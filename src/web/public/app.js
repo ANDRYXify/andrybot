@@ -12837,6 +12837,15 @@ function pannelloRegole() {
       </div>
       <p class="suggerimento">${L('Non tocca nessuno: mette la segnalazione qui sotto e decidi tu. Un account che sta in molti canali contemporaneamente e non parla mai è quasi sempre un bot che gonfia i numeri.', 'It never acts: it files a report below and you decide. An account sitting in many channels at once and never speaking is almost always a number-inflating bot.', 'No toca a nadie: deja el aviso aquí abajo y decides tú. Una cuenta que está en muchos canales a la vez y nunca habla casi siempre es un bot que infla los números.')}</p>
       <div class="riga-flessibile">
+        <span class="suggerimento">${L('Quanto presto reagire:', 'How soon to react:', 'Con qué rapidez reaccionar:')}</span>
+        <select aria-label="${esc(L('Quanto presto alzare il livello di difesa', 'How soon to raise the defence level', 'Con que rapidez subir el nivel de defensa'))}" id="sel-ab-modo">
+          <option value="prudente" ${ab.modo === 'prudente' ? 'selected' : ''}>${L('prudente', 'cautious', 'prudente')}</option>
+          <option value="bilanciata" ${(ab.modo || 'bilanciata') === 'bilanciata' ? 'selected' : ''}>${L('bilanciata', 'balanced', 'equilibrada')}</option>
+          <option value="aggressiva" ${ab.modo === 'aggressiva' ? 'selected' : ''}>${L('aggressiva', 'aggressive', 'agresiva')}</option>
+        </select>
+      </div>
+      <p class="suggerimento">${L('Lo scudo ha sei livelli e sale piano: prima guarda, poi avvisa i moderatori, poi rallenta la chat, e solo alla fine la chiude ai soli follower. Questa scelta decide quanto presto passa da uno all\'altro.', 'The shield has six levels and climbs gradually: first it watches, then it warns the mods, then it slows the chat, and only at the end closes it to followers only. This choice decides how soon it moves between them.', 'El escudo tiene seis niveles y sube poco a poco: primero mira, luego avisa a los moderadores, luego ralentiza el chat, y solo al final lo cierra solo a seguidores. Esta opcion decide con que rapidez pasa de uno a otro.')}</p>
+      <div class="riga-flessibile">
         <span class="suggerimento">${L('Cosa fare:', 'What to do:', 'Qué hacer:')}</span>
         <select aria-label="${esc(L('Cosa fare quando scatta l\'allarme', 'What to do when the alert fires', 'Que hacer cuando salta la alarma'))}" id="sel-ab-azione">
           <option value="ban" ${(ab.azione || 'ban') === 'ban' ? 'selected' : ''}>${L('bannare', 'ban', 'banear')}</option>
@@ -13074,6 +13083,7 @@ function attivaPiattaforma() {
         listaAuto: document.getElementById('chk-ab-listaauto').checked,
         presenze: document.getElementById('chk-ab-presenze').checked,
         aVuoto: document.getElementById('chk-ab-avuoto').checked,
+        modo: document.getElementById('sel-ab-modo').value,
         azione: document.getElementById('sel-ab-azione').value,
         controllaAccount: document.getElementById('chk-ab-account').checked,
         chatNuovi: document.getElementById('chk-ab-chatnuovi').checked,

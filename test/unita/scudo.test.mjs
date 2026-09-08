@@ -361,9 +361,15 @@ test('un picco di gente vera alza la serranda ma non tocca nessuno', async () =>
     await scudo.onFollow({ channel: ch, data: { user_id: 'fan' + i, user_login: 'andrea' + i } });
     await attesa(Math.round(-Math.log(1 - r()) * 25));
   }
-  assert.equal(ab.assetto(ch).livello, 'attacco', 'la serranda si alza lo stesso: e\' prudenza, non condanna');
+  // Con i sei livelli questo caso non chiude piu' la chat: un picco irregolare
+  // senza nomi da fabbrica è probabilmente una clip andata bene, e chiudere la
+  // chat ai soli follower proprio in quel momento vuol dire fare male allo
+  // streamer nel suo momento migliore. Si sale di livello — si guarda di piu' —
+  // e basta.
+  assert.equal(ab.assetto(ch).livello, 'allerta', 'si guarda, non si chiude');
+  assert.ok(!h.f.chiuso.follower, 'la chat resta aperta durante una clip virale');
   await attesa(300);
-  assert.equal(h.f.bloccati.length, 0, 'ma non si toglie il follow a nessuno');
+  assert.equal(h.f.bloccati.length, 0, 'e non si toglie il follow a nessuno');
   assert.equal(h.f.bannati.length, 0);
 });
 
@@ -375,10 +381,18 @@ test('al rientro in calma si rimette a posto solo cio\' che aveva mosso lui', as
   const h = helixFinto();
   const scudo = new ab.AntiBot({ helix: h });
   await scudo._alza(ch, 'attacco', 'prova', scudo.cfg(ch));
-  assert.deepEqual(h.f.chiuso, { follower: true, lenta: true, shield: true });
+  assert.deepEqual(h.f.chiuso, { lenta: true, follower: true, shield: true });
+  // SI SCENDE PIANO: un gradino per volta. Al primo rientro la serranda si
+  // riapre — il livello sotto non la prevede — ma la chat resta lenta finche'
+  // non si scende ancora. Saltare dall'attacco alla calma in un colpo vuol dire
+  // riaprire tutto mentre l'ondata magari respira.
   await scudo._abbassa(ch);
-  assert.deepEqual(h.f.chiuso, { follower: false, lenta: false, shield: false }, 'tutto riaperto');
+  assert.equal(ab.assetto(ch).livello, 'difesa');
+  assert.equal(h.f.chiuso.follower, false, 'la serranda si riapre subito');
+  assert.equal(h.f.chiuso.lenta, true, 'la chat lenta resta ancora');
+  for (let i = 0; i < 5 && ab.assetto(ch).livello !== 'calma'; i++) await scudo._abbassa(ch);
   assert.equal(ab.assetto(ch).livello, 'calma');
+  assert.deepEqual(h.f.chiuso, { lenta: false, follower: false, shield: false }, 'e alla fine tutto riaperto');
 });
 
 test('in chat si banna, sui follow si blocca', async () => {

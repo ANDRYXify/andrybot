@@ -17,6 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
+- Lo scudo adesso ha sei livelli e sale piano: prima guarda, poi avvisa i moderatori, poi rallenta la chat, e solo alla fine la chiude ai soli follower. Prima passava dal non fare niente al chiudere tutto.
+- Così una clip andata bene non fa più chiudere la chat: tanti follow di cui non si sa niente alzano l'attenzione, non la serranda.
+- E quando l'attacco passa si scende un gradino per volta, riaprendo subito quello che non serve più, invece di restare chiusi per sicurezza.
+- Nello Scudo anti-bot puoi scegliere quanto presto reagire: prudente, bilanciata o aggressiva.
 - Nel pannello sei scritte avevano l'apostrofo al posto dell'accento, e adesso sono scritte come si deve.
 - Quando arriva un'ondata di follow finti, il bot riconosce quali nomi vengono dalla stessa fabbrica e toglie solo quelli: chi era capitato lì in mezzo non viene più toccato.
 - E se non riconosce nessun gruppo non se lo inventa: tratta l'ondata come una cosa sola, perché lì il rischio è lasciarla passare.

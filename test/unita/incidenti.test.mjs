@@ -177,7 +177,11 @@ test('l\'assetto che sale apre l\'incidente, il rientro lo chiude', async () => 
   const a = I.aperto(ch);
   assert.ok(a, 'l\'incidente nasce quando sale l\'assetto');
   assert.equal(a.tipo, 'ondata-follow', 'il tipo si legge da come l\'ha descritto chi ha dato l\'allarme');
+  // Si scende un gradino per volta: finché il canale non è tornato in pace,
+  // l'attacco è ancora in corso e l'incidente resta aperto.
   await scudo._abbassa(ch);
+  assert.ok(I.aperto(ch), 'a meta\' discesa l\'attacco non e\' finito');
+  for (let i = 0; i < 6 && I.aperto(ch); i++) await scudo._abbassa(ch);
   assert.equal(I.aperto(ch), null);
   assert.ok(I.ultimoDi(ch).chiuso);
 });
