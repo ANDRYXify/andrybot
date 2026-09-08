@@ -33,6 +33,7 @@ import { Esecutore, verdetto, AZIONI, daFare } from './enforcement.js';
 import * as inc from './incidenti.js';
 import { daToccare, dominante, appartiene } from './gruppi.js';
 import * as LIV from './livelli.js';
+import * as bon from './bonifica.js';
 import { config } from '../config.js';
 
 const log = makeLog('antibot');
@@ -678,6 +679,39 @@ export const riprovaFallite = (ch) => esecutore?.riprovaFalliti(ch) || 0;
 // serve etichettare niente a mano, e non serve intercettare niente nel percorso
 // dei messaggi. Sta fuori dalla classe perche' non ha bisogno di nessuno stato:
 // legge quello che e' scritto, come registro() e sintesiRegistro().
+// ── La bonifica di un incidente ─────────────────────────────────────────────
+// Si lavora sui giudizi che l'incidente ha già scritto mentre succedeva, non
+// sull'orologio: «prendi l'intervallo e cancella tutto» ripulisce in un colpo e
+// si porta via i fan veri arrivati in quei minuti.
+//
+// Sta fuori dalla classe come erroriScudo: le serve l'esecutore, che è uno per
+// processo, e nessuno stato suo.
+export async function bonifica(incidente, giudizi, conferma, { canale } = {}) {
+  const r = bon.rapporto(incidente);
+  if (!r) return { ok: false, motivo: 'incidente non trovato' };
+  if (canale && norm(canale) !== r.canale) return { ok: false, motivo: 'non è un tuo incidente' };
+  if (!esecutore) return { ok: false, motivo: 'scudo non attivo' };
+  const buona = bon.confermaValida(incidente, giudizi, conferma);
+  if (!buona.ok) return { ok: false, ...buona };
+
+  const cfg = { ...ANTIBOT_DEFAULT, ...(streamers.get(r.canale)?.settings?.antibot || {}) };
+  const esenti = (cfg.esenti || []).map(norm);
+  const verdetti = bon.verdettiPer(incidente, giudizi, { aVuoto: cfg.aVuoto === true })
+    .filter((v) => !BUONI.has(norm(v.login)) && !esenti.includes(norm(v.login)))
+    .map((v) => verdetto({ ...v, azione: cfg.togliFollow === false ? AZIONI.BAN : AZIONI.BLOCCA }));
+
+  registra(r.canale, { azione: 'bonifica', motivo: `${verdetti.length} account tolti dopo ${r.incidente}`, esito: 'in-attesa' });
+  log.warn(`#${r.canale} bonifica ${r.incidente}: ${verdetti.length} account in fila`);
+  for (const v of verdetti) {
+    esecutore.esegui(v).then((x) => {
+      // Nella rete condivisa entra solo quello che è andato a buon fine
+      // davvero: non un doppione, non una prova a vuoto, non un fallimento.
+      if (x?.ok && !x.aVuoto && !x.doppione && !x.saltato) { try { rete.segnala(r.canale, v.login, 'ondata'); } catch (e) {  } }
+    }).catch(() => {});
+  }
+  return { ok: true, quanti: verdetti.length, risparmiati: r.quanti.legittimo };
+}
+
 export function erroriScudo(channel) {
   const ch = norm(channel);
   let elenco = [];
@@ -905,7 +939,7 @@ export class AntiBot {
       log.info(`#${ch} gruppo riconosciuto: ${gruppo.motivo} — ${risparmiati} lasciati stare`);
       try {
         inc.racconta(ch, `gruppo riconosciuto: ${gruppo.motivo}; ${risparmiati} account fuori dal gruppo non toccati`);
-        for (const v of puliti) if (!gruppo.dentro.has(norm(v.login))) inc.coinvolto(ch, v.login, inc.GIUDIZI.SOSPETTO);
+        for (const v of puliti) if (!gruppo.dentro.has(norm(v.login))) inc.coinvolto(ch, v.login, inc.GIUDIZI.SOSPETTO, 0, v.userId);
       } catch (e) {  }
     }
     const verdetti = bersagli
@@ -929,7 +963,7 @@ export class AntiBot {
     registra(ch, { azione: 'blocco', motivo: `${n} account dell'ondata → blocco (${motivo})`, esito: 'in-attesa' });
     if (cfg.avvisa && !this._aVuoto(cfg)) this.say?.(ch, `🛡️ Ondata artificiale: sto ripulendo ${n} account finti.`);
     for (const v of verdetti) {
-      try { inc.coinvolto(ch, v.login, inc.GIUDIZI.CERTO, v.punti); } catch (e) {  }
+      try { inc.coinvolto(ch, v.login, inc.GIUDIZI.CERTO, v.punti, v.userId); } catch (e) {  }
       this.esecutore.esegui(v).then((r) => {
         // Nella rete entra solo quello che e' andato a buon fine DAVVERO: non
         // un doppione, non una prova a vuoto, non un tentativo fallito.
@@ -964,7 +998,7 @@ export class AntiBot {
     else if (cfg.azione === 'timeout') azione = AZIONI.TIMEOUT;
     else azione = AZIONI.BAN;
 
-    try { inc.coinvolto(ch, login, inc.GIUDIZI.CERTO, extra.punti || 0); } catch (e) {  }
+    try { inc.coinvolto(ch, login, inc.GIUDIZI.CERTO, extra.punti || 0, userId); } catch (e) {  }
     return this.esecutore.esegui(verdetto({
       canale: ch, login, userId, azione,
       motivi: [motivo], origine, incidente: inc.aperto(ch)?.id || '',
@@ -1094,7 +1128,7 @@ export class AntiBot {
     // stesso, ed è proprio la gente che arriva ai livelli bassi quella che non
     // si dovrà toccare quando si ripulisce.
     if (a && LIV.N[a.livello] > 0) {
-      try { inc.coinvolto(channel, login, a.artificiale ? inc.GIUDIZI.SOSPETTO : inc.GIUDIZI.LEGITTIMO); } catch (e) {  }
+      try { inc.coinvolto(channel, login, a.artificiale ? inc.GIUDIZI.SOSPETTO : inc.GIUDIZI.LEGITTIMO, 0, userId); } catch (e) {  }
     }
 
     // vecchio interruttore: bannare i follow dell'ondata anche senza certezza
@@ -1146,7 +1180,7 @@ export class AntiBot {
     if (c.coro) {
       const motivo = `stesso messaggio da ${c.quanti} account diversi in mezzo minuto`;
       await this._valuta(channel, { coro: true, coroBocche: c.quanti }, cfg);
-      try { inc.coinvolto(channel, login, inc.GIUDIZI.CERTO); } catch (e) {  }
+      try { inc.coinvolto(channel, login, inc.GIUDIZI.CERTO, 0, msg.userId); } catch (e) {  }
       const r = await this.esecutore.esegui(verdetto({
         canale: channel, login, userId: msg.userId, azione: AZIONI.CANCELLA,
         messaggio: msg.id, motivi: [motivo], origine: 'coro', incidente: inc.aperto(channel)?.id || '',

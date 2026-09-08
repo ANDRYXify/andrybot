@@ -17,47 +17,48 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
-- Lo scudo adesso ha sei livelli e sale piano: prima guarda, poi avvisa i moderatori, poi rallenta la chat, e solo alla fine la chiude ai soli follower. Prima passava dal non fare niente al chiudere tutto.
-- Così una clip andata bene non fa più chiudere la chat: tanti follow di cui non si sa niente alzano l'attenzione, non la serranda.
-- E quando l'attacco passa si scende un gradino per volta, riaprendo subito quello che non serve più, invece di restare chiusi per sicurezza.
-- Nello Scudo anti-bot puoi scegliere quanto presto reagire: prudente, bilanciata o aggressiva.
-- Nel pannello sei scritte avevano l'apostrofo al posto dell'accento, e adesso sono scritte come si deve.
-- Quando arriva un'ondata di follow finti, il bot riconosce quali nomi vengono dalla stessa fabbrica e toglie solo quelli: chi era capitato lì in mezzo non viene più toccato.
-- E se non riconosce nessun gruppo non se lo inventa: tratta l'ondata come una cosa sola, perché lì il rischio è lasciarla passare.
-- Anche i follow finti che arrivano piano piano, uno ogni pochi secondi per dieci minuti, adesso vengono fermati. Prima passavano indisturbati.
-- E il bot non impara più il ritmo del tuo canale da due minuti di attacco: perché quel ritmo conti servono ore, non un episodio.
-- Se qualcuno ti manda un raid vero e in trecento salutano con la stessa frase, il bot non li scambia più per un attacco. Prima ne cancellava fino a novanta su trecento.
-- E una chat che ripete una frase corta tutti insieme non è più un attacco: prima bastavano quattordici caratteri, adesso ne servono trenta e cinque parole.
-- Lo scudo misura gli attacchi sull'ora in cui sono successi e non su quella in cui gli arrivano, così un ritardo del bot non falsa più il giudizio.
-- Ogni attacco al tuo canale diventa una scheda unica invece di trecento righe di registro: quando è cominciato, quanto è durato, quanto forte è andato, chi c'era, cosa ha fatto il bot e quanto ha funzionato.
-- Un attacco che riprende dopo pochi minuti resta lo stesso attacco, così il conto dei danni non si spezza in dieci pezzi.
-- Nella scheda chi è arrivato durante l'attacco è diviso fra bot certi, sospetti e persone vere: serve per non fare pulizia alla cieca dopo.
-- Se il bot si riavvia mentre un attacco è in corso, la scheda si chiude e resta, invece di restare aperta per sempre.
-- Nello Scudo anti-bot c'è la sola osservazione: lo scudo lavora e scrive nel registro cosa avrebbe fatto, ma non banna, non blocca e non cancella. Serve per vedere come si comporta prima di lasciarlo agire.
-- Un'azione che non riesce, perché Twitch non risponde o manca un permesso, non si perde più: resta in sospeso e la puoi far riprovare dalla console.
-- Nel registro dello scudo ora c'è anche cosa ha risposto Twitch, non solo se è andata. Prima «fallito» non diceva perché.
-- Se lo stesso evento arriva due volte, il bot non banna due volte.
-- E la cancellazione di un messaggio di spam passa avanti alla pulizia dei follower finti, che può aspettare.
-- I canali che usano il bot ora si scambiano quello che scoprono: un account bloccato durante un'ondata su un canale diventa noto anche agli altri. La lista cresce da sola con gli streamer che arrivano.
-- Serve però che tre canali diversi lo riconoscano ciascuno per conto suo, e solo per cose misurate sul momento, mai per il tipo di profilo. Un canale solo non fa una verità.
-- Un nome nella lista comune scade da solo dopo tre mesi e si può togliere subito, così un errore non resta lì per sempre.
-- Lo scudo sa riconoscere anche i bot che guardano e basta: un account che sta in molti canali nello stesso momento e non scrive mai in nessuno viene segnalato. Non viene toccato, decidi tu.
-- Il giudizio su un account non somma più tre volte la stessa cosa. Prima un nuovo spettatore senza foto né bio prendeva lo stesso punteggio di un follow-bot vero.
-- E per togliere il follow a qualcuno adesso serve sempre un fatto che una persona non può produrre: il nome riconosciuto o la presenza in molti canali. Il resto fa solo segnalare.
-- Nella console dello scudo c'è quanto ha sbagliato: chi era stato segnalato e poi ha scritto in chat era una persona, e viene contato.
-- Il filtro dei link guarda il dominio del link e non il testo intorno. Prima bastava nominare da qualche parte un sito permesso, o metterne uno buono davanti a quello vero, e il filtro si spegneva.
-- E non cancella più i messaggi normali scritti col punto attaccato, tipo «lascia stare.io ci provo». Su quindici frasi di chat vere prima ne finivano cancellate dieci.
-- Lo scudo riconosce anche le ondate di follow così veloci da arrivare tutte insieme: erano proprio quelle che passavano.
-- E per dire che un'ondata è finta ora aspetta di aver visto quindici follow. Con sei, una ondata vera su dodici veniva scambiata per finta e i follower veri finivano rimossi.
-- Quando lo scudo si convince a metà ondata, riprende anche i follow arrivati prima, invece di partire da quel momento.
-- Il rilevamento dello stesso messaggio scritto da tanti account resta acceso anche se spegni l'elenco dei nomi da bot: prima si spegneva anche quello, senza dirlo.
+- Il bot risponde agganciando la risposta al messaggio di chi gli ha scritto, come fa una persona col tasto «rispondi». Vale su Twitch e su Kick.
+- Prima di rispondere aspetta un momento, come chi legge e scrive. Adesso quel momento segue il ritmo della chat: se vola risponde subito, se è calma si prende il suo tempo.
+- Vede se chi gli scrive è moderatore, abbonato o VIP, e se è la prima volta che scrive da te. Non cambia cosa risponde, cambia il modo: a un nuovo arrivato non dà per scontate le cose del canale.
+- Quando parla di sua iniziativa si aggancia a quello che vi state dicendo. L'elenco di frasi fatte non c'è più, e cadeva sempre in mezzo a discorsi che non c'entravano.
+- Se non ha niente di suo da dire, sta zitto.
+- Lo scudo anti-bot adesso ha sei livelli e sale un gradino alla volta. Prima guarda, poi avvisa i moderatori, poi rallenta la chat, e solo alla fine la chiude ai soli follower.
+- Una clip andata bene non fa più chiudere la chat. Tanti follow di cui non si sa niente alzano l'attenzione, non la serranda.
+- Quando l'attacco passa si scende un gradino per volta, riaprendo subito quello che non serve più.
+- Puoi scegliere quanto presto reagire: prudente, bilanciata o aggressiva.
+- Davanti a un'ondata di follow finti il bot riconosce quali nomi vengono dalla stessa fabbrica e toglie solo quelli. Chi era capitato lì in mezzo resta dov'è.
+- Se non riconosce nessun gruppo non se lo inventa, e tratta l'ondata come una cosa sola.
+- Vengono fermati anche i follow finti che arrivano piano piano, uno ogni pochi secondi per dieci minuti. Passavano indisturbati.
+- Un'ondata così veloce da arrivare tutta insieme adesso si vede. Era proprio quella che scappava.
+- Per dire che un'ondata è finta il bot aspetta di aver visto quindici follow. Con sei, un picco vero su dodici finiva scambiato per finto.
+- Convincendosi a metà ondata riprende anche i follow arrivati prima, invece di partire da quel momento.
+- Il ritmo del tuo canale non si impara più da due minuti di attacco. Perché conti servono ore.
+- Un raid vero in cui trecento persone salutano con la stessa frase non viene più scambiato per un attacco.
+- Una chat che ripete una frase corta tutti insieme nemmeno. Servono trenta caratteri e cinque parole, non quattordici caratteri.
+- Il rilevamento dello stesso messaggio da tanti account resta acceso anche spegnendo l'elenco dei nomi da bot.
+- Gli attacchi si misurano sull'ora in cui sono successi, non su quella in cui arrivano al bot.
+- Ogni attacco diventa una scheda sola invece di trecento righe di registro: quando è cominciato, quanto è durato, quanto forte è andato, chi c'era, cosa ha fatto il bot.
+- Un attacco che riprende dopo pochi minuti resta lo stesso attacco, e il conto dei danni non si spezza in dieci pezzi.
+- Nella scheda chi è arrivato durante l'attacco è diviso fra bot certi, sospetti e persone vere.
+- Finito l'attacco puoi ripulire i follower finti partendo da quella divisione. Le persone vere restano fuori, e per eseguire devi riscrivere quanti account stai per togliere.
+- Se il bot si riavvia mentre un attacco è in corso, la scheda si chiude e resta.
+- C'è la sola osservazione: lo scudo lavora e scrive cosa avrebbe fatto, senza bannare, bloccare o cancellare niente. Serve per vedere come si comporta prima di lasciarlo agire.
+- Un'azione che non riesce non si perde. Resta in sospeso e la fai riprovare dalla console.
+- Nel registro c'è anche cosa ha risposto Twitch, non solo se è andata.
+- Nella console trovi quanto ha sbagliato: chi era stato segnalato e poi ha scritto in chat era una persona.
+- Lo stesso evento che arriva due volte non fa bannare due volte.
+- La cancellazione di un messaggio di spam passa avanti alla pulizia dei follower finti, che può aspettare.
+- I canali che usano il bot si scambiano quello che scoprono. Un account bloccato durante un'ondata da una parte diventa noto anche agli altri, e la lista cresce da sola.
+- Perché un nome entri in quella lista servono tre canali che lo riconoscano ciascuno per conto suo, e solo per cose misurate sul momento.
+- Un nome nella lista comune scade dopo tre mesi e si può togliere subito.
+- Lo scudo riconosce anche i bot che guardano e basta. Un account presente in molti canali nello stesso momento, che non scrive mai, viene segnalato: decidi tu.
+- Il giudizio su un account non somma più tre volte la stessa cosa. Un nuovo spettatore senza foto né bio prendeva lo stesso punteggio di un follow-bot vero.
+- Per togliere il follow serve sempre un fatto che una persona non può produrre: il nome riconosciuto, o la presenza in molti canali. Il resto fa solo segnalare.
+- Se Twitch non risponde mentre lo scudo controlla l'età di un account, riprova al messaggio dopo.
+- Il filtro dei link guarda il dominio del link, non il testo intorno. Bastava nominare da qualche parte un sito permesso e il filtro si spegneva.
+- I messaggi normali scritti col punto attaccato, tipo «lascia stare.io ci provo», non vengono più cancellati. Su quindici frasi di chat vere ne finivano cancellate dieci.
 - Una parola vietata resta vietata anche scritta con un accento.
-- Se Twitch non risponde mentre lo scudo controlla l'eta di un account, ora riprova al messaggio dopo invece di lasciarlo per sempre senza controllo.
-- Quando il bot risponde a qualcuno, la risposta esce agganciata al messaggio: chi ha scritto la vede sotto la sua riga, anche se la chat nel frattempo è corsa avanti. Su Twitch e su Kick.
-- Il bot aspetta un momento prima di rispondere, come una persona che legge e scrive. Adesso quel momento tiene conto di quanto corre la chat: se vola risponde prima, se è calma si prende il suo tempo.
-- Il bot vede se chi gli scrive è moderatore, abbonato o VIP, e se è la prima volta che scrive nel tuo canale. Non cambia cosa risponde, cambia il modo: a un nuovo arrivato non dà per scontate le cose del canale.
-- Quando parla di sua iniziativa, il bot guarda cosa vi state dicendo e si aggancia a quello. Prima pescava da un elenco di frasi fatte, e cadevano in mezzo a discorsi che non c'entravano.
-- E se non ha niente di suo da dire, sta zitto. Prima una frase la diceva comunque.
+- Nel pannello sei scritte avevano l'apostrofo al posto dell'accento, e adesso sono scritte come si deve.
 - Quando la cancellazione è finita te lo dice una nuvoletta disegnata come il resto del sito, invece della finestrella grigia del browser.
 - Nella finestra di ricerca il Tab non esce più dietro al velo, Escape chiude da qualunque punto e chiudendo il cursore torna dove eri. Prima girava nella pagina sotto, che non si vede.
 - Il bot legge e risponde nella chat delle tue dirette YouTube, con gli stessi comandi, moduli e monete di Twitch. Si accende da Stato → Le tue piattaforme.
@@ -77,7 +78,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-06
 
 - Nella locandina live compare la foto anche degli streamer che hai aggiunto tu alle notifiche: prima restava un cerchio vuoto.
-- E le emote nel titolo non diventano più quadratini: vengono tolte, perché nel disegno della locandina non si possono scrivere.
+- Le emote nel titolo non diventano più quadratini: vengono tolte, perché nel disegno della locandina non si possono scrivere.
 
 - Le guide hanno lo stesso aspetto del resto: carta, contorno a inchiostro e titoli scritti a mano. Prima sembravano di un altro sito.
 
@@ -99,7 +100,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Otto riquadri che si aprono non mostravano nessuna freccia: sembravano testo normale. Ora ce l'hanno tutti.
 
 - Sulle nuvolette corte la coda non sbanda più sull'angolo: resta attaccata al fondo, anche quando la bolla è larga quanto una parola.
-- E non supera più mezza bolla di lunghezza. Prima su una parola sola arrivava a due terzi e sembrava appesa a un filo.
+- Non supera più mezza bolla di lunghezza. Prima su una parola sola arrivava a due terzi e sembrava appesa a un filo.
 - Le sezioni ancora vuote non sono più un buco bianco: sono un riquadro col retino, che dice cosa ci comparirà.
 
 - La riga che apre ogni scheda adesso è una didascalia: un riquadro con la barra d'inchiostro e l'angolo piegato, come nei fumetti. Chi parla ha la bolla, chi racconta ha il riquadro.
@@ -122,7 +123,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Il testo dentro è centrato e le righe sono bilanciate, come nei balloon veri.
 
 - Le nuvolette compaiono dove sei col cursore, non al centro della cosa che stai puntando. Sulla tela dell'editor finivano lontanissime.
-- E sono palloncini veri: forma tonda, becco che punta dove guardi. Prima erano rettangoli con gli angoli smussati.
+- Sono palloncini veri: forma tonda, becco che punta dove guardi. Prima erano rettangoli con gli angoli smussati.
 - Passando sopra alle vesti dell'overlay adesso c'è scritto com'è fatta ognuna, invece del nome che si legge già sul tasto.
 
 - Le nuvolette col cursore sopra adesso sono di tre tipi: fumetto normale per un comando, squadrato e rosso per le cose che fanno danni, nuvola di pensiero per spiegare un valore o una parola.
@@ -158,7 +159,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-05
 
 - I suggerimenti che compaiono passando il cursore sopra un comando adesso li disegna il sito, col suo tema. Prima erano la scatoletta grigia del browser, che non si può cambiare.
-- E compaiono anche arrivandoci col tasto di tabulazione: chi naviga da tastiera prima non li vedeva mai.
+- Compaiono anche arrivandoci col tasto di tabulazione: chi naviga da tastiera prima non li vedeva mai.
 
 - Il vinile che gira sull'overlay non si blocca più per ricominciare il giro da capo. Succedeva a ogni lettura del brano, e valeva anche per le onde e per il titolo che scorre.
 
@@ -182,7 +183,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Su Twitch la richiesta arriva allo streamer già confermata: prima di mostrargliela chiediamo a Twitch chi modera quel canale.
 - Chi ha il canale vede le richieste in attesa nella scheda Stato e risponde con un tasto. Finché non dice di sì, chi ha chiesto non vede niente e non occupa un posto del piano.
 - L'invito a un moderatore ora si manda anche a chi sta su Kick: scegli la piattaforma e scrivi il nome.
-- E chi è stato invitato entra dalla sua piattaforma, non per forza da Twitch.
+- Chi è stato invitato entra dalla sua piattaforma, non per forza da Twitch.
 
 ## 2026-09-04
 
@@ -191,7 +192,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - I segreti dei collegamenti (bot Telegram, Spotify, TikTok, 7TV) non stanno più in chiaro nel database: ognuno ha la sua chiave, e quella chiave è a sua volta chiusa a chiave.
 - Ogni segreto è legato al suo posto: preso da un account e messo su un altro non si apre più.
 - Nell'Overlay Studio il titolo «Gira il telefono» non copre più l'icona sopra di sé.
-- E i tre passi per mettere l'overlay in OBS tornano a leggersi come frasi intere, invece di spezzarsi in due colonne.
+- I tre passi per mettere l'overlay in OBS tornano a leggersi come frasi intere, invece di spezzarsi in due colonne.
 - Niente più schermate vuote scorrendo una scheda: alcune carte restavano spente e lasciavano al loro posto un buco alto quanto loro.
 - Sul telefono il contorno non resta più acceso sull'ultimo tasto premuto: gli effetti del passaggio del mouse ora valgono solo dove un mouse c'è davvero.
 - Su telefono le schede Notifiche, Moduli e Avvisi non escono più dallo schermo: il testo si tagliava a metà frase e la pagina scivolava di lato.
@@ -216,37 +217,37 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [privato] Lia potrà insegnare al bot solo quando vivrà. Fino ad allora il quaderno lo scrivi tu, e il bot non può leggere niente di lei.
 - [privato] Quando il bot non sa rispondere, la domanda resta da studiare per Lia: senza nome, senza contatti e senza link.
 - Attorno a un video o a una musica incorporata non si vedono più gli spicchi vuoti negli angoli: li riempie il colore del bordo, così sembrano cornice.
-- E puoi scegliere il colore dietro al riquadro, per intonarlo a quello che si vede dentro al contenuto.
+- Puoi scegliere il colore dietro al riquadro, per intonarlo a quello che si vede dentro al contenuto.
 - I riquadri di video, musica e pagine incorporate, la copertina e i bottoni dell'informativa hanno lo stesso bordo e la stessa ombra del resto della pagina: prima avevano un filo sottile che non cambiava mai col tema.
 - La scritta che scorre è tornata a scorrere: si era fermata perché due cose diverse avevano lo stesso nome dentro al foglio di stile.
-- E la sua velocità funziona per la prima volta: «lenta», «media» e «veloce» non arrivavano mai alla pagina, andavano tutte alla stessa andatura.
+- La sua velocità funziona per la prima volta: «lenta», «media» e «veloce» non arrivavano mai alla pagina, andavano tutte alla stessa andatura.
 - L'editor della pagina link è a tre zone come il banco dell'overlay: i pezzi a sinistra, l'anteprima al centro, i comandi del pezzo scelto a destra.
 - Scegli un pezzo (o cliccalo nell'anteprima) e i suoi comandi compaiono a destra, con scritto sopra di quale pezzo sono.
 - Il tutorial della pagina link parte chiuso e sta in fondo: aperto si mangiava mezza colonna e la lista dei pezzi non si vedeva.
 - I pezzi della pagina link non sono più tutti spalancati insieme: una riga per pezzo, che si apre una alla volta e resta aperta anche se lo sposti o lo duplichi.
 - Nel tema scuro il contorno disegnato si vede: era nero su nero, quindi non c'era, e restavano solo gli aloni rosa.
 - La barra in basso, la lente della ricerca e le icone parlano la stessa lingua del resto: contorno disegnato e ombra a timbro.
-- E la barra in basso è opaca: su alcuni telefoni il testo della pagina si leggeva attraverso.
+- La barra in basso è opaca: su alcuni telefoni il testo della pagina si leggeva attraverso.
 - Le pagine link pubblicate non portano più i commenti del nostro codice: chi apriva gli strumenti del browser su una pagina qualsiasi ne trovava trentasette.
 - La pagina link ora si allarga su tutto lo schermo come il banco dell'overlay: prima restava dentro una colonna da mille pixel e l'anteprima era piccola.
 - I titoli delle sezioni non sporgono più sopra la carta, e la freccetta che le apre è tornata una punta invece di un rombo.
 - La pagina link ha molte più cose da cambiare: carattere dei titoli separato, maiuscolo, interlinea, aria fra i pezzi, colore del testo dei bottoni e spessore del bordo.
-- E c'è una scheda «CSS» dove scrivere il tuo: arriva per ultimo, quindi vince su tutto il resto.
+- C'è una scheda «CSS» dove scrivere il tuo: arriva per ultimo, quindi vince su tutto il resto.
 - La pagina link: l'aspetto non è più una colonna sola da ventidue voci, ma sei schede — Temi, Impianto, Scrittura, Colori, Bottoni, Modi — con i campi affiancati.
-- E l'anteprima della pagina link è passata a sinistra, con i comandi a destra: si legge come il banco dell'overlay.
+- L'anteprima della pagina link è passata a sinistra, con i comandi a destra: si legge come il banco dell'overlay.
 - Puoi cambiare la grandezza del testo della pagina link (80–130%) e il suo spessore: leggero, medio o marcato. Prima era grassetto e basta.
 - Il puntatore disegnato adesso resta scelto: lo salvavi e alla ricarica tornava indietro da solo.
 - Il titolo della home usa gli stessi due colori del resto della pagina: le parole nel colore del testo, quelle in risalto nel rosa del marchio. Prima aveva un rosa tutto suo che al buio restava scuro come il fondo.
 - I bottoni scelti e quelli rossi hanno di nuovo il loro contorno: il bordo era dello stesso colore del riempimento, quindi spariva dentro, e restava solo l'ombra su due lati — sembravano ritagliati male.
 - I riquadri «ultimo follower» e «ultimo sub» prendono la veste come tutto il resto: prima quei bottoni non facevano niente e le due etichette restavano com'erano mentre l'overlay cambiava tema.
-- E «a tutto l'overlay» adesso li prende davvero tutti: prima saltava quei due, il conto alla rovescia e i contatori.
+- «a tutto l'overlay» adesso li prende davvero tutti: prima saltava quei due, il conto alla rovescia e i contatori.
 - Ai due riquadri puoi scegliere forma, materia e cornice, come agli altri pezzi.
 - L'anteprima dei due riquadri mostra quello che va davvero in onda: prima ne disegnava uno e in diretta ne arrivava un altro.
 - L'alone dell'alert e quello della materia neon si accendono: c'erano da sempre e non si erano mai visti.
 - Con la veste manga l'ombra è netta invece che sfocata, come un secondo segno d'inchiostro.
 - Il sito era irraggiungibile: la configurazione del guardiano d'ingresso non era valida e lui, per questo, non si avviava. Rimessa a posto e verificata col programma vero prima di spingerla.
 - Un elemento con la Dimensione cambiata arriva davvero al bordo dello schermo: rimpicciolito si piantava prima e sembrava bloccato lì, ingrandito usciva dalla tela.
-- E segue il dito com'è giusto mentre lo trascini, a qualunque Dimensione.
+- Segue il dito com'è giusto mentre lo trascini, a qualunque Dimensione.
 - Le immagini e i video dei comandi finiscono in diretta dove li hai messi nell'anteprima, anche quando li rimpicciolisci.
 - Il player non si strizza più a seconda di dove lo metti: posato al centro o a destra si stringeva, e il titolo finiva tagliato. Ora è largo quanto gli serve, ovunque lo porti.
 - Il player è cresciuto: le misure partono da dove prima finivano, e c'è la misura «enorme».
@@ -254,13 +255,13 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Il player ha i temi, e un tema prende la forma dell'oggetto vero. Cassetta: titolo e artista sull'etichetta, sotto la finestrella con le due bobine che girano.
 - Vinile: il disco esce dalla busta e gira, con i solchi e l'etichetta al centro.
 - Terminale: mono, prompt e cursore che lampeggia. Manga: retino, contorno d'inchiostro e il titolo in lettering.
-- E ha il corpo: **slim** se lo vuoi sottile, **cicciotto** se lo vuoi generoso. È un asse a parte dalla dimensione: uno cambia le proporzioni, l'altro la scala.
+- Ha il corpo: **slim** se lo vuoi sottile, **cicciotto** se lo vuoi generoso. È un asse a parte dalla dimensione: uno cambia le proporzioni, l'altro la scala.
 - Le onde ballano quanto è carico il brano: una ballata si muove piano, un pezzo tirato spinge. Lo dice Spotify, non lo inventiamo noi.
 - Un titolo lungo non allarga più il player a mezzo schermo: la colonna del testo ha il suo tetto e il titolo scorre, come deve.
-- E quel tetto lo scegli tu: «Larghezza del testo» dice quanto può allargarsi prima che il titolo si metta a scorrere. A zero decide il corpo.
+- Quel tetto lo scegli tu: «Larghezza del testo» dice quanto può allargarsi prima che il titolo si metta a scorrere. A zero decide il corpo.
 - «Parti da quanti ne ho adesso» adesso è una spunta che resta, non un tasto da premere ogni volta. Il numero lo tengo allineato io a quello vero di Twitch.
 - La Plancia è disegnata come il resto del sito: contorno d'inchiostro, angoli tirati a mano, nomi in lettering.
-- E quando scorri fra le sezioni partono le linee di concentrazione dalla scheda che stai guardando, come in una vignetta.
+- Quando scorri fra le sezioni partono le linee di concentrazione dalla scheda che stai guardando, come in una vignetta.
 - Il tratto disegnato adesso arriva ovunque: interruttori, campi, cartellini e tutti i pulsantini hanno il contorno d'inchiostro e gli angoli tirati a mano.
 - Gli interruttori sono disegnati anche loro: contorno, pallina con il suo bordo, e lo scatto a scatti invece che scivolato.
 - Le schede sono vignette: angoli quadri, contorno spesso e il titolo in una fascia d'inchiostro in alto, come la didascalia di una tavola.
@@ -279,32 +280,32 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Anche il cambio di sezione ha perso la sfocatura: adesso è uno stacco netto, come si passa da una vignetta all'altra.
 - L'avviso di errore arriva con la sua scossa: si capisce che qualcosa è andato storto anche solo da come si muove.
 - Il marchio in alto trema un attimo quando ci passi sopra, come una cosa disegnata a mano.
-- E di notte si legge: il contorno nero spariva nel fondo scuro, ora ha il filo di carta attorno come nelle tavole stampate.
+- Di notte si legge: il contorno nero spariva nel fondo scuro, ora ha il filo di carta attorno come nelle tavole stampate.
 - Le linee di concentrazione dietro il titolo si sono calmate: erano un fondale che copriva tutto, adesso convergono sul titolo e gli lasciano aria attorno.
 - Il titolo grande ha il pieno del marchio, lo stesso della «b» di bot, dentro il contorno: prima era una parete di colore piatto e su telefono le lettere si gonfiavano fino a chiudersi.
 - La home non si ricompone più sotto gli occhi mentre carica: arriva già fatta, e non balla più.
-- Ed è la stessa per tutti: prima chi cercava su Google trovava una pagina scritta a parte, solo in italiano, diversa da quella che poi si apriva davvero.
+- È la stessa per tutti: prima chi cercava su Google trovava una pagina scritta a parte, solo in italiano, diversa da quella che poi si apriva davvero.
 - Le tre lingue sono diventate indirizzi veri: cambiando lingua l'indirizzo cambia con te, e lo puoi salvare o mandare a qualcuno.
 - Nell'Overlay Studio la veste si sceglie sempre, non solo quando crei un overlay: in cima a ogni barra ci sono le nove vesti, e sotto cambi quello che vuoi.
 - «A tutto l'overlay» le applica in un colpo a tutti gli elementi, invece di rifare le stesse undici scelte per alert, chat e ogni widget.
-- E adesso una veste veste davvero tutto: prima sceglievi Manga e la chat restava a metà, gli obiettivi e il player non se ne accorgevano nemmeno.
+- Adesso una veste veste davvero tutto: prima sceglievi Manga e la chat restava a metà, gli obiettivi e il player non se ne accorgevano nemmeno.
 - Il player segue la veste: «Nastro» lo fa diventare una cassetta, «Terminale» un terminale, «Manga» il manga.
 - Il manga adesso c'è dappertutto: overlay, pagina link (in chiaro e di notte) e grafiche social.
 - La pagina link in manga è carta e inchiostro davvero: contorni neri, ombra piena spostata, titoli a pennarello.
 - Il carattere a pennarello lo scarica solo chi sceglie quel tema: le altre pagine link restano leggere come prima.
-- E l'avatar segue il tema: prima aveva un alone sfumato suo che stonava su una pagina disegnata.
+- L'avatar segue il tema: prima aveva un alone sfumato suo che stonava su una pagina disegnata.
 - Nel riquadro che chiede il consenso, «Dettagli» finiva da solo schiacciato nell'angolo in basso a destra e sembrava caduto fuori: ora sta dentro la frase che spiega, e i due pulsanti si dividono la riga.
 - Il tema Manga adesso è disegnato davvero: retino stampato sulla carta, contorni spessi coi pieni dentro, e di notte le linee di concentrazione che convergono sul tuo nome.
 - Puoi accendere un puntatore del mouse disegnato coi colori del tuo tema: una penna, e una stella su quello che si può premere. Su telefono non cambia niente.
 - Chi visita la tua pagina può cambiare idea sui contenuti di altri siti: prima la scelta era per sempre e il riquadro non tornava più. Ora nel piede c'è «Contenuti di altri siti» che lo riapre.
-- E se dice di no dopo aver detto di sì, il no vale davvero: la pagina si ricarica, così da quei siti non parte più niente.
+- Se dice di no dopo aver detto di sì, il no vale davvero: la pagina si ricarica, così da quei siti non parte più niente.
 - Sulla pagina link online non funzionava niente di quello che si clicca: il riquadro del consenso non compariva, «Carica il contenuto» non rispondeva, il conto alla rovescia stava fermo. Ora funziona.
 - Nell'interfaccia non ci sono più emoji di sistema: dove dicevano qualcosa — «bloccato», «animato», «in attesa» — ora c'è il segno disegnato, con lo stesso tratto del resto.
 - Le emoji che il bot scrive in chat restano dov'erano: quella è la sua voce.
 - Gli obiettivi si impostano in un posto solo: il traguardo vale per tutti i tuoi overlay, e non lo devi rifare scena per scena. Dove sta e come si vede lo decidi ancora sull'overlay che stai componendo.
 - La barra di un obiettivo non torna più indietro: se arrivavano follower mentre il numero vero era ancora quello di poco prima, il totale a schermo calava. Ora no.
 - Nell'anteprima dello Studio la barra di un obiettivo era vuota anche a 662 su 1000: adesso si riempie davvero.
-- E l'anteprima non ti mostra più un overlay diverso da quello che va in onda: la cornice degli elementi era disegnata in un modo qui e in un altro in diretta.
+- L'anteprima non ti mostra più un overlay diverso da quello che va in onda: la cornice degli elementi era disegnata in un modo qui e in un altro in diretta.
 - Il titolo lungo del player scorre anche nell'anteprima, invece di restare tagliato.
 - Spuntare «parti da quanti ne ho adesso» non ti butta più fuori dalla scheda che stavi modificando.
 - I comandi delle onde del player dicono cosa fanno: uno le mostra o le nasconde, l'altro decide cosa balla a tempo.
@@ -314,7 +315,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 - Nell'overlay c'è il player: quello che stai ascoltando su Spotify, a schermo. Compare quando la musica parte e sparisce quando la fermi.
 - Il player è tuo dalla copertina in giù: quadrata, tonda o un vinile che gira, avanzamento come barra o come anello attorno alla copertina, onde che ballano a tempo.
-- E ancora: lo sfondo può prendere la copertina sfocata o i colori del disco che scorrono, il titolo lungo scorre e l'entrata in scena la scegli tu.
+- Ancora: lo sfondo può prendere la copertina sfocata o i colori del disco che scorrono, il titolo lungo scorre e l'entrata in scena la scegli tu.
 - Il player va a tempo con quello che suona: le onde ballano sul battito vero del brano, e volendo pulsa anche la copertina.
 - Il player non sparisce più mentre la canzone va: un intoppo di Spotify o il vuoto fra due tracce lo spegnevano per un attimo, e poi rientrava.
 - In pausa invece sparisce davvero, se è quello che hai scelto: prima restava lì.
@@ -347,7 +348,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - La maniglia per ruotare si raggiunge sempre: per un elemento in cima alla tela finiva tagliata fuori dal riquadro, e ora passa sotto.
 - L'elemento che stai modificando sta davanti agli altri: prima un vicino gli copriva le maniglie e si prendeva il clic.
 - Ogni overlay è una sessione di lavoro a sé: quello che sposti in uno resta lì. Prima player, conto alla rovescia, obiettivi e contatori avevano una posizione sola per tutto il canale e ti seguivano ovunque.
-- E ogni overlay ha il suo Annulla: annullare in una scena non disfa quello che hai fatto in un'altra.
+- Ogni overlay ha il suo Annulla: annullare in una scena non disfa quello che hai fatto in un'altra.
 - Lo Studio ha la marcia fine: tieni Ctrl (o ⌘) mentre trascini e il puntatore va a un quinto, così arrivi sotto il pixel. Prima il movimento più piccolo possibile col mouse era di due pixel e mezzo di overlay.
 - Con Maiusc premuto l'elemento resta dritto sull'asse in cui l'hai avviato, senza sbandare.
 - La rotellina non ridimensiona più da sola: scorrendo la pagina sopra la tela cambiavi misura all'elemento senza volerlo. Ora serve Alt per la misura e Maiusc per la rotazione.
@@ -418,7 +419,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nella barra c'è un «?» che porta a guide, manuali e novità — e in cima quella della scheda che stai guardando.
 - L'avviso della guida impara: dove sei già entrato e uscito senza fare niente arriva prima, e se gli dici due volte «non serve» sta zitto per un mese.
 - Quando si vede che sei in difficoltà — fermo, un errore appena uscito, la rotella su e giù, o ci torni per la terza volta — il bot ti dice che per quella scheda c'è una guida. Si zittisce per sempre con un clic.
-- E se è una guida, si apre sul punto che dice cosa fare in SocialBot: non su una spiegazione generica.
+- Se è una guida, si apre sul punto che dice cosa fare in SocialBot: non su una spiegazione generica.
 - Privacy, termini, invito ai moderatori e sblocco hanno lo stesso aspetto del resto del sito e seguono il tema che hai scelto: erano rimaste scure e viola.
 - Su Kick il bot scrive con il tuo account, come su Twitch: prima provava con un account suo e Kick rifiutava, quindi in chat non usciva niente.
 - La pagina pubblica è dello stesso colore del resto del bot e segue il tema che hai scelto, chiaro o scuro: prima era scura e basta, anche se avevi scelto chiaro.

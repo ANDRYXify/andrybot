@@ -35,6 +35,33 @@ dice(gruppi.length > 0 && voci.length > 0, `giornate raccontate: ${gruppi.length
 dice(voci.every((v) => typeof v === 'string'), 'le righe si leggono come testo',
   'la forma delle voci e\' cambiata: i controlli qui sotto non misurano piu\' niente');
 
+// ---- e sono scritte da una persona, non da una macchina -------------------
+// «Scrivi meno statisticamente, cosi' e' proprio fatto da un'IA.» Il modo in cui
+// si vede non e' il contenuto: e' la MONOTONIA. Righe che cominciano tutte allo
+// stesso modo, e la congiunzione appiccicata davanti — «E poi...», «E se...» —
+// che di seguito diventa un tic. In una giornata ce n'erano nove su quaranta.
+//
+// Due misure, tutte e due contabili e senza giudizi di gusto: nessuna riga
+// comincia con una congiunzione, e nessuna parola d'attacco copre piu' di un
+// quarto della giornata. Oggi la piu' frequente sta all'11%: la soglia lascia
+// spazio a chi scrive e prende il tic quando diventa tale.
+const perGiorno = gruppi.map((g) => g.voci.map((v) => v.testo)).filter((v) => v.length >= 8);
+const appiccicate = voci.filter((v) => /^(E|Ed|Ma|Però|Cosi|Così|Poi|Inoltre)\s/.test(v));
+dice(appiccicate.length <= 1, `le righe cominciano per conto loro (${appiccicate.length} appiccicate)`,
+  appiccicate.slice(0, 4).map((v) => `«${v.slice(0, 60)}…»`).join(' · ') + ' — una congiunzione davanti, di seguito, diventa un tic');
+
+const monotone = [];
+for (const g of perGiorno) {
+  const conte = new Map();
+  for (const v of g) {
+    const w = (v.split(/\s+/)[0] || '').toLowerCase().replace(/[«»,.:]/g, '');
+    conte.set(w, (conte.get(w) || 0) + 1);
+  }
+  const [parola, quante] = [...conte.entries()].sort((a, b) => b[1] - a[1])[0] || ['', 0];
+  if (quante / g.length > 0.25) monotone.push(`«${parola}» apre ${quante} righe su ${g.length}`);
+}
+dice(!monotone.length, 'e non cominciano tutte allo stesso modo', monotone.join(' · '));
+
 // ---- quello che e' privato non esce di casa ------------------------------
 // Non tutto quello che cambia riguarda chi usa il bot: la crescita di Lia e il suo
 // computer sono cose del direttore. Si marcano `[privato]`, e da li' in poi la

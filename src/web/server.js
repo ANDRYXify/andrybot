@@ -30,9 +30,10 @@ import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guid
 import * as novita from './novita.js';
 import { paginaManuale, paginaIndiceManuali, urlManuali, aiutiPerScheda } from './manuali.js';
 import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
-import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite } from '../features/antibot.js';
+import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
 import { aperto as incidenteAperto, elenco as elencoIncidenti, uno as unIncidente, sintesi as sintesiIncidente } from '../features/incidenti.js';
+import { rapporto as rapportoBonifica, anteprima as anteprimaBonifica } from '../features/bonifica.js';
 import { stato as statoRete, elenco as elencoRete, dimentica as dimenticaRete } from '../features/rete.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
@@ -2366,6 +2367,24 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const i = unIncidente(req.params.id);
     if (!i || i.canale !== login) return res.status(404).json({ errore: 'non trovato' });
     res.json({ incidente: sintesiIncidente(i), timeline: i.timeline, coinvolti: i.coinvolti });
+  });
+
+  // Il rapporto di un incidente: cosa è rimasto in casa dopo l'attacco.
+  app.get('/api/antibot/incidenti/:id/bonifica', requireOwner, (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const r = rapportoBonifica(req.params.id);
+    if (!r || r.canale !== login) return res.status(404).json({ errore: 'non trovato' });
+    const giudizi = String(req.query.giudizi || 'certo').split(',').filter(Boolean);
+    res.json({ rapporto: r, anteprima: anteprimaBonifica(req.params.id, giudizi) });
+  });
+
+  // E l'esecuzione, che vuole il NUMERO di account riscritto a mano: se nel
+  // frattempo è cambiato, la conferma non vale più e si guarda di nuovo.
+  app.post('/api/antibot/incidenti/:id/bonifica', requireOwner, async (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const giudizi = Array.isArray(req.body?.giudizi) ? req.body.giudizi : ['certo'];
+    const esito = await bonificaIncidente(req.params.id, giudizi, req.body?.conferma, { canale: login });
+    res.status(esito.ok ? 200 : 400).json(esito);
   });
 
   app.get('/api/antibot/console', requireOwner, (req, res) => {
