@@ -17,6 +17,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- Il giro guidato non finisce più mezzo fuori dallo schermo. Su sette schede, sei avevano almeno un passo con la scheda dei suggerimenti tagliata dal bordo.
+- L'ultimo passo, quello che dice dove trovare il manuale, si piantava dove stava il passo prima. Adesso sta in mezzo, e in mezzo davvero.
+- Quando il passo indica qualcosa che sta più in basso nella pagina, il riquadro aspetta di stare dentro la finestra invece di seguirlo fuori.
+- Nella demo un link diretto a una scheda porta dove dice. Prima si atterrava sempre sulla prima.
+
 - La pagina della moderazione è divisa in tre: Chat per i filtri sui messaggi, Scudo per la difesa dagli attacchi, Registro per quello che è successo.
 - Lo stato dello scudo sta dove si accende: acceso o spento, il livello di adesso, quanti follow servono per far scattare l'allarme.
 - Le due liste «blocca sempre» e «non toccare mai» stavano in due posti e si cancellavano a vicenda: un nome aggiunto di qua spariva salvando di là. Ora stanno in un posto solo e si salvano da sole.
