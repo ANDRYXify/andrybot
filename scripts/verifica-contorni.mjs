@@ -128,6 +128,33 @@ const COPERTI = `(() => {
     } return { dx, dy }; };
   const nome = (e) => (e.tagName.toLowerCase() + (String(e.className || '').trim()
     ? '.' + String(e.className).split(/\\s+/).filter(Boolean).slice(0, 2).join('.') : '')).slice(0, 46);
+  // L'ORDINE DI DISEGNO, per quel che serve qui. Per ogni elemento si prende la
+  // catena dei contesti di impilamento che lo contengono, ognuno col suo
+  // z-index; si confrontano le due catene dal primo punto in cui divergono, e
+  // a parita' di z-index vince chi viene dopo nel documento.
+  const percorso = (e) => {
+    const out = [];
+    for (let x = e; x && x !== document.documentElement; x = x.parentElement) {
+      const s = getComputedStyle(x);
+      const z = s.zIndex === 'auto' ? 0 : (parseInt(s.zIndex, 10) || 0);
+      const crea = z !== 0 || s.transform !== 'none' || s.opacity !== '1'
+        || s.filter !== 'none' || s.isolation === 'isolate' || s.mixBlendMode !== 'normal';
+      if (crea || x === e) out.push({ el: x, z });
+    }
+    return out.reverse();
+  };
+  const copre = (a, b) => {
+    const pa = percorso(a), pb = percorso(b);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const x = pa[i], y = pb[i];
+      if (!x) return false;
+      if (!y) return true;
+      if (x.el === y.el) continue;
+      if (x.z !== y.z) return x.z > y.z;
+      return !!(y.el.compareDocumentPosition(x.el) & Node.DOCUMENT_POSITION_FOLLOWING);
+    }
+    return false;
+  };
   const fuori = [];
   for (const e of document.querySelectorAll(RADICE + ' :hover')) {
     const s = getComputedStyle(e);
@@ -142,6 +169,10 @@ const COPERTI = `(() => {
       if (!sopra || sopra === e || e.contains(sopra) || sopra.contains(e)) continue;
       // il difetto e' solo chi viene DOPO: chi viene prima sta sotto per natura
       if (!(e.compareDocumentPosition(sopra) & Node.DOCUMENT_POSITION_FOLLOWING)) continue;
+      // elementFromPoint risponde al CLIC, non al disegno: un'ombra non si puo'
+      // cliccare, quindi li' sotto trova sempre qualcuno anche quando l'ombra
+      // gli e' disegnata sopra. Chi copre davvero lo dice l'ordine di disegno.
+      if (!copre(sopra, e)) continue;
       fuori.push({ chi: nome(e), da: nome(sopra) });
       break;
     }

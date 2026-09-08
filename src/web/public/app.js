@@ -986,10 +986,26 @@ function rendiCartePieghevoli(scope, scheda) {
   }
 }
 
+function _cartaInMoto(carta) {
+  const corpo = carta.querySelector(':scope > .carta-corpo');
+  if (!corpo) return;
+  carta.classList.add('in-moto');
+  clearTimeout(carta._fermo);
+  const ferma = () => {
+    clearTimeout(carta._fermo);
+    carta.classList.remove('in-moto');
+    corpo.removeEventListener('transitionend', senti);
+  };
+  const senti = (ev) => { if (ev.target === corpo && ev.propertyName === 'grid-template-rows') ferma(); };
+  corpo.addEventListener('transitionend', senti);
+  carta._fermo = setTimeout(ferma, 900);
+}
+
 function _piegaCarta(carta, aperta) {
   carta.classList.toggle('chiusa', !aperta);
   carta.querySelector(':scope > h2')?.setAttribute('aria-expanded', aperta ? 'true' : 'false');
   if (carta.dataset.ck) _ricordaCarta(carta.dataset.ck, aperta);
+  _cartaInMoto(carta);
 }
 
 function barraCarteHtml() {

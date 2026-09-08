@@ -5,8 +5,9 @@ I file del sito (`src/web/public/*.js`, `*.css`) non hanno commenti: quello che 
 ## Il principio: una proprietà, un padrone
 
 Ogni proprietà animata ha **un solo** sistema che la scrive. Quando due sistemi scrivono la stessa
-cosa il difetto non è un bug da cercare: è garantito. È già successo tre volte in questo progetto,
-sempre allo stesso modo.
+cosa il difetto non è un bug da cercare: è garantito. È già successo **quattro** volte in questo
+progetto, sempre allo stesso modo. La quarta è raccontata in fondo: l'hover dei bottoni era scritto
+in due fogli di stile, e vinceva quello che carica dopo.
 
 | proprietà | padrone |
 | --- | --- |
@@ -164,6 +165,77 @@ Sono usciti `ink-colora`, `ink-colpo`, `shonen-colpo` e `shonen-lampo`: nessuno 
 agganciava, e `ink-colora` per com'era scritto non avrebbe potuto funzionare —
 dipingeva dietro l'elemento (`z-index: -1`), quindi lo sfondo dell'elemento stesso
 lo copriva sempre.
+
+## Il tasto che viene avanti
+
+Il direttore ha chiesto una cosa semplice: quando passi sopra un tasto, deve
+venire in primo piano, come se uscisse dallo schermo. Sotto c'erano tre cose.
+
+#### 1. Il corpo della carta tagliava l'inchiostro
+
+Ogni tasto sta dentro `div.carta-corpo-in`, che ritaglia. Il ritaglio serve
+davvero, ma solo per una cosa: la carta si apre e si chiude passando la riga
+della griglia da `0fr` a `1fr`, e senza ritaglio il contenuto si vedrebbe
+straripare mentre la riga si stringe.
+
+C'era un permesso di sfogo — `overflow-clip-margin: 8px` — e sulla carta ci
+stava, appena. Ma **Safari non supporta `overflow-clip-margin`**, né su Mac né
+su iPhone: lì lo sfogo è zero, e l'ombra dei tasti a filo del bordo era già
+tagliata prima di qualunque modifica.
+
+Quindi il ritaglio adesso c'è **solo mentre la carta si muove**: chiusa, o
+durante l'apertura e la chiusura. Da ferma e aperta non serve, e non c'è.
+Misurato prima di deciderlo: su 88 corpi di carta in 25 schede, nessuno ha
+contenuto più largo di sé — il massimo era 2 px, che era proprio l'inchiostro
+tagliato.
+
+Il risultato, contato dal cancello dei contorni: **da 11 contorni rasati a 1**.
+
+#### 2. L'hover del tasto era scritto in due file
+
+`style.css` diceva una cosa, `anime.css` un'altra, e vinceva `anime.css` perché
+carica dopo. La riga di `style.css` era morta da tempo: chi la leggeva pensava
+di sapere come si comporta un tasto, e non era vero. Adesso il movimento del
+tasto sta in un posto solo.
+
+#### 3. Il salto era mezzo passo
+
+Un pixel di sollevamento e un'ombra da 6. In questa lingua grafica l'ombra è
+inchiostro — un rettangolo pieno spostato — quindi «uscire dallo schermo» vuol
+dire due cose insieme: l'oggetto va verso di te, e la sua ombra si allontana.
+
+Adesso: **10 px di ombra** (un quarto livello, `--ombra-ink-salto`, dopo
+timbro, riposo e alta), tre pixel a sinistra e quattro in su, e una scala di
+1,02 che dà profondità senza sfocare il contorno disegnato.
+
+Il vicino non viene invaso: la distanza minima misurata fra due tasti
+affiancati è 6 px, e con il tasto che si sposta di 3 px l'ombra ne copre **uno**
+sul tasto accanto — riempie lo spazio, non ci si appoggia sopra.
+
+Chi ha il movimento ridotto acceso non vede il salto (il foglio di stile
+azzera già la trasformazione) ma vede l'ombra crescere: la profondità resta,
+il moto no.
+
+#### L'eccezione: il banco dell'Overlay Studio
+
+Lì la carta è un banco di lavoro a dimensione fissa, e il ritaglio è
+strutturale: gli attrezzi devono restare nella cassetta. Dentro quel banco i
+tasti non saltano.
+
+#### Il metro che misurava la cosa sbagliata
+
+`scripts/verifica-contorni.mjs` controlla anche se l'ombra di una cosa sotto il
+mouse finisce coperta da un vicino. Lo faceva con `elementFromPoint`, che
+risponde al **clic**: un'ombra non si può cliccare, quindi lì sotto trova
+sempre qualcuno, anche quando l'ombra gli è disegnata sopra. Due dei tre casi
+che segnalava erano falsi allarmi. Adesso, trovato il candidato, confronta
+l'**ordine di disegno** vero: la catena dei contesti di impilamento con i loro
+z-index, e a parità vince chi viene dopo nel documento.
+
+Restano due segnalazioni, e sono onestamente dichiarate: una preesistente nello
+Studio, e una che compare solo mentre le carte stanno ancora comparendo — in
+quel momento hanno una trasformazione addosso, che le chiude in un contesto
+loro. Il cancello non è nella catena e non lo era prima.
 
 ## Lo stacco fra due vignette
 
