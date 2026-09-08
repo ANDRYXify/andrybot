@@ -32,6 +32,7 @@ import * as rete from './rete.js';
 import { Esecutore, verdetto, AZIONI, daFare } from './enforcement.js';
 import * as inc from './incidenti.js';
 import { daToccare, dominante, appartiene } from './gruppi.js';
+import * as LIV from './livelli.js';
 import { config } from '../config.js';
 
 const log = makeLog('antibot');
@@ -53,6 +54,7 @@ export const ANTIBOT_DEFAULT = {
   listaAuto: true,             // usa la lista di bot noti aggiornata da sola
   presenze: true,              // guarda chi sta in molti canali nostri insieme (solo segnala)
   aVuoto: false,               // sola osservazione: decide e scrive tutto, non tocca nessuno
+  modo: 'bilanciata',          // quanto presto salire di livello: prudente | bilanciata | aggressiva
   // 3. account sospetto (costa una chiamata a Twitch per follow)
   controllaAccount: false,
   soglia: 70,                  // punteggio 0-100 oltre il quale si agisce
@@ -329,7 +331,27 @@ export async function caricaRegistroDaDisco() {
 // doveva capirli uno per uno per essere protetto. Ora c'è UN livello per canale:
 // sale quando arriva evidenza, e scende da solo dopo un periodo di quiete.
 // Tutte le difese leggono quello. Un fatto, un posto dove è scritto.
-export const ASSETTO = { CALMA: 'calma', SOSPETTO: 'sospetto', ATTACCO: 'attacco' };
+// I sei livelli stanno in livelli.js, insieme a cosa cambia a ogni scalino.
+// Qui restano i due nomi che il resto del mondo usa per parlarne.
+export const ASSETTO = { CALMA: 'calma', SOSPETTO: 'allerta', ATTACCO: 'attacco', SERRATA: 'serrata' };
+export const { LIVELLI, MODI, assettoDi, punteggioAttacco, livelloDa } = LIV;
+
+// «Almeno attacco» invece di «esattamente attacco»: con sei livelli il
+// confronto secco lascerebbe fuori la serrata, che è più grave — e una difesa
+// che si spegne quando le cose peggiorano è il peggior difetto possibile.
+export const almeno = (channel, quale) => LIV.almeno(assetto(channel).livello, quale);
+
+// Il motivo, scritto una volta sola a partire dai segnali. Ricomporlo a mano in
+// ogni punto vorrebbe dire tenere la stessa frase in cinque posti.
+function motivoDa(s = {}, punti = 0) {
+  const pezzi = [];
+  if (s.follow) pezzi.push(`${s.follow} follow (soglia ${s.soglia})`);
+  if (s.artificiale) pezzi.push('cadenza da macchina');
+  if (s.gruppo) pezzi.push('nomi dalla stessa fabbrica');
+  if (s.coro) pezzi.push(`stesso messaggio da ${s.coroBocche} account`);
+  if (s.ondaLenta) pezzi.push('gocciolamento su dieci minuti');
+  return `${punti}/100 · ${pezzi.join(' · ') || 'movimento sospetto'}`;
+}
 
 // Che razza di attacco e'. Si legge da come l'ha descritto chi ha dato
 // l'allarme: e' l'unico che lo sa, e riscriverlo da capo altrove vorrebbe dire
@@ -363,8 +385,8 @@ function segnaSerranda(ch, a) {
 
 export function assetto(channel) {
   const a = assetti.get(norm(channel));
-  if (!a) return { livello: ASSETTO.CALMA, motivo: '', da: 0 };
-  return { livello: a.livello, motivo: a.motivo, da: a.da };
+  if (!a) return { livello: LIV.LIVELLI[0], numero: 0, punti: 0, motivo: '', da: 0 };
+  return { livello: a.livello, numero: LIV.N[a.livello] ?? 0, punti: a.punti || 0, motivo: a.motivo, da: a.da, segnali: a.segnali || {} };
 }
 
 // ── Ritmo abituale del canale ───────────────────────────────────────────────
@@ -712,25 +734,54 @@ export class AntiBot {
   // serranda, che si riapre all'avvio.
   cfg(channel) {
     const base = { ...ANTIBOT_DEFAULT, ...(streamers.get(channel)?.settings?.antibot || {}) };
-    if (assetto(channel).livello !== ASSETTO.ATTACCO || base.assettoAuto === false) return base;
+    const liv = assetto(channel).livello;
+    if (liv === ASSETTO.CALMA || base.assettoAuto === false) return base;
+    const a = assettoDi(liv);
     return {
       ...base,
-      nomiBot: true,
-      chatNuovi: true,
-      chatMinOre: Math.max(Number(base.chatMinOre || 24), 72),
-      chatNuoviAzione: 'elimina',
-      rafficaChiudiChat: true,
-      // NON accendiamo controllaAccount: una chiamata a Twitch per ogni follow,
+      nomiBot: a.guardaNomi ? true : base.nomiBot,
+      presenze: a.guardaPresenze ? true : base.presenze,
+      // Da «difesa» in su i messaggi degli account appena nati si trattengono;
+      // a «allerta» si segnalano soltanto, che è la differenza fra guardare e
+      // mettere le mani addosso.
+      chatNuovi: a.segnalaNuovi ? true : base.chatNuovi,
+      chatNuoviAzione: a.trattieniNuovi ? 'elimina' : 'segnala',
+      chatMinOre: Math.max(Number(base.chatMinOre || 24), a.oreMinime),
+      rafficaChiudiChat: a.serranda ? true : base.rafficaChiudiChat,
+      // NON si accende controllaAccount: una chiamata a Twitch per ogni follow,
       // proprio mentre ne arrivano centinaia, amplificherebbe l'attacco invece
-      // di fermarlo. In attacco i follow si giudicano in aggregato.
+      // di fermarlo. Sotto ondata i follow si giudicano in aggregato.
     };
   }
 
+  // ── Quanto è grave, adesso ────────────────────────────────────────────────
+  // Un punteggio continuo invece di tre interruttori: «nove follow quando la
+  // soglia è dieci» e «zero follow» non sono la stessa cosa, e col booleano lo
+  // diventavano. Da qui esce il livello, e dal livello cosa fa lo scudo.
+  async _valuta(channel, nuovi, cfg) {
+    const ch = norm(channel);
+    const a = assetti.get(ch);
+    const segnali = { ...(a?.segnali || {}), ...nuovi };
+    const punti = punteggioAttacco(segnali);
+    const modo = MODI[cfg.modo] ? cfg.modo : LIV.MODO_PREDEFINITO;
+    const livello = livelloDa(punti, modo);
+    if (a) { a.segnali = segnali; a.punti = punti; }
+    if (LIV.N[livello] > LIV.N[assetto(ch).livello]) {
+      await this._alza(ch, livello, motivoDa(segnali, punti), cfg, { segnali, punti });
+    } else if (a) {
+      this._rimanda(ch);          // il pericolo c'è ancora: si rimanda il rientro
+    }
+    return { punti, livello };
+  }
+
   // ── Il livello sale ────────────────────────────────────────────────────────
-  async _alza(channel, livello, motivo, cfg) {
+  async _alza(channel, livello, motivo, cfg, extra = {}) {
     const ch = norm(channel);
     const prima = assetti.get(ch);
-    if (prima && prima.livello === ASSETTO.ATTACCO && livello === ASSETTO.SOSPETTO) {
+    // Non si scende mai passando di qui: alzare è un gesto, abbassare è il
+    // tempo che passa. Un allarme più lieve mentre ce n'è uno grave in corso
+    // rimanda il rientro, non lo anticipa.
+    if (prima && LIV.N[prima.livello] > LIV.N[livello]) {
       this._rimanda(ch);
       return;
     }
@@ -749,27 +800,34 @@ export class AntiBot {
     // — un'ondata che riprende non e' un attacco nuovo.
     try { inc.apri(ch, { tipo: tipoDi(motivo), motivo, livello }); inc.segnaPicco(ch, { livello }); } catch (e) {  }
     registra(ch, { azione: 'assetto', motivo: `${livello}: ${motivo}`, esito: 'avviso' });
-    this.alert?.(ch, { tipo: 'antibot', testo: livello === ASSETTO.ATTACCO ? 'Sotto attacco: scudo alzato' : 'Movimento sospetto' });
+    const dev = assettoDi(livello);
+    this.alert?.(ch, { tipo: 'antibot', testo: dev.serranda ? 'Sotto attacco: scudo alzato' : `Livello ${livello}` });
+    if (extra.punti !== undefined) a.punti = extra.punti;
+    if (extra.segnali) a.segnali = extra.segnali;
 
-    if (livello !== ASSETTO.ATTACCO || cfg.assettoAuto === false) return;
+    if (cfg.assettoAuto === false) return;
 
-    if (cfg.avvisa) this.say?.(ch, `🛡️ Scudo alzato: ${motivo}. Chat ai soli follower finché non passa.`);
-
-    // La serranda. Ogni pezzo si segna solo se l'ha alzato LUI: quello che lo
-    // streamer aveva già acceso per conto suo non va spento al ritorno in pace.
+    // Ogni scalino accende quello che gli tocca, e niente di più. La chat lenta
+    // arriva a «difesa», la serranda solo ad «attacco»: fra il non far niente e
+    // il chiudere la porta ci sono dei passi, e prima non c'erano.
     const rip = a.ripristino || {};
-    if (!rip.follower) {
-      const r = await this.helix?.chatSoloFollower?.(ch, true, 10).catch(() => null);
-      if (r?.ok) rip.follower = true;
-    }
-    if (!rip.lenta) {
-      const r = await this.helix?.chatLenta?.(ch, true, 10).catch(() => null);
+    if (dev.chatLenta && !rip.lenta) {
+      const r = await this.helix?.chatLenta?.(ch, true, dev.chatLenta).catch(() => null);
       if (r?.ok) rip.lenta = true;
     }
-    if (!rip.shield) {
-      const r = await this.helix?.shieldMode?.(ch, true).catch(() => null);
-      if (r?.ok) rip.shield = true;
-      else if (r?.motivo === 'permesso mancante') log.warn(`#${ch} Shield Mode non alzato: manca il permesso moderator:manage:shield_mode`);
+    if (dev.serranda) {
+      if (cfg.avvisa) this.say?.(ch, `🛡️ Scudo alzato: ${motivo}. Chat ai soli follower finché non passa.`);
+      // La serranda. Ogni pezzo si segna solo se l'ha alzato LUI: quello che lo
+      // streamer aveva già acceso per conto suo non va spento al ritorno in pace.
+      if (!rip.follower) {
+        const r = await this.helix?.chatSoloFollower?.(ch, true, dev.followerDaMinuti).catch(() => null);
+        if (r?.ok) rip.follower = true;
+      }
+      if (!rip.shield) {
+        const r = await this.helix?.shieldMode?.(ch, true).catch(() => null);
+        if (r?.ok) rip.shield = true;
+        else if (r?.motivo === 'permesso mancante') log.warn(`#${ch} Shield Mode non alzato: manca il permesso moderator:manage:shield_mode`);
+      }
     }
     a.ripristino = rip;
     assetti.set(ch, a);
@@ -785,10 +843,34 @@ export class AntiBot {
   }
 
   // ── E scende, rimettendo a posto solo ciò che aveva mosso ──────────────────
+  // SI SALE IN FRETTA E SI SCENDE PIANO, che è la forma giusta per una difesa:
+  // alzare un livello di troppo per qualche minuto costa poco, restare indietro
+  // durante un'ondata costa molto. Quindi dopo la quiete si scende di UN
+  // gradino, e se la quiete continua si continua a scendere.
   async _abbassa(channel) {
     const ch = norm(channel);
     const a = assetti.get(ch);
     if (!a) return;
+    const sotto = LIVELLI[Math.max(0, (LIV.N[a.livello] ?? 0) - 1)];
+    if (sotto !== ASSETTO.CALMA) {
+      a.livello = sotto;
+      a.segnali = {};
+      a.punti = 0;
+      log.info(`#${ch} assetto → ${sotto.toUpperCase()} (si scende un gradino)`);
+      registra(ch, { azione: 'assetto', motivo: `rientro a ${sotto}`, esito: 'fatto' });
+      // Quello che il livello nuovo non prevede più si spegne subito: restare
+      // chiusi «per sicurezza» a livello basso è il modo di lasciare un canale
+      // strozzato senza che nessuno se ne accorga.
+      const dev = assettoDi(sotto);
+      const rip = a.ripristino || {};
+      if (rip.follower && !dev.serranda) { const r = await this.helix?.chatSoloFollower?.(ch, false).catch(() => null); if (r?.ok) rip.follower = false; }
+      if (rip.shield && !dev.shieldMode) { const r = await this.helix?.shieldMode?.(ch, false).catch(() => null); if (r?.ok) rip.shield = false; }
+      if (rip.lenta && !dev.chatLenta) { const r = await this.helix?.chatLenta?.(ch, false).catch(() => null); if (r?.ok) rip.lenta = false; }
+      a.ripristino = rip;
+      segnaSerranda(ch, a);
+      this._rimanda(ch);
+      return;
+    }
     if (a.timer) clearTimeout(a.timer);
     assetti.delete(ch);
     try { statoVivo.togli(ch, CHIAVE_SERRANDA); } catch (e) {  }
@@ -801,7 +883,7 @@ export class AntiBot {
     registra(ch, { azione: 'assetto', motivo: `rientro in calma dopo ${durata}s`, esito: 'fatto' });
     try { inc.chiudi(ch, `rientro in calma dopo ${durata}s`); } catch (e) {  }
     const c = this.cfg(ch);
-    if (c.avvisa && a.livello === ASSETTO.ATTACCO) this.say?.(ch, '🛡️ Passata. Chat riaperta.');
+    if (c.avvisa && LIV.almeno(a.livello, ASSETTO.ATTACCO)) this.say?.(ch, '🛡️ Passata. Chat riaperta.');
   }
 
   // ── Il blocco sul nascere ─────────────────────────────────────────────────
@@ -914,7 +996,7 @@ export class AntiBot {
     // tempo assoluto insieme a quelli relativi. Basta un valore fuori scala
     // dentro la finestra e la cadenza misurata non vuol più dire niente.
     const ora = Number.isFinite(ev.ts) ? Number(ev.ts) : Date.now();
-    const eraAttacco = assetto(channel).livello === ASSETTO.ATTACCO;
+    const eraAttacco = LIV.almeno(assetto(channel).livello, ASSETTO.ATTACCO);
     if (!eraAttacco) segnaRitmo(channel, ora);      // la normalità si impara in pace, non sotto attacco
     const wMs = Number(cfg.rafficaSecondi ?? 30) * 1000;
     const arr = segnaOndata(channel, ora, userId, login, wMs);
@@ -922,39 +1004,49 @@ export class AntiBot {
 
     if (cfg.raffica) {
       const soglia = sogliaRaffica(channel, cfg, ora);
+      // I SEGNALI, non le decisioni. Ogni follow aggiorna quello che si sa del
+      // canale in questo momento; a decidere quanto è grave — e quindi cosa
+      // fare — è una funzione sola, che pesa tutto insieme. Prima ogni
+      // rilevatore alzava l'allarme per conto suo, e nove follow su una soglia
+      // di dieci valevano quanto zero follow.
+      const segnali = { follow: arr.length, soglia };
+
       if (arr.length >= soglia && !eraAttacco) {
         const g = ondataArtificiale(arr, cfg);
-        const motivo = `${arr.length} follow in ${cfg.rafficaSecondi}s (per questo canale la soglia è ${soglia}) · ${g.motivo}`;
+        segnali.artificiale = !!g.certo;
         raffiche.set(channel, ora + 120000);
-        registra(channel, { azione: 'raffica', motivo, esito: 'avviso' });
-        await this._alza(channel, ASSETTO.ATTACCO, motivo, cfg);
+        registra(channel, { azione: 'raffica', motivo: `${arr.length} follow in ${cfg.rafficaSecondi}s (soglia ${soglia}) · ${g.motivo}`, esito: 'avviso' });
+        await this._valuta(channel, segnali, cfg);
         const a = assetti.get(channel);
         // undefined = «non lo so ancora»: si torna a chiedere al prossimo
         // follow, invece di aspettare il venticinquesimo con un «no» che non
         // era un no.
         if (a) a.artificiale = g.basta ? g.certo : undefined;
-        if (g.certo && cfg.bloccoSulNascere !== false) {
+        if (g.certo && cfg.bloccoSulNascere !== false && LIV.almeno(assetto(channel).livello, ASSETTO.ATTACCO)) {
           await this._blocca(channel, arr.map((v) => ({ ...v, motivo: 'ondata follow-bot' })), g.motivo, cfg);
         }
-      } else if (lunga.onda && assetto(channel).livello === ASSETTO.CALMA) {
+      } else if (lunga.onda && !eraAttacco) {
         // IL GOCCIOLAMENTO. Un follow ogni quattro secondi per dieci minuti non
         // ha nessuna cadenza da macchina — è troppo lento — e finora alzava solo
         // il sospetto, cioè non faceva niente: centocinquanta follow finti
         // passavano indisturbati. Ma se i nomi vengono tutti dalla stessa
         // fabbrica, la fabbrica c'è lo stesso, e si vede senza guardare l'orologio.
         const g = dominante(lunga.voci);
-        if (g) {
-          await this._alza(channel, ASSETTO.ATTACCO,
-            `${lunga.quanti} follow in dieci minuti · ${g.motivo}`, cfg);
+        segnali.ondaLenta = true;
+        segnali.gruppo = !!g;
+        await this._valuta(channel, segnali, cfg);
+        if (g && LIV.almeno(assetto(channel).livello, ASSETTO.ATTACCO)) {
           const a2 = assetti.get(channel);
           if (a2) { a2.artificiale = true; a2.motivoArt = g.motivo; }
           if (cfg.bloccoSulNascere !== false) {
             await this._blocca(channel, lunga.voci.map((v) => ({ ...v, motivo: 'ondata lenta: ' + g.motivo })), g.motivo, cfg);
           }
-        } else {
-          await this._alza(channel, ASSETTO.SOSPETTO,
-            `${lunga.quanti} follow in dieci minuti (soglia ${lunga.soglia}): onda lenta`, cfg);
         }
+      } else if (arr.length >= Math.ceil(soglia / 2) && !eraAttacco) {
+        // Sotto la soglia ma non tranquillo: qui prima non succedeva niente, e
+        // il livello «osservo» esiste apposta — guardare di più non costa a
+        // nessuno.
+        await this._valuta(channel, segnali, cfg);
       }
     }
 
@@ -965,7 +1057,7 @@ export class AntiBot {
     // adesso viene dallo stesso posto e va in coda senza altre domande.
     // Il giudizio si rifà ogni venticinque follow: un'ondata può cambiare faccia.
     const a = assetti.get(channel);
-    if (a && a.livello === ASSETTO.ATTACCO && cfg.bloccoSulNascere !== false) {
+    if (a && LIV.almeno(a.livello, ASSETTO.ATTACCO) && cfg.bloccoSulNascere !== false) {
       const prima = a.artificiale;
       if (a.artificiale === undefined || arr.length % 25 === 0) {
         const g = ondataArtificiale(arr, cfg);
@@ -997,7 +1089,11 @@ export class AntiBot {
     // Chi e' arrivato durante l'attacco ma non ha nessun segnale contro resta
     // scritto come LEGITTIMO. Dentro un'ondata ci finisce anche gente vera, ed
     // e' quella che non si deve toccare dopo, quando si ripulisce.
-    if (a && a.livello === ASSETTO.ATTACCO) {
+    // Basta che ci sia un incidente aperto, non che si sia arrivati alla
+    // serranda: chi passa di lì mentre il canale è in allarme va registrato lo
+    // stesso, ed è proprio la gente che arriva ai livelli bassi quella che non
+    // si dovrà toccare quando si ripulisce.
+    if (a && LIV.N[a.livello] > 0) {
       try { inc.coinvolto(channel, login, a.artificiale ? inc.GIUDIZI.SOSPETTO : inc.GIUDIZI.LEGITTIMO); } catch (e) {  }
     }
 
@@ -1049,9 +1145,7 @@ export class AntiBot {
     const c = segnaCoro(channel, msg.text || msg.message || '', login, cfg, msg.ts);
     if (c.coro) {
       const motivo = `stesso messaggio da ${c.quanti} account diversi in mezzo minuto`;
-      if (assetto(channel).livello !== ASSETTO.ATTACCO) {
-        await this._alza(channel, ASSETTO.ATTACCO, motivo, cfg);
-      }
+      await this._valuta(channel, { coro: true, coroBocche: c.quanti }, cfg);
       try { inc.coinvolto(channel, login, inc.GIUDIZI.CERTO); } catch (e) {  }
       const r = await this.esecutore.esegui(verdetto({
         canale: channel, login, userId: msg.userId, azione: AZIONI.CANCELLA,

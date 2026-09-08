@@ -38,6 +38,7 @@ colonna «c'è» è stata verificata nel codice.
 | **Incident engine**: un attacco come oggetto, con timeline e coinvolti giudicati | `incidenti.js` |
 | **Simulatore** con scenari deterministici, precisione, richiamo e tempo di rilevamento | `simulatore.js` |
 | **Riconoscimento dei gruppi**: si tocca la fabbrica, non chi passava di lì | `gruppi.js` |
+| **Sei livelli** con punteggio continuo e tre modalità | `livelli.js` |
 | **Raid legittimo correlato**: sotto raid il coro si giudica sulla cadenza | `antibot.js` |
 | Dashboard, `/health`, prove automatiche (700+), cancelli | vari |
 
@@ -46,7 +47,6 @@ colonna «c'è» è stata verificata nel codice.
 | pezzo | perché pesa |
 |---|---|
 | **Analisi dei messaggi** | la firma confronta l'uguaglianza. Mancano zero-width, homoglyph, punycode, e la **similarità** (quasi-duplicati) |
-| **Sei stati** invece di tre | oggi calma/sospetto/attacco: manca la gradualità in mezzo |
 | **Reputazione locale con decadimento** | la rete è fra canali; manca la storia del singolo account, e il fatto che un errore di anni fa deve pesare meno |
 | **Dashboard investigativa dei follower** e bonifica post-attacco | c'è la pulizia per nomi noti, non l'indagine per intervallo, cluster e incidente |
 
@@ -146,8 +146,13 @@ fuori. Senza gruppo non si finge di saperlo. Ha chiuso i due scenari incompleti
 richiamo — e ha fatto emergere che il canale imparava il proprio ritmo
 dall'attacco stesso. Per esteso: `docs/GRUPPI.md`.
 
-**F · Gli stati.** Sei livelli invece di tre, con le modalità Prudente,
-Bilanciata, Aggressiva. E il raid legittimo correlato allo spike.
+**E · Gli stati. — FATTA**
+
+Sei livelli che fanno sei cose diverse, un punteggio d'attacco continuo da cui
+si derivano, e tre modalità che spostano le soglie. Si sale in fretta e si
+scende di un gradino per volta. Il caso che l'ha motivata: un picco di gente
+vera alzava la serranda, cioè chiudeva la chat durante una clip andata bene.
+Per esteso: `docs/LIVELLI.md`.
 
 **G · La bonifica.** Indagine sui follower per intervallo, cluster e incidente;
 riepilogo prima di ogni operazione distruttiva; rapporto post-attacco.
