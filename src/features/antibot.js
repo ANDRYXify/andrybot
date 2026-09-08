@@ -34,6 +34,7 @@ import * as inc from './incidenti.js';
 import { daToccare, dominante, appartiene } from './gruppi.js';
 import * as LIV from './livelli.js';
 import * as bon from './bonifica.js';
+import * as rep from './reputazione.js';
 import { config } from '../config.js';
 
 const log = makeLog('antibot');
@@ -180,6 +181,7 @@ export function valutaAccount(u, cfg = {}, extra = {}) {
     nomePattern: nomeBot(login, cfg) && !listaEsterna.has(login),
     nomeGenerato: nomeGenerato(login),
     canaliInsieme: extra.canaliInsieme ?? canaliInsieme(login),
+    sconto: extra.sconto ?? rep.di(extra.canale || '', login).sconto,
     reteCanali: extra.reteCanali ?? rete.quantiLoSegnalano(login),
     maiScritto: !!extra.maiScritto,
     nonSegue: !!extra.nonSegue,
@@ -933,13 +935,29 @@ export class AntiBot {
     // vale sull'insieme e non dice niente sul singolo: dentro la finestra ci
     // sono anche le persone capitate in mezzo, e prima ci finivano tutte.
     // Se i nomi mostrano una fabbrica sola, si tocca quella e basta.
-    const { voci: bersagli, gruppo, risparmiati } = daToccare(puliti);
+    // CHI È DI CASA NON SI TOCCA, nemmeno se il suo nome somiglia alla fabbrica.
+    // Tutto il resto dello scudo guarda solo indizi contro; questa è l'unica
+    // cosa che sottrae, e serve proprio qui — dentro un'ondata, dove il giudizio
+    // è sull'insieme e un abitué sfortunato di nome non avrebbe scampo.
+    const fid = rep.diMolti(ch, puliti.map((v) => v.login));
+    const diCasa = [];
+    const restanti = [];
+    for (const v of puliti) ((fid.get(norm(v.login))?.sconto || 0) >= rep.DI_CASA ? diCasa : restanti).push(v);
+    if (diCasa.length) {
+      log.info(`#${ch} ${diCasa.length} lasciati stare: scrivono qui da tempo`);
+      try {
+        inc.racconta(ch, `${diCasa.length} account lasciati stare: scrivono in questo canale da tempo`);
+        for (const v of diCasa) inc.coinvolto(ch, v.login, inc.GIUDIZI.LEGITTIMO, 0, v.userId);
+      } catch (e) {  }
+    }
+
+    const { voci: bersagli, gruppo, risparmiati } = daToccare(restanti);
     if (gruppo) { const a = assetti.get(ch); if (a) a.gruppo = gruppo; }
     if (gruppo && risparmiati) {
       log.info(`#${ch} gruppo riconosciuto: ${gruppo.motivo} — ${risparmiati} lasciati stare`);
       try {
         inc.racconta(ch, `gruppo riconosciuto: ${gruppo.motivo}; ${risparmiati} account fuori dal gruppo non toccati`);
-        for (const v of puliti) if (!gruppo.dentro.has(norm(v.login))) inc.coinvolto(ch, v.login, inc.GIUDIZI.SOSPETTO, 0, v.userId);
+        for (const v of restanti) if (!gruppo.dentro.has(norm(v.login))) inc.coinvolto(ch, v.login, inc.GIUDIZI.SOSPETTO, 0, v.userId);
       } catch (e) {  }
     }
     const verdetti = bersagli
@@ -1141,7 +1159,7 @@ export class AntiBot {
     // follow di un'ondata amplificherebbe l'attacco in centinaia di richieste.
     if (cfg.controllaAccount && this.helix?.getUserByLogin && !inRaffica(channel)) {
       const u = await this.helix.getUserByLogin(login).catch(() => null);
-      const { rischio, motivi, forte } = valutaAccount(u, cfg);
+      const { rischio, motivi, forte } = valutaAccount(u, cfg, { canale: channel });
       // Il numero da solo non basta mai: senza un fatto che una persona non può
       // produrre si segnala e ci si ferma li'. Un account nuovo, spoglio, che
       // guarda e non scrive e' la descrizione di uno spettatore appena
@@ -1265,8 +1283,13 @@ export class AntiBot {
     let segnalati = 0;
     let elenco = [];
     try { elenco = statoVivo.leggi(ch, GIUDIZI_CHIAVE) || []; } catch (e) { elenco = []; }
+    // La fiducia di tutti in un colpo solo. Qui nessuno ha mai scritto, quindi
+    // il credito è zero per definizione: quello che serve leggere è il DEBITO,
+    // cioè se lo scudo ha già fermato quel nome in questo canale. Chiedendola
+    // uno alla volta sarebbero cento letture per ogni giro di censimento.
+    const fid = rep.diMolti(ch, candidati);
     for (const u of utenti) {
-      const g = valutaAccount(u, cfg, { maiScritto: true });
+      const g = valutaAccount(u, cfg, { maiScritto: true, canale: ch, sconto: fid.get(norm(u.login))?.sconto ?? 0 });
       if (!g.punti || g.punti < SOGLIA_SEGNALA) continue;
       segnalati++;
       elenco = segnaGiudizio(elenco, { login: norm(u.login), punti: g.punti, agito: false });

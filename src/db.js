@@ -1917,12 +1917,44 @@ export const membri = {
 
 // ---------------------------------------------------------------- memoria
 export const memory = {
-  logMessage(channel, user, display, text, fromBot = false) {
+  // `quando` serve a chi ricostruisce una storia invece di viverla: il
+  // simulatore che rigioca un attacco, un'importazione. Senza, ogni messaggio
+  // nasce adesso e «da quanto uno sta qui» non si può nemmeno mettere alla
+  // prova.
+  logMessage(channel, user, display, text, fromBot = false, quando = 0) {
     db.prepare('INSERT INTO messages (channel, user, display, text, from_bot, ts) VALUES (?,?,?,?,?,?)')
-      .run(channel, user, display, text, fromBot ? 1 : 0, now());
+      .run(channel, user, display, text, fromBot ? 1 : 0, Number(quando) || now());
   },
   recentMessages(channel, limit = 40) {
     return db.prepare('SELECT * FROM messages WHERE channel=? ORDER BY ts DESC LIMIT ?').all(channel, limit).reverse();
+  },
+
+  // Da quanto una persona sta in questo canale, e quanto ci ha parlato. È la
+  // materia prima della fiducia: chi scrive qui da mesi non è un account che
+  // si giudica con un'euristica sui nomi.
+  storiaDi(channel, user) {
+    const r = db.prepare('SELECT COUNT(*) quanti, MIN(ts) primo, MAX(ts) ultimo FROM messages WHERE channel=? AND user=? AND from_bot=0')
+      .get(channel, String(user || '').toLowerCase());
+    return { quanti: r?.quanti || 0, primo: r?.primo || 0, ultimo: r?.ultimo || 0 };
+  },
+
+  // La stessa cosa per molte persone insieme. Durante un'ondata i nomi da
+  // guardare sono centinaia, e una query per ciascuno sarebbe un modo di
+  // rallentare la difesa proprio mentre serve.
+  storiaDiMolti(channel, users = []) {
+    const l = [...new Set(users.map((u) => String(u || '').toLowerCase()).filter(Boolean))];
+    const fuori = new Map();
+    if (!l.length) return fuori;
+    for (let i = 0; i < l.length; i += 400) {
+      const pezzo = l.slice(i, i + 400);
+      const segni = pezzo.map(() => '?').join(',');
+      const righe = db.prepare(
+        `SELECT user, COUNT(*) quanti, MIN(ts) primo, MAX(ts) ultimo FROM messages
+         WHERE channel=? AND from_bot=0 AND user IN (${segni}) GROUP BY user`,
+      ).all(channel, ...pezzo);
+      for (const r of righe) fuori.set(r.user, { quanti: r.quanti, primo: r.primo, ultimo: r.ultimo });
+    }
+    return fuori;
   },
 
   // Ha scritto, questa persona, dopo un certo momento? Serve allo scudo per

@@ -166,6 +166,42 @@ export function segnaAzione(canale, { azione, esito }) {
 }
 
 // ── Leggerli ────────────────────────────────────────────────────────────────
+
+// I PRECEDENTI di una persona in questo canale. Li chiede la reputazione, che è
+// l'unica ad averne bisogno: qui non si giudica niente di nuovo, si rilegge
+// quello che è già scritto negli incidenti.
+//
+// Due classi, e sono la stessa distinzione dei giudizi già registrati.
+// CERTO vuol dire che lo scudo ha agito su quel nome; SOSPETTO e PROBABILE
+// vogliono dire che c'era durante un attacco e non l'abbiamo toccato.
+// LEGITTIMO non lascia traccia: essere stati assolti non è un precedente.
+//
+// Di ogni classe torna solo la data PIÙ RECENTE, perché è quella che la
+// reputazione fa decadere. Contare quante volte è successo trasformerebbe una
+// serie di incidenti ravvicinati in una condanna che non scade più.
+export function precedenti(canale, logins = []) {
+  const ch = norm(canale);
+  const fuori = new Map();
+  if (!ch || !logins.length) return fuori;
+  const cercati = new Map();
+  for (const l0 of logins) {
+    const l = norm(l0);
+    if (l && !cercati.has(l)) { cercati.set(l, { colpito: 0, sospettato: 0 }); fuori.set(l, cercati.get(l)); }
+  }
+  for (const inc of tutti.values()) {
+    if (inc.canale !== ch) continue;
+    for (const [l, v] of cercati) {
+      const c = inc.coinvolti[l];
+      if (!c) continue;
+      const quando = Number(c.ts) || 0;
+      if (!quando) continue;
+      if (c.giudizio === GIUDIZI.CERTO) { if (quando > v.colpito) v.colpito = quando; }
+      else if (c.giudizio === GIUDIZI.SOSPETTO || c.giudizio === GIUDIZI.PROBABILE) { if (quando > v.sospettato) v.sospettato = quando; }
+    }
+  }
+  return fuori;
+}
+
 export function uno(id) { return tutti.get(String(id || '')) || null; }
 
 export function ultimoDi(canale) {

@@ -15,6 +15,15 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+## 2026-09-08
+
+- Chi scrive nel tuo canale da mesi non finisce più nel mucchio durante un'ondata di follow finti, nemmeno con un nome che somiglia a quelli dei bot.
+- Per essere di casa servono una trentina di messaggi e un paio di mesi. Il volume da solo non basta: quattrocento righe in un'ora sono un motivo di sospetto.
+- Pesano anche i precedenti. Un account che lo scudo ha già fermato lì da poco parte in salita, e questo vale solo nel canale dove è successo.
+- Un giudizio vecchio conta meno di uno nuovo: ogni novanta giorni vale la metà, dopo un anno non ne resta praticamente niente.
+- Essere stati lasciati stare durante un attacco non lascia alcuna traccia.
+- La fiducia sposta il punteggio, in bene e in male, ma da sola non fa mai togliere nessuno: per agire serve sempre un fatto indipendente.
+
 ## 2026-09-07
 
 - Il bot risponde agganciando la risposta al messaggio di chi gli ha scritto, come fa una persona col tasto «rispondi». Vale su Twitch e su Kick.
