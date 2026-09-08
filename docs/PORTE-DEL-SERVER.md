@@ -48,12 +48,19 @@ Il minimo che costa due minuti e non può chiuderti fuori è `fail2ban`
 Da controllare senza modificare niente:
 
 ```
-sudo grep -E '^\s*(PermitRootLogin|PasswordAuthentication)' /etc/ssh/sshd_config
+sudo sshd -T | grep -E '^(permitrootlogin|passwordauthentication|kbdinteractiveauthentication|usepam)'
 ```
 
 Se `PermitRootLogin` è `yes`, i tentativi si concentrano lì. Non toccarlo
 prima di avere la chiave che funziona: se entri come root, cambiarlo ti chiude
 fuori.
+
+**Non leggere `sshd_config` col grep.** Il file comincia quasi sempre con
+`Include /etc/ssh/sshd_config.d/*.conf`, e quando due righe dicono cose diverse
+vince la prima letta, cioè quella dell'incluso — dove su Ubuntu cloud-init
+scrive volentieri `PasswordAuthentication yes`. Il file può dire `no` mentre il
+servizio accetta password. `sshd -T` stampa la configurazione risolta, quella
+che il demone applica davvero.
 
 ## Stringere la 22, in ordine di valore reale
 
@@ -125,12 +132,23 @@ KbdInteractiveAuthentication no
 PermitRootLogin prohibit-password
 ```
 
+`KbdInteractiveAuthentication` va messa insieme all'altra. Con PAM attivo è una
+seconda strada che chiede comunque una password, e resta aperta anche con
+`PasswordAuthentication no`. È la riga che si dimentica.
+
+Se esiste `/etc/ssh/sshd_config.d/`, guarda anche lì: le righe incluse vengono
+lette per prime e vincono su quelle del file principale.
+
 Poi, **senza chiudere la sessione che hai aperta**:
 
 ```
 sudo sshd -t          # controlla la sintassi: se sbaglia, NON riavviare
 sudo systemctl reload ssh
+sudo sshd -T | grep -E '^(passwordauthentication|kbdinteractiveauthentication|permitrootlogin)'
 ```
+
+L'ultima riga è quella che conferma: stampa la configurazione risolta, non
+quella scritta.
 
 E adesso la parte che conta: **apri un secondo terminale e prova a entrare**.
 Solo quando il secondo accesso funziona, chiudi il primo. Se qualcosa è andato
