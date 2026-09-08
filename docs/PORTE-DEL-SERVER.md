@@ -35,6 +35,26 @@ tre dichiarate, che l'elenco non marcisca (una porta dichiarata che non c'è pi�
 che toglierebbe di mezzo la mappatura e metterebbe tutto sulla scheda di rete
 del server. Il suo collaudo rimette i quattro guasti uno per volta.
 
+## Se rimandi
+
+Rimandare va bene: il livello «medio» della scansione descrive una porta
+aperta, non una falla trovata. Quello che tiene fuori i tentativi automatici,
+finché la chiave non c'è, è la password del server. Se è lunga e casuale
+tiene. Se è corta, o la usi anche altrove, quello è il buco vero.
+
+Il minimo che costa due minuti e non può chiuderti fuori è `fail2ban`
+(punto 3). Non cambia il modo in cui entri.
+
+Da controllare senza modificare niente:
+
+```
+sudo grep -E '^\s*(PermitRootLogin|PasswordAuthentication)' /etc/ssh/sshd_config
+```
+
+Se `PermitRootLogin` è `yes`, i tentativi si concentrano lì. Non toccarlo
+prima di avere la chiave che funziona: se entri come root, cambiarlo ti chiude
+fuori.
+
 ## Stringere la 22, in ordine di valore reale
 
 ### 1. Solo chiave, niente password
