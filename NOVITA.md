@@ -17,6 +17,14 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- La pagina della moderazione è divisa in tre: Chat per i filtri sui messaggi, Scudo per la difesa dagli attacchi, Registro per quello che è successo.
+- Lo stato dello scudo sta dove si accende: acceso o spento, il livello di adesso, quanti follow servono per far scattare l'allarme.
+- Le due liste «blocca sempre» e «non toccare mai» stavano in due posti e si cancellavano a vicenda: un nome aggiunto di qua spariva salvando di là. Ora stanno in un posto solo e si salvano da sole.
+- Sola osservazione, quanto presto reagire e la segnalazione di chi guarda molti canali: le tre caselle c'erano, il salvataggio le buttava via. Adesso restano.
+- Un salvataggio parziale non azzera più il resto. Soglia, timeout ed età minima restavano indietro a ogni «Salva» senza dirlo.
+- Nel registro ogni attacco è una scheda che si apre: chi c'era diviso per giudizio, e la pulizia dei follower finti con il numero da riscrivere per confermare.
+- Le azioni che non erano riuscite adesso si vedono, e si riprendono da lì.
+
 - Chi scrive nel tuo canale da mesi non finisce più nel mucchio durante un'ondata di follow finti, nemmeno con un nome che somiglia a quelli dei bot.
 - Per essere di casa servono una trentina di messaggi e un paio di mesi. Il volume da solo non basta: quattrocento righe in un'ora sono un motivo di sospetto.
 - Pesano anche i precedenti. Un account che lo scudo ha già fermato lì da poco parte in salita, e questo vale solo nel canale dove è successo.

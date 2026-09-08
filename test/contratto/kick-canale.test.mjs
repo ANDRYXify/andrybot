@@ -50,8 +50,16 @@ test('le schede dichiarate «solo Twitch» esistono', () => {
   assert.ok(dentro, 'SOLO_TWITCH c’è');
   const solo = [...dentro[1].matchAll(/'([a-z-]+)'/g)].map((m) => m[1]);
   assert.ok(solo.length >= 2, `schede solo Twitch: ${solo.length}`);
+  // Le schede stanno in DUE registri, come sa schedaValida(): le voci del menu
+  // (GRUPPI) e le parti di una famiglia (FAMIGLIE), che nel menu non compaiono
+  // perché ci si arriva dalla barra della famiglia. Leggerne uno solo vuol dire
+  // chiamare inesistente metà del pannello.
   const gruppi = APP.slice(APP.indexOf('const GRUPPI = ['), APP.indexOf('function schedaValida'));
-  const schede = [...gruppi.matchAll(/\[\s*'([a-z-]+)',\s*'[^']*'\s*\]/g)].map((m) => m[1]);
+  const famiglie = APP.slice(APP.indexOf('const FAMIGLIE = ['), APP.indexOf('const famigliaDi'));
+  const schede = [
+    ...[...gruppi.matchAll(/\[\s*'([a-z-]+)',\s*'[^']*'\s*\]/g)].map((m) => m[1]),
+    ...[...famiglie.matchAll(/parti: \[([^\]]*)\]/g)].flatMap((m) => [...m[1].matchAll(/'([a-z-]+)'/g)].map((x) => x[1])),
+  ];
   assert.ok(schede.length >= 10, `schede totali: ${schede.length}`);
   for (const id of solo) assert.ok(schede.includes(id), `la scheda «${id}» esiste`);
 });
