@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- Sulla pagina link, un avatar con l'indirizzo rotto mostra l'iniziale invece dell'icona di immagine spezzata. Il ripiego c'era da tempo, ma il browser lo rifiutava e non era mai partito.
+
 - Il tasto sotto il mouse lo segue senza scattare. Prima il movimento ripartiva da capo a ogni spostamento del puntatore e non arrivava mai a destinazione.
 - I tasti si sollevano davvero quando ci passi sopra: si staccano dalla pagina invece di spostarsi di un pixel, e restano davanti a quello che hanno intorno.
 - L'ombra dei tasti non viene più tagliata dal bordo della scheda che li contiene. Su Safari era tagliata sempre, perché quel browser non conosce il permesso di sfogo.

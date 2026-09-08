@@ -94,3 +94,27 @@ if(rm){frame();return;}
 var last=0;function loop(t){if(t-last>55){frame();last=t;}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 })();
 })();
+
+(function () {
+  function ripiega(img) {
+    try {
+      img.style.display = 'none';
+      var f = img.nextElementSibling;
+      if (f && f.classList.contains('avatar')) f.style.display = 'grid';
+    } catch (e) { }
+  }
+  function rotta(img) { return img.complete && img.naturalWidth === 0; }
+  addEventListener('error', function (e) {
+    var t = e.target;
+    if (t && t.tagName === 'IMG' && t.hasAttribute('data-ripiego')) ripiega(t);
+  }, true);
+  function passa() {
+    try {
+      var l = document.querySelectorAll('img[data-ripiego]');
+      for (var i = 0; i < l.length; i++) if (rotta(l[i])) ripiega(l[i]);
+    } catch (e) { }
+  }
+  passa();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', passa);
+  addEventListener('load', passa);
+})();

@@ -1200,7 +1200,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   ${fxCanvas}
   <main class="telo">
     ${mostraAvatar ? (imgAvatar
-      ? `<img class="avatar" src="${esc(imgAvatar)}" alt="" width="88" height="88" loading="eager" onerror="this.style.display='none';var f=this.nextElementSibling;if(f)f.style.display='grid';">
+      ? `<img class="avatar" src="${esc(imgAvatar)}" alt="" width="88" height="88" loading="eager" data-ripiego>
          <div class="avatar" aria-hidden="true" style="display:none">${esc(iniziale(titolo))}</div>`
       : `<div class="avatar" aria-hidden="true">${esc(iniziale(titolo))}</div>`) : ''}
     <h1>${esc(titolo)}</h1>
@@ -1210,7 +1210,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
       · <a href="/u/${esc(login)}/privacy">Privacy</a>${banner && corpo.includes('chiedi-b')
         ? ` · <button type="button" id="ri-consenso" class="come-link">Contenuti di altri siti</button>` : ''}</p>
   </main>
-<script src="/pagina-link.js?v=7" defer></script>
+<script src="/pagina-link.js?v=8" defer></script>
 ${banner && corpo.includes('chiedi-b') ? `
   <aside class="fascia" id="fascia" hidden>
     <p><b>Video e musica di altri siti.</b> Questa pagina non usa cookie, ma i riquadri di YouTube, Spotify,

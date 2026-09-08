@@ -1,10 +1,11 @@
 # CSP e service worker
 
 Il `Content-Security-Policy` non è nel codice dell'applicazione: lo mette
-**Caddy**, davanti al server, e ce ne sono tre — uno per la Mini App Telegram
-(che deve poter essere incorniciata da `web.telegram.org`), uno per le pagine
-con il tracking del volto (che devono scaricare i modelli da CDN), e uno per
-tutto il resto, il più stretto.
+**Caddy**, davanti al server, e ce ne sono quattro — uno per la Mini App
+Telegram (che deve poter essere incorniciata da `web.telegram.org`), uno per le
+pagine con il tracking del volto (che devono scaricare i modelli da CDN), uno
+per tutto il resto, ed è il più stretto, e uno per la pagina di manutenzione,
+che è il più stretto di tutti perché quella pagina non esegue niente.
 
 ## La riga che conta
 
@@ -79,6 +80,22 @@ attributo `on…=""`, nemmeno nel markup che `app.js` genera a runtime: l'unico
 (`onerror` sull'avatar Twitch) è diventato un ascoltatore delegato in cattura,
 perché l'evento `error` non risale.
 
+Questa frase è rimasta vera a metà per parecchio tempo, e vale la pena dire
+dove. Il cancello leggeva i file dentro `public/`, quindi copriva le pagine
+scritte a mano e il markup di `app.js`. Non copriva le pagine che il **server
+compone**: la pagina link teneva un `onerror` sull'avatar, quello che nasconde
+l'immagine rotta e mostra l'iniziale al suo posto. Il browser lo rifiutava —
+*«Refused to execute inline event handler»*, riprodotto sul banco — quindi chi
+metteva un avatar personalizzato con un indirizzo rotto vedeva l'icona spezzata
+e nient'altro. Nessun errore in pagina, nessun cancello rosso.
+
+Ora il comportamento vive in `pagina-link.js`, con due strade perché lo script
+ha `defer` e l'immagine è `eager`: un ascoltatore `error` in cattura per gli
+errori che arrivano dopo, e una passata su `img[data-ripiego]` che riconosce
+quelle già fallite (`complete && naturalWidth === 0`) per quelli arrivati prima.
+Misurato sul banco con la CSP vera addosso: immagine nascosta, iniziale
+mostrata, zero violazioni.
+
 Due dettagli si sarebbero rotti in silenzio, e sono stati misurati sul banco
 prima di toccare la CSP:
 
@@ -94,14 +111,69 @@ I percorsi dei nuovi file sono **assoluti** (`/tema.js`, non `tema.js`): pagine
 come l'overlay sono servite su un percorso (`/overlay/<login>`) diverso da dove
 sta il file, e un percorso relativo cercherebbe `/overlay/overlay-app.js`.
 
-`style-src` tiene ancora `'unsafe-inline'`: l'app scrive stili al volo
-(posizioni degli elementi, colori scelti dallo streamer). Lì il rischio è di
-un'altra natura — non esegue codice — e toglierlo è un lavoro a sé.
+`style-src` tiene ancora `'unsafe-inline'`, ma non per la ragione che era
+scritta qui. «L'app scrive stili al volo» non è un motivo: `el.style.x = y`
+passa dal CSSOM, e la CSP non lo guarda. Nel codice servito
+`setAttribute('style')` non compare mai — contato, zero occorrenze.
+
+I motivi veri sono due, e sono contati anche quelli: sette pagine servite hanno
+un blocco `<style>`, e il CSS personalizzato dello streamer nasce nel database e
+finisce dentro un `<style>` della sua pagina. Toglierlo vuol dire firmare ogni
+blocco con un hash e dare al CSS dello streamer una strada tutta sua. È un
+lavoro a sé, ma adesso si sa quanto grande.
 
 Le tre CSP sono state applicate **davvero** alle pagine vere sul banco, che ora
 legge le politiche dal `Caddyfile` invece di averne una copia sua: dashboard,
 vetrina, accesso moderatori, sblocca, overlay, Mini App, voce e tracking — zero
 violazioni, zero errori JavaScript.
+
+## `frame-src`: l'elenco chiuso, e come resta chiuso
+
+`frame-src` era `https:`, cioè «incorniciamo qualunque pagina del web». La
+motivazione scritta accanto diceva che le pagine link incorporano contenuti
+scelti dallo streamer, «anche una pagina qualsiasi».
+
+Il codice dice un'altra cosa. `embedSrc()` in `linkpagina.js` riconosce quattordici
+fornitori — YouTube, Twitch, Kick, TikTok, Instagram, Facebook, Spotify,
+SoundCloud, Deezer, Apple Music, Vimeo — e per qualunque altro indirizzo
+**torna `null`**, cioè non incornicia niente. Il permesso aperto non serviva a
+nessuno: era largo e basta.
+
+Ora `frame-src` elenca quei fornitori. Vale anche per l'anteprima dentro
+l'editor, che è un iframe `srcdoc` e quindi **eredita questa politica**: se un
+fornitore manca qui, sparisce anche dall'anteprima.
+
+Il cancello lo tiene agganciato al codice nei due versi, perché i due modi di
+sbagliare sono opposti e uno solo dei due si nota:
+
+- **un fornitore aggiunto al codice e dimenticato nella CSP** si rompe dal vivo,
+  senza un errore in pagina;
+- **un host lasciato nella CSP** dopo che il codice non lo usa più è un permesso
+  regalato che nessuno rilegge.
+
+Perciò `verifica-csp.mjs` estrae gli host dal codice e pretende che i due
+insiemi coincidano, oltre a rifiutare qualunque fonte che sia un intero schema.
+Una voce, `soundcloud.com`, è nell'elenco pur non essendo l'origine di un
+iframe: compare nel codice dentro il parametro `url=` del lettore
+`w.soundcloud.com`. Sta lì perché l'elenco è estratto meccanicamente, e un
+elenco estratto vale più di uno curato a mano.
+
+`img-src` e `media-src` tengono `https:` di proposito, e non passano di qui.
+Lo sfondo e l'avatar di una pagina link sono un indirizzo scelto dallo streamer:
+lì l'elenco chiuso non esiste per costruzione. Chiuderlo vorrebbe dire passare
+quelle immagini da un nostro proxy, che è una funzione a sé — con cache, limiti
+di dimensione e difesa dalle richieste verso l'interno.
+
+## `form-action`
+
+`form-action` e `frame-ancestors` sono le due direttive che **non ereditano da
+`default-src`**. Se non le scrivi non valgono, e una `default-src 'self'`
+stretta non copre il buco: un form iniettato in pagina può spedire dove gli
+pare. `frame-ancestors` c'era in tutte e quattro le politiche, `form-action` in
+nessuna.
+
+Adesso c'è: `'self'` sulle tre politiche vere, `'none'` sulla pagina di
+manutenzione, che di form non ne ha nemmeno uno.
 
 ## `security.txt`
 
@@ -121,16 +193,28 @@ la data **non sia passata** e che stia entro l'anno.
 ## Il cancello
 
 `scripts/verifica-csp.mjs` legge le politiche dal `Caddyfile` e tiene ferme
-cinque cose: nessun `script-src` con `'unsafe-inline'` o `'unsafe-eval'`;
-`object-src 'none'`, `base-uri 'self'` e `frame-ancestors` in tutte; nessuno
-`<script>` eseguibile dentro l'HTML (ammessi solo JSON-LD e le regole di
-prefetch); nessun attributo `on…=` in nessun file servito, HTML o JS; e il
+sette cose: nessun `script-src` con `'unsafe-inline'` o `'unsafe-eval'`;
+`object-src 'none'`, `base-uri 'self'`, `frame-ancestors` e `form-action` in
+tutte; nessuno `<script>` eseguibile dentro l'HTML (ammessi solo JSON-LD e le
+regole di prefetch); nessun attributo `on…=` in nessun file servito **né nelle
+pagine composte dal server né nel codice che le compone**; `frame-src`
+agganciata nei due versi all'elenco che il codice produce davvero; e il
 `security.txt` presente, con contatto e scadenza valida.
 
 Il verso è quello giusto: se rientra uno script inline, **smette di funzionare** e
 il cancello diventa rosso. La risposta non è riallargare la CSP, è portare lo
 script in un file.
 
-Provato rosso su quattro difetti veri: `'unsafe-inline'` rimesso nella CSP, uno
-`<script>` rimesso in `index.html`, un `onerror` rimesso nel markup generato, e
-un `security.txt` scaduto.
+Provato rosso su nove difetti veri: `'unsafe-inline'` rimesso nella CSP, uno
+`<script>` rimesso in `index.html`, un `onerror` rimesso nel markup di `app.js`,
+un `security.txt` scaduto, `form-action` tolta da una politica, l'`onerror`
+rimesso nella pagina link (visto sia sulla pagina composta sia nel codice che la
+compone), `frame-src` riaperta a tutto `https:`, un fornitore tolto dalla CSP ma
+non dal codice, e un host lasciato nella CSP che il codice non usa.
+
+Una nota sul banco stesso, perché è il genere di cosa che rende verde un
+cancello cieco. La prima volta, il difetto dell'`onerror` sulla pagina link lo
+vedeva solo il controllo sul codice: la pagina di collaudo veniva composta senza
+avatar, quindi il ramo con l'`<img>` non veniva scritto affatto e il controllo
+sulle pagine composte guardava un HTML in cui il difetto non poteva esserci. Il
+corpus adesso ha un avatar, e il difetto lo vedono entrambi.
