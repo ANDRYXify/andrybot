@@ -18359,7 +18359,11 @@ function initGuscio() {
         smagnetizza(b);
         const r = b.getBoundingClientRect();
         if (!r.width) return;
-        magCx = r.left + r.width / 2; magCy = r.top + r.height / 2; magNoto = true;
+        const t = getComputedStyle(b).translate;
+        const [tx, ty] = t && t !== 'none' ? t.split(/\s+/).map((v) => parseFloat(v) || 0) : [0, 0];
+        magCx = r.left - (tx || 0) + r.width / 2;
+        magCy = r.top - (ty || 0) + r.height / 2;
+        magNoto = true;
       }
       b.style.setProperty('--mx', ((ev.clientX - magCx) * 0.22).toFixed(1) + 'px');
       b.style.setProperty('--my', ((ev.clientY - magCy) * 0.32).toFixed(1) + 'px');

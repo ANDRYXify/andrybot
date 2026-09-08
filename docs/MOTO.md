@@ -222,6 +222,50 @@ Lì la carta è un banco di lavoro a dimensione fissa, e il ritaglio è
 strutturale: gli attrezzi devono restare nella cassetta. Dentro quel banco i
 tasti non saltano.
 
+#### E poi il tasto ha smesso di seguire il mouse
+
+Con la scala addosso è saltata fuori la quarta violazione del principio in cima
+a questo documento, e stavolta si vedeva a occhio: il tasto **scattava mentre
+inseguiva il puntatore**.
+
+La causa è quella scritta lì: `transition: transform` nel CSS, e il JS che
+riscrive `--mx`/`--my` a **ogni** movimento del mouse. Ogni scrittura fa
+ripartire la transizione, che non arriva mai. C'era da sempre — ma prima le due
+posizioni differivano di un pixel e non si notava; con la scala il rimbalzo è
+sull'intera matrice, e la larghezza del tasto sbatteva avanti e indietro.
+
+Misurato, passando il mouse sul tasto a velocità costante e registrando
+fotogramma per fotogramma dove sta e quanto è largo:
+
+| | prima | dopo |
+|---|---|---|
+| inversioni di verso in una passata | **30** | 2 |
+| la larghezza cambia verso | **29 volte** | mai |
+| passo | a scatti | 0,5 px per fotogramma, sempre avanti |
+
+La cura è la separazione dei padroni, ed è possibile perché `translate` e
+`scale` sono **proprietà a sé**, non pezzi della scorciatoia `transform`:
+
+- il **magnetismo** (JS, ogni movimento) vive su `translate`, senza transizione;
+- il **sollevamento** (CSS, uno stato) vive su `scale`, con la transizione.
+
+Restano separate anche a riposo: `.grp-btn` e `.modello-pronto` non sono
+magnetici — il JS scrive `--mx`/`--my` solo sui `.btn` — quindi loro tengono il
+vecchio `transform` e la vecchia transizione.
+
+E il magnetismo misurava male il proprio centro: chiedeva il rettangolo del
+bottone quando il sollevamento era già applicato, quindi partiva sfalsato dei
+tre-quattro pixel del sollevamento. Ora toglie la traslazione corrente prima di
+prendere il centro.
+
+`scripts/verifica-padrone.mjs` è il contrappeso, e **misura il sintomo invece
+di leggere il codice**. La prima versione cercava nei file la coppia «variabile
+scritta dal JS» + «proprietà in una transition»: cinquantadue allarmi, nessuno
+vero, perché da fuori non si distingue una variabile riscritta sessanta volte
+al secondo da un colore di tema scritto una volta. Un cancello che grida al
+lupo viene spento — è esattamente come si perdono i cancelli. Quello che gira
+adesso passa il mouse sul tasto e conta quante volte il movimento cambia verso.
+
 #### Il metro che misurava la cosa sbagliata
 
 `scripts/verifica-contorni.mjs` controlla anche se l'ombra di una cosa sotto il
