@@ -221,9 +221,24 @@ dice(/messageRate\?\.\(channel\)/.test(handlerNudo) && /attesaUmana\([^)]*\britm
 dice(/chat\.say\(channel, risposta, \{ rispondiA: msg\.id \}\)/.test(handlerNudo),
   'la risposta parte agganciata al messaggio a cui risponde',
   'l\'id ce l\'abbiamo in mano dal primo istante e lo buttiamo');
-const voci = [...botJs.matchAll(/return \(t, o\) =>/g)].length;
-dice(voci >= 3, `nessuna piattaforma perde l'id per strada (${voci} voci)`,
-  'una voce accetta solo il testo: su quella piattaforma il filo si spezza qui');
+// Qui la domanda e' se l'id ARRIVA, non come e' scritta la riga che lo porta.
+// Contare `return (t, o) =>` in tutto il file misurava la forma: bastava avvolgere
+// le voci per un'altra ragione — l'accordo di genere — e il cancello diventava
+// rosso mentre l'id passava benissimo. Ora si guarda DENTRO vocePer, e si chiede
+// la cosa vera: che ogni voce prenda due argomenti e RIPASSI il secondo. Una voce
+// che accetta solo il testo non ha modo di far comparire quella `o` finale.
+const corpoVoce = (() => {
+  const i = botJs.indexOf('vocePer(msg) {');
+  return i < 0 ? '' : botJs.slice(i, botJs.indexOf('\n  }', i));
+})();
+// E si guarda RAMO PER RAMO, non quante volte compare la forma giusta nel
+// mucchio: con un totale, una voce rotta si nasconde dietro le altre due che
+// stanno bene. Provato: rompendo la voce di Kick, il conteggio restava a tre.
+const rami = [...corpoVoce.matchAll(/return ([^;]+);/g)].map((m) => m[1]);
+const rotte = rami.filter((r) => !/\(t, o\) =>[^\n]*\bo\s*\)/.test(r));
+dice(rami.length >= 3 && rotte.length === 0,
+  `nessuna piattaforma perde l'id per strada (${rami.length} voci)`,
+  rotte.length ? `questa voce non ripassa l'id: ${rotte[0].slice(0, 80)}` : 'manca la voce di una piattaforma');
 dice(/say\(_canale, testo, \{ rispondiA/.test(senzaCommentiJs(leggi('src/kick/voce.js'))),
   'e su Kick il filo della risposta esiste davvero', 'la voce di Kick butta via l\'id che l\'API sa usare');
 
