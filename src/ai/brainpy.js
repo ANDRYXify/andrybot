@@ -357,10 +357,11 @@ export async function plasma() {
   const to = setTimeout(() => ac.abort(), 4000);
   try {
     const r = await fetch(BASE + '/plasma', { signal: ac.signal });
-    if (!r.ok) return { plasma: {}, attivita: {}, ambiente: null };
+    if (!r.ok) return { plasma: {}, attivita: {}, tappe: [], ambiente: null };
     const d = await r.json().catch(() => null);
-    return { plasma: (d && d.plasma) || {}, attivita: (d && d.attivita) || {}, ambiente: (d && d.ambiente) || null };
-  } catch (e) { log.debug('plasma:', e?.message || e); return { plasma: {}, attivita: {}, ambiente: null }; }
+    return { plasma: (d && d.plasma) || {}, attivita: (d && d.attivita) || {},
+             tappe: (d && Array.isArray(d.tappe)) ? d.tappe : [], ambiente: (d && d.ambiente) || null };
+  } catch (e) { log.debug('plasma:', e?.message || e); return { plasma: {}, attivita: {}, tappe: [], ambiente: null }; }
   finally { clearTimeout(to); }
 }
 

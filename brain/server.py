@@ -246,6 +246,7 @@ class Handler(BaseHTTPRequestHandler):
             perche = AMB.perche_spento()
             return self._json(200, {"plasma": mente.stato_plasma(),
                                     "attivita": mente.attivita_recente(),
+                                    "tappe": mente.tappe(),
                                     "ambiente": {"spento": bool(perche), "perche": perche}})
         except Exception as e:
             return self._json(200, {"plasma": {}, "attivita": {}, "errore": str(e)[:120]})
@@ -1826,6 +1827,12 @@ def _forse_strumento(nome):
         AMB.diario_scrivi(f"Ho costruito uno strumento mio: «{prop['nome']}» — "
                           f"{prop.get('descrizione', '')}. L'ho provato e funziona: è una "
                           "capacità nuova, tutta mia.", tag="strumento")
+        # Il diario vive nel suo computer: se un giorno quello e' spento, la memoria di
+        # averlo costruito sparirebbe dal cruscotto. La tappa sta nella SUA testa.
+        try:
+            mente.segna_tappa("strumento", prop["nome"], prop.get("descrizione", ""))
+        except Exception:
+            pass
         print(f"[brain] strumento costruito e tenuto: {prop['nome']}"
               f"{' (dal kit)' if riserva else ''}", flush=True)
         return {"ok": True, "nome": prop["nome"], "descrizione": prop.get("descrizione", ""),

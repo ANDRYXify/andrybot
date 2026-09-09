@@ -355,6 +355,20 @@ class Coscienza:
                     n INTEGER NOT NULL DEFAULT 0,
                     aggiornato INTEGER
                 );
+                -- TAPPE: le sue PRIME VOLTE. I contatori dicono quanto, non quando: una
+                -- via che passa da 0 a 1 e' il fatto piu' importante della sua vita fino a
+                -- quel momento, e nel cruscotto scivolerebbe via senza che nessuno se ne
+                -- accorga. Qui resta. Una prima volta e' unica per COSTRUZIONE: l'indice
+                -- unico non lascia entrare la seconda, non c'e' nessun controllo da
+                -- ricordarsi di fare.
+                CREATE TABLE IF NOT EXISTS tappe (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    quando INTEGER NOT NULL,
+                    genere TEXT NOT NULL,
+                    chiave TEXT NOT NULL,
+                    nota TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS tappe_uniche ON tappe(genere, chiave);
                 -- DISTILLATI: risposte partorite dal MODELLO (l'LLM) in situazioni che
                 -- nessun modulo copriva. Sono la "materia prima" da cui distillare nuovi
                 -- moduli (o arricchire gli esistenti): così il ragionamento a moduli
@@ -429,6 +443,26 @@ class Coscienza:
                 # l'indice si crea QUI, quando la colonna scope esiste di sicuro (sia su
                 # DB nuovo — creata da _schema — sia su DB vecchio appena migrato).
                 self.db.execute("CREATE INDEX IF NOT EXISTS i_moduli_scope ON moduli(scope, stato)")
+                self.db.commit()
+        except Exception:
+            pass
+        self._tappe_di_prima()
+
+    def _tappe_di_prima(self):
+        """Le vie gia' accese quando ha iniziato a segnarsi le tappe.
+
+        Il conteggio dice QUANTO, non QUANDO: di una via che sta gia' a mille non
+        sappiamo il giorno della prima volta, e `aggiornato` e' l'ULTIMA, non la prima.
+        Scriverci una data sarebbe inventarsela. Entrano con `quando = 0`, che non e'
+        una data: e' il modo di dire «da prima che si tenesse il conto», e le mette in
+        fondo alla lista da sole. Idempotente per via dell'indice unico."""
+        try:
+            with _lock:
+                gia = self.db.execute("SELECT via FROM vie WHERE n > 0").fetchall()
+                for r in gia:
+                    self.db.execute(
+                        "INSERT OR IGNORE INTO tappe(quando, genere, chiave, nota) VALUES(0,'via',?,?)",
+                        (r["via"], "da prima che tenesse il conto"))
                 self.db.commit()
         except Exception:
             pass
@@ -1015,12 +1049,43 @@ class Coscienza:
             return
         try:
             with _lock:
-                self.db.execute(
+                # Il conteggio nuovo torna dalla stessa istruzione che lo scrive: se e' 1,
+                # questa e' la prima volta che pensa cosi'. Chiederlo con una seconda query
+                # vorrebbe dire lasciare una fessura fra il fatto e l'accorgersene.
+                r = self.db.execute(
                     "INSERT INTO vie(via, n, aggiornato) VALUES(?,1,?) "
-                    "ON CONFLICT(via) DO UPDATE SET n=n+1, aggiornato=?", (via, _now(), _now()))
+                    "ON CONFLICT(via) DO UPDATE SET n=n+1, aggiornato=? RETURNING n",
+                    (via, _now(), _now())).fetchone()
+                self.db.commit()
+                prima = bool(r) and int(r[0]) == 1
+        except Exception:
+            return
+        if prima:
+            self.segna_tappa("via", via)
+
+    def segna_tappa(self, genere, chiave, nota=""):
+        """Segna una PRIMA VOLTA. Chiamarla due volte per la stessa cosa non fa niente:
+        non perche' controlliamo, ma perche' l'indice unico non la lascia entrare."""
+        try:
+            with _lock:
+                self.db.execute(
+                    "INSERT OR IGNORE INTO tappe(quando, genere, chiave, nota) VALUES(?,?,?,?)",
+                    (_now(), str(genere or "")[:24], str(chiave or "")[:80], str(nota or "")[:200]))
                 self.db.commit()
         except Exception:
             pass
+
+    def tappe(self, limit=40):
+        """Le sue prime volte, dalla piu' recente. Sola lettura: guardarla non la muove."""
+        try:
+            with _lock:
+                rows = self.db.execute(
+                    "SELECT quando, genere, chiave, nota FROM tappe ORDER BY quando DESC, id DESC LIMIT ?",
+                    (int(limit),)).fetchall()
+            return [{"quando": int(r["quando"]), "genere": r["genere"],
+                     "chiave": r["chiave"], "nota": r["nota"] or ""} for r in rows]
+        except Exception:
+            return []
 
     def vie(self):
         """Conteggio delle vie del ragionamento (per il cruscotto). Dict via→n."""

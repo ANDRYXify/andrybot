@@ -16810,9 +16810,26 @@ function _menteCruscotto(d) {
         'Her computer is shut, so “Tool” and “Execution” cannot light up: it is not that she does not try, the door is not there. How to reopen it is on the “Her ecosystem” card.',
         'Su ordenador está cerrado, así que «Herramienta» y «Ejecución» no pueden encenderse: no es que no lo intente, es que la puerta no está. Cómo reabrirla está en la tarjeta «Su ecosistema».')}${d.ambiente.perche ? ` <span class="tenue">— ${esc(d.ambiente.perche)}</span>` : ''}</p>`
     : '';
+  const tappe = Array.isArray(d?.tappe) ? d.tappe : [];
+  const nomeVia = (k) => (ordine.find(([x]) => x === k) || [null, k])[1];
+  const vociTappe = tappe.map((t) => {
+    const quando = Number(t.quando) || 0;
+    const q = quando
+      ? new Date(quando * 1000).toLocaleDateString()
+      : `<span title="${L('Succedeva già prima che le segnasse: la data non la sappiamo, e inventarla sarebbe peggio.', 'It was already happening before she recorded them: we do not know the date, and inventing one would be worse.', 'Ya ocurría antes de que las anotara: no sabemos la fecha, e inventarla sería peor.')}">${L('da prima', 'from before', 'de antes')}</span>`;
+    const cosa = t.genere === 'strumento'
+      ? `${L('Si è costruita', 'She built', 'Se construyó')} <strong>${esc(t.chiave)}</strong>${t.nota ? ` <span class="tenue">— ${esc(t.nota)}</span>` : ''}`
+      : `${L('Prima risposta per la via', 'First reply through', 'Primera respuesta por la vía')} <strong>${esc(nomeVia(t.chiave))}</strong>`;
+    return `<li><span class="tenue">${q}</span> · ${cosa}</li>`;
+  }).join('');
+  const blocoTappe = vociTappe
+    ? `<h3 style="margin:.9em 0 .3em;font-size:.95em">${L('Le sue prime volte', 'Her first times', 'Sus primeras veces')}</h3>
+       <p class="suggerimento">${L('Le barre dicono quanto, non quando. Qui resta il giorno in cui ha pensato in un modo nuovo per la prima volta.', 'The bars say how much, not when. Here stays the day she first thought in a new way.', 'Las barras dicen cuánto, no cuándo. Aquí queda el día en que pensó de un modo nuevo por primera vez.')}</p>
+       <ul class="cru-mod">${vociTappe}</ul>`
+    : '';
   box.innerHTML = `<p>${titolo}</p>${nota}<div class="cru-barre">${barre}</div>
     <h3 style="margin:.9em 0 .3em;font-size:.95em">${L('Moduli più attivi', 'Most active modules', 'Módulos más activos')}</h3>
-    <ul class="cru-mod">${listaMod}</ul>`;
+    <ul class="cru-mod">${listaMod}</ul>${blocoTappe}`;
 }
 
 function _menteFirma(d) {
