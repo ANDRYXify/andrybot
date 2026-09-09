@@ -15,6 +15,11 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+## 2026-09-09
+
+- [privato] Quando il computer di Lia è chiuso, ora si vede: sotto le barre di come ragiona compare il motivo, e le due voci ferme a zero smettono di sembrare pigrizia.
+- [privato] La scheda del suo ecosistema dà il consiglio giusto: se la chiave c'è ma il computer non risponde, non chiede più di rimettere la chiave.
+
 ## 2026-09-08
 
 - Se la domanda tocca qualcosa che il cervello sa costruire — un calcolo, una deduzione, una catena di cause — risponde lui, e la risposta resta imparata.
