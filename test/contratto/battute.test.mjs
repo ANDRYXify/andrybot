@@ -220,3 +220,25 @@ test('l\'interruttore delle battute autonome non mente', () => {
   assert.ok(/disabled/.test(intorno), 'e si spegne quando non potrebbe funzionare');
   assert.ok(/chat autonoma/i.test(intorno), 'dicendo perché, invece di restare muto');
 });
+
+test('quando tace dopo essere stato chiamato, lo scrive nel registro', () => {
+  // Il silenzio dopo che ti hanno chiamato per nome e' la cosa piu' difficile da
+  // capire da fuori: da dentro sembra tutto a posto, da fuori sembri morto. Ogni
+  // strada che porta a tacere deve passare da una riga che dice il perche', e
+  // deve uscire SEMPRE — non solo con DEBUG acceso, perche' serve proprio quando
+  // nessuno aveva acceso niente prima.
+  const src = readFileSync(join(RAD, 'src/ai/brain.js'), 'utf8');
+  const i = src.indexOf('if (menzionaBot(text, botLogin || channel)) {');
+  assert.ok(i > 0, 'il ramo della menzione si trova');
+  const ramo = src.slice(i, src.indexOf('return true;', i));
+  // la riga si scrive in un posto solo, e quel posto usa log.info: con log.debug
+  // uscirebbe solo se qualcuno avesse acceso DEBUG prima, cioe' mai quando serve.
+  assert.ok(/const zitto = [\s\S]{0,160}log\.info\(/.test(ramo),
+    'chi scrive la riga la scrive sempre, non solo con DEBUG acceso');
+  // e ogni strada che porta a tacere deve passare di li'. Tolta la definizione,
+  // nel ramo non deve restare nessun ritiro muto.
+  const strade = ramo.replace(/const zitto = [\s\S]*?\};/, '');
+  const ritiri = [...strade.matchAll(/return (?:false|zitto\()/g)].map((m) => m[0]);
+  assert.ok(ritiri.length >= 3, `le strade per tacere sono almeno tre, trovate ${ritiri.length}`);
+  assert.ok(ritiri.every((r) => r.includes('zitto(')), `una strada tace senza dire perché: ${ritiri.join(', ')}`);
+});
