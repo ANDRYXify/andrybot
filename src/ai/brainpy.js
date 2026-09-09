@@ -44,8 +44,54 @@ const TIMEOUT_CHAT = Number(process.env.BRAIN_TIMEOUT_MS || '15000') || 15000;
 // `timeoutMs` = quanto attendere (i DM possono attendere di più: su CPU un 3B è
 //   lento e una risposta tardiva è meglio di nessuna risposta).
 // `modo` = 'live' | 'allenamento' | 'proattivo' | 'studio' (solo per la via di lei).
-export async function rispondi({ canale, canaleId, login, nome, testo, tono, conoscenza, scheda, stile, storia, situazione, timeoutMs, modo, nomeBot, spunto, lineeGuida, web, via, compito, ruolo, iniziativa } = {}) {
+// UN PENSIERO ALLA VOLTA.
+//
+// Il cervello e' UN modello su UNA macchina. Due richieste insieme non vanno al
+// doppio della velocita': si dimezzano la CPU a vicenda e sbagliano il tempo
+// tutte e due. Dal vivo si vede cosi': i grafici a 800% — otto core saturi — e
+// nessuna risposta che esce. Non e' il modello che non ce la fa: sono tre
+// domande che si ostacolano.
+//
+// Chi chiede passa di qui. Se e' occupato:
+//  · una richiesta DI SFONDO si ritira subito. Di sfondo e' il lavoro che
+//    NESSUNO VEDE — lo studio delle lacune, il sogno, la distillazione: la
+//    domanda di una persona vale piu' del rimuginare del bot. L'iniziativa in
+//    chat invece non e' sfondo: e' parlato che si vede, ed e' una cosa che lo
+//    streamer ha acceso apposta. Ha gia' i suoi freni suoi;
+//  · una richiesta DI PERSONA si ritira anche lei, e chi ha chiamato usa il suo
+//    ripiego — il materiale trovato sul web, o una risposta onesta e corta. Una
+//    risposta buona vale piu' di tre andate in timeout.
+//
+// Non c'e' una coda: mettersi in fila davanti a una scadenza vuol dire solo
+// arrivare tardi con piu' passi.
+let pensando = 0;
+let ultimaPersona = 0;                 // quando ha chiesto l'ultima persona
+const RISPETTO_MS = 60_000;            // per quanto il bot smette di rimuginare dopo
+export const staPensando = () => pensando > 0;
+
+export async function rispondi({ canale, canaleId, login, nome, testo, tono, conoscenza, scheda, stile, storia, situazione, timeoutMs, modo, nomeBot, spunto, lineeGuida, web, via, compito, ruolo, iniziativa, sfondo } = {}) {
   if (!canale || !login || !testo) return null;
+  // Il lavoro di sfondo si fa da parte anche quando NON c'e' nessuno che pensa
+  // in questo istante: se una persona ha chiesto qualcosa nell'ultimo minuto, la
+  // conversazione e' viva e il bot non si mette a rimuginare in mezzo. Senza
+  // questa riga il sogno partiva fra una domanda e l'altra e si prendeva gli
+  // otto core proprio mentre qualcuno aspettava.
+  if (sfondo && Date.now() - ultimaPersona < RISPETTO_MS) {
+    log.debug('c\'e\' una conversazione viva: il lavoro di sfondo aspetta');
+    return null;
+  }
+  if (pensando > 0) {
+    log.debug(sfondo ? 'occupato: il lavoro di sfondo si ritira' : 'occupato: chi ha chiesto usa il suo ripiego');
+    return null;
+  }
+  if (!sfondo) ultimaPersona = Date.now();
+  pensando++;
+  try {
+    return await _rispondi({ canale, canaleId, login, nome, testo, tono, conoscenza, scheda, stile, storia, situazione, timeoutMs, modo, nomeBot, spunto, lineeGuida, web, via, compito, ruolo, iniziativa });
+  } finally { pensando--; }
+}
+
+async function _rispondi({ canale, canaleId, login, nome, testo, tono, conoscenza, scheda, stile, storia, situazione, timeoutMs, modo, nomeBot, spunto, lineeGuida, web, via, compito, ruolo, iniziativa } = {}) {
   const rotta = via === 'bot' ? '/bot' : '/chat';
   const attesa = timeoutMs || TIMEOUT_CHAT;
   const ac = new AbortController();

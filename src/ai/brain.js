@@ -655,7 +655,7 @@ export class Brain {
     try {
       const r = await brainpy.rispondi({
         canale: channel, login: channel, nome: 'studio',
-        testo: String(lacuna).slice(0, 200), modo: 'studio', web: snippet,
+        testo: String(lacuna).slice(0, 200), modo: 'studio', web: snippet, sfondo: true,
         nomeBot: this._nomePersona(), lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }), timeoutMs: 30000,
       });
       if (!r) return null;
