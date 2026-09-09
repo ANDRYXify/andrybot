@@ -874,7 +874,10 @@ export class Brain {
     try {
       if (isSelf || !streamer || !channel || !text) return false;
       const uLow = String(user || '').toLowerCase();
-      if (BOT_NOTI.has(uLow)) return false;
+      if (BOT_NOTI.has(uLow)) {
+        if (menzionaBot(text, botLogin || channel)) log.info(`#${channel} menzione di ${uLow}: non rispondo — e' in elenco fra i bot noti`);
+        return false;
+      }
 
       const settings = streamer.settings || {};
       // FOLLOW-UP: sto continuando un filo con la STESSA persona a cui ho appena
@@ -898,11 +901,23 @@ export class Brain {
       // Cosi' una conversazione funziona, e chi ripete il nome del bot dieci volte
       // di fila non fa allagare la chat lo stesso.
       if (menzionaBot(text, botLogin || channel)) {
-        if (settings.rispostaMenzioni === false) return false;
+        // Un bot che ignora qualcuno deve saper dire PERCHE'. Il silenzio dopo
+        // che ti hanno chiamato per nome, senza una riga da nessuna parte, e' la
+        // cosa piu' difficile da capire da fuori: da dentro sembra tutto a posto,
+        // da fuori sembri morto. Queste righe escono sempre, non solo con DEBUG,
+        // perche' servono proprio quando qualcosa non torna e nessuno aveva
+        // acceso niente prima. Sono poche: solo quando qualcuno chiama e non si
+        // risponde.
+        const zitto = (perche) => { log.info(`#${channel} menzione di ${uLow}: non rispondo — ${perche}`); return false; };
+        if (settings.rispostaMenzioni === false) return zitto('«Rispondi quando mi nominano» e\' spento in Personalita\'');
         const adesso = Date.now();
         const suo = `${channel}|${uLow}`;
-        if (adesso - (this._ultimaMenzione.get(suo) || 0) < COOLDOWN_MENZIONE_PERSONA) return false;
-        if (adesso - (this._ultimaMenzioneCanale.get(channel) || 0) < COOLDOWN_MENZIONE_CANALE) return false;
+        if (adesso - (this._ultimaMenzione.get(suo) || 0) < COOLDOWN_MENZIONE_PERSONA) {
+          return zitto(`ha gia' chiamato ${Math.round((adesso - this._ultimaMenzione.get(suo)) / 1000)}s fa`);
+        }
+        if (adesso - (this._ultimaMenzioneCanale.get(channel) || 0) < COOLDOWN_MENZIONE_CANALE) {
+          return zitto('un altro ha chiamato un attimo fa');
+        }
         this._ultimaMenzione.set(suo, adesso);
         this._ultimaMenzioneCanale.set(channel, adesso);
         return true;
