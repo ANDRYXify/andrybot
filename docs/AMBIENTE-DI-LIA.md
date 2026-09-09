@@ -171,6 +171,26 @@ ambiente senza finestre.
 Regolabili da `.env`: `AMBIENTE_MEM`, `AMBIENTE_CPUS`, `AMBIENTE_TIMEOUT_MAX`,
 `SCHERMO_LARG`, `SCHERMO_ALT`.
 
+## Come si vede che è spento
+
+Un mondo spento in silenzio è il difetto peggiore: nel cruscotto «Come ragiona» le
+vie **strumento** ed **esecuzione** restano a zero per sempre, e sembra che lei non
+ci provi. Non ci prova perché la porta non c'è. Perciò lo spento si dice, in tre
+punti, e da **una sola fonte** — `ambiente.perche_spento()`:
+
+- **nel log del cervello**, una riga all'avvio se `AMBIENTE_KEY` manca, e una riga
+  a ogni cambio di raggiungibilità (raggiungibile ⇄ irraggiungibile);
+- **nella scheda «Il suo ecosistema»**, con il consiglio giusto: manca la chiave →
+  come metterla; chiave c'è ma non risponde → guarda i container, non il `.env`.
+  Il ramo si sceglie dal campo `chiave`, non leggendo la frase;
+- **sotto le barre del cruscotto**, una riga che spiega perché quei due zeri non
+  sono pigrizia.
+
+Il motivo viaggia con il resto: `/plasma` → `brainpy.plasma()` → `/api/admin/mente3d`
+→ pagina. `test/contratto/mondo-spento.test.mjs` segue quel nome per tutta la catena:
+basta un anello che lo lascia cadere e la prova è rossa. Se il cervello tace (timeout),
+il campo resta `null` — *non lo so* non è *è spento*, e la nota non esce.
+
 ## Perché la versione di Debian è inchiodata
 
 `playwright install --with-deps` installa le librerie di sistema del browser con un

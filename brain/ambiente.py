@@ -31,9 +31,32 @@ def configurato():
     return bool(KEY)
 
 
+_detto = {"chiave": False, "esito": None}
+
+
+def perche_spento():
+    """Perche' il suo mondo non e' raggiungibile, detto in una riga. Vuota se lo e'.
+
+    Serve perche' il difetto peggiore di tutti e' quello che non si vede: senza
+    AMBIENTE_KEY qui non succede NIENTE, in silenzio, e nel cruscotto le vie
+    «strumento» ed «esecuzione» restano a zero per sempre senza che nessuno sappia
+    che non e' lei a non provarci — e' che la porta non c'e'.
+    """
+    if not KEY:
+        return "AMBIENTE_KEY non e' impostata: il suo computer c'e' ma lei non ha la chiave"
+    if _stato.get("ok") is False:
+        return f"la sandbox non risponde su {URL}"
+    return ""
+
+
 def disponibile():
     """La sandbox risponde? Esito in cache per non tempestarla di /health."""
     if not KEY:
+        # una volta sola, all'avvio: un mondo spento va detto, non lasciato intuire
+        if not _detto["chiave"]:
+            _detto["chiave"] = True
+            print("[ambiente] AMBIENTE_KEY non impostata: il computer di Lia resta chiuso "
+                  "(le vie «strumento» ed «esecuzione» non potranno mai accendersi)", flush=True)
         return False
     now = time.time()
     if _stato["ok"] is not None and (now - _stato["quando"]) < _TTL:
@@ -45,6 +68,9 @@ def disponibile():
             ok = (r.status == 200)
     except Exception:
         ok = False
+    if _detto["esito"] != ok:
+        _detto["esito"] = ok
+        print(f"[ambiente] il mondo di Lia e' {'raggiungibile' if ok else 'IRRAGGIUNGIBILE'} su {URL}", flush=True)
     _stato.update(ok=ok, quando=now)
     return ok
 
@@ -800,9 +826,9 @@ def _stato_browser(risposta):
 
 def stato_ecosistema():
     """Foto dell'ecosistema per il cruscotto: strumenti presenti, spazio, n. progetti, lavori
-    attivi. Deterministico, sola lettura. Ritorna un dict (spento → {attivo:False})."""
+    attivi. Deterministico, sola lettura. Ritorna un dict (spento → {attivo:False, perche:...})."""
     if not disponibile():
-        return {"attivo": False}
+        return {"attivo": False, "perche": perche_spento(), "chiave": bool(KEY)}
     cmd = (
         "echo '<<PY>>'; python3 --version 2>&1 | head -1; "
         "echo '<<NODE>>'; node --version 2>&1 | head -1; "

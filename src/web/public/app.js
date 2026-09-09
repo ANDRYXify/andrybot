@@ -16804,7 +16804,13 @@ function _menteCruscotto(d) {
         `<strong>${perc(senzaMod)}%</strong> of replies come from its modules or without the model — the rest is the language model.`,
         `<strong>${perc(senzaMod)}%</strong> de las respuestas nacen de sus módulos o sin el modelo — el resto lo pone el modelo.`)
     : L('Ancora nessuna risposta registrata: parlaci un po’ e questo si riempie.', 'No replies recorded yet: chat a bit and this fills up.', 'Aún no hay respuestas: chatea un poco y esto se llena.');
-  box.innerHTML = `<p>${titolo}</p><div class="cru-barre">${barre}</div>
+  const mondoSpento = !!(d && d.ambiente && d.ambiente.spento);
+  const nota = mondoSpento
+    ? `<p class="suggerimento">${L('Il suo computer è chiuso, quindi «Strumento» ed «Esecuzione» non possono accendersi: non è che non ci prova, è che la porta non c\'è. Come riaprirla sta nella scheda «Il suo ecosistema».',
+        'Her computer is shut, so “Tool” and “Execution” cannot light up: it is not that she does not try, the door is not there. How to reopen it is on the “Her ecosystem” card.',
+        'Su ordenador está cerrado, así que «Herramienta» y «Ejecución» no pueden encenderse: no es que no lo intente, es que la puerta no está. Cómo reabrirla está en la tarjeta «Su ecosistema».')}${d.ambiente.perche ? ` <span class="tenue">— ${esc(d.ambiente.perche)}</span>` : ''}</p>`
+    : '';
+  box.innerHTML = `<p>${titolo}</p>${nota}<div class="cru-barre">${barre}</div>
     <h3 style="margin:.9em 0 .3em;font-size:.95em">${L('Moduli più attivi', 'Most active modules', 'Módulos más activos')}</h3>
     <ul class="cru-mod">${listaMod}</ul>`;
 }
@@ -17059,8 +17065,12 @@ async function caricaEcosistema() {
   try { d = await api('/api/admin/ecosistema'); } catch { card.innerHTML = ''; return; }
   const e = (d && d.ecosistema) || { attivo: false };
   if (!e.attivo) {
+    const senzaChiave = e.chiave !== true;
+    const corpo = senzaChiave
+      ? `${L('Spento ora. Per accenderlo: imposta', 'Off now. To turn it on: set', 'Apagado ahora. Para encenderlo: define')} <code>AMBIENTE_KEY</code> ${L('e avvia i container', 'and start the containers', 'y arranca los contenedores')} <code>guardiano</code> + <code>ambiente</code>.`
+      : `${L('La chiave c’è, ma il suo computer non risponde: controlla i container', 'The key is set, but her computer is not answering: check the containers', 'La clave está, pero su ordenador no responde: revisa los contenedores')} <code>guardiano</code> + <code>ambiente</code>.`;
     card.innerHTML = `<h3>${_hIco(ICO.mondo)}${L('Il suo ecosistema', 'Her ecosystem', 'Su ecosistema')}</h3>
-      <p class="vuoto">${L('Spento ora. Per accenderlo: imposta', 'Off now. To turn it on: set', 'Apagado ahora. Para encenderlo: define')} <code>AMBIENTE_KEY</code> ${L('e avvia i container', 'and start the containers', 'y arranca los contenedores')} <code>guardiano</code> + <code>ambiente</code>.</p>`;
+      <p class="vuoto">${corpo}</p>${e.perche ? `<p class="tenue">${esc(e.perche)}</p>` : ''}`;
     return;
   }
   const riga = (k, v) => `<div style="display:flex;justify-content:space-between;gap:1em"><span class="tenue">${k}</span><strong>${esc(v || '—')}</strong></div>`;

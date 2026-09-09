@@ -243,8 +243,10 @@ class Handler(BaseHTTPRequestHandler):
         # LA PLASTICITÀ + l'ATTIVITÀ RECENTE per il grafo 3D: i nodi coniati da lei, i legami
         # tirati, le modulazioni; e cosa ha «sparato» negli ultimi secondi (per pulsare live).
         try:
+            perche = AMB.perche_spento()
             return self._json(200, {"plasma": mente.stato_plasma(),
-                                    "attivita": mente.attivita_recente()})
+                                    "attivita": mente.attivita_recente(),
+                                    "ambiente": {"spento": bool(perche), "perche": perche}})
         except Exception as e:
             return self._json(200, {"plasma": {}, "attivita": {}, "errore": str(e)[:120]})
 
