@@ -38,6 +38,7 @@ const DECISO = [
   ['features/antibot.js', 'assetti', 'resta', 'la serranda: quello che il bot ha chiuso su Twitch va riaperto, il livello di allarme no'],
   ['features/antibot.js', 'ritmi', 'resta', 'il ritmo del canale si impara in trenta follow, e in memoria non ci arrivava mai'],
 
+  ['features/battute.js', 'inAscolto', 'volatile', 'la finestra di 45 secondi in cui si contano le risate: perderne una a meta\' non toglie niente a nessuno, e la battuta esce di nuovo un\'altra volta'],
   ['features/antibot.js', 'listaEsterna', 'volatile', 'lista di bot conosciuti, si riscarica da sola'],
   ['features/antibot.js', 'finestre', 'volatile', 'finestra di trenta secondi: dopo un riavvio la raffica si rivede subito'],
   ['features/antibot.js', 'raffiche', 'volatile', 'idem, e l\'allarme si rialza da solo se l\'attacco continua'],
