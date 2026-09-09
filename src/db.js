@@ -2623,8 +2623,19 @@ export const guide = {
     // in uno solo vale anche per il settimo, quando ci sara'.
     // In testa e fuori dal conto delle sue: se consumasse un posto, la
     // dodicesima regola dello streamer sparirebbe per far spazio a questa.
-    const suo = istruzioneGenere(streamers.get(channel)?.settings?.genere);
-    return suo ? [suo, ...sue] : sue;
+    const imp = streamers.get(channel)?.settings || {};
+    const testa = [];
+    // Il CARATTERE, scritto dallo streamer con parole sue: «sei tagliente e
+    // sarcastica», «sei dolcissima e chiami tutti tesoro». Sta prima delle regole
+    // perche' e' chi il bot E', mentre quelle sono cosa deve fare. Passa dalla
+    // stessa strada del genere per la stessa ragione: sei punti chiedono le
+    // regole al modello, e una cosa messa qui vale anche per il settimo.
+    const car = String(imp.carattere || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+    if (car) testa.push(`Il tuo carattere, deciso da chi ti ha creato: ${car}`);
+    testa.push(istruzioneGenere(imp.genere));
+    // In testa e fuori dal conto delle sue: se consumassero un posto, le ultime
+    // regole dello streamer sparirebbero per far spazio a queste.
+    return [...testa.filter(Boolean), ...sue];
   },
   add(channel, testo, ambito = {}) {
     const t = String(testo || '').replace(/\s+/g, ' ').trim().slice(0, 300);

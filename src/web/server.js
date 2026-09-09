@@ -3343,6 +3343,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (!GENERI_VALIDI.includes(b.genere)) return res.status(400).json({ errore: 'genere non valido' });
       out.genere = b.genere;
     }
+    if (b.carattere !== undefined) {
+      if (typeof b.carattere !== 'string') return res.status(400).json({ errore: 'carattere non valido' });
+      out.carattere = b.carattere.replace(/\s+/g, ' ').trim().slice(0, 300);
+    }
     if (b.spontaneita !== undefined) {
       const n = Number(b.spontaneita);
       if (!Number.isFinite(n)) return res.status(400).json({ errore: 'spontaneita non valida' });
@@ -6663,6 +6667,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.genere !== undefined) {
       if (!GENERI_VALIDI.includes(b.genere)) return res.status(400).json({ errore: 'genere non valido' });
       patch.genere = b.genere;
+    }
+    if (b.carattere !== undefined) {
+      if (typeof b.carattere !== 'string') return res.status(400).json({ errore: 'carattere non valido' });
+      patch.carattere = b.carattere.replace(/\s+/g, ' ').trim().slice(0, 300);
     }
     if (b.umore !== undefined) patch.umore = Math.min(100, Math.max(0, Math.round(Number(b.umore)) || 0));
     if (b.energia !== undefined) patch.energia = Math.min(100, Math.max(0, Math.round(Number(b.energia)) || 0));

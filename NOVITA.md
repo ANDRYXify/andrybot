@@ -17,6 +17,12 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- Il bot risponde alle domande cercando davvero. Prima restituiva l'introduzione di Wikipedia: a «capitale della Francia» rispondeva quanto è grande la Francia.
+- Le ricette arrivano dal ricettario, non dall'enciclopedia: ingredienti e una riga di preparazione, non la storia del piatto.
+- Quello che trova lo dice con parole sue, nel tono che gli hai dato. Prima il testo trovato usciva grezzo, e solo quando il modello era spento.
+- Nuovo campo Carattere in Personalità: scrivi con parole tue com'è fatto il bot, e vale ovunque parli.
+- Se non trova niente che c'entri con la domanda, tace invece di rispondere a caso.
+
 - Il bot fa i conti: «quanto fa 4+4», «7 x 8», «20% di 90», anche con le parentesi. Il risultato lo calcola, non lo indovina, quindi è sempre giusto.
 - Quando un numero è ambiguo tace invece di rischiare: «1.000» in italiano è mille, ma scritto in chat può essere uno virgola zero, e non c'è modo di saperlo.
 - Se il messaggio non è un conto non risponde. Nessuna risposta a «ho 2 gatti e 3 cani».

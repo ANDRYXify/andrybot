@@ -89,3 +89,33 @@ Cinque gruppi di frasi scritte a mano in `brain.js` non li legge nessuno:
 usati — quelle risposte le scrive il modello. Non li ho marcati, perché sarebbe
 lavoro su codice morto. Vanno tolti o ricollegati, ed è una decisione da
 prendere: sono la personalità scritta a mano contro quella generata.
+
+## Il carattere, sulla stessa rotaia
+
+Il genere dice *come parla di sé*. Il carattere dice *chi è*, e lo scrive lo
+streamer con parole sue: «tagliente e sarcastica, ma mai cattiva», «dolcissima,
+chiama tutti tesoro». Sta in Personalità, sopra il genere, ed è un campo libero
+da 300 caratteri.
+
+Viaggia dalla stessa parte: `guide.applicabili` in `db.js`. La ragione è la
+stessa — sei punti del codice chiedono le regole al modello, e una cosa messa
+dove le regole nascono vale anche per il settimo, quando ci sarà. Il carattere
+sta **prima** del genere, perché chi il bot è viene prima di come parla di sé, e
+tutti e due stanno **prima** delle regole dello streamer e fuori dal conto delle
+dodici: se consumassero un posto, la sua dodicesima regola sparirebbe per far
+spazio alle nostre.
+
+Il tono (scherzoso, amichevole, serio) resta e non va in conflitto: quello decide
+il registro, il carattere decide la persona. Uno può essere scherzoso e stronzo,
+o scherzoso e dolce.
+
+### Un collaudo che non bastava
+
+Il primo collaudo che avevo scritto chiedeva che il carattere venisse **letto**
+dalle impostazioni. Togliendo la riga che lo mette davvero nell'elenco, il
+collaudo restava verde: la lettura c'era ancora, e il valore finiva nel nulla.
+
+È esattamente il difetto che questo progetto insegue — una riga che sembra fare
+qualcosa e non fa niente — scritto dentro il collaudo che doveva scovarlo. Ora
+chiede il percorso intero: letto, messo nell'elenco, e l'elenco restituito.
+Provato rosso su tutti e tre i punti.
