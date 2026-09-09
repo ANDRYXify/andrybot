@@ -82,7 +82,12 @@ test('il comando è nel registro: si può spegnere e rinominare come gli altri',
   const c = comandoDi('battuta');
   assert.ok(c, 'esiste nel registro');
   assert.ok(c.nomi.includes('battuta'), 'risponde al suo nome');
-  assert.equal(c.modulo, 'base');
+  assert.equal(c.modulo, 'battute', 'ha la sua famiglia, con il suo interruttore');
+  // e i nomi li prende DA LI', non scritti a mano nel gestore: se no rinominarlo
+  // dal pannello non cambierebbe niente in chat.
+  const src = readFileSync(join(RAD, 'src/features/battute.js'), 'utf8');
+  assert.ok(/comandoDi\('battuta'\)/.test(src), 'il gestore chiede i nomi al registro');
+  assert.ok(/preparaComando\(/.test(src), 'e passa dal vaglio come tutti gli altri');
 });
 
 test('il tubo è attaccato: il bot lo chiama davvero', () => {

@@ -97,7 +97,13 @@ test('il materiale dal web arriva AL MODELLO, non solo al ripiego', () => {
   const j = brain.indexOf('FALLBACK quando il modello', i);
   assert.ok(i > 0 && j > i, 'il percorso normale si trova');
   const tratto = brain.slice(i, j);
-  assert.ok(/internet\.cerca\(/.test(tratto), 'nel percorso normale si cerca');
+  assert.ok(/_cercaWeb\(channel, text, \d{3,4}\)/.test(tratto),
+    'nel percorso normale si cerca, con l\'attesa corta e con la regola che sta gia\' in _cercaWeb');
   assert.ok(/^\s*web,/m.test(tratto), 'e il trovato viene passato al modello');
-  assert.ok(/attesa: \d{3,4}/.test(tratto), 'con un\'attesa corta: in chat la risposta lenta è persa');
+  // La regola su QUANDO cercare deve stare in UN posto: due criteri per la stessa
+  // domanda divergono, e il primo che avevo scritto qui accanto («cerca solo se
+  // non ho conoscenza») non avrebbe fatto partire la ricerca mai, perche'
+  // _conoscenzaPertinente non ha soglia e torna sempre qualcosa.
+  assert.ok(!/conoscenza\?\.length/.test(tratto),
+    'la ricerca non si lega alla conoscenza: quella non ha soglia e c\'e\' sempre');
 });

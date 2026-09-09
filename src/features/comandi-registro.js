@@ -35,6 +35,7 @@ export const MODULI = {
   ore: { nome: ['Ore guardate', 'Watch time', 'Horas vistas'], file: 'watchtime.js', acceso: (s) => (s.watchtime?.attivo) !== false },
   base: { nome: ['Comandi pronti', 'Built-in commands', 'Comandos de serie'], file: 'comandibase.js', acceso: (s) => (s.comandiBase?.attivo) !== false },
   chat: { nome: ['Gestione dei comandi dalla chat', 'Managing commands from chat', 'Gestión de comandos desde el chat'], file: 'comandichat.js', acceso: (s) => !!(s.comandiChat?.attivo) },
+  battute: { nome: ['Battute', 'Jokes', 'Chistes'], file: 'battute.js', acceso: (s) => s.battute !== false },
   vip: { nome: ['VIP', 'VIP', 'VIP'], file: 'vip.js', acceso: () => true },
   sondaggi: { nome: ['Sondaggi e predizioni', 'Polls and predictions', 'Encuestas y predicciones'], file: 'sondaggi.js', acceso: () => true },
   musica: { nome: ['Richieste musicali', 'Music requests', 'Peticiones musicales'], file: 'songrequest.js', acceso: () => true },
@@ -123,7 +124,7 @@ export const COMANDI = [
   { id: 'classificaore', modulo: 'ore', nomi: ['classificaore', 'classificatempo', 'oretop', 'topore'], titolo: ['Classifica delle ore', 'Watch time leaderboard', 'Clasificación de horas'],
     cosa: ['Chi ha guardato di più.', 'Who has watched the most.', 'Quién ha visto más.'] },
 
-  { id: 'battuta', modulo: 'base', nomi: ['battuta', 'battute', 'joke'], titolo: ['Battuta', 'Joke', 'Chiste'],
+  { id: 'battuta', modulo: 'battute', nomi: ['battuta', 'battute', 'joke'], titolo: ['Battuta', 'Joke', 'Chiste'],
     cosa: ['Dice una battuta del serbatoio del canale. Mod e streamer le aggiungono con !battuta aggiungi.',
       'Tells a joke from the channel\'s bank. Mods and streamer add them with !battuta aggiungi.',
       'Cuenta un chiste del depósito del canal. Mods y streamer los añaden con !battuta aggiungi.'], attesa: 5 },

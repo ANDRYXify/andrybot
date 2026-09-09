@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- Le ricette e le domande da enciclopedia funzionano davvero: prima la ricerca non partiva mai e il bot ripiegava su «insegnamela dalla dashboard».
+- Il comando delle battute si può rinominare e spegnere dal pannello come tutti gli altri, e ha una sua voce fra le famiglie.
+
 - Se chiami il bot per nome ti risponde sempre. Prima, dopo una risposta restava muto per quarantacinque secondi anche a chi lo chiamava: sembrava morto.
 - Ogni tanto dice una battuta da solo, se lasci accesa la chat autonoma. Si spegne dalla scheda Giochi.
 - Le battute che fanno ridere escono più spesso: dopo ognuna il bot conta quante persone diverse ridono davvero.

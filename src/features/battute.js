@@ -19,6 +19,7 @@
 // genere si applica: una battuta può contenere `{o/a}`.
 import { battute } from '../db.js';
 import { makeLog } from '../logger.js';
+import { preparaComando, comandoDi } from './comandi-registro.js';
 
 const log = makeLog('battute');
 
@@ -91,8 +92,17 @@ export function fmt(b) {
 // serbatoio vuoto si dice che è vuoto, che è la verità.
 export function tryBattuta(msg, say, { inventa = null } = {}) {
   try {
-    const testo = String(msg?.text || '').trim();
-    const m = /^!(?:battuta|battute|joke)\b\s*(.*)$/i.exec(testo);
+    // I nomi li tiene il REGISTRO, non questa riga: cosi' un comando rinominato
+    // risponde al nome nuovo, uno spento non parte, e uno riservato lo dice
+    // invece di tacere. Scriverli qui a mano vorrebbe dire due elenchi da tenere
+    // d'accordo, e uno dei due sarebbe sempre indietro.
+    const nomi = (comandoDi('battuta')?.nomi || ['battuta']).join('|');
+    if (!new RegExp(`^!(?:${nomi})\\b`, 'i').test(String(msg?.text || '').trim())) return false;
+    const vaglio = preparaComando(msg.channel, msg);
+    if (vaglio?.rifiuta) { say(vaglio.messaggio); return true; }
+    if (vaglio?.salta) return false;
+    const testo = String(vaglio?.testo || msg.text || '').trim();
+    const m = new RegExp(`^!(?:${nomi})\\b\\s*([\\s\\S]*)$`, 'i').exec(testo);
     if (!m) return false;
     const resto = m[1].trim();
     const canale = msg.channel;
