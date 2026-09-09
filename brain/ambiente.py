@@ -49,6 +49,25 @@ def perche_spento():
     return ""
 
 
+def _bussa():
+    """Bussa alla sandbox e basta: nessuna cache, nessuna stampa. Il giro in rete sta
+    in UN posto solo, cosi' chi deve solo sapere non stampa e chi deve parlare non
+    duplica la prova."""
+    try:
+        req = urllib.request.Request(URL + "/health", method="GET")
+        with urllib.request.urlopen(req, timeout=3) as r:
+            return r.status == 200
+    except Exception:
+        return False
+
+
+def _dillo(ok):
+    """Dice l'esito solo quando CAMBIA (la prima volta cambia sempre)."""
+    if _detto["esito"] != ok:
+        _detto["esito"] = ok
+        print(f"[ambiente] il mondo di Lia e' {'raggiungibile' if ok else 'IRRAGGIUNGIBILE'} su {URL}", flush=True)
+
+
 def disponibile():
     """La sandbox risponde? Esito in cache per non tempestarla di /health."""
     if not KEY:
@@ -61,17 +80,33 @@ def disponibile():
     now = time.time()
     if _stato["ok"] is not None and (now - _stato["quando"]) < _TTL:
         return _stato["ok"]
-    ok = False
-    try:
-        req = urllib.request.Request(URL + "/health", method="GET")
-        with urllib.request.urlopen(req, timeout=3) as r:
-            ok = (r.status == 200)
-    except Exception:
-        ok = False
-    if _detto["esito"] != ok:
-        _detto["esito"] = ok
-        print(f"[ambiente] il mondo di Lia e' {'raggiungibile' if ok else 'IRRAGGIUNGIBILE'} su {URL}", flush=True)
+    ok = _bussa()
+    _dillo(ok)
     _stato.update(ok=ok, quando=now)
+    return ok
+
+
+def annuncia(attesa_max=90.0, passo=5.0):
+    """All'avvio dice com'e' il suo mondo, SEMPRE — non solo quando la chiave manca.
+
+    Senza questo, chi ha appena messo la chiave e riavviato non legge niente: il primo
+    che tocca la sandbox e' un ciclo che parte minuti dopo, e un log muto non si
+    distingue da un mondo spento. Dire l'assenza e tacere la presenza e' meta' lavoro.
+
+    Cervello e sandbox partono insieme, quindi si bussa in silenzio finche' risponde
+    (fino a `attesa_max`) e si parla UNA volta sola, alla fine: un «IRRAGGIUNGIBILE»
+    stampato al primo secondo direbbe una cosa falsa su una cosa che si stava alzando.
+    """
+    if not KEY:
+        disponibile()
+        return False
+    fine = time.time() + attesa_max
+    ok = _bussa()
+    while not ok and time.time() < fine:
+        time.sleep(passo)
+        ok = _bussa()
+    _dillo(ok)
+    _stato.update(ok=ok, quando=time.time())
     return ok
 
 

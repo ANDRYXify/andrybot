@@ -84,6 +84,53 @@ test('il ponte non inventa un mondo spento quando il cervello tace', async () =>
   } finally { globalThis.fetch = vero; }
 });
 
+test('all\'avvio lo dice anche quando il mondo C\'E\'', () => {
+  // Il buco della prima versione: l'assenza era rumorosa, la presenza muta. Chi
+  // aveva appena messo la chiave e riavviato non leggeva NIENTE — e un log muto
+  // non si distingue da un mondo spento. Qui si guarda la riga, non l'intenzione.
+  const fuori = execFileSync('python3', ['-c', [
+    'import threading, http.server, ambiente as A',
+    'class H(http.server.BaseHTTPRequestHandler):',
+    '    def do_GET(self): self.send_response(200); self.end_headers(); self.wfile.write(b"ok")',
+    '    def log_message(self, *a): pass',
+    's = http.server.HTTPServer(("127.0.0.1", 8791), H)',
+    'threading.Thread(target=s.serve_forever, daemon=True).start()',
+    'print("ESITO", A.annuncia(attesa_max=6, passo=1))',
+    's.shutdown()',
+  ].join('\n')], {
+    cwd: join(RAD, 'brain'),
+    env: { ...process.env, AMBIENTE_KEY: 'prova', AMBIENTE_URL: 'http://127.0.0.1:8791' },
+    encoding: 'utf8',
+  });
+  assert.match(fuori, /\[ambiente\] il mondo di Lia e' raggiungibile/, 'il mondo acceso si annuncia da solo');
+  assert.match(fuori, /ESITO True/);
+});
+
+test('e quando non risponde lo dice UNA volta, non a ogni bussata', () => {
+  // Bussare in silenzio e parlare alla fine: un «IRRAGGIUNGIBILE» al primo secondo
+  // direbbe una cosa falsa su una sandbox che si stava ancora alzando, e ripeterlo
+  // a ogni tentativo trasformerebbe il log in rumore che nessuno legge piu'.
+  const fuori = execFileSync('python3', ['-c', [
+    'import ambiente as A',
+    'print("ESITO", A.annuncia(attesa_max=4, passo=1))',
+  ].join('\n')], {
+    cwd: join(RAD, 'brain'),
+    env: { ...process.env, AMBIENTE_KEY: 'prova', AMBIENTE_URL: 'http://127.0.0.1:9' },
+    encoding: 'utf8',
+  });
+  const righe = fuori.split('\n').filter((r) => r.includes('[ambiente] il mondo di Lia'));
+  assert.equal(righe.length, 1, 'una riga sola, alla fine');
+  assert.match(righe[0], /IRRAGGIUNGIBILE/);
+  assert.match(fuori, /ESITO False/);
+});
+
+test('l\'annuncio parte davvero all\'avvio del cervello', () => {
+  // Una funzione perfetta che nessuno chiama e' la stessa cosa di una riga che non c'e'.
+  const cervello = leggi('brain/server.py');
+  const avvio = cervello.slice(cervello.indexOf('def main():'));
+  assert.match(avvio, /Thread\(target=AMB\.annuncia/, 'un filo all\'avvio, cosi\' non blocca la porta');
+});
+
 test('il nome arriva intero dal cervello alla pagina', () => {
   const cervello = leggi('brain/server.py');
   const corpo = cervello.slice(cervello.indexOf('def _plasma(self):'), cervello.indexOf('def _moduli(self):'));

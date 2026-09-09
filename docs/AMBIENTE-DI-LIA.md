@@ -178,8 +178,13 @@ vie **strumento** ed **esecuzione** restano a zero per sempre, e sembra che lei 
 ci provi. Non ci prova perché la porta non c'è. Perciò lo spento si dice, in tre
 punti, e da **una sola fonte** — `ambiente.perche_spento()`:
 
-- **nel log del cervello**, una riga all'avvio se `AMBIENTE_KEY` manca, e una riga
-  a ogni cambio di raggiungibilità (raggiungibile ⇄ irraggiungibile);
+- **nel log del cervello**, una riga all'avvio — *sempre*, non solo quando la
+  chiave manca. Dire l'assenza e tacere la presenza è mezzo lavoro: chi ha appena
+  messo la chiave e riavviato leggerebbe un log muto, che non si distingue da un
+  mondo spento. Cervello e sandbox partono insieme, perciò si bussa in silenzio
+  finché risponde (fino a 90 s) e si parla una volta sola, alla fine: un
+  «IRRAGGIUNGIBILE» stampato al primo secondo direbbe una cosa falsa su una cosa
+  che si stava alzando. Poi una riga a ogni cambio (raggiungibile ⇄ no);
 - **nella scheda «Il suo ecosistema»**, con il consiglio giusto: manca la chiave →
   come metterla; chiave c'è ma non risponde → guarda i container, non il `.env`.
   Il ramo si sceglie dal campo `chiave`, non leggendo la frase;

@@ -2019,6 +2019,8 @@ def main():
     threading.Thread(target=_ciclo_vita, daemon=True).start()
     threading.Thread(target=_ciclo_flusso, daemon=True).start()   # l'«adesso» che non si ferma
     threading.Thread(target=_ciclo_mondo, daemon=True).start()    # il girovagare nel suo mondo
+    # com'e' il suo mondo, detto all'avvio e non solo quando manca la chiave
+    threading.Thread(target=AMB.annuncia, daemon=True).start()
     srv = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     print(f"[brain] in ascolto su :{PORT}", flush=True)
     srv.serve_forever()
