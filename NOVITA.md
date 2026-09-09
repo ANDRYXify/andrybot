@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- Il bot pensa una cosa per volta. Prima più richieste insieme si dimezzavano il processore a vicenda e finivano tutte fuori tempo: nessuna risposta usciva.
+- Mentre qualcuno sta parlando, il bot smette di studiare per conto suo. La domanda di una persona viene prima del suo rimuginare.
+
 - L'interruttore delle battute automatiche si spegne da solo se la chat autonoma è spenta, e dice perché: prima si poteva accendere senza che cambiasse niente.
 
 - Le ricette e le domande da enciclopedia funzionano davvero: prima la ricerca non partiva mai e il bot ripiegava su «insegnamela dalla dashboard».
