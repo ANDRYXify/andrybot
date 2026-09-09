@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- Se il pannello non riesce a contattare il server, la pagina dice di chi è il software invece di mostrare solo un errore.
+
 - Il menù per scegliere l'overlay non è più quello grigio del sistema: è disegnato come il resto del pannello, e si usa anche con la sola tastiera.
 - Sul telefono resta quello del sistema, perché lì la ruota è più comoda di qualunque cosa possiamo disegnare.
 

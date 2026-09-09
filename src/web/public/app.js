@@ -201,6 +201,28 @@ function apriDaIndirizzo() {
   if (h && schedaValida(h) && !schedaBloccata(h) && (!SOLO_ADMIN.has(h) || stato?.isAdmin)) schedaAttiva = h;
 }
 
+function _firma() {
+  const a = (() => {
+    try { return getComputedStyle(document.documentElement).getPropertyValue('--ax-1').trim().replace(/^"|"$/g, ''); }
+    catch (e) { return ''; }
+  })();
+  const b = (() => { try { return String(window.__ax2 || ''); } catch (e) { return ''; } })();
+  const c = 'socialbot.live';
+  return (a && b) ? `ANDRYX-IP::${a}-${b}::${c}` : '';
+}
+
+function _pagineDiProprieta() {
+  const f = _firma();
+  const chi = 'Andrea Taliento (ANDRYXify)';
+  return `<div class="carta">
+    <h2>${esc(chi)}</h2>
+    <p>${esc(L('Questo software è di sua proprietà. Tutti i diritti riservati.',
+      'This software is his property. All rights reserved.',
+      'Este software es de su propiedad. Todos los derechos reservados.'))}</p>
+    <p class="suggerimento">© 2024–2026 · socialbot.live${f ? ` · ${esc(f)}` : ''}</p>
+  </div>`;
+}
+
 async function caricaStato() {
   if (DEMO) { stato = statoDemo(); apriDaIndirizzo(); render(); montaDemo(); window.SB_SPLASH_OFF?.(); return; }
   try {
@@ -208,7 +230,8 @@ async function caricaStato() {
   } catch (e) {
 
     if (inApp()) { location.href = '/sblocca'; return; }
-    app.innerHTML = `<div class="carta"><h2>Ops!</h2><p>Impossibile contattare il server: ${esc(e.message)}</p></div>`;
+    app.innerHTML = _pagineDiProprieta()
+      + `<div class="carta"><h2>Ops!</h2><p>${esc(L('Impossibile contattare il server', 'Cannot reach the server', 'No se puede contactar el servidor'))}: ${esc(e.message)}</p></div>`;
     window.SB_SPLASH_OFF?.();
     return;
   }
