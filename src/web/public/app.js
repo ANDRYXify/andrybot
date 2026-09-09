@@ -8076,6 +8076,124 @@ function _rigeneraSelOverlay() {
   _rigeneraQuale();
 }
 
+const _TENDINE = new WeakMap();
+
+function vestiTendina(sel) {
+  if (!sel || _TENDINE.has(sel)) return;
+  try { if (matchMedia('(pointer: coarse)').matches) return; } catch (e) { }
+  const guscio = document.createElement('span');
+  guscio.className = 'tendina';
+  const bottone = document.createElement('button');
+  bottone.type = 'button';
+  bottone.className = 'tendina-btn';
+  bottone.setAttribute('aria-haspopup', 'listbox');
+  bottone.setAttribute('aria-expanded', 'false');
+  const eti = sel.id ? document.querySelector(`label[for="${sel.id}"]`) : null;
+  if (eti) bottone.setAttribute('aria-label', eti.textContent.trim());
+  else if (sel.getAttribute('aria-label')) bottone.setAttribute('aria-label', sel.getAttribute('aria-label'));
+  if (sel.dataset.aiuto) bottone.dataset.aiuto = sel.dataset.aiuto;
+  const lista = document.createElement('div');
+  lista.className = 'tendina-lista';
+  lista.setAttribute('role', 'listbox');
+  lista.hidden = true;
+  sel.parentNode.insertBefore(guscio, sel);
+  guscio.appendChild(bottone);
+  guscio.appendChild(lista);
+  guscio.appendChild(sel);
+  sel.classList.add('tendina-vero');
+  sel.setAttribute('tabindex', '-1');
+
+  let aperta = false, evidenziato = -1;
+  const voci = () => [...lista.querySelectorAll('.tendina-voce')];
+  const titolo = () => {
+    const o = sel.options[sel.selectedIndex];
+    bottone.textContent = o ? o.textContent : '';
+    bottone.disabled = sel.disabled || !sel.options.length;
+  };
+  const disegna = () => {
+    lista.innerHTML = '';
+    [...sel.options].forEach((o, i) => {
+      const v = document.createElement('button');
+      v.type = 'button';
+      v.className = 'tendina-voce';
+      v.setAttribute('role', 'option');
+      v.setAttribute('aria-selected', i === sel.selectedIndex ? 'true' : 'false');
+      v.textContent = o.textContent;
+      v.dataset.i = String(i);
+      lista.appendChild(v);
+    });
+  };
+  const evidenzia = (i) => {
+    const el = voci();
+    if (!el.length) return;
+    evidenziato = Math.max(0, Math.min(el.length - 1, i));
+    el.forEach((v, k) => v.classList.toggle('su', k === evidenziato));
+    el[evidenziato].scrollIntoView({ block: 'nearest' });
+  };
+  const chiudi = (tornaAlBottone) => {
+    if (!aperta) return;
+    aperta = false;
+    lista.hidden = true;
+    bottone.setAttribute('aria-expanded', 'false');
+    if (tornaAlBottone) bottone.focus();
+  };
+  const apri = () => {
+    if (aperta || bottone.disabled) return;
+    disegna();
+    aperta = true;
+    lista.hidden = false;
+    bottone.setAttribute('aria-expanded', 'true');
+    evidenzia(sel.selectedIndex < 0 ? 0 : sel.selectedIndex);
+  };
+  const scegli = (i) => {
+    if (i < 0 || i >= sel.options.length) return;
+    if (sel.selectedIndex !== i) {
+      sel.selectedIndex = i;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    titolo();
+    chiudi(true);
+  };
+
+  bottone.addEventListener('click', () => (aperta ? chiudi(true) : apri()));
+  bottone.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); apri(); }
+  });
+  lista.addEventListener('click', (e) => {
+    const v = e.target.closest('.tendina-voce');
+    if (v) scegli(Number(v.dataset.i));
+  });
+  lista.addEventListener('mousemove', (e) => {
+    const v = e.target.closest('.tendina-voce');
+    if (v) evidenzia(Number(v.dataset.i));
+  });
+  guscio.addEventListener('keydown', (e) => {
+    if (!aperta) return;
+    if (e.key === 'Escape') { e.preventDefault(); chiudi(true); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); evidenzia(evidenziato + 1); return; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); evidenzia(evidenziato - 1); return; }
+    if (e.key === 'Home') { e.preventDefault(); evidenzia(0); return; }
+    if (e.key === 'End') { e.preventDefault(); evidenzia(voci().length - 1); return; }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scegli(evidenziato); return; }
+    if (e.key.length === 1) {
+      const c = e.key.toLowerCase();
+      const da = evidenziato + 1;
+      const tutte = [...sel.options].map((o) => o.textContent.trim().toLowerCase());
+      for (let k = 0; k < tutte.length; k++) {
+        const i = (da + k) % tutte.length;
+        if (tutte[i].startsWith(c)) { evidenzia(i); break; }
+      }
+    }
+  });
+  document.addEventListener('pointerdown', (e) => { if (!guscio.contains(e.target)) chiudi(false); });
+  sel.addEventListener('change', titolo);
+  new MutationObserver(() => { titolo(); if (aperta) { disegna(); evidenzia(sel.selectedIndex); } })
+    .observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ['value', 'disabled'] });
+
+  titolo();
+  _TENDINE.set(sel, true);
+}
+
 function _rigeneraQuale() {
   const sel = _g('ovl-quale'); if (!sel) return;
   sel.innerHTML = overlays.map((o) => `<option value="${esc(o.id)}"${o.id === overlaySel ? ' selected' : ''}>${esc(o.nome)}</option>`).join('');
@@ -8214,6 +8332,7 @@ function caricaAlert() {
   collegaEditorOvl();
   _applicaZoom(1);
   setTimeout(() => _ricorda(), 400);
+  vestiTendina(_g('ovl-quale'));
   _g('ovl-quale')?.addEventListener('change', (e) => scegliOverlay(e.target.value));
   _g('ovl-nuovo-da')?.addEventListener('click', () => conErrore(() => nuovoOverlayDaPreset()));
   _g('ov-rinomina')?.addEventListener('click', () => conErrore(() => rinominaOverlay()));
