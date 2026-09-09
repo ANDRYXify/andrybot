@@ -6,6 +6,7 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { config } from './config.js';
 import { cifra, decifra, eCifrato, anello, anelloCorrente } from './segreti.js';
+import { istruzioneGenere } from './ai/genere.js';
 
 mkdirSync(config.dataDir, { recursive: true });
 export const db = new Database(join(config.dataDir, 'andrybot.db'));
@@ -2604,7 +2605,7 @@ export const guide = {
   // contesto = { piattaforma:'twitch'|'telegram', privato:bool, sonoIo:bool }
   applicabili(channel, contesto = {}, max = 12) {
     const { piattaforma = 'twitch', privato = false, sonoIo = false } = contesto;
-    return this.list(channel).filter((g) => {
+    const sue = this.list(channel).filter((g) => {
       const dove = g.dove || 'ovunque';
       let doveOk = true;
       if (dove === 'twitch') doveOk = piattaforma === 'twitch';
@@ -2616,6 +2617,14 @@ export const guide = {
       if (con === 'tranne-me') return sonoIo === false;
       return true;
     }).slice(0, max).map((g) => g.testo);
+    // Il genere con cui il bot parla di se' non e' una regola che lo streamer
+    // scrive: e' un'impostazione, e vale sempre. Sta QUI perche' qui nascono le
+    // regole che arrivano al modello, e i punti che le chiedono sono sei: messa
+    // in uno solo vale anche per il settimo, quando ci sara'.
+    // In testa e fuori dal conto delle sue: se consumasse un posto, la
+    // dodicesima regola dello streamer sparirebbe per far spazio a questa.
+    const suo = istruzioneGenere(streamers.get(channel)?.settings?.genere);
+    return suo ? [suo, ...sue] : sue;
   },
   add(channel, testo, ambito = {}) {
     const t = String(testo || '').replace(/\s+/g, ' ').trim().slice(0, 300);
