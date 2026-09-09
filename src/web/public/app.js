@@ -94,6 +94,7 @@ function impostazioni() {
     tono: ['scherzoso', 'amichevole', 'serio'].includes(s.tono) ? s.tono : 'scherzoso',
     genere: ['neutro', 'femminile', 'maschile'].includes(s.genere) ? s.genere : 'neutro',
     carattere: typeof s.carattere === 'string' ? s.carattere : '',
+    battuteAuto: s.battuteAuto !== false,
     spontaneita: typeof s.spontaneita === 'number' ? s.spontaneita : 0.03,
     rispostaMenzioni: s.rispostaMenzioni !== false,
     modalita: ['sempre', 'live', 'manuale'].includes(s.modalita) ? s.modalita : 'sempre',
@@ -12281,6 +12282,21 @@ function pannelloGiochi() {
       </details>
 
       <ul class="lista-voci" id="lista-citazioni"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.persona)}${L('Battute', 'Jokes', 'Chistes')}</h2>
+      <p>${L('Quelle che funzionano nel tuo canale le sai tu. Il bot le dice con !battuta, e ogni tanto da solo se lasci accesa la chat autonoma.', 'You know which ones work in your channel. The bot tells them with !battuta, and now and then on its own if you leave autonomous chatting on.', 'Tú sabes cuáles funcionan en tu canal. El bot los cuenta con !battuta, y de vez en cuando solo si dejas activado el chat autónomo.')}</p>
+      <div class="riga-flessibile">
+        <input type="text" id="inp-battuta" maxlength="300" placeholder="${esc(L('Scrivi una battuta…', 'Write a joke…', 'Escribe un chiste…'))}">
+        <button class="btn" id="btn-aggiungi-battuta">${L('Aggiungi', 'Add', 'Añadir')}</button>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-battute-auto" ${impostazioni().battuteAuto !== false ? 'checked' : ''}>
+        <label for="chk-battute-auto">${L('Ogni tanto ne dice una da solo', 'Now and then it tells one on its own', 'De vez en cuando cuenta uno solo')}</label>
+      </div>
+      <p class="suggerimento">${L('Esce sempre la meno detta di recente, e quelle che fanno ridere escono più spesso: dopo ogni battuta il bot conta quante persone ridono davvero.', 'The least recently told one comes out, and the ones that land come out more often: after each joke the bot counts how many people actually laugh.', 'Sale el menos contado recientemente, y los que funcionan salen más a menudo: tras cada chiste el bot cuenta cuántas personas se ríen de verdad.')}</p>
+      <ul class="lista-voci" id="lista-battute"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>`);
 }
 
@@ -13541,6 +13557,20 @@ function attivaPiattaforma() {
     caricaGiochi();
   }));
 
+  document.getElementById('btn-aggiungi-battuta')?.addEventListener('click', () => conErrore(async () => {
+    const inp = document.getElementById('inp-battuta');
+    const testo = String(inp?.value || '').trim();
+    if (!testo) { toast(L('Scrivi la battuta.', 'Write the joke.', 'Escribe el chiste.'), 'errore'); return; }
+    await api('/api/streamer/battute', { method: 'POST', body: { testo } });
+    inp.value = '';
+    toast(L('Battuta aggiunta!', 'Joke added!', '¡Chiste añadido!'));
+    caricaBattute();
+  }));
+  document.getElementById('chk-battute-auto')?.addEventListener('change', (ev) => conErrore(async () => {
+    await salvaImpostazioni({ battuteAuto: ev.target.checked },
+      L('Salvato', 'Saved', 'Guardado'));
+  }));
+
   document.getElementById('btn-salva-giochisito')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({ giochiSito: { attivo: document.getElementById('chk-giochisito').checked } }, 'Giochi del sito salvati');
   }));
@@ -14339,7 +14369,7 @@ function caricaDatiScheda(id) {
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); }
   if (id === 'memoria') caricaStatistiche();
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); caricaGiochiComandi(); }
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'grafiche') initGrafiche();
@@ -14656,6 +14686,33 @@ async function caricaCitazioni() {
       const b = ev.target.closest('[data-cita-rimuovi]');
       if (!b) return;
       conErrore(async () => { await api('/api/streamer/citazioni/' + b.dataset.citaRimuovi, { method: 'DELETE' }); toast(L('Citazione rimossa.', 'Quote removed.', 'Cita eliminada.')); caricaCitazioni(); });
+    };
+  } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
+}
+
+async function caricaBattute() {
+  const ul = document.getElementById('lista-battute');
+  if (!ul) return;
+  try {
+    const voci = await api('/api/streamer/battute');
+    ul.innerHTML = voci.length
+      ? voci.map((b) => {
+        const presa = b.dette ? `${b.risate}/${b.dette}` : L('mai detta', 'never told', 'nunca contado');
+        return `<li>
+          <div class="testo-voce"><span class="domanda">#${b.n}</span> <span class="risposta">${esc(b.testo)}</span>
+            <span class="suggerimento">— ${L('risate', 'laughs', 'risas')}: ${esc(presa)}${b.fonte === 'ia' ? ' · ' + L('inventata', 'invented', 'inventado') : ''}</span></div>
+          <button class="btn secondario mini" data-battuta-rimuovi="${b.n}">${L('Rimuovi', 'Remove', 'Quitar')}</button>
+        </li>`;
+      }).join('')
+      : `<li class="vuoto">${L('Ancora nessuna battuta. Aggiungine una qui sopra o con !battuta aggiungi in chat', 'No jokes yet. Add one above or with !battuta aggiungi in chat', 'Aún no hay chistes. Añade uno arriba o con !battuta aggiungi en el chat')}</li>`;
+    ul.onclick = (ev) => {
+      const b = ev.target.closest('[data-battuta-rimuovi]');
+      if (!b) return;
+      conErrore(async () => {
+        await api('/api/streamer/battute/' + b.dataset.battutaRimuovi, { method: 'DELETE' });
+        toast(L('Battuta rimossa.', 'Joke removed.', 'Chiste eliminado.'));
+        caricaBattute();
+      });
     };
   } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
 }

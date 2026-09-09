@@ -18,6 +18,13 @@ const log = makeLog('brain');
 const COOLDOWN_RISPOSTA = 45_000;   // minimo tra due risposte del cervello per canale
 const COOLDOWN_FOLLOWUP = 15_000;   // cooldown ridotto mentre si continua un filo con la stessa persona
 const FOLLOWUP_MS = 120_000;        // per quanto resta "aperto" il filo dopo una risposta
+// Il freno della MENZIONE e' un'altra cosa dal respiro fra due chiacchiere
+// spontanee: qui qualcuno ti ha chiamato, e la risposta la sta aspettando.
+// Corti di proposito. Il modello ci mette comunque una decina di secondi a
+// rispondere, quindi il freno che serve davvero e' contro TANTE persone insieme,
+// non contro una che fa due domande di fila — quella e' una conversazione.
+const COOLDOWN_MENZIONE_PERSONA = 10_000;   // la stessa persona non fa raffica
+const COOLDOWN_MENZIONE_CANALE = 4_000;     // e in dieci non fanno allagare la chat
 const COOLDOWN_EVENTO = 10_000;     // minimo tra due annunci dello stesso evento per canale
 const MAX_RISPOSTA = 400;           // lunghezza massima di una risposta
 
@@ -396,6 +403,10 @@ export class Brain {
     this.helix = helix;
     this.actions = actions || {};
     this._ultimaRisposta = new Map();   // canale → ts ultima risposta del cervello
+    // Il freno delle menzioni sta a parte: chi chiama per nome non deve mai
+    // trovare il silenzio per colpa del respiro delle chiacchiere spontanee.
+    this._ultimaMenzione = new Map();        // canale|persona → ts
+    this._ultimaMenzioneCanale = new Map();  // canale → ts
     this._ultimoEvento = new Map();     // 'canale|tipo' → ts ultimo annuncio
     this._stileCache = new Map();       // canale → { ts, frasi } (voce dello streamer)
     this._paginaCache = new Map();      // canale → { ts, voci } (la sua pagina link, letta viva)
@@ -871,11 +882,33 @@ export class Brain {
       const inFollowUp = !!(conv && uLow && conv.user === uLow
         && (Date.now() - conv.ts) < FOLLOWUP_MS && settings.rispostaMenzioni !== false);
 
+      // CHI TI CHIAMA PER NOME NON SI IGNORA.
+      //
+      // Il respiro fra due risposte serve a non allagare la chat, ed e' giusto per
+      // le volte in cui il bot parla di sua iniziativa. Ma stava PRIMA di guardare
+      // se qualcuno lo aveva chiamato: risultato, chiedevi una cosa, il bot
+      // rispondeva, chiedevi la seconda entro tre quarti di minuto e non usciva
+      // niente. Non «aspetta», non «non lo so»: silenzio. Chi chiama per nome e
+      // non riceve niente non pensa «avra' il freno», pensa che sei morto — ed e'
+      // esattamente quello che e' stato scritto in chat.
+      //
+      // Il freno resta, ma per la menzione e' un altro freno: corto e per PERSONA.
+      // Cosi' una conversazione funziona, e chi ripete il nome del bot dieci volte
+      // di fila non fa allagare la chat lo stesso.
+      if (menzionaBot(text, botLogin || channel)) {
+        if (settings.rispostaMenzioni === false) return false;
+        const adesso = Date.now();
+        const suo = `${channel}|${uLow}`;
+        if (adesso - (this._ultimaMenzione.get(suo) || 0) < COOLDOWN_MENZIONE_PERSONA) return false;
+        if (adesso - (this._ultimaMenzioneCanale.get(channel) || 0) < COOLDOWN_MENZIONE_CANALE) return false;
+        this._ultimaMenzione.set(suo, adesso);
+        this._ultimaMenzioneCanale.set(channel, adesso);
+        return true;
+      }
+
       // respiro: mai due risposte del cervello troppo vicine (i comandi ! non c'entrano)
       const cooldown = inFollowUp ? COOLDOWN_FOLLOWUP : COOLDOWN_RISPOSTA;
       if (Date.now() - (this._ultimaRisposta.get(channel) || 0) < cooldown) return false;
-
-      if (menzionaBot(text, botLogin || channel)) return settings.rispostaMenzioni !== false;
 
       // manopola: probabilità base "spontanea" (0 = zitto). Stesso clamp del
       // server (0..0.5), così un valore alto = bot più "chiacchierone".
@@ -1092,7 +1125,29 @@ export class Brain {
           situazione: this._situazione(channel),   // com'è la diretta adesso (gioco/live/uptime)
           lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),   // regole valide in chat pubblica
         });
-        if (risposta) return risposta;
+        if (risposta) {
+          // IL MOTORE INTERNO E' RICORDARSI. Se la risposta e' nata da qualcosa
+          // trovato fuori, la si scrive nel quaderno del canale: la seconda volta
+          // esce dalla conoscenza, istantanea, senza rete e senza modello. Un giro
+          // lento che lascia una nota vale la pena; un giro lento che non lascia
+          // niente e' solo lento.
+          //
+          // Si salva la RISPOSTA DEL BOT, non il pezzo di testo grezzo: quella e'
+          // gia' nel suo tono, ed e' quella che vogliamo risentire.
+          //
+          // Nota che questo e' il quaderno del BOT DI QUESTO CANALE. Lia non
+          // c'entra e non viene toccata: la valvola resta a senso unico
+          // (docs/BOT-E-LIA.md).
+          if (web && text.length <= 200) {
+            try { knowledge.add(channel, { domanda: String(text).slice(0, 200), risposta, fonte: 'web' }); }
+            catch (e) { log.debug(`#${channel} nota:`, e?.message || e); }
+          }
+          return risposta;
+        }
+        // Il modello non ha risposto — spento, lento, in coda. Se pero' abbiamo
+        // gia' in mano quello che serviva, dirlo e' meglio che tacere: la persona
+        // ha fatto una domanda e la risposta ce l'abbiamo, solo non vestita bene.
+        if (web) return String(web).slice(0, 380);
       }
 
       // ---- d. FALLBACK quando il modello non è pronto/è lento ----------

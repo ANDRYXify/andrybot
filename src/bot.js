@@ -38,6 +38,7 @@ import * as feed from './features/feed.js';
 import * as compleanniFeat from './features/compleanni.js';
 import * as gamesbridge from './features/gamesbridge.js';
 import * as quotes from './features/quotes.js';
+import * as battute from './features/battute.js';
 import * as model from './ai/model.js';
 import * as brainpy from './ai/brainpy.js';
 import { createMessageHandler } from './features/handler.js';
@@ -46,7 +47,7 @@ import { ChatYoutube } from './youtube/chat.js';
 import { voceYoutube } from './youtube/voce.js';
 import { collegati as youtubeCollegati } from './youtube/api.js';
 import * as avvisi from './features/avvisi.js';
-import { dirette } from './db.js';
+import { dirette, guide } from './db.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
@@ -272,6 +273,26 @@ export class BotManager {
           const promo = (s.settings?.promoSocial !== false && Math.random() < 0.45)
             ? games.promoSociale(login) : null;
           if (promo) { this.say(login, promo); continue; }
+          // Una battuta di sua iniziativa, e non a caso: solo se la chat e' viva,
+          // solo se non se ne e' detta una da un po', e solo se il serbatoio ha
+          // qualcosa. La scelta di QUALE la fa il serbatoio, che pesa il riposo e
+          // la presa sul pubblico — cosi' quella che non fa ridere nessuno smette
+          // di uscire da sola, senza che nessuno debba toglierla.
+          //
+          // E non si dice una battuta mentre si sta ancora ascoltando se ha fatto
+          // ridere la precedente: si sovrapporrebbero le risate e la misura non
+          // varrebbe piu' niente.
+          if (s.settings?.battuteAuto !== false && !battute.stoAscoltando(login)
+              && Date.now() - (this._ultimaBattuta?.get(login) || 0) > 20 * 60_000
+              && Math.random() < 0.35) {
+            const b = battute.prossimaDa(login);
+            if (b) {
+              (this._ultimaBattuta ||= new Map()).set(login, Date.now());
+              this.say(login, b.testo);
+              battute.detta(login, b.n);
+              continue;
+            }
+          }
           this.brain?.iniziativa?.(login)
             .then((t) => { if (t) this.say(login, t); })
             .catch((e) => log.debug(`#${login} iniziativa:`, e?.message || e));
@@ -659,6 +680,25 @@ export class BotManager {
     songrequest.trySongRequest(cmdMsg, parla).catch((e) => log.error(`#${login} songrequest:`, e?.message || e));
     // citazioni (!cita) — lo shoutout (!so) lo gestisce comandibase qui sopra
     try { quotes.tryQuoteCommand(msg, parla); } catch (e) { log.error(`#${login} citazioni:`, e?.message || e); }
+    // Le battute: prima il serbatoio del canale, che e' istantaneo e sicuro. Il
+    // cervello solo quando il serbatoio e' vuoto, e con l'attesa corta — una
+    // battuta che arriva dopo quindici secondi non fa ridere nessuno. Il carattere
+    // e le regole del canale viaggiano con la richiesta, quindi la inventa come
+    // parla lui e non come parla un manuale.
+    try {
+      battute.tryBattuta(msg, parla, {
+        inventa: async () => {
+          const s = streamers.get(login);
+          return brainpy.rispondi({
+            via: 'bot', compito: true,
+            canale: login, canaleId: login, login, nome: 'sistema', timeoutMs: 6000,
+            tono: s?.settings?.tono || 'scherzoso',
+            lineeGuida: guide.applicabili(login, { piattaforma: 'twitch', privato: false, sonoIo: false }),
+            testo: 'Inventa UNA battuta breve per la chat di una diretta (max 20 parole). Niente insulti, niente politica, niente sesso. Rispondi SOLO con la battuta.',
+          }).catch(() => null);
+        },
+      });
+    } catch (e) { log.error(`#${login} battute:`, e?.message || e); }
     // contatori (!morti, !tentativi, !parole…): comando chat + auto-conteggio parole.
     // L'emit aggiorna il widget sullo STESSO overlay OBS (feed SSE di alert/effetti).
     try { contatori.tryComando(msg, parla, (p) => this.effects?.emit?.(login, p)); }

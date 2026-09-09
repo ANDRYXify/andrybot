@@ -123,6 +123,10 @@ export const COMANDI = [
   { id: 'classificaore', modulo: 'ore', nomi: ['classificaore', 'classificatempo', 'oretop', 'topore'], titolo: ['Classifica delle ore', 'Watch time leaderboard', 'Clasificación de horas'],
     cosa: ['Chi ha guardato di più.', 'Who has watched the most.', 'Quién ha visto más.'] },
 
+  { id: 'battuta', modulo: 'base', nomi: ['battuta', 'battute', 'joke'], titolo: ['Battuta', 'Joke', 'Chiste'],
+    cosa: ['Dice una battuta del serbatoio del canale. Mod e streamer le aggiungono con !battuta aggiungi.',
+      'Tells a joke from the channel\'s bank. Mods and streamer add them with !battuta aggiungi.',
+      'Cuenta un chiste del depósito del canal. Mods y streamer los añaden con !battuta aggiungi.'], attesa: 5 },
   { id: 'so', modulo: 'base', nomi: ['so', 'shoutout'], titolo: ['Shoutout', 'Shoutout', 'Shoutout'], chi: 'mod',
     cosa: ['Fa lo shoutout a un altro canale.', 'Gives a shoutout to another channel.', 'Hace un shoutout a otro canal.'] },
   { id: 'followage', modulo: 'base', nomi: ['followage', 'daquanto'], titolo: ['Da quanto segui', 'How long you\'ve followed', 'Desde cuándo sigues'],

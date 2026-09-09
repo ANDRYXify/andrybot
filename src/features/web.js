@@ -203,14 +203,32 @@ const WB = 'https://it.wikibooks.org/w/api.php';
 // Il ricettario e' su Wikibooks, e li' ingredienti e preparazione ci sono.
 const CHIEDE_RICETTA = /ricett|come si (?:fa|prepara|cucina)|ingredient/i;
 
-// Da una domanda si toglie la parte che chiede, e resta il piatto:
-// «ricetta della carbonara» → «carbonara».
-const SOLO_PIATTO = /^\s*(?:qual\s*(?:'|è|e)\s*)?(?:la|il|lo|l')?\s*(?:ricetta|ingredienti|preparazione)\s*(?:di|del|dello|della|dei|degli|delle|dell'|per)?\s*/i;
+// Il piatto si cerca DOVE SI TROVA nella frase, non all'inizio. Provando con
+// «ricetta carbonara» funzionava; una persona pero' scrive «Bot mi dai la
+// ricetta della carbonara?», e con l'ancora a inizio riga non trovava niente.
+// Le prove scritte da chi fa la cosa somigliano a chi fa la cosa: questa
+// l'ha trovata uno screenshot di chat vera.
+const PIATTO = [
+  /(?:ricett[ae]|ingredienti|preparazione)\s*(?:di|del|dello|della|dei|degli|delle|dell'|per|:)?\s*([\p{L}][\p{L}\s']{2,40})/iu,
+  /come si (?:fa|prepara|cucina|cucinano|fanno)\s*(?:il|lo|la|i|gli|le|l')?\s*([\p{L}][\p{L}\s']{2,40})/iu,
+];
+
+export function piattoDi(domanda) {
+  const q = String(domanda || '').replace(/[?!.]+$/, '');
+  for (const re of PIATTO) {
+    const m = re.exec(q);
+    if (m) {
+      const p = m[1].replace(/\s+/g, ' ').trim().replace(/^(?:il|lo|la|i|gli|le|l'|un|uno|una)\s+/i, '');
+      if (p.length >= 3) return p;
+    }
+  }
+  return null;
+}
 
 async function _ricettario(query, attesa) {
   if (!CHIEDE_RICETTA.test(query)) return null;
-  const piatto = String(query).replace(SOLO_PIATTO, '').replace(/[?!.]+$/, '').trim();
-  if (piatto.length < 3) return null;
+  const piatto = piattoDi(query);
+  if (!piatto) return null;
   const s = await _json(`${WB}?action=query&list=search&format=json&srlimit=3&srsearch=${encodeURIComponent(piatto)}`, attesa);
   const titoli = (s?.query?.search || []).map((x) => x.title).filter(Boolean);
   const chiavi = paroleChiave(piatto);
