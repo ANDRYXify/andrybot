@@ -995,16 +995,6 @@ export class Brain {
       // link, clip) che l'IA non può inventare. Saluti/come va/chi sei/grazie
       // NON sono più template: li gestisce il modello, con parole sue.
 
-      // IL CONTO SI FA CONTANDO. Un modello linguistico che risponde «8» a 4+4
-      // lo fa per somiglianza, non perche' ha contato, e sopra i numeri piccoli
-      // sbaglia: la macchina su cui gira quella somma la sa fare in un
-      // microsecondo ed e' sempre giusta. Sta in cima alla catena perche' quando
-      // un messaggio E' un conto la cosa e' certa, e nessun altro intento deve
-      // poterlo scambiare per una domanda. Se non e' un conto — ed e' il caso
-      // quasi sempre — risolvi() torna null e qui non succede niente.
-      const conto = conti.risolvi(text);
-      if (conto) return `🧮 ${conto.testo}`;
-
       // che gioco / a cosa giochi
       if (/che gioco|che game|a cosa (stai )?gioc|a che (gioco|game)|cosa stai giocando|che stai giocando/.test(lower)) {
         const ctx = memory.streamContext(channel);
@@ -1166,6 +1156,13 @@ export class Brain {
             try { knowledge.add(channel, { domanda: String(text).slice(0, 200), risposta, fonte: 'web' }); }
             catch (e) { log.debug(`#${channel} nota:`, e?.message || e); }
           }
+          // Se a rispondere e' stata LEI, con una cosa che sa costruire, il bot la
+          // impara: la volta dopo non serve disturbarla. E' il verso giusto della
+          // valvola — lei insegna, il bot non la tocca (docs/BOT-E-LIA.md).
+          try {
+            const ins = brainpy.ultimaInsegna?.();
+            if (ins) knowledge.add(channel, { domanda: String(ins.domanda).slice(0, 200), risposta: String(ins.risposta).slice(0, 400), fonte: 'lia' });
+          } catch (e) { log.debug(`#${channel} insegnamento:`, e?.message || e); }
           return risposta;
         }
         // Il modello non ha risposto — spento, lento, in coda. Se pero' abbiamo
@@ -1180,6 +1177,13 @@ export class Brain {
       // domanda provo il web e sennò ammetto con garbo; con un semplice richiamo
       // rispondo con un cenno (saluto/eccomi). Appena il modello è pronto, parla lui.
       if (menziona) {
+        // IL CONTO, SE NESSUNO L'HA FATTO. Sta QUI e non piu' in cima: davanti c'e'
+        // lei, che il calcolo lo sa fare e in millisecondi — la sua via `calcolo`
+        // non passa da nessun modello. Mettere questo prima voleva dire toglierle
+        // di bocca proprio le domande che sa, e le sue vie restavano a zero.
+        // Resta come rete: se il cervello e' spento, il conto si fa lo stesso.
+        const conto = conti.risolvi(text);
+        if (conto) return `🧮 ${conto.testo}`;
         if (text.includes('?')) {
           // prima di arrendersi: se ha internet, prova a cercare la risposta da sé
           if (this._internetOn(channel)) {

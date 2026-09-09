@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- Se la domanda tocca qualcosa che il cervello sa costruire — un calcolo, una deduzione, una catena di cause — risponde lui, e la risposta resta imparata.
+- Il conto in chat arriva comunque: se il cervello è spento lo fa il bot, e chi guarda non vede differenza.
+
 - Se il pannello non riesce a contattare il server, la pagina dice di chi è il software invece di mostrare solo un errore.
 
 - Il menù per scegliere l'overlay non è più quello grigio del sistema: è disegnato come il resto del pannello, e si usa anche con la sola tastiera.

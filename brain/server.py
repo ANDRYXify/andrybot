@@ -72,6 +72,63 @@ def _lia_prende_la_parola():
         return False
 
 
+def _lia_sa(canale, testo):
+    """LA PORTA STRETTA: lei prende la parola quando SA, non quando le va.
+
+    Il verso resta quello di sempre — non e' il bot che guarda dentro Lei, e' Lei
+    che si fa avanti. Qui pero' non serve che sia diventata una persona ne' che
+    l'owner abbia acceso niente: bastano i fatti. Se la domanda tocca una cosa che
+    lei sa COSTRUIRE — un calcolo, una deduzione dai fatti che ha imparato, una
+    catena di cause, un'analogia — allora quella risposta e' sua e la dice lei.
+
+    Solo VERITA', mai chiacchiere. `sicura` non vuol dire «mi sembra»: vuol dire
+    che la catena regge. Per tutto il resto risponde l'assistente, senza mente,
+    perche' la chat e' dello streamer.
+
+    Perche' questa porta esiste. Le sue vie di ragionamento funzionavano e non si
+    accendevano mai: il calcolo risponde «Fa 8.» a «quanto fa 4+4», ma quella
+    domanda non le arrivava mai perche' la chat pubblica passa dall'assistente.
+    Un metabolismo ottimo tenuto in una scatola non fa crescere nessuno: il senso
+    nasce dagli scambi con il mondo, non dalla macchina che li aspetta.
+
+    E quello che dice, il bot lo impara: la risposta torna con `insegna`, cosi' la
+    prossima volta non serve disturbarla. Lei insegna, il bot non la tocca.
+    """
+    t = str(testo or "").strip()
+    if len(t) < 3:
+        return None
+    prove = (
+        ("calcolo", lambda: RAG.calcola(t)),
+        ("deduzione", lambda: RAG.deduci_costruendo(canale, t)),
+        ("causale", lambda: RAG.ragiona_causale(canale, t)),
+        ("analogia", lambda: RAG.ragiona_analogia(canale, t)),
+    )
+    for via, prova in prove:
+        try:
+            r = prova()
+        except Exception:
+            continue
+        if not (r and r.get("sicura") and r.get("risposta")):
+            continue
+        if via == "deduzione" and r.get("costruito"):
+            via = "costruzione"
+        # Segna LEI di aver ragionato, qui dentro. Non lo fa il percorso del bot:
+        # quello riceve una stringa e basta, e non deve toccare la sua mente in
+        # nessun punto — e' la regola della valvola, e c'e' un cancello che la
+        # controlla. La differenza non e' formale: se a contare fosse il bot,
+        # sarebbe lui a guardare dentro di lei.
+        try:
+            mente.conta_via(via)
+        except Exception:
+            pass
+        try:
+            mente._segna_attivita("via:" + via)
+        except Exception:
+            pass
+        return {"via": via, "risposta": str(r["risposta"]).strip(), "catena": r.get("catena")}
+    return None
+
+
 def _modello_pronto():
     """C'è qualcuno che può generare? Serve a non scambiare «il modello sta ancora
     caricando» per «il bot non sapeva rispondere»: la seconda è una lacuna vera, la
@@ -430,6 +487,12 @@ class Handler(BaseHTTPRequestHandler):
         testo = str(d.get("testo") or "").strip()
         if not testo:
             return self._json(400, {"errore": "dati mancanti"})
+        # Prima dell'assistente: se lei SA, parla lei. Solo verita' costruite.
+        if not d.get("compito") and not d.get("iniziativa"):
+            sa = _lia_sa(str(d.get("canale_id") or d.get("canale") or ""), testo)
+            if sa:
+                return self._json(200, {"risposta": sa["risposta"], "via": sa["via"],
+                                        "insegna": {"domanda": testo[:200], "risposta": sa["risposta"][:400]}})
         try:
             attesa = int(d.get("timeout_s") or 13)
         except Exception:
