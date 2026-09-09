@@ -282,6 +282,56 @@ body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .
   animation: gr-entra .22s var(--an-vel) both;
 }
 .switch-canale-menu[hidden] { display: none; }
+
+.tendina { position: relative; display: inline-flex; }
+.tendina-vero {
+  position: absolute; width: 1px; height: 1px; margin: 0; padding: 0;
+  clip-path: inset(50%); overflow: hidden; white-space: nowrap; border: 0; opacity: 0;
+  pointer-events: none;
+}
+.tendina-btn {
+  font: inherit; color: var(--testo); background: var(--surface); cursor: pointer;
+  border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-2);
+  border-radius: var(--ang-mano); padding: .42rem 2rem .42rem .6rem;
+  text-align: left; min-width: 10rem; max-width: min(20rem, 60vw);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  box-shadow: var(--ombra-ink-b, 3px 3px 0 var(--contorno));
+  transition: translate var(--t-molla-su, .22s) var(--molla-medio, ease), box-shadow .2s ease;
+  background-image: linear-gradient(45deg, transparent 50%, var(--contorno) 50%),
+    linear-gradient(135deg, var(--contorno) 50%, transparent 50%);
+  background-position: right 1.02rem center, right .72rem center;
+  background-size: .3rem .3rem, .3rem .3rem;
+  background-repeat: no-repeat;
+}
+@media (hover: hover) {
+  .tendina-btn:hover { translate: -1px -2px; box-shadow: 5px 6px 0 var(--contorno); }
+}
+.tendina-btn:focus-visible { outline: var(--contorno-sp) solid var(--acc); outline-offset: 2px; }
+.tendina-btn[aria-expanded="true"] { translate: 1px 2px; box-shadow: 1px 1px 0 var(--contorno); }
+.tendina-btn:disabled { opacity: .55; cursor: default; }
+.tendina-lista {
+  position: absolute; top: calc(100% + 7px); left: 0; z-index: 90;
+  min-width: 100%; max-width: min(22rem, 84vw); max-height: min(18rem, 52vh); overflow: auto;
+  background: var(--surface); color: var(--testo);
+  border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-2);
+  border-radius: var(--ang-mano); box-shadow: var(--ombra-ink);
+  padding: 5px; display: flex; flex-direction: column; gap: 2px;
+  animation: gr-entra-fermo .18s var(--an-vel) both;
+}
+.tendina-lista[hidden] { display: none; }
+.tendina-voce {
+  font: inherit; font-size: .92rem; color: var(--testo); text-align: left;
+  background: transparent; border: none; border-radius: calc(var(--ang-mano-l, 4px));
+  padding: .42rem .55rem; cursor: pointer; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.tendina-voce.su { background: color-mix(in srgb, var(--acc) 22%, transparent); }
+.tendina-voce[aria-selected="true"] { font-weight: 700; }
+.tendina-voce[aria-selected="true"]::after { content: ''; }
+@media (prefers-reduced-motion: reduce) {
+  .tendina-btn { transition: none; }
+  .tendina-lista { animation: none; }
+}
 .aiuto-btn { width: 30px; padding: 0; font-weight: 700; }
 .aiuto-menu .sc-voce { text-decoration: none; }
 .aiuto-menu .sc-testo { white-space: normal; }

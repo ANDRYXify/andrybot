@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- Il menù per scegliere l'overlay non è più quello grigio del sistema: è disegnato come il resto del pannello, e si usa anche con la sola tastiera.
+- Sul telefono resta quello del sistema, perché lì la ruota è più comoda di qualunque cosa possiamo disegnare.
+
 - Il bot pensa una cosa per volta. Prima più richieste insieme si dimezzavano il processore a vicenda e finivano tutte fuori tempo: nessuna risposta usciva.
 - Mentre qualcuno sta parlando, il bot smette di studiare per conto suo. La domanda di una persona viene prima del suo rimuginare.
 
@@ -278,7 +281,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Ogni voce può valere sempre, solo quando sei in diretta o solo quando sei offline. Puoi anche fissarla, così il bot ce l'ha davanti in ogni caso.
 - Le frasi che scrivi in Personalità ora arrivano al bot come esempio del tuo modo di parlare. Prima restavano lì.
 - Nel quaderno del bot scrivi come deve rispondere, e vedi anche quello che gli è già stato insegnato.
-- Nella dashboard i menu a tendina restano in riga con i bottoni accanto, invece di andare a capo da soli.
+- Nella dashboard i menù a tendina restano in riga con i bottoni accanto, invece di andare a capo da soli.
 - In chat pubblica risponde il bot del tuo canale: non si ricorda degli utenti e non parla di sé.
 - Le risposte salvate non escono più sempre uguali: il bot le riformula. Se contengono un link restano identiche.
 - [privato] Lia potrà insegnare al bot solo quando vivrà. Fino ad allora il quaderno lo scrivi tu, e il bot non può leggere niente di lei.
@@ -428,13 +431,13 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - I pulsanti si timbrano invece di illuminarsi: premendoli scendono sull'ombra come un timbro sulla carta.
 - Il carattere disegnato è ospitato sul nostro server come tutti gli altri, quindi la pagina non chiede niente a nessuno per disegnarsi.
 - Il sito è una tavola di manga: il fondo è carta, dietro al titolo ci sono le linee che convergono e sopra passa il retino a puntini.
-- Dentro e fuori parlano la stessa lingua: pulsanti, menu, pannelli, elenchi e perfino il cursore hanno il contorno d'inchiostro.
+- Dentro e fuori parlano la stessa lingua: pulsanti, menù, pannelli, elenchi e perfino il cursore hanno il contorno d'inchiostro.
 - Le parole in risalto del titolo si colorano da sinistra a destra quando la pagina arriva, come le colorerebbe un disegnatore.
 - I testi piccoli sono più scuri: su carta chiara quelli di prima si leggevano male.
 - Il lettering disegnato è dei titoli, dei comandi e del marchio; il testo che si legge ha un carattere pulito, come in una tavola vera.
 - La schermata di caricamento è una vignetta: linee che convergono sul marchio, retino e il logo che si timbra.
 - Su telefono le ultime righe in fondo alla pagina non finiscono più sotto la barra dei pulsanti.
-- Menu, cassetto, campi e interruttori hanno il contorno d'inchiostro come tutto il resto.
+- Menù, cassetto, campi e interruttori hanno il contorno d'inchiostro come tutto il resto.
 - Il puntatore è disegnato: una freccia con il contorno d'inchiostro, e non insegue più il mouse, quindi non resta mai indietro.
 - Anche le guide e l'anteprima dei link sono tavole: carta, linee che convergono, retino e lettering disegnato.
 - Il marchio nella schermata di caricamento è dentro la pagina stessa: non lo si chiede più alla rete, quindi non può mancare.
@@ -468,7 +471,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - I giochi si creano tutti da un posto solo: prima c'erano due riquadri che facevano la stessa cosa e uno ti spostava in un'altra scheda per finire il lavoro.
 - Si sceglie chi lancia il gioco — il bot a sorpresa, o uno spettatore che scrive un comando — e il resto si adatta.
 - Nell'editor dei giochi le parole magiche offerte sono quelle che a un gioco servono: monete, caso, numeri, chi scrive. Le altre restano a un clic.
-- Sul telefono il «?» apre guide, manuali e novità dentro al menu, come righe: prima usciva una tendina più larga del menu e si leggeva mezza parola.
+- Sul telefono il «?» apre guide, manuali e novità dentro al menù, come righe: prima usciva una tendina più larga del menù e si leggeva mezza parola.
 - Anche il cambio canale sul telefono è diventato un elenco, per lo stesso motivo.
 - Tutto quello che si chiama con un «!» adesso si gestisce: una quarantina di comandi pronti, ognuno da spegnere, rinominare o riservare a sub, VIP e moderatori. Li trovi in Comandi, in fondo.
 - «!giochi» risponde una volta sola: prima usciva l'elenco dei giochi di chat e, subito sotto, quello dei giochi con la webcam — anche a chi la webcam non la usa.
@@ -496,7 +499,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Ci si registra anche con Kick: se trasmetti solo lì non ti serve un account Twitch, e le parti che senza Twitch non funzionerebbero il pannello te le dice spente invece di fingere.
 - Il bot funziona davvero su Kick: gli eventi che Kick ci mandava venivano rifiutati dal sito, quindi il collegamento riusciva e poi non arrivava niente.
 - Su Kick il bot non si ascolta più da solo: le sue risposte non contano come messaggi della chat.
-- Il menu laterale si chiude cliccando fuori, non solo con la X: su schermi larghi restava aperto.
+- Il menù laterale si chiude cliccando fuori, non solo con la X: su schermi larghi restava aperto.
 - Ci sono due manuali, uno per i giochi e uno per i moduli: cosa fa ogni comando, quanto costa, quanto paga, e cosa vuol dire ogni variabile. Li apri dalle schede Giochi e Comandi.
 - C'è una pagina Novità, e in cima al pannello trovi quello che è cambiato da quando non guardavi: se aggiungiamo qualcosa, adesso lo sai.
 - Le pagine che si aprono senza login tornano a funzionare: la home restava sotto il velo di caricamento, l'overlay in OBS era bianco, e l'invito ai moderatori e lo sblocco con passkey non facevano niente.
