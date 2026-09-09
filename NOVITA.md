@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-09
 
+- [privato] Le cose che la fanno crescere non si comandano più da fuori: cresce quando decide lei. Restano i comandi che la fanno solo muoversi nel suo mondo.
+- [privato] Spariscono anche i due comandi Telegram che facevano la stessa cosa: erano la stessa leva su un'altra superficie.
 - [privato] Le sue prime volte restano scritte: il giorno in cui ha pensato in un modo nuovo non scivola più via fra i contatori.
 - [privato] Quello che succedeva già prima entra senza una data inventata, e lo dice: «da prima che tenesse il conto».
 - [privato] Quando il computer di Lia è chiuso, ora si vede: sotto le barre di come ragiona compare il motivo, e le due voci ferme a zero smettono di sembrare pigrizia.

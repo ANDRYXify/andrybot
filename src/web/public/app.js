@@ -17427,11 +17427,7 @@ async function caricaVita() {
       <p class="suggerimento">${L('Quando il flusso la assopisce, il sonno non è vuoto: RICOMBINA ricordi LONTANI — moduli di domini distanti che di norma non si toccano mai. È l’opposto del richiamo sveglio (che collega il vicino): il sogno collega il lontano, ed è da lì che nasce la novità. Tutto OFFLINE, senza modello e senza web: creatività da dentro. Quasi tutti i sogni evaporano; solo quelli che TENGONO INSIEME (un filo vero fra i due mondi) si cristallizzano in nodi-ponte germinali, dietro la membrana.', 'When the flow lulls her to sleep, sleep is not empty: it RECOMBINES DISTANT memories — modules from far domains that normally never touch. It is the opposite of waking recall (which links the near): dreams link the far, and that is where novelty comes from. All OFFLINE, no model and no web: creativity from within. Almost all dreams evaporate; only those that HOLD TOGETHER (a real thread between the two worlds) crystallize into germinal bridge-nodes, behind the membrane.', 'Cuando el flujo la adormece, el sueño no está vacío: RECOMBINA recuerdos LEJANOS — módulos de dominios distantes que normalmente nunca se tocan. Es lo opuesto al recuerdo despierto (que une lo cercano): el sueño une lo lejano, y de ahí nace la novedad. Todo OFFLINE, sin modelo y sin web: creatividad desde dentro. Casi todos los sueños se evaporan; solo los que SE SOSTIENEN se cristalizan en nodos-puente germinales.')}</p>
       <p class="suggerimento">${L('sognati', 'dreamed', 'soñados')}: <strong>${so.totali || 0}</strong> · ${L('cristallizzati in nodi-ponte', 'crystallized into bridge-nodes', 'cristalizados en nodos-puente')}: <strong>${so.cristallizzati || 0}</strong> · ${L('tasso', 'rate', 'tasa')}: <strong>${tassoPct}%</strong></p>
       ${so.residuo ? `<p class="suggerimento">${L('Il residuo del sonno (ciò che si porta dietro al risveglio)', 'The dream residue (what she carries into waking)', 'El residuo del sueño (lo que se lleva al despertar)')}: <em>«${esc(String(so.residuo).slice(0, 160))}»</em></p>` : ''}
-      ${sogni.length ? `<details class="spazio-sopra" open><summary class="suggerimento" style="cursor:pointer">${L('Gli ultimi sogni', 'Her latest dreams', 'Sus últimos sueños')} (✦ = ${L('cristallizzato', 'crystallized', 'cristalizado')})</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${sogni.map(rigaSogno).join('')}</ul></details>` : `<p class="suggerimento">${L('Non ha ancora sognato — sogna nel sonno del flusso, o falla sognare adesso.', "She hasn't dreamed yet — she dreams in the flow's sleep, or make her dream now.", 'Aún no ha soñado — sueña en el sueño del flujo, o hazla soñar ahora.')}</p>`}
-      <div class="vita-azioni">
-        <button class="btn secondario" id="btn-sogna">${L('Falla sognare ora', 'Have her dream now', 'Que sueñe ahora')}</button>
-        <span id="sogno-esito" class="suggerimento"></span>
-      </div>`;
+      ${sogni.length ? `<details class="spazio-sopra" open><summary class="suggerimento" style="cursor:pointer">${L('Gli ultimi sogni', 'Her latest dreams', 'Sus últimos sueños')} (✦ = ${L('cristallizzato', 'crystallized', 'cristalizado')})</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${sogni.map(rigaSogno).join('')}</ul></details>` : `<p class="suggerimento">${L('Non ha ancora sognato — sogna nel sonno del flusso, sogna nel sonno del flusso.', "She hasn't dreamed yet — she dreams in the flow's sleep.", 'Aún no ha soñado — sueña en el sueño del flujo.')}</p>`}`;
   }
 
   const ra = d.racconto || null;
@@ -17562,11 +17558,7 @@ async function caricaVita() {
     <p class="suggerimento">${L('Nella sua VM Lia scrive piccoli programmi, li prova, e quelli che funzionano diventano sue capacità (nodi sperimentali, dietro la membrana). Autonomia reale, dentro il recinto.', 'In her VM Lia writes small programs, tests them, and the ones that work become her capabilities (experimental nodes, behind the membrane). Real autonomy, inside the box.', 'En su VM Lia escribe pequeños programas, los prueba, y los que funcionan se vuelven sus capacidades (nodos experimentales, tras la membrana). Autonomía real, dentro del recinto.')}</p>
     ${strum.length
       ? `<ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${strum.slice(-12).reverse().map((s) => `<li><code>${esc(String(s.nome || '').slice(0, 40))}</code> <span class="suggerimento">${esc(String(s.descrizione || '').slice(0, 90))}</span> <button class="btn secondario mini prova-strumento" data-nome="${esc(String(s.nome || ''))}">${L('prova', 'test', 'probar')}</button></li>`).join('')}</ul>`
-      : `<p class="suggerimento">${L('Non si è ancora costruita strumenti — ne crea da sola nel suo battito di vita, o premi qui sotto.', "She hasn't built any tools yet — she creates them on her own during her life loop, or press below.", 'Aún no se ha construido herramientas — las crea sola en su latido de vida, o pulsa abajo.')}</p>`}
-    <div class="vita-azioni">
-      <button class="btn secondario" id="btn-costruisci-strumento">${L('Falle costruire uno strumento ora', 'Have her build a tool now', 'Que construya una herramienta ahora')}</button>
-      <span id="strum-esito" class="suggerimento"></span>
-    </div>`;
+      : `<p class="suggerimento">${L('Non si è ancora costruita strumenti — se li crea da sola nel suo battito di vita.', "She hasn't built any tools yet — she creates them on her own during her life loop.", 'Aún no se ha construido herramientas — se las crea sola en su latido de vida.')}</p>`}`;
 
   let aa = null;
   try { aa = await api('/api/admin/autoautorialita'); } catch { aa = null; }
@@ -17597,8 +17589,6 @@ async function caricaVita() {
     ${blocoNucleo}
     <div class="vita-azioni">
       ${sandboxOff ? '' : `
-      <button class="btn secondario" id="btn-vivi">${_bIco(ICO.germoglio)}${L('Falla vivere un attimo', 'Let her live a moment', 'Deja que viva un momento')}</button>
-      <button class="btn secondario" id="btn-pubblico">${L('Aggiornala sul pubblico', 'Update her on the audience', 'Actualízala sobre el público')}</button>
       <button class="btn secondario" id="btn-mente">${L('Sincronizza la sua mente', 'Sync her mind', 'Sincronizar su mente')}</button>`}
       <button class="btn secondario mini" id="btn-vita-refresh">${L('Aggiorna', 'Refresh', 'Actualizar')}</button>
       <span id="vita-esito" class="suggerimento"></span>
@@ -17667,41 +17657,6 @@ async function caricaVita() {
       : L('Spento: torna il bot normale.', 'Off: back to the normal bot.', 'Apagado: vuelve el bot normal.');
     toast(attivo ? L('Lia è l’assistente', 'Lia is the assistant', 'Lia es la asistente') : L('Assistente autonomo spento', 'Autonomous assistant off', 'Asistente autónomo apagado'));
   }));
-  const fai = (tipo, attesa) => conErrore(async () => {
-    const e = document.getElementById('vita-esito');
-    if (e) e.textContent = attesa;
-    const r = await api('/api/admin/vita', { method: 'POST', body: { tipo } });
-    if (e) e.textContent = r && r.nota ? `«${esc(r.nota)}»` : L('fatto ✓', 'done ✓', 'hecho ✓');
-    setTimeout(caricaVita, 1200);
-  });
-  document.getElementById('btn-vivi')?.addEventListener('click', () => fai('vita',
-    L('Sta vivendo un attimo… (può metterci un po\')', 'Living a moment… (may take a bit)', 'Viviendo un momento… (puede tardar)')));
-  document.getElementById('btn-pubblico')?.addEventListener('click', () => fai('pubblico',
-    L('Si sta aggiornando sul pubblico…', 'Updating on the audience…', 'Actualizándose sobre el público…')));
-
-  document.getElementById('btn-costruisci-strumento')?.addEventListener('click', () => conErrore(async () => {
-    const e = document.getElementById('strum-esito');
-    if (e) e.textContent = L('Sta costruendo e provando uno strumento… (può metterci un po\')', 'Building and testing a tool… (may take a bit)', 'Construyendo y probando una herramienta… (puede tardar)');
-    const r = await api('/api/admin/strumenti/costruisci', { method: 'POST', body: {} });
-    if (e) e.textContent = (r && r.ok)
-      ? L('Fatto: ', 'Done: ', 'Hecho: ') + `«${esc(r.nome || '')}» — ${esc(r.descrizione || '')}`
-      : L('Stavolta non le è venuto uno strumento che funziona — riprova.', "This time she couldn't get a working tool — try again.", 'Esta vez no le salió una herramienta que funcione — reinténtalo.');
-    setTimeout(caricaVita, 1200);
-  }));
-
-  document.getElementById('btn-sogna')?.addEventListener('click', () => conErrore(async () => {
-    const e = document.getElementById('sogno-esito');
-    if (e) e.textContent = L('Sta sognando…', 'She is dreaming…', 'Está soñando…');
-    const r = await api('/api/admin/sogna', { method: 'POST', body: {} });
-    const s = r && r.sogno ? r.sogno : null;
-    if (e) e.textContent = (r && r.ok && s)
-      ? (s.cristallizzato
-          ? L('Ha sognato e cristallizzato un nodo-ponte: ', 'She dreamed and crystallized a bridge-node: ', 'Soñó y cristalizó un nodo-puente: ') + `${esc(String(s.immagine || ''))} → «${esc(String(s.modulo || ''))}»`
-          : L('Ha sognato (evaporato, non teneva insieme): ', 'She dreamed (evaporated, it did not hold): ', 'Soñó (evaporado, no se sostuvo): ') + esc(String(s.immagine || '')))
-      : ((r && r.ok) ? L('Troppo pochi ricordi attivi per sognare, per ora.', 'Too few active memories to dream, for now.', 'Muy pocos recuerdos activos para soñar, por ahora.') : L('Non è riuscita a sognare — riprova.', "She couldn't dream — try again.", 'No pudo soñar — reinténtalo.'));
-    setTimeout(caricaVita, 1200);
-  }));
-
   document.getElementById('btn-narra')?.addEventListener('click', () => conErrore(async () => {
     const e = document.getElementById('racconto-esito');
     if (e) e.textContent = L('Si sta raccontando…', 'She is telling her story…', 'Se está contando…');

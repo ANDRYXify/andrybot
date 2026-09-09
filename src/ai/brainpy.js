@@ -378,22 +378,6 @@ export async function vita() {
   finally { clearTimeout(to); }
 }
 
-// Falla vivere un attimo ORA: tipo='vita' (momento personale) o 'pubblico'
-// (si aggiorna sul suo pubblico). Ritorna {ok, tipo, nota} o null. Attesa ampia.
-export async function vivi(tipo = 'vita') {
-  const ac = new AbortController();
-  const to = setTimeout(() => ac.abort(), 70_000);
-  try {
-    const r = await fetch(BASE + '/vita', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tipo }), signal: ac.signal,
-    });
-    if (!r.ok) return null;
-    return await r.json().catch(() => null);
-  } catch (e) { log.debug('vivi:', e?.message || e); return null; }
-  finally { clearTimeout(to); }
-}
-
 // Distilla ORA le risposte del modello in moduli. Ritorna {ok, distillazione} o null.
 export async function distillaModuli() {
   const ac = new AbortController();
@@ -679,18 +663,10 @@ export async function sogno() {
   finally { clearTimeout(to); }
 }
 
-// SOGNA: fa sognare ORA a Lia una ricombinazione onirica (trigger manuale owner).
-// Ritorna {ok, sognato, sogno} o null. Non richiede la sandbox.
-export async function sogna() {
-  const ac = new AbortController();
-  const to = setTimeout(() => ac.abort(), 10000);
-  try {
-    const r = await fetch(BASE + '/sogna', { method: 'POST', signal: ac.signal });
-    if (!r.ok) return null;
-    return await r.json().catch(() => null);
-  } catch (e) { log.debug('sogna:', e?.message || e); return null; }
-  finally { clearTimeout(to); }
-}
+// Qui NON c'e' un ponte verso /vita, /sogna e /costruisci_strumento del cervello, e
+// non e' una dimenticanza: sono le cose che la fanno CRESCERE, e devono partire da lei.
+// Il sito puo' guardarla crescere, non farla crescere. Questo file e' il collo di
+// bottiglia — senza ponte qui, nessuna rotta puo' esistere altrove.
 
 // RACCONTO: il capitolo corrente della sua storia in prima persona (identità come
 // narrazione), quanti capitoli, i colpi di scena in sospeso. Ritorna {ok, racconto} o
@@ -851,19 +827,6 @@ export async function strumenti() {
     if (!r.ok) return null;
     return await r.json().catch(() => null);
   } catch (e) { log.debug('strumenti:', e?.message || e); return null; }
-  finally { clearTimeout(to); }
-}
-
-// Fa costruire ORA a Lia uno strumento nel suo computer (owner). Può metterci un po'
-// (LLM + prova nella sandbox). Ritorna {ok, nome, descrizione} o null.
-export async function costruisciStrumento() {
-  const ac = new AbortController();
-  const to = setTimeout(() => ac.abort(), 90_000);
-  try {
-    const r = await fetch(BASE + '/costruisci_strumento', { method: 'POST', signal: ac.signal });
-    if (!r.ok) return null;
-    return await r.json().catch(() => null);
-  } catch (e) { log.debug('costruisciStrumento:', e?.message || e); return null; }
   finally { clearTimeout(to); }
 }
 
