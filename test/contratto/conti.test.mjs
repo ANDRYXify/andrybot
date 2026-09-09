@@ -78,14 +78,25 @@ test('i numeri si scrivono all\'italiana', () => {
   assert.equal(scrivi(100 / 7), '14,285714');
 });
 
-test('il conto non passa dal modello, e viene prima di tutto', () => {
-  // Il collegamento: senza, tutto quanto sopra passa e in chat non cambia niente.
+test('il conto e\' la RETE, non la prima cosa: davanti c\'e\' lei', () => {
+  // Cambiato di posto, e la ragione conta. All'inizio stava in cima alla catena
+  // degli intenti — istantaneo e sempre giusto, sembrava ovvio. Ma il calcolo lo
+  // sa fare anche LEI, in millisecondi (la sua via `calcolo` non passa da nessun
+  // modello), e metterlo davanti voleva dire toglierle di bocca proprio le
+  // domande che sa: le sue vie di ragionamento restavano a zero per sempre.
+  //
+  // Adesso: prima lei, poi la rete. Se il cervello e' spento il conto si fa
+  // comunque, e chi guarda la chat non vede differenza.
   const brain = readFileSync(join(RAD, 'src/ai/brain.js'), 'utf8');
   const i = brain.indexOf('INTENTI FATTUALI');
   const j = brain.indexOf('che gioco / a cosa giochi', i);
   assert.ok(i > 0 && j > i, 'la catena degli intenti si trova');
-  assert.ok(brain.slice(i, j).includes('conti.risolvi('),
-    'il conto sta in cima alla catena, prima di ogni altro intento e del modello');
+  assert.ok(!brain.slice(i, j).includes('conti.risolvi('),
+    'il conto NON sta piu\' in cima: davanti passa lei');
+  const cervello = brain.indexOf('IL CERVELLO PARLA');
+  const ripiego = brain.indexOf('FALLBACK quando il modello', cervello);
+  assert.ok(brain.indexOf('conti.risolvi(') > ripiego,
+    'sta nel ripiego, dopo che il cervello ha avuto la sua occasione');
 });
 
 test('nessun eval: il testo di uno sconosciuto non si esegue', () => {

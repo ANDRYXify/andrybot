@@ -64,6 +64,14 @@ const TIMEOUT_CHAT = Number(process.env.BRAIN_TIMEOUT_MS || '15000') || 15000;
 //
 // Non c'e' una coda: mettersi in fila davanti a una scadenza vuol dire solo
 // arrivare tardi con piu' passi.
+// Quello che LEI ha insegnato nell'ultima risposta, se ha insegnato qualcosa. Si
+// legge subito dopo la chiamata, come ultima_via() dal lato suo: passa di qui e
+// non da un valore di ritorno diverso, perche' i punti che chiamano rispondi()
+// sono nove e cambiarli tutti per un caso solo e' il modo di sbagliarne uno.
+// Non c'e' corsa: dal cervello passa un pensiero alla volta.
+let _insegna = null;
+export const ultimaInsegna = () => _insegna;
+
 let pensando = 0;
 let ultimaPersona = 0;                 // quando ha chiesto l'ultima persona
 const RISPETTO_MS = 60_000;            // per quanto il bot smette di rimuginare dopo
@@ -85,6 +93,7 @@ export async function rispondi({ canale, canaleId, login, nome, testo, tono, con
     return null;
   }
   if (!sfondo) ultimaPersona = Date.now();
+  _insegna = null;
   pensando++;
   try {
     return await _rispondi({ canale, canaleId, login, nome, testo, tono, conoscenza, scheda, stile, storia, situazione, timeoutMs, modo, nomeBot, spunto, lineeGuida, web, via, compito, ruolo, iniziativa });
@@ -113,6 +122,7 @@ async function _rispondi({ canale, canaleId, login, nome, testo, tono, conoscenz
     });
     if (!r.ok) return null;
     const d = await r.json().catch(() => null);
+    _insegna = (d && d.insegna && d.insegna.domanda && d.insegna.risposta) ? d.insegna : null;
     return d && d.risposta ? String(d.risposta) : null;
   } catch (e) {
     log.debug('chat:', e?.message || e);
