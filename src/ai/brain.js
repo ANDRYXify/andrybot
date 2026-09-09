@@ -599,9 +599,11 @@ export class Brain {
   }
 
   // Cerca online se acceso e se ha senso. Ritorna un breve riferimento o null.
-  async _cercaWeb(channel, testo) {
+  // L'attesa cambia col posto: in chat pubblica una risposta lenta e' persa, in
+  // un messaggio privato si puo' aspettare.
+  async _cercaWeb(channel, testo, attesa) {
     if (!this._internetOn(channel) || !this._sembraDomanda(testo)) return null;
-    try { return await internet.cerca(testo); } catch { return null; }
+    try { return await internet.cerca(testo, attesa ? { attesa } : undefined); } catch { return null; }
   }
 
   // Il nome della "persona" (dall'anima condivisa): è così che si presenta nei DM.
@@ -1108,11 +1110,18 @@ export class Brain {
         //
         // L'attesa e' corta di proposito: in chat la risposta lenta e' persa, e
         // 3 secondi piu' il pensiero del modello sono gia' tanti.
-        let web = null;
-        const domanda = text.includes('?') || /^(chi|cosa|che cos|come|quando|dove|perch|quanto|quale|qual)\b/i.test(String(text).trim());
-        if (domanda && menziona && !conoscenza?.length && this._internetOn(channel)) {
-          try { web = await internet.cerca(text, { attesa: 3000 }); } catch { web = null; }
-        }
+        // La regola su QUANDO ha senso cercare sta gia' in _cercaWeb, e non se ne
+        // scrive una seconda qui accanto: due criteri per la stessa domanda
+        // divergono, e il primo che avevo scritto — «cerca solo se non ho
+        // conoscenza» — non avrebbe fatto partire la ricerca mai. Perche'
+        // _conoscenzaPertinente non ha nessuna soglia: restituisce fino a sei voci
+        // sempre, se il canale ne ha almeno una. Sarebbe stata una riga che sembra
+        // fare qualcosa e non fa niente, scritta dentro la correzione dello stesso
+        // difetto.
+        //
+        // E la conoscenza non c'entra comunque: se ci fosse stata una voce che
+        // risponde davvero, saremmo usciti prima, al punto b.
+        const web = menziona ? await this._cercaWeb(channel, text, 3000) : null;
         const risposta = await brainpy.rispondi({
           web,   // quello che ha trovato: materiale da dire con parole sue
           via: 'bot',   // la chat pubblica è del BOT, non di Lei (docs/BOT-E-LIA.md)
