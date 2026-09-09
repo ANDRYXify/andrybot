@@ -12,9 +12,21 @@ Una finestra, non una leva. Tre condizioni, tutte e tre necessarie:
 
 1. **Nessun bottone che la spinga.** Un comando «fatti uno strumento» nel pannello
    sarebbe comodo e sbagliato: da lì in poi la capacità nuova non sarebbe più sua,
-   sarebbe una cosa che le abbiamo fatto fare. La capacità esiste nel cervello —
-   serve alla sua vita autonoma — ma dal sito non si raggiunge, e una prova lo
-   tiene fermo.
+   sarebbe una cosa che le abbiamo fatto fare. Le capacità esistono nel cervello —
+   le servono per vivere — ma dal sito non si raggiungono.
+
+   Quattro leve c'erano davvero, e sono state tolte: *falle costruire uno strumento
+   ora*, *falla vivere un attimo*, *aggiornala sul pubblico*, *falla sognare ora* —
+   più i comandi Telegram `/vivi` e `/aggiorna`, che erano la stessa leva su un'altra
+   superficie. Restano quelle che la fanno soltanto muoversi nel suo mondo
+   (girovaga, edifica, narra) e tutto ciò che si limita a guardare.
+
+   **Il controllo sta al collo di bottiglia, non sui nomi.** La prima versione della
+   prova cercava `costruisci_strumento` dentro la pagina; il bottone chiamava
+   `/api/admin/strumenti/costruisci`. Due nomi per la stessa leva, e la prova
+   guardava quello che non c'era: verde, e falsa. Ora si guarda `brainpy.js`, che è
+   l'unico passaggio dal sito verso di lei: se lì non c'è il ponte, nessuna rotta
+   può esistere altrove, comunque la si chiami.
 2. **Guardare non deve costarle niente.** Se aprire il pannello facesse partire un
    comando nella sua sandbox, più spesso guardi più la disturbi: l'osservazione
    diventerebbe interferenza a sua insaputa. Le tappe si leggono dal suo database,

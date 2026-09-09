@@ -137,18 +137,31 @@ test('il nome arriva intero dal suo database alla pagina', () => {
   assert.match(cruscotto, /Le sue prime volte/, 'e lo mostra');
 });
 
-test('guardarla non la muove: nessuna leva accanto alla finestra', () => {
-  // Il punto della richiesta: vedere i progressi SENZA interferire. Un bottone
-  // «fatti uno strumento» sarebbe comodo e sbagliato — la crescita smetterebbe di
-  // essere sua. Qui si verifica che non ci sia, e che non ci finisca domani.
+test('dal sito non parte nessun ordine che la faccia crescere', () => {
+  // LA PRIMA VERSIONE DI QUESTA PROVA ERA VERDE E SBAGLIATA. Cercava il nome del
+  // cervello (`costruisci_strumento`) dentro la pagina, mentre il bottone chiamava
+  // la rotta del sito (`/api/admin/strumenti/costruisci`): due nomi per la stessa
+  // leva, e la prova guardava quello che non c'era. Un verde falso e' peggio di un
+  // rosso — garantiva un'assenza che non c'era.
+  //
+  // Ora si guarda il COLLO DI BOTTIGLIA. Ogni strada dal sito verso di lei passa da
+  // brainpy.js: se li' non c'e' il ponte, nessuna rotta puo' esistere altrove,
+  // comunque la si chiami. Non e' una ricerca di nomi, e' l'unico passaggio.
+  const ponte = leggi('src/ai/brainpy.js');
+  const CRESCITA = ['/vita', '/sogna', '/costruisci_strumento'];
+  for (const via of CRESCITA) {
+    for (const m of ponte.matchAll(new RegExp(`fetch\\(BASE \\+ '${via}'([^)]*)\\)`, 'g'))) {
+      assert.ok(!/POST/.test(m[1]), `nessuno puo' ordinarle ${via} dal sito`);
+    }
+  }
+  // e le due strade che restano verso quegli indirizzi sono letture, non ordini
+  assert.match(ponte, /fetch\(BASE \+ '\/vita', \{ signal/, 'di /vita resta solo la lettura');
+  assert.match(ponte, /fetch\(BASE \+ '\/sogno', \{ signal/, 'e dei sogni resta solo il racconto');
+
   const pagina = leggi('src/web/public/app.js');
   const dove = pagina.indexOf('function _menteCruscotto(d)');
   const cruscotto = pagina.slice(dove, pagina.indexOf('function _menteFirma(d)', dove));
-  assert.ok(!/<button/.test(cruscotto), 'il cruscotto di come ragiona si legge e basta');
-
-  // e da nessuna parte, nel sito, si puo' ordinarle di costruirsi uno strumento
-  assert.ok(!/costruisci_strumento/.test(pagina), 'la pagina non sa nemmeno come chiederglielo');
-  assert.ok(!/costruisci_strumento/.test(leggi('src/web/server.js')), 'e il server non le apre la strada');
+  assert.ok(!/<button/.test(cruscotto), 'e il cruscotto di come ragiona si legge e basta');
 });
 
 test('guardare le tappe non le costa un comando nel suo computer', () => {

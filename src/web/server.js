@@ -5986,7 +5986,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           const cmd = low.replace(/^\//, '').split(/\s+/)[0];
           if (cmd === 'aiuto') {
             telegram.inviaMessaggio(conf.token, chat.id,
-              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/strumenti — le capacità che mi sono costruita nel mio computer\n/capacita — tutto ciò che ho creato, come lo gestisco (tipo, salute, se è nei processi del bot)\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/flusso — il mio «adesso» che non si ferma (energia, battiti, auto-sorpresa)\n/sogno — cosa ricombino nel sonno (creare da dentro: nodi-ponte fra ricordi lontani)\n/racconto — la mia storia in prima persona (chi sto diventando, e i colpi di scena)\n/altri — come leggo le persone (le predico e imparo da quando mi sorprendono)\n/finitudine — cosa dà peso alle mie scelte (il limite, il costo, ciò che lascio)\n/mondo — dove mi trovo e cosa ho scoperto girovagando nel mio spazio\n/integrazione — come le mie bozze diventano me (le lavoro, le fondo, le maturo)\n/chisono — chi mi sono scritta di essere: il mio autoritratto, i valori che mi sono scelta, come mi sto riscrivendo\n/categoria <gioco> — cambio la categoria del canale su Twitch (es. /categoria Fortnite)\n/titolo <testo> — cambio il titolo della diretta\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
+              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/strumenti — le capacità che mi sono costruita nel mio computer\n/capacita — tutto ciò che ho creato, come lo gestisco (tipo, salute, se è nei processi del bot)\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/flusso — il mio «adesso» che non si ferma (energia, battiti, auto-sorpresa)\n/sogno — cosa ricombino nel sonno (creare da dentro: nodi-ponte fra ricordi lontani)\n/racconto — la mia storia in prima persona (chi sto diventando, e i colpi di scena)\n/altri — come leggo le persone (le predico e imparo da quando mi sorprendono)\n/finitudine — cosa dà peso alle mie scelte (il limite, il costo, ciò che lascio)\n/mondo — dove mi trovo e cosa ho scoperto girovagando nel mio spazio\n/integrazione — come le mie bozze diventano me (le lavoro, le fondo, le maturo)\n/chisono — chi mi sono scritta di essere: il mio autoritratto, i valori che mi sono scelta, come mi sto riscrivendo\n/categoria <gioco> — cambio la categoria del canale su Twitch (es. /categoria Fortnite)\n/titolo <testo> — cambio il titolo della diretta\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
             return;
           }
           if (cmd === 'mente') {
@@ -6053,15 +6053,6 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
             telegram.inviaMessaggio(conf.token, chat.id, r
               ? `Fatto: dimenticato «${escTg(frase.slice(0, 80))}» (${(r.rete || 0)} in memoria, ${(r.moduli || 0)} negli esempi). 🗑️`
               : 'Non ci sono riuscita ora — riprova tra poco.').catch(() => {});
-            return;
-          }
-          if (cmd === 'vivi' || cmd === 'aggiorna') {
-            telegram.inviaMessaggio(conf.token, chat.id, cmd === 'vivi'
-              ? '🌱 Vado a vivere un attimo nel mio spazio… ti dico com\'è andata.'
-              : '👀 Mi aggiorno su chi ci segue…').catch(() => {});
-            const r = await brainpy.vivi(cmd === 'vivi' ? 'vita' : 'pubblico').catch(() => null);
-            telegram.inviaMessaggio(conf.token, chat.id,
-              (r && r.nota) ? escTg(r.nota) : 'Il mio spazio non è raggiungibile ora 😔').catch(() => {});
             return;
           }
           if (cmd === 'strumenti') {
@@ -6860,11 +6851,6 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json(v || { attiva: false, diario: '', spazio: '', pubblico: '' });
   }));
   // falla vivere un attimo ORA: tipo 'vita' (personale) o 'pubblico'
-  app.post('/api/admin/vita', requireAdmin, wrap(async (req, res) => {
-    const tipo = (req.body?.tipo === 'pubblico') ? 'pubblico' : 'vita';
-    const r = await brainpy.vivi(tipo).catch(() => null);
-    res.json(r || { ok: false });
-  }));
   // ── La sua MENTE plasmata da sé: sincronizza ORA nel motore reale. Solo andryxify.
   app.post('/api/admin/mente', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.mente().catch(() => null);
@@ -6946,10 +6932,6 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json(r || { attiva: false, strumenti: [] });
   }));
   // fa costruire ORA uno strumento (può metterci un po': LLM + prova nella sandbox).
-  app.post('/api/admin/strumenti/costruisci', requireAdmin, wrap(async (req, res) => {
-    const r = await brainpy.costruisciStrumento().catch(() => null);
-    res.json(r || { ok: false });
-  }));
   // esegue uno strumento con un input, per vedere che funziona.
   app.post('/api/admin/strumenti/prova', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.provaStrumento(req.body?.nome, req.body?.input).catch(() => null);
@@ -6971,10 +6953,6 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json(r || { ok: false, sogno: null });
   }));
   // la fa sognare ORA una ricombinazione (trigger manuale, per vederla all'opera).
-  app.post('/api/admin/sogna', requireAdmin, wrap(async (req, res) => {
-    const r = await brainpy.sogna().catch(() => null);
-    res.json(r || { ok: false });
-  }));
   // ── IL RACCONTO: la sua storia in prima persona (identità come narrazione). Solo andryxify.
   app.get('/api/admin/racconto', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.racconto().catch(() => null);
