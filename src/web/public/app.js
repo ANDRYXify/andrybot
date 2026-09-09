@@ -12289,7 +12289,7 @@ function pannelloGiochi() {
       <h2>${_hIco(ICO.persona)}${L('Battute', 'Jokes', 'Chistes')}</h2>
       <p>${L('Quelle che funzionano nel tuo canale le sai tu. Il bot le dice con !battuta, e ogni tanto da solo se lasci accesa la chat autonoma.', 'You know which ones work in your channel. The bot tells them with !battuta, and now and then on its own if you leave autonomous chatting on.', 'Tú sabes cuáles funcionan en tu canal. El bot los cuenta con !battuta, y de vez en cuando solo si dejas activado el chat autónomo.')}</p>
       <div class="riga-flessibile">
-        <input type="text" id="inp-battuta" maxlength="300" placeholder="${esc(L('Scrivi una battuta…', 'Write a joke…', 'Escribe un chiste…'))}">
+        <input type="text" id="inp-battuta" maxlength="300" aria-label="${esc(L('Scrivi una battuta', 'Write a joke', 'Escribe un chiste'))}" placeholder="${esc(L('Scrivi una battuta…', 'Write a joke…', 'Escribe un chiste…'))}">
         <button class="btn" id="btn-aggiungi-battuta">${L('Aggiungi', 'Add', 'Añadir')}</button>
       </div>
       <div class="riga-check">
