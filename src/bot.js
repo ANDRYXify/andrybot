@@ -313,6 +313,16 @@ export class BotManager {
           // nemmeno una chiamata in piu' a Twitch.
           try { games.giroMonete(login, chatters, { live: true }); }
           catch (e) { log.debug(`#${login} monete:`, e?.message || e); }
+          // E la presenza, che finora si deduceva dal parlare. Dedurla dal
+          // parlare ha un buco che non si chiude con un caso particolare: i
+          // messaggi che il bot manda non gli tornano indietro su IRC (serve a
+          // non fare loop), e il bot parla con l'account dello STREAMER. Quindi
+          // l'unico account che non poteva risultare in chat era proprio il suo,
+          // e !duello rispondeva che non c'era mentre stava parlando. Chi c'e' e
+          // sta zitto aveva lo stesso problema. Questa lista la da' Twitch: dice
+          // chi e' nella stanza, non chi ha parlato di recente.
+          try { for (const u of chatters) games.segnaPresenza(login, u); }
+          catch (e) { log.debug(`#${login} presenze:`, e?.message || e); }
         }
       } catch (e) { log.debug(`#${login} ore:`, e?.message || e); }
     }

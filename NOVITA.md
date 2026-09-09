@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- Puoi sfidare a duello lo streamer. Il bot parla con il suo account e non vede i propri messaggi, quindi lui risultava sempre «non in chat» anche mentre stava scrivendo.
+- Si può sfidare anche chi c'è e sta zitto. Prima contava solo chi aveva parlato negli ultimi trenta minuti, e metà della chat era invisibile.
+
 - La scheda del giro guidato non sporge più dal bordo dello schermo mentre compare. Entrava salendo di quattordici pixel, e quando si appoggiava in fondo quei pixel la portavano fuori.
 
 - Sulla pagina link, un avatar con l'indirizzo rotto mostra l'iniziale invece dell'icona di immagine spezzata. Il ripiego c'era da tempo, ma il browser lo rifiutava e non era mai partito.
