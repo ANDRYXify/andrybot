@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- L'interruttore delle battute automatiche si spegne da solo se la chat autonoma è spenta, e dice perché: prima si poteva accendere senza che cambiasse niente.
+
 - Le ricette e le domande da enciclopedia funzionano davvero: prima la ricerca non partiva mai e il bot ripiegava su «insegnamela dalla dashboard».
 - Il comando delle battute si può rinominare e spegnere dal pannello come tutti gli altri, e ha una sua voce fra le famiglie.
 

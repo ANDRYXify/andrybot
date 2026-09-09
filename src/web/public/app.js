@@ -12292,10 +12292,15 @@ function pannelloGiochi() {
         <input type="text" id="inp-battuta" maxlength="300" aria-label="${esc(L('Scrivi una battuta', 'Write a joke', 'Escribe un chiste'))}" placeholder="${esc(L('Scrivi una battuta…', 'Write a joke…', 'Escribe un chiste…'))}">
         <button class="btn" id="btn-aggiungi-battuta">${L('Aggiungi', 'Add', 'Añadir')}</button>
       </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-battute-auto" ${impostazioni().battuteAuto !== false ? 'checked' : ''}>
+      ${(() => {
+        const i = impostazioni();
+        const autonomia = i.proattivo !== false && Number(i.spontaneita || 0) > 0;
+        return `<div class="riga-check">
+        <input type="checkbox" id="chk-battute-auto" ${i.battuteAuto !== false ? 'checked' : ''}${autonomia ? '' : ' disabled'}>
         <label for="chk-battute-auto">${L('Ogni tanto ne dice una da solo', 'Now and then it tells one on its own', 'De vez en cuando cuenta uno solo')}</label>
       </div>
+      ${autonomia ? '' : `<p class="suggerimento">${L('Per questo serve la <strong>chat autonoma</strong> accesa in Personalità: senza, il bot non parla mai di sua iniziativa e questo interruttore non cambierebbe niente.', 'This needs <strong>autonomous chatting</strong> switched on under Personality: without it the bot never speaks on its own and this switch would change nothing.', 'Para esto hace falta el <strong>chat autónomo</strong> activado en Personalidad: sin él el bot nunca habla por su cuenta y este interruptor no cambiaría nada.')}</p>`}`;
+      })()}
       <p class="suggerimento">${L('Esce sempre la meno detta di recente, e quelle che fanno ridere escono più spesso: dopo ogni battuta il bot conta quante persone ridono davvero.', 'The least recently told one comes out, and the ones that land come out more often: after each joke the bot counts how many people actually laugh.', 'Sale el menos contado recientemente, y los que funcionan salen más a menudo: tras cada chiste el bot cuenta cuántas personas se ríen de verdad.')}</p>
       <ul class="lista-voci" id="lista-battute"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>`);
