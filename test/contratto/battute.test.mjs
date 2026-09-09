@@ -206,3 +206,17 @@ test('il respiro delle chiacchiere spontanee resta dov\'era', async () => {
   for (let i = 0; i < 50; i++) if (b.shouldReply({ ...base, user: 'x', text: 'che bella giornata oggi' })) parlato = true;
   assert.equal(parlato, false, 'senza chiamarlo, il respiro lungo resta');
 });
+
+test('l\'interruttore delle battute autonome non mente', () => {
+  // Stava in Giochi, ma la funzione parte solo se in Personalita' e' accesa la
+  // chat autonoma: si poteva spuntarlo, vederlo spuntato, e non succedere niente.
+  // Un comando che sembra fare qualcosa e non fa niente e' il difetto di casa.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const i = app.indexOf('chk-battute-auto');
+  assert.ok(i > 0, 'l\'interruttore c\'è');
+  const intorno = app.slice(i - 700, i + 900);
+  assert.ok(/proattivo !== false/.test(intorno) && /spontaneita/.test(intorno),
+    'guarda se la chat autonoma è accesa');
+  assert.ok(/disabled/.test(intorno), 'e si spegne quando non potrebbe funzionare');
+  assert.ok(/chat autonoma/i.test(intorno), 'dicendo perché, invece di restare muto');
+});
