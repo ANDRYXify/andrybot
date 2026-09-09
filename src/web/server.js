@@ -19,7 +19,7 @@ import { config, SCOPES, missingConfig } from '../config.js';
 import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive } from '../db.js';
-import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
+import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
@@ -3347,6 +3347,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (typeof b.carattere !== 'string') return res.status(400).json({ errore: 'carattere non valido' });
       out.carattere = b.carattere.replace(/\s+/g, ' ').trim().slice(0, 300);
     }
+    if (b.battuteAuto !== undefined) {
+      out.battuteAuto = !!b.battuteAuto;
+    }
     if (b.spontaneita !== undefined) {
       const n = Number(b.spontaneita);
       if (!Number.isFinite(n)) return res.status(400).json({ errore: 'spontaneita non valida' });
@@ -5138,6 +5141,28 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: true });
   }));
 
+  // battute (!battuta) — elenco/aggiungi/rimuovi dalla dashboard.
+  // L'elenco porta anche quante volte e' stata detta e quante volte ha fatto
+  // ridere: sono i numeri con cui il serbatoio sceglie, e vederli e' il modo per
+  // capire quali tenere. Nasconderli darebbe un elenco che si ordina da solo
+  // senza che si sappia perche'.
+  app.get('/api/streamer/battute', requireLogin, wrap(async (req, res) => {
+    res.json(battute.list(currentUser(req).login).map((b) => ({
+      n: b.n, testo: b.testo, fonte: b.fonte, dette: b.dette, risate: b.risate, ts: b.ts,
+    })));
+  }));
+  app.post('/api/streamer/battute', requireLogin, wrap(async (req, res) => {
+    const testo = String(req.body?.testo || '').trim();
+    if (!testo) return res.status(400).json({ errore: 'testo mancante' });
+    const n = battute.add(currentUser(req).login, testo, currentUser(req).login, 'mano');
+    if (!n) return res.status(400).json({ errore: 'questa battuta c\'è già, o è troppo corta' });
+    res.json({ ok: true, n });
+  }));
+  app.delete('/api/streamer/battute/:n', requireLogin, wrap(async (req, res) => {
+    battute.remove(currentUser(req).login, parseInt(req.params.n, 10) || 0);
+    res.json({ ok: true });
+  }));
+
   // citazioni (!cita) — elenco/aggiungi/rimuovi dalla dashboard
   app.get('/api/streamer/citazioni', requireLogin, wrap(async (req, res) => {
     res.json(quotes.list(currentUser(req).login).map((q) => ({ n: q.n, text: q.text, added_by: q.added_by, ts: q.ts })));
@@ -6671,6 +6696,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.carattere !== undefined) {
       if (typeof b.carattere !== 'string') return res.status(400).json({ errore: 'carattere non valido' });
       patch.carattere = b.carattere.replace(/\s+/g, ' ').trim().slice(0, 300);
+    }
+    if (b.battuteAuto !== undefined) {
+      patch.battuteAuto = !!b.battuteAuto;
     }
     if (b.umore !== undefined) patch.umore = Math.min(100, Math.max(0, Math.round(Number(b.umore)) || 0));
     if (b.energia !== undefined) patch.energia = Math.min(100, Math.max(0, Math.round(Number(b.energia)) || 0));

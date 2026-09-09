@@ -18,7 +18,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { paroleChiave, scomponi, sezioni, punteggio, scegliPasso } from '../../src/features/web.js';
+import { paroleChiave, scomponi, sezioni, punteggio, scegliPasso, piattoDi } from '../../src/features/web.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -74,6 +74,18 @@ test('senza nessun aggancio con la domanda si tace', () => {
   assert.equal(scegliPasso(ESTRATTO, 'quotazione del bitcoin'), null,
     'meglio niente che un pezzo di testo a caso');
   assert.equal(scegliPasso('', 'qualcosa'), null);
+});
+
+test('il piatto si trova dove sta nella frase, non a inizio riga', () => {
+  // Provando con «ricetta carbonara» funzionava. Una persona pero' scrive
+  // «Bot mi dai la ricetta della carbonara?», e con l'ancora a inizio riga non
+  // si trovava niente: questa l'ha trovata uno screenshot di chat vera, non io.
+  assert.equal(piattoDi('Bot mi dai la ricetta della carbonara?'), 'carbonara');
+  assert.equal(piattoDi('ricetta carbonara'), 'carbonara');
+  assert.equal(piattoDi('come si prepara il tiramisù'), 'tiramisù');
+  assert.equal(piattoDi('mi dici gli ingredienti della cacio e pepe'), 'cacio e pepe');
+  assert.equal(piattoDi('bot come si fa la pizza margherita'), 'pizza margherita');
+  assert.equal(piattoDi('ciao come va'), null, 'dove non c\'e un piatto non se ne inventa uno');
 });
 
 test('il materiale dal web arriva AL MODELLO, non solo al ripiego', () => {

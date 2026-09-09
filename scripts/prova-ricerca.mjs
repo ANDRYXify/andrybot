@@ -17,6 +17,9 @@ const BANCO = [
   ["popolazione dell'Italia", /\d{7,}/],
   ['regista di Inception', /nolan/i],
   ['ricetta carbonara', /guanciale|uovo|uova|pecorino/i],
+  // come la scrive una persona in chat, non come la scrive chi fa le prove
+  ['Bot mi dai la ricetta della carbonara?', /guanciale|uovo|uova|pecorino/i],
+  ['mi dici gli ingredienti della cacio e pepe', /pecorino|pepe/i],
   ['come si prepara il tiramisù', /savoiardi|mascarpone|caff/i],
   ['chi era Leonardo da Vinci', /(pittore|inventore|artista|scienziato)/i],
 ];

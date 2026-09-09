@@ -17,6 +17,17 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- Se chiami il bot per nome ti risponde sempre. Prima, dopo una risposta restava muto per quarantacinque secondi anche a chi lo chiamava: sembrava morto.
+- Ogni tanto dice una battuta da solo, se lasci accesa la chat autonoma. Si spegne dalla scheda Giochi.
+- Le battute che fanno ridere escono più spesso: dopo ognuna il bot conta quante persone diverse ridono davvero.
+- Le battute si gestiscono anche dalla dashboard, con quante volte sono state dette e quante hanno funzionato.
+- Quello che il bot trova cercando se lo scrive. La stessa domanda, la seconda volta, ha risposta immediata.
+
+- Nuovo comando !battuta. Il bot pesca dal serbatoio del canale, e mod e streamer lo riempiono con !battuta aggiungi.
+- Non ripete: esce sempre la meno detta di recente, non una a caso.
+- Se il serbatoio è vuoto se ne fa venire una dal cervello, con il carattere del canale addosso.
+- Le ricette funzionano anche chiedendole come si chiedono davvero: «Bot mi dai la ricetta della carbonara?», non solo «ricetta carbonara».
+
 - Il bot risponde alle domande cercando davvero. Prima restituiva l'introduzione di Wikipedia: a «capitale della Francia» rispondeva quanto è grande la Francia.
 - Le ricette arrivano dal ricettario, non dall'enciclopedia: ingredienti e una riga di preparazione, non la storia del piatto.
 - Quello che trova lo dice con parole sue, nel tono che gli hai dato. Prima il testo trovato usciva grezzo, e solo quando il modello era spento.

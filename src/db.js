@@ -384,6 +384,20 @@ CREATE TABLE IF NOT EXISTS quotes (       -- citazioni della chat (!cita)
 );
 CREATE INDEX IF NOT EXISTS idx_quotes_channel ON quotes(channel, n);
 
+CREATE TABLE IF NOT EXISTS battute (     -- il serbatoio delle battute del canale (!battuta)
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  n INTEGER NOT NULL,                     -- numero stabile per canale: !battuta 7 punta sempre a quella
+  testo TEXT NOT NULL,
+  added_by TEXT NOT NULL DEFAULT '',
+  fonte TEXT NOT NULL DEFAULT 'mano',     -- 'mano' = scritta dallo streamer, 'ia' = inventata e tenuta
+  usata_ts INTEGER NOT NULL DEFAULT 0,    -- quando e' stata detta l'ultima volta: per non ripetersi
+  dette INTEGER NOT NULL DEFAULT 0,       -- quante volte e' stata detta
+  risate INTEGER NOT NULL DEFAULT 0,      -- quante volte la chat ha riso davvero (misurato, non stimato)
+  ts INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_battute_channel ON battute(channel, n);
+
 CREATE TABLE IF NOT EXISTS compleanni (   -- compleanni dei membri del gruppo Telegram
   channel TEXT NOT NULL,                   -- login twitch (proprietario del bot Telegram)
   tg_user_id TEXT NOT NULL,                -- id Telegram del membro (o "man_..." se aggiunto a mano)
@@ -535,6 +549,12 @@ function aggiungiColonna(tabella, colonna, definizione) {
     if (!/duplicate column name/i.test(e?.message || '')) throw e;
   }
 }
+// La presa sul pubblico si e' aggiunta dopo il serbatoio: CREATE TABLE IF NOT
+// EXISTS non tocca una tabella che c'e' gia', e senza queste due righe un
+// database che aveva gia' visto le battute restava senza le colonne — con
+// l'errore inghiottito dal try/catch, quindi muto.
+aggiungiColonna('battute', 'dette', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('battute', 'risate', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('point_alerts', 'suono', "TEXT NOT NULL DEFAULT ''");   // suono PRESET sul riscatto (id preset)
 aggiungiColonna('point_alerts', 'opzioni', "TEXT NOT NULL DEFAULT ''"); // posizione + green screen dell'effetto (JSON)
 // Effetti a schermo: posizione/dimensione/rotazione, gestite dall'Overlay Studio.
@@ -1311,6 +1331,61 @@ export const passkeys = {
 };
 
 // ---------------------------------------------------------------- citazioni (!cita)
+// Le battute del canale. Come le citazioni per la forma, diverse per il verso:
+// una citazione la si cerca, una battuta la si tira fuori — e non due volte di
+// fila. Per questo qui c'e' `usata_ts`: si pesca fra quelle dette meno di
+// recente invece che a caso, se no in una serata la stessa esce tre volte.
+export const battute = {
+  add(channel, testo, by = '', fonte = 'mano') {
+    const ch = String(channel).toLowerCase();
+    const t = String(testo || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+    if (t.length < 3) return null;
+    const norm = (x) => x.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    const testi = db.prepare('SELECT testo FROM battute WHERE channel=?').all(ch).map((r) => norm(r.testo));
+    if (testi.includes(norm(t))) return null;          // gia' c'e': non si duplica
+    const n = (db.prepare('SELECT MAX(n) m FROM battute WHERE channel=?').get(ch).m || 0) + 1;
+    db.prepare('INSERT INTO battute (channel, n, testo, added_by, fonte, usata_ts, ts) VALUES (?,?,?,?,?,?,?)')
+      .run(ch, n, t, String(by).toLowerCase(), fonte === 'ia' ? 'ia' : 'mano', 0, now());
+    return n;
+  },
+  get(channel, n) {
+    return db.prepare('SELECT * FROM battute WHERE channel=? AND n=?').get(String(channel).toLowerCase(), Number(n) || 0) || null;
+  },
+  // Quale battuta esce. Due cose insieme, e nessuna delle due e' il caso:
+  //
+  //  · la meno detta di RECENTE, se no in una serata la stessa esce tre volte e
+  //    sembra che il bot ne sappia una sola;
+  //  · quella che ha fatto ridere DAVVERO. La presa sul pubblico non e'
+  //    un'impressione: dopo averla detta si conta chi ride, e il conto resta.
+  //
+  // Una battuta mai provata parte con un credito (le si da' il beneficio del
+  // dubbio, se no le nuove non uscirebbero mai e il serbatoio si fossilizza sulle
+  // prime tre). Una che e' stata detta piu' volte e non ha fatto ridere nessuno
+  // scende in fondo da sola, senza che nessuno debba toglierla.
+  prossima(channel) {
+    const ch = String(channel).toLowerCase();
+    const tutte = db.prepare('SELECT * FROM battute WHERE channel=?').all(ch);
+    if (!tutte.length) return null;
+    const adesso = now();
+    const voto = (b) => {
+      const presa = (b.risate + 1) / (b.dette + 2);          // credito iniziale per le mai provate
+      const riposo = Math.min(1, (adesso - b.usata_ts) / (6 * 3600_000));   // sei ore per tornare fresca
+      return presa * (0.25 + 0.75 * riposo);
+    };
+    const scelta = tutte.map((b) => ({ b, v: voto(b) })).sort((x, y) => y.v - x.v)[0].b;
+    db.prepare('UPDATE battute SET usata_ts=?, dette=dette+1 WHERE id=?').run(adesso, scelta.id);
+    return scelta;
+  },
+  // La chat ha riso: si segna sulla battuta, non da qualche parte in generale.
+  haFattoRidere(channel, n) {
+    db.prepare('UPDATE battute SET risate=risate+1 WHERE channel=? AND n=?')
+      .run(String(channel).toLowerCase(), Number(n) || 0);
+  },
+  list(channel) { return db.prepare('SELECT * FROM battute WHERE channel=? ORDER BY n').all(String(channel).toLowerCase()); },
+  remove(channel, n) { db.prepare('DELETE FROM battute WHERE channel=? AND n=?').run(String(channel).toLowerCase(), Number(n) || 0); },
+  count(channel) { return db.prepare('SELECT COUNT(*) c FROM battute WHERE channel=?').get(String(channel).toLowerCase()).c; },
+};
+
 export const quotes = {
   add(channel, text, by = '', meta = {}) {
     const ch = String(channel).toLowerCase();
