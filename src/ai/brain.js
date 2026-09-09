@@ -10,6 +10,7 @@ import * as learn from './learn.js';
 import * as model from './model.js';
 import * as persona from './persona.js';
 import * as brainpy from './brainpy.js';
+import { genereDi, scegliAccordando, istruzioneGenere } from './genere.js';
 
 const log = makeLog('brain');
 
@@ -200,12 +201,12 @@ const ECCOMI = {
   scherzoso: [
     'Eccomi {user}, chi mi ha evocato? 🧞',
     'Presente! Dimmi tutto, {user} 😄',
-    '{user} hai fatto il mio nome e sono apparso ✨',
+    '{user} hai fatto il mio nome e sono appars{o/a} ✨',
     'Sì {user}? Se è per soldi, non ne ho 😂',
   ],
   amichevole: [
     'Eccomi {user}! Dimmi pure 😊',
-    'Ciao {user}, sono tutto orecchie 👂',
+    'Ciao {user}, sono {tutto/tutta} orecchie 👂',
     'Presente, {user}! Che succede?',
     'Dimmi {user} 💜',
   ],
@@ -339,7 +340,11 @@ const EV_RISCATTO = [
 // utilità
 // ======================================================================
 
-const scegli = (pool) => pool[Math.floor(Math.random() * pool.length)];
+// Sceglie una frase dal gruppo. Il genere passa di qui: con 'femminile' o
+// 'maschile' i marcatori si risolvono, con 'neutro' si preferisce una frase che
+// non dichiari niente. Senza genere si comporta come 'neutro', che e' il
+// predefinito — quindi un gruppo senza marcatori non cambia comportamento.
+const scegli = (pool, genere) => scegliAccordando(pool, genere);
 
 function compila(template, variabili) {
   let out = String(template ?? '');
@@ -923,6 +928,7 @@ export class Brain {
       const settings = streamer.settings || {};
       const iaOn = settings.iaLocale !== false;   // IA locale accesa (default sì)
       const tono = TONI.includes(settings.tono) ? settings.tono : 'scherzoso';
+      const genere = genereDi(settings);
       let nome = display || user || 'tu';
       // amici della community: ogni tanto il bot li chiama con più calore
       // (l'anima è condivisa; non rivela MAI dove/cosa, solo l'affinità)
@@ -1082,13 +1088,13 @@ export class Brain {
               if (r) return r;
             }
           }
-          return compila(scegli(NON_LO_SO), variabili);
+          return compila(scegli(NON_LO_SO, genere), variabili);
         }
         // mi hanno chiamato senza una domanda: rispondo comunque con un cenno
         // (mai ignorare chi mi nomina), scegliendo tra saluto ed "eccomi".
         const salutato = /(^|[^a-z])(ciao|ehi|hey|buongiorno|buonasera|buond[iì]|salve|weil[aà]|hola)([^a-z]|$)/.test(lower);
         const pool = (salutato ? SALUTI : ECCOMI)[tono] || ECCOMI.scherzoso;
-        return compila(scegli(pool), variabili);
+        return compila(scegli(pool, genere), variabili);
       }
       return null;
     } catch (e) {

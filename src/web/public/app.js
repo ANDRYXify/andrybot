@@ -92,6 +92,7 @@ function impostazioni() {
   const s = stato?.streamer?.settings || {};
   return {
     tono: ['scherzoso', 'amichevole', 'serio'].includes(s.tono) ? s.tono : 'scherzoso',
+    genere: ['neutro', 'femminile', 'maschile'].includes(s.genere) ? s.genere : 'neutro',
     spontaneita: typeof s.spontaneita === 'number' ? s.spontaneita : 0.03,
     rispostaMenzioni: s.rispostaMenzioni !== false,
     modalita: ['sempre', 'live', 'manuale'].includes(s.modalita) ? s.modalita : 'sempre',
@@ -252,7 +253,7 @@ function statoDemo() {
       status: 'approved',
       botEnabled: true,
       settings: {
-        tono: 'scherzoso', spontaneita: 0.05, rispostaMenzioni: true, modalita: 'sempre',
+        tono: 'scherzoso', genere: 'neutro', spontaneita: 0.05, rispostaMenzioni: true, modalita: 'sempre',
         iaLocale: true, proattivo: true, proattivoTg: true, internet: true, adattaCanale: true, giochi: true, promoSocial: true,
         nomeMonete: 'scudi', clipAuto: true, clipAutoSoglia: 25, ascoltoLive: false, ascoltoSensibilita: 5,
         cambioCategoria: { attivo: true, trigger: 'categoria', annuncia: true },
@@ -4455,6 +4456,14 @@ function pannelloPersonalita() {
         <option value="amichevole" ${s.tono === 'amichevole' ? 'selected' : ''}>${L('Amichevole — caloroso e tranquillo', 'Friendly — warm and calm', 'Amistoso — cálido y tranquilo')}</option>
         <option value="serio" ${s.tono === 'serio' ? 'selected' : ''}>${L('Serio — sobrio e diretto', 'Serious — plain and direct', 'Serio — sobrio y directo')}</option>
       </select>
+
+      <label class="campo" for="sel-genere">${L('Come parla di sé', 'How it refers to itself', 'Cómo habla de sí')}</label>
+      <select id="sel-genere">
+        <option value="neutro" ${s.genere === 'neutro' ? 'selected' : ''}>${L('Non lo dice — gira la frase', 'Neutral — never states a gender', 'Neutro — no declara género')}</option>
+        <option value="femminile" ${s.genere === 'femminile' ? 'selected' : ''}>${L('Femminile — «sono apparsa»', 'Feminine — refers to itself as female', 'Femenino — habla de sí en femenino')}</option>
+        <option value="maschile" ${s.genere === 'maschile' ? 'selected' : ''}>${L('Maschile — «sono apparso»', 'Masculine — refers to itself as male', 'Masculino — habla de sí en masculino')}</option>
+      </select>
+      <p class="suggerimento">${L('In italiano non si può dire «sono apparso» senza scegliere un genere. Se non scegli, il bot gira la frase per non doverlo dire.', 'In Italian the bot cannot say “I showed up” without picking a gender. If you do not pick one, it rephrases to avoid saying it.', 'En italiano el bot no puede decir «he aparecido» sin elegir un género. Si no eliges, reformula para no tener que decirlo.')}</p>
 
       <label class="campo" for="rng-spontaneita">${L('Chat autonoma:', 'Autonomous chatting:', 'Chat autónomo:')} <span id="val-spontaneita">${perc}%</span></label>
       <input type="range" id="rng-spontaneita" min="0" max="50" step="1" value="${perc}">
@@ -13230,6 +13239,7 @@ function attivaPiattaforma() {
   document.getElementById('btn-salva-personalita')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({
       tono: document.getElementById('sel-tono').value,
+      genere: document.getElementById('sel-genere').value,
       spontaneita: Number(document.getElementById('rng-spontaneita').value) / 100,
       rispostaMenzioni: document.getElementById('chk-menzioni').checked,
       proattivo: document.getElementById('chk-proattivo').checked,

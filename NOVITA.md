@@ -17,6 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- Scegli come il bot parla di sé: femminile, maschile, o senza dirlo. Sta in Personalità, sotto il tono.
+- Prima cambiava a ogni frase. Le battute scritte a mano erano tutte al maschile («sono apparso»), e il resto lo decideva lui volta per volta.
+- Chi non sceglie niente non rischia: il bot gira la frase e non dichiara nessun genere, invece di darsene uno a caso.
+
 - Puoi sfidare a duello lo streamer. Il bot parla con il suo account e non vede i propri messaggi, quindi lui risultava sempre «non in chat» anche mentre stava scrivendo.
 - Si può sfidare anche chi c'è e sta zitto. Prima contava solo chi aveva parlato negli ultimi trenta minuti, e metà della chat era invisibile.
 

@@ -865,7 +865,7 @@ export class ModulesEngine {
         if (azione.annuncia !== false) {
           if (r.ok) dire(`🎵 In coda: ${brano.nome} — ${brano.artisti} 🎶`);
           else if (r.status === 404) dire('🎵 Nessun dispositivo Spotify attivo.');
-          else dire('🎵 Non sono riuscito ad aggiungere il brano.');
+          else dire('🎵 Il brano non è stato aggiunto.');
         }
         return;
       }

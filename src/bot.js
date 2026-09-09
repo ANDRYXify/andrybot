@@ -14,6 +14,7 @@ import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
 import * as persona from './ai/persona.js';
 import * as games from './features/games.js';
+import { accorda } from './ai/genere.js';
 import * as registro from './features/comandi-registro.js';
 import * as personalizzati from './features/personalizzati.js';
 import * as giveaway from './features/giveaway.js';
@@ -241,7 +242,15 @@ export class BotManager {
   }
 
   // manda un messaggio nel canale attraverso l'unità giusta
-  say(channel, text, opzioni) { this.units.get(channel)?.chat.say(channel, text, opzioni); }
+  // L'accordo di genere si applica QUI, all'uscita, oltre che quando si sceglie
+  // la frase. E' una rete: una frase marcata che arrivasse fin qui senza essere
+  // passata dallo scegli stamperebbe in chat il marcatore, e sarebbe un difetto
+  // che si legge da fuori. Applicarlo due volte non fa danno: dopo la prima
+  // passata di marcatori non ne restano.
+  say(channel, text, opzioni) {
+    const t = accorda(text, streamers.get(channel)?.settings?.genere);
+    this.units.get(channel)?.chat.say(channel, t, opzioni);
+  }
 
   // Battito dell'anima: l'umore "respira" (torna piano alla calma) e, se lo
   // streamer lascia la proattività accesa, ogni tanto il bot dice qualcosa di
@@ -557,12 +566,17 @@ export class BotManager {
   // prima volta ne ho sbagliate quattordici, e un !comando scritto su Kick
   // veniva risposto su TWITCH. Peggio del silenzio.
   vocePer(msg) {
-    if (msg?.piattaforma === 'kick') { const v = voceKick(msg.channel); return (t, o) => v.say(msg.channel, t, o); }
+    // L'accordo di genere sta nella voce, non nei quindici punti che parlano:
+    // e' la stessa ragione per cui la voce sta scritta in un posto solo. Su
+    // Twitch si applica due volte (anche in say) e non fa danno.
+    const genere = streamers.get(msg?.channel)?.settings?.genere;
+    const con = (dire) => (t, o) => dire(accorda(t, genere), o);
+    if (msg?.piattaforma === 'kick') { const v = voceKick(msg.channel); return con((t, o) => v.say(msg.channel, t, o)); }
     if (msg?.piattaforma === 'youtube') {
       const v = voceYoutube(msg.channel, { chatDiAdesso: (l) => this.chatYT.chatDi(l) });
-      return (t, o) => v.say(msg.channel, t, o);
+      return con((t, o) => v.say(msg.channel, t, o));
     }
-    return (t, o) => this.say(msg.channel, t, o);
+    return con((t, o) => this.say(msg.channel, t, o));
   }
 
   async _gestisciMessaggio(login, msg, onMessage, dire = null) {

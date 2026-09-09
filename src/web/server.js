@@ -63,6 +63,7 @@ import * as tgapp from '../features/tgapp.js';
 import * as badges from '../features/badges.js';
 import * as quotesImport from '../features/quotesimport.js';
 import { pretrain } from '../ai/pretrain.js';
+import { GENERI } from '../ai/genere.js';
 import * as persona from '../ai/persona.js';
 import * as brainpy from '../ai/brainpy.js';
 import { impronta, combacia } from '../segreti.js';
@@ -155,6 +156,9 @@ function slugify(s) {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'overlay';
 }
 const TONI_VALIDI = ['scherzoso', 'amichevole', 'serio'];
+// Il genere con cui il bot parla di se'. L'elenco lo tiene il modulo che lo usa,
+// cosi' non ci sono due liste da tenere d'accordo.
+const GENERI_VALIDI = GENERI;
 const STATI_VALIDI = ['pending', 'approved', 'disabled'];
 const TIER_VALIDI = ['tutti', 'sub', 'vip', 'mod'];
 const UPLOAD_MAX = 60 * 1024 * 1024;   // 60 MB in ingresso (per clip fino a ~30s; l'output sarà molto più piccolo)
@@ -3334,6 +3338,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.tono !== undefined) {
       if (!TONI_VALIDI.includes(b.tono)) return res.status(400).json({ errore: 'tono non valido' });
       out.tono = b.tono;
+    }
+    if (b.genere !== undefined) {
+      if (!GENERI_VALIDI.includes(b.genere)) return res.status(400).json({ errore: 'genere non valido' });
+      out.genere = b.genere;
     }
     if (b.spontaneita !== undefined) {
       const n = Number(b.spontaneita);
@@ -6651,6 +6659,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.tono !== undefined) {
       if (!TONI_VALIDI.includes(b.tono)) return res.status(400).json({ errore: 'tono non valido' });
       patch.tono = b.tono;
+    }
+    if (b.genere !== undefined) {
+      if (!GENERI_VALIDI.includes(b.genere)) return res.status(400).json({ errore: 'genere non valido' });
+      patch.genere = b.genere;
     }
     if (b.umore !== undefined) patch.umore = Math.min(100, Math.max(0, Math.round(Number(b.umore)) || 0));
     if (b.energia !== undefined) patch.energia = Math.min(100, Math.max(0, Math.round(Number(b.energia)) || 0));
