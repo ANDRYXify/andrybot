@@ -11,6 +11,7 @@ import * as model from './model.js';
 import * as persona from './persona.js';
 import * as brainpy from './brainpy.js';
 import { genereDi, scegliAccordando, istruzioneGenere } from './genere.js';
+import * as conti from '../features/conti.js';
 
 const log = makeLog('brain');
 
@@ -943,6 +944,16 @@ export class Brain {
       // Questi NON passano dal modello: danno un dato preciso (gioco, uptime,
       // link, clip) che l'IA non può inventare. Saluti/come va/chi sei/grazie
       // NON sono più template: li gestisce il modello, con parole sue.
+
+      // IL CONTO SI FA CONTANDO. Un modello linguistico che risponde «8» a 4+4
+      // lo fa per somiglianza, non perche' ha contato, e sopra i numeri piccoli
+      // sbaglia: la macchina su cui gira quella somma la sa fare in un
+      // microsecondo ed e' sempre giusta. Sta in cima alla catena perche' quando
+      // un messaggio E' un conto la cosa e' certa, e nessun altro intento deve
+      // poterlo scambiare per una domanda. Se non e' un conto — ed e' il caso
+      // quasi sempre — risolvi() torna null e qui non succede niente.
+      const conto = conti.risolvi(text);
+      if (conto) return `🧮 ${conto.testo}`;
 
       // che gioco / a cosa giochi
       if (/che gioco|che game|a cosa (stai )?gioc|a che (gioco|game)|cosa stai giocando|che stai giocando/.test(lower)) {
