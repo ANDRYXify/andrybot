@@ -93,6 +93,7 @@ function impostazioni() {
   return {
     tono: ['scherzoso', 'amichevole', 'serio'].includes(s.tono) ? s.tono : 'scherzoso',
     genere: ['neutro', 'femminile', 'maschile'].includes(s.genere) ? s.genere : 'neutro',
+    carattere: typeof s.carattere === 'string' ? s.carattere : '',
     spontaneita: typeof s.spontaneita === 'number' ? s.spontaneita : 0.03,
     rispostaMenzioni: s.rispostaMenzioni !== false,
     modalita: ['sempre', 'live', 'manuale'].includes(s.modalita) ? s.modalita : 'sempre',
@@ -253,7 +254,7 @@ function statoDemo() {
       status: 'approved',
       botEnabled: true,
       settings: {
-        tono: 'scherzoso', genere: 'neutro', spontaneita: 0.05, rispostaMenzioni: true, modalita: 'sempre',
+        tono: 'scherzoso', genere: 'neutro', carattere: '', spontaneita: 0.05, rispostaMenzioni: true, modalita: 'sempre',
         iaLocale: true, proattivo: true, proattivoTg: true, internet: true, adattaCanale: true, giochi: true, promoSocial: true,
         nomeMonete: 'scudi', clipAuto: true, clipAutoSoglia: 25, ascoltoLive: false, ascoltoSensibilita: 5,
         cambioCategoria: { attivo: true, trigger: 'categoria', annuncia: true },
@@ -4456,6 +4457,10 @@ function pannelloPersonalita() {
         <option value="amichevole" ${s.tono === 'amichevole' ? 'selected' : ''}>${L('Amichevole — caloroso e tranquillo', 'Friendly — warm and calm', 'Amistoso — cálido y tranquilo')}</option>
         <option value="serio" ${s.tono === 'serio' ? 'selected' : ''}>${L('Serio — sobrio e diretto', 'Serious — plain and direct', 'Serio — sobrio y directo')}</option>
       </select>
+
+      <label class="campo" for="inp-carattere">${L('Carattere', 'Character', 'Carácter')}</label>
+      <input type="text" id="inp-carattere" maxlength="300" value="${esc(s.carattere || '')}" placeholder="${esc(L('es. tagliente e sarcastica, ma mai cattiva', 'e.g. sharp and sarcastic, but never mean', 'ej. mordaz y sarcástica, pero nunca cruel'))}">
+      <p class="suggerimento">${L('Scrivilo con parole tue: com\'è fatta, non cosa deve fare. Vale ovunque parli.', 'Write it in your own words: what it is like, not what it must do. It applies wherever it speaks.', 'Escríbelo con tus palabras: cómo es, no qué debe hacer. Vale allí donde hable.')}</p>
 
       <label class="campo" for="sel-genere">${L('Come parla di sé', 'How it refers to itself', 'Cómo habla de sí')}</label>
       <select id="sel-genere">
@@ -13240,6 +13245,7 @@ function attivaPiattaforma() {
     await salvaImpostazioni({
       tono: document.getElementById('sel-tono').value,
       genere: document.getElementById('sel-genere').value,
+      carattere: document.getElementById('inp-carattere').value,
       spontaneita: Number(document.getElementById('rng-spontaneita').value) / 100,
       rispostaMenzioni: document.getElementById('chk-menzioni').checked,
       proattivo: document.getElementById('chk-proattivo').checked,

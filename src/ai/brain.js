@@ -1061,7 +1061,27 @@ export class Brain {
       // qui → restano sempre istantanei. Passa comunque da _finalizza (mod+anti-eco).
       if (iaOn) {
         const conoscenza = this._conoscenzaPertinente(channel, text);
+        // MATERIALE, non risposta. Se e' una domanda vera e non sappiamo gia'
+        // rispondere, si va a cercare e si passa il trovato al modello: e' lui
+        // che poi lo dice, nel tono e nel carattere che gli ha dato lo streamer.
+        // Il testo del web incollato di peso suona come un'enciclopedia, e il
+        // bot deve suonare come se stesso.
+        //
+        // Prima questa ricerca esisteva solo nel RIPIEGO, cioe' quando il
+        // modello era spento: col modello acceso — il caso normale — il web non
+        // veniva mai consultato, e brainpy.rispondi accetta un parametro `web`
+        // che nessuno gli passava. Una via che c'era e non portava da nessuna
+        // parte.
+        //
+        // L'attesa e' corta di proposito: in chat la risposta lenta e' persa, e
+        // 3 secondi piu' il pensiero del modello sono gia' tanti.
+        let web = null;
+        const domanda = text.includes('?') || /^(chi|cosa|che cos|come|quando|dove|perch|quanto|quale|qual)\b/i.test(String(text).trim());
+        if (domanda && menziona && !conoscenza?.length && this._internetOn(channel)) {
+          try { web = await internet.cerca(text, { attesa: 3000 }); } catch { web = null; }
+        }
         const risposta = await brainpy.rispondi({
+          web,   // quello che ha trovato: materiale da dire con parole sue
           via: 'bot',   // la chat pubblica è del BOT, non di Lei (docs/BOT-E-LIA.md)
           canale: streamer.display || channel, canaleId: channel,
           login: user, nome, testo: text, tono, conoscenza,

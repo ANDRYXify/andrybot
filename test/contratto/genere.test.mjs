@@ -77,9 +77,13 @@ test('l\'impostazione arriva al modello dalle regole, in un posto solo', () => {
   const db = leggi('src/db.js');
   const i = db.indexOf('applicabili(channel');
   assert.ok(i > 0, 'le regole applicabili si trovano');
-  const regione = db.slice(i, i + 1800);
+  const regione = db.slice(i, i + 2400);   // la finestra deve arrivare fino al return
   assert.ok(regione.includes('istruzioneGenere'), 'la riga sul genere parte da qui');
-  assert.ok(/\[\s*suo\s*,\s*\.\.\.sue\s*\]/.test(regione), 'sta in testa e non consuma il posto delle regole dello streamer');
+  // L'invariante non e' come e' scritta la riga, e' DOVE finiscono le regole
+  // dello streamer: in coda, cosi' le nostre righe non consumano il loro posto e
+  // la sua dodicesima regola non sparisce per far spazio alle nostre.
+  const ret = /return\s+\[([^\]]*)\]/.exec(regione)?.[1] || '';
+  assert.ok(ret.trim().endsWith('...sue'), `le regole dello streamer devono stare in coda, trovato: [${ret}]`);
 });
 
 test('l\'accordo si applica all\'uscita, non solo quando si sceglie', () => {
@@ -97,4 +101,34 @@ test('il pannello lo offre e il salvataggio non lo butta via', () => {
   const srv = leggi('src/web/server.js');
   assert.equal((srv.match(/b\.genere !== undefined/g) || []).length, 2, 'tutte e due le strade di salvataggio lo accettano');
   assert.ok(srv.includes('GENERI_VALIDI.includes(b.genere)'), 'e lo validano');
+});
+
+// ---------------------------------------------------------------- carattere
+//
+// Il carattere viaggia sulla stessa rotaia del genere, e per la stessa ragione:
+// sei punti del codice chiedono le regole al modello, e una cosa messa dove le
+// regole nascono vale anche per il settimo. Qui si prova che la rotaia sia
+// attaccata, perche' la logica funziona anche scollegata.
+test('il carattere si scrive con parole proprie e arriva al modello', () => {
+  const db = leggi('src/db.js');
+  const i = db.indexOf('applicabili(channel');
+  const regione = db.slice(i, i + 2200);
+  // Non basta che il carattere venga LETTO: leggerlo e buttarlo via e' il difetto
+  // classico, e il primo collaudo che avevo scritto lo lasciava passare. Si chiede
+  // il percorso intero: letto, messo nell'elenco, e l'elenco restituito.
+  assert.ok(/imp\.carattere/.test(regione), 'il carattere si legge dalle impostazioni');
+  assert.ok(/testa\.push\([^)]*car\b/.test(regione), 'e finisce DAVVERO nelle righe che vanno al modello');
+  assert.ok(/return\s+\[[^\]]*\.\.\.testa/.test(regione), 'e quelle righe vengono restituite');
+  assert.ok(/slice\(0,\s*300\)/.test(regione), 'ed e\' tagliato: un prompt non e\' un tema');
+  assert.ok(regione.indexOf('imp.carattere') < regione.indexOf('istruzioneGenere'),
+    'chi il bot E\' viene prima di come parla di se\'');
+});
+
+test('il carattere: il pannello lo offre e il salvataggio non lo butta via', () => {
+  const app = leggi('src/web/public/app.js');
+  assert.ok(app.includes('id="inp-carattere"'), 'il pannello ha il campo');
+  assert.ok(/carattere:\s*document\.getElementById\('inp-carattere'\)\.value/.test(app), 'e il salvataggio lo manda');
+  assert.ok(/carattere:\s*typeof s\.carattere/.test(app), 'e rileggendo lo stato torna quello salvato');
+  const srv = leggi('src/web/server.js');
+  assert.equal((srv.match(/b\.carattere !== undefined/g) || []).length, 2, 'tutte e due le strade di salvataggio lo accettano');
 });
