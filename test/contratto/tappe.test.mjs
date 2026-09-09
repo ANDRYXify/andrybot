@@ -36,6 +36,36 @@ test('la prima volta si segna una volta sola, anche pensandoci cento', () => {
   assert.ok(!d.tappe.some(([, k]) => k === 'via-inventata'), 'una via che non esiste non inventa una tappa');
 });
 
+test('se la parte nuova si rompe, la via resta contata lo stesso', () => {
+  // Le tappe sono arrivate dopo i contatori. Una cosa nuova non deve poter rompere
+  // una vecchia: il conteggio e' scritto e chiuso PRIMA che si parli di tappe, e
+  // qui si rompe la parte nuova apposta per vederlo.
+  const d = python([
+    'import json, tempfile, os, coscienza as C',
+    'm = C.Coscienza(db_path=os.path.join(tempfile.mkdtemp(), "p.db"))',
+    'm.segna_tappa = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("rotta"))',
+    'alzata = False',
+    'try:',
+    '    m.conta_via("memoria")',
+    'except Exception:',
+    '    alzata = True',
+    'print(json.dumps({"vie": m.vie(), "alzata": alzata}))',
+  ]);
+  assert.equal(d.vie.memoria, 1, 'la via e\' contata comunque');
+  assert.equal(d.alzata, false, 'e l\'errore non esce a disturbare chi stava rispondendo');
+});
+
+test('il conteggio non dipende da nessuna funzione SQL in piu\'', () => {
+  // Il rischio vero non e' un errore rumoroso: e' che un giorno la base cambi e
+  // l'istruzione che conta fallisca INTERA, in silenzio, fermando tutte le barre.
+  // L'istruzione che conta e' quella di sempre.
+  const cervello = leggi('brain/coscienza.py');
+  const corpo = cervello.slice(cervello.indexOf('    def conta_via(self, via):'), cervello.indexOf('    def segna_tappa('));
+  const conteggio = corpo.slice(corpo.indexOf('INSERT INTO vie'), corpo.indexOf('self.db.commit()'));
+  assert.ok(!/RETURNING/i.test(conteggio), 'niente RETURNING nella riga che conta');
+  assert.match(corpo, /SELECT n FROM vie WHERE via=\?/, 'la prima volta si chiede a parte');
+});
+
 test('lo stesso strumento non diventa due tappe', () => {
   const d = python([
     'import json, tempfile, os, coscienza as C',

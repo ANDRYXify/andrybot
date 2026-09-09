@@ -38,9 +38,13 @@ ricordarsi di fare — un controllo si dimentica, un vincolo no.
 
 Due sorgenti, tutte e due dentro di lei:
 
-- `conta_via()` — l'istruzione che incrementa il contatore **restituisce** il
-  numero nuovo (`RETURNING n`). Se è 1, è la prima volta. Chiederlo con una seconda
-  query lascerebbe una fessura fra il fatto e l'accorgersene.
+- `conta_via()` — dopo aver contato, guarda il numero: se è 1, è la prima volta.
+  L'istruzione che **conta** è rimasta identica a com'era, senza nessuna funzione
+  SQL in più da cui dipendere: i contatori sono roba sua e vecchia, e una cosa
+  nuova non deve poter rompere una vecchia. La lettura sta dentro lo stesso lock
+  (fuori, due risposte insieme potrebbero far vedere 2 a chi ha scritto 1, e la
+  prima volta sparirebbe) e dopo il commit, dentro una guardia sua: se si rompe,
+  la via resta contata lo stesso.
 - `_forse_strumento()` — ogni strumento che si costruisce e **tiene** lascia la sua
   tappa. Il diario lo racconta già, ma il diario vive nel suo computer: se un
   giorno è spento, la memoria di averlo costruito sparirebbe. La tappa sta nella

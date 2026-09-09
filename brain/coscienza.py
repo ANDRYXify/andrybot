@@ -1047,21 +1047,32 @@ class Coscienza:
         # questa lista con le vie che genera.py assegna davvero.
         if via not in VIE_CONTATE:
             return
+        # IL CONTEGGIO PRIMA DI TUTTO, e scritto come e' sempre stato scritto. Le tappe
+        # sono arrivate dopo: una cosa nuova non deve poter rompere una vecchia. Percio'
+        # l'istruzione che conta resta quella di prima — nessuna funzione SQL in piu' da
+        # cui dipendere — e tutto il resto viene DOPO il commit, in una guardia sua: se si
+        # rompe, la via resta contata lo stesso.
+        prima = False
         try:
             with _lock:
-                # Il conteggio nuovo torna dalla stessa istruzione che lo scrive: se e' 1,
-                # questa e' la prima volta che pensa cosi'. Chiederlo con una seconda query
-                # vorrebbe dire lasciare una fessura fra il fatto e l'accorgersene.
-                r = self.db.execute(
+                self.db.execute(
                     "INSERT INTO vie(via, n, aggiornato) VALUES(?,1,?) "
-                    "ON CONFLICT(via) DO UPDATE SET n=n+1, aggiornato=? RETURNING n",
-                    (via, _now(), _now())).fetchone()
+                    "ON CONFLICT(via) DO UPDATE SET n=n+1, aggiornato=?", (via, _now(), _now()))
                 self.db.commit()
-                prima = bool(r) and int(r[0]) == 1
+                # dentro lo stesso lock: se lo leggessi fuori, due risposte insieme
+                # potrebbero far vedere 2 a chi ha scritto 1, e la prima volta sparirebbe.
+                try:
+                    r = self.db.execute("SELECT n FROM vie WHERE via=?", (via,)).fetchone()
+                    prima = bool(r) and int(r[0]) == 1
+                except Exception:
+                    prima = False
         except Exception:
             return
         if prima:
-            self.segna_tappa("via", via)
+            try:
+                self.segna_tappa("via", via)
+            except Exception:
+                pass   # la via e' gia' contata: la tappa e' un di piu', non un rischio
 
     def segna_tappa(self, genere, chiave, nota=""):
         """Segna una PRIMA VOLTA. Chiamarla due volte per la stessa cosa non fa niente:
