@@ -17,6 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- Il bot fa i conti: «quanto fa 4+4», «7 x 8», «20% di 90», anche con le parentesi. Il risultato lo calcola, non lo indovina, quindi è sempre giusto.
+- Quando un numero è ambiguo tace invece di rischiare: «1.000» in italiano è mille, ma scritto in chat può essere uno virgola zero, e non c'è modo di saperlo.
+- Se il messaggio non è un conto non risponde. Nessuna risposta a «ho 2 gatti e 3 cani».
+
 - Scegli come il bot parla di sé: femminile, maschile, o senza dirlo. Sta in Personalità, sotto il tono.
 - Prima cambiava a ogni frase. Le battute scritte a mano erano tutte al maschile («sono apparso»), e il resto lo decideva lui volta per volta.
 - Chi non sceglie niente non rischia: il bot gira la frase e non dichiara nessun genere, invece di darsene uno a caso.
