@@ -292,6 +292,7 @@ export const normTimer = (t) => {
     testoFine: String(t.testoFine == null ? 'Si comincia!' : t.testoFine).slice(0, 60),
     aFine: unoDi(t.aFine, ['resta', 'sparisce'], 'resta'),
     minuti: clampInt(t.minuti, 1, 600, 15),
+    partiDaSolo: t.partiDaSolo === true,
     posizione: unoDi(t.posizione, POS_ANG, 'alto-destra'),
     xy: xyOk(t.xy),
     stile: normWidgetStile(t.stile),

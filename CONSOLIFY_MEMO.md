@@ -278,3 +278,31 @@ il "dado" che qui non si usa.
 Da tenere: qui il difetto non era nel pezzo che «non funzionava», era nel pezzo
 che **rispondeva bene**. Cercare il guasto dove il risultato e' negativo e'
 naturale; questo stava dove il risultato era positivo e falso.
+
+## L'interruttore che avevo spinto inerte (e la prova che me l'ha detto)
+
+20. Avevo messo l'interruttore «tasti di CONSOLify» nella lista sbagliata. Ce ne
+    sono TRE che devono dire le stesse cose — quella dell'editor overlay
+    (`ovlElemento`), quella del pannello (`ELEM_OVL`) e quella del server
+    (`ELEM_OVERLAY`) — piu' una quarta, `ELEMENTI()`, che e' un'altra cosa: tiene
+    le POSIZIONI di cio' che si disegna. CONSOLify non si disegna da nessuna
+    parte: e' un permesso, non un elemento con un posto. Nella quarta non ci va.
+    Messo dove non serviva e non messo dove serviva, l'interruttore si sarebbe
+    visto, si sarebbe potuto spegnere, e il server l'avrebbe buttato via al
+    salvataggio: **inerte**. Lo stesso difetto che sto togliendo da stamattina,
+    fatto da me, nel commit che lo toglieva.
+    L'ha preso una prova che c'era gia' («l'elenco degli elementi e quello che
+    l'overlay mostra dicono le stesse cose»). Non l'ho zittita: mi stava dicendo
+    una cosa vera sul modello, cioe' che avevo confuso «cosa compare» con «cosa
+    e' permesso».
+
+## Il conto alla rovescia che parte da solo
+
+21. Il modello del timer era gia' giusto e non l'ho toccato: si salva l'ISTANTE
+    di scadenza, non un contatore che scorre, quindi niente puo' andare fuori
+    sincrono fra server e sorgenti, e un riavvio non lo azzera.
+    Aggiunto solo l'avvio: l'overlay che lo mostra, aprendosi, chiede al server
+    di farlo partire. **Solo se non sta gia' andando**: due sorgenti aperte
+    insieme chiederebbero tutte e due, e la seconda farebbe ripartire da capo un
+    conto che chi guarda sta gia' leggendo. Chi arriva secondo non trova niente
+    da fare, ed e' giusto cosi'.

@@ -101,7 +101,7 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'musica', 'timer', 'effetti'];
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'musica', 'timer', 'effetti', 'consolify'];
 const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {});
 
 // Un overlay E' un layout: tiene la posizione di OGNI cosa che ci puo' comparire,
@@ -838,6 +838,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     _guaioUltimo.set(k, ora);
     logOverlay.error(`#${login} ${dove}: ${perche || 'senza motivo'}`);
     res.json({ ok: true });
+  });
+
+  app.post('/overlay/:login/timer/parti', (req, res) => {
+    if (!chiaveOk(req)) return res.status(403).json({ errore: 'chiave non valida' });
+    const login = String(req.params.login).toLowerCase();
+    res.json({ ok: true, fine: alerts.avviaTimerSePronto(login) });
   });
 
   // la pagina dell'overlay

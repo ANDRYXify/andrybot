@@ -7,6 +7,7 @@ const parti = location.pathname.split('/').filter(Boolean);
 const login = parti[1] || '';
 const urlStream = '/overlay/' + encodeURIComponent(login) + '/stream' + location.search;
 const urlGuaio = '/overlay/' + encodeURIComponent(login) + '/guaio' + location.search;
+const urlTimerParti = '/overlay/' + encodeURIComponent(login) + '/timer/parti' + location.search;
 
 const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, stile: { alert: null, chat: null }, widget: {} };
 const mostra = (k) => MIO.mostra[k] !== false;
@@ -1054,6 +1055,12 @@ function applicaTema(t) {
   MIO.musica = t.musica || null;
   MIO.timer = t.timer || null;
   MIO.timerFine = Number(stato.timer && stato.timer.fine) || 0;
+  if (MIO.timer && MIO.timer.attivo && MIO.timer.partiDaSolo && mostra('timer') && MIO.timerFine <= Date.now()) {
+    fetch(urlTimerParti, { method: 'POST' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d && d.fine) { MIO.timerFine = d.fine; disegnaTimer(); } })
+      .catch(function (e) { guaio('timer-da-solo', String(e && e.message || e)); });
+  }
   disegnaTimer();
   if (MIO.musica && MIO.musica.attivo && mostra('musica')) chiediMusica(); else togliMusica();
 }

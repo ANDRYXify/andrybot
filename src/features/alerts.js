@@ -146,6 +146,22 @@ export class AlertsEngine {
     } catch (e) { log.debug('timer:', e?.message || e); return 0; }
   }
 
+  // L'OVERLAY DELL'ATTESA FA PARTIRE IL CONTO DA SE'. Ma solo se non sta gia'
+  // andando: due sorgenti aperte insieme chiederebbero tutte e due, e la seconda
+  // farebbe ripartire da capo un conto gia' avviato — proprio mentre chi guarda
+  // lo sta leggendo. Chi arriva secondo non trova niente da fare, ed e' giusto.
+  avviaTimerSePronto(channel) {
+    try {
+      const s = streamers.get(channel);
+      if (!s) return 0;
+      const cfg = s.settings?.overlayTimer;
+      if (!cfg || cfg.attivo !== true || cfg.partiDaSolo !== true) return 0;
+      const fine = Number(s.settings?.overlayStato?.timer?.fine) || 0;
+      if (fine > Date.now()) return fine;
+      return this.impostaTimer(channel, cfg.minuti);
+    } catch (e) { log.debug('timer da solo:', e?.message || e); return 0; }
+  }
+
   // Riporta un obiettivo a zero — o tutti. E' un'azione dello streamer, non del
   // tempo: un obiettivo che si azzera da solo la notte non e' un obiettivo.
   azzeraGoal(channel, id = '') {
