@@ -31,7 +31,7 @@ import { AUTORE, ALIAS, SITO, COPYRIGHT } from './watermark.js';
 // entra mai in un repository; questa si incolla qui e puo' stare al sole.
 // Finche' e' vuota il software parte lo stesso, ma dichiarando di chi e': non si
 // blocca il proprietario prima che si sia fatto la chiave.
-export const CHIAVE_PUBBLICA = '';
+export const CHIAVE_PUBBLICA = "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAPw8IHWNqa74tjRVcybRdqjepZ3TDqW3HBRH8zH7Hdmc=\n-----END PUBLIC KEY-----\n";
 
 const ORA = () => Date.now();
 
