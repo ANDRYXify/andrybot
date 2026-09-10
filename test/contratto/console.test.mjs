@@ -607,3 +607,50 @@ test('i file che nessuno guarda più non restano sul disco', () => {
   assert.ok(!ora.has('cons_111111111111.webp'), 'e quello di prima non lo usa più');
   assert.ok(ora.has('cons_222222222222.webp'));
 });
+
+test('i passi di regia si salvano, e il server dice che non tocca a lui', () => {
+  // Il programma con cui si manda in onda ascolta sul computer dello streamer:
+  // da qui non lo vediamo. Il server deve comunque SAPERLI (se no non si
+  // salverebbero) e deve dire che non li fa lui — invece di rispondere «fatto».
+  const ch = canale();
+  const r = consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [{
+    passi: [{ tipo: 'scena', scena: 'Gioco' }, { tipo: 'muto', fonte: 'Microfono', come: 'inverti' }],
+  }] }] });
+  const t = r.pagine[0].tasti[0];
+  assert.equal(t.passi.length, 2, 'i passi di regia sopravvivono al salvataggio');
+  assert.equal(t.passi[0].scena, 'Gioco');
+  assert.equal(t.passi[1].come, 'inverti');
+
+  const e0 = consolle.eseguiPassoDiTasto(ch, t.id, 0, {});
+  assert.equal(e0.ok, false, 'il server non finge di averlo fatto');
+  assert.equal(e0.browser, true, 'e dice di chi è il mestiere');
+});
+
+test('la pagina percorre la partitura in ORDINE, un passo per volta', () => {
+  // Se il server facesse «tutto il resto» e la pagina le scene «dopo», una fila
+  // con un'attesa in mezzo andrebbe fuori ordine. Percio' la pagina cammina lei,
+  // e per ogni passo che non sa fare chiede quel passo, non tutto il tasto.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const srv = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
+  assert.match(app, /async function premiTasto\(/, 'la pagina ha una sua camminata');
+  assert.match(app, /passo\/\$\{k\}/, 'e chiede un passo per volta');
+  assert.match(srv, /app\.post\('\/api\/console\/:login\/tasto\/:id\/passo\/:k', guardiaConsole/, 'la porta del singolo passo esiste ed è guardata');
+});
+
+test('la password del programma non passa mai da noi', () => {
+  // Sta nel browser dello streamer, sul suo computer. Non viaggia al server, non
+  // finisce nel database, e non la vediamo nemmeno volendo.
+  const re = readFileSync(join(RAD, 'src/web/public/regia-esterna.js'), 'utf8');
+  const srv = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
+  assert.match(re, /localStorage\.setItem/, 'resta nel browser');
+  assert.ok(!/fetch\(|XMLHttpRequest/.test(re), 'il collegamento non manda niente a nessun server nostro');
+  assert.ok(!/re-pass|regia-esterna|obs_pass/.test(srv), 'e il server non ne sa niente');
+});
+
+test('solo il computer di casa: un indirizzo di rete non viene nemmeno tentato', () => {
+  // Il browser lo bloccherebbe comunque (misurato: SecurityError su un indirizzo
+  // di rete o esterno), ma dirlo prima è meglio che far vedere un errore oscuro.
+  const re = readFileSync(join(RAD, 'src/web/public/regia-esterna.js'), 'utf8');
+  assert.match(re, /const casa = \(ip\) =>/, 'c\'è una definizione sola di «casa»');
+  assert.match(re, /if \(!casa\(cfg\.ip\)\)/, 'e si controlla prima di provare');
+});

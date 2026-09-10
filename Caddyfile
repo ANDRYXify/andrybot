@@ -162,10 +162,17 @@ socialbot.live {
 			#   QUESTA politica. verifica-csp.mjs lo tiene agganciato al codice nei
 			#   due versi: niente host qui che il codice non produca, niente host
 			#   nel codice che qui manchi.
+			# connect-src: oltre a noi stessi, SOLO il loopback in ws://. Serve a
+			# parlare con il programma con cui lo streamer manda in onda, che ascolta
+			# sul SUO computer. Non e' una concessione a terzi: 127.0.0.1 e localhost
+			# sono la macchina di chi ha la pagina aperta, e il browser gia' rifiuta
+			# ogni altro ws:// da una pagina https (misurato: un indirizzo di rete
+			# locale o esterno prende SecurityError). La password di quel programma
+			# resta nel browser: non passa da qui e non arriva al server.
 			#   NON allenta l'anti-clickjacking: quello e' frame-ancestors 'none'
 			#   + X-Frame-Options DENY, che restano — questo dice solo COSA
 			#   possiamo incorniciare NOI.
-			Content-Security-Policy "default-src 'self'; script-src 'self' 'inline-speculation-rules'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self'; frame-src 'self' https://www.youtube-nocookie.com https://player.twitch.tv https://clips.twitch.tv https://www.twitch.tv https://player.kick.com https://www.tiktok.com https://www.instagram.com https://www.facebook.com https://open.spotify.com https://w.soundcloud.com https://soundcloud.com https://widget.deezer.com https://embed.music.apple.com https://player.vimeo.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
+			Content-Security-Policy "default-src 'self'; script-src 'self' 'inline-speculation-rules'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' ws://127.0.0.1:* ws://localhost:*; frame-src 'self' https://www.youtube-nocookie.com https://player.twitch.tv https://clips.twitch.tv https://www.twitch.tv https://player.kick.com https://www.tiktok.com https://www.instagram.com https://www.facebook.com https://open.spotify.com https://w.soundcloud.com https://soundcloud.com https://widget.deezer.com https://embed.music.apple.com https://player.vimeo.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
 		}
 		reverse_proxy bot:8090 {
 			header_up X-Edge-Key {env.EDGE_KEY}

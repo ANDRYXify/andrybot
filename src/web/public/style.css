@@ -2169,6 +2169,22 @@ body.ce-aperto { overflow: hidden; }
 .cons-passo .cons-num .campo { flex: 0 0 4rem; width: 4rem; align-self: center; }
 .cons-passo .cons-frecce { position: static; flex: 0 0 auto; display: flex; gap: .2rem; }
 
+.cons-scene { margin-top: .6rem; }
+.cons-scene-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: .45rem; margin-top: .35rem; }
+.cons-scena {
+  padding: .55rem .6rem; font: inherit; font-size: .84rem; font-weight: 600; cursor: pointer;
+  color: var(--testo); background: var(--surface);
+  border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano);
+  border-radius: var(--ang-mano); box-shadow: var(--ombra-ink);
+  transition: transform .08s ease, box-shadow .08s ease, background var(--molla);
+}
+.cons-scena.on { background: var(--acc); color: var(--su-acc); }
+.cons-scena:active { transform: translate(3px, 3px); box-shadow: var(--ombra-ink-timbro); }
+@media (hover: hover) {
+  .cons-scena:hover { background: var(--surface-2); box-shadow: var(--ombra-ink-alta); transform: translate(-1px, -1px); }
+  .cons-scena.on:hover { background: var(--acc-600); color: var(--su-acc); }
+}
+
 .cons-spia {
   display: inline-flex; align-items: center; gap: .35rem;
   font-size: .76rem; font-weight: 600; color: var(--testo-2);

@@ -813,7 +813,36 @@ const CONSOLIFY = {
       'Puoi fare più <strong>pagine</strong>: una per il gioco, una per il momento chiacchiere, come preferisci.',
       'Premi <strong>Fatto</strong> e la plancia torna operativa. In modifica i tasti non sparano: sistemi in pace senza mandare niente in chat.',
     ] },
-    { p: ['Sul telefono la griglia si adatta da sé. È il modo per cui è pensata: telefono in mano, accanto alla tastiera.'] },
+    { p: ['Sul telefono la plancia si apre <strong>di lato</strong>: in verticale i tasti sarebbero francobolli, e te lo dice invece di darteli schiacciati.'] },
+
+    { h2: 'Un tasto può fare più cose, in fila' },
+    { p: [
+      'Un tasto non è per forza una cosa sola. Apri la sua scheda e sotto <strong>Cosa fa, in fila</strong> aggiungi i passi che vuoi: vanno in ordine, e se uno non riesce gli altri succedono lo stesso — chi ti guarda ha già visto i primi.',
+    ] },
+    { tabella: [
+      ['Passo', 'Cosa fa'],
+      ['Fai una cosa che hai già', 'Un contatore, un effetto, una battuta: quello che nasce dai tuoi contatori e dai tuoi effetti'],
+      ['Dì una frase in chat', 'Il bot scrive quello che gli hai messo lì'],
+      ['Manda questo', 'Un\'immagine, un video o un suono che carichi <strong>lì sul tasto</strong> — durata e volume li scegli lì'],
+      ['Manda il risultato di un comando', 'Non la scritta «!comando»: quello che quel comando produce'],
+      ['Cambia scena in regia', 'La scena del programma con cui mandi in onda'],
+      ['Muta o smuta una fonte', 'Il microfono, la musica, quello che vuoi'],
+      ['Aspetta', 'Da un decimo di secondo a trenta: serve a far respirare la fila'],
+    ] },
+    { p: [
+      'Sotto ogni passo ci sono le frecce per spostarlo e la <strong>×</strong> per toglierlo. Un tasto deve fare almeno una cosa: se togli l\'ultimo passo te lo dice, invece di lasciarti un tasto che non fa niente.',
+      'Un media sostituito porta via il file vecchio: non resta niente sul disco che non guardi più.',
+    ] },
+
+    { h2: 'Collegare il programma con cui mandi in onda' },
+    { p: [
+      'Nella scheda di CONSOLify metti <strong>indirizzo</strong>, <strong>porta</strong> e <strong>password</strong> del collegamento che quel programma mette a disposizione (nelle sue impostazioni), e premi <strong>Collega</strong>. Compaiono le tue scene: premi una scena e cambia, come dal programma.',
+      'Da lì in poi i passi «cambia scena» e «muta una fonte» funzionano dentro i tasti, insieme a tutto il resto.',
+    ] },
+    { p: [
+      '<strong>Dove funziona.</strong> Il collegamento parte da questa pagina e arriva al programma che gira sullo <strong>stesso computer</strong>. Dal telefono i tasti del bot funzionano come sempre, ma le scene no: il «computer di casa» del telefono è il telefono, e il browser blocca il resto. Non è una nostra scelta, è una regola dei browser — e le abbiamo lasciata in piedi apposta.',
+      '<strong>La password non passa da noi.</strong> Indirizzo, porta e password restano nel tuo browser, sul tuo computer: non arrivano al nostro server, non entrano nel database e non finiscono nei backup. Con <strong>Scorda tutto</strong> spariscono anche da lì.',
+    ] },
 
     { h2: 'Sulla tastiera fisica vera' },
     { p: [
