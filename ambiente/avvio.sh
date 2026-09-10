@@ -51,11 +51,29 @@ if command -v Xvfb >/dev/null 2>&1; then
     # che fluxbox si era scritto al PRIMO avvio, da prima di questa correzione. Quel
     # controllo trovava una riga e saltava — per sempre. La correzione funzionava
     # solo su una casa nuova, cioe' mai. Ora la riga vecchia si toglie e si riscrive.
-    if [ -f "$HOME/.fluxbox/init" ]; then
-      grep -v '^session.screen0.rootCommand:' "$HOME/.fluxbox/init" > "$HOME/.fluxbox/init.nuovo" 2>/dev/null || true
-      mv "$HOME/.fluxbox/init.nuovo" "$HOME/.fluxbox/init" 2>/dev/null || true
-    fi
-    echo "session.screen0.rootCommand: xsetroot -solid ${SFONDO:-#101418}" >> "$HOME/.fluxbox/init"
+    #
+    # E NON SI SCRIVE CON `>>`. La sua init non finiva con un a capo, e l'append ha
+    # incollato la riga nuova in coda a quella prima: `...systemtray` +
+    # `session.screen0.rootCommand: ...` tutto attaccato. Due danni in uno — il
+    # valore di prima storpiato, e il rootCommand illeggibile perche' sta in mezzo a
+    # un'altra riga, quindi fluxbox e' caduto sul suo comportamento predefinito e ha
+    # aperto la finestra dello sfondo. Il `grep -v` non lo ripuliva nemmeno: quella
+    # riga non comincia a inizio riga.
+    #
+    # Percio' il file si RISCRIVE, non ci si appende: si staccano le righe incollate
+    # (riparando anche quelle di ieri), si tolgono i rootCommand vecchi, si aggiunge
+    # il nostro, e si chiude con un a capo. Un file di righe si tratta a righe.
+    python3 - "$HOME/.fluxbox/init" "${SFONDO:-#101418}" <<'FINE'
+import sys, pathlib
+f, sfondo = pathlib.Path(sys.argv[1]), sys.argv[2]
+testo = f.read_text() if f.exists() else ""
+CHIAVE = "session.screen0.rootCommand:"
+testo = testo.replace(CHIAVE, "\n" + CHIAVE)          # stacca cio' che era incollato
+righe = [r for r in testo.splitlines() if r.strip() and not r.startswith(CHIAVE)]
+righe.append(f"{CHIAVE} xsetroot -solid {sfondo}")
+f.parent.mkdir(parents=True, exist_ok=True)
+f.write_text("\n".join(righe) + "\n")                 # e finisce SEMPRE con un a capo
+FINE
   fi
   command -v fluxbox >/dev/null 2>&1 && avvia fluxbox fluxbox
   # guardarlo dal vivo: x11vnc parla VNC, websockify lo traduce per il browser

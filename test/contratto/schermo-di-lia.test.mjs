@@ -64,6 +64,34 @@ test('e riavviare cento volte non moltiplica la riga', () => {
   assert.equal(righe.length, 1);
 });
 
+test('una init SENZA a capo finale non si incolla addosso la riga nuova', () => {
+  // Il difetto vero, visto sul suo server: la sua init non finiva con un a capo e
+  // l'append ha attaccato la riga nuova in coda a quella prima —
+  // «...systemtraysession.screen0.rootCommand: ...». Due danni: il valore di prima
+  // storpiato, e il rootCommand illeggibile perche' in mezzo a un'altra riga, cosi'
+  // fluxbox e' caduto sul predefinito e ha aperto la finestra dello sfondo.
+  const init = giraIlBlocco('session.screen0.workspaces: 1');   // niente \n finale
+  const righe = init.split('\n').filter((r) => r.startsWith('session.screen0.rootCommand:'));
+  assert.equal(righe.length, 1);
+  assert.match(init, /^session\.screen0\.workspaces: 1$/m, 'la riga di prima resta intera');
+  assert.ok(init.endsWith('\n'), 'e il file finisce con un a capo, cosi\' il prossimo avvio non si incolla');
+});
+
+test('e una init GIA\' incollata viene riparata', () => {
+  // Non basta non rifarlo: il danno di ieri e' gia' sul suo disco, e va disfatto.
+  const rotta = [
+    'session.screen0.workspaces: 1',
+    'session.screen0.toolbar.tools: clock, iconbar, systemtraysession.screen0.rootCommand: xsetroot -solid #101418',
+    'session.screen0.rootCommand: xsetroot -solid #101418',
+    '',
+  ].join('\n');
+  const init = giraIlBlocco(rotta);
+  assert.match(init, /^session\.screen0\.toolbar\.tools: clock, iconbar, systemtray$/m,
+    'la riga storpiata torna quella che era');
+  assert.equal(init.split('\n').filter((r) => r.startsWith('session.screen0.rootCommand:')).length, 1,
+    'e resta un solo rootCommand, non due');
+});
+
 test('e una casa senza init parte gia\' giusta', () => {
   const init = giraIlBlocco(null);
   assert.match(init, /session\.screen0\.rootCommand: xsetroot -solid/);
