@@ -24,3 +24,7 @@ docs/anatomia.html
 licenza.txt
 *.pem
 .socialbot-chiave-privata.pem
+
+# roba che macOS semina in ogni cartella
+.DS_Store
+**/.DS_Store
