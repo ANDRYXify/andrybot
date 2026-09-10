@@ -6176,6 +6176,7 @@ function pannelloAlert() {
         ${ovlElemento('musica', ICO.musica, L('Player musica', 'Music player', 'Reproductor de música'), 'sez-musica')}
         ${ovlElemento('timer', ICO.orologio, L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), 'sez-timer')}
         ${ovlElemento('effetti', ICO.effetti, L('Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'), 'effetti')}
+        ${ovlElemento('consolify', ICO.onda, L('Tasti di CONSOLify', 'CONSOLify keys', 'Teclas de CONSOLify'), 'consolify')}
       </div>
       <p class="suggerimento">${L('Tienilo per te: chi ha questo link può far comparire cose nel tuo overlay.', 'Keep it to yourself: anyone with this link can make things appear in your overlay.', 'Guárdalo para ti: quien tenga este enlace puede hacer aparecer cosas en tu overlay.')}</p>
     </div>
@@ -6242,6 +6243,8 @@ function pannelloAlert() {
           <label class="campo-num">${L('A zero', 'At zero', 'En cero')}<select data-c="aFine">${[['resta', L('resta a schermo', 'stays on screen', 'se queda')], ['sparisce', L('sparisce', 'goes away', 'desaparece')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Minuti', 'Minutes', 'Minutos')}<input type="number" data-c="minuti" min="1" max="600"></label>
         </div>
+        <label class="cons-spunta spazio-sopra"><input type="checkbox" data-c="partiDaSolo">
+          ${L('Parte da solo quando l’overlay si apre — per la schermata d’attesa: metti su la scena e il conto è già andato.', 'Starts on its own when the overlay opens — for the waiting screen: put the scene up and the countdown is already running.', 'Arranca solo cuando se abre el overlay — para la pantalla de espera: pones la escena y la cuenta ya va.')}</label>
         <p class="spazio-sopra">
           <button class="btn" id="tim-parti">${L('Fai partire', 'Start it', 'Ponlo en marcha')}</button>
           <button class="btn secondario" id="tim-ferma">${L('Ferma', 'Stop', 'Para')}</button>
@@ -6511,7 +6514,7 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'musica', 'timer', 'effetti'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'musica', 'timer', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const _mostraOra = () => {
   const o = ELEM_OVL.reduce((q, k) => (q[k] = mostraChk(k), q), {});
@@ -7426,7 +7429,6 @@ const ELEMENTI = () => {
   for (const c of _conta) out.push({ k: 'cont:' + c.comando, ico: ICO.grafico, n: c.etichetta || c.comando, cont: c });
   out.push({ k: 'musica', ico: ICO.musica, n: L('Player musica', 'Music player', 'Reproductor de música'), cfg: 'overlayMusica' });
   out.push({ k: 'timer', ico: ICO.orologio, n: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), cfg: 'overlayTimer' });
-  out.push({ k: 'consolify', ico: ICO.onda, n: L('Tasti di CONSOLify', 'CONSOLify keys', 'Teclas de CONSOLify') });
   return out;
 };
 const ELEM = (k) => ELEMENTI().find((e) => e.k === k) || null;
@@ -7455,7 +7457,7 @@ function _defMusica() {
 }
 
 function _defTimer() {
-  return { attivo: false, titolo: 'Si comincia tra', testoFine: 'Si comincia!', aFine: 'resta',
+  return { attivo: false, partiDaSolo: false, titolo: 'Si comincia tra', testoFine: 'Si comincia!', aFine: 'resta',
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 

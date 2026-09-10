@@ -420,5 +420,41 @@ test('un tasto arriva a TUTTI gli overlay, e ogni overlay puo\' dire di no', () 
   assert.match(ov, /dati\.da === 'consolify' && !mostra\('consolify'\)/, 'e l\'overlay puo\' rifiutarli');
 
   const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
-  assert.match(app, /k: 'consolify'/, 'l\'interruttore sta nell\'elenco degli elementi, come gli altri');
+  assert.match(app, /ovlElemento\('consolify'/, 'l\'interruttore sta nell\'elenco degli elementi, come gli altri');
+});
+
+test('l\'interruttore di CONSOLify sopravvive al salvataggio', () => {
+  // L'avevo messo nell'elenco del pannello e nell'overlay, ma il server ha una
+  // SUA lista di elementi e quello che non c'è dentro lo butta via: l'inter-
+  // ruttore si sarebbe visto, si sarebbe potuto spegnere, e non avrebbe fatto
+  // niente. Un comando inerte è esattamente il difetto che stiamo togliendo.
+  const srv = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
+  const riga = srv.match(/const ELEM_OVERLAY = \[[^\]]*\]/);
+  assert.ok(riga, 'la lista del server esiste');
+  assert.match(riga[0], /'consolify'/, 'e conosce anche i tasti della plancia');
+
+  // le tre liste devono nominare la stessa cosa, se no una delle tre mente
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const ov = readFileSync(join(RAD, 'src/web/public/overlay-app.js'), 'utf8');
+  assert.match(app, /ELEM_OVL = \[[^\]]*'consolify'/, 'il pannello lo offre');
+  assert.match(ov, /mostra\('consolify'\)/, 'l\'overlay lo legge');
+});
+
+test('il conto dell\'attesa parte da solo, e due sorgenti non lo fanno ripartire', () => {
+  // Per la schermata d'attesa: metti su la scena e il conto è già andato. Ma
+  // due sorgenti aperte insieme chiederebbero tutte e due, e la seconda
+  // farebbe ripartire da capo un conto che chi guarda sta già leggendo.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const ov = readFileSync(join(RAD, 'src/web/public/overlay-app.js'), 'utf8');
+  const al = readFileSync(join(RAD, 'src/features/alerts.js'), 'utf8');
+  const st = readFileSync(join(RAD, 'src/web/stile.js'), 'utf8');
+
+  assert.match(st, /partiDaSolo: t\.partiDaSolo === true/, 'il campo sopravvive al salvataggio');
+  assert.match(app, /data-c="partiDaSolo"/, 'e si accende dal pannello');
+
+  const f = al.slice(al.indexOf('avviaTimerSePronto('), al.indexOf('avviaTimerSePronto(') + 700);
+  assert.match(f, /cfg\.partiDaSolo !== true.*return 0/s, 'senza la spunta non parte niente');
+  assert.match(f, /fine > Date\.now\(\).*return fine/s, 'e un conto gia\' avviato NON riparte da capo');
+
+  assert.match(ov, /MIO\.timer\.partiDaSolo && mostra\('timer'\)/, 'lo chiede solo l\'overlay che lo mostra davvero');
 });
