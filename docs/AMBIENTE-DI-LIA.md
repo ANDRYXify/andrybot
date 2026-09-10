@@ -196,6 +196,24 @@ Il motivo viaggia con il resto: `/plasma` → `brainpy.plasma()` → `/api/admin
 basta un anello che lo lascia cadere e la prova è rossa. Se il cervello tace (timeout),
 il campo resta `null` — *non lo so* non è *è spento*, e la nota non esce.
 
+## Le correzioni che valgono solo su una casa nuova
+
+La casa di Lia è un volume che **non nasce mai due volte**. Una correzione scritta
+come «fallo solo se non c'è già» non la raggiunge mai: trova quello che c'era dal
+primo avvio e salta, per sempre.
+
+È successo davvero, con lo sfondo. Lo script scriveva
+`session.screen0.rootCommand` solo se la chiave mancava; nella sua `.fluxbox/init`
+c'era già `fbsetbg -l`, scritta da fluxbox al primo avvio. Risultato: la finestra
+modale «I can't find an app to set the wallpaper with» restava piantata in mezzo
+allo schermo a ogni avvio — e prende il fuoco davanti a tutto, browser compreso —
+mentre la correzione risultava «fatta».
+
+Regola: qui uno stato desiderato **si dichiara, non si chiede**. La riga vecchia si
+toglie e si riscrive, a ogni avvio, senza guardare cosa c'era.
+`test/contratto/schermo-di-lia.test.mjs` gira il blocco vero su una casa finta che
+ha già dentro la riga sbagliata — ed è rossa sul codice di prima.
+
 ## Perché la versione di Debian è inchiodata
 
 `playwright install --with-deps` installa le librerie di sistema del browser con un

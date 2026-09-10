@@ -46,9 +46,16 @@ if command -v Xvfb >/dev/null 2>&1; then
   if command -v xsetroot >/dev/null 2>&1; then
     xsetroot -solid "${SFONDO:-#101418}" 2>/dev/null || true
     mkdir -p "$HOME/.fluxbox"
-    if ! grep -q '^session.screen0.rootCommand:' "$HOME/.fluxbox/init" 2>/dev/null; then
-      echo "session.screen0.rootCommand: xsetroot -solid ${SFONDO:-#101418}" >> "$HOME/.fluxbox/init"
+    # SI DICHIARA, NON SI CHIEDE. Prima qui c'era «scrivilo solo se non c'e' gia'»:
+    # e la casa di Lia e' un volume che non nasce mai due volte, con dentro l'init
+    # che fluxbox si era scritto al PRIMO avvio, da prima di questa correzione. Quel
+    # controllo trovava una riga e saltava — per sempre. La correzione funzionava
+    # solo su una casa nuova, cioe' mai. Ora la riga vecchia si toglie e si riscrive.
+    if [ -f "$HOME/.fluxbox/init" ]; then
+      grep -v '^session.screen0.rootCommand:' "$HOME/.fluxbox/init" > "$HOME/.fluxbox/init.nuovo" 2>/dev/null || true
+      mv "$HOME/.fluxbox/init.nuovo" "$HOME/.fluxbox/init" 2>/dev/null || true
     fi
+    echo "session.screen0.rootCommand: xsetroot -solid ${SFONDO:-#101418}" >> "$HOME/.fluxbox/init"
   fi
   command -v fluxbox >/dev/null 2>&1 && avvia fluxbox fluxbox
   # guardarlo dal vivo: x11vnc parla VNC, websockify lo traduce per il browser

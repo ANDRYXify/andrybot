@@ -15,6 +15,10 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+## 2026-09-10
+
+- [privato] La finestra che chiedeva di installare un programma per lo sfondo non resta più piantata sullo schermo di Lia: la correzione di prima valeva solo su una casa nuova, e la sua casa non nasce mai due volte.
+
 ## 2026-09-09
 
 - [privato] Le cose che la fanno crescere non si comandano più da fuori: cresce quando decide lei. Restano i comandi che la fanno solo muoversi nel suo mondo.
