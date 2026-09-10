@@ -17,6 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-10
 
+- Un tasto si crea da un posto libero: nasce vuoto e si apre la sua scheda, dove costruisci quello che vuoi. Non devi più scegliere un'azione da una tendina prima di poter fare niente.
+- Nella scheda ci sono idee pronte — manda un link, manda un suono, cambia scena, vado in pausa — che sono un punto di partenza: poi cambi tutto.
+- Collegata la regia, ti do io scene, fonti e transizioni: nei tasti le scegli da un elenco invece di ricopiare i nomi a mano.
+- Le schede aperte si aggiornano appena il collegamento va a buon fine, invece di restare come prima.
 - Collegare il programma con cui mandi in onda è un incollaggio solo: lui ti dà una riga, tu la incolli, e indirizzo, porta e password li prendo da lì.
 - Dalla volta dopo mi collego da solo quando apri la scheda; e se non hai messo nessuna password ci provo lo stesso, così spesso non devi fare niente.
 - Puoi collegare il programma con cui mandi in onda: compaiono le tue scene, le cambi da qui, e i tasti possono cambiare scena o mutare una fonte dentro una fila di passi.

@@ -682,3 +682,39 @@ test('la seconda volta si collega da solo, senza che tu prema niente', () => {
   assert.match(app, /collegaRegia\(\{ ip: g\.ip, porta: g\.porta, pass: '' \}, true\)/, 'e prova anche senza password, per chi non l\'ha messa');
   assert.match(app, /ev\.target\?\.id === 're-incolla'/, 'e incollare basta: non serve nemmeno premere Collega');
 });
+
+test('un tasto nuovo nasce VUOTO: si crea, poi si riempie', () => {
+  // «Dove sta la creazione completamente a fantasia dell'utente? il tasto deve
+  // essere un più, al click si apre l'editor DA ZERO.» Prima bisognava scegliere
+  // un'azione da una tendina PRIMA di poter costruire: quello non è
+  // personalizzare, è un catalogo.
+  const ch = canale();
+  const r = consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [{ vuoto: true, passi: [], nome: '' }] }] });
+  assert.equal(r.pagine[0].tasti.length, 1, 'un tasto in costruzione sopravvive al salvataggio');
+  assert.equal(r.pagine[0].tasti[0].vuoto, true);
+  assert.match(r.pagine[0].tasti[0].id, /^[a-f0-9]{10}$/, 'e ha già il suo indirizzo');
+
+  // ma un tasto che punta a un'azione sparita continua a sparire: è un'altra cosa
+  const m = consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [{ passi: [{ tipo: 'azione', id: 'non:esiste' }] }] }] });
+  assert.equal(m.pagine[0].tasti.length, 0, 'quello sì che va tolto');
+
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  assert.match(app, /data-cons-preset/, 'e ci sono le idee pronte, per fare in fretta');
+  assert.ok(!app.includes("id=\"cons-quale\""), 'la tendina «scegli prima un\'azione» non c\'è più');
+});
+
+test('quello che la regia ci ha detto si SCEGLIE, non si ricopia', () => {
+  // «Deve darmele lui le scene, non devo essere io a doverle scegliere» — e
+  // soprattutto: «colleghi e non cambia nulla».
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  assert.match(app, /GetSceneList/, 'chiediamo le scene');
+  assert.match(app, /GetInputList/, 'le fonti');
+  assert.match(app, /GetSceneTransitionList/, 'e le transizioni');
+  assert.match(app, /function daRegia\(/, 'e i passi le offrono da un elenco');
+  for (const c of [/daRegia\(_cons\.scene/, /daRegia\(_cons\.fonti/, /daRegia\(_cons\.transizioni/]) {
+    assert.match(app, c, 'ogni passo di regia pesca dal suo elenco');
+  }
+  // e dopo il collegamento la scheda aperta si RIDISEGNA: se no a video non cambia niente
+  const f = app.slice(app.indexOf('async function caricaScene('), app.indexOf('function segnaScenaViva('));
+  assert.match(f, /disegnaSchedaTasto\(\)/, 'collegarsi cambia quello che vedi, subito');
+});

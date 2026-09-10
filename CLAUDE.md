@@ -4,6 +4,26 @@ Bot multi-streamer per Twitch e Kick (socialbot.live). Node ES modules, SQLite,
 niente framework di troppo. **Repository pubblico**: tutto quello che sta qui
 dentro lo può leggere chiunque.
 
+## Regola assoluta: si crea DA ZERO, e chi e' collegato PARLA
+
+Due difetti della stessa famiglia, e valgono per ogni funzione nuova.
+
+**1. Si parte dal vuoto, non da un elenco.** Il «+» apre l'editor VUOTO. I preset
+esistono per fare in fretta («manda un link in chat», «manda un suono»), non per
+essere l'unica strada. Obbligare a scegliere da una tendina PRIMA di poter
+costruire e' il contrario della personalizzazione: e' un catalogo.
+
+**2. Non far scrivere a mano cio' che il programma collegato gia' sa.** Se ci si
+collega a qualcosa — regia, musica, una piattaforma — la prima cosa che si fa e'
+CHIEDERGLI cosa c'e' dentro, e offrirlo. Un campo di testo dove uno deve
+ricopiare il nome di una scena che noi vediamo gia' e' un difetto, non una
+scelta. E dopo un collegamento riuscito le schede aperte si RIDISEGNANO: se
+colleghi e a video non cambia niente, per chi guarda non e' successo niente.
+
+Corollario: una funzione nuova nasce personalizzabile **in tutto** — nome, icona,
+colore, ordine, contenuto, quante volte, in che ordine. Se un pezzo di una
+funzione nuova non si puo' cambiare da dentro, la funzione non e' finita.
+
 ## Metodo di lavoro
 
 - **Analitico, non statistico. Preciso, non a tentoni.** Prima il modello e il

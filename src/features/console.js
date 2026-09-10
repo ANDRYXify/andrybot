@@ -396,10 +396,15 @@ function passiDi(t, valide) {
 
 function tastoPulito(t, valide) {
   const passi = passiDi(t, valide);
-  if (!passi.length) return null;
+  // Un tasto NUOVO nasce vuoto: si crea prima e si riempie dopo, come si fa con
+  // un foglio. Un tasto vuoto e' un tasto in costruzione, non un tasto rotto —
+  // percio' sopravvive al salvataggio; quello che non deve sopravvivere e' un
+  // passo che punta a un'azione sparita, e infatti quello viene tolto.
+  if (!passi.length && !t?.vuoto) return null;
   return {
     id: /^[a-f0-9]{10}$/.test(String(t?.id || '')) ? String(t.id) : nuovoId(),
     passi,
+    vuoto: !passi.length,
     nome: testoPulito(t?.nome, 24),
     // tre forme, e sono tutte legittime: il nome di un'icona nostra, un carattere
     // scritto da lui, o `img:<file>` — un'immagine SUA, che ha anche un indirizzo
