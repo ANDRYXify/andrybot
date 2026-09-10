@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
 
 const usaEGetta = cartellaUsaEGetta('andrybot-console-');
-const { contatori, streamers } = await import('../../src/db.js');
+const { contatori, effects: storeEffetti, streamers, battute } = await import('../../src/db.js');
 const consolle = await import('../../src/features/console.js');
 
 let n = 0;
@@ -27,12 +27,13 @@ const canale = () => {
 
 test('il registro nasce dai contatori del canale, non da una lista scritta a mano', () => {
   const ch = canale();
-  assert.deepEqual(consolle.azioni(ch), [], 'un canale senza contatori non ha tasti da mostrare');
+  const dei = (c, g) => consolle.azioni(c).filter((x) => x.gruppo === g);
+  assert.deepEqual(dei(ch, 'contatori'), [], 'un canale senza contatori non ha quei tasti');
+  assert.equal(dei(ch, 'chat').length, 2, 'ma battuta e «dì» ci sono sempre: non dipendono da niente');
 
   contatori.upsert(ch, { comando: 'morti', etichetta: 'Morti', emoji: '💀', valore: 7, step: 1 });
-  const a = consolle.azioni(ch);
+  const a = dei(ch, 'contatori');
   assert.equal(a.length, 3, 'un contatore porta tre tasti: più, meno, azzera');
-  assert.ok(a.every((x) => x.id.startsWith('contatore:')), 'e ognuno sa da dove viene');
 
   // il tasto DICE cosa fa: c'è il numero di adesso, non solo il nome
   assert.match(a[0].mostra, /Morti: 7/);
@@ -40,7 +41,7 @@ test('il registro nasce dai contatori del canale, non da una lista scritta a man
 
   // un contatore nuovo compare da solo: nessuna lista da tenere allineata
   contatori.upsert(ch, { comando: 'tentativi', etichetta: 'Tentativi', valore: 2 });
-  assert.equal(consolle.azioni(ch).length, 6);
+  assert.equal(dei(ch, 'contatori').length, 6, 'e un contatore nuovo porta i suoi');
 });
 
 test('premere un tasto cambia il numero davvero, e lo dice in chat e a schermo', () => {
@@ -107,4 +108,49 @@ test('un canale che non esiste non ha una chiave, e non la si inventa', () => {
   // stessa — e in produzione non si sarebbe visto mai.
   assert.equal(consolle.chiave('canale-che-non-esiste'), null);
   assert.equal(consolle.chiaveOk('canale-che-non-esiste', 'qualunque cosa'), false);
+});
+
+test('anche gli effetti del canale diventano tasti, da soli', () => {
+  const ch = canale();
+  assert.equal(consolle.azioni(ch).filter((a) => a.gruppo === 'effetti').length, 0);
+  storeEffetti.add(ch, { comando: 'airhorn', tipo: 'audio', file: 'a.mp3', tier: 'tutti', cooldown: 0, volume: 100, durata: 3 });
+  const eff = consolle.azioni(ch).filter((a) => a.gruppo === 'effetti');
+  assert.equal(eff.length, 1);
+  assert.equal(eff[0].id, 'effetto:airhorn');
+  assert.equal(eff[0].titolo, '!airhorn', 'il tasto porta il comando con cui lo chiama la chat');
+  assert.equal(eff[0].icona, '🔊', 'e l\'icona segue il tipo');
+});
+
+test('l\'effetto lo spara il motore vero, non una seconda strada', () => {
+  const ch = canale();
+  storeEffetti.add(ch, { comando: 'airhorn', tipo: 'audio', file: 'a.mp3', tier: 'tutti', cooldown: 0, volume: 100, durata: 3 });
+  const sparati = [];
+  const finto = { fire: (c, cmd) => { sparati.push(`${c}/${cmd}`); return true; } };
+  const r = consolle.esegui(ch, 'effetto:airhorn', { effetti: finto });
+  assert.equal(r.ok, true);
+  assert.deepEqual(sparati, [`${ch}/airhorn`], 'passa dal motore degli effetti, quello che userebbe la chat');
+  assert.equal(consolle.esegui(ch, 'effetto:inesistente', { effetti: finto }).ok, false);
+});
+
+test('il tasto «battuta» ne dice una, e la segna come detta', () => {
+  const ch = canale();
+  const n = battute.add(ch, 'Una battuta di prova per il tasto', 'streamer');
+  const detto = [];
+  const r = consolle.esegui(ch, 'battuta', { say: (t) => detto.push(t) });
+  assert.equal(r.ok, true);
+  assert.equal(detto.length, 1, 'la dice in chat');
+  assert.match(r.mostra, /battuta di prova/, 'e il tasto mostra cosa ha detto');
+  assert.equal(battute.get(ch, n).dette, 1, 'ed è contata come detta: se no il suo schema non impara');
+});
+
+test('il tasto «di\'» dice quello che gli hai scritto, e senza testo non fa niente', () => {
+  const ch = canale();
+  const detto = [];
+  const say = (t) => detto.push(t);
+  assert.equal(consolle.esegui(ch, 'di', { say }).ok, false, 'senza testo non inventa niente');
+  assert.equal(detto.length, 0);
+
+  const r = consolle.esegui(ch, 'di', { say, testo: '  Ciao   a   tutti  ' });
+  assert.equal(r.ok, true);
+  assert.deepEqual(detto, ['Ciao a tutti'], 'e lo ripulisce dagli spazi di troppo');
 });

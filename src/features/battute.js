@@ -82,6 +82,26 @@ export function ascolta(msg) {
 // ogni canale misurera' il suo umorismo come misura ogni altro modo di costruire
 // battute, con le risate vere. Nessun trattamento di favore: se in quel canale non
 // fa ridere, smette di uscire da sola, esattamente come le altre.
+// UNA BATTUTA, DETTA. La sequenza e' sempre la stessa da qualunque parte arrivi la
+// spinta — chat, iniziativa del bot, tasto della console: prima il serbatoio (che
+// pesa riposo e presa sul pubblico), se e' vuoto la si COSTRUISCE con la materia
+// del canale, poi si dice e si segna che e' stata detta (che apre la finestra in
+// cui si contano le risate). Tre copie di questa sequenza avrebbero voluto dire che
+// prima o poi una si dimentica di segnare, e quella battuta non impara piu' niente.
+// Ritorna {testo, n} o null.
+export function diUna(canale, say, motore = null) {
+  const b = prossimaDa(canale);
+  if (b) { say(fmt(b)); detta(canale, b.n); return { testo: b.testo, n: b.n }; }
+  if (typeof motore?.costruisci !== 'function') return null;
+  let fatta = null;
+  try { fatta = motore.costruisci(canale); } catch (e) { log.debug('motore:', e?.message || e); }
+  if (!fatta?.testo) return null;
+  const n = battute.add(canale, fatta.testo, 'motore', 'motore', fatta.schema);
+  if (n) { say(fmt({ testo: fatta.testo, n })); detta(canale, n); return { testo: fatta.testo, n }; }
+  say(fatta.testo);
+  return { testo: fatta.testo, n: 0 };
+}
+
 export function accogliDaLei(canali, testo) {
   let messe = 0;
   for (const ch of canali || []) {
@@ -168,24 +188,9 @@ export function tryBattuta(msg, say, { inventa = null, motore = null } = {}) {
 
     if (resto) { say('Uso: !battuta · !battuta N · !battuta aggiungi <testo> · !battuta togli N'); return true; }
 
-    // una qualsiasi: la sceglie il serbatoio, per riposo e per presa
-    const b = battute.prossima(canale);
-    if (b) { say(fmt(b)); detta(canale, b.n); return true; }
-
-    // serbatoio vuoto: prima si prova a COSTRUIRLA. Una battuta fatta con i numeri
-    // di questo canale parla di loro; una chiesta al modello parla di chiunque.
-    if (typeof motore === 'function') {
-      let fatta = null;
-      try { fatta = motore(canale); } catch (e) { log.debug('motore:', e?.message || e); }
-      if (fatta && fatta.testo) {
-        // entra nel serbatoio con lo schema che l'ha fatta: da li' in poi e' la
-        // chat a dire se quel MODO di costruire funziona qui, e il conto resta.
-        const n = battute.add(canale, fatta.testo, 'motore', 'motore', fatta.schema);
-        if (n) { say(fmt({ testo: fatta.testo, n })); detta(canale, n); return true; }
-        say(fatta.testo);
-        return true;
-      }
-    }
+    // una qualsiasi: serbatoio prima, costruita poi. La sequenza sta in `diUna`,
+    // una sola volta: qui, nell'iniziativa del bot e nel tasto della console.
+    if (diUna(canale, say, typeof motore === 'function' ? { costruisci: motore } : null)) return true;
     // se il canale non ha ancora materia propria, si chiede al cervello. Se non c'è,
     // si dice com'è — un bot che promette e non consegna è peggio di uno che ammette.
     if (typeof inventa === 'function') {
