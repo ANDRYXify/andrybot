@@ -2012,9 +2012,10 @@ body.ce-aperto { overflow: hidden; }
 
 .cons-gruppo { margin: 1rem 0 .35rem; font-size: .74rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--testo-2); opacity: .8; }
 .cons-griglia { display: grid; gap: .6rem; margin: .35rem 0 0; }
-.cons-griglia.m-s { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); }
-.cons-griglia.m-m { grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); }
-.cons-griglia.m-l { grid-template-columns: repeat(auto-fill, minmax(152px, 1fr)); }
+.cons-griglia.m-s { --cons-lato: 110px; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); }
+.cons-griglia.m-m { --cons-lato: 150px; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); }
+.cons-griglia.m-l { --cons-lato: 200px; grid-template-columns: repeat(auto-fill, minmax(152px, 1fr)); }
+.cons-griglia.fissa { justify-content: center; }
 
 .cons-tasto {
   --cons-tinta: transparent;
@@ -2063,7 +2064,7 @@ body.ce-aperto { overflow: hidden; }
 .cons-colore.on { box-shadow: 0 0 0 2px var(--acc); }
 
 .cons-aggiungi { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .7rem; }
-.cons-aggiungi .campo { flex: 1 1 220px; }
+.cons-aggiungi .campo { flex: 1 1 220px; max-width: 26rem; }
 
 .cons-riga { display: flex; flex-wrap: wrap; gap: .45rem; align-items: center; padding: .45rem 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
 .cons-riga:last-child { border-bottom: 0; }
@@ -2076,6 +2077,7 @@ body.ce-aperto { overflow: hidden; }
 }
 .cons-url.velata { color: var(--testo-2); }
 
+.cons-ruota { display: none; }
 .cons-ruota { display: none; }
 @media (max-width: 860px) and (orientation: portrait) {
   .cons-plancia-corpo { display: none; }
@@ -2107,6 +2109,8 @@ body.ce-aperto { overflow: hidden; }
 .cons-ic.on { border-color: var(--acc); color: var(--testo); background: var(--acc-tint); }
 .cons-ic svg { width: 1.15rem; height: 1.15rem; }
 .cons-libera { display: flex; flex-direction: column; gap: .25rem; margin-top: .5rem; font-size: .76rem; color: var(--testo-2); font-weight: 600; }
+.cons-libera .campo { max-width: 34rem; }
+.cons-libera.corta .campo { max-width: 8rem; }
 .cons-spunta { display: flex; align-items: center; gap: .45rem; margin-top: .7rem; font-size: .84rem; color: var(--testo-2); }
 .cons-colore-libero { width: 1.9rem; height: 1.9rem; padding: 0; border: 1px solid var(--border); border-radius: var(--r-s); background: none; cursor: pointer; }
 .cons-scheda label.cons-spunta { flex-direction: row; align-items: center; gap: .45rem; }
@@ -2117,3 +2121,28 @@ body.ce-aperto { overflow: hidden; }
   .cons-mini:hover { color: var(--testo); border-color: var(--acc-bordo); }
   .cons-ic:hover { border-color: var(--border); color: var(--testo); }
 }
+.nov-finestra {
+  border: 1px solid var(--border); border-radius: var(--r-l); background: var(--surface);
+  color: var(--testo); padding: 0; max-width: 34rem; width: calc(100vw - 2rem);
+  max-height: min(80vh, 40rem); box-shadow: var(--om-m);
+}
+.nov-finestra::backdrop { background: rgba(0, 0, 0, .45); }
+.nov-testa { padding: 1.1rem 1.2rem .6rem; border-bottom: 1px solid var(--border); }
+.nov-testa h2 { font-family: var(--mano); font-size: 1.06rem; font-weight: 700; margin: 0 0 .2rem; }
+.nov-corpo { padding: .4rem 1.2rem 1rem; overflow-y: auto; max-height: min(56vh, 28rem); }
+.nov-giorno { margin: .9rem 0 0; }
+.nov-giorno h3 { font-size: .74rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--testo-2); margin: 0 0 .35rem; }
+.nov-giorno ul { margin: 0; padding-left: 1.1rem; }
+.nov-giorno li { margin: .3rem 0; line-height: 1.45; }
+.nov-priv {
+  font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--acc); border: 1px solid var(--acc-bordo); border-radius: var(--r-s);
+  padding: 0 .3rem; margin-right: .2rem; vertical-align: .05em;
+}
+.nov-piede { display: flex; gap: .5rem; justify-content: flex-end; align-items: center; padding: .8rem 1.2rem; border-top: 1px solid var(--border); }
+.nov-altri { margin-top: 1rem; padding-top: .7rem; border-top: 1px solid var(--border); }
+.cons-vuoto {
+  aspect-ratio: 1 / .88; border: 1px dashed var(--border); border-radius: var(--r-l);
+  background: transparent; color: var(--testo-2); font-size: 1.1rem; cursor: pointer;
+}
+.cons-vuoto[disabled] { cursor: default; opacity: .5; }

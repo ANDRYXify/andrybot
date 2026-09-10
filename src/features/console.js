@@ -6,15 +6,14 @@
 // si scollerebbero al primo contatore nuovo. Qui il registro si RICAVA da cio' che
 // il canale ha davvero: aggiungi un contatore e il tasto compare da solo.
 //
-// COSA HO IMPARATO GUARDANDO COS'E' DAVVERO UNO STREAM DECK. Non e' una tastiera
-// di scorciatoie: e' un tasto che DICE cosa fa e si aggiorna. Percio' ogni azione
+// COS'E' DAVVERO UNA TASTIERA DI COMANDO PER CHI STREAMA. Non e' una tastiera di
+// scorciatoie: e' un tasto che DICE cosa fa e si aggiorna. Percio' ogni azione
 // porta con se' `mostra` — la riga corta che il tasto stampa — e chi la esegue
-// risponde con quella. I plugin HTTP generici (API Ninja e simili) la stampano sul
-// tasto: da li' viene il valore, non dal fatto che il tasto esista.
+// risponde con quella: il valore viene da li', non dal fatto che il tasto esista.
 //
-// La porta funziona con qualunque superficie che sappia fare una chiamata web:
-// tastiera fisica con un plugin HTTP, Bitfocus Companion, Touch Portal, Loupedeck, il
-// browser di un telefono. Nessuna dipendenza da nessuno.
+// La porta funziona con qualunque superficie che sappia fare una chiamata web: una
+// tastiera fisica con un componente HTTP, il browser di un telefono. Nessuna
+// dipendenza da nessuno.
 import { contatori as storeContatori, effects as storeEffetti, streamers } from '../db.js';
 import * as contatori from './contatori.js';
 import * as battute from './battute.js';
@@ -134,6 +133,19 @@ export function azioni(channel) {
 // `dipendenze` porta dentro cio' che serve per agire davvero (dire in chat,
 // aggiornare l'overlay) senza che questo file conosca il bot: cosi' si puo'
 // provare per davvero, con un finto `say` e un finto `emit`.
+// Premere un tasto della plancia PER IDENTITA'. Si va a vedere cosa fa ADESSO:
+// se lo streamer ieri gli ha cambiato azione, il tasto fisico fa la cosa nuova.
+export function eseguiTasto(channel, idTasto, dip = {}) {
+  const login = norm(channel);
+  for (const pg of plancia(login).pagine) {
+    for (const t of pg.tasti || []) {
+      if (t.id !== idTasto) continue;
+      return esegui(login, t.azione, { ...dip, testo: t.testo || dip.testo });
+    }
+  }
+  return { ok: false, mostra: 'tasto non trovato' };
+}
+
 export function esegui(channel, id, { say, emit, effetti, testo } = {}) {
   const login = norm(channel);
   const pezzi = String(id || '').split(':');
@@ -187,16 +199,43 @@ export function esegui(channel, id, { say, emit, effetti, testo } = {}) {
 // Deck. Se un giorno si aggiunge un campo, si aggiunge anche il modo di cambiarlo.
 const PAGINE_MAX = 8;
 const TASTI_MAX = 48;
-const SCORCIATOIE_MAX = 60;
 const MISURE = ['s', 'm', 'l'];
+
+// I FORMATI, come una tastiera vera: righe per colonne. Non e' un vezzo — con le
+// caselle FISSE si parte gia' con una disposizione, e le vuote si vedono e si
+// riempiono. Una griglia che si allunga da sola non e' un deck: e' un elenco.
+// `{righe: 0, colonne: 0}` vuol dire libera, che resta possibile per chi la vuole.
+export const FORMATI = [
+  { id: '3x3', righe: 3, colonne: 3 },
+  { id: '3x4', righe: 3, colonne: 4 },
+  { id: '3x5', righe: 3, colonne: 5 },
+  { id: '4x4', righe: 4, colonne: 4 },
+  { id: '4x6', righe: 4, colonne: 6 },
+  { id: '5x8', righe: 5, colonne: 8 },
+];
+
+function formatoPulito(f) {
+  const righe = Number(f?.righe);
+  const colonne = Number(f?.colonne);
+  const ok = (n) => Number.isInteger(n) && n >= 2 && n <= 10;
+  return ok(righe) && ok(colonne) ? { righe, colonne } : { righe: 0, colonne: 0 };
+}
 
 const testoPulito = (v, max) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 const coloreOk = (v) => (/^#[0-9a-f]{6}$/i.test(String(v || '')) ? String(v).toLowerCase() : '');
+
+// OGNI TASTO HA UN SUO INDIRIZZO, e questo cambia il disegno. Il tasto fisico non
+// punta a un'azione: punta a QUESTO tasto. Percio' quando lo streamer cambia cosa
+// fa, come si chiama o che faccia ha, il tasto fisico lo segue da solo — non c'e'
+// niente da rifare la' sopra. Ed e' anche il motivo per cui l'elenco separato di
+// «scorciatoie» che avevo fatto e' sparito: era il solito secondo elenco.
+const nuovoId = () => crypto.randomBytes(5).toString('hex');
 
 function tastoPulito(t, valide) {
   const azione = String(t?.azione || '');
   if (!valide.has(azione)) return null;
   return {
+    id: /^[a-f0-9]{10}$/.test(String(t?.id || '')) ? String(t.id) : nuovoId(),
     azione,
     nome: testoPulito(t?.nome, 24),
     // tre forme, e sono tutte legittime: il nome di un'icona nostra, un carattere
@@ -215,9 +254,8 @@ export function plancia(channel) {
   const pagine = Array.isArray(p?.pagine) ? p.pagine : [];
   return {
     misura: MISURE.includes(p?.misura) ? p.misura : 'm',
-    colonne: Number.isInteger(p?.colonne) && p.colonne >= 2 && p.colonne <= 10 ? p.colonne : 0,
+    formato: formatoPulito(p?.formato),
     pagine: pagine.length ? pagine : [{ nome: 'Principale', tasti: [] }],
-    scorciatoie: Array.isArray(p?.scorciatoie) ? p.scorciatoie : [],
   };
 }
 
@@ -232,18 +270,10 @@ export function salvaPlancia(channel, dati) {
       .map((t) => tastoPulito(t, valide))
       .filter(Boolean),
   }));
-  const scorciatoie = (Array.isArray(dati?.scorciatoie) ? dati.scorciatoie : []).slice(0, SCORCIATOIE_MAX)
-    .map((c) => {
-      const t = tastoPulito(c, valide);
-      return t ? { azione: t.azione, nome: t.nome, testo: t.testo } : null;
-    })
-    .filter(Boolean);
-  const colonne = Number(dati?.colonne);
   const pulita = {
     misura: MISURE.includes(String(dati?.misura)) ? String(dati.misura) : 'm',
-    colonne: Number.isInteger(colonne) && colonne >= 2 && colonne <= 10 ? colonne : 0,
+    formato: formatoPulito(dati?.formato),
     pagine: pagine.length ? pagine : [{ nome: 'Principale', tasti: [] }],
-    scorciatoie,
   };
   streamers.setSettings(login, { ...(s.settings || {}), plancia: pulita });
   return plancia(login);

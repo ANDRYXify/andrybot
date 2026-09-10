@@ -64,7 +64,7 @@ tenere allineata.
 - [ ] C (dopo): plugin ufficiale .sdPlugin, se serve davvero
 
 ## Fonti
-- Elgato: cos'e' uno tastiera fisica, multi-azioni, cartelle, profili, SDK/azioni.
+- Elgato: cos'e' una tastiera di comando, multi-azioni, cartelle, profili, SDK/azioni.
 - API Ninja (BarRaider) e tastiera-api-request: chiamata HTTP dal tasto.
 - Alternative viste: Bitfocus Companion, Touch Portal, Deckboard, WebDeck, SAMMI.
 
@@ -102,3 +102,40 @@ tenere allineata.
 - `.cons-scheda label` (due classi) batteva `.cons-spunta` (una): la spunta usciva
   in colonna. E il selettore di colore prendeva 784px invece di 32. Trovati
   chiedendo al browser le proprieta' calcolate, non guardando il CSS.
+
+## Giro di lettura sul lavoro non ancora committato (indirizzo per tasto + formati)
+
+Difetti trovati LEGGENDO, prima di far girare qualunque cosa. Tutti della stessa
+famiglia: una riga che sembra fare qualcosa e non fa niente.
+
+1. **«Rigenera la chiave» non era attaccato a niente.** Il bottone c'era, il giro
+   guidato ci puntava, il testo prometteva «quello vecchio smette di funzionare
+   all'istante» — e premerlo non faceva nulla. La rotta esisteva gia'.
+2. **Un tasto senza indirizzo.** Un tasto appena aggiunto (o duplicato) non ha
+   ancora un id: il suo indirizzo veniva fuori `/tasto/?key=…` e premerlo
+   scriveva a vuoto. Per costruzione: la rotta di salvataggio RESTITUISCE gia' la
+   plancia ripulita, con gli id assegnati — ora quella e' l'unica plancia che il
+   pannello tiene. Non esiste piu' uno stato in cui a video c'e' un tasto che il
+   server non conosce.
+3. **Il testo scritto e non ancora salvato spariva.** Nome, frase e carattere
+   vivevano solo nel DOM fino a «Salva»: bastava scegliere un colore o un'icona e
+   il pannello si ridisegnava buttandoli. Per costruzione: i campi si depositano
+   nel modello al `change` (che scatta all'uscita dal campo, PRIMA del click sul
+   bottone accanto), quindi non esiste piu' roba non depositata da perdere. Il
+   bottone «Salva» non aveva piu' niente da fare: tolto.
+   Corollario: al `change` di un campo di testo NON si puo' ridisegnare tutto —
+   il click che sta arrivando cadrebbe su un nodo staccato e non scatterebbe mai.
+   Si aggiorna sul posto solo la scritta del tasto.
+4. **Marchi altrui nelle lingue straniere.** L'italiano era gia' stato ripulito,
+   inglese e spagnolo no: nomi di prodotti di altre aziende ancora scritti nel
+   pannello e nel manuale. Regola assoluta, valeva per tutte e tre le lingue.
+5. **«tastiera fisica» dentro le frasi inglesi e spagnole**: italiano colato
+   nelle altre lingue.
+6. **Due elementi con lo stesso id `cons-occhio`** quando scheda ed elenco sono a
+   video insieme.
+7. **Il «+» su ogni buca vuota** prometteva un posto che non si poteva occupare:
+   la lista dei tasti e' compatta, l'unico buco riempibile e' il primo.
+8. **L'elenco degli indirizzi non si aggiornava mai** dopo il caricamento: un
+   tasto creato dopo non compariva li' sotto fino a un aggiornamento di pagina.
+9. `scAperta`: campo di stato che nessuno legge.
+10. «non salvato» restava scritto per sempre anche quando poi andava bene.

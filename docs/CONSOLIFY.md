@@ -17,10 +17,10 @@ Dalla ricerca, tre cose che cambiano il disegno:
 2. **La struttura è a quattro livelli**: azione → multi-azione (più cose in fila,
    con attese) → cartella (un tasto che apre un secondo strato) → pagina/profilo
    (layout che cambia col contesto). Sui modelli nuovi ci sono manopole.
-3. **Non serve pubblicare un plugin su Elgato.** Plugin generici (API Ninja di
-   BarRaider, tastiera-api-request) fanno una chiamata HTTP e mostrano la
-   risposta sul tasto. Una porta HTTP copre tastiera fisica, Bitfocus Companion, Touch
-   Portal, Loupedeck e il browser di un telefono — oggi, senza dipendere da nessuno.
+3. **Non serve pubblicare niente sul negozio di nessuno.** I componenti generici
+   che fanno una chiamata HTTP esistono su tutte queste tastiere e mostrano la
+   risposta sul tasto. Una porta HTTP le copre tutte, piu' il browser di un
+   telefono — oggi, senza dipendere da nessuno.
 
 ## Il registro si ricava, non si scrive
 
@@ -102,11 +102,12 @@ e `chiaveOk` dice no.
 ## Sullo tastiera fisica fisico
 
 Un tasto con un plugin HTTP generico, metodo `GET` o `POST`, e l'indirizzo che la
-dashboard ti dà già pronto. Il plugin stampa la risposta sul tasto: dopo la
+dashboard ti dà già pronto. Il componente stampa la risposta sul tasto: dopo la
 pressione il tasto mostra il numero nuovo. Icona, nome e tutto il resto si scelgono
 sulla tastiera, come per qualunque altro tasto.
 
-Lo stesso indirizzo funziona in Companion, Touch Portal, Loupedeck e da un telefono.
+Lo stesso indirizzo funziona in qualunque programma sappia fare una chiamata web,
+e da un telefono.
 
 ## La plancia (la webapp)
 

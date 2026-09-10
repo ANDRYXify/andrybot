@@ -31,7 +31,7 @@ const GUARDIANI = [
   'chiaveOk',        // chiave dell'overlay: il link e' il segreto
   'chiaveUguale',    // chiave dell'estensione, confronto a tempo costante
   'apiKeyValida',    // chiave dell'estensione: dell'impronta salvata, a tempo costante
-  'guardiaConsole',  // CONSOLify e Stream Deck: uno Stream Deck non sa tenere un cookie,
+  'guardiaConsole',  // CONSOLify e tastiere fisiche: una tastiera non sa tenere un cookie,
                      // quindi la chiave del canale — a tempo costante, revocabile, con tetto
   'verificaWebhook', // firma di Stripe
   'currentUser',     // legge la sessione: senza, non c'e' niente da leggere
@@ -73,7 +73,7 @@ const PUBBLICHE = new Map([
   ['GET /tgapp', 'la mini-app dentro Telegram'],
   ['POST /api/tgapp/auth', 'verifica da se la firma di Telegram'],
   ['POST /tg/:secret', 'segreto nel percorso piu header segreto di Telegram'],
-  // Un'icona non e' un segreto, e deve poter essere presa da fuori (Stream Deck,
+  // Un'icona non e' un segreto, e deve poter essere presa da fuori (una tastiera,
   // Companion) senza portarsi dietro la chiave del canale. Il nome del file e' a
   // schema fisso e casuale: non si indovina e non si risale di cartella.
   ['GET /icona/:login/:file', 'icona di un tasto: pubblica di proposito, serve fuori dal sito'],

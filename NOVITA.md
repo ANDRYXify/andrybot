@@ -17,9 +17,15 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-10
 
+- Ogni tasto di CONSOLify ha il suo indirizzo, e punta al tasto invece che all'azione: se domani a quel tasto cambi mestiere, nome o icona, sulla tastiera fisica non rifai niente.
+- Scegli il formato della plancia — da 3×3 a 5×8 — e quanto stanno grandi i tasti: parti da una griglia vera invece che da un foglio bianco, e i posti liberi si vedono.
+- Sul telefono la plancia si apre di lato: in verticale i tasti sarebbero francobolli, e te lo dice invece di darteli schiacciati.
+- Quello che scrivi nella scheda di un tasto si salva da sé quando esci dal campo: non c'è più un «Salva» da ricordarsi, e non si perde niente scegliendo un colore.
+- Rigenerare la chiave degli indirizzi si fa dal pannello e chiede conferma: i vecchi indirizzi smettono di funzionare subito.
+- Quando entri dopo un aggiornamento una finestra ti dice cosa è cambiato, e se ti sei perso qualche giorno li trovi tutti in elenco.
 - I tasti di CONSOLify si personalizzano in tutto: nome, colore libero, conferma prima di premere, e l'icona la scegli da un elenco disegnato oppure carichi la tua immagine.
 - L'immagine che carichi ha un suo indirizzo, così la stessa faccia la puoi mettere anche sul tasto di una tastiera fisica.
-- I tasti si trascinano per ordinarli, si duplicano, si spostano fra le pagine, e scegli tu quante colonne.
+- I tasti si trascinano per ordinarli, si duplicano e si spostano fra le pagine.
 - La chiave degli indirizzi ora sta coperta: quella scheda si apre mentre streami, e prima si leggeva a schermo.
 - Nuova sezione CONSOLify: i tasti del tuo canale sotto le dita mentre streami — contatori, effetti, una battuta, una frase — sul telefono, sul tablet o su un secondo monitor.
 - I tasti nascono da soli dai tuoi contatori e dai tuoi effetti, e ognuno mostra com'è andata: premi e leggi il numero nuovo.

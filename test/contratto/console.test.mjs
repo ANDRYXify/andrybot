@@ -1,11 +1,11 @@
 // LE AZIONI DEL CANALE, E LA PORTA DA CUI SI PREMONO.
 //
-// CONSOLify e uno Stream Deck fisico guardano lo STESSO registro. Non è eleganza:
+// CONSOLify e una tastiera fisica guardano lo STESSO registro. Non è eleganza:
 // un elenco di bottoni scritto a mano sarebbe un secondo elenco accanto a quello
 // dei contatori, e i due si scollerebbero al primo contatore nuovo — il difetto
 // che rincorriamo da stamattina. Qui si controlla che il registro sia DERIVATO.
 //
-// E la cosa che ho imparato guardando cos'è davvero uno Stream Deck: non è una
+// E cos'è davvero una tastiera di comando per chi streama: non è una
 // tastiera di scorciatoie, è un tasto che DICE cosa fa. Perciò ogni azione porta
 // con sé la riga da stampare sul tasto, e chi la esegue risponde con quella.
 import test from 'node:test';
@@ -210,4 +210,80 @@ test('CONSOLify ascolta dentro il pannello che esiste davvero', () => {
   assert.match(app, /closest\?\.\('#scheda-consolify'\)/, 'il filtro punta al contenitore vero');
   assert.match(app, /id="scheda-\$\{id\}"/, 'e i pannelli si chiamano così');
   assert.ok(!/#pannello-consolify/.test(app), 'nessun contenitore inventato');
+});
+
+test('il formato si sceglie come una tastiera vera: righe per colonne', () => {
+  const ch = canale();
+  const dif = consolle.plancia(ch).formato;
+  assert.deepEqual(dif, { righe: 0, colonne: 0 }, 'si parte liberi');
+
+  const r = consolle.salvaPlancia(ch, { formato: { righe: 3, colonne: 4 }, pagine: [{ nome: 'P', tasti: [] }] });
+  assert.deepEqual(r.formato, { righe: 3, colonne: 4 });
+
+  // e un formato assurdo non entra: sarebbe una griglia che non si guarda
+  const male = consolle.salvaPlancia(ch, { formato: { righe: 99, colonne: 0 }, pagine: [{ nome: 'P', tasti: [] }] });
+  assert.deepEqual(male.formato, { righe: 0, colonne: 0 }, 'fuori misura torna libera, non rotta');
+});
+
+test('la plancia ripulisce anche quello che non conosce', () => {
+  const ch = canale();
+  const r = consolle.salvaPlancia(ch, { formato: 'grande', misura: 'XXL', pagine: 'non una lista' });
+  assert.deepEqual(r.formato, { righe: 0, colonne: 0 });
+  assert.equal(r.misura, 'm');
+  assert.equal(r.pagine.length, 1, 'e resta una plancia usabile, non un guscio vuoto');
+});
+
+test('un tasto a video non puo\' essere senza indirizzo', () => {
+  // Un tasto appena aggiunto non ha ancora un id: il suo indirizzo verrebbe
+  // fuori «/tasto/?key=…» e premerlo scriverebbe a vuoto. La rotta di
+  // salvataggio restituisce la plancia ripulita, con gli id gia' assegnati —
+  // il pannello deve prendere QUELLA, non tenersi la sua.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const salva = app.slice(app.indexOf('async function salvaPlancia'));
+  const corpo = salva.slice(0, salva.indexOf('\n}\n'));
+  assert.match(corpo, /_cons\.plancia = d\.plancia/, 'la plancia buona e\' quella che torna dal server');
+
+  // e il server la restituisce davvero, con gli id dentro
+  const ch = canale();
+  const r = consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [{ azione: 'battuta' }] }] });
+  assert.ok(r, 'la rotta restituisce la plancia');
+  assert.match(r.pagine[0].tasti[0].id, /^[a-f0-9]{10}$/, 'e ogni tasto torna con il suo id');
+});
+
+test('quello che scrivi nei campi non si perde scegliendo un colore', () => {
+  // Nome, frase e carattere vivevano solo nel DOM fino a un bottone «Salva»:
+  // bastava toccare un\'icona e il pannello si ridisegnava buttandoli. Ora si
+  // depositano al «change», che scatta uscendo dal campo — prima del click
+  // sul bottone accanto. Cosi' non esiste piu' roba non depositata da perdere.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  for (const campo of ['cons-c-nome', 'cons-c-testo', 'cons-c-icona', 'cons-c-colore']) {
+    assert.ok(app.includes(`id === '${campo}'`), `${campo} si deposita da solo`);
+  }
+  assert.ok(!app.includes('cons-c-salva'), 'e il bottone «Salva» non ha piu\' niente da fare');
+});
+
+test('nessun marchio altrui, in nessuna delle tre lingue', () => {
+  // Non siamo partner di nessuno: i prodotti degli altri non si nominano.
+  // L\'italiano era gia' stato ripulito, inglese e spagnolo no.
+  const marchi = /stream ?deck|elgato|loupedeck|touch portal|bitfocus|api ninja/i;
+  for (const f of ['src/web/public/app.js', 'src/web/manuali.js', 'NOVITA.md', 'docs/CONSOLIFY.md']) {
+    const s = readFileSync(join(RAD, f), 'utf8');
+    const riga = s.split('\n').findIndex((r) => marchi.test(r));
+    assert.equal(riga, -1, `${f}: marchio altrui alla riga ${riga + 1}`);
+  }
+});
+
+test('la plancia sul telefono si apre solo di lato', () => {
+  // La regola c\'era scritta nel foglio di stile — «in verticale nascondi la
+  // plancia, mostra "gira il telefono"» — ma le due classi non le scriveva
+  // nessuno: regole vere puntate su elementi che non esistevano. In verticale
+  // la plancia restava a video, coi tasti schiacciati a francobollo.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const css = readFileSync(join(RAD, 'src/web/public/style.css'), 'utf8');
+  for (const c of ['cons-plancia-corpo', 'cons-ruota']) {
+    assert.ok(css.includes(`.${c}`), `il foglio di stile parla di ${c}`);
+    assert.ok(app.includes(`class="${c}`), `e qualcuno la scrive davvero, la classe ${c}`);
+  }
+  assert.match(css, /\.cons-ruota \{ display: none; \}/, 'l\'avviso sta zitto quando non serve');
+  assert.match(css, /@media \(max-width: 860px\) and \(orientation: portrait\)/, 'e la regola e\' quella del telefono in piedi');
 });
