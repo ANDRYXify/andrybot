@@ -2144,6 +2144,18 @@ body.ce-aperto { overflow: hidden; }
 }
 .nov-piede { display: flex; gap: .5rem; justify-content: flex-end; align-items: center; padding: .8rem 1.2rem; border-top: 1px solid var(--border); }
 .nov-altri { margin-top: 1rem; padding-top: .7rem; border-top: 1px solid var(--border); }
+.cons-spia {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .76rem; font-weight: 600; color: var(--testo-2);
+}
+.cons-spia::before {
+  content: ''; width: .55rem; height: .55rem; border-radius: 50%;
+  border: 1.5px solid var(--contorno); background: var(--testo-2);
+}
+.cons-spia.su::before { background: var(--verde, #1f9e4f); }
+.cons-spia.giu { color: var(--acc); }
+.cons-spia.giu::before { background: var(--acc); }
+
 .cons-vuoto {
   aspect-ratio: 1 / .88;
   border: var(--contorno-sp) dashed var(--contorno); border-width: var(--tratto-mano);

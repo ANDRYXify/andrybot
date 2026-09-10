@@ -8575,6 +8575,7 @@ function pannelloConsolify() {
       <div class="vita-azioni">
         <button class="btn secondario mini" id="cons-modifica">${L('Modifica i tasti', 'Edit the keys', 'Editar las teclas')}</button>
         <button class="btn secondario mini" id="cons-aggiorna">${L('Aggiorna', 'Refresh', 'Actualizar')}</button>
+        <span id="cons-collegato" class="cons-spia"></span>
         <span id="cons-esito" class="suggerimento"></span>
       </div>
       <div id="cons-plancia"></div>
@@ -8591,7 +8592,7 @@ function pannelloConsolify() {
     </div>`);
 }
 
-let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', login: '', pagina: 0, modifica: false, aperto: null, scoperta: false };
+let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', login: '', pagina: 0, modifica: false, aperto: null, scoperta: false, overlay: false };
 
 async function caricaConsolify() {
   const esito = document.getElementById('cons-esito');
@@ -8602,6 +8603,7 @@ async function caricaConsolify() {
     _cons.base = d?.base || '';
     _cons.login = String(_cons.base).split('/').pop() || '';
     _cons.chiave = d?.chiave || '';
+    _cons.overlay = !!d?.overlay;
     _cons.plancia = p?.plancia || { pagine: [{ nome: 'Principale', tasti: [] }] };
     if (_cons.pagina >= _cons.plancia.pagine.length) _cons.pagina = 0;
   } catch (e) {
@@ -8612,6 +8614,7 @@ async function caricaConsolify() {
   appendiConsolifyCampi();
   disegnaConsolify();
   disegnaIndirizziConsole();
+  disegnaSpia();
 }
 
 function disegnaConsolify() {
@@ -8706,6 +8709,16 @@ function disegnaConsolify() {
     ${tasti.length ? sezioni : `${sezioni}${vuoto}`}${aggiungi}<div id="cons-scheda"></div></div>`;
   if (mod) appendiConsolifyTrascina();
   if (_cons.aperto !== null && _cons.aperto !== undefined) disegnaSchedaTasto();
+}
+
+function disegnaSpia() {
+  const el = document.getElementById('cons-collegato');
+  if (!el) return;
+  const su = _cons.overlay;
+  el.className = 'cons-spia' + (su ? ' su' : ' giu');
+  el.textContent = su
+    ? L('overlay collegato', 'overlay connected', 'overlay conectado')
+    : L('nessun overlay collegato — effetti, suoni e video non hanno dove andare', 'no overlay connected — effects, sounds and videos have nowhere to go', 'ningún overlay conectado — efectos, sonidos y vídeos no tienen a dónde ir');
 }
 
 function consIcona(t, a) {
@@ -8891,6 +8904,7 @@ function appendiConsolify() {
       try {
         const r = await fetch(consUrlTasto(t), { method: 'POST' });
         const d = await r.json().catch(() => null);
+        if (d && typeof d.overlay === 'boolean' && d.overlay !== _cons.overlay) { _cons.overlay = d.overlay; disegnaSpia(); }
         if (stato) stato.textContent = String(d?.mostra || (d?.ok ? L('fatto', 'done', 'hecho') : L('non riuscito', 'failed', 'falló'))).slice(0, 40);
         tasto.classList.toggle('cons-male', !d?.ok);
         if (d?.ok) { tasto.classList.add('cons-fatto'); setTimeout(() => tasto.classList.remove('cons-fatto'), 400); }
