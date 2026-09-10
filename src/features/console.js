@@ -198,7 +198,31 @@ function eseguiPasso(login, passo, dip) {
     if (!preso) return { ok: false, mostra: `!${passo.comando} non c'è` };
     return { ok: true, mostra: (detto || `!${passo.comando}`).slice(0, 60) };
   }
+  if (passo.tipo === 'scena' || passo.tipo === 'muto') {
+    // Il programma con cui si manda in onda ascolta sul computer dello streamer:
+    // da qui non lo vediamo, e non fingiamo di poterlo fare. Lo fa la pagina, che
+    // sta su quella macchina. Chi preme da fuori (una tastiera fisica) se lo
+    // sente dire, invece di veder tornare un «fatto» che non e' successo.
+    return { ok: false, mostra: 'questo passo lo fa la pagina', browser: true };
+  }
   return { ok: false, mostra: 'passo sconosciuto' };
+}
+
+// UN PASSO SOLO di un tasto. Serve alla pagina, che percorre la partitura in
+// ordine e fa da se' i passi di regia: se il server facesse "tutto il resto" e la
+// pagina le scene "dopo", una fila con un'attesa in mezzo andrebbe fuori ordine.
+export function eseguiPassoDiTasto(channel, idTasto, k, dip = {}) {
+  const login = norm(channel);
+  for (const pg of plancia(login).pagine) {
+    for (const t of pg.tasti || []) {
+      if (t.id !== idTasto) continue;
+      const passo = (t.passi || [])[Number(k)];
+      if (!passo) return { ok: false, mostra: 'passo non trovato' };
+      if (passo.tipo === 'attesa') return { ok: true, mostra: '', attesa: passo.ms };
+      return eseguiPasso(login, passo, dip);
+    }
+  }
+  return { ok: false, mostra: 'tasto non trovato' };
 }
 
 export function esegui(channel, id, { say, emit, effetti, testo } = {}) {
@@ -343,6 +367,15 @@ function passoPulito(p, valide) {
       durata: Number.isFinite(durata) ? Math.max(500, Math.min(30000, durata)) : 5000,
       volume: Number.isFinite(volume) ? Math.max(0, Math.min(100, volume)) : 100,
     };
+  }
+  if (tipo === 'scena') {
+    const scena = testoPulito(p?.scena, 80);
+    return scena ? { tipo, scena } : null;
+  }
+  if (tipo === 'muto') {
+    const fonte = testoPulito(p?.fonte, 80);
+    const come = ['inverti', 'muta', 'smuta'].includes(String(p?.come)) ? String(p.come) : 'inverti';
+    return fonte ? { tipo, fonte, come } : null;
   }
   if (tipo === 'attesa') {
     const ms = Math.round(Number(p?.ms));

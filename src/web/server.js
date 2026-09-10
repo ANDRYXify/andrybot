@@ -4185,6 +4185,18 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     });
     res.json({ ...esito, overlay: effects.hasClients(login) });
   });
+  const consolePasso = wrap(async (req, res) => {
+    const login = String(req.params.login || '').toLowerCase();
+    const esito = consolle.eseguiPassoDiTasto(login, String(req.params.id || ''), req.params.k, {
+      say: (t) => { try { manager.say(login, t); } catch { /* niente */ } },
+      emit: (p) => { try { effects.emit(login, p); } catch { /* niente */ } },
+      effetti: effects,
+      comandi: comandiChat,
+    });
+    res.json({ ...esito, overlay: effects.hasClients(login) });
+  });
+  app.post('/api/console/:login/tasto/:id/passo/:k', guardiaConsole, consolePasso);
+
   app.post('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
   app.get('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
 

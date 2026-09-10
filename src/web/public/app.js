@@ -8585,6 +8585,27 @@ function pannelloConsolify() {
     </div>
 
     <div class="carta">
+      <h2>${_hIco(ICO.video)}${L('Il programma con cui mandi in onda', 'The program you go live with', 'El programa con el que emites')}</h2>
+      <p class="suggerimento">${L('Collegalo e i tasti possono cambiare scena, far partire una transizione, mutare una fonte. Il collegamento parte da questa pagina e arriva al programma che gira sul TUO computer: la password resta qui, non passa da noi e non finisce nel nostro database.', 'Connect it and your keys can change scene, fire a transition, mute a source. The connection goes from this page to the program running on YOUR computer: the password stays here, it never passes through us and never reaches our database.', 'Conéctalo y las teclas pueden cambiar de escena, lanzar una transición, silenciar una fuente. La conexión va de esta página al programa que corre en TU ordenador: la contraseña se queda aquí, no pasa por nosotros ni llega a nuestra base de datos.')}</p>
+      <div class="griglia-campi">
+        <div><label class="campo" for="re-ip">${L('Indirizzo', 'Address', 'Dirección')}</label>
+          <input type="text" id="re-ip" class="campo-largo" maxlength="40" placeholder="127.0.0.1"></div>
+        <div><label class="campo" for="re-porta">${L('Porta', 'Port', 'Puerto')}</label>
+          <input type="text" id="re-porta" class="campo-largo" maxlength="6" placeholder="4455"></div>
+      </div>
+      <label class="campo spazio-sopra" for="re-pass">${L('Password del collegamento', 'Connection password', 'Contraseña de la conexión')}</label>
+      <input type="password" id="re-pass" class="campo-largo" maxlength="120" autocomplete="off">
+      <p class="vita-azioni spazio-sopra">
+        <button class="btn secondario mini" id="re-collega">${L('Collega', 'Connect', 'Conectar')}</button>
+        <button class="btn secondario mini" id="re-stacca">${L('Stacca', 'Disconnect', 'Desconectar')}</button>
+        <button class="btn secondario mini" id="re-scorda">${L('Scorda tutto', 'Forget it all', 'Olvidar todo')}</button>
+        <span id="re-spia" class="cons-spia"></span>
+      </p>
+      <p class="suggerimento">${L('Funziona dove sta il programma: questa pagina aperta su quel computer. Dal telefono i tasti del bot funzionano lo stesso, ma le scene no — il «computer di casa» del telefono è il telefono.', 'It works where the program is: this page open on that computer. From your phone the bot keys still work, but scenes do not — the phone’s own “home computer” is the phone.', 'Funciona donde está el programa: esta página abierta en ese ordenador. Desde el móvil las teclas del bot siguen funcionando, pero las escenas no — el «ordenador de casa» del móvil es el móvil.')}</p>
+      <div id="re-scene" class="cons-scene"></div>
+    </div>
+
+    <div class="carta">
       <h2>${_hIco(ICO.monitor)}${L('Su una tastiera fisica', 'On a physical key pad', 'En un teclado físico')}</h2>
       <p class="suggerimento">${L('Non serve installare niente di nostro: sulla tua tastiera aggiungi un tasto con un componente che fa chiamate web, incolli l’indirizzo qui sotto e scegli tu icona e nome. Il tasto stampa la risposta, quindi dopo la pressione mostra il numero nuovo. Lo stesso indirizzo funziona con qualunque programma sappia fare una chiamata web, e dal browser di un telefono.', 'Nothing of ours to install: on your key pad add a key with a component that makes web requests, paste the address below and pick your own icon and name. The key prints the reply, so after pressing it shows the new number. The same address works from a phone browser too.', 'No hace falta instalar nada nuestro: en tu teclado añade una tecla con un componente de peticiones web, pega la dirección de abajo y eliges icono y nombre. La tecla imprime la respuesta, así que tras pulsarla muestra el número nuevo. La misma dirección vale también desde el navegador del móvil.')}</p>
       <div id="cons-indirizzi"></div>
@@ -8595,7 +8616,7 @@ function pannelloConsolify() {
     </div>`);
 }
 
-let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', login: '', pagina: 0, modifica: false, aperto: null, scoperta: false, overlay: false, passoFile: 0 };
+let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', login: '', pagina: 0, modifica: false, aperto: null, scoperta: false, overlay: false, passoFile: 0, scene: [], regia: false, regiaAppesa: false };
 
 async function caricaConsolify() {
   const esito = document.getElementById('cons-esito');
@@ -8618,6 +8639,7 @@ async function caricaConsolify() {
   disegnaConsolify();
   disegnaIndirizziConsole();
   disegnaSpia();
+  preparaRegia();
 }
 
 function disegnaConsolify() {
@@ -8715,6 +8737,101 @@ function disegnaConsolify() {
   if (_cons.aperto !== null && _cons.aperto !== undefined) disegnaSchedaTasto();
 }
 
+function disegnaSpiaRegia(msg) {
+  const el = document.getElementById('re-spia');
+  if (!el) return;
+  const su = !!(window.RegiaEsterna && RegiaEsterna.collegato());
+  _cons.regia = su;
+  el.className = 'cons-spia' + (su ? ' su' : ' giu');
+  el.textContent = msg || (su
+    ? L('collegato', 'connected', 'conectado')
+    : L('non collegato', 'not connected', 'no conectado'));
+}
+
+const MOTIVI_REGIA = () => ({
+  'fuori-casa': L('Solo il tuo computer: un indirizzo di rete lo blocca il browser, non noi.', 'Only your own computer: a network address is blocked by the browser, not by us.', 'Solo tu propio ordenador: una dirección de red la bloquea el navegador, no nosotros.'),
+  'serve-password': L('Chiede una password: prendila dalle impostazioni del programma.', 'It asks for a password: take it from the program’s settings.', 'Pide una contraseña: tómala de los ajustes del programa.'),
+  'non-raggiungibile': L('Non risponde: controlla che il programma sia aperto e che il collegamento sia acceso nelle sue impostazioni.', 'No answer: check the program is open and its connection is switched on in its settings.', 'No responde: comprueba que el programa esté abierto y que la conexión esté activada en sus ajustes.'),
+});
+
+function preparaRegia() {
+  if (!window.RegiaEsterna) return;
+  const g = RegiaEsterna.impostazioni();
+  const met = (k, v) => { const el = document.getElementById(k); if (el) el.value = v; };
+  met('re-ip', g.ip); met('re-porta', g.porta); met('re-pass', g.pass);
+  disegnaSpiaRegia();
+  if (!_cons.regiaAppesa) {
+    _cons.regiaAppesa = true;
+    RegiaEsterna.ascolta('stato', () => disegnaSpiaRegia());
+    RegiaEsterna.ascolta('CurrentProgramSceneChanged', (d) => segnaScenaViva(d && d.sceneName));
+  }
+  if (RegiaEsterna.collegato()) caricaScene();
+}
+
+async function caricaScene() {
+  const box = document.getElementById('re-scene');
+  if (!box) return;
+  if (!window.RegiaEsterna || !RegiaEsterna.collegato()) { box.innerHTML = ''; return; }
+  try {
+    const d = await RegiaEsterna.chiedi('GetSceneList');
+    _cons.scene = (d.scenes || []).map((x) => x.sceneName).filter(Boolean).reverse();
+    const ora = d.currentProgramSceneName || '';
+    box.innerHTML = `<div class="cons-sez">${L('Le tue scene', 'Your scenes', 'Tus escenas')}</div>
+      <div class="cons-scene-griglia">${_cons.scene.map((n2) => `<button class="cons-scena${n2 === ora ? ' on' : ''}" data-re-scena="${esc(n2)}">${esc(n2)}</button>`).join('')}</div>`;
+  } catch (e) {
+    box.innerHTML = `<p class="vuoto">${esc(L('non riesco a leggere le scene', 'cannot read the scenes', 'no puedo leer las escenas'))}</p>`;
+  }
+}
+
+function segnaScenaViva(nome) {
+  document.querySelectorAll('[data-re-scena]').forEach((b) => {
+    b.classList.toggle('on', b.dataset.reScena === nome);
+  });
+}
+
+const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function premiTasto(t, stato) {
+  const passi = t.passi || [];
+  const esiti = [];
+  for (let k = 0; k < passi.length; k++) {
+    const p = passi[k];
+    if (p.tipo === 'attesa') { await attendi(Math.min(30000, Number(p.ms) || 0)); esiti.push({ ok: true, mostra: '' }); continue; }
+    if (p.tipo === 'scena' || p.tipo === 'muto') { esiti.push(await eseguiPassoRegia(p)); continue; }
+    try {
+      const r = await fetch(`${consUrlTasto(t)}`.replace(/\?/, `/passo/${k}?`), { method: 'POST' });
+      const d = await r.json().catch(() => null);
+      if (d && typeof d.overlay === 'boolean' && d.overlay !== _cons.overlay) { _cons.overlay = d.overlay; disegnaSpia(); }
+      esiti.push({ ok: !!(d && d.ok), mostra: String((d && d.mostra) || '') });
+    } catch (e) { esiti.push({ ok: false, mostra: L('non riuscito', 'failed', 'falló') }); }
+    if (stato) stato.textContent = `${k + 1}/${passi.length}`;
+  }
+  const riusciti = esiti.filter((e) => e.ok).length;
+  const guaio = esiti.find((e) => !e.ok);
+  if (esiti.length === 1) return esiti[0];
+  return { ok: !guaio, mostra: guaio ? `${riusciti}/${esiti.length} · ${guaio.mostra}` : (esiti.map((e) => e.mostra).filter(Boolean).pop() || `${riusciti}`) };
+}
+
+async function eseguiPassoRegia(p) {
+  if (!window.RegiaEsterna || !RegiaEsterna.collegato()) return { ok: false, mostra: L('regia non collegata', 'program not connected', 'programa no conectado') };
+  try {
+    if (p.tipo === 'scena') {
+      if (!p.scena) return { ok: false, mostra: L('manca la scena', 'scene missing', 'falta la escena') };
+      await RegiaEsterna.chiedi('SetCurrentProgramScene', { sceneName: p.scena });
+      return { ok: true, mostra: p.scena };
+    }
+    if (p.tipo === 'muto') {
+      if (!p.fonte) return { ok: false, mostra: L('manca la fonte', 'source missing', 'falta la fuente') };
+      if (p.come === 'inverti') await RegiaEsterna.chiedi('ToggleInputMute', { inputName: p.fonte });
+      else await RegiaEsterna.chiedi('SetInputMute', { inputName: p.fonte, inputMuted: p.come === 'muta' });
+      return { ok: true, mostra: p.fonte };
+    }
+  } catch (e) {
+    return { ok: false, mostra: String((e && e.message) || 'non riuscito').slice(0, 60) };
+  }
+  return { ok: false, mostra: L('passo sconosciuto', 'unknown step', 'paso desconocido') };
+}
+
 function disegnaSpia() {
   const el = document.getElementById('cons-collegato');
   if (!el) return;
@@ -8729,6 +8846,8 @@ const TIPI_PASSO = () => [
   ['azione', L('Fai una cosa che hai già', 'Do something you already have', 'Haz algo que ya tienes')],
   ['chat', L('Dì una frase in chat', 'Say a line in chat', 'Di una frase en el chat')],
   ['media', L('Manda questo (immagine, video o suono)', 'Send this (image, video or sound)', 'Manda esto (imagen, vídeo o sonido)')],
+  ['scena', L('Cambia scena in regia', 'Change scene in the program', 'Cambia de escena en el programa')],
+  ['muto', L('Muta o smuta una fonte', 'Mute or unmute a source', 'Silencia o quita el silencio a una fuente')],
   ['comando', L('Manda il risultato di un comando', 'Send what a command produces', 'Manda lo que produce un comando')],
   ['attesa', L('Aspetta', 'Wait', 'Espera')],
 ];
@@ -8737,6 +8856,8 @@ function etichettaPasso(p) {
   if (!p) return '';
   if (p.tipo === 'azione') return (_cons.azioni.find((a) => a.id === p.id) || {}).titolo || p.id;
   if (p.tipo === 'media') return p.file ? p.genere : '';
+  if (p.tipo === 'scena') return p.scena || '';
+  if (p.tipo === 'muto') return p.fonte || '';
   if (p.tipo === 'chat') return p.testo || '';
   if (p.tipo === 'comando') return '!' + p.comando;
   if (p.tipo === 'attesa') return `${Math.round(p.ms / 100) / 10}s`;
@@ -8799,6 +8920,14 @@ function disegnaPasso(p, k, n) {
          <button class="btn secondario mini" data-cons-pfile="${k}">${L('cambia', 'change', 'cambiar')}</button>`
       : `<button class="btn secondario mini" data-cons-pfile="${k}">${L('Scegli il file', 'Pick the file', 'Elige el archivo')}</button>
          <span class="tenue">${L('immagine, video o suono', 'image, video or sound', 'imagen, vídeo o sonido')}</span>`;
+  } else if (p.tipo === 'scena') {
+    const scene = _cons.scene || [];
+    corpo = scene.length
+      ? `<select class="campo" data-cons-pcampo="${k}:scena">${scene.map((n2) => `<option value="${esc(n2)}"${n2 === p.scena ? ' selected' : ''}>${esc(n2)}</option>`).join('')}</select>`
+      : `<input class="campo" data-cons-pcampo="${k}:scena" maxlength="80" value="${esc(p.scena || '')}" placeholder="${L('nome della scena', 'scene name', 'nombre de la escena')}">`;
+  } else if (p.tipo === 'muto') {
+    corpo = `<input class="campo" data-cons-pcampo="${k}:fonte" maxlength="80" value="${esc(p.fonte || '')}" placeholder="${L('nome della fonte', 'source name', 'nombre de la fuente')}">
+      <select class="campo" data-cons-pcampo="${k}:come">${[['inverti', L('inverti', 'toggle', 'invierte')], ['muta', L('muta', 'mute', 'silencia')], ['smuta', L('smuta', 'unmute', 'quita silencio')]].map(([v2, t2]) => `<option value="${v2}"${p.come === v2 ? ' selected' : ''}>${esc(t2)}</option>`).join('')}</select>`;
   } else if (p.tipo === 'comando') {
     corpo = `<input class="campo" data-cons-pcampo="${k}:comando" maxlength="40" value="${esc(p.comando || '')}" placeholder="${L('nome del comando, senza !', 'command name, without !', 'nombre del comando, sin !')}">`;
   } else if (p.tipo === 'attesa') {
@@ -8976,12 +9105,10 @@ function appendiConsolify() {
       const stato = tasto.querySelector('.cons-stato');
       if (stato) stato.textContent = '\u2026';
       try {
-        const r = await fetch(consUrlTasto(t), { method: 'POST' });
-        const d = await r.json().catch(() => null);
-        if (d && typeof d.overlay === 'boolean' && d.overlay !== _cons.overlay) { _cons.overlay = d.overlay; disegnaSpia(); }
-        if (stato) stato.textContent = String(d?.mostra || (d?.ok ? L('fatto', 'done', 'hecho') : L('non riuscito', 'failed', 'falló'))).slice(0, 40);
-        tasto.classList.toggle('cons-male', !d?.ok);
-        if (d?.ok) { tasto.classList.add('cons-fatto'); setTimeout(() => tasto.classList.remove('cons-fatto'), 400); }
+        const d = await premiTasto(t, stato);
+        if (stato) stato.textContent = String(d.mostra || (d.ok ? L('fatto', 'done', 'hecho') : L('non riuscito', 'failed', 'falló'))).slice(0, 40);
+        tasto.classList.toggle('cons-male', !d.ok);
+        if (d.ok) { tasto.classList.add('cons-fatto'); setTimeout(() => tasto.classList.remove('cons-fatto'), 400); }
       } catch { if (stato) stato.textContent = L('non riuscito', 'failed', 'falló'); }
       return;
     }
@@ -9022,6 +9149,38 @@ function appendiConsolify() {
       pg().tasti.push({ passi: [{ tipo: 'azione', id: a.id, testo }], nome: testo ? testo.slice(0, 24) : a.titolo, icona: '', colore: '', conferma: false });
       disegnaConsolify(); await salvaPlancia(); return;
     }
+    const scena = ev.target.closest('[data-re-scena]');
+    if (scena) {
+      const nome = scena.dataset.reScena;
+      const r = await eseguiPassoRegia({ tipo: 'scena', scena: nome });
+      if (r.ok) segnaScenaViva(nome); else disegnaSpiaRegia(r.mostra);
+      return;
+    }
+    if (id === 're-collega') {
+      const cfg = {
+        ip: (document.getElementById('re-ip')?.value || '127.0.0.1').trim(),
+        porta: (document.getElementById('re-porta')?.value || '4455').trim(),
+        pass: document.getElementById('re-pass')?.value || '',
+      };
+      disegnaSpiaRegia(L('provo…', 'trying…', 'probando…'));
+      try {
+        await RegiaEsterna.collega(cfg);
+        RegiaEsterna.salvaImpostazioni(cfg);
+        disegnaSpiaRegia();
+        await caricaScene();
+      } catch (e) {
+        disegnaSpiaRegia(MOTIVI_REGIA()[e && e.message] || L('non riuscito', 'failed', 'falló'));
+      }
+      return;
+    }
+    if (id === 're-stacca') { RegiaEsterna.chiudi(); disegnaSpiaRegia(); await caricaScene(); return; }
+    if (id === 're-scorda') {
+      if (!confirm(L('Scordare indirizzo e password? Restano solo su questo computer, e le riscrivi quando vuoi.', 'Forget address and password? They only live on this computer, and you can type them again whenever.', '¿Olvidar dirección y contraseña? Solo viven en este ordenador, y las reescribes cuando quieras.'))) return;
+      RegiaEsterna.chiudi(); RegiaEsterna.scorda();
+      ['re-ip', 're-porta', 're-pass'].forEach((k) => { const el = document.getElementById(k); if (el) el.value = k === 're-ip' ? '127.0.0.1' : k === 're-porta' ? '4455' : ''; });
+      _cons.scene = []; disegnaSpiaRegia(); await caricaScene();
+      return;
+    }
     const pfile = ev.target.closest('[data-cons-pfile]');
     if (pfile) {
       _cons.passoFile = Number(pfile.dataset.consPfile);
@@ -9051,6 +9210,8 @@ function appendiConsolify() {
         : tipo === 'chat' ? { tipo, testo: '' }
           : tipo === 'comando' ? { tipo, comando: '' }
             : tipo === 'media' ? { tipo, file: '', genere: 'immagine', durata: 5000, volume: 100 }
+              : tipo === 'scena' ? { tipo, scena: (_cons.scene || [])[0] || '' }
+                : tipo === 'muto' ? { tipo, fonte: '', come: 'inverti' }
               : { tipo: 'attesa', ms: 1000 };
       if (t.passi.length >= 8) { alert(L('Otto passi bastano: oltre, un tasto non si capisce più.', 'Eight steps is plenty: past that, a key stops being readable.', 'Ocho pasos bastan: más allá, una tecla deja de entenderse.')); return; }
       t.passi.push(nuovo);
@@ -9127,6 +9288,9 @@ function appendiConsolifyCampi() {
       else if (campo === 'durata') passo.durata = Math.max(500, Math.min(30000, Math.round(Number(ev.target.value) * 1000) || 5000));
       else if (campo === 'volume') passo.volume = Math.max(0, Math.min(100, Math.round(Number(ev.target.value)) || 0));
       else if (campo === 'comando') passo.comando = String(ev.target.value).trim().replace(/^!/, '').toLowerCase().slice(0, 40);
+      else if (campo === 'scena') passo.scena = String(ev.target.value).slice(0, 80);
+      else if (campo === 'fonte') passo.fonte = String(ev.target.value).slice(0, 80);
+      else if (campo === 'come') passo.come = String(ev.target.value);
       else if (campo === 'id') { passo.id = String(ev.target.value); disegnaSchedaTasto(); }
       else passo.testo = String(ev.target.value).trim().slice(0, 400);
       rinfrescaTasto(_cons.aperto);

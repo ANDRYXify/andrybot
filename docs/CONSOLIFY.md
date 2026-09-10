@@ -154,3 +154,45 @@ stampa la risposta sul tasto, quindi dopo la pressione leggi il numero nuovo.
 Se un indirizzo finisce in una clip o in uno screenshot: **rigenera la chiave**. Gli
 indirizzi vecchi smettono di funzionare all'istante e vanno rifatti — è il motivo
 per cui il bottone c'è.
+
+## Il collegamento al programma di regia (misurato, non dedotto)
+
+La strada che sembrava impossibile e' invece quella giusta. Provato da una pagina
+servita in **https**, con la controprova che sola rende la misura una prova:
+
+| destinazione | esito |
+|---|---|
+| `ws://127.0.0.1:4455` | passa (solo errore di rete) |
+| `ws://localhost:4455` | passa |
+| `ws://192.168.1.50:4455` | **SecurityError** |
+| `ws://example.com:4455` | **SecurityError** |
+
+Il browser tratta il **loopback** come attendibile anche per i websocket. Quindi
+la pagina parla direttamente col programma, e non serve installare niente.
+
+### Come e' fatto
+
+- **Nessuna libreria di terzi.** Il protocollo v5 e' una stretta di mano (Hello →
+  Identify con un digest SHA-256 di password+sale+sfida) e poi messaggi JSON.
+  Sta in `src/web/public/regia-esterna.js`, un centinaio di righe. Appendere il
+  pannello a uno script di un CDN avrebbe voluto dire allargare la CSP e legarci
+  a qualcuno.
+- **La CSP si apre SOLO al loopback**: `connect-src 'self' ws://127.0.0.1:*
+  ws://localhost:*`. Nient'altro. E il browser rifiuta comunque tutto il resto.
+- **La password non passa da noi.** Vive in `localStorage`, cioe' sul computer
+  dello streamer. Il file del collegamento non fa nemmeno una `fetch`: non
+  avrebbe dove mandarla. Una prova lo verifica in tutti e due i sensi.
+- **Un indirizzo di rete non viene nemmeno tentato**: lo blocca il browser, ma
+  dirlo prima e' meglio che mostrare un errore oscuro.
+
+### L'ordine dei passi, che e' la parte difficile
+
+I passi di regia li puo' fare solo la pagina; tutti gli altri solo il server. Se
+il server facesse "tutto il resto" e la pagina le scene "dopo", una fila con
+un'attesa in mezzo andrebbe fuori ordine.
+
+Percio' **la pagina cammina lei**, in ordine, e per ogni passo che non sa fare
+chiede QUEL passo (`/tasto/:id/passo/:k`), non tutto il tasto. Il server, dal
+canto suo, i passi di regia non finge di farli: risponde che li fa la pagina —
+cosi' chi preme da una tastiera fisica se lo sente dire invece di ricevere un
+«fatto» che non e' successo.
