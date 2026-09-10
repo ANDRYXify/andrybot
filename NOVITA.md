@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-10
 
+- Un tasto può mandare in onda un'immagine, un video o un suono caricati lì sul tasto: non devi più farne prima un effetto con un suo comando in un'altra scheda.
+- Durata e volume di quel media si cambiano dal tasto, e quando lo sostituisci il file vecchio se ne va invece di restare sul disco per sempre.
 - Un tasto di CONSOLify può fare più cose di seguito, non una sola: dire una frase, aspettare, lanciare un effetto, mandare il risultato di un comando — nell'ordine che scegli tu.
 - I passi si aggiungono, si spostano e si tolgono dalla scheda del tasto, e se uno non riesce gli altri succedono lo stesso.
 - I tasti che avevi già continuano a funzionare: diventano una fila di un passo solo, senza che tu debba rifarli.

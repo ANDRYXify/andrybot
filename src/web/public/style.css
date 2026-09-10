@@ -2160,6 +2160,13 @@ body.ce-aperto { overflow: hidden; }
 .cons-passo-c { flex: 1 1 12rem; display: flex; align-items: center; gap: .4rem; min-width: 0; }
 .cons-passo-c .campo { flex: 1 1 auto; min-width: 0; }
 .cons-passo-c input[type="number"].campo { flex: 0 0 5.5rem; }
+.cons-media-c { display: inline-flex; align-items: center; gap: .3rem; flex: 0 0 auto; }
+.cons-media-c svg { width: 1.1rem; height: 1.1rem; }
+.cons-passo .cons-num {
+  display: flex; flex-direction: row; align-items: center; gap: .25rem;
+  flex: 0 0 auto; margin: 0; font-size: .74rem; color: var(--testo-2); font-weight: 600;
+}
+.cons-passo .cons-num .campo { flex: 0 0 4rem; width: 4rem; align-self: center; }
 .cons-passo .cons-frecce { position: static; flex: 0 0 auto; display: flex; gap: .2rem; }
 
 .cons-spia {
