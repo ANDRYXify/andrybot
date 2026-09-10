@@ -19548,4 +19548,24 @@ window.SB_APP = {
   schedaValida(id) { try { return schedaValida(id); } catch (e) { return true; } },
   schedaBloccata(id) { try { return schedaBloccata(id); } catch (e) { return false; } },
 };
+function vestiOgniTendina(dove) {
+  try {
+    (dove || document).querySelectorAll('select:not(.tendina-vero)').forEach(vestiTendina);
+  } catch (e) {  }
+}
+
+(function () {
+  let inCoda = false;
+  const giro = () => { inCoda = false; vestiOgniTendina(); };
+  try {
+    new MutationObserver(() => {
+      if (inCoda) return;
+      inCoda = true;
+      requestAnimationFrame(giro);
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  } catch (e) {  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', giro, { once: true });
+  else giro();
+}());
+
 try { window.dispatchEvent(new CustomEvent('sb-app-pronta')); } catch (e) {  }

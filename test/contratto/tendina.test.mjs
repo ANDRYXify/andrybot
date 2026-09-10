@@ -67,3 +67,15 @@ test('lo stile parla la lingua del resto', () => {
   assert.ok(!/display:\s*none[^;]*;\s*\}/.test(css.slice(css.indexOf('.tendina-vero'), css.indexOf('.tendina-vero') + 200)),
     'e non con display:none, che lo toglierebbe anche a chi legge lo schermo');
 });
+
+test('non serve ricordarsi di vestirle: si vestono da sé', () => {
+  // La tendina esisteva ed era riusabile, ma andava chiamata a mano su ogni
+  // select — e infatti su 104 select era chiamata su UNO. Se ci si deve
+  // ricordare, prima o poi ci si dimentica: me ne sono dimenticato io, e i menù
+  // nuovi uscivano col grigio del sistema in mezzo a un'interfaccia disegnata.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  assert.match(app, /function vestiOgniTendina\(/, 'c\'è un posto solo che le veste tutte');
+  assert.match(app, /select:not\(\.tendina-vero\)/, 'e prende quelle non ancora vestite');
+  assert.match(app, /new MutationObserver\(/, 'e guarda quello che compare dopo, non solo quello che c\'è all\'avvio');
+  assert.match(app, /requestAnimationFrame\(giro\)/, 'una passata per disegno, non una per ogni nodo che cambia');
+});
