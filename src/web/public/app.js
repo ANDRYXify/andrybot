@@ -2488,8 +2488,8 @@ const GUIDE = {
     come: [['Il modo più corto: dai un nome al comando e scrivi la risposta. È già fatto.', 'The shortest way: name the command and write the answer. That is it.', 'La forma más corta: pon nombre al comando y escribe la respuesta. Ya está.', '#qc-nome'], ['Per qualcosa di più c’è il modulo: QUANDO succede X (un !comando, una parola, un evento, un timer) ALLORA fai Y — anche più cose insieme.', 'For something more there is the module: WHEN X happens (a !command, a word, an event, a timer) THEN do Y — several things at once, too.', 'Para algo más está el módulo: CUANDO pasa X (un !comando, una palabra, un evento, un temporizador) ENTONCES haz Y — varias cosas a la vez, también.', '#lista-moduli'], ['I contatori sono numeri che tu e i mod muovete in chat — !morti, !tentativi — e che puoi mostrare nell’overlay.', 'Counters are numbers you and your mods move in chat — !deaths, !attempts — and that you can show in the overlay.', 'Los contadores son números que tú y los mods movéis en el chat — !muertes, !intentos — y que puedes mostrar en el overlay.', '#cont-comando']] },
   memoria: { serve: ['Vedere cosa si ricorda il bot e come sta andando il canale: statistiche, utenti più attivi e cose imparate.', 'See what the bot remembers and how the channel is doing: stats, most active viewers and things it learned.', 'Ver qué recuerda el bot y cómo va el canal: estadísticas, usuarios más activos y cosas aprendidas.'],
     come: [['Scorri le statistiche per capire quando la chat è più viva.', 'Scroll the stats to see when chat is most alive.', 'Repasa las estadísticas para ver cuándo el chat está más vivo.', '#griglia-stat'], ['Controlla i ricordi: puoi cancellare quelli sbagliati.', 'Check the memories: you can delete the wrong ones.', 'Revisa los recuerdos: puedes borrar los equivocados.', '#btn-carica-memoria'], ['Se qualcosa non ti piace, correggilo dalla scheda Conoscenza.', 'If something’s off, fix it from the Knowledge tab.', 'Si algo no te gusta, corrígelo desde la pestaña Conocimiento.', '']] },
-  consolify: { serve: ['Avere i tasti del tuo canale sotto le dita mentre streami: contatori, effetti, una battuta, una frase — sul telefono, sul tablet o su uno Stream Deck vero.', 'Have your channel’s keys under your fingers while you stream: counters, effects, a joke, a line — on your phone, tablet or a real Stream Deck.', 'Tener las teclas de tu canal bajo los dedos mientras emites: contadores, efectos, un chiste, una frase — en el móvil, la tablet o un Stream Deck real.'],
-    come: [['Premi «Modifica i tasti» e aggiungine uno: nell\'elenco ci sono già le tue azioni, perché nascono dai tuoi contatori e dai tuoi effetti.', 'Press “Edit the keys” and add one: your actions are already in the list, because they come from your own counters and effects.', 'Pulsa «Editar las teclas» y añade una: tus acciones ya están en la lista, porque nacen de tus contadores y tus efectos.', '#cons-modifica'], ['Premi «Fatto» e prova: sotto ogni tasto compare com\'è andata, per esempio il numero nuovo del contatore.', 'Press “Done” and try it: under each key you see how it went, for example the counter’s new number.', 'Pulsa «Hecho» y pruébalo: bajo cada tecla aparece cómo ha ido, por ejemplo el número nuevo del contador.', '#cons-plancia'], ['Apri questa pagina sul telefono e tienila lì mentre streami: la griglia si adatta da sé.', 'Open this page on your phone and keep it there while you stream: the grid adapts on its own.', 'Abre esta página en el móvil y tenla ahí mientras emites: la cuadrícula se adapta sola.', ''], ['Per uno Stream Deck vero: copia l\'indirizzo dell\'azione e incollalo in un tasto con un plugin di chiamate web. Icona e nome li scegli lì.', 'For a real Stream Deck: copy the action’s address and paste it into a key with a web-request plugin. Icon and name you pick there.', 'Para un Stream Deck real: copia la dirección de la acción y pégala en una tecla con un plugin de peticiones web. Icono y nombre los eliges allí.', '#cons-indirizzi'], ['Se un indirizzo finisce in una clip, rigenera la chiave: quelli vecchi smettono di funzionare subito.', 'If an address ends up in a clip, regenerate the key: the old ones stop working immediately.', 'Si una dirección acaba en un clip, regenera la clave: las viejas dejan de funcionar enseguida.', '#cons-revoca']] },
+  consolify: { serve: ['Avere i tasti del tuo canale sotto le dita mentre streami: contatori, effetti, una battuta, una frase — sul telefono, sul tablet o su una tastiera fisica.', 'Have your channel’s keys under your fingers while you stream: counters, effects, a joke, a line — on your phone, tablet or a physical key pad.', 'Tener las teclas de tu canal bajo los dedos mientras emites: contadores, efectos, un chiste, una frase — en el móvil, la tablet o un teclado físico.'],
+    come: [['Premi «Modifica i tasti» e aggiungine uno: nell\'elenco ci sono già le tue azioni, perché nascono dai tuoi contatori e dai tuoi effetti.', 'Press “Edit the keys” and add one: your actions are already in the list, because they come from your own counters and effects.', 'Pulsa «Editar las teclas» y añade una: tus acciones ya están en la lista, porque nacen de tus contadores y tus efectos.', '#cons-modifica'], ['Premi «Fatto» e prova: sotto ogni tasto compare com\'è andata, per esempio il numero nuovo del contatore.', 'Press “Done” and try it: under each key you see how it went, for example the counter’s new number.', 'Pulsa «Hecho» y pruébalo: bajo cada tecla aparece cómo ha ido, por ejemplo el número nuevo del contador.', '#cons-plancia'], ['Apri questa pagina sul telefono e tienila lì mentre streami: la griglia si adatta da sé.', 'Open this page on your phone and keep it there while you stream: the grid adapts on its own.', 'Abre esta página en el móvil y tenla ahí mientras emites: la cuadrícula se adapta sola.', ''], ['Per una tastiera fisica: copia l\'indirizzo dell\'azione e incollalo in un tasto con un plugin di chiamate web. Icona e nome li scegli lì.', 'For a physical key pad: copy the action’s address and paste it into a key with a web-request plugin. Icon and name you pick there.', 'Para un teclado físico: copia la dirección de la acción y pégala en una tecla con un plugin de peticiones web. Icono y nombre los eliges allí.', '#cons-indirizzi'], ['Se un indirizzo finisce in una clip, rigenera la chiave: quelli vecchi smettono di funzionare subito.', 'If an address ends up in a clip, regenerate the key: the old ones stop working immediately.', 'Si una dirección acaba en un clip, regenera la clave: las viejas dejan de funcionar enseguida.', '#cons-revoca']] },
   regia: { serve: ['Gestire la diretta dal pannello: titolo, categoria, marker e le azioni rapide, senza aprire Twitch.', 'Run your stream from the panel: title, category, markers and quick actions, without opening Twitch.', 'Gestionar el directo desde el panel: título, categoría, marcadores y acciones rápidas, sin abrir Twitch.'],
     come: [['Cambia titolo e categoria e salva: si aggiornano su Twitch subito.', 'Change title and category and save: they update on Twitch right away.', 'Cambia título y categoría y guarda: se actualizan en Twitch al instante.', '#regia-titolo'], ['Usa le azioni rapide durante la live (marker, clip, annunci).', 'Use the quick actions during the stream (marker, clip, announcements).', 'Usa las acciones rápidas durante el directo (marcador, clip, anuncios).', '#regia-clip'], ['Tieni il pannello aperto su un secondo schermo mentre streami.', 'Keep the panel open on a second screen while you stream.', 'Ten el panel abierto en una segunda pantalla mientras emites.', '']] },
   sottoscrizione: { serve: ['Vedere cosa hai attivo, cosa comprende, quanto paghi e come cambiarlo o annullarlo.', 'See what you have active, what it includes, what you pay and how to change or cancel it.', 'Ver qué tienes activo, qué incluye, cuánto pagas y cómo cambiarlo o cancelarlo.'],
@@ -2536,6 +2536,7 @@ const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" s
 
 const _hIco = (d) => `<svg class="h-ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ICO = {
+  meno: '<line x1="5" x2="19" y1="12" y2="12"/>',
   orologio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
   musica: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
   sliders: '<line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/>',
@@ -8517,7 +8518,7 @@ function pannelloConsolify() {
   return pannello('consolify', `
     <div class="carta">
       <h2>${_hIco(ICO.onda)}CONSOLify</h2>
-      <p class="suggerimento">${L('I tasti del tuo canale, sotto le dita. Sul telefono, sul tablet o su un secondo monitor mentre streammi — e gli stessi tasti li puoi mettere su uno Stream Deck vero.', 'Your channel’s keys under your fingers. On your phone, tablet or a second monitor while you stream — and the same keys go on a real Stream Deck.', 'Las teclas de tu canal bajo los dedos. En el móvil, la tablet o un segundo monitor mientras emites — y las mismas teclas van a un Stream Deck real.')}</p>
+      <p class="suggerimento">${L('I tasti del tuo canale, sotto le dita. Sul telefono, sul tablet o su un secondo monitor mentre streammi — e gli stessi tasti li puoi mettere su una tastiera fisica.', 'Your channel’s keys under your fingers. On your phone, tablet or a second monitor while you stream — and the same keys go on a physical key pad.', 'Las teclas de tu canal bajo los dedos. En el móvil, la tablet o un segundo monitor mientras emites — y las mismas teclas van a un teclado físico.')}</p>
       <div class="vita-azioni">
         <button class="btn secondario mini" id="cons-modifica">${L('Modifica i tasti', 'Edit the keys', 'Editar las teclas')}</button>
         <button class="btn secondario mini" id="cons-aggiorna">${L('Aggiorna', 'Refresh', 'Actualizar')}</button>
@@ -8527,8 +8528,8 @@ function pannelloConsolify() {
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.monitor)}${L('Su uno Stream Deck vero', 'On a real Stream Deck', 'En un Stream Deck real')}</h2>
-      <p class="suggerimento">${L('Non serve installare niente di nostro: in Stream Deck aggiungi un tasto con un plugin che fa chiamate web (per esempio <strong>API Ninja</strong>), incolli l’indirizzo qui sotto e scegli tu icona e nome. Il tasto stampa la risposta, quindi dopo la pressione mostra il numero nuovo. Lo stesso indirizzo funziona con Companion, Touch Portal, Loupedeck e dal browser di un telefono.', 'Nothing of ours to install: in Stream Deck add a key with a plugin that makes web requests (for example <strong>API Ninja</strong>), paste the address below and pick your own icon and name. The key prints the response, so after pressing it shows the new number. The same address works with Companion, Touch Portal, Loupedeck and from a phone browser.', 'No hace falta instalar nada nuestro: en Stream Deck añade una tecla con un plugin de peticiones web (por ejemplo <strong>API Ninja</strong>), pega la dirección de abajo y eliges icono y nombre. La tecla imprime la respuesta, así que tras pulsarla muestra el número nuevo. La misma dirección vale con Companion, Touch Portal, Loupedeck y desde el navegador del móvil.')}</p>
+      <h2>${_hIco(ICO.monitor)}${L('Su una tastiera fisica', 'On a physical key pad', 'En un teclado físico')}</h2>
+      <p class="suggerimento">${L('Non serve installare niente di nostro: sulla tua tastiera aggiungi un tasto con un componente che fa chiamate web, incolli l’indirizzo qui sotto e scegli tu icona e nome. Il tasto stampa la risposta, quindi dopo la pressione mostra il numero nuovo. Lo stesso indirizzo funziona con Companion, Touch Portal, Loupedeck e dal browser di un telefono.', 'Nothing of ours to install: in tastiera fisica add a key with a plugin that makes web requests (for example <strong>API Ninja</strong>), paste the address below and pick your own icon and name. The key prints the response, so after pressing it shows the new number. The same address works with Companion, Touch Portal, Loupedeck and from a phone browser.', 'No hace falta instalar nada nuestro: en tastiera fisica añade una tecla con un plugin de peticiones web (por ejemplo <strong>API Ninja</strong>), pega la dirección de abajo y eliges icono y nombre. La tecla imprime la respuesta, así que tras pulsarla muestra el número nuevo. La misma dirección vale con Companion, Touch Portal, Loupedeck y desde el navegador del móvil.')}</p>
       <div id="cons-indirizzi"></div>
       <p class="vita-azioni">
         <button class="btn secondario mini" id="cons-revoca">${L('Rigenera la chiave', 'Regenerate the key', 'Regenerar la clave')}</button>
@@ -8537,7 +8538,7 @@ function pannelloConsolify() {
     </div>`);
 }
 
-let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', pagina: 0, modifica: false };
+let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', login: '', pagina: 0, modifica: false, aperto: null, scAperta: null, scoperta: false };
 
 async function caricaConsolify() {
   const esito = document.getElementById('cons-esito');
@@ -8546,6 +8547,7 @@ async function caricaConsolify() {
     const p = await api('/api/streamer/console/plancia');
     _cons.azioni = Array.isArray(d?.azioni) ? d.azioni : [];
     _cons.base = d?.base || '';
+    _cons.login = String(_cons.base).split('/').pop() || '';
     _cons.chiave = d?.chiave || '';
     _cons.plancia = p?.plancia || { pagine: [{ nome: 'Principale', tasti: [] }] };
     if (_cons.pagina >= _cons.plancia.pagine.length) _cons.pagina = 0;
@@ -8554,22 +8556,9 @@ async function caricaConsolify() {
     return;
   }
   appendiConsolify();
+  appendiConsolifyCampi();
   disegnaConsolify();
   disegnaIndirizziConsole();
-}
-
-function disegnaIndirizziConsole() {
-  const box = document.getElementById('cons-indirizzi');
-  if (!box) return;
-  const righe = _cons.azioni.slice(0, 40).map((a) => {
-    const url = `${_cons.base}/${a.id}?key=${_cons.chiave}`;
-    return `<div class="cons-riga">
-      <span class="cons-riga-nome">${esc(a.icona || '')} ${esc(a.titolo)}</span>
-      <code class="cons-url">${esc(url)}</code>
-      <button class="btn secondario mini cons-copia" data-url="${esc(url)}">${L('copia', 'copy', 'copiar')}</button>
-    </div>`;
-  }).join('');
-  box.innerHTML = righe || `<p class="vuoto">${L('Nessuna azione ancora: aggiungi un contatore o un effetto e i tasti compaiono da soli.', 'No actions yet: add a counter or an effect and the keys appear on their own.', 'Aún no hay acciones: añade un contador o un efecto y las teclas aparecen solas.')}</p>`;
 }
 
 function disegnaConsolify() {
@@ -8578,31 +8567,182 @@ function disegnaConsolify() {
   const pagine = _cons.plancia.pagine || [];
   const pg = pagine[_cons.pagina] || { nome: '', tasti: [] };
   const perId = new Map(_cons.azioni.map((a) => [a.id, a]));
+  const misura = _cons.plancia.misura || 'm';
+  const mod = _cons.modifica;
 
-  const linguette = pagine.map((p, i) => `<button class="btn secondario mini${i === _cons.pagina ? ' acceso' : ''}" data-cons-pag="${i}">${esc(p.nome || `#${i + 1}`)}</button>`).join('')
-    + (_cons.modifica && pagine.length < 8 ? `<button class="btn secondario mini" id="cons-piu-pagina">+</button>` : '');
+  const linguette = `<div class="cons-linguette">${pagine.map((p, i) => `<button class="cons-ling${i === _cons.pagina ? ' on' : ''}" data-cons-pag="${i}">${esc(p.nome || `#${i + 1}`)}</button>`).join('')}${mod && pagine.length < 8 ? '<button class="cons-ling cons-ling-piu" id="cons-piu-pagina" title="' + L('Nuova pagina', 'New page', 'Nueva página') + '">+</button>' : ''}</div>`;
 
-  const tasti = (pg.tasti || []).map((t, i) => {
+  const col = Number(_cons.plancia.colonne) || 0;
+  const misure = mod ? `<div class="cons-linguette">${[['s', 'S'], ['m', 'M'], ['l', 'L']].map(([k, et]) => `<button class="cons-ling${misura === k ? ' on' : ''}" data-cons-misura="${k}">${et}</button>`).join('')}</div>
+    <label class="cons-colonne">${L('Colonne', 'Columns', 'Columnas')}
+      <select class="campo" id="cons-colonne">
+        <option value="0"${!col ? ' selected' : ''}>${L('quante ci stanno', 'as many as fit', 'las que quepan')}</option>
+        ${[2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => `<option value="${n}"${col === n ? ' selected' : ''}>${n}</option>`).join('')}
+      </select></label>` : '';
+  const rinomina = mod ? `<button class="btn secondario mini" id="cons-rinomina">${L('Rinomina pagina', 'Rename page', 'Renombrar página')}</button>` : '';
+  const elimina = mod && pagine.length > 1 ? `<button class="btn secondario mini" id="cons-togli-pagina">${L('Elimina pagina', 'Delete page', 'Eliminar página')}</button>` : '';
+
+  const tastoHtml = (t, i, n) => {
     const a = perId.get(t.azione);
-    const nome = t.nome || a?.titolo || t.azione;
     const stile = t.colore ? ` style="--cons-tinta:${esc(t.colore)}"` : '';
-    return `<button class="cons-tasto" data-cons-tasto="${i}"${stile} title="${esc(a?.titolo || t.azione)}">
-      <span class="cons-ico">${esc(t.icona || a?.icona || '•')}</span>
-      <span class="cons-nome">${esc(nome)}</span>
+    return `<button class="cons-tasto" data-cons-tasto="${i}"${stile}${mod ? ` draggable="true" data-cons-trascina="${i}"` : ''} title="${esc(a?.titolo || t.azione)}">
+      <span class="cons-ico">${consIcona(t, a)}</span>
+      <span class="cons-nome">${esc(t.nome || a?.titolo || t.azione)}</span>
       <span class="cons-stato">${esc(a?.mostra || '')}</span>
-      ${_cons.modifica ? `<span class="cons-x" data-cons-togli="${i}">×</span>` : ''}
+      ${mod ? `<span class="cons-mod">
+          <span class="cons-mini" data-cons-apri="${i}" title="${L('Modifica', 'Edit', 'Editar')}">${_bIco(ICO.scrivi)}</span>
+          <span class="cons-mini" data-cons-togli="${i}" title="${L('Togli', 'Remove', 'Quitar')}">×</span>
+        </span>
+        <span class="cons-frecce">
+          <span class="cons-mini" data-cons-sposta="${i}:-1" ${i === 0 ? 'hidden' : ''}>‹</span>
+          <span class="cons-mini" data-cons-sposta="${i}:1" ${i === n - 1 ? 'hidden' : ''}>›</span>
+        </span>` : ''}
     </button>`;
+  };
+
+  const tasti = pg.tasti || [];
+  const ordine = ['contatori', 'effetti', 'chat', 'altro'];
+  const nomiGruppo = {
+    contatori: L('Contatori', 'Counters', 'Contadores'),
+    effetti: L('Effetti', 'Effects', 'Efectos'),
+    chat: L('Chat', 'Chat', 'Chat'),
+    altro: L('Altro', 'Other', 'Otros'),
+  };
+  const perGruppo = new Map();
+  tasti.forEach((t, i) => {
+    const g = perId.get(t.azione)?.gruppo || 'altro';
+    if (!perGruppo.has(g)) perGruppo.set(g, []);
+    perGruppo.get(g).push([t, i]);
+  });
+  const sezioni = ordine.filter((g) => perGruppo.has(g)).map((g) => {
+    const voci = perGruppo.get(g).map(([t, i]) => tastoHtml(t, i, tasti.length)).join('');
+    const titolo = perGruppo.size > 1 ? `<div class="cons-gruppo">${esc(nomiGruppo[g])}</div>` : '';
+    const stileCol = col ? ` style="grid-template-columns:repeat(${col},minmax(0,1fr))"` : '';
+    return `${titolo}<div class="cons-griglia m-${misura}"${stileCol}>${voci}</div>`;
   }).join('');
 
-  const aggiungi = _cons.modifica
+  const vuoto = `<p class="vuoto">${L('Nessun tasto qui. Premi «Modifica i tasti» e aggiungine uno: nell’elenco ci sono già le tue azioni.', 'No keys here. Press “Edit the keys” and add one: your actions are already in the list.', 'Sin teclas aquí. Pulsa «Editar las teclas» y añade una: tus acciones ya están en la lista.')}</p>`;
+
+  const aggiungi = mod
     ? `<div class="cons-aggiungi">
-        <select id="cons-quale" class="campo">${_cons.azioni.map((a) => `<option value="${esc(a.id)}">${esc(a.icona || '')} ${esc(a.titolo)}</option>`).join('')}</select>
+        <select id="cons-quale" class="campo">${_cons.azioni.map((a) => `<option value="${esc(a.id)}">${esc(a.titolo)}</option>`).join('')}</select>
         <button class="btn secondario mini" id="cons-piu">${L('Aggiungi tasto', 'Add key', 'Añadir tecla')}</button>
       </div>` : '';
 
-  box.innerHTML = `<div class="cons-linguette">${linguette}</div>
-    <div class="cons-griglia">${tasti || `<p class="vuoto">${L('Nessun tasto: premi «Modifica i tasti» e aggiungine uno.', 'No keys yet: press «Edit the keys» and add one.', 'Sin teclas: pulsa «Editar las teclas» y añade una.')}</p>`}</div>
-    ${aggiungi}`;
+  box.innerHTML = `<div class="cons-barra">${linguette}${misure}${rinomina}${elimina}</div>
+    ${sezioni || vuoto}${aggiungi}<div id="cons-scheda"></div>`;
+  if (mod) appendiConsolifyTrascina();
+  if (_cons.aperto !== null && _cons.aperto !== undefined) disegnaSchedaTasto();
+}
+
+function consIcona(t, a) {
+  const scelta = t.icona || a?.icona || '';
+  if (scelta.startsWith('img:')) return `<img class="cons-img" src="/icona/${esc(_cons.login)}/${esc(scelta.slice(4))}" alt="">`;
+  if (ICO[scelta]) return _bIco(ICO[scelta]);
+  return esc(scelta);
+}
+
+const COLORI_TASTO = ['', '#ba007a', '#d000b8', '#1f9e4f', '#e0913a', '#3aa6c9', '#8f7bd6', '#9a9a9a'];
+
+function disegnaSchedaTasto() {
+  const box = document.getElementById('cons-scheda');
+  const pg = _cons.plancia.pagine[_cons.pagina];
+  const t = pg?.tasti?.[_cons.aperto];
+  if (!box || !t) { if (box) box.innerHTML = ''; return; }
+  const a = _cons.azioni.find((x) => x.id === t.azione);
+  const icone = Object.keys(ICO);
+  const scelta = t.icona || a?.icona || '';
+  const pagine = _cons.plancia.pagine;
+
+  box.innerHTML = `<div class="cons-scheda">
+    <div class="cons-scheda-testa">
+      <strong>${esc(a?.titolo || t.azione)}</strong>
+      <button class="btn secondario mini" id="cons-c-chiudi">${L('Chiudi', 'Close', 'Cerrar')}</button>
+    </div>
+
+    <div class="cons-campi">
+      <label>${L('Nome sul tasto', 'Key name', 'Nombre en la tecla')}
+        <input class="campo" id="cons-c-nome" maxlength="24" value="${esc(t.nome || '')}" placeholder="${esc(a?.titolo || '')}"></label>
+      ${a?.testo ? `<label>${L('Cosa deve dire', 'What it says', 'Qué dice')}
+        <input class="campo" id="cons-c-testo" maxlength="200" value="${esc(t.testo || '')}"></label>` : ''}
+      <label>${L('Sposta nella pagina', 'Move to page', 'Mover a la página')}
+        <select class="campo" id="cons-c-pagina">${pagine.map((p, k) => `<option value="${k}"${k === _cons.pagina ? ' selected' : ''}>${esc(p.nome || `#${k + 1}`)}</option>`).join('')}</select></label>
+    </div>
+
+    <div class="cons-sez">${L('Icona', 'Icon', 'Icono')}</div>
+    <div class="cons-icone">
+      <button class="cons-ic${!scelta ? ' on' : ''}" data-cons-icona="">${L('nessuna', 'none', 'ninguna')}</button>
+      ${icone.map((k) => `<button class="cons-ic${scelta === k ? ' on' : ''}" data-cons-icona="${esc(k)}" title="${esc(k)}">${_bIco(ICO[k])}</button>`).join('')}
+      ${scelta.startsWith('img:') ? `<button class="cons-ic on" data-cons-icona="${esc(scelta)}"><img class="cons-img" src="/icona/${esc(_cons.login)}/${esc(scelta.slice(4))}" alt=""></button>` : ''}
+    </div>
+    <label class="cons-libera">${L('Oppure un\'immagine tua (PNG, JPG, WEBP, GIF, SVG — max 2 MB). Ha un indirizzo pubblico, così la stessa faccia la metti anche sul tasto dello tastiera fisica.', 'Or an image of your own (PNG, JPG, WEBP, GIF, SVG — max 2 MB). It gets a public address, so the same face goes on your tastiera fisica key too.', 'O una imagen tuya (PNG, JPG, WEBP, GIF, SVG — máx 2 MB). Tiene una dirección pública, así la misma cara va también en la tecla del tastiera fisica.')}
+      <input type="file" class="campo" id="cons-c-file" accept="image/*"></label>
+    <label class="cons-libera">${L('Oppure un carattere tuo', 'Or a character of your own', 'O un carácter tuyo')}
+      <input class="campo" id="cons-c-icona" maxlength="4" value="${esc(ICO[t.icona] ? '' : (t.icona || ''))}" placeholder="${L('vuoto = quella scelta sopra', 'empty = the one picked above', 'vacío = la elegida arriba')}"></label>
+
+    <div class="cons-sez">${L('Colore', 'Colour', 'Color')}</div>
+    <div class="cons-colori">
+      <button class="cons-colore${!t.colore ? ' on' : ''}" data-cons-colore="" title="${L('nessuno', 'none', 'ninguno')}"></button>
+      ${COLORI_TASTO.filter(Boolean).map((c) => `<button class="cons-colore${(t.colore || '') === c ? ' on' : ''}" data-cons-colore="${esc(c)}" style="background:${esc(c)}"></button>`).join('')}
+      <input type="color" class="cons-colore-libero" id="cons-c-colore" value="${esc(t.colore || '#ba007a')}" title="${L('un colore qualunque', 'any colour', 'cualquier color')}">
+    </div>
+
+    <label class="cons-spunta"><input type="checkbox" id="cons-c-conferma"${t.conferma ? ' checked' : ''}>
+      ${L('Chiedi conferma prima di premerlo', 'Ask before pressing it', 'Pedir confirmación antes de pulsarlo')}</label>
+
+    <p class="vita-azioni">
+      <button class="btn secondario mini" id="cons-c-salva">${L('Salva', 'Save', 'Guardar')}</button>
+      <button class="btn secondario mini" id="cons-c-duplica">${L('Duplica', 'Duplicate', 'Duplicar')}</button>
+      <button class="btn secondario mini" id="cons-c-togli">${L('Togli il tasto', 'Remove key', 'Quitar la tecla')}</button>
+    </p>
+  </div>`;
+}
+
+function disegnaIndirizziConsole() {
+  const box = document.getElementById('cons-indirizzi');
+  if (!box) return;
+  const nascondi = (u) => u.replace(/key=[^&]+/, 'key=' + '\u2022'.repeat(8));
+  const lista = _cons.plancia.scorciatoie || [];
+  const perId = new Map(_cons.azioni.map((a) => [a.id, a]));
+
+  const righe = lista.map((c, i) => {
+    const a = perId.get(c.azione);
+    const q = c.testo ? `&testo=${encodeURIComponent(c.testo)}` : '';
+    const url = `${_cons.base}/${c.azione}?key=${_cons.chiave}${q}`;
+    return `<div class="cons-riga">
+      <span class="cons-riga-nome">${ICO[a?.icona] ? _bIco(ICO[a.icona]) : ''}${esc(c.nome || a?.titolo || c.azione)}</span>
+      <code class="cons-url${_cons.scoperta ? '' : ' velata'}">${esc(_cons.scoperta ? url : nascondi(url))}</code>
+      <button class="btn secondario mini cons-copia" data-url="${esc(url)}">${L('copia', 'copy', 'copiar')}</button>
+      <button class="btn secondario mini" data-cons-sc-mod="${i}">${L('modifica', 'edit', 'editar')}</button>
+      <button class="btn secondario mini" data-cons-sc-via="${i}">${L('togli', 'remove', 'quitar')}</button>
+    </div>`;
+  }).join('');
+
+  const editor = _cons.scAperta === null || _cons.scAperta === undefined ? '' : (() => {
+    const c = lista[_cons.scAperta] || { azione: _cons.azioni[0]?.id || '', nome: '', testo: '' };
+    const a = perId.get(c.azione);
+    return `<div class="cons-scheda">
+      <div class="cons-campi">
+        <label>${L('Azione', 'Action', 'Acción')}
+          <select class="campo" id="cons-sc-azione">${_cons.azioni.map((x) => `<option value="${esc(x.id)}"${x.id === c.azione ? ' selected' : ''}>${esc(x.titolo)}</option>`).join('')}</select></label>
+        <label>${L('Come la chiami', 'What you call it', 'Cómo la llamas')}
+          <input class="campo" id="cons-sc-nome" maxlength="24" value="${esc(c.nome || '')}" placeholder="${esc(a?.titolo || '')}"></label>
+        <label>${L('Testo (se l\'azione lo chiede)', 'Text (if the action needs it)', 'Texto (si la acción lo pide)')}
+          <input class="campo" id="cons-sc-testo" maxlength="200" value="${esc(c.testo || '')}"></label>
+      </div>
+      <p class="vita-azioni">
+        <button class="btn secondario mini" id="cons-sc-salva">${L('Salva', 'Save', 'Guardar')}</button>
+        <button class="btn secondario mini" id="cons-sc-chiudi">${L('Chiudi', 'Close', 'Cerrar')}</button>
+      </p>
+    </div>`;
+  })();
+
+  const occhio = `<p class="vita-azioni">
+    <button class="btn secondario mini" id="cons-sc-piu">${L('Nuova scorciatoia', 'New shortcut', 'Nuevo atajo')}</button>
+    <button class="btn secondario mini" id="cons-occhio">${_cons.scoperta ? L('Nascondi la chiave', 'Hide the key', 'Ocultar la clave') : L('Mostra la chiave', 'Show the key', 'Mostrar la clave')}</button>
+    <span class="tenue">${L('La chiave sta coperta apposta: questa scheda si apre mentre streami.', 'The key stays covered on purpose: this tab gets opened while you stream.', 'La clave se mantiene tapada a propósito: esta pestaña se abre mientras emites.')}</span></p>`;
+
+  box.innerHTML = occhio + editor + (righe || `<p class="vuoto">${L('Nessuna scorciatoia. Creane una: scegli l’azione, dalle un nome, e ti do l’indirizzo da incollare nel tasto.', 'No shortcuts yet. Create one: pick the action, give it a name, and I give you the address to paste into the key.', 'Sin atajos. Crea uno: elige la acción, dale un nombre, y te doy la dirección para pegar en la tecla.')}</p>`);
 }
 
 async function salvaPlancia() {
@@ -8626,10 +8766,49 @@ function appendiConsolify() {
     const pag = ev.target.closest('[data-cons-pag]');
     if (pag) { _cons.pagina = Number(pag.dataset.consPag) || 0; disegnaConsolify(); return; }
 
+    const ic = ev.target.closest('[data-cons-icona]');
+    if (ic) {
+      const t = _cons.plancia.pagine[_cons.pagina].tasti[_cons.aperto];
+      if (t) { t.icona = ic.dataset.consIcona; disegnaConsolify(); await salvaPlancia(); }
+      return;
+    }
+    const scMod = ev.target.closest('[data-cons-sc-mod]');
+    if (scMod) { _cons.scAperta = Number(scMod.dataset.consScMod); disegnaIndirizziConsole(); return; }
+    const scVia = ev.target.closest('[data-cons-sc-via]');
+    if (scVia) {
+      _cons.plancia.scorciatoie.splice(Number(scVia.dataset.consScVia), 1);
+      _cons.scAperta = null; disegnaIndirizziConsole(); await salvaPlancia(); return;
+    }
+
+    const apri = ev.target.closest('[data-cons-apri]');
+    if (apri) {
+      ev.stopPropagation();
+      _cons.aperto = Number(apri.dataset.consApri);
+      disegnaSchedaTasto(); return;
+    }
+    const sposta = ev.target.closest('[data-cons-sposta]');
+    if (sposta) {
+      ev.stopPropagation();
+      const [i, d] = String(sposta.dataset.consSposta).split(':').map(Number);
+      const lista = _cons.plancia.pagine[_cons.pagina].tasti;
+      const j = i + d;
+      if (j >= 0 && j < lista.length) { [lista[i], lista[j]] = [lista[j], lista[i]]; _cons.aperto = null; disegnaConsolify(); await salvaPlancia(); }
+      return;
+    }
+    const mis = ev.target.closest('[data-cons-misura]');
+    if (mis) { _cons.plancia.misura = mis.dataset.consMisura; disegnaConsolify(); await salvaPlancia(); return; }
+    const col = ev.target.closest('[data-cons-colore]');
+    if (col) {
+      const t = _cons.plancia.pagine[_cons.pagina].tasti[_cons.aperto];
+      if (t) { t.colore = col.dataset.consColore || ''; disegnaConsolify(); await salvaPlancia(); }
+      return;
+    }
+
     const togli = ev.target.closest('[data-cons-togli]');
     if (togli) {
       ev.stopPropagation();
       _cons.plancia.pagine[_cons.pagina].tasti.splice(Number(togli.dataset.consTogli), 1);
+      _cons.aperto = null;
       disegnaConsolify(); await salvaPlancia(); return;
     }
 
@@ -8638,6 +8817,7 @@ function appendiConsolify() {
       if (_cons.modifica) return;                       // in modifica non si spara
       const t = _cons.plancia.pagine[_cons.pagina].tasti[Number(tasto.dataset.consTasto)];
       if (!t) return;
+      if (t.conferma && !confirm(`${t.nome || t.azione}: ${L('sicuro?', 'sure?', '¿seguro?')}`)) return;
       const stato = tasto.querySelector('.cons-stato');
       if (stato) stato.textContent = '…';
       try {
@@ -8654,12 +8834,61 @@ function appendiConsolify() {
     const id = ev.target.id;
     if (id === 'cons-modifica') {
       _cons.modifica = !_cons.modifica;
+      _cons.aperto = null;
       ev.target.textContent = _cons.modifica
         ? L('Fatto', 'Done', 'Hecho')
         : L('Modifica i tasti', 'Edit the keys', 'Editar las teclas');
       disegnaConsolify(); return;
     }
     if (id === 'cons-aggiorna') { caricaConsolify(); return; }
+    if (id === 'cons-occhio') { _cons.scoperta = !_cons.scoperta; disegnaIndirizziConsole(); return; }
+    if (id === 'cons-rinomina') {
+      const pg = _cons.plancia.pagine[_cons.pagina];
+      const nome = (prompt(L('Nome della pagina', 'Page name', 'Nombre de la página'), pg.nome || '') || '').trim();
+      if (!nome) return;
+      pg.nome = nome.slice(0, 24); disegnaConsolify(); await salvaPlancia(); return;
+    }
+    if (id === 'cons-togli-pagina') {
+      if (_cons.plancia.pagine.length < 2) return;
+      if (!confirm(L('Eliminare questa pagina e i suoi tasti?', 'Delete this page and its keys?', '¿Eliminar esta página y sus teclas?'))) return;
+      _cons.plancia.pagine.splice(_cons.pagina, 1);
+      _cons.pagina = 0; _cons.aperto = null;
+      disegnaConsolify(); await salvaPlancia(); return;
+    }
+    if (id === 'cons-c-chiudi') { _cons.aperto = null; disegnaSchedaTasto(); return; }
+    if (id === 'cons-c-duplica') {
+      const lista = _cons.plancia.pagine[_cons.pagina].tasti;
+      const t = lista[_cons.aperto];
+      if (!t) return;
+      lista.splice(_cons.aperto + 1, 0, { ...t });
+      _cons.aperto = null; disegnaConsolify(); await salvaPlancia(); return;
+    }
+    if (id === 'cons-c-togli') {
+      _cons.plancia.pagine[_cons.pagina].tasti.splice(_cons.aperto, 1);
+      _cons.aperto = null; disegnaConsolify(); await salvaPlancia(); return;
+    }
+    if (id === 'cons-sc-piu') {
+      (_cons.plancia.scorciatoie ||= []).push({ azione: _cons.azioni[0]?.id || '', nome: '', testo: '' });
+      _cons.scAperta = _cons.plancia.scorciatoie.length - 1; disegnaIndirizziConsole(); return;
+    }
+    if (id === 'cons-sc-chiudi') { _cons.scAperta = null; disegnaIndirizziConsole(); return; }
+    if (id === 'cons-sc-salva') {
+      const c = _cons.plancia.scorciatoie[_cons.scAperta];
+      if (!c) return;
+      c.azione = document.getElementById('cons-sc-azione')?.value || c.azione;
+      c.nome = (document.getElementById('cons-sc-nome')?.value || '').trim().slice(0, 24);
+      c.testo = (document.getElementById('cons-sc-testo')?.value || '').trim().slice(0, 200);
+      _cons.scAperta = null; disegnaIndirizziConsole(); await salvaPlancia(); return;
+    }
+    if (id === 'cons-c-salva') {
+      const t = _cons.plancia.pagine[_cons.pagina].tasti[_cons.aperto];
+      if (!t) return;
+      t.nome = (document.getElementById('cons-c-nome')?.value || '').trim().slice(0, 24);
+      t.icona = (document.getElementById('cons-c-icona')?.value || '').trim().slice(0, 8);
+      const te = document.getElementById('cons-c-testo');
+      if (te) t.testo = te.value.trim().slice(0, 200);
+      disegnaConsolify(); await salvaPlancia(); return;
+    }
     if (id === 'cons-piu-pagina') {
       _cons.plancia.pagine.push({ nome: `#${_cons.plancia.pagine.length + 1}`, tasti: [] });
       _cons.pagina = _cons.plancia.pagine.length - 1;
@@ -8677,9 +8906,75 @@ function appendiConsolify() {
       disegnaConsolify(); await salvaPlancia(); return;
     }
     if (id === 'cons-revoca') {
-      if (!confirm(L('Rigenerare la chiave? Gli indirizzi già messi sullo Stream Deck smettono di funzionare e vanno rifatti.', 'Regenerate the key? Addresses already on your Stream Deck stop working and must be redone.', '¿Regenerar la clave? Las direcciones ya puestas en el Stream Deck dejan de funcionar y hay que rehacerlas.'))) return;
+      if (!confirm(L('Rigenerare la chiave? Gli indirizzi già messi sullo tastiera fisica smettono di funzionare e vanno rifatti.', 'Regenerate the key? Addresses already on your tastiera fisica stop working and must be redone.', '¿Regenerar la clave? Las direcciones ya puestas en el tastiera fisica dejan de funcionar y hay que rehacerlas.'))) return;
       try { const r = await api('/api/streamer/console/revoca', { method: 'POST', body: {} }); _cons.chiave = r?.chiave || _cons.chiave; disegnaIndirizziConsole(); }
       catch { /* niente */ }
+    }
+  });
+}
+
+let _consTrascinato = null;
+function appendiConsolifyTrascina() {
+  const box = document.getElementById('cons-plancia');
+  if (!box || box.dataset.trascina) return;
+  box.dataset.trascina = '1';
+  box.addEventListener('dragstart', (ev) => {
+    const t = ev.target.closest('[data-cons-trascina]');
+    if (!t) return;
+    _consTrascinato = Number(t.dataset.consTrascina);
+    t.classList.add('cons-preso');
+  });
+  box.addEventListener('dragend', (ev) => { ev.target.closest?.('[data-cons-trascina]')?.classList.remove('cons-preso'); });
+  box.addEventListener('dragover', (ev) => { if (ev.target.closest('[data-cons-trascina]')) ev.preventDefault(); });
+  box.addEventListener('drop', async (ev) => {
+    const t = ev.target.closest('[data-cons-trascina]');
+    if (!t || _consTrascinato === null) return;
+    ev.preventDefault();
+    const a = _consTrascinato, b = Number(t.dataset.consTrascina);
+    _consTrascinato = null;
+    if (a === b) return;
+    const lista = _cons.plancia.pagine[_cons.pagina].tasti;
+    const [preso] = lista.splice(a, 1);
+    lista.splice(b, 0, preso);
+    _cons.aperto = null;
+    disegnaConsolify(); await salvaPlancia();
+  });
+}
+
+let _consCampiAppesi = false;
+function appendiConsolifyCampi() {
+  if (_consCampiAppesi) return;
+  _consCampiAppesi = true;
+  document.addEventListener('change', async (ev) => {
+    if (!ev.target?.closest?.('#scheda-consolify')) return;
+    const t = _cons.plancia.pagine[_cons.pagina]?.tasti?.[_cons.aperto];
+    const id = ev.target.id;
+
+    if (id === 'cons-c-colore' && t) { t.colore = ev.target.value; disegnaConsolify(); await salvaPlancia(); return; }
+    if (id === 'cons-c-conferma' && t) { t.conferma = ev.target.checked; await salvaPlancia(); return; }
+    if (id === 'cons-c-pagina' && t) {
+      const dove = Number(ev.target.value);
+      if (dove === _cons.pagina || !_cons.plancia.pagine[dove]) return;
+      _cons.plancia.pagine[_cons.pagina].tasti.splice(_cons.aperto, 1);
+      _cons.plancia.pagine[dove].tasti.push(t);
+      _cons.aperto = null; disegnaConsolify(); await salvaPlancia(); return;
+    }
+    if (id === 'cons-colonne') {
+      _cons.plancia.colonne = Number(ev.target.value) || 0;
+      disegnaConsolify(); await salvaPlancia(); return;
+    }
+    if (id === 'cons-c-file' && t) {
+      const f = ev.target.files?.[0];
+      if (!f) return;
+      const fd = new FormData();
+      fd.append('file', f);
+      try {
+        const r = await fetch('/api/streamer/console/icona', { method: 'POST', body: fd, credentials: 'same-origin' });
+        const d = await r.json().catch(() => null);
+        if (!d?.ok) { alert(d?.motivo || L('non caricata', 'not uploaded', 'no subida')); return; }
+        t.icona = d.icona;
+        disegnaConsolify(); await salvaPlancia();
+      } catch { alert(L('non caricata', 'not uploaded', 'no subida')); }
     }
   });
 }

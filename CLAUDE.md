@@ -24,7 +24,24 @@ dentro lo può leggere chiunque.
 - Tutto in **italiano**, anche i nomi nel codice e i messaggi di commit.
 - Frasi corte e piane. Niente aforismi, niente «non X: è Y», niente svolazzi.
   Se una riga suona come scritta da una macchina, va riscritta.
-- **Niente emoji** nella grafica del sito e nelle novità.
+- **Niente emoji** nella grafica del sito e nelle novità. Le icone stanno in
+  `ICO` e si disegnano: un'emoji viene disegnata diversa su ogni sistema, e non
+  è nostra. Se serve un simbolo che non c'è, si aggiunge a `ICO`.
+- **Tutto è modificabile, con un editor completo.** Regola assoluta, al pari del
+  niente-emoji. Se il prodotto mostra una cosa allo streamer — un tasto, un nome,
+  un'icona, un colore, un testo, un indirizzo, l'ordine in cui stanno — quella
+  cosa si deve poter cambiare da dentro, senza chiedere a noi. Un elenco che si
+  può solo guardare è un pezzo non finito: o si rende modificabile, o è scritto
+  nel memo perché ancora non lo è.
+- **Le icone: le nostre SEMPRE più le sue.** Ovunque si scelga un'icona, accanto
+  al nostro elenco ci va la possibilità di mettere **un'immagine sua**, caricata
+  da lui. E quell'immagine deve avere un indirizzo pubblico, perché la stessa
+  faccia serve fuori dal sito — per esempio sul tasto di uno Stream Deck. Un
+  elenco chiuso di icone è un elenco che prima o poi non ha quella che gli serve.
+- **Niente marchi altrui.** Non siamo partner di nessuno: i prodotti di altri non
+  si nominano — né nel sito, né nei manuali, né nelle novità. Si descrive la cosa
+  per quello che fa («una tastiera fisica di comando», «un componente che fa
+  chiamate web»), che è anche più chiaro per chi non conosce quel prodotto.
 - I commenti spiegano **perché**, non cosa: soprattutto il difetto che quella
   riga esiste per impedire.
 

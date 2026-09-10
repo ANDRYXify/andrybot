@@ -3,10 +3,10 @@
 
 # CONSOLify — i tasti del canale
 
-Due superfici, **un solo registro**: la webapp (CONSOLify) e uno Stream Deck fisico
+Due superfici, **un solo registro**: la webapp (CONSOLify) e uno tastiera fisica fisico
 guardano la stessa cosa.
 
-## Cos'è davvero uno Stream Deck (e cosa non è)
+## Cos'è davvero uno tastiera fisica (e cosa non è)
 
 Dalla ricerca, tre cose che cambiano il disegno:
 
@@ -18,8 +18,8 @@ Dalla ricerca, tre cose che cambiano il disegno:
    con attese) → cartella (un tasto che apre un secondo strato) → pagina/profilo
    (layout che cambia col contesto). Sui modelli nuovi ci sono manopole.
 3. **Non serve pubblicare un plugin su Elgato.** Plugin generici (API Ninja di
-   BarRaider, streamdeck-api-request) fanno una chiamata HTTP e mostrano la
-   risposta sul tasto. Una porta HTTP copre Stream Deck, Bitfocus Companion, Touch
+   BarRaider, tastiera-api-request) fanno una chiamata HTTP e mostrano la
+   risposta sul tasto. Una porta HTTP copre tastiera fisica, Bitfocus Companion, Touch
    Portal, Loupedeck e il browser di un telefono — oggi, senza dipendere da nessuno.
 
 ## Il registro si ricava, non si scrive
@@ -70,7 +70,7 @@ che prima o poi una dimentica il widget, e nessuno se ne accorge finché non gua
     GET|POST  /api/console/:login/:azione?key=…     → esegue, risponde {ok, mostra}
     GET       /api/console/:login?key=…             → il registro + lo stato di adesso
 
-Non chiede una sessione: uno Stream Deck non sa tenere un cookie. Chiede la
+Non chiede una sessione: uno tastiera fisica non sa tenere un cookie. Chiede la
 **chiave del canale**, e accetta anche `GET` perché i plugin HTTP generici partono
 da lì — non è bello, ed è ciò che rende la cosa utilizzabile oggi.
 
@@ -99,12 +99,12 @@ emessa avrebbe combaciato con sé stessa — e in produzione non si sarebbe vist
 perché lo streamer c'è sempre. Ora, se il salvataggio non attecchisce, torna `null`,
 e `chiaveOk` dice no.
 
-## Sullo Stream Deck fisico
+## Sullo tastiera fisica fisico
 
 Un tasto con un plugin HTTP generico, metodo `GET` o `POST`, e l'indirizzo che la
 dashboard ti dà già pronto. Il plugin stampa la risposta sul tasto: dopo la
 pressione il tasto mostra il numero nuovo. Icona, nome e tutto il resto si scelgono
-in Stream Deck, come per qualunque altro tasto.
+sulla tastiera, come per qualunque altro tasto.
 
 Lo stesso indirizzo funziona in Companion, Touch Portal, Loupedeck e da un telefono.
 
@@ -140,14 +140,14 @@ colori, pagine e tasti con un tetto. E soprattutto: **un tasto che punta a un'az
 che non esiste più non si salva**. Un contatore cancellato lascerebbe un bottone che
 sembra fare qualcosa e non fa niente quando lo premi — peggio di un buco.
 
-## Sullo Stream Deck, in pratica
+## Sullo tastiera fisica, in pratica
 
 La scheda ti dà **gli indirizzi delle tue azioni**, già scritti, uno per tasto, con
 il bottone per copiarli. Non un esempio generico da adattare: il tuo.
 
-In Stream Deck: aggiungi un tasto con un plugin che fa chiamate web (per esempio
-**API Ninja**), incolli l'indirizzo, e scegli icona e nome lì — perché lì, icona e
-nome, sono roba di Stream Deck e si personalizzano meglio che da noi. Il plugin
+Sulla tastiera: aggiungi un tasto con un componente che fa chiamate web, incolli
+l'indirizzo, e scegli icona e nome lì — perché lì, icona e
+nome, sono roba di tastiera fisica e si personalizzano meglio che da noi. Il plugin
 stampa la risposta sul tasto, quindi dopo la pressione leggi il numero nuovo.
 
 Se un indirizzo finisce in una clip o in uno screenshot: **rigenera la chiave**. Gli
