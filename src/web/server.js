@@ -1713,6 +1713,41 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ultima: novita.ultima(gruppi), gruppi: gruppi.slice(0, 3) });
   });
 
+  // QUELLO CHE SI E' PERSO. Chi torna dopo un aggiornamento non deve andare a
+  // cercare cosa e' cambiato: glielo si dice all'ingresso, una volta.
+  //
+  // Si RICAVA da NOVITA.md — la fonte c'e' gia'. Un secondo elenco «per il popup»
+  // sarebbe il difetto di sempre: due liste che si scollano, e quella che nessuno
+  // aggiorna e' proprio questa. Le voci private escono solo a chi ha quel diritto,
+  // e la risposta non finisce in nessuna cache condivisa.
+  app.get('/api/novita/da-vedere', requireLogin, (req, res) => {
+    const u = currentUser(req);
+    const suo = streamers.get(u.login);
+    const letti = novita.leggi(NOVITA_MD);
+    const gruppi = u.isAdmin ? novita.tutte(letti) : novita.pubbliche(letti);
+    const ultima = novita.ultima(gruppi);
+    const viste = String(suo?.settings?.novitaViste || '');
+    res.set('Cache-Control', 'private, no-store');
+    // Chi entra per la prima volta non si e' perso niente: non gli si rovescia
+    // addosso la storia di mesi. Si segna il punto e da domani vede solo il nuovo.
+    if (!viste) return res.json({ ok: true, primo: true, ultima, gruppi: [] });
+    // Un tetto alle giornate: chi torna dopo sei mesi non deve trovarsi un muro
+    // che nessuno legge. Si mostrano le piu' recenti e si dice quante restano —
+    // e restano tutte in «Tutte le novita'», che e' la pagina fatta per quello.
+    const persi = gruppi.filter((g) => g.data > viste);
+    res.json({ ok: true, ultima, gruppi: persi.slice(0, 6), altriGiorni: Math.max(0, persi.length - 6) });
+  });
+
+  app.post('/api/novita/viste', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const suo = streamers.get(login);
+    if (!suo) return res.json({ ok: false });
+    const fino = String(req.body?.fino || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fino)) return res.status(400).json({ ok: false });
+    streamers.setSettings(login, { ...(suo.settings || {}), novitaViste: fino });
+    res.json({ ok: true });
+  }));
+
   app.get('/guide/:slug', (req, res, next) => {
     const slug = String(req.params.slug || '').toLowerCase();
     if (!/^[a-z0-9-]{2,80}$/.test(slug)) return next();
@@ -4083,9 +4118,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // un cookie. Chiede una chiave del canale, revocabile, e ha un tetto di
   // frequenza — da qui non si guarda, si agisce.
   //
-  // Accetta GET oltre a POST perche' i plugin HTTP generici (API Ninja e simili)
+  // Accetta GET oltre a POST perche' i componenti HTTP generici
   // partono da li'. Non e' bello, ed e' quello che rende la cosa utilizzabile oggi
-  // su tastiera fisica, Companion, Touch Portal e il browser di un telefono.
+  // su una tastiera fisica e il browser di un telefono.
   // IL GUARDIANO, separato da cio' che fa. Un gestore che si controlla da dentro
   // funziona ma non si vede da fuori: `scripts/verifica-porte.mjs` legge la riga
   // della rotta per sapere chi la sorveglia, e una porta il cui guardiano non si
@@ -4108,6 +4143,19 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       testo: req.query.testo ?? req.body?.testo,
     }));
   });
+  // L'indirizzo DI UN TASTO: `/tasto/<id>`. E' quello che si incolla su una
+  // tastiera fisica, e non invecchia — segue il tasto, non l'azione di oggi.
+  const consoleTasto = wrap(async (req, res) => {
+    const login = String(req.params.login || '').toLowerCase();
+    res.json(consolle.eseguiTasto(login, String(req.params.id || ''), {
+      say: (t) => { try { manager.say(login, t); } catch { /* niente */ } },
+      emit: (p) => { try { effects.emit(login, p); } catch { /* niente */ } },
+      effetti: effects,
+    }));
+  });
+  app.post('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
+  app.get('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
+
   app.post('/api/console/:login/:azione', guardiaConsole, consoleAgisci);
   app.get('/api/console/:login/:azione', guardiaConsole, consoleAgisci);
 
@@ -4145,7 +4193,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   }));
 
   // Pubblica di proposito: un'icona non e' un segreto, e deve poter essere presa
-  // da fuori (tastiera fisica, Companion) senza portarsi dietro la chiave del canale.
+  // da fuori (una tastiera fisica) senza portarsi dietro la chiave del canale.
   app.get('/icona/:login/:file', (req, res) => {
     const login = String(req.params.login || '').toLowerCase();
     const file = String(req.params.file || '');
