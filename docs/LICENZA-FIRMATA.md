@@ -41,13 +41,27 @@ deve *esistere*, non «si controlla».
 
 ## Come si accende (l'ordine conta)
 
-Sulla **tua** macchina, una volta sola:
+Sulla **tua** macchina, dentro il progetto (`cd` nella cartella clonata: lo script
+sta lì, non nella home), e in quest'ordine.
+
+Prima firma la licenza — ma serve la chiave, quindi:
 
     node scripts/licenza.mjs --chiavi
 
-Scrive la privata in `~/.socialbot-chiave-privata.pem` (permessi 600) e stampa la
-pubblica. **Fai una copia della privata al sicuro: persa quella, non puoi più
-firmare licenze nuove.** In `.gitignore` ci sono già `*.pem` e `licenza.txt`.
+Scrive la privata in `~/.socialbot-chiave-privata.pem` (permessi 600) **e incolla
+da sé la pubblica** in `src/licenza.js`. **Fai una copia della privata al sicuro:
+persa quella, non puoi più firmare licenze nuove.** In `.gitignore` ci sono già
+`*.pem` e `licenza.txt`.
+
+> **Perché la incolla lo script e non tu.** La chiave contiene dei `\n`. Incollata a
+> mano va a capo davvero, la stringa si spezza in due, e il file smette di
+> caricarsi — non per la licenza: per la sintassi. È successo. Chiedere a una
+> persona di trascrivere una costante crittografica è chiedere un errore, e il modo
+> giusto è che quella riga non la scriva nessuno a mano. Con `--niente-incolla` la
+> stampa soltanto, già pronta come riga intera.
+>
+> `test/contratto/licenza.test.mjs` prende comunque una modifica a mano fatta male
+> — costante spezzata, o chiave che non si apre — **prima** che arrivi sul server.
 
 Poi firma la licenza del tuo server:
 

@@ -8,7 +8,8 @@
 //
 //   node scripts/licenza.mjs --chiavi
 //       genera la coppia. Scrive la privata in ~/.socialbot-chiave-privata.pem
-//       (permessi 600) e stampa la pubblica da incollare in src/licenza.js.
+//       (permessi 600) e INCOLLA DA SE' la pubblica in src/licenza.js. Con
+//       --niente-incolla la stampa soltanto.
 //
 //   node scripts/licenza.mjs --firma --dominio socialbot.live --mesi 12
 //       firma una licenza per quel dominio. Opzioni: --macchina <hostname>,
@@ -19,7 +20,10 @@
 import { generateKeyPairSync, createPrivateKey, sign } from 'node:crypto';
 import { writeFileSync, readFileSync, chmodSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const arg = (nome, dif = '') => {
   const i = process.argv.indexOf(`--${nome}`);
@@ -38,9 +42,31 @@ if (c_e('chiavi')) {
   console.log(`\nChiave privata scritta in ${DOVE} (solo tu la puoi leggere).`);
   console.log('NON metterla in git, non mandarla a nessuno, e tienine una copia al sicuro:');
   console.log('persa quella, non puoi piu\' firmare nuove licenze.\n');
-  console.log('Ora incolla questa in src/licenza.js, dentro CHIAVE_PUBBLICA:\n');
-  console.log(JSON.stringify(pub));
-  console.log('\n(la pubblica puo\' stare al sole: serve a verificare, non a firmare)\n');
+
+  // LA COSTANTE LA SCRIVE LA MACCHINA. Chiedere a una persona di incollare a mano
+  // una chiave con dentro dei \n e' chiedere un errore: va a capo davvero, la
+  // stringa si spezza a meta', e il file non si carica piu' — non per la licenza,
+  // per la sintassi. E' successo. Il modo giusto e' che quella riga non la scriva
+  // nessuno a mano.
+  const riga = `export const CHIAVE_PUBBLICA = ${JSON.stringify(pub)};`;
+  if (!c_e('niente-incolla')) {
+    const f = join(RAD, 'src', 'licenza.js');
+    const src = readFileSync(f, 'utf8');
+    const re = /^export const CHIAVE_PUBBLICA = .*$/m;
+    if (!re.test(src)) {
+      console.error(`Non trovo la riga CHIAVE_PUBBLICA in ${f}. Incollala tu, tutta su una riga:\n`);
+      console.error(riga);
+      process.exit(1);
+    }
+    writeFileSync(f, src.replace(re, riga));
+    console.log('Chiave pubblica messa in src/licenza.js — nessun copia-incolla, nessuna riga spezzata.');
+    console.log('DA ADESSO IL CANCELLO E\' ATTIVO: senza una LICENZA valida nel .env il bot non parte.');
+    console.log('Se non l\'hai ancora firmata:  node scripts/licenza.mjs --firma --dominio <dominio>\n');
+  } else {
+    console.log('Incolla questa riga in src/licenza.js, TUTTA SU UNA RIGA SOLA:\n');
+    console.log(riga + '\n');
+  }
+  console.log('(la pubblica puo\' stare al sole: serve a verificare, non a firmare)\n');
   process.exit(0);
 }
 
