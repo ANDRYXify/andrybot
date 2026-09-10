@@ -48,7 +48,10 @@ tenere allineata.
 - [x] A2: effetti (dal motore vero), battuta (via `battute.diUna`), «di'» con testo
 - [ ] A3: clip, pubblicita', comandi di chat. Lo SCUDO no: non e' un interruttore,
       e' la macchina antibot — merita un pezzo suo, non un tasto frettoloso.
-- [ ] B: CONSOLify (griglia, pagine, cartelle, tasti personalizzabili, telefono)
+- [x] B: CONSOLify — griglia adattiva, pagine, tasti personalizzabili (azione, nome,
+      icona, colore, testo), stato sul tasto, indirizzi pronti per lo Stream Deck
+- [ ] B2: cartelle (un tasto che apre un secondo strato) e multi-azione (piu' cose
+      in fila, con attese) — sono due dei quattro livelli veri di uno Stream Deck
 - [ ] C (dopo): plugin ufficiale .sdPlugin, se serve davvero
 
 ## Fonti
@@ -69,3 +72,6 @@ tenere allineata.
   sempre sul ripiego.
 - La sequenza «pesca, se no costruisci, dilla, segnala» stava in due punti e stava
   per diventare tre: ora in `battute.diUna()`.
+- Il filtro degli eventi puntava a `#pannello-consolify`, che non esiste (i pannelli
+  si chiamano `scheda-<id>`): la sezione sarebbe stata INERTE, nessun tasto avrebbe
+  risposto, e senza un errore da nessuna parte.

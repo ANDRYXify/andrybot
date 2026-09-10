@@ -4127,6 +4127,16 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: true, chiave: consolle.revoca(login) });
   }));
 
+  // La PLANCIA di CONSOLify: quali tasti, dove, con che faccia. Sono scelte dello
+  // streamer, non dati del bot — stanno nelle sue impostazioni come tutto il resto.
+  app.get('/api/streamer/console/plancia', requireLogin, wrap(async (req, res) => {
+    res.json({ ok: true, plancia: consolle.plancia(currentUser(req).login) });
+  }));
+  app.post('/api/streamer/console/plancia', requireLogin, wrap(async (req, res) => {
+    const p = consolle.salvaPlancia(currentUser(req).login, req.body?.plancia);
+    res.json({ ok: !!p, plancia: p });
+  }));
+
   // ---- REGIA: gestisci la diretta dal bot (senza aprire OBS per queste cose) ----
   // Stato diretta (live/spettatori/uptime) + info canale (titolo/categoria/tag) +
   // quali permessi la regia ha a disposizione + programmazione pubblicità.

@@ -1957,8 +1957,6 @@ body.ce-aperto { overflow: hidden; }
   .aiuto-bolla, .aiuto-bolla.attenzione, .aiuto-bolla.dritta { transition: none; transform: none; }
 }
 
-
-
 .zona-pericolo {
   border: var(--contorno-sp) solid var(--contorno);
   border-left: 6px solid var(--rosso);
@@ -2005,3 +2003,36 @@ body.ce-aperto { overflow: hidden; }
   .nuv-velo { animation: none; }
   .nuv-bolla, .nuv-bolla.vista { transition: none; transform: none; opacity: 1; }
 }
+
+.cons-linguette { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.cons-griglia {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+.cons-tasto {
+  --cons-tinta: var(--contorno);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; min-height: 92px; padding: 10px 6px;
+  border: var(--tratto); border-radius: var(--r-m);
+  background: var(--carta); color: inherit; cursor: pointer;
+  text-align: center; position: relative;
+  box-shadow: inset 0 -3px 0 0 var(--cons-tinta);
+  transition: transform .06s ease, box-shadow .06s ease;
+}
+.cons-tasto:active { transform: translateY(2px); box-shadow: inset 0 -1px 0 0 var(--cons-tinta); }
+.cons-tasto.cons-fatto { box-shadow: inset 0 -3px 0 0 var(--cons-tinta), 0 0 0 2px var(--verde, #1f9e4f); }
+.cons-tasto.cons-male { box-shadow: inset 0 -3px 0 0 var(--cons-tinta), 0 0 0 2px var(--rosso, #c0392b); }
+.cons-ico { font-size: 1.6em; line-height: 1; }
+.cons-nome { font-weight: 600; font-size: .86em; overflow-wrap: anywhere; }
+.cons-stato { font-size: .74em; opacity: .7; min-height: 1em; overflow-wrap: anywhere; }
+.cons-x {
+  position: absolute; top: 2px; right: 5px; font-size: 1.1em; line-height: 1;
+  opacity: .55; padding: 2px 4px;
+}
+.cons-aggiungi { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cons-aggiungi .campo { flex: 1 1 220px; }
+.cons-riga { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 5px 0; }
+.cons-riga-nome { flex: 0 0 auto; min-width: 130px; font-weight: 600; font-size: .9em; }
+.cons-url { flex: 1 1 260px; overflow-x: auto; white-space: nowrap; font-size: .78em; padding: 3px 6px; }

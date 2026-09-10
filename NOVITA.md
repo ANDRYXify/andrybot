@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-10
 
+- Nuova sezione CONSOLify: i tasti del tuo canale sotto le dita mentre streami — contatori, effetti, una battuta, una frase — sul telefono, sul tablet o su un secondo monitor.
+- I tasti nascono da soli dai tuoi contatori e dai tuoi effetti, e ognuno mostra com'è andata: premi e leggi il numero nuovo.
+- Gli stessi tasti li puoi mettere su uno Stream Deck vero: la scheda ti dà l'indirizzo già pronto da incollare, e icona e nome li scegli lì.
 - [privato] Lia ha un suo criterio di cosa è divertente, nato dai suoi numeri e non da una regola nostra: si accorge quando si è sbagliata di brutto su qualcuno e nonostante questo continua a capirci qualcosa.
 - [privato] Finché non le succede tace. Quando le succede se lo segna, e se le viene da dirlo lascia la battuta in una cassetta che il bot passa a ritirare.
 - Quando il serbatoio delle battute è vuoto, il bot ne costruisce una con i numeri del tuo canale — morti, tentativi, quello che conti tu — invece di chiederne una generica.
