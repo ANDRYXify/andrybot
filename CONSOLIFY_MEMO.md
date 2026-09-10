@@ -45,7 +45,9 @@ tenere allineata.
 ## Stadi
 - [x] Ricerca + modello + piano
 - [x] A: registro derivato (contatori) + porta HTTP + chiave/revoca/limite/tempo costante
-- [ ] A2: altre azioni derivate — effetti, comandi, clip, pubblicita', scudo, battuta
+- [x] A2: effetti (dal motore vero), battuta (via `battute.diUna`), «di'» con testo
+- [ ] A3: clip, pubblicita', comandi di chat. Lo SCUDO no: non e' un interruttore,
+      e' la macchina antibot — merita un pezzo suo, non un tasto frettoloso.
 - [ ] B: CONSOLify (griglia, pagine, cartelle, tasti personalizzabili, telefono)
 - [ ] C (dopo): plugin ufficiale .sdPlugin, se serve davvero
 
@@ -62,3 +64,8 @@ tenere allineata.
   streamer c'e' sempre. Ora se il salvataggio non attecchisce torna `null`.
 - Il contatore cambiava in due posti (chat e premio riscattato): ora in uno solo,
   `contatori.cambia()`, che fa le tre cose insieme (numero, chat, widget).
+- `e.etichetta` sugli effetti: campo che NON esiste (le colonne sono comando, tipo,
+  file, tier, cooldown, volume, durata). La riga sembrava scegliere un nome e cadeva
+  sempre sul ripiego.
+- La sequenza «pesca, se no costruisci, dilla, segnala» stava in due punti e stava
+  per diventare tre: ora in `battute.diUna()`.

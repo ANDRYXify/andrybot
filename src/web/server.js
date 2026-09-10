@@ -4104,6 +4104,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json(consolle.esegui(login, req.params.azione, {
       say: (t) => { try { manager.say(login, t); } catch { /* niente */ } },
       emit: (p) => { try { effects.emit(login, p); } catch { /* niente */ } },
+      effetti: effects,
+      testo: req.query.testo ?? req.body?.testo,
     }));
   });
   app.post('/api/console/:login/:azione', guardiaConsole, consoleAgisci);

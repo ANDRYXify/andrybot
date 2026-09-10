@@ -15,8 +15,10 @@
 // La porta funziona con qualunque superficie che sappia fare una chiamata web:
 // Stream Deck con un plugin HTTP, Bitfocus Companion, Touch Portal, Loupedeck, il
 // browser di un telefono. Nessuna dipendenza da nessuno.
-import { contatori as storeContatori, streamers } from '../db.js';
+import { contatori as storeContatori, effects as storeEffetti, streamers } from '../db.js';
 import * as contatori from './contatori.js';
+import * as battute from './battute.js';
+import * as motoreBattute from './battute-motore.js';
 import { makeLog } from '../logger.js';
 import crypto from 'node:crypto';
 
@@ -105,6 +107,24 @@ export function azioni(channel) {
       conferma: true,
     });
   }
+  let eff = [];
+  try { eff = storeEffetti.list(login) || []; } catch (e) { log.debug('effetti:', e?.message || e); }
+  for (const e of eff) {
+    // Un effetto NON ha un'etichetta: ha il comando con cui lo chiama la chat, e il
+    // tipo (suono, immagine, video). Leggere un `etichetta` inesistente sarebbe una
+    // riga che sembra scegliere un nome e cade sempre sul ripiego.
+    const icone = { audio: '🔊', suono: '🔊', immagine: '🖼️', video: '🎬' };
+    fuori.push({
+      id: `effetto:${e.comando}`, gruppo: 'effetti',
+      titolo: `!${e.comando}`, icona: icone[e.tipo] || '✨',
+      mostra: `!${e.comando}`,
+    });
+  }
+
+  fuori.push({ id: 'battuta', gruppo: 'chat', titolo: 'Racconta una battuta', icona: '😄', mostra: 'battuta' });
+  // «Di'» e' l'unico tasto che porta con se' del testo: il testo lo scrive chi
+  // costruisce il tasto, e viaggia come `?testo=`. Senza, non fa niente e lo dice.
+  fuori.push({ id: 'di', gruppo: 'chat', titolo: 'Fai dire una frase', icona: '💬', mostra: 'dice una frase', testo: true });
   return fuori;
 }
 
@@ -112,7 +132,7 @@ export function azioni(channel) {
 // `dipendenze` porta dentro cio' che serve per agire davvero (dire in chat,
 // aggiornare l'overlay) senza che questo file conosca il bot: cosi' si puo'
 // provare per davvero, con un finto `say` e un finto `emit`.
-export function esegui(channel, id, { say, emit } = {}) {
+export function esegui(channel, id, { say, emit, effetti, testo } = {}) {
   const login = norm(channel);
   const pezzi = String(id || '').split(':');
   if (pezzi[0] === 'contatore') {
@@ -126,5 +146,30 @@ export function esegui(channel, id, { say, emit } = {}) {
     if (!nuovo) return { ok: false, mostra: 'non riuscito' };
     return { ok: true, mostra: `${c.etichetta || c.comando}: ${nuovo.valore}`, valore: nuovo.valore };
   }
+  if (pezzi[0] === 'effetto') {
+    const comando = pezzi.slice(1).join(':');
+    const e = storeEffetti.get(login, comando);
+    if (!e) return { ok: false, mostra: 'non c\'è' };
+    // Lo spara il motore vero, quello che lo sparerebbe la chat: un secondo modo
+    // di mandare un effetto vorrebbe dire un secondo posto dove si rompe.
+    const andato = typeof effetti?.fire === 'function' ? effetti.fire(login, comando) : false;
+    return andato ? { ok: true, mostra: `!${comando}` } : { ok: false, mostra: 'non partito' };
+  }
+
+  if (id === 'battuta') {
+    let detta = null;
+    const parla = (t) => { detta = t; if (typeof say === 'function') say(t); };
+    const b = battute.diUna(login, parla, motoreBattute);
+    return b ? { ok: true, mostra: String(detta || b.testo).slice(0, 60) } : { ok: false, mostra: 'niente da dire' };
+  }
+
+  if (id === 'di') {
+    const t = String(testo || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+    if (!t) return { ok: false, mostra: 'manca il testo' };
+    if (typeof say !== 'function') return { ok: false, mostra: 'non riuscito' };
+    say(t);
+    return { ok: true, mostra: t.slice(0, 60) };
+  }
+
   return { ok: false, mostra: 'azione sconosciuta' };
 }

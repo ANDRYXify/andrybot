@@ -29,8 +29,34 @@ dei contatori, e i due si scollerebbero al primo contatore nuovo. Perciò
 `azioni(canale)` si ricava da ciò che il canale ha davvero: **aggiungi un contatore
 e i suoi tasti compaiono da soli**, con la sua emoji e il suo passo.
 
-Oggi il registro copre i contatori (`+passo`, `−passo`, `azzera`). Effetti, clip,
-pubblicità e comandi arrivano dopo, e arriveranno **derivati** allo stesso modo.
+Oggi il registro copre:
+
+- **contatori** — `+passo`, `−passo`, `azzera`, con l'emoji del contatore e il
+  numero di adesso sul tasto;
+- **effetti** — uno per ogni effetto del canale, con l'icona che segue il tipo
+  (suono, immagine, video). Lo spara il **motore vero**, quello che userebbe la
+  chat: un secondo modo di mandare un effetto sarebbe un secondo posto dove rompersi;
+- **battuta** — ne dice una, e la segna come detta (se no il suo schema non impara);
+- **dì** — l'unico tasto che porta con sé del testo, passato come `?testo=`.
+
+Clip, pubblicità e comandi di chat arrivano dopo, **derivati** allo stesso modo. Lo
+scudo no: non è un interruttore, è tutta la macchina antibot, e merita un pezzo suo.
+
+## Una battuta si dice in un posto solo
+
+Chat, iniziativa del bot, tasto della console: la sequenza è sempre la stessa —
+prima il serbatoio (che pesa riposo e presa sul pubblico), se è vuoto la si
+**costruisce** con la materia del canale, poi si dice e si segna che è stata detta,
+che apre la finestra in cui si contano le risate. Sta in `battute.diUna()`. Tre
+copie avrebbero voluto dire che prima o poi una si dimentica di segnare, e quella
+battuta non impara più niente.
+
+### Un campo che non esisteva
+
+La prima versione dava ai tasti degli effetti il titolo `e.etichetta || e.comando`.
+Un effetto **non ha** un'etichetta: ha il comando con cui lo chiama la chat e il
+tipo. Quella riga sembrava scegliere un nome e cadeva sempre sul ripiego. Ora il
+titolo è `!comando`, che è il nome vero.
 
 ## Un contatore cambia in un posto solo
 
