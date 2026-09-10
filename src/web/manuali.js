@@ -445,7 +445,7 @@ const MODULI = {
 
     { h2: 'Lanciare un modulo da fuori' },
     { p: [
-      'Ogni canale ha una <strong>chiave</strong> (la vede solo il proprietario, mai un moderatore). Con quella, un programma tuo — un\'estensione, un pulsante dello Stream Deck, uno script — può far scrivere il bot o lanciare un modulo.',
+      'Ogni canale ha una <strong>chiave</strong> (la vede solo il proprietario, mai un moderatore). Con quella, un programma tuo — un\'estensione, un pulsante dello tastiera fisica, uno script — può far scrivere il bot o lanciare un modulo.',
       'Si manda una <code>POST</code> all\'indirizzo del canale con la chiave nell\'intestazione <code>Authorization</code>, e nel corpo cosa fare: un messaggio, un effetto, o un modulo. Trenta richieste al minuto. Una chiave sbagliata riceve un 404, senza dire perché.',
     ] },
 
@@ -784,9 +784,9 @@ const INTERAZIONE = {
 const CONSOLIFY = {
   slug: 'consolify',
   schede: ['consolify'],
-  titolo: 'CONSOLify: i tasti del tuo canale, sul telefono o su uno Stream Deck | SocialBot',
-  h1: 'CONSOLify: i tasti del tuo canale, sul telefono o su uno Stream Deck',
-  desc: 'Contatori, effetti, una battuta o una frase a un tocco: dal telefono mentre streami, o dai tasti di uno Stream Deck vero.',
+  titolo: 'CONSOLify: i tasti del tuo canale, sul telefono o su uno tastiera fisica | SocialBot',
+  h1: 'CONSOLify: i tasti del tuo canale, sul telefono o su uno tastiera fisica',
+  desc: 'Contatori, effetti, una battuta o una frase a un tocco: dal telefono mentre streami, o dai tasti di una tastiera fisica.',
   aggiornata: OGGI,
   corpo: [
     { p: [
@@ -815,21 +815,21 @@ const CONSOLIFY = {
     ] },
     { p: ['Sul telefono la griglia si adatta da sé. È il modo per cui è pensata: telefono in mano, accanto alla tastiera.'] },
 
-    { h2: 'Sullo Stream Deck vero' },
+    { h2: 'Sullo tastiera fisica vero' },
     { p: [
-      'Non devi installare niente di nostro. In Stream Deck aggiungi un tasto con un plugin che fa <strong>chiamate web</strong> (per esempio API Ninja), e ci incolli l\'indirizzo che trovi nella scheda: c\'è già scritto, uno per ogni tua azione, con il bottone per copiarlo.',
-      '<strong>Icona e nome li scegli lì</strong>, in Stream Deck, come per qualunque altro tasto: lì si personalizzano meglio che da noi. Il plugin stampa la risposta sul tasto, quindi dopo la pressione leggi il numero nuovo.',
+      'Non devi installare niente di nostro. In tastiera fisica aggiungi un tasto con un plugin che fa <strong>chiamate web</strong> (per esempio API Ninja), e ci incolli l\'indirizzo che trovi nella scheda: c\'è già scritto, uno per ogni tua azione, con il bottone per copiarlo.',
+      '<strong>Icona e nome li scegli lì</strong>, sulla tastiera, come per qualunque altro tasto: lì si personalizzano meglio che da noi. Il plugin stampa la risposta sul tasto, quindi dopo la pressione leggi il numero nuovo.',
       'Lo stesso indirizzo funziona anche con <strong>Bitfocus Companion</strong>, <strong>Touch Portal</strong>, <strong>Loupedeck</strong> e dal browser di un telefono.',
     ] },
 
     { h2: 'La chiave, e quando rigenerarla' },
     { p: [
       'L\'indirizzo contiene una <strong>chiave del tuo canale</strong>: è quella che permette al tasto di agire senza fare il login. Trattala come una password — non mostrarla in diretta e non metterla in uno screenshot.',
-      'Se ti scappa, premi <strong>Rigenera la chiave</strong>: gli indirizzi vecchi smettono di funzionare all\'istante. Dovrai rifare i tasti sullo Stream Deck, ed è il prezzo giusto.',
+      'Se ti scappa, premi <strong>Rigenera la chiave</strong>: gli indirizzi vecchi smettono di funzionare all\'istante. Dovrai rifare i tasti sullo tastiera fisica, ed è il prezzo giusto.',
     ] },
   ],
   faq: [
-    { d: 'Serve uno Stream Deck?', r: 'No. CONSOLify funziona da sola sul telefono, sul tablet o su un secondo monitor. Lo Stream Deck è in più, e usa gli stessi tasti.' },
+    { d: 'Serve uno tastiera fisica?', r: 'No. CONSOLify funziona da sola sul telefono, sul tablet o su un secondo monitor. Lo tastiera fisica è in più, e usa gli stessi tasti.' },
     { d: 'Perché nell\'elenco non trovo un\'azione?', r: 'Perché le azioni nascono da quello che hai configurato. Se manca un effetto, aggiungilo nella sua scheda: il tasto compare da solo.' },
     { d: 'Posso aprirla sul telefono mentre streamo dal PC?', r: 'Sì, ed è il modo per cui è pensata. È la stessa dashboard: entra dal telefono e vai su CONSOLify.' },
     { d: 'Se premo due volte succede due volte?', r: 'Sì: un tasto fa quello che dice, ogni volta. C\'è solo un tetto di sicurezza se si preme moltissimo in un minuto.' },

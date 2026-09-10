@@ -12,13 +12,13 @@ import cookieSession from 'cookie-session';
 import multer from 'multer';
 import crypto from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync, statSync, unlinkSync, renameSync, copyFileSync } from 'node:fs';
-import { unlink, readFile } from 'node:fs/promises';
+import { unlink, readFile, mkdir, rename } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import * as licenza from '../licenza.js';      // il nome con cui questo software si presenta
-import * as consolle from '../features/console.js';   // CONSOLify + Stream Deck
+import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
@@ -4078,14 +4078,14 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ overlayUrl: effects.overlayUrl(currentUser(req).login) });
   }));
 
-  // ── CONSOLify + Stream Deck ─────────────────────────────────────────────
-  // La porta delle AZIONI. Non chiede una sessione: uno Stream Deck non sa tenere
+  // ── CONSOLify + tastiera fisica ─────────────────────────────────────────────
+  // La porta delle AZIONI. Non chiede una sessione: uno tastiera fisica non sa tenere
   // un cookie. Chiede una chiave del canale, revocabile, e ha un tetto di
   // frequenza — da qui non si guarda, si agisce.
   //
   // Accetta GET oltre a POST perche' i plugin HTTP generici (API Ninja e simili)
   // partono da li'. Non e' bello, ed e' quello che rende la cosa utilizzabile oggi
-  // su Stream Deck, Companion, Touch Portal e il browser di un telefono.
+  // su tastiera fisica, Companion, Touch Portal e il browser di un telefono.
   // IL GUARDIANO, separato da cio' che fa. Un gestore che si controlla da dentro
   // funziona ma non si vede da fuori: `scripts/verifica-porte.mjs` legge la riga
   // della rotta per sapere chi la sorveglia, e una porta il cui guardiano non si
@@ -4126,6 +4126,35 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login;
     res.json({ ok: true, chiave: consolle.revoca(login) });
   }));
+
+  // L'ICONA DI UN TASTO PUO' ESSERE SUA. Il nostro elenco non avra' mai l'icona
+  // che gli serve oggi, e la stessa faccia gli serve anche fuori dal sito — sul
+  // tasto di uno tastiera fisica. Percio' si carica un'immagine e ha un indirizzo.
+  app.post('/api/streamer/console/icona', requireLogin, upload.single('file'), wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!req.file) return res.status(400).json({ ok: false, motivo: 'nessun file' });
+    const tipi = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/svg+xml': 'svg' };
+    const est = tipi[req.file.mimetype];
+    if (!est) { await pulisciTemp(req.file.path); return res.status(415).json({ ok: false, motivo: 'non è un\'immagine' }); }
+    if (req.file.size > 2 * 1024 * 1024) { await pulisciTemp(req.file.path); return res.status(413).json({ ok: false, motivo: 'troppo grande (max 2 MB)' }); }
+    const nome = `ico_${crypto.randomBytes(6).toString('hex')}.${est}`;
+    const dove = join(effectsRoot, login);
+    await mkdir(dove, { recursive: true });
+    await rename(req.file.path, join(dove, nome));
+    res.json({ ok: true, icona: `img:${nome}`, url: `${config.baseUrl}/icona/${login}/${nome}` });
+  }));
+
+  // Pubblica di proposito: un'icona non e' un segreto, e deve poter essere presa
+  // da fuori (tastiera fisica, Companion) senza portarsi dietro la chiave del canale.
+  app.get('/icona/:login/:file', (req, res) => {
+    const login = String(req.params.login || '').toLowerCase();
+    const file = String(req.params.file || '');
+    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    if (!/^ico_[a-f0-9]{12}\.(png|jpg|webp|gif|svg)$/.test(file)) return notFound(res);
+    res.sendFile(join(effectsRoot, login, file), { maxAge: '1h' }, (err) => {
+      if (err && !res.headersSent) notFound(res);
+    });
+  });
 
   // La PLANCIA di CONSOLify: quali tasti, dove, con che faccia. Sono scelte dello
   // streamer, non dati del bot — stanno nelle sue impostazioni come tutto il resto.

@@ -73,6 +73,10 @@ const PUBBLICHE = new Map([
   ['GET /tgapp', 'la mini-app dentro Telegram'],
   ['POST /api/tgapp/auth', 'verifica da se la firma di Telegram'],
   ['POST /tg/:secret', 'segreto nel percorso piu header segreto di Telegram'],
+  // Un'icona non e' un segreto, e deve poter essere presa da fuori (Stream Deck,
+  // Companion) senza portarsi dietro la chiave del canale. Il nome del file e' a
+  // schema fisso e casuale: non si indovina e non si risale di cartella.
+  ['GET /icona/:login/:file', 'icona di un tasto: pubblica di proposito, serve fuori dal sito'],
   ['POST /api/passkey/login/inizio', 'il login non puo chiedere di essere gia loggati'],
   ['POST /api/passkey/login/fine', 'il login non puo chiedere di essere gia loggati'],
 ]);

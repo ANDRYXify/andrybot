@@ -42,7 +42,8 @@ test('il registro nasce dai contatori del canale, non da una lista scritta a man
 
   // il tasto DICE cosa fa: c'è il numero di adesso, non solo il nome
   assert.match(a[0].mostra, /Morti: 7/);
-  assert.equal(a[0].icona, '💀', 'e si porta dietro l\'emoji del contatore');
+  // niente emoji nella grafica: l'icona e' il NOME di una nostra, disegnata
+  assert.equal(a[0].icona, 'piu', 'l\'icona è una delle nostre, non un\'emoji');
 
   // un contatore nuovo compare da solo: nessuna lista da tenere allineata
   contatori.upsert(ch, { comando: 'tentativi', etichetta: 'Tentativi', valore: 2 });
@@ -131,7 +132,7 @@ test('anche gli effetti del canale diventano tasti, da soli', () => {
   assert.equal(eff.length, 1);
   assert.equal(eff[0].id, 'effetto:airhorn');
   assert.equal(eff[0].titolo, '!airhorn', 'il tasto porta il comando con cui lo chiama la chat');
-  assert.equal(eff[0].icona, '🔊', 'e l\'icona segue il tipo');
+  assert.equal(eff[0].icona, 'altoparlante', 'e l\'icona nostra segue il tipo');
 });
 
 test('l\'effetto lo spara il motore vero, non una seconda strada', () => {
