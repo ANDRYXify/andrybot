@@ -11,13 +11,17 @@
 //       (permessi 600) e INCOLLA DA SE' la pubblica in src/licenza.js. Con
 //       --niente-incolla la stampa soltanto.
 //
+//   node scripts/licenza.mjs --pubblica
+//       la chiave privata c'e' gia': ne ricava la pubblica e la mette in
+//       src/licenza.js. Non genera niente, non tocca la privata.
+//
 //   node scripts/licenza.mjs --firma --dominio socialbot.live --mesi 12
 //       firma una licenza per quel dominio. Opzioni: --macchina <hostname>,
 //       --proprietario "<nome>", --chiave <percorso della privata>.
 //
 // La licenza che esce e' UNA RIGA: si mette in `.env` come LICENZA=... oppure in
 // un file `licenza.txt` accanto al progetto.
-import { generateKeyPairSync, createPrivateKey, sign } from 'node:crypto';
+import { generateKeyPairSync, createPrivateKey, createPublicKey, sign } from 'node:crypto';
 import { writeFileSync, readFileSync, chmodSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
@@ -67,6 +71,42 @@ if (c_e('chiavi')) {
     console.log(riga + '\n');
   }
   console.log('(la pubblica puo\' stare al sole: serve a verificare, non a firmare)\n');
+  process.exit(0);
+}
+
+// LA PUBBLICA SI RICAVA DALLA PRIVATA, sempre. Serve quando la chiave c'e' gia' —
+// per esempio perche' la si e' generata con una versione vecchia di questo script,
+// che la pubblica la stampava soltanto. Senza questo, l'unico modo per rimettere
+// la riga a posto sarebbe buttare la coppia e rifarne una: perdere una chiave
+// buona per un dettaglio di trascrizione sarebbe assurdo.
+if (c_e('pubblica')) {
+  const percorso = arg('chiave', DOVE);
+  let priv;
+  try { priv = createPrivateKey(readFileSync(percorso, 'utf8')); }
+  catch (e) {
+    console.error(`Non riesco a leggere la chiave privata in ${percorso}: ${e?.message || e}`);
+    console.error('Se non ne hai ancora una: node scripts/licenza.mjs --chiavi');
+    process.exit(1);
+  }
+  const pub = createPublicKey(priv).export({ type: 'spki', format: 'pem' });
+  const riga = `export const CHIAVE_PUBBLICA = ${JSON.stringify(pub)};`;
+  if (c_e('niente-incolla')) {
+    console.log('\nIncolla questa riga in src/licenza.js, TUTTA SU UNA RIGA SOLA:\n');
+    console.log(riga + '\n');
+    process.exit(0);
+  }
+  const f = join(RAD, 'src', 'licenza.js');
+  const src = readFileSync(f, 'utf8');
+  const re = /^export const CHIAVE_PUBBLICA = .*$/m;
+  if (!re.test(src)) {
+    console.error(`Non trovo la riga CHIAVE_PUBBLICA in ${f}. Incollala tu, tutta su una riga:\n`);
+    console.error(riga);
+    process.exit(1);
+  }
+  writeFileSync(f, src.replace(re, riga));
+  console.log(`\nChiave pubblica ricavata da ${percorso} e messa in src/licenza.js.`);
+  console.log('DA ADESSO IL CANCELLO E\' ATTIVO: senza una LICENZA valida nel .env il bot non parte.');
+  console.log('Se non l\'hai ancora firmata:  node scripts/licenza.mjs --firma --dominio <dominio>\n');
   process.exit(0);
 }
 
