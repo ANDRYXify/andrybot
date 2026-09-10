@@ -767,3 +767,41 @@ test('il ponte non è un canale per ordini liberi', () => {
   assert.match(f, /manda\(\{ tipo: 'regia', lavoro: idLavoro, passo \}\)/, 'viaggia il passo, e basta');
   assert.match(f, /PONTE_ATTESA_MS/, 'e se la pagina non risponde non si resta appesi per sempre');
 });
+
+test('la plancia di uno non si vede da nessun altro, e non c\'è una porta per chiederla', () => {
+  // Domanda del direttore: questi dati non sono condivisi con nessuno, vero?
+  // Non basta dire di sì: si controlla.
+  const a = canale();
+  const b = canale();
+  contatori.upsert(a, { comando: 'morti', etichetta: 'Morti', valore: 1 });
+  contatori.upsert(b, { comando: 'morti', etichetta: 'Morti', valore: 1 });
+
+  consolle.salvaPlancia(a, { pagine: [{ nome: 'Sua', tasti: [{ nome: 'Segreto di A', passi: [{ tipo: 'scena', scena: 'Scena privata di A' }] }] }] });
+  const daB = consolle.plancia(b);
+  assert.equal(daB.pagine[0].tasti.length, 0, 'B non vede i tasti di A');
+  assert.equal(JSON.stringify(daB).includes('Scena privata di A'), false, 'né i nomi delle sue scene');
+
+  // e non esiste una rotta che restituisca la plancia di un canale scelto da fuori:
+  // quella che c'è la prende dall'utente della sessione, non dall'indirizzo
+  const srv = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
+  const righe = srv.split('\n').filter((r) => /consolle\.plancia\(/.test(r));
+  assert.equal(righe.length, 1, 'una sola porta la restituisce');
+  // NON basta che la riga NOMINI la sessione: deve non avere altre fonti. Con
+  // «prende currentUser» come unica verifica, un `req.query.chi || currentUser`
+  // passerebbe — provato, e passava.
+  assert.match(righe[0], /consolle\.plancia\(currentUser\(req\)\.login\)/, 'il canale viene SOLO da chi è entrato');
+  assert.ok(!/req\.(query|params|body)/.test(righe[0]), 'e niente che arrivi dall\'esterno lo può cambiare');
+
+  // chi ha solo la chiave del canale può AGIRE, ma non leggere la plancia
+  const conChiave = srv.slice(srv.indexOf("app.get('/api/console/:login'"), srv.indexOf("app.get('/api/console/:login'") + 320);
+  assert.ok(!conChiave.includes('plancia'), 'dall\'indirizzo della tastiera fisica la plancia non si legge');
+});
+
+test('l\'elenco delle tue scene non ci arriva nemmeno', () => {
+  // Scene, fonti e transizioni le legge il browser dal programma e restano lì.
+  // Quello che viene salvato è solo il NOME che hai scelto dentro un passo —
+  // senza, quel passo non saprebbe cosa fare quando lo premi.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const spedizioni = app.split('\n').filter((r) => /_cons\.(scene|fonti|transizioni)/.test(r) && /(fetch\(|api\(|JSON\.stringify)/.test(r));
+  assert.deepEqual(spedizioni, [], 'nessuna riga spedisce quegli elenchi da qualche parte');
+});
