@@ -8742,14 +8742,43 @@ function disegnaConsolify() {
   if (_cons.aperto !== null && _cons.aperto !== undefined) disegnaSchedaTasto();
 }
 
+let _ponte = null;
+
+function apriPonteRegia() {
+  if (_ponte) return;
+  try {
+    _ponte = new EventSource('/api/streamer/regia/ponte');
+    _ponte.onmessage = async (m) => {
+      let d;
+      try { d = JSON.parse(m.data); } catch (e) { return; }
+      if (!d || d.tipo !== 'regia' || !d.passo) return;
+      const esito = await eseguiPassoRegia(d.passo);
+      try {
+        await fetch('/api/streamer/regia/ponte/esito', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+          body: JSON.stringify({ lavoro: d.lavoro, ok: !!esito.ok, mostra: esito.mostra || '' }),
+        });
+      } catch (e) {  }
+    };
+    _ponte.onerror = () => {  };
+  } catch (e) { _ponte = null; }
+}
+
+function chiudiPonteRegia() {
+  if (!_ponte) return;
+  try { _ponte.close(); } catch (e) {  }
+  _ponte = null;
+}
+
 function disegnaSpiaRegia(msg) {
   const el = document.getElementById('re-spia');
   if (!el) return;
   const su = !!(window.RegiaEsterna && RegiaEsterna.collegato());
   _cons.regia = su;
+  if (su) apriPonteRegia(); else chiudiPonteRegia();
   el.className = 'cons-spia' + (su ? ' su' : ' giu');
   el.textContent = msg || (su
-    ? L('collegato', 'connected', 'conectado')
+    ? L('collegato — da qui comando anche quello che premi dal telefono', 'connected — from here I also run what you press on your phone', 'conectado — desde aquí también ejecuto lo que pulsas en el móvil')
     : L('non collegato', 'not connected', 'no conectado'));
 }
 

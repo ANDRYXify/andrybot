@@ -153,7 +153,7 @@ export async function eseguiTasto(channel, idTasto, dip = {}) {
   const esiti = [];
   for (const passo of tasto.passi) {
     if (passo.tipo === 'attesa') { await dormi(passo.ms); esiti.push({ ok: true, mostra: '' }); continue; }
-    esiti.push(eseguiPasso(login, passo, dip));
+    esiti.push(await eseguiPasso(login, passo, dip));
   }
 
   const riusciti = esiti.filter((e) => e.ok).length;
@@ -198,20 +198,71 @@ function eseguiPasso(login, passo, dip) {
     if (!preso) return { ok: false, mostra: `!${passo.comando} non c'è` };
     return { ok: true, mostra: (detto || `!${passo.comando}`).slice(0, 60) };
   }
-  if (passo.tipo === 'scena' || passo.tipo === 'muto') {
-    // Il programma con cui si manda in onda ascolta sul computer dello streamer:
-    // da qui non lo vediamo, e non fingiamo di poterlo fare. Lo fa la pagina, che
-    // sta su quella macchina. Chi preme da fuori (una tastiera fisica) se lo
-    // sente dire, invece di veder tornare un «fatto» che non e' successo.
-    return { ok: false, mostra: 'questo passo lo fa la pagina', browser: true };
+  if (passo.tipo === 'scena' || passo.tipo === 'muto' || passo.tipo === 'transizione') {
+    return chiediAlPonte(login, passo);
   }
   return { ok: false, mostra: 'passo sconosciuto' };
+}
+
+// IL PONTE VERSO LA REGIA. Il programma con cui si manda in onda ascolta sul
+// computer dello streamer, e da qui non lo vediamo. Ma la pagina aperta SU quel
+// computer ha tutte e due le mani: una su di noi, una sul programma. Quindi i
+// passi di regia che arrivano da fuori (telefono, tastiera fisica) glieli
+// passiamo, e aspettiamo l'esito.
+//
+// Se nessuna pagina e' di guardia il tasto lo DICE: e' la regola di sempre, un
+// tasto che mente e' peggio di un tasto che non c'e'.
+const _ponti = new Map();
+let _seqPonte = 0;
+
+export function apriPonte(channel, manda) {
+  const login = norm(channel);
+  const id = ++_seqPonte;
+  if (!_ponti.has(login)) _ponti.set(login, new Map());
+  _ponti.get(login).set(id, { manda, attese: new Map() });
+  return () => { const m = _ponti.get(login); if (m) { m.delete(id); if (!m.size) _ponti.delete(login); } };
+}
+
+export function pontiAperti(channel) {
+  const m = _ponti.get(norm(channel));
+  return m ? m.size : 0;
+}
+
+export function esitoDalPonte(channel, idLavoro, esito) {
+  const m = _ponti.get(norm(channel));
+  if (!m) return false;
+  for (const p of m.values()) {
+    const a = p.attese.get(idLavoro);
+    if (!a) continue;
+    p.attese.delete(idLavoro);
+    a(esito);
+    return true;
+  }
+  return false;
+}
+
+const PONTE_ATTESA_MS = 6000;
+
+function chiediAlPonte(login, passo) {
+  const m = _ponti.get(login);
+  if (!m || !m.size) return Promise.resolve({ ok: false, mostra: 'nessuna pagina di regia aperta' });
+  const [ponte] = [...m.values()];
+  const idLavoro = `p${++_seqPonte}`;
+  return new Promise((si) => {
+    const scade = setTimeout(() => {
+      ponte.attese.delete(idLavoro);
+      si({ ok: false, mostra: 'la pagina non ha risposto' });
+    }, PONTE_ATTESA_MS);
+    ponte.attese.set(idLavoro, (esito) => { clearTimeout(scade); si(esito); });
+    try { ponte.manda({ tipo: 'regia', lavoro: idLavoro, passo }); }
+    catch (e) { clearTimeout(scade); ponte.attese.delete(idLavoro); si({ ok: false, mostra: 'non riuscito' }); }
+  });
 }
 
 // UN PASSO SOLO di un tasto. Serve alla pagina, che percorre la partitura in
 // ordine e fa da se' i passi di regia: se il server facesse "tutto il resto" e la
 // pagina le scene "dopo", una fila con un'attesa in mezzo andrebbe fuori ordine.
-export function eseguiPassoDiTasto(channel, idTasto, k, dip = {}) {
+export async function eseguiPassoDiTasto(channel, idTasto, k, dip = {}) {
   const login = norm(channel);
   for (const pg of plancia(login).pagine) {
     for (const t of pg.tasti || []) {
@@ -219,7 +270,7 @@ export function eseguiPassoDiTasto(channel, idTasto, k, dip = {}) {
       const passo = (t.passi || [])[Number(k)];
       if (!passo) return { ok: false, mostra: 'passo non trovato' };
       if (passo.tipo === 'attesa') return { ok: true, mostra: '', attesa: passo.ms };
-      return eseguiPasso(login, passo, dip);
+      return Promise.resolve(eseguiPasso(login, passo, dip));
     }
   }
   return { ok: false, mostra: 'tasto non trovato' };

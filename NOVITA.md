@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-10
 
+- Con la regia collegata sul computer, i tasti scena funzionano anche premuti dal telefono o da una tastiera fisica: il pannello aperto lì fa da ponte.
+- Se nessun pannello è aperto su quel computer, il tasto te lo dice invece di rispondere «fatto».
+- I menù con tante voci non si schiacciano più: prima con dieci scene i nomi venivano tagliati a metà, ora la lista scorre.
 - I menù a tendina del pannello sono disegnati come il resto del sito, tutti: prima solo uno lo era e gli altri uscivano col grigio del sistema.
 - Un tasto si crea da un posto libero: nasce vuoto e si apre la sua scheda, dove costruisci quello che vuoi. Non devi più scegliere un'azione da una tendina prima di poter fare niente.
 - Nella scheda ci sono idee pronte — manda un link, manda un suono, cambia scena, vado in pausa — che sono un punto di partenza: poi cambi tutto.

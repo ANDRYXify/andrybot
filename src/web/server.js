@@ -4187,7 +4187,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   });
   const consolePasso = wrap(async (req, res) => {
     const login = String(req.params.login || '').toLowerCase();
-    const esito = consolle.eseguiPassoDiTasto(login, String(req.params.id || ''), req.params.k, {
+    const esito = await consolle.eseguiPassoDiTasto(login, String(req.params.id || ''), req.params.k, {
       say: (t) => { try { manager.say(login, t); } catch { /* niente */ } },
       emit: (p) => { try { effects.emit(login, p); } catch { /* niente */ } },
       effetti: effects,
@@ -4196,6 +4196,30 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ...esito, overlay: effects.hasClients(login) });
   });
   app.post('/api/console/:login/tasto/:id/passo/:k', guardiaConsole, consolePasso);
+
+  // IL PONTE: la pagina aperta sul computer della regia si mette di guardia, e
+  // riceve i passi che arrivano da fuori. E' un flusso a senso unico come quello
+  // degli overlay; l'esito torna dalla porta qui sotto.
+  app.get('/api/streamer/regia/ponte', requireLogin, (req, res) => {
+    const login = currentUser(req).login;
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+    res.write(': ponte aperto\n\n');
+    const chiudi = consolle.apriPonte(login, (m) => res.write(`data: ${JSON.stringify(m)}\n\n`));
+    const battito = setInterval(() => { try { res.write(': ba\n\n'); } catch { /* chiuso */ } }, 15000);
+    req.on('close', () => { clearInterval(battito); chiudi(); });
+  });
+
+  app.post('/api/streamer/regia/ponte/esito', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const lavoro = String(req.body?.lavoro || '');
+    const esito = { ok: !!req.body?.ok, mostra: String(req.body?.mostra || '').slice(0, 80) };
+    res.json({ ok: consolle.esitoDalPonte(login, lavoro, esito) });
+  }));
 
   app.post('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
   app.get('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
