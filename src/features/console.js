@@ -195,8 +195,8 @@ export function esegui(channel, id, { say, emit, effetti, testo } = {}) {
 //
 // REGOLA DEL PROGETTO: tutto e' modificabile. Percio' qui dentro non c'e' niente
 // di deciso da noi che non si possa cambiare da fuori — nome, icona, colore,
-// testo, conferma, ordine, pagina, quante colonne, e le scorciatoie per lo Stream
-// Deck. Se un giorno si aggiunge un campo, si aggiunge anche il modo di cambiarlo.
+// testo, conferma, ordine, pagina, formato della griglia e misura dei tasti. Se
+// un giorno si aggiunge un campo, si aggiunge anche il modo di cambiarlo.
 const PAGINE_MAX = 8;
 const TASTI_MAX = 48;
 const MISURE = ['s', 'm', 'l'];

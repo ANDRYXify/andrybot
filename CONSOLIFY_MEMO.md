@@ -193,3 +193,38 @@ peggio del difetto. Si cambia dalla tendina, un clic.
 
 E per la seconda volta in questa sessione ho scritto commenti dentro un file che
 si legge con F12. Il cancello mi ha fermato al push. Le spiegazioni stanno qui.
+
+## Il suono che non si sente (segnalato: «compare il nome ma non si sente nulla»)
+
+Prima ho seguito tre piste e sono cadute TUTTE E TRE. Le scrivo perche' il valore
+sta anche nell'aver escluso:
+- **non e' l'autoplay del browser**: misurato con la politica normale e con
+  quella che usa OBS, suona in tutti e due i casi;
+- **non e' l'estensione mancante**: i suoni vengono salvati `.ogg` da `comprimi`,
+  quindi il tipo di contenuto lo prende giusto;
+- **non e' `mostra('effetti')`**: e' acceso di default (`!== false`).
+
+**Il dato che ha chiuso il cerchio: «compare il nome».** In `suona()`
+l'etichetta col comando sta FUORI dal `try` e parte sempre, anche quando l'audio
+fallisce. Quindi «il nome compare» non dice niente sul suono — e' esattamente il
+sintomo di un audio che non parte in una funzione che si annuncia comunque.
+
+**Cosa NON so ancora, e perche' non lo sa nessuno.** Cinque punti facevano
+`a.play().catch(() => {})` e `es.onerror = () => {}`. Bloccato dal browser, file
+irraggiungibile, chiave scaduta, flusso caduto: da fuori erano la stessa identica
+cosa, cioe' silenzio. Non era una diagnosi difficile: era una diagnosi
+IMPOSSIBILE, per costruzione.
+
+**Percio' la prima cosa da fare non era indovinare la causa, ma togliere la
+condizione che rende impossibile saperla.** Ora c'e' un punto solo dove il suono
+parte (`suonaUrl`), che:
+- tiene un riferimento a chi sta suonando (un elemento audio senza riferimenti
+  puo' sparire sotto i piedi a meta');
+- ascolta anche `error` sull'elemento, non solo il rifiuto di `play()` — sono due
+  fallimenti diversi e prima erano tutti e due muti;
+- riporta il guaio al server, che lo scrive nell'osservatorio: una volta al
+  minuto per tipo, perche' un overlay che sbaglia sbaglia in fretta.
+Lo stesso vale per i video e per il flusso di eventi caduto.
+
+Adesso una prova sola dice quale delle cause e', invece di farci tirare a
+indovinare in due.
