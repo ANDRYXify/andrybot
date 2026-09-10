@@ -176,3 +176,20 @@ resta su «libero»: da qui non posso distinguere il «libero» scelto da quello
 ereditato — il vecchio codice scriveva lo stesso identico valore per tutti e due.
 Riscrivere in silenzio la preferenza di qualcuno per far tornare i conti sarebbe
 peggio del difetto. Si cambia dalla tendina, un clic.
+
+## I tasti si vedono (segnalato: «non sono distinguibili, ne' in light ne' in dark»)
+
+15. **I tasti erano costruiti con token che il sito non usa.** `1px solid
+    var(--border)` e `var(--om-s)`, mentre tutto il resto vive su `--tratto-mano`
+    (spessori diseguali, tratto a mano), `--ang-mano` (angolo storto) e
+    `--ombra-ink`. Un pezzo che non parla la lingua del posto non e' «piu'
+    sobrio»: e' estraneo, e sparisce su tutti e due i fondi. Rifatti sui token
+    veri, i due temi li seguono da soli.
+16. **Un posto libero e' un POSTO, non un tasto spento.** Stesso tratto e stesso
+    angolo, ma tratteggiato, senza ombra, piu' tenue: si vede che li' ci sta
+    qualcosa e si vede che non c'e' ancora.
+17. **La fascia del colore stava SOPRA il bordo** e sembrava una riga che
+    galleggiava staccata. Ora e' dentro al tasto, sotto il tratto.
+
+E per la seconda volta in questa sessione ho scritto commenti dentro un file che
+si legge con F12. Il cancello mi ha fermato al push. Le spiegazioni stanno qui.
