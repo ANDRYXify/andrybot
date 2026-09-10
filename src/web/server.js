@@ -18,6 +18,7 @@ import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import * as licenza from '../licenza.js';      // il nome con cui questo software si presenta
+import * as consolle from '../features/console.js';   // CONSOLify + Stream Deck
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
@@ -4075,6 +4076,53 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   app.get('/api/streamer/overlay-url', requireLogin, wrap(async (req, res) => {
     res.json({ overlayUrl: effects.overlayUrl(currentUser(req).login) });
+  }));
+
+  // ── CONSOLify + Stream Deck ─────────────────────────────────────────────
+  // La porta delle AZIONI. Non chiede una sessione: uno Stream Deck non sa tenere
+  // un cookie. Chiede una chiave del canale, revocabile, e ha un tetto di
+  // frequenza — da qui non si guarda, si agisce.
+  //
+  // Accetta GET oltre a POST perche' i plugin HTTP generici (API Ninja e simili)
+  // partono da li'. Non e' bello, ed e' quello che rende la cosa utilizzabile oggi
+  // su Stream Deck, Companion, Touch Portal e il browser di un telefono.
+  // IL GUARDIANO, separato da cio' che fa. Un gestore che si controlla da dentro
+  // funziona ma non si vede da fuori: `scripts/verifica-porte.mjs` legge la riga
+  // della rotta per sapere chi la sorveglia, e una porta il cui guardiano non si
+  // legge e' una porta che un domani si dimentica. Qui il guardiano ha un nome, sta
+  // sulla riga, e il cancello lo conosce.
+  const guardiaConsole = (req, res, next) => {
+    const login = String(req.params.login || '').toLowerCase();
+    const key = String(req.query.key || req.body?.key || '');
+    if (!streamers.get(login)) return res.status(404).json({ ok: false, mostra: 'canale sconosciuto' });
+    if (!consolle.chiaveOk(login, key)) return res.status(403).json({ ok: false, mostra: 'chiave non valida' });
+    if (consolle.troppiColpi(login)) return res.status(429).json({ ok: false, mostra: 'troppo in fretta' });
+    return next();
+  };
+  const consoleAgisci = wrap(async (req, res) => {
+    const login = String(req.params.login || '').toLowerCase();
+    res.json(consolle.esegui(login, req.params.azione, {
+      say: (t) => { try { manager.say(login, t); } catch { /* niente */ } },
+      emit: (p) => { try { effects.emit(login, p); } catch { /* niente */ } },
+    }));
+  });
+  app.post('/api/console/:login/:azione', guardiaConsole, consoleAgisci);
+  app.get('/api/console/:login/:azione', guardiaConsole, consoleAgisci);
+
+  // Il registro + lo stato di adesso: lo legge CONSOLify, e lo puo' leggere un
+  // tasto che vuole mostrare un numero senza premerlo.
+  app.get('/api/console/:login', guardiaConsole, wrap(async (req, res) => {
+    res.json({ ok: true, azioni: consolle.azioni(String(req.params.login || '').toLowerCase()) });
+  }));
+
+  // Per la dashboard: l'indirizzo da incollare nel tasto, e il bottone per revocare.
+  app.get('/api/streamer/console', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    res.json({ base: `${config.baseUrl}/api/console/${login}`, chiave: consolle.chiave(login), azioni: consolle.azioni(login) });
+  }));
+  app.post('/api/streamer/console/revoca', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    res.json({ ok: true, chiave: consolle.revoca(login) });
   }));
 
   // ---- REGIA: gestisci la diretta dal bot (senza aprire OBS per queste cose) ----

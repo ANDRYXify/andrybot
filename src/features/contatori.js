@@ -103,15 +103,34 @@ export function perParola(msg, emit) {
 }
 
 // Riscatto punti canale collegato a un contatore → +step, con annuncio + overlay.
+// UN CONTATORE E' CAMBIATO. Da qualunque parte arrivi la spinta — la chat, un
+// premio riscattato, un tasto della console — succedono le stesse tre cose: il
+// numero sale, il bot lo dice, il widget a schermo si aggiorna. Tenere tre copie
+// di questa sequenza vorrebbe dire che prima o poi una delle tre dimentica il
+// widget, e nessuno se ne accorge finche' non lo guarda.
+// `delta` nullo = azzera. Ritorna la riga nuova, o null.
+export function cambia(channel, comando, delta, say, emit) {
+  try {
+    const c = store.get(channel, comando);
+    if (!c) return null;
+    const nuovo = delta === null
+      ? store.upsert(channel, { comando, valore: 0 })
+      : store.incrementa(channel, comando, delta);
+    if (!nuovo) return null;
+    if (typeof say === 'function') {
+      const emoji = c.emoji ? c.emoji + ' ' : '';
+      say(`${emoji}${c.etichetta || c.comando}: ${nuovo.valore}`);
+    }
+    versoSeMostra(emit, nuovo);
+    return nuovo;
+  } catch (e) { log.debug('cambia:', e?.message || e); return null; }
+}
+
 export function perRiscatto(channel, data, say, emit) {
   try {
     const rewardId = data?.reward?.id; if (!rewardId) return false;
     const c = store.getByReward(channel, rewardId); if (!c) return false;
-    const nuovo = store.incrementa(channel, c.comando, c.step || 1);
-    if (nuovo) {
-      if (typeof say === 'function') { const emoji = c.emoji ? c.emoji + ' ' : ''; say(`${emoji}${c.etichetta || c.comando}: ${nuovo.valore}`); }
-      versoSeMostra(emit, nuovo);
-    }
+    cambia(channel, c.comando, c.step || 1, say, emit);
     return true;
   } catch (e) { log.debug('perRiscatto:', e?.message || e); return false; }
 }
