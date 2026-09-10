@@ -17,6 +17,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-10
 
+- I tasti di CONSOLify hanno il tratto disegnato del resto del sito, e si distinguono sia col tema chiaro sia con quello scuro; i posti liberi si vedono che sono posti, non tasti spenti.
 - La plancia vuota non è più una frase: i posti liberi si vedono, e sotto c'è scritto come riempirli — con il consiglio giusto a seconda che tu stia sistemando i tasti o usandoli.
 - Ogni tasto di CONSOLify ha il suo indirizzo, e punta al tasto invece che all'azione: se domani a quel tasto cambi mestiere, nome o icona, sulla tastiera fisica non rifai niente.
 - Scegli il formato della plancia — da 3×3 a 5×8 — e quanto stanno grandi i tasti: parti da una griglia vera invece che da un foglio bianco, e i posti liberi si vedono.

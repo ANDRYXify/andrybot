@@ -2023,16 +2023,18 @@ body.ce-aperto { overflow: hidden; }
   position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: .22rem; padding: .7rem .5rem .55rem; aspect-ratio: 1 / .88;
   font: inherit; color: var(--testo); text-align: center; cursor: pointer;
-  background: color-mix(in srgb, var(--contorno) 4%, var(--surface));
-  border: 1px solid var(--border); border-radius: var(--r-l);
-  box-shadow: var(--om-s);
-  transition: transform .08s ease, box-shadow .08s ease, border-color .12s ease;
+  background: var(--surface);
+  border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano);
+  border-radius: var(--ang-mano);
+  box-shadow: var(--ombra-ink);
+  transition: transform .08s ease, box-shadow .08s ease, background var(--molla);
 }
 .cons-tasto::before {
-  content: ''; position: absolute; inset: 0 20% auto; height: 3px; border-radius: 0 0 3px 3px;
+  content: ''; position: absolute; inset: 0 0 auto; height: .5rem;
+  border-radius: var(--ang-mano) var(--ang-mano) 0 0;
   background: var(--cons-tinta);
 }
-.cons-tasto:active { transform: translateY(1px); box-shadow: none; }
+.cons-tasto:active { transform: translate(3px, 3px); box-shadow: var(--ombra-ink-timbro); }
 .cons-tasto:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 .cons-tasto.cons-fatto { border-color: var(--acc); box-shadow: 0 0 0 2px var(--acc-tint); }
 .cons-tasto.cons-male { border-color: var(--acc-vino, #9a0028); }
@@ -2118,7 +2120,7 @@ body.ce-aperto { overflow: hidden; }
 .cons-colori input[type="color"].cons-colore-libero { flex: 0 0 auto; width: 2rem; height: 2rem; }
 
 @media (hover: hover) {
-  .cons-tasto:hover { border-color: var(--acc-bordo); }
+  .cons-tasto:hover { background: var(--surface-2); box-shadow: var(--ombra-ink-alta); transform: translate(-1px, -1px); }
   .cons-mini:hover { color: var(--testo); border-color: var(--acc-bordo); }
   .cons-ic:hover { border-color: var(--border); color: var(--testo); }
 }
@@ -2143,7 +2145,15 @@ body.ce-aperto { overflow: hidden; }
 .nov-piede { display: flex; gap: .5rem; justify-content: flex-end; align-items: center; padding: .8rem 1.2rem; border-top: 1px solid var(--border); }
 .nov-altri { margin-top: 1rem; padding-top: .7rem; border-top: 1px solid var(--border); }
 .cons-vuoto {
-  aspect-ratio: 1 / .88; border: 1px dashed var(--border); border-radius: var(--r-l);
-  background: transparent; color: var(--testo-2); font-size: 1.1rem; cursor: pointer;
+  aspect-ratio: 1 / .88;
+  border: var(--contorno-sp) dashed var(--contorno); border-width: var(--tratto-mano);
+  border-radius: var(--ang-mano);
+  background: var(--tono-carta, transparent);
+  color: var(--testo-2); font-family: var(--mano); font-size: 1.35rem; line-height: 1; cursor: pointer;
+  opacity: .55;
+  transition: opacity var(--molla), background var(--molla);
 }
-.cons-vuoto[disabled] { cursor: default; opacity: .5; }
+.cons-vuoto[disabled] { cursor: default; opacity: .32; }
+@media (hover: hover) {
+  .cons-vuoto:not([disabled]):hover { opacity: .9; background: var(--surface-2); }
+}
