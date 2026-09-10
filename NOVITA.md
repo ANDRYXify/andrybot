@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-10
 
+- Un tasto di CONSOLify può fare più cose di seguito, non una sola: dire una frase, aspettare, lanciare un effetto, mandare il risultato di un comando — nell'ordine che scegli tu.
+- I passi si aggiungono, si spostano e si tolgono dalla scheda del tasto, e se uno non riesce gli altri succedono lo stesso.
+- I tasti che avevi già continuano a funzionare: diventano una fila di un passo solo, senza che tu debba rifarli.
 - I tasti di CONSOLify creati prima di oggi ripartono: alcuni non avevano un indirizzo valido e premerli non faceva niente, ora si sistemano da soli alla prima apertura.
 - Il conto alla rovescia può partire da solo quando si apre l'overlay: metti su la scena d'attesa e il conto è già andato, senza premere niente.
 - Quello che metti su CONSOLify arriva a tutti i tuoi overlay: premi e parte, senza collegare niente a mano.

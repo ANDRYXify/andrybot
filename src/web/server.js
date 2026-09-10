@@ -83,6 +83,7 @@ import * as kickDiario from '../kick/diario.js';
 import { montaYoutube } from '../youtube/rotte.js';
 import * as ytApi from '../youtube/api.js';
 import * as avvisi from '../features/avvisi.js';
+import * as comandiChat from '../features/comandichat.js';
 
 const log = makeLog('web');
 const logOverlay = makeLog('overlay');
@@ -4176,10 +4177,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // tastiera fisica, e non invecchia — segue il tasto, non l'azione di oggi.
   const consoleTasto = wrap(async (req, res) => {
     const login = String(req.params.login || '').toLowerCase();
-    const esito = consolle.eseguiTasto(login, String(req.params.id || ''), {
+    const esito = await consolle.eseguiTasto(login, String(req.params.id || ''), {
       say: (t) => { try { manager.say(login, t); } catch { /* niente */ } },
       emit: (p) => { try { effects.emit(login, p); } catch { /* niente */ } },
       effetti: effects,
+      comandi: comandiChat,
     });
     res.json({ ...esito, overlay: effects.hasClients(login) });
   });

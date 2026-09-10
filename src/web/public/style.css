@@ -2144,6 +2144,24 @@ body.ce-aperto { overflow: hidden; }
 }
 .nov-piede { display: flex; gap: .5rem; justify-content: flex-end; align-items: center; padding: .8rem 1.2rem; border-top: 1px solid var(--border); }
 .nov-altri { margin-top: 1rem; padding-top: .7rem; border-top: 1px solid var(--border); }
+.cons-passi { display: flex; flex-direction: column; gap: .4rem; margin: .4rem 0 .6rem; }
+.cons-passo {
+  display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  padding: .45rem .55rem;
+  border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano);
+  border-radius: var(--ang-mano); background: var(--surface-2);
+}
+.cons-passo-n {
+  flex: 0 0 auto; width: 1.5rem; height: 1.5rem; display: grid; place-items: center;
+  font-family: var(--mano); font-size: .82rem;
+  border-radius: 50%; background: var(--acc); color: var(--su-acc);
+}
+.cons-passo-t { flex: 0 0 auto; font-size: .76rem; font-weight: 700; color: var(--testo-2); }
+.cons-passo-c { flex: 1 1 12rem; display: flex; align-items: center; gap: .4rem; min-width: 0; }
+.cons-passo-c .campo { flex: 1 1 auto; min-width: 0; }
+.cons-passo-c input[type="number"].campo { flex: 0 0 5.5rem; }
+.cons-passo .cons-frecce { position: static; flex: 0 0 auto; display: flex; gap: .2rem; }
+
 .cons-spia {
   display: inline-flex; align-items: center; gap: .35rem;
   font-size: .76rem; font-weight: 600; color: var(--testo-2);

@@ -8637,17 +8637,18 @@ function disegnaConsolify() {
     <label class="cons-colonne">${L('Formato', 'Layout', 'Formato')}
       <select class="campo" id="cons-formato">
         ${FORMATI_CONS.map(([r, c]) => `<option value="${r}x${c}"${fmt.righe === r && col === c ? ' selected' : ''}>${r}×${c}</option>`).join('')}
+        ${col && !FORMATI_CONS.some(([r, c]) => r === fmt.righe && c === col) ? `<option value="${fmt.righe}x${col}" selected>${fmt.righe}×${col}</option>` : ''}
         <option value="0x0"${!col ? ' selected' : ''}>${L('libero', 'free', 'libre')}</option>
       </select></label>` : '';
   const rinomina = mod ? `<button class="btn secondario mini" id="cons-rinomina">${L('Rinomina pagina', 'Rename page', 'Renombrar página')}</button>` : '';
   const elimina = mod && pagine.length > 1 ? `<button class="btn secondario mini" id="cons-togli-pagina">${L('Elimina pagina', 'Delete page', 'Eliminar página')}</button>` : '';
 
   const tastoHtml = (t, i, n) => {
-    const a = perId.get(t.azione);
+    const a = consAzione(t, perId);
     const stile = t.colore ? ` style="--cons-tinta:${esc(t.colore)}"` : '';
-    return `<button class="cons-tasto" data-cons-tasto="${i}"${stile}${mod ? ` draggable="true" data-cons-trascina="${i}"` : ''} title="${esc(a?.titolo || t.azione)}">
+    return `<button class="cons-tasto" data-cons-tasto="${i}"${stile}${mod ? ` draggable="true" data-cons-trascina="${i}"` : ''} title="${esc(consNome(t, a))}">
       <span class="cons-ico">${consIcona(t, a)}</span>
-      <span class="cons-nome">${esc(t.nome || a?.titolo || t.azione)}</span>
+      <span class="cons-nome">${esc(consNome(t, a))}</span>
       <span class="cons-stato">${esc(a?.mostra || '')}</span>
       ${mod ? `<span class="cons-mod">
           <span class="cons-mini" data-cons-apri="${i}" title="${L('Modifica', 'Edit', 'Editar')}">${_bIco(ICO.scrivi)}</span>
@@ -8670,7 +8671,7 @@ function disegnaConsolify() {
   };
   const perGruppo = new Map();
   tasti.forEach((t, i) => {
-    const g = perId.get(t.azione)?.gruppo || 'altro';
+    const g = consAzione(t, perId)?.gruppo || 'altro';
     if (!perGruppo.has(g)) perGruppo.set(g, []);
     perGruppo.get(g).push([t, i]);
   });
@@ -8724,6 +8725,30 @@ function disegnaSpia() {
     : L('nessun overlay collegato — effetti, suoni e video non hanno dove andare', 'no overlay connected — effects, sounds and videos have nowhere to go', 'ningún overlay conectado — efectos, sonidos y vídeos no tienen a dónde ir');
 }
 
+const TIPI_PASSO = () => [
+  ['azione', L('Fai una cosa che hai già', 'Do something you already have', 'Haz algo que ya tienes')],
+  ['chat', L('Dì una frase in chat', 'Say a line in chat', 'Di una frase en el chat')],
+  ['comando', L('Manda il risultato di un comando', 'Send what a command produces', 'Manda lo que produce un comando')],
+  ['attesa', L('Aspetta', 'Wait', 'Espera')],
+];
+
+function etichettaPasso(p) {
+  if (!p) return '';
+  if (p.tipo === 'azione') return (_cons.azioni.find((a) => a.id === p.id) || {}).titolo || p.id;
+  if (p.tipo === 'chat') return p.testo || '';
+  if (p.tipo === 'comando') return '!' + p.comando;
+  if (p.tipo === 'attesa') return `${Math.round(p.ms / 100) / 10}s`;
+  return '';
+}
+
+const passoAzione = (t) => ((t && t.passi) || []).find((p) => p.tipo === 'azione') || null;
+function consAzione(t, perId) {
+  const p = passoAzione(t);
+  if (!p) return null;
+  return perId ? perId.get(p.id) : _cons.azioni.find((a) => a.id === p.id);
+}
+const consNome = (t, a) => t.nome || (a && a.titolo) || etichettaPasso(((t && t.passi) || [])[0]) || '—';
+
 function consIcona(t, a) {
   const scelta = t.icona || a?.icona || '';
   if (scelta.startsWith('img:')) return `<img class="cons-img" src="/icona/${esc(_cons.login)}/${esc(scelta.slice(4))}" alt="">`;
@@ -8735,9 +8760,9 @@ function rinfrescaTasto(i) {
   const el = document.querySelector(`[data-cons-tasto="${i}"]`);
   const t = _cons.plancia.pagine[_cons.pagina]?.tasti?.[i];
   if (!el || !t) return;
-  const a = _cons.azioni.find((x) => x.id === t.azione);
+  const a = consAzione(t);
   const nome = el.querySelector('.cons-nome');
-  if (nome) nome.textContent = t.nome || a?.titolo || t.azione;
+  if (nome) nome.textContent = consNome(t, a);
   const ico = el.querySelector('.cons-ico');
   if (ico) ico.innerHTML = consIcona(t, a);
   if (t.colore) el.style.setProperty('--cons-tinta', t.colore);
@@ -8750,29 +8775,63 @@ const consUrlTasto = (t) => `${_cons.base}/tasto/${t.id || ''}?key=${_cons.chiav
 
 const COLORI_TASTO = ['', '#ba007a', '#d000b8', '#1f9e4f', '#e0913a', '#3aa6c9', '#8f7bd6', '#9a9a9a'];
 
+function disegnaPasso(p, k, n) {
+  const frecce = `<span class="cons-frecce">
+      <span class="cons-mini" data-cons-psposta="${k}:-1" ${k === 0 ? 'hidden' : ''}>‹</span>
+      <span class="cons-mini" data-cons-psposta="${k}:1" ${k === n - 1 ? 'hidden' : ''}>›</span>
+      <span class="cons-mini" data-cons-ptogli="${k}" title="${L('Togli', 'Remove', 'Quitar')}">×</span>
+    </span>`;
+  let corpo = '';
+  if (p.tipo === 'azione') {
+    corpo = `<select class="campo" data-cons-pcampo="${k}:id">${_cons.azioni.map((a) => `<option value="${esc(a.id)}"${a.id === p.id ? ' selected' : ''}>${esc(a.titolo)}</option>`).join('')}</select>`;
+    const a = _cons.azioni.find((x) => x.id === p.id);
+    if (a && a.testo) corpo += `<input class="campo" data-cons-pcampo="${k}:testo" maxlength="200" value="${esc(p.testo || '')}" placeholder="${L('cosa deve dire', 'what it says', 'qué dice')}">`;
+  } else if (p.tipo === 'chat') {
+    corpo = `<input class="campo" data-cons-pcampo="${k}:testo" maxlength="400" value="${esc(p.testo || '')}" placeholder="${L('la frase da dire', 'the line to say', 'la frase a decir')}">`;
+  } else if (p.tipo === 'comando') {
+    corpo = `<input class="campo" data-cons-pcampo="${k}:comando" maxlength="40" value="${esc(p.comando || '')}" placeholder="${L('nome del comando, senza !', 'command name, without !', 'nombre del comando, sin !')}">`;
+  } else if (p.tipo === 'attesa') {
+    corpo = `<input class="campo" type="number" min="0.1" max="30" step="0.1" data-cons-pcampo="${k}:ms" value="${Math.round((p.ms || 0) / 100) / 10}">
+      <span class="tenue">${L('secondi', 'seconds', 'segundos')}</span>`;
+  }
+  const nomi = Object.fromEntries(TIPI_PASSO());
+  return `<div class="cons-passo">
+    <span class="cons-passo-n">${k + 1}</span>
+    <span class="cons-passo-t">${esc(nomi[p.tipo] || p.tipo)}</span>
+    <span class="cons-passo-c">${corpo}</span>
+    ${frecce}
+  </div>`;
+}
+
 function disegnaSchedaTasto() {
   const box = document.getElementById('cons-scheda');
   const pg = _cons.plancia.pagine[_cons.pagina];
   const t = pg?.tasti?.[_cons.aperto];
   if (!box || !t) { if (box) box.innerHTML = ''; return; }
-  const a = _cons.azioni.find((x) => x.id === t.azione);
+  const a = consAzione(t);
   const icone = Object.keys(ICO);
   const scelta = t.icona || a?.icona || '';
   const pagine = _cons.plancia.pagine;
 
   box.innerHTML = `<div class="cons-scheda">
     <div class="cons-scheda-testa">
-      <strong>${esc(a?.titolo || t.azione)}</strong>
+      <strong>${esc(consNome(t, a))}</strong>
       <button class="btn secondario mini" id="cons-c-chiudi">${L('Chiudi', 'Close', 'Cerrar')}</button>
     </div>
 
     <div class="cons-campi">
       <label>${L('Nome sul tasto', 'Key name', 'Nombre en la tecla')}
         <input class="campo" id="cons-c-nome" maxlength="24" value="${esc(t.nome || '')}" placeholder="${esc(a?.titolo || '')}"></label>
-      ${a?.testo ? `<label>${L('Cosa deve dire', 'What it says', 'Qué dice')}
-        <input class="campo" id="cons-c-testo" maxlength="200" value="${esc(t.testo || '')}"></label>` : ''}
       <label>${L('Sposta nella pagina', 'Move to page', 'Mover a la página')}
         <select class="campo" id="cons-c-pagina">${pagine.map((p, k) => `<option value="${k}"${k === _cons.pagina ? ' selected' : ''}>${esc(p.nome || `#${k + 1}`)}</option>`).join('')}</select></label>
+    </div>
+
+    <div class="cons-sez">${L('Cosa fa, in fila', 'What it does, in order', 'Qué hace, en fila')}</div>
+    <p class="suggerimento">${L('Un tasto può fare più cose di seguito. Vanno in ordine, e se una non riesce le altre succedono lo stesso.', 'A key can do several things in a row. They run in order, and if one fails the others still happen.', 'Una tecla puede hacer varias cosas seguidas. Van en orden, y si una falla las demás pasan igual.')}</p>
+    <div class="cons-passi">${(t.passi || []).map((p, k) => disegnaPasso(p, k, (t.passi || []).length)).join('')}</div>
+    <div class="cons-aggiungi">
+      <select id="cons-p-tipo" class="campo">${TIPI_PASSO().map(([v, et]) => `<option value="${v}">${esc(et)}</option>`).join('')}</select>
+      <button class="btn secondario mini" id="cons-p-piu">${L('Aggiungi passo', 'Add step', 'Añadir paso')}</button>
     </div>
 
     <div class="cons-sez">${L('Icona', 'Icon', 'Icono')}</div>
@@ -8818,10 +8877,10 @@ function disegnaIndirizziConsole() {
   const nascondi = (u) => u.replace(/key=[^&]+/, 'key=' + '\u2022'.repeat(8));
 
   const righe = (_cons.plancia.pagine || []).flatMap((pg, np) => (pg.tasti || []).map((t) => {
-    const a = perId.get(t.azione);
+    const a = consAzione(t, perId);
     const url = consUrlTasto(t);
     return `<div class="cons-riga">
-      <span class="cons-riga-nome">${consIcona(t, a)}${esc(t.nome || a?.titolo || t.azione)}
+      <span class="cons-riga-nome">${consIcona(t, a)}${esc(consNome(t, a))}
         ${(_cons.plancia.pagine.length > 1) ? `<span class="tenue">· ${esc(pg.nome || `#${np + 1}`)}</span>` : ''}</span>
       <code class="cons-url${_cons.scoperta ? '' : ' velata'}">${esc(_cons.scoperta ? url : nascondi(url))}</code>
       <button class="btn secondario mini cons-copia" data-url="${esc(url)}">${L('copia', 'copy', 'copiar')}</button>
@@ -8901,7 +8960,7 @@ function appendiConsolify() {
       if (_cons.modifica) return;
       const t = pg()?.tasti?.[Number(tasto.dataset.consTasto)];
       if (!t) return;
-      if (t.conferma && !confirm(`${t.nome || t.azione}: ${L('sicuro?', 'sure?', '¿seguro?')}`)) return;
+      if (t.conferma && !confirm(`${consNome(t, consAzione(t))}: ${L('sicuro?', 'sure?', '¿seguro?')}`)) return;
       const stato = tasto.querySelector('.cons-stato');
       if (stato) stato.textContent = '\u2026';
       try {
@@ -8948,8 +9007,35 @@ function appendiConsolify() {
       if (!a) return;
       const testo = a.testo ? (prompt(L('Cosa deve dire?', 'What should it say?', '¿Qué debe decir?')) || '').trim() : '';
       if (a.testo && !testo) return;
-      pg().tasti.push({ azione: a.id, nome: testo ? testo.slice(0, 24) : a.titolo, icona: '', colore: '', testo, conferma: false });
+      pg().tasti.push({ passi: [{ tipo: 'azione', id: a.id, testo }], nome: testo ? testo.slice(0, 24) : a.titolo, icona: '', colore: '', conferma: false });
       disegnaConsolify(); await salvaPlancia(); return;
+    }
+    const psposta = ev.target.closest('[data-cons-psposta]');
+    if (psposta) {
+      const t = aperto(); if (!t) return;
+      const [k, d] = String(psposta.dataset.consPsposta).split(':').map(Number);
+      const b = k + d;
+      if (b < 0 || b >= t.passi.length) return;
+      [t.passi[k], t.passi[b]] = [t.passi[b], t.passi[k]];
+      disegnaSchedaTasto(); await salvaPlancia({ ridisegna: false }); rinfrescaTasto(_cons.aperto); return;
+    }
+    const ptogli = ev.target.closest('[data-cons-ptogli]');
+    if (ptogli) {
+      const t = aperto(); if (!t) return;
+      if (t.passi.length < 2) { alert(L('Un tasto deve fare almeno una cosa. Cambiala, oppure togli il tasto.', 'A key has to do at least one thing. Change it, or remove the key.', 'Una tecla debe hacer al menos una cosa. Cámbiala, o quita la tecla.')); return; }
+      t.passi.splice(Number(ptogli.dataset.consPtogli), 1);
+      disegnaSchedaTasto(); await salvaPlancia({ ridisegna: false }); rinfrescaTasto(_cons.aperto); return;
+    }
+    if (id === 'cons-p-piu') {
+      const t = aperto(); if (!t) return;
+      const tipo = document.getElementById('cons-p-tipo')?.value || 'chat';
+      const nuovo = tipo === 'azione' ? { tipo, id: _cons.azioni[0]?.id || '', testo: '' }
+        : tipo === 'chat' ? { tipo, testo: '' }
+          : tipo === 'comando' ? { tipo, comando: '' }
+            : { tipo: 'attesa', ms: 1000 };
+      if (t.passi.length >= 8) { alert(L('Otto passi bastano: oltre, un tasto non si capisce più.', 'Eight steps is plenty: past that, a key stops being readable.', 'Ocho pasos bastan: más allá, una tecla deja de entenderse.')); return; }
+      t.passi.push(nuovo);
+      disegnaSchedaTasto(); return;
     }
     if (id === 'cons-c-chiudi') { _cons.aperto = null; disegnaSchedaTasto(); return; }
     if (id === 'cons-c-duplica') {
@@ -9013,13 +9099,22 @@ function appendiConsolifyCampi() {
     const t = _cons.plancia.pagine[_cons.pagina]?.tasti?.[_cons.aperto];
     const id = ev.target.id;
 
+    const pcampo = ev.target.closest?.('[data-cons-pcampo]');
+    if (pcampo && t) {
+      const [k, campo] = String(pcampo.dataset.consPcampo).split(':');
+      const passo = t.passi[Number(k)];
+      if (!passo) return;
+      if (campo === 'ms') passo.ms = Math.max(100, Math.min(30000, Math.round(Number(ev.target.value) * 1000) || 1000));
+      else if (campo === 'comando') passo.comando = String(ev.target.value).trim().replace(/^!/, '').toLowerCase().slice(0, 40);
+      else if (campo === 'id') { passo.id = String(ev.target.value); disegnaSchedaTasto(); }
+      else passo.testo = String(ev.target.value).trim().slice(0, 400);
+      rinfrescaTasto(_cons.aperto);
+      await salvaPlancia({ ridisegna: false });
+      return;
+    }
     if (id === 'cons-c-nome' && t) {
       t.nome = ev.target.value.trim().slice(0, 24);
       rinfrescaTasto(_cons.aperto);
-      await salvaPlancia({ ridisegna: false }); return;
-    }
-    if (id === 'cons-c-testo' && t) {
-      t.testo = ev.target.value.trim().slice(0, 200);
       await salvaPlancia({ ridisegna: false }); return;
     }
     if (id === 'cons-c-icona' && t) {

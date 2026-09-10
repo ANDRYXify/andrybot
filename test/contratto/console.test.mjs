@@ -180,7 +180,7 @@ test('la plancia non tiene tasti che puntano a niente', () => {
   // un tasto che punta a un'azione che non esiste piu' non e' un buco: e' peggio,
   // e' un bottone che sembra fare qualcosa e non fa niente quando lo premi
   assert.equal(salvata.pagine[0].tasti.length, 1);
-  assert.equal(salvata.pagine[0].tasti[0].azione, 'contatore:piu:morti');
+  assert.deepEqual(salvata.pagine[0].tasti[0].passi, [{ tipo: 'azione', id: 'contatore:piu:morti', testo: '' }]);
   assert.equal(salvata.pagine[0].tasti[0].colore, '#112233');
 });
 
@@ -260,9 +260,11 @@ test('quello che scrivi nei campi non si perde scegliendo un colore', () => {
   // depositano al «change», che scatta uscendo dal campo — prima del click
   // sul bottone accanto. Cosi' non esiste piu' roba non depositata da perdere.
   const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
-  for (const campo of ['cons-c-nome', 'cons-c-testo', 'cons-c-icona', 'cons-c-colore']) {
+  for (const campo of ['cons-c-nome', 'cons-c-icona', 'cons-c-colore']) {
     assert.ok(app.includes(`id === '${campo}'`), `${campo} si deposita da solo`);
   }
+  // e i campi dei passi seguono la stessa regola: si depositano uscendo dal campo
+  assert.match(app, /data-cons-pcampo.*await salvaPlancia/s, 'anche i campi di un passo si depositano da soli');
   assert.ok(!app.includes('cons-c-salva'), 'e il bottone «Salva» non ha piu\' niente da fare');
 });
 
@@ -489,7 +491,68 @@ test('un tasto salvato PRIMA che esistessero gli id si aggiusta da solo, e resta
   // e adesso premerlo lo fa partire davvero
   let sparato = false;
   const finto = { fire: () => { sparato = true; return true; }, hasClients: () => true };
-  const r = consolle.eseguiTasto(ch, id, { effetti: finto });
-  assert.equal(r.ok, true, `premuto: ${r.mostra}`);
-  assert.equal(sparato, true, 'ed è partito');
+  return consolle.eseguiTasto(ch, id, { effetti: finto }).then((r) => {
+    assert.equal(r.ok, true, `premuto: ${r.mostra}`);
+    assert.equal(sparato, true, 'ed è partito');
+  });
+});
+
+test('un tasto fa PIÙ cose in fila, e una che va storta non zittisce le altre', async () => {
+  // Il tasto era un puntatore a una cosa sola, e per averla dovevi averla già
+  // creata da un'altra parte: era lo strozzo. Ora è una partitura.
+  const ch = canale();
+  const detti = [];
+  const say = (t) => detti.push(t);
+
+  const salvata = consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [{
+    nome: 'Apertura',
+    passi: [
+      { tipo: 'chat', testo: 'Si comincia!' },
+      { tipo: 'azione', id: 'roba:che:non:esiste' },
+      { tipo: 'attesa', ms: 5 },
+      { tipo: 'chat', testo: 'Buon divertimento' },
+    ],
+  }] }] });
+
+  const t = salvata.pagine[0].tasti[0];
+  assert.equal(t.passi.length, 3, 'il passo che non si può fare viene tolto, non tenuto lì a fingere');
+
+  const r = await consolle.eseguiTasto(ch, t.id, { say });
+  assert.deepEqual(detti, ['Si comincia!', 'Buon divertimento'], 'e gli altri passi succedono tutti');
+  assert.equal(r.ok, true);
+});
+
+test('un passo che fallisce a metà non ferma quelli dopo, e l\'esito lo dice', async () => {
+  const ch = canale();
+  const detti = [];
+  const salvata = consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [{
+    passi: [
+      { tipo: 'chat', testo: 'uno' },
+      { tipo: 'azione', id: 'di' },
+      { tipo: 'chat', testo: 'tre' },
+    ],
+  }] }] });
+  const t = salvata.pagine[0].tasti[0];
+  // «di» senza testo non fa niente e lo dice: è il passo che fallisce
+  const r = await consolle.eseguiTasto(ch, t.id, { say: (x) => detti.push(x) });
+  assert.deepEqual(detti, ['uno', 'tre'], 'il terzo passo è successo lo stesso');
+  assert.equal(r.ok, false, 'ma l\'esito non finge che sia andato tutto bene');
+  assert.match(r.mostra, /2\/3/, 'e dice quanti ne sono riusciti');
+});
+
+test('un tasto di prima diventa una partitura di un passo solo', async () => {
+  // Chi ha già dei tasti non deve rifarli: la conversione sta dove si ripulisce,
+  // quindi vale sia leggendo sia salvando e non esiste un tasto a metà del guado.
+  const ch = canale();
+  const s = streamers.get(ch);
+  streamers.setSettings(ch, { ...(s.settings || {}),
+    plancia: { pagine: [{ nome: 'P', tasti: [{ id: 'aaaaaaaaa1', azione: 'di', nome: 'Saluta', testo: 'ciao a tutti' }] }] } });
+
+  const t = consolle.plancia(ch).pagine[0].tasti[0];
+  assert.deepEqual(t.passi, [{ tipo: 'azione', id: 'di', testo: 'ciao a tutti' }], 'la frase è rimasta col suo passo');
+
+  const detti = [];
+  const r = await consolle.eseguiTasto(ch, 'aaaaaaaaa1', { say: (x) => detti.push(x) });
+  assert.equal(r.ok, true);
+  assert.deepEqual(detti, ['ciao a tutti'], 'e il tasto vecchio fa ancora quello che faceva');
 });
