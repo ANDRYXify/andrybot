@@ -36,6 +36,23 @@ function finito() {
   setTimeout(mostraProssimo, 120);
 }
 
+const TETTO_MEDIA_MS = 31000;
+
+function reggiFinoAllaFine(el, dove, chiudi, msDichiarati) {
+  let timer = setTimeout(chiudi, msDichiarati);
+  el.addEventListener('loadedmetadata', function () {
+    const reale = Number(el.duration);
+    if (!Number.isFinite(reale) || reale <= 0) return;
+    const ms = Math.min(reale * 1000 + 900, TETTO_MEDIA_MS);
+    if (ms > msDichiarati) {
+      guaio(dove + '-durata', 'dura ' + Math.round(reale * 1000) + 'ms ma ne erano dichiarati ' + msDichiarati + ': lo lascio finire');
+      clearTimeout(timer);
+      timer = setTimeout(chiudi, ms);
+    }
+  });
+  return function () { clearTimeout(timer); };
+}
+
 function durataMs(ev, fallback) {
   const n = Number(ev.durata);
   return Number.isFinite(n) && n > 0 ? n : fallback;
@@ -72,6 +89,27 @@ function guaio(dove, perche) {
   } catch (e) {  }
 }
 
+let audioLibero = false;
+function segnaLibero() { audioLibero = true; }
+['pointerdown', 'keydown', 'touchstart'].forEach(function (e) {
+  document.addEventListener(e, segnaLibero, { once: true, capture: true });
+});
+
+function avvia(el, dove) {
+  return el.play().catch(function (e) {
+    if (!e || e.name !== 'NotAllowedError') {
+      guaio(dove, (e && e.name ? e.name : 'errore') + ': ' + (e && e.message ? e.message : ''));
+      return;
+    }
+    el.muted = true;
+    return el.play().then(function () {
+      guaio(dove + '-muto', 'il browser non da\' il permesso di partire con l\'audio: e\' partito muto. In OBS il permesso c\'e\'; in una scheda serve un clic sulla pagina.');
+    }).catch(function (e2) {
+      guaio(dove, 'nemmeno muto: ' + (e2 && e2.name ? e2.name : 'errore'));
+    });
+  });
+}
+
 function suonaUrl(url, vol, dove) {
   if (!url) return;
   var a;
@@ -87,6 +125,12 @@ function suonaUrl(url, vol, dove) {
   });
   a.play().catch(function (e) {
     molla();
+    if (e && e.name === 'NotAllowedError') {
+      guaio(dove, audioLibero
+        ? 'il browser ha rifiutato di suonare anche dopo un gesto sulla pagina'
+        : 'il browser non da\' il permesso di suonare finche\' nessuno tocca la pagina. In OBS il permesso c\'e\'; in una scheda serve un clic.');
+      return;
+    }
     guaio(dove, (e && e.name ? e.name : 'errore') + ': ' + (e && e.message ? e.message : ''));
   });
 }
@@ -127,17 +171,18 @@ function mostraVideo(ev) {
   etichettaVolatile(ev.comando, 1800);
 
   let chiuso = false;
+  let fermaTimer = null;
   const chiudi = () => {
     if (chiuso) return;
     chiuso = true;
+    if (fermaTimer) fermaTimer();
     v.classList.remove('dentro');
     setTimeout(() => { try { v.pause(); } catch (e) {} v.remove(); finito(); }, 320);
   };
   v.addEventListener('ended', chiudi);
   v.addEventListener('error', function () { guaio('video', 'il file non si apre: ' + String(v.src || '').split('?')[0]); chiudi(); });
-  v.play().catch(function (e) { guaio('video', (e && e.name ? e.name : 'errore') + ': ' + (e && e.message ? e.message : '')); });
-
-  setTimeout(chiudi, durataMs(ev, 8000) + 600);
+  fermaTimer = reggiFinoAllaFine(v, 'video', chiudi, durataMs(ev, 8000) + 600);
+  avvia(v, 'video');
 }
 
 function hexToRgb(h) {
@@ -178,17 +223,19 @@ function mostraVideoChroma(ev) {
     }
     raf = requestAnimationFrame(disegna);
   };
+  let fermaTimer = null;
   const chiudi = () => {
     if (chiuso) return; chiuso = true;
+    if (fermaTimer) fermaTimer();
     cancelAnimationFrame(raf);
     canvas.classList.remove('dentro');
     setTimeout(() => { try { v.pause(); } catch (e) {} canvas.remove(); finito(); }, 320);
   };
   v.addEventListener('ended', chiudi);
   v.addEventListener('error', function () { guaio('video', 'il file non si apre: ' + String(v.src || '').split('?')[0]); chiudi(); });
-  v.play().catch(function (e) { guaio('video', (e && e.name ? e.name : 'errore') + ': ' + (e && e.message ? e.message : '')); });
+  fermaTimer = reggiFinoAllaFine(v, 'video', chiudi, durataMs(ev, 8000) + 600);
+  avvia(v, 'video');
   disegna();
-  setTimeout(chiudi, durataMs(ev, 8000) + 600);
 }
 
 function suona(ev) {
