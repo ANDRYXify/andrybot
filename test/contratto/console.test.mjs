@@ -458,3 +458,38 @@ test('il conto dell\'attesa parte da solo, e due sorgenti non lo fanno ripartire
 
   assert.match(ov, /MIO\.timer\.partiDaSolo && mostra\('timer'\)/, 'lo chiede solo l\'overlay che lo mostra davvero');
 });
+
+test('un tasto salvato PRIMA che esistessero gli id si aggiusta da solo, e resta aggiustato', () => {
+  // Il difetto che il direttore ha isolato con la domanda giusta: «se funziona
+  // l'anteprima dall'editor overlay, perché non deve funzionare l'effetto
+  // lanciato dalla consolify?». Non era il payload — è identico. Era che
+  // leggere e salvare davano cose diverse: leggere restituiva i tasti così
+  // com'erano sul disco, e un tasto senza id ha per indirizzo «/tasto/» senza
+  // niente. Quella rotta non esiste: la richiesta cadeva su un'altra e tornava
+  // «azione sconosciuta». Premevi e non partiva.
+  const ch = canale();
+  storeEffetti.add(ch, { comando: 'tuono', tipo: 'audio', file: 't.ogg', tier: 'tutti', cooldown: 0, volume: 100, durata: 1000 });
+
+  // com'era sul disco prima: nessun id
+  const s = streamers.get(ch);
+  streamers.setSettings(ch, {
+    ...(s.settings || {}),
+    plancia: { misura: 'm', pagine: [{ nome: 'Principale', tasti: [{ azione: 'effetto:tuono', nome: 'Tuono' }] }] },
+  });
+
+  const p1 = consolle.plancia(ch);
+  const id = p1.pagine[0].tasti[0].id;
+  assert.match(String(id), /^[a-f0-9]{10}$/, 'leggendo, il tasto vecchio ha un id');
+
+  // e l'id NON cambia alla lettura dopo: se cambiasse, l'indirizzo che hai
+  // incollato sulla tastiera fisica varrebbe fino al prossimo aggiornamento
+  assert.equal(consolle.plancia(ch).pagine[0].tasti[0].id, id, 'e resta quello');
+  assert.equal(consolle.plancia(ch).pagine[0].tasti[0].id, id, 'anche alla terza');
+
+  // e adesso premerlo lo fa partire davvero
+  let sparato = false;
+  const finto = { fire: () => { sparato = true; return true; }, hasClients: () => true };
+  const r = consolle.eseguiTasto(ch, id, { effetti: finto });
+  assert.equal(r.ok, true, `premuto: ${r.mostra}`);
+  assert.equal(sparato, true, 'ed è partito');
+});

@@ -306,3 +306,33 @@ naturale; questo stava dove il risultato era positivo e falso.
     insieme chiederebbero tutte e due, e la seconda farebbe ripartire da capo un
     conto che chi guarda sta gia' leggendo. Chi arriva secondo non trova niente
     da fare, ed e' giusto cosi'.
+
+## Perché l'anteprima funzionava e il tasto no
+
+La domanda del direttore — «se funziona l'anteprima dall'editor overlay, perché
+non deve funzionare l'effetto lanciato dalla consolify?» — e' quella che ha
+chiuso il caso, perche' mette a confronto due strade di cui una funziona. La
+differenza fra le due E' il difetto, e non c'era piu' bisogno di ipotesi.
+
+Confrontate riga per riga:
+- anteprima: `effects.emit(login, effects.payload(login, eff))`
+- tasto:     `fire(...)` → `this.emit(ch, this.payload(ch, eff))`
+
+**Identiche.** Quindi il difetto non poteva stare nell'invio: stava PRIMA, cioe'
+nella richiesta che non arrivava mai fino li'.
+
+22. **`plancia()` restituiva i tasti cosi' com'erano sul disco; solo
+    `salvaPlancia()` li ripuliva.** Un tasto creato prima che esistessero gli id
+    non ne aveva uno. Il suo indirizzo veniva fuori `/tasto/?key=…`, quella rotta
+    non esiste, express faceva cadere la richiesta su `/:azione` con azione
+    «tasto» e tornava «azione sconosciuta». Premevi e non partiva niente —
+    mentre l'anteprima, che non passa di li', partiva benissimo.
+
+**La regola violata: leggere e salvare devono dare la stessa identica cosa.** Se
+la ripulitura sta solo su un lato, esiste uno stato — quello sul disco — che il
+resto del codice non si aspetta e non gestisce. Ora la ripulitura e' una sola
+funzione usata da tutti e due.
+
+E l'id assegnato leggendo va SCRITTO, se no cambierebbe a ogni lettura e
+l'indirizzo incollato sulla tastiera fisica varrebbe fino al prossimo
+aggiornamento di pagina. La prova lo controlla tre volte di fila.

@@ -264,33 +264,50 @@ function tastoPulito(t, valide) {
   };
 }
 
-export function plancia(channel) {
-  const login = norm(channel);
-  const p = streamers.get(login)?.settings?.plancia;
-  const pagine = Array.isArray(p?.pagine) ? p.pagine : [];
+// LEGGERE E SALVARE DEVONO DARE LA STESSA IDENTICA COSA. Prima leggere
+// restituiva i tasti cosi' com'erano sul disco, e solo salvare li ripuliva. Da
+// li' un difetto che si vedeva solo premendo: un tasto salvato prima che
+// esistessero gli id non ne aveva uno, il suo indirizzo veniva fuori «/tasto/»
+// senza niente, quella rotta non esiste, la richiesta finiva su un'altra e
+// tornava «azione sconosciuta». Premevi e non partiva niente.
+//
+// Percio' qui si ripulisce come al salvataggio, e se la ripulitura ha cambiato
+// qualcosa la si SCRIVE: un id assegnato e non salvato cambierebbe a ogni
+// lettura, e l'indirizzo che hai incollato sulla tastiera fisica varrebbe fino
+// al prossimo aggiornamento di pagina.
+function planciaPulita(login, grezza) {
+  const valide = new Set(azioni(login).map((a) => a.id));
+  const pagine = (Array.isArray(grezza?.pagine) ? grezza.pagine : []).slice(0, PAGINE_MAX).map((pg) => ({
+    nome: testoPulito(pg?.nome, 24) || 'Pagina',
+    tasti: (Array.isArray(pg?.tasti) ? pg.tasti : []).slice(0, TASTI_MAX)
+      .map((t) => tastoPulito(t, valide))
+      .filter(Boolean),
+  }));
   return {
-    misura: MISURE.includes(p?.misura) ? p.misura : 'm',
-    formato: formatoPulito(p?.formato),
+    misura: MISURE.includes(String(grezza?.misura)) ? String(grezza.misura) : 'm',
+    formato: formatoPulito(grezza?.formato),
     pagine: pagine.length ? pagine : [{ nome: 'Principale', tasti: [] }],
   };
+}
+
+export function plancia(channel) {
+  const login = norm(channel);
+  const s = streamers.get(login);
+  if (!s) return planciaPulita(login, null);
+  const grezza = s.settings?.plancia;
+  const pulita = planciaPulita(login, grezza);
+  if (grezza && JSON.stringify(grezza) !== JSON.stringify(pulita)) {
+    try { streamers.setSettings(login, { ...(s.settings || {}), plancia: pulita }); }
+    catch (e) { log.debug('plancia non riscritta:', e?.message || e); }
+  }
+  return pulita;
 }
 
 export function salvaPlancia(channel, dati) {
   const login = norm(channel);
   const s = streamers.get(login);
   if (!s) return null;
-  const valide = new Set(azioni(login).map((a) => a.id));
-  const pagine = (Array.isArray(dati?.pagine) ? dati.pagine : []).slice(0, PAGINE_MAX).map((pg) => ({
-    nome: testoPulito(pg?.nome, 24) || 'Pagina',
-    tasti: (Array.isArray(pg?.tasti) ? pg.tasti : []).slice(0, TASTI_MAX)
-      .map((t) => tastoPulito(t, valide))
-      .filter(Boolean),
-  }));
-  const pulita = {
-    misura: MISURE.includes(String(dati?.misura)) ? String(dati.misura) : 'm',
-    formato: formatoPulito(dati?.formato),
-    pagine: pagine.length ? pagine : [{ nome: 'Principale', tasti: [] }],
-  };
+  const pulita = planciaPulita(login, dati);
   streamers.setSettings(login, { ...(s.settings || {}), plancia: pulita });
   return plancia(login);
 }
