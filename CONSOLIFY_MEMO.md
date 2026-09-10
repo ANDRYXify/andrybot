@@ -139,3 +139,14 @@ famiglia: una riga che sembra fare qualcosa e non fa niente.
    tasto creato dopo non compariva li' sotto fino a un aggiornamento di pagina.
 9. `scAperta`: campo di stato che nessuno legge.
 10. «non salvato» restava scritto per sempre anche quando poi andava bene.
+
+## E poi guardando la finestra delle novità
+
+11. **Ogni finestra modale usciva nell'angolo in alto a sinistra.** Il browser
+    la centra da solo — mette `margin: auto` a un `<dialog>` aperto con
+    `showModal()` — ma la sveltina in cima al foglio di stile,
+    `* { margin: 0 }`, gliela toglieva. Non era un difetto della finestra delle
+    novità: era di tutte, comprese quelle che nasceranno domani. Rimesso il
+    centro una volta sola, subito dopo la sveltina.
+    Trovato misurando `getComputedStyle`, non leggendo il CSS: le due regole
+    stanno in due punti lontani del file e a leggerle sembrano andare d'accordo.

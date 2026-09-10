@@ -287,3 +287,15 @@ test('la plancia sul telefono si apre solo di lato', () => {
   assert.match(css, /\.cons-ruota \{ display: none; \}/, 'l\'avviso sta zitto quando non serve');
   assert.match(css, /@media \(max-width: 860px\) and \(orientation: portrait\)/, 'e la regola e\' quella del telefono in piedi');
 });
+
+test('una finestra modale sta in mezzo allo schermo, non in un angolo', () => {
+  // Il browser centra da solo un <dialog> aperto con showModal(), mettendogli
+  // «margin: auto». Ma la sveltina iniziale — «* { margin: 0 }» — glielo
+  // toglieva: la finestra delle novità usciva incollata in alto a sinistra,
+  // e cosi' ogni altra finestra modale che nascera' domani.
+  const css = readFileSync(join(RAD, 'src/web/public/style.css'), 'utf8');
+  const reset = css.indexOf('* { box-sizing: border-box; margin: 0; padding: 0; }');
+  const rimedio = css.indexOf('dialog:modal { margin: auto; }');
+  assert.ok(reset >= 0, 'la sveltina iniziale sta ancora li\'');
+  assert.ok(rimedio > reset, 'e subito dopo si ridà il centro alle finestre modali');
+});
