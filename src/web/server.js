@@ -85,6 +85,7 @@ import * as ytApi from '../youtube/api.js';
 import * as avvisi from '../features/avvisi.js';
 
 const log = makeLog('web');
+const logOverlay = makeLog('overlay');
 
 const SETTE_GIORNI_MS = 7 * 24 * 60 * 60 * 1000;
 import {
@@ -816,6 +817,28 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // confronto a tempo costante (come per la chiave API), niente '===' che perde
     return !!login && !!req.query.key && chiaveUguale(String(req.query.key), effects.overlayKey(login));
   };
+
+  // QUANDO UN OVERLAY NON RIESCE A FARE UNA COSA, DEVE POTERLO DIRE. Il flusso
+  // degli eventi va in un senso solo (server -> overlay), quindi finora un suono
+  // che non partiva restava un fatto privato del browser: ne' lo streamer ne'
+  // noi potevamo saperlo. Qui l'overlay riporta il guaio e finisce
+  // nell'osservatorio, dove lo streamer lo legge.
+  const _guaioUltimo = new Map();
+  app.post('/overlay/:login/guaio', (req, res) => {
+    if (!chiaveOk(req)) return res.status(403).json({ errore: 'chiave non valida' });
+    const login = String(req.params.login).toLowerCase();
+    const dove = String(req.body?.dove || '').replace(/[^a-z0-9_:-]/gi, '').slice(0, 40);
+    const perche = String(req.body?.perche || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+    if (!dove) return res.status(400).json({ errore: 'dove manca' });
+    // Un overlay che sbaglia sbaglia in fretta e tante volte: si racconta una
+    // volta al minuto per tipo di guaio, se no il registro diventa il problema.
+    const k = `${login}|${dove}`;
+    const ora = Date.now();
+    if (ora - (_guaioUltimo.get(k) || 0) < 60000) return res.json({ ok: true, gia: true });
+    _guaioUltimo.set(k, ora);
+    logOverlay.error(`#${login} ${dove}: ${perche || 'senza motivo'}`);
+    res.json({ ok: true });
+  });
 
   // la pagina dell'overlay
   app.get('/overlay/:login', (req, res) => {

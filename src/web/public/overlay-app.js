@@ -6,6 +6,7 @@
 const parti = location.pathname.split('/').filter(Boolean);
 const login = parti[1] || '';
 const urlStream = '/overlay/' + encodeURIComponent(login) + '/stream' + location.search;
+const urlGuaio = '/overlay/' + encodeURIComponent(login) + '/guaio' + location.search;
 
 const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, stile: { alert: null, chat: null }, widget: {} };
 const mostra = (k) => MIO.mostra[k] !== false;
@@ -60,9 +61,39 @@ function posizionaEffetto(el, pos) {
   el.style.setProperty('--fx-r', (Number(pos.r) || 0) + 'deg');
 }
 
+const inAscolto = new Set();
+
+function guaio(dove, perche) {
+  try {
+    fetch(urlGuaio, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dove: dove, perche: String(perche || '') }),
+    }).catch(function () {  });
+  } catch (e) {  }
+}
+
+function suonaUrl(url, vol, dove) {
+  if (!url) return;
+  var a;
+  try { a = new Audio(url); } catch (e) { return guaio(dove, 'audio non creato: ' + (e && e.message)); }
+  a.volume = vol;
+  inAscolto.add(a);
+  var molla = function () { inAscolto.delete(a); };
+  a.addEventListener('ended', molla);
+  a.addEventListener('error', function () {
+    molla();
+    var c = a.error && a.error.code;
+    guaio(dove, 'il file non si apre (codice ' + c + '): ' + url.split('?')[0]);
+  });
+  a.play().catch(function (e) {
+    molla();
+    guaio(dove, (e && e.name ? e.name : 'errore') + ': ' + (e && e.message ? e.message : ''));
+  });
+}
+
 function suonaAbbinato(ev) {
   if (!ev || !ev.suonoUrl) return;
-  try { const a = new Audio(ev.suonoUrl); a.volume = volume01(ev); a.play().catch(() => {}); } catch (e) {  }
+  suonaUrl(ev.suonoUrl, volume01(ev), 'suono-abbinato');
 }
 
 function mostraImmagine(ev) {
@@ -103,8 +134,8 @@ function mostraVideo(ev) {
     setTimeout(() => { try { v.pause(); } catch (e) {} v.remove(); finito(); }, 320);
   };
   v.addEventListener('ended', chiudi);
-  v.addEventListener('error', chiudi);
-  v.play().catch(() => {});
+  v.addEventListener('error', function () { guaio('video', 'il file non si apre: ' + String(v.src || '').split('?')[0]); chiudi(); });
+  v.play().catch(function (e) { guaio('video', (e && e.name ? e.name : 'errore') + ': ' + (e && e.message ? e.message : '')); });
 
   setTimeout(chiudi, durataMs(ev, 8000) + 600);
 }
@@ -154,18 +185,14 @@ function mostraVideoChroma(ev) {
     setTimeout(() => { try { v.pause(); } catch (e) {} canvas.remove(); finito(); }, 320);
   };
   v.addEventListener('ended', chiudi);
-  v.addEventListener('error', chiudi);
-  v.play().catch(() => {});
+  v.addEventListener('error', function () { guaio('video', 'il file non si apre: ' + String(v.src || '').split('?')[0]); chiudi(); });
+  v.play().catch(function (e) { guaio('video', (e && e.name ? e.name : 'errore') + ': ' + (e && e.message ? e.message : '')); });
   disegna();
   setTimeout(chiudi, durataMs(ev, 8000) + 600);
 }
 
 function suona(ev) {
-  try {
-    const a = new Audio(ev.url);
-    a.volume = volume01(ev);
-    a.play().catch(() => {});
-  } catch (e) {  }
+  suonaUrl(ev.url, volume01(ev), 'suono-effetto');
   etichettaVolatile(ev.comando, 1600);
 }
 
@@ -359,7 +386,7 @@ function mostraAlertProssimo() {
   requestAnimationFrame(() => card.classList.add('dentro'));
 
   try {
-    if (ev.suonoUrl) { const au = new Audio(ev.suonoUrl); au.volume = vol01; au.play().catch(() => {}); }
+    if (ev.suonoUrl) suonaUrl(ev.suonoUrl, vol01, 'suono-alert');
     else if (ev.suono && window.SUONI_PRESET) window.SUONI_PRESET.suona(ev.suono, ev.volume != null ? ev.volume : 100);
   } catch (e) {  }
   const durata = Math.max(2000, Number(ev.durata) || 6000);
@@ -528,7 +555,7 @@ function connetti() {
     else if (dati.tipo === 'immagine' || dati.tipo === 'video') { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
   };
 
-  es.onerror = () => {};
+  es.onerror = () => { guaio('flusso-eventi', 'il flusso si e\' interrotto'); };
 }
 
 const CONT_BASE = 40;

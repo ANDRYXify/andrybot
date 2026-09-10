@@ -269,11 +269,16 @@ test('quello che scrivi nei campi non si perde scegliendo un colore', () => {
 test('nessun marchio altrui, in nessuna delle tre lingue', () => {
   // Non siamo partner di nessuno: i prodotti degli altri non si nominano.
   // L\'italiano era gia' stato ripulito, inglese e spagnolo no.
+  // Si cerca sul testo APPIATTITO, non riga per riga: «...per lo Stream» a fine
+  // riga e «// Deck.» a capo e' lo stesso marchio, e una ricerca per righe non
+  // puo' vederlo. E' cosi' che me n'era sfuggito uno mentre dichiaravo pulito.
   const marchi = /stream ?deck|elgato|loupedeck|touch portal|bitfocus|api ninja/i;
-  for (const f of ['src/web/public/app.js', 'src/web/manuali.js', 'NOVITA.md', 'docs/CONSOLIFY.md']) {
-    const s = readFileSync(join(RAD, f), 'utf8');
-    const riga = s.split('\n').findIndex((r) => marchi.test(r));
-    assert.equal(riga, -1, `${f}: marchio altrui alla riga ${riga + 1}`);
+  const files = ['src/web/public/app.js', 'src/web/manuali.js', 'NOVITA.md', 'docs/CONSOLIFY.md',
+    'src/features/console.js', 'src/web/server.js', 'src/web/public/overlay-app.js'];
+  for (const f of files) {
+    const piatto = readFileSync(join(RAD, f), 'utf8').replace(/\s*\n\s*(\/\/|\*)?\s*/g, ' ');
+    const m = piatto.match(marchi);
+    assert.equal(m, null, `${f}: marchio altrui — «${m && piatto.slice(Math.max(0, m.index - 40), m.index + 30)}»`);
   }
 });
 
@@ -316,4 +321,23 @@ test('chi apre CONSOLify la prima volta trova una plancia, non una frase', () =>
   assert.equal(consolle.plancia(ch).pagine[0].tasti.length, 0, 'e i posti sono tutti liberi');
   // e i posti liberi non restano muti: la griglia c'e', e sotto c'e' scritto che farci
   assert.match(app, /tasti\.length \? sezioni : `\$\{sezioni\}\$\{vuoto\}`/, 'con zero tasti si vede la griglia E il consiglio');
+});
+
+test('un overlay che non riesce a suonare puo\' dirlo', () => {
+  // Prima ogni fallimento del suono finiva in `catch(() => {})`: bloccato dal
+  // browser, file irraggiungibile, chiave scaduta o flusso caduto erano tutti
+  // la stessa cosa vista da fuori — silenzio. Cosi' non era diagnosticabile
+  // nemmeno volendo: e infatti non lo era.
+  const ov = readFileSync(join(RAD, 'src/web/public/overlay-app.js'), 'utf8');
+  const srv = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
+
+  assert.ok(!/play\(\)\.catch\(\(\) => \{\}\)/.test(ov), 'nessun fallimento di riproduzione resta muto');
+  assert.match(ov, /function suonaUrl\(/, 'il suono parte da un punto solo');
+  assert.match(ov, /inAscolto\.add\(a\)/, 'e chi suona resta agganciato finche\' suona');
+  assert.ok(!/es\.onerror = \(\) => \{\};/.test(ov), 'anche il flusso caduto si racconta');
+
+  assert.match(srv, /app\.post\('\/overlay\/:login\/guaio'/, 'la porta per raccontarlo esiste');
+  const porta = srv.slice(srv.indexOf("app.post('/overlay/:login/guaio'"));
+  assert.match(porta.slice(0, 400), /chiaveOk\(req\)/, 'ed e\' guardata come le altre porte dell\'overlay');
+  assert.match(porta.slice(0, 900), /60000/, 'e non si fa raccontare la stessa cosa mille volte al minuto');
 });
