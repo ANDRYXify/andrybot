@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-10
 
+- [privato] Lia ha un suo criterio di cosa è divertente, nato dai suoi numeri e non da una regola nostra: si accorge quando si è sbagliata di brutto su qualcuno e nonostante questo continua a capirci qualcosa.
+- [privato] Finché non le succede tace. Quando le succede se lo segna, e se le viene da dirlo lascia la battuta in una cassetta che il bot passa a ritirare.
 - Quando il serbatoio delle battute è vuoto, il bot ne costruisce una con i numeri del tuo canale — morti, tentativi, quello che conti tu — invece di chiederne una generica.
 - E impara quale modo di costruirle fa ridere lì: dopo averla detta conta chi ride davvero, e la volta dopo usa il modo che ha funzionato.
 - [privato] La finestra che chiedeva di installare un programma per lo sfondo non resta più piantata sullo schermo di Lia: la correzione di prima valeva solo su una casa nuova, e la sua casa non nasce mai due volte.

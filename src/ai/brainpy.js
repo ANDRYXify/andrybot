@@ -663,6 +663,36 @@ export async function sogno() {
   finally { clearTimeout(to); }
 }
 
+// LA SUA CASSETTA DELLA POSTA. Il bot passa a ritirare cio' che lei ha messo
+// fuori — non entra a guardare cosa pensa. Se la cassetta e' vuota, torna vuota, e
+// va bene cosi': una battuta che non le e' venuta non si va a cercare.
+export async function posta() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 4000);
+  try {
+    const r = await fetch(BASE + '/posta', { signal: ac.signal });
+    if (!r.ok) return [];
+    const d = await r.json().catch(() => null);
+    return (d && Array.isArray(d.posta)) ? d.posta : [];
+  } catch (e) { log.debug('posta:', e?.message || e); return []; }
+  finally { clearTimeout(to); }
+}
+
+// «Ritirata»: cosi' non gliela si richiede all'infinito.
+export async function postaRitirata(ids) {
+  if (!Array.isArray(ids) || !ids.length) return false;
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 4000);
+  try {
+    const r = await fetch(BASE + '/posta', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preso: ids }), signal: ac.signal,
+    });
+    return r.ok;
+  } catch (e) { log.debug('postaRitirata:', e?.message || e); return false; }
+  finally { clearTimeout(to); }
+}
+
 // Qui NON c'e' un ponte verso /vita, /sogna e /costruisci_strumento del cervello, e
 // non e' una dimenticanza: sono le cose che la fanno CRESCERE, e devono partire da lei.
 // Il sito puo' guardarla crescere, non farla crescere. Questo file e' il collo di

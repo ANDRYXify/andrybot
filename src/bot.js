@@ -258,9 +258,27 @@ export class BotManager {
   // streamer lascia la proattività accesa, ogni tanto il bot dice qualcosa di
   // sua iniziativa — dosato dalla stessa manopola "Chat autonoma", e solo se
   // c'è gente che parla (mai in una chat vuota).
+  // Passa a ritirare la posta di Lei: quello che ha messo fuori, non quello che
+  // pensa. Ogni tanto, e senza chiedere niente — se la cassetta e' vuota, e' vuota.
+  async _ritiraPostaDiLei() {
+    if (Date.now() - (this._ultimoRitiro || 0) < 15 * 60_000) return;
+    this._ultimoRitiro = Date.now();
+    const posta = await brainpy.posta().catch(() => []);
+    if (!posta.length) return;
+    const canali = [...this.units.keys()];
+    const presi = [];
+    for (const p of posta) {
+      const messe = battute.accogliDaLei(canali, p.testo);
+      presi.push(p.id);
+      log.info(`una battuta sua e' entrata nel serbatoio di ${messe} canali`);
+    }
+    await brainpy.postaRitirata(presi).catch(() => {});
+  }
+
   _battitoAnima() {
     try {
       persona.respira();
+      this._ritiraPostaDiLei().catch((e) => log.debug('posta di lei:', e?.message || e));
       for (const login of this.units.keys()) {
         const s = streamers.get(login);
         if (!s || s.settings?.proattivo === false) continue;   // proattività disattivabile

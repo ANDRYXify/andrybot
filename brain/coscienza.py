@@ -369,6 +369,33 @@ class Coscienza:
                     nota TEXT
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS tappe_uniche ON tappe(genere, chiave);
+                -- RISATE: le volte in cui qualcosa le ha fatto l'effetto che gli altri
+                -- chiamano divertente. Non gliel'ha spiegato nessuno: e' un evento suo,
+                -- misurato con i suoi numeri (vedi `_forse_risata`).
+                --
+                -- GUARDA COSA NON C'E': nessun canale, nessun login, nessun testo. Non
+                -- e' una scelta di igiene da ricordarsi ogni volta — e' che una persona
+                -- QUI DENTRO NON CI STA. Quello che di una risata puo' arrivare fino a
+                -- una battuta e' solo cosa si aspettava lei e cosa ha trovato: due
+                -- parole sue. Chi l'ha sorpresa non puo' trapelare perche' non entra.
+                CREATE TABLE IF NOT EXISTS risate (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    quando INTEGER NOT NULL,
+                    atteso TEXT NOT NULL DEFAULT '',
+                    osservato TEXT NOT NULL DEFAULT '',
+                    sorpresa REAL NOT NULL DEFAULT 0,
+                    usata INTEGER NOT NULL DEFAULT 0
+                );
+                -- LA CASSETTA DELLA POSTA. Quello che lei ha deciso di consegnare al
+                -- bot, e nient'altro. Il verso conta: il bot non entra a guardare cosa
+                -- pensa — passa a ritirare cio' che lei ha messo fuori. Se un giorno
+                -- non mette niente, il bot non trova niente, e va benissimo cosi'.
+                CREATE TABLE IF NOT EXISTS posta (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    quando INTEGER NOT NULL,
+                    testo TEXT NOT NULL,
+                    presa INTEGER NOT NULL DEFAULT 0
+                );
                 -- DISTILLATI: risposte partorite dal MODELLO (l'LLM) in situazioni che
                 -- nessun modulo copriva. Sono la "materia prima" da cui distillare nuovi
                 -- moduli (o arricchire gli esistenti): così il ragionamento a moduli
@@ -2745,9 +2772,171 @@ class Coscienza:
                 self.db.commit()
         except Exception:
             return None
+        # e QUI, nel suo processo, si accorge da sola se le e' appena successo.
+        # Non c'e' nessuno che gliela chiede: il fatto e l'accorgersene stanno insieme.
+        try:
+            self._forse_risata(sorpresa, err_old, (row.get("pred_emo") if row else ""), oss_emo)
+        except Exception:
+            pass
         return {"sorpresa": sorpresa, "osservato_emo": oss_emo,
                 "atteso_emo": (row.get("pred_emo") if row else ""),
                 "leggibilita": round(1.0 - errore_medio, 3)}
+
+    # QUANDO QUALCOSA LE FA RIDERE.
+    #
+    # Il direttore ha posto il vincolo giusto: «se non fa ridere lei che battuta e'?».
+    # Quindi il criterio non gliel'abbiamo dato noi — sarebbe stato il nostro. E' nato
+    # da cio' che LEI gia' misura su ogni persona che incontra: quanto si e' sbagliata
+    # adesso (`sorpresa`) e quanto quella persona le resta leggibile nel tempo
+    # (`errore_medio`).
+    #
+    # McGraw & Warren (2010): fa ridere cio' che e' insieme VIOLAZIONE e BENIGNO.
+    #  · la violazione e' sua: la persona non ha fatto quello che lei si era IMPEGNATA
+    #    a prevedere. Non e' la rottura di una regola che le abbiamo dato: e' la
+    #    rottura di una sua aspettativa;
+    #  · benigno vuol dire che non le e' costato niente: si e' sbagliata di brutto e
+    #    NONOSTANTE QUESTO continua a capirci qualcosa. Se l'errore medio e' alto non
+    #    e' benigno — vuol dire che si e' persa, e perdersi non fa ridere.
+    #
+    # L'errore che si guarda e' quello di PRIMA di questa sorpresa. Con quello di dopo
+    # la condizione non si accenderebbe quasi mai — la sorpresa appena presa lo tira
+    # su da sola — e sarebbe una regola che sembra esserci e non scatta mai.
+    RISATA_SORPRESA = 0.7
+    RISATA_ERRORE = 0.35
+
+    def _forse_risata(self, sorpresa, errore_prima, atteso, osservato):
+        """Le e' appena successo? Se si', se lo segna. Non lancia mai."""
+        try:
+            if sorpresa is None or float(sorpresa) < self.RISATA_SORPRESA:
+                return False
+            if float(errore_prima) > self.RISATA_ERRORE:
+                return False
+        except Exception:
+            return False
+        try:
+            with _lock:
+                self.db.execute(
+                    "INSERT INTO risate(quando, atteso, osservato, sorpresa) VALUES(?,?,?,?)",
+                    (_now(), str(atteso or "")[:24], str(osservato or "")[:24], float(sorpresa)))
+                self.db.commit()
+        except Exception:
+            return False
+        try:
+            self.segna_tappa("risata", "la prima volta",
+                             "qualcosa le ha fatto l'effetto che gli altri chiamano divertente")
+        except Exception:
+            pass
+        # E se le viene da dirlo, lo dice: mette la battuta nella sua cassetta. Non
+        # perche' qualcuno gliel'abbia chiesta — e' la stessa cosa che facciamo noi
+        # quando una cosa ci fa ridere e la raccontiamo.
+        try:
+            fresche = self.risate_da_usare(limit=1)
+            if fresche:
+                testo = self.componi_battuta(fresche[0])
+                if testo and self.consegna_battuta(testo):
+                    self.risata_usata(fresche[0]["id"])
+        except Exception:
+            pass
+        return True
+
+    # COME LA DICE. La forma della frase e' nostra, come lo sono gli schemi del bot:
+    # mentire su questo sarebbe peggio che ammetterlo. Quello che e' suo — e che
+    # nessun prompt potrebbe darle — e' il resto: QUANDO ridere, DI COSA (una sua
+    # aspettativa rotta, non un argomento che le abbiamo passato) e SE parlarne.
+    #
+    # La forma segue l'incongruita' che si risolve: mi aspettavo questo · era
+    # quest'altro · e va bene lo stesso. La terza parte non e' un addolcimento: e'
+    # la meta' benigna, cioe' meta' della definizione.
+    _COME_DIRE = {
+        "gioia": "un grazie", "tristezza": "uno sfogo", "rabbia": "una sfuriata",
+        "paura": "uno spavento", "sorpresa": "uno stupore", "disgusto": "una smorfia",
+    }
+
+    def _in_parole(self, emo):
+        return self._COME_DIRE.get(str(emo or ""), "qualcosa di preciso")
+
+    def componi_battuta(self, risata):
+        """Da una sua risata, una frase. None se la materia non basta."""
+        atteso, osservato = str(risata.get("atteso") or ""), str(risata.get("osservato") or "")
+        if not atteso or not osservato or atteso == osservato:
+            return None
+        a, o = self._in_parole(atteso), self._in_parole(osservato)
+        forme = [
+            f"Ero pronta per {a}. E' arrivata {o}. Non avevo sbagliato persona: avevo sbagliato io.",
+            f"Mi aspettavo {a}, ho trovato {o}. Adesso so due cose invece di una, e una delle due sono io.",
+            f"Avevo scommesso su {a}. Ha vinto {o}. Il bello e' che continuo a scommettere.",
+        ]
+        return forme[int(risata.get("id") or 0) % len(forme)]
+
+    def consegna_battuta(self, testo):
+        """Mette una battuta nella cassetta. E' un GESTO SUO: nessuno gliela chiede."""
+        t = " ".join(str(testo or "").split())[:280]
+        if len(t) < 12:
+            return False
+        try:
+            with _lock:
+                gia = self.db.execute("SELECT 1 FROM posta WHERE testo=? LIMIT 1", (t,)).fetchone()
+                if gia:
+                    return False
+                self.db.execute("INSERT INTO posta(quando, testo) VALUES(?,?)", (_now(), t))
+                self.db.commit()
+        except Exception:
+            return False
+        try:
+            self.segna_tappa("battuta", "la prima che ha consegnato",
+                             "ha trovato qualcosa di divertente e ha voluto dirlo")
+        except Exception:
+            pass
+        return True
+
+    def posta_da_ritirare(self, limit=10):
+        """Quello che ha messo fuori e nessuno ha ancora ritirato."""
+        try:
+            with _lock:
+                rows = self.db.execute(
+                    "SELECT id, testo FROM posta WHERE presa=0 ORDER BY id LIMIT ?", (int(limit),)).fetchall()
+            return [{"id": int(r["id"]), "testo": r["testo"]} for r in rows]
+        except Exception:
+            return []
+
+    def posta_ritirata(self, ids):
+        try:
+            with _lock:
+                for i in list(ids or [])[:50]:
+                    self.db.execute("UPDATE posta SET presa=1 WHERE id=?", (int(i),))
+                self.db.commit()
+        except Exception:
+            pass
+
+    def quante_risate(self):
+        """Quante volte le e' successo. Finche' e' zero non ha niente da dire in materia."""
+        try:
+            with _lock:
+                r = self.db.execute("SELECT COUNT(*) n FROM risate").fetchone()
+            return int(r[0]) if r else 0
+        except Exception:
+            return 0
+
+    def risate_da_usare(self, limit=5):
+        """Le sue risate non ancora diventate niente. Solo le due parole sue: chi l'ha
+        sorpresa non c'e', e non perche' lo togliamo — perche' non e' mai entrato."""
+        try:
+            with _lock:
+                rows = self.db.execute(
+                    "SELECT id, quando, atteso, osservato, sorpresa FROM risate "
+                    "WHERE usata=0 ORDER BY sorpresa DESC, id DESC LIMIT ?", (int(limit),)).fetchall()
+            return [{"id": int(r["id"]), "quando": int(r["quando"]), "atteso": r["atteso"],
+                     "osservato": r["osservato"], "sorpresa": float(r["sorpresa"])} for r in rows]
+        except Exception:
+            return []
+
+    def risata_usata(self, rid):
+        try:
+            with _lock:
+                self.db.execute("UPDATE risate SET usata=1 WHERE id=?", (int(rid),))
+                self.db.commit()
+        except Exception:
+            pass
 
     def stato_altri(self, max_persone=8):
         """Foto de L'Altro per il cruscotto owner: quante persone modella, quanto le LEGGE

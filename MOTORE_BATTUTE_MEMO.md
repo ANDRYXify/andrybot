@@ -63,8 +63,10 @@ le succede.**
 - [x] A: scelta + memoria dello schema (`battute.schema`, `perSchema`, `presaDelloSchema`)
 - [x] A: collegato al bot, prima di `inventa`
 - [ ] A: potatura di cio' che non ha mai fatto ridere
-- [ ] B: criterio suo + tappa
-- [ ] B: cassetta della posta
+- [x] B: criterio suo (`_forse_risata`) + tappa alla prima volta
+- [x] B: compone dalla sua materia e consegna (`componi_battuta`, `consegna_battuta`)
+- [x] B: cassetta della posta (`/posta` GET+POST, `brainpy.posta`, ritiro nel battito)
+- [ ] eventuale: potatura di cio' che non ha mai fatto ridere
 
 ## Difetti trovati costruendo A (per memoria)
 - `dette` si contava SOLO dentro `prossima()`, cioe' solo per le battute del
@@ -78,3 +80,7 @@ le succede.**
   sbagliato finche' non ha fallito per quello giusto.
 - Accordo grammaticale con l'etichetta dello streamer (due varianti), e uno schema
   senza opposizione. Trovati LEGGENDO l'uscita, non da un cancello.
+- Le rotte `/posta` registrate con gli HANDLER MAI SCRITTI: uno script si era
+  interrotto a meta'. Python non se ne lamenta al caricamento — la porta c'e', si
+  apre, e dietro non c'e' niente. Ora `test/contratto/porte-del-cervello.test.mjs`
+  confronta la lista delle rotte con quella dei metodi, nei due versi.

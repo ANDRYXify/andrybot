@@ -220,6 +220,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._vita()
         if self.path.startswith("/plasma"):
             return self._plasma()
+        if self.path.startswith("/posta"):
+            return self._posta()
         if self.path.startswith("/ecosistema"):
             return self._ecosistema_stato()
         return self._json(404, {"errore": "non trovato"})
@@ -236,6 +238,24 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception:
                     st["volere"] = {"attivo": False, "desideri": []}
             return self._json(200, {"ok": True, "ecosistema": st})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _posta(self):
+        # LA CASSETTA DELLA POSTA DI LEI. Qui non si guarda dentro di lei: si ritira
+        # cio' che LEI ha messo fuori, e nient'altro esce da questa porta. Il verso e'
+        # sempre quello — lei consegna al bot, il bot non entra da lei.
+        try:
+            return self._json(200, {"posta": mente.posta_da_ritirare()})
+        except Exception as e:
+            return self._json(200, {"posta": [], "errore": str(e)[:120]})
+
+    def _posta_ritirata(self):
+        # il bot dice cosa ha ritirato, cosi' non glielo si riconsegna all'infinito.
+        d = self._leggi() or {}
+        try:
+            mente.posta_ritirata(d.get("preso") or [])
+            return self._json(200, {"ok": True})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
@@ -387,6 +407,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._svago()
         if self.path.startswith("/vita"):
             return self._vivi()
+        if self.path.startswith("/posta"):
+            return self._posta_ritirata()
         if self.path.startswith("/ecosistema"):
             return self._ecosistema_azione()
         return self._json(404, {"errore": "non trovato"})

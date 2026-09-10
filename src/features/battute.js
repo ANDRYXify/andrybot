@@ -77,6 +77,20 @@ export function ascolta(msg) {
 // Per l'iniziativa del bot: la stessa scelta del comando, senza il numero
 // attaccato in coda — una battuta detta di sua spontanea volonta' non e' una voce
 // di catalogo, e «(#7)» in fondo la fa sembrare tale.
+// QUELLO CHE ARRIVA DA LEI. Non lo scrive il bot e non glielo chiede: lo trova
+// nella sua cassetta. Entra con schema «sua», che vuol dire una cosa precisa —
+// ogni canale misurera' il suo umorismo come misura ogni altro modo di costruire
+// battute, con le risate vere. Nessun trattamento di favore: se in quel canale non
+// fa ridere, smette di uscire da sola, esattamente come le altre.
+export function accogliDaLei(canali, testo) {
+  let messe = 0;
+  for (const ch of canali || []) {
+    try { if (battute.add(ch, testo, 'lia', 'lei', 'sua')) messe++; }
+    catch (e) { log.debug('accogliDaLei:', e?.message || e); }
+  }
+  return messe;
+}
+
 export function prossimaDa(channel) {
   try { return battute.prossima(channel); } catch (e) { log.debug('prossimaDa:', e?.message || e); return null; }
 }
