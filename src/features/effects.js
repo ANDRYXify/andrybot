@@ -203,11 +203,15 @@ export class EffectsEngine {
   // (azione "effetto") e l'ingresso via API: la decisione di sparare l'effetto
   // è già stata presa altrove, qui si spinge e basta. Ritorna true se l'effetto
   // esiste ed è attivo su quel canale.
-  fire(channel, comando) {
+  fire(channel, comando, extra = null) {
     const ch = norm(channel);
     const eff = effectsDb.get(ch, comando);
     if (!eff) return false;
-    this.emit(ch, this.payload(ch, eff));
+    // CHI L'HA MANDATO viaggia col payload: e' l'unico modo perche' un overlay
+    // possa dire «io i tasti della plancia non li accetto» senza spegnere anche
+    // gli effetti che arrivano dalla chat. Senza questo, i due sono la stessa
+    // cosa vista da li' e non si possono separare.
+    this.emit(ch, extra ? { ...this.payload(ch, eff), ...extra } : this.payload(ch, eff));
     log.debug(`fire effetto !${eff.comando} su #${ch}`);
     return true;
   }
