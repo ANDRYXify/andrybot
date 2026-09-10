@@ -44,7 +44,8 @@ tenere allineata.
 
 ## Stadi
 - [x] Ricerca + modello + piano
-- [ ] A: registro derivato + porta HTTP + chiave/revoca/limite
+- [x] A: registro derivato (contatori) + porta HTTP + chiave/revoca/limite/tempo costante
+- [ ] A2: altre azioni derivate — effetti, comandi, clip, pubblicita', scudo, battuta
 - [ ] B: CONSOLify (griglia, pagine, cartelle, tasti personalizzabili, telefono)
 - [ ] C (dopo): plugin ufficiale .sdPlugin, se serve davvero
 
@@ -52,3 +53,12 @@ tenere allineata.
 - Elgato: cos'e' uno Stream Deck, multi-azioni, cartelle, profili, SDK/azioni.
 - API Ninja (BarRaider) e streamdeck-api-request: chiamata HTTP dal tasto.
 - Alternative viste: Bitfocus Companion, Touch Portal, Deckboard, WebDeck, SAMMI.
+
+## Difetti trovati costruendo A (per memoria)
+- `chiave()` per un canale che NON esiste ne generava una nuova a ogni chiamata:
+  `setSettings` su una riga che non c'e' non scrive niente, e la funzione tornava
+  una chiave fresca fingendo di averla salvata. Nessuna chiave emessa avrebbe
+  combaciato con se stessa — e in produzione non si sarebbe visto mai, perche' lo
+  streamer c'e' sempre. Ora se il salvataggio non attecchisce torna `null`.
+- Il contatore cambiava in due posti (chat e premio riscattato): ora in uno solo,
+  `contatori.cambia()`, che fa le tre cose insieme (numero, chat, widget).

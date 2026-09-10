@@ -31,6 +31,8 @@ const GUARDIANI = [
   'chiaveOk',        // chiave dell'overlay: il link e' il segreto
   'chiaveUguale',    // chiave dell'estensione, confronto a tempo costante
   'apiKeyValida',    // chiave dell'estensione: dell'impronta salvata, a tempo costante
+  'guardiaConsole',  // CONSOLify e Stream Deck: uno Stream Deck non sa tenere un cookie,
+                     // quindi la chiave del canale — a tempo costante, revocabile, con tetto
   'verificaWebhook', // firma di Stripe
   'currentUser',     // legge la sessione: senza, non c'e' niente da leggere
   'soloProprietario',

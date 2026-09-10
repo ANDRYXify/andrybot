@@ -39,6 +39,7 @@ const DECISO = [
   ['features/antibot.js', 'ritmi', 'resta', 'il ritmo del canale si impara in trenta follow, e in memoria non ci arrivava mai'],
 
   ['features/battute.js', 'inAscolto', 'volatile', 'la finestra di 45 secondi in cui si contano le risate: perderne una a meta\' non toglie niente a nessuno, e la battuta esce di nuovo un\'altra volta'],
+  ['features/console.js', '_colpi', 'volatile', 'il minuto in cui si contano le pressioni dei tasti: dopo un riavvio riparte da zero, e l\'unico effetto e\' che chi stava per essere fermato ha un minuto in regalo — un riavvio non e\' un modo pratico per aggirare un tetto'],
   ['features/antibot.js', 'listaEsterna', 'volatile', 'lista di bot conosciuti, si riscarica da sola'],
   ['features/antibot.js', 'finestre', 'volatile', 'finestra di trenta secondi: dopo un riavvio la raffica si rivede subito'],
   ['features/antibot.js', 'raffiche', 'volatile', 'idem, e l\'allarme si rialza da solo se l\'attacco continua'],
