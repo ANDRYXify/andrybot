@@ -196,3 +196,22 @@ chiede QUEL passo (`/tasto/:id/passo/:k`), non tutto il tasto. Il server, dal
 canto suo, i passi di regia non finge di farli: risponde che li fa la pagina —
 cosi' chi preme da una tastiera fisica se lo sente dire invece di ricevere un
 «fatto» che non e' successo.
+
+### Perche' non si compila piu' niente
+
+Tre campi a mano erano attrito, e l'attrito rende una funzione inutilizzata («e'
+troppo macchinoso»). La soluzione non era inventare una scorciatoia nostra: **il
+programma una riga sola te la da' gia'** — `obsws://indirizzo:porta/password`,
+dalle sue info di connessione (e lo stesso in un codice QR). Si legge quella.
+
+`leggiIncollato()` accetta quattro forme, in ordine di quanto sono comode:
+`obsws://` e `obswss://` (con la password anche codificata: uno spazio arriva
+intero), `indirizzo:porta`, e la sola password. Quello che non e' nessuna delle
+quattro **non si indovina**: torna `null`.
+
+E poi non serve nemmeno premere:
+- **incollare basta** — al `change` del campo il collegamento parte;
+- **all'apertura ci prova da solo**, in silenzio: prima con quello che sa, poi
+  senza password (per chi nel programma non l'ha messa). In silenzio perche' se
+  non c'e' nessuno in ascolto non deve disturbare;
+- **una volta per apertura**, non a ogni disegno.

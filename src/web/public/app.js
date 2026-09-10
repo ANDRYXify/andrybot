@@ -8587,14 +8587,20 @@ function pannelloConsolify() {
     <div class="carta">
       <h2>${_hIco(ICO.video)}${L('Il programma con cui mandi in onda', 'The program you go live with', 'El programa con el que emites')}</h2>
       <p class="suggerimento">${L('Collegalo e i tasti possono cambiare scena, far partire una transizione, mutare una fonte. Il collegamento parte da questa pagina e arriva al programma che gira sul TUO computer: la password resta qui, non passa da noi e non finisce nel nostro database.', 'Connect it and your keys can change scene, fire a transition, mute a source. The connection goes from this page to the program running on YOUR computer: the password stays here, it never passes through us and never reaches our database.', 'Conéctalo y las teclas pueden cambiar de escena, lanzar una transición, silenciar una fuente. La conexión va de esta página al programa que corre en TU ordenador: la contraseña se queda aquí, no pasa por nosotros ni llega a nuestra base de datos.')}</p>
-      <div class="griglia-campi">
-        <div><label class="campo" for="re-ip">${L('Indirizzo', 'Address', 'Dirección')}</label>
-          <input type="text" id="re-ip" class="campo-largo" maxlength="40" placeholder="127.0.0.1"></div>
-        <div><label class="campo" for="re-porta">${L('Porta', 'Port', 'Puerto')}</label>
-          <input type="text" id="re-porta" class="campo-largo" maxlength="6" placeholder="4455"></div>
-      </div>
-      <label class="campo spazio-sopra" for="re-pass">${L('Password del collegamento', 'Connection password', 'Contraseña de la conexión')}</label>
-      <input type="password" id="re-pass" class="campo-largo" maxlength="120" autocomplete="off">
+      <label class="campo spazio-sopra" for="re-incolla">${L('Incolla qui quello che ti dà il programma', 'Paste here what the program gives you', 'Pega aquí lo que te da el programa')}</label>
+      <input type="password" id="re-incolla" class="campo-largo" maxlength="300" autocomplete="off" placeholder="obsws://…">
+      <p class="suggerimento">${L('Nel programma: Strumenti → impostazioni del collegamento → mostra le info di connessione. Copia la riga intera e incollala qui: indirizzo, porta e password le prendo da lì. Una volta sola: la prossima volta mi collego da solo.', 'In the program: Tools → connection settings → show connect info. Copy the whole line and paste it here: address, port and password come from there. Once only: next time I connect on my own.', 'En el programa: Herramientas → ajustes de la conexión → mostrar info de conexión. Copia la línea entera y pégala aquí: dirección, puerto y contraseña salen de ahí. Una sola vez: la próxima me conecto solo.')}</p>
+      <details class="spazio-sopra">
+        <summary>${L('Oppure a mano', 'Or by hand', 'O a mano')}</summary>
+        <div class="griglia-campi spazio-sopra">
+          <div><label class="campo" for="re-ip">${L('Indirizzo', 'Address', 'Dirección')}</label>
+            <input type="text" id="re-ip" class="campo-largo" maxlength="40" placeholder="127.0.0.1"></div>
+          <div><label class="campo" for="re-porta">${L('Porta', 'Port', 'Puerto')}</label>
+            <input type="text" id="re-porta" class="campo-largo" maxlength="6" placeholder="4455"></div>
+        </div>
+        <label class="campo spazio-sopra" for="re-pass">${L('Password del collegamento', 'Connection password', 'Contraseña de la conexión')}</label>
+        <input type="password" id="re-pass" class="campo-largo" maxlength="120" autocomplete="off">
+      </details>
       <p class="vita-azioni spazio-sopra">
         <button class="btn secondario mini" id="re-collega">${L('Collega', 'Connect', 'Conectar')}</button>
         <button class="btn secondario mini" id="re-stacca">${L('Stacca', 'Disconnect', 'Desconectar')}</button>
@@ -8616,7 +8622,7 @@ function pannelloConsolify() {
     </div>`);
 }
 
-let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', login: '', pagina: 0, modifica: false, aperto: null, scoperta: false, overlay: false, passoFile: 0, scene: [], regia: false, regiaAppesa: false };
+let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', login: '', pagina: 0, modifica: false, aperto: null, scoperta: false, overlay: false, passoFile: 0, scene: [], regia: false, regiaAppesa: false, regiaProvata: false };
 
 async function caricaConsolify() {
   const esito = document.getElementById('cons-esito');
@@ -8754,18 +8760,57 @@ const MOTIVI_REGIA = () => ({
   'non-raggiungibile': L('Non risponde: controlla che il programma sia aperto e che il collegamento sia acceso nelle sue impostazioni.', 'No answer: check the program is open and its connection is switched on in its settings.', 'No responde: comprueba que el programa esté abierto y que la conexión esté activada en sus ajustes.'),
 });
 
+function cfgDaiCampi() {
+  const incollato = document.getElementById('re-incolla')?.value || '';
+  const letto = window.RegiaEsterna && RegiaEsterna.leggiIncollato(incollato);
+  if (letto) return letto;
+  return {
+    ip: (document.getElementById('re-ip')?.value || '127.0.0.1').trim() || '127.0.0.1',
+    porta: (document.getElementById('re-porta')?.value || '4455').trim() || '4455',
+    pass: document.getElementById('re-pass')?.value || '',
+  };
+}
+
+async function collegaRegia(cfg, zitto) {
+  if (!window.RegiaEsterna) return false;
+  if (!zitto) disegnaSpiaRegia(L('provo…', 'trying…', 'probando…'));
+  try {
+    await RegiaEsterna.collega(cfg);
+    RegiaEsterna.salvaImpostazioni(cfg);
+    const inc = document.getElementById('re-incolla');
+    if (inc) inc.value = '';
+    metticampiRegia(cfg);
+    disegnaSpiaRegia();
+    await caricaScene();
+    return true;
+  } catch (e) {
+    if (!zitto) disegnaSpiaRegia(MOTIVI_REGIA()[e && e.message] || L('non riuscito', 'failed', 'falló'));
+    return false;
+  }
+}
+
+function metticampiRegia(g) {
+  const met = (k, v) => { const el = document.getElementById(k); if (el) el.value = v; };
+  met('re-ip', g.ip); met('re-porta', g.porta); met('re-pass', g.pass);
+}
+
 function preparaRegia() {
   if (!window.RegiaEsterna) return;
   const g = RegiaEsterna.impostazioni();
-  const met = (k, v) => { const el = document.getElementById(k); if (el) el.value = v; };
-  met('re-ip', g.ip); met('re-porta', g.porta); met('re-pass', g.pass);
+  metticampiRegia(g);
   disegnaSpiaRegia();
   if (!_cons.regiaAppesa) {
     _cons.regiaAppesa = true;
     RegiaEsterna.ascolta('stato', () => disegnaSpiaRegia());
     RegiaEsterna.ascolta('CurrentProgramSceneChanged', (d) => segnaScenaViva(d && d.sceneName));
   }
-  if (RegiaEsterna.collegato()) caricaScene();
+  if (RegiaEsterna.collegato()) { caricaScene(); return; }
+  if (_cons.regiaProvata) return;
+  _cons.regiaProvata = true;
+  (async () => {
+    if (g.pass && await collegaRegia(g, true)) return;
+    await collegaRegia({ ip: g.ip, porta: g.porta, pass: '' }, true);
+  })();
 }
 
 async function caricaScene() {
@@ -9156,23 +9201,7 @@ function appendiConsolify() {
       if (r.ok) segnaScenaViva(nome); else disegnaSpiaRegia(r.mostra);
       return;
     }
-    if (id === 're-collega') {
-      const cfg = {
-        ip: (document.getElementById('re-ip')?.value || '127.0.0.1').trim(),
-        porta: (document.getElementById('re-porta')?.value || '4455').trim(),
-        pass: document.getElementById('re-pass')?.value || '',
-      };
-      disegnaSpiaRegia(L('provo…', 'trying…', 'probando…'));
-      try {
-        await RegiaEsterna.collega(cfg);
-        RegiaEsterna.salvaImpostazioni(cfg);
-        disegnaSpiaRegia();
-        await caricaScene();
-      } catch (e) {
-        disegnaSpiaRegia(MOTIVI_REGIA()[e && e.message] || L('non riuscito', 'failed', 'falló'));
-      }
-      return;
-    }
+    if (id === 're-collega') { await collegaRegia(cfgDaiCampi(), false); return; }
     if (id === 're-stacca') { RegiaEsterna.chiudi(); disegnaSpiaRegia(); await caricaScene(); return; }
     if (id === 're-scorda') {
       if (!confirm(L('Scordare indirizzo e password? Restano solo su questo computer, e le riscrivi quando vuoi.', 'Forget address and password? They only live on this computer, and you can type them again whenever.', '¿Olvidar dirección y contraseña? Solo viven en este ordenador, y las reescribes cuando quieras.'))) return;
@@ -9279,6 +9308,11 @@ function appendiConsolifyCampi() {
     const t = _cons.plancia.pagine[_cons.pagina]?.tasti?.[_cons.aperto];
     const id = ev.target.id;
 
+    if (ev.target?.id === 're-incolla') {
+      const letto = window.RegiaEsterna && RegiaEsterna.leggiIncollato(ev.target.value);
+      if (letto) await collegaRegia(letto, false);
+      return;
+    }
     const pcampo = ev.target.closest?.('[data-cons-pcampo]');
     if (pcampo && t) {
       const [k, campo] = String(pcampo.dataset.consPcampo).split(':');

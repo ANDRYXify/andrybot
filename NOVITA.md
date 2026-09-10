@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-10
 
+- Collegare il programma con cui mandi in onda è un incollaggio solo: lui ti dà una riga, tu la incolli, e indirizzo, porta e password li prendo da lì.
+- Dalla volta dopo mi collego da solo quando apri la scheda; e se non hai messo nessuna password ci provo lo stesso, così spesso non devi fare niente.
 - Puoi collegare il programma con cui mandi in onda: compaiono le tue scene, le cambi da qui, e i tasti possono cambiare scena o mutare una fonte dentro una fila di passi.
 - Indirizzo e password di quel collegamento restano nel tuo browser: non arrivano al nostro server e non entrano nel database. Con «Scorda tutto» spariscono anche da lì.
 - Funziona sul computer dove gira quel programma. Dal telefono i tasti del bot vanno come sempre, ma le scene no, e la scheda te lo dice prima.
