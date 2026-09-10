@@ -107,3 +107,49 @@ pressione il tasto mostra il numero nuovo. Icona, nome e tutto il resto si scelg
 in Stream Deck, come per qualunque altro tasto.
 
 Lo stesso indirizzo funziona in Companion, Touch Portal, Loupedeck e da un telefono.
+
+## La plancia (la webapp)
+
+Sta in **Durante la diretta → CONSOLify**. Una griglia di tasti, con pagine, e ogni
+tasto scelto da te: quale azione, che nome, che icona, che colore.
+
+- **La griglia si adatta da sé.** Tre per riga su un telefono in verticale, molti di
+  più su un monitor. Questa cosa si usa **col telefono in mano mentre streammi**,
+  non seduti davanti alla dashboard.
+- **Il tasto risponde subito**: si abbassa quando lo premi, e la riga sotto mostra
+  com'è andata — il numero nuovo, o che non è andata. Quella riga si tiene lo spazio
+  anche da vuota, se no la griglia salta a ogni pressione.
+- **In modifica non spara.** Mentre stai sistemando i tasti, premerne uno non manda
+  niente in chat.
+- **Un ascoltatore solo**, appeso una volta al contenitore. La plancia si ridisegna a
+  ogni pressione: riappendere i gestori a ogni disegno vuol dire che prima o poi si
+  appendono due volte e un tasto spara due colpi.
+
+### Il filtro che avrebbe reso la sezione inerte
+
+La prima versione filtrava gli eventi su `#pannello-consolify`. Quel contenitore non
+esiste: i pannelli si chiamano `scheda-<id>`. Il filtro non avrebbe agganciato
+niente e **nessun tasto avrebbe mai risposto** — una sezione intera morta, senza un
+errore da nessuna parte, di quelli che si scoprono solo aprendo la pagina. Una prova
+tiene fermo che il filtro punti al contenitore vero.
+
+## Quello che la plancia non si fida di ricevere
+
+Il salvataggio **ripulisce in ingresso**: nomi e icone tagliati, colori solo se sono
+colori, pagine e tasti con un tetto. E soprattutto: **un tasto che punta a un'azione
+che non esiste più non si salva**. Un contatore cancellato lascerebbe un bottone che
+sembra fare qualcosa e non fa niente quando lo premi — peggio di un buco.
+
+## Sullo Stream Deck, in pratica
+
+La scheda ti dà **gli indirizzi delle tue azioni**, già scritti, uno per tasto, con
+il bottone per copiarli. Non un esempio generico da adattare: il tuo.
+
+In Stream Deck: aggiungi un tasto con un plugin che fa chiamate web (per esempio
+**API Ninja**), incolli l'indirizzo, e scegli icona e nome lì — perché lì, icona e
+nome, sono roba di Stream Deck e si personalizzano meglio che da noi. Il plugin
+stampa la risposta sul tasto, quindi dopo la pressione leggi il numero nuovo.
+
+Se un indirizzo finisce in una clip o in uno screenshot: **rigenera la chiave**. Gli
+indirizzi vecchi smettono di funzionare all'istante e vanno rifatti — è il motivo
+per cui il bottone c'è.

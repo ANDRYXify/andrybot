@@ -781,6 +781,61 @@ const INTERAZIONE = {
   ],
 };
 
+const CONSOLIFY = {
+  slug: 'consolify',
+  schede: ['consolify'],
+  titolo: 'CONSOLify: i tasti del tuo canale, sul telefono o su uno Stream Deck | SocialBot',
+  h1: 'CONSOLify: i tasti del tuo canale, sul telefono o su uno Stream Deck',
+  desc: 'Contatori, effetti, una battuta o una frase a un tocco: dal telefono mentre streami, o dai tasti di uno Stream Deck vero.',
+  aggiornata: OGGI,
+  corpo: [
+    { p: [
+      'Mentre trasmetti non puoi cercare un bottone in una pagina piena di roba. CONSOLify è una <strong>griglia di tasti grandi</strong>: la apri sul telefono o su un secondo schermo, e con un tocco fai partire una cosa.',
+      'E ogni tasto <strong>dice com\'è andata</strong>: sotto compare la risposta — per esempio il numero nuovo del contatore. È la differenza fra un deck e una pulsantiera: sai sempre se ha preso.',
+    ] },
+
+    { h2: 'I tasti sono già i tuoi' },
+    { p: [
+      'Nell\'elenco non trovi azioni generiche: trovi <strong>le tue</strong>. Nascono da quello che hai già configurato, quindi <strong>aggiungi un contatore e i suoi tasti compaiono da soli</strong>, con la sua emoji e il suo passo. Cancelli un contatore e i suoi tasti se ne vanno: niente bottoni che sembrano fare qualcosa e non fanno niente.',
+    ] },
+    { tabella: [
+      ['Tasto', 'Cosa fa', 'Da dove nasce'],
+      ['Contatore +, −, a zero', 'Cambia il numero, lo dice in chat e aggiorna il widget a schermo', 'Da ogni contatore che hai'],
+      ['Effetto', 'Spara un tuo effetto sull\'overlay', 'Da ogni effetto che hai'],
+      ['Battuta', 'Ne dice una: prima dal serbatoio, se è vuoto la costruisce', 'C\'è sempre'],
+      ['Dì una frase', 'Il bot dice la frase che gli hai scritto', 'C\'è sempre'],
+    ] },
+
+    { h2: 'Come si costruisce la plancia' },
+    { lista: [
+      'Premi <strong>Modifica i tasti</strong>: compare l\'elenco delle tue azioni.',
+      'Scegli l\'azione e premi <strong>Aggiungi tasto</strong>. Per «Dì una frase» ti chiede cosa deve dire.',
+      'Puoi fare più <strong>pagine</strong>: una per il gioco, una per il momento chiacchiere, come preferisci.',
+      'Premi <strong>Fatto</strong> e la plancia torna operativa. In modifica i tasti non sparano: sistemi in pace senza mandare niente in chat.',
+    ] },
+    { p: ['Sul telefono la griglia si adatta da sé. È il modo per cui è pensata: telefono in mano, accanto alla tastiera.'] },
+
+    { h2: 'Sullo Stream Deck vero' },
+    { p: [
+      'Non devi installare niente di nostro. In Stream Deck aggiungi un tasto con un plugin che fa <strong>chiamate web</strong> (per esempio API Ninja), e ci incolli l\'indirizzo che trovi nella scheda: c\'è già scritto, uno per ogni tua azione, con il bottone per copiarlo.',
+      '<strong>Icona e nome li scegli lì</strong>, in Stream Deck, come per qualunque altro tasto: lì si personalizzano meglio che da noi. Il plugin stampa la risposta sul tasto, quindi dopo la pressione leggi il numero nuovo.',
+      'Lo stesso indirizzo funziona anche con <strong>Bitfocus Companion</strong>, <strong>Touch Portal</strong>, <strong>Loupedeck</strong> e dal browser di un telefono.',
+    ] },
+
+    { h2: 'La chiave, e quando rigenerarla' },
+    { p: [
+      'L\'indirizzo contiene una <strong>chiave del tuo canale</strong>: è quella che permette al tasto di agire senza fare il login. Trattala come una password — non mostrarla in diretta e non metterla in uno screenshot.',
+      'Se ti scappa, premi <strong>Rigenera la chiave</strong>: gli indirizzi vecchi smettono di funzionare all\'istante. Dovrai rifare i tasti sullo Stream Deck, ed è il prezzo giusto.',
+    ] },
+  ],
+  faq: [
+    { d: 'Serve uno Stream Deck?', r: 'No. CONSOLify funziona da sola sul telefono, sul tablet o su un secondo monitor. Lo Stream Deck è in più, e usa gli stessi tasti.' },
+    { d: 'Perché nell\'elenco non trovo un\'azione?', r: 'Perché le azioni nascono da quello che hai configurato. Se manca un effetto, aggiungilo nella sua scheda: il tasto compare da solo.' },
+    { d: 'Posso aprirla sul telefono mentre streamo dal PC?', r: 'Sì, ed è il modo per cui è pensata. È la stessa dashboard: entra dal telefono e vai su CONSOLify.' },
+    { d: 'Se premo due volte succede due volte?', r: 'Sì: un tasto fa quello che dice, ogni volta. C\'è solo un tetto di sicurezza se si preme moltissimo in un minuto.' },
+  ],
+};
+
 const DIRETTA = {
   slug: 'diretta',
   schede: ['regia', 'ascolto', 'clip', 'musica'],
@@ -1238,7 +1293,7 @@ const OVERLAY = {
   ],
 };
 
-export const MANUALI = [GIOCHI, MODULI, BOT, MODERAZIONE, INTERAZIONE, DIRETTA, VETRINA, ACCOUNT, EMOTE, OVERLAY];
+export const MANUALI = [GIOCHI, MODULI, BOT, MODERAZIONE, INTERAZIONE, DIRETTA, CONSOLIFY, VETRINA, ACCOUNT, EMOTE, OVERLAY];
 
 // A QUALE SCHEDA DEL PANNELLO SERVE OGNI PAGINA.
 //

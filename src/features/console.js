@@ -173,3 +173,41 @@ export function esegui(channel, id, { say, emit, effetti, testo } = {}) {
 
   return { ok: false, mostra: 'azione sconosciuta' };
 }
+
+// ── La plancia: quali tasti, dove, con che faccia ───────────────────────────
+// Sono scelte dello streamer, non dati del bot. E si RIPULISCE in ingresso: un
+// tasto che punta a un'azione che non esiste piu' (un contatore cancellato) non
+// deve restare li' a non fare niente quando lo premi — sparisce, ed e' onesto.
+const PAGINE_MAX = 8;
+const TASTI_MAX = 32;
+
+export function plancia(channel) {
+  const login = norm(channel);
+  const p = streamers.get(login)?.settings?.plancia;
+  const pagine = Array.isArray(p?.pagine) ? p.pagine : [];
+  return { pagine: pagine.length ? pagine : [{ nome: 'Principale', tasti: [] }] };
+}
+
+export function salvaPlancia(channel, dati) {
+  const login = norm(channel);
+  const s = streamers.get(login);
+  if (!s) return null;
+  const valide = new Set(azioni(login).map((a) => a.id));
+  const pagine = (Array.isArray(dati?.pagine) ? dati.pagine : []).slice(0, PAGINE_MAX).map((pg) => ({
+    nome: String(pg?.nome || 'Pagina').slice(0, 24),
+    tasti: (Array.isArray(pg?.tasti) ? pg.tasti : []).slice(0, TASTI_MAX)
+      // un tasto che punta a un'azione sparita non si salva: meglio un buco che un
+      // bottone che sembra fare qualcosa e non fa niente
+      .filter((t) => valide.has(String(t?.azione || '')))
+      .map((t) => ({
+        azione: String(t.azione),
+        nome: String(t.nome || '').slice(0, 24),
+        icona: String(t.icona || '').slice(0, 8),
+        colore: /^#[0-9a-f]{6}$/i.test(String(t.colore || '')) ? String(t.colore) : '',
+        testo: String(t.testo || '').slice(0, 200),
+      })),
+  }));
+  const pulita = { pagine: pagine.length ? pagine : [{ nome: 'Principale', tasti: [] }] };
+  streamers.setSettings(login, { ...(s.settings || {}), plancia: pulita });
+  return plancia(login);
+}

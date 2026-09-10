@@ -10,7 +10,12 @@
 // con sé la riga da stampare sul tasto, e chi la esegue risponde con quella.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
+
+const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 const usaEGetta = cartellaUsaEGetta('andrybot-console-');
 const { contatori, effects: storeEffetti, streamers, battute } = await import('../../src/db.js');
@@ -89,8 +94,16 @@ test('una chiave sbagliata non passa, e nemmeno una piu\' corta', () => {
   const ch = canale();
   const vera = consolle.chiave(ch);
   assert.equal(consolle.chiaveOk(ch, ''), false);
-  assert.equal(consolle.chiaveOk(ch, vera.slice(0, -1)), false);
-  assert.equal(consolle.chiaveOk(ch, vera.slice(0, -1) + 'f'), false);
+  assert.equal(consolle.chiaveOk(ch, vera.slice(0, -1)), false, 'una più corta non passa');
+  // L'ultimo carattere si CAMBIA, non si sostituisce con una lettera scelta a caso:
+  // la chiave è esadecimale, e mettere sempre 'f' voleva dire che una volta su
+  // sedici la «chiave sbagliata» era esattamente quella giusta. Rosso una volta ogni
+  // sedici giri, e la colpa non era del codice — un rosso intermittente e' peggio di
+  // uno fisso, perche' insegna a non guardare il rosso.
+  const ultimo = vera.slice(-1);
+  const diverso = vera.slice(0, -1) + (ultimo === 'f' ? '0' : 'f');
+  assert.notEqual(diverso, vera, 'la chiave di prova è davvero diversa');
+  assert.equal(consolle.chiaveOk(ch, diverso), false, 'e un carattere diverso basta');
 });
 
 test('c\'e\' un tetto: da questa porta non si guarda, si agisce', () => {
@@ -153,4 +166,47 @@ test('il tasto «di\'» dice quello che gli hai scritto, e senza testo non fa ni
   const r = consolle.esegui(ch, 'di', { say, testo: '  Ciao   a   tutti  ' });
   assert.equal(r.ok, true);
   assert.deepEqual(detto, ['Ciao a tutti'], 'e lo ripulisce dagli spazi di troppo');
+});
+
+test('la plancia non tiene tasti che puntano a niente', () => {
+  const ch = canale();
+  contatori.upsert(ch, { comando: 'morti', etichetta: 'Morti', valore: 1 });
+  const salvata = consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [
+    { azione: 'contatore:piu:morti', nome: 'Su', icona: '💀', colore: '#112233' },
+    { azione: 'contatore:piu:sparito', nome: 'Fantasma' },
+    { azione: 'roba:inventata' },
+  ] }] });
+  // un tasto che punta a un'azione che non esiste piu' non e' un buco: e' peggio,
+  // e' un bottone che sembra fare qualcosa e non fa niente quando lo premi
+  assert.equal(salvata.pagine[0].tasti.length, 1);
+  assert.equal(salvata.pagine[0].tasti[0].azione, 'contatore:piu:morti');
+  assert.equal(salvata.pagine[0].tasti[0].colore, '#112233');
+});
+
+test('la plancia ripulisce quello che le arriva, invece di fidarsi', () => {
+  const ch = canale();
+  const r = consolle.salvaPlancia(ch, { pagine: [{
+    nome: 'x'.repeat(80),
+    tasti: [{ azione: 'battuta', nome: 'y'.repeat(80), icona: 'z'.repeat(40), colore: 'javascript:alert(1)' }],
+  }] });
+  assert.ok(r.pagine[0].nome.length <= 24);
+  assert.ok(r.pagine[0].tasti[0].nome.length <= 24);
+  assert.equal(r.pagine[0].tasti[0].colore, '', 'un colore che non è un colore non entra');
+});
+
+test('un canale senza plancia ne ha comunque una, vuota', () => {
+  const ch = canale();
+  const p = consolle.plancia(ch);
+  assert.equal(p.pagine.length, 1);
+  assert.deepEqual(p.pagine[0].tasti, []);
+});
+
+test('CONSOLify ascolta dentro il pannello che esiste davvero', () => {
+  // La prima versione filtrava gli eventi su «#pannello-consolify», che non esiste:
+  // il contenitore si chiama «scheda-<id>». I tasti non avrebbero mai risposto — una
+  // sezione intera inerte, senza un errore da nessuna parte.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  assert.match(app, /closest\?\.\('#scheda-consolify'\)/, 'il filtro punta al contenitore vero');
+  assert.match(app, /id="scheda-\$\{id\}"/, 'e i pannelli si chiamano così');
+  assert.ok(!/#pannello-consolify/.test(app), 'nessun contenitore inventato');
 });
