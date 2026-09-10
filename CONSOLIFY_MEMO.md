@@ -228,3 +228,36 @@ Lo stesso vale per i video e per il flusso di eventi caduto.
 
 Adesso una prova sola dice quale delle cause e', invece di farci tirare a
 indovinare in due.
+
+## Il video che esce nero e se ne va
+
+Il dettaglio del direttore — «esce, mostra un fotogramma nero, e se ne va senza
+ne' suonare ne' andare avanti» — ha aperto DUE ipotesi che spiegano lo stesso
+sintomo, e nessuna delle due si puo' provare da qui:
+
+1. **Il permesso di partire con l'audio.** Un media con audio non parte da solo
+   finche' nessuno ha toccato la pagina: `play()` viene rifiutato, resta il primo
+   fotogramma, non avanza, non suona. In OBS il permesso c'e', in una scheda del
+   browser no.
+   Attenzione: avevo gia' «escluso» questa causa misurandola in Chromium
+   headless, che fa partire l'audio comunque perche' non ha una scheda audio.
+   Era un surrogato sbagliato, e ne avevo tratto una conclusione che non
+   reggeva. Misurare la cosa sbagliata e' peggio che non misurare: da' la stessa
+   sicurezza senza la sostanza.
+2. **Il timer che chiude il video.** `setTimeout(chiudi, durataMs(ev) + 600)`
+   gareggiava col video stesso. Se la durata memorizzata era sbagliata (un
+   effetto vecchio, uno copiato dalla libreria) il video veniva troncato — e se
+   comincia con un secondo nero, quello che si vede e' un fotogramma nero che
+   sparisce. IDENTICO al sintomo dell'altra causa.
+
+**Sistemate tutte e due, perche' tutte e due sono difetti veri a prescindere da
+quale stia mordendo adesso:**
+- se il permesso non c'e', il video riparte MUTO invece di restare fermo (un
+  video muto parte sempre) e lo dice: fermo e muto, fra le due, la peggiore e'
+  ferma;
+- la fine del video la decide il video: `loadedmetadata` da' la durata vera, e
+  quella dichiarata diventa un pavimento, non un soffitto.
+
+Lezione da tenere: **due cause diverse possono avere lo stesso identico
+sintomo.** Sceglierne una perche' e' la prima che viene in mente e' esattamente
+il "dado" che qui non si usa.

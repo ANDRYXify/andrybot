@@ -341,3 +341,27 @@ test('un overlay che non riesce a suonare puo\' dirlo', () => {
   assert.match(porta.slice(0, 400), /chiaveOk\(req\)/, 'ed e\' guardata come le altre porte dell\'overlay');
   assert.match(porta.slice(0, 900), /60000/, 'e non si fa raccontare la stessa cosa mille volte al minuto');
 });
+
+test('un video lo chiude la sua fine, non un timer che tira a indovinare', () => {
+  // Sintomo: «esce, mostra un fotogramma nero e se ne va senza andare avanti».
+  // Il timer di chiusura gareggiava col video: se la durata memorizzata era
+  // sbagliata, il video veniva troncato — e se comincia con un secondo nero,
+  // quello che si vede e' un fotogramma nero che sparisce. La durata vera la sa
+  // il browser: si usa quella, e quella dichiarata diventa un pavimento.
+  const ov = readFileSync(join(RAD, 'src/web/public/overlay-app.js'), 'utf8');
+  assert.ok(!/setTimeout\(chiudi, durataMs/.test(ov), 'nessun video chiuso da un timer armato alla cieca');
+  assert.match(ov, /function reggiFinoAllaFine\(/, 'c\'e\' un posto solo che decide quando finisce');
+  assert.match(ov, /loadedmetadata/, 'e chiede al browser quanto dura davvero');
+  assert.match(ov, /if \(fermaTimer\) fermaTimer\(\)/, 'e chi finisce da solo spegne il proprio timer');
+});
+
+test('se il browser non da\' il permesso, il video parte muto invece di non partire', () => {
+  // Un media CON audio non parte da solo finche' nessuno ha toccato la pagina:
+  // in OBS il permesso c'e', in una scheda no. Restare fermi e' la scelta
+  // peggiore delle due: un video muto e' molto meglio di un fotogramma fermo.
+  const ov = readFileSync(join(RAD, 'src/web/public/overlay-app.js'), 'utf8');
+  const f = ov.slice(ov.indexOf('function avvia('), ov.indexOf('function suonaUrl('));
+  assert.match(f, /NotAllowedError/, 'riconosce proprio quel rifiuto, non un errore qualsiasi');
+  assert.match(f, /el\.muted = true/, 'e riprova muto');
+  assert.match(f, /guaio\(dove \+ '-muto'/, 'senza tenerselo per se\'');
+});
