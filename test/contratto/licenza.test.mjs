@@ -147,3 +147,23 @@ test('la chiave PRIVATA non e\' in nessun file del progetto', async () => {
   const trovati = uscita.trim().split('\n').filter(Boolean).filter((f) => !/^test\//.test(f));
   assert.deepEqual(trovati, [], `chiavi private nel repository: ${trovati.join(', ')}`);
 });
+
+test('la chiave pubblica sta su UNA riga, ed e\' una chiave vera', async () => {
+  // Successo davvero: incollata a mano, la chiave e' andata a capo dentro le
+  // virgolette e il file ha smesso di caricarsi. Non per la licenza — per la
+  // sintassi. Ora la riga la scrive lo script (`--chiavi` la incolla da se'), e
+  // questa prova prende comunque una modifica a mano fatta male, PRIMA che
+  // arrivi sul server.
+  const src = readFileSync(join(RAD, 'src/licenza.js'), 'utf8');
+  const righe = src.split('\n').filter((r) => r.startsWith('export const CHIAVE_PUBBLICA'));
+  assert.equal(righe.length, 1, 'la costante e\' dichiarata una volta sola');
+  assert.match(righe[0], /;\s*$/, 'e finisce sulla stessa riga in cui comincia');
+
+  const m = /^export const CHIAVE_PUBBLICA = (.+);$/.exec(righe[0]);
+  assert.ok(m, 'la riga ha la forma di una dichiarazione intera');
+  const valore = JSON.parse(m[1].startsWith("'") ? `"${m[1].slice(1, -1).replace(/"/g, '\\"')}"` : m[1]);
+  if (valore) {
+    const { createPublicKey } = await import('node:crypto');
+    assert.doesNotThrow(() => createPublicKey(valore), 'e se c\'e\' una chiave, e\' una chiave che si apre');
+  }
+});
