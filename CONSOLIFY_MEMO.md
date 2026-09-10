@@ -336,3 +336,35 @@ funzione usata da tutti e due.
 E l'id assegnato leggendo va SCRITTO, se no cambierebbe a ogni lettura e
 l'indirizzo incollato sulla tastiera fisica varrebbe fino al prossimo
 aggiornamento di pagina. La prova lo controlla tre volte di fila.
+
+## La partitura (punto 1 del piano), fatta
+
+Il direttore: «manca la totalita' della personalizzazione dei tasti, non esiste
+nulla di cio' che ci siamo detti». Aveva ragione: avevo scritto il piano e poi
+passato il tempo sui difetti, quindi il pezzo che toglie lo strozzo non c'era.
+
+**Un tasto non e' piu' un puntatore a una cosa sola: e' una fila di passi.**
+Verbi di questo giro: fare una cosa che hai gia' · dire una frase in chat ·
+mandare il RISULTATO di un comando (non la scritta «!comando») · aspettare.
+
+Tre decisioni che tengono in piedi il resto:
+
+1. **La conversione dei tasti vecchi sta dove si RIPULISCE**, non in una
+   migrazione a parte. Cosi' vale sia leggendo sia salvando, e non esiste un
+   tasto a meta' del guado: `azione` diventa una partitura di un passo solo, e
+   quel tasto continua a fare quello che faceva.
+2. **Un passo che va storto non zittisce quelli dopo.** Se il terzo di cinque non
+   riesce, gli altri quattro devono succedere: chi ti guarda ha gia' visto i
+   primi due. L'esito pero' non finge — dice quanti ne sono riusciti e qual e' il
+   primo che non ce l'ha fatta.
+3. **Un passo che non si puo' fare viene TOLTO, non tenuto li' a fingere**, e se
+   non ne resta nessuno sparisce il tasto: e' la stessa regola che gia' valeva
+   per un tasto puntato a un'azione cancellata.
+
+Il verbo «risultato di un comando» si appoggia al motore dei comandi vero
+(`tryComando`) con un messaggio finto dello streamer, e manda quello che il
+comando direbbe. Nessun secondo posto dove i comandi si possono rompere.
+
+Restano dal piano: «manda questo» (media caricato sul tasto), le cartelle, il
+compagno per le app di fuori. E i verbi titolo/categoria/musica, che hanno una
+dipendenza in piu' e vanno fatti interi invece che accennati.

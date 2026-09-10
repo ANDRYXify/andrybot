@@ -135,15 +135,60 @@ export function azioni(channel) {
 // provare per davvero, con un finto `say` e un finto `emit`.
 // Premere un tasto della plancia PER IDENTITA'. Si va a vedere cosa fa ADESSO:
 // se lo streamer ieri gli ha cambiato azione, il tasto fisico fa la cosa nuova.
-export function eseguiTasto(channel, idTasto, dip = {}) {
+const dormi = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// I passi si fanno IN FILA, e uno che va storto non zittisce quelli dopo: se il
+// terzo di cinque non riesce, gli altri quattro devono comunque succedere — chi
+// ti guarda ha gia' visto i primi due. Quello che torna indietro racconta com'e'
+// andata: un passo solo parla da se', da due in su si dice quanti ne sono
+// riusciti e qual e' il primo che non ce l'ha fatta.
+export async function eseguiTasto(channel, idTasto, dip = {}) {
   const login = norm(channel);
+  let tasto = null;
   for (const pg of plancia(login).pagine) {
-    for (const t of pg.tasti || []) {
-      if (t.id !== idTasto) continue;
-      return esegui(login, t.azione, { ...dip, testo: t.testo || dip.testo });
-    }
+    for (const t of pg.tasti || []) if (t.id === idTasto) tasto = t;
   }
-  return { ok: false, mostra: 'tasto non trovato' };
+  if (!tasto) return { ok: false, mostra: 'tasto non trovato' };
+
+  const esiti = [];
+  for (const passo of tasto.passi) {
+    if (passo.tipo === 'attesa') { await dormi(passo.ms); esiti.push({ ok: true, mostra: '' }); continue; }
+    esiti.push(eseguiPasso(login, passo, dip));
+  }
+
+  const riusciti = esiti.filter((e) => e.ok).length;
+  const primoGuaio = esiti.find((e) => !e.ok);
+  if (esiti.length === 1) return esiti[0];
+  return {
+    ok: !primoGuaio,
+    mostra: primoGuaio
+      ? `${riusciti}/${esiti.length} · ${primoGuaio.mostra}`
+      : (esiti.map((e) => e.mostra).filter(Boolean).pop() || `${riusciti} passi`),
+  };
+}
+
+function eseguiPasso(login, passo, dip) {
+  const { say, comandi } = dip;
+  if (passo.tipo === 'azione') return esegui(login, passo.id, { ...dip, testo: passo.testo || dip.testo });
+  if (passo.tipo === 'chat') {
+    if (typeof say !== 'function') return { ok: false, mostra: 'non riuscito' };
+    say(passo.testo);
+    return { ok: true, mostra: passo.testo.slice(0, 60) };
+  }
+  if (passo.tipo === 'comando') {
+    // Il RISULTATO del comando, non la scritta «!comando»: si fa dire al motore
+    // dei comandi quello che direbbe in chat, e si manda quello.
+    if (typeof comandi?.tryComando !== 'function') return { ok: false, mostra: 'comandi non disponibili' };
+    let detto = '';
+    const parla = (t) => { detto = String(t || ''); if (typeof say === 'function') say(t); };
+    const preso = comandi.tryComando({
+      channel: login, text: `!${passo.comando}`, username: login,
+      isMod: true, isBroadcaster: true, isSub: true,
+    }, parla);
+    if (!preso) return { ok: false, mostra: `!${passo.comando} non c'è` };
+    return { ok: true, mostra: (detto || `!${passo.comando}`).slice(0, 60) };
+  }
+  return { ok: false, mostra: 'passo sconosciuto' };
 }
 
 export function esegui(channel, id, { say, emit, effetti, testo } = {}) {
@@ -247,19 +292,61 @@ const coloreOk = (v) => (/^#[0-9a-f]{6}$/i.test(String(v || '')) ? String(v).toL
 // «scorciatoie» che avevo fatto e' sparito: era il solito secondo elenco.
 const nuovoId = () => crypto.randomBytes(5).toString('hex');
 
+// UN TASTO E' UNA PARTITURA, non un puntatore a una cosa sola. Prima un tasto
+// poteva fare soltanto una cosa che esisteva gia' da un'altra parte: era il
+// motivo per cui la plancia stava stretta. Ora porta una fila di passi, e un
+// passo e' uno di pochi verbi.
+//
+// Un passo che non si puo' fare viene tolto, non tenuto li' a fingere; se non ne
+// resta nessuno, il tasto sparisce — come prima faceva un tasto che puntava a
+// un'azione cancellata.
+const PASSI_MAX = 8;
+const ATTESA_MAX_MS = 30000;
+
+function passoPulito(p, valide) {
+  const tipo = String(p?.tipo || '');
+  if (tipo === 'azione') {
+    const id = String(p?.id || '');
+    if (!valide.has(id)) return null;
+    return { tipo, id, testo: testoPulito(p?.testo, 200) };
+  }
+  if (tipo === 'chat') {
+    const testo = testoPulito(p?.testo, 400);
+    return testo ? { tipo, testo } : null;
+  }
+  if (tipo === 'comando') {
+    const comando = testoPulito(p?.comando, 40).replace(/^!/, '').toLowerCase();
+    return /^[a-z0-9_-]{1,40}$/.test(comando) ? { tipo, comando } : null;
+  }
+  if (tipo === 'attesa') {
+    const ms = Math.round(Number(p?.ms));
+    return Number.isFinite(ms) && ms > 0 ? { tipo, ms: Math.min(ms, ATTESA_MAX_MS) } : null;
+  }
+  return null;
+}
+
+// Un tasto di prima aveva `azione`: diventa una partitura di un passo solo. La
+// conversione sta QUI, dove si ripulisce, cosi' vale sia leggendo sia salvando e
+// non esiste un tasto in mezzo al guado.
+function passiDi(t, valide) {
+  const grezzi = Array.isArray(t?.passi) && t.passi.length
+    ? t.passi
+    : (t?.azione ? [{ tipo: 'azione', id: String(t.azione), testo: t?.testo }] : []);
+  return grezzi.slice(0, PASSI_MAX).map((p) => passoPulito(p, valide)).filter(Boolean);
+}
+
 function tastoPulito(t, valide) {
-  const azione = String(t?.azione || '');
-  if (!valide.has(azione)) return null;
+  const passi = passiDi(t, valide);
+  if (!passi.length) return null;
   return {
     id: /^[a-f0-9]{10}$/.test(String(t?.id || '')) ? String(t.id) : nuovoId(),
-    azione,
+    passi,
     nome: testoPulito(t?.nome, 24),
     // tre forme, e sono tutte legittime: il nome di un'icona nostra, un carattere
     // scritto da lui, o `img:<file>` — un'immagine SUA, che ha anche un indirizzo
     // pubblico perche' la stessa faccia gli serve sul tasto di uno tastiera fisica.
     icona: testoPulito(t?.icona, 80),
     colore: coloreOk(t?.colore),
-    testo: testoPulito(t?.testo, 200),
     conferma: !!t?.conferma,
   };
 }
