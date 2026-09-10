@@ -19,3 +19,8 @@ docs/CERVELLO.md
 docs/RAGIONE.md
 docs/NASCERE.md
 docs/anatomia.html
+
+# la licenza del server e QUALUNQUE chiave privata: non entrano mai in git
+licenza.txt
+*.pem
+.socialbot-chiave-privata.pem

@@ -13,6 +13,29 @@ import { PluginBus, caricaPlugin } from './features/plugins.js';
 import { startWeb } from './web/server.js';
 import { startApprovalSync } from './web/gate.js';
 import { contaRifiuto, avviaVigilanza } from './salute.js';
+import * as licenza from './licenza.js';
+
+// IL CANCELLO. Questo software gira dove dice il proprietario. La licenza e'
+// firmata con una chiave privata che non sta in nessun repository: nessuno puo'
+// fabbricarsene una. Chi ha il sorgente puo' togliere QUESTE righe — ed e' un
+// atto deliberato, che si vede — ma non ottiene un software pulito: il nome con
+// cui il bot si presenta continua a uscire da `licenza.firma()`, e senza licenza
+// quel nome dice a chi appartiene. Vedi src/licenza.js.
+{
+  const perche = licenza.motivoPerNonPartire({ dominio: new URL(config.baseUrl).hostname });
+  if (perche) {
+    log.error(`LICENZA: ${perche}`);
+    log.error(licenza.firma());
+    log.error('Questo software non e\' libero: gira solo con la licenza firmata dal suo proprietario.');
+    // Un blocco che non dice come si sblocca e' un blocco che ti tiene fuori da
+    // casa tua. Il rimedio va detto insieme al motivo, sempre.
+    log.error('Se sei tu: node scripts/licenza.mjs --firma --dominio '
+      + new URL(config.baseUrl).hostname + '   → poi LICENZA=... nel .env');
+    process.exit(1);
+  }
+  const e = licenza.esito({ dominio: new URL(config.baseUrl).hostname });
+  if (e.stato === 'senza-chiave') log.warn(`LICENZA: ${e.motivo} — ${licenza.firma()}`);
+}
 
 const missing = missingConfig();
 if (missing.length) {
