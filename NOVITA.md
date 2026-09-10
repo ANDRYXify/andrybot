@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-10
 
+- Quando il serbatoio delle battute è vuoto, il bot ne costruisce una con i numeri del tuo canale — morti, tentativi, quello che conti tu — invece di chiederne una generica.
+- E impara quale modo di costruirle fa ridere lì: dopo averla detta conta chi ride davvero, e la volta dopo usa il modo che ha funzionato.
 - [privato] La finestra che chiedeva di installare un programma per lo sfondo non resta più piantata sullo schermo di Lia: la correzione di prima valeva solo su una casa nuova, e la sua casa non nasce mai due volte.
 
 ## 2026-09-09

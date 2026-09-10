@@ -20,7 +20,7 @@ import { cartellaUsaEGetta } from '../aiuto.mjs';
 // cascata.
 const usaEGetta = cartellaUsaEGetta('andrybot-battute-');
 const { battute } = await import('../../src/db.js');
-const { tryBattuta } = await import('../../src/features/battute.js');
+const { tryBattuta, detta } = await import('../../src/features/battute.js');
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const CH = 'canale-battute-prova';
@@ -136,13 +136,40 @@ test('quella che fa ridere esce piu\' spesso di quella che non fa ridere', () =>
 });
 
 test('una battuta mai provata non resta al palo', () => {
+  // Sceglierla e dirla sono due cose: `prossima` sceglie, `detta` registra che il
+  // bot l'ha detta (e apre la finestra in cui si ascolta chi ride). Qui si usa la
+  // coppia vera, com'e' in chat — contare dentro `prossima` voleva dire contare
+  // come «detta» anche una battuta soltanto sbirciata.
   for (const b of battute.list(CH)) battute.remove(CH, b.n);
   const vecchia = battute.add(CH, 'La vecchia gia\' collaudata', 'streamer');
-  for (let i = 0; i < 3; i++) { battute.prossima(CH); battute.haFattoRidere(CH, vecchia); }
+  for (let i = 0; i < 3; i++) { detta(CH, battute.prossima(CH).n); battute.haFattoRidere(CH, vecchia); }
   const nuova = battute.add(CH, 'La nuova mai provata', 'streamer');
   const uscite = new Set();
-  for (let i = 0; i < 10; i++) uscite.add(battute.prossima(CH).n);
+  for (let i = 0; i < 10; i++) { const b = battute.prossima(CH); detta(CH, b.n); uscite.add(b.n); }
   assert.ok(uscite.has(nuova), 'senza credito iniziale, una battuta nuova non uscirebbe mai');
+});
+
+test('chi sceglie una battuta dice sempre anche che l\'ha detta', () => {
+  // La cucitura creata spostando il conto: `prossima` non registra piu' niente, e
+  // un chiamante che si dimenticasse `detta` perderebbe il conto IN SILENZIO — la
+  // battuta uscirebbe in chat e risulterebbe mai detta. Qui si controlla che non
+  // succeda in nessuno dei punti in cui il bot ne pesca una.
+  const fonti = ['src/features/battute.js', 'src/bot.js'];
+  let punti = 0;
+  for (const f of fonti) {
+    const src = readFileSync(join(RAD, f), 'utf8');
+    // `prossimaDa` e' solo un passacarte: il dovere di segnare e' di chi lo chiama,
+    // e quel chiamante viene controllato per conto suo qui sotto.
+    const iPas = src.indexOf('export function prossimaDa');
+    const passacarte = iPas < 0 ? [-1, -1] : [iPas, src.indexOf('\n}', iPas)];
+    for (const m of src.matchAll(/\bprossima(?:Da)?\(/g)) {
+      if (m.index > passacarte[0] && m.index < passacarte[1]) continue;
+      punti++;
+      assert.match(src.slice(m.index, m.index + 400), /\bdetta\(/,
+        `in ${f} si pesca una battuta e si dice anche che e' stata detta`);
+    }
+  }
+  assert.ok(punti >= 2, `punti controllati: ${punti}`);
 });
 
 test('il bot ne dice una da solo, ma non mentre sta ancora ascoltando', () => {

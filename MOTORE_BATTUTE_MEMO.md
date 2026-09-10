@@ -57,9 +57,24 @@ le succede.**
 
 ## Stato
 - [x] Modello e piano scritti
-- [ ] A: materia
-- [ ] A: schemi
-- [ ] A: vaglio
-- [ ] A: scelta + memoria dello schema
+- [x] A: materia (contatori del canale)
+- [x] A: schemi (5, ognuno dichiara opposizione/norma/bersaglio)
+- [x] A: vaglio (norme leggere + bersagli ammessi; distanza per costruzione)
+- [x] A: scelta + memoria dello schema (`battute.schema`, `perSchema`, `presaDelloSchema`)
+- [x] A: collegato al bot, prima di `inventa`
+- [ ] A: potatura di cio' che non ha mai fatto ridere
 - [ ] B: criterio suo + tappa
 - [ ] B: cassetta della posta
+
+## Difetti trovati costruendo A (per memoria)
+- `dette` si contava SOLO dentro `prossima()`, cioe' solo per le battute del
+  serbatoio: quelle del motore restavano «mai dette» e il loro schema non imparava
+  niente (risate divise per zero). Spostato in `detta()`, che e' l'unico posto che
+  sa che il bot ha appena detto una battuta.
+- `battute.add` faceva `fonte === 'ia' ? 'ia' : 'mano'`: una fonte nuova diventava
+  'mano' in silenzio. Ora le fonti sono un elenco.
+- Nel mio stesso test: `battute.detta?.(...)` — `detta` non e' nel magazzino, e
+  l'optional chaining l'ha fatto sparire senza errore. Il test passava per un motivo
+  sbagliato finche' non ha fallito per quello giusto.
+- Accordo grammaticale con l'etichetta dello streamer (due varianti), e uno schema
+  senza opposizione. Trovati LEGGENDO l'uscita, non da un cancello.

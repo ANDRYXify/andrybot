@@ -45,10 +45,14 @@ export function stoAscoltando(channel) {
   return !!a && Date.now() < a.fino;
 }
 
-// Il bot ha appena detto la battuta n: da adesso si ascolta.
+// Il bot ha appena detto la battuta n. E' l'UNICO posto che sa che e' successo, e
+// da qui pendono tutte e due le cose: la finestra in cui si ascolta chi ride, e il
+// conto di quante volte e' stata detta. Tenerle separate voleva dire che una delle
+// due strade per dire una battuta si dimenticava di contare — ed e' successo.
 export function detta(channel, n) {
   if (!n) return;
   inAscolto.set(String(channel || '').toLowerCase(), { n, fino: Date.now() + FINESTRA_MS, chi: new Set() });
+  try { battute.segnaDetta(channel, n); } catch (e) { log.debug('segnaDetta:', e?.message || e); }
 }
 
 // Ogni messaggio di chat passa di qui. Ritorna true quando la battuta viene
@@ -87,10 +91,17 @@ export function fmt(b) {
 // !battuta togli N           (mod/streamer)
 // !battuta quante
 //
-// `inventa` è una funzione asincrona opzionale: se il serbatoio è vuoto, il bot
-// prova a farsene dire una dal cervello. Non è obbligatoria — senza, con il
-// serbatoio vuoto si dice che è vuoto, che è la verità.
-export function tryBattuta(msg, say, { inventa = null } = {}) {
+// A serbatoio vuoto il bot non resta a bocca aperta, e l'ordine conta:
+//
+//  · `motore` COSTRUISCE una battuta con la materia di questo canale (i suoi
+//    numeri veri) e uno schema che dichiara cosa viola. E' istantaneo, non chiede
+//    niente a nessuno e funziona col cervello spento;
+//  · `inventa` chiede al cervello, ed e' l'ultima spiaggia: serve quando il canale
+//    non ha ancora materia propria — niente contatori, niente da cui partire.
+//
+// Nessuna delle due e' obbligatoria: senza, con il serbatoio vuoto si dice che e'
+// vuoto, che e' la verita'.
+export function tryBattuta(msg, say, { inventa = null, motore = null } = {}) {
   try {
     // I nomi li tiene il REGISTRO, non questa riga: cosi' un comando rinominato
     // risponde al nome nuovo, uno spento non parte, e uno riservato lo dice
@@ -147,8 +158,22 @@ export function tryBattuta(msg, say, { inventa = null } = {}) {
     const b = battute.prossima(canale);
     if (b) { say(fmt(b)); detta(canale, b.n); return true; }
 
-    // serbatoio vuoto: se il cervello c'è, gliene chiediamo una. Se non c'è, si
-    // dice com'è — un bot che promette e non consegna è peggio di uno che ammette.
+    // serbatoio vuoto: prima si prova a COSTRUIRLA. Una battuta fatta con i numeri
+    // di questo canale parla di loro; una chiesta al modello parla di chiunque.
+    if (typeof motore === 'function') {
+      let fatta = null;
+      try { fatta = motore(canale); } catch (e) { log.debug('motore:', e?.message || e); }
+      if (fatta && fatta.testo) {
+        // entra nel serbatoio con lo schema che l'ha fatta: da li' in poi e' la
+        // chat a dire se quel MODO di costruire funziona qui, e il conto resta.
+        const n = battute.add(canale, fatta.testo, 'motore', 'motore', fatta.schema);
+        if (n) { say(fmt({ testo: fatta.testo, n })); detta(canale, n); return true; }
+        say(fatta.testo);
+        return true;
+      }
+    }
+    // se il canale non ha ancora materia propria, si chiede al cervello. Se non c'è,
+    // si dice com'è — un bot che promette e non consegna è peggio di uno che ammette.
     if (typeof inventa === 'function') {
       inventa()
         .then((t) => {
