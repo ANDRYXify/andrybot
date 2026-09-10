@@ -8622,7 +8622,7 @@ function pannelloConsolify() {
     </div>`);
 }
 
-let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', login: '', pagina: 0, modifica: false, aperto: null, scoperta: false, overlay: false, passoFile: 0, scene: [], regia: false, regiaAppesa: false, regiaProvata: false };
+let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', login: '', pagina: 0, modifica: false, aperto: null, scoperta: false, overlay: false, passoFile: 0, scene: [], fonti: [], transizioni: [], regia: false, regiaAppesa: false, regiaProvata: false };
 
 async function caricaConsolify() {
   const esito = document.getElementById('cons-esito');
@@ -8728,10 +8728,7 @@ function disegnaConsolify() {
     : L('Nessun tasto qui. Premi «Modifica i tasti» e aggiungine uno: nell’elenco ci sono già le tue azioni.', 'No keys here. Press “Edit the keys” and add one: your actions are already in the list.', 'Sin teclas aquí. Pulsa «Editar las teclas» y añade una: tus acciones ya están en la lista.')}</p>`;
 
   const aggiungi = mod
-    ? `<div class="cons-aggiungi">
-        <select id="cons-quale" class="campo">${_cons.azioni.map((a) => `<option value="${esc(a.id)}">${esc(a.titolo)}</option>`).join('')}</select>
-        <button class="btn secondario mini" id="cons-piu">${L('Aggiungi tasto', 'Add key', 'Añadir tecla')}</button>
-      </div>` : '';
+    ? `<p class="suggerimento">${L('Premi un posto libero: nasce un tasto vuoto e si apre la sua scheda. Da lì costruisci quello che vuoi, da zero o partendo da un\'idea pronta.', 'Press a free slot: an empty key is born and its card opens. From there build whatever you want, from scratch or starting from a ready-made idea.', 'Pulsa un sitio libre: nace una tecla vacía y se abre su ficha. Desde ahí construyes lo que quieras, desde cero o partiendo de una idea lista.')}</p>` : '';
 
   box.innerHTML = `<div class="cons-ruota">
       <strong>${L('Gira il telefono', 'Turn your phone', 'Gira el teléfono')}</strong>
@@ -8815,17 +8812,29 @@ function preparaRegia() {
 
 async function caricaScene() {
   const box = document.getElementById('re-scene');
-  if (!box) return;
-  if (!window.RegiaEsterna || !RegiaEsterna.collegato()) { box.innerHTML = ''; return; }
-  try {
-    const d = await RegiaEsterna.chiedi('GetSceneList');
-    _cons.scene = (d.scenes || []).map((x) => x.sceneName).filter(Boolean).reverse();
-    const ora = d.currentProgramSceneName || '';
-    box.innerHTML = `<div class="cons-sez">${L('Le tue scene', 'Your scenes', 'Tus escenas')}</div>
-      <div class="cons-scene-griglia">${_cons.scene.map((n2) => `<button class="cons-scena${n2 === ora ? ' on' : ''}" data-re-scena="${esc(n2)}">${esc(n2)}</button>`).join('')}</div>`;
-  } catch (e) {
-    box.innerHTML = `<p class="vuoto">${esc(L('non riesco a leggere le scene', 'cannot read the scenes', 'no puedo leer las escenas'))}</p>`;
+  if (!window.RegiaEsterna || !RegiaEsterna.collegato()) {
+    _cons.scene = []; _cons.fonti = []; _cons.transizioni = [];
+    if (box) box.innerHTML = '';
+    return;
   }
+  const chiedi = async (cosa, poi) => { try { poi(await RegiaEsterna.chiedi(cosa)); } catch (e) { /* quel pezzo non lo sa */ } };
+  let ora = '';
+  await Promise.all([
+    chiedi('GetSceneList', (d) => {
+      _cons.scene = (d.scenes || []).map((x) => x.sceneName).filter(Boolean).reverse();
+      ora = d.currentProgramSceneName || '';
+    }),
+    chiedi('GetInputList', (d) => { _cons.fonti = (d.inputs || []).map((x) => x.inputName).filter(Boolean); }),
+    chiedi('GetSceneTransitionList', (d) => { _cons.transizioni = (d.transitions || []).map((x) => x.transitionName).filter(Boolean); }),
+  ]);
+  if (box) {
+    box.innerHTML = _cons.scene.length
+      ? `<div class="cons-sez">${L('Le tue scene', 'Your scenes', 'Tus escenas')}</div>
+         <div class="cons-scene-griglia">${_cons.scene.map((n2) => `<button class="cons-scena${n2 === ora ? ' on' : ''}" data-re-scena="${esc(n2)}">${esc(n2)}</button>`).join('')}</div>
+         <p class="suggerimento spazio-sopra">${L('Ho letto', 'I read', 'He leído')} ${_cons.scene.length} ${L('scene', 'scenes', 'escenas')}, ${_cons.fonti.length} ${L('fonti', 'sources', 'fuentes')} ${L('e', 'and', 'y')} ${_cons.transizioni.length} ${L('transizioni: quando costruisci un tasto te le propongo, non devi ricopiare niente.', 'transitions: when you build a key I offer them, you don’t have to retype anything.', 'transiciones: cuando construyes una tecla te las propongo, no tienes que reescribir nada.')}</p>`
+      : `<p class="vuoto">${esc(L('non riesco a leggere le scene', 'cannot read the scenes', 'no puedo leer las escenas'))}</p>`;
+  }
+  if (_cons.aperto !== null && _cons.aperto !== undefined) disegnaSchedaTasto();
 }
 
 function segnaScenaViva(nome) {
@@ -8842,7 +8851,7 @@ async function premiTasto(t, stato) {
   for (let k = 0; k < passi.length; k++) {
     const p = passi[k];
     if (p.tipo === 'attesa') { await attendi(Math.min(30000, Number(p.ms) || 0)); esiti.push({ ok: true, mostra: '' }); continue; }
-    if (p.tipo === 'scena' || p.tipo === 'muto') { esiti.push(await eseguiPassoRegia(p)); continue; }
+    if (p.tipo === 'scena' || p.tipo === 'muto' || p.tipo === 'transizione') { esiti.push(await eseguiPassoRegia(p)); continue; }
     try {
       const r = await fetch(`${consUrlTasto(t)}`.replace(/\?/, `/passo/${k}?`), { method: 'POST' });
       const d = await r.json().catch(() => null);
@@ -8871,6 +8880,11 @@ async function eseguiPassoRegia(p) {
       else await RegiaEsterna.chiedi('SetInputMute', { inputName: p.fonte, inputMuted: p.come === 'muta' });
       return { ok: true, mostra: p.fonte };
     }
+    if (p.tipo === 'transizione') {
+      if (!p.transizione) return { ok: false, mostra: L('manca la transizione', 'transition missing', 'falta la transición') };
+      await RegiaEsterna.chiedi('SetCurrentSceneTransition', { transitionName: p.transizione });
+      return { ok: true, mostra: p.transizione };
+    }
   } catch (e) {
     return { ok: false, mostra: String((e && e.message) || 'non riuscito').slice(0, 60) };
   }
@@ -8893,6 +8907,7 @@ const TIPI_PASSO = () => [
   ['media', L('Manda questo (immagine, video o suono)', 'Send this (image, video or sound)', 'Manda esto (imagen, vídeo o sonido)')],
   ['scena', L('Cambia scena in regia', 'Change scene in the program', 'Cambia de escena en el programa')],
   ['muto', L('Muta o smuta una fonte', 'Mute or unmute a source', 'Silencia o quita el silencio a una fuente')],
+  ['transizione', L('Fai partire una transizione', 'Fire a transition', 'Lanza una transición')],
   ['comando', L('Manda il risultato di un comando', 'Send what a command produces', 'Manda lo que produce un comando')],
   ['attesa', L('Aspetta', 'Wait', 'Espera')],
 ];
@@ -8903,6 +8918,7 @@ function etichettaPasso(p) {
   if (p.tipo === 'media') return p.file ? p.genere : '';
   if (p.tipo === 'scena') return p.scena || '';
   if (p.tipo === 'muto') return p.fonte || '';
+  if (p.tipo === 'transizione') return p.transizione || '';
   if (p.tipo === 'chat') return p.testo || '';
   if (p.tipo === 'comando') return '!' + p.comando;
   if (p.tipo === 'attesa') return `${Math.round(p.ms / 100) / 10}s`;
@@ -8943,6 +8959,35 @@ const consUrlTasto = (t) => `${_cons.base}/tasto/${t.id || ''}?key=${_cons.chiav
 
 const COLORI_TASTO = ['', '#ba007a', '#d000b8', '#1f9e4f', '#e0913a', '#3aa6c9', '#8f7bd6', '#9a9a9a'];
 
+const RICETTE = () => [
+  { id: 'link', nome: L('Manda un link', 'Send a link', 'Manda un enlace'), icona: 'mondo',
+    passi: () => [{ tipo: 'chat', testo: '' }] },
+  { id: 'suono', nome: L('Manda un suono', 'Send a sound', 'Manda un sonido'), icona: 'altoparlante',
+    passi: () => [{ tipo: 'media', file: '', genere: 'audio', durata: 5000, volume: 100 }] },
+  { id: 'immagine', nome: L('Manda un\'immagine', 'Send an image', 'Manda una imagen'), icona: 'immagine',
+    passi: () => [{ tipo: 'media', file: '', genere: 'immagine', durata: 5000, volume: 100 }] },
+  { id: 'battuta', nome: L('Racconta una battuta', 'Tell a joke', 'Cuenta un chiste'), icona: 'chat',
+    passi: () => [{ tipo: 'azione', id: 'battuta', testo: '' }] },
+  { id: 'scena', nome: L('Cambia scena', 'Change scene', 'Cambia de escena'), icona: 'video',
+    passi: () => [{ tipo: 'scena', scena: (_cons.scene || [])[0] || '' }] },
+  { id: 'pausa', nome: L('Vado in pausa', 'Going on a break', 'Me tomo un descanso'), icona: 'orologio',
+    passi: () => [
+      { tipo: 'chat', testo: '' },
+      { tipo: 'scena', scena: (_cons.scene || [])[0] || '' },
+      { tipo: 'muto', fonte: (_cons.fonti || [])[0] || '', come: 'muta' },
+    ] },
+];
+
+function daRegia(elenco, k, campo, valore, vuoto) {
+  const lista = elenco || [];
+  if (!lista.length) return `<span class="tenue">${esc(vuoto)}</span>`;
+  const dentro = lista.includes(valore);
+  return `<select class="campo" data-cons-pcampo="${k}:${campo}">
+    ${dentro ? '' : `<option value="" selected>${esc(L('scegli…', 'pick…', 'elige…'))}</option>`}
+    ${lista.map((n3) => `<option value="${esc(n3)}"${n3 === valore ? ' selected' : ''}>${esc(n3)}</option>`).join('')}
+  </select>`;
+}
+
 function disegnaPasso(p, k, n) {
   const frecce = `<span class="cons-frecce">
       <span class="cons-mini" data-cons-psposta="${k}:-1" ${k === 0 ? 'hidden' : ''}>‹</span>
@@ -8966,13 +9011,12 @@ function disegnaPasso(p, k, n) {
       : `<button class="btn secondario mini" data-cons-pfile="${k}">${L('Scegli il file', 'Pick the file', 'Elige el archivo')}</button>
          <span class="tenue">${L('immagine, video o suono', 'image, video or sound', 'imagen, vídeo o sonido')}</span>`;
   } else if (p.tipo === 'scena') {
-    const scene = _cons.scene || [];
-    corpo = scene.length
-      ? `<select class="campo" data-cons-pcampo="${k}:scena">${scene.map((n2) => `<option value="${esc(n2)}"${n2 === p.scena ? ' selected' : ''}>${esc(n2)}</option>`).join('')}</select>`
-      : `<input class="campo" data-cons-pcampo="${k}:scena" maxlength="80" value="${esc(p.scena || '')}" placeholder="${L('nome della scena', 'scene name', 'nombre de la escena')}">`;
+    corpo = daRegia(_cons.scene, k, 'scena', p.scena, L('nessuna scena: collega la regia qui sotto', 'no scenes: connect the program below', 'sin escenas: conecta el programa abajo'));
+  } else if (p.tipo === 'transizione') {
+    corpo = daRegia(_cons.transizioni, k, 'transizione', p.transizione, L('nessuna transizione: collega la regia qui sotto', 'no transitions: connect the program below', 'sin transiciones: conecta el programa abajo'));
   } else if (p.tipo === 'muto') {
-    corpo = `<input class="campo" data-cons-pcampo="${k}:fonte" maxlength="80" value="${esc(p.fonte || '')}" placeholder="${L('nome della fonte', 'source name', 'nombre de la fuente')}">
-      <select class="campo" data-cons-pcampo="${k}:come">${[['inverti', L('inverti', 'toggle', 'invierte')], ['muta', L('muta', 'mute', 'silencia')], ['smuta', L('smuta', 'unmute', 'quita silencio')]].map(([v2, t2]) => `<option value="${v2}"${p.come === v2 ? ' selected' : ''}>${esc(t2)}</option>`).join('')}</select>`;
+    corpo = daRegia(_cons.fonti, k, 'fonte', p.fonte, L('nessuna fonte: collega la regia qui sotto', 'no sources: connect the program below', 'sin fuentes: conecta el programa abajo'))
+      + `<select class="campo" data-cons-pcampo="${k}:come">${[['inverti', L('inverti', 'toggle', 'invierte')], ['muta', L('muta', 'mute', 'silencia')], ['smuta', L('smuta', 'unmute', 'quita silencio')]].map(([v2, t2]) => `<option value="${v2}"${p.come === v2 ? ' selected' : ''}>${esc(t2)}</option>`).join('')}</select>`;
   } else if (p.tipo === 'comando') {
     corpo = `<input class="campo" data-cons-pcampo="${k}:comando" maxlength="40" value="${esc(p.comando || '')}" placeholder="${L('nome del comando, senza !', 'command name, without !', 'nombre del comando, sin !')}">`;
   } else if (p.tipo === 'attesa') {
@@ -9013,6 +9057,10 @@ function disegnaSchedaTasto() {
 
     <div class="cons-sez">${L('Cosa fa, in fila', 'What it does, in order', 'Qué hace, en fila')}</div>
     <p class="suggerimento">${L('Un tasto può fare più cose di seguito. Vanno in ordine, e se una non riesce le altre succedono lo stesso.', 'A key can do several things in a row. They run in order, and if one fails the others still happen.', 'Una tecla puede hacer varias cosas seguidas. Van en orden, y si una falla las demás pasan igual.')}</p>
+    ${(t.passi || []).length ? '' : `<div class="cons-ricette">
+      <p class="suggerimento">${L('Non fa ancora niente. Aggiungi i passi che vuoi qui sotto, oppure parti da una di queste — poi cambi tutto quello che vuoi.', 'It does nothing yet. Add the steps you want below, or start from one of these — then change anything you like.', 'Todavía no hace nada. Añade abajo los pasos que quieras, o parte de una de estas — luego cambias lo que quieras.')}</p>
+      <div class="cons-ricette-fila">${RICETTE().map((r) => `<button class="btn secondario mini" data-cons-preset="${r.id}">${_bIco(ICO[r.icona] || ICO.effetti)}${esc(r.nome)}</button>`).join('')}</div>
+    </div>`}
     <div class="cons-passi">${(t.passi || []).map((p, k) => disegnaPasso(p, k, (t.passi || []).length)).join('')}</div>
     <input type="file" id="cons-p-file" accept="image/*,video/*,audio/*" hidden>
     <div class="cons-aggiungi">
@@ -9124,7 +9172,16 @@ function appendiConsolify() {
     const mis = ev.target.closest('[data-cons-misura]');
     if (mis) { _cons.plancia.misura = mis.dataset.consMisura; disegnaConsolify(); await salvaPlancia(); return; }
     const vuoto = ev.target.closest('[data-cons-vuoto]');
-    if (vuoto) { const q = document.getElementById('cons-quale'); if (q) { q.focus(); q.scrollIntoView({ block: 'center', behavior: 'smooth' }); } return; }
+    if (vuoto) {
+      const lista = pg().tasti;
+      if (lista.length >= 48) { alert(L('Quarantotto tasti per pagina bastano: fanne un\'altra pagina.', 'Forty-eight keys per page is plenty: make another page.', 'Cuarenta y ocho teclas por página bastan: haz otra página.')); return; }
+      lista.push({ passi: [], nome: '', icona: '', colore: '', conferma: false, vuoto: true });
+      _cons.aperto = lista.length - 1;
+      disegnaConsolify();
+      await salvaPlancia({ ridisegna: false });
+      document.getElementById('cons-scheda')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
     const apri = ev.target.closest('[data-cons-apri]');
     if (apri) { ev.stopPropagation(); _cons.aperto = Number(apri.dataset.consApri); disegnaSchedaTasto(); return; }
     const sposta = ev.target.closest('[data-cons-sposta]');
@@ -9185,14 +9242,18 @@ function appendiConsolify() {
       _cons.pagina = 0; _cons.aperto = null;
       disegnaConsolify(); await salvaPlancia(); return;
     }
-    if (id === 'cons-piu') {
-      const quale = document.getElementById('cons-quale')?.value;
-      const a = _cons.azioni.find((x) => x.id === quale);
-      if (!a) return;
-      const testo = a.testo ? (prompt(L('Cosa deve dire?', 'What should it say?', '¿Qué debe decir?')) || '').trim() : '';
-      if (a.testo && !testo) return;
-      pg().tasti.push({ passi: [{ tipo: 'azione', id: a.id, testo }], nome: testo ? testo.slice(0, 24) : a.titolo, icona: '', colore: '', conferma: false });
-      disegnaConsolify(); await salvaPlancia(); return;
+    const preset = ev.target.closest('[data-cons-preset]');
+    if (preset) {
+      const t = aperto();
+      const r = RICETTE().find((x) => x.id === preset.dataset.consPreset);
+      if (!t || !r) return;
+      t.passi = r.passi();
+      if (!t.nome) t.nome = r.nome;
+      if (!t.icona) t.icona = r.icona || '';
+      t.vuoto = false;
+      disegnaConsolify();
+      await salvaPlancia({ ridisegna: false });
+      return;
     }
     const scena = ev.target.closest('[data-re-scena]');
     if (scena) {
@@ -9240,8 +9301,9 @@ function appendiConsolify() {
           : tipo === 'comando' ? { tipo, comando: '' }
             : tipo === 'media' ? { tipo, file: '', genere: 'immagine', durata: 5000, volume: 100 }
               : tipo === 'scena' ? { tipo, scena: (_cons.scene || [])[0] || '' }
-                : tipo === 'muto' ? { tipo, fonte: '', come: 'inverti' }
-              : { tipo: 'attesa', ms: 1000 };
+                : tipo === 'muto' ? { tipo, fonte: (_cons.fonti || [])[0] || '', come: 'inverti' }
+                  : tipo === 'transizione' ? { tipo, transizione: (_cons.transizioni || [])[0] || '' }
+                    : { tipo: 'attesa', ms: 1000 };
       if (t.passi.length >= 8) { alert(L('Otto passi bastano: oltre, un tasto non si capisce più.', 'Eight steps is plenty: past that, a key stops being readable.', 'Ocho pasos bastan: más allá, una tecla deja de entenderse.')); return; }
       t.passi.push(nuovo);
       disegnaSchedaTasto(); return;
@@ -9324,6 +9386,7 @@ function appendiConsolifyCampi() {
       else if (campo === 'comando') passo.comando = String(ev.target.value).trim().replace(/^!/, '').toLowerCase().slice(0, 40);
       else if (campo === 'scena') passo.scena = String(ev.target.value).slice(0, 80);
       else if (campo === 'fonte') passo.fonte = String(ev.target.value).slice(0, 80);
+      else if (campo === 'transizione') passo.transizione = String(ev.target.value).slice(0, 80);
       else if (campo === 'come') passo.come = String(ev.target.value);
       else if (campo === 'id') { passo.id = String(ev.target.value); disegnaSchedaTasto(); }
       else passo.testo = String(ev.target.value).trim().slice(0, 400);

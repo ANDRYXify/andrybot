@@ -2145,6 +2145,9 @@ body.ce-aperto { overflow: hidden; }
 .nov-piede { display: flex; gap: .5rem; justify-content: flex-end; align-items: center; padding: .8rem 1.2rem; border-top: 1px solid var(--border); }
 .nov-altri { margin-top: 1rem; padding-top: .7rem; border-top: 1px solid var(--border); }
 .cons-passi { display: flex; flex-direction: column; gap: .4rem; margin: .4rem 0 .6rem; }
+.cons-ricette { margin: .4rem 0 .2rem; }
+.cons-ricette-fila { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .4rem; }
+.cons-ricette-fila .btn svg { width: 1em; height: 1em; margin-right: .35em; vertical-align: -.12em; }
 .cons-passo {
   display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
   padding: .45rem .55rem;
@@ -2152,9 +2155,10 @@ body.ce-aperto { overflow: hidden; }
   border-radius: var(--ang-mano); background: var(--surface-2);
 }
 .cons-passo-n {
-  flex: 0 0 auto; width: 1.5rem; height: 1.5rem; display: grid; place-items: center;
-  font-family: var(--mano); font-size: .82rem;
-  border-radius: 50%; background: var(--acc); color: var(--su-acc);
+  flex: 0 0 auto; min-width: 1.6rem; height: 1.6rem; padding: 0 .3rem;
+  display: grid; place-items: center;
+  font-size: .8rem; font-weight: 700; line-height: 1;
+  border-radius: 999px; background: var(--acc); color: var(--su-acc);
 }
 .cons-passo-t { flex: 0 0 auto; font-size: .76rem; font-weight: 700; color: var(--testo-2); }
 .cons-passo-c { flex: 1 1 12rem; display: flex; align-items: center; gap: .4rem; min-width: 0; }

@@ -43,7 +43,11 @@ const A_PAROLE = [
   { q: 'come blocco i bot', scheda: ['scudo', 'regole'] },
   { q: 'alert su obs', scheda: ['alert'] },
   { q: 'mettere una gif quando riscattano', scheda: ['effetti', 'alert'] },
-  { q: 'chiave api', scheda: ['moduli'] },
+  // Due schede hanno DAVVERO una chiave API — i moduli (per le chiamate web) e
+  // le notifiche (quella di YouTube, che si chiama proprio cosi'). Chiederne una
+  // sola era una misura imprecisa: la domanda ha due risposte giuste, e quale
+  // delle due esca dipende da quante parole ci sono attorno, non da un difetto.
+  { q: 'chiave api', scheda: ['moduli', 'notifiche'] },
   { q: 'comandi a voce', scheda: ['ascolto'] },
   { q: 'quanto costa', scheda: ['sottoscrizione', 'stato'] },
 ];
