@@ -8595,7 +8595,7 @@ function pannelloConsolify() {
     </div>`);
 }
 
-let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', login: '', pagina: 0, modifica: false, aperto: null, scoperta: false, overlay: false };
+let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', login: '', pagina: 0, modifica: false, aperto: null, scoperta: false, overlay: false, passoFile: 0 };
 
 async function caricaConsolify() {
   const esito = document.getElementById('cons-esito');
@@ -8728,6 +8728,7 @@ function disegnaSpia() {
 const TIPI_PASSO = () => [
   ['azione', L('Fai una cosa che hai già', 'Do something you already have', 'Haz algo que ya tienes')],
   ['chat', L('Dì una frase in chat', 'Say a line in chat', 'Di una frase en el chat')],
+  ['media', L('Manda questo (immagine, video o suono)', 'Send this (image, video or sound)', 'Manda esto (imagen, vídeo o sonido)')],
   ['comando', L('Manda il risultato di un comando', 'Send what a command produces', 'Manda lo que produce un comando')],
   ['attesa', L('Aspetta', 'Wait', 'Espera')],
 ];
@@ -8735,6 +8736,7 @@ const TIPI_PASSO = () => [
 function etichettaPasso(p) {
   if (!p) return '';
   if (p.tipo === 'azione') return (_cons.azioni.find((a) => a.id === p.id) || {}).titolo || p.id;
+  if (p.tipo === 'media') return p.file ? p.genere : '';
   if (p.tipo === 'chat') return p.testo || '';
   if (p.tipo === 'comando') return '!' + p.comando;
   if (p.tipo === 'attesa') return `${Math.round(p.ms / 100) / 10}s`;
@@ -8788,6 +8790,15 @@ function disegnaPasso(p, k, n) {
     if (a && a.testo) corpo += `<input class="campo" data-cons-pcampo="${k}:testo" maxlength="200" value="${esc(p.testo || '')}" placeholder="${L('cosa deve dire', 'what it says', 'qué dice')}">`;
   } else if (p.tipo === 'chat') {
     corpo = `<input class="campo" data-cons-pcampo="${k}:testo" maxlength="400" value="${esc(p.testo || '')}" placeholder="${L('la frase da dire', 'the line to say', 'la frase a decir')}">`;
+  } else if (p.tipo === 'media') {
+    corpo = p.file
+      ? `<span class="cons-media-c">${_bIco(ICO[p.genere === 'audio' ? 'altoparlante' : p.genere === 'video' ? 'video' : 'immagine'] || ICO.effetti)}
+           <span class="tenue">${esc(p.genere)}</span></span>
+         <label class="cons-num">${L('dura', 'lasts', 'dura')}<input class="campo" type="number" min="0.5" max="30" step="0.5" data-cons-pcampo="${k}:durata" value="${Math.round((p.durata || 0) / 100) / 10}"></label>
+         <label class="cons-num">${L('vol', 'vol', 'vol')}<input class="campo" type="number" min="0" max="100" step="5" data-cons-pcampo="${k}:volume" value="${Number(p.volume) || 0}"></label>
+         <button class="btn secondario mini" data-cons-pfile="${k}">${L('cambia', 'change', 'cambiar')}</button>`
+      : `<button class="btn secondario mini" data-cons-pfile="${k}">${L('Scegli il file', 'Pick the file', 'Elige el archivo')}</button>
+         <span class="tenue">${L('immagine, video o suono', 'image, video or sound', 'imagen, vídeo o sonido')}</span>`;
   } else if (p.tipo === 'comando') {
     corpo = `<input class="campo" data-cons-pcampo="${k}:comando" maxlength="40" value="${esc(p.comando || '')}" placeholder="${L('nome del comando, senza !', 'command name, without !', 'nombre del comando, sin !')}">`;
   } else if (p.tipo === 'attesa') {
@@ -8829,6 +8840,7 @@ function disegnaSchedaTasto() {
     <div class="cons-sez">${L('Cosa fa, in fila', 'What it does, in order', 'Qué hace, en fila')}</div>
     <p class="suggerimento">${L('Un tasto può fare più cose di seguito. Vanno in ordine, e se una non riesce le altre succedono lo stesso.', 'A key can do several things in a row. They run in order, and if one fails the others still happen.', 'Una tecla puede hacer varias cosas seguidas. Van en orden, y si una falla las demás pasan igual.')}</p>
     <div class="cons-passi">${(t.passi || []).map((p, k) => disegnaPasso(p, k, (t.passi || []).length)).join('')}</div>
+    <input type="file" id="cons-p-file" accept="image/*,video/*,audio/*" hidden>
     <div class="cons-aggiungi">
       <select id="cons-p-tipo" class="campo">${TIPI_PASSO().map(([v, et]) => `<option value="${v}">${esc(et)}</option>`).join('')}</select>
       <button class="btn secondario mini" id="cons-p-piu">${L('Aggiungi passo', 'Add step', 'Añadir paso')}</button>
@@ -9010,6 +9022,12 @@ function appendiConsolify() {
       pg().tasti.push({ passi: [{ tipo: 'azione', id: a.id, testo }], nome: testo ? testo.slice(0, 24) : a.titolo, icona: '', colore: '', conferma: false });
       disegnaConsolify(); await salvaPlancia(); return;
     }
+    const pfile = ev.target.closest('[data-cons-pfile]');
+    if (pfile) {
+      _cons.passoFile = Number(pfile.dataset.consPfile);
+      document.getElementById('cons-p-file')?.click();
+      return;
+    }
     const psposta = ev.target.closest('[data-cons-psposta]');
     if (psposta) {
       const t = aperto(); if (!t) return;
@@ -9032,7 +9050,8 @@ function appendiConsolify() {
       const nuovo = tipo === 'azione' ? { tipo, id: _cons.azioni[0]?.id || '', testo: '' }
         : tipo === 'chat' ? { tipo, testo: '' }
           : tipo === 'comando' ? { tipo, comando: '' }
-            : { tipo: 'attesa', ms: 1000 };
+            : tipo === 'media' ? { tipo, file: '', genere: 'immagine', durata: 5000, volume: 100 }
+              : { tipo: 'attesa', ms: 1000 };
       if (t.passi.length >= 8) { alert(L('Otto passi bastano: oltre, un tasto non si capisce più.', 'Eight steps is plenty: past that, a key stops being readable.', 'Ocho pasos bastan: más allá, una tecla deja de entenderse.')); return; }
       t.passi.push(nuovo);
       disegnaSchedaTasto(); return;
@@ -9105,6 +9124,8 @@ function appendiConsolifyCampi() {
       const passo = t.passi[Number(k)];
       if (!passo) return;
       if (campo === 'ms') passo.ms = Math.max(100, Math.min(30000, Math.round(Number(ev.target.value) * 1000) || 1000));
+      else if (campo === 'durata') passo.durata = Math.max(500, Math.min(30000, Math.round(Number(ev.target.value) * 1000) || 5000));
+      else if (campo === 'volume') passo.volume = Math.max(0, Math.min(100, Math.round(Number(ev.target.value)) || 0));
       else if (campo === 'comando') passo.comando = String(ev.target.value).trim().replace(/^!/, '').toLowerCase().slice(0, 40);
       else if (campo === 'id') { passo.id = String(ev.target.value); disegnaSchedaTasto(); }
       else passo.testo = String(ev.target.value).trim().slice(0, 400);
@@ -9140,6 +9161,29 @@ function appendiConsolifyCampi() {
       const [r, c] = String(ev.target.value).split('x').map(Number);
       _cons.plancia.formato = { righe: r || 0, colonne: c || 0 };
       disegnaConsolify(); await salvaPlancia(); return;
+    }
+    if (id === 'cons-p-file' && t) {
+      const f = ev.target.files?.[0];
+      const k = _cons.passoFile;
+      ev.target.value = '';
+      const passo = t.passi?.[k];
+      if (!f || !passo) return;
+      const es = document.getElementById('cons-esito');
+      if (es) es.textContent = L('carico…', 'uploading…', 'subiendo…');
+      const fd = new FormData();
+      fd.append('file', f);
+      try {
+        const r = await fetch('/api/streamer/console/media', { method: 'POST', body: fd, credentials: 'same-origin' });
+        const d = await r.json().catch(() => null);
+        if (!d?.ok) { if (es) es.textContent = ''; alert(d?.motivo || L('non caricato', 'not uploaded', 'no subido')); return; }
+        passo.file = d.file; passo.genere = d.genere;
+        passo.durata = Math.max(500, Math.min(30000, Number(d.durata) || 5000));
+        if (es) es.textContent = '';
+        disegnaSchedaTasto();
+        await salvaPlancia({ ridisegna: false });
+        rinfrescaTasto(_cons.aperto);
+      } catch { if (es) es.textContent = ''; alert(L('non caricato', 'not uploaded', 'no subido')); }
+      return;
     }
     if (id === 'cons-c-file' && t) {
       const f = ev.target.files?.[0];

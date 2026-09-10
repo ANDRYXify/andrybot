@@ -556,3 +556,54 @@ test('un tasto di prima diventa una partitura di un passo solo', async () => {
   assert.equal(r.ok, true);
   assert.deepEqual(detti, ['ciao a tutti'], 'e il tasto vecchio fa ancora quello che faceva');
 });
+
+test('un media si carica SUL tasto, e premerlo lo manda in onda', async () => {
+  // «Voglio aggiungere tutto da quella schermata, non dalla regia»: un media non
+  // deve prima diventare un effetto con un suo comando in un'altra scheda.
+  const ch = canale();
+  const salvata = consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [{
+    nome: 'Cartello',
+    passi: [{ tipo: 'media', file: 'cons_aabbccddeeff.webp', genere: 'immagine', durata: 4000, volume: 80 }],
+  }] }] });
+  const t = salvata.pagine[0].tasti[0];
+  assert.equal(t.passi[0].file, 'cons_aabbccddeeff.webp');
+
+  let mandato = null;
+  const finto = {
+    hasClients: () => true,
+    mediaUrl: (l, f) => `https://x/overlay/${l}/media/${f}?key=k`,
+    emit: (l, p) => { mandato = p; },
+  };
+  const r = await consolle.eseguiTasto(ch, t.id, { effetti: finto });
+  assert.equal(r.ok, true, r.mostra);
+  assert.equal(mandato.tipo, 'immagine', 'l\'overlay riceve un media, non un effetto finto');
+  assert.match(mandato.url, /cons_aabbccddeeff\.webp/);
+  assert.equal(mandato.volume, 80);
+  assert.equal(mandato.da, 'consolify', 'e porta con sé da dove viene, come tutti i tasti');
+});
+
+test('un nome di file storto non esce dalla cartella del canale', () => {
+  const ch = canale();
+  const r = consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [
+    { passi: [{ tipo: 'media', file: '../../etc/passwd', genere: 'immagine' }] },
+    { passi: [{ tipo: 'media', file: 'buono.webp', genere: 'inventato' }] },
+    { passi: [{ tipo: 'media', file: 'buono.webp', genere: 'video' }] },
+  ] }] });
+  assert.equal(r.pagine[0].tasti.length, 1, 'passano solo i media che sono davvero media');
+  assert.equal(r.pagine[0].tasti[0].passi[0].genere, 'video');
+});
+
+test('i file che nessuno guarda più non restano sul disco', () => {
+  // Un media sostituito o un passo tolto lascerebbero un file orfano per sempre.
+  const ch = canale();
+  consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [
+    { passi: [{ tipo: 'media', file: 'cons_111111111111.webp', genere: 'immagine' }] },
+  ] }] });
+  assert.ok(consolle.fileUsati(ch).has('cons_111111111111.webp'), 'la plancia sa quali file usa');
+  consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [
+    { passi: [{ tipo: 'media', file: 'cons_222222222222.webp', genere: 'immagine' }] },
+  ] }] });
+  const ora = consolle.fileUsati(ch);
+  assert.ok(!ora.has('cons_111111111111.webp'), 'e quello di prima non lo usa più');
+  assert.ok(ora.has('cons_222222222222.webp'));
+});

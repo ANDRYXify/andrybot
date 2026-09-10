@@ -90,3 +90,43 @@ Nel prodotto — sito, manuali, novità — **i nomi di quelle app non si scrivo
 Si descrive cosa fanno («il programma con cui mandi in onda», «il programma che
 ti cambia la voce»), e il collegamento si chiama col mestiere che fa. Qui dentro
 i nomi ci sono perché è una nota di lavoro, e serve sapere di cosa si parla.
+
+---
+
+## CORREZIONE (misurata): il ponte verso OBS NON ha bisogno di un compagno
+
+Sopra avevo scritto che una pagina in https non puo' aprire un websocket `ws://`
+verso `localhost`, e che quindi serviva per forza un programma installato sul
+computer dello streamer. **Era sbagliato.** L'avevo dedotto dal riassunto di una
+ricerca invece di provarlo, e ci avevo costruito sopra un capitolo intero.
+
+Misurato da una pagina servita in https, con la controprova:
+
+| destinazione | esito |
+|---|---|
+| `ws://127.0.0.1:4455` | passa (solo errore di rete: non c'era nessuno in ascolto) |
+| `ws://localhost:4455` | passa |
+| `ws://192.168.1.50:4455` | **SecurityError** — bloccato |
+| `ws://example.com:4455` | **SecurityError** — bloccato |
+
+Il confronto e' quello che conta: se la politica valesse per tutti, il primo caso
+sarebbe bloccato come gli altri due. Il browser tratta il **loopback** come
+attendibile anche per i websocket. Quindi la pagina puo' parlare con OBS
+direttamente, senza installare niente.
+
+### Cosa resta vero, e va detto
+
+- **Vale solo per il loopback.** OBS su un ALTRO computer della rete di casa e'
+  bloccato: quello, e solo quello, avrebbe bisogno del compagno.
+- **Vale solo dove gira il browser.** CONSOLify aperto sul telefono NON puo'
+  raggiungere OBS sul computer: il `localhost` del telefono e' il telefono. Il
+  telefono resta il telecomando del bot; le scene si comandano dalla pagina
+  aperta sulla macchina dove sta OBS. Questo va scritto chiaro nel prodotto,
+  invece di lasciarlo scoprire.
+- **La password di OBS non deve passare da noi.** Resta nel browser, sul suo
+  computer: non viaggia verso il server e non finisce nel database.
+- **Niente libreria da un CDN.** Il protocollo v5 e' una stretta di mano con un
+  digest SHA-256 e poi messaggi JSON: si scrive in casa, senza appendere il
+  pannello a uno script di terzi e senza allargare la CSP piu' del necessario.
+- **La CSP va aperta quel tanto**: `connect-src` deve ammettere `ws://127.0.0.1:*`
+  e `ws://localhost:*`, e nient'altro.

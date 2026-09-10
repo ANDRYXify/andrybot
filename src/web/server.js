@@ -4225,6 +4225,28 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: true, icona: `img:${nome}`, url: `${config.baseUrl}/icona/${login}/${nome}` });
   }));
 
+  // UN MEDIA SI CARICA SUL TASTO, non in un'altra scheda. Passa dalla stessa
+  // catena degli effetti — compressione, limiti, cartella del canale — perche' un
+  // secondo modo di far entrare un file vorrebbe dire un secondo posto dove si
+  // rompe, e due comportamenti diversi per la stessa cosa.
+  app.post('/api/streamer/console/media', requireLogin, upload.single('file'), wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!req.file) return res.status(400).json({ ok: false, motivo: 'nessun file' });
+    if (streamers.get(login)?.status !== 'approved') {
+      await pulisciTemp(req.file.path);
+      return res.status(403).json({ ok: false, motivo: 'non sei ancora abilitato' });
+    }
+    const destDir = join(effectsRoot, login);
+    mkdirSync(destDir, { recursive: true });
+    try {
+      const esito = await comprimi(req.file.path, req.file.mimetype, destDir, `cons_${crypto.randomBytes(6).toString('hex')}`);
+      res.json({ ok: true, file: esito.file, genere: esito.tipo, durata: esito.durata });
+    } catch (e) {
+      await pulisciTemp(req.file.path);
+      res.status(400).json({ ok: false, motivo: e?.message || 'non riuscito' });
+    }
+  }));
+
   // Pubblica di proposito: un'icona non e' un segreto, e deve poter essere presa
   // da fuori (una tastiera fisica) senza portarsi dietro la chiave del canale.
   app.get('/icona/:login/:file', (req, res) => {
@@ -4243,7 +4265,19 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: true, plancia: consolle.plancia(currentUser(req).login) });
   }));
   app.post('/api/streamer/console/plancia', requireLogin, wrap(async (req, res) => {
-    const p = consolle.salvaPlancia(currentUser(req).login, req.body?.plancia);
+    const login = currentUser(req).login;
+    const prima = consolle.fileUsati(login);
+    const p = consolle.salvaPlancia(login, req.body?.plancia);
+    // Un media sostituito o un passo tolto lasciano un file che non guarda piu'
+    // nessuno: si toglie subito, invece di accumularlo per sempre. Si tocca solo
+    // cio' che la plancia usava PRIMA — mai un file di un'altra parte del bot.
+    if (p) {
+      const dopo = consolle.fileUsati(login);
+      for (const f of prima) {
+        if (dopo.has(f) || !/^(cons|ico)_[a-f0-9]{12}\.[A-Za-z0-9]{1,5}$/.test(f)) continue;
+        await pulisciTemp(join(effectsRoot, login, f));
+      }
+    }
     res.json({ ok: !!p, plancia: p });
   }));
 

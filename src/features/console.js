@@ -175,6 +175,16 @@ function eseguiPasso(login, passo, dip) {
     say(passo.testo);
     return { ok: true, mostra: passo.testo.slice(0, 60) };
   }
+  if (passo.tipo === 'media') {
+    const eff = dip.effetti;
+    if (typeof eff?.mediaUrl !== 'function' || typeof eff?.emit !== 'function') return { ok: false, mostra: 'non riuscito' };
+    if (typeof eff.hasClients === 'function' && !eff.hasClients(login)) return { ok: false, mostra: 'nessun overlay collegato' };
+    eff.emit(login, {
+      comando: '', tipo: passo.genere, url: eff.mediaUrl(login, passo.file),
+      volume: passo.volume, durata: passo.durata, posizione: null, da: 'consolify',
+    });
+    return { ok: true, mostra: passo.genere };
+  }
   if (passo.tipo === 'comando') {
     // Il RISULTATO del comando, non la scritta «!comando»: si fa dire al motore
     // dei comandi quello che direbbe in chat, e si manda quello.
@@ -318,6 +328,22 @@ function passoPulito(p, valide) {
     const comando = testoPulito(p?.comando, 40).replace(/^!/, '').toLowerCase();
     return /^[a-z0-9_-]{1,40}$/.test(comando) ? { tipo, comando } : null;
   }
+  if (tipo === 'media') {
+    // Il file e' stato prodotto dalla stessa catena degli effetti (compressione,
+    // limiti, cartella del canale): qui si controlla solo che il nome sia un
+    // nome di file e non una strada per uscire dalla cartella.
+    const file = String(p?.file || '');
+    if (!/^[A-Za-z0-9._-]{1,80}$/.test(file) || file.includes('..')) return null;
+    const genere = ['immagine', 'video', 'audio'].includes(String(p?.genere)) ? String(p.genere) : null;
+    if (!genere) return null;
+    const durata = Math.round(Number(p?.durata));
+    const volume = Math.round(Number(p?.volume));
+    return {
+      tipo, file, genere,
+      durata: Number.isFinite(durata) ? Math.max(500, Math.min(30000, durata)) : 5000,
+      volume: Number.isFinite(volume) ? Math.max(0, Math.min(100, volume)) : 100,
+    };
+  }
   if (tipo === 'attesa') {
     const ms = Math.round(Number(p?.ms));
     return Number.isFinite(ms) && ms > 0 ? { tipo, ms: Math.min(ms, ATTESA_MAX_MS) } : null;
@@ -388,6 +414,20 @@ export function plancia(channel) {
     catch (e) { log.debug('plancia non riscritta:', e?.message || e); }
   }
   return pulita;
+}
+
+// Tutti i file che la plancia usa DAVVERO adesso. Serve a chi tiene pulito il
+// disco: un media sostituito o un passo tolto lasciano un file che non guarda
+// piu' nessuno, e nessuno andrebbe mai a cercarlo.
+export function fileUsati(channel) {
+  const fuori = new Set();
+  for (const pg of plancia(norm(channel)).pagine) {
+    for (const t of pg.tasti || []) {
+      for (const p of t.passi || []) if (p.tipo === 'media' && p.file) fuori.add(p.file);
+      if (String(t.icona || '').startsWith('img:')) fuori.add(String(t.icona).slice(4));
+    }
+  }
+  return fuori;
 }
 
 export function salvaPlancia(channel, dati) {
