@@ -215,20 +215,24 @@ test('CONSOLify ascolta dentro il pannello che esiste davvero', () => {
 test('il formato si sceglie come una tastiera vera: righe per colonne', () => {
   const ch = canale();
   const dif = consolle.plancia(ch).formato;
-  assert.deepEqual(dif, { righe: 0, colonne: 0 }, 'si parte liberi');
+  assert.deepEqual(dif, { righe: 3, colonne: 4 }, 'chi arriva trova gia\' una plancia, non un foglio bianco');
 
   const r = consolle.salvaPlancia(ch, { formato: { righe: 3, colonne: 4 }, pagine: [{ nome: 'P', tasti: [] }] });
   assert.deepEqual(r.formato, { righe: 3, colonne: 4 });
 
   // e un formato assurdo non entra: sarebbe una griglia che non si guarda
   const male = consolle.salvaPlancia(ch, { formato: { righe: 99, colonne: 0 }, pagine: [{ nome: 'P', tasti: [] }] });
-  assert.deepEqual(male.formato, { righe: 0, colonne: 0 }, 'fuori misura torna libera, non rotta');
+  assert.deepEqual(male.formato, { righe: 3, colonne: 4 }, 'fuori misura torna alla plancia di partenza, non al vuoto');
+
+  // ma «libero» resta una scelta vera, se e' lo streamer a farla
+  const lib = consolle.salvaPlancia(ch, { formato: { righe: 0, colonne: 0 }, pagine: [{ nome: 'P', tasti: [] }] });
+  assert.deepEqual(lib.formato, { righe: 0, colonne: 0 }, 'chi sceglie libero resta libero');
 });
 
 test('la plancia ripulisce anche quello che non conosce', () => {
   const ch = canale();
   const r = consolle.salvaPlancia(ch, { formato: 'grande', misura: 'XXL', pagine: 'non una lista' });
-  assert.deepEqual(r.formato, { righe: 0, colonne: 0 });
+  assert.deepEqual(r.formato, { righe: 3, colonne: 4 });
   assert.equal(r.misura, 'm');
   assert.equal(r.pagine.length, 1, 'e resta una plancia usabile, non un guscio vuoto');
 });
@@ -298,4 +302,18 @@ test('una finestra modale sta in mezzo allo schermo, non in un angolo', () => {
   const rimedio = css.indexOf('dialog:modal { margin: auto; }');
   assert.ok(reset >= 0, 'la sveltina iniziale sta ancora li\'');
   assert.ok(rimedio > reset, 'e subito dopo si ridà il centro alle finestre modali');
+});
+
+test('chi apre CONSOLify la prima volta trova una plancia, non una frase', () => {
+  // La richiesta era: si parte da un layout, cosi' si e' gia' avvantaggiati. Il
+  // commento nel codice lo diceva, il valore di partenza faceva l'opposto —
+  // «libero» — e chi arrivava vedeva una riga di testo al posto della griglia.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const ch = canale();
+  const f = consolle.plancia(ch).formato;
+  assert.deepEqual(f, consolle.FORMATO_INIZIALE, 'la plancia di partenza e\' quella dichiarata, non un numero riscritto qui');
+  assert.ok(f.righe >= 3 && f.colonne >= 3, 'ed e\' una griglia vera');
+  assert.equal(consolle.plancia(ch).pagine[0].tasti.length, 0, 'e i posti sono tutti liberi');
+  // e i posti liberi non restano muti: la griglia c'e', e sotto c'e' scritto che farci
+  assert.match(app, /tasti\.length \? sezioni : `\$\{sezioni\}\$\{vuoto\}`/, 'con zero tasti si vede la griglia E il consiglio');
 });
