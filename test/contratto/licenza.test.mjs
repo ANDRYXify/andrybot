@@ -39,8 +39,17 @@ const firmaCon = (dati, chiave = privateKey) => {
 // il modulo vero, con dentro la chiave pubblica di prova
 const cartella = mkdtempSync(join(tmpdir(), 'lic-'));
 const percorso = join(cartella, 'licenza.mjs');
-writeFileSync(percorso, readFileSync(join(RAD, 'src/licenza.js'), 'utf8')
-  .replace("export const CHIAVE_PUBBLICA = '';", `export const CHIAVE_PUBBLICA = ${JSON.stringify(PUB)};`)
+// La costante si sostituisce PER RIGA, non cercando il testo che aveva quando
+// questa prova e' stata scritta. Cercava `= '';`, cioe' il valore VUOTO: il giorno
+// in cui il proprietario ha messo la sua chiave la sostituzione non ha piu'
+// agganciato, la prova ha firmato con una chiave e verificato con un'altra, e sette
+// prove sono diventate rosse per un motivo che non c'entrava niente con la licenza.
+// Una prova che misura la forma di oggi si rompe al primo cambiamento legittimo.
+const sorgente = readFileSync(join(RAD, 'src/licenza.js'), 'utf8');
+const conLaChiave = sorgente.replace(/^export const CHIAVE_PUBBLICA = .*$/m,
+  `export const CHIAVE_PUBBLICA = ${JSON.stringify(PUB)};`);
+assert.notEqual(conLaChiave, sorgente, 'la costante e\' stata sostituita davvero');
+writeFileSync(percorso, conLaChiave
   .replace("from './watermark.js'", `from ${JSON.stringify(join(RAD, 'src/watermark.js'))}`));
 
 let giro = 0;
