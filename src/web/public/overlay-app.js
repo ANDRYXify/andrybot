@@ -588,6 +588,7 @@ function connetti() {
     let dati;
     try { dati = JSON.parse(m.data); } catch (e) { return; }
     if (!dati || !dati.tipo) return;
+    if (dati.da === 'consolify' && !mostra('consolify')) return;
 
     if (dati.tipo === 'audio') { if (mostra('effetti')) suona(dati); }
     else if (dati.tipo === 'preset') { if (mostra('effetti')) suonaPreset(dati); }

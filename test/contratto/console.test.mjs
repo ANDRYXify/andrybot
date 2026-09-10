@@ -401,3 +401,24 @@ test('la plancia dice se c\'è un overlay collegato PRIMA che tu prema', () => {
   assert.match(app, /d\.overlay !== _cons\.overlay.*disegnaSpia\(\)/s, 'e si aggiorna a ogni pressione, non solo all\'apertura');
   assert.match(srv, /overlay: effects\.hasClients\(login\)/, 'il server lo dice davvero');
 });
+
+test('un tasto arriva a TUTTI gli overlay, e ogni overlay puo\' dire di no', () => {
+  // «Qualunque cosa va lì è automaticamente attiva se premuta, su qualunque
+  // overlay — con un interruttore per accenderla solo su quelli che decide lo
+  // streamer.» Perché un overlay possa rifiutare i tasti SENZA rifiutare anche
+  // gli effetti che arrivano dalla chat, deve poterli distinguere: quindi
+  // l'effetto sparato da un tasto porta con sé da dove viene.
+  const ch = canale();
+  storeEffetti.add(ch, { comando: 'tuono', tipo: 'audio', file: 't.ogg', tier: 'tutti', cooldown: 0, volume: 100, durata: 1000 });
+
+  let visto = null;
+  const finto = { fire: (l, c, extra) => { visto = extra; return true; }, hasClients: () => true };
+  consolle.esegui(ch, 'effetto:tuono', { effetti: finto });
+  assert.deepEqual(visto, { da: 'consolify' }, 'il tasto dice di essere un tasto');
+
+  const ov = readFileSync(join(RAD, 'src/web/public/overlay-app.js'), 'utf8');
+  assert.match(ov, /dati\.da === 'consolify' && !mostra\('consolify'\)/, 'e l\'overlay puo\' rifiutarli');
+
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  assert.match(app, /k: 'consolify'/, 'l\'interruttore sta nell\'elenco degli elementi, come gli altri');
+});

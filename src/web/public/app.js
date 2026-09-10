@@ -7426,6 +7426,7 @@ const ELEMENTI = () => {
   for (const c of _conta) out.push({ k: 'cont:' + c.comando, ico: ICO.grafico, n: c.etichetta || c.comando, cont: c });
   out.push({ k: 'musica', ico: ICO.musica, n: L('Player musica', 'Music player', 'Reproductor de música'), cfg: 'overlayMusica' });
   out.push({ k: 'timer', ico: ICO.orologio, n: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), cfg: 'overlayTimer' });
+  out.push({ k: 'consolify', ico: ICO.onda, n: L('Tasti di CONSOLify', 'CONSOLify keys', 'Teclas de CONSOLify') });
   return out;
 };
 const ELEM = (k) => ELEMENTI().find((e) => e.k === k) || null;

@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-10
 
+- Quello che metti su CONSOLify arriva a tutti i tuoi overlay: premi e parte, senza collegare niente a mano.
+- Ogni overlay può rifiutare i tasti per conto suo, dall'elenco degli elementi, senza rifiutare anche gli effetti che gli arrivano dalla chat.
 - Premere un tasto di CONSOLify senza nessun overlay collegato non dice più «fatto»: l'effetto non avrebbe dove andare, e adesso te lo dice invece di farti credere che sia partito.
 - In cima alla plancia c'è una spia che dice se un overlay è collegato, così lo sai prima di premere e non dopo.
 - I video degli effetti vanno fino in fondo: prima li chiudeva un tempo memorizzato, e se quel tempo era sbagliato il video spariva dopo un fotogramma senza mai partire.

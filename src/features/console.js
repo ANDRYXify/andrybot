@@ -174,7 +174,7 @@ export function esegui(channel, id, { say, emit, effetti, testo } = {}) {
     }
     // Lo spara il motore vero, quello che lo sparerebbe la chat: un secondo modo
     // di mandare un effetto vorrebbe dire un secondo posto dove si rompe.
-    const andato = typeof effetti?.fire === 'function' ? effetti.fire(login, comando) : false;
+    const andato = typeof effetti?.fire === 'function' ? effetti.fire(login, comando, { da: 'consolify' }) : false;
     return andato ? { ok: true, mostra: `!${comando}` } : { ok: false, mostra: 'non partito' };
   }
 
