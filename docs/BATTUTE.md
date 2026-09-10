@@ -37,14 +37,59 @@ sempre a quella.
 
 ## Quando il serbatoio è vuoto
 
-Se il cervello risponde, gliene chiede una — con il **carattere e le regole del
-canale** attaccati alla richiesta, quindi la inventa come parla lui e non come
-parla un manuale. Sei secondi di attesa: una battuta che arriva dopo quindici
-non fa ridere nessuno.
+Prima si **costruisce**, poi si chiede. L'ordine non è un dettaglio: una battuta
+fatta con i numeri di questo canale parla di loro; una chiesta al modello parla di
+chiunque.
 
-Se il cervello non risponde, lo dice: «il serbatoio è vuoto, aggiungine con
-!battuta aggiungi». Un bot che promette e non consegna è peggio di uno che
-ammette.
+`battute-motore.js` costruisce, e non chiede niente a nessuno — con il cervello
+spento lavora uguale. Il modello resta l'ultima spiaggia, per un canale che non ha
+ancora materia propria.
+
+### Perché un motore e non un prompt
+
+Tre cose, da studi veri:
+
+1. **Benign violation** (McGraw & Warren, *Psychological Science*, 2010). Fa ridere
+   ciò che è insieme una *violazione* e *benigno*, e le due letture devono stare in
+   piedi insieme; una violazione è benigna se c'è una norma alternativa, se
+   all'infranta si tiene poco, o se c'è distanza. Da qui la cosa più importante:
+   **la metà benigna è parte della definizione**. Ciò che fa ridere è la stessa cosa
+   che tiene la battuta pulita — non un filtro appiccicato dopo.
+2. **Gli schemi battono la generazione libera** (JAPE — Binsted, Pain & Ritchie).
+   Uno schema formale su risorse vere produce testi che i bambini distinguono dai
+   non-testi e trovano più divertenti dei non-testi. Ed è deterministico e istantaneo.
+3. **Il divertente è una preferenza, non una proprietà** («Humor Is an Audience»,
+   SemEval-2026). Si modella su un pubblico preciso. Il nostro pubblico lo
+   misuriamo già: `battute.risate`, contate dalla chat vera.
+
+### Come funziona
+
+- **Materia** — solo fatti di questo canale: i contatori con il loro numero. Nessuna
+  persona entra qui dentro, ed è così che la *distanza* è garantita per costruzione
+  invece che controllata: non c'è nessuno da colpire.
+- **Forma** — gli schemi sono **dati**, non testo. Ognuno dichiara l'opposizione che
+  usa, la norma che viola e il bersaglio, così il vaglio può controllarli invece di
+  indovinarli leggendo.
+- **Vaglio** — le norme ammesse sono solo quelle a cui si tiene poco; il bersaglio è
+  la situazione, lo streamer o il bot, mai chi guarda. Chi non passa non è
+  «scorretto»: **non è una battuta**, ed è la ragione onesta.
+- **Scelta** — fra tutti i candidati vince quello del *modo* che su questo canale ha
+  fatto ridere di più, e a parità vince quello che non è già stato sentito.
+- **Memoria** — la battuta entra nel serbatoio con lo schema che l'ha fatta. Da lì è
+  la chat a dire se quel modo funziona qui. Si impara lo **schema**, non la battuta:
+  una battuta serve una sera, uno schema tutte le altre.
+
+### Due regole che si vedono solo leggendo
+
+- **Mai accordarsi con l'etichetta.** «Morti», «Cadute di stile», «Tentativo»: le
+  scrive lo streamer e possono essere di qualunque genere e numero. Nessuna frase
+  qui si accorda con loro — quando serve un soggetto, il soggetto è *il contatore*,
+  che è una parola nostra. Il primo giro ne aveva due sbagliate («Morti dice 14»,
+  «3 tentativi, e nessuna per colpa nostra») e non le ha prese nessun cancello: si
+  vedono leggendo l'uscita, e per questo l'uscita si legge.
+- **Uno schema senza opposizione non è uno schema.** «Due numeri accostati» c'era, ed
+  è stato tolto: due numeri vicini non violano niente. È diventato *rapporto
+  assurdo*, che tace finché la proporzione è normale e parla quando salta.
 
 ## L'accordo di genere vale anche qui
 

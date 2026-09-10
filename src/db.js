@@ -555,6 +555,10 @@ function aggiungiColonna(tabella, colonna, definizione) {
 // l'errore inghiottito dal try/catch, quindi muto.
 aggiungiColonna('battute', 'dette', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('battute', 'risate', 'INTEGER NOT NULL DEFAULT 0');
+// Quale SCHEMA l'ha costruita. Senza, si potrebbe sapere se una battuta ha fatto
+// ridere ma non se ha funzionato il MODO di costruirla — e il modo e' la cosa che
+// si impara: una battuta serve una sera, uno schema serve tutte le altre.
+aggiungiColonna('battute', 'schema', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('point_alerts', 'suono', "TEXT NOT NULL DEFAULT ''");   // suono PRESET sul riscatto (id preset)
 aggiungiColonna('point_alerts', 'opzioni', "TEXT NOT NULL DEFAULT ''"); // posizione + green screen dell'effetto (JSON)
 // Effetti a schermo: posizione/dimensione/rotazione, gestite dall'Overlay Studio.
@@ -1336,7 +1340,7 @@ export const passkeys = {
 // fila. Per questo qui c'e' `usata_ts`: si pesca fra quelle dette meno di
 // recente invece che a caso, se no in una serata la stessa esce tre volte.
 export const battute = {
-  add(channel, testo, by = '', fonte = 'mano') {
+  add(channel, testo, by = '', fonte = 'mano', schema = '') {
     const ch = String(channel).toLowerCase();
     const t = String(testo || '').replace(/\s+/g, ' ').trim().slice(0, 300);
     if (t.length < 3) return null;
@@ -1344,9 +1348,22 @@ export const battute = {
     const testi = db.prepare('SELECT testo FROM battute WHERE channel=?').all(ch).map((r) => norm(r.testo));
     if (testi.includes(norm(t))) return null;          // gia' c'e': non si duplica
     const n = (db.prepare('SELECT MAX(n) m FROM battute WHERE channel=?').get(ch).m || 0) + 1;
-    db.prepare('INSERT INTO battute (channel, n, testo, added_by, fonte, usata_ts, ts) VALUES (?,?,?,?,?,?,?)')
-      .run(ch, n, t, String(by).toLowerCase(), fonte === 'ia' ? 'ia' : 'mano', 0, now());
+    // Le fonti sono un ELENCO, non un si'/no. Prima qui c'era `fonte === 'ia' ? 'ia'
+    // : 'mano'`: una fonte nuova sarebbe diventata 'mano' in silenzio, e le battute
+    // del motore avrebbero detto di essere state scritte a mano.
+    const FONTI = new Set(['mano', 'ia', 'motore', 'lei']);
+    const f = FONTI.has(String(fonte)) ? String(fonte) : 'mano';
+    db.prepare('INSERT INTO battute (channel, n, testo, added_by, fonte, schema, usata_ts, ts) VALUES (?,?,?,?,?,?,?,?)')
+      .run(ch, n, t, String(by).toLowerCase(), f, String(schema || '').slice(0, 40), 0, now());
     return n;
+  },
+  // Come sta andando un MODO di costruire battute su questo canale: quante volte
+  // le sue battute sono state dette e quante hanno fatto ridere davvero.
+  perSchema(channel, schema) {
+    const r = db.prepare(
+      'SELECT COALESCE(SUM(dette),0) dette, COALESCE(SUM(risate),0) risate FROM battute WHERE channel=? AND schema=?',
+    ).get(String(channel).toLowerCase(), String(schema || ''));
+    return { dette: Number(r?.dette) || 0, risate: Number(r?.risate) || 0 };
   },
   get(channel, n) {
     return db.prepare('SELECT * FROM battute WHERE channel=? AND n=?').get(String(channel).toLowerCase(), Number(n) || 0) || null;
@@ -1373,8 +1390,17 @@ export const battute = {
       return presa * (0.25 + 0.75 * riposo);
     };
     const scelta = tutte.map((b) => ({ b, v: voto(b) })).sort((x, y) => y.v - x.v)[0].b;
-    db.prepare('UPDATE battute SET usata_ts=?, dette=dette+1 WHERE id=?').run(adesso, scelta.id);
     return scelta;
+  },
+  // IL BOT L'HA DETTA. Il conto sta QUI e non dentro `prossima`, perche' `prossima`
+  // e' solo una delle strade: quella del serbatoio. Le battute che il motore
+  // costruisce sul momento non passano di li', e col conto dentro `prossima`
+  // sarebbero rimaste «mai dette» per sempre — con le loro risate divise per zero,
+  // cioe' con lo schema che le ha fatte che non imparava niente. Un evento solo,
+  // un posto solo: chi dice una battuta chiama questa, da qualunque strada venga.
+  segnaDetta(channel, n) {
+    db.prepare('UPDATE battute SET usata_ts=?, dette=dette+1 WHERE channel=? AND n=?')
+      .run(now(), String(channel).toLowerCase(), Number(n) || 0);
   },
   // La chat ha riso: si segna sulla battuta, non da qualche parte in generale.
   haFattoRidere(channel, n) {

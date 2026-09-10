@@ -39,6 +39,7 @@ import * as compleanniFeat from './features/compleanni.js';
 import * as gamesbridge from './features/gamesbridge.js';
 import * as quotes from './features/quotes.js';
 import * as battute from './features/battute.js';
+import * as motoreBattute from './features/battute-motore.js';
 import * as model from './ai/model.js';
 import * as brainpy from './ai/brainpy.js';
 import { createMessageHandler } from './features/handler.js';
@@ -687,6 +688,9 @@ export class BotManager {
     // parla lui e non come parla un manuale.
     try {
       battute.tryBattuta(msg, parla, {
+        // prima si COSTRUISCE con la materia di questo canale: istantaneo, e non
+        // dipende dal cervello. Il modello resta la spiaggia dopo, non l'autore.
+        motore: (canale) => motoreBattute.costruisci(canale),
         inventa: async () => {
           const s = streamers.get(login);
           return brainpy.rispondi({
