@@ -365,3 +365,39 @@ test('se il browser non da\' il permesso, il video parte muto invece di non part
   assert.match(f, /el\.muted = true/, 'e riprova muto');
   assert.match(f, /guaio\(dove \+ '-muto'/, 'senza tenerselo per se\'');
 });
+
+test('premere un tasto senza nessun overlay collegato NON dice «fatto»', () => {
+  // «Se premo un tasto deve per forza partire ciò che schiaccio. Che senso ha
+  // se non parte?» — e infatti non partiva: `emit` esce zitto quando non c'è
+  // nessun overlay collegato, ma `fire` restituiva `true` lo stesso. Il tasto
+  // rispondeva «fatto» mentre in diretta non era andato niente. Un tasto che
+  // mente è peggio di un tasto che non c'è: ti fa credere di aver mandato una
+  // cosa a chi ti guarda.
+  const ch = canale();
+  storeEffetti.add(ch, { comando: 'applausi', tipo: 'audio', file: 'a.ogg', tier: 'tutti', cooldown: 0, volume: 100, durata: 1000 });
+
+  let sparato = false;
+  const nessunoAscolta = { fire: () => { sparato = true; return true; }, hasClients: () => false };
+  const r = consolle.esegui(ch, 'effetto:applausi', { effetti: nessunoAscolta });
+  assert.equal(r.ok, false, 'non dice di avercela fatta');
+  assert.match(r.mostra, /overlay/i, 'e dice PERCHE\'');
+  assert.equal(sparato, false, 'e non spara nel vuoto');
+
+  // e con un overlay collegato parte davvero
+  let sparato2 = false;
+  const qualcunoAscolta = { fire: () => { sparato2 = true; return true; }, hasClients: () => true };
+  const r2 = consolle.esegui(ch, 'effetto:applausi', { effetti: qualcunoAscolta });
+  assert.equal(r2.ok, true);
+  assert.equal(sparato2, true, 'quando c\'è chi ascolta, parte');
+});
+
+test('la plancia dice se c\'è un overlay collegato PRIMA che tu prema', () => {
+  // Saperlo dopo aver premuto è troppo tardi: un banco di comando mostra lo
+  // stato della cosa che comanda.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const srv = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
+  assert.match(app, /function disegnaSpia\(/, 'la spia esiste');
+  assert.match(app, /_cons\.overlay = !!d\?\.overlay/, 'e si accende con quello che dice il server');
+  assert.match(app, /d\.overlay !== _cons\.overlay.*disegnaSpia\(\)/s, 'e si aggiorna a ogni pressione, non solo all\'apertura');
+  assert.match(srv, /overlay: effects\.hasClients\(login\)/, 'il server lo dice davvero');
+});

@@ -4170,11 +4170,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // tastiera fisica, e non invecchia — segue il tasto, non l'azione di oggi.
   const consoleTasto = wrap(async (req, res) => {
     const login = String(req.params.login || '').toLowerCase();
-    res.json(consolle.eseguiTasto(login, String(req.params.id || ''), {
+    const esito = consolle.eseguiTasto(login, String(req.params.id || ''), {
       say: (t) => { try { manager.say(login, t); } catch { /* niente */ } },
       emit: (p) => { try { effects.emit(login, p); } catch { /* niente */ } },
       effetti: effects,
-    }));
+    });
+    res.json({ ...esito, overlay: effects.hasClients(login) });
   });
   app.post('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
   app.get('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
@@ -4185,13 +4186,14 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // Il registro + lo stato di adesso: lo legge CONSOLify, e lo puo' leggere un
   // tasto che vuole mostrare un numero senza premerlo.
   app.get('/api/console/:login', guardiaConsole, wrap(async (req, res) => {
-    res.json({ ok: true, azioni: consolle.azioni(String(req.params.login || '').toLowerCase()) });
+    const l = String(req.params.login || '').toLowerCase();
+    res.json({ ok: true, overlay: effects.hasClients(l), azioni: consolle.azioni(l) });
   }));
 
   // Per la dashboard: l'indirizzo da incollare nel tasto, e il bottone per revocare.
   app.get('/api/streamer/console', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    res.json({ base: `${config.baseUrl}/api/console/${login}`, chiave: consolle.chiave(login), azioni: consolle.azioni(login) });
+    res.json({ base: `${config.baseUrl}/api/console/${login}`, chiave: consolle.chiave(login), overlay: effects.hasClients(login), azioni: consolle.azioni(login) });
   }));
   app.post('/api/streamer/console/revoca', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;

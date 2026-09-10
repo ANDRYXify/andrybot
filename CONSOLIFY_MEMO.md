@@ -261,3 +261,20 @@ quale stia mordendo adesso:**
 Lezione da tenere: **due cause diverse possono avere lo stesso identico
 sintomo.** Sceglierne una perche' e' la prima che viene in mente e' esattamente
 il "dado" che qui non si usa.
+
+## «Se premo, deve partire» — il tasto che diceva «fatto» a vuoto
+
+18. **`emit` esce zitto quando non c'e' nessun overlay collegato**
+    (`if (!set || !set.size) return;`), ma `fire` restituiva `true` lo stesso.
+    Quindi il tasto rispondeva «fatto» mentre in diretta non era andato niente.
+    Non e' «a volte non parte»: e' un tasto che MENTE, ed e' peggio di un tasto
+    che non c'e' — ti fa credere di aver mandato una cosa a chi ti guarda.
+    La funzione per saperlo (`hasClients`) esisteva gia', usata altrove per
+    «evitare lavoro inutile». Serviva solo guardarla prima di sparare.
+19. **Saperlo dopo aver premuto e' troppo tardi.** Un banco di comando mostra lo
+    stato della cosa che comanda: ora in cima alla plancia c'e' una spia, e si
+    aggiorna a ogni pressione perche' un overlay puo' cadere mentre streami.
+
+Da tenere: qui il difetto non era nel pezzo che «non funzionava», era nel pezzo
+che **rispondeva bene**. Cercare il guasto dove il risultato e' negativo e'
+naturale; questo stava dove il risultato era positivo e falso.

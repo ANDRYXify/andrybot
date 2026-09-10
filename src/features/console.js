@@ -164,6 +164,14 @@ export function esegui(channel, id, { say, emit, effetti, testo } = {}) {
     const comando = pezzi.slice(1).join(':');
     const e = storeEffetti.get(login, comando);
     if (!e) return { ok: false, mostra: 'non c\'è' };
+    // PREMERE UN TASTO DEVE FAR PARTIRE QUELLO CHE PREMI. Se non c'e' nessun
+    // overlay collegato l'effetto non ha dove andare: veniva buttato via in
+    // silenzio e il tasto rispondeva lo stesso «fatto». Un tasto che mente e'
+    // peggio di un tasto che non c'e', perche' ti fa credere di aver mandato una
+    // cosa in diretta. Qui si guarda PRIMA di sparare, e si dice com'e'.
+    if (typeof effetti?.hasClients === 'function' && !effetti.hasClients(login)) {
+      return { ok: false, mostra: 'nessun overlay collegato' };
+    }
     // Lo spara il motore vero, quello che lo sparerebbe la chat: un secondo modo
     // di mandare un effetto vorrebbe dire un secondo posto dove si rompe.
     const andato = typeof effetti?.fire === 'function' ? effetti.fire(login, comando) : false;
