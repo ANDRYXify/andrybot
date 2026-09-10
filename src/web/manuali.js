@@ -836,8 +836,10 @@ const CONSOLIFY = {
 
     { h2: 'Collegare il programma con cui mandi in onda' },
     { p: [
-      'Nel programma vai in <strong>Strumenti → impostazioni del collegamento → mostra le info di connessione</strong>: ti dà una riga sola, che comincia per <code>obsws://</code>. Copiala e incollala nel campo della scheda. Indirizzo, porta e password li prendo da lì: non devi compilare niente.',
-      '<strong>Una volta sola.</strong> Dalla volta dopo mi collego da solo quando apri la scheda, senza che tu prema niente. E se nel programma non hai messo nessuna password, ci provo lo stesso da solo: spesso non serve fare nulla.',
+      'Premi <strong>Collega</strong>. Non devi compilare niente: indirizzo e porta sono quelli soliti e li provo io, comprese le porte più usate.',
+      'Se il programma <strong>non chiede una password</strong> — cioè se nelle sue impostazioni l\'autenticazione è spenta — hai finito lì: un clic, e sei collegato. È il modo più comodo, e sul tuo computer non toglie niente a nessuno: quel collegamento lo può aprire solo chi è già seduto davanti a quella macchina.',
+      'Se invece la chiede, te lo dico e compare un campo solo: incolla la <strong>password</strong> che vedi nelle sue impostazioni, e basta. Indirizzo e porta restano affar mio.',
+      '<strong>Una volta sola.</strong> Dalla volta dopo mi collego da solo quando apri la scheda, senza che tu prema niente.',
       'Appena collegato compaiono le tue scene: premi una scena e cambia, come dal programma. Da lì in poi i passi «cambia scena» e «muta una fonte» funzionano dentro i tasti, insieme a tutto il resto.',
     ] },
     { p: [

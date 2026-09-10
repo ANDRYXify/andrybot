@@ -678,9 +678,8 @@ test('la riga che dà il programma si legge da sola: un incollaggio, e basta', (
 test('la seconda volta si collega da solo, senza che tu prema niente', () => {
   const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
   assert.match(app, /_cons\.regiaProvata = true/, 'ci prova una volta sola per apertura');
-  assert.match(app, /collegaRegia\(g, true\)/, 'e in silenzio: se non c\'è nessuno non ti disturba');
-  assert.match(app, /collegaRegia\(\{ ip: g\.ip, porta: g\.porta, pass: '' \}, true\)/, 'e prova anche senza password, per chi non l\'ha messa');
-  assert.match(app, /ev\.target\?\.id === 're-incolla'/, 'e incollare basta: non serve nemmeno premere Collega');
+  assert.match(app, /provaCollegamento\(true\)/, 'e in silenzio: se non c\'è nessuno non ti disturba');
+  assert.match(app, /ev\.target\?\.id === 're-incolla'/, 'e incollare la password basta: non serve nemmeno premere Collega');
 });
 
 test('un tasto nuovo nasce VUOTO: si crea, poi si riempie', () => {
@@ -717,4 +716,24 @@ test('quello che la regia ci ha detto si SCEGLIE, non si ricopia', () => {
   // e dopo il collegamento la scheda aperta si RIDISEGNA: se no a video non cambia niente
   const f = app.slice(app.indexOf('async function caricaScene('), app.indexOf('function segnaScenaViva('));
   assert.match(f, /disegnaSchedaTasto\(\)/, 'collegarsi cambia quello che vedi, subito');
+});
+
+test('collegare la regia è un clic: indirizzo e porta non si chiedono, si provano', () => {
+  // «Vorrei che ci fosse la possibilità di un click per collegarsi» — e, giusto:
+  // «non c'è alcun link da copiare da obs, ci sono i parametri ip, porta,
+  // password». L'istruzione che avevo scritto era falsa: quella riga nel
+  // programma non c'è da copiare.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  assert.match(app, /const PORTE_REGIA = \['4455', '4444'\]/, 'le porte solite le proviamo noi');
+  assert.match(app, /async function provaCollegamento\(/, 'un solo posto che prova');
+  const f = app.slice(app.indexOf('async function provaCollegamento('), app.indexOf('function mostraCampoPassword('));
+  assert.match(f, /pass: '' \}\)/, 'e si prova anche senza nessuna password');
+  assert.match(f, /serveLaPassword = true/, 'la password si chiede solo se il programma la chiede davvero');
+  assert.match(f, /visti\.has\(firma\)/, 'e non si prova due volte la stessa cosa');
+  assert.match(app, /function mostraCampoPassword\(/, 'e il campo compare solo allora');
+  assert.match(app, /id="re-passo" hidden/, 'di partenza è nascosto: un clic e basta');
+
+  // il manuale non deve piu' promettere una riga che nel programma non esiste
+  const man = readFileSync(join(RAD, 'src/web/manuali.js'), 'utf8');
+  assert.ok(!man.includes('obsws://'), 'niente istruzioni per copiare una riga che non c\'è');
 });

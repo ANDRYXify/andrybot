@@ -200,9 +200,19 @@ cosi' chi preme da una tastiera fisica se lo sente dire invece di ricevere un
 ### Perche' non si compila piu' niente
 
 Tre campi a mano erano attrito, e l'attrito rende una funzione inutilizzata («e'
-troppo macchinoso»). La soluzione non era inventare una scorciatoia nostra: **il
-programma una riga sola te la da' gia'** — `obsws://indirizzo:porta/password`,
-dalle sue info di connessione (e lo stesso in un codice QR). Si legge quella.
+troppo macchinoso»).
+
+**Correzione di una mia istruzione sbagliata.** Avevo scritto di copiare una riga
+`obsws://` dalle info di connessione. Nel programma quella riga **non c'e' da
+copiare**: ci sono tre parametri separati (indirizzo, porta, password); la riga
+esiste solo dentro il codice QR. Il lettore la accetta lo stesso — non fa male —
+ma l'istruzione era falsa e chi la seguiva non trovava niente.
+
+**Quello che si fa davvero: un clic.** Indirizzo e porta non li chiediamo, li
+proviamo (127.0.0.1 sulle porte solite). Se l'autenticazione e' spenta si entra
+al primo colpo e non si compila niente. Se e' accesa, il protocollo lo dice
+(`serve-password`) e allora — e SOLO allora — compare un campo, uno: la
+password. Il resto resta affar nostro.
 
 `leggiIncollato()` accetta quattro forme, in ordine di quanto sono comode:
 `obsws://` e `obswss://` (con la password anche codificata: uno spazio arriva
