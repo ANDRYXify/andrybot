@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andrea Taliento / ANDRYXify)
+import * as licenza from '../licenza.js';      // il nome con cui questo software si presenta
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
@@ -206,7 +207,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // (header, si vedono solo in DevTools/curl), persistente, si porta dietro ogni copia o
   // deploy del bot. Togliamo anche l'X-Powered-By di Express (niente impronta altrui).
   app.disable('x-powered-by');
-  app.use((req, res, next) => { filigrana.applicaHeader(res); next(); });
+  // La filigrana di proprieta' + il nome con cui questo software si presenta. Il
+  // secondo lo da' la licenza: con una valida e' l'installazione autorizzata,
+  // senza e' la proprieta' per esteso. Percio' chi togliesse il cancello
+  // dell'avvio si ritroverebbe un bot che dichiara di chi e' a ogni risposta.
+  app.use((req, res, next) => {
+    filigrana.applicaHeader(res);
+    try { res.setHeader('X-Licenza', licenza.firma()); } catch { /* header gia' inviati */ }
+    next();
+  });
 
   // Le sessioni DEVONO essere firmate con un segreto reale. `config.sessionSecret`
   // è sempre valorizzato (env → file persistito → effimero casuale): se per
