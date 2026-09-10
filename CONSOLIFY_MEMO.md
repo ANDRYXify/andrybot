@@ -150,3 +150,29 @@ famiglia: una riga che sembra fare qualcosa e non fa niente.
     centro una volta sola, subito dopo la sveltina.
     Trovato misurando `getComputedStyle`, non leggendo il CSS: le due regole
     stanno in due punti lontani del file e a leggerle sembrano andare d'accordo.
+
+## Il formato di partenza (segnalato dal direttore: «non mi pare ci sia la griglia»)
+
+12. **Si partiva da «libero», cioe' dal foglio bianco.** La richiesta era
+    l'opposto: si sceglie un formato «cosi' che l'utente parta con un layout
+    grafico ed e' gia' avvantaggiato». Il commento sopra al codice lo diceva
+    perfino — «si parte gia' con una disposizione» — e tre righe sotto il valore
+    di partenza era `{0,0}`. Chi apriva CONSOLify trovava una frase al posto
+    della plancia.
+    **La causa vera non e' la distrazione: e' che `{0,0}` significava DUE cose** —
+    «libero, l'ho scelto io» e «non ho capito cosa mi hai dato, ripiego». Un
+    valore che dice due cose prima o poi dice quella sbagliata. Ora il ripiego e'
+    `FORMATO_INIZIALE` (3x4) e `{0,0}` vale solo se qualcuno l'ha scelto davvero.
+13. **A plancia vuota si vedeva o la griglia o il consiglio, mai tutti e due.**
+    Con un formato scelto comparivano dodici caselle tratteggiate e nessuna
+    parola; senza, una parola e nessuna casella. Ora la griglia c'e' e sotto c'e'
+    scritto che farci.
+14. **Il consiglio diceva «premi Modifica i tasti» anche a chi era GIA' in
+    modifica.** Mandare qualcuno a premere un bottone che ha gia' premuto e' il
+    modo piu' rapido per fargli credere che il pannello sia rotto.
+
+**Cosa NON ho fatto, e perche'.** Chi ha gia' salvato una plancia con `{0,0}`
+resta su «libero»: da qui non posso distinguere il «libero» scelto da quello
+ereditato — il vecchio codice scriveva lo stesso identico valore per tutti e due.
+Riscrivere in silenzio la preferenza di qualcuno per far tornare i conti sarebbe
+peggio del difetto. Si cambia dalla tendina, un clic.

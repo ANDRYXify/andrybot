@@ -204,7 +204,11 @@ const MISURE = ['s', 'm', 'l'];
 // I FORMATI, come una tastiera vera: righe per colonne. Non e' un vezzo — con le
 // caselle FISSE si parte gia' con una disposizione, e le vuote si vedono e si
 // riempiono. Una griglia che si allunga da sola non e' un deck: e' un elenco.
-// `{righe: 0, colonne: 0}` vuol dire libera, che resta possibile per chi la vuole.
+// Chi non ha mai scelto parte da 3x4: e' il senso della cosa, arrivare e trovare
+// gia' una plancia. `{righe: 0, colonne: 0}` vuol dire libera, e vale solo se
+// qualcuno l'ha scelta davvero — non e' piu' anche il ripiego di un valore
+// storto, perche' un valore che significa due cose finisce per dire quella
+// sbagliata.
 export const FORMATI = [
   { id: '3x3', righe: 3, colonne: 3 },
   { id: '3x4', righe: 3, colonne: 4 },
@@ -214,11 +218,15 @@ export const FORMATI = [
   { id: '5x8', righe: 5, colonne: 8 },
 ];
 
+export const FORMATO_INIZIALE = { righe: 3, colonne: 4 };
+
 function formatoPulito(f) {
   const righe = Number(f?.righe);
   const colonne = Number(f?.colonne);
   const ok = (n) => Number.isInteger(n) && n >= 2 && n <= 10;
-  return ok(righe) && ok(colonne) ? { righe, colonne } : { righe: 0, colonne: 0 };
+  if (ok(righe) && ok(colonne)) return { righe, colonne };
+  if (righe === 0 && colonne === 0) return { righe: 0, colonne: 0 };
+  return { ...FORMATO_INIZIALE };
 }
 
 const testoPulito = (v, max) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);

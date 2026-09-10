@@ -8688,7 +8688,9 @@ function disegnaConsolify() {
     }).join('');
   }
 
-  const vuoto = `<p class="vuoto">${L('Nessun tasto qui. Premi «Modifica i tasti» e aggiungine uno: nell’elenco ci sono già le tue azioni.', 'No keys here. Press “Edit the keys” and add one: your actions are already in the list.', 'Sin teclas aquí. Pulsa «Editar las teclas» y añade una: tus acciones ya están en la lista.')}</p>`;
+  const vuoto = `<p class="vuoto">${mod
+    ? L('I posti sono qui, vuoti. Scegli un’azione qui sotto e premi «Aggiungi tasto»: nell’elenco ci sono già le tue, perché nascono dai tuoi contatori e dai tuoi effetti.', 'The slots are here, empty. Pick an action below and press “Add key”: your own are already in the list, because they come from your counters and effects.', 'Los sitios están aquí, vacíos. Elige una acción abajo y pulsa «Añadir tecla»: las tuyas ya están en la lista, porque nacen de tus contadores y tus efectos.')
+    : L('Nessun tasto qui. Premi «Modifica i tasti» e aggiungine uno: nell’elenco ci sono già le tue azioni.', 'No keys here. Press “Edit the keys” and add one: your actions are already in the list.', 'Sin teclas aquí. Pulsa «Editar las teclas» y añade una: tus acciones ya están en la lista.')}</p>`;
 
   const aggiungi = mod
     ? `<div class="cons-aggiungi">
@@ -8701,7 +8703,7 @@ function disegnaConsolify() {
       ${L('La plancia lavora di lato: in orizzontale i tasti stanno larghi e li prendi al primo colpo, come su una tastiera vera. In verticale sarebbero francobolli.', 'The board works sideways: in landscape the keys have room and you hit them first time, like on a real key pad. Upright they would be postage stamps.', 'El tablero trabaja de lado: en horizontal las teclas tienen sitio y las aciertas a la primera, como en un teclado de verdad. En vertical serían sellos.')}
     </div>
     <div class="cons-plancia-corpo"><div class="cons-barra">${linguette}${misure}${rinomina}${elimina}</div>
-    ${sezioni || vuoto}${aggiungi}<div id="cons-scheda"></div></div>`;
+    ${tasti.length ? sezioni : `${sezioni}${vuoto}`}${aggiungi}<div id="cons-scheda"></div></div>`;
   if (mod) appendiConsolifyTrascina();
   if (_cons.aperto !== null && _cons.aperto !== undefined) disegnaSchedaTasto();
 }
