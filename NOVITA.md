@@ -17,6 +17,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-10
 
+- I tasti di CONSOLify creati prima di oggi ripartono: alcuni non avevano un indirizzo valido e premerli non faceva niente, ora si sistemano da soli alla prima apertura.
 - Il conto alla rovescia può partire da solo quando si apre l'overlay: metti su la scena d'attesa e il conto è già andato, senza premere niente.
 - Quello che metti su CONSOLify arriva a tutti i tuoi overlay: premi e parte, senza collegare niente a mano.
 - Ogni overlay può rifiutare i tasti per conto suo, dall'elenco degli elementi, senza rifiutare anche gli effetti che gli arrivano dalla chat.
