@@ -320,6 +320,7 @@ body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .
 }
 .tendina-lista[hidden] { display: none; }
 .tendina-voce {
+  flex: 0 0 auto;
   font: inherit; font-size: .92rem; color: var(--testo); text-align: left;
   background: transparent; border: none; border-radius: calc(var(--ang-mano-l, 4px));
   padding: .42rem .55rem; cursor: pointer; white-space: nowrap;

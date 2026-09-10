@@ -608,7 +608,7 @@ test('i file che nessuno guarda più non restano sul disco', () => {
   assert.ok(ora.has('cons_222222222222.webp'));
 });
 
-test('i passi di regia si salvano, e il server dice che non tocca a lui', () => {
+test('i passi di regia si salvano, e senza una pagina di guardia il tasto lo dice', async () => {
   // Il programma con cui si manda in onda ascolta sul computer dello streamer:
   // da qui non lo vediamo. Il server deve comunque SAPERLI (se no non si
   // salverebbero) e deve dire che non li fa lui — invece di rispondere «fatto».
@@ -621,9 +621,24 @@ test('i passi di regia si salvano, e il server dice che non tocca a lui', () => 
   assert.equal(t.passi[0].scena, 'Gioco');
   assert.equal(t.passi[1].come, 'inverti');
 
-  const e0 = consolle.eseguiPassoDiTasto(ch, t.id, 0, {});
+  // nessuna pagina di regia aperta: non si finge di averlo fatto
+  assert.equal(consolle.pontiAperti(ch), 0);
+  const e0 = await consolle.eseguiPassoDiTasto(ch, t.id, 0, {});
   assert.equal(e0.ok, false, 'il server non finge di averlo fatto');
-  assert.equal(e0.browser, true, 'e dice di chi è il mestiere');
+  assert.match(e0.mostra, /pagina/i, 'e dice cosa manca');
+
+  // con una pagina di guardia, il passo le arriva e l'esito torna indietro
+  let ricevuto = null;
+  const chiudi = consolle.apriPonte(ch, (m) => {
+    ricevuto = m;
+    setTimeout(() => consolle.esitoDalPonte(ch, m.lavoro, { ok: true, mostra: 'Gioco' }), 0);
+  });
+  assert.equal(consolle.pontiAperti(ch), 1);
+  const e1 = await consolle.eseguiPassoDiTasto(ch, t.id, 0, {});
+  assert.equal(ricevuto.passo.scena, 'Gioco', 'alla pagina arriva il passo, non un ordine libero');
+  assert.equal(e1.ok, true, 'e l\'esito torna indietro');
+  chiudi();
+  assert.equal(consolle.pontiAperti(ch), 0, 'e chiudendo la pagina non resta di guardia nessuno');
 });
 
 test('la pagina percorre la partitura in ORDINE, un passo per volta', () => {
@@ -736,4 +751,19 @@ test('collegare la regia è un clic: indirizzo e porta non si chiedono, si prova
   // il manuale non deve piu' promettere una riga che nel programma non esiste
   const man = readFileSync(join(RAD, 'src/web/manuali.js'), 'utf8');
   assert.ok(!man.includes('obsws://'), 'niente istruzioni per copiare una riga che non c\'è');
+});
+
+test('il ponte non è un canale per ordini liberi', () => {
+  // Quello che passa di lì è un passo GIÀ SALVATO su un tasto di quel canale.
+  // Se fosse una porta per comandi arbitrari, chi entrasse in una sessione
+  // potrebbe pilotare il programma di regia di chi streama.
+  const srv = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
+  const cons = readFileSync(join(RAD, 'src/features/console.js'), 'utf8');
+  const porta = srv.slice(srv.indexOf("app.get('/api/streamer/regia/ponte'"), srv.indexOf("app.post('/api/streamer/regia/ponte/esito'"));
+  assert.match(porta, /requireLogin/, 'ci si mette di guardia solo da dentro il proprio pannello');
+  assert.match(porta, /currentUser\(req\)\.login/, 'e per il proprio canale, non per uno scelto da fuori');
+  // e il passo che viaggia arriva dal tasto, non dalla richiesta
+  const f = cons.slice(cons.indexOf('function chiediAlPonte('), cons.indexOf('export async function eseguiPassoDiTasto('));
+  assert.match(f, /manda\(\{ tipo: 'regia', lavoro: idLavoro, passo \}\)/, 'viaggia il passo, e basta');
+  assert.match(f, /PONTE_ATTESA_MS/, 'e se la pagina non risponde non si resta appesi per sempre');
 });
