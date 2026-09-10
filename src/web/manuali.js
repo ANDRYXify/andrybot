@@ -836,8 +836,9 @@ const CONSOLIFY = {
 
     { h2: 'Collegare il programma con cui mandi in onda' },
     { p: [
-      'Nella scheda di CONSOLify metti <strong>indirizzo</strong>, <strong>porta</strong> e <strong>password</strong> del collegamento che quel programma mette a disposizione (nelle sue impostazioni), e premi <strong>Collega</strong>. Compaiono le tue scene: premi una scena e cambia, come dal programma.',
-      'Da lì in poi i passi «cambia scena» e «muta una fonte» funzionano dentro i tasti, insieme a tutto il resto.',
+      'Nel programma vai in <strong>Strumenti → impostazioni del collegamento → mostra le info di connessione</strong>: ti dà una riga sola, che comincia per <code>obsws://</code>. Copiala e incollala nel campo della scheda. Indirizzo, porta e password li prendo da lì: non devi compilare niente.',
+      '<strong>Una volta sola.</strong> Dalla volta dopo mi collego da solo quando apri la scheda, senza che tu prema niente. E se nel programma non hai messo nessuna password, ci provo lo stesso da solo: spesso non serve fare nulla.',
+      'Appena collegato compaiono le tue scene: premi una scena e cambia, come dal programma. Da lì in poi i passi «cambia scena» e «muta una fonte» funzionano dentro i tasti, insieme a tutto il resto.',
     ] },
     { p: [
       '<strong>Dove funziona.</strong> Il collegamento parte da questa pagina e arriva al programma che gira sullo <strong>stesso computer</strong>. Dal telefono i tasti del bot funzionano come sempre, ma le scene no: il «computer di casa» del telefono è il telefono, e il browser blocca il resto. Non è una nostra scelta, è una regola dei browser — e le abbiamo lasciata in piedi apposta.',

@@ -654,3 +654,31 @@ test('solo il computer di casa: un indirizzo di rete non viene nemmeno tentato',
   assert.match(re, /const casa = \(ip\) =>/, 'c\'è una definizione sola di «casa»');
   assert.match(re, /if \(!casa\(cfg\.ip\)\)/, 'e si controlla prima di provare');
 });
+
+test('la riga che dà il programma si legge da sola: un incollaggio, e basta', () => {
+  // «Non c'è un modo per creare il collegamento in automatico? così è troppo
+  // macchinoso». Tre campi a mano sono attrito, e l'attrito rende una funzione
+  // inutilizzata. Il programma però una riga sola te la dà già — indirizzo,
+  // porta e password insieme: si legge quella.
+  const src = readFileSync(join(RAD, 'src/web/public/regia-esterna.js'), 'utf8');
+  const finta = { window: {}, localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} } };
+  new Function('window', 'localStorage', src)(finta.window, finta.localStorage);
+  const leggi = finta.window.RegiaEsterna.leggiIncollato;
+
+  assert.deepEqual(leggi('obsws://127.0.0.1:4455/abc123'), { ip: '127.0.0.1', porta: '4455', pass: 'abc123' });
+  assert.deepEqual(leggi('obswss://localhost:4455/xyz'), { ip: 'localhost', porta: '4455', pass: 'xyz' });
+  assert.deepEqual(leggi('obsws://127.0.0.1:4455/mia%20password').pass, 'mia password', 'una password con lo spazio arriva intera');
+  assert.deepEqual(leggi('obsws://127.0.0.1:4455/'), { ip: '127.0.0.1', porta: '4455', pass: '' }, 'senza password va bene lo stesso');
+  assert.deepEqual(leggi('127.0.0.1:4455'), { ip: '127.0.0.1', porta: '4455', pass: '' }, 'anche solo indirizzo e porta');
+  assert.deepEqual(leggi('soloLaPassword'), { ip: '127.0.0.1', porta: '4455', pass: 'soloLaPassword' }, 'e anche solo la password');
+  assert.equal(leggi('due parole'), null, 'quello che non è nessuna delle due non si indovina');
+  assert.equal(leggi(''), null);
+});
+
+test('la seconda volta si collega da solo, senza che tu prema niente', () => {
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  assert.match(app, /_cons\.regiaProvata = true/, 'ci prova una volta sola per apertura');
+  assert.match(app, /collegaRegia\(g, true\)/, 'e in silenzio: se non c\'è nessuno non ti disturba');
+  assert.match(app, /collegaRegia\(\{ ip: g\.ip, porta: g\.porta, pass: '' \}, true\)/, 'e prova anche senza password, per chi non l\'ha messa');
+  assert.match(app, /ev\.target\?\.id === 're-incolla'/, 'e incollare basta: non serve nemmeno premere Collega');
+});

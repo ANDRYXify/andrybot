@@ -35,6 +35,17 @@
 
   const casa = (ip) => ip === '127.0.0.1' || ip === 'localhost' || ip === '::1';
 
+  function leggiIncollato(testo) {
+    const t = String(testo || '').trim();
+    if (!t) return null;
+    const m = /^obsw(?:s|ss):\/\/([^/:\s]+)(?::(\d{1,5}))?(?:\/(.*))?$/i.exec(t);
+    if (m) return { ip: m[1], porta: m[2] || '4455', pass: decodeURIComponent(m[3] || '') };
+    const hp = /^([a-z0-9.\-:]+):(\d{1,5})$/i.exec(t);
+    if (hp) return { ip: hp[1], porta: hp[2], pass: '' };
+    if (!/\s/.test(t)) return { ip: '127.0.0.1', porta: '4455', pass: t };
+    return null;
+  }
+
   function crea() {
     let ws = null;
     let pronto = false;
@@ -119,7 +130,7 @@
     }
 
     return {
-      collega, chiudi, chiedi, ascolta,
+      collega, chiudi, chiedi, ascolta, leggiIncollato,
       collegato: () => pronto,
       impostazioni, salvaImpostazioni, scorda, casa,
     };
