@@ -1,6 +1,7 @@
 // Database di SocialBot (SQLite): qui vivono token, streamer abilitati,
 // memoria del bot (messaggi, ricordi sugli utenti, lezioni imparate),
 // comandi personalizzati e registro delle clip.
+import crypto from 'node:crypto';
 import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -697,6 +698,42 @@ aggiungiColonna('streamers', 'manuale', 'INTEGER NOT NULL DEFAULT 0');
     }
   } catch { /* best-effort: non blocca l'avvio */ }
 })();
+
+// RINNOVO UNA-TANTUM DELLE CHIAVI DEGLI OVERLAY. Una scorciatoia pubblica ha
+// consegnato per mesi il link dell'overlay con la chiave dentro a chiunque
+// conoscesse il nome di uno streamer. Una chiave che e' stata pubblica non
+// torna segreta chiudendo la porta: va cambiata. Si cambia qui, al primo avvio
+// della versione che ha chiuso la porta, una volta sola, per ogni canale che
+// ne aveva una — e senza che nessuno debba scrivere un comando su un server.
+// Il link nuovo va rimesso nelle sorgenti del programma di regia: lo dicono
+// le novita' all'ingresso e il manuale.
+export function rinnovaChiaviOverlayUnaTantum() {
+  const FLAG = 'overlay_key_rinnovo_v1';
+  try {
+    const gia = db.prepare("SELECT 1 FROM facts WHERE channel='__migrazioni__' AND key=?").get(FLAG);
+    if (gia) return 0;
+    const righe = db.prepare('SELECT login, settings FROM streamers').all();
+    const scrivi = db.prepare('UPDATE streamers SET settings=? WHERE login=?');
+    let n = 0;
+    const giro = db.transaction(() => {
+      for (const r of righe) {
+        const s = safeJson(r.settings) || {};
+        if (!s.overlayKey) continue;
+        scrivi.run(JSON.stringify({ ...s, overlayKey: crypto.randomBytes(16).toString('hex') }), r.login);
+        n++;
+      }
+      db.prepare(`INSERT INTO facts (channel, key, value, ts) VALUES ('__migrazioni__', ?, ?, ?)
+        ON CONFLICT(channel, key) DO UPDATE SET value=excluded.value, ts=excluded.ts`).run(FLAG, String(n), Date.now());
+    });
+    giro();
+    if (n > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[db] chiavi degli overlay rinnovate una tantum: ${n} canali (il link va rimesso nelle sorgenti di regia)`);
+    }
+    return n;
+  } catch { return 0; /* best-effort: non blocca l'avvio */ }
+}
+rinnovaChiaviOverlayUnaTantum();
 
 // Contatori: colonna `overlay` (JSON aspetto/posizione del widget) sui DB esistenti.
 (() => {
