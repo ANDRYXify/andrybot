@@ -1765,6 +1765,7 @@ function collegaTgDestinazioni() {
 }
 
 const SEL_SALVA = 'button[id*="salva"], button[id*="save"], [data-salva]';
+const ASP_SALVA_A_MANO = '.asp-blocco[data-asp="alert"], .asp-blocco[data-asp="chat"], .asp-blocco[data-asp="wf"], .asp-blocco[data-asp="ws"]';
 
 let _salvaBarra = null, _salvaSporco = false, _salvaOsservatore = null;
 let _salvaRegione = null, _salvaChiusa = false, _uscitaInCorso = false;
@@ -1870,7 +1871,8 @@ function avviaBarraSalva() {
     if (!t || !t.closest) return;
     if (!t.closest('.pannello-scheda.visibile')) return;
     if (!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
-    if (t.closest('#tg-destinazioni, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .ovl-inspector, .cerca-guscio')) return;
+    if (t.closest('#tg-destinazioni, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .cerca-guscio')) return;
+    if (t.closest('.ovl-inspector') && !t.closest(ASP_SALVA_A_MANO)) return;
     const reg = _regioneSalva(t);
     if (!reg) return;
     _salvaRegione = reg;
@@ -6141,6 +6143,7 @@ function pannelloAlert() {
         <div class="ovl-gruppo">
           <label class="ovl-spunta"><input type="checkbox" id="ovl-griglia" checked><span>${L('Griglia', 'Grid', 'Rejilla')}</span></label>
           <label class="ovl-spunta"><input type="checkbox" id="ovl-sicura"><span>${L('Zone sicure', 'Safe areas', 'Zonas seguras')}</span></label>
+          <label class="ovl-spunta"><input type="checkbox" id="ovl-aggancia" checked><span>${L('Aggancia', 'Snap', 'Ajustar')}</span></label>
           <label class="ovl-spunta ovl-vivo-sp"><input type="checkbox" id="ovl-vivo"><span>${L('Dal vivo', 'Live', 'En vivo')}</span></label>
         </div>
         <div class="ovl-gruppo ovl-zoom">
@@ -6165,6 +6168,7 @@ function pannelloAlert() {
       </div>
       <div class="ovl-inspector" id="ovl-inspector" hidden>
         <div class="ovl-insp-testa"><span class="ovl-insp-nome" id="insp-nome">${L('Elemento', 'Element', 'Elemento')}</span>
+          <button type="button" class="ovl-insp-reset" id="insp-blocca" title="${L('Un livello bloccato non si sposta, non si ridimensiona e non si ruota per sbaglio', 'A locked layer won’t move, resize or rotate by accident', 'Una capa bloqueada no se mueve, no se redimensiona ni gira por error')}">${L('Blocca', 'Lock', 'Bloquear')}</button>
           <button type="button" class="ovl-insp-reset" id="insp-reset" title="${L('Ripristina posizione, dimensione e rotazione', 'Reset position, size and rotation', 'Restablecer posición, tamaño y rotación')}">${L('Ripristina', 'Reset', 'Restablecer')}</button></div>
         <div class="ovl-insp-num">
           <label>X <input type="number" id="insp-x" step="0.1" min="0" max="100"><i>%</i></label>
@@ -6648,7 +6652,9 @@ async function _salvaOverlayCorrente(msg, ancheLayout) {
     ov.css = _v('ovl-css') || '';
     if (ancheLayout) ov.mostra = _mostraOra();
   }
-  await salvaImpostazioni({ alerts: alertsCanale, chatOverlay: chatCanale, overlays: _overlaysPayload() }, msg);
+  const ok = await _spingiOverlays({ alerts: alertsCanale, chatOverlay: chatCanale });
+  if (!ok) { _salvaSporco = true; _salvaChiusa = false; aggiornaBarraSalva(); return; }
+  if (msg) toast(msg);
 }
 async function salvaAlert(silenzioso) { await _salvaOverlayCorrente(silenzioso ? null : L('Alert salvati ✓', 'Alerts saved ✓', 'Alertas guardadas ✓'), false); }
 async function salvaChatOverlay(silenzioso) { await _salvaOverlayCorrente(silenzioso ? null : L('Chat a schermo salvata ✓', 'On-screen chat saved ✓', 'Chat en pantalla guardado ✓'), false); }
@@ -6854,6 +6860,7 @@ function aggiornaAnteprima() {
     if (!nodo) continue;
     nodo.style.display = _inOverlay(e.k) ? '' : 'none';
     nodo.classList.toggle('spento', !_elementoAcceso(e.k));
+    nodo.classList.toggle('bloccato', _bloccato(e.k));
     const st = _posCorrente(e.k);
     if (st) _posElemento(nodo, st);
     else _posAncora(nodo, _angoloDi(e.k));
@@ -7155,6 +7162,8 @@ function aggiornaInspector() {
   if (!selezione) { box.hidden = true; return; }
   box.hidden = false;
   const nome = _g('insp-nome'); if (nome) nome.textContent = _nomeEl(selezione);
+  const luc = _g('insp-blocca');
+  if (luc) { const b = _bloccato(selezione); luc.textContent = b ? L('Sblocca', 'Unlock', 'Desbloquear') : L('Blocca', 'Lock', 'Bloquear'); luc.classList.toggle('chiuso', b); }
   _mostraProp();
 }
 
@@ -7553,6 +7562,24 @@ function _posDove(k) {
 
 const _corpoPan = (el) => (el ? (el.querySelector(':scope > .pan-corpo') || el) : null);
 
+function _aggiornaRigaLivello(k) {
+  const riga = _g('ovl-livelli')?.querySelector(`[data-liv="${k}"] .ovl-liv-corpo span`);
+  if (!riga || !_inOverlay(k)) return;
+  const st = _posDove(k);
+  riga.textContent = `${Math.round(st.x)}% · ${Math.round(st.y)}%${st.s !== 100 ? ' · ' + st.s + '%' : ''}`;
+}
+
+let _agganciaOn = true;
+try { _agganciaOn = localStorage.getItem('banco:aggancia') !== '0'; } catch (e) {  }
+function _bloccato(k) { return !!((_ovAttuale() || {}).blocchi || {})[k]; }
+function _blocca(k, v) {
+  const ov = _ovAttuale();
+  if (!ov) return;
+  ov.blocchi = ov.blocchi || {};
+  if (v) ov.blocchi[k] = true; else delete ov.blocchi[k];
+  aggiornaAnteprima(); aggiornaInspector(); _salvaPos();
+}
+
 function _rendiLivelli() {
   const box = _corpoPan(_g('ovl-livelli'));
   if (!box) return;
@@ -7566,6 +7593,7 @@ function _rendiLivelli() {
         ? `${Math.round(st.x)}% · ${Math.round(st.y)}%${st.s !== 100 ? ' · ' + st.s + '%' : ''}`
         : L('non in questo overlay', 'not in this overlay', 'no en este overlay')}</span></span>
       ${spento ? `<span class="ovl-liv-avviso" title="${L('L’elemento è spento del tutto', 'The element is fully off', 'El elemento está apagado del todo')}">!</span>` : ''}
+      ${acceso ? `<span class="ovl-liv-lucchetto${_bloccato(l.k) ? ' chiuso' : ''}" data-lucchetto="${l.k}" role="button" tabindex="0" title="${_bloccato(l.k) ? L('Sblocca: torna a spostarsi', 'Unlock: it can move again', 'Desbloquear: vuelve a moverse') : L('Blocca: non si sposta per sbaglio', 'Lock: it won’t move by accident', 'Bloquear: no se mueve por error')}">${_bIco(ICO.lucchetto)}</span>` : ''}
       <span class="ovl-liv-occhio" data-occhio="${l.k}" role="button" tabindex="0"
         title="${acceso ? L('Togli da questo overlay', 'Remove from this overlay', 'Quitar de este overlay') : L('Metti in questo overlay', 'Add to this overlay', 'Poner en este overlay')}">${_bIco(acceso ? ICO.occhio : ICO.occhioNo)}</span>
     </button>`;
@@ -7573,10 +7601,16 @@ function _rendiLivelli() {
 }
 
 let _zoomOvl = 1;
-function _applicaZoom(v) {
+function _applicaZoom(v, perno) {
+  const prima = _zoomOvl;
   _zoomOvl = Math.max(0.5, Math.min(ZOOM_MAX, v));
   const t = _g('ovl-tela');
-  if (t) t.style.setProperty('--ovl-zoom', _zoomOvl);
+  if (t) {
+    const cx = perno ? perno.x : t.clientWidth / 2, cy = perno ? perno.y : t.clientHeight / 2;
+    const px = (t.scrollLeft + cx) / prima, py = (t.scrollTop + cy) / prima;
+    t.style.setProperty('--ovl-zoom', _zoomOvl);
+    t.scrollLeft = px * _zoomOvl - cx; t.scrollTop = py * _zoomOvl - cy;
+  }
   const et = _g('ovl-zoom-v');
   if (et) et.textContent = Math.round(_zoomOvl * 100) + '%';
 }
@@ -7591,6 +7625,12 @@ function collegaEditorOvl() {
     if (occ) {
       e.stopPropagation();
       _occhio(occ.dataset.occhio);
+      return;
+    }
+    const luc = e.target.closest('[data-lucchetto]');
+    if (luc) {
+      e.stopPropagation();
+      _blocca(luc.dataset.lucchetto, !_bloccato(luc.dataset.lucchetto));
       return;
     }
     const b = e.target.closest('[data-liv]');
@@ -7613,6 +7653,16 @@ function collegaEditorOvl() {
   _g('ovl-zoom-meno')?.addEventListener('click', () => _applicaZoom(_zoomOvl - 0.25));
   _g('ovl-zoom-piu')?.addEventListener('click', () => _applicaZoom(_zoomOvl + 0.25));
   _g('ovl-zoom-fit')?.addEventListener('click', () => _applicaZoom(1));
+  _g('ovl-tela')?.addEventListener('wheel', (e) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    const r = _g('ovl-tela').getBoundingClientRect();
+    _applicaZoom(_zoomOvl * (e.deltaY < 0 ? 1.1 : 1 / 1.1), { x: e.clientX - r.left, y: e.clientY - r.top });
+  }, { passive: false });
+  _g('ovl-aggancia')?.addEventListener('change', (e) => {
+    _agganciaOn = !!e.target.checked;
+    try { localStorage.setItem('banco:aggancia', _agganciaOn ? '1' : '0'); } catch (err) {  }
+  });
 
   for (const [campo, viste] of Object.entries(VISTE_PROP)) {
     for (const id of viste) {
@@ -7675,9 +7725,9 @@ function _dragManiglia(chiave, e, tipo) {
       while (deg > 180) deg -= 360; while (deg < -180) deg += 360;
       st.r = Math.round(deg);
     }
-    _posElemento(el, st); aggiornaInspector();
+    _posElemento(el, st); _mostraProp(); _aggiornaRigaLivello(chiave);
   };
-  const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); _salvaPos(chiave); };
+  const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); aggiornaInspector(); _ricorda(); _salvaPos(chiave); };
   window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
 }
 
@@ -7738,12 +7788,12 @@ function _applicaIstantanea(foto) {
     const d = JSON.parse(foto);
     for (const [k, v] of Object.entries(d.mostra || {})) { const c = _g('mostra-' + k); if (c) c.checked = !!v; }
     const m = _ovMostra();
+    _storiaInCorso = true;
     for (const e of ELEMENTI()) {
       if (d.pos && e.k in d.pos) _scriviPos(e.k, d.pos[e.k]);
       if (d.acceso && e.k in d.acceso) _accendiDi(e.k, d.acceso[e.k]);
       if (d.mostra && (e.goal || e.cont)) { if (d.mostra[e.k] === false) m[e.k] = false; else delete m[e.k]; }
     }
-    _storiaInCorso = true;
     disegnaGoal();
     aggiornaAnteprima();
     salvaLayoutOverlay(true);
@@ -7816,6 +7866,7 @@ function _mostraGuide(guide) {
 }
 
 function _spostaTasti(chiave, dx, dy, grande) {
+  if (_bloccato(chiave)) return;
   const st = _statoXY(chiave);
   const el = _nodo(chiave);
   const p = grande ? 10 : 1;
@@ -7829,7 +7880,7 @@ function _spostaTasti(chiave, dx, dy, grande) {
 }
 
 function allineaOvl(dove) {
-  if (!selezione) return;
+  if (!selezione || _bloccato(selezione)) return;
   const st = _statoXY(selezione);
   const el = _nodo(selezione);
   const m = {
@@ -7846,7 +7897,8 @@ function allineaOvl(dove) {
 
 let _inTrascinamento = false;
 function rendiTrascinabile(el, chiave) {
-  if (!el) return;
+  if (!el || el.dataset.trascinabile) return;
+  el.dataset.trascinabile = '1';
   el.style.cursor = 'grab';
   el.title = L('Clic per selezionare · trascina per spostare (Ctrl = fine, Maiusc = dritto, Alt = niente aggancio) · doppio clic per ripristinare', 'Click to select · drag to move (Ctrl = fine, Shift = straight, Alt = no snapping) · double click to reset', 'Clic para seleccionar · arrastra para mover (Ctrl = fino, Mayús = recto, Alt = sin ajuste) · doble clic para restablecer');
   _iniettaManiglie(chiave);
@@ -7855,6 +7907,7 @@ function rendiTrascinabile(el, chiave) {
     if (e.target?.classList?.contains('ap-handle')) return;
     e.preventDefault();
     seleziona(chiave);
+    if (_bloccato(chiave)) return;
     const canvas = _g('ovl-preview').getBoundingClientRect();
     const scala = canvas.width / OVL_W;
     try { el.setPointerCapture(e.pointerId); } catch (_) {  }
@@ -7879,12 +7932,12 @@ function rendiTrascinabile(el, chiave) {
       let cx = c0.x + dx, cy = c0.y + dy;
       let guide = [];
       const fine = ev.ctrlKey || ev.metaKey;
-      if (!ev.altKey && !fine) { const a = _aggancia(altri, cx, cy, w, h, scala); cx = a.cx; cy = a.cy; guide = a.guide; }
+      if (!ev.altKey && !fine && _agganciaOn) { const a = _aggancia(altri, cx, cy, w, h, scala); cx = a.cx; cy = a.cy; guide = a.guide; }
       st.x = _arr(_tra(xDaCentro(cx, w, OVL_W), 0, 100));
       st.y = _arr(_tra(xDaCentro(cy, h, OVL_H), 0, 100));
       _posElemento(el, st);
       _mostraGuide(guide);
-      aggiornaInspector();
+      _mostraProp(); _aggiornaRigaLivello(chiave);
     };
     const partenza = { x: st.x, y: st.y };
     _inTrascinamento = true;
@@ -7895,7 +7948,7 @@ function rendiTrascinabile(el, chiave) {
       document.removeEventListener('keydown', fuga, true);
       _mostraGuide([]);
     };
-    const up = () => { chiudi(); _ricorda(); _salvaPos(chiave); };
+    const up = () => { chiudi(); aggiornaInspector(); _ricorda(); _salvaPos(chiave); };
     const fuga = (ev) => {
       if (ev.key !== 'Escape') return;
       ev.preventDefault(); ev.stopImmediatePropagation();
@@ -7911,6 +7964,7 @@ function rendiTrascinabile(el, chiave) {
   el.addEventListener('wheel', (e) => {
     if (!e.altKey && !e.shiftKey) return;
     e.preventDefault();
+    if (_bloccato(chiave)) return;
     const st = _statoXY(chiave);
     const passo = e.ctrlKey || e.metaKey ? 1 : 4;
     if (e.shiftKey) { let r = (st.r || 0) + (e.deltaY < 0 ? passo : -passo); while (r > 180) r -= 360; while (r < -180) r += 360; st.r = r; }
@@ -7920,13 +7974,9 @@ function rendiTrascinabile(el, chiave) {
   el.addEventListener('dblclick', () => { _azzeraPos(chiave); deseleziona(); aggiornaAnteprima(); _ricorda(); _salvaPos(chiave); });
 }
 
-function _salvaPos() { return salvaLayoutOverlay(true); }
-
-function _salvaFamiglia(chiave) {
-  const e = ELEM(chiave);
-  if (e && e.goal) return salvaGoalDaScena();
-  if (e && e.cont) return salvaContoDaScena(e.cont);
-  if (e && e.cfg) return salvaCfgElemento(chiave);
+function _salvaPos(chiave) {
+  const e = chiave ? ELEM(chiave) : null;
+  if (e && e.cont) salvaContoDaScena(e.cont);
   return salvaLayoutOverlay(true);
 }
 
@@ -7936,7 +7986,7 @@ function salvaCfgElemento(k) {
   if (!e || !e.cfg) return;
   clearTimeout(_timerCfg[k]);
   _timerCfg[k] = setTimeout(() => {
-    salvaImpostazioni({ [e.cfg]: _cfgEl(k) }, null).catch(() => {  });
+    salvaImpostazioni({ [e.cfg]: _cfgEl(k) }, null).catch(() => _avvisaSalvataggio());
   }, 600);
 }
 
@@ -7945,7 +7995,7 @@ function salvaGoalDaScena() {
   clearTimeout(_timerGoal);
   _timerGoal = setTimeout(() => {
     if (!_g('lista-goal')) return;
-    salvaImpostazioni({ overlayGoals: leggiGoalDalForm() }, null).catch(() => {  });
+    salvaImpostazioni({ overlayGoals: leggiGoalDalForm() }, null).catch(() => _avvisaSalvataggio());
   }, 600);
 }
 
@@ -7954,7 +8004,7 @@ function salvaContoDaScena(c) {
   clearTimeout(_timerConto[c.comando]);
   _timerConto[c.comando] = setTimeout(() => {
     const o = c.overlayCfg || (c.overlayCfg = {});
-    api('/api/contatori', { method: 'POST', body: { comando: c.comando, overlay: o } }).catch(() => {  });
+    api('/api/contatori', { method: 'POST', body: { comando: c.comando, overlay: o } }).catch(() => _avvisaSalvataggio());
   }, 600);
 }
 function salvaContiDaScena() { for (const e of ELEMENTI()) if (e.cont) salvaContoDaScena(e.cont); }
@@ -8263,6 +8313,15 @@ function _rigeneraQuale() {
 
 function scegliOverlay(id) {
   if (!id || id === overlaySel || !overlays.find((o) => o.id === id)) return;
+  if (_salvaSporco && !_uscitaInCorso) {
+    _uscitaInCorso = true;
+    _chiediPrimaDiUscire().then((si) => { _uscitaInCorso = false; if (si) { azzeraBarraSalva(); _cambiaOverlay(id); } else _rigeneraSelOverlay(); },
+      () => { _uscitaInCorso = false; _rigeneraSelOverlay(); });
+    return;
+  }
+  _cambiaOverlay(id);
+}
+function _cambiaOverlay(id) {
   overlaySel = id;
   _rigeneraSelOverlay();
   caricaOverlaySel();
@@ -8284,14 +8343,39 @@ function caricaOverlaySel() {
 
 function _overlaysPayload() {
 
-  return overlays.map((o) => ({ id: o.id, nome: o.nome, mostra: o.mostra, xy: o.xy, css: o.css || '', stile: o.stile || null }));
+  return overlays.map((o) => ({ id: o.id, nome: o.nome, mostra: o.mostra, xy: o.xy, css: o.css || '', stile: o.stile || null, blocchi: o.blocchi || {} }));
 }
 
+let _avvisoSalvataggio = 0;
+function _avvisaSalvataggio() {
+  if (Date.now() - _avvisoSalvataggio < 10000) return;
+  _avvisoSalvataggio = Date.now();
+  toast(L('Non riesco a salvare: controlla la connessione, riprovo al prossimo cambiamento.', 'I can’t save: check your connection, I’ll retry on the next change.', 'No consigo guardar: revisa la conexión, lo reintento en el próximo cambio.'), 'errore');
+}
+let _codaOverlay = null, _codaAncora = false, _codaExtra = null;
+function _spingiOverlays(extra) {
+  if (extra) _codaExtra = { ...(_codaExtra || {}), ...extra };
+  if (_codaOverlay) { _codaAncora = true; return _codaOverlay; }
+  _codaOverlay = (async () => {
+    let ok = true;
+    do {
+      _codaAncora = false;
+      const corpo = { ...(_codaExtra || {}), overlays: _overlaysPayload() };
+      _codaExtra = null;
+      try { await salvaImpostazioni(corpo, null); ok = true; }
+      catch (e) { ok = false; _avvisaSalvataggio(); }
+    } while (_codaAncora);
+    _codaOverlay = null;
+    return ok;
+  })();
+  return _codaOverlay;
+}
 async function salvaLayoutOverlay(silenzioso) {
   const ov = overlays.find((o) => o.id === overlaySel);
   if (!ov) return;
   ov.mostra = _mostraOra();
-  await salvaImpostazioni({ overlays: _overlaysPayload() }, silenzioso ? null : L('Overlay salvato ✓', 'Overlay saved ✓', 'Overlay guardado ✓'));
+  const ok = await _spingiOverlays();
+  if (ok && !silenzioso) toast(L('Overlay salvato ✓', 'Overlay saved ✓', 'Overlay guardado ✓'));
 }
 async function nuovoOverlayDaPreset() {
   if (overlays.length >= 12) { toast(L('Massimo 12 overlay.', 'Maximum 12 overlays.', 'Máximo 12 overlays.')); return; }
@@ -8317,7 +8401,7 @@ async function nuovoOverlayDaPreset() {
     stile: preset ? _stileDaPreset(preset) : (corr && corr.stile ? JSON.parse(JSON.stringify(corr.stile)) : null),
   });
   overlaySel = id;
-  await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
+  await _spingiOverlays();
   await caricaOverlays();
   if (!overlays.find((o) => o.id === id)) { toast(L('Overlay non salvato: riprova.', 'Overlay not saved: try again.', 'Overlay no guardado: inténtalo de nuevo.'), 'errore'); return; }
   toast(L('Overlay creato ✓', 'Overlay created ✓', 'Overlay creado ✓'));
@@ -8344,7 +8428,7 @@ async function duplicaOverlay() {
   const clone = JSON.parse(JSON.stringify({ mostra: ov.mostra, xy: ov.xy, css: ov.css || '', stile: ov.stile || null }));
   overlays.push({ id: 'ov' + Math.random().toString(36).slice(2, 8), nome, ...clone });
   overlaySel = overlays[overlays.length - 1].id;
-  await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
+  await _spingiOverlays();
   await caricaOverlays();
   toast(L('Overlay duplicato ✓', 'Overlay duplicated ✓', 'Overlay duplicado ✓'));
 }
@@ -8358,7 +8442,7 @@ async function rinominaOverlay() {
   }) || '').trim();
   if (!nome) return;
   ov.nome = nome;
-  await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
+  await _spingiOverlays();
   _rigeneraSelOverlay(); toast(L('Rinominato ✓', 'Renamed ✓', 'Renombrado ✓'));
 }
 async function eliminaOverlay() {
@@ -8367,7 +8451,7 @@ async function eliminaOverlay() {
   if (!confirm(L(`Eliminare l'overlay "${ov.nome}"? Il suo link OBS smetterà di funzionare.`, `Delete the overlay "${ov.nome}"? Its OBS link will stop working.`, `¿Eliminar el overlay "${ov.nome}"? Su enlace OBS dejará de funcionar.`))) return;
   overlays = overlays.filter((o) => o.id !== overlaySel);
   overlaySel = overlays[0].id;
-  await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
+  await _spingiOverlays();
   await caricaOverlays();
   toast(L('Overlay eliminato.', 'Overlay deleted.', 'Overlay eliminado.'));
 }
@@ -8391,9 +8475,12 @@ function caricaAlert() {
 
   caricaOverlays();
   collegaEditorOvl();
+  vestiTendina(_g('ovl-quale'));
+  const agg = _g('ovl-aggancia'); if (agg) agg.checked = _agganciaOn;
+  if (scheda?.dataset.collegato) { scalaAnteprima(); aggiornaAnteprima(); return; }
+  if (scheda) scheda.dataset.collegato = '1';
   _applicaZoom(1);
   setTimeout(() => _ricorda(), 400);
-  vestiTendina(_g('ovl-quale'));
   _g('ovl-quale')?.addEventListener('change', (e) => scegliOverlay(e.target.value));
   _g('ovl-nuovo-da')?.addEventListener('click', () => conErrore(() => nuovoOverlayDaPreset()));
   _g('ov-rinomina')?.addEventListener('click', () => conErrore(() => rinominaOverlay()));
@@ -8450,6 +8537,7 @@ function caricaAlert() {
     if (det) { det.open = true; det.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' }); }
   });
 
+  _g('insp-blocca')?.addEventListener('click', () => { if (selezione) _blocca(selezione, !_bloccato(selezione)); });
   _g('insp-reset')?.addEventListener('click', () => {
     if (!selezione) return;
     const k = selezione; _azzeraPos(k); aggiornaAnteprima(); aggiornaInspector(); _salvaPos(k);

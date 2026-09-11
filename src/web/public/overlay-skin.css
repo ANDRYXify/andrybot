@@ -152,6 +152,8 @@
 }
 .ap-stage .ap-el.sel  { outline: 3px dashed var(--acc); outline-offset: 6px; z-index: 20; }
 .ap-stage .ap-el.spento { opacity: .35; }
+.ap-stage .ap-el.bloccato { cursor: default; }
+.ap-stage .ap-el.bloccato .ap-handle { display: none; }
 
 .ap-stage .ap-handle {
   position: absolute; display: none;

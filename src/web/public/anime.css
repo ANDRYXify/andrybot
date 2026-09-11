@@ -1513,7 +1513,13 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 .ap-guida.centro { background: #ff3ea5; box-shadow: 0 0 6px rgba(255, 62, 165, .6); }
 .ap-guida.pari { background: #3ecfff; box-shadow: 0 0 6px rgba(62, 207, 255, .5); }
 
-#ovl-preview.senza-griglia .ap-stage { background-image: none; }
+#ovl-preview.senza-griglia { background-image: none; }
+.ovl-liv-lucchetto { flex: 0 0 auto; display: grid; place-items: center; padding: 2px; border-radius: 5px; color: var(--testo-3); opacity: .45; }
+.ovl-liv-lucchetto.chiuso { opacity: 1; color: var(--acc); }
+.ovl-insp-reset.chiuso { background: var(--acc); color: var(--su-acc); }
+@media (hover: hover) {
+.ovl-liv-lucchetto:hover { background: var(--surface); color: var(--acc); opacity: 1; }
+}
 #ovl-preview.con-sicure::after {
   content: ""; position: absolute; inset: 5%; z-index: 30; pointer-events: none;
   border: 1px dashed rgba(255, 255, 255, .35); border-radius: 4px;
