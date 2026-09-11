@@ -8,7 +8,7 @@
 // aveva promesso di non ricordare nessuno. Il difetto non ha sintomi: per questo
 // va misurato qui e non "visto" in produzione.
 //
-// docs/BOT-E-LIA.md ha il modello per esteso.
+// Il modello per esteso sta nel repository del cervello.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

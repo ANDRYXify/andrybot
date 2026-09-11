@@ -144,7 +144,7 @@ test('la risposta esce agganciata al messaggio a cui risponde', async () => {
 });
 
 test('il cervello riceve i distintivi e non l\'amicizia', async () => {
-  // Il bot del canale non ricorda nessuno (docs/BOT-E-LIA.md). I distintivi
+  // Il bot del canale non ricorda nessuno (nel repository del cervello). I distintivi
   // sono un fatto di QUESTO turno; l'affinita' fra canali sarebbe memoria.
   const { brain, onMessage } = banco();
   await onMessage(messaggio({ isVip: true }));

@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { analizza, pubbliche, tutte, inItaliano, ultima, segnalibro, daVedere, segnoValido, taglia, destinazioni, inSezioni } from '../../src/web/novita.js';
+import { analizza, pubbliche, tutte, unisci, inItaliano, ultima, segnalibro, daVedere, segnoValido, taglia, destinazioni, inSezioni } from '../../src/web/novita.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const gruppi = analizza(readFileSync(join(RAD, 'NOVITA.md'), 'utf8'));
@@ -52,7 +52,7 @@ test('la data si legge come la direbbe una persona', () => {
 });
 
 // ── quello che è tuo non esce di casa ──────────────────────────────────────
-// Non tutto quello che cambia riguarda chi usa il bot: la crescita di Lia e il suo
+// Non tutto quello che cambia riguarda chi usa il bot: la crescita del cervello privato e il suo
 // computer sono cose del direttore. Il rischio non è che si veda male: è che si
 // veda, e a chiunque.
 
@@ -86,11 +86,29 @@ test('il marcatore si scrive come viene, e non si porta dietro le parentesi', ()
   }
 });
 
-test('nel file vero, quello che è marcato privato resta fuori', () => {
-  const mie = gruppi.flatMap((g) => g.voci).filter((v) => v.privata).map((v) => v.testo);
-  assert.ok(mie.length > 0, 'ci sono righe private da proteggere');
-  const fuori = JSON.stringify(pubbliche(gruppi));
-  for (const t of mie) assert.ok(!fuori.includes(t), `è uscita di casa: ${t.slice(0, 60)}`);
+// Le righe private non vivono piu' nel file pubblico: stanno nel NOVITA.md del
+// repository del cervello, accanto a questo. Due invarianti al posto di uno, e
+// tutti e due piu' forti: qui ZERO righe private; la', SOLO righe private, e
+// nessuna esce dalla porta pubblica nemmeno passandoci.
+test('nel file pubblico non c\'e\' nessuna riga privata', () => {
+  const mie = gruppi.flatMap((g) => g.voci).filter((v) => v.privata);
+  assert.equal(mie.length, 0, `una riga privata nel file pubblico: ${(mie[0] || {}).testo}`);
+});
+
+test('nel file del cervello, accanto a questo, tutto e\' privato e niente esce', (t) => {
+  let testo = null;
+  try { testo = readFileSync(join(RAD, '..', 'lia', 'NOVITA.md'), 'utf8'); }
+  catch { t.skip('il repository del cervello non e\' accanto a questo: non si misura'); return; }
+  const suoi = analizza(testo);
+  const voci = suoi.flatMap((g) => g.voci);
+  assert.ok(voci.length > 0, 'il file del cervello ha righe');
+  const scoperte = voci.filter((v) => !v.privata);
+  assert.equal(scoperte.length, 0, `una riga del cervello senza [privato]: ${(scoperte[0] || {}).testo}`);
+  assert.equal(pubbliche(suoi).length, 0, 'una riga del cervello uscirebbe dalla porta pubblica');
+  const unite = unisci(gruppi, suoi);
+  assert.equal(unite.flatMap((g) => g.voci).length, gruppi.flatMap((g) => g.voci).length + voci.length,
+    'l\'unione per il proprietario perde righe');
+  for (let i = 1; i < unite.length; i++) assert.ok(unite[i - 1].data > unite[i].data, 'i giorni uniti non sono in ordine');
 });
 
 // ── IL SEGNAPOSTO ──────────────────────────────────────────────────────────

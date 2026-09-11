@@ -1,4 +1,4 @@
-// SE E COSA DIRE, dato un momento. Non Lia: il bot del canale.
+// SE E COSA DIRE, dato un momento. Non lei: il bot del canale.
 //
 // I momenti li riconosce momenti.js guardando la chat. Qui si decide se coglierne
 // uno, e quale, con quattro cose in mano: la dose scelta dallo streamer (il

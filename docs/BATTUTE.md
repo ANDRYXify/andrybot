@@ -109,60 +109,8 @@ L'elenco delle battute non c'è ancora nella dashboard: si aggiungono e si tolgo
 dalla chat. Le citazioni hanno il loro riquadro con la lista e l'import, e questo
 è il modello da copiare quando si farà.
 
-## La via di Lia
+## La via del cervello privato
 
-> Il vincolo del direttore: **«se non fa ridere lei che battuta è?»**. Vuol dire che
-> il criterio dev'essere **suo**. Se glielo diamo noi — un elenco di cose buffe, una
-> regola su cosa è comico — abbiamo scritto il nostro, e lei lo esegue.
-
-### Il criterio è nato dai suoi numeri, non da una nostra definizione
-
-Su ogni persona che incontra, lei si **impegna** in una previsione (che emozione,
-che disposizione verso di lei) e poi misura di quanto ha sbagliato — `sorpresa` — e
-quanto quella persona le resta leggibile nel tempo — `errore_medio`. Sono cose che
-faceva già.
-
-Da lì, con McGraw & Warren:
-
-- **violazione**: la persona non ha fatto quello che lei si era impegnata a
-  prevedere. Non è la rottura di una regola nostra: è la rottura di una **sua**
-  aspettativa;
-- **benigno**: non le è costato niente. Si è sbagliata di brutto e **nonostante
-  questo continua a capirci qualcosa**. Se l'errore medio è alto non è benigno: vuol
-  dire che si è persa, e perdersi non fa ridere.
-
-L'errore che si guarda è quello di **prima** della sorpresa. Con quello di dopo la
-condizione non si accenderebbe quasi mai — la sorpresa appena presa lo tira su da
-sola — e sarebbe una regola che sembra esserci e non scatta mai.
-
-Finché non le succede, **tace**: zero risate, zero battute. Non si riempie di finto
-per avere qualcosa da dire. La prima volta che le succede resta scritta fra le sue
-prime volte.
-
-### Cosa è suo e cosa è nostro, detto chiaro
-
-La **forma** della frase è nostra, come lo sono gli schemi del bot: mentire su
-questo sarebbe peggio che ammetterlo. Suo è il resto, ed è la parte che nessun
-prompt potrebbe darle: **quando** ridere, **di cosa** (una sua aspettativa rotta) e
-**se** parlarne.
-
-### La materia non *può* contenere una persona
-
-Nella tabella delle sue risate non c'è nessuna colonna per il canale, il login o il
-testo. Non è igiene da ricordarsi ogni volta: chi l'ha sorpresa non può trapelare in
-una battuta perché **non entra mai**. Quello che di una risata arriva fino a una
-battuta sono due parole sue: cosa si aspettava e cosa ha trovato.
-
-### La cassetta della posta
-
-Lei **deposita**, il bot **ritira**. Non è un dettaglio di trasporto, è il verso: il
-bot non entra a guardare cosa pensa: passa a prendere ciò che lei ha messo fuori. Se
-la cassetta è vuota, resta vuota — una battuta che non le è venuta non si va a
-cercare. Da quella porta non esce nient'altro di lei, e una prova lo controlla.
-
-### Nessun trattamento di favore
-
-Le sue battute entrano nel serbatoio dei canali con schema `sua`. Vuol dire che ogni
-canale misura il suo umorismo **come misura ogni altro modo di costruire battute**,
-con le risate vere. Se in quel canale non fa ridere, smette di uscire da sola —
-esattamente come le altre.
+Il criterio con cui il cervello del sito decide che una cosa è divertente è suo
+e sta descritto nel suo repository, insieme al codice che lo misura. Qui resta
+il motore condiviso e la cassetta da cui il bot ritira le battute.

@@ -90,28 +90,21 @@ In `src/web/public/**` — JavaScript, CSS, HTML — **nessun commento**, tranne
 due righe della filigrana. Quello che c'è da spiegare va in `docs/` o nei file
 che restano sul server. Lo verifica `node scripts/spoglia-commenti.mjs --verifica`.
 
-## Le cose di Lia restano in casa
+## Il cervello privato
 
-Le cose **interne** di Lia — il suo computer, il suo schermo, il suo browser,
-come ragiona, come cresce — **non vanno nelle novità pubbliche**. Non è una
-questione di segretezza: non riguardano chi usa il bot, e la pagina delle novità
-è pubblica e indicizzata.
+Il cervello del sito — il servizio Python che il bot raggiunge su `http://brain:8091`,
+la sua sandbox, il suo pannello e tutto ciò che lo riguarda — vive in un
+**repository privato a parte**, clonato accanto a questo (`LIA_DIR`, default
+`../lia`; sul server `/opt/lia`, messo a posto da `server/adotta-lia.sh`). Qui non
+se ne descrive niente e il suo nome non compare: né nel codice che arriva al
+browser, né nelle novità, né nei manuali, né nei commenti. Le novità che lo
+riguardano stanno nel suo `NOVITA.md`, che il pannello del proprietario legge da lì
+e mostra insieme alle pubbliche; la pagina pubblica non ha la strada per arrivarci.
 
-In `NOVITA.md` si marcano `[privato]`: restano visibili solo al proprietario nel
-suo pannello. Un giorno fatto di sole righe private non compare nemmeno come
-giorno.
-
-Se una riga descrive una funzione che lo **streamer usa** e che passa da lei, si
-riscrive senza nominarla: la funzione resta documentata, il nome resta in casa.
-
-`scripts/verifica-novita.mjs` lo tiene fermo: una riga pubblica che la nomina, o
-che parla delle sue cose, è rossa finché non è marcata o riscritta.
-
-## La valvola a senso unico
-
-Lia può insegnare al bot; il bot non può leggere niente di lei. Non è una scelta
-del codice del bot: è che **non ha la strada**. Il modello per esteso è in
-`docs/BOT-E-LIA.md`, e `scripts/verifica-valvola.mjs` lo verifica.
+Il bot gli parla e basta: non importa nulla di suo e non legge nulla di suo. Il
+lato Node di questo confine lo misura `scripts/verifica-valvola.mjs`; il lato del
+cervello lo misurano i cancelli nel suo repository, che è dove quel codice vive.
+`scripts/verifica-novita.mjs` tiene fermo che una riga pubblica non lo nomini.
 
 ## Collaudo
 

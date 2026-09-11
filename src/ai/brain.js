@@ -607,7 +607,7 @@ export class Brain {
   }
 
   // Il nome della "persona" (dall'anima condivisa): è così che si presenta nei DM.
-  // Se non le hai dato un nome (è ancora il default "SocialBot"), usa "Lia" così ha
+  // Se non le hai dato un nome (è ancora il default "SocialBot"), usa "lei" così ha
   // COMUNQUE un'identità stabile — senza un nome finiva per confondersi e prendere
   // quello dell'interlocutore. Lo cambi in Admin → Anima.
   _nomePersona() {
@@ -1129,7 +1129,7 @@ export class Brain {
         const web = menziona ? await this._cercaWeb(channel, text, 3000) : null;
         const risposta = await brainpy.rispondi({
           web,   // quello che ha trovato: materiale da dire con parole sue
-          via: 'bot',   // la chat pubblica è del BOT, non di Lei (docs/BOT-E-LIA.md)
+          via: 'bot',   // la chat pubblica è del BOT, non di Lei (nel repository del cervello)
           canale: streamer.display || channel, canaleId: channel,
           login: user, nome, testo: text, tono, conoscenza,
           ruolo,   // i distintivi di CHI ha scritto, per il modo (docs/MODO.md)
@@ -1149,16 +1149,16 @@ export class Brain {
           // Si salva la RISPOSTA DEL BOT, non il pezzo di testo grezzo: quella e'
           // gia' nel suo tono, ed e' quella che vogliamo risentire.
           //
-          // Nota che questo e' il quaderno del BOT DI QUESTO CANALE. Lia non
+          // Nota che questo e' il quaderno del BOT DI QUESTO CANALE. lei non
           // c'entra e non viene toccata: la valvola resta a senso unico
-          // (docs/BOT-E-LIA.md).
+          // (nel repository del cervello).
           if (web && text.length <= 200) {
             try { knowledge.add(channel, { domanda: String(text).slice(0, 200), risposta, fonte: 'web' }); }
             catch (e) { log.debug(`#${channel} nota:`, e?.message || e); }
           }
           // Se a rispondere e' stata LEI, con una cosa che sa costruire, il bot la
           // impara: la volta dopo non serve disturbarla. E' il verso giusto della
-          // valvola — lei insegna, il bot non la tocca (docs/BOT-E-LIA.md).
+          // valvola — lei insegna, il bot non la tocca (nel repository del cervello).
           try {
             const ins = brainpy.ultimaInsegna?.();
             if (ins) knowledge.add(channel, { domanda: String(ins.domanda).slice(0, 200), risposta: String(ins.risposta).slice(0, 400), fonte: 'lia' });
@@ -1261,7 +1261,7 @@ export class Brain {
       if (!ultima) return null;
       const tono = TONI.includes(settings.tono) ? settings.tono : 'scherzoso';
       const grezza = await brainpy.rispondi({
-        via: 'bot',   // anche quando parte lui, in chat pubblica parla il BOT (docs/BOT-E-LIA.md)
+        via: 'bot',   // anche quando parte lui, in chat pubblica parla il BOT (nel repository del cervello)
         iniziativa: true,
         canale: streamer.display || channel, canaleId: channel,
         login: String(ultima.user || 'chat'), nome: String(ultima.display || ultima.user || 'qualcuno'),

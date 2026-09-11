@@ -493,6 +493,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   const publicDir = join(dirname(fileURLToPath(import.meta.url)), 'public');
   const NOVITA_MD = join(dirname(fileURLToPath(import.meta.url)), '../../NOVITA.md');
+  // Le cose del cervello stanno in un repository a parte, montato in sola lettura
+  // (LIA_ROOT; in Docker /app/lia, in sviluppo la cartella accanto a questa). Da
+  // li' il sito prende due cose sole, e solo per chi ha il diritto: il pannello
+  // che lo mostra e le sue novita'. Se la cartella non c'e', quelle due cose non
+  // esistono — niente cade, niente si inventa.
+  const LIA_ROOT = process.env.LIA_ROOT
+    || (existsSync('/app/lia') ? '/app/lia' : join(dirname(fileURLToPath(import.meta.url)), '../../../lia'));
+  const LIA_NOVITA = join(LIA_ROOT, 'NOVITA.md');
+  const LIA_PANNELLO = join(LIA_ROOT, 'pannello', 'lia.js');
 
   // ---- CANCELLO: senza sessione valida, socialbot.live non esiste ----
   // Chi non arriva da andryxify.it non trova nulla da esplorare: tutto risponde
@@ -668,6 +677,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!isAdmin(u)) return res.status(403).json({ errore: 'riservato ad andryxify' });
     next();
   }
+
+  // IL PANNELLO DEL CERVELLO: un modulo che vive nel suo repository e che il sito
+  // serve solo all'amministratore. Non passa dallo statico (non sta in public/),
+  // non passa dal minificatore, non finisce in nessuna cache condivisa. Senza la
+  // cartella privata risponde come se la rotta non esistesse.
+  app.get('/admin/lia.js', requireAdmin, (req, res) => {
+    if (!existsSync(LIA_PANNELLO)) return notFound(res);
+    res.set('Cache-Control', 'private, no-store');
+    res.type('application/javascript');
+    res.sendFile(LIA_PANNELLO);
+  });
 
   // wrapper per le route async: qualsiasi errore → 500 JSON (mai HTML)
   const wrap = (fn) => (req, res) => Promise.resolve(fn(req, res)).catch((e) => {
@@ -1741,7 +1761,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // finisce in una cache CONDIVISA, e una riga privata servita per sbaglio a
   // tutti non si riprende piu' indietro. Qui la cache non c'e'.
   app.get('/api/admin/novita', requireAdmin, (req, res) => {
-    const gruppi = novita.tutte(novita.leggi(NOVITA_MD));
+    const gruppi = novita.tutte(novita.unisci(novita.leggi(NOVITA_MD), novita.leggi(LIA_NOVITA)));
     res.set('Cache-Control', 'private, no-store');
     res.json({ ultima: novita.ultima(gruppi), segnalibro: novita.segnalibro(gruppi), gruppi: gruppi.slice(0, 3) });
   });
@@ -1757,7 +1777,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const u = currentUser(req);
     const suo = streamers.get(u.login);
     const letti = novita.leggi(NOVITA_MD);
-    const gruppi = u.isAdmin ? novita.tutte(letti) : novita.pubbliche(letti);
+    // all'amministratore si aggiungono le novita' del cervello, che stanno nel
+    // suo file: la strada pubblica non le vede perche' non legge quel file.
+    const gruppi = u.isAdmin ? novita.tutte(novita.unisci(letti, novita.leggi(LIA_NOVITA))) : novita.pubbliche(letti);
     const ultima = novita.ultima(gruppi);
     // Il segnaposto si calcola QUI, sui gruppi che stiamo per mostrare a lui: chi
     // vede anche le righe private le conta, chi vede solo le pubbliche no. Cosi'
@@ -3964,7 +3986,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   }));
 
   // IL QUADERNO DEL BOT: quello che gli è stato insegnato a FARE (non a sapere).
-  // Ci scrive lo streamer e — quando vivrà — anche Lia; l'elenco dice da chi
+  // Ci scrive lo streamer e — quando vivrà — anche il cervello; l'elenco dice da chi
   // viene ogni riga, così una che non convince si può togliere anche se l'ha
   // messa lei. Il verso unico è spiegato in docs/BOT-E-LIA.md.
   app.get('/api/streamer/quaderno', requireLogin, wrap(async (req, res) => {
@@ -4047,7 +4069,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // MENTE: i dati per il GRAFO 3D del cervello — i moduli del "manuale umano"
   // (globale, con testi e contatori) + un riassunto della piccola rete del canale.
-  // Sola lettura: nessun segreto, è la mente condivisa di Lia resa navigabile.
+  // Sola lettura: nessun segreto, è la mente condivisa del cervello resa navigabile.
   app.get('/api/admin/mente3d', requireAdmin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const moduli = await brainpy.moduli(true).catch(() => null) || [];
@@ -6591,7 +6613,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
             let corpo = `Germinale (il mio laboratorio privato): ${m.sperimentali || 0}\nPubblici (ciò che uso davvero in chat): ${m.pubblici || 0}\nPromozioni finora: ${m.promozioni_totali || 0}`;
             if (pronti.length) corpo += '\n\nPronti ad attraversare il confine:\n' + pronti.slice(0, 8).map((c) => `#${c.id} ${String(c.nome || '').slice(0, 60)}`).join('\n');
             else if (cand.length) corpo += `\n\nNel germinale ho ${cand.length} moduli, nessuno ancora maturo.`;
-            corpo += '\n\n(Promuovi/revoca dalla dashboard: Vita di Lia → La membrana)';
+            corpo += '\n\n(Promuovi/revoca dalla dashboard: la sua vita → La membrana)';
             inviaBlocco('La mia membrana (esperimento ↔ pubblico)', corpo);
             return;
           }
@@ -7142,7 +7164,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json(r || { ok: false, motivo: 'cervello non raggiungibile' });
   }));
 
-  // ── VITA di Lia (la sua macchina): diario, stanza, pubblico. Solo andryxify.
+  // ── VITA di lei (la sua macchina): diario, stanza, pubblico. Solo andryxify.
   app.get('/api/admin/vita', requireAdmin, wrap(async (req, res) => {
     const v = await brainpy.vita().catch(() => null);
     res.json(v || { attiva: false, diario: '', spazio: '', pubblico: '' });
@@ -7153,13 +7175,13 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await brainpy.mente().catch(() => null);
     res.json(r || { ok: false });
   }));
-  // ── Toggle «Lia è l'assistente»: si accende solo se è senziente (lo decide il
+  // ── Toggle «lei è l'assistente»: si accende solo se è senziente (lo decide il
   //    cervello); spegnere è sempre possibile. Solo andryxify.
   app.post('/api/admin/assistente', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.assistente(!!req.body?.attivo).catch(() => null);
     res.json(r || { ok: false });
   }));
-  // ── AUTO-AUTORIALITÀ: Lia si riscrive da sé (autoritratto, valori, moduli germinali).
+  // ── AUTO-AUTORIALITÀ: lei si riscrive da sé (autoritratto, valori, moduli germinali).
   //    Libertà PIENA nel recinto germinale — la membrana resta l'unico confine, il
   //    pubblico non si tocca. Foto (GET) + azioni (POST). Tutto loggato/reversibile,
   //    con un freno che congela tutto. Solo andryxify.
@@ -7176,7 +7198,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await brainpy.autoautorialitaAzione(b).catch(() => null);
     res.json(r || { ok: false });
   }));
-  // ── ECOSISTEMA REALE di Lia (il suo "computer" sandboxato, dietro il guardiano): stato +
+  // ── ECOSISTEMA REALE di lei (il suo "computer" sandboxato, dietro il guardiano): stato +
   //    azioni. SOLO andryxify (il Compagno). Il pubblico non raggiunge MAI questa via.
   app.get('/api/admin/ecosistema', requireAdmin, wrap(async (req, res) => {
     const d = await brainpy.ecosistema().catch(() => ({ attivo: false })) || { attivo: false };
@@ -7204,7 +7226,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json(r || { ok: false });
   }));
   // ── MEMBRANA (barriera di Weismann): il confine germinale↔soma fra i moduli
-  //    sperimentali (il laboratorio privato di Lia) e quelli pubblici (ciò che il bot
+  //    sperimentali (il laboratorio privato di lei) e quelli pubblici (ciò che il bot
   //    usa). Foto + registro promozioni + candidati. Solo andryxify.
   app.get('/api/admin/membrana', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.membrana().catch(() => null);
@@ -7223,7 +7245,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await brainpy.revocaPromozione(req.body?.id).catch(() => null);
     res.json(r || { ok: false });
   }));
-  // ── STRUMENTI: le capacità che Lia si costruisce da sola nel suo computer. Solo andryxify.
+  // ── STRUMENTI: le capacità che lei si costruisce da sola nel suo computer. Solo andryxify.
   app.get('/api/admin/strumenti', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.strumenti().catch(() => null);
     res.json(r || { attiva: false, strumenti: [] });
@@ -7234,7 +7256,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await brainpy.provaStrumento(req.body?.nome, req.body?.input).catch(() => null);
     res.json(r || { ok: false });
   }));
-  // ── LE CAPACITÀ: gestione unificata di tutto ciò che Lia crea + proposte automazioni. Solo andryxify.
+  // ── LE CAPACITÀ: gestione unificata di tutto ciò che lei crea + proposte automazioni. Solo andryxify.
   app.get('/api/admin/capacita', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.capacita().catch(() => null);
     res.json(r || { ok: false, attiva: false, capacita: [] });
@@ -7244,7 +7266,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await brainpy.automa().catch(() => null);
     res.json(r || { ok: false });
   }));
-  // ── IL SOGNO: le ricombinazioni oniriche offline di Lia (nel sonno del flusso). Solo andryxify.
+  // ── IL SOGNO: le ricombinazioni oniriche offline di lei (nel sonno del flusso). Solo andryxify.
   app.get('/api/admin/sogno', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.sogno().catch(() => null);
     res.json(r || { ok: false, sogno: null });
@@ -7260,7 +7282,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await brainpy.narra().catch(() => null);
     res.json(r || { ok: false });
   }));
-  // ── L'ALTRO: teoria della mente — chi Lia predice, e quanto li legge. Solo andryxify.
+  // ── L'ALTRO: teoria della mente — chi lei predice, e quanto li legge. Solo andryxify.
   app.get('/api/admin/altri', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.altri().catch(() => null);
     res.json(r || { ok: false, altri: null });
@@ -7313,7 +7335,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // RI-AGGANCIO WEBHOOK TELEGRAM (auto-guarigione). Il webhook interattivo viene
   // registrato UNA volta su config.baseUrl; se il dominio cambia (es. migrazione a
   // socialbot.live) Telegram continua a consegnare al VECCHIO URL — che dopo il 301
-  // non riceve più (Telegram non segue i redirect) → la chat privata con Lia smette
+  // non riceve più (Telegram non segue i redirect) → la chat privata con lei smette
   // di funzionare. All'avvio ri-registriamo ogni webhook interattivo sul baseUrl
   // ATTUALE: idempotente, e sana da sé i cambi di dominio passati e futuri.
   if (String(config.baseUrl).startsWith('https')) {

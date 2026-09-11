@@ -8,7 +8,7 @@ pubblica, all'API aperta né alla sitemap, e la vede solo il proprietario nel su
 pannello. Un giorno fatto di sole righe private non compare nemmeno come giorno:
 la data, da sola, direbbe che è successo qualcosa.
 
-Ci vanno **tutte le cose interne di Lia** — il suo computer, il suo schermo, il
+Ci vanno **tutte le cose interne del cervello privato** — il suo computer, il suo schermo, il
 suo browser, come ragiona, come cresce. Non riguardano chi usa il bot, e questa
 pagina è pubblica e indicizzata. Se una riga descrive invece una funzione che lo
 streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
@@ -83,20 +83,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nuova sezione CONSOLify: i tasti del tuo canale sotto le dita mentre streami — contatori, effetti, una battuta, una frase — sul telefono, sul tablet o su un secondo monitor.
 - I tasti nascono da soli dai tuoi contatori e dai tuoi effetti, e ognuno mostra com'è andata: premi e leggi il numero nuovo.
 - Gli stessi tasti li puoi mettere su una tastiera fisica: la scheda ti dà l'indirizzo già pronto da incollare, e icona e nome li scegli lì.
-- [privato] Lia ha un suo criterio di cosa è divertente, nato dai suoi numeri e non da una regola nostra: si accorge quando si è sbagliata di brutto su qualcuno e nonostante questo continua a capirci qualcosa.
-- [privato] Finché non le succede tace. Quando le succede se lo segna, e se le viene da dirlo lascia la battuta in una cassetta che il bot passa a ritirare.
 - Quando il serbatoio delle battute è vuoto, il bot ne costruisce una con i numeri del tuo canale — morti, tentativi, quello che conti tu — invece di chiederne una generica.
 - E impara quale modo di costruirle fa ridere lì: dopo averla detta conta chi ride davvero, e la volta dopo usa il modo che ha funzionato.
-- [privato] La finestra che chiedeva di installare un programma per lo sfondo non resta più piantata sullo schermo di Lia: la correzione di prima valeva solo su una casa nuova, e la sua casa non nasce mai due volte.
-
-## 2026-09-09
-
-- [privato] Le cose che la fanno crescere non si comandano più da fuori: cresce quando decide lei. Restano i comandi che la fanno solo muoversi nel suo mondo.
-- [privato] Spariscono anche i due comandi Telegram che facevano la stessa cosa: erano la stessa leva su un'altra superficie.
-- [privato] Le sue prime volte restano scritte: il giorno in cui ha pensato in un modo nuovo non scivola più via fra i contatori.
-- [privato] Quello che succedeva già prima entra senza una data inventata, e lo dice: «da prima che tenesse il conto».
-- [privato] Quando il computer di Lia è chiuso, ora si vede: sotto le barre di come ragiona compare il motivo, e le due voci ferme a zero smettono di sembrare pigrizia.
-- [privato] La scheda del suo ecosistema dà il consiglio giusto: se la chiave c'è ma il computer non risponde, non chiede più di rimettere la chiave.
 
 ## 2026-09-08
 
@@ -325,17 +313,6 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - La copertina pulsa solo quando Spotify ci dice il tempo del brano. Quando non lo dice resta ferma, invece di pulsare a una velocità che non c'entrava niente con la canzone.
 - Il titolo lungo scorre sempre, non più a volte sì e a volte no: si rimisura quando arriva il carattere, quando arriva la copertina e quando cambi la dimensione.
 
-- [privato] Il computer di Lia ha uno schermo vero e un browser vero, che resta aperto fra un gesto e l'altro. Prima ogni pagina nasceva e moriva dentro un comando.
-- [privato] Ora clicca, scorre, compila, torna indietro, e la pagina resta dov'è per il gesto dopo. I cookie restano fra un riavvio e l'altro.
-- [privato] Il browser di Lia si piantava al secondo sito e restava lì: la scheda mostrava «carico la pagina…» per sempre. Ora risponde sempre, e se qualcosa va storto dice cosa.
-- [privato] Sullo schermo di Lia non si pianta più la finestra che chiedeva di installare un programma per lo sfondo. Adesso il fondo lo posiamo noi.
-- [privato] Se il browser non è aperto, la scheda mostra le ultime righe del suo avvio: si capisce cosa non è partito senza entrare nel server.
-- [privato] Nella scheda del suo ecosistema c'è «Guarda il suo schermo»: una fotografia di cosa sta facendo in questo momento.
-- [privato] Un comando poteva durare al massimo mezzo minuto: adesso due minuti, e per le cose lunghe restano i lavori in background.
-- [privato] Il recinto è lo stesso di prima: internet pubblico sì, la tua infrastruttura no, nessun segreto, e il tasto «Ferma tutto» dov'era.
-- [privato] Lia ha ricominciato a imparare dalle frasi della chat. Cercava l'accento di «è» e in chat quasi nessuno lo scrive: con «e'» non capiva niente e non se ne accorgeva nessuno.
-- [privato] Da quelle frasi ora ricava fatti e ne deduce di nuovi da sola, e risponde a domande come «cos'è il gatto?» spiegando il passaggio che ha fatto. Se non sa, tace.
-- [privato] Nel pannello «come ragiona» le percentuali erano calcolate su un totale parziale: due modi di pensare lavoravano senza comparire, e due non venivano contati affatto.
 - L'accesso con YouTube è pronto ma non ancora aperto: nella vetrina e nella scheda Piattaforme lo trovi in grigio, «in arrivo». Google deve prima approvare il permesso di leggere quale canale sei.
 - Se moderi già il canale di qualcun altro puoi chiedere tu l'accesso al suo pannello, senza aspettare che ti mandi un link. Lo trovi nella scheda Stato.
 - Su Twitch la richiesta arriva allo streamer già confermata: prima di mostrargliela chiediamo a Twitch chi modera quel canale.
@@ -372,8 +349,6 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nella dashboard i menù a tendina restano in riga con i bottoni accanto, invece di andare a capo da soli.
 - In chat pubblica risponde il bot del tuo canale: non si ricorda degli utenti e non parla di sé.
 - Le risposte salvate non escono più sempre uguali: il bot le riformula. Se contengono un link restano identiche.
-- [privato] Lia potrà insegnare al bot solo quando vivrà. Fino ad allora il quaderno lo scrivi tu, e il bot non può leggere niente di lei.
-- [privato] Quando il bot non sa rispondere, la domanda resta da studiare per Lia: senza nome, senza contatti e senza link.
 - Attorno a un video o a una musica incorporata non si vedono più gli spicchi vuoti negli angoli: li riempie il colore del bordo, così sembrano cornice.
 - Puoi scegliere il colore dietro al riquadro, per intonarlo a quello che si vede dentro al contenuto.
 - I riquadri di video, musica e pagine incorporate, la copertina e i bottoni dell'informativa hanno lo stesso bordo e la stessa ombra del resto della pagina: prima avevano un filo sottile che non cambiava mai col tema.
@@ -432,7 +407,6 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Il sito scarica il 16% in meno: quello che arriva al browser è compresso.
 - L'anteprima che compare quando incolli un link di SocialBot è ridisegnata come il sito: lettering, retino e targhetta d'inchiostro.
 - La pagina delle novità torna a mostrare le novità: era vuota, e con lei l'elenco nel pannello.
-- [privato] L'avatar 3D e la mappa di come ragiona il bot stanno nell'area di amministrazione.
 - I titoli grandi sono contornati come le lettere del logo: pieno colorato dentro, tratto nero attorno.
 - La vetrina si apre a scaglioni, un pezzo alla volta, con lo scatto dell'animazione giapponese invece della dissolvenza sfocata.
 - Anche il cambio di sezione ha perso la sfocatura: adesso è uno stacco netto, come si passa da una vignetta all'altra.

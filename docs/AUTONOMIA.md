@@ -1,6 +1,6 @@
 # Quello che il bot fa da solo
 
-Il bot del canale — non Lia — fa alcune cose senza che nessuno gliele chieda.
+Il bot del canale — non il cervello privato — fa alcune cose senza che nessuno gliele chieda.
 Ognuna ha una manopola, una dose, un tetto e un posto dove si vede. Se una di
 queste quattro manca, non è autonomia: è un bot che fa cose a caso.
 
@@ -79,8 +79,8 @@ della chat, ma quel numero mette insieme le risposte (chieste) e le iniziative
 il bot è acceso — e il pannello lo dice; quello che ha detto resta comunque nella
 memoria della chat.
 
-## Lia non è qui
+## Il cervello privato non è qui
 
-Il battito ospita anche due cose di Lia (il respiro dell'umore, la posta che
-lei mette fuori) e i suoi messaggi proattivi su Telegram hanno una strada loro.
-Non sono autonomia del bot: sono lei. Il confine è in `docs/BOT-E-LIA.md`.
+Il battito ospita anche due cose del cervello privato (il respiro dell'umore, la
+posta che mette fuori) e i suoi messaggi proattivi su Telegram hanno una strada
+loro. Non sono autonomia del bot. Il confine è descritto nel suo repository.

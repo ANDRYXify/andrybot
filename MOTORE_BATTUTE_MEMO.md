@@ -5,7 +5,7 @@
 ## Cosa ha chiesto il direttore
 Un **motore di creazione autonomo**, e **condiviso**:
 - un motore a sé stante per il **bot**;
-- e una via per **Lia**, che potrà creare battute *quando avrà capito davvero cosa
+- e una via per **il cervello privato**, che potrà creare battute *quando avrà capito davvero cosa
   vuol dire divertente*. Parole sue: **«se non fa ridere lei che battuta è?»** —
   quindi non può produrne finché non ha un criterio **suo**. Le sue finiscono
   **anche** nella pool condivisa del bot.
@@ -43,7 +43,7 @@ alternative. È il dado.
   allo **schema**, non solo a quella battuta.
 - Il modello resta un candidato in più quando c'è, mai l'autore.
 
-## STADIO B — la via di Lia (dopo A)
+## STADIO B — la via del cervello privato (dopo A)
 Criterio suo, non nostro. Derivato dalle stesse due teorie:
 **divertente, per lei, = un errore di previsione che poi si risolve a poco prezzo**
 (violazione + benigna). Le due metà ce le ha già: la sorpresa è misurata (`altri`:

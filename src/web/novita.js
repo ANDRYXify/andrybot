@@ -22,7 +22,7 @@ const GIORNO = /^##\s+(\d{4}-\d{2}-\d{2})\s*$/;
 const VOCE = /^[-*]\s+(.+?)\s*$/;
 
 // LE NOVITÀ PRIVATE. Non tutto quello che cambia riguarda chi usa il bot: la
-// crescita di Lia, il suo computer, il suo modo di ragionare sono cose del
+// crescita del cervello privato, il suo computer, il suo modo di ragionare sono cose del
 // direttore, non della vetrina. Si marcano cosi':
 //
 //     - [privato] Il suo browser adesso resta aperto fra un gesto e l'altro.
@@ -108,15 +108,32 @@ export function inItaliano(iso) {
     { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 }
 
-// Si rilegge solo quando il file cambia davvero.
-let cache = { quando: 0, gruppi: [] };
+// Si rilegge solo quando il file cambia davvero. La cache e' PER FILE: le
+// novita' arrivano da due file (quello pubblico e quello privato del cervello),
+// e una cache sola con la data dell'ultimo letto restituirebbe i gruppi di un
+// file sotto il nome dell'altro non appena le due date coincidono.
+const cache = new Map();
 export function leggi(via) {
   let mtime = 0;
   try { mtime = statSync(via).mtimeMs; } catch { return []; }
-  if (mtime !== cache.quando) {
-    try { cache = { quando: mtime, gruppi: analizza(readFileSync(via, 'utf8')) }; } catch { return cache.gruppi; }
+  const c = cache.get(via);
+  if (!c || mtime !== c.quando) {
+    try { cache.set(via, { quando: mtime, gruppi: analizza(readFileSync(via, 'utf8')) }); } catch { return c ? c.gruppi : []; }
   }
-  return cache.gruppi;
+  return cache.get(via).gruppi;
+}
+
+// Due fonti, un solo elenco: le voci dello stesso giorno stanno insieme (prima
+// quelle della prima fonte), i giorni in ordine dal piu' recente. E' cosi' che
+// il pannello del proprietario vede le novita' pubbliche e quelle del cervello
+// come una storia sola, senza che il file pubblico contenga le seconde.
+export function unisci(a, b) {
+  const perData = new Map();
+  for (const g of [...(a || []), ...(b || [])]) {
+    if (!perData.has(g.data)) perData.set(g.data, { data: g.data, voci: [] });
+    perData.get(g.data).voci.push(...g.voci.map((v) => ({ ...v })));
+  }
+  return [...perData.values()].sort((x, y) => (x.data < y.data ? 1 : x.data > y.data ? -1 : 0));
 }
 
 // L'ultima novità: e' la data che il pannello confronta con «l'hai gia' vista».
