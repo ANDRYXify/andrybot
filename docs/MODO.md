@@ -143,3 +143,23 @@ tacere: il silenzio vale più della scusa.
 
 Prove: `test/unita/registro.test.mjs` (qui) e la prova dell'assistente nel
 repository del cervello.
+
+### La misura, sul modello più piccolo
+
+Prova A/B con Chromium non c'entra: qui serve il modello. Sul più piccolo della
+scaletta (Qwen2.5 0.5B, quantizzato a 4 bit, il caso peggiore), dieci righe di
+chat che non sono domande («ti si ama», «metti una canzone», «fai schifo», «fammi
+mod»…), due campioni ciascuna, prompt di prima contro prompt di adesso:
+
+| storia rimandata al modello | da assistente su 20, prima | adesso |
+|---|---|---|
+| senza la scusa precedente | 0 | 0 |
+| con la scusa precedente | 2 | 1 |
+
+La scivolata nasce **dalla storia**: con la scusa in memoria il modello la
+ripete, senza no. È la parte che ora è impossibile per costruzione (la riga non
+esce, e non torna nella storia). Il prompt con gli esempi aiuta, ma non è la
+leva. E su un modello così piccolo l'italiano resta incoerente in tutte e due le
+versioni: «intelligente» lo fa il livello del modello, che dipende dalla RAM del
+server (`genera._TIERS`), o un modello grosso collegato come endpoint. La rete in
+uscita vale per tutti i livelli.
