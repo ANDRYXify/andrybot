@@ -46,6 +46,8 @@ if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
 fi
 PRIMA="$(git rev-parse HEAD)"
 echo "adesso siamo su $(git rev-parse --short HEAD) — $(git log -1 --format=%s)"
+# i segreti li legge solo root, sempre: costa niente ripeterlo a ogni giro
+[ -f .env ] && chmod 600 .env
 
 # ---- 2. cosa sta per arrivare ------------------------------
 passo "Guardo cosa c'è di nuovo"
@@ -118,20 +120,40 @@ passo "Ricostruisco e riavvio"
 docker compose up -d --build
 
 # ---- 7. è tornato su davvero? ------------------------------
-passo "Controllo che sia tornato su"
+# Se non torna su, si TORNA INDIETRO DA SOLI: chi aggiorna da una console
+# scomoda non deve battere a mano un comando lungo con il sito giù.
 PORTA="${PORTA_BOT:-8090}"
-for i in $(seq 1 30); do
-  RISP="$(docker compose exec -T bot node -e "require('http').get('http://127.0.0.1:$PORTA/health',r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>{console.log(d);process.exit(0)})}).on('error',()=>process.exit(1))" 2>/dev/null || true)"
-  case "$RISP" in
-    *'"stato":"sano"'*)      echo "sano ✓"; echo "$RISP"; exit 0 ;;
-    *'"stato":"degradato"'*) echo "in piedi ma degradato — guarda /api/admin/salute"; echo "$RISP"; exit 0 ;;
-  esac
-  sleep 2
-done
+aspetta_sano() {   # esce 0 se entro 60 secondi il bot risponde sano o degradato
+  for i in $(seq 1 30); do
+    RISP="$(docker compose exec -T bot node -e "require('http').get('http://127.0.0.1:$PORTA/health',r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>{console.log(d);process.exit(0)})}).on('error',()=>process.exit(1))" 2>/dev/null || true)"
+    case "$RISP" in
+      *'"stato":"sano"'*)      echo "sano ✓"; echo "$RISP"; return 0 ;;
+      *'"stato":"degradato"'*) echo "in piedi ma degradato — guarda /api/admin/salute"; echo "$RISP"; return 0 ;;
+    esac
+    sleep 2
+  done
+  return 1
+}
+
+passo "Controllo che sia tornato su"
+if aspetta_sano; then
+  echo "aggiornato a $(git rev-parse --short HEAD) — se nei log c'è «chiavi degli overlay rinnovate», i link degli overlay vanno rimessi nelle sorgenti di regia."
+  exit 0
+fi
 
 echo
-echo "Il bot non risponde sano dopo 60 secondi. Guarda i log:"
+echo "Il bot non risponde sano dopo 60 secondi: TORNO ALLA VERSIONE DI PRIMA ($(git rev-parse --short "$PRIMA"))."
+echo "Ultime righe di log della versione nuova, per capire:"
+docker compose logs --tail=40 bot 2>/dev/null || true
+git reset --hard "$PRIMA" >/dev/null
+docker compose up -d --build
+
+passo "Controllo che la versione di prima sia tornata su"
+if aspetta_sano; then
+  echo "tornati alla versione di prima. L'aggiornamento NON è passato: guarda i log qui sopra."
+  exit 1
+fi
+echo
+echo "Nemmeno la versione di prima risponde. Guarda i log:"
 echo "    docker compose logs --tail=100 bot"
-echo "Per tornare alla versione di prima:"
-echo "    git -C $RADICE reset --hard $PRIMA && docker compose up -d --build"
 exit 1

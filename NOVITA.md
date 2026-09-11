@@ -17,6 +17,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-11
 
+- Il link dei tuoi overlay è stato rinnovato per tutti, per sicurezza: copialo di nuovo dal pannello e rimettilo nelle sorgenti del programma con cui mandi in onda. [vai: alert]
 - Il link dell'overlay ora porta la chiave con sé, e accanto c'è il tasto per farne uno nuovo: se ti scappa in un video o in una chat, lo rinnovi e il vecchio muore subito. [vai: alert]
 - Un'icona caricata come disegno vettoriale viene trasformata in immagine: quello che carichi resta un'immagine e basta. [vai: consolify]
 - Ogni canale ha un tetto di spazio sul disco per media, effetti, font e icone, e il pannello ti dice quanto ne usi: prima nessuno lo contava. [vai: effetti]

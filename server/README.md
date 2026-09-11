@@ -131,8 +131,8 @@ con la procedura del sito.
 Dal server, in `/opt/andrybot`:
 
 ```bash
-# aggiornare all'ultima versione
-git pull && docker compose up -d --build
+# aggiornare all'ultima versione: prova, aggiorna, e se non torna su TORNA INDIETRO DA SOLO
+bash server/aggiorna.sh
 
 # vedere i log in tempo reale
 docker compose logs -f bot
