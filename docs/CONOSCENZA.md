@@ -85,9 +85,9 @@ Una pagina spenta non parla: se non è pubblica, il bot non la usa.
 ## Il quaderno
 
 È il file del bot: quello che gli è stato insegnato a **fare** (non a sapere).
-Lo scrivi tu, e — quando vivrà — ci scriverà anche Lia. In elenco vedi da chi
+Lo scrivi tu, e ci può scrivere anche il cervello del sito. In elenco vedi da chi
 viene ogni riga, e puoi toglierne una che non ti convince, anche se l'ha messa
-lei. Il perché del verso unico sta in `docs/BOT-E-LIA.md`.
+lui. Il perché del verso unico sta nel repository del cervello.
 
 ## Due dettagli che stanno solo qui
 
@@ -97,4 +97,4 @@ riscrivere la voce intera non lo corregge nessuno.
 
 **Le righe del quaderno che valgono ovunque si vedono ma non si tolgono dalla
 dashboard.** Non appartengono a quel canale: le ha messe chi tiene il sito, o
-Lia. Il bottone «Togli» compare solo dove funziona davvero.
+il cervello. Il bottone «Togli» compare solo dove funziona davvero.

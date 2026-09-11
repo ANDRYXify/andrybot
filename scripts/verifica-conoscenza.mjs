@@ -41,8 +41,6 @@ const ROTTURE = [
   ['src/db.js', '  chiamami: 40,', '  chiamami: 40,\n  colore: 40,', 'un campo nuovo nella scheda, e nessuno lo rende'],
   ['src/web/public/app.js', '<input type="text" id="sc-orari"', '<input type="text" id="sc-orarii"', 'un campo della scheda perde il suo posto nella dashboard'],
   ['src/web/public/app.js', "orari: campo('orari'),", "", 'un campo si compila ma non si salva'],
-  ['brain/assistente.py', '    ("orari", "quando e\' in diretta"),', '', 'un campo si salva ma non arriva al prompt'],
-  ['brain/assistente.py', 'regole = _divieto_scheda(scheda) + ', 'regole = ', '«cosa non dire mai di me» smette di essere una regola'],
   ['src/ai/brain.js', 'scheda: this._scheda(channel),   // chi', '// scheda: this._scheda(channel),   // chi', 'la scheda non parte piu\' dalla chat pubblica'],
   ['src/ai/brainpy.js', '        conoscenza, scheda, stile,', '        conoscenza, stile,', 'la scheda si ferma sul ponte'],
   ['src/web/server.js', 'out.scheda = schedaPulita(b.scheda);', '', 'la scheda non si salva piu\''],
@@ -105,48 +103,8 @@ for (const c of CAMPI) {
   dice(new RegExp(`\\b${c}\\s*:\\s*campo\\('${c}'\\)`).test(salva), `«${c}»: viene salvato`, 'compilarlo non lo scriverebbe da nessuna parte');
 }
 
-// --- 2. LA PROVA: ogni campo compilato si ritrova nel prompt ------------
-function pythonC() {
-  for (const bin of [process.env.PYTHON_BIN, 'python3', 'python'].filter(Boolean)) {
-    try { execFileSync(bin, ['-c', 'pass'], { stdio: 'ignore' }); return bin; } catch { /* prossimo */ }
-  }
-  return null;
-}
-const py = pythonC();
-if (!py || !CAMPI.length) {
-  dice(false, 'la scheda compilata si ritrova nel prompt (provato davvero)',
-    py ? 'senza campi non c\'e' + ' niente da provare' : 'senza python3 non posso comporre il prompt, e su questo non si va di parola');
-} else {
-  const scheda = Object.fromEntries(CAMPI.map((c, i) => [c, `segnale${i}zzz`]));
-  const prova = `
-import sys, types, json, tempfile, os
-os.environ["DATA_DIR"] = tempfile.mkdtemp()
-sys.path.insert(0, ${JSON.stringify(join(RAD, 'brain'))})
-finto = types.ModuleType("genera"); visto = {}
-def _completa(sistema, turni, utente, max_tokens, **k):
-    visto["s"] = sistema; return "ok"
-finto._completa = _completa
-finto.scudo_identita = lambda t, n, u="": t
-sys.modules["genera"] = finto
-import assistente as A
-A.rispondi({"canale": "c", "login": "l", "nome": "n", "testo": "una domanda qualunque",
-            "scheda": ${JSON.stringify(scheda)}})
-print(json.dumps({"prompt": visto.get("s", "")}))
-`;
-  let out = null;
-  try { out = JSON.parse(execFileSync(py, ['-c', prova], { encoding: 'utf8' })); }
-  catch (e) { dice(false, 'il prompt si compone', String(e.message || e).slice(0, 200)); }
-  if (out) {
-    const persi = CAMPI.filter((c, i) => !out.prompt.includes(`segnale${i}zzz`));
-    dice(!persi.length, `tutti i ${CAMPI.length} campi della scheda arrivano nel prompt`,
-      `si perdono per strada: ${persi.join(', ')}`);
-    const iEvita = CAMPI.indexOf('evita');
-    const dopoRegole = out.prompt.slice(out.prompt.indexOf('REGOLE DI QUESTO CANALE'));
-    dice(iEvita >= 0 && out.prompt.includes('REGOLE DI QUESTO CANALE') && dopoRegole.includes(`segnale${iEvita}zzz`),
-      '«cosa non dire mai di me» sta fra le REGOLE, non fra i fatti',
-      'sta fra le informazioni: il modello lo racconterebbe invece di rispettarlo');
-  }
-}
+// --- 2. che ogni campo arrivi nel PROMPT lo prova il cancello omonimo nel
+//        repository del cervello: e' li' che il prompt si compone.
 
 // --- 3. la scheda attraversa i tre strati ------------------------------
 const brainjs = senzaCommentiJs(leggi('src/ai/brain.js'));

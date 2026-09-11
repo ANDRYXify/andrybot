@@ -94,7 +94,7 @@ Regole, e sono tutte «non parlare»:
 - passa dagli stessi controlli di una risposta normale: moderazione, niente eco
   di un utente, niente ripetizioni di sé.
 
-Un'iniziativa andata a vuoto non diventa una lacuna di Lia. Lì nessuno ha
+Un'iniziativa andata a vuoto non diventa una lacuna del cervello. Lì nessuno ha
 chiesto niente, e «non avevo niente da dire» non è un buco da studiare.
 
 L'elenco di frasi è stato tolto da `src/ai/persona.js`. Finché restava lì,

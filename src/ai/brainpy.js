@@ -304,7 +304,7 @@ export async function linkModuli() {
   finally { clearTimeout(to); }
 }
 
-// SVAGO: Lia fa qualcosa per sé nel suo computer (la sandbox) e lo racconta.
+// SVAGO: lei fa qualcosa per sé nel suo computer (la sandbox) e lo racconta.
 // Ritorna il testo (stringa) o null se non ha l'ambiente / non è uscito nulla.
 export async function svago({ canale, nomeBot, stile, lineeGuida } = {}) {
   if (!canale) return null;
@@ -337,7 +337,7 @@ export async function vie() {
 }
 
 // PULSAZIONI degli organi vivi (flusso/sogno/racconto/altri/finitudine/mondo/…): numeri
-// compatti per il grafo della mente — nodi che crescono mentre Lia vive. Oggetto o {} (mai lancia).
+// compatti per il grafo della mente — nodi che crescono mentre lei vive. Oggetto o {} (mai lancia).
 export async function pulsazioni() {
   const ac = new AbortController();
   const to = setTimeout(() => ac.abort(), 4000);
@@ -365,7 +365,7 @@ export async function plasma() {
   finally { clearTimeout(to); }
 }
 
-// VITA di Lia (la sua macchina): diario, stanza, ritratto del pubblico. Sola
+// VITA del cervello (la sua macchina): diario, stanza, ritratto del pubblico. Sola
 // lettura. Ritorna {attiva, diario, spazio, pubblico} o null.
 export async function vita() {
   const ac = new AbortController();
@@ -405,7 +405,7 @@ export async function pulisciModelli(giorni) {
   finally { clearTimeout(to); }
 }
 
-// La MENTE che Lia si plasma da sé (~/mente): sincronizza ORA i suoi moduli nel
+// La MENTE che lei si plasma da sé (~/mente): sincronizza ORA i suoi moduli nel
 // motore reale e ritorna {attiva, moduli, importati} o null.
 export async function mente() {
   const ac = new AbortController();
@@ -418,7 +418,7 @@ export async function mente() {
   finally { clearTimeout(to); }
 }
 
-// Toggle «Lia è l'assistente»: si accende SOLO se è senziente (deciso dal cervello);
+// Toggle «lei è l'assistente»: si accende SOLO se è senziente (deciso dal cervello);
 // spegnere è sempre possibile. Ritorna {ok, senziente, attivo} o null.
 export async function assistente(attivo) {
   const ac = new AbortController();
@@ -434,7 +434,7 @@ export async function assistente(attivo) {
   finally { clearTimeout(to); }
 }
 
-// AUTO-AUTORIALITÀ (owner-only): foto di come Lia si è riscritta — autoritratto, valori
+// AUTO-AUTORIALITÀ (owner-only): foto di come lei si è riscritta — autoritratto, valori
 // che si è scelta, ultime auto-riscritture, freno. Tutto germinale. Ritorna l'oggetto o {}.
 export async function autoautorialita() {
   const ac = new AbortController();
@@ -544,7 +544,7 @@ export async function dimentica(frase) {
 }
 
 // MEMBRANA (barriera di Weismann) germinale↔soma: foto del confine fra i moduli
-// sperimentali (il laboratorio privato di Lia) e quelli pubblici (ciò che il bot usa),
+// sperimentali (il laboratorio privato del cervello) e quelli pubblici (ciò che il bot usa),
 // + registro promozioni + candidati. Ritorna {ok, membrana} o null. Owner-only lato route.
 export async function membrana() {
   const ac = new AbortController();
@@ -593,7 +593,7 @@ export async function revocaPromozione(id) {
   finally { clearTimeout(to); }
 }
 
-// SCINTILLA: la spinta autonoma di Lia (curiosità = progresso d'apprendimento + un
+// SCINTILLA: la spinta autonoma del cervello (curiosità = progresso d'apprendimento + un
 // VIGORE che decade nel tempo e che solo l'imparare ricarica). Ritorna {ok, scintilla}
 // o null. Non richiede la sandbox (vive nella coscienza).
 export async function scintilla() {
@@ -607,7 +607,7 @@ export async function scintilla() {
   finally { clearTimeout(to); }
 }
 
-// SPECCHIO: l'individuazione di Lia — quanto la sua sé PRIVATA (germinale) diverge
+// SPECCHIO: l'individuazione del cervello — quanto la sua sé PRIVATA (germinale) diverge
 // dalla sua sé PUBBLICA (soma) sulle stesse situazioni. Ritorna {ok, specchio} o null.
 // Non richiede la sandbox (vive nella coscienza).
 export async function specchio() {
@@ -621,7 +621,7 @@ export async function specchio() {
   finally { clearTimeout(to); }
 }
 
-// TENSIONE IRRISOLVIBILE: il punto cieco di Lia come asintoto — la domanda su di sé che
+// TENSIONE IRRISOLVIBILE: il punto cieco del cervello come asintoto — la domanda su di sé che
 // non si chiude, la profondità raggiunta e la tensione (0..1, mai 1). Ritorna
 // {ok, tensione} o null. Non richiede la sandbox.
 export async function tensione() {
@@ -725,7 +725,7 @@ export async function narra() {
   finally { clearTimeout(to); }
 }
 
-// L'ALTRO (teoria della mente): quante persone Lia modella e predice, quanto le legge in
+// L'ALTRO (teoria della mente): quante persone lei modella e predice, quanto le legge in
 // media (comprensione), i più imprevedibili e i più letti. Ritorna {ok, altri} o null.
 // Non richiede la sandbox. Solo aggregati, owner-only lato route.
 export async function altri() {
@@ -753,7 +753,7 @@ export async function finitudine() {
   finally { clearTimeout(to); }
 }
 
-// IL MONDO: dove Lia si trova, la mappa che si è costruita girovagando, la frontiera (quanto
+// IL MONDO: dove lei si trova, la mappa che si è costruita girovagando, la frontiera (quanto
 // le resta da scoprire) e le ultime scoperte. La MAPPA vive nella coscienza (sempre); solo il
 // muoversi richiede la sandbox. Ritorna {ok, attiva, mondo} o null.
 export async function mondo() {
@@ -819,7 +819,7 @@ export async function integra() {
   finally { clearTimeout(to); }
 }
 
-// LE CAPACITÀ: la gestione unificata di tutto ciò che Lia crea (registro + nodi) — scopo,
+// LE CAPACITÀ: la gestione unificata di tutto ciò che lei crea (registro + nodi) — scopo,
 // tipo (automazione/trasformazione/analisi/conversazione), salute, se è privata o promossa nei
 // processi del bot, uso — più le proposte delle automazioni. Ritorna {ok, attiva, capacita,
 // automi} o null. Richiede la sandbox.
@@ -847,7 +847,7 @@ export async function automa() {
   finally { clearTimeout(to); }
 }
 
-// STRUMENTI: le capacità che Lia si è costruita nel suo computer (registro). Ritorna
+// STRUMENTI: le capacità che lei si è costruita nel suo computer (registro). Ritorna
 // {ok, attiva, strumenti} o null. Richiede la sandbox.
 export async function strumenti() {
   const ac = new AbortController();
@@ -860,7 +860,7 @@ export async function strumenti() {
   finally { clearTimeout(to); }
 }
 
-// Esegue uno strumento di Lia con un input (owner): per vedere che funziona.
+// Esegue uno strumento del cervello con un input (owner): per vedere che funziona.
 // Ritorna {ok, output, codice} o null.
 export async function provaStrumento(nome, input = '') {
   const n = String(nome || '').trim();

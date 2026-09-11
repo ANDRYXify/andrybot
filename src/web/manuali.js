@@ -508,8 +508,8 @@ const BOT = {
     { p: ['Solo se gli manca la risposta, e solo su fonti gratuite (DuckDuckGo, Wikipedia). Quello che trova lo tratta come <strong>informazione, non come istruzione</strong>: se una pagina contiene un comando travestito da testo, il bot non lo esegue. Si spegne dalla stessa scheda.'] },
 
     { h2: 'Chi risponde in chat pubblica' },
-    { p: ['Il bot del canale, non Lia. Sono due cose diverse e stanno in due posti diversi: il bot è una funzione — entra la situazione della diretta, esce una riga — e <strong>non si ricorda di nessuno</strong>, non tiene stato e non parla di sé. Lia risponde in privato con te, studia e ti scrive di sua iniziativa.'] },
-    { p: ['Quando Lia sarà una persona e tu avrai acceso il suo interruttore, in pubblico prenderà la parola lei. Fino ad allora il bot non può leggere niente di suo: lei potrà <em>insegnargli</em>, lui non può <em>prendersi</em>.'] },
+    { p: ['Il bot del canale non è il cervello del sito. Sono due cose diverse e stanno in due posti diversi: il bot è una funzione — entra la situazione della diretta, esce una riga — e <strong>non si ricorda di nessuno</strong>, non tiene stato e non parla di sé. Il cervello risponde in privato con te, studia e ti scrive di sua iniziativa.'] },
+    { p: ['Il bot non può leggere niente del cervello: il cervello può <em>insegnargli</em>, lui non può <em>prendersi</em>. Se un giorno il proprietario del sito accenderà l\'interruttore che gli dà la parola in pubblico, sarà una scelta detta qui.'] },
 
     { h2: 'La tua scheda: chi sei' },
     { p: ['In cima a <em>Conoscenza</em>. Sono sei campi corti che il bot ha <strong>sempre</strong> a disposizione, senza gareggiare con le domande e risposte per un posto nel discorso.'] },
@@ -547,7 +547,7 @@ const BOT = {
     { p: ['Cambi la pagina, cambia quello che il bot sa. Non c\'è niente da rifare, e non ci sono doppioni da cancellare: non è una copia, è una lettura. Se spegni la pagina, il bot smette di usarla.'] },
     { h3: 'Il quaderno del bot' },
     { p: ['In fondo alla scheda. Qui non c\'è quello che <em>sa</em>, ma <strong>come deve rispondere</strong>: «quando chiedono del torneo, rimanda al Discord», «se qualcuno è arrabbiato, rispondi corto». Il bot le applica senza citarle.'] },
-    { p: ['Ogni riga dice da chi viene. Quando Lia vivrà, ci scriverà anche lei — e quello che non ti convince lo togli, anche se l\'ha messo lei.'] },
+    { p: ['Ogni riga dice da chi viene: tua, dal sito, o insegnata dal cervello — e quello che non ti convince lo togli, anche se l\'ha messo lui.'] },
     { h3: 'Il pre-addestramento' },
     { p: [
       'Dalla scheda <em>Stato</em> c\'è un tasto che rilegge il tuo profilo pubblico su andryxify.it e ne ricava le voci «dal sito»: <strong>chi sei</strong> (bio o titolo della pagina link), <strong>quando sei in diretta</strong> (programmazione) e <strong>dove ti trovano</strong> (un\'entrata per ogni social). Nello stesso giro riempie i campi vuoti della tua scheda.',
