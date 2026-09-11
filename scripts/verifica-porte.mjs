@@ -63,7 +63,6 @@ const PUBBLICHE = new Map([
   ['GET /u/:user/img/:file', 'immagini della pagina link'],
   ['GET /u/:user/privacy', 'informativa della pagina link'],
   ['GET /api/streamer-verify', 'lo stesso servizio della pagina link, origine fissa'],
-  ['GET /o/:login/:slug', 'scorciatoia verso un overlay: rimanda al link con la chiave'],
   ['GET /auth/callback', 'ritorno del login Twitch'],
   ['GET /auth/mod', 'ingresso dei moderatori'],
   ['GET /auth/logout', 'uscita'],
@@ -72,7 +71,6 @@ const PUBBLICHE = new Map([
   ['GET /telegram/oidc/callback', 'ritorno del collegamento Telegram'],
   ['GET /tgapp', 'la mini-app dentro Telegram'],
   ['POST /api/tgapp/auth', 'verifica da se la firma di Telegram'],
-  ['POST /tg/:secret', 'segreto nel percorso piu header segreto di Telegram'],
   // Un'icona non e' un segreto, e deve poter essere presa da fuori (una tastiera,
   // Companion) senza portarsi dietro la chiave del canale. Il nome del file e' a
   // schema fisso e casuale: non si indovina e non si risale di cartella.
@@ -85,7 +83,9 @@ let sorgente = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
 if (SELFTEST) {
   sorgente = sorgente.replace(
     "  app.get('/health',",
-    "  app.get('/api/segreti-di-tutti', wrap(async (req, res) => res.json({ tutto: 1 })));\n  app.get('/health',");
+    "  app.get('/api/segreti-di-tutti', wrap(async (req, res) => res.json({ tutto: 1 })));\n"
+    + "  app.get('/regalo/:login', (req, res) => res.redirect(effects.overlayUrl(req.params.login)));\n"
+    + "  app.get('/health',");
 }
 
 const rotte = [];
@@ -125,6 +125,17 @@ for (const r of rotte) {
   }
 }
 
+// 4) UNA PORTA PUBBLICA NON TOCCA CHI FABBRICA I SEGRETI. C'era una scorciatoia
+//    «/o/:login/:slug», pubblica con tanto di motivo scritto, che rimandava al
+//    link dell'overlay CON la chiave dentro: bastava il nome di uno streamer per
+//    avere la chiave del suo schermo. Il motivo nell'elenco descriveva il buco,
+//    e l'elenco lo benediceva. Quindi l'elenco non basta: una rotta senza
+//    guardiano non puo' nemmeno NOMINARE una funzione che produce una chiave.
+const FABBRICHE = /\b(overlayKey|overlayUrl|mediaUrl|nuovaChiave)\s*\(|consolle\.chiave\s*\(/;
+for (const r of senza) {
+  if (FABBRICHE.test(r.corpo)) guai.push(`${r.chiave}: e' pubblica ma tocca una chiave`);
+}
+
 const conta = {};
 for (const r of rotte) conta[r.guardia || 'pubblica'] = (conta[r.guardia || 'pubblica'] || 0) + 1;
 
@@ -136,9 +147,12 @@ let verde = true;
 verde = dice(!guai.some((g) => /nessun guardiano/.test(g)), `rotte lette: ${rotte.length}`, guai.filter((g) => /nessun guardiano/.test(g)).slice(0, 5).join(' · ')) && verde;
 verde = dice(!guai.some((g) => /marcire|toglila/.test(g)), `porte dichiarate pubbliche: ${PUBBLICHE.size}, tutte ancora vere`, guai.filter((g) => /toglila/.test(g)).slice(0, 5).join(' · ')) && verde;
 verde = dice(!guai.some((g) => /amministrazione/.test(g)), `porte di amministrazione: ${rotte.filter((r) => /^\/api\/admin\b/.test(r.via)).length}`, guai.filter((g) => /amministrazione/.test(g)).slice(0, 5).join(' · ')) && verde;
+verde = dice(!guai.some((g) => /tocca una chiave/.test(g)), `porte pubbliche che toccano una chiave: ${guai.filter((g) => /tocca una chiave/.test(g)).length}`, guai.filter((g) => /tocca una chiave/.test(g)).slice(0, 5).join(' · ')) && verde;
 
 if (SELFTEST) {
-  if (!verde) { console.log('\nAutoprova: una porta nuova senza guardiano fa diventare rosso il cancello. ✓\n'); process.exit(0); }
+  const regalo = guai.some((g) => /regalo.*tocca una chiave/.test(g));
+  if (!verde && regalo) { console.log('\nAutoprova: una porta nuova senza guardiano, e una che regala una chiave, fanno diventare rosso il cancello. ✓\n'); process.exit(0); }
+  if (!verde) { console.log('\nAutoprova FALLITA: la porta che regala la chiave non e\' stata vista.\n'); process.exit(1); }
   console.log('\nAutoprova FALLITA: il cancello non si accorge di una porta aperta.\n');
   process.exit(1);
 }

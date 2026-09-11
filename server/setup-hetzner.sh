@@ -83,6 +83,7 @@ cd "${APP_DIR}"
 passo "Configurazione (.env)"
 if [ ! -f .env ]; then
   cp .env.example .env
+  chmod 600 .env   # i segreti li legge solo root: nessun altro utente della macchina
   # Genera subito un SESSION_SECRET casuale al posto del segnaposto
   SEGRETO="$(openssl rand -hex 32)"
   sed -i "s|^SESSION_SECRET=.*|SESSION_SECRET=${SEGRETO}|" .env

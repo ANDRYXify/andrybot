@@ -31,6 +31,7 @@ import { pagina404, LINGUE_SERVIZIO } from './pagine-servizio.js';
 import { montaArgine } from './argine.js';
 import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guide.js';
 import * as novita from './novita.js';
+import { spazioCartella, inMega } from '../features/spazio.js';
 import { paginaManuale, paginaIndiceManuali, urlManuali, aiutiPerScheda } from './manuali.js';
 import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
 import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente } from '../features/antibot.js';
@@ -45,7 +46,7 @@ import * as abbonamenti from '../features/abbonamenti.js';
 import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
 import * as webauthn from './webauthn.js';
-import { comprimi, convertiPerEmote } from '../features/compress.js';
+import { comprimi, convertiPerEmote, svgInPng } from '../features/compress.js';
 import { StudioEngine, QUALITA as STUDIO_QUALITA } from '../features/studio.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
@@ -783,6 +784,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ------------------------------------------------------------ EFFETTI: cartelle e upload
   // gli effetti vivono in data/effects/<login>/, i file in arrivo in data/tmp/
   const effectsRoot = join(config.dataDir, 'effects');
+  // Il tetto allo spazio di un canale: la somma di quello che ha caricato.
+  const SPAZIO_FINITO = 'spazio del canale esaurito: togli qualche media, effetto o font e riprova';
+  const spazioEsaurito = (login) => spazioCartella(join(effectsRoot, String(login).toLowerCase())) >= config.spazioCanaleByte;
+  const spazioDi = (login) => ({ usato: inMega(spazioCartella(join(effectsRoot, String(login).toLowerCase()))), max: inMega(config.spazioCanaleByte) });
   const sfondiRoot = join(config.dataDir, 'sfondi');   // libreria sfondi delle grafiche
   const tmpDir = join(config.dataDir, 'tmp');
   mkdirSync(tmpDir, { recursive: true });
@@ -989,17 +994,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // la chiave (gestita dal server) e l'overlay giusto (?o=id). Comodo da copiare;
   // l'overlay funziona identico. Nota: è indovinabile (nick + nome), quindi meno
   // "segreto" del link con ?key — che resta valido come alternativa privata.
-  app.get('/o/:login/:slug', (req, res) => {
-    const login = String(req.params.login).toLowerCase();
-    const s = streamers.get(login);
-    if (!s) return notFound(res);
-    const slug = slugify(req.params.slug);
-    const lista = overlaysDi(s.settings);
-    const ov = lista.find((o) => slugify(o.nome) === slug) || (slug === 'overlay' ? lista[0] : null);
-    if (!ov) return notFound(res);
-    const key = effects.overlayKey(login);
-    res.redirect(`/overlay/${encodeURIComponent(login)}?key=${encodeURIComponent(key)}&o=${encodeURIComponent(ov.id)}`);
-  });
+  // Qui c'era una scorciatoia pubblica «/o/:login/:slug» che rimandava al link
+  // dell'overlay CON la chiave dentro. Una porta senza guardiano che consegna un
+  // segreto non e' una porta pubblica: e' il segreto reso pubblico. Il link che
+  // si incolla nel programma di regia porta la chiave in se', e la chiave si
+  // rinnova dal pannello (POST /api/streamer/overlay/chiave).
 
   // «Parti da quanti ne ho»: la partenza di un obiettivo non deve essere una
   // fotografia che invecchia. Con daVivo acceso il server la riallinea al numero
@@ -1161,6 +1160,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // flusso SSE degli effetti in tempo reale
   app.get('/overlay/:login/stream', (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
+    if (!effects.postoLibero()) return res.status(503).json({ errore: 'troppi collegamenti aperti' });
     const login = String(req.params.login).toLowerCase();
     res.set({
       'Content-Type': 'text/event-stream',
@@ -1178,6 +1178,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // chat, sfide della chat). Lo apre l'overlay tracking; protetto dalla chiave.
   app.get('/tracking/:login/stream', (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
+    if (!effects.postoLibero()) return res.status(503).json({ errore: 'troppi collegamenti aperti' });
     const login = String(req.params.login).toLowerCase();
     res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
     res.flushHeaders?.();
@@ -1527,6 +1528,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const mime = String(req.file.mimetype || '');
     const est = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[mime];
     if (!est) { await pulisciTemp(req.file.path); return res.status(400).json({ errore: 'Serve un\'immagine (PNG, JPG, WEBP o GIF).' }); }
+    if (spazioEsaurito(login)) { await pulisciTemp(req.file.path); return res.status(413).json({ errore: SPAZIO_FINITO }); }
     const nome = `lp_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${est}`;
     const dir = join(effectsRoot, login);
     try {
@@ -2126,6 +2128,13 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.post('/api/mod/cambia-canale', requireLogin, cambiaCanale);   // alias retrocompatibile
 
   app.get('/auth/logout', (req, res) => {
+    // E' un GET perche' e' un link, e un link da un altro sito porta con se' il
+    // cookie (SameSite=Lax lascia passare le navigazioni). Farti uscire da fuori
+    // non ruba niente, ma e' una porta che si apre a chiunque: si chiude
+    // guardando da dove arriva il passo. Un browser vecchio senza l'header
+    // passa lo stesso — e' l'header a dire «cross-site», non la sua assenza.
+    const da = String(req.get('Sec-Fetch-Site') || '');
+    if (da === 'cross-site') return res.redirect('/');
     req.session = null;
     res.redirect('/entra');            // uscendo si torna "fuori" (404 finché non si rientra col pass)
   });
@@ -4118,7 +4127,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       pubblico: !!e.pubblico, nome: e.nome || '', combo: !!e.suono_file,
       url: e.file ? effects.mediaUrl(login, e.file) : '',
     }));
-    res.json({ effetti, overlayUrl: effects.overlayUrl(login) });
+    res.json({ effetti, overlayUrl: effects.overlayUrl(login), spazio: spazioDi(login) });
   }));
 
   // solo il link dell'overlay per la diretta (lo usa l'Overlay Studio, senza scaricare
@@ -4152,6 +4161,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   app.get('/api/streamer/overlay-url', requireLogin, wrap(async (req, res) => {
     res.json({ overlayUrl: effects.overlayUrl(currentUser(req).login) });
+  }));
+  // La chiave si rinnova: il link vecchio muore subito, quello nuovo va rimesso
+  // nelle sorgenti del programma di regia. Solo il proprietario: e' il suo schermo.
+  app.post('/api/streamer/overlay/chiave', requireOwner, wrap(async (req, res) => {
+    effects.nuovaChiave(currentUser(req).login);
+    res.json({ ok: true });
   }));
 
   // ── CONSOLify + tastiera fisica ─────────────────────────────────────────────
@@ -4220,7 +4235,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       'X-Accel-Buffering': 'no',
     });
     res.write(': ponte aperto\n\n');
-    const chiudi = consolle.apriPonte(login, (m) => res.write(`data: ${JSON.stringify(m)}\n\n`));
+    const chiudi = consolle.apriPonte(login, (m) => res.write(`data: ${JSON.stringify(m)}\n\n`), () => { try { res.end(); } catch { /* chiuso */ } });
     const battito = setInterval(() => { try { res.write(': ba\n\n'); } catch { /* chiuso */ } }, 15000);
     req.on('close', () => { clearInterval(battito); chiudi(); });
   });
@@ -4265,10 +4280,19 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const est = tipi[req.file.mimetype];
     if (!est) { await pulisciTemp(req.file.path); return res.status(415).json({ ok: false, motivo: 'non è un\'immagine' }); }
     if (req.file.size > 2 * 1024 * 1024) { await pulisciTemp(req.file.path); return res.status(413).json({ ok: false, motivo: 'troppo grande (max 2 MB)' }); }
-    const nome = `ico_${crypto.randomBytes(6).toString('hex')}.${est}`;
+    if (spazioEsaurito(login)) { await pulisciTemp(req.file.path); return res.status(413).json({ ok: false, motivo: SPAZIO_FINITO }); }
     const dove = join(effectsRoot, login);
     await mkdir(dove, { recursive: true });
-    await rename(req.file.path, join(dove, nome));
+    let nome;
+    if (est === 'svg') {
+      // un SVG e' un documento, non un'immagine: resta solo l'immagine
+      nome = `ico_${crypto.randomBytes(6).toString('hex')}.png`;
+      try { await svgInPng(req.file.path, join(dove, nome)); }
+      catch { await pulisciTemp(req.file.path); return res.status(415).json({ ok: false, motivo: 'immagine non leggibile' }); }
+    } else {
+      nome = `ico_${crypto.randomBytes(6).toString('hex')}.${est}`;
+      await rename(req.file.path, join(dove, nome));
+    }
     res.json({ ok: true, icona: `img:${nome}`, url: `${config.baseUrl}/icona/${login}/${nome}` });
   }));
 
@@ -4283,6 +4307,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       await pulisciTemp(req.file.path);
       return res.status(403).json({ ok: false, motivo: 'non sei ancora abilitato' });
     }
+    if (spazioEsaurito(login)) { await pulisciTemp(req.file.path); return res.status(413).json({ ok: false, motivo: SPAZIO_FINITO }); }
     const destDir = join(effectsRoot, login);
     mkdirSync(destDir, { recursive: true });
     try {
@@ -4479,12 +4504,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login;
     const base = effects.overlayUrl(login);
     const sep = base.includes('?') ? '&' : '?';
-    const root = config.baseUrl.replace(/\/$/, '');
     const overlays = overlaysDi(streamers.get(login)?.settings).map((o) => ({
       id: o.id, nome: o.nome, mostra: o.mostra || _mostraDefault(), xy: o.xy || {}, css: o.css || '', stile: o.stile || null,
-      // link "bello" per OBS (senza ?key) + link privato con chiave, come alternativa
-      url: `${root}/o/${encodeURIComponent(login)}/${slugify(o.nome)}`,
-      urlKey: `${base}${sep}o=${encodeURIComponent(o.id)}`,
+      // il link porta la chiave in se': e' l'unico modo in cui un link e' un segreto
+      url: `${base}${sep}o=${encodeURIComponent(o.id)}`,
     }));
     res.json({ overlays });
   }));
@@ -4553,6 +4576,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       return res.status(403).json({ errore: 'non sei ancora abilitato' });
     }
     if (!fileMedia) { await puliziaTutto(); return res.status(400).json({ errore: 'nessun file caricato' }); }
+    if (spazioEsaurito(login)) { await puliziaTutto(); return res.status(413).json({ errore: SPAZIO_FINITO }); }
 
     // Il comando e' facoltativo: serve solo a chi vuole lanciare il media dalla
     // chat. Chi carica una foto/un video per CONDIVIDERLO o per usarlo in un
@@ -4848,6 +4872,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         const est = (/\.(woff2|woff|ttf|otf)$/i.exec(req.file.originalname || '') || [])[1];
         if (!est) { await pulisciTemp(req.file.path); return res.status(400).json({ errore: 'serve un font .woff2, .woff, .ttf o .otf' }); }
         if (req.file.size > 3 * 1024 * 1024) { await pulisciTemp(req.file.path); return res.status(400).json({ errore: 'font troppo grande (max 3MB)' }); }
+        if (spazioEsaurito(login)) { await pulisciTemp(req.file.path); return res.status(413).json({ errore: SPAZIO_FINITO }); }
 
         const grezzo = String(req.body?.nome || req.file.originalname || '').replace(/\.[^.]+$/, '');
         const nome = grezzo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32) || 'font';
@@ -4916,6 +4941,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       return res.status(403).json({ errore: 'non sei ancora abilitato' });
     }
     if (!req.file) return res.status(400).json({ errore: 'nessun file caricato' });
+    if (spazioEsaurito(login)) { await pulisciTemp(req.file.path); return res.status(413).json({ errore: SPAZIO_FINITO }); }
 
     const kind = String(req.body?.kind || '').toLowerCase();
     const slot = String(req.body?.slot || '').toLowerCase();   // 'suono' | 'media' | 'icona'
@@ -6158,7 +6184,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const conf = tgConf.getBySecret(req.params.secret);
     if (!conf) return res.status(404).type('text/plain').send('Not Found');
     // verifica l'header segreto (difesa in più oltre al path)
-    if (req.get('X-Telegram-Bot-Api-Secret-Token') !== conf.webhook_secret) {
+    if (!chiaveUguale(req.get('X-Telegram-Bot-Api-Secret-Token'), conf.webhook_secret)) {
       return res.status(403).type('text/plain').send('Forbidden');
     }
     res.json({ ok: true });   // conferma subito a Telegram, poi elabora

@@ -816,3 +816,17 @@ test('dal telefono un passo di regia passa dal ponte, non muore lì', () => {
   // e se non lo è, finisce nella strada normale: quella che chiede al server
   assert.match(f, /passo\/\$\{k\}/, 'altrimenti lo chiede al server, che ha il ponte');
 });
+
+test('i ponti di un canale hanno un tetto, e chi accumula perde il piu\' vecchio', () => {
+  const ch = 'tetto_ponti';
+  const chiusi = [];
+  const aperti = [];
+  for (let i = 0; i < consolle.MAX_PONTI; i++) aperti.push(consolle.apriPonte(ch, () => {}, () => chiusi.push(i)));
+  assert.equal(consolle.pontiAperti(ch), consolle.MAX_PONTI, 'fino al tetto entrano tutti');
+  assert.deepEqual(chiusi, [], 'e nessuno viene chiuso');
+  const ultimo = consolle.apriPonte(ch, () => {}, () => chiusi.push('nuovo'));
+  assert.equal(consolle.pontiAperti(ch), consolle.MAX_PONTI, 'il canale resta al tetto');
+  assert.deepEqual(chiusi, [0], 'e' + ' se ne va il primo, non il nuovo');
+  ultimo(); for (const c of aperti) c();
+  assert.equal(consolle.pontiAperti(ch), 0);
+});

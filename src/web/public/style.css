@@ -2142,6 +2142,8 @@ body.ce-aperto { overflow: hidden; }
   color: var(--acc); border: 1px solid var(--acc-bordo); border-radius: var(--r-s);
   padding: 0 .3rem; margin-right: .2rem; vertical-align: .05em;
 }
+.ovl-tasto.armato { background: var(--rosso-soft); border-color: var(--rosso); color: var(--rosso); animation: sb-pulsa .8s ease-in-out infinite alternate; }
+@keyframes sb-pulsa { from { transform: none; } to { transform: translate(-1px, -1px); } }
 .nov-sez { margin: .55rem 0 0; }
 .nov-sez.con-tit { margin-top: .9rem; }
 .nov-sez-tit { display: flex; align-items: baseline; gap: .4rem; flex-wrap: wrap; margin: 0 0 .25rem; font-size: .82rem; }

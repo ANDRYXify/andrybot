@@ -3,7 +3,7 @@
 // e video vengono ridotti a file piccolissimi, adatti a un overlay per OBS.
 // Obiettivo: qualità "sufficiente" e peso minimo, così l'overlay resta fluido.
 import { spawn } from 'node:child_process';
-import { stat, unlink } from 'node:fs/promises';
+import { stat, unlink, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { makeLog } from '../logger.js';
 
@@ -214,4 +214,20 @@ export async function convertiPerEmote(tempPath, tipoDichiarato, destDir, id) {
   } finally {
     try { await unlink(tempPath); } catch { /* già rimosso */ }
   }
+}
+
+// UN'IMMAGINE CARICATA NON E' UN DOCUMENTO. Un SVG e' testo, e il testo puo'
+// contenere script, collegamenti, riferimenti a risorse fuori: servito dal
+// nostro dominio a chiunque ne conosca l'indirizzo, e' un documento nostro con
+// dentro roba di qualcun altro. La CSP lo tiene a bada, ma una difesa che
+// dipende da un header e' una difesa che una riga di configurazione puo'
+// togliere. Quindi l'SVG non si conserva: si RASTERIZZA, e resta solo l'immagine.
+export async function svgInPng(tempPath, destPath, lato = 256) {
+  const { Resvg } = await import('@resvg/resvg-js');
+  const sorgente = await readFile(tempPath, 'utf8');
+  const r = new Resvg(sorgente, { fitTo: { mode: 'width', value: Math.max(16, Math.min(1024, lato | 0)) } });
+  const png = Buffer.from(r.render().asPng());
+  await writeFile(destPath, png);
+  try { await unlink(tempPath); } catch { /* gia' tolto */ }
+  return png.length;
 }

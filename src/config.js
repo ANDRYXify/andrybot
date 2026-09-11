@@ -77,6 +77,10 @@ export const config = {
   // (il caso normale). Quando l'accendi, DEVE averla anche il proxy davanti
   // (nel Caddyfile è già passata da {env.EDGE_KEY}).
   edgeKey: env('EDGE_KEY', '').trim(),
+  // Quanto puo' occupare sul disco ogni canale (effetti, media dei tasti, font,
+  // icone, immagini della pagina link). Non e' un limite al singolo file — quello
+  // c'e' gia' — e' il tetto alla somma: il disco e' uno per tutti.
+  spazioCanaleByte: Math.max(50, parseInt(env('SPAZIO_CANALE_MB', '500'), 10) || 500) * 1024 * 1024,
   baseUrl: env('BASE_URL', 'http://localhost:8090').replace(/\/$/, ''),
   sessionSecret: sessionSecret(),
 
