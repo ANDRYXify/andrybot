@@ -32,6 +32,7 @@ import { montaArgine } from './argine.js';
 import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guide.js';
 import * as novita from './novita.js';
 import { spazioCartella, inMega } from '../features/spazio.js';
+import * as spontanea from '../features/spontanea.js';
 import { paginaManuale, paginaIndiceManuali, urlManuali, aiutiPerScheda } from './manuali.js';
 import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
 import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente } from '../features/antibot.js';
@@ -3654,6 +3655,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // anima: adatta la personalità al canale (autonomo) + proattività
     if (b.adattaCanale !== undefined) out.adattaCanale = !!b.adattaCanale;
     if (b.proattivo !== undefined) out.proattivo = !!b.proattivo;
+    if (b.proattivoSoloLive !== undefined) out.proattivoSoloLive = !!b.proattivoSoloLive;
     // proattività su Telegram: lei ti scrive per prima in privato (curiosa)
     if (b.proattivoTg !== undefined) out.proattivoTg = !!b.proattivoTg;
     // accesso a internet: può cercare online quando ha un dubbio
@@ -4157,6 +4159,15 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login;
     const fine = manager.alerts?.impostaTimer?.(login, req.body?.minuti) || 0;
     res.json({ ok: true, fine });
+  }));
+
+  // COSA HA DETTO DA SOLO. Il registro delle righe dette di sua iniziativa
+  // (promemoria dei link, battute, cose sue, manche) da quando il bot e' acceso:
+  // e' l'unico modo di giudicare la dose senza stare in chat a guardare.
+  app.get('/api/streamer/autonomia', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    res.set('Cache-Control', 'private, no-store');
+    res.json({ voci: manager.spontanee?.(login) || [], tetti: { fraDueMs: spontanea.SPONTANEA_MIN_MS, promoMs: spontanea.PROMO_MIN_MS } });
   }));
 
   app.get('/api/streamer/overlay-url', requireLogin, wrap(async (req, res) => {

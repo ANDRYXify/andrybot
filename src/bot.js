@@ -39,6 +39,7 @@ import * as compleanniFeat from './features/compleanni.js';
 import * as gamesbridge from './features/gamesbridge.js';
 import * as quotes from './features/quotes.js';
 import * as battute from './features/battute.js';
+import * as spontanea from './features/spontanea.js';
 import * as motoreBattute from './features/battute-motore.js';
 import * as model from './ai/model.js';
 import * as brainpy from './ai/brainpy.js';
@@ -89,6 +90,13 @@ export class BotManager {
     this._tiktokTimer = null;
     this._tiktokLive = new Map();    // login → bool: in diretta su TikTok adesso
     this._tiktokUltima = new Map();  // login → ts ultima notifica TikTok (anti-doppioni)
+    // Quello che dice da solo: quando l'ultima volta (il tetto), quando l'ultimo
+    // promemoria dei link e l'ultima battuta (i loro riposi), e il registro che
+    // il pannello mostra.
+    this._ultimaSpontanea = new Map();   // login → ts dell'ultima volta che ha parlato da solo
+    this._ultimaPromo = new Map();       // login → ts dell'ultimo promemoria dei link
+    this._ultimaBattuta = new Map();     // login → ts dell'ultima battuta di sua iniziativa
+    this._spontanee = new Map();         // login → [{ ts, tipo, testo }] di seduta
   }
 
   async start() {
@@ -254,6 +262,17 @@ export class BotManager {
     this.units.get(channel)?.chat.say(channel, t, opzioni);
   }
 
+  // Una riga detta di sua iniziativa: esce come le altre, e in piu' finisce nel
+  // registro che lo streamer legge nel pannello («Cosa ha detto da solo»). Senza
+  // il registro, l'unico modo di giudicare la dose era stare in chat a guardare.
+  _dettaDaSolo(channel, tipo, text) {
+    this.say(channel, text);
+    spontanea.registra(this._spontanee, channel, { ts: Date.now(), tipo, testo: text });
+    log.info(`#${channel} da solo (${tipo}): ${String(text).slice(0, 120)}`);
+  }
+
+  spontanee(channel) { return spontanea.elenco(this._spontanee, channel); }
+
   // Battito dell'anima: l'umore "respira" (torna piano alla calma) e, se lo
   // streamer lascia la proattività accesa, ogni tanto il bot dice qualcosa di
   // sua iniziativa — dosato dalla stessa manopola "Chat autonoma", e solo se
@@ -279,43 +298,56 @@ export class BotManager {
     try {
       persona.respira();
       this._ritiraPostaDiLei().catch((e) => log.debug('posta di lei:', e?.message || e));
+      const ora = Date.now();
       for (const login of this.units.keys()) {
         const s = streamers.get(login);
         if (!s || s.settings?.proattivo === false) continue;   // proattività disattivabile
-        const auto = Math.min(0.5, Math.max(0, Number(s.settings?.spontaneita) || 0));
-        if (auto <= 0) continue;                                // autonomia a zero = zitto
-        if ((memory.messageRate?.(login) || 0) < 1) continue;   // chat ferma: non parlare da solo
-        if (Math.random() < auto * 0.4) {
-          // a volte una promo social (se accesa e c'è un link imparato), sennò
-          // una cosa sua — DETTA SUL MOMENTO guardando cosa si sta dicendo in
-          // chat, non pescata da un elenco di frasi buone per qualunque chat.
-          const promo = (s.settings?.promoSocial !== false && Math.random() < 0.45)
-            ? games.promoSociale(login) : null;
-          if (promo) { this.say(login, promo); continue; }
-          // Una battuta di sua iniziativa, e non a caso: solo se la chat e' viva,
-          // solo se non se ne e' detta una da un po', e solo se il serbatoio ha
-          // qualcosa. La scelta di QUALE la fa il serbatoio, che pesa il riposo e
-          // la presa sul pubblico — cosi' quella che non fa ridere nessuno smette
-          // di uscire da sola, senza che nessuno debba toglierla.
-          //
-          // E non si dice una battuta mentre si sta ancora ascoltando se ha fatto
-          // ridere la precedente: si sovrapporrebbero le risate e la misura non
-          // varrebbe piu' niente.
-          if (s.settings?.battuteAuto !== false && !battute.stoAscoltando(login)
-              && Date.now() - (this._ultimaBattuta?.get(login) || 0) > 20 * 60_000
-              && Math.random() < 0.35) {
-            const b = battute.prossimaDa(login);
-            if (b) {
-              (this._ultimaBattuta ||= new Map()).set(login, Date.now());
-              this.say(login, b.testo);
-              battute.detta(login, b.n);
-              continue;
-            }
-          }
-          this.brain?.iniziativa?.(login)
-            .then((t) => { if (t) this.say(login, t); })
-            .catch((e) => log.debug(`#${login} iniziativa:`, e?.message || e));
+        // La decisione sta in features/spontanea.js, in una funzione sola e
+        // senza dadi dentro: dose, chat viva, diretta se richiesto, il tetto
+        // «mai due volte in sei minuti» e il riposo del promemoria dei link.
+        const d = spontanea.decidiSpontanea({
+          ora, dose: s.settings?.spontaneita,
+          ritmo: memory.messageRate?.(login) || 0,
+          live: this._liveState.get(login) === true,
+          soloLive: s.settings?.proattivoSoloLive === true,
+          ultimaSpontanea: this._ultimaSpontanea.get(login) || 0,
+          ultimaPromo: this._ultimaPromo.get(login) || 0,
+          promoAccesa: s.settings?.promoSocial !== false,
+          caso: { parla: Math.random(), promo: Math.random() },
+        });
+        if (!d.parla) continue;
+        // Il tetto si segna QUI, quando si decide di parlare, non quando la riga
+        // esce: una cosa sua chiesta al cervello arriva dopo, e nel frattempo un
+        // altro giro non deve poterne decidere una seconda.
+        this._ultimaSpontanea.set(login, ora);
+        if (d.tipo === 'promo') {
+          const promo = games.promoSociale(login);
+          if (promo) { this._ultimaPromo.set(login, ora); this._dettaDaSolo(login, 'promo', promo); continue; }
         }
+        // Una battuta di sua iniziativa, e non a caso: solo se non se ne e' detta
+        // una da un po', e solo se il serbatoio ha qualcosa. La scelta di QUALE la
+        // fa il serbatoio, che pesa il riposo e la presa sul pubblico — cosi'
+        // quella che non fa ridere nessuno smette di uscire da sola.
+        //
+        // E non si dice una battuta mentre si sta ancora ascoltando se ha fatto
+        // ridere la precedente: si sovrapporrebbero le risate e la misura non
+        // varrebbe piu' niente.
+        if (s.settings?.battuteAuto !== false && !battute.stoAscoltando(login)
+            && ora - (this._ultimaBattuta.get(login) || 0) > 20 * 60_000
+            && Math.random() < 0.35) {
+          const b = battute.prossimaDa(login);
+          if (b) {
+            this._ultimaBattuta.set(login, ora);
+            this._dettaDaSolo(login, 'battuta', b.testo);
+            battute.detta(login, b.n);
+            continue;
+          }
+        }
+        // sennò una cosa sua — DETTA SUL MOMENTO guardando cosa si sta dicendo in
+        // chat, non pescata da un elenco di frasi buone per qualunque chat.
+        this.brain?.iniziativa?.(login)
+          .then((t) => { if (t) this._dettaDaSolo(login, 'iniziativa', t); })
+          .catch((e) => log.debug(`#${login} iniziativa:`, e?.message || e));
       }
     } catch (e) { log.error('battito anima:', e?.message || e); }
   }
@@ -397,7 +429,8 @@ export class BotManager {
         const prox = this._mancheProx.get(login);
         if (prox === undefined) { this._mancheProx.set(login, this._prossimaManche(m)); continue; }  // pianifica la prima
         if (Date.now() < prox) continue;
-        games.avviaManche(login, (t) => this.say(login, t));
+        let prima = true;
+        games.avviaManche(login, (t) => { if (prima) { prima = false; this._dettaDaSolo(login, 'manche', t); } else this.say(login, t); });
         this._mancheProx.set(login, this._prossimaManche(m));
       }
     } catch (e) { log.error('manche:', e?.message || e); }
