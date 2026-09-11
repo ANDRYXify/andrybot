@@ -757,3 +757,31 @@ sbiadito (in diretta non c'è; sulla tela serve trovarlo per riaccenderlo).
 L'autoprova rompe quattro cose una per volta (il tetto al posto della larghezza,
 la larghezza della chat, la doppia scala, il ripiego del grassetto) e pretende
 che il cancello diventi rosso.
+
+## Il banco: comodo e robusto per costruzione
+
+Un inventario del banco, letto tutto con lo stesso occhio, ha dato sette cose che
+si rompevano in silenzio e quattro che mancavano. Ognuna qui, con la struttura
+che la rende impossibile, non la patch che la nasconde.
+
+| cosa | prima | ora |
+|---|---|---|
+| l'aspetto non salvato | l'ispettore era escluso in blocco dal segnale «hai modifiche non salvate»: colori, font, forma e CSS cambiati e persi con un ricaricamento, senza un avviso | l'ispettore sporca la pagina, tranne le sue parti che si salvano da sole (posizione, obiettivi, contatori, player, conto alla rovescia). Cambiare scheda, overlay o pagina chiede prima; `ASP_SALVA_A_MANO` dice quali blocchi escono solo con «Salva overlay» |
+| gli ascoltatori | ogni visita alla scheda li legava di nuovo: alla N-esima visita, N salvataggi per un clic | una guardia (`scheda.dataset.collegato`), e `rendiTrascinabile` non si ripete su un elemento gia' trascinabile |
+| i salvataggi | quattro timer diversi e chiamate immediate: due richieste in volo con l'elenco completo degli overlay, l'ultima arrivata vinceva e poteva riportare indietro l'altra | una coda sola (`_spingiOverlays`): una richiesta in volo, le altre si fondono nella prossima, che parte con lo stato piu' recente; anche «Salva overlay» ci passa |
+| la rete che cade | ingoiata (`.catch(() => {})`): l'editor sembrava salvato | un avviso, al piu' uno ogni dieci secondi, e la pagina resta sporca |
+| l'annulla | riaccendeva gli interruttori prima di fermare la storia: una decina di richieste per un Ctrl+Z | la storia si ferma prima; e comunque c'e' la coda |
+| il ripristino di un contatore | scriveva la sua scheda e salvava solo il layout: non restava | `_salvaPos` salva anche il contatore; la funzione morta che avrebbe dovuto farlo e' sparita |
+| la griglia | la regola toglieva lo sfondo a un figlio che non lo aveva | la regola tocca chi ha lo sfondo |
+| lo zoom | ancorato in alto a sinistra: l'elemento su cui lavoravi scappava | attorno al centro della finestra, o al puntatore con Ctrl+rotella |
+| il trascinamento | a ogni pixel si rifaceva l'`innerHTML` del pannello dei livelli | si aggiorna la riga del livello; il pannello si ridisegna al rilascio |
+| **blocco di un livello** | non c'era | un lucchetto per livello (`ov.blocchi`), salvato con l'overlay e ripulito dal server con le chiavi degli elementi: niente trascinamento, rotella, frecce, allineamento; maniglie nascoste |
+| **aggancio** | sempre acceso, Alt per un attimo | una spunta che si ricorda (`banco:aggancia`) |
+
+Prove: `test/contratto/banco-robusto.test.mjs`; il banco vero gira nei cancelli
+dell'anteprima (`verifica-anteprima.mjs`), che lo usano come lo usa chi lavora.
+
+Quello che manca ancora, e che si vede: elementi liberi (un testo, un'immagine)
+da mettere in scena, e la selezione multipla. Sono una funzione nuova, non una
+correzione: hanno bisogno del loro modello (dati per overlay, resa in diretta,
+editor) e del loro piano.

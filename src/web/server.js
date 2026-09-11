@@ -128,6 +128,13 @@ const _mostraDiOverlay = (m) => {
   return q;
 };
 
+// I livelli bloccati nell'editor: solo il «si'», con le chiavi degli elementi.
+const _blocchiDiOverlay = (b) => {
+  const q = {};
+  if (!b || typeof b !== 'object') return q;
+  for (const k of Object.keys(b).slice(0, 60)) if (CHIAVE_EL.test(k) && b[k] === true) q[k] = true;
+  return q;
+};
 const _xyDiOverlay = (xy) => {
   const q = {};
   if (!xy || typeof xy !== 'object') return q;
@@ -3615,6 +3622,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           id, nome: String(o?.nome || 'Overlay').trim().slice(0, 40) || 'Overlay',
           mostra: _mostraDiOverlay(m),
           xy: _xyDiOverlay(xy),
+          blocchi: _blocchiDiOverlay(o?.blocchi),
           css: String(o?.css || '').slice(0, 8000),
           stile: normOverlayStile(o?.stile),   // Opzione B: aspetto proprio (null → eredita dal canale)
         };
@@ -4539,7 +4547,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const base = effects.overlayUrl(login);
     const sep = base.includes('?') ? '&' : '?';
     const overlays = overlaysDi(streamers.get(login)?.settings).map((o) => ({
-      id: o.id, nome: o.nome, mostra: o.mostra || _mostraDefault(), xy: o.xy || {}, css: o.css || '', stile: o.stile || null,
+      id: o.id, nome: o.nome, mostra: o.mostra || _mostraDefault(), xy: o.xy || {}, blocchi: o.blocchi || {}, css: o.css || '', stile: o.stile || null,
       // il link porta la chiave in se': e' l'unico modo in cui un link e' un segreto
       url: `${base}${sep}o=${encodeURIComponent(o.id)}`,
     }));

@@ -17,9 +17,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-11
 
-- Nell'editor degli overlay la tela ha le misure della diretta: il player tiene la stessa larghezza con ogni brano, la chat si ferma alla larghezza scelta, i contatori hanno la dimensione vera. [vai: alert]
+- L'editor degli overlay chiede prima di farti perdere l'aspetto non salvato, se cambi scheda, overlay o pagina; dice quando un salvataggio non riesce; e non manda più salvataggi doppi. [vai: alert]
+- Nell'editor degli overlay un livello si può bloccare perché non si sposti per sbaglio, l'aggancio alle guide si spegne, con Ctrl e rotella si ingrandisce attorno al puntatore, e la griglia si toglie davvero. [vai: alert]
 - In chat il bot non parla più da assistente: niente «implementazione», «non sono in grado», «funzionalità». Se una cosa non è sua lo dice come uno della chat, e una riga di quel tipo non esce e non gli torna in mente. [vai: personalita]
 - L'overlay in OBS si ricollega da solo dopo un riavvio del bot o un salto di rete: chat, effetti e tasti di CONSOLify ripartono senza toccare la sorgente. Quelle aperte da prima di oggi vanno ricaricate una volta. [vai: alert]
+- Nell'editor degli overlay la tela ha le misure della diretta: il player tiene la stessa larghezza con ogni brano, la chat si ferma alla larghezza scelta, i contatori hanno la dimensione vera. [vai: alert]
 - Quando parla da solo, il bot lo fa per un motivo e non più a caso: risponde a chi è rimasto senza risposta se sa la cosa, rilancia la chat che si ferma dopo un momento vivo, sale sull'onda quando esplode. [vai: personalita]
 - Risposte e battute di sua iniziativa escono con il tempo di una persona che scrive, mai due di fila dello stesso genere, e se hai appena scritto tu lascia la chat a te. [vai: personalita]
 - Di sua iniziativa il bot non parla più due volte in sei minuti, e il promemoria dei tuoi link esce al più ogni tre quarti d'ora: prima poteva ripeterlo a tre minuti di distanza. [vai: personalita]
