@@ -3352,7 +3352,9 @@ async function caricaNovita() {
   if (DEMO || !stato?.user) return;
   let d;
   try { d = await api(stato.isAdmin ? '/api/admin/novita' : '/api/novita'); } catch (e) { return; }
-  if (!d?.ultima || d.ultima === novitaViste() || !d.gruppi?.length) return;
+  const fin = d.segnalibro || d.ultima;
+  if (!fin || fin === novitaViste() || !d.gruppi?.length) return;
+  d.fin = fin;
   stato.novita = d;
   render();
 }
@@ -3369,7 +3371,7 @@ function cardNovitaHtml() {
     <ul>${mostrate.map((v) => `<li>${v.privata ? `<span class="badge">${L('solo tu', 'only you', 'solo tú')}</span> ` : ''}${esc(v.testo)}</li>`).join('')}</ul>
     ${altre > 0 ? `<p class="suggerimento">${L(`E altre ${altre}.`, `And ${altre} more.`, `Y ${altre} más.`)}</p>` : ''}
     <p class="spazio-sopra"><a class="btn secondario mini" href="/novita" target="_blank" rel="noopener">${L('Vedi tutte', 'See them all', 'Verlas todas')}</a>
-    <button class="btn secondario mini" data-novita-viste="${esc(n.ultima)}">${L('Nascondi', 'Hide', 'Ocultar')}</button></p>
+    <button class="btn secondario mini" data-novita-viste="${esc(n.fin || n.ultima)}">${L('Nascondi', 'Hide', 'Ocultar')}</button></p>
   </div>`;
 }
 
@@ -8533,11 +8535,13 @@ async function mostraNovita() {
   try { d = await api('/api/novita/da-vedere'); } catch { return; }
   if (!d?.ok) return;
   const segna = (fino) => api('/api/novita/viste', { method: 'POST', body: { fino } }).catch(() => {});
-  if (d.primo) { if (d.ultima) segna(d.ultima); return; }
+  const fin = d.segnalibro || d.ultima;
+  if (d.primo) { if (fin) segna(fin); return; }
   const gruppi = Array.isArray(d.gruppi) ? d.gruppi : [];
   if (!gruppi.length) return;
 
-  const quante = gruppi.reduce((n, g) => n + g.voci.length, 0);
+  const restanti = Math.max(0, Number(d.altre) || 0);
+  const quante = gruppi.reduce((n, g) => n + g.voci.length, 0) + restanti;
   const voce = (v) => {
     const testo = typeof v === 'string' ? v : v.testo;
     const privata = typeof v === 'object' && v.privata;
@@ -8556,15 +8560,15 @@ async function mostraNovita() {
         ? L('Una cosa nuova.', 'One new thing.', 'Una cosa nueva.')
         : `${quante} ${L('cose nuove, dall’ultima volta che sei entrato.', 'new things, since you were last here.', 'cosas nuevas, desde la última vez que entraste.')}`}</p>
     </div>
-    <div class="nov-corpo">${corpo}${Number(d.altriGiorni) > 0
-      ? `<p class="suggerimento nov-altri">${L('E altre', 'And', 'Y otras')} ${Number(d.altriGiorni)} ${L('giornate più indietro: le trovi tutte qui sotto.', 'more days further back: you find them all below.', 'jornadas más atrás: las encuentras todas abajo.')}</p>`
+    <div class="nov-corpo">${corpo}${restanti > 0
+      ? `<p class="suggerimento nov-altri">${L(`Le altre ${restanti} stanno più indietro: le trovi tutte qui sotto.`, `The other ${restanti} are further back: you find them all below.`, `Las otras ${restanti} están más atrás: las encuentras todas abajo.`)}</p>`
       : ''}</div>
     <div class="nov-piede">
       <a class="btn secondario mini" href="/novita">${L('Tutte le novità', 'All the news', 'Todas las novedades')}</a>
       <button class="btn" id="nov-chiudi">${L('Ho capito', 'Got it', 'Entendido')}</button>
     </div>`;
   document.body.appendChild(f);
-  f.addEventListener('close', () => { if (d.ultima) segna(d.ultima); f.remove(); });
+  f.addEventListener('close', () => { if (fin) segna(fin); f.remove(); });
   f.querySelector('#nov-chiudi')?.addEventListener('click', () => f.close());
   f.addEventListener('click', (ev) => { if (ev.target === f) f.close(); });
   f.showModal();

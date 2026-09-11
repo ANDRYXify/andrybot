@@ -15,6 +15,11 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+## 2026-09-11
+
+- La finestra delle novità non perde più quello che arriva a giornata iniziata: se una cosa esce dopo che l'hai vista, te la mostra lo stesso invece di darla per letta.
+- Quando le novità sono tante, la finestra ne mostra una manciata e dice quante altre ci sono, invece di rovesciarti addosso un muro di righe.
+
 ## 2026-09-10
 
 - Con la regia collegata sul computer, i tasti scena funzionano anche premuti dal telefono o da una tastiera fisica: il pannello aperto lì fa da ponte.

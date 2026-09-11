@@ -83,3 +83,67 @@ export function leggi(via) {
 export function ultima(gruppi) {
   return gruppi.length ? gruppi[0].data : null;
 }
+
+// IL SEGNAPOSTO. Una giornata non e' chiusa quando comincia: resta aperta e si
+// allunga per tutto il giorno. Segnarla vista col solo NOME DEL GIORNO butta via
+// tutto quello che arriva dopo — e lo butta PER SEMPRE, perche' il confronto e'
+// «giorno piu' recente di quello segnato» e quel giorno non lo sara' mai piu'.
+//
+// Quindi il segnaposto non e' un giorno: e' un PUNTO NELLA LISTA. La data in
+// cima e QUANTE righe aveva quando l'hai vista. Le righe nuove di una giornata
+// entrano in cima, percio' quelle che non hai visto sono le prime (ora - allora).
+//
+// Lo calcola chi mostra, sulla STESSA forma che mostra: a chi vede anche le
+// righe sue il conto le comprende, a chi vede solo le pubbliche no. Leggere e
+// segnare contano le stesse righe perche' passano di qui tutte e due.
+const SEGNO = /^(\d{4}-\d{2}-\d{2})(?:#(\d{1,5}))?$/;
+
+export function segnalibro(gruppi) {
+  return gruppi.length ? `${gruppi[0].data}#${gruppi[0].voci.length}` : null;
+}
+
+export function segnoValido(s) {
+  return SEGNO.test(String(s || ''));
+}
+
+// Quello che non hai ancora visto, nella stessa forma dei gruppi.
+//
+// Un segnaposto VECCHIO — la sola data, senza il conto — non dice quante righe
+// c'erano, e non si puo' inventare. Quella giornata si rimostra intera una volta
+// sola: rivedere qualche riga e' una seccatura, perderne ventinove no.
+// IL TETTO. Chi torna dopo mesi — o chi aveva il segnaposto vecchio e si rivede
+// una giornata intera — non deve trovarsi un muro di quaranta righe: un muro non
+// si legge, e una finestra che non si legge vale zero. Si mostra quanto si legge
+// davvero, si dice quante ne restano, e restano tutte in «Tutte le novita'», che
+// e' la pagina fatta per quello. Il tetto e' sulle RIGHE, perche' e' quello che
+// si legge: una giornata da trenta righe e' un muro anche se e' una sola.
+export function taglia(gruppi, { righe = 12, giorni = 6 } = {}) {
+  const fuori = [];
+  let messe = 0;
+  let altre = 0;
+  for (const g of gruppi) {
+    const spazio = fuori.length >= giorni ? 0 : Math.max(0, righe - messe);
+    if (spazio <= 0) { altre += g.voci.length; continue; }
+    const prese = g.voci.slice(0, spazio);
+    altre += g.voci.length - prese.length;
+    messe += prese.length;
+    fuori.push({ data: g.data, voci: prese });
+  }
+  return { gruppi: fuori, altre };
+}
+
+export function daVedere(gruppi, segno) {
+  const m = String(segno || '').match(SEGNO);
+  if (!m) return gruppi.slice();
+  const data = m[1];
+  const viste = m[2] === undefined ? null : Number(m[2]);
+  const fuori = [];
+  for (const g of gruppi) {
+    if (g.data > data) { fuori.push(g); continue; }
+    if (g.data < data) break;
+    const nuove = viste === null ? g.voci : g.voci.slice(0, Math.max(0, g.voci.length - viste));
+    if (nuove.length) fuori.push({ data: g.data, voci: nuove });
+    break;
+  }
+  return fuori;
+}

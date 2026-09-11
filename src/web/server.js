@@ -1730,7 +1730,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.get('/api/novita', (req, res) => {
     const gruppi = novita.pubbliche(novita.leggi(NOVITA_MD));
     res.set('Cache-Control', 'public, max-age=0, s-maxage=600');
-    res.json({ ultima: novita.ultima(gruppi), gruppi: gruppi.slice(0, 3) });
+    res.json({ ultima: novita.ultima(gruppi), segnalibro: novita.segnalibro(gruppi), gruppi: gruppi.slice(0, 3) });
   });
 
   // LE NOVITÀ COMPLETE, per chi ha il diritto di vederle. Sta dietro una porta
@@ -1740,7 +1740,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.get('/api/admin/novita', requireAdmin, (req, res) => {
     const gruppi = novita.tutte(novita.leggi(NOVITA_MD));
     res.set('Cache-Control', 'private, no-store');
-    res.json({ ultima: novita.ultima(gruppi), gruppi: gruppi.slice(0, 3) });
+    res.json({ ultima: novita.ultima(gruppi), segnalibro: novita.segnalibro(gruppi), gruppi: gruppi.slice(0, 3) });
   });
 
   // QUELLO CHE SI E' PERSO. Chi torna dopo un aggiornamento non deve andare a
@@ -1756,24 +1756,32 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const letti = novita.leggi(NOVITA_MD);
     const gruppi = u.isAdmin ? novita.tutte(letti) : novita.pubbliche(letti);
     const ultima = novita.ultima(gruppi);
+    // Il segnaposto si calcola QUI, sui gruppi che stiamo per mostrare a lui: chi
+    // vede anche le righe private le conta, chi vede solo le pubbliche no. Cosi'
+    // il numero che torna indietro conta le stesse righe che ha davanti.
+    const segnalibro = novita.segnalibro(gruppi);
     const viste = String(suo?.settings?.novitaViste || '');
     res.set('Cache-Control', 'private, no-store');
     // Chi entra per la prima volta non si e' perso niente: non gli si rovescia
     // addosso la storia di mesi. Si segna il punto e da domani vede solo il nuovo.
-    if (!viste) return res.json({ ok: true, primo: true, ultima, gruppi: [] });
-    // Un tetto alle giornate: chi torna dopo sei mesi non deve trovarsi un muro
-    // che nessuno legge. Si mostrano le piu' recenti e si dice quante restano —
-    // e restano tutte in «Tutte le novita'», che e' la pagina fatta per quello.
-    const persi = gruppi.filter((g) => g.data > viste);
-    res.json({ ok: true, ultima, gruppi: persi.slice(0, 6), altriGiorni: Math.max(0, persi.length - 6) });
+    if (!viste) return res.json({ ok: true, primo: true, ultima, segnalibro, gruppi: [] });
+    // Un tetto a quanto si legge in una volta: chi torna dopo sei mesi non deve
+    // trovarsi un muro che nessuno legge. Si mostrano le righe piu' recenti e si
+    // dice quante restano — e restano tutte in «Tutte le novita'», che e' la
+    // pagina fatta per quello.
+    const { gruppi: persi, altre } = novita.taglia(novita.daVedere(gruppi, viste));
+    res.json({ ok: true, ultima, segnalibro, gruppi: persi, altre });
   });
 
   app.post('/api/novita/viste', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const suo = streamers.get(login);
     if (!suo) return res.json({ ok: false });
-    const fino = String(req.body?.fino || '').slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(fino)) return res.status(400).json({ ok: false });
+    // Il segnaposto torna indietro com'era: «AAAA-MM-GG#quante». La sola data e'
+    // il formato vecchio, e si accetta ancora — chi ce l'ha in tasca da ieri non
+    // deve trovarsi la porta chiusa.
+    const fino = String(req.body?.fino || '').slice(0, 16);
+    if (!novita.segnoValido(fino)) return res.status(400).json({ ok: false });
     streamers.setSettings(login, { ...(suo.settings || {}), novitaViste: fino });
     res.json({ ok: true });
   }));
