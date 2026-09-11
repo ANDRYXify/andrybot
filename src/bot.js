@@ -515,6 +515,16 @@ export class BotManager {
   // crea/distrugge le unità in base allo stato sulla dashboard
   async syncChannels() {
     if (!this.running) return;
+    // Un giro alla volta. Questo parte ogni minuto e da ogni cambio di stato
+    // live: se un giro resta indietro (Twitch lento) e ne parte un secondo,
+    // tutti e due vedono un canale «senza unita'» e lo avviano — due connessioni
+    // e due risposte a ogni comando. Il secondo giro aspetta il primo.
+    if (this._syncInCorso) return this._syncInCorso;
+    this._syncInCorso = this._syncChannels().finally(() => { this._syncInCorso = null; });
+    return this._syncInCorso;
+  }
+
+  async _syncChannels() {
     const wanted = new Map(
       streamers.active()
         .filter(s => this._ready(s))
@@ -538,9 +548,13 @@ export class BotManager {
         });
         chat.on('disconnesso', () => { const u = this.units.get(login); if (u) u.connesso = false; });
         chat.on('auth-fallita', () => this._chatAuthKO(login));
-        await chat.connect();
+        // il posto si prende PRIMA di aspettare la rete: cosi' nessun altro giro
+        // puo' avviare una seconda unita' per lo stesso canale nel frattempo
+        this.units.set(login, { chat, connesso: false });
+        try { await chat.connect(); }
+        catch (e) { this.units.delete(login); throw e; }
         chat.join(login);
-        this.units.set(login, { chat, connesso: true });
+        const u = this.units.get(login); if (u) u.connesso = true;
         this.events.watch(s).catch?.(() => {});
         log.info(`Unità attiva per #${login} (parla come @${login})`);
       } catch (e) {

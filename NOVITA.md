@@ -17,7 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-11
 
-- Il link dei tuoi overlay è stato rinnovato per tutti, per sicurezza: copialo di nuovo dal pannello e rimettilo nelle sorgenti del programma con cui mandi in onda. [vai: alert]
+- Quando la connessione alla chat muore in silenzio il bot se ne accorge e si ricollega da solo, invece di restare acceso e muto con la spia verde. [vai: stato]
+- Se il permesso di Twitch scade, prova a rinnovarlo da solo prima di chiederti di ricollegare; e una risposta rimasta ferma durante una caduta non esce in ritardo di minuti. [vai: stato]
+- Gli avvisi di follow, iscrizione e diretta che Twitch rifiutava per un attimo di troppo traffico ora si riattivano da soli poco dopo. [vai: alert]
+- Per sicurezza il link dei tuoi overlay è stato rinnovato: copialo di nuovo dal pannello e rimettilo nelle sorgenti del programma con cui mandi in onda. [vai: alert]
 - Il link dell'overlay ora porta la chiave con sé, e accanto c'è il tasto per farne uno nuovo: se ti scappa in un video o in una chat, lo rinnovi e il vecchio muore subito. [vai: alert]
 - Un'icona caricata come disegno vettoriale viene trasformata in immagine: quello che carichi resta un'immagine e basta. [vai: consolify]
 - Ogni canale ha un tetto di spazio sul disco per media, effetti, font e icone, e il pannello ti dice quanto ne usi: prima nessuno lo contava. [vai: effetti]

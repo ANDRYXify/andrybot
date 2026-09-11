@@ -13,6 +13,9 @@ const ID_BASE = 'https://id.twitch.tv/oauth2';
 
 // margine di sicurezza: rinnoviamo i token 5 minuti prima della scadenza
 const MARGINE_MS = 5 * 60 * 1000;
+// Una richiesta che non risponde non e' «lenta»: e' morta. Senza un limite un
+// fetch appeso tiene ferma la connessione di un canale per sempre.
+const RETE_MS = 15_000;
 
 export class TwitchAuth {
   constructor() {
@@ -43,7 +46,7 @@ export class TwitchAuth {
       client_secret: config.twitchClientSecret,
       ...params,
     });
-    const res = await fetch(`${ID_BASE}/token`, { method: 'POST', body });
+    const res = await fetch(`${ID_BASE}/token`, { method: 'POST', body, signal: AbortSignal.timeout(RETE_MS) });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       const err = new Error(`Richiesta token fallita (${params.grant_type}): ${res.status} ${text}`.trim());
@@ -78,6 +81,7 @@ export class TwitchAuth {
     try {
       const res = await fetch(`${ID_BASE}/validate`, {
         headers: { Authorization: 'OAuth ' + accessToken },
+        signal: AbortSignal.timeout(RETE_MS),
       });
       if (!res.ok) return null;
       const j = await res.json();
@@ -104,13 +108,16 @@ export class TwitchAuth {
 
   // Ritorna un access token VALIDO per (kind, login), rinnovandolo se serve.
   // kind ∈ 'bot' | 'broadcaster'. Lancia se il token non esiste in DB.
-  async getToken(kind, login) {
+  // `forza`: rinnova anche se non e' in scadenza — dopo un login fallito il
+  // token in mano non vale piu' (revocato, o a scadenza sconosciuta), e
+  // riprovarlo uguale ogni minuto per ore non lo fara' tornare buono.
+  async getToken(kind, login, { forza = false } = {}) {
     const t = tokens.get(kind, login);
     if (!t) throw new Error('Token ' + kind + ' mancante per ' + login);
 
     // token ancora buono (o a scadenza sconosciuta e senza refresh token): usalo così com'è
     const inScadenza = t.expiresAt > 0 && t.expiresAt - Date.now() < MARGINE_MS;
-    if (!inScadenza || !t.refreshToken) return t.accessToken;
+    if ((!inScadenza && !forza) || !t.refreshToken) return t.accessToken;
 
     // refresh con de-duplicazione: se un altro chiamante sta già rinnovando
     // lo stesso token, aspettiamo lo stesso risultato invece di duplicare.
