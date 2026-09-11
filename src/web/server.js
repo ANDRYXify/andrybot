@@ -1719,7 +1719,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.get('/novita', (req, res) => {
     const gruppi = novita.pubbliche(novita.leggi(NOVITA_MD));
     const quando = novita.ultima(gruppi) + ':' + gruppi.length;
-    if (novitaHtml.quando !== quando) novitaHtml = { quando, corpo: paginaNovita(gruppi) };
+    if (novitaHtml.quando !== quando) novitaHtml = { quando, corpo: paginaNovita(gruppi, AIUTI) };
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.set('Cache-Control', 'public, max-age=0, s-maxage=600');
     res.send(novitaHtml.corpo);
@@ -1770,7 +1770,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // dice quante restano — e restano tutte in «Tutte le novita'», che e' la
     // pagina fatta per quello.
     const { gruppi: persi, altre } = novita.taglia(novita.daVedere(gruppi, viste));
-    res.json({ ok: true, ultima, segnalibro, gruppi: persi, altre });
+    // A sezioni, col nome del punto del pannello di cui parlano: il raggruppamento
+    // si fa qui, una volta, e non in ogni posto che le mostra.
+    const aSezioni = persi.map((g) => ({ data: g.data, sezioni: novita.inSezioni(g.voci) }));
+    res.json({ ok: true, ultima, segnalibro, gruppi: aSezioni, altre });
   });
 
   app.post('/api/novita/viste', requireLogin, wrap(async (req, res) => {

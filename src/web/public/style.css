@@ -2142,6 +2142,25 @@ body.ce-aperto { overflow: hidden; }
   color: var(--acc); border: 1px solid var(--acc-bordo); border-radius: var(--r-s);
   padding: 0 .3rem; margin-right: .2rem; vertical-align: .05em;
 }
+.nov-sez { margin: .55rem 0 0; }
+.nov-sez.con-tit { margin-top: .9rem; }
+.nov-sez-tit { display: flex; align-items: baseline; gap: .4rem; flex-wrap: wrap; margin: 0 0 .25rem; font-size: .82rem; }
+.nov-sez-area { font-size: .64rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--testo-3); }
+.nov-sez-tit .nov-dove { margin-left: 0; font-size: .8rem; padding: .05rem .5rem; }
+.nov-dove {
+  display: inline-block; margin-left: .3rem; padding: 0 .42rem;
+  font: inherit; font-size: .74rem; font-weight: 700; line-height: 1.55;
+  color: var(--testo); background: var(--surface-2-tinta);
+  border: 1px solid var(--contorno); border-radius: var(--ang-mano-l);
+  box-shadow: var(--ombra-ink-timbro); cursor: pointer; white-space: nowrap;
+  vertical-align: .05em; transition: transform var(--molla), box-shadow var(--molla);
+}
+.nov-dove::after { content: " \2192"; }
+@media (hover: hover) {
+  .nov-dove:hover { background: var(--acc-soft); border-color: var(--acc-bordo); transform: translate(-1px, -1px); box-shadow: var(--ombra-ink); }
+}
+.nov-dove:active { transform: translate(1px, 1px); box-shadow: none; }
+.carta-novita .nov-dove { font-size: .72rem; }
 .nov-piede { display: flex; gap: .5rem; justify-content: flex-end; align-items: center; padding: .8rem 1.2rem; border-top: 1px solid var(--border); }
 .nov-altri { margin-top: 1rem; padding-top: .7rem; border-top: 1px solid var(--border); }
 .cons-passi { display: flex; flex-direction: column; gap: .4rem; margin: .4rem 0 .6rem; }

@@ -33,6 +33,18 @@ const VOCE = /^[-*]\s+(.+?)\s*$/;
 // voce privata nemmeno sbagliando.
 const PRIVATA = /^\[privat[oa]\]\s*/i;
 
+// DOVE E' SUCCESSA. Una riga dice cosa e' cambiato; da sola non dice dove
+// andare a vederlo, e chi legge deve mettersi a cercare la scheda giusta. La
+// destinazione si scrive IN FONDO ALLA RIGA, nello stesso commit della cosa:
+//
+//     - I menu' con tante voci non si schiacciano piu'. [vai: consolify]
+//
+// e' l'unico modo perche' non si scolli. Da li' ognuno la dice a modo suo: il
+// pannello apre quella scheda, la pagina pubblica manda alla guida che la
+// spiega. Il nome della scheda NON si scrive qui: si ricava, cosi' non esiste
+// una riga che chiama una cosa con un nome che nel pannello non c'e' piu'.
+const VAI = /\s*\[vai:\s*([a-z0-9-]{2,40})\]\s*$/i;
+
 export function analizza(testo) {
   const gruppi = [];
   for (const riga of String(testo).split('\n')) {
@@ -41,7 +53,9 @@ export function analizza(testo) {
     const v = riga.match(VOCE);
     if (v && gruppi.length) {
       const privata = PRIVATA.test(v[1]);
-      gruppi[gruppi.length - 1].voci.push({ testo: v[1].replace(PRIVATA, ''), privata });
+      const dove = v[1].match(VAI);
+      const testo = v[1].replace(VAI, '').replace(PRIVATA, '');
+      gruppi[gruppi.length - 1].voci.push({ testo, privata, vai: dove ? dove[1].toLowerCase() : null });
     }
   }
   return gruppi.filter((g) => g.voci.length);
@@ -51,8 +65,34 @@ export function analizza(testo) {
 // giorni che restano vuoti perché parlavano solo di lei.
 export function pubbliche(gruppi) {
   return gruppi
-    .map((g) => ({ data: g.data, voci: g.voci.filter((v) => !v.privata).map((v) => v.testo) }))
+    .map((g) => ({ data: g.data, voci: g.voci.filter((v) => !v.privata).map((v) => ({ testo: v.testo, vai: v.vai || null })) }))
     .filter((g) => g.voci.length);
+}
+
+// A SEZIONI. Le righe di una giornata parlano quasi sempre di due o tre punti
+// del pannello: raccolte sotto il nome di quel punto si leggono come un discorso
+// invece che come un elenco, e il nome diventa la porta per andarci.
+//
+// Si raggruppa per destinazione, nell'ordine in cui la destinazione compare la
+// prima volta. Non per vicinanza: due blocchi della stessa sezione separati da
+// una riga qualsiasi darebbero lo stesso titolo due volte a tre righe di
+// distanza, e un titolo ripetuto sembra un difetto. Le righe che non dicono dove
+// stanno insieme, senza titolo, dove compare la prima.
+export function inSezioni(voci) {
+  const per = new Map();
+  for (const v of voci) {
+    const dove = v && typeof v === 'object' ? (v.vai || null) : null;
+    if (!per.has(dove)) per.set(dove, { vai: dove, voci: [] });
+    per.get(dove).voci.push(v);
+  }
+  return [...per.values()];
+}
+
+// Le destinazioni nominate nel file, per chi deve controllare che esistano.
+export function destinazioni(gruppi) {
+  const out = new Set();
+  for (const g of gruppi) for (const v of g.voci) if (v.vai) out.add(v.vai);
+  return [...out];
 }
 
 // Tutto, per chi ha il diritto di vederlo. Le voci restano oggetti, così chi le

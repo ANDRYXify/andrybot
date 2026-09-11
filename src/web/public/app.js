@@ -3368,7 +3368,7 @@ function cardNovitaHtml() {
   const altre = voci.length - mostrate.length;
   return `<div class="carta evidenziata carta-novita">
     <h2>${_hIco(ICO.megafono)}${L('Novità', 'What’s new', 'Novedades')}</h2>
-    <ul>${mostrate.map((v) => `<li>${v.privata ? `<span class="badge">${L('solo tu', 'only you', 'solo tú')}</span> ` : ''}${esc(v.testo)}</li>`).join('')}</ul>
+    <ul>${mostrate.map((v) => `<li>${v.privata ? `<span class="badge">${L('solo tu', 'only you', 'solo tú')}</span> ` : ''}${esc(v.testo)}${novDove(v)}</li>`).join('')}</ul>
     ${altre > 0 ? `<p class="suggerimento">${L(`E altre ${altre}.`, `And ${altre} more.`, `Y ${altre} más.`)}</p>` : ''}
     <p class="spazio-sopra"><a class="btn secondario mini" href="/novita" target="_blank" rel="noopener">${L('Vedi tutte', 'See them all', 'Verlas todas')}</a>
     <button class="btn secondario mini" data-novita-viste="${esc(n.fin || n.ultima)}">${L('Nascondi', 'Hide', 'Ocultar')}</button></p>
@@ -8520,6 +8520,32 @@ function caricaAlert() {
 
 }
 
+function novDove(v) {
+  const id = v && typeof v === 'object' ? v.vai : null;
+  if (!id || !schedaValida(id) || schedaBloccata(id)) return '';
+  const { nome } = novScheda(id);
+  return ` <button type="button" class="nov-dove" data-nov-vai="${esc(id)}" title="${esc(L('Vai a', 'Go to', 'Ir a'))} ${esc(nome)}">${esc(nome)}</button>`;
+}
+
+function novScheda(id) {
+  for (const g of elencoGruppi()) {
+    const s = g.schede.find(([sid]) => sid === id);
+    if (s) return { nome: tScheda(id, s[1]), area: tGruppo(g.id, g.nome) };
+  }
+  const f = famigliaDi(id);
+  if (f) return { nome: tScheda(id, _nomeSchedaGrezzo(id)), area: tFamiglia(f.id, f.nome) };
+  return { nome: tScheda(id, _nomeSchedaGrezzo(id)), area: '' };
+}
+
+function novTitolo(id) {
+  if (!id || !schedaValida(id) || schedaBloccata(id)) return '';
+  const { nome, area } = novScheda(id);
+  return `<h4 class="nov-sez-tit">
+    ${area ? `<span class="nov-sez-area">${esc(area)}</span>` : ''}
+    <button type="button" class="nov-dove" data-nov-vai="${esc(id)}">${esc(nome)}</button>
+  </h4>`;
+}
+
 const novGiorno = (iso) => {
   const d = new Date(`${iso}T12:00:00`);
   if (Number.isNaN(d.getTime())) return iso;
@@ -8540,8 +8566,9 @@ async function mostraNovita() {
   const gruppi = Array.isArray(d.gruppi) ? d.gruppi : [];
   if (!gruppi.length) return;
 
+  const sezioniDi = (g) => (Array.isArray(g.sezioni) ? g.sezioni : [{ vai: null, voci: g.voci || [] }]);
   const restanti = Math.max(0, Number(d.altre) || 0);
-  const quante = gruppi.reduce((n, g) => n + g.voci.length, 0) + restanti;
+  const quante = gruppi.reduce((n, g) => n + sezioniDi(g).reduce((k, s) => k + s.voci.length, 0), 0) + restanti;
   const voce = (v) => {
     const testo = typeof v === 'string' ? v : v.testo;
     const privata = typeof v === 'object' && v.privata;
@@ -8549,7 +8576,10 @@ async function mostraNovita() {
   };
   const corpo = gruppi.map((g) => `<section class="nov-giorno">
       <h3>${esc(novGiorno(g.data))}</h3>
-      <ul>${g.voci.map(voce).join('')}</ul>
+      ${sezioniDi(g).map((s) => {
+    const tit = novTitolo(s.vai);
+    return `<div class="nov-sez${tit ? ' con-tit' : ''}">${tit}<ul>${s.voci.map(voce).join('')}</ul></div>`;
+  }).join('')}
     </section>`).join('');
 
   const f = document.createElement('dialog');
@@ -19128,6 +19158,13 @@ document.addEventListener('click', (ev) => {
       stato = await api('/api/me');
       render();
     });
+    return;
+  }
+  const dove = ev.target.closest?.('[data-nov-vai]');
+  if (dove) {
+    const f = dove.closest('dialog');
+    if (f) { try { f.close(); } catch (e) {  } }
+    vaiAScheda(dove.dataset.novVai);
     return;
   }
   const viste = ev.target.closest?.('[data-novita-viste]');
