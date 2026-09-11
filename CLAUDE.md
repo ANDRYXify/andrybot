@@ -24,6 +24,25 @@ Corollario: una funzione nuova nasce personalizzabile **in tutto** — nome, ico
 colore, ordine, contenuto, quante volte, in che ordine. Se un pezzo di una
 funzione nuova non si puo' cambiare da dentro, la funzione non e' finita.
 
+## Regola assoluta: quello che si fa, si dice anche FUORI
+
+Una funzione nuova nasce nel pannello, e li' la vede solo chi e' gia' dentro. Chi
+sta decidendo se prendere il bot guarda la **vetrina**: se li' non c'e', per lui
+quella funzione non esiste. Giorni di lavoro invisibili proprio a chi deve
+scegliere.
+
+Quindi **ogni cosa che si aggiunge va trascritta sulla pagina pubblica**, nello
+stesso giro in cui la si fa, in tre lingue:
+
+- la voce in `CAPACITA` (`src/web/vetrina-vista.js`), che dichiara **quale
+  scheda** del pannello vende;
+- la riga in `NOVITA.md`, con la sua destinazione `[vai: scheda]`;
+- la guida o il manuale della scheda, se cambia come si fa.
+
+`test/contratto/vetrina-capacita.test.mjs` boccia una scheda del pannello che
+nessuna voce racconta. L'unica eccezione e' «Avatar 3D», che e' roba da admin e
+non si compra — e sta scritta li' col suo motivo.
+
 ## Metodo di lavoro
 
 - **Analitico, non statistico. Preciso, non a tentoni.** Prima il modello e il
