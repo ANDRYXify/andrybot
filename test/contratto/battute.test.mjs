@@ -174,12 +174,13 @@ test('chi sceglie una battuta dice sempre anche che l\'ha detta', () => {
 
 test('il bot ne dice una da solo, ma non mentre sta ancora ascoltando', () => {
   const bot = readFileSync(join(RAD, 'src/bot.js'), 'utf8');
-  // il METODO, non il punto in cui viene chiamato: indexOf('_battitoAnima')
-  // trova prima il setInterval, e li' dentro non c'e' niente da guardare.
-  const i = bot.indexOf('_battitoAnima() {');
-  assert.ok(i > 0, 'il battito si trova');
-  const giro = bot.slice(i, bot.indexOf('\n  }\n', i));
-  assert.ok(/battute\.prossimaDa\(/.test(giro), 'nel battito il bot pesca una battuta');
+  // Da solo il bot parla nei MOMENTI (_valutaMomenti decide, _eseguiMomento dice),
+  // non piu' nel battito: e' li' che si guarda.
+  const i = bot.indexOf('_valutaMomenti() {');
+  assert.ok(i > 0, 'i momenti si trovano');
+  const giro = bot.slice(i, bot.indexOf('// Premi periodici', i));
+  assert.ok(giro.length > 0, 'e finiscono prima dei premi periodici');
+  assert.ok(/battute\.prossimaDa\(/.test(giro), 'a discorso che scorre il bot pesca una battuta dal serbatoio');
   assert.ok(/battute\.stoAscoltando\(/.test(giro), 'e non ne dice una mentre misura la precedente');
   assert.ok(/battuteAuto/.test(giro), 'e lo streamer puo\' spegnerlo');
 });

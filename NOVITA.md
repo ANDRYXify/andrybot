@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-11
 
+- Quando parla da solo, il bot lo fa per un motivo e non più a caso: risponde a chi è rimasto senza risposta se sa la cosa, rilancia la chat che si ferma dopo un momento vivo, sale sull'onda quando esplode. [vai: personalita]
+- Risposte e battute di sua iniziativa escono con il tempo di una persona che scrive, mai due di fila dello stesso genere, e se hai appena scritto tu lascia la chat a te. [vai: personalita]
 - Di sua iniziativa il bot non parla più due volte in sei minuti, e il promemoria dei tuoi link esce al più ogni tre quarti d'ora: prima poteva ripeterlo a tre minuti di distanza. [vai: personalita]
 - Nella scheda del bot vedi cosa ha detto da solo, con l'ora e il motivo, e puoi dirgli di farlo solo mentre sei in diretta. [vai: personalita]
 - La chat autonoma parte a zero, come dice il cursore: prima il cursore mostrava 3%, il manuale 5% e il bot stava a zero. [vai: personalita]

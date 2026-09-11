@@ -40,10 +40,11 @@ import * as gamesbridge from './features/gamesbridge.js';
 import * as quotes from './features/quotes.js';
 import * as battute from './features/battute.js';
 import * as spontanea from './features/spontanea.js';
+import { Momenti } from './features/momenti.js';
 import * as motoreBattute from './features/battute-motore.js';
 import * as model from './ai/model.js';
 import * as brainpy from './ai/brainpy.js';
-import { createMessageHandler } from './features/handler.js';
+import { createMessageHandler, attesaUmana } from './features/handler.js';
 import { voceKick } from './kick/voce.js';
 import { ChatYoutube } from './youtube/chat.js';
 import { voceYoutube } from './youtube/voce.js';
@@ -97,6 +98,9 @@ export class BotManager {
     this._ultimaPromo = new Map();       // login → ts dell'ultimo promemoria dei link
     this._ultimaBattuta = new Map();     // login → ts dell'ultima battuta di sua iniziativa
     this._spontanee = new Map();         // login → [{ ts, tipo, testo }] di seduta
+    this._ultimoTipo = new Map();        // login → cosa ha detto da solo l'ultima volta (mai due uguali di fila)
+    this._momenti = new Momenti();       // i momenti buoni per parlare, riconosciuti dalla chat
+    this._momentiTimer = null;
   }
 
   async start() {
@@ -153,6 +157,9 @@ export class BotManager {
     this._syncTimer = setInterval(() => this.syncChannels().catch(() => {}), 60_000);
     // battito dell'anima: umore che "respira" + proattività dosata dall'autonomia
     this._animaTimer = setInterval(() => this._battitoAnima(), 3 * 60_000);
+    // I momenti per parlare da solo si guardano ogni quindici secondi: una
+    // domanda rimasta sola va colta in un minuto, non in tre.
+    this._momentiTimer = setInterval(() => this._valutaMomenti(), 15_000);
     // VIP: rimozione automatica degli scaduti + premi periodici (settimanale/mensile)
     this._vipTimer = setInterval(() => vip.controllaScadenze(this.helix).catch(() => {}), 5 * 60_000);
     this._premiTimer = setInterval(() => this._controllaPremi(), 60 * 60_000);
@@ -219,6 +226,7 @@ export class BotManager {
     this.running = false;
     clearInterval(this._syncTimer);
     clearInterval(this._animaTimer);
+    clearInterval(this._momentiTimer);
     clearInterval(this._vipTimer);
     clearInterval(this._premiTimer);
     clearInterval(this._listaBotTimer);
@@ -260,15 +268,24 @@ export class BotManager {
   say(channel, text, opzioni) {
     const t = accorda(text, streamers.get(channel)?.settings?.genere);
     this.units.get(channel)?.chat.say(channel, t, opzioni);
+    try { this._momenti.osserva(channel, { ts: Date.now(), user: channel, testo: t, dalBot: true }); } catch { /* niente */ }
   }
 
   // Una riga detta di sua iniziativa: esce come le altre, e in piu' finisce nel
   // registro che lo streamer legge nel pannello («Cosa ha detto da solo»). Senza
   // il registro, l'unico modo di giudicare la dose era stare in chat a guardare.
-  _dettaDaSolo(channel, tipo, text) {
-    this.say(channel, text);
+  _dettaDaSolo(channel, tipo, text, opzioni) {
+    this.say(channel, text, opzioni);
     spontanea.registra(this._spontanee, channel, { ts: Date.now(), tipo, testo: text });
     log.info(`#${channel} da solo (${tipo}): ${String(text).slice(0, 120)}`);
+  }
+
+  // Come una persona: non nell'istante in cui decide, ma dopo il tempo di
+  // scriverla (piu' lunga, piu' attesa; chat veloce, attesa piu' corta).
+  _dettaDaSoloConCalma(channel, tipo, text, opzioni) {
+    if (!text) return;
+    const attesa = attesaUmana(String(text).length, this._momenti.ritmo(channel), Math.random());
+    setTimeout(() => { if (this.units.has(channel)) this._dettaDaSolo(channel, tipo, text, opzioni); }, attesa);
   }
 
   spontanee(channel) { return spontanea.elenco(this._spontanee, channel); }
@@ -298,58 +315,83 @@ export class BotManager {
     try {
       persona.respira();
       this._ritiraPostaDiLei().catch((e) => log.debug('posta di lei:', e?.message || e));
+      // Il bot che parla da solo non sta piu' qui: sta nei momenti (_valutaMomenti),
+      // che guardano la chat ogni quindici secondi invece di tirare una moneta ogni tre minuti.
+    } catch (e) { log.error('battito anima:', e?.message || e); }
+  }
+
+  // QUANDO PARLA DA SOLO. Ogni quindici secondi, per ogni canale acceso: i momenti
+  // li riconosce la chat (momenti.js), se coglierne uno e quale lo decide la dose
+  // e i riposi (spontanea.js), e qui si dice — con un motivo, e con calma.
+  _valutaMomenti() {
+    try {
       const ora = Date.now();
       for (const login of this.units.keys()) {
         const s = streamers.get(login);
-        if (!s || s.settings?.proattivo === false) continue;   // proattività disattivabile
-        // La decisione sta in features/spontanea.js, in una funzione sola e
-        // senza dadi dentro: dose, chat viva, diretta se richiesto, il tetto
-        // «mai due volte in sei minuti» e il riposo del promemoria dei link.
-        const d = spontanea.decidiSpontanea({
-          ora, dose: s.settings?.spontaneita,
-          ritmo: memory.messageRate?.(login) || 0,
-          live: this._liveState.get(login) === true,
-          soloLive: s.settings?.proattivoSoloLive === true,
+        if (!s || s.settings?.proattivo === false) continue;
+        const dose = Number(s.settings?.spontaneita) || 0;
+        if (dose <= 0) continue;                                 // a zero parla solo se lo chiami
+        const live = this._liveState.get(login) === true;
+        const momenti = this._momenti.vedi(login, { ora, live, saQualcosa: (t) => !!this.brain?.saQualcosa?.(login, t) });
+        if (!momenti.length) continue;
+        // una battuta e' pronta solo se il serbatoio ne ha una, e' passato il suo
+        // riposo, e non si sta ancora misurando se la precedente ha fatto ridere
+        const battutaPronta = s.settings?.battuteAuto !== false && !battute.stoAscoltando(login)
+          && ora - (this._ultimaBattuta.get(login) || 0) > 20 * 60_000;
+        const scelta = spontanea.scegliMomento({
+          ora, dose, live, soloLive: s.settings?.proattivoSoloLive === true, momenti,
           ultimaSpontanea: this._ultimaSpontanea.get(login) || 0,
           ultimaPromo: this._ultimaPromo.get(login) || 0,
+          ultimoTipo: this._ultimoTipo.get(login) || '',
           promoAccesa: s.settings?.promoSocial !== false,
-          caso: { parla: Math.random(), promo: Math.random() },
+          battutaPronta,
+          caso: { jitter: Math.random(), scelta: Math.random() },
         });
-        if (!d.parla) continue;
-        // Il tetto si segna QUI, quando si decide di parlare, non quando la riga
-        // esce: una cosa sua chiesta al cervello arriva dopo, e nel frattempo un
-        // altro giro non deve poterne decidere una seconda.
+        if (!scelta.tipo) continue;
+        // Il riposo si segna QUI, quando si decide, non quando la riga esce: una
+        // cosa chiesta al cervello arriva dopo, e nel frattempo un altro giro non
+        // deve poterne decidere una seconda.
         this._ultimaSpontanea.set(login, ora);
-        if (d.tipo === 'promo') {
-          const promo = games.promoSociale(login);
-          if (promo) { this._ultimaPromo.set(login, ora); this._dettaDaSolo(login, 'promo', promo); continue; }
-        }
-        // Una battuta di sua iniziativa, e non a caso: solo se non se ne e' detta
-        // una da un po', e solo se il serbatoio ha qualcosa. La scelta di QUALE la
-        // fa il serbatoio, che pesa il riposo e la presa sul pubblico — cosi'
-        // quella che non fa ridere nessuno smette di uscire da sola.
-        //
-        // E non si dice una battuta mentre si sta ancora ascoltando se ha fatto
-        // ridere la precedente: si sovrapporrebbero le risate e la misura non
-        // varrebbe piu' niente.
-        if (s.settings?.battuteAuto !== false && !battute.stoAscoltando(login)
-            && ora - (this._ultimaBattuta.get(login) || 0) > 20 * 60_000
-            && Math.random() < 0.35) {
-          const b = battute.prossimaDa(login);
-          if (b) {
-            this._ultimaBattuta.set(login, ora);
-            this._dettaDaSolo(login, 'battuta', b.testo);
-            battute.detta(login, b.n);
-            continue;
-          }
-        }
-        // sennò una cosa sua — DETTA SUL MOMENTO guardando cosa si sta dicendo in
-        // chat, non pescata da un elenco di frasi buone per qualunque chat.
-        this.brain?.iniziativa?.(login)
-          .then((t) => { if (t) this._dettaDaSolo(login, 'iniziativa', t); })
-          .catch((e) => log.debug(`#${login} iniziativa:`, e?.message || e));
+        this._ultimoTipo.set(login, scelta.tipo);
+        this._momenti.segna(login, scelta.momento.tipo, ora);
+        this._eseguiMomento(login, s, scelta, ora);
       }
-    } catch (e) { log.error('battito anima:', e?.message || e); }
+    } catch (e) { log.error('momenti:', e?.message || e); }
+  }
+
+  _eseguiMomento(login, s, { tipo, momento }, ora) {
+    const spunto = momento.spunto || '';
+    if (tipo === 'domanda') {
+      // Rispondere a chi e' rimasto senza risposta: come a una menzione, ma
+      // agganciata alla sua domanda (Twitch la mostra sotto), cosi' si capisce a chi.
+      const q = momento.dati;
+      Promise.resolve().then(() => this.brain.chatReply({ channel: login, user: q.user, display: q.display, text: q.testo, streamer: s, botLogin: login }))
+        .then((t) => this._dettaDaSoloConCalma(login, 'domanda', t, q.id ? { rispondiA: q.id } : undefined))
+        .catch((e) => log.debug(`#${login} domanda sola:`, e?.message || e));
+      return;
+    }
+    if (tipo === 'hype' || tipo === 'rilancio' || tipo === 'iniziativa') {
+      Promise.resolve().then(() => this.brain.iniziativa(login, { spunto }))
+        .then((t) => this._dettaDaSoloConCalma(login, tipo, t))
+        .catch((e) => log.debug(`#${login} ${tipo}:`, e?.message || e));
+      return;
+    }
+    if (tipo === 'battuta') {
+      // La scelta di QUALE la fa il serbatoio, che pesa il riposo e la presa sul
+      // pubblico — cosi' quella che non fa ridere nessuno smette di uscire da sola.
+      const b = battute.prossimaDa(login);
+      if (!b) { this._ultimoTipo.set(login, 'iniziativa'); return this._eseguiMomento(login, s, { tipo: 'iniziativa', momento }, ora); }
+      this._ultimaBattuta.set(login, ora);
+      battute.detta(login, b.n);
+      this._dettaDaSoloConCalma(login, 'battuta', b.testo);
+      return;
+    }
+    if (tipo === 'promo') {
+      const promo = games.promoSociale(login);
+      if (!promo) { this._ultimoTipo.set(login, 'iniziativa'); return this._eseguiMomento(login, s, { tipo: 'iniziativa', momento }, ora); }
+      this._ultimaPromo.set(login, ora);
+      this._dettaDaSoloConCalma(login, 'promo', promo);
+    }
   }
 
   // Premi periodici: se lo streamer li ha attivati, ogni settimana/mese dà il
@@ -692,6 +734,10 @@ export class BotManager {
   // Elaborazione normale di un messaggio (chiamata solo se non gestito prima).
   _elaboraMessaggio(login, msg, onMessage, parla = this.vocePer(msg)) {
     onMessage(msg).catch(e => log.error(`#${login} gestione messaggio:`, e?.message || e));
+    if (!msg.piattaforma || msg.piattaforma === 'twitch') {
+      try { this._momenti.osserva(login, { ts: Date.now(), user: msg.user, display: msg.display, testo: msg.text, isSelf: !!msg.isSelf, id: msg.id }); }
+      catch (e) { log.debug(`#${login} momenti:`, e?.message || e); }
+    }
     if (!msg.isSelf) this.clips.onActivity(msg);   // rilevatore "hype" per le clip automatiche (chat)
     try { this.alerts?.onChat(login, msg); } catch (e) { log.debug(`#${login} chat overlay:`, e?.message || e); }
     // pannello chat dello Studio Web (feed 'chat_raw' ungated): solo se qualcuno
