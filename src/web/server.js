@@ -4269,7 +4269,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     });
     res.write(': ponte aperto\n\n');
     const chiudi = consolle.apriPonte(login, (m) => res.write(`data: ${JSON.stringify(m)}\n\n`), () => { try { res.end(); } catch { /* chiuso */ } });
-    const battito = setInterval(() => { try { res.write(': ba\n\n'); } catch { /* chiuso */ } }, 15000);
+    // un evento, non un commento: cosi' la pagina sa se la linea e' viva (flusso.js)
+    const battito = setInterval(() => { try { res.write('data: {"tipo":"battito"}\n\n'); } catch { /* chiuso */ } }, 15000);
     req.on('close', () => { clearInterval(battito); chiudi(); });
   });
 

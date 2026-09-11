@@ -99,14 +99,24 @@ export class EffectsEngine {
     return !!(set && set.size);
   }
 
-  // Keepalive: un commento SSE che non fa nulla, serve solo a tenere viva la
-  // connessione dietro reverse proxy (Caddy). server.js lo chiama ogni ~15s.
+  // Il BATTITO, ogni ~15 s (lo chiama index.js). Tiene viva la connessione
+  // dietro il reverse proxy, e agli overlay arriva come EVENTO, non come
+  // commento: un commento SSE il browser non lo mostra alla pagina, e una pagina
+  // che non sente niente non puo' distinguere una linea viva da una morta a
+  // meta' (il socket resta aperto, i dati non passano piu'). Con un evento che
+  // ha un tipo suo, la pagina sa quando l'ultimo battito e' arrivato e riapre il
+  // flusso quando tace troppo (flusso.js, «silenzio»). Al canale del tracking
+  // resta il commento: i suoi comandi vanno a un gestore che non ha un tipo da
+  // ignorare.
   ping() {
-    for (const m of [this._clients, this._trkClients]) {
-      for (const set of m.values()) {
-        for (const res of set) {
-          try { res.write(': ping\n\n'); } catch { /* ignora: il close pulirà */ }
-        }
+    for (const set of this._clients.values()) {
+      for (const res of set) {
+        try { res.write('data: {"tipo":"battito"}\n\n'); } catch { /* ignora: il close pulirà */ }
+      }
+    }
+    for (const set of this._trkClients.values()) {
+      for (const res of set) {
+        try { res.write(': ping\n\n'); } catch { /* ignora: il close pulirà */ }
       }
     }
   }

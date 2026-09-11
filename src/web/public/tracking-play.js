@@ -89,19 +89,19 @@
 
   function connetti() {
     if (!key) { setStato('chiave mancante nel link'); return; }
-    try {
-      const es = new EventSource(`/tracking/${encodeURIComponent(login)}/stream?key=${encodeURIComponent(key)}`);
-      es.onopen = () => setStato('collegato — pronto');
-      es.onmessage = (m) => {
+    window.SB_FLUSSO.apri(`/tracking/${encodeURIComponent(login)}/stream?key=${encodeURIComponent(key)}`, {
+      suAperto: () => setStato('collegato — pronto'),
+      suRitorno: () => setStato('collegato — pronto'),
+      suCaduta: () => setStato('collegamento perso, riprovo'),
+      suMessaggio: (m) => {
         let d; try { d = JSON.parse(m.data); } catch { return; }
         if (!d) return;
         document.body.classList.add('pronto');
         if (d.azione === 'stato') { lastGesto = d.gesto || ''; lastEmo = d.emozione || ''; mostraMeme(d.emozione); }
         else if (d.azione === 'fx') applicaFx(d);
         else if (cmdFn) { try { cmdFn(d); } catch {  } }
-      };
-      es.onerror = () => {  };
-    } catch { setStato('impossibile collegarsi'); }
+      },
+    });
   }
 
   function ridimensiona() { fx.width = window.innerWidth || 1280; fx.height = window.innerHeight || 720; }

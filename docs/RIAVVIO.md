@@ -15,6 +15,7 @@ fila senza che nessuno la cercasse.
 | giveaway | chi aveva scritto `!join`, coi suoi biglietti |
 | penitenze | la sfida in corso, già pagata a punti canale |
 | scudo anti-bot | il foglietto di cosa riaprire |
+| overlay in OBS | il filo: dietro il proxy il riavvio risponde 502, e un 502 il browser non lo riprova mai più (`OVERLAY.md`, «Il flusso che sopravvive al riavvio») |
 
 L'ultima è la peggiore e vale la pena raccontarla per intero. Quando lo scudo
 si alza, il bot accende su Twitch tre cose — chat ai soli follower, modalità

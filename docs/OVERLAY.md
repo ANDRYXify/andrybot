@@ -700,3 +700,35 @@ sì. Un test ora rifiuta qualsiasi `--op` senza unità nella pelle dell'overlay.
 
 Insieme è sparito il **viola di Twitch** che l'overlay usava come accento di
 serie (e la pastiglia degli effetti): l'accento di serie adesso è il nostro.
+
+## Il flusso che sopravvive al riavvio
+
+L'overlay in OBS riceve tutto da un `EventSource`. Misurato con Chromium vero
+(`scripts/verifica-flusso.mjs`): se il server chiude il socket e basta, il
+browser riapre da solo; se in mezzo c'è un reverse proxy, un riavvio del bot
+risponde **502** per qualche secondo, e un `EventSource` che riceve uno stato
+diverso da 200 **si chiude e non riprova mai più**. È la specifica, non un
+difetto del browser.
+
+| cosa succede | prima | ora |
+|---|---|---|
+| socket chiuso, server subito su | riapre (lo fa il browser) | riapre, e rilegge il tema |
+| riavvio dietro Caddy, 502 per un po' | **morto fino al ricaricamento** | riapre con passi 1·2·4·8·15 s, rilegge il tema |
+| linea aperta ma muta | morto senza saperlo | il battito del server è un evento; dopo 75 s di silenzio riapre |
+
+Era la classe di `RIAVVIO.md` vista dall'altro capo del filo: ogni
+`aggiorna.sh` lasciava la chat ferma e gli effetti e i tasti di CONSOLify senza
+destinazione («nessun overlay collegato»), finché qualcuno non ricaricava la
+sorgente. Con tre deploy in un giorno l'overlay «non funzionava più».
+
+Un modo solo di aprire un flusso: `flusso.js` (`SB_FLUSSO.apri`), usato
+dall'overlay, dai due overlay del tracking, dal ponte della regia e dallo Studio
+nel pannello. Il battito (`effects.ping`, ogni 15 s) agli overlay arriva come
+`{"tipo":"battito"}` e non come commento: un commento SSE la pagina non lo vede,
+e senza vederlo non può distinguere una linea viva da una morta a metà. Al
+ritorno la pagina rilegge il tema: gli eventi persi nel frattempo non tornano,
+lo stato sì. Il guaio si racconta una volta per caduta (`flusso-caduto`) e una
+al ritorno (`flusso-tornato`, con i tentativi), non a ogni prova.
+
+Le sorgenti rimaste aperte da prima di questo cambiamento hanno la pagina
+vecchia: vanno ricaricate una volta.

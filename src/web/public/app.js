@@ -8806,9 +8806,9 @@ let _ponte = null;
 
 function apriPonteRegia() {
   if (_ponte) return;
-  try {
-    _ponte = new EventSource('/api/streamer/regia/ponte');
-    _ponte.onmessage = async (m) => {
+  _ponte = window.SB_FLUSSO.apri('/api/streamer/regia/ponte', {
+    silenzio: 75000,
+    suMessaggio: async (m) => {
       let d;
       try { d = JSON.parse(m.data); } catch (e) { return; }
       if (!d || d.tipo !== 'regia' || !d.passo) return;
@@ -8819,14 +8819,13 @@ function apriPonteRegia() {
           body: JSON.stringify({ lavoro: d.lavoro, ok: !!esito.ok, mostra: esito.mostra || '' }),
         });
       } catch (e) {  }
-    };
-    _ponte.onerror = () => {  };
-  } catch (e) { _ponte = null; }
+    },
+  });
 }
 
 function chiudiPonteRegia() {
   if (!_ponte) return;
-  try { _ponte.close(); } catch (e) {  }
+  _ponte.chiudi();
   _ponte = null;
 }
 
@@ -10087,10 +10086,8 @@ function studioChatPanelPush(d) {
 }
 
 function studioSSE(sseUrl) {
-  if (STUDIO.sse) { try { STUDIO.sse.close(); } catch (e) {  } }
-  let es; try { es = new EventSource(sseUrl); } catch (e) { return; }
-  STUDIO.sse = es;
-  es.onmessage = (ev) => {
+  if (STUDIO.sse) STUDIO.sse.chiudi();
+  STUDIO.sse = window.SB_FLUSSO.apri(sseUrl, { suMessaggio: (ev) => {
     let d; try { d = JSON.parse(ev.data); } catch { return; }
     const now = Date.now();
     if (d.tipo === 'immagine' || d.tipo === 'video') {
@@ -10121,7 +10118,7 @@ function studioSSE(sseUrl) {
 
       studioChatPanelPush(d);
     }
-  };
+  } });
 }
 
 function studioVincoliVideo() {
