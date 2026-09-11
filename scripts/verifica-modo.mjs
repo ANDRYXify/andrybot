@@ -141,8 +141,8 @@ dice(spontanee.length === 1, 'quando parte lui, guarda la chat prima di parlare'
     : 'nessuna: la riga d\'iniziativa non passa piu\' dal cervello');
 dice(/\biniziativa\b/.test(corpoHttp), 'e l\'iniziativa viaggia nel corpo della richiesta',
   'il cervello non sapra\' mai che nessuno gli ha chiesto niente');
-dice(/iniziativa\?\.\(login\)/.test(botJs), 'ed e\' il battito del bot a chiederglielo',
-  'la riga d\'iniziativa non passa dal cervello: torna a uscire da un elenco');
+dice(/this\.brain\.iniziativa\(login, \{ spunto \}\)/.test(botJs), 'ed e\' il bot a chiederglielo, dai momenti e con il motivo',
+  'la riga d\'iniziativa non passa dal cervello con lo spunto: torna a uscire da un elenco, o parte senza motivo');
 dice(!/proattiva|PROATTIVE/.test(senzaCommentiJs(leggi('src/ai/persona.js'))),
   'e l\'elenco di frasi buone per qualunque chat non esiste piu\'',
   'finche\' c\'e\', prima o poi qualcuno ci ricasca');
