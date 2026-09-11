@@ -29,7 +29,42 @@ Tutto il resto legge quel file, e succede da sé:
 - **La scheda in cima al pannello** — compare solo se c'è qualcosa di più
   recente dell'ultima volta che quel browser ha detto «visto» (`/api/novita` +
   `localStorage`). Niente da salvare sul server, niente pallino che resta acceso.
+- **La finestra all'ingresso** — chi torna dopo un aggiornamento non deve andare
+  a cercare cosa è cambiato: glielo si dice una volta, entrando
+  (`/api/novita/da-vedere`). Chi entra per la prima volta non si è perso niente:
+  si segna il punto e da domani vede solo il nuovo.
 - **Il piede della vetrina** — un collegamento in più fra le pagine pubbliche.
+
+## Il segnaposto: un punto nella lista, non un giorno
+
+Una giornata **non è chiusa quando comincia**: resta aperta e si allunga per
+tutto il giorno. Il 10 settembre aveva 18 righe al mattino e 47 la sera.
+
+Segnarla vista col solo nome del giorno sembra funzionare e non funziona: il
+confronto è «giorno più recente di quello segnato», e quel giorno non lo sarà
+mai più. Le 29 righe arrivate dopo **non si sarebbero viste mai**. È il difetto
+di sempre — una riga che sembra fare una cosa e non la fa — travestito da valore
+che significa due cose: «visto fino a qui» e «visto tutto quel giorno».
+
+Quindi il segnaposto è `AAAA-MM-GG#quante`: la giornata in cima e **quante righe
+aveva quando l'hai vista**. Le righe nuove entrano in cima alla giornata, perciò
+quelle non viste sono le prime `(ora − allora)`.
+
+Tre cose lo tengono in piedi:
+
+1. **Lo calcola chi mostra, sulla forma che mostra.** A chi vede anche le righe
+   private il conto le comprende, a chi vede solo le pubbliche no. Leggere e
+   segnare passano dalla stessa funzione, quindi contano le stesse righe.
+2. **Il segnaposto torna indietro com'era.** Non è la pagina a decidere il
+   numero: riceve il segnaposto e lo ridà uguale. Fra il mostrare e il segnare
+   non c'è spazio per una riga che sparisce.
+3. **Un segnaposto vecchio — la sola data — non dice quante righe c'erano**, e
+   non si può inventare. Quella giornata si rimostra intera una volta sola:
+   rivedere qualche riga è una seccatura, perderne ventinove no.
+
+Il tetto è sulle **righe**, non sulle giornate: una giornata da quaranta righe è
+un muro anche se è una sola, e un muro non si legge. Si mostra quanto si legge,
+si dice quante restano, e restano tutte in `/novita`.
 
 ## Come si scrive una riga
 
@@ -48,6 +83,9 @@ nella disciplina — non nella scrittura.
 ## Le prove
 
 - `test/contratto/novita.test.mjs` legge il file vero: giornate in ordine, righe
-  vere, prosa attorno ignorata, date in italiano.
+  vere, prosa attorno ignorata, date in italiano. E il segnaposto: una riga
+  aggiunta a giornata già vista esce lo stesso, il conto segue quello che quella
+  persona vede, il tetto non perde il conto di quante restano. Provato rosso
+  rimettendo il confronto per giorno: quattro prove su ventitré diventano rosse.
 - `scripts/verifica-novita.mjs`: date sane e non nel futuro, righe senza gergo,
   e la regola del commit. Provato rosso con un commit che tocca `src/` e tace.
