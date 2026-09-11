@@ -13,6 +13,12 @@ const SUB_URL = 'https://api.twitch.tv/helix/eventsub/subscriptions';
 const GUARD_MS = 60_000;        // nessun messaggio (nemmeno keepalive) per 60s → riconnetti
 const BACKOFF_MIN = 1000;
 const BACKOFF_MAX = 60_000;
+const RETE_MS = 15_000;         // una richiesta che non risponde e' morta, non lenta
+// UNA SOTTOSCRIZIONE RIFIUTATA PER UN MOTIVO PASSEGGERO SI RIPROVA. Un 429 (troppe
+// richieste all'avvio, con molti canali) o un 5xx lasciavano il canale senza
+// «stream.online» fino alla prossima riconnessione — che su una connessione
+// sana puo' non arrivare mai. Un 403 invece e' uno scope mancante: non si riprova.
+const RIPROVA_MS = [15_000, 60_000, 240_000];
 
 // Sottoscrizioni desiderate per un broadcaster (bid = user_id).
 // Ognuna viene tentata singolarmente: se manca lo scope, Twitch la
@@ -30,10 +36,12 @@ function desiredSubs(bid) {
 }
 
 export class EventHub {
-  constructor({ auth, helix, onEvent }) {
+  constructor({ auth, helix, onEvent, wsFactory = null, fetchFn = null }) {
     this.auth = auth;
     this.helix = helix;
     this.onEvent = onEvent;
+    this._wsFactory = wsFactory || ((url) => new WebSocket(url));
+    this._fetch = fetchFn || ((...a) => fetch(...a));
     // login → stato della connessione { login, userId, ws, guard, timer, backoff, closing, carryOver }
     this._conns = new Map();
   }
@@ -58,6 +66,8 @@ export class EventHub {
       backoff: BACKOFF_MIN,
       closing: false,
       carryOver: false,   // true quando seguiamo un session_reconnect (le sub sopravvivono)
+      riprova: null,      // timer per le sottoscrizioni rifiutate per un motivo passeggero
+      sessionId: '',
     };
     this._conns.set(login, state);
 
@@ -83,6 +93,7 @@ export class EventHub {
     state.closing = true;
     clearTimeout(state.guard);
     clearTimeout(state.timer);
+    clearTimeout(state.riprova);
     try { state.ws?.close(); } catch { /* già chiuso */ }
     this._conns.delete(state.login);
     log.info(`EventSub: non osservo più ${state.login}`);
@@ -98,7 +109,7 @@ export class EventHub {
   _connect(state, url) {
     let ws;
     try {
-      ws = new WebSocket(url);
+      ws = this._wsFactory(url);
     } catch (e) {
       log.error(`EventSub ${state.login}: apertura WS fallita:`, e?.message || e);
       this._scheduleReconnect(state);
@@ -138,7 +149,9 @@ export class EventHub {
         const sessionId = msg.payload?.session?.id;
         // dopo un session_reconnect le sottoscrizioni sopravvivono: non ricrearle
         if (state.carryOver) { state.carryOver = false; break; }
-        if (sessionId) await this._subscribeAll(state, sessionId);
+        state.sessionId = sessionId || '';
+        clearTimeout(state.riprova);
+        if (sessionId) await this._subscribeAll(state, sessionId, desiredSubs(state.userId), 0);
         break;
       }
       case 'notification': {
@@ -177,6 +190,7 @@ export class EventHub {
     if (state.ws !== ws) return;                          // chiusura della connessione vecchia
     if (state.closing) return;
     clearTimeout(state.guard);
+    clearTimeout(state.riprova);
     this._scheduleReconnect(state);
   }
 
@@ -194,9 +208,10 @@ export class EventHub {
     }, delay);
   }
 
-  // Crea le sottoscrizioni sulla sessione appena aperta, con il token
-  // del broadcaster. Ognuna in try/catch: se manca lo scope si salta.
-  async _subscribeAll(state, sessionId) {
+  // Crea le sottoscrizioni sulla sessione appena aperta, con il token del
+  // broadcaster. Ognuna in try/catch: se manca lo scope si salta; se il motivo
+  // e' passeggero (429, 5xx, rete) si riprova piu' tardi, poche volte.
+  async _subscribeAll(state, sessionId, subs, giro) {
     let token;
     try {
       token = await this.auth.getToken('broadcaster', state.login);
@@ -206,10 +221,10 @@ export class EventHub {
     }
 
     let ok = 0;
-    const subs = desiredSubs(state.userId);
+    const daRiprovare = [];
     for (const sub of subs) {
       try {
-        const res = await fetch(SUB_URL, {
+        const res = await this._fetch(SUB_URL, {
           method: 'POST',
           headers: {
             'Client-Id': config.twitchClientId,
@@ -222,18 +237,39 @@ export class EventHub {
             condition: sub.condition,
             transport: { method: 'websocket', session_id: sessionId },
           }),
+          signal: AbortSignal.timeout(RETE_MS),
         });
         if (res.ok) {
           ok++;
         } else {
-          // 403 = scope mancante: normale se lo streamer non ha concesso tutto
           await res.text().catch(() => '');
-          log.debug(`EventSub ${state.login}: ${sub.type} rifiutata (${res.status}), salto`);
+          if (res.status === 429 || res.status >= 500) {
+            daRiprovare.push(sub);
+            log.warn(`EventSub ${state.login}: ${sub.type} rifiutata (${res.status}), la riprovo`);
+          } else {
+            // 403 = scope mancante: normale se lo streamer non ha concesso tutto
+            log.debug(`EventSub ${state.login}: ${sub.type} rifiutata (${res.status}), salto`);
+          }
         }
       } catch (e) {
-        log.debug(`EventSub ${state.login}: ${sub.type} fallita:`, e?.message || e);
+        daRiprovare.push(sub);
+        log.warn(`EventSub ${state.login}: ${sub.type} fallita (${e?.name === 'TimeoutError' ? 'timeout' : (e?.message || e)}), la riprovo`);
       }
     }
-    log.info(`EventSub ${state.login}: attive ${ok}/${subs.length} sottoscrizioni`);
+    log.info(`EventSub ${state.login}: attive ${ok}/${subs.length} sottoscrizioni` + (giro ? ` (riprova ${giro})` : ''));
+
+    if (!daRiprovare.length || state.closing) return;
+    const attesa = RIPROVA_MS[giro];
+    if (attesa === undefined) {
+      log.error(`EventSub ${state.login}: ${daRiprovare.map((x) => x.type).join(', ')} non attivate dopo ${RIPROVA_MS.length} riprove`);
+      return;
+    }
+    clearTimeout(state.riprova);
+    state.riprova = setTimeout(() => {
+      // la sessione e' ancora quella? se nel frattempo si e' riconnesso, le
+      // sottoscrizioni le rifa' la welcome nuova
+      if (state.closing || state.sessionId !== sessionId) return;
+      this._subscribeAll(state, sessionId, daRiprovare, giro + 1).catch((e) => log.error(`EventSub ${state.login}: riprova:`, e?.message || e));
+    }, attesa);
   }
 }

@@ -19,6 +19,18 @@ const RATE_MS = 400;
 const BACKOFF_MIN = 1000;       // riconnessione: 1s → ... → 60s
 const BACKOFF_MAX = 60_000;
 const QUEUE_MAX = 30;           // messaggi in coda al massimo (oltre: scartiamo i più vecchi)
+// Un messaggio in coda ha una scadenza: una risposta a «!uptime» consegnata tre
+// minuti dopo, quando la connessione torna, e' peggio di nessuna risposta.
+const CODA_TTL_MS = 90_000;
+// LA CONNESSIONE PUO' MORIRE IN SILENZIO. Un socket che nessuno chiude (NAT,
+// rete che cade senza FIN) resta «aperto» per Node per sempre: niente evento
+// close, niente riconnessione, il bot sordo e muto con la spia verde. Twitch
+// manda un PING ogni ~5 minuti: se per PING_GUARD_MS non arriva NIENTE, la
+// connessione e' morta e la chiudiamo noi, cosi' il backoff riparte. In piu'
+// ogni PING_OGNI_MS mandiamo noi un PING: un socket mezzo morto lo si scopre
+// entro pochi minuti invece che mai.
+const PING_OGNI_MS = 4 * 60_000;
+const PING_GUARD_MS = 6 * 60_000;
 
 // de-escape dei valori dei tag IRCv3 (\: → ';', \s → ' ', \\ → '\', \r, \n)
 function unescapeTag(v) {
@@ -53,10 +65,14 @@ const idRisposta = v => (ID_MSG.test(String(v || '')) ? String(v) : '');
 export class ChatBot extends EventEmitter {
   // login: account con cui parlare in chat (per SocialBot è lo streamer
   // stesso); kind: tipo di token in db ('broadcaster' di default).
-  constructor({ auth, login, kind = 'broadcaster' }) {
+  constructor({ auth, login, kind = 'broadcaster', wsFactory = null }) {
     super();
     this.auth = auth;
+    this._wsFactory = wsFactory || ((url) => new WebSocket(url));
     this._ws = null;
+    this._guard = null;              // guardiano: nessuna riga per PING_GUARD_MS → chiudo
+    this._pingTimer = null;          // il nostro PING periodico
+    this._forzaRefresh = false;      // dopo un login fallito il prossimo token si rinnova comunque
     this._login = String(login || '').toLowerCase();  // account che scrive in chat
     this._kind = kind;
     this._channels = new Set();      // canali in cui vogliamo stare (senza '#')
@@ -76,15 +92,25 @@ export class ChatBot extends EventEmitter {
   async connect() {
     if (!this._login) throw new Error('ChatBot: login mancante');
     this._closing = false;
-    await this._open();
+    // Se il PRIMO tentativo fallisce, chi ci ha creato decide cosa fare. Senza
+    // questo, l'evento close di quel tentativo pianificava una riconnessione
+    // per conto suo: un'unita' mai registrata che continuava a collegarsi —
+    // uno zombie autenticato in piu' a ogni avvio fallito.
+    try { await this._open(); }
+    catch (e) { this.disconnect(); throw e; }
   }
 
   // Chiude senza riconnettere.
   disconnect() {
     this._closing = true;
     clearTimeout(this._reconnectTimer);
+    this._reconnectTimer = null;
     clearTimeout(this._sendTimer);
     this._sendTimer = null;
+    clearTimeout(this._guard);
+    this._guard = null;
+    clearInterval(this._pingTimer);
+    this._pingTimer = null;
     try { this._ws?.close(); } catch { /* già chiuso */ }
     this._ws = null;
   }
@@ -118,7 +144,7 @@ export class ChatBot extends EventEmitter {
     let t = String(text ?? '').replace(/[\r\n]+/g, ' ').trim();
     if (!c || !t) return;
     if (t.length > MSG_MAX) t = t.slice(0, MSG_MAX - 1) + '…';
-    this._queue.push({ channel: c, text: t, rispondiA: idRisposta(rispondiA) });
+    this._queue.push({ channel: c, text: t, rispondiA: idRisposta(rispondiA), ts: Date.now() });
     while (this._queue.length > QUEUE_MAX) this._queue.shift();   // non accumulare all'infinito
     this._pump();
   }
@@ -129,13 +155,17 @@ export class ChatBot extends EventEmitter {
 
   // Apre il WebSocket e fa il login IRC. Risolve alla 'open'.
   async _open() {
-    // token sempre fresco (auth fa il refresh se serve)
-    const token = await this.auth.getToken(this._kind, this._login);
+    // token sempre fresco (auth fa il refresh se serve; dopo un login fallito
+    // lo rinnova comunque, perche' quello in mano non vale piu')
+    const forza = this._forzaRefresh;
+    this._forzaRefresh = false;
+    const token = await this.auth.getToken(this._kind, this._login, { forza });
 
     await new Promise((resolve, reject) => {
       let settled = false;
-      const ws = new WebSocket(IRC_URL);
+      const ws = this._wsFactory(IRC_URL);
       this._ws = ws;
+      this._armaGuardia();
 
       ws.addEventListener('open', () => {
         // capability per tag e comandi, poi autenticazione
@@ -170,18 +200,48 @@ export class ChatBot extends EventEmitter {
   _onClose(ws) {
     if (this._ws !== ws) return;        // chiusura di una connessione vecchia: ignora
     this._ws = null;
+    clearTimeout(this._guard); this._guard = null;
+    clearInterval(this._pingTimer); this._pingTimer = null;
     if (this._closing) return;
     this.emit('disconnesso');           // caduta non voluta: il backoff sotto riprova
+    this._riprova();
+  }
+
+  // Una sola pianificazione alla volta. Prima un tentativo fallito poteva
+  // pianificare due volte (dal close e dal catch), raddoppiando il backoff a
+  // vuoto: qui se un timer c'e' gia', si lascia a lui.
+  _riprova() {
+    if (this._closing || this._reconnectTimer) return;
     const delay = this._backoff;
     this._backoff = Math.min(this._backoff * 2, BACKOFF_MAX);
     log.warn(`IRC disconnesso, riprovo tra ${Math.round(delay / 1000)}s`);
-    clearTimeout(this._reconnectTimer);
     this._reconnectTimer = setTimeout(() => {
+      this._reconnectTimer = null;
       this._open().catch(e => {
         log.error('riconnessione IRC fallita:', e?.message || e);
-        this._onClose(null);            // ripianifica (this._ws è già null)
+        // se il socket e' rimasto in mano (fallito prima della close) lo si lascia
+        // alla sua close; altrimenti si ripianifica qui
+        if (!this._ws) this._riprova();
       });
     }, delay);
+  }
+
+  // Il guardiano della connessione: ogni riga ricevuta lo riarma; se scade,
+  // la connessione e' morta e la chiudiamo noi. Con lei parte il nostro PING.
+  _armaGuardia() {
+    clearTimeout(this._guard);
+    this._guard = setTimeout(() => {
+      log.warn(`IRC @${this._login}: nessuna riga da ${PING_GUARD_MS / 60000} minuti, la connessione e' morta: chiudo e riconnetto`);
+      const ws = this._ws;
+      try { ws?.close(); } catch { /* niente */ }
+      // un socket morto puo' non emettere nemmeno la close: la forziamo noi
+      setTimeout(() => { if (this._ws === ws) this._onClose(ws); }, 2000);
+    }, PING_GUARD_MS);
+    if (!this._pingTimer) {
+      this._pingTimer = setInterval(() => {
+        if (this._isOpen()) { try { this._ws.send('PING :socialbot'); } catch { /* la close fara' il resto */ } }
+      }, PING_OGNI_MS);
+    }
   }
 
   // ------------------------------------------------------------- ricezione
@@ -194,6 +254,7 @@ export class ChatBot extends EventEmitter {
   }
 
   _handleLine(line) {
+    this._armaGuardia();                // qualsiasi riga: la connessione e' viva
     // keep-alive del server: rispondiamo subito
     if (line.startsWith('PING')) {
       this._ws?.send('PONG :tmi.twitch.tv');
@@ -234,8 +295,14 @@ export class ChatBot extends EventEmitter {
       case 'NOTICE':
         // login fallito → messaggio chiaro nei log (il token va rifatto)
         if (params.includes('Login authentication failed') || params.includes('Improperly formatted auth')) {
-          log.error(`Autenticazione IRC FALLITA per @${this._login}: token non valido. Lo streamer deve ricollegare i permessi dalla dashboard.`);
+          log.error(`Autenticazione IRC FALLITA per @${this._login}: token non valido. Al prossimo tentativo lo rinnovo; se non si rinnova, lo streamer deve ricollegare i permessi dalla dashboard.`);
+          this._forzaRefresh = true;    // il token in mano non vale: il prossimo _open lo rinnova
           this.emit('auth-fallita');    // il bot avvisa il proprietario: va ricollegato
+        } else if (String(tags['msg-id'] || '').startsWith('msg_')) {
+          // Twitch ci dice che un NOSTRO messaggio non e' passato (rate limit,
+          // canale sospeso, modalita' della chat...): in silenzio sarebbe una
+          // risposta sparita senza spiegazione.
+          log.warn(`IRC @${this._login} NOTICE ${tags['msg-id']}: ${params.replace(/^#?\S+ :/, '')}`);
         } else {
           log.debug('NOTICE:', params);
         }
@@ -301,7 +368,12 @@ export class ChatBot extends EventEmitter {
         this._sendTimer = setTimeout(step, wait);
         return;
       }
-      const { channel, text, rispondiA } = this._queue.shift();
+      const { channel, text, rispondiA, ts } = this._queue.shift();
+      if (typeof ts === 'number' && Date.now() - ts > CODA_TTL_MS) {
+        log.debug(`messaggio per #${channel} scaduto in coda, scartato`);
+        if (this._queue.length) this._sendTimer = setTimeout(step, 0);
+        return;
+      }
       try {
         this._ws.send((rispondiA ? `@reply-parent-msg-id=${rispondiA} ` : '') + `PRIVMSG #${channel} :${text}`);
         this._lastSent = Date.now();

@@ -9,6 +9,7 @@ import { streamers } from '../db.js';
 const log = makeLog('helix');
 
 const BASE = 'https://api.twitch.tv/helix';
+const RETE_MS = 15_000;
 
 export class Helix {
   constructor({ auth }) {
@@ -29,10 +30,14 @@ export class Helix {
     };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
 
+    // Una chiamata che non risponde non e' lenta: e' morta. Senza un limite
+    // resta appesa per sempre, e con lei il giro che l'aspettava (sincronia dei
+    // canali, ore guardate, ascolti): il bot «si e' fermato» senza un errore.
     const res = await fetch(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(RETE_MS),
     });
 
     if (!res.ok) {
