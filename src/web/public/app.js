@@ -8609,7 +8609,7 @@ function pannelloConsolify() {
         <button class="btn secondario mini" id="re-scorda">${L('Scorda tutto', 'Forget it all', 'Olvidar todo')}</button>
         <span id="re-spia" class="cons-spia"></span>
       </p>
-      <p class="suggerimento">${L('Funziona dove sta il programma: questa pagina aperta su quel computer. Dal telefono i tasti del bot funzionano lo stesso, ma le scene no — il «computer di casa» del telefono è il telefono.', 'It works where the program is: this page open on that computer. From your phone the bot keys still work, but scenes do not — the phone’s own “home computer” is the phone.', 'Funciona donde está el programa: esta página abierta en ese ordenador. Desde el móvil las teclas del bot siguen funcionando, pero las escenas no — el «ordenador de casa» del móvil es el móvil.')}</p>
+      <p class="suggerimento">${L('Il collegamento si apre da questa pagina, e solo verso il programma che gira sullo stesso computer: un browser non può cercare né raggiungere un altro computer della rete, lo impedisce il browser stesso. Dal telefono però i tasti scena funzionano lo stesso, passando da questo pannello: tienilo aperto su quel computer mentre streami. Se non c’è nessun pannello aperto lì, il tasto te lo dice invece di fingere.', 'The connection opens from this page, and only to the program running on the same computer: a browser cannot search for or reach another computer on the network — the browser itself forbids it. From your phone the scene keys still work though, going through this panel: keep it open on that computer while you stream. If no panel is open there, the key says so instead of pretending.', 'La conexión se abre desde esta página, y solo hacia el programa que corre en el mismo ordenador: un navegador no puede buscar ni alcanzar otro ordenador de la red, lo impide el propio navegador. Desde el móvil las teclas de escena funcionan igual, pasando por este panel: tenlo abierto en ese ordenador mientras emites. Si no hay ningún panel abierto allí, la tecla te lo dice en vez de fingir.')}</p>
       <div id="re-scene" class="cons-scene"></div>
     </div>
 
@@ -8931,7 +8931,8 @@ async function premiTasto(t, stato) {
   for (let k = 0; k < passi.length; k++) {
     const p = passi[k];
     if (p.tipo === 'attesa') { await attendi(Math.min(30000, Number(p.ms) || 0)); esiti.push({ ok: true, mostra: '' }); continue; }
-    if (p.tipo === 'scena' || p.tipo === 'muto' || p.tipo === 'transizione') { esiti.push(await eseguiPassoRegia(p)); continue; }
+    const diRegia = p.tipo === 'scena' || p.tipo === 'muto' || p.tipo === 'transizione';
+    if (diRegia && window.RegiaEsterna && RegiaEsterna.collegato()) { esiti.push(await eseguiPassoRegia(p)); continue; }
     try {
       const r = await fetch(`${consUrlTasto(t)}`.replace(/\?/, `/passo/${k}?`), { method: 'POST' });
       const d = await r.json().catch(() => null);
