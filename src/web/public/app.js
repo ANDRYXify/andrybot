@@ -95,11 +95,12 @@ function impostazioni() {
     genere: ['neutro', 'femminile', 'maschile'].includes(s.genere) ? s.genere : 'neutro',
     carattere: typeof s.carattere === 'string' ? s.carattere : '',
     battuteAuto: s.battuteAuto !== false,
-    spontaneita: typeof s.spontaneita === 'number' ? s.spontaneita : 0.03,
+    spontaneita: typeof s.spontaneita === 'number' ? s.spontaneita : 0,
     rispostaMenzioni: s.rispostaMenzioni !== false,
     modalita: ['sempre', 'live', 'manuale'].includes(s.modalita) ? s.modalita : 'sempre',
     iaLocale: s.iaLocale !== false,
     proattivo: s.proattivo !== false,
+    proattivoSoloLive: s.proattivoSoloLive === true,
     proattivoTg: s.proattivoTg !== false,
     internet: s.internet !== false,
     adattaCanale: s.adattaCanale !== false,
@@ -4515,6 +4516,16 @@ function pannelloPersonalita() {
         <input type="checkbox" id="chk-proattivo" ${s.proattivo ? 'checked' : ''}>
         <label for="chk-proattivo">${L('Personalità proattiva — ogni tanto si fa vivo da solo', 'Proactive personality — chimes in on its own now and then', 'Personalidad proactiva — de vez en cuando interviene solo')}</label>
       </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-proattivo-live" ${s.proattivoSoloLive ? 'checked' : ''}>
+        <label for="chk-proattivo-live">${L('Solo mentre sono in diretta', 'Only while I am live', 'Solo mientras estoy en directo')}</label>
+      </div>
+      <p class="suggerimento">${L('Di sua iniziativa non parla mai due volte in sei minuti, e il promemoria dei tuoi link esce al più ogni tre quarti d’ora — e solo se la chat è viva. Con la spunta qui sopra, a canale spento tace anche se in chat c’è gente.', 'On its own it never speaks twice within six minutes, and the reminder of your links goes out at most every forty-five minutes — and only when chat is alive. With the box above, it stays quiet while you are offline even if people are chatting.', 'Por iniciativa propia nunca habla dos veces en seis minutos, y el recordatorio de tus enlaces sale como mucho cada tres cuartos de hora — y solo si el chat está vivo. Con la casilla de arriba, con el canal apagado calla aunque haya gente.')}</p>
+      <div class="spazio-sopra">
+        <p class="campo">${L('Cosa ha detto da solo', 'What it said on its own', 'Qué ha dicho por su cuenta')}</p>
+        <ul class="lista-voci" id="lista-spontanee"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+        <p class="suggerimento">${L('Le ultime volte che ha parlato senza che nessuno lo chiamasse, da quando il bot è acceso: con l’ora e il motivo. È qui che vedi se la dose è quella giusta.', 'The last times it spoke without being called, since the bot was started: with time and reason. This is where you see whether the dose is right.', 'Las últimas veces que habló sin que nadie lo llamara, desde que el bot está encendido: con la hora y el motivo. Aquí ves si la dosis es la correcta.')}</p>
+      </div>
 
       <div class="riga-check">
         <input type="checkbox" id="chk-adatta" ${s.adattaCanale ? 'checked' : ''}>
@@ -4564,6 +4575,23 @@ function pannelloPersonalita() {
       </div>
       <ul class="lista-voci" id="lista-guide"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>`);
+}
+
+async function caricaSpontanee() {
+  const ul = document.getElementById('lista-spontanee');
+  if (!ul) return;
+  let d;
+  try { d = await api('/api/streamer/autonomia'); } catch { ul.innerHTML = ''; return; }
+  const voci = Array.isArray(d?.voci) ? d.voci : [];
+  if (!voci.length) { ul.innerHTML = `<li class="vuoto">${L('Niente, finora: da quando è acceso non ha ancora parlato di sua iniziativa.', 'Nothing yet: since it was started it has not spoken on its own.', 'Nada, por ahora: desde que está encendido no ha hablado por iniciativa propia.')}</li>`; return; }
+  const TIPO = { promo: L('promemoria dei link', 'link reminder', 'recordatorio de enlaces'), battuta: L('battuta', 'joke', 'broma'), iniziativa: L('una cosa sua', 'its own remark', 'una cosa suya'), manche: L('manche', 'round', 'ronda') };
+  const lingua = { it: 'it-IT', en: 'en-GB', es: 'es-ES' }[L('it', 'en', 'es')] || 'it-IT';
+  ul.innerHTML = voci.map((v) => `<li>
+      <div class="testo-voce">
+        <div class="domanda"><span class="badge">${esc(TIPO[v.tipo] || v.tipo)}</span> <span class="meta">${esc(new Date(v.ts).toLocaleTimeString(lingua, { hour: '2-digit', minute: '2-digit' }))}</span></div>
+        <div class="meta">${esc(v.testo)}</div>
+      </div>
+    </li>`).join('');
 }
 
 async function caricaGuide() {
@@ -14478,6 +14506,7 @@ function attivaPiattaforma() {
       spontaneita: Number(document.getElementById('rng-spontaneita').value) / 100,
       rispostaMenzioni: document.getElementById('chk-menzioni').checked,
       proattivo: document.getElementById('chk-proattivo').checked,
+      proattivoSoloLive: document.getElementById('chk-proattivo-live').checked,
       adattaCanale: document.getElementById('chk-adatta').checked,
       iaLocale: document.getElementById('chk-ialocale').checked,
       internet: document.getElementById('chk-internet').checked,
@@ -15587,7 +15616,7 @@ function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
   if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaRetePanoramica(); caricaPiattaforme(); collegaCancella(); }
   if (id === 'avatar') caricaMente3d();
-  if (id === 'personalita') caricaGuide();
+  if (id === 'personalita') { caricaGuide(); caricaSpontanee(); }
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); }
   if (id === 'clip') caricaClip();
   if (id === 'musica') caricaSpotify();

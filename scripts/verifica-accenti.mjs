@@ -67,7 +67,9 @@ function incoerenti(testo) {
 
 // Dove si guarda: tutto quello che una persona legge da fuori.
 const POSTI = [
-  ['NOVITA.md', (t) => t.split('\n').filter((r) => r.startsWith('- ')).join('\n')],
+  // la destinazione «[vai: personalita]» e' un identificativo di scheda, non una
+  // parola da leggere: si toglie prima di guardare gli accenti
+  ['NOVITA.md', (t) => t.split('\n').filter((r) => r.startsWith('- ')).map((r) => r.replace(/\s*\[vai:\s*[a-z0-9-]+\]\s*$/i, '')).join('\n')],
   // I commenti si tolgono prima: quello che il programmatore scrive per sé non
   // lo legge nessuno da fuori, e un cancello che dà allarmi su quelli si spegne.
   ['src/web/manuali.js', (t) => (senzaCommentiJs(t).match(/'[^']{25,}'/g) || []).join('\n')],

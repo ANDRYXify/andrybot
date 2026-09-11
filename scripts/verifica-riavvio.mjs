@@ -96,6 +96,10 @@ const DECISO = [
   ['bot.js', '_ytId', 'volatile', 'cache dell\'id canale YouTube'],
   ['bot.js', '_mancheProx', 'volatile', 'quando tocca alla prossima manche: si ricalcola'],
   ['bot.js', '_tgProattivoUltimo', 'volatile', 'ultimo messaggio proattivo, anti-ripetizione a breve'],
+  ['bot.js', '_ultimaSpontanea', 'volatile', 'quando ha parlato da solo l\'ultima volta: dopo un riavvio riparte da zero, e al massimo parla un giro prima'],
+  ['bot.js', '_ultimaPromo', 'volatile', 'ultimo promemoria dei link: idem, un riavvio non e\' un modo pratico per farglielo ripetere'],
+  ['bot.js', '_ultimaBattuta', 'volatile', 'ultima battuta di sua iniziativa: idem'],
+  ['bot.js', '_spontanee', 'volatile', 'cosa ha detto da solo: e\' un registro DI SEDUTA, e il pannello lo dice («da quando il bot e\' acceso»); quello che ha detto sta comunque nella memoria della chat'],
   ['db.js', '_revComandi', 'volatile', 'numero di revisione per invalidare una cache'],
   ['segreti.js', '_maestre', 'volatile', 'chiavi maestre tenute in memoria, mai su disco: e\' il punto'],
 ];

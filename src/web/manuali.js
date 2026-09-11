@@ -485,14 +485,16 @@ const BOT = {
     { tabella: [
       ['Impostazione', 'Di base', 'Limiti', 'Cosa cambia davvero'],
       ['Tono', 'scherzoso', 'scherzoso · amichevole · serio', 'La forma delle frasi: battute e ironia, caloroso e tranquillo, oppure sobrio e diretto.'],
-      ['Chat autonoma', '5%', '0–50%', 'Quanto si intromette da solo in una conversazione a cui nessuno lo ha chiamato. A 0 parla solo se lo chiami.'],
+      ['Chat autonoma', '0%', '0–50%', 'Quanto si intromette da solo in una conversazione a cui nessuno lo ha chiamato. Parte a zero: parla solo se lo chiami, finché non alzi il cursore.'],
       ['Rispondi quando mi nominano', 'acceso', '—', 'Se qualcuno scrive il tuo nome in chat, risponde lui.'],
       ['Personalità proattiva', 'acceso', '—', 'Ogni tanto si fa vivo di sua iniziativa, anche senza essere nominato.'],
+      ['Solo mentre sono in diretta', 'spento', '—', 'Con la spunta, di sua iniziativa parla solo a diretta accesa: a canale spento tace anche se in chat c\'è gente.'],
       ['Adatta la personalità al canale', 'acceso', '—', 'Impara il tuo stile dalla chat e ci si avvicina, senza che tu debba descriverlo.'],
       ['Risposte intelligenti (IA locale)', 'acceso', '—', 'Il modello che gira sul nostro server: capisce la domanda anche se scritta in un altro modo.'],
       ['Accesso a internet', 'acceso', '—', 'Se non sa una cosa può cercarla al volo invece di dire «non lo so».'],
       ['Le tue frasi', 'vuoto', 'una per riga', 'Modi di dire tuoi che entrano nel suo repertorio.'],
     ] },
+    { p: ['<strong>Quanto spesso, al massimo.</strong> Di sua iniziativa non parla mai due volte in sei minuti, e il promemoria dei tuoi link esce al più ogni tre quarti d\'ora — e solo se la chat è viva: almeno un messaggio al minuto, i suoi non contano. In fondo alla scheda c\'è <strong>Cosa ha detto da solo</strong>: le ultime volte che ha parlato senza essere chiamato, con l\'ora e il motivo, da quando il bot è acceso. È lì che vedi se la dose è quella giusta, senza stare in chat a guardare.'] },
     { p: ['La <strong>chat autonoma</strong> è quella che si sente di più. Sotto il 10% il bot resta un servizio: risponde e tace. Sopra il 25% diventa un presente in chat, e su un canale piccolo può coprire le persone. Il massimo è 50% <em>di proposito</em>: oltre, non sarebbe più la tua chat.'] },
 
     { h3: 'Le due teste: modello e moduli' },
