@@ -17,6 +17,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-11
 
+- Nell'editor degli overlay la tela ha le misure della diretta: il player tiene la stessa larghezza con ogni brano, la chat si ferma alla larghezza scelta, i contatori hanno la dimensione vera. [vai: alert]
 - In chat il bot non parla più da assistente: niente «implementazione», «non sono in grado», «funzionalità». Se una cosa non è sua lo dice come uno della chat, e una riga di quel tipo non esce e non gli torna in mente. [vai: personalita]
 - L'overlay in OBS si ricollega da solo dopo un riavvio del bot o un salto di rete: chat, effetti e tasti di CONSOLify ripartono senza toccare la sorgente. Quelle aperte da prima di oggi vanno ricaricate una volta. [vai: alert]
 - Quando parla da solo, il bot lo fa per un motivo e non più a caso: risponde a chi è rimasto senza risposta se sa la cosa, rilancia la chat che si ferma dopo un momento vivo, sale sull'onda quando esplode. [vai: personalita]

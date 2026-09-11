@@ -6835,9 +6835,10 @@ function aggiornaAnteprima() {
   const apChat = _g('ap-chat');
   if (apChat) {
     apChat.className = 'ap-el ap-chat' + (/destra/.test(chatPos) ? ' destra' : '') + (selezione === 'chat' ? ' sel' : '');
+    apChat.style.maxWidth = Number(cst.larghezza) > 0 ? _arr((Number(cst.larghezza) / 100) * OVL_W) + 'px' : '';
     apChat.innerHTML = _messaggiFinti().map(([u, col, t]) => {
       const cu = cst.username === 'twitch' ? col : cst.username;
-      return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} maiusc-${cst.maiuscolo || 'no'} ${classiIdentita(cst, 'nessuna')} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--acc:${cu};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)};--peso:${cst.peso || '700'};--spaz:${Number(cst.spaziatura) || 0}px;--ombra-testo:${cst.ombraTesto ? '0 2px 8px rgba(0,0,0,.6)' : 'none'}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
+      return `<div class="chat-riga dim-${cst.dim} anim-${cst.animazione || 'slide'}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} maiusc-${cst.maiuscolo || 'no'} ${classiIdentita(cst, 'nessuna')} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--acc:${cu};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)};--peso:${cst.peso || '700'};--spaz:${Number(cst.spaziatura) || 0}px;--ombra-testo:${cst.ombraTesto ? '0 2px 8px rgba(0,0,0,.6)' : 'none'}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
     }).join('');
     _iniettaManiglie('chat');
   }
@@ -6852,6 +6853,7 @@ function aggiornaAnteprima() {
     const nodo = _nodo(e.k);
     if (!nodo) continue;
     nodo.style.display = _inOverlay(e.k) ? '' : 'none';
+    nodo.classList.toggle('spento', !_elementoAcceso(e.k));
     const st = _posCorrente(e.k);
     if (st) _posElemento(nodo, st);
     else _posAncora(nodo, _angoloDi(e.k));
@@ -7004,8 +7006,8 @@ function _vestiCont(box, c) {
   box.style.color = o.colore || '#ffffff';
   box.style.setProperty('--fg', o.colore || '#ffffff');
   if (o.sfondo) box.style.setProperty('--bg', o.sfondo);
-  box.style.fontSize = Math.round((CONT_BASE * (Number(st.s) || 100)) / 100) + 'px';
-  box.style.fontWeight = o.grassetto === false ? '500' : '800';
+  box.style.fontSize = CONT_BASE + 'px';
+  box.style.fontWeight = o.grassetto ? '800' : '500';
   box.style.fontFamily = (window.FONT_CONT || {})[o.font] || (window.FONT_CONT || {}).system || 'system-ui, sans-serif';
 }
 

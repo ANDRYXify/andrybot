@@ -732,3 +732,28 @@ al ritorno (`flusso-tornato`, con i tentativi), non a ogni prova.
 
 Le sorgenti rimaste aperte da prima di questo cambiamento hanno la pagina
 vecchia: vanno ricaricate una volta.
+
+## Anteprima = diretta: cosa divergeva, e il cancello che lo misura
+
+La tela dell'editor è 1920×1080 scalata, con lo stesso CSS dell'overlay. Ma
+«stesso CSS» non basta se le due pagine partono da basi diverse o se chi veste
+l'elemento di qua non fa quello che fa chi lo veste di là. Misurato con Chromium
+(`scripts/verifica-anteprima.mjs`: editor demo e pagina vera dell'overlay, stesso
+elemento, stessa configurazione, misure in pixel di tela):
+
+| cosa | editor | diretta | causa | rimedio |
+|---|---|---|---|---|
+| player (cassetta, slim) | 739 px | 509 px | `.m-corpo` aveva solo un tetto: largo quanto il titolo del brano | `width: var(--m-testo, 13em)`: una larghezza, non un tetto; in diretta il player non cambia più col brano |
+| player (cassetta) | 478 px | 511 px | il pannello ha `* { box-sizing: border-box }`, la pagina dell'overlay no | dentro la tela il modello di scatola è quello dell'overlay, con specificità zero (`:where`), così ogni regola della pelle continua a vincere |
+| widget (media) | 38 px alti | 33 px | interlinea 1.6 e corpo 15 px del pannello, ereditati | la tela parte dalla base tipografica della pagina dell'overlay: `font: 16px/normal` e lo stesso carattere |
+| chat, larghezza | ignorata | `max-width: N vw` | la larghezza scelta non arrivava sulla tela | `N/100 × 1920` px sulla tela |
+| contatore | 305×115 | 326×83 | la veste (`padding`, `line-height`) stava nello `<style>` di `overlay.html`, che la tela non legge; e il corpo era scalato due volte (font × s e `scale(s)`) | la veste sta nella pelle, letta da tutte e due le pagine; il corpo è quello base e la scala la dà il contenitore, una volta |
+| contatore, grassetto | 800 | 500 | ripiego al contrario quando non è mai stato scelto | lo stesso ripiego di `db.js` (`!!grassetto`) |
+
+Due cose che non sono misure ma coerenza: le righe della chat sulla tela portano
+la classe dell'animazione scelta, e un elemento **spento** resta sulla tela ma
+sbiadito (in diretta non c'è; sulla tela serve trovarlo per riaccenderlo).
+
+L'autoprova rompe quattro cose una per volta (il tetto al posto della larghezza,
+la larghezza della chat, la doppia scala, il ripiego del grassetto) e pretende
+che il cancello diventi rosso.
