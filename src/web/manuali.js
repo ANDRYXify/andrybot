@@ -1318,6 +1318,7 @@ const OVERLAY = {
       '<strong>Parte l\'alert ma non il suono.</strong> In OBS la sorgente Browser deve avere il <strong>«Controlla l\'audio via OBS»</strong>, altrimenti l\'audio esce dal browser e non dalla diretta.',
       '<strong>Vedo tutto doppio.</strong> Due sorgenti Browser con lo stesso link nella stessa scena: tienine una, o dai a ciascuna il suo overlay con i suoi elementi.',
       '<strong>La chat non compare.</strong> È spenta di base: si accende dal suo interruttore.',
+      '<strong>La chat si è fermata e non arriva più niente.</strong> La pagina aveva perso il filo col bot, per un riavvio o un salto di rete. Ora lo riprende da sola e rilegge tutto; una sorgente rimasta aperta da prima di questo aggiornamento va ricaricata una volta.',
       '<strong>L\'obiettivo resta a zero.</strong> Conta da quando l\'hai acceso: gli eventi di prima non tornano indietro.',
       '<strong>Ho spostato tutto e non mi piace più.</strong> Doppio clic su un elemento lo rimette dov\'era.',
     ] },

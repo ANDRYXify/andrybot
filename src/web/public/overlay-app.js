@@ -583,13 +583,11 @@ function etichettaVolatile(comando, durata, conPrefisso = true) {
   }, Math.max(800, durata));
 }
 
-function connetti() {
-  const es = new EventSource(urlStream);
-  es.onmessage = (m) => {
-    let dati;
-    try { dati = JSON.parse(m.data); } catch (e) { return; }
-    if (!dati || !dati.tipo) return;
-    if (dati.da === 'consolify' && !mostra('consolify')) return;
+function ricevi(m) {
+  let dati;
+  try { dati = JSON.parse(m.data); } catch (e) { return; }
+  if (!dati || !dati.tipo || dati.tipo === 'battito') return;
+  if (dati.da === 'consolify' && !mostra('consolify')) return;
 
     if (dati.tipo === 'audio') { if (mostra('effetti')) suona(dati); }
     else if (dati.tipo === 'preset') { if (mostra('effetti')) suonaPreset(dati); }
@@ -602,9 +600,15 @@ function connetti() {
     else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
     else if (dati.tipo === 'contatore') contatore(dati);
     else if (dati.tipo === 'immagine' || dati.tipo === 'video') { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
-  };
+}
 
-  es.onerror = () => { guaio('flusso-eventi', 'il flusso si e\' interrotto'); };
+function connetti() {
+  window.SB_FLUSSO.apri(urlStream, {
+    silenzio: 75000,
+    suMessaggio: ricevi,
+    suCaduta: () => guaio('flusso-caduto', 'il flusso si e\' interrotto, riprovo'),
+    suRitorno: (n) => { caricaTema(); guaio('flusso-tornato', n ? 'dopo ' + n + ' tentativi' : 'al primo colpo'); },
+  });
 }
 
 const CONT_BASE = 40;
