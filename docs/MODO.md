@@ -112,3 +112,34 @@ quel pezzo.
 e pretende che il cancello diventi rosso ogni volta.
 
 Il comportamento, invece, si prova in `test/unita/modo.test.mjs`.
+
+## 5. Non parla da assistente
+
+In chat qualcuno ha scritto «ti si ama ❤️» e il bot ha risposto: *«Mi dispiace,
+l'implementazione attuale lo impedisce. Cercherò di risolvere in fretta.»* Da lì
+in poi qualunque cosa gli si dicesse «pareva non implementata».
+
+Due cause, una per lato.
+
+**Il prompt insegnava la scusa.** Le regole erano scritte al negativo: «non
+promettere cose che non puoi fare», «sei un bot». Un modello piccolo, davanti a
+una riga che non è una domanda, non ha un modello di come si risponde a un
+affetto o a una richiesta che non è sua: ha solo l'elenco di ciò che non può
+fare, e risponde con quello, nel registro di chi lo ha scritto. Adesso le regole
+sono in positivo («le cose che si fanno in diretta le fa lo streamer: tu al
+massimo ci scherzi») e c'è un blocco di **esempi nel tono del canale**: affetto,
+complimento, richiesta non sua, cosa che non sa, insulto, saluto. Il taglio, non
+le frasi. Un modello piccolo segue un esempio molto meglio di una regola.
+
+**La scivolata diventava il registro.** La riga detta finiva nella memoria della
+chat, e la memoria torna al modello come «discorso in corso», con le sue righe
+nel ruolo dell'assistente: il modello imitava sé stesso, e ogni risposta dopo
+suonava uguale. Ora una riga da assistente (implementazione, capacità,
+funzionalità, «non sono in grado», «come modello»…) non esce dall'unica uscita
+del bot (`brain._finalizza`, `src/ai/registro.js`), e la storia che si rimanda
+al modello non gliela mostra (`brain._storiaRecente`). Dove la riga nasce, nel
+cervello, lo stesso elenco fa riprovare una volta a temperatura più bassa e poi
+tacere: il silenzio vale più della scusa.
+
+Prove: `test/unita/registro.test.mjs` (qui) e la prova dell'assistente nel
+repository del cervello.

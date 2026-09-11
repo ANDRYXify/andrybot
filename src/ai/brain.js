@@ -10,6 +10,7 @@ import * as learn from './learn.js';
 import * as model from './model.js';
 import * as persona from './persona.js';
 import * as brainpy from './brainpy.js';
+import { daAssistente } from './registro.js';
 import { genereDi, scegliAccordando, istruzioneGenere } from './genere.js';
 import * as conti from '../features/conti.js';
 
@@ -513,6 +514,9 @@ export class Brain {
         const t = String(r.text || '').replace(/\s+/g, ' ').trim();
         if (!t || t.startsWith('!')) continue;                       // niente comandi
         if (!r.from_bot && this._norm(t) === corr) continue;         // è il messaggio attuale
+        // una riga sua da assistente non torna al modello come esempio di come
+        // parla: e' cosi' che una scivolata diventa il registro di tutta la sera
+        if (r.from_bot && daAssistente(t)) continue;
         out.push({
           nome: r.from_bot ? 'io' : String(r.display || r.user || 'utente').slice(0, 24),
           testo: t.slice(0, 160),
@@ -1483,6 +1487,12 @@ export class Brain {
     const esito = checkRisposta(testo, streamer?.settings || {});
     if (!esito.ok) {
       log.warn(`#${channel} risposta bloccata (${esito.reason})`);
+      return null;
+    }
+    // in chat nessuno parla di implementazioni e capacita': una riga cosi' non
+    // esce, da qualunque ramo arrivi (src/ai/registro.js)
+    if (daAssistente(testo)) {
+      log.warn(`#${channel} risposta scartata: registro da assistente («${testo.slice(0, 60)}»)`);
       return null;
     }
     // mai fare l'eco di un messaggio di un utente
