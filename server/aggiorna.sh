@@ -71,6 +71,39 @@ fi
 echo "$NUOVI commit in arrivo:"
 git log --oneline HEAD..origin/"$RAMO" | head -15
 
+# ---- 2b. il cervello privato -------------------------------
+# Il codice del cervello vive in un repository a parte (LIA_DIR, di solito la
+# cartella accanto a questa). Da quando è così, aggiornare QUESTO senza avere
+# QUELLO vorrebbe dire costruire i container del cervello dal nulla: si ferma
+# prima, con l'istruzione giusta, invece di scoprirlo a metà del build.
+passo "Il cervello privato"
+LIA_DIR_CONF="$( { grep -E '^LIA_DIR=' .env 2>/dev/null || true; } | tail -1 | cut -d= -f2- )"
+LIA_DIR="${LIA_DIR_CONF:-../lia}"
+case "$LIA_DIR" in /*) ;; *) LIA_DIR="$RADICE/$LIA_DIR" ;; esac
+SERVE_LIA=0
+if git show "origin/$RAMO:docker-compose.yml" 2>/dev/null | grep -q 'LIA_DIR'; then SERVE_LIA=1; fi
+if [ "$SERVE_LIA" = "1" ]; then
+  if [ ! -d "$LIA_DIR/.git" ]; then
+    echo "Il codice in arrivo si aspetta il cervello privato in $LIA_DIR, e lì non c'è niente."
+    echo "Prima adottalo (una volta sola):"
+    echo "    cd $RADICE && bash server/adotta-lia.sh"
+    muori "senza il cervello privato non aggiorno."
+  fi
+  if [ -n "$(git -C "$LIA_DIR" status --porcelain --untracked-files=no)" ]; then
+    git -C "$LIA_DIR" status --short | head -10
+    muori "il cervello privato ha modifiche non salvate: committale o annullale prima."
+  fi
+  LIA_PRIMA="$(git -C "$LIA_DIR" rev-parse HEAD)"
+  echo "cervello adesso su $(git -C "$LIA_DIR" rev-parse --short HEAD) — $(git -C "$LIA_DIR" log -1 --format=%s)"
+  git -C "$LIA_DIR" fetch --quiet origin
+  LIA_RAMO="$(git -C "$LIA_DIR" rev-parse --abbrev-ref HEAD)"
+  LIA_NUOVI="$(git -C "$LIA_DIR" rev-list --count HEAD..origin/"$LIA_RAMO" 2>/dev/null || echo 0)"
+  echo "$LIA_NUOVI commit in arrivo per il cervello"
+  git -C "$LIA_DIR" log --oneline HEAD..origin/"$LIA_RAMO" | head -10
+else
+  echo "il codice in arrivo non lo chiede ancora: niente da fare qui."
+fi
+
 # ---- 3. copia di sicurezza del database --------------------
 passo "Copia di sicurezza del database"
 if docker compose ps --status running 2>/dev/null | grep -q bot; then
@@ -87,6 +120,10 @@ fi
 passo "Prendo il codice nuovo"
 git merge --ff-only "origin/$RAMO"
 echo "ora siamo su $(git rev-parse --short HEAD) — $(git log -1 --format=%s)"
+if [ "$SERVE_LIA" = "1" ]; then
+  git -C "$LIA_DIR" merge --ff-only "origin/$LIA_RAMO"
+  echo "cervello ora su $(git -C "$LIA_DIR" rev-parse --short HEAD) — $(git -C "$LIA_DIR" log -1 --format=%s)"
+fi
 
 # ---- 5. il collaudo, PRIMA di toccare quello che gira ------
 if [ "$SALTA" = "1" ]; then
@@ -100,12 +137,17 @@ else
     echo "Il codice nuovo NON passa il collaudo. Quello che gira non è stato toccato."
     echo "Per rimettere il repository com'era:"
     echo "    git -C $RADICE reset --hard $PRIMA"
+    [ "$SERVE_LIA" = "1" ] && echo "    git -C $LIA_DIR reset --hard $LIA_PRIMA"
     exit 1
   }
 
   npm ci --no-audit --no-fund --silent || { echo "installazione dipendenze fallita"; torna_indietro; }
   npm test --silent || torna_indietro
   npm run --silent cancelli || torna_indietro
+  if [ "$SERVE_LIA" = "1" ]; then
+    # le prove del cervello leggono anche questo repository (sta accanto): ANDRYBOT_DIR glielo dice
+    ( cd "$LIA_DIR" && ANDRYBOT_DIR="$RADICE" npm test --silent && ANDRYBOT_DIR="$RADICE" npm run --silent cancelli ) || torna_indietro
+  fi
   echo "collaudo verde ✓"
 fi
 
@@ -146,6 +188,7 @@ echo "Il bot non risponde sano dopo 60 secondi: TORNO ALLA VERSIONE DI PRIMA ($(
 echo "Ultime righe di log della versione nuova, per capire:"
 docker compose logs --tail=40 bot 2>/dev/null || true
 git reset --hard "$PRIMA" >/dev/null
+[ "$SERVE_LIA" = "1" ] && git -C "$LIA_DIR" reset --hard "$LIA_PRIMA" >/dev/null
 docker compose up -d --build
 
 passo "Controllo che la versione di prima sia tornata su"
