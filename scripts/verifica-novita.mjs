@@ -20,7 +20,8 @@ import { EMOJI } from './_emoji.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { analizza, pubbliche } from '../src/web/novita.js';
+import { analizza, pubbliche, destinazioni } from '../src/web/novita.js';
+import { aiutiPerScheda } from '../src/web/manuali.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
 const esiti = [];
@@ -137,6 +138,17 @@ dice(conEmoji.length === 0, 'niente emoji', conEmoji[0]?.slice(0, 40));
 // c'è un ramo a monte) non c'è niente da controllare: non è un errore.
 const git = (...a) => execFileSync('git', a, { cwd: RAD, encoding: 'utf8' }).trim();
 let daSpingere = [];
+// DOVE E' SUCCESSA. Una riga puo' portare la sua destinazione: «[vai: consolify]».
+// Se quel nome non e' una scheda vera, la freccia porta nel vuoto — e nessuno se
+// ne accorge, perche' un bottone che non fa niente ha lo stesso aspetto di uno
+// che funziona. La stessa mappa dice anche che quella scheda ha una pagina
+// pubblica che la spiega, quindi la freccia vale dentro e fuori dal pannello.
+const SCHEDE = aiutiPerScheda();
+const dove = destinazioni(gruppi);
+const orfane = dove.filter((d) => !SCHEDE[d]);
+dice(orfane.length === 0, `righe che dicono dove andare: ${dove.length}`,
+  orfane.length ? `non esistono: ${orfane.join(', ')}` : '');
+
 try {
   const monte = git('rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}');
   daSpingere = git('rev-list', `${monte}..HEAD`).split('\n').filter(Boolean);

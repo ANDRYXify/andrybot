@@ -66,6 +66,39 @@ Il tetto è sulle **righe**, non sulle giornate: una giornata da quaranta righe 
 un muro anche se è una sola, e un muro non si legge. Si mostra quanto si legge,
 si dice quante restano, e restano tutte in `/novita`.
 
+## Dove è successa
+
+Una riga dice cosa è cambiato. Da sola non dice **dove andare a vederlo**, e chi
+legge deve mettersi a cercare la scheda giusta — cioè la novità si ferma a essere
+un annuncio invece di diventare una cosa che provi.
+
+La destinazione si scrive in fondo alla riga, nello stesso commit della cosa:
+
+```
+- I menù con tante voci non si schiacciano più. [vai: consolify]
+```
+
+È un identificativo di scheda, e basta quello. Il **nome** non si scrive qui: si
+ricava, così non esiste una riga che chiama una cosa con un nome che nel pannello
+non c'è più. Da lì ognuno la dice a modo suo:
+
+- **nel pannello** le righe vicine si raccolgono sotto il titolo di quella
+  scheda, con l'area sopra («Durante la diretta · CONSOLify»), e il titolo è il
+  bottone: chiude la finestra e apre quella scheda;
+- **sulla pagina pubblica** lo stesso titolo è un collegamento alla guida o al
+  manuale che spiega quella scheda — fuori dal pannello non si apre una scheda,
+  si apre una pagina.
+
+Si raggruppa **per destinazione**, nell'ordine in cui compare la prima volta, non
+per vicinanza: due blocchi della stessa sezione separati da una riga qualsiasi
+darebbero lo stesso titolo due volte a tre righe di distanza, e un titolo
+ripetuto si legge come un difetto.
+
+`scripts/verifica-novita.mjs` boccia una destinazione che non è una scheda vera.
+La mappa che usa è la stessa che dice quale pagina spiega quella scheda, quindi
+un `[vai:]` verde vuol dire che la freccia funziona **dentro e fuori** dal
+pannello. Provato rosso con `[vai: schedainesistente]`.
+
 ## Come si scrive una riga
 
 Una riga dice **cosa puoi fare adesso che prima non potevi**, o cosa non si

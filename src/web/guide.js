@@ -516,6 +516,10 @@ h3{font-size:1rem;margin:20px 0 6px}
 .g-novita h2{font-size:1.1rem;color:var(--testo-2);font-weight:400;margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid var(--contorno)}
 .g-novita ul{margin:0;padding-left:20px}
 .g-novita li{margin:7px 0}
+.g-dove-tit{margin:14px 0 4px;font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.g-dove-tit a{display:inline-block;padding:1px 9px;border:1px solid var(--contorno);border-radius:999px;text-decoration:none;background:var(--surface)}
+.g-dove-tit a::after{content:" →"}
+.g-novita section+ul,.g-dove-tit+ul{margin-top:4px}
 main{max-width:760px;margin:0 auto;padding:34px 20px 60px}
 .g-briciole{font-size:.84rem;color:var(--testo-3);margin:0 0 18px}
 .g-briciole a{color:var(--testo-3)}
@@ -755,7 +759,25 @@ export function paginaManuali(manuali) {
     url, corpo, ld });
 }
 
-export function paginaNovita(gruppi) {
+// Le righe vicine che parlano dello stesso punto del pannello stanno insieme,
+// sotto il titolo di quel punto: si leggono come un discorso invece che come un
+// elenco, e il titolo e' il collegamento per andare a vedere. Non si riordina
+// niente — dentro la giornata l'ordine vuol dire qualcosa.
+function sezioni(voci) {
+  const per = new Map();
+  for (const v of voci) {
+    const dove = v && typeof v === 'object' ? (v.vai || null) : null;
+    if (!per.has(dove)) per.set(dove, { vai: dove, voci: [] });
+    per.get(dove).voci.push(v);
+  }
+  return [...per.values()];
+}
+
+// `aiuti` e' la mappa scheda → pagina che la spiega (da manuali.js, che importa
+// di qui: la passa chi chiama, cosi' non si girano intorno). Serve per dire DOVE
+// e' successa una cosa: la riga porta solo l'identificativo della scheda, il
+// nome e l'indirizzo li mette chi mostra.
+export function paginaNovita(gruppi, aiuti = {}) {
   const url = `${SITO}/novita`;
   const ultima = gruppi[0]?.data || new Date().toISOString().slice(0, 10);
   const ld = `<script type="application/ld+json">${JSON.stringify({
@@ -768,8 +790,12 @@ export function paginaNovita(gruppi) {
 <main><p class="g-briciole"><a href="/">SocialBot</a> › Novità</p>
 <h1>Novità</h1>
 <p>Cosa è cambiato nel bot, in ordine di tempo. Una riga per cosa: se non si vede da fuori, qui non c'è.</p>
-${gruppi.map((g) => `<section class="g-novita"><h2>${esc(dataItaliana(g.data))}</h2><ul>${
-    g.voci.map((v) => `<li>${testo(v)}</li>`).join('')}</ul></section>`).join('')}
+${gruppi.map((g) => `<section class="g-novita"><h2>${esc(dataItaliana(g.data))}</h2>${
+    sezioni(g.voci).map((s) => {
+      const a = s.vai && aiuti[s.vai];
+      const tit = a ? `<h3 class="g-dove-tit"><a href="${esc(a.via)}">${esc(a.titolo)}</a></h3>` : '';
+      return `${tit}<ul>${s.voci.map((v) => `<li>${testo(typeof v === 'string' ? v : v.testo)}</li>`).join('')}</ul>`;
+    }).join('')}</section>`).join('')}
 </main>${piede()}`;
   return scheletro({
     titolo: 'Novità di SocialBot: cosa è cambiato | SocialBot',

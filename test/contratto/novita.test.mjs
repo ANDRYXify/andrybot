@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { analizza, pubbliche, tutte, inItaliano, ultima, segnalibro, daVedere, segnoValido, taglia } from '../../src/web/novita.js';
+import { analizza, pubbliche, tutte, inItaliano, ultima, segnalibro, daVedere, segnoValido, taglia, destinazioni, inSezioni } from '../../src/web/novita.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const gruppi = analizza(readFileSync(join(RAD, 'NOVITA.md'), 'utf8'));
@@ -39,7 +39,7 @@ test('la prosa attorno non finisce fra le novità', () => {
     '## 2026-01-01',
     '',            // giornata vuota: non deve comparire
   ].join('\n'));
-  assert.deepEqual(pubbliche(uno), [{ data: '2026-01-02', voci: ['prima cosa', 'seconda cosa'] }]);
+  assert.deepEqual(pubbliche(uno), [{ data: '2026-01-02', voci: [{ testo: 'prima cosa', vai: null }, { testo: 'seconda cosa', vai: null }] }]);
 });
 
 test('le righe scritte prima di qualsiasi giornata si ignorano', () => {
@@ -62,11 +62,11 @@ test('una riga marcata privata non arriva mai alla forma pubblica', () => {
     '- questa la vedono tutti',
     '- [privato] questa è solo mia',
   ].join('\n'));
-  assert.deepEqual(pubbliche(g), [{ data: '2026-01-02', voci: ['questa la vedono tutti'] }]);
+  assert.deepEqual(pubbliche(g), [{ data: '2026-01-02', voci: [{ testo: 'questa la vedono tutti', vai: null }] }]);
   // e a chi ha diritto arriva, marcata per quello che è
   assert.deepEqual(tutte(g), [{ data: '2026-01-02', voci: [
-    { testo: 'questa la vedono tutti', privata: false },
-    { testo: 'questa è solo mia', privata: true },
+    { testo: 'questa la vedono tutti', privata: false, vai: null },
+    { testo: 'questa è solo mia', privata: true, vai: null },
   ] }]);
 });
 
@@ -214,6 +214,95 @@ test('la finestra conta tutte le novità, anche quelle che non ci stanno dentro'
   // «12 cose nuove» mentre ne sono successe 47 e' una bugia per omissione.
   const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
   const f = app.slice(app.indexOf('async function mostraNovita('), app.indexOf('function pannelloConsolify('));
-  assert.match(f, /const quante = gruppi\.reduce\(\(n, g\) => n \+ g\.voci\.length, 0\) \+ restanti;/);
+  assert.match(f, /const quante = gruppi\.reduce\([^\n]*\+ restanti;/, 'il conto comprende quelle che restano fuori');
+  assert.match(f, /sezioniDi\(g\)\.reduce/, 'e le conta dentro le sezioni, non nel vecchio elenco piatto');
   assert.doesNotMatch(f, /altriGiorni/, 'le giornate non si contano piu\': si contano le righe');
+});
+
+// ── DOVE E' SUCCESSA ───────────────────────────────────────────────────────
+// Una riga dice cosa e' cambiato; senza la destinazione chi legge deve mettersi
+// a cercare la scheda giusta. La destinazione sta nella riga, quindi nasce e
+// muore con la cosa che racconta.
+
+test('la riga porta la sua destinazione, e la destinazione non finisce nel testo', () => {
+  const g = analizza('## 2026-01-02\n- una cosa nuova. [vai: consolify]\n- un\'altra senza\n');
+  assert.deepEqual(g[0].voci, [
+    { testo: 'una cosa nuova.', privata: false, vai: 'consolify' },
+    { testo: 'un\'altra senza', privata: false, vai: null },
+  ]);
+});
+
+test('privato e destinazione stanno insieme senza pestarsi', () => {
+  const g = analizza('## 2026-01-02\n- [privato] roba sua [vai: stato]\n');
+  assert.deepEqual(g[0].voci[0], { testo: 'roba sua', privata: true, vai: 'stato' });
+  assert.deepEqual(pubbliche(g), [], 'e resta comunque in casa');
+});
+
+test('la destinazione si scrive come viene, e una storta non diventa una voce', () => {
+  assert.equal(analizza('## 2026-01-02\n- cosa [VAI: Consolify]\n')[0].voci[0].vai, 'consolify');
+  assert.equal(analizza('## 2026-01-02\n- cosa [vai: con solify]\n')[0].voci[0].vai, null,
+    'con uno spazio dentro non e\' un nome di scheda: meglio niente freccia che una rotta');
+  assert.equal(analizza('## 2026-01-02\n- [vai: consolify] cosa\n')[0].voci[0].vai, null,
+    'sta in fondo, non in mezzo: in mezzo sarebbe testo');
+});
+
+test('nel file vero, ogni destinazione e\' una scheda che esiste', async () => {
+  // La stessa mappa che dice quale pagina spiega quella scheda: se il nome c'e'
+  // dentro, la freccia funziona sia nel pannello sia sulla pagina pubblica.
+  const { aiutiPerScheda } = await import('../../src/web/manuali.js');
+  const schede = aiutiPerScheda();
+  const dove = destinazioni(gruppi);
+  assert.ok(dove.length > 0, 'qualche riga dice dove andare');
+  for (const d of dove) assert.ok(schede[d], `${d} e' una scheda vera, con la sua pagina`);
+});
+
+test('le righe si raccolgono sotto il punto del pannello di cui parlano', () => {
+  const v = [
+    { testo: 'a', vai: 'consolify' }, { testo: 'b', vai: null },
+    { testo: 'c', vai: 'consolify' }, { testo: 'd', vai: 'effetti' }, { testo: 'e', vai: null },
+  ];
+  assert.deepEqual(inSezioni(v).map((s) => [s.vai, s.voci.map((x) => x.testo)]), [
+    ['consolify', ['a', 'c']],
+    [null, ['b', 'e']],
+    ['effetti', ['d']],
+  ]);
+});
+
+test('lo stesso titolo non compare due volte nella stessa giornata', () => {
+  // Raggruppare per vicinanza darebbe «CONSOLify» due volte a tre righe di
+  // distanza, e un titolo ripetuto si legge come un difetto.
+  const v = [{ testo: 'a', vai: 'consolify' }, { testo: 'b', vai: null }, { testo: 'c', vai: 'consolify' }];
+  const titoli = inSezioni(v).map((s) => s.vai).filter(Boolean);
+  assert.equal(new Set(titoli).size, titoli.length);
+});
+
+test('niente si perde e niente si duplica nel raggruppare', () => {
+  const v = gruppi[0].voci;
+  const dentro = inSezioni(v).flatMap((s) => s.voci);
+  assert.equal(dentro.length, v.length);
+  assert.deepEqual(new Set(dentro.map((x) => x.testo)).size, new Set(v.map((x) => x.testo)).size);
+});
+
+test('la finestra disegna il titolo della sezione, e quel titolo porta li\'', () => {
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const f = app.slice(app.indexOf('function novScheda('), app.indexOf('function pannelloConsolify('));
+  assert.match(f, /class="nov-sez-tit"/, 'il titolo c\'e\'');
+  assert.match(f, /nov-sez-area/, 'con l\'area a cui appartiene');
+  assert.match(f, /data-nov-vai="\$\{esc\(id\)\}"/, 'e porta un indirizzo');
+  assert.match(f, /schedaValida\(id\) \|\| schedaBloccata\(id\)/, 'niente titolo verso una scheda che non c\'e\' o e\' chiusa');
+  // il nome NON si riscrive: si prende dall'elenco del pannello
+  assert.match(f, /g\.schede\.find\(\(\[sid\]\) => sid === id\)/, 'il nome viene dall\'elenco vero delle schede');
+
+  const clic = app.slice(app.indexOf("const dove = ev.target.closest?.('[data-nov-vai]')"), app.indexOf("const viste = ev.target.closest"));
+  assert.match(clic, /f\.close\(\)/, 'chiude la finestra');
+  assert.match(clic, /vaiAScheda\(dove\.dataset\.novVai\)/, 'e apre la scheda');
+});
+
+test('la pagina pubblica manda alla pagina che spiega quella sezione', () => {
+  const g = readFileSync(join(RAD, 'src/web/guide.js'), 'utf8');
+  const f = g.slice(g.indexOf('export function paginaNovita('), g.indexOf('function dataItaliana('));
+  assert.match(f, /sezioni\(g\.voci\)/, 'anche qui a sezioni');
+  assert.match(f, /g-dove-tit/, 'col titolo');
+  assert.match(f, /href="\$\{esc\(a\.via\)\}"/, 'che e\' un collegamento vero');
+  assert.doesNotMatch(f, /data-nov-vai/, 'fuori dal pannello non si apre una scheda: si apre una pagina');
 });
