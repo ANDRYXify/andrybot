@@ -1,35 +1,60 @@
-// QUANDO IL BOT PARLA DA SOLO. Non Lia: il bot del canale, che ogni tanto dice
-// una cosa senza che nessuno l'abbia chiamato — un promemoria dei link dello
-// streamer, una battuta, una cosa sua sul discorso in corso.
+// SE E COSA DIRE, dato un momento. Non Lia: il bot del canale.
 //
-// La decisione stava dentro al battito, sparsa in quattro condizioni e due dadi,
-// e mancavano due cose che si vedono da fuori: un tetto a quanto spesso (poteva
-// parlare a due giri di fila, cioe' a tre minuti di distanza) e un tetto al
-// promemoria dei link (lo stesso indirizzo, nessun riposo: la cosa piu' da bot
-// che un bot possa fare). Qui la decisione e' una funzione sola, senza dadi
-// dentro — il caso arriva da fuori — cosi' si prova.
+// I momenti li riconosce momenti.js guardando la chat. Qui si decide se coglierne
+// uno, e quale, con quattro cose in mano: la dose scelta dallo streamer (il
+// cursore «chat autonoma»), i riposi (mai due volte troppo vicine, il promemoria
+// dei link raramente), la diretta se richiesta, e cosa ha detto l'ultima volta —
+// due volte di fila la stessa cosa e' il modo piu' rapido di sembrare un bot.
+// Il caso arriva da fuori (jitter e scelta fra pari), cosi' si prova.
 export const DOSE_MAX = 0.5;                 // il cursore arriva a 50%: di proposito
-export const SPONTANEA_MIN_MS = 6 * 60_000;  // mai due volte in sei minuti (due giri del battito)
+export const FLOOR_MS = 6 * 60_000;          // mai due volte in sei minuti...
+export const FLOOR_DOMANDA_MS = 2 * 60_000;  // ...salvo rispondere a chi e' rimasto senza risposta
 export const PROMO_MIN_MS = 45 * 60_000;     // il promemoria dei link, al piu' ogni tre quarti d'ora
+export const INTERVALLO_MAX_MS = 180 * 60_000;
 export const REGISTRO_MAX = 30;              // quante voci si tengono per canale
+// Quanto spesso al massimo una cosa sua a discorso che scorre, dalla dose: e' lo
+// stesso ritmo medio che aveva la moneta di prima (una probabilita' dose×0,4
+// ogni tre minuti, cioe' 3/(0,4·dose) minuti fra una riga e l'altra), solo che
+// ora e' un intervallo dichiarato invece di un dado:
+// 50% → 15 minuti · 25% → 30 · 10% → 75 · 5% → 150 · sotto il 3,3% → 180 (il tetto).
+// Sotto i 15 minuti non si scende: il cursore si ferma a 50%. Il pavimento dei
+// sei minuti (FLOOR_MS) vale per tutto il resto, non per questo intervallo.
+export function intervalloDose(dose) {
+  const d = Math.min(DOSE_MAX, Math.max(0, Number(dose) || 0));
+  if (d <= 0) return Infinity;
+  return Math.min(INTERVALLO_MAX_MS, Math.round((3 / (0.4 * d)) * 60_000));   // millisecondi interi
+}
 
-// Ritorna { parla: false, perche } oppure { parla: true, tipo: 'promo' | 'altro' }.
-//   dose        il cursore «chat autonoma» (0..0.5)
-//   ritmo       messaggi al minuto in chat, i suoi esclusi
-//   live        se lo streamer e' in diretta adesso
-//   soloLive    la spunta «solo mentre sono in diretta»
-//   ultimaSpontanea / ultimaPromo   quando ha parlato da solo / fatto promo l'ultima volta
-//   promoAccesa la spunta della promo social
-//   caso        { parla, promo } due numeri in [0,1): il caso, passato da fuori
-export function decidiSpontanea({ ora, dose, ritmo, live, soloLive, ultimaSpontanea = 0, ultimaPromo = 0, promoAccesa = true, caso }) {
-  const auto = Math.min(DOSE_MAX, Math.max(0, Number(dose) || 0));
-  if (auto <= 0) return { parla: false, perche: 'dose a zero' };
-  if (soloLive && live !== true) return { parla: false, perche: 'non in diretta' };
-  if ((Number(ritmo) || 0) < 1) return { parla: false, perche: 'chat ferma' };
-  if (ora - (Number(ultimaSpontanea) || 0) < SPONTANEA_MIN_MS) return { parla: false, perche: 'ha appena parlato da solo' };
-  if (!(Number(caso?.parla) < auto * 0.4)) return { parla: false, perche: 'non stavolta' };
-  const promo = promoAccesa !== false && ora - (Number(ultimaPromo) || 0) >= PROMO_MIN_MS && Number(caso?.promo) < 0.45;
-  return { parla: true, tipo: promo ? 'promo' : 'altro' };
+const PRIORITA = ['domanda', 'hype', 'rilancio', 'flusso'];
+
+// Ritorna { tipo: null, perche } oppure { tipo, momento } dove tipo e' cosa dire:
+// 'domanda' | 'hype' | 'rilancio' | 'iniziativa' | 'battuta' | 'promo'.
+export function scegliMomento({ ora, dose, live, soloLive, momenti = [], ultimaSpontanea = 0, ultimaPromo = 0, ultimoTipo = '', promoAccesa = true, battutaPronta = false, caso = {} }) {
+  const d = Math.min(DOSE_MAX, Math.max(0, Number(dose) || 0));
+  if (d <= 0) return { tipo: null, perche: 'dose a zero' };
+  if (soloLive && live !== true) return { tipo: null, perche: 'non in diretta' };
+  if (!momenti.length) return { tipo: null, perche: 'nessun momento' };
+  const daUltima = ora - (Number(ultimaSpontanea) || 0);
+  const ordinati = [...momenti].sort((a, b) => PRIORITA.indexOf(a.tipo) - PRIORITA.indexOf(b.tipo));
+
+  for (const m of ordinati) {
+    if (m.tipo === 'domanda') {
+      if (daUltima < FLOOR_DOMANDA_MS) continue;
+      return { tipo: 'domanda', momento: m };
+    }
+    if (daUltima < FLOOR_MS) continue;
+    if (m.tipo === 'hype' || m.tipo === 'rilancio') return { tipo: m.tipo, momento: m };
+    if (m.tipo === 'flusso') {
+      const jitter = 0.75 + Math.min(1, Math.max(0, Number(caso.jitter) || 0)) * 0.5;   // ±25%: niente orologeria
+      if (daUltima < intervalloDose(d) * jitter) continue;
+      const promoOk = promoAccesa !== false && live === true && ora - (Number(ultimaPromo) || 0) >= PROMO_MIN_MS;
+      let scelte = ['iniziativa', battutaPronta ? 'battuta' : null, promoOk ? 'promo' : null].filter(Boolean);
+      if (scelte.length > 1) scelte = scelte.filter((t) => t !== ultimoTipo);
+      const i = Math.min(scelte.length - 1, Math.floor(Math.min(0.999, Math.max(0, Number(caso.scelta) || 0)) * scelte.length));
+      return { tipo: scelte[i], momento: m };
+    }
+  }
+  return { tipo: null, perche: 'troppo presto' };
 }
 
 // Il registro di cosa ha detto da solo: una lista corta per canale, in memoria.

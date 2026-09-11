@@ -99,6 +99,8 @@ const DECISO = [
   ['bot.js', '_ultimaSpontanea', 'volatile', 'quando ha parlato da solo l\'ultima volta: dopo un riavvio riparte da zero, e al massimo parla un giro prima'],
   ['bot.js', '_ultimaPromo', 'volatile', 'ultimo promemoria dei link: idem, un riavvio non e\' un modo pratico per farglielo ripetere'],
   ['bot.js', '_ultimaBattuta', 'volatile', 'ultima battuta di sua iniziativa: idem'],
+  ['bot.js', '_ultimoTipo', 'volatile', 'cosa ha detto da solo l\'ultima volta, per non fare due volte lo stesso genere di fila: dopo un riavvio al massimo una volta lo rifa\''],
+  ['features/momenti.js', '_canali', 'volatile', 'le ultime righe della chat e le domande rimaste aperte: sono il presente della chat, e il presente non si salva — al riavvio si riparte a guardare'],
   ['bot.js', '_spontanee', 'volatile', 'cosa ha detto da solo: e\' un registro DI SEDUTA, e il pannello lo dice («da quando il bot e\' acceso»); quello che ha detto sta comunque nella memoria della chat'],
   ['db.js', '_revComandi', 'volatile', 'numero di revisione per invalidare una cache'],
   ['segreti.js', '_maestre', 'volatile', 'chiavi maestre tenute in memoria, mai su disco: e\' il punto'],
@@ -113,6 +115,13 @@ function stati() {
       if (!f.endsWith('.js')) continue;
       const rel = path.relative(path.join(RADICE, 'src'), p);
       fs.readFileSync(p, 'utf8').split('\n').forEach((r) => {
+        // un costruttore scritto su una riga sola dichiara i suoi stati li' dentro:
+        // si leggono tutti, sennò basterebbe la formattazione per nascondere uno stato
+        const inline = r.match(/^\s{2,8}constructor\s*\([^)]*\)\s*\{(.*)\}\s*$/);
+        if (inline) {
+          for (const c of inline[1].matchAll(/this\.([A-Za-z_$][\w$]*)\s*=\s*new (?:Map|Set)\(/g)) out.push({ file: rel.split(path.sep).join('/'), nome: c[1] });
+          return;
+        }
         let m = r.match(/^(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*new (?:Map|Set)\(/);
         let dentro = false;
         if (!m) { m = r.match(/^\s{2,8}this\.([A-Za-z_$][\w$]*)\s*=\s*new (?:Map|Set)\(/); dentro = !!m; }

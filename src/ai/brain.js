@@ -1242,7 +1242,10 @@ export class Brain {
   // Passa dagli stessi controlli di una risposta normale (_finalizza): stessa
   // moderazione, niente eco di un utente, e soprattutto niente ripetizioni di
   // se stesso. E se non ha niente da dire, non dice niente — che era il punto.
-  async iniziativa(channel) {
+  // `spunto`: il motivo per cui parte adesso (la chat ferma da quattro minuti,
+  // un'esplosione di messaggi). Entra nel blocco «com'e' la diretta adesso»,
+  // che e' il posto in cui il modello legge la situazione.
+  async iniziativa(channel, { spunto = '' } = {}) {
     try {
       const streamer = streamers.get(channel);
       if (!streamer) return null;
@@ -1267,7 +1270,7 @@ export class Brain {
         scheda: this._scheda(channel),
         stile: this._stileStreamer(channel),
         storia: this._storiaRecente(channel, ultima.text),
-        situazione: this._situazione(channel),
+        situazione: [this._situazione(channel), spunto ? String(spunto).slice(0, 200) : ''].filter(Boolean).join('\n'),
         lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),
       });
       return this._finalizza(channel, grezza, streamer);
@@ -1275,6 +1278,14 @@ export class Brain {
       log.error(`iniziativa #${channel}:`, e?.message || e);
       return null;
     }
+  }
+
+  // Sa rispondere a questo? Vero solo se una voce della conoscenza del canale
+  // c'entra abbastanza da essere gia' la risposta (stessa soglia della
+  // scorciatoia). Serve a non intromettersi su una domanda che non sa: «non lo
+  // so» a chi non ti ha chiesto niente e' peggio del silenzio.
+  saQualcosa(channel, testo) {
+    try { return !!this._cercaConoscenza(channel, testo); } catch { return false; }
   }
 
 
