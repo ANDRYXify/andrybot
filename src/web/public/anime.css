@@ -843,11 +843,11 @@ body.pad-guida, body.pad-guida * { cursor: none !important; }
 }
 
 .btn.pericolo:not(.secondario):not(.testo) {
-  background: var(--rosso); color: #fff;
+  background: var(--rosso); color: var(--su-rosso);
 }
 @media (hover: hover) {
 .btn.pericolo:not(.secondario):not(.testo):hover {
-  background: var(--rosso); color: #fff; opacity: .86;
+  background: var(--rosso); color: var(--su-rosso); opacity: .86;
 }
 }
 
@@ -1923,7 +1923,7 @@ input[type="color"]:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-t
 }
 
 @media (hover: hover) {
-.pannello-scheda .carta:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-alta); position: relative; z-index: 2; }
+.pannello-scheda .carta:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-salto); position: relative; z-index: 2; }
 }
 
 .carta > h2:first-child, details.carta.sez > summary > h3 {

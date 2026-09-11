@@ -240,7 +240,7 @@ body.menu-aperto .backdrop { opacity: 1; pointer-events: auto; }
 .carta {
   border-color: var(--contorno); border-width: var(--tratto-mano);
   border-radius: var(--ang-mano-l);
-  box-shadow: var(--ombra-ink);
+  box-shadow: var(--ombra-ink-alta);
 }
 .carta-novita ul { margin: .5rem 0 0; padding-left: 1.15rem; color: var(--testo-2); }
 .carta-novita li { margin: .3rem 0; line-height: 1.55; }
@@ -672,7 +672,7 @@ details > summary:focus-visible { outline: 2px solid var(--acc); outline-offset:
 @media (hover: hover) {
 .btn.secondario:hover { background: var(--surface-2); color: var(--testo); border-color: var(--contorno); box-shadow: var(--ombra-ink-salto); }
 }
-.btn.pericolo { background: var(--rosso); }
+.btn.pericolo { background: var(--rosso); color: var(--su-rosso); }
 @media (hover: hover) {
 .btn.pericolo:hover { background: #bb2f39; box-shadow: var(--alone-contorno), var(--ombra-ink-salto); }
 }
@@ -1504,7 +1504,7 @@ body::after {
 
 .carta { transition: border-color var(--molla), box-shadow .32s var(--ease), background var(--molla); }
 @media (hover: hover) {
-.carta:hover { border-color: var(--contorno); box-shadow: var(--alone-contorno), var(--ombra-ink-alta); }
+.carta:hover { border-color: var(--contorno); box-shadow: var(--alone-contorno), var(--ombra-ink-salto); }
 .carta, .btn { position: relative; }
 .carta:hover, .carta:focus-within { z-index: 2; }
 .btn:hover, .btn:focus-visible { z-index: 3; }
@@ -1728,8 +1728,8 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
   border-radius: var(--ang-mano);
   box-shadow: var(--ombra-ink);
 }
-.drawer { border-radius: 26px 0 0 22px / 16px 0 0 26px; border-right: 0; box-shadow: var(--ombra-ink-alta); }
-.menu { box-shadow: var(--ombra-ink-alta); }
+.drawer { border-radius: 26px 0 0 22px / 16px 0 0 26px; border-right: 0; box-shadow: var(--ombra-ink-salto); }
+.menu { box-shadow: var(--ombra-ink-salto); }
 .apri-menu:active, .chiudi-drawer:active, .ovl-tasto:active {
   box-shadow: var(--ombra-ink-timbro); transform: translate(2px, 3px);
 }

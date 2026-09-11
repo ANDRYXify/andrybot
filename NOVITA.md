@@ -17,6 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-11
 
+- Le carte si staccano dalla pagina più dei bottoni che ci stanno dentro: prima avevano la stessa ombra e sembrava tutto appiccicato sullo stesso piano.
+- Le scritte piccole sopra le schede e nel menù laterale erano troppo chiare per leggerle bene: ora hanno il contrasto che serve, col tema chiaro e con quello scuro.
+- Il bottone che cancella tutto aveva la scritta bianca su rosso chiaro nel tema scuro, poco leggibile proprio dove conta: adesso è scritta in nero.
+
 - La finestra delle novità non perde più quello che arriva a giornata iniziata: se una cosa esce dopo che l'hai vista, te la mostra lo stesso invece di darla per letta.
 - Quando le novità sono tante, la finestra ne mostra una manciata e dice quante altre ci sono, invece di rovesciarti addosso un muro di righe.
 
