@@ -805,3 +805,14 @@ test('l\'elenco delle tue scene non ci arriva nemmeno', () => {
   const spedizioni = app.split('\n').filter((r) => /_cons\.(scene|fonti|transizioni)/.test(r) && /(fetch\(|api\(|JSON\.stringify)/.test(r));
   assert.deepEqual(spedizioni, [], 'nessuna riga spedisce quegli elenchi da qualche parte');
 });
+
+test('dal telefono un passo di regia passa dal ponte, non muore lì', () => {
+  // Il telefono OBS non ce l'ha. Se la pagina provasse a farlo da sé, fallirebbe
+  // sempre — e il ponte, che esiste apposta, non verrebbe mai usato.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const f = app.slice(app.indexOf('async function premiTasto('), app.indexOf('async function eseguiPassoRegia('));
+  assert.match(f, /const diRegia = /, 'un passo di regia si riconosce');
+  assert.match(f, /diRegia && window\.RegiaEsterna && RegiaEsterna\.collegato\(\)/, 'e lo fa questa pagina SOLO se è lei quella collegata');
+  // e se non lo è, finisce nella strada normale: quella che chiede al server
+  assert.match(f, /passo\/\$\{k\}/, 'altrimenti lo chiede al server, che ha il ponte');
+});

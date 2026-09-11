@@ -368,3 +368,42 @@ comando direbbe. Nessun secondo posto dove i comandi si possono rompere.
 Restano dal piano: «manda questo» (media caricato sul tasto), le cartelle, il
 compagno per le app di fuori. E i verbi titolo/categoria/musica, che hanno una
 dipendenza in piu' e vanno fatti interi invece che accennati.
+
+## Cercare i dispositivi dal browser: misurato, non supposto
+
+Domanda del direttore: la webapp può cercare i dispositivi in rete, così anche
+dal telefono si controlla la regia? Ho misurato invece di rispondere a naso, e
+la strada è chiusa due volte, indipendentemente:
+
+1. **Non esiste un modo di cercare.** `navigator.mdns` non esiste. USB, Serial e
+   HID esistono ma parlano con cose attaccate al dispositivo, non con computer
+   della rete. Non c'è un'API di scoperta perché una pagina che scandaglia la
+   rete di casa sarebbe uno strumento di ricognizione, e i browser gliel'hanno
+   tolto apposta.
+2. **Anche sapendo l'indirizzo, non lo raggiunge.** Da una pagina in HTTPS:
+   `ws://127.0.0.1:4455` e `ws://localhost:4455` passano; `ws://192.168.1.50:4455`
+   e qualunque host esterno danno **SecurityError**. Il telefono non parla col
+   computer della regia nemmeno se glielo scrivi tu.
+
+Quindi la risposta non è «non l'ho fatto», è «non si può, e non è una cosa da
+aggirare». E soprattutto: **non serve**, perché il ponte c'è già. Dal telefono
+il tasto scena lo esegue il pannello aperto sul computer della regia.
+
+## Il ponte che non veniva mai usato (difetto mio, del giro prima)
+
+Costruito il ponte, `premiTasto` eseguiva i passi di regia **in locale sempre**,
+senza chiedersi se questa pagina fosse quella collegata. Dal telefono OBS non
+c'è: il passo falliva lì e il ponte — scritto, testato, funzionante — non veniva
+mai interpellato. Il difetto di sempre: una riga che sembra fare una cosa e non
+la fa.
+
+Corretto per costruzione: la scorciatoia locale vale **solo se è questa pagina a
+essere collegata**; altrimenti il passo prende la strada normale, quella che
+passa dal server, che il ponte ce l'ha. Una riga sola, ma è la riga che decide
+se il ponte esiste.
+
+E due testi erano diventati **falsi** nel momento in cui il ponte è nato: il
+suggerimento nella scheda regia e il manuale dicevano entrambi «dal telefono le
+scene no». Riscritti: un browser non può cercare né raggiungere un altro
+computer, ma il tasto scena dal telefono funziona passando dal pannello aperto
+sulla regia — e se lì non c'è nessun pannello, il tasto te lo dice.

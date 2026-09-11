@@ -843,7 +843,8 @@ const CONSOLIFY = {
       'Appena collegato compaiono le tue scene: premi una scena e cambia, come dal programma. Da lì in poi i passi «cambia scena» e «muta una fonte» funzionano dentro i tasti, insieme a tutto il resto.',
     ] },
     { p: [
-      '<strong>Dove funziona.</strong> Il collegamento parte da questa pagina e arriva al programma che gira sullo <strong>stesso computer</strong>. Dal telefono i tasti del bot funzionano come sempre, ma le scene no: il «computer di casa» del telefono è il telefono, e il browser blocca il resto. Non è una nostra scelta, è una regola dei browser — e le abbiamo lasciata in piedi apposta.',
+      '<strong>Dove funziona.</strong> Il collegamento parte da questa pagina e arriva al programma che gira sullo <strong>stesso computer</strong>. Un browser non può cercare i dispositivi della rete né parlare con un altro computer: lo impedisce il browser stesso, e non è una regola che vogliamo aggirare.',
+      '<strong>Dal telefono però le scene funzionano.</strong> Non perché il telefono raggiunga il programma — non può — ma perché passa da questo pannello: tu premi sul telefono, il pannello aperto sul computer della regia esegue. Basta tenerlo aperto lì mentre streami. Se non c\'è nessun pannello aperto, il tasto te lo dice invece di rispondere «fatto».',
       '<strong>La password non passa da noi.</strong> Indirizzo, porta e password restano nel tuo browser, sul tuo computer: non arrivano al nostro server, non entrano nel database e non finiscono nei backup. Con <strong>Scorda tutto</strong> spariscono anche da lì.',
     ] },
 
