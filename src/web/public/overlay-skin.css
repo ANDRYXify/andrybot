@@ -124,6 +124,7 @@
 .ovl-widget.dim-media   { font-size: 1rem; }
 .ovl-widget.dim-grande  { font-size: 1.25rem; }
 .ovl-widget.dim-enorme  { font-size: 1.6rem; }
+.contatore-widget { padding: .12em .5em; border-radius: .3em; line-height: 1.15; white-space: nowrap; text-shadow: 0 2px 8px rgba(0,0,0,.65), 0 0 2px rgba(0,0,0,.5); }
 
 .ovl-anteprima {
   position: relative; overflow: hidden; width: 100%;
@@ -134,12 +135,15 @@
 .ap-stage {
   position: absolute; top: 0; left: 0;
   width: 1920px; height: 1080px; transform-origin: top left;
+  font: 16px/normal -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 .ap-stage .ap-el { position: absolute; width: max-content; max-width: 100%; }
+:where(.ap-stage .ap-el, .ap-stage .ap-el *, .ap-stage .ap-el *::before, .ap-stage .ap-el *::after) { box-sizing: content-box; }
+.ap-stage .ap-handle { box-sizing: border-box; }
 
 #ovl-preview .ap-el { transition-property: opacity; }
-.ap-stage .ap-chat { display: flex; flex-direction: column; gap: 6px; }
+.ap-stage .ap-chat { display: flex; flex-direction: column; gap: .35rem; }
 .ap-stage .ap-chat.destra { align-items: flex-end; }
 
 .ap-stage .ap-el { cursor: grab; }
@@ -147,6 +151,7 @@
 .ap-stage .ap-el:hover { outline: 2px solid color-mix(in srgb, var(--acc) 35%, transparent); outline-offset: 6px; }
 }
 .ap-stage .ap-el.sel  { outline: 3px dashed var(--acc); outline-offset: 6px; z-index: 20; }
+.ap-stage .ap-el.spento { opacity: .35; }
 
 .ap-stage .ap-handle {
   position: absolute; display: none;
@@ -411,7 +416,7 @@
 .ovl-musica.verso-solo-cover .m-anello circle { stroke-width: 4.2; }
 .ovl-musica .m-an-ora { stroke: var(--acc); transition: stroke-dashoffset .9s linear; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--acc) 55%, transparent)); }
 
-.ovl-musica .m-corpo { min-width: 0; max-width: var(--m-testo, 13em); display: grid; gap: .28em; flex: 1 1 auto; overflow: hidden; }
+.ovl-musica .m-corpo { min-width: 0; width: var(--m-testo, 13em); display: grid; gap: .28em; flex: 0 1 auto; overflow: hidden; }
 .ovl-musica .m-riga { display: block; overflow: hidden; white-space: nowrap; }
 .ovl-musica.scorre .m-riga {
   -webkit-mask-image: linear-gradient(90deg, #000 78%, transparent 100%);
@@ -587,7 +592,7 @@
     radial-gradient(circle at calc(100% - .46em) calc(100% - .46em), rgba(255, 255, 255, .16) 0 .06em, transparent .07em);
 }
 .ovl-musica.tema-cassetta .m-corpo {
-  order: 1; max-width: none; padding: .3em .48em .34em; border-radius: .1em;
+  order: 1; padding: .3em .48em .34em; border-radius: .1em;
   background: #efe9dc; color: #1a1620;
   box-shadow: inset 0 0 0 .045em rgba(0, 0, 0, .4);
 }

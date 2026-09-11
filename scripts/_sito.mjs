@@ -36,12 +36,56 @@ function guscio(lingua, kick) {
     .replace('<html lang="it">', `<html lang="${lingua}">`);
 }
 
+// Un finto bot per la PAGINA dell'overlay (overlay.html + overlay-app.js), da
+// passare ad apriSito come `overlay`. Serve la pagina, il tema (`tema()`), il
+// brano in corso (`musica()`) e il flusso SSE, con quel che serve a un collaudo:
+// `manda(ev)` spinge un evento a chi e' collegato, `cadi()` butta giu' i socket,
+// `st.giu` fa rispondere 502 come il proxy durante un riavvio, e `st` conta cosa
+// la pagina ha chiesto (tema, guai, connessioni).
+export function overlayFinto({ login = 'prova', tema = () => ({}), musica = () => ({ stato: 'niente' }) } = {}) {
+  const st = { giu: false, stream: [], socket: new Set(), tema: 0, musica: 0, guai: [], connessioni: 0 };
+  const base = '/overlay/' + login;
+  const json = (res, o) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
+  return {
+    st,
+    manda(ev) { for (const r of st.stream) r.write('data: ' + JSON.stringify(ev) + '\n\n'); },
+    cadi() { for (const s of st.socket) s.destroy(); },
+    gestisci(req, res, q) {
+      if (q !== base && !q.startsWith(base + '/')) return false;
+      if (q === base + '/stream') {
+        st.connessioni++;
+        if (st.giu) { res.writeHead(502, { 'content-type': 'text/html' }); res.end('bad gateway'); return true; }
+        res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' });
+        res.write(': connesso\n\n');
+        st.stream.push(res); st.socket.add(res.socket);
+        req.on('close', () => { st.stream = st.stream.filter((r) => r !== res); st.socket.delete(res.socket); });
+        return true;
+      }
+      if (q === base + '/tema') { st.tema++; json(res, tema()); return true; }
+      if (q === base + '/musica') { st.musica++; json(res, musica()); return true; }
+      if (q === base + '/guaio') {
+        let b = '';
+        req.on('data', (c) => { b += c; });
+        req.on('end', () => { try { st.guai.push(JSON.parse(b).dove); } catch { /* niente */ } json(res, { ok: true }); });
+        return true;
+      }
+      if (q === base) { res.writeHead(200, { 'content-type': TIPI['.html'] }); res.end(fs.readFileSync(path.join(PUB, 'overlay.html'))); return true; }
+      json(res, {});
+      return true;
+    },
+  };
+}
+
 // Apre il sito su una porta libera. `api` risponde a /api/* (per finta, o come
-// gli si dice); `kick` accende la porta di Kick nella vetrina.
-export async function apriSito({ api = () => ({}), kick = true } = {}) {
+// gli si dice); `kick` accende la porta di Kick nella vetrina; `overlay` e' un
+// overlayFinto(); `rotte(req, res, q)` serve quel che un collaudo vuole in piu'
+// (torna true se ha risposto).
+export async function apriSito({ api = () => ({}), kick = true, overlay = null, rotte = null } = {}) {
   const srv = http.createServer((req, res) => {
     const via = new URL(req.url, 'http://x');
     const q = decodeURIComponent(via.pathname);
+    if (rotte && rotte(req, res, q)) return;
+    if (overlay && overlay.gestisci(req, res, q)) return;
     if (q.startsWith('/api/')) {
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify(api(q, via) ?? {}));

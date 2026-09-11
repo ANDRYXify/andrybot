@@ -1216,6 +1216,7 @@ const OVERLAY = {
       ['Vedere com\'è dal vivo', 'La spunta <strong>Dal vivo</strong>: alert e chat finti che si susseguono mentre lavori.'],
     ] },
     { p: ['Gli angoli della tela sono gli stessi dell\'overlay vero (un dito dai bordi), quindi un elemento «in alto a destra» sta a filo dello schermo anche in OBS. Il salvataggio è automatico: la posizione si scrive appena molli il mouse.'] },
+    { p: ['Quello che vedi sulla tela ha le misure della diretta: il player tiene la stessa larghezza qualunque sia il brano, la chat si ferma alla larghezza che hai scelto, e un elemento spento resta sulla tela ma sbiadito, così lo trovi e lo riaccendi.'] },
 
     { h2: 'Metterlo in OBS' },
     { ul: [
