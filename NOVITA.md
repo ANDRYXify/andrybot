@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-11
 
+- Il link dell'overlay ora porta la chiave con sé, e accanto c'è il tasto per farne uno nuovo: se ti scappa in un video o in una chat, lo rinnovi e il vecchio muore subito. [vai: alert]
+- Un'icona caricata come disegno vettoriale viene trasformata in immagine: quello che carichi resta un'immagine e basta. [vai: consolify]
+- Ogni canale ha un tetto di spazio sul disco per media, effetti, font e icone, e il pannello ti dice quanto ne usi: prima nessuno lo contava. [vai: effetti]
 - Sulla pagina pubblica ora si vede anche CONSOLify, con il collegamento al programma della diretta: prima chi non aveva un account non sapeva che esistesse. [vai: consolify]
 - Compaiono in vetrina anche le grafiche pronte da pubblicare, il registro della moderazione e quello che il bot ricorda dei tuoi spettatori. [vai: grafiche]
 - Ogni novità dice anche dove è successa: le righe stanno sotto il nome della sezione, e quel nome è un bottone che ti porta lì. [vai: stato]

@@ -8,6 +8,10 @@ import { config } from '../config.js';
 import { effects as effectsDb, streamers } from '../db.js';
 import { makeLog } from '../logger.js';
 
+// Tetti ai collegamenti SSE (overlay + tracking): per canale e in tutto.
+export const MAX_SSE_CANALE = 32;
+export const MAX_SSE_TOTALE = 4000;
+
 const log = makeLog('effects');
 
 // Un utente è VIP se ha il badge 'vip/' oppure il tag vip=1.
@@ -27,11 +31,35 @@ export class EffectsEngine {
 
   // ------------------------------------------------------ registro overlay (SSE)
 
+  // UN TETTO AI COLLEGAMENTI APERTI. Una connessione SSE resta su per ore e
+  // costa un descrittore e un pezzo di memoria: senza tetto, chi ha il link di
+  // un overlay puo' aprirne migliaia e affogare il processo. Il limite per
+  // canale e' generoso (una regia vera ne apre una manciata), e quando si supera
+  // si chiude la PIU' VECCHIA, non la nuova: cosi' la sorgente appena aperta dal
+  // programma di regia entra sempre, e chi accumula perde le sue.
+  // Il tetto totale e' l'ultimo argine: oltre, la porta risponde 503 prima di
+  // aprire il flusso (vedi postoLibero).
+  _tettoCanale(set, quanti) {
+    while (set.size >= quanti) {
+      const vecchio = set.values().next().value;
+      set.delete(vecchio);
+      try { vecchio.end(); } catch { /* gia' chiuso */ }
+    }
+  }
+  _totaleClient() {
+    let n = 0;
+    for (const [, s] of this._clients) n += s.size;
+    for (const [, s] of this._trkClients) n += s.size;
+    return n;
+  }
+  postoLibero() { return this._totaleClient() < MAX_SSE_TOTALE; }
+
   // Registra una connessione SSE dell'overlay per un canale.
   addClient(channel, res) {
     const ch = norm(channel);
     let set = this._clients.get(ch);
     if (!set) { set = new Set(); this._clients.set(ch, set); }
+    this._tettoCanale(set, MAX_SSE_CANALE);
     set.add(res);
     log.debug(`overlay collegato a #${ch} (ora ${set.size})`);
   }
@@ -90,6 +118,7 @@ export class EffectsEngine {
     const ch = norm(channel);
     let set = this._trkClients.get(ch);
     if (!set) { set = new Set(); this._trkClients.set(ch, set); }
+    this._tettoCanale(set, MAX_SSE_CANALE);
     set.add(res);
   }
   removeTrkClient(channel, res) {
@@ -120,6 +149,19 @@ export class EffectsEngine {
     const s = streamers.get(login);
     const attuale = s?.settings?.overlayKey;
     if (attuale) return attuale;
+    const key = crypto.randomBytes(16).toString('hex');
+    streamers.setSettings(login, { ...(s?.settings || {}), overlayKey: key });
+    return key;
+  }
+
+  // LA CHIAVE SI RINNOVA. Il link dell'overlay finisce nelle sorgenti del
+  // programma di regia, e da li' in un video, in uno screenshot, in una chat:
+  // e' il segreto che si perde piu' spesso. Senza un modo di cambiarla, la
+  // sola difesa sarebbe non sbagliare mai. Con questa, si cambia e basta:
+  // il link vecchio muore all'istante e quello nuovo va rimesso nelle sorgenti.
+  nuovaChiave(channel) {
+    const login = norm(channel);
+    const s = streamers.get(login);
     const key = crypto.randomBytes(16).toString('hex');
     streamers.setSettings(login, { ...(s?.settings || {}), overlayKey: key });
     return key;

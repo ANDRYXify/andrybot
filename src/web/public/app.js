@@ -6088,6 +6088,7 @@ function pannelloAlert() {
           <input type="password" id="inp-overlay-url" class="ovl-url" readonly autocomplete="off" tabindex="-1" aria-label="${esc(L('Link di questo overlay (nascosto)', 'Link for this overlay (hidden)', 'Enlace de este overlay (oculto)'))}" data-aiuto="${esc(L('Sta nascosto apposta: chi ha questo link può mandare roba sul tuo schermo in diretta.', 'Hidden on purpose: anyone with this link can push things onto your screen while you are live.', 'Esta oculto a proposito: quien tenga este enlace puede mandar cosas a tu pantalla en directo.'))}" value="">
           <button type="button" class="ovl-tasto ico-sola" id="btn-copia-overlay" data-aiuto="${esc(L('Copia il link, poi incollalo in OBS come Browser Source.', 'Copies the link, then paste it into OBS as a Browser Source.', 'Copia el enlace y pegalo en OBS como Browser Source.'))}" aria-label="${esc(L('Copia il link', 'Copy the link', 'Copiar el enlace'))}">${_bIco('<rect width="13" height="13" x="9" y="9" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>')}</button>
           <button type="button" class="ovl-tasto ico-sola" id="btn-apri-overlay" data-aiuto="${esc(L('Lo apre in una scheda per vedere com\'e\'. Per OBS serve il link copiato, non questo.', 'Opens it in a tab so you can see it. For OBS use the copied link, not this.', 'Lo abre en una pestana para verlo. Para OBS usa el enlace copiado, no esto.'))}" aria-label="${esc(L('Apri l\'overlay in una scheda', 'Open the overlay in a tab', 'Abrir el overlay en una pestaña'))}">${_bIco(ICO.occhio)}</button>
+          ${stato?.ruolo !== 'moderatore' ? `<button type="button" class="ovl-tasto ico-sola" id="btn-nuovo-link-overlay" data-aiuto="${esc(L('Fa un link nuovo e spegne quello vecchio, per tutti i tuoi overlay. Serve se il link è finito in un video, in uno screenshot o in una chat. Poi lo rimetti nelle sorgenti del programma con cui mandi in onda.', 'Makes a new link and kills the old one, for all your overlays. Use it if the link ended up in a video, a screenshot or a chat. Then put it back into your broadcast program’s sources.', 'Hace un enlace nuevo y apaga el viejo, para todos tus overlays. Sirve si el enlace acabó en un vídeo, una captura o un chat. Luego lo vuelves a poner en las fuentes del programa con el que emites.'))}" aria-label="${esc(L('Link nuovo', 'New link', 'Enlace nuevo'))}">${_bIco('<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/>')}</button>` : ''}
         </span>
         <span class="ovl-testa-az">
           <button class="btn secondario mini" id="ovl-nuovo-da" type="button" data-aiuto="${esc(L('Parti da un modello già fatto invece che da zero.', 'Start from a ready-made preset instead of from scratch.', 'Empieza desde una plantilla ya hecha en vez de cero.'))}">${L('Nuovo…', 'New…', 'Nuevo…')}</button>
@@ -11132,6 +11133,7 @@ function pannelloEffetti() {
     <div class="carta">
       <h2>${_hIco(ICO.sliders)}${L('I tuoi effetti', 'Your effects', 'Tus efectos')}</h2>
       <ul class="lista-voci" id="lista-effetti"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <p class="suggerimento" id="eff-spazio" hidden></p>
     </div>
 
     <div class="carta">
@@ -15339,6 +15341,27 @@ function attivaPiattaforma() {
     }
   });
 
+  (() => {
+    const b = document.getElementById('btn-nuovo-link-overlay');
+    if (!b) return;
+    let armato = 0;
+    b.addEventListener('click', () => conErrore(async () => {
+      if (Date.now() - armato > 5000) {
+        armato = Date.now();
+        b.classList.add('armato');
+        toast(L('Premi di nuovo entro cinque secondi: il link vecchio smetterà di funzionare.', 'Press again within five seconds: the old link will stop working.', 'Pulsa otra vez en cinco segundos: el enlace viejo dejará de funcionar.'));
+        setTimeout(() => b.classList.remove('armato'), 5000);
+        return;
+      }
+      armato = 0;
+      b.classList.remove('armato');
+      await api('/api/streamer/overlay/chiave', { method: 'POST' });
+      await caricaOverlays();
+      caricaOverlaySel();
+      toast(L('Link nuovo pronto. Rimettilo nelle sorgenti del programma con cui mandi in onda: quello vecchio non funziona più.', 'New link ready. Put it back into your broadcast program’s sources: the old one no longer works.', 'Enlace nuevo listo. Vuelve a ponerlo en las fuentes del programa con el que emites: el viejo ya no funciona.'));
+    }));
+  })();
+
   document.getElementById('regia-refresh')?.addEventListener('click', () => conErrore(() => caricaRegia()));
   document.getElementById('regia-salva-canale')?.addEventListener('click', () => conErrore(() => salvaRegiaCanale()));
   document.getElementById('regia-clip')?.addEventListener('click', () => conErrore(async () => {
@@ -16032,6 +16055,11 @@ async function caricaEffetti() {
   if (!ul) return;
   try {
     const dati = await api('/api/streamer/effetti');
+    const sp = document.getElementById('eff-spazio');
+    if (sp && dati.spazio) {
+      sp.hidden = false;
+      sp.textContent = L(`Spazio del canale: ${dati.spazio.usato} MB su ${dati.spazio.max}, fra effetti, media dei tasti, font e icone.`, `Channel space: ${dati.spazio.usato} MB of ${dati.spazio.max}, across effects, key media, fonts and icons.`, `Espacio del canal: ${dati.spazio.usato} MB de ${dati.spazio.max}, entre efectos, medios de las teclas, fuentes e iconos.`);
+    }
 
     const etTipo = { audio: _bIco(ICO.altoparlante) + L('audio', 'audio', 'audio'), immagine: _bIco(ICO.immagine) + L('immagine', 'image', 'imagen'), video: _bIco(ICO.video) + L('video', 'video', 'vídeo') };
     const etTier = { tutti: L('tutti', 'everyone', 'todos'), sub: 'sub', vip: 'VIP', mod: 'mod' };

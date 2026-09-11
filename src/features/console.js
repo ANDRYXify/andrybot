@@ -214,13 +214,23 @@ function eseguiPasso(login, passo, dip) {
 // tasto che mente e' peggio di un tasto che non c'e'.
 const _ponti = new Map();
 let _seqPonte = 0;
+// Quanti pannelli di guardia per canale. Uno basta; qualcuno ne tiene due
+// (computer e tablet). Oltre, chi accumula perde il piu' vecchio: un flusso
+// aperto e' una risorsa, e una sessione valida non deve poterne tenere mille.
+export const MAX_PONTI = 8;
 
-export function apriPonte(channel, manda) {
+export function apriPonte(channel, manda, chiudi = null) {
   const login = norm(channel);
   const id = ++_seqPonte;
   if (!_ponti.has(login)) _ponti.set(login, new Map());
-  _ponti.get(login).set(id, { manda, attese: new Map() });
-  return () => { const m = _ponti.get(login); if (m) { m.delete(id); if (!m.size) _ponti.delete(login); } };
+  const m = _ponti.get(login);
+  while (m.size >= MAX_PONTI) {
+    const [vecchioId, vecchio] = m.entries().next().value;
+    m.delete(vecchioId);
+    try { vecchio.chiudi?.(); } catch { /* gia' chiuso */ }
+  }
+  m.set(id, { manda, chiudi, attese: new Map() });
+  return () => { const mm = _ponti.get(login); if (mm) { mm.delete(id); if (!mm.size) _ponti.delete(login); } };
 }
 
 export function pontiAperti(channel) {

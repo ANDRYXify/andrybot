@@ -198,3 +198,43 @@ disordine in più da ricordarsi.
 - **Non aggiungere `ports:` a un servizio per fare una prova.** Se serve
   guardare dentro, si usa `docker compose exec` o un tunnel SSH, che non apre
   niente a nessuno.
+
+## Una porta pubblica non consegna un segreto
+
+C'era una scorciatoia, `/o/:login/:slug`, pubblica con tanto di motivo scritto
+nell'elenco del cancello: «rimanda al link con la chiave». Bastava il nome di
+uno streamer — che è pubblico per definizione — per farsi dare il link del suo
+overlay **con la chiave dentro**: cioè la porta per far comparire cose sul suo
+schermo in diretta, leggere il flusso dei suoi alert, far partire i suoi effetti.
+Il pannello lo chiamava «link bello per OBS», e la pagina lo nascondeva come una
+password mentre il server lo regalava a chiunque.
+
+Il motivo nell'elenco **descriveva il buco**, e l'elenco lo benediceva: un
+guardiano che si fida della dichiarazione non guarda cosa fa la porta. Quindi
+la regola è cambiata, per costruzione: una rotta senza guardiano **non può
+nemmeno nominare** una funzione che produce o compone una chiave
+(`overlayKey`, `overlayUrl`, `mediaUrl`, `nuovaChiave`, `consolle.chiave`).
+`scripts/verifica-porte.mjs` lo controlla, e l'autoprova inietta proprio una
+porta che regala una chiave per vedere il cancello diventare rosso.
+
+Il link che si incolla nelle sorgenti del programma di regia porta la chiave
+in sé — è l'unico modo in cui un link è un segreto — e la chiave **si rinnova**
+dal pannello: il link vecchio muore all'istante, quello nuovo si rimette nelle
+sorgenti. Prima non c'era modo di cambiarla: la sola difesa era non sbagliare
+mai, e un link nelle sorgenti di regia finisce in un video prima o poi.
+
+## I tetti: quante, non solo quali
+
+Le porte dicono *chi* può bussare. Ma una connessione che resta aperta e un
+file che resta sul disco sono risorse, e le risorse finiscono per tutti.
+
+- **Collegamenti SSE** (overlay e tracking): al massimo 32 per canale e 4000 in
+  tutto. Oltre il tetto del canale si chiude la connessione **più vecchia**, non
+  la nuova — così la sorgente appena aperta dal programma di regia entra sempre
+  e chi accumula perde le sue. Oltre il tetto totale la porta risponde 503 prima
+  di aprire il flusso. Lo stesso per i ponti della regia: 8 per canale.
+- **Spazio su disco**: ogni canale ha un tetto (`SPAZIO_CANALE_MB`, 500 di
+  default) sulla somma di effetti, media dei tasti, font, icone e immagini
+  della pagina link. Il limite al singolo file c'era; quello alla somma no, e
+  un disco pieno è un sintomo che arriva a chi non ha fatto niente. Il pannello
+  dice quanto se ne usa, e il rifiuto dice cosa fare.

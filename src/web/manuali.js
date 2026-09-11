@@ -1221,6 +1221,7 @@ const OVERLAY = {
     { p: [
       'Puoi averne <strong>più d\'uno</strong>: ogni overlay ha il suo link, il suo elenco di elementi e il suo stile. Un overlay «solo alert» in una scena e uno «solo chat» in un\'altra è la ragione per cui esistono.',
       '<strong>Il link è un segreto.</strong> Chi ce l\'ha può far comparire cose nel tuo overlay: non va in un video, in uno screenshot o in una chat.',
+      '<strong>Se il link è scappato</strong> — in un video, in uno screenshot, in una chat — accanto al link c\'è il tasto per farne uno nuovo: quello vecchio smette di funzionare all\'istante, per tutti i tuoi overlay, e il nuovo lo rimetti nelle sorgenti del programma con cui mandi in onda. Non serve chiedere niente a nessuno.',
     ] },
 
     { h2: 'Alert eventi' },
@@ -1321,7 +1322,7 @@ const OVERLAY = {
     { d: 'Serve installare un plugin in OBS?', r: 'No. È una pagina web: basta la sorgente Browser che OBS ha già.' },
     { d: 'Posso usare overlay diversi in scene diverse?', r: 'Sì, ed è il motivo per cui ognuno ha il suo link: elementi e stile sono suoi. Un «solo alert» sopra il gioco e un «solo chat» nella scena della pausa, per dire.' },
     { d: 'Se cambio qualcosa devo ricaricare OBS?', r: 'No: quello che cambi arriva subito. Ricaricare serve solo se hai chiuso e riaperto tutto.' },
-    { d: 'Chi ha il link può fare danni?', r: 'Può far comparire cose nel tuo overlay, quindi non va condiviso. Non dà accesso al pannello né al tuo account.' },
+    { d: 'Chi ha il link può fare danni?', r: 'Può far comparire cose nel tuo overlay, quindi non va condiviso. Non dà accesso al pannello né al tuo account. Se è scappato, fai un link nuovo dal tasto accanto al link: il vecchio muore subito.' },
     { d: 'L\'obiettivo conta anche a canale spento?', r: 'Conta gli eventi che arrivano, e i follow arrivano anche da offline. Se non li vuoi, si spegne e si riaccende quando serve.' },
     { d: 'Posso mettere l\'overlay in Streamlabs o in un altro programma?', r: 'Sì: va bene qualunque programma che sappia aprire una pagina web come sorgente.' },
   ],
