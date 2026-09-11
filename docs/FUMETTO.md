@@ -170,3 +170,38 @@ larghezza, e la bolla verrebbe cucita addosso al vuoto.
 
 La variante `attenzione` è quella rossa che già esisteva per i suggerimenti: si
 usa per le cose che non si annullano.
+
+## L'ombra dice l'altezza (e il contrasto non si giudica a occhio)
+
+Lo stile disegnato ha una tentazione precisa: l'ombra dura piace, quindi la si
+mette su tutto. Il giorno dopo la targhetta, il bottone, la carta e il pannello
+che si apre hanno la stessa ombra, e non c'è più gerarchia — è tutto appiccicato
+allo stesso piano, e la pagina diventa rumore.
+
+Misurato sulle pagine vere, era già successo a metà: **carta e bottone stavano
+entrambi a 4px**. Un bottone non sembrava posato SULLA carta, sembrava accanto.
+
+Quattro gradini, e ognuno vuol dire una distanza dalla pagina:
+
+| gradino | token | chi ci sta |
+|---|---|---|
+| 1px | `--ombra-ink-timbro` | targhette, levette, chip |
+| 4px (scuro 3) | `--ombra-ink` | i comandi: bottoni, interruttori |
+| 6px (scuro 5) | `--ombra-ink-alta` | le carte |
+| 10px (scuro 9) | `--ombra-ink-salto` | quello che galleggia: cassetto, menù, e la carta mentre il dito ci passa sopra |
+
+`test/contratto/fumetto.test.mjs` tiene la scala in ordine e senza gradini
+doppi, e controlla che carta e bottone non tornino sullo stesso.
+
+**Il contrasto è un conto, non un'opinione.** «Forte» non vuol dire «leggibile»:
+il grigio dei gruppi stava a 3.2:1 sulla carta chiara e a 3.6:1 su quella scura —
+elegante a vedersi, illeggibile da un telefono al sole. Lo standard chiede 4.5:1
+per il testo normale, ed è una formula: `test/contratto/contrasto.test.mjs` la
+applica alle coppie che il sito mette DAVVERO a schermo (verificate rendendo le
+pagine vere nei due temi, non immaginate).
+
+Un `color: #fff` scritto dentro una regola di stato è la trappola gemella: non
+cambia col tema, e nel tema scuro finisce su un fondo chiaro. È così che il
+bottone del «cancella tutto» era sceso a 3.37:1 — proprio quello che non si può
+sbagliare. Il bianco sopra un colore pieno è un token per tema (`--su-rosso`),
+non una costante.
