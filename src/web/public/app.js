@@ -6152,6 +6152,13 @@ function pannelloAlert() {
           <label class="ovl-spunta"><input type="checkbox" id="ovl-aggancia" checked><span>${L('Aggancia', 'Snap', 'Ajustar')}</span></label>
           <label class="ovl-spunta ovl-vivo-sp"><input type="checkbox" id="ovl-vivo"><span>${L('Dal vivo', 'Live', 'En vivo')}</span></label>
         </div>
+        <div class="ovl-gruppo" id="ovl-riferimento">
+          <button type="button" class="ovl-tasto testo" id="ovl-rif-scegli" title="${esc(L('Metti sotto la tela uno screenshot della scena o una grafica: resta nel tuo browser, non va in onda. Puoi anche incollarla o trascinarla sulla tela.', 'Put a screenshot of your scene or a graphic under the canvas: it stays in your browser and never goes on air. You can also paste it or drop it on the canvas.', 'Pon bajo el lienzo una captura de la escena o un gráfico: se queda en tu navegador y no sale en directo. También puedes pegarla o arrastrarla al lienzo.'))}">${L('Riferimento', 'Reference', 'Referencia')}</button>
+          <input type="file" id="ovl-rif-file" accept="image/*" hidden>
+          <input type="range" id="ovl-rif-op" min="10" max="100" step="5" value="60" aria-label="${esc(L('Trasparenza del riferimento', 'Reference opacity', 'Opacidad de la referencia'))}" hidden>
+          <label class="ovl-spunta" id="ovl-rif-on-l" hidden><input type="checkbox" id="ovl-rif-on" checked><span>${L('Mostra', 'Show', 'Mostrar')}</span></label>
+          <button type="button" class="ovl-tasto testo" id="ovl-rif-via" hidden>${L('Togli', 'Remove', 'Quitar')}</button>
+        </div>
         <div class="ovl-gruppo ovl-zoom">
           <button type="button" class="ovl-tasto" id="ovl-zoom-meno" title="${L('Rimpicciolisci', 'Zoom out', 'Alejar')}">${_bIco('<circle cx="11" cy="11" r="7"/><path d="M8 11h6M21 21l-4.3-4.3"/>')}</button>
           <span class="ovl-zoom-v" id="ovl-zoom-v">100%</span>
@@ -6162,6 +6169,7 @@ function pannelloAlert() {
       <div class="ovl-scena">
       <div class="ovl-tela" id="ovl-tela">
       <div class="ovl-anteprima" id="ovl-preview">
+        <div class="ap-riferimento" id="ap-riferimento" hidden></div>
         <div class="ap-stage" id="ap-stage">
           <div class="ap-el alert-card" id="ap-alert"><div class="alert-ico" id="ap-alert-ico"></div><div class="alert-testo" id="ap-alert-testo"></div></div>
           <div class="ap-el ap-chat" id="ap-chat"></div>
@@ -6785,10 +6793,20 @@ const ALERT_FINTI = () => [
 ];
 let _vivo = false, _vivoTimer = [], _vivoChat = null, _vivoAlert = 0, _vivoNomi = 0;
 
-function _messaggiFinti() {
+function _messaggiFinti(riempi) {
   const max = Math.max(1, Math.min(20, Number(_v('co-max')) || 8));
-  if (!_vivo || !_vivoChat) return CHAT_FINTA().slice(0, 2);
-  return _vivoChat.slice(-max);
+  if (_vivo && _vivoChat) return _vivoChat.slice(-max);
+  const base = CHAT_FINTA();
+  if (!riempi) return base.slice(0, 2);
+  const out = [];
+  for (let i = 0; out.length < max; i++) out.push(base[i % base.length]);
+  return out;
+}
+function _righeChatFinte(cst, lista) {
+  return lista.map(([u, col, t]) => {
+    const cu = cst.username === 'twitch' ? col : cst.username;
+    return `<div class="chat-riga dim-${cst.dim} anim-${cst.animazione || 'slide'}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} maiusc-${cst.maiuscolo || 'no'} ${classiIdentita(cst, 'nessuna')} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--acc:${cu};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)};--peso:${cst.peso || '700'};--spaz:${Number(cst.spaziatura) || 0}px;--ombra-testo:${cst.ombraTesto ? '0 2px 8px rgba(0,0,0,.6)' : 'none'}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
+  }).join('');
 }
 
 function avviaVita() {
@@ -6834,7 +6852,73 @@ function fermaVita() {
   if (_g('ap-alert')) aggiornaAnteprima();
 }
 
+let _rif = { id: null, blob: null, url: null, op: 60, on: true };
+function _rifDb() {
+  return new Promise((ok, no) => {
+    let req;
+    try { req = indexedDB.open('socialbot-studio', 1); } catch (e) { return no(e); }
+    req.onupgradeneeded = () => { const db = req.result; if (!db.objectStoreNames.contains('riferimenti')) db.createObjectStore('riferimenti'); };
+    req.onsuccess = () => ok(req.result);
+    req.onerror = () => no(req.error);
+  });
+}
+function _rifLeggi(id) {
+  return _rifDb().then((db) => new Promise((ok, no) => {
+    const t = db.transaction('riferimenti', 'readonly').objectStore('riferimenti').get(id);
+    t.onsuccess = () => ok(t.result || null); t.onerror = () => no(t.error);
+  })).catch(() => null);
+}
+function _rifScrivi(id, rec) {
+  return _rifDb().then((db) => new Promise((ok, no) => {
+    const s = db.transaction('riferimenti', 'readwrite').objectStore('riferimenti');
+    const t = rec ? s.put(rec, id) : s.delete(id);
+    t.onsuccess = () => ok(true); t.onerror = () => no(t.error);
+  })).catch(() => false);
+}
+function _rifId() { return 'ov:' + ((_ovAttuale() || {}).id || 'principale'); }
+function _rifDisegna() {
+  const strato = _g('ap-riferimento');
+  if (!strato) return;
+  const ha = !!_rif.blob;
+  strato.hidden = !(ha && _rif.on);
+  strato.style.backgroundImage = _rif.url ? 'url("' + _rif.url + '")' : '';
+  strato.style.opacity = String(_rif.op / 100);
+  for (const id of ['ovl-rif-op', 'ovl-rif-on-l', 'ovl-rif-via']) { const n = _g(id); if (n) n.hidden = !ha; }
+  const on = _g('ovl-rif-on'), op = _g('ovl-rif-op');
+  if (on) on.checked = _rif.on;
+  if (op) op.value = String(_rif.op);
+}
+function _rifRicorda() { if (_rif.blob) _rifScrivi(_rif.id, { blob: _rif.blob, op: _rif.op, on: _rif.on }); }
+function _rifSgombra() { if (_rif.url) { try { URL.revokeObjectURL(_rif.url); } catch (e) {  } } _rif.url = null; }
+async function _rifMetti(blob) {
+  if (!blob || !/^image\//.test(blob.type || '')) { toast(L('Serve un\'immagine (PNG, JPG, WebP).', 'It needs an image (PNG, JPG, WebP).', 'Hace falta una imagen (PNG, JPG, WebP).'), 'err'); return false; }
+  if (blob.size > 25 * 1024 * 1024) { toast(L('Immagine troppo pesante: oltre 25 MB.', 'Image too heavy: over 25 MB.', 'Imagen demasiado pesada: más de 25 MB.'), 'err'); return false; }
+  _rifSgombra();
+  _rif.id = _rifId(); _rif.blob = blob; _rif.url = URL.createObjectURL(blob); _rif.on = true;
+  _rifDisegna();
+  await _rifScrivi(_rif.id, { blob, op: _rif.op, on: true });
+  return true;
+}
+async function _rifCarica() {
+  const id = _rifId();
+  if (_rif.id === id) { _rifDisegna(); return; }
+  _rifSgombra();
+  _rif = { id, blob: null, url: null, op: 60, on: true };
+  const rec = await _rifLeggi(id);
+  if (_rif.id !== id) return;
+  if (rec && rec.blob) { _rif.blob = rec.blob; _rif.url = URL.createObjectURL(rec.blob); _rif.op = Math.max(10, Math.min(100, Number(rec.op) || 60)); _rif.on = rec.on !== false; }
+  _rifDisegna();
+}
+function _rifVia() {
+  const id = _rif.id || _rifId();
+  _rifSgombra();
+  _rif = { id, blob: null, url: null, op: 60, on: true };
+  _rifDisegna();
+  _rifScrivi(id, null);
+}
+
 function aggiornaAnteprima() {
+  _rifCarica();
   const st = _leggiAlertStile();
   const acc = document.querySelector('.alert-blocco[data-alert="sub"] .al-colore')?.value || '#ffb020';
   const card = _g('ap-alert');
@@ -6859,10 +6943,7 @@ function aggiornaAnteprima() {
   if (apChat) {
     apChat.className = 'ap-el ap-chat' + (/destra/.test(chatPos) ? ' destra' : '') + (selezione === 'chat' ? ' sel' : '');
     apChat.style.maxWidth = Number(cst.larghezza) > 0 ? _arr((Number(cst.larghezza) / 100) * OVL_W) + 'px' : '';
-    apChat.innerHTML = _messaggiFinti().map(([u, col, t]) => {
-      const cu = cst.username === 'twitch' ? col : cst.username;
-      return `<div class="chat-riga dim-${cst.dim} anim-${cst.animazione || 'slide'}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} maiusc-${cst.maiuscolo || 'no'} ${classiIdentita(cst, 'nessuna')} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--acc:${cu};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)};--peso:${cst.peso || '700'};--spaz:${Number(cst.spaziatura) || 0}px;--ombra-testo:${cst.ombraTesto ? '0 2px 8px rgba(0,0,0,.6)' : 'none'}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
-    }).join('');
+    apChat.innerHTML = _righeChatFinte(cst, _messaggiFinti(window.SB_RIQUADRO.e(_posCorrente('chat') || {})));
     _iniettaManiglie('chat');
   }
   const nomi = CHAT_FINTA();
@@ -6998,10 +7079,10 @@ function _vestiMusica(box, cfg) {
 
 function _vestiPen(box, cfg) {
   const o = cfg.overlay || {};
-  box.className = 'pen-card dentro';
-  box.style.setProperty('--pen-colore', /^#[0-9a-fA-F]{6}$/.test(o.colore || '') ? o.colore : '#ff2d2d');
-  box.innerHTML = '<span class="pen-parola"><small>vietata</small>ESEMPIO</span><span class="pen-num">0</span><span class="pen-tempo">'
-    + esc(_orologioGiu((Number(cfg.durataMin) || 2) * 60000)) + '</span>';
+  box.className = 'pen-box';
+  box.innerHTML = '<div class="pen-card dentro"><span class="pen-parola"><small>vietata</small>ESEMPIO</span><span class="pen-num">0</span><span class="pen-tempo">'
+    + esc(_orologioGiu((Number(cfg.durataMin) || 2) * 60000)) + '</span></div>';
+  box.firstElementChild.style.setProperty('--pen-colore', /^#[0-9a-fA-F]{6}$/.test(o.colore || '') ? o.colore : '#ff2d2d');
 }
 
 function _vestiTimer(box, cfg) {
@@ -7128,7 +7209,7 @@ function _posElemento(el, xy) {
     el.classList.add('nel-riquadro');
     const chat = el.classList.contains('ap-chat');
     window.SB_RIQUADRO.posa(el, xy, { tela: { w: OVL_W, h: OVL_H }, chat, dentro: chat || el.classList.contains('alert-card') ? null : el.firstElementChild });
-    if (el.classList.contains('ap-chat')) window.SB_RIQUADRO.ritaglia(el);
+    if (chat) { el.innerHTML = _righeChatFinte(_leggiChatStile(), _messaggiFinti(true)); _iniettaManiglie('chat'); window.SB_RIQUADRO.ritaglia(el); }
     _maniglieAPosto(el, 1, 0);
     if (selezione && el.id === _idEl(selezione)) _disegnaRiquadro();
     return;
@@ -7922,6 +8003,24 @@ function collegaEditorOvl() {
   _g('ovl-aggancia')?.addEventListener('change', (e) => {
     _agganciaOn = !!e.target.checked;
     try { localStorage.setItem('banco:aggancia', _agganciaOn ? '1' : '0'); } catch (err) {  }
+  });
+  _g('ovl-rif-scegli')?.addEventListener('click', () => _g('ovl-rif-file')?.click());
+  _g('ovl-rif-file')?.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) _rifMetti(f); });
+  _g('ovl-rif-op')?.addEventListener('input', (e) => { _rif.op = Math.max(10, Math.min(100, Number(e.target.value) || 60)); _rifDisegna(); });
+  _g('ovl-rif-op')?.addEventListener('change', () => _rifRicorda());
+  _g('ovl-rif-on')?.addEventListener('change', (e) => { _rif.on = !!e.target.checked; _rifDisegna(); _rifRicorda(); });
+  _g('ovl-rif-via')?.addEventListener('click', () => _rifVia());
+  _g('ovl-tela')?.addEventListener('dragover', (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) e.preventDefault(); });
+  _g('ovl-tela')?.addEventListener('drop', (e) => { const f = e.dataTransfer?.files?.[0]; if (!f) return; e.preventDefault(); _rifMetti(f); });
+  document.addEventListener('paste', (e) => {
+    const tela = _g('ovl-tela');
+    if (!tela || !tela.offsetParent) return;
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    const it = [...(e.clipboardData?.items || [])].find((i) => /^image\//.test(i.type));
+    if (!it) return;
+    e.preventDefault();
+    _rifMetti(it.getAsFile());
   });
 
   for (const [campo, viste] of Object.entries(VISTE_PROP)) {

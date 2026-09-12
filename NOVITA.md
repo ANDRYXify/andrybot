@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-12
 
+- Sotto la tela dello Studio puoi mettere un'immagine di riferimento, uno screenshot della scena o una grafica: resta nel tuo browser, non va in onda, e la regoli in trasparenza. [vai: alert]
+- Nello Studio il riquadro è la scatola dell'elemento: tiri il perimetro del player e lui prende quella forma, largo, stretto o quadrato; l'altezza dà la grandezza, la larghezza lo spazio al testo. [vai: alert]
+- Mentre tiri i bordi di un riquadro vedi l'elemento cambiare in tempo reale, e la chat in anteprima riempie la sua scatola con quante righe ci stanno. [vai: alert]
 - Il player musica si regola pezzo per pezzo: spazio attorno, copertina, vinile, prima e seconda riga, tempi, barra e onde hanno ognuno la sua misura e, se vuoi, il suo colore. [vai: alert]
 - Il conto alla rovescia con «parte da solo» parte appena lo accendi, senza premere «Fai partire», e il pannello lo vede contare anche quando l'ha fatto partire una sorgente. [vai: alert]
 - La sfida a tempo dei punti canale compare davvero sull'overlay (l'avvio si perdeva per strada) ed è un elemento della scena: la sposti, le dai un riquadro, e sulla carta si legge quanto manca. [vai: alert]
