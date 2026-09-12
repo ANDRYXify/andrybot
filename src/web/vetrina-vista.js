@@ -176,6 +176,9 @@ function capacita(L) {
 }
 
 function corpo(L, l, kick, youtube) {
+  // con chi ci si registra: Twitch sempre, Kick e YouTube quando la porta e' aperta.
+  // L'invito in fondo deve dire le stesse cose dell'apertura: una lista sola.
+  const conChi = (o) => { const p = ['Twitch', kick ? 'Kick' : null, youtube ? 'YouTube' : null].filter(Boolean); return p.length > 1 ? p.slice(0, -1).join(', ') + o + p[p.length - 1] : p[0]; };
 
   const STEP = [
     ['1', L('Accedi con Twitch', 'Log in with Twitch', 'Entra con Twitch'), L('Un click, con lo stesso account con cui streammi.', 'One click, with the same account you stream with.', 'Un clic, con la misma cuenta con la que haces directo.')],
@@ -271,9 +274,11 @@ function corpo(L, l, kick, youtube) {
 
     <section class="vt-fine vt-rivela">
       <h2 class="vt-tit">${L('Pronto a farlo parlare?', 'Ready to give it a voice?', '¿Listo para darle voz?')}</h2>
-      <p class="vt-testo">${L('Registrarsi è un click con Twitch. L’Essenziale è gratis per sempre, e gli extra li aggiungi quando ti servono davvero — non prima.', 'Signing up is one click with Twitch. Essenziale is free forever, and you add extras when you actually need them — not before.', 'Registrarse es un clic con Twitch. Essenziale es gratis para siempre, y añades extras cuando de verdad los necesitas — no antes.')}</p>
+      <p class="vt-testo">${L(`Registrarsi è un click con ${conChi(' o ')}. L’Essenziale è gratis per sempre, e gli extra li aggiungi quando ti servono davvero — non prima.`, `Signing up is one click with ${conChi(' or ')}. Essenziale is free forever, and you add extras when you actually need them — not before.`, `Registrarse es un clic con ${conChi(' o ')}. Essenziale es gratis para siempre, y añades extras cuando de verdad los necesitas — no antes.`)}</p>
       <div class="vt-azioni">
         <a class="vt-btn vt-btn-primo" href="/entra?nuovo=1">${L('Registrati con Twitch', 'Sign up with Twitch', 'Regístrate con Twitch')}</a>
+        ${kick ? `<a class="vt-btn" href="/accedi/kick">${L('Registrati con Kick', 'Sign up with Kick', 'Regístrate con Kick')}</a>` : ''}
+        ${youtube ? `<a class="vt-btn" href="/accedi/youtube">${L('Registrati con YouTube', 'Sign up with YouTube', 'Regístrate con YouTube')}</a>` : ''}
         <a class="vt-btn" href="https://andryxify.it">${L('Vai al sito principale', 'Go to the main site', 'Ir al sitio principal')}</a>
       </div>
       <p class="vt-sotto">${L('Preferisci un altro modo?', 'Prefer another way?', '¿Prefieres otra forma?')}
