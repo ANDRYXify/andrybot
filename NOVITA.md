@@ -17,6 +17,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-12
 
+- Il player musica si regola pezzo per pezzo: spazio attorno, copertina, vinile, prima e seconda riga, tempi, barra e onde hanno ognuno la sua misura e, se vuoi, il suo colore. [vai: alert]
 - Il conto alla rovescia con «parte da solo» parte appena lo accendi, senza premere «Fai partire», e il pannello lo vede contare anche quando l'ha fatto partire una sorgente. [vai: alert]
 - La sfida a tempo dei punti canale compare davvero sull'overlay (l'avvio si perdeva per strada) ed è un elemento della scena: la sposti, le dai un riquadro, e sulla carta si legge quanto manca. [vai: alert]
 - Nell'editor degli overlay ogni elemento può avere un riquadro: tiri i bordi e chat, alert, player, widget, obiettivi e contatori si adattano a quello spazio, uguale sulla tela e in diretta. [vai: alert]

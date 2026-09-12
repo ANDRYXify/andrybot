@@ -235,6 +235,24 @@ export const normGoals = (lista) => {
 // copertina), se il titolo lungo scorre, se le onde ballano a tempo, se lo
 // sfondo prende la copertina sfocata, se l'accento se lo prende dai colori
 // dell'artwork, come entra in scena, e cosa fa quando non suona niente.
+// Il player, pezzo per pezzo. Ogni parte ha un FATTORE (percentuale, 100 = come
+// il corpo) e, se «propri» è acceso, un COLORE. Le chiavi sono la stessa lista
+// che il pannello e le due pagine leggono da presets.js (PLAYER_VARS): una prova
+// di contratto le confronta.
+export const MISURE_MUS = ['sfondo', 'cover', 'vinile', 'titolo', 'artista', 'tempi', 'barra', 'onde'];
+export const COLORI_MUS = ['titolo', 'artista', 'tempi', 'barra', 'onde'];
+export const normMisureMusica = (m) => {
+  m = m || {};
+  const o = {};
+  for (const k of MISURE_MUS) o[k] = clampInt(m[k], 40, 250, 100);
+  return o;
+};
+export const normColoriMusica = (c) => {
+  c = c || {};
+  const o = { propri: c.propri === true };
+  for (const k of COLORI_MUS) o[k] = hexOk(c[k], k === 'barra' || k === 'onde' ? '#f72fa7' : '#ffffff');
+  return o;
+};
 export const COVER_MUS = ['quadrata', 'tonda', 'vinile', 'no'];
 export const BARRA_MUS = ['sotto', 'anello', 'no'];
 export const TEMPI_MUS = ['no', 'trascorso', 'restante', 'due'];
@@ -287,6 +305,8 @@ export const normMusica = (m) => {
     quandoFermo: unoDi(m.quandoFermo, ['sparisce', 'resta'], 'sparisce'),
     posizione: unoDi(m.posizione, POS_ANG, 'basso-sinistra'),
     xy: xyOk(m.xy),
+    misure: normMisureMusica(m.misure),
+    colori: normColoriMusica(m.colori),
     stile: normWidgetStile(m.stile),
   };
 };

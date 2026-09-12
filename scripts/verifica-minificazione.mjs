@@ -31,7 +31,7 @@ const SELFTEST = process.argv.includes('--selftest');
 const PONTI = [
   ['app.js', ['SB_APP']],
   ['overlay-app.js', ['trasformaXY', 'posaElemento']],
-  ['presets.js', ['SUONI_PRESET', 'ICONE_OVL', 'FONT_CONT']],
+  ['presets.js', ['SUONI_PRESET', 'ICONE_OVL', 'FONT_CONT', 'PLAYER_VARS']],
   ['plancia.js', ['SB_PLANCIA']],
   ['suono.js', ['SB_SUONO']],
   ['flusso.js', ['SB_FLUSSO']],

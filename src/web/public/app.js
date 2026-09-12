@@ -5950,8 +5950,13 @@ function riempiCfgForm(k) {
       const v = via.length === 2 ? (c[via[0]] || {})[via[1]] : c[via[0]];
       if (v === undefined || v === null) continue;
       if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
+      if (el.type === 'range') _scriviMisura(box, el);
     }
   }
+}
+function _scriviMisura(box, el) {
+  const o = box.querySelector('[data-mis-out="' + el.dataset.c.split('.')[1] + '"]');
+  if (o) o.textContent = el.value + '%';
 }
 
 function leggiCfgDalForm(k) {
@@ -5959,7 +5964,7 @@ function leggiCfgDalForm(k) {
   for (const box of _pezziCfg(k)) {
     for (const el of box.querySelectorAll('[data-c]')) {
       const via = el.dataset.c.split('.');
-      const v = el.type === 'checkbox' ? el.checked : (el.type === 'number' ? Number(el.value) : el.value);
+      const v = el.type === 'checkbox' ? el.checked : (el.type === 'number' || el.type === 'range' ? Number(el.value) : el.value);
       if (via.length === 2) { c[via[0]] = c[via[0]] || {}; c[via[0]][via[1]] = v; }
       else c[via[0]] = v;
     }
@@ -6258,6 +6263,12 @@ function pannelloAlert() {
         <div class="asp-blocco" data-asp="musica" data-cfg-di="musica">
           <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
           ${_vesteCampi()}
+          <h4 class="spazio-sopra">${L('Misure', 'Sizes', 'Medidas')} <span class="tenue">${L('100 = come il corpo', '100 = as the body', '100 = como el cuerpo')}</span></h4>
+          <div class="griglia-campi" data-misure="musica">${_misureCampi()}</div>
+          <p><button type="button" class="btn secondario" id="mus-misure-serie">${L('Di serie', 'Defaults', 'De serie')}</button></p>
+          <h4 class="spazio-sopra">${L('Colori a parte', 'Separate colours', 'Colores aparte')}</h4>
+          <label class="riga-check"><input type="checkbox" data-c="colori.propri"> ${L('Ogni pezzo col suo colore (spento: testo e accento per tutti)', 'Each part with its own colour (off: text and accent for all)', 'Cada pieza con su color (apagado: texto y acento para todas)')}</label>
+          <div class="goal-campi">${_coloriCampi()}</div>
         </div>
       </div>
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="musica">${L('Salva', 'Save', 'Guardar')}</button></p>
@@ -6570,7 +6581,7 @@ const AP_ICO_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 const AP_ICO_WIDGET = { ultimoFollower: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>', ultimoSub: AP_ICO_ALERT };
 const _g = (id) => document.getElementById(id);
 const _v = (id) => _g(id)?.value;
-function _setVars(el, vars) { for (const k in vars) { const x = vars[k]; if (x != null && x !== '' && String(x).indexOf('undefined') < 0 && String(x).indexOf('NaN') < 0) el.style.setProperty(k, x); } }
+function _setVars(el, vars) { for (const k in vars) { const x = vars[k]; if (x != null && x !== '' && String(x).indexOf('undefined') < 0 && String(x).indexOf('NaN') < 0) el.style.setProperty(k, x); else el.style.removeProperty(k); } }
 
 function _leggiAlertStile() {
   return {
@@ -6967,6 +6978,7 @@ function _vestiMusica(box, cfg) {
     '--acc': st.accento, '--acc2': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px',
     '--font': fontStile(st), '--energia': String(d.energia),
     '--m-testo': Number(cfg.larghezza) > 0 ? Number(cfg.larghezza) + 'em' : null });
+  if (window.PLAYER_VARS) window.PLAYER_VARS.applica(box, cfg);
   const dipingi = (sel, tpl) => {
     const n = box.querySelector(sel);
     if (n) n.innerHTML = esc(tpl || '').replace(/\{titolo\}/g, '<b>' + esc(d.nome) + '</b>')
@@ -7537,7 +7549,23 @@ function _defMusica() {
     cover: 'quadrata', barra: 'sotto', tempi: 'no', onde: true, ritmo: 'onde', sfondo: 'no',
     daCopertina: false, scorre: true, entrata: 'dissolve', cambio: true,
     corpo: 'normale', tema: 'nessuno', larghezza: 0,
-    quandoFermo: 'sparisce', posizione: 'basso-sinistra', xy: null, stile: VESTE_DEF() };
+    quandoFermo: 'sparisce', posizione: 'basso-sinistra', xy: null, misure: _misureDef(), colori: _coloriDef(), stile: VESTE_DEF() };
+}
+function _PV() { return window.PLAYER_VARS || { misure: [], colori: [], applica() {} }; }
+function _misureDef() { const o = {}; for (const k of _PV().misure) o[k] = 100; return o; }
+function _coloriDef() { const o = { propri: false }; for (const k of _PV().colori) o[k] = k === 'barra' || k === 'onde' ? '#f72fa7' : '#ffffff'; return o; }
+function _nomiPezziPlayer() {
+  return { sfondo: L('Spazio attorno', 'Space around', 'Espacio alrededor'), cover: L('Copertina', 'Cover art', 'Portada'), vinile: L('Vinile', 'Vinyl', 'Vinilo'),
+    titolo: L('Prima riga', 'First line', 'Primera línea'), artista: L('Seconda riga', 'Second line', 'Segunda línea'), tempi: L('Tempi', 'Times', 'Tiempos'),
+    barra: L('Barra', 'Bar', 'Barra'), onde: L('Onde', 'Bars', 'Ondas') };
+}
+function _misureCampi() {
+  const nomi = _nomiPezziPlayer();
+  return _PV().misure.map((k) => `<div><label class="campo">${esc(nomi[k] || k)} <span class="tenue" data-mis-out="${k}">100%</span></label><input type="range" data-c="misure.${k}" min="40" max="250" step="5" aria-label="${esc(nomi[k] || k)}"></div>`).join('');
+}
+function _coloriCampi() {
+  const nomi = _nomiPezziPlayer();
+  return _PV().colori.map((k) => `<label class="campo-num">${esc(nomi[k] || k)}<input type="color" data-c="colori.${k}" aria-label="${esc(nomi[k] || k)}"></label>`).join('');
 }
 
 function _defTimer() {
@@ -14966,12 +14994,21 @@ function attivaPiattaforma() {
       const box = ev.target.closest('[data-cfg], [data-cfg-di]');
       if (!box) return;
       const k = box.dataset.cfg || box.dataset.cfgDi;
+      if (ev.target.type === 'range' && /^misure\./.test(ev.target.dataset.c || '')) _scriviMisura(box, ev.target);
       leggiCfgDalForm(k);
       aggiornaAnteprima();
       aggiornaInspector();
       salvaCfgElemento(k);
     });
   }
+
+  _g('mus-misure-serie')?.addEventListener('click', () => {
+    _cfgEl('musica').misure = _misureDef();
+    riempiCfgForm('musica');
+    aggiornaAnteprima();
+    aggiornaInspector();
+    salvaCfgElemento('musica');
+  });
 
   _g('scheda-alert')?.addEventListener('click', (ev) => {
     const b = ev.target.closest('[data-salva-cfg]');

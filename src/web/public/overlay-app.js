@@ -366,7 +366,7 @@ const fontDi = (st) => {
   return st && st.googleFont ? caricaFontGoogle(st.googleFont) : (FONT[f] || null);
 };
 
-function applicaVars(el, vars) { for (const k in vars) { if (vars[k] != null && vars[k] !== '') el.style.setProperty(k, String(vars[k])); } }
+function applicaVars(el, vars) { for (const k in vars) { if (vars[k] != null && vars[k] !== '') el.style.setProperty(k, String(vars[k])); else el.style.removeProperty(k); } }
 
 function trasformaXY(xy) {
   const s = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
@@ -845,6 +845,7 @@ function disegnaMusica() {
     + (el.classList.contains('dentro') ? ' dentro' : '');
   if (Number(cfg.larghezza) > 0) el.style.setProperty('--m-testo', Number(cfg.larghezza) + 'em');
   else el.style.removeProperty('--m-testo');
+  if (window.PLAYER_VARS) window.PLAYER_VARS.applica(el, cfg);
   if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
 
   const disco = el.querySelector('.m-disco');

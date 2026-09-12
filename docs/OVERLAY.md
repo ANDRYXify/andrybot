@@ -909,3 +909,84 @@ caso da coprire: due cose diverse non possono avere lo stesso nome. La busta si
 scrive per ultima, così il contenuto non può toccarla, e ciò che la sfida vieta
 viaggia come `cosa`. Il cancello dell'anteprima manda l'evento com'è davvero,
 e la prova di contratto lo guarda uscire dal server.
+
+## Il player, pezzo per pezzo
+
+**La domanda.** «Più libertà con il player: la grandezza dello sfondo, la
+copertina, il vinile, il titolo, gli artisti, insomma tutto.»
+
+**Il modello.** Il player è uno **scheletro in em**: la Dimensione (piccola,
+media, grande, enorme) dà il corpo del carattere, il Corpo (slim, normale,
+cicciotto) dà le proporzioni, e ogni pezzo è un multiplo del corpo: la
+copertina 4,5 em, la seconda riga 0,84 em, i tempi 0,68 em, la barra 0,26 em,
+le onde 1,1 em, lo spazio attorno 0,5 × 0,74 em. Tutto scala insieme, ed è
+giusto così: cambiare Dimensione non deve sfasare le parti. La libertà chiesta
+non è un secondo scheletro: è **un fattore per pezzo, sopra lo scheletro**.
+Otto misure (spazio attorno, copertina, vinile, prima riga, seconda riga,
+tempi, barra, onde), da 40 a 250 per cento, con 100 = come il corpo. E, a
+scelta, **colori a parte**: acceso l'interruttore, prima riga, seconda riga,
+tempi, barra e onde hanno ognuno il suo colore; spento, seguono testo e accento
+come prima.
+
+**L'invariante che regge tutto: a 100 non cambia niente.** Nel foglio ogni
+misura è `calc(<valore di prima> * var(--k-…, 1))`: senza variabile, o con la
+variabile a 1, il foglio risolve esattamente ai valori di ieri. Chi non tocca i
+cursori vede il player di sempre, e i dodici casi del cancello dell'anteprima
+che già misuravano il player continuano a misurare le stesse cose. La copertina
+aveva otto definizioni di `--cov` (una per corpo e per tema): ora ognuna dice
+la **base** (`--cov-base`) e il fattore si applica in un posto solo.
+
+**Una lista, un traduttore.** I pezzi sono una lista sola, scritta in
+`stile.js` (per il server, che pulisce) e in `presets.js` (per il browser), e
+una prova le confronta. La traduzione da configurazione a variabili CSS è una
+funzione sola, `PLAYER_VARS.applica`, che la tela dello Studio e la pagina
+dell'overlay chiamano allo stesso modo: è per questo che l'anteprima resta la
+diretta anche qui. La funzione **toglie** la variabile quando una misura torna a
+100 o un colore si spegne: l'elemento vive fra un disegno e l'altro, e una
+variabile lasciata lì sarebbe una scelta che nessuno ha più fatto. I campi del
+pannello nascono dalla stessa lista: aggiungere un pezzo è aggiungerlo lì.
+
+**Il vinile.** Nel tema vinile il disco sporge da dietro la copertina; farlo
+più grande vuol dire farlo sporgere di più, senza che la scatola lo tagli: la
+scatola della copertina si allarga con lui (`.62 + fattore` copertine) e si
+alza quando il disco supera la copertina (`max(1, fattore)`), e la copertina
+resta centrata in altezza invece di stirarsi.
+
+**Il cancello.** Lo stesso player (tema vinile, due righe, tempi) si misura tre
+volte, pezzo per pezzo (copertina, disco, righe, tempi, barra, onde, spazio
+attorno, colori): senza misure, con le misure a 100, con misure e colori
+propri. Le prime due devono essere identiche, in editor e in diretta; la terza
+deve coincidere fra editor e diretta **e derivare dalla seconda coi fattori
+scelti** (copertina ×1,5, vinile ×1,3, prima riga ×1,3, seconda ×0,8, tempi
+×1,2, barra ×2, onde ×1,6, spazio ×1,4, e i colori sul testo). Non basta che
+le due pagine siano d'accordo: devono essere d'accordo sulla cosa giusta.
+L'autoprova toglie la chiamata al traduttore in diretta e pretende il rosso.
+
+**Il tetto che rubava spazio al testo.** Guardando la resa con la copertina a
+150 e il disco a 130, il titolo usciva tagliato. La carta aveva un tetto fisso
+(27 em; 22 em la cassetta) che non c'entrava con niente di scelto: la colonna
+del testo ha già una larghezza esplicita (11, 13 o 15 em per corpo, o quella
+scritta in «Larghezza del testo»), e quando copertina più colonna superavano il
+tetto era la colonna a cedere, in silenzio. Lo stesso succedeva già a chi
+scriveva una larghezza del testo sopra i 20 em: la scelta veniva ignorata senza
+dirlo. Il tetto non c'è più: la carta è larga quanto i suoi pezzi, il titolo
+troppo lungo scorre come sempre, e chi vuole contenere il player usa il
+riquadro, che è fatto per quello. Il cancello ora guarda anche che la colonna
+del testo non perda un pixel quando la copertina cresce, e l'autoprova rimette
+il tetto per vedere il rosso. Nel tema vinile, poi, la copertina è sempre
+quadrata: il foro da disco che le veniva disegnato al centro era di un'altra
+forma, e non c'è più.
+
+**La variabile che restava.** Il cancello, che apre l'editor una volta e ci fa
+passare tutti i casi come farebbe una persona in una sessione, ha visto la tela
+più larga della diretta di 94 px: un caso precedente aveva scritto «Larghezza
+del testo 20» e la tela se l'era tenuta anche dopo lo zero. Chi mette le
+variabili sulla tela saltava i valori nulli invece di toglierli, e l'elemento
+vive fra un disegno e l'altro. Ora un valore nullo **toglie** la variabile, in
+editor e in diretta allo stesso modo: nullo vuol dire «come dice la pelle», non
+«come l'ultima volta». L'autoprova rimette il salto e pretende il rosso.
+
+L'autoprova del cancello ora si può mirare: `node scripts/verifica-anteprima.mjs
+--selftest=player` prova solo le rotture la cui descrizione contiene «player»;
+ogni rottura costa un giro intero delle due pagine, e chi ne aggiunge una la
+prova da sola senza aspettare le altre.
