@@ -1297,7 +1297,7 @@ const OVERLAY = {
       ['Righe', 'una', 'una riga sola, oppure titolo sopra e artista sotto'],
       ['Copertina', 'quadrata', 'quadrata · tonda · vinile che gira mentre suona · niente'],
       ['Corpo', 'normale', 'slim · normale · cicciotto: la taglia di tutto il player, copertina compresa'],
-      ['Tema', 'nessuno', 'ogni tema porta la sua figura e il suo moto, e si muove solo mentre suona: vinile (il disco sporge da dietro e gira) · CD (gira e cambia riflesso) · cassetta (le bobine girano) · terminale (prompt e cursore) · manga (retino che pulsa a tempo) · esagono (copertina a sei lati, con un anello che ruota)'],
+      ['Tema', 'nessuno', 'ogni tema porta la sua figura e il suo moto, e si muove solo mentre suona: vinile (il disco sporge da dietro e gira) · CD (gira e cambia riflesso) · cassetta (le bobine girano) · terminale (prompt e cursore) · manga (retino che pulsa a tempo) · esagono (copertina a sei lati, con un anello che ruota). Ogni tema entra ed esce anche a modo suo: il disco scivola fuori dalla copertina, le bobine si posano, l\'anello si chiude, il terminale scrive riga per riga; «Rivedi l\'entrata» te lo fa vedere sulla tela'],
       ['Avanzamento', 'barra sotto', 'barra sotto · anello attorno alla copertina · niente'],
       ['Tempi', 'niente', 'trascorso · quanto manca · tutti e due'],
       ['Le onde', 'onde che ballano', 'onde che ballano · onde e copertina che pulsa · niente onde (spariscono)'],

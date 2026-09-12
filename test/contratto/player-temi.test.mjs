@@ -58,7 +58,40 @@ test('ogni tema passa dal cancello dell\'anteprima e ha un nome nella tendina', 
   }
 });
 
+test('ogni tema con una figura entra ed esce a modo suo, e l\'uscita finisce prima che il nodo sparisca', () => {
+  const OVL = readFileSync('src/web/public/overlay-app.js', 'utf8');
+  const tolto = Number(OVL.match(/musicaEl\.uscita = setTimeout\(via, (\d+)\)/)[1]);
+  const secondi = (s) => (s.match(/(\d*\.?\d+)s/g) || []).reduce((a, x) => a + parseFloat(x), 0);
+  for (const t of TEMA_MUS) {
+    if (t === 'nessuno') continue;
+    const dentro = regole.filter((r) => r.sel.includes(`.tema-${t}.dentro`) && /transition:/.test(r.corpo));
+    const esce = regole.filter((r) => r.sel.includes(`.tema-${t}.esce`) && /transition:/.test(r.corpo));
+    assert.ok(dentro.length, `${t}: nessuna entrata`);
+    assert.ok(esce.length, `${t}: nessuna uscita`);
+    for (const r of [...dentro, ...esce]) {
+      for (const parte of r.corpo.match(/transition:\s*([^;]+)/)[1].split(/,(?![^(]*\))/)) {
+        assert.match(parte.trim(), /^(translate|scale|opacity|rotate)\b/, `${t}: «${parte.trim()}» non è un moto da compositor`);
+      }
+    }
+    for (const r of esce) for (const parte of r.corpo.match(/transition:\s*([^;]+)/)[1].split(/,(?![^(]*\))/)) {
+      assert.ok(secondi(parte) * 1000 <= tolto, `${t}: l'uscita «${parte.trim()}» dura più dei ${tolto} ms dopo cui il nodo sparisce`);
+    }
+  }
+  const ridotto = CSS.slice(CSS.indexOf('@media (prefers-reduced-motion: reduce)'));
+  const ferme = [...ridotto.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((m) => /transition:\s*none/.test(m[2])).map((m) => m[1]).join(' ');
+  for (const s of ['.ovl-musica .m-cover::after', '.ovl-musica .m-velo', '.ovl-musica .m-riga']) assert.ok(ferme.includes(s), `con «riduci animazioni» ${s} non fa gesti`);
+});
+
 test('la veste «Esagoni» è un esagono, come «Nastro» è una cassetta', () => {
   const riga = APP.slice(APP.indexOf("nome: 'Esagoni'"), APP.indexOf('\n', APP.indexOf("nome: 'Esagoni'")));
   assert.match(riga, /mu: \{ tema: 'esagono'/);
+});
+
+// L'entrata parte davvero solo se il primo stile del nodo è stato calcolato
+// PRIMA di aggiungere «dentro». Il rAF che la aggiunge corre prima del ricalcolo
+// di stile del fotogramma in cui il nodo è nato: senza una lettura di layout in
+// mezzo, il nodo nasce già «dentro» e nessuna transizione ha un punto di partenza.
+test('in diretta il primo stile del player è calcolato prima di aggiungere «dentro»', () => {
+  const OVL = readFileSync('src/web/public/overlay-app.js', 'utf8');
+  assert.match(OVL, /if \(nato\) \{ void el\.offsetWidth; requestAnimationFrame\(\(\) => el\.classList\.add\('dentro'\)\); \}/);
 });

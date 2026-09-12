@@ -6266,6 +6266,7 @@ function pannelloAlert() {
           <label class="riga-check"><input type="checkbox" data-c="scorre"> ${L('Il titolo lungo scorre', 'Long titles scroll', 'Los títulos largos se desplazan')}</label>
           <label class="riga-check"><input type="checkbox" data-c="daCopertina"> ${L('Colore preso dalla copertina', 'Color taken from the cover', 'Color tomado de la portada')}</label>
           <label class="riga-check"><input type="checkbox" data-c="cambio"> ${L('Si rianima a ogni brano', 'Replays its entrance on every track', 'Se reanima en cada tema')}</label>
+          <button type="button" class="btn secondario" id="mus-prova-entrata">${L('Rivedi l\'entrata', 'Replay the entrance', 'Repetir la entrada')}</button>
         </div>
         <p class="suggerimento spazio-sopra">${L('La copertina pulsa solo se Spotify ci dice il tempo del brano: quando non lo dice, resta ferma invece di pulsare a una velocità che non c’entra niente. Le onde ballano comunque.', 'The cover only pulses when Spotify tells us the track’s tempo: when it doesn’t, it stays still instead of pulsing at a speed unrelated to the song. The bars dance anyway.', 'La portada solo late si Spotify nos dice el tempo del tema: cuando no lo dice, se queda quieta en vez de latir a una velocidad que no tiene que ver. Las ondas bailan igual.')}</p>
         <div class="asp-blocco" data-asp="musica" data-cfg-di="musica">
@@ -15102,6 +15103,12 @@ function attivaPiattaforma() {
     });
   }
 
+  _g('mus-prova-entrata')?.addEventListener('click', () => {
+    const box = document.querySelector('#ap-stage .ovl-musica');
+    if (!box || _menoMoto) return;
+    box.classList.remove('dentro'); box.classList.add('esce');
+    setTimeout(() => { box.classList.remove('esce'); void box.offsetWidth; box.classList.add('dentro'); }, 560);
+  });
   _g('mus-misure-serie')?.addEventListener('click', () => {
     _cfgEl('musica').misure = _misureDef();
     riempiCfgForm('musica');
