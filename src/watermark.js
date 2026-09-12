@@ -130,7 +130,7 @@ export function firmaPng(bytes) {
 // con la proprieta' e con il nome con cui si presenta (la licenza): davanti a
 // testimoni, un bot copiato dice di chi e'. Si calcola con
 // node scripts/firma-canarino.mjs; finche' CANARINO e' vuota, dorme.
-export const CANARINO = '';
+export const CANARINO = '8f9cd64021f6ab65b5f401b3a97326e80b5c614caf5b1aad5a30f2ff4e907eb8';
 export function normalizzaCanarino(testo) {
   return String(testo || '').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 }
