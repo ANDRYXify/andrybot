@@ -870,3 +870,42 @@ ciò che non ci sta finisce **sopra** il bordo, e `scrollHeight` quel lato non l
 conta. Il taglio non tagliava e la misura diceva che andava tutto bene. Ora
 tanto il taglio quanto la misura guardano la geometria delle righe (la prima
 sopra il bordo, l'ultima sotto), in `riquadro.js`, in un posto solo.
+
+## Il conto che «parte da solo» non partiva, e la sfida che non si spostava
+
+**Il conto alla rovescia.** La spunta «parte da solo quando l'overlay si apre»
+faceva esattamente quello: partiva quando una sorgente ricaricava la pagina.
+Chi la accendeva dal pannello, con l'overlay già aperto, non vedeva succedere
+niente: la pagina veniva avvisata del nuovo tema e chiedeva al server di far
+partire il conto, ma il pannello non lo veniva a sapere, la tela mostrava i
+minuti fermi e la scritta «in corso» non compariva. E finché il flusso moriva a
+ogni riavvio (sopra), spesso non partiva nemmeno in diretta. Ora il conto parte
+nel momento in cui la spunta passa da spenta ad accesa (il **passaggio**, non lo
+stato: salvare un titolo con la spunta già accesa non fa ripartire un conto
+finito), con la stessa funzione che usa l'overlay, che non fa ripartire un conto
+già in corso. La risposta del salvataggio porta l'istante di fine, il pannello
+lo mostra contare, e aprendo lo Studio chiede dov'è il conto: può essere partito
+da una sorgente mentre il pannello non guardava.
+
+**La sfida a tempo.** La carta della penitenza riscattata coi punti canale
+(parola vietata o obbligata, colpi) aveva un angolo scelto nella scheda delle
+penitenze e nient'altro: non era un elemento della scena, non si spostava, non
+aveva un riquadro, e la sua veste stava nell'HTML dell'overlay, dove la tela non
+la vede. Ora è l'elemento «Sfida a tempo»: si accende per overlay, si sposta, ha
+il riquadro, la veste sta nella pelle, e sulla carta si legge **quanto manca**
+(la durata la manda il server con l'avvio; l'orologio si spegne con la carta).
+La posa avviene dopo il contenuto, come per gli altri, e si rifà a ogni colpo,
+perché il numero cambia larghezza. Il cancello dell'anteprima la misura come
+gli altri elementi.
+
+**E la carta non compariva mai.** Misurandola in diretta il cancello non l'ha
+trovata: l'evento di avvio parte dal server come `{ tipo: 'penitenza',
+...contenuto }`, e il contenuto porta a sua volta un `tipo` (parola o lettera,
+ciò che la sfida vieta o impone) che, scritto dopo, **sovrascriveva la busta**.
+L'overlay riceveva un evento di tipo «parola» e lo lasciava cadere: dal giorno
+in cui la sfida è nata, la sua carta non è mai andata in onda; i colpi e la
+fine, che non hanno quel campo, arrivavano a una carta che non c'era. Non è un
+caso da coprire: due cose diverse non possono avere lo stesso nome. La busta si
+scrive per ultima, così il contenuto non può toccarla, e ciò che la sfida vieta
+viaggia come `cosa`. Il cancello dell'anteprima manda l'evento com'è davvero,
+e la prova di contratto lo guarda uscire dal server.

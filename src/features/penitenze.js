@@ -158,7 +158,7 @@ export class PenitenzeEngine {
         ? `${chi} ti ha VIETATO ${cosa} per ${durata} ${durata === 1 ? 'minuto' : 'minuti'}! Se la dici… si conta. 😈`
         : `${chi} ti obbliga a dire SOLO ${cosa} per ${durata} ${durata === 1 ? 'minuto' : 'minuti'}! Ogni altra frase… si conta. 😈`;
       this.say(channel, `🔒 ${regola}`);
-      this._overlay(channel, { azione: 'start', id, modo, tipo, valore, durata, ...this._overlayOpts(c) });
+      this._overlay(channel, { azione: 'start', id, modo, cosa: tipo, valore, durata, ...this._overlayOpts(c) });
       log.info(`penitenza #${id} su #${channel}: ${modo} "${valore}" ${durata}m (da ${chi})`);
       return true;
     } catch (e) { log.error(`daRiscatto #${channel}:`, e?.message || e); return false; }
@@ -250,8 +250,11 @@ export class PenitenzeEngine {
       .map((p) => ({ id: p.id, modo: p.modo, tipo: p.tipo, valore: p.valore, count: p.count, restano: Math.max(0, Math.round((p.scadenza - ora) / 1000)) }));
   }
 
+  // La busta dell'evento e' `tipo: 'penitenza'`, e la busta si scrive per ULTIMA:
+  // il contenuto non puo' sovrascriverla. Cio' che la sfida vieta o impone
+  // (parola o lettera) viaggia come `cosa`, un nome che non e' quello della busta.
   _overlay(channel, payload) {
-    if (this.effects?.emit) { try { this.effects.emit(channel, { tipo: 'penitenza', ...payload }); } catch { /* niente */ } }
+    if (this.effects?.emit) { try { this.effects.emit(channel, { ...payload, tipo: 'penitenza' }); } catch { /* niente */ } }
   }
 
   // Prova dal pannello: mostra un contatore d'esempio nell'overlay (start → +1 →
@@ -259,7 +262,7 @@ export class PenitenzeEngine {
   prova(channel) {
     const c = this.cfg(channel);
     const id = `prova-${this._nextId++}`;
-    this._overlay(channel, { azione: 'start', id, modo: 'vieta', tipo: 'parola', valore: 'esempio', durata: 1, ...this._overlayOpts(c) });
+    this._overlay(channel, { azione: 'start', id, modo: 'vieta', cosa: 'parola', valore: 'esempio', durata: 1, ...this._overlayOpts(c) });
     setTimeout(() => this._overlay(channel, { azione: 'hit', id, count: 1, inc: 1 }), 700);
     setTimeout(() => this._overlay(channel, { azione: 'hit', id, count: 2, inc: 1 }), 1500);
     setTimeout(() => this._overlay(channel, { azione: 'end', id, count: 2, penitenza: '10 flessioni' }), 2600);

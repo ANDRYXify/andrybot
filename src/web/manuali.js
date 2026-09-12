@@ -1186,7 +1186,7 @@ const OVERLAY = {
       'Si compone nella scheda <em>Overlay Studio</em>, e si vede subito mentre lo cambi.',
     ] },
 
-    { h2: 'I sette elementi' },
+    { h2: 'Gli elementi' },
     { p: ['Tutto quello che può comparire è un <strong>elemento della scena</strong>: si accende, si sposta e si veste dallo stesso posto. Non ci sono cose che seguono regole proprie.'] },
     { tabella: [
       ['Elemento', 'Cos\'è', 'Dove sta di serie'],
@@ -1197,7 +1197,8 @@ const OVERLAY = {
       ['Obiettivi', 'Barre che si riempiono mentre arrivano follower, sub o bit. Quanti ne vuoi.', 'dove li metti tu'],
       ['Contatori', 'I numeri che tu e i mod muovete in chat: morti, tentativi, quello che vuoi.', 'dove li metti tu'],
       ['Player musica', 'Quello che stai ascoltando su Spotify: copertina, titolo e avanzamento.', 'in basso a sinistra'],
-      ['Conto alla rovescia', 'Quanto manca all\'inizio della diretta.', 'in alto a destra'],
+      ['Conto alla rovescia', 'Quanto manca all\'inizio della diretta. Con «parte da solo» parte appena lo accendi e ogni volta che un overlay si apre e lo trova fermo.', 'in alto a destra'],
+      ['Sfida a tempo', 'La carta della penitenza riscattata coi punti canale: parola, colpi e tempo che manca.', 'in alto a destra'],
       ['Effetti & suoni', 'Immagini, video e suoni che partono da un comando o da un premio a punti.', 'al centro'],
     ] },
     { p: ['Sulla tela dello Studio ci sono <strong>tutti</strong>, obiettivi e contatori compresi: quello che vedi lì è quello che va in onda, nello stesso punto.'] },

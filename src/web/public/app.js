@@ -185,11 +185,12 @@ function impostazioni() {
 }
 
 async function salvaImpostazioni(parziale, msgOk = 'Impostazioni salvate') {
-  await api('/api/streamer/impostazioni', { method: 'POST', body: parziale });
+  const d = await api('/api/streamer/impostazioni', { method: 'POST', body: parziale });
   if (stato?.streamer) {
     stato.streamer.settings = { ...(stato.streamer.settings || {}), ...parziale };
   }
   if (msgOk) toast(msgOk);
+  return d;
 }
 
 function inApp() {
@@ -6210,6 +6211,7 @@ function pannelloAlert() {
         ${ovlElemento('cont', ICO.grafico, L('Contatori', 'Counters', 'Contadores'), '')}
         ${ovlElemento('musica', ICO.musica, L('Player musica', 'Music player', 'Reproductor de música'), 'sez-musica')}
         ${ovlElemento('timer', ICO.orologio, L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), 'sez-timer')}
+        ${ovlElemento('pen', ICO.penitenza, L('Sfida a tempo', 'Timed challenge', 'Reto a tiempo'), 'penitenze')}
         ${ovlElemento('effetti', ICO.effetti, L('Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'), 'effetti')}
         ${ovlElemento('consolify', ICO.onda, L('Tasti di CONSOLify', 'CONSOLify keys', 'Teclas de CONSOLify'), 'consolify')}
       </div>
@@ -6549,7 +6551,7 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'musica', 'timer', 'effetti', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'musica', 'timer', 'pen', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const _mostraOra = () => {
   const o = ELEM_OVL.reduce((q, k) => (q[k] = mostraChk(k), q), {});
@@ -6714,6 +6716,7 @@ function _elementoAcceso(k) {
   return c ? !!c.checked : true;
 }
 function _accendiElemento(k, v) {
+  if (ELEM(k)?.cfg) { _accendiDi(k, v); salvaCfgElemento(k); return true; }
   const c = ATTIVO_DI[k] && _g(ATTIVO_DI[k]);
   if (!c || c.checked === !!v) return false;
   c.checked = !!v;
@@ -6894,6 +6897,7 @@ function _sincronizzaScena() {
     if (e.goal) _vestiGoal(nodo.firstElementChild, e.goal);
     else if (e.cont) _vestiCont(nodo.firstElementChild, e.cont);
     else if (e.k === 'musica') _vestiMusica(nodo.firstElementChild, _cfgEl('musica'));
+    else if (e.k === 'pen') _vestiPen(nodo.firstElementChild, _cfgEl('pen'));
     else _vestiTimer(nodo.firstElementChild, _cfgEl('timer'));
     nodo.classList.toggle('sel', selezione === e.k);
   }
@@ -6980,6 +6984,14 @@ function _vestiMusica(box, cfg) {
   misuraScorrimentoAnteprima(box, cfg);
 }
 
+function _vestiPen(box, cfg) {
+  const o = cfg.overlay || {};
+  box.className = 'pen-card dentro';
+  box.style.setProperty('--pen-colore', /^#[0-9a-fA-F]{6}$/.test(o.colore || '') ? o.colore : '#ff2d2d');
+  box.innerHTML = '<span class="pen-parola"><small>vietata</small>ESEMPIO</span><span class="pen-num">0</span><span class="pen-tempo">'
+    + esc(_orologioGiu((Number(cfg.durataMin) || 2) * 60000)) + '</span>';
+}
+
 function _vestiTimer(box, cfg) {
   if (!box.querySelector('.t-num')) box.innerHTML = '<span class="t-tit"></span><span class="t-num"></span>';
   const st = cfg.stile || {};
@@ -7038,6 +7050,7 @@ function _angoloDi(k) {
   const e = ELEM(k);
   if (e && e.goal) return e.goal.posizione || 'alto-sinistra';
   if (e && e.cont) return null;
+  if (k === 'pen') return (_cfgEl(k).overlay || {}).posizione || 'alto-destra';
   if (e && e.cfg) return _cfgEl(k).posizione || (k === 'timer' ? 'alto-destra' : 'basso-sinistra');
   if (k === 'alert') return _v('al-pos') || 'alto-centro';
   if (k === 'chat') return _v('co-pos') || 'basso-sinistra';
@@ -7499,6 +7512,7 @@ const ELEMENTI = () => {
   for (const c of _conta) out.push({ k: 'cont:' + c.comando, ico: ICO.grafico, n: c.etichetta || c.comando, cont: c });
   out.push({ k: 'musica', ico: ICO.musica, n: L('Player musica', 'Music player', 'Reproductor de música'), cfg: 'overlayMusica' });
   out.push({ k: 'timer', ico: ICO.orologio, n: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), cfg: 'overlayTimer' });
+  out.push({ k: 'pen', ico: ICO.penitenza, n: L('Sfida a tempo', 'Timed challenge', 'Reto a tiempo'), cfg: 'penitenze' });
   return out;
 };
 const ELEM = (k) => ELEMENTI().find((e) => e.k === k) || null;
@@ -7531,7 +7545,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 function _cfgEl(k) {
   const e = ELEM(k);
@@ -7579,7 +7593,7 @@ function _accendiDi(k, v) {
   if (e && e.cont) { (e.cont.overlayCfg = e.cont.overlayCfg || {}).mostra = !!v; return; }
   if (e && e.cfg) {
     _cfgEl(k).attivo = !!v;
-    const chk = _g(k === 'musica' ? 'mus-attivo' : 'tim-attivo');
+    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo' }[k]);
     if (chk) chk.checked = !!v;
     return;
   }
@@ -8213,7 +8227,9 @@ function salvaCfgElemento(k) {
   if (!e || !e.cfg) return;
   clearTimeout(_timerCfg[k]);
   _timerCfg[k] = setTimeout(() => {
-    salvaImpostazioni({ [e.cfg]: _cfgEl(k) }, null).catch(() => _avvisaSalvataggio());
+    salvaImpostazioni({ [e.cfg]: _cfgEl(k) }, null)
+      .then((d) => { if (k === 'timer' && d && d.timerFine != null) _segnaTimer(d.timerFine); })
+      .catch(() => _avvisaSalvataggio());
   }, 600);
 }
 
@@ -8703,6 +8719,7 @@ function caricaAlert() {
   caricaOverlays();
   collegaEditorOvl();
   vestiTendina(_g('ovl-quale'));
+  api('/api/streamer/timer').then((d) => { if (d && d.fine != null) _segnaTimer(Number(d.fine) || 0); }).catch(() => null);
   const agg = _g('ovl-aggancia'); if (agg) agg.checked = _agganciaOn;
   if (scheda?.dataset.collegato) { scalaAnteprima(); aggiornaAnteprima(); return; }
   if (scheda) scheda.dataset.collegato = '1';
@@ -8759,7 +8776,7 @@ function caricaAlert() {
     }
     const b = e.target.closest('[data-apri-sez]'); if (!b) return;
     const s = b.dataset.apriSez;
-    if (s === 'effetti') { vaiAScheda('effetti'); return; }
+    if (s === 'effetti' || s === 'penitenze') { vaiAScheda(s); return; }
     const det = _g(s);
     if (det) { det.open = true; det.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' }); }
   });
@@ -14961,8 +14978,10 @@ function attivaPiattaforma() {
     if (!b) return;
     const k = b.dataset.salvaCfg;
     const e = ELEM(k);
-    conErrore(() => salvaImpostazioni({ [e.cfg]: leggiCfgDalForm(k) },
-      L('Salvato ✓', 'Saved ✓', 'Guardado ✓')));
+    conErrore(async () => {
+      const d = await salvaImpostazioni({ [e.cfg]: leggiCfgDalForm(k) }, L('Salvato ✓', 'Saved ✓', 'Guardado ✓'));
+      if (k === 'timer' && d && d.timerFine != null) _segnaTimer(d.timerFine);
+    });
   });
 
   _g('tim-parti')?.addEventListener('click', () => conErrore(async () => {

@@ -272,16 +272,24 @@ function penitenza(ev) {
   else if (ev.azione === 'end') penEnd(ev);
 }
 
+function penPosa() { posizionaContenitore(penBox, MIO.xy.pen, penBox._angolo || 'alto-destra'); }
+
 function penStart(ev) {
-  penBox.className = ev.posizione || 'alto-destra';
+  penBox._angolo = ev.posizione || 'alto-destra';
   if (ev.colore) penBox.style.setProperty('--pen-colore', ev.colore);
   const parola = String(ev.valore || '').toUpperCase();
   const eti = ev.modo === 'solo' ? 'dì solo' : 'vietata';
   const card = document.createElement('div');
   card.className = 'pen-card';
-  card.innerHTML = '<span class="pen-parola"><small>' + eti + '</small>' + escHtml(parola) + '</span><span class="pen-num">0</span>';
+  card.innerHTML = '<span class="pen-parola"><small>' + eti + '</small>' + escHtml(parola) + '</span><span class="pen-num">0</span><span class="pen-tempo"></span>';
   penBox.appendChild(card);
   penCard[ev.id] = card;
+  const scadenza = Date.now() + Math.max(1, Number(ev.durata) || 2) * 60000;
+  const tempo = card.querySelector('.pen-tempo');
+  const batti = () => { tempo.textContent = oreMinSec(scadenza - Date.now()); };
+  batti();
+  card._orologio = setInterval(batti, 1000);
+  penPosa();
   requestAnimationFrame(() => card.classList.add('dentro'));
 }
 
@@ -298,6 +306,7 @@ function penHit(ev) {
   piu.textContent = '+' + (ev.inc || 1);
   card.appendChild(piu);
   setTimeout(() => piu.remove(), 1000);
+  penPosa();
 }
 
 function penEnd(ev) {
@@ -306,7 +315,9 @@ function penEnd(ev) {
   const esito = ev.count > 0
     ? 'PENITENZA: ' + escHtml(String(ev.penitenza || '')) + (ev.count > 1 ? ' ×' + ev.count : '')
     : 'Salvo!';
+  clearInterval(card._orologio);
   card.innerHTML = '<span class="pen-esito">' + esito + '</span>';
+  penPosa();
   setTimeout(() => {
     card.classList.remove('dentro');
     setTimeout(() => { card.remove(); delete penCard[ev.id]; }, 400);
@@ -594,7 +605,7 @@ function ricevi(m) {
 
     if (dati.tipo === 'audio') { if (mostra('effetti')) suona(dati); }
     else if (dati.tipo === 'preset') { if (mostra('effetti')) suonaPreset(dati); }
-    else if (dati.tipo === 'penitenza') { if (mostra('effetti')) penitenza(dati); }
+    else if (dati.tipo === 'penitenza') { if (mostra('pen')) penitenza(dati); }
     else if (dati.tipo === 'alert') alert(dati);
     else if (dati.tipo === 'chat') chat(dati);
     else if (dati.tipo === 'widget') { if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, (MIO.widget && MIO.widget[dati.id]) || dati.cfg, dati.valore); }

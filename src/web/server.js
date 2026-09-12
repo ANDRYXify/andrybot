@@ -104,7 +104,7 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'musica', 'timer', 'effetti', 'consolify'];
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'musica', 'timer', 'pen', 'effetti', 'consolify'];
 const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {});
 
 // Un overlay E' un layout: tiene la posizione di OGNI cosa che ci puo' comparire,
@@ -113,7 +113,7 @@ const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {})
 // Prima qui c'erano solo i quattro fissi, quindi player, conto alla rovescia,
 // obiettivi e contatori avevano UNA posizione per tutto il canale: li spostavi
 // in un overlay e si spostavano in tutti.
-const CHIAVE_EL = /^(alert|chat|wf|ws|musica|timer|goal:[a-z0-9_-]{1,24}|cont:[a-z0-9_]{1,30})$/i;
+const CHIAVE_EL = /^(alert|chat|wf|ws|musica|timer|pen|goal:[a-z0-9_-]{1,24}|cont:[a-z0-9_]{1,30})$/i;
 // Cosa compare in questo overlay: le nove famiglie piu' le singole voci che si
 // possono togliere una a una. Si scrive solo il «no»: quel che non c'e' compare,
 // cosi' un obiettivo nuovo entra acceso ovunque senza dover toccare niente.
@@ -3935,6 +3935,20 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     }
 
     streamers.setSettings(user.login, out);
+    // IL CONTO ALLA ROVESCIA CON «PARTE DA SOLO»: parte nel momento in cui lo
+    // si accende, non solo quando un overlay si apre. Prima si accendeva la
+    // spunta e non succedeva niente finche' una sorgente non ricaricava la
+    // pagina: dal pannello sembrava una spunta rotta. Si guarda il PASSAGGIO
+    // (spento → acceso), non lo stato: salvare un titolo con la spunta gia'
+    // accesa non fa ripartire un conto finito. Il pannello riceve l'istante di
+    // fine e lo mostra contare.
+    let timerFine = null;
+    if (out.overlayTimer) {
+      const prima = s.settings?.overlayTimer || {};
+      const acceso = out.overlayTimer.attivo && out.overlayTimer.partiDaSolo && !(prima.attivo && prima.partiDaSolo);
+      timerFine = acceso ? (manager.alerts?.avviaTimerSePronto?.(user.login) || 0)
+        : (Number(streamers.get(user.login)?.settings?.overlayStato?.timer?.fine) || 0);
+    }
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
@@ -3946,7 +3960,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     }
     // se è cambiata la modalità di attivazione, riconcilia subito i canali
     if (b.modalita !== undefined) sync();
-    res.json({ ok: true });
+    res.json(timerFine == null ? { ok: true } : { ok: true, timerFine });
   }));
 
   // conoscenza del bot
@@ -4184,6 +4198,14 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: true });
   }));
 
+  // Dov'e' il conto adesso: l'istante di fine (0 = fermo). Il pannello lo chiede
+  // aprendo lo Studio, perche' il conto puo' essere partito da solo da un
+  // overlay mentre il pannello non guardava.
+  app.get('/api/streamer/timer', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    res.set('Cache-Control', 'private, no-store');
+    res.json({ fine: Number(streamers.get(login)?.settings?.overlayStato?.timer?.fine) || 0 });
+  }));
   // Fa partire (o ferma, con minuti = 0) il conto alla rovescia di inizio live.
   app.post('/api/streamer/timer', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;

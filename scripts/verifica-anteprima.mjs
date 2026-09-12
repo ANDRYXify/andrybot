@@ -80,7 +80,7 @@ if (!browser) { console.log('  –  saltato: manca Chromium o Playwright'); proc
 // il tema e il brano che il finto bot serve alla pagina dell'overlay: li scrive
 // l'editor, caso per caso, cosi' le due pagine vestono la stessa cosa
 let TEMA = null, MUSICA = { stato: 'niente' };
-const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, effetti: true, consolify: true };
+const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, pen: true, effetti: true, consolify: true };
 const ovl = overlayFinto({ tema: () => TEMA, musica: () => MUSICA });
 const { base, chiudi } = await apriSito({ overlay: ovl });
 
@@ -267,6 +267,25 @@ try {
     dice(dentro(e) && dentro(l) && riempie(l) && vicino(e.w, l.w, tol) && vicino(e.h, l.h, tol),
       `${k} nel riquadro ${RQ[k].w}×${RQ[k].h}%: sta dentro, lo riempie su un lato, uguale di qua e di la' — editor ${e ? mis(e) : '–'}, diretta ${l ? mis(l) : '–'}`);
   }
+
+  // --- 6. la sfida a tempo -------------------------------------------------
+  const cfgPen = await ed.evaluate(async () => {
+    const c = _cfgEl('pen'); c.attivo = true; c.durataMin = 2; c.overlay = { posizione: 'alto-destra', colore: '#ff2d2d' };
+    const xy = _ovXY(); for (const k of Object.keys(xy)) delete xy[k];
+    xy.pen = { x: 50, y: 50, s: 100, r: 0 };
+    aggiornaAnteprima();
+    await new Promise((r) => setTimeout(r, 300));
+    return true;
+  });
+  const edPen = cfgPen ? await misuraEd('#ap-pen .pen-card') : null;
+  TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: { pen: { x: 50, y: 50, s: 100, r: 0 } }, alertStile: null, chatStile: null };
+  await apriLive(() => window.MIO && window.MIO.mostra && window.MIO.mostra.pen === true);
+  await attesa(200);
+  ovl.manda({ azione: 'start', id: 'p1', modo: 'vieta', cosa: 'parola', valore: 'esempio', durata: 2, posizione: 'alto-destra', colore: '#ff2d2d', tipo: 'penitenza' });
+  await live.waitForFunction(() => document.querySelector('#penitenze .pen-card.dentro'), null, { timeout: 5000 }).catch(() => {});
+  const lvPen = await misuraLive('#penitenze .pen-card');
+  dice(edPen && lvPen && vicino(edPen.w, lvPen.w) && vicino(edPen.h, lvPen.h) && vicino(edPen.font, lvPen.font, 0.6),
+    `sfida a tempo: editor ${edPen ? mis(edPen) : '–'} = diretta ${lvPen ? mis(lvPen) : '–'}`, 'editor e diretta non coincidono');
 
   dice(erroriEd.length === 0, 'l\'editor non ha errori', erroriEd.slice(0, 2).join(' | '));
   dice(erroriLive.length === 0, 'la pagina dell\'overlay non ha errori', erroriLive.slice(0, 2).join(' | '));

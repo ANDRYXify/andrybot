@@ -105,45 +105,6 @@
     #penitenze.basso-destra   { bottom: 4vh; right: 3vw; align-items: flex-end; }
     #penitenze.alto-centro    { top: 4vh;  left: 50%; transform: translateX(-50%); align-items: center; }
     #penitenze.basso-centro   { bottom: 4vh; left: 50%; transform: translateX(-50%); align-items: center; }
-    .pen-card {
-      position: relative;
-      background: rgba(15, 15, 20, .82);
-      border: 2px solid var(--pen-colore, #ff2d2d);
-      border-radius: 14px;
-      padding: .55rem 1rem;
-      color: #fff;
-      font-weight: 800;
-      box-shadow: 0 10px 34px rgba(0, 0, 0, .5);
-      opacity: 0;
-      transform: translateY(-8px) scale(.96);
-      transition: opacity .3s ease, transform .3s ease;
-      display: flex;
-      align-items: center;
-      gap: .6rem;
-      white-space: nowrap;
-    }
-    .pen-card.dentro { opacity: 1; transform: translateY(0) scale(1); }
-    .pen-card .pen-parola { font-size: 1.15rem; letter-spacing: .01em; }
-    .pen-card .pen-parola small { display: block; font-size: .72rem; font-weight: 700; opacity: .8; letter-spacing: .04em; text-transform: uppercase; }
-    .pen-card .pen-num {
-      min-width: 2.2rem; text-align: center;
-      background: var(--pen-colore, #ff2d2d);
-      color: #fff; font-size: 1.5rem; line-height: 1;
-      padding: .28rem .5rem; border-radius: 10px;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, .4);
-    }
-    .pen-card.colpito { animation: pen-scossa .32s ease; }
-    @keyframes pen-scossa { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
-    .pen-card .pen-esito { font-size: 1rem; font-weight: 800; }
-    
-    .pen-piu {
-      position: absolute; top: -.2rem; right: .6rem;
-      color: var(--pen-colore, #ff2d2d);
-      font-weight: 900; font-size: 1.9rem;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, .6);
-      animation: pen-sale 1s ease forwards;
-    }
-    @keyframes pen-sale { 0% { opacity: 0; transform: translateY(6px) scale(.8); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-42px) scale(1.15); } }
 
     
     #alert {
