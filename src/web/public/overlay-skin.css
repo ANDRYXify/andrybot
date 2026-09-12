@@ -170,6 +170,20 @@
 .riquadro .alert-card, .alert-card.riquadro { max-width: 100%; min-width: 0; overflow-wrap: anywhere; }
 #chatlive.riquadro, .ap-chat.riquadro { justify-content: flex-end; overflow: hidden; }
 .riquadro .chat-riga { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.riquadro { box-sizing: border-box; }
+.riquadro > .alert-card { width: 100%; height: 100%; max-width: none; box-sizing: border-box; }
+.alert-card.riquadro { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.ovl-widget.riquadro { justify-content: center; }
+.ovl-musica.riquadro { min-width: max-content; }
+.ovl-musica.riquadro .m-corpo { width: 5em; flex-grow: 1; }
+.ovl-musica.riquadro .m-sotto { flex-wrap: wrap; }
+.ovl-musica.riquadro .m-barra { flex-basis: 3em; min-width: 3em; }
+.ovl-musica.riquadro.verso-colonna { justify-content: center; }
+.ovl-musica.riquadro.verso-colonna .m-cover { width: calc(12em * var(--k-cov, 1)); max-width: 100%; align-self: center; }
+.ovl-musica.riquadro.verso-colonna .m-corpo, .ovl-musica.riquadro.tema-cassetta .m-corpo { width: 0; min-width: 100%; flex-grow: 0; }
+.ovl-musica.riquadro.tema-cassetta { justify-content: stretch; align-content: center; }
+.ovl-goal.riquadro { align-content: center; }
+.pen-box { display: flex; flex-direction: column; gap: .6rem; }
 
 .ovl-anteprima {
   position: relative; overflow: hidden; width: 100%;
@@ -177,6 +191,8 @@
   background: #14171f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='54'%3E%3Cpath d='M0 27h96M48 0v54' stroke='%23ffffff10' stroke-width='1'/%3E%3C/svg%3E");
   background-size: 8.33% 8.33%;
 }
+.ap-riferimento { position: absolute; inset: 0; background-size: cover; background-position: center; pointer-events: none; }
+.ap-riferimento[hidden] { display: none; }
 .ap-stage {
   position: absolute; top: 0; left: 0;
   width: 1920px; height: 1080px; transform-origin: top left;

@@ -47,6 +47,8 @@ const ROTTURE = [
     'la carta del player ha di nuovo un tetto che ruba spazio al testo'],
   ['src/web/public/app.js', " el.style.setProperty(k, x); else el.style.removeProperty(k); } }", " el.style.setProperty(k, x); } }",
     'la tela tiene una variabile che nessuno ha piu\' chiesto'],
+  ['src/web/public/riquadro.js', "    el.style.width = (fw / k) + 'px'; el.style.height = (fh / k) + 'px'; el.style.maxWidth = 'none';\n", '',
+    'il riquadro torna un perimetro attorno a un elemento scalato, non la sua scatola'],
 ];
 
 // --selftest prova tutte le rotture; --selftest=<parola> solo quelle la cui
@@ -273,12 +275,37 @@ try {
     'righe fuori dal riquadro, o nessuna tolta');
   for (const k of ['wf', 'musica', 'alert']) {
     const e = edRq[k], l = lvRq[k], r = rqPx(k);
-    const dentro = (m) => m && m.w <= r.w + 1.5 && m.h <= r.h + 1.5;
-    const riempie = (m) => m && (vicino(m.w, r.w, 2) || vicino(m.h, r.h, 2));
-    const tol = k === 'alert' ? 4 : 1.5;
-    dice(dentro(e) && dentro(l) && riempie(l) && vicino(e.w, l.w, tol) && vicino(e.h, l.h, tol),
-      `${k} nel riquadro ${RQ[k].w}×${RQ[k].h}%: sta dentro, lo riempie su un lato, uguale di qua e di la' — editor ${e ? mis(e) : '–'}, diretta ${l ? mis(l) : '–'}`);
+    const scatola = (m) => m && vicino(m.w, r.w, 2.5) && vicino(m.h, r.h, 2.5);
+    dice(scatola(e) && scatola(l),
+      `${k} nel riquadro ${RQ[k].w}×${RQ[k].h}%: la scatola e' il riquadro (${Math.round(r.w)}×${Math.round(r.h)}), di qua e di la' — editor ${e ? mis(e) : '–'}, diretta ${l ? mis(l) : '–'}`);
   }
+  // la larghezza da' spazio al testo: nel riquadro la colonna del player cresce
+  // oltre i suoi 13em, e cresce uguale di qua e di la'
+  const corpoRq = { e: await misuraEd('#ap-stage .ovl-musica .m-corpo'), l: await misuraLive('.ovl-musica .m-corpo') };
+  const kRq = await live.evaluate(() => new DOMMatrix(getComputedStyle(document.querySelector('.ovl-musica')).transform).a || 1);
+  dice(corpoRq.e && corpoRq.l && corpoRq.l.w / kRq > 13 * 33.6 + 2 && vicino(corpoRq.e.w, corpoRq.l.w, 2),
+    `nel riquadro la colonna del testo del player prende lo spazio che c'e' (${corpoRq.l ? Math.round(corpoRq.l.w / kRq) : '–'} px prima della scala, piu' dei 13em di serie), uguale di qua e di la' — editor ${corpoRq.e ? Math.round(corpoRq.e.w) : '–'}, diretta ${corpoRq.l ? Math.round(corpoRq.l.w) : '–'}`);
+  // tirando i bordi della chat sulla tela le righe escono e tornano: la tela non le perde
+  const righeVanno = await ed.evaluate(async (RQ) => {
+    const b = document.getElementById('ap-chat');
+    const conta = () => b.querySelectorAll('.chat-riga').length;
+    const prima = conta();
+    _posElemento(b, { ...RQ.chat, h: 8 }); const poche = conta();
+    _posElemento(b, { ...RQ.chat }); const tornate = conta();
+    return { prima, poche, tornate };
+  }, RQ);
+  dice(righeVanno.prima >= 3 && righeVanno.poche < righeVanno.prima && righeVanno.tornate === righeVanno.prima,
+    `stringendo il riquadro della chat sulla tela le righe escono (${righeVanno.prima} → ${righeVanno.poche}), allargandolo tornano (${righeVanno.tornate}): la tela non le perde`);
+  // e un riquadro quasi quadrato fa un player quasi quadrato: la forma la decide chi tira i bordi
+  const QUAD = { x: 60, y: 30, w: 15, h: 26, r: 0 };
+  await ed.evaluate(async (Q) => { _ovXY().musica = { ...Q }; aggiornaAnteprima(); await new Promise((r) => setTimeout(r, 350)); }, QUAD);
+  const eQ = await misuraEd('#ap-stage .ovl-musica');
+  TEMA = { ...TEMA, xy: { ...RQ, musica: QUAD } };
+  await apriLive(() => document.querySelector('.ovl-musica.dentro'));
+  const lQ = await misuraLive('.ovl-musica');
+  const rQ = { w: QUAD.w / 100 * 1920, h: QUAD.h / 100 * 1080 };
+  dice(eQ && lQ && vicino(eQ.w, rQ.w, 2.5) && vicino(eQ.h, rQ.h, 2.5) && vicino(lQ.w, rQ.w, 2.5) && vicino(lQ.h, rQ.h, 2.5),
+    `player in un riquadro ${QUAD.w}×${QUAD.h}% (${Math.round(rQ.w)}×${Math.round(rQ.h)}): quadrato di qua e di la' — editor ${eQ ? mis(eQ) : '–'}, diretta ${lQ ? mis(lQ) : '–'}`);
 
   // --- 6. la sfida a tempo -------------------------------------------------
   const cfgPen = await ed.evaluate(async () => {

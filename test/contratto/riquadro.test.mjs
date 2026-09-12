@@ -1,4 +1,4 @@
-// IL RIQUADRO: un perimetro a cui l'elemento si adatta.
+// IL RIQUADRO: la scatola dell'elemento.
 //
 // Due modi di posare: il punto ({x, y, s, r}) e il riquadro ({x, y, w, h, r}).
 // La presenza di w e h decide il modo, in un posto solo per il dato (xyOk) e in
@@ -57,6 +57,16 @@ test('l\'editor: la stessa resa, la conversione senza salti, i bordi che si agga
   assert.ok(/window\.SB_RIQUADRO\.posa\(el, xy, \{ tela: \{ w: OVL_W, h: OVL_H \}, chat, dentro: chat \|\| el\.classList\.contains\('alert-card'\) \? null : el\.firstElementChild \}\);/.test(APP),
     'la tela passa le sue misure, e il tetto di larghezza va sull\'elemento dentro l\'involucro, come in diretta sta sull\'elemento');
   assert.ok(/if \(o\.dentro\) \{ o\.dentro\.style\.maxWidth = '100%'; el\._rqDentro = o\.dentro; \}/.test(RQ), 'riquadro.js lo applica prima di misurare');
+  assert.ok(/el\.style\.width = \(fw \/ k\) \+ 'px'; el\.style\.height = \(fh \/ k\) \+ 'px'; el\.style\.maxWidth = 'none';/.test(RQ), 'dopo la misura la scatola diventa il riquadro: la forma la decide chi tira i bordi');
+  assert.ok(/if \(o\.dentro\) \{ o\.dentro\.style\.width = '100%'; o\.dentro\.style\.height = '100%'; \}/.test(RQ) && /o\.dentro\.classList\.add\('riquadro'\)/.test(RQ), 'sulla tela l\'elemento riempie l\'involucro e porta la stessa classe: gli stessi selettori di qua e di la\'');
+  assert.ok(/el\._rqDentro\.classList\.remove\('riquadro'\); el\._rqDentro\.style\.maxWidth = ''; el\._rqDentro\.style\.width = ''; el\._rqDentro\.style\.height = '';/.test(RQ), 'e tornando al punto si toglie tutto');
+  assert.ok(/^\.riquadro \{ box-sizing: border-box; \}/m.test(SKIN) && /\.ovl-musica\.riquadro \.m-corpo \{ width: 5em; flex-grow: 1; \}/.test(SKIN) && /\.alert-card\.riquadro \{ display: flex; flex-direction: column; justify-content: center; align-items: center; \}/.test(SKIN), 'la larghezza da\' spazio al testo del player; l\'alert si centra nella sua scatola');
+  assert.ok(/function vivi\(box\)/.test(RQ) && /if \(c\.offsetHeight > 0 \|\| c\.offsetWidth > 0\) out\.push\(c\);/.test(RQ) && /var v = vivi\(box\);\n\s*if \(!v\.length\) return false;\n\s*var primo = v\[0\], ultimo = v\[v\.length - 1\];/.test(RQ), 'trabocco e taglio guardano solo i figli disegnati: sulla tela le maniglie nascoste non sono righe');
+  assert.ok(/if \(o\.dentro\) \{ W = Math\.max\(W, o\.dentro\.offsetWidth\); H = Math\.max\(H, o\.dentro\.offsetHeight\); \}/.test(RQ) && !/scrollWidth/.test(RQ), 'la misura e\' almeno quella dell\'elemento dentro l\'involucro, non quella tappata dal riquadro; e non e\' scrollWidth, che conta anche lo sfondo sfocato che sporge');
+  assert.ok(/^\.ovl-musica\.riquadro \{ min-width: max-content; \}/m.test(SKIN) && /\.ovl-musica\.riquadro \.m-sotto \{ flex-wrap: wrap; \}/.test(SKIN), 'il player non si stringe sotto il suo minimo, e i tempi vanno a capo invece di tagliarsi');
+  assert.ok(/if \(chat\) \{ el\.innerHTML = _righeChatFinte\(_leggiChatStile\(\), _messaggiFinti\(true\)\); _iniettaManiglie\('chat'\); window\.SB_RIQUADRO\.ritaglia\(el\); \}/.test(APP), 'a ogni posa la chat sulla tela si riscrive e poi si taglia: tirando i bordi le righe escono e tornano');
+  assert.ok(/if \(!riempi\) return base\.slice\(0, 2\);/.test(APP) && /for \(let i = 0; out\.length < max; i\+\+\) out\.push\(base\[i % base\.length\]\);/.test(APP), 'nel riquadro la chat finta ha quante righe ne mostrerebbe la diretta');
+  assert.ok(/box\.className = 'pen-box';/.test(APP) && /^\.pen-box \{ display: flex; flex-direction: column; gap: \.6rem; \}/m.test(SKIN), 'sulla tela la sfida sta in un contenitore come in diretta: la scatola e\' il contenitore, la carta no');
   assert.ok(/const rett = _rettDi\(k\);\n\s*if \(!rett\) return;\n\s*st = \{ x: rett\.x, y: rett\.y, w: rett\.w, h: rett\.h, r: Number\(st\.r\) \|\| 0 \};/.test(APP), 'tirare un bordo di un punto lo fa riquadro dal rettangolo che occupa');
   assert.ok(/for \(let i = 0; i <= 12; i\+\+\) cand\.push\(\{ v: _arr\(i \* 100 \/ 12\)/.test(APP), 'i bordi si agganciano alle dodici caselle della griglia');
   assert.ok(/id="insp-w"/.test(APP) && /id="insp-h"/.test(APP) && /id="insp-riq"/.test(APP), 'larghezza, altezza e la spunta nelle proprieta\'');

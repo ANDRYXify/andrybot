@@ -786,7 +786,7 @@ da mettere in scena, e la selezione multipla. Sono una funzione nuova, non una
 correzione: hanno bisogno del loro modello (dati per overlay, resa in diretta,
 editor) e del loro piano.
 
-## Il riquadro: un perimetro a cui l'elemento si adatta
+## Il riquadro: la scatola dell'elemento
 
 Chiesto così: «non allargo la chat, il player o l'alert: allargo il **perimetro**
 dell'elemento, e lui si adatta». Prima il modello, poi il codice.
@@ -806,24 +806,70 @@ presenza di `w` e `h` decide il modo, in un posto solo (`xyOk`, nel server, e
 `riquadro.js`, letto da tutte e due le pagine). Nessuna migrazione: quello che
 è posato oggi resta un punto e si disegna come prima.
 
-### Cosa vuol dire «si adatta»
+### Cosa vuol dire «si adatta»: il riquadro è la scatola
 
-Due famiglie, perché due sono i modi in cui una cosa può riempire uno spazio.
+Chiesto meglio, dopo la prima versione: «vorrei poter allargare il riquadro
+come voglio: più grande, più stretto, rettangolare, quadrato». La prima
+versione scalava l'elemento perché stesse nel riquadro e lo centrava: il
+perimetro era un limite, non una forma, e attorno restava vuoto. Ora **il
+riquadro è la scatola dell'elemento**, per tutti con la stessa regola:
 
-- **La chat** è un flusso di righe: il riquadro è la sua scatola vera. Le righe
-  vanno a capo alla larghezza del riquadro, si impilano dal basso, e quando non
-  ci stanno più in altezza la più vecchia esce dall'alto. Il carattere non
-  cambia: lo decide «dimensione». Un riquadro «2×3» della griglia è una chat
-  larga due caselle e alta tre, e mostra quante righe ci stanno.
-- **Tutto il resto** (alert, widget, obiettivi, conto alla rovescia, player,
-  contatori) è un blocco: si impagina alla larghezza del riquadro (il testo va
-  a capo, se può), poi viene **scalato in modo uniforme** perché stia dentro,
-  e centrato. Se il riquadro è più grande della misura naturale l'elemento
-  cresce a riempirlo; se è più piccolo si stringe. Il fattore è uno solo:
-  `k = min(w / W, h / H)`, con `W` e `H` misurati dopo l'impaginazione. Niente
-  deformazioni: un alert resta un alert, solo più grande.
+1. l'elemento si impagina alla larghezza del riquadro e si misura (`W × H`,
+   la sua misura minima);
+2. un fattore solo, `k = min(w / W, h / H)`: niente deformazioni, il carattere
+   e le proporzioni interne restano quelle;
+3. la scatola dell'elemento diventa il riquadro (`w / k × h / k` prima della
+   scala, cioè esattamente `w × h` dopo), e il contenuto si dispone dentro.
 
-La rotazione vale in tutti e due i casi, attorno al centro del riquadro.
+Quindi **l'altezza dà la grandezza, la larghezza dà lo spazio**. Nel player la
+colonna del testo parte dalla sua misura minima (5 em) e cresce a riempire:
+un riquadro largo è un player con tanto posto per il titolo, un riquadro quasi
+quadrato è un player quasi quadrato con la colonna stretta e il titolo che
+scorre, un riquadro basso e largo è una barra sottile. La copertina «sopra»
+(poster) è limitata dall'altezza, così un riquadro largo non la fa esplodere.
+Gli altri si centrano nella loro scatola: la pastiglia del widget, il conto, il
+contatore, la carta dell'alert (che diventa una colonna centrata); le barre
+degli obiettivi riempiono la larghezza; la chat e la sfida a tempo sono
+contenitori, e la scatola è il contenitore, non le righe o le carte. La
+«larghezza del testo» del player, nel riquadro, non conta più: la larghezza è
+quella del riquadro.
+
+Sulla tela dello Studio l'elemento sta in un involucro: è l'involucro a
+diventare la scatola, l'elemento dentro la riempie (100% × 100%) e riceve la
+stessa classe `riquadro`, così i selettori della pelle sono gli stessi di qua e
+di là. La rotazione vale sempre, attorno al centro del riquadro.
+
+**La misura è quella minima, non quella tappata.** Guardando la resa: il player
+in un riquadro quasi quadrato usciva 403 px sulla tela e 288 in diretta. La
+misura di `W` si fa con il tetto di larghezza del riquadro addosso (serve ai
+blocchi di testo, che vanno a capo a quella larghezza); ma il player ha una
+larghezza minima sotto cui non va (copertina, colonna da 5 em, onde), e in
+diretta la sua `min-width` vince sul tetto, mentre sulla tela l'involucro si
+tappa e l'elemento dentro sporge. Ora la misura è almeno quella dell'elemento
+dentro l'involucro (`offsetWidth` di tutti e due, il maggiore); non
+`scrollWidth`, che in diretta conta anche lo sfondo sfocato del player, che
+sporge dalla carta apposta, e avrebbe dato una misura diversa di qua e di là (l'ha
+detto il cancello: 374 contro 405). E il player nel riquadro dichiara
+`min-width: max-content`, così sotto il suo minimo non si stringe mai: nel
+quadrato la colonna resta 5 em e il titolo scorre, invece di ridursi a una
+lettera. I tempi, in una colonna stretta, vanno a capo sotto la barra invece di
+tagliarsi; nella copertina «sopra» la copertina tiene la sua misura (12 em per
+il suo fattore) e il testo prende tutta la larghezza; nella cassetta l'etichetta
+prende tutta la larghezza.
+
+**Tirando i bordi si vede.** Sulla tela, mentre si tira un bordo, la chat
+perdeva le righe: a ogni posa le righe che non ci stavano venivano tolte dal
+DOM, e allargando non tornavano; e l'anteprima aveva due sole righe finte, così
+la scatola restava vuota. Ora a ogni posa la chat finta si riscrive con quante
+righe ne mostrerebbe la diretta (il «massimo righe» della scheda) e poi si
+taglia: stringendo escono, allargando tornano, e la scatola si vede piena.
+
+**Le maniglie non sono righe.** Sulla tela le maniglie di scala e rotazione
+stanno dentro la scatola della chat, ultime fra i figli, nascoste quando c'è il
+riquadro. Il trabocco guardava il primo e l'ultimo figlio: l'ultimo era una
+maniglia nascosta (altezza zero, quindi mai «sotto il bordo»), e il taglio
+poteva contare le maniglie fra le cose da togliere. Ora trabocco e taglio
+guardano solo i figli disegnati, in `riquadro.js`, per tutte e due le pagine.
 
 ### Perché lo stesso codice da tutte e due le parti
 
@@ -854,12 +900,14 @@ taglia dall'alto. Il riquadro non può uscire dalla tela (`x + w ≤ 100`,
 
 ### Misurato
 
-Il cancello dell'anteprima ha quattro casi di riquadro, editor contro pagina
-vera dell'overlay: la chat in un riquadro di due caselle per tre (320×270 px di
+Il cancello dell'anteprima ha i casi di riquadro, editor contro pagina vera
+dell'overlay: la chat in un riquadro di due caselle per tre (320×270 px di
 tela, otto righe lunghe: la scatola è il riquadro e nessuna riga è tagliata a
-metà), un widget in 20×10, il player in 30×12, un alert senza icona in 40×15.
-Tutti stanno dentro, riempiono almeno un lato e hanno le stesse misure di qua e
-di là. Il rosso trovato strada facendo: nell'editor gli elementi stanno in un
+metà), un widget in 20×10, il player in 30×12, un alert senza icona in 40×15,
+e il player in un 15×26 quasi quadrato. Per tutti **la scatola è il riquadro**,
+su tutti e due i lati, di qua e di là; nel 30×12 la colonna del testo del
+player è più larga dei suoi 13 em di serie, e uguale sulle due pagine.
+L'autoprova toglie la riga che fa della scatola il riquadro e pretende il rosso. Il rosso trovato strada facendo: nell'editor gli elementi stanno in un
 involucro, in diretta sono l'elemento stesso, e il tetto di larghezza del
 riquadro stringeva scatole diverse (player 636 contro 404 px). Ora il tetto va
 anche sull'elemento dentro l'involucro, ed è `riquadro.js` a metterlo prima di
@@ -870,6 +918,36 @@ ciò che non ci sta finisce **sopra** il bordo, e `scrollHeight` quel lato non l
 conta. Il taglio non tagliava e la misura diceva che andava tutto bene. Ora
 tanto il taglio quanto la misura guardano la geometria delle righe (la prima
 sopra il bordo, l'ultima sotto), in `riquadro.js`, in un posto solo.
+
+## L'immagine di riferimento sotto la tela
+
+Chiesto: «mettere un'immagine di riferimento come sfondo di tutto l'editor,
+per gestire la personalizzazione con screenshot della scena, grafiche già
+esistenti». Il modello: un **file del tuo computer** (scelto col tasto
+«Riferimento», incollato con Ctrl+V sulla scheda, o trascinato sulla tela),
+disegnato sotto la tela a coprirla (centrato), con un cursore di trasparenza e
+un interruttore per nasconderlo, per overlay. Non è un elemento della scena:
+non si salva col tema e non va in onda.
+
+**Dove sta.** Nel browser, in IndexedDB (`socialbot-studio`, archivio
+`riferimenti`, chiave = l'overlay), e da nessun'altra parte: uno screenshot
+della scena può contenere di tutto, e caricarlo sul server sarebbe un dato in
+più da custodire per una cosa che serve solo a chi sta componendo. Niente
+indirizzo remoto da cui prendere l'immagine, per la stessa ragione (e per non
+aprire una porta a richieste verso terzi). Il CSP del pannello ammetteva già
+`blob:` fra le sorgenti delle immagini: non è cambiato niente lì. Solo
+`image/*`, fino a 25 MB. Cambiando overlay si rilegge la sua immagine, se
+c'è; ricaricando la pagina torna com'era, con la stessa trasparenza.
+
+**Misurato.** `scripts/verifica-riferimento.mjs` apre lo Studio, mette un PNG
+da un Blob (senza rete), guarda lo strato e la trasparenza, ricarica subito la
+pagina e pretende che torni com'era (appena messa, prima di toccare altro: chi
+la salvasse solo al primo ritocco della trasparenza qui sarebbe rosso), poi la
+cambia, spegne e riaccende, ricarica e pretende che torni con la trasparenza
+nuova, poi toglie e ricarica e pretende che non torni; e per tutto il giro nessuna richiesta al server porta
+un corpo grande quanto un'immagine. L'autoprova toglie la scrittura in
+IndexedDB (dopo la ricarica sparisce) e l'applicazione della trasparenza, e
+pretende il rosso.
 
 ## Il conto che «parte da solo» non partiva, e la sfida che non si spostava
 
