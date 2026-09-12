@@ -1056,6 +1056,27 @@ costruzione, così il riquadro non la taglia. La misura «Figura dietro» (la
 chiave resta `vinile`) scala il disco o l'anello in ogni tema che ne ha uno.
 `test/contratto/player-temi.test.mjs` fissa le tre regole.
 
+**Entrata e uscita del tema.** Anche il gesto con cui la figura arriva e se
+ne va è del tema, e sta nello stesso blocco: il disco (vinile e CD) parte
+nascosto dietro la copertina e scivola fuori un attimo dopo che la carta è
+entrata, le bobine della cassetta si posano una dopo l'altra, l'anello
+dell'esagono si chiude sulla copertina, il retino del manga si assesta, il
+terminale accende le righe una alla volta. Sono `transition`, non
+`@keyframes`: partono solo al cambio di stato (`dentro`, `esce`), quindi
+nell'editor, dove `dentro` c'è dalla nascita, non si riavviano a ogni ritocco;
+il tasto «Rivedi l'entrata» le fa vedere apposta. Muovono solo `translate`,
+`scale` e `opacity`, così la rotazione (che sta su `transform`) non viene
+interrotta, e l'uscita finisce sempre prima dei 520 ms dopo cui il nodo
+sparisce (`togliMusica`): il test lo confronta con il numero nel codice. Con
+«riduci animazioni» la figura è al suo posto e basta.
+
+Una cosa trovata misurando: l'entrata della carta stessa (dissolvenza, scivola,
+sale) in diretta non partiva. Il nodo veniva aggiunto e «dentro» arrivava al
+primo `requestAnimationFrame`, che corre PRIMA del ricalcolo di stile di quel
+fotogramma: il primo stile calcolato era già quello di arrivo, e una transizione
+senza punto di partenza non esiste. Ora, prima del rAF, si legge `offsetWidth`:
+lo stile iniziale c'è, e la transizione ha da dove partire. Il test lo pretende.
+
 **In colonna.** In diretta il player è largo `max-content` e la carta ha un
 tetto di dodici copertine: il corpo del testo (13 em di serie) superava il tetto
 e i tempi uscivano dal bordo, mentre l'editor, che non usa `max-content`, li

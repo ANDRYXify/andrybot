@@ -794,6 +794,32 @@
 .ovl-musica.tema-esagono.barra-anello .m-cover { margin: 0; width: calc(var(--cov) * (1.5 + .24 * max(1, var(--k-vin, 1)))); height: calc(var(--cov) * (1.5 + .24 * max(1, var(--k-vin, 1)))); }
 .ovl-musica.tema-esagono.barra-anello .m-cover::after { width: calc(var(--cov) * (1.46 + .24 * max(1, var(--k-vin, 1)))); height: calc(var(--cov) * (1.46 + .24 * max(1, var(--k-vin, 1)))); }
 
+.ovl-musica.tema-vinile .m-cover::after, .ovl-musica.tema-cd .m-cover::after { translate: -34% 0; opacity: 0; }
+.ovl-musica.tema-vinile.dentro .m-cover::after, .ovl-musica.tema-cd.dentro .m-cover::after {
+  translate: 0 0; opacity: 1;
+  transition: translate .55s cubic-bezier(.2, .9, .25, 1) .12s, opacity .22s ease .12s;
+}
+.ovl-musica.tema-vinile.esce .m-cover::after, .ovl-musica.tema-cd.esce .m-cover::after { translate: -34% 0; opacity: 0; transition: translate .3s ease-in, opacity .18s ease-in .1s; }
+.ovl-musica.tema-cassetta .m-cover::before, .ovl-musica.tema-cassetta .m-cover::after { scale: .55; opacity: 0; }
+.ovl-musica.tema-cassetta.dentro .m-cover::before, .ovl-musica.tema-cassetta.dentro .m-cover::after { scale: 1; opacity: 1; transition: scale .5s cubic-bezier(.2, .9, .25, 1.15) .1s, opacity .2s ease .1s; }
+.ovl-musica.tema-cassetta.dentro .m-cover::after { transition-delay: .2s; }
+.ovl-musica.tema-cassetta.esce .m-cover::before, .ovl-musica.tema-cassetta.esce .m-cover::after { scale: .55; opacity: 0; transition: scale .28s ease-in, opacity .18s ease-in .08s; }
+.ovl-musica.tema-esagono .m-cover::after { scale: 1.45; opacity: 0; }
+.ovl-musica.tema-esagono.dentro .m-cover::after { scale: 1; opacity: 1; transition: scale .6s cubic-bezier(.2, .9, .25, 1) .1s, opacity .3s ease .1s; }
+.ovl-musica.tema-esagono.esce .m-cover::after { scale: 1.35; opacity: 0; transition: scale .3s ease-in, opacity .2s ease-in; }
+.ovl-musica.tema-manga .m-velo { scale: 1.08; opacity: 0; }
+.ovl-musica.tema-manga.dentro .m-velo { scale: 1; opacity: 1; transition: scale .3s cubic-bezier(.2, .9, .25, 1) .08s, opacity .2s ease .08s; }
+.ovl-musica.tema-manga.esce .m-velo { scale: 1.06; opacity: 0; transition: scale .22s ease-in, opacity .18s ease-in; }
+.ovl-musica.tema-terminale .m-riga, .ovl-musica.tema-terminale .m-sotto, .ovl-musica.tema-terminale .m-onde { opacity: 0; }
+.ovl-musica.tema-terminale.dentro .m-riga, .ovl-musica.tema-terminale.dentro .m-sotto, .ovl-musica.tema-terminale.dentro .m-onde { opacity: 1; transition: opacity .01s steps(1, jump-end); }
+.ovl-musica.tema-terminale.dentro .m-riga:first-child { transition-delay: .18s; }
+.ovl-musica.tema-terminale.dentro .m-riga2 { transition-delay: .36s; }
+.ovl-musica.tema-terminale.dentro .m-sotto { transition-delay: .52s; }
+.ovl-musica.tema-terminale.dentro .m-onde { transition-delay: .62s; }
+.ovl-musica.tema-terminale.esce .m-riga, .ovl-musica.tema-terminale.esce .m-sotto, .ovl-musica.tema-terminale.esce .m-onde { opacity: 0; transition: opacity .01s steps(1, jump-end); }
+.ovl-musica.tema-terminale.esce .m-riga2 { transition-delay: .08s; }
+.ovl-musica.tema-terminale.esce .m-riga:first-child { transition-delay: .16s; }
+
 .ovl-timer { display: inline-flex; align-items: baseline; gap: .55em; }
 .ovl-timer .t-tit { opacity: .82; font-weight: 700; }
 .ovl-timer .t-tit:empty { display: none; }
@@ -808,5 +834,6 @@
   .ovl-musica.tema-terminale .m-riga2 .m-scorri::after { animation: none; }
   .ovl-musica[class*="entra-"] { opacity: 1; transform: none; transition: none; }
   .ovl-musica.esce, .ovl-timer, .ovl-timer.esce { transition: none; }
+  .ovl-musica .m-cover::before, .ovl-musica .m-cover::after, .ovl-musica .m-velo, .ovl-musica .m-riga, .ovl-musica .m-sotto, .ovl-musica .m-onde { transition: none; }
   .ovl-timer { opacity: 1; transform: none; }
 }

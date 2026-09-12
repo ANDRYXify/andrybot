@@ -846,7 +846,7 @@ function disegnaMusica() {
   if (Number(cfg.larghezza) > 0) el.style.setProperty('--m-testo', Number(cfg.larghezza) + 'em');
   else el.style.removeProperty('--m-testo');
   if (window.PLAYER_VARS) window.PLAYER_VARS.applica(el, cfg);
-  if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
+  if (nato) { void el.offsetWidth; requestAnimationFrame(() => el.classList.add('dentro')); }
 
   const disco = el.querySelector('.m-disco');
   const sfondo = el.querySelector('.m-sfondo');
