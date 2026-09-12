@@ -16,6 +16,8 @@
 //  LICENSE (proprietaria) allegata al progetto.
 // ============================================================
 
+import { createHash, timingSafeEqual } from 'node:crypto';
+
 export const AUTORE = 'Andrea Taliento';
 export const ALIAS = 'ANDRYXify';
 export const ANNO = '2024–2026';
@@ -120,5 +122,36 @@ export function firmaPng(bytes) {
   return Buffer.concat([b.subarray(0, ins), chunk, b.subarray(ins)]);
 }
 
+// ─────────────── La frase-canarino: la firma nel COMPORTAMENTO ───────────────
+// Le altre firme stanno nei file. Questa sta in quello che il bot FA: il
+// proprietario sceglie una frase e la tiene per se'; qui c'e' solo la sua
+// impronta (sha256 della frase normalizzata, salata con la FIRMA), da cui la
+// frase non si ricava. Qualunque installazione che la senta in chat risponde
+// con la proprieta' e con il nome con cui si presenta (la licenza): davanti a
+// testimoni, un bot copiato dice di chi e'. Si calcola con
+// node scripts/firma-canarino.mjs; finche' CANARINO e' vuota, dorme.
+export const CANARINO = '';
+export function normalizzaCanarino(testo) {
+  return String(testo || '').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+}
+export function improntaCanarino(frase) {
+  const n = normalizzaCanarino(frase);
+  return n ? createHash('sha256').update(n + '|' + FIRMA).digest('hex') : '';
+}
+export function eCanarino(testo, impronta = CANARINO) {
+  if (!impronta) return false;
+  const mia = improntaCanarino(testo);
+  if (!mia) return false;
+  const a = Buffer.from(mia), b = Buffer.from(String(impronta));
+  if (a.length !== b.length) return false;
+  try { return timingSafeEqual(a, b); } catch { return false; }
+}
+export function rispostaCanarino(presentazione) {
+  const p = String(presentazione || '');
+  const testa = p.includes(COPYRIGHT) ? FIRMA : `${COPYRIGHT} · ${FIRMA}`;
+  return p ? `${testa} · ${p}` : testa;
+}
+
 export default { AUTORE, ALIAS, ANNO, SITO, FIRMA, COPYRIGHT, PROPRIETA,
-  zeroWidth, leggiZeroWidth, FILIGRANA_ZW, applicaHeader, iniettaHtml, FIRMA_PNG, firmaPng };
+  zeroWidth, leggiZeroWidth, FILIGRANA_ZW, applicaHeader, iniettaHtml, FIRMA_PNG, firmaPng,
+  CANARINO, normalizzaCanarino, improntaCanarino, eCanarino, rispostaCanarino };

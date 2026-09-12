@@ -3,7 +3,7 @@
 // è completa, il bot vero e proprio (chat, eventi, IA, clip).
 import { config, missingConfig } from './config.js';
 import { log } from './logger.js';
-import { migraTokenCifratura, migraSegreti } from './db.js';   // inizializza lo schema
+import { migraTokenCifratura, migraSegreti, statoVivo } from './db.js';   // inizializza lo schema
 import { TwitchAuth } from './twitch/auth.js';
 import { Helix } from './twitch/helix.js';
 import { BotManager } from './bot.js';
@@ -14,6 +14,7 @@ import { startWeb } from './web/server.js';
 import { startApprovalSync } from './web/gate.js';
 import { contaRifiuto, avviaVigilanza } from './salute.js';
 import * as licenza from './licenza.js';
+import * as filigrana from './watermark.js';
 
 // IL CANCELLO. Questo software gira dove dice il proprietario. La licenza e'
 // firmata con una chiave privata che non sta in nessun repository: nessuno puo'
@@ -47,6 +48,12 @@ if (missing.length) {
 // rubato senza il segreto del server non serve a nulla.
 try { const n = migraTokenCifratura(); if (n) log.info(`sicurezza: cifrati a riposo i token di ${n} account`); } catch (e) { log.warn('cifratura token:', e?.message || e); }
 try { const n = migraSegreti(); if (n) log.info(`sicurezza: ${n} segreti portati nella busta di adesso`); } catch (e) { log.warn('busta dei segreti:', e?.message || e); }
+
+// La marca di proprieta' nel database: un archivio copiato dice di chi e', e con
+// quale nome girava il software che lo ha scritto.
+try {
+  statoVivo.scrivi('[proprieta]', 'firma', { firma: filigrana.FIRMA, copyright: filigrana.COPYRIGHT, presentazione: licenza.firma(), da: new Date().toISOString() });
+} catch (e) { log.warn('marca di proprieta\':', e?.message || e); }
 
 const auth = new TwitchAuth();
 const helix = new Helix({ auth });
