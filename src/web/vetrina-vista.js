@@ -59,7 +59,7 @@ const NOME_ADDON = {
 const CAPACITA = [
   { ico: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>', area: ['Chat e comandi', 'Chat and commands', 'Chat y comandos'], voci: [
     { scheda: 'stato', pacc: 'free', t: ['Scrive col tuo account', 'Writes with your account', 'Escribe con tu cuenta'], d: ['In chat compare il tuo nome, non un bot anonimo.', 'Your name appears in chat, not an anonymous bot.', 'En el chat aparece tu nombre, no un bot anónimo.'] },
-    { scheda: 'moduli', pacc: 'free', t: ['Comandi e automazioni illimitati', 'Unlimited commands and automations', 'Comandos y automatizaciones ilimitados'], d: ['Quando succede X, il bot fa Y. Nessun limite di numero.', 'When X happens, the bot does Y. No limit on how many.', 'Cuando pasa X, el bot hace Y. Sin límite de cantidad.'] },
+    { scheda: 'moduli', pacc: 'free', t: ['Comandi e automazioni illimitati', 'Unlimited commands and automations', 'Comandos y automatizaciones ilimitados'], d: ['Un follow accende una GIF, «!oggi» risponde con la scaletta, un timer ricorda i social: li scrivi tu, quanti vuoi.', 'A follow fires a GIF, «!today» answers with the schedule, a timer reminds people of your socials: you write them, as many as you like.', 'Un follow lanza un GIF, «!hoy» responde con el horario, un temporizador recuerda tus redes: los escribes tú, tantos como quieras.'] },
     { scheda: 'regole', pacc: 'free', t: ['Moderazione e antispam', 'Moderation and anti-spam', 'Moderación y antispam'], d: ['Filtra link, maiuscole, ripetizioni, menzioni, ASCII-art/zalgo, muri di testo ed emoji a raffica, e dà timeout a chi insiste.', 'Filters links, caps, repetition, mentions, ASCII art/zalgo, text walls and emoji floods, and times out those who insist.', 'Filtra enlaces, mayúsculas, repeticiones, menciones, ASCII-art/zalgo, muros de texto y ráfagas de emojis, y da timeout a quien insiste.'] },
     { scheda: 'scudo', pacc: 'free', t: ['Scudo anti-bot e anti-raid', 'Anti-bot & anti-raid shield', 'Escudo anti-bot y anti-raid'], d: ['Ferma le raffiche di follow-bot, riconosce i bot noti (lista aggiornata da sola) e trattiene i messaggi degli account appena creati per mod e streamer.', 'Stops follow-bot waves, recognises known bots (self-updating list) and holds brand-new accounts’ messages for mods and streamer.', 'Frena las oleadas de follow-bots, reconoce los bots conocidos (lista que se actualiza sola) y retiene los mensajes de cuentas recién creadas para mods y streamer.'] },
     { scheda: 'moduli', pacc: 'free', t: ['Contatori a schermo', 'On-screen counters', 'Contadores en pantalla'], d: ['Tipo !morti: li accendi dalla chat e il numero appare nell’overlay.', 'Like !deaths: turn them on from chat and the number shows in the overlay.', 'Tipo !muertes: los enciendes desde el chat y el número aparece en el overlay.'] },
@@ -157,41 +157,32 @@ function heroAnteprima(L) {
   </figure>`;
 }
 
-function capacita(L) {
-  const c = (ico, t, d) => `<article class="vt-carta"><span class="vt-carta-ico">${_hIco(ico)}</span><h3>${t}</h3><p>${d}</p></article>`;
-  return [
-    c(ICO.chat, L('Scrive col tuo account', 'It writes with your account', 'Escribe con tu cuenta'),
-      L('Niente bot anonimo: in chat compare il tuo nome, e il controllo resta tuo.', 'No anonymous bot: your name shows in chat, and control stays yours.', 'Nada de bot anónimo: en el chat aparece tu nombre y el control es tuyo.')),
-    c(ICO.scudo, L('Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'),
-      L('Ferma follow-bot e hate-raid prima che tocchino la tua community.', 'Stops follow-bots and hate-raids before they reach your community.', 'Detiene follow-bots y hate-raids antes de que lleguen a tu comunidad.')),
-    c(ICO.moduli, L('Comandi e automazioni', 'Commands and automations', 'Comandos y automatizaciones'),
-      L('Illimitati e già dal piano gratuito: parole, eventi, timer, variabili.', 'Unlimited, free plan included: words, events, timers, variables.', 'Ilimitados, ya en el plan gratis: palabras, eventos, temporizadores, variables.')),
-    c(ICO.monitor, L('Overlay per la diretta', 'Overlay for your stream', 'Overlay para el directo'),
-      L('Avvisi, chat a schermo, contatori e classifiche: un link e sei in scena.', 'Alerts, on-screen chat, counters and leaderboards: one link and you are on.', 'Avisos, chat en pantalla, contadores y clasificaciones: un enlace y estás en escena.')),
-    c(ICO.scudo, L('Scudo anti-bot e anti-raid', 'Anti-bot and anti-raid shield', 'Escudo anti-bot y anti-raid'),
-      L('Ferma le raffiche di follow-bot e para le hate-raid, da solo, mentre streammi.', 'Stops follow-bot bursts and blocks hate raids, on its own, while you stream.', 'Frena las oleadas de follow-bots y para las hate-raids, solo, mientras emites.')),
-    c(ICO.musica, L('Musica, clip e giochi', 'Music, clips and games', 'Música, clips y juegos'),
-      L('Richieste su Spotify, momenti migliori clippati da soli, minigiochi con monete.', 'Spotify requests, best moments clipped automatically, coin minigames.', 'Peticiones en Spotify, mejores momentos clipados solos, minijuegos con monedas.')),
-  ].map((h, i) => h.replace('<article class="vt-carta"', `<article class="vt-carta" style="--i:${i}"`)).join('');
-}
 
 function corpo(L, l, kick, youtube) {
   // con chi ci si registra: Twitch sempre, Kick e YouTube quando la porta e' aperta.
   // L'invito in fondo deve dire le stesse cose dell'apertura: una lista sola.
   const conChi = (o) => { const p = ['Twitch', kick ? 'Kick' : null, youtube ? 'YouTube' : null].filter(Boolean); return p.length > 1 ? p.slice(0, -1).join(', ') + o + p[p.length - 1] : p[0]; };
 
-  const STEP = [
-    ['1', L('Accedi con Twitch', 'Log in with Twitch', 'Entra con Twitch'), L('Un click, con lo stesso account con cui streammi.', 'One click, with the same account you stream with.', 'Un clic, con la misma cuenta con la que haces directo.')],
-    ['2', L('Parti con l’Essenziale', 'Start with Essenziale', 'Empieza con Essenziale'), L('Gratis e senza carta: comandi illimitati, moderazione, overlay e contatori sono già tuoi.', 'Free, no card needed: unlimited commands, moderation, overlay and counters are already yours.', 'Gratis y sin tarjeta: comandos ilimitados, moderación, overlay y contadores ya son tuyos.')],
-    ['3', L('Aggiungi solo ciò che vuoi', 'Add only what you want', 'Añade solo lo que quieras'), L('Se ti serve di più, scegli i pacchetti uno per uno. Niente di tutto-o-nulla.', 'If you need more, pick packages one by one. No all-or-nothing.', 'Si necesitas más, eliges los paquetes uno a uno. Nada de todo o nada.')],
+  // Una serata vera, momento per momento: ogni riga e' una cosa che il bot fa
+  // davvero e che nel pannello ha la sua scheda. Niente elenco di parole chiave.
+  const SERATA = [
+    ['20:58', L('Vai in diretta. Il gruppo Telegram e il server Discord lo sanno da soli, con il titolo di stasera.', 'You go live. Your Telegram group and Discord server find out on their own, with tonight’s title.', 'Sales en directo. Tu grupo de Telegram y tu servidor de Discord se enteran solos, con el título de esta noche.')],
+    ['21:03', L('Quaranta follow in dieci secondi. Lo scudo li riconosce come bot e li ferma: la chat non se ne accorge nemmeno.', 'Forty follows in ten seconds. The shield spots them as bots and stops them: chat does not even notice.', 'Cuarenta follows en diez segundos. El escudo los reconoce como bots y los para: el chat ni se entera.')],
+    ['21:20', L('Qualcuno scrive <strong>!sr</strong> con una canzone: va in coda su Spotify, e sulla scena compaiono copertina e titolo, con la tua veste.', 'Someone types <strong>!sr</strong> with a song: it queues on Spotify, and cover and title show up on your scene, in your style.', 'Alguien escribe <strong>!sr</strong> con una canción: entra en la cola de Spotify, y en la escena aparecen portada y título, con tu estilo.')],
+    ['21:41', L('La chat si ferma per qualche minuto. Il bot rilancia con una domanda, con il tono che gli hai dato, e riparte.', 'Chat goes quiet for a few minutes. The bot picks it back up with a question, in the tone you gave it, and it moves again.', 'El chat se queda callado unos minutos. El bot lo reactiva con una pregunta, con el tono que le diste, y vuelve a arrancar.')],
+    ['22:15', L('Arriva un raid. L’alert va in scena con il tuo video e il tuo suono. Un mod chiede perché un tale è stato fermato: lo trova nel registro, con le prove.', 'A raid comes in. The alert plays on your scene with your video and your sound. A mod asks why someone got stopped: it is in the log, with the evidence.', 'Llega un raid. El aviso sale en escena con tu vídeo y tu sonido. Un mod pregunta por qué pararon a alguien: lo encuentra en el registro, con las pruebas.')],
+    ['23:30', L('Chiudi. Le ore guardate sono già contate, e il VIP del mese lo prende chi c’era sempre, senza che tu debba ricordartene.', 'You sign off. Watch hours are already counted, and the VIP of the month goes to whoever was always there, without you having to remember.', 'Cierras. Las horas vistas ya están contadas, y el VIP del mes se lo lleva quien siempre estuvo, sin que tengas que acordarte.')],
   ];
 
   const FAQ = [
-    [L('Con quale account scrive SocialBot in chat?', 'Which account does SocialBot write with in chat?', '¿Con qué cuenta escribe SocialBot en el chat?'), L('Con il <strong>tuo</strong>: SocialBot usa il tuo account Twitch, non un bot anonimo. In chat compare il tuo nome e sei sempre tu ad avere il controllo.', 'With <strong>yours</strong>: SocialBot uses your Twitch account, not an anonymous bot. Your name shows in chat and you’re always in control.', 'Con la <strong>tuya</strong>: SocialBot usa tu cuenta de Twitch, no un bot anónimo. En el chat aparece tu nombre y siempre tienes el control.')],
-    [L('Che cosa sa fare?', 'What can it do?', '¿Qué sabe hacer?'), L('Comandi e automazioni su misura, moderazione della chat con scudo anti-bot (blocca follow-bot e hate-raid), shoutout e annunci ufficiali, ore guardate e classifica fedeltà, clip automatiche, minigiochi con monete, notifiche live su Telegram e avvisi dei nuovi post su TikTok, YouTube e Instagram. E lo piloti anche a voce.', 'Custom commands and automations, chat moderation with an anti-bot shield (blocks follow-bots and hate-raids), native shoutouts and announcements, watched hours and a loyalty leaderboard, automatic clips, coin minigames, live Telegram notifications and alerts for new posts on TikTok, YouTube and Instagram. And you can drive it by voice too.', 'Comandos y automatizaciones a medida, moderación del chat con escudo anti-bot (bloquea follow-bots y hate-raids), shoutouts y anuncios oficiales, horas vistas y clasificación de fidelidad, clips automáticos, minijuegos con monedas, notificaciones en directo por Telegram y avisos de nuevas publicaciones en TikTok, YouTube e Instagram. Y también lo controlas por voz.')],
-    [L('SocialBot è in italiano?', 'Is SocialBot multilingual?', '¿SocialBot está en varios idiomas?'), L('Sì, ed è disponibile in italiano, inglese e spagnolo.', 'Yes: it’s available in Italian, English and Spanish.', 'Sí: está disponible en italiano, inglés y español.')],
-    [L('Posso provarlo senza registrarmi?', 'Can I try it without signing up?', '¿Puedo probarlo sin registrarme?'), L('Sì, c’è una <a href="/?demo=1">demo interattiva</a> con dati d’esempio: la apri con un click, senza accesso.', 'Yes, there’s an <a href="/?demo=1">interactive demo</a> with sample data: open it with one click, no login.', 'Sí, hay una <a href="/?demo=1">demo interactiva</a> con datos de ejemplo: la abres con un clic, sin acceso.')],
-    [L('Come si attiva sul mio canale?', 'How do I activate it on my channel?', '¿Cómo lo activo en mi canal?'), L('In due modi. Se sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>, SocialBot è gratis e completo: accedi con Twitch e attivi la dashboard. Altrimenti scegli un piano — con l’abbonamento entri subito, direttamente da qui.', 'Two ways. If you’re already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community, SocialBot is free and complete: log in with Twitch and activate the dashboard. Otherwise pick a plan — with a subscription you’re in right away, from here.', 'De dos formas. Si ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>, SocialBot es gratis y completo: entra con Twitch y activas el panel. Si no, elige un plan — con la suscripción entras al instante, desde aquí.')],
+    [L('Con quale account scrive in chat?', 'Which account does it write with?', '¿Con qué cuenta escribe en el chat?'),
+      L('Con il tuo. In chat compare il tuo nome, e puoi spegnerlo o correggerlo in qualsiasi momento dal pannello.', 'Yours. Your name is what shows up in chat, and you can switch it off or correct it any time from the panel.', 'Con la tuya. En el chat aparece tu nombre, y puedes apagarlo o corregirlo cuando quieras desde el panel.')],
+    [L('Posso provarlo senza registrarmi?', 'Can I try it without signing up?', '¿Puedo probarlo sin registrarme?'),
+      L('Sì: la <a href="/?demo=1">demo</a> è il pannello vero con dati d’esempio, senza accesso.', 'Yes: the <a href="/?demo=1">demo</a> is the real panel with sample data, no login.', 'Sí: la <a href="/?demo=1">demo</a> es el panel real con datos de ejemplo, sin acceso.')],
+    [L('In che lingua parla?', 'What language does it speak?', '¿En qué idioma habla?'),
+      L('Il pannello è in italiano, inglese e spagnolo. Quello che il bot scrive in chat lo scrivi tu, nella lingua che vuoi.', 'The panel comes in Italian, English and Spanish. What the bot says in chat is written by you, in whatever language you like.', 'El panel está en italiano, inglés y español. Lo que el bot escribe en el chat lo escribes tú, en el idioma que quieras.')],
+    [L('Sono nella community di andryxify.it: cambia qualcosa?', 'I am in the andryxify.it community: does that change anything?', 'Estoy en la comunidad de andryxify.it: ¿cambia algo?'),
+      L('Sì: se sei un membro abilitato hai tutto compreso. Entri con lo stesso account e il pannello è già completo.', 'Yes: enabled members get everything included. You log in with the same account and the panel is already complete.', 'Sí: si eres miembro habilitado lo tienes todo incluido. Entras con la misma cuenta y el panel ya está completo.')],
   ];
 
   return `
@@ -207,8 +198,8 @@ function corpo(L, l, kick, youtube) {
         <div class="vt-strumenti">${selettoreLingua(l, L)}</div>
       </header>
       <span class="vt-occhiello"><i class="vivo"></i>${L('Per Twitch e Kick · di andryxify.it', 'For Twitch and Kick · by andryxify.it', 'Para Twitch y Kick · de andryxify.it')}</span>
-      <h1 class="vt-titolo">${L('Il bot per Twitch che parla', 'The Twitch bot that speaks', 'El bot de Twitch que habla')} <em>${L('con la tua voce', 'with your own voice', 'con tu propia voz')}</em></h1>
-      <p class="vt-sub">${L('Vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi. Comandi su misura, <strong>scudo anti-bot</strong>, overlay per la diretta, clip, musica e <strong>notifiche live</strong>.', 'It lives in your chat and writes <strong>with your own account</strong> — no anonymous bots. Custom commands, an <strong>anti-bot shield</strong>, stream overlay, clips, music and <strong>live alerts</strong>.', 'Vive en tu chat y escribe <strong>con tu cuenta</strong> — nada de bots anónimos. Comandos a medida, <strong>escudo anti-bot</strong>, overlay para el directo, clips, música y <strong>avisos en directo</strong>.')}</p>
+      <h1 class="vt-titolo">${L('Il bot che in chat scrive', 'The bot that writes in chat', 'El bot que en el chat escribe')} <em>${L('con il tuo nome', 'under your own name', 'con tu nombre')}</em></h1>
+      <p class="vt-sub">${L('Uno spettatore scrive <strong>!social</strong> e in chat risponde il tuo account, non un bot. Vale per i comandi, per la moderazione e per quello che mandi a schermo: lo decidi dal pannello, in diretta lo vede la chat.', 'A viewer types <strong>!social</strong> and the reply comes from your account, not from a bot. Same for commands, moderation and what you put on screen: you decide in the panel, chat sees it live.', 'Un espectador escribe <strong>!social</strong> y en el chat responde tu cuenta, no un bot. Vale para los comandos, la moderación y lo que mandas a pantalla: lo decides en el panel, el chat lo ve en directo.')}</p>
       <div class="vt-azioni">
         <a class="vt-btn vt-btn-primo" href="/entra?nuovo=1">${L('Registrati con Twitch', 'Sign up with Twitch', 'Regístrate con Twitch')}</a>
         <a class="vt-btn" href="/entra">${L('Accedi', 'Log in', 'Entrar')}</a>
@@ -222,50 +213,33 @@ function corpo(L, l, kick, youtube) {
     </section>
 
     <section class="vt-sez">
-      <div class="vt-testa centro vt-rivela">
-        <span class="vt-occhio">${L('Cosa sa fare', 'What it does', 'Qué sabe hacer')}</span>
-        <h2 class="vt-tit">${L('Tutto quello che serve,', 'Everything you need,', 'Todo lo que hace falta,')} <em>${L('niente che non serva', 'nothing you don’t', 'nada que no')}</em></h2>
-        <p class="vt-testo">${L('Un solo pannello per la chat, la moderazione, la scena e la community. Quello che non usi non lo paghi.', 'One panel for chat, moderation, your scene and your community. You don’t pay for what you don’t use.', 'Un solo panel para el chat, la moderación, la escena y la comunidad. Lo que no usas, no lo pagas.')}</p>
+      <div class="vt-testa vt-rivela">
+        <h2 class="vt-tit">${L('Una serata, con il bot acceso', 'One evening, with the bot on', 'Una noche, con el bot encendido')}</h2>
       </div>
-      <div class="vt-griglia">${capacita(L)}</div>
+      <ol class="vt-serata vt-rivela">
+        ${SERATA.map(([t, testo]) => `<li><time>${t}</time><p>${testo}</p></li>`).join('')}
+      </ol>
     </section>
 
     <section class="vt-sez">
       <div class="vt-testa vt-rivela">
-        <span class="vt-occhio">${L('Nel dettaglio', 'In detail', 'En detalle')}</span>
-        <h2 class="vt-tit">${L('Ogni funzione, e', 'Every feature, and', 'Cada función, y')} <em>${L('in quale piano sta', 'which plan it’s in', 'en qué plan está')}</em></h2>
-        <p class="vt-testo">${L('Niente sorprese: qui c’è tutto, con accanto scritto se è già tuo o se è un extra.', 'No surprises: it’s all here, marked as already yours or as an extra.', 'Sin sorpresas: está todo, con la marca de si ya es tuyo o si es un extra.')}</p>
+        <h2 class="vt-tit">${L('Cosa c’è dentro', 'What is inside', 'Qué hay dentro')}</h2>
+        <p class="vt-testo">${L('Tutto, con accanto scritto se è già tuo o se è un pacchetto in più.', 'All of it, each marked as already yours or as an extra package.', 'Todo, con al lado si ya es tuyo o si es un paquete extra.')}</p>
       </div>
       ${capacitaHtml(L)}
     </section>
 
-    <section class="vt-sez">
-      <div class="vt-testa vt-rivela">
-        <span class="vt-occhio">${L('Come si attiva', 'How to start', 'Cómo se activa')}</span>
-        <h2 class="vt-tit">${L('Tre passi,', 'Three steps,', 'Tres pasos,')} <em>${L('due minuti', 'two minutes', 'dos minutos')}</em></h2>
-      </div>
-      <div class="vt-passi">
-        ${STEP.map(([n, t, d], i) => `
-          <div class="vt-passo" style="--i:${i}">
-            <span class="vt-num">${n}</span>
-            <strong>${t}</strong><p>${d}</p>
-          </div>`).join('')}
-      </div>
-    </section>
-
     <section class="vt-sez" id="listino">
       <div class="vt-testa centro vt-rivela">
-        <span class="vt-occhio">${L('Il listino', 'Pricing', 'Precios')}</span>
-        <h2 class="vt-tit">${L('Parti gratis.', 'Start free.', 'Empieza gratis.')} <em>${L('Aggiungi quando vuoi.', 'Add whenever you like.', 'Añade cuando quieras.')}</em></h2>
-        <p class="vt-testo">${L('Nessun tutto-o-nulla: scegli i pezzi uno per uno, e li puoi aggiungere o togliere anche dopo, dal pannello.', 'No all-or-nothing: pick the pieces one by one, and add or remove them later from the dashboard.', 'Nada de todo o nada: eliges las piezas una a una, y las añades o quitas después desde el panel.')}</p>
+        <h2 class="vt-tit">${L('Quanto costa', 'What it costs', 'Cuánto cuesta')}</h2>
+        <p class="vt-testo">${L('L’Essenziale è gratis e resta gratis. Il resto si aggiunge un pacchetto alla volta, dal pannello, e si toglie allo stesso modo.', 'Essenziale is free and stays free. The rest is added one package at a time, from the panel, and removed the same way.', 'Essenziale es gratis y sigue siéndolo. Lo demás se añade de paquete en paquete, desde el panel, y se quita igual.')}</p>
       </div>
       <div class="vetrina-piani" id="vetrina-piani"></div>
     </section>
 
     <section class="vt-sez">
       <div class="vt-testa vt-rivela">
-        <span class="vt-occhio">${L('Domande', 'Questions', 'Preguntas')}</span>
-        <h2 class="vt-tit">${L('Quello che', 'What people', 'Lo que')} <em>${L('chiedono di più', 'ask most', 'más preguntan')}</em></h2>
+        <h2 class="vt-tit">${L('Domande', 'Questions', 'Preguntas')}</h2>
       </div>
       <div class="vt-faq vt-rivela">
         ${FAQ.map(([q, a]) => `<details><summary>${q}</summary><p>${a}</p></details>`).join('')}
@@ -273,8 +247,8 @@ function corpo(L, l, kick, youtube) {
     </section>
 
     <section class="vt-fine vt-rivela">
-      <h2 class="vt-tit">${L('Pronto a farlo parlare?', 'Ready to give it a voice?', '¿Listo para darle voz?')}</h2>
-      <p class="vt-testo">${L(`Registrarsi è un click con ${conChi(' o ')}. L’Essenziale è gratis per sempre, e gli extra li aggiungi quando ti servono davvero — non prima.`, `Signing up is one click with ${conChi(' or ')}. Essenziale is free forever, and you add extras when you actually need them — not before.`, `Registrarse es un clic con ${conChi(' o ')}. Essenziale es gratis para siempre, y añades extras cuando de verdad los necesitas — no antes.`)}</p>
+      <h2 class="vt-tit">${L('Per cominciare', 'To get started', 'Para empezar')}</h2>
+      <p class="vt-testo">${L(`Serve solo l’account con cui streammi, su ${conChi(' o ')}. Entri, il piano Essenziale è già attivo, e quello che ti manca lo aggiungi quando ti manca davvero.`, `All you need is the account you stream with, on ${conChi(' or ')}. You log in, the Essenziale plan is already on, and whatever you are missing you add when you actually miss it.`, `Solo hace falta la cuenta con la que haces directo, en ${conChi(' o ')}. Entras, el plan Essenziale ya está activo, y lo que te falte lo añades cuando te falte de verdad.`)}</p>
       <div class="vt-azioni">
         <a class="vt-btn vt-btn-primo" href="/entra?nuovo=1">${L('Registrati con Twitch', 'Sign up with Twitch', 'Regístrate con Twitch')}</a>
         ${kick ? `<a class="vt-btn" href="/accedi/kick">${L('Registrati con Kick', 'Sign up with Kick', 'Regístrate con Kick')}</a>` : ''}

@@ -253,3 +253,37 @@ nessun apice) e chiede al cancello se passano. Se un modo di scrivere un `src` s
 modulo, la differenza salterebbe fuori lì.
 
 Quindi: `vetrina.css` non è più «da ricordare». Lo chiede `index.html`, e tanto basta.
+
+## Senza l'aria di una pagina fatta a stampo
+
+Un'analisi esterna della pagina diceva, in sostanza: struttura «titolo →
+spiegazione → funzione successiva», copia da motore di ricerca, una sfilza di
+funzioni con costruzioni tutte uguali, frasi come «quando succede una cosa, il
+bot ne fa un'altra». Riletta a freddo, aveva ragione, e si misurava: sette
+sezioni con la stessa testa (occhiello, titolo spezzato in due, un paragrafo
+che lo spiega), due griglie di schede identiche (sei in cima, trentuno sotto)
+con lo scudo anti-bot ripetuto due volte, tre passi «in due minuti», un invito
+finale a slogan, e un'apertura che era un elenco di parole chiave.
+
+La pagina ora ha **cinque sezioni disuguali**, e nessuna è a stampo:
+
+- l'apertura dice **una cosa che succede** («uno spettatore scrive !social e
+  in chat risponde il tuo account»), non un elenco;
+- **«Una serata, con il bot acceso»**: sei momenti con l'orario, dalle 20:58
+  alle 23:30, ognuno una cosa che il bot fa davvero e che nel pannello ha la
+  sua scheda (avviso della diretta, scudo, richiesta musicale con il player,
+  rilancio della chat ferma, alert del raid e registro, ore guardate e VIP);
+  al posto delle sei schede;
+- **«Cosa c'è dentro»**: l'elenco completo resta, perché ogni scheda del
+  pannello deve essere raccontata (`test/contratto/vetrina-capacita.test.mjs`)
+  e perché è quello che cerca chi confronta; ma senza la testa a stampo, e
+  con la frase «quando succede X, il bot fa Y» sostituita da esempi;
+- **«Quanto costa»** in una frase, **«Domande»** in quattro (via quella che
+  ripeteva il catalogo, via quella che ripeteva il listino), e la chiusura
+  senza slogan: serve solo l'account con cui streammi.
+
+Cosa NON è cambiato, di proposito: la SEO sta nel titolo, nella descrizione e
+nei dati strutturati, non nel corpo; la filigrana (righe di testa, header,
+firma a larghezza zero) resta identica; l'anteprima della diretta in apertura
+resta, perché è concreta. Il cancello `scripts/verifica-vetrina.mjs` conferma
+che la pagina è una sola prima e dopo gli script, con scarto di layout zero.

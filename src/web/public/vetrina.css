@@ -595,3 +595,8 @@ body.vetrina em, body.vetrina .vt-corsivo {
   .vt-chat li, .vt-alert { opacity: 1; }
   .vt-gioco { animation: none; }
 }
+.vt-serata { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; max-width: 720px; }
+.vt-serata li { display: grid; grid-template-columns: 4.4rem 1fr; gap: 1rem; align-items: baseline; }
+.vt-serata time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--acc); }
+.vt-serata p { margin: 0; }
+@media (max-width: 600px) { .vt-serata li { grid-template-columns: 3.6rem 1fr; gap: .7rem; } }
