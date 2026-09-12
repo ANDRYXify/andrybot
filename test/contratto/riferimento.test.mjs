@@ -45,6 +45,9 @@ test('sotto la tela, con trasparenza e interruttore, e la pagina la rilegge da s
 
 test('il cancello e\' in catena e sa quando l\'immagine non torna o la trasparenza non arriva', () => {
   assert.ok(/verifica-anteprima\.mjs && node scripts\/verifica-riferimento\.mjs && /.test(PKG), 'in catena dopo l\'anteprima');
+  assert.ok(/_g\('ovl-rif-on'\)\?\.addEventListener\('input', \(e\) => \{ _rif\.on = !!e\.target\.checked; _rifDisegna\(\); \}\);/.test(APP), 'la spunta aggiorna lo stato gia\' all\'input: chi rifa\' l\'anteprima fra input e change trova lo stato nuovo');
+  assert.ok(/await ed\.click\('#ovl-rif-on'\);/.test(GATE) && /await ed\.click\('#ovl-rif-via'\);/.test(GATE), 'il cancello clicca davvero, non manda eventi finti');
+  assert.ok(/la spunta «Mostra» non regge al clic/.test(GATE), 'e l\'autoprova toglie l\'ascoltatore dell\'input');
   assert.ok(/l'immagine non si ricorda: ricaricando la pagina sparisce/.test(GATE) && /la trasparenza scelta non arriva sull'immagine/.test(GATE), 'due rotture nell\'autoprova');
   assert.ok(/richieste\.filter\(\(r\) => r\.n > 2000\)/.test(GATE), 'e guarda che nessuna richiesta porti l\'immagine al server');
 });

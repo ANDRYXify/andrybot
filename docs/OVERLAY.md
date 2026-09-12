@@ -949,6 +949,17 @@ un corpo grande quanto un'immagine. L'autoprova toglie la scrittura in
 IndexedDB (dopo la ricarica sparisce) e l'applicazione della trasparenza, e
 pretende il rosso.
 
+**La spunta che non reggeva al clic.** Messa in linea, «Mostra» non faceva
+niente. Il cancello la provava con un evento `change` costruito a mano, e
+passava; un clic vero no. Tracciando gli eventi di un clic: la spunta cambia,
+parte `input`, e fra `input` e `change` un ascoltatore generico del pannello
+rifà l'anteprima; l'anteprima ridisegna anche il riferimento, e il ridisegno
+rimette la spunta com'è nello stato, che è ancora quello vecchio; quando arriva
+`change`, il mio ascoltatore legge una spunta già tornata indietro. Lo stato
+ora si aggiorna già all'`input` (che sul bersaglio arriva prima di chiunque
+altro), e il cancello clicca davvero, sulla spunta e su «Togli»: un evento
+finto prova solo che il codice risponde a un evento finto.
+
 ## Il conto che «parte da solo» non partiva, e la sfida che non si spostava
 
 **Il conto alla rovescia.** La spunta «parte da solo quando l'overlay si apre»

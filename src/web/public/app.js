@@ -8008,6 +8008,7 @@ function collegaEditorOvl() {
   _g('ovl-rif-file')?.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) _rifMetti(f); });
   _g('ovl-rif-op')?.addEventListener('input', (e) => { _rif.op = Math.max(10, Math.min(100, Number(e.target.value) || 60)); _rifDisegna(); });
   _g('ovl-rif-op')?.addEventListener('change', () => _rifRicorda());
+  _g('ovl-rif-on')?.addEventListener('input', (e) => { _rif.on = !!e.target.checked; _rifDisegna(); });
   _g('ovl-rif-on')?.addEventListener('change', (e) => { _rif.on = !!e.target.checked; _rifDisegna(); _rifRicorda(); });
   _g('ovl-rif-via')?.addEventListener('click', () => _rifVia());
   _g('ovl-tela')?.addEventListener('dragover', (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) e.preventDefault(); });
