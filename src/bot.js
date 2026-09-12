@@ -8,6 +8,8 @@
 // eventi Twitch. Tiene tutto sincronizzato con la dashboard.
 import { makeLog } from './logger.js';
 import { config } from './config.js';
+import * as filigrana from './watermark.js';
+import * as licenza from './licenza.js';
 import { tokens, streamers, memory, tgConf, tgDest, tgAmici, tgMsg, feedFonti, dcConf, compleanni, pointAlerts } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
@@ -64,6 +66,16 @@ import { LiveListener } from './stream/listener.js';
 import { avviaBackupAuto, stopBackupAuto } from './backup.js';
 
 const log = makeLog('bot');
+
+// Una risposta al canarino al minuto per canale: chi conosce la frase non deve
+// poterla usare per far scrivere il bot a raffica.
+const _canarinoTs = new Map();
+export function canarinoLibero(login, ora = Date.now()) {
+  const prima = _canarinoTs.get(login) || 0;
+  if (ora - prima < 60_000) return false;
+  _canarinoTs.set(login, ora);
+  return true;
+}
 
 export class BotManager {
   constructor({ auth, helix, effects, modules, bus }) {
@@ -734,6 +746,7 @@ export class BotManager {
   // Elaborazione normale di un messaggio (chiamata solo se non gestito prima).
   _elaboraMessaggio(login, msg, onMessage, parla = this.vocePer(msg)) {
     onMessage(msg).catch(e => log.error(`#${login} gestione messaggio:`, e?.message || e));
+    if (filigrana.eCanarino(msg.text) && canarinoLibero(login)) { parla(filigrana.rispostaCanarino(licenza.firma())); return; }
     if (!msg.piattaforma || msg.piattaforma === 'twitch') {
       try { this._momenti.osserva(login, { ts: Date.now(), user: msg.user, display: msg.display, testo: msg.text, isSelf: !!msg.isSelf, id: msg.id }); }
       catch (e) { log.debug(`#${login} momenti:`, e?.message || e); }
