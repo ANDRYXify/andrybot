@@ -32,10 +32,15 @@ test('l\'impronta e\' uno sha256 esadecimale salato con la FIRMA, e da lei la fr
   for (const parola of normalizzaCanarino(FRASE).split(' ')) assert.ok(!IMPRONTA.includes(parola));
 });
 
-test('con CANARINO vuota il bot dorme: nessuna frase lo sveglia', () => {
-  assert.equal(CANARINO, '');
+test('con CANARINO vuota il bot dorme; accesa, in CANARINO c\'e\' un\'impronta e non la frase', () => {
+  if (!CANARINO) {
+    assert.equal(eCanarino(FRASE), false);
+    assert.equal(eCanarino(FRASE, ''), false);
+    return;
+  }
+  assert.match(CANARINO, /^[0-9a-f]{64}$/, 'in CANARINO va l\'impronta, mai la frase');
+  assert.notEqual(CANARINO, IMPRONTA, 'la frase di questo collaudo non e\' quella del proprietario');
   assert.equal(eCanarino(FRASE), false);
-  assert.equal(eCanarino(FRASE, ''), false);
 });
 
 test('riconosce la frase anche scritta diversa, e nient\'altro', () => {
