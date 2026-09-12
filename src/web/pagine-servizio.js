@@ -111,7 +111,7 @@ const guscio = (lang, titolo, corpo, robots = 'noindex, follow', conIcona = true
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(titolo)}</title>
 <meta name="robots" content="${robots}">
-${conIcona ? '<link rel="icon" href="/icons/icon-192.png?v=7">\n<link rel="stylesheet" href="/font.css">' : ''}
+${conIcona ? '<link rel="icon" href="/icons/icon-192.png?v=8">\n<link rel="stylesheet" href="/font.css">' : ''}
 <style>${conIcona ? '' : MANO_INLINE}${VESTITO}</style>
 </head>
 <body>

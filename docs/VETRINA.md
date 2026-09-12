@@ -287,3 +287,20 @@ nei dati strutturati, non nel corpo; la filigrana (righe di testa, header,
 firma a larghezza zero) resta identica; l'anteprima della diretta in apertura
 resta, perché è concreta. Il cancello `scripts/verifica-vetrina.mjs` conferma
 che la pagina è una sola prima e dopo gli script, con scarto di layout zero.
+
+## L'anteprima dei link dice quello che dice la pagina
+
+Incollando il link in una chat, l'app legge `og:title`, `og:description` e
+l'immagine `icons/og.png`, e li tiene in cache. Dopo la riscrittura
+dell'apertura l'anteprima diceva ancora «scrive col tuo account», con la
+cartolina vecchia. Ora il titolo social **è** il titolo della pagina, in ogni
+lingua (`test/contratto/anteprime.test.mjs` lo confronta con l'`h1` di
+`vetrina-vista.js`), la descrizione è la prima frase dell'apertura, e
+l'immagine si rigenera con `node scripts/og.mjs` dallo stesso testo.
+
+Il timbro delle icone (`?v=N`) è uno solo per tutto il sito
+(`scripts/verifica-risorse.mjs`): quando l'immagine cambia sale ovunque, e con
+lui il nome della cache del service worker. Le chat che hanno già l'anteprima
+in cache non la rileggono da sole: su Telegram la si fa rileggere a
+@WebpageBot con «Update preview», su X e Facebook con i loro strumenti di
+verifica dei link.

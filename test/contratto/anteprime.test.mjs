@@ -84,3 +84,28 @@ test('le pagine di servizio non finiscono nei motori', () => {
     assert.doesNotMatch(h, /content="noindex/, `${nome} deve restare indicizzabile`);
   }
 });
+
+// L'anteprima dice quello che dice la pagina. Il titolo social È il titolo
+// della pagina, in ogni lingua: quando l'apertura cambia, la cartolina cambia
+// con lei — altrimenti nelle chat continua a girare una pagina che non esiste
+// più (è successo: «scrive col tuo account» per settimane dopo la riscrittura).
+const VISTA = readFileSync(join(RAD, 'src/web/vetrina-vista.js'), 'utf8');
+const daH1 = VISTA.indexOf('<h1 class="vt-titolo">');
+const rigaH1 = VISTA.slice(daH1, VISTA.indexOf('</h1>', daH1));
+const pezziH1 = [...rigaH1.matchAll(/L\('([^']*)', '([^']*)', '([^']*)'\)/g)];
+const h1Di = (i) => pezziH1.map((m) => m[i + 1]).join(' ').replace(/\s+/g, ' ').trim();
+const bloccoLingua = (codice) => {
+  const da = SRV.indexOf(`    ${codice}: {`, SRV.indexOf('const META_LINGUA'));
+  return SRV.slice(da, SRV.indexOf('    },', da));
+};
+const campo = (codice, nome) => bloccoLingua(codice).match(new RegExp(`${nome}: '([^']*)'`))[1];
+
+test("il titolo dell'anteprima è il titolo della pagina, in ogni lingua", () => {
+  assert.equal(pezziH1.length, 2, 'l\'h1 è fatto di due pezzi tradotti');
+  for (const [codice, i] of [['it', 0], ['en', 1], ['es', 2]]) {
+    assert.equal(campo(codice, 'ogTitolo'), h1Di(i), `og:title ${codice}`);
+    assert.equal(campo(codice, 'twTitolo'), h1Di(i), `twitter:title ${codice}`);
+  }
+  const home = readFileSync(join(PUB, 'index.html'), 'utf8');
+  assert.ok(home.includes(`<meta property="og:title" content="${h1Di(0)}">`), 'index.html porta il titolo italiano');
+});
