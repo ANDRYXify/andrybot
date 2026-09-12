@@ -74,10 +74,10 @@ h1 b{font-weight:400;color:${C.acc}}
 const IMMAGINI = {
   'og.png': pagina({
     occhiello: 'Twitch e Kick',
-    titolo: 'Il bot che scrive in chat',
-    evidenza: 'col tuo account',
-    sotto: 'Comandi su misura, <strong>overlay per la diretta</strong>, clip, musica, notifiche live e uno <strong>scudo anti&#8209;bot</strong> che si alza da solo.',
-    pastiglie: ['Col tuo account', 'Overlay ed effetti', 'In italiano', 'Gratis'],
+    titolo: 'Il bot che in chat scrive',
+    evidenza: 'con il tuo nome',
+    sotto: 'Uno spettatore scrive <strong>!social</strong> e risponde il tuo account, non un bot. Comandi, moderazione, <strong>overlay per la diretta</strong>, clip e avvisi live.',
+    pastiglie: ['Con il tuo nome', 'Overlay ed effetti', 'In italiano', 'Gratis'],
   }),
   'og-guide.png': pagina({
     occhiello: 'Guide',

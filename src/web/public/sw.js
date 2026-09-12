@@ -2,9 +2,9 @@
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 
 
-const CACHE = 'socialbot-v4';
-const DA_TENERE = ['/icons/icon-192.png?v=7', '/icons/icon-512.png?v=7',
-  '/icons/marchio-barra.png?v=7', '/icons/logo-barra.png?v=7', '/manifest.webmanifest'];
+const CACHE = 'socialbot-v5';
+const DA_TENERE = ['/icons/icon-192.png?v=8', '/icons/icon-512.png?v=8',
+  '/icons/marchio-barra.png?v=8', '/icons/logo-barra.png?v=8', '/manifest.webmanifest'];
 const SHELL = DA_TENERE.map((v) => v.split('?')[0]);
 
 self.addEventListener('install', (ev) => {

@@ -188,7 +188,7 @@ function corpo(L, l, kick, youtube) {
   return `
     <section class="vt-scena">
       <header class="vt-barra">
-        <a class="vt-marchio" href="/" aria-label="SocialBot"><img src="/icons/logo-barra.png?v=7" alt="SocialBot" width="80" height="30"></a>
+        <a class="vt-marchio" href="/" aria-label="SocialBot"><img src="/icons/logo-barra.png?v=8" alt="SocialBot" width="80" height="30"></a>
         <nav class="vt-mappa" aria-label="${L('Il sito', 'The site', 'El sitio')}">
           <a href="/guide">${L('Guide', 'Guides', 'Guías')}</a>
           <a href="/manuale">${L('Manuali', 'Manuals', 'Manuales')}</a>
