@@ -37,6 +37,10 @@ const ROTTURE = [
     'i contatori scalati due volte'],
   ['src/web/public/app.js', "  box.style.fontWeight = o.grassetto ? '800' : '500';", "  box.style.fontWeight = o.grassetto === false ? '500' : '800';",
     'il grassetto dei contatori ha il ripiego al contrario'],
+  ['src/web/public/riquadro.js', "    var k = Math.min((w / 100) * t.w / W, (h / 100) * t.h / H);", "    var k = (w / 100) * t.w / W;",
+    'il riquadro guarda solo la larghezza: un alert alto trabocca'],
+  ['src/web/public/overlay-app.js', "  if (chatBox.classList.contains('riquadro')) window.SB_RIQUADRO.ritaglia(chatBox);\n", '',
+    'in diretta la chat nel riquadro non taglia dall\'alto'],
 ];
 
 if (process.argv.includes('--selftest')) {
@@ -219,6 +223,49 @@ try {
     const ok = e && l && vicino(e.w, l.w) && vicino(e.h, l.h) && e.peso === l.peso;
     dice(ok, `${caso.nome}: editor ${e ? mis(e) : '–'} peso ${e ? e.peso : '–'} = diretta ${l ? mis(l) : '–'} peso ${l ? l.peso : '–'}`,
       'editor e diretta non coincidono');
+  }
+
+  // --- 5. i riquadri --------------------------------------------------------
+  // un riquadro di due caselle per tre (16,67% × 25%): la chat lo riempie e non
+  // trabocca; alert, widget e player si adattano allo stesso modo di qua e di la'
+  const RQ = { chat: { x: 10, y: 10, w: 16.67, h: 25, r: 0 }, wf: { x: 60, y: 60, w: 20, h: 10, r: 0 }, musica: { x: 5, y: 60, w: 30, h: 12, r: 0 }, alert: { x: 30, y: 5, w: 40, h: 15, r: 0 } };
+  const cfgRq = await ed.evaluate(async (RQ) => {
+    const c = _cfgEl('musica');
+    Object.assign(c, { attivo: true, verso: 'riga', righe: 'una', cover: 'quadrata', barra: 'sotto', tempi: 'no', entrata: 'dissolvenza', quandoFermo: 'resta',
+      ritmo: 'onde', sfondo: 'no', corpo: 'normale', tema: 'nessuno', larghezza: 0, scorre: true, daCopertina: false, testo: '{titolo} — {artista}', testo2: '{artista}' });
+    _imposta('co-st-dim', 'media'); _imposta('co-st-larg', 30); _imposta('wf-attivo', true); _imposta('wf-dim', 'media'); _imposta('al-st-icon', false);
+    const xy = _ovXY();
+    for (const k of Object.keys(RQ)) xy[k] = { ...RQ[k] };
+    aggiornaAnteprima();
+    await new Promise((r) => setTimeout(r, 400));
+    return { musica: JSON.parse(JSON.stringify(c)), chat: _leggiChatStile(), wf: { ..._leggiWidget('wf'), attivo: true }, alert: _leggiAlertStile ? _leggiAlertStile() : { icona: false },
+      testoAlert: document.querySelector('#ap-alert-testo')?.textContent || '' };
+  }, RQ);
+  const edRq = { chat: await misuraEd('#ap-chat'), wf: await misuraEd('#ap-wf-el'), musica: await misuraEd('#ap-stage .ovl-musica'), alert: await misuraEd('#ap-alert') };
+  const righeEd = await ed.evaluate(() => { const b = document.getElementById('ap-chat'); return { n: b.children.length, trabocca: window.SB_RIQUADRO.trabocca(b) }; });
+  TEMA = { css: '', widget: { ultimoFollower: cfgRq.wf, ultimoSub: { attivo: false } }, goals: [], conti: {}, timer: null, musica: cfgRq.musica,
+    stato: { ultimoFollower: 'MarioRossi' }, mostra: MOSTRA, xy: RQ, alertStile: { icona: false }, chatStile: cfgRq.chat };
+  MUSICA = brano(TITOLO_LUNGO);
+  await apriLive(() => document.querySelector('.ovl-musica.dentro') && document.querySelector('.ovl-widget .w-testo b'));
+  for (let i = 0; i < 8; i++) ovl.manda({ tipo: 'chat', user: 'utente' + i, colore: '#ff4d4d', testo: 'una riga di chat abbastanza lunga da andare a capo dentro un riquadro stretto numero ' + i, max: 20, fadeSec: 0 });
+  ovl.manda({ tipo: 'alert', kind: 'sub', testo: cfgRq.testoAlert, colore: '#ff4d4d', durata: 30000 });
+  await live.waitForFunction(() => document.querySelectorAll('#chatlive .chat-riga').length >= 1 && document.querySelector('#alert .alert-card.dentro'), null, { timeout: 6000 }).catch(() => {});
+  await attesa(500);
+  const lvRq = { chat: await misuraLive('#chatlive'), wf: await misuraLive('.ovl-widget:not(.ovl-musica)'), musica: await misuraLive('.ovl-musica'), alert: await misuraLive('#alert .alert-card') };
+  const righeLv = await live.evaluate(() => { const b = document.getElementById('chatlive'); return { n: b.children.length, trabocca: window.SB_RIQUADRO.trabocca(b) }; });
+  const rqPx = (k) => ({ w: RQ[k].w / 100 * 1920, h: RQ[k].h / 100 * 1080 });
+  const c = rqPx('chat');
+  dice(edRq.chat && lvRq.chat && vicino(edRq.chat.w, c.w) && vicino(edRq.chat.h, c.h) && vicino(lvRq.chat.w, c.w) && vicino(lvRq.chat.h, c.h),
+    `chat nel riquadro 2×3: la scatola e' il riquadro (${Math.round(c.w)}×${Math.round(c.h)}) — editor ${edRq.chat ? mis(edRq.chat) : '–'}, diretta ${lvRq.chat ? mis(lvRq.chat) : '–'}`);
+  dice(righeLv.n >= 1 && righeLv.n < 8 && !righeLv.trabocca && !righeEd.trabocca, `e la chat non trabocca: di otto righe lunghe in diretta ne restano ${righeLv.n}, quelle che ci stanno, nessuna tagliata a meta'`,
+    'righe fuori dal riquadro, o nessuna tolta');
+  for (const k of ['wf', 'musica', 'alert']) {
+    const e = edRq[k], l = lvRq[k], r = rqPx(k);
+    const dentro = (m) => m && m.w <= r.w + 1.5 && m.h <= r.h + 1.5;
+    const riempie = (m) => m && (vicino(m.w, r.w, 2) || vicino(m.h, r.h, 2));
+    const tol = k === 'alert' ? 4 : 1.5;
+    dice(dentro(e) && dentro(l) && riempie(l) && vicino(e.w, l.w, tol) && vicino(e.h, l.h, tol),
+      `${k} nel riquadro ${RQ[k].w}×${RQ[k].h}%: sta dentro, lo riempie su un lato, uguale di qua e di la' — editor ${e ? mis(e) : '–'}, diretta ${l ? mis(l) : '–'}`);
   }
 
   dice(erroriEd.length === 0, 'l\'editor non ha errori', erroriEd.slice(0, 2).join(' | '));

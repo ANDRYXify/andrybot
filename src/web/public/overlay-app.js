@@ -365,10 +365,13 @@ function trasformaXY(xy) {
 function posizionaContenitore(el, xy, corner) {
   if (xy && xy.x != null) {
     el.className = '';
+    if (window.SB_RIQUADRO.e(xy)) { window.SB_RIQUADRO.posa(el, xy, { chat: el === chatBox }); return; }
+    window.SB_RIQUADRO.togli(el);
     el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
     el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.width = 'max-content';
     el.style.transform = trasformaXY(xy);
   } else {
+    window.SB_RIQUADRO.togli(el);
     el.className = corner;
     el.style.left = el.style.top = el.style.right = el.style.bottom = el.style.width = el.style.transform = '';
   }
@@ -400,7 +403,6 @@ function mostraAlertProssimo() {
   const ev = codaAlert.shift();
 
   const st = MIO.stile.alert || ev.stile || {};
-  posizionaContenitore(alertBox, MIO.xy.alert || ev.xy, ev.posizione || 'alto-centro');
   const card = document.createElement('div');
   card.className = 'alert-card anim-' + (st.animazione || 'slide') + (st.glow ? ' glow' : '') + (st.icona === false ? ' senza-ico' : '')
     + (st.evidenziaNome === false ? ' senza-evid' : '') + ' maiusc-' + (st.maiuscolo || 'no')
@@ -429,6 +431,7 @@ function mostraAlertProssimo() {
       : (libro && ev.icona ? libro.svg(ev.icona) : (ALERT_ICO[ev.kind] || ALERT_ICO.follow)));
   card.innerHTML = mediaHtml + '<div class="alert-ico">' + icoScelta + '</div><div class="alert-testo">' + testoHtml + '</div>';
   alertBox.appendChild(card);
+  posizionaContenitore(alertBox, MIO.xy.alert || ev.xy, ev.posizione || 'alto-centro');
   const vol01 = (ev.volume != null ? ev.volume : 100) / 100;
   const vid = card.querySelector('video.alert-media'); if (vid) { try { vid.volume = vol01; } catch (e) {  } }
   requestAnimationFrame(() => card.classList.add('dentro'));
@@ -500,7 +503,7 @@ function chat(ev) {
   if (!mostra('chat')) return;
   const st = MIO.stile.chat || ev.stile || {};
   posizionaContenitore(chatBox, MIO.xy.chat || ev.xy, ev.posizione || 'basso-sinistra');
-  if (st.larghezza) chatBox.style.maxWidth = st.larghezza + 'vw';
+  if (st.larghezza && !chatBox.classList.contains('riquadro')) chatBox.style.maxWidth = st.larghezza + 'vw';
   const destra = !ev.xy && /destra/.test(ev.posizione || '');
   const riga = document.createElement('div');
   riga.className = 'chat-riga dim-' + (st.dim || 'media') + ' anim-' + (st.animazione || 'slide') + (st.ombra !== false ? ' ombra' : '') + (st.grassettoUser !== false ? ' user-bold' : '')
@@ -525,6 +528,7 @@ function chat(ev) {
   requestAnimationFrame(() => { riga.style.transform = ''; riga.classList.add('dentro'); });
   const max = Math.max(1, Number(ev.max) || 8);
   while (chatBox.children.length > max) chatBox.firstChild.remove();
+  if (chatBox.classList.contains('riquadro')) window.SB_RIQUADRO.ritaglia(chatBox);
   const fade = Math.max(0, Number(ev.fadeSec) || 0);
   if (fade > 0) setTimeout(() => {
     riga.classList.add('uscita');
@@ -553,8 +557,6 @@ function widget(id, cfg, valore) {
     widgetEl[id] = el;
   }
   posa(wboxes[ang] || wboxes['basso-destra'], el);
-
-  posaElemento(el, id === 'ultimoSub' ? 'ws' : 'wf', cfg);
   const st = cfg.stile || {};
   el.className = 'ovl-widget dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
   applicaVars(el, { '--dim-ico': (st.dimIcona != null ? st.dimIcona : 20) + 'px' });
@@ -568,6 +570,7 @@ function widget(id, cfg, valore) {
       : (libroW && st.icona ? libroW.svg(st.icona) : (WIDGET_ICO[id] || '')));
   const tpl = cfg.testo || '{nome}';
   el.querySelector('.w-testo').innerHTML = escHtml(tpl).replace(/\{nome\}/g, '<b>' + escHtml(valore || '—') + '</b>');
+  posaElemento(el, id === 'ultimoSub' ? 'ws' : 'wf', cfg);
 }
 
 function etichettaVolatile(comando, durata, conPrefisso = true) {
@@ -627,11 +630,7 @@ function contatore(d) {
   const mio = (MIO.xy || {})['cont:' + cmd] || null;
   const x = mio ? Number(mio.x) : (isFinite(Number(d.x)) ? Number(d.x) : 6);
   const y = mio ? Number(mio.y) : (isFinite(Number(d.y)) ? Number(d.y) : 84);
-  el.style.left = x + '%';
-  el.style.top = y + '%';
-
   const r = Number(mio ? mio.r : d.r) || 0;
-  el.style.transform = 'translate(-' + x + '%,-' + y + '%)' + (r ? ' rotate(' + r + 'deg)' : '');
   el.style.setProperty('--fg', d.colore || '#ffffff');
   if (d.sfondo) el.style.setProperty('--bg', d.sfondo);
   el.style.color = d.colore || '#ffffff';
@@ -639,6 +638,11 @@ function contatore(d) {
   el.style.fontSize = Math.max(8, Math.min(200, Math.round(corpo))) + 'px';
   el.style.fontWeight = d.grassetto ? '800' : '500';
   el.style.fontFamily = fontStackCont(d.font);
+  if (mio && window.SB_RIQUADRO.e(mio)) { window.SB_RIQUADRO.posa(el, mio, {}); return; }
+  window.SB_RIQUADRO.togli(el);
+  el.style.left = x + '%';
+  el.style.top = y + '%';
+  el.style.transform = 'translate(-' + x + '%,-' + y + '%)' + (r ? ' rotate(' + r + 'deg)' : '');
 }
 
 const GOAL_ETICHETTA = { follower: 'follower', sub: 'sub', bit: 'bit' };
@@ -658,7 +662,6 @@ function unGoal(cfg, valore) {
   posa(wboxes[cfg.posizione] || wboxes['alto-sinistra'] || document.body, el);
   const st = cfg.stile || {};
   el.className = 'ovl-widget ovl-goal dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
-  posaElemento(el, 'goal:' + id, cfg);
   applicaVars(el, {
     '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
     '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
@@ -669,6 +672,7 @@ function unGoal(cfg, valore) {
   el.querySelector('.g-num').textContent = ora + ' / ' + meta;
   el.querySelector('.g-barra i').style.setProperty('--q', Math.min(1, (ora / meta) || 0).toFixed(4));
   el.classList.toggle('pieno', ora >= meta);
+  posaElemento(el, 'goal:' + id, cfg);
 }
 
 function goal(lista, conti) {
@@ -692,10 +696,14 @@ const MUSICA_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 function posaElemento(el, chiave, cfg) {
   const xy = (MIO.xy && MIO.xy[chiave]) || (cfg && cfg.xy);
   if (xy && xy.x != null) {
-    el.style.position = 'fixed'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
+    el.style.position = 'fixed';
+    if (window.SB_RIQUADRO.e(xy)) { window.SB_RIQUADRO.posa(el, xy, {}); return; }
+    window.SB_RIQUADRO.togli(el);
+    el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
     el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.width = 'max-content';
     el.style.transform = trasformaXY(xy);
   } else {
+    window.SB_RIQUADRO.togli(el);
     el.style.position = ''; el.style.left = ''; el.style.top = '';
     el.style.right = ''; el.style.bottom = ''; el.style.width = '';
     el.style.transform = '';
@@ -824,7 +832,6 @@ function disegnaMusica() {
     + (vivo && d.suona ? ' suona' : ' in-pausa') + (vivo ? '' : ' fermo')
     + ' entra-' + cfg.entrata + (cfg.barra !== 'sotto' && cfg.tempi === 'no' ? ' senza-sotto' : '')
     + (el.classList.contains('dentro') ? ' dentro' : '');
-  vestiElemento(el, cfg, 'nessuna', 'musica');
   if (Number(cfg.larghezza) > 0) el.style.setProperty('--m-testo', Number(cfg.larghezza) + 'em');
   else el.style.removeProperty('--m-testo');
   if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
@@ -869,6 +876,7 @@ function disegnaMusica() {
       el.classList.remove('cambia'); void el.offsetWidth; el.classList.add('cambia');
     }
   }
+  vestiElemento(el, cfg, 'nessuna', 'musica');
   misuraScorrimento(el, cfg);
   avanzaBarra();
 }
@@ -1008,9 +1016,9 @@ function disegnaTimer() {
   posa(wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body, el);
   el.className = 'ovl-widget ovl-timer dim-' + ((cfg.stile || {}).dim || 'media') + ' ' + classiIdentita(cfg.stile, 'nessuna')
     + (finito ? ' finito' : '') + (el.classList.contains('dentro') ? ' dentro' : '');
-  vestiElemento(el, cfg, 'nessuna', 'timer');
   el.querySelector('.t-tit').textContent = finito ? '' : (cfg.titolo || '');
   el.querySelector('.t-num').textContent = finito ? (cfg.testoFine || '') : oreMinSec(manca);
+  vestiElemento(el, cfg, 'nessuna', 'timer');
   if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
 }
 

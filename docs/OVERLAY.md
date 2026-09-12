@@ -785,3 +785,88 @@ Quello che manca ancora, e che si vede: elementi liberi (un testo, un'immagine)
 da mettere in scena, e la selezione multipla. Sono una funzione nuova, non una
 correzione: hanno bisogno del loro modello (dati per overlay, resa in diretta,
 editor) e del loro piano.
+
+## Il riquadro: un perimetro a cui l'elemento si adatta
+
+Chiesto così: «non allargo la chat, il player o l'alert: allargo il **perimetro**
+dell'elemento, e lui si adatta». Prima il modello, poi il codice.
+
+### Due modi di posare, non uno solo
+
+Un elemento posato sulla tela oggi è un **punto**: `{x, y, s, r}`, dove `x` e `y`
+sono la posizione lungo la corsa disponibile (0 a filo, 100 a filo dall'altra
+parte), `s` una scala uniforme e `r` la rotazione. L'elemento tiene la sua
+misura naturale: la chat è larga quanto la riga più lunga, l'alert quanto il
+suo testo.
+
+Un **riquadro** è l'altro modo: `{x, y, w, h, r}`, un rettangolo sulla tela in
+centesimi (`x, y` l'angolo in alto a sinistra, `w, h` la misura), e l'elemento
+**si adatta al rettangolo**. Il riquadro ha `w` e `h`; il punto ha `s`. La
+presenza di `w` e `h` decide il modo, in un posto solo (`xyOk`, nel server, e
+`riquadro.js`, letto da tutte e due le pagine). Nessuna migrazione: quello che
+è posato oggi resta un punto e si disegna come prima.
+
+### Cosa vuol dire «si adatta»
+
+Due famiglie, perché due sono i modi in cui una cosa può riempire uno spazio.
+
+- **La chat** è un flusso di righe: il riquadro è la sua scatola vera. Le righe
+  vanno a capo alla larghezza del riquadro, si impilano dal basso, e quando non
+  ci stanno più in altezza la più vecchia esce dall'alto. Il carattere non
+  cambia: lo decide «dimensione». Un riquadro «2×3» della griglia è una chat
+  larga due caselle e alta tre, e mostra quante righe ci stanno.
+- **Tutto il resto** (alert, widget, obiettivi, conto alla rovescia, player,
+  contatori) è un blocco: si impagina alla larghezza del riquadro (il testo va
+  a capo, se può), poi viene **scalato in modo uniforme** perché stia dentro,
+  e centrato. Se il riquadro è più grande della misura naturale l'elemento
+  cresce a riempirlo; se è più piccolo si stringe. Il fattore è uno solo:
+  `k = min(w / W, h / H)`, con `W` e `H` misurati dopo l'impaginazione. Niente
+  deformazioni: un alert resta un alert, solo più grande.
+
+La rotazione vale in tutti e due i casi, attorno al centro del riquadro.
+
+### Perché lo stesso codice da tutte e due le parti
+
+Adattarsi richiede una **misura** (quanto è largo e alto l'elemento dopo essere
+andato a capo) e la misura la sa solo il browser. Quindi il calcolo non può
+stare nel CSS e non può stare in due posti: `riquadro.js` (`SB_RIQUADRO.posa`)
+lo fa per la pagina dell'overlay e per la tela dell'editor, che gli passano lo
+stesso rettangolo e la stessa tela di 1920×1080. È l'unico modo in cui
+«anteprima = diretta» resta vero anche qui, e il cancello lo misura.
+
+### Nell'editor
+
+Un elemento selezionato mostra il suo riquadro: otto maniglie (quattro angoli,
+quattro lati) sul rettangolo, non sul contenuto scalato. Tirare un lato o un
+angolo di un elemento posato a punto lo **trasforma in riquadro** partendo dal
+rettangolo che occupa in quel momento: niente salta. I bordi si agganciano alla
+griglia della tela (dodici caselle per lato), ai terzi, al centro e ai bordi
+degli altri riquadri. Nelle proprietà: X, Y, larghezza e altezza in centesimi,
+e la spunta «riquadro» per tornare al punto (che riparte dal centro, a scala
+100). Il resto (lucchetto, aggancio, annulla, salvataggi in coda) vale uguale.
+
+### Il limite dichiarato
+
+La misura si fa a ogni posa, non a ogni riga di chat che arriva: un alert
+lunghissimo che va a capo si stringe per starci; una chat non si stringe mai,
+taglia dall'alto. Il riquadro non può uscire dalla tela (`x + w ≤ 100`,
+`y + h ≤ 100`) e non può essere più piccolo di due centesimi per lato.
+
+### Misurato
+
+Il cancello dell'anteprima ha quattro casi di riquadro, editor contro pagina
+vera dell'overlay: la chat in un riquadro di due caselle per tre (320×270 px di
+tela, otto righe lunghe: la scatola è il riquadro e nessuna riga è tagliata a
+metà), un widget in 20×10, il player in 30×12, un alert senza icona in 40×15.
+Tutti stanno dentro, riempiono almeno un lato e hanno le stesse misure di qua e
+di là. Il rosso trovato strada facendo: nell'editor gli elementi stanno in un
+involucro, in diretta sono l'elemento stesso, e il tetto di larghezza del
+riquadro stringeva scatole diverse (player 636 contro 404 px). Ora il tetto va
+anche sull'elemento dentro l'involucro, ed è `riquadro.js` a metterlo prima di
+misurare.
+
+L'autoprova ha trovato anche un cieco: la chat impila le righe dal basso, quindi
+ciò che non ci sta finisce **sopra** il bordo, e `scrollHeight` quel lato non lo
+conta. Il taglio non tagliava e la misura diceva che andava tutto bene. Ora
+tanto il taglio quanto la misura guardano la geometria delle righe (la prima
+sopra il bordo, l'ultima sotto), in `riquadro.js`, in un posto solo.

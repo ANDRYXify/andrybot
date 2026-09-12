@@ -1211,6 +1211,7 @@ const OVERLAY = {
       ['Ridimensionare', 'La maniglia in basso a destra, la <strong>rotellina</strong>, o il numero nelle proprietà.'],
       ['Ruotare', 'La maniglia col cerchio, <strong>Maiusc+rotellina</strong>, o i gradi nelle proprietà.'],
       ['Allineare', 'I sei pulsanti in alto: bordi e centri della tela.'],
+      ['Dare un perimetro', 'Tira un <strong>bordo</strong> dell\'elemento selezionato (o spunta <strong>Riquadro</strong> nelle proprietà): da lì l\'elemento vive in un riquadro e si adatta a quello spazio. I bordi si agganciano alla griglia e agli altri riquadri; larghezza e altezza si scrivono anche a numero.'],
       ['Bloccare', 'Il lucchetto nel livello, o <strong>Blocca</strong> nelle proprietà: un livello bloccato non si sposta, non si ridimensiona e non si ruota per sbaglio.'],
       ['Ingrandire', '<strong>Ctrl+rotellina</strong> sulla tela, attorno al puntatore; i pulsanti dello zoom attorno al centro; <strong>Adatta</strong> rimette tutta la scena nello schermo.'],
       ['Spegnere l\'aggancio', 'La spunta <strong>Aggancia</strong>: senza, gli elementi non vengono tirati da guide e centri. <strong>Alt</strong> lo toglie solo mentre trascini.'],
@@ -1219,6 +1220,7 @@ const OVERLAY = {
       ['Vedere com\'è dal vivo', 'La spunta <strong>Dal vivo</strong>: alert e chat finti che si susseguono mentre lavori.'],
     ] },
     { p: ['Gli angoli della tela sono gli stessi dell\'overlay vero (un dito dai bordi), quindi un elemento «in alto a destra» sta a filo dello schermo anche in OBS. Il salvataggio è automatico: la posizione si scrive appena molli il mouse. L\'aspetto (colori, font, forma) invece esce con <strong>Salva overlay</strong>: se provi a cambiare scheda, overlay o pagina con modifiche non salvate, l\'editor te lo chiede prima. Se un salvataggio non riesce, te lo dice.'] },
+    { p: ['<strong>Il riquadro.</strong> La chat dentro un riquadro va a capo alla sua larghezza, impila le righe dal basso e quando non ci stanno più la più vecchia esce dall\'alto: un riquadro di due caselle per tre mostra quante righe ci stanno. Tutto il resto (alert, widget, obiettivi, conto alla rovescia, player, contatori) va a capo se può e poi si ingrandisce o si stringe per starci, senza deformarsi: un alert resta un alert, solo più grande. Niente esce dalla tela.'] },
     { p: ['Quello che vedi sulla tela ha le misure della diretta: il player tiene la stessa larghezza qualunque sia il brano, la chat si ferma alla larghezza che hai scelto, e un elemento spento resta sulla tela ma sbiadito, così lo trovi e lo riaccendi.'] },
 
     { h2: 'Metterlo in OBS' },
