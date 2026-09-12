@@ -575,7 +575,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       ogTitolo: 'The Twitch and Kick bot that writes with your own account',
       ogDesc: 'The Twitch and Kick bot that writes in chat with your own account: custom commands, stream overlay (alerts, on-screen chat, widgets, 7TV emotes, green screen), music, clips and live alerts.',
       twTitolo: 'The Twitch and Kick bot that writes with your own account',
-      twDesc: 'The Twitch and Kick bot that writes with your own account. stream overlay (alerts, chat, widgets, 7TV, green screen), commands, music, clips, live alerts.',
+      twDesc: 'The Twitch and Kick bot that writes with your own account. Stream overlay (alerts, chat, widgets, 7TV, green screen), commands, music, clips, live alerts.',
     },
     es: {
       html: 'es', ogLocale: 'es_ES', url: 'https://socialbot.live/?lang=es',
@@ -584,7 +584,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       ogTitolo: 'El bot de Twitch y Kick que escribe con tu propia cuenta',
       ogDesc: 'El bot de Twitch y Kick que escribe en el chat con tu propia cuenta: comandos a medida, overlay para el directo (avisos, chat en pantalla, widgets, emotes 7TV, pantalla verde), música, clips y avisos en directo.',
       twTitolo: 'El bot de Twitch y Kick que escribe con tu propia cuenta',
-      twDesc: 'El bot de Twitch y Kick que escribe con tu propia cuenta. Overlay per la diretta (avisos, chat, widgets, 7TV, pantalla verde), comandos, música, clips, avisos en directo.',
+      twDesc: 'El bot de Twitch y Kick que escribe con tu propia cuenta. Overlay para el directo (avisos, chat, widgets, 7TV, pantalla verde), comandos, música, clips, avisos en directo.',
     },
   };
 
@@ -1675,7 +1675,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 - Importa i comandi che lo streamer ha gia' su Nightbot, StreamElements o
   Fossabot: si incolla l'export, le variabili vengono tradotte, e prima di
   scrivere qualsiasi cosa mostra un'anteprima.
-- Comandi e automazioni illimitati (quando succede X, fai Y).
+- Comandi e automazioni illimitati: un follow accende una GIF, «!oggi» risponde con la scaletta.
 - Moderazione automatica: antispam, filtri su link/maiuscole/ripetizioni, timeout.
 - Overlay per la diretta: alert di follow/sub/bit/raid, chat a schermo, widget, emote 7TV.
 - Contatori a schermo (es. !morti) accesi dalla chat.
