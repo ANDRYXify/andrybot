@@ -740,7 +740,7 @@ function togliMusica() {
   if (musicaEl.uscita) return;
   el.classList.remove('dentro');
   el.classList.add('esce');
-  musicaEl.uscita = setTimeout(via, 520);
+  musicaEl.uscita = setTimeout(via, 880);
 }
 
 function restaMusica(el) {

@@ -18,7 +18,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-12
 
 - Il player ha due temi nuovi, CD ed esagono, e ogni tema porta la sua animazione: il vinile gira, il CD cambia riflesso, l'anello dell'esagono ruota. Scegli il tema e basta. [vai: alert]
-- Ogni tema del player entra ed esce a modo suo: il disco scivola fuori dalla copertina, le bobine si posano, l'anello si chiude, il terminale scrive riga per riga. Nello Studio: «Rivedi l'entrata». [vai: alert]
+- Ogni tema del player entra ed esce come l'oggetto vero: il vinile prende giri e poi frena e rientra nella custodia, il CD esce e la custodia si chiude, la cassetta viene espulsa. [vai: alert]
+- Nello Studio, «Rivedi l'entrata» fa uscire e rientrare il player sulla tela, per vedere il gesto del tema senza andare in diretta. [vai: alert]
 - L'entrata del player (dissolvenza, scivola, sale) in diretta ora parte davvero: prima il nodo compariva già al suo posto. [vai: alert]
 - Nel player messo in colonna il testo sta dentro la carta e la copertina è al centro: i tempi non escono più dal bordo. [vai: alert]
 - L'anteprima del link, quando lo incolli su Telegram, WhatsApp o X, dice la stessa cosa della pagina: il bot che in chat scrive con il tuo nome, con l'immagine rifatta.

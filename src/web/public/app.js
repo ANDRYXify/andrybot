@@ -7054,7 +7054,7 @@ function _vestiMusica(box, cfg) {
     + ' cover-' + (cfg.cover || 'quadrata') + ' barra-' + (cfg.barra || 'sotto')
     + ((cfg.ritmo || 'onde') !== 'no' ? ' con-onde' : '') + ' sfondo-' + (cfg.sfondo || 'no')
     + ' ritmo-' + (cfg.ritmo || 'onde') + ' suona'
-    + ' corpo-' + (cfg.corpo || 'normale') + ' tema-' + (cfg.tema || 'nessuno')
+    + ' corpo-' + (cfg.corpo || 'normale') + ' tema-' + (cfg.tema || 'nessuno') + ' entra-' + (cfg.entrata || 'dissolve')
     + ((cfg.barra || 'sotto') !== 'sotto' && (cfg.tempi || 'no') === 'no' ? ' senza-sotto' : '');
   _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
     '--acc': st.accento, '--acc2': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px',

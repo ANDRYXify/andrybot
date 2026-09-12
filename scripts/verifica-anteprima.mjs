@@ -130,8 +130,11 @@ try {
     await live.waitForFunction(aspetta, null, { timeout: 8000 }).catch(() => {});
     await attesa(250);
   };
-  const misuraLive = (sel) => live.evaluate(`(${MISURA})(${JSON.stringify(sel)})`);
-  const misuraEd = (sel) => ed.evaluate(`(${MISURA})(${JSON.stringify(sel)})`);
+  // si misura A RIPOSO: entrate, uscite e gesti dei temi sono transizioni e
+  // animazioni finite, e un rettangolo letto a meta' corsa non e' una misura
+  const A_RIPOSO = 'Promise.all(document.getAnimations().filter((a) => a.playState === "running" && Number.isFinite(a.effect.getTiming().iterations)).map((a) => a.finished.catch(() => {})))';
+  const misuraLive = async (sel) => { await live.evaluate(A_RIPOSO); return live.evaluate(`(${MISURA})(${JSON.stringify(sel)})`); };
+  const misuraEd = async (sel) => { await ed.evaluate(A_RIPOSO); return ed.evaluate(`(${MISURA})(${JSON.stringify(sel)})`); };
 
   // --- 1. il player -------------------------------------------------------
   const XY = { x: 50, y: 50, s: 100, r: 0 };
