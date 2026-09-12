@@ -1041,6 +1041,28 @@ scatola della copertina si allarga con lui (`.62 + fattore` copertine) e si
 alza quando il disco supera la copertina (`max(1, fattore)`), e la copertina
 resta centrata in altezza invece di stirarsi.
 
+**Le animazioni sono del tema.** Un tema del player è tre cose, tutte nel
+foglio, dentro il suo blocco `.tema-X`: la texture della carta (`--velo`), la
+figura dietro o attorno alla copertina (uno pseudo-elemento di `.m-cover`) e
+il suo moto (una `@keyframes mus-*`). Il codice non sa niente: mette la classe.
+Vinile e CD sporgono da dietro e girano, la cassetta gira le bobine, l'esagono
+taglia la copertina a sei lati e le mette attorno un anello che ruota piano.
+Tre regole rendono sicuro aggiungerne uno: quello che si muove vive in uno
+pseudo-elemento o nel velo, mai in un nodo che l'anteprima misura (una
+rotazione cambia il rettangolo che `getBoundingClientRect` legge, e il
+cancello dell'anteprima non sarebbe più vero); ciò che gira parte in pausa e
+si accende con `.suona`; e la scatola della copertina contiene la figura per
+costruzione, così il riquadro non la taglia. La misura «Figura dietro» (la
+chiave resta `vinile`) scala il disco o l'anello in ogni tema che ne ha uno.
+`test/contratto/player-temi.test.mjs` fissa le tre regole.
+
+**In colonna.** In diretta il player è largo `max-content` e la carta ha un
+tetto di dodici copertine: il corpo del testo (13 em di serie) superava il tetto
+e i tempi uscivano dal bordo, mentre l'editor, che non usa `max-content`, li
+teneva dentro. Ora il corpo non supera la carta (`max-width: 100%`), la copertina
+sta al centro e la riga dei tempi pure: editor e diretta danno la stessa misura
+anche qui (caso «colonna» del cancello).
+
 **Il cancello.** Lo stesso player (tema vinile, due righe, tempi) si misura tre
 volte, pezzo per pezzo (copertina, disco, righe, tempi, barra, onde, spazio
 attorno, colori): senza misure, con le misure a 100, con misure e colori
