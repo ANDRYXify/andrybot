@@ -146,7 +146,8 @@ export class AlertsEngine {
     } catch (e) { log.debug('timer:', e?.message || e); return 0; }
   }
 
-  // L'OVERLAY DELL'ATTESA FA PARTIRE IL CONTO DA SE'. Ma solo se non sta gia'
+  // L'OVERLAY DELL'ATTESA FA PARTIRE IL CONTO DA SE' (e lo stesso fa il pannello
+  // nel momento in cui si accende «parte da solo»). Ma solo se non sta gia'
   // andando: due sorgenti aperte insieme chiederebbero tutte e due, e la seconda
   // farebbe ripartire da capo un conto gia' avviato — proprio mentre chi guarda
   // lo sta leggendo. Chi arriva secondo non trova niente da fare, ed e' giusto.
