@@ -5632,9 +5632,9 @@ const CORPO_OPTS = () => [
   ['cicciotto', L('Cicciotto', 'Chunky', 'Gordito')],
 ];
 const TEMA_OPTS = () => [
-  ['nessuno', L('Nessuno', 'None', 'Ninguno')], ['vinile', L('Vinile', 'Vinyl', 'Vinilo')],
+  ['nessuno', L('Nessuno', 'None', 'Ninguno')], ['vinile', L('Vinile', 'Vinyl', 'Vinilo')], ['cd', L('CD', 'CD', 'CD')],
   ['cassetta', L('Cassetta', 'Cassette', 'Casete')], ['terminale', L('Terminale', 'Terminal', 'Terminal')],
-  ['manga', L('Manga', 'Manga', 'Manga')],
+  ['manga', L('Manga', 'Manga', 'Manga')], ['esagono', L('Esagono', 'Hexagon', 'Hexágono')],
 ];
 const FORMA_OPTS = () => [
   ['carta', L('Carta', 'Card', 'Tarjeta')], ['pillola', L('Pillola', 'Pill', 'Píldora')],
@@ -5699,7 +5699,7 @@ const TEMPLATE_BUILTIN = [
 
   { nome: 'Nastro', che: 'Fasce piene e diagonali, senza cornici. Buono per le dirette veloci', dati: { al: { animazione: 'slide', sfondo: '#241206', opacita: 93, testo: '#fff4e6', bordoRaggio: 0, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 27, forma: 'nastro', materia: 'sfumata', cornice: 'barra', composizione: 'riga' }, ch: { sfondo: '#241206', opacita: 85, testo: '#fff4e6', bordoRaggio: 0, font: 'sistema', dim: 'media', forma: 'nastro', materia: 'sfumata', cornice: 'barra' }, go: { dim: 'media', font: 'sistema', forma: 'nastro', materia: 'sfumata', cornice: 'barra', sfondo: '#241206', testo: '#fff4e6', accento: '#ff8a2b', bordoRaggio: 0, opacita: 90 }, mu: { tema: 'cassetta', sfondo: 'copertina', corpo: 'cicciotto', entrata: 'scivola' }, acc: '#ff8a2b' } },
 
-  { nome: 'Esagoni', che: 'Forme a nido d’ape e taglio tecnico, per i giochi di fantascienza', dati: { al: { animazione: 'zoom', sfondo: '#0d1117', opacita: 92, testo: '#e6edf3', bordoRaggio: 0, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 26, forma: 'esagono', materia: 'griglia', cornice: 'linea', composizione: 'colonna' }, ch: { sfondo: '#0d1117', opacita: 84, testo: '#e6edf3', bordoRaggio: 0, font: 'sistema', dim: 'media', forma: 'taglio', materia: 'griglia', cornice: 'linea' }, go: { dim: 'media', font: 'sistema', forma: 'esagono', materia: 'griglia', cornice: 'linea', sfondo: '#0d1117', testo: '#e6edf3', accento: '#58a6ff', bordoRaggio: 0, opacita: 88 }, mu: { tema: 'vinile', sfondo: 'colori', corpo: 'normale', entrata: 'sale' }, acc: '#58a6ff' } },
+  { nome: 'Esagoni', che: 'Forme a nido d’ape e taglio tecnico, per i giochi di fantascienza', dati: { al: { animazione: 'zoom', sfondo: '#0d1117', opacita: 92, testo: '#e6edf3', bordoRaggio: 0, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 26, forma: 'esagono', materia: 'griglia', cornice: 'linea', composizione: 'colonna' }, ch: { sfondo: '#0d1117', opacita: 84, testo: '#e6edf3', bordoRaggio: 0, font: 'sistema', dim: 'media', forma: 'taglio', materia: 'griglia', cornice: 'linea' }, go: { dim: 'media', font: 'sistema', forma: 'esagono', materia: 'griglia', cornice: 'linea', sfondo: '#0d1117', testo: '#e6edf3', accento: '#58a6ff', bordoRaggio: 0, opacita: 88 }, mu: { tema: 'esagono', sfondo: 'colori', corpo: 'normale', entrata: 'sale' }, acc: '#58a6ff' } },
 ];
 
 function bloccoAlert(t, a) {
@@ -7636,7 +7636,7 @@ function _PV() { return window.PLAYER_VARS || { misure: [], colori: [], applica(
 function _misureDef() { const o = {}; for (const k of _PV().misure) o[k] = 100; return o; }
 function _coloriDef() { const o = { propri: false }; for (const k of _PV().colori) o[k] = k === 'barra' || k === 'onde' ? '#f72fa7' : '#ffffff'; return o; }
 function _nomiPezziPlayer() {
-  return { sfondo: L('Spazio attorno', 'Space around', 'Espacio alrededor'), cover: L('Copertina', 'Cover art', 'Portada'), vinile: L('Vinile', 'Vinyl', 'Vinilo'),
+  return { sfondo: L('Spazio attorno', 'Space around', 'Espacio alrededor'), cover: L('Copertina', 'Cover art', 'Portada'), vinile: L('Figura dietro', 'Figure behind', 'Figura detrás'),
     titolo: L('Prima riga', 'First line', 'Primera línea'), artista: L('Seconda riga', 'Second line', 'Segunda línea'), tempi: L('Tempi', 'Times', 'Tiempos'),
     barra: L('Barra', 'Bar', 'Barra'), onde: L('Onde', 'Bars', 'Ondas') };
 }

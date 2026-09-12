@@ -97,8 +97,9 @@ di scrivere la riga che lo applica.
 
 E le vesti sono state completate: oltre ad alert e chat vestono **gli obiettivi**
 e **il player**. Il player ha un asse suo — l'oggetto che imita, vinile /
-cassetta / terminale / manga — e la veste adesso lo sceglie invece di lasciarlo
-scollegato: «Nastro» è una cassetta, «Terminale» un terminale, «Manga» il manga.
+CD / cassetta / terminale / manga / esagono — e la veste adesso lo sceglie invece
+di lasciarlo scollegato: «Nastro» è una cassetta, «Terminale» un terminale,
+«Manga» il manga, «Esagoni» un esagono.
 
 ### Il contratto
 

@@ -262,7 +262,7 @@ export const RIGHE_MUS = ['una', 'due'];
 export const RITMO_MUS = ['no', 'onde', 'tutto'];
 export const SFONDO_MUS = ['no', 'copertina', 'colori'];
 export const CORPO_MUS = ['slim', 'normale', 'cicciotto'];
-export const TEMA_MUS = ['nessuno', 'vinile', 'cassetta', 'terminale', 'manga'];
+export const TEMA_MUS = ['nessuno', 'vinile', 'cd', 'cassetta', 'terminale', 'manga', 'esagono'];
 
 export const normMusica = (m) => {
   m = m || {};

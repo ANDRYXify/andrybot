@@ -136,7 +136,7 @@ try {
   // --- 1. il player -------------------------------------------------------
   const XY = { x: 50, y: 50, s: 100, r: 0 };
   const CASI_PLAYER = [];
-  for (const tema of ['nessuno', 'vinile', 'cassetta', 'terminale', 'manga']) for (const corpo of ['normale', 'slim']) CASI_PLAYER.push({ tema, corpo, verso: 'riga', larghezza: 0 });
+  for (const tema of ['nessuno', 'vinile', 'cd', 'cassetta', 'terminale', 'manga', 'esagono']) for (const corpo of ['normale', 'slim']) CASI_PLAYER.push({ tema, corpo, verso: 'riga', larghezza: 0 });
   CASI_PLAYER.push({ tema: 'nessuno', corpo: 'normale', verso: 'colonna', larghezza: 0 }, { tema: 'cassetta', corpo: 'slim', verso: 'riga', larghezza: 20 });
   for (const caso of CASI_PLAYER) {
     const nome = `player ${caso.tema}/${caso.corpo}/${caso.verso}${caso.larghezza ? '/testo ' + caso.larghezza + 'em' : ''}`;

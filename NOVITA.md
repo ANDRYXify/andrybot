@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-12
 
+- Il player ha due temi nuovi, CD ed esagono, e ogni tema porta la sua animazione: il vinile gira, il CD cambia riflesso, l'anello dell'esagono ruota. Scegli il tema e basta. [vai: alert]
+- Nel player messo in colonna il testo sta dentro la carta e la copertina è al centro: i tempi non escono più dal bordo. [vai: alert]
 - L'anteprima del link, quando lo incolli su Telegram, WhatsApp o X, dice la stessa cosa della pagina: il bot che in chat scrive con il tuo nome, con l'immagine rifatta.
 - La pagina pubblica racconta una serata di diretta con il bot acceso, momento per momento, al posto delle schede tutte uguali; l'elenco completo delle funzioni resta, con i prezzi accanto.
 - Nell'invito in fondo alla pagina pubblica ci si registra anche con Kick (e con YouTube dove è aperto), come in cima alla pagina: lì era rimasto solo Twitch.
