@@ -19,6 +19,8 @@ const ROTTURE = [
     "l'immagine non si ricorda: ricaricando la pagina sparisce"],
   ['src/web/public/app.js', "  strato.style.opacity = String(_rif.op / 100);\n", '',
     "la trasparenza scelta non arriva sull'immagine"],
+  ['src/web/public/app.js', "  _g('ovl-rif-on')?.addEventListener('input', (e) => { _rif.on = !!e.target.checked; _rifDisegna(); });\n", '',
+    "la spunta «Mostra» non regge al clic: qualcun altro rifa' l'anteprima fra l'input e il change e la rimette com'era"],
 ];
 
 const _selftest = process.argv.find((a) => a === '--selftest' || a.startsWith('--selftest='));
@@ -92,11 +94,16 @@ try {
   await attesa(300);
   dice((await strato()).opacita === '0.3', 'il cursore cambia la trasparenza (30)');
 
-  await ed.evaluate(() => { const c = document.getElementById('ovl-rif-on'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); });
-  await attesa(200);
-  dice((await strato()).hidden, '«Mostra» spento nasconde l\'immagine senza toglierla');
-  await ed.evaluate(() => { const c = document.getElementById('ovl-rif-on'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); });
+  // un CLIC vero, non un evento finto: fra l'input e il change qualcun altro rifa'
+  // l'anteprima, e la spunta deve reggere anche a quello
+  await ed.click('#ovl-rif-on');
   await attesa(300);
+  const spenta = await ed.evaluate(() => ({ spunta: document.getElementById('ovl-rif-on').checked, hidden: document.getElementById('ap-riferimento').hidden }));
+  dice(!spenta.spunta && spenta.hidden, `un clic su «Mostra» la spegne e nasconde l'immagine senza toglierla — ${JSON.stringify(spenta)}`);
+  await ed.click('#ovl-rif-on');
+  await attesa(300);
+  const riaccesa = await ed.evaluate(() => ({ spunta: document.getElementById('ovl-rif-on').checked, hidden: document.getElementById('ap-riferimento').hidden }));
+  dice(riaccesa.spunta && !riaccesa.hidden, `un altro clic la riaccende — ${JSON.stringify(riaccesa)}`);
 
   const rifiuto = await ed.evaluate(async () => _rifMetti(new Blob(['ciao'], { type: 'text/plain' })));
   dice(rifiuto === false && (await strato()).blob, 'un file che non e\' un\'immagine viene rifiutato e quella di prima resta');
@@ -106,7 +113,7 @@ try {
   const tornata = await strato();
   dice(!tornata.hidden && tornata.blob && tornata.opacita === '0.3', `ricaricando la pagina l'immagine torna, con la sua trasparenza (30) — ${JSON.stringify(tornata)}`);
 
-  await ed.evaluate(() => document.getElementById('ovl-rif-via').click());
+  await ed.click('#ovl-rif-via');
   await attesa(400);
   dice((await strato()).hidden && !(await strato()).comandi, '«Togli» la toglie e nasconde i comandi');
   await apri();
