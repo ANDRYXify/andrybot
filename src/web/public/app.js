@@ -6173,8 +6173,11 @@ function pannelloAlert() {
         <div class="ovl-insp-num">
           <label>X <input type="number" id="insp-x" step="0.1" min="0" max="100"><i>%</i></label>
           <label>Y <input type="number" id="insp-y" step="0.1" min="0" max="100"><i>%</i></label>
+          <label id="insp-riga-w" hidden>${L('Larg.', 'Width', 'Ancho')} <input type="number" id="insp-w" step="0.1" min="2" max="100"><i>%</i></label>
+          <label id="insp-riga-h" hidden>${L('Alt.', 'Height', 'Alto')} <input type="number" id="insp-h" step="0.1" min="2" max="100"><i>%</i></label>
+          <label class="ovl-spunta" title="${esc(L('Un riquadro: tiri i bordi e l’elemento si adatta a quello spazio, in diretta come qui.', 'A frame: drag its edges and the element adapts to that space, live as here.', 'Un recuadro: tiras de los bordes y el elemento se adapta a ese espacio, en directo como aquí.'))}"><input type="checkbox" id="insp-riq"><span>${L('Riquadro', 'Frame', 'Recuadro')}</span></label>
         </div>
-        <div class="ovl-insp-cur">
+        <div class="ovl-insp-cur" id="insp-riga-dim">
           <label for="insp-size">${L('Dimensione', 'Size', 'Tamaño')}</label>
           <input type="range" id="insp-size" min="30" max="300" step="1" value="100">
           <label class="ovl-insp-mis"><input type="number" id="insp-s" step="1" min="30" max="300"><i>%</i></label>
@@ -6866,6 +6869,7 @@ function aggiornaAnteprima() {
     else _posAncora(nodo, _angoloDi(e.k));
   }
   _aggiornaStatoLivelli();
+  _disegnaRiquadro();
 }
 
 const GOAL_PAROLA = { follower: 'follower', sub: 'sub', bit: 'bit' };
@@ -7073,6 +7077,7 @@ function _posAncora(el, ang) {
 function _centroTela(k) {
   const st = _posCorrente(k);
   const el = _nodo(k);
+  if (st && window.SB_RIQUADRO.e(st)) return { x: (st.x + st.w / 2) / 100 * OVL_W, y: (st.y + st.h / 2) / 100 * OVL_H };
   if (st && el) { const l = _lati(el, st); return { x: centroDa(st.x, l.w, OVL_W), y: centroDa(st.y, l.h, OVL_H) }; }
   const canvas = _g('ovl-preview')?.getBoundingClientRect();
   const r = el ? el.getBoundingClientRect() : null;
@@ -7093,6 +7098,19 @@ function _defPos(k) {
 
 function _posElemento(el, xy) {
   if (!el || !xy) return;
+  if (window.SB_RIQUADRO.e(xy)) {
+    el.style.position = 'absolute';
+    el.classList.add('nel-riquadro');
+    const chat = el.classList.contains('ap-chat');
+    window.SB_RIQUADRO.posa(el, xy, { tela: { w: OVL_W, h: OVL_H }, chat, dentro: chat || el.classList.contains('alert-card') ? null : el.firstElementChild });
+    if (el.classList.contains('ap-chat')) window.SB_RIQUADRO.ritaglia(el);
+    _maniglieAPosto(el, 1, 0);
+    if (selezione && el.id === _idEl(selezione)) _disegnaRiquadro();
+    return;
+  }
+  el.classList.remove('nel-riquadro');
+  window.SB_RIQUADRO.togli(el);
+  el.style.width = ''; el.style.height = '';
   const sf = _fatt(xy), r = Number(xy.r) || 0;
   el.style.position = 'absolute'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
   el.style.right = 'auto'; el.style.bottom = 'auto';
@@ -7100,6 +7118,7 @@ function _posElemento(el, xy) {
 
   const h = el.offsetHeight * sf;
   _maniglieAPosto(el, sf, centroDa(xy.y, h, OVL_H) - h / 2);
+  if (selezione && el.id === _idEl(selezione)) _disegnaRiquadro();
 }
 
 let selezione = null;
@@ -7110,7 +7129,7 @@ function _statoXY(chiave) {
   const xy = _ovXY();
   st = (xy[chiave] = xy[chiave] || _posDove(chiave));
   void e;
-  if (st.s == null) st.s = 100;
+  if (st.s == null && !(Number(st.w) > 0)) st.s = 100;
   if (st.r == null) st.r = 0;
   return st;
 }
@@ -7155,6 +7174,7 @@ function deseleziona() {
 function aggiornaInspector() {
   const box = _g('ovl-inspector');
   _rendiLivelli();
+  _disegnaRiquadro();
   aggiornaPiedeBanco();
   if (!box) return;
   mettiVesti(box);
@@ -7167,25 +7187,36 @@ function aggiornaInspector() {
   _mostraProp();
 }
 
-const PROP = { x: [0, 100], y: [0, 100], s: [30, 300], r: [-180, 180] };
-const VISTE_PROP = { x: ['insp-x'], y: ['insp-y'], s: ['insp-s', 'insp-size'], r: ['insp-r', 'insp-rot'] };
+const PROP = { x: [0, 100], y: [0, 100], w: [2, 100], h: [2, 100], s: [30, 300], r: [-180, 180] };
+const VISTE_PROP = { x: ['insp-x'], y: ['insp-y'], w: ['insp-w'], h: ['insp-h'], s: ['insp-s', 'insp-size'], r: ['insp-r', 'insp-rot'] };
 
 function _mostraProp() {
   if (!selezione) return;
   const st = _posDove(selezione);
+  const riq = Number(st.w) > 0;
+  const chk = _g('insp-riq'); if (chk) chk.checked = riq;
+  const rd = _g('insp-riga-dim'); if (rd) rd.hidden = riq;
+  for (const id of ['insp-riga-w', 'insp-riga-h']) { const r = _g(id); if (r) r.hidden = !riq; }
   for (const [campo, viste] of Object.entries(VISTE_PROP)) {
     for (const id of viste) {
       const e = _g(id);
-      if (e && document.activeElement !== e) e.value = campo === 'x' || campo === 'y' ? _arr(st[campo]) : st[campo];
+      if (e && document.activeElement !== e) e.value = st[campo] == null ? '' : (campo === 's' || campo === 'r' ? st[campo] : _arr(st[campo]));
     }
   }
 }
 
 function _scriviProp(campo, v) {
   if (!selezione || !Number.isFinite(v)) return;
-  const [lo, hi] = PROP[campo];
   const st = _statoXY(selezione);
-  st[campo] = campo === 'x' || campo === 'y' ? _arr(_tra(v, lo, hi)) : Math.round(_tra(v, lo, hi));
+  const riq = window.SB_RIQUADRO.e(st);
+  if ((campo === 'w' || campo === 'h') && !riq) return;
+  if (campo === 's' && riq) return;
+  let [lo, hi] = PROP[campo];
+  if (riq && campo === 'x') hi = 100 - st.w;
+  if (riq && campo === 'y') hi = 100 - st.h;
+  if (riq && campo === 'w') hi = 100 - st.x;
+  if (riq && campo === 'h') hi = 100 - st.y;
+  st[campo] = campo === 's' || campo === 'r' ? Math.round(_tra(v, lo, hi)) : _arr(_tra(v, lo, hi));
   _posElemento(_nodo(selezione), st);
   _mostraProp();
   _rendiLivelli();
@@ -7557,7 +7588,9 @@ function _accendiDi(k, v) {
 
 function _posDove(k) {
   const st = _posCorrente(k) || _defPos(k) || _cornerXY(_angoloDi(k));
-  return { x: _arr(st.x), y: _arr(st.y), s: st.s == null ? 100 : st.s, r: st.r == null ? 0 : st.r };
+  const fuori = { x: _arr(st.x), y: _arr(st.y), s: st.s == null ? 100 : st.s, r: st.r == null ? 0 : st.r };
+  if (Number(st.w) > 0 && Number(st.h) > 0) { fuori.w = _arr(st.w); fuori.h = _arr(st.h); }
+  return fuori;
 }
 
 const _corpoPan = (el) => (el ? (el.querySelector(':scope > .pan-corpo') || el) : null);
@@ -7566,7 +7599,192 @@ function _aggiornaRigaLivello(k) {
   const riga = _g('ovl-livelli')?.querySelector(`[data-liv="${k}"] .ovl-liv-corpo span`);
   if (!riga || !_inOverlay(k)) return;
   const st = _posDove(k);
-  riga.textContent = `${Math.round(st.x)}% · ${Math.round(st.y)}%${st.s !== 100 ? ' · ' + st.s + '%' : ''}`;
+  riga.textContent = _testoPos(st);
+}
+const _testoPos = (st) => (Number(st.w) > 0
+  ? `${Math.round(st.x)}% · ${Math.round(st.y)}% · ${Math.round(st.w)}×${Math.round(st.h)}%`
+  : `${Math.round(st.x)}% · ${Math.round(st.y)}%${st.s !== 100 ? ' · ' + st.s + '%' : ''}`);
+
+function _rettDi(k) {
+  const st = _posCorrente(k);
+  if (!st) return null;
+  if (window.SB_RIQUADRO.e(st)) return { x: st.x, y: st.y, w: st.w, h: st.h, r: Number(st.r) || 0, riq: true };
+  const el = _nodo(k);
+  const c = _centroTela(k);
+  if (!el || !c) return null;
+  const l = _lati(el, st);
+  return { x: _arr((c.x - l.w / 2) / OVL_W * 100), y: _arr((c.y - l.h / 2) / OVL_H * 100),
+    w: _arr(l.w / OVL_W * 100), h: _arr(l.h / OVL_H * 100), r: Number(st.r) || 0, riq: false };
+}
+
+function _disegnaRiquadro() {
+  const stage = _g('ap-stage');
+  if (!stage) return;
+  let box = _g('ap-riquadro');
+  const rett = selezione && _inOverlay(selezione) ? _rettDi(selezione) : null;
+  if (!rett) { if (box) box.hidden = true; return; }
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'ap-riquadro';
+    box.innerHTML = ['n', 'e', 's', 'o', 'no', 'ne', 'so', 'se'].map((l) => `<i class="ap-rq-m ap-rq-${l}" data-lato="${l}"></i>`).join('')
+      + '<i class="ap-rq-ruota" data-lato="ruota">⟳</i>';
+    stage.appendChild(box);
+    box.addEventListener('pointerdown', (e) => {
+      const m = e.target.closest('[data-lato]');
+      if (m) _dragRiquadro(m.dataset.lato, e);
+    });
+  }
+  box.hidden = false;
+  box.classList.toggle('attivo', rett.riq);
+  box.classList.toggle('bloccato', _bloccato(selezione));
+  box.style.left = rett.x + '%'; box.style.top = rett.y + '%';
+  box.style.width = rett.w + '%'; box.style.height = rett.h + '%';
+  box.style.transform = rett.r ? `rotate(${rett.r}deg)` : '';
+}
+
+function _bordiAltrui(k) {
+  const out = [];
+  for (const e of ELEMENTI()) {
+    if (e.k === k || !_inOverlay(e.k)) continue;
+    const r = _rettDi(e.k);
+    if (!r) continue;
+    out.push({ asse: 'x', v: r.x }, { asse: 'x', v: _arr(r.x + r.w / 2) }, { asse: 'x', v: _arr(r.x + r.w) },
+      { asse: 'y', v: r.y }, { asse: 'y', v: _arr(r.y + r.h / 2) }, { asse: 'y', v: _arr(r.y + r.h) });
+  }
+  return out;
+}
+
+function _agganciaBordo(asse, v, altri, scala) {
+  const tot = asse === 'x' ? OVL_W : OVL_H;
+  const soglia = (SNAP_PX / scala) / tot * 100;
+  const cand = [];
+  for (let i = 0; i <= 12; i++) cand.push({ v: _arr(i * 100 / 12), c: i === 6 ? 1 : 0 });
+  for (const a of altri) if (a.asse === asse) cand.push({ v: a.v, c: 2 });
+  let m = null, d = soglia;
+  for (const c of cand) if (Math.abs(v - c.v) < d) { d = Math.abs(v - c.v); m = c; }
+  return m ? { v: m.v, g: { asse, v: m.v, c: m.c } } : null;
+}
+
+function _dragRiquadro(lato, e) {
+  e.preventDefault(); e.stopPropagation();
+  const k = selezione;
+  if (!k || _bloccato(k)) return;
+  const el = _nodo(k);
+  if (!el) return;
+  if (lato === 'ruota') { _dragManiglia(k, e, 'ruota'); return; }
+  const canvas = _g('ovl-preview').getBoundingClientRect();
+  const scala = canvas.width / OVL_W;
+  let st = _statoXY(k);
+  if (!window.SB_RIQUADRO.e(st)) {
+    const rett = _rettDi(k);
+    if (!rett) return;
+    st = { x: rett.x, y: rett.y, w: rett.w, h: rett.h, r: Number(st.r) || 0 };
+    _scriviPos(k, st);
+  }
+  const p0 = { x: (e.clientX - canvas.left) / scala, y: (e.clientY - canvas.top) / scala };
+  const r0 = { x: st.x, y: st.y, w: st.w, h: st.h };
+  const altri = _bordiAltrui(k);
+  const move = (ev) => {
+    const p = { x: (ev.clientX - canvas.left) / scala, y: (ev.clientY - canvas.top) / scala };
+    let dx = (p.x - p0.x) / OVL_W * 100, dy = (p.y - p0.y) / OVL_H * 100;
+    if (ev.ctrlKey || ev.metaKey) { dx *= MARCIA_FINE; dy *= MARCIA_FINE; }
+    let x = r0.x, y = r0.y, w = r0.w, h = r0.h;
+    if (lato.includes('o')) { x = r0.x + dx; w = r0.w - dx; }
+    if (lato.includes('e')) w = r0.w + dx;
+    if (lato.includes('n')) { y = r0.y + dy; h = r0.h - dy; }
+    if (lato.includes('s')) h = r0.h + dy;
+    const guide = [];
+    if (!ev.altKey && !(ev.ctrlKey || ev.metaKey) && _agganciaOn) {
+      if (lato.includes('o')) { const a = _agganciaBordo('x', x, altri, scala); if (a) { w += x - a.v; x = a.v; guide.push(a.g); } }
+      if (lato.includes('e')) { const a = _agganciaBordo('x', x + w, altri, scala); if (a) { w = a.v - x; guide.push(a.g); } }
+      if (lato.includes('n')) { const a = _agganciaBordo('y', y, altri, scala); if (a) { h += y - a.v; y = a.v; guide.push(a.g); } }
+      if (lato.includes('s')) { const a = _agganciaBordo('y', y + h, altri, scala); if (a) { h = a.v - y; guide.push(a.g); } }
+    }
+    if (w < 2) { if (lato.includes('o')) x = r0.x + r0.w - 2; w = 2; }
+    if (h < 2) { if (lato.includes('n')) y = r0.y + r0.h - 2; h = 2; }
+    x = _tra(x, 0, 98); y = _tra(y, 0, 98); w = _tra(w, 2, 100 - x); h = _tra(h, 2, 100 - y);
+    st.x = _arr(x); st.y = _arr(y); st.w = _arr(w); st.h = _arr(h);
+    _posElemento(el, st); _mostraGuide(guide); _mostraProp(); _aggiornaRigaLivello(k);
+  };
+  const up = () => {
+    window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+    _mostraGuide([]); aggiornaInspector(); _ricorda(); _salvaPos(k);
+  };
+  window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+}
+
+function _trascinaRiquadro(k, e) {
+  const el = _nodo(k);
+  if (!el) return;
+  const canvas = _g('ovl-preview').getBoundingClientRect();
+  const scala = canvas.width / OVL_W;
+  const st = _statoXY(k);
+  const p0 = { x: (e.clientX - canvas.left) / scala, y: (e.clientY - canvas.top) / scala };
+  const r0 = { x: st.x, y: st.y };
+  const altri = _bordiAltrui(k);
+  let asse = null;
+  el.style.cursor = 'grabbing';
+  _inTrascinamento = true;
+  const meglio = (a, v, mis, lista) => lista.map((off) => ({ a: _agganciaBordo(a, v + off, altri, scala), off })).filter((o) => o.a)
+    .sort((p1, p2) => Math.abs(p1.a.v - p1.off - v) - Math.abs(p2.a.v - p2.off - v))[0];
+  const move = (ev) => {
+    const p = { x: (ev.clientX - canvas.left) / scala, y: (ev.clientY - canvas.top) / scala };
+    let dx = (p.x - p0.x) / OVL_W * 100, dy = (p.y - p0.y) / OVL_H * 100;
+    if (ev.ctrlKey || ev.metaKey) { dx *= MARCIA_FINE; dy *= MARCIA_FINE; }
+    if (ev.shiftKey) {
+      if (!asse) asse = Math.abs(dx) === Math.abs(dy) ? null : (Math.abs(dx) > Math.abs(dy) ? 'x' : 'y');
+      if (asse === 'x') dy = 0; else if (asse === 'y') dx = 0;
+    } else asse = null;
+    let x = r0.x + dx, y = r0.y + dy;
+    const guide = [];
+    if (!ev.altKey && !(ev.ctrlKey || ev.metaKey) && _agganciaOn) {
+      const ax = meglio('x', x, st.w, [0, st.w / 2, st.w]);
+      if (ax) { x = ax.a.v - ax.off; guide.push(ax.a.g); }
+      const ay = meglio('y', y, st.h, [0, st.h / 2, st.h]);
+      if (ay) { y = ay.a.v - ay.off; guide.push(ay.a.g); }
+    }
+    st.x = _arr(_tra(x, 0, 100 - st.w)); st.y = _arr(_tra(y, 0, 100 - st.h));
+    _posElemento(el, st); _mostraGuide(guide); _mostraProp(); _aggiornaRigaLivello(k);
+  };
+  const fine = () => {
+    _inTrascinamento = false; el.style.cursor = 'grab';
+    window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+    document.removeEventListener('keydown', fuga, true);
+    _mostraGuide([]);
+  };
+  const up = () => { fine(); aggiornaInspector(); _ricorda(); _salvaPos(k); };
+  const fuga = (ev) => {
+    if (ev.key !== 'Escape') return;
+    ev.preventDefault(); ev.stopImmediatePropagation();
+    st.x = r0.x; st.y = r0.y; _posElemento(el, st); fine(); aggiornaInspector(); _salvaPos(k);
+  };
+  window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  document.addEventListener('keydown', fuga, true);
+}
+
+function _ridimensionaRiquadro(st, passo) {
+  const f = 1 + passo / 100;
+  const w = _tra(st.w * f, 2, 100), h = _tra(st.h * f, 2, 100);
+  st.x = _arr(_tra(st.x + (st.w - w) / 2, 0, 100 - w)); st.y = _arr(_tra(st.y + (st.h - h) / 2, 0, 100 - h));
+  st.w = _arr(w); st.h = _arr(h);
+}
+
+function _riquadroOn(k, on) {
+  const st = _statoXY(k), el = _nodo(k);
+  if (!el) return;
+  if (on && !window.SB_RIQUADRO.e(st)) {
+    const rett = _rettDi(k);
+    if (!rett) return;
+    _scriviPos(k, { x: rett.x, y: rett.y, w: rett.w, h: rett.h, r: Number(st.r) || 0 });
+  } else if (!on && window.SB_RIQUADRO.e(st)) {
+    const cx = (st.x + st.w / 2) / 100 * OVL_W, cy = (st.y + st.h / 2) / 100 * OVL_H, r = Number(st.r) || 0;
+    _scriviPos(k, null);
+    window.SB_RIQUADRO.togli(el); el.classList.remove('nel-riquadro');
+    el.style.transform = ''; el.style.width = ''; el.style.height = '';
+    const W = el.offsetWidth, H = el.offsetHeight;
+    _scriviPos(k, { x: _arr(_tra(xDaCentro(cx, W, OVL_W), 0, 100)), y: _arr(_tra(xDaCentro(cy, H, OVL_H), 0, 100)), s: 100, r });
+  } else return;
+  aggiornaAnteprima(); aggiornaInspector(); _ricorda(); _salvaPos(k);
 }
 
 let _agganciaOn = true;
@@ -7590,7 +7808,7 @@ function _rendiLivelli() {
     return `<button type="button" class="ovl-liv${selezione === l.k ? ' scelto' : ''}${acceso ? '' : ' via'}" data-liv="${l.k}">
       <span class="ovl-liv-ico">${_bIco(l.ico)}</span>
       <span class="ovl-liv-corpo"><strong>${esc(l.n)}</strong><span>${acceso
-        ? `${Math.round(st.x)}% · ${Math.round(st.y)}%${st.s !== 100 ? ' · ' + st.s + '%' : ''}`
+        ? _testoPos(st)
         : L('non in questo overlay', 'not in this overlay', 'no en este overlay')}</span></span>
       ${spento ? `<span class="ovl-liv-avviso" title="${L('L’elemento è spento del tutto', 'The element is fully off', 'El elemento está apagado del todo')}">!</span>` : ''}
       ${acceso ? `<span class="ovl-liv-lucchetto${_bloccato(l.k) ? ' chiuso' : ''}" data-lucchetto="${l.k}" role="button" tabindex="0" title="${_bloccato(l.k) ? L('Sblocca: torna a spostarsi', 'Unlock: it can move again', 'Desbloquear: vuelve a moverse') : L('Blocca: non si sposta per sbaglio', 'Lock: it won’t move by accident', 'Bloquear: no se mueve por error')}">${_bIco(ICO.lucchetto)}</span>` : ''}
@@ -7670,6 +7888,7 @@ function collegaEditorOvl() {
       _g(id)?.addEventListener('change', () => _ricorda());
     }
   }
+  _g('insp-riq')?.addEventListener('change', (e) => { if (selezione) _riquadroOn(selezione, e.target.checked); });
 
   document.addEventListener('keydown', (e) => {
     const scheda2 = _g('scheda-alert');
@@ -7870,9 +8089,14 @@ function _spostaTasti(chiave, dx, dy, grande) {
   const st = _statoXY(chiave);
   const el = _nodo(chiave);
   const p = grande ? 10 : 1;
-  const { w, h } = _lati(el, st);
-  st.x = _arr(_tra(xDaCentro(centroDa(st.x, w, OVL_W) + dx * p, w, OVL_W), 0, 100));
-  st.y = _arr(_tra(xDaCentro(centroDa(st.y, h, OVL_H) + dy * p, h, OVL_H), 0, 100));
+  if (window.SB_RIQUADRO.e(st)) {
+    st.x = _arr(_tra(st.x + dx * p / OVL_W * 100, 0, 100 - st.w));
+    st.y = _arr(_tra(st.y + dy * p / OVL_H * 100, 0, 100 - st.h));
+  } else {
+    const { w, h } = _lati(el, st);
+    st.x = _arr(_tra(xDaCentro(centroDa(st.x, w, OVL_W) + dx * p, w, OVL_W), 0, 100));
+    st.y = _arr(_tra(xDaCentro(centroDa(st.y, h, OVL_H) + dy * p, h, OVL_H), 0, 100));
+  }
   _posElemento(el, st);
   aggiornaInspector();
   _ricorda('tasti:' + chiave + ':' + (dx ? 'x' : 'y'));
@@ -7883,9 +8107,10 @@ function allineaOvl(dove) {
   if (!selezione || _bloccato(selezione)) return;
   const st = _statoXY(selezione);
   const el = _nodo(selezione);
+  const riq = window.SB_RIQUADRO.e(st);
   const m = {
-    sx: () => { st.x = 0; }, cx: () => { st.x = 50; }, dx: () => { st.x = 100; },
-    su: () => { st.y = 0; }, cy: () => { st.y = 50; }, giu: () => { st.y = 100; },
+    sx: () => { st.x = 0; }, cx: () => { st.x = riq ? _arr((100 - st.w) / 2) : 50; }, dx: () => { st.x = riq ? _arr(100 - st.w) : 100; },
+    su: () => { st.y = 0; }, cy: () => { st.y = riq ? _arr((100 - st.h) / 2) : 50; }, giu: () => { st.y = riq ? _arr(100 - st.h) : 100; },
   };
   if (!m[dove]) return;
   m[dove]();
@@ -7908,6 +8133,7 @@ function rendiTrascinabile(el, chiave) {
     e.preventDefault();
     seleziona(chiave);
     if (_bloccato(chiave)) return;
+    if (window.SB_RIQUADRO.e(_posCorrente(chiave) || {})) { _trascinaRiquadro(chiave, e); return; }
     const canvas = _g('ovl-preview').getBoundingClientRect();
     const scala = canvas.width / OVL_W;
     try { el.setPointerCapture(e.pointerId); } catch (_) {  }
@@ -7968,6 +8194,7 @@ function rendiTrascinabile(el, chiave) {
     const st = _statoXY(chiave);
     const passo = e.ctrlKey || e.metaKey ? 1 : 4;
     if (e.shiftKey) { let r = (st.r || 0) + (e.deltaY < 0 ? passo : -passo); while (r > 180) r -= 360; while (r < -180) r += 360; st.r = r; }
+    else if (window.SB_RIQUADRO.e(st)) { _ridimensionaRiquadro(st, e.deltaY < 0 ? passo : -passo); }
     else { st.s = Math.max(30, Math.min(300, (st.s || 100) + (e.deltaY < 0 ? passo : -passo))); }
     seleziona(chiave); _posElemento(el, st); aggiornaInspector(); _ricorda('rotella:' + chiave); _salvaPosDebounced(chiave);
   }, { passive: false });

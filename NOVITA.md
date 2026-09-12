@@ -15,6 +15,10 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+## 2026-09-12
+
+- Nell'editor degli overlay ogni elemento può avere un riquadro: tiri i bordi e chat, alert, player, widget, obiettivi e contatori si adattano a quello spazio, uguale sulla tela e in diretta. [vai: alert]
+
 ## 2026-09-11
 
 - L'editor degli overlay chiede prima di farti perdere l'aspetto non salvato, se cambi scheda, overlay o pagina; dice quando un salvataggio non riesce; e non manda più salvataggi doppi. [vai: alert]

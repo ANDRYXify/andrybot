@@ -125,6 +125,11 @@
 .ovl-widget.dim-grande  { font-size: 1.25rem; }
 .ovl-widget.dim-enorme  { font-size: 1.6rem; }
 .contatore-widget { padding: .12em .5em; border-radius: .3em; line-height: 1.15; white-space: nowrap; text-shadow: 0 2px 8px rgba(0,0,0,.65), 0 0 2px rgba(0,0,0,.5); }
+.ovl-widget.riquadro, .ap-el.riquadro .ovl-widget { white-space: normal; overflow-wrap: anywhere; }
+.contatore-widget.riquadro, .ap-el.riquadro .contatore-widget { white-space: nowrap; }
+.riquadro .alert-card, .alert-card.riquadro { max-width: 100%; min-width: 0; overflow-wrap: anywhere; }
+#chatlive.riquadro, .ap-chat.riquadro { justify-content: flex-end; overflow: hidden; }
+.riquadro .chat-riga { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 
 .ovl-anteprima {
   position: relative; overflow: hidden; width: 100%;
@@ -154,6 +159,22 @@
 .ap-stage .ap-el.spento { opacity: .35; }
 .ap-stage .ap-el.bloccato { cursor: default; }
 .ap-stage .ap-el.bloccato .ap-handle { display: none; }
+.ap-stage .ap-el.nel-riquadro.sel { outline: none; }
+.ap-stage .ap-el.nel-riquadro .ap-handle { display: none; }
+#ap-riquadro { position: absolute; z-index: 25; pointer-events: none; outline: 3px dashed var(--acc); outline-offset: 2px; transform-origin: center; }
+#ap-riquadro.attivo { outline-style: solid; }
+#ap-riquadro.bloccato .ap-rq-m, #ap-riquadro.bloccato .ap-rq-ruota { display: none; }
+#ap-riquadro .ap-rq-m { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; background: var(--acc); border: 4px solid #fff; box-shadow: 0 4px 14px rgba(0, 0, 0, .45); pointer-events: auto; box-sizing: border-box; }
+#ap-riquadro .ap-rq-n { top: 0; left: 50%; cursor: ns-resize; }
+#ap-riquadro .ap-rq-s { top: 100%; left: 50%; cursor: ns-resize; }
+#ap-riquadro .ap-rq-o { top: 50%; left: 0; cursor: ew-resize; }
+#ap-riquadro .ap-rq-e { top: 50%; left: 100%; cursor: ew-resize; }
+#ap-riquadro .ap-rq-no { top: 0; left: 0; cursor: nwse-resize; }
+#ap-riquadro .ap-rq-ne { top: 0; left: 100%; cursor: nesw-resize; }
+#ap-riquadro .ap-rq-so { top: 100%; left: 0; cursor: nesw-resize; }
+#ap-riquadro .ap-rq-se { top: 100%; left: 100%; cursor: nwse-resize; }
+#ap-riquadro:not(.attivo) .ap-rq-no, #ap-riquadro:not(.attivo) .ap-rq-ne, #ap-riquadro:not(.attivo) .ap-rq-so, #ap-riquadro:not(.attivo) .ap-rq-se, #ap-riquadro:not(.attivo) .ap-rq-ruota { display: none; }
+#ap-riquadro .ap-rq-ruota { position: absolute; top: -78px; left: 50%; margin-left: -30px; width: 60px; height: 60px; border-radius: 50%; background: var(--acc); color: var(--su-acc); border: 4px solid #fff; box-shadow: 0 6px 20px rgba(0, 0, 0, .5); display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 900; font-style: normal; line-height: 1; cursor: grab; pointer-events: auto; box-sizing: border-box; }
 
 .ap-stage .ap-handle {
   position: absolute; display: none;

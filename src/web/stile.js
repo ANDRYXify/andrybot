@@ -73,8 +73,19 @@ export const puliConta = (o) => {
   return q;
 };
 
-export const xyOk = (v) => (v && Number.isFinite(Number(v.x)) && Number.isFinite(Number(v.y)))
-  ? { x: clampPct(v.x, 0, 100, 50), y: clampPct(v.y, 0, 100, 50), s: clampInt(v.s, 30, 300, 100), r: clampInt(v.r, -180, 180, 0) } : null;
+// La posa di un elemento sulla tela: un PUNTO ({x, y, s, r}: posizione lungo la
+// corsa, scala, rotazione) oppure un RIQUADRO ({x, y, w, h, r}: l'angolo in alto
+// a sinistra e la misura, in centesimi; l'elemento si adatta al rettangolo). La
+// presenza di w e h decide il modo; un riquadro non esce mai dalla tela e non e'
+// mai piu' piccolo di due centesimi per lato (docs/OVERLAY.md, «Il riquadro»).
+export const xyOk = (v) => {
+  if (!v || !Number.isFinite(Number(v.x)) || !Number.isFinite(Number(v.y))) return null;
+  const riq = Number(v.w) > 0 && Number(v.h) > 0;
+  const w = riq ? clampPct(v.w, 2, 100, 20) : 0, h = riq ? clampPct(v.h, 2, 100, 20) : 0;
+  const q = { x: clampPct(v.x, 0, 100 - w, riq ? 0 : 50), y: clampPct(v.y, 0, 100 - h, riq ? 0 : 50), r: clampInt(v.r, -180, 180, 0) };
+  if (riq) { q.w = w; q.h = h; } else q.s = clampInt(v.s, 30, 300, 100);
+  return q;
+};
 
 // STILE dell'overlay (alert / chat / widget). Estratti in funzioni riusabili: gli
 // STESSI campi valgono sia per lo stile di CANALE sia per lo stile PER-OVERLAY
