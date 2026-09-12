@@ -132,6 +132,26 @@
     fraunces: 'Fraunces, Georgia, serif',
     bricolage: '"Bricolage Grotesque", Inter, sans-serif',
   };
+  const MISURE_MUS = ['sfondo', 'cover', 'vinile', 'titolo', 'artista', 'tempi', 'barra', 'onde'];
+  const COLORI_MUS = ['titolo', 'artista', 'tempi', 'barra', 'onde'];
+  const VAR_MIS = { sfondo: '--k-sfondo', cover: '--k-cov', vinile: '--k-vin', titolo: '--k-tit', artista: '--k-art', tempi: '--k-tempi', barra: '--k-barra', onde: '--k-onde' };
+  const VAR_COL = { titolo: '--c-tit', artista: '--c-art', tempi: '--c-tempi', barra: '--c-barra', onde: '--c-onde' };
+  window.PLAYER_VARS = {
+    misure: MISURE_MUS, colori: COLORI_MUS, varMisure: VAR_MIS, varColori: VAR_COL,
+    applica(el, cfg) {
+      const m = (cfg && cfg.misure) || {}, c = (cfg && cfg.colori) || {};
+      for (const k of MISURE_MUS) {
+        const n = Math.round(Number(m[k]));
+        if (n >= 40 && n <= 250 && n !== 100) el.style.setProperty(VAR_MIS[k], String(n / 100));
+        else el.style.removeProperty(VAR_MIS[k]);
+      }
+      for (const k of COLORI_MUS) {
+        const v = c.propri === true && /^#[0-9a-fA-F]{6}$/.test(String(c[k])) ? c[k] : null;
+        if (v) el.style.setProperty(VAR_COL[k], v);
+        else el.style.removeProperty(VAR_COL[k]);
+      }
+    },
+  };
   window.ICONE_OVL = {
     chiavi: Object.keys(ICONE),
     svg(k) { return ICONE[k] || ''; },

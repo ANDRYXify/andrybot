@@ -41,12 +41,24 @@ const ROTTURE = [
     'il riquadro guarda solo la larghezza: un alert alto trabocca'],
   ['src/web/public/overlay-app.js', "  if (chatBox.classList.contains('riquadro')) window.SB_RIQUADRO.ritaglia(chatBox);\n", '',
     'in diretta la chat nel riquadro non taglia dall\'alto'],
+  ['src/web/public/overlay-app.js', "  if (window.PLAYER_VARS) window.PLAYER_VARS.applica(el, cfg);\n", '',
+    'in diretta il player ignora le misure scelte pezzo per pezzo'],
+  ['src/web/public/overlay-skin.css', "  min-width: 12em;\n  padding: calc(.5em", "  min-width: 12em; max-width: 27em;\n  padding: calc(.5em",
+    'la carta del player ha di nuovo un tetto che ruba spazio al testo'],
+  ['src/web/public/app.js', " el.style.setProperty(k, x); else el.style.removeProperty(k); } }", " el.style.setProperty(k, x); } }",
+    'la tela tiene una variabile che nessuno ha piu\' chiesto'],
 ];
 
-if (process.argv.includes('--selftest')) {
+// --selftest prova tutte le rotture; --selftest=<parola> solo quelle la cui
+// descrizione contiene la parola (ogni giro apre due pagine per tutti i casi:
+// chi ha appena aggiunto una rottura la prova da sola, senza aspettare le altre).
+const _selftest = process.argv.find((a) => a === '--selftest' || a.startsWith('--selftest='));
+if (_selftest) {
   const io = fileURLToPath(import.meta.url);
+  const filtro = _selftest.includes('=') ? _selftest.slice(_selftest.indexOf('=') + 1) : '';
   let cieche = 0;
   for (const [file, da, a, che] of ROTTURE) {
+    if (filtro && !che.includes(filtro)) continue;
     const via = join(RAD, file);
     const orig = readFileSync(via, 'utf8');
     if (!orig.includes(da)) {
@@ -286,6 +298,85 @@ try {
   const lvPen = await misuraLive('#penitenze .pen-card');
   dice(edPen && lvPen && vicino(edPen.w, lvPen.w) && vicino(edPen.h, lvPen.h) && vicino(edPen.font, lvPen.font, 0.6),
     `sfida a tempo: editor ${edPen ? mis(edPen) : '–'} = diretta ${lvPen ? mis(lvPen) : '–'}`, 'editor e diretta non coincidono');
+
+  // --- 7. il player, pezzo per pezzo -----------------------------------------
+  // tre giri sullo stesso player (tema vinile, due righe, tempi): senza misure,
+  // con le misure a 100, con misure e colori propri. I primi due devono essere
+  // identici (100 = come il corpo, di qua e di la'); il terzo deve coincidere
+  // fra editor e diretta E derivare dal secondo coi fattori scelti.
+  const MIS = { sfondo: 140, cover: 150, vinile: 130, titolo: 130, artista: 80, tempi: 120, barra: 200, onde: 160 };
+  const COL = { propri: true, titolo: '#ffe066', artista: '#9ad0ff', tempi: '#c0ffc0', barra: '#ff8800', onde: '#00ccff' };
+  const PARTI = ['.m-disco', '.m-cover', '.m-corpo', '.m-riga:first-child', '.m-riga2', '.m-tempi', '.m-barra', '.m-onde'];
+  const MISURA_PARTI = `((radice, parti) => {
+    const stage = document.getElementById('ap-stage');
+    const sc = stage ? stage.getBoundingClientRect().width / 1920 : 1;
+    const el = document.querySelector(radice);
+    if (!el) return null;
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    const out = { el: { w: r.width / sc, h: r.height / sc, pad: parseFloat(cs.paddingLeft) } };
+    for (const p of parti) {
+      const n = el.querySelector(p);
+      if (!n) { out[p] = null; continue; }
+      const b = n.getBoundingClientRect(), c = getComputedStyle(n);
+      out[p] = { w: b.width / sc, h: b.height / sc, font: Math.round(parseFloat(c.fontSize) * 10) / 10, colore: c.color };
+    }
+    return out;
+  })`;
+  const giriPlayer = [
+    { nome: 'senza misure', misure: null, colori: null },
+    { nome: 'misure a 100', misure: Object.fromEntries(Object.keys(MIS).map((k) => [k, 100])), colori: { ...COL, propri: false } },
+    { nome: 'misure e colori propri', misure: MIS, colori: COL },
+  ];
+  const presi = [];
+  for (const giro of giriPlayer) {
+    const cfg = await ed.evaluate(async (giro) => {
+      const c = _cfgEl('musica');
+      Object.assign(c, { attivo: true, verso: 'riga', righe: 'due', cover: 'quadrata', barra: 'sotto', tempi: 'due', entrata: 'dissolvenza', quandoFermo: 'resta',
+        ritmo: 'onde', sfondo: 'no', corpo: 'normale', tema: 'vinile', larghezza: 0, scorre: false, daCopertina: false, testo: '{titolo}', testo2: '{artista}' });
+      if (giro.misure) c.misure = { ...giro.misure }; else delete c.misure;
+      if (giro.colori) c.colori = { ...giro.colori }; else delete c.colori;
+      const xy = _ovXY(); for (const k of Object.keys(xy)) delete xy[k];
+      xy.musica = { x: 50, y: 50, s: 100, r: 0 };
+      aggiornaAnteprima();
+      await new Promise((r) => setTimeout(r, 350));
+      return JSON.parse(JSON.stringify(c));
+    }, giro);
+    const e = await ed.evaluate(`(${MISURA_PARTI})('#ap-stage .ovl-musica', ${JSON.stringify(PARTI)})`);
+    TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, stato: {}, mostra: MOSTRA, xy: { musica: { x: 50, y: 50, s: 100, r: 0 } }, musica: cfg, alertStile: null, chatStile: null };
+    MUSICA = brano('Ok');
+    await apriLive(() => document.querySelector('.ovl-musica.dentro'));
+    const l = await live.evaluate(`(${MISURA_PARTI})('.ovl-musica', ${JSON.stringify(PARTI)})`);
+    presi.push({ giro, e, l });
+    const diversi = [];
+    if (!(e && l)) diversi.push('manca il player');
+    else {
+      if (!(vicino(e.el.w, l.el.w) && vicino(e.el.h, l.el.h) && vicino(e.el.pad, l.el.pad, .6))) diversi.push(`carta ${mis(e.el)} / ${mis(l.el)}`);
+      for (const p of PARTI) {
+        if (!(e[p] && l[p])) { diversi.push(p + ' manca'); continue; }
+        if (!(vicino(e[p].w, l[p].w) && vicino(e[p].h, l[p].h) && vicino(e[p].font, l[p].font, .6) && e[p].colore === l[p].colore)) diversi.push(`${p} ${mis(e[p])} ${e[p].colore} / ${mis(l[p])} ${l[p].colore}`);
+      }
+    }
+    dice(diversi.length === 0, `player pezzo per pezzo, ${giro.nome}: editor ${e ? mis(e.el) : '–'} = diretta ${l ? mis(l.el) : '–'}, e ogni pezzo uguale di qua e di la'`, diversi.join(' · '));
+  }
+  const [p0, p1, p2] = presi;
+  const stessi = (a, b) => a && b && vicino(a.el.w, b.el.w) && vicino(a.el.h, b.el.h) && PARTI.every((p) => a[p] && b[p] && vicino(a[p].w, b[p].w) && vicino(a[p].h, b[p].h) && vicino(a[p].font, b[p].font, .6) && a[p].colore === b[p].colore);
+  dice(stessi(p0.e, p1.e) && stessi(p0.l, p1.l), 'misure assenti = misure a 100: chi non tocca niente vede il player di prima, in editor e in diretta', 'una misura a 100 sposta qualcosa');
+  const rapporto = (a, b) => (a > 0 && b > 0) ? b / a : NaN;
+  const circa = (r, atteso) => Number.isFinite(r) && Math.abs(r - atteso) <= .03;
+  const d1 = p1.l, d2 = p2.l;
+  const derivati = d1 && d2 && d1['.m-disco'] && d2['.m-disco']
+    && circa(rapporto(d1['.m-disco'].w, d2['.m-disco'].w), 1.5)
+    && circa(rapporto(d1['.m-cover'].h, d2['.m-cover'].h), 1.5 * 1.3)
+    && circa(rapporto(d1['.m-riga:first-child'].font, d2['.m-riga:first-child'].font), 1.3)
+    && circa(rapporto(d1['.m-riga2'].font, d2['.m-riga2'].font), .8)
+    && circa(rapporto(d1['.m-tempi'].font, d2['.m-tempi'].font), 1.2)
+    && circa(rapporto(d1['.m-barra'].h, d2['.m-barra'].h), 2)
+    && circa(rapporto(d1['.m-onde'].h, d2['.m-onde'].h), 1.6)
+    && circa(rapporto(d1.el.pad, d2.el.pad), 1.4)
+    && vicino(d1['.m-corpo'].w, d2['.m-corpo'].w)
+    && d2['.m-riga:first-child'].colore === 'rgb(255, 224, 102)' && d2['.m-riga2'].colore === 'rgb(154, 208, 255)' && d2['.m-tempi'].colore === 'rgb(192, 255, 192)';
+  dice(derivati, `ogni misura fa quello che dice: copertina ×1,5, vinile ×1,3, prima riga ×1,3, seconda ×0,8, tempi ×1,2, barra ×2, onde ×1,6, spazio attorno ×1,4, la colonna del testo non perde un pixel, e i colori propri sul testo`,
+    d1 && d2 && d2['.m-disco'] ? `disco ${rapporto(d1['.m-disco'].w, d2['.m-disco'].w).toFixed(2)} cover-h ${rapporto(d1['.m-cover'].h, d2['.m-cover'].h).toFixed(2)} tit ${rapporto(d1['.m-riga:first-child'].font, d2['.m-riga:first-child'].font).toFixed(2)} art ${rapporto(d1['.m-riga2'].font, d2['.m-riga2'].font).toFixed(2)} tempi ${rapporto(d1['.m-tempi'].font, d2['.m-tempi'].font).toFixed(2)} barra ${rapporto(d1['.m-barra'].h, d2['.m-barra'].h).toFixed(2)} onde ${rapporto(d1['.m-onde'].h, d2['.m-onde'].h).toFixed(2)} pad ${rapporto(d1.el.pad, d2.el.pad).toFixed(2)} corpo ${Math.round(d1['.m-corpo'].w)}→${Math.round(d2['.m-corpo'].w)} tit ${d2['.m-riga:first-child'].colore}` : 'manca una misura');
 
   dice(erroriEd.length === 0, 'l\'editor non ha errori', erroriEd.slice(0, 2).join(' | '));
   dice(erroriLive.length === 0, 'la pagina dell\'overlay non ha errori', erroriLive.slice(0, 2).join(' | '));

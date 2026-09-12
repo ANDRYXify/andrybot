@@ -1303,6 +1303,8 @@ const OVERLAY = {
       ['Titolo lungo', 'scorre', 'solo se non ci sta: si misura, non si indovina'],
       ['Entrata', 'dissolvenza', 'dissolvenza · scivola da lato · sale dal basso · secca'],
       ['A ogni brano', 'si rianima', 'la copertina rientra e il testo risale, come un cambio di scena'],
+      ['Misure', 'tutte a 100', 'un cursore per pezzo — spazio attorno, copertina, vinile, prima e seconda riga, tempi, barra, onde — da 40 a 250: 100 è come il corpo, e «Di serie» riporta tutto lì'],
+      ['Colori a parte', 'spenti', 'accesi, prima riga, seconda riga, tempi, barra e onde hanno ognuno il suo colore; spenti, seguono testo e accento'],
     ] },
     { p: ['<strong>Le onde sono una domanda sola.</strong> «Niente onde» le toglie: non le lascia lì ferme. Un equalizzatore che non si muove non è spento, è finto — e occupa posto per fingere.'] },
     { p: ['<strong>La copertina pulsa solo se il battito si sa.</strong> Quando Spotify ci dice quanti battiti al minuto ha il brano, la copertina va con quelli. Quando non lo dice — capita, e non dipende da te — resta ferma, invece di pulsare a una velocità che non c\'entra niente con la canzone. Le onde ballano comunque: quelle non promettono di stare a tempo.'] },

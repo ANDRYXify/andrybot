@@ -173,3 +173,13 @@ test('lo sfondo di un contatore accetta tinta, trasparenza o niente', () => {
 test('anche un contatore tiene la regolazione fine', () => {
   assert.equal(S.puliConta({ x: 2.29 }).x, 2.29);
 });
+
+// Il player pezzo per pezzo: ogni misura ha un tetto e un pavimento, ogni
+// colore un ripiego, e i colori valgono solo se «propri» e' acceso.
+test('le misure e i colori del player si puliscono come tutto il resto', () => {
+  const m = S.normMusica({ misure: { cover: 999, titolo: '130', onde: -5, vinile: 'x' }, colori: { propri: 'si', titolo: 'rosso', barra: '#FF8800' } });
+  assert.deepEqual(m.misure, { sfondo: 100, cover: 250, vinile: 100, titolo: 130, artista: 100, tempi: 100, barra: 100, onde: 40 });
+  assert.deepEqual(m.colori, { propri: false, titolo: '#ffffff', artista: '#ffffff', tempi: '#ffffff', barra: '#FF8800', onde: '#f72fa7' });
+  assert.equal(S.normMusica({ colori: { propri: true } }).colori.propri, true);
+  assert.deepEqual(Object.keys(S.normMusica({}).misure), S.MISURE_MUS);
+});
