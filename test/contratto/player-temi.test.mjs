@@ -27,9 +27,9 @@ test('ogni tema ha il suo blocco nel foglio, e CD ed esagono ci sono', () => {
   assert.ok(TEMA_MUS.includes('cd') && TEMA_MUS.includes('esagono'));
 });
 
-test('quello che si muove in un tema vive in uno pseudo-elemento o nel velo', () => {
+test('quello che gira senza fine in un tema vive in uno pseudo-elemento o nel velo', () => {
   for (const t of TEMA_MUS) for (const r of diTema(t)) {
-    if (!anima(r)) continue;
+    if (!anima(r) || !/infinite/.test(r.corpo)) continue;
     for (const s of r.sel.split(',').map((x) => x.trim())) {
       if (!s.includes(`.tema-${t}`)) continue;
       assert.match(s, /(::before|::after|\.m-velo)$/, `${t}: «${s}» anima un nodo che l'anteprima misura`);
@@ -41,7 +41,7 @@ test('ciò che gira parte in pausa, si accende con «suona» e si spegne con «r
   const ridotto = CSS.slice(CSS.indexOf('@media (prefers-reduced-motion: reduce)'));
   for (const s of ['.ovl-musica .m-cover::before', '.ovl-musica .m-cover::after', '.ovl-musica .m-velo']) assert.ok(ridotto.includes(s), s);
   for (const t of TEMA_MUS) for (const r of diTema(t)) {
-    if (!anima(r) || r.sel.includes('--battito')) continue;
+    if (!anima(r) || !/infinite/.test(r.corpo) || r.sel.includes('--battito')) continue;
     if (!/transform/.test(chiaveDi(nomeMoto(r)))) continue;   // un lampeggio può restare; una rotazione no
     assert.match(r.corpo, /animation-play-state\s*:\s*paused/, `${t}: «${r.sel}» gira anche da fermo`);
     assert.ok(regole.some((x) => x.sel.includes(`.tema-${t}.suona`) && /running/.test(x.corpo)), `${t}: niente lo accende con .suona`);
@@ -70,7 +70,7 @@ test('ogni tema con una figura entra ed esce a modo suo, e l\'uscita finisce pri
     assert.ok(esce.length, `${t}: nessuna uscita`);
     for (const r of [...dentro, ...esce]) {
       for (const parte of r.corpo.match(/transition:\s*([^;]+)/)[1].split(/,(?![^(]*\))/)) {
-        assert.match(parte.trim(), /^(translate|scale|opacity|rotate)\b/, `${t}: «${parte.trim()}» non è un moto da compositor`);
+        assert.match(parte.trim(), /^(translate|scale|opacity|rotate|transform|filter|clip-path)\b/, `${t}: «${parte.trim()}» non è un moto da compositor`);
       }
     }
     for (const r of esce) for (const parte of r.corpo.match(/transition:\s*([^;]+)/)[1].split(/,(?![^(]*\))/)) {
@@ -94,4 +94,28 @@ test('la veste «Esagoni» è un esagono, come «Nastro» è una cassetta', () =
 test('in diretta il primo stile del player è calcolato prima di aggiungere «dentro»', () => {
   const OVL = readFileSync('src/web/public/overlay-app.js', 'utf8');
   assert.match(OVL, /if \(nato\) \{ void el\.offsetWidth; requestAnimationFrame\(\(\) => el\.classList\.add\('dentro'\)\); \}/);
+});
+
+// Chi gira prende giri e frena: una rampa d'avvio e una di frenata sulla
+// proprietà «rotate», sommate al giro costante che sta su «transform». L'angolo
+// di frenata è ω·T/2 e vive in --frenata, per tema. E anche le animazioni finite
+// dell'uscita (il tubo catodico che si spegne) finiscono prima che il nodo sparisca.
+test('vinile, CD e cassetta prendono giri all\'entrata e frenano all\'uscita', () => {
+  assert.ok(CSS.includes('@keyframes mus-avvia') && CSS.includes('@keyframes mus-frena'));
+  for (const t of ['vinile', 'cd', 'cassetta']) {
+    const dentro = diTema(t).filter((r) => r.sel.includes(`.tema-${t}.dentro`) && /mus-avvia/.test(r.corpo));
+    const esce = diTema(t).filter((r) => r.sel.includes(`.tema-${t}.esce`) && /mus-frena/.test(r.corpo));
+    assert.ok(dentro.length, `${t}: nessuna rampa d'avvio`);
+    assert.ok(esce.length, `${t}: nessuna frenata`);
+    for (const r of esce) assert.match(r.corpo, /animation-play-state:\s*paused,\s*running/, `${t}: alla frenata il giro di base resta in pausa e frena solo la rampa`);
+    assert.ok(diTema(t).some((r) => /--frenata:\s*[\d.]+deg/.test(r.corpo)), `${t}: manca --frenata`);
+  }
+  const OVL = readFileSync('src/web/public/overlay-app.js', 'utf8');
+  const tolto = Number(OVL.match(/musicaEl\.uscita = setTimeout\(via, (\d+)\)/)[1]);
+  const secondi = (s) => (s.match(/(\d*\.?\d+)s/g) || []).reduce((a, x) => a + parseFloat(x), 0);
+  for (const t of TEMA_MUS) for (const r of diTema(t)) {
+    if (!r.sel.includes(`.tema-${t}.esce`) || !anima(r) || /infinite/.test(r.corpo)) continue;
+    const dich = r.corpo.match(/animation:\s*([^;]+)/)[1];
+    for (const parte of dich.split(/,(?![^(]*\))/)) if (!/infinite/.test(parte)) assert.ok(secondi(parte) * 1000 <= tolto, `${t}: «${parte.trim()}» finisce dopo i ${tolto} ms`);
+  }
 });

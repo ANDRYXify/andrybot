@@ -1056,26 +1056,38 @@ costruzione, così il riquadro non la taglia. La misura «Figura dietro» (la
 chiave resta `vinile`) scala il disco o l'anello in ogni tema che ne ha uno.
 `test/contratto/player-temi.test.mjs` fissa le tre regole.
 
-**Entrata e uscita del tema.** Anche il gesto con cui la figura arriva e se
-ne va è del tema, e sta nello stesso blocco: il disco (vinile e CD) parte
-nascosto dietro la copertina e scivola fuori un attimo dopo che la carta è
-entrata, le bobine della cassetta si posano una dopo l'altra, l'anello
-dell'esagono si chiude sulla copertina, il retino del manga si assesta, il
-terminale accende le righe una alla volta. Sono `transition`, non
-`@keyframes`: partono solo al cambio di stato (`dentro`, `esce`), quindi
-nell'editor, dove `dentro` c'è dalla nascita, non si riavviano a ogni ritocco;
-il tasto «Rivedi l'entrata» le fa vedere apposta. Muovono solo `translate`,
-`scale` e `opacity`, così la rotazione (che sta su `transform`) non viene
-interrotta, e l'uscita finisce sempre prima dei 520 ms dopo cui il nodo
-sparisce (`togliMusica`): il test lo confronta con il numero nel codice. Con
-«riduci animazioni» la figura è al suo posto e basta.
+**Entrata e uscita del tema.** Il gesto con cui la figura arriva e se ne va è
+del tema, e imita come si ripone l'oggetto vero. Il vinile: la custodia entra,
+il disco scivola fuori e prende giri (una rampa d'avvio, poi il giro costante);
+all'uscita frena fino a fermarsi, rientra nella custodia, e solo allora la
+custodia se ne va. Il CD: la custodia si apre (un coperchio trasparente ruota
+sul cardine sinistro, `.m-cover::before` con `perspective`), il disco esce e
+gira; all'uscita si ferma, rientra, il coperchio si chiude, la custodia va via.
+La cassetta: le bobine prendono giri; all'uscita si fermano e la cassetta viene
+espulsa (si inclina e scende). Il terminale si accende come un tubo catodico
+(una riga luminosa che si apre in schermo, poi le righe di testo una alla volta)
+e si spegne come i televisori di una volta: l'immagine si schiaccia in una riga
+orizzontale e poi in un punto, perché la deflessione verticale cade prima di
+quella orizzontale. Il manga è una pagina: si volta per entrare e si volta per
+uscire, sul cardine sinistro. L'esagono si dispiega da una linea a sei lati
+mentre l'anello scende ruotando, e si ripiega al contrario.
 
-Una cosa trovata misurando: l'entrata della carta stessa (dissolvenza, scivola,
-sale) in diretta non partiva. Il nodo veniva aggiunto e «dentro» arrivava al
-primo `requestAnimationFrame`, che corre PRIMA del ricalcolo di stile di quel
-fotogramma: il primo stile calcolato era già quello di arrivo, e una transizione
-senza punto di partenza non esiste. Ora, prima del rAF, si legge `offsetWidth`:
-lo stile iniziale c'è, e la transizione ha da dove partire. Il test lo pretende.
+Come sono fatti. Le rampe di avvio e di frenata sono `@keyframes` sulla
+proprietà `rotate` (`mus-avvia`, `mus-frena`), con l'angolo di frenata in
+`--frenata` = ω·T/2 per ogni tema, mentre il giro costante resta su
+`transform`: le due si sommano, e il giro di base parte con un ritardo pari
+alla fine della rampa, così la velocità è continua. Alla frenata il giro di
+base si mette in pausa e la rampa lo porta a zero. Tutto il resto sono
+`transition` su `translate`, `scale`, `rotate`, `opacity` e `clip-path`, che
+partono solo al cambio di stato (`dentro`, `esce`): nell'editor `dentro` c'è
+dalla nascita, quindi niente riavvii a ogni ritocco, e il tasto «Rivedi
+l'entrata» le fa vedere apposta. Un giradischi a trazione diretta frena in una
+frazione di secondo, uno a cinghia scivola per qualche secondo: qui la frenata
+dura mezzo secondo, perché l'uscita intera deve finire prima degli 880 ms dopo
+cui il nodo sparisce (`togliMusica`), e il test lo confronta con il numero nel
+codice. Con «riduci animazioni» la figura è al suo posto e basta. Il cancello
+dell'anteprima misura a riposo: aspetta che ogni transizione e animazione
+finita sia conclusa, perché un rettangolo letto a metà corsa non è una misura.
 
 **In colonna.** In diretta il player è largo `max-content` e la carta ha un
 tetto di dodici copertine: il corpo del testo (13 em di serie) superava il tetto
