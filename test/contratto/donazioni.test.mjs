@@ -64,7 +64,7 @@ test('l\'obiettivo «euro» esiste dove si conta, dove si pulisce e dove si dise
 test('il blocco «Sostieni» esiste dove si pulisce, dove si rende e dove si aggiunge, e legge una configurazione sola', () => {
   assert.ok(TIPI_BLOCCO.includes('sostieni'));
   const p = linkPage.pulisci({ blocchi: [{ tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: 'grazie', etichetta: 'Dona', obiettivo: false }] });
-  assert.deepEqual(p.blocchi[0], { tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: 'grazie', etichetta: 'Dona', obiettivo: false, icona: 'cuore', larghezza: 'piena', entrata: 'auto', allinea: 'auto' });
+  assert.deepEqual(p.blocchi[0], { tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: 'grazie', etichetta: 'Dona', obiettivo: false, icona: 'cuore', pagina: false, larghezza: 'piena', entrata: 'auto', allinea: 'auto' });
   assert.equal(linkPage.pulisci({ blocchi: [{ tipo: 'sostieni', icona: 'stella' }] }).blocchi[0].icona, 'stella', 'l\'icona si sceglie come per i link');
   assert.equal(linkPage.pulisci({ blocchi: [{ tipo: 'sostieni', icona: 'boh' }] }).blocchi[0].icona, 'cuore', 'una sconosciuta torna al cuore');
   assert.match(APP, /data-lpadd="sostieni"/, 'si aggiunge dal pannello');
@@ -103,7 +103,7 @@ test('il webhook e\' un ingresso dichiarato, verificato con l\'impronta, e il to
   assert.match(SRV, /donazioni: \{ \.\.\.dn, kofiImp: '', kofiSet: true \}/, '/api/me maschera l\'impronta');
   assert.match(SRV, /out\.donazioni = donazioni\.normDonazioni\(b\.donazioni, s\.settings\?\.donazioni, user\.login\);/, 'le impostazioni passano dalla pulizia');
   assert.match(SRV, /if \(azione === 'donazione'\) \{/, 'la chiave API del canale accetta una mancia');
-  assert.ok((SRV.match(/sostieni: donazioni\.datiSostieni\(s\?\.settings, (conti|contiDi\(login\))\)/g) || []).length === 2, 'la pagina pubblica e l\'anteprima ricevono gli stessi dati, coi conti');
+  assert.ok((SRV.match(/sostieni: donazioni\.datiSostieni\(s\?\.settings, (conti|contiDi\(login\))\)/g) || []).length === 4, 'le due pagine pubbliche e le due anteprime ricevono gli stessi dati, coi conti');
 });
 
 test('il motore: una donazione fa crescere l\'obiettivo, spara l\'alert sopra la soglia e ringrazia in chat', () => {
@@ -248,4 +248,33 @@ test('Satispay: le rotte hanno il loro guardiano o sono dichiarate, la ronda lo 
   assert.ok(PLJS.includes("dati.set('mezzo', b.value)"), 'lo script manda il mezzo del tasto premuto');
   assert.match(APP, /id="dona-satispay-codice"/); assert.match(APP, /data-dona="satispay-collega"/);
   assert.ok(leggi('src/web/public/privacy.html').includes('Satispay Europe') && leggi('src/web/public/termini.html').includes('Satispay'), 'privacy e termini lo dicono');
+});
+
+test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le offerte accendono gli effetti', () => {
+  assert.match(SRV, /app\.get\('\/u\/:user\/dona', wrap\(/, 'la pagina pubblica');
+  assert.match(PORTE, /\['GET \/u\/:user\/dona', /, 'dichiarata pubblica');
+  for (const r of ["app.get('/api/paginadona', requireOwner,", "app.post('/api/paginadona', requireOwner,", "app.post('/api/paginadona/anteprima', requireOwner,", "app.delete('/api/paginadona', requireOwner,"]) assert.ok(SRV.includes(r), r);
+  assert.ok(SRV.includes("SELECT channel, ts FROM pagina_dona WHERE attiva=1"), 'la sitemap la elenca');
+  assert.ok(SRV.includes("const ritorno = String(req.body?.pagina || '') === 'dona' ? 'dona' : 'link';"), 'il modulo dice da dove torna');
+  assert.ok(leggi('src/features/donazioni-stripe.js').includes("ritorno === 'dona' ? urlPaginaDona(login)") && leggi('src/features/donazioni-satispay.js').includes("ritorno === 'dona' ? urlPaginaDona(login)"), 'e tutti e due i mezzi tornano li\', anche con l\'indirizzo corto');
+  assert.ok(SRV.includes("if (config.donaHost) app.use((req, res, next) => {") && SRV.includes("req.url = '/u/' + m[1].toLowerCase() + '/dona'"), 'con il sottodominio, dona.<dominio>/<login> si traduce prima delle rotte');
+  assert.ok(leggi('Caddyfile').includes('socialbot.live, dona.socialbot.live {'), 'e Caddy conosce il nome');
+  assert.match(APP, /const lpApi = \(\) => \(LP\.quale === 'dona' \? '\/api\/paginadona' : '\/api\/linkpage'\);/, 'un editor, due porte');
+  assert.equal((APP.match(/api\(lpApi\(\)/g) || []).length, 4, 'carica, salva, spegni e anteprima passano dalla porta giusta');
+  assert.ok(APP.includes("api(lpApi() + '/anteprima'"), 'anche l\'anteprima');
+  assert.match(APP, /data-lpquale="dona"/, 'l\'interruttore fra le due pagine');
+  assert.match(APP, /data-dona="pagina"/, 'dalla scheda Donazioni si va a modificarla');
+  assert.match(APP, /id="dona-livelli"/); assert.match(APP, /class="dl-effetto"/, 'le offerte si compongono nel pannello, con l\'effetto dalla libreria');
+  assert.match(AL, /const liv = livelloPer\(cfgD\.livelli, importo\); if \(liv\?\.effetto\) this\._sparaEffetto\(channel, liv\.effetto, 1200\);/, 'l\'offerta raggiunta accende il suo effetto, dall\'importo pagato');
+  assert.ok(AL.includes("this.effects.emit(channel, this.effects.payload(channel, eff))"), 'con lo stesso payload del tasto Prova');
+  // il blocco: le offerte al posto degli importi, il campo nascosto sulla pagina delle donazioni, il rimando dalla pagina link
+  const base = { attiva: true, blocchi: [{ tipo: 'sostieni', titolo: 'Un caffè' }], tema: {} };
+  const opz = { login: 'x', display: 'X', avatar: '', baseUrl: 'http://x' };
+  const dati = { modo: 'conto', mezzi: ['stripe'], link: '', importi: [2, 5], minimo: 1, massimo: 500, livelli: [{ da: 5, nome: 'Applauso', effetto: 'effetto:clap' }, { da: 20, nome: '', effetto: '' }], conMessaggio: true, etichetta: 'Dona', messaggio: '', valuta: 'EUR', goal: null };
+  const sulla = renderLinkPage(base, { ...opz, sostieni: dati, dona: true });
+  assert.ok(sulla.includes('<input type="hidden" name="pagina" value="dona">'), 'sulla pagina delle donazioni il modulo dice da dove torna');
+  assert.ok(sulla.includes('<span>5 € · Applauso</span>') && sulla.includes('<span>20 €</span>') && !sulla.includes('<span>2 €</span>'), 'le offerte al posto degli importi suggeriti');
+  const link = renderLinkPage({ ...base, blocchi: [{ tipo: 'sostieni', pagina: true }] }, { ...opz, sostieni: dati });
+  assert.ok(link.includes('<a class="voce spicca sost-b" href="/u/x/dona">') && !link.includes('<form class="sost-f"'), 'sulla pagina link, se lo streamer vuole, il tasto porta alla pagina delle donazioni');
+  assert.ok(!renderLinkPage({ ...base, blocchi: [{ tipo: 'sostieni', pagina: true }] }, { ...opz, sostieni: dati, dona: true }).includes('href="/u/x/dona"'), 'ma sulla pagina delle donazioni il rimando non ha senso: resta il modulo');
 });

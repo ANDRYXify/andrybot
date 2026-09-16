@@ -15,6 +15,7 @@
 // Questo modulo e' puro: niente database, niente rete. Cio' che tocca Stripe
 // e il registro sta in donazioni-stripe.js.
 import { impronta } from '../segreti.js';
+import { config } from '../config.js';
 
 export const VALUTE = ['EUR', 'USD', 'GBP'];
 export const MODI = ['conto', 'link'];
@@ -22,6 +23,10 @@ export const MODI = ['conto', 'link'];
 // streamer, 500 di serie e mai oltre 5.000; al massimo sei importi suggeriti
 export const LIMITI = { min: 1, max: 5000, massimoDiSerie: 500, importi: 6, minimoMax: 100 };
 export const IMPORTI_DI_SERIE = [2, 5, 10, 20];
+// le offerte: al massimo otto scaglioni, ognuno con un importo da cui vale,
+// un nome e l'effetto che accende (un riferimento alla libreria, come per gli alert)
+export const MAX_LIVELLI = 8;
+const EFFETTO_OK = /^effetto:[a-z0-9_-]{1,32}$/;
 const SIMBOLO = { EUR: '€', USD: '$', GBP: '£' };
 const L = { link: 400, etichetta: 40, messaggio: 160, testoChat: 200, nome: 40, testo: 200 };
 
@@ -63,6 +68,30 @@ export function importiOk(lista, minimo = LIMITI.min, massimo = LIMITI.max) {
   return serie.length ? serie : [minimo];
 }
 const minimoOk = (v) => Math.min(LIMITI.minimoMax, Math.max(LIMITI.min, numero(v) || LIMITI.min));
+
+// Le offerte ripulite: importo fra 1 e 5.000, nome corto, effetto valido o
+// nessuno; in ordine di importo, senza due allo stesso importo, al massimo otto.
+export function livelliOk(lista) {
+  if (!Array.isArray(lista)) return [];
+  const out = [];
+  for (const x of lista) {
+    if (!x || typeof x !== 'object') continue;
+    const da = numero(x.da);
+    if (!(da >= LIMITI.min && da <= LIMITI.max) || out.some((l) => l.da === da)) continue;
+    const eff = String(x.effetto || '').trim().toLowerCase();
+    out.push({ da, nome: str(x.nome, 30), effetto: EFFETTO_OK.test(eff) ? eff : '' });
+    if (out.length >= MAX_LIVELLI) break;
+  }
+  return out.sort((a, b) => a.da - b.da);
+}
+// L'offerta che vale per un importo: la piu' alta fra quelle raggiunte.
+// Si ricava dall'importo PAGATO, mai da cio' che manda il browser.
+export function livelloPer(livelli, importo) {
+  const n = Number(importo) || 0;
+  let scelto = null;
+  for (const l of livelliOk(livelli)) if (l.da <= n) scelto = l;
+  return scelto;
+}
 const massimoOk = (v, minimo = LIMITI.min) => Math.min(LIMITI.max, Math.max(minimo, numero(v) || LIMITI.massimoDiSerie));
 
 // La configurazione, ripulita. `prima` e' quella salvata: il token arriva in
@@ -81,6 +110,7 @@ export function normDonazioni(d, prima = {}, login = '') {
     importi: importiOk(d.importi, minimo, massimo),
     minimo,
     massimo,
+    livelli: livelliOk(d.livelli),
     conMessaggio: d.conMessaggio !== false,
     etichetta: str(d.etichetta, L.etichetta),
     messaggio: str(d.messaggio, L.messaggio),
@@ -144,6 +174,13 @@ export function mezziDi(d, conti = null) {
   return out;
 }
 
+// L'indirizzo della pagina delle donazioni: corto se c'e' il sottodominio,
+// altrimenti sotto la pagina link.
+export function urlPaginaDona(login) {
+  const l = String(login || '').toLowerCase();
+  return config.donaHost ? `https://${config.donaHost}/${l}` : `${config.baseUrl}/u/${l}/dona`;
+}
+
 // Cosa manca perche' il tasto compaia: niente ('' = tutto a posto), oppure
 // 'spente', 'link' (modo link senza indirizzo), 'conto' (modo conto senza un
 // conto pronto a incassare).
@@ -174,6 +211,7 @@ export function datiSostieni(settings, conti = null) {
     importi: importiOk(d.importi, minimo, massimo),
     minimo,
     massimo,
+    livelli: livelliOk(d.livelli).filter((l) => l.da >= minimo && l.da <= massimo),
     conMessaggio: d.conMessaggio !== false,
     etichetta: d.etichetta || 'Sostieni',
     messaggio: d.messaggio || '',

@@ -60,6 +60,7 @@ const PUBBLICHE = new Map([
   ['GET /api/novita', 'le novita sono pubbliche'],
   ['GET /api/abbonamento/piani', 'il listino e pubblico'],
   ['GET /u/:user', 'la pagina link di uno streamer e pubblica per definizione'],
+  ['GET /u/:user/dona', 'la pagina delle donazioni di uno streamer: pubblica come la pagina link'],
   ['GET /u/:user/avatar', 'immagine della pagina link'],
   ['GET /u/:user/img/:file', 'immagini della pagina link'],
   ['GET /u/:user/privacy', 'informativa della pagina link'],

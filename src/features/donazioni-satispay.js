@@ -17,6 +17,7 @@ import crypto from 'node:crypto';
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
 import { contiSatispay, registroDonazioni } from '../db.js';
+import { urlPaginaDona } from './donazioni.js';
 
 const log = makeLog('satispay');
 const HOST = () => String(config.satispay?.host || 'https://authservices.satispay.com').replace(/\/+$/, '');
@@ -129,7 +130,7 @@ export function scollega(login) { contiSatispay.togli(login); }
 
 // Apre il pagamento: la riga del registro nasce col NOSTRO id (satispay:<token>),
 // che sta nel ritorno; l'id di Satispay va in `riferimento`, e la callback lo porta.
-export async function apriPagamento({ login, display, importoCent, nome = '', messaggio = '' }) {
+export async function apriPagamento({ login, display, importoCent, nome = '', messaggio = '', ritorno = 'link' }) {
   login = String(login || '').toLowerCase();
   const c = contiSatispay.get(login);
   if (!c?.chiave || !c.pronto) return { errore: 'conto' };
@@ -144,7 +145,7 @@ export async function apriPagamento({ login, display, importoCent, nome = '', me
     currency: 'EUR',
     external_code: ('Donazione a ' + chi).slice(0, 50),
     callback_url: `${base}/dona/satispay/${login}?payment_id={uuid}`,
-    redirect_url: `${base}/u/${login}?dona=sp_${token}`,
+    redirect_url: `${ritorno === 'dona' ? urlPaginaDona(login) : base + '/u/' + login}?dona=sp_${token}`,
     expiration_date: new Date(Date.now() + SCADENZA_MS).toISOString(),
     metadata: { login, nome, messaggio, token },
   });

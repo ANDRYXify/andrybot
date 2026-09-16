@@ -22,7 +22,7 @@ import * as consolle from '../features/console.js';   // CONSOLify + tastiera fi
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
@@ -216,6 +216,16 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // dietro reverse proxy (nginx/caddy) serve per cookie "secure" e IP reali
   app.set('trust proxy', config.proxyFidati);   // Caddy = 1; con un edge DDoS L7 davanti, 2
+  // dona.<dominio>/<login> e' la pagina delle donazioni: con il nome nel .env
+  // l'indirizzo corto si traduce in /u/<login>/dona prima di ogni rotta. La
+  // radice rimanda al sito; tutto il resto (script, immagini, il modulo) passa.
+  if (config.donaHost) app.use((req, res, next) => {
+    if (String(req.hostname || '').toLowerCase() !== config.donaHost) return next();
+    const m = /^\/([a-z0-9_]{1,30})\/?$/i.exec(req.path);
+    if (m) { const q = req.url.indexOf('?'); req.url = '/u/' + m[1].toLowerCase() + '/dona' + (q >= 0 ? req.url.slice(q) : ''); return next(); }
+    if (req.path === '/') return res.redirect(302, config.baseUrl + '/');
+    next();
+  });
 
   // FILIGRANA DI PROPRIETÀ INTELLETTUALE (Andrea Taliento / ANDRYXify) — PRIMA di tutto,
   // così viaggia su OGNI risposta (pagine, API, overlay, statici). Invisibile all'utente
@@ -1486,6 +1496,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       baseUrl: config.baseUrl,
       sostieni: donazioni.datiSostieni(s?.settings, conti),
       grazie,
+      urlDona: donazioni.urlPaginaDona(login),
     });
     // Una visita in più. Contiamo SOLO quante volte la pagina è stata aperta:
     // niente indirizzi IP, niente cookie, niente su chi c'era. I robot li
@@ -1496,6 +1507,30 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       }
     } catch (e) { log.warn('visite pagina link:', e?.message || e); }
     // la pagina col ritorno di un pagamento e' di chi ha pagato: non si mette in cache
+    if (dona) res.set('Cache-Control', 'private, no-store');
+    else res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+    res.type('html').send(html);
+  }));
+  // La pagina delle donazioni: stessa forma della pagina link, un'altra
+  // tabella, e il modulo dice da dove torna. Niente conteggio delle visite.
+  app.get('/u/:user/dona', wrap(async (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    const p = paginaDona.get(login);
+    if (!p || !p.attiva) return notFound(res);
+    const s = streamers.get(login);
+    const conti = contiDi(login);
+    let grazie = null;
+    const dona = String(req.query.dona || '');
+    if (extRateOk('dona-ok:' + login)) {
+      const e = await confermaDonazione(login, dona);
+      if (e?.nuova) manager.alerts?.donazione(login, e.d);
+      if (e) grazie = { nome: e.d.user, importo: e.d.importo, valuta: e.d.valuta };
+    }
+    const html = renderLinkPage(p, {
+      login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
+      sostieni: donazioni.datiSostieni(s?.settings, conti), grazie, dona: true,
+    });
     if (dona) res.set('Cache-Control', 'private, no-store');
     else res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
     res.type('html').send(html);
@@ -1609,8 +1644,63 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)),
       manca: donazioni.cosaManca(s?.settings, contiDi(login)),
       anteprima: true,   // mostra anche i blocchi ancora da completare
+      urlDona: donazioni.urlPaginaDona(login),
     });
     res.json({ html });
+  }));
+
+  // ── La pagina delle donazioni: le stesse quattro porte, sull'altro tavolo ──
+  // Lo stesso editor la modifica; l'immagine si carica con la porta della
+  // pagina link, che e' solo un file nella cartella dello streamer.
+  app.get('/api/paginadona', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const display = s?.display || login;
+    const p = paginaDona.conDefault(login, display);
+    res.json({
+      url: donazioni.urlPaginaDona(login),
+      pubblicata: paginaDona.esiste(login) && p.attiva,
+      templates: TEMPLATE_LINKPAGE, fonts: FONT_LINKPAGE, icone: ICONE_LINKPAGE, tipi: TIPI_BLOCCO, limiti: LIMITI_LINKPAGE,
+      avatarTwitch: await avatarDi(login, { aggiorna: true }),
+      visite: null,
+      // per chi parte da zero: il tasto delle donazioni, che qui e' il cuore della pagina
+      suggeriti: paginaDona.esiste(login) ? [] : [{ tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: '', etichetta: '', obiettivo: true, icona: 'cuore' }],
+      pagina: {
+        headline: p.vuota ? `Sostieni ${display}` : (p.headline || ''), tagline: p.tagline || '', template: p.template || 'minimal',
+        avatar: p.avatar || '', tema: p.tema, blocchi: p.blocchi || [], attiva: p.attiva !== false, aggiornata: p.ts || null,
+      },
+    });
+  }));
+  app.post('/api/paginadona', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const b = req.body || {};
+    const inviati = Array.isArray(b.blocchi) ? b.blocchi.length : 0;
+    const p = paginaDona.salva(login, {
+      headline: b.headline, tagline: b.tagline, template: b.template, avatar: b.avatar, tema: b.tema,
+      blocchi: await risolviCanaliYoutube(b.blocchi, login), attiva: b.attiva !== false,
+    });
+    res.json({
+      ok: true, url: donazioni.urlPaginaDona(login), pubblicata: !!p?.attiva, salvati: p?.blocchi?.length || 0, inviati,
+      pagina: { headline: p.headline, tagline: p.tagline, template: p.template, avatar: p.avatar, tema: p.tema, blocchi: p.blocchi, attiva: p.attiva, aggiornata: p.ts },
+    });
+  }));
+  app.post('/api/paginadona/anteprima', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const b = req.body || {};
+    const finta = paginaDona.pulisci({ headline: b.headline, tagline: b.tagline, template: b.template, avatar: b.avatar, tema: b.tema, blocchi: await risolviCanaliYoutube(b.blocchi, login) });
+    const html = renderLinkPage(finta, {
+      login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
+      sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)), manca: donazioni.cosaManca(s?.settings, contiDi(login)),
+      anteprima: true, dona: true,
+    });
+    res.json({ html });
+  }));
+  app.delete('/api/paginadona', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const p = paginaDona.get(login);
+    if (p) paginaDona.salva(login, { ...p, attiva: false });
+    res.json({ ok: true, pubblicata: false });
   }));
 
   // Spegne la pagina (torna 404) senza cancellare i contenuti: si riaccende.
@@ -1650,6 +1740,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     try {
       for (const r of db.prepare('SELECT channel, ts FROM link_page WHERE attiva=1 ORDER BY ts DESC LIMIT 5000').all()) {
         voci.push({ u: `${b}/u/${r.channel}`, p: '0.6', f: 'weekly', m: new Date(r.ts || Date.now()).toISOString().slice(0, 10) });
+      }
+      for (const r of db.prepare('SELECT channel, ts FROM pagina_dona WHERE attiva=1 ORDER BY ts DESC LIMIT 5000').all()) {
+        voci.push({ u: donazioni.urlPaginaDona(r.channel), p: '0.5', f: 'weekly', m: new Date(r.ts || Date.now()).toISOString().slice(0, 10) });
       }
     } catch { /* tabella non ancora creata */ }
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n`
@@ -1710,9 +1803,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   su TikTok, YouTube e Instagram.
 - Comandi a voce mentre si streamma.
 - Pagina link pubblica personalizzabile su ${b}/u/<nomeutente>.
-- Donazioni sul conto dello streamer: chi guarda dona dalla pagina link, il
-  pagamento arriva sul suo conto Stripe o Satispay, l'avviso parte in overlay
-  e in chat, un obiettivo in euro sale. Ko-fi resta possibile.
+- Donazioni sul conto dello streamer: chi guarda dona dalla pagina link o da
+  una pagina tutta per le donazioni (${b}/u/<nomeutente>/dona), con offerte a
+  scaglioni che accendono i suoi effetti; il pagamento arriva sul suo conto
+  Stripe o Satispay, l'avviso parte in overlay e in chat, un obiettivo in euro
+  sale. Ko-fi resta possibile.
 
 ## Prezzi
 - Essenziale: gratuito, basta registrarsi. Comandi illimitati, moderazione,
@@ -2807,6 +2902,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (sp?.chiave && (req.query.rileggi === '1' || Date.now() - (sp.verificato_at || 0) > 60_000)) sp = await donaSatispay.verificaChiave(login);
     const rp = registroDonazioni.riepilogo(login);
     res.json({
+      paginaUrl: donazioni.urlPaginaDona(login),
       conto: { stato: donaStripe.statoDi(c), coda: c?.coda || '', verificato: c?.verificato_at || 0, nota: c?.nota || '' },
       satispay: { stato: donaSatispay.statoDi(sp), coda: sp?.coda || '', verificato: sp?.verificato_at || 0, nota: sp?.nota || '' },
       riepilogo: { oggi: sommeDonazioni(rp.oggi), mese: sommeDonazioni(rp.mese), anno: sommeDonazioni(rp.anno), sempre: sommeDonazioni(rp.sempre) },
@@ -2921,7 +3017,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // il mezzo lo sceglie chi dona fra quelli pronti; senza una scelta, il primo
     const mezzi = donazioni.mezziDi(cfg, conti);
     const mezzo = mezzi.includes(String(req.body?.mezzo || '')) ? String(req.body.mezzo) : mezzi[0];
-    const dati = { login, display: s?.display || login, importoCent: m.importoCent, valuta: cfg.valuta, nome: m.nome, messaggio: m.messaggio };
+    // da dove e' partito il modulo, li' si torna: la pagina link o quella delle donazioni
+    const ritorno = String(req.body?.pagina || '') === 'dona' ? 'dona' : 'link';
+    const dati = { login, display: s?.display || login, importoCent: m.importoCent, valuta: cfg.valuta, nome: m.nome, messaggio: m.messaggio, ritorno };
     const r = mezzo === 'satispay' ? await donaSatispay.apriPagamento(dati) : await donaStripe.apriPagamento(dati);
     if (r.errore) return rispondi(503, { errore: 'Il pagamento non si apre in questo momento: riprova fra poco.' });
     rispondi(200, { url: r.url });

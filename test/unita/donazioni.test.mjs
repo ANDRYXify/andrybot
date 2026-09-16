@@ -6,6 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as dn from '../../src/features/donazioni.js';
 import { combacia, eImpronta } from '../../src/segreti.js';
+import { config } from '../../src/config.js';
 
 test('la configurazione si ripulisce, e del token resta solo l\'impronta', () => {
   const d = dn.normDonazioni({ attivo: true, link: 'ko-fi.com/andry', etichetta: 'Offrimi un caffè', messaggio: 'grazie', valuta: 'USD', annunciaChat: true, testoChat: 'Grazie {user}', kofiToken: 'tok-123' }, {}, 'andry');
@@ -34,6 +35,16 @@ test('la configurazione si ripulisce, e del token resta solo l\'impronta', () =>
   assert.equal(dn.normDonazioni({ minimo: '2,5' }).minimo, 2.5);
   assert.equal(dn.normDonazioni({ minimo: 500 }).minimo, 100);
   assert.equal(dn.normDonazioni({ conMessaggio: false }).conMessaggio, false);
+  // le offerte: importo, nome, effetto della libreria; in ordine, senza doppioni, al massimo otto
+  const liv = dn.normDonazioni({ livelli: [{ da: '10', nome: 'Fuochi', effetto: 'effetto:Fuochi_1' }, { da: 5, nome: 'x'.repeat(50), effetto: 'https://altrove.example/x.gif' }, { da: 5 }, { da: 0 }, { da: 9999 }, null] }).livelli;
+  assert.deepEqual(liv, [{ da: 5, nome: 'x'.repeat(30), effetto: '' }, { da: 10, nome: 'Fuochi', effetto: 'effetto:fuochi_1' }]);
+  assert.equal(dn.normDonazioni({ livelli: Array.from({ length: 12 }, (_, i) => ({ da: i + 1 })) }).livelli.length, 8);
+  assert.deepEqual(dn.normDonazioni({}).livelli, []);
+  // l'offerta che vale e' la piu' alta raggiunta dall'importo pagato
+  assert.equal(dn.livelloPer(liv, 4), null);
+  assert.equal(dn.livelloPer(liv, 5).nome, 'x'.repeat(30));
+  assert.equal(dn.livelloPer(liv, 12).effetto, 'effetto:fuochi_1');
+  assert.equal(dn.livelloPer(null, 12), null);
   // il massimo lo sceglie lo streamer, mai sotto il minimo e mai oltre 5.000; gli importi suggeriti ci stanno dentro
   assert.equal(dn.normDonazioni({ massimo: 2000 }).massimo, 2000);
   assert.equal(dn.normDonazioni({ massimo: 99999 }).massimo, 5000);
@@ -86,6 +97,15 @@ test('una mancia dalla chiave API: basta l\'importo, il resto ha un ripiego', ()
   assert.equal(dn.leggiEsterna({ importo: -3 }), null);
 });
 
+test('l\'indirizzo della pagina delle donazioni: sotto la pagina link, o corto se c\'e\' il sottodominio', () => {
+  const salva = { base: config.baseUrl, host: config.donaHost };
+  config.baseUrl = 'https://prova.example'; config.donaHost = '';
+  assert.equal(dn.urlPaginaDona('Andry'), 'https://prova.example/u/andry/dona');
+  config.donaHost = 'dona.prova.example';
+  assert.equal(dn.urlPaginaDona('andry'), 'https://dona.prova.example/andry');
+  config.baseUrl = salva.base; config.donaHost = salva.host;
+});
+
 test('l\'importo si scrive come si scrive', () => {
   assert.equal(dn.formattaImporto(5), '5 €');
   assert.equal(dn.formattaImporto(12.5), '12,50 €');
@@ -119,6 +139,7 @@ test('i dati per il blocco «Sostieni»: come si dona, gli importi, il tasto, la
   assert.deepEqual(c.importi, [3, 9]);
   assert.equal(c.minimo, 2);
   assert.equal(c.massimo, 500);
+  assert.deepEqual(dn.datiSostieni({ donazioni: { attivo: true, minimo: 5, massimo: 50, livelli: [{ da: 2, nome: 'a' }, { da: 10, nome: 'b' }, { da: 100, nome: 'c' }] } }, { stripe: { pronto: 1 } }).livelli.map((l) => l.nome), ['b'], 'sulla pagina solo le offerte fra minimo e massimo');
   assert.equal(dn.datiSostieni({ donazioni: { ...conto.donazioni, massimo: 1500 } }, { stripe: { pronto: 1 } }).massimo, 1500);
   // Satispay conta solo in euro; con tutti e due, Stripe viene prima
   assert.deepEqual(dn.mezziDi({ valuta: 'EUR' }, { stripe: { pronto: 1 }, satispay: { pronto: 1 } }), ['stripe', 'satispay']);

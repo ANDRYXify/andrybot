@@ -453,7 +453,7 @@ const MANCA_SOSTIENI = {
   conto: 'collega il tuo conto nella scheda «Donazioni»',
 };
 
-export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca } = {}) {
+export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona } = {}) {
   const pre = PRESET[pagina.template] || PRESET.minimal;
   const t = pagina.tema || {};
   // il tema dell'utente vince sul preset, campo per campo
@@ -747,12 +747,21 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       const cifra = (x) => formattaImporto(x, d.valuta);
       const tasto = b.etichetta || d.etichetta || 'Sostieni';
       const dentro = `<span class="ico">${_mIco(b.icona || 'cuore')}</span><span class="tx"><span class="et">${esc(tasto)}</span></span><span class="fre" aria-hidden="true">›</span>`;
-      // il modo: un link esterno e' un link; sul conto e' un modulo che apre il
-      // pagamento (in anteprima il modulo non manda niente)
+      // le scelte: le offerte, se ce ne sono (importo e nome, e ognuna accende
+      // il suo effetto), altrimenti gli importi suggeriti
+      const scelte = (d.livelli && d.livelli.length)
+        ? d.livelli.map((l) => ({ v: l.da, t: cifra(l.da) + (l.nome ? ' · ' + l.nome : '') }))
+        : (d.importi || []).map((n) => ({ v: n, t: cifra(n) }));
+      // il modo: un link esterno e' un link; sulla pagina link, se lo streamer
+      // preferisce, un rimando alla sua pagina delle donazioni; sul conto e' un
+      // modulo che apre il pagamento (in anteprima il modulo non manda niente)
       const azione = d.modo === 'link'
         ? `<a class="voce spicca sost-b" href="${esc(d.link)}" target="_blank" rel="noopener nofollow">${dentro}</a>`
-        : `<form class="sost-f"${anteprima ? ' data-anteprima="1"' : ` method="post" action="/dona/${esc(login)}"`}>
-          <div class="sost-chips" role="radiogroup" aria-label="Importo">${d.importi.map((n, i) => `<label class="sost-c"><input type="radio" name="importo" value="${n}"${i === Math.min(1, d.importi.length - 1) ? ' checked' : ''}><span>${esc(cifra(n))}</span></label>`).join('')}</div>
+        : (b.pagina && !dona)
+          ? `<a class="voce spicca sost-b" href="${esc(urlDona || '/u/' + login + '/dona')}">${dentro}</a>`
+          : `<form class="sost-f"${anteprima ? ' data-anteprima="1"' : ` method="post" action="/dona/${esc(login)}"`}>
+          ${dona ? '<input type="hidden" name="pagina" value="dona">' : ''}
+          <div class="sost-chips" role="radiogroup" aria-label="Importo">${scelte.map((s, i) => `<label class="sost-c"><input type="radio" name="importo" value="${s.v}"${i === Math.min(1, scelte.length - 1) ? ' checked' : ''}><span>${esc(s.t)}</span></label>`).join('')}</div>
           <label class="sost-altro"><span class="sost-l">Oppure</span><input type="number" name="altro" min="${d.minimo}" max="${d.massimo}" step="0.5" inputmode="decimal" placeholder="${esc('un altro importo, da ' + cifra(d.minimo))}"></label>
           <input class="sost-i" type="text" name="nome" maxlength="40" placeholder="Il tuo nome (se vuoi)" autocomplete="nickname">
           ${d.conMessaggio ? `<input class="sost-i" type="text" name="messaggio" maxlength="200" placeholder="Un messaggio per la diretta (se vuoi)">` : ''}
