@@ -988,6 +988,7 @@ const VETRINA = {
       ['Immagine', 'Una tua immagine.'],
       ['La mia diretta', 'Il player: resta lì e dice da sé se sei online o no.'],
       ['Sostieni', 'Le donazioni, col tuo tema: gli importi da scegliere e il pagamento sul tuo conto, oppure il tasto verso Ko-fi, PayPal o altro; se vuoi, sotto c\'è l\'obiettivo in euro che sale.'],
+      ['Chi ha donato', 'Gli ultimi che hanno donato, o i primi per somma (del mese o di sempre), quanti nomi vuoi. I nomi sono quelli scritti nel modulo; le rimborsate non contano.'],
     ] },
     { p: ['Il blocco «La mia diretta» è quello che cambia di più la pagina: chi arriva dalla bio non deve chiedersi se sei live, lo vede.'] },
     { h3: 'Le donazioni' },

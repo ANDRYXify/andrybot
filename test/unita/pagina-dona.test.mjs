@@ -27,3 +27,12 @@ test('due tavoli, uno store: salvare la pagina delle donazioni non tocca la pagi
   paginaDona.rimuovi('andry');
   assert.equal(paginaDona.get('andry'), null); assert.equal(linkPage.get('andry').headline, 'I miei link');
 });
+
+test('il blocco «Chi ha donato» si ripulisce: quanti fra 3 e 20, modo e periodo fra quelli noti', () => {
+  const p = paginaDona.salva('andry', { headline: 'x', blocchi: [
+    { tipo: 'donatori', titolo: 'Grazie a', quanti: 50, modo: 'top', periodo: 'mese' },
+    { tipo: 'donatori', quanti: '4', modo: 'boh', periodo: 'anno' },
+  ] });
+  assert.deepEqual(p.blocchi.map((b) => [b.quanti, b.modo, b.periodo, b.titolo]), [[5, 'top', 'mese', 'Grazie a'], [4, 'ultimi', 'sempre', '']]);
+  paginaDona.rimuovi('andry');
+});

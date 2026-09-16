@@ -453,7 +453,7 @@ const MANCA_SOSTIENI = {
   conto: 'collega il tuo conto nella scheda «Donazioni»',
 };
 
-export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona } = {}) {
+export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, donatori } = {}) {
   const pre = PRESET[pagina.template] || PRESET.minimal;
   const t = pagina.tema || {};
   // il tema dell'utente vince sul preset, campo per campo
@@ -737,6 +737,17 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       if (!tessere) return anteprima ? `<div class="segna" ${ritardo}>griglia: aggiungi almeno una tessera</div>` : '';
       return `<div class="griglia" ${ritardo}>${tessere}</div>`;
     }
+    if (b.tipo === 'donatori') {
+      // chi ha donato: i nomi li porta il server dal registro; qui la forma
+      const top = b.modo === 'top';
+      const lista = !donatori ? [] : (top ? (b.periodo === 'mese' ? donatori.mese : donatori.sempre) : donatori.ultimi) || [];
+      const righe = lista.slice(0, b.quanti || 5).map((v, i) => `<li class="dnt-r">${top ? `<span class="dnt-p">${i + 1}</span>` : ''}<span class="dnt-n">${esc(v.nome || 'Qualcuno')}</span><span class="dnt-i">${esc(formattaImporto((top ? v.somma : v.importo) / 100, v.valuta))}</span></li>`).join('');
+      if (!righe && anteprima) return `<div class="segna" ${ritardo}>chi ha donato: i nomi compaiono con le prime donazioni</div>`;
+      return `<div class="dnt" ${ritardo}>
+        ${b.titolo ? `<span class="sost-t">${esc(b.titolo)}</span>` : ''}
+        ${righe ? `<ol class="dnt-l">${righe}</ol>` : '<p class="dnt-vuoto">Ancora nessuno: potresti essere il primo.</p>'}
+      </div>`;
+    }
     if (b.tipo === 'sostieni') {
       // il link, la frase e l'obiettivo arrivano dalle impostazioni del canale
       // (`sostieni`): il blocco decide solo come si presenta
@@ -771,7 +782,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
             ? `<button type="${anteprima ? 'button' : 'submit'}" class="voce spicca sost-b" name="mezzo" value="${m}">${dentro}</button>`
             : `<button type="${anteprima ? 'button' : 'submit'}" class="voce sost-b sost-b2" name="mezzo" value="${m}"><span class="ico">${_mIco('soldi')}</span><span class="tx"><span class="et">${m === 'satispay' ? 'Oppure con Satispay' : 'Oppure con carta'}</span></span><span class="fre" aria-hidden="true">›</span></button>`).join('')}
           <p class="sost-err" role="alert" hidden></p>
-          <p class="sost-nota">Pagamento sicuro con carta, Apple Pay o Google Pay. Va tutto a ${esc(display || login)}.</p>
+          <p class="sost-nota">Pagamento sicuro con carta, Apple Pay o Google Pay. Va tutto a ${esc(display || login)}.${(pagina.blocchi || []).some((x) => x && x.tipo === 'donatori') ? ' Il nome che scrivi può comparire fra chi ha donato, qui in pagina.' : ''}</p>
         </form>`;
       return `<div class="sost" id="sostieni" ${ritardo}>
         ${b.titolo ? `<span class="sost-t">${esc(b.titolo)}</span>` : ''}
@@ -1134,6 +1145,14 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
     display:flex;flex-direction:column;gap:.15rem}
   .num-n{font-size:clamp(1.4rem,5vw,2.1rem);font-weight:var(--pf);letter-spacing:-.03em;color:var(--acc);line-height:1}
   .num-e{font-size:.76rem;color:var(--tenue);text-transform:uppercase;letter-spacing:.06em}
+  .dnt{width:100%;margin-top:1.2rem;padding:1rem 1.1rem;border-radius:var(--r);border:var(--bw) solid ${c.bordo};background:${c.card};text-align:left}
+  .dnt .sost-t{display:block;text-align:center;margin-bottom:.6rem}
+  .dnt-l{margin:0;padding:0;list-style:none;display:grid;gap:.45rem}
+  .dnt-r{display:flex;align-items:baseline;gap:.6rem}
+  .dnt-p{min-width:1.3em;color:var(--tenue);font-variant-numeric:tabular-nums;font-size:.85rem}
+  .dnt-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:var(--pm)}
+  .dnt-i{color:var(--acc);font-weight:var(--pf);font-variant-numeric:tabular-nums}
+  .dnt-vuoto{margin:0;color:var(--tenue);font-size:.9rem;text-align:center}
   /* domande frequenti: si aprono da sole, nessuno script */
   .faq{width:100%;margin-top:1rem;display:flex;flex-direction:column;gap:.45rem}
   .faq-v{border-radius:var(--r);${stileBtn};overflow:hidden}

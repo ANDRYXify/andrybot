@@ -66,3 +66,23 @@ test('la pulizia dice quali file delle righe tolte erano ancora sul disco', () =
   assert.equal(registroDonazioni.get('kofi:andry:9'), null); assert.equal(registroDonazioni.get('kofi:andry:10'), null);
   assert.ok(registroDonazioni.get('stripe:cs_img'), 'le recenti restano');
 });
+
+test('«Chi ha donato»: gli ultimi senza le rimborsate, i primi per somma solo con un nome, maiuscole e minuscole insieme', () => {
+  const t = Date.now();
+  const metti = (id, nome, importo, quando, extra = '') => {
+    registroDonazioni.segna(id, { login: 'zeta', fonte: 'kofi', importo, nome });
+    db.prepare(`UPDATE donazioni SET pagata_at=? ${extra} WHERE id=?`).run(quando, id);
+  };
+  metti('kofi:zeta:d1', 'Anna', 2500, t - 1000);
+  metti('kofi:zeta:d2', 'anna', 1000, t - 2000);
+  metti('kofi:zeta:d3', '', 5000, t - 3000);
+  metti('kofi:zeta:d4', 'Luca', 4000, t - 4000, ", rimborsata_at=1");
+  metti('kofi:zeta:d5', 'Giada', 300, t - 40 * 86400_000);
+  const d = registroDonazioni.donatori('zeta', 10);
+  const ultimi = d.ultimi.filter((r) => r.pagata_at >= t - 5000);
+  assert.equal(d.ultimi.length, 4, 'quattro pagate non rimborsate');
+  assert.deepEqual(ultimi.map((r) => [r.nome, r.importo]), [['Anna', 2500], ['anna', 1000], ['', 5000]], 'la rimborsata non c\'e\', chi non ha scritto un nome c\'e\'');
+  assert.deepEqual(d.sempre.map((r) => [r.nome, r.somma, r.quante]).filter(([n]) => ['Anna', 'anna', 'Giada'].includes(n)), [['Anna', 3500, 2], ['Giada', 300, 1]], 'Anna e anna sono una: 35 €; niente senza nome, niente rimborsate');
+  assert.ok(!d.mese.some((r) => r.nome === 'Giada'), 'del mese: Giada e\' di quaranta giorni fa');
+  assert.equal(registroDonazioni.donatori('nessuno').ultimi.length, 0);
+});

@@ -1498,6 +1498,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       sostieni: donazioni.datiSostieni(s?.settings, conti),
       grazie,
       urlDona: donazioni.urlPaginaDona(login),
+      donatori: donatoriPer(login, p.blocchi),
     });
     // Una visita in più. Contiamo SOLO quante volte la pagina è stata aperta:
     // niente indirizzi IP, niente cookie, niente su chi c'era. I robot li
@@ -1531,6 +1532,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const html = renderLinkPage(p, {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
       sostieni: donazioni.datiSostieni(s?.settings, conti), grazie, dona: true,
+      donatori: donatoriPer(login, p.blocchi),
     });
     if (dona) res.set('Cache-Control', 'private, no-store');
     else res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
@@ -1646,6 +1648,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       manca: donazioni.cosaManca(s?.settings, contiDi(login)),
       anteprima: true,   // mostra anche i blocchi ancora da completare
       urlDona: donazioni.urlPaginaDona(login),
+      donatori: donatoriPer(login, finta.blocchi),
     });
     res.json({ html });
   }));
@@ -1694,6 +1697,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
       sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)), manca: donazioni.cosaManca(s?.settings, contiDi(login)),
       anteprima: true, dona: true,
+      donatori: donatoriPer(login, finta.blocchi),
     });
     res.json({ html });
   }));
@@ -2880,6 +2884,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // I conti dello streamer, come li vuole il blocco «Sostieni»
   const contiDi = (login) => ({ stripe: contiDonazioni.get(login), satispay: contiSatispay.get(login) });
+  // il blocco «Chi ha donato»: i nomi si leggono dal registro solo se la pagina lo mostra
+  const donatoriPer = (login, blocchi) => (Array.isArray(blocchi) && blocchi.some((b) => b && b.tipo === 'donatori') ? registroDonazioni.donatori(login) : null);
   // Il ritorno da un pagamento: cs_… e' una sessione di Stripe, sp_… un nostro
   // id per Satispay. Qualunque altra cosa non e' niente.
   async function confermaDonazione(login, dona) {

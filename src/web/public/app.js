@@ -13152,6 +13152,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
             <button type="button" class="btn secondario mini" data-lpadd="faq">${L('Domande frequenti', 'FAQ', 'Preguntas frecuentes')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="conto">${L('Conto alla rovescia', 'Countdown', 'Cuenta atrás')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="sostieni">${L('Sostieni (donazioni)', 'Support me (donations)', 'Apóyame (donaciones)')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="donatori">${L('Chi ha donato', 'Who donated', 'Quién donó')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="separatore">${L('Riga divisoria', 'Divider', 'Separador')}</button>
           </div>
         </details>
@@ -13432,6 +13433,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
       faq: { tipo: 'faq', voci: [{ d: '', r: '' }] },
       conto: { tipo: 'conto', titolo: '', quando: '', finito: '' },
       sostieni: { tipo: 'sostieni', titolo: '', testo: '', etichetta: '', obiettivo: true, icona: 'cuore' },
+      donatori: { tipo: 'donatori', titolo: '', quanti: 5, modo: 'ultimi', periodo: 'sempre' },
       griglia: { tipo: 'griglia', voci: [{ img: '', titolo: '', testo: '', url: '' }, { img: '', titolo: '', testo: '', url: '' }] },
       separatore: { tipo: 'separatore' } }[tipo];
     if (!nuovo) return;
@@ -13569,11 +13571,12 @@ const NOMI_BLOCCO = () => ({ link: L('Link', 'Link', 'Enlace'), social: L('Riga 
     numeri: L('Numeri', 'Numbers', 'Números'), faq: L('Domande frequenti', 'FAQ', 'Preguntas frecuentes'),
     conto: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'),
     sostieni: L('Sostieni (donazioni)', 'Support me (donations)', 'Apóyame (donaciones)'),
+    donatori: L('Chi ha donato', 'Who donated', 'Quién donó'),
     separatore: L('Riga divisoria', 'Divider', 'Separador') });
 
 const ICO_BLOCCO = { link: 'link', social: 'cuore', titolo: 'stella', testo: 'mail', immagine: 'video',
   embed: 'video', diretta: 'twitch', eroe: 'stella', griglia: 'gioco', scritta: 'musica',
-  numeri: 'soldi', faq: 'mail', conto: 'calendario', sostieni: 'cuore', separatore: 'link' };
+  numeri: 'soldi', faq: 'mail', conto: 'calendario', sostieni: 'cuore', donatori: 'stella', separatore: 'link' };
 
 function nomeBlocco(b, NOMI) {
   const suo = (b.label || b.testo || b.titolo || b.d || '').toString().trim().replace(/\s+/g, ' ');
@@ -13722,6 +13725,17 @@ function lpRenderBlocchi() {
         ${LP.quale === 'dona' ? '' : `<label class="riga-check spazio-sopra"><input type="checkbox" data-lpb="${i}" data-lpf="pagina"${b.pagina ? ' checked' : ''}> ${L('Porta alla mia pagina delle donazioni, invece del modulo qui', 'Send people to my donations page, instead of the form here', 'Lleva a mi página de donaciones, en vez del formulario aquí')}</label>`}
         <label class="riga-check spazio-sopra"><input type="checkbox" data-lpb="${i}" data-lpf="obiettivo"${b.obiettivo !== false ? ' checked' : ''}> ${L('Mostra l\'obiettivo in euro, se ne hai uno acceso', 'Show the euro goal, if you have one on', 'Muestra el objetivo en euros, si tienes uno activo')}</label>
         <p class="suggerimento">${dn.attivo && (dn.modo !== 'link' || dn.link) ? L('Come si dona, gli importi e la valuta vengono dalla scheda «Donazioni»: si impostano una volta sola.', 'How people donate, the amounts and the currency come from the «Donations» tab: set them once.', 'Cómo se dona, los importes y la moneda vienen de la pestaña «Donaciones»: se ajustan una sola vez.') : L('Per farlo comparire accendi le donazioni nella scheda «Donazioni» e collega il conto (o metti un link).', 'To make it appear, turn donations on in the «Donations» tab and connect the account (or set a link).', 'Para que aparezca, activa las donaciones en la pestaña «Donaciones» y conecta la cuenta (o pon un enlace).')}</p>`;
+    } else if (b.tipo === 'donatori') {
+      const MODI = { ultimi: L('Gli ultimi che hanno donato', 'The latest donors', 'Los últimos que donaron'), top: L('I primi per somma', 'The top by amount', 'Los primeros por importe') };
+      const PER = { sempre: L('Di sempre', 'All time', 'De siempre'), mese: L('Degli ultimi 30 giorni', 'Last 30 days', 'De los últimos 30 días') };
+      campi = `<input type="text" data-lpb="${i}" data-lpf="titolo" maxlength="${d.limiti.label}" value="${esc(b.titolo || '')}" placeholder="${esc(L('Titolo (es. GRAZIE A)', 'Heading (e.g. THANKS TO)', 'Título (p. ej. GRACIAS A)'))}">
+        <div class="lp-riga2 spazio-sopra">
+          <select data-lpb="${i}" data-lpf="modo">${Object.keys(MODI).map((k) => `<option value="${k}"${(b.modo || 'ultimi') === k ? ' selected' : ''}>${esc(MODI[k])}</option>`).join('')}</select>
+          <select data-lpb="${i}" data-lpf="periodo">${Object.keys(PER).map((k) => `<option value="${k}"${(b.periodo || 'sempre') === k ? ' selected' : ''}>${esc(PER[k])}</option>`).join('')}</select>
+        </div>
+        <label class="campo spazio-sopra">${L('Quanti nomi (da 3 a 20)', 'How many names (3 to 20)', 'Cuántos nombres (de 3 a 20)')}</label>
+        <input type="number" data-lpb="${i}" data-lpf="quanti" min="3" max="20" value="${Number(b.quanti) || 5}">
+        <p class="suggerimento">${L('I nomi sono quelli scritti da chi ha donato: chi non ne scrive uno compare come «Qualcuno» fra gli ultimi e non entra fra i primi. Le rimborsate non contano. Nel modulo, chi dona legge che il nome può comparire qui.', 'Names are the ones donors typed: whoever leaves it blank shows as “Someone” among the latest and does not enter the top. Refunded ones do not count. In the form, donors read that their name may appear here.', 'Los nombres son los que escribió quien donó: quien no pone uno aparece como «Alguien» entre los últimos y no entra en los primeros. Las reembolsadas no cuentan. En el formulario, quien dona lee que el nombre puede aparecer aquí.')}</p>`;
     } else if (b.tipo === 'conto') {
       campi = `<input type="text" data-lpb="${i}" data-lpf="titolo" maxlength="${d.limiti.label}" value="${esc(b.titolo || '')}" placeholder="${esc(L('es. Prossima diretta fra', 'e.g. Next stream in', 'p. ej. Próximo directo en'))}">
         <label class="campo spazio-sopra">${L('Quando', 'When', 'Cuándo')}</label>
