@@ -204,6 +204,9 @@ test('il blocco «Sostieni» sul conto: un modulo col tema, che in anteprima non
   assert.ok(manca.includes('collega il tuo conto nella scheda «Donazioni»'), 'in anteprima si dice cosa manca');
   const stile = con.slice(con.indexOf('<style>'), con.indexOf('</style>'));
   assert.ok(stile.includes('.sost-c input:checked+span{') && stile.includes('button.sost-b{'), 'il foglio veste i bottoni degli importi e il tasto');
+  const LPSRC = leggi('src/features/linkpagina.js');
+  assert.ok(LPSRC.includes('2 1,auto!important}') && LPSRC.includes('16 15,pointer!important}'), 'il puntatore disegnato vince sui cursor dei pezzi scritti dopo');
+  assert.ok(LPSRC.includes('input[type="radio"],input[type="checkbox"]') && LPSRC.includes('input:not([type="radio"])'), 'sugli interruttori a scelta la stella, il cursore di testo solo dove si scrive');
   assert.ok(!/https:\/\/[a-z.]*stripe/.test(leggi('src/features/linkpagina.js')), 'nessun host di Stripe nel codice della pagina: il CSP non cambia');
   assert.ok(PLJS.includes("document.querySelector('.sost-f')") && PLJS.includes("headers: { Accept: 'application/json' }") && PLJS.includes('location.href = x.j.url'), 'lo script manda via fetch e naviga da solo');
   assert.ok(PLJS.includes("if (f.getAttribute('data-anteprima')) return;"), 'e in anteprima si ferma');

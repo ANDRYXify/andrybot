@@ -139,6 +139,13 @@ const facciaFont = (nome) => (nome !== 'manga' ? '' : `
 // in alto a sinistra) e una stella per quello che si puo' premere. Su schermo
 // tattile non si disegna niente: li' un puntatore non c'e' proprio, e imporne uno
 // vorrebbe dire far scaricare due immagini per nulla.
+//
+// Il puntatore e' una scelta della pagina, non del singolo pezzo: le regole
+// sono `!important`, cosi' un bottone o un campo scritti dopo nel foglio (il
+// modulo delle donazioni ha i suoi `cursor: pointer`) non rimettono quello di
+// sistema. Il cursore di testo resta solo dove si scrive davvero: un
+// interruttore a scelta e' un `input`, ma non si scrive dentro, e sopra ci
+// vuole la stella.
 const cursoreCss = (t, c) => {
   if (t.cursore !== 'disegnato') return '';
   const u = (svg) => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
@@ -146,9 +153,9 @@ const cursoreCss = (t, c) => {
   const stella = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path d="M15 2.4C15.3 1.5 16.6 1.5 16.9 2.4L19 10.7C19.1 11.2 19.5 11.6 20 11.7L28.4 13.8C29.3 14.1 29.3 15.4 28.4 15.7L20 17.8C19.5 17.9 19.1 18.3 19 18.8L16.9 27.1C16.6 28 15.3 28 15 27.1L12.9 18.8C12.8 18.3 12.4 17.9 11.9 17.8L3.5 15.7C2.6 15.4 2.6 14.1 3.5 13.8L11.9 11.7C12.4 11.6 12.8 11.2 12.9 10.7Z" fill="${c.acc}" stroke="${c.bordo}" stroke-width="2.1" stroke-linejoin="round"/></svg>`;
   return `
   @media (pointer:fine){
-    body,body *{cursor:${u(penna)} 2 1,auto}
-    a,a *,button,button *,summary,label,[role="button"],[role="button"] *{cursor:${u(stella)} 16 15,pointer}
-    input,textarea,[contenteditable="true"]{cursor:text}
+    body,body *{cursor:${u(penna)} 2 1,auto!important}
+    a,a *,button,button *,summary,label,label *,[role="button"],[role="button"] *,input[type="radio"],input[type="checkbox"],input[type="submit"],input[type="button"],select{cursor:${u(stella)} 16 15,pointer!important}
+    input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]),textarea,[contenteditable="true"]{cursor:text!important}
   }`;
 };
 
