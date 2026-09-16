@@ -881,6 +881,9 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .blocco-passi { margin: .7rem 0 0; padding-left: 1.25rem; color: var(--txt-2, inherit); }
 .blocco-passi li { margin: .3rem 0; }
 .blocco-azioni { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-top: 1.1rem; }
+.muro-pacchetto { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: .7rem 0; padding: .65rem .9rem; border: 1px dashed var(--contorno); border-radius: .7rem; }
+.muro-pacchetto .b-ico { flex: none; }
+.muro-pacchetto span { flex: 1 1 12rem; }
 .voce-lock { margin-left: 6px; font-size: .82em; opacity: .7; }
 .menu-voce.bloccata, .drawer-voce.bloccata { opacity: .82; }
 

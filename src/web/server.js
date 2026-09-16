@@ -1690,10 +1690,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
 ## Prezzi
 - Essenziale: gratuito, basta registrarsi. Comandi illimitati, moderazione,
-  overlay per la diretta e contatori.
-- Base: 2,99 euro al mese. Aggiunge un moderatore.
-- Pacchetti aggiuntivi a scelta (giochi, effetti, notifiche, clip, voce,
-  squadra, musica) e bundle scontati.
+  overlay e alert, giochi e monete, sondaggi, giveaway, richieste musicali.
+- Base: 2,99 euro al mese. Un moderatore, avvisi live e nuovi post su
+  Telegram e Discord, Studio Web.
+- Extra a scelta: clip automatiche (0,99), comandi a voce (0,99), squadra
+  fino a dieci moderatori (2,99); tutti e tre insieme 3,99.
 - Gratuito e completo per i membri abilitati della community di andryxify.it.
 
 ## Link
@@ -2437,7 +2438,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       tier: tierDi(user.login),
       // matrice funzioni EFFETTIVE del canale: la UI la usa per mostrare "bloccate"
       // le sezioni non incluse nel piano (stesso identico calcolo del gating server).
-      funzioni: funzioniDi(user.login),
+      funzioni: abbonamenti.funzioniPubbliche(funzioniDi(user.login)),
+      nAddon: abbonamenti.ADDON_IDS.length,
       abbonamento: (() => {
         const s = subscriptions.get(user.login);
         return s ? { tier: s.tier, pacchetti: abbonamenti.normalizzaPacchetti(s.pacchetti), status: s.status, fine: s.current_period_end } : null;
@@ -2701,6 +2703,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.get('/api/abbonamento/piani', (req, res) => {
     res.json({ attivo: config.stripe.attivo, ...abbonamenti.pianiPubblici() });
   });
+  // il listino si confronta con Stripe all'avvio: una voce che non coincide non si vende
+  abbonamenti.verificaPrezziStripe().catch((e) => log.warn('prezzi Stripe:', e?.message || e));
 
   // avvia il checkout per un tier. Identità: la sessione, oppure chi ha fatto il
   // login self-service in attesa di abbonarsi (req.session.abbonando). Off → 503.
@@ -3175,7 +3179,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   });
 
   // dalla Mini App: accendi/spegni il bot al volo (solo il proprietario)
-  app.post('/api/tgapp/toggle', requireOwner, wrap(async (req, res) => {
+  app.post('/api/tgapp/toggle', requireOwner, gateFeature('notifiche', 'Il bot su Telegram'), wrap(async (req, res) => {
     const u = currentUser(req);
     if (streamers.get(u.login)?.status !== 'approved') return res.status(403).json({ errore: 'non abilitato' });
     streamers.setEnabled(u.login, !!req.body?.enabled);
@@ -3184,7 +3188,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   }));
 
   // dalla DASHBOARD (loggato): collega Telegram inserendo il codice della Mini App
-  app.post('/api/tgapp/collega', requireOwner, wrap(async (req, res) => {
+  app.post('/api/tgapp/collega', requireOwner, gateFeature('notifiche', 'Il bot su Telegram'), wrap(async (req, res) => {
     puliziaTg();
     const codice = String(req.body?.codice || '').trim().toUpperCase();
     const dati = tgLinkCodes.get(codice);
@@ -3194,7 +3198,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: true, username: dati.username || '' });
   }));
 
-  app.post('/api/tgapp/scollega', requireOwner, (req, res) => {
+  app.post('/api/tgapp/scollega', requireOwner, gateFeature('notifiche', 'Il bot su Telegram'), (req, res) => {
     tgLogin.unlinkByLogin(currentUser(req).login);
     res.json({ ok: true });
   });
@@ -5998,7 +6002,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     });
   }));
 
-  app.post('/api/streamer/feed', requireLogin, wrap(async (req, res) => {
+  app.post('/api/streamer/feed', requireLogin, gateFeature('notifiche', 'Gli avvisi dei nuovi post'), wrap(async (req, res) => {
     const login = currentUser(req).login;
     const url = String(req.body?.url || '').trim();
     const via = await feedmod.indirizzoAmmesso(url);
@@ -6018,20 +6022,20 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: true, id, trovate: p.voci.length, prima: p.voci[0] });
   }));
 
-  app.patch('/api/streamer/feed/:id', requireLogin, wrap(async (req, res) => {
+  app.patch('/api/streamer/feed/:id', requireLogin, gateFeature('notifiche', 'Gli avvisi dei nuovi post'), wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (!feedFonti.aggiorna(login, req.params.id, req.body || {})) return res.status(404).json({ errore: 'sorgente non trovata' });
     res.json({ ok: true });
   }));
 
-  app.delete('/api/streamer/feed/:id', requireLogin, wrap(async (req, res) => {
+  app.delete('/api/streamer/feed/:id', requireLogin, gateFeature('notifiche', 'Gli avvisi dei nuovi post'), wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (!feedFonti.rimuovi(login, req.params.id)) return res.status(404).json({ errore: 'sorgente non trovata' });
     res.json({ ok: true });
   }));
 
   // Prova adesso: dice cosa vede E dove finirebbe, senza aspettare il giro.
-  app.post('/api/streamer/feed/:id/prova', requireLogin, wrap(async (req, res) => {
+  app.post('/api/streamer/feed/:id/prova', requireLogin, gateFeature('notifiche', 'Gli avvisi dei nuovi post'), wrap(async (req, res) => {
     const login = currentUser(req).login;
     const f = feedFonti.get(login, req.params.id);
     if (!f) return res.status(404).json({ errore: 'sorgente non trovata' });
@@ -6859,13 +6863,18 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!extRateOk(login)) return res.status(429).json({ errore: 'troppe richieste' });
     // azione 'clip': crea una clip a comando (usata dalla voce lato PC via companion)
     const azione = String(req.body?.azione || '').toLowerCase().trim();
+    // il piano vale anche da fuori: la chiave API non e' un abbonamento
+    const F = funzioniDi(login);
+    const nonNelPiano = (cosa) => res.status(403).json({ errore: `${cosa} non è incluso nel piano di questo canale.`, upgrade: true });
     if (azione === 'clip') {
+      if (!abbonamenti.abilitata(F, 'voce') && !abbonamenti.abilitata(F, 'clipAuto')) return nonNelPiano('La clip a comando');
       await manager.creaClip(login, req.body?.motivo || 'comando vocale');
       return res.json({ ok: true });
     }
     // azione 'tiktok-live': via affidabile per avvisare "sono live su TikTok"
     // (una tua automazione la chiama quando vai in diretta su TikTok)
     if (azione === 'tiktok-live' || azione === 'tiktok') {
+      if (!abbonamenti.abilitata(F, 'notifiche')) return nonNelPiano('L’avviso di diretta');
       const r = await manager.notificaTikTok(login);
       return res.json({ ok: !!r?.ok, motivo: r?.motivo });
     }
@@ -6873,6 +6882,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // dove il rilevamento automatico dal server non è possibile.
     if (azione === 'youtube' || azione === 'youtube-post' || azione === 'tiktok-post' || azione === 'instagram-post') {
       const piattaforma = azione === 'tiktok-post' ? 'tiktok' : azione === 'instagram-post' ? 'instagram' : 'youtube';
+      if (!abbonamenti.abilitata(F, 'notifiche')) return nonNelPiano('L’avviso dei nuovi post');
       const s = streamers.get(login);
       const cfg = s?.settings?.[piattaforma] || {};
       const r = await manager.notificaPost(login, {

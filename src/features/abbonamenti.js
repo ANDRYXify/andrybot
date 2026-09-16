@@ -31,13 +31,17 @@ const TOLLERANZA_WEBHOOK_S = 300; // 5 min: finestra anti-replay dei webhook Str
 // moderatori, add-on). L'id resta 'free' per compatibilità con i dati salvati.
 export const FREE = {
   id: 'free', nome: 'Essenziale', prezzo: 0, prezzoTesto: 'Gratis', priceEnv: null, icona: '🎈',
-  sommario: 'Gratis, basta registrarsi: comandi illimitati, moderazione, overlay per OBS e contatori a schermo.',
+  sommario: 'Gratis, basta registrarsi: comandi illimitati, moderazione, overlay e alert, giochi e monete, sondaggi, richieste musicali.',
   nome3: ['Essenziale', 'Essenziale', 'Essenziale'],
   sommario3: [
-    'Gratis, basta registrarsi: comandi illimitati, moderazione, overlay per OBS e contatori a schermo.',
-    'Free, just sign up: unlimited commands, moderation, OBS overlay and on-screen counters.',
-    'Gratis, solo con registrarte: comandos ilimitados, moderación, overlay para OBS y contadores en pantalla.'],
-  funzioni: { moduli: Infinity, giochi: false, notifiche: false, clipAuto: false, voce: false, moderatori: 0, effetti: false, overlay: true, telegram: false, studio: false },
+    'Gratis, basta registrarsi: comandi illimitati, moderazione, overlay e alert, giochi e monete, sondaggi, richieste musicali.',
+    'Free, just sign up: unlimited commands, moderation, overlay and alerts, games and coins, polls, song requests.',
+    'Gratis, solo con registrarte: comandos ilimitados, moderación, overlay y alertas, juegos y monedas, encuestas, peticiones musicales.'],
+  // PARITA' CON GLI ALTRI BOT: quello che Nightbot, StreamElements e Cloudbot
+  // danno gratis (giochi e monete, alert ed effetti, sondaggi, richieste
+  // musicali) qui e' gratis. Si paga cio' che altrove non c'e': moderatori,
+  // avvisi live e nuovi post, Studio Web, clip automatiche, comandi a voce.
+  funzioni: { moduli: Infinity, giochi: true, notifiche: false, clipAuto: false, voce: false, moderatori: 0, effetti: true, overlay: true, telegram: false, musica: true, studio: false },
 };
 
 // ── BASE: il passo sopra l'Essenziale ────────────────────────────────────────
@@ -45,16 +49,16 @@ export const FREE = {
 // illimitato), booleani = on/off. L'unione con gli add-on la calcola funzioniDi().
 export const BASE = {
   id: 'base', nome: 'Base', prezzo: 2.99, prezzoTesto: '€2,99/mese', priceEnv: 'base', icona: '🤖',
-  sommario: 'Tutto l’Essenziale, più gli avvisi live su Telegram/Discord e i nuovi post, e un moderatore.',
+  sommario: 'Tutto l’Essenziale, più gli avvisi live su Telegram/Discord e i nuovi post, lo Studio Web e un moderatore.',
   nome3: ['Base', 'Base', 'Base'],
   sommario3: [
-    'Tutto l’Essenziale, più gli avvisi live su Telegram/Discord e i nuovi post, e un moderatore.',
-    'Everything in Essenziale, plus live alerts on Telegram/Discord and new posts, and one moderator.',
-    'Todo lo de Essenziale, más los avisos en directo en Telegram/Discord y las nuevas publicaciones, y un moderador.'],
+    'Tutto l’Essenziale, più gli avvisi live su Telegram/Discord e i nuovi post, lo Studio Web e un moderatore.',
+    'Everything in Essenziale, plus live alerts on Telegram/Discord and new posts, the Web Studio and one moderator.',
+    'Todo lo de Essenziale, más los avisos en directo en Telegram/Discord y las nuevas publicaciones, el Studio Web y un moderador.'],
   // Social & Notifiche ora è INCLUSO nel Base (notifiche + telegram): prima era
   // un add-on a pagamento, ma è di fatto essenziale. Chi l'aveva comprato non
   // perde nulla; chi prende il Base ora ce l'ha dentro.
-  funzioni: { moduli: Infinity, giochi: false, notifiche: true, clipAuto: false, voce: false, moderatori: 1, effetti: false, overlay: true, telegram: true, studio: true },
+  funzioni: { moduli: Infinity, giochi: true, notifiche: true, clipAuto: false, voce: false, moderatori: 1, effetti: true, overlay: true, telegram: true, musica: true, studio: true },
 };
 
 // ── ADD-ON à la carte: pacchetti componibili, ognuno un prezzo Stripe a sé ───
@@ -71,6 +75,9 @@ export const ADDON = [
       'Chat minigames, coins, leaderboards and a VIP reward for the most active.',
       'Minijuegos en el chat, monedas, clasificaciones y premio VIP a los más activos.'],
     funzioni: { giochi: true },
+    // Ora nell'Essenziale: non si vende piu'. Resta nel catalogo perche' chi lo
+    // aveva comprato ha quell'id nei metadata Stripe e nel database.
+    ritirato: true,
   },
   {
     id: 'effetti', nome: 'Effetti & Punti canale', prezzo: 1.79, prezzoTesto: '€1,79/mese',
@@ -82,6 +89,7 @@ export const ADDON = [
       'Overlay alerts and effects, redeemable with channel points too.',
       'Alertas y efectos en overlay, también canjeables con puntos de canal.'],
     funzioni: { effetti: true },
+    ritirato: true,
   },
   {
     id: 'notifiche', nome: 'Social & Notifiche', prezzo: 2.99, prezzoTesto: '€2,99/mese',
@@ -140,6 +148,7 @@ export const ADDON = [
       'Viewers queue songs on Spotify with !sr.',
       'Los espectadores ponen canciones en cola en Spotify con !sr.'],
     funzioni: { musica: true },
+    ritirato: true,
   },
 ];
 
@@ -176,19 +185,19 @@ export function normalizzaPacchetti(x) {
 // intatta (il gating li conosce uno per uno).
 const _sommaAddon = (ids) => ids.reduce((t, id) => t + (addonById(id)?.prezzo || 0), 0);
 export const BUNDLE = [
-  { id: 'creator', nome: 'Creator', icona: '🎨', priceEnv: 'bundle_creator', prezzo: 4.49, addon: ['effetti', 'notifiche', 'clip'],
+  { id: 'creator', nome: 'Creator', icona: '🎨', priceEnv: 'bundle_creator', prezzo: 4.49, ritirato: true, addon: ['effetti', 'notifiche', 'clip'],
     sommario: 'Presenza e visibilità: overlay ed effetti, avvisi live sui social, clip automatiche.',
     sommario3: [
       'Presenza e visibilità: overlay ed effetti, avvisi live sui social, clip automatiche.',
       'Presence and reach: overlay and effects, live alerts on socials, automatic clips.',
       'Presencia y visibilidad: overlay y efectos, avisos en directo en redes, clips automáticos.'] },
-  { id: 'interazione', nome: 'Interazione', icona: '🎉', priceEnv: 'bundle_interazione', prezzo: 5.49, addon: ['musica', 'giochi', 'voce'],
+  { id: 'interazione', nome: 'Interazione', icona: '🎉', priceEnv: 'bundle_interazione', prezzo: 5.49, ritirato: true, addon: ['musica', 'giochi', 'voce'],
     sommario: 'Community attiva: richieste musicali, minigiochi e monete, comandi a voce.',
     sommario3: [
       'Community attiva: richieste musicali, minigiochi e monete, comandi a voce.',
       'An active community: song requests, minigames and coins, voice commands.',
       'Comunidad activa: peticiones musicales, minijuegos y monedas, comandos por voz.'] },
-  { id: 'tutto', nome: 'Tutto', icona: '🚀', priceEnv: 'bundle_tutto', prezzo: 12.49, addon: [...ADDON_IDS],
+  { id: 'tutto', nome: 'Tutto', icona: '🚀', priceEnv: 'bundle_tutto', prezzo: 3.99, addon: ADDON_IDS.filter((id) => !addonById(id).ritirato && !addonById(id).inclusoBase),
     sommario: 'Ogni super-potere sbloccato: tutti gli add-on in un colpo solo.',
     sommario3: [
       'Ogni super-potere sbloccato: tutti gli add-on in un colpo solo.',
@@ -242,17 +251,54 @@ export function limite(funzioni, chiave) {
   return typeof v === 'number' ? v : (v === true ? Infinity : 0);
 }
 
+// Infinity non viaggia in JSON (diventa null): fuori casa «illimitato» e' -1.
+export const funzioniPubbliche = (f) => Object.fromEntries(Object.entries(f || {}).map(([k, v]) => [k, v === Infinity ? -1 : v]));
+
+// ── Il prezzo mostrato e' quello che Stripe addebita, o non si vende ─────────
+// Il listino sta qui, il prezzo vero sta in Stripe: due posti, e il giorno che
+// uno cambia senza l'altro qualcuno paga una cifra diversa da quella letta.
+// All'avvio si chiede a Stripe ogni prezzo configurato e si confronta: se non
+// coincide (importo, valuta, cadenza), quella voce sparisce dal listino e il
+// checkout la rifiuta, finche' non tornano uguali.
+const _prezzi = new Map();   // priceEnv → { ok, motivo }
+export function vendibile(voce) {
+  if (!voce?.priceEnv) return true;                  // gratis: niente da vendere
+  if (!config.stripe.attivo) return true;           // pagamenti spenti: il listino si legge lo stesso
+  if (!config.stripe.prezzi[voce.priceEnv]) return false;
+  return _prezzi.get(voce.priceEnv)?.ok !== false;
+}
+export async function verificaPrezziStripe() {
+  if (!config.stripe.attivo) return [];
+  const esiti = [];
+  for (const v of [BASE, ...ADDON.filter((a) => !a.ritirato), ...BUNDLE.filter((b) => !b.ritirato)]) {
+    const id = config.stripe.prezzi[v.priceEnv];
+    if (!id) continue;
+    const p = await stripeGet('/prices/' + encodeURIComponent(id));
+    if (!p) { esiti.push({ id: v.id, ok: null }); continue; }
+    const atteso = Math.round(v.prezzo * 100);
+    const ok = p.unit_amount === atteso && p.currency === 'eur' && p.recurring?.interval === 'month' && p.active !== false;
+    const motivo = ok ? '' : `Stripe ${p.unit_amount} ${p.currency}/${p.recurring?.interval || '?'} (attivo: ${p.active}) ≠ listino ${atteso} eur/month`;
+    _prezzi.set(v.priceEnv, { ok, motivo });
+    if (!ok) log.error(`prezzo di «${v.nome}»: ${motivo} — non si vende finche' non coincidono`);
+    esiti.push({ id: v.id, ok, motivo });
+  }
+  return esiti;
+}
+
 // Vetrina pubblica: la forma dei piani per il client (Infinity → -1, non-serializz.).
 export function pianiPubblici() {
-  const san = (f) => Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v === Infinity ? -1 : v]));
+  const san = funzioniPubbliche;
   const esponi = (p) => ({ id: p.id, nome: p.nome, nome3: p.nome3 || null, icona: p.icona, prezzo: p.prezzo, prezzoTesto: p.prezzoTesto, sommario: p.sommario, sommario3: p.sommario3 || null, funzioni: san(p.funzioni) });
   return {
     free: esponi(FREE),
     base: esponi(BASE),
     // gli add-on inclusi nel Base (es. Social & Notifiche) non si offrono più à la
     // carte: restano definiti solo per i bundle e per chi li aveva già comprati.
-    addon: ADDON.filter((a) => !a.inclusoBase).map(esponi),
-    bundle: BUNDLE.map((b) => ({ id: b.id, nome: b.nome, icona: b.icona, sommario: b.sommario, sommario3: b.sommario3 || null,
+    addon: ADDON.filter((a) => !a.inclusoBase && !a.ritirato && vendibile(a)).map(esponi),
+    ritirati: ADDON.filter((a) => a.ritirato).map((a) => a.id),
+    nAddon: ADDON_IDS.length,
+    baseVendibile: vendibile(BASE),
+    bundle: BUNDLE.filter((b) => !b.ritirato && vendibile(b)).map((b) => ({ id: b.id, nome: b.nome, icona: b.icona, sommario: b.sommario, sommario3: b.sommario3 || null,
       addon: b.addon, prezzo: b.prezzo, prezzoTesto: b.prezzoTesto, prezzoPieno: b.prezzoPieno, prezzoPienoTesto: b.prezzoPienoTesto, sconto: b.sconto })),
     community: esponi(TIER_COMMUNITY),
   };
@@ -260,6 +306,19 @@ export function pianiPubblici() {
 
 // ── Stripe via REST (niente SDK) ────────────────────────────────────────────
 const API = 'https://api.stripe.com/v1';
+
+async function stripeGet(path) {
+  if (!config.stripe.attivo) return null;
+  try {
+    const r = await fetch(API + path, { headers: { Authorization: 'Bearer ' + config.stripe.secretKey } });
+    const dati = await r.json().catch(() => null);
+    if (!r.ok) { log.warn(`stripe GET ${path}:`, dati?.error?.message || r.status); return null; }
+    return dati;
+  } catch (e) {
+    log.warn(`stripe GET ${path}: irraggiungibile`, e?.message || e);
+    return null;
+  }
+}
 
 async function stripeCall(path, params) {
   if (!config.stripe.attivo) return null;
@@ -289,8 +348,9 @@ async function stripeCall(path, params) {
 // già attivo di default nel Checkout di Stripe.
 export async function creaCheckout({ login, pacchetti = [], bundle = null }) {
   const basePrice = config.stripe.prezzi.base;
-  if (!config.stripe.attivo || !basePrice) return null;
+  if (!config.stripe.attivo || !basePrice || !vendibile(BASE)) return null;
   const b = bundle ? bundleById(bundle) : null;
+  if (b && (b.ritirato || !vendibile(b))) return null;
   let ids, prezzi;
   if (b) {
     // BUNDLE: line-item = Base + il prezzo UNICO del bundle. Nei metadata salvo
@@ -303,6 +363,8 @@ export async function creaCheckout({ login, pacchetti = [], bundle = null }) {
     // à la carte: Base + ogni add-on scelto con un price-id configurato.
     ids = normalizzaPacchetti(pacchetti);
     prezzi = [basePrice];
+    // gli add-on ritirati sono gia' nell'Essenziale: chiederli non costa niente
+    ids = ids.filter((id) => { const a = addonById(id); return a && !a.ritirato && vendibile(a); });
     for (const id of ids) {
       const a = addonById(id);
       const p = a?.priceEnv ? config.stripe.prezzi[a.priceEnv] : '';

@@ -10,6 +10,7 @@ import { makeLog } from './logger.js';
 import { config } from './config.js';
 import * as filigrana from './watermark.js';
 import * as licenza from './licenza.js';
+import { canaleHa } from './features/accesso.js';
 import { tokens, streamers, memory, tgConf, tgDest, tgAmici, tgMsg, feedFonti, dcConf, compleanni, pointAlerts } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
@@ -864,7 +865,7 @@ export class BotManager {
     const cap = config.maxListeners;
 
     // chi vuole essere ascoltato: attivi con impostazione ascoltoLive === true
-    const vogliono = streamers.active().filter(s => s.settings?.ascoltoLive === true);
+    const vogliono = streamers.active().filter(s => s.settings?.ascoltoLive === true && canaleHa(s.login, 'voce'));
     const voglionoSet = new Set(vogliono.map(s => s.login));
 
     // 1) spegni gli ascolti non più desiderati o morti (offline/binario assente)
@@ -1051,6 +1052,7 @@ export class BotManager {
   async annunciaDiretta(d) {
     if (!d?.login) return { inviati: 0 };
     const { login, piattaforma } = d;
+    if (!canaleHa(login, 'notifiche')) return { inviati: 0, piano: false };
     // Anti-doppioni PER PIATTAFORMA: si puo' essere live su Twitch e su Kick
     // insieme, e un ricordo solo cancellerebbe l'altro.
     if (d.id && dirette.gia(login, piattaforma, d.id)) return { inviati: 0, gia: true };
@@ -1322,6 +1324,7 @@ export class BotManager {
       const l = String(login || '').toLowerCase();
       const s = streamers.get(l);
       const tk = s?.settings?.tiktok;
+      if (!canaleHa(l, 'notifiche')) return { ok: false, motivo: 'non nel piano' };
       if (!tk?.username) return { ok: false, motivo: 'TikTok non configurato' };
       if (Date.now() - (this._tiktokUltima.get(l) || 0) < 3 * 3600_000) return { ok: false, motivo: 'gia avvisato di recente' };
       this._tiktokUltima.set(l, Date.now());
@@ -1444,6 +1447,7 @@ export class BotManager {
   async notificaPost(login, { piattaforma = 'youtube', titolo = '', url = '', messaggio = '', annunciaChat = false } = {}) {
     try {
       const l = String(login || '').toLowerCase();
+      if (!canaleHa(l, 'notifiche')) return { ok: false, motivo: 'non nel piano' };
       const s = streamers.get(l);
       const conf = tgConf.get(l);
       if (conf?.token) {

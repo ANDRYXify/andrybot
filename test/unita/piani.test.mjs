@@ -8,17 +8,19 @@ import * as ab from '../../src/features/abbonamenti.js';
 const ha = (piano, chiave) => ab.abilitata(ab.funzioniDi(piano), chiave);
 
 test('senza abbonamento restano solo le cose gratis', () => {
-  for (const chiuse of ['giochi', 'effetti', 'clipAuto', 'voce', 'notifiche', 'telegram', 'studio']) {
+  for (const chiuse of ['clipAuto', 'voce', 'notifiche', 'telegram', 'studio']) {
     assert.equal(ha({}, chiuse), false, `free non deve avere "${chiuse}"`);
   }
   assert.equal(ha({}, 'overlay'), true, "l'overlay è gratis");
+  // parita' con gli altri bot: quello che Nightbot, StreamElements e Cloudbot danno gratis, qui e' gratis
+  for (const aperte of ['giochi', 'effetti', 'musica']) assert.equal(ha({}, aperte), true, `free deve avere "${aperte}"`);
   assert.equal(ab.limite(ab.funzioniDi({}), 'moduli'), Infinity, 'i moduli sono illimitati anche gratis');
   assert.equal(ab.limite(ab.funzioniDi({}), 'moderatori'), 0);
 });
 
 test('un tier inventato non regala niente', () => {
   for (const t of ['premium', 'PRO ', 'admin', null, undefined, 0, {}]) {
-    assert.equal(ha({ tier: t }, 'giochi'), false, `tier "${String(t)}" non deve aprire i giochi`);
+    assert.equal(ha({ tier: t }, 'clipAuto'), false, `tier "${String(t)}" non deve aprire le clip`);
   }
 });
 
@@ -27,35 +29,35 @@ test('il Base dà quello che promette e non di più', () => {
   assert.equal(ha({ tier: 'base' }, 'telegram'), true);
   assert.equal(ha({ tier: 'base' }, 'studio'), true);
   assert.equal(ab.limite(ab.funzioniDi({ tier: 'base' }), 'moderatori'), 1);
-  assert.equal(ha({ tier: 'base' }, 'giochi'), false, 'i giochi restano un add-on');
-  assert.equal(ha({ tier: 'base' }, 'effetti'), false);
+  assert.equal(ha({ tier: 'base' }, 'clipAuto'), false, 'le clip restano un add-on');
+  assert.equal(ha({ tier: 'base' }, 'voce'), false);
 });
 
 test('un add-on comprato si aggiunge, senza togliere il Base', () => {
-  const f = ab.funzioniDi({ tier: 'base', pacchetti: ['giochi'] });
-  assert.equal(ab.abilitata(f, 'giochi'), true);
+  const f = ab.funzioniDi({ tier: 'base', pacchetti: ['clip'] });
+  assert.equal(ab.abilitata(f, 'clipAuto'), true);
   assert.equal(ab.abilitata(f, 'telegram'), true, 'quello che c’era resta');
-  assert.equal(ab.abilitata(f, 'effetti'), false, 'quello che non hai comprato no');
+  assert.equal(ab.abilitata(f, 'voce'), false, 'quello che non hai comprato no');
 });
 
 test('gli add-on si sommano in qualunque forma arrivino', () => {
-  const a = ab.funzioniDi({ tier: 'base', pacchetti: 'giochi,effetti' });
-  const b = ab.funzioniDi({ tier: 'base', pacchetti: ['effetti', 'giochi'] });
+  const a = ab.funzioniDi({ tier: 'base', pacchetti: 'clip,voce' });
+  const b = ab.funzioniDi({ tier: 'base', pacchetti: ['voce', 'clip'] });
   assert.deepEqual(a, b, 'CSV e array danno lo stesso risultato');
-  assert.equal(ab.abilitata(a, 'giochi'), true);
-  assert.equal(ab.abilitata(a, 'effetti'), true);
+  assert.equal(ab.abilitata(a, 'clipAuto'), true);
+  assert.equal(ab.abilitata(a, 'voce'), true);
 });
 
 test('un add-on che non esiste viene ignorato, non apre nulla', () => {
-  const f = ab.funzioniDi({ tier: 'base', pacchetti: ['giochi', 'inventato', '__proto__', 'constructor'] });
-  assert.equal(ab.abilitata(f, 'giochi'), true);
+  const f = ab.funzioniDi({ tier: 'base', pacchetti: ['clip', 'inventato', '__proto__', 'constructor'] });
+  assert.equal(ab.abilitata(f, 'clipAuto'), true);
   assert.equal(ab.abilitata(f, 'inventato'), false);
-  assert.equal(ab.abilitata(f, 'effetti'), false);
+  assert.equal(ab.abilitata(f, 'voce'), false);
 });
 
 test('gli add-on senza Base non bastano da soli', () => {
-  const f = ab.funzioniDi({ pacchetti: ['giochi'] });
-  assert.equal(ab.abilitata(f, 'giochi'), true, "l'add-on comprato vale");
+  const f = ab.funzioniDi({ pacchetti: ['clip'] });
+  assert.equal(ab.abilitata(f, 'clipAuto'), true, "l'add-on comprato vale");
   assert.equal(ab.abilitata(f, 'telegram'), false, 'ma non regala il Base');
 });
 
@@ -86,6 +88,33 @@ test('ogni add-on ha un id, un prezzo e un nome nelle tre lingue', () => {
     assert.ok(Object.keys(a.funzioni).length, `${a.id} sblocca qualcosa`);
   }
   assert.equal(new Set(ab.ADDON_IDS).size, ab.ADDON_IDS.length, 'nessun id ripetuto');
+});
+
+test('gli add-on ritirati non si vendono più, ma chi li aveva li tiene', () => {
+  const p = ab.pianiPubblici();
+  const offerti = p.addon.map((a) => a.id);
+  for (const id of ['giochi', 'effetti', 'musica']) {
+    assert.ok(!offerti.includes(id), `${id} non va più offerto`);
+    assert.ok(p.ritirati.includes(id));
+    assert.ok(ab.addonById(id).ritirato === true);
+  }
+  for (const id of ['clip', 'voce', 'squadra']) assert.ok(offerti.includes(id), `${id} resta in vendita`);
+  // chi ha ancora 'giochi' nei metadata non perde niente e non rompe niente
+  assert.equal(ab.abilitata(ab.funzioniDi({ tier: 'base', pacchetti: ['giochi', 'clip'] }), 'clipAuto'), true);
+  assert.deepEqual(ab.normalizzaPacchetti('giochi,clip'), ['clip', 'giochi'].sort((x, y) => ab.ADDON_IDS.indexOf(x) - ab.ADDON_IDS.indexOf(y)));
+});
+
+test('il pacchetto «Tutto» copre solo ciò che si vende ancora, e costa meno della somma', () => {
+  const b = ab.bundleById('tutto');
+  assert.deepEqual([...b.addon].sort(), ['clip', 'squadra', 'voce']);
+  assert.ok(b.prezzo < b.prezzoPieno, `${b.prezzo} < ${b.prezzoPieno}`);
+  assert.equal(ab.bundleById('creator').ritirato, true);
+  assert.equal(ab.bundleById('interazione').ritirato, true);
+  assert.deepEqual(ab.pianiPubblici().bundle.map((x) => x.id), ['tutto']);
+});
+
+test('«illimitato» esce di casa come -1 anche da /api/me', () => {
+  assert.deepEqual(ab.funzioniPubbliche({ moduli: Infinity, giochi: true, moderatori: 1 }), { moduli: -1, giochi: true, moderatori: 1 });
 });
 
 test('la vetrina pubblica non manda Infinity al browser', () => {
