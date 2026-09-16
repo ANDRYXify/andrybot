@@ -56,7 +56,7 @@ const tinta = (s) => {
 // dichiarato: e' la scritta a dover vincere sul suo fondo, comunque sia fatto.
 const PROVE = [
   ['.vt-btn-primo', 4.5], ['.vt-btn:not(.vt-btn-primo)', 4.5],
-  ['.vt-occhiello', 4.5], ['.vt-sub', 4.5], ['.vt-sotto', 4.5],
+  ['.vt-occhiello', 4.5], ['.vt-frase', 4.5], ['.vt-sotto', 4.5],
   ['.vt-titolo', 3], ['.vt-titolo em', 3],
 ];
 

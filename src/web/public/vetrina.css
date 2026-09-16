@@ -122,11 +122,6 @@ body.vetrina em, body.vetrina .vt-corsivo {
   margin: clamp(.9rem, 2.2vh, 1.4rem) auto 0; max-width: 56ch; text-align: center; text-wrap: balance;
   font-size: clamp(1.05rem, 1.5vw, 1.25rem); line-height: 1.45; font-weight: 500; color: var(--testo);
 }
-.vt-sub {
-  margin: clamp(1rem, 2.4vh, 1.5rem) auto 0; max-width: 62ch; text-align: center;
-  font-size: clamp(1rem, 1.35vw, 1.16rem); line-height: 1.6; color: var(--testo-2);
-}
-.vt-sub strong { color: var(--testo); font-weight: 600; }
 
 .vt-azioni {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
@@ -523,14 +518,13 @@ body.vetrina em, body.vetrina .vt-corsivo {
   body.vetrina .vt-scena .vt-occhiello,
   body.vetrina .vt-scena .vt-titolo,
   body.vetrina .vt-scena .vt-frase,
-  body.vetrina .vt-scena .vt-sub,
   body.vetrina .vt-scena .vt-azioni > *,
   body.vetrina .vt-scena .vt-sotto {
     animation: shonen-entra var(--colpo) var(--su-due) both;
     animation-delay: var(--posa, 0ms);
   }
   body.vetrina .vt-scena .vt-titolo { --posa: 70ms; }
-  body.vetrina .vt-scena .vt-sub { --posa: 140ms; }
+  body.vetrina .vt-scena .vt-frase { --posa: 140ms; }
   body.vetrina .vt-scena .vt-azioni > * { --posa: 210ms; }
   body.vetrina .vt-scena .vt-azioni > * + * { --posa: 270ms; }
   body.vetrina .vt-scena .vt-sotto { --posa: 330ms; }
@@ -579,7 +573,6 @@ body.vetrina em, body.vetrina .vt-corsivo {
   .vt-titolo { font-size: clamp(2.1rem, 10.5vw, 3.2rem); letter-spacing: -.03em; }
   .vt-occhiello { font-size: .58rem; letter-spacing: .18em; padding: .38rem .8rem .38rem .7rem; }
   .vt-etichetta { font-size: .6rem; letter-spacing: .08em; }
-  .vt-sub { font-size: .97rem; }
   .vt-azioni { flex-direction: column; align-items: stretch; }
   .vt-btn { width: 100%; }
   .vt-vetro { padding: 7px; border-radius: 14px; }
