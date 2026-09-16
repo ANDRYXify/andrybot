@@ -2780,47 +2780,75 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     manager.alerts?.donazione(login, d);
   }));
 
-  // ── Le donazioni sul conto dello streamer (Stripe Connect) ──────────────────
-  // Il conto e' suo: lo apre da qui, Stripe gli chiede identita' e coordinate,
-  // e i pagamenti nascono sul suo conto. Qui si tiene solo l'id del conto e il
-  // registro delle donazioni (donazioni-stripe.js).
+  // ── Le donazioni sul conto dello streamer ───────────────────────────────────
+  // Il conto e' suo, aperto e gestito da lui. Qui arriva solo la chiave con
+  // restrizioni che ci affida (cifrata nel database, mai rimandata al browser)
+  // e il registro delle donazioni (donazioni-stripe.js).
+  const rigaDonazione = (r) => ({ id: r.id, quando: r.pagata_at, fonte: r.fonte, nome: r.nome, importo: r.importo / 100, valuta: r.valuta, messaggio: r.messaggio, rimborsata: !!r.rimborsata_at, rimborsabile: r.fonte === 'stripe' && !!r.riferimento && !r.rimborsata_at });
+  const sommeDonazioni = (righe) => righe.map((t) => ({ valuta: t.valuta, somma: t.somma / 100, quante: t.quante }));
   app.get('/api/donazioni/stato', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     let c = contiDonazioni.get(login);
-    // un conto non ancora pronto si rilegge da Stripe: al ritorno dalla
-    // registrazione subito, altrimenti non piu' di una volta al minuto
-    if (c?.stripe_account && !c.pronto && (req.query.rileggi === '1' || Date.now() - (c.verificato_at || 0) > 60_000)) c = await donaStripe.aggiornaStato(login);
+    // la chiave si riverifica quando la scheda si apre, e comunque non piu' di una volta al minuto
+    if (c?.chiave && (req.query.rileggi === '1' || Date.now() - (c.verificato_at || 0) > 60_000)) c = await donaStripe.verificaChiave(login);
+    const rp = registroDonazioni.riepilogo(login);
     res.json({
-      attivo: donaStripe.attivo(),
-      quotaPct: donaStripe.quotaPct(),
-      paesi: donaStripe.PAESI,
-      conto: { stato: donaStripe.statoDi(c), paese: c?.paese || 'IT', dettagli: !!c?.dettagli },
-      ultime: registroDonazioni.ultime(login, 12).map((r) => ({ quando: r.pagata_at, fonte: r.fonte, nome: r.nome, importo: r.importo / 100, valuta: r.valuta, messaggio: r.messaggio })),
-      totali: registroDonazioni.totali(login).map((t) => ({ valuta: t.valuta, somma: t.somma / 100, quante: t.quante })),
+      conto: { stato: donaStripe.statoDi(c), coda: c?.coda || '', verificato: c?.verificato_at || 0, nota: c?.nota || '' },
+      riepilogo: { oggi: sommeDonazioni(rp.oggi), mese: sommeDonazioni(rp.mese), anno: sommeDonazioni(rp.anno), sempre: sommeDonazioni(rp.sempre) },
+      ultime: registroDonazioni.elenco(login, { n: 50 }).map(rigaDonazione),
     });
+  }));
+  app.get('/api/donazioni/elenco', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const righe = registroDonazioni.elenco(login, { prima: Number(req.query.prima) || 0, n: Number(req.query.n) || 50 });
+    res.json({ righe: righe.map(rigaDonazione) });
+  }));
+  // il registro completo, da aprire in un foglio di calcolo: e' dello streamer, e solo suo
+  app.get('/api/donazioni/esporta.csv', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const cella = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const righe = [['quando', 'fonte', 'nome', 'importo', 'valuta', 'messaggio', 'rimborsata'].join(';')];
+    let prima = 0;
+    for (;;) {
+      const p = registroDonazioni.elenco(login, { prima, n: 200 });
+      if (!p.length) break;
+      for (const r of p) righe.push([new Date(r.pagata_at).toISOString(), r.fonte, cella(r.nome), (r.importo / 100).toFixed(2).replace('.', ','), r.valuta, cella(r.messaggio), r.rimborsata_at ? 'si' : 'no'].join(';'));
+      prima = p[p.length - 1].pagata_at;
+      if (righe.length > 20_000) break;
+    }
+    res.set('Content-Type', 'text/csv; charset=utf-8');
+    res.set('Content-Disposition', `attachment; filename="donazioni-${login}.csv"`);
+    res.set('Cache-Control', 'private, no-store');
+    res.send('\ufeff' + righe.join('\r\n'));
+  }));
+  // le azioni sul registro: rimandare l'avviso in overlay (senza ricontare),
+  // rimborsare dal proprio conto, cancellare la riga (nome e messaggio spariscono)
+  app.post('/api/donazioni/azione', requireOwner, wrap(async (req, res) => {
+    const u = currentUser(req);
+    const login = u.login;
+    const id = String(req.body?.id || '');
+    const cosa = String(req.body?.cosa || '');
+    if (!/^[a-z]+:[A-Za-z0-9_:.\-]{1,160}$/.test(id)) return res.status(400).json({ errore: 'donazione non valida' });
+    const r = registroDonazioni.getDi(login, id);
+    if (!r || r.stato !== 'pagata') return res.status(404).json({ errore: 'Questa donazione non c\'e\' piu\'.' });
+    if (cosa === 'riproponi') {
+      manager.alerts?.donazione(login, { user: r.nome || 'qualcuno', importo: r.importo / 100, valuta: r.valuta, messaggio: r.messaggio }, { soloAvviso: true });
+      return res.json({ ok: true });
+    }
+    if (cosa === 'rimborsa') {
+      const e = await donaStripe.rimborsa(login, id);
+      if (e.errore) return res.status(400).json({ errore: e.errore + (isAdmin(u) && e.dettaglio ? ' Stripe dice: ' + e.dettaglio : '') });
+      return res.json({ ok: true });
+    }
+    if (cosa === 'elimina') { registroDonazioni.elimina(login, id); return res.json({ ok: true }); }
+    res.status(400).json({ errore: 'azione sconosciuta' });
   }));
   app.post('/api/donazioni/conto/collega', requireOwner, wrap(async (req, res) => {
     const u = currentUser(req);
-    const r = await donaStripe.collegaConto(u.login, String(req.body?.paese || 'IT').toUpperCase());
-    // la frase di Stripe la vede solo l'amministratore: e' lui che puo' farci qualcosa
-    if (r.errore) return res.status(503).json({ errore: r.errore + (isAdmin(u) && r.dettaglio ? ' Stripe dice: ' + r.dettaglio : '') });
-    res.json({ url: r.url });
-  }));
-  // Stripe rimanda qui quando la sua pagina di registrazione e' scaduta a
-  // meta': si riparte con una pagina nuova, se e' ancora lo streamer; altrimenti
-  // al pannello, che ha il tasto per continuare.
-  app.get('/api/donazioni/conto/riprendi', wrap(async (req, res) => {
-    const u = currentUser(req);
-    const c = u && isOwner(req) ? contiDonazioni.get(u.login) : null;
-    const r = c?.stripe_account ? await donaStripe.linkRegistrazione(c.stripe_account) : null;
-    res.redirect(r?.url || '/#donazioni');
-  }));
-  // Il ritorno dalla registrazione: si rilegge lo stato del conto e si torna
-  // alla scheda. Senza sessione e' solo un rimando al pannello.
-  app.get('/api/donazioni/conto/ritorno', wrap(async (req, res) => {
-    const u = currentUser(req);
-    if (u && isOwner(req)) await donaStripe.aggiornaStato(u.login);
-    res.redirect('/#donazioni');
+    const r = await donaStripe.collegaConto(u.login, req.body?.chiave);
+    // la frase di Stripe la vede solo l'amministratore: e' lui che puo' capirci qualcosa
+    if (r.errore) return res.status(400).json({ errore: r.errore + (isAdmin(u) && r.dettaglio ? ' Stripe dice: ' + r.dettaglio : '') });
+    res.json({ ok: true, coda: r.coda });
   }));
   app.post('/api/donazioni/conto/scollega', requireOwner, wrap(async (req, res) => {
     donaStripe.scollega(currentUser(req).login);

@@ -516,14 +516,17 @@ CREATE TABLE IF NOT EXISTS stato_vivo (      -- lo stato dei motori che deve sop
   ts INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (channel, chiave)
 );
-CREATE TABLE IF NOT EXISTS conti_donazioni (   -- il conto Stripe (Connect) con cui lo streamer riceve le donazioni
+CREATE TABLE IF NOT EXISTS conti_donazioni (   -- il conto Stripe dello streamer (suo, aperto e gestito da lui) con cui riceve le donazioni
   login TEXT PRIMARY KEY,
-  stripe_account TEXT NOT NULL DEFAULT '',     -- acct_… del conto Standard collegato (suo, non nostro)
-  paese TEXT NOT NULL DEFAULT 'IT',
-  pronto INTEGER NOT NULL DEFAULT 0,           -- 1 quando Stripe dice che puo' incassare (charges_enabled)
-  dettagli INTEGER NOT NULL DEFAULT 0,         -- 1 quando la registrazione e' stata compilata (details_submitted)
-  verificato_at INTEGER NOT NULL DEFAULT 0,    -- ultima volta che lo stato e' stato riletto da Stripe
-  updated_at INTEGER NOT NULL DEFAULT 0
+  stripe_account TEXT NOT NULL DEFAULT '',     -- non usata: resta per i database gia' creati
+  paese TEXT NOT NULL DEFAULT 'IT',            -- non usata: resta per i database gia' creati
+  pronto INTEGER NOT NULL DEFAULT 0,           -- 1 finche' la chiave risponde
+  dettagli INTEGER NOT NULL DEFAULT 0,         -- non usata: resta per i database gia' creati
+  verificato_at INTEGER NOT NULL DEFAULT 0,    -- ultima volta che la chiave ha risposto
+  updated_at INTEGER NOT NULL DEFAULT 0,
+  chiave TEXT NOT NULL DEFAULT '',             -- la chiave con restrizioni che lo streamer ci affida (nella busta)
+  prodotto TEXT NOT NULL DEFAULT '',           -- prod_… «Donazione», creato nel suo conto quando la chiave si verifica
+  nota TEXT NOT NULL DEFAULT ''                -- cosa non va con la chiave, con le parole di Stripe (vuota = tutto bene)
 );
 CREATE TABLE IF NOT EXISTS donazioni (         -- il registro delle donazioni: quelle in attesa di pagamento e quelle pagate
   id TEXT PRIMARY KEY,                         -- 'stripe:cs_…' | 'kofi:<login>:<message_id>' | 'ext:<login>:<id>'
@@ -535,7 +538,9 @@ CREATE TABLE IF NOT EXISTS donazioni (         -- il registro delle donazioni: q
   nome TEXT NOT NULL DEFAULT '',
   messaggio TEXT NOT NULL DEFAULT '',
   created_at INTEGER NOT NULL DEFAULT 0,
-  pagata_at INTEGER NOT NULL DEFAULT 0
+  pagata_at INTEGER NOT NULL DEFAULT 0,
+  riferimento TEXT NOT NULL DEFAULT '',        -- il pagamento in Stripe (pi_…), per rimborsare da qui
+  rimborsata_at INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_donazioni_login ON donazioni(login, stato, pagata_at);
 `);
@@ -659,6 +664,11 @@ aggiungiColonna('streamers', 'avatar', "TEXT NOT NULL DEFAULT ''");
 // lo rispetta e non lo sovrascrive più.
 aggiungiColonna('streamers', 'grazia_fino', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('streamers', 'manuale', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('conti_donazioni', 'chiave', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('conti_donazioni', 'prodotto', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('conti_donazioni', 'nota', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('donazioni', 'riferimento', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('donazioni', 'rimborsata_at', 'INTEGER NOT NULL DEFAULT 0');
 
 // Migrazione dominio dei LINK PROFILO: chi ha dati vecchi (moduli/conoscenza)
 // aveva "andryxify.it/u/<canale>" scritto nei testi; lo portiamo al dominio
@@ -999,6 +1009,7 @@ export const CAMPI_SEGRETI = {
   spotify_tokens: ['access', 'refresh', 'client_secret'],
   tiktok_tokens: ['access', 'refresh'],
   seventv_tokens: ['token'],
+  conti_donazioni: ['chiave'],
 };
 
 // Come si chiama la riga, tabella per tabella. Serve alla busta: è il «dove
@@ -1009,6 +1020,7 @@ const RIGA_SEGRETI = {
   spotify_tokens: (r) => r.login,
   tiktok_tokens: (r) => r.login,
   seventv_tokens: (r) => r.login,
+  conti_donazioni: (r) => r.login,
 };
 const CHIAVE_SEGRETI = {
   tokens: ['kind', 'login'],
@@ -1016,6 +1028,7 @@ const CHIAVE_SEGRETI = {
   spotify_tokens: ['login'],
   tiktok_tokens: ['login'],
   seventv_tokens: ['login'],
+  conti_donazioni: ['login'],
 };
 
 // Porta nella busta di ADESSO tutto quello che è rimasto indietro: il chiaro di
@@ -1232,22 +1245,28 @@ export const subscriptions = {
 };
 
 // ---------------------------------------------------------------- Donazioni (conto Stripe e registro)
-// Il conto Stripe con cui lo streamer riceve le donazioni. Solo l'id del conto
-// (acct_…): non e' un segreto, e' un indirizzo. Le credenziali sono di Stripe.
+// Il conto Stripe dello streamer: suo, aperto da solo e gestito da solo. Qui
+// sta solo la chiave con restrizioni che ci ha affidato, nella busta come
+// ogni altro token, e l'id del prodotto «Donazione» creato nel suo conto.
 export const contiDonazioni = {
   get(login) {
-    return db.prepare('SELECT * FROM conti_donazioni WHERE login=?').get(String(login).toLowerCase()) || null;
+    const l = String(login).toLowerCase();
+    const r = db.prepare('SELECT * FROM conti_donazioni WHERE login=?').get(l);
+    if (!r) return null;
+    const chiave = decifra(r.chiave, _dove('conti_donazioni', 'chiave', l));
+    return { ...r, chiave, coda: chiave.slice(-4) };
   },
-  set(login, { account, paese, pronto, dettagli, verificato } = {}) {
+  set(login, { chiave, prodotto, pronto, verificato, nota } = {}) {
     const l = String(login).toLowerCase();
     const prima = this.get(l) || {};
-    db.prepare(`INSERT INTO conti_donazioni (login, stripe_account, paese, pronto, dettagli, verificato_at, updated_at)
+    const ch = chiave !== undefined ? String(chiave || '') : (prima.chiave || '');
+    db.prepare(`INSERT INTO conti_donazioni (login, chiave, prodotto, pronto, verificato_at, updated_at, nota)
       VALUES (?,?,?,?,?,?,?)
-      ON CONFLICT(login) DO UPDATE SET stripe_account=excluded.stripe_account, paese=excluded.paese,
-        pronto=excluded.pronto, dettagli=excluded.dettagli, verificato_at=excluded.verificato_at, updated_at=excluded.updated_at`)
-      .run(l, account ?? prima.stripe_account ?? '', paese ?? prima.paese ?? 'IT',
-        (pronto ?? !!prima.pronto) ? 1 : 0, (dettagli ?? !!prima.dettagli) ? 1 : 0,
-        verificato ? now() : (prima.verificato_at || 0), now());
+      ON CONFLICT(login) DO UPDATE SET chiave=excluded.chiave, prodotto=excluded.prodotto,
+        pronto=excluded.pronto, verificato_at=excluded.verificato_at, updated_at=excluded.updated_at, nota=excluded.nota`)
+      .run(l, cifra(ch, _dove('conti_donazioni', 'chiave', l)), prodotto ?? prima.prodotto ?? '',
+        (pronto ?? !!prima.pronto) ? 1 : 0, verificato ? now() : (prima.verificato_at || 0), now(),
+        nota !== undefined ? String(nota || '').slice(0, 300) : (prima.nota || ''));
     return this.get(l);
   },
   togli(login) { db.prepare('DELETE FROM conti_donazioni WHERE login=?').run(String(login).toLowerCase()); },
@@ -1272,9 +1291,40 @@ export const registroDonazioni = {
   segna(id, dati) { return this._riga(id, dati, 'pagata'); },
   get(id) { return db.prepare('SELECT * FROM donazioni WHERE id=?').get(String(id)) || null; },
   // attesa → pagata, in un passaggio solo: true per chi ci riesce, false per tutti gli altri
-  paga(id, importo) {
-    return db.prepare(`UPDATE donazioni SET stato='pagata', pagata_at=?, importo=COALESCE(?, importo) WHERE id=? AND stato='attesa'`)
-      .run(now(), Number.isFinite(importo) ? Math.round(importo) : null, String(id)).changes > 0;
+  paga(id, importo, riferimento = '') {
+    return db.prepare(`UPDATE donazioni SET stato='pagata', pagata_at=?, importo=COALESCE(?, importo), riferimento=? WHERE id=? AND stato='attesa'`)
+      .run(now(), Number.isFinite(importo) ? Math.round(importo) : null, String(riferimento || '').slice(0, 80), String(id)).changes > 0;
+  },
+  getDi(login, id) {
+    return db.prepare('SELECT * FROM donazioni WHERE id=? AND login=?').get(String(id), String(login).toLowerCase()) || null;
+  },
+  // le pagate, dalla piu' recente, a pagine: `prima` e' il pagata_at dell'ultima riga vista
+  elenco(login, { prima = 0, n = 50 } = {}) {
+    const l = String(login).toLowerCase();
+    const lim = Math.max(1, Math.min(200, n | 0));
+    return prima > 0
+      ? db.prepare("SELECT * FROM donazioni WHERE login=? AND stato='pagata' AND pagata_at<? ORDER BY pagata_at DESC LIMIT ?").all(l, prima, lim)
+      : db.prepare("SELECT * FROM donazioni WHERE login=? AND stato='pagata' ORDER BY pagata_at DESC LIMIT ?").all(l, lim);
+  },
+  // quanto e' arrivato oggi, negli ultimi trenta giorni, nell'anno e da sempre,
+  // valuta per valuta (centesimi), senza le rimborsate
+  riepilogo(login, ora = now()) {
+    const l = String(login).toLowerCase();
+    const mezzanotte = new Date(ora); mezzanotte.setHours(0, 0, 0, 0);
+    const q = db.prepare("SELECT valuta, SUM(importo) AS somma, COUNT(*) AS quante FROM donazioni WHERE login=? AND stato='pagata' AND rimborsata_at=0 AND pagata_at>=? GROUP BY valuta");
+    return {
+      oggi: q.all(l, mezzanotte.getTime()),
+      mese: q.all(l, ora - 30 * 86400_000),
+      anno: q.all(l, ora - 365 * 86400_000),
+      sempre: q.all(l, 0),
+    };
+  },
+  rimborsa(login, id) {
+    return db.prepare("UPDATE donazioni SET rimborsata_at=? WHERE id=? AND login=? AND stato='pagata' AND rimborsata_at=0")
+      .run(now(), String(id), String(login).toLowerCase()).changes > 0;
+  },
+  elimina(login, id) {
+    return db.prepare('DELETE FROM donazioni WHERE id=? AND login=?').run(String(id), String(login).toLowerCase()).changes > 0;
   },
   scadi(id) {
     return db.prepare("UPDATE donazioni SET stato='scaduta' WHERE id=? AND stato='attesa'").run(String(id)).changes > 0;
