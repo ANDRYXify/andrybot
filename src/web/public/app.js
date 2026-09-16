@@ -123,6 +123,7 @@ function impostazioni() {
     overlayStato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     overlayMusica: (s.overlayMusica && typeof s.overlayMusica === 'object') ? s.overlayMusica : {},
     overlayTimer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : {},
+    donazioni: (s.donazioni && typeof s.donazioni === 'object') ? s.donazioni : { attivo: false, link: '', etichetta: '', messaggio: '', valuta: 'EUR', annunciaChat: false, testoChat: '', kofiSet: false },
     grafiche: (s.grafiche && typeof s.grafiche === 'object') ? s.grafiche : null,
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -5638,6 +5639,7 @@ const ALERT_TIPI = () => [
   { key: 'sub', nome: L('Abbonamento', 'Subscription', 'Suscripción'), ph: L('{user} si è abbonato! ({mesi} mesi)', '{user} subscribed! ({mesi} months)', '¡{user} se ha suscrito! ({mesi} meses)'), vars: '{user}, {mesi}', acc: '#ffb020' },
   { key: 'cheer', nome: L('Bit (cheer)', 'Bits (cheer)', 'Bits (cheer)'), ph: L('{user} ha lanciato {bits} bit!', '{user} sent {bits} bits!', '¡{user} ha enviado {bits} bits!'), vars: '{user}, {bits}', acc: '#38d39f', soglia: { campo: 'minBits', label: L('Bit minimi', 'Minimum bits', 'Bits mínimos') } },
   { key: 'raid', nome: L('Raid', 'Raid', 'Raid'), ph: L('{user} è arrivato in raid con {viewers} spettatori!', '{user} raided with {viewers} viewers!', '¡{user} ha llegado en raid con {viewers} espectadores!'), vars: '{user}, {viewers}', acc: '#ff4d4d', soglia: { campo: 'minViewers', label: L('Spettatori minimi', 'Minimum viewers', 'Espectadores mínimos') } },
+  { key: 'donazione', nome: L('Donazione', 'Donation', 'Donación'), ph: L('{user} ha offerto {importo}! {messaggio}', '{user} tipped {importo}! {messaggio}', '¡{user} ha donado {importo}! {messaggio}'), vars: '{user}, {importo}, {messaggio}', acc: '#1d9e5e', soglia: { campo: 'minImporto', label: L('Importo minimo', 'Minimum amount', 'Importe mínimo') } },
 ];
 
 const FONT_BASE = () => [['sistema', L('Sistema', 'System', 'Sistema')], ['rotondo', L('Arrotondato', 'Rounded', 'Redondeado')], ['condensato', L('Condensato', 'Condensed', 'Condensada')], ['mono', L('Monospazio', 'Monospace', 'Monoespaciada')], ['serif', L('Serif', 'Serif', 'Serif')], ['manga', L('Manga', 'Manga', 'Manga')]];
@@ -5818,6 +5820,7 @@ const GOAL_TIPI = () => [
   ['follower', L('follower', 'followers', 'followers')],
   ['sub', L('abbonati', 'subs', 'subs')],
   ['bit', L('bit', 'bits', 'bits')],
+  ['euro', L('euro donati', 'euros donated', 'euros donados')],
 ];
 const GOAL_ANGOLI = () => [
   ['alto-sinistra', L('in alto a sinistra', 'top left', 'arriba izquierda')],
@@ -6677,7 +6680,8 @@ function _raccogliAlerts() {
       volume: Number(b.querySelector('.al-vol')?.value) || 0,
       icona: b.querySelector('.al-icona')?.value || '',
     };
-    if (soglia) blocchi[k][k === 'cheer' ? 'minBits' : 'minViewers'] = Number(soglia.value) || 0;
+    const campoSoglia = ((ALERT_TIPI().find((t) => t.key === k) || {}).soglia || {}).campo;
+    if (soglia && campoSoglia) blocchi[k][campoSoglia] = Number(soglia.value) || 0;
   });
   return {
     attivo: !!_g('al-attivo')?.checked,
@@ -6997,7 +7001,8 @@ function aggiornaAnteprima() {
   _disegnaRiquadro();
 }
 
-const GOAL_PAROLA = { follower: 'follower', sub: 'sub', bit: 'bit' };
+const GOAL_PAROLA = { follower: 'follower', sub: 'sub', bit: 'bit', euro: 'euro' };
+const _numGoal = (tipo, n) => (tipo === 'euro' ? String(Math.round(n * 100) / 100).replace('.', ',') + ' €' : String(n));
 
 function _sincronizzaScena() {
   const stage = _g('ap-stage');
@@ -7037,7 +7042,7 @@ function _vestiGoal(box, g) {
   const meta = Math.max(1, Number(g.obiettivo) || 100);
   const ora = Math.max(0, (Number(g.partenza) || 0) + (Number((impostazioni().overlayStato.goals || {})[g.id]) || 0));
   box.querySelector('.g-tit').textContent = g.titolo || GOAL_PAROLA[g.tipo] || '';
-  box.querySelector('.g-num').textContent = ora + ' / ' + meta;
+  box.querySelector('.g-num').textContent = _numGoal(g.tipo, ora) + ' / ' + _numGoal(g.tipo, meta);
   box.querySelector('.g-barra i').style.setProperty('--q', Math.min(1, (ora / meta) || 0).toFixed(4));
   box.classList.toggle('pieno', ora >= meta);
 }
@@ -8719,7 +8724,7 @@ function _riempiConfig(d) {
     _impostaEl(b.querySelector('.al-attivo'), c.attivo); _impostaEl(b.querySelector('.al-testo'), c.testo);
     _impostaEl(b.querySelector('.al-suono'), c.suono); _impostaEl(b.querySelector('.al-colore'), c.accento || c.colore);
     _impostaEl(b.querySelector('.al-font'), c.font || ''); _impostaEl(b.querySelector('.al-vol'), c.volume != null ? c.volume : 100);
-    const sog = b.querySelector('.al-soglia'); if (sog) _impostaEl(sog, c.minBits != null ? c.minBits : c.minViewers);
+    const sog = b.querySelector('.al-soglia'); if (sog) _impostaEl(sog, c.minBits != null ? c.minBits : c.minImporto != null ? c.minImporto : c.minViewers);
   });
 
   api('/api/streamer/effetti').then((r) => popolaMediaSuoniAlert(r.effetti || [], a)).catch(() => {  });
@@ -12684,7 +12689,51 @@ function pannelloPaginaLink() {
     <div class="carta">
       <h2>${_hIco(ICO.condividi)}${L('La tua pagina link', 'Your link page', 'Tu página de enlaces')}</h2>
       <div id="lp-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+    </div>
+    <div class="carta" id="dona-carta">
+      <h2>${_hIco(ICO.cuore)}${L('Donazioni', 'Donations', 'Donaciones')}</h2>
+      <p>${L('Il tasto «Sostieni» della tua pagina link porta dove vuoi tu: Ko-fi, PayPal, Streamlabs o un altro servizio. Se usi Ko-fi, incolla qui il suo token: a ogni mancia parte l\'avviso in overlay, il grazie in chat, e sale l\'obiettivo in euro.', 'The «Support me» button on your link page goes wherever you want: Ko-fi, PayPal, Streamlabs or another service. If you use Ko-fi, paste its token here: every tip fires the overlay alert, the thanks in chat, and moves the euro goal.', 'El botón «Apóyame» de tu página de enlaces lleva donde quieras: Ko-fi, PayPal, Streamlabs u otro servicio. Si usas Ko-fi, pega aquí su token: cada propina lanza el aviso en el overlay, el gracias en el chat, y sube el objetivo en euros.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="dona-attivo"><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Donazioni accese', 'Donations on', 'Donaciones activas')}</span>
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        <div><label class="campo" for="dona-link">${L('Dove si dona', 'Where people donate', 'Dónde se dona')}</label><input type="url" id="dona-link" class="campo-largo" maxlength="400" placeholder="https://ko-fi.com/iltuonome"></div>
+        <div><label class="campo" for="dona-etichetta">${L('Testo del tasto', 'Button text', 'Texto del botón')}</label><input type="text" id="dona-etichetta" maxlength="40" placeholder="${esc(L('Offrimi un caffè', 'Buy me a coffee', 'Invítame a un café'))}"></div>
+        <div><label class="campo" for="dona-valuta">${L('Valuta', 'Currency', 'Moneda')}</label><select id="dona-valuta"><option value="EUR">€ euro</option><option value="USD">$ ${L('dollari', 'dollars', 'dólares')}</option><option value="GBP">£ ${L('sterline', 'pounds', 'libras')}</option></select></div>
+      </div>
+      <label class="campo spazio-sopra" for="dona-messaggio">${L('Una frase sotto il titolo', 'A line under the heading', 'Una frase bajo el título')}</label>
+      <input type="text" id="dona-messaggio" class="campo-largo" maxlength="160" placeholder="${esc(L('Se ti piace quello che faccio, un caffè aiuta a farne di più.', 'If you like what I do, a coffee helps me do more.', 'Si te gusta lo que hago, un café ayuda a hacer más.'))}">
+      <label class="riga-check spazio-sopra"><input type="checkbox" id="dona-chat"> ${L('Ringrazia in chat a ogni donazione', 'Thank in chat on every donation', 'Agradece en el chat cada donación')}</label>
+      <input type="text" id="dona-testo-chat" class="campo-largo spazio-sopra" maxlength="200" aria-label="${esc(L('Frase del grazie in chat', 'Chat thank-you line', 'Frase de agradecimiento en el chat'))}" placeholder="${esc(L('Grazie {user} per {importo}!', 'Thanks {user} for {importo}!', '¡Gracias {user} por {importo}!'))}">
+      <h3 class="spazio-sopra">Ko-fi</h3>
+      <p class="suggerimento">${L('Su Ko-fi apri Impostazioni → API → Webhooks, incolla questo indirizzo e copia qui il «verification token». Il token non lo conserviamo: ne teniamo l\'impronta.', 'On Ko-fi open Settings → API → Webhooks, paste this address and copy the “verification token” here. We do not keep the token: only its fingerprint.', 'En Ko-fi abre Ajustes → API → Webhooks, pega esta dirección y copia aquí el «verification token». No guardamos el token: solo su huella.')}</p>
+      <p><code id="dona-webhook">…</code></p>
+      <label class="campo" for="dona-kofi">Verification token</label>
+      <input type="password" id="dona-kofi" class="campo-largo" autocomplete="off">
+      <p class="suggerimento" id="dona-kofi-stato"></p>
+      <p class="spazio-sopra"><button class="btn" id="dona-salva">${L('Salva', 'Save', 'Guardar')}</button> <button type="button" class="btn secondario" id="dona-prova">${L('Prova l\'avviso', 'Test the alert', 'Probar el aviso')}</button> <button type="button" class="btn secondario" id="dona-kofi-via" hidden style="display:none">${L('Togli il token', 'Remove the token', 'Quitar el token')}</button></p>
+      <p class="suggerimento">${L('L\'avviso si veste nella scheda Overlay come gli altri (voce «Donazione», con l\'importo minimo); l\'obiettivo in euro si aggiunge fra gli obiettivi con «Conta: euro donati». Chi usa un altro servizio può mandare le mance con la chiave API del canale (azione «donazione»).', 'The alert is styled in the Overlay tab like the others (the «Donation» entry, with a minimum amount); the euro goal is added among the goals with «Count: euros donated». If you use another service, send tips with the channel API key (action «donazione»).', 'El aviso se viste en la pestaña Overlay como los demás (entrada «Donación», con importe mínimo); el objetivo en euros se añade entre los objetivos con «Cuenta: euros donados». Si usas otro servicio, envía las propinas con la clave API del canal (acción «donazione»).')}</p>
     </div>`);
+}
+
+function riempiDonazioni() {
+  const d = impostazioni().donazioni || {};
+  if (!_g('dona-carta')) return;
+  _imposta('dona-attivo', d.attivo === true); _imposta('dona-link', d.link || ''); _imposta('dona-etichetta', d.etichetta || '');
+  _imposta('dona-valuta', d.valuta || 'EUR'); _imposta('dona-messaggio', d.messaggio || '');
+  _imposta('dona-chat', d.annunciaChat === true); _imposta('dona-testo-chat', d.testoChat || '');
+  const w = _g('dona-webhook'); if (w) w.textContent = location.origin + '/dona/kofi/' + (stato?.user?.login || '…');
+  const st = _g('dona-kofi-stato');
+  if (st) st.textContent = d.kofiSet ? L('Token impostato: le mance da Ko-fi arrivano.', 'Token set: tips from Ko-fi come through.', 'Token configurado: las propinas de Ko-fi llegan.') : L('Nessun token: incollalo e salva.', 'No token yet: paste it and save.', 'Sin token: pégalo y guarda.');
+  const via = _g('dona-kofi-via'); if (via) { via.hidden = !d.kofiSet; via.style.display = d.kofiSet ? '' : 'none'; }
+}
+function _leggiDonazioni() {
+  const tok = (_v('dona-kofi') || '').trim();
+  const d = { attivo: !!_g('dona-attivo')?.checked, link: (_v('dona-link') || '').trim(), etichetta: (_v('dona-etichetta') || '').trim(),
+    messaggio: (_v('dona-messaggio') || '').trim(), valuta: _v('dona-valuta') || 'EUR', annunciaChat: !!_g('dona-chat')?.checked, testoChat: (_v('dona-testo-chat') || '').trim() };
+  if (tok) d.kofiToken = tok;
+  return d;
 }
 
 function lpVisiteHtml(v) {
@@ -12889,6 +12938,7 @@ async function caricaPaginaLink(ridisegna = false) {
             <button type="button" class="btn secondario mini" data-lpadd="numeri">${L('Numeri', 'Numbers', 'Números')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="faq">${L('Domande frequenti', 'FAQ', 'Preguntas frecuentes')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="conto">${L('Conto alla rovescia', 'Countdown', 'Cuenta atrás')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="sostieni">${L('Sostieni (donazioni)', 'Support me (donations)', 'Apóyame (donaciones)')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="separatore">${L('Riga divisoria', 'Divider', 'Separador')}</button>
           </div>
         </details>
@@ -13168,6 +13218,7 @@ async function caricaPaginaLink(ridisegna = false) {
       numeri: { tipo: 'numeri', voci: [{ n: '', etichetta: '' }, { n: '', etichetta: '' }, { n: '', etichetta: '' }] },
       faq: { tipo: 'faq', voci: [{ d: '', r: '' }] },
       conto: { tipo: 'conto', titolo: '', quando: '', finito: '' },
+      sostieni: { tipo: 'sostieni', titolo: '', testo: '', etichetta: '', obiettivo: true },
       griglia: { tipo: 'griglia', voci: [{ img: '', titolo: '', testo: '', url: '' }, { img: '', titolo: '', testo: '', url: '' }] },
       separatore: { tipo: 'separatore' } }[tipo];
     if (!nuovo) return;
@@ -13302,11 +13353,12 @@ const NOMI_BLOCCO = () => ({ link: L('Link', 'Link', 'Enlace'), social: L('Riga 
     scritta: L('Scritta che scorre', 'Scrolling text', 'Texto que se desplaza'),
     numeri: L('Numeri', 'Numbers', 'Números'), faq: L('Domande frequenti', 'FAQ', 'Preguntas frecuentes'),
     conto: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'),
+    sostieni: L('Sostieni (donazioni)', 'Support me (donations)', 'Apóyame (donaciones)'),
     separatore: L('Riga divisoria', 'Divider', 'Separador') });
 
 const ICO_BLOCCO = { link: 'link', social: 'cuore', titolo: 'stella', testo: 'mail', immagine: 'video',
   embed: 'video', diretta: 'twitch', eroe: 'stella', griglia: 'gioco', scritta: 'musica',
-  numeri: 'soldi', faq: 'mail', conto: 'calendario', separatore: 'link' };
+  numeri: 'soldi', faq: 'mail', conto: 'calendario', sostieni: 'caffe', separatore: 'link' };
 
 function nomeBlocco(b, NOMI) {
   const suo = (b.label || b.testo || b.titolo || b.d || '').toString().trim().replace(/\s+/g, ' ');
@@ -13445,6 +13497,13 @@ function lpRenderBlocchi() {
         </div>`).join('')
         + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi domanda', 'Add question', 'Añadir pregunta')}</button></p>
            <p class="suggerimento">${L('Si aprono e si chiudono da sole, senza una riga di script. “Che PC usi?”, “Quando streammi?”, “Posso usare le tue clip?”', 'They open and close on their own, without a line of script. “What PC do you use?”, “When do you stream?”, “Can I use your clips?”', 'Se abren y cierran solas, sin una línea de script. “¿Qué PC usas?”, “¿Cuándo transmites?”, “¿Puedo usar tus clips?”')}</p>`;
+    } else if (b.tipo === 'sostieni') {
+      const dn = impostazioni().donazioni || {};
+      campi = `<input type="text" data-lpb="${i}" data-lpf="titolo" maxlength="${d.limiti.label}" value="${esc(b.titolo || '')}" placeholder="${esc(L('Titolo (es. OFFRIMI UN CAFFÈ)', 'Heading (e.g. BUY ME A COFFEE)', 'Título (p. ej. INVÍTAME A UN CAFÉ)'))}">
+        <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="testo" maxlength="${d.limiti.sotto}" value="${esc(b.testo || '')}" placeholder="${esc(L('Una frase (vuota: quella della carta Donazioni)', 'A line (empty: the one from the Donations card)', 'Una frase (vacía: la de la tarjeta Donaciones)'))}">
+        <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="etichetta" maxlength="${d.limiti.label}" value="${esc(b.etichetta || '')}" placeholder="${esc(L('Testo del tasto (vuoto: quello della carta Donazioni)', 'Button text (empty: the one from the Donations card)', 'Texto del botón (vacío: el de la tarjeta Donaciones)'))}">
+        <label class="riga-check spazio-sopra"><input type="checkbox" data-lpb="${i}" data-lpf="obiettivo"${b.obiettivo !== false ? ' checked' : ''}> ${L('Mostra l\'obiettivo in euro, se ne hai uno acceso', 'Show the euro goal, if you have one on', 'Muestra el objetivo en euros, si tienes uno activo')}</label>
+        <p class="suggerimento">${dn.attivo && dn.link ? L('Il link e la valuta vengono dalla carta «Donazioni», sotto l\'editor: si impostano una volta sola.', 'The link and currency come from the «Donations» card below the editor: set them once.', 'El enlace y la moneda vienen de la tarjeta «Donaciones», bajo el editor: se ajustan una sola vez.') : L('Per farlo comparire accendi le donazioni e metti il link nella carta «Donazioni», sotto l\'editor.', 'To make it appear, turn donations on and set the link in the «Donations» card below the editor.', 'Para que aparezca, activa las donaciones y pon el enlace en la tarjeta «Donaciones», bajo el editor.')}</p>`;
     } else if (b.tipo === 'conto') {
       campi = `<input type="text" data-lpb="${i}" data-lpf="titolo" maxlength="${d.limiti.label}" value="${esc(b.titolo || '')}" placeholder="${esc(L('es. Prossima diretta fra', 'e.g. Next stream in', 'p. ej. Próximo directo en'))}">
         <label class="campo spazio-sopra">${L('Quando', 'When', 'Cuándo')}</label>
@@ -15320,6 +15379,23 @@ function attivaPiattaforma() {
     if (Number.isFinite(v)) _parteViva()[a] = _arr(_tra(v, a === 'w' ? 5 : 0, 100));
   });
   _g('mus-parte-a')?.addEventListener('change', () => { _parteViva().a = _g('mus-parte-a').value; });
+  _g('dona-salva')?.addEventListener('click', () => conErrore(async () => {
+    const d = _leggiDonazioni();
+    const r = await salvaImpostazioni({ donazioni: d }, L('Donazioni salvate ✓', 'Donations saved ✓', 'Donaciones guardadas ✓'));
+    if (stato?.streamer && r?.settings?.donazioni) stato.streamer.settings.donazioni = r.settings.donazioni;
+    else if (stato?.streamer) stato.streamer.settings.donazioni = { ...d, kofiToken: undefined, kofiSet: !!(d.kofiToken || impostazioni().donazioni?.kofiSet) };
+    const k = _g('dona-kofi'); if (k) k.value = '';
+    riempiDonazioni(); lpAnteprima();
+  }));
+  _g('dona-prova')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/alert/prova', { method: 'POST', body: { kind: 'donazione' } });
+    toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
+  }));
+  _g('dona-kofi-via')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({ donazioni: { ..._leggiDonazioni(), kofiToken: undefined, kofiTokenClear: true } }, L('Token tolto', 'Token removed', 'Token quitado'));
+    if (stato?.streamer) stato.streamer.settings.donazioni = { ...impostazioni().donazioni, kofiSet: false };
+    riempiDonazioni();
+  }));
   _g('mus-parti-riga')?.addEventListener('click', () => {
     _cfgEl('musica').parti = _partiInRiga();
     aggiornaAnteprima(); aggiornaInspector(); _ricorda(); salvaCfgElemento('musica');
@@ -16317,7 +16393,7 @@ function caricaDatiScheda(id) {
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
-  if (id === 'pagina') caricaPaginaLink();
+  if (id === 'pagina') { caricaPaginaLink(); riempiDonazioni(); }
   if (id === 'grafiche') initGrafiche();
   modSincronizza();
   if (id === 'scudo') caricaScudo();

@@ -44,6 +44,7 @@ import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolvi
 import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
+import * as donazioni from '../features/donazioni.js';
 import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
 import * as webauthn from './webauthn.js';
@@ -794,6 +795,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (yt && yt.apiKey) s.settings = { ...s.settings, youtube: { ...yt, apiKey: '', apiKeySet: true } };
     const ig = s.settings?.instagram;
     if (ig && ig.token) s.settings = { ...s.settings, instagram: { ...ig, token: '', tokenSet: true } };
+    const dn = s.settings?.donazioni;
+    if (dn && dn.kofiImp) s.settings = { ...s.settings, donazioni: { ...dn, kofiImp: '', kofiSet: true } };
     // La chiave API del canale (controlla il canale via /api/ext) e la overlayKey
     // NON devono viaggiare in /api/me: il proprietario le prende da rotte dedicate.
     // Così una sessione con meno privilegi (moderatore) non se le porta via.
@@ -1075,7 +1078,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       let cambiato = false;
       const fuori = [];
       for (const g of lista) {
-        if (!g || g.daVivo !== true || g.tipo === 'bit') { fuori.push(g); continue; }
+        if (!g || g.daVivo !== true || g.tipo === 'bit' || g.tipo === 'euro') { fuori.push(g); continue; }
         const letto = await quantiVivi(login, g.tipo === 'sub' ? 'sub' : 'follower', conti[g.id]);
         if (!letto || letto.quanti == null) { fuori.push(g); continue; }
         // `allora` e' il conteggio com'era quando quel numero e' stato letto:
@@ -1467,6 +1470,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       display: s?.display || login,
       avatar: await avatarDi(login),
       baseUrl: config.baseUrl,
+      sostieni: donazioni.datiSostieni(s?.settings),
     });
     // Una visita in più. Contiamo SOLO quante volte la pagina è stata aperta:
     // niente indirizzi IP, niente cookie, niente su chi c'era. I robot li
@@ -1585,6 +1589,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     });
     const html = renderLinkPage(finta, {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
+      sostieni: donazioni.datiSostieni(s?.settings),
       anteprima: true,   // mostra anche i blocchi ancora da completare
     });
     res.json({ html });
@@ -1687,6 +1692,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   su TikTok, YouTube e Instagram.
 - Comandi a voce mentre si streamma.
 - Pagina link pubblica personalizzabile su ${b}/u/<nomeutente>.
+- Donazioni: il tasto «Sostieni» sulla pagina link, l'avviso in overlay e in
+  chat quando arriva una mancia da Ko-fi, un obiettivo in euro.
 
 ## Prezzi
 - Essenziale: gratuito, basta registrarsi. Comandi illimitati, moderazione,
@@ -2737,6 +2744,22 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   }));
 
   // webhook Stripe: unica fonte di verità sullo stato dell'abbonamento.
+  // Le donazioni da Ko-fi. Un modulo con un campo `data` (JSON); il token che
+  // Ko-fi ci mette dentro si confronta con l'impronta salvata dallo streamer.
+  // Si risponde SUBITO, come a Kick: Ko-fi ritenta se aspetta troppo, e lo
+  // stesso avviso ha sempre lo stesso message_id, quindi il doppione si scarta.
+  app.post('/dona/kofi/:login', express.urlencoded({ extended: false, limit: '64kb' }), wrap(async (req, res) => {
+    const login = String(req.params.login || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    const st = streamers.get(login)?.settings;
+    const d = donazioni.leggiKofi(req.body);
+    if (!st?.donazioni?.kofiImp || !d || !combacia(d.token, st.donazioni.kofiImp, login)) return res.status(401).json({ errore: 'non riconosciuto' });
+    res.json({ ok: true });
+    if (!extRateOk('dona:' + login)) return;
+    if (!donazioni.nuova('kofi:' + login + ':' + d.id)) return;
+    manager.alerts?.donazione(login, d);
+  }));
+
   app.post('/stripe/webhook', wrap(async (req, res) => {
     const ev = abbonamenti.verificaWebhook(req.rawBody, req.headers['stripe-signature']);
     if (!ev) return res.status(400).send('firma non valida');
@@ -3521,6 +3544,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     }
     // penitenze a punti canale (a CONTATORE): due premi (vieta / usa solo), la
     // penitenza scatta alla fine del tempo; contatore + "+1" nell'overlay.
+    // le donazioni: dove si dona, il tasto, la frase, il grazie in chat; del
+    // token di Ko-fi resta solo l'impronta (features/donazioni.js)
+    if (b.donazioni !== undefined) out.donazioni = donazioni.normDonazioni(b.donazioni, s.settings?.donazioni, user.login);
     if (b.penitenze !== undefined) {
       const p = b.penitenze || {};
       const ov = (p.overlay && typeof p.overlay === 'object') ? p.overlay : {};
@@ -3574,6 +3600,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         sub: evt(p.sub),
         cheer: { ...evt(p.cheer), minBits: clampInt(p.cheer?.minBits, 0, 1e9, 0) },
         raid: { ...evt(p.raid), minViewers: clampInt(p.raid?.minViewers, 0, 1e6, 0) },
+        donazione: { ...evt(p.donazione), minImporto: Math.max(0, Math.min(1e6, Math.round((Number(p.donazione?.minImporto) || 0) * 100) / 100)) },
       };
     }
     // CHAT a schermo nell'overlay (con stile completo)
@@ -6893,6 +6920,15 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         annunciaChat: !!cfg.annunciaChat,
       });
       return res.json({ ok: !!r?.ok });
+    }
+    // azione 'donazione': una mancia arrivata da un altro servizio (Streamlabs,
+    // StreamElements, PayPal…) tramite una tua automazione. Basta l'importo.
+    if (azione === 'donazione') {
+      const d = donazioni.leggiEsterna(req.body);
+      if (!d) return res.status(400).json({ errore: 'serve un importo' });
+      if (d.id && !donazioni.nuova('ext:' + login + ':' + d.id)) return res.json({ ok: true, doppione: true });
+      manager.alerts?.donazione(login, d);
+      return res.json({ ok: true });
     }
     // le altre azioni (messaggio/effetto/modulo) restano gestite dai moduli
     const ok = await modules.eseguiPerApi(login, req.body || {}, (t) => manager.say(login, t));

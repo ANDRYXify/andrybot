@@ -987,8 +987,12 @@ const VETRINA = {
       ['Embed', 'Video e musica: YouTube, Spotify, TikTok.'],
       ['Immagine', 'Una tua immagine.'],
       ['La mia diretta', 'Il player: resta lì e dice da sé se sei online o no.'],
+      ['Sostieni', 'Il tasto delle donazioni, col tuo tema: porta alla tua pagina Ko-fi, PayPal o altro e, se vuoi, mostra l\'obiettivo in euro che sale.'],
     ] },
     { p: ['Il blocco «La mia diretta» è quello che cambia di più la pagina: chi arriva dalla bio non deve chiedersi se sei live, lo vede.'] },
+    { h3: 'Le donazioni' },
+    { p: ['Nella carta <strong>Donazioni</strong>, sotto l\'editor, dici dove si dona (Ko-fi, PayPal, Streamlabs o un altro indirizzo), il testo del tasto, una frase e la valuta. Il blocco «Sostieni» le legge da lì: si impostano una volta sola e la pagina resta coerente col tema.'] },
+    { p: ['Se usi <strong>Ko-fi</strong>, nelle sue impostazioni (API → Webhooks) incolli l\'indirizzo che trovi nella carta e copi qui il suo «verification token». Da quel momento ogni mancia fa partire l\'avviso «Donazione» in overlay, il grazie in chat se lo accendi, e fa salire l\'obiettivo che conta gli <strong>euro donati</strong>. Del token teniamo solo l\'impronta. Chi usa un altro servizio manda le mance con la chiave API del canale, azione <code>donazione</code>, con <code>importo</code> e <code>user</code>.'] },
     { h3: 'L\'aspetto' },
     { ul: [
       '<strong>Sette temi</strong>: minimal, neon, retro, sunset, glass, brutal, pastello.',
@@ -1241,15 +1245,16 @@ const OVERLAY = {
     ] },
 
     { h2: 'Alert eventi' },
-    { p: ['Quattro eventi, ognuno con il suo interruttore, il suo testo, il suo suono e il suo colore.'] },
+    { p: ['Cinque eventi, ognuno con il suo interruttore, il suo testo, il suo suono e il suo colore.'] },
     { tabella: [
       ['Evento', 'Testo di serie', 'Suono', 'Parole che puoi usare'],
       ['Follow', '<code>{user} ha seguito il canale!</code>', 'campanello', '<code>{user}</code>'],
       ['Sub', '<code>{user} si è abbonato! ({mesi} mesi)</code>', 'tada', '<code>{user}</code> <code>{mesi}</code>'],
       ['Bit', '<code>{user} ha lanciato {bits} bit!</code>', 'moneta', '<code>{user}</code> <code>{bits}</code>'],
       ['Raid', '<code>{user} è arrivato in raid con {viewers} spettatori!</code>', 'trombetta', '<code>{user}</code> <code>{viewers}</code>'],
+      ['Donazione', '<code>{user} ha offerto {importo}! {messaggio}</code>', 'moneta', '<code>{user}</code> <code>{importo}</code> <code>{messaggio}</code>'],
     ] },
-    { p: ['Bit e raid hanno una <strong>soglia</strong>: sotto quel numero l\'alert non parte. È il modo di non far suonare il campanello per un bit solo.'] },
+    { p: ['Bit, raid e donazioni hanno una <strong>soglia</strong>: sotto quel numero l\'alert non parte. È il modo di non far suonare il campanello per un bit solo. La donazione arriva da Ko-fi o dalla chiave API del canale: come si collega è scritto nel manuale della pagina link.'] },
     { tabella: [
       ['Impostazione', 'Di base', 'Limiti'],
       ['Durata', '6 secondi', '—'],
@@ -1278,7 +1283,7 @@ const OVERLAY = {
     { p: ['Barre che si riempiono da sole. <strong>Quanti ne vuoi</strong> (fino a sei), e ognuno è indipendente: il suo traguardo, il suo posto, il suo aspetto. Tre obiettivi in fila che salgono insieme, o uno in ogni angolo con colori diversi: decidi tu.'] },
     { tabella: [
       ['Per ogni obiettivo', 'Di base', 'Limiti'],
-      ['Conta', 'follower', 'follower · abbonati · bit'],
+      ['Conta', 'follower', 'follower · abbonati · bit · euro donati (sale dell\'importo di ogni donazione, e si può mostrare anche sulla pagina link)'],
       ['Traguardo', '100', 'da 1 a 1.000.000'],
       ['Parte da', '0', 'il gradino sotto: «1000 follower» invece di «altri 1000»'],
       ['Titolo', 'vuoto', '60 caratteri'],

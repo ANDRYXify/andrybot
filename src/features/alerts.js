@@ -8,6 +8,7 @@ import { streamers, effects as effectsDb } from '../db.js';
 import * as stemmi from './badges.js';
 import * as emote from './emotes.js';
 import { makeLog } from '../logger.js';
+import { formattaImporto } from './donazioni.js';
 
 const log = makeLog('alerts');
 
@@ -25,9 +26,10 @@ const DEFAULT_TESTO = {
   sub: '{user} si è abbonato! ({mesi} mesi)',
   cheer: '{user} ha lanciato {bits} bit!',
   raid: '{user} è arrivato in raid con {viewers} spettatori!',
+  donazione: '{user} ha offerto {importo}! {messaggio}',
 };
-const DEFAULT_SUONO = { follow: 'campanello', sub: 'tada', cheer: 'moneta', raid: 'trombetta' };
-const DEFAULT_ACC = { follow: '#f72fa7', sub: '#ffb020', cheer: '#38d39f', raid: '#ff4d4d' };
+const DEFAULT_SUONO = { follow: 'campanello', sub: 'tada', cheer: 'moneta', raid: 'trombetta', donazione: 'moneta' };
+const DEFAULT_ACC = { follow: '#f72fa7', sub: '#ffb020', cheer: '#38d39f', raid: '#ff4d4d', donazione: '#1d9e5e' };
 
 // stile alert di default (usato se lo streamer non lo tocca)
 const STILE_ALERT = { animazione: 'slide', dimTesto: 27, sfondo: '#0f0f14', opacita: 88, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, icona: true, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'linea', composizione: 'colonna', dimIcona: 46, uscita: 'come', peso: '700', spaziatura: 0, maiuscolo: 'no', ombraTesto: true, evidenziaNome: true };
@@ -40,7 +42,7 @@ function riempi(tpl, vars) {
 
 // Quale evento fa crescere quale obiettivo. Un evento che non compare qui non
 // ne fa crescere nessuno: e' l'elenco, non un caso particolare nel codice.
-const GOAL_DI = { follow: 'follower', sub: 'sub', cheer: 'bit' };
+const GOAL_DI = { follow: 'follower', sub: 'sub', cheer: 'bit', donazione: 'euro' };
 
 // Gli obiettivi del canale. Chi aveva l'obiettivo singolo di prima se lo ritrova
 // come primo della lista, col suo conto: nessuno perde niente cambiando forma.
@@ -64,8 +66,9 @@ export function contiGoal(settings) {
 }
 
 export class AlertsEngine {
-  constructor({ effects } = {}) {
+  constructor({ effects, say } = {}) {
     this.effects = effects || null;
+    this.say = say || null;
   }
 
   cfg(channel) { return streamers.get(channel)?.settings || null; }
@@ -107,6 +110,27 @@ export class AlertsEngine {
     } catch (e) { log.debug('onEvent:', e?.message || e); }
   }
 
+  // UNA DONAZIONE. Non viene da Twitch: la porta il webhook di Ko-fi o una
+  // automazione dello streamer. Fa crescere l'obiettivo in euro, spara l'alert
+  // (dall'importo minimo in su) e, se acceso, ringrazia in chat.
+  donazione(channel, d) {
+    try {
+      const s = this.cfg(channel);
+      if (!s || !d) return false;
+      const importo = Math.round((Number(d.importo) || 0) * 100) / 100;
+      if (importo <= 0) return false;
+      const cfgD = s.donazioni || {};
+      const vars = { user: d.user || 'qualcuno', importo: formattaImporto(importo, d.valuta || cfgD.valuta || 'EUR'), messaggio: d.messaggio || '' };
+      this._contaGoal(channel, 'donazione', importo);
+      const a = s.alerts;
+      const conf = a && a.attivo !== false ? a.donazione : null;
+      if (conf && conf.attivo !== false && importo >= (Number(conf.minImporto) || 0)) this._spara(channel, a, 'donazione', conf, vars);
+      if (cfgD.annunciaChat && this.say) this.say(channel, riempi(cfgD.testoChat || 'Grazie {user} per {importo}!', vars));
+      log.info(`donazione su #${channel}: ${vars.importo} da ${vars.user}`);
+      return true;
+    } catch (e) { log.debug('donazione:', e?.message || e); return false; }
+  }
+
   // L'OBIETTIVO. Conta gli eventi che lo riguardano e li rende disponibili
   // all'overlay. Il conto sta nelle impostazioni del canale, quindi sopravvive a
   // un riavvio: un obiettivo che si azzera da solo la notte non e' un obiettivo.
@@ -120,7 +144,7 @@ export class AlertsEngine {
       if (!tocca.length) return;
       const stato = { ...(s.settings?.overlayStato || {}) };
       const conti = { ...(stato.goals || {}) };
-      for (const x of tocca) conti[x.id] = (Number(conti[x.id]) || 0) + quanti;
+      for (const x of tocca) conti[x.id] = Math.round(((Number(conti[x.id]) || 0) + quanti) * 100) / 100;
       stato.goals = conti;
       streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
       this.effects?.emit?.(channel, { tipo: 'goal', goals: lista, conti });
@@ -345,7 +369,7 @@ export class AlertsEngine {
     }
     const a = s.alerts || {};
     const conf = a[kind] || {};
-    this._spara(channel, a, kind, conf, { user: 'MarioRossi', mesi: 3, bits: 500, viewers: 42 });
+    this._spara(channel, a, kind, conf, { user: 'MarioRossi', mesi: 3, bits: 500, viewers: 42, importo: formattaImporto(5, s.donazioni?.valuta || 'EUR'), messaggio: 'grande live!' });
     return true;
   }
 }

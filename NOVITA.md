@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-16
 
+- Donazioni: nella scheda «Pagina link» dici dove si dona (Ko-fi, PayPal o altro) e il tasto «Sostieni» compare sulla tua pagina, col tuo tema. [vai: pagina]
+- Con il token di Ko-fi ogni mancia accende l'avviso «Donazione» in overlay, il grazie in chat e fa salire l'obiettivo in euro, che si può mostrare anche sotto il tasto «Sostieni». [vai: alert]
 - Nel player la disposizione «libera» mette ogni pezzo dove lo trascini sulla tela: copertina, righe, barra, tempi e onde, con righe e barra larghe quanto vuoi. Si parte da dove i pezzi stanno già, e in diretta è uguale. [vai: alert]
 - Gli extra Clip automatiche e Squadra costano 1,99 € al mese ciascuno, i comandi a voce 0,99 €: il listino dice quello che Stripe addebita, e i tre insieme restano 3,99 € con «Tutto». [vai: sottoscrizione]
 - Giochi e monete, alert ed effetti, sondaggi e richieste musicali con il player sono nell'Essenziale, gratis: quello che gli altri bot danno gratis, qui è gratis. [vai: sottoscrizione]
