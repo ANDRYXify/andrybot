@@ -9,6 +9,7 @@
 //   · EVENTI — sub, valanghe di bit, raid: momenti forti che spesso vanno clippati.
 import { makeLog } from '../logger.js';
 import { clips, streamers } from '../db.js';
+import { canaleHa } from './accesso.js';
 
 const log = makeLog('clips');
 
@@ -106,6 +107,7 @@ export class ClipEngine {
     const channel = msg.channel;
     const streamer = streamers.get(channel);
     if (!streamer || streamer.settings.clipAuto === false) return;   // funzione spenta
+    if (!canaleHa(channel, 'clipAuto')) return;                        // non nel piano: l'impostazione salvata non basta
 
     const ora = Date.now();
     let buf = this._buf.get(channel);
@@ -160,6 +162,7 @@ export class ClipEngine {
       if (!channel) return;
       const streamer = streamers.get(channel);
       if (!streamer || streamer.settings.clipAuto === false) return;
+      if (!canaleHa(channel, 'clipAuto')) return;
       const d = ev.data || {};
       let tipo = null, chi = '', forza = 0;
       if (type === 'channel.raid') {

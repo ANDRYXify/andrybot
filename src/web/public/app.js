@@ -529,16 +529,13 @@ function _demoGet(via) {
     '/api/streamer/font': { font: [{ nome: 'il-mio-font', url: '/demo/font.woff2' }] },
     '/api/discord/stato': { configurato: false, attivo: false, messaggio: '', nomeBot: '', avatar: '', anteprima: '' },
     '/api/abbonamento/piani': { attivo: false,
-      free: { id: 'free', nome: 'Essenziale', prezzoTesto: 'Gratis', sommario: 'Gratis, basta registrarsi.' },
-      base: { id: 'base', nome: 'Base', prezzoTesto: '\u20ac2,99/mese', sommario: 'Avvisi live, nuovi post e un moderatore.' },
+      free: { id: 'free', nome: 'Essenziale', prezzoTesto: 'Gratis', sommario: 'Gratis, basta registrarsi: comandi, moderazione, overlay e alert, giochi, sondaggi, musica.' },
+      base: { id: 'base', nome: 'Base', prezzoTesto: '\u20ac2,99/mese', sommario: 'Avvisi live e nuovi post, Studio Web e un moderatore.' },
       addon: [
-        { id: 'giochi', nome: 'Giochi & Classifiche', prezzoTesto: '\u20ac2,79/mese', sommario: 'Minigiochi, monete, classifiche e VIP.' },
-        { id: 'effetti', nome: 'Effetti & Punti canale', prezzoTesto: '\u20ac1,79/mese', sommario: 'Alert ed effetti riscattabili a punti canale.' },
         { id: 'clip', nome: 'Clip Automatiche', prezzoTesto: '\u20ac0,99/mese', sommario: 'I momenti migliori clippati da soli.' },
         { id: 'voce', nome: 'Comandi Vocali', prezzoTesto: '\u20ac0,99/mese', sommario: 'Guida il bot parlando.' },
         { id: 'squadra', nome: 'Squadra', prezzoTesto: '\u20ac2,99/mese', sommario: 'Fino a 10 moderatori.' },
-        { id: 'musica', nome: 'Richieste Musicali', prezzoTesto: '\u20ac2,79/mese', sommario: 'Canzoni in coda su Spotify con !sr.' },
-      ], bundle: [] },
+      ], bundle: [{ id: 'tutto', nome: 'Tutto', icona: '\ud83d\ude80', addon: ['clip', 'voce', 'squadra'], prezzo: 3.99, prezzoTesto: '\u20ac3,99/mese', prezzoPieno: 4.97, prezzoPienoTesto: '\u20ac4,97', sconto: 0.2, sommario: 'Clip, voce e squadra in un colpo solo.' }], nAddon: 7 },
     '/api/linkpage': { url: 'https://socialbot.live/u/andryxify', pubblicata: true,
       templates: ['minimal','neon','retro','sunset','glass','brutal','pastello'],
       fonts: ['system','inter','mono','serif','condensato','tondo'],
@@ -2396,7 +2393,7 @@ const DESC = {
 const descScheda = (id) => { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) : ''; };
 
 const SCHEDA_FUNZ = { giochi: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', effetti: 'effetti', sondaggi: 'effetti', studio: 'studio' };
-const FUNZ_ADDON = { giochi: 'giochi', musica: 'musica', voce: 'voce', notifiche: 'notifiche', effetti: 'effetti', clipAuto: 'clip', studio: 'base' };
+const FUNZ_ADDON = { giochi: 'giochi', musica: 'musica', voce: 'voce', notifiche: 'notifiche', effetti: 'effetti', clipAuto: 'clip', studio: 'base', moderatori: 'base' };
 
 const NOME_ADDON = {
   base: ['Base', 'Base', 'Base'],
@@ -2426,6 +2423,23 @@ function paginaSoloTwitch(id) {
       <span class="badge">${L('Solo su Twitch', 'Twitch only', 'Solo en Twitch')}</span></div>
     <p class="blocco-cosa">${L('Questa parte parla con Twitch, e il tuo canale è su Kick: qui non avrebbe niente con cui lavorare. Preferiamo dirtelo che mostrarti dei pulsanti che non fanno niente.', 'This part talks to Twitch, and your channel is on Kick: here it would have nothing to work with. We’d rather tell you than show you buttons that do nothing.', 'Esta parte habla con Twitch y tu canal está en Kick: aquí no tendría con qué trabajar. Preferimos decírtelo antes que mostrarte botones que no hacen nada.')}</p>
     <p class="suggerimento">${L('Se trasmetti anche su Twitch, collega quell’account: il canale diventa uno solo e questa scheda si accende.', 'If you also stream on Twitch, connect that account: the channel becomes one and this tab lights up.', 'Si también emites en Twitch, conecta esa cuenta: el canal pasa a ser uno solo y esta pestaña se enciende.')}</p>
+  </div>`;
+}
+
+function funzioneChiusa(funz) {
+  if (DEMO || stato?.isAdmin || !stato?.funzioni) return false;
+  const v = stato.funzioni[funz];
+  return !(v === true || v === -1 || (typeof v === 'number' && v > 0));
+}
+
+function muroPacchetto(funz, cosa, addon = FUNZ_ADDON[funz]) {
+  if (!funzioneChiusa(funz)) return '';
+  const na = NOME_ADDON[addon] || ['', '', ''];
+  const nome = L(na[0], na[1], na[2]);
+  const compra = !!stato?.stripeAttivo && !!addon;
+  return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${esc(cosa)} ${L('non è nel tuo piano.', 'is not in your plan.', 'no está en tu plan.')}</span>
+    ${compra ? `<button type="button" class="btn secondario" data-sblocca="${esc(addon)}">${L('Sblocca con', 'Unlock with', 'Desbloquea con')} «${esc(nome)}»</button>`
+      : `<a href="#stato" data-scheda="stato">${L('Vedi i piani', 'See the plans', 'Ver los planes')}</a>`}
   </div>`;
 }
 
@@ -2900,7 +2914,7 @@ function provaInCorso() {
   if (!a || a.status !== 'trialing') return null;
   const fine = Number(a.fine) || 0;
   const giorni = fine ? Math.max(0, Math.ceil((fine - Date.now()) / 86400000)) : null;
-  const tutto = (a.pacchetti || []).length >= 7;
+  const tutto = (a.pacchetti || []).length >= (Number(stato?.nAddon) || 7);
   return { tier: a.tier || 'base', tutto, fine, giorni };
 }
 
@@ -4436,6 +4450,8 @@ function pannelloStato() {
     ${proprietario ? `
     <div class="carta">
       <h2>${_hIco(ICO.utenti)}${L('Moderatori', 'Moderators', 'Moderadores')}</h2>
+      ${muroPacchetto('moderatori', L('Avere dei moderatori sul pannello', 'Having moderators on the panel', 'Tener moderadores en el panel'))}
+      ${!funzioneChiusa('moderatori') && stato?.funzioni?.moderatori === 1 && stato?.stripeAttivo ? `<p class="suggerimento">${L('Il tuo piano ha un posto. Con «Squadra» arrivi a dieci.', 'Your plan has one seat. With «Squadra» you get ten.', 'Tu plan tiene un puesto. Con «Squadra» llegas a diez.')} <button type="button" class="btn secondario" data-sblocca="squadra">${L('Aggiungi «Squadra»', 'Add «Squadra»', 'Añadir «Squadra»')}</button></p>` : ''}
       <p>${L('Fai aiutare qualcuno di cui ti fidi a gestire il bot. Gli mandi un', 'Let someone you trust help run the bot. You send them an', 'Deja que alguien de confianza te ayude con el bot. Le mandas un')} <strong class="primo-piano">${L('link d\'invito', 'invite link', 'enlace de invitación')}</strong>: ${L('accede con Twitch (così sappiamo che è davvero lui) e può occuparsi di tutto,', 'they sign in with Twitch (so we know it’s really them) and can handle everything,', 'entra con Twitch (así sabemos que es él de verdad) y puede ocuparse de todo,')} <strong class="primo-piano">${L('tranne', 'except', 'excepto')}</strong> ${L('le cose da proprietario — permessi Twitch e questo elenco.', 'owner-only things — Twitch permissions and this list.', 'lo de propietario — permisos de Twitch y esta lista.')}</p>
       <label class="campo" for="sel-mod-piattaforma">${L('Dove sta il moderatore', 'Where the moderator is', 'Dónde está el moderador')}</label>
       <div class="riga-flessibile">
@@ -4691,16 +4707,17 @@ function pannelloClip() {
   return pannello('clip', `
     <div class="carta">
       <h2>${_hIco(ICO.clip)}${L('Clip automatiche', 'Automatic clips', 'Clips automáticos')}</h2>
+      ${muroPacchetto('clipAuto', L('Le clip automatiche', 'Automatic clips', 'Los clips automáticos'))}
       <p>${L('Il bot riconosce i', 'The bot spots', 'El bot reconoce los')} <strong>${L('momenti da clip', 'clip-worthy moments', 'momentos para clip')}</strong> ${L('da solo: non conta solo i messaggi, ma capisce quando la chat', 'on its own: it doesn’t just count messages, it senses when chat', 'solo: no cuenta solo los mensajes, sino que capta cuándo el chat')} <strong>${L('esplode di reazioni', 'explodes with reactions', 'explota de reacciones')}</strong>${L(', ride tutta insieme o arrivano', ', laughs all together, or', ', se ríe a la vez o llegan')} <strong>${L('sub, bit o raid', 'subs, bits or raids', 'subs, bits o raids')}</strong> ${L('arrivano. E si adatta al ritmo del tuo canale (piccolo o grande).', 'come in. And it adapts to your channel’s pace (small or big).', 'And it adapts to your channel’s pace (small or big).')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
-          <input type="checkbox" id="chk-clip" ${s.clipAuto ? 'checked' : ''}>
+          <input type="checkbox" id="chk-clip" ${s.clipAuto && !funzioneChiusa('clipAuto') ? 'checked' : ''}${funzioneChiusa('clipAuto') ? ' disabled' : ''}>
           <span class="levetta"></span>
         </label>
         <span class="etichetta-stato" id="etichetta-clip">${s.clipAuto ? L('Clip automatiche accese', 'Automatic clips on', 'Clips automáticos activados') : L('Clip automatiche spente', 'Automatic clips off', 'Clips automáticos desactivados')}</span>
       </div>
       <label class="campo spazio-sopra" for="rng-clip-sens">${L('Sensibilità:', 'Sensitivity:', 'Sensibilidad:')} <span id="val-clip-sens">${s.clipAutoSensibilita}</span></label>
-      <input type="range" id="rng-clip-sens" min="1" max="10" value="${s.clipAutoSensibilita}">
+      <input type="range" id="rng-clip-sens" min="1" max="10" value="${s.clipAutoSensibilita}"${funzioneChiusa('clipAuto') ? ' disabled' : ''}>
       <p class="suggerimento">${L('Più alta = più clip (basta poco). Più bassa = solo i momenti davvero forti.', 'Higher = more clips (little is enough). Lower = only the really strong moments.', 'Más alta = más clips (basta poco). Más baja = solo los momentos realmente fuertes.')}</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-clip">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
