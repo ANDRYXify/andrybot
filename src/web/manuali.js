@@ -973,7 +973,7 @@ const VETRINA = {
     ] },
 
     { h2: 'La pagina link' },
-    { p: ['Una pagina pubblica all\'indirizzo <code>socialbot.live/u/&lt;tuonome&gt;</code>, da mettere nella bio di Instagram o TikTok. La <strong>foto la prendo dal tuo profilo Twitch</strong>: non devi caricare niente.'] },
+    { p: ['Una pagina pubblica all\'indirizzo <code>socialbot.live/u/&lt;tuonome&gt;</code>, da mettere nella bio di Instagram o TikTok. La <strong>foto la prendo dal tuo profilo Twitch</strong>: non devi caricare niente. Quando incolli il link in una chat, l\'anteprima è una <strong>card coi colori della tua pagina</strong> (nome, sottotitolo, faccia, indirizzo): nel riquadro «Quando condividi il link» la vedi e, se vuoi, la rifai con lo stesso editor delle locandine; vale anche per la pagina delle donazioni.'] },
     { p: ['È fatta per stare in una bio, quindi è costruita per una cosa sola: <strong>aprirsi subito su una connessione mobile scadente</strong>. Nessuno script, nessun font remoto, niente da scaricare — funziona anche a JavaScript spento e le anteprime dei social la leggono bene.'] },
     { h3: 'I blocchi' },
     { p: ['La pagina si compone a blocchi, che si riordinano trascinandoli.'] },

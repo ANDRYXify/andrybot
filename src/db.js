@@ -374,6 +374,14 @@ CREATE TABLE IF NOT EXISTS carte_live (  -- la grafica con cui si annuncia «son
   ts INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS carte_pagina (  -- l'anteprima del link (pagina link, pagina delle donazioni), se lo streamer l'ha rifatta
+  channel TEXT NOT NULL,
+  quale TEXT NOT NULL,                     -- link | dona
+  dati TEXT NOT NULL DEFAULT '',           -- la carta intera, come la scrive l'editor
+  ts INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, quale)
+);
+
 CREATE TABLE IF NOT EXISTS managers (     -- moderatori che possono gestire la dashboard di uno streamer
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,                   -- canale (streamer proprietario) minuscolo
@@ -2167,6 +2175,26 @@ export const carteLive = {
     return this.get(c);
   },
   cancella(channel) { db.prepare('DELETE FROM carte_live WHERE channel=?').run(String(channel).toLowerCase()); },
+};
+
+// L'anteprima del link, rifatta dallo streamer: una per pagina (link, dona).
+// Niente riga = standard (la carta vestita col colore della pagina).
+export const cartePagina = {
+  _quale: (q) => (q === 'dona' ? 'dona' : 'link'),
+  get(channel, quale) {
+    const r = db.prepare('SELECT * FROM carte_pagina WHERE channel=? AND quale=?').get(String(channel).toLowerCase(), this._quale(quale));
+    if (!r) return null;
+    let dati = null;
+    try { dati = r.dati ? JSON.parse(r.dati) : null; } catch { dati = null; }
+    return dati && Array.isArray(dati.elementi) && dati.elementi.length ? { dati, ts: r.ts } : null;
+  },
+  set(channel, quale, dati) {
+    const c = String(channel).toLowerCase(), q = this._quale(quale);
+    if (!dati) { db.prepare('DELETE FROM carte_pagina WHERE channel=? AND quale=?').run(c, q); return null; }
+    db.prepare(`INSERT INTO carte_pagina (channel, quale, dati, ts) VALUES (?,?,?,?)
+      ON CONFLICT(channel, quale) DO UPDATE SET dati=excluded.dati, ts=excluded.ts`).run(c, q, JSON.stringify(dati), now());
+    return this.get(c, q);
+  },
 };
 
 export const tgConf = {

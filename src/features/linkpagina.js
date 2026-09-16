@@ -453,7 +453,14 @@ const MANCA_SOSTIENI = {
   conto: 'collega il tuo conto nella scheda «Donazioni»',
 };
 
-export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, donatori } = {}) {
+// Il colore d'accento della pagina (quello del tema dell'utente, o del preset):
+// la carta dell'anteprima del link lo prende per vestirsi come la pagina.
+export function accentoDi(pagina) {
+  const pre = PRESET[pagina?.template] || PRESET.minimal;
+  return (pagina?.tema && pagina.tema.accent) || pre.acc;
+}
+
+export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, donatori, immagineAnteprima } = {}) {
   // l'indirizzo vero della pagina: quello corto delle donazioni, se c'e'
   const urlCanonico = dona ? (urlDona || `${baseUrl}/dona/${login}`) : `${baseUrl}/u/${login}`;
   const pre = PRESET[pagina.template] || PRESET.minimal;
@@ -906,15 +913,16 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
 <meta property="og:title" content="${esc(titolo)}">
 <meta property="og:description" content="${esc(descr).slice(0, 200)}">
 <meta property="og:url" content="${esc(urlCanonico)}">
-${/* per l'anteprima nelle chat vale molto di più la copertina della foto profilo:
-     è larga, si vede, e fa sembrare il link una pagina vera invece di un avatar */
+${/* l'anteprima nelle chat: la carta disegnata dal server (coi colori della
+     pagina, o rifatta dallo streamer); senza, la copertina, che è larga e fa
+     sembrare il link una pagina vera; per ultima la foto profilo */
   ''}${(() => {
     const cop = (pagina.blocchi || []).find((b) => b?.tipo === 'eroe' && b.img);
-    const og = urlSicuro(cop?.img) || imgAvatar;
+    const og = urlSicuro(immagineAnteprima) || urlSicuro(cop?.img) || imgAvatar;
     return og ? `<meta property="og:image" content="${esc(og)}">
 <meta name="twitter:image" content="${esc(og)}">` : '';
   })()}
-<meta name="twitter:card" content="${(pagina.blocchi || []).some((b) => b?.tipo === 'eroe' && b.img) ? 'summary_large_image' : 'summary'}">
+<meta name="twitter:card" content="${urlSicuro(immagineAnteprima) || (pagina.blocchi || []).some((b) => b?.tipo === 'eroe' && b.img) ? 'summary_large_image' : 'summary'}">
 <link rel="icon" href="/icons/icon-192.png?v=8">
 <style>${facciaFont(t.font)}${cursoreCss(t, c)}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}

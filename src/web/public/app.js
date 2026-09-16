@@ -689,6 +689,11 @@ function _demoGet(via) {
   F['/api/paginadona'] = { ...F['/api/linkpage'], url: 'https://dona.socialbot.live/andryxify', pagina: { ...F['/api/linkpage'].pagina, headline: 'Sostieni ANDRYXify', tagline: 'Se ti piace quello che faccio, un caffè aiuta a farne di più.', blocchi: [{ tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: '', etichetta: '', obiettivo: true, icona: 'cuore' }] } };
   const statoDona = { paginaUrl: 'https://dona.socialbot.live/andryxify', conto: { stato: 'nessuno', coda: '', nota: '' }, satispay: { stato: 'nessuno', coda: '', nota: '' }, riepilogo: { oggi: [], mese: [], anno: [], sempre: [] }, ultime: [], daApprovare: [] };
   F['/api/donazioni/stato'] = statoDona; F['/api/donazioni/stato?rileggi=1'] = statoDona;
+  const cartaPag = (quale) => ({ quale, mia: false, disegnabile: true, immagine: '',
+    carta: { nome: quale === 'dona' ? 'Sostienimi' : 'I miei link', larghezza: 1200, altezza: 630, fondo: {}, elementi: [] },
+    dati: { nome: 'ANDRYXify', titolo: quale === 'dona' ? 'Se ti piace quello che faccio, un caffè aiuta.' : 'Dirette, giochi e chiacchiere', gioco: '', login: 'andryxify', link: quale === 'dona' ? 'dona.socialbot.live/andryxify' : 'socialbot.live/u/andryxify', avatar: '' },
+    vocabolario: { ...F['/api/streamer/telegram/carta'].vocabolario, misura: { larghezza: 1200, altezza: 630 }, temi: [] } });
+  F['/api/paginacarta'] = cartaPag('link');
   return F[via] !== undefined ? F[via] : {};
 }
 
@@ -1453,6 +1458,7 @@ const TG_ICO_TIPO = (t) => (t === 'channel'
   : '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>');
 
 let _cartaLive = null;
+let _cartaPagina = null;
 
 function _cartaAnteprimaUrl() {
   return `/api/streamer/telegram/carta.png?v=${Date.now()}`;
@@ -12959,6 +12965,38 @@ function lpVisiteHtml(v) {
   </div>`;
 }
 
+async function caricaCartaPagina() {
+  if (!document.getElementById('lp-carta-box')) return;
+  try { _cartaPagina = await api('/api/paginacarta?quale=' + (LP.quale === 'dona' ? 'dona' : 'link')); } catch (e) { _cartaPagina = null; }
+  disegnaCartaPagina();
+}
+function disegnaCartaPagina() {
+  const box = document.getElementById('lp-carta-box'); if (!box) return;
+  const d = _cartaPagina;
+  if (!d) { box.innerHTML = `<p class="suggerimento">${L('Non riesco a leggerla in questo momento.', 'I cannot read it right now.', 'No puedo leerla en este momento.')}</p>`; return; }
+  const quale = LP.quale === 'dona' ? 'dona' : 'link';
+  box.innerHTML = `${d.disegnabile && d.immagine ? `<img class="lp-carta-img" src="${esc(d.immagine)}&v=${Date.now()}" alt="">` : ''}
+    ${d.disegnabile ? '' : `<p class="suggerimento">${L('Sul server mancano i caratteri per disegnarla: nell\'anteprima va la copertina, o la foto profilo.', 'The server is missing the fonts to draw it: the preview falls back to the cover, or the profile photo.', 'Al servidor le faltan las fuentes para dibujarla: la vista previa usa la portada, o la foto de perfil.')}</p>`}
+    <p class="lp-riga2 spazio-sopra"><button type="button" class="btn secondario mini" id="lp-carta-editor" ${d.disegnabile ? '' : 'disabled'}>${L('Apri l\'editor', 'Open the editor', 'Abrir el editor')}</button>${d.mia ? `<button type="button" class="btn secondario mini" id="lp-carta-standard">${L('Torna a quella standard', 'Back to the standard one', 'Volver a la estándar')}</button>` : ''}</p>
+    <p class="suggerimento">${L('Telegram e WhatsApp tengono a mente l\'immagine per un po\': se la cambi e vedi ancora la vecchia, aspetta o rimanda il link.', 'Telegram and WhatsApp remember the image for a while: if you change it and still see the old one, wait or send the link again.', 'Telegram y WhatsApp recuerdan la imagen un rato: si la cambias y sigues viendo la vieja, espera o vuelve a enviar el enlace.')}</p>`;
+  const ed = document.getElementById('lp-carta-editor');
+  if (ed) ed.onclick = () => conErrore(async () => {
+    ed.disabled = true;
+    try {
+      const mod = await import('/carta-editor.js');
+      mod.apri({ ..._cartaPagina, titolo: L('Editor dell\'anteprima del link', 'Link preview editor', 'Editor de la vista previa del enlace') }, {
+        salva: async (carta) => { _cartaPagina = await api('/api/paginacarta?quale=' + quale, { method: 'PUT', body: { carta } }); toast(L('Anteprima salvata', 'Preview saved', 'Vista previa guardada')); },
+        aggiorna: () => disegnaCartaPagina(),
+      });
+    } finally { ed.disabled = false; }
+  });
+  const st = document.getElementById('lp-carta-standard');
+  if (st) st.onclick = () => conErrore(async () => {
+    _cartaPagina = await api('/api/paginacarta?quale=' + quale, { method: 'DELETE' });
+    toast(L('Torna quella standard', 'Back to the standard one', 'Vuelve la estándar'));
+    disegnaCartaPagina();
+  });
+}
 function lpIntroHtml(d) {
   const intro = LP.quale === 'dona'
     ? L('La pagina delle donazioni: chi la apre trova le offerte e il modulo, con lo stile che scegli qui. Il suo indirizzo è', 'The donations page: whoever opens it finds the offers and the form, in the style you pick here. Its address is', 'La página de donaciones: quien la abre encuentra las ofertas y el formulario, con el estilo que eliges aquí. Su dirección es')
@@ -13137,6 +13175,12 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
             <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpup="avatar">${_bIco(ICO.carica)}${L('Carica una foto', 'Upload a photo', 'Subir una foto')}</button></p>
             <input type="url" id="lp-avatar-url" aria-label="${esc(L('Indirizzo della foto', 'Photo address', 'Dirección de la foto'))}" data-lpt="avatarUrl" class="spazio-sopra" maxlength="${d.limiti.url}" value="${esc(LP.testa.avatar && LP.testa.avatar !== 'no' ? LP.testa.avatar : '')}" placeholder="${esc(L('…oppure incolla un indirizzo', '…or paste an address', '…o pega una dirección'))}">
           </div>
+        </details>
+
+        <details class="carta sez">
+          <summary><h3>${L('Quando condividi il link', 'When you share the link', 'Cuando compartes el enlace')}</h3></summary>
+          <p class="suggerimento">${L('Su Telegram, WhatsApp e Discord il link mostra questa immagine, disegnata coi colori della tua pagina. La puoi rifare come vuoi con lo stesso editor delle locandine.', 'On Telegram, WhatsApp and Discord the link shows this image, drawn in your page\'s colours. You can redo it as you like with the same editor as the posters.', 'En Telegram, WhatsApp y Discord el enlace muestra esta imagen, dibujada con los colores de tu página. Puedes rehacerla como quieras con el mismo editor de los carteles.')}</p>
+          <div id="lp-carta-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
         </details>
 
         <details class="carta sez" open>
@@ -13523,6 +13567,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
   });
 
   document.querySelectorAll('[data-lpquale]').forEach((b) => { b.onclick = () => conScrollFermo(() => caricaPaginaLink(false, b.dataset.lpquale)); });
+  caricaCartaPagina();
 
   const spegni = document.getElementById('lp-spegni');
   if (spegni) spegni.onclick = () => conErrore(async () => {

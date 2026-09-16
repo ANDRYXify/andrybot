@@ -307,6 +307,19 @@ ce l'hanno — si aprono solo con la chiave — e restano fuori da sole, senza d
 nominare. `test/contratto/anteprime.test.mjs` ricava l'elenco così e pretende la
 cartolina completa, con l'immagine che esiste davvero.
 
+## L'anteprima della pagina link e della pagina delle donazioni
+
+Per le pagine degli streamer la cartolina non si prende in prestito: è una
+**carta** disegnata dal server (`/u/<login>/anteprima.png`,
+`/u/<login>/anteprima-dona.png`), della stessa famiglia della locandina
+Telegram — stesso motore, stessi caratteri, stesso editor — con un impianto
+suo, 1200×630. Di serie si veste col colore d'accento della pagina; lo
+streamer la rifà dal riquadro «Quando condividi il link». `og:image` e
+`twitter:image` puntano lì, con la card grande; se al server mancano i
+caratteri per disegnarla, si torna alla copertina o alla foto profilo. La
+carta si tiene in memoria un'ora e si rifà quando cambiano pagina, carta o
+faccia. Il resto sta in `docs/CARTA-LIVE.md`.
+
 ## Le vie private, e il 404 che Google si è preso da solo
 
 Search Console segnalava `socialbot.live/esci*` come **Non trovata (404)**. Con

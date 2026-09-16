@@ -63,6 +63,8 @@ const PUBBLICHE = new Map([
   ['GET /u/:user/dona', 'il vecchio indirizzo della pagina delle donazioni: rimanda a quello vero'],
   ['GET /dona/:login', 'la pagina delle donazioni di uno streamer: pubblica come la pagina link'],
   ['GET /u/:user/avatar', 'immagine della pagina link'],
+  ['GET /u/:user/anteprima.png', 'l\'anteprima del link della pagina link: la leggono Telegram, WhatsApp e Discord quando qualcuno incolla il link'],
+  ['GET /u/:user/anteprima-dona.png', 'l\'anteprima del link della pagina delle donazioni: come sopra'],
   ['GET /u/:user/img/:file', 'immagini della pagina link'],
   ['GET /u/:user/privacy', 'informativa della pagina link'],
   ['POST /dona/:login', 'il modulo delle donazioni della pagina link: chi dona non ha una sessione, e il pagamento lo conferma Stripe o Satispay, non chi bussa'],
