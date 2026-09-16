@@ -100,7 +100,7 @@ test('una mancia dalla chiave API: basta l\'importo, il resto ha un ripiego', ()
 test('l\'indirizzo della pagina delle donazioni: sotto la pagina link, o corto se c\'e\' il sottodominio', () => {
   const salva = { base: config.baseUrl, host: config.donaHost };
   config.baseUrl = 'https://prova.example'; config.donaHost = '';
-  assert.equal(dn.urlPaginaDona('Andry'), 'https://prova.example/u/andry/dona');
+  assert.equal(dn.urlPaginaDona('Andry'), 'https://prova.example/dona/andry');
   config.donaHost = 'dona.prova.example';
   assert.equal(dn.urlPaginaDona('andry'), 'https://dona.prova.example/andry');
   config.baseUrl = salva.base; config.donaHost = salva.host;

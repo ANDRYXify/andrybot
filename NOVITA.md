@@ -19,7 +19,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 - Le donazioni passano da SocialBot: nella scheda «Donazioni» colleghi il tuo conto Stripe, tuo e gestito da te, e chi ti segue dona dalla tua pagina link. Il pagamento arriva a te. [vai: donazioni]
 - Anche Satispay: colleghi il tuo negozio online con il codice di attivazione, e chi ha l'app paga da lì. Con tutti e due, chi dona sceglie. [vai: donazioni]
-- Una pagina tutta per le donazioni, su socialbot.live/u/iltuonome/dona: stessi strumenti della pagina link, un'altra pagina, e il tasto «Sostieni» della pagina link può portare lì. [vai: donazioni]
+- Una pagina tutta per le donazioni, su dona.socialbot.live/iltuonome (o socialbot.live/dona/iltuonome): stessi strumenti della pagina link, un'altra pagina, e il tasto «Sostieni» della pagina link può portare lì. [vai: donazioni]
 - Le offerte: fino a otto scaglioni con importo, nome ed effetto della tua libreria. Chi dona le vede al posto degli importi, e all'arrivo parte l'effetto dell'offerta raggiunta. [vai: donazioni]
 - Chi dona, da un importo che decidi tu in su, può allegare un'immagine o una GIF: va in onda come un effetto, dopo che l'hai vista nel registro e l'hai mandata tu con un tasto. [vai: donazioni]
 - Se preferisci, l'immagine di chi dona parte da sola appena il pagamento è confermato: lo scegli nella scheda delle donazioni, e la puoi sempre rimandare, scartare o togliere. [vai: donazioni]

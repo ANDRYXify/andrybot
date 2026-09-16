@@ -210,7 +210,7 @@ export function candidatoDonaHost(baseUrl) {
 }
 export function urlPaginaDona(login) {
   const l = String(login || '').toLowerCase();
-  return config.donaHost ? `https://${config.donaHost}/${l}` : `${config.baseUrl}/u/${l}/dona`;
+  return config.donaHost ? `https://${config.donaHost}/${l}` : `${config.baseUrl}/dona/${l}`;
 }
 
 // Cosa manca perche' il tasto compaia: niente ('' = tutto a posto), oppure

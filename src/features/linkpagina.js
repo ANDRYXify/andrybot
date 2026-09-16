@@ -454,6 +454,8 @@ const MANCA_SOSTIENI = {
 };
 
 export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, donatori } = {}) {
+  // l'indirizzo vero della pagina: quello corto delle donazioni, se c'e'
+  const urlCanonico = dona ? (urlDona || `${baseUrl}/dona/${login}`) : `${baseUrl}/u/${login}`;
   const pre = PRESET[pagina.template] || PRESET.minimal;
   const t = pagina.tema || {};
   // il tema dell'utente vince sul preset, campo per campo
@@ -769,7 +771,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       const azione = d.modo === 'link'
         ? `<a class="voce spicca sost-b" href="${esc(d.link)}" target="_blank" rel="noopener nofollow">${dentro}</a>`
         : (b.pagina && !dona)
-          ? `<a class="voce spicca sost-b" href="${esc(urlDona || '/u/' + login + '/dona')}">${dentro}</a>`
+          ? `<a class="voce spicca sost-b" href="${esc(urlDona || '/dona/' + login)}">${dentro}</a>`
           : `<form class="sost-f"${anteprima ? ' data-anteprima="1"' : ` method="post" action="/dona/${esc(login)}"`}${d.proprio ? ' enctype="multipart/form-data"' : ''}>
           ${dona ? '<input type="hidden" name="pagina" value="dona">' : ''}
           <div class="sost-chips" role="radiogroup" aria-label="Importo">${scelte.map((s, i) => `<label class="sost-c"><input type="radio" name="importo" value="${s.v}"${i === Math.min(1, scelte.length - 1) ? ' checked' : ''}><span>${esc(s.t)}</span></label>`).join('')}</div>
@@ -895,15 +897,15 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(titolo)} · i miei link</title>
+<title>${esc(titolo)} · ${dona ? 'sostienimi' : 'i miei link'}</title>
 <meta name="description" content="${esc(descr).slice(0, 160)}">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="${esc(baseUrl)}/u/${esc(login)}">
+<link rel="canonical" href="${esc(urlCanonico)}">
 <meta name="theme-color" content="${esc(c.bg)}">
 <meta property="og:type" content="profile">
 <meta property="og:title" content="${esc(titolo)}">
 <meta property="og:description" content="${esc(descr).slice(0, 200)}">
-<meta property="og:url" content="${esc(baseUrl)}/u/${esc(login)}">
+<meta property="og:url" content="${esc(urlCanonico)}">
 ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profilo:
      è larga, si vede, e fa sembrare il link una pagina vera invece di un avatar */
   ''}${(() => {

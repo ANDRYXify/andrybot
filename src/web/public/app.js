@@ -686,8 +686,8 @@ function _demoGet(via) {
     ] },
     '/api/passkey': [ { id: 'demo', nome: 'iPhone di Andryx', quando: '2026-04-10' } ],
   };
-  F['/api/paginadona'] = { ...F['/api/linkpage'], url: 'https://socialbot.live/u/andryxify/dona', pagina: { ...F['/api/linkpage'].pagina, headline: 'Sostieni ANDRYXify', tagline: 'Se ti piace quello che faccio, un caffè aiuta a farne di più.', blocchi: [{ tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: '', etichetta: '', obiettivo: true, icona: 'cuore' }] } };
-  const statoDona = { paginaUrl: 'https://socialbot.live/u/andryxify/dona', conto: { stato: 'nessuno', coda: '', nota: '' }, satispay: { stato: 'nessuno', coda: '', nota: '' }, riepilogo: { oggi: [], mese: [], anno: [], sempre: [] }, ultime: [], daApprovare: [] };
+  F['/api/paginadona'] = { ...F['/api/linkpage'], url: 'https://dona.socialbot.live/andryxify', pagina: { ...F['/api/linkpage'].pagina, headline: 'Sostieni ANDRYXify', tagline: 'Se ti piace quello che faccio, un caffè aiuta a farne di più.', blocchi: [{ tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: '', etichetta: '', obiettivo: true, icona: 'cuore' }] } };
+  const statoDona = { paginaUrl: 'https://dona.socialbot.live/andryxify', conto: { stato: 'nessuno', coda: '', nota: '' }, satispay: { stato: 'nessuno', coda: '', nota: '' }, riepilogo: { oggi: [], mese: [], anno: [], sempre: [] }, ultime: [], daApprovare: [] };
   F['/api/donazioni/stato'] = statoDona; F['/api/donazioni/stato?rileggi=1'] = statoDona;
   return F[via] !== undefined ? F[via] : {};
 }
@@ -12801,7 +12801,7 @@ function riempiDonazioni() {
   const pr = d.proprio || {};
   _imposta('dona-proprio-attivo', pr.attivo === true); _imposta('dona-proprio-da', pr.da || 20); _imposta('dona-proprio-durata', pr.durata || 6); _imposta('dona-proprio-subito', pr.subito === true);
   if (!_EFFETTI.length) api('/api/streamer/effetti').then((lib) => { _EFFETTI = lib?.effetti || []; _disegnaLivelli(_leggiLivelli()); }).catch(() => {});
-  const url = location.origin + '/u/' + (stato?.user?.login || '…') + '/dona';
+  const url = _statoDona?.paginaUrl || (location.origin + '/dona/' + (stato?.user?.login || '…'));
   const cu = _g('dona-pagina-url'); if (cu) cu.textContent = url;
   const ap = _g('dona-pagina-apri'); if (ap) ap.href = url;
   const w = _g('dona-webhook'); if (w) w.textContent = location.origin + '/dona/kofi/' + (stato?.user?.login || '…');
@@ -12960,7 +12960,10 @@ function lpVisiteHtml(v) {
 }
 
 function lpIntroHtml(d) {
-  return `<p class="suggerimento">${L('Una pagina pubblica con tutti i tuoi link, da mettere nella bio di Instagram o TikTok. Il suo indirizzo è', 'A public page with all your links, to put in your Instagram or TikTok bio. Its address is', 'Una página pública con todos tus enlaces, para poner en la bio de Instagram o TikTok. Su dirección es')}
+  const intro = LP.quale === 'dona'
+    ? L('La pagina delle donazioni: chi la apre trova le offerte e il modulo, con lo stile che scegli qui. Il suo indirizzo è', 'The donations page: whoever opens it finds the offers and the form, in the style you pick here. Its address is', 'La página de donaciones: quien la abre encuentra las ofertas y el formulario, con el estilo que eliges aquí. Su dirección es')
+    : L('Una pagina pubblica con tutti i tuoi link, da mettere nella bio di Instagram o TikTok. Il suo indirizzo è', 'A public page with all your links, to put in your Instagram or TikTok bio. Its address is', 'Una página pública con todos tus enlaces, para poner en la bio de Instagram o TikTok. Su dirección es');
+  return `<p class="suggerimento">${intro}
       <strong>${esc((d.url || '').replace(/^https?:\/\//, '') || 'socialbot.live/u/…')}</strong></p>
       ${miniGuida({
     titolo: L('Tutorial: come si costruisce', 'Tutorial: how to build it', 'Tutorial: cómo se construye'),
@@ -13095,11 +13098,13 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
   const NOMI_FONT = { system: L('Sistema', 'System', 'Sistema'), inter: 'Inter', mono: L('Monospaziato', 'Monospaced', 'Monoespaciado'), serif: L('Con grazie', 'Serif', 'Con serifa'), condensato: L('Condensato', 'Condensed', 'Condensada'), tondo: L('Tondo', 'Rounded', 'Redonda'), manga: L('Manga — a pennarello', 'Manga — marker', 'Manga — a rotulador') };
   const opts = (lista, sel, nomi) => lista.map((k) => `<option value="${esc(k)}"${k === sel ? ' selected' : ''}>${esc((nomi && nomi[k]) || k)}</option>`).join('');
 
+  const h2 = box.closest('.carta')?.querySelector('h2');
+  if (h2) h2.innerHTML = _hIco(ICO.condividi) + (LP.quale === 'dona' ? L('La tua pagina delle donazioni', 'Your donations page', 'Tu página de donaciones') : L('La tua pagina link', 'Your link page', 'Tu página de enlaces'));
   box.innerHTML = `
     <div class="lp-editor">
+      <div class="lp-comandi">
       <p class="lp-quale"><button type="button" class="btn mini${LP.quale === 'dona' ? ' secondario' : ''}" data-lpquale="link">${L('Pagina link', 'Link page', 'Página de enlaces')}</button> <button type="button" class="btn mini${LP.quale === 'dona' ? '' : ' secondario'}" data-lpquale="dona">${L('Pagina delle donazioni', 'Donations page', 'Página de donaciones')}</button>
         <span class="suggerimento">${LP.quale === 'dona' ? L('Stai modificando la pagina delle donazioni: stessi strumenti, un\'altra pagina.', 'You are editing the donations page: same tools, another page.', 'Estás editando la página de donaciones: mismas herramientas, otra página.') : ''}</span></p>
-      <div class="lp-comandi">
         ${d.pubblicata
       ? `<p class="lp-stato on">${_bIco(ICO.globo)}${L('Online:', 'Live:', 'Online:')}
           <a href="${esc(d.url)}" target="_blank" rel="noopener"><strong>${esc((d.url || '').replace(/^https?:\/\//, ''))}</strong></a></p>`
@@ -13579,7 +13584,7 @@ const ICO_BLOCCO = { link: 'link', social: 'cuore', titolo: 'stella', testo: 'ma
   numeri: 'soldi', faq: 'mail', conto: 'calendario', sostieni: 'cuore', donatori: 'stella', separatore: 'link' };
 
 function nomeBlocco(b, NOMI) {
-  const suo = (b.label || b.testo || b.titolo || b.d || '').toString().trim().replace(/\s+/g, ' ');
+  const suo = (b.tipo === 'sostieni' || b.tipo === 'donatori' ? (b.titolo || b.testo) : (b.label || b.testo || b.titolo || b.d || '')).toString().trim().replace(/\s+/g, ' ');
   return suo || (NOMI[b.tipo] || b.tipo);
 }
 
@@ -13592,7 +13597,7 @@ function lpRenderCampi() {
   const j = _lpAperto ? LP.blocchi.indexOf(_lpAperto) : -1;
   document.querySelectorAll('#lp-blocchi .lp-blocco').forEach((e) => e.classList.toggle('sel', Number(e.dataset.i) === j));
   if (j < 0 || !_lpCampi[j]) {
-    casa.innerHTML = `<p class="suggerimento lp-vuoto">${L('Scegli un pezzo qui a fianco — o cliccalo nell\'anteprima — e qui compaiono i suoi comandi.', 'Pick a piece on the side — or click it in the preview — and its controls show up here.', 'Elige una pieza al lado — o haz clic en ella en la vista previa — y aquí aparecen sus mandos.')}</p>`;
+    casa.innerHTML = `<p class="suggerimento lp-vuoto">${L('Scegli un pezzo qui a fianco, o cliccalo nell\'anteprima: qui compaiono i suoi comandi.', 'Pick a piece on the side, or click it in the preview: its controls show up here.', 'Elige una pieza al lado, o haz clic en ella en la vista previa: aquí aparecen sus mandos.')}</p>`;
     return;
   }
   const b = LP.blocchi[j];

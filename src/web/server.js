@@ -235,7 +235,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.use((req, res, next) => {
     if (!config.donaHost || String(req.hostname || '').toLowerCase() !== config.donaHost) return next();
     const m = /^\/([a-z0-9_]{1,30})\/?$/i.exec(req.path);
-    if (m) { const q = req.url.indexOf('?'); req.url = '/u/' + m[1].toLowerCase() + '/dona' + (q >= 0 ? req.url.slice(q) : ''); return next(); }
+    if (m) { const q = req.url.indexOf('?'); req.url = '/dona/' + m[1].toLowerCase() + (q >= 0 ? req.url.slice(q) : ''); return next(); }
     if (req.path === '/') return res.redirect(302, config.baseUrl + '/');
     next();
   });
@@ -1527,8 +1527,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }));
   // La pagina delle donazioni: stessa forma della pagina link, un'altra
   // tabella, e il modulo dice da dove torna. Niente conteggio delle visite.
-  app.get('/u/:user/dona', wrap(async (req, res) => {
+  // La pagina delle donazioni sta su dona.<dominio>/<login> quando il nome
+  // corto c'e', e su /dona/<login> sempre. Il vecchio /u/<login>/dona rimanda
+  // a quello vero, ritorno del pagamento compreso (302: se il nome corto un
+  // giorno sparisse, nessun browser resterebbe con un rimando a memoria).
+  app.get('/u/:user/dona', (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    const q = req.url.indexOf('?');
+    res.redirect(302, donazioni.urlPaginaDona(login) + (q >= 0 ? req.url.slice(q) : ''));
+  });
+  app.get('/dona/:login', wrap(async (req, res) => {
+    const login = String(req.params.login || '').toLowerCase();
     if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
     const p = paginaDona.get(login);
     if (!p || !p.attiva) return notFound(res);
@@ -1544,6 +1554,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const html = renderLinkPage(p, {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
       sostieni: donazioni.datiSostieni(s?.settings, conti), grazie, dona: true,
+      urlDona: donazioni.urlPaginaDona(login),
       donatori: donatoriPer(login, p.blocchi),
     });
     if (dona) res.set('Cache-Control', 'private, no-store');
@@ -1709,6 +1720,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
       sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)), manca: donazioni.cosaManca(s?.settings, contiDi(login)),
       anteprima: true, dona: true,
+      urlDona: donazioni.urlPaginaDona(login),
       donatori: donatoriPer(login, finta.blocchi),
     });
     res.json({ html });
@@ -1821,7 +1833,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 - Comandi a voce mentre si streamma.
 - Pagina link pubblica personalizzabile su ${b}/u/<nomeutente>.
 - Donazioni sul conto dello streamer: chi guarda dona dalla pagina link o da
-  una pagina tutta per le donazioni (${b}/u/<nomeutente>/dona), con offerte a
+  una pagina tutta per le donazioni (${b}/dona/<nomeutente>), con offerte a
   scaglioni che accendono i suoi effetti; il pagamento arriva sul suo conto
   Stripe o Satispay, l'avviso parte in overlay e in chat, un obiettivo in euro
   sale. Ko-fi resta possibile.
