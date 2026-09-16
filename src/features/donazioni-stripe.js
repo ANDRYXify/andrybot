@@ -68,7 +68,9 @@ async function stripe(metodo, path, { params = null, account = '' } = {}) {
   }
 }
 // Quello che si dice allo streamer quando Stripe non collabora. Il motivo vero
-// va nel log: a lui serve sapere che deve riprovare, o chiedere.
+// va nel log e in `dettaglio`, che il server mostra solo all'amministratore:
+// allo streamer serve sapere che deve riprovare, o chiedere; a chi gestisce
+// serve la frase di Stripe (per esempio: Connect non ancora attivato).
 const SCUSA = 'Stripe non ha risposto come dovrebbe: riprova fra poco. Se continua, scrivilo a chi gestisce il servizio.';
 
 // Collega il conto: se non c'e' lo crea (Standard, nel paese scelto), poi
@@ -80,7 +82,7 @@ export async function collegaConto(login, paese = 'IT') {
   if (!c?.stripe_account) {
     const p = paeseOk(paese);
     const r = await stripe('POST', '/accounts', { params: { type: 'standard', country: p, 'metadata[login]': login } });
-    if (!r.ok) return { errore: SCUSA };
+    if (!r.ok) return { errore: SCUSA, dettaglio: r.errore };
     c = contiDonazioni.set(login, { account: r.dati.id, paese: p, pronto: false, dettagli: false });
     log.info(`conto donazioni creato per @${login} (${p})`);
   }
@@ -94,7 +96,7 @@ export async function linkRegistrazione(account) {
   const r = await stripe('POST', '/account_links', {
     params: { account, type: 'account_onboarding', refresh_url: base + '/api/donazioni/conto/riprendi', return_url: base + '/api/donazioni/conto/ritorno' },
   });
-  if (!r.ok) return { errore: SCUSA };
+  if (!r.ok) return { errore: SCUSA, dettaglio: r.errore };
   return { url: r.dati.url };
 }
 

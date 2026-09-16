@@ -19,6 +19,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 - Le donazioni passano da SocialBot: nella scheda «Donazioni» colleghi il tuo conto Stripe una volta sola, chi ti segue dona dalla tua pagina link e il pagamento arriva a te. [vai: donazioni]
 - A ogni donazione ricevuta sul conto partono da soli l'avviso in overlay, il grazie in chat e l'obiettivo in euro. Nella scheda vedi le ultime arrivate, con nome e messaggio. [vai: donazioni]
+- Il minimo e il massimo per una donazione li decidi tu nella scheda «Donazioni»: il massimo parte da 500 e può arrivare a 5.000. [vai: donazioni]
+- Le voci «Donazioni» e «CONSOLify» del menù del pannello hanno la loro icona, come tutte le altre. [vai: consolify]
 - Nel player puoi mettere un tuo video in loop, caricato fra gli Effetti: sfocato sullo sfondo al posto della copertina, o in chiaro sulla copertina stessa. Con i temi vinile e CD la copertina resta quella del disco. [vai: alert]
 - Donazioni: nella scheda «Donazioni» dici come si dona (sul tuo conto, oppure Ko-fi, PayPal o altro) e il tasto «Sostieni» compare sulla tua pagina link, col tuo tema. [vai: donazioni]
 - Con il token di Ko-fi ogni mancia accende l'avviso «Donazione» in overlay, il grazie in chat e fa salire l'obiettivo in euro, che si può mostrare anche sotto il tasto «Sostieni». [vai: alert]

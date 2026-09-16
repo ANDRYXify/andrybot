@@ -15,6 +15,7 @@ test('la configurazione si ripulisce, e del token resta solo l\'impronta', () =>
   assert.equal(d.valuta, 'USD');
   assert.deepEqual(d.importi, [2, 5, 10, 20], 'gli importi di serie');
   assert.equal(d.minimo, 1);
+  assert.equal(d.massimo, 500, 'il massimo di serie');
   assert.equal(d.conMessaggio, true);
   assert.ok(eImpronta(d.kofiImp), 'il token non si conserva: si conserva l\'impronta');
   assert.ok(!JSON.stringify(d).includes('tok-123'));
@@ -33,6 +34,14 @@ test('la configurazione si ripulisce, e del token resta solo l\'impronta', () =>
   assert.equal(dn.normDonazioni({ minimo: '2,5' }).minimo, 2.5);
   assert.equal(dn.normDonazioni({ minimo: 500 }).minimo, 100);
   assert.equal(dn.normDonazioni({ conMessaggio: false }).conMessaggio, false);
+  // il massimo lo sceglie lo streamer, mai sotto il minimo e mai oltre 5.000; gli importi suggeriti ci stanno dentro
+  assert.equal(dn.normDonazioni({ massimo: 2000 }).massimo, 2000);
+  assert.equal(dn.normDonazioni({ massimo: 99999 }).massimo, 5000);
+  assert.equal(dn.normDonazioni({ massimo: 0 }).massimo, 500);
+  assert.equal(dn.normDonazioni({ minimo: 50, massimo: 10 }).massimo, 50, 'un massimo sotto il minimo sale al minimo');
+  assert.deepEqual(dn.normDonazioni({ massimo: 8 }).importi, [2, 5], 'di serie, solo quelli che ci stanno');
+  assert.deepEqual(dn.normDonazioni({ minimo: 30, massimo: 40 }).importi, [30], 'se non ce ne sta nessuno, il minimo');
+  assert.deepEqual(dn.normDonazioni({ importi: '5, 50, 500, 5000', massimo: 100 }).importi, [5, 50]);
   // cose che non passano
   assert.equal(dn.normDonazioni({ link: 'http://insicuro.example' }).link, '', 'solo https');
   assert.equal(dn.normDonazioni({ link: 'javascript:alert(1)' }).link, '');
@@ -46,7 +55,9 @@ test('il modulo della pagina: un importo scelto o scritto, il nome, il messaggio
   assert.equal(dn.leggiModulo({ importo: 'altro', altro: '3' }).importoCent, 300);
   assert.equal(dn.leggiModulo({ importo: 'altro', altro: '' }), null, '«altro» senza un numero non e\' un importo');
   assert.equal(dn.leggiModulo({ importo: '0.5' }), null, 'sotto il minimo');
-  assert.equal(dn.leggiModulo({ importo: '600' }), null, 'sopra il massimo');
+  assert.equal(dn.leggiModulo({ importo: '600' }), null, 'sopra il massimo di serie');
+  assert.equal(dn.leggiModulo({ importo: '600' }, { massimo: 1000 }).importoCent, 60000, 'entro il massimo dello streamer');
+  assert.equal(dn.leggiModulo({ importo: '6000' }, { massimo: 99999 }), null, 'oltre 5.000 mai');
   assert.equal(dn.leggiModulo({ importo: '2' }, { minimo: 5 }), null, 'sotto il minimo dello streamer');
   assert.equal(dn.leggiModulo({ importo: '5', sito: 'http://spam.example' }), null, 'il campo trappola pieno: era un programma');
   assert.equal(dn.leggiModulo({ importo: '5', nome: '  Luca  ', messaggio: 'grande   live\n\n!' }).nome, 'Luca');
@@ -106,6 +117,8 @@ test('i dati per il blocco «Sostieni»: come si dona, gli importi, il tasto, la
   assert.equal(c.link, '', 'sul conto il link non si usa');
   assert.deepEqual(c.importi, [3, 9]);
   assert.equal(c.minimo, 2);
+  assert.equal(c.massimo, 500);
+  assert.equal(dn.datiSostieni({ donazioni: { ...conto.donazioni, massimo: 1500 } }, { pronto: 1 }).massimo, 1500);
   assert.equal(c.conMessaggio, false);
   assert.equal(c.valuta, 'USD');
   // cosa manca, detto in una parola

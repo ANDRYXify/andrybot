@@ -57,6 +57,13 @@ test('il conto si crea Standard nel paese scelto, una volta sola, e la registraz
   assert.equal(chiamate.filter((x) => x.path === '/v1/accounts').length, 1);
   assert.equal(contiDonazioni.get('andry').paese, 'DE', 'il paese non cambia dopo');
   assert.equal(ds.paeseOk('XX'), 'IT', 'un paese sconosciuto diventa Italia');
+  // Stripe che rifiuta: allo streamer una scusa, e a parte la frase di Stripe
+  contiDonazioni.togli('nuovo');
+  stripeFinto((c) => (c.path === '/v1/accounts' ? { status: 400, body: { error: { message: 'You can only create new accounts if you\'ve signed up for Connect.' } } } : null));
+  const no = await ds.collegaConto('nuovo', 'IT');
+  assert.match(no.errore, /riprova fra poco/);
+  assert.match(no.dettaglio, /signed up for Connect/);
+  assert.equal(contiDonazioni.get('nuovo'), null, 'senza conto creato non resta niente');
 });
 
 test('lo stato si rilegge da Stripe; un conto che Stripe non conosce piu\' si dimentica', async () => {
