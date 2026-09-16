@@ -233,7 +233,7 @@ function corpo(L, l, kick, youtube) {
     <section class="vt-sez" id="listino">
       <div class="vt-testa centro vt-rivela">
         <h2 class="vt-tit">${L('Quanto costa', 'What it costs', 'Cuánto cuesta')}</h2>
-        <p class="vt-testo">${L('L’Essenziale è gratis e resta gratis. Il resto si aggiunge un pacchetto alla volta, dal pannello, e si toglie allo stesso modo.', 'Essenziale is free and stays free. The rest is added one package at a time, from the panel, and removed the same way.', 'Essenziale es gratis y sigue siéndolo. Lo demás se añade de paquete en paquete, desde el panel, y se quita igual.')}</p>
+        <p class="vt-testo">${L('L’Essenziale è gratis e resta gratis. Il resto si aggiunge un pacchetto alla volta, dal pannello, e si toglie allo stesso modo. Se un rinnovo non passa, il bot resta: si spengono solo le funzioni in più.', 'Essenziale is free and stays free. The rest is added one package at a time, from the panel, and removed the same way. If a renewal fails, the bot stays: only the extra features switch off.', 'Essenziale es gratis y sigue siéndolo. Lo demás se añade de paquete en paquete, desde el panel, y se quita igual. Si una renovación falla, el bot se queda: solo se apagan las funciones extra.')}</p>
       </div>
       <div class="vetrina-piani" id="vetrina-piani"></div>
     </section>

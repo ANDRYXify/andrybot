@@ -159,3 +159,74 @@ scadenza, nota, storia. Lo streamer legge la riga nella scheda «Il tuo bot»
 chiuse dicono «chiuso dal proprietario» invece di proporre un acquisto. Il
 blocco chiude le funzioni nel pannello e nel bot dove il muro c'è; per far
 uscire il bot dal canale resta «Disabilita».
+
+## Chi paga arriva in fondo, chi non paga sa cosa manca
+
+Un giro completo fatto a settembre 2026 sui tre momenti del paywall: comprare,
+vivere con l'abbonamento (rinnovi, disdette, prove che finiscono), non pagare.
+L'invariante che regge tutto: **l'Essenziale non scade mai e il bot non si
+spegne mai per una questione di soldi**; quello che si spegne sono le funzioni
+in più, dove partono, perché il gating legge il piano a ogni richiesta.
+
+Quello che non tornava, e come sta adesso:
+
+- **Il ritorno dal Checkout non era confermato.** Stripe rimandava a
+  `/?abbonato=1` e il pannello diceva «attivo» sulla sola query, webhook o non
+  webhook. Ora il ritorno è `/abbonamento/ritorno?sessione={CHECKOUT_SESSION_ID}`:
+  la sessione si rilegge da Stripe (`leggiCheckout`, `esitoCheckout`), e se è
+  pagata si attiva subito con la stessa funzione del webhook
+  (`attivaDaCheckout`, idempotente: chi arriva prima attiva, l'altro trova
+  tutto com'è). Il pannello riceve tre esiti: `1` attivo, `attesa` (Stripe non
+  ha ancora incassato, per esempio un bonifico), `no` (nessuna sessione pagata
+  con quell'id). Chi era entrato solo per abbonarsi, senza sessione, entra al
+  ritorno se il login combacia.
+- **Un extra per chi ha già il Base apriva un secondo Checkout con il Base
+  dentro**: due sottoscrizioni, il Base pagato due volte. Ora ogni acquisto
+  passa da `avviaAcquisto`, dalla rotta del pannello e dal login self-service:
+  con una sottoscrizione viva gli extra entrano in *quella*
+  (`aggiungiAlAbbonamento`: voci in più sulla sottoscrizione, la parte di mese
+  che resta nella prossima fattura, i metadata aggiornati così il webhook e il
+  gating leggono come sempre); senza, il Checkout come prima. Un pacchetto
+  curato, per chi ha già degli extra, diventa i suoi extra mancanti uno per
+  uno: mai più di quanto ha letto. Con un pagamento non riuscito la rotta
+  risponde 409: prima si sistema quello.
+- **Rinnovo fallito o disdetta: silenzio.** Il webhook portava il piano a
+  Essenziale e la scheda diceva «niente da annullare», senza il tasto del
+  portale: la carta non si poteva nemmeno aggiornare. Ora `/api/me` dice se
+  l'abbonamento è attivo e se esiste un cliente Stripe, e la scheda racconta lo
+  stato vero: pagamento non riuscito (con «Aggiorna la carta»), in pausa,
+  finito (con la data, e cosa riaccendere), prova finita. Il portale c'è ogni
+  volta che c'è un cliente Stripe.
+- **Il webhook spegneva il bot** alla disdetta o all'insoluto, contro la
+  promessa «torni all'Essenziale». Non lo fa più. E una sottoscrizione vecchia
+  che si spegne (un doppione di prima) non spegne quella viva: si guarda l'id.
+- **La ronda del sito spegneva anche l'Essenziale.** Chi non era nella lista
+  di andryxify.it, senza Stripe attivo e non gestito a mano, dopo sette giorni
+  di grazia finiva `disabled` («Accesso disabilitato»): valeva anche per chi si
+  era iscritto gratis dalla vetrina, che in quella lista non è mai stato. Ora
+  la lista governa **una cosa sola, il flag community**: community e non più in
+  lista → grazia, poi `community=0` (torna all'Essenziale, il canale resta);
+  in lista senza flag → `community=1`; chi era stato spento da una grazia
+  scaduta viene riapprovato sull'Essenziale. La ronda è `giroCancello(attivi)`,
+  esportata e collaudata con un database usa-e-getta.
+- **La prova promo** finiva solo quando passava la ronda: ora
+  `subscriptions.attivo(login, ora)` guarda la data, e la ronda, quando la
+  chiude, toglie anche gli extra dalla riga (prima restavano, e la scheda li
+  mostrava come «attivo»). Nel pannello gli extra «tuoi» sono solo quelli di un
+  abbonamento attivo.
+- **La scheda Abbonamento non vendeva**: elencava gli extra senza tasti e
+  «Scegli i pacchetti» portava alla scheda Stato, dove c'era scritto «gli
+  abbonamenti self-service stanno arrivando». Ora nella scheda c'è lo stesso
+  compositore della vetrina, con gli extra già tuoi tolti: sull'Essenziale il
+  totale comprende il Base, con il Base attivo conta solo quello che aggiungi.
+  I muri dentro le schede e le schede murate portano lì, e la scheda Stato dice
+  dove si aggiunge un extra invece di rimandare a domani.
+- **I testi**: il 403 dice dove si apre la funzione («lo apri dalla scheda
+  Abbonamento») e i messaggi di ritorno dal pagamento sono scritti come si
+  parla, senza trattini lunghi.
+
+Il collaudo: `test/unita/abbonamento-stato.test.mjs` (la prova che finisce
+per data, la ronda in cinque situazioni, gli extra aggiunti a una sottoscrizione
+con uno Stripe finto, il ritorno dal Checkout) e `test/contratto/paywall.test.mjs`
+(il ritorno confermato, un solo posto per comprare, il bot che non si spegne per
+soldi, la scheda che vende e i muri che portano lì).

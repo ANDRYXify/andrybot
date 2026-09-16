@@ -112,84 +112,67 @@ export async function fetchApproved() {
   }
 }
 
-// Revoca automatica: ogni 5 minuti chiede al sito chi è ancora abilitato e
-// SPEGNE i bot degli streamer che nel frattempo sono stati rimossi/sospesi.
-// Se il sito non risponde, non tocca nulla (un disguido di rete non deve
-// buttare giù i bot). Ritorna una funzione per fermare il ciclo.
-export function startApprovalSync({ manager, everyMs = 5 * 60_000 } = {}) {
-  async function giro() {
-    // Elenco degli abilitati dal sito (i "community": accesso pieno di diritto).
-    // null = sito muto: in tal caso NON si revoca nulla in base al sito (un
-    // disguido di rete non deve spegnere i bot). Lo prendiamo UNA volta e lo
-    // usiamo in tutti i passaggi qui sotto.
-    const attivi = await fetchApproved();
-    const listaSito = attivi && attivi.size > 0;   // lista utile (non muta né vuota)
-    let cambiato = false;
+// LA RONDA: cosa dice la lista del sito, e cosa ne facciamo. Sta in una
+// funzione a se', con la lista passata da fuori, cosi' si collauda con un
+// database usa-e-getta e senza rete.
+//
+// La lista del sito governa UNA cosa sola: il flag «community» (accesso pieno
+// di diritto). Non decide se un canale esiste: l'Essenziale e' gratis e non
+// scade, e chi si e' iscritto dalla vetrina in quella lista non c'e' mai stato.
+//  - community e non piu' in lista → periodo di grazia, poi community=0:
+//    torna all'Essenziale, il bot resta dov'e';
+//  - in lista e senza flag → community=1 (anche chi era decaduto e rientra);
+//  - spento in passato da una grazia scaduta (grazia_fino=-1) → riapprovato,
+//    sull'Essenziale: quella regola non esiste piu';
+//  - prove promo finite → tier free, status none, niente extra.
+// Gli account gestiti a mano (manuale=1) non si toccano. Con lista nulla o
+// vuota (sito muto) non si revoca niente: un disguido di rete non deve
+// togliere l'accesso a nessuno. Ritorna true se ha cambiato qualcosa.
+export function giroCancello(attivi, { ora = Date.now() } = {}) {
+  let cambiato = false;
 
-    // 0) AUTO-RIPRISTINO: un membro community non deve MAI restare col bot spento
-    //    per colpa di un trial promo scaduto. Se troviamo un community (nella
-    //    lista del sito) col bot spento e un trial ormai chiuso, lo riaccendiamo
-    //    e azzeriamo il trial (torna "community puro"). Firma sicura: l'interruttore
-    //    volontario dello streamer non lascia un abbonamento 'canceled', quindi
-    //    non riaccendiamo mai per sbaglio chi ha spento il bot di sua volontà.
-    if (listaSito) {
-      for (const s of streamers.list()) {
-        if (s.manuale || s.botEnabled || !attivi.has(s.login)) continue;
-        const sub = subscriptions.get(s.login);
-        if (sub && sub.status === 'canceled') {
-          streamers.setEnabled(s.login, true);
-          subscriptions.set(s.login, { tier: 'free', status: 'none', periodEnd: 0 });
-          log.info(`Ripristino: #${s.login} è community → bot riacceso (un trial scaduto non deve spegnerlo)`);
-          cambiato = true;
-        }
-      }
+  for (const s of subscriptions.scaduti(ora)) {
+    subscriptions.set(s.login, { tier: 'free', status: 'none', pacchetti: [], periodEnd: s.current_period_end });
+    log.info(`Prova finita per #${s.login}: torna all'Essenziale`);
+    cambiato = true;
+  }
+
+  const listaSito = attivi instanceof Set && attivi.size > 0;
+  if (!listaSito) return cambiato;
+  for (const s of streamers.list()) {
+    if (s.manuale) continue;
+    if (attivi.has(s.login)) {
+      if (s.grazia_fino) streamers.setGrazia(s.login, 0);
+      if (s.status === 'disabled') { streamers.setStatus(s.login, 'approved'); log.info(`#${s.login} riconfermato dal sito → riapprovato`); cambiato = true; }
+      if (!s.community && (s.status === 'approved' || s.status === 'disabled')) { streamers.markCommunity(s.login); log.info(`#${s.login} è nella lista del sito → community`); cambiato = true; }
+      continue;
     }
-
-    // 1) Trial "settimana gratis" scaduti: si azzera il trial (torna al piano
-    //    gratis). NON tocchiamo MAI `bot_enabled`: se la persona è comunque
-    //    abilitata dal sito (community) il bot deve restare acceso. Se l'accesso
-    //    veniva SOLO dal trial, a spegnerlo ci pensa il punto 2 in base alla lista
-    //    del sito (setStatus 'disabled'), revoca più pulita che non si scontra con
-    //    l'interruttore on/off dello streamer.
-    for (const s of subscriptions.scaduti()) {
-      subscriptions.set(s.login, { tier: 'free', status: 'canceled', periodEnd: s.current_period_end });
-      log.info(`Trial promo scaduto per #${s.login}: torna al piano gratis`);
+    if (s.status === 'disabled' && s.grazia_fino === -1) {
+      streamers.setStatus(s.login, 'approved'); streamers.setGrazia(s.login, 0);
+      log.info(`#${s.login} era spento da una grazia scaduta: riapprovato, sull'Essenziale`);
+      cambiato = true;
+      continue;
+    }
+    if (!s.community || s.status !== 'approved') continue;
+    const scad = s.grazia_fino > 0 ? s.grazia_fino : (ora + GRACE_MS);
+    if (s.grazia_fino <= 0 && GRACE_MS > 0) {
+      streamers.setGrazia(s.login, scad);
+      log.info(`#${s.login} non confermato dal sito: grazia di ${GRACE_DAYS}g (scade ${new Date(scad).toISOString()})`);
+    } else if (ora >= scad) {
+      streamers.unmarkCommunity(s.login); streamers.setGrazia(s.login, -1);
+      log.info(`Grazia scaduta per #${s.login}: torna all'Essenziale`);
       cambiato = true;
     }
+  }
+  return cambiato;
+}
 
-    // 2) GRAZIA + revoca in base alla lista del sito. Chi non è più nella lista NON
-    //    viene spento subito: parte un PERIODO DI GRAZIA (GRACE_DAYS, default 7). Se
-    //    rientra prima, la grazia si azzera; se scade, allora si disabilita.
-    //    Esenti: gli abbonati Stripe e chi è gestito a MANO dall'admin (manuale=1).
-    //    Salta tutto se il sito è muto/lista vuota (disguido → non revocare nulla).
-    //    Ripristina anche i community disabilitati per errore dal vecchio revoke secco.
-    if (listaSito) {
-      const ora = Date.now();
-      for (const s of streamers.list()) {
-        if (s.manuale) continue;                       // stato deciso dall'admin: intoccabile
-        if (subscriptions.attivo(s.login)) continue;   // Stripe: non dipende dal sito
-        if (attivi.has(s.login)) {                     // riconfermato dal sito
-          if (s.grazia_fino) streamers.setGrazia(s.login, 0);
-          if (s.status === 'disabled') { streamers.setStatus(s.login, 'approved'); log.info(`#${s.login} riconfermato dal sito → riapprovato`); cambiato = true; }
-          continue;
-        }
-        // NON è nella lista del sito
-        if (s.status === 'approved') {
-          const scad = s.grazia_fino > 0 ? s.grazia_fino : (ora + GRACE_MS);
-          if (s.grazia_fino <= 0 && GRACE_MS > 0) { streamers.setGrazia(s.login, scad); log.info(`#${s.login} non confermato dal sito: grazia di ${GRACE_DAYS}g (scade ${new Date(scad).toISOString()})`); }
-          else if (ora >= scad) { streamers.setStatus(s.login, 'disabled'); streamers.setGrazia(s.login, -1); log.info(`Grazia scaduta per #${s.login}: bot disattivato`); cambiato = true; }
-          // altrimenti: in grazia, resta approved
-        } else if (s.status === 'disabled' && s.community && s.grazia_fino === 0) {
-          // community disabilitato per errore dal vecchio revoke immediato (grazia mai
-          // partita): lo rimettiamo approved dandogli la grazia piena.
-          streamers.setStatus(s.login, 'approved'); streamers.setGrazia(s.login, ora + GRACE_MS);
-          log.info(`Ripristino con grazia: #${s.login} community disabilitato per errore → riapprovato per ${GRACE_DAYS}g`);
-          cambiato = true;
-        }
-      }
-    }
-
-    if (cambiato) Promise.resolve(manager?.syncChannels?.()).catch(() => {});
+// Ogni 5 minuti chiede al sito chi e' ancora abilitato e fa la ronda. Se il
+// sito non risponde, non tocca nulla. Ritorna una funzione per fermare il ciclo.
+export function startApprovalSync({ manager, everyMs = 5 * 60_000 } = {}) {
+  async function giro() {
+    const attivi = await fetchApproved();
+    if (giroCancello(attivi)) Promise.resolve(manager?.syncChannels?.()).catch(() => {});
   }
   const timer = setInterval(() => giro().catch(() => {}), everyMs);
   timer.unref?.();

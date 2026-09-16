@@ -1092,8 +1092,13 @@ const ACCOUNT = {
     { p: ['Giochi, effetti e richieste musicali erano extra a pagamento: ora stanno nell\'Essenziale. Chi li aveva comprati non deve fare niente, e può disdirli dal portale quando vuole.'] },
     { p: ['Il principio è sempre lo stesso: <strong>spegnere un extra non cancella niente di tuo</strong>. Comandi, monete, effetti caricati, classifiche e impostazioni restano dove sono, e riaccendendo l\'extra ritrovi tutto com\'era.'] },
 
+    { h2: 'Aggiungere un extra' },
+    { p: ['Si fa dalla scheda stessa, sotto «Puoi aggiungere»: spunti quello che manca, il totale è quello che pagherai in più al mese, e il tasto lo attiva. Sull\'Essenziale il totale comprende il Base.'] },
+    { p: ['Chi ha già il Base <strong>non lo ripaga</strong>: l\'extra entra nell\'abbonamento che c\'è, e i giorni che restano del mese vanno nella prossima fattura, in proporzione.'] },
+
     { h2: 'Cambiare, mettere in pausa, disdire' },
     { p: ['Il tasto «Gestisci» apre il <strong>portale dei pagamenti</strong>: fatture, carta e disdetta stanno lì. Non serve scriverci: la disdetta è un pulsante.'] },
+    { p: ['Se un rinnovo non passa, la scheda lo dice e il tasto porta al portale per aggiornare la carta. Nel frattempo sei sull\'Essenziale; appena il pagamento passa, le funzioni tornano da sole.'] },
     { p: ['Se disdici, l\'abbonamento resta attivo <strong>fino alla fine del periodo già pagato</strong>, poi il canale torna all\'Essenziale. Niente si cancella.'] },
 
     { h2: 'Moderatori' },
@@ -1108,7 +1113,7 @@ const ACCOUNT = {
 
     { h2: 'Domande che arrivano quando si guarda il prezzo' },
     { ul: [
-      '<strong>Il bot smette se non pago?</strong> No. L\'Essenziale non scade.',
+      '<strong>Il bot smette se non pago?</strong> No. L\'Essenziale non scade, e il bot resta in chat anche se un abbonamento finisce o un rinnovo non passa.',
       '<strong>Serve la carta per registrarsi?</strong> No, e nemmeno per usare l\'Essenziale.',
       '<strong>Posso accendere un extra per un mese solo?</strong> Sì: si accende e si spegne quando vuoi, e quello che hai creato resta.',
     ] },
@@ -1121,6 +1126,8 @@ const ACCOUNT = {
     { d: 'Moderavo già un canale: devo aspettare che mi mandi il link?', r: 'No. Nella scheda Stato scrivi il nome del canale che moderi e mandi la richiesta. Se il canale è su Twitch la conferma è automatica, e allo streamer arriva già verificata.' },
     { d: 'Posso avere il bot su due canali?', r: 'Ogni canale ha il suo abbonamento, perché ogni canale ha la sua chat, le sue monete e i suoi comandi.' },
     { d: 'Dove vedo quanto pago davvero?', r: 'Nella scheda Abbonamento in cima, e nel portale dei pagamenti con le fatture.' },
+    { d: 'Ho già il Base e voglio un extra: pago di nuovo il Base?', r: 'No. L\'extra entra nell\'abbonamento che hai, e paghi solo lui: la parte di mese che resta la trovi nella prossima fattura.' },
+    { d: 'Ho pagato ma il pannello non lo vede ancora.', r: 'Al ritorno dal pagamento il piano si accende appena Stripe conferma l\'incasso: con la carta è subito, con un bonifico può volerci qualche giorno. Se dopo il messaggio «pagamento in corso» non cambia niente, scrivi ad andryxify.' },
   ],
 };
 

@@ -247,9 +247,30 @@ async function caricaStato() {
 
   if (new URLSearchParams(location.search).get('promo') === '1') {
 
-    toast(L('Hai vinto una prova gratuita — i dettagli sono qui sopra.', 'You won a free trial — the details are right above.', 'Has ganado una prueba gratuita — los detalles están arriba.'));
+    toast(L('Hai vinto una prova gratuita: i dettagli sono qui sopra.', 'You won a free trial: the details are right above.', 'Has ganado una prueba gratuita: los detalles están arriba.'));
     try { history.replaceState(null, '', '/'); } catch {  }
   }
+  esitoAcquistoDaIndirizzo();
+}
+
+function esitoAcquistoDaIndirizzo() {
+  const q = new URLSearchParams(location.search);
+  const ab = q.get('abbonato'), ann = q.get('abbonamento');
+  if (!ab && !ann) return;
+  const dentro = stato?.streamer?.status === 'approved';
+  if (ab === '1') toast(L('Pagamento ricevuto: il tuo piano è attivo.', 'Payment received: your plan is active.', 'Pago recibido: tu plan está activo.') + (dentro ? '' : ' ' + L('Entra con il tuo account e lo trovi acceso.', 'Log in with your account and you will find it on.', 'Entra con tu cuenta y lo encontrarás activo.')));
+  else if (ab === 'attesa') toast(L('Pagamento in corso: appena Stripe conferma, il piano si accende da solo.', 'Payment in progress: as soon as Stripe confirms, the plan switches on by itself.', 'Pago en curso: en cuanto Stripe confirme, el plan se enciende solo.'));
+  else if (ab) toast(L('Non risulta nessun pagamento. Se hai pagato, scrivi ad andryxify.', 'No payment found. If you did pay, message andryxify.', 'No consta ningún pago. Si has pagado, escribe a andryxify.'), 'errore');
+  else if (ann === 'annullato') toast(L('Pagamento annullato: nessun addebito.', 'Payment canceled: no charge.', 'Pago cancelado: sin cargo.'));
+  try { history.replaceState(null, '', '/' + (ab && dentro ? '#sottoscrizione' : '')); } catch {  }
+  if (ab && dentro && stato?.user?.role === 'proprietario') vaiAScheda('sottoscrizione');
+}
+
+async function dopoAcquisto(r) {
+  const nomi = (r.aggiunti || []).map((id) => { const n = NOME_ADDON[id]; return n ? L(n[0], n[1], n[2]) : id; });
+  if (nomi.length) toast(L(`Aggiunto: ${nomi.join(', ')}. È già tuo; i giorni che restano del mese li trovi nella prossima fattura.`, `Added: ${nomi.join(', ')}. It is yours now; the remaining days of the month go on your next invoice.`, `Añadido: ${nomi.join(', ')}. Ya es tuyo; los días que quedan del mes van en la próxima factura.`));
+  else toast(L('Ce l’hai già: non c’era niente da aggiungere.', 'You already have it: nothing to add.', 'Ya lo tienes: no había nada que añadir.'));
+  try { stato = await api('/api/me'); render(); } catch {  }
 }
 
 const _DEMO_CANALI = [
@@ -1357,9 +1378,9 @@ function montaConfiguratore(root, d, { gia = [], suOk = null } = {}) {
     if (b) {
       risp.hidden = false;
       risp.innerHTML = `${_bIco('<path d="M20 6 9 17l-5-5"/>')} ${esc(L(
-        `Col pacchetto «${b.nome}» paghi ${_eur(b.prezzo)} invece di ${_eur(b.somma)} — applicato.`,
-        `With the «${b.nome}» pack you pay ${_eur(b.prezzo)} instead of ${_eur(b.somma)} — applied.`,
-        `Con el paquete «${b.nome}» pagas ${_eur(b.prezzo)} en vez de ${_eur(b.somma)} — aplicado.`))}`;
+        `Col pacchetto «${b.nome}» paghi ${_eur(b.prezzo)} invece di ${_eur(b.somma)}: applicato.`,
+        `With the «${b.nome}» pack you pay ${_eur(b.prezzo)} instead of ${_eur(b.somma)}: applied.`,
+        `Con el paquete «${b.nome}» pagas ${_eur(b.prezzo)} en vez de ${_eur(b.somma)}: aplicado.`))}`;
     } else risp.hidden = true;
     vai.disabled = posseduti.size > 0 && !ids.length;
     box.dataset.bundle = b ? b.id : '';
@@ -2081,9 +2102,7 @@ function renderHero() {
   rivelaCarte();
   caricaPiani();
 
-  const q = new URLSearchParams(location.search);
-  if (q.get('abbonato') === '1') toast(L('Abbonamento attivo, benvenuto!', 'Subscription active, welcome!', 'Suscripción activa, ¡bienvenido!'));
-  else if (q.get('abbonamento') === 'annullato') toast(L('Checkout annullato — nessun addebito.', 'Checkout canceled — no charge.', 'Pago cancelado — sin cargo.'));
+  esitoAcquistoDaIndirizzo();
 }
 
 const SVG_PIANI = {
@@ -2172,7 +2191,7 @@ async function caricaPiani() {
 
     <div class="vt-comp-guscio vt-rivela" id="vt-comp-guscio"></div>
 
-    <p class="vt-community vt-rivela">${L('<strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot è <strong>gratis e completo</strong> per te — non ti serve nessun piano.', '<strong>Already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community?</strong> SocialBot is <strong>free and complete</strong> for you — no plan needed.', '<strong>¿Ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot es <strong>gratis y completo</strong> para ti — no necesitas ningún plan.')}</p>`;
+    <p class="vt-community vt-rivela">${L('<strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot è <strong>gratis e completo</strong> per te: non ti serve nessun piano.', '<strong>Already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community?</strong> SocialBot is <strong>free and complete</strong> for you: no plan needed.', '<strong>¿Ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot es <strong>gratis y completo</strong> para ti: no necesitas ningún plan.')}</p>`;
 
   const guscio = box.querySelector('#vt-comp-guscio');
   guscio.innerHTML = configuratoreHtml(dati, { titolo: L('Aggiungi i super-poteri', 'Add the super-powers', 'Añade los súper-poderes') });
@@ -2406,7 +2425,7 @@ const DESC = {
 const descScheda = (id) => { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) : ''; };
 
 const SCHEDA_FUNZ = { giochi: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', effetti: 'effetti', sondaggi: 'effetti', studio: 'studio' };
-const FUNZ_ADDON = { giochi: 'giochi', musica: 'musica', voce: 'voce', notifiche: 'notifiche', effetti: 'effetti', clipAuto: 'clip', studio: 'base', moderatori: 'base' };
+const FUNZ_ADDON = { giochi: 'giochi', musica: 'musica', voce: 'voce', notifiche: 'base', effetti: 'effetti', clipAuto: 'clip', studio: 'base', moderatori: 'base' };
 
 const NOME_ADDON = {
   base: ['Base', 'Base', 'Base'],
@@ -2453,7 +2472,7 @@ function muroPacchetto(funz, cosa, addon = FUNZ_ADDON[funz]) {
   const compra = !!stato?.stripeAttivo && !!addon;
   return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${esc(cosa)} ${L('non è nel tuo piano.', 'is not in your plan.', 'no está en tu plan.')}</span>
     ${compra ? `<button type="button" class="btn secondario" data-sblocca="${esc(addon)}">${L('Sblocca con', 'Unlock with', 'Desbloquea con')} «${esc(nome)}»</button>`
-      : `<a href="#stato" data-scheda="stato">${L('Vedi i piani', 'See the plans', 'Ver los planes')}</a>`}
+      : `<a href="#sottoscrizione" data-scheda="sottoscrizione">${L('Vedi i piani', 'See the plans', 'Ver los planes')}</a>`}
   </div>`;
 }
 
@@ -2489,7 +2508,7 @@ function paginaBloccata(id) {
         ? `<button class="btn grande" data-sblocca="${esc(addon)}">${_bIco(ICO.effetti)}${L('Sblocca con', 'Unlock with', 'Desbloquea con')} «${esc(nomePacchetto)}»</button>`
         : `<span class="suggerimento">${L('Questa funzione fa parte del pacchetto', 'This feature is part of the package', 'Esta función forma parte del paquete')} <strong>${esc(nomePacchetto)}</strong>. ${L('Chiedi ad andryxify di abilitarla.', 'Ask andryxify to enable it.', 'Pide a andryxify que la habilite.')}</span>`}
     </div>
-    ${puoComprare ? `<p class="suggerimento spazio-sopra"><a href="#stato" data-scheda="stato">${L('Vedi tutti i piani e i pacchetti →', 'See all plans and packages →', 'Ver todos los planes y paquetes →')}</a></p>` : ''}
+    ${puoComprare ? `<p class="suggerimento spazio-sopra"><a href="#sottoscrizione" data-scheda="sottoscrizione">${L('Vedi tutti i piani e i pacchetti', 'See all plans and packages', 'Ver todos los planes y paquetes')}</a></p>` : ''}
   </div>`;
 }
 
@@ -2498,7 +2517,8 @@ function sbloccaAddon(addon) {
     try {
       const r = await api('/api/abbonamento/checkout', { method: 'POST', body: { pacchetti: [addon] } });
       if (r?.url) location.href = r.url;
-      else toast(L('Checkout non disponibile al momento.', 'Checkout not available right now.', 'Pago no disponible por el momento.'), 'errore');
+      else if (r?.ok) await dopoAcquisto(r);
+      else toast(L('Il pagamento non si apre in questo momento: riprova fra poco.', 'Payment cannot open right now: try again in a bit.', 'El pago no se abre en este momento: inténtalo en un rato.'), 'errore');
     } catch (e) {
       if (/non autenticato/i.test(e?.message || '')) { location.href = '/accedi?pacchetti=' + encodeURIComponent(addon); return; }
       throw e;
@@ -2527,7 +2547,7 @@ const GUIDE = {
   regia: { serve: ['Gestire la diretta dal pannello: titolo, categoria, marker e le azioni rapide, senza aprire Twitch.', 'Run your stream from the panel: title, category, markers and quick actions, without opening Twitch.', 'Gestionar el directo desde el panel: título, categoría, marcadores y acciones rápidas, sin abrir Twitch.'],
     come: [['Cambia titolo e categoria e salva: si aggiornano su Twitch subito.', 'Change title and category and save: they update on Twitch right away.', 'Cambia título y categoría y guarda: se actualizan en Twitch al instante.', '#regia-titolo'], ['Usa le azioni rapide durante la live (marker, clip, annunci).', 'Use the quick actions during the stream (marker, clip, announcements).', 'Usa las acciones rápidas durante el directo (marcador, clip, anuncios).', '#regia-clip'], ['Tieni il pannello aperto su un secondo schermo mentre streami.', 'Keep the panel open on a second screen while you stream.', 'Ten el panel abierto en una segunda pantalla mientras emites.', '']] },
   sottoscrizione: { serve: ['Vedere cosa hai attivo, cosa comprende, quanto paghi e come cambiarlo o annullarlo.', 'See what you have active, what it includes, what you pay and how to change or cancel it.', 'Ver qué tienes activo, qué incluye, cuánto pagas y cómo cambiarlo o cancelarlo.'],
-    come: [['In cima leggi il piano attuale e, se è una prova, fino a quando dura.', 'At the top you read your current plan and, if it’s a trial, how long it lasts.', 'Arriba lees tu plan actual y, si es una prueba, hasta cuándo dura.', '#sott-box'], ['Sotto vedi quali funzioni sono accese e quali no, senza gerghi.', 'Below you see which features are on and which aren’t, no jargon.', 'Debajo ves qué funciones están activas y cuáles no, sin jerga.', ''], ['Da «Gestisci» apri il portale dei pagamenti: fatture, carta e disdetta.', 'From “Manage” you open the payment portal: invoices, card and cancellation.', 'Desde «Gestionar» abres el portal de pagos: facturas, tarjeta y cancelación.', '']] },
+    come: [['In cima leggi il piano attuale e, se è una prova, fino a quando dura.', 'At the top you read your current plan and, if it’s a trial, how long it lasts.', 'Arriba lees tu plan actual y, si es una prueba, hasta cuándo dura.', '#sott-box'], ['Sotto vedi quali funzioni sono accese e quali no, senza gerghi.', 'Below you see which features are on and which aren’t, no jargon.', 'Debajo ves qué funciones están activas y cuáles no, sin jerga.', ''], ['Sotto «Puoi aggiungere» spunti gli extra che ti mancano: il totale è quello che paghi in più, e il tasto li attiva.', 'Under “You can add” you tick the extras you are missing: the total is what you pay extra, and the button switches them on.', 'Bajo «Puedes añadir» marcas los extras que te faltan: el total es lo que pagas de más, y el botón los activa.', ''], ['Da «Gestisci» apri il portale dei pagamenti: fatture, carta e disdetta.', 'From “Manage” you open the payment portal: invoices, card and cancellation.', 'Desde «Gestionar» abres el portal de pagos: facturas, tarjeta y cancelación.', '']] },
   pagina: { serve: ['Avere una pagina pubblica con tutti i tuoi link (Twitch, social, Discord, donazioni) da mettere nella bio di Instagram o TikTok.', 'Have a public page with all your links (Twitch, socials, Discord, donations) to put in your Instagram or TikTok bio.', 'Tener una página pública con todos tus enlaces (Twitch, redes, Discord, donaciones) para poner en la bio de Instagram o TikTok.'],
     come: [['Scrivi titolo e sottotitolo: è quello che si legge in cima. La foto la prendo dal tuo profilo Twitch.', 'Write a headline and tagline: that’s what people read at the top. I take the picture from your Twitch profile.', 'Escribe título y subtítulo: es lo que se lee arriba. La foto la tomo de tu perfil de Twitch.', '#lp-headline'], ['Aggiungi i link con etichetta e indirizzo: l’icona giusta la riconosco dall’indirizzo.', 'Add your links with a label and address: I recognise the right icon from the address.', 'Añade los enlaces con etiqueta y dirección: el icono correcto lo reconozco por la dirección.', '#lp-blocchi'], ['Metti anche video e musica (YouTube, Spotify, TikTok…) e il blocco “La mia diretta”: il player resta lì e dice da sé se sei online.', 'Add video and music too (YouTube, Spotify, TikTok…) and the “My live stream” block: the player stays there and says by itself whether you are online.', 'Pon también vídeo y música (YouTube, Spotify, TikTok…) y el bloque “Mi directo”: el reproductor se queda ahí y dice él mismo si estás online.', '#lp-blocchi'], ['Scegli stile e colori, salva e apri l’anteprima.', 'Pick style and colours, save and open the preview.', 'Elige estilo y colores, guarda y abre la vista previa.', '#lp-salva']] },
   donazioni: { serve: ['Ricevere donazioni dalla tua pagina link, sul tuo conto, con l\'avviso in diretta e il grazie in chat che partono da soli.', 'Receive donations from your link page, on your own account, with the on-stream alert and the chat thanks firing on their own.', 'Recibir donaciones desde tu página de enlaces, en tu propia cuenta, con el aviso en directo y el gracias en el chat que salen solos.'],
@@ -3435,7 +3455,7 @@ function bannerProvaHtml() {
     <p>${L('Ti è stata assegnata una <strong>prova gratuita</strong> al primo accesso: per qualche giorno hai tutte le funzioni sbloccate, senza aver pagato nulla e senza carta.', 'You were given a <strong>free trial</strong> on your first login: for a few days every feature is unlocked, without paying anything and with no card.', 'Se te ha asignado una <strong>prueba gratuita</strong> en tu primer acceso: durante unos días tienes todas las funciones desbloqueadas, sin pagar nada y sin tarjeta.')}
     ${p.fine ? `<br>${L('Finisce il', 'It ends on', 'Termina el')} <strong class="primo-piano">${esc(dataIt(p.fine))}</strong>.` : ''}</p>
     <p class="suggerimento spazio-sopra">${L('Quando finisce <strong>non perdi nulla di quello che hai configurato</strong>: torni al pacchetto <strong>Essenziale</strong> (gratuito) e le funzioni in più si limitano a spegnersi. Puoi riaccenderle quando vuoi scegliendo un pacchetto.', 'When it ends <strong>you lose nothing you configured</strong>: you go back to the <strong>Essenziale</strong> package (free) and the extra features simply switch off. You can turn them back on any time by picking a package.', 'Cuando termina <strong>no pierdes nada de lo que has configurado</strong>: vuelves al paquete <strong>Essenziale</strong> (gratuito) y las funciones extra simplemente se apagan. Puedes reactivarlas cuando quieras eligiendo un paquete.')}</p>
-    <p class="spazio-sopra"><a class="btn secondario" href="#stato" data-scheda="stato">${L('Vedi i pacchetti', 'See the packages', 'Ver los paquetes')}</a></p>
+    <p class="spazio-sopra"><a class="btn secondario" href="#sottoscrizione" data-scheda="sottoscrizione">${L('Vedi i pacchetti', 'See the packages', 'Ver los paquetes')}</a></p>
   </div>`;
 }
 
@@ -4446,16 +4466,19 @@ function pannelloStato() {
       return `
     <div class="carta">
       <h2>${_hIco(ICO.carta)}${L('Abbonamento', 'Subscription', 'Suscripción')}</h2>
-      <p>${L('Piano attuale:', 'Current plan:', 'Plan actual:')} <strong class="primo-piano">${esc(nomi[tier] || '—')}</strong>${(() => {
+      <p>${L('Piano attuale:', 'Current plan:', 'Plan actual:')} <strong class="primo-piano">${esc(nomi[tier] || tier)}</strong>${(() => {
         const p = provaInCorso();
-        if (p) return ` <span class="badge giallo">${L('prova gratuita', 'free trial', 'prueba gratuita')}</span>` + (p.fine ? ` — ${L('fino al', 'until', 'hasta el')} <strong class="primo-piano">${esc(dataIt(p.fine))}</strong>, ${L('poi torni all\'Essenziale (gratuito).', 'then you go back to Essenziale (free).', 'luego vuelves a Essenziale (gratuito).')}` : '');
-        if (tier === 'community') return L(' — accesso completo, riservato ai membri abilitati di andryxify.it.', ' — full access, reserved for enabled andryxify.it members.', ' — acceso completo, reservado a los miembros habilitados de andryxify.it.');
-        if (tier === 'free') return L(' — gratuito: comandi illimitati, moderazione, overlay e contatori. Nessuna scadenza.', ' — free: unlimited commands, moderation, overlay and counters. No expiry.', ' — gratuito: comandos ilimitados, moderación, overlay y contadores. Sin caducidad.');
+        if (p) return ` <span class="badge giallo">${L('prova gratuita', 'free trial', 'prueba gratuita')}</span>` + (p.fine ? `, ${L('fino al', 'until', 'hasta el')} <strong class="primo-piano">${esc(dataIt(p.fine))}</strong>: ${L('poi torni all\'Essenziale, gratuito.', 'then you go back to Essenziale, free.', 'luego vuelves a Essenziale, gratuito.')}` : '');
+        if (tier === 'community') return L(': accesso completo, riservato ai membri abilitati di andryxify.it.', ': full access, reserved for enabled andryxify.it members.', ': acceso completo, reservado a los miembros habilitados de andryxify.it.');
+        if (tier === 'free') return L(': gratuito, senza scadenza. Comandi illimitati, moderazione, overlay e contatori.', ': free, no expiry. Unlimited commands, moderation, overlay and counters.', ': gratuito, sin caducidad. Comandos ilimitados, moderación, overlay y contadores.');
         return '';
       })()}</p>
-      ${pagato
+      ${pagato || stato.abbonamento?.cliente
         ? `<p class="spazio-sopra"><button class="btn secondario" id="btn-portale-abbonamento">${L('Gestisci abbonamento', 'Manage subscription', 'Gestionar suscripción')}</button></p>`
-        : (tier === 'community' ? '' : `<p class="suggerimento spazio-sopra">${L('Gli abbonamenti self-service stanno arrivando.', 'Self-service subscriptions are coming soon.', 'Las suscripciones self-service están al llegar.')}</p>`)}
+        : ''}
+      ${tier === 'community' || pagato ? '' : `<p class="suggerimento spazio-sopra">${stato?.stripeAttivo
+        ? `${L('Quello che manca lo aggiungi un extra alla volta, dalla scheda', 'What you are missing you add one extra at a time, from the', 'Lo que te falta lo añades de extra en extra, desde la pestaña')} <a href="#sottoscrizione" data-scheda="sottoscrizione">${L('Abbonamento', 'Subscription', 'Suscripción')}</a>.`
+        : L('I pagamenti dal pannello non sono ancora aperti: per un extra chiedi ad andryxify.', 'Payments from the panel are not open yet: for an extra, ask andryxify.', 'Los pagos desde el panel aún no están abiertos: para un extra, pide a andryxify.')}</p>`}
     </div>`;
     })() : ''}
     <div class="carta">
@@ -12566,7 +12589,14 @@ async function caricaSottoscrizione() {
   const tier = stato.tier || 'free';
   const prova = provaInCorso();
   const ab = stato.abbonamento || null;
-  const mieiPacchetti = new Set(ab?.pacchetti || []);
+  const abAttivo = !!ab?.attivo;
+  const cliente = !!ab?.cliente;
+  const st = ab?.status || '';
+  const guasto = cliente && !abAttivo && ['past_due', 'unpaid', 'incomplete'].includes(st);
+  const pausa = cliente && !abAttivo && st === 'paused';
+  const finito = cliente && !abAttivo && !guasto && !pausa;
+  const provaFinita = !cliente && !abAttivo && !!ab && Number(ab.fine) > 0 && Number(ab.fine) < Date.now() && tier !== 'community';
+  const mieiPacchetti = new Set(abAttivo && !prova ? (ab.pacchetti || []) : []);
   const nomi = { community: 'Community', free: 'Essenziale', base: 'Base', pro: 'Pro (storico)' };
   const f = stato.funzioni || {};
 
@@ -12586,6 +12616,26 @@ async function caricaSottoscrizione() {
     riga = L(`Hai il pacchetto <strong>${nomi[tier]}</strong> attivo${ab?.fine ? `, rinnovo il <strong>${esc(dataIt(ab.fine))}</strong>` : ''}.`,
       `You have the <strong>${nomi[tier]}</strong> package active${ab?.fine ? `, renewing on <strong>${esc(dataIt(ab.fine))}</strong>` : ''}.`,
       `Tienes el paquete <strong>${nomi[tier]}</strong> activo${ab?.fine ? `, renovación el <strong>${esc(dataIt(ab.fine))}</strong>` : ''}.`);
+  } else if (guasto) {
+    tono = 'giallo';
+    riga = L('L\'ultimo pagamento <strong>non è andato a buon fine</strong>, quindi per ora sei sull\'<strong>Essenziale</strong>. Aggiorna la carta dal portale qui sotto: appena il pagamento passa, le funzioni tornano da sole.',
+      'The last payment <strong>did not go through</strong>, so for now you’re on <strong>Essenziale</strong>. Update your card from the portal below: as soon as the payment goes through, the features come back on their own.',
+      'El último pago <strong>no se ha completado</strong>, así que por ahora estás en <strong>Essenziale</strong>. Actualiza la tarjeta desde el portal de abajo: en cuanto el pago pase, las funciones vuelven solas.');
+  } else if (pausa) {
+    tono = 'giallo';
+    riga = L('L\'abbonamento è <strong>in pausa</strong>: sei sull\'<strong>Essenziale</strong> finché non lo riprendi dal portale qui sotto.',
+      'Your subscription is <strong>paused</strong>: you’re on <strong>Essenziale</strong> until you resume it from the portal below.',
+      'La suscripción está <strong>en pausa</strong>: estás en <strong>Essenziale</strong> hasta que la reanudes desde el portal de abajo.');
+  } else if (finito) {
+    tono = '';
+    riga = L(`L'abbonamento è <strong>finito</strong>${ab?.fine ? ` il <strong>${esc(dataIt(ab.fine))}</strong>` : ''} e sei tornato all'<strong>Essenziale</strong>: niente di tuo è stato cancellato. Se vuoi riprendere, qui sotto scegli cosa riaccendere.`,
+      `Your subscription <strong>ended</strong>${ab?.fine ? ` on <strong>${esc(dataIt(ab.fine))}</strong>` : ''} and you’re back on <strong>Essenziale</strong>: nothing of yours was deleted. To pick it up again, choose below what to switch back on.`,
+      `La suscripción <strong>terminó</strong>${ab?.fine ? ` el <strong>${esc(dataIt(ab.fine))}</strong>` : ''} y has vuelto a <strong>Essenziale</strong>: nada tuyo se ha borrado. Si quieres retomarla, elige abajo qué volver a encender.`);
+  } else if (provaFinita) {
+    tono = '';
+    riga = L(`La prova gratuita è <strong>finita</strong> il <strong>${esc(dataIt(ab.fine))}</strong>: sei sull'<strong>Essenziale</strong>, senza addebiti. Quello che ti manca lo riaccendi qui sotto.`,
+      `Your free trial <strong>ended</strong> on <strong>${esc(dataIt(ab.fine))}</strong>: you’re on <strong>Essenziale</strong>, with no charges. Whatever you miss, you switch back on below.`,
+      `La prueba gratuita <strong>terminó</strong> el <strong>${esc(dataIt(ab.fine))}</strong>: estás en <strong>Essenziale</strong>, sin cargos. Lo que te falte lo vuelves a encender abajo.`);
   } else {
     tono = '';
     riga = L('Sei sull\'<strong>Essenziale</strong>: gratuito, senza scadenza e senza carta. Comandi e automazioni illimitati, moderazione, overlay per la diretta e contatori a schermo sono già tuoi.',
@@ -12620,19 +12670,36 @@ async function caricaSottoscrizione() {
       ${mio ? `<span class="badge verde">${L('attivo', 'active', 'activo')}</span>` : ''}
     </div>`;
 
-  const haCliente = !!(tier === 'base' || tier === 'pro') && !prova;
+  const vende = !!stato.stripeAttivo && !!piani && tier !== 'community' && !guasto && !pausa;
+  const titoloComp = mieiPacchetti.size || (abAttivo && !prova)
+    ? L('Gli extra che ti mancano', 'The extras you are missing', 'Los extras que te faltan')
+    : prova ? L('Per continuare dopo la prova', 'To carry on after the trial', 'Para seguir después de la prueba')
+    : L('Il Base, più quello che vuoi', 'Base, plus whatever you want', 'Base, más lo que quieras');
+  const aggiungi = vende
+    ? `<h3 class="spazio-sopra">${L('Puoi aggiungere', 'You can add', 'Puedes añadir')}</h3>
+       ${configuratoreHtml(piani, { gia: [...mieiPacchetti], titolo: titoloComp })}`
+    : (altri.length && tier !== 'community' ? `<h3 class="spazio-sopra">${L('Puoi aggiungere', 'You can add', 'Puedes añadir')}</h3>
+      <div class="sott-pacchetti">${altri.map((a) => cardAddon(a, false)).join('')}</div>
+      <p class="suggerimento">${guasto || pausa
+        ? L('Prima sistema il pagamento dal portale qui sotto: poi aggiungi quello che vuoi.', 'First sort out the payment from the portal below: then add whatever you want.', 'Primero arregla el pago desde el portal de abajo: luego añade lo que quieras.')
+        : L('I pagamenti dal pannello non sono ancora aperti: per un extra chiedi ad andryxify.', 'Payments from the panel are not open yet: for an extra, ask andryxify.', 'Los pagos desde el panel aún no están abiertos: para un extra, pide a andryxify.')}</p>` : '');
+
   const gestione = tier === 'community'
     ? `<p class="suggerimento">${L('Niente da gestire: il tuo accesso arriva dalla community, non da un pagamento.', 'Nothing to manage: your access comes from the community, not from a payment.', 'Nada que gestionar: tu acceso viene de la comunidad, no de un pago.')}</p>`
-    : haCliente
-      ? `<p><button class="btn" id="sott-portale">${_bIco(ICO.carta)}${L('Gestisci, cambia carta o annulla', 'Manage, change card or cancel', 'Gestionar, cambiar tarjeta o cancelar')}</button></p>
-         <p class="suggerimento">${L('Si apre il portale sicuro dei pagamenti: lì trovi le <strong>fatture</strong>, puoi cambiare la <strong>carta</strong> e <strong>annullare</strong>. Se annulli resti attivo fino alla fine del periodo già pagato, poi torni all\'<strong>Essenziale</strong>: <strong>niente di quello che hai configurato viene cancellato</strong>, le funzioni in più si limitano a spegnersi.', 'The secure payment portal opens: there you find your <strong>invoices</strong>, you can change the <strong>card</strong> and <strong>cancel</strong>. If you cancel you stay active until the end of the period you already paid for, then you go back to <strong>Essenziale</strong>: <strong>nothing you configured is deleted</strong>, the extra features simply switch off.', 'Se abre el portal seguro de pagos: allí están tus <strong>facturas</strong>, puedes cambiar la <strong>tarjeta</strong> y <strong>cancelar</strong>. Si cancelas sigues activo hasta el final del periodo ya pagado, luego vuelves a <strong>Essenziale</strong>: <strong>nada de lo que has configurado se borra</strong>, las funciones extra simplemente se apagan.')}</p>`
+    : cliente
+      ? `<p><button class="btn" id="sott-portale">${_bIco(ICO.carta)}${guasto ? L('Aggiorna la carta', 'Update the card', 'Actualizar la tarjeta') : abAttivo && !prova ? L('Gestisci, cambia carta o annulla', 'Manage, change card or cancel', 'Gestionar, cambiar tarjeta o cancelar') : L('Apri il portale dei pagamenti', 'Open the payment portal', 'Abrir el portal de pagos')}</button></p>
+         <p class="suggerimento">${abAttivo && !prova
+           ? L('Si apre il portale sicuro dei pagamenti: lì trovi le <strong>fatture</strong>, puoi cambiare la <strong>carta</strong> e <strong>annullare</strong>. Se annulli resti attivo fino alla fine del periodo già pagato, poi torni all\'<strong>Essenziale</strong>: <strong>niente di quello che hai configurato viene cancellato</strong>, le funzioni in più si limitano a spegnersi.', 'The secure payment portal opens: there you find your <strong>invoices</strong>, you can change the <strong>card</strong> and <strong>cancel</strong>. If you cancel you stay active until the end of the period you already paid for, then you go back to <strong>Essenziale</strong>: <strong>nothing you configured is deleted</strong>, the extra features simply switch off.', 'Se abre el portal seguro de pagos: allí están tus <strong>facturas</strong>, puedes cambiar la <strong>tarjeta</strong> y <strong>cancelar</strong>. Si cancelas sigues activo hasta el final del periodo ya pagado, luego vuelves a <strong>Essenziale</strong>: <strong>nada de lo que has configurado se borra</strong>, las funciones extra simplemente se apagan.')
+           : guasto
+             ? L('Si apre il portale sicuro dei pagamenti: lì aggiorni la carta e paghi la fattura rimasta in sospeso. Il resto si riaccende da solo.', 'The secure payment portal opens: there you update the card and pay the invoice left pending. The rest switches back on by itself.', 'Se abre el portal seguro de pagos: allí actualizas la tarjeta y pagas la factura pendiente. Lo demás se vuelve a encender solo.')
+             : L('Si apre il portale sicuro dei pagamenti: lì trovi le fatture di prima e, se vuoi, riprendi da dove eri.', 'The secure payment portal opens: there you find your past invoices and, if you want, pick up where you left off.', 'Se abre el portal seguro de pagos: allí están las facturas anteriores y, si quieres, retomas donde estabas.')}</p>`
       : `<p class="suggerimento">${prova
         ? L('Non c\'è nulla da annullare: la prova è gratuita e scade da sé, senza addebiti.', 'There’s nothing to cancel: the trial is free and expires on its own, with no charges.', 'No hay nada que cancelar: la prueba es gratuita y caduca sola, sin cargos.')
         : L('Non hai pagamenti attivi, quindi non c\'è nulla da annullare.', 'You have no active payments, so there’s nothing to cancel.', 'No tienes pagos activos, así que no hay nada que cancelar.')}</p>`;
 
   box.innerHTML = `
     <div class="carta ${tono === 'verde' ? '' : tono === 'giallo' ? 'avviso' : 'evidenziata'} sott-testa">
-      <h3>${L('Piano attuale', 'Current plan', 'Plan actual')}: ${esc(nomi[tier] || tier)}${prova ? ` <span class="badge giallo">${L('prova gratuita', 'free trial', 'prueba gratuita')}</span>` : ''}</h3>
+      <h3>${L('Piano attuale', 'Current plan', 'Plan actual')}: ${esc(nomi[tier] || tier)}${prova ? ` <span class="badge giallo">${L('prova gratuita', 'free trial', 'prueba gratuita')}</span>` : ''}${guasto ? ` <span class="badge giallo">${L('pagamento non riuscito', 'payment failed', 'pago fallido')}</span>` : ''}</h3>
       <p>${riga}</p>${accRiga}
     </div>
 
@@ -12643,12 +12710,17 @@ async function caricaSottoscrizione() {
     ${tuoi.length ? `<h3 class="spazio-sopra">${L('I tuoi pacchetti', 'Your packages', 'Tus paquetes')}</h3>
       <div class="sott-pacchetti">${tuoi.map((a) => cardAddon(a, true)).join('')}</div>` : ''}
 
-    ${altri.length && tier !== 'community' ? `<h3 class="spazio-sopra">${L('Puoi aggiungere', 'You can add', 'Puedes añadir')}</h3>
-      <div class="sott-pacchetti">${altri.map((a) => cardAddon(a, false)).join('')}</div>
-      <p class="spazio-sopra"><a class="btn secondario" href="#stato" data-scheda="stato">${L('Scegli i pacchetti', 'Pick packages', 'Elige los paquetes')} →</a></p>` : ''}
+    ${aggiungi}
 
     <h3 class="spazio-sopra">${L('Gestione e disdetta', 'Management and cancellation', 'Gestión y cancelación')}</h3>
     ${gestione}`;
+
+  if (vende) montaConfiguratore(box, piani, { gia: [...mieiPacchetti], suOk: ({ pacchetti, bundle }) => conErrore(async () => {
+    const r = await api('/api/abbonamento/checkout', { method: 'POST', body: { pacchetti, bundle } });
+    if (r?.url) location.href = r.url;
+    else if (r?.ok) await dopoAcquisto(r);
+    else toast(L('Il pagamento non si apre in questo momento: riprova fra poco.', 'Payment cannot open right now: try again in a bit.', 'El pago no se abre en este momento: inténtalo en un rato.'), 'errore');
+  }) });
 
   const bp = document.getElementById('sott-portale');
   if (bp) bp.onclick = () => conErrore(async () => {
