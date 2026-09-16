@@ -1,18 +1,18 @@
 // IL CONTO STRIPE DELLO STREAMER, e i pagamenti che ci arrivano sopra.
 //
-// Stripe Connect, conto «Standard»: lo streamer lo apre (o collega quello che
-// ha gia') dal pannello, Stripe gli chiede identita' e coordinate, e il conto
-// resta suo, con la sua dashboard. Il pagamento nasce SUL SUO CONTO
-// (intestazione Stripe-Account): lui e' l'esercente, i soldi arrivano a lui,
-// le commissioni di Stripe le paga lui sull'incasso, e SocialBot puo'
-// trattenere una quota (application fee), di serie zero. Per la piattaforma
-// un conto Standard non costa niente.
+// Il conto e' SUO: lo apre da solo, lo gestisce da solo, ne vede incassi,
+// ricevute e contestazioni nel suo Dashboard. Nessun Connect, nessun legame
+// con l'account della piattaforma. A noi affida una chiave con restrizioni
+// (sessioni di pagamento e prodotti: niente rimborsi, niente bonifici, niente
+// dati bancari), che sta nella busta del database e che lui revoca quando
+// vuole. Con quella chiave si apre il pagamento sul suo conto e si rilegge
+// se e' andato a buon fine. SocialBot non tocca i soldi e non trattiene niente.
 //
-// La verita' su un pagamento la da' Stripe: la sessione si rilegge con la
-// chiave della piattaforma, e si conta una volta sola grazie al registro
-// (attesa → pagata, un passaggio solo). Niente webhook da configurare: la
-// conferma arriva al ritorno del donatore sulla pagina, e una ronda ogni due
-// minuti rilegge le sessioni ancora aperte, per chi chiude la scheda prima.
+// La verita' su un pagamento la da' Stripe: la sessione si rilegge con la sua
+// chiave, e si conta una volta sola grazie al registro (attesa → pagata, un
+// passaggio solo). Niente webhook da configurare: la conferma arriva al
+// ritorno del donatore sulla pagina, e una ronda ogni due minuti rilegge le
+// sessioni ancora aperte, per chi chiude la scheda prima.
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
 import { contiDonazioni, registroDonazioni } from '../db.js';
@@ -23,30 +23,14 @@ export const SCADENZA_MS = 60 * 60 * 1000;          // una sessione di pagamento
 const TOLLERANZA_MS = 15 * 60 * 1000;               // poi si aspetta ancora un quarto d'ora prima di darla per scaduta
 const RONDA_MS = 2 * 60 * 1000;
 
-// I paesi in cui Stripe apre un conto: quello dello streamer si sceglie prima
-// di collegarlo, perche' Stripe lo chiede alla creazione.
-export const PAESI = [
-  ['IT', 'Italia'], ['AT', 'Austria'], ['BE', 'Belgio'], ['BG', 'Bulgaria'], ['HR', 'Croazia'], ['CY', 'Cipro'],
-  ['CZ', 'Cechia'], ['DK', 'Danimarca'], ['EE', 'Estonia'], ['FI', 'Finlandia'], ['FR', 'Francia'], ['DE', 'Germania'],
-  ['GR', 'Grecia'], ['HU', 'Ungheria'], ['IE', 'Irlanda'], ['LV', 'Lettonia'], ['LT', 'Lituania'], ['LU', 'Lussemburgo'],
-  ['MT', 'Malta'], ['NL', 'Paesi Bassi'], ['NO', 'Norvegia'], ['PL', 'Polonia'], ['PT', 'Portogallo'], ['RO', 'Romania'],
-  ['SK', 'Slovacchia'], ['SI', 'Slovenia'], ['ES', 'Spagna'], ['SE', 'Svezia'], ['CH', 'Svizzera'], ['LI', 'Liechtenstein'],
-  ['GB', 'Regno Unito'], ['GI', 'Gibilterra'], ['US', 'Stati Uniti'], ['CA', 'Canada'], ['MX', 'Messico'], ['BR', 'Brasile'],
-  ['AU', 'Australia'], ['NZ', 'Nuova Zelanda'], ['JP', 'Giappone'], ['SG', 'Singapore'], ['HK', 'Hong Kong'], ['AE', 'Emirati Arabi Uniti'],
-];
-export const paeseOk = (p) => (PAESI.some(([c]) => c === p) ? p : 'IT');
+// Solo una chiave CON RESTRIZIONI (rk_…): la chiave segreta del conto (sk_…)
+// puo' fare tutto, e non deve stare da nessuna parte fuori dal suo Dashboard.
+export const CHIAVE_OK = /^rk_(live|test)_[A-Za-z0-9]{16,}$/;
 
-export const attivo = () => !!config.donazioni?.attivo;
-export const quotaPct = () => Number(config.donazioni?.quotaPct) || 0;
-export const quota = (cent) => Math.round((Number(cent) || 0) * quotaPct() / 100);
-
-// Una chiamata a Stripe con la chiave della piattaforma; con `account` la
-// richiesta vale sul conto dello streamer. Torna { ok, dati } o { ok: false,
-// errore, codice }; non lancia mai.
-async function stripe(metodo, path, { params = null, account = '' } = {}) {
-  if (!attivo()) return { ok: false, errore: 'spento', codice: 'spento' };
-  const headers = { Authorization: 'Bearer ' + config.stripe.secretKey };
-  if (account) headers['Stripe-Account'] = account;
+// Una chiamata a Stripe con la chiave dello streamer. Torna { ok, dati } o
+// { ok: false, errore, codice }; non lancia mai.
+async function stripe(chiave, metodo, path, params = null) {
+  const headers = { Authorization: 'Bearer ' + chiave };
   let body;
   if (params) {
     headers['Content-Type'] = 'application/x-www-form-urlencoded';
@@ -59,89 +43,39 @@ async function stripe(metodo, path, { params = null, account = '' } = {}) {
     if (!r.ok) {
       const errore = dati?.error?.message || String(r.status);
       log.warn(`stripe ${metodo} ${path}: ${errore}`);
-      return { ok: false, errore, codice: dati?.error?.code || String(r.status) };
+      return { ok: false, errore, codice: dati?.error?.code || String(r.status), stato: r.status };
     }
     return { ok: true, dati };
   } catch (e) {
     log.warn(`stripe ${metodo} ${path}: irraggiungibile`, e?.message || e);
-    return { ok: false, errore: 'irraggiungibile', codice: 'rete' };
+    return { ok: false, errore: 'irraggiungibile', codice: 'rete', stato: 0 };
   }
 }
-// Quello che si dice allo streamer quando Stripe non collabora. Il motivo vero
-// va nel log e in `dettaglio`, che il server mostra solo all'amministratore:
-// allo streamer serve sapere che deve riprovare, o chiedere; a chi gestisce
-// serve la frase di Stripe (per esempio: Connect non ancora attivato).
-const SCUSA = 'Stripe non ha risposto come dovrebbe: riprova fra poco. Se continua, scrivilo a chi gestisce il servizio.';
-
-// Collega il conto: se non c'e' lo crea (Standard, nel paese scelto), poi
-// chiede a Stripe la pagina di registrazione e torna il suo indirizzo.
-export async function collegaConto(login, paese = 'IT') {
-  login = String(login || '').toLowerCase();
-  if (!attivo()) return { errore: 'Le donazioni sul conto non sono attive su questo server.' };
-  let c = contiDonazioni.get(login);
-  if (!c?.stripe_account) {
-    const p = paeseOk(paese);
-    const r = await stripe('POST', '/accounts', { params: { type: 'standard', country: p, 'metadata[login]': login } });
-    if (!r.ok) return { errore: SCUSA, dettaglio: r.errore };
-    c = contiDonazioni.set(login, { account: r.dati.id, paese: p, pronto: false, dettagli: false });
-    log.info(`conto donazioni creato per @${login} (${p})`);
-  }
-  return linkRegistrazione(c.stripe_account);
+// Stripe, quando rifiuta, dice perche': con 401 la chiave non esiste piu'
+// (revocata, o del modo sbagliato), con 403 le manca un permesso, e la sua
+// frase dice quale. E' la chiave dello streamer: le parole di Stripe si
+// possono dire a lui. Il conto resta, non e' pronto, e la scheda lo spiega.
+function spiegaRifiuto(r) {
+  if (r.stato === 401) return 'Stripe non riconosce piu\' questa chiave: forse l\'hai revocata. Incollane una nuova.';
+  if (r.stato === 403) return 'Alla chiave manca un permesso. Stripe dice: ' + r.errore;
+  return '';
 }
-
-// La pagina di registrazione di Stripe per un conto: vale pochi minuti, si
-// richiede ogni volta (anche quando lo streamer la lascia a meta').
-export async function linkRegistrazione(account) {
+function chiaveMorta(login, r) {
+  const nota = spiegaRifiuto(r);
+  if (nota) contiDonazioni.set(login, { pronto: false, nota });
+}
+// I parametri di una sessione di pagamento sul conto dello streamer. La
+// sessione di PROVA al collegamento usa gli stessi, cosi' un permesso che
+// manca si scopre subito, non alla prima donazione vera.
+function paramsSessione({ login, prodotto, chi, cent, valuta, nome, messaggio, scadenzaMs }) {
   const base = config.baseUrl;
-  const r = await stripe('POST', '/account_links', {
-    params: { account, type: 'account_onboarding', refresh_url: base + '/api/donazioni/conto/riprendi', return_url: base + '/api/donazioni/conto/ritorno' },
-  });
-  if (!r.ok) return { errore: SCUSA, dettaglio: r.errore };
-  return { url: r.dati.url };
-}
-
-// Rilegge da Stripe se il conto puo' incassare. Un conto che Stripe non
-// conosce piu' si dimentica.
-export async function aggiornaStato(login) {
-  const c = contiDonazioni.get(login);
-  if (!c?.stripe_account) return null;
-  const r = await stripe('GET', '/accounts/' + c.stripe_account);
-  if (!r.ok) {
-    if (r.codice === 'account_invalid' || /No such account/i.test(r.errore)) { contiDonazioni.togli(login); return null; }
-    return c;
-  }
-  const dopo = contiDonazioni.set(login, { pronto: r.dati.charges_enabled === true, dettagli: r.dati.details_submitted === true, verificato: true });
-  if (dopo.pronto && !c.pronto) log.info(`conto donazioni pronto per @${login}`);
-  return dopo;
-}
-
-export function statoDi(c) {
-  if (!c?.stripe_account) return 'nessuno';
-  return c.pronto ? 'pronto' : 'incompleto';
-}
-
-// Lo streamer scollega: si dimentica l'id. Il conto su Stripe resta suo.
-export function scollega(login) { contiDonazioni.togli(login); }
-
-// Apre il pagamento sul conto dello streamer: una sessione di Checkout con
-// l'importo scelto, la quota della piattaforma se c'e', e il ritorno sulla
-// pagina link con l'id della sessione. La riga nel registro nasce «in attesa».
-export async function apriPagamento({ login, display, importoCent, valuta = 'EUR', nome = '', messaggio = '' }) {
-  login = String(login || '').toLowerCase();
-  const c = contiDonazioni.get(login);
-  if (!c?.stripe_account || !c.pronto) return { errore: 'conto' };
-  const cent = Math.round(Number(importoCent) || 0);
-  if (cent <= 0) return { errore: 'importo' };
-  const chi = display || login;
-  const base = config.baseUrl;
-  const fee = quota(cent);
-  const params = {
+  return {
     mode: 'payment',
     submit_type: 'donate',
     locale: 'auto',
     'line_items[0][price_data][currency]': String(valuta || 'EUR').toLowerCase(),
     'line_items[0][price_data][unit_amount]': cent,
-    'line_items[0][price_data][product_data][name]': 'Donazione a ' + chi,
+    'line_items[0][price_data][product]': prodotto,
     'line_items[0][quantity]': 1,
     'payment_intent_data[description]': 'Donazione a ' + chi + (nome ? ' da ' + nome : ''),
     'metadata[login]': login,
@@ -149,11 +83,68 @@ export async function apriPagamento({ login, display, importoCent, valuta = 'EUR
     'metadata[messaggio]': messaggio,
     success_url: `${base}/u/${login}?dona={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/u/${login}?dona=annullata`,
-    expires_at: Math.floor((Date.now() + SCADENZA_MS) / 1000),
+    expires_at: Math.floor((Date.now() + scadenzaMs) / 1000),
   };
-  if (fee > 0) params['payment_intent_data[application_fee_amount]'] = fee;
-  const r = await stripe('POST', '/checkout/sessions', { params, account: c.stripe_account });
-  if (!r.ok || !r.dati?.url) return { errore: 'stripe' };
+}
+
+// Collega il conto: si verifica la chiave creando nel SUO conto il prodotto
+// «Donazione» su cui nasceranno i pagamenti. Se Stripe la rifiuta, la chiave
+// non si salva. Torna { ok, coda } o { errore, dettaglio }.
+export async function collegaConto(login, chiave) {
+  login = String(login || '').toLowerCase();
+  const k = String(chiave || '').trim();
+  if (/^sk_/.test(k)) return { errore: 'Questa e\' la chiave segreta del conto: puo\' fare tutto, e non va data a nessuno. Crea una chiave con restrizioni (rk_…) con i due permessi indicati.' };
+  if (!CHIAVE_OK.test(k)) return { errore: 'La chiave non ha la forma giusta: comincia con rk_live_ o rk_test_ e va copiata intera.' };
+  const rifiuto = (r, cosa) => ({
+    errore: r.stato === 401 ? 'Stripe non riconosce questa chiave: controlla di averla copiata intera.'
+      : r.stato === 403 ? `La chiave non ha il permesso per ${cosa}. Stripe dice: ${r.errore}`
+        : 'Stripe non ha risposto come dovrebbe: riprova fra poco.',
+    dettaglio: r.errore,
+  });
+  const r = await stripe(k, 'POST', '/products', { name: 'Donazione', 'metadata[socialbot]': 'donazioni' });
+  if (!r.ok) return rifiuto(r, 'creare il prodotto «Donazione» (Products, in scrittura)');
+  // una sessione di prova, mai mostrata a nessuno: scade da sola in mezz'ora
+  const p = await stripe(k, 'POST', '/checkout/sessions', paramsSessione({ login, prodotto: r.dati.id, chi: login, cent: 100, valuta: 'EUR', nome: '', messaggio: '', scadenzaMs: 31 * 60 * 1000 }));
+  if (!p.ok) return rifiuto(p, 'aprire un pagamento (Checkout Sessions, in scrittura)');
+  const c = contiDonazioni.set(login, { chiave: k, prodotto: r.dati.id, pronto: true, verificato: true, nota: '' });
+  log.info(`conto donazioni collegato per @${login} (chiave …${c.coda})`);
+  return { ok: true, coda: c.coda };
+}
+
+// La chiave risponde ancora? Si chiede a Stripe il prodotto «Donazione»: una
+// chiamata leggera, che con una chiave revocata torna 401.
+export async function verificaChiave(login) {
+  login = String(login || '').toLowerCase();
+  const c = contiDonazioni.get(login);
+  if (!c?.chiave) return null;
+  const r = await stripe(c.chiave, 'GET', '/products/' + (c.prodotto || 'nessuno'));
+  if (r.ok) return contiDonazioni.set(login, { pronto: true, verificato: true, nota: '' });
+  const nota = spiegaRifiuto(r);
+  if (nota) return contiDonazioni.set(login, { pronto: false, nota });
+  return c;
+}
+
+export function statoDi(c) {
+  if (!c?.chiave) return 'nessuno';
+  return c.pronto ? 'pronto' : 'incompleto';
+}
+
+// Lo streamer scollega: la chiave si cancella. Revocarla nel suo Dashboard
+// e' comunque cosa sua, e giusta.
+export function scollega(login) { contiDonazioni.togli(login); }
+
+// Apre il pagamento sul conto dello streamer: una sessione di Checkout con
+// l'importo scelto, sul suo prodotto «Donazione», e il ritorno sulla pagina
+// link con l'id della sessione. La riga nel registro nasce «in attesa».
+export async function apriPagamento({ login, display, importoCent, valuta = 'EUR', nome = '', messaggio = '' }) {
+  login = String(login || '').toLowerCase();
+  const c = contiDonazioni.get(login);
+  if (!c?.chiave || !c.pronto || !c.prodotto) return { errore: 'conto' };
+  const cent = Math.round(Number(importoCent) || 0);
+  if (cent <= 0) return { errore: 'importo' };
+  const params = paramsSessione({ login, prodotto: c.prodotto, chi: display || login, cent, valuta, nome, messaggio, scadenzaMs: SCADENZA_MS });
+  const r = await stripe(c.chiave, 'POST', '/checkout/sessions', params);
+  if (!r.ok || !r.dati?.url) { chiaveMorta(login, r); return { errore: 'stripe' }; }
   registroDonazioni.apri('stripe:' + r.dati.id, { login, fonte: 'stripe', importo: cent, valuta, nome, messaggio });
   return { url: r.dati.url, id: r.dati.id };
 }
@@ -164,9 +155,9 @@ const evento = (r) => ({
 });
 
 // Conferma una sessione: la cerca nel registro (una che non c'e', o di un
-// altro canale, non esiste), la rilegge da Stripe e, se pagata, la segna.
-// Torna { nuova, d }: `nuova` e' vera per la prima e sola richiesta che
-// l'ha vista pagare; null se non e' pagata (o non e' nostra).
+// altro canale, non esiste), la rilegge da Stripe con la chiave dello
+// streamer e, se pagata, la segna. Torna { nuova, d }: `nuova` e' vera per la
+// prima e sola richiesta che l'ha vista pagare; null se non e' pagata.
 export async function conferma(login, sessione) {
   login = String(login || '').toLowerCase();
   const id = 'stripe:' + sessione;
@@ -175,31 +166,57 @@ export async function conferma(login, sessione) {
   if (r.stato === 'pagata') return { nuova: false, d: evento(r) };
   if (r.stato !== 'attesa') return null;
   const c = contiDonazioni.get(login);
-  if (!c?.stripe_account) return null;
-  const s = await stripe('GET', '/checkout/sessions/' + sessione, { account: c.stripe_account });
-  if (!s.ok) return null;
+  if (!c?.chiave) return null;
+  const s = await stripe(c.chiave, 'GET', '/checkout/sessions/' + sessione);
+  if (!s.ok) { chiaveMorta(login, s); return null; }
   if (s.dati.payment_status === 'paid') {
     const importo = Number.isFinite(s.dati.amount_total) ? s.dati.amount_total : r.importo;
-    const nuova = registroDonazioni.paga(id, importo);
+    const nuova = registroDonazioni.paga(id, importo, typeof s.dati.payment_intent === 'string' ? s.dati.payment_intent : (s.dati.payment_intent?.id || ''));
     return { nuova, d: evento({ ...r, importo }) };
   }
   if (s.dati.status === 'expired') registroDonazioni.scadi(id);
   return null;
 }
 
+// Il rimborso, dal registro: sul pagamento di Stripe, con la chiave dello
+// streamer. Serve il permesso «Refunds» sulla chiave; se manca, Stripe dice
+// 403 e lo si spiega. Una donazione arrivata da Ko-fi o dalla chiave API non
+// si rimborsa da qui: i soldi non sono passati da Stripe.
+export async function rimborsa(login, id) {
+  login = String(login || '').toLowerCase();
+  const r = registroDonazioni.getDi(login, id);
+  if (!r || r.stato !== 'pagata') return { errore: 'Questa donazione non c\'e\' piu\'.' };
+  if (r.rimborsata_at) return { errore: 'Gia\' rimborsata.' };
+  if (r.fonte !== 'stripe' || !r.riferimento) return { errore: 'Questa donazione non e\' passata dal tuo conto Stripe: si rimborsa da dove e\' arrivata.' };
+  const c = contiDonazioni.get(login);
+  if (!c?.chiave) return { errore: 'Il conto non e\' collegato.' };
+  const s = await stripe(c.chiave, 'POST', '/refunds', { payment_intent: r.riferimento });
+  if (!s.ok) {
+    // un permesso in meno per i rimborsi non ferma le donazioni: solo una chiave sparita (401) spegne il conto
+    if (s.stato === 401) chiaveMorta(login, s);
+    return {
+      errore: s.stato === 403 ? 'La chiave non ha il permesso «Refunds»: aggiungilo alla chiave in Stripe (Sviluppatori → Chiavi API), oppure rimborsa dal tuo Dashboard.'
+        : s.codice === 'charge_already_refunded' ? 'Stripe dice che e\' gia\' stata rimborsata.'
+          : 'Stripe non ha accettato il rimborso: riprova fra poco, o fallo dal tuo Dashboard.',
+      dettaglio: s.errore,
+    };
+  }
+  registroDonazioni.rimborsa(login, id);
+  log.info(`donazione rimborsata su #${login}: ${r.importo / 100} ${r.valuta}`);
+  return { ok: true };
+}
+
 // La ronda: rilegge le sessioni in attesa, segna le pagate (e avvisa), lascia
 // scadere le vecchie, e tiene pulito il registro. Torna quante ne ha trovate pagate.
 export async function ronda(suPagata, ora = Date.now()) {
   let n = 0;
-  if (attivo()) {
-    for (const r of registroDonazioni.inAttesa()) {
-      if (!r.id.startsWith('stripe:')) continue;
-      if (ora - r.created_at > SCADENZA_MS + TOLLERANZA_MS) { registroDonazioni.scadi(r.id); continue; }
-      const e = await conferma(r.login, r.id.slice('stripe:'.length));
-      if (!e?.nuova) continue;
-      n++;
-      try { suPagata(r.login, e.d); } catch (err) { log.warn('donazione confermata dalla ronda, avviso fallito:', err?.message || err); }
-    }
+  for (const r of registroDonazioni.inAttesa()) {
+    if (!r.id.startsWith('stripe:')) continue;
+    if (ora - r.created_at > SCADENZA_MS + TOLLERANZA_MS) { registroDonazioni.scadi(r.id); continue; }
+    const e = await conferma(r.login, r.id.slice('stripe:'.length));
+    if (!e?.nuova) continue;
+    n++;
+    try { suPagata(r.login, e.d); } catch (err) { log.warn('donazione confermata dalla ronda, avviso fallito:', err?.message || err); }
   }
   registroDonazioni.pulisci();
   return n;

@@ -2517,7 +2517,7 @@ const GUIDE = {
   pagina: { serve: ['Avere una pagina pubblica con tutti i tuoi link (Twitch, social, Discord, donazioni) da mettere nella bio di Instagram o TikTok.', 'Have a public page with all your links (Twitch, socials, Discord, donations) to put in your Instagram or TikTok bio.', 'Tener una página pública con todos tus enlaces (Twitch, redes, Discord, donaciones) para poner en la bio de Instagram o TikTok.'],
     come: [['Scrivi titolo e sottotitolo: è quello che si legge in cima. La foto la prendo dal tuo profilo Twitch.', 'Write a headline and tagline: that’s what people read at the top. I take the picture from your Twitch profile.', 'Escribe título y subtítulo: es lo que se lee arriba. La foto la tomo de tu perfil de Twitch.', '#lp-headline'], ['Aggiungi i link con etichetta e indirizzo: l’icona giusta la riconosco dall’indirizzo.', 'Add your links with a label and address: I recognise the right icon from the address.', 'Añade los enlaces con etiqueta y dirección: el icono correcto lo reconozco por la dirección.', '#lp-blocchi'], ['Metti anche video e musica (YouTube, Spotify, TikTok…) e il blocco “La mia diretta”: il player resta lì e dice da sé se sei online.', 'Add video and music too (YouTube, Spotify, TikTok…) and the “My live stream” block: the player stays there and says by itself whether you are online.', 'Pon también vídeo y música (YouTube, Spotify, TikTok…) y el bloque “Mi directo”: el reproductor se queda ahí y dice él mismo si estás online.', '#lp-blocchi'], ['Scegli stile e colori, salva e apri l’anteprima.', 'Pick style and colours, save and open the preview.', 'Elige estilo y colores, guarda y abre la vista previa.', '#lp-salva']] },
   donazioni: { serve: ['Ricevere donazioni dalla tua pagina link, sul tuo conto, con l\'avviso in diretta e il grazie in chat che partono da soli.', 'Receive donations from your link page, on your own account, with the on-stream alert and the chat thanks firing on their own.', 'Recibir donaciones desde tu página de enlaces, en tu propia cuenta, con el aviso en directo y el gracias en el chat que salen solos.'],
-    come: [['Collega il tuo conto Stripe: scegli il paese e segui la registrazione; il conto è tuo.', 'Connect your Stripe account: pick the country and follow the registration; the account is yours.', 'Conecta tu cuenta de Stripe: elige el país y sigue el registro; la cuenta es tuya.', '#dona-conto-box'], ['Accendi le donazioni e scegli come si dona: sul conto, oppure con un link esterno.', 'Turn donations on and choose how people donate: on the account, or with an external link.', 'Activa las donaciones y elige cómo se dona: en la cuenta, o con un enlace externo.', '#dona-attivo'], ['Decidi gli importi suggeriti, il minimo, il massimo e se chi dona può lasciare un messaggio.', 'Set the suggested amounts, the minimum, the maximum, and whether donors can leave a message.', 'Decide los importes sugeridos, el mínimo, el máximo y si quien dona puede dejar un mensaje.', '#dona-importi'], ['Scrivi il testo del tasto e una frase: compaiono nel blocco «Sostieni» della pagina.', 'Write the button text and a line: they show in the «Support me» block of the page.', 'Escribe el texto del botón y una frase: aparecen en el bloque «Apóyame» de la página.', '#dona-etichetta'], ['Se vuoi, accendi il grazie in chat e prova l\'avviso.', 'If you like, turn on the chat thanks and test the alert.', 'Si quieres, activa el gracias en el chat y prueba el aviso.', '#dona-chat']] },
+    come: [['Nel tuo Dashboard di Stripe crea una chiave con restrizioni (sessioni di pagamento e prodotti) e incollala qui: il conto resta tuo.', 'In your Stripe Dashboard create a restricted key (checkout sessions and products) and paste it here: the account stays yours.', 'En tu Dashboard de Stripe crea una clave restringida (sesiones de pago y productos) y pégala aquí: la cuenta sigue siendo tuya.', '#dona-conto-box'], ['Accendi le donazioni e scegli come si dona: sul conto, oppure con un link esterno.', 'Turn donations on and choose how people donate: on the account, or with an external link.', 'Activa las donaciones y elige cómo se dona: en la cuenta, o con un enlace externo.', '#dona-attivo'], ['Decidi gli importi suggeriti, il minimo, il massimo e se chi dona può lasciare un messaggio.', 'Set the suggested amounts, the minimum, the maximum, and whether donors can leave a message.', 'Decide los importes sugeridos, el mínimo, el máximo y si quien dona puede dejar un mensaje.', '#dona-importi'], ['Scrivi il testo del tasto e una frase: compaiono nel blocco «Sostieni» della pagina.', 'Write the button text and a line: they show in the «Support me» block of the page.', 'Escribe el texto del botón y una frase: aparecen en el bloque «Apóyame» de la página.', '#dona-etichetta'], ['Se vuoi, accendi il grazie in chat e prova l\'avviso.', 'If you like, turn on the chat thanks and test the alert.', 'Si quieres, activa el gracias en el chat y prueba el aviso.', '#dona-chat']] },
   regole: { serve: ['I filtri sui messaggi: le parole che il bot non dirà mai, e l\'antispam che pulisce la chat da solo.', 'Message filters: the words the bot will never say, and the anti-spam that cleans chat on its own.', 'Los filtros de los mensajes: las palabras que el bot nunca dirá, y el antispam que limpia el chat solo.'],
     come: [['Scrivi le parole vietate, una per riga.', 'Write the banned words, one per line.', 'Escribe las palabras prohibidas, una por línea.', '#txt-vietate'], ['Accendi l\'antispam: da lì in giù decidi cosa filtrare.', 'Turn on anti-spam: from there down you choose what to filter.', 'Enciende el antispam: de ahí para abajo eliges qué filtrar.', '#chk-as-attivo'], ['Scegli chi può postare link e quali domini passano sempre.', 'Choose who can post links and which domains always pass.', 'Elige quién puede publicar enlaces y qué dominios pasan siempre.', '#sel-as-linktier'], ['Salva: il bot modera da solo.', 'Save: the bot moderates on its own.', 'Guarda: el bot modera solo.', '#btn-salva-antispam']] },
   giochi: { serve: ['Minigiochi, monete e classifiche per tenere viva la chat.', 'Minigames, coins and leaderboards to keep chat alive.', 'Minijuegos, monedas y clasificaciones para animar el chat.'],
@@ -12712,7 +12712,7 @@ function pannelloDonazioni() {
   return pannello('donazioni', `
     <div class="carta" id="dona-conto-carta">
       <h2>${_hIco(ICO.cuore)}${L('Donazioni', 'Donations', 'Donaciones')}</h2>
-      <p>${L('Chi ti segue ti dona dalla tua pagina link. Il pagamento arriva sul tuo conto Stripe, che colleghi qui una volta sola. A ogni donazione partono l\'avviso in overlay e il grazie in chat, e sale l\'obiettivo in euro.', 'People donate to you from your link page. The payment lands on your Stripe account, which you connect here once. Every donation fires the overlay alert and the thanks in chat, and moves the euro goal.', 'Quien te sigue te dona desde tu página de enlaces. El pago llega a tu cuenta de Stripe, que conectas aquí una sola vez. Cada donación lanza el aviso en el overlay y el gracias en el chat, y sube el objetivo en euros.')}</p>
+      <p>${L('Chi ti segue ti dona dalla tua pagina link. Il pagamento arriva sul tuo conto Stripe, aperto e gestito da te: qui incolli solo una chiave con permessi ridotti, una volta. A ogni donazione partono l\'avviso in overlay e il grazie in chat, e sale l\'obiettivo in euro.', 'People donate to you from your link page. The payment lands on your own Stripe account, opened and managed by you: here you paste just a key with limited permissions, once. Every donation fires the overlay alert and the thanks in chat, and moves the euro goal.', 'Quien te sigue te dona desde tu página de enlaces. El pago llega a tu propia cuenta de Stripe, abierta y gestionada por ti: aquí pegas solo una clave con permisos limitados, una vez. Cada donación lanza el aviso en el overlay y el gracias en el chat, y sube el objetivo en euros.')}</p>
       <div id="dona-conto-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
     </div>
     <div class="carta" id="dona-carta">
@@ -12746,7 +12746,7 @@ function pannelloDonazioni() {
       <p class="suggerimento">${L('Il tasto sta nel blocco «Sostieni» della pagina link. L\'avviso si veste nella scheda Overlay come gli altri, voce «Donazione», con l\'importo minimo; l\'obiettivo in euro si aggiunge fra gli obiettivi con «Conta: euro donati».', 'The button lives in the «Support me» block of your link page. The alert is styled in the Overlay tab like the others, entry «Donation», with a minimum amount; the euro goal is added among the goals with «Count: euros donated».', 'El botón vive en el bloque «Apóyame» de tu página de enlaces. El aviso se viste en la pestaña Overlay como los demás, entrada «Donación», con importe mínimo; el objetivo en euros se añade entre los objetivos con «Cuenta: euros donados».')}</p>
     </div>
     <div class="carta" id="dona-ultime-carta">
-      <h2>${_hIco(ICO.lista)}${L('Ultime donazioni', 'Latest donations', 'Últimas donaciones')}</h2>
+      <h2>${_hIco(ICO.lista)}${L('Il registro delle donazioni', 'The donations register', 'El registro de donaciones')}</h2>
       <div id="dona-ultime-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
     </div>
     <div class="carta" id="dona-kofi-carta">
@@ -12809,29 +12809,45 @@ async function caricaStatoDonazioni(rileggi) {
 }
 function _contoDonaHtml(st) {
   const s = st?.conto?.stato || 'nessuno';
-  if (!st?.attivo) return `<p class="suggerimento">${L('Su questo server le donazioni sul conto non sono attive: scegli «un link esterno» qui sotto.', 'Donations on your account are not active on this server: pick «an external link» below.', 'En este servidor las donaciones en cuenta no están activas: elige «un enlace externo» abajo.')}</p>`;
-  const quota = st.quotaPct > 0
-    ? L(`SocialBot trattiene il ${st.quotaPct}% di ogni donazione. Le commissioni di Stripe sono sull'incasso, come per qualunque pagamento con carta.`, `SocialBot keeps ${st.quotaPct}% of every donation. Stripe's fees come off the amount received, as with any card payment.`, `SocialBot se queda con el ${st.quotaPct}% de cada donación. Las comisiones de Stripe se descuentan de lo recibido, como en cualquier pago con tarjeta.`)
-    : L('SocialBot non trattiene niente. Le commissioni di Stripe sono sull\'incasso, come per qualunque pagamento con carta.', 'SocialBot keeps nothing. Stripe\'s fees come off the amount received, as with any card payment.', 'SocialBot no se queda con nada. Las comisiones de Stripe se descuentan de lo recibido, como en cualquier pago con tarjeta.');
-  if (s === 'pronto') return `<p>${_bIco(ICO.spunta)}${L('Conto collegato: i pagamenti arrivano sul tuo conto Stripe.', 'Account connected: payments land on your Stripe account.', 'Cuenta conectada: los pagos llegan a tu cuenta de Stripe.')}</p>
-    <p class="suggerimento">${quota}</p>
+  if (s === 'pronto') return `<p>${_bIco(ICO.spunta)}${L('Conto collegato: i pagamenti arrivano sul tuo conto Stripe.', 'Account connected: payments land on your Stripe account.', 'Cuenta conectada: los pagos llegan a tu cuenta de Stripe.')} <span class="suggerimento">${L('Chiave che finisce con', 'Key ending in', 'Clave que termina en')} …${esc(st.conto.coda || '')}</span></p>
+    <p class="suggerimento">${L('SocialBot non trattiene niente e non tocca i tuoi soldi. Le commissioni sono quelle di Stripe, sull\'incasso. Puoi revocare la chiave dal tuo Dashboard quando vuoi.', 'SocialBot keeps nothing and never touches your money. The fees are Stripe\'s, on the amount received. You can revoke the key from your Dashboard whenever you like.', 'SocialBot no se queda con nada y no toca tu dinero. Las comisiones son las de Stripe, sobre lo recibido. Puedes revocar la clave desde tu Dashboard cuando quieras.')}</p>
     <p><a class="btn secondario" href="https://dashboard.stripe.com/" target="_blank" rel="noopener">${L('Apri Stripe', 'Open Stripe', 'Abrir Stripe')}</a> <button type="button" class="btn secondario" data-dona="scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button></p>`;
-  if (s === 'incompleto') return `<p>${L('Registrazione da completare: a Stripe manca ancora qualcosa da parte tua.', 'Registration to complete: Stripe still needs something from you.', 'Registro por completar: a Stripe aún le falta algo de tu parte.')}</p>
-    <p><button type="button" class="btn" data-dona="collega">${L('Continua la registrazione', 'Continue the registration', 'Continuar el registro')}</button> <button type="button" class="btn secondario" data-dona="scollega">${L('Ricomincia da capo', 'Start over', 'Empezar de nuevo')}</button></p>`;
-  const opzioni = (st.paesi || []).map(([c, n]) => `<option value="${c}"${c === (st.conto?.paese || 'IT') ? ' selected' : ''}>${esc(n)}</option>`).join('');
-  return `<p>${L('Stripe ti chiede identità e coordinate bancarie una volta sola. Il conto è tuo e resta tuo, con la sua pagina per vedere incassi e ricevute.', 'Stripe asks for your identity and bank details once. The account is yours and stays yours, with its own page for payouts and receipts.', 'Stripe te pide identidad y datos bancarios una sola vez. La cuenta es tuya y sigue siendo tuya, con su página para ver cobros y recibos.')}</p>
-    <p class="suggerimento">${quota}</p>
-    <div class="griglia-campi"><div><label class="campo" for="dona-paese">${L('Paese', 'Country', 'País')}</label><select id="dona-paese">${opzioni}</select></div></div>
-    <p class="spazio-sopra"><button type="button" class="btn" data-dona="collega">${L('Collega il mio conto Stripe', 'Connect my Stripe account', 'Conectar mi cuenta de Stripe')}</button></p>`;
+  const passi = L('Nel tuo Dashboard di Stripe: Sviluppatori → Chiavi API → «Crea chiave con restrizioni». Dai due permessi in scrittura: «Checkout Sessions» e «Products». Copia la chiave (comincia con rk_) e incollala qui.', 'In your Stripe Dashboard: Developers → API keys → “Create restricted key”. Grant two write permissions: “Checkout Sessions” and “Products”. Copy the key (it starts with rk_) and paste it here.', 'En tu Dashboard de Stripe: Desarrolladores → Claves API → «Crear clave restringida». Da dos permisos de escritura: «Checkout Sessions» y «Products». Copia la clave (empieza por rk_) y pégala aquí.');
+  return `<p>${s === 'incompleto'
+    ? esc(st.conto.nota || L('La chiave non funziona più: forse l\'hai revocata. Incollane una nuova.', 'The key no longer works: maybe you revoked it. Paste a new one.', 'La clave ya no funciona: quizá la revocaste. Pega una nueva.'))
+    : L('Il conto lo apri e lo gestisci tu su Stripe, come chiunque. A SocialBot serve solo una chiave con permessi ridotti: apre il pagamento sul tuo conto e legge se è andato a buon fine. Niente altro.', 'You open and manage the account yourself on Stripe, like anyone. SocialBot only needs a key with limited permissions: it opens the payment on your account and reads whether it went through. Nothing else.', 'La cuenta la abres y la gestionas tú en Stripe, como cualquiera. SocialBot solo necesita una clave con permisos limitados: abre el pago en tu cuenta y lee si ha ido bien. Nada más.')}</p>
+    <p class="suggerimento">${passi}</p>
+    <label class="campo" for="dona-chiave">${L('Chiave con restrizioni', 'Restricted key', 'Clave restringida')}</label>
+    <input type="password" id="dona-chiave" class="campo-largo" autocomplete="off" placeholder="rk_live_…">
+    <p class="spazio-sopra"><button type="button" class="btn" data-dona="collega">${L('Collega il mio conto', 'Connect my account', 'Conectar mi cuenta')}</button>${s === 'incompleto' ? ` <button type="button" class="btn secondario" data-dona="scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}</p>
+    <p class="suggerimento">${L('La chiave resta cifrata sul server e non torna mai nel browser. SocialBot non trattiene niente: le commissioni sono quelle di Stripe.', 'The key stays encrypted on the server and never comes back to the browser. SocialBot keeps nothing: the fees are Stripe\'s.', 'La clave queda cifrada en el servidor y nunca vuelve al navegador. SocialBot no se queda con nada: las comisiones son las de Stripe.')}</p>`;
+}
+function _sommeDona(lista) {
+  return (lista || []).length ? lista.map((t) => _soldi(t.somma, t.valuta)).join(' + ') : _soldi(0, 'EUR');
+}
+function _rigaDonaHtml(d) {
+  const quando = (ts) => { try { return new Date(ts).toLocaleString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
+  const fonte = d.fonte === 'kofi' ? 'Ko-fi' : (d.fonte === 'ext' ? L('chiave API', 'API key', 'clave API') : 'Stripe');
+  return `<li class="dona-riga${d.rimborsata ? ' rimborsata' : ''}" data-id="${esc(d.id)}">
+    <div><b>${esc(_soldi(d.importo, d.valuta))}</b> ${esc(d.nome || L('qualcuno', 'someone', 'alguien'))}${d.messaggio ? ` <span class="suggerimento">· ${esc(d.messaggio)}</span>` : ''}
+      <span class="suggerimento">· ${esc(quando(d.quando))} · ${esc(fonte)}${d.rimborsata ? ' · ' + L('rimborsata', 'refunded', 'reembolsada') : ''}</span></div>
+    <div class="dona-azioni"><button type="button" class="btn secondario mini" data-dona-riga="riproponi">${L('Rimanda l\'avviso', 'Replay the alert', 'Repetir el aviso')}</button>${d.rimborsabile ? ` <button type="button" class="btn secondario mini" data-dona-riga="rimborsa">${L('Rimborsa', 'Refund', 'Reembolsar')}</button>` : ''} <button type="button" class="btn secondario mini" data-dona-riga="elimina">${L('Elimina', 'Delete', 'Eliminar')}</button></div>
+  </li>`;
 }
 function _ultimeDonaHtml(st) {
   const ultime = st?.ultime || [];
-  if (!ultime.length) return `<p class="suggerimento">${L('Ancora nessuna. Quando arriva la prima la vedi qui, con nome e messaggio.', 'None yet. When the first one arrives you see it here, with name and message.', 'Todavía ninguna. Cuando llegue la primera la ves aquí, con nombre y mensaje.')}</p>`;
-  const tot = (st.totali || []).map((t) => `${_soldi(t.somma, t.valuta)} (${t.quante})`).join(' · ');
-  const quando = (ts) => { try { return new Date(ts).toLocaleString(undefined, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
-  const fonte = (f) => f === 'kofi' ? ' · Ko-fi' : (f === 'ext' ? ' · ' + L('chiave API', 'API key', 'clave API') : '');
-  const righe = ultime.map((d) => `<li><b>${esc(_soldi(d.importo, d.valuta))}</b> ${esc(d.nome || L('qualcuno', 'someone', 'alguien'))}${d.messaggio ? ` <span class="suggerimento">· ${esc(d.messaggio)}</span>` : ''} <span class="suggerimento">${esc(quando(d.quando))}${fonte(d.fonte)}</span></li>`).join('');
-  return `<p class="suggerimento">${L('In tutto', 'In total', 'En total')}: ${esc(tot)}</p><ul style="margin:.4rem 0 0 1.1rem;padding:0;display:grid;gap:.35rem">${righe}</ul>`;
+  const rp = st?.riepilogo || {};
+  const testa = `<div class="griglia-campi">
+      <div><span class="campo">${L('Oggi', 'Today', 'Hoy')}</span><div><b>${esc(_sommeDona(rp.oggi))}</b></div></div>
+      <div><span class="campo">${L('Ultimi 30 giorni', 'Last 30 days', 'Últimos 30 días')}</span><div><b>${esc(_sommeDona(rp.mese))}</b></div></div>
+      <div><span class="campo">${L('Ultimo anno', 'Last year', 'Último año')}</span><div><b>${esc(_sommeDona(rp.anno))}</b></div></div>
+      <div><span class="campo">${L('Da sempre', 'All time', 'Desde siempre')}</span><div><b>${esc(_sommeDona(rp.sempre))}</b> <span class="suggerimento">(${(rp.sempre || []).reduce((a, t) => a + (t.quante || 0), 0)})</span></div></div>
+    </div>`;
+  if (!ultime.length) return testa + `<p class="suggerimento spazio-sopra">${L('Ancora nessuna. Quando arriva la prima la vedi qui, con nome e messaggio.', 'None yet. When the first one arrives you see it here, with name and message.', 'Todavía ninguna. Cuando llegue la primera la ves aquí, con nombre y mensaje.')}</p>`;
+  return testa + `<p class="spazio-sopra"><input type="search" id="dona-cerca" class="campo-largo" placeholder="${esc(L('Cerca per nome o messaggio', 'Search by name or message', 'Buscar por nombre o mensaje'))}"></p>
+    <ul id="dona-lista" style="margin:.4rem 0 0;padding:0;list-style:none;display:grid;gap:.55rem">${ultime.map(_rigaDonaHtml).join('')}</ul>
+    <p class="spazio-sopra"><button type="button" class="btn secondario" id="dona-altre"${ultime.length < 50 ? ' hidden style="display:none"' : ''}>${L('Mostra altre', 'Show more', 'Mostrar más')}</button> <a class="btn secondario" href="/api/donazioni/esporta.csv" download>${L('Scarica il registro (CSV)', 'Download the register (CSV)', 'Descargar el registro (CSV)')}</a></p>
+    <p class="suggerimento">${L('Il registro tiene un anno. «Rimanda l\'avviso» lo rifà in overlay senza contare di nuovo l\'obiettivo; «Rimborsa» vale per le donazioni passate dal tuo conto Stripe, se la chiave ha il permesso «Refunds»; «Elimina» toglie la riga, nome e messaggio compresi.', 'The register keeps one year. “Replay the alert” shows it again in the overlay without counting the goal twice; “Refund” works for donations that went through your Stripe account, if the key has the “Refunds” permission; “Delete” removes the row, name and message included.', 'El registro guarda un año. «Repetir el aviso» lo vuelve a mostrar en el overlay sin contar el objetivo otra vez; «Reembolsar» vale para las donaciones que pasaron por tu cuenta de Stripe, si la clave tiene el permiso «Refunds»; «Eliminar» quita la fila, nombre y mensaje incluidos.')}</p>`;
 }
 
 function lpVisiteHtml(v) {
@@ -15493,11 +15509,13 @@ function attivaPiattaforma() {
     const cosa = b.dataset.dona;
     conErrore(async () => {
       if (cosa === 'collega') {
+        const chiave = (_v('dona-chiave') || '').trim();
+        if (!chiave) { toast(L('Incolla prima la chiave.', 'Paste the key first.', 'Pega primero la clave.'), 'errore'); return; }
         b.disabled = true;
         try {
-          const r = await api('/api/donazioni/conto/collega', { method: 'POST', body: { paese: _v('dona-paese') || _statoDona?.conto?.paese || 'IT' } });
-          if (r?.url) { location.href = r.url; return; }
-          toast(L('Stripe non ha risposto: riprova fra poco.', 'Stripe did not answer: try again shortly.', 'Stripe no respondió: inténtalo en un momento.'), 'errore');
+          await api('/api/donazioni/conto/collega', { method: 'POST', body: { chiave } });
+          toast(L('Conto collegato', 'Account connected', 'Cuenta conectada'));
+          caricaStatoDonazioni(false);
         } finally { b.disabled = false; }
       } else if (cosa === 'scollega') {
         if (!confirm(L('Scollegare il conto? Il tuo conto Stripe resta tuo; qui le donazioni sul conto si fermano finché non lo ricolleghi.', 'Disconnect the account? Your Stripe account stays yours; donations on the account stop here until you connect it again.', '¿Desconectar la cuenta? Tu cuenta de Stripe sigue siendo tuya; aquí las donaciones en cuenta se detienen hasta que la conectes de nuevo.'))) return;
@@ -15505,6 +15523,40 @@ function attivaPiattaforma() {
         toast(L('Conto scollegato', 'Account disconnected', 'Cuenta desconectada'));
         caricaStatoDonazioni(false);
       }
+    });
+  });
+  _g('dona-ultime-box')?.addEventListener('input', (e) => {
+    if (e.target?.id !== 'dona-cerca') return;
+    const q = String(e.target.value || '').trim().toLowerCase();
+    document.querySelectorAll('#dona-lista .dona-riga').forEach((li) => { li.hidden = !!q && !li.textContent.toLowerCase().includes(q); });
+  });
+  _g('dona-ultime-box')?.addEventListener('click', (e) => {
+    const altre = e.target.closest('#dona-altre');
+    if (altre) {
+      conErrore(async () => {
+        const righe = [...document.querySelectorAll('#dona-lista .dona-riga')];
+        const ultima = _statoDona?.ultime?.length ? _statoDona.ultime[_statoDona.ultime.length - 1] : null;
+        const r = await api('/api/donazioni/elenco?n=50&prima=' + (ultima?.quando || 0));
+        const nuove = r?.righe || [];
+        _statoDona.ultime = (_statoDona.ultime || []).concat(nuove);
+        _g('dona-lista')?.insertAdjacentHTML('beforeend', nuove.map(_rigaDonaHtml).join(''));
+        if (nuove.length < 50) { altre.hidden = true; altre.style.display = 'none'; }
+        if (!righe.length && !nuove.length) altre.hidden = true;
+      });
+      return;
+    }
+    const b = e.target.closest('[data-dona-riga]'); if (!b) return;
+    const li = b.closest('.dona-riga'); const id = li?.dataset.id; if (!id) return;
+    const cosa = b.dataset.donaRiga;
+    conErrore(async () => {
+      if (cosa === 'elimina' && !confirm(L('Togliere questa donazione dal registro? Nome e messaggio spariscono. L\'obiettivo in euro non cambia.', 'Remove this donation from the register? Name and message disappear. The euro goal does not change.', '¿Quitar esta donación del registro? Nombre y mensaje desaparecen. El objetivo en euros no cambia.'))) return;
+      if (cosa === 'rimborsa' && !confirm(L('Rimborsare questa donazione dal tuo conto Stripe? Non si può annullare.', 'Refund this donation from your Stripe account? This cannot be undone.', '¿Reembolsar esta donación desde tu cuenta de Stripe? No se puede deshacer.'))) return;
+      b.disabled = true;
+      try {
+        await api('/api/donazioni/azione', { method: 'POST', body: { id, cosa } });
+        if (cosa === 'riproponi') toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
+        else { toast(cosa === 'elimina' ? L('Tolta dal registro', 'Removed from the register', 'Quitada del registro') : L('Rimborsata', 'Refunded', 'Reembolsada')); caricaStatoDonazioni(false); }
+      } finally { b.disabled = false; }
     });
   });
   _g('dona-prova')?.addEventListener('click', () => conErrore(async () => {

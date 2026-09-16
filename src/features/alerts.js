@@ -113,7 +113,9 @@ export class AlertsEngine {
   // UNA DONAZIONE. Non viene da Twitch: la porta il webhook di Ko-fi o una
   // automazione dello streamer. Fa crescere l'obiettivo in euro, spara l'alert
   // (dall'importo minimo in su) e, se acceso, ringrazia in chat.
-  donazione(channel, d) {
+  // `soloAvviso`: l'avviso si rimanda in overlay dal registro, ma l'obiettivo
+  // e la chat non si toccano: quella donazione e' gia' stata contata e ringraziata.
+  donazione(channel, d, { soloAvviso = false } = {}) {
     try {
       const s = this.cfg(channel);
       if (!s || !d) return false;
@@ -121,11 +123,11 @@ export class AlertsEngine {
       if (importo <= 0) return false;
       const cfgD = s.donazioni || {};
       const vars = { user: d.user || 'qualcuno', importo: formattaImporto(importo, d.valuta || cfgD.valuta || 'EUR'), messaggio: d.messaggio || '' };
-      this._contaGoal(channel, 'donazione', importo);
+      if (!soloAvviso) this._contaGoal(channel, 'donazione', importo);
       const a = s.alerts;
       const conf = a && a.attivo !== false ? a.donazione : null;
-      if (conf && conf.attivo !== false && importo >= (Number(conf.minImporto) || 0)) this._spara(channel, a, 'donazione', conf, vars);
-      if (cfgD.annunciaChat && this.say) this.say(channel, riempi(cfgD.testoChat || 'Grazie {user} per {importo}!', vars));
+      if (conf && conf.attivo !== false && (soloAvviso || importo >= (Number(conf.minImporto) || 0))) this._spara(channel, a, 'donazione', conf, vars);
+      if (!soloAvviso && cfgD.annunciaChat && this.say) this.say(channel, riempi(cfgD.testoChat || 'Grazie {user} per {importo}!', vars));
       log.info(`donazione su #${channel}: ${vars.importo} da ${vars.user}`);
       return true;
     } catch (e) { log.debug('donazione:', e?.message || e); return false; }
