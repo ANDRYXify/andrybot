@@ -97,7 +97,6 @@ const DECISO = [
   ['bot.js', '_mancheProx', 'volatile', 'quando tocca alla prossima manche: si ricalcola'],
   ['bot.js', '_tgProattivoUltimo', 'volatile', 'ultimo messaggio proattivo, anti-ripetizione a breve'],
   ['bot.js', '_canarinoTs', 'volatile', 'un minuto di silenzio dopo la risposta al canarino: dopo un riavvio, al massimo, risponde una volta di piu\''],
-  ['features/donazioni.js', '_visti', 'volatile', 'gli id delle donazioni viste nell\'ultima ora, per scartare i tentativi ripetuti di Ko-fi: dopo un riavvio un ritentativo puo\' passare due volte, e si preferisce quello a perderne una'],
   ['features/abbonamenti.js', '_prezzi', 'volatile', 'i prezzi trovati in Stripe e il loro esito: si rifanno a ogni avvio e ogni quarto d\'ora, e finche\' non ci sono non si vende'],
   ['bot.js', '_ultimaSpontanea', 'volatile', 'quando ha parlato da solo l\'ultima volta: dopo un riavvio riparte da zero, e al massimo parla un giro prima'],
   ['bot.js', '_ultimaPromo', 'volatile', 'ultimo promemoria dei link: idem, un riavvio non e\' un modo pratico per farglielo ripetere'],

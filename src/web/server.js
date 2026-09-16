@@ -22,7 +22,7 @@ import * as consolle from '../features/console.js';   // CONSOLify + tastiera fi
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, registroDonazioni } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
@@ -45,6 +45,7 @@ import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as donazioni from '../features/donazioni.js';
+import * as donaStripe from '../features/donazioni-stripe.js';
 import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
 import * as webauthn from './webauthn.js';
@@ -1465,12 +1466,24 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const p = linkPage.get(login);
     if (!p || !p.attiva) return notFound(res);        // mai creata, o spenta dallo streamer
     const s = streamers.get(login);
+    const conto = contiDonazioni.get(login);
+    // Il ritorno da un pagamento: l'id della sessione viaggia nell'indirizzo,
+    // ma la verita' la da' Stripe, e si conta una volta sola (registro). Chi
+    // ricarica la pagina rivede il grazie, non fa partire un secondo avviso.
+    let grazie = null;
+    const dona = String(req.query.dona || '');
+    if (/^cs_[A-Za-z0-9_]{8,200}$/.test(dona) && extRateOk('dona-ok:' + login)) {
+      const e = await donaStripe.conferma(login, dona);
+      if (e?.nuova) manager.alerts?.donazione(login, e.d);
+      if (e) grazie = { nome: e.d.user, importo: e.d.importo, valuta: e.d.valuta };
+    }
     const html = renderLinkPage(p, {
       login,
       display: s?.display || login,
       avatar: await avatarDi(login),
       baseUrl: config.baseUrl,
-      sostieni: donazioni.datiSostieni(s?.settings),
+      sostieni: donazioni.datiSostieni(s?.settings, conto),
+      grazie,
     });
     // Una visita in più. Contiamo SOLO quante volte la pagina è stata aperta:
     // niente indirizzi IP, niente cookie, niente su chi c'era. I robot li
@@ -1480,7 +1493,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         visitePagina.conta(login);
       }
     } catch (e) { log.warn('visite pagina link:', e?.message || e); }
-    res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+    // la pagina col ritorno di un pagamento e' di chi ha pagato: non si mette in cache
+    if (dona) res.set('Cache-Control', 'private, no-store');
+    else res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
     res.type('html').send(html);
   }));
   // Il vecchio proxy resta solo per l'API del sito che il pre-addestramento
@@ -1589,7 +1604,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     });
     const html = renderLinkPage(finta, {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
-      sostieni: donazioni.datiSostieni(s?.settings),
+      sostieni: donazioni.datiSostieni(s?.settings, contiDonazioni.get(login)),
+      manca: donazioni.cosaManca(s?.settings, contiDonazioni.get(login)),
       anteprima: true,   // mostra anche i blocchi ancora da completare
     });
     res.json({ html });
@@ -1692,8 +1708,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   su TikTok, YouTube e Instagram.
 - Comandi a voce mentre si streamma.
 - Pagina link pubblica personalizzabile su ${b}/u/<nomeutente>.
-- Donazioni: il tasto «Sostieni» sulla pagina link, l'avviso in overlay e in
-  chat quando arriva una mancia da Ko-fi, un obiettivo in euro.
+- Donazioni sul conto dello streamer: chi guarda dona dalla pagina link, il
+  pagamento arriva sul suo conto Stripe, l'avviso parte in overlay e in chat,
+  un obiettivo in euro sale. Ko-fi resta possibile.
 
 ## Prezzi
 - Essenziale: gratuito, basta registrarsi. Comandi illimitati, moderazione,
@@ -2712,6 +2729,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   });
   // i prezzi si trovano in Stripe all'avvio e poi ogni quarto d'ora: una voce che non coincide non si vende
   abbonamenti.sorvegliaPrezzi();
+  // le donazioni pagate senza tornare sulla pagina le trova la ronda
+  donaStripe.avviaRonda((login, d) => manager.alerts?.donazione(login, d));
 
   // avvia il checkout per un tier. Identità: la sessione, oppure chi ha fatto il
   // login self-service in attesa di abbonarsi (req.session.abbonando). Off → 503.
@@ -2756,8 +2775,83 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!st?.donazioni?.kofiImp || !d || !combacia(d.token, st.donazioni.kofiImp, login)) return res.status(401).json({ errore: 'non riconosciuto' });
     res.json({ ok: true });
     if (!extRateOk('dona:' + login)) return;
-    if (!donazioni.nuova('kofi:' + login + ':' + d.id)) return;
+    const chiave = 'kofi:' + login + ':' + (d.id || crypto.randomUUID());
+    if (!registroDonazioni.segna(chiave, { login, fonte: 'kofi', importo: Math.round(d.importo * 100), valuta: d.valuta, nome: d.user, messaggio: d.messaggio })) return;
     manager.alerts?.donazione(login, d);
+  }));
+
+  // ── Le donazioni sul conto dello streamer (Stripe Connect) ──────────────────
+  // Il conto e' suo: lo apre da qui, Stripe gli chiede identita' e coordinate,
+  // e i pagamenti nascono sul suo conto. Qui si tiene solo l'id del conto e il
+  // registro delle donazioni (donazioni-stripe.js).
+  app.get('/api/donazioni/stato', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    let c = contiDonazioni.get(login);
+    // un conto non ancora pronto si rilegge da Stripe: al ritorno dalla
+    // registrazione subito, altrimenti non piu' di una volta al minuto
+    if (c?.stripe_account && !c.pronto && (req.query.rileggi === '1' || Date.now() - (c.verificato_at || 0) > 60_000)) c = await donaStripe.aggiornaStato(login);
+    res.json({
+      attivo: donaStripe.attivo(),
+      quotaPct: donaStripe.quotaPct(),
+      paesi: donaStripe.PAESI,
+      conto: { stato: donaStripe.statoDi(c), paese: c?.paese || 'IT', dettagli: !!c?.dettagli },
+      ultime: registroDonazioni.ultime(login, 12).map((r) => ({ quando: r.pagata_at, fonte: r.fonte, nome: r.nome, importo: r.importo / 100, valuta: r.valuta, messaggio: r.messaggio })),
+      totali: registroDonazioni.totali(login).map((t) => ({ valuta: t.valuta, somma: t.somma / 100, quante: t.quante })),
+    });
+  }));
+  app.post('/api/donazioni/conto/collega', requireOwner, wrap(async (req, res) => {
+    const r = await donaStripe.collegaConto(currentUser(req).login, String(req.body?.paese || 'IT').toUpperCase());
+    if (r.errore) return res.status(503).json({ errore: r.errore });
+    res.json({ url: r.url });
+  }));
+  // Stripe rimanda qui quando la sua pagina di registrazione e' scaduta a
+  // meta': si riparte con una pagina nuova, se e' ancora lo streamer; altrimenti
+  // al pannello, che ha il tasto per continuare.
+  app.get('/api/donazioni/conto/riprendi', wrap(async (req, res) => {
+    const u = currentUser(req);
+    const c = u && isOwner(req) ? contiDonazioni.get(u.login) : null;
+    const r = c?.stripe_account ? await donaStripe.linkRegistrazione(c.stripe_account) : null;
+    res.redirect(r?.url || '/#donazioni');
+  }));
+  // Il ritorno dalla registrazione: si rilegge lo stato del conto e si torna
+  // alla scheda. Senza sessione e' solo un rimando al pannello.
+  app.get('/api/donazioni/conto/ritorno', wrap(async (req, res) => {
+    const u = currentUser(req);
+    if (u && isOwner(req)) await donaStripe.aggiornaStato(u.login);
+    res.redirect('/#donazioni');
+  }));
+  app.post('/api/donazioni/conto/scollega', requireOwner, wrap(async (req, res) => {
+    donaStripe.scollega(currentUser(req).login);
+    res.json({ ok: true });
+  }));
+
+  // Il modulo «Sostieni» della pagina link: chi dona non ha una sessione. Si
+  // apre il pagamento sul conto dello streamer e si manda li'. La pagina lo
+  // chiede via fetch e naviga da sola all'indirizzo; senza script arriva una
+  // pagina-ponte che porta allo stesso posto.
+  app.post('/dona/:login', express.urlencoded({ extended: false, limit: '8kb' }), wrap(async (req, res) => {
+    const login = String(req.params.login || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    const vuoleJson = /\bapplication\/json\b/.test(String(req.get('accept') || ''));
+    const h = (t) => String(t).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const pagina = (titolo, corpo, testa = '') => `<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>${h(titolo)}</title>${testa}<style>body{margin:0;min-height:100dvh;display:grid;place-items:center;font:16px/1.5 system-ui,sans-serif;background:#0f0f14;color:#eee;padding:1.5rem}main{max-width:26rem;text-align:center}a{color:#8ab4ff}</style></head><body><main>${corpo}</main></body></html>`;
+    const rispondi = (stato, dati) => {
+      res.status(stato);
+      if (vuoleJson) return res.json(dati);
+      res.set('Cache-Control', 'private, no-store').type('html');
+      if (dati.url) return res.send(pagina('Vai al pagamento', `<p>Ti porto al pagamento sicuro…</p><p><a href="${h(dati.url)}">Se non succede niente, tocca qui.</a></p>`, `<meta http-equiv="refresh" content="0;url=${h(dati.url)}">`));
+      return res.send(pagina('Donazione', `<p>${h(dati.errore || 'Qualcosa non ha funzionato.')}</p><p><a href="/u/${h(login)}">Torna alla pagina</a></p>`));
+    };
+    const s = streamers.get(login);
+    const p = linkPage.get(login);
+    const cfg = s?.settings?.donazioni;
+    if (!p?.attiva || !cfg || cfg.modo === 'link' || donazioni.cosaManca(s?.settings, contiDonazioni.get(login))) return rispondi(404, { errore: 'Le donazioni non sono aperte su questa pagina.' });
+    if (!extRateOk('dona-modulo:' + login)) return rispondi(429, { errore: 'Troppe richieste in questo momento: riprova fra un minuto.' });
+    const m = donazioni.leggiModulo(req.body, cfg);
+    if (!m) return rispondi(400, { errore: 'Controlla l\'importo: da ' + donazioni.formattaImporto(cfg.minimo, cfg.valuta) + ' a ' + donazioni.formattaImporto(donazioni.LIMITI.max, cfg.valuta) + '.' });
+    const r = await donaStripe.apriPagamento({ login, display: s?.display || login, importoCent: m.importoCent, valuta: cfg.valuta, nome: m.nome, messaggio: m.messaggio });
+    if (r.errore) return rispondi(503, { errore: 'Il pagamento non si apre in questo momento: riprova fra poco.' });
+    rispondi(200, { url: r.url });
   }));
 
   app.post('/stripe/webhook', wrap(async (req, res) => {
@@ -6926,7 +7020,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (azione === 'donazione') {
       const d = donazioni.leggiEsterna(req.body);
       if (!d) return res.status(400).json({ errore: 'serve un importo' });
-      if (d.id && !donazioni.nuova('ext:' + login + ':' + d.id)) return res.json({ ok: true, doppione: true });
+      const chiave = 'ext:' + login + ':' + (d.id || crypto.randomUUID());
+      if (!registroDonazioni.segna(chiave, { login, fonte: 'ext', importo: Math.round(d.importo * 100), valuta: d.valuta || s.settings?.donazioni?.valuta || 'EUR', nome: d.user, messaggio: d.messaggio })) return res.json({ ok: true, doppione: true });
       manager.alerts?.donazione(login, d);
       return res.json({ ok: true });
     }

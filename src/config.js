@@ -170,6 +170,15 @@ export const config = {
     };
   })(),
 
+  // Donazioni verso lo streamer: passano dal SUO conto Stripe (Connect, conto
+  // Standard), quindi basta la chiave segreta, niente webhook. La quota che
+  // SocialBot trattiene su ogni donazione, in percento (0 = niente): diventa
+  // l'application fee del pagamento, e lo streamer la vede nella sua scheda.
+  donazioni: (() => {
+    const quotaPct = Math.min(30, Math.max(0, Number(env('DONAZIONI_QUOTA_PCT', '0')) || 0));
+    return { quotaPct, attivo: !!env('STRIPE_SECRET_KEY') };
+  })(),
+
   // Spotify (richieste musicali) — OPZIONALE. Serve un'app su
   // developer.spotify.com con Client ID/Secret e il redirect
   // https://socialbot.live/spotify/callback tra i "Redirect URIs". Senza

@@ -63,6 +63,7 @@ const PUBBLICHE = new Map([
   ['GET /u/:user/avatar', 'immagine della pagina link'],
   ['GET /u/:user/img/:file', 'immagini della pagina link'],
   ['GET /u/:user/privacy', 'informativa della pagina link'],
+  ['POST /dona/:login', 'il modulo delle donazioni della pagina link: chi dona non ha una sessione, e il pagamento lo conferma Stripe, non chi bussa'],
   ['GET /api/streamer-verify', 'lo stesso servizio della pagina link, origine fissa'],
   ['GET /auth/callback', 'ritorno del login Twitch'],
   ['GET /auth/mod', 'ingresso dei moderatori'],
