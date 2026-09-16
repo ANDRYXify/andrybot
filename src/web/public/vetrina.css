@@ -119,8 +119,8 @@ body.vetrina em, body.vetrina .vt-corsivo {
 @supports not (background-clip: text) { .vt-titolo em { -webkit-text-fill-color: currentColor; color: var(--acc); } }
 
 .vt-frase {
-  margin: clamp(.9rem, 2.2vh, 1.4rem) auto 0; max-width: 46ch; text-align: center; text-wrap: balance;
-  font-size: clamp(1.12rem, 1.75vw, 1.42rem); line-height: 1.4; font-weight: 600; color: var(--testo);
+  margin: clamp(.9rem, 2.2vh, 1.4rem) auto 0; max-width: 56ch; text-align: center; text-wrap: balance;
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem); line-height: 1.45; font-weight: 500; color: var(--testo);
 }
 .vt-sub {
   margin: clamp(1rem, 2.4vh, 1.5rem) auto 0; max-width: 62ch; text-align: center;
