@@ -82,6 +82,10 @@ export const config = {
   // c'e' gia' — e' il tetto alla somma: il disco e' uno per tutti.
   spazioCanaleByte: Math.max(50, parseInt(env('SPAZIO_CANALE_MB', '500'), 10) || 500) * 1024 * 1024,
   baseUrl: env('BASE_URL', 'http://localhost:8090').replace(/\/$/, ''),
+  // La pagina delle donazioni sta in /u/<login>/dona. Con un nome qui (per
+  // esempio dona.socialbot.live, con il suo record DNS e il nome nel Caddyfile)
+  // ha anche l'indirizzo corto dona.socialbot.live/<login>, e da li' si torna.
+  donaHost: env('DONA_HOST', '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
   sessionSecret: sessionSecret(),
 
   // kick — app registrata su kick.com/settings/developer.

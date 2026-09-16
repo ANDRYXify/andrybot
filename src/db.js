@@ -123,6 +123,21 @@ CREATE TABLE IF NOT EXISTS link_page (       -- la pagina pubblica /u/<login>
   ts INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS pagina_dona (     -- la pagina delle donazioni /u/<login>/dona: stessa forma della pagina link
+  channel TEXT PRIMARY KEY,
+  headline TEXT NOT NULL DEFAULT '',
+  tagline TEXT NOT NULL DEFAULT '',
+  template TEXT NOT NULL DEFAULT 'minimal',
+  accent TEXT NOT NULL DEFAULT '',
+  bg TEXT NOT NULL DEFAULT '',
+  links TEXT NOT NULL DEFAULT '',
+  avatar TEXT NOT NULL DEFAULT '',
+  tema TEXT NOT NULL DEFAULT '',
+  blocchi TEXT NOT NULL DEFAULT '',
+  attiva INTEGER NOT NULL DEFAULT 1,
+  ts INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS dirette_annunciate (  -- l'ultima diretta gia' annunciata, per piattaforma
   channel TEXT NOT NULL,
   piattaforma TEXT NOT NULL,     -- twitch | kick | youtube | tiktok
@@ -2491,7 +2506,11 @@ export const visitePagina = {
   },
 };
 
-export const linkPage = {
+// Le pagine pubbliche hanno una forma sola (testa, tema, blocchi) e due
+// tavoli: la pagina link e la pagina delle donazioni. Lo store e' uno,
+// costruito sul nome della tabella: stessa pulizia, stesso salvataggio.
+const storePagina = (tabella) => ({
+  tabella,
   _riga(r) {
     const leggi = (s, def) => { try { const p = JSON.parse(s || 'null'); return p && typeof p === 'object' ? p : def; } catch { return def; } };
     const tema = { ...TEMA_DEF, ...leggi(r.tema, {}) };
@@ -2506,7 +2525,7 @@ export const linkPage = {
     return { ...r, tema, blocchi, attiva: r.attiva !== 0 };
   },
   get(channel) {
-    const r = db.prepare('SELECT * FROM link_page WHERE channel=?').get(String(channel).toLowerCase());
+    const r = db.prepare(`SELECT * FROM ${this.tabella} WHERE channel=?`).get(String(channel).toLowerCase());
     return r ? this._riga(r) : null;
   },
   conDefault(channel, display) {
@@ -2661,7 +2680,7 @@ export const linkPage = {
         // il tasto delle donazioni: dove si dona e la valuta stanno nelle
         // impostazioni del canale (una configurazione sola); qui solo come si presenta
         out.push({ tipo, titolo: str(b.titolo, L.label), testo: str(b.testo, L.sotto), etichetta: str(b.etichetta, L.label), obiettivo: b.obiettivo !== false,
-          icona: scelta(b.icona, ICONE_LINKPAGE, null) || 'cuore' });
+          icona: scelta(b.icona, ICONE_LINKPAGE, null) || 'cuore', pagina: b.pagina === true });
       } else if (tipo === 'griglia') {
         const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 12).map((v) => ({
           img: urlOk(v?.img), titolo: str(v?.titolo, L.label), testo: str(v?.testo, L.sotto), url: urlOk(v?.url),
@@ -2705,7 +2724,7 @@ export const linkPage = {
       attiva: p.attiva === false ? 0 : 1,
       ts: now(),
     };
-    db.prepare(`INSERT INTO link_page (channel, headline, tagline, template, accent, bg, links, avatar, tema, blocchi, attiva, ts)
+    db.prepare(`INSERT INTO ${this.tabella} (channel, headline, tagline, template, accent, bg, links, avatar, tema, blocchi, attiva, ts)
       VALUES (@channel,@headline,@tagline,@template,@accent,@bg,@links,@avatar,@tema,@blocchi,@attiva,@ts)
       ON CONFLICT(channel) DO UPDATE SET headline=excluded.headline, tagline=excluded.tagline,
         template=excluded.template, accent=excluded.accent, bg=excluded.bg, links=excluded.links,
@@ -2713,8 +2732,10 @@ export const linkPage = {
         attiva=excluded.attiva, ts=excluded.ts`).run(v);
     return this.get(c);
   },
-  rimuovi(channel) { db.prepare('DELETE FROM link_page WHERE channel=?').run(String(channel).toLowerCase()); },
-};
+  rimuovi(channel) { db.prepare(`DELETE FROM ${this.tabella} WHERE channel=?`).run(String(channel).toLowerCase()); },
+});
+export const linkPage = storePagina('link_page');
+export const paginaDona = storePagina('pagina_dona');
 
 // NB: distinto dai `counters` di sotto (store low-level usato dalle azioni dei moduli).
 export const contatori = {

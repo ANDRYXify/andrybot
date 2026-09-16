@@ -82,6 +82,42 @@ un mezzo fra quelli pronti. `SATISPAY_HOST` punta alla sandbox, se serve.
 Il blocco ha la sua icona, scelta fra quelle della pagina come per i link
 (`icona`, di serie `cuore`).
 
+## La pagina delle donazioni e le offerte
+
+Chiesto così: «una pagina come quella della pagina link, super
+personalizzabile SOLO per le donazioni, da cui si possono anche comprare
+effetti ad hoc, e più range di prezzi per più effetti».
+
+La pagina ha la **stessa forma** della pagina link: testa, tema, blocchi. Lo
+store è uno (`storePagina(tabella)` in db.js) costruito su un altro tavolo,
+`pagina_dona`: stessa pulizia, stesso salvataggio, e salvare l'una non tocca
+l'altra. L'editor è uno: `LP.quale` (`link` | `dona`) sceglie la porta
+(`/api/linkpage` o `/api/paginadona`), l'interruttore sta in cima all'editor
+e dalla scheda Donazioni «Modifica la pagina» ci porta. Pubblica in
+`/u/<login>/dona`; con `DONA_HOST` (per esempio `dona.socialbot.live`, con il
+suo record DNS e il nome nel Caddyfile, che c'è già) anche
+`dona.socialbot.live/<login>`: un passaggio prima delle rotte traduce
+l'indirizzo corto, e i ritorni dal pagamento (`ritorno: 'dona'`) usano
+`urlPaginaDona(login)`. Il blocco «Sostieni» della pagina link può portare lì
+(`pagina: true`) invece di mostrare il modulo; sulla pagina delle donazioni
+quel rimando non ha senso e resta il modulo, con un campo nascosto
+`pagina=dona` che dice da dove si torna.
+
+Le **offerte** (`settings.donazioni.livelli`): fino a otto scaglioni
+`{ da, nome, effetto }`, in ordine di importo, senza doppioni, effetto come
+riferimento alla libreria (`effetto:<comando>`). Chi dona le vede al posto
+degli importi suggeriti («5 € · Applauso»), fra minimo e massimo. All'arrivo
+della donazione `AlertsEngine.donazione()` calcola `livelloPer(livelli,
+importo)`, la più alta raggiunta **dall'importo pagato** (mai da ciò che
+manda il browser), e 1,2 s dopo l'avviso manda l'effetto in overlay con lo
+stesso payload del tasto «Prova» (`effects.payload`). «Rimanda l'avviso» dal
+registro non lo ripete.
+
+Da fare: lo scaglione «il tuo effetto», in cui chi dona sopra una soglia
+carica un'immagine o una GIF che passa in overlay, con approvazione dello
+streamer nel registro, durata e pulizia; e un blocco «donatori» (ultime,
+classifica).
+
 ## Il registro, dentro SocialBot
 
 Tabella `donazioni`: una riga per pagamento (`stripe:cs_…`, `kofi:<login>:<id>`,

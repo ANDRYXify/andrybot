@@ -8,7 +8,7 @@ import { streamers, effects as effectsDb } from '../db.js';
 import * as stemmi from './badges.js';
 import * as emote from './emotes.js';
 import { makeLog } from '../logger.js';
-import { formattaImporto } from './donazioni.js';
+import { formattaImporto, livelloPer } from './donazioni.js';
 
 const log = makeLog('alerts');
 
@@ -128,6 +128,8 @@ export class AlertsEngine {
       const conf = a && a.attivo !== false ? a.donazione : null;
       if (conf && conf.attivo !== false && (soloAvviso || importo >= (Number(conf.minImporto) || 0))) this._spara(channel, a, 'donazione', conf, vars);
       if (!soloAvviso && cfgD.annunciaChat && this.say) this.say(channel, riempi(cfgD.testoChat || 'Grazie {user} per {importo}!', vars));
+      // l'offerta raggiunta accende il suo effetto, un attimo dopo l'avviso
+      if (!soloAvviso) { const liv = livelloPer(cfgD.livelli, importo); if (liv?.effetto) this._sparaEffetto(channel, liv.effetto, 1200); }
       log.info(`donazione su #${channel}: ${vars.importo} da ${vars.user}`);
       return true;
     } catch (e) { log.debug('donazione:', e?.message || e); return false; }
@@ -213,6 +215,19 @@ export class AlertsEngine {
     if (!m || typeof m !== 'object') return null;
     const v = m.video ? this._risolviEffetto(channel, m.video) : null;
     return { ...m, videoUrl: v && v.tipo === 'video' ? v.url : '' };
+  }
+
+  // Un effetto della libreria, mandato in overlay come lo manda il tasto
+  // «Prova» del pannello: stesso payload (media, volume, durata, posizione).
+  _sparaEffetto(channel, ref, ritardoMs = 0) {
+    const m = /^effetto:(.+)$/i.exec(String(ref || ''));
+    if (!m || !this.effects?.emit || !this.effects?.payload) return false;
+    let eff = null;
+    try { eff = effectsDb.get(channel, m[1]); } catch { eff = null; }
+    if (!eff) return false;
+    const manda = () => { try { this.effects.emit(channel, this.effects.payload(channel, eff)); } catch (e) { log.debug('effetto donazione:', e?.message || e); } };
+    if (ritardoMs > 0) setTimeout(manda, ritardoMs).unref?.(); else manda();
+    return true;
   }
 
   _risolviEffetto(channel, ref) {

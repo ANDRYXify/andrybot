@@ -85,7 +85,10 @@
 #              stretta e X-Frame-Options DENY, come prima.
 # Ogni `handle` è esclusivo (vince il primo che combacia): così ogni risposta
 # riceve UN SOLO set di header, senza ambiguità di precedenza.
-socialbot.live {
+# dona.socialbot.live e' la pagina delle donazioni con l'indirizzo corto
+# (dona.socialbot.live/<login>): stesso sito, stesse intestazioni, e' il
+# server che traduce l'indirizzo. Serve il record DNS e DONA_HOST nel .env.
+socialbot.live, dona.socialbot.live {
 	# zstd prima di gzip: Chrome lo prende e comprime meglio, gli altri
 	# ricadono su gzip. app.js e un file grosso, qui si vede.
 	encode zstd gzip

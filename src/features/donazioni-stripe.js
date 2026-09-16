@@ -16,6 +16,7 @@
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
 import { contiDonazioni, registroDonazioni } from '../db.js';
+import { urlPaginaDona } from './donazioni.js';
 
 const log = makeLog('donazioni');
 const API = 'https://api.stripe.com/v1';
@@ -67,8 +68,8 @@ function chiaveMorta(login, r) {
 // I parametri di una sessione di pagamento sul conto dello streamer. La
 // sessione di PROVA al collegamento usa gli stessi, cosi' un permesso che
 // manca si scopre subito, non alla prima donazione vera.
-function paramsSessione({ login, prodotto, chi, cent, valuta, nome, messaggio, scadenzaMs }) {
-  const base = config.baseUrl;
+function paramsSessione({ login, prodotto, chi, cent, valuta, nome, messaggio, scadenzaMs, ritorno = 'link' }) {
+  const base = ritorno === 'dona' ? urlPaginaDona(login) : config.baseUrl + '/u/' + login;
   return {
     mode: 'payment',
     submit_type: 'donate',
@@ -81,8 +82,8 @@ function paramsSessione({ login, prodotto, chi, cent, valuta, nome, messaggio, s
     'metadata[login]': login,
     'metadata[nome]': nome,
     'metadata[messaggio]': messaggio,
-    success_url: `${base}/u/${login}?dona={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${base}/u/${login}?dona=annullata`,
+    success_url: `${base}?dona={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${base}?dona=annullata`,
     expires_at: Math.floor((Date.now() + scadenzaMs) / 1000),
   };
 }
@@ -136,13 +137,13 @@ export function scollega(login) { contiDonazioni.togli(login); }
 // Apre il pagamento sul conto dello streamer: una sessione di Checkout con
 // l'importo scelto, sul suo prodotto «Donazione», e il ritorno sulla pagina
 // link con l'id della sessione. La riga nel registro nasce «in attesa».
-export async function apriPagamento({ login, display, importoCent, valuta = 'EUR', nome = '', messaggio = '' }) {
+export async function apriPagamento({ login, display, importoCent, valuta = 'EUR', nome = '', messaggio = '', ritorno = 'link' }) {
   login = String(login || '').toLowerCase();
   const c = contiDonazioni.get(login);
   if (!c?.chiave || !c.pronto || !c.prodotto) return { errore: 'conto' };
   const cent = Math.round(Number(importoCent) || 0);
   if (cent <= 0) return { errore: 'importo' };
-  const params = paramsSessione({ login, prodotto: c.prodotto, chi: display || login, cent, valuta, nome, messaggio, scadenzaMs: SCADENZA_MS });
+  const params = paramsSessione({ login, prodotto: c.prodotto, chi: display || login, cent, valuta, nome, messaggio, scadenzaMs: SCADENZA_MS, ritorno });
   const r = await stripe(c.chiave, 'POST', '/checkout/sessions', params);
   if (!r.ok || !r.dati?.url) { chiaveMorta(login, r); return { errore: 'stripe' }; }
   registroDonazioni.apri('stripe:' + r.dati.id, { login, fonte: 'stripe', importo: cent, valuta, nome, messaggio });
