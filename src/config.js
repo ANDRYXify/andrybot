@@ -142,7 +142,9 @@ export const config = {
     return {
       secretKey,
       webhookSecret,
-      // price-id (dal cruscotto Stripe). Vuoto = non acquistabile.
+      // price-id FACOLTATIVI. Il server trova i prezzi da solo in Stripe, per nome
+      // del prodotto e importo del listino (abbonamenti.js, verificaPrezziStripe).
+      // Un id scritto qui forza la scelta per quella voce, e viene verificato lo stesso.
       //  · base        → il canone del piano Base
       //  · addon_*     → i pacchetti add-on à la carte (componibili sopra la Base)
       //  · pro         → LEGACY: vecchio tier "tutto incluso" (compat con abbonati storici)
@@ -156,11 +158,9 @@ export const config = {
         addon_squadra: env('STRIPE_PRICE_ADDON_SQUADRA'),
         addon_musica: env('STRIPE_PRICE_ADDON_MUSICA'),
         pro: env('STRIPE_PRICE_PRO'),
-        // BUNDLE curati: un price-id Stripe DEDICATO per bundle (prezzo fisso
-        //  scontato). Crea in Stripe un prezzo ricorrente per ciascuno:
-        //  «Tutto» €3,99 (clip + voce + squadra, esclusa la Base). Creator e
-        //  Interazione sono ritirati: i loro add-on stanno nell'Essenziale.
-        //  All'avvio il listino si confronta con i prezzi veri (verificaPrezziStripe).
+        // BUNDLE: in Stripe un prodotto «Bundle Tutto» con un prezzo unico (€3,99,
+        //  clip + voce + squadra, esclusa la Base), trovato per nome come gli altri.
+        //  Creator e Interazione sono ritirati: i loro add-on stanno nell'Essenziale.
         bundle_creator: env('STRIPE_PRICE_BUNDLE_CREATOR'),
         bundle_interazione: env('STRIPE_PRICE_BUNDLE_INTERAZIONE'),
         bundle_tutto: env('STRIPE_PRICE_BUNDLE_TUTTO'),

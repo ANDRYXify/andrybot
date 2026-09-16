@@ -122,3 +122,76 @@ test('la vetrina pubblica non manda Infinity al browser', () => {
   assert.doesNotMatch(v, /null,"moduli"|Infinity/);
   assert.ok(v.includes('"moduli":-1') || v.includes('"moduli": -1'), 'illimitato viaggia come -1');
 });
+
+// ── I PREZZI SI TROVANO DA SOLI IN STRIPE ──────────────────────────────────
+// Un finto elenco di prezzi come lo restituisce Stripe (con il prodotto espanso).
+const prezzo = (id, nomeProd, cent, extra = {}, prod = {}) => ({
+  id, unit_amount: cent, currency: 'eur', active: true, created: 100, recurring: { interval: 'month', interval_count: 1 },
+  product: { id: 'prod_' + id, name: nomeProd, active: true, metadata: {}, ...prod }, ...extra,
+});
+const voceClip = ab.addonById('clip'), voceTutto = ab.bundleById('tutto');
+const cent = (v) => Math.round(v.prezzo * 100);
+
+test('il prezzo di una voce e\' quello del prodotto con il suo nome e con l\'importo del listino', () => {
+  const lista = [
+    prezzo('price_clip_vecchio', 'Clip Automatiche', 99, { created: 50 }),          // importo vecchio, ancora attivo
+    prezzo('price_clip', 'Clip Automatiche', cent(voceClip)),
+    prezzo('price_base', 'Base', cent(ab.BASE)),
+    prezzo('price_tutto_vecchio', 'Bundle Tutto', 1249),
+    prezzo('price_tutto', 'Bundle Tutto', cent(voceTutto)),
+  ];
+  const e = ab.abbinaPrezzi([ab.BASE, voceClip, voceTutto], lista);
+  assert.deepEqual(e.get('base'), { ok: true, price: 'price_base', motivo: '' });
+  assert.deepEqual(e.get('addon_clip'), { ok: true, price: 'price_clip', motivo: '' }, 'fra due prezzi dello stesso prodotto vince l\'importo del listino, non il piu\' recente');
+  assert.deepEqual(e.get('bundle_tutto'), { ok: true, price: 'price_tutto', motivo: '' }, '«Bundle Tutto» in Stripe e\' il pacchetto «Tutto»');
+});
+
+test('il nome si confronta senza maiuscole, accenti e segni; la chiave nei metadata vince sul nome', () => {
+  const voceSquadra = ab.addonById('squadra');
+  const lista = [
+    prezzo('price_sq', '  squadra ', cent(voceSquadra)),
+    prezzo('price_clip', 'Le mie clip', cent(voceClip), {}, { metadata: { socialbot: 'addon_clip' } }),
+    prezzo('price_finto', 'Clip Automatiche', cent(voceClip), {}, { metadata: { socialbot: 'bundle_tutto' } }),
+  ];
+  const e = ab.abbinaPrezzi([voceSquadra, voceClip], lista);
+  assert.equal(e.get('addon_squadra').price, 'price_sq');
+  assert.equal(e.get('addon_clip').price, 'price_clip', 'il prodotto marcato «addon_clip» e\' il suo, anche con un altro nome');
+});
+
+test('un importo che non torna, un prodotto che manca o un prezzo archiviato non si vendono, e il motivo dice cosa c\'e\'', () => {
+  const lista = [
+    prezzo('price_clip_sbagliato', 'Clip Automatiche', 99),
+    prezzo('price_base_arch', 'Base', cent(ab.BASE), { active: false }),
+    prezzo('price_tutto_anno', 'Bundle Tutto', cent(voceTutto), { recurring: { interval: 'year', interval_count: 1 } }),
+  ];
+  const e = ab.abbinaPrezzi([ab.BASE, voceClip, voceTutto, ab.addonById('voce')], lista);
+  assert.equal(e.get('addon_clip').ok, false);
+  assert.match(e.get('addon_clip').motivo, /Stripe ha 99 eur\/month ≠ listino 199 eur\/month/);
+  assert.equal(e.get('base').ok, false, 'un prezzo archiviato non vale');
+  assert.equal(e.get('bundle_tutto').ok, false, 'un prezzo annuale non e\' il canone mensile');
+  assert.equal(e.get('addon_voce').ok, false);
+  assert.match(e.get('addon_voce').motivo, /nessun prodotto «Comandi Vocali»/);
+  for (const [, x] of e) assert.equal(x.price, '', 'una voce non confermata non ha un id da vendere');
+});
+
+test('un id forzato dal .env vince sul nome, ma si verifica lo stesso', () => {
+  const lista = [
+    prezzo('price_a', 'Clip Automatiche', cent(voceClip)),
+    prezzo('price_b', 'Altro nome', cent(voceClip)),
+    prezzo('price_c', 'Clip Automatiche', 99),
+  ];
+  assert.equal(ab.abbinaPrezzi([voceClip], lista, { addon_clip: 'price_b' }).get('addon_clip').price, 'price_b');
+  const c = ab.abbinaPrezzi([voceClip], lista, { addon_clip: 'price_c' }).get('addon_clip');
+  assert.equal(c.ok, false, 'forzato ma con l\'importo sbagliato: non si vende');
+  const z = ab.abbinaPrezzi([voceClip], lista, { addon_clip: 'price_zzz' }).get('addon_clip');
+  assert.equal(z.ok, false); assert.match(z.motivo, /price_zzz/);
+});
+
+test('si cercano solo le voci in vendita: niente ritirati; con Stripe spento il listino si legge e basta', () => {
+  const chiavi = ab.vociVendute().map((v) => v.id);
+  assert.deepEqual(chiavi, ['base', 'clip', 'voce', 'squadra', 'tutto']);
+  for (const id of ['giochi', 'effetti', 'musica']) assert.ok(!chiavi.includes(id));
+  assert.equal(ab.vendibile(voceClip), true, 'senza Stripe non c\'e\' niente da confermare: il listino si mostra');
+  assert.equal(ab.priceDi(voceClip), '', 'ma senza conferma non c\'e\' un id da mandare al checkout');
+  assert.equal(ab.addonById('clip').prezzo + ab.addonById('voce').prezzo + ab.addonById('squadra').prezzo, 4.97, 'la somma dei tre extra e\' quella scritta ovunque');
+});

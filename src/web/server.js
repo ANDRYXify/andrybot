@@ -1693,8 +1693,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   overlay e alert, giochi e monete, sondaggi, giveaway, richieste musicali.
 - Base: 2,99 euro al mese. Un moderatore, avvisi live e nuovi post su
   Telegram e Discord, Studio Web.
-- Extra a scelta: clip automatiche (0,99), comandi a voce (0,99), squadra
-  fino a dieci moderatori (2,99); tutti e tre insieme 3,99.
+- Extra a scelta: clip automatiche (1,99), comandi a voce (0,99), squadra
+  fino a dieci moderatori (1,99); tutti e tre insieme 3,99.
 - Gratuito e completo per i membri abilitati della community di andryxify.it.
 
 ## Link
@@ -2703,8 +2703,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.get('/api/abbonamento/piani', (req, res) => {
     res.json({ attivo: config.stripe.attivo, ...abbonamenti.pianiPubblici() });
   });
-  // il listino si confronta con Stripe all'avvio: una voce che non coincide non si vende
-  abbonamenti.verificaPrezziStripe().catch((e) => log.warn('prezzi Stripe:', e?.message || e));
+  // i prezzi si trovano in Stripe all'avvio e poi ogni quarto d'ora: una voce che non coincide non si vende
+  abbonamenti.sorvegliaPrezzi();
 
   // avvia il checkout per un tier. Identità: la sessione, oppure chi ha fatto il
   // login self-service in attesa di abbonarsi (req.session.abbonando). Off → 503.
