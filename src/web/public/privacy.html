@@ -88,7 +88,8 @@
           stagni</strong> — mai il contenuto dei messaggi né in quale canale.</li>
         <li><strong>Integrazioni opzionali</strong> attivate dallo streamer: token del suo bot <strong>Telegram</strong>
           + id del gruppo (forniti da lui), <strong>username TikTok</strong> pubblico per la notifica live, e la
-          chiave a permessi ridotti del suo conto <strong>Stripe</strong> per le donazioni, conservata cifrata.</li>
+          chiave a permessi ridotti del suo conto <strong>Stripe</strong> per le donazioni, conservata cifrata; se collega
+          <strong>Satispay</strong>, la chiave con cui firmiamo i pagamenti sul suo negozio online, anch'essa cifrata.</li>
         <li><strong>Messaggi ed eventi delle altre piattaforme collegate</strong> (Kick, YouTube): arrivano solo dai
           canali che lo streamer ha collegato lui, e vengono trattati <strong>esattamente come quelli di Twitch</strong>
           — stessa conservazione, stessa cancellazione automatica dopo 14 giorni. Nessuna piattaforma nuova amplia
@@ -118,8 +119,8 @@
         <strong>YouTube</strong>: verso ognuna passano solo i dati necessari a fare quello che lo streamer ha chiesto
         (leggere la chat del suo canale, rispondere, ricevere gli eventi). Le integrazioni verso <strong>Telegram</strong> e
       <strong>TikTok</strong> avvengono solo se lo streamer le collega. Le donazioni passano da <strong>Stripe</strong>
-      (Stripe Payments Europe, Irlanda), sul conto che lo streamer apre lì: verso Stripe vanno l'importo, il nome e il
-      messaggio scelti da chi dona. I dati vivono sul <strong>server di ANDRYXify
+      (Stripe Payments Europe, Irlanda) o da <strong>Satispay</strong> (Satispay Europe, Lussemburgo), sul conto che lo
+      streamer apre lì: verso di loro vanno l'importo, il nome e il messaggio scelti da chi dona. I dati vivono sul <strong>server di ANDRYXify
       (Hetzner, Germania — UE)</strong>, sotto HTTPS.</p>
       <p class="muted">Nessuna vendita di dati, nessun tracciamento pubblicitario, nessuna IA a pagamento di terzi.</p>
     </section>

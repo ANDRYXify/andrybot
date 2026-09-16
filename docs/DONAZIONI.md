@@ -60,6 +60,28 @@ donare esce dalla pagina, e senza Ko-fi non c'è avviso.
    chiave API. Con `{ soloAvviso: true }` l'avviso si rimanda dal registro
    senza ricontare e senza ringraziare di nuovo.
 
+## Satispay, la seconda strada
+
+Stesso principio: il conto e' dello streamer. Nel suo pannello Business apre
+un negozio online di tipo API e genera un **codice di attivazione** (vale una
+volta sola). Con quel codice SocialBot registra presso Satispay una chiave
+pubblica RSA nata per lui (`POST /g_business/v1/authentication_keys`) e
+riceve un KeyId; la chiave privata sta nella busta (`conti_satispay.chiave`).
+Da li' ogni richiesta e' firmata (`(request-target) host date digest`,
+RSA-SHA256) e si verifica subito con una richiesta vera. Il pagamento e' un
+`MATCH_CODE` con `redirect_url` verso `/u/<login>?dona=sp_<token>` e
+`callback_url` verso `GET /dona/satispay/<login>?payment_id={uuid}`: il
+registro tiene il nostro token come id e l'id di Satispay in `riferimento`,
+cosi' il ritorno, la callback e la ronda arrivano tutti alla stessa riga e
+`ACCEPTED` si conta una volta. Il rimborso e' un pagamento `REFUND` figlio
+dell'originale. Solo in euro: con un'altra valuta Satispay non si offre. Con
+Stripe e Satispay pronti, il blocco ha due tasti (`name="mezzo"`) e chi dona
+sceglie; lo script manda il mezzo del tasto premuto, e il server accetta solo
+un mezzo fra quelli pronti. `SATISPAY_HOST` punta alla sandbox, se serve.
+
+Il blocco ha la sua icona, scelta fra quelle della pagina come per i link
+(`icona`, di serie `cuore`).
+
 ## Il registro, dentro SocialBot
 
 Tabella `donazioni`: una riga per pagamento (`stripe:cs_…`, `kofi:<login>:<id>`,
@@ -129,6 +151,10 @@ pagamento nasce sul suo conto senza Connect e senza quote; la conferma conta
 una volta sola e tiene il riferimento; la chiave revocata si scopre e si
 spiega; il rimborso spiega il permesso che manca e segna la riga; la ronda; il
 registro (doppioni, pagine, riepilogo, cancellazione).
+`test/unita/donazioni-satispay.test.mjs`: la registrazione con il codice, ogni
+firma verificata con la chiave pubblica mandata a Satispay, il pagamento con
+ritorno e callback, la conferma una volta sola, il rimborso REFUND, la firma
+rifiutata spiegata.
 `test/contratto/donazioni.test.mjs`: la scheda nel pannello e negli aiuti, le
 rotte col loro guardiano, niente Connect nel modulo, il blocco col modulo (e
 non in anteprima), lo script, privacy e termini.

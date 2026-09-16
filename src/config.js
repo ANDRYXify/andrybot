@@ -174,6 +174,10 @@ export const config = {
   // developer.spotify.com con Client ID/Secret e il redirect
   // https://socialbot.live/spotify/callback tra i "Redirect URIs". Senza
   // credenziali il connettore resta spento (nessun bottone "Connetti Spotify").
+  // Satispay Business (donazioni): il conto e' dello streamer, la chiave la
+  // firmiamo noi. L'indirizzo cambia solo per la sandbox di Satispay.
+  satispay: { host: env('SATISPAY_HOST', 'https://authservices.satispay.com') },
+
   spotify: (() => {
     const clientId = env('SPOTIFY_CLIENT_ID');
     const clientSecret = env('SPOTIFY_CLIENT_SECRET');

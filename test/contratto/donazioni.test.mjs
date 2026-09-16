@@ -64,9 +64,12 @@ test('l\'obiettivo «euro» esiste dove si conta, dove si pulisce e dove si dise
 test('il blocco «Sostieni» esiste dove si pulisce, dove si rende e dove si aggiunge, e legge una configurazione sola', () => {
   assert.ok(TIPI_BLOCCO.includes('sostieni'));
   const p = linkPage.pulisci({ blocchi: [{ tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: 'grazie', etichetta: 'Dona', obiettivo: false }] });
-  assert.deepEqual(p.blocchi[0], { tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: 'grazie', etichetta: 'Dona', obiettivo: false, larghezza: 'piena', entrata: 'auto', allinea: 'auto' });
+  assert.deepEqual(p.blocchi[0], { tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: 'grazie', etichetta: 'Dona', obiettivo: false, icona: 'cuore', larghezza: 'piena', entrata: 'auto', allinea: 'auto' });
+  assert.equal(linkPage.pulisci({ blocchi: [{ tipo: 'sostieni', icona: 'stella' }] }).blocchi[0].icona, 'stella', 'l\'icona si sceglie come per i link');
+  assert.equal(linkPage.pulisci({ blocchi: [{ tipo: 'sostieni', icona: 'boh' }] }).blocchi[0].icona, 'cuore', 'una sconosciuta torna al cuore');
   assert.match(APP, /data-lpadd="sostieni"/, 'si aggiunge dal pannello');
-  assert.match(APP, /sostieni: \{ tipo: 'sostieni', titolo: '', testo: '', etichetta: '', obiettivo: true \}/);
+  assert.match(APP, /sostieni: \{ tipo: 'sostieni', titolo: '', testo: '', etichetta: '', obiettivo: true, icona: 'cuore' \}/);
+  assert.match(APP, /\$\{grigliaIcone\(i, b\.icona \|\| 'cuore'\)\}/, 'l\'editor offre la griglia delle icone anche qui');
   const base = { attiva: true, blocchi: [{ tipo: 'sostieni', titolo: 'Un caffè', obiettivo: true }], tema: {} };
   const opz = { login: 'x', display: 'X', avatar: '', baseUrl: 'http://x' };
   const senza = renderLinkPage(base, opz);
@@ -100,7 +103,7 @@ test('il webhook e\' un ingresso dichiarato, verificato con l\'impronta, e il to
   assert.match(SRV, /donazioni: \{ \.\.\.dn, kofiImp: '', kofiSet: true \}/, '/api/me maschera l\'impronta');
   assert.match(SRV, /out\.donazioni = donazioni\.normDonazioni\(b\.donazioni, s\.settings\?\.donazioni, user\.login\);/, 'le impostazioni passano dalla pulizia');
   assert.match(SRV, /if \(azione === 'donazione'\) \{/, 'la chiave API del canale accetta una mancia');
-  assert.ok((SRV.match(/sostieni: donazioni\.datiSostieni\(s\?\.settings, (conto|contiDonazioni\.get\(login\))\)/g) || []).length === 2, 'la pagina pubblica e l\'anteprima ricevono gli stessi dati, col conto');
+  assert.ok((SRV.match(/sostieni: donazioni\.datiSostieni\(s\?\.settings, (conti|contiDi\(login\))\)/g) || []).length === 2, 'la pagina pubblica e l\'anteprima ricevono gli stessi dati, coi conti');
 });
 
 test('il motore: una donazione fa crescere l\'obiettivo, spara l\'alert sopra la soglia e ringrazia in chat', () => {
@@ -165,12 +168,13 @@ test('il conto e il pagamento: le rotte hanno il loro guardiano o sono dichiarat
   assert.match(SRV, /app\.post\('\/dona\/:login', express\.urlencoded\(\{ extended: false, limit: '8kb' \}\)/, 'il modulo e\' un modulo');
   assert.match(PORTE, /\['POST \/dona\/:login', /, 'ed e\' dichiarato pubblico, col motivo');
   const u = SRV.slice(SRV.indexOf("app.get('/u/:user'"), SRV.indexOf("app.get('/api/streamer-verify'"));
-  assert.ok(u.includes("const e = await donaStripe.conferma(login, dona);"), 'al ritorno si chiede a Stripe');
+  assert.ok(u.includes("const e = await confermaDonazione(login, dona);"), 'al ritorno si chiede a chi ha mosso i soldi');
+  assert.ok(SRV.includes("if (/^cs_[A-Za-z0-9_]{8,200}$/.test(dona)) return donaStripe.conferma(login, dona);"), 'cs_… e\' una sessione di Stripe');
   assert.ok(u.includes("if (e?.nuova) manager.alerts?.donazione(login, e.d);"), 'l\'avviso parte solo la prima volta');
   assert.ok(u.includes("if (dona) res.set('Cache-Control', 'private, no-store');"), 'la pagina del grazie non va in cache');
-  assert.match(SRV, /donaStripe\.avviaRonda\(\(login, d\) => manager\.alerts\?\.donazione\(login, d\)\);/, 'la ronda avvisa come il ritorno');
+  assert.match(SRV, /donaStripe\.avviaRonda\(\(login, d\) => manager\.alerts\?\.donazione\(login, d\), \{/, 'la ronda avvisa come il ritorno');
   const modulo = SRV.slice(SRV.indexOf("app.post('/dona/:login'"), SRV.indexOf("app.post('/stripe/webhook'"));
-  assert.ok(modulo.includes("donazioni.leggiModulo(req.body, cfg)") && modulo.includes("donaStripe.apriPagamento({ login, display: s?.display || login"), 'legge il modulo e apre il pagamento sul conto');
+  assert.ok(modulo.includes("donazioni.leggiModulo(req.body, cfg)") && modulo.includes("const dati = { login, display: s?.display || login,") && modulo.includes("mezzo === 'satispay' ? await donaSatispay.apriPagamento(dati) : await donaStripe.apriPagamento(dati)"), 'legge il modulo e apre il pagamento sul conto scelto');
   assert.ok(modulo.includes("extRateOk('dona-modulo:' + login)"), 'con un limite di frequenza');
   assert.ok(modulo.includes('http-equiv="refresh"'), 'senza script, la pagina-ponte');
   assert.match(SRV, /registroDonazioni\.segna\(chiave, \{ login, fonte: 'ext'/, 'anche la chiave API passa dal registro');
@@ -203,7 +207,7 @@ test('il blocco «Sostieni» sul conto: un modulo col tema, che in anteprima non
   assert.ok(!/https:\/\/[a-z.]*stripe/.test(leggi('src/features/linkpagina.js')), 'nessun host di Stripe nel codice della pagina: il CSP non cambia');
   assert.ok(PLJS.includes("document.querySelector('.sost-f')") && PLJS.includes("headers: { Accept: 'application/json' }") && PLJS.includes('location.href = x.j.url'), 'lo script manda via fetch e naviga da solo');
   assert.ok(PLJS.includes("if (f.getAttribute('data-anteprima')) return;"), 'e in anteprima si ferma');
-  assert.match(leggi('src/features/linkpagina.js'), /pagina-link\.js\?v=9/, 'lo script cambia versione, cosi\' la cache lo ricarica');
+  assert.match(leggi('src/features/linkpagina.js'), /pagina-link\.js\?v=10/, 'lo script cambia versione, cosi\' la cache lo ricarica');
 });
 
 test('le pagine di privacy e termini, e l\'informativa della pagina link, dicono come vanno i soldi e i dati', () => {
@@ -214,4 +218,31 @@ test('le pagine di privacy e termini, e l\'informativa della pagina link, dicono
   assert.ok(term.includes('sei tu l\'esercente') && term.includes('non custodisce fondi'), 'i termini: lo streamer e\' l\'esercente, SocialBot non tiene soldi');
   const inf = renderInformativa({ login: 'x', display: 'X', baseUrl: 'http://x', pagina: { tema: {} }, contatto: '' });
   assert.ok(inf.includes('<h2>Donazioni</h2>') && inf.includes('sul conto di X'), 'l\'informativa della pagina');
+});
+
+test('Satispay: le rotte hanno il loro guardiano o sono dichiarate, la ronda lo conosce, il blocco offre la scelta', () => {
+  assert.match(SRV, /app\.post\('\/api\/donazioni\/satispay\/collega', requireOwner,/);
+  assert.match(SRV, /app\.post\('\/api\/donazioni\/satispay\/scollega', requireOwner,/);
+  assert.match(SRV, /app\.get\('\/dona\/satispay\/:login', wrap\(/, 'la callback e\' pubblica');
+  assert.match(PORTE, /\['GET \/dona\/satispay\/:login', /, 'e dichiarata, col motivo');
+  const cb = SRV.slice(SRV.indexOf("app.get('/dona/satispay/:login'"), SRV.indexOf("}));", SRV.indexOf("app.get('/dona/satispay/:login'")));
+  assert.ok(cb.indexOf('res.json({ ok: true });') < cb.indexOf('donaSatispay.confermaPerRiferimento'), 'si risponde prima di lavorare');
+  assert.ok(cb.includes("extRateOk('dona-cb:' + login)"), 'con un limite di frequenza');
+  assert.match(SRV, /donaStripe\.avviaRonda\(\(login, d\) => manager\.alerts\?\.donazione\(login, d\), \{ satispay: donaSatispay\.conferma \}\);/, 'la ronda rilegge anche Satispay');
+  assert.ok(SRV.includes("if (/^sp_[0-9a-f]{16}$/.test(dona)) return donaSatispay.conferma(login, dona.slice(3));"), 'il ritorno sp_… e\' di Satispay');
+  assert.ok(SRV.includes("const mezzo = mezzi.includes(String(req.body?.mezzo || '')) ? String(req.body.mezzo) : mezzi[0];"), 'il mezzo lo sceglie chi dona, fra quelli pronti');
+  const SP = leggi('src/features/donazioni-satispay.js');
+  assert.match(SP, /headers="\(request-target\) host date digest"/, 'la firma di Satispay');
+  assert.match(SP, /flow: 'MATCH_CODE'/); assert.match(SP, /flow: 'REFUND'/);
+  const base = { attiva: true, blocchi: [{ tipo: 'sostieni', titolo: 'Un caffè' }], tema: {} };
+  const opz = { login: 'x', display: 'X', avatar: '', baseUrl: 'http://x' };
+  const dati = { modo: 'conto', link: '', importi: [2, 5], minimo: 1, massimo: 500, conMessaggio: true, etichetta: 'Dona', messaggio: '', valuta: 'EUR', goal: null };
+  const due = renderLinkPage(base, { ...opz, sostieni: { ...dati, mezzi: ['stripe', 'satispay'] } });
+  assert.ok(due.includes('class="voce spicca sost-b" name="mezzo" value="stripe"'), 'il tasto principale paga con carta');
+  assert.ok(due.includes('class="voce sost-b sost-b2" name="mezzo" value="satispay"') && due.includes('Oppure con Satispay'), 'e il secondo con Satispay');
+  const solo = renderLinkPage(base, { ...opz, sostieni: { ...dati, mezzi: ['satispay'] } });
+  assert.ok(solo.includes('class="voce spicca sost-b" name="mezzo" value="satispay"') && !solo.includes('class="voce sost-b sost-b2"'), 'con Satispay soltanto, un tasto solo');
+  assert.ok(PLJS.includes("dati.set('mezzo', b.value)"), 'lo script manda il mezzo del tasto premuto');
+  assert.match(APP, /id="dona-satispay-codice"/); assert.match(APP, /data-dona="satispay-collega"/);
+  assert.ok(leggi('src/web/public/privacy.html').includes('Satispay Europe') && leggi('src/web/public/termini.html').includes('Satispay'), 'privacy e termini lo dicono');
 });

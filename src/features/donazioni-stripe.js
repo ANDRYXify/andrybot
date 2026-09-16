@@ -208,12 +208,15 @@ export async function rimborsa(login, id) {
 
 // La ronda: rilegge le sessioni in attesa, segna le pagate (e avvisa), lascia
 // scadere le vecchie, e tiene pulito il registro. Torna quante ne ha trovate pagate.
-export async function ronda(suPagata, ora = Date.now()) {
+// `altri`: le conferme degli altri mezzi, per prefisso del registro (satispay: …).
+export async function ronda(suPagata, ora = Date.now(), altri = {}) {
   let n = 0;
   for (const r of registroDonazioni.inAttesa()) {
-    if (!r.id.startsWith('stripe:')) continue;
+    const prefisso = r.id.slice(0, r.id.indexOf(':'));
+    const confermaDi = prefisso === 'stripe' ? conferma : altri[prefisso];
+    if (!confermaDi) continue;
     if (ora - r.created_at > SCADENZA_MS + TOLLERANZA_MS) { registroDonazioni.scadi(r.id); continue; }
-    const e = await conferma(r.login, r.id.slice('stripe:'.length));
+    const e = await confermaDi(r.login, r.id.slice(prefisso.length + 1));
     if (!e?.nuova) continue;
     n++;
     try { suPagata(r.login, e.d); } catch (err) { log.warn('donazione confermata dalla ronda, avviso fallito:', err?.message || err); }
@@ -223,8 +226,8 @@ export async function ronda(suPagata, ora = Date.now()) {
 }
 
 let _timer = null;
-export function avviaRonda(suPagata) {
+export function avviaRonda(suPagata, altri = {}) {
   if (_timer) return;
-  _timer = setInterval(() => ronda(suPagata).catch((e) => log.warn('ronda donazioni:', e?.message || e)), RONDA_MS);
+  _timer = setInterval(() => ronda(suPagata, Date.now(), altri).catch((e) => log.warn('ronda donazioni:', e?.message || e)), RONDA_MS);
   _timer.unref?.();
 }

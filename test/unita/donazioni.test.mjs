@@ -111,19 +111,26 @@ test('i dati per il blocco «Sostieni»: come si dona, gli importi, il tasto, la
   // sul conto: serve un conto pronto a incassare; il link non c'entra
   const conto = { donazioni: { attivo: true, modo: 'conto', link: 'https://ko-fi.com/a', importi: [3, 9], minimo: 2, conMessaggio: false, valuta: 'USD' } };
   assert.equal(dn.datiSostieni(conto), null, 'senza conto niente modulo');
-  assert.equal(dn.datiSostieni(conto, { stripe_account: 'acct_1', pronto: 0 }), null, 'un conto non pronto non incassa');
-  const c = dn.datiSostieni(conto, { stripe_account: 'acct_1', pronto: 1 });
+  assert.equal(dn.datiSostieni(conto, { stripe: { pronto: 0 } }), null, 'un conto non pronto non incassa');
+  const c = dn.datiSostieni(conto, { stripe: { pronto: 1 } });
   assert.equal(c.modo, 'conto');
+  assert.deepEqual(c.mezzi, ['stripe']);
   assert.equal(c.link, '', 'sul conto il link non si usa');
   assert.deepEqual(c.importi, [3, 9]);
   assert.equal(c.minimo, 2);
   assert.equal(c.massimo, 500);
-  assert.equal(dn.datiSostieni({ donazioni: { ...conto.donazioni, massimo: 1500 } }, { pronto: 1 }).massimo, 1500);
+  assert.equal(dn.datiSostieni({ donazioni: { ...conto.donazioni, massimo: 1500 } }, { stripe: { pronto: 1 } }).massimo, 1500);
+  // Satispay conta solo in euro; con tutti e due, Stripe viene prima
+  assert.deepEqual(dn.mezziDi({ valuta: 'EUR' }, { stripe: { pronto: 1 }, satispay: { pronto: 1 } }), ['stripe', 'satispay']);
+  assert.deepEqual(dn.mezziDi({ valuta: 'USD' }, { satispay: { pronto: 1 } }), [], 'Satispay non conosce i dollari');
+  assert.deepEqual(dn.mezziDi({ valuta: 'EUR' }, { satispay: { pronto: 1 } }), ['satispay']);
+  assert.deepEqual(dn.datiSostieni({ donazioni: { attivo: true } }, { satispay: { pronto: 1 } }).mezzi, ['satispay']);
   assert.equal(c.conMessaggio, false);
   assert.equal(c.valuta, 'USD');
   // cosa manca, detto in una parola
   assert.equal(dn.cosaManca(null), 'spente');
   assert.equal(dn.cosaManca({ donazioni: { attivo: true, modo: 'link' } }), 'link');
   assert.equal(dn.cosaManca({ donazioni: { attivo: true } }), 'conto');
-  assert.equal(dn.cosaManca({ donazioni: { attivo: true } }, { pronto: 1 }), '');
+  assert.equal(dn.cosaManca({ donazioni: { attivo: true } }, { stripe: { pronto: 1 } }), '');
+  assert.equal(dn.cosaManca({ donazioni: { attivo: true, valuta: 'USD' } }, { satispay: { pronto: 1 } }), 'conto', 'Satispay da solo, in dollari, non basta');
 });
