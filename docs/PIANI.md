@@ -28,7 +28,7 @@ musicali** su Spotify con il player a schermo.
 **Si paga ciò che altrove non c'è.** Base, 2,99 €/mese: un moderatore sul
 pannello, avvisi di diretta e dei nuovi post su Telegram e Discord (TikTok,
 YouTube, Instagram), il bot su Telegram, lo Studio Web. Extra: clip automatiche
-(0,99), comandi a voce (0,99), squadra fino a dieci moderatori (2,99); i tre
+(1,99), comandi a voce (0,99), squadra fino a dieci moderatori (1,99); i tre
 insieme nel pacchetto «Tutto» a 3,99 invece di 4,97. I membri abilitati della
 community di andryxify.it hanno tutto.
 
@@ -44,16 +44,36 @@ portale Stripe: il codice non può disdire al posto suo.
 
 Il listino sta nel catalogo, il prezzo vero sta in Stripe: due posti. Il giorno
 che uno cambia senza l'altro, qualcuno paga una cifra diversa da quella che ha
-letto. All'avvio `verificaPrezziStripe()` chiede a Stripe ogni prezzo
-configurato e confronta importo, valuta e cadenza con il catalogo: la voce che
-non coincide sparisce dal listino (`vendibile()`), il checkout la rifiuta, e il
-log dice quale e perché. Vale per il Base, gli extra e il pacchetto. Con Stripe
-spento il listino si legge lo stesso e i pagamenti non partono, come prima.
+letto. Prima la cura era copiare a mano l'id di ogni prezzo nel `.env` e
+confrontarlo all'avvio: funzionava, ma ogni prezzo nuovo voleva un giro sul
+server, e il proprietario lo ha detto chiaro: scomodo.
 
-Quando si cambia un prezzo: prima si crea il nuovo prezzo ricorrente in Stripe,
-poi si mette il suo id nel `.env` (`STRIPE_PRICE_…`), poi si tocca il catalogo.
-Il pacchetto «Tutto» è passato da 12,49 a 3,99: finché in Stripe resta il prezzo
-vecchio, non si vende.
+Ora il server **trova i prezzi da solo**. La regola, in una frase: il prezzo di
+una voce è quello, attivo e mensile in euro, del prodotto Stripe che porta il
+suo nome con l'importo del listino. Il nome si confronta senza maiuscole,
+accenti e segni («Bundle Tutto» vale per il pacchetto «Tutto», «Effetti & Punti
+canale» vale com'è); se un prodotto ha nei metadata la chiave `socialbot`
+uguale alla chiave della voce (`base`, `addon_clip`, `bundle_tutto`…), vince
+quella e il nome non conta. Fra più prezzi dello stesso prodotto si prende
+quello con l'importo giusto, e fra più prezzi giusti il più recente. Se
+l'importo non torna, o il prodotto non c'è, la voce sparisce dal listino
+(`vendibile()`), il checkout la rifiuta e il log dice cosa Stripe ha davvero.
+Le voci ritirate e quelle già comprese nel Base (Social & Notifiche) non si
+cercano: non si vendono a parte, e un checkout che le chiede non le addebita.
+
+Il controllo (`verificaPrezziStripe()`, pura la parte che abbina:
+`abbinaPrezzi()`) parte all'avvio e si ripete ogni quarto d'ora, ogni minuto
+finché Stripe non risponde (`sorvegliaPrezzi()`). Finché Stripe non ha
+confermato, non si vende: meglio un listino vuoto per un minuto che un prezzo
+sbagliato. Un id scritto nel `.env` (`STRIPE_PRICE_…`) forza la scelta per
+quella voce e viene verificato allo stesso modo; di norma le righe restano vuote.
+
+Quando si cambia un prezzo: si crea il nuovo prezzo ricorrente in Stripe con
+l'importo del listino, si archivia il vecchio, e entro un quarto d'ora (o al
+riavvio) si vende quello nuovo. Il pacchetto «Tutto» è passato da 12,49 a 3,99
+così. Clip automatiche e Squadra stavano a 0,99 e 2,99 nel catalogo ma a 1,99 e
+1,99 in Stripe dal luglio 2026: il catalogo ora dice quello che Stripe addebita
+(la somma dei tre extra resta 4,97).
 
 ## Il muro sta dove la funzione parte
 
@@ -98,14 +118,14 @@ che si vende e costa meno della somma, -1 al posto di Infinity.
 (quelle che l'Essenziale non ha) e per ognuna deve esistere il muro sul server,
 nel bot dove la funzione parte, nelle rotte laterali e nel pannello; vetrina,
 dati strutturati e listino demo devono vendere le stesse cose del catalogo; la
-verifica dei prezzi con Stripe deve partire all'avvio e il checkout rifiutare
-ciò che non coincide.
+ricerca dei prezzi in Stripe deve partire all'avvio e il checkout rifiutare
+ciò che non coincide; `abbinaPrezzi()` ha i suoi casi in `test/unita/piani.test.mjs`.
 
 ## Sui prezzi
 
 Con la parità, il Base a 2,99 € è il piano a pagamento più basso del mercato
 (Moobot parte da 4,99 $) e vende cose che gli altri non hanno: moderatori sul
 pannello, avvisi su Telegram, Studio Web. Non c'è motivo di abbassarlo. Il
-pacchetto «Tutto» a 12,49 non aveva più senso con tre extra da 0,99, 0,99 e
-2,99: sta a 3,99. Se un giorno si vuole una cifra sola da dire a voce, «Base +
+pacchetto «Tutto» a 12,49 non aveva più senso con tre extra da 1,99, 0,99 e
+1,99: sta a 3,99. Se un giorno si vuole una cifra sola da dire a voce, «Base +
 Tutto» fa 6,98 al mese: sotto Moobot Affiliate, con più cose dentro.

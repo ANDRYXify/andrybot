@@ -91,6 +91,6 @@ test('un prezzo che Stripe non conferma non si vende', () => {
   const src = readFileSync('src/features/abbonamenti.js', 'utf8');
   assert.ok(src.includes("if (!config.stripe.attivo || !basePrice || !vendibile(BASE)) return null;"));
   assert.ok(src.includes('if (b && (b.ritirato || !vendibile(b))) return null;'));
-  assert.ok(src.includes('return a && !a.ritirato && vendibile(a);'));
-  assert.ok(SRV.includes('abbonamenti.verificaPrezziStripe()'), 'la verifica parte all\'avvio');
+  assert.ok(src.includes('return a && !a.ritirato && !a.inclusoBase && vendibile(a);'), 'ne\' ritirati ne\' compresi nel Base si pagano a parte');
+  assert.ok(SRV.includes('abbonamenti.sorvegliaPrezzi();'), 'la ricerca dei prezzi parte all\'avvio e si ripete');
 });

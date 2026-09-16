@@ -17,6 +17,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-16
 
+- Gli extra Clip automatiche e Squadra costano 1,99 € al mese ciascuno, i comandi a voce 0,99 €: il listino dice quello che Stripe addebita, e i tre insieme restano 3,99 € con «Tutto». [vai: sottoscrizione]
 - Giochi e monete, alert ed effetti, sondaggi e richieste musicali con il player sono nell'Essenziale, gratis: quello che gli altri bot danno gratis, qui è gratis. [vai: sottoscrizione]
 - Il piano vale anche mentre il bot lavora, non solo quando salvi: clip automatiche, avvisi e ascolto a voce seguono il tuo piano, e nel pannello ogni funzione a pagamento ha il suo muro con il pacchetto giusto. [vai: sottoscrizione]
 

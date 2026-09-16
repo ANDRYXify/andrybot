@@ -139,7 +139,7 @@ Spunti gli extra, vedi il totale mensile aggiornarsi, e **se un pacchetto curato
 somma di ciò che hai scelto te lo dice e lo applica da solo** — solo se lo copre per intero. Il
 totale include il canone Base quando non ce l'hai ancora, e lo esclude quando ce l'hai già.
 
-Verificato: Base €2,99 · +Voce €3,98 · +Clip €4,97 · +Squadra €7,96 con il pacchetto
+Verificato: Base €2,99 · +Voce €3,98 · +Clip €5,97 · +Squadra €7,96 con il pacchetto
 «Tutto» applicato al posto della somma (€6,98 invece di €7,96). Giochi, effetti e musica non
 si scelgono più: stanno nell'Essenziale (vedi `docs/PIANI.md`).
 

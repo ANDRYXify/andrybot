@@ -63,7 +63,7 @@ export const BASE = {
 
 // ── ADD-ON à la carte: pacchetti componibili, ognuno un prezzo Stripe a sé ───
 // Ogni add-on aggiunge (unione) le sue funzioni sopra alla Base. `priceEnv` è la
-// chiave in config.stripe.prezzi; senza price-id l'add-on non è acquistabile.
+// chiave del prezzo (priceEnv): il suo id lo trova da solo in Stripe, per nome del prodotto.
 export const ADDON = [
   {
     id: 'giochi', nome: 'Giochi & Classifiche', prezzo: 2.79, prezzoTesto: '€2,79/mese',
@@ -106,7 +106,7 @@ export const ADDON = [
     inclusoBase: true,
   },
   {
-    id: 'clip', nome: 'Clip Automatiche', prezzo: 0.99, prezzoTesto: '€0,99/mese',
+    id: 'clip', nome: 'Clip Automatiche', prezzo: 1.99, prezzoTesto: '€1,99/mese',
     priceEnv: 'addon_clip', icona: '🎬',
     sommario: 'I momenti migliori clippati e salvati in automatico durante la diretta.',
     nome3: ['Clip Automatiche', 'Automatic Clips', 'Clips Automáticos'],
@@ -128,7 +128,7 @@ export const ADDON = [
     funzioni: { voce: true },
   },
   {
-    id: 'squadra', nome: 'Squadra', prezzo: 2.99, prezzoTesto: '€2,99/mese',
+    id: 'squadra', nome: 'Squadra', prezzo: 1.99, prezzoTesto: '€1,99/mese',
     priceEnv: 'addon_squadra', icona: '👥',
     sommario: 'Fino a 10 moderatori per gestire il canale in team con i tuoi mod.',
     nome3: ['Squadra', 'Team', 'Equipo'],
@@ -180,8 +180,8 @@ export function normalizzaPacchetti(x) {
 
 // ── BUNDLE curati: set di add-on a PREZZO FISSO scontato ────────────────────
 // Non sono un piano a sé: sono una SCORCIATOIA che, con un prezzo unico più
-// conveniente, sblocca un gruppo di add-on. In Stripe ognuno ha il suo price-id
-// dedicato (`priceEnv`). Restano add-on "posseduti", quindi la modularità è
+// conveniente, sblocca un gruppo di add-on. In Stripe ognuno e' un prodotto suo
+// («Bundle Tutto») con un prezzo unico, trovato per nome come gli altri. Restano add-on "posseduti", quindi la modularità è
 // intatta (il gating li conosce uno per uno).
 const _sommaAddon = (ids) => ids.reduce((t, id) => t + (addonById(id)?.prezzo || 0), 0);
 export const BUNDLE = [
@@ -255,34 +255,102 @@ export function limite(funzioni, chiave) {
 export const funzioniPubbliche = (f) => Object.fromEntries(Object.entries(f || {}).map(([k, v]) => [k, v === Infinity ? -1 : v]));
 
 // ── Il prezzo mostrato e' quello che Stripe addebita, o non si vende ─────────
-// Il listino sta qui, il prezzo vero sta in Stripe: due posti, e il giorno che
-// uno cambia senza l'altro qualcuno paga una cifra diversa da quella letta.
-// All'avvio si chiede a Stripe ogni prezzo configurato e si confronta: se non
-// coincide (importo, valuta, cadenza), quella voce sparisce dal listino e il
-// checkout la rifiuta, finche' non tornano uguali.
-const _prezzi = new Map();   // priceEnv → { ok, motivo }
+// Il listino dice prodotto e importo; Stripe ha i prodotti con i loro prezzi.
+// Il prezzo di una voce e' quello, attivo e mensile in euro, del prodotto che
+// porta il suo nome (o `metadata.socialbot` = la sua chiave) con il suo
+// importo. Non c'e' niente da copiare nel .env: un id li' dentro, se c'e',
+// forza la scelta e viene verificato lo stesso. Un prodotto rinominato, un
+// prezzo vecchio rimasto attivo o un importo che non torna non vendono niente
+// per sbaglio: la voce sparisce dal listino, il checkout la rifiuta e il log
+// dice cosa Stripe ha davvero. Le voci ritirate, e quelle gia' comprese nel
+// Base, non si cercano nemmeno: non si vendono a parte.
+const _prezzi = new Map();   // priceEnv → { ok, price, motivo }
+let _timerPrezzi = null;
+let _firmaPrezzi = '';
+const _chiave = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+export const vociVendute = () => [BASE, ...ADDON.filter((a) => !a.ritirato && !a.inclusoBase), ...BUNDLE.filter((b) => !b.ritirato)];
+export function priceDi(voce) { return (voce?.priceEnv && _prezzi.get(voce.priceEnv)?.price) || ''; }
 export function vendibile(voce) {
   if (!voce?.priceEnv) return true;                  // gratis: niente da vendere
   if (!config.stripe.attivo) return true;           // pagamenti spenti: il listino si legge lo stesso
-  if (!config.stripe.prezzi[voce.priceEnv]) return false;
-  return _prezzi.get(voce.priceEnv)?.ok !== false;
+  return _prezzi.get(voce.priceEnv)?.ok === true;   // finche' Stripe non conferma, non si vende
 }
+// Pura: catalogo + prezzi di Stripe (con il prodotto espanso) → esito per voce.
+// `forzati` sono gli id del .env: se ci sono, valgono loro, ma si verificano.
+export function abbinaPrezzi(voci, lista, forzati = {}) {
+  const out = new Map();
+  const descr = (p) => `${p.unit_amount} ${p.currency}/${p.recurring?.interval || '?'}${p.active === false ? ' (archiviato)' : ''}`;
+  for (const v of voci) {
+    const atteso = Math.round(v.prezzo * 100);
+    const suo = (p) => {
+      const prod = p.product;
+      if (!prod || typeof prod !== 'object') return false;
+      const marca = prod.metadata && prod.metadata.socialbot;
+      if (marca) return marca === v.priceEnv;
+      return prod.active !== false && _chiave(prod.name).replace(/^(bundle|pacchetto)/, '') === _chiave(v.nome);
+    };
+    const giusto = (p) => p.active !== false && p.currency === 'eur' && p.recurring?.interval === 'month'
+      && (p.recurring.interval_count || 1) === 1 && p.unit_amount === atteso;
+    const forzato = forzati[v.priceEnv];
+    const cand = forzato ? lista.filter((p) => p.id === forzato) : lista.filter(suo);
+    if (forzato && !cand.length) { out.set(v.priceEnv, { ok: false, price: '', motivo: `l'id ${forzato} del .env non e' fra i prezzi di Stripe` }); continue; }
+    const buoni = cand.filter(giusto).sort((a, b) => (b.created || 0) - (a.created || 0));
+    if (buoni.length) out.set(v.priceEnv, { ok: true, price: buoni[0].id, motivo: '' });
+    else if (cand.length) out.set(v.priceEnv, { ok: false, price: '', motivo: `Stripe ha ${cand.map(descr).join(', ')} ≠ listino ${atteso} eur/month` });
+    else out.set(v.priceEnv, { ok: false, price: '', motivo: `nessun prodotto «${v.nome}» in Stripe` });
+  }
+  return out;
+}
+// tutti i prezzi ricorrenti attivi, con il prodotto espanso (a pagine da 100)
+async function elencoPrezziStripe() {
+  const out = [];
+  let dopo = '';
+  for (let giro = 0; giro < 20; giro++) {
+    const q = new URLSearchParams({ limit: '100', active: 'true', type: 'recurring' });
+    q.append('expand[]', 'data.product');
+    if (dopo) q.set('starting_after', dopo);
+    const j = await stripeGet('/prices?' + q);
+    if (!j || !Array.isArray(j.data)) return null;
+    out.push(...j.data);
+    if (!j.has_more || !j.data.length) break;
+    dopo = j.data[j.data.length - 1].id;
+  }
+  return out;
+}
+// Chiede a Stripe e riempie _prezzi. Ritorna null se Stripe non risponde (e
+// allora quel che c'era resta com'e'), [] con i pagamenti spenti, gli esiti se no.
 export async function verificaPrezziStripe() {
   if (!config.stripe.attivo) return [];
-  const esiti = [];
-  for (const v of [BASE, ...ADDON.filter((a) => !a.ritirato), ...BUNDLE.filter((b) => !b.ritirato)]) {
+  const lista = await elencoPrezziStripe();
+  if (!lista) { log.warn('prezzi Stripe: non risponde; finche\' non risponde non si vende niente, riprovo fra un minuto'); return null; }
+  const voci = vociVendute();
+  const forzati = {};
+  for (const v of voci) {
     const id = config.stripe.prezzi[v.priceEnv];
     if (!id) continue;
-    const p = await stripeGet('/prices/' + encodeURIComponent(id));
-    if (!p) { esiti.push({ id: v.id, ok: null }); continue; }
-    const atteso = Math.round(v.prezzo * 100);
-    const ok = p.unit_amount === atteso && p.currency === 'eur' && p.recurring?.interval === 'month' && p.active !== false;
-    const motivo = ok ? '' : `Stripe ${p.unit_amount} ${p.currency}/${p.recurring?.interval || '?'} (attivo: ${p.active}) ≠ listino ${atteso} eur/month`;
-    _prezzi.set(v.priceEnv, { ok, motivo });
-    if (!ok) log.error(`prezzo di «${v.nome}»: ${motivo} — non si vende finche' non coincidono`);
-    esiti.push({ id: v.id, ok, motivo });
+    forzati[v.priceEnv] = id;
+    if (!lista.some((p) => p.id === id)) { const p = await stripeGet('/prices/' + encodeURIComponent(id) + '?expand[]=product'); if (p) lista.push(p); }
   }
-  return esiti;
+  const esiti = abbinaPrezzi(voci, lista, forzati);
+  const vendute = [];
+  for (const v of voci) {
+    const e = esiti.get(v.priceEnv);
+    _prezzi.set(v.priceEnv, e);
+    if (e.ok) vendute.push(`${v.nome} ${e.price}`);
+    else log.error(`prezzo di «${v.nome}»: ${e.motivo} — non si vende finche' non coincidono`);
+  }
+  const firma = vendute.join(' · ');
+  if (firma !== _firmaPrezzi) { _firmaPrezzi = firma; log.info('prezzi Stripe in vendita: ' + (firma || 'nessuno')); }
+  return voci.map((v) => ({ id: v.id, priceEnv: v.priceEnv, ...esiti.get(v.priceEnv) }));
+}
+// All'avvio e poi ogni quarto d'ora (ogni minuto finche' Stripe non risponde):
+// un prezzo nuovo creato in Stripe si vende da solo, senza toccare il server.
+export function sorvegliaPrezzi() {
+  if (!config.stripe.attivo) return;
+  clearTimeout(_timerPrezzi);
+  const poi = (ms) => { _timerPrezzi = setTimeout(sorvegliaPrezzi, ms); if (_timerPrezzi.unref) _timerPrezzi.unref(); };
+  verificaPrezziStripe().then((esiti) => poi(esiti ? 15 * 60_000 : 60_000))
+    .catch((e) => { log.warn('prezzi Stripe:', e?.message || e); poi(60_000); });
 }
 
 // Vetrina pubblica: la forma dei piani per il client (Infinity → -1, non-serializz.).
@@ -347,7 +415,7 @@ async function stripeCall(path, params) {
 // il browser, oppure null se Stripe è spento / manca il price della Base. Link è
 // già attivo di default nel Checkout di Stripe.
 export async function creaCheckout({ login, pacchetti = [], bundle = null }) {
-  const basePrice = config.stripe.prezzi.base;
+  const basePrice = priceDi(BASE);
   if (!config.stripe.attivo || !basePrice || !vendibile(BASE)) return null;
   const b = bundle ? bundleById(bundle) : null;
   if (b && (b.ritirato || !vendibile(b))) return null;
@@ -355,19 +423,20 @@ export async function creaCheckout({ login, pacchetti = [], bundle = null }) {
   if (b) {
     // BUNDLE: line-item = Base + il prezzo UNICO del bundle. Nei metadata salvo
     // comunque i suoi add-on, così il gating li sblocca uno per uno.
-    const bp = b.priceEnv ? config.stripe.prezzi[b.priceEnv] : '';
-    if (!bp) return null;              // bundle non ancora configurato in Stripe
+    const bp = priceDi(b);
+    if (!bp) return null;              // bundle senza un prezzo confermato in Stripe
     ids = normalizzaPacchetti(b.addon);
     prezzi = [basePrice, bp];
   } else {
-    // à la carte: Base + ogni add-on scelto con un price-id configurato.
+    // à la carte: Base + ogni add-on scelto con un prezzo confermato in Stripe.
     ids = normalizzaPacchetti(pacchetti);
     prezzi = [basePrice];
-    // gli add-on ritirati sono gia' nell'Essenziale: chiederli non costa niente
-    ids = ids.filter((id) => { const a = addonById(id); return a && !a.ritirato && vendibile(a); });
+    // gli add-on ritirati sono gia' nell'Essenziale e quelli compresi nel Base si
+    // stanno gia' pagando con il canone: chiederli non costa niente
+    ids = ids.filter((id) => { const a = addonById(id); return a && !a.ritirato && !a.inclusoBase && vendibile(a); });
     for (const id of ids) {
       const a = addonById(id);
-      const p = a?.priceEnv ? config.stripe.prezzi[a.priceEnv] : '';
+      const p = priceDi(a);
       if (p) prezzi.push(p);
     }
   }

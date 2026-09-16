@@ -97,7 +97,7 @@ const DECISO = [
   ['bot.js', '_mancheProx', 'volatile', 'quando tocca alla prossima manche: si ricalcola'],
   ['bot.js', '_tgProattivoUltimo', 'volatile', 'ultimo messaggio proattivo, anti-ripetizione a breve'],
   ['bot.js', '_canarinoTs', 'volatile', 'un minuto di silenzio dopo la risposta al canarino: dopo un riavvio, al massimo, risponde una volta di piu\''],
-  ['features/abbonamenti.js', '_prezzi', 'volatile', 'esito del confronto dei prezzi con Stripe: si rifa\' a ogni avvio, e finche\' non c\'e\' si vende come prima'],
+  ['features/abbonamenti.js', '_prezzi', 'volatile', 'i prezzi trovati in Stripe e il loro esito: si rifanno a ogni avvio e ogni quarto d\'ora, e finche\' non ci sono non si vende'],
   ['bot.js', '_ultimaSpontanea', 'volatile', 'quando ha parlato da solo l\'ultima volta: dopo un riavvio riparte da zero, e al massimo parla un giro prima'],
   ['bot.js', '_ultimaPromo', 'volatile', 'ultimo promemoria dei link: idem, un riavvio non e\' un modo pratico per farglielo ripetere'],
   ['bot.js', '_ultimaBattuta', 'volatile', 'ultima battuta di sua iniziativa: idem'],

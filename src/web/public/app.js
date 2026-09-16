@@ -532,9 +532,9 @@ function _demoGet(via) {
       free: { id: 'free', nome: 'Essenziale', prezzoTesto: 'Gratis', sommario: 'Gratis, basta registrarsi: comandi, moderazione, overlay e alert, giochi, sondaggi, musica.' },
       base: { id: 'base', nome: 'Base', prezzoTesto: '\u20ac2,99/mese', sommario: 'Avvisi live e nuovi post, Studio Web e un moderatore.' },
       addon: [
-        { id: 'clip', nome: 'Clip Automatiche', prezzoTesto: '\u20ac0,99/mese', sommario: 'I momenti migliori clippati da soli.' },
+        { id: 'clip', nome: 'Clip Automatiche', prezzoTesto: '\u20ac1,99/mese', sommario: 'I momenti migliori clippati da soli.' },
         { id: 'voce', nome: 'Comandi Vocali', prezzoTesto: '\u20ac0,99/mese', sommario: 'Guida il bot parlando.' },
-        { id: 'squadra', nome: 'Squadra', prezzoTesto: '\u20ac2,99/mese', sommario: 'Fino a 10 moderatori.' },
+        { id: 'squadra', nome: 'Squadra', prezzoTesto: '\u20ac1,99/mese', sommario: 'Fino a 10 moderatori.' },
       ], bundle: [{ id: 'tutto', nome: 'Tutto', icona: '\ud83d\ude80', addon: ['clip', 'voce', 'squadra'], prezzo: 3.99, prezzoTesto: '\u20ac3,99/mese', prezzoPieno: 4.97, prezzoPienoTesto: '\u20ac4,97', sconto: 0.2, sommario: 'Clip, voce e squadra in un colpo solo.' }], nAddon: 7 },
     '/api/linkpage': { url: 'https://socialbot.live/u/andryxify', pubblicata: true,
       templates: ['minimal','neon','retro','sunset','glass','brutal','pastello'],
