@@ -528,10 +528,19 @@ CREATE TABLE IF NOT EXISTS conti_donazioni (   -- il conto Stripe dello streamer
   prodotto TEXT NOT NULL DEFAULT '',           -- prod_… «Donazione», creato nel suo conto quando la chiave si verifica
   nota TEXT NOT NULL DEFAULT ''                -- cosa non va con la chiave, con le parole di Stripe (vuota = tutto bene)
 );
+CREATE TABLE IF NOT EXISTS conti_satispay (    -- il conto Satispay Business dello streamer (suo), per le donazioni
+  login TEXT PRIMARY KEY,
+  key_id TEXT NOT NULL DEFAULT '',             -- il KeyId che Satispay ha dato alla nostra chiave pubblica
+  chiave TEXT NOT NULL DEFAULT '',             -- la chiave privata RSA con cui si firmano le richieste (nella busta)
+  pronto INTEGER NOT NULL DEFAULT 0,           -- 1 finche' la firma viene accettata
+  nota TEXT NOT NULL DEFAULT '',               -- cosa non va, con le parole di Satispay (vuota = tutto bene)
+  verificato_at INTEGER NOT NULL DEFAULT 0,
+  updated_at INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS donazioni (         -- il registro delle donazioni: quelle in attesa di pagamento e quelle pagate
-  id TEXT PRIMARY KEY,                         -- 'stripe:cs_…' | 'kofi:<login>:<message_id>' | 'ext:<login>:<id>'
+  id TEXT PRIMARY KEY,                         -- 'stripe:cs_…' | 'satispay:<nostro id>' | 'kofi:<login>:<message_id>' | 'ext:<login>:<id>'
   login TEXT NOT NULL,
-  fonte TEXT NOT NULL DEFAULT 'stripe',        -- stripe | kofi | ext
+  fonte TEXT NOT NULL DEFAULT 'stripe',        -- stripe | satispay | kofi | ext
   stato TEXT NOT NULL DEFAULT 'attesa',        -- attesa | pagata | scaduta
   importo INTEGER NOT NULL DEFAULT 0,          -- in centesimi
   valuta TEXT NOT NULL DEFAULT 'EUR',
@@ -539,7 +548,7 @@ CREATE TABLE IF NOT EXISTS donazioni (         -- il registro delle donazioni: q
   messaggio TEXT NOT NULL DEFAULT '',
   created_at INTEGER NOT NULL DEFAULT 0,
   pagata_at INTEGER NOT NULL DEFAULT 0,
-  riferimento TEXT NOT NULL DEFAULT '',        -- il pagamento in Stripe (pi_…), per rimborsare da qui
+  riferimento TEXT NOT NULL DEFAULT '',        -- il pagamento presso chi lo ha mosso (pi_… di Stripe, id di Satispay), per rimborsare da qui
   rimborsata_at INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_donazioni_login ON donazioni(login, stato, pagata_at);
@@ -1010,6 +1019,7 @@ export const CAMPI_SEGRETI = {
   tiktok_tokens: ['access', 'refresh'],
   seventv_tokens: ['token'],
   conti_donazioni: ['chiave'],
+  conti_satispay: ['chiave'],
 };
 
 // Come si chiama la riga, tabella per tabella. Serve alla busta: è il «dove
@@ -1021,6 +1031,7 @@ const RIGA_SEGRETI = {
   tiktok_tokens: (r) => r.login,
   seventv_tokens: (r) => r.login,
   conti_donazioni: (r) => r.login,
+  conti_satispay: (r) => r.login,
 };
 const CHIAVE_SEGRETI = {
   tokens: ['kind', 'login'],
@@ -1029,6 +1040,7 @@ const CHIAVE_SEGRETI = {
   tiktok_tokens: ['login'],
   seventv_tokens: ['login'],
   conti_donazioni: ['login'],
+  conti_satispay: ['login'],
 };
 
 // Porta nella busta di ADESSO tutto quello che è rimasto indietro: il chiaro di
@@ -1272,18 +1284,47 @@ export const contiDonazioni = {
   togli(login) { db.prepare('DELETE FROM conti_donazioni WHERE login=?').run(String(login).toLowerCase()); },
 };
 
+// Il conto Satispay Business dello streamer: il KeyId e la chiave privata con
+// cui si firmano le richieste, nella busta. Il conto e' suo; noi firmiamo.
+export const contiSatispay = {
+  get(login) {
+    const l = String(login).toLowerCase();
+    const r = db.prepare('SELECT * FROM conti_satispay WHERE login=?').get(l);
+    if (!r) return null;
+    return { ...r, chiave: decifra(r.chiave, _dove('conti_satispay', 'chiave', l)), coda: String(r.key_id || '').slice(-4) };
+  },
+  set(login, { keyId, chiave, pronto, verificato, nota } = {}) {
+    const l = String(login).toLowerCase();
+    const prima = this.get(l) || {};
+    const ch = chiave !== undefined ? String(chiave || '') : (prima.chiave || '');
+    db.prepare(`INSERT INTO conti_satispay (login, key_id, chiave, pronto, nota, verificato_at, updated_at)
+      VALUES (?,?,?,?,?,?,?)
+      ON CONFLICT(login) DO UPDATE SET key_id=excluded.key_id, chiave=excluded.chiave, pronto=excluded.pronto,
+        nota=excluded.nota, verificato_at=excluded.verificato_at, updated_at=excluded.updated_at`)
+      .run(l, keyId ?? prima.key_id ?? '', cifra(ch, _dove('conti_satispay', 'chiave', l)), (pronto ?? !!prima.pronto) ? 1 : 0,
+        nota !== undefined ? String(nota || '').slice(0, 300) : (prima.nota || ''), verificato ? now() : (prima.verificato_at || 0), now());
+    return this.get(l);
+  },
+  togli(login) { db.prepare('DELETE FROM conti_satispay WHERE login=?').run(String(login).toLowerCase()); },
+};
+
 // Il registro delle donazioni. Una riga per pagamento, con l'id che gli da' chi
 // lo porta (la sessione di Stripe, l'avviso di Ko-fi): la stessa donazione
 // non entra due volte, e il passaggio attesa → pagata avviene una volta sola,
 // qualunque sia il numero di richieste che lo chiedono nello stesso istante.
 export const registroDonazioni = {
-  _riga(id, { login, fonte = 'stripe', importo = 0, valuta = 'EUR', nome = '', messaggio = '' }, stato) {
+  _riga(id, { login, fonte = 'stripe', importo = 0, valuta = 'EUR', nome = '', messaggio = '', riferimento = '' }, stato) {
     const t = now();
-    return db.prepare(`INSERT OR IGNORE INTO donazioni (id, login, fonte, stato, importo, valuta, nome, messaggio, created_at, pagata_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?)`)
+    return db.prepare(`INSERT OR IGNORE INTO donazioni (id, login, fonte, stato, importo, valuta, nome, messaggio, created_at, pagata_at, riferimento)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
       .run(String(id), String(login).toLowerCase(), fonte, stato, Math.max(0, Math.round(Number(importo) || 0)),
         String(valuta || 'EUR').toUpperCase().slice(0, 3), String(nome || '').slice(0, 60), String(messaggio || '').slice(0, 200),
-        t, stato === 'pagata' ? t : 0).changes > 0;
+        t, stato === 'pagata' ? t : 0, String(riferimento || '').slice(0, 80)).changes > 0;
+  },
+  // la riga di un pagamento, dal suo id presso chi lo ha mosso (la callback di Satispay porta solo quello)
+  perRiferimento(login, riferimento) {
+    if (!riferimento) return null;
+    return db.prepare('SELECT * FROM donazioni WHERE login=? AND riferimento=?').get(String(login).toLowerCase(), String(riferimento)) || null;
   },
   // una sessione di pagamento aperta: entra in attesa
   apri(id, dati) { return this._riga(id, dati, 'attesa'); },
@@ -1291,9 +1332,9 @@ export const registroDonazioni = {
   segna(id, dati) { return this._riga(id, dati, 'pagata'); },
   get(id) { return db.prepare('SELECT * FROM donazioni WHERE id=?').get(String(id)) || null; },
   // attesa → pagata, in un passaggio solo: true per chi ci riesce, false per tutti gli altri
-  paga(id, importo, riferimento = '') {
-    return db.prepare(`UPDATE donazioni SET stato='pagata', pagata_at=?, importo=COALESCE(?, importo), riferimento=? WHERE id=? AND stato='attesa'`)
-      .run(now(), Number.isFinite(importo) ? Math.round(importo) : null, String(riferimento || '').slice(0, 80), String(id)).changes > 0;
+  paga(id, importo, riferimento) {
+    return db.prepare(`UPDATE donazioni SET stato='pagata', pagata_at=?, importo=COALESCE(?, importo), riferimento=COALESCE(?, riferimento) WHERE id=? AND stato='attesa'`)
+      .run(now(), Number.isFinite(importo) ? Math.round(importo) : null, riferimento ? String(riferimento).slice(0, 80) : null, String(id)).changes > 0;
   },
   getDi(login, id) {
     return db.prepare('SELECT * FROM donazioni WHERE id=? AND login=?').get(String(id), String(login).toLowerCase()) || null;
@@ -2619,7 +2660,8 @@ export const linkPage = {
       } else if (tipo === 'sostieni') {
         // il tasto delle donazioni: dove si dona e la valuta stanno nelle
         // impostazioni del canale (una configurazione sola); qui solo come si presenta
-        out.push({ tipo, titolo: str(b.titolo, L.label), testo: str(b.testo, L.sotto), etichetta: str(b.etichetta, L.label), obiettivo: b.obiettivo !== false });
+        out.push({ tipo, titolo: str(b.titolo, L.label), testo: str(b.testo, L.sotto), etichetta: str(b.etichetta, L.label), obiettivo: b.obiettivo !== false,
+          icona: scelta(b.icona, ICONE_LINKPAGE, null) || 'cuore' });
       } else if (tipo === 'griglia') {
         const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 12).map((v) => ({
           img: urlOk(v?.img), titolo: str(v?.titolo, L.label), testo: str(v?.testo, L.sotto), url: urlOk(v?.url),

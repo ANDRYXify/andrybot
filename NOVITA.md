@@ -18,9 +18,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-16
 
 - Le donazioni passano da SocialBot: nella scheda «Donazioni» colleghi il tuo conto Stripe, tuo e gestito da te, e chi ti segue dona dalla tua pagina link. Il pagamento arriva a te. [vai: donazioni]
+- Anche Satispay: colleghi il tuo negozio online con il codice di attivazione, e chi ha l'app paga da lì. Con tutti e due, chi dona sceglie. [vai: donazioni]
+- Per il tasto «Sostieni» scegli l'icona fra quelle della pagina, come per ogni link; di serie è un cuore. [vai: pagina]
 - A ogni donazione ricevuta sul conto partono da soli l'avviso in overlay, il grazie in chat e l'obiettivo in euro. Nella scheda vedi le ultime arrivate, con nome e messaggio. [vai: donazioni]
 - Il minimo e il massimo per una donazione li decidi tu nella scheda «Donazioni»: il massimo parte da 500 e può arrivare a 5.000. [vai: donazioni]
-- Il registro delle donazioni è nella scheda «Donazioni»: totali di oggi, del mese e dell'anno, ricerca, scarico in CSV; per ogni riga puoi rimandare l'avviso, rimborsare dal tuo conto o cancellarla. [vai: donazioni]
+- Ogni donazione finisce nel registro della scheda «Donazioni»: totali di oggi, del mese e dell'anno, ricerca, scarico in CSV; per ogni riga puoi rimandare l'avviso, rimborsare dal tuo conto o cancellarla. [vai: donazioni]
 - Le voci «Donazioni» e «CONSOLify» del menù del pannello hanno la loro icona, come tutte le altre. [vai: consolify]
 - Nel player puoi mettere un tuo video in loop, caricato fra gli Effetti: sfocato sullo sfondo al posto della copertina, o in chiaro sulla copertina stessa. Con i temi vinile e CD la copertina resta quella del disco. [vai: alert]
 - Donazioni: nella scheda «Donazioni» dici come si dona (sul tuo conto, oppure Ko-fi, PayPal o altro) e il tasto «Sostieni» compare sulla tua pagina link, col tuo tema. [vai: donazioni]

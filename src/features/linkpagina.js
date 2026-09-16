@@ -739,7 +739,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       const q = g ? Math.min(1, Math.max(0, g.ora / g.meta)) : 0;
       const cifra = (x) => formattaImporto(x, d.valuta);
       const tasto = b.etichetta || d.etichetta || 'Sostieni';
-      const dentro = `<span class="ico">${_mIco('caffe')}</span><span class="tx"><span class="et">${esc(tasto)}</span></span><span class="fre" aria-hidden="true">›</span>`;
+      const dentro = `<span class="ico">${_mIco(b.icona || 'cuore')}</span><span class="tx"><span class="et">${esc(tasto)}</span></span><span class="fre" aria-hidden="true">›</span>`;
       // il modo: un link esterno e' un link; sul conto e' un modulo che apre il
       // pagamento (in anteprima il modulo non manda niente)
       const azione = d.modo === 'link'
@@ -750,7 +750,9 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
           <input class="sost-i" type="text" name="nome" maxlength="40" placeholder="Il tuo nome (se vuoi)" autocomplete="nickname">
           ${d.conMessaggio ? `<input class="sost-i" type="text" name="messaggio" maxlength="200" placeholder="Un messaggio per la diretta (se vuoi)">` : ''}
           <div class="sost-np" aria-hidden="true"><label>Sito <input type="text" name="sito" tabindex="-1" autocomplete="off"></label></div>
-          <button type="${anteprima ? 'button' : 'submit'}" class="voce spicca sost-b">${dentro}</button>
+          ${(d.mezzi && d.mezzi.length ? d.mezzi : ['stripe']).map((m, i) => i === 0
+            ? `<button type="${anteprima ? 'button' : 'submit'}" class="voce spicca sost-b" name="mezzo" value="${m}">${dentro}</button>`
+            : `<button type="${anteprima ? 'button' : 'submit'}" class="voce sost-b sost-b2" name="mezzo" value="${m}"><span class="ico">${_mIco('soldi')}</span><span class="tx"><span class="et">${m === 'satispay' ? 'Oppure con Satispay' : 'Oppure con carta'}</span></span><span class="fre" aria-hidden="true">›</span></button>`).join('')}
           <p class="sost-err" role="alert" hidden></p>
           <p class="sost-nota">Pagamento sicuro con carta, Apple Pay o Google Pay. Va tutto a ${esc(display || login)}.</p>
         </form>`;
@@ -1162,6 +1164,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   button.sost-b:disabled{opacity:.6;cursor:wait}
   .sost-err{color:#e5484d;font-size:.9rem;margin:0;text-align:center}
   .sost-nota{font-size:.78rem;color:var(--tenue);margin:0;text-align:center}
+  .sost-b2{margin-top:-.2rem}
   .sost-ok{margin:0;padding:.6rem .9rem;border-radius:calc(var(--r) * .7);background:${c.acc}22;color:var(--testo);font-weight:var(--pf)}
   .badge2{align-self:${aSinistra ? 'flex-start' : 'center'};margin-top:1rem;padding:.3rem .8rem;border-radius:999px;
     background:var(--acc);color:var(--suacc);font-size:.8rem;font-weight:var(--pm);letter-spacing:.02em}
@@ -1281,7 +1284,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
       · <a href="/u/${esc(login)}/privacy">Privacy</a>${banner && corpo.includes('chiedi-b')
         ? ` · <button type="button" id="ri-consenso" class="come-link">Contenuti di altri siti</button>` : ''}</p>
   </main>
-<script src="/pagina-link.js?v=9" defer></script>
+<script src="/pagina-link.js?v=10" defer></script>
 ${banner && corpo.includes('chiedi-b') ? `
   <aside class="fascia" id="fascia" hidden>
     <p><b>Video e musica di altri siti.</b> Questa pagina non usa cookie, ma i riquadri di YouTube, Spotify,

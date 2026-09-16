@@ -131,11 +131,13 @@ var last=0;function loop(t){if(t-last>55){frame();last=t;}requestAnimationFrame(
   f.addEventListener('submit', function (e) {
     e.preventDefault();
     if (f.getAttribute('data-anteprima')) return;
-    var b = f.querySelector('.sost-b'), err = f.querySelector('.sost-err');
+    var b = (e.submitter && e.submitter.classList.contains('sost-b')) ? e.submitter : f.querySelector('.sost-b'), err = f.querySelector('.sost-err');
     if (!window.fetch || !window.FormData || !window.URLSearchParams) { f.submit(); return; }
+    var dati = new URLSearchParams(new FormData(f));
+    if (b && b.name === 'mezzo' && b.value) dati.set('mezzo', b.value);
     b.disabled = true;
     if (err) err.hidden = true;
-    fetch(f.getAttribute('action'), { method: 'POST', body: new URLSearchParams(new FormData(f)), headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+    fetch(f.getAttribute('action'), { method: 'POST', body: dati, headers: { Accept: 'application/json' }, credentials: 'same-origin' })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (x) {
         if (x.ok && x.j && x.j.url) { location.href = x.j.url; return; }

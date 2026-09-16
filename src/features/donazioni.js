@@ -132,31 +132,44 @@ export function leggiKofi(body) {
   };
 }
 
+// I mezzi con cui si puo' pagare sul conto dello streamer: Stripe se il suo
+// conto e' pronto; Satispay se e' pronto e la valuta e' l'euro (Satispay non ne
+// conosce altre). `conti` = { stripe, satispay } come li da' il database.
+export function mezziDi(d, conti = null) {
+  const c = conti && typeof conti === 'object' ? conti : {};
+  const valuta = VALUTE.includes(d?.valuta) ? d.valuta : 'EUR';
+  const out = [];
+  if (c.stripe && c.stripe.pronto) out.push('stripe');
+  if (c.satispay && c.satispay.pronto && valuta === 'EUR') out.push('satispay');
+  return out;
+}
+
 // Cosa manca perche' il tasto compaia: niente ('' = tutto a posto), oppure
 // 'spente', 'link' (modo link senza indirizzo), 'conto' (modo conto senza un
 // conto pronto a incassare).
-export function cosaManca(settings, conto = null) {
+export function cosaManca(settings, conti = null) {
   const d = settings && settings.donazioni;
   if (!d || d.attivo !== true) return 'spente';
   if (d.modo === 'link') return d.link ? '' : 'link';
-  return conto && conto.pronto ? '' : 'conto';
+  return mezziDi(d, conti).length ? '' : 'conto';
 }
 
 // Quello che serve al blocco «Sostieni» della pagina link: come si dona, gli
 // importi, il tasto, la frase e, se c'e' un obiettivo in euro acceso, dove sta.
-export function datiSostieni(settings, conto = null) {
-  if (cosaManca(settings, conto)) return null;
+export function datiSostieni(settings, conti = null) {
+  if (cosaManca(settings, conti)) return null;
   const s = settings;
   const d = s.donazioni;
   const goals = Array.isArray(s.overlayGoals) ? s.overlayGoals : [];
   const g = goals.find((x) => x && x.attivo !== false && x.tipo === 'euro');
-  const conti = (s.overlayStato && s.overlayStato.goals) || {};
-  const ora = g ? Math.round(((Number(g.partenza) || 0) + (Number(conti[g.id]) || 0)) * 100) / 100 : 0;
+  const contiGoal = (s.overlayStato && s.overlayStato.goals) || {};
+  const ora = g ? Math.round(((Number(g.partenza) || 0) + (Number(contiGoal[g.id]) || 0)) * 100) / 100 : 0;
   const modo = d.modo === 'link' ? 'link' : 'conto';
   const minimo = minimoOk(d.minimo);
   const massimo = massimoOk(d.massimo, minimo);
   return {
     modo,
+    mezzi: modo === 'conto' ? mezziDi(d, conti) : [],
     link: modo === 'link' ? d.link : '',
     importi: importiOk(d.importi, minimo, massimo),
     minimo,

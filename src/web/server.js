@@ -22,7 +22,7 @@ import * as consolle from '../features/console.js';   // CONSOLify + tastiera fi
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, registroDonazioni } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
@@ -46,6 +46,7 @@ import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as donazioni from '../features/donazioni.js';
 import * as donaStripe from '../features/donazioni-stripe.js';
+import * as donaSatispay from '../features/donazioni-satispay.js';
 import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
 import * as webauthn from './webauthn.js';
@@ -1466,14 +1467,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const p = linkPage.get(login);
     if (!p || !p.attiva) return notFound(res);        // mai creata, o spenta dallo streamer
     const s = streamers.get(login);
-    const conto = contiDonazioni.get(login);
-    // Il ritorno da un pagamento: l'id della sessione viaggia nell'indirizzo,
-    // ma la verita' la da' Stripe, e si conta una volta sola (registro). Chi
-    // ricarica la pagina rivede il grazie, non fa partire un secondo avviso.
+    const conti = contiDi(login);
+    // Il ritorno da un pagamento: l'id viaggia nell'indirizzo, ma la verita'
+    // la da' chi ha mosso i soldi (Stripe o Satispay), e si conta una volta
+    // sola (registro). Chi ricarica rivede il grazie, non fa partire un
+    // secondo avviso.
     let grazie = null;
     const dona = String(req.query.dona || '');
-    if (/^cs_[A-Za-z0-9_]{8,200}$/.test(dona) && extRateOk('dona-ok:' + login)) {
-      const e = await donaStripe.conferma(login, dona);
+    if (extRateOk('dona-ok:' + login)) {
+      const e = await confermaDonazione(login, dona);
       if (e?.nuova) manager.alerts?.donazione(login, e.d);
       if (e) grazie = { nome: e.d.user, importo: e.d.importo, valuta: e.d.valuta };
     }
@@ -1482,7 +1484,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       display: s?.display || login,
       avatar: await avatarDi(login),
       baseUrl: config.baseUrl,
-      sostieni: donazioni.datiSostieni(s?.settings, conto),
+      sostieni: donazioni.datiSostieni(s?.settings, conti),
       grazie,
     });
     // Una visita in più. Contiamo SOLO quante volte la pagina è stata aperta:
@@ -1604,8 +1606,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     });
     const html = renderLinkPage(finta, {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
-      sostieni: donazioni.datiSostieni(s?.settings, contiDonazioni.get(login)),
-      manca: donazioni.cosaManca(s?.settings, contiDonazioni.get(login)),
+      sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)),
+      manca: donazioni.cosaManca(s?.settings, contiDi(login)),
       anteprima: true,   // mostra anche i blocchi ancora da completare
     });
     res.json({ html });
@@ -1709,8 +1711,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 - Comandi a voce mentre si streamma.
 - Pagina link pubblica personalizzabile su ${b}/u/<nomeutente>.
 - Donazioni sul conto dello streamer: chi guarda dona dalla pagina link, il
-  pagamento arriva sul suo conto Stripe, l'avviso parte in overlay e in chat,
-  un obiettivo in euro sale. Ko-fi resta possibile.
+  pagamento arriva sul suo conto Stripe o Satispay, l'avviso parte in overlay
+  e in chat, un obiettivo in euro sale. Ko-fi resta possibile.
 
 ## Prezzi
 - Essenziale: gratuito, basta registrarsi. Comandi illimitati, moderazione,
@@ -2730,7 +2732,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // i prezzi si trovano in Stripe all'avvio e poi ogni quarto d'ora: una voce che non coincide non si vende
   abbonamenti.sorvegliaPrezzi();
   // le donazioni pagate senza tornare sulla pagina le trova la ronda
-  donaStripe.avviaRonda((login, d) => manager.alerts?.donazione(login, d));
+  donaStripe.avviaRonda((login, d) => manager.alerts?.donazione(login, d), { satispay: donaSatispay.conferma });
 
   // avvia il checkout per un tier. Identità: la sessione, oppure chi ha fatto il
   // login self-service in attesa di abbonarsi (req.session.abbonando). Off → 503.
@@ -2780,20 +2782,33 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     manager.alerts?.donazione(login, d);
   }));
 
+  // I conti dello streamer, come li vuole il blocco «Sostieni»
+  const contiDi = (login) => ({ stripe: contiDonazioni.get(login), satispay: contiSatispay.get(login) });
+  // Il ritorno da un pagamento: cs_… e' una sessione di Stripe, sp_… un nostro
+  // id per Satispay. Qualunque altra cosa non e' niente.
+  async function confermaDonazione(login, dona) {
+    if (/^cs_[A-Za-z0-9_]{8,200}$/.test(dona)) return donaStripe.conferma(login, dona);
+    if (/^sp_[0-9a-f]{16}$/.test(dona)) return donaSatispay.conferma(login, dona.slice(3));
+    return null;
+  }
+
   // ── Le donazioni sul conto dello streamer ───────────────────────────────────
   // Il conto e' suo, aperto e gestito da lui. Qui arriva solo la chiave con
   // restrizioni che ci affida (cifrata nel database, mai rimandata al browser)
   // e il registro delle donazioni (donazioni-stripe.js).
-  const rigaDonazione = (r) => ({ id: r.id, quando: r.pagata_at, fonte: r.fonte, nome: r.nome, importo: r.importo / 100, valuta: r.valuta, messaggio: r.messaggio, rimborsata: !!r.rimborsata_at, rimborsabile: r.fonte === 'stripe' && !!r.riferimento && !r.rimborsata_at });
+  const rigaDonazione = (r) => ({ id: r.id, quando: r.pagata_at, fonte: r.fonte, nome: r.nome, importo: r.importo / 100, valuta: r.valuta, messaggio: r.messaggio, rimborsata: !!r.rimborsata_at, rimborsabile: (r.fonte === 'stripe' || r.fonte === 'satispay') && !!r.riferimento && !r.rimborsata_at });
   const sommeDonazioni = (righe) => righe.map((t) => ({ valuta: t.valuta, somma: t.somma / 100, quante: t.quante }));
   app.get('/api/donazioni/stato', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     let c = contiDonazioni.get(login);
     // la chiave si riverifica quando la scheda si apre, e comunque non piu' di una volta al minuto
     if (c?.chiave && (req.query.rileggi === '1' || Date.now() - (c.verificato_at || 0) > 60_000)) c = await donaStripe.verificaChiave(login);
+    let sp = contiSatispay.get(login);
+    if (sp?.chiave && (req.query.rileggi === '1' || Date.now() - (sp.verificato_at || 0) > 60_000)) sp = await donaSatispay.verificaChiave(login);
     const rp = registroDonazioni.riepilogo(login);
     res.json({
       conto: { stato: donaStripe.statoDi(c), coda: c?.coda || '', verificato: c?.verificato_at || 0, nota: c?.nota || '' },
+      satispay: { stato: donaSatispay.statoDi(sp), coda: sp?.coda || '', verificato: sp?.verificato_at || 0, nota: sp?.nota || '' },
       riepilogo: { oggi: sommeDonazioni(rp.oggi), mese: sommeDonazioni(rp.mese), anno: sommeDonazioni(rp.anno), sempre: sommeDonazioni(rp.sempre) },
       ultime: registroDonazioni.elenco(login, { n: 50 }).map(rigaDonazione),
     });
@@ -2836,8 +2851,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       return res.json({ ok: true });
     }
     if (cosa === 'rimborsa') {
-      const e = await donaStripe.rimborsa(login, id);
-      if (e.errore) return res.status(400).json({ errore: e.errore + (isAdmin(u) && e.dettaglio ? ' Stripe dice: ' + e.dettaglio : '') });
+      const e = r.fonte === 'satispay' ? await donaSatispay.rimborsa(login, id) : await donaStripe.rimborsa(login, id);
+      if (e.errore) return res.status(400).json({ errore: e.errore + (isAdmin(u) && e.dettaglio ? ' Dice: ' + e.dettaglio : '') });
       return res.json({ ok: true });
     }
     if (cosa === 'elimina') { registroDonazioni.elimina(login, id); return res.json({ ok: true }); }
@@ -2853,6 +2868,29 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.post('/api/donazioni/conto/scollega', requireOwner, wrap(async (req, res) => {
     donaStripe.scollega(currentUser(req).login);
     res.json({ ok: true });
+  }));
+  // Satispay: il codice di attivazione del negozio online dello streamer
+  app.post('/api/donazioni/satispay/collega', requireOwner, wrap(async (req, res) => {
+    const u = currentUser(req);
+    const r = await donaSatispay.collegaConto(u.login, req.body?.codice);
+    if (r.errore) return res.status(400).json({ errore: r.errore + (isAdmin(u) && r.dettaglio ? ' Satispay dice: ' + r.dettaglio : '') });
+    res.json({ ok: true, coda: r.coda });
+  }));
+  app.post('/api/donazioni/satispay/scollega', requireOwner, wrap(async (req, res) => {
+    donaSatispay.scollega(currentUser(req).login);
+    res.json({ ok: true });
+  }));
+  // La callback di Satispay: un GET con l'id del pagamento quando cambia stato.
+  // Non dice quale stato: si rilegge il pagamento con la chiave dello
+  // streamer, e il registro lo conta una volta sola. Si risponde 200 sempre.
+  app.get('/dona/satispay/:login', wrap(async (req, res) => {
+    const login = String(req.params.login || '').toLowerCase();
+    res.json({ ok: true });
+    if (!/^[a-z0-9_]{1,30}$/.test(login) || !extRateOk('dona-cb:' + login)) return;
+    const pid = String(req.query.payment_id || '');
+    if (!/^[A-Za-z0-9-]{8,80}$/.test(pid)) return;
+    const e = await donaSatispay.confermaPerRiferimento(login, pid);
+    if (e?.nuova) manager.alerts?.donazione(login, e.d);
   }));
 
   // Il modulo «Sostieni» della pagina link: chi dona non ha una sessione. Si
@@ -2875,11 +2913,16 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const s = streamers.get(login);
     const p = linkPage.get(login);
     const cfg = s?.settings?.donazioni;
-    if (!p?.attiva || !cfg || cfg.modo === 'link' || donazioni.cosaManca(s?.settings, contiDonazioni.get(login))) return rispondi(404, { errore: 'Le donazioni non sono aperte su questa pagina.' });
+    const conti = contiDi(login);
+    if (!p?.attiva || !cfg || cfg.modo === 'link' || donazioni.cosaManca(s?.settings, conti)) return rispondi(404, { errore: 'Le donazioni non sono aperte su questa pagina.' });
     if (!extRateOk('dona-modulo:' + login)) return rispondi(429, { errore: 'Troppe richieste in questo momento: riprova fra un minuto.' });
     const m = donazioni.leggiModulo(req.body, cfg);
     if (!m) return rispondi(400, { errore: 'Controlla l\'importo: da ' + donazioni.formattaImporto(cfg.minimo, cfg.valuta) + ' a ' + donazioni.formattaImporto(cfg.massimo || donazioni.LIMITI.massimoDiSerie, cfg.valuta) + '.' });
-    const r = await donaStripe.apriPagamento({ login, display: s?.display || login, importoCent: m.importoCent, valuta: cfg.valuta, nome: m.nome, messaggio: m.messaggio });
+    // il mezzo lo sceglie chi dona fra quelli pronti; senza una scelta, il primo
+    const mezzi = donazioni.mezziDi(cfg, conti);
+    const mezzo = mezzi.includes(String(req.body?.mezzo || '')) ? String(req.body.mezzo) : mezzi[0];
+    const dati = { login, display: s?.display || login, importoCent: m.importoCent, valuta: cfg.valuta, nome: m.nome, messaggio: m.messaggio };
+    const r = mezzo === 'satispay' ? await donaSatispay.apriPagamento(dati) : await donaStripe.apriPagamento(dati);
     if (r.errore) return rispondi(503, { errore: 'Il pagamento non si apre in questo momento: riprova fra poco.' });
     rispondi(200, { url: r.url });
   }));
