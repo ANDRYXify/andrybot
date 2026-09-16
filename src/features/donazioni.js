@@ -199,6 +199,15 @@ export function mezziDi(d, conti = null) {
 
 // L'indirizzo della pagina delle donazioni: corto se c'e' il sottodominio,
 // altrimenti sotto la pagina link.
+// L'indirizzo corto delle donazioni, se DONA_HOST non lo dice, si prova da
+// solo: dona.<dominio del sito>. Niente per localhost, indirizzi IP e nomi
+// senza dominio: li' un sottodominio non esiste.
+export function candidatoDonaHost(baseUrl) {
+  let host = '';
+  try { host = new URL(String(baseUrl || '')).hostname.toLowerCase(); } catch { return ''; }
+  if (!host || host === 'localhost' || /^[\d.]+$/.test(host) || host.startsWith('[') || !host.includes('.')) return '';
+  return 'dona.' + host.replace(/^www\./, '');
+}
 export function urlPaginaDona(login) {
   const l = String(login || '').toLowerCase();
   return config.donaHost ? `https://${config.donaHost}/${l}` : `${config.baseUrl}/u/${l}/dona`;

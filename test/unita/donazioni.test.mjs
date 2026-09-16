@@ -155,3 +155,13 @@ test('i dati per il blocco «Sostieni»: come si dona, gli importi, il tasto, la
   assert.equal(dn.cosaManca({ donazioni: { attivo: true } }, { stripe: { pronto: 1 } }), '');
   assert.equal(dn.cosaManca({ donazioni: { attivo: true, valuta: 'USD' } }, { satispay: { pronto: 1 } }), 'conto', 'Satispay da solo, in dollari, non basta');
 });
+
+test('l\'indirizzo corto si propone da solo dal dominio del sito, mai da localhost o da un IP', () => {
+  assert.equal(dn.candidatoDonaHost('https://socialbot.live'), 'dona.socialbot.live');
+  assert.equal(dn.candidatoDonaHost('https://www.socialbot.live/'), 'dona.socialbot.live', 'senza www');
+  assert.equal(dn.candidatoDonaHost('http://localhost:8090'), '');
+  assert.equal(dn.candidatoDonaHost('http://127.0.0.1:8090'), '');
+  assert.equal(dn.candidatoDonaHost('http://[::1]:8090'), '');
+  assert.equal(dn.candidatoDonaHost('http://bot'), '', 'un nome senza dominio');
+  assert.equal(dn.candidatoDonaHost(''), ''); assert.equal(dn.candidatoDonaHost('boh'), '');
+});

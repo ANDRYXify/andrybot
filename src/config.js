@@ -85,7 +85,8 @@ export const config = {
   // La pagina delle donazioni sta in /u/<login>/dona. Con un nome qui (per
   // esempio dona.socialbot.live, con il suo record DNS e il nome nel Caddyfile)
   // ha anche l'indirizzo corto dona.socialbot.live/<login>, e da li' si torna.
-  donaHost: env('DONA_HOST', '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
+  donaHost: /^(no|off)$/i.test(env('DONA_HOST', '')) ? '' : env('DONA_HOST', '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
+  donaHostSpento: /^(no|off)$/i.test(env('DONA_HOST', '')),
   sessionSecret: sessionSecret(),
 
   // kick — app registrata su kick.com/settings/developer.
