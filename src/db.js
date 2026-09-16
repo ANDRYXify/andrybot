@@ -2210,7 +2210,7 @@ export const FONT_LINKPAGE = ['system', 'inter', 'mono', 'serif', 'condensato', 
 export const ICONE_LINKPAGE = ['link', 'twitch', 'youtube', 'instagram', 'tiktok', 'discord', 'spotify',
   'x', 'telegram', 'kick', 'github', 'reddit', 'threads', 'facebook', 'whatsapp', 'twitter',
   'cuore', 'stella', 'regalo', 'carrello', 'calendario', 'mail', 'musica', 'video', 'scarica', 'gioco', 'caffe', 'soldi'];
-export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine', 'diretta', 'eroe', 'griglia', 'scritta', 'numeri', 'faq', 'conto'];
+export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine', 'diretta', 'eroe', 'griglia', 'scritta', 'numeri', 'faq', 'conto', 'sostieni'];
 // Quanto si MUOVE la pagina mentre la si scorre. "dolce" = i contenuti
 // compaiono entrando. "cinema" = in più: la foto della copertina va in
 // parallasse, i titoli si rivelano parola per parola, le immagini si
@@ -2475,6 +2475,10 @@ export const linkPage = {
         out.push({ tipo, titolo: str(b.titolo, L.label),
           quando: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(q) ? q : '',
           finito: str(b.finito, L.label) });
+      } else if (tipo === 'sostieni') {
+        // il tasto delle donazioni: dove si dona e la valuta stanno nelle
+        // impostazioni del canale (una configurazione sola); qui solo come si presenta
+        out.push({ tipo, titolo: str(b.titolo, L.label), testo: str(b.testo, L.sotto), etichetta: str(b.etichetta, L.label), obiettivo: b.obiettivo !== false });
       } else if (tipo === 'griglia') {
         const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 12).map((v) => ({
           img: urlOk(v?.img), titolo: str(v?.titolo, L.label), testo: str(v?.testo, L.sotto), url: urlOk(v?.url),

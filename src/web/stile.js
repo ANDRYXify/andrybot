@@ -196,7 +196,7 @@ export const normGoal = (g, i = 0) => {
   return {
     id,
     attivo: g.attivo !== false,
-    tipo: unoDi(g.tipo, ['follower', 'sub', 'bit'], 'follower'),
+    tipo: unoDi(g.tipo, ['follower', 'sub', 'bit', 'euro'], 'follower'),
     obiettivo: clampInt(g.obiettivo, 1, 1000000, 100),
     // Da dove parte il conto. Un obiettivo «1000 follower» non e' «altri mille»:
     // se ne hai gia' 450, la barra deve partire da li'. Il conto vero resta

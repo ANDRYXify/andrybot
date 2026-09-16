@@ -335,6 +335,7 @@ const ALERT_ICO = {
   sub: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
   cheer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-3 7h5l-3 7"/><circle cx="12" cy="12" r="9"/></svg>',
   raid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>',
+  donazione: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h15v7a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M7 4v1M11 3v2M15 4v1"/></svg>',
 };
 
 const FONT = { sistema: 'var(--font-sistema)', rotondo: 'var(--font-rotondo)', condensato: 'var(--font-condensato)', mono: 'var(--font-mono)', serif: 'var(--font-serif)', manga: 'var(--font-manga)' };
@@ -656,7 +657,8 @@ function contatore(d) {
   el.style.transform = 'translate(-' + x + '%,-' + y + '%)' + (r ? ' rotate(' + r + 'deg)' : '');
 }
 
-const GOAL_ETICHETTA = { follower: 'follower', sub: 'sub', bit: 'bit' };
+const GOAL_ETICHETTA = { follower: 'follower', sub: 'sub', bit: 'bit', euro: 'euro' };
+const numGoal = (tipo, n) => (tipo === 'euro' ? String(Math.round(n * 100) / 100).replace('.', ',') + ' €' : String(n));
 
 const goalEl = {};
 
@@ -680,7 +682,7 @@ function unGoal(cfg, valore) {
   const meta = Math.max(1, Number(cfg.obiettivo) || 100);
   const ora = Math.max(0, (Number(cfg.partenza) || 0) + (Number(valore) || 0));
   el.querySelector('.g-tit').textContent = cfg.titolo || GOAL_ETICHETTA[cfg.tipo] || '';
-  el.querySelector('.g-num').textContent = ora + ' / ' + meta;
+  el.querySelector('.g-num').textContent = numGoal(cfg.tipo, ora) + ' / ' + numGoal(cfg.tipo, meta);
   el.querySelector('.g-barra i').style.setProperty('--q', Math.min(1, (ora / meta) || 0).toFixed(4));
   el.classList.toggle('pieno', ora >= meta);
   posaElemento(el, 'goal:' + id, cfg);

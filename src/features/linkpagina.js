@@ -86,6 +86,7 @@ const PILE = {
 // La sola pila che porta un file. Le pagine link non caricano caratteri dal
 // web: e' una scelta di velocita', e vale ancora per tutte tranne questa.
 import { cssPaginaSicuro } from '../db.js';
+import { formattaImporto } from './donazioni.js';
 
 // I COMMENTI NON ESCONO DA QUI.
 //
@@ -431,14 +432,14 @@ if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
 if(!('IntersectionObserver' in window))return;
 if(window.CSS&&CSS.supports&&CSS.supports('animation-timeline','view()'))return;
 document.documentElement.className+=' sr';
-var SEL='.lista .voce,.lista .tit,.lista .par,.lista .sep,.lista .socrow,.lista .img,.lista .emb,.lista .eroe,.lista .griglia,.lista .marq,.lista .bl';
+var SEL='.lista .voce,.lista .tit,.lista .par,.lista .sep,.lista .socrow,.lista .img,.lista .emb,.lista .eroe,.lista .griglia,.lista .marq,.lista .bl,.lista .sost';
 function tutti(){try{document.querySelectorAll(SEL).forEach(function(el){el.classList.add('vis');});}catch(e){}}
 function avvia(){try{var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('vis');io.unobserve(e.target);}});},{rootMargin:'0px 0px -6% 0px'});document.querySelectorAll(SEL).forEach(function(el){io.observe(el);});}catch(e){tutti();}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',avvia);else avvia();
 setTimeout(tutti,5000);
 }catch(e){try{document.documentElement.classList.remove('sr');}catch(_){}}})();`;
 
-export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima } = {}) {
+export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni } = {}) {
   const pre = PRESET[pagina.template] || PRESET.minimal;
   const t = pagina.tema || {};
   // il tema dell'utente vince sul preset, campo per campo
@@ -721,6 +722,21 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       }).filter(Boolean).join('');
       if (!tessere) return anteprima ? `<div class="segna" ${ritardo}>griglia: aggiungi almeno una tessera</div>` : '';
       return `<div class="griglia" ${ritardo}>${tessere}</div>`;
+    }
+    if (b.tipo === 'sostieni') {
+      // il link, la frase e l'obiettivo arrivano dalle impostazioni del canale
+      // (`sostieni`): il blocco decide solo come si presenta
+      const d = sostieni;
+      if (!d || !d.link) return anteprima ? `<div class="segna" ${ritardo}>sostieni: accendi le donazioni e metti il link nella carta «Donazioni» — da completare</div>` : '';
+      const g = b.obiettivo !== false && d.goal ? d.goal : null;
+      const q = g ? Math.min(1, Math.max(0, g.ora / g.meta)) : 0;
+      const cifra = (x) => formattaImporto(x, d.valuta);
+      return `<div class="sost" ${ritardo}>
+        ${b.titolo ? `<span class="sost-t">${esc(b.titolo)}</span>` : ''}
+        ${(b.testo || d.messaggio) ? `<p class="sost-p">${esc(b.testo || d.messaggio)}</p>` : ''}
+        ${g ? `<div class="sost-g" role="img" aria-label="${esc(cifra(g.ora) + ' su ' + cifra(g.meta))}">${g.titolo ? `<span class="sost-gt">${esc(g.titolo)}</span>` : ''}<span class="sost-gn">${esc(cifra(g.ora))} <small>/ ${esc(cifra(g.meta))}</small></span><span class="sost-gb"><i style="--q:${q.toFixed(4)}"></i></span></div>` : ''}
+        <a class="voce spicca sost-b" href="${esc(d.link)}" target="_blank" rel="noopener nofollow"><span class="ico">${_mIco('caffe')}</span><span class="tx"><span class="et">${esc(b.etichetta || d.etichetta || 'Sostieni')}</span></span><span class="fre" aria-hidden="true">›</span></a>
+      </div>`;
     }
     if (b.tipo === 'diretta') {
       const dv = direttaSrc(b, dom, login);
@@ -1092,6 +1108,20 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .conto-n{font-size:clamp(1.3rem,5vw,2rem);font-weight:var(--pf);letter-spacing:-.02em;color:var(--acc);
     font-variant-numeric:tabular-nums}
   .spazio{width:100%;height:1.6rem}
+  /* il tasto delle donazioni: una carta del tema con la frase, l'obiettivo in
+     euro (cifra e barra) e il bottone in evidenza */
+  .sost{width:100%;margin-top:1.2rem;padding:1.1rem 1rem;border-radius:var(--r);${stileBtn};text-align:center;
+    display:flex;flex-direction:column;gap:.7rem}
+  .sost-t{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:var(--tenue)}
+  .sost-p{color:var(--tenue);font-size:.95rem;line-height:1.45;text-wrap:pretty;margin:0}
+  .sost-g{display:flex;flex-direction:column;gap:.4rem}
+  .sost-gt{font-size:.8rem;color:var(--tenue)}
+  .sost-gn{font-family:var(--fd);font-size:clamp(1.25rem,4.6vw,1.9rem);font-weight:var(--pf);letter-spacing:-.02em;color:var(--acc);
+    font-variant-numeric:tabular-nums;line-height:1}
+  .sost-gn small{font-size:.55em;color:var(--tenue);font-weight:var(--pn)}
+  .sost-gb{display:block;height:.55rem;border-radius:999px;background:${c.acc}33;overflow:hidden}
+  .sost-gb i{display:block;height:100%;width:calc(var(--q,0)*100%);background:var(--acc);border-radius:inherit}
+  .sost .voce{margin-top:.1rem;justify-content:center}
   .badge2{align-self:${aSinistra ? 'flex-start' : 'center'};margin-top:1rem;padding:.3rem .8rem;border-radius:999px;
     background:var(--acc);color:var(--suacc);font-size:.8rem;font-weight:var(--pm);letter-spacing:.02em}
   .bozza{opacity:.5;border-style:dashed!important;cursor:default}
@@ -1135,9 +1165,9 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
      faceva sembrare l'editor rotto — ma quella allo scorrimento resta, così
      l'effetto si vede davvero mentre scorri l'anteprima. */
   ${mov !== 'nessuno' && anim ? `${anim}
-  ${anteprima ? '' : `.voce,.tit,.par,.sep,.socrow,.img,.emb,.eroe,.griglia,.marq{animation:ent .5s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0ms)}`}
+  ${anteprima ? '' : `.voce,.tit,.par,.sep,.socrow,.img,.emb,.eroe,.griglia,.marq,.sost{animation:ent .5s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0ms)}`}
   @supports (animation-timeline:view()){@media (prefers-reduced-motion:no-preference){
-    .voce,.tit,.par,.img,.emb,.eroe,.griglia,.socrow,.marq{animation:ent .6s cubic-bezier(.16,1,.3,1) both;
+    .voce,.tit,.par,.img,.emb,.eroe,.griglia,.socrow,.marq,.sost{animation:ent .6s cubic-bezier(.16,1,.3,1) both;
       animation-delay:0ms;animation-timeline:view();animation-range:entry 0% cover 22%}
   }}` : ''}
   /* Entrata scelta blocco per blocco: vince su quella della pagina. Anima
@@ -1185,8 +1215,8 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
      vedi lo script) mette in pausa l'animazione d'ingresso e la fa PARTIRE solo
      quando il pezzo entra nello schermo → l'effetto "compare mentre scorri" si
      vede anche lì. Senza JS, o sui browser moderni, non cambia niente. */
-  html.sr :is(.voce,.tit,.par,.sep,.socrow,.img,.emb,.eroe,.griglia,.marq,.bl){animation-play-state:paused}
-  html.sr :is(.voce,.tit,.par,.sep,.socrow,.img,.emb,.eroe,.griglia,.marq,.bl).vis{animation-play-state:running}` : ''}
+  html.sr :is(.voce,.tit,.par,.sep,.socrow,.img,.emb,.eroe,.griglia,.marq,.bl,.sost){animation-play-state:paused}
+  html.sr :is(.voce,.tit,.par,.sep,.socrow,.img,.emb,.eroe,.griglia,.marq,.bl,.sost).vis{animation-play-state:running}` : ''}
   ${anteprima ? `
   /* solo in anteprima: si vede che ogni pezzo si può cliccare per aprirne i comandi */
   .sel-b:hover > *{outline:2px dashed var(--acc);outline-offset:4px;cursor:pointer}

@@ -120,7 +120,7 @@ export class BotManager {
     if (this.running) return;
 
     this.clips = new ClipEngine({ helix: this.helix, say: (ch, t) => this.say(ch, t) });
-    this.alerts = new AlertsEngine({ effects: this.effects });
+    this.alerts = new AlertsEngine({ effects: this.effects, say: (ch, t) => this.say(ch, t) });
     // Anti-bot (stile Sery_Bot): raffiche di follow, nomi da bot, hate-raid.
     this.antibot = new AntiBot({
       helix: this.helix,

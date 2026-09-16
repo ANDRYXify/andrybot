@@ -34,6 +34,7 @@ const GUARDIANI = [
   'guardiaConsole',  // CONSOLify e tastiere fisiche: una tastiera non sa tenere un cookie,
                      // quindi la chiave del canale — a tempo costante, revocabile, con tetto
   'verificaWebhook', // firma di Stripe
+  'combacia',        // impronta di un token esterno (Ko-fi), a tempo costante: come la chiave API
   'currentUser',     // legge la sessione: senza, non c'e' niente da leggere
   'soloProprietario',
 ];
