@@ -43,12 +43,14 @@ const ROTTURE = [
     'in diretta la chat nel riquadro non taglia dall\'alto'],
   ['src/web/public/overlay-app.js', "  if (window.PLAYER_VARS) window.PLAYER_VARS.applica(el, cfg);\n", '',
     'in diretta il player ignora le misure scelte pezzo per pezzo'],
-  ['src/web/public/overlay-skin.css', "  min-width: 12em;\n  padding: calc(.5em", "  min-width: 12em; max-width: 27em;\n  padding: calc(.5em",
+  ['src/web/public/overlay-skin.css', "  min-width: 12em;\n  padding: calc(var(--m-py)", "  min-width: 12em; max-width: 27em;\n  padding: calc(var(--m-py)",
     'la carta del player ha di nuovo un tetto che ruba spazio al testo'],
   ['src/web/public/app.js', " el.style.setProperty(k, x); else el.style.removeProperty(k); } }", " el.style.setProperty(k, x); } }",
     'la tela tiene una variabile che nessuno ha piu\' chiesto'],
   ['src/web/public/riquadro.js', "    el.style.width = (fw / k) + 'px'; el.style.height = (fh / k) + 'px'; el.style.maxWidth = 'none';\n", '',
     'il riquadro torna un perimetro attorno a un elemento scalato, non la sua scatola'],
+  ['src/web/public/presets.js', "      const libera = !!cfg && cfg.verso === 'libera';", "      const libera = false;",
+    'nella disposizione libera le parti restano ai posti di serie'],
 ];
 
 // --selftest prova tutte le rotture; --selftest=<parola> solo quelle la cui
@@ -140,7 +142,7 @@ try {
   const XY = { x: 50, y: 50, s: 100, r: 0 };
   const CASI_PLAYER = [];
   for (const tema of ['nessuno', 'vinile', 'cd', 'cassetta', 'terminale', 'manga', 'esagono']) for (const corpo of ['normale', 'slim']) CASI_PLAYER.push({ tema, corpo, verso: 'riga', larghezza: 0 });
-  CASI_PLAYER.push({ tema: 'nessuno', corpo: 'normale', verso: 'colonna', larghezza: 0 }, { tema: 'cassetta', corpo: 'slim', verso: 'riga', larghezza: 20 });
+  CASI_PLAYER.push({ tema: 'nessuno', corpo: 'normale', verso: 'colonna', larghezza: 0 }, { tema: 'cassetta', corpo: 'slim', verso: 'riga', larghezza: 20 }, { tema: 'nessuno', corpo: 'normale', verso: 'libera', larghezza: 0 });
   for (const caso of CASI_PLAYER) {
     const nome = `player ${caso.tema}/${caso.corpo}/${caso.verso}${caso.larghezza ? '/testo ' + caso.larghezza + 'em' : ''}`;
     const cfg = await ed.evaluate(async ({ caso, XY }) => {
@@ -407,6 +409,69 @@ try {
     && d2['.m-riga:first-child'].colore === 'rgb(255, 224, 102)' && d2['.m-riga2'].colore === 'rgb(154, 208, 255)' && d2['.m-tempi'].colore === 'rgb(192, 255, 192)';
   dice(derivati, `ogni misura fa quello che dice: copertina ×1,5, vinile ×1,3, prima riga ×1,3, seconda ×0,8, tempi ×1,2, barra ×2, onde ×1,6, spazio attorno ×1,4, la colonna del testo non perde un pixel, e i colori propri sul testo`,
     d1 && d2 && d2['.m-disco'] ? `disco ${rapporto(d1['.m-disco'].w, d2['.m-disco'].w).toFixed(2)} cover-h ${rapporto(d1['.m-cover'].h, d2['.m-cover'].h).toFixed(2)} tit ${rapporto(d1['.m-riga:first-child'].font, d2['.m-riga:first-child'].font).toFixed(2)} art ${rapporto(d1['.m-riga2'].font, d2['.m-riga2'].font).toFixed(2)} tempi ${rapporto(d1['.m-tempi'].font, d2['.m-tempi'].font).toFixed(2)} barra ${rapporto(d1['.m-barra'].h, d2['.m-barra'].h).toFixed(2)} onde ${rapporto(d1['.m-onde'].h, d2['.m-onde'].h).toFixed(2)} pad ${rapporto(d1.el.pad, d2.el.pad).toFixed(2)} corpo ${Math.round(d1['.m-corpo'].w)}→${Math.round(d2['.m-corpo'].w)} tit ${d2['.m-riga:first-child'].colore}` : 'manca una misura');
+
+  // --- 8. le parti dove vuoi ---------------------------------------------------
+  // disposizione libera in un riquadro, con una tabella nota: ogni pezzo sta nello
+  // stesso posto di qua e di la', E nel posto che il numero dice — x=0 a filo dello
+  // spazio interno a sinistra, x=100 a filo a destra, y=50 al centro, w in
+  // centesimi dell'interno. Cosi' un difetto condiviso dal traduttore non passa
+  // solo perche' le due pagine lo condividono.
+  const RQL = { x: 10, y: 20, w: 40, h: 22, r: 0 };
+  const TAB = { cover: { x: 0, y: 0 }, titolo: { x: 100, y: 100, w: 40, a: 'destra' }, artista: { x: 50, y: 0, w: 30, a: 'centro' }, barra: { x: 50, y: 50, w: 30 }, tempi: { x: 100, y: 0 }, onde: { x: 0, y: 100 } };
+  const PEZZI = { cover: '.m-cover', titolo: '.m-riga:not(.m-riga2)', artista: '.m-riga2', barra: '.m-barra', tempi: '.m-tempi', onde: '.m-onde' };
+  const MISURA_LIBERA = `((radice, pezzi) => {
+    const stage = document.getElementById('ap-stage');
+    const sc = stage ? stage.getBoundingClientRect().width / 1920 : 1;
+    const el = document.querySelector(radice);
+    if (!el) return null;
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    const k = new DOMMatrix(getComputedStyle(el.closest('.ap-el') || el).transform).a || 1;
+    const out = { el: { x: r.left / sc, y: r.top / sc, w: r.width / sc, h: r.height / sc, px: parseFloat(cs.paddingLeft) * k, py: parseFloat(cs.paddingTop) * k, allinea: {} } };
+    for (const [n, s] of Object.entries(pezzi)) {
+      const p = el.querySelector(s);
+      if (!p || !p.offsetWidth) { out[n] = null; continue; }
+      const b = p.getBoundingClientRect();
+      out[n] = { x: (b.left - r.left) / sc, y: (b.top - r.top) / sc, w: b.width / sc, h: b.height / sc, allinea: getComputedStyle(p).textAlign };
+    }
+    return out;
+  })`;
+  const cfgLib = await ed.evaluate(async ({ RQL, TAB }) => {
+    const c = _cfgEl('musica');
+    Object.assign(c, { attivo: true, verso: 'libera', righe: 'due', cover: 'quadrata', barra: 'sotto', tempi: 'due', entrata: 'dissolvenza', quandoFermo: 'resta',
+      ritmo: 'onde', sfondo: 'no', corpo: 'normale', tema: 'nessuno', larghezza: 0, scorre: false, daCopertina: false, testo: '{titolo}', testo2: '{artista}', parti: JSON.parse(JSON.stringify(TAB)) });
+    delete c.misure; delete c.colori;
+    const xy = _ovXY(); for (const k of Object.keys(xy)) delete xy[k];
+    xy.musica = { ...RQL };
+    aggiornaAnteprima();
+    await new Promise((r) => setTimeout(r, 350));
+    return JSON.parse(JSON.stringify(c));
+  }, { RQL, TAB });
+  const eL = await ed.evaluate(`(${MISURA_LIBERA})('#ap-stage .ovl-musica', ${JSON.stringify(PEZZI)})`);
+  TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, stato: {}, mostra: MOSTRA, xy: { musica: RQL }, musica: cfgLib, alertStile: null, chatStile: null };
+  MUSICA = brano('Ok');
+  await apriLive(() => document.querySelector('.ovl-musica.dentro'));
+  const lL = await live.evaluate(`(${MISURA_LIBERA})('.ovl-musica', ${JSON.stringify(PEZZI)})`);
+  const diversiL = [];
+  if (!(eL && lL)) diversiL.push('manca il player');
+  else for (const n of Object.keys(PEZZI)) {
+    if (!(eL[n] && lL[n])) { diversiL.push(n + ' manca'); continue; }
+    if (!(vicino(eL[n].x, lL[n].x, 2) && vicino(eL[n].y, lL[n].y, 2) && vicino(eL[n].w, lL[n].w, 2) && vicino(eL[n].h, lL[n].h, 2))) diversiL.push(`${n} ${Math.round(eL[n].x)},${Math.round(eL[n].y)} ${mis(eL[n])} / ${Math.round(lL[n].x)},${Math.round(lL[n].y)} ${mis(lL[n])}`);
+  }
+  dice(diversiL.length === 0, 'disposizione libera nel riquadro: ogni pezzo sta nello stesso posto sulla tela e in diretta', diversiL.join(' · '));
+  const posti = [];
+  if (lL && lL.cover && lL.titolo && lL.artista && lL.barra && lL.tempi && lL.onde) {
+    const W = lL.el.w, H = lL.el.h, px = lL.el.px, py = lL.el.py, dentroW = W - 2 * px, dentroH = H - 2 * py;
+    if (!vicino(lL.cover.x, px, 2) || !vicino(lL.cover.y, py, 2)) posti.push(`copertina a 0,0 sta a ${Math.round(lL.cover.x)},${Math.round(lL.cover.y)} invece di ${Math.round(px)},${Math.round(py)}`);
+    if (!vicino(lL.titolo.x + lL.titolo.w, W - px, 2) || !vicino(lL.titolo.y + lL.titolo.h, H - py, 2)) posti.push(`titolo a 100,100 finisce a ${Math.round(lL.titolo.x + lL.titolo.w)},${Math.round(lL.titolo.y + lL.titolo.h)} invece di ${Math.round(W - px)},${Math.round(H - py)}`);
+    if (!vicino(lL.titolo.w, dentroW * .4, 2)) posti.push(`titolo largo ${Math.round(lL.titolo.w)} invece del 40% (${Math.round(dentroW * .4)})`);
+    if (lL.titolo.allinea !== 'right' || lL.artista.allinea !== 'center') posti.push(`allineamento ${lL.titolo.allinea}/${lL.artista.allinea}`);
+    if (!vicino(lL.barra.x + lL.barra.w / 2, W / 2, 2) || !vicino(lL.barra.y + lL.barra.h / 2, H / 2, 2)) posti.push(`barra a 50,50 ha il centro in ${Math.round(lL.barra.x + lL.barra.w / 2)},${Math.round(lL.barra.y + lL.barra.h / 2)} invece di ${Math.round(W / 2)},${Math.round(H / 2)}`);
+    if (!vicino(lL.barra.w, dentroW * .3, 2)) posti.push(`barra larga ${Math.round(lL.barra.w)} invece del 30%`);
+    if (!vicino(lL.tempi.x + lL.tempi.w, W - px, 2) || !vicino(lL.tempi.y, py, 2)) posti.push('tempi non in alto a destra');
+    if (!vicino(lL.onde.x, px, 2) || !vicino(lL.onde.y + lL.onde.h, H - py, 2)) posti.push('onde non in basso a sinistra');
+    if (!vicino(lL.el.w, RQL.w / 100 * 1920, 2.5) || !vicino(lL.el.h, RQL.h / 100 * 1080, 2.5)) posti.push(`la carta non e' il riquadro: ${mis(lL.el)}`);
+  } else posti.push('manca un pezzo in diretta');
+  dice(posti.length === 0, 'e ogni pezzo sta dove il numero dice: 0 a filo, 100 a filo dall\'altra parte, 50 al centro, la larghezza in centesimi dello spazio interno, il testo allineato come chiesto', posti.join(' · '));
 
   dice(erroriEd.length === 0, 'l\'editor non ha errori', erroriEd.slice(0, 2).join(' | '));
   dice(erroriLive.length === 0, 'la pagina dell\'overlay non ha errori', erroriLive.slice(0, 2).join(' | '));

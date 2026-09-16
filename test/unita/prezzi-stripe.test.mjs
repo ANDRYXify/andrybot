@@ -13,9 +13,10 @@ const prezzo = (id, nomeProd, cent, extra = {}) => ({
 const cent = (v) => Math.round(v.prezzo * 100);
 
 test('all\'avvio il server chiede a Stripe, pagina per pagina, e vende solo cio\' che coincide', async () => {
-  const salva = { attivo: config.stripe.attivo, key: config.stripe.secretKey, prezzi: { ...config.stripe.prezzi }, fetch: globalThis.fetch };
+  const salva = { attivo: config.stripe.attivo, key: config.stripe.secretKey, prezzi: config.stripe.prezzi, fetch: globalThis.fetch };
   config.stripe.attivo = true; config.stripe.secretKey = 'sk_test_finta';
-  config.stripe.prezzi.addon_voce = 'price_voce_forzato';          // forzato dal .env, archiviato: non sta fra gli attivi
+  // il .env di chi lancia i test non conta: qui c'e' UN id forzato, archiviato, che non sta fra gli attivi
+  config.stripe.prezzi = { addon_voce: 'price_voce_forzato' };
   const pagina1 = [prezzo('price_base', 'Base', cent(ab.BASE)), prezzo('price_clip', 'Clip Automatiche', cent(ab.addonById('clip')))];
   const pagina2 = [prezzo('price_sq', 'Squadra', 299), prezzo('price_tutto', 'Bundle Tutto', cent(ab.bundleById('tutto')))];
   const chiamate = [];
@@ -49,17 +50,17 @@ test('all\'avvio il server chiede a Stripe, pagina per pagina, e vende solo cio\
   } finally {
     globalThis.fetch = salva.fetch;
     config.stripe.attivo = salva.attivo; config.stripe.secretKey = salva.key;
-    Object.assign(config.stripe.prezzi, salva.prezzi);
+    config.stripe.prezzi = salva.prezzi;
   }
 });
 
 test('se Stripe non risponde non si vende niente, e quel che c\'era prima resta com\'era', async () => {
-  const salva = { attivo: config.stripe.attivo, key: config.stripe.secretKey, fetch: globalThis.fetch };
-  config.stripe.attivo = true; config.stripe.secretKey = 'sk_test_finta';
+  const salva = { attivo: config.stripe.attivo, key: config.stripe.secretKey, prezzi: config.stripe.prezzi, fetch: globalThis.fetch };
+  config.stripe.attivo = true; config.stripe.secretKey = 'sk_test_finta'; config.stripe.prezzi = {};
   globalThis.fetch = async () => { throw new Error('rete giu\''); };
   try {
     const prima = ab.priceDi(ab.BASE);
     assert.equal(await ab.verificaPrezziStripe(), null);
     assert.equal(ab.priceDi(ab.BASE), prima, 'niente cancellato: l\'esito precedente resta');
-  } finally { globalThis.fetch = salva.fetch; config.stripe.attivo = salva.attivo; config.stripe.secretKey = salva.key; }
+  } finally { globalThis.fetch = salva.fetch; config.stripe.attivo = salva.attivo; config.stripe.secretKey = salva.key; config.stripe.prezzi = salva.prezzi; }
 });

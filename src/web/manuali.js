@@ -1296,7 +1296,7 @@ const OVERLAY = {
     { p: ['Quello che stai ascoltando, a schermo. Compare quando la musica parte e sparisce quando la fermi (o resta con un trattino, se preferisci). Legge da <strong>Spotify</strong>: si collega nella scheda <em>Richieste musicali</em>.'] },
     { tabella: [
       ['Scelta', 'Di base', 'Cosa puoi metterci'],
-      ['Disposizione', 'copertina a sinistra', 'copertina a sinistra · a destra · sopra (poster) · solo la copertina'],
+      ['Disposizione', 'copertina a sinistra', 'copertina a sinistra · a destra · sopra (poster) · solo la copertina · libera: ogni pezzo dove lo trascini sulla tela dello Studio, con righe e barra larghe quanto vuoi e il testo allineato come vuoi. Si parte da dove i pezzi stanno già, e la carta è il riquadro'],
       ['Righe', 'una', 'una riga sola, oppure titolo sopra e artista sotto'],
       ['Copertina', 'quadrata', 'quadrata · tonda · vinile che gira mentre suona · niente'],
       ['Corpo', 'normale', 'slim · normale · cicciotto: la taglia di tutto il player, copertina compresa'],
