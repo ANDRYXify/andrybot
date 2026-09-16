@@ -200,8 +200,7 @@ function corpo(L, l, kick, youtube) {
       </header>
       <span class="vt-occhiello"><i class="vivo"></i>${L('Per Twitch e Kick · di andryxify.it', 'For Twitch and Kick · by andryxify.it', 'Para Twitch y Kick · de andryxify.it')}</span>
       <h1 class="vt-titolo">${L('Il bot che in chat scrive', 'The bot that writes in chat', 'El bot que en el chat escribe')} <em>${L('con il tuo nome', 'under your own name', 'con tu nombre')}</em></h1>
-      <p class="vt-frase">${L('Niente più un servizio per ogni cosa: chat, alert, donazioni e pagina link stanno qui, con un accesso solo.', 'No more one service for each thing: chat, alerts, donations and your link page live here, with one login.', 'Se acabó un servicio para cada cosa: chat, avisos, donaciones y página de enlaces están aquí, con un solo acceso.')}</p>
-      <p class="vt-sub">${L('Uno spettatore scrive <strong>!social</strong> e in chat risponde il tuo account, non un bot.', 'A viewer types <strong>!social</strong> and the reply comes from your account, not from a bot.', 'Un espectador escribe <strong>!social</strong> y en el chat responde tu cuenta, no un bot.')}</p>
+      <p class="vt-frase">${L('Chat, alert, donazioni e pagina link in un posto solo, con un accesso solo.', 'Chat, alerts, donations and your link page in one place, with one login.', 'Chat, avisos, donaciones y página de enlaces en un solo sitio, con un solo acceso.')}</p>
       <div class="vt-azioni">
         <a class="vt-btn vt-btn-primo" href="/entra?nuovo=1">${L('Registrati con Twitch', 'Sign up with Twitch', 'Regístrate con Twitch')}</a>
         <a class="vt-btn" href="/entra">${L('Accedi', 'Log in', 'Entrar')}</a>
