@@ -1194,3 +1194,30 @@ centro, la larghezza in centesimi dell'interno, il testo allineato come chiesto.
 La seconda esiste perché un difetto nel traduttore lo condividerebbero le due
 pagine, e il confronto fra loro non lo vedrebbe. L'autoprova lo spegne
 (`const libera = false`) e guarda che il cancello diventi rosso.
+
+
+## Un video nel player
+
+Chiesto: «mettere come sfondo anche il video (se presente) al posto della
+copertina sfocata; il video può andare anche in chiaro sulla copertina, ma non
+su CD e vinile». Prima la verità sul «se presente»: Spotify **non dà un video
+del brano**. I brevi loop che si vedono nell'app (Canvas) non stanno nell'API
+pubblica, e leggerli da dove non si dovrebbe è contro le sue condizioni. Quindi
+il video è **dello streamer**: un loop corto caricato fra gli Effetti, muto,
+scelto nel player con «Il mio video».
+
+Il modello, in tre righe:
+
+1. Il dato è un riferimento a un effetto (`video: 'effetto:<comando>'`), come il
+   suono o l'immagine di un alert. Il server lo risolve in indirizzo quando
+   consegna il tema all'overlay (`_musicaConVideo`), e solo se l'effetto è
+   davvero un video.
+2. Dove va lo dicono due scelte già esistenti: **Sfondo → il mio video,
+   sfocato** (stesso velo e stessa sfocatura della copertina) e **Copertina → il
+   mio video, in chiaro** (riempie la copertina, `object-fit: cover`). Con i
+   temi vinile e CD la copertina resta quella del disco, per costruzione: la
+   lista dei temi senza video sta nel traduttore, in un posto solo.
+3. **Un traduttore solo**, `PLAYER_VARS.video`, letto dalla tela e dalla
+   diretta: crea il `<video>` una volta, cambia l'indirizzo solo se è cambiato
+   (il player si ridisegna a ogni lettura di Spotify, il video non deve
+   ricominciare), e con «riduci animazioni» lo lascia fermo al primo fotogramma.

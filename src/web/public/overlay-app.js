@@ -857,6 +857,7 @@ function disegnaMusica() {
   else disco.style.backgroundImage = '';
   if (cfg.sfondo === 'copertina' && foto) sfondo.style.backgroundImage = 'url("' + foto.replace(/"/g, '') + '")';
   else sfondo.style.backgroundImage = '';
+  if (window.PLAYER_VARS && window.PLAYER_VARS.video) window.PLAYER_VARS.video(el, cfg, cfg.videoUrl || '');
 
   if ((cfg.daCopertina || cfg.sfondo === 'colori') && d.copertina) {
     tintaDaCopertina(d.copertina, (uno, due) => {

@@ -5631,6 +5631,13 @@ function popolaMediaSuoniAlert(effetti, alertsCfg) {
     if (selI) selI.value = c.icona != null ? c.icona : selI.value;
   });
   _rifaiMenuIcone(a);
+  const selV = document.getElementById('mus-video');
+  if (selV) {
+    const video = (effetti || []).filter((e) => e.tipo === 'video');
+    const val = (typeof _cfgEl === 'function' && _cfgEl('musica').video) || selV.value || '';
+    selV.innerHTML = `<option value="">${L('— nessuno —', '— none —', '— ninguno —')}</option>` + video.map((e) => `<option value="effetto:${esc(e.comando)}">!${esc(e.comando)}</option>`).join('');
+    selV.value = val;
+  }
   if (typeof aggiornaAnteprima === 'function') aggiornaAnteprima();
 }
 
@@ -6272,13 +6279,14 @@ function pannelloAlert() {
             <input type="text" data-c="testo2" aria-label="${esc(L('Seconda riga', 'Second line', 'Segunda línea'))}" maxlength="80"></div>
         </div>
         <div class="goal-campi spazio-sopra">
-          <label class="campo-num">${L('Copertina', 'Cover art', 'Portada')}<select data-c="cover">${[['quadrata', L('quadrata', 'square', 'cuadrada')], ['tonda', L('tonda', 'round', 'redonda')], ['vinile', L('vinile che gira', 'spinning vinyl', 'vinilo que gira')], ['no', L('niente', 'none', 'ninguna')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Copertina', 'Cover art', 'Portada')}<select data-c="cover">${[['quadrata', L('quadrata', 'square', 'cuadrada')], ['tonda', L('tonda', 'round', 'redonda')], ['vinile', L('vinile che gira', 'spinning vinyl', 'vinilo que gira')], ['video', L('il mio video, in chiaro', 'my video, in the clear', 'mi vídeo, nítido')], ['no', L('niente', 'none', 'ninguna')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Avanzamento', 'Progress', 'Progreso')}<select data-c="barra">${[['sotto', L('barra sotto', 'bar below', 'barra abajo')], ['anello', L('anello sulla copertina', 'ring on the cover', 'anillo en la portada')], ['no', L('niente', 'none', 'ninguno')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Tempi', 'Times', 'Tiempos')}<select data-c="tempi">${[['no', L('niente', 'none', 'ninguno')], ['trascorso', L('trascorso', 'elapsed', 'transcurrido')], ['restante', L('quanto manca', 'remaining', 'lo que falta')], ['due', L('tutti e due', 'both', 'los dos')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Entrata', 'Entrance', 'Entrada')}<select data-c="entrata">${[['dissolve', L('dissolvenza', 'fade', 'fundido')], ['scivola', L('scivola da lato', 'slide in', 'desliza')], ['sale', L('sale dal basso', 'rise up', 'sube')], ['niente', L('secca', 'none', 'seca')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Se è in pausa', 'When paused', 'Si está en pausa')}<select data-c="quandoFermo">${[['sparisce', L('sparisce', 'goes away', 'desaparece')], ['resta', L('resta a schermo', 'stays on screen', 'se queda')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Le onde', 'The bars', 'Las ondas')}<select data-c="ritmo">${[['onde', L('onde che ballano', 'bars that dance', 'ondas que bailan')], ['tutto', L('onde e copertina che pulsa', 'bars and pulsing cover', 'ondas y portada que late')], ['no', L('niente onde', 'no bars', 'sin ondas')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
-          <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<select data-c="sfondo">${[['no', L('niente', 'none', 'ninguno')], ['copertina', L('copertina sfocata', 'blurred cover', 'portada difuminada')], ['colori', L('colori del disco', 'record colors', 'colores del disco')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<select data-c="sfondo">${[['no', L('niente', 'none', 'ninguno')], ['copertina', L('copertina sfocata', 'blurred cover', 'portada difuminada')], ['colori', L('colori del disco', 'record colors', 'colores del disco')], ['video', L('il mio video, sfocato', 'my video, blurred', 'mi vídeo, difuminado')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Il mio video', 'My video', 'Mi vídeo')} <span class="tenue">${L('dai tuoi Effetti', 'from your Effects', 'de tus Efectos')}</span><select data-c="video" id="mus-video"><option value="">${L('— nessuno —', '— none —', '— ninguno —')}</option></select></label>
           <label class="campo-num">${L('Corpo', 'Body', 'Cuerpo')}<select data-c="corpo">${CORPO_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Tema', 'Theme', 'Tema')}<select data-c="tema">${TEMA_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num" id="mus-larghezza-riga">${L('Larghezza del testo', 'Text width', 'Ancho del texto')} <span class="tenue">${L('0 = come il corpo', '0 = follow the body', '0 = como el cuerpo')}</span><input type="number" data-c="larghezza" min="0" max="30"></label>
@@ -6289,7 +6297,8 @@ function pannelloAlert() {
           <label class="riga-check"><input type="checkbox" data-c="cambio"> ${L('Si rianima a ogni brano', 'Replays its entrance on every track', 'Se reanima en cada tema')}</label>
           <button type="button" class="btn secondario" id="mus-prova-entrata">${L('Rivedi l\'entrata', 'Replay the entrance', 'Repetir la entrada')}</button>
         </div>
-        <p class="suggerimento spazio-sopra">${L('La copertina pulsa solo se Spotify ci dice il tempo del brano: quando non lo dice, resta ferma invece di pulsare a una velocità che non c’entra niente. Le onde ballano comunque.', 'The cover only pulses when Spotify tells us the track’s tempo: when it doesn’t, it stays still instead of pulsing at a speed unrelated to the song. The bars dance anyway.', 'La portada solo late si Spotify nos dice el tempo del tema: cuando no lo dice, se queda quieta en vez de latir a una velocidad que no tiene que ver. Las ondas bailan igual.')}</p>
+        <p class="suggerimento spazio-sopra">${L('Il video è tuo: un loop corto caricato fra gli Effetti (Spotify non dà un video del brano). Sfocato sullo sfondo o in chiaro al posto della copertina; con i temi vinile e CD la copertina resta quella del disco.', 'The video is yours: a short loop uploaded among your Effects (Spotify gives no video for a track). Blurred in the background or in the clear instead of the cover; with the vinyl and CD themes the cover stays the record’s.', 'El vídeo es tuyo: un bucle corto subido entre tus Efectos (Spotify no da un vídeo del tema). Difuminado de fondo o nítido en lugar de la portada; con los temas vinilo y CD la portada sigue siendo la del disco.')}</p>
+        <p class="suggerimento">${L('La copertina pulsa solo se Spotify ci dice il tempo del brano: quando non lo dice, resta ferma invece di pulsare a una velocità che non c’entra niente. Le onde ballano comunque.', 'The cover only pulses when Spotify tells us the track’s tempo: when it doesn’t, it stays still instead of pulsing at a speed unrelated to the song. The bars dance anyway.', 'La portada solo late si Spotify nos dice el tempo del tema: cuando no lo dice, se queda quieta en vez de latir a una velocidad que no tiene que ver. Las ondas bailan igual.')}</p>
         <div class="asp-blocco" data-asp="musica" data-cfg-di="musica">
           <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
           ${_vesteCampi()}
@@ -7095,6 +7104,7 @@ function _vestiMusica(box, cfg) {
     '--font': fontStile(st), '--energia': String(d.energia),
     '--m-testo': Number(cfg.larghezza) > 0 ? Number(cfg.larghezza) + 'em' : null });
   if (window.PLAYER_VARS) window.PLAYER_VARS.applica(box, cfg);
+  if (window.PLAYER_VARS && window.PLAYER_VARS.video) window.PLAYER_VARS.video(box, cfg, urlEffetto(cfg.video));
   const dipingi = (sel, tpl) => {
     const n = box.querySelector(sel);
     if (n) n.innerHTML = esc(tpl || '').replace(/\{titolo\}/g, '<b>' + esc(d.nome) + '</b>')
@@ -7824,7 +7834,7 @@ function _defMusica() {
   return { attivo: false, verso: 'riga', righe: 'una', testo: '{titolo} — {artista}', testo2: '{artista}',
     cover: 'quadrata', barra: 'sotto', tempi: 'no', onde: true, ritmo: 'onde', sfondo: 'no',
     daCopertina: false, scorre: true, entrata: 'dissolve', cambio: true,
-    corpo: 'normale', tema: 'nessuno', larghezza: 0,
+    corpo: 'normale', tema: 'nessuno', larghezza: 0, video: '',
     quandoFermo: 'sparisce', posizione: 'basso-sinistra', xy: null, misure: _misureDef(), colori: _coloriDef(), parti: _partiDef(), stile: VESTE_DEF() };
 }
 function _PV() { return window.PLAYER_VARS || { misure: [], colori: [], applica() {} }; }
