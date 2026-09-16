@@ -281,14 +281,14 @@ export const normPartiMusica = (p) => {
   o.scatola = { w: clampPct(s.w, 5, 80, PARTI_DEF.scatola.w), h: clampPct(s.h, 2, 60, PARTI_DEF.scatola.h) };
   return o;
 };
-export const COVER_MUS = ['quadrata', 'tonda', 'vinile', 'no'];
+export const COVER_MUS = ['quadrata', 'tonda', 'vinile', 'video', 'no'];
 export const BARRA_MUS = ['sotto', 'anello', 'no'];
 export const TEMPI_MUS = ['no', 'trascorso', 'restante', 'due'];
 export const ENTRATA_MUS = ['dissolve', 'scivola', 'sale', 'niente'];
 export const VERSO_MUS = ['riga', 'riga-inversa', 'colonna', 'solo-cover', 'libera'];
 export const RIGHE_MUS = ['una', 'due'];
 export const RITMO_MUS = ['no', 'onde', 'tutto'];
-export const SFONDO_MUS = ['no', 'copertina', 'colori'];
+export const SFONDO_MUS = ['no', 'copertina', 'colori', 'video'];
 export const CORPO_MUS = ['slim', 'normale', 'cicciotto'];
 export const TEMA_MUS = ['nessuno', 'vinile', 'cd', 'cassetta', 'terminale', 'manga', 'esagono'];
 
@@ -320,6 +320,10 @@ export const normMusica = (m) => {
       return { onde: r !== 'no', ritmo: r };
     })(),
     sfondo: unoDi(m.sfondo, SFONDO_MUS, 'no'),
+    // Un video TUO, caricato fra gli Effetti ("effetto:<comando>"): Spotify non
+    // da' un video del brano, quindi il video e' dello streamer, e gira in loop
+    // sfocato sullo sfondo o in chiaro al posto della copertina.
+    video: /^effetto:[a-z0-9_]{1,30}$/i.test(String(m.video || '')) ? String(m.video).toLowerCase() : '',
     corpo: unoDi(m.corpo, CORPO_MUS, 'normale'),
     // Quanto si allarga la colonna del testo prima che il titolo cominci a
     // scorrere. In «em», quindi vale uguale a ogni Dimensione. 0 = decide il

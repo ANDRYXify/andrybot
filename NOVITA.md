@@ -17,6 +17,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-16
 
+- Nel player puoi mettere un tuo video in loop, caricato fra gli Effetti: sfocato sullo sfondo al posto della copertina, o in chiaro sulla copertina stessa. Con i temi vinile e CD la copertina resta quella del disco. [vai: alert]
 - Donazioni: nella scheda «Pagina link» dici dove si dona (Ko-fi, PayPal o altro) e il tasto «Sostieni» compare sulla tua pagina, col tuo tema. [vai: pagina]
 - Con il token di Ko-fi ogni mancia accende l'avviso «Donazione» in overlay, il grazie in chat e fa salire l'obiettivo in euro, che si può mostrare anche sotto il tasto «Sostieni». [vai: alert]
 - Nel player la disposizione «libera» mette ogni pezzo dove lo trascini sulla tela: copertina, righe, barra, tempi e onde, con righe e barra larghe quanto vuoi. Si parte da dove i pezzi stanno già, e in diretta è uguale. [vai: alert]

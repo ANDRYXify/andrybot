@@ -149,10 +149,32 @@
     scatola: { w: '--p-scatola-w', h: '--p-scatola-h' },
   };
   const ALLINEA = { sinistra: 'left', centro: 'center', destra: 'right' };
+  const TEMI_SENZA_VIDEO = ['vinile', 'cd'];
   window.PLAYER_VARS = {
     misure: MISURE_MUS, colori: COLORI_MUS, varMisure: VAR_MIS, varColori: VAR_COL,
     parti: PARTI_MUS, larghe: LARGHE_MUS, varParti: VAR_PARTI,
     partiDef() { return JSON.parse(JSON.stringify(PARTI_DEF)); },
+    temiSenzaVideo: TEMI_SENZA_VIDEO,
+    video(el, cfg, url) {
+      const c = cfg || {};
+      const dove = { '.m-sfondo': !!url && c.sfondo === 'video', '.m-disco': !!url && c.cover === 'video' && TEMI_SENZA_VIDEO.indexOf(c.tema || 'nessuno') < 0 };
+      const fermo = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      for (const sel in dove) {
+        const box = el.querySelector(sel);
+        if (!box) continue;
+        let v = box.querySelector('video.m-video');
+        if (!dove[sel]) { if (v) v.remove(); continue; }
+        if (!v) {
+          v = document.createElement('video');
+          v.className = 'm-video'; v.muted = true; v.loop = true; v.autoplay = !fermo; v.playsInline = true;
+          v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('aria-hidden', 'true');
+          box.appendChild(v);
+        }
+        if (v.getAttribute('src') !== url) { v.setAttribute('src', url); v.load(); }
+        if (fermo) v.pause(); else { const p = v.play(); if (p && p.catch) p.catch(function () {}); }
+      }
+      el.classList.toggle('con-video', dove['.m-sfondo'] || dove['.m-disco']);
+    },
     applica(el, cfg) {
       const m = (cfg && cfg.misure) || {}, c = (cfg && cfg.colori) || {};
       for (const k of MISURE_MUS) {

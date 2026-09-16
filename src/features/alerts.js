@@ -205,6 +205,14 @@ export class AlertsEngine {
 
   // Risolve "effetto:<comando>" in { url, tipo } usando la libreria Effetti &
   // suoni del canale (così un alert può usare un suono/immagine/video caricati).
+  // Il player: la configurazione com'e', piu' l'indirizzo del video scelto fra
+  // gli Effetti, risolto qui come le icone. Solo se e' davvero un video.
+  _musicaConVideo(channel, m) {
+    if (!m || typeof m !== 'object') return null;
+    const v = m.video ? this._risolviEffetto(channel, m.video) : null;
+    return { ...m, videoUrl: v && v.tipo === 'video' ? v.url : '' };
+  }
+
   _risolviEffetto(channel, ref) {
     const m = /^effetto:(.+)$/i.exec(String(ref || ''));
     if (!m) return null;
@@ -343,7 +351,7 @@ export class AlertsEngine {
       widget: conIcone,
       goals: goalDi(s),
       conti: contiGoal(s),
-      musica: (s.overlayMusica && typeof s.overlayMusica === 'object') ? s.overlayMusica : null,
+      musica: this._musicaConVideo(channel, s.overlayMusica),
       timer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : null,
       stato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     };
