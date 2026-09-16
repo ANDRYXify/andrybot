@@ -143,6 +143,7 @@ test('la scheda «Donazioni» esiste nel pannello, negli aiuti, nella vetrina e 
 test('il conto e il pagamento: le rotte hanno il loro guardiano o sono dichiarate pubbliche, e la pagina conferma con Stripe', () => {
   assert.match(SRV, /app\.get\('\/api\/donazioni\/stato', requireOwner,/);
   assert.match(SRV, /app\.post\('\/api\/donazioni\/conto\/collega', requireOwner,/);
+  assert.match(SRV, /isAdmin\(u\) && r\.dettaglio \? ' Stripe dice: ' \+ r\.dettaglio : ''/, 'la frase di Stripe la vede solo l\'amministratore');
   assert.match(SRV, /app\.post\('\/api\/donazioni\/conto\/scollega', requireOwner,/);
   assert.match(SRV, /app\.post\('\/dona\/:login', express\.urlencoded\(\{ extended: false, limit: '8kb' \}\)/, 'il modulo e\' un modulo');
   assert.match(PORTE, /\['POST \/dona\/:login', /, 'ed e\' dichiarato pubblico, col motivo');
@@ -161,11 +162,12 @@ test('il conto e il pagamento: le rotte hanno il loro guardiano o sono dichiarat
 test('il blocco «Sostieni» sul conto: un modulo col tema, che in anteprima non manda niente, e il grazie al ritorno', () => {
   const base = { attiva: true, blocchi: [{ tipo: 'sostieni', titolo: 'Un caffè', obiettivo: true }], tema: {} };
   const opz = { login: 'x', display: 'Xena', avatar: '', baseUrl: 'http://x' };
-  const dati = { modo: 'conto', link: '', importi: [2, 5, 10], minimo: 2, conMessaggio: true, etichetta: 'Dona', messaggio: '', valuta: 'EUR', goal: null };
+  const dati = { modo: 'conto', link: '', importi: [2, 5, 10], minimo: 2, massimo: 1500, conMessaggio: true, etichetta: 'Dona', messaggio: '', valuta: 'EUR', goal: null };
   const con = renderLinkPage(base, { ...opz, sostieni: dati });
   assert.ok(con.includes('<form class="sost-f" method="post" action="/dona/x">'), 'il modulo manda al nostro server');
   assert.ok(con.includes('<input type="radio" name="importo" value="5" checked>'), 'il secondo importo e\' quello proposto');
-  assert.ok(con.includes('name="altro"') && con.includes('min="2"'), 'un altro importo, dal minimo in su');
+  assert.ok(con.includes('name="altro"') && con.includes('min="2"') && con.includes('max="1500"'), 'un altro importo, fra il minimo e il massimo dello streamer');
+  assert.match(APP, /id="dona-massimo" min="1" max="5000"/, 'il massimo si sceglie nel pannello');
   assert.ok(con.includes('name="nome"') && con.includes('name="messaggio"') && con.includes('name="sito"'), 'nome, messaggio e il campo trappola');
   assert.ok(con.includes('type="submit" class="voce spicca sost-b"'), 'il tasto e\' quello in evidenza, col tema');
   assert.ok(con.includes('Va tutto a Xena.'));

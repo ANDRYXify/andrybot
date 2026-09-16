@@ -2800,8 +2800,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     });
   }));
   app.post('/api/donazioni/conto/collega', requireOwner, wrap(async (req, res) => {
-    const r = await donaStripe.collegaConto(currentUser(req).login, String(req.body?.paese || 'IT').toUpperCase());
-    if (r.errore) return res.status(503).json({ errore: r.errore });
+    const u = currentUser(req);
+    const r = await donaStripe.collegaConto(u.login, String(req.body?.paese || 'IT').toUpperCase());
+    // la frase di Stripe la vede solo l'amministratore: e' lui che puo' farci qualcosa
+    if (r.errore) return res.status(503).json({ errore: r.errore + (isAdmin(u) && r.dettaglio ? ' Stripe dice: ' + r.dettaglio : '') });
     res.json({ url: r.url });
   }));
   // Stripe rimanda qui quando la sua pagina di registrazione e' scaduta a
@@ -2848,7 +2850,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!p?.attiva || !cfg || cfg.modo === 'link' || donazioni.cosaManca(s?.settings, contiDonazioni.get(login))) return rispondi(404, { errore: 'Le donazioni non sono aperte su questa pagina.' });
     if (!extRateOk('dona-modulo:' + login)) return rispondi(429, { errore: 'Troppe richieste in questo momento: riprova fra un minuto.' });
     const m = donazioni.leggiModulo(req.body, cfg);
-    if (!m) return rispondi(400, { errore: 'Controlla l\'importo: da ' + donazioni.formattaImporto(cfg.minimo, cfg.valuta) + ' a ' + donazioni.formattaImporto(donazioni.LIMITI.max, cfg.valuta) + '.' });
+    if (!m) return rispondi(400, { errore: 'Controlla l\'importo: da ' + donazioni.formattaImporto(cfg.minimo, cfg.valuta) + ' a ' + donazioni.formattaImporto(cfg.massimo || donazioni.LIMITI.massimoDiSerie, cfg.valuta) + '.' });
     const r = await donaStripe.apriPagamento({ login, display: s?.display || login, importoCent: m.importoCent, valuta: cfg.valuta, nome: m.nome, messaggio: m.messaggio });
     if (r.errore) return rispondi(503, { errore: 'Il pagamento non si apre in questo momento: riprova fra poco.' });
     rispondi(200, { url: r.url });

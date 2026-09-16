@@ -35,7 +35,10 @@ donare esce dalla pagina, e senza Ko-fi non c'è avviso.
    la scheda prima di tornare non si perde. Il registro tiene le donazioni un
    anno e butta le sessioni scadute dopo un giorno.
 5. **Una configurazione sola**, `settings.donazioni`: `modo` (`conto` | `link`),
-   `importi` suggeriti (1–500, al massimo sei), `minimo`, `conMessaggio`, il
+   `importi` suggeriti (al massimo sei, dentro i limiti), `minimo` (1–100),
+   `massimo` (500 di serie, mai oltre 5.000: sulle pagine pubbliche gli importi
+   alti in una volta sola sono quasi sempre errori o carte rubate in prova, e
+   la contestazione ricade sullo streamer), `conMessaggio`, il
    testo del tasto, una frase, la valuta, il grazie in chat, e per Ko-fi
    l'impronta del token (mai il token). Il blocco «Sostieni» la legge.
 6. **Una donazione è un evento**, come un follow: `AlertsEngine.donazione()`

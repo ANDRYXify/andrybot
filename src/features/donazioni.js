@@ -18,8 +18,9 @@ import { impronta } from '../segreti.js';
 
 export const VALUTE = ['EUR', 'USD', 'GBP'];
 export const MODI = ['conto', 'link'];
-// una donazione va da 1 a 500 (nella valuta scelta); al massimo sei importi suggeriti
-export const LIMITI = { min: 1, max: 500, importi: 6, minimoMax: 100 };
+// una donazione parte da 1 (nella valuta scelta); il massimo lo sceglie lo
+// streamer, 500 di serie e mai oltre 5.000; al massimo sei importi suggeriti
+export const LIMITI = { min: 1, max: 5000, massimoDiSerie: 500, importi: 6, minimoMax: 100 };
 export const IMPORTI_DI_SERIE = [2, 5, 10, 20];
 const SIMBOLO = { EUR: '€', USD: '$', GBP: '£' };
 const L = { link: 400, etichetta: 40, messaggio: 160, testoChat: 200, nome: 40, testo: 200 };
@@ -45,19 +46,24 @@ export function formattaImporto(n, valuta = 'EUR') {
   return (SIMBOLO[valuta] || valuta + ' ') + cifra;
 }
 
-// Gli importi suggeriti: numeri fra il minimo e il massimo, senza doppioni,
-// in ordine, al massimo sei. Una lista vuota o storta torna quella di serie.
-export function importiOk(lista) {
+// Gli importi suggeriti: numeri fra il minimo e il massimo dello streamer,
+// senza doppioni, in ordine, al massimo sei. Una lista vuota o storta torna
+// quella di serie (per la parte che sta nei limiti; sennò il minimo).
+export function importiOk(lista, minimo = LIMITI.min, massimo = LIMITI.max) {
   const arr = Array.isArray(lista) ? lista : String(lista ?? '').split(/[,;\s]+/);
+  const dentro = (n) => n >= minimo && n <= massimo;
   const out = [];
   for (const x of arr) {
     const n = numero(x);
-    if (n >= LIMITI.min && n <= LIMITI.max && !out.includes(n)) out.push(n);
+    if (dentro(n) && !out.includes(n)) out.push(n);
     if (out.length >= LIMITI.importi) break;
   }
-  return out.length ? out.sort((a, b) => a - b) : [...IMPORTI_DI_SERIE];
+  if (out.length) return out.sort((a, b) => a - b);
+  const serie = IMPORTI_DI_SERIE.filter(dentro);
+  return serie.length ? serie : [minimo];
 }
 const minimoOk = (v) => Math.min(LIMITI.minimoMax, Math.max(LIMITI.min, numero(v) || LIMITI.min));
+const massimoOk = (v, minimo = LIMITI.min) => Math.min(LIMITI.max, Math.max(minimo, numero(v) || LIMITI.massimoDiSerie));
 
 // La configurazione, ripulita. `prima` e' quella salvata: il token arriva in
 // chiaro una volta sola e diventa impronta; senza un token nuovo resta quella
@@ -66,12 +72,15 @@ export function normDonazioni(d, prima = {}, login = '') {
   d = (d && typeof d === 'object') ? d : {};
   const p = (prima && typeof prima === 'object') ? prima : {};
   const nuovo = str(d.kofiToken, 200);
+  const minimo = minimoOk(d.minimo);
+  const massimo = massimoOk(d.massimo, minimo);
   return {
     attivo: d.attivo === true,
     modo: d.modo === 'link' ? 'link' : 'conto',
     link: urlOk(d.link),
-    importi: importiOk(d.importi),
-    minimo: minimoOk(d.minimo),
+    importi: importiOk(d.importi, minimo, massimo),
+    minimo,
+    massimo,
     conMessaggio: d.conMessaggio !== false,
     etichetta: str(d.etichetta, L.etichetta),
     messaggio: str(d.messaggio, L.messaggio),
@@ -93,7 +102,8 @@ export function leggiModulo(body, cfg = {}) {
   const scelta = String(b.importo ?? '').trim();
   const importo = libero > 0 ? libero : numero(scelta === 'altro' ? 0 : scelta);
   const minimo = minimoOk(cfg.minimo);
-  if (!(importo >= minimo && importo <= LIMITI.max)) return null;
+  const massimo = massimoOk(cfg.massimo, minimo);
+  if (!(importo >= minimo && importo <= massimo)) return null;
   return {
     importoCent: Math.round(importo * 100),
     nome: str(b.nome, L.nome),
@@ -143,11 +153,14 @@ export function datiSostieni(settings, conto = null) {
   const conti = (s.overlayStato && s.overlayStato.goals) || {};
   const ora = g ? Math.round(((Number(g.partenza) || 0) + (Number(conti[g.id]) || 0)) * 100) / 100 : 0;
   const modo = d.modo === 'link' ? 'link' : 'conto';
+  const minimo = minimoOk(d.minimo);
+  const massimo = massimoOk(d.massimo, minimo);
   return {
     modo,
     link: modo === 'link' ? d.link : '',
-    importi: importiOk(d.importi),
-    minimo: minimoOk(d.minimo),
+    importi: importiOk(d.importi, minimo, massimo),
+    minimo,
+    massimo,
     conMessaggio: d.conMessaggio !== false,
     etichetta: d.etichetta || 'Sostieni',
     messaggio: d.messaggio || '',

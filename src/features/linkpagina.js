@@ -746,7 +746,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
         ? `<a class="voce spicca sost-b" href="${esc(d.link)}" target="_blank" rel="noopener nofollow">${dentro}</a>`
         : `<form class="sost-f"${anteprima ? ' data-anteprima="1"' : ` method="post" action="/dona/${esc(login)}"`}>
           <div class="sost-chips" role="radiogroup" aria-label="Importo">${d.importi.map((n, i) => `<label class="sost-c"><input type="radio" name="importo" value="${n}"${i === Math.min(1, d.importi.length - 1) ? ' checked' : ''}><span>${esc(cifra(n))}</span></label>`).join('')}</div>
-          <label class="sost-altro"><span class="sost-l">Oppure</span><input type="number" name="altro" min="${d.minimo}" max="500" step="0.5" inputmode="decimal" placeholder="${esc('un altro importo, da ' + cifra(d.minimo))}"></label>
+          <label class="sost-altro"><span class="sost-l">Oppure</span><input type="number" name="altro" min="${d.minimo}" max="${d.massimo}" step="0.5" inputmode="decimal" placeholder="${esc('un altro importo, da ' + cifra(d.minimo))}"></label>
           <input class="sost-i" type="text" name="nome" maxlength="40" placeholder="Il tuo nome (se vuoi)" autocomplete="nickname">
           ${d.conMessaggio ? `<input class="sost-i" type="text" name="messaggio" maxlength="200" placeholder="Un messaggio per la diretta (se vuoi)">` : ''}
           <div class="sost-np" aria-hidden="true"><label>Sito <input type="text" name="sito" tabindex="-1" autocomplete="off"></label></div>
