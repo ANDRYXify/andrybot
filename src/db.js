@@ -367,6 +367,27 @@ CREATE TABLE IF NOT EXISTS passkeys (     -- passkey (WebAuthn) per rientrare se
 );
 CREATE INDEX IF NOT EXISTS idx_passkeys_login ON passkeys(login);
 
+CREATE TABLE IF NOT EXISTS accessi (      -- accessi decisi a mano: si sommano al piano (tutto, scelte) o gli tolgono qualcosa (blocco)
+  login TEXT PRIMARY KEY,
+  modo TEXT NOT NULL,                     -- tutto | scelte | blocco
+  funzioni TEXT NOT NULL DEFAULT '',      -- JSON {chiave: true | numero}: le scelte aperte, o le chiavi chiuse
+  scade INTEGER NOT NULL DEFAULT 0,       -- 0 = mai
+  nota TEXT NOT NULL DEFAULT '',
+  motivo TEXT NOT NULL DEFAULT 'manuale', -- manuale | norme
+  chi TEXT NOT NULL DEFAULT '',
+  ts INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS accessi_storia (  -- ogni cambio agli accessi: chi, quando, prima e dopo
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  login TEXT NOT NULL,
+  chi TEXT NOT NULL DEFAULT '',
+  motivo TEXT NOT NULL DEFAULT 'manuale',
+  prima TEXT NOT NULL DEFAULT '',
+  dopo TEXT NOT NULL DEFAULT '',
+  ts INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_accessi_storia ON accessi_storia(login, ts);
+
 CREATE TABLE IF NOT EXISTS carte_live (  -- la grafica con cui si annuncia «sono live»
   channel TEXT PRIMARY KEY,
   attiva INTEGER NOT NULL DEFAULT 0,
@@ -1255,6 +1276,65 @@ export const voceStreamer = {
 // Stato dell'abbonamento self-service (Stripe) di uno streamer. Il tier decide
 // quali funzioni sono sbloccate; lo status se l'accesso è attivo. Aggiornato dal
 // webhook Stripe. Chi è abilitato dal sito (community) non passa di qui.
+// Gli accessi decisi a mano dal proprietario (e, domani, dal controllo delle
+// norme): una riga per canale che si SOMMA al piano («tutto», «scelte») o gli
+// TOGLIE qualcosa («blocco»), con scadenza facoltativa, nota e motivo. Ogni
+// cambio lascia una riga di storia: chi, quando, prima e dopo. Cosa ne fa il
+// calcolo dei diritti sta in features/accesso.js, in un posto solo.
+export const MODI_ACCESSO = ['tutto', 'scelte', 'blocco'];
+export const accessi = {
+  _riga(r) {
+    if (!r) return null;
+    let funzioni = {};
+    try { funzioni = r.funzioni ? JSON.parse(r.funzioni) : {}; } catch { funzioni = {}; }
+    return { login: r.login, modo: r.modo, funzioni: funzioni && typeof funzioni === 'object' ? funzioni : {},
+      scade: r.scade || 0, nota: r.nota || '', motivo: r.motivo || 'manuale', chi: r.chi || '', ts: r.ts || 0 };
+  },
+  get(login) { return this._riga(db.prepare('SELECT * FROM accessi WHERE login=?').get(String(login || '').toLowerCase())); },
+  // vale adesso? (c'e', ha un modo noto, e non e' scaduta)
+  attiva(r, ora = now()) { return !!r && MODI_ACCESSO.includes(r.modo) && (!r.scade || r.scade > ora); },
+  elenco() { return db.prepare('SELECT * FROM accessi ORDER BY ts DESC').all().map((r) => this._riga(r)); },
+  set(login, { modo, funzioni, scade, nota, motivo } = {}, chi = '') {
+    const l = String(login || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,30}$/.test(l)) throw new Error('login non valido');
+    if (!MODI_ACCESSO.includes(modo)) throw new Error('modo non valido');
+    const prima = this.get(l);
+    const f = {};
+    for (const [k, v] of Object.entries(funzioni && typeof funzioni === 'object' ? funzioni : {})) {
+      if (!/^[a-zA-Z]{1,30}$/.test(k)) continue;
+      if (v === true) f[k] = true;
+      else if (typeof v === 'number' && Number.isFinite(v) && v >= 0) f[k] = Math.round(v);
+    }
+    const riga = { modo, funzioni: f, scade: Math.max(0, Math.round(Number(scade) || 0)), nota: String(nota || '').slice(0, 300),
+      motivo: motivo === 'norme' ? 'norme' : 'manuale', chi: String(chi || '').slice(0, 60), ts: now() };
+    db.prepare(`INSERT INTO accessi (login, modo, funzioni, scade, nota, motivo, chi, ts) VALUES (?,?,?,?,?,?,?,?)
+      ON CONFLICT(login) DO UPDATE SET modo=excluded.modo, funzioni=excluded.funzioni, scade=excluded.scade,
+        nota=excluded.nota, motivo=excluded.motivo, chi=excluded.chi, ts=excluded.ts`)
+      .run(l, riga.modo, JSON.stringify(riga.funzioni), riga.scade, riga.nota, riga.motivo, riga.chi, riga.ts);
+    this._storia(l, riga.chi, riga.motivo, prima, { ...riga, login: l });
+    return this.get(l);
+  },
+  togli(login, chi = '', motivo = 'manuale') {
+    const l = String(login || '').toLowerCase();
+    const prima = this.get(l);
+    if (!prima) return false;
+    db.prepare('DELETE FROM accessi WHERE login=?').run(l);
+    this._storia(l, chi, motivo, prima, null);
+    return true;
+  },
+  _storia(login, chi, motivo, prima, dopo) {
+    db.prepare('INSERT INTO accessi_storia (login, chi, motivo, prima, dopo, ts) VALUES (?,?,?,?,?,?)')
+      .run(login, String(chi || '').slice(0, 60), motivo === 'norme' ? 'norme' : 'manuale', prima ? JSON.stringify(prima) : '', dopo ? JSON.stringify(dopo) : '', now());
+    db.prepare('DELETE FROM accessi_storia WHERE login=? AND id NOT IN (SELECT id FROM accessi_storia WHERE login=? ORDER BY ts DESC, id DESC LIMIT 50)').run(login, login);
+  },
+  storia(login, n = 20) {
+    const j = (s) => { try { return s ? JSON.parse(s) : null; } catch { return null; } };
+    return db.prepare('SELECT * FROM accessi_storia WHERE login=? ORDER BY ts DESC, id DESC LIMIT ?')
+      .all(String(login || '').toLowerCase(), Math.max(1, Math.min(50, n | 0)))
+      .map((r) => ({ id: r.id, chi: r.chi, motivo: r.motivo, prima: j(r.prima), dopo: j(r.dopo), ts: r.ts }));
+  },
+};
+
 export const subscriptions = {
   get(login) {
     return db.prepare('SELECT * FROM subscriptions WHERE login=?').get(String(login).toLowerCase()) || null;
