@@ -124,16 +124,38 @@ var last=0;function loop(t){if(t-last>55){frame();last=t;}requestAnimationFrame(
   if (!f) return;
   var altro = f.querySelector('input[name="altro"]');
   var chips = f.querySelectorAll('input[name="importo"]');
-  if (altro) {
-    altro.addEventListener('input', function () { if (altro.value) for (var i = 0; i < chips.length; i++) chips[i].checked = false; });
-    for (var i = 0; i < chips.length; i++) chips[i].addEventListener('change', function () { altro.value = ''; });
+  var file = f.querySelector('input[name="media"]');
+  var MIME = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+  function importoScelto() {
+    var a = altro && altro.value ? Number(String(altro.value).replace(',', '.')) : NaN;
+    if (!isNaN(a) && a > 0) return a;
+    for (var i = 0; i < chips.length; i++) if (chips[i].checked) return Number(chips[i].value) || 0;
+    return 0;
   }
+  function aggiornaFile() {
+    if (!file) return;
+    var ok = importoScelto() >= (Number(file.getAttribute('data-da')) || 0);
+    file.disabled = !ok;
+    if (!ok) file.value = '';
+    var box = file.parentNode; if (box && box.classList) box.classList.toggle('spenta', !ok);
+  }
+  if (altro) {
+    altro.addEventListener('input', function () { if (altro.value) for (var i = 0; i < chips.length; i++) chips[i].checked = false; aggiornaFile(); });
+    for (var i = 0; i < chips.length; i++) chips[i].addEventListener('change', function () { altro.value = ''; aggiornaFile(); });
+  }
+  aggiornaFile();
   f.addEventListener('submit', function (e) {
     e.preventDefault();
     if (f.getAttribute('data-anteprima')) return;
     var b = (e.submitter && e.submitter.classList.contains('sost-b')) ? e.submitter : f.querySelector('.sost-b'), err = f.querySelector('.sost-err');
     if (!window.fetch || !window.FormData || !window.URLSearchParams) { f.submit(); return; }
-    var dati = new URLSearchParams(new FormData(f));
+    var allegato = file && !file.disabled && file.files && file.files[0];
+    if (allegato) {
+      var guaio = MIME.indexOf(allegato.type) < 0 ? 'Serve un\'immagine: PNG, JPG, WEBP o GIF.' : (allegato.size > 8 * 1024 * 1024 ? 'L\'immagine pesa troppo: fino a 8 MB.' : '');
+      if (guaio) { if (err) { err.textContent = guaio; err.hidden = false; } return; }
+    }
+    var dati = allegato ? new FormData(f) : new URLSearchParams(new FormData(f));
+    if (!allegato && file) dati.delete('media');
     if (b && b.name === 'mezzo' && b.value) dati.set('mezzo', b.value);
     b.disabled = true;
     if (err) err.hidden = true;

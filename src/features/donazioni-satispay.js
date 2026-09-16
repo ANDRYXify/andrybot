@@ -130,7 +130,7 @@ export function scollega(login) { contiSatispay.togli(login); }
 
 // Apre il pagamento: la riga del registro nasce col NOSTRO id (satispay:<token>),
 // che sta nel ritorno; l'id di Satispay va in `riferimento`, e la callback lo porta.
-export async function apriPagamento({ login, display, importoCent, nome = '', messaggio = '', ritorno = 'link' }) {
+export async function apriPagamento({ login, display, importoCent, nome = '', messaggio = '', ritorno = 'link', media = null }) {
   login = String(login || '').toLowerCase();
   const c = contiSatispay.get(login);
   if (!c?.chiave || !c.pronto) return { errore: 'conto' };
@@ -150,7 +150,7 @@ export async function apriPagamento({ login, display, importoCent, nome = '', me
     metadata: { login, nome, messaggio, token },
   });
   if (!r.ok || !r.dati?.id || !r.dati?.redirect_url) { chiaveMorta(login, r); return { errore: 'satispay' }; }
-  registroDonazioni.apri('satispay:' + token, { login, fonte: 'satispay', importo: cent, valuta: 'EUR', nome, messaggio, riferimento: r.dati.id });
+  registroDonazioni.apri('satispay:' + token, { login, fonte: 'satispay', importo: cent, valuta: 'EUR', nome, messaggio, riferimento: r.dati.id, media });
   return { url: r.dati.redirect_url, id: token };
 }
 

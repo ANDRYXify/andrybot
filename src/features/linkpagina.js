@@ -154,8 +154,8 @@ const cursoreCss = (t, c) => {
   return `
   @media (pointer:fine){
     body,body *{cursor:${u(penna)} 2 1,auto!important}
-    a,a *,button,button *,summary,label,label *,[role="button"],[role="button"] *,input[type="radio"],input[type="checkbox"],input[type="submit"],input[type="button"],select{cursor:${u(stella)} 16 15,pointer!important}
-    input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]),textarea,[contenteditable="true"]{cursor:text!important}
+    a,a *,button,button *,summary,label,label *,[role="button"],[role="button"] *,input[type="radio"],input[type="checkbox"],input[type="submit"],input[type="button"],input[type="file"],select{cursor:${u(stella)} 16 15,pointer!important}
+    input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="file"]),textarea,[contenteditable="true"]{cursor:text!important}
   }`;
 };
 
@@ -759,12 +759,13 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
         ? `<a class="voce spicca sost-b" href="${esc(d.link)}" target="_blank" rel="noopener nofollow">${dentro}</a>`
         : (b.pagina && !dona)
           ? `<a class="voce spicca sost-b" href="${esc(urlDona || '/u/' + login + '/dona')}">${dentro}</a>`
-          : `<form class="sost-f"${anteprima ? ' data-anteprima="1"' : ` method="post" action="/dona/${esc(login)}"`}>
+          : `<form class="sost-f"${anteprima ? ' data-anteprima="1"' : ` method="post" action="/dona/${esc(login)}"`}${d.proprio ? ' enctype="multipart/form-data"' : ''}>
           ${dona ? '<input type="hidden" name="pagina" value="dona">' : ''}
           <div class="sost-chips" role="radiogroup" aria-label="Importo">${scelte.map((s, i) => `<label class="sost-c"><input type="radio" name="importo" value="${s.v}"${i === Math.min(1, scelte.length - 1) ? ' checked' : ''}><span>${esc(s.t)}</span></label>`).join('')}</div>
           <label class="sost-altro"><span class="sost-l">Oppure</span><input type="number" name="altro" min="${d.minimo}" max="${d.massimo}" step="0.5" inputmode="decimal" placeholder="${esc('un altro importo, da ' + cifra(d.minimo))}"></label>
           <input class="sost-i" type="text" name="nome" maxlength="40" placeholder="Il tuo nome (se vuoi)" autocomplete="nickname">
           ${d.conMessaggio ? `<input class="sost-i" type="text" name="messaggio" maxlength="200" placeholder="Un messaggio per la diretta (se vuoi)">` : ''}
+          ${d.proprio ? `<label class="sost-file"><span class="sost-l">Da ${esc(cifra(d.proprio.da))} in su puoi allegare un'immagine o una GIF (fino a 8 MB) che va in onda in diretta: la vede prima ${esc(display || login)}.</span><input type="file" name="media" accept="image/png,image/jpeg,image/webp,image/gif" data-da="${d.proprio.da}"></label>` : ''}
           <div class="sost-np" aria-hidden="true"><label>Sito <input type="text" name="sito" tabindex="-1" autocomplete="off"></label></div>
           ${(d.mezzi && d.mezzi.length ? d.mezzi : ['stripe']).map((m, i) => i === 0
             ? `<button type="${anteprima ? 'button' : 'submit'}" class="voce spicca sost-b" name="mezzo" value="${m}">${dentro}</button>`
@@ -1175,6 +1176,11 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .sost-i::placeholder,.sost-altro input::placeholder{color:var(--tenue)}
   .sost-altro{display:flex;align-items:center;gap:.6rem}
   .sost-altro .sost-l{font-size:.8rem;color:var(--tenue);white-space:nowrap}
+  .sost-file{display:flex;flex-direction:column;gap:.4rem}
+  .sost-file .sost-l{font-size:.8rem;color:var(--tenue)}
+  .sost-file input{width:100%;font:inherit;font-size:.9rem;color:var(--testo);min-width:0}
+  .sost-file input::file-selector-button{font:inherit;padding:.45rem .8rem;border-radius:999px;border:var(--bw) solid ${c.bordo};background:${c.card};color:var(--testo);margin-right:.6rem;cursor:pointer}
+  .sost-file.spenta{opacity:.5}
   .sost-np{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
   button.sost-b{width:100%;cursor:pointer;font:inherit;text-align:left}
   button.sost-b:disabled{opacity:.6;cursor:wait}
@@ -1300,7 +1306,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
       · <a href="/u/${esc(login)}/privacy">Privacy</a>${banner && corpo.includes('chiedi-b')
         ? ` · <button type="button" id="ri-consenso" class="come-link">Contenuti di altri siti</button>` : ''}</p>
   </main>
-<script src="/pagina-link.js?v=10" defer></script>
+<script src="/pagina-link.js?v=11" defer></script>
 ${banner && corpo.includes('chiedi-b') ? `
   <aside class="fascia" id="fascia" hidden>
     <p><b>Video e musica di altri siti.</b> Questa pagina non usa cookie, ma i riquadri di YouTube, Spotify,

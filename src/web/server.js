@@ -47,6 +47,7 @@ import * as abbonamenti from '../features/abbonamenti.js';
 import * as donazioni from '../features/donazioni.js';
 import * as donaStripe from '../features/donazioni-stripe.js';
 import * as donaSatispay from '../features/donazioni-satispay.js';
+import * as donaMedia from '../features/donazioni-media.js';
 import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
 import * as webauthn from './webauthn.js';
@@ -1486,7 +1487,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const dona = String(req.query.dona || '');
     if (extRateOk('dona-ok:' + login)) {
       const e = await confermaDonazione(login, dona);
-      if (e?.nuova) manager.alerts?.donazione(login, e.d);
+      if (e?.nuova) donazioneArrivata(login, e.d);
       if (e) grazie = { nome: e.d.user, importo: e.d.importo, valuta: e.d.valuta };
     }
     const html = renderLinkPage(p, {
@@ -1524,7 +1525,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const dona = String(req.query.dona || '');
     if (extRateOk('dona-ok:' + login)) {
       const e = await confermaDonazione(login, dona);
-      if (e?.nuova) manager.alerts?.donazione(login, e.d);
+      if (e?.nuova) donazioneArrivata(login, e.d);
       if (e) grazie = { nome: e.d.user, importo: e.d.importo, valuta: e.d.valuta };
     }
     const html = renderLinkPage(p, {
@@ -2827,7 +2828,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // i prezzi si trovano in Stripe all'avvio e poi ogni quarto d'ora: una voce che non coincide non si vende
   abbonamenti.sorvegliaPrezzi();
   // le donazioni pagate senza tornare sulla pagina le trova la ronda
-  donaStripe.avviaRonda((login, d) => manager.alerts?.donazione(login, d), { satispay: donaSatispay.conferma });
+  donaStripe.avviaRonda(donazioneArrivata, { satispay: donaSatispay.conferma, fileVia: (x) => donaMedia.togli(x.login, x.media) });
 
   // avvia il checkout per un tier. Identità: la sessione, oppure chi ha fatto il
   // login self-service in attesa di abbonarsi (req.session.abbonando). Off → 503.
@@ -2887,11 +2888,30 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     return null;
   }
 
+  // Una donazione confermata (dal ritorno del pagamento o dalla ronda): l'avviso
+  // e, se c'e' un'immagine allegata, la sua sorte. Vale l'importo PAGATO: sotto
+  // la soglia, o a funzione spenta, il file va via; se lo streamer vuole che
+  // parta da sola, parte; altrimenti aspetta il suo ok nel registro.
+  function donazioneArrivata(login, d) {
+    manager.alerts?.donazione(login, d);
+    if (!d?.id) return;
+    const r = registroDonazioni.get(d.id);
+    if (!r?.media || r.media_stato !== 'attesa') return;
+    const cfg = streamers.get(login)?.settings?.donazioni;
+    if (!donazioni.mediaAmmesso(cfg, d.importo)) {
+      const v = registroDonazioni.mediaVia(r.id);
+      if (v) donaMedia.togli(v.login, v.media).catch(() => {});
+      return;
+    }
+    if (donazioni.proprioOk(cfg.proprio).subito && registroDonazioni.mediaOk(login, r.id)) manager.alerts?.effettoDono(login, payloadDono(login, r), 1200);
+  }
+  const payloadDono = (login, r) => donaMedia.payload((l, file) => effects.mediaUrl(l, file), login, r, donazioni.proprioOk(streamers.get(login)?.settings?.donazioni?.proprio));
+
   // ── Le donazioni sul conto dello streamer ───────────────────────────────────
   // Il conto e' suo, aperto e gestito da lui. Qui arriva solo la chiave con
   // restrizioni che ci affida (cifrata nel database, mai rimandata al browser)
   // e il registro delle donazioni (donazioni-stripe.js).
-  const rigaDonazione = (r) => ({ id: r.id, quando: r.pagata_at, fonte: r.fonte, nome: r.nome, importo: r.importo / 100, valuta: r.valuta, messaggio: r.messaggio, rimborsata: !!r.rimborsata_at, rimborsabile: (r.fonte === 'stripe' || r.fonte === 'satispay') && !!r.riferimento && !r.rimborsata_at });
+  const rigaDonazione = (r) => ({ id: r.id, quando: r.pagata_at, fonte: r.fonte, nome: r.nome, importo: r.importo / 100, valuta: r.valuta, messaggio: r.messaggio, rimborsata: !!r.rimborsata_at, rimborsabile: (r.fonte === 'stripe' || r.fonte === 'satispay') && !!r.riferimento && !r.rimborsata_at, effetto: !!r.media && r.media_stato === 'ok' });
   const sommeDonazioni = (righe) => righe.map((t) => ({ valuta: t.valuta, somma: t.somma / 100, quante: t.quante }));
   app.get('/api/donazioni/stato', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
@@ -2907,6 +2927,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       satispay: { stato: donaSatispay.statoDi(sp), coda: sp?.coda || '', verificato: sp?.verificato_at || 0, nota: sp?.nota || '' },
       riepilogo: { oggi: sommeDonazioni(rp.oggi), mese: sommeDonazioni(rp.mese), anno: sommeDonazioni(rp.anno), sempre: sommeDonazioni(rp.sempre) },
       ultime: registroDonazioni.elenco(login, { n: 50 }).map(rigaDonazione),
+      daApprovare: registroDonazioni.mediaDaApprovare(login).map((r) => ({ ...rigaDonazione(r), url: effects.mediaUrl(login, r.media), tipo: r.media_tipo })),
     });
   }));
   app.get('/api/donazioni/elenco', requireOwner, wrap(async (req, res) => {
@@ -2951,7 +2972,28 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (e.errore) return res.status(400).json({ errore: e.errore + (isAdmin(u) && e.dettaglio ? ' Dice: ' + e.dettaglio : '') });
       return res.json({ ok: true });
     }
-    if (cosa === 'elimina') { registroDonazioni.elimina(login, id); return res.json({ ok: true }); }
+    if (cosa === 'elimina') {
+      if (r.media) await donaMedia.togli(login, r.media);
+      registroDonazioni.elimina(login, id);
+      return res.json({ ok: true });
+    }
+    // l'immagine allegata: in onda (una volta sola, poi si puo' rimandare), o via dal server
+    if (cosa === 'manda') {
+      if (!r.media || r.media_stato !== 'attesa' || !registroDonazioni.mediaOk(login, id)) return res.status(400).json({ errore: 'Non c\'e\' un\'immagine da mandare.' });
+      manager.alerts?.effettoDono(login, payloadDono(login, r));
+      return res.json({ ok: true });
+    }
+    if (cosa === 'scarta') {
+      if (!r.media || r.media_stato !== 'attesa') return res.status(400).json({ errore: 'Non c\'e\' un\'immagine da scartare.' });
+      const v = registroDonazioni.mediaVia(id);
+      if (v) await donaMedia.togli(v.login, v.media);
+      return res.json({ ok: true });
+    }
+    if (cosa === 'rieffetto') {
+      if (!r.media || r.media_stato !== 'ok') return res.status(400).json({ errore: 'Questa donazione non ha un\'immagine in onda.' });
+      manager.alerts?.effettoDono(login, payloadDono(login, r));
+      return res.json({ ok: true });
+    }
     res.status(400).json({ errore: 'azione sconosciuta' });
   }));
   app.post('/api/donazioni/conto/collega', requireOwner, wrap(async (req, res) => {
@@ -2993,13 +3035,22 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // apre il pagamento sul conto dello streamer e si manda li'. La pagina lo
   // chiede via fetch e naviga da sola all'indirizzo; senza script arriva una
   // pagina-ponte che porta allo stesso posto.
-  app.post('/dona/:login', express.urlencoded({ extended: false, limit: '8kb' }), wrap(async (req, res) => {
+  // L'immagine di chi dona entra da qui, col modulo (multipart): un file solo,
+  // fino a 8 MB, e solo se lo streamer l'ha permesso e l'importo arriva alla
+  // soglia. Senza file il modulo resta quello di sempre (urlencoded).
+  const uploadDona = multer({ storage: uploadStorage, limits: { fileSize: donaMedia.MAX_BYTE, files: 1, fields: 12, fieldSize: 2048 } });
+  const conFileDono = (req, res, next) => uploadDona.single('media')(req, res, (err) => {
+    if (err) req.fileErrore = err.code === 'LIMIT_FILE_SIZE' ? 'L\'immagine pesa troppo: fino a 8 MB.' : 'L\'immagine non e\' arrivata: riprova, o dona senza.';
+    next();
+  });
+  app.post('/dona/:login', express.urlencoded({ extended: false, limit: '8kb' }), conFileDono, wrap(async (req, res) => {
     const login = String(req.params.login || '').toLowerCase();
     if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
     const vuoleJson = /\bapplication\/json\b/.test(String(req.get('accept') || ''));
     const h = (t) => String(t).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
     const pagina = (titolo, corpo, testa = '') => `<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>${h(titolo)}</title>${testa}<style>body{margin:0;min-height:100dvh;display:grid;place-items:center;font:16px/1.5 system-ui,sans-serif;background:#0f0f14;color:#eee;padding:1.5rem}main{max-width:26rem;text-align:center}a{color:#8ab4ff}</style></head><body><main>${corpo}</main></body></html>`;
     const rispondi = (stato, dati) => {
+      if (stato !== 200 && req.file) pulisciTemp(req.file.path);
       res.status(stato);
       if (vuoleJson) return res.json(dati);
       res.set('Cache-Control', 'private, no-store').type('html');
@@ -3014,14 +3065,30 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!extRateOk('dona-modulo:' + login)) return rispondi(429, { errore: 'Troppe richieste in questo momento: riprova fra un minuto.' });
     const m = donazioni.leggiModulo(req.body, cfg);
     if (!m) return rispondi(400, { errore: 'Controlla l\'importo: da ' + donazioni.formattaImporto(cfg.minimo, cfg.valuta) + ' a ' + donazioni.formattaImporto(cfg.massimo || donazioni.LIMITI.massimoDiSerie, cfg.valuta) + '.' });
+    // l'immagine allegata: ammessa solo con l'importo scelto; la verita' e'
+    // l'importo pagato, ricontrollato quando la donazione arriva
+    if (req.fileErrore) return rispondi(400, { errore: req.fileErrore });
+    let media = null;
+    if (req.file) {
+      const pr = donazioni.proprioOk(cfg.proprio);
+      if (!pr.attivo) return rispondi(400, { errore: 'Su questa pagina non si allegano immagini.' });
+      if (!donazioni.mediaAmmesso(cfg, m.importoCent / 100)) return rispondi(400, { errore: 'L\'immagine si puo\' allegare da ' + donazioni.formattaImporto(pr.da, cfg.valuta) + ' in su.' });
+      if (!donaMedia.mimeOk(req.file.mimetype)) return rispondi(400, { errore: 'Serve un\'immagine: PNG, JPG, WEBP o GIF.' });
+      if (spazioEsaurito(login) || registroDonazioni.mediaInAttesa(login) >= donaMedia.MAX_IN_ATTESA) return rispondi(400, { errore: 'In questo momento le immagini non si possono allegare: dona senza, oppure riprova piu\' tardi.' });
+      try { media = await donaMedia.salva(login, req.file.path, req.file.mimetype); }
+      catch (e) { log.warn('immagine di chi dona:', e?.message || e); return rispondi(400, { errore: 'L\'immagine non si e\' potuta salvare: prova con un altro file, o dona senza.' }); }
+    }
     // il mezzo lo sceglie chi dona fra quelli pronti; senza una scelta, il primo
     const mezzi = donazioni.mezziDi(cfg, conti);
     const mezzo = mezzi.includes(String(req.body?.mezzo || '')) ? String(req.body.mezzo) : mezzi[0];
     // da dove e' partito il modulo, li' si torna: la pagina link o quella delle donazioni
     const ritorno = String(req.body?.pagina || '') === 'dona' ? 'dona' : 'link';
-    const dati = { login, display: s?.display || login, importoCent: m.importoCent, valuta: cfg.valuta, nome: m.nome, messaggio: m.messaggio, ritorno };
+    const dati = { login, display: s?.display || login, importoCent: m.importoCent, valuta: cfg.valuta, nome: m.nome, messaggio: m.messaggio, ritorno, media };
     const r = mezzo === 'satispay' ? await donaSatispay.apriPagamento(dati) : await donaStripe.apriPagamento(dati);
-    if (r.errore) return rispondi(503, { errore: 'Il pagamento non si apre in questo momento: riprova fra poco.' });
+    if (r.errore) {
+      if (media) await donaMedia.togli(login, media.file);
+      return rispondi(503, { errore: 'Il pagamento non si apre in questo momento: riprova fra poco.' });
+    }
     rispondi(200, { url: r.url });
   }));
 

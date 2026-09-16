@@ -137,7 +137,7 @@ export function scollega(login) { contiDonazioni.togli(login); }
 // Apre il pagamento sul conto dello streamer: una sessione di Checkout con
 // l'importo scelto, sul suo prodotto «Donazione», e il ritorno sulla pagina
 // link con l'id della sessione. La riga nel registro nasce «in attesa».
-export async function apriPagamento({ login, display, importoCent, valuta = 'EUR', nome = '', messaggio = '', ritorno = 'link' }) {
+export async function apriPagamento({ login, display, importoCent, valuta = 'EUR', nome = '', messaggio = '', ritorno = 'link', media = null }) {
   login = String(login || '').toLowerCase();
   const c = contiDonazioni.get(login);
   if (!c?.chiave || !c.pronto || !c.prodotto) return { errore: 'conto' };
@@ -146,7 +146,7 @@ export async function apriPagamento({ login, display, importoCent, valuta = 'EUR
   const params = paramsSessione({ login, prodotto: c.prodotto, chi: display || login, cent, valuta, nome, messaggio, scadenzaMs: SCADENZA_MS, ritorno });
   const r = await stripe(c.chiave, 'POST', '/checkout/sessions', params);
   if (!r.ok || !r.dati?.url) { chiaveMorta(login, r); return { errore: 'stripe' }; }
-  registroDonazioni.apri('stripe:' + r.dati.id, { login, fonte: 'stripe', importo: cent, valuta, nome, messaggio });
+  registroDonazioni.apri('stripe:' + r.dati.id, { login, fonte: 'stripe', importo: cent, valuta, nome, messaggio, media });
   return { url: r.dati.url, id: r.dati.id };
 }
 
@@ -216,13 +216,13 @@ export async function ronda(suPagata, ora = Date.now(), altri = {}) {
     const prefisso = r.id.slice(0, r.id.indexOf(':'));
     const confermaDi = prefisso === 'stripe' ? conferma : altri[prefisso];
     if (!confermaDi) continue;
-    if (ora - r.created_at > SCADENZA_MS + TOLLERANZA_MS) { registroDonazioni.scadi(r.id); continue; }
+    if (ora - r.created_at > SCADENZA_MS + TOLLERANZA_MS) { registroDonazioni.scadi(r.id); if (r.media) altri.fileVia?.(r); continue; }
     const e = await confermaDi(r.login, r.id.slice(prefisso.length + 1));
     if (!e?.nuova) continue;
     n++;
     try { suPagata(r.login, e.d); } catch (err) { log.warn('donazione confermata dalla ronda, avviso fallito:', err?.message || err); }
   }
-  registroDonazioni.pulisci();
+  for (const x of registroDonazioni.pulisci()) altri.fileVia?.(x);
   return n;
 }
 
