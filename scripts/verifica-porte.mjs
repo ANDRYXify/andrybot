@@ -59,6 +59,7 @@ const PUBBLICHE = new Map([
   ['GET /novita', 'le novita sono pubbliche'],
   ['GET /api/novita', 'le novita sono pubbliche'],
   ['GET /api/abbonamento/piani', 'il listino e pubblico'],
+  ['GET /abbonamento/ritorno', 'il ritorno dal Checkout di Stripe: porta solo l\'id della sessione, e lo stato si rilegge da Stripe con la chiave del server; chi bussa con un id qualunque non ottiene niente'],
   ['GET /u/:user', 'la pagina link di uno streamer e pubblica per definizione'],
   ['GET /u/:user/dona', 'il vecchio indirizzo della pagina delle donazioni: rimanda a quello vero'],
   ['GET /dona/:login', 'la pagina delle donazioni di uno streamer: pubblica come la pagina link'],

@@ -60,7 +60,7 @@ Il meccanismo (**zero segreti condivisi**):
    crea la sessione. L'ancora di fiducia è l'HTTPS di andryxify.it — **niente chiavi da
    incollare in `.env` o nelle variabili d'ambiente**.
 
-Se il sito revoca l'abilitazione, il bot **esce dal canale da solo** (controllo periodico).
+Se il sito revoca l'abilitazione, il canale **torna all'Essenziale da solo** (controllo periodico): il bot resta, le funzioni della community si spengono.
 
 ---
 

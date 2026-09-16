@@ -444,7 +444,7 @@ export async function creaCheckout({ login, pacchetti = [], bundle = null }) {
   const base = config.baseUrl;
   const params = {
     mode: 'subscription',
-    success_url: base + '/?abbonato=1',
+    success_url: base + '/abbonamento/ritorno?sessione={CHECKOUT_SESSION_ID}',
     cancel_url: base + '/?abbonamento=annullato',
     client_reference_id: login,
     'metadata[login]': login,
@@ -468,6 +468,61 @@ export async function creaPortale({ customerId }) {
   if (!config.stripe.attivo || !customerId) return null;
   const s = await stripeCall('/billing_portal/sessions', { customer: customerId, return_url: config.baseUrl + '/' });
   return s?.url || null;
+}
+
+// La sessione di Checkout riletta da Stripe quando la persona torna: e' la
+// conferma che il pagamento c'e' stato, senza aspettare il webhook. Null se
+// Stripe e' spento, l'id non ha la forma giusta o la sessione non esiste.
+export async function leggiCheckout(id) {
+  const sid = String(id || '');
+  if (!/^cs_[A-Za-z0-9_]{8,}$/.test(sid)) return null;
+  return stripeGet('/checkout/sessions/' + encodeURIComponent(sid));
+}
+
+// Cosa dice una sessione di Checkout: 'ok' (pagata, o niente da pagare),
+// 'attesa' (aperta, o completa con l'incasso ancora in corso), 'no' (scaduta
+// o mai esistita). Pura.
+export function esitoCheckout(s) {
+  if (!s || typeof s !== 'object' || !s.id) return 'no';
+  if (s.status === 'expired') return 'no';
+  if (s.status === 'complete' && (s.payment_status === 'paid' || s.payment_status === 'no_payment_required')) return 'ok';
+  return 'attesa';
+}
+
+// Chi ha gia' una sottoscrizione viva non apre un secondo Checkout: pagherebbe
+// il Base due volte. Gli extra si aggiungono a QUELLA sottoscrizione come voci
+// in piu' (Stripe conta la parte di mese che resta e la mette nella prossima
+// fattura), e i metadata dicono i pacchetti nuovi, cosi' il webhook e il
+// gating li leggono come sempre. Un pacchetto curato, per chi ha gia' degli
+// extra, diventa i suoi extra mancanti uno per uno: mai piu' di quanto ha
+// letto. Ritorna { pacchetti, aggiunti } oppure null se Stripe non risponde.
+export async function aggiungiAlAbbonamento({ subId, login, pacchetti = [], bundle = null, gia = [] }) {
+  if (!config.stripe.attivo || !subId) return null;
+  const sub = await stripeGet('/subscriptions/' + encodeURIComponent(subId));
+  if (!sub || !Array.isArray(sub.items?.data)) return null;
+  const presenti = new Set(sub.items.data.map((it) => it?.price?.id).filter(Boolean));
+  const posseduti = normalizzaPacchetti(gia);
+  const b = bundle ? bundleById(bundle) : null;
+  const vendibili = (ids) => normalizzaPacchetti(ids).filter((id) => { const a = addonById(id); return a && !a.ritirato && !a.inclusoBase && vendibile(a) && priceDi(a) && !posseduti.includes(id); });
+  let ids, prezzi;
+  if (b && !posseduti.length && !b.ritirato && vendibile(b) && priceDi(b)) {
+    ids = normalizzaPacchetti(b.addon);
+    prezzi = [priceDi(b)];
+  } else {
+    ids = vendibili(b ? b.addon : pacchetti);
+    prezzi = ids.map((id) => priceDi(addonById(id)));
+  }
+  const nuovi = prezzi.filter((p) => !presenti.has(p));
+  const aggiunti = ids.filter((id) => !posseduti.includes(id));
+  if (!nuovi.length || !aggiunti.length) return { pacchetti: posseduti, aggiunti: [] };
+  for (const price of nuovi) {
+    const r = await stripeCall('/subscription_items', { subscription: subId, price, quantity: '1', proration_behavior: 'create_prorations' });
+    if (!r) return null;
+  }
+  const tutti = normalizzaPacchetti([...posseduti, ...ids]);
+  const r = await stripeCall('/subscriptions/' + encodeURIComponent(subId), { 'metadata[login]': login, 'metadata[tier]': 'base', 'metadata[pacchetti]': tutti.join(',') });
+  if (!r) return null;
+  return { pacchetti: tutti, aggiunti };
 }
 
 // Verifica la firma del webhook Stripe (HMAC-SHA256 su `${t}.${payload}`).

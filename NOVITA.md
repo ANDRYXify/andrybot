@@ -17,6 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-16
 
+- Nella scheda «Abbonamento» aggiungi gli extra da lì: spunti quello che ti manca, leggi il totale e attivi. Chi ha già il Base non lo ripaga: l'extra entra nell'abbonamento che c'è. [vai: sottoscrizione]
+- Se un rinnovo non va a buon fine, la scheda te lo dice e il tasto porta al portale per cambiare carta: appena il pagamento passa, le funzioni tornano da sole. [vai: sottoscrizione]
+- Tornando dal pagamento, il piano risulta attivo solo quando Stripe ha confermato davvero. Se l'incasso è ancora in corso lo leggi, e il piano si accende da solo dopo. [vai: sottoscrizione]
+- L'Essenziale non scade mai: chi esce dalla community o disdice un abbonamento resta con il bot acceso e perde solo le funzioni in più. [vai: sottoscrizione]
 - Le donazioni passano da SocialBot: nella scheda «Donazioni» colleghi il tuo conto Stripe, tuo e gestito da te, e chi ti segue dona dalla tua pagina link. Il pagamento arriva a te. [vai: donazioni]
 - Anche Satispay: colleghi il tuo negozio online con il codice di attivazione, e chi ha l'app paga da lì. Con tutti e due, chi dona sceglie. [vai: donazioni]
 - Una pagina tutta per le donazioni, su dona.socialbot.live/iltuonome (o socialbot.live/dona/iltuonome): stessi strumenti della pagina link, un'altra pagina, e il tasto «Sostieni» della pagina link può portare lì. [vai: donazioni]

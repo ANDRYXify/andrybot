@@ -466,7 +466,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const funzioniReq = (req) => funzioniDi(currentUser(req)?.login);
   function esigiFunzione(req, res, chiave, etichetta) {
     if (abbonamenti.abilitata(funzioniReq(req), chiave)) return true;
-    res.status(403).json({ errore: `${etichetta} non è incluso nel tuo piano — aggiungi il pacchetto giusto per sbloccarlo.`, upgrade: true });
+    res.status(403).json({ errore: `${etichetta} non è nel tuo piano: lo apri dalla scheda «Abbonamento».`, upgrade: true });
     return false;
   }
   // Stesso controllo di esigiFunzione, ma come MIDDLEWARE da mettere nella catena
@@ -2137,8 +2137,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // veniva da "attiva il bot" (Base + add-on scelti)? → dritti al checkout
       // Stripe. La sessione c'è già, quindi al rientro è dentro.
       if (sf.compra && config.stripe.attivo) {
-        const url = await abbonamenti.creaCheckout({ login, pacchetti: sf.pacchetti || [], bundle: sf.bundle || null }).catch(() => null);
-        if (url) { if (!req.session.user) req.session.abbonando = { login, display: disp }; return res.redirect(url); }
+        const r = await avviaAcquisto({ login, pacchetti: sf.pacchetti || [], bundle: sf.bundle || null });
+        if (r.url) { if (!req.session.user) req.session.abbonando = { login, display: disp }; return res.redirect(r.url); }
+        if (r.ok) return res.redirect('/?abbonato=1');
       }
       if (req.session.user) {
         if (promoVinta) return res.redirect('/?promo=1');
@@ -2682,7 +2683,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       nAddon: abbonamenti.ADDON_IDS.length,
       abbonamento: (() => {
         const s = subscriptions.get(user.login);
-        return s ? { tier: s.tier, pacchetti: abbonamenti.normalizzaPacchetti(s.pacchetti), status: s.status, fine: s.current_period_end } : null;
+        return s ? { tier: s.tier, pacchetti: abbonamenti.normalizzaPacchetti(s.pacchetti), status: s.status, fine: s.current_period_end, attivo: subscriptions.attivo(user.login), cliente: !!s.stripe_customer } : null;
       })(),
       stripeAttivo: config.stripe.attivo,
     });
@@ -2957,17 +2958,76 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // BUNDLE curato → prezzo unico scontato (i suoi add-on li sblocca il gating).
     // Altrimenti à la carte (retrocompat: 'pro' → base + tutti gli add-on).
     const bundle = abbonamenti.bundleById(req.body?.bundle);
-    if (bundle) {
-      const url = await abbonamenti.creaCheckout({ login, bundle: bundle.id });
-      if (!url) return res.status(400).json({ errore: 'Bundle non disponibile.' });
-      return res.json({ url });
-    }
     const pacchetti = String(req.body?.tier || '').toLowerCase() === 'pro'
       ? abbonamenti.ADDON_IDS
       : abbonamenti.normalizzaPacchetti(req.body?.pacchetti);
-    const url = await abbonamenti.creaCheckout({ login, pacchetti });
-    if (!url) return res.status(400).json({ errore: 'Piano non disponibile.' });
-    res.json({ url });
+    const r = await avviaAcquisto({ login, pacchetti, bundle: bundle?.id || null });
+    if (r.errore) return res.status(r.codice || 400).json({ errore: r.errore });
+    res.json(r);
+  }));
+
+  // UN ACQUISTO, da qualunque porta arrivi (pannello, vetrina dopo il login).
+  // Chi ha gia' una sottoscrizione viva riceve gli extra DENTRO quella, non un
+  // secondo Checkout con il Base di nuovo (lo pagherebbe due volte); chi non
+  // ce l'ha va al Checkout. Con un pagamento non riuscito prima si sistema
+  // quello. Ritorna { url } | { ok, aggiunti, pacchetti } | { errore, codice }.
+  async function avviaAcquisto({ login, pacchetti = [], bundle = null }) {
+    const s = subscriptions.get(login);
+    const stripe = !!(s?.stripe_sub && s?.stripe_customer);
+    if (stripe && ['past_due', 'unpaid', 'incomplete'].includes(s.status)) {
+      return { errore: 'C\'è un pagamento non riuscito: sistemalo dal portale, poi aggiungi quello che vuoi.', codice: 409 };
+    }
+    if (stripe && subscriptions.attivo(login)) {
+      const r = await abbonamenti.aggiungiAlAbbonamento({ subId: s.stripe_sub, login, pacchetti, bundle, gia: s.pacchetti });
+      if (!r) return { errore: 'In questo momento non riesco a parlare con Stripe: riprova fra poco.', codice: 503 };
+      if (r.aggiunti.length) {
+        subscriptions.set(login, { tier: s.tier || 'base', pacchetti: r.pacchetti, status: s.status, periodEnd: s.current_period_end });
+        sync();
+        log.info(`abbonamento @${login}: +${r.aggiunti.join('+')}`);
+      }
+      return { ok: true, aggiunti: r.aggiunti, pacchetti: r.pacchetti };
+    }
+    const url = await abbonamenti.creaCheckout({ login, pacchetti, bundle }).catch(() => null);
+    if (!url) return { errore: bundle ? 'Bundle non disponibile.' : 'Piano non disponibile.', codice: 400 };
+    return { url };
+  }
+
+  // Una sessione di Checkout pagata diventa l'abbonamento della persona. La
+  // chiamano il webhook e il ritorno dal Checkout: chi arriva prima attiva,
+  // l'altro trova gia' tutto com'e' (idempotente). Ritorna il login, o ''.
+  function attivaDaCheckout(o) {
+    const login = String(o?.metadata?.login || o?.client_reference_id || '').toLowerCase();
+    if (!login) return '';
+    const tier = o.metadata?.tier || 'base';
+    const pacchetti = abbonamenti.normalizzaPacchetti(o.metadata?.pacchetti);
+    const prima = subscriptions.get(login);
+    const uguale = !!(prima && prima.status === 'active' && prima.stripe_sub && prima.stripe_sub === String(o.subscription || ''));
+    subscriptions.set(login, { tier, pacchetti, status: 'active', customerId: String(o.customer || ''), subId: String(o.subscription || '') });
+    streamers.upsertApproved(login, streamers.get(login)?.display || login);   // abbonato → abilitato
+    seedStreamer(login);
+    sync();
+    if (!uguale) log.info(`abbonamento attivo: @${login} (${tier}${pacchetti.length ? ' +' + pacchetti.join('+') : ''})`);
+    return login;
+  }
+
+  // Il ritorno dal Checkout. Stripe rimanda qui con l'id della sessione: la
+  // rileggiamo da Stripe (della query non ci si fida) e, se e' pagata,
+  // attiviamo subito senza aspettare il webhook. Chi era entrato solo per
+  // abbonarsi, senza sessione, entra adesso se il login combacia. Poi il
+  // pannello, con l'esito: 1 (attivo), attesa (Stripe non ha ancora incassato),
+  // no (nessuna sessione pagata con quell'id).
+  app.get('/abbonamento/ritorno', wrap(async (req, res) => {
+    const s = await abbonamenti.leggiCheckout(req.query.sessione);
+    const esito = abbonamenti.esitoCheckout(s);
+    if (esito === 'ok') {
+      const login = attivaDaCheckout(s);
+      if (login && req.session && !req.session.user && req.session.abbonando?.login === login) {
+        const contesti = contestiPer(login);
+        if (contesti.length) req.session.user = sessionePer(login, req.session.abbonando.display || login, contestoDefault(contesti, login));
+      }
+      if (req.session) delete req.session.abbonando;
+    }
+    res.redirect('/?abbonato=' + (esito === 'ok' ? '1' : esito));
   }));
 
   // portale clienti Stripe (gestione/disdetta). Serve un cliente Stripe esistente.
@@ -3222,25 +3282,25 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   async function gestisciEventoStripe(ev) {
     const o = ev.data?.object || {};
     if (ev.type === 'checkout.session.completed') {
-      const login = String(o.metadata?.login || o.client_reference_id || '').toLowerCase();
-      if (!login) return;
-      const tier = o.metadata?.tier || 'base';
-      const pacchetti = abbonamenti.normalizzaPacchetti(o.metadata?.pacchetti);
-      subscriptions.set(login, { tier, pacchetti, status: 'active', customerId: o.customer || '', subId: o.subscription || '' });
-      streamers.upsertApproved(login, streamers.get(login)?.display || login);   // abbonato → abilitato
-      seedStreamer(login);
-      sync();
-      log.info(`abbonamento attivo: @${login} (${tier}${pacchetti.length ? ' +' + pacchetti.join('+') : ''})`);
+      attivaDaCheckout(o);
     } else if (ev.type === 'customer.subscription.updated' || ev.type === 'customer.subscription.deleted') {
       const login = String(o.metadata?.login || '').toLowerCase();
       if (!login) return;
-      const attivo = o.status === 'active' || o.status === 'trialing';
-      const tier = o.metadata?.tier || subscriptions.get(login)?.tier || 'base';
+      const vivo = o.status === 'active' || o.status === 'trialing';
+      const loc = subscriptions.get(login);
+      // una sottoscrizione vecchia (un doppione di prima) che si spegne non deve
+      // spegnere quella viva: si guarda l'id, non solo il login
+      if (!vivo && loc?.stripe_sub && o.id && loc.stripe_sub !== o.id && subscriptions.attivo(login)) {
+        log.info(`abbonamento @${login}: ${o.status} di ${o.id}, ma quella viva è ${loc.stripe_sub}: non tocco niente`);
+        return;
+      }
+      const tier = o.metadata?.tier || loc?.tier || 'base';
       // i pacchetti restano quelli scelti al checkout: se i metadata non li portano,
       // non li tocchiamo (undefined = mantieni quelli già salvati).
       const pacchetti = o.metadata?.pacchetti !== undefined ? abbonamenti.normalizzaPacchetti(o.metadata.pacchetti) : undefined;
       subscriptions.set(login, { tier, pacchetti, status: o.status || 'canceled', subId: o.id || '', periodEnd: (o.current_period_end || 0) * 1000 });
-      if (!attivo) streamers.setEnabled(login, false);   // disdetta/insoluto → bot spento (non cancella nulla)
+      // il bot resta dov'e': l'Essenziale non scade, e le funzioni in piu' si
+      // spengono da sole dove partono (il gating legge il piano a ogni richiesta)
       sync();
       log.info(`abbonamento @${login}: ${o.status}`);
     }

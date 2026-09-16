@@ -1214,6 +1214,10 @@ export const streamers = {
   markCommunity(login) {
     db.prepare('UPDATE streamers SET community=1 WHERE login=?').run(login.toLowerCase());
   },
+  // il sito non lo conferma piu': torna all'Essenziale, il canale resta
+  unmarkCommunity(login) {
+    db.prepare('UPDATE streamers SET community=0 WHERE login=?').run(login.toLowerCase());
+  },
   setSettings(login, settings) {
     db.prepare('UPDATE streamers SET settings=? WHERE login=?').run(JSON.stringify(settings || {}), login.toLowerCase());
   },
@@ -1356,16 +1360,19 @@ export const subscriptions = {
       .run(l, tier || 'free', csv || '', status || 'none', customerId, subId, periodEnd, now(), csv === null ? 0 : 1);
     return this.get(l);
   },
-  // abbonamento operativo (accesso attivo)
-  attivo(login) {
+  // abbonamento operativo (accesso attivo). Una prova vale finche' dura: lo
+  // decide la data, non la ronda che poi la chiude.
+  attivo(login, ora = now()) {
     const s = this.get(login);
-    return !!s && (s.status === 'active' || s.status === 'trialing');
+    if (!s) return false;
+    if (s.status === 'active') return true;
+    return s.status === 'trialing' && !(s.current_period_end > 0 && s.current_period_end < ora);
   },
   // trial (promo) scaduti da revocare: quelli in prova con periodo finito.
   // I paganti (active) li gestisce il webhook Stripe, non questo.
-  scaduti() {
+  scaduti(ora = now()) {
     return db.prepare("SELECT * FROM subscriptions WHERE status='trialing' AND current_period_end>0 AND current_period_end<?")
-      .all(now());
+      .all(ora);
   },
 };
 
