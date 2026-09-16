@@ -687,7 +687,7 @@ function _demoGet(via) {
     '/api/passkey': [ { id: 'demo', nome: 'iPhone di Andryx', quando: '2026-04-10' } ],
   };
   F['/api/paginadona'] = { ...F['/api/linkpage'], url: 'https://socialbot.live/u/andryxify/dona', pagina: { ...F['/api/linkpage'].pagina, headline: 'Sostieni ANDRYXify', tagline: 'Se ti piace quello che faccio, un caffè aiuta a farne di più.', blocchi: [{ tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: '', etichetta: '', obiettivo: true, icona: 'cuore' }] } };
-  const statoDona = { paginaUrl: 'https://socialbot.live/u/andryxify/dona', conto: { stato: 'nessuno', coda: '', nota: '' }, satispay: { stato: 'nessuno', coda: '', nota: '' }, riepilogo: { oggi: [], mese: [], anno: [], sempre: [] }, ultime: [] };
+  const statoDona = { paginaUrl: 'https://socialbot.live/u/andryxify/dona', conto: { stato: 'nessuno', coda: '', nota: '' }, satispay: { stato: 'nessuno', coda: '', nota: '' }, riepilogo: { oggi: [], mese: [], anno: [], sempre: [] }, ultime: [], daApprovare: [] };
   F['/api/donazioni/stato'] = statoDona; F['/api/donazioni/stato?rileggi=1'] = statoDona;
   return F[via] !== undefined ? F[via] : {};
 }
@@ -12746,6 +12746,16 @@ function pannelloDonazioni() {
         <div id="dona-livelli"></div>
         <p><button type="button" class="btn secondario mini" id="dona-livello-piu">${_bIco(ICO.piu)}${L('Aggiungi un\'offerta', 'Add an offer', 'Añadir una oferta')}</button></p>
       </div>
+      <div id="dona-proprio" class="spazio-sopra">
+        <h3>${L('L\'immagine di chi dona', 'The donor\'s image', 'La imagen de quien dona')}</h3>
+        <p class="suggerimento">${L('Da un importo in su, chi dona può allegare un\'immagine o una GIF che va in onda come un effetto. La vedi prima tu, nel registro qui sotto, e la mandi con un tasto; se preferisci, parte da sola appena il pagamento è confermato.', 'From an amount upwards, donors can attach an image or a GIF that goes on air as an effect. You see it first, in the register below, and send it with a button; if you prefer, it starts on its own as soon as the payment is confirmed.', 'A partir de un importe, quien dona puede adjuntar una imagen o un GIF que sale en directo como un efecto. La ves antes tú, en el registro de abajo, y la envías con un botón; si prefieres, sale sola en cuanto se confirma el pago.')}</p>
+        <label class="riga-check"><input type="checkbox" id="dona-proprio-attivo"> ${L('Chi dona può allegare un\'immagine', 'Donors can attach an image', 'Quien dona puede adjuntar una imagen')}</label>
+        <div class="griglia-campi spazio-sopra">
+          <div><label class="campo" for="dona-proprio-da">${L('Da questo importo in su', 'From this amount upwards', 'A partir de este importe')}</label><input type="number" id="dona-proprio-da" min="1" max="5000" step="0.5" value="20"></div>
+          <div><label class="campo" for="dona-proprio-durata">${L('Secondi a schermo (le GIF durano quanto sono lunghe)', 'Seconds on screen (GIFs last as long as they are)', 'Segundos en pantalla (los GIF duran lo que duran)')}</label><input type="number" id="dona-proprio-durata" min="2" max="15" step="1" value="6"></div>
+        </div>
+        <label class="riga-check spazio-sopra"><input type="checkbox" id="dona-proprio-subito"> ${L('Va in onda da sola, senza aspettare il mio ok', 'Goes on air on its own, without waiting for my ok', 'Sale sola, sin esperar mi visto bueno')}</label>
+      </div>
       <div id="dona-campi-link" class="spazio-sopra">
         <label class="campo" for="dona-link">${L('Dove si dona', 'Where people donate', 'Dónde se dona')}</label><input type="url" id="dona-link" class="campo-largo" maxlength="400" placeholder="https://ko-fi.com/iltuonome">
       </div>
@@ -12788,6 +12798,8 @@ function riempiDonazioni() {
   document.querySelectorAll('input[name="dona-modo"]').forEach((r) => { r.checked = r.value === modo; });
   _mostraModoDona();
   _disegnaLivelli(Array.isArray(d.livelli) ? d.livelli : []);
+  const pr = d.proprio || {};
+  _imposta('dona-proprio-attivo', pr.attivo === true); _imposta('dona-proprio-da', pr.da || 20); _imposta('dona-proprio-durata', pr.durata || 6); _imposta('dona-proprio-subito', pr.subito === true);
   if (!_EFFETTI.length) api('/api/streamer/effetti').then((lib) => { _EFFETTI = lib?.effetti || []; _disegnaLivelli(_leggiLivelli()); }).catch(() => {});
   const url = location.origin + '/u/' + (stato?.user?.login || '…') + '/dona';
   const cu = _g('dona-pagina-url'); if (cu) cu.textContent = url;
@@ -12828,6 +12840,7 @@ function _leggiDonazioni() {
   const d = { attivo: !!_g('dona-attivo')?.checked, modo: document.querySelector('input[name="dona-modo"][value="link"]')?.checked ? 'link' : 'conto',
     link: (_v('dona-link') || '').trim(), importi: (_v('dona-importi') || '').trim(), minimo: Number(_v('dona-minimo')) || 1, massimo: Number(_v('dona-massimo')) || 500, conMessaggio: !!_g('dona-con-messaggio')?.checked,
     livelli: _leggiLivelli(),
+    proprio: { attivo: !!_g('dona-proprio-attivo')?.checked, da: Number(_v('dona-proprio-da')) || 20, durata: Number(_v('dona-proprio-durata')) || 6, subito: !!_g('dona-proprio-subito')?.checked },
     etichetta: (_v('dona-etichetta') || '').trim(), messaggio: (_v('dona-messaggio') || '').trim(), valuta: _v('dona-valuta') || 'EUR',
     annunciaChat: !!_g('dona-chat')?.checked, testoChat: (_v('dona-testo-chat') || '').trim() };
   if (tok) d.kofiToken = tok;
@@ -12901,20 +12914,32 @@ function _rigaDonaHtml(d) {
   return `<li class="dona-riga${d.rimborsata ? ' rimborsata' : ''}" data-id="${esc(d.id)}">
     <div><b>${esc(_soldi(d.importo, d.valuta))}</b> ${esc(d.nome || L('qualcuno', 'someone', 'alguien'))}${d.messaggio ? ` <span class="suggerimento">· ${esc(d.messaggio)}</span>` : ''}
       <span class="suggerimento">· ${esc(quando(d.quando))} · ${esc(fonte)}${d.rimborsata ? ' · ' + L('rimborsata', 'refunded', 'reembolsada') : ''}</span></div>
-    <div class="dona-azioni"><button type="button" class="btn secondario mini" data-dona-riga="riproponi">${L('Rimanda l\'avviso', 'Replay the alert', 'Repetir el aviso')}</button>${d.rimborsabile ? ` <button type="button" class="btn secondario mini" data-dona-riga="rimborsa">${L('Rimborsa', 'Refund', 'Reembolsar')}</button>` : ''} <button type="button" class="btn secondario mini" data-dona-riga="elimina">${L('Elimina', 'Delete', 'Eliminar')}</button></div>
+    <div class="dona-azioni"><button type="button" class="btn secondario mini" data-dona-riga="riproponi">${L('Rimanda l\'avviso', 'Replay the alert', 'Repetir el aviso')}</button>${d.effetto ? ` <button type="button" class="btn secondario mini" data-dona-riga="rieffetto">${L('Rimanda l\'immagine', 'Replay the image', 'Repetir la imagen')}</button>` : ''}${d.rimborsabile ? ` <button type="button" class="btn secondario mini" data-dona-riga="rimborsa">${L('Rimborsa', 'Refund', 'Reembolsar')}</button>` : ''} <button type="button" class="btn secondario mini" data-dona-riga="elimina">${L('Elimina', 'Delete', 'Eliminar')}</button></div>
+  </li>`;
+}
+function _rigaCodaHtml(d) {
+  const ant = d.tipo === 'video' ? `<video class="dona-ant" src="${esc(d.url)}" muted loop autoplay playsinline style="width:96px;height:64px;object-fit:cover;border-radius:8px;flex:none;background:#000"></video>` : `<img class="dona-ant" src="${esc(d.url)}" alt="" style="width:96px;height:64px;object-fit:cover;border-radius:8px;flex:none;background:#000">`;
+  return `<li class="dona-riga dona-coda-riga" data-id="${esc(d.id)}" style="display:flex;gap:.75rem;align-items:center">
+    ${ant}
+    <div class="dona-coda-testo" style="flex:1;min-width:0"><b>${esc(_soldi(d.importo, d.valuta))}</b> ${esc(d.nome || L('qualcuno', 'someone', 'alguien'))}${d.messaggio ? ` <span class="suggerimento">· ${esc(d.messaggio)}</span>` : ''}
+      <div class="dona-azioni"><button type="button" class="btn mini" data-dona-riga="manda">${L('Manda in onda', 'Send on air', 'Enviar al directo')}</button> <button type="button" class="btn secondario mini" data-dona-riga="scarta">${L('Scarta', 'Discard', 'Descartar')}</button></div></div>
   </li>`;
 }
 function _ultimeDonaHtml(st) {
   const ultime = st?.ultime || [];
   const rp = st?.riepilogo || {};
+  const coda = st?.daApprovare || [];
+  const codaHtml = coda.length ? `<h3 class="spazio-sopra">${L('Da mandare in onda', 'To send on air', 'Para enviar al directo')}</h3>
+    <p class="suggerimento">${L('Immagini allegate da chi ha donato: le vedi solo tu finché non le mandi. «Scarta» le cancella dal server, la donazione resta.', 'Images attached by donors: only you see them until you send them. “Discard” deletes them from the server, the donation stays.', 'Imágenes adjuntadas por quien donó: solo las ves tú hasta que las envías. «Descartar» las borra del servidor, la donación se queda.')}</p>
+    <ul class="dona-coda" style="margin:.4rem 0 0;padding:0;list-style:none;display:grid;gap:.6rem">${coda.map(_rigaCodaHtml).join('')}</ul>` : '';
   const testa = `<div class="griglia-campi">
       <div><span class="campo">${L('Oggi', 'Today', 'Hoy')}</span><div><b>${esc(_sommeDona(rp.oggi))}</b></div></div>
       <div><span class="campo">${L('Ultimi 30 giorni', 'Last 30 days', 'Últimos 30 días')}</span><div><b>${esc(_sommeDona(rp.mese))}</b></div></div>
       <div><span class="campo">${L('Ultimo anno', 'Last year', 'Último año')}</span><div><b>${esc(_sommeDona(rp.anno))}</b></div></div>
       <div><span class="campo">${L('Da sempre', 'All time', 'Desde siempre')}</span><div><b>${esc(_sommeDona(rp.sempre))}</b> <span class="suggerimento">(${(rp.sempre || []).reduce((a, t) => a + (t.quante || 0), 0)})</span></div></div>
     </div>`;
-  if (!ultime.length) return testa + `<p class="suggerimento spazio-sopra">${L('Ancora nessuna. Quando arriva la prima la vedi qui, con nome e messaggio.', 'None yet. When the first one arrives you see it here, with name and message.', 'Todavía ninguna. Cuando llegue la primera la ves aquí, con nombre y mensaje.')}</p>`;
-  return testa + `<p class="spazio-sopra"><input type="search" id="dona-cerca" class="campo-largo" placeholder="${esc(L('Cerca per nome o messaggio', 'Search by name or message', 'Buscar por nombre o mensaje'))}"></p>
+  if (!ultime.length) return testa + codaHtml + `<p class="suggerimento spazio-sopra">${L('Ancora nessuna. Quando arriva la prima la vedi qui, con nome e messaggio.', 'None yet. When the first one arrives you see it here, with name and message.', 'Todavía ninguna. Cuando llegue la primera la ves aquí, con nombre y mensaje.')}</p>`;
+  return testa + codaHtml + `<p class="spazio-sopra"><input type="search" id="dona-cerca" class="campo-largo" placeholder="${esc(L('Cerca per nome o messaggio', 'Search by name or message', 'Buscar por nombre o mensaje'))}"></p>
     <ul id="dona-lista" style="margin:.4rem 0 0;padding:0;list-style:none;display:grid;gap:.55rem">${ultime.map(_rigaDonaHtml).join('')}</ul>
     <p class="spazio-sopra"><button type="button" class="btn secondario" id="dona-altre"${ultime.length < 50 ? ' hidden style="display:none"' : ''}>${L('Mostra altre', 'Show more', 'Mostrar más')}</button> <a class="btn secondario" href="/api/donazioni/esporta.csv" download>${L('Scarica il registro (CSV)', 'Download the register (CSV)', 'Descargar el registro (CSV)')}</a></p>
     <p class="suggerimento">${L('Il registro tiene un anno. «Rimanda l\'avviso» lo rifà in overlay senza contare di nuovo l\'obiettivo; «Rimborsa» vale per le donazioni passate dal tuo conto Stripe (se la chiave ha il permesso «Refunds») o da Satispay; «Elimina» toglie la riga, nome e messaggio compresi.', 'The register keeps one year. “Replay the alert” shows it again in the overlay without counting the goal twice; “Refund” works for donations that went through your Stripe account (if the key has the “Refunds” permission) or through Satispay; “Delete” removes the row, name and message included.', 'El registro guarda un año. «Repetir el aviso» lo vuelve a mostrar en el overlay sin contar el objetivo otra vez; «Reembolsar» vale para las donaciones que pasaron por tu cuenta de Stripe (si la clave tiene el permiso «Refunds») o por Satispay; «Eliminar» quita la fila, nombre y mensaje incluidos.')}</p>`;
@@ -15658,12 +15683,15 @@ function attivaPiattaforma() {
     const li = b.closest('.dona-riga'); const id = li?.dataset.id; if (!id) return;
     const cosa = b.dataset.donaRiga;
     conErrore(async () => {
-      if (cosa === 'elimina' && !confirm(L('Togliere questa donazione dal registro? Nome e messaggio spariscono. L\'obiettivo in euro non cambia.', 'Remove this donation from the register? Name and message disappear. The euro goal does not change.', '¿Quitar esta donación del registro? Nombre y mensaje desaparecen. El objetivo en euros no cambia.'))) return;
+      if (cosa === 'elimina' && !confirm(L('Togliere questa donazione dal registro? Nome, messaggio e immagine spariscono. L\'obiettivo in euro non cambia.', 'Remove this donation from the register? Name, message and image disappear. The euro goal does not change.', '¿Quitar esta donación del registro? Nombre, mensaje e imagen desaparecen. El objetivo en euros no cambia.'))) return;
+      if (cosa === 'scarta' && !confirm(L('Scartare questa immagine? Si cancella dal server; la donazione resta nel registro.', 'Discard this image? It is deleted from the server; the donation stays in the register.', '¿Descartar esta imagen? Se borra del servidor; la donación se queda en el registro.'))) return;
       if (cosa === 'rimborsa' && !confirm(L('Rimborsare questa donazione dal tuo conto Stripe? Non si può annullare.', 'Refund this donation from your Stripe account? This cannot be undone.', '¿Reembolsar esta donación desde tu cuenta de Stripe? No se puede deshacer.'))) return;
       b.disabled = true;
       try {
         await api('/api/donazioni/azione', { method: 'POST', body: { id, cosa } });
-        if (cosa === 'riproponi') toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
+        if (cosa === 'riproponi' || cosa === 'rieffetto') toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
+        else if (cosa === 'manda') { toast(L('In onda', 'On air', 'En directo')); caricaStatoDonazioni(false); }
+        else if (cosa === 'scarta') { toast(L('Scartata', 'Discarded', 'Descartada')); caricaStatoDonazioni(false); }
         else { toast(cosa === 'elimina' ? L('Tolta dal registro', 'Removed from the register', 'Quitada del registro') : L('Rimborsata', 'Refunded', 'Reembolsada')); caricaStatoDonazioni(false); }
       } finally { b.disabled = false; }
     });

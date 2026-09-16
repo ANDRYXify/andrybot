@@ -94,6 +94,28 @@ export function livelloPer(livelli, importo) {
 }
 const massimoOk = (v, minimo = LIMITI.min) => Math.min(LIMITI.max, Math.max(minimo, numero(v) || LIMITI.massimoDiSerie));
 
+// L'immagine di chi dona: da un importo in su (1..5.000) chi dona puo' allegare
+// un'immagine o una GIF che va in onda come un effetto. Quanto dura a schermo
+// (le immagini; una GIF diventa un video muto e dura quanto e' lunga), e se
+// parte da sola o aspetta l'ok dello streamer: di serie aspetta.
+export const PROPRIO = { da: 20, durata: 6, durataMin: 2, durataMax: 15 };
+export function proprioOk(p) {
+  p = (p && typeof p === 'object') ? p : {};
+  const da = numero(p.da);
+  const durata = numero(p.durata);
+  return {
+    attivo: p.attivo === true,
+    da: da >= LIMITI.min && da <= LIMITI.max ? da : PROPRIO.da,
+    durata: durata >= PROPRIO.durataMin && durata <= PROPRIO.durataMax ? durata : PROPRIO.durata,
+    subito: p.subito === true,
+  };
+}
+// Se con questo importo (in valuta, PAGATO) l'immagine di chi dona e' ammessa.
+export function mediaAmmesso(cfg, importo) {
+  const p = proprioOk(cfg && cfg.proprio);
+  return p.attivo && (Number(importo) || 0) >= p.da;
+}
+
 // La configurazione, ripulita. `prima` e' quella salvata: il token arriva in
 // chiaro una volta sola e diventa impronta; senza un token nuovo resta quella
 // di prima; `kofiTokenClear` la toglie.
@@ -111,6 +133,7 @@ export function normDonazioni(d, prima = {}, login = '') {
     minimo,
     massimo,
     livelli: livelliOk(d.livelli),
+    proprio: proprioOk(d.proprio),
     conMessaggio: d.conMessaggio !== false,
     etichetta: str(d.etichetta, L.etichetta),
     messaggio: str(d.messaggio, L.messaggio),
@@ -204,6 +227,7 @@ export function datiSostieni(settings, conti = null) {
   const modo = d.modo === 'link' ? 'link' : 'conto';
   const minimo = minimoOk(d.minimo);
   const massimo = massimoOk(d.massimo, minimo);
+  const pr = proprioOk(d.proprio);
   return {
     modo,
     mezzi: modo === 'conto' ? mezziDi(d, conti) : [],
@@ -213,6 +237,7 @@ export function datiSostieni(settings, conti = null) {
     massimo,
     livelli: livelliOk(d.livelli).filter((l) => l.da >= minimo && l.da <= massimo),
     conMessaggio: d.conMessaggio !== false,
+    proprio: modo === 'conto' && pr.attivo && pr.da <= massimo ? { da: Math.max(pr.da, minimo), durata: pr.durata } : null,
     etichetta: d.etichetta || 'Sostieni',
     messaggio: d.messaggio || '',
     valuta: VALUTE.includes(d.valuta) ? d.valuta : 'EUR',

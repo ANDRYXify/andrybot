@@ -230,6 +230,15 @@ export class AlertsEngine {
     return true;
   }
 
+  // L'immagine di chi dona, gia' pronta come payload dell'overlay (donazioni-media):
+  // parte un attimo dopo l'avviso, come l'effetto di un'offerta.
+  effettoDono(channel, p, ritardoMs = 0) {
+    if (!p || !p.url || !this.effects?.emit) return false;
+    const manda = () => { try { this.effects.emit(channel, p); } catch (e) { log.debug('effetto di chi dona:', e?.message || e); } };
+    if (ritardoMs > 0) setTimeout(manda, ritardoMs).unref?.(); else manda();
+    return true;
+  }
+
   _risolviEffetto(channel, ref) {
     const m = /^effetto:(.+)$/i.exec(String(ref || ''));
     if (!m) return null;

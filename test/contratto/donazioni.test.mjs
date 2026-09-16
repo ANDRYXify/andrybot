@@ -170,9 +170,10 @@ test('il conto e il pagamento: le rotte hanno il loro guardiano o sono dichiarat
   const u = SRV.slice(SRV.indexOf("app.get('/u/:user'"), SRV.indexOf("app.get('/api/streamer-verify'"));
   assert.ok(u.includes("const e = await confermaDonazione(login, dona);"), 'al ritorno si chiede a chi ha mosso i soldi');
   assert.ok(SRV.includes("if (/^cs_[A-Za-z0-9_]{8,200}$/.test(dona)) return donaStripe.conferma(login, dona);"), 'cs_… e\' una sessione di Stripe');
-  assert.ok(u.includes("if (e?.nuova) manager.alerts?.donazione(login, e.d);"), 'l\'avviso parte solo la prima volta');
+  assert.ok(u.includes("if (e?.nuova) donazioneArrivata(login, e.d);"), 'l\'avviso parte solo la prima volta');
+  assert.ok(SRV.includes("function donazioneArrivata(login, d) {\n    manager.alerts?.donazione(login, d);"), 'e la donazione arrivata e\' una cosa sola, per il ritorno e per la ronda');
   assert.ok(u.includes("if (dona) res.set('Cache-Control', 'private, no-store');"), 'la pagina del grazie non va in cache');
-  assert.match(SRV, /donaStripe\.avviaRonda\(\(login, d\) => manager\.alerts\?\.donazione\(login, d\), \{/, 'la ronda avvisa come il ritorno');
+  assert.match(SRV, /donaStripe\.avviaRonda\(donazioneArrivata, \{/, 'la ronda avvisa come il ritorno');
   const modulo = SRV.slice(SRV.indexOf("app.post('/dona/:login'"), SRV.indexOf("app.post('/stripe/webhook'"));
   assert.ok(modulo.includes("donazioni.leggiModulo(req.body, cfg)") && modulo.includes("const dati = { login, display: s?.display || login,") && modulo.includes("mezzo === 'satispay' ? await donaSatispay.apriPagamento(dati) : await donaStripe.apriPagamento(dati)"), 'legge il modulo e apre il pagamento sul conto scelto');
   assert.ok(modulo.includes("extRateOk('dona-modulo:' + login)"), 'con un limite di frequenza');
@@ -210,7 +211,7 @@ test('il blocco «Sostieni» sul conto: un modulo col tema, che in anteprima non
   assert.ok(!/https:\/\/[a-z.]*stripe/.test(leggi('src/features/linkpagina.js')), 'nessun host di Stripe nel codice della pagina: il CSP non cambia');
   assert.ok(PLJS.includes("document.querySelector('.sost-f')") && PLJS.includes("headers: { Accept: 'application/json' }") && PLJS.includes('location.href = x.j.url'), 'lo script manda via fetch e naviga da solo');
   assert.ok(PLJS.includes("if (f.getAttribute('data-anteprima')) return;"), 'e in anteprima si ferma');
-  assert.match(leggi('src/features/linkpagina.js'), /pagina-link\.js\?v=10/, 'lo script cambia versione, cosi\' la cache lo ricarica');
+  assert.match(leggi('src/features/linkpagina.js'), /pagina-link\.js\?v=11/, 'lo script cambia versione, cosi\' la cache lo ricarica');
 });
 
 test('le pagine di privacy e termini, e l\'informativa della pagina link, dicono come vanno i soldi e i dati', () => {
@@ -231,7 +232,7 @@ test('Satispay: le rotte hanno il loro guardiano o sono dichiarate, la ronda lo 
   const cb = SRV.slice(SRV.indexOf("app.get('/dona/satispay/:login'"), SRV.indexOf("}));", SRV.indexOf("app.get('/dona/satispay/:login'")));
   assert.ok(cb.indexOf('res.json({ ok: true });') < cb.indexOf('donaSatispay.confermaPerRiferimento'), 'si risponde prima di lavorare');
   assert.ok(cb.includes("extRateOk('dona-cb:' + login)"), 'con un limite di frequenza');
-  assert.match(SRV, /donaStripe\.avviaRonda\(\(login, d\) => manager\.alerts\?\.donazione\(login, d\), \{ satispay: donaSatispay\.conferma \}\);/, 'la ronda rilegge anche Satispay');
+  assert.match(SRV, /donaStripe\.avviaRonda\(donazioneArrivata, \{ satispay: donaSatispay\.conferma, fileVia: /, 'la ronda rilegge anche Satispay, e sa togliere i file');
   assert.ok(SRV.includes("if (/^sp_[0-9a-f]{16}$/.test(dona)) return donaSatispay.conferma(login, dona.slice(3));"), 'il ritorno sp_… e\' di Satispay');
   assert.ok(SRV.includes("const mezzo = mezzi.includes(String(req.body?.mezzo || '')) ? String(req.body.mezzo) : mezzi[0];"), 'il mezzo lo sceglie chi dona, fra quelli pronti');
   const SP = leggi('src/features/donazioni-satispay.js');
@@ -277,4 +278,50 @@ test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le o
   const link = renderLinkPage({ ...base, blocchi: [{ tipo: 'sostieni', pagina: true }] }, { ...opz, sostieni: dati });
   assert.ok(link.includes('<a class="voce spicca sost-b" href="/u/x/dona">') && !link.includes('<form class="sost-f"'), 'sulla pagina link, se lo streamer vuole, il tasto porta alla pagina delle donazioni');
   assert.ok(!renderLinkPage({ ...base, blocchi: [{ tipo: 'sostieni', pagina: true }] }, { ...opz, sostieni: dati, dona: true }).includes('href="/u/x/dona"'), 'ma sulla pagina delle donazioni il rimando non ha senso: resta il modulo');
+});
+
+test('l\'immagine di chi dona: entra dal modulo con limiti stretti, aspetta l\'ok nel registro, muore con la riga', () => {
+  const DM = leggi('src/features/donazioni-media.js');
+  assert.match(DM, /export const MIME_OK = \{ 'image\/png': 'png', 'image\/jpeg': 'jpg', 'image\/webp': 'webp', 'image\/gif': 'gif' \};/, 'solo immagini');
+  assert.match(DM, /export const MAX_BYTE = 8 \* 1024 \* 1024;/); assert.match(DM, /export const MAX_IN_ATTESA = 30;/);
+  assert.ok(DM.includes("join(config.dataDir, 'effects', String(login || '').toLowerCase())"), 'nella cartella degli effetti del canale: la serve la porta dell\'overlay, e conta nello spazio');
+  assert.ok(DM.includes("if (!FILE_OK.test(String(file || ''))) return false;"), 'si toglie solo un file col nostro nome');
+  // il modulo: multipart solo se serve, un file solo, piccolo, pulito su ogni uscita
+  const modulo = SRV.slice(SRV.indexOf("const uploadDona = multer("), SRV.indexOf("app.post('/stripe/webhook'"));
+  assert.ok(modulo.includes("limits: { fileSize: donaMedia.MAX_BYTE, files: 1, fields: 12, fieldSize: 2048 }"), 'un file, piccolo, pochi campi');
+  assert.ok(modulo.includes("app.post('/dona/:login', express.urlencoded({ extended: false, limit: '8kb' }), conFileDono, wrap("), 'la porta e\' la stessa di sempre');
+  assert.ok(modulo.includes("if (stato !== 200 && req.file) pulisciTemp(req.file.path);"), 'ogni risposta che non e\' un pagamento aperto toglie il temporaneo');
+  assert.ok(modulo.includes("if (!pr.attivo) return rispondi(400,") && modulo.includes("if (!donazioni.mediaAmmesso(cfg, m.importoCent / 100)) return rispondi(400,") && modulo.includes("if (!donaMedia.mimeOk(req.file.mimetype)) return rispondi(400,"), 'spenta, sotto la soglia o non immagine: si rifiuta con una frase chiara');
+  assert.ok(modulo.includes("registroDonazioni.mediaInAttesa(login) >= donaMedia.MAX_IN_ATTESA"), 'e un tetto di file in attesa per canale');
+  assert.ok(modulo.includes("if (media) await donaMedia.togli(login, media.file);"), 'se il pagamento non si apre, il file va via');
+  // all'arrivo vale l'importo pagato
+  const arrivo = SRV.slice(SRV.indexOf("function donazioneArrivata(login, d) {"), SRV.indexOf("const payloadDono ="));
+  assert.ok(arrivo.includes("if (!donazioni.mediaAmmesso(cfg, d.importo)) {") && arrivo.includes("registroDonazioni.mediaVia(r.id)"), 'sotto la soglia pagata il file va via');
+  assert.ok(arrivo.includes("if (donazioni.proprioOk(cfg.proprio).subito && registroDonazioni.mediaOk(login, r.id)) manager.alerts?.effettoDono(login, payloadDono(login, r), 1200);"), 'da sola solo se lo streamer lo vuole, e una volta sola');
+  assert.ok(SRV.includes("fileVia: (x) => donaMedia.togli(x.login, x.media)"), 'la ronda toglie i file delle scadute e delle vecchie');
+  // il registro: coda, azioni, eliminazione col file
+  assert.ok(SRV.includes("daApprovare: registroDonazioni.mediaDaApprovare(login).map((r) => ({ ...rigaDonazione(r), url: effects.mediaUrl(login, r.media), tipo: r.media_tipo }))"), 'la coda arriva al pannello con l\'anteprima');
+  for (const c of ['manda', 'scarta', 'rieffetto']) assert.ok(SRV.includes(`if (cosa === '${c}') {`), 'azione ' + c);
+  assert.ok(SRV.includes("if (r.media) await donaMedia.togli(login, r.media);\n      registroDonazioni.elimina(login, id);"), 'eliminare la riga toglie anche il file');
+  assert.match(APP, /id="dona-proprio-attivo"/); assert.match(APP, /id="dona-proprio-da" min="1" max="5000"/); assert.match(APP, /id="dona-proprio-durata" min="2" max="15"/); assert.match(APP, /id="dona-proprio-subito"/);
+  assert.match(APP, /data-dona-riga="manda"/); assert.match(APP, /data-dona-riga="scarta"/); assert.match(APP, /data-dona-riga="rieffetto"/);
+  assert.ok(!APP.includes('dona-proprio-volume'), 'niente volume: una GIF e\' muta');
+  // il blocco: il campo file solo se la funzione e' accesa, e il modulo diventa multipart solo allora
+  const base = { attiva: true, blocchi: [{ tipo: 'sostieni', titolo: 'Un caffè' }], tema: {} };
+  const opz = { login: 'x', display: 'X', baseUrl: 'https://s.live' };
+  const dati = { modo: 'conto', mezzi: ['stripe'], importi: [2, 5], minimo: 1, massimo: 500, conMessaggio: true, valuta: 'EUR', proprio: { da: 20, durata: 6 } };
+  const con = renderLinkPage(base, { ...opz, sostieni: dati });
+  assert.ok(con.includes('<form class="sost-f" method="post" action="/dona/x" enctype="multipart/form-data">'));
+  assert.ok(con.includes('<input type="file" name="media" accept="image/png,image/jpeg,image/webp,image/gif" data-da="20">'));
+  assert.ok(con.includes('Da 20 € in su puoi allegare un\'immagine o una GIF (fino a 8 MB)'), 'la soglia si legge nel modulo');
+  const senza = renderLinkPage(base, { ...opz, sostieni: { ...dati, proprio: null } });
+  assert.ok(senza.includes('<form class="sost-f" method="post" action="/dona/x">') && !senza.includes('name="media"'), 'spenta: il modulo di sempre');
+  const stile = con.slice(con.indexOf('<style>'), con.indexOf('</style>'));
+  assert.ok(stile.includes('.sost-file input::file-selector-button{'), 'il tasto del file veste il tema');
+  const cur = renderLinkPage({ ...base, tema: { cursore: 'disegnato' } }, { ...opz, sostieni: dati });
+  assert.ok(/input\[type="file"\],select\{cursor:url\(/.test(cur) && cur.includes(':not([type="file"]),textarea,[contenteditable="true"]{cursor:text!important}'), 'il puntatore disegnato resta anche sul campo file');
+  assert.ok(PLJS.includes("var dati = allegato ? new FormData(f) : new URLSearchParams(new FormData(f));") && PLJS.includes("MIME.indexOf(allegato.type) < 0") && PLJS.includes("allegato.size > 8 * 1024 * 1024"), 'lo script manda il file come multipart, e controlla prima tipo e peso');
+  assert.ok(PLJS.includes("file.disabled = !ok;"), 'sotto la soglia il campo si spegne');
+  assert.ok(!leggi('src/features/donazioni.js').includes('volume'), 'la configurazione non ha un volume');
+  assert.match(leggi('src/db.js'), /media_stato TEXT NOT NULL DEFAULT ''/);
 });

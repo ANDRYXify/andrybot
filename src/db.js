@@ -564,7 +564,12 @@ CREATE TABLE IF NOT EXISTS donazioni (         -- il registro delle donazioni: q
   created_at INTEGER NOT NULL DEFAULT 0,
   pagata_at INTEGER NOT NULL DEFAULT 0,
   riferimento TEXT NOT NULL DEFAULT '',        -- il pagamento presso chi lo ha mosso (pi_… di Stripe, id di Satispay), per rimborsare da qui
-  rimborsata_at INTEGER NOT NULL DEFAULT 0
+  rimborsata_at INTEGER NOT NULL DEFAULT 0,
+  media TEXT NOT NULL DEFAULT '',              -- l'immagine allegata da chi dona (file nella cartella degli effetti del canale), '' = nessuna
+  media_tipo TEXT NOT NULL DEFAULT '',         -- immagine | video (una GIF diventa video)
+  media_durata INTEGER NOT NULL DEFAULT 0,     -- ms, per i video
+  media_stato TEXT NOT NULL DEFAULT '',        -- attesa (aspetta l'ok) | ok (mandata in onda) | no (scartata o sotto la soglia)
+  media_at INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_donazioni_login ON donazioni(login, stato, pagata_at);
 `);
@@ -693,6 +698,11 @@ aggiungiColonna('conti_donazioni', 'prodotto', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('conti_donazioni', 'nota', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'riferimento', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'rimborsata_at', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('donazioni', 'media', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('donazioni', 'media_tipo', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('donazioni', 'media_durata', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('donazioni', 'media_stato', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('donazioni', 'media_at', 'INTEGER NOT NULL DEFAULT 0');
 
 // Migrazione dominio dei LINK PROFILO: chi ha dati vecchi (moduli/conoscenza)
 // aveva "andryxify.it/u/<canale>" scritto nei testi; lo portiamo al dominio
@@ -1328,13 +1338,16 @@ export const contiSatispay = {
 // non entra due volte, e il passaggio attesa → pagata avviene una volta sola,
 // qualunque sia il numero di richieste che lo chiedono nello stesso istante.
 export const registroDonazioni = {
-  _riga(id, { login, fonte = 'stripe', importo = 0, valuta = 'EUR', nome = '', messaggio = '', riferimento = '' }, stato) {
+  _riga(id, { login, fonte = 'stripe', importo = 0, valuta = 'EUR', nome = '', messaggio = '', riferimento = '', media = null }, stato) {
     const t = now();
-    return db.prepare(`INSERT OR IGNORE INTO donazioni (id, login, fonte, stato, importo, valuta, nome, messaggio, created_at, pagata_at, riferimento)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+    const m = media && media.file ? media : null;
+    return db.prepare(`INSERT OR IGNORE INTO donazioni (id, login, fonte, stato, importo, valuta, nome, messaggio, created_at, pagata_at, riferimento, media, media_tipo, media_durata, media_stato)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(String(id), String(login).toLowerCase(), fonte, stato, Math.max(0, Math.round(Number(importo) || 0)),
         String(valuta || 'EUR').toUpperCase().slice(0, 3), String(nome || '').slice(0, 60), String(messaggio || '').slice(0, 200),
-        t, stato === 'pagata' ? t : 0, String(riferimento || '').slice(0, 80)).changes > 0;
+        t, stato === 'pagata' ? t : 0, String(riferimento || '').slice(0, 80),
+        m ? String(m.file).slice(0, 120) : '', m ? (m.tipo === 'video' ? 'video' : 'immagine') : '',
+        m ? Math.max(0, Math.round(Number(m.durata) || 0)) : 0, m ? 'attesa' : '').changes > 0;
   },
   // la riga di un pagamento, dal suo id presso chi lo ha mosso (la callback di Satispay porta solo quello)
   perRiferimento(login, riferimento) {
@@ -1382,8 +1395,32 @@ export const registroDonazioni = {
   elimina(login, id) {
     return db.prepare('DELETE FROM donazioni WHERE id=? AND login=?').run(String(id), String(login).toLowerCase()).changes > 0;
   },
+  // una sessione mai pagata: scade, e l'immagine allegata non ha piu' ragione di restare
+  // (il file lo toglie chi chiama, che ha la riga in mano)
   scadi(id) {
-    return db.prepare("UPDATE donazioni SET stato='scaduta' WHERE id=? AND stato='attesa'").run(String(id)).changes > 0;
+    return db.prepare("UPDATE donazioni SET stato='scaduta', media='', media_stato='' WHERE id=? AND stato='attesa'").run(String(id)).changes > 0;
+  },
+  // ── l'immagine di chi dona ──
+  // quante aspettano (un pagamento o una decisione) su un canale: il tetto vale per costruzione
+  mediaInAttesa(login) {
+    return db.prepare("SELECT COUNT(*) AS n FROM donazioni WHERE login=? AND media!='' AND media_stato='attesa'").get(String(login).toLowerCase()).n;
+  },
+  // le pagate con un'immagine che aspetta l'ok dello streamer, dalla piu' vecchia
+  mediaDaApprovare(login) {
+    return db.prepare("SELECT * FROM donazioni WHERE login=? AND stato='pagata' AND media!='' AND media_stato='attesa' ORDER BY pagata_at ASC LIMIT 50").all(String(login).toLowerCase());
+  },
+  // mandata in onda (dallo streamer, o da sola): attesa → ok, una volta sola
+  mediaOk(login, id) {
+    return db.prepare("UPDATE donazioni SET media_stato='ok', media_at=? WHERE id=? AND login=? AND stato='pagata' AND media!='' AND media_stato='attesa'")
+      .run(now(), String(id), String(login).toLowerCase()).changes > 0;
+  },
+  // scartata (dallo streamer, o sotto la soglia pagata): la riga resta, il file
+  // no. Torna { login, media } a chi deve cancellare il file, null se non c'era.
+  mediaVia(id) {
+    const r = db.prepare("SELECT login, media FROM donazioni WHERE id=? AND media!=''").get(String(id));
+    if (!r) return null;
+    db.prepare("UPDATE donazioni SET media='', media_stato='no', media_at=? WHERE id=?").run(now(), String(id));
+    return r;
   },
   inAttesa() {
     return db.prepare("SELECT * FROM donazioni WHERE stato='attesa' ORDER BY created_at ASC LIMIT 200").all();
@@ -1398,10 +1435,14 @@ export const registroDonazioni = {
       .all(String(login).toLowerCase());
   },
   // le sessioni scadute non dicono piu' niente dopo un giorno; le donazioni si tengono un anno
+  // Torna { login, media } delle righe tolte che avevano ancora un file: il
+  // file lo cancella chi chiama.
   pulisci() {
     const t = now();
+    const via = db.prepare("SELECT login, media FROM donazioni WHERE media!='' AND ((stato='scaduta' AND created_at<?) OR (stato='pagata' AND pagata_at<?))").all(t - 86400_000, t - 365 * 86400_000);
     db.prepare("DELETE FROM donazioni WHERE stato='scaduta' AND created_at<?").run(t - 86400_000);
     db.prepare("DELETE FROM donazioni WHERE stato='pagata' AND pagata_at<?").run(t - 365 * 86400_000);
+    return via;
   },
   rimuovi(login) { db.prepare('DELETE FROM donazioni WHERE login=?').run(String(login).toLowerCase()); },
 };

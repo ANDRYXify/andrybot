@@ -113,10 +113,54 @@ manda il browser), e 1,2 s dopo l'avviso manda l'effetto in overlay con lo
 stesso payload del tasto «Prova» (`effects.payload`). «Rimanda l'avviso» dal
 registro non lo ripete.
 
-Da fare: lo scaglione «il tuo effetto», in cui chi dona sopra una soglia
-carica un'immagine o una GIF che passa in overlay, con approvazione dello
-streamer nel registro, durata e pulizia; e un blocco «donatori» (ultime,
-classifica).
+## L'immagine di chi dona
+
+Chiesto così: «da un prezzo definito dallo streamer in su, si possono mandare
+effetti custom dell'utente che dona». Gli invarianti, da cui viene tutto:
+
+1. **Niente va in onda senza che lo streamer lo voglia.** Di serie ogni
+   immagine aspetta il suo ok nel registro («Da mandare in onda»); «va in onda
+   da sola» è una scelta sua esplicita (`proprio.subito`).
+2. **Il file è legato a una donazione.** Nasce col modulo (prima del
+   pagamento), vive con la riga (`media`, `media_tipo`, `media_durata`,
+   `media_stato` attesa|ok|no, `media_at`), muore con la riga: scaduta (la
+   ronda toglie il file), eliminata (la rotta toglie il file), pulizia annuale
+   (`pulisci()` torna i file delle righe tolte), canale cancellato (la cartella
+   degli effetti va via con tutto il resto).
+3. **Vale l'importo pagato.** Il modulo ammette il file solo se l'importo
+   scelto arriva alla soglia; all'arrivo (`donazioneArrivata`) si ricontrolla
+   con l'importo pagato e sotto la soglia, o a funzione spenta, il file va via.
+4. **La porta è pubblica, quindi i limiti sono per costruzione**
+   (`donazioni-media.js`): solo PNG, JPG, WEBP e GIF; 8 MB in ingresso e un
+   file solo (multer, `fields: 12`); ricompressione come per gli effetti (webp
+   ≤800 px; una GIF diventa un video webm muto ≤30 s), l'originale non si
+   conserva; il ritmo del modulo (`dona-modulo`), lo spazio del canale e un
+   tetto di 30 file in attesa per canale; ogni risposta che non apre un
+   pagamento toglie il temporaneo.
+5. **Il file sta nella cartella degli effetti del canale**
+   (`effects/<login>/dn_<ora>_<caso>.<webp|webm>`): lo serve la porta
+   dell'overlay che c'è già, con la chiave, e conta nello spazio come tutto il
+   resto. `togli()` accetta solo nomi con quel prefisso: gli effetti dello
+   streamer non si toccano.
+
+La configurazione: `settings.donazioni.proprio = { attivo, da, durata,
+subito }` (`da` 1..5.000 in valuta, `durata` 2..15 s per le immagini; niente
+volume, perché una GIF è muta e video veri non ne entrano). `datiSostieni`
+espone `proprio: { da, durata }` solo sul conto e se la soglia sta sotto il
+massimo; il blocco mostra allora il campo file (`name="media"`, con
+`enctype="multipart/form-data"` solo in quel caso) e lo script della pagina
+lo spegne sotto la soglia, controlla tipo e peso prima di mandare e usa
+`FormData` invece di `URLSearchParams`. In overlay va lo stesso payload di un
+effetto della libreria (`donaMedia.payload`: tipo, url, durata, nessuna
+etichetta), via `AlertsEngine.effettoDono`, 1,2 s dopo l'avviso.
+
+Il registro: `/api/donazioni/stato` porta `daApprovare` (anteprima con l'url
+dell'overlay); `/api/donazioni/azione` ha `manda` (attesa → ok, una volta
+sola, e in onda), `scarta` (il file via, la riga resta), `rieffetto` (rimanda
+un'immagine già in onda); `elimina` toglie anche il file. Le righe con
+`effetto: true` mostrano «Rimanda l'immagine».
+
+Da fare: un blocco «donatori» (ultime, classifica).
 
 ## Il registro, dentro SocialBot
 
