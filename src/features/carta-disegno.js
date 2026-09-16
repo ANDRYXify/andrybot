@@ -43,6 +43,8 @@ export const CARATTERI = [
 ];
 
 export const MISURA = { larghezza: 1200, altezza: 500 };
+// L'anteprima del link (Telegram, WhatsApp, Discord) ha un'altra forma: 1200×630.
+export const MISURA_PAGINA = { larghezza: 1200, altezza: 630 };
 
 // ── il modello ─────────────────────────────────────────────────────────────
 // Pochi tipi, e ognuno è una cosa che una persona sa afferrare e spostare. Un
@@ -155,6 +157,121 @@ export const NOMI_TEMI = Object.keys(TEMI);
 // Il tema giusto per una piattaforma, quando lo streamer non ha scelto.
 export function temaPerPiattaforma(p) {
   return TEMI[p] ? p : 'twitch';
+}
+
+// ── le carte dell'anteprima del link ───────────────────────────────────────
+//
+// Quando si incolla la pagina link o quella delle donazioni in una chat, l'app
+// mostra una cartolina: questa. Stessa famiglia delle locandine (stessi tipi,
+// stessi caratteri, stesso editor), altra forma e altro impianto: qui non c'e'
+// una diretta da annunciare ma una persona da riconoscere.
+//
+// Le due carte sono STANDARD MA NON FISSE: di partenza si vestono col colore
+// d'accento della pagina (tintaCarta), e lo streamer le rifa' come vuole con
+// l'editor. Il «segnale» e' il colore che nel preset fa da accento: e' quello
+// che la tinta sostituisce, in ogni posto in cui compare.
+//
+// LINK — notte con l'alone: la faccia con l'aureola, il nome grande, il
+// sottotitolo, un trattino, l'indirizzo. DONA — taglio: un fondo sfumato, una
+// striscia di colore a destra, la targhetta tagliata, il nome condensato.
+export const SEGNALE_PAGINA = { link: '#7C5CFF', dona: '#FF4FA3' };
+
+export const TEMI_PAGINA = {
+  link: {
+    nome: 'I miei link',
+    ...MISURA_PAGINA,
+    fondo: { tipo: 'alone', tinta: '#0F0D16', alone: '#7C5CFF', alone2: '#382973', cx: 22, cy: 45, r: 62 },
+    elementi: [
+      { id: 'avatar', tipo: 'avatar', x: 290, y: 315, d: 300, forma: 'tondo',
+        bordo: '#7C5CFF', spessore: 6, aureola: true },
+      { id: 'targhetta', tipo: 'targhetta', x: 520, y: 176, testo: 'I MIEI LINK',
+        sfondo: '#7C5CFF', colore: '#FFFFFF', carattere: 'Archivo Black', corpo: 24, punto: false },
+      { id: 'nome', tipo: 'testo', x: 520, y: 318, testo: '{nome}',
+        carattere: 'Archivo Black', corpo: 78, colore: '#FFFFFF', max: 15 },
+      { id: 'titolo', tipo: 'testo', x: 520, y: 376, testo: '{titolo}',
+        carattere: 'Archivo', corpo: 32, colore: '#C9C4D6', max: 42 },
+      { id: 'trattino', tipo: 'riga', x: 520, y: 416, larghezza: 56, altezza: 5, colore: '#7C5CFF' },
+      { id: 'indirizzo', tipo: 'testo', x: 520, y: 472, testo: '{link}',
+        carattere: 'Archivo', corpo: 27, colore: '#8E88A3', max: 44 },
+    ],
+  },
+  dona: {
+    nome: 'Sostienimi',
+    ...MISURA_PAGINA,
+    fondo: { tipo: 'sfumatura', tinta: '#120B10', alone: '#47162E' },
+    elementi: [
+      { id: 'striscia', tipo: 'striscia', x: 1130, larghezza: 38, inclinazione: 14, colore: '#FF4FA3' },
+      { id: 'avatar', tipo: 'avatar', x: 290, y: 315, d: 280, forma: 'tondo',
+        bordo: '#FF4FA3', spessore: 4, aureola: false },
+      { id: 'targhetta', tipo: 'targhetta', x: 520, y: 170, testo: 'SOSTIENIMI',
+        sfondo: '#FF4FA3', colore: '#FFFFFF', carattere: 'Anton', corpo: 28, punto: false, tagliata: true },
+      { id: 'nome', tipo: 'testo', x: 520, y: 322, testo: '{nome}',
+        carattere: 'Anton', corpo: 88, colore: '#FFFFFF', max: 14, maiuscolo: true, spaziatura: 1 },
+      { id: 'titolo', tipo: 'testo', x: 520, y: 380, testo: '{titolo}',
+        carattere: 'Archivo', corpo: 31, colore: '#D6C9D2', max: 34 },
+      { id: 'filo', tipo: 'riga', x: 520, y: 418, larghezza: 500, altezza: 2, colore: '#2E1F2A' },
+      { id: 'indirizzo', tipo: 'testo', x: 520, y: 470, testo: '{link}',
+        carattere: 'Archivo', corpo: 27, colore: '#9B8E98', max: 38 },
+    ],
+  },
+};
+export const NOMI_TEMI_PAGINA = Object.keys(TEMI_PAGINA);
+
+// Un colore in tre numeri, e ritorno. Solo esadecimali a 3 o 6 cifre: il resto
+// non e' un colore, e non entra.
+const rgbDi = (hex) => {
+  const h = String(hex || '').replace('#', '');
+  const p = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  if (!/^[0-9a-f]{6}$/i.test(p)) return null;
+  return [0, 2, 4].map((i) => parseInt(p.slice(i, i + 2), 16));
+};
+const hexDi = (rgb) => '#' + rgb.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('').toUpperCase();
+
+// Mescola due colori: q = 0 tutto il primo, q = 1 tutto il secondo.
+export function mescola(a, b, q) {
+  const x = rgbDi(a), y = rgbDi(b);
+  if (!x || !y) return a;
+  const t = Math.max(0, Math.min(1, Number(q) || 0));
+  return hexDi(x.map((v, i) => v * (1 - t) + y[i] * t));
+}
+
+// Il testo che si legge sopra un colore: nero sui chiari, bianco sugli scuri.
+export function suColore(hex) {
+  const c = rgbDi(hex);
+  if (!c) return '#FFFFFF';
+  const lin = (v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+  const L = 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+  return L > 0.5 ? '#000000' : '#FFFFFF';
+}
+
+// La carta col colore della pagina: dove il preset ha il suo segnale, va il
+// colore dato; le sfumature del fondo si ricavano da quello; il testo delle
+// targhette resta leggibile. Con il segnale stesso, torna il preset identico.
+export function tintaCarta(carta, segnale, accento) {
+  const a = rgbDi(accento) ? hexDi(rgbDi(accento)) : '';
+  const s = rgbDi(segnale) ? hexDi(rgbDi(segnale)) : '';
+  if (!a || !s || !carta) return carta;
+  const stesso = (v) => rgbDi(v) && hexDi(rgbDi(v)) === s;
+  const cambia = (v) => (stesso(v) ? a : v);
+  const f = { ...(carta.fondo || {}) };
+  if (f.tipo === 'alone') { f.alone = cambia(f.alone); f.alone2 = mescola(a, '#000000', 0.55); }
+  else if (f.tipo === 'sfumatura') f.alone = mescola(a, '#000000', 0.72);
+  const elementi = (carta.elementi || []).map((e) => {
+    const n = { ...e };
+    for (const k of ['bordo', 'sfondo', 'colore']) if (k in n) n[k] = cambia(n[k]);
+    if (e.tipo === 'targhetta' && stesso(e.sfondo)) n.colore = suColore(a);
+    return n;
+  });
+  return { ...carta, fondo: f, elementi };
+}
+
+// La carta dell'anteprima di una pagina: quella sua se l'ha rifatta, sennò lo
+// standard vestito col colore della pagina. Una funzione sola per chi disegna
+// l'immagine e per chi apre l'editor.
+export function cartaPaginaDi({ dati, quale, accento } = {}) {
+  if (dati && Array.isArray(dati.elementi) && dati.elementi.length) return normCarta(dati);
+  const q = TEMI_PAGINA[quale] ? quale : 'link';
+  return normCarta(tintaCarta(TEMI_PAGINA[q], SEGNALE_PAGINA[q], accento || SEGNALE_PAGINA[q]));
 }
 
 // ── la validazione ─────────────────────────────────────────────────────────

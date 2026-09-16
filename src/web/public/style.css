@@ -1186,6 +1186,7 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .lp-stato.off { color: var(--ambra); background: var(--ambra-soft); border: 1px solid var(--ambra-bordo); }
 .lp-stato a { color: inherit; }
 
+.lp-carta-img { display: block; width: 100%; border-radius: 10px; border: 1px solid var(--bordo); }
 .lp-avatar-tw { display: flex; align-items: center; gap: .6rem; margin-top: .5rem; }
 .lp-avatar-tw img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid var(--bordo); flex: 0 0 auto; }
 .lp-avatar-tw .suggerimento { margin: 0; }

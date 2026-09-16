@@ -201,3 +201,26 @@ quindi non può importare niente). I cancelli la prendono da lì. Non è «un
 carattere di quel blocco Unicode»: è un carattere che il sistema disegna a
 colori — `Emoji_Presentation` — più i pittogrammi che U+FE0F promuove. Le spunte
 ✓ ✗ e le stelline ★ ✦ sono segni tipografici e restano.
+
+## La carta dell'anteprima del link
+
+La stessa famiglia serve anche l'anteprima che le chat mostrano quando
+qualcuno incolla la pagina link o quella delle donazioni. Due preset in
+`TEMI_PAGINA` (`link`, `dona`), misura `MISURA_PAGINA` (1200×630), un impianto
+diverso dalla locandina perché qui non c'è una diretta da annunciare ma una
+persona da riconoscere: la faccia, il nome grande, il sottotitolo, l'indirizzo.
+
+**Standard ma non fissa.** Ogni preset ha un **segnale** (`SEGNALE_PAGINA`), il
+colore che nel disegno fa da accento; `tintaCarta(carta, segnale, accento)` lo
+sostituisce ovunque compaia con l'accento della pagina, ricava da quello le
+sfumature del fondo e tiene leggibile il testo delle targhette. Col segnale
+stesso torna il preset identico, e il collaudo lo pretende. `cartaPaginaDi`
+sceglie: la carta rifatta dallo streamer (`carte_pagina`, una per pagina),
+altrimenti il preset tinto.
+
+Il pannello la mostra nel riquadro «Quando condividi il link» dell'editor della
+pagina e apre lo stesso `carta-editor.js` (titolo suo, misura sua, nessun tema
+di partenza da scegliere: lo standard è già la carta che si vede). Le rotte:
+`GET/PUT/DELETE /api/paginacarta?quale=link|dona`, `GET /api/paginacarta.png`
+per il proprietario; `GET /u/<login>/anteprima.png` e `anteprima-dona.png`
+pubbliche, con cache di un'ora rifatta quando cambiano pagina, carta o faccia.

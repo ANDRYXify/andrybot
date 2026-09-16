@@ -94,7 +94,7 @@ export function apri(stato, { salva, aggiorna } = {}) {
   velo.className = 'ce-velo';
   velo.innerHTML = `
     <div class="ce-testa">
-      <strong>${L('Editor della locandina', 'Poster editor', 'Editor del cartel')}</strong>
+      <strong>${esc(stato.titolo || L('Editor della locandina', 'Poster editor', 'Editor del cartel'))}</strong>
       <span class="ce-spinta"></span>
       <button type="button" class="btn secondario mini" data-fa="annulla" title="${L('Annulla (Ctrl+Z)', 'Undo (Ctrl+Z)', 'Deshacer (Ctrl+Z)')}">${L('Annulla', 'Undo', 'Deshacer')}</button>
       <button type="button" class="btn secondario mini" data-fa="rifai" title="${L('Rifai (Ctrl+Maiusc+Z)', 'Redo (Ctrl+Shift+Z)', 'Rehacer (Ctrl+Mayús+Z)')}">${L('Rifai', 'Redo', 'Rehacer')}</button>

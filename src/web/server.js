@@ -23,8 +23,8 @@ import * as consolle from '../features/console.js';   // CONSOLify + tastiera fi
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona } from '../db.js';
-import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina } from '../db.js';
+import { renderLinkPage, renderInformativa, accentoDi } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
 import { inserisciVetrina } from './vetrina-vista.js';
@@ -1468,6 +1468,59 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     } catch (e) { notFound(res); }
   }));
 
+  // ── L'anteprima del link: la carta della pagina, disegnata dal server ──
+  // Quando qualcuno incolla la pagina link o quella delle donazioni in una
+  // chat, l'app viene a prendere questa immagine. E' una carta come la
+  // locandina (stesso motore, stesso editor): lo standard si veste col colore
+  // della pagina, oppure e' quella che lo streamer ha rifatto. Si tiene in
+  // memoria un'ora, e si rifa' quando cambia la pagina, la carta o la faccia.
+  const _cartePagina = new Map();          // login|quale → { buf, chiave, ts }
+  const qualePagina = (v) => (String(v || '') === 'dona' ? 'dona' : 'link');
+  async function datiCartaPagina(login, quale) {
+    const s = streamers.get(login);
+    const display = s?.display || login;
+    const p = (quale === 'dona' ? paginaDona : linkPage).conDefault(login, display);
+    const url = quale === 'dona' ? donazioni.urlPaginaDona(login) : `${config.baseUrl}/u/${login}`;
+    const foto = p.avatar === 'no' ? '' : (p.avatar || await avatarDi(login) || '');
+    return {
+      nome: quale === 'dona' ? display : (p.headline || display),
+      titolo: p.tagline || '', gioco: '', spettatori: '',
+      login, link: url.replace(/^https?:\/\//, ''), piattaforma: piattaformaDi(login),
+      avatar: await cartaLive.avatarDataUri(foto),
+      accento: accentoDi(p), ts: p.ts || 0,
+    };
+  }
+  async function pngCartaPagina(login, quale, { forza = false } = {}) {
+    if (!cartaLive.disegnabile()) return null;
+    const mia = cartePagina.get(login, quale);
+    const dati = await datiCartaPagina(login, quale);
+    const chiave = `${dati.ts}|${mia?.ts || 0}|${dati.avatar.length}|${dati.accento}`;
+    const k = login + '|' + quale;
+    const c = _cartePagina.get(k);
+    if (!forza && c && c.chiave === chiave && Date.now() - c.ts < 3600_000) return c.buf;
+    let buf = null;
+    try { buf = await cartaLive.pngCarta(cartaLive.cartaPaginaDi({ dati: mia?.dati, quale, accento: dati.accento }), dati); }
+    catch (e) { log.warn(`anteprima della pagina di #${login}: ${e?.message || e}`); return null; }
+    if (buf) {
+      if (_cartePagina.size > 300) _cartePagina.delete(_cartePagina.keys().next().value);
+      _cartePagina.set(k, { buf, chiave, ts: Date.now() });
+    }
+    return buf;
+  }
+  const rottaCartaPagina = (quale) => wrap(async (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    const p = (quale === 'dona' ? paginaDona : linkPage).get(login);
+    if (!p || !p.attiva) return notFound(res);
+    const png = await pngCartaPagina(login, quale);
+    if (!png) return notFound(res);
+    res.set('Content-Type', 'image/png').set('Cache-Control', 'public, max-age=3600').send(png);
+  });
+  app.get('/u/:user/anteprima.png', rottaCartaPagina('link'));
+  app.get('/u/:user/anteprima-dona.png', rottaCartaPagina('dona'));
+  // l'indirizzo dell'immagine da scrivere nella pagina: solo se il server sa disegnarla
+  const immagineAnteprimaDi = (login, quale) => (cartaLive.disegnabile() ? `${config.baseUrl}/u/${login}/anteprima${quale === 'dona' ? '-dona' : ''}.png` : '');
+
   // Informativa privacy della pagina pubblica. Va messa sempre, anche senza
   // cookie: il banner serve solo per i cookie non essenziali, ma dire chi tratta
   // i dati e quali è un obbligo che dai cookie non dipende.
@@ -1511,6 +1564,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       grazie,
       urlDona: donazioni.urlPaginaDona(login),
       donatori: donatoriPer(login, p.blocchi),
+      immagineAnteprima: immagineAnteprimaDi(login, 'link'),
     });
     // Una visita in più. Contiamo SOLO quante volte la pagina è stata aperta:
     // niente indirizzi IP, niente cookie, niente su chi c'era. I robot li
@@ -1556,6 +1610,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       sostieni: donazioni.datiSostieni(s?.settings, conti), grazie, dona: true,
       urlDona: donazioni.urlPaginaDona(login),
       donatori: donatoriPer(login, p.blocchi),
+      immagineAnteprima: immagineAnteprimaDi(login, 'dona'),
     });
     if (dona) res.set('Cache-Control', 'private, no-store');
     else res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
@@ -1730,6 +1785,45 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const p = paginaDona.get(login);
     if (p) paginaDona.salva(login, { ...p, attiva: false });
     res.json({ ok: true, pubblicata: false });
+  }));
+
+  // ── L'anteprima del link, dal pannello: la carta di ognuna delle due pagine ──
+  // Stesso vocabolario e stesso editor della locandina; qui la misura e' quella
+  // dell'anteprima e i temi di partenza sono le due carte standard. Si salva
+  // quello che il server ha normalizzato, come per la locandina.
+  async function rispostaCartaPagina(login, quale) {
+    const mia = cartePagina.get(login, quale);
+    const dati = await datiCartaPagina(login, quale);
+    return {
+      quale, mia: !!mia,
+      carta: cartaLive.cartaPaginaDi({ dati: mia?.dati, quale, accento: dati.accento }),
+      dati, disegnabile: cartaLive.disegnabile(),
+      vocabolario: { ...vocabolarioCarta(), misura: cartaLive.MISURA_PAGINA, temi: [] },
+      immagine: `/api/paginacarta.png?quale=${quale}`,
+    };
+  }
+  app.get('/api/paginacarta', requireOwner, wrap(async (req, res) => {
+    res.json(await rispostaCartaPagina(currentUser(req).login, qualePagina(req.query.quale)));
+  }));
+  app.put('/api/paginacarta', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const quale = qualePagina(req.query.quale || req.body?.quale);
+    if (req.body?.carta === undefined) return res.status(400).json({ errore: 'niente da cambiare' });
+    cartePagina.set(login, quale, req.body.carta ? cartaLive.normCarta(req.body.carta) : null);
+    _cartePagina.delete(login + '|' + quale);
+    res.json(await rispostaCartaPagina(login, quale));
+  }));
+  app.delete('/api/paginacarta', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const quale = qualePagina(req.query.quale || req.body?.quale);
+    cartePagina.set(login, quale, null);
+    _cartePagina.delete(login + '|' + quale);
+    res.json(await rispostaCartaPagina(login, quale));
+  }));
+  app.get('/api/paginacarta.png', requireOwner, wrap(async (req, res) => {
+    const png = await pngCartaPagina(currentUser(req).login, qualePagina(req.query.quale), { forza: true });
+    if (!png) return res.status(503).json({ errore: 'non riesco a disegnarla' });
+    res.set('Content-Type', 'image/png').set('Cache-Control', 'private, no-store').send(png);
   }));
 
   // Spegne la pagina (torna 404) senza cancellare i contenuti: si riaccende.
