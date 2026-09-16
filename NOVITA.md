@@ -23,6 +23,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Le offerte: fino a otto scaglioni con importo, nome ed effetto della tua libreria. Chi dona le vede al posto degli importi, e all'arrivo parte l'effetto dell'offerta raggiunta. [vai: donazioni]
 - Chi dona, da un importo che decidi tu in su, può allegare un'immagine o una GIF: va in onda come un effetto, dopo che l'hai vista nel registro e l'hai mandata tu con un tasto. [vai: donazioni]
 - Se preferisci, l'immagine di chi dona parte da sola appena il pagamento è confermato: lo scegli nella scheda delle donazioni, e la puoi sempre rimandare, scartare o togliere. [vai: donazioni]
+- L'indirizzo corto dona.socialbot.live/iltuonome si accende da solo: quando lo vedi nella scheda «Donazioni» al posto di quello lungo, è pronto da condividere. [vai: donazioni]
 - Un blocco «Chi ha donato» per la pagina link e per la pagina delle donazioni: gli ultimi sostenitori o i primi per somma, del mese o di sempre, quanti nomi vuoi. [vai: pagina]
 - Per il tasto «Sostieni» scegli l'icona fra quelle della pagina, come per ogni link; di serie è un cuore. [vai: pagina]
 - Sulla pagina link il puntatore disegnato resta suo anche sul blocco delle donazioni: stella sui tasti e sugli importi, penna intorno, cursore di testo solo dove si scrive. [vai: pagina]

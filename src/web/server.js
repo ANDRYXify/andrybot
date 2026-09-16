@@ -10,6 +10,7 @@ import express from 'express';
 import { normalizzaAntispam, normalizzaAntibot } from './impostazioni-moderazione.js';
 import cookieSession from 'cookie-session';
 import multer from 'multer';
+import dns from 'node:dns/promises';
 import crypto from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync, statSync, unlinkSync, renameSync, copyFileSync } from 'node:fs';
 import { unlink, readFile, mkdir, rename } from 'node:fs/promises';
@@ -220,8 +221,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // dona.<dominio>/<login> e' la pagina delle donazioni: con il nome nel .env
   // l'indirizzo corto si traduce in /u/<login>/dona prima di ogni rotta. La
   // radice rimanda al sito; tutto il resto (script, immagini, il modulo) passa.
-  if (config.donaHost) app.use((req, res, next) => {
-    if (String(req.hostname || '').toLowerCase() !== config.donaHost) return next();
+  // L'indirizzo corto delle donazioni si accende da solo: senza DONA_HOST si
+  // prova dona.<dominio del sito> nel DNS, ogni dieci minuti finche' non
+  // risponde; da quel momento le pagine e i ritorni lo usano. Basta il record.
+  const candidatoDona = !config.donaHost && !config.donaHostSpento ? donazioni.candidatoDonaHost(config.baseUrl) : '';
+  if (candidatoDona) {
+    const sondaDona = () => dns.lookup(candidatoDona).then(() => {
+      config.donaHost = candidatoDona;
+      log.info(`indirizzo corto delle donazioni acceso: ${candidatoDona}`);
+    }).catch(() => { setTimeout(sondaDona, 10 * 60_000).unref?.(); });
+    sondaDona();
+  }
+  app.use((req, res, next) => {
+    if (!config.donaHost || String(req.hostname || '').toLowerCase() !== config.donaHost) return next();
     const m = /^\/([a-z0-9_]{1,30})\/?$/i.exec(req.path);
     if (m) { const q = req.url.indexOf('?'); req.url = '/u/' + m[1].toLowerCase() + '/dona' + (q >= 0 ? req.url.slice(q) : ''); return next(); }
     if (req.path === '/') return res.redirect(302, config.baseUrl + '/');

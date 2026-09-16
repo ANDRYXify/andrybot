@@ -94,11 +94,13 @@ store è uno (`storePagina(tabella)` in db.js) costruito su un altro tavolo,
 l'altra. L'editor è uno: `LP.quale` (`link` | `dona`) sceglie la porta
 (`/api/linkpage` o `/api/paginadona`), l'interruttore sta in cima all'editor
 e dalla scheda Donazioni «Modifica la pagina» ci porta. Pubblica in
-`/u/<login>/dona`; con `DONA_HOST` (per esempio `dona.socialbot.live`, con il
-suo record DNS e il nome nel Caddyfile, che c'è già) anche
-`dona.socialbot.live/<login>`: un passaggio prima delle rotte traduce
-l'indirizzo corto, e i ritorni dal pagamento (`ritorno: 'dona'`) usano
-`urlPaginaDona(login)`. Il blocco «Sostieni» della pagina link può portare lì
+`/u/<login>/dona` e, appena il record DNS `dona` esiste, anche
+`dona.socialbot.live/<login>`: il server prova da solo `dona.<dominio>`
+(`candidatoDonaHost`, `dns.lookup` ogni dieci minuti finché non risponde) e da
+quel momento un passaggio prima delle rotte traduce l'indirizzo corto e i
+ritorni dal pagamento (`ritorno: 'dona'`) usano `urlPaginaDona(login)`; il
+nome nel Caddyfile c'è già. `DONA_HOST` serve solo per un altro nome, o `no`
+per non usarlo. Il blocco «Sostieni» della pagina link può portare lì
 (`pagina: true`) invece di mostrare il modulo; sulla pagina delle donazioni
 quel rimando non ha senso e resta il modulo, con un campo nascosto
 `pagina=dona` che dice da dove si torna.
