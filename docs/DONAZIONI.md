@@ -100,7 +100,19 @@ e dalla scheda Donazioni «Modifica la pagina» ci porta. Pubblica in
 quel momento un passaggio prima delle rotte traduce l'indirizzo corto e i
 ritorni dal pagamento (`ritorno: 'dona'`) usano `urlPaginaDona(login)`; il
 nome nel Caddyfile c'è già. `DONA_HOST` serve solo per un altro nome, o `no`
-per non usarlo. Il blocco «Sostieni» della pagina link può portare lì
+per non usarlo.
+
+Il certificato del nome corto lo chiede Caddy da solo, ma lo chiede
+all'avvio: se il record DNS arriva dopo, il primo tentativo fallisce e i
+successivi si diradano (fino a un'ora fra uno e l'altro). Nel frattempo sulla
+443 il nome risponde con un alert TLS (`ERR_SSL_PROTOCOL_ERROR` nel browser)
+mentre sulla 80 rimanda già a https. Per non aspettare:
+`docker compose restart caddy` e poi `docker compose logs --tail=50 caddy`,
+dove deve comparire «certificate obtained successfully» per
+`dona.socialbot.live`. Se il registro parla di un indirizzo IPv6
+(`2a01:…`), il record AAAA di `dona` punta a qualcosa che non risponde: o si
+fa rispondere il server anche in IPv6, o si toglie l'AAAA e resta l'A, come
+per l'apice. Il blocco «Sostieni» della pagina link può portare lì
 (`pagina: true`) invece di mostrare il modulo; sulla pagina delle donazioni
 quel rimando non ha senso e resta il modulo, con un campo nascosto
 `pagina=dona` che dice da dove si torna.
