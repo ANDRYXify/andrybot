@@ -23,7 +23,8 @@ import * as consolle from '../features/console.js';   // CONSOLify + tastiera fi
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi } from '../db.js';
+import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { renderLinkPage, renderInformativa, accentoDi } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
@@ -368,7 +369,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // canale vuoto, ma sul canale che modera.
     if (proprio) {
       const l = proprio.canale;
-      const streamerVero = !!(subscriptions.get(l) || streamers.get(l)?.community || config.adminLogins.includes(l));
+      const streamerVero = !!(subscriptions.get(l) || streamers.get(l)?.community || config.adminLogins.includes(l) || concessioneDi(l)?.modo === 'tutto');
       if (streamerVero || !moderato) return proprio;
     }
     return moderato || proprio || contesti[0] || null;
@@ -455,16 +456,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Funzioni EFFETTIVE del canale di una persona: unione di piano base + add-on
   // à la carte attivi (o accesso pieno se community). È la matrice su cui si basa
   // tutto il gating: chi non ha un piano ricade su 'free'.
-  function funzioniDi(login) {
-    const l = String(login || '').toLowerCase();
-    if (l && subscriptions.attivo(l)) {
-      const s = subscriptions.get(l);
-      return abbonamenti.funzioniDi({ tier: s.tier || 'base', pacchetti: s.pacchetti });
-    }
-    const st = l ? streamers.get(l) : null;
-    if (st && st.status === 'approved' && st.community) return abbonamenti.funzioniDi({ tier: 'community' });
-    return abbonamenti.funzioniDi({ tier: 'free' });
-  }
+  // Una risposta sola, in un posto solo (features/accesso.js): il piano piu'
+  // quello che il proprietario ha deciso a mano. Il bot legge la stessa.
+  function funzioniDi(login) { return funzioniCanale(login); }
 
   // Gating funzioni (endpoint a pagamento). Ritorna true se la funzione è inclusa
   // nelle funzioni effettive del canale gestito; altrimenti risponde 403 e ritorna
@@ -2683,6 +2677,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // matrice funzioni EFFETTIVE del canale: la UI la usa per mostrare "bloccate"
       // le sezioni non incluse nel piano (stesso identico calcolo del gating server).
       funzioni: abbonamenti.funzioniPubbliche(funzioniDi(user.login)),
+      // quello che il proprietario ha deciso a mano per questo canale, se vale adesso
+      accesso: (() => { const a = concessioneDi(user.login); return a ? { modo: a.modo, funzioni: a.funzioni, scade: a.scade, nota: a.nota, motivo: a.motivo } : null; })(),
       nAddon: abbonamenti.ADDON_IDS.length,
       abbonamento: (() => {
         const s = subscriptions.get(user.login);
@@ -7512,6 +7508,42 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     sync();
     res.json({ ok: true });
   }));
+
+  // ── Gli accessi decisi a mano ──────────────────────────────────────────────
+  // Il proprietario apre tutto, alcune funzioni o ne chiude, a chi vuole e
+  // quando vuole, con una scadenza e una nota; ogni cambio resta in storia.
+  // Il calcolo dei diritti sta in features/accesso.js: qui solo le porte.
+  const rigaAccesso = (login) => {
+    const r = accessi.get(login);
+    return { login, riga: r, attiva: accessi.attiva(r), piano: tierDi(login),
+      effettive: abbonamenti.funzioniPubbliche(funzioniDi(login)), storia: accessi.storia(login, 20) };
+  };
+  const loginAccesso = (req, res) => {
+    const login = String(req.params.login || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,30}$/.test(login)) { res.status(400).json({ errore: 'login non valido' }); return ''; }
+    return login;
+  };
+  app.get('/api/admin/accessi', requireAdmin, (req, res) => {
+    res.json({ accessi: accessi.elenco().map((r) => ({ ...r, attiva: accessi.attiva(r) })), chiavi: Object.keys(abbonamenti.FREE.funzioni) });
+  });
+  app.get('/api/admin/accessi/:login', requireAdmin, (req, res) => {
+    const login = loginAccesso(req, res); if (!login) return;
+    res.json(rigaAccesso(login));
+  });
+  app.put('/api/admin/accessi/:login', requireAdmin, (req, res) => {
+    const login = loginAccesso(req, res); if (!login) return;
+    const b = req.body || {};
+    try { accessi.set(login, { modo: b.modo, funzioni: b.funzioni, scade: b.scade, nota: b.nota, motivo: 'manuale' }, currentUser(req).login); }
+    catch (e) { return res.status(400).json({ errore: e?.message || 'accesso non valido' }); }
+    log.info(`accesso deciso a mano per @${login}: ${b.modo} (${currentUser(req).login})`);
+    res.json(rigaAccesso(login));
+  });
+  app.delete('/api/admin/accessi/:login', requireAdmin, (req, res) => {
+    const login = loginAccesso(req, res); if (!login) return;
+    accessi.togli(login, currentUser(req).login);
+    log.info(`accesso deciso a mano tolto per @${login} (${currentUser(req).login})`);
+    res.json(rigaAccesso(login));
+  });
 
   // ------------------------------------------------------------ Anima (operatore)
   // La personalità CONDIVISA di SocialBot: una sola, coerente su tutti i canali.

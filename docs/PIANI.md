@@ -129,3 +129,33 @@ pannello, avvisi su Telegram, Studio Web. Non c'è motivo di abbassarlo. Il
 pacchetto «Tutto» a 12,49 non aveva più senso con tre extra da 1,99, 0,99 e
 1,99: sta a 3,99. Se un giorno si vuole una cifra sola da dire a voce, «Base +
 Tutto» fa 6,98 al mese: sotto Moobot Affiliate, con più cose dentro.
+
+## Gli accessi decisi a mano
+
+Il proprietario può aprire o chiudere quello che vuole, a chi vuole, quando
+vuole, anche fuori dalla community: è la leva manuale che deve esistere prima
+di qualunque controllo automatico delle norme, così se qualcosa va storto c'è
+sempre una mano che rimette a posto.
+
+Una riga per canale nella tabella `accessi`: `modo` **tutto** (accesso pieno),
+**scelte** (le funzioni elencate si sommano al piano: booleani in OR, numeri al
+massimo) o **blocco** (le funzioni elencate si chiudono; nessuna elencata =
+tutto chiuso nel pannello), con `scade` facoltativo, `nota` (la legge anche lo
+streamer) e `motivo` (`manuale` oggi, `norme` domani). Ogni cambio scrive in
+`accessi_storia` chi, quando, prima e dopo.
+
+La domanda «questo canale ha diritto a X?» ha **una risposta sola**:
+`funzioniCanale(login)` in `src/features/accesso.js`, che prende il piano
+(abbonamento, community o Essenziale) e ci applica la concessione che vale
+adesso (`applicaAccesso`, pura). Il server delega lì (`funzioniDi`), il bot
+legge lì (`canaleHa`): non esistono due calcoli. Una concessione scaduta smette
+da sola. Chi ha «tutto» conta come streamer vero e atterra sul proprio canale.
+
+Le porte, tutte dell'amministratore: `GET /api/admin/accessi`,
+`GET/PUT/DELETE /api/admin/accessi/:login`. Nel pannello Admin ogni streamer
+ha il tasto «Accessi»: modo, caselle delle funzioni (moderatori come numero),
+scadenza, nota, storia. Lo streamer legge la riga nella scheda «Il tuo bot»
+(«Il proprietario ti ha aperto…», «Accesso sospeso…»), e i muri delle funzioni
+chiuse dicono «chiuso dal proprietario» invece di proporre un acquisto. Il
+blocco chiude le funzioni nel pannello e nel bot dove il muro c'è; per far
+uscire il bot dal canale resta «Disabilita».

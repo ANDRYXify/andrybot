@@ -2447,6 +2447,7 @@ function funzioneChiusa(funz) {
 
 function muroPacchetto(funz, cosa, addon = FUNZ_ADDON[funz]) {
   if (!funzioneChiusa(funz)) return '';
+  if (_chiusoDalProprietario(funz)) return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${esc(cosa)} ${L('è chiuso dal proprietario', 'is closed by the owner', 'está cerrado por el propietario')}${stato.accesso.nota ? ': ' + esc(stato.accesso.nota) : ''}.</span></div>`;
   const na = NOME_ADDON[addon] || ['', '', ''];
   const nome = L(na[0], na[1], na[2]);
   const compra = !!stato?.stripeAttivo && !!addon;
@@ -2465,6 +2466,10 @@ function schedaBloccata(id) {
 const addonPerScheda = (id) => FUNZ_ADDON[SCHEDA_FUNZ[id]] || null;
 
 function paginaBloccata(id) {
+  if (_chiusoDalProprietario(SCHEDA_FUNZ[id])) {
+    return `<div class="carta blocco-carta"><div class="blocco-testa">${_bIco(ICO.lucchetto)}<h2>${esc(tScheda(id, id))}</h2><span class="badge rosso">${L('Chiusa dal proprietario', 'Closed by the owner', 'Cerrada por el propietario')}</span></div>
+      <p class="blocco-cosa">${stato.accesso.nota ? esc(stato.accesso.nota) : L('Questa scheda è chiusa per il tuo canale.', 'This tab is closed for your channel.', 'Esta pestaña está cerrada para tu canal.')}</p></div>`;
+  }
   const addon = addonPerScheda(id);
   const nomeScheda = tScheda(id, id);
   const g = GUIDE[id];
@@ -12588,6 +12593,7 @@ async function caricaSottoscrizione() {
       'Estás en <strong>Essenziale</strong>: gratuito, sin caducidad y sin tarjeta. Comandos y automatizaciones ilimitados, moderación, overlay para el directo y contadores en pantalla ya son tuyos.');
   }
 
+  const accRiga = _rigaAccessoHtml();
   const VOCI = [
     ['moduli', L('Comandi e automazioni', 'Commands and automations', 'Comandos y automatizaciones')],
     ['overlay', L('Overlay per la diretta', 'stream overlay', 'Overlay para el directo')],
@@ -12627,7 +12633,7 @@ async function caricaSottoscrizione() {
   box.innerHTML = `
     <div class="carta ${tono === 'verde' ? '' : tono === 'giallo' ? 'avviso' : 'evidenziata'} sott-testa">
       <h3>${L('Piano attuale', 'Current plan', 'Plan actual')}: ${esc(nomi[tier] || tier)}${prova ? ` <span class="badge giallo">${L('prova gratuita', 'free trial', 'prueba gratuita')}</span>` : ''}</h3>
-      <p>${riga}</p>
+      <p>${riga}</p>${accRiga}
     </div>
 
     <h3 class="spazio-sopra">${L('Cosa hai acceso', 'What you have on', 'Qué tienes activo')}</h3>
@@ -19027,6 +19033,112 @@ async function caricaAnima() {
   }
 }
 
+const ETICHETTE_FUNZ = () => ({
+  moduli: L('Comandi e automazioni', 'Commands and automations', 'Comandos y automatizaciones'),
+  overlay: L('Overlay per la diretta', 'Stream overlay', 'Overlay para el directo'),
+  effetti: L('Effetti e punti canale', 'Effects and channel points', 'Efectos y puntos de canal'),
+  giochi: L('Giochi e classifiche', 'Games and leaderboards', 'Juegos y clasificaciones'),
+  musica: L('Richieste musicali', 'Music requests', 'Peticiones musicales'),
+  clipAuto: L('Clip automatiche', 'Automatic clips', 'Clips automáticos'),
+  voce: L('Comandi a voce', 'Voice commands', 'Comandos por voz'),
+  notifiche: L('Avvisi live e nuovi post', 'Live and new-post alerts', 'Avisos de directo y nuevos posts'),
+  telegram: L('Bot su Telegram', 'Bot on Telegram', 'Bot en Telegram'),
+  studio: L('Studio Web', 'Web Studio', 'Studio Web'),
+  moderatori: L('Moderatori sul pannello', 'Moderators on the panel', 'Moderadores en el panel'),
+});
+
+function _accessiHtml(d) {
+  const E = ETICHETTE_FUNZ();
+  const r = d.riga;
+  const modo = d.attiva && r ? r.modo : 'piano';
+  const f = (r && r.funzioni) || {};
+  const quando = (ts) => { try { return new Date(ts).toLocaleString(); } catch (e) { return ''; } };
+  const scadeVal = r && r.scade ? new Date(r.scade - new Date(r.scade).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
+  const caselle = Object.keys(E).map((k) => k === 'moderatori'
+    ? `<label class="riga-check"><input type="number" class="acc-num" data-acc-f="${k}" min="0" max="50" value="${typeof f[k] === 'number' ? f[k] : ''}"> ${esc(E[k])} (${L('quanti', 'how many', 'cuántos')})</label>`
+    : `<label class="riga-check"><input type="checkbox" data-acc-f="${k}"${f[k] ? ' checked' : ''}> ${esc(E[k])}</label>`).join('');
+  const storia = (d.storia || []).map((s) => {
+    const cosa = s.dopo ? esc(s.dopo.modo) + (Object.keys(s.dopo.funzioni || {}).length ? ' (' + esc(Object.keys(s.dopo.funzioni).map((k) => E[k] || k).join(', ')) + ')' : '') : L('tolto', 'removed', 'quitado');
+    return `<li>${esc(quando(s.ts))} · ${esc(s.chi || '?')} · ${cosa}${s.dopo?.nota ? ' · ' + esc(s.dopo.nota) : ''}</li>`;
+  }).join('');
+  const MODI = [['piano', L('Come da piano', 'As per plan', 'Según el plan')], ['tutto', L('Tutto', 'Everything', 'Todo')], ['scelte', L('Alcune cose', 'Some things', 'Algunas cosas')], ['blocco', L('Blocco', 'Block', 'Bloqueo')]];
+  return `<div class="acc-editor" data-login="${esc(d.login)}">
+    <p class="suggerimento">${L('Piano di', 'Plan of', 'Plan de')} <code>${esc(d.login)}</code>: <strong>${esc(d.piano || 'free')}</strong>. ${L('Quello che decidi qui si somma al piano (Tutto, Alcune cose) o gli toglie (Blocco); con una scadenza torna da solo al piano.', 'What you set here adds to the plan (Everything, Some things) or takes away from it (Block); with an expiry it goes back to the plan on its own.', 'Lo que decides aquí se suma al plan (Todo, Algunas cosas) o le quita (Bloqueo); con una caducidad vuelve solo al plan.')}</p>
+    <div class="acc-modi">${MODI.map(([v, t]) => `<label class="riga-check"><input type="radio" name="acc-modo-${esc(d.login)}" value="${v}"${modo === v ? ' checked' : ''}> ${esc(t)}</label>`).join('')}</div>
+    <div class="acc-funzioni griglia-campi"${modo === 'scelte' || modo === 'blocco' ? '' : ' hidden'}>${caselle}</div>
+    <p class="suggerimento acc-nota-blocco"${modo === 'blocco' ? '' : ' hidden'}>${L('Blocco senza nessuna casella = tutto chiuso nel pannello. Per far uscire il bot dal canale usa «Disabilita».', 'Block with no box ticked = everything closed in the panel. To make the bot leave the channel use “Disable”.', 'Bloqueo sin ninguna casilla = todo cerrado en el panel. Para que el bot salga del canal usa «Deshabilitar».')}</p>
+    <div class="griglia-campi spazio-sopra">
+      <div><label class="campo">${L('Scade il (vuoto: mai)', 'Expires on (empty: never)', 'Caduca el (vacío: nunca)')}</label><input type="datetime-local" class="acc-scade" value="${esc(scadeVal)}"></div>
+      <div><label class="campo">${L('Nota (la legge anche lo streamer)', 'Note (the streamer reads it too)', 'Nota (el streamer también la lee)')}</label><input type="text" class="acc-nota" maxlength="300" value="${esc(r?.nota || '')}"></div>
+    </div>
+    <p class="spazio-sopra"><button type="button" class="btn mini" data-acc="salva">${L('Salva', 'Save', 'Guardar')}</button> <button type="button" class="btn secondario mini" data-acc="chiudi">${L('Chiudi', 'Close', 'Cerrar')}</button></p>
+    ${storia ? `<p class="campo spazio-sopra">${L('Storia', 'History', 'Historial')}</p><ul class="acc-storia suggerimento">${storia}</ul>` : ''}
+  </div>`;
+}
+
+function disegnaAccessi(riga, login, d) {
+  riga.innerHTML = `<td colspan="6">${_accessiHtml(d)}</td>`;
+  const ed = riga.querySelector('.acc-editor');
+  const mostra = () => {
+    const m = ed.querySelector('input[type="radio"]:checked')?.value || 'piano';
+    ed.querySelector('.acc-funzioni').hidden = !(m === 'scelte' || m === 'blocco');
+    ed.querySelector('.acc-nota-blocco').hidden = m !== 'blocco';
+  };
+  ed.querySelectorAll('input[type="radio"]').forEach((r) => { r.onchange = mostra; });
+  ed.querySelector('[data-acc="chiudi"]').onclick = () => riga.remove();
+  ed.querySelector('[data-acc="salva"]').onclick = () => conErrore(async () => {
+    const via = '/api/admin/accessi/' + encodeURIComponent(login);
+    const modo = ed.querySelector('input[type="radio"]:checked')?.value || 'piano';
+    if (modo === 'piano') {
+      const d2 = await api(via, { method: 'DELETE' });
+      toast(L('Torna come da piano', 'Back to the plan', 'Vuelve según el plan'));
+      disegnaAccessi(riga, login, d2);
+      return;
+    }
+    const funzioni = {};
+    ed.querySelectorAll('[data-acc-f]').forEach((i) => {
+      const k = i.dataset.accF;
+      if (i.type === 'checkbox') { if (i.checked) funzioni[k] = true; } else if (i.value !== '') funzioni[k] = Number(i.value) || 0;
+    });
+    const sc = ed.querySelector('.acc-scade').value;
+    const d2 = await api(via, { method: 'PUT', body: { modo, funzioni, scade: sc ? new Date(sc).getTime() : 0, nota: ed.querySelector('.acc-nota').value } });
+    toast(L('Accessi salvati', 'Access saved', 'Accesos guardados'));
+    disegnaAccessi(riga, login, d2);
+  });
+}
+
+async function apriAccessi(tr, login) {
+  const gia = tr.nextElementSibling;
+  if (gia && gia.classList.contains('acc-riga')) { gia.remove(); return; }
+  const d = await api('/api/admin/accessi/' + encodeURIComponent(login));
+  const riga = document.createElement('tr');
+  riga.className = 'acc-riga';
+  tr.after(riga);
+  disegnaAccessi(riga, login, d);
+}
+
+function _chiusoDalProprietario(funz) {
+  const a = stato?.accesso;
+  if (!a || a.modo !== 'blocco' || !funz) return false;
+  const k = Object.keys(a.funzioni || {});
+  return !k.length || k.includes(funz);
+}
+
+function _rigaAccessoHtml() {
+  const a = stato?.accesso;
+  if (!a) return '';
+  const E = ETICHETTE_FUNZ();
+  const chiavi = Object.entries(a.funzioni || {}).map(([k, v]) => (E[k] || k) + (typeof v === 'number' ? ': ' + v : ''));
+  const fino = a.scade ? ' ' + L('fino al', 'until', 'hasta el') + ' <strong>' + esc(dataIt(a.scade)) + '</strong>' : '';
+  const nota = a.nota ? ': ' + esc(a.nota) : '';
+  let t;
+  if (a.modo === 'tutto') t = L('Il proprietario ti ha aperto <strong>tutto</strong>', 'The owner has opened <strong>everything</strong> for you', 'El propietario te ha abierto <strong>todo</strong>');
+  else if (a.modo === 'scelte') t = L('Il proprietario ti ha aperto', 'The owner has opened for you', 'El propietario te ha abierto') + ' <strong>' + esc(chiavi.join(', ')) + '</strong>';
+  else if (!chiavi.length) t = L('<strong>Accesso sospeso</strong> dal proprietario', '<strong>Access suspended</strong> by the owner', '<strong>Acceso suspendido</strong> por el propietario');
+  else t = L('Il proprietario ha chiuso', 'The owner has closed', 'El propietario ha cerrado') + ' <strong>' + esc(chiavi.join(', ')) + '</strong>';
+  return `<p class="acc-avviso">${t}${fino}${nota}.</p>`;
+}
+
 async function caricaTabellaAdmin() {
   const tbody = document.getElementById('tabella-streamer');
   if (!tbody) return;
@@ -19050,6 +19162,7 @@ async function caricaTabellaAdmin() {
           ${s.status !== 'approved' ? `<button class="btn mini" data-azione="approved" data-login="${esc(s.login)}">${L('Approva', 'Approve', 'Aprobar')}</button>` : ''}
           ${s.status === 'approved' ? `<button class="btn secondario mini" data-azione="disabled" data-login="${esc(s.login)}">${L('Disabilita', 'Disable', 'Deshabilitar')}</button>` : ''}
           ${s.manuale ? `<button class="btn secondario mini" data-azione="auto" data-login="${esc(s.login)}" data-stato="${esc(s.status)}" title="${L('Rimetti sotto il controllo automatico del sito', 'Put back under the site auto-control', 'Vuelve al control automático del sitio')}">↻ ${L('Auto', 'Auto', 'Auto')}</button>` : ''}
+          <button class="btn secondario mini" data-azione="accessi" data-login="${esc(s.login)}">${L('Accessi', 'Access', 'Accesos')}</button>
           <button class="btn pericolo mini" data-azione="rimuovi" data-login="${esc(s.login)}">${L('Rimuovi', 'Remove', 'Quitar')}</button>
         </td>
       </tr>`).join('');
@@ -19059,6 +19172,7 @@ async function caricaTabellaAdmin() {
       if (!btn) return;
       const { azione, login } = btn.dataset;
       conErrore(async () => {
+        if (azione === 'accessi') { await apriAccessi(btn.closest('tr'), login); return; }
         if (azione === 'rimuovi') {
           if (!confirm(L(`Rimuovere del tutto ${login}? Verranno eliminati anche i suoi permessi.`, `Completely remove ${login}? Their permissions will be deleted too.`, `¿Eliminar por completo a ${login}? También se borrarán sus permisos.`))) return;
           await api('/api/admin/rimuovi', { method: 'POST', body: { login } });
