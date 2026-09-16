@@ -118,3 +118,32 @@ var last=0;function loop(t){if(t-last>55){frame();last=t;}requestAnimationFrame(
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', passa);
   addEventListener('load', passa);
 })();
+
+(function () {
+  var f = document.querySelector('.sost-f');
+  if (!f) return;
+  var altro = f.querySelector('input[name="altro"]');
+  var chips = f.querySelectorAll('input[name="importo"]');
+  if (altro) {
+    altro.addEventListener('input', function () { if (altro.value) for (var i = 0; i < chips.length; i++) chips[i].checked = false; });
+    for (var i = 0; i < chips.length; i++) chips[i].addEventListener('change', function () { altro.value = ''; });
+  }
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (f.getAttribute('data-anteprima')) return;
+    var b = f.querySelector('.sost-b'), err = f.querySelector('.sost-err');
+    if (!window.fetch || !window.FormData || !window.URLSearchParams) { f.submit(); return; }
+    b.disabled = true;
+    if (err) err.hidden = true;
+    fetch(f.getAttribute('action'), { method: 'POST', body: new URLSearchParams(new FormData(f)), headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (x) {
+        if (x.ok && x.j && x.j.url) { location.href = x.j.url; return; }
+        throw new Error((x.j && x.j.errore) || 'Qualcosa non ha funzionato: riprova.');
+      })
+      .catch(function (e2) {
+        b.disabled = false;
+        if (err) { err.textContent = e2.message || 'Riprova.'; err.hidden = false; }
+      });
+  });
+})();

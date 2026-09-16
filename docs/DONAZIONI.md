@@ -2,82 +2,107 @@
 
 Chiesto così: «un modo per configurare le donazioni … verso lo streamer …
 integrare nella pagina link con il tema coerente … e mettiamo anche un goal
-donazioni».
+donazioni», poi «non possiamo gestirlo tutto all'interno di socialbot?» e
+«ovviamente ogni donazione va al corrispettivo streamer».
 
 ## Cosa c'era
 
-Niente sulle mance. I bit erano l'unico denaro che il bot vedeva, e facevano
-crescere l'obiettivo `bit`. La pagina link riconosceva già gli indirizzi di
-Ko-fi, PayPal e Streamlabs (ci metteva l'icona giusta), ma un link è un link:
-nessun avviso quando qualcuno dona, niente da mostrare.
+Niente sulle mance, poi il tasto «Sostieni» verso un link esterno (Ko-fi,
+PayPal…) con il webhook di Ko-fi per l'avviso. Un link è un link: chi vuole
+donare esce dalla pagina, e senza Ko-fi non c'è avviso.
 
-## Come funziona davvero, fuori
+## Il modello, adesso
 
-Ko-fi ha una pagina per ricevere mance e un webhook gratuito: a ogni pagamento
-manda un modulo (`application/x-www-form-urlencoded`) con un campo `data` che
-contiene un JSON: `verification_token`, `message_id`, `type`, `from_name`,
-`amount`, `currency`, `message`, `is_public`. Il token lo mostra nelle sue
-impostazioni; chi riceve lo confronta. Se non riceve un 200 in tempo, ritenta,
-con lo stesso `message_id`. PayPal.me è solo un link. Buy Me a Coffee e Patreon
-hanno webhook firmati con HMAC: si possono aggiungere con lo stesso schema.
-Streamlabs e StreamElements hanno i loro alert; chi li usa non ha bisogno dei
-nostri, e comunque da loro le mance in overlay e in chat sono gratis, quindi
-qui sono gratis.
+1. **Il conto è dello streamer.** Stripe Connect, conto *Standard*: lo streamer
+   lo apre (o collega quello che ha) dalla scheda «Donazioni»; Stripe gli
+   chiede identità e coordinate, il conto è suo, con la sua dashboard. Per la
+   piattaforma un conto Standard non ha canone: niente costi per SocialBot.
+2. **Il pagamento nasce sul suo conto** (*direct charge*: `Stripe-Account` sulla
+   sessione di Checkout). Lo streamer è l'esercente: incassi, ricevute e
+   contestazioni sono suoi; le commissioni di Stripe le paga lui sull'incasso,
+   come con qualunque servizio. SocialBot può trattenere una quota
+   (`DONAZIONI_QUOTA_PCT`, application fee), di serie zero, e la scheda la dice
+   prima di collegare il conto. SocialBot non tiene mai fondi.
+3. **La verità la dà Stripe, non il browser.** Al ritorno sulla pagina link
+   (`/u/<login>?dona=cs_…`) il server rilegge la sessione con la chiave della
+   piattaforma; se è pagata la donazione si conta. **Una volta sola**: il
+   registro (`donazioni`, id = `stripe:cs_…`) passa da `attesa` a `pagata` con
+   un `UPDATE … WHERE stato='attesa'`, quindi due richieste nello stesso
+   istante ne fanno vincere una. Chi ricarica rivede il grazie, non fa partire
+   un secondo avviso.
+4. **Nessun webhook nuovo.** Una ronda ogni due minuti rilegge le sessioni in
+   attesa (vivono un'ora, poi un quarto d'ora di tolleranza): chi paga e chiude
+   la scheda prima di tornare non si perde. Il registro tiene le donazioni un
+   anno e butta le sessioni scadute dopo un giorno.
+5. **Una configurazione sola**, `settings.donazioni`: `modo` (`conto` | `link`),
+   `importi` suggeriti (1–500, al massimo sei), `minimo`, `conMessaggio`, il
+   testo del tasto, una frase, la valuta, il grazie in chat, e per Ko-fi
+   l'impronta del token (mai il token). Il blocco «Sostieni» la legge.
+6. **Una donazione è un evento**, come un follow: `AlertsEngine.donazione()`
+   fa crescere l'obiettivo `euro`, spara l'alert `donazione` (soglia
+   «importo minimo») e, se acceso, ringrazia in chat. Da qualunque fonte:
+   conto, Ko-fi, chiave API.
 
-## Il modello
+## Il modulo sulla pagina link
 
-1. **Una configurazione sola**, `settings.donazioni`: dove si dona (il link),
-   il testo del tasto, una frase, la valuta, il grazie in chat. Del token di
-   Ko-fi si conserva **l'impronta** (`segreti.impronta`, sale = login), mai il
-   token: chi legge il database non può fingersi Ko-fi, e il pannello vede
-   solo «impostato».
-2. **Il tasto sulla pagina link è un blocco** (`sostieni`) che legge quella
-   configurazione. Il blocco decide solo come si presenta (titolo, frase,
-   testo del tasto, se mostrare l'obiettivo); il link e la valuta stanno in
-   un posto solo. Si veste col tema come gli altri blocchi (carta, accento,
-   bottone in evidenza), entra con la stessa animazione, e se le donazioni
-   sono spente o manca il link non compare in pubblico; in anteprima si vede
-   segnato «da completare».
-3. **Una donazione è un evento**, come un follow: `AlertsEngine.donazione()`
-   fa crescere l'obiettivo `euro` dell'importo, spara l'alert `donazione`
-   (testo con `{user}`, `{importo}`, `{messaggio}`, soglia «importo minimo»)
-   e, se acceso, ringrazia in chat. Il bot presta la chat al motore
-   (`say`), come fa con le clip.
-4. **L'obiettivo `euro`** è una quarta conta. Il conto tiene i centesimi, si
-   scrive «12,50 € / 100 €» in diretta e sulla tela, e «Quanti ne ho adesso»
-   non lo tocca: non c'è un numero da chiedere a nessuno.
+Il blocco `sostieni`, col tema della pagina: gli importi come bottoni, un campo
+per un altro importo, il nome (se vuoi), il messaggio (se lo streamer lo
+permette), un campo che una persona non vede (`sito`: se è pieno, era un
+programma). Lo script della pagina manda il modulo via `fetch` e naviga
+all'indirizzo di Checkout che riceve; senza script, il `POST` risponde con una
+pagina-ponte che porta allo stesso posto. Nessun host di Stripe nel codice
+della pagina: il CSP (`connect-src 'self'`, `form-action 'self'`) non cambia.
+In anteprima il modulo c'è ma non manda niente.
 
-## Da dove arriva una donazione
+Al ritorno il blocco dice «Grazie, <nome>! 5 € arrivati.» e la pagina con
+`?dona=` non finisce in cache.
 
-- `POST /dona/kofi/<login>`: un ingresso esterno dichiarato
-  (`INGRESSI_ESTERNI`, senza sessione), col corpo letto come modulo. Senza
-  impronta salvata, o con un token diverso, risponde 401 e basta. Se
-  combacia risponde 200 **subito**, come a Kick, poi lavora: limite di
-  frequenza per canale, doppioni scartati per `message_id` (un'ora di
-  memoria, volatile: dopo un riavvio un ritentativo può passare due volte, e
-  si preferisce quello a perderne una), e l'evento.
-- `POST /api/ext/<login>` con `azione: "donazione"`, `importo`, `user`,
-  `messaggio`, `valuta`, `id`: per chi usa un altro servizio e ha una propria
-  automazione. La chiave API del canale è l'autenticazione, come per le altre
-  azioni.
+## Le rotte
 
-Nessun importo arriva dal browser: solo dal webhook o dalla chiave API.
+- `GET /api/donazioni/stato` (proprietario): stato del conto (`nessuno`,
+  `incompleto`, `pronto`; un conto non pronto si rilegge da Stripe, al massimo
+  una volta al minuto o subito con `?rileggi=1`), quota, paesi, ultime
+  donazioni e totali.
+- `POST /api/donazioni/conto/collega` (proprietario, `{ paese }`): crea il
+  conto se manca e torna l'indirizzo della registrazione di Stripe.
+- `GET /api/donazioni/conto/riprendi` e `/ritorno`: dove Stripe rimanda; con la
+  sessione del proprietario rileggono lo stato, altrimenti sono un rimando al
+  pannello (`/#donazioni`).
+- `POST /api/donazioni/conto/scollega` (proprietario): si dimentica l'id. Il
+  conto su Stripe resta dello streamer.
+- `POST /dona/<login>` (pubblica, modulo): apre il pagamento; JSON `{ url }` a
+  chi lo chiede (`Accept: application/json`), pagina-ponte agli altri. Limite
+  di frequenza per canale.
+- `POST /dona/kofi/<login>` e `/api/ext` azione `donazione` come prima: il
+  doppione lo scarta il registro (`INSERT OR IGNORE`), che sopravvive a un
+  riavvio.
+
+## Cosa serve dalla piattaforma
+
+Nel Dashboard di Stripe, **Connect** attivato una volta (profilo piattaforma).
+Nel `.env` basta `STRIPE_SECRET_KEY`; `DONAZIONI_QUOTA_PCT` è facoltativa.
+Senza Connect, la creazione del conto fallisce e lo streamer vede «Stripe non ha
+risposto come dovrebbe»; il motivo vero sta nel log.
 
 ## Nel pannello
 
-Nella scheda «Pagina link», la carta **Donazioni**: interruttore, link, testo
-del tasto, valuta, frase, grazie in chat, e la parte Ko-fi con l'indirizzo del
-webhook da incollare e il campo del token (che si svuota dopo il salvataggio:
-resta l'impronta). «Prova l'avviso» spara l'alert finto. L'alert si veste
-nella scheda Overlay come gli altri; l'obiettivo si aggiunge fra gli
-obiettivi con «Conta: euro donati».
+La scheda **Donazioni**: il conto (paese, «Collega il mio conto Stripe», poi
+«Continua la registrazione» o «Conto collegato», «Apri Stripe», «Scollega»),
+il tasto (acceso, come si dona, importi, minimo, messaggio, testo, frase,
+valuta, grazie in chat, prova dell'avviso), le ultime donazioni, e in fondo
+Ko-fi e la chiave API per chi riceve altrove.
 
 ## Collaudo
 
-`test/unita/donazioni.test.mjs`: pulizia (https, limiti, impronta), lettura
-del corpo di Ko-fi, mancia dalla chiave API, doppioni e scadenza, importi
-scritti come si scrivono, dati per il blocco. `test/contratto/donazioni.test.mjs`:
-l'alert esiste dove nasce, si veste e si salva; l'obiettivo dove si conta, si
-pulisce e si disegna; il blocco dove si pulisce, si rende e si aggiunge; il
-webhook è dichiarato, verificato e risponde prima di lavorare; il token non
-viaggia verso il browser; il motore fa quel che dice con un canale di prova.
+`test/unita/donazioni.test.mjs`: la configurazione (modo, importi, minimo,
+impronta), il modulo letto (importo scelto o libero, il campo trappola), i
+dati del blocco con e senza conto. `test/unita/donazioni-stripe.test.mjs`: con
+uno Stripe finto, il conto si crea Standard nel paese scelto e la registrazione
+ha i due ritorni; il pagamento nasce sul conto dello streamer con l'importo,
+la quota e il ritorno giusti; la conferma conta una volta sola, la sessione
+scaduta si chiude, la ronda trova le pagate e lascia scadere le vecchie; il
+registro scarta i doppioni. `test/contratto/donazioni.test.mjs`: la scheda
+esiste nel pannello e nell'indice degli aiuti, le rotte hanno il loro
+guardiano o sono dichiarate pubbliche, il blocco rende il modulo (e non in
+anteprima), lo script lo manda via fetch, le pagine di privacy e termini lo
+dicono.

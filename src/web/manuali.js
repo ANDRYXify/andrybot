@@ -961,7 +961,7 @@ const DIRETTA = {
 
 const VETRINA = {
   slug: 'vetrina',
-  schede: ['pagina', 'grafiche', 'notifiche'],
+  schede: ['pagina', 'donazioni', 'grafiche', 'notifiche'],
   titolo: 'Manuale della vetrina: pagina link, grafiche e notifiche social | SocialBot',
   h1: 'Manuale della vetrina: pagina link, grafiche e notifiche social',
   desc: 'La pagina pubblica da mettere in bio, le due grafiche pronte da pubblicare e gli avvisi automatici quando vai in diretta o pubblichi qualcosa.',
@@ -987,12 +987,14 @@ const VETRINA = {
       ['Embed', 'Video e musica: YouTube, Spotify, TikTok.'],
       ['Immagine', 'Una tua immagine.'],
       ['La mia diretta', 'Il player: resta lì e dice da sé se sei online o no.'],
-      ['Sostieni', 'Il tasto delle donazioni, col tuo tema: porta alla tua pagina Ko-fi, PayPal o altro e, se vuoi, mostra l\'obiettivo in euro che sale.'],
+      ['Sostieni', 'Le donazioni, col tuo tema: gli importi da scegliere e il pagamento sul tuo conto, oppure il tasto verso Ko-fi, PayPal o altro; se vuoi, sotto c\'è l\'obiettivo in euro che sale.'],
     ] },
     { p: ['Il blocco «La mia diretta» è quello che cambia di più la pagina: chi arriva dalla bio non deve chiedersi se sei live, lo vede.'] },
     { h3: 'Le donazioni' },
-    { p: ['Nella carta <strong>Donazioni</strong>, sotto l\'editor, dici dove si dona (Ko-fi, PayPal, Streamlabs o un altro indirizzo), il testo del tasto, una frase e la valuta. Il blocco «Sostieni» le legge da lì: si impostano una volta sola e la pagina resta coerente col tema.'] },
-    { p: ['Se usi <strong>Ko-fi</strong>, nelle sue impostazioni (API → Webhooks) incolli l\'indirizzo che trovi nella carta e copi qui il suo «verification token». Da quel momento ogni mancia fa partire l\'avviso «Donazione» in overlay, il grazie in chat se lo accendi, e fa salire l\'obiettivo che conta gli <strong>euro donati</strong>. Del token teniamo solo l\'impronta. Chi usa un altro servizio manda le mance con la chiave API del canale, azione <code>donazione</code>, con <code>importo</code> e <code>user</code>.'] },
+    { p: ['Nella scheda <strong>Donazioni</strong> colleghi il tuo conto Stripe: Stripe ti chiede identità e coordinate una volta sola, il conto è tuo e resta tuo, e SocialBot non trattiene niente (se chi gestisce il servizio ha impostato una quota, la vedi scritta lì). Da quel momento chi apre la tua pagina link sceglie un importo, scrive un nome e un messaggio se vuole, e paga con carta, Apple Pay o Google Pay: i soldi arrivano sul tuo conto, e l\'avviso parte da solo.'] },
+    { p: ['Nella stessa scheda decidi gli <strong>importi suggeriti</strong>, il minimo, se chi dona può lasciare un messaggio, il testo del tasto, una frase e la valuta. Il blocco «Sostieni» della pagina legge tutto da lì: si imposta una volta sola e la pagina resta coerente col tema. Sotto, le <strong>ultime donazioni</strong> arrivate, con nome e messaggio.'] },
+    { p: ['Preferisci un servizio esterno? Scegli «un link esterno» e metti l\'indirizzo della tua pagina Ko-fi, PayPal, Streamlabs o altro: il tasto porta lì.'] },
+    { p: ['Se usi <strong>Ko-fi</strong>, nelle sue impostazioni (API → Webhooks) incolli l\'indirizzo che trovi nella scheda e copi qui il suo «verification token». Da quel momento ogni mancia fa partire l\'avviso «Donazione» in overlay, il grazie in chat se lo accendi, e fa salire l\'obiettivo che conta gli <strong>euro donati</strong>. Del token teniamo solo l\'impronta. Chi usa un altro servizio manda le mance con la chiave API del canale, azione <code>donazione</code>, con <code>importo</code> e <code>user</code>.'] },
     { h3: 'L\'aspetto' },
     { ul: [
       '<strong>Sette temi</strong>: minimal, neon, retro, sunset, glass, brutal, pastello.',

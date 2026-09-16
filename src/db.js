@@ -516,6 +516,28 @@ CREATE TABLE IF NOT EXISTS stato_vivo (      -- lo stato dei motori che deve sop
   ts INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (channel, chiave)
 );
+CREATE TABLE IF NOT EXISTS conti_donazioni (   -- il conto Stripe (Connect) con cui lo streamer riceve le donazioni
+  login TEXT PRIMARY KEY,
+  stripe_account TEXT NOT NULL DEFAULT '',     -- acct_… del conto Standard collegato (suo, non nostro)
+  paese TEXT NOT NULL DEFAULT 'IT',
+  pronto INTEGER NOT NULL DEFAULT 0,           -- 1 quando Stripe dice che puo' incassare (charges_enabled)
+  dettagli INTEGER NOT NULL DEFAULT 0,         -- 1 quando la registrazione e' stata compilata (details_submitted)
+  verificato_at INTEGER NOT NULL DEFAULT 0,    -- ultima volta che lo stato e' stato riletto da Stripe
+  updated_at INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS donazioni (         -- il registro delle donazioni: quelle in attesa di pagamento e quelle pagate
+  id TEXT PRIMARY KEY,                         -- 'stripe:cs_…' | 'kofi:<login>:<message_id>' | 'ext:<login>:<id>'
+  login TEXT NOT NULL,
+  fonte TEXT NOT NULL DEFAULT 'stripe',        -- stripe | kofi | ext
+  stato TEXT NOT NULL DEFAULT 'attesa',        -- attesa | pagata | scaduta
+  importo INTEGER NOT NULL DEFAULT 0,          -- in centesimi
+  valuta TEXT NOT NULL DEFAULT 'EUR',
+  nome TEXT NOT NULL DEFAULT '',
+  messaggio TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL DEFAULT 0,
+  pagata_at INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_donazioni_login ON donazioni(login, stato, pagata_at);
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -1207,6 +1229,75 @@ export const subscriptions = {
     return db.prepare("SELECT * FROM subscriptions WHERE status='trialing' AND current_period_end>0 AND current_period_end<?")
       .all(now());
   },
+};
+
+// ---------------------------------------------------------------- Donazioni (conto Stripe e registro)
+// Il conto Stripe con cui lo streamer riceve le donazioni. Solo l'id del conto
+// (acct_…): non e' un segreto, e' un indirizzo. Le credenziali sono di Stripe.
+export const contiDonazioni = {
+  get(login) {
+    return db.prepare('SELECT * FROM conti_donazioni WHERE login=?').get(String(login).toLowerCase()) || null;
+  },
+  set(login, { account, paese, pronto, dettagli, verificato } = {}) {
+    const l = String(login).toLowerCase();
+    const prima = this.get(l) || {};
+    db.prepare(`INSERT INTO conti_donazioni (login, stripe_account, paese, pronto, dettagli, verificato_at, updated_at)
+      VALUES (?,?,?,?,?,?,?)
+      ON CONFLICT(login) DO UPDATE SET stripe_account=excluded.stripe_account, paese=excluded.paese,
+        pronto=excluded.pronto, dettagli=excluded.dettagli, verificato_at=excluded.verificato_at, updated_at=excluded.updated_at`)
+      .run(l, account ?? prima.stripe_account ?? '', paese ?? prima.paese ?? 'IT',
+        (pronto ?? !!prima.pronto) ? 1 : 0, (dettagli ?? !!prima.dettagli) ? 1 : 0,
+        verificato ? now() : (prima.verificato_at || 0), now());
+    return this.get(l);
+  },
+  togli(login) { db.prepare('DELETE FROM conti_donazioni WHERE login=?').run(String(login).toLowerCase()); },
+};
+
+// Il registro delle donazioni. Una riga per pagamento, con l'id che gli da' chi
+// lo porta (la sessione di Stripe, l'avviso di Ko-fi): la stessa donazione
+// non entra due volte, e il passaggio attesa → pagata avviene una volta sola,
+// qualunque sia il numero di richieste che lo chiedono nello stesso istante.
+export const registroDonazioni = {
+  _riga(id, { login, fonte = 'stripe', importo = 0, valuta = 'EUR', nome = '', messaggio = '' }, stato) {
+    const t = now();
+    return db.prepare(`INSERT OR IGNORE INTO donazioni (id, login, fonte, stato, importo, valuta, nome, messaggio, created_at, pagata_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?)`)
+      .run(String(id), String(login).toLowerCase(), fonte, stato, Math.max(0, Math.round(Number(importo) || 0)),
+        String(valuta || 'EUR').toUpperCase().slice(0, 3), String(nome || '').slice(0, 60), String(messaggio || '').slice(0, 200),
+        t, stato === 'pagata' ? t : 0).changes > 0;
+  },
+  // una sessione di pagamento aperta: entra in attesa
+  apri(id, dati) { return this._riga(id, dati, 'attesa'); },
+  // una donazione gia' avvenuta altrove (Ko-fi, chiave API): entra pagata; false se era gia' entrata
+  segna(id, dati) { return this._riga(id, dati, 'pagata'); },
+  get(id) { return db.prepare('SELECT * FROM donazioni WHERE id=?').get(String(id)) || null; },
+  // attesa → pagata, in un passaggio solo: true per chi ci riesce, false per tutti gli altri
+  paga(id, importo) {
+    return db.prepare(`UPDATE donazioni SET stato='pagata', pagata_at=?, importo=COALESCE(?, importo) WHERE id=? AND stato='attesa'`)
+      .run(now(), Number.isFinite(importo) ? Math.round(importo) : null, String(id)).changes > 0;
+  },
+  scadi(id) {
+    return db.prepare("UPDATE donazioni SET stato='scaduta' WHERE id=? AND stato='attesa'").run(String(id)).changes > 0;
+  },
+  inAttesa() {
+    return db.prepare("SELECT * FROM donazioni WHERE stato='attesa' ORDER BY created_at ASC LIMIT 200").all();
+  },
+  ultime(login, n = 10) {
+    return db.prepare("SELECT * FROM donazioni WHERE login=? AND stato='pagata' ORDER BY pagata_at DESC LIMIT ?")
+      .all(String(login).toLowerCase(), Math.max(1, Math.min(50, n | 0)));
+  },
+  // quanto e' arrivato, valuta per valuta (centesimi), e quante donazioni
+  totali(login) {
+    return db.prepare("SELECT valuta, SUM(importo) AS somma, COUNT(*) AS quante FROM donazioni WHERE login=? AND stato='pagata' GROUP BY valuta")
+      .all(String(login).toLowerCase());
+  },
+  // le sessioni scadute non dicono piu' niente dopo un giorno; le donazioni si tengono un anno
+  pulisci() {
+    const t = now();
+    db.prepare("DELETE FROM donazioni WHERE stato='scaduta' AND created_at<?").run(t - 86400_000);
+    db.prepare("DELETE FROM donazioni WHERE stato='pagata' AND pagata_at<?").run(t - 365 * 86400_000);
+  },
+  rimuovi(login) { db.prepare('DELETE FROM donazioni WHERE login=?').run(String(login).toLowerCase()); },
 };
 
 // ---------------------------------------------------------------- Spotify (richieste musicali)

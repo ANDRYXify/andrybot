@@ -439,7 +439,14 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 setTimeout(tutti,5000);
 }catch(e){try{document.documentElement.classList.remove('sr');}catch(_){}}})();`;
 
-export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni } = {}) {
+// cosa dire, in anteprima, quando il blocco «Sostieni» non puo' ancora comparire
+const MANCA_SOSTIENI = {
+  spente: 'accendi le donazioni nella scheda «Donazioni»',
+  link: 'metti il link nella scheda «Donazioni»',
+  conto: 'collega il tuo conto nella scheda «Donazioni»',
+};
+
+export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca } = {}) {
   const pre = PRESET[pagina.template] || PRESET.minimal;
   const t = pagina.tema || {};
   // il tema dell'utente vince sul preset, campo per campo
@@ -727,15 +734,32 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       // il link, la frase e l'obiettivo arrivano dalle impostazioni del canale
       // (`sostieni`): il blocco decide solo come si presenta
       const d = sostieni;
-      if (!d || !d.link) return anteprima ? `<div class="segna" ${ritardo}>sostieni: accendi le donazioni e metti il link nella carta «Donazioni» — da completare</div>` : '';
+      if (!d) return anteprima ? `<div class="segna" ${ritardo}>sostieni: ${MANCA_SOSTIENI[manca] || MANCA_SOSTIENI.spente} — da completare</div>` : '';
       const g = b.obiettivo !== false && d.goal ? d.goal : null;
       const q = g ? Math.min(1, Math.max(0, g.ora / g.meta)) : 0;
       const cifra = (x) => formattaImporto(x, d.valuta);
-      return `<div class="sost" ${ritardo}>
+      const tasto = b.etichetta || d.etichetta || 'Sostieni';
+      const dentro = `<span class="ico">${_mIco('caffe')}</span><span class="tx"><span class="et">${esc(tasto)}</span></span><span class="fre" aria-hidden="true">›</span>`;
+      // il modo: un link esterno e' un link; sul conto e' un modulo che apre il
+      // pagamento (in anteprima il modulo non manda niente)
+      const azione = d.modo === 'link'
+        ? `<a class="voce spicca sost-b" href="${esc(d.link)}" target="_blank" rel="noopener nofollow">${dentro}</a>`
+        : `<form class="sost-f"${anteprima ? ' data-anteprima="1"' : ` method="post" action="/dona/${esc(login)}"`}>
+          <div class="sost-chips" role="radiogroup" aria-label="Importo">${d.importi.map((n, i) => `<label class="sost-c"><input type="radio" name="importo" value="${n}"${i === Math.min(1, d.importi.length - 1) ? ' checked' : ''}><span>${esc(cifra(n))}</span></label>`).join('')}</div>
+          <label class="sost-altro"><span class="sost-l">Oppure</span><input type="number" name="altro" min="${d.minimo}" max="500" step="0.5" inputmode="decimal" placeholder="${esc('un altro importo, da ' + cifra(d.minimo))}"></label>
+          <input class="sost-i" type="text" name="nome" maxlength="40" placeholder="Il tuo nome (se vuoi)" autocomplete="nickname">
+          ${d.conMessaggio ? `<input class="sost-i" type="text" name="messaggio" maxlength="200" placeholder="Un messaggio per la diretta (se vuoi)">` : ''}
+          <div class="sost-np" aria-hidden="true"><label>Sito <input type="text" name="sito" tabindex="-1" autocomplete="off"></label></div>
+          <button type="${anteprima ? 'button' : 'submit'}" class="voce spicca sost-b">${dentro}</button>
+          <p class="sost-err" role="alert" hidden></p>
+          <p class="sost-nota">Pagamento sicuro con carta, Apple Pay o Google Pay. Va tutto a ${esc(display || login)}.</p>
+        </form>`;
+      return `<div class="sost" id="sostieni" ${ritardo}>
         ${b.titolo ? `<span class="sost-t">${esc(b.titolo)}</span>` : ''}
         ${(b.testo || d.messaggio) ? `<p class="sost-p">${esc(b.testo || d.messaggio)}</p>` : ''}
         ${g ? `<div class="sost-g" role="img" aria-label="${esc(cifra(g.ora) + ' su ' + cifra(g.meta))}">${g.titolo ? `<span class="sost-gt">${esc(g.titolo)}</span>` : ''}<span class="sost-gn">${esc(cifra(g.ora))} <small>/ ${esc(cifra(g.meta))}</small></span><span class="sost-gb"><i style="--q:${q.toFixed(4)}"></i></span></div>` : ''}
-        <a class="voce spicca sost-b" href="${esc(d.link)}" target="_blank" rel="noopener nofollow"><span class="ico">${_mIco('caffe')}</span><span class="tx"><span class="et">${esc(b.etichetta || d.etichetta || 'Sostieni')}</span></span><span class="fre" aria-hidden="true">›</span></a>
+        ${grazie ? `<p class="sost-ok" role="status">Grazie${grazie.nome && grazie.nome !== 'qualcuno' ? ', ' + esc(grazie.nome) : ''}! ${esc(formattaImporto(grazie.importo, grazie.valuta || d.valuta))} arrivati.</p>` : ''}
+        ${azione}
       </div>`;
     }
     if (b.tipo === 'diretta') {
@@ -1122,6 +1146,23 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .sost-gb{display:block;height:.55rem;border-radius:999px;background:${c.acc}33;overflow:hidden}
   .sost-gb i{display:block;height:100%;width:calc(var(--q,0)*100%);background:var(--acc);border-radius:inherit}
   .sost .voce{margin-top:.1rem;justify-content:center}
+  .sost-f{display:flex;flex-direction:column;gap:.7rem;margin-top:.2rem;text-align:left}
+  .sost-chips{display:flex;flex-wrap:wrap;gap:.45rem;justify-content:center}
+  .sost-c{position:relative}
+  .sost-c input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+  .sost-c span{display:inline-block;padding:.5rem .95rem;border-radius:999px;border:var(--bw) solid ${c.bordo};background:${c.card};font-weight:var(--pf);font-size:.95rem;font-variant-numeric:tabular-nums}
+  .sost-c input:checked+span{background:var(--acc);border-color:var(--acc);color:var(--suacc)}
+  .sost-c input:focus-visible+span{outline:2px solid var(--acc);outline-offset:2px}
+  .sost-i,.sost-altro input{width:100%;padding:.7rem .9rem;border-radius:calc(var(--r) * .7);border:var(--bw) solid ${c.bordo};background:${c.card};color:var(--testo);font:inherit;min-width:0}
+  .sost-i::placeholder,.sost-altro input::placeholder{color:var(--tenue)}
+  .sost-altro{display:flex;align-items:center;gap:.6rem}
+  .sost-altro .sost-l{font-size:.8rem;color:var(--tenue);white-space:nowrap}
+  .sost-np{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+  button.sost-b{width:100%;cursor:pointer;font:inherit;text-align:left}
+  button.sost-b:disabled{opacity:.6;cursor:wait}
+  .sost-err{color:#e5484d;font-size:.9rem;margin:0;text-align:center}
+  .sost-nota{font-size:.78rem;color:var(--tenue);margin:0;text-align:center}
+  .sost-ok{margin:0;padding:.6rem .9rem;border-radius:calc(var(--r) * .7);background:${c.acc}22;color:var(--testo);font-weight:var(--pf)}
   .badge2{align-self:${aSinistra ? 'flex-start' : 'center'};margin-top:1rem;padding:.3rem .8rem;border-radius:999px;
     background:var(--acc);color:var(--suacc);font-size:.8rem;font-weight:var(--pm);letter-spacing:.02em}
   .bozza{opacity:.5;border-style:dashed!important;cursor:default}
@@ -1240,7 +1281,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
       · <a href="/u/${esc(login)}/privacy">Privacy</a>${banner && corpo.includes('chiedi-b')
         ? ` · <button type="button" id="ri-consenso" class="come-link">Contenuti di altri siti</button>` : ''}</p>
   </main>
-<script src="/pagina-link.js?v=8" defer></script>
+<script src="/pagina-link.js?v=9" defer></script>
 ${banner && corpo.includes('chiedi-b') ? `
   <aside class="fascia" id="fascia" hidden>
     <p><b>Video e musica di altri siti.</b> Questa pagina non usa cookie, ma i riquadri di YouTube, Spotify,
@@ -1321,6 +1362,8 @@ export function renderInformativa({ login, display, baseUrl, pagina, contatto })
       ? p('Se in questa pagina ci sono video, musica o riquadri di YouTube, Spotify, Twitch, TikTok, Instagram o Facebook, <strong>non vengono caricati da soli</strong>: al loro posto trovi un cartello con un bottone. Finché non lo premi tu, verso quei siti non parte nessuna richiesta e quindi nessun cookie loro. Se lo premi, da quel momento vale la privacy di quel sito, non la nostra.')
       : p('In questa pagina ci possono essere video, musica o riquadri di YouTube, Spotify, Twitch, TikTok, Instagram o Facebook. Sono pezzi dei <strong>loro</strong> siti: quando li carichi, quei siti possono usare cookie propri e ricevere il tuo indirizzo IP. Vale la loro informativa, non la nostra.')}
 
+    <h2>Donazioni</h2>
+    ${p(`Se in questa pagina c'è il tasto per donare, il pagamento lo gestisce <strong>Stripe</strong>, sul conto di ${esc(nome)}: i dati della carta li vedono solo Stripe e la tua banca, mai SocialBot. A noi resta ciò che serve per l'avviso in diretta e per il registro di chi riceve: il nome che scegli tu (anche nessuno), il messaggio, l'importo e l'ora. Il nome e il messaggio possono comparire in diretta. Si conservano un anno.`)}
     <h2>Chi decide, e a chi scrivere</h2>
     ${p(`I contenuti di questa pagina li sceglie <strong>${esc(nome)}</strong>. SocialBot la ospita e la mostra per suo conto.`)}
     ${p(`Per chiedere di vedere, correggere o cancellare qualcosa${contatto ? `, scrivi a <a href="mailto:${esc(contatto)}">${esc(contatto)}</a>` : ', usa i contatti che trovi sulla pagina'}. La pagina si può togliere dal web in qualsiasi momento, e con lei il contatore.`)}

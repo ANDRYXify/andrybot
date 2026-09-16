@@ -57,7 +57,7 @@ export const INGRESSI_ESTERNI = [
   '/kick/webhook',        // Kick: firma RSA verificata prima di guardare il corpo
   '/tg/',                 // Telegram: il segreto sta nel percorso
   '/api/ext/',            // ingresso esterno dello streamer: chiave API del canale
-  '/dona/',               // Ko-fi: token confrontato con l'impronta, 200 subito
+  '/dona/',               // Ko-fi (token confrontato con l'impronta, 200 subito) e il modulo della pagina link (il pagamento lo conferma Stripe)
 ];
 
 export function eIngressoEsterno(via) {
@@ -97,7 +97,7 @@ const PREFISSI = [
   '/guide/',             // le singole guide
   '/manuale/',           // i singoli manuali
   '/u/',                 // link-page pubblica dello streamer, servita dal DB
-  '/dona/',              // webhook delle donazioni (Ko-fi): si protegge col token
+  '/dona/',              // donazioni: il webhook di Ko-fi (protetto dal token) e il modulo della pagina link
   '/assets/',            // bundle JS/CSS della link-page (proxy verso Vercel)
   '/api/passkey/login/', // sblocco con passkey: serve prima di avere una sessione
 ];
