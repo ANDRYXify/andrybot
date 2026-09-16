@@ -253,11 +253,39 @@ export const normColoriMusica = (c) => {
   for (const k of COLORI_MUS) o[k] = hexOk(c[k], k === 'barra' || k === 'onde' ? '#f72fa7' : '#ffffff');
   return o;
 };
+// LE PARTI, nella disposizione «libera»: ogni pezzo ha una posizione lungo la
+// corsa dello spazio interno della carta (0 a filo, 100 a filo dall'altra
+// parte), le righe e la barra anche una larghezza in centesimi della carta, le
+// righe un allineamento del testo. La misura di ogni pezzo la danno le Misure.
+// `scatola` e' la misura naturale della carta in em (quella che aveva al
+// momento del passaggio a «libera»): senza riquadro e' la sua grandezza, nel
+// riquadro decide la scala, cosi' il passaggio non cambia niente di un pixel.
+// La copertina ha una larghezza solo nella cassetta, dove e' il nastro.
+export const PARTI_MUS = ['cover', 'titolo', 'artista', 'barra', 'tempi', 'onde'];
+export const LARGHE_MUS = ['titolo', 'artista', 'barra'];
+export const ALLINEA_MUS = ['sinistra', 'centro', 'destra'];
+export const PARTI_DEF = { cover: { x: 0, y: 50, w: 100 }, titolo: { x: 67.5, y: 24, w: 60, a: 'sinistra' }, artista: { x: 67.5, y: 50, w: 60, a: 'sinistra' }, barra: { x: 56, y: 78, w: 52 }, tempi: { x: 91, y: 78 }, onde: { x: 96, y: 50 }, scatola: { w: 22, h: 5.5 } };
+export const normPartiMusica = (p) => {
+  p = p || {};
+  const o = {};
+  for (const k of PARTI_MUS) {
+    const d = PARTI_DEF[k], v = (p[k] && typeof p[k] === 'object') ? p[k] : {};
+    // non e' una posizione sulla tela (quella passa da xyOk): e' il posto del pezzo
+    // lungo la corsa interna della carta, in centesimi
+    const corsa = (a, lo, hi) => clampPct(v[a], lo, hi, d[a]);
+    o[k] = { x: corsa('x', 0, 100), y: corsa('y', 0, 100) };
+    if (d.w != null) o[k].w = corsa('w', 5, 100);
+    if (d.a) o[k].a = unoDi(v.a, ALLINEA_MUS, d.a);
+  }
+  const s = (p.scatola && typeof p.scatola === 'object') ? p.scatola : {};
+  o.scatola = { w: clampPct(s.w, 5, 80, PARTI_DEF.scatola.w), h: clampPct(s.h, 2, 60, PARTI_DEF.scatola.h) };
+  return o;
+};
 export const COVER_MUS = ['quadrata', 'tonda', 'vinile', 'no'];
 export const BARRA_MUS = ['sotto', 'anello', 'no'];
 export const TEMPI_MUS = ['no', 'trascorso', 'restante', 'due'];
 export const ENTRATA_MUS = ['dissolve', 'scivola', 'sale', 'niente'];
-export const VERSO_MUS = ['riga', 'riga-inversa', 'colonna', 'solo-cover'];
+export const VERSO_MUS = ['riga', 'riga-inversa', 'colonna', 'solo-cover', 'libera'];
 export const RIGHE_MUS = ['una', 'due'];
 export const RITMO_MUS = ['no', 'onde', 'tutto'];
 export const SFONDO_MUS = ['no', 'copertina', 'colori'];
@@ -307,6 +335,7 @@ export const normMusica = (m) => {
     xy: xyOk(m.xy),
     misure: normMisureMusica(m.misure),
     colori: normColoriMusica(m.colori),
+    parti: normPartiMusica(m.parti),
     stile: normWidgetStile(m.stile),
   };
 };

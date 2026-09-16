@@ -136,8 +136,23 @@
   const COLORI_MUS = ['titolo', 'artista', 'tempi', 'barra', 'onde'];
   const VAR_MIS = { sfondo: '--k-sfondo', cover: '--k-cov', vinile: '--k-vin', titolo: '--k-tit', artista: '--k-art', tempi: '--k-tempi', barra: '--k-barra', onde: '--k-onde' };
   const VAR_COL = { titolo: '--c-tit', artista: '--c-art', tempi: '--c-tempi', barra: '--c-barra', onde: '--c-onde' };
+  const PARTI_MUS = ['cover', 'titolo', 'artista', 'barra', 'tempi', 'onde'];
+  const LARGHE_MUS = ['titolo', 'artista', 'barra'];
+  const PARTI_DEF = { cover: { x: 0, y: 50, w: 100 }, titolo: { x: 67.5, y: 24, w: 60, a: 'sinistra' }, artista: { x: 67.5, y: 50, w: 60, a: 'sinistra' }, barra: { x: 56, y: 78, w: 52 }, tempi: { x: 91, y: 78 }, onde: { x: 96, y: 50 }, scatola: { w: 22, h: 5.5 } };
+  const VAR_PARTI = {
+    cover: { x: '--p-cover-x', y: '--p-cover-y', w: '--p-cover-w' },
+    titolo: { x: '--p-titolo-x', y: '--p-titolo-y', w: '--p-titolo-w', a: '--p-titolo-a' },
+    artista: { x: '--p-artista-x', y: '--p-artista-y', w: '--p-artista-w', a: '--p-artista-a' },
+    barra: { x: '--p-barra-x', y: '--p-barra-y', w: '--p-barra-w' },
+    tempi: { x: '--p-tempi-x', y: '--p-tempi-y' },
+    onde: { x: '--p-onde-x', y: '--p-onde-y' },
+    scatola: { w: '--p-scatola-w', h: '--p-scatola-h' },
+  };
+  const ALLINEA = { sinistra: 'left', centro: 'center', destra: 'right' };
   window.PLAYER_VARS = {
     misure: MISURE_MUS, colori: COLORI_MUS, varMisure: VAR_MIS, varColori: VAR_COL,
+    parti: PARTI_MUS, larghe: LARGHE_MUS, varParti: VAR_PARTI,
+    partiDef() { return JSON.parse(JSON.stringify(PARTI_DEF)); },
     applica(el, cfg) {
       const m = (cfg && cfg.misure) || {}, c = (cfg && cfg.colori) || {};
       for (const k of MISURE_MUS) {
@@ -149,6 +164,16 @@
         const v = c.propri === true && /^#[0-9a-fA-F]{6}$/.test(String(c[k])) ? c[k] : null;
         if (v) el.style.setProperty(VAR_COL[k], v);
         else el.style.removeProperty(VAR_COL[k]);
+      }
+      const libera = !!cfg && cfg.verso === 'libera';
+      const p = (cfg && cfg.parti) || {};
+      for (const k in VAR_PARTI) for (const a in VAR_PARTI[k]) {
+        const v = (p[k] || {})[a], d = PARTI_DEF[k][a];
+        let fuori;
+        if (a === 'a') fuori = ALLINEA[v] || ALLINEA[d];
+        else { const n = Number(v); fuori = String(Number.isFinite(n) ? Math.round(Math.max(k === 'scatola' ? 2 : a === 'w' ? 5 : 0, Math.min(100, n)) * 100) / 100 : d); }
+        if (libera) el.style.setProperty(VAR_PARTI[k][a], fuori);
+        else el.style.removeProperty(VAR_PARTI[k][a]);
       }
     },
   };

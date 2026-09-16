@@ -5970,6 +5970,7 @@ function riempiCfgForm(k) {
       if (el.type === 'range') _scriviMisura(box, el);
     }
   }
+  if (k === 'musica') _mostraParti();
 }
 function _scriviMisura(box, el) {
   const o = box.querySelector('[data-mis-out="' + el.dataset.c.split('.')[1] + '"]');
@@ -6257,7 +6258,7 @@ function pannelloAlert() {
           <span class="etichetta-stato">${L('Player musica', 'Music player', 'Reproductor de música')}</span>
         </div>
         <div class="goal-campi spazio-sopra">
-          <label class="campo-num">${L('Disposizione', 'Layout', 'Disposición')}<select data-c="verso">${[['riga', L('copertina a sinistra', 'cover on the left', 'portada a la izquierda')], ['riga-inversa', L('copertina a destra', 'cover on the right', 'portada a la derecha')], ['colonna', L('copertina sopra', 'cover on top', 'portada arriba')], ['solo-cover', L('solo la copertina', 'cover only', 'solo la portada')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Disposizione', 'Layout', 'Disposición')}<select data-c="verso">${[['riga', L('copertina a sinistra', 'cover on the left', 'portada a la izquierda')], ['riga-inversa', L('copertina a destra', 'cover on the right', 'portada a la derecha')], ['colonna', L('copertina sopra', 'cover on top', 'portada arriba')], ['solo-cover', L('solo la copertina', 'cover only', 'solo la portada')], ['libera', L('libera: ogni pezzo dove vuoi', 'free: each part where you want', 'libre: cada pieza donde quieras')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Righe', 'Lines', 'Líneas')}<select data-c="righe">${[['una', L('una riga', 'one line', 'una línea')], ['due', L('due: titolo e artista', 'two: title and artist', 'dos: título y artista')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-c="posizione">${POS4_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
         </div>
@@ -6277,7 +6278,7 @@ function pannelloAlert() {
           <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<select data-c="sfondo">${[['no', L('niente', 'none', 'ninguno')], ['copertina', L('copertina sfocata', 'blurred cover', 'portada difuminada')], ['colori', L('colori del disco', 'record colors', 'colores del disco')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Corpo', 'Body', 'Cuerpo')}<select data-c="corpo">${CORPO_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Tema', 'Theme', 'Tema')}<select data-c="tema">${TEMA_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
-          <label class="campo-num">${L('Larghezza del testo', 'Text width', 'Ancho del texto')} <span class="tenue">${L('0 = come il corpo', '0 = follow the body', '0 = como el cuerpo')}</span><input type="number" data-c="larghezza" min="0" max="30"></label>
+          <label class="campo-num" id="mus-larghezza-riga">${L('Larghezza del testo', 'Text width', 'Ancho del texto')} <span class="tenue">${L('0 = come il corpo', '0 = follow the body', '0 = como el cuerpo')}</span><input type="number" data-c="larghezza" min="0" max="30"></label>
         </div>
         <div class="riga-flessibile spazio-sopra">
           <label class="riga-check"><input type="checkbox" data-c="scorre"> ${L('Il titolo lungo scorre', 'Long titles scroll', 'Los títulos largos se desplazan')}</label>
@@ -6292,6 +6293,17 @@ function pannelloAlert() {
           <h4 class="spazio-sopra">${L('Misure', 'Sizes', 'Medidas')} <span class="tenue">${L('100 = come il corpo', '100 = as the body', '100 = como el cuerpo')}</span></h4>
           <div class="griglia-campi" data-misure="musica">${_misureCampi()}</div>
           <p><button type="button" class="btn secondario" id="mus-misure-serie">${L('Di serie', 'Defaults', 'De serie')}</button></p>
+          <div id="mus-parti" hidden>
+            <h4 class="spazio-sopra">${L('Le parti', 'The parts', 'Las piezas')} <span class="tenue">${L('dove sta ogni pezzo, in centesimi della carta', 'where each part sits, in hundredths of the card', 'dónde está cada pieza, en centésimas de la tarjeta')}</span></h4>
+            <div class="goal-campi">
+              <label class="campo-num">${L('Pezzo', 'Part', 'Pieza')}<select id="mus-parte" aria-label="${esc(L('Pezzo del player', 'Player part', 'Pieza del reproductor'))}"></select></label>
+              <label class="campo-num">X<input type="number" id="mus-parte-x" min="0" max="100" step="0.5" aria-label="X"></label>
+              <label class="campo-num">Y<input type="number" id="mus-parte-y" min="0" max="100" step="0.5" aria-label="Y"></label>
+              <label class="campo-num" id="mus-parte-w-riga">${L('Larghezza', 'Width', 'Ancho')}<input type="number" id="mus-parte-w" min="5" max="100" step="0.5" aria-label="${esc(L('Larghezza', 'Width', 'Ancho'))}"></label>
+              <label class="campo-num" id="mus-parte-a-riga">${L('Testo', 'Text', 'Texto')}<select id="mus-parte-a" aria-label="${esc(L('Allineamento del testo', 'Text alignment', 'Alineación del texto'))}">${[['sinistra', L('a sinistra', 'left', 'a la izquierda')], ['centro', L('al centro', 'centred', 'al centro')], ['destra', L('a destra', 'right', 'a la derecha')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+            </div>
+            <p><button type="button" class="btn secondario" id="mus-parti-riga">${L('Come in riga', 'As in a row', 'Como en fila')}</button> <span class="suggerimento">${L('Sulla tela trascini ogni pezzo; righe e barra hanno una maniglia a destra per la larghezza.', 'On the canvas you drag each part; lines and bar have a handle on the right for the width.', 'En el lienzo arrastras cada pieza; líneas y barra tienen un tirador a la derecha para el ancho.')}</span></p>
+          </div>
           <h4 class="spazio-sopra">${L('Colori a parte', 'Separate colours', 'Colores aparte')}</h4>
           <label class="riga-check"><input type="checkbox" data-c="colori.propri"> ${L('Ogni pezzo col suo colore (spento: testo e accento per tutti)', 'Each part with its own colour (off: text and accent for all)', 'Cada pieza con su color (apagado: texto y acento para todas)')}</label>
           <div class="goal-campi">${_coloriCampi()}</div>
@@ -7095,6 +7107,165 @@ function _vestiMusica(box, cfg) {
   misuraScorrimentoAnteprima(box, cfg);
 }
 
+const PARTE_SEL = { cover: '.m-cover', titolo: '.m-riga:not(.m-riga2)', artista: '.m-riga2', barra: '.m-barra', tempi: '.m-tempi', onde: '.m-onde' };
+let _parteSel = 'cover';
+function _parteDi(t) {
+  if (!t || !t.closest) return null;
+  for (const k of _PV().parti) if (t.closest(PARTE_SEL[k])) return k;
+  return null;
+}
+function _parteViva() {
+  const c = _cfgEl('musica');
+  c.parti = c.parti || _partiDef();
+  c.parti[_parteSel] = { ..._partiDef()[_parteSel], ...(c.parti[_parteSel] || {}) };
+  return c.parti[_parteSel];
+}
+function _geoParti(el, box) {
+  const cs = getComputedStyle(box);
+  const px = parseFloat(cs.paddingLeft) || 0, py = parseFloat(cs.paddingTop) || 0;
+  const W = box.clientWidth - 2 * px, H = box.clientHeight - 2 * py;
+  const m = new DOMMatrix(getComputedStyle(el).transform);
+  const k = (Math.hypot(m.a, m.b) || 1) * ((_g('ovl-preview')?.getBoundingClientRect().width || OVL_W) / OVL_W);
+  const ang = Math.atan2(m.b, m.a);
+  const locale = (dx, dy) => ({ x: (dx * Math.cos(ang) + dy * Math.sin(ang)) / k, y: (-dx * Math.sin(ang) + dy * Math.cos(ang)) / k });
+  return { px, py, W, H, locale };
+}
+function _largo(k) { return _PV().larghe.includes(k) || (k === 'cover' && _cfgEl('musica').tema === 'cassetta'); }
+function _scatolaNaturale(box) {
+  const fs = parseFloat(getComputedStyle(box).fontSize) || 16;
+  const clone = box.cloneNode(true);
+  clone.removeAttribute('id');
+  clone.classList.remove('sel');
+  clone.querySelectorAll('.ap-handle').forEach((h) => h.remove());
+  clone.style.cssText += ';position:absolute;left:0;top:0;width:max-content;height:auto;max-width:none;visibility:hidden;pointer-events:none';
+  (box.parentElement || document.body).appendChild(clone);
+  const w = clone.offsetWidth / fs, h = clone.offsetHeight / fs;
+  clone.remove();
+  return { w: _arr(_tra(w, 5, 80)), h: _arr(_tra(h, 2, 60)) };
+}
+function _partiMisurate(box) {
+  if (!box || !box.offsetWidth) return null;
+  const g = _geoParti(box.parentElement || box, box);
+  if (g.W <= 0 || g.H <= 0) return null;
+  const def = _partiDef(), out = {};
+  const corsa = (pos, lato, tot) => (tot - lato > 0.5 ? _arr(_tra((pos / (tot - lato)) * 100, 0, 100)) : 50);
+  for (const k of _PV().parti) {
+    const n = box.querySelector(PARTE_SEL[k]);
+    const d = def[k];
+    if (!n || !n.offsetWidth) { out[k] = { ...d }; continue; }
+    let l = 0, t = 0;
+    for (let e = n; e && e !== box; e = e.offsetParent) { l += e.offsetLeft; t += e.offsetTop; }
+    out[k] = { x: corsa(l - g.px, n.offsetWidth, g.W), y: corsa(t - g.py, n.offsetHeight, g.H) };
+    if (d.w != null) out[k].w = _arr(_tra((n.offsetWidth / g.W) * 100, 5, 100));
+    if (d.a) { const ta = getComputedStyle(n).textAlign; out[k].a = ta === 'right' || ta === 'end' ? 'destra' : ta === 'center' ? 'centro' : 'sinistra'; }
+  }
+  out.scatola = _scatolaNaturale(box);
+  return out;
+}
+function _partiInRiga() {
+  const c = _cfgEl('musica'), box = _nodo('musica')?.firstElementChild;
+  if (!box) return _partiDef();
+  const verso = c.verso;
+  c.verso = 'riga'; _vestiMusica(box, c);
+  const parti = _partiMisurate(box) || _partiDef();
+  c.verso = verso; _vestiMusica(box, c);
+  return parti;
+}
+function _liberaIlPlayer() {
+  const c = _cfgEl('musica');
+  c.parti = _partiMisurate(_nodo('musica')?.firstElementChild) || _partiDef();
+  if (!window.SB_RIQUADRO.e(_statoXY('musica'))) _riquadroOn('musica', true);
+}
+function _mostraParti() {
+  const box = _g('mus-parti');
+  if (!box || !ELEM('musica')) return;
+  const c = _cfgEl('musica'), libera = c.verso === 'libera';
+  box.hidden = !libera;
+  const rigaL = _g('mus-larghezza-riga'); if (rigaL) rigaL.hidden = libera;
+  if (!libera) return;
+  const nomi = _nomiPezziPlayer();
+  const nodo = _nodo('musica');
+  const vive = _PV().parti.filter((k) => { const n = nodo && nodo.querySelector(PARTE_SEL[k]); return n && n.offsetWidth > 0; });
+  if (!vive.includes(_parteSel)) _parteSel = vive[0] || 'cover';
+  const sel = _g('mus-parte');
+  const voci = vive.map((k) => `<option value="${k}"${k === _parteSel ? ' selected' : ''}>${esc(nomi[k] || k)}</option>`).join('');
+  if (sel && sel.innerHTML !== voci) sel.innerHTML = voci;
+  const p = { ..._partiDef()[_parteSel], ...((c.parti || {})[_parteSel] || {}) };
+  for (const a of ['x', 'y', 'w']) { const e = _g('mus-parte-' + a); if (e && document.activeElement !== e) e.value = p[a] == null ? '' : p[a]; }
+  const wr = _g('mus-parte-w-riga'); if (wr) wr.hidden = !_largo(_parteSel);
+  const ar = _g('mus-parte-a-riga'); if (ar) ar.hidden = !p.a;
+  const as = _g('mus-parte-a'); if (as && p.a && document.activeElement !== as) as.value = p.a;
+}
+function _disegnaParti() {
+  const stage = _g('ap-stage');
+  if (!stage) return;
+  let strato = _g('ap-parti');
+  const el = _nodo('musica'), box = el && el.firstElementChild;
+  const c = ELEM('musica') ? _cfgEl('musica') : null;
+  const su = selezione === 'musica' && c && c.verso === 'libera' && box && _inOverlay('musica') && !_bloccato('musica');
+  if (!su) { if (strato) strato.hidden = true; return; }
+  if (!strato) {
+    strato = document.createElement('div');
+    strato.id = 'ap-parti';
+    stage.appendChild(strato);
+    strato.addEventListener('pointerdown', (e) => { const h = e.target.closest('.ap-pt-w'); if (h) _tiraLarghezza(h.dataset.parte, e); });
+  }
+  strato.hidden = false;
+  const sr = stage.getBoundingClientRect(), sc = sr.width / OVL_W || 1;
+  let html = '';
+  for (const k of _PV().parti) {
+    const n = box.querySelector(PARTE_SEL[k]);
+    if (!n || !n.offsetWidth) continue;
+    const r = n.getBoundingClientRect();
+    const x = (r.left - sr.left) / sc, y = (r.top - sr.top) / sc, w = r.width / sc, h = r.height / sc;
+    html += `<i class="ap-pt${k === _parteSel ? ' attiva' : ''}" data-parte="${k}" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"></i>`;
+    if (_largo(k)) html += `<i class="ap-pt-w" data-parte="${k}" title="${esc(L('Trascina per allargare', 'Drag to widen', 'Arrastra para ensanchar'))}" style="left:${x + w}px;top:${y + h / 2}px"></i>`;
+  }
+  strato.innerHTML = html;
+}
+function _presaParte(parte, e, muovi) {
+  e.preventDefault(); e.stopPropagation();
+  const el = _nodo('musica'), box = el && el.firstElementChild;
+  const n = box && box.querySelector(PARTE_SEL[parte]);
+  if (!n) return;
+  _parteSel = parte;
+  const c = _cfgEl('musica'), p = _parteViva();
+  const g = _geoParti(el, box);
+  const p0 = { x: e.clientX, y: e.clientY }, v0 = { ...p };
+  const ridisegna = () => { _vestiMusica(box, c); _disegnaParti(); _mostraParti(); };
+  _inTrascinamento = true;
+  const move = (ev) => { muovi(p, v0, g.locale(ev.clientX - p0.x, ev.clientY - p0.y), g, n); ridisegna(); };
+  const fine = () => {
+    _inTrascinamento = false;
+    window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+    document.removeEventListener('keydown', fuga, true);
+  };
+  const up = () => { fine(); _ricorda(); salvaCfgElemento('musica'); };
+  const fuga = (ev) => {
+    if (ev.key !== 'Escape') return;
+    ev.preventDefault(); ev.stopImmediatePropagation();
+    Object.assign(p, v0); ridisegna(); fine();
+  };
+  window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  document.addEventListener('keydown', fuga, true);
+}
+function _trascinaParte(parte, e) {
+  _presaParte(parte, e, (p, v0, d, g, n) => {
+    const corsaW = g.W - n.offsetWidth, corsaH = g.H - n.offsetHeight;
+    if (corsaW > 0.5) p.x = _arr(_tra(v0.x + d.x / corsaW * 100, 0, 100));
+    if (corsaH > 0.5) p.y = _arr(_tra(v0.y + d.y / corsaH * 100, 0, 100));
+  });
+}
+function _tiraLarghezza(parte, e) {
+  _presaParte(parte, e, (p, v0, d, g) => {
+    const w0 = g.W * v0.w / 100, sinistra = v0.x / 100 * (g.W - w0);
+    const w = _tra(w0 + d.x, g.W * .05, g.W - sinistra);
+    p.w = _arr(w / g.W * 100);
+    const corsa = g.W - w;
+    p.x = corsa > 0.5 ? _arr(_tra(sinistra / corsa * 100, 0, 100)) : 0;
+  });
+}
+
 function _vestiPen(box, cfg) {
   const o = cfg.overlay || {};
   box.className = 'pen-box';
@@ -7327,6 +7498,7 @@ function _mostraProp() {
       if (e && document.activeElement !== e) e.value = st[campo] == null ? '' : (campo === 's' || campo === 'r' ? st[campo] : _arr(st[campo]));
     }
   }
+  if (selezione === 'musica') _mostraParti();
 }
 
 function _scriviProp(campo, v) {
@@ -7648,11 +7820,12 @@ function _defMusica() {
     cover: 'quadrata', barra: 'sotto', tempi: 'no', onde: true, ritmo: 'onde', sfondo: 'no',
     daCopertina: false, scorre: true, entrata: 'dissolve', cambio: true,
     corpo: 'normale', tema: 'nessuno', larghezza: 0,
-    quandoFermo: 'sparisce', posizione: 'basso-sinistra', xy: null, misure: _misureDef(), colori: _coloriDef(), stile: VESTE_DEF() };
+    quandoFermo: 'sparisce', posizione: 'basso-sinistra', xy: null, misure: _misureDef(), colori: _coloriDef(), parti: _partiDef(), stile: VESTE_DEF() };
 }
 function _PV() { return window.PLAYER_VARS || { misure: [], colori: [], applica() {} }; }
 function _misureDef() { const o = {}; for (const k of _PV().misure) o[k] = 100; return o; }
 function _coloriDef() { const o = { propri: false }; for (const k of _PV().colori) o[k] = k === 'barra' || k === 'onde' ? '#f72fa7' : '#ffffff'; return o; }
+function _partiDef() { return _PV().partiDef ? _PV().partiDef() : {}; }
 function _nomiPezziPlayer() {
   return { sfondo: L('Spazio attorno', 'Space around', 'Espacio alrededor'), cover: L('Copertina', 'Cover art', 'Portada'), vinile: L('Figura dietro', 'Figure behind', 'Figura detrás'),
     titolo: L('Prima riga', 'First line', 'Primera línea'), artista: L('Seconda riga', 'Second line', 'Segunda línea'), tempi: L('Tempi', 'Times', 'Tiempos'),
@@ -7763,7 +7936,7 @@ function _disegnaRiquadro() {
   if (!stage) return;
   let box = _g('ap-riquadro');
   const rett = selezione && _inOverlay(selezione) ? _rettDi(selezione) : null;
-  if (!rett) { if (box) box.hidden = true; return; }
+  if (!rett) { if (box) box.hidden = true; _disegnaParti(); return; }
   if (!box) {
     box = document.createElement('div');
     box.id = 'ap-riquadro';
@@ -7781,6 +7954,7 @@ function _disegnaRiquadro() {
   box.style.left = rett.x + '%'; box.style.top = rett.y + '%';
   box.style.width = rett.w + '%'; box.style.height = rett.h + '%';
   box.style.transform = rett.r ? `rotate(${rett.r}deg)` : '';
+  _disegnaParti();
 }
 
 function _bordiAltrui(k) {
@@ -8142,7 +8316,7 @@ function _sessione() {
 function _istantanea() {
   const pos = {}, acceso = {};
   for (const e of ELEMENTI()) { pos[e.k] = _posCorrente(e.k) || null; acceso[e.k] = _accesoDi(e.k); }
-  return JSON.stringify({ pos, acceso, mostra: _mostraOra() });
+  return JSON.stringify({ pos, acceso, mostra: _mostraOra(), parti: ELEM('musica') ? _cfgEl('musica').parti || null : null });
 }
 let _ultimoRicordo = 0, _ultimaFusione = '';
 function _ricorda(fusione) {
@@ -8173,6 +8347,7 @@ function _applicaIstantanea(foto) {
       if (d.acceso && e.k in d.acceso) _accendiDi(e.k, d.acceso[e.k]);
       if (d.mostra && (e.goal || e.cont)) { if (d.mostra[e.k] === false) m[e.k] = false; else delete m[e.k]; }
     }
+    if (d.parti && ELEM('musica') && JSON.stringify(_cfgEl('musica').parti) !== JSON.stringify(d.parti)) { _cfgEl('musica').parti = d.parti; salvaCfgElemento('musica'); }
     disegnaGoal();
     aggiornaAnteprima();
     salvaLayoutOverlay(true);
@@ -8291,6 +8466,10 @@ function rendiTrascinabile(el, chiave) {
     if (e.button != null && e.button !== 0) return;
     if (e.target?.classList?.contains('ap-handle')) return;
     e.preventDefault();
+    if (chiave === 'musica' && selezione === 'musica' && !_bloccato(chiave) && _cfgEl('musica').verso === 'libera') {
+      const parte = _parteDi(e.target);
+      if (parte) { _trascinaParte(parte, e); return; }
+    }
     seleziona(chiave);
     if (_bloccato(chiave)) return;
     if (window.SB_RIQUADRO.e(_posCorrente(chiave) || {})) { _trascinaRiquadro(chiave, e); return; }
@@ -15113,7 +15292,9 @@ function attivaPiattaforma() {
       if (!box) return;
       const k = box.dataset.cfg || box.dataset.cfgDi;
       if (ev.target.type === 'range' && /^misure\./.test(ev.target.dataset.c || '')) _scriviMisura(box, ev.target);
+      const versoPrima = k === 'musica' ? _cfgEl('musica').verso : '';
       leggiCfgDalForm(k);
+      if (k === 'musica' && _cfgEl('musica').verso === 'libera' && versoPrima !== 'libera') _liberaIlPlayer();
       aggiornaAnteprima();
       aggiornaInspector();
       salvaCfgElemento(k);
@@ -15132,6 +15313,16 @@ function attivaPiattaforma() {
     aggiornaAnteprima();
     aggiornaInspector();
     salvaCfgElemento('musica');
+  });
+  _g('mus-parte')?.addEventListener('change', () => { _parteSel = _g('mus-parte').value; _mostraParti(); _disegnaParti(); });
+  for (const a of ['x', 'y', 'w']) _g('mus-parte-' + a)?.addEventListener('input', () => {
+    const v = Number(_g('mus-parte-' + a).value);
+    if (Number.isFinite(v)) _parteViva()[a] = _arr(_tra(v, a === 'w' ? 5 : 0, 100));
+  });
+  _g('mus-parte-a')?.addEventListener('change', () => { _parteViva().a = _g('mus-parte-a').value; });
+  _g('mus-parti-riga')?.addEventListener('click', () => {
+    _cfgEl('musica').parti = _partiInRiga();
+    aggiornaAnteprima(); aggiornaInspector(); _ricorda(); salvaCfgElemento('musica');
   });
 
   _g('scheda-alert')?.addEventListener('click', (ev) => {

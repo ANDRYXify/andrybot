@@ -3,7 +3,14 @@
 // dall'altro uno che paga si trova la porta chiusa e se ne va.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { config } from '../../src/config.js';
 import * as ab from '../../src/features/abbonamenti.js';
+
+// Chi lancia i test puo' avere un .env con le chiavi di Stripe (sul server e'
+// cosi'): qui il listino si legge con i pagamenti SPENTI, per scelta, cosi'
+// l'esito non dipende dalla macchina.
+config.stripe.attivo = false;
+config.stripe.prezzi = {};
 
 const ha = (piano, chiave) => ab.abilitata(ab.funzioniDi(piano), chiave);
 

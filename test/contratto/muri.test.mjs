@@ -11,7 +11,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { config } from '../../src/config.js';
 import * as ab from '../../src/features/abbonamenti.js';
+
+// il listino si legge con i pagamenti spenti: l'esito non dipende dal .env di chi lancia i test
+config.stripe.attivo = false;
+config.stripe.prezzi = {};
 
 const SRV = readFileSync('src/web/server.js', 'utf8');
 const BOT = readFileSync('src/bot.js', 'utf8');

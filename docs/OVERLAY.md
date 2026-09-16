@@ -1134,3 +1134,63 @@ L'autoprova del cancello ora si può mirare: `node scripts/verifica-anteprima.mj
 --selftest=player` prova solo le rotture la cui descrizione contiene «player»;
 ogni rottura costa un giro intero delle due pagine, e chi ne aggiunge una la
 prova da sola senza aspettare le altre.
+
+
+## Le parti del player si mettono dove vuoi
+
+Chiesto: «più spazio di manovra, anche la posizione delle varie parti del
+player vorrei poterle spostare dove e come voglio». La quinta **Disposizione**
+del player è **libera**: la carta è una scatola e ogni pezzo — copertina, prima
+riga, seconda riga, barra, tempi, onde — ha una posizione sua dentro la scatola.
+
+Il modello, da cui viene tutto il resto:
+
+1. **La misura di un pezzo la danno le Misure**, come prima. La disposizione
+   libera dà la posizione, non la misura: i due comandi non si sovrappongono.
+   Fanno eccezione i pezzi che hanno una *lunghezza*, le due righe e la barra:
+   per loro c'è anche una larghezza in centesimi della carta, e per le righe
+   l'allineamento del testo (a sinistra, al centro, a destra), perché la
+   lunghezza di una riga non è una misura del carattere.
+2. **La posizione è la corsa**, la stessa idea degli elementi sulla tela: `x = 0`
+   a filo a sinistra dello spazio interno, `100` a filo a destra, `50` al centro;
+   così `y`. Lo spazio interno è la carta meno lo «spazio attorno», quindi un
+   pezzo a 0 resta dentro il bordo e il cursore «spazio attorno» continua a
+   valere. In CSS: `left = pad + (100% − 2·pad) · x/100` e `translate: −x%`,
+   che sottrae x% della larghezza del pezzo stesso; il pezzo tiene la sua misura
+   e la formula non ha bisogno di conoscerla. Il padding è un valore solo per
+   corpo (`--m-px`, `--m-py`), letto dal `padding` e dalla corsa.
+3. **La scatola è il riquadro.** Quando scegli «libera» lo Studio accende il
+   riquadro, se non c'è, sul rettangolo che il player occupa in quel momento.
+   La misura *naturale* della carta (quella che decide la scala dentro il
+   riquadro, e la grandezza senza) si misura al passaggio e si salva in em
+   (`parti.scatola`): è la stessa che aveva prima, quindi la scala non salta.
+   Un dato salvato a mano senza scatola ha quella di serie, 22 × 5,5 em.
+4. **Si parte da dove sono.** Nel passaggio a «libera» lo Studio misura i pezzi
+   nella disposizione che c'era (`offsetLeft`/`offsetTop`, che non risentono
+   delle trasformazioni) e li converte in corsa: il player non cambia di un
+   pixel nel momento in cui diventa libero, poi si trascina. «Come in riga»
+   rifà la stessa misura sulla riga. Il server ha comunque una tabella di serie
+   che somiglia alla riga, scritta uguale nel browser (test).
+5. **Un traduttore solo.** `PLAYER_VARS.applica` scrive anche
+   `--p-<pezzo>-x/y` (e `-w`, `-a` dove servono) quando la disposizione è
+   libera, e le toglie sennò; tela e diretta lo chiamavano già.
+6. **I temi non cambiano.** Le figure vivono negli pseudo-elementi della
+   copertina e nel velo: spostare la copertina sposta la figura; entrate e
+   uscite stanno sulla carta e sugli pseudo-elementi. Il «cambio brano», che
+   animava la colonna del testo (in libera non è più una scatola), anima i
+   pezzi. Nella cassetta l'etichetta color carta passa sulle righe.
+
+Sulla tela: con il player selezionato, trascinare un pezzo lo sposta (il
+delta del puntatore torna in coordinate locali con la scala e la rotazione
+dell'involucro, poi in corsa); righe e barra hanno una maniglia sul bordo
+destro per la larghezza, che tiene fermo il bordo sinistro. Esc annulla il
+gesto, annulla e ripeti ricordano anche le parti. Nell'ispettore, «Le parti»:
+pezzo, X, Y, larghezza, testo.
+
+Il cancello dell'anteprima ha due misure nuove: la libera in un riquadro con
+una tabella nota, ogni pezzo nello stesso posto sulla tela e in diretta; e
+**contro il numero**, 0 a filo del padding, 100 a filo dall'altra parte, 50 al
+centro, la larghezza in centesimi dell'interno, il testo allineato come chiesto.
+La seconda esiste perché un difetto nel traduttore lo condividerebbero le due
+pagine, e il confronto fra loro non lo vedrebbe. L'autoprova lo spegne
+(`const libera = false`) e guarda che il cancello diventi rosso.
