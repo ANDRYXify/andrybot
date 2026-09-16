@@ -252,13 +252,15 @@ test('Satispay: le rotte hanno il loro guardiano o sono dichiarate, la ronda lo 
 });
 
 test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le offerte accendono gli effetti', () => {
-  assert.match(SRV, /app\.get\('\/u\/:user\/dona', wrap\(/, 'la pagina pubblica');
-  assert.match(PORTE, /\['GET \/u\/:user\/dona', /, 'dichiarata pubblica');
+  assert.match(SRV, /app\.get\('\/dona\/:login', wrap\(/, 'la pagina pubblica');
+  assert.match(PORTE, /\['GET \/dona\/:login', /, 'dichiarata pubblica');
+  assert.ok(SRV.includes("res.redirect(302, donazioni.urlPaginaDona(login) + (q >= 0 ? req.url.slice(q) : ''));"), 'il vecchio /u/<login>/dona rimanda a quello vero, col ritorno del pagamento');
+  assert.match(PORTE, /\['GET \/u\/:user\/dona', /, 'e resta dichiarato');
   for (const r of ["app.get('/api/paginadona', requireOwner,", "app.post('/api/paginadona', requireOwner,", "app.post('/api/paginadona/anteprima', requireOwner,", "app.delete('/api/paginadona', requireOwner,"]) assert.ok(SRV.includes(r), r);
   assert.ok(SRV.includes("SELECT channel, ts FROM pagina_dona WHERE attiva=1"), 'la sitemap la elenca');
   assert.ok(SRV.includes("const ritorno = String(req.body?.pagina || '') === 'dona' ? 'dona' : 'link';"), 'il modulo dice da dove torna');
   assert.ok(leggi('src/features/donazioni-stripe.js').includes("ritorno === 'dona' ? urlPaginaDona(login)") && leggi('src/features/donazioni-satispay.js').includes("ritorno === 'dona' ? urlPaginaDona(login)"), 'e tutti e due i mezzi tornano li\', anche con l\'indirizzo corto');
-  assert.ok(SRV.includes("if (!config.donaHost || String(req.hostname || '').toLowerCase() !== config.donaHost) return next();") && SRV.includes("req.url = '/u/' + m[1].toLowerCase() + '/dona'"), 'con il sottodominio, dona.<dominio>/<login> si traduce prima delle rotte, e il nome si legge a ogni richiesta');
+  assert.ok(SRV.includes("if (!config.donaHost || String(req.hostname || '').toLowerCase() !== config.donaHost) return next();") && SRV.includes("req.url = '/dona/' + m[1].toLowerCase()"), 'con il sottodominio, dona.<dominio>/<login> si traduce prima delle rotte, e il nome si legge a ogni richiesta');
   assert.ok(SRV.includes("const candidatoDona = !config.donaHost && !config.donaHostSpento ? donazioni.candidatoDonaHost(config.baseUrl) : '';") && SRV.includes("const sondaDona = () => dns.lookup(candidatoDona).then(() => {") && SRV.includes("setTimeout(sondaDona, 10 * 60_000).unref?.()"), 'senza DONA_HOST il nome si prova da solo nel DNS, ogni dieci minuti finche\' non risponde');
   assert.ok(leggi('src/config.js').includes("donaHostSpento: /^(no|off)$/i.test(env('DONA_HOST', ''))"), 'e si puo\' spegnere con DONA_HOST=no');
   assert.ok(leggi('Caddyfile').includes('socialbot.live, dona.socialbot.live {'), 'e Caddy conosce il nome');
@@ -278,8 +280,8 @@ test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le o
   assert.ok(sulla.includes('<input type="hidden" name="pagina" value="dona">'), 'sulla pagina delle donazioni il modulo dice da dove torna');
   assert.ok(sulla.includes('<span>5 € · Applauso</span>') && sulla.includes('<span>20 €</span>') && !sulla.includes('<span>2 €</span>'), 'le offerte al posto degli importi suggeriti');
   const link = renderLinkPage({ ...base, blocchi: [{ tipo: 'sostieni', pagina: true }] }, { ...opz, sostieni: dati });
-  assert.ok(link.includes('<a class="voce spicca sost-b" href="/u/x/dona">') && !link.includes('<form class="sost-f"'), 'sulla pagina link, se lo streamer vuole, il tasto porta alla pagina delle donazioni');
-  assert.ok(!renderLinkPage({ ...base, blocchi: [{ tipo: 'sostieni', pagina: true }] }, { ...opz, sostieni: dati, dona: true }).includes('href="/u/x/dona"'), 'ma sulla pagina delle donazioni il rimando non ha senso: resta il modulo');
+  assert.ok(link.includes('<a class="voce spicca sost-b" href="/dona/x">') && !link.includes('<form class="sost-f"'), 'sulla pagina link, se lo streamer vuole, il tasto porta alla pagina delle donazioni');
+  assert.ok(!renderLinkPage({ ...base, blocchi: [{ tipo: 'sostieni', pagina: true }] }, { ...opz, sostieni: dati, dona: true }).includes('href="/dona/x"'), 'ma sulla pagina delle donazioni il rimando non ha senso: resta il modulo');
 });
 
 test('l\'immagine di chi dona: entra dal modulo con limiti stretti, aspetta l\'ok nel registro, muore con la riga', () => {
@@ -348,4 +350,16 @@ test('il blocco «Chi ha donato»: i nomi dal registro solo se la pagina lo most
   assert.equal((SRV.match(/donatori: donatoriPer\(login, (p|finta)\.blocchi\)/g) || []).length, 4, 'le due pagine e le due anteprime');
   assert.match(APP, /data-lpadd="donatori"/); assert.match(APP, /donatori: \{ tipo: 'donatori', titolo: '', quanti: 5, modo: 'ultimi', periodo: 'sempre' \}/);
   assert.ok(leggi('src/db.js').includes("'sostieni', 'donatori']"), 'e\' un tipo di blocco');
+});
+
+test('la pagina delle donazioni dice il suo indirizzo vero: canonical e og:url col nome corto, titolo suo', () => {
+  const opz = { login: 'x', display: 'X', baseUrl: 'https://s.live', sostieni: { modo: 'conto', mezzi: ['stripe'], importi: [2], minimo: 1, massimo: 500, valuta: 'EUR' } };
+  const pag = { attiva: true, blocchi: [{ tipo: 'sostieni' }], tema: {} };
+  const corta = renderLinkPage(pag, { ...opz, dona: true, urlDona: 'https://dona.s.live/x' });
+  assert.ok(corta.includes('<link rel="canonical" href="https://dona.s.live/x">') && corta.includes('<meta property="og:url" content="https://dona.s.live/x">') && corta.includes('· sostienimi</title>'));
+  const lunga = renderLinkPage(pag, { ...opz, dona: true });
+  assert.ok(lunga.includes('<link rel="canonical" href="https://s.live/dona/x">'), 'senza nome corto, /dona/<login>');
+  const link = renderLinkPage(pag, { ...opz, urlDona: 'https://dona.s.live/x' });
+  assert.ok(link.includes('<link rel="canonical" href="https://s.live/u/x">') && link.includes('· i miei link</title>'), 'la pagina link resta la pagina link');
+  assert.equal((SRV.match(/urlDona: donazioni\.urlPaginaDona\(login\)/g) || []).length, 4, 'le due pagine e le due anteprime sanno l\'indirizzo corto');
 });

@@ -94,7 +94,7 @@ store è uno (`storePagina(tabella)` in db.js) costruito su un altro tavolo,
 l'altra. L'editor è uno: `LP.quale` (`link` | `dona`) sceglie la porta
 (`/api/linkpage` o `/api/paginadona`), l'interruttore sta in cima all'editor
 e dalla scheda Donazioni «Modifica la pagina» ci porta. Pubblica in
-`/u/<login>/dona` e, appena il record DNS `dona` esiste, anche
+`/dona/<login>` (il vecchio `/u/<login>/dona` rimanda lì) e, appena il record DNS `dona` esiste, anche
 `dona.socialbot.live/<login>`: il server prova da solo `dona.<dominio>`
 (`candidatoDonaHost`, `dns.lookup` ogni dieci minuti finché non risponde) e da
 quel momento un passaggio prima delle rotte traduce l'indirizzo corto e i
