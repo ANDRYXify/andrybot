@@ -160,7 +160,16 @@ sola, e in onda), `scarta` (il file via, la riga resta), `rieffetto` (rimanda
 un'immagine già in onda); `elimina` toglie anche il file. Le righe con
 `effetto: true` mostrano «Rimanda l'immagine».
 
-Da fare: un blocco «donatori» (ultime, classifica).
+## Il blocco «Chi ha donato»
+
+Un blocco della pagina (`donatori`: titolo, `quanti` 3..20, `modo` ultimi|top,
+`periodo` mese|sempre) che mostra chi ha sostenuto lo streamer. I dati li porta
+il server (`registroDonazioni.donatori(login)`: gli ultimi senza le rimborsate,
+con «Qualcuno» per chi non ha scritto un nome; i primi per somma solo fra chi
+un nome l'ha scritto, stesso nome in maiuscolo o minuscolo = stessa persona) e
+si leggono **solo se la pagina ha il blocco** (`donatoriPer`), anche in
+anteprima. Il modulo, quando il blocco c'è, dice a chi dona che il nome può
+comparire in pagina: il consenso sta nella frase, prima del pagamento.
 
 ## Il registro, dentro SocialBot
 

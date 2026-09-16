@@ -1429,6 +1429,17 @@ export const registroDonazioni = {
     return db.prepare("SELECT * FROM donazioni WHERE login=? AND stato='pagata' ORDER BY pagata_at DESC LIMIT ?")
       .all(String(login).toLowerCase(), Math.max(1, Math.min(50, n | 0)));
   },
+  // Il blocco «Chi ha donato» della pagina: gli ultimi (senza le rimborsate;
+  // chi non ha scritto un nome compare come qualcuno) e i primi per somma
+  // (solo con un nome, stesso nome in maiuscolo o minuscolo = stessa persona),
+  // del mese o di sempre. Centesimi, come tutto il registro.
+  donatori(login, n = 20) {
+    const l = String(login).toLowerCase();
+    const lim = Math.max(1, Math.min(50, n | 0));
+    const ultimi = db.prepare("SELECT nome, importo, valuta, pagata_at FROM donazioni WHERE login=? AND stato='pagata' AND rimborsata_at=0 ORDER BY pagata_at DESC LIMIT ?").all(l, lim);
+    const primi = (da) => db.prepare("SELECT MIN(nome) AS nome, valuta, SUM(importo) AS somma, COUNT(*) AS quante FROM donazioni WHERE login=? AND stato='pagata' AND rimborsata_at=0 AND nome!='' AND pagata_at>=? GROUP BY lower(nome), valuta ORDER BY somma DESC, quante DESC LIMIT ?").all(l, da, lim);
+    return { ultimi, mese: primi(now() - 30 * 86400_000), sempre: primi(0) };
+  },
   // quanto e' arrivato, valuta per valuta (centesimi), e quante donazioni
   totali(login) {
     return db.prepare("SELECT valuta, SUM(importo) AS somma, COUNT(*) AS quante FROM donazioni WHERE login=? AND stato='pagata' GROUP BY valuta")
@@ -2448,7 +2459,7 @@ export const FONT_LINKPAGE = ['system', 'inter', 'mono', 'serif', 'condensato', 
 export const ICONE_LINKPAGE = ['link', 'twitch', 'youtube', 'instagram', 'tiktok', 'discord', 'spotify',
   'x', 'telegram', 'kick', 'github', 'reddit', 'threads', 'facebook', 'whatsapp', 'twitter',
   'cuore', 'stella', 'regalo', 'carrello', 'calendario', 'mail', 'musica', 'video', 'scarica', 'gioco', 'caffe', 'soldi'];
-export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine', 'diretta', 'eroe', 'griglia', 'scritta', 'numeri', 'faq', 'conto', 'sostieni'];
+export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine', 'diretta', 'eroe', 'griglia', 'scritta', 'numeri', 'faq', 'conto', 'sostieni', 'donatori'];
 // Quanto si MUOVE la pagina mentre la si scorre. "dolce" = i contenuti
 // compaiono entrando. "cinema" = in più: la foto della copertina va in
 // parallasse, i titoli si rivelano parola per parola, le immagini si
@@ -2722,6 +2733,12 @@ const storePagina = (tabella) => ({
         // impostazioni del canale (una configurazione sola); qui solo come si presenta
         out.push({ tipo, titolo: str(b.titolo, L.label), testo: str(b.testo, L.sotto), etichetta: str(b.etichetta, L.label), obiettivo: b.obiettivo !== false,
           icona: scelta(b.icona, ICONE_LINKPAGE, null) || 'cuore', pagina: b.pagina === true });
+      } else if (tipo === 'donatori') {
+        // chi ha donato: gli ultimi, o i primi per somma; i nomi arrivano dal
+        // registro quando la pagina si stampa, qui solo come si presenta
+        const quanti = Math.round(Number(b.quanti));
+        out.push({ tipo, titolo: str(b.titolo, L.label), quanti: quanti >= 3 && quanti <= 20 ? quanti : 5,
+          modo: scelta(b.modo, ['ultimi', 'top'], 'ultimi'), periodo: scelta(b.periodo, ['mese', 'sempre'], 'sempre') });
       } else if (tipo === 'griglia') {
         const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 12).map((v) => ({
           img: urlOk(v?.img), titolo: str(v?.titolo, L.label), testo: str(v?.testo, L.sotto), url: urlOk(v?.url),

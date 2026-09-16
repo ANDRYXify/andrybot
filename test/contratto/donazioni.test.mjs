@@ -325,3 +325,25 @@ test('l\'immagine di chi dona: entra dal modulo con limiti stretti, aspetta l\'o
   assert.ok(!leggi('src/features/donazioni.js').includes('volume'), 'la configurazione non ha un volume');
   assert.match(leggi('src/db.js'), /media_stato TEXT NOT NULL DEFAULT ''/);
 });
+
+test('il blocco «Chi ha donato»: i nomi dal registro solo se la pagina lo mostra, e il modulo lo dice prima', () => {
+  const opz = { login: 'x', display: 'X', baseUrl: 'https://s.live' };
+  const dati = { modo: 'conto', mezzi: ['stripe'], importi: [2, 5], minimo: 1, massimo: 500, conMessaggio: true, valuta: 'EUR' };
+  const donatori = { ultimi: [{ nome: 'Anna', importo: 2500, valuta: 'EUR' }, { nome: '', importo: 500, valuta: 'EUR' }], mese: [{ nome: 'Anna', somma: 3500, valuta: 'EUR' }], sempre: [{ nome: 'Anna', somma: 9000, valuta: 'EUR' }, { nome: 'Luca', somma: 100, valuta: 'EUR' }] };
+  const con = (blocchi, extra = {}) => renderLinkPage({ attiva: true, blocchi, tema: {} }, { ...opz, sostieni: dati, donatori, ...extra });
+  const ultimi = con([{ tipo: 'donatori', titolo: 'Grazie a', quanti: 5, modo: 'ultimi', periodo: 'sempre' }]);
+  assert.ok(ultimi.includes('<span class="sost-t">Grazie a</span>') && ultimi.includes('<span class="dnt-n">Anna</span><span class="dnt-i">25 €</span>') && ultimi.includes('<span class="dnt-n">Qualcuno</span><span class="dnt-i">5 €</span>'), 'gli ultimi, con l\'importo; senza nome, qualcuno');
+  assert.ok(!ultimi.slice(ultimi.indexOf('<ol class="dnt-l">')).includes('dnt-p'), 'gli ultimi non hanno un posto in classifica');
+  const top = con([{ tipo: 'donatori', quanti: 3, modo: 'top', periodo: 'sempre' }]);
+  assert.ok(top.includes('<span class="dnt-p">1</span><span class="dnt-n">Anna</span><span class="dnt-i">90 €</span>') && top.includes('<span class="dnt-p">2</span><span class="dnt-n">Luca</span>'), 'i primi per somma, numerati');
+  assert.ok(con([{ tipo: 'donatori', quanti: 3, modo: 'top', periodo: 'mese' }]).includes('35 €'), 'del mese');
+  assert.equal((con([{ tipo: 'donatori', quanti: 1, modo: 'ultimi' }]).match(/<li class="dnt-r">/g) || []).length, 1, 'quanti vale');
+  assert.ok(con([{ tipo: 'donatori', quanti: 5 }], { donatori: { ultimi: [], mese: [], sempre: [] } }).includes('Ancora nessuno: potresti essere il primo.'), 'vuoto: una riga onesta');
+  assert.ok(con([{ tipo: 'donatori', quanti: 5 }], { donatori: null, anteprima: true }).includes('chi ha donato: i nomi compaiono con le prime donazioni'), 'in anteprima senza nomi, il segnaposto');
+  assert.ok(con([{ tipo: 'sostieni', titolo: 'Un caffè' }, { tipo: 'donatori', quanti: 5 }]).includes('Il nome che scrivi può comparire fra chi ha donato, qui in pagina.'), 'il modulo avvisa quando il blocco c\'e\'');
+  assert.ok(!con([{ tipo: 'sostieni', titolo: 'Un caffè' }]).includes('può comparire fra chi ha donato'), 'e tace quando non c\'e\'');
+  assert.ok(SRV.includes("const donatoriPer = (login, blocchi) => (Array.isArray(blocchi) && blocchi.some((b) => b && b.tipo === 'donatori') ? registroDonazioni.donatori(login) : null);"), 'il registro si legge solo se serve');
+  assert.equal((SRV.match(/donatori: donatoriPer\(login, (p|finta)\.blocchi\)/g) || []).length, 4, 'le due pagine e le due anteprime');
+  assert.match(APP, /data-lpadd="donatori"/); assert.match(APP, /donatori: \{ tipo: 'donatori', titolo: '', quanti: 5, modo: 'ultimi', periodo: 'sempre' \}/);
+  assert.ok(leggi('src/db.js').includes("'sostieni', 'donatori']"), 'e\' un tipo di blocco');
+});
