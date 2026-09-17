@@ -66,6 +66,7 @@ import * as cartaLive from '../features/cartalive.js';
 import * as feedmod from '../features/feed.js';
 import * as categoria from '../features/categoria.js';
 import * as compleanniFeat from '../features/compleanni.js';
+import * as vetrinaLive from '../features/vetrina-live.js';
 import * as tiktok from '../features/tiktok.js';
 import * as discord from '../features/discord.js';
 import * as instagram from '../features/instagram.js';
@@ -640,7 +641,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // Le porte di Kick e YouTube esistono solo se questo server ha le
     // credenziali: un pulsante che porta a un 503 e' peggio di un pulsante che
     // non c'e'.
-    h = inserisciVetrina(h, codice, { kick: conKick, youtube: conYoutube });
+    h = inserisciVetrina(h, codice, { kick: conKick, youtube: conYoutube, dirette: _dirette });
     cambia('<html lang="it">', `<html lang="${m.html}">`);
     cambia(`<title>${base.titolo}</title>`, `<title>${m.titolo}</title>`);
     cambia(`<meta name="description" content="${base.desc}">`, `<meta name="description" content="${m.desc}">`);
@@ -658,8 +659,30 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Quattro gusci precalcolati: tre lingue per chi non e loggato (con
   // `body.vetrina` gia messo, vedi docs/VELOCITA.md) e quello nudo per la
   // dashboard, che la lingua se la sceglie da sola una volta dentro.
+  // Le dirette in vetrina entrano nei gusci, non nella pagina gia' aperta: cosi'
+  // arrivano nel primo HTML (buone per chi indicizza, e senza spostare niente
+  // mentre si legge). I gusci si rifanno solo quando l'elenco CAMBIA davvero, al
+  // massimo una volta al minuto, e in disparte: chi apre la home non aspetta mai
+  // una chiamata a una piattaforma.
+  let _dirette = [];
   const GUSCI = {};
-  for (const codice of Object.keys(META_LINGUA)) GUSCI[codice] = gusciaDi(codice).replace('<body>', '<body class="vetrina">');
+  const rifaiGusci = () => {
+    for (const codice of Object.keys(META_LINGUA)) GUSCI[codice] = gusciaDi(codice).replace('<body>', '<body class="vetrina">');
+  };
+  rifaiGusci();
+  let _firmaDirette = '';
+  const ronda = async () => {
+    try {
+      const lista = await vetrinaLive.elenco({ helix, inDiretta: (l) => manager?.inDiretta?.(l) });
+      const firma = lista.map((d) => `${d.login}:${d.spettatori}:${d.categoria}`).join('|');
+      if (firma === _firmaDirette) return;
+      _firmaDirette = firma;
+      _dirette = lista;
+      rifaiGusci();
+    } catch (e) { log.debug('vetrina live:', e?.message || e); }
+  };
+  setTimeout(ronda, 4000).unref?.();
+  setInterval(ronda, vetrinaLive.FRESCHEZZA_MS).unref?.();
   const serviGuscio = (req, res) => {
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.set('Cache-Control', 'no-cache');
@@ -4050,6 +4073,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       out.spontaneita = Math.min(0.5, Math.max(0, n));
     }
     if (b.rispostaMenzioni !== undefined) out.rispostaMenzioni = !!b.rispostaMenzioni;
+    // «fammi comparire fra le dirette sulla home»: e' un si' che si dice, e si
+    // toglie. Di serie non c'e', quindi nessuno finisce in vetrina per distrazione.
+    if (b.vetrinaLive !== undefined) { out.vetrinaLive = !!b.vetrinaLive; vetrinaLive.scorda(); }
     // modalità di attivazione: 24/7, solo quando è in diretta, o manuale
     if (b.modalita !== undefined) {
       if (!['sempre', 'live', 'manuale'].includes(b.modalita)) return res.status(400).json({ errore: 'modalità non valida' });

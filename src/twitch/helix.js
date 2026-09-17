@@ -62,6 +62,17 @@ export class Helix {
     return j?.data?.[0] || null;
   }
 
+  // Le dirette in corso di PIU' canali in una chiamata sola: Helix ne accetta
+  // cento per volta. Serve alla vetrina, dove una chiamata per canale sarebbe
+  // cresciuta col numero di clienti fino a diventare un problema di quelli che
+  // si scoprono quando il prodotto va bene.
+  async getStreams(logins) {
+    const lista = [...new Set((logins || []).map((l) => String(l || '').toLowerCase()).filter(Boolean))].slice(0, 100);
+    if (!lista.length) return [];
+    const j = await this._request('GET', '/streams', { query: lista.map((l) => ['user_login', l]) });
+    return j?.data || [];
+  }
+
   // Informazioni canale (titolo, categoria, ...) per broadcaster_id → oggetto o null.
   async getChannelInfo(broadcasterId) {
     const j = await this._request('GET', '/channels', { query: { broadcaster_id: broadcasterId } });

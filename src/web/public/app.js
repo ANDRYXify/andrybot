@@ -106,6 +106,7 @@ function impostazioni() {
     adattaCanale: s.adattaCanale !== false,
     giochi: s.giochi !== false,
     promoSocial: s.promoSocial !== false,
+    vetrinaLive: s.vetrinaLive === true,
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
     punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, perPresenza: 5, perAttivita: 5, moltSub: 1.5, moltVip: 1.25, lurkPasso: 0.15, lurkMinimo: 0.35, soloLive: true, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
     manche: { attivo: false, minMin: 15, maxMin: 45, soloLive: false, ...(s.manche && typeof s.manche === 'object' ? s.manche : {}) },
@@ -4537,6 +4538,16 @@ function pannelloStato() {
       <p>${L('Il motore veloce del bot che', 'The bot’s fast engine that', 'El motor rápido del bot que')} <strong class="primo-piano">${L('cresce da solo', 'grows on its own', 'crece solo')}</strong>: ${L('risponde all\'istante a ciò che ha già imparato e, quando incontra qualcosa di nuovo, se lo segna e lo impara dal maestro. Più lo alleni (anche via DM su Telegram), più sa fare da sé.', 'answers instantly to what it already learned and, when it meets something new, notes it and learns it from the teacher. The more you train it (also via Telegram DM), the more it can do on its own.', 'responde al instante a lo que ya aprendió y, cuando encuentra algo nuevo, lo anota y lo aprende del maestro. Cuanto más lo entrenas (también por DM en Telegram), más sabe hacer solo.')}</p>
       <div id="rete-panoramica"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
+    ${proprietario ? `<div class="carta">
+      <h2>${_hIco(ICO.globo)}${L('La tua diretta sulla home di SocialBot', 'Your stream on the SocialBot home', 'Tu directo en la home de SocialBot')}</h2>
+      <p>${L('Quando sei in onda, il tuo canale può comparire fra le dirette sulla nostra pagina iniziale: il nome, cosa stai giocando e il titolo della diretta, con un collegamento al tuo canale. È spento finché non lo accendi tu, e appena lo spegni sparisci.', 'When you are live, your channel can show up among the streams on our home page: your name, what you are playing and the stream title, with a link to your channel. It is off until you turn it on, and the moment you turn it off you disappear.', 'Cuando estás en directo, tu canal puede aparecer entre los directos de nuestra página de inicio: tu nombre, a qué juegas y el título del directo, con un enlace a tu canal. Está apagado hasta que lo enciendas, y en cuanto lo apagues desapareces.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="chk-vetrina-live" ${sImp.vetrinaLive ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Fammi comparire quando sono in diretta', 'Show me when I am live', 'Muéstrame cuando esté en directo')}</span>
+      </div>
+      <p class="suggerimento spazio-sopra">${L('Non mostriamo niente dei tuoi spettatori, e niente di tuo che non sia già pubblico sul tuo canale.', 'We show nothing about your viewers, and nothing of yours that is not already public on your channel.', 'No mostramos nada de tus espectadores, ni nada tuyo que no sea ya público en tu canal.')}</p>
+    </div>` : ''}
+
     <div class="carta">
       <h2>${_hIco(ICO.spina)}${L('Le tue piattaforme', 'Your platforms', 'Tus plataformas')}</h2>
       <p>${L('Dove il bot lavora per te. Collega quelle che usi: comandi, moduli, punti e memoria funzionano allo stesso modo su tutte, e una risposta torna sempre da dove è arrivata la domanda.', 'Where the bot works for you. Connect the ones you use: commands, modules, points and memory work the same on all of them, and a reply always comes back from where the question came.', 'Donde el bot trabaja para ti. Conecta las que uses: comandos, módulos, puntos y memoria funcionan igual en todas, y una respuesta vuelve siempre desde donde llegó la pregunta.')}</p>
@@ -17263,7 +17274,7 @@ async function conErrore(fn) {
 
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
-  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaRetePanoramica(); caricaPiattaforme(); caricaCodiciPosta(); collegaCancella(); }
+  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaRetePanoramica(); caricaPiattaforme(); caricaCodiciPosta(); collegaVetrinaLive(); collegaCancella(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'personalita') { caricaGuide(); caricaSpontanee(); }
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); }
@@ -18215,6 +18226,18 @@ function _statGara(id, righe, vuoto) {
     ? righe.map((r, i) => `<li><div class="testo-voce"><span class="domanda">${medaglia(i)} ${esc(r.chi)}</span>
         <span class="risposta">${esc(r.quanto)}</span></div></li>`).join('')
     : `<li class="vuoto">${vuoto}</li>`;
+}
+
+function collegaVetrinaLive() {
+  const c = document.getElementById('chk-vetrina-live');
+  if (!c || c.dataset.legato) return;
+  c.dataset.legato = '1';
+  c.addEventListener('change', () => conErrore(async () => {
+    await salvaImpostazioni({ vetrinaLive: c.checked }, null);
+    toast(c.checked
+      ? L('Comparirai fra le dirette quando sei in onda ✓', 'You will show up among the streams when you are live ✓', 'Aparecerás entre los directos cuando estés en directo ✓')
+      : L('Non comparirai più sulla home ✓', 'You will not show up on the home any more ✓', 'Ya no aparecerás en la home ✓'));
+  }));
 }
 
 async function caricaCodiciPosta() {
