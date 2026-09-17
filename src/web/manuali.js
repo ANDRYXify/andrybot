@@ -1036,6 +1036,7 @@ const VETRINA = {
       'Aggiungi il bot al tuo gruppo, scrivici dentro <code>/collega</code>, poi premi <em>Rileva gruppo</em>.',
     ] },
     { p: ['Da quel momento, quando vai live il gruppo lo sa. Il terzo passo è quello che si dimentica: senza <code>/collega</code> scritto <em>dentro</em> al gruppo, il bot non sa dove scrivere.'] },
+    { p: ['Se hai collegato anche la <strong>chat privata</strong>, a fine diretta il bot ti scrive un rapporto: durata, picco di spettatori e media, messaggi e chi ha scritto di più, nuovi follower e sub, raid, presenti, clip e donazioni. Numeri, non aggettivi. Si spegne dall\'interruttore sotto la chat privata.'] },
     { h3: 'TikTok, YouTube, Instagram' },
     { tabella: [
       ['Rete', 'Cosa serve', 'Cosa avvisa'],

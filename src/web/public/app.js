@@ -14746,6 +14746,12 @@ function pannelloNotifiche() {
       <div id="tg-dm-codice"></div>
 
       <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="chk-tg-rapporto" ${(stato.streamer?.settings?.rapporto?.attivo) !== false ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Rapporto di fine diretta in privato', 'End-of-stream report in private', 'Informe de fin de directo en privado')}</span>
+      </div>
+      <p class="suggerimento">${L('Appena chiudi la diretta ti scrive com’è andata: durata, picco di spettatori, messaggi e chi ha scritto di più, nuovi follower e sub, raid, presenti, clip e donazioni. Serve la chat privata collegata e accesa.', 'As soon as you end the stream it writes you how it went: duration, viewer peak, messages and top chatters, new followers and subs, raids, attendees, clips and donations. The private chat must be linked and on.', 'En cuanto cierras el directo te escribe cómo ha ido: duración, pico de espectadores, mensajes y quién más ha escrito, nuevos seguidores y subs, raids, presentes, clips y donaciones. Hace falta el chat privado vinculado y encendido.')}</p>
+
+      <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="chk-tg-proattiva" ${impostazioni().proattivoTg !== false ? 'checked' : ''}><span class="levetta"></span></label>
         <span class="etichetta-stato">${L('Ti scrive per prima (proattiva e curiosa)', 'It writes to you first (proactive and curious)', 'Te escribe primero (proactiva y curiosa)')}</span>
       </div>
@@ -16258,6 +16264,9 @@ function attivaPiattaforma() {
     await api('/api/streamer/telegram/dm', { method: 'POST', body: { modo: ev.target.checked ? 'me' : 'off' } });
     toast(ev.target.checked ? 'In privato risponderò solo a te.' : 'Chat privata spenta.');
     stato = await api('/api/me'); render();
+  }));
+  document.getElementById('chk-tg-rapporto')?.addEventListener('change', (ev) => conErrore(async () => {
+    await salvaImpostazioni({ rapporto: { attivo: ev.target.checked } }, ev.target.checked ? L('A fine diretta ti arriva il rapporto.', 'You get the report when the stream ends.', 'Al final del directo te llega el informe.') : L('Rapporto spento.', 'Report off.', 'Informe apagado.'));
   }));
   document.getElementById('btn-tg-dm-collega')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     const r = await api('/api/streamer/telegram/collega', { method: 'POST', body: {} });
