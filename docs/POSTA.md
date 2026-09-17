@@ -28,15 +28,35 @@ E il **reverse DNS** dell'IP del server, che deve tornare al dominio.
    - `socialbot.live` TXT `v=spf1 ip4:<IP> -all`
    - `sb1._domainkey.socialbot.live` TXT `v=DKIM1; k=rsa; p=…`
    - `_dmarc.socialbot.live` TXT `v=DMARC1; p=quarantine; adkim=s; aspf=s`
-4. **Reverse DNS** dell'IP del server → `socialbot.live`, dalla console Hetzner
-   (rDNS del server).
+4. **Reverse DNS** dell'IP del server, dalla console Hetzner. Il nome che
+   scegli qui (`mail.socialbot.live` va benissimo) deve avere un record A che
+   torna allo stesso IP, ed e' anche il nome con cui il bot si presenta:
+   se non e' il dominio nudo, va scritto in `MAIL_HELO`.
 5. Nel `.env`, solo se serve: `MAIL_DOMINIO` (di serie il dominio di
    `BASE_URL`), `MAIL_DA` (di serie `rapporti@<dominio>`),
-   `MAIL_DKIM_SELETTORE` (di serie `sb1`), `MAIL=no` per spegnere.
+   `MAIL_DKIM_SELETTORE` (di serie `sb1`), `MAIL_HELO` (di serie il dominio),
+   `MAIL=no` per spegnere.
+6. **La prova**: `node scripts/posta-chiave.mjs --verifica --ip <IP>`. Non tocca
+   niente e guarda com'e' messo il server adesso; quando e' tutto verde, la
+   prova vera e' scrivere il proprio indirizzo nella scheda Dirette.
 
 Senza la chiave la posta è **spenta**: `posta.attiva()` è falso, la scheda
 Dirette lo dice e il rapporto arriva su Telegram. Meglio niente che una mail
 che parte e sparisce.
+
+## Il cerchio: EHLO, reverse DNS e IP
+
+Chi riceve posta non si fida di un nome: lo chiude in un cerchio. Il nome detto
+nell'`EHLO` deve avere un record A che punta all'IP da cui la mail arriva, e
+quell'IP deve dichiarare lo stesso nome nel suo reverse DNS. Tre pezzi che
+guardati uno per uno sembrano tutti giusti, e insieme non combaciano: e' il caso
+normale, perche' un IP di posta si chiama `mail.<dominio>` mentre il bot, di
+serie, si presenterebbe col dominio nudo.
+
+Percio' il nome si **dice** (`MAIL_HELO`), non si deduce, e `--verifica` chiude
+il cerchio per intero: legge il reverse DNS dell'IP, controlla che quel nome
+torni davvero a quell'IP, e lo confronta con quello che il bot direbbe. Se non
+combaciano stampa la riga esatta da mettere nel `.env`.
 
 ## Cosa fa la consegna
 
@@ -66,6 +86,22 @@ minuti per canale. «Togli» cancella l'indirizzo e spegne il canale mail.
 
 Nella privacy sta scritto: l'indirizzo è facoltativo, serve solo per il
 rapporto, resta finché lo streamer non lo toglie.
+
+## La verifica, e perche' non e' una lista da spuntare
+
+`node scripts/posta-chiave.mjs --verifica [--ip <IP>]` non tocca niente e guarda
+com'e' messo il server adesso. Guarda le tre cose che vanno storte davvero, e
+che una lista scritta a mano non puo' garantire:
+
+- **il DKIM pubblicato contro la chiave vera.** Non «c'e' / non c'e'»: si
+  confronta carattere per carattere la `p=` del DNS con la chiave che il server
+  usa per firmare. Un record troncato dal pannello DNS — il guasto piu' comune —
+  da fuori sembra a posto, e le mail partono firmate male.
+- **la porta 25 in uscita, aprendola.** Un firewall che la blocca non risponde
+  «chiusa»: resta muto. Quindi la prova e' il banner `220` che arriva entro il
+  tempo da uno scambiatore vero, non «la connessione non e' fallita».
+- **il cerchio EHLO ↔ reverse DNS ↔ IP** (qui sopra), con la riga pronta da
+  copiare nel `.env` quando non si chiude.
 
 ## Il collaudo
 
