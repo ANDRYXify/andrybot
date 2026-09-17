@@ -33,13 +33,16 @@ test('il registro: famiglia con il suo file, due comandi, e la demo li copre', (
   assert.ok(MOD.includes("serie: serieText,") && MOD.includes("recordserie: recordText,"), 'le variabili dei Moduli');
 });
 
-test('il pannello: la carta con i due testi, il salvataggio, la lista in Memoria; il server normalizza e risponde', () => {
+test('il pannello: la carta con i due testi, il salvataggio, la classifica in Statistiche; il server normalizza e risponde', () => {
   for (const id of ['pr-attivo', 'pr-bonus', 'pr-tetto', 'pr-annuncia', 'pr-saluti', 'pr-primaVolta', 'pr-bentornato', 'pr-giorni', 'pr-soloLive', 'btn-salva-presenze', 'lista-presenze']) {
     assert.ok(APP.includes(`id="${id}"`), `manca #${id}`);
   }
   assert.ok(APP.includes("await salvaImpostazioni({ presenze: {"));
   assert.ok(SRV.includes("if (b.presenze !== undefined) out.presenze = presenze.normalizza(b.presenze, s.settings?.presenze);"));
-  assert.ok(SRV.includes("presenze: presenze.classifica(login, 5)"), 'la scheda Memoria legge dalle statistiche');
+  // Le serie non si contano due volte: la scheda Statistiche le chiede al modulo
+  // delle statistiche, che a sua volta le chiede a chi le tiene.
+  const st = leggi('src/features/statistiche.js');
+  assert.match(st, /presenze: presenze\.classifica\(ch, n\)/, 'la classifica delle presenze viene da chi la tiene');
   assert.ok(APP.includes("presenze: [\n        { user: 'il_nonno', serie: 27"), 'la demo mostra chi c\'e\' sempre');
 });
 

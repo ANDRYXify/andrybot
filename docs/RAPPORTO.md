@@ -123,3 +123,29 @@ indirizzo ce l'ha già anche solo proposto, e chi ha già risposto. La risposta 
 segna alla chiusura della finestra comunque sia andata, sì o no: la domanda è
 stata fatta. E se le novità sono già aperte, l'invito aspetta che si chiudano
 invece di accavallarsi.
+
+## Le statistiche: un posto solo, e una fonte sola per numero
+
+I numeri del canale stavano in tre schede con tre facce: i sette giorni in cima a
+Memoria, le classifiche delle monete dentro la carta del premio VIP in Giochi, le
+serie di presenze di nuovo in Memoria, i rapporti in Dirette. Nessun periodo da
+scegliere, nessun confronto possibile, e il proprietario l'ha detto senza giri:
+«non si capisce nulla così».
+
+Adesso c'è la scheda **Statistiche**, e il calcolo sta in
+`src/features/statistiche.js` — non nella porta, così si prova senza HTTP.
+`riassunto(login, { periodo })` decide due cose:
+
+- **cos'è un periodo**: sette giorni, trenta, oppure da sempre (che non è un caso
+  particolare, è l'inizio del tempo);
+- **da dove viene ogni numero, e uno solo**. La chat e il bot dai messaggi; le
+  dirette, le ore in onda, il picco, i follower, i sub e le donazioni **dai
+  rapporti già salvati** — gli stessi che lo streamer legge nella scheda Dirette,
+  non un secondo conto che col tempo diverge; le presenze e le ore guardate dai
+  loro registri.
+
+I rapporti si sommano **nel database** (`json_extract` in una query sola):
+leggerli tutti per sommarli in JavaScript vorrebbe dire aprire un JSON per ogni
+diretta mai fatta. Le ultime dirette invece non dipendono dal periodo: sono
+l'elenco di com'è andata le ultime volte, e a chi guarda «sette giorni» dopo una
+pausa di un mese una tabella vuota non direbbe niente.
