@@ -81,9 +81,13 @@ function livelloUtente(msg) {
 }
 
 export class ModulesEngine {
-  constructor({ effects, helix, pausaTimerMs } = {}) {
+  constructor({ effects, helix, regia, pausaTimerMs } = {}) {
     this.effects = effects || null;
     this.helix = helix || null;
+    // La regia (scena, fonte, transizione) la fa la pagina del pannello aperta
+    // sul computer dello streamer, attraverso il ponte di CONSOLify: qui arriva
+    // solo la funzione che gli passa un passo, e questo file non conosce il ponte.
+    this.regia = typeof regia === 'function' ? regia : null;
     this.manager = null;                 // impostato da start(); serve per say() di default
     this._cooldown = new Map();          // 'channel|id' → epoch ms di fine cooldown
     this._cooldownUtente = new Map();    // 'channel|id|utente' → idem, ma per persona
@@ -909,9 +913,38 @@ export class ModulesEngine {
         }
         return;
       }
+      case 'regia': {
+        // Un passo con la stessa forma di quelli dei tasti di CONSOLify. I nomi
+        // passano dall'espansione, cosi' «!scena $arg1» cambia scena a comando.
+        // Se nessuna pagina e' di guardia il passo salta e le altre azioni del
+        // Modulo vanno avanti: e' la regola di tutte le azioni.
+        if (!this.regia) return;
+        const passo = await this._passoRegia(azione, ctx);
+        if (!passo) return;
+        const esito = await this.regia(ctx.channel, passo);
+        if (!esito?.ok) log.debug(`#${ctx.channel} regia ${passo.tipo}: ${esito?.mostra || 'non riuscito'}`);
+        return;
+      }
       default:
         return;
     }
+  }
+
+  async _passoRegia(azione, ctx) {
+    const nome = async (v) => String(await this.espandi(String(v ?? ''), ctx, { noAzioni: true })).trim().slice(0, 80);
+    if (azione.cosa === 'scena') {
+      const scena = await nome(azione.scena);
+      return scena ? { tipo: 'scena', scena } : null;
+    }
+    if (azione.cosa === 'muto') {
+      const fonte = await nome(azione.fonte);
+      return fonte ? { tipo: 'muto', fonte, come: azione.come } : null;
+    }
+    if (azione.cosa === 'transizione') {
+      const transizione = await nome(azione.transizione);
+      return transizione ? { tipo: 'transizione', transizione } : null;
+    }
+    return null;
   }
 
   // Azione di moderazione "timeout": la proviamo SOLO se Helix espone un metodo

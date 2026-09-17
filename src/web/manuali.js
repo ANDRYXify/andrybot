@@ -299,7 +299,7 @@ const MODULI = {
     ] },
     { p: ['Quindi si paga <strong>dopo</strong> le attese e <strong>prima</strong> del dado: chi gioca paga la giocata anche quando perde — che è come funziona una giocata — ma non paga se il comando era in attesa. Dopo il pagamento hai <code>$costo</code> (quanto è uscito) e <code>$saldo</code> (quanto è rimasto) da usare nei testi.'] },
 
-    { h2: 'ALLORA: le quattordici azioni' },
+    { h2: 'ALLORA: le quindici azioni' },
     { p: ['Si eseguono <strong>in fila</strong>, fino a otto per modulo. Se una fallisce, le altre vanno avanti lo stesso: un webhook spento non deve spegnere il messaggio in chat.'] },
     { tabella: [
       ['Azione', 'Cosa fa', 'Cosa le dai', 'Serve'],
@@ -317,6 +317,7 @@ const MODULI = {
       ['Timeout in chat', 'mette in pausa chi ha scritto', 'i secondi', 'il permesso di moderazione'],
       ['Aspetta', 'una pausa prima dell\'azione dopo', 'i secondi (fino a 30)', '—'],
       ['Chiama un webhook', 'manda i dati a un indirizzo tuo', 'l\'URL, e se usare la risposta', 'un servizio tuo'],
+      ['Regia: scena, muto o transizione', 'comanda il programma con cui mandi in onda', 'la scena, o la fonte e come mutarla, o la transizione', 'il pannello aperto sul computer della regia, collegato in CONSOLify'],
     ] },
     { h3: 'Dai o togli punti' },
     { p: [
@@ -330,10 +331,18 @@ const MODULI = {
       'Accetta solo <code>http</code> e <code>https</code>, e <strong>non può puntare dentro una rete privata</strong>: gli indirizzi interni sono rifiutati sia scritti direttamente sia dopo aver risolto il nome, e un redirect non aggira il controllo. Cinque secondi di tempo, risposta letta fino a 10 KB.',
     ] },
 
+    { h3: 'Regia: scena, muto o transizione' },
+    { p: [
+      'È lo stesso passo dei tasti di CONSOLify, messo dentro un Modulo: così una scena cambia a comando (<code>!brb</code>), a voce, o quando succede qualcosa: un raid, l\'inizio o la fine della diretta.',
+      'I nomi sono quelli del programma. Se la regia è collegata da questa pagina te li propongo mentre scrivi; una scena può venire anche dal comando: <code>$arg1</code> dopo <code>!scena</code>.',
+      'Lo esegue il pannello aperto sul computer della regia, non il server: tienilo aperto mentre streami. Se non c\'è, il passo salta e le altre azioni del Modulo vanno avanti lo stesso.',
+      'Tra i modelli pronti trovi <strong>Torno subito</strong> (scena di pausa e microfono muto), <strong>Sono tornato</strong> e <strong>Raid: scena dedicata</strong>: i nomi delle scene li adatti ai tuoi.',
+    ] },
+
     { h2: 'Il ramo ALTRIMENTI' },
     { p: [
       'È quello che succede <strong>quando il dado non passa</strong>. Ha senso solo con una probabilità sotto il 100%: il pannello non lo lascia salvare altrimenti, perché un modulo che sembra fare due cose e ne fa una sola è peggio di un errore.',
-      'Le azioni del ramo «altrimenti» sono le stesse quattordici, e il costo è già stato pagato: la giocata persa può raccontarlo con <code>$costo</code> e <code>$saldo</code>.',
+      'Le azioni del ramo «altrimenti» sono le stesse quindici, e il costo è già stato pagato: la giocata persa può raccontarlo con <code>$costo</code> e <code>$saldo</code>.',
     ] },
 
     { h2: 'Le variabili' },
@@ -856,12 +865,13 @@ const CONSOLIFY = {
       'Premi <strong>Collega</strong>. Non devi compilare niente: indirizzo e porta sono quelli soliti e li provo io, comprese le porte più usate.',
       'Se il programma <strong>non chiede una password</strong> — cioè se nelle sue impostazioni l\'autenticazione è spenta — hai finito lì: un clic, e sei collegato. È il modo più comodo, e sul tuo computer non toglie niente a nessuno: quel collegamento lo può aprire solo chi è già seduto davanti a quella macchina.',
       'Se invece la chiede, te lo dico e compare un campo solo: incolla la <strong>password</strong> che vedi nelle sue impostazioni, e basta. Indirizzo e porta restano affar mio.',
-      '<strong>Una volta sola.</strong> Dalla volta dopo mi collego da solo quando apri la scheda, senza che tu prema niente.',
+      '<strong>Una volta sola.</strong> Dalla volta dopo mi collego da solo appena apri il pannello, senza che tu prema niente, e se il programma si chiude e riapre ci riprovo da me ogni mezzo minuto. Con <strong>Stacca</strong> smetto finché non premi di nuovo Collega.',
       'Appena collegato compaiono le tue scene: premi una scena e cambia, come dal programma. Da lì in poi i passi «cambia scena» e «muta una fonte» funzionano dentro i tasti, insieme a tutto il resto.',
     ] },
     { p: [
       '<strong>Dove funziona.</strong> Il collegamento parte da questa pagina e arriva al programma che gira sullo <strong>stesso computer</strong>. Un browser non può cercare i dispositivi della rete né parlare con un altro computer: lo impedisce il browser stesso, e non è una regola che vogliamo aggirare.',
       '<strong>Dal telefono però le scene funzionano.</strong> Non perché il telefono raggiunga il programma — non può — ma perché passa da questo pannello: tu premi sul telefono, il pannello aperto sul computer della regia esegue. Basta tenerlo aperto lì mentre streami. Se non c\'è nessun pannello aperto, il tasto te lo dice invece di rispondere «fatto».',
+      '<strong>Anche dai Moduli.</strong> Un comando in chat, la voce o un evento come un raid possono cambiare scena, mutare una fonte o la transizione: è la stessa strada, e la esegue lo stesso pannello.',
       '<strong>La password non passa da noi.</strong> Indirizzo, porta e password restano nel tuo browser, sul tuo computer: non arrivano al nostro server, non entrano nel database e non finiscono nei backup. Con <strong>Scorda tutto</strong> spariscono anche da lì.',
     ] },
 

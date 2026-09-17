@@ -21,6 +21,10 @@
     try { localStorage.removeItem(K); } catch (e) {  }
   }
 
+  function ricordata() {
+    try { return !!localStorage.getItem(K); } catch (e) { return false; }
+  }
+
   const b64 = (buf) => btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
 
   async function digest(testo) {
@@ -132,7 +136,7 @@
     return {
       collega, chiudi, chiedi, ascolta, leggiIncollato,
       collegato: () => pronto,
-      impostazioni, salvaImpostazioni, scorda, casa,
+      impostazioni, salvaImpostazioni, scorda, ricordata, casa,
     };
   }
 

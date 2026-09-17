@@ -9,6 +9,7 @@ import { Helix } from './twitch/helix.js';
 import { BotManager } from './bot.js';
 import { EffectsEngine } from './features/effects.js';
 import { ModulesEngine } from './features/modules.js';
+import { passoDiRegia } from './features/console.js';
 import { PluginBus, caricaPlugin } from './features/plugins.js';
 import { startWeb } from './web/server.js';
 import { startApprovalSync } from './web/gate.js';
@@ -64,7 +65,7 @@ const effects = new EffectsEngine();
 // Motore "Moduli": automazioni QUANDO→SE→ALLORA per streamer (solo dati, mai
 // codice arbitrario). Condiviso tra bot (trigger da chat/eventi/timer) e
 // dashboard (CRUD, prova, ingresso API esterna).
-const modules = new ModulesEngine({ effects, helix });
+const modules = new ModulesEngine({ effects, helix, regia: passoDiRegia });
 // Event-bus dei plugin OPERATORE (server-side, fidati): il say usa il manager.
 const bus = new PluginBus({ say: (ch, t) => manager.say(ch, t) });
 const manager = new BotManager({ auth, helix, effects, modules, bus });

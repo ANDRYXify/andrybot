@@ -36,6 +36,11 @@ il bot esegue una o più azioni.
   - `attendi` `{ secondi }` → pausa (max 30s) prima dell'azione successiva.
   - `overlayTesto` `{ testo, durata }` → testo centrato sull'overlay OBS.
   - `timeout` `{ secondi }` → moderazione (vedi note sotto).
+  - `regia` `{ cosa:'scena', scena }` | `{ cosa:'muto', fonte, come:'inverti'|'muta'|'smuta' }` |
+    `{ cosa:'transizione', transizione }` → un passo di regia di CONSOLify (stessa forma dei passi
+    dei tasti), eseguito dalla pagina del pannello aperta sul computer della regia attraverso il
+    ponte (`console.passoDiRegia`). I nomi passano dall'espansione (`$arg1`). Vedi
+    `docs/REGIA-PONTE.md`.
 
 Ogni azione è isolata in `try/catch`: un errore **non blocca** quelle successive.
 

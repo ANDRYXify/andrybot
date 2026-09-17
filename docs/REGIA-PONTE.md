@@ -64,3 +64,34 @@ autenticata come sempre.
   tasto che non c'e'.
 - Il ponte porta SOLO passi di regia gia' salvati su un tasto di quel canale: non
   e' un canale per comandi liberi.
+
+## Dai Moduli: scene a comando, a voce e dagli eventi
+
+Il ponte era nato per i tasti. Ma «torno subito» lo si dice in chat, un raid
+arriva da solo, e la fine della diretta e' un evento: tutte cose che i Moduli
+sanno gia' ascoltare. Quindi l'azione «regia» di un Modulo **e'** un passo di
+regia — stessa forma dei passi dei tasti (`scena`, `muto`, `transizione`),
+stessa pulizia (`passoPulito`), stessa uscita (`chiediAlPonte`). Il motore dei
+Moduli non conosce il ponte: riceve dall'avvio una funzione (`passoDiRegia`),
+come riceve gli effetti e Helix.
+
+Questo tiene in piedi l'invariante di sopra: dal ponte passa solo un passo gia'
+salvato dallo streamer — in un tasto o in un Modulo, che la porta dei Moduli
+valida — mai un ordine che arrivi da una richiesta. I nomi di scena possono
+venire dal comando (`$arg1`), ma sono comunque il nome di un passo salvato, non
+un canale libero: al ponte arriva `{tipo:'scena', scena:'Pausa'}`, e la pagina
+sa fare solo quelle tre cose.
+
+Se nessuna pagina e' di guardia il passo salta e le altre azioni del Modulo
+vanno avanti (la regola di tutte le azioni), e resta una riga nel log del bot.
+
+### Di guardia dall'avvio, non dalla scheda
+
+Un raid non aspetta che si apra CONSOLify. Percio' il pannello, se un
+collegamento e' stato ricordato (`RegiaEsterna.ricordata()`), si collega da se'
+all'avvio con la configurazione salvata — niente scansione delle porte, quella
+resta al tasto Collega — e se la linea cade riprova ogni trenta secondi finche'
+il collegamento resta ricordato. «Stacca» la ferma (finche' non si preme di
+nuovo Collega), «Scorda tutto» la spegne per definizione. La sincronizzazione
+del ponte (`apriPonteRegia`/`chiudiPonteRegia`) sta PRIMA del disegno della
+spia: cosi' vale anche quando la scheda non e' a video.

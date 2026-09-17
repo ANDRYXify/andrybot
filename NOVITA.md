@@ -22,6 +22,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nella scheda Memoria trovi chi c'è sempre: le serie di presenze più lunghe del canale. [vai: memoria]
 - Ogni diretta finita lascia il suo rapporto nella scheda «Dirette», con durata, picco di spettatori, chat, follower, sub, raid, presenti, clip e donazioni. Un puntino ti dice quando ce n'è uno nuovo. [vai: dirette]
 - Il rapporto può arrivarti appena chiudi, su Telegram in privato o via mail: l'indirizzo lo scrivi tu e vale dopo la conferma. [vai: dirette]
+- I Moduli comandano la regia: un comando, la voce o un raid cambiano scena, mutano una fonte o la transizione nel programma con cui mandi in onda. Tre modelli pronti: torno subito, sono tornato, raid. [vai: moduli]
+- Il pannello si collega da solo alla regia appena lo apri, se l'hai collegata una volta, e ci riprova se il programma si chiude: basta tenerlo aperto sul computer della diretta. [vai: consolify]
 
 ## 2026-09-16
 
