@@ -194,7 +194,170 @@ function fasciaLive(L, l, dirette) {
   </section>`;
 }
 
-function corpo(L, l, kick, youtube, dirette) {
+// IL LISTINO LO DISEGNA IL SERVER.
+//
+// Lo disegnava app.js: la home apriva un buco vuoto (`#vetrina-piani`),
+// chiedeva `/api/abbonamento/piani`, e a risposta arrivata ci scriveva dentro
+// tre schede, i pacchetti e il configuratore. Due prezzi da pagare: un giro di
+// rete in piu' su una pagina che non ha bisogno di nessuno, e un pezzo di
+// pagina che compare dopo, spingendo in giu' quello che c'e' sotto mentre uno
+// legge. Ma soprattutto: per disegnarlo serviva TUTTO il pannello: 434 kB di
+// app.js su una pagina che e' un volantino.
+//
+// I prezzi il server li ha gia' in mano. Quindi il listino entra nei gusci
+// insieme al resto della vetrina, e al browser resta solo il conto del
+// configuratore — le caselle da spuntare e il totale che cambia.
+const eur = (n) => '€' + Number(n || 0).toFixed(2).replace('.', ',');
+const tre = (o, campo, L) => {
+  const t = o && o[campo + '3'];
+  return (Array.isArray(t) && t.length === 3) ? L(t[0], t[1], t[2]) : ((o && o[campo]) || '');
+};
+
+// Il conto che il browser rifa' a ogni spunta: prezzi, pacchetti e le frasi
+// gia' scritte nella lingua del guscio, con i buchi da riempire. Cosi' in
+// `vetrina-app.js` non c'e' una parola di copia — solo l'aritmetica.
+function datiConto(L, piani) {
+  const prezzi = {};
+  for (const a of piani.addon || []) prezzi[a.id] = Number(a.prezzo || 0);
+  return {
+    base: Number(piani.base.prezzo || 0),
+    prezzi,
+    bundle: (piani.bundle || []).map((b) => ({ id: b.id, nome: b.nome, addon: b.addon, prezzo: Number(b.prezzo || 0) })),
+    testi: {
+      uno: L('extra', 'extra', 'extra'),
+      tanti: L('extra', 'extras', 'extras'),
+      conta: L('Base + {n} {parola}', 'Base + {n} {parola}', 'Base + {n} {parola}'),
+      niente: L('solo il canone Base', 'Base fee only', 'solo la cuota Base'),
+      risparmio: L('Col pacchetto «{nome}» paghi {prezzo} invece di {somma}: applicato.',
+        'With the «{nome}» pack you pay {prezzo} instead of {somma}: applied.',
+        'Con el paquete «{nome}» pagas {prezzo} en vez de {somma}: aplicado.'),
+    },
+  };
+}
+
+function configuratoreHtml(L, piani) {
+  const disponibili = piani.addon || [];
+  if (!disponibili.length) return '';
+  const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  const righe = disponibili.map((a) => `
+    <label class="vt-extra">
+      <input type="checkbox" value="${esc(a.id)}">
+      <span class="vt-spunta">${spunta}</span>
+      <span class="vt-extra-corpo">
+        <strong>${esc(tre(a, 'nome', L))}</strong>
+        <span>${esc(tre(a, 'sommario', L))}</span>
+      </span>
+      <span class="vt-extra-prezzo">+${esc(eur(a.prezzo))}</span>
+    </label>`).join('');
+  return `<div class="vt-comp" data-comp data-conto="${esc(JSON.stringify(datiConto(L, piani)))}">
+    <h3 class="vt-comp-tit">${L('Aggiungi i super-poteri', 'Add the super-powers', 'Añade los súper-poderes')}</h3>
+    <p class="vt-testo">${L('Spunta cosa ti serve. Il canone Base è compreso nel totale, e puoi cambiare idea quando vuoi.', 'Tick what you need. The Base fee is included in the total, and you can change your mind anytime.', 'Marca lo que necesitas. La cuota Base está incluida en el total, y puedes cambiar de idea cuando quieras.')}</p>
+    <div class="vt-comp-griglia">${righe}</div>
+    <div class="vt-conto">
+      <span class="vt-conto-tot"><b data-tot>${esc(eur(piani.base.prezzo))}</b><span>${L('/mese', '/month', '/mes')}</span></span>
+      <span class="vt-conto-nota" data-nota>${L('solo il canone Base', 'Base fee only', 'solo la cuota Base')}</span>
+      <button type="button" class="vt-btn vt-btn-primo" data-vai>${L('Attiva', 'Activate', 'Activar')}</button>
+      <span class="vt-risparmio" data-risp hidden></span>
+    </div>
+  </div>`;
+}
+
+// LE POCHE PAROLE CHE IL BROWSER DEVE ANCORA DIRE. Sono quattro avvisi che
+// dipendono da come uno e' arrivato qui (un accesso annullato su Twitch, un
+// pagamento tornato indietro), quindi non si possono disegnare in un guscio
+// precalcolato. Ma nemmeno si scrivono in `vetrina-app.js`: la copia sta qui,
+// in tre lingue, come tutto il resto della vetrina, e di la' resta solo il
+// gesto di mostrarla.
+function avvisiHtml(L) {
+  const parole = {
+    errore: {
+      access_denied: L('Hai annullato l’accesso su Twitch.', 'You cancelled the Twitch login.', 'Has cancelado el acceso con Twitch.'),
+      state: L('Sessione di accesso scaduta, riprova.', 'Login session expired, please try again.', 'Sesión de acceso caducada, inténtalo de nuevo.'),
+      validazione: L('Twitch non ha confermato il tuo accesso, riprova.', 'Twitch didn’t confirm your login, please try again.', 'Twitch no confirmó tu acceso, inténtalo de nuevo.'),
+      'account-diverso': L('Hai autorizzato un account diverso da quello con cui sei loggato: usa lo stesso account.', 'You authorised a different account than the one you’re logged in with: use the same account.', 'Has autorizado una cuenta distinta a la de tu sesión: usa la misma cuenta.'),
+    },
+    altro: L('Errore di accesso: ', 'Login error: ', 'Error de acceso: '),
+    pagato: L('Pagamento ricevuto: il tuo piano è attivo. Entra con il tuo account e lo trovi acceso.', 'Payment received: your plan is active. Log in with your account and you will find it on.', 'Pago recibido: tu plan está activo. Entra con tu cuenta y lo encontrarás activo.'),
+    attesa: L('Pagamento in corso: appena Stripe conferma, il piano si accende da solo.', 'Payment in progress: as soon as Stripe confirms, the plan switches on by itself.', 'Pago en curso: en cuanto Stripe confirme, el plan se enciende solo.'),
+    senzaPagamento: L('Non risulta nessun pagamento. Se hai pagato, scrivi ad andryxify.', 'No payment found. If you did pay, message andryxify.', 'No consta ningún pago. Si has pagado, escribe a andryxify.'),
+    annullato: L('Pagamento annullato: nessun addebito.', 'Payment canceled: no charge.', 'Pago cancelado: sin cargo.'),
+  };
+  return '<div class="vt-avvisi" data-avvisi="' + esc(JSON.stringify(parole)) + '"></div>';
+}
+
+function listinoHtml(L, piani) {
+  if (!piani || !piani.base || !piani.free) return '';
+  const perMese = L('/mese', '/month', '/mes');
+  const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  const inclusiFree = [
+    L('Comandi e moduli illimitati', 'Unlimited commands and modules', 'Comandos y módulos ilimitados'),
+    L('Moderazione con scudo anti-bot', 'Moderation with anti-bot shield', 'Moderación con escudo anti-bot'),
+    L('Overlay per la diretta e contatori a schermo', 'stream overlay and on-screen counters', 'Overlay para el directo y contadores'),
+  ];
+  const inclusiBase = [
+    L('Tutto l’Essenziale', 'Everything in Essenziale', 'Todo lo de Essenziale'),
+    L('Avvisi live su Telegram e Discord', 'Live alerts on Telegram and Discord', 'Avisos en directo en Telegram y Discord'),
+    L('Avvisi dei nuovi post sui social', 'Alerts for new social posts', 'Avisos de nuevas publicaciones'),
+    L('Un moderatore incluso', 'One moderator included', 'Un moderador incluido'),
+  ];
+  const piano = ({ nome, prezzo, sotto, testo, voci, punta, azione, i }) => `
+    <article class="vt-piano${punta ? ' punta' : ''}" style="--i:${i}">
+      ${punta ? `<span class="vt-piano-tag">${L('il più scelto', 'most picked', 'el más elegido')}</span>` : ''}
+      <h3>${esc(nome)}</h3>
+      <div class="vt-prezzo"><b>${prezzo}</b><span>${sotto}</span></div>
+      <p>${esc(testo)}</p>
+      <ul class="vt-elenco">${voci.map((v) => `<li>${spunta}${esc(v)}</li>`).join('')}</ul>
+      ${azione}
+    </article>`;
+
+  const bundle = piani.bundle || [];
+  return `<div class="vetrina-piani" id="vetrina-piani">
+    <div class="vt-store">
+      ${piano({
+        i: 0,
+        nome: tre(piani.free, 'nome', L) || 'Essenziale',
+        prezzo: L('Gratis', 'Free', 'Gratis'),
+        sotto: L('per sempre', 'forever', 'para siempre'),
+        testo: L('Basta registrarsi. Nessuna carta, nessuna scadenza.', 'Just sign up. No card, no expiry.', 'Solo regístrate. Sin tarjeta, sin caducidad.'),
+        voci: inclusiFree,
+        punta: false,
+        azione: `<a class="vt-btn" href="/entra?nuovo=1">${L('Inizia gratis', 'Start free', 'Empieza gratis')}</a>`,
+      })}
+      ${piano({
+        i: 1,
+        nome: tre(piani.base, 'nome', L) || 'Base',
+        prezzo: eur(piani.base.prezzo),
+        sotto: perMese,
+        testo: tre(piani.base, 'sommario', L),
+        voci: inclusiBase,
+        punta: true,
+        azione: `<button type="button" class="vt-btn" data-vai-comp>${L('Componi il tuo', 'Build yours', 'Compón el tuyo')}</button>`,
+      })}
+    </div>
+
+    ${bundle.length ? `
+    <div class="vt-pacchi">
+      <p class="vt-pacchi-tit vt-rivela">${L('Pacchetti pronti', 'Ready-made packs', 'Packs listos')} <span>${L('un clic e ti riempio la lista qui sotto', 'one click and I fill in the list below', 'un clic y te relleno la lista de abajo')}</span></p>
+      <div class="vt-griglia">
+        ${bundle.map((b, i) => {
+          const risp = b.prezzoPieno > b.prezzo;
+          return `<button type="button" class="vt-carta vt-pacco" data-pacco="${esc(b.id)}" aria-pressed="false" style="--i:${i}">
+            ${risp ? `<span class="vt-pacco-sconto">−${Math.round(b.sconto * 100)}%</span>` : ''}
+            <h3>${esc(b.nome)}</h3>
+            <p>${esc(tre(b, 'sommario', L))}</p>
+            <span class="vt-pacco-prezzo">${risp ? `<s>+${eur(b.prezzoPieno)}</s>` : ''}<b>+${eur(b.prezzo)}</b><i>${perMese}</i></span>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
+
+    <div class="vt-comp-guscio vt-rivela" id="vt-comp-guscio">${configuratoreHtml(L, piani)}</div>
+
+    <p class="vt-community vt-rivela">${L('<strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot è <strong>gratis e completo</strong> per te: non ti serve nessun piano.', '<strong>Already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community?</strong> SocialBot is <strong>free and complete</strong> for you: no plan needed.', '<strong>¿Ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot es <strong>gratis y completo</strong> para ti: no necesitas ningún plan.')}</p>
+  </div>`;
+}
+
+function corpo(L, l, kick, youtube, dirette, piani) {
   // con chi ci si registra: Twitch sempre, Kick e YouTube quando la porta e' aperta.
   // L'invito in fondo deve dire le stesse cose dell'apertura: una lista sola.
   const conChi = (o) => { const p = ['Twitch', kick ? 'Kick' : null, youtube ? 'YouTube' : null].filter(Boolean); return p.length > 1 ? p.slice(0, -1).join(', ') + o + p[p.length - 1] : p[0]; };
@@ -222,6 +385,7 @@ function corpo(L, l, kick, youtube, dirette) {
   ];
 
   return `
+    ${avvisiHtml(L)}
     <section class="vt-scena">
       <header class="vt-barra">
         <a class="vt-marchio" href="/" aria-label="SocialBot"><img src="/icons/logo-barra.png?v=8" alt="SocialBot" width="80" height="30"></a>
@@ -271,7 +435,7 @@ function corpo(L, l, kick, youtube, dirette) {
         <h2 class="vt-tit">${L('Quanto costa', 'What it costs', 'Cuánto cuesta')}</h2>
         <p class="vt-testo">${L('L’Essenziale è gratis e resta gratis. Il resto si aggiunge un pacchetto alla volta, dal pannello, e si toglie allo stesso modo. Se un rinnovo non passa, il bot resta: si spengono solo le funzioni in più.', 'Essenziale is free and stays free. The rest is added one package at a time, from the panel, and removed the same way. If a renewal fails, the bot stays: only the extra features switch off.', 'Essenziale es gratis y sigue siéndolo. Lo demás se añade de paquete en paquete, desde el panel, y se quita igual. Si una renovación falla, el bot se queda: solo se apagan las funciones extra.')}</p>
       </div>
-      <div class="vetrina-piani" id="vetrina-piani"></div>
+      ${listinoHtml(L, piani)}
     </section>
 
     <section class="vt-sez">
@@ -303,10 +467,10 @@ function corpo(L, l, kick, youtube, dirette) {
 // Il markup della vetrina nella lingua chiesta. Funzione PURA: nessun DOM,
 // nessuna richiesta, nessuna data — cosi' i gusci si precalcolano una volta
 // all'avvio e si servono senza rifare niente.
-export function vetrinaHtml(lingua = 'it', { kick = false, youtube = false, dirette = [] } = {}) {
+export function vetrinaHtml(lingua = 'it', { kick = false, youtube = false, dirette = [], piani = null } = {}) {
   const l = LINGUE.includes(lingua) ? lingua : 'it';
   const L = (it, en, es) => (l === 'en' ? en : l === 'es' ? es : it);
-  return corpo(L, l, kick, youtube, dirette);
+  return corpo(L, l, kick, youtube, dirette, piani);
 }
 
 export { ICO as ICONE_VETRINA, NOME_ADDON as PACCHETTI_VETRINA, CAPACITA as FUNZIONI_VETRINA };
@@ -323,4 +487,76 @@ export function inserisciVetrina(guscio, lingua, opzioni) {
     throw new Error(`vetrina: non trovo ${ANCORA_VETRINA} in index.html`);
   }
   return guscio.replace(ANCORA_VETRINA, `<div id="app">${vetrinaHtml(lingua, opzioni)}</div>`);
+}
+
+// ── IL GUSCIO DELLA VETRINA NON E' IL GUSCIO DEL PANNELLO ───────────────────
+//
+// `index.html` e' uno solo, ed e' giusto cosi': e' la stessa pagina, con la
+// stessa testata, lo stesso pie' e la stessa filigrana. Ma i due che ci
+// abitano dentro non si somigliano per niente. Il pannello e' un programma —
+// lo Studio, l'editor, la ricerca, il ponte con la regia. La vetrina e' un
+// volantino: si legge, e c'e' un conto da fare in fondo.
+//
+// Finora pagavano lo stesso conto: 434 kB di `app.js` piu' mezzo megabyte di
+// contorno arrivavano anche a chi era passato solo a leggere — e la vetrina che
+// il server aveva gia' scritto restava sotto il velo di caricamento finche'
+// quel megabyte non aveva finito di girare.
+//
+// Il verso giusto e' l'elenco corto, non quello lungo: la vetrina tiene SOLO
+// quello che nomina qui sotto, e tutto il resto e' del pannello per
+// definizione. Uno script nuovo aggiunto domani alla pagina non arriva alla
+// vetrina perche' nessuno si e' ricordato di escluderlo: non ci arriva perche'
+// non e' in questo elenco. Il contrario — un elenco di cose da togliere — ha
+// gia' fallito altrove, e non poteva fare altro.
+export const RISORSE_VETRINA = [
+  'tema.js',          // il tema prima del primo disegno, o la pagina lampeggia
+  'font.css', 'style.css', 'tema.css', 'anime.css', 'vetrina.css',
+  'splash.js',        // toglie il velo
+  'cookie.js',        // la striscia del cookie tecnico
+  'cinema.js',        // lo sfondo animato e la modalita' leggera
+  'vetrina-app.js',   // il velo via subito, il conto del configuratore
+];
+
+export const SCRIPT_VETRINA = '<script src="vetrina-app.js" defer></script>';
+
+const _nudo = (via) => String(via || '').split('?')[0].replace(/^\.?\//, '');
+
+// Toglie dal guscio ogni script e ogni foglio di stile che la vetrina non
+// nomina. Gli script scritti dentro la pagina (i dati strutturati, le regole di
+// prefetch, lo stile del velo) restano: non pesano e non si scaricano.
+function soloRisorseVetrina(h) {
+  const tieni = new Set(RISORSE_VETRINA.map(_nudo));
+  const via = [];
+  h = h.replace(/[ \t]*<script\b[^>]*\bsrc="([^"]+)"[^>]*>\s*<\/script>\n?/g, (tutto, src) => {
+    if (tieni.has(_nudo(src))) return tutto;
+    via.push(_nudo(src));
+    return '';
+  });
+  h = h.replace(/[ \t]*<link\b[^>]*\brel="stylesheet"[^>]*>\n?/g, (tutto) => {
+    const m = /\bhref="([^"]+)"/.exec(tutto);
+    if (m && tieni.has(_nudo(m[1]))) return tutto;
+    via.push(m ? _nudo(m[1]) : '?');
+    return '';
+  });
+  if (!via.length) throw new Error('vetrina: il guscio non porta nessuna risorsa del pannello, qualcosa non torna');
+  return h;
+}
+
+// Il guscio di chi non e' entrato: la vetrina gia' disegnata, la larghezza
+// giusta al primo disegno (`body.vetrina`, vedi docs/VELOCITA.md) e solo le sue
+// risorse.
+export function guscioVetrina(guscio, lingua, opzioni) {
+  let h = inserisciVetrina(guscio, lingua, opzioni);
+  if (!h.includes('<body>')) throw new Error('vetrina: non trovo <body> nel guscio');
+  h = h.replace('<body>', '<body class="vetrina">');
+  return soloRisorseVetrina(h);
+}
+
+// Il guscio di chi e' entrato (e della demo): tutto il pannello, senza lo
+// script della vetrina che li' non ha niente da fare.
+export function guscioPannello(guscio) {
+  if (!guscio.includes(SCRIPT_VETRINA)) {
+    throw new Error(`pannello: non trovo ${SCRIPT_VETRINA} in index.html`);
+  }
+  return guscio.replace('  ' + SCRIPT_VETRINA + '\n', '').replace(SCRIPT_VETRINA, '');
 }

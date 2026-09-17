@@ -17,7 +17,16 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { inserisciVetrina } from '../src/web/vetrina-vista.js';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { guscioVetrina } from '../src/web/vetrina-vista.js';
+
+// I prezzi arrivano dal listino vero, non da una sua imitazione. La cartella
+// usa e getta serve perche' il listino tira dentro la configurazione: il banco
+// non tocca niente di quello che c'e' sul disco.
+process.env.DATA_DIR = process.env.DATA_DIR || mkdtempSync(path.join(tmpdir(), 'vetrina-'));
+const { pianiPubblici } = await import('../src/features/abbonamenti.js');
+const PIANI = pianiPubblici();
 
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUB = path.join(RAD, 'src/web/public');
@@ -34,8 +43,7 @@ const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 
 // Il guscio si compone come fa il server: stessa funzione, non una sua imitazione.
 const GUSCIO = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8');
-const guscioDi = (lingua) => inserisciVetrina(GUSCIO, lingua, { kick: true })
-  .replace('<body>', '<body class="vetrina">')
+const guscioDi = (lingua) => guscioVetrina(GUSCIO, lingua, { kick: true, piani: PIANI })
   .replace('<html lang="it">', `<html lang="${lingua}">`);
 
 const srv = http.createServer((req, res) => {

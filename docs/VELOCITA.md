@@ -78,3 +78,58 @@ per risparmiare lavoro di layout. **Qui e sbagliato:** applica
 `contain: paint`, che ritaglia il contenuto al proprio riquadro — e ci
 rimangiremmo esattamente le luci e le ombre appena liberate (vedi
 `docs/LUCI.md`). Il guadagno non vale il difetto.
+
+## La vetrina non paga il conto del pannello
+
+Misura sul sito vero, prima: **554 kB** sulla home per chi non e entrato, di
+cui **434 kB di solo `app.js`** — il pannello intero, con lo Studio, l'editor
+dell'overlay, la ricerca e il ponte con la regia. Piu il contorno: la veste
+dell'overlay, il generatore di QR, l'avatar 3D, i preset, la plancia, il
+pilota. Tutta roba che sulla home non ha niente da fare.
+
+Il difetto non era un file di troppo: era che i due inquilini condividevano
+l'elenco. `index.html` e uno solo — ed e giusto, e la stessa pagina, con la
+stessa testata, lo stesso pie e la stessa filigrana — ma dentro ci abitano un
+programma e un volantino. Finche l'elenco degli script e stato uno, il
+volantino ha pagato il conto del programma. E non solo in byte: la vetrina che
+il server aveva gia scritto restava sotto il velo di caricamento finche quel
+megabyte non aveva finito di girare, perche il velo lo toglieva `app.js`.
+
+Ora i gusci sono due, e li compone `src/web/vetrina-vista.js`:
+
+- `guscioVetrina(...)` — la vetrina gia disegnata (listino compreso), la
+  larghezza giusta al primo disegno, e **solo le risorse elencate in
+  `RISORSE_VETRINA`**;
+- `guscioPannello(...)` — tutto il resto, per chi e dentro e per la demo.
+
+Il verso conta. L'elenco e **corto e positivo**: la vetrina tiene solo quello
+che nomina, e tutto il resto e del pannello per definizione. Uno script nuovo
+aggiunto domani non arriva alla home perche qualcuno si e ricordato di
+escluderlo: non ci arriva perche non e in quell'elenco. Un elenco di cose da
+togliere ha gia fallito due volte altrove (vedi `src/web/vetrina.js`), e per
+costruzione non poteva fare altro.
+
+Il listino se lo disegna il server. Prima la home apriva un buco vuoto,
+chiedeva `/api/abbonamento/piani` e ci scriveva dentro le schede a risposta
+arrivata: un giro di rete in piu e un pezzo di pagina che compariva dopo. I
+prezzi il server li ha gia in mano, quindi entrano nei gusci insieme al resto,
+e i gusci si rifanno quando il listino **cambia davvero** — la stessa ronda che
+aggiorna le dirette in vetrina. Al browser resta il conto del configuratore:
+`src/web/public/vetrina-app.js`, che legge prezzi e frasi da `data-conto` e non
+contiene una parola di copia.
+
+| | prima | dopo |
+| --- | ---: | ---: |
+| home, HTML + CSS + JS (gzip) | 554 kB | **82 kB** |
+| script caricati | 17 | **5** |
+| velo di caricamento | via dopo `/api/me` | via subito |
+
+Il cancello che la tiene ferma: `node scripts/verifica-dieta.mjs`
+(`--selftest`). Apre la home in un browser vero, pesa ogni cosa che chiede,
+controlla che non chieda niente che non sia suo, che stia sotto il tetto di
+120 kB, che il velo se ne sia andato — e che la demo, che il pannello lo e
+davvero, continui ad averlo tutto. Se un domani il tetto si sfora, la domanda
+giusta non e "alzo il tetto?": e "cosa e rientrato dalla finestra?".
+
+Resta da fare, e vale un'altra fetta: `style.css` e `anime.css` sono ancora
+interi (52 kB gzip sui 82), e per buona parte sono stile del pannello.

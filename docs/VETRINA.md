@@ -384,3 +384,25 @@ strano, per sempre. La richiesta in volo adesso ha una variabile sua.
 `test/unita/vetrina-live.test.mjs` tiene ferme le due regole (il permesso e il
 vuoto), l'ordine per spettatori, l'indirizzo giusto per piattaforma, le carte che
 restano quando Twitch non risponde, e la chiamata che non si ripete a ogni visita.
+
+## Il listino, e il peso della pagina
+
+Il listino non lo chiede piu' il browser: lo disegna il server dentro al guscio,
+nella lingua di quel guscio, dai prezzi che ha gia' in mano
+(`abbonamenti.pianiPubblici()`). Prima la home apriva un buco vuoto, chiedeva
+`/api/abbonamento/piani` e ci scriveva dentro le schede a risposta arrivata: un
+giro di rete in piu' e un pezzo di pagina che compariva dopo, spingendo in giu'
+quello che c'era sotto mentre uno leggeva.
+
+I gusci si rifanno quando il listino cambia davvero — e puo' cambiare da solo,
+perche' una voce entra in vendita quando Stripe conferma il suo prezzo. La
+stessa ronda che aggiorna le dirette guarda anche questo.
+
+Al browser resta solo il conto del configuratore: `public/vetrina-app.js` legge
+prezzi, pacchetti e frasi da `data-conto` e rifa' il totale a ogni spunta. Non
+contiene una parola di copia — le frasi, in tre lingue, stanno con tutto il
+resto della vetrina.
+
+Da qui viene anche la dieta della pagina: la vetrina non carica piu' `app.js` ne'
+il suo contorno, e le sue risorse sono quelle elencate in `RISORSE_VETRINA`.
+Numeri, verso della regola e cancello in `docs/VELOCITA.md`.
