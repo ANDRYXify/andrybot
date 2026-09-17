@@ -253,6 +253,7 @@ async function caricaStato() {
   esitoAcquistoDaIndirizzo();
   esitoPostaDaIndirizzo();
   avvisaRapporti();
+  collegaRegiaRicordata();
 }
 
 let _avvisatoRapporti = false;
@@ -9445,7 +9446,7 @@ function pannelloConsolify() {
     </div>`);
 }
 
-let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', login: '', pagina: 0, modifica: false, aperto: null, scoperta: false, overlay: false, passoFile: 0, scene: [], fonti: [], transizioni: [], regia: false, regiaAppesa: false, regiaProvata: false };
+let _cons = { azioni: [], plancia: { pagine: [] }, base: '', chiave: '', login: '', pagina: 0, modifica: false, aperto: null, scoperta: false, overlay: false, passoFile: 0, scene: [], fonti: [], transizioni: [], regia: false, regiaAppesa: false, regiaProvata: false, regiaFerma: false };
 
 async function caricaConsolify() {
   const esito = document.getElementById('cons-esito');
@@ -9590,12 +9591,39 @@ function chiudiPonteRegia() {
   _ponte = null;
 }
 
+function appendiAscoltiRegia() {
+  if (_cons.regiaAppesa || !window.RegiaEsterna) return;
+  _cons.regiaAppesa = true;
+  RegiaEsterna.ascolta('stato', (s) => { disegnaSpiaRegia(); if (!(s && s.collegato)) programmaRiprovaRegia(); });
+  RegiaEsterna.ascolta('CurrentProgramSceneChanged', (d) => segnaScenaViva(d && d.sceneName));
+}
+
+const RIPROVA_REGIA_MS = 30000;
+let _regiaRiprova = null;
+
+function programmaRiprovaRegia() {
+  if (_regiaRiprova || _cons.regiaFerma || DEMO || !window.RegiaEsterna || !RegiaEsterna.ricordata()) return;
+  _regiaRiprova = setTimeout(async () => {
+    _regiaRiprova = null;
+    if (_cons.regiaFerma || !RegiaEsterna.ricordata() || RegiaEsterna.collegato()) return;
+    const ok = await collegaRegia(RegiaEsterna.impostazioni(), true);
+    if (!ok) programmaRiprovaRegia();
+  }, RIPROVA_REGIA_MS);
+}
+
+function collegaRegiaRicordata() {
+  if (DEMO || !window.RegiaEsterna || !RegiaEsterna.ricordata() || RegiaEsterna.collegato()) return;
+  appendiAscoltiRegia();
+  _cons.regiaProvata = true;
+  collegaRegia(RegiaEsterna.impostazioni(), true).then((ok) => { if (!ok) programmaRiprovaRegia(); });
+}
+
 function disegnaSpiaRegia(msg) {
-  const el = document.getElementById('re-spia');
-  if (!el) return;
   const su = !!(window.RegiaEsterna && RegiaEsterna.collegato());
   _cons.regia = su;
   if (su) apriPonteRegia(); else chiudiPonteRegia();
+  const el = document.getElementById('re-spia');
+  if (!el) return;
   el.className = 'cons-spia' + (su ? ' su' : ' giu');
   el.textContent = msg || (su
     ? L('collegato — da qui comando anche quello che premi dal telefono', 'connected — from here I also run what you press on your phone', 'conectado — desde aquí también ejecuto lo que pulsas en el móvil')
@@ -9699,11 +9727,7 @@ function preparaRegia() {
   const g = RegiaEsterna.impostazioni();
   metticampiRegia(g);
   disegnaSpiaRegia();
-  if (!_cons.regiaAppesa) {
-    _cons.regiaAppesa = true;
-    RegiaEsterna.ascolta('stato', () => disegnaSpiaRegia());
-    RegiaEsterna.ascolta('CurrentProgramSceneChanged', (d) => segnaScenaViva(d && d.sceneName));
-  }
+  appendiAscoltiRegia();
   if (RegiaEsterna.collegato()) { caricaScene(); return; }
   if (_cons.regiaProvata) return;
   _cons.regiaProvata = true;
@@ -10163,8 +10187,8 @@ function appendiConsolify() {
       if (r.ok) segnaScenaViva(nome); else disegnaSpiaRegia(r.mostra);
       return;
     }
-    if (id === 're-collega') { await provaCollegamento(false); return; }
-    if (id === 're-stacca') { RegiaEsterna.chiudi(); disegnaSpiaRegia(); await caricaScene(); return; }
+    if (id === 're-collega') { _cons.regiaFerma = false; await provaCollegamento(false); return; }
+    if (id === 're-stacca') { _cons.regiaFerma = true; RegiaEsterna.chiudi(); disegnaSpiaRegia(); await caricaScene(); return; }
     if (id === 're-scorda') {
       if (!confirm(L('Scordare indirizzo e password? Restano solo su questo computer, e le riscrivi quando vuoi.', 'Forget address and password? They only live on this computer, and you can type them again whenever.', '¿Olvidar dirección y contraseña? Solo viven en este ordenador, y las reescribes cuando quieras.'))) return;
       RegiaEsterna.chiudi(); RegiaEsterna.scorda();
@@ -12442,6 +12466,9 @@ function pannelloModuli() {
         <button class="modello-pronto" data-modello="morti">${L('Contatore morti', 'Death counter', 'Contador de muertes')}</button>
         <button class="modello-pronto" data-modello="voce">${L('Comando vocale: clippa', 'Voice command: clip', 'Comando por voz: clipea')}</button>
         <button class="modello-pronto" data-modello="webhook">${L('Collega il mio bot (webhook)', 'Connect my bot (webhook)', 'Conecta mi bot (webhook)')}</button>
+        <button class="modello-pronto" data-modello="brb">${L('Torno subito (regia)', 'Be right back (program)', 'Vuelvo enseguida (programa)')}</button>
+        <button class="modello-pronto" data-modello="torno">${L('Sono tornato (regia)', 'I am back (program)', 'Ya estoy (programa)')}</button>
+        <button class="modello-pronto" data-modello="raidscena">${L('Raid: scena dedicata', 'Raid: dedicated scene', 'Raid: escena dedicada')}</button>
         ${bottoniRicette('data-modello')}
       </div>
     </div>
@@ -12481,6 +12508,14 @@ function pannelloModuli() {
       <p class="spazio-sopra"><button class="btn" id="btn-salva-gcmd-2">${L('Salva i comandi', 'Save the commands', 'Guardar los comandos')}</button></p>
     </div>
 `);
+}
+
+function nomiRegia() {
+  const scene = _cons.scene || [];
+  const fonti = _cons.fonti || [];
+  const scena = (n) => scene.find((s) => s.toLowerCase().includes(n.toLowerCase())) || n;
+  const fonte = fonti.find((f) => /mic|aux|voce|voice/i.test(f)) || 'Mic/Aux';
+  return { scena, fonte };
 }
 
 function modelloPronto(nome) {
@@ -12564,6 +12599,37 @@ function modelloPronto(nome) {
           { tipo: 'punti', op: 'aggiungi', quanto: '$arg2', a: 'destinatario' },
           { tipo: 'messaggio', testo: '✨ $touser riceve $arg2 $monete da $user.' },
         ] };
+    case 'brb': {
+      const { scena, fonte } = nomiRegia();
+      return { id: null, nome: 'Torno subito', attivo: true,
+        trigger: { tipo: 'comando', comando: 'brb', alias: ['pausa'] }, condizioni: { ...cond(), tier: 'mod' },
+        azioni: [
+          { tipo: 'regia', cosa: 'scena', scena: scena('Pausa') },
+          { tipo: 'regia', cosa: 'muto', fonte, come: 'muta' },
+          { tipo: 'messaggio', testo: 'Torno subito: intanto la chat è vostra.' },
+        ] };
+    }
+    case 'torno': {
+      const { scena, fonte } = nomiRegia();
+      return { id: null, nome: 'Sono tornato', attivo: true,
+        trigger: { tipo: 'comando', comando: 'torno', alias: ['back'] }, condizioni: { ...cond(), tier: 'mod' },
+        azioni: [
+          { tipo: 'regia', cosa: 'scena', scena: scena('Gioco') },
+          { tipo: 'regia', cosa: 'muto', fonte, come: 'smuta' },
+          { tipo: 'messaggio', testo: 'Rieccomi!' },
+        ] };
+    }
+    case 'raidscena': {
+      const { scena } = nomiRegia();
+      return { id: null, nome: 'Raid: scena dedicata', attivo: true,
+        trigger: { tipo: 'evento', evento: 'raid' }, condizioni: cond(),
+        azioni: [
+          { tipo: 'regia', cosa: 'scena', scena: scena('Raid') },
+          { tipo: 'messaggio', testo: 'Benvenuti a tutti dal raid di $raider!' },
+          { tipo: 'attendi', secondi: 20 },
+          { tipo: 'regia', cosa: 'scena', scena: scena('Gioco') },
+        ] };
+    }
     case 'social':
       return { id: null, nome: 'Social', attivo: true,
         trigger: { tipo: 'comando', comando: 'social', alias: [] }, condizioni: cond(),
@@ -16903,6 +16969,9 @@ function attivaPiattaforma() {
       } else if (ev.target.matches('[data-campo="a"]')) {
         const box = ev.target.closest('.azione-riga')?.querySelector('[data-solo-nome]');
         if (box) box.hidden = ev.target.value !== 'nome';
+      } else if (ev.target.matches('[data-campo="cosa"]')) {
+        const cosa = ev.target.value;
+        ev.target.closest('.azione-riga')?.querySelectorAll('[data-regia-cosa]').forEach((b) => { b.hidden = b.dataset.regiaCosa !== cosa; });
       }
       aggiornaRiassunto();
     });
@@ -18040,6 +18109,7 @@ const AZIONI = [
   ['annuncia', 'Annuncio in chat (/announce)'],
   ['shoutout', 'Shoutout (banner)'],
   ['punti', 'Dai o togli punti'],
+  ['regia', 'Regia: scena, muto o transizione'],
 ];
 
 const VARIABILI = [
@@ -18241,6 +18311,14 @@ function riassuntoAzione(a) {
     case 'titolo': return a.testo ? `cambia titolo in "${a.testo}"` : 'cambia titolo';
     case 'attendi': return `aspetta ${a.secondi || 0}s`;
     case 'overlayTesto': return 'mostra un testo sull\'overlay';
+    case 'regia': {
+      if (a.cosa === 'muto') {
+        const come = { muta: 'muta', smuta: 'smuta', inverti: 'muta o smuta' }[a.come] || 'muta o smuta';
+        return a.fonte ? `${come} la fonte "${a.fonte}"` : `${come} una fonte`;
+      }
+      if (a.cosa === 'transizione') return a.transizione ? `passa alla transizione "${a.transizione}"` : 'cambia transizione';
+      return a.scena ? `cambia scena in "${a.scena}"` : 'cambia scena';
+    }
     case 'timeout': return `timeout di ${a.secondi || 0}s`;
     case 'musica': return a.brano ? `metti in coda "${a.brano}"` : 'metti una canzone in coda';
     case 'punti': {
@@ -18699,6 +18777,51 @@ function disegnaCampiAzione(a) {
         ${pillole}
         <label class="campo">Durata a schermo (ms)</label>
         <input aria-label="Durata a schermo (ms)" type="number" data-campo="durata" min="500" max="30000" value="${Number(a.durata) || 5000}">`;
+    case 'regia': {
+      const cosa = ['scena', 'muto', 'transizione'].includes(a.cosa) ? a.cosa : 'scena';
+      const come = a.come || 'inverti';
+      const su = !!(window.RegiaEsterna && RegiaEsterna.collegato());
+      const lista = (id, voci) => `<datalist id="${id}">${(voci || []).map((n) => `<option value="${esc(n)}"></option>`).join('')}</datalist>`;
+      return `
+        <div class="griglia-campi">
+          <div>
+            <label class="campo">Cosa fare</label>
+            <select aria-label="Cosa fare" data-campo="cosa">
+              <option value="scena" ${cosa === 'scena' ? 'selected' : ''}>Cambia scena</option>
+              <option value="muto" ${cosa === 'muto' ? 'selected' : ''}>Muta o smuta una fonte</option>
+              <option value="transizione" ${cosa === 'transizione' ? 'selected' : ''}>Cambia transizione</option>
+            </select>
+          </div>
+          <div data-regia-cosa="scena"${cosa === 'scena' ? '' : ' hidden'}>
+            <label class="campo">Scena</label>
+            <input aria-label="Scena" type="text" data-campo="scena" data-var-target list="mod-regia-scene" maxlength="80" placeholder="es. Pausa, oppure $arg1" value="${esc(a.scena || '')}">
+            ${lista('mod-regia-scene', _cons.scene)}
+          </div>
+          <div data-regia-cosa="muto"${cosa === 'muto' ? '' : ' hidden'}>
+            <label class="campo">Fonte</label>
+            <input aria-label="Fonte" type="text" data-campo="fonte" data-var-target list="mod-regia-fonti" maxlength="80" placeholder="es. Mic/Aux" value="${esc(a.fonte || '')}">
+            ${lista('mod-regia-fonti', _cons.fonti)}
+          </div>
+          <div data-regia-cosa="muto"${cosa === 'muto' ? '' : ' hidden'}>
+            <label class="campo">Come</label>
+            <select aria-label="Come" data-campo="come">
+              <option value="muta" ${come === 'muta' ? 'selected' : ''}>Muta</option>
+              <option value="smuta" ${come === 'smuta' ? 'selected' : ''}>Smuta</option>
+              <option value="inverti" ${come === 'inverti' ? 'selected' : ''}>Inverti</option>
+            </select>
+          </div>
+          <div data-regia-cosa="transizione"${cosa === 'transizione' ? '' : ' hidden'}>
+            <label class="campo">Transizione</label>
+            <input aria-label="Transizione" type="text" data-campo="transizione" data-var-target list="mod-regia-transizioni" maxlength="80" placeholder="es. Dissolvenza" value="${esc(a.transizione || '')}">
+            ${lista('mod-regia-transizioni', _cons.transizioni)}
+          </div>
+        </div>
+        ${pillole}
+        <p class="suggerimento">${su
+          ? 'Regia collegata da questa pagina: i nomi te li propongo mentre scrivi.'
+          : 'Regia non collegata: scrivi il nome esatto come nel programma, oppure collegala in <strong>CONSOLify</strong> e te li propongo io.'}
+        Il passo lo esegue il pannello aperto sul computer della regia, non il server: tienilo aperto mentre streami.</p>`;
+    }
     case 'timeout':
       return `
         <label class="campo">Timeout (secondi)</label>
@@ -18806,6 +18929,11 @@ function leggiAzioneRiga(riga) {
     case 'titolo': return { tipo, testo: v('testo')?.value || '', annuncia: !!v('annuncia')?.checked };
     case 'attendi': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
     case 'overlayTesto': return { tipo, testo: v('testo')?.value || '', durata: Number(v('durata')?.value) || 5000 };
+    case 'regia': return {
+      tipo, cosa: v('cosa')?.value || 'scena', scena: (v('scena')?.value || '').trim(),
+      fonte: (v('fonte')?.value || '').trim(), come: v('come')?.value || 'inverti',
+      transizione: (v('transizione')?.value || '').trim(),
+    };
     case 'timeout': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
     case 'musica': return { tipo, brano: (v('brano')?.value || '').trim(), annuncia: !!v('annuncia')?.checked };
     case 'annuncia': return { tipo, testo: v('testo')?.value || '', colore: v('colore')?.value || 'primary' };

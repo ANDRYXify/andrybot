@@ -286,6 +286,19 @@ export async function eseguiPassoDiTasto(channel, idTasto, k, dip = {}) {
   return { ok: false, mostra: 'tasto non trovato' };
 }
 
+// I MODULI passano di qui. Un'azione «regia» di un Modulo e' un passo di regia
+// con la STESSA forma di quelli dei tasti, salvato dallo streamer nel suo
+// Modulo (dalla porta dei Moduli, che lo valida). Percio' esce dal ponte con la
+// stessa strada e la stessa pulizia: un posto solo dove si parla con la pagina,
+// e mai un ordine che arrivi da una richiesta.
+export const TIPI_REGIA = ['scena', 'muto', 'transizione'];
+
+export function passoDiRegia(channel, passo) {
+  const p = passoPulito(passo, new Set());
+  if (!p || !TIPI_REGIA.includes(p.tipo)) return Promise.resolve({ ok: false, mostra: 'passo non valido' });
+  return chiediAlPonte(norm(channel), p);
+}
+
 export function esegui(channel, id, { say, emit, effetti, testo } = {}) {
   const login = norm(channel);
   const pezzi = String(id || '').split(':');

@@ -187,9 +187,13 @@ const UPLOAD_MAX = 60 * 1024 * 1024;   // 60 MB in ingresso (per clip fino a ~30
 
 // Moduli: tipi di innesco e di azione ammessi (validazione lato API)
 const MOD_TRIGGER = ['comando', 'parola', 'evento', 'timer', 'manuale', 'voce'];
-const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip', 'categoria', 'titolo', 'musica', 'annuncia', 'shoutout', 'punti'];
+const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip', 'categoria', 'titolo', 'musica', 'annuncia', 'shoutout', 'punti', 'regia'];
 const MOD_PUNTI_OP = ['aggiungi', 'togli', 'imposta'];
 const MOD_PUNTI_A = ['autore', 'destinatario', 'caso', 'nome'];
+// L'azione «regia» e' un passo di regia di CONSOLify dentro un Modulo: stesse
+// tre cose (scena, fonte da mutare, transizione) e stesse tre maniere di mutare.
+const MOD_REGIA = ['scena', 'muto', 'transizione'];
+const MOD_MUTO = ['inverti', 'muta', 'smuta'];
 const EXT_MAX_MIN = 30;   // ingresso esterno: max richieste al minuto per login
 
 // Comando integrato /compleanno nel gruppo Telegram. Registra/mostra/rimuove la
@@ -5844,6 +5848,13 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       }
       if (a.tipo === 'annuncia' && !String(a.testo || '').trim()) {
         return 'l\'azione "annuncio" ha bisogno di un testo (anche con variabili come $gioco)';
+      }
+      if (a.tipo === 'regia') {
+        if (!MOD_REGIA.includes(a.cosa)) return 'l\'azione "regia" vuole sapere se cambiare scena, mutare una fonte o cambiare transizione';
+        if (a.cosa === 'scena' && !String(a.scena || '').trim()) return 'l\'azione "regia" ha bisogno del nome della scena (anche una variabile come $arg1)';
+        if (a.cosa === 'muto' && !String(a.fonte || '').trim()) return 'l\'azione "regia" ha bisogno del nome della fonte da mutare';
+        if (a.cosa === 'muto' && !MOD_MUTO.includes(a.come)) return 'l\'azione "regia" vuole sapere se mutare, smutare o invertire la fonte';
+        if (a.cosa === 'transizione' && !String(a.transizione || '').trim()) return 'l\'azione "regia" ha bisogno del nome della transizione';
       }
     }
     return null;
