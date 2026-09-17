@@ -124,6 +124,7 @@ function impostazioni() {
     overlayStato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     overlayMusica: (s.overlayMusica && typeof s.overlayMusica === 'object') ? s.overlayMusica : {},
     overlayTimer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : {},
+    overlayTreno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : {},
     donazioni: (s.donazioni && typeof s.donazioni === 'object') ? s.donazioni : { attivo: false, link: '', etichetta: '', messaggio: '', valuta: 'EUR', annunciaChat: false, testoChat: '', kofiSet: false },
     grafiche: (s.grafiche && typeof s.grafiche === 'object') ? s.grafiche : null,
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
@@ -567,6 +568,7 @@ function _demoGet(via) {
       { id: "serie", modulo: "presenze", moduloNome: ["Serie di presenze", "Attendance streaks", "Rachas de presencia"], moduloAcceso: true, titolo: ["La tua serie", "Your streak", "Tu racha"], cosa: ["Dice a quante dirette di fila è stato presente chi lo scrive, o il nome dopo il comando, e a quante in tutto.", "Says how many streams in a row the writer, or the name after the command, has attended, and how many overall.", "Dice a cuántos directos seguidos ha estado quien lo escribe, o el nombre tras el comando, y a cuántos en total."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["serie", "presenze", "streak"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "classificaserie", modulo: "presenze", moduloNome: ["Serie di presenze", "Attendance streaks", "Rachas de presencia"], moduloAcceso: true, titolo: ["Classifica delle serie", "Streak leaderboard", "Clasificación de rachas"], cosa: ["Chi è venuto a più dirette di fila.", "Who has attended the most streams in a row.", "Quién ha estado en más directos seguidos."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["classificaserie", "serietop", "topserie", "presenzetop"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "subathon", modulo: "subathon", moduloNome: ["Subathon", "Subathon", "Subathon"], moduloAcceso: true, titolo: ["Quanto manca", "How long left", "Cuánto queda"], cosa: ["Dice quanto manca alla fine del subathon.", "Says how long is left before the subathon ends.", "Dice cuánto queda para el final del subathon."], costa: false, attesa: 5, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["subathon", "quantomanca"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "treno", modulo: "treno", moduloNome: ["Hype train", "Hype train", "Hype train"], moduloAcceso: true, titolo: ["A che punto è il treno", "Where the train is", "Por dónde va el tren"], cosa: ["Dice a che livello è l’hype train in corso, quanto manca al prossimo e quanti secondi restano.", "Says what level the running hype train is at, how far to the next one and how many seconds are left.", "Dice en qué nivel está el hype train en curso, cuánto falta para el siguiente y cuántos segundos quedan."], costa: false, attesa: 5, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["treno", "hypetrain", "hype"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "compleanno", modulo: "compleanni", moduloNome: ["Compleanni", "Birthdays", "Cumpleaños"], moduloAcceso: true, titolo: ["Il mio compleanno", "My birthday", "Mi cumpleaños"], cosa: ["Chi lo scrive si segna il compleanno (!compleanno 25/12), lo rilegge o lo toglie con «via».", "The writer sets their birthday (!compleanno 25/12), reads it back or removes it with «via».", "Quien lo escribe apunta su cumpleaños (!compleanno 25/12), lo consulta o lo quita con «via»."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["compleanno", "compleanni", "birthday"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "battuta", modulo: "battute", moduloNome: ["Battute", "Jokes", "Chistes"], moduloAcceso: true, titolo: ["Battuta", "Joke", "Chiste"], cosa: ["Dice una battuta del serbatoio del canale. Mod e streamer le aggiungono con !battuta aggiungi.", "Tells a joke from the channel's bank. Mods and streamer add them with !battuta aggiungi.", "Cuenta un chiste del depósito del canal. Mods y streamer los añaden con !battuta aggiungi."], costa: false, attesa: 5, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["battuta", "battute", "joke"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "so", modulo: "base", moduloNome: ["Comandi pronti", "Built-in commands", "Comandos de serie"], moduloAcceso: true, titolo: ["Shoutout", "Shoutout", "Shoutout"], cosa: ["Fa lo shoutout a un altro canale.", "Gives a shoutout to another channel.", "Hace un shoutout a otro canal."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["so", "shoutout"], rinominato: false, chi: "mod", chiMinimo: "mod" },
@@ -2596,6 +2598,7 @@ const _hIco = (d) => `<svg class="h-ico" viewBox="0 0 24 24" width="20" height="
 const ICO = {
   meno: '<line x1="5" x2="19" y1="12" y2="12"/>',
   orologio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
+  treno: '<rect x="4" y="3" width="16" height="12" rx="2"/><path d="M4 9h16"/><path d="M8 19l-2 2"/><path d="M16 19l2 2"/><circle cx="8.5" cy="18" r="1.5"/><circle cx="15.5" cy="18" r="1.5"/>',
   musica: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
   sliders: '<line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/>',
   sondaggi: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
@@ -6318,6 +6321,7 @@ function pannelloAlert() {
         ${ovlElemento('cont', ICO.grafico, L('Contatori', 'Counters', 'Contadores'), '')}
         ${ovlElemento('musica', ICO.musica, L('Player musica', 'Music player', 'Reproductor de música'), 'sez-musica')}
         ${ovlElemento('timer', ICO.orologio, L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), 'sez-timer')}
+        ${ovlElemento('treno', ICO.treno, L('Hype train', 'Hype train', 'Hype train'), 'sez-treno')}
         ${ovlElemento('pen', ICO.penitenza, L('Sfida a tempo', 'Timed challenge', 'Reto a tiempo'), 'penitenze')}
         ${ovlElemento('effetti', ICO.effetti, L('Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'), 'effetti')}
         ${ovlElemento('consolify', ICO.onda, L('Tasti di CONSOLify', 'CONSOLify keys', 'Teclas de CONSOLify'), 'consolify')}
@@ -6437,6 +6441,40 @@ function pannelloAlert() {
         </div>
       </div>
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="timer">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
+    <details class="carta sez" data-parte="aspetto" id="sez-treno">
+      <summary><h3>${_hIco(ICO.treno)}Hype train</h3></summary>
+      <p>${L('Il treno lo fa Twitch: livello, punti e quanto manca li decide lui, e qui si vedono. Niente da contare e niente da far partire — quando parte, parte.', 'The train is Twitch’s: level, points and time left are its call, and here you see them. Nothing to count and nothing to start — when it goes, it goes.', 'El tren lo hace Twitch: nivel, puntos y lo que falta los decide él, y aquí se ven. Nada que contar y nada que arrancar — cuando sale, sale.')}</p>
+      <p class="suggerimento">${L('I sub e i bit che lo fanno crescere contano già negli obiettivi e nel subathon, uno per uno: qui non si contano una seconda volta.', 'The subs and bits that grow it already count towards goals and the subathon, one by one: they are not counted again here.', 'Los subs y bits que lo hacen crecer ya cuentan en los objetivos y en el subathon, uno a uno: aquí no se cuentan otra vez.')}</p>
+      <div data-cfg="treno">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="trn-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Mostralo nella scena', 'Show it on the scene', 'Muéstralo en la escena')}</span>
+        </div>
+        <div class="griglia-campi spazio-sopra">
+          <div><label class="campo" for="trn-titolo">${L('Titolo', 'Title', 'Título')}</label><input id="trn-titolo" type="text" data-c="titolo" maxlength="60"></div>
+          <div><label class="campo" for="trn-pos">${L('Dove', 'Where', 'Dónde')}</label><select id="trn-pos" data-c="posizione">${POS4_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></div>
+        </div>
+        <label class="riga-check spazio-sopra"><input type="checkbox" data-c="mostraChi"> ${L('Mostra chi ha spinto di più', 'Show who pushed the most', 'Muestra quién empujó más')}</label>
+        <label class="riga-check"><input type="checkbox" data-c="mostraRecord"> ${L('Mostra il record del canale, quando Twitch lo manda', 'Show the channel record, when Twitch sends it', 'Muestra el récord del canal, cuando Twitch lo envía')}</label>
+
+        <h4 class="spazio-sopra">${L('In chat', 'In chat', 'En el chat')}</h4>
+        <p class="suggerimento">${L('Si parla quando il treno parte, quando sale di livello e quando finisce. Non a ogni sub: quello lo dicono già gli alert.', 'It speaks when the train starts, when it levels up and when it ends. Not at every sub: the alerts already say that.', 'Habla cuando el tren sale, cuando sube de nivel y cuando acaba. No en cada sub: eso ya lo dicen las alertas.')}</p>
+        <label class="riga-check spazio-sopra"><input type="checkbox" data-c="annuncia"> ${L('Dillo in chat', 'Say it in chat', 'Dilo en el chat')}</label>
+        <div><label class="campo" for="trn-parte">${L('Quando parte', 'When it starts', 'Cuando sale')}</label>
+          <input id="trn-parte" type="text" data-c="testoParte" maxlength="200"></div>
+        <div><label class="campo" for="trn-liv">${L('Quando sale di livello', 'When it levels up', 'Cuando sube de nivel')} <span class="tenue">— <code>{livello}</code></span></label>
+          <input id="trn-liv" type="text" data-c="testoLivello" maxlength="200"></div>
+        <div><label class="campo" for="trn-fine">${L('Quando finisce', 'When it ends', 'Cuando acaba')} <span class="tenue">— <code>{livello}</code> <code>{chi}</code> <code>{punti}</code></span></label>
+          <input id="trn-fine" type="text" data-c="testoFine" maxlength="200"></div>
+
+        <div class="asp-blocco" data-asp="treno" data-cfg-di="treno">
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="treno">${L('Salva', 'Save', 'Guardar')}</button></p>
     </details>
 
     <details class="carta sez" data-parte="aspetto" id="sez-goal">
@@ -6697,7 +6735,7 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'musica', 'timer', 'pen', 'effetti', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'musica', 'timer', 'treno', 'pen', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
 const _mostraOra = () => {
@@ -7154,9 +7192,7 @@ function _sincronizzaScena() {
     }
     if (e.goal) _vestiGoal(nodo.firstElementChild, e.goal);
     else if (e.cont) _vestiCont(nodo.firstElementChild, e.cont);
-    else if (e.k === 'musica') _vestiMusica(nodo.firstElementChild, _cfgEl('musica'));
-    else if (e.k === 'pen') _vestiPen(nodo.firstElementChild, _cfgEl('pen'));
-    else _vestiTimer(nodo.firstElementChild, _cfgEl('timer'));
+    else if (VESTITORE[e.k]) VESTITORE[e.k](nodo.firstElementChild, _cfgEl(e.k));
     nodo.classList.toggle('sel', selezione === e.k);
   }
   for (const n of [...stage.querySelectorAll('.ap-el')]) if (!vivi.has(n.id)) n.remove();
@@ -7425,6 +7461,44 @@ function _vestiTimer(box, cfg) {
     : _orologioGiu(fine > 0 ? manca : (Number(cfg.minuti) || 15) * 60000);
 }
 
+const TRENO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICO.treno + '</svg>';
+
+function _defTreno() {
+  return { attivo: false, titolo: 'Hype train', mostraChi: true, mostraRecord: false,
+    annuncia: false, testoParte: 'Hype train partito! Spingiamo.',
+    testoLivello: 'Hype train al livello {livello}!',
+    testoFine: 'Treno finito al livello {livello}. Grazie {chi}!',
+    posizione: 'alto-destra', xy: null,
+    stile: { dim: 'media', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 12, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
+}
+
+function _vestiTreno(box, cfg) {
+  if (!box.querySelector('.tr-barra')) {
+    box.innerHTML = '<div class="tr-testa"><span class="tr-ico">' + TRENO_SVG + '</span>'
+      + '<span class="tr-tit"></span><span class="tr-liv"></span></div>'
+      + '<div class="tr-barra"><i></i></div>'
+      + '<div class="tr-pie"><span class="tr-chi"></span><span class="tr-tempo"></span></div>';
+  }
+  const st = cfg.stile || {};
+  const t = impostazioni().overlayStato?.treno;
+  const corre = !!(t && Number(t.scade) > Date.now());
+  const liv = corre ? (Number(t.livello) || 1) : 3;
+  const q = corre ? Math.min(1, (Number(t.quanto) || 0) / Math.max(1, Number(t.meta) || 1)) : 0.62;
+  box.className = 'ovl-widget ovl-treno dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st),
+    '--dim-ico': (st.dimIcona != null ? st.dimIcona : 20) + 'px' });
+  box.querySelector('.tr-tit').textContent = cfg.titolo || '';
+  const rec = corre ? (Number(t.record) || 0) : 7;
+  box.querySelector('.tr-liv').textContent = 'liv. ' + liv + (cfg.mostraRecord && rec > 0 ? ' / rec. ' + rec : '');
+  box.querySelector('.tr-barra i').style.setProperty('--q', q.toFixed(4));
+  box.querySelector('.tr-chi').textContent = cfg.mostraChi
+    ? (corre && t.chi && t.chi[0] ? t.chi[0].nome : 'MarioRossi') : '';
+  box.querySelector('.tr-tempo').textContent = corre ? _orologioGiu(t.scade - Date.now()) : '3:12';
+}
+
+const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno };
+
 function _orologioGiu(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
   const o = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), sec = t % 60;
@@ -7663,6 +7737,7 @@ const PEZZI_EL = () => [
   ['chat', '#sez-chat'],
   ['musica', '#sez-musica'],
   ['timer', '#sez-timer'],
+  ['treno', '#sez-treno'],
 ];
 
 const _apertoGrp = {};
@@ -7932,6 +8007,7 @@ const ELEMENTI = () => {
   for (const c of _conta) out.push({ k: 'cont:' + c.comando, ico: ICO.grafico, n: c.etichetta || c.comando, cont: c });
   out.push({ k: 'musica', ico: ICO.musica, n: L('Player musica', 'Music player', 'Reproductor de música'), cfg: 'overlayMusica' });
   out.push({ k: 'timer', ico: ICO.orologio, n: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), cfg: 'overlayTimer' });
+  out.push({ k: 'treno', ico: ICO.treno, n: L('Hype train', 'Hype train', 'Hype train'), cfg: 'overlayTreno' });
   out.push({ k: 'pen', ico: ICO.penitenza, n: L('Sfida a tempo', 'Timed challenge', 'Reto a tiempo'), cfg: 'penitenze' });
   return out;
 };
@@ -7982,7 +8058,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer, pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 function _cfgEl(k) {
   const e = ELEM(k);
@@ -17189,7 +17265,7 @@ function caricaDatiScheda(id) {
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _bozzaEl = {}; disegnaGoal(); caricaContaStudio();
-    riempiCfgForm('musica'); riempiCfgForm('timer'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
+    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'consolify') caricaConsolify();

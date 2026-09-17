@@ -1288,3 +1288,55 @@ pretende il rosso da tutte.
 Nell'editor la stessa scelta si vede sulla tela: l'anteprima disegna le righe
 delle sole sorgenti accese, col segno se è acceso. Anteprima uguale alla diretta,
 come per tutto il resto.
+
+## L'hype train: rispecchiato, non ricalcolato
+
+Il treno lo potevamo contare da soli — i sub e i bit ci passano davanti uno per
+uno, bastava sommarli. Sarebbe stata una SECONDA verita' che con la prima non
+torna, e nessuno se ne sarebbe accorto se non mettendo Twitch e l'overlay uno
+accanto all'altro: le soglie cambiano da canale a canale e nel tempo, esistono i
+treni CONDIVISI fra piu' canali, ed esistono i treni speciali (tesoro, golden
+kappa) che non seguono la regola normale.
+
+Quindi si rispecchia. Twitch manda `channel.hype_train.begin/progress/end` —
+nella **versione 2**, perche' la 1 e' deprecata e non sa dei treni condivisi —
+e `src/features/treno.js` li trasforma in uno stato:
+
+    { id, livello, quanto, meta, totale, tipo, condiviso, inizio, scade, finito, record, chi[] }
+
+Da qui scendono tre cose che se no sarebbero state tre decisioni da prendere:
+
+- **Un treno solo.** Lo stato porta l'`id` del treno di Twitch: un evento con un
+  id diverso SOSTITUISCE, non somma. Due treni in memoria non possono esistere
+  perche' non c'e' posto dove metterli.
+- **Non conta niente.** I sub e i bit che fanno crescere il treno sono gia'
+  passati dagli obiettivi e dal subathon, uno per uno. Contarli qui sarebbe
+  contarli due volte: lo stesso difetto delle raffiche di sub regalati, con la
+  stessa cura.
+- **La scadenza la dice Twitch.** Si salva l'ISTANTE e chi lo mostra fa la
+  sottrazione, come il conto alla rovescia. Nessun secondo orologio da tenere
+  d'accordo, e un riavvio non sposta niente.
+
+Lo stato sta in `settings.overlayStato.treno`, come gli obiettivi: un OBS
+riaperto a meta' treno lo ritrova nel `tema`, e il bot riavviato pure. Mentre il
+treno corre arriva anche via SSE (`{ tipo: 'treno', treno }`), quindi la scena
+segue i livelli senza ricaricare niente.
+
+**Due interruttori, non uno.** `attivo` governa l'elemento in scena, `annuncia`
+le righe in chat, e sono separati di proposito: c'e' chi il treno ce l'ha gia'
+a schermo dal pannello di Twitch e vuole solo le righe, e chi il contrario. Se
+sono spenti tutti e due lo stato non si scrive nemmeno: un canale che il treno
+non lo usa non paga una riga.
+
+In chat si parla in tre momenti — parte, sale di livello, finisce — e basta.
+`progress` arriva a OGNI contributo: annunciarli tutti vorrebbe dire cento righe
+del bot su un treno da cento sub.
+
+Serve lo scope `channel:read:hype_train`. Chi aveva gia' collegato il canale se
+lo vede chiedere dal pannello con la strada dei permessi mancanti che c'e' gia'.
+
+Cancelli: `node scripts/verifica-treno.mjs` (`--selftest`) apre un overlay vero
+e guarda che un treno scaduto se ne vada, che un elemento spento resti spento,
+che la scena segua i livelli e che le due scelte (chi spinge, il record) contino
+davvero. `verifica-anteprima` misura che il treno dello Studio e quello in onda
+siano lo stesso oggetto. `test/unita/treno.test.mjs` tiene ferme le regole.

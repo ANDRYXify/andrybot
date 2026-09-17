@@ -391,6 +391,31 @@ export const normTimer = (t) => {
   };
 };
 
+// IL TRENO. E' un elemento della scena come gli altri — stessa veste, stesso
+// angolo, stesso trascinamento — piu' le due scelte che sono solo sue: se
+// mostrare chi ha spinto di piu', e cosa dire in chat. La chat e la scena sono
+// due interruttori separati di proposito: c'e' chi il treno lo vuole solo a
+// schermo, e chi solo in chat perche' a schermo ce l'ha gia' da Twitch.
+export const normTreno = (x) => {
+  x = x || {};
+  return {
+    attivo: x.attivo === true,
+    titolo: String(x.titolo == null ? 'Hype train' : x.titolo).slice(0, 60),
+    mostraChi: x.mostraChi !== false,
+    // Il record storico del canale, quando Twitch lo manda: e' la riga che fa
+    // spingere ancora un po'. Spento di suo, perche' su un canale che il record
+    // non l'ha mai sfiorato e' solo un numero che sta li'.
+    mostraRecord: x.mostraRecord === true,
+    annuncia: x.annuncia === true,
+    testoParte: String(x.testoParte == null ? 'Hype train partito! Spingiamo.' : x.testoParte).slice(0, 200),
+    testoLivello: String(x.testoLivello == null ? 'Hype train al livello {livello}!' : x.testoLivello).slice(0, 200),
+    testoFine: String(x.testoFine == null ? 'Treno finito al livello {livello}. Grazie {chi}!' : x.testoFine).slice(0, 200),
+    posizione: unoDi(x.posizione, POS_ANG, 'alto-destra'),
+    xy: xyOk(x.xy),
+    stile: normWidgetStile(x.stile),
+  };
+};
+
 // Stile PER-OVERLAY completo (tutti i campi opzionali): { alerts, chat, widget }.
 // Ritorna null se non c'è nulla di valido → l'overlay eredita lo stile di canale.
 export const normOverlayWidgetCfg = (w) => {

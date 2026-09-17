@@ -37,6 +37,7 @@ export const MODULI = {
   base: { nome: ['Comandi pronti', 'Built-in commands', 'Comandos de serie'], file: 'comandibase.js', acceso: (s) => (s.comandiBase?.attivo) !== false },
   compleanni: { nome: ['Compleanni', 'Birthdays', 'Cumpleaños'], file: 'compleanni.js', acceso: (s) => !!(s.chatAuguri?.attivo) },
   subathon: { nome: ['Subathon', 'Subathon', 'Subathon'], file: 'subathon.js', acceso: (s) => !!(s.overlayTimer?.attivo && s.overlayTimer?.subathon?.attivo) },
+  treno: { nome: ['Hype train', 'Hype train', 'Hype train'], file: 'treno.js', acceso: (s) => !!(s.overlayTreno?.attivo || s.overlayTreno?.annuncia) },
   chat: { nome: ['Gestione dei comandi dalla chat', 'Managing commands from chat', 'Gestión de comandos desde el chat'], file: 'comandichat.js', acceso: (s) => !!(s.comandiChat?.attivo) },
   battute: { nome: ['Battute', 'Jokes', 'Chistes'], file: 'battute.js', acceso: (s) => s.battute !== false },
   vip: { nome: ['VIP', 'VIP', 'VIP'], file: 'vip.js', acceso: () => true },
@@ -133,6 +134,9 @@ export const COMANDI = [
 
   { id: 'subathon', modulo: 'subathon', nomi: ['subathon', 'quantomanca'], titolo: ['Quanto manca', 'How long left', 'Cuánto queda'],
     cosa: ['Dice quanto manca alla fine del subathon.', 'Says how long is left before the subathon ends.', 'Dice cuánto queda para el final del subathon.'], attesa: 5 },
+
+  { id: 'treno', modulo: 'treno', nomi: ['treno', 'hypetrain', 'hype'], titolo: ['A che punto e\u2019 il treno', 'Where the train is', 'Por d\u00f3nde va el tren'],
+    cosa: ['Dice a che livello e\u2019 l\u2019hype train in corso, quanto manca al prossimo e quanti secondi restano.', 'Says what level the running hype train is at, how far to the next one and how many seconds are left.', 'Dice en qu\u00e9 nivel est\u00e1 el hype train en curso, cu\u00e1nto falta para el siguiente y cu\u00e1ntos segundos quedan.'], attesa: 5 },
 
   { id: 'compleanno', modulo: 'compleanni', nomi: ['compleanno', 'compleanni', 'birthday'], titolo: ['Il mio compleanno', 'My birthday', 'Mi cumpleaños'],
     cosa: ['Chi lo scrive si segna il compleanno (!compleanno 25/12), lo rilegge o lo toglie con «via».', 'The writer sets their birthday (!compleanno 25/12), reads it back or removes it with «via».', 'Quien lo escribe apunta su cumpleaños (!compleanno 25/12), lo consulta o lo quita con «via».'] },

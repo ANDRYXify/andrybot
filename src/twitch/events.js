@@ -40,6 +40,13 @@ function desiredSubs(bid) {
     { type: 'channel.cheer', version: '1', condition: { broadcaster_user_id: bid } },
     { type: 'channel.raid', version: '1', condition: { to_broadcaster_user_id: bid } },
     { type: 'channel.channel_points_custom_reward_redemption.add', version: '1', condition: { broadcaster_user_id: bid } },
+    // L'HYPE TRAIN, IN VERSIONE 2. La 1 Twitch l'ha deprecata, e la 2 e' l'unica
+    // che sa dei treni CONDIVISI fra piu' canali e di quelli speciali (tesoro,
+    // golden kappa): con la 1 un treno condiviso sarebbe arrivato come un treno
+    // normale, e quel che si mostra non sarebbe stato quel che succede.
+    { type: 'channel.hype_train.begin', version: '2', condition: { broadcaster_user_id: bid } },
+    { type: 'channel.hype_train.progress', version: '2', condition: { broadcaster_user_id: bid } },
+    { type: 'channel.hype_train.end', version: '2', condition: { broadcaster_user_id: bid } },
   ];
 }
 

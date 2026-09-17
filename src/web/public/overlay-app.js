@@ -640,6 +640,7 @@ function ricevi(m) {
     else if (dati.tipo === 'widget') { if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, (MIO.widget && MIO.widget[dati.id]) || dati.cfg, dati.valore); }
     else if (dati.tipo === 'goal') { MIO.goals = Array.isArray(dati.goals) ? dati.goals : MIO.goals; goal(MIO.goals, dati.conti || {}); }
     else if (dati.tipo === 'timer') { MIO.timerFine = Number(dati.fine) || MIO.timerFine; disegnaTimer(); }
+    else if (dati.tipo === 'treno') { MIO.trenoStato = dati.treno || null; disegnaTreno(); }
     else if (dati.tipo === 'tema') caricaTema();
     else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
     else if (dati.tipo === 'contatore') contatore(dati);
@@ -1077,6 +1078,61 @@ function togliTimer() {
   timerEl.uscita = setTimeout(via, 520);
 }
 
+const trenoEl = {};
+const TRENO_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="12" rx="2"/><path d="M4 9h16"/><path d="M8 19l-2 2"/><path d="M16 19l2 2"/><circle cx="8.5" cy="18" r="1.5"/><circle cx="15.5" cy="18" r="1.5"/></svg>';
+
+function disegnaTreno() {
+  const cfg = MIO.treno;
+  const t = MIO.trenoStato;
+  const ora = Date.now();
+  if (!cfg || !cfg.attivo || !mostra('treno') || !t || !(Number(t.scade) > ora)) return togliTreno();
+  let el = trenoEl.n;
+  const nato = !el;
+  if (!el) {
+    el = document.createElement('div');
+    el.innerHTML = '<div class="tr-testa"><span class="tr-ico">' + TRENO_ICO + '</span>'
+      + '<span class="tr-tit"></span><span class="tr-liv"></span></div>'
+      + '<div class="tr-barra"><i></i></div>'
+      + '<div class="tr-pie"><span class="tr-chi"></span><span class="tr-tempo"></span></div>';
+    trenoEl.n = el;
+  }
+  if (trenoEl.uscita) { clearTimeout(trenoEl.uscita); trenoEl.uscita = 0; el.classList.remove('esce'); }
+  posa(wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body, el);
+  const st = cfg.stile || {};
+  const finito = !!t.finito;
+  el.className = 'ovl-widget ovl-treno dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna')
+    + (finito ? ' finito' : '') + (t.condiviso ? ' condiviso' : '')
+    + (t.tipo && t.tipo !== 'normale' ? ' t-' + t.tipo.replace(/_/g, '-') : '')
+    + (el.classList.contains('dentro') ? ' dentro' : '');
+  applicaVars(el, {
+    '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
+    '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null,
+    '--font': fontDi(st) || null, '--dim-ico': (st.dimIcona != null ? st.dimIcona : 20) + 'px',
+  });
+  const meta = Math.max(1, Number(t.meta) || 1);
+  const quanto = Math.max(0, Number(t.quanto) || 0);
+  el.querySelector('.tr-tit').textContent = cfg.titolo || '';
+  el.querySelector('.tr-liv').textContent = 'liv. ' + (Number(t.livello) || 1)
+    + (cfg.mostraRecord && Number(t.record) > 0 ? ' / rec. ' + t.record : '');
+  el.querySelector('.tr-barra i').style.setProperty('--q', (finito ? 1 : Math.min(1, quanto / meta)).toFixed(4));
+  const chi = (cfg.mostraChi && Array.isArray(t.chi) && t.chi.length) ? t.chi[0].nome : '';
+  el.querySelector('.tr-chi').textContent = chi;
+  el.querySelector('.tr-tempo').textContent = finito ? '' : oreMinSec(t.scade - ora);
+  posaElemento(el, 'treno', cfg);
+  if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
+}
+
+function togliTreno() {
+  const el = trenoEl.n;
+  if (!el) return;
+  const via = () => { el.remove(); if (trenoEl.n === el) trenoEl.n = null; trenoEl.uscita = 0; };
+  if (fermiIMotori()) return via();
+  if (trenoEl.uscita) return;
+  el.classList.remove('dentro');
+  el.classList.add('esce');
+  trenoEl.uscita = setTimeout(via, 520);
+}
+
 function oreMinSec(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
   const o = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
@@ -1086,6 +1142,7 @@ function oreMinSec(ms) {
 
 setInterval(() => {
   if (MIO.timer && MIO.timer.attivo && mostra('timer')) disegnaTimer();
+  if (MIO.treno && MIO.treno.attivo && mostra('treno')) disegnaTreno();
   const vivo = MIO.musica && MIO.musica.attivo && mostra('musica');
   if (!vivo) return;
   avanzaBarra();
@@ -1118,6 +1175,9 @@ function applicaTema(t) {
       .catch(function (e) { guaio('timer-da-solo', String(e && e.message || e)); });
   }
   disegnaTimer();
+  MIO.treno = t.treno || null;
+  MIO.trenoStato = (stato.treno && typeof stato.treno === 'object') ? stato.treno : null;
+  disegnaTreno();
   if (MIO.musica && MIO.musica.attivo && mostra('musica')) chiediMusica(); else togliMusica();
 }
 
