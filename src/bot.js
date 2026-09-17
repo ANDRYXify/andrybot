@@ -23,6 +23,7 @@ import * as personalizzati from './features/personalizzati.js';
 import * as giveaway from './features/giveaway.js';
 import * as watchtime from './features/watchtime.js';
 import * as comandibase from './features/comandibase.js';
+import * as presenze from './features/presenze.js';
 import * as trackinggiochi from './features/trackinggiochi.js';
 import * as comandichat from './features/comandichat.js';
 import * as sondaggi from './features/sondaggi.js';
@@ -459,6 +460,12 @@ export class BotManager {
           // chi e' nella stanza, non chi ha parlato di recente.
           try { for (const u of chatters) games.segnaPresenza(login, u); }
           catch (e) { log.debug(`#${login} presenze:`, e?.message || e); }
+          // Diretta dopo diretta: chi c'e' per due giri e' presente a questa
+          // diretta e la sua serie cresce. Stessa lista, e ai traguardi una riga.
+          try {
+            const esito = presenze.giroDiretta(login, { streamId: stream.id, chatters });
+            for (const t of presenze.annunciDi(login, esito)) this.say(login, t);
+          } catch (e) { log.debug(`#${login} serie di presenze:`, e?.message || e); }
         }
       } catch (e) { log.debug(`#${login} ore:`, e?.message || e); }
     }
@@ -763,6 +770,12 @@ export class BotManager {
     if (!msg.isSelf) { try { persona.interagisci(msg.user); } catch { /* niente */ } }
     // L'economia gira sempre: le monete della presenza non sono un comando.
     try { games.accredita(msg); } catch (e) { log.error(`#${login} monete:`, e?.message || e); }
+    // Chi scrive per la prima volta, e chi torna dopo un'assenza: una parola dal
+    // bot, salvo che lo streamer si sia costruito il suo saluto con un Modulo.
+    try {
+      const live = msg.piattaforma && msg.piattaforma !== 'twitch' ? true : this._liveState.get(login) === true;
+      presenze.suMessaggio(msg, parla, { live });
+    } catch (e) { log.debug(`#${login} saluti:`, e?.message || e); }
 
     // «Quello che ti sei costruito vince»: se questo e' un comando che lo
     // streamer ha gia' suo (comando semplice o Modulo), i comandi PRONTI non lo
@@ -787,6 +800,9 @@ export class BotManager {
     // ore guardate / fedeltà (!ore, !classificaore)
     try { watchtime.tryComando(cmdMsg, parla); }
     catch (e) { log.error(`#${login} ore:`, e?.message || e); }
+    // serie di presenze (!serie, !classificaserie)
+    try { presenze.tryComando(cmdMsg, parla); }
+    catch (e) { log.error(`#${login} serie:`, e?.message || e); }
     // comandi base pronti (!so/!shoutout, !followage, !uptime): opt-out e mai
     // sopra ai comandi/Moduli creati dallo streamer (quelli vincono).
     comandibase.tryComando(this.helix, cmdMsg, parla)

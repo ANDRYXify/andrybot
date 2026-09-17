@@ -46,6 +46,7 @@ import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolvi
 import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
+import * as presenze from '../features/presenze.js';
 import * as donazioni from '../features/donazioni.js';
 import * as donaStripe from '../features/donazioni-stripe.js';
 import * as donaSatispay from '../features/donazioni-satispay.js';
@@ -4337,6 +4338,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // sopra» si prova senza accendere un server. Il perche' sta scritto li'.
     if (b.antispam !== undefined) out.antispam = normalizzaAntispam(s.settings?.antispam, b.antispam);
     if (b.antibot !== undefined) out.antibot = normalizzaAntibot(s.settings?.antibot, b.antibot);
+    // serie di presenze e saluti: la regola pura sta nel modulo
+    if (b.presenze !== undefined) out.presenze = presenze.normalizza(b.presenze, s.settings?.presenze);
     // ore guardate (watchtime): sempre attive salvo che lo streamer le spenga
     if (b.watchtime !== undefined) {
       out.watchtime = { attivo: (b.watchtime || {}).attivo !== false };
@@ -4619,7 +4622,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       'SELECT COUNT(*) c FROM messages WHERE channel=? AND ts>=? AND from_bot=1').get(login, da).c;
     const clipTotali = db.prepare(
       'SELECT COUNT(*) c FROM clips WHERE channel=?').get(login).c;
-    res.json({ messaggi7g, topChatters, messaggiBot7g, clipTotali });
+    res.json({ messaggi7g, topChatters, messaggiBot7g, clipTotali, presenze: presenze.classifica(login, 5) });
   }));
 
   // stato della "piccola rete che impara" per questo canale (cruscotto Panoramica)

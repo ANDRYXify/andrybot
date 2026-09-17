@@ -15,6 +15,12 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+## 2026-09-17
+
+- Le presenze si contano diretta dopo diretta: chi resta in chat almeno dieci minuti è presente, e le dirette di fila fanno una serie con un bonus in monete che cresce. Con !serie ognuno vede la sua. [vai: giochi]
+- Il bot saluta chi scrive per la prima volta e chi torna dopo settimane, con le parole che scegli tu nella scheda Giochi. Se hai già un Modulo sul primo messaggio, vince il tuo. [vai: giochi]
+- Nella scheda Memoria trovi chi c'è sempre: le serie di presenze più lunghe del canale. [vai: memoria]
+
 ## 2026-09-16
 
 - Nella scheda «Abbonamento» aggiungi gli extra da lì: spunti quello che ti manca, leggi il totale e attivi. Chi ha già il Base non lo ripaga: l'extra entra nell'abbonamento che c'è. [vai: sottoscrizione]

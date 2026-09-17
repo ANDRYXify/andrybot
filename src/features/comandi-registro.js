@@ -33,6 +33,7 @@ export const MODULI = {
   puzzle: { nome: ['Puzzle con le mani', 'Hand puzzle', 'Puzle con las manos'], file: 'trackinggiochi.js', acceso: (s) => (s.tracking?.attivo !== false) && s.tracking?.effetti?.puzzle === true },
   sorteggi: { nome: ['Sorteggi', 'Giveaways', 'Sorteos'], file: 'giveaway.js', acceso: (s) => s.giochi !== false },
   ore: { nome: ['Ore guardate', 'Watch time', 'Horas vistas'], file: 'watchtime.js', acceso: (s) => (s.watchtime?.attivo) !== false },
+  presenze: { nome: ['Serie di presenze', 'Attendance streaks', 'Rachas de presencia'], file: 'presenze.js', acceso: (s) => (s.presenze?.attivo) !== false },
   base: { nome: ['Comandi pronti', 'Built-in commands', 'Comandos de serie'], file: 'comandibase.js', acceso: (s) => (s.comandiBase?.attivo) !== false },
   chat: { nome: ['Gestione dei comandi dalla chat', 'Managing commands from chat', 'Gestión de comandos desde el chat'], file: 'comandichat.js', acceso: (s) => !!(s.comandiChat?.attivo) },
   battute: { nome: ['Battute', 'Jokes', 'Chistes'], file: 'battute.js', acceso: (s) => s.battute !== false },
@@ -123,6 +124,10 @@ export const COMANDI = [
     cosa: ['Dice da quanto tempo guarda chi lo scrive.', 'Says how long the writer has been watching.', 'Dice cuánto lleva viendo quien lo escribe.'] },
   { id: 'classificaore', modulo: 'ore', nomi: ['classificaore', 'classificatempo', 'oretop', 'topore'], titolo: ['Classifica delle ore', 'Watch time leaderboard', 'Clasificación de horas'],
     cosa: ['Chi ha guardato di più.', 'Who has watched the most.', 'Quién ha visto más.'] },
+  { id: 'serie', modulo: 'presenze', nomi: ['serie', 'presenze', 'streak'], titolo: ['La tua serie', 'Your streak', 'Tu racha'],
+    cosa: ['Dice a quante dirette di fila è stato presente chi lo scrive, o il nome dopo il comando, e a quante in tutto.', 'Says how many streams in a row the writer, or the name after the command, has attended, and how many overall.', 'Dice a cuántos directos seguidos ha estado quien lo escribe, o el nombre tras el comando, y a cuántos en total.'] },
+  { id: 'classificaserie', modulo: 'presenze', nomi: ['classificaserie', 'serietop', 'topserie', 'presenzetop'], titolo: ['Classifica delle serie', 'Streak leaderboard', 'Clasificación de rachas'],
+    cosa: ['Chi è venuto a più dirette di fila.', 'Who has attended the most streams in a row.', 'Quién ha estado en más directos seguidos.'] },
 
   { id: 'battuta', modulo: 'battute', nomi: ['battuta', 'battute', 'joke'], titolo: ['Battuta', 'Joke', 'Chiste'],
     cosa: ['Dice una battuta del serbatoio del canale. Mod e streamer le aggiungono con !battuta aggiungi.',

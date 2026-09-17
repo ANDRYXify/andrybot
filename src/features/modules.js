@@ -15,6 +15,7 @@ import http from 'node:http';
 import https from 'node:https';
 import { modules as modulesDb, counters, memory, streamers, clips, quotes, watchtime, points } from '../db.js';
 import { risolviCategoria } from './categoria.js';
+import * as presenze from './presenze.js';
 import { canaleHa } from './accesso.js';
 import * as spotify from './spotify.js';
 import { makeLog } from '../logger.js';
@@ -1003,6 +1004,17 @@ export class ModulesEngine {
       } catch (e) { log.debug('ore:', e?.message || e); }
     }
 
+    // SERIE DI PRESENZE: dirette di fila, dirette in tutto e record, di chi
+    // scrive o del nome dopo il comando. Dallo store locale, niente Twitch.
+    let serieText = '', diretteText = '', recordText = '';
+    if (/\$serie\b|\$dirette\b|\$recordserie\b/.test(s)) {
+      try {
+        const chi = String((ctx.args && ctx.args[0]) || ctx.userLogin || ctx.user || '').replace(/^@/, '').trim();
+        const p = chi ? presenze.di(ctx.channel, chi) : null;
+        if (p) { serieText = String(p.serie); diretteText = String(p.dirette); recordText = String(p.record); }
+      } catch (e) { log.debug('serie:', e?.message || e); }
+    }
+
     // CHATTER A CASO: un nome pescato tra chi ha scritto di recente (per i giochi:
     // "!abbraccia $chattercaso"). Esclude gli echi del bot e, se possibile, chi
     // ha lanciato il comando (così non pesca se stesso). Tutto dalla memoria locale.
@@ -1140,6 +1152,9 @@ export class ModulesEngine {
       ore: oreText,
       oreguardate: oreText,
       watchtime: oreText,
+      serie: serieText,
+      dirette: diretteText,
+      recordserie: recordText,
       tempoguardato: oreText,
       // un utente a caso tra chi ha scritto di recente (per i giochi)
       chattercaso: chatterCaso,
