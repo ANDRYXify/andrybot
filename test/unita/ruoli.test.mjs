@@ -44,7 +44,9 @@ test('lo streamer e\' staff del suo canale anche se Twitch non lo elenca', async
 
 test('chi non e\' piu\' moderatore torna nel pubblico', async () => {
   await ruoli.riallinea(finto([{ user_login: 'seb__98' }]), CH, { forza: true });
-  assert.deepEqual(points.top(CH, 9, 'staff').map((r) => r.user).sort(), ['andryxify', 'seb__98']);
+  // Il padrone resta staff, ma in classifica non ci va: la gara e' di chi guarda.
+  assert.equal(points.ruoloDi(CH, CH), 'staff');
+  assert.deepEqual(points.top(CH, 9, 'staff').map((r) => r.user).sort(), ['seb__98']);
   assert.ok(points.top(CH, 9).some((r) => r.user === 'skeller92'), 'skeller92 e\' tornato pubblico');
 });
 
