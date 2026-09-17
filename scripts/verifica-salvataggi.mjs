@@ -83,8 +83,27 @@ dice(orfani.length === 0, `ogni comando disegnato viene anche letto (${comandi.l
 // ── 2. salvataggio → markup
 // Solo i salvataggi della moderazione: gli altri pannelli hanno le loro strade e
 // non e' questo il cancello che le guarda.
-const salvaMod = [...app.matchAll(/salvaImpostazioni\(\{[\s\S]*?\n {4}\}, '[^']*'\)/g)]
-  .map((m) => m[0]).filter((b) => /antibot:|antispam:|paroleVietate:/.test(b)).join('\n');
+// Da «salvaImpostazioni({» fino alla graffa che gli corrisponde DAVVERO: le
+// parentesi si contano, non si indovinano. Prima si cercava la prima riga che
+// somigliasse a una chiusura, e bastava il `}, 'image/png')` di un'altra
+// funzione, mille righe piu' in la', perche' mezzo file diventasse un unico
+// salvataggio: il cancello si accendeva rosso elencando ogni id del pannello.
+function chiamateSalva(testo) {
+  const fuori = [];
+  const re = /salvaImpostazioni\(\{/g;
+  let m;
+  while ((m = re.exec(testo))) {
+    let i = m.index + m[0].length - 1;
+    let liv = 0;
+    for (; i < testo.length; i++) {
+      if (testo[i] === '{') liv++;
+      else if (testo[i] === '}') { liv--; if (liv === 0) { i++; break; } }
+    }
+    fuori.push(testo.slice(m.index, i));
+  }
+  return fuori;
+}
+const salvaMod = chiamateSalva(app).filter((b) => /antibot:|antispam:|paroleVietate:/.test(b)).join('\n');
 const idSalvati = [...new Set([...salvaMod.matchAll(/getElementById\('([a-z0-9-]+)'\)/g)].map((m) => m[1]))];
 const fantasmi = idSalvati.filter((id) => !nelMarkup.has(id));
 dice(idSalvati.length > 10 && fantasmi.length === 0,
