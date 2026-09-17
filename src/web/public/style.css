@@ -1294,6 +1294,11 @@ input[type="color"] { width: 100%; min-height: 38px; padding: 2px; border: 1px s
 .riga-premio-suono .sel-suono { min-width: 150px; }
 .riga-premio-suono .prova-suono { display: inline-flex; align-items: center; justify-content: center; padding: .3rem .5rem; }
 
+.cod-posta { list-style: none; display: flex; flex-direction: column; gap: .4rem; margin-top: .6rem; }
+.cod-posta li { display: flex; gap: .7rem; align-items: baseline; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-m); padding: .45rem .7rem; }
+.cod-posta li.ora { border-color: var(--acc-bordo); background: var(--acc-soft); }
+.cod-posta code { font-size: 1.05rem; font-weight: 700; letter-spacing: .12em; }
+.cod-posta span { color: var(--testo-2); font-size: .8rem; margin-left: auto; }
 .stat-periodo { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .2rem; }
 .stat-periodo .scelto { background: var(--acc); color: var(--su-acc); border-color: var(--acc); }
 .griglia-classifiche { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 0 1.2rem; }

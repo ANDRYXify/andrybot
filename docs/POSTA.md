@@ -110,3 +110,48 @@ due parti), la canonizzazione e una firma che la chiave pubblica verifica, la
 consegna a un server SMTP finto sulla porta locale (sequenza, punti
 raddoppiati, un 550 che ferma, una porta chiusa che spiega), `invia` da capo
 a fondo, la posta spenta, il guscio HTML coi colori del tema.
+
+## Il codice di verifica: come si riconosce una nostra mail
+
+Un mittente si falsifica scrivendolo. SPF, DKIM e DMARC difendono *il nostro
+dominio* — chi riceve non può usare il nostro nome — ma non dicono niente a chi
+riceve una mail che *somiglia* alla nostra da un dominio vicino
+(`socialbot-live.com`, `soc1albot.live`). Contro quello serve qualcosa che il
+destinatario possa **controllare**, e che l'imitatore non possa sapere.
+
+Perciò in fondo a ogni mail c'è un **codice**, e quel codice si ritrova solo
+dentro al pannello, dove si entra con le proprie credenziali.
+
+- **Per canale.** Se fosse uguale per tutti, basterebbe riceverne una per
+  conoscere quello di chiunque.
+- **Per settimana** (settimana ISO, dal lunedì). Uno rubato invecchia da solo in
+  pochi giorni.
+- **Non si conserva.** Si ricava con `segno('codice-posta', canale|settimana)` in
+  `src/segreti.js`: una chiave HKDF derivata dal segreto del server *per questo
+  scopo soltanto*, poi HMAC. Sopravvive a un riavvio, non c'è una tabella in più
+  da rubare, e se il codice trapela non porta con sé niente di quello che sta
+  nelle buste.
+- **Senza lettere che si confondono** (niente `0/O`, niente `1/I/L`): un codice
+  serve a essere confrontato a occhio, e due caratteri simili farebbero dire
+  «non combacia» a una mail buona.
+
+Nel pannello, scheda *Stato*, ci sono il codice di questa settimana e quelli
+delle settimane già passate del mese, per chi apre una mail in ritardo. Quelli
+futuri no: uno sguardo allo schermo di passaggio sarebbe un regalo.
+La porta è `GET /api/streamer/codici-posta`, solo per il proprietario e solo per
+il proprio canale.
+
+Il confine della settimana è in UTC: una mail spedita fra la mezzanotte e le due
+di lunedì in Italia porta il codice della settimana appena finita, che nella
+scheda c'è comunque.
+
+## Chi scrive, non solo da dove
+
+Senza un nome nell'intestazione `From`, nell'elenco della posta si legge il pezzo
+prima della chiocciola: «info». Ora il `From` è `SocialBot <indirizzo>`
+(`MAIL_NOME` lo cambia), mentre la busta SMTP (`MAIL FROM`) resta il solo
+indirizzo, come vuole il protocollo. Il `From` è fra le intestazioni firmate con
+DKIM, quindi il nome viaggia dentro la firma.
+
+Il logo accanto al mittente, quello sì, non si può fare senza BIMI, che chiede un
+certificato a pagamento: non lo facciamo, e non lo promettiamo.

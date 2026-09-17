@@ -7,9 +7,14 @@ import crypto from 'node:crypto';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
 
 const usaEGetta = cartellaUsaEGetta('andrybot-posta-');
+// LA PROVA NON DEVE SAPERE SU CHE MACCHINA GIRA. Sul server vero il .env ha
+// MAIL_HELO, MAIL_DA, MAIL_NOME: se la prova li leggesse, direbbe «rotto» su
+// una configurazione giusta e il deploy si fermerebbe per niente. E' successo.
+// Percio' si sgombera TUTTA la famiglia MAIL, e si mette solo cio' che serve
+// qui: cosi' vale anche per le variabili che aggiungeremo domani.
+for (const k of Object.keys(process.env)) if (k === 'MAIL' || k.startsWith('MAIL_')) delete process.env[k];
 process.env.MAIL_DOMINIO = 'prova.example';
 process.env.MAIL_DA = 'rapporti@prova.example';
-delete process.env.MAIL;
 const p = await import('../../src/features/posta.js');
 process.on('exit', () => usaEGetta.pulisci());
 
@@ -112,7 +117,11 @@ test('invia: composta, firmata e consegnata; senza chiave si rifiuta; gli indiri
     await new Promise((ok) => setTimeout(ok, 50));
     const m = f.st.messaggi[0];
     assert.ok(m.startsWith('DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=prova.example; s=sb1;'), 'firmata, e la firma sta in cima');
-    assert.ok(m.includes('\r\nFrom: rapporti@prova.example\r\nTo: io@altro.example\r\nSubject: Diretta finita: 1h\r\n'));
+    // Nell'elenco della posta si legge il NOME, non il pezzo prima della
+    // chiocciola: senza, Gmail scrive «rapporti». La busta invece resta il solo
+    // indirizzo, come vuole SMTP, se no il destinatario la rifiuta.
+    assert.ok(m.includes('\r\nFrom: SocialBot <rapporti@prova.example>\r\nTo: io@altro.example\r\nSubject: Diretta finita: 1h\r\n'));
+    assert.ok(f.st.comandi.includes('MAIL FROM:<rapporti@prova.example>'), 'la busta porta il solo indirizzo');
     await assert.rejects(() => p.invia({ a: 'non-valido', oggetto: 'x', via: f.via }), /indirizzo non valido/);
   } finally { f.chiudi(); }
   process.env.MAIL = 'no';
@@ -146,4 +155,45 @@ test('il nome con cui ci si presenta e\' una cosa che si dice, e la mail lo usa'
     } finally { f.chiudi(); }
   } finally { delete process.env.MAIL_HELO; }
   assert.equal(p.nomeHelo(), 'prova.example');
+});
+
+test('il codice della settimana: per canale, per settimana, e senza lettere che si confondono', () => {
+  const lun = Date.UTC(2026, 8, 14, 9, 0);      // lunedì
+  const dom = Date.UTC(2026, 8, 20, 23, 0);     // domenica della stessa settimana
+  const poi = Date.UTC(2026, 8, 21, 0, 30);     // lunedì dopo
+
+  assert.equal(p.settimanaDi(lun), '2026-W38');
+  assert.equal(p.settimanaDi(dom), '2026-W38', 'la settimana finisce la domenica');
+  assert.equal(p.settimanaDi(poi), '2026-W39');
+  assert.equal(p.settimanaDi(Date.UTC(2027, 0, 1)), '2026-W53', 'il primo gennaio puo\' stare nell\'anno prima');
+
+  const c = p.codiceDi('canale', lun);
+  assert.match(c, /^[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}$/, 'niente 0/O e 1/I/L: si confondono a occhio');
+  assert.equal(p.codiceDi('canale', dom), c, 'dentro la settimana non cambia');
+  assert.equal(p.codiceDi('CANALE', lun), c, 'e il nome del canale non e\' sensibile alle maiuscole');
+  assert.notEqual(p.codiceDi('canale', poi), c, 'la settimana dopo e\' un altro');
+  assert.notEqual(p.codiceDi('altro', lun), c, 'e un altro canale ha il suo');
+});
+
+test('i codici del mese: quelli gia\' usati, il piu\' recente segnato, nessuno futuro', () => {
+  const ora = Date.UTC(2026, 8, 17, 12, 0);
+  const m = p.codiciDelMese('canale', ora);
+  assert.ok(m.length >= 2 && m.length <= 6, `settimane del mese: ${m.length}`);
+  assert.deepEqual(m.map((x) => x.settimana), [...new Set(m.map((x) => x.settimana))], 'nessuna ripetuta');
+  assert.ok(m.every((x) => x.dal <= ora), 'nessuna settimana che deve ancora cominciare');
+  assert.equal(m.filter((x) => x.corrente).length, 1, 'una sola e\' quella di adesso');
+  assert.equal(m[m.length - 1].corrente, true, 'ed e\' l\'ultima');
+  assert.equal(m[m.length - 1].codice, p.codiceDi('canale', ora));
+  for (const x of m) assert.equal(new Date(x.dal).getUTCDay(), 1, 'ogni settimana comincia di lunedì');
+});
+
+test('il codice sta in fondo a ogni mail, in tutte e due le forme', () => {
+  const h = p.guscioHtml({ titolo: 'x', corpo: '<p>y</p>', codice: 'AB23-CD45' });
+  assert.ok(h.includes('AB23-CD45') && h.includes('Codice di verifica di questa settimana'));
+  assert.ok(h.includes('scheda Stato'), 'e dice dove ritrovarlo');
+  assert.ok(!p.guscioHtml({ titolo: 'x', corpo: 'y' }).includes('Codice di verifica'), 'senza codice non si inventa un riquadro vuoto');
+  assert.ok(p.codiceTesto('AB23-CD45').includes('AB23-CD45'), 'anche per chi legge in solo testo');
+  assert.equal(p.codiceTesto(''), '');
+  const conf = p.mailConferma({ display: 'Tizio', link: 'https://x.example/c', codice: 'AB23-CD45' });
+  assert.ok(conf.html.includes('AB23-CD45') && conf.testo.includes('AB23-CD45'));
 });

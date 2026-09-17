@@ -25,6 +25,7 @@ import crypto from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { config } from '../config.js';
+import { segno } from '../segreti.js';
 import { makeLog } from '../logger.js';
 import { tinta } from '../web/tavolozza.js';
 
@@ -42,6 +43,76 @@ export function dominio() {
 }
 export function selettore() { return (env('MAIL_DKIM_SELETTORE') || 'sb1').toLowerCase().replace(/[^a-z0-9-]/g, '') || 'sb1'; }
 export function mittente() { return env('MAIL_DA') || `rapporti@${dominio()}`; }
+// CHI SCRIVE, non solo da dove. Senza un nome, nell'elenco della posta compare
+// il pezzo prima della chiocciola: «info». Il nome va nell'intestazione From,
+// che e' firmata; la busta (MAIL FROM) resta il solo indirizzo, come vuole SMTP.
+export function nomeMittente() { return env('MAIL_NOME') || 'SocialBot'; }
+export function mittenteIntestazione() {
+  const n = nomeMittente();
+  return n ? `${oggettoCodificato(n)} <${mittente()}>` : mittente();
+}
+
+// ---------------------------------------------------------------- IL CODICE DELLA SETTIMANA
+//
+// «Questa mail l'avete scritta voi?» Senza una risposta, l'unica difesa che ha
+// chi riceve e' guardare il mittente — e il mittente si falsifica scrivendolo.
+// Percio' ogni nostra mail porta in fondo un codice, e quel codice si ritrova
+// SOLO dentro il pannello, dove si entra con le proprie credenziali. Chi imita
+// la mail non sa cosa scrivere li'.
+//
+// Il codice e' PER CANALE e per SETTIMANA. Per canale, se no basterebbe
+// riceverne una per conoscere quello di tutti. Per settimana, cosi' uno
+// rubato invecchia da solo in pochi giorni. Non si conserva da nessuna parte:
+// si ricava dal segreto del server, quindi sopravvive a un riavvio e non c'e'
+// niente da rubare in piu' nel database.
+//
+// Le lettere che si confondono (0/O, 1/I/L) non ci sono: un codice serve a
+// essere confrontato a occhio, e due caratteri simili farebbero dire «non
+// combacia» a una mail buona.
+const ALFABETO = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+const GIORNO = 86_400_000;
+
+// La settimana ISO: comincia di lunedi', e si chiama con l'anno a cui
+// appartiene il suo giovedi'. E' l'unico modo di dire «settimana» che non
+// cambia significato a cavallo di dicembre.
+export function settimanaDi(ora = Date.now()) {
+  const t = new Date(Number(ora) || 0);
+  const g = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()));
+  g.setUTCDate(g.getUTCDate() + 4 - (g.getUTCDay() || 7));
+  const capodanno = Date.UTC(g.getUTCFullYear(), 0, 1);
+  const n = Math.ceil(((g.getTime() - capodanno) / GIORNO + 1) / 7);
+  return `${g.getUTCFullYear()}-W${String(n).padStart(2, '0')}`;
+}
+
+export function lunediDi(ora = Date.now()) {
+  const t = new Date(Number(ora) || 0);
+  const g = Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate());
+  return g - ((new Date(g).getUTCDay() || 7) - 1) * GIORNO;
+}
+
+export function codiceDi(channel, ora = Date.now()) {
+  const b = segno('codice-posta', `${String(channel || '').toLowerCase()}|${settimanaDi(ora)}`);
+  let s = '';
+  for (let i = 0; i < 8; i++) s += ALFABETO[b[i] % ALFABETO.length];
+  return `${s.slice(0, 4)}-${s.slice(4)}`;
+}
+
+// I codici del mese, per chi apre oggi una mail di dieci giorni fa. Solo quelli
+// gia' usati: uno futuro, se qualcuno sbircia lo schermo, sarebbe un regalo.
+export function codiciDelMese(channel, ora = Date.now()) {
+  const q = new Date(Number(ora) || 0);
+  const primo = Date.UTC(q.getUTCFullYear(), q.getUTCMonth(), 1);
+  const questa = settimanaDi(ora);
+  const fuori = [];
+  const visti = new Set();
+  for (let t = lunediDi(primo); t <= Number(ora); t += 7 * GIORNO) {
+    const settimana = settimanaDi(t);
+    if (visti.has(settimana)) continue;
+    visti.add(settimana);
+    fuori.push({ settimana, dal: t, codice: codiceDi(channel, t), corrente: settimana === questa });
+  }
+  return fuori;
+}
 // IL NOME CON CUI CI SI PRESENTA (EHLO). Chi riceve posta chiude un cerchio: il
 // nome detto nell'EHLO deve puntare all'IP da cui arriva la mail, e quell'IP
 // deve dichiarare lo stesso nome nel suo reverse DNS. Il dominio del sito va
@@ -211,7 +282,7 @@ export async function invia({ a, oggetto, testo = '', html = '', via = null }) {
   const pem = chiavePrivata();
   if (!via && (spenta() || !dominio() || !pem)) throw errore('spenta', 'la posta non e\' configurata: manca la chiave DKIM o il dominio');
   const da = mittente(), dom = dominio();
-  const m = componi({ da, a, oggetto, testo, html, dom });
+  const m = componi({ da: mittenteIntestazione(), a, oggetto, testo, html, dom });
   const intestazioni = pem ? [firmaDkim({ intestazioni: m.intestazioni, corpo: m.corpo, dom, sel: selettore(), pem }), ...m.intestazioni] : m.intestazioni;
   const esito = await consegna({ a, da, messaggio: serializza({ intestazioni, corpo: m.corpo }), helo: nomeHelo(), via });
   log.info(`posta a ${a.replace(/^(.).*@/, '$1…@')}: ${esito.risposta || 'consegnata'} (${esito.host})`);
@@ -249,7 +320,7 @@ function vestiScuro() {
 // `occhiello` e' la riga che si legge NELL'ELENCO della posta, accanto
 // all'oggetto: se non gliela si da', il programma si prende le prime parole del
 // corpo. `cappello` e' di chi e' il canale, accanto al nome nostro.
-export function guscioHtml({ titolo, corpo, piede = '', occhiello = '', cappello = '' }) {
+export function guscioHtml({ titolo, corpo, piede = '', occhiello = '', cappello = '', codice = '' }) {
   const c = (n) => cq(n);
   return `<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">
@@ -262,7 +333,13 @@ ${occhiello ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;"
 <tr><td style="padding:22px 28px 6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:bold;"><span class="sb-acc" style="color:${c('acc')};">SocialBot</span>${cappello ? `<span class="sb-tenue" style="color:${c('testo-2')};font-weight:normal;letter-spacing:.04em;"> · ${esc(cappello)}</span>` : ''}</td></tr>
 <tr><td class="sb-testo" style="padding:0 28px 6px;font-size:25px;line-height:1.2;font-weight:bold;letter-spacing:-.015em;">${esc(titolo)}</td></tr>
 <tr><td class="sb-testo" style="padding:6px 28px 26px;font-size:16px;line-height:1.55;">${corpo}</td></tr>
-<tr><td class="sb-tenue sb-bordo" style="padding:14px 28px 20px;border-top:1px solid ${c('border')};font-size:12px;line-height:1.5;color:${c('testo-2')};">${piede || 'SocialBot · socialbot.live'}</td></tr>
+${codice ? `<tr><td class="sb-bordo" style="padding:14px 28px 0;border-top:1px solid ${c('border')};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="sb-riquadro sb-bordo" style="background:${c('surface-2-tinta')};border:1px solid ${c('border')};border-radius:10px;"><tr><td style="padding:10px 14px;">
+<div class="sb-tenue" style="font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:${c('testo-2')};">Codice di verifica di questa settimana</div>
+<div class="sb-testo" style="margin-top:3px;font-size:19px;font-weight:bold;letter-spacing:.12em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${esc(codice)}</div>
+<div class="sb-tenue" style="margin-top:4px;font-size:12px;line-height:1.45;color:${c('testo-2')};">Lo ritrovi nel tuo pannello, alla scheda Stato. Se non combacia, questa mail non l’abbiamo scritta noi: non aprire i collegamenti.</div>
+</td></tr></table></td></tr>` : ''}
+<tr><td class="sb-tenue sb-bordo" style="padding:14px 28px 20px;${codice ? '' : `border-top:1px solid ${c('border')};`}font-size:12px;line-height:1.5;color:${c('testo-2')};">${piede || 'SocialBot · socialbot.live'}</td></tr>
 </table></td></tr></table></body></html>`;
 }
 
@@ -330,17 +407,24 @@ export function rigaHtml(etichetta, valore) {
   return `<tr><td class="sb-tenue" style="padding:5px 0;color:${t2};font-size:14px;width:44%;">${esc(etichetta)}</td><td class="sb-testo" style="padding:5px 0;font-size:16px;font-weight:bold;">${esc(valore)}</td></tr>`;
 }
 
+// La stessa cosa per chi la posta la legge in solo testo: senza, sarebbe
+// l'unico a non poter verificare niente.
+export const codiceTesto = (codice) => (codice
+  ? `\n\nCodice di verifica di questa settimana: ${codice}\nLo ritrovi nel tuo pannello, alla scheda Stato. Se non combacia, questa mail non l’abbiamo scritta noi.`
+  : '');
+
 // ---------------------------------------------------------------- le mail che partono
 // La mail di conferma dell'indirizzo: chi la riceve deve poter capire in una
 // riga perche' e' arrivata e cosa succede se non clicca (niente).
-export function mailConferma({ display = '', link }) {
+export function mailConferma({ display = '', link, codice = '' }) {
   const corpo = `<p style="margin:0 0 14px;">Qualcuno, dal pannello di SocialBot${display ? ` del canale <b>${esc(display)}</b>` : ''}, ha scritto questo indirizzo per ricevere il rapporto a fine diretta.</p>
 <p style="margin:0 0 18px;">Se sei tu, conferma con il tasto qui sotto. Il collegamento vale un giorno.</p>
 <p style="margin:0 0 18px;">${tastoHtml('Conferma l’indirizzo', link)}</p>
 <p style="margin:0;color:#5c5852;font-size:14px;">Se non sei stato tu, non fare niente: senza il clic questo indirizzo non riceverà mai nulla.</p>`;
   return {
-    html: guscioHtml({ titolo: 'Conferma l’indirizzo', corpo, piede: 'SocialBot · socialbot.live · questa mail arriva una volta sola, per la conferma.' }),
-    testo: `Qualcuno, dal pannello di SocialBot${display ? ` del canale ${display}` : ''}, ha scritto questo indirizzo per ricevere il rapporto a fine diretta.\nSe sei tu, conferma qui (vale un giorno): ${link}\nSe non sei stato tu, non fare niente.`,
+    html: guscioHtml({ titolo: 'Conferma l’indirizzo', cappello: display || '', corpo, codice,
+      piede: 'SocialBot · socialbot.live · questa mail arriva una volta sola, per la conferma.' }),
+    testo: `Qualcuno, dal pannello di SocialBot${display ? ` del canale ${display}` : ''}, ha scritto questo indirizzo per ricevere il rapporto a fine diretta.\nSe sei tu, conferma qui (vale un giorno): ${link}\nSe non sei stato tu, non fare niente.${codiceTesto(codice)}`,
   };
 }
 

@@ -4660,7 +4660,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const link = `${config.baseUrl}/posta/conferma?t=${codice}`;
     const display = streamers.get(login)?.display || login;
     try {
-      await posta.invia({ a: email, oggetto: 'Conferma l\'indirizzo per i rapporti di SocialBot', ...posta.mailConferma({ display, link }) });
+      await posta.invia({ a: email, oggetto: 'Conferma l\'indirizzo per i rapporti di SocialBot', ...posta.mailConferma({ display, link, codice: posta.codiceDi(login) }) });
     } catch (e) {
       log.warn(`#${login} conferma posta:`, e?.message || e);
       postaStreamer.togli(login);
@@ -4668,6 +4668,14 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     }
     res.json({ ok: true, posta: statoPosta(login) });
   }));
+  // I CODICI CHE STAMPIAMO IN FONDO ALLE MAIL. Stanno qui dentro e da nessuna
+  // altra parte: e' tutto il senso della cosa. Chi imita una nostra mail non ha
+  // modo di sapere cosa scrivere nel riquadro in fondo, perche' per saperlo
+  // dovrebbe entrare in questo pannello. Solo il proprietario, e solo i suoi.
+  app.get('/api/streamer/codici-posta', requireOwner, wrap(async (req, res) => {
+    res.json({ codici: posta.codiciDelMese(currentUser(req).login) });
+  }));
+
   // «L'ho visto»: vale sia per il si' sia per il no, perche' in tutti e due i
   // casi la domanda e' stata fatta e non va rifatta.
   app.post('/api/streamer/posta/invito', requireOwner, wrap(async (req, res) => {
