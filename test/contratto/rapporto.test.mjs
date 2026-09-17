@@ -94,3 +94,39 @@ test('le clip della serata si riaprono: nella carta della scheda, non solo nella
   assert.match(f, /target="_blank" rel="noopener"/, 'si aprono di fianco, non al posto del pannello');
   assert.ok(!/rap-clip/.test(leggi('src/web/public/style.css')) === false, 'e hanno il loro stile');
 });
+
+test('il codice di verifica: in fondo a ogni mail, e visibile solo da dentro il pannello', () => {
+  // Il senso della cosa e' tutto qui: chi imita una nostra mail non sa cosa
+  // scrivere nel riquadro in fondo, perche' per saperlo dovrebbe entrare nel
+  // pannello dello streamer. Percio' il codice non deve uscire da nessun'altra
+  // parte, e ogni mail che parte deve portarlo.
+  const srv = leggi('src/web/server.js');
+  const porta = srv.slice(srv.indexOf("app.get('/api/streamer/codici-posta'"), srv.indexOf("app.get('/api/streamer/codici-posta'") + 260);
+  assert.match(porta, /requireOwner/, 'solo il proprietario');
+  assert.match(porta, /posta\.codiciDelMese\(currentUser\(req\)\.login\)/, 'e solo i suoi: il canale viene da chi e\' entrato');
+  assert.equal(srv.split('codiciDelMese(').length - 1, 1, 'una porta sola li mostra');
+  assert.ok(!leggi('src/web/vetrina.js').includes('codici-posta'), 'non e\' una porta pubblica');
+
+  // ogni mail che parte porta il codice
+  assert.match(srv, /posta\.mailConferma\(\{ display, link, codice: posta\.codiceDi\(login\) \}\)/, 'la conferma');
+  const bot = leggi('src/bot.js');
+  assert.match(bot, /const codice = posta\.codiceDi\(login\);/, 'e il rapporto');
+  assert.match(bot, /testo: rapporto\.testoPiano\(dati, \{ codice \}\), html: rapporto\.html\(dati, \{ display, codice \}\)/);
+
+  // non si conserva: si ricava dal segreto del server
+  const pst = leggi('src/features/posta.js');
+  assert.match(pst, /segno\('codice-posta', `\$\{String\(channel \|\| ''\)\.toLowerCase\(\)\}\|\$\{settimanaDi\(ora\)\}`\)/,
+    'per canale e per settimana, dal segreto del server');
+  assert.ok(!/INSERT INTO|CREATE TABLE/.test(pst), 'niente da conservare, quindi niente da rubare');
+
+  const app = leggi('src/web/public/app.js');
+  assert.ok(app.includes('id="codici-posta"'), 'la carta c\'e\' nella scheda Stato');
+  assert.match(app, /caricaCodiciPosta\(\);/, 'e si carica con la scheda');
+});
+
+test('il nome del mittente si vede nell\'elenco della posta', () => {
+  const pst = leggi('src/features/posta.js');
+  assert.match(pst, /export function nomeMittente\(\) \{ return env\('MAIL_NOME'\) \|\| 'SocialBot'; \}/);
+  assert.match(pst, /componi\(\{ da: mittenteIntestazione\(\)/, 'il From porta il nome');
+  assert.match(pst, /consegna\(\{ a, da, messaggio/, 'la busta porta il solo indirizzo');
+});

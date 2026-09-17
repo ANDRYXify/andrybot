@@ -156,6 +156,24 @@ export function impronta(valore, sale = '') {
 
 export function eImpronta(v) { return typeof v === 'string' && v.startsWith('imp:1:'); }
 
+// UN SEGNO: un valore breve, stabile, che solo questo server sa produrre.
+//
+// Non e' una busta (non si riapre) e non e' un'impronta (non serve a
+// riconoscere un segreto che qualcuno ripresenta). Serve a firmare una cosa
+// PUBBLICA in modo che nessun altro possa rifarla uguale: il codice che
+// stampiamo in fondo alle mail, per esempio. Chi lo legge non puo' risalire al
+// segreto, e chi non ha il segreto non puo' indovinare il codice della
+// settimana prossima.
+//
+// La chiave si ricava dal segreto del server PER SCOPO: se un giorno un segno
+// trapela, non porta con se' niente di quello che sta nelle buste.
+export function segno(scopo, valore) {
+  const chiave = Buffer.from(crypto.hkdfSync(
+    'sha256', Buffer.from(SEGRETO, 'utf8'), Buffer.alloc(0),
+    Buffer.from('andrybot:segno:' + String(scopo)), 32));
+  return crypto.createHmac('sha256', chiave).update(String(valore)).digest();
+}
+
 export function combacia(valore, attesa, sale = '') {
   if (!attesa) return false;
   const a = Buffer.from(impronta(valore, sale));

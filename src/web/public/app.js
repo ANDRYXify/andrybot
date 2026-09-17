@@ -715,6 +715,13 @@ function _demoGet(via) {
         { id: 1, inizio: 1789228800000, fine: 1789236000000, letto: true, inviato: '', ts: 1789236000000, dati: { durataMs: 7200000, picco: 39, media: 27, giri: 24, messaggi: 610, persone: 54, top: [{ user: 'marco99', n: 70 }, { user: 'lucaplays', n: 66 }, { user: 'sara_gg', n: 40 }], follow: 6, sub: 1, regali: 0, raid: 0, raidSpettatori: 0, presenti: 40, primeVolte: 3, clip: 1, donazioni: 1, donazioniCent: 500 } },
       ],
     },
+    '/api/streamer/codici-posta': {
+      codici: [
+        { settimana: '2026-W36', dal: 1788912000000, codice: 'H4TQ-9MRD', corrente: false },
+        { settimana: '2026-W37', dal: 1789516800000, codice: 'B7KX-3PNF', corrente: false },
+        { settimana: '2026-W38', dal: 1790121600000, codice: 'Q2WD-6HJT', corrente: true },
+      ],
+    },
     '/api/streamer/statistiche': {
       periodo: '7', messaggi: 12840, persone: 640, messaggiBot: 1620, clip: 12,
       dirette: { n: 4, oreMs: 41400000, picco: 61, follow: 38, sub: 9, raid: 3, donazioni: 5, donazioniCent: 4200 },
@@ -4530,6 +4537,13 @@ function pannelloStato() {
       <p>${L('Dove il bot lavora per te. Collega quelle che usi: comandi, moduli, punti e memoria funzionano allo stesso modo su tutte, e una risposta torna sempre da dove è arrivata la domanda.', 'Where the bot works for you. Connect the ones you use: commands, modules, points and memory work the same on all of them, and a reply always comes back from where the question came.', 'Donde el bot trabaja para ti. Conecta las que uses: comandos, módulos, puntos y memoria funcionan igual en todas, y una respuesta vuelve siempre desde donde llegó la pregunta.')}</p>
       <div id="piattaforme-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
+
+    ${proprietario ? `<div class="carta">
+      <h2>${_hIco(ICO.scudo)}${L('Le mail che ti mandiamo', 'The mails we send you', 'Los correos que te enviamos')}</h2>
+      <p>${L('In fondo a ogni nostra mail c’è un codice. Lo trovi qui, e solo qui: chi imita una nostra mail non può saperlo, perché per saperlo dovrebbe entrare in questo pannello.', 'At the bottom of every mail of ours there is a code. You find it here, and only here: whoever fakes a mail of ours cannot know it, because to know it they would have to get into this panel.', 'Al final de cada correo nuestro hay un código. Lo encuentras aquí, y solo aquí: quien imita un correo nuestro no puede saberlo, porque para saberlo tendría que entrar en este panel.')}</p>
+      <div id="codici-posta"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <p class="suggerimento spazio-sopra">${L('Cambia ogni lunedì. Ci sono anche quelli delle settimane scorse di questo mese, per le mail che apri in ritardo. Se il codice non combacia, quella mail non l’abbiamo scritta noi: non aprire i collegamenti e scrivicelo.', 'It changes every Monday. The codes of this month’s past weeks are here too, for mails you open late. If the code does not match, we did not write that mail: do not open the links and tell us.', 'Cambia cada lunes. También están los de las semanas pasadas de este mes, para los correos que abres tarde. Si el código no coincide, ese correo no lo hemos escrito nosotros: no abras los enlaces y avísanos.')}</p>
+    </div>` : ''}
 
     <div class="carta">
       <h2>${_hIco(ICO.scarica)}${L('I tuoi dati sono tuoi', 'Your data is yours', 'Tus datos son tuyos')}</h2>
@@ -17192,7 +17206,7 @@ async function conErrore(fn) {
 
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
-  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaRetePanoramica(); caricaPiattaforme(); collegaCancella(); }
+  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaRetePanoramica(); caricaPiattaforme(); caricaCodiciPosta(); collegaCancella(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'personalita') { caricaGuide(); caricaSpontanee(); }
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); }
@@ -18128,6 +18142,20 @@ function _statGara(id, righe, vuoto) {
     ? righe.map((r, i) => `<li><div class="testo-voce"><span class="domanda">${medaglia(i)} ${esc(r.chi)}</span>
         <span class="risposta">${esc(r.quanto)}</span></div></li>`).join('')
     : `<li class="vuoto">${vuoto}</li>`;
+}
+
+async function caricaCodiciPosta() {
+  const box = document.getElementById('codici-posta');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/streamer/codici-posta'); }
+  catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore:', 'Error:', 'Error:')} ${esc(e.message)}</p>`; return; }
+  const c = (d.codici || []).slice().reverse();
+  box.innerHTML = c.length
+    ? `<ul class="cod-posta">${c.map((x) => `<li${x.corrente ? ' class="ora"' : ''}>
+        <code>${esc(x.codice)}</code>
+        <span>${x.corrente ? L('questa settimana', 'this week', 'esta semana') : L('dal', 'from', 'desde') + ' ' + esc(String(dataIt(x.dal)).split(',')[0])}</span></li>`).join('')}</ul>`
+    : `<p class="vuoto">${L('Nessun codice per questo mese.', 'No code for this month.', 'Ningún código para este mes.')}</p>`;
 }
 
 async function caricaStatistiche() {

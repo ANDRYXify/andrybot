@@ -12,7 +12,7 @@
 // presenze (dirette_viste), che sopravvive ai riavvii. La fine e' adesso.
 import { db, streamers, presenze as store } from '../db.js';
 import { config } from '../config.js';
-import { guscioHtml, rigaHtml, numeriHtml, podioHtml, sezioneHtml, cartaLinkHtml, tastoHtml, dueColonneHtml } from './posta.js';
+import { guscioHtml, rigaHtml, numeriHtml, podioHtml, sezioneHtml, cartaLinkHtml, tastoHtml, dueColonneHtml, codiceDi, codiceTesto } from './posta.js';
 
 const norm = (s) => String(s || '').toLowerCase().trim();
 const sessioni = new Map();   // canale → { inizio, picco, somma, giri }
@@ -170,7 +170,7 @@ const ORA_IT = (ts) => new Date(Number(ts) || 0).toLocaleTimeString('it-IT', { h
 // La mail, col guscio del prodotto. Prima la voce, poi i tre numeri che si
 // guardano per primi, poi chi ha scritto, il resto, e in fondo le clip: quelle
 // si aprono una per una, ed e' la ragione per cui questa mail si riapre.
-export function html(dati, { display = '', quando = '' } = {}) {
+export function html(dati, { display = '', quando = '', codice = '' } = {}) {
   const d = dati || {};
   // Le voci corte: in due colonne lo spazio e' poco, e «54, di cui 7 alla prima
   // volta» andrebbe a capo male. Dice la stessa cosa in meta' larghezza.
@@ -201,6 +201,7 @@ ${clip.length ? sezioneHtml(`${clip.length === 1 ? 'La clip della serata' : `Le 
     + clip.map((c) => cartaLinkHtml({ titolo: c.motivo || 'Clip della diretta', link: c.url, nota: `${ORA_IT(c.ts)} · ${dominioDi(c.url)}` })).join('') : ''}
 <div style="margin-top:22px;">${tastoHtml('Apri le tue dirette', `${config.baseUrl}/#dirette`)}</div>`;
   return guscioHtml({
+    codice,
     titolo: `Com’è andata${quandoDetto ? ` ${quandoDetto}` : ''}`,
     cappello: display || '',
     occhiello: `${d.giri > 0 ? `${d.picco} al picco, ` : ''}${d.messaggi | 0} messaggi, ${d.follow | 0} follower nuovi`,
@@ -211,10 +212,10 @@ ${clip.length ? sezioneHtml(`${clip.length === 1 ? 'La clip della serata' : `Le 
 
 // La versione senza HTML, per chi legge la posta in testo. I link delle clip
 // restano per esteso: senza HTML un titolo cliccabile non esiste.
-export function testoPiano(dati) {
+export function testoPiano(dati, { codice = '' } = {}) {
   const d = dati || {};
   const righe = [testo(d).replace(/<a href="([^"]+)">([^<]*)<\/a>/g, '$2: $1').replace(/<[^>]+>/g, '')];
-  return righe.join('\n');
+  return righe.join('\n') + codiceTesto(codice);
 }
 
 // Il messaggio, in HTML di Telegram. Solo le righe che hanno qualcosa da dire.

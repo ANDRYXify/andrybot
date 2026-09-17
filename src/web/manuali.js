@@ -934,6 +934,10 @@ const DIRETTA = {
     ] },
 
     { p: ['La prima volta che entri dopo l\'attivazione te lo chiedo io, con una finestra: scrivi l\'indirizzo e ti mando la conferma. Se rispondi no, non te lo chiedo più, da nessun computer.'] },
+    { p: [
+      '<strong>Come sai che una mail è davvero nostra.</strong> In fondo a ogni messaggio che ti mandiamo c\'è un <strong>codice di verifica</strong>, e lo trovi nel pannello alla scheda <em>Stato</em>: lì e da nessun\'altra parte. Chi imita una nostra mail non può saperlo, perché per saperlo dovrebbe entrare nel tuo pannello.',
+      'Cambia ogni lunedì, ed è diverso per ogni canale. Nella scheda trovi anche quelli delle settimane scorse del mese, per le mail che apri in ritardo. Se il codice non combacia, quella mail non l\'abbiamo scritta noi: non aprire i collegamenti.',
+    ] },
     { p: ['Un riavvio del bot a metà serata non perde il rapporto: riparte dall\'inizio che le presenze ricordano, e al più manca il picco di prima.'] },
 
     { h2: 'Clip automatiche' },

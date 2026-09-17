@@ -1069,7 +1069,8 @@ export class BotManager {
       const pst = postaStreamer.get(login);
       if (c.mail && pst?.confermata && pst.email && posta.attiva()) {
         const display = streamers.get(login)?.display || login;
-        posta.invia({ a: pst.email, oggetto: rapporto.oggetto(dati), testo: rapporto.testoPiano(dati), html: rapporto.html(dati, { display }) })
+        const codice = posta.codiceDi(login);
+        posta.invia({ a: pst.email, oggetto: rapporto.oggetto(dati), testo: rapporto.testoPiano(dati, { codice }), html: rapporto.html(dati, { display, codice }) })
           .then(() => rapporti.segnaInviato(id, 'mail'))
           .catch((e) => log.warn(`#${login} rapporto via mail:`, e?.message || e));
       }
