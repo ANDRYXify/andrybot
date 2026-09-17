@@ -900,7 +900,8 @@ function render() {
   if (!stato.user) {
     document.body.classList.remove('con-nav');
     svuotaNav();
-    renderHero();
+
+    if (!document.querySelector('.vt-scena')) { location.replace('/'); return; }
     applicaTema();
     return;
   }
@@ -2207,142 +2208,6 @@ function mostraBenvenuto() {
     chiudi();
   });
   el.querySelector('[data-bv="via"]')?.focus();
-}
-
-function renderHero() {
-  const errore = new URLSearchParams(location.search).get('errore');
-  const msgErrore = {
-    'access_denied': L('Hai annullato l’accesso su Twitch.', 'You cancelled the Twitch login.', 'Has cancelado el acceso con Twitch.'),
-    'state': L('Sessione di accesso scaduta, riprova.', 'Login session expired, please try again.', 'Sesión de acceso caducada, inténtalo de nuevo.'),
-    'validazione': L('Twitch non ha confermato il tuo accesso, riprova.', 'Twitch didn’t confirm your login, please try again.', 'Twitch no confirmó tu acceso, inténtalo de nuevo.'),
-    'account-diverso': L('Hai autorizzato un account diverso da quello con cui sei loggato: usa lo stesso account.', 'You authorised a different account than the one you’re logged in with: use the same account.', 'Has autorizado una cuenta distinta a la de tu sesión: usa la misma cuenta.'),
-  }[errore] || (errore ? L('Errore di accesso: ', 'Login error: ', 'Error de acceso: ') + errore : null);
-  if (msgErrore && !app.querySelector('.vt-errore')) {
-    const a = document.createElement('div');
-    a.className = 'carta avviso vt-errore';
-    a.innerHTML = `<p>${esc(msgErrore)}</p>`;
-    app.prepend(a);
-  }
-
-  rivelaCarte();
-  caricaPiani();
-
-  esitoAcquistoDaIndirizzo();
-}
-
-const SVG_PIANI = {
-  base: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
-  giochi: '<line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/>',
-  effetti: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
-  notifiche: '<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>',
-  clip: '<path d="m12.296 3.464 3.02 3.956"/><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m6.18 5.276 3.1 3.899"/>',
-  voce: '<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>',
-  squadra: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/>',
-  musica: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
-};
-const svgPiano = (id) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SVG_PIANI[id] || SVG_PIANI.base}</svg>`;
-
-async function caricaPiani() {
-  const box = document.getElementById('vetrina-piani');
-  if (!box) return;
-  let dati;
-  try { dati = await api('/api/abbonamento/piani'); } catch { box.remove(); return; }
-  const base = dati.base, free = dati.free;
-  const bundle = dati.bundle || [];
-  if (!base) { box.remove(); return; }
-  const perMese = L('/mese', '/month', '/mes');
-  const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
-
-  const inclusiFree = [
-    L('Comandi e moduli illimitati', 'Unlimited commands and modules', 'Comandos y módulos ilimitados'),
-    L('Moderazione con scudo anti-bot', 'Moderation with anti-bot shield', 'Moderación con escudo anti-bot'),
-    L('Overlay per la diretta e contatori a schermo', 'stream overlay and on-screen counters', 'Overlay para el directo y contadores'),
-  ];
-  const inclusiBase = [
-    L('Tutto l’Essenziale', 'Everything in Essenziale', 'Todo lo de Essenziale'),
-    L('Avvisi live su Telegram e Discord', 'Live alerts on Telegram and Discord', 'Avisos en directo en Telegram y Discord'),
-    L('Avvisi dei nuovi post sui social', 'Alerts for new social posts', 'Avisos de nuevas publicaciones'),
-    L('Un moderatore incluso', 'One moderator included', 'Un moderador incluido'),
-  ];
-  const piano = ({ nome, prezzo, sotto, testo, voci, punta, azione, i }) => `
-    <article class="vt-piano${punta ? ' punta' : ''}" style="--i:${i}">
-      ${punta ? `<span class="vt-piano-tag">${L('il più scelto', 'most picked', 'el más elegido')}</span>` : ''}
-      <h3>${esc(nome)}</h3>
-      <div class="vt-prezzo"><b>${prezzo}</b><span>${sotto}</span></div>
-      <p>${esc(testo)}</p>
-      <ul class="vt-elenco">${voci.map((v) => `<li>${spunta}${esc(v)}</li>`).join('')}</ul>
-      ${azione}
-    </article>`;
-
-  box.innerHTML = `
-    <div class="vt-store">
-      ${piano({
-        i: 0,
-        nome: tP(free, 'nome') || 'Essenziale',
-        prezzo: L('Gratis', 'Free', 'Gratis'),
-        sotto: L('per sempre', 'forever', 'para siempre'),
-        testo: L('Basta registrarsi. Nessuna carta, nessuna scadenza.', 'Just sign up. No card, no expiry.', 'Solo regístrate. Sin tarjeta, sin caducidad.'),
-        voci: inclusiFree,
-        punta: false,
-        azione: `<a class="vt-btn" href="/entra?nuovo=1">${L('Inizia gratis', 'Start free', 'Empieza gratis')}</a>`,
-      })}
-      ${piano({
-        i: 1,
-        nome: tP(base, 'nome') || 'Base',
-        prezzo: '€' + Number(base.prezzo || 0).toFixed(2).replace('.', ','),
-        sotto: perMese,
-        testo: tP(base, 'sommario'),
-        voci: inclusiBase,
-        punta: true,
-        azione: `<button type="button" class="vt-btn" data-vai-comp>${L('Componi il tuo', 'Build yours', 'Compón el tuyo')}</button>`,
-      })}
-    </div>
-
-    ${bundle.length ? `
-    <div class="vt-pacchi">
-      <p class="vt-pacchi-tit vt-rivela">${L('Pacchetti pronti', 'Ready-made packs', 'Packs listos')} <span>${L('un clic e ti riempio la lista qui sotto', 'one click and I fill in the list below', 'un clic y te relleno la lista de abajo')}</span></p>
-      <div class="vt-griglia">
-        ${bundle.map((b, i) => {
-          const risp = b.prezzoPieno > b.prezzo;
-          return `<button type="button" class="vt-carta vt-pacco" data-pacco="${esc(b.id)}" aria-pressed="false" style="--i:${i}">
-            ${risp ? `<span class="vt-pacco-sconto">−${Math.round(b.sconto * 100)}%</span>` : ''}
-            <h3>${esc(b.nome)}</h3>
-            <p>${esc(tP(b, 'sommario'))}</p>
-            <span class="vt-pacco-prezzo">${risp ? `<s>+€${Number(b.prezzoPieno).toFixed(2).replace('.', ',')}</s>` : ''}<b>+€${Number(b.prezzo).toFixed(2).replace('.', ',')}</b><i>${perMese}</i></span>
-          </button>`;
-        }).join('')}
-      </div>
-    </div>` : ''}
-
-    <div class="vt-comp-guscio vt-rivela" id="vt-comp-guscio"></div>
-
-    <p class="vt-community vt-rivela">${L('<strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot è <strong>gratis e completo</strong> per te: non ti serve nessun piano.', '<strong>Already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community?</strong> SocialBot is <strong>free and complete</strong> for you: no plan needed.', '<strong>¿Ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot es <strong>gratis y completo</strong> para ti: no necesitas ningún plan.')}</p>`;
-
-  const guscio = box.querySelector('#vt-comp-guscio');
-  guscio.innerHTML = configuratoreHtml(dati, { titolo: L('Aggiungi i super-poteri', 'Add the super-powers', 'Añade los súper-poderes') });
-  montaConfiguratore(guscio, dati);
-
-  const vaiAlComp = () => guscio.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' });
-  box.querySelector('[data-vai-comp]')?.addEventListener('click', vaiAlComp);
-
-  box.querySelectorAll('[data-pacco]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const b = bundle.find((x) => x.id === btn.dataset.pacco);
-      if (!b) return;
-      const caselle = [...guscio.querySelectorAll('input[type=checkbox]')];
-      if (!caselle.length) return;
-      const gia = caselle.filter((c) => c.checked).map((c) => c.value);
-      const uguale = gia.length === b.addon.length && b.addon.every((id) => gia.includes(id));
-      for (const c of caselle) c.checked = uguale ? false : b.addon.includes(c.value);
-      caselle[0].dispatchEvent(new Event('change', { bubbles: true }));
-      box.querySelectorAll('[data-pacco]').forEach((e) => {
-        const acceso = !uguale && e === btn;
-        e.classList.toggle('on', acceso);
-        e.setAttribute('aria-pressed', acceso ? 'true' : 'false');
-      });
-      vaiAlComp();
-    });
-  });
 }
 
 function altroCanale() {

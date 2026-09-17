@@ -28,7 +28,7 @@ import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { renderLinkPage, renderInformativa, accentoDi } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
-import { inserisciVetrina } from './vetrina-vista.js';
+import { guscioVetrina, guscioPannello } from './vetrina-vista.js';
 import { pagina404, LINGUE_SERVIZIO } from './pagine-servizio.js';
 import { montaArgine } from './argine.js';
 import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guide.js';
@@ -610,7 +610,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     return notFound(res);
   });
 
-  // GUSCIO: `body.vetrina` deciso QUI, non dal JS. Prima lo metteva app.js dopo
+  // DUE GUSCI DALLO STESSO index.html: quello di chi legge e quello di chi
+  // lavora. Li compone `src/web/vetrina-vista.js`, che sa anche quali risorse
+  // spettano alla vetrina — vedi docs/VELOCITA.md.
+  //
+  // `body.vetrina` lo decide il server, non il JS. Prima lo metteva app.js dopo
   // /api/me, e nel frattempo la pagina aveva gia disegnato la colonna stretta
   // della dashboard (640px) per poi allargarsi a quella della vetrina (1180px):
   // uno scarto di layout di 0,15 CLS, sopra la soglia buona di 0,1. Chi e loggato
@@ -674,7 +678,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // Le porte di Kick e YouTube esistono solo se questo server ha le
     // credenziali: un pulsante che porta a un 503 e' peggio di un pulsante che
     // non c'e'.
-    h = inserisciVetrina(h, codice, { kick: conKick, youtube: conYoutube, dirette: _dirette });
+    h = guscioVetrina(h, codice, { kick: conKick, youtube: conYoutube, dirette: _dirette, piani: _piani });
     cambia('<html lang="it">', `<html lang="${m.html}">`);
     cambia(`<title>${base.titolo}</title>`, `<title>${m.titolo}</title>`);
     cambia(`<meta name="description" content="${base.desc}">`, `<meta name="description" content="${m.desc}">`);
@@ -692,35 +696,41 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Quattro gusci precalcolati: tre lingue per chi non e loggato (con
   // `body.vetrina` gia messo, vedi docs/VELOCITA.md) e quello nudo per la
   // dashboard, che la lingua se la sceglie da sola una volta dentro.
-  // Le dirette in vetrina entrano nei gusci, non nella pagina gia' aperta: cosi'
-  // arrivano nel primo HTML (buone per chi indicizza, e senza spostare niente
-  // mentre si legge). I gusci si rifanno solo quando l'elenco CAMBIA davvero, al
-  // massimo una volta al minuto, e in disparte: chi apre la home non aspetta mai
-  // una chiamata a una piattaforma.
+  // Le dirette e il listino entrano nei gusci, non nella pagina gia' aperta:
+  // cosi' arrivano nel primo HTML (buone per chi indicizza, e senza spostare
+  // niente mentre si legge). I gusci si rifanno solo quando una delle due cose
+  // CAMBIA davvero, al massimo una volta al minuto, e in disparte: chi apre la
+  // home non aspetta mai una chiamata a una piattaforma. Il listino puo'
+  // cambiare da solo: i prezzi li conferma Stripe, e una voce entra in vendita
+  // quando lui risponde (vedi abbonamenti.sorvegliaPrezzi).
   let _dirette = [];
+  let _piani = abbonamenti.pianiPubblici();
   const GUSCI = {};
   const rifaiGusci = () => {
-    for (const codice of Object.keys(META_LINGUA)) GUSCI[codice] = gusciaDi(codice).replace('<body>', '<body class="vetrina">');
+    for (const codice of Object.keys(META_LINGUA)) GUSCI[codice] = gusciaDi(codice);
   };
   rifaiGusci();
-  let _firmaDirette = '';
+  let _firma = '';
   const ronda = async () => {
     try {
       const lista = await vetrinaLive.elenco({ helix, inDiretta: (l) => manager?.inDiretta?.(l) });
-      const firma = lista.map((d) => `${d.login}:${d.spettatori}:${d.categoria}`).join('|');
-      if (firma === _firmaDirette) return;
-      _firmaDirette = firma;
+      const piani = abbonamenti.pianiPubblici();
+      const firma = lista.map((d) => `${d.login}:${d.spettatori}:${d.categoria}`).join('|') + '\n' + JSON.stringify(piani);
+      if (firma === _firma) return;
+      _firma = firma;
       _dirette = lista;
+      _piani = piani;
       rifaiGusci();
     } catch (e) { log.debug('vetrina live:', e?.message || e); }
   };
   setTimeout(ronda, 4000).unref?.();
   setInterval(ronda, vetrinaLive.FRESCHEZZA_MS).unref?.();
+  const PANNELLO = guscioPannello(gusciaHtml);
   const serviGuscio = (req, res) => {
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.set('Cache-Control', 'no-cache');
     res.set('Vary', 'Cookie');
-    if (currentUser(req)) return res.send(gusciaHtml);
+    if (currentUser(req) || String(req.query?.demo || '') === '1') return res.send(PANNELLO);
     const chiesta = String(req.query?.lang || '').toLowerCase();
     res.send(GUSCI[chiesta] || GUSCI.it);
   };
