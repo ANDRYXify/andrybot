@@ -9,6 +9,13 @@ cartellaUsaEGetta('andrybot-eventsub-');
 const { tokens } = await import('../../src/db.js');
 const { EventHub } = await import('../../src/twitch/events.js');
 
+// QUANTE SONO. Scriverlo a mano vorrebbe dire che il giorno in cui il bot si
+// iscrive a un evento in piu' questo collaudo diventa rosso senza che si sia
+// rotto niente: qui interessa «una richiesta per ogni sottoscrizione voluta»,
+// non il numero.
+const QUANTE = ((await import('node:fs')).readFileSync(new URL('../../src/twitch/events.js', import.meta.url), 'utf8')
+  .match(/\{ type: '/g) || []).length;
+
 class SocketFinto {
   constructor() { this.readyState = 1; this._l = {}; }
   addEventListener(t, f) { (this._l[t] ||= []).push(f); }
@@ -48,20 +55,20 @@ function banco(t, risposte) {
 
 test('un 429 si riprova dopo quindici secondi, e solo quello', async (t) => {
   tokens.save('broadcaster', 'alfa', { userId: '1', accessToken: 'a', refreshToken: 'r', scopes: ['chat:edit'], expiresAt: Date.now() + 3600_000 });
-  const { hub, socks, chiamate } = banco(t, [429, 200, 200, 200, 200, 200, 200]);
+  const { hub, socks, chiamate } = banco(t, [429, ...Array(QUANTE).fill(200)]);
   await hub.watch({ login: 'alfa', user_id: '1' });
   socks[0].messaggio(benvenuto('s1'));
   await flush();
-  assert.equal(chiamate.length, 7, 'sette sottoscrizioni chieste');
+  assert.equal(chiamate.length, QUANTE, 'una richiesta per ogni sottoscrizione voluta');
   assert.equal(chiamate[0].st, 429);
   await avanza(t, socks[0], 10_000);
-  assert.equal(chiamate.length, 7, 'non prima dei quindici secondi');
+  assert.equal(chiamate.length, QUANTE, 'non prima dei quindici secondi');
   await avanza(t, socks[0], 10_000);
-  assert.equal(chiamate.length, 8, 'una riprova');
-  assert.equal(chiamate[7].tipo, chiamate[0].tipo, 'della sola sottoscrizione rifiutata');
-  assert.equal(chiamate[7].st, 200);
+  assert.equal(chiamate.length, QUANTE + 1, 'una riprova');
+  assert.equal(chiamate[QUANTE].tipo, chiamate[0].tipo, 'della sola sottoscrizione rifiutata');
+  assert.equal(chiamate[QUANTE].st, 200);
   await avanza(t, socks[0], 10 * 60_000);
-  assert.equal(chiamate.length, 8, 'andata a buon fine: basta cosi\'');
+  assert.equal(chiamate.length, QUANTE + 1, 'andata a buon fine: basta cosi\'');
   hub.stop();
 });
 
@@ -71,9 +78,9 @@ test('un 403 (scope mancante) non si riprova', async (t) => {
   await hub.watch({ login: 'beta', user_id: '2' });
   socks[0].messaggio(benvenuto('s1'));
   await flush();
-  assert.equal(chiamate.length, 7);
+  assert.equal(chiamate.length, QUANTE);
   await avanza(t, socks[0], 10 * 60_000);
-  assert.equal(chiamate.length, 7, 'riprovare uno scope mancante non lo fa comparire');
+  assert.equal(chiamate.length, QUANTE, 'riprovare uno scope mancante non lo fa comparire');
   hub.stop();
 });
 
@@ -83,29 +90,29 @@ test('una sessione nuova cancella le riprove di quella vecchia (le rifa\' lei)',
   await hub.watch({ login: 'gamma', user_id: '3' });
   socks[0].messaggio(benvenuto('s1'));
   await flush();
-  assert.equal(chiamate.length, 7);
+  assert.equal(chiamate.length, QUANTE);
   socks[0].close();                               // cade: riconnessione con sessione nuova
   t.mock.timers.tick(1000); await flush();
   assert.equal(socks.length, 2);
   socks[1].messaggio(benvenuto('s2'));
   await flush();
-  assert.equal(chiamate.length, 14, 'la welcome nuova rifa\' tutte e sette');
+  assert.equal(chiamate.length, QUANTE * 2, 'la welcome nuova rifa\' tutte e sette');
   await avanza(t, socks[1], 20_000);
-  assert.equal(chiamate.length, 14, 'e la riprova della sessione vecchia non parte');
+  assert.equal(chiamate.length, QUANTE * 2, 'e la riprova della sessione vecchia non parte');
   hub.stop();
 });
 
 test('dopo tre riprove a vuoto ci si arrende, senza girare per sempre', async (t) => {
   tokens.save('broadcaster', 'delta', { userId: '4', accessToken: 'a', refreshToken: 'r', scopes: ['chat:edit'], expiresAt: Date.now() + 3600_000 });
-  const { hub, socks, chiamate } = banco(t, [500, 200, 200, 200, 200, 200, 200, 500, 500, 500, 500]);
+  const { hub, socks, chiamate } = banco(t, [500, ...Array(QUANTE - 1).fill(200), 500, 500, 500, 500]);
   await hub.watch({ login: 'delta', user_id: '4' });
   socks[0].messaggio(benvenuto('s1'));
   await flush();
   await avanza(t, socks[0], 15_000);              // 1a riprova → 500
   await avanza(t, socks[0], 60_000);              // 2a → 500
   await avanza(t, socks[0], 240_000);             // 3a → 500
-  assert.equal(chiamate.length, 10);
+  assert.equal(chiamate.length, QUANTE + 3);
   await avanza(t, socks[0], 60 * 60_000);
-  assert.equal(chiamate.length, 10, 'basta');
+  assert.equal(chiamate.length, QUANTE + 3, 'basta');
   hub.stop();
 });

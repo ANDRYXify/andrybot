@@ -10,7 +10,7 @@
 // L'inizio della diretta e' l'istante in cui il bot l'ha vista partire; se e'
 // ripartito a diretta in corso, e' l'inizio della diretta corrente delle
 // presenze (dirette_viste), che sopravvive ai riavvii. La fine e' adesso.
-import { db, streamers, presenze as store } from '../db.js';
+import { db, streamers, presenze as store, padroneDi } from '../db.js';
 import { config } from '../config.js';
 import { guscioHtml, rigaHtml, numeriHtml, podioHtml, sezioneHtml, cartaLinkHtml, tastoHtml, dueColonneHtml, codiceDi, codiceTesto } from './posta.js';
 
@@ -74,9 +74,11 @@ export function raccogli(channel, { inizio, fine, picco = 0 }) {
   const da = Number(inizio) || 0, a = Number(fine) || Date.now();
   const chat = db.prepare(`SELECT COUNT(*) n, COUNT(DISTINCT user) p FROM messages
     WHERE channel=? AND ts>=? AND ts<=? AND from_bot=0 AND user NOT LIKE '[%'`).get(ch, da, a);
+  // «chi ha scritto di piu'» e' il pubblico: lo streamer nella classifica della
+  // propria serata e' una riga che non dice niente a chi la legge
   const top = db.prepare(`SELECT user, MAX(display) display, COUNT(*) n FROM messages
-    WHERE channel=? AND ts>=? AND ts<=? AND from_bot=0 AND user NOT LIKE '[%'
-    GROUP BY user ORDER BY n DESC, user LIMIT 3`).all(ch, da, a).map((r) => ({ user: r.display || r.user, n: r.n }));
+    WHERE channel=? AND ts>=? AND ts<=? AND from_bot=0 AND user<>? AND user NOT LIKE '[%'
+    GROUP BY user ORDER BY n DESC, user LIMIT 3`).all(ch, da, a, padroneDi(ch)).map((r) => ({ user: r.display || r.user, n: r.n }));
   const out = { messaggi: chat.n | 0, persone: chat.p | 0, top, follow: 0, sub: 0, regali: 0, raid: 0, raidSpettatori: 0 };
   for (const r of db.prepare(`SELECT text FROM messages WHERE channel=? AND user='[evento]' AND ts>=? AND ts<=?`).all(ch, da, a)) {
     const { tipo, dati } = evento(r.text);

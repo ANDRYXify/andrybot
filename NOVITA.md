@@ -40,6 +40,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Metti un tetto in ore e la fine non va mai oltre: una serata fortunata non ti porta a dormire alle sette. Con !subathon la chat sa quanto manca. [vai: alert]
 - Chi rinnova l'abbonamento adesso fa scattare l'alert e conta negli obiettivi. Prima il rinnovo al bot non arrivava proprio. [vai: alert]
 - Una raffica di regali conta un sub per ogni sub, non uno in più: l'annuncio della raffica serve all'alert, non al conto. [vai: alert]
+- Nelle classifiche del canale non ci sei più tu: ore, monete, messaggi e serie contano chi ti guarda. Il totale dei messaggi resta intero. [vai: statistiche]
 - Gli auguri di compleanno adesso arrivano anche in chat, al primo messaggio di chi li compie. Nel gruppo restano a mezzanotte, come prima. [vai: notifiche]
 - Chi ti guarda si segna il compleanno da solo: scrive !compleanno 25/12 e tu non devi toccare niente. Con !compleanno via lo toglie. [vai: notifiche]
 - Insieme agli auguri in chat può partire un effetto della tua libreria. Lo scegli dalla scheda Notifiche. [vai: notifiche]

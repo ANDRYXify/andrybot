@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { config } from './config.js';
 import { cifra, decifra, eCifrato, anello, anelloCorrente } from './segreti.js';
 import { istruzioneGenere } from './ai/genere.js';
+import { nomeSu } from './identita.js';
 
 mkdirSync(config.dataDir, { recursive: true });
 export const db = new Database(join(config.dataDir, 'andrybot.db'));
@@ -928,6 +929,15 @@ export const friends = {
 export const CLASSIFICHE = ['pubblico', 'staff', 'tutti'];
 const FILTRO_CLASSIFICA = { pubblico: " AND ruolo=''", staff: " AND ruolo='staff'", tutti: '' };
 
+// IL PADRONE NON CORRE NELLA SUA GARA.
+//
+// Una classifica del canale che mette primo lo streamer non dice niente a
+// nessuno: lui c'e' sempre, per mestiere, e le ore guardate le vince per
+// definizione. Il nome da lasciar fuori e' quello con cui scrive IN CHAT, che
+// non e' sempre il login del canale: un canale Kick si chiama `kick.giada` ma
+// in chat lei e' `giada`.
+export const padroneDi = (channel) => nomeSu(String(channel || '').toLowerCase());
+
 export const points = {
   get(channel, user) {
     const r = db.prepare('SELECT monete FROM points WHERE channel=? AND user=?').get(channel, String(user).toLowerCase());
@@ -970,13 +980,13 @@ export const points = {
     const u = String(user).toLowerCase();
     const r = db.prepare('SELECT monete, ruolo FROM points WHERE channel=? AND user=?').get(channel, u);
     if (!r) return 0;
-    const q = db.prepare("SELECT COUNT(*) c FROM points WHERE channel=? AND ruolo=? AND user NOT LIKE '[%' AND monete>?")
-      .get(channel, r.ruolo || '', r.monete);
+    const q = db.prepare("SELECT COUNT(*) c FROM points WHERE channel=? AND ruolo=? AND user<>? AND user NOT LIKE '[%' AND monete>?")
+      .get(channel, r.ruolo || '', padroneDi(channel), r.monete);
     return q.c + 1;
   },
   top(channel, n = 5, chi = 'pubblico') {
     const filtro = FILTRO_CLASSIFICA[chi] ?? FILTRO_CLASSIFICA.pubblico;
-    return db.prepare(`SELECT user, monete, ruolo FROM points WHERE channel=? AND user NOT LIKE '[%'${filtro} ORDER BY monete DESC LIMIT ?`).all(channel, n);
+    return db.prepare(`SELECT user, monete, ruolo FROM points WHERE channel=? AND user<>? AND user NOT LIKE '[%'${filtro} ORDER BY monete DESC LIMIT ?`).all(channel, padroneDi(channel), n);
   },
 };
 
@@ -1004,7 +1014,7 @@ export const watchtime = {
     tx(users || []);
   },
   top(channel, n = 5) {
-    return db.prepare("SELECT user, display, seconds FROM watchtime WHERE channel=? AND user NOT LIKE '[%' ORDER BY seconds DESC LIMIT ?").all(channel, n);
+    return db.prepare("SELECT user, display, seconds FROM watchtime WHERE channel=? AND user<>? AND user NOT LIKE '[%' ORDER BY seconds DESC LIMIT ?").all(channel, padroneDi(channel), n);
   },
 };
 
@@ -1031,8 +1041,9 @@ export const presenze = {
     return this.get(ch, u);
   },
   top(channel, n = 5) {
-    return db.prepare(`SELECT user, dirette, serie, record FROM presenze WHERE channel=? AND serie>0 AND user NOT LIKE '[%'
-      ORDER BY serie DESC, dirette DESC, record DESC, user LIMIT ?`).all(String(channel).toLowerCase(), n);
+    const ch = String(channel).toLowerCase();
+    return db.prepare(`SELECT user, dirette, serie, record FROM presenze WHERE channel=? AND user<>? AND serie>0 AND user NOT LIKE '[%'
+      ORDER BY serie DESC, dirette DESC, record DESC, user LIMIT ?`).all(ch, padroneDi(ch), n);
   },
   diretta(channel) {
     return db.prepare('SELECT * FROM dirette_viste WHERE channel=?').get(String(channel).toLowerCase()) || null;

@@ -11,7 +11,7 @@
 // esattamente quello che lo streamer legge nella scheda Dirette, non un secondo
 // conto che col tempo diverge; le presenze e le ore guardate dai loro registri.
 // Il periodo taglia tutto allo stesso modo, e «da sempre» non taglia niente.
-import { db, rapporti, watchtime } from '../db.js';
+import { db, rapporti, watchtime, padroneDi } from '../db.js';
 import * as presenze from './presenze.js';
 
 const GIORNO_MS = 24 * 3600_000;
@@ -35,9 +35,11 @@ export function riassunto(channel, { periodo = '7', ora = Date.now(), n = 10 } =
   const chat = db.prepare(`SELECT COUNT(*) n, COUNT(DISTINCT user) p FROM messages
     WHERE channel=? AND ts>=? AND from_bot=0 AND user NOT LIKE '[%'`).get(ch, da);
   const bot = db.prepare('SELECT COUNT(*) c FROM messages WHERE channel=? AND ts>=? AND from_bot=1').get(ch, da).c;
+  // il padrone non corre nella sua gara: i messaggi del canale li conta tutti
+  // (sopra), ma in classifica ci va chi guarda
   const topChatters = db.prepare(`SELECT user, COUNT(*) c FROM messages
-    WHERE channel=? AND ts>=? AND from_bot=0 AND user NOT LIKE '[%'
-    GROUP BY user ORDER BY c DESC, user LIMIT ?`).all(ch, da, n).map((r) => ({ user: r.user, n: intero(r.c) }));
+    WHERE channel=? AND ts>=? AND from_bot=0 AND user<>? AND user NOT LIKE '[%'
+    GROUP BY user ORDER BY c DESC, user LIMIT ?`).all(ch, da, padroneDi(ch), n).map((r) => ({ user: r.user, n: intero(r.c) }));
   const clip = db.prepare('SELECT COUNT(*) c FROM clips WHERE channel=? AND ts>=?').get(ch, da).c;
 
   // I rapporti si sommano nel database, non in JavaScript: leggerli tutti per
