@@ -352,9 +352,33 @@ export const normMusica = (m) => {
 // l'istante in cui scade sta nello STATO del canale (overlayStato.timer.fine),
 // perche' e' un dato che deve sopravvivere a un riavvio: un conto alla rovescia
 // che riparte da solo quando il bot si riavvia non e' un conto alla rovescia.
+// IL SUBATHON: non un orologio nuovo, una REGOLA del conto alla rovescia. Il
+// tempo che aggiunge finisce nello stesso istante di fine che l'overlay mostra
+// gia', quindi non ci sono due orologi da tenere d'accordo — e non si puo'
+// accendere un subathon senza un conto che lo faccia vedere.
+export const normSubathon = (x) => {
+  x = x || {};
+  return {
+    attivo: x.attivo === true,
+    // I minuti sono per UNITA': un sub, cento bit, un euro. Le frazioni le fa il
+    // conto (cinquanta bit valgono mezza unita'), cosi' nessuno deve scrivere
+    // numeri con la virgola.
+    perSub: clampInt(x.perSub, 0, 120, 5),
+    perBit100: clampInt(x.perBit100, 0, 120, 1),
+    perEuro: clampInt(x.perEuro, 0, 120, 2),
+    // Il tetto e' su QUANTO MANCA, non su quanto si e' aggiunto in tutto: una
+    // serata fortunata non deve trasformare la diretta in tre giorni. A zero
+    // non c'e' tetto, ed e' una scelta che si prende scrivendo zero.
+    tettoOre: clampInt(x.tettoOre, 0, 72, 12),
+    annuncia: x.annuncia !== false,
+    testoChat: String(x.testoChat == null ? 'Grazie {chi}! Il conto sale di {quanto}.' : x.testoChat).slice(0, 200),
+  };
+};
+
 export const normTimer = (t) => {
   t = t || {};
   return {
+    subathon: normSubathon(t.subathon),
     attivo: t.attivo === true,
     titolo: String(t.titolo == null ? 'Si comincia tra' : t.titolo).slice(0, 60),
     testoFine: String(t.testoFine == null ? 'Si comincia!' : t.testoFine).slice(0, 60),

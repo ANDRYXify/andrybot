@@ -1388,6 +1388,11 @@ const OVERLAY = {
     { h2: 'Il conto alla rovescia' },
     { p: ['Quanto manca all\'inizio. Scegli i minuti e premi <strong>Fai partire</strong>: il conto sta nel canale, quindi anche se ricarichi l\'overlay o riavvii tutto continua da dove era. Quando arriva a zero scrive quello che vuoi tu — «Si comincia!» di base — e può restare o sparire.'] },
 
+    { h3: 'Subathon' },
+    { p: ['Il subathon non è un secondo conto: è <strong>questo</strong>, con una regola in più. Lo accendi sotto al conto alla rovescia e decidi quanto vale un sub, cento bit e un euro donato. Da quel momento il tempo che arriva si somma a quello che manca, e a schermo si vede il timer che hai già messo in scena, con la veste che gli hai dato.'] },
+    { p: ['Il <strong>tetto</strong> è su quanto manca, non su quanto hai aggiunto in tutto: «non può mancare più di dodici ore» risponde alla domanda vera, cioè a che ora vai a dormire. A zero ore non c\'è tetto. Se il conto è già arrivato a zero, un sub non lo fa ripartire: la diretta è finita, e riaprirla è una tua scelta.'] },
+    { p: ['Con l\'avviso acceso il bot dice in chat quanto è salito e per merito di chi (<code>{chi}</code>, <code>{quanto}</code>). Chi guarda può chiedere <code>!subathon</code> per sapere quanto manca.'] },
+
     { h2: 'I contatori' },
     { p: ['Sono i numeri che vivono in chat — <code>!morti</code>, <code>!tentativi</code> — e si creano in <em>Comandi</em>. Nell\'overlay sono un elemento come gli altri: si spengono tutti insieme dall\'elenco e prendono la veste della scena.'] },
     { p: ['Se a un contatore dai colore, sfondo o posizione tuoi, <strong>quelli vincono</strong>: la scena veste solo quello che non hai deciso.'] },
