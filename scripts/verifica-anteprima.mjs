@@ -96,7 +96,7 @@ if (!browser) { console.log('  –  saltato: manca Chromium o Playwright'); proc
 // il tema e il brano che il finto bot serve alla pagina dell'overlay: li scrive
 // l'editor, caso per caso, cosi' le due pagine vestono la stessa cosa
 let TEMA = null, MUSICA = { stato: 'niente' };
-const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, pen: true, effetti: true, consolify: true };
+const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, pen: true, effetti: true, consolify: true };
 const ovl = overlayFinto({ tema: () => TEMA, musica: () => MUSICA });
 const { base, chiudi } = await apriSito({ overlay: ovl });
 
@@ -330,6 +330,41 @@ try {
   const lvPen = await misuraLive('#penitenze .pen-card');
   dice(edPen && lvPen && vicino(edPen.w, lvPen.w) && vicino(edPen.h, lvPen.h) && vicino(edPen.font, lvPen.font, 0.6),
     `sfida a tempo: editor ${edPen ? mis(edPen) : '–'} = diretta ${lvPen ? mis(lvPen) : '–'}`, 'editor e diretta non coincidono');
+
+  // --- 6-bis. l'hype train ---------------------------------------------------
+  // Il treno lo disegna Twitch, non noi: quindi l'unica cosa che puo' scollarsi
+  // e' il modo in cui lo DISEGNIAMO, ed e' proprio quel che si misura qui. Lo
+  // stato e' lo stesso di qua e di la' — l'editor legge il treno vero del
+  // canale, come la diretta.
+  const TRENO_FINTO = { id: 't1', livello: 4, quanto: 320, meta: 800, totale: 2100, tipo: 'normale',
+    condiviso: false, inizio: Date.now() - 120000, scade: Date.now() + 480000, finito: false, record: 11,
+    chi: [{ nome: 'Mario', quanti: 900, come: 'bit' }] };
+  const cfgTreno = await ed.evaluate(async (t) => {
+    const c = _cfgEl('treno');
+    Object.assign(c, { attivo: true, titolo: 'Hype train', mostraChi: true, mostraRecord: true, posizione: 'alto-destra' });
+    impostazioni().overlayStato.treno = t;
+    const xy = _ovXY(); for (const k of Object.keys(xy)) delete xy[k];
+    xy.treno = { x: 50, y: 50, s: 100, r: 0 };
+    aggiornaAnteprima();
+    await new Promise((r) => setTimeout(r, 300));
+    return true;
+  }, TRENO_FINTO);
+  const edTreno = cfgTreno ? await misuraEd('#ap-treno .ovl-treno') : null;
+  TEMA = { css: '', widget: {}, goals: [], conti: {},
+    timer: null, musica: null, treno: { attivo: true, titolo: 'Hype train', mostraChi: true, mostraRecord: true, posizione: 'alto-destra', stile: {} },
+    stato: { treno: TRENO_FINTO }, mostra: MOSTRA, xy: { treno: { x: 50, y: 50, s: 100, r: 0 } }, alertStile: null, chatStile: null };
+  await apriLive(() => document.querySelector('.ovl-treno'));
+  await attesa(200);
+  const lvTreno = await misuraLive('.ovl-treno');
+  dice(edTreno && lvTreno && vicino(edTreno.w, lvTreno.w) && vicino(edTreno.h, lvTreno.h) && vicino(edTreno.font, lvTreno.font, 0.6),
+    `hype train: editor ${edTreno ? mis(edTreno) : '–'} = diretta ${lvTreno ? mis(lvTreno) : '–'}`, 'editor e diretta non coincidono');
+  const testiTreno = await Promise.all([
+    ed.evaluate(() => { const n = document.querySelector('#ap-treno .ovl-treno'); return n ? [n.querySelector('.tr-liv').textContent, n.querySelector('.tr-chi').textContent] : null; }),
+    live.evaluate(() => { const n = document.querySelector('.ovl-treno'); return n ? [n.querySelector('.tr-liv').textContent, n.querySelector('.tr-chi').textContent] : null; }),
+  ]);
+  dice(testiTreno[0] && testiTreno[1] && testiTreno[0][0] === testiTreno[1][0] && testiTreno[0][1] === testiTreno[1][1],
+    `hype train: stesso livello e stesso nome di qua e di la' — editor «${(testiTreno[0] || []).join(' · ')}», diretta «${(testiTreno[1] || []).join(' · ')}»`,
+    'l\'editor racconta un treno diverso da quello in onda');
 
   // --- 7. il player, pezzo per pezzo -----------------------------------------
   // tre giri sullo stesso player (tema vinile, due righe, tempi): senza misure,

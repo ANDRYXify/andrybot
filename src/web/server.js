@@ -107,7 +107,7 @@ import {
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
-  normMusica, normTimer,
+  normMusica, normTimer, normTreno,
 } from './stile.js';
 
 // --- PIÙ OVERLAY: ogni overlay ha un suo LAYOUT (quali elementi mostra e dove)
@@ -115,7 +115,7 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'musica', 'timer', 'pen', 'effetti', 'consolify'];
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'musica', 'timer', 'treno', 'pen', 'effetti', 'consolify'];
 const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {});
 
 // Un overlay E' un layout: tiene la posizione di OGNI cosa che ci puo' comparire,
@@ -124,7 +124,7 @@ const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {})
 // Prima qui c'erano solo i quattro fissi, quindi player, conto alla rovescia,
 // obiettivi e contatori avevano UNA posizione per tutto il canale: li spostavi
 // in un overlay e si spostavano in tutti.
-const CHIAVE_EL = /^(alert|chat|wf|ws|musica|timer|pen|goal:[a-z0-9_-]{1,24}|cont:[a-z0-9_]{1,30})$/i;
+const CHIAVE_EL = /^(alert|chat|wf|ws|musica|timer|treno|pen|goal:[a-z0-9_-]{1,24}|cont:[a-z0-9_]{1,30})$/i;
 // LE CHAT CHE UN OVERLAY MOSTRA. Una chat non e' un elemento a se': e' una
 // SORGENTE del riquadro della chat, quindi si accende e si spegne come ogni
 // altra cosa dell'overlay ma non ha una posizione propria. Tenerle divise
@@ -1214,6 +1214,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       conti: base.conti,
       musica: base.musica,
       timer: base.timer,
+      treno: base.treno,
       stato: base.stato,
       mostra: ov.mostra || _mostraDefault(),
       xy: ov.xy || {},
@@ -4234,6 +4235,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.overlayTimer !== undefined) {
       out.overlayTimer = normTimer(b.overlayTimer);
     }
+    if (b.overlayTreno !== undefined) {
+      out.overlayTreno = normTreno(b.overlayTreno);
+    }
     if (b.overlayWidget !== undefined) {
       out.overlayWidget = normOverlayWidgetCfg(b.overlayWidget || {});
     }
@@ -4591,7 +4595,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayTreno'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }

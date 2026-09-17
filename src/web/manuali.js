@@ -1393,6 +1393,12 @@ const OVERLAY = {
     { p: ['Il <strong>tetto</strong> è su quanto manca, non su quanto hai aggiunto in tutto: «non può mancare più di dodici ore» risponde alla domanda vera, cioè a che ora vai a dormire. A zero ore non c\'è tetto. Se il conto è già arrivato a zero, un sub non lo fa ripartire: la diretta è finita, e riaprirla è una tua scelta.'] },
     { p: ['Con l\'avviso acceso il bot dice in chat quanto è salito e per merito di chi (<code>{chi}</code>, <code>{quanto}</code>). Chi guarda può chiedere <code>!subathon</code> per sapere quanto manca.'] },
 
+    { h2: 'L’hype train' },
+    { p: ['Il treno lo fa Twitch, non il bot: livello, punti, traguardo e quanto manca li decide lui. Qui si vedono, e basta accendere l’elemento nell’overlay. Non c’è niente da far partire e niente da contare: quando il treno parte, compare; quando Twitch dice che è finito, il cartello resta il tempo di leggere il livello raggiunto e poi se ne va.'] },
+    { p: ['Nella scena si vede il <strong>livello</strong>, la barra fino al livello dopo, <strong>quanto manca</strong> prima che scada e, se vuoi, <strong>chi sta spingendo di più</strong> e il record del canale. È un elemento come gli altri: si trascina nello Studio, prende la veste che gli dai, e ogni overlay decide se mostrarlo.'] },
+    { p: ['In chat il bot parla in tre momenti: quando il treno <strong>parte</strong>, quando <strong>sale di livello</strong> (<code>{livello}</code>) e quando <strong>finisce</strong> (<code>{livello}</code>, <code>{chi}</code>, <code>{punti}</code>). Non a ogni sub: quello lo dicono già gli alert. La chat e la scena sono due interruttori separati, così chi il treno ce l’ha già a schermo da Twitch può tenersi solo le righe in chat. Chi guarda può chiedere <code>!treno</code>.'] },
+    { p: ['I sub e i bit che fanno crescere il treno <strong>contano già</strong> negli obiettivi e nel subathon, uno per uno: qui non si contano una seconda volta. E serve il permesso nuovo su Twitch: se il pannello te lo chiede, è per questo.'] },
+
     { h2: 'I contatori' },
     { p: ['Sono i numeri che vivono in chat — <code>!morti</code>, <code>!tentativi</code> — e si creano in <em>Comandi</em>. Nell\'overlay sono un elemento come gli altri: si spengono tutti insieme dall\'elenco e prendono la veste della scena.'] },
     { p: ['Se a un contatore dai colore, sfondo o posizione tuoi, <strong>quelli vincono</strong>: la scena veste solo quello che non hai deciso.'] },

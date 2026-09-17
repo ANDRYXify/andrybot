@@ -25,6 +25,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - I Moduli comandano la regia: un comando, la voce o un raid cambiano scena, mutano una fonte o la transizione nel programma con cui mandi in onda. Tre modelli pronti: torno subito, sono tornato, raid. [vai: moduli]
 - Il marchio adesso esiste anche in vettoriale, pronto per il giorno che i programmi di posta mostreranno il nostro logo accanto al mittente. [vai: dirette]
 - La pagina d’ingresso adesso pesa un settimo: chi arriva per leggere non si scarica più tutto il pannello, e il listino è già lì senza aspettare.
+- L’hype train adesso sta nella scena: livello, barra, quanto manca e chi spinge di più. Il bot lo dice in chat quando parte, quando sale e quando finisce. [vai: alert]
 - In fondo a ogni mail che ti mandiamo c'è un codice di verifica. Lo ritrovi solo nella scheda Stato: se non combacia, quella mail non è nostra. [vai: stato]
 - Nell'elenco della posta adesso si legge il nome di chi scrive, non il pezzo prima della chiocciola. [vai: dirette]
 - C'è una scheda «Statistiche»: i numeri del canale per sette giorni, trenta o da sempre, e cinque classifiche. Prima erano sparsi fra Memoria, Giochi e Dirette. [vai: statistiche]

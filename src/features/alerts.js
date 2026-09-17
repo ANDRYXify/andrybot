@@ -6,6 +6,7 @@
 // Tutta la configurazione (e lo stato dei widget) vive in streamers.settings.
 import { streamers, effects as effectsDb } from '../db.js';
 import * as subathon from './subathon.js';
+import * as treno from './treno.js';
 import * as stemmi from './badges.js';
 import * as emote from './emotes.js';
 import { makeLog } from '../logger.js';
@@ -96,6 +97,17 @@ export class AlertsEngine {
   onEvent(ev) {
     try {
       const { channel, type, data } = ev || {};
+      // IL TRENO PASSA PRIMA, E DA SOLO. Non e' un alert: non ha un suo suono,
+      // non ha un suo testo da sparare in scena, e soprattutto NON conta — i
+      // sub e i bit che lo fanno crescere sono gia' passati di qui uno per uno.
+      // Vedi features/treno.js.
+      if (treno.EVENTI[type]) {
+        treno.suEvento(channel, type, data, {
+          say: this.say,
+          spingi: (ch, t) => this.effects?.emit?.(ch, { tipo: 'treno', treno: t }),
+        });
+        return;
+      }
       const kind = MAPPA[type];
       if (!kind) return;
       const s = this.cfg(channel);
@@ -407,6 +419,7 @@ export class AlertsEngine {
       conti: contiGoal(s),
       musica: this._musicaConVideo(channel, s.overlayMusica),
       timer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : null,
+      treno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : null,
       stato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     };
   }

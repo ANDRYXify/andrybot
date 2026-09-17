@@ -43,6 +43,7 @@ import * as instagram from './features/instagram.js';
 import * as feed from './features/feed.js';
 import * as compleanniFeat from './features/compleanni.js';
 import * as subathonFeat from './features/subathon.js';
+import * as trenoFeat from './features/treno.js';
 import * as gamesbridge from './features/gamesbridge.js';
 import * as quotes from './features/quotes.js';
 import * as battute from './features/battute.js';
@@ -819,6 +820,9 @@ export class BotManager {
     // quanto manca alla fine del subathon (!subathon)
     try { subathonFeat.tryComando(cmdMsg, parla); }
     catch (e) { log.error(`#${login} subathon:`, e?.message || e); }
+    // a che punto e' l'hype train in corso (!treno)
+    try { trenoFeat.tryComando(cmdMsg, parla); }
+    catch (e) { log.error(`#${login} treno:`, e?.message || e); }
     // comandi base pronti (!so/!shoutout, !followage, !uptime): opt-out e mai
     // sopra ai comandi/Moduli creati dallo streamer (quelli vincono).
     comandibase.tryComando(this.helix, cmdMsg, parla)
