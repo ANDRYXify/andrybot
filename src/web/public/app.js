@@ -480,6 +480,8 @@ function _demoGet(via) {
       { id: "estrai", modulo: "sorteggi", moduloNome: ["Sorteggi", "Giveaways", "Sorteos"], moduloAcceso: true, titolo: ["Estrai", "Draw", "Sortea"], cosa: ["Estrae un vincitore. Con un numero ne estrae più d'uno.", "Draws a winner. With a number it draws more than one.", "Saca un ganador. Con un número saca más de uno."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["estrai", "draw", "vincitore"], rinominato: false, chi: "mod", chiMinimo: "mod" },
       { id: "ore", modulo: "ore", moduloNome: ["Ore guardate", "Watch time", "Horas vistas"], moduloAcceso: true, titolo: ["Ore guardate", "Watch time", "Horas vistas"], cosa: ["Dice da quanto tempo guarda chi lo scrive.", "Says how long the writer has been watching.", "Dice cuánto lleva viendo quien lo escribe."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["ore", "oreguardate", "tempo", "watchtime"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "classificaore", modulo: "ore", moduloNome: ["Ore guardate", "Watch time", "Horas vistas"], moduloAcceso: true, titolo: ["Classifica delle ore", "Watch time leaderboard", "Clasificación de horas"], cosa: ["Chi ha guardato di più.", "Who has watched the most.", "Quién ha visto más."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["classificaore", "classificatempo", "oretop", "topore"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "serie", modulo: "presenze", moduloNome: ["Serie di presenze", "Attendance streaks", "Rachas de presencia"], moduloAcceso: true, titolo: ["La tua serie", "Your streak", "Tu racha"], cosa: ["Dice a quante dirette di fila è stato presente chi lo scrive, o il nome dopo il comando, e a quante in tutto.", "Says how many streams in a row the writer, or the name after the command, has attended, and how many overall.", "Dice a cuántos directos seguidos ha estado quien lo escribe, o el nombre tras el comando, y a cuántos en total."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["serie", "presenze", "streak"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "classificaserie", modulo: "presenze", moduloNome: ["Serie di presenze", "Attendance streaks", "Rachas de presencia"], moduloAcceso: true, titolo: ["Classifica delle serie", "Streak leaderboard", "Clasificación de rachas"], cosa: ["Chi è venuto a più dirette di fila.", "Who has attended the most streams in a row.", "Quién ha estado en más directos seguidos."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["classificaserie", "serietop", "topserie", "presenzetop"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "battuta", modulo: "battute", moduloNome: ["Battute", "Jokes", "Chistes"], moduloAcceso: true, titolo: ["Battuta", "Joke", "Chiste"], cosa: ["Dice una battuta del serbatoio del canale. Mod e streamer le aggiungono con !battuta aggiungi.", "Tells a joke from the channel's bank. Mods and streamer add them with !battuta aggiungi.", "Cuenta un chiste del depósito del canal. Mods y streamer los añaden con !battuta aggiungi."], costa: false, attesa: 5, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["battuta", "battute", "joke"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "so", modulo: "base", moduloNome: ["Comandi pronti", "Built-in commands", "Comandos de serie"], moduloAcceso: true, titolo: ["Shoutout", "Shoutout", "Shoutout"], cosa: ["Fa lo shoutout a un altro canale.", "Gives a shoutout to another channel.", "Hace un shoutout a otro canal."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["so", "shoutout"], rinominato: false, chi: "mod", chiMinimo: "mod" },
       { id: "followage", modulo: "base", moduloNome: ["Comandi pronti", "Built-in commands", "Comandos de serie"], moduloAcceso: true, titolo: ["Da quanto segui", "How long you've followed", "Desde cuándo sigues"], cosa: ["Dice da quanto tempo una persona segue il canale.", "Says how long someone has followed the channel.", "Dice desde cuándo una persona sigue el canal."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["followage", "daquanto"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
@@ -645,6 +647,10 @@ function _demoGet(via) {
       topChatters: [
         { user: 'lucaplays', c: 1820 }, { user: 'giada_ttv', c: 1390 }, { user: 'marco99', c: 980 },
         { user: 'sara_gg', c: 640 }, { user: 'il_nonno', c: 410 },
+      ],
+      presenze: [
+        { user: 'il_nonno', serie: 27, dirette: 61, record: 27 }, { user: 'giada_ttv', serie: 12, dirette: 40, record: 15 },
+        { user: 'lucaplays', serie: 9, dirette: 52, record: 21 }, { user: 'sara_gg', serie: 4, dirette: 18, record: 6 }, { user: 'marco99', serie: 2, dirette: 33, record: 11 },
       ],
     },
     '/api/streamer/memoria': {
@@ -14368,8 +14374,15 @@ async function salvaGiochiComandi() {
   }
 }
 
+const PRESENZE_DEFAULT = { attivo: true, bonus: 10, tetto: 10, annuncia: true, saluti: { attivo: true, giorniAssenza: 21, soloLive: true, primaVolta: 'Ciao {user}, è la tua prima volta qui: fai come a casa tua.', bentornato: 'Ehi {user}, sono passati {giorni} giorni: che bello rivederti.' } };
+function presenzeDi(s) {
+  const p = (s && s.presenze && typeof s.presenze === 'object') ? s.presenze : {};
+  return { ...PRESENZE_DEFAULT, ...p, saluti: { ...PRESENZE_DEFAULT.saluti, ...((p.saluti && typeof p.saluti === 'object') ? p.saluti : {}) } };
+}
+
 function pannelloGiochi() {
   const s = impostazioni();
+  const pr = presenzeDi(s);
   return pannello('giochi', `
     <div class="carta">
       <h2>${_hIco(ICO.giochi)}${L('Minigiochi', 'Minigames', 'Minijuegos')}</h2>
@@ -14420,6 +14433,36 @@ function pannelloGiochi() {
       <p><label class="riga-check"><input type="checkbox" id="pt-soloLive"${s.punti.soloLive !== false ? ' checked' : ''}> ${L('Solo mentre sei in diretta', 'Only while you are live', 'Solo mientras estás en directo')}</label></p>
       <p class="suggerimento">${L('“Punti per messaggio” a 0 = nessun guadagno passivo dal chattare. Lo slot tris scala su questo valore (pieno, 7⃣ 75%, resto 40%).', '“Points per message” at 0 = no passive earning from chatting. The slot three-of-a-kind scales on this value (full, 7⃣ 75%, rest 40%).', '“Puntos por mensaje” a 0 = sin ganancia pasiva por charlar. El trío de la slot escala sobre este valor (completo, 7⃣ 75%, resto 40%).')}</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">${L('Salva punti', 'Save points', 'Guardar puntos')}</button></p>
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.utenti)}${L('Presenze e saluti', 'Attendance and greetings', 'Presencias y saludos')}</h2>
+      <p>${L('Chi resta in chat almeno dieci minuti è <strong class="primo-piano">presente</strong> a quella diretta. Diretta dopo diretta la sua <strong class="primo-piano">serie</strong> cresce, e con lei il bonus in', 'Whoever stays in chat at least ten minutes is <strong class="primo-piano">present</strong> at that stream. Stream after stream their <strong class="primo-piano">streak</strong> grows, and with it the bonus in', 'Quien se queda en el chat al menos diez minutos está <strong class="primo-piano">presente</strong> en ese directo. Directo tras directo su <strong class="primo-piano">racha</strong> crece, y con ella el bono en')} <strong class="primo-piano">${esc(s.nomeMonete)}</strong>. ${L('Ai traguardi (3, 5, 10, 25, 50 e 100 di fila) il bot lo dice in chat. Con !serie ognuno vede la sua.', 'At the milestones (3, 5, 10, 25, 50 and 100 in a row) the bot says it in chat. With !serie everyone sees their own.', 'En las metas (3, 5, 10, 25, 50 y 100 seguidos) el bot lo dice en el chat. Con !serie cada uno ve la suya.')}</p>
+      <div class="riga-check">
+        <input type="checkbox" id="pr-attivo" ${pr.attivo !== false ? 'checked' : ''}>
+        <label for="pr-attivo">${L('Conta le presenze e le serie', 'Count attendance and streaks', 'Cuenta presencias y rachas')}</label>
+      </div>
+      <div class="griglia-punti">
+        <label class="campo-num">${L('Bonus per diretta di fila', 'Bonus per stream in a row', 'Bono por directo seguido')}<input type="number" id="pr-bonus" min="0" max="100000" value="${pr.bonus}"></label>
+        <label class="campo-num">${L('Il bonus smette di crescere a', 'The bonus stops growing at', 'El bono deja de crecer en')}<input type="number" id="pr-tetto" min="1" max="365" value="${pr.tetto}"></label>
+      </div>
+      <p class="suggerimento">${L('Alla terza diretta di fila il bonus vale tre volte quello base, alla decima dieci volte: poi resta lì. Chi salta una diretta riparte da uno, il record resta.', 'At the third stream in a row the bonus is three times the base one, at the tenth ten times: then it stays there. Whoever skips a stream starts again from one, the record stays.', 'En el tercer directo seguido el bono vale tres veces el base, en el décimo diez veces: luego se queda ahí. Quien se salta un directo vuelve a empezar de uno, el récord se queda.')}</p>
+      <p><label class="riga-check"><input type="checkbox" id="pr-annuncia"${pr.annuncia !== false ? ' checked' : ''}> ${L('Ai traguardi il bot lo dice in chat', 'At the milestones the bot says it in chat', 'En las metas el bot lo dice en el chat')}</label></p>
+      <h3 class="sotto-titolo">${L('Il bot che ti riconosce', 'The bot that knows you', 'El bot que te reconoce')}</h3>
+      <p>${L('Al primo messaggio di una persona nuova, e a chi torna dopo un po\', il bot dice una parola. Se ti sei costruito un Modulo sul primo messaggio, vince il tuo e il bot tace.', 'At the first message of a new person, and to whoever comes back after a while, the bot says a word. If you built a Module on the first message, yours wins and the bot stays quiet.', 'Al primer mensaje de una persona nueva, y a quien vuelve tras un tiempo, el bot dice una palabra. Si te has construido un Módulo sobre el primer mensaje, gana el tuyo y el bot calla.')}</p>
+      <div class="riga-check">
+        <input type="checkbox" id="pr-saluti" ${pr.saluti.attivo !== false ? 'checked' : ''}>
+        <label for="pr-saluti">${L('Saluta chi arriva e chi torna', 'Greet newcomers and returners', 'Saluda a quien llega y a quien vuelve')}</label>
+      </div>
+      <label class="campo" for="pr-primaVolta">${L('Alla prima volta', 'The first time', 'La primera vez')}</label>
+      <input type="text" id="pr-primaVolta" maxlength="200" value="${esc(pr.saluti.primaVolta)}">
+      <label class="campo" for="pr-bentornato">${L('A chi torna', 'To whoever comes back', 'A quien vuelve')}</label>
+      <input type="text" id="pr-bentornato" maxlength="200" value="${esc(pr.saluti.bentornato)}">
+      <div class="griglia-punti">
+        <label class="campo-num">${L('Dopo quanti giorni di assenza', 'After how many days away', 'Tras cuántos días de ausencia')}<input type="number" id="pr-giorni" min="2" max="365" value="${pr.saluti.giorniAssenza}"></label>
+      </div>
+      <p class="suggerimento">${L('Nei testi puoi usare {user}, {giorni}, {serie} e {dirette}. Un testo vuoto vuol dire nessun saluto per quel caso.', 'In the texts you can use {user}, {giorni}, {serie} and {dirette}. An empty text means no greeting for that case.', 'En los textos puedes usar {user}, {giorni}, {serie} y {dirette}. Un texto vacío significa ningún saludo para ese caso.')}</p>
+      <p><label class="riga-check"><input type="checkbox" id="pr-soloLive"${pr.saluti.soloLive !== false ? ' checked' : ''}> ${L('Solo mentre sei in diretta', 'Only while you are live', 'Solo mientras estás en directo')}</label></p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-presenze">${L('Salva presenze e saluti', 'Save attendance and greetings', 'Guardar presencias y saludos')}</button></p>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.dado)}${L('Manche automatiche', 'Automatic rounds', 'Rondas automáticas')}</h2>
@@ -15466,6 +15509,8 @@ function pannelloMemoria() {
       <div class="griglia-stat" id="griglia-stat"><div class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</div></div>
       <h3>${L('Top chatters', 'Top chatters', 'Top chatters')}</h3>
       <ul class="lista-voci" id="lista-chatters"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <h3>${L('Chi c’è sempre', 'Who is always there', 'Quién está siempre')}</h3>
+      <ul class="lista-voci" id="lista-presenze"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.cervello)}${L('La memoria del bot', 'The bot’s memory', 'La memoria del bot')}</h2>
@@ -15954,6 +15999,16 @@ function attivaPiattaforma() {
       slotCosto: v('pt-slotCosto'), slotVinci: v('pt-slotVinci'),
       slotCoppia: v('pt-slotCoppia'), topN: v('pt-topN'),
     } }, 'Punti aggiornati');
+  }));
+
+  document.getElementById('btn-salva-presenze')?.addEventListener('click', () => conErrore(async () => {
+    const v = (id) => Number(document.getElementById(id)?.value);
+    const t = (id) => (document.getElementById(id)?.value || '').trim();
+    const on = (id) => !!document.getElementById(id)?.checked;
+    await salvaImpostazioni({ presenze: {
+      attivo: on('pr-attivo'), bonus: v('pr-bonus'), tetto: v('pr-tetto'), annuncia: on('pr-annuncia'),
+      saluti: { attivo: on('pr-saluti'), primaVolta: t('pr-primaVolta'), bentornato: t('pr-bentornato'), giorniAssenza: v('pr-giorni'), soloLive: on('pr-soloLive') },
+    } }, L('Presenze e saluti salvati', 'Attendance and greetings saved', 'Presencias y saludos guardados'));
   }));
 
   document.getElementById('btn-salva-manche')?.addEventListener('click', () => conErrore(async () => {
@@ -17758,6 +17813,12 @@ async function caricaStatistiche() {
           <li><div class="testo-voce"><span class="domanda">${['', '', '', '4°', '5°'][i] || ''} ${esc(c.user)}</span>
           <span class="meta"> — ${c.c} messaggi</span></div></li>`).join('')
       : '<li class="vuoto">Ancora nessun chatter registrato.</li>';
+    const pres = document.getElementById('lista-presenze');
+    const fila = (n) => `${n} ${n === 1 ? L('diretta di fila', 'stream in a row', 'directo seguido') : L('dirette di fila', 'streams in a row', 'directos seguidos')}`;
+    if (pres) pres.innerHTML = (s.presenze || []).length
+      ? s.presenze.map((p, i) => `<li><div class="testo-voce"><span class="domanda">${['', '', '', '4°', '5°'][i] || ''} ${esc(p.user)}</span>
+          <span class="meta"> · ${fila(p.serie)}, ${p.dirette} ${L('in tutto', 'overall', 'en total')}</span></div></li>`).join('')
+      : `<li class="vuoto">${L('Ancora nessuna serie: la presenza si conta dopo dieci minuti in chat.', 'No streak yet: attendance counts after ten minutes in chat.', 'Aún ninguna racha: la presencia se cuenta tras diez minutos en el chat.')}</li>`;
   } catch (e) {
     griglia.innerHTML = `<div class="vuoto">Errore: ${esc(e.message)}</div>`;
   }

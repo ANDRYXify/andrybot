@@ -46,6 +46,12 @@ const GIOCHI = {
       ['Monete', '5', '4', '4', '3', '2', '2'],
     ] },
     { p: ['Non scende a zero perché la presenza vale sempre qualcosa: è la differenza fra premiare chi c\'è e premiare chi tiene una macro che scrive in chat.'] },
+    { h3: 'La serie di presenze' },
+    { p: [
+      'Le ore dicono <em>quanto</em> uno ha guardato; la serie dice <em>quante volte</em> è venuto, e se viene di fila. Chi resta in chat almeno <strong>dieci minuti</strong> è presente a quella diretta, anche in silenzio. Presente anche alla diretta dopo, la serie sale a due; chi ne salta una riparte da uno, e il record resta.',
+      'Il bonus arriva quando la presenza viene contata: <strong>bonus × serie</strong>, con un tetto oltre il quale non cresce più. Con i valori di base sono 10 monete alla prima diretta, 30 alla terza di fila, 100 dalla decima in poi. Ai traguardi (3, 5, 10, 25, 50, 100 di fila) il bot lo dice in chat, se glielo lasci fare.',
+      'Una diretta è una sessione: se il bot o Twitch cadono e tornano entro mezz\'ora, è ancora la stessa. Ognuno vede la sua serie con <code>!serie</code>, e la classifica con <code>!classificaserie</code>.',
+    ] },
 
     { h2: 'Tutto quello che puoi cambiare' },
     { p: ['Da <em>Giochi</em> nel pannello. Fra parentesi il minimo e il massimo che il server accetta.'] },
@@ -87,6 +93,8 @@ const GIOCHI = {
       ['<code>!roulette</code>', '<code>!rul</code>', 'Punti su rosso, nero, verde o un numero.', '5s a testa'],
       ['<code>!furto @nome</code>', '<code>!rapina</code>', 'Provi a rubare. Se ti beccano, paghi.', '45s a testa'],
       ['<code>!regala @nome 50</code>', '<code>!dona</code>', 'Passi monete a qualcun altro.', '—'],
+      ['<code>!serie</code>', '<code>!presenze</code> <code>!streak</code>', 'A quante dirette di fila sei stato presente, e a quante in tutto. Con un nome, di quella persona.', '—'],
+      ['<code>!classificaserie</code>', '<code>!serietop</code> <code>!topserie</code>', 'Chi è venuto a più dirette di fila.', '—'],
     ] },
 
     { h2: 'Ogni comando si accende, si rinomina, si riserva' },
@@ -350,6 +358,7 @@ const MODULI = {
     { tabella: [
       ['<code>$followage</code>', 'da quanto ti segue chi scrive, o il nome dopo il comando'],
       ['<code>$ore</code>', 'ore guardate sul tuo canale (anche <code>$oreguardate</code>, <code>$watchtime</code>)'],
+      ['<code>$serie</code>', 'dirette di fila di chi scrive, o del nome dopo il comando; <code>$dirette</code> quante in tutto, <code>$recordserie</code> la serie più lunga'],
       ['<code>$chattercaso</code>', 'uno a caso fra chi ha scritto di recente'],
       ['<code>$cita</code>', 'una citazione a caso fra quelle salvate'],
       ['<code>$giocotarget</code>', 'l\'ultima categoria di chi nomini dopo il comando'],
@@ -564,7 +573,10 @@ const BOT = {
       ['Ricordi sugli utenti', '—', 'Cosa sa delle persone che scrivono spesso. Non si sfoglia dal pannello.'],
       ['Contesto della diretta', '—', 'Di cosa si sta parlando adesso. Si consuma da solo.'],
       ['Clip', 'le ultime 20', 'Le clip create in automatico.'],
+      ['Chi c\'è sempre', 'i primi 5', 'Le serie di presenze più lunghe: chi è venuto a più dirette di fila, e a quante in tutto.'],
     ] },
+    { h3: 'Il bot che ti riconosce' },
+    { p: ['Al primo messaggio di una persona nuova il bot dice una parola, e la dice anche a chi torna dopo settimane (di base tre). I due testi li scrivi tu nella scheda <em>Giochi</em>, sotto «Presenze e saluti», con <code>{user}</code>, <code>{giorni}</code>, <code>{serie}</code> e <code>{dirette}</code>; un testo vuoto spegne quel saluto. Se ti sei costruito un Modulo sul primo messaggio, vince il tuo. Il bot non saluta a raffica: un raid porta cinquanta persone in un colpo, e cinquanta saluti sarebbero spam.'] },
     { h3: 'Azzerare: cosa sparisce e cosa resta' },
     { p: ['Il tasto rosso in fondo cancella <strong>quello che il bot ha dedotto da solo</strong>: lezioni, ricordi sugli utenti, fatti, contesto della diretta e le voci di conoscenza «imparata dalla chat».'] },
     { p: ['<strong>Restano</strong>: la conoscenza scritta da te, quella presa dal sito, quella studiata, i moduli, i comandi, le monete e le classifiche. Non è un tasto che riporta il canale a zero: è un tasto che gli fa dimenticare le conclusioni sbagliate.'] },

@@ -250,6 +250,28 @@ CREATE TABLE IF NOT EXISTS watchtime (     -- ore guardate (secondi in chat ment
   PRIMARY KEY (channel, user)
 );
 
+CREATE TABLE IF NOT EXISTS presenze (      -- chi c'e', diretta dopo diretta, per canale
+  channel TEXT NOT NULL,
+  user TEXT NOT NULL,                        -- login minuscolo
+  dirette INTEGER NOT NULL DEFAULT 0,        -- a quante dirette e' stato presente
+  serie INTEGER NOT NULL DEFAULT 0,          -- dirette di fila, adesso
+  record INTEGER NOT NULL DEFAULT 0,         -- la serie piu' lunga
+  ultima TEXT NOT NULL DEFAULT '',           -- l'ultima diretta contata
+  ultima_ts INTEGER NOT NULL DEFAULT 0,
+  prima_ts INTEGER NOT NULL DEFAULT 0,       -- la prima volta che si e' visto (giro o messaggio)
+  ultimo_msg INTEGER NOT NULL DEFAULT 0,     -- l'ultimo messaggio
+  salutato INTEGER NOT NULL DEFAULT 0,       -- ha gia' avuto il benvenuto
+  PRIMARY KEY (channel, user)
+);
+
+CREATE TABLE IF NOT EXISTS dirette_viste (  -- la diretta corrente e la precedente, per canale
+  channel TEXT PRIMARY KEY,
+  corrente TEXT NOT NULL DEFAULT '',
+  corrente_ts INTEGER NOT NULL DEFAULT 0,
+  precedente TEXT NOT NULL DEFAULT '',
+  ultimo_tick INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS vips (          -- VIP assegnati dal bot (con scadenza)
   channel TEXT NOT NULL,
   user TEXT NOT NULL,                       -- login minuscolo
@@ -962,6 +984,47 @@ export const watchtime = {
   },
   top(channel, n = 5) {
     return db.prepare("SELECT user, display, seconds FROM watchtime WHERE channel=? AND user NOT LIKE '[%' ORDER BY seconds DESC LIMIT ?").all(channel, n);
+  },
+};
+
+// ---------------------------------------------------------------- PRESENZE (diretta dopo diretta)
+// Lo store e' muto: la regola (cos'e' una diretta, quando una presenza conta,
+// come cresce la serie) sta in features/presenze.js. I tempi sono millisecondi:
+// un `| 0` li avrebbe schiacciati a 32 bit, e una data del 2026 sarebbe
+// diventata un numero negativo.
+const msIntero = (v) => Math.trunc(Number(v)) || 0;
+export const presenze = {
+  get(channel, user) {
+    return db.prepare('SELECT * FROM presenze WHERE channel=? AND user=?').get(String(channel).toLowerCase(), String(user).toLowerCase()) || null;
+  },
+  // scrive solo i campi passati; la riga nasce se non c'e'
+  set(channel, user, campi = {}) {
+    const ch = String(channel).toLowerCase(), u = String(user).toLowerCase();
+    const prima = this.get(ch, u) || { dirette: 0, serie: 0, record: 0, ultima: '', ultima_ts: 0, prima_ts: 0, ultimo_msg: 0, salutato: 0 };
+    const r = { ...prima, ...campi };
+    db.prepare(`INSERT INTO presenze (channel, user, dirette, serie, record, ultima, ultima_ts, prima_ts, ultimo_msg, salutato)
+      VALUES (?,?,?,?,?,?,?,?,?,?)
+      ON CONFLICT(channel, user) DO UPDATE SET dirette=excluded.dirette, serie=excluded.serie, record=excluded.record,
+        ultima=excluded.ultima, ultima_ts=excluded.ultima_ts, prima_ts=excluded.prima_ts, ultimo_msg=excluded.ultimo_msg, salutato=excluded.salutato`)
+      .run(ch, u, msIntero(r.dirette), msIntero(r.serie), msIntero(r.record), String(r.ultima || ''), msIntero(r.ultima_ts), msIntero(r.prima_ts), msIntero(r.ultimo_msg), r.salutato ? 1 : 0);
+    return this.get(ch, u);
+  },
+  top(channel, n = 5) {
+    return db.prepare(`SELECT user, dirette, serie, record FROM presenze WHERE channel=? AND serie>0 AND user NOT LIKE '[%'
+      ORDER BY serie DESC, dirette DESC, record DESC, user LIMIT ?`).all(String(channel).toLowerCase(), n);
+  },
+  diretta(channel) {
+    return db.prepare('SELECT * FROM dirette_viste WHERE channel=?').get(String(channel).toLowerCase()) || null;
+  },
+  setDiretta(channel, { corrente = '', corrente_ts = 0, precedente = '', ultimo_tick = 0 } = {}) {
+    db.prepare(`INSERT INTO dirette_viste (channel, corrente, corrente_ts, precedente, ultimo_tick) VALUES (?,?,?,?,?)
+      ON CONFLICT(channel) DO UPDATE SET corrente=excluded.corrente, corrente_ts=excluded.corrente_ts, precedente=excluded.precedente, ultimo_tick=excluded.ultimo_tick`)
+      .run(String(channel).toLowerCase(), String(corrente || ''), msIntero(corrente_ts), String(precedente || ''), msIntero(ultimo_tick));
+  },
+  azzera(channel) {
+    const ch = String(channel).toLowerCase();
+    db.prepare('DELETE FROM presenze WHERE channel=?').run(ch);
+    db.prepare('DELETE FROM dirette_viste WHERE channel=?').run(ch);
   },
 };
 
