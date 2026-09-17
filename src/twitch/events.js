@@ -29,6 +29,14 @@ function desiredSubs(bid) {
     { type: 'stream.offline', version: '1', condition: { broadcaster_user_id: bid } },
     { type: 'channel.follow', version: '2', condition: { broadcaster_user_id: bid, moderator_user_id: bid } },
     { type: 'channel.subscribe', version: '1', condition: { broadcaster_user_id: bid } },
+    // I RINNOVI e le RAFFICHE DI REGALI. `channel.subscribe` non copre i
+    // rinnovi (Twitch li manda con `subscription.message`), quindi chi si
+    // riabbona non faceva scattare niente: ne' alert, ne' obiettivo, ne' clip —
+    // e il testo del rinnovo stava gia' scritto nel prodotto, ad aspettare un
+    // evento che non arrivava. La raffica di regali serve all'alert; a contare
+    // restano i sub veri, uno per uno (vedi alerts.js).
+    { type: 'channel.subscription.message', version: '1', condition: { broadcaster_user_id: bid } },
+    { type: 'channel.subscription.gift', version: '1', condition: { broadcaster_user_id: bid } },
     { type: 'channel.cheer', version: '1', condition: { broadcaster_user_id: bid } },
     { type: 'channel.raid', version: '1', condition: { to_broadcaster_user_id: bid } },
     { type: 'channel.channel_points_custom_reward_redemption.add', version: '1', condition: { broadcaster_user_id: bid } },
