@@ -113,3 +113,30 @@ test('chi aveva l\'obiettivo singolo di prima se lo ritrova, col suo conto', () 
   assert.equal(t.goals[0].obiettivo, 30);
   assert.equal(t.conti[t.goals[0].id], 7, 'e il conto lo segue');
 });
+
+// I RINNOVI E LE RAFFICHE DI REGALI.
+//
+// Il testo del rinnovo era gia' scritto nel prodotto e l'alert lo sapeva
+// disegnare: mancava l'iscrizione all'evento, quindi chi si riabbonava non
+// faceva scattare niente. Ed e' il difetto peggiore da trovare, perche' da fuori
+// sembra solo che «i sub non si vedano sempre».
+//
+// La raffica di regali serve all'alert e basta: Twitch manda gia' un
+// `channel.subscribe` per ogni regalo, quindi contarla vorrebbe dire contare
+// venti regali ventuno volte.
+test('il bot si iscrive anche ai rinnovi e alle raffiche di regali', async () => {
+  const src = await import('node:fs').then((fs) => fs.readFileSync(new URL('../../src/twitch/events.js', import.meta.url), 'utf8'));
+  for (const t of ['channel.subscribe', 'channel.subscription.message', 'channel.subscription.gift']) {
+    assert.ok(src.includes(`type: '${t}'`), `manca l'iscrizione a ${t}`);
+  }
+});
+
+test('la raffica di regali non conta, i sub veri si\'', () => {
+  impostaGoal({ id: 'g1', attivo: true, tipo: 'sub', obiettivo: 10 });
+  evento('channel.subscribe');
+  evento('channel.subscription.message');
+  const prima = conti().g1;
+  evento('channel.subscription.gift', { total: 20 });
+  assert.equal(conti().g1, prima, 'l\'annuncio della raffica non fa numero a se\'');
+  assert.equal(prima, 2, 'un sub nuovo e un rinnovo contano uno per uno');
+});
