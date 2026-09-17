@@ -1334,6 +1334,8 @@ const OVERLAY = {
       ['Colore dei nomi', 'quello di Twitch', 'Oppure uno fisso, se preferisci un look uniforme.'],
     ] },
     { p: ['Le emote di Twitch e quelle 7TV del tuo canale compaiono come immagini, e i badge accanto al nome. Le emote 7TV si gestiscono da <em>Emote (7TV)</em>.'] },
+    { p: ['Se trasmetti su due piattaforme, in <strong>Quali chat</strong> scegli quali finiscono in questo overlay. Toglierne una la lascia fuori di qui e basta: la chat resta accesa, e il bot continua a leggerla e a rispondere.'] },
+    { p: ['Per tenerle <strong>divise</strong> fai un secondo overlay con l\'altra accesa: ha un link suo, quindi in regia diventano due fonti che metti dove vuoi. Per tenerle <strong>unite</strong> lasciale accese tutte e due nello stesso overlay, e se vuoi accendi <em>Segna da dove arriva</em>: ogni riga porta un segno che dice da quale chat viene.'] },
 
     { h2: 'Gli obiettivi' },
     { p: ['Barre che si riempiono da sole. <strong>Quanti ne vuoi</strong> (fino a sei), e ognuno è indipendente: il suo traguardo, il suo posto, il suo aspetto. Tre obiettivi in fila che salgono insieme, o uno in ogni angolo con colori diversi: decidi tu.'] },

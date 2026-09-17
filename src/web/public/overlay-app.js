@@ -511,8 +511,35 @@ function testoConEmote(riga, testo, extra) {
   }
 }
 
+const SEGNO_DA = {
+  twitch: [['rect', { width: '20', height: '15', x: '2', y: '7', rx: '2' }], ['polyline', { points: '17 2 12 7 7 2' }]],
+  kick: [['path', { d: 'M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z' }]],
+};
+const SVGNS = 'http://www.w3.org/2000/svg';
+
+function segnaOrigine(riga, da) {
+  const pezzi = SEGNO_DA[da];
+  if (!pezzi) return;
+  const s = document.createElementNS(SVGNS, 'svg');
+  s.setAttribute('class', 'chat-da');
+  s.setAttribute('viewBox', '0 0 24 24');
+  s.setAttribute('fill', 'none');
+  s.setAttribute('stroke', 'currentColor');
+  s.setAttribute('stroke-width', '2');
+  s.setAttribute('stroke-linecap', 'round');
+  s.setAttribute('stroke-linejoin', 'round');
+  for (const [tag, attr] of pezzi) {
+    const e = document.createElementNS(SVGNS, tag);
+    for (const k in attr) e.setAttribute(k, attr[k]);
+    s.appendChild(e);
+  }
+  riga.appendChild(s);
+}
+
 function chat(ev) {
   if (!mostra('chat')) return;
+  const da = String(ev.piattaforma || 'twitch').toLowerCase();
+  if (!mostra('chat:' + da)) return;
   const st = MIO.stile.chat || ev.stile || {};
   posizionaContenitore(chatBox, MIO.xy.chat || ev.xy, ev.posizione || 'basso-sinistra');
   if (st.larghezza && !chatBox.classList.contains('riquadro')) chatBox.style.maxWidth = st.larghezza + 'vw';
@@ -527,6 +554,7 @@ function chat(ev) {
     '--fg': st.testo, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
   });
   if (destra) riga.style.transform = 'translateX(10px)';
+  if (st.segnaDaDove) segnaOrigine(riga, da);
   aggiungiStemmi(riga, ev);
   const u = document.createElement('span');
   u.className = 'chat-user';

@@ -6604,6 +6604,7 @@ function pannelloAlert() {
         <div><label class="campo" for="co-max">${L('Messaggi visibili', 'Visible messages', 'Mensajes visibles')}</label><input type="number" id="co-max" min="1" max="20" value="${Number(co.max) || 8}"></div>
         <div><label class="campo" for="co-fade">${L('Spariscono dopo (s, 0=restano)', 'Disappear after (s, 0=stay)', 'Desaparecen tras (s, 0=quedan)')}</label><input type="number" id="co-fade" min="0" max="120" value="${Number(co.fadeSec) || 0}"></div>
       </div>
+      <div id="co-da-box" class="spazio-sopra" hidden></div>
       <div class="asp-blocco" data-asp="chat">
       <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
       <div class="griglia-campi spazio-sopra">
@@ -6639,6 +6640,7 @@ function pannelloAlert() {
         ${cChk('co-st-ombra', L('Ombra', 'Shadow', 'Sombra'), cst.ombra)}
         ${cChk('co-st-bold', L('Nome in grassetto', 'Bold name', 'Nombre en negrita'), cst.grassettoUser)}
         ${cChk('co-st-ombratxt', L('Ombra del testo', 'Text shadow', 'Sombra del texto'), cst.ombraTesto === true)}
+        ${cChk('co-st-dadove', L('Segna da dove arriva', 'Mark where it comes from', 'Marca de dónde llega'), cst.segnaDaDove === true)}
       </div>
       </div>
       <p class="suggerimento solo-giu">${L('Colori, forma, materia e cornice si cambiano', 'Colors, shape, surface and frame are changed', 'Colores, forma, materia y marco se cambian')} <strong>${L('sulla tela qui sopra', 'on the canvas above', 'en el lienzo de arriba')}</strong>: ${L('scegli l\'elemento e li trovi nel pannello «Proprietà», mentre lo guardi.', 'pick the element and you find them in the «Properties» panel, while looking at it.', 'elige el elemento y los encuentras en el panel «Propiedades», mientras lo miras.')}</p>
@@ -6776,10 +6778,12 @@ const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
 const ELEM_OVL = [...FISSI, 'goal', 'cont', 'musica', 'timer', 'pen', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
+const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
 const _mostraOra = () => {
   const o = ELEM_OVL.reduce((q, k) => (q[k] = mostraChk(k), q), {});
   const m = (_ovAttuale() || {}).mostra || {};
   for (const e of ELEMENTI()) if ((e.goal || e.cont) && m[e.k] === false) o[e.k] = false;
+  for (const [id] of CHAT_DA) if (m['chat:' + id] === false) o['chat:' + id] = false;
   return o;
 };
 const _ovMostra = () => { const o = _ovAttuale(); if (!o) return {}; return (o.mostra = o.mostra || {}); };
@@ -6822,6 +6826,7 @@ function _leggiChatStile() {
     peso: _v('co-st-peso') || '700', spaziatura: Number(_v('co-st-spaz')) || 0,
     maiuscolo: _v('co-st-maiusc') || 'no', ombraTesto: !!_g('co-st-ombratxt')?.checked,
     ombra: !!_g('co-st-ombra')?.checked, grassettoUser: !!_g('co-st-bold')?.checked,
+    segnaDaDove: !!_g('co-st-dadove')?.checked,
   };
 }
 function _leggiWidget(pref) {
@@ -6870,6 +6875,28 @@ function _raccogliChat() {
     max: Number(_v('co-max')) || 8, fadeSec: Number(_v('co-fade')) || 0, stile: _leggiChatStile() };
 }
 function _raccogliWidget() { return { ultimoFollower: _leggiWidget('wf'), ultimoSub: _leggiWidget('ws') }; }
+
+function _chatDaCollegate() {
+  const vive = new Set(_piattaformeAttive.map((x) => x.id));
+  return CHAT_DA.filter(([id]) => vive.has(id));
+}
+function _rendiQualiChat() {
+  const box = _g('co-da-box');
+  if (!box) return;
+  const lista = _chatDaCollegate();
+  box.hidden = lista.length < 2;
+  if (box.hidden) { box.innerHTML = ''; return; }
+  const m = _ovMostra();
+  box.innerHTML = `<label class="campo">${L('Quali chat in questo overlay', 'Which chats in this overlay', 'Qué chats en este overlay')}</label>
+    <div class="riga-flessibile">${lista.map(([id, nome]) => `
+      <label class="riga-check"><input type="checkbox" class="co-da-c" value="${id}"${m['chat:' + id] === false ? '' : ' checked'}> ${esc(nome)}</label>`).join('')}</div>
+    <p class="tenue">${L('Spegnine una e resta fuori di qui. Per tenerle divise, fai un secondo overlay con l\'altra accesa.', 'Turn one off and it stays out of here. To keep them apart, make a second overlay with the other one on.', 'Apaga uno y se queda fuera de aquí. Para tenerlos separados, haz un segundo overlay con el otro encendido.')}</p>`;
+  box.querySelectorAll('.co-da-c').forEach((c) => c.addEventListener('change', () => {
+    const q = _ovMostra();
+    if (c.checked) delete q['chat:' + c.value]; else q['chat:' + c.value] = false;
+    aggiornaAnteprima(); _ricorda(); salvaChatOverlay(true);
+  }));
+}
 
 async function _salvaOverlayCorrente(msg, ancheLayout) {
   const ov = overlays.find((o) => o.id === overlaySel);
@@ -6921,6 +6948,7 @@ function _applicaStileOverlay(ov) {
   const modo = (ch.username && ch.username !== 'twitch') ? 'fisso' : 'twitch';
   _imposta('co-st-user', modo); if (modo === 'fisso') _imposta('co-st-usercol', ch.username);
   _imposta('co-st-ombra', ch.ombra !== false); _imposta('co-st-bold', ch.grassettoUser !== false);
+  _imposta('co-st-dadove', ch.segnaDaDove === true);
   _riempiWidget(wcfg);
   _imposta('ovl-css', css);
   document.querySelectorAll('#scheda-alert input[type="range"]').forEach((r) => { const s = _g(r.id + '-v'); if (s) s.textContent = r.value; });
@@ -7007,10 +7035,21 @@ function _messaggiFinti(riempi) {
   for (let i = 0; out.length < max; i++) out.push(base[i % base.length]);
   return out;
 }
+function _chatDaAccese() {
+  const coll = _chatDaCollegate();
+  if (coll.length < 2) return ['twitch'];
+  const m = _ovMostra();
+  return coll.map(([id]) => id).filter((id) => m['chat:' + id] !== false);
+}
+const _segnoDaHtml = (id) => `<svg class="chat-da" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PIATT_ICO[id] || ''}</svg>`;
+
 function _righeChatFinte(cst, lista) {
-  return lista.map(([u, col, t]) => {
+  const da = _chatDaAccese();
+  if (!da.length) return '';
+  return lista.map(([u, col, t], i) => {
     const cu = cst.username === 'twitch' ? col : cst.username;
-    return `<div class="chat-riga dim-${cst.dim} anim-${cst.animazione || 'slide'}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} maiusc-${cst.maiuscolo || 'no'} ${classiIdentita(cst, 'nessuna')} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--acc:${cu};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)};--peso:${cst.peso || '700'};--spaz:${Number(cst.spaziatura) || 0}px;--ombra-testo:${cst.ombraTesto ? '0 2px 8px rgba(0,0,0,.6)' : 'none'}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
+    const segno = cst.segnaDaDove ? _segnoDaHtml(da[i % da.length]) : '';
+    return `<div class="chat-riga dim-${cst.dim} anim-${cst.animazione || 'slide'}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} maiusc-${cst.maiuscolo || 'no'} ${classiIdentita(cst, 'nessuna')} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--acc:${cu};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)};--peso:${cst.peso || '700'};--spaz:${Number(cst.spaziatura) || 0}px;--ombra-testo:${cst.ombraTesto ? '0 2px 8px rgba(0,0,0,.6)' : 'none'}">${segno}<span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
   }).join('');
 }
 
@@ -8524,6 +8563,8 @@ function _applicaIstantanea(foto) {
       if (d.acceso && e.k in d.acceso) _accendiDi(e.k, d.acceso[e.k]);
       if (d.mostra && (e.goal || e.cont)) { if (d.mostra[e.k] === false) m[e.k] = false; else delete m[e.k]; }
     }
+    for (const [id] of CHAT_DA) { if (d.mostra && d.mostra['chat:' + id] === false) m['chat:' + id] = false; else delete m['chat:' + id]; }
+    _rendiQualiChat();
     if (d.parti && ELEM('musica') && JSON.stringify(_cfgEl('musica').parti) !== JSON.stringify(d.parti)) { _cfgEl('musica').parti = d.parti; salvaCfgElemento('musica'); }
     disegnaGoal();
     aggiornaAnteprima();
@@ -9078,6 +9119,7 @@ function caricaOverlaySel() {
   ov.xy = ov.xy || {};
   ELEM_OVL.forEach((k) => { const c = _g('mostra-' + k); if (c) c.checked = ov.mostra?.[k] !== false; });
   const i = _g('inp-overlay-url'); if (i) i.value = ov.url || '';
+  _rendiQualiChat();
   _applicaStileOverlay(ov);
   deseleziona();
   aggiornaAnteprima();
@@ -10931,6 +10973,7 @@ function studioChatPanelPush(d) {
   const box = document.getElementById('studio-chat'); if (!box) return;
   const attaccato = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
   const riga = document.createElement('div'); riga.className = 'studio-chat-riga';
+  if (_chatDaCollegate().length > 1) riga.insertAdjacentHTML('afterbegin', _segnoDaHtml(String(d.piattaforma || 'twitch')));
   if (d.badge7tv) { const b = document.createElement('img'); b.className = 'studio-chat-badge'; b.src = d.badge7tv; b.alt = ''; riga.appendChild(b); }
   const u = document.createElement('span'); u.className = 'studio-chat-user';
   u.textContent = (d.user || '') + ': '; if (d.colore) u.style.color = d.colore;
@@ -17215,7 +17258,7 @@ function caricaDatiScheda(id) {
   if (id === 'sondaggi') caricaSondaggi();
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
-  if (id === 'alert') { caricaAlert(); _goalBozza = null; _bozzaEl = {}; disegnaGoal(); caricaContaStudio();
+  if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _bozzaEl = {}; disegnaGoal(); caricaContaStudio();
     riempiCfgForm('musica'); riempiCfgForm('timer'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();

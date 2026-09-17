@@ -1221,3 +1221,70 @@ Il modello, in tre righe:
    diretta: crea il `<video>` una volta, cambia l'indirizzo solo se è cambiato
    (il player si ridisegna a ogni lettura di Spotify, il video non deve
    ricominciare), e con «riduci animazioni» lo lascia fermo al primo fotogramma.
+
+## Due chat nello stesso overlay: unite, divise, o una sola
+
+Chi trasmette su due piattaforme ha due chat che finiscono nello stesso riquadro.
+Prima ci finivano davvero, ma **senza dire da dove venivano**: l'evento che parte
+verso l'overlay portava nome, colore, stemmi ed emote, non l'origine. A schermo
+una riga di Kick e una di Twitch erano la stessa cosa, e nessuna impostazione
+messa a valle avrebbe potuto separarle: il dato non c'era più.
+
+Per questo la correzione non comincia da un'opzione, ma dal messaggio.
+
+### L'origine è un dato del messaggio
+
+`alerts.onChat` mette `piattaforma` nell'evento, accanto al nome di chi scrive.
+Un messaggio che non la dichiara vale `twitch`, perché quando il bot è nato
+Twitch era l'unica: i canali di prima non cambiano di una virgola. Lo stesso
+campo viaggia anche negli eventi `chat_raw`, quelli che alimentano il pannello
+chat dello Studio, dove infatti il segno compare appena ci sono due piattaforme
+collegate.
+
+### La scelta è una riga di `mostra`, non una struttura nuova
+
+Un overlay **è** un layout: `mostra` dice cosa ci compare, e si scrive solo il
+«no» (quel che non c'è, compare). Obiettivi e contatori, che sono tanti, portano
+l'id nella chiave: `goal:<id>`, `cont:<id>`. Le sorgenti della chat seguono la
+stessa regola:
+
+    mostra['chat:twitch'] === false   → in QUESTO overlay le righe di Twitch non entrano
+    mostra['chat:kick']   === false   → e lo stesso per Kick
+    mostra.chat           === false   → la chat non c'è affatto, e la scelta di sopra non conta
+
+Da qui discendono tutti e tre i casi, senza aggiungere niente:
+
+- **unite**: tutte e due accese nello stesso overlay, un riquadro solo;
+- **divise**: un secondo overlay con l'altra accesa. Ha un link suo, quindi in
+  regia sono due fonti, ognuna dove si vuole. Questo è anche il motivo per cui
+  non serve un secondo riquadro dentro allo stesso overlay: la posizione la dà
+  la fonte in regia, non noi;
+- **una sola a schermo**: si spegne l'altra. La chat **resta accesa**: il bot
+  continua a leggerla, a rispondere, a contare monete e ore. Togliere dallo
+  schermo non è spegnere.
+
+Chi non è nell'elenco delle sorgenti (oggi YouTube) non si può spegnere, quindi
+si vede: è la stessa regola del resto, e domani basta aggiungerlo alla lista.
+
+### Il segno: i nostri disegni, non i loro marchi
+
+Quando due chat stanno insieme, una riga non dice più da sola da dove viene.
+`segnaDaDove` (nello stile della chat, quindi **per overlay**) mette davanti a
+ogni riga un segno piccolo, nel colore del testo. Sono le nostre icone, non i
+marchi di chi ospita la chat: un marchio altrui in sovraimpressione non è nostro
+da mettere, e cambierebbe forma ogni volta che lo cambiano loro. È spento di
+base: chi trasmette su una sola piattaforma non deve ritrovarsi un simbolo che
+non gli serve.
+
+### Il cancello
+
+`node scripts/verifica-chat-divise.mjs` apre una pagina overlay **vera** con un
+finto bot, le manda una riga per sorgente e guarda cosa resta a schermo: unite,
+spenta una, spenta l'altra, il messaggio senza origine, il segno quando serve e
+due segni diversi per due sorgenti diverse. L'autoprova rompe quattro cose una
+per volta — il filtro, l'origine, il segno, e i due segni resi uguali — e
+pretende il rosso da tutte.
+
+Nell'editor la stessa scelta si vede sulla tela: l'anteprima disegna le righe
+delle sole sorgenti accese, col segno se è acceso. Anteprima uguale alla diretta,
+come per tutto il resto.
