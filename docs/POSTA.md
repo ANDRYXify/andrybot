@@ -103,6 +103,12 @@ che una lista scritta a mano non puo' garantire:
 - **il cerchio EHLO ↔ reverse DNS ↔ IP** (qui sopra), con la riga pronta da
   copiare nel `.env` quando non si chiude.
 
+Poi guarda anche il BIMI, ma **senza farne una riga rossa**: non averlo non e' un
+guasto. Se invece il record c'e', allora l'indirizzo del logo viene aperto per
+davvero (risposta 200, tipo `image/svg+xml`, entro i 32 kB). Un record che indica
+un logo che non si apre e' peggio del record assente: chi lo controlla legge un
+mittente che dichiara una cosa falsa.
+
 ## Il collaudo
 
 `test/unita/posta.test.mjs`: il messaggio (intestazioni, oggetto UTF-8, le
@@ -206,7 +212,34 @@ Due scelte che si vedono nel file:
    v=BIMI1; l=https://socialbot.live/bimi/socialbot.svg; a=https://socialbot.live/bimi/certificato.pem
    ```
 
-Senza la parte `a=` il record è valido e non fa danni, ma **Gmail e Apple Mail il
-logo non lo mostrano**: vogliono il certificato. Qualche programma minore lo
-mostra lo stesso. Quindi il record da solo si può pubblicare, ma non va raccontato
-come «fatto».
+### La strada gratis, e fin dove arriva
+
+Il record **senza** la parte `a=` si pubblica subito e non costa niente:
+
+```
+default._bimi.socialbot.live  TXT
+v=BIMI1; l=https://socialbot.live/bimi/socialbot.svg
+```
+
+È legittimo: nello standard `a=` è facoltativo, e un record con la sola `l=`
+significa «il logo sta qui, prova documentale non ne ho». Chi lo onora lo mostra,
+chi vuole il certificato lo ignora e basta. Non peggiora la consegna e non ha
+effetti sul resto.
+
+Il punto è **chi lo onora**, e conviene dirlo per nome invece che sperarci:
+Fastmail e qualche programma minore mostrano il logo con la sola `l=`. Gmail,
+Apple Mail e Yahoo no, e sono loro la quasi totalità delle caselle vere. La
+richiesta del certificato non è un capriccio: senza, chiunque possieda un dominio
+metterebbe accanto al proprio nome il logo di una banca.
+
+Percorsi gratuiti al certificato non ce ne sono, e non è una questione di prezzo
+di listino: il certificato deve risalire a una delle poche autorità nella lista
+BIMI, quindi uno fatto in casa non vale, e ognuna di quelle autorità verifica a
+mano il marchio. La spesa vera, per un marchio non ancora registrato, è prima la
+registrazione e poi il certificato.
+
+Quindi la strada gratis si prende per quello che è: **il record si pubblica**, il
+logo c'è e risponde, e il giorno in cui arrivasse un certificato basta aggiungere
+`a=`. Nel frattempo, nella casella di posta, quello che si vede davvero è il nome
+del mittente e l'oggetto, che sono già nostri.
+
