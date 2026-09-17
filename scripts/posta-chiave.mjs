@@ -121,6 +121,41 @@ async function verifica() {
   const porta = await provaPorta25();
   dice(porta.ok, 'la porta 25 in uscita e\' aperta', porta.perche);
 
+  // BIMI: il logo accanto al mittente. E' FACOLTATIVO, quindi non averlo non e'
+  // un difetto e non deve diventare una riga rossa. Ma se il record c'e' deve
+  // essere giusto, e soprattutto il logo deve rispondere davvero: un indirizzo
+  // che non si apre e' peggio di nessun record, perche' chi lo controlla lo
+  // legge come un mittente che dice il falso.
+  const bimi = ((await txt(`default._bimi.${dom}`)) || []).find((r) => /^v=BIMI1/i.test(r.trim()));
+  if (!bimi) {
+    // Non basta dire «manca»: la riga da incollare la sappiamo gia', e scriverla
+    // qui evita il giro per la documentazione e un indirizzo ricopiato a mano.
+    const sito = (process.env.BASE_URL || `https://${dom}`).replace(/\/$/, '');
+    console.log('(BIMI non e\' pubblicato: e\' facoltativo. La versione senza certificato non costa niente,');
+    console.log(' e la mostrano pochi programmi — Gmail e Apple vogliono il certificato. Il record e\' questo:');
+    console.log(`   default._bimi.${dom}  TXT`);
+    console.log(`   v=BIMI1; l=${sito}/bimi/socialbot.svg`);
+    console.log(' Il resto sta in docs/POSTA.md)\n');
+  } else {
+    const l = (/\bl=([^;]+)/i.exec(bimi) || [])[1]?.trim() || '';
+    const a = (/\ba=([^;]+)/i.exec(bimi) || [])[1]?.trim() || '';
+    if (dice(!!l, 'BIMI: il record dice dove sta il logo', 'manca la parte «l=»')) {
+      dice(/^https:\/\//.test(l), 'e il logo sta in https', `c'e' scritto: ${l}`);
+      let risposta = null;
+      try {
+        const c = await fetch(l, { redirect: 'follow', signal: AbortSignal.timeout(10_000) });
+        risposta = { stato: c.status, tipo: (c.headers.get('content-type') || '').split(';')[0], quanti: (await c.arrayBuffer()).byteLength };
+      } catch (e) { risposta = { errore: e?.message || String(e) }; }
+      dice(risposta?.stato === 200, 'e il logo risponde',
+        risposta?.errore ? risposta.errore : `risponde ${risposta?.stato}`);
+      if (risposta?.stato === 200) {
+        dice(risposta.tipo === 'image/svg+xml', 'ed e\' un SVG', `lo serve come ${risposta.tipo || 'niente'}`);
+        dice(risposta.quanti <= 32 * 1024, `il logo sta in ${(risposta.quanti / 1024).toFixed(1)} kB`, 'il certificato ne accetta al massimo 32');
+      }
+    }
+    if (!a) console.log('(BIMI senza «a=»: il record vale, ma Gmail e Apple il logo non lo mostrano — vogliono il certificato)\n');
+  }
+
   const rossi = esiti.filter((e) => !e.ok);
   for (const e of esiti) console.log((e.ok ? '  ✓ ' : '  ✗ ') + e.cosa + (e.ok || !e.dettaglio ? '' : `\n      → ${e.dettaglio}`));
   console.log(rossi.length
