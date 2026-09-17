@@ -781,6 +781,10 @@ export class BotManager {
       const live = msg.piattaforma && msg.piattaforma !== 'twitch' ? true : this._liveState.get(login) === true;
       presenze.suMessaggio(msg, parla, { live });
     } catch (e) { log.debug(`#${login} saluti:`, e?.message || e); }
+    // Auguri a chi compie gli anni oggi, al suo primo messaggio: in chat non
+    // esiste la mezzanotte, esiste quando c'e'.
+    try { compleanniFeat.auguriInChat(msg, parla, (c, eff) => this.effects?.fire(c, eff)); }
+    catch (e) { log.debug(`#${login} auguri:`, e?.message || e); }
 
     // «Quello che ti sei costruito vince»: se questo e' un comando che lo
     // streamer ha gia' suo (comando semplice o Modulo), i comandi PRONTI non lo
@@ -808,6 +812,9 @@ export class BotManager {
     // serie di presenze (!serie, !classificaserie)
     try { presenze.tryComando(cmdMsg, parla); }
     catch (e) { log.error(`#${login} serie:`, e?.message || e); }
+    // il proprio compleanno (!compleanno GG/MM): opt-in, vive con gli auguri in chat
+    try { compleanniFeat.tryComando(cmdMsg, parla); }
+    catch (e) { log.error(`#${login} compleanno:`, e?.message || e); }
     // comandi base pronti (!so/!shoutout, !followage, !uptime): opt-out e mai
     // sopra ai comandi/Moduli creati dallo streamer (quelli vincono).
     comandibase.tryComando(this.helix, cmdMsg, parla)

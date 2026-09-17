@@ -543,6 +543,7 @@ function _demoGet(via) {
       { id: "classificaore", modulo: "ore", moduloNome: ["Ore guardate", "Watch time", "Horas vistas"], moduloAcceso: true, titolo: ["Classifica delle ore", "Watch time leaderboard", "Clasificación de horas"], cosa: ["Chi ha guardato di più.", "Who has watched the most.", "Quién ha visto más."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["classificaore", "classificatempo", "oretop", "topore"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "serie", modulo: "presenze", moduloNome: ["Serie di presenze", "Attendance streaks", "Rachas de presencia"], moduloAcceso: true, titolo: ["La tua serie", "Your streak", "Tu racha"], cosa: ["Dice a quante dirette di fila è stato presente chi lo scrive, o il nome dopo il comando, e a quante in tutto.", "Says how many streams in a row the writer, or the name after the command, has attended, and how many overall.", "Dice a cuántos directos seguidos ha estado quien lo escribe, o el nombre tras el comando, y a cuántos en total."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["serie", "presenze", "streak"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "classificaserie", modulo: "presenze", moduloNome: ["Serie di presenze", "Attendance streaks", "Rachas de presencia"], moduloAcceso: true, titolo: ["Classifica delle serie", "Streak leaderboard", "Clasificación de rachas"], cosa: ["Chi è venuto a più dirette di fila.", "Who has attended the most streams in a row.", "Quién ha estado en más directos seguidos."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["classificaserie", "serietop", "topserie", "presenzetop"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "compleanno", modulo: "compleanni", moduloNome: ["Compleanni", "Birthdays", "Cumpleaños"], moduloAcceso: true, titolo: ["Il mio compleanno", "My birthday", "Mi cumpleaños"], cosa: ["Chi lo scrive si segna il compleanno (!compleanno 25/12), lo rilegge o lo toglie con «via».", "The writer sets their birthday (!compleanno 25/12), reads it back or removes it with «via».", "Quien lo escribe apunta su cumpleaños (!compleanno 25/12), lo consulta o lo quita con «via»."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["compleanno", "compleanni", "birthday"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "battuta", modulo: "battute", moduloNome: ["Battute", "Jokes", "Chistes"], moduloAcceso: true, titolo: ["Battuta", "Joke", "Chiste"], cosa: ["Dice una battuta del serbatoio del canale. Mod e streamer le aggiungono con !battuta aggiungi.", "Tells a joke from the channel's bank. Mods and streamer add them with !battuta aggiungi.", "Cuenta un chiste del depósito del canal. Mods y streamer los añaden con !battuta aggiungi."], costa: false, attesa: 5, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["battuta", "battute", "joke"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "so", modulo: "base", moduloNome: ["Comandi pronti", "Built-in commands", "Comandos de serie"], moduloAcceso: true, titolo: ["Shoutout", "Shoutout", "Shoutout"], cosa: ["Fa lo shoutout a un altro canale.", "Gives a shoutout to another channel.", "Hace un shoutout a otro canal."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["so", "shoutout"], rinominato: false, chi: "mod", chiMinimo: "mod" },
       { id: "followage", modulo: "base", moduloNome: ["Comandi pronti", "Built-in commands", "Comandos de serie"], moduloAcceso: true, titolo: ["Da quanto segui", "How long you've followed", "Desde cuándo sigues"], cosa: ["Dice da quanto tempo una persona segue il canale.", "Says how long someone has followed the channel.", "Dice desde cuándo una persona sigue el canal."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["followage", "daquanto"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
@@ -773,13 +774,17 @@ function _demoGet(via) {
         azioni: [{ tipo: 'messaggio', testo: '$user tira il dado e fa... $random(1,6)!' }] },
     ],
     '/api/streamer/telegram/compleanni': {
+      attivo: true, messaggio: '',
+      chat: { attivo: true, messaggio: '', effetto: 'coriandoli' },
+      effetti: ['coriandoli', 'applausi'],
       membri: [
-        { tg_user_id: '1', nome: 'Luca', username: 'lucaplays' },
-        { tg_user_id: '2', nome: 'Giada', username: 'giada_ttv' },
+        { id: '1', nome: 'Luca', username: 'lucaplays' },
+        { id: '2', nome: 'Giada', username: 'giada_ttv' },
       ],
-      compleanni: [
-        { id: 1, nome: 'Luca', giorno: 14, mese: 3, tg_user_id: '1' },
-        { id: 2, nome: 'Giada', giorno: 2, mese: 9, tg_user_id: '2' },
+      lista: [
+        { id: '2', nome: 'Giada', giorno: 2, mese: 9, manuale: false, daChat: false },
+        { id: 'chat:marco99', nome: 'marco99', giorno: 14, mese: 3, manuale: false, daChat: true },
+        { id: 'man_a1b2c3', nome: 'Sara', giorno: 30, mese: 11, manuale: true, daChat: false },
       ],
     },
     '/api/streamer/giochi': [
@@ -16643,6 +16648,15 @@ function attivaPiattaforma() {
   }));
 
   document.getElementById('box-compleanni')?.addEventListener('click', (ev) => {
+    if (ev.target.closest('#btn-comple-chat-salva')) return conErrore(async () => {
+      await api('/api/streamer/compleanni/chat', { method: 'POST', body: {
+        attivo: document.getElementById('chk-comple-chat')?.checked,
+        messaggio: document.getElementById('txt-comple-chat')?.value || '',
+        effetto: document.getElementById('sel-comple-effetto')?.value || '',
+      } });
+      toast('Auguri in chat salvati ✓');
+      caricaCompleanni();
+    });
     if (ev.target.closest('#btn-compleanni-salva')) return conErrore(async () => {
       await api('/api/streamer/telegram/compleanni', { method: 'POST', body: {
         attivo: document.getElementById('chk-compleanni-attivo')?.checked,
@@ -17291,7 +17305,7 @@ async function caricaCompleanni() {
   catch { box.innerHTML = '<p class="vuoto">Impossibile caricare.</p>'; return; }
   const lista = (d.lista || []).map((c) => `
     <li><div class="testo-voce"><span class="domanda">${esc(c.nome || '—')}</span>
-      <span class="meta"> — ${fmtGiornoMese(c.giorno, c.mese)}${c.manuale ? ' · aggiunto a mano' : ''}</span></div>
+      <span class="meta"> — ${fmtGiornoMese(c.giorno, c.mese)}${c.daChat ? ' · dalla chat' : (c.manuale ? ' · aggiunto a mano' : '')}</span></div>
       <button class="btn pericolo mini" data-comple-rimuovi="${esc(c.id)}">Rimuovi</button></li>`).join('');
   const roster = (d.membri || []).map((m) => `
     <div class="riga-flessibile membro-riga" data-membro-id="${esc(m.id)}" data-membro-nome="${esc(m.nome || '')}" style="margin-bottom:.4rem">
@@ -17300,10 +17314,26 @@ async function caricaCompleanni() {
       <input type="number" class="mem-mm" min="1" max="12" aria-label="Mese di nascita di ${esc(m.nome || '—')}" placeholder="MM" style="width:72px">
       <button class="btn secondario mini" data-membro-add>Aggiungi</button>
     </div>`).join('');
+  const ch = d.chat || {};
+  const effetti = ['<option value="">— nessun effetto —</option>']
+    .concat((d.effetti || []).map((e) => `<option value="${esc(e)}"${ch.effetto === e ? ' selected' : ''}>!${esc(e)}</option>`)).join('');
   box.innerHTML = `
     <div class="riga-interruttore">
+      <label class="interruttore"><input type="checkbox" id="chk-comple-chat" ${ch.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+      <span class="etichetta-stato">Auguri in chat ${ch.attivo ? 'accesi' : 'spenti'}</span>
+    </div>
+    <p class="suggerimento">In chat non c'è la mezzanotte: gli auguri partono al <strong>primo messaggio</strong> di chi compie gli anni, una volta l'anno. Con questo acceso, chi guarda può segnarsi da solo scrivendo <code>!compleanno 25/12</code>.</p>
+    <label class="campo spazio-sopra" for="txt-comple-chat">Messaggio in chat</label>
+    <textarea id="txt-comple-chat" rows="2" placeholder="Tanti auguri {nome}!">${esc(ch.messaggio || '')}</textarea>
+    <p class="suggerimento">Segnaposto: <code>{nome}</code>. Vuoto = messaggio standard.</p>
+    <label class="campo spazio-sopra" for="sel-comple-effetto">Effetto in sovraimpressione</label>
+    <select id="sel-comple-effetto" aria-label="Effetto in sovraimpressione">${effetti}</select>
+    <p><button class="btn" id="btn-comple-chat-salva">Salva auguri in chat</button></p>
+
+    <hr class="separatore">
+    <div class="riga-interruttore">
       <label class="interruttore"><input type="checkbox" id="chk-compleanni-attivo" ${d.attivo ? 'checked' : ''}><span class="levetta"></span></label>
-      <span class="etichetta-stato">Auguri automatici ${d.attivo ? 'accesi' : 'spenti'}</span>
+      <span class="etichetta-stato">Auguri nel gruppo Telegram ${d.attivo ? 'accesi' : 'spenti'}</span>
     </div>
     <label class="campo spazio-sopra" for="txt-compleanni-msg">Messaggio di auguri</label>
     <textarea id="txt-compleanni-msg" rows="3" placeholder="Tanti auguri {menzione}!">${esc(d.messaggio || '')}</textarea>

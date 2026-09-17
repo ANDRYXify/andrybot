@@ -33,6 +33,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Chi trasmette su due piattaforme sceglie quali chat vanno a schermo in ogni overlay. Per tenerle divise ne fai un secondo con l'altra accesa: ha un link suo. [vai: alert]
 - Quando due chat stanno nello stesso riquadro, ogni riga può portare un segno che dice da dove arriva. Lo accendi in «Segna da dove arriva». [vai: alert]
 - Togliere una chat dallo schermo non la spegne: il bot continua a leggerla e a rispondere. [vai: alert]
+- Gli auguri di compleanno adesso arrivano anche in chat, al primo messaggio di chi li compie. Nel gruppo restano a mezzanotte, come prima. [vai: notifiche]
+- Chi ti guarda si segna il compleanno da solo: scrive !compleanno 25/12 e tu non devi toccare niente. Con !compleanno via lo toglie. [vai: notifiche]
+- Insieme agli auguri in chat può partire un effetto della tua libreria. Lo scegli dalla scheda Notifiche. [vai: notifiche]
 
 ## 2026-09-16
 

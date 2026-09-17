@@ -210,25 +210,23 @@ const EXT_MAX_MIN = 30;   // ingresso esterno: max richieste al minuto per login
 // data del membro che scrive. Ritorna il testo di risposta (HTML) o null se il
 // messaggio non è un comando compleanno.
 function gestisciComandoCompleanno(login, msg, testo) {
-  const m = String(testo).trim().toLowerCase().match(/^[\/!]?compleanno(?:@\S+)?(?:\s+(.*))?$/);
-  if (!m) return null;
-  const arg = (m[1] || '').trim();
+  const cmd = compleanniFeat.leggiComando(testo);
+  if (!cmd) return null;
   const from = msg.from || {};
   const nome = from.first_name || from.username || 'amico';
-  if (!arg) {
+  if (cmd.azione === 'mostra') {
     const cur = compleanni.get(login, from.id);
     return cur
       ? `🎂 Il tuo compleanno è segnato per il <b>${compleanniFeat.fmtData(cur.giorno, cur.mese)}</b>. Per cambiarlo: <code>/compleanno GG/MM</code>.`
       : 'Scrivi <code>/compleanno GG/MM</code> (es. <code>/compleanno 25/12</code>) e ti farò gli auguri il giorno giusto! 🎉';
   }
-  if (/^(rimuovi|cancella|togli)$/.test(arg)) {
+  if (cmd.azione === 'togli') {
     compleanni.remove(login, from.id);
     return '👍 Ho tolto il tuo compleanno.';
   }
-  const d = compleanniFeat.parseData(arg);
-  if (!d) return 'Non ho capito la data. Usa <code>/compleanno GG/MM</code>, es. <code>/compleanno 25/12</code>.';
-  compleanni.set(login, from.id, nome, d.giorno, d.mese);
-  return `🎂 Segnato! Ti farò gli auguri il <b>${compleanniFeat.fmtData(d.giorno, d.mese)}</b>. 🎉`;
+  if (cmd.azione === 'boh') return 'Non ho capito la data. Usa <code>/compleanno GG/MM</code>, es. <code>/compleanno 25/12</code>.';
+  compleanni.set(login, from.id, nome, cmd.giorno, cmd.mese);
+  return `🎂 Segnato! Ti farò gli auguri il <b>${compleanniFeat.fmtData(cmd.giorno, cmd.mese)}</b>. 🎉`;
 }
 
 export function startWeb({ auth, helix, manager, effects, modules }) {
@@ -6838,12 +6836,34 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const lista = righe.map((c) => ({
       id: c.tg_user_id, nome: c.nome, giorno: c.giorno, mese: c.mese,
       manuale: String(c.tg_user_id).startsWith('man_'),
+      // da dove arriva: chi se lo segna dalla chat porta il prefisso, e nel
+      // pannello si vede, cosi' l'elenco resta uno solo e si capisce lo stesso
+      daChat: String(c.tg_user_id).startsWith(compleanniFeat.CHI_CHAT),
     }));
     // roster: membri visti nel gruppo che NON hanno ancora un compleanno segnato
     const conCompleanno = new Set(righe.map((c) => c.tg_user_id));
     const roster = membri.list(login).filter((m) => !conCompleanno.has(m.tg_user_id))
       .map((m) => ({ id: m.tg_user_id, nome: m.nome, username: m.username }));
-    res.json({ attivo: !!cfg.attivo, messaggio: cfg.messaggio || '', lista, membri: roster });
+    const chat = streamers.get(login)?.settings?.chatAuguri || {};
+    res.json({ attivo: !!cfg.attivo, messaggio: cfg.messaggio || '', lista, membri: roster,
+      chat: { attivo: !!chat.attivo, messaggio: chat.messaggio || '', effetto: chat.effetto || '' },
+      // gli effetti accesi del canale: la scelta dell'effetto sta qui dentro,
+      // cosi' la scheda non deve andare a chiederli da un'altra parte
+      effetti: effectsDb.list(login).filter((e) => e.attivo).map((e) => e.comando) });
+  }));
+
+  // Auguri IN CHAT: interruttore, testo e un effetto in sovraimpressione. Sono
+  // una cosa a parte da quelli del gruppo — posti diversi, momenti diversi — e
+  // accendere questi accende anche il comando !compleanno.
+  app.post('/api/streamer/compleanni/chat', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    if (!s) return res.status(404).json({ errore: 'streamer sconosciuto' });
+    const attivo = !!req.body?.attivo;
+    const messaggio = String(req.body?.messaggio || '').slice(0, 400);
+    const effetto = String(req.body?.effetto || '').trim().slice(0, 50);
+    streamers.setSettings(login, { ...s.settings, chatAuguri: { attivo, messaggio, effetto } });
+    res.json({ ok: true });
   }));
 
   // carica gli amministratori del gruppo nel roster (unica lista che l'API concede)
