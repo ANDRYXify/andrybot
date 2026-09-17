@@ -153,5 +153,60 @@ prima della chiocciola: «info». Ora il `From` è `SocialBot <indirizzo>`
 indirizzo, come vuole il protocollo. Il `From` è fra le intestazioni firmate con
 DKIM, quindi il nome viaggia dentro la firma.
 
-Il logo accanto al mittente, quello sì, non si può fare senza BIMI, che chiede un
-certificato a pagamento: non lo facciamo, e non lo promettiamo.
+## BIMI: il logo accanto al mittente
+
+BIMI è il modo in cui un programma di posta mostra il **logo** del mittente al
+posto del cerchietto con l'iniziale. Non è un'impostazione: è un record DNS più
+un certificato, e il certificato si paga.
+
+**Il logo c'è già.** `node scripts/marchio-bimi.mjs` lo ricalca dal disegno vero
+in `assets/marchio/sbot.png` e scrive `src/web/public/bimi/socialbot.svg`.
+Ricalcare, non ridisegnare: segue il bordo fra i pixel di ogni colore e lo
+trasforma in una linea, così il segno che esce è lo stesso che c'è in casa e non
+una sua imitazione fatta a occhio, che il giorno dopo diverge. Lo strumento è la
+canvas di Chromium, come per `marchio.mjs`.
+
+Il profilo che BIMI pretende è stretto — **SVG Tiny 1.2 Portable/Secure** — e non
+si vede a occhio: un SVG che si apre benissimo nel browser può essere rifiutato da
+chi emette il certificato, e ce ne si accorge dopo aver pagato. Perciò c'è un
+cancello, `verifica-bimi.mjs`, dentro `npm run cancelli`: titolo obbligatorio,
+riquadro quadrato, niente che esegua, niente che si muova, niente che venga da
+fuori, niente testo (le lettere devono essere disegno, se no dipendono da un
+carattere che chi guarda non ha), non più di 32 kB.
+
+Due scelte che si vedono nel file:
+
+- **Fondo chiaro.** Il disegno ha i contorni neri: su fondo scuro il segno
+  diventa una macchia. È la stessa ragione per cui le icone dell'app stanno sulla
+  carta calda del prodotto.
+- **Il segno occupa l'80% del quadrato.** Chi mostra i loghi BIMI spesso li
+  ritaglia a cerchio, e il cerchio più grande dentro un quadrato tocca i lati a
+  metà: quindi ciò che deve starci dentro non è la larghezza, è la **diagonale**
+  del riquadro del segno. Questo segno è largo e basso, la sua diagonale misura
+  1,185 volte la larghezza, e può arrivare a 0,84 prima di toccare il cerchio. Al
+  66% delle icone dell'app restava un francobollo in mezzo al vuoto, illeggibile
+  a 96 pixel.
+
+### Cosa manca, e quanto costa
+
+1. **DMARC a `quarantine` o `reject`.** Già fatto: `p=quarantine`.
+2. **Il logo servito in HTTPS.** Già fatto: `https://<dominio>/bimi/socialbot.svg`,
+   pubblico, senza sessione.
+3. **Il certificato.** È il pezzo che manca e l'unico che si paga. Lo emettono
+   DigiCert ed Entrust, costa attorno ai mille euro l'anno:
+   - **VMC** (Verified Mark Certificate): vuole un **marchio registrato** in un
+     ufficio riconosciuto (EUIPO, USPTO e pochi altri).
+   - **CMC** (Common Mark Certificate): il marchio registrato non lo chiede, ma
+     vuole il logo **in uso documentato** da almeno un anno, e lo accettano meno
+     programmi.
+4. **Il record**, quando il certificato c'è:
+
+   ```
+   default._bimi.socialbot.live  TXT
+   v=BIMI1; l=https://socialbot.live/bimi/socialbot.svg; a=https://socialbot.live/bimi/certificato.pem
+   ```
+
+Senza la parte `a=` il record è valido e non fa danni, ma **Gmail e Apple Mail il
+logo non lo mostrano**: vogliono il certificato. Qualche programma minore lo
+mostra lo stesso. Quindi il record da solo si può pubblicare, ma non va raccontato
+come «fatto».
