@@ -61,18 +61,21 @@ test('la raccolta legge la finestra giusta: chat, eventi, presenze, clip, donazi
   assert.equal(d.presenti, 2); assert.equal(d.primeVolte, 1);
   assert.equal(d.clip, 1);
   assert.equal(d.donazioni, 2); assert.equal(d.donazioniCent, 1500);
+  assert.deepEqual(d.clipElenco, [{ url: 'u', motivo: 'hype', ts: da + 9 * MIN }], 'la clip fuori finestra non entra');
   const t = r.testo({ durataMs: 134 * MIN, picco: 48, media: 31, giri: 20, ...d });
   assert.equal(t, [
-    '<b>Diretta finita</b>: 2h 14m',
+    '<b>È arrivato un raid, con 35 persone al seguito.</b>',
+    'Sei stato in onda 2h 14m, e in chat sono passate 2 persone.',
     'Spettatori: picco 48, in media 31',
     'Chat: 3 messaggi da 2 persone',
     'Più attivi: Marco (2), Giada (1)',
     'Nuovi follower: 2 · Sub: 4 (4 regalati) · Raid: 1 (35 spettatori)',
     'Presenti: 2, di cui 1 alla prima volta',
     'Clip: 1 · Donazioni: 2 (15,00 €)',
+    '<a href="u">hype</a>',
   ].join('\n'));
   const vuoto = r.testo({ durataMs: 5 * MIN, giri: 0, messaggi: 0, persone: 0, top: [], follow: 0, sub: 0, regali: 0, raid: 0 });
-  assert.equal(vuoto, '<b>Diretta finita</b>: 5m\nChat: 0 messaggi da 0 persone\nNuovi follower: 0 · Sub: 0', 'senza spettatori misurati e senza extra, niente righe vuote');
+  assert.equal(vuoto, '<b>Serata tranquilla.</b>\nSei stato in onda 5m, e in chat sono passate 0 persone.\nChat: 0 messaggi da 0 persone\nNuovi follower: 0 · Sub: 0', 'senza spettatori misurati e senza extra, niente righe vuote');
   assert.equal(r.testo({ durataMs: 0, top: [{ user: '<b>x', n: 1 }] }).includes('&lt;b&gt;x'), true, 'il nome non rompe l\'HTML di Telegram');
 });
 
@@ -113,12 +116,44 @@ test('i canali si normalizzano, e la versione mail ha le stesse voci nel guscio 
   assert.deepEqual(r.normalizza({ attivo: false }), { telegram: false, mail: false }, 'il nome della prima versione vale ancora');
   assert.deepEqual(r.normalizza({ telegram: true, mail: 'si' }), { telegram: true, mail: false });
   assert.deepEqual(r.normalizza(undefined), { telegram: true, mail: false });
-  const d = { durataMs: 134 * MIN, picco: 48, media: 31, giri: 20, messaggi: 3, persone: 2, top: [{ user: 'Marco', n: 2 }], follow: 2, sub: 4, regali: 4, raid: 1, raidSpettatori: 35, presenti: 2, primeVolte: 1, clip: 1, donazioni: 2, donazioniCent: 1500 };
-  assert.equal(r.oggetto(d), 'Diretta finita: 2h 14m');
-  const h = r.html(d, { display: 'Canale', quando: 'ieri sera' });
-  for (const pezzo of ['Diretta finita: 2h 14m', 'picco 48, in media 31', '3 messaggi da 2 persone', 'Marco (2)', '4 (4 regalati)', '1 (35 spettatori)', '2, di cui 1 alla prima volta', '2 (15,00 €)', 'ieri sera', 'per il canale Canale', 'scheda Dirette']) {
+  const d = { durataMs: 134 * MIN, fine: Date.UTC(2026, 8, 15, 20, 30), picco: 48, media: 31, giri: 20, messaggi: 3, persone: 2, top: [{ user: 'Marco', n: 2 }], follow: 2, sub: 4, regali: 4, raid: 1, raidSpettatori: 35, presenti: 2, primeVolte: 1, clip: 1, donazioni: 2, donazioniCent: 1500, clipElenco: [{ url: 'https://clips.twitch.tv/Uno', motivo: 'il salto', ts: Date.UTC(2026, 8, 15, 19, 5) }] };
+  const h = r.html(d, { display: 'Canale' });
+  for (const pezzo of ['È arrivato un raid, con 35 persone al seguito.', 'Com’è andata martedì sera', 'Marco', '4 (4 regalati)', '1 (35 persone)', '2 (1 nuovo)', '2 · 15,00 €', 'per il canale Canale', 'scheda Dirette', 'La clip della serata', 'https://clips.twitch.tv/Uno', 'il salto', '#dirette']) {
     assert.ok(h.includes(pezzo), `manca «${pezzo}»`);
   }
   assert.ok(!/<script/i.test(h));
-  assert.equal(r.testoPiano(d).split('\n')[0], 'Diretta finita: 2h 14m');
+});
+
+test('la mail apre con la cosa che salta all\'occhio, e la scelta non e\' un dado', () => {
+  // La stessa serata da' sempre la stessa riga; serate diverse ne danno di
+  // diverse, in un ordine deciso: il record viene prima del raid, il raid prima
+  // delle donazioni, e in fondo resta «serata tranquilla».
+  const base = { durataMs: 60 * MIN, persone: 1, messaggi: 1, follow: 0, sub: 0, raid: 0, donazioniCent: 0, primeVolte: 0 };
+  assert.equal(r.apertura({ ...base, piccoRecord: true, picco: 61, raid: 1, raidSpettatori: 9 }), 'Mai visti tanti insieme: 61 spettatori nello stesso momento.');
+  assert.equal(r.apertura({ ...base, raid: 1, raidSpettatori: 9, donazioniCent: 900 }), 'È arrivato un raid, con 9 persone al seguito.');
+  assert.equal(r.apertura({ ...base, raid: 2, raidSpettatori: 12 }), 'Sono arrivati 2 raid, 12 persone in tutto.');
+  assert.equal(r.apertura({ ...base, donazioniCent: 900 }), 'Qualcuno ha voluto ringraziare: 9,00 € in donazioni.');
+  assert.equal(r.apertura({ ...base, primeVolte: 3 }), '3 facce nuove in chat, mai viste prima.');
+  assert.equal(r.apertura({ ...base, follow: 10 }), '10 persone hanno premuto segui mentre eri in onda.');
+  assert.equal(r.apertura({ ...base, sub: 1 }), 'Un abbonamento nuovo, stasera.');
+  assert.equal(r.apertura({ ...base, messaggi: 200 }), 'La chat non si è fermata un attimo.');
+  assert.equal(r.apertura({ ...base, messaggi: 0 }), 'Serata tranquilla.');
+  assert.equal(r.oggetto({ ...base, messaggi: 0 }), r.apertura({ ...base, messaggi: 0 }), 'ed e\' anche l\'oggetto: e\' la riga che decide se la mail si apre');
+  assert.equal(r.cornice({ ...base, persone: 1, durataMs: 90 * MIN }), 'Sei stato in onda 1h 30m, e in chat sono passate una persona.');
+  assert.equal(r.quandoParlato(Date.UTC(2026, 8, 15, 20, 30)), 'martedì sera');
+  assert.equal(r.quandoParlato(Date.UTC(2026, 8, 15, 8, 30)), 'martedì mattina');
+  assert.equal(r.quandoParlato(0), '');
+});
+
+test('le clip si possono riaprire: link nella mail, link su Telegram, indirizzo per esteso nel testo', () => {
+  const d = { durataMs: 60 * MIN, picco: 3, media: 2, giri: 4, messaggi: 5, persone: 2, follow: 0, sub: 0, raid: 0,
+    clip: 2, clipElenco: [{ url: 'https://clips.twitch.tv/Uno', motivo: 'il salto', ts: Date.UTC(2026, 8, 15, 19, 5) }, { url: 'https://clips.twitch.tv/Due', motivo: '', ts: Date.UTC(2026, 8, 15, 19, 40) }] };
+  const t = r.testo(d);
+  assert.ok(t.includes('<a href="https://clips.twitch.tv/Uno">il salto</a>'), 'su Telegram il titolo e\' il link');
+  assert.ok(t.includes('<a href="https://clips.twitch.tv/Due">Clip della diretta</a>'), 'e una clip senza motivo ha comunque un nome');
+  const p = r.testoPiano(d);
+  assert.ok(!/<[a-z]/i.test(p), 'nel testo semplice non restano segni');
+  assert.ok(p.includes('il salto: https://clips.twitch.tv/Uno'), 'e l\'indirizzo si legge per esteso');
+  const h = r.html(d, {});
+  assert.ok(h.includes('Le clip della serata (2)') && h.includes('clips.twitch.tv'), 'nella mail sono due, con il loro nome');
 });

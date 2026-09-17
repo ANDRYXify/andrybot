@@ -1069,7 +1069,7 @@ export class BotManager {
       const pst = postaStreamer.get(login);
       if (c.mail && pst?.confermata && pst.email && posta.attiva()) {
         const display = streamers.get(login)?.display || login;
-        posta.invia({ a: pst.email, oggetto: rapporto.oggetto(dati), testo: rapporto.testoPiano(dati), html: rapporto.html(dati, { display, quando: new Date(chiuso.fine).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }) }) })
+        posta.invia({ a: pst.email, oggetto: rapporto.oggetto(dati), testo: rapporto.testoPiano(dati), html: rapporto.html(dati, { display }) })
           .then(() => rapporti.segnaInviato(id, 'mail'))
           .catch((e) => log.warn(`#${login} rapporto via mail:`, e?.message || e));
       }

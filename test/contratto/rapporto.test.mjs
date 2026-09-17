@@ -63,3 +63,34 @@ test('il manuale, la vetrina, la privacy e le novita\' lo raccontano', () => {
   assert.ok(novita.includes('nella scheda «Dirette»') && novita.includes('su Telegram in privato o via mail'));
   assert.ok(leggi('.env.example').includes('MAIL_DOMINIO=') && leggi('docs/POSTA.md').includes('porta 25'));
 });
+
+test('l\'invito a lasciare l\'indirizzo lo decide il server, e vale una volta sola', () => {
+  // Una scelta tenuta nel browser ricompare sull'altro computer e sul telefono:
+  // chi ha gia' detto no se la ritroverebbe davanti. Percio' la decisione sta in
+  // un posto solo, e la risposta resta con lo streamer dovunque entri.
+  const srv = leggi('src/web/server.js');
+  const me = srv.slice(srv.indexOf('invitoPosta: (() => {'), srv.indexOf('invitoPosta: (() => {') + 420);
+  assert.match(me, /!posta\.attiva\(\) \|\| !isOwner\(req\)/, 'niente invito se la posta e\' spenta o non sei tu');
+  assert.match(me, /s\?\.status !== 'approved'/, 'e nemmeno prima dell\'attivazione');
+  assert.match(me, /s\?\.settings\?\.invitoPosta/, 'chi ha gia\' risposto non lo rivede');
+  assert.match(me, /postaStreamer\.get\(user\.login\)\?\.email/, 'ne\' chi un indirizzo ce l\'ha gia\'');
+  const porta = srv.slice(srv.indexOf("app.post('/api/streamer/posta/invito'"), srv.indexOf("app.delete('/api/streamer/posta'"));
+  assert.match(porta, /requireOwner/, 'la porta ha il suo guardiano');
+  assert.match(porta, /invitoPosta: Date\.now\(\)/, 'e la risposta si scrive fra le impostazioni dello streamer');
+
+  const app = leggi('src/web/public/app.js');
+  const f = app.slice(app.indexOf('function invitoPosta()'), app.indexOf('function esitoPostaDaIndirizzo('));
+  assert.match(f, /if \(!stato\?\.invitoPosta\) return;/, 'il pannello non decide: guarda cosa gli ha detto il server');
+  assert.match(f, /dialog\[open\]/, 'una finestra sola alla volta: aspetta che si chiuda quella delle novita\'');
+  assert.match(f, /addEventListener\('close'[\s\S]{0,200}\/api\/streamer\/posta\/invito/, 'la risposta si segna comunque sia andata, si\' o no');
+  assert.match(f, /\/api\/streamer\/posta'/, 'e il si\' passa dalla porta di sempre, quella che manda la conferma');
+});
+
+test('le clip della serata si riaprono: nella carta della scheda, non solo nella mail', () => {
+  const app = leggi('src/web/public/app.js');
+  assert.match(app, /\$\{clipRapporto\(d\.clipElenco\)\}/, 'la carta le mostra');
+  const f = app.slice(app.indexOf('function clipRapporto('), app.indexOf('function canaliRapportoHtml('));
+  assert.match(f, /filter\(\(c\) => c\?\.url\)/, 'solo quelle che hanno davvero un indirizzo');
+  assert.match(f, /target="_blank" rel="noopener"/, 'si aprono di fianco, non al posto del pannello');
+  assert.ok(!/rap-clip/.test(leggi('src/web/public/style.css')) === false, 'e hanno il loro stile');
+});

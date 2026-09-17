@@ -223,27 +223,111 @@ export async function invia({ a, oggetto, testo = '', html = '', via = null }) {
 // il marchio cambia cambia anche qui. Stili in linea, tabelle: e' cio' che i
 // programmi di posta capiscono.
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-export function guscioHtml({ titolo, corpo, piede = '' }) {
-  const c = (n) => { try { return tinta(n); } catch { return '#000'; } };
-  const bg = c('bg'), carta = c('surface'), testo = c('testo'), testo2 = c('testo-2'), acc = c('acc'), bordo = c('border'), contorno = c('contorno');
-  return `<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(titolo)}</title></head>
-<body style="margin:0;padding:0;background:${bg};">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${bg};padding:28px 12px;">
+// I caratteri del sito non si spediscono: un programma di posta ne carica uno da
+// fuori quasi mai, e quando non ce la fa mette il suo. Quindi si chiede prima
+// quello del sito, per chi ce l'ha, e dietro si mette una fila che gli somiglia.
+const PILA_FONT = "Archivo,'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif";
+const cq = (n, tema = 'chiaro') => { try { return tinta(n, tema); } catch { return tema === 'scuro' ? '#fff' : '#000'; } };
+
+// LO STESSO GUSCIO NEI DUE TEMI. I colori dello scuro non si inventano qui: sono
+// quelli di tema.css letti per il tema scuro, gli stessi del sito. Chi legge la
+// posta col fondo nero non si prende una carta bianca in faccia. Chi non capisce
+// la regola la salta e resta al chiaro: e' un di piu', non una condizione.
+function vestiScuro() {
+  return `@media (prefers-color-scheme: dark) {
+  .sb-fondo { background:${cq('bg', 'scuro')} !important; }
+  .sb-carta { background:${cq('surface', 'scuro')} !important; border-color:${cq('contorno', 'scuro')} !important; }
+  .sb-testo { color:${cq('testo', 'scuro')} !important; }
+  .sb-tenue { color:${cq('testo-2', 'scuro')} !important; }
+  .sb-acc, .sb-acc a { color:${cq('acc', 'scuro')} !important; }
+  .sb-riquadro { background:${cq('surface-2-tinta', 'scuro')} !important; border-color:${cq('border', 'scuro')} !important; }
+  .sb-bordo { border-color:${cq('border', 'scuro')} !important; }
+  .sb-tasto { background:${cq('acc', 'scuro')} !important; color:${cq('bg', 'scuro')} !important; }
+}`;
+}
+
+// `occhiello` e' la riga che si legge NELL'ELENCO della posta, accanto
+// all'oggetto: se non gliela si da', il programma si prende le prime parole del
+// corpo. `cappello` e' di chi e' il canale, accanto al nome nostro.
+export function guscioHtml({ titolo, corpo, piede = '', occhiello = '', cappello = '' }) {
+  const c = (n) => cq(n);
+  return `<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">
+<title>${esc(titolo)}</title><style>${vestiScuro()}</style></head>
+<body class="sb-fondo" style="margin:0;padding:0;background:${c('bg')};">
+${occhiello ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(occhiello)}</div>` : ''}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="sb-fondo" style="background:${c('bg')};padding:28px 12px;">
 <tr><td align="center">
-<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:${carta};border:2px solid ${contorno};border-radius:14px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:${testo};">
-<tr><td style="padding:22px 28px 6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:${acc};font-weight:bold;">SocialBot</td></tr>
-<tr><td style="padding:0 28px 8px;font-size:24px;line-height:1.25;font-weight:bold;">${esc(titolo)}</td></tr>
-<tr><td style="padding:8px 28px 24px;font-size:16px;line-height:1.5;">${corpo}</td></tr>
-<tr><td style="padding:14px 28px 20px;border-top:1px solid ${bordo};font-size:12px;line-height:1.5;color:${testo2};">${piede || 'SocialBot · socialbot.live'}</td></tr>
+<table role="presentation" width="640" cellpadding="0" cellspacing="0" class="sb-carta sb-testo" style="max-width:640px;width:100%;background:${c('surface')};border:2px solid ${c('contorno')};border-radius:14px;font-family:${PILA_FONT};color:${c('testo')};">
+<tr><td style="padding:22px 28px 6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:bold;"><span class="sb-acc" style="color:${c('acc')};">SocialBot</span>${cappello ? `<span class="sb-tenue" style="color:${c('testo-2')};font-weight:normal;letter-spacing:.04em;"> · ${esc(cappello)}</span>` : ''}</td></tr>
+<tr><td class="sb-testo" style="padding:0 28px 6px;font-size:25px;line-height:1.2;font-weight:bold;letter-spacing:-.015em;">${esc(titolo)}</td></tr>
+<tr><td class="sb-testo" style="padding:6px 28px 26px;font-size:16px;line-height:1.55;">${corpo}</td></tr>
+<tr><td class="sb-tenue sb-bordo" style="padding:14px 28px 20px;border-top:1px solid ${c('border')};font-size:12px;line-height:1.5;color:${c('testo-2')};">${piede || 'SocialBot · socialbot.live'}</td></tr>
 </table></td></tr></table></body></html>`;
+}
+
+// I NUMERI CHE SI GUARDANO PER PRIMI: nel pannello sono riquadri con un numero
+// grosso e una parola sotto, e qui sono gli stessi, in tabella perche' e' cio'
+// che la posta capisce. Tre: il quarto non si guarda piu', si legge.
+export function numeriHtml(voci) {
+  const c = (n) => cq(n);
+  const v = (voci || []).filter(Boolean).slice(0, 3);
+  if (!v.length) return '';
+  const largo = Math.floor(100 / v.length);
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:2px 0 6px;"><tr>${v.map((x, i) => `<td width="${largo}%" style="padding:0 ${i === v.length - 1 ? 0 : 8}px 0 ${i ? 8 : 0}px;" valign="top">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="sb-riquadro sb-bordo" style="background:${c('surface-2-tinta')};border:1px solid ${c('border')};border-radius:10px;"><tr><td align="center" style="padding:14px 4px 12px;">
+<div class="sb-testo" style="font-size:30px;line-height:1;font-weight:bold;letter-spacing:-.02em;">${esc(x.n)}</div>
+<div class="sb-tenue" style="margin-top:5px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:${c('testo-2')};">${esc(x.che)}</div>
+</td></tr></table></td>`).join('')}</tr></table>`;
+}
+
+// DUE COLONNE CHE SI IMPILANO DA SOLE. Non con una regola condizionale: quelle
+// certi programmi non le leggono, e resterebbero in colonna anche su uno schermo
+// largo. Due blocchi affiancati con una larghezza massima si mettono uno sotto
+// l'altro appena lo spazio non basta, e questo lo sanno fare tutti. Il commento
+// per Outlook e' l'unico che serve, perche' lui i blocchi affiancati non li fa.
+export function dueColonneHtml(a, b) {
+  return `<div style="font-size:0;text-align:left;margin-top:4px;">
+<!--[if mso]><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td width="50%" valign="top"><![endif]-->
+<div style="display:inline-block;width:100%;max-width:280px;vertical-align:top;font-size:16px;padding-right:12px;box-sizing:border-box;">${a}</div>
+<!--[if mso]></td><td width="50%" valign="top"><![endif]-->
+<div style="display:inline-block;width:100%;max-width:280px;vertical-align:top;font-size:16px;box-sizing:border-box;">${b}</div>
+<!--[if mso]></td></tr></table><![endif]-->
+</div>`;
+}
+
+// Il titoletto di un gruppo: dice che sotto cambia argomento.
+export function sezioneHtml(testo) {
+  return `<div class="sb-tenue" style="margin:22px 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:bold;color:${cq('testo-2')};">${esc(testo)}</div>`;
+}
+
+// Il podio. Una riga di nomi separati da virgole andava a capo male, e chi fosse
+// il primo non si capiva.
+export function podioHtml(voci, { che = '' } = {}) {
+  const c = (n) => cq(n);
+  const righe = (voci || []).slice(0, 3).map((v, i) => `<tr>
+<td width="28" valign="top" style="padding:5px 0;font-size:15px;font-weight:bold;"><span class="sb-acc" style="color:${c('acc')};">${i + 1}°</span></td>
+<td valign="top" class="sb-testo" style="padding:5px 0;font-size:16px;font-weight:bold;">${esc(v.user)}</td>
+<td align="right" valign="top" class="sb-tenue" style="padding:5px 0;font-size:14px;color:${c('testo-2')};">${esc(v.n)}${che ? ' ' + esc(che) : ''}</td></tr>`).join('');
+  return righe ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${righe}</table>` : '';
+}
+
+// Una cosa che si apre: un titolo che e' il link, e sotto da dove viene. Serve
+// alle clip, ed e' l'unico pezzo del rapporto che si riguarda.
+export function cartaLinkHtml({ titolo, link, nota = '' }) {
+  const c = (n) => cq(n);
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td class="sb-riquadro sb-bordo" style="background:${c('surface-2-tinta')};border:1px solid ${c('border')};border-radius:10px;padding:10px 14px;">
+<a class="sb-acc" href="${esc(link)}" style="color:${c('acc')};font-weight:bold;font-size:15px;text-decoration:none;">${esc(titolo)}</a>
+${nota ? `<div class="sb-tenue" style="margin-top:2px;font-size:12px;color:${c('testo-2')};">${esc(nota)}</div>` : ''}
+</td></tr><tr><td height="8"></td></tr></table>`;
 }
 export function tastoHtml(testo, link) {
   const acc = (() => { try { return tinta('acc'); } catch { return '#ba007a'; } })();
-  return `<a href="${esc(link)}" style="display:inline-block;padding:12px 20px;background:${acc};color:#ffffff;text-decoration:none;font-weight:bold;border-radius:8px;">${esc(testo)}</a>`;
+  return `<a class="sb-tasto" href="${esc(link)}" style="display:inline-block;padding:12px 22px;background:${acc};color:#ffffff;text-decoration:none;font-weight:bold;border-radius:8px;font-size:15px;">${esc(testo)}</a>`;
 }
 export function rigaHtml(etichetta, valore) {
   const t2 = (() => { try { return tinta('testo-2'); } catch { return '#666'; } })();
-  return `<tr><td style="padding:6px 0;color:${t2};font-size:14px;width:46%;">${esc(etichetta)}</td><td style="padding:6px 0;font-size:16px;font-weight:bold;">${esc(valore)}</td></tr>`;
+  return `<tr><td class="sb-tenue" style="padding:5px 0;color:${t2};font-size:14px;width:44%;">${esc(etichetta)}</td><td class="sb-testo" style="padding:5px 0;font-size:16px;font-weight:bold;">${esc(valore)}</td></tr>`;
 }
 
 // ---------------------------------------------------------------- le mail che partono

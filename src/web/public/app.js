@@ -254,6 +254,46 @@ async function caricaStato() {
   esitoPostaDaIndirizzo();
   avvisaRapporti();
   collegaRegiaRicordata();
+  invitoPosta();
+}
+
+function invitoPosta() {
+  if (!stato?.invitoPosta) return;
+  const gia = document.querySelector('dialog[open]');
+  if (gia) { gia.addEventListener('close', () => invitoPosta(), { once: true }); return; }
+  stato.invitoPosta = false;
+  const f = document.createElement('dialog');
+  f.className = 'nov-finestra';
+  f.innerHTML = `<div class="nov-testa">
+      <h2>${L('Ti mando com’è andata, quando chiudi?', 'Shall I send you how it went, when you stop?', '¿Te mando qué tal fue, cuando cierras?')}</h2>
+      <p class="suggerimento">${L('Appena finisci la diretta ti arriva il riepilogo: spettatori, chat, follower nuovi e le clip da riguardare.', 'As soon as your stream ends you get the recap: viewers, chat, new followers and the clips to watch again.', 'En cuanto cierras el directo te llega el resumen: espectadores, chat, seguidores nuevos y los clips para volver a verlos.')}</p>
+    </div>
+    <div class="nov-corpo">
+      <label class="campo" for="inv-posta-mail">${L('Il tuo indirizzo', 'Your address', 'Tu dirección')}</label>
+      <input type="email" id="inv-posta-mail" class="campo-largo" placeholder="tu@esempio.it" autocomplete="email">
+      <p class="suggerimento spazio-sopra">${L('Ti mando una mail per confermarlo: vale solo dopo il clic. Serve a questo e basta, e lo togli quando vuoi dalla scheda Dirette.', 'I send you a mail to confirm it: it only counts after the click. It is used for this and nothing else, and you remove it whenever you want from the Streams tab.', 'Te mando un correo para confirmarla: solo vale tras el clic. Sirve para esto y nada más, y la quitas cuando quieras desde la pestaña Directos.')}</p>
+    </div>
+    <div class="nov-piede">
+      <button class="btn secondario mini" id="inv-posta-no">${L('No, grazie', 'No, thanks', 'No, gracias')}</button>
+      <button class="btn" id="inv-posta-si">${L('Mandami la conferma', 'Send me the confirmation', 'Mándame la confirmación')}</button>
+    </div>`;
+  document.body.appendChild(f);
+  f.addEventListener('close', () => {
+    f.remove();
+    api('/api/streamer/posta/invito', { method: 'POST', body: {} }).catch(() => {  });
+  });
+  f.querySelector('#inv-posta-no')?.addEventListener('click', () => f.close());
+  f.querySelector('#inv-posta-si')?.addEventListener('click', (ev) => conErrore(async () => {
+    const email = (document.getElementById('inv-posta-mail')?.value || '').trim();
+    if (!email) { toast(L('Scrivi il tuo indirizzo.', 'Type your address.', 'Escribe tu dirección.'), 'errore'); return; }
+    const b = ev.currentTarget; b.disabled = true;
+    try {
+      await api('/api/streamer/posta', { method: 'POST', body: { email } });
+      toast(L('Ti ho scritto: apri la mail e conferma.', 'I wrote to you: open the mail and confirm.', 'Te he escrito: abre el correo y confirma.'));
+      f.close();
+    } finally { b.disabled = false; }
+  }));
+  f.showModal();
 }
 
 let _avvisatoRapporti = false;
@@ -309,7 +349,7 @@ function statoDemo() {
     ruolo: ctx.role,
     identita: 'andryx_demo', identitaDisplay: 'Andryx',
     tier: 'community', stripeAttivo: false,
-    rapportiNuovi: 1, postaDisponibile: true,
+    rapportiNuovi: 1, postaDisponibile: true, invitoPosta: false,
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display },
     isAdmin: false,
@@ -667,7 +707,10 @@ function _demoGet(via) {
       rapporto: { telegram: true, mail: true },
       posta: { disponibile: true, email: 'andry@esempio.it', confermata: true, inAttesa: false },
       rapporti: [
-        { id: 3, inizio: 1789574400000, fine: 1789583040000, letto: false, inviato: 'telegram,mail', ts: 1789583040000, dati: { durataMs: 8640000, picco: 61, media: 44, giri: 28, messaggi: 1240, persone: 96, top: [{ user: 'lucaplays', n: 120 }, { user: 'giada_ttv', n: 98 }, { user: 'marco99', n: 77 }], follow: 14, sub: 5, regali: 2, raid: 1, raidSpettatori: 35, presenti: 71, primeVolte: 9, clip: 4, donazioni: 2, donazioniCent: 1500 } },
+        { id: 3, inizio: 1789574400000, fine: 1789583040000, letto: false, inviato: 'telegram,mail', ts: 1789583040000, dati: { durataMs: 8640000, picco: 61, media: 44, giri: 28, messaggi: 1240, persone: 96, top: [{ user: 'lucaplays', n: 120 }, { user: 'giada_ttv', n: 98 }, { user: 'marco99', n: 77 }], follow: 14, sub: 5, regali: 2, raid: 1, raidSpettatori: 35, presenti: 71, primeVolte: 9, clip: 2, donazioni: 2, donazioniCent: 1500, clipElenco: [
+          { url: 'https://clips.twitch.tv/EsempioUno', motivo: 'la chat si è accesa', ts: 1789578840000 },
+          { url: 'https://clips.twitch.tv/EsempioDue', motivo: 'reazione al jumpscare', ts: 1789581720000 },
+        ] } },
         { id: 2, inizio: 1789401600000, fine: 1789410960000, letto: true, inviato: 'telegram', ts: 1789410960000, dati: { durataMs: 9360000, picco: 48, media: 33, giri: 31, messaggi: 980, persone: 80, top: [{ user: 'giada_ttv', n: 101 }, { user: 'il_nonno', n: 64 }, { user: 'sara_gg', n: 52 }], follow: 9, sub: 3, regali: 0, raid: 0, raidSpettatori: 0, presenti: 58, primeVolte: 5, clip: 2, donazioni: 0, donazioniCent: 0 } },
         { id: 1, inizio: 1789228800000, fine: 1789236000000, letto: true, inviato: '', ts: 1789236000000, dati: { durataMs: 7200000, picco: 39, media: 27, giri: 24, messaggi: 610, persone: 54, top: [{ user: 'marco99', n: 70 }, { user: 'lucaplays', n: 66 }, { user: 'sara_gg', n: 40 }], follow: 6, sub: 1, regali: 0, raid: 0, raidSpettatori: 0, presenti: 40, primeVolte: 3, clip: 1, donazioni: 1, donazioniCent: 500 } },
       ],
@@ -12713,7 +12756,17 @@ function cartaRapporto(r) {
       ${d.clip ? num(d.clip, 'clip') : ''}${d.donazioni ? num(euro(d.donazioniCent), L(`donazioni (${d.donazioni})`, `donations (${d.donazioni})`, `donaciones (${d.donazioni})`)) : ''}
     </div>
     ${d.top?.length ? `<p class="rap-top">${L('Più attivi', 'Most active', 'Más activos')}: ${d.top.map((t) => `<strong>${esc(t.user)}</strong> (${t.n})`).join(', ')}</p>` : ''}
+    ${clipRapporto(d.clipElenco)}
   </div>`;
+}
+
+function clipRapporto(elenco) {
+  const clip = (Array.isArray(elenco) ? elenco : []).filter((c) => c?.url);
+  if (!clip.length) return '';
+  const ora = (ts) => new Date(Number(ts) || 0).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  return `<div class="rap-clip">${clip.map((c) => `<a href="${esc(c.url)}" target="_blank" rel="noopener">
+      <strong>${esc(c.motivo || L('Clip della diretta', 'Stream clip', 'Clip del directo'))}</strong>
+      <span>${esc(ora(c.ts))}</span></a>`).join('')}</div>`;
 }
 
 function canaliRapportoHtml(d) {
