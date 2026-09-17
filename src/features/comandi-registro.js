@@ -36,6 +36,7 @@ export const MODULI = {
   presenze: { nome: ['Serie di presenze', 'Attendance streaks', 'Rachas de presencia'], file: 'presenze.js', acceso: (s) => (s.presenze?.attivo) !== false },
   base: { nome: ['Comandi pronti', 'Built-in commands', 'Comandos de serie'], file: 'comandibase.js', acceso: (s) => (s.comandiBase?.attivo) !== false },
   compleanni: { nome: ['Compleanni', 'Birthdays', 'Cumpleaños'], file: 'compleanni.js', acceso: (s) => !!(s.chatAuguri?.attivo) },
+  subathon: { nome: ['Subathon', 'Subathon', 'Subathon'], file: 'subathon.js', acceso: (s) => !!(s.overlayTimer?.attivo && s.overlayTimer?.subathon?.attivo) },
   chat: { nome: ['Gestione dei comandi dalla chat', 'Managing commands from chat', 'Gestión de comandos desde el chat'], file: 'comandichat.js', acceso: (s) => !!(s.comandiChat?.attivo) },
   battute: { nome: ['Battute', 'Jokes', 'Chistes'], file: 'battute.js', acceso: (s) => s.battute !== false },
   vip: { nome: ['VIP', 'VIP', 'VIP'], file: 'vip.js', acceso: () => true },
@@ -129,6 +130,9 @@ export const COMANDI = [
     cosa: ['Dice a quante dirette di fila è stato presente chi lo scrive, o il nome dopo il comando, e a quante in tutto.', 'Says how many streams in a row the writer, or the name after the command, has attended, and how many overall.', 'Dice a cuántos directos seguidos ha estado quien lo escribe, o el nombre tras el comando, y a cuántos en total.'] },
   { id: 'classificaserie', modulo: 'presenze', nomi: ['classificaserie', 'serietop', 'topserie', 'presenzetop'], titolo: ['Classifica delle serie', 'Streak leaderboard', 'Clasificación de rachas'],
     cosa: ['Chi è venuto a più dirette di fila.', 'Who has attended the most streams in a row.', 'Quién ha estado en más directos seguidos.'] },
+
+  { id: 'subathon', modulo: 'subathon', nomi: ['subathon', 'quantomanca'], titolo: ['Quanto manca', 'How long left', 'Cuánto queda'],
+    cosa: ['Dice quanto manca alla fine del subathon.', 'Says how long is left before the subathon ends.', 'Dice cuánto queda para el final del subathon.'], attesa: 5 },
 
   { id: 'compleanno', modulo: 'compleanni', nomi: ['compleanno', 'compleanni', 'birthday'], titolo: ['Il mio compleanno', 'My birthday', 'Mi cumpleaños'],
     cosa: ['Chi lo scrive si segna il compleanno (!compleanno 25/12), lo rilegge o lo toglie con «via».', 'The writer sets their birthday (!compleanno 25/12), reads it back or removes it with «via».', 'Quien lo escribe apunta su cumpleaños (!compleanno 25/12), lo consulta o lo quita con «via».'] },

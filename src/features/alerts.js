@@ -5,6 +5,7 @@
 // Riusa il canale SSE degli effetti (EffectsEngine.emit) e i suoni PRESET.
 // Tutta la configurazione (e lo stato dei widget) vive in streamers.settings.
 import { streamers, effects as effectsDb } from '../db.js';
+import * as subathon from './subathon.js';
 import * as stemmi from './badges.js';
 import * as emote from './emotes.js';
 import { makeLog } from '../logger.js';
@@ -102,8 +103,21 @@ export class AlertsEngine {
       // widget persistenti: si aggiornano a prescindere dall'alert
       if (kind === 'follow') this._aggiornaWidget(channel, 'ultimoFollower', vars.user);
       if (kind === 'sub') this._aggiornaWidget(channel, 'ultimoSub', vars.user);
+      // I SUB REGALATI ARRIVANO DUE VOLTE. Twitch manda un `channel.subscribe`
+      // per OGNI abbonamento regalato, piu' un `channel.subscription.gift` per
+      // la raffica: contarli tutti e due vuol dire contare venti regali
+      // ventuno volte. L'annuncio della raffica serve all'alert, non al conto.
+      const regalo = type === 'channel.subscription.gift';
       // l'obiettivo conta gli eventi veri, non una stima: passano tutti di qui
-      this._contaGoal(channel, kind, kind === 'cheer' ? Number(vars.bits) || 0 : 1);
+      if (!regalo) this._contaGoal(channel, kind, kind === 'cheer' ? Number(vars.bits) || 0 : 1);
+      // il subathon allunga il conto alla rovescia, se lo streamer lo ha acceso
+      if (!regalo && (kind === 'sub' || kind === 'cheer')) {
+        subathon.suEvento(channel, {
+          tipo: kind === 'cheer' ? 'bit' : 'sub',
+          quanti: kind === 'cheer' ? Number(vars.bits) || 0 : 1,
+          chi: vars.user,
+        }, { say: this.say, spingi: (ch, fine) => this.effects?.emit?.(ch, { tipo: 'timer', fine }) });
+      }
       // alert
       const a = s?.alerts;
       if (!a || a.attivo === false) return;
@@ -128,7 +142,11 @@ export class AlertsEngine {
       if (importo <= 0) return false;
       const cfgD = s.donazioni || {};
       const vars = { user: d.user || 'qualcuno', importo: formattaImporto(importo, d.valuta || cfgD.valuta || 'EUR'), messaggio: d.messaggio || '' };
-      if (!soloAvviso) this._contaGoal(channel, 'donazione', importo);
+      if (!soloAvviso) {
+        this._contaGoal(channel, 'donazione', importo);
+        subathon.suEvento(channel, { tipo: 'euro', quanti: importo, chi: vars.user },
+          { say: this.say, spingi: (ch, fine) => this.effects?.emit?.(ch, { tipo: 'timer', fine }) });
+      }
       const a = s.alerts;
       const conf = a && a.attivo !== false ? a.donazione : null;
       if (conf && conf.attivo !== false && (soloAvviso || importo >= (Number(conf.minImporto) || 0))) this._spara(channel, a, 'donazione', conf, vars);

@@ -42,6 +42,7 @@ import * as youtube from './features/youtube.js';
 import * as instagram from './features/instagram.js';
 import * as feed from './features/feed.js';
 import * as compleanniFeat from './features/compleanni.js';
+import * as subathonFeat from './features/subathon.js';
 import * as gamesbridge from './features/gamesbridge.js';
 import * as quotes from './features/quotes.js';
 import * as battute from './features/battute.js';
@@ -815,6 +816,9 @@ export class BotManager {
     // il proprio compleanno (!compleanno GG/MM): opt-in, vive con gli auguri in chat
     try { compleanniFeat.tryComando(cmdMsg, parla); }
     catch (e) { log.error(`#${login} compleanno:`, e?.message || e); }
+    // quanto manca alla fine del subathon (!subathon)
+    try { subathonFeat.tryComando(cmdMsg, parla); }
+    catch (e) { log.error(`#${login} subathon:`, e?.message || e); }
     // comandi base pronti (!so/!shoutout, !followage, !uptime): opt-out e mai
     // sopra ai comandi/Moduli creati dallo streamer (quelli vincono).
     comandibase.tryComando(this.helix, cmdMsg, parla)
