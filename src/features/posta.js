@@ -42,6 +42,14 @@ export function dominio() {
 }
 export function selettore() { return (env('MAIL_DKIM_SELETTORE') || 'sb1').toLowerCase().replace(/[^a-z0-9-]/g, '') || 'sb1'; }
 export function mittente() { return env('MAIL_DA') || `rapporti@${dominio()}`; }
+// IL NOME CON CUI CI SI PRESENTA (EHLO). Chi riceve posta chiude un cerchio: il
+// nome detto nell'EHLO deve puntare all'IP da cui arriva la mail, e quell'IP
+// deve dichiarare lo stesso nome nel suo reverse DNS. Il dominio del sito va
+// bene finche' l'IP dichiara proprio quello; ma un IP di posta di solito si
+// chiama `mail.<dominio>`, e allora il cerchio non si chiude da se'. Percio' il
+// nome e' una cosa che si dice, non una che si deduce: MAIL_HELO. Di serie
+// resta il dominio, che e' il caso in cui il cerchio si chiude gia'.
+export function nomeHelo() { return (env('MAIL_HELO') || dominio()).toLowerCase(); }
 export const spenta = () => /^(no|off)$/i.test(env('MAIL'));
 export function chiavePrivata(file = CHIAVE_FILE) {
   try { return existsSync(file) ? readFileSync(file, 'utf8') : ''; } catch { return ''; }
@@ -183,7 +191,7 @@ async function consegnaA({ host, port = 25, tls: implicito = false }, { a, da, m
 
 // Consegna un messaggio gia' composto. `via` forza un server (i collaudi, o un
 // relay di casa); senza, gli MX del destinatario in ordine di priorita'.
-export async function consegna({ a, da = mittente(), messaggio, helo = dominio(), via = null, timeoutMs = TIMEOUT_MS }) {
+export async function consegna({ a, da = mittente(), messaggio, helo = nomeHelo(), via = null, timeoutMs = TIMEOUT_MS }) {
   const dest = String(a || '').split('@')[1];
   if (!dest) throw errore('destinatario', 'indirizzo senza dominio', true);
   const tentativi = via ? [via] : await scambiatori(dest.toLowerCase());
@@ -205,7 +213,7 @@ export async function invia({ a, oggetto, testo = '', html = '', via = null }) {
   const da = mittente(), dom = dominio();
   const m = componi({ da, a, oggetto, testo, html, dom });
   const intestazioni = pem ? [firmaDkim({ intestazioni: m.intestazioni, corpo: m.corpo, dom, sel: selettore(), pem }), ...m.intestazioni] : m.intestazioni;
-  const esito = await consegna({ a, da, messaggio: serializza({ intestazioni, corpo: m.corpo }), helo: dom, via });
+  const esito = await consegna({ a, da, messaggio: serializza({ intestazioni, corpo: m.corpo }), helo: nomeHelo(), via });
   log.info(`posta a ${a.replace(/^(.).*@/, '$1…@')}: ${esito.risposta || 'consegnata'} (${esito.host})`);
   return { ...esito, id: m.id };
 }

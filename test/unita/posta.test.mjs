@@ -128,3 +128,22 @@ test('il guscio HTML: i colori del tema, il testo protetto, un tasto', () => {
   assert.ok(p.tastoHtml('Conferma', 'https://x.example/c?t=1').includes('href="https://x.example/c?t=1"'));
   assert.ok(p.rigaHtml('Picco', 48).includes('>48<'));
 });
+
+test('il nome con cui ci si presenta e\' una cosa che si dice, e la mail lo usa', async () => {
+  // Il cerchio che chiude chi riceve: EHLO → A → l'IP che manda → reverse DNS →
+  // lo stesso nome. Il dominio del sito va bene finche' l'IP dichiara proprio
+  // quello; quando l'IP si chiama `mail.<dominio>` — il caso normale — il nome
+  // va detto, se no il cerchio resta aperto e la mail perde punti.
+  assert.equal(p.nomeHelo(), 'prova.example', 'di serie e\' il dominio');
+  process.env.MAIL_HELO = 'Mail.Prova.Example';
+  try {
+    assert.equal(p.nomeHelo(), 'mail.prova.example', 'e si scrive come si vuole');
+    const f = await serverFinto();
+    try {
+      await p.invia({ a: 'io@altro.example', oggetto: 'x', testo: 'y', via: f.via });
+      await new Promise((ok) => setTimeout(ok, 50));
+      assert.equal(f.st.comandi[0], 'EHLO mail.prova.example', 'una mail vera si presenta con quel nome');
+    } finally { f.chiudi(); }
+  } finally { delete process.env.MAIL_HELO; }
+  assert.equal(p.nomeHelo(), 'prova.example');
+});
