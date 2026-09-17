@@ -65,6 +65,11 @@ export function contiGoal(settings) {
   return { [lista[0].id]: Number(vecchio[lista[0].tipo]) || 0 };
 }
 
+// Da dove arriva un messaggio. Chi legge da Twitch non scrive la piattaforma
+// (era l'unica quando il bot e' nato), quindi l'assenza vale 'twitch': cosi' i
+// canali che non hanno mai collegato altro non cambiano di una virgola.
+const piattaformaDi = (msg) => String(msg?.piattaforma || 'twitch').toLowerCase();
+
 export class AlertsEngine {
   constructor({ effects, say } = {}) {
     this.effects = effects || null;
@@ -313,6 +318,10 @@ export class AlertsEngine {
       if (!testo || testo.startsWith('!')) return;
       this.effects?.emit?.(channel, {
         tipo: 'chat',
+        // DA DOVE ARRIVA. E' un dato del messaggio, non un'impostazione: se non
+        // viaggia con lui, a schermo una riga di Kick e una di Twitch sono la
+        // stessa cosa, e nessuna scelta a valle puo' piu' distinguerle.
+        piattaforma: piattaformaDi(msg),
         user: msg.display || msg.user || '',
         colore: msg?.tags?.color || '',
         testo: testo.slice(0, 200),
@@ -343,6 +352,7 @@ export class AlertsEngine {
       if (!testo) return;
       this.effects.emit(channel, {
         tipo: 'chat_raw',
+        piattaforma: piattaformaDi(msg),
         user: msg.display || msg.user || '',
         colore: msg?.tags?.color || '',
         testo: testo.slice(0, 300),

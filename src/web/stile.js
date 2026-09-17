@@ -165,6 +165,10 @@ export const normChatStile = (st) => {
     spaziatura: clampInt(st.spaziatura, -2, 8, 0),
     maiuscolo: unoDi(st.maiuscolo, MAIUSC_OVL, 'no'),
     ombraTesto: st.ombraTesto === true,
+    // Quando in un riquadro finiscono piu' chat, una riga non dice piu' da sola
+    // da dove viene. Il segno e' spento di default: chi trasmette su una sola
+    // piattaforma non deve vedersi comparire un simbolo che non gli serve.
+    segnaDaDove: st.segnaDaDove === true,
   };
 };
 export const normWidgetStile = (st) => {

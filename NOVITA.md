@@ -30,6 +30,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - La mail del rapporto adesso apre dicendo com'è andata, non con una tabella. In fondo trovi le clip della serata, una per una, da riaprire. [vai: dirette]
 - Se non hai ancora messo un indirizzo, la prima volta che entri te lo chiedo una volta sola. Dici no e non te lo chiedo più. [vai: dirette]
 - Basta tenere il pannello aperto sul computer della diretta: si ricollega da solo alla regia appena lo apri, e riprova quando il programma si chiude. [vai: consolify]
+- Chi trasmette su due piattaforme sceglie quali chat vanno a schermo in ogni overlay. Per tenerle divise ne fai un secondo con l'altra accesa: ha un link suo. [vai: alert]
+- Quando due chat stanno nello stesso riquadro, ogni riga può portare un segno che dice da dove arriva. Lo accendi in «Segna da dove arriva». [vai: alert]
+- Togliere una chat dallo schermo non la spegne: il bot continua a leggerla e a rispondere. [vai: alert]
 
 ## 2026-09-16
 

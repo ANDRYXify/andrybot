@@ -124,6 +124,15 @@ const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {})
 // obiettivi e contatori avevano UNA posizione per tutto il canale: li spostavi
 // in un overlay e si spostavano in tutti.
 const CHIAVE_EL = /^(alert|chat|wf|ws|musica|timer|pen|goal:[a-z0-9_-]{1,24}|cont:[a-z0-9_]{1,30})$/i;
+// LE CHAT CHE UN OVERLAY MOSTRA. Una chat non e' un elemento a se': e' una
+// SORGENTE del riquadro della chat, quindi si accende e si spegne come ogni
+// altra cosa dell'overlay ma non ha una posizione propria. Tenerle divise
+// vuol dire un secondo overlay con l'altra sorgente accesa, non un secondo
+// riquadro qui dentro. Chi non e' in questa lista non si puo' spegnere, e
+// quindi si vede: e' la stessa regola del resto (si scrive solo il «no»), ed e'
+// il motivo per cui aggiungere una piattaforma domani non rompe niente.
+const CHAT_DA = ['twitch', 'kick'];
+const CHIAVE_CHAT = new RegExp(`^chat:(${CHAT_DA.join('|')})$`, 'i');
 // Cosa compare in questo overlay: le nove famiglie piu' le singole voci che si
 // possono togliere una a una. Si scrive solo il «no»: quel che non c'e' compare,
 // cosi' un obiettivo nuovo entra acceso ovunque senza dover toccare niente.
@@ -131,7 +140,7 @@ const _mostraDiOverlay = (m) => {
   const q = ELEM_OVERLAY.reduce((acc, k) => (acc[k] = m[k] !== false, acc), {});
   if (m && typeof m === 'object') {
     for (const k of Object.keys(m).slice(0, 120)) {
-      if (q[k] !== undefined || !CHIAVE_EL.test(k)) continue;
+      if (q[k] !== undefined || !(CHIAVE_EL.test(k) || CHIAVE_CHAT.test(k))) continue;
       if (m[k] === false) q[k] = false;
     }
   }
