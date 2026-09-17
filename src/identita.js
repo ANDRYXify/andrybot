@@ -31,9 +31,9 @@ const NOME = '[a-z0-9_]{1,30}';
 // LE PIATTAFORME. Twitch ha il prefisso vuoto perché è la casa: i canali nati
 // prima dei prefissi si chiamano ancora come si chiamavano.
 export const PIATTAFORME = [
-  { id: 'twitch', prefisso: '' },
-  { id: 'kick', prefisso: 'kick.' },
-  { id: 'youtube', prefisso: 'yt.' },
+  { id: 'twitch', prefisso: '', casa: 'https://www.twitch.tv/' },
+  { id: 'kick', prefisso: 'kick.', casa: 'https://kick.com/' },
+  { id: 'youtube', prefisso: 'yt.', casa: 'https://www.youtube.com/@' },
 ];
 
 const CON_PREFISSO = PIATTAFORME.filter((p) => p.prefisso);
@@ -79,6 +79,16 @@ export function nomeSu(login) {
 // Questo canale vive su questa piattaforma?
 export function eSu(piattaforma, login) {
   return piattaformaDi(login) === piattaforma;
+}
+
+// L'indirizzo pubblico del canale, quello che si apre cliccando. Sta qui e non
+// dove serve perche' e' una conseguenza della piattaforma, come il prefisso: due
+// elenchi di indirizzi, prima o poi, direbbero due cose diverse.
+export function urlCanale(login) {
+  const nome = nomeSu(login);
+  if (!nome) return '';
+  const p = PIATTAFORME.find((x) => x.id === piattaformaDi(login));
+  return p ? p.casa + nome : '';
 }
 
 // --- le scorciatoie per piattaforma ---------------------------------

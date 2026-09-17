@@ -1530,6 +1530,11 @@ export class BotManager {
   }
 
   // stato riassuntivo per la dashboard
+  // Chi e' in onda adesso. Lo stato ce l'ha gia' il bot per mille altre cose:
+  // chi lo chiede da fuori (la vetrina) non deve andarlo a chiedere di nuovo
+  // alla piattaforma.
+  inDiretta(login) { return this._liveState.get(String(login || '').toLowerCase()) === true; }
+
   status() {
     return {
       running: this.running,

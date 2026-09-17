@@ -84,6 +84,7 @@ const CAPACITA = [
     { scheda: 'regia', pacc: 'free', t: ['Regia della diretta', 'Stream control room', 'Realización del directo'], d: ['Titolo, categoria, tag, marker, pubblicità e raid dal pannello.', 'Title, category, tags, markers, ads and raids from the panel.', 'Título, categoría, etiquetas, marcadores, anuncios y raids desde el panel.'] },
     { scheda: 'dirette', pacc: 'free', t: ['Il rapporto di ogni diretta', 'A report for every stream', 'El informe de cada directo'], d: ['Appena chiudi: durata, picco di spettatori, chat e chi ha scritto di più, nuovi follower e sub, raid, presenti, clip e donazioni. Resta nel pannello e, se vuoi, ti arriva su Telegram o via mail.', 'As soon as you end: duration, viewer peak, chat and top chatters, new followers and subs, raids, attendees, clips and donations. It stays in the panel and, if you want, reaches you on Telegram or by email.', 'En cuanto cierras: duración, pico de espectadores, chat y quién más ha escrito, nuevos seguidores y subs, raids, presentes, clips y donaciones. Se queda en el panel y, si quieres, te llega en Telegram o por correo.'] },
     { scheda: 'statistiche', pacc: 'free', t: ['I numeri del canale, in un posto solo', 'Your channel numbers, in one place', 'Los números del canal, en un solo sitio'], d: ['Dirette, ore in onda, picco di spettatori, chat, follower e donazioni, per sette giorni, trenta o da sempre. Con le classifiche di chi c’è sempre, di chi scrive e di chi guarda.', 'Streams, hours on air, viewer peak, chat, followers and donations, over seven days, thirty or all time. With the leaderboards of who is always there, who writes and who watches.', 'Directos, horas en antena, pico de espectadores, chat, seguidores y donaciones, en siete días, treinta o desde siempre. Con las clasificaciones de quién está siempre, quién escribe y quién mira.'] },
+    { scheda: 'stato', pacc: 'free', t: ['La tua diretta sulla nostra home', 'Your stream on our home', 'Tu directo en nuestra home'], d: ['Quando sei in onda il tuo canale pu\u00f2 comparire fra le dirette sulla pagina iniziale di SocialBot, con il titolo e cosa stai giocando. Lo accendi tu e lo spegni quando vuoi: se non lo accendi, non compari.', 'When you are live your channel can show up among the streams on the SocialBot home page, with the title and what you are playing. You turn it on and off whenever you want: if you do not turn it on, you do not appear.', 'Cuando est\u00e1s en directo tu canal puede aparecer entre los directos de la p\u00e1gina de inicio de SocialBot, con el t\u00edtulo y a qu\u00e9 juegas. Lo enciendes y lo apagas cuando quieras: si no lo enciendes, no apareces.'] },
     { scheda: 'stato', pacc: 'free', t: ['Le nostre mail si riconoscono', 'Our mails can be told apart', 'Nuestros correos se reconocen'], d: ['In fondo a ogni mail che ti mandiamo c’è un codice che cambia ogni lunedì e lo trovi solo dentro al tuo pannello. Se non combacia, quella mail non l’abbiamo scritta noi.', 'At the bottom of every mail we send you there is a code that changes every Monday and lives only inside your panel. If it does not match, we did not write that mail.', 'Al final de cada correo que te enviamos hay un código que cambia cada lunes y solo está dentro de tu panel. Si no coincide, ese correo no lo hemos escrito nosotros.'] },
 
     { scheda: 'consolify', pacc: 'free', t: ['CONSOLify: i tasti del tuo canale', 'CONSOLify: your channel’s keys', 'CONSOLify: las teclas de tu canal'], d: ['Una plancia di tasti sul telefono, sul tablet o su una tastiera fisica. Ogni tasto fa una fila di cose: manda un suono o un video, dice una frase, cambia scena.', 'A board of keys on your phone, tablet or a physical key pad. Each key runs a row of steps: play a sound or a video, say a line, change scene.', 'Un panel de teclas en el móvil, la tablet o un teclado físico. Cada tecla hace una fila de cosas: lanza un sonido o un vídeo, dice una frase, cambia de escena.'] },
@@ -166,7 +167,33 @@ function heroAnteprima(L) {
 }
 
 
-function corpo(L, l, kick, youtube) {
+// LA FASCIA DELLE DIRETTE. Se non c'e' nessuno in onda non torna una fascia
+// vuota: non torna niente. «Nessuno in diretta ora» su una home e' una casa con
+// le luci spente, e si vede piu' di una casa che non c'e'. La disegna il server
+// dentro al primo HTML, non il browser dopo: una fascia che compare a pagina
+// gia' disegnata sposterebbe in giu' tutto il resto, ed e' esattamente lo scarto
+// che questa home ha passato mesi a togliere.
+function fasciaLive(L, l, dirette) {
+  if (!Array.isArray(dirette) || !dirette.length) return '';
+  const carte = dirette.map((d) => {
+    const conta = Number(d.spettatori) > 0
+      ? `${Number(d.spettatori).toLocaleString(l === 'en' ? 'en-GB' : l === 'es' ? 'es-ES' : 'it-IT')} ${L('spettatori', 'watching', 'viendo')}`
+      : L('in onda', 'on air', 'en directo');
+    return `<a class="vt-dirette-carta" href="${esc(d.url)}" rel="noopener">
+      <span class="vt-dirette-nome">${esc(d.nome)}</span>
+      ${d.categoria ? `<span class="vt-dirette-cat">${esc(d.categoria)}</span>` : ''}
+      ${d.titolo ? `<span class="vt-dirette-tt">${esc(d.titolo)}</span>` : ''}
+      <span class="vt-dirette-pie"><i class="vivo"></i>${esc(conta)}</span>
+    </a>`;
+  }).join('');
+  return `<section class="vt-dirette vt-rivela">
+    <h2 class="vt-dirette-tit">${L('In diretta adesso', 'Live right now', 'En directo ahora')}</h2>
+    <p class="vt-dirette-sotto">${L('Canali che usano SocialBot e hanno scelto di comparire qui.', 'Channels using SocialBot that chose to appear here.', 'Canales que usan SocialBot y han elegido aparecer aquí.')}</p>
+    <div class="vt-dirette-griglia">${carte}</div>
+  </section>`;
+}
+
+function corpo(L, l, kick, youtube, dirette) {
   // con chi ci si registra: Twitch sempre, Kick e YouTube quando la porta e' aperta.
   // L'invito in fondo deve dire le stesse cose dell'apertura: una lista sola.
   const conChi = (o) => { const p = ['Twitch', kick ? 'Kick' : null, youtube ? 'YouTube' : null].filter(Boolean); return p.length > 1 ? p.slice(0, -1).join(', ') + o + p[p.length - 1] : p[0]; };
@@ -218,6 +245,7 @@ function corpo(L, l, kick, youtube) {
       </div>
       <p class="vt-sotto">${L('L’<b>Essenziale è gratis per sempre</b> · nessuna carta richiesta · <a href="/?demo=1">guarda la demo</a>', 'The <b>Essenziale plan is free forever</b> · no card needed · <a href="/?demo=1">see the demo</a>', 'El <b>plan Essenziale es gratis para siempre</b> · sin tarjeta · <a href="/?demo=1">mira la demo</a>')}</p>
       ${heroAnteprima(L)}
+      ${fasciaLive(L, l, dirette)}
     </section>
 
     <section class="vt-sez">
@@ -274,10 +302,10 @@ function corpo(L, l, kick, youtube) {
 // Il markup della vetrina nella lingua chiesta. Funzione PURA: nessun DOM,
 // nessuna richiesta, nessuna data — cosi' i gusci si precalcolano una volta
 // all'avvio e si servono senza rifare niente.
-export function vetrinaHtml(lingua = 'it', { kick = false, youtube = false } = {}) {
+export function vetrinaHtml(lingua = 'it', { kick = false, youtube = false, dirette = [] } = {}) {
   const l = LINGUE.includes(lingua) ? lingua : 'it';
   const L = (it, en, es) => (l === 'en' ? en : l === 'es' ? es : it);
-  return corpo(L, l, kick, youtube);
+  return corpo(L, l, kick, youtube, dirette);
 }
 
 export { ICO as ICONE_VETRINA, NOME_ADDON as PACCHETTI_VETRINA, CAPACITA as FUNZIONI_VETRINA };

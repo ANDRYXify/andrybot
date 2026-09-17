@@ -305,3 +305,64 @@ lui il nome della cache del service worker. Le chat che hanno già l'anteprima
 in cache non la rileggono da sole: su Telegram la si fa rileggere a
 @WebpageBot con «Update preview», su X e Facebook con i loro strumenti di
 verifica dei link.
+
+## La fascia delle dirette sulla home
+
+Sotto l'anteprima dell'overlay, la home mostra chi e' in onda adesso fra chi usa
+il bot. L'idea e' semplice; le decisioni che la rendono onesta sono tre, e sono
+tutte per costruzione, non impostazioni da ricordare.
+
+### Si entra dicendo di si'
+
+Un canale non e' nostro da mettere in mostra. `settings.vetrinaLive` e' **spento
+di serie**: si accende dalla scheda Stato, e appena si spegne quel canale
+sparisce dalla fascia al giro dopo. Non c'e' un modo per finirci per distrazione.
+
+Quel che si vede e' solo quello che e' gia' pubblico sul canale stesso: nome,
+titolo della diretta, categoria, quante persone stanno guardando. Niente che
+riguardi chi guarda.
+
+### Una fascia vuota e' peggio di nessuna fascia
+
+Se non c'e' nessuno in onda, la fascia **non esiste**: niente «nessuno in diretta
+ora». Una casa con le luci spente si vede piu' di una casa che non c'e'. E' la
+stessa ragione per cui non si scrive quanti sono: un numero piccolo si legge
+come un numero piccolo, mentre tre canali in onda sono tre canali in onda.
+
+### La disegna il server, non il browser
+
+La fascia entra nel primo HTML. Non arriva dopo con una chiamata, per due
+motivi:
+
+- una fascia che compare a pagina gia' disegnata spinge in giu' tutto quello che
+  ha sotto, ed e' esattamente lo scarto di layout che questa home ha passato mesi
+  a togliere (vedi `docs/VELOCITA.md`);
+- chi indicizza la pagina la legge com'e', senza dover eseguire niente.
+
+I gusci della home sono precalcolati per lingua all'avvio. Adesso si rifanno
+anche quando l'elenco delle dirette **cambia davvero**, non piu' di una volta al
+minuto e in disparte: chi apre la home non aspetta mai una chiamata a Twitch.
+
+### Chi e' live lo sa gia' il bot
+
+Lo stato live vive nel bot perche' gli serve per mille altre cose. La vetrina lo
+chiede a lui (`inDiretta`), non alla piattaforma. A Twitch si chiede solo il
+contorno — titolo, categoria, spettatori — e si chiede **per tutti i canali in
+una volta sola** (Helix ne accetta cento): cosi' il costo non cresce col numero
+di clienti ne' col numero di visite. Se Twitch non risponde, le carte restano
+senza contorno invece di sparire.
+
+### Il difetto che il collaudo ha trovato
+
+La fotografia in cache teneva dentro di se' anche la richiesta in volo. Ma
+`_foto.inCorso = (async () => { … })()` fissa il bersaglio **prima** di valutare
+quel che le sta a destra, e quella funzione, quando non c'era nessuno in onda,
+finiva senza mai fermarsi: sostituiva `_foto` con la foto nuova, e il valore
+andava a scriversi sull'oggetto vecchio. Chi chiamava riceveva `null` al posto
+dell'elenco — e solo nel caso «non c'e' nessuno in onda», cioe' proprio quando la
+fascia non deve comparire. Guardando la home non si sarebbe visto niente di
+strano, per sempre. La richiesta in volo adesso ha una variabile sua.
+
+`test/unita/vetrina-live.test.mjs` tiene ferme le due regole (il permesso e il
+vuoto), l'ordine per spettatori, l'indirizzo giusto per piattaforma, le carte che
+restano quando Twitch non risponde, e la chiamata che non si ripete a ogni visita.
