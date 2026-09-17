@@ -64,26 +64,40 @@ test('il manuale, la vetrina, la privacy e le novita\' lo raccontano', () => {
   assert.ok(leggi('.env.example').includes('MAIL_DOMINIO=') && leggi('docs/POSTA.md').includes('porta 25'));
 });
 
-test('l\'invito a lasciare l\'indirizzo lo decide il server, e vale una volta sola', () => {
+test('gli inviti li decide il server, e si fanno una volta sola', () => {
   // Una scelta tenuta nel browser ricompare sull'altro computer e sul telefono:
   // chi ha gia' detto no se la ritroverebbe davanti. Percio' la decisione sta in
-  // un posto solo, e la risposta resta con lo streamer dovunque entri.
+  // un posto solo, e la risposta resta con lo streamer dovunque entri. E stanno
+  // in un elenco, non uno per uno: due copie della stessa cosa sono due posti
+  // dove sbagliarla.
   const srv = leggi('src/web/server.js');
-  const me = srv.slice(srv.indexOf('invitoPosta: (() => {'), srv.indexOf('invitoPosta: (() => {') + 420);
-  assert.match(me, /!posta\.attiva\(\) \|\| !isOwner\(req\)/, 'niente invito se la posta e\' spenta o non sei tu');
-  assert.match(me, /s\?\.status !== 'approved'/, 'e nemmeno prima dell\'attivazione');
-  assert.match(me, /s\?\.settings\?\.invitoPosta/, 'chi ha gia\' risposto non lo rivede');
-  assert.match(me, /postaStreamer\.get\(user\.login\)\?\.email/, 'ne\' chi un indirizzo ce l\'ha gia\'');
-  const porta = srv.slice(srv.indexOf("app.post('/api/streamer/posta/invito'"), srv.indexOf("app.delete('/api/streamer/posta'"));
+  const reg = srv.slice(srv.indexOf('const INVITI = ['), srv.indexOf('const INVITI_ID'));
+  assert.match(reg, /\['posta',/, 'l\'invito a lasciare l\'indirizzo');
+  assert.match(reg, /\['vetrina',/, 'e quello a comparire fra le dirette sulla home');
+  assert.match(reg, /!posta\.attiva\(\)/, 'niente invito alla posta se la posta e\' spenta');
+  assert.match(reg, /s\?\.settings\?\.invitoPosta/, 'chi aveva gia\' risposto quando l\'invito era uno solo non lo rivede');
+  assert.match(reg, /postaStreamer\.get\(user\.login\)\?\.email/, 'ne\' chi un indirizzo ce l\'ha gia\'');
+  assert.match(reg, /vetrinaLive !== true/, 'e chi compare gia\' in vetrina non se lo sente chiedere');
+
+  const chi = srv.slice(srv.indexOf('function invitiAperti('), srv.indexOf('function invitiAperti(') + 600);
+  assert.match(chi, /if \(!isOwner\(req\)\) return \[\];/, 'un moderatore non sceglie per il proprietario');
+  assert.match(chi, /s\?\.status !== 'approved'/, 'e non si chiede niente prima dell\'attivazione');
+  assert.match(chi, /!visti\[id\]/, 'chi ha gia\' risposto non lo rivede');
+
+  const porta = srv.slice(srv.indexOf("app.post('/api/streamer/invito/:id'"), srv.indexOf("app.delete('/api/streamer/posta'"));
   assert.match(porta, /requireOwner/, 'la porta ha il suo guardiano');
-  assert.match(porta, /invitoPosta: Date\.now\(\)/, 'e la risposta si scrive fra le impostazioni dello streamer');
+  assert.match(porta, /INVITI_ID\.includes\(id\)/, 'e l\'id si controlla: da qui non si scrivono chiavi qualunque');
+  assert.match(porta, /invitiVisti/, 'la risposta si scrive fra le impostazioni dello streamer');
 
   const app = leggi('src/web/public/app.js');
-  const f = app.slice(app.indexOf('function invitoPosta()'), app.indexOf('function esitoPostaDaIndirizzo('));
-  assert.match(f, /if \(!stato\?\.invitoPosta\) return;/, 'il pannello non decide: guarda cosa gli ha detto il server');
+  const f = app.slice(app.indexOf('function invito()'), app.indexOf('let _avvisatoRapporti'));
+  assert.match(f, /\(stato\?\.inviti \|\| \[\]\)/, 'il pannello non decide: guarda cosa gli ha detto il server');
   assert.match(f, /dialog\[open\]/, 'una finestra sola alla volta: aspetta che si chiuda quella delle novita\'');
-  assert.match(f, /addEventListener\('close'[\s\S]{0,200}\/api\/streamer\/posta\/invito/, 'la risposta si segna comunque sia andata, si\' o no');
-  assert.match(f, /\/api\/streamer\/posta'/, 'e il si\' passa dalla porta di sempre, quella che manda la conferma');
+  assert.match(f, /stato\.inviti = \[\];/, 'e ne fa una per accesso, non una fila di domande');
+  assert.match(f, /addEventListener\('close'[\s\S]{0,200}\/api\/streamer\/invito\//, 'la risposta si segna comunque sia andata, si\' o no');
+  const reg2 = app.slice(app.indexOf('const INVITI = {'), app.indexOf('function invito()'));
+  assert.match(reg2, /\/api\/streamer\/posta'/, 'il si\' alla posta passa dalla porta di sempre, quella che manda la conferma');
+  assert.match(reg2, /vetrinaLive: true/, 'e il si\' alla vetrina accende l\'interruttore');
 });
 
 test('le clip della serata si riaprono: nella carta della scheda, non solo nella mail', () => {

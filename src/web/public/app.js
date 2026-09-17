@@ -255,44 +255,65 @@ async function caricaStato() {
   esitoPostaDaIndirizzo();
   avvisaRapporti();
   collegaRegiaRicordata();
-  invitoPosta();
+  invito();
 }
 
-function invitoPosta() {
-  if (!stato?.invitoPosta) return;
+const INVITI = {
+  posta: () => ({
+    titolo: L('Ti mando com’è andata, quando chiudi?', 'Shall I send you how it went, when you stop?', '¿Te mando qué tal fue, cuando cierras?'),
+    testo: L('Appena finisci la diretta ti arriva il riepilogo: spettatori, chat, follower nuovi e le clip da riguardare.', 'As soon as your stream ends you get the recap: viewers, chat, new followers and the clips to watch again.', 'En cuanto cierras el directo te llega el resumen: espectadores, chat, seguidores nuevos y los clips para volver a verlos.'),
+    corpo: `<label class="campo" for="inv-posta-mail">${L('Il tuo indirizzo', 'Your address', 'Tu dirección')}</label>
+      <input type="email" id="inv-posta-mail" class="campo-largo" placeholder="tu@esempio.it" autocomplete="email">
+      <p class="suggerimento spazio-sopra">${L('Ti mando una mail per confermarlo: vale solo dopo il clic. Serve a questo e basta, e lo togli quando vuoi dalla scheda Dirette.', 'I send you a mail to confirm it: it only counts after the click. It is used for this and nothing else, and you remove it whenever you want from the Streams tab.', 'Te mando un correo para confirmarla: solo vale tras el clic. Sirve para esto y nada más, y la quitas cuando quieras desde la pestaña Directos.')}</p>`,
+    si: L('Mandami la conferma', 'Send me the confirmation', 'Mándame la confirmación'),
+    fai: async () => {
+      const email = (document.getElementById('inv-posta-mail')?.value || '').trim();
+      if (!email) { toast(L('Scrivi il tuo indirizzo.', 'Type your address.', 'Escribe tu dirección.'), 'errore'); return false; }
+      await api('/api/streamer/posta', { method: 'POST', body: { email } });
+      toast(L('Ti ho scritto: apri la mail e conferma.', 'I wrote to you: open the mail and confirm.', 'Te he escrito: abre el correo y confirma.'));
+      return true;
+    },
+  }),
+  vetrina: () => ({
+    titolo: L('Ti va di comparire sulla nostra home quando sei in diretta?', 'Fancy showing up on our home when you are live?', '¿Te apetece aparecer en nuestra home cuando estés en directo?'),
+    testo: L('Sulla pagina iniziale di SocialBot c’è una fascia con chi è in onda adesso. Se vuoi ci sei anche tu.', 'The SocialBot home page has a band with who is on air right now. If you like, you are in it too.', 'La página de inicio de SocialBot tiene una franja con quién está en directo ahora. Si quieres, tú también.'),
+    corpo: `<p class="suggerimento">${L('Si vedono il tuo nome, il titolo della diretta, la categoria e quante persone ti guardano, con un collegamento al tuo canale. Niente dei tuoi spettatori, e niente che non sia già pubblico sul tuo canale. Lo spegni quando vuoi dalla scheda Stato.', 'It shows your name, the stream title, the category and how many people are watching, with a link to your channel. Nothing about your viewers, and nothing that is not already public on your channel. You turn it off whenever you want from the Status tab.', 'Se ven tu nombre, el título del directo, la categoría y cuánta gente te ve, con un enlace a tu canal. Nada de tus espectadores, y nada que no sea ya público en tu canal. Lo apagas cuando quieras desde la pestaña Estado.')}</p>`,
+    si: L('Sì, fammi comparire', 'Yes, show me', 'Sí, muéstrame'),
+    fai: async () => {
+      await salvaImpostazioni({ vetrinaLive: true }, null);
+      toast(L('Comparirai fra le dirette quando sei in onda ✓', 'You will show up among the streams when you are live ✓', 'Aparecerás entre los directos cuando estés en directo ✓'));
+      return true;
+    },
+  }),
+};
+
+function invito() {
+  const id = (stato?.inviti || []).find((x) => INVITI[x]);
+  if (!id) return;
   const gia = document.querySelector('dialog[open]');
-  if (gia) { gia.addEventListener('close', () => invitoPosta(), { once: true }); return; }
-  stato.invitoPosta = false;
+  if (gia) { gia.addEventListener('close', () => invito(), { once: true }); return; }
+  stato.inviti = [];
+  const v = INVITI[id]();
   const f = document.createElement('dialog');
   f.className = 'nov-finestra';
   f.innerHTML = `<div class="nov-testa">
-      <h2>${L('Ti mando com’è andata, quando chiudi?', 'Shall I send you how it went, when you stop?', '¿Te mando qué tal fue, cuando cierras?')}</h2>
-      <p class="suggerimento">${L('Appena finisci la diretta ti arriva il riepilogo: spettatori, chat, follower nuovi e le clip da riguardare.', 'As soon as your stream ends you get the recap: viewers, chat, new followers and the clips to watch again.', 'En cuanto cierras el directo te llega el resumen: espectadores, chat, seguidores nuevos y los clips para volver a verlos.')}</p>
+      <h2>${v.titolo}</h2>
+      <p class="suggerimento">${v.testo}</p>
     </div>
-    <div class="nov-corpo">
-      <label class="campo" for="inv-posta-mail">${L('Il tuo indirizzo', 'Your address', 'Tu dirección')}</label>
-      <input type="email" id="inv-posta-mail" class="campo-largo" placeholder="tu@esempio.it" autocomplete="email">
-      <p class="suggerimento spazio-sopra">${L('Ti mando una mail per confermarlo: vale solo dopo il clic. Serve a questo e basta, e lo togli quando vuoi dalla scheda Dirette.', 'I send you a mail to confirm it: it only counts after the click. It is used for this and nothing else, and you remove it whenever you want from the Streams tab.', 'Te mando un correo para confirmarla: solo vale tras el clic. Sirve para esto y nada más, y la quitas cuando quieras desde la pestaña Directos.')}</p>
-    </div>
+    <div class="nov-corpo">${v.corpo}</div>
     <div class="nov-piede">
-      <button class="btn secondario mini" id="inv-posta-no">${L('No, grazie', 'No, thanks', 'No, gracias')}</button>
-      <button class="btn" id="inv-posta-si">${L('Mandami la conferma', 'Send me the confirmation', 'Mándame la confirmación')}</button>
+      <button class="btn secondario mini" id="inv-no">${L('No, grazie', 'No, thanks', 'No, gracias')}</button>
+      <button class="btn" id="inv-si">${v.si}</button>
     </div>`;
   document.body.appendChild(f);
   f.addEventListener('close', () => {
     f.remove();
-    api('/api/streamer/posta/invito', { method: 'POST', body: {} }).catch(() => {  });
+    api('/api/streamer/invito/' + encodeURIComponent(id), { method: 'POST', body: {} }).catch(() => {  });
   });
-  f.querySelector('#inv-posta-no')?.addEventListener('click', () => f.close());
-  f.querySelector('#inv-posta-si')?.addEventListener('click', (ev) => conErrore(async () => {
-    const email = (document.getElementById('inv-posta-mail')?.value || '').trim();
-    if (!email) { toast(L('Scrivi il tuo indirizzo.', 'Type your address.', 'Escribe tu dirección.'), 'errore'); return; }
+  f.querySelector('#inv-no')?.addEventListener('click', () => f.close());
+  f.querySelector('#inv-si')?.addEventListener('click', (ev) => conErrore(async () => {
     const b = ev.currentTarget; b.disabled = true;
-    try {
-      await api('/api/streamer/posta', { method: 'POST', body: { email } });
-      toast(L('Ti ho scritto: apri la mail e conferma.', 'I wrote to you: open the mail and confirm.', 'Te he escrito: abre el correo y confirma.'));
-      f.close();
-    } finally { b.disabled = false; }
+    try { if (await v.fai()) f.close(); } finally { b.disabled = false; }
   }));
   f.showModal();
 }
@@ -350,7 +371,7 @@ function statoDemo() {
     ruolo: ctx.role,
     identita: 'andryx_demo', identitaDisplay: 'Andryx',
     tier: 'community', stripeAttivo: false,
-    rapportiNuovi: 1, postaDisponibile: true, invitoPosta: false,
+    rapportiNuovi: 1, postaDisponibile: true, inviti: [],
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display },
     isAdmin: false,

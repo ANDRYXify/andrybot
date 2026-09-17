@@ -230,6 +230,39 @@ function gestisciComandoCompleanno(login, msg, testo) {
   return `🎂 Segnato! Ti farò gli auguri il <b>${compleanniFeat.fmtData(cmd.giorno, cmd.mese)}</b>. 🎉`;
 }
 
+// GLI INVITI: una domanda che si fa UNA VOLTA SOLA.
+//
+// Ce n'erano due da fare, e due copie della stessa cosa sono due posti dove
+// sbagliare: l'elenco sta qui, e il pannello sa solo disegnare quello che gli
+// arriva. Ogni voce dice quando ha senso chiedere; chi ha gia' risposto — di si'
+// o di no — non se lo ritrova piu' davanti, perche' in tutti e due i casi la
+// domanda e' stata fatta.
+//
+// `invitoPosta` con la data dentro e' la forma vecchia, di quando l'invito era
+// uno solo: vale ancora come «gia' risposto», se no chi aveva gia' detto no se
+// lo vedrebbe tornare il giorno della pubblicazione.
+const INVITI = [
+  ['posta', (req, user) => {
+    if (!posta.attiva()) return false;
+    const s = streamers.get(user.login);
+    if (s?.settings?.invitoPosta) return false;
+    return !postaStreamer.get(user.login)?.email;
+  }],
+  ['vetrina', (req, user) => streamers.get(user.login)?.settings?.vetrinaLive !== true],
+];
+const INVITI_ID = INVITI.map(([id]) => id);
+
+// Gli inviti ancora da fare a questa persona, nell'ordine in cui vanno offerti.
+// Un moderatore non ne vede nessuno: sono scelte del proprietario del canale, e
+// non si fanno prendere a chi passa di li'.
+function invitiAperti(req, user, isOwner) {
+  if (!isOwner(req)) return [];
+  const s = streamers.get(user.login);
+  if (s?.status !== 'approved') return [];
+  const visti = (s?.settings?.invitiVisti && typeof s.settings.invitiVisti === 'object') ? s.settings.invitiVisti : {};
+  return INVITI.filter(([id, quando]) => !visti[id] && quando(req, user)).map(([id]) => id);
+}
+
 export function startWeb({ auth, helix, manager, effects, modules }) {
   const app = express();
 
@@ -2727,18 +2760,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // i rapporti delle dirette non ancora aperti, per il segno sulla scheda
       rapportiNuovi: rapporti.nuovi(user.login),
       postaDisponibile: posta.attiva(),
-      // L'INVITO A LASCIARE L'INDIRIZZO, una volta sola. Chi lo deve vedere si
-      // decide qui e non nel browser: una scelta tenuta nel browser ricompare
-      // sull'altro computer e sul telefono, e uno che ha gia' detto no se lo
-      // ritrova davanti. Qui invece la risposta resta con lo streamer, dovunque
-      // entri. Non lo vede: chi non e' ancora attivo, chi non ha il canale, chi
-      // un indirizzo ce l'ha gia' (anche solo proposto), e chi ha gia' risposto.
-      invitoPosta: (() => {
-        if (!posta.attiva() || !isOwner(req)) return false;
-        const s = streamers.get(user.login);
-        if (s?.status !== 'approved' || s?.settings?.invitoPosta) return false;
-        return !postaStreamer.get(user.login)?.email;
-      })(),
+      // GLI INVITI, uno per volta. Chi li deve vedere si decide QUI e non nel
+      // browser: una scelta tenuta nel browser ricompare sull'altro computer e
+      // sul telefono, e uno che ha gia' detto no se lo ritrova davanti. Qui
+      // invece la risposta resta con lo streamer, dovunque entri.
+      inviti: invitiAperti(req, user, isOwner),
     });
   }));
 
@@ -4710,11 +4736,16 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   }));
 
   // «L'ho visto»: vale sia per il si' sia per il no, perche' in tutti e due i
-  // casi la domanda e' stata fatta e non va rifatta.
-  app.post('/api/streamer/posta/invito', requireOwner, wrap(async (req, res) => {
+  // casi la domanda e' stata fatta e non va rifatta. L'id si controlla contro
+  // l'elenco: se no, da qui si scriverebbero chiavi qualunque nelle impostazioni
+  // di chi ha fatto l'accesso.
+  app.post('/api/streamer/invito/:id', requireOwner, wrap(async (req, res) => {
+    const id = String(req.params.id || '');
+    if (!INVITI_ID.includes(id)) return res.status(400).json({ errore: 'invito sconosciuto' });
     const login = currentUser(req).login;
     const s = streamers.get(login);
-    streamers.setSettings(login, { ...(s?.settings || {}), invitoPosta: Date.now() });
+    const visti = { ...(s?.settings?.invitiVisti || {}), [id]: Date.now() };
+    streamers.setSettings(login, { ...(s?.settings || {}), invitiVisti: visti });
     res.json({ ok: true });
   }));
 

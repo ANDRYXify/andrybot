@@ -343,6 +343,24 @@ I gusci della home sono precalcolati per lingua all'avvio. Adesso si rifanno
 anche quando l'elenco delle dirette **cambia davvero**, non piu' di una volta al
 minuto e in disparte: chi apre la home non aspetta mai una chiamata a Twitch.
 
+### Come lo si viene a sapere
+
+Un interruttore che nessuno sa che esiste e' un interruttore spento per sempre.
+Alla prima apertura del pannello dopo la pubblicazione, al proprietario del
+canale viene chiesto se vuole comparire: una volta sola, e chi risponde no non se
+lo ritrova piu' davanti.
+
+La domanda la decide il SERVER, non il browser: una scelta tenuta nel browser
+ricompare sull'altro computer e sul telefono, e chi ha gia' detto no se la
+rivedrebbe. Gli inviti stanno in un elenco (`INVITI` in `src/web/server.js`) e il
+pannello sa solo disegnare quello che gli arriva: quando ce n'e' un secondo da
+fare non si copia niente, si aggiunge una riga. Se ne fa **uno per accesso**, non
+una fila di finestre.
+
+`settings.invitiVisti` tiene le risposte; la vecchia `invitoPosta` con la data
+dentro vale ancora come «gia' risposto», se no chi aveva detto no all'invito
+della posta se lo vedrebbe tornare.
+
 ### Chi e' live lo sa gia' il bot
 
 Lo stato live vive nel bot perche' gli serve per mille altre cose. La vetrina lo
