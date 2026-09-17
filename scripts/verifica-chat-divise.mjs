@@ -65,13 +65,19 @@ const errori = [];
 
 // Un giro: si decide cosa mostra l'overlay, si apre la pagina, si mandano i
 // messaggi e si guarda cosa e' rimasto a schermo.
+// La FIRMA del tema: aspettare che il server l'abbia SERVITO non basta, perche'
+// fra il servito e l'applicato ci sta una risposta da leggere — e in quella
+// fessura i messaggi arriverebbero mentre la pagina mostra ancora tutto. Qui si
+// aspetta un segno che solo `applicaTema` puo' aver lasciato nella pagina.
+const FIRMA = '.tema-applicato';
+
 async function giro(mostra, chatStile, messaggi) {
-  TEMA = { css: '', widget: {}, goals: [], conti: {}, musica: null, timer: null, stato: {}, mostra, xy: {}, alertStile: null, chatStile };
+  TEMA = { css: FIRMA, widget: {}, goals: [], conti: {}, musica: null, timer: null, stato: {}, mostra, xy: {}, alertStile: null, chatStile };
   const page = await browser.newPage();
   page.on('pageerror', (e) => errori.push(String(e.message || e)));
-  const partenza = ovl.st.tema;
   await page.goto(base + '/overlay/prova?key=x');
-  for (let i = 0; i < 100 && (ovl.st.stream.length < 1 || ovl.st.tema <= partenza); i++) await attesa(50);
+  await page.waitForFunction((f) => document.getElementById('css-utente')?.textContent.includes(f), FIRMA, { timeout: 15000 });
+  for (let i = 0; i < 100 && ovl.st.stream.length < 1; i++) await attesa(50);
   for (const m of messaggi) ovl.manda({ tipo: 'chat', max: 8, ...m });
   await attesa(400);
   const righe = await page.$$eval('#chatlive .chat-riga', (l) => l.map((r) => ({
