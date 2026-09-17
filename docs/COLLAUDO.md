@@ -269,3 +269,42 @@ spento, in coda, o bloccato da una politica dell'account — è successo subito,
 alla prima esecuzione. Il valore non è «GitHub esegue le prove»: è «le prove
 girano prima che il codice esca». Il gancio dà quella garanzia senza dipendere
 da nessuno; Actions resta la conferma, non l'unica rete.
+
+## Il collaudo non deve sapere su che macchina gira
+
+Due deploy fermati dallo stesso difetto, e vale la pena scriverlo.
+
+La prova della posta metteva `MAIL_DOMINIO` e `MAIL_DA` e dava per scontato che
+tutto il resto della famiglia `MAIL` non ci fosse. In sviluppo è vero: non c'è un
+`.env`. Sul server c'è, e dentro ci sono `MAIL_HELO`, `MAIL_NOME`, il mittente
+vero. Risultato: una configurazione **giusta** faceva dire «rotto» al collaudo, e
+`aggiorna.sh` si fermava — facendo esattamente il suo mestiere, per la ragione
+sbagliata.
+
+**Cancellare la variabile non basta**, ed è la trappola. Il lettore del `.env`
+(`loadDotEnv` in `src/config.js`) gira quando si importa la configurazione, cioè
+al primo `import` di qualunque cosa la usi, e riempie le chiavi **assenti**:
+
+```js
+if (!(key in process.env)) process.env[key] = val;
+```
+
+Una chiave cancellata prima dell'import torna indietro, col valore del server.
+Una cancellata dopo dipende dall'ordine degli import, che è una cosa che nessuno
+vuole dover tenere a mente.
+
+**La regola**: una prova *dichiara* le variabili che la riguardano, vuote quando
+devono valere come «non impostata».
+
+```js
+for (const k of ['MAIL', 'MAIL_NOME', 'MAIL_HELO', 'MAIL_DKIM_SELETTORE']) process.env[k] = '';
+process.env.MAIL_DOMINIO = 'prova.example';
+```
+
+Una chiave che esiste, anche vuota, il lettore non la tocca. Così la prova dice
+lei come sta il mondo e l'ordine degli import non conta più.
+
+Per rifare il caso del server prima di spingere: si mette un `.env` di prova
+nella radice con dentro le variabili che ha lui, si gira `npm test`, e lo si
+toglie. È l'unico modo di vedere il difetto, perché in sviluppo quel file non
+c'è.

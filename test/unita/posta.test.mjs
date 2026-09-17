@@ -8,11 +8,16 @@ import { cartellaUsaEGetta } from '../aiuto.mjs';
 
 const usaEGetta = cartellaUsaEGetta('andrybot-posta-');
 // LA PROVA NON DEVE SAPERE SU CHE MACCHINA GIRA. Sul server vero il .env ha
-// MAIL_HELO, MAIL_DA, MAIL_NOME: se la prova li leggesse, direbbe «rotto» su
-// una configurazione giusta e il deploy si fermerebbe per niente. E' successo.
-// Percio' si sgombera TUTTA la famiglia MAIL, e si mette solo cio' che serve
-// qui: cosi' vale anche per le variabili che aggiungeremo domani.
-for (const k of Object.keys(process.env)) if (k === 'MAIL' || k.startsWith('MAIL_')) delete process.env[k];
+// MAIL_HELO, MAIL_DA, MAIL_NOME: se la prova li leggesse direbbe «rotto» su una
+// configurazione giusta, e fermerebbe il deploy per niente. E' successo.
+//
+// Cancellarle NON basta, ed e' la trappola: il lettore del .env gira quando si
+// importa la configurazione, e riempie le chiavi ASSENTI — quindi una cancellata
+// torna indietro con dentro il valore del server. Percio' si DICHIARANO tutte,
+// vuote quando devono valere come «non impostata». Una chiave che esiste, anche
+// vuota, il lettore non la tocca: cosi' la prova dice lei come sta il mondo, e
+// l'ordine in cui si importano le cose non conta piu'.
+for (const k of ['MAIL', 'MAIL_NOME', 'MAIL_HELO', 'MAIL_DKIM_SELETTORE']) process.env[k] = '';
 process.env.MAIL_DOMINIO = 'prova.example';
 process.env.MAIL_DA = 'rapporti@prova.example';
 const p = await import('../../src/features/posta.js');
@@ -127,7 +132,7 @@ test('invia: composta, firmata e consegnata; senza chiave si rifiuta; gli indiri
   process.env.MAIL = 'no';
   assert.equal(p.attiva(), false);
   await assert.rejects(() => p.invia({ a: 'io@altro.example', oggetto: 'x' }), /non e' configurata/);
-  delete process.env.MAIL;
+  process.env.MAIL = '';
 });
 
 test('il guscio HTML: i colori del tema, il testo protetto, un tasto', () => {
@@ -153,7 +158,7 @@ test('il nome con cui ci si presenta e\' una cosa che si dice, e la mail lo usa'
       await new Promise((ok) => setTimeout(ok, 50));
       assert.equal(f.st.comandi[0], 'EHLO mail.prova.example', 'una mail vera si presenta con quel nome');
     } finally { f.chiudi(); }
-  } finally { delete process.env.MAIL_HELO; }
+  } finally { process.env.MAIL_HELO = ''; }
   assert.equal(p.nomeHelo(), 'prova.example');
 });
 
