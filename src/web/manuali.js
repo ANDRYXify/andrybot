@@ -899,7 +899,7 @@ const CONSOLIFY = {
 
 const DIRETTA = {
   slug: 'diretta',
-  schede: ['regia', 'dirette', 'ascolto', 'clip', 'musica'],
+  schede: ['regia', 'dirette', 'statistiche', 'ascolto', 'clip', 'musica'],
   titolo: 'Manuale della diretta: regia, clip, musica e comandi a voce | SocialBot',
   h1: 'Manuale della diretta: regia, clip, musica e comandi a voce',
   desc: 'Comandare il canale senza aprire Twitch, far nascere le clip da sole, le richieste musicali e i comandi a voce.',
@@ -925,6 +925,14 @@ const DIRETTA = {
     { p: ['Quando chiudi, la scheda <em>Dirette</em> riceve una carta con i numeri della serata: durata, picco di spettatori e media, messaggi e chi ha scritto di più, nuovi follower e sub (con i regali), raid con gli spettatori portati, presenti e prime volte, clip, donazioni. Numeri, non aggettivi: sono quelli veri del canale, raccolti dal bot mentre trasmettevi. Un puntino sulla voce di menu ti dice che ce n\'è uno nuovo.'] },
     { p: ['Da lì scegli anche dove riceverlo appena chiudi: su <strong>Telegram</strong>, nella chat privata del tuo bot (va collegata in <em>Notifiche</em>), oppure <strong>via mail</strong>. Per la mail scrivi l\'indirizzo e premi <em>Conferma</em>: ti arriva un messaggio con un tasto, e l\'indirizzo vale solo dopo il clic. La mail la manda il nostro server, non un servizio esterno; se sul server la posta non è configurata, la scheda lo dice e resta Telegram.'] },
     { p: ['La mail non è un tabulato: apre con la cosa che è saltata all\'occhio quella sera (un record di spettatori, un raid, le facce nuove), poi i tre numeri grossi, chi ha scritto di più e il resto. In fondo ci sono <strong>le clip della serata</strong>, una per una, da riaprire quando vuoi: è il pezzo che si riguarda. Ha i colori del sito e si adatta al fondo chiaro o scuro del tuo programma di posta.'] },
+    { h2: 'Le statistiche e le classifiche' },
+    { p: [
+      'Erano sparse in tre schede con tre facce diverse: i numeri della settimana in <em>Memoria</em>, le classifiche delle monete dentro la carta del premio VIP in <em>Giochi</em>, le serie di presenze ancora in Memoria. Ora stanno tutte nella scheda <em>Statistiche</em>, e sopra c\'è una cosa che prima non c\'era: il <strong>periodo</strong>. Sette giorni, trenta, oppure da sempre.',
+      'I numeri sono dirette fatte, ore in onda, picco di spettatori, messaggi della chat e quante persone li hanno scritti, interventi del bot, nuovi follower, sub, raid, clip e donazioni. Dirette, ore, picco, follower e sub vengono <strong>dai rapporti di fine diretta</strong>, cioè dagli stessi numeri che leggi nella scheda Dirette: non è un secondo conto che col tempo si scolla dal primo.',
+      'Le classifiche sono cinque e dicono cose diverse: le <strong>monete</strong> del pubblico e dello staff, <strong>chi c\'è sempre</strong> (le serie di presenze), <strong>chi scrive di più</strong> nel periodo scelto, e <strong>chi guarda di più</strong>, che ha bisogno del conteggio delle ore acceso in <em>Comandi</em>.',
+      'In fondo, le ultime dirette una sotto l\'altra con durata, picco, media, chat e clip: è il modo per accorgersi se una serata è andata diversamente dalle altre. Da lì un tasto porta ai rapporti per intero.',
+    ] },
+
     { p: ['La prima volta che entri dopo l\'attivazione te lo chiedo io, con una finestra: scrivi l\'indirizzo e ti mando la conferma. Se rispondi no, non te lo chiedo più, da nessun computer.'] },
     { p: ['Un riavvio del bot a metà serata non perde il rapporto: riparte dall\'inizio che le presenze ricordano, e al più manca il picco di prima.'] },
 

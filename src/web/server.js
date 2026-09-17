@@ -47,6 +47,7 @@ import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as presenze from '../features/presenze.js';
+import * as statistiche from '../features/statistiche.js';
 import * as rapporto from '../features/rapporto.js';
 import * as posta from '../features/posta.js';
 import * as donazioni from '../features/donazioni.js';
@@ -4694,19 +4695,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   }));
 
   app.get('/api/streamer/statistiche', requireLogin, wrap(async (req, res) => {
-    const login = currentUser(req).login;
-    const da = Date.now() - SETTE_GIORNI_MS;
-    const messaggi7g = db.prepare(
-      'SELECT COUNT(*) c FROM messages WHERE channel=? AND ts>=? AND from_bot=0').get(login, da).c;
-    const topChatters = db.prepare(
-      `SELECT user, COUNT(*) c FROM messages
-       WHERE channel=? AND ts>=? AND from_bot=0 AND user NOT LIKE '[%'
-       GROUP BY user ORDER BY c DESC LIMIT 5`).all(login, da);
-    const messaggiBot7g = db.prepare(
-      'SELECT COUNT(*) c FROM messages WHERE channel=? AND ts>=? AND from_bot=1').get(login, da).c;
-    const clipTotali = db.prepare(
-      'SELECT COUNT(*) c FROM clips WHERE channel=?').get(login).c;
-    res.json({ messaggi7g, topChatters, messaggiBot7g, clipTotali, presenze: presenze.classifica(login, 5) });
+    res.json(statistiche.riassunto(currentUser(req).login, { periodo: req.query.periodo }));
   }));
 
   // stato della "piccola rete che impara" per questo canale (cruscotto Panoramica)

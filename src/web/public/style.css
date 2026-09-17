@@ -1294,6 +1294,14 @@ input[type="color"] { width: 100%; min-height: 38px; padding: 2px; border: 1px s
 .riga-premio-suono .sel-suono { min-width: 150px; }
 .riga-premio-suono .prova-suono { display: inline-flex; align-items: center; justify-content: center; padding: .3rem .5rem; }
 
+.stat-periodo { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .2rem; }
+.stat-periodo .scelto { background: var(--acc); color: var(--su-acc); border-color: var(--acc); }
+.griglia-classifiche { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 0 1.2rem; }
+.griglia-classifiche h3 { margin-top: .9rem; }
+.tab-stat { overflow-x: auto; margin-top: .6rem; }
+.tab-stat table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+.tab-stat th { text-align: left; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--testo-2); padding: .3rem .55rem .3rem 0; font-weight: 700; }
+.tab-stat td { padding: .38rem .55rem .38rem 0; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .griglia-stat { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .85rem; margin: .8rem 0; }
 .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); padding: 1.2rem 1rem; text-align: center; box-shadow: var(--om-s); transition: border-color var(--molla), transform var(--molla), box-shadow var(--molla); }
 @media (hover: hover) {

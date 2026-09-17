@@ -716,14 +716,24 @@ function _demoGet(via) {
       ],
     },
     '/api/streamer/statistiche': {
-      messaggi7g: 12840, messaggiBot7g: 1620, clipTotali: 96,
+      periodo: '7', messaggi: 12840, persone: 640, messaggiBot: 1620, clip: 12,
+      dirette: { n: 4, oreMs: 41400000, picco: 61, follow: 38, sub: 9, raid: 3, donazioni: 5, donazioniCent: 4200 },
       topChatters: [
-        { user: 'lucaplays', c: 1820 }, { user: 'giada_ttv', c: 1390 }, { user: 'marco99', c: 980 },
-        { user: 'sara_gg', c: 640 }, { user: 'il_nonno', c: 410 },
+        { user: 'lucaplays', n: 1820 }, { user: 'giada_ttv', n: 1390 }, { user: 'marco99', n: 980 },
+        { user: 'sara_gg', n: 640 }, { user: 'il_nonno', n: 410 },
       ],
       presenze: [
         { user: 'il_nonno', serie: 27, dirette: 61, record: 27 }, { user: 'giada_ttv', serie: 12, dirette: 40, record: 15 },
         { user: 'lucaplays', serie: 9, dirette: 52, record: 21 }, { user: 'sara_gg', serie: 4, dirette: 18, record: 6 }, { user: 'marco99', serie: 2, dirette: 33, record: 11 },
+      ],
+      ore: [
+        { user: 'il_nonno', secondi: 486000 }, { user: 'lucaplays', secondi: 322000 }, { user: 'giada_ttv', secondi: 251000 },
+        { user: 'sara_gg', secondi: 98000 }, { user: 'marco99', secondi: 54000 },
+      ],
+      ultime: [
+        { id: 3, inizio: 1789574400000, fine: 1789583040000, durataMs: 8640000, picco: 61, media: 44, messaggi: 1240, persone: 96, follow: 14, clip: 2 },
+        { id: 2, inizio: 1789401600000, fine: 1789410960000, durataMs: 9360000, picco: 48, media: 33, messaggi: 980, persone: 80, follow: 9, clip: 2 },
+        { id: 1, inizio: 1789228800000, fine: 1789236000000, durataMs: 7200000, picco: 39, media: 27, messaggi: 610, persone: 54, follow: 6, clip: 1 },
       ],
     },
     '/api/streamer/memoria': {
@@ -2365,6 +2375,7 @@ const GRUPPI = [
     ['moduli', 'Comandi'],
     ['regole', 'Moderazione'],
     ['giochi', 'Giochi'],
+    ['statistiche', 'Statistiche'],
   ] },
   { id: 'diretta', nome: 'Durante la diretta', schede: [
     ['regia', 'Regia'],
@@ -2415,6 +2426,7 @@ const T_SCHEDA = {
   personalita: ['Personalità', 'Personality', 'Personalidad'],
   conoscenza: ['Conoscenza', 'Knowledge', 'Conocimiento'],
   memoria: ['Memoria', 'Memory', 'Memoria'],
+  statistiche: ['Statistiche', 'Stats', 'Estadísticas'],
   avatar: ['Avatar 3D', 'Avatar 3D', 'Avatar 3D'],
   moduli: ['Comandi', 'Commands', 'Comandos'],
   regole: ['Moderazione', 'Moderation', 'Moderación'],
@@ -2453,7 +2465,8 @@ const ICONA = {
   studio:      _ico('<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>'),
   personalita: _ico('<path d="M12 3c.35 3.8 1.4 4.85 5 5.2-3.6.35-4.65 1.4-5 5.2-.35-3.8-1.4-4.85-5-5.2 3.6-.35 4.65-1.4 5-5.2Z"/><path d="M18.5 15c.15 1.6.6 2.05 2.2 2.2-1.6.15-2.05.6-2.2 2.2-.15-1.6-.6-2.05-2.2-2.2 1.6-.15 2.05-.6 2.2-2.2Z"/>'),
   conoscenza:  _ico('<path d="M5 4.5h11a2 2 0 0 1 2 2v13H7a2 2 0 0 1-2-2Z"/><path d="M9 4.5v15"/>'),
-  memoria:     _ico('<path d="M4 21V4"/><path d="M4 21h16"/><path d="M8.5 21v-6"/><path d="M13 21V9"/><path d="M17.5 21v-9"/>'),
+  memoria:     _ico('<path d="M12 5a3 3 0 0 0-3 3 2.5 2.5 0 0 0-1.5 4.5A2.5 2.5 0 0 0 9 17a3 3 0 0 0 3 2 3 3 0 0 0 3-2 2.5 2.5 0 0 0 1.5-4.5A2.5 2.5 0 0 0 15 8a3 3 0 0 0-3-3Z"/><path d="M12 5v14"/>'),
+  statistiche: _ico('<path d="M4 21V4"/><path d="M4 21h16"/><path d="M8.5 21v-6"/><path d="M13 21V9"/><path d="M17.5 21v-9"/>'),
   avatar:      _ico('<path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5"/><path d="M12 12v10"/>'),
   moduli:      _ico('<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M7.5 9.5 10.5 12l-3 2.5"/><path d="M13 15h4"/>'),
   regole:      _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>'),
@@ -2482,7 +2495,8 @@ const DESC = {
   stato: ['Accendi il bot e controlla che sia connesso alla tua chat.', 'Turn the bot on and check it’s connected to your chat.', 'Enciende el bot y comprueba que esté conectado a tu chat.'],
   personalita: ['Il tono e il carattere con cui il bot parla in chat.', 'The tone and character the bot uses in chat.', 'El tono y el carácter con que el bot habla en el chat.'],
   conoscenza: ['Cosa sa il bot su di te e sui tuoi contenuti.', 'What the bot knows about you and your content.', 'Lo que el bot sabe sobre ti y tu contenido.'],
-  memoria: ['Le statistiche della chat e cosa il bot ricorda.', 'Chat stats and what the bot remembers.', 'Las estadísticas del chat y lo que el bot recuerda.'],
+  memoria: ['Cosa il bot si ricorda del canale e di chi ci scrive.', 'What the bot remembers about the channel and who writes in it.', 'Lo que el bot recuerda del canal y de quien escribe.'],
+  statistiche: ['Come sta andando il canale, e le classifiche di chi c\'è.', 'How the channel is doing, and the leaderboards of who is around.', 'Cómo va el canal, y las clasificaciones de quién está.'],
   moduli: ['Crea comandi, automazioni e contatori per la tua chat.', 'Create commands, automations and counters for your chat.', 'Crea comandos, automatizaciones y contadores para tu chat.'],
   regole: ['I filtri sui messaggi: parole vietate e antispam.', 'Message filters: banned words and anti-spam.', 'Los filtros de los mensajes: palabras prohibidas y antispam.'],
   scudo: ['La difesa dagli attacchi: ondate di follow-bot e hate-raid.', 'Defence against attacks: follow-bot waves and hate-raids.', 'La defensa contra los ataques: oleadas de follow-bots y hate-raids.'],
@@ -2623,8 +2637,10 @@ const GUIDE = {
       ['Quello che c’è sulla tua pagina link — FAQ comprese — lo legge da sé, sempre aggiornato.', 'What is on your link page — FAQs included — it reads by itself, always up to date.', 'Lo que hay en tu página de enlaces — FAQ incluidas — lo lee solo, siempre al día.', '#lista-conoscenza']] },
   moduli: { serve: ['Creare i comandi di chat: comandi/automazioni (QUANDO succede X, ALLORA fai Y) e i contatori (morti, tentativi, parole…) che tu e i mod gestite in chat.', 'Create your chat commands: commands/automations (WHEN X happens, THEN do Y) and counters (deaths, attempts, words…) that you and your mods manage in chat.', 'Crea tus comandos de chat: comandos/automatizaciones (CUANDO pasa X, ENTONCES haz Y) y los contadores (muertes, intentos, palabras…) que tú y los mods gestionáis en el chat.'],
     come: [['Il modo più corto: dai un nome al comando e scrivi la risposta. È già fatto.', 'The shortest way: name the command and write the answer. That is it.', 'La forma más corta: pon nombre al comando y escribe la respuesta. Ya está.', '#qc-nome'], ['Per qualcosa di più c’è il modulo: QUANDO succede X (un !comando, una parola, un evento, un timer) ALLORA fai Y — anche più cose insieme.', 'For something more there is the module: WHEN X happens (a !command, a word, an event, a timer) THEN do Y — several things at once, too.', 'Para algo más está el módulo: CUANDO pasa X (un !comando, una palabra, un evento, un temporizador) ENTONCES haz Y — varias cosas a la vez, también.', '#lista-moduli'], ['I contatori sono numeri che tu e i mod muovete in chat — !morti, !tentativi — e che puoi mostrare nell’overlay.', 'Counters are numbers you and your mods move in chat — !deaths, !attempts — and that you can show in the overlay.', 'Los contadores son números que tú y los mods movéis en el chat — !muertes, !intentos — y que puedes mostrar en el overlay.', '#cont-comando']] },
-  memoria: { serve: ['Vedere cosa si ricorda il bot e come sta andando il canale: statistiche, utenti più attivi e cose imparate.', 'See what the bot remembers and how the channel is doing: stats, most active viewers and things it learned.', 'Ver qué recuerda el bot y cómo va el canal: estadísticas, usuarios más activos y cosas aprendidas.'],
-    come: [['Scorri le statistiche per capire quando la chat è più viva.', 'Scroll the stats to see when chat is most alive.', 'Repasa las estadísticas para ver cuándo el chat está más vivo.', '#griglia-stat'], ['Controlla i ricordi: puoi cancellare quelli sbagliati.', 'Check the memories: you can delete the wrong ones.', 'Revisa los recuerdos: puedes borrar los equivocados.', '#btn-carica-memoria'], ['Se qualcosa non ti piace, correggilo dalla scheda Conoscenza.', 'If something’s off, fix it from the Knowledge tab.', 'Si algo no te gusta, corrígelo desde la pestaña Conocimiento.', '']] },
+  statistiche: { serve: ['Vedere come sta andando il canale in un posto solo: i numeri del periodo che scegli, le classifiche e com\'è andata nelle ultime dirette.', 'See how the channel is doing in one place: the numbers for the period you pick, the leaderboards and how the latest streams went.', 'Ver cómo va el canal en un solo sitio: los números del periodo que elijas, las clasificaciones y cómo fueron los últimos directos.'],
+    come: [['Scegli il periodo: sette giorni, trenta, oppure da sempre.', 'Pick the period: seven days, thirty, or all time.', 'Elige el periodo: siete días, treinta, o desde siempre.', '#stat-periodo'], ['Guarda i numeri: dirette, ore in onda, picco, chat, follower.', 'Look at the numbers: streams, hours on air, peak, chat, followers.', 'Mira los números: directos, horas en antena, pico, chat, seguidores.', '#griglia-stat'], ['Le classifiche dicono chi c\'è sempre, chi scrive e chi guarda.', 'The leaderboards tell you who is always there, who writes and who watches.', 'Las clasificaciones dicen quién está siempre, quién escribe y quién mira.', '#lista-presenze'], ['In fondo, le ultime dirette una accanto all\'altra.', 'At the bottom, the latest streams side by side.', 'Abajo, los últimos directos uno al lado del otro.', '#stat-dirette']] },
+  memoria: { serve: ['Vedere cosa si ricorda il bot: le lezioni che ha tirato dalla chat e i fatti stabili sul canale.', 'See what the bot remembers: the lessons it drew from chat and the stable facts about the channel.', 'Ver qué recuerda el bot: las lecciones que sacó del chat y los hechos estables del canal.'],
+    come: [['I numeri del canale stanno nella scheda Statistiche.', 'The channel numbers are in the Stats tab.', 'Los números del canal están en la pestaña Estadísticas.', ''], ['Controlla i ricordi: puoi cancellare quelli sbagliati.', 'Check the memories: you can delete the wrong ones.', 'Revisa los recuerdos: puedes borrar los equivocados.', '#btn-carica-memoria'], ['Se qualcosa non ti piace, correggilo dalla scheda Conoscenza.', 'If something’s off, fix it from the Knowledge tab.', 'Si algo no te gusta, corrígelo desde la pestaña Conocimiento.', '']] },
   consolify: { serve: ['Avere i tasti del tuo canale sotto le dita mentre streami: contatori, effetti, una battuta, una frase — sul telefono, sul tablet o su una tastiera fisica.', 'Have your channel’s keys under your fingers while you stream: counters, effects, a joke, a line — on your phone, tablet or a physical key pad.', 'Tener las teclas de tu canal bajo los dedos mientras emites: contadores, efectos, un chiste, una frase — en el móvil, la tablet o un teclado físico.'],
     come: [['Premi «Modifica i tasti» e aggiungine uno: nell\'elenco ci sono già le tue azioni, perché nascono dai tuoi contatori e dai tuoi effetti.', 'Press “Edit the keys” and add one: your actions are already in the list, because they come from your own counters and effects.', 'Pulsa «Editar las teclas» y añade una: tus acciones ya están en la lista, porque nacen de tus contadores y tus efectos.', '#cons-modifica'], ['Premi «Fatto» e prova: sotto ogni tasto compare com\'è andata, per esempio il numero nuovo del contatore.', 'Press “Done” and try it: under each key you see how it went, for example the counter’s new number.', 'Pulsa «Hecho» y pruébalo: bajo cada tecla aparece cómo ha ido, por ejemplo el número nuevo del contador.', '#cons-plancia'], ['Apri questa pagina sul telefono e tienila lì mentre streami: la griglia si adatta da sé.', 'Open this page on your phone and keep it there while you stream: the grid adapts on its own.', 'Abre esta página en el móvil y tenla ahí mientras emites: la cuadrícula se adapta sola.', ''], ['Per una tastiera fisica: ogni tasto qui ha il suo indirizzo. Copialo e incollalo in un tasto con un componente di chiamate web: punta al tasto, non all\'azione, quindi se domani gli cambi mestiere lì non rifai niente.', 'For a physical key pad: every key here has its own address. Copy it into a key with a web-request component: it points at the key, not the action, so if tomorrow you change what it does you redo nothing there.', 'Para un teclado físico: cada tecla de aquí tiene su dirección. Cópiala en una tecla con un componente de peticiones web: apunta a la tecla, no a la acción, así si mañana cambias lo que hace no rehaces nada allí.', '#cons-indirizzi'], ['Se un indirizzo finisce in una clip, rigenera la chiave: quelli vecchi smettono di funzionare subito.', 'If an address ends up in a clip, regenerate the key: the old ones stop working immediately.', 'Si una dirección acaba en un clip, regenera la clave: las viejas dejan de funcionar enseguida.', '#cons-revoca']] },
   regia: { serve: ['Gestire la diretta dal pannello: titolo, categoria, marker e le azioni rapide, senza aprire Twitch.', 'Run your stream from the panel: title, category, markers and quick actions, without opening Twitch.', 'Gestionar el directo desde el panel: título, categoría, marcadores y acciones rápidas, sin abrir Twitch.'],
@@ -3554,6 +3570,7 @@ function vistaPiattaforma() {
     ${pannelloPersonalita()}
     ${pannelloConoscenza()}
     ${pannelloMemoria()}
+    ${pannelloStatistiche()}
     ${pannelloAvatar()}
     ${pannelloModuli()}
     ${pannelloRegole()}
@@ -14836,10 +14853,8 @@ function pannelloGiochi() {
         <button type="button" class="btn secondario" id="btn-punti-manuale">${L('Aggiusta', 'Adjust', 'Ajustar')} ${esc(s.nomeMonete)}</button>
       </div>
       <p class="suggerimento">${L('Per riparare un errore. Con il meno si tolgono. In chat puoi fare lo stesso con un comando (ricetta «Dai monete»), che però lo fa vedere a tutti — e possono usarlo anche i tuoi moderatori.', 'To fix a mistake. Use a minus to remove. In chat you can do the same with a command (the «Give coins» recipe), which everyone sees — and your mods can use it too.', 'Para reparar un error. Con el menos se quitan. En el chat puedes hacer lo mismo con un comando (receta «Dar monedas»), que además lo ve todo el mundo — y también pueden usarlo tus moderadores.')}</p>`}
-      <h3>${L('Classifica del pubblico', 'Public leaderboard', 'Clasificación del público')}</h3>
-      <ul class="lista-voci" id="lista-classifica"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
-      <h3>${L('Classifica dello staff', 'Staff leaderboard', 'Clasificación del staff')}</h3>
-      <ul class="lista-voci" id="lista-classifica-staff"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <p class="suggerimento spazio-sopra">${L('Le classifiche delle monete stanno nella scheda Statistiche, insieme a tutti gli altri numeri del canale.', 'The coin leaderboards are in the Stats tab, together with all the other channel numbers.', 'Las clasificaciones de monedas están en la pestaña Estadísticas, junto a los demás números del canal.')}
+        <button type="button" class="btn secondario mini" data-scheda="statistiche">${L('Vedi le classifiche', 'See the leaderboards', 'Ver las clasificaciones')}</button></p>
       <h3>${L('VIP a tempo attivi', 'Active timed VIPs', 'VIP temporales activos')}</h3>
       <ul class="lista-voci" id="lista-vip"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>
@@ -15761,16 +15776,53 @@ function pannelloRegole() {
     </div>`);
 }
 
+function pannelloStatistiche() {
+  const per = (id, t) => `<button type="button" class="btn secondario mini${_statPeriodo === id ? ' scelto' : ''}" data-stat-periodo="${id}">${t}</button>`;
+  return pannello('statistiche', `
+    <div class="carta">
+      <h2>${_hIco(ICO.grafico)}${L('Il canale in numeri', 'The channel in numbers', 'El canal en números')}</h2>
+      <div class="stat-periodo" id="stat-periodo">
+        ${per('7', L('Ultimi 7 giorni', 'Last 7 days', 'Últimos 7 días'))}${per('30', L('Ultimi 30 giorni', 'Last 30 days', 'Últimos 30 días'))}${per('tutto', L('Da sempre', 'All time', 'Desde siempre'))}
+      </div>
+      <div class="griglia-stat" id="griglia-stat"><div class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</div></div>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.trofeo)}${L('Le classifiche', 'The leaderboards', 'Las clasificaciones')}</h2>
+      <p class="suggerimento">${L('Chi c’è, chi scrive e chi guarda. Le monete si regolano nella scheda Giochi.', 'Who is around, who writes and who watches. Coins are tuned in the Games tab.', 'Quién está, quién escribe y quién mira. Las monedas se ajustan en la pestaña Juegos.')}</p>
+      <div class="griglia-classifiche">
+        <div>
+          <h3>${L('Monete del pubblico', 'Public coins', 'Monedas del público')}</h3>
+          <ul class="lista-voci" id="lista-classifica"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+        </div>
+        <div>
+          <h3>${L('Monete dello staff', 'Staff coins', 'Monedas del staff')}</h3>
+          <ul class="lista-voci" id="lista-classifica-staff"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+        </div>
+        <div>
+          <h3>${L('Chi c’è sempre', 'Who is always there', 'Quién está siempre')}</h3>
+          <ul class="lista-voci" id="lista-presenze"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+        </div>
+        <div>
+          <h3>${L('Chi scrive di più', 'Who writes the most', 'Quién escribe más')}</h3>
+          <ul class="lista-voci" id="lista-chatters"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+        </div>
+        <div>
+          <h3>${L('Chi guarda di più', 'Who watches the most', 'Quién mira más')}</h3>
+          <ul class="lista-voci" id="lista-ore"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.onda)}${L('Le ultime dirette', 'The latest streams', 'Los últimos directos')}</h2>
+      <div id="stat-dirette"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-scheda="dirette">${L('Apri i rapporti', 'Open the reports', 'Abrir los informes')}</button></p>
+    </div>`);
+}
+
 function pannelloMemoria() {
   return pannello('memoria', `
-    <div class="carta">
-      <h2>${_hIco(ICO.grafico)}${L('Statistiche degli ultimi 7 giorni', 'Last 7 days stats', 'Estadísticas de los últimos 7 días')}</h2>
-      <div class="griglia-stat" id="griglia-stat"><div class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</div></div>
-      <h3>${L('Top chatters', 'Top chatters', 'Top chatters')}</h3>
-      <ul class="lista-voci" id="lista-chatters"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
-      <h3>${L('Chi c’è sempre', 'Who is always there', 'Quién está siempre')}</h3>
-      <ul class="lista-voci" id="lista-presenze"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
-    </div>
     <div class="carta">
       <h2>${_hIco(ICO.cervello)}${L('La memoria del bot', 'The bot’s memory', 'La memoria del bot')}</h2>
       <p>${L('Le "lezioni" che ha imparato osservando la tua chat e i fatti stabili che ricorda sul canale.', 'The “lessons” it learned watching your chat and the stable facts it remembers about the channel.', 'Las «lecciones» que aprendió observando tu chat y los datos estables que recuerda sobre el canal.')}</p>
@@ -17158,7 +17210,7 @@ function caricaDatiScheda(id) {
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); caricaTracking(); }
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); }
-  if (id === 'memoria') caricaStatistiche();
+  if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
   if (id === 'pagina') caricaPaginaLink();
@@ -18060,31 +18112,70 @@ function animaNumeri(root) {
   });
 }
 
+let _statPeriodo = '7';
+
+const _statOre = (s) => {
+  const h = Math.floor((Number(s) || 0) / 3600);
+  const m = Math.round(((Number(s) || 0) % 3600) / 60);
+  return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`;
+};
+const _statNum = (n) => Number(n || 0).toLocaleString('it-IT');
+
+function _statGara(id, righe, vuoto) {
+  const ul = document.getElementById(id);
+  if (!ul) return;
+  ul.innerHTML = righe.length
+    ? righe.map((r, i) => `<li><div class="testo-voce"><span class="domanda">${medaglia(i)} ${esc(r.chi)}</span>
+        <span class="risposta">${esc(r.quanto)}</span></div></li>`).join('')
+    : `<li class="vuoto">${vuoto}</li>`;
+}
+
 async function caricaStatistiche() {
   const griglia = document.getElementById('griglia-stat');
-  const chatters = document.getElementById('lista-chatters');
   if (!griglia) return;
-  try {
-    const s = await api('/api/streamer/statistiche');
-    griglia.innerHTML = `
-      <div class="stat"><div class="numero">${s.messaggi7g}</div><div class="etichetta">messaggi in chat (7g)</div></div>
-      <div class="stat"><div class="numero">${s.messaggiBot7g}</div><div class="etichetta">interventi del bot (7g)</div></div>
-      <div class="stat"><div class="numero">${s.clipTotali}</div><div class="etichetta">clip totali</div></div>`;
-    animaNumeri(griglia);
-    chatters.innerHTML = s.topChatters.length
-      ? s.topChatters.map((c, i) => `
-          <li><div class="testo-voce"><span class="domanda">${['', '', '', '4°', '5°'][i] || ''} ${esc(c.user)}</span>
-          <span class="meta"> — ${c.c} messaggi</span></div></li>`).join('')
-      : '<li class="vuoto">Ancora nessun chatter registrato.</li>';
-    const pres = document.getElementById('lista-presenze');
-    const fila = (n) => `${n} ${n === 1 ? L('diretta di fila', 'stream in a row', 'directo seguido') : L('dirette di fila', 'streams in a row', 'directos seguidos')}`;
-    if (pres) pres.innerHTML = (s.presenze || []).length
-      ? s.presenze.map((p, i) => `<li><div class="testo-voce"><span class="domanda">${['', '', '', '4°', '5°'][i] || ''} ${esc(p.user)}</span>
-          <span class="meta"> · ${fila(p.serie)}, ${p.dirette} ${L('in tutto', 'overall', 'en total')}</span></div></li>`).join('')
-      : `<li class="vuoto">${L('Ancora nessuna serie: la presenza si conta dopo dieci minuti in chat.', 'No streak yet: attendance counts after ten minutes in chat.', 'Aún ninguna racha: la presencia se cuenta tras diez minutos en el chat.')}</li>`;
-  } catch (e) {
-    griglia.innerHTML = `<div class="vuoto">Errore: ${esc(e.message)}</div>`;
+  document.querySelectorAll('[data-stat-periodo]').forEach((b) => b.classList.toggle('scelto', b.dataset.statPeriodo === _statPeriodo));
+  let s;
+  try { s = await api('/api/streamer/statistiche?periodo=' + encodeURIComponent(_statPeriodo)); }
+  catch (e) { griglia.innerHTML = `<div class="vuoto">${L('Errore:', 'Error:', 'Error:')} ${esc(e.message)}</div>`; return; }
+
+  const d = s.dirette || {};
+  const riquadro = (n, et) => `<div class="stat"><div class="numero">${esc(n)}</div><div class="etichetta">${esc(et)}</div></div>`;
+  griglia.innerHTML = [
+    riquadro(_statNum(d.n), L('dirette', 'streams', 'directos')),
+    riquadro(_statOre(Math.round((d.oreMs || 0) / 1000)), L('in onda', 'on air', 'en antena')),
+    riquadro(_statNum(d.picco), L('picco di spettatori', 'viewer peak', 'pico de espectadores')),
+    riquadro(_statNum(s.messaggi), L('messaggi in chat', 'chat messages', 'mensajes en el chat')),
+    riquadro(_statNum(s.persone), L('persone che hanno scritto', 'people who wrote', 'personas que escribieron')),
+    riquadro(_statNum(s.messaggiBot), L('interventi del bot', 'bot messages', 'intervenciones del bot')),
+    riquadro(_statNum(d.follow), L('nuovi follower', 'new followers', 'nuevos seguidores')),
+    riquadro(_statNum(d.sub), 'sub'),
+    d.raid ? riquadro(_statNum(d.raid), 'raid') : '',
+    riquadro(_statNum(s.clip), 'clip'),
+    d.donazioni ? riquadro(((d.donazioniCent || 0) / 100).toFixed(2).replace('.', ',') + ' €', L(`donazioni (${d.donazioni})`, `donations (${d.donazioni})`, `donaciones (${d.donazioni})`)) : '',
+  ].filter(Boolean).join('');
+
+  const fila = (n) => `${n} ${n === 1 ? L('diretta di fila', 'stream in a row', 'directo seguido') : L('dirette di fila', 'streams in a row', 'directos seguidos')}`;
+  _statGara('lista-presenze', (s.presenze || []).map((p) => ({ chi: p.user, quanto: `${fila(p.serie)} · ${p.dirette} ${L('in tutto', 'overall', 'en total')}` })),
+    L('Ancora nessuna serie: la presenza si conta dopo dieci minuti in chat.', 'No streak yet: attendance counts after ten minutes in chat.', 'Aún ninguna racha: la presencia se cuenta tras diez minutos en el chat.'));
+  _statGara('lista-chatters', (s.topChatters || []).map((c) => ({ chi: c.user, quanto: `${_statNum(c.n)} ${L('messaggi', 'messages', 'mensajes')}` })),
+    L('Ancora nessuno ha scritto in questo periodo.', 'Nobody wrote in this period yet.', 'Todavía nadie escribió en este periodo.'));
+  _statGara('lista-ore', (s.ore || []).map((o) => ({ chi: o.user, quanto: _statOre(o.secondi) })),
+    L('Il conteggio delle ore si accende nella scheda Comandi.', 'Watch-time counting is switched on in the Commands tab.', 'El conteo de horas se activa en la pestaña Comandos.'));
+
+  const box = document.getElementById('stat-dirette');
+  if (box) {
+    const u = s.ultime || [];
+    box.innerHTML = u.length
+      ? `<div class="tab-stat"><table><thead><tr>
+          <th>${L('Quando', 'When', 'Cuándo')}</th><th>${L('Durata', 'Length', 'Duración')}</th><th>${L('Picco', 'Peak', 'Pico')}</th>
+          <th>${L('Media', 'Average', 'Media')}</th><th>${L('Messaggi', 'Messages', 'Mensajes')}</th><th>${L('Persone', 'People', 'Personas')}</th>
+          <th>${L('Follower', 'Followers', 'Seguidores')}</th><th>clip</th></tr></thead><tbody>
+          ${u.map((x) => `<tr><td>${esc(dataIt(x.inizio || x.fine))}</td><td>${esc(_durataRap(x.durataMs))}</td><td>${x.picco || '—'}</td>
+          <td>${x.media || '—'}</td><td>${_statNum(x.messaggi)}</td><td>${_statNum(x.persone)}</td><td>${_statNum(x.follow)}</td><td>${x.clip || '—'}</td></tr>`).join('')}
+        </tbody></table></div>`
+      : `<p class="vuoto">${L('Nessuna diretta ancora: il rapporto nasce quando chiudi.', 'No stream yet: the report is born when you stop.', 'Ningún directo aún: el informe nace cuando cierras.')}</p>`;
   }
+  animaNumeri(griglia);
 }
 
 async function caricaMemoria(mostraToast = false) {
@@ -20089,6 +20180,9 @@ function initGuscio() {
   });
 
   document.addEventListener('click', (ev) => {
+    const sp = ev.target.closest('[data-stat-periodo]');
+    if (sp) { ev.preventDefault(); _statPeriodo = sp.dataset.statPeriodo; caricaStatistiche(); return; }
+
     const sb = ev.target.closest('[data-sblocca]');
     if (sb) { ev.preventDefault(); sbloccaAddon(sb.dataset.sblocca); return; }
 
