@@ -23,7 +23,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Ogni diretta finita lascia il suo rapporto nella scheda «Dirette», con durata, picco di spettatori, chat, follower, sub, raid, presenti, clip e donazioni. Un puntino ti dice quando ce n'è uno nuovo. [vai: dirette]
 - Il rapporto può arrivarti appena chiudi, su Telegram in privato o via mail: l'indirizzo lo scrivi tu e vale dopo la conferma. [vai: dirette]
 - I Moduli comandano la regia: un comando, la voce o un raid cambiano scena, mutano una fonte o la transizione nel programma con cui mandi in onda. Tre modelli pronti: torno subito, sono tornato, raid. [vai: moduli]
-- Il pannello si collega da solo alla regia appena lo apri, se l'hai collegata una volta, e ci riprova se il programma si chiude: basta tenerlo aperto sul computer della diretta. [vai: consolify]
+- La mail del rapporto adesso apre dicendo com'è andata, non con una tabella. In fondo trovi le clip della serata, una per una, da riaprire. [vai: dirette]
+- Se non hai ancora messo un indirizzo, la prima volta che entri te lo chiedo una volta sola. Dici no e non te lo chiedo più. [vai: dirette]
+- Basta tenere il pannello aperto sul computer della diretta: si ricollega da solo alla regia appena lo apri, e riprova quando il programma si chiude. [vai: consolify]
 
 ## 2026-09-16
 

@@ -65,3 +65,61 @@ dalle presenze), la raccolta nella finestra giusta (chat, eventi, presenze,
 clip, donazioni), il testo riga per riga e il caso vuoto, lo spegnimento.
 `test/contratto/rapporto.test.mjs`: il cablaggio nel bot (salva sempre, poi i
 canali), la scheda Dirette con le sue porte, il manuale, la vetrina, le novità.
+
+## La mail: perché non è un tabulato
+
+La prima versione era un elenco di undici righe etichetta-valore, tutte dello
+stesso peso. Si legge una volta e non si riapre: non c'è niente da guardare, e
+soprattutto niente da *rivedere*. Da lì il rifacimento, con tre scelte.
+
+**Una voce in apertura, ricavata dai fatti.** La prima riga dice la cosa che è
+saltata all'occhio quella sera. Non è un aggettivo buttato lì e non è un dado:
+`apertura()` scorre una lista di condizioni in ordine fisso (record di
+spettatori, raid, donazioni, facce nuove, follower, sub, chat viva, chat ferma)
+e prende la prima che è vera. La stessa serata dà sempre la stessa riga, serate
+diverse ne danno di diverse — che è esattamente il punto. Quella riga è anche
+l'**oggetto** della mail: è l'unica cosa che si legge nell'elenco della posta, ed
+è ciò che decide se la mail si apre. «Diretta finita: 3h 41m» si archivia senza
+guardarlo.
+
+**Una gerarchia.** Tre numeri grandi (picco, messaggi, follower nuovi) come i
+riquadri del pannello, poi il podio di chi ha scritto, poi il resto in righe
+leggere. Sotto i numeri le due colonne si impilano da sole — due blocchi
+affiancati con una larghezza massima, non una regola condizionale, così vale
+anche nei programmi che le regole non le leggono; per Outlook, che i blocchi
+affiancati non li fa, c'è il solo commento condizionale.
+
+**Le clip in fondo, una per una.** È il pezzo che vale di più: l'unico che si
+riapre. `raccogli()` si porta via url, motivo e ora dalla finestra della diretta
+(fino a otto), non solo il conteggio; la mail le mostra come carte con il titolo
+cliccabile, Telegram come link, il testo semplice con l'indirizzo per esteso, e
+la carta nella scheda Dirette le elenca per chi il rapporto non se lo fa mandare
+da nessuna parte.
+
+Il titolo dice **quando è cominciata**, non quando è finita: una diretta di
+martedì sera che chiude alle 00:46 resta «martedì sera», perché è così che la
+chiama chi l'ha fatta.
+
+## I due temi, e i caratteri
+
+Il guscio è lo stesso del prodotto, e i colori del tema scuro non si inventano:
+sono quelli di `tema.css` letti per il tema scuro (`tinta(nome, 'scuro')`), gli
+stessi del sito. Chi legge la posta col fondo nero non si prende una carta
+bianca in faccia; chi non capisce la regola resta al chiaro. I caratteri del sito
+non si spediscono — un programma di posta ne carica uno da fuori quasi mai —
+quindi si chiede prima quello del sito, per chi ce l'ha, e dietro c'è una fila
+che gli somiglia. Il cursore del sito, per lo stesso motivo, in una mail non
+esiste: non c'è CSS che sopravviva e non c'è un puntatore da vestire.
+
+## L'invito a lasciare l'indirizzo
+
+Chi non ha mai messo un indirizzo non sa che il rapporto può arrivargli. Perciò
+la prima volta che entra nel pannello dopo l'attivazione glielo si chiede, una
+volta sola. Chi lo deve vedere lo decide il **server** (`/api/me`, campo
+`invitoPosta`), non il browser: una scelta tenuta nel browser ricompare
+sull'altro computer e sul telefono, e uno che ha già detto no se la ritrova
+davanti. Non lo vede chi non è ancora attivo, chi non ha il canale, chi un
+indirizzo ce l'ha già anche solo proposto, e chi ha già risposto. La risposta si
+segna alla chiusura della finestra comunque sia andata, sì o no: la domanda è
+stata fatta. E se le novità sono già aperte, l'invito aspetta che si chiudano
+invece di accavallarsi.

@@ -2696,6 +2696,18 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // i rapporti delle dirette non ancora aperti, per il segno sulla scheda
       rapportiNuovi: rapporti.nuovi(user.login),
       postaDisponibile: posta.attiva(),
+      // L'INVITO A LASCIARE L'INDIRIZZO, una volta sola. Chi lo deve vedere si
+      // decide qui e non nel browser: una scelta tenuta nel browser ricompare
+      // sull'altro computer e sul telefono, e uno che ha gia' detto no se lo
+      // ritrova davanti. Qui invece la risposta resta con lo streamer, dovunque
+      // entri. Non lo vede: chi non e' ancora attivo, chi non ha il canale, chi
+      // un indirizzo ce l'ha gia' (anche solo proposto), e chi ha gia' risposto.
+      invitoPosta: (() => {
+        if (!posta.attiva() || !isOwner(req)) return false;
+        const s = streamers.get(user.login);
+        if (s?.status !== 'approved' || s?.settings?.invitoPosta) return false;
+        return !postaStreamer.get(user.login)?.email;
+      })(),
     });
   }));
 
@@ -4655,6 +4667,15 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     }
     res.json({ ok: true, posta: statoPosta(login) });
   }));
+  // «L'ho visto»: vale sia per il si' sia per il no, perche' in tutti e due i
+  // casi la domanda e' stata fatta e non va rifatta.
+  app.post('/api/streamer/posta/invito', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    streamers.setSettings(login, { ...(s?.settings || {}), invitoPosta: Date.now() });
+    res.json({ ok: true });
+  }));
+
   app.delete('/api/streamer/posta', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     postaStreamer.togli(login);

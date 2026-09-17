@@ -142,5 +142,5 @@ test('manuale, vetrina e novita\' lo dicono', () => {
   assert.match(vet, /scheda: 'moduli', pacc: 'free', t: \['La regia dai comandi e dagli eventi'/);
   const nov = leggi('NOVITA.md');
   assert.match(nov, /I Moduli comandano la regia:.*\[vai: moduli\]/);
-  assert.match(nov, /si collega da solo alla regia.*\[vai: consolify\]/);
+  assert.match(nov, /si ricollega da solo alla regia.*\[vai: consolify\]/);
 });
