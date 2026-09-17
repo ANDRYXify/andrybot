@@ -1066,6 +1066,11 @@ const VETRINA = {
     ] },
     { p: ['Da quel momento, quando vai live il gruppo lo sa. Il terzo passo è quello che si dimentica: senza <code>/collega</code> scritto <em>dentro</em> al gruppo, il bot non sa dove scrivere.'] },
     { p: ['Se hai collegato anche la <strong>chat privata</strong>, a fine diretta il bot può scriverti lì il rapporto della serata: lo accendi nella scheda <em>Dirette</em>, dove il rapporto resta comunque, insieme all\'opzione via mail.'] },
+    { h3: 'Compleanni' },
+    { p: ['Gli auguri partono in due posti, e sono due cose separate perché i momenti sono diversi. Nel <strong>gruppo Telegram</strong> partono a mezzanotte italiana. In <strong>chat</strong> la mezzanotte non esiste — a quell\'ora non c\'è nessuno — quindi partono al <strong>primo messaggio</strong> di chi compie gli anni quel giorno, una volta l\'anno.'] },
+    { p: ['Con gli auguri in chat accesi, chi ti guarda si segna da solo scrivendo <code>!compleanno 25/12</code>; <code>!compleanno</code> da solo rilegge la data, <code>!compleanno via</code> la toglie. Tu scrivi il testo (con <code>{nome}</code>) e, se vuoi, scegli un <strong>effetto</strong> della tua libreria che parte insieme agli auguri.'] },
+    { p: ['L\'elenco dei compleanni è uno solo, e accanto a ognuno c\'è da dove arriva: dal gruppo, dalla chat, o aggiunto a mano da te. Chi non passa in chat il giorno del suo compleanno non riceve auguri in chat: si fanno a chi c\'è.'] },
+
     { h3: 'TikTok, YouTube, Instagram' },
     { tabella: [
       ['Rete', 'Cosa serve', 'Cosa avvisa'],
