@@ -80,6 +80,7 @@ const ROTTE = new Set([
   '/.well-known/security.txt',                // RFC 9116: dove scrivere se trovi un buco
   '/accedi',                                  // abbonamenti self-service (login con Twitch)
   '/abbonamento/ritorno',                     // il ritorno dal Checkout: la sessione si rilegge da Stripe
+  '/posta/conferma',                          // il clic sulla mail di conferma dell'indirizzo
   '/spotify/callback', '/tiktok/callback',    // ritorni OAuth: si proteggono con lo `state`
   '/tgapp', '/api/tgapp/auth',                // Telegram Mini App: initData firmato dal bot token
   '/api/tgapp/oidc/start', '/telegram/oidc/callback',

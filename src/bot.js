@@ -11,7 +11,7 @@ import { config } from './config.js';
 import * as filigrana from './watermark.js';
 import * as licenza from './licenza.js';
 import { canaleHa } from './features/accesso.js';
-import { tokens, streamers, memory, tgConf, tgDest, tgAmici, tgMsg, feedFonti, dcConf, compleanni, pointAlerts } from './db.js';
+import { tokens, streamers, memory, tgConf, tgDest, tgAmici, tgMsg, feedFonti, dcConf, compleanni, pointAlerts, rapporti, postaStreamer } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
@@ -25,6 +25,7 @@ import * as watchtime from './features/watchtime.js';
 import * as comandibase from './features/comandibase.js';
 import * as presenze from './features/presenze.js';
 import * as rapporto from './features/rapporto.js';
+import * as posta from './features/posta.js';
 import * as trackinggiochi from './features/trackinggiochi.js';
 import * as comandichat from './features/comandichat.js';
 import * as sondaggi from './features/sondaggi.js';
@@ -1054,12 +1055,24 @@ export class BotManager {
   _rapportoDiretta(login) {
     try {
       const chiuso = rapporto.chiudi(login);
-      if (!chiuso || !rapporto.cfg(login).attivo) return;
+      if (!chiuso) return;
+      const dati = { ...chiuso, ...rapporto.raccogli(login, chiuso) };
+      // il rapporto resta sempre, nella scheda Dirette: i canali sono in piu'
+      const id = rapporti.salva(login, { inizio: chiuso.inizio, fine: chiuso.fine, dati });
+      const c = rapporto.cfg(login);
       const conf = tgConf.get(login);
-      if (!conf?.token || !conf.owner_tg_id || (conf.dm_modo || 'me') === 'off') return;
-      const t = rapporto.testo({ ...chiuso, ...rapporto.raccogli(login, chiuso) });
-      telegram.inviaMessaggio(conf.token, conf.owner_tg_id, t, { anteprima: false })
-        .catch((e) => log.debug(`#${login} rapporto:`, e?.message || e));
+      if (c.telegram && conf?.token && conf.owner_tg_id && (conf.dm_modo || 'me') !== 'off') {
+        telegram.inviaMessaggio(conf.token, conf.owner_tg_id, rapporto.testo(dati), { anteprima: false })
+          .then(() => rapporti.segnaInviato(id, 'telegram'))
+          .catch((e) => log.debug(`#${login} rapporto su Telegram:`, e?.message || e));
+      }
+      const pst = postaStreamer.get(login);
+      if (c.mail && pst?.confermata && pst.email && posta.attiva()) {
+        const display = streamers.get(login)?.display || login;
+        posta.invia({ a: pst.email, oggetto: rapporto.oggetto(dati), testo: rapporto.testoPiano(dati), html: rapporto.html(dati, { display, quando: new Date(chiuso.fine).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }) }) })
+          .then(() => rapporti.segnaInviato(id, 'mail'))
+          .catch((e) => log.warn(`#${login} rapporto via mail:`, e?.message || e));
+      }
     } catch (e) { log.debug(`#${login} rapporto:`, e?.message || e); }
   }
 

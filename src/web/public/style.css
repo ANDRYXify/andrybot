@@ -2249,3 +2249,15 @@ body.ce-aperto { overflow: hidden; }
 @media (hover: hover) {
   .cons-vuoto:not([disabled]):hover { opacity: .9; background: var(--surface-2); }
 }
+
+.voce-nuovo { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--acc); margin-right: .45rem; flex: 0 0 auto; }
+.rap-lista { display: flex; flex-direction: column; gap: .6rem; }
+.rap-carta { border: 1px solid var(--border); border-radius: var(--r-m); padding: .7rem .85rem; background: var(--surface-2); }
+.rap-carta.nuovo { border-color: var(--acc-bordo); }
+.rap-testa { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-bottom: .45rem; }
+.rap-durata { color: var(--testo-2); font-variant-numeric: tabular-nums; }
+.rap-via { margin-left: auto; font-size: .8rem; color: var(--testo-3); }
+.rap-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: .35rem .8rem; }
+.rap-num b { display: block; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.rap-num span { font-size: .78rem; color: var(--testo-2); }
+.rap-top { margin: .5rem 0 0; font-size: .88rem; color: var(--testo-2); }

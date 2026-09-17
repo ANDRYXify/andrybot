@@ -77,8 +77,48 @@ test('la raccolta legge la finestra giusta: chat, eventi, presenze, clip, donazi
 });
 
 test('si spegne dalle impostazioni, e di serie e\' acceso', () => {
-  assert.equal(r.cfg(CH).attivo, true);
+  assert.deepEqual(r.cfg(CH), { telegram: true, mail: false });
   streamers.setSettings(CH, { rapporto: { attivo: false } });
-  assert.equal(r.cfg(CH).attivo, false);
+  assert.equal(r.cfg(CH).telegram, false, 'il nome della prima versione spegne Telegram');
+  streamers.setSettings(CH, { rapporto: { telegram: true, mail: true } });
+  assert.deepEqual(r.cfg(CH), { telegram: true, mail: true });
   assert.equal(r.durata(59 * MIN + 29_000), '59m'); assert.equal(r.durata(3 * 3600_000 + 5 * MIN), '3h 05m');
+});
+
+test('lo store: il rapporto si salva, si elenca, si segna letto e inviato; l\'indirizzo vale solo confermato', async () => {
+  const { rapporti, postaStreamer } = await import('../../src/db.js');
+  const id = rapporti.salva(CH, { inizio: T0, fine: T0 + 60 * MIN, dati: { durataMs: 60 * MIN, messaggi: 3, top: [{ user: 'a', n: 1 }] } });
+  assert.ok(id > 0);
+  assert.equal(rapporti.nuovi(CH), 1);
+  const e = rapporti.elenco(CH);
+  assert.equal(e.length, 1); assert.equal(e[0].dati.messaggi, 3); assert.equal(e[0].letto, false); assert.equal(e[0].inviato, '');
+  rapporti.segnaInviato(id, 'telegram'); rapporti.segnaInviato(id, 'mail'); rapporti.segnaInviato(id, 'mail');
+  assert.equal(rapporti.elenco(CH)[0].inviato, 'telegram,mail');
+  rapporti.segnaLetti(CH);
+  assert.equal(rapporti.nuovi(CH), 0); assert.equal(rapporti.elenco(CH)[0].letto, true);
+  assert.equal(postaStreamer.get(CH), null);
+  postaStreamer.proponi(CH, ' Io@Esempio.IT ', 'calco1', T0 + 86_400_000);
+  let p = postaStreamer.get(CH);
+  assert.equal(p.email, 'io@esempio.it'); assert.equal(p.confermata, 0);
+  assert.equal(postaStreamer.conferma('calco-sbagliato', T0), null);
+  assert.equal(postaStreamer.conferma('calco1', T0 + 2 * 86_400_000), null, 'scaduto');
+  p = postaStreamer.conferma('calco1', T0 + 3600_000);
+  assert.equal(p.confermata, 1); assert.equal(p.impronta, '', 'il calco si consuma');
+  assert.equal(postaStreamer.conferma('calco1', T0 + 3600_000), null, 'una volta sola');
+  postaStreamer.togli(CH);
+  assert.equal(postaStreamer.get(CH), null);
+});
+
+test('i canali si normalizzano, e la versione mail ha le stesse voci nel guscio del prodotto', () => {
+  assert.deepEqual(r.normalizza({ attivo: false }), { telegram: false, mail: false }, 'il nome della prima versione vale ancora');
+  assert.deepEqual(r.normalizza({ telegram: true, mail: 'si' }), { telegram: true, mail: false });
+  assert.deepEqual(r.normalizza(undefined), { telegram: true, mail: false });
+  const d = { durataMs: 134 * MIN, picco: 48, media: 31, giri: 20, messaggi: 3, persone: 2, top: [{ user: 'Marco', n: 2 }], follow: 2, sub: 4, regali: 4, raid: 1, raidSpettatori: 35, presenti: 2, primeVolte: 1, clip: 1, donazioni: 2, donazioniCent: 1500 };
+  assert.equal(r.oggetto(d), 'Diretta finita: 2h 14m');
+  const h = r.html(d, { display: 'Canale', quando: 'ieri sera' });
+  for (const pezzo of ['Diretta finita: 2h 14m', 'picco 48, in media 31', '3 messaggi da 2 persone', 'Marco (2)', '4 (4 regalati)', '1 (35 spettatori)', '2, di cui 1 alla prima volta', '2 (15,00 €)', 'ieri sera', 'per il canale Canale', 'scheda Dirette']) {
+    assert.ok(h.includes(pezzo), `manca «${pezzo}»`);
+  }
+  assert.ok(!/<script/i.test(h));
+  assert.equal(r.testoPiano(d).split('\n')[0], 'Diretta finita: 2h 14m');
 });

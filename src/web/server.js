@@ -22,7 +22,7 @@ import * as licenza from '../licenza.js';      // il nome con cui questo softwar
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive } from '../db.js';
-import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
+import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi } from '../db.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { renderLinkPage, renderInformativa, accentoDi } from '../features/linkpagina.js';
@@ -47,6 +47,8 @@ import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as presenze from '../features/presenze.js';
+import * as rapporto from '../features/rapporto.js';
+import * as posta from '../features/posta.js';
 import * as donazioni from '../features/donazioni.js';
 import * as donaStripe from '../features/donazioni-stripe.js';
 import * as donaSatispay from '../features/donazioni-satispay.js';
@@ -2687,6 +2689,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         return s ? { tier: s.tier, pacchetti: abbonamenti.normalizzaPacchetti(s.pacchetti), status: s.status, fine: s.current_period_end, attivo: subscriptions.attivo(user.login), cliente: !!s.stripe_customer } : null;
       })(),
       stripeAttivo: config.stripe.attivo,
+      // i rapporti delle dirette non ancora aperti, per il segno sulla scheda
+      rapportiNuovi: rapporti.nuovi(user.login),
+      postaDisponibile: posta.attiva(),
     });
   }));
 
@@ -4340,8 +4345,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.antibot !== undefined) out.antibot = normalizzaAntibot(s.settings?.antibot, b.antibot);
     // serie di presenze e saluti: la regola pura sta nel modulo
     if (b.presenze !== undefined) out.presenze = presenze.normalizza(b.presenze, s.settings?.presenze);
-    // il rapporto di fine diretta in privato: acceso di serie, si spegne
-    if (b.rapporto !== undefined) out.rapporto = { attivo: (b.rapporto || {}).attivo !== false };
+    // il rapporto di fine diretta: su Telegram di serie, via mail se acceso
+    if (b.rapporto !== undefined) out.rapporto = rapporto.normalizza(b.rapporto);
     // ore guardate (watchtime): sempre attive salvo che lo streamer le spenga
     if (b.watchtime !== undefined) {
       out.watchtime = { attivo: (b.watchtime || {}).attivo !== false };
@@ -4611,6 +4616,58 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   }));
 
   // statistiche degli ultimi 7 giorni
+  // ------------------------------------------------------------ DIRETTE (i rapporti)
+  const statoPosta = (login) => {
+    const p = postaStreamer.get(login);
+    return { disponibile: posta.attiva(), email: p?.email || '', confermata: !!(p && p.confermata), inAttesa: !!(p && !p.confermata && p.email) };
+  };
+  app.get('/api/streamer/rapporti', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    res.json({ rapporti: rapporti.elenco(login, 30), posta: statoPosta(login), rapporto: rapporto.cfg(login) });
+  }));
+  app.post('/api/streamer/rapporti/letti', requireLogin, wrap(async (req, res) => {
+    rapporti.segnaLetti(currentUser(req).login);
+    res.json({ ok: true, nuovi: 0 });
+  }));
+  // L'indirizzo per i rapporti: si propone, arriva una mail con un codice, e
+  // vale solo dopo il clic. Il codice non si conserva: si conserva il calco.
+  app.post('/api/streamer/posta', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    if (!posta.indirizzoOk(email)) return res.status(400).json({ errore: 'Scrivi un indirizzo valido.' });
+    if (!posta.attiva()) return res.status(503).json({ errore: 'La posta non è configurata su questo server: il rapporto arriva su Telegram.' });
+    if (!posta.riposoConferma(login)) return res.status(429).json({ errore: 'Hai già chiesto una conferma da poco: guarda la casella, anche fra lo spam, e riprova fra dieci minuti.' });
+    const codice = crypto.randomBytes(24).toString('base64url');
+    const impronta = crypto.createHash('sha256').update(codice).digest('hex');
+    postaStreamer.proponi(login, email, impronta, Date.now() + 24 * 3600_000);
+    const link = `${config.baseUrl}/posta/conferma?t=${codice}`;
+    const display = streamers.get(login)?.display || login;
+    try {
+      await posta.invia({ a: email, oggetto: 'Conferma l\'indirizzo per i rapporti di SocialBot', ...posta.mailConferma({ display, link }) });
+    } catch (e) {
+      log.warn(`#${login} conferma posta:`, e?.message || e);
+      postaStreamer.togli(login);
+      return res.status(502).json({ errore: 'La mail di conferma non è partita: ' + (e?.passo === 'rete' ? 'il server non riesce a consegnare posta adesso.' : 'l\'indirizzo è stato rifiutato.') });
+    }
+    res.json({ ok: true, posta: statoPosta(login) });
+  }));
+  app.delete('/api/streamer/posta', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    postaStreamer.togli(login);
+    streamers.setSettings(login, { ...(streamers.get(login)?.settings || {}), rapporto: { ...rapporto.cfg(login), mail: false } });
+    res.json({ ok: true, posta: statoPosta(login) });
+  }));
+  app.get('/posta/conferma', wrap(async (req, res) => {
+    const codice = String(req.query.t || '');
+    const r = /^[A-Za-z0-9_-]{20,64}$/.test(codice) ? postaStreamer.conferma(crypto.createHash('sha256').update(codice).digest('hex')) : null;
+    if (r) {
+      const s = streamers.get(r.channel);
+      streamers.setSettings(r.channel, { ...(s?.settings || {}), rapporto: { ...rapporto.cfg(r.channel), mail: true } });
+      log.info(`posta confermata per #${r.channel}`);
+    }
+    res.redirect('/?posta=' + (r ? 'ok' : 'no') + (r ? '#dirette' : ''));
+  }));
+
   app.get('/api/streamer/statistiche', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const da = Date.now() - SETTE_GIORNI_MS;

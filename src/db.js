@@ -272,6 +272,27 @@ CREATE TABLE IF NOT EXISTS dirette_viste (  -- la diretta corrente e la preceden
   ultimo_tick INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS rapporti (      -- il rapporto di ogni diretta finita
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  inizio INTEGER NOT NULL DEFAULT 0,
+  fine INTEGER NOT NULL DEFAULT 0,
+  dati TEXT NOT NULL DEFAULT '{}',           -- i numeri, come li ha raccolti features/rapporto.js
+  letto INTEGER NOT NULL DEFAULT 0,
+  inviato TEXT NOT NULL DEFAULT '',          -- dove e' stato mandato: telegram, mail
+  ts INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_rapporti_channel ON rapporti(channel, fine);
+
+CREATE TABLE IF NOT EXISTS posta_streamer ( -- l'indirizzo scelto dallo streamer per i rapporti
+  channel TEXT PRIMARY KEY,
+  email TEXT NOT NULL DEFAULT '',
+  confermata INTEGER NOT NULL DEFAULT 0,
+  impronta TEXT NOT NULL DEFAULT '',         -- il calco del codice di conferma, mai il codice
+  scade INTEGER NOT NULL DEFAULT 0,
+  ts INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS vips (          -- VIP assegnati dal bot (con scadenza)
   channel TEXT NOT NULL,
   user TEXT NOT NULL,                       -- login minuscolo
@@ -1026,6 +1047,51 @@ export const presenze = {
     db.prepare('DELETE FROM presenze WHERE channel=?').run(ch);
     db.prepare('DELETE FROM dirette_viste WHERE channel=?').run(ch);
   },
+};
+
+// ---------------------------------------------------------------- RAPPORTI di fine diretta
+export const rapporti = {
+  salva(channel, { inizio = 0, fine = 0, dati = {} } = {}) {
+    const r = db.prepare('INSERT INTO rapporti (channel, inizio, fine, dati, letto, inviato, ts) VALUES (?,?,?,?,0,\'\',?)')
+      .run(String(channel).toLowerCase(), msIntero(inizio), msIntero(fine), JSON.stringify(dati || {}), now());
+    return Number(r.lastInsertRowid);
+  },
+  elenco(channel, n = 30) {
+    return db.prepare('SELECT * FROM rapporti WHERE channel=? ORDER BY fine DESC, id DESC LIMIT ?').all(String(channel).toLowerCase(), n)
+      .map((r) => ({ ...r, dati: safeJson(r.dati) || {}, letto: !!r.letto }));
+  },
+  nuovi(channel) {
+    return db.prepare('SELECT COUNT(*) c FROM rapporti WHERE channel=? AND letto=0').get(String(channel).toLowerCase()).c;
+  },
+  segnaLetti(channel) {
+    db.prepare('UPDATE rapporti SET letto=1 WHERE channel=? AND letto=0').run(String(channel).toLowerCase());
+  },
+  segnaInviato(id, via) {
+    const r = db.prepare('SELECT inviato FROM rapporti WHERE id=?').get(id);
+    if (!r) return;
+    const lista = new Set(String(r.inviato || '').split(',').filter(Boolean)); lista.add(String(via));
+    db.prepare('UPDATE rapporti SET inviato=? WHERE id=?').run([...lista].join(','), id);
+  },
+};
+
+// ---------------------------------------------------------------- POSTA dello streamer
+// Un indirizzo vale solo confermato: il codice della conferma non si conserva,
+// si conserva il suo calco (sha256), e scade.
+export const postaStreamer = {
+  get(channel) { return db.prepare('SELECT * FROM posta_streamer WHERE channel=?').get(String(channel).toLowerCase()) || null; },
+  proponi(channel, email, impronta, scade) {
+    db.prepare(`INSERT INTO posta_streamer (channel, email, confermata, impronta, scade, ts) VALUES (?,?,0,?,?,?)
+      ON CONFLICT(channel) DO UPDATE SET email=excluded.email, confermata=0, impronta=excluded.impronta, scade=excluded.scade, ts=excluded.ts`)
+      .run(String(channel).toLowerCase(), String(email).trim().toLowerCase(), String(impronta), msIntero(scade), now());
+    return this.get(channel);
+  },
+  conferma(impronta, ora = now()) {
+    const r = db.prepare('SELECT * FROM posta_streamer WHERE impronta=? AND impronta<>\'\' AND scade>=?').get(String(impronta), ora);
+    if (!r) return null;
+    db.prepare("UPDATE posta_streamer SET confermata=1, impronta='', scade=0, ts=? WHERE channel=?").run(now(), r.channel);
+    return this.get(r.channel);
+  },
+  togli(channel) { db.prepare('DELETE FROM posta_streamer WHERE channel=?').run(String(channel).toLowerCase()); },
 };
 
 // ---------------------------------------------------------------- VIP (con scadenza)

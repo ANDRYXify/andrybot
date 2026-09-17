@@ -251,6 +251,25 @@ async function caricaStato() {
     try { history.replaceState(null, '', '/'); } catch {  }
   }
   esitoAcquistoDaIndirizzo();
+  esitoPostaDaIndirizzo();
+  avvisaRapporti();
+}
+
+let _avvisatoRapporti = false;
+function avvisaRapporti() {
+  if (_avvisatoRapporti || !(stato?.rapportiNuovi > 0) || schedaAttiva === 'dirette' || stato?.user?.role !== 'proprietario') return;
+  _avvisatoRapporti = true;
+  toast(L('C’è il rapporto dell’ultima diretta: lo trovi in Dirette.', 'The report of your last stream is in: find it under Streams.', 'Está el informe del último directo: lo encuentras en Directos.'));
+}
+
+function esitoPostaDaIndirizzo() {
+  const po = new URLSearchParams(location.search).get('posta');
+  if (!po) return;
+  const dentro = stato?.streamer?.status === 'approved';
+  if (po === 'ok') toast(L('Indirizzo confermato: il rapporto ti arriva anche via mail.', 'Address confirmed: the report reaches you by email too.', 'Dirección confirmada: el informe te llega también por correo.'));
+  else toast(L('Il collegamento non vale più: chiedi una nuova conferma dalla scheda Dirette.', 'The link is no longer valid: ask for a new confirmation from the Streams tab.', 'El enlace ya no vale: pide una nueva confirmación desde la pestaña Directos.'), 'errore');
+  try { history.replaceState(null, '', '/' + (dentro ? '#dirette' : '')); } catch {  }
+  if (dentro && stato?.user?.role === 'proprietario') vaiAScheda('dirette');
 }
 
 function esitoAcquistoDaIndirizzo() {
@@ -289,6 +308,7 @@ function statoDemo() {
     ruolo: ctx.role,
     identita: 'andryx_demo', identitaDisplay: 'Andryx',
     tier: 'community', stripeAttivo: false,
+    rapportiNuovi: 1, postaDisponibile: true,
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display },
     isAdmin: false,
@@ -640,6 +660,15 @@ function _demoGet(via) {
         { id: 1, comando: 'applausi', tipo: 'audio', tier: 'tutti', cooldown: 10, volume: 80, durata: 3000 },
         { id: 2, comando: 'tromba', tipo: 'audio', tier: 'sub', cooldown: 15, volume: 70, durata: 2000 },
         { id: 3, comando: 'coriandoli', tipo: 'video', tier: 'vip', cooldown: 30, volume: 60, durata: 4000 },
+      ],
+    },
+    '/api/streamer/rapporti': {
+      rapporto: { telegram: true, mail: true },
+      posta: { disponibile: true, email: 'andry@esempio.it', confermata: true, inAttesa: false },
+      rapporti: [
+        { id: 3, inizio: 1789574400000, fine: 1789583040000, letto: false, inviato: 'telegram,mail', ts: 1789583040000, dati: { durataMs: 8640000, picco: 61, media: 44, giri: 28, messaggi: 1240, persone: 96, top: [{ user: 'lucaplays', n: 120 }, { user: 'giada_ttv', n: 98 }, { user: 'marco99', n: 77 }], follow: 14, sub: 5, regali: 2, raid: 1, raidSpettatori: 35, presenti: 71, primeVolte: 9, clip: 4, donazioni: 2, donazioniCent: 1500 } },
+        { id: 2, inizio: 1789401600000, fine: 1789410960000, letto: true, inviato: 'telegram', ts: 1789410960000, dati: { durataMs: 9360000, picco: 48, media: 33, giri: 31, messaggi: 980, persone: 80, top: [{ user: 'giada_ttv', n: 101 }, { user: 'il_nonno', n: 64 }, { user: 'sara_gg', n: 52 }], follow: 9, sub: 3, regali: 0, raid: 0, raidSpettatori: 0, presenti: 58, primeVolte: 5, clip: 2, donazioni: 0, donazioniCent: 0 } },
+        { id: 1, inizio: 1789228800000, fine: 1789236000000, letto: true, inviato: '', ts: 1789236000000, dati: { durataMs: 7200000, picco: 39, media: 27, giri: 24, messaggi: 610, persone: 54, top: [{ user: 'marco99', n: 70 }, { user: 'lucaplays', n: 66 }, { user: 'sara_gg', n: 40 }], follow: 6, sub: 1, regali: 0, raid: 0, raidSpettatori: 0, presenti: 40, primeVolte: 3, clip: 1, donazioni: 1, donazioniCent: 500 } },
       ],
     },
     '/api/streamer/statistiche': {
@@ -2295,6 +2324,7 @@ const GRUPPI = [
   ] },
   { id: 'diretta', nome: 'Durante la diretta', schede: [
     ['regia', 'Regia'],
+    ['dirette', 'Dirette'],
     ['consolify', 'CONSOLify'],
   ] },
   { id: 'scena', nome: 'Scena & overlay', schede: [
@@ -2358,6 +2388,7 @@ const T_SCHEDA = {
   alert: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'],
   emote: ['Emote (7TV)', 'Emotes (7TV)', 'Emotes (7TV)'],
   notifiche: ['Notifiche social', 'Social notifications', 'Notificaciones sociales'],
+  dirette: ['Dirette', 'Streams', 'Directos'],
   sottoscrizione: ['Abbonamento', 'Subscription', 'Suscripción'],
   pagina: ['Pagina link', 'Link page', 'Página de enlaces'],
   effetti: ['Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'],
@@ -2395,6 +2426,7 @@ const ICONA = {
   emote:       _ico('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><line x1="9" x2="9.01" y1="9.5" y2="9.5"/><line x1="15" x2="15.01" y1="9.5" y2="9.5"/>'),
   notifiche:   _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
   grafiche:    _ico('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5a2 2 0 0 0-2.8 0L4 22"/>'),
+  dirette:     _ico('<path d="M3 13h3l3-7 4 14 3-9 2 4h3"/>'),
   sottoscrizione: _ico('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 14.5h4"/>'),
   pagina:      _ico('<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.8 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.8-1.7"/>'),
   donazioni:   _ico('<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'),
@@ -2424,6 +2456,7 @@ const DESC = {
   alert: ['Il tuo overlay: alert, chat a schermo, widget e temi, tutto personalizzabile.', 'Your stream overlay: alerts, on-screen chat, widgets and themes, all customizable.', 'Tu overlay: alertas, chat en pantalla, widgets y temas, todo personalizable.'],
   emote: ['Gestisci le emote 7TV del tuo canale: aggiungi, togli e rinomina, senza uscire dal bot.', 'Manage your channel’s 7TV emotes: add, remove and rename, without leaving the bot.', 'Gestiona las emotes 7TV de tu canal: añade, quita y renombra, sin salir del bot.'],
   notifiche: ['Avvisi su Telegram e Discord quando vai in diretta, e dei nuovi post su TikTok, YouTube e Instagram.', 'Alerts on Telegram and Discord when you go live, and for new posts on TikTok, YouTube and Instagram.', 'Avisos en Telegram y Discord cuando estás en directo, y de los nuevos posts en TikTok, YouTube e Instagram.'],
+  dirette: ['Il rapporto di ogni diretta: spettatori, chat, follower, presenti, clip e donazioni. E dove riceverlo.', 'The report of every stream: viewers, chat, followers, attendees, clips and donations. And where to get it.', 'El informe de cada directo: espectadores, chat, seguidores, presentes, clips y donaciones. Y dónde recibirlo.'],
   sottoscrizione: ['Cosa hai attivo, cosa comprende e come annullare.', 'What you have active, what it includes and how to cancel.', 'Qué tienes activo, qué incluye y cómo cancelar.'],
   pagina: ['La tua pagina pubblica con tutti i link, su socialbot.live/u/iltuonome.', 'Your public page with all your links, at socialbot.live/u/yourname.', 'Tu página pública con todos tus enlaces, en socialbot.live/u/tunombre.'],
   admin: ['Gestione streamer e anima condivisa del bot.', 'Streamer management and the bot’s shared soul.', 'Gestión de streamers y el alma compartida del bot.'],
@@ -2552,6 +2585,8 @@ const GUIDE = {
     come: [['Premi «Modifica i tasti» e aggiungine uno: nell\'elenco ci sono già le tue azioni, perché nascono dai tuoi contatori e dai tuoi effetti.', 'Press “Edit the keys” and add one: your actions are already in the list, because they come from your own counters and effects.', 'Pulsa «Editar las teclas» y añade una: tus acciones ya están en la lista, porque nacen de tus contadores y tus efectos.', '#cons-modifica'], ['Premi «Fatto» e prova: sotto ogni tasto compare com\'è andata, per esempio il numero nuovo del contatore.', 'Press “Done” and try it: under each key you see how it went, for example the counter’s new number.', 'Pulsa «Hecho» y pruébalo: bajo cada tecla aparece cómo ha ido, por ejemplo el número nuevo del contador.', '#cons-plancia'], ['Apri questa pagina sul telefono e tienila lì mentre streami: la griglia si adatta da sé.', 'Open this page on your phone and keep it there while you stream: the grid adapts on its own.', 'Abre esta página en el móvil y tenla ahí mientras emites: la cuadrícula se adapta sola.', ''], ['Per una tastiera fisica: ogni tasto qui ha il suo indirizzo. Copialo e incollalo in un tasto con un componente di chiamate web: punta al tasto, non all\'azione, quindi se domani gli cambi mestiere lì non rifai niente.', 'For a physical key pad: every key here has its own address. Copy it into a key with a web-request component: it points at the key, not the action, so if tomorrow you change what it does you redo nothing there.', 'Para un teclado físico: cada tecla de aquí tiene su dirección. Cópiala en una tecla con un componente de peticiones web: apunta a la tecla, no a la acción, así si mañana cambias lo que hace no rehaces nada allí.', '#cons-indirizzi'], ['Se un indirizzo finisce in una clip, rigenera la chiave: quelli vecchi smettono di funzionare subito.', 'If an address ends up in a clip, regenerate the key: the old ones stop working immediately.', 'Si una dirección acaba en un clip, regenera la clave: las viejas dejan de funcionar enseguida.', '#cons-revoca']] },
   regia: { serve: ['Gestire la diretta dal pannello: titolo, categoria, marker e le azioni rapide, senza aprire Twitch.', 'Run your stream from the panel: title, category, markers and quick actions, without opening Twitch.', 'Gestionar el directo desde el panel: título, categoría, marcadores y acciones rápidas, sin abrir Twitch.'],
     come: [['Cambia titolo e categoria e salva: si aggiornano su Twitch subito.', 'Change title and category and save: they update on Twitch right away.', 'Cambia título y categoría y guarda: se actualizan en Twitch al instante.', '#regia-titolo'], ['Usa le azioni rapide durante la live (marker, clip, annunci).', 'Use the quick actions during the stream (marker, clip, announcements).', 'Usa las acciones rápidas durante el directo (marcador, clip, anuncios).', '#regia-clip'], ['Tieni il pannello aperto su un secondo schermo mentre streami.', 'Keep the panel open on a second screen while you stream.', 'Ten el panel abierto en una segunda pantalla mientras emites.', '']] },
+  dirette: { serve: ['Rileggere com’è andata ogni diretta e scegliere dove ricevere il rapporto.', 'Look back at how each stream went and choose where to get the report.', 'Repasar cómo fue cada directo y elegir dónde recibir el informe.'],
+    come: [['Ogni diretta finita è una carta: durata, spettatori, chat, follower, presenti, clip e donazioni.', 'Every finished stream is a card: duration, viewers, chat, followers, attendees, clips and donations.', 'Cada directo terminado es una tarjeta: duración, espectadores, chat, seguidores, presentes, clips y donaciones.', '#lista-rapporti'], ['Accendi Telegram se hai collegato la chat privata: il rapporto arriva lì appena chiudi.', 'Turn on Telegram if you linked the private chat: the report lands there as soon as you end.', 'Enciende Telegram si vinculaste el chat privado: el informe llega allí en cuanto cierras.', '#chk-rap-telegram'], ['Per la mail scrivi l’indirizzo e conferma dal messaggio che ti arriva.', 'For email, write the address and confirm from the message you get.', 'Para el correo escribe la dirección y confirma desde el mensaje que te llega.', '#inp-posta']] },
   sottoscrizione: { serve: ['Vedere cosa hai attivo, cosa comprende, quanto paghi e come cambiarlo o annullarlo.', 'See what you have active, what it includes, what you pay and how to change or cancel it.', 'Ver qué tienes activo, qué incluye, cuánto pagas y cómo cambiarlo o cancelarlo.'],
     come: [['In cima leggi il piano attuale e, se è una prova, fino a quando dura.', 'At the top you read your current plan and, if it’s a trial, how long it lasts.', 'Arriba lees tu plan actual y, si es una prueba, hasta cuándo dura.', '#sott-box'], ['Sotto vedi quali funzioni sono accese e quali no, senza gerghi.', 'Below you see which features are on and which aren’t, no jargon.', 'Debajo ves qué funciones están activas y cuáles no, sin jerga.', ''], ['Sotto «Puoi aggiungere» spunti gli extra che ti mancano: il totale è quello che paghi in più, e il tasto li attiva.', 'Under “You can add” you tick the extras you are missing: the total is what you pay extra, and the button switches them on.', 'Bajo «Puedes añadir» marcas los extras que te faltan: el total es lo que pagas de más, y el botón los activa.', ''], ['Da «Gestisci» apri il portale dei pagamenti: fatture, carta e disdetta.', 'From “Manage” you open the payment portal: invoices, card and cancellation.', 'Desde «Gestionar» abres el portal de pagos: facturas, tarjeta y cancelación.', '']] },
   pagina: { serve: ['Avere una pagina pubblica con tutti i tuoi link (Twitch, social, Discord, donazioni) da mettere nella bio di Instagram o TikTok.', 'Have a public page with all your links (Twitch, socials, Discord, donations) to put in your Instagram or TikTok bio.', 'Tener una página pública con todos tus enlaces (Twitch, redes, Discord, donaciones) para poner en la bio de Instagram o TikTok.'],
@@ -2844,6 +2879,8 @@ function gruppoDiScheda(id) {
   return g ? g.id : '';
 }
 
+const nuovoDi = (id) => (id === 'dirette' && stato?.rapportiNuovi > 0 ? '<i class="voce-nuovo"></i>' : '');
+
 function navTopHtml() {
   return elencoGruppi().map((g) => {
     const attivo = g.schede.some(([id]) => id === schedaAttiva) ? ' attivo' : '';
@@ -2854,7 +2891,7 @@ function navTopHtml() {
         <button class="grp-btn" data-scheda="${id}"><span class="grp-dot"></span>${esc(tGruppo(g.id, g.nome))}</button></div>`;
     }
     const voci = g.schede.map(([id, nome]) =>
-      `<button class="menu-voce${id === schedaAttiva ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span>${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`).join('');
+      `<button class="menu-voce${id === schedaAttiva ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}${nuovoDi(id)}<span>${esc(tScheda(id, nome))}</span>${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`).join('');
     return `<div class="grp${attivo}" data-grp="${g.id}" style="${col}">
       <button class="grp-btn" data-menu="${g.id}" aria-expanded="false"><span class="grp-dot"></span>${esc(tGruppo(g.id, g.nome))}${CHEVRON}</button>
       <div class="grp-menu">${voci}</div></div>`;
@@ -2919,7 +2956,7 @@ function osservaTitolo() {
 function navDrawerHtml() {
   return elencoGruppi().map((g) => {
     const voci = g.schede.map(([id, nome]) =>
-      `<button class="drawer-voce${id === schedaAttiva ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span>${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`).join('');
+      `<button class="drawer-voce${id === schedaAttiva ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}${nuovoDi(id)}<span>${esc(tScheda(id, nome))}</span>${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`).join('');
     return `<div class="drawer-grp" style="--gc:var(--g-${g.id})"><div class="drawer-grp-tit">${esc(tGruppo(g.id, g.nome))}</div>${voci}</div>`;
   }).join('');
 }
@@ -3480,6 +3517,7 @@ function vistaPiattaforma() {
     ${pannelloRegistro()}
     ${pannelloGiochi()}
     ${pannelloRegia()}
+    ${pannelloDirette()}
     ${pannelloConsolify()}
     ${pannelloStudio()}
     ${pannelloClip()}
@@ -12578,6 +12616,107 @@ function _xlaGrabFn() {
 
 const bookmarkletXla = 'javascript:(' + _xlaGrabFn.toString().replace(/\n\s*/g, ' ') + ')()';
 
+function pannelloDirette() {
+  return pannello('dirette', `
+    <div class="carta">
+      <h2>${_hIco(ICO.grafico)}${L('Le tue dirette', 'Your streams', 'Tus directos')}</h2>
+      <p>${L('Ogni diretta finita lascia qui il suo rapporto: quanto è durata, quanti c’erano, cosa è successo. Sono i numeri veri del canale, raccolti dal bot mentre trasmettevi.', 'Every finished stream leaves its report here: how long it lasted, how many were there, what happened. They are the channel’s real numbers, collected by the bot while you were live.', 'Cada directo terminado deja aquí su informe: cuánto duró, cuántos había, qué pasó. Son los números reales del canal, recogidos por el bot mientras emitías.')}</p>
+      <div id="lista-rapporti" class="rap-lista"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.megafono)}${L('Dove ricevere il rapporto', 'Where to get the report', 'Dónde recibir el informe')}</h2>
+      <p>${L('Qui resta sempre. In più può arrivarti appena chiudi la diretta, su Telegram o via mail.', 'It always stays here. It can also reach you as soon as you end the stream, on Telegram or by email.', 'Aquí se queda siempre. Además puede llegarte en cuanto cierras el directo, en Telegram o por correo.')}</p>
+      <div id="box-canali-rapporto"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+    </div>`);
+}
+
+const _durataRap = (ms) => { const m = Math.max(0, Math.round((Number(ms) || 0) / 60000)); const h = Math.floor(m / 60); return h ? `${h}h ${String(m % 60).padStart(2, '0')}m` : `${m}m`; };
+function cartaRapporto(r) {
+  const d = r.dati || {};
+  const num = (v, et) => `<div class="rap-num"><b>${esc(String(v))}</b><span>${esc(et)}</span></div>`;
+  const euro = (c) => ((Number(c) || 0) / 100).toFixed(2).replace('.', ',') + ' €';
+  const vie = String(r.inviato || '').split(',').filter(Boolean).map((v) => (v === 'mail' ? L('mail', 'email', 'correo') : 'Telegram'));
+  return `<div class="rap-carta${r.letto ? '' : ' nuovo'}">
+    <div class="rap-testa"><strong>${esc(dataIt(r.fine || r.ts))}</strong><span class="rap-durata">${esc(_durataRap(d.durataMs))}</span>${r.letto ? '' : `<span class="badge verde">${L('nuovo', 'new', 'nuevo')}</span>`}${vie.length ? `<span class="rap-via">${esc(vie.join(' · '))}</span>` : ''}</div>
+    <div class="rap-griglia">
+      ${d.giri > 0 ? num(d.picco, L('picco spettatori', 'viewer peak', 'pico de espectadores')) + num(d.media, L('spettatori in media', 'average viewers', 'espectadores de media')) : ''}
+      ${num(d.messaggi | 0, L('messaggi', 'messages', 'mensajes'))}${num(d.persone | 0, L('persone in chat', 'people in chat', 'personas en el chat'))}
+      ${num(d.follow | 0, L('nuovi follower', 'new followers', 'nuevos seguidores'))}${num(d.sub | 0, d.regali ? L(`sub (${d.regali} regalati)`, `subs (${d.regali} gifted)`, `subs (${d.regali} regalados)`) : 'sub')}
+      ${d.raid ? num(d.raid, L(`raid (${d.raidSpettatori} spettatori)`, `raids (${d.raidSpettatori} viewers)`, `raids (${d.raidSpettatori} espectadores)`)) : ''}
+      ${d.presenti ? num(d.presenti, L('presenti', 'attendees', 'presentes')) : ''}${d.primeVolte ? num(d.primeVolte, L('prime volte', 'first-timers', 'primeras veces')) : ''}
+      ${d.clip ? num(d.clip, 'clip') : ''}${d.donazioni ? num(euro(d.donazioniCent), L(`donazioni (${d.donazioni})`, `donations (${d.donazioni})`, `donaciones (${d.donazioni})`)) : ''}
+    </div>
+    ${d.top?.length ? `<p class="rap-top">${L('Più attivi', 'Most active', 'Más activos')}: ${d.top.map((t) => `<strong>${esc(t.user)}</strong> (${t.n})`).join(', ')}</p>` : ''}
+  </div>`;
+}
+
+function canaliRapportoHtml(d) {
+  const tg = stato.telegram || {};
+  const tgOk = !!tg.dmCollegato && tg.dmModo !== 'off';
+  const p = d.posta || {};
+  const c = d.rapporto || {};
+  return `
+    <div class="riga-interruttore">
+      <label class="interruttore"><input type="checkbox" id="chk-rap-telegram" ${c.telegram !== false ? 'checked' : ''}><span class="levetta"></span></label>
+      <span class="etichetta-stato">${L('Su Telegram, in privato', 'On Telegram, in private', 'En Telegram, en privado')}</span>
+      ${tgOk ? `<span class="badge verde">${L('pronto', 'ready', 'listo')}</span>` : ''}
+    </div>
+    <p class="suggerimento">${tgOk
+      ? L('Arriva nella chat privata del tuo bot appena chiudi la diretta.', 'It lands in your bot’s private chat as soon as you end the stream.', 'Llega al chat privado de tu bot en cuanto cierras el directo.')
+      : `${L('Serve la chat privata collegata:', 'You need the private chat linked:', 'Hace falta el chat privado vinculado:')} <a href="#notifiche" data-scheda="notifiche">${L('la colleghi in Notifiche', 'link it under Notifications', 'la vinculas en Notificaciones')}</a>.`}</p>
+    <h3 class="sotto-titolo">${L('Via mail', 'By email', 'Por correo')}</h3>
+    ${p.disponibile ? '' : `<p class="suggerimento">${L('La posta non è configurata su questo server: per ora il rapporto arriva su Telegram.', 'Email is not set up on this server: for now the report reaches you on Telegram.', 'El correo no está configurado en este servidor: por ahora el informe llega en Telegram.')}</p>`}
+    <label class="campo" for="inp-posta">${L('Indirizzo', 'Address', 'Dirección')}</label>
+    <div class="riga-flessibile">
+      <input type="email" id="inp-posta" maxlength="254" value="${esc(p.email || '')}" placeholder="nome@esempio.it"${p.disponibile ? '' : ' disabled'}>
+      <button type="button" class="btn" id="btn-posta-conferma"${p.disponibile ? '' : ' disabled'}>${p.email && !p.confermata ? L('Rimanda la conferma', 'Resend the confirmation', 'Reenviar la confirmación') : L('Conferma l’indirizzo', 'Confirm the address', 'Confirmar la dirección')}</button>
+      ${p.email ? `<button type="button" class="btn secondario" id="btn-posta-togli">${L('Togli', 'Remove', 'Quitar')}</button>` : ''}
+    </div>
+    <p class="suggerimento">${p.confermata
+      ? `<span class="badge verde">${L('confermato', 'confirmed', 'confirmado')}</span> ${L('Il rapporto può arrivare qui.', 'The report can reach you here.', 'El informe puede llegar aquí.')}`
+      : p.email
+        ? `<span class="badge giallo">${L('in attesa', 'pending', 'pendiente')}</span> ${L('Ti abbiamo scritto: apri la mail e premi Conferma. Guarda anche nello spam.', 'We wrote to you: open the email and press Confirm. Check the spam folder too.', 'Te hemos escrito: abre el correo y pulsa Confirmar. Mira también en el spam.')}`
+        : L('Scrivi l’indirizzo e premi Conferma: ti arriva una mail con un tasto, e vale solo dopo il clic.', 'Write the address and press Confirm: you get an email with a button, and it only counts after the click.', 'Escribe la dirección y pulsa Confirmar: te llega un correo con un botón, y solo vale tras el clic.')}</p>
+    <div class="riga-interruttore">
+      <label class="interruttore"><input type="checkbox" id="chk-rap-mail" ${c.mail && p.confermata ? 'checked' : ''}${p.confermata ? '' : ' disabled'}><span class="levetta"></span></label>
+      <span class="etichetta-stato">${L('Mandami il rapporto via mail', 'Send me the report by email', 'Envíame el informe por correo')}</span>
+    </div>`;
+}
+
+async function caricaDirette() {
+  const lista = document.getElementById('lista-rapporti');
+  const box = document.getElementById('box-canali-rapporto');
+  if (!lista || !box) return;
+  let d;
+  try { d = await api('/api/streamer/rapporti'); }
+  catch (e) { lista.innerHTML = `<p class="vuoto">${esc(e.message)}</p>`; return; }
+  const righe = d.rapporti || [];
+  lista.innerHTML = righe.length ? righe.map(cartaRapporto).join('')
+    : `<p class="vuoto">${L('Ancora nessuna diretta finita da quando il bot le conta: la prossima lascerà qui il suo rapporto.', 'No finished stream yet since the bot started counting: the next one will leave its report here.', 'Aún ningún directo terminado desde que el bot los cuenta: el próximo dejará aquí su informe.')}</p>`;
+  box.innerHTML = canaliRapportoHtml(d);
+  const salvaCanali = (msg) => salvaImpostazioni({ rapporto: { telegram: !!document.getElementById('chk-rap-telegram')?.checked, mail: !!document.getElementById('chk-rap-mail')?.checked } }, msg);
+  document.getElementById('chk-rap-telegram')?.addEventListener('change', (ev) => conErrore(() => salvaCanali(ev.target.checked ? L('Il rapporto arriva su Telegram.', 'The report reaches you on Telegram.', 'El informe llega en Telegram.') : L('Niente rapporto su Telegram.', 'No report on Telegram.', 'Sin informe en Telegram.'))));
+  document.getElementById('chk-rap-mail')?.addEventListener('change', (ev) => conErrore(() => salvaCanali(ev.target.checked ? L('Il rapporto arriva anche via mail.', 'The report reaches you by email too.', 'El informe llega también por correo.') : L('Niente rapporto via mail.', 'No report by email.', 'Sin informe por correo.'))));
+  document.getElementById('btn-posta-conferma')?.addEventListener('click', () => conErrore(async () => {
+    const email = (document.getElementById('inp-posta')?.value || '').trim();
+    if (!email) { toast(L('Scrivi l’indirizzo.', 'Write the address.', 'Escribe la dirección.'), 'errore'); return; }
+    const r = await api('/api/streamer/posta', { method: 'POST', body: { email } });
+    toast(L('Ti abbiamo scritto: apri la mail e premi Conferma.', 'We wrote to you: open the email and press Confirm.', 'Te hemos escrito: abre el correo y pulsa Confirmar.'));
+    box.innerHTML = canaliRapportoHtml({ ...d, posta: r.posta });
+    caricaDirette();
+  }));
+  document.getElementById('btn-posta-togli')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/streamer/posta', { method: 'DELETE' });
+    toast(L('Indirizzo tolto.', 'Address removed.', 'Dirección quitada.'));
+    caricaDirette();
+  }));
+  if (stato?.rapportiNuovi > 0) {
+    stato.rapportiNuovi = 0;
+    document.querySelectorAll('.voce-nuovo').forEach((e) => e.remove());
+    if (!DEMO) api('/api/streamer/rapporti/letti', { method: 'POST', body: {} }).catch(() => {});
+  }
+}
+
 function pannelloSottoscrizione() {
   return pannello('sottoscrizione', `
     <div class="carta">
@@ -14745,11 +14884,6 @@ function pannelloNotifiche() {
       </p>
       <div id="tg-dm-codice"></div>
 
-      <div class="riga-interruttore spazio-sopra">
-        <label class="interruttore"><input type="checkbox" id="chk-tg-rapporto" ${(stato.streamer?.settings?.rapporto?.attivo) !== false ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">${L('Rapporto di fine diretta in privato', 'End-of-stream report in private', 'Informe de fin de directo en privado')}</span>
-      </div>
-      <p class="suggerimento">${L('Appena chiudi la diretta ti scrive com’è andata: durata, picco di spettatori, messaggi e chi ha scritto di più, nuovi follower e sub, raid, presenti, clip e donazioni. Serve la chat privata collegata e accesa.', 'As soon as you end the stream it writes you how it went: duration, viewer peak, messages and top chatters, new followers and subs, raids, attendees, clips and donations. The private chat must be linked and on.', 'En cuanto cierras el directo te escribe cómo ha ido: duración, pico de espectadores, mensajes y quién más ha escrito, nuevos seguidores y subs, raids, presentes, clips y donaciones. Hace falta el chat privado vinculado y encendido.')}</p>
 
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="chk-tg-proattiva" ${impostazioni().proattivoTg !== false ? 'checked' : ''}><span class="levetta"></span></label>
@@ -16265,9 +16399,6 @@ function attivaPiattaforma() {
     toast(ev.target.checked ? 'In privato risponderò solo a te.' : 'Chat privata spenta.');
     stato = await api('/api/me'); render();
   }));
-  document.getElementById('chk-tg-rapporto')?.addEventListener('change', (ev) => conErrore(async () => {
-    await salvaImpostazioni({ rapporto: { attivo: ev.target.checked } }, ev.target.checked ? L('A fine diretta ti arriva il rapporto.', 'You get the report when the stream ends.', 'Al final del directo te llega el informe.') : L('Rapporto spento.', 'Report off.', 'Informe apagado.'));
-  }));
   document.getElementById('btn-tg-dm-collega')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     const r = await api('/api/streamer/telegram/collega', { method: 'POST', body: {} });
     const box = document.getElementById('tg-dm-codice');
@@ -16915,6 +17046,7 @@ function caricaDatiScheda(id) {
   if (id === 'scudo') caricaScudo();
   if (id === 'registro') caricaRegistro();
   if (id === 'sottoscrizione') caricaSottoscrizione();
+  if (id === 'dirette') caricaDirette();
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
 }
 

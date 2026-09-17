@@ -11,13 +11,20 @@
 // ripartito a diretta in corso, e' l'inizio della diretta corrente delle
 // presenze (dirette_viste), che sopravvive ai riavvii. La fine e' adesso.
 import { db, streamers, presenze as store } from '../db.js';
+import { guscioHtml, rigaHtml } from './posta.js';
 
 const norm = (s) => String(s || '').toLowerCase().trim();
 const sessioni = new Map();   // canale → { inizio, picco, somma, giri }
 
+// Dove va il rapporto: Telegram di serie (se la chat privata c'e'), la mail
+// solo se lo streamer l'ha accesa. `attivo` e' il nome della prima versione.
 export function cfg(channel) {
-  const r = streamers.get(norm(channel))?.settings?.rapporto;
-  return { attivo: !(r && r.attivo === false) };
+  const r = streamers.get(norm(channel))?.settings?.rapporto || {};
+  return { telegram: (r.telegram ?? r.attivo) !== false, mail: r.mail === true };
+}
+export function normalizza(b) {
+  const r = (b && typeof b === 'object') ? b : {};
+  return { telegram: (r.telegram ?? r.attivo) !== false, mail: r.mail === true };
 }
 
 export function apri(channel, { ora = Date.now(), inizio = 0 } = {}) {
@@ -96,6 +103,36 @@ export function durata(ms) {
 }
 const euro = (cent) => (cent / 100).toFixed(2).replace('.', ',') + ' €';
 const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+export const oggetto = (dati) => `Diretta finita: ${durata(dati?.durataMs || 0)}`;
+
+// La mail, col guscio del prodotto: le stesse voci del messaggio, in tabella.
+export function html(dati, { display = '', quando = '' } = {}) {
+  const d = dati || {};
+  const righe = [];
+  righe.push(rigaHtml('Durata', durata(d.durataMs || 0)));
+  if (d.giri > 0) righe.push(rigaHtml('Spettatori', `picco ${d.picco}, in media ${d.media}`));
+  righe.push(rigaHtml('Chat', `${d.messaggi | 0} messaggi da ${d.persone | 0} ${d.persone === 1 ? 'persona' : 'persone'}`));
+  if (d.top?.length) righe.push(rigaHtml('Più attivi', d.top.map((t) => `${t.user} (${t.n})`).join(', ')));
+  righe.push(rigaHtml('Nuovi follower', String(d.follow | 0)));
+  righe.push(rigaHtml('Sub', `${d.sub | 0}${d.regali ? ` (${d.regali} regalat${d.regali === 1 ? 'o' : 'i'})` : ''}`));
+  if (d.raid) righe.push(rigaHtml('Raid', `${d.raid} (${d.raidSpettatori} spettatori)`));
+  if (d.presenti) righe.push(rigaHtml('Presenti', `${d.presenti}${d.primeVolte ? `, di cui ${d.primeVolte} alla prima volta` : ''}`));
+  if (d.clip) righe.push(rigaHtml('Clip', String(d.clip)));
+  if (d.donazioni) righe.push(rigaHtml('Donazioni', `${d.donazioni} (${euro(d.donazioniCent || 0)})`));
+  const corpo = `${quando ? `<p style="margin:0 0 10px;color:#5c5852;font-size:14px;">${esc(quando)}</p>` : ''}
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">${righe.join('')}</table>`;
+  return guscioHtml({
+    titolo: oggetto(d),
+    corpo,
+    piede: `Ricevi questa mail perché hai confermato l’indirizzo nella scheda Dirette di SocialBot${display ? ` per il canale ${esc(display)}` : ''}. La togli da lì quando vuoi. SocialBot · socialbot.live`,
+  });
+}
+
+// La versione senza HTML, per chi legge la posta in testo.
+export function testoPiano(dati) {
+  return testo(dati).replace(/<[^>]+>/g, '');
+}
 
 // Il messaggio, in HTML di Telegram. Solo le righe che hanno qualcosa da dire.
 export function testo(dati) {
