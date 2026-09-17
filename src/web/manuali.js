@@ -889,7 +889,7 @@ const CONSOLIFY = {
 
 const DIRETTA = {
   slug: 'diretta',
-  schede: ['regia', 'ascolto', 'clip', 'musica'],
+  schede: ['regia', 'dirette', 'ascolto', 'clip', 'musica'],
   titolo: 'Manuale della diretta: regia, clip, musica e comandi a voce | SocialBot',
   h1: 'Manuale della diretta: regia, clip, musica e comandi a voce',
   desc: 'Comandare il canale senza aprire Twitch, far nascere le clip da sole, le richieste musicali e i comandi a voce.',
@@ -910,6 +910,11 @@ const DIRETTA = {
     ] },
     { p: ['Sopra c\'è lo <strong>stato della diretta</strong> (online, spettatori, da quanto), e sotto le <strong>azioni rapide</strong>: marker, clip, annuncio. Il marker è il più sottovalutato: costa un clic e ti risparmia mezz\'ora di scrubbing quando monti il VOD.'] },
     { p: ['Titolo, categoria, annunci e clip li fa <strong>Twitch</strong> per conto tuo: se un permesso manca, il bot te lo dice invece di fallire in silenzio, e si riautorizza dalla scheda Stato.'] },
+
+    { h2: 'Il rapporto di ogni diretta' },
+    { p: ['Quando chiudi, la scheda <em>Dirette</em> riceve una carta con i numeri della serata: durata, picco di spettatori e media, messaggi e chi ha scritto di più, nuovi follower e sub (con i regali), raid con gli spettatori portati, presenti e prime volte, clip, donazioni. Numeri, non aggettivi: sono quelli veri del canale, raccolti dal bot mentre trasmettevi. Un puntino sulla voce di menu ti dice che ce n\'è uno nuovo.'] },
+    { p: ['Da lì scegli anche dove riceverlo appena chiudi: su <strong>Telegram</strong>, nella chat privata del tuo bot (va collegata in <em>Notifiche</em>), oppure <strong>via mail</strong>. Per la mail scrivi l\'indirizzo e premi <em>Conferma</em>: ti arriva un messaggio con un tasto, e l\'indirizzo vale solo dopo il clic. La mail la manda il nostro server, non un servizio esterno; se sul server la posta non è configurata, la scheda lo dice e resta Telegram.'] },
+    { p: ['Un riavvio del bot a metà serata non perde il rapporto: riparte dall\'inizio che le presenze ricordano, e al più manca il picco di prima.'] },
 
     { h2: 'Clip automatiche' },
     { p: ['Accese di base. Il bot non conta i messaggi: guarda quando la chat <strong>esplode di reazioni</strong>, ride tutta insieme, o quando arrivano sub, bit e raid. E si adatta al ritmo del tuo canale, quindi la stessa sensibilità significa cose diverse su un canale da 10 e su uno da 1000.'] },
@@ -1036,7 +1041,7 @@ const VETRINA = {
       'Aggiungi il bot al tuo gruppo, scrivici dentro <code>/collega</code>, poi premi <em>Rileva gruppo</em>.',
     ] },
     { p: ['Da quel momento, quando vai live il gruppo lo sa. Il terzo passo è quello che si dimentica: senza <code>/collega</code> scritto <em>dentro</em> al gruppo, il bot non sa dove scrivere.'] },
-    { p: ['Se hai collegato anche la <strong>chat privata</strong>, a fine diretta il bot ti scrive un rapporto: durata, picco di spettatori e media, messaggi e chi ha scritto di più, nuovi follower e sub, raid, presenti, clip e donazioni. Numeri, non aggettivi. Si spegne dall\'interruttore sotto la chat privata.'] },
+    { p: ['Se hai collegato anche la <strong>chat privata</strong>, a fine diretta il bot può scriverti lì il rapporto della serata: lo accendi nella scheda <em>Dirette</em>, dove il rapporto resta comunque, insieme all\'opzione via mail.'] },
     { h3: 'TikTok, YouTube, Instagram' },
     { tabella: [
       ['Rete', 'Cosa serve', 'Cosa avvisa'],
