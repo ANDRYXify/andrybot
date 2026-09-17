@@ -4340,6 +4340,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.antibot !== undefined) out.antibot = normalizzaAntibot(s.settings?.antibot, b.antibot);
     // serie di presenze e saluti: la regola pura sta nel modulo
     if (b.presenze !== undefined) out.presenze = presenze.normalizza(b.presenze, s.settings?.presenze);
+    // il rapporto di fine diretta in privato: acceso di serie, si spegne
+    if (b.rapporto !== undefined) out.rapporto = { attivo: (b.rapporto || {}).attivo !== false };
     // ore guardate (watchtime): sempre attive salvo che lo streamer le spenga
     if (b.watchtime !== undefined) {
       out.watchtime = { attivo: (b.watchtime || {}).attivo !== false };

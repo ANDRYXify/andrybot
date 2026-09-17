@@ -59,6 +59,7 @@ const DECISO = [
   ['features/presenze.js', 'giri', 'volatile', 'quanti giri di fila una persona e\' in chat in questa diretta: dopo un riavvio si ricontano due giri, dieci minuti, e le presenze gia\' contate stanno nel database'],
   ['features/presenze.js', 'annunci', 'volatile', 'un minuto di riposo fra due annunci di traguardo'],
   ['features/presenze.js', 'riposi', 'volatile', 'i saluti degli ultimi dieci minuti: il tetto serve contro un raid, non contro un deploy, e chi e\' gia\' stato salutato sta nel database'],
+  ['features/rapporto.js', 'sessioni', 'volatile', 'la diretta in corso, con picco e media degli spettatori: dopo un riavvio si riapre al giro dopo con l\'inizio che le presenze ricordano, e si perde al piu\' il picco di prima'],
   ['features/antispam.js', 'recenti', 'volatile', 'ultimi messaggi per rilevare flood, finestra di quaranta secondi'],
   ['features/antispam.js', 'reati', 'volatile', 'la recidivita\' decade da sola dopo dieci minuti'],
   ['features/badges.js', 'cacheTw', 'volatile', 'cache dei badge'],

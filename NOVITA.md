@@ -20,6 +20,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Le presenze si contano diretta dopo diretta: chi resta in chat almeno dieci minuti è presente, e le dirette di fila fanno una serie con un bonus in monete che cresce. Con !serie ognuno vede la sua. [vai: giochi]
 - Il bot saluta chi scrive per la prima volta e chi torna dopo settimane, con le parole che scegli tu nella scheda Giochi. Se hai già un Modulo sul primo messaggio, vince il tuo. [vai: giochi]
 - Nella scheda Memoria trovi chi c'è sempre: le serie di presenze più lunghe del canale. [vai: memoria]
+- A fine diretta il bot ti scrive in privato su Telegram com'è andata: durata, picco di spettatori, messaggi e chi ha scritto di più, nuovi follower e sub, raid, presenti, clip e donazioni. [vai: notifiche]
 
 ## 2026-09-16
 

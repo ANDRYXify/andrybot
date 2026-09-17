@@ -24,6 +24,7 @@ import * as giveaway from './features/giveaway.js';
 import * as watchtime from './features/watchtime.js';
 import * as comandibase from './features/comandibase.js';
 import * as presenze from './features/presenze.js';
+import * as rapporto from './features/rapporto.js';
 import * as trackinggiochi from './features/trackinggiochi.js';
 import * as comandichat from './features/comandichat.js';
 import * as sondaggi from './features/sondaggi.js';
@@ -466,6 +467,9 @@ export class BotManager {
             const esito = presenze.giroDiretta(login, { streamId: stream.id, chatters });
             for (const t of presenze.annunciDi(login, esito)) this.say(login, t);
           } catch (e) { log.debug(`#${login} serie di presenze:`, e?.message || e); }
+          // e gli spettatori di questo giro, per il rapporto di fine diretta
+          try { rapporto.osservaGiro(login, { spettatori: stream.viewer_count }); }
+          catch (e) { log.debug(`#${login} rapporto:`, e?.message || e); }
         }
       } catch (e) { log.debug(`#${login} ore:`, e?.message || e); }
     }
@@ -1034,9 +1038,29 @@ export class BotManager {
     if (prev === undefined) return;
     const ev = { channel: ch, type: isLive ? 'stream.online' : 'stream.offline', data: data || {} };
     this._dispatchEvent(ev);
-    if (isLive) this._annunciaTwitch(ch).catch((e) => log.error(`avviso live #${ch}:`, e?.message || e));
-    else this._chiudiTelegram(ch);
+    if (isLive) {
+      rapporto.apri(ch, { inizio: Date.parse(data?.started_at) || 0 });
+      this._annunciaTwitch(ch).catch((e) => log.error(`avviso live #${ch}:`, e?.message || e));
+    } else {
+      this._chiudiTelegram(ch);
+      this._rapportoDiretta(ch);
+    }
     this._reagisciAllaDiretta(ch, isLive);   // lei se ne accorge e ti scrive (presente/consapevole)
+  }
+
+  // A diretta finita, il rapporto in privato: numeri, non aggettivi. Solo se lo
+  // streamer lo vuole e ha collegato la chat privata. Il rapporto e' suo, e
+  // stare zitti quando non lo vuole vale quanto scrivere quando lo vuole.
+  _rapportoDiretta(login) {
+    try {
+      const chiuso = rapporto.chiudi(login);
+      if (!chiuso || !rapporto.cfg(login).attivo) return;
+      const conf = tgConf.get(login);
+      if (!conf?.token || !conf.owner_tg_id || (conf.dm_modo || 'me') === 'off') return;
+      const t = rapporto.testo({ ...chiuso, ...rapporto.raccogli(login, chiuso) });
+      telegram.inviaMessaggio(conf.token, conf.owner_tg_id, t, { anteprima: false })
+        .catch((e) => log.debug(`#${login} rapporto:`, e?.message || e));
+    } catch (e) { log.debug(`#${login} rapporto:`, e?.message || e); }
   }
 
   // Consapevolezza: quando parti/finisci la diretta, LEI se ne accorge e ti scrive
