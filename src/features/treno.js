@@ -43,6 +43,17 @@ export const EVENTI = {
 // cui il treno finisce vorrebbe dire non farlo vedere a nessuno.
 const CODA_MS = 20_000;
 
+// L'ULTIMO QUARTO. Un treno si spinge quando la cima si vede: prima e' presto,
+// dopo e' fatta. La frazione, e non un numero fisso di punti, perche' il
+// traguardo cresce a ogni livello e un «mancano 100» che a livello 1 e' molto
+// a livello 5 non e' niente.
+//
+// Il richiamo si dice UNA VOLTA per livello: `progress` arriva a ogni
+// contributo, e ripeterlo a ognuno sarebbe la stessa raffica che gia' evitiamo
+// per i passaggi di livello. Lo stato si ricorda l'ultimo livello richiamato:
+// e' una cosa che il treno si porta dietro, non un timer da tenere d'occhio.
+const QUASI = 0.75;
+
 export const regoleDi = (settings) => settings?.overlayTreno || null;
 export const inScena = (settings) => regoleDi(settings)?.attivo === true;
 export const annuncia = (settings) => regoleDi(settings)?.annuncia === true;
@@ -115,11 +126,27 @@ export function aggiorna(channel, nuovo, { ora = Date.now() } = {}) {
   // Stesso treno o treno nuovo: lo dice l'id. Il record storico Twitch lo manda
   // solo quando il treno parte, quindi se ora non c'e' si tiene quello di prima.
   const stesso = !!(vecchio && nuovo.id && vecchio.id === nuovo.id);
-  const treno = { ...nuovo, record: nuovo.record || (stesso ? (vecchio.record || 0) : 0) };
+  const treno = {
+    ...nuovo,
+    record: nuovo.record || (stesso ? (vecchio.record || 0) : 0),
+    avvisato: stesso ? (vecchio.avvisato || 0) : 0,
+  };
   const saltato = (stesso && !treno.finito && treno.livello > vecchio.livello) ? treno.livello : 0;
+  // IL RICHIAMO. Si segna speso solo quando c'e' davvero da dirlo, e solo sugli
+  // eventi di crescita: se lo segnassimo anche quando il treno PARTE gia' oltre
+  // i tre quarti, o quando SALE di livello, la frase che in quel momento va
+  // detta e' un'altra — e il richiamo resterebbe bruciato senza essere mai
+  // uscito. E' il difetto che si vede solo mettendo in fila le frasi di una
+  // serata intera, quindi qui la porta e' chiusa per costruzione.
+  let quasi = 0;
+  if (treno.che === 'cresce' && !saltato && !treno.finito && treno.meta > 0
+      && treno.livello > treno.avvisato && treno.quanto >= treno.meta * QUASI) {
+    quasi = treno.livello;
+    treno.avvisato = treno.livello;
+  }
   const stato = { ...(s.settings?.overlayStato || {}), treno };
   streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
-  return { treno, saltato };
+  return { treno, saltato, quasi };
 }
 
 // Da un evento del bot allo stato scritto, all'avviso in chat e alla spinta
@@ -136,10 +163,23 @@ export function suEvento(channel, tipo, dati, { say, spingi, ora = Date.now() } 
     }
     if (say && annuncia(s?.settings)) {
       const r = regoleDi(s.settings);
-      const vars = { livello: esito.treno.livello, chi: primo(esito.treno) || 'voi', punti: esito.treno.totale };
+      const vars = {
+        livello: esito.treno.livello,
+        chi: primo(esito.treno) || 'voi',
+        punti: esito.treno.totale,
+        // `quanto` e `meta` Twitch li manda verso il livello DOPO: il numero che
+        // manca e' per il prossimo, non per quello in cui siamo. Chiamarlo
+        // {livello} avrebbe scritto in chat un traguardo gia' passato.
+        prossimo: esito.treno.livello + 1,
+        manca: Math.max(0, esito.treno.meta - esito.treno.quanto),
+      };
+      // Il passaggio di livello batte il richiamo: se il treno e' appena salito,
+      // «manca poco al livello di prima» sarebbe una notizia vecchia di un
+      // istante. Un evento, una frase.
       const testo = nuovo.che === 'parte' ? riempi(r.testoParte, vars)
         : nuovo.che === 'finisce' ? riempi(r.testoFine, vars)
-          : esito.saltato ? riempi(r.testoLivello, vars) : '';
+          : esito.saltato ? riempi(r.testoLivello, vars)
+            : esito.quasi ? riempi(r.testoQuasi, vars) : '';
       if (testo.trim()) say(channel, testo);
     }
     return esito;

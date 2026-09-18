@@ -1328,9 +1328,28 @@ a schermo dal pannello di Twitch e vuole solo le righe, e chi il contrario. Se
 sono spenti tutti e due lo stato non si scrive nemmeno: un canale che il treno
 non lo usa non paga una riga.
 
-In chat si parla in tre momenti — parte, sale di livello, finisce — e basta.
-`progress` arriva a OGNI contributo: annunciarli tutti vorrebbe dire cento righe
-del bot su un treno da cento sub.
+In chat si parla in quattro momenti — parte, manca poco al livello dopo, ci
+arriva, finisce — e basta. `progress` arriva a OGNI contributo: annunciarli
+tutti vorrebbe dire cento righe del bot su un treno da cento sub.
+
+**Il richiamo dell'ultimo quarto** (`testoQuasi`) e' l'unico che aggiunge un
+invito invece di raccontare un fatto: quando la salita e' oltre i tre quarti
+(`QUASI = 0.75`) il bot dice quanti punti mancano al livello dopo. La frazione,
+e non un numero fisso, perche' il traguardo cresce a ogni livello e un «mancano
+100» che al livello 1 e' molto al livello 5 non e' niente.
+
+Si dice **una volta per livello**: lo stato del treno si porta dietro
+`avvisato`, il livello dal quale il richiamo e' gia' uscito. E si segna speso
+SOLO quando c'e' davvero da dirlo — non quando il treno parte gia' oltre i tre
+quarti, ne' quando sale di livello nello stesso evento, perche' in quei due casi
+la frase che va detta e' un'altra e il richiamo resterebbe bruciato senza essere
+mai uscito. E' un difetto che si vede solo mettendo in fila le frasi di una
+serata intera, quindi la porta e' chiusa per costruzione, non per correzione.
+
+Attenzione a `{prossimo}`: `quanto` e `meta` Twitch li manda verso il livello
+DOPO, quindi i punti che mancano sono per quello. Il richiamo scrive
+`{prossimo}` (= `livello + 1`); `{livello}` resta il livello in cui si e', come
+in tutte le altre frasi. Svuotando la casella la frase non si dice piu'.
 
 Serve lo scope `channel:read:hype_train`. Chi aveva gia' collegato il canale se
 lo vede chiedere dal pannello con la strada dei permessi mancanti che c'e' gia'.

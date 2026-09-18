@@ -6605,12 +6605,14 @@ function pannelloAlert() {
         <label class="riga-check"><input type="checkbox" data-c="mostraRecord"> ${L('Mostra il record del canale, quando Twitch lo manda', 'Show the channel record, when Twitch sends it', 'Muestra el récord del canal, cuando Twitch lo envía')}</label>
 
         <h4 class="spazio-sopra">${L('In chat', 'In chat', 'En el chat')}</h4>
-        <p class="suggerimento">${L('Si parla quando il treno parte, quando sale di livello e quando finisce. Non a ogni sub: quello lo dicono già gli alert.', 'It speaks when the train starts, when it levels up and when it ends. Not at every sub: the alerts already say that.', 'Habla cuando el tren sale, cuando sube de nivel y cuando acaba. No en cada sub: eso ya lo dicen las alertas.')}</p>
+        <p class="suggerimento">${L('Si parla quando il treno parte, quando manca poco al livello, quando ci arriva e quando finisce. Una volta per livello, non a ogni sub: quello lo dicono già gli alert. Svuota una casella e quella frase non si dice più.', 'It speaks when the train starts, when the next level is close, when it gets there and when it ends. Once per level, not at every sub: the alerts already say that. Empty a box and that line is never said.', 'Habla cuando el tren sale, cuando falta poco para el nivel, cuando llega y cuando acaba. Una vez por nivel, no en cada sub: eso ya lo dicen las alertas. Vacía una casilla y esa frase no se dice más.')}</p>
         <label class="riga-check spazio-sopra"><input type="checkbox" data-c="annuncia"> ${L('Dillo in chat', 'Say it in chat', 'Dilo en el chat')}</label>
         <div><label class="campo" for="trn-parte">${L('Quando parte', 'When it starts', 'Cuando sale')}</label>
           <input id="trn-parte" type="text" data-c="testoParte" maxlength="200"></div>
         <div><label class="campo" for="trn-liv">${L('Quando sale di livello', 'When it levels up', 'Cuando sube de nivel')} <span class="tenue">— <code>{livello}</code></span></label>
           <input id="trn-liv" type="text" data-c="testoLivello" maxlength="200"></div>
+        <div><label class="campo" for="trn-quasi">${L('Quando manca poco al livello', 'When the next level is close', 'Cuando falta poco para el nivel')} <span class="tenue">— <code>{prossimo}</code> <code>{manca}</code></span></label>
+          <input id="trn-quasi" type="text" data-c="testoQuasi" maxlength="200"></div>
         <div><label class="campo" for="trn-fine">${L('Quando finisce', 'When it ends', 'Cuando acaba')} <span class="tenue">— <code>{livello}</code> <code>{chi}</code> <code>{punti}</code></span></label>
           <input id="trn-fine" type="text" data-c="testoFine" maxlength="200"></div>
 
@@ -7627,6 +7629,7 @@ function _defTreno() {
     annuncia: false, testoParte: 'Hype train partito! Spingiamo.',
     testoLivello: 'Hype train al livello {livello}!',
     testoFine: 'Treno finito al livello {livello}. Grazie {chi}!',
+    testoQuasi: 'Manca poco al livello {prossimo}: {manca} punti!',
     posizione: 'alto-destra', xy: null,
     stile: { dim: 'media', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 12, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
 }
