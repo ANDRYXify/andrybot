@@ -58,6 +58,13 @@ await p.waitForFunction(() => document.querySelectorAll('#ap-stage .ap-el').leng
 await p.waitForTimeout(700);
 await p.evaluate(() => document.querySelector('.giro-velo')?.remove());
 
+// Il collaudo scrive nei campi dello stile per provare l'anteprima, e cosi'
+// sporca la barra «hai modifiche non salvate»: da li' in poi cambiare overlay
+// apre — giustamente — la domanda «salvo?», e il velo ferma tutto quello che
+// viene dopo. E' sporcizia dello strumento, non del prodotto: si pulisce prima
+// di ogni cambio di overlay.
+await p.evaluate(() => { window.__scegli = (id) => { azzeraBarraSalva(); scegliOverlay(id); }; });
+
 const centro = (id) => p.evaluate((s) => {
   const el = document.getElementById(s), c = document.getElementById('ovl-preview').getBoundingClientRect();
   const r = el.getBoundingClientRect();
@@ -119,11 +126,15 @@ for (const k of chiavi) {
       sel: [...document.querySelectorAll('#ap-stage .ap-el.sel')].map((e) => e.id),
       liv: [...document.querySelectorAll('.ovl-liv.scelto')].map((e) => e.dataset.liv),
       nome: (document.getElementById('insp-nome') || {}).textContent,
+      altrove: !!insp.querySelector('.insp-altrove:not([hidden])'),
       atteso: _nomeEl(kk), idAtteso: _idEl(kk), inOverlay: _inOverlay(kk), chiuso: insp.hidden,
     };
   }, k);
   const g = [];
-  if (r.visti.length !== 1 || r.visti[0] !== k) g.push(`comandi visibili [${r.visti}]`);
+  // Un elemento o ha QUI i suoi comandi, o dice dove sono: la sfida a tempo si
+  // veste nella sua scheda, e allora al suo posto c'e' il rimando. Quello che
+  // non deve succedere e' il vuoto muto, o i comandi di un altro.
+  if (r.visti.length ? (r.visti.length !== 1 || r.visti[0] !== k) : !r.altrove) g.push(`comandi visibili [${r.visti}]`);
   if (r.inOverlay && (r.sel.length !== 1 || r.sel[0] !== r.idAtteso)) g.push(`sulla tela [${r.sel}]`);
   if (r.liv.length !== 1 || r.liv[0] !== k) g.push(`livelli [${r.liv}]`);
   if (r.nome !== r.atteso) g.push(`titolo «${r.nome}»`);
@@ -171,19 +182,23 @@ for (const [k, sel, val, leggi, atteso] of PROVE) {
 }
 
 // L'occhio di un livello: cliccarlo toglie l'elemento dall'overlay E si vede
-// che l'ha fatto. Prima l'elemento spariva ma l'occhio restava aperto.
+// che l'ha fatto. Prima l'elemento spariva ma l'occhio restava aperto; da
+// quando i livelli sono l'elenco di CHI C'E', la riga non resta spenta in
+// fondo: se ne va e ricompare tra quelli da rimettere. E da li' si rimette.
 const occhio = await p.evaluate(async () => {
   const riga = document.querySelector('.ovl-liv[data-liv="alert"]');
   const occ = riga && riga.querySelector('[data-occhio]');
   if (!occ) return { errore: 'nessun occhio' };
-  const prima = riga.className + '|' + occ.innerHTML.length;
   occ.click();
-  await new Promise((r) => setTimeout(r, 150));
-  const riga2 = document.querySelector('.ovl-liv[data-liv="alert"]');
-  const occ2 = riga2 && riga2.querySelector('[data-occhio]');
-  const dopo = riga2.className + '|' + occ2.innerHTML.length;
+  await new Promise((r) => setTimeout(r, 200));
   const nodo = document.getElementById('ap-alert');
-  return { cambiata: prima !== dopo, elementoVia: nodo.style.display === 'none', prima, dopo };
+  const restata = !!document.querySelector('.ovl-liv[data-liv="alert"]');
+  const rimetti = document.querySelector('#ovl-agg [data-metti="alert"]');
+  const esito = { elementoVia: nodo.style.display === 'none', cambiata: !restata && !!rimetti, restata, rimettibile: !!rimetti };
+  if (rimetti) { rimetti.click(); await new Promise((r) => setTimeout(r, 300)); }
+  esito.tornato = !!document.querySelector('.ovl-liv[data-liv="alert"]')
+    && document.getElementById('ap-alert').style.display !== 'none';
+  return esito;
 });
 
 // Una proprieta', un valore. Cursore e casella erano due strade diverse per la
@@ -285,20 +300,20 @@ const trapelati = await p.evaluate(async () => {
   if (overlays.length < 2) return ['servono due overlay per provarlo'];
   const chiavi = ELEMENTI().map((e) => e.k);
   const [primo, secondo] = [overlays[0].id, overlays[1].id];
-  scegliOverlay(primo);
+  __scegli(primo);
   await new Promise((r) => setTimeout(r, 350));
   const prima = {};
   for (const k of chiavi) prima[k] = _posDove(k).x;
-  scegliOverlay(secondo);
+  __scegli(secondo);
   await new Promise((r) => setTimeout(r, 350));
   const altrove = {};
   for (const k of chiavi) altrove[k] = _posDove(k).x;
 
-  scegliOverlay(primo);
+  __scegli(primo);
   await new Promise((r) => setTimeout(r, 350));
   for (const k of chiavi) { seleziona(k); await new Promise((r) => setTimeout(r, 50)); _scriviProp('x', 77); }
   await new Promise((r) => setTimeout(r, 250));
-  scegliOverlay(secondo);
+  __scegli(secondo);
   await new Promise((r) => setTimeout(r, 450));
   const fuori = [];
   for (const k of chiavi) {
@@ -306,7 +321,7 @@ const trapelati = await p.evaluate(async () => {
     if (Math.abs(ora - 77) < 0.5 && Math.abs(altrove[k] - 77) >= 0.5) fuori.push(`${k}: spostato nel primo, si è mosso anche nel secondo`);
     else if (Math.abs(ora - altrove[k]) > 0.02) fuori.push(`${k}: nel secondo è passato da ${altrove[k]} a ${ora}`);
   }
-  scegliOverlay(primo);
+  __scegli(primo);
   await new Promise((r) => setTimeout(r, 300));
   for (const k of chiavi) if (Math.abs(_posDove(k).x - 77) > 0.5) fuori.push(`${k}: nel primo non è rimasto dove l'ho messo`);
   void prima;
@@ -319,19 +334,19 @@ const storiaMista = await p.evaluate(async () => {
   if (overlays.length < 2) return [];
   const [primo, secondo] = [overlays[0].id, overlays[1].id];
   const fuori = [];
-  scegliOverlay(primo);
+  __scegli(primo);
   await new Promise((r) => setTimeout(r, 350));
   seleziona('musica'); await new Promise((r) => setTimeout(r, 80));
   _scriviProp('x', 11);
   await new Promise((r) => setTimeout(r, 250));
-  scegliOverlay(secondo);
+  __scegli(secondo);
   await new Promise((r) => setTimeout(r, 400));
   seleziona('musica'); await new Promise((r) => setTimeout(r, 80));
   const eraNelSecondo = _posDove('musica').x;
   annullaOvl();
   await new Promise((r) => setTimeout(r, 300));
   if (Math.abs(_posDove('musica').x - eraNelSecondo) > 0.02) fuori.push('annullando nel secondo si è mosso il secondo, che non avevo toccato');
-  scegliOverlay(primo);
+  __scegli(primo);
   await new Promise((r) => setTimeout(r, 400));
   if (Math.abs(_posDove('musica').x - 11) > 0.5) fuori.push(`annullando nel secondo si è disfatto il primo (${_posDove('musica').x} invece di 11)`);
   return fuori;
@@ -348,12 +363,21 @@ const marce = await p.evaluate(async () => {
   const el = _nodo('musica');
   const guasti = [];
   const posa = async () => { seleziona('musica'); await new Promise((r) => setTimeout(r, 60)); _scriviProp('x', 37); _scriviProp('y', 63); _scriviProp('s', 100); _scriviProp('r', 0); await new Promise((r) => setTimeout(r, 80)); };
+  // Il trascinamento si applica A FOTOGRAMMA: il movimento entra in coda e
+  // viene reso al frame dopo, e chi molla il tasto prima annulla la coda. Un
+  // dito vero passa sempre dei fotogrammi tra un movimento e l'altro, quindi
+  // qui si aspetta un fotogramma come farebbe lui: senza, non si misura il
+  // trascinamento, si misura la coda buttata via.
+  const fotogramma = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   const trascina = async (dx, dy, mod) => {
     const r0 = el.getBoundingClientRect();
     const gx = r0.left + r0.width / 2, gy = r0.top + r0.height / 2;
     const prima = _centroTela('musica');
     el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: gx, clientY: gy, pointerId: 1 }));
-    for (let i = 1; i <= 3; i++) el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: gx + (dx * i) / 3, clientY: gy + (dy * i) / 3, pointerId: 1, ...mod }));
+    for (let i = 1; i <= 3; i++) {
+      el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: gx + (dx * i) / 3, clientY: gy + (dy * i) / 3, pointerId: 1, ...mod }));
+      await fotogramma();
+    }
     el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }));
     await new Promise((r) => setTimeout(r, 80));
     const dopo = _centroTela('musica');
@@ -378,6 +402,7 @@ const marce = await p.evaluate(async () => {
     el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: gx, clientY: gy, pointerId: 1 }));
     const a = _centroTela('musica').x;
     el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: gx + 1, clientY: gy, pointerId: 1, altKey: true, ...mod }));
+    await fotogramma();
     const b2 = _centroTela('musica').x;
     el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }));
     return b2 - a;
@@ -409,7 +434,7 @@ const occhiTrapelati = await p.evaluate(async () => {
   const [primo, secondo] = [overlays[0].id, overlays[1].id];
   const fuori = [];
   const spegnibili = ELEMENTI().filter((e) => e.goal || e.cont).map((e) => e.k);
-  scegliOverlay(primo);
+  __scegli(primo);
   await new Promise((r) => setTimeout(r, 350));
   for (const k of spegnibili) {
     if (!_inOverlay(k)) { fuori.push(`${k}: parte gia' spento, non posso provarlo`); continue; }
@@ -418,16 +443,71 @@ const occhiTrapelati = await p.evaluate(async () => {
     if (_inOverlay(k)) fuori.push(`${k}: l’occhio non lo toglie da questo overlay`);
   }
   await new Promise((r) => setTimeout(r, 250));
-  scegliOverlay(secondo);
+  __scegli(secondo);
   await new Promise((r) => setTimeout(r, 450));
   for (const k of spegnibili) if (!_inOverlay(k)) fuori.push(`${k}: spento nel primo, si è spento anche nel secondo`);
-  scegliOverlay(primo);
+  __scegli(primo);
   await new Promise((r) => setTimeout(r, 450));
   for (const k of spegnibili) {
     if (_inOverlay(k)) fuori.push(`${k}: nel primo è tornato acceso da solo`);
     _occhio(k);
     await new Promise((r) => setTimeout(r, 60));
   }
+  return fuori;
+});
+
+// «Crea → Un contatore» mandava in un'altra scheda: per un numero da mettere
+// sulla tela si perdeva la tela. Qui si misura la strada intera dentro il banco
+// — il riquadro si apre, il contatore nasce ed entra nell'overlay aperto; e la
+// seconda uscita fa una COPIA dell'overlay, dove il contatore nuovo si vede,
+// lasciando quello di tutti i giorni com'era.
+const contaNuovo = await p.evaluate(async () => {
+  const fuori = [];
+  const attesa = (ms) => new Promise((r) => setTimeout(r, ms));
+  const schedaOra = () => (document.querySelector('.pannello-scheda.visibile') || {}).id;
+  azzeraBarraSalva();
+  const apri = async () => {
+    document.getElementById('ovl-liv-aggiungi').click();
+    await attesa(80);
+    const b2 = document.querySelector('#ovl-agg [data-nuovo="cont"]');
+    if (!b2) return null;
+    b2.click();
+    await attesa(120);
+    return document.querySelector('.bv-velo.mdl-chiedi');
+  };
+  const quanti = overlays.length;
+  const primo = overlaySel;
+  const velo = await apri();
+  if (!velo) return ['premendo «Un contatore» non si apre niente'];
+  if (schedaOra() !== 'scheda-alert') fuori.push('premendo «Un contatore» si esce dal banco');
+  const scrivi = (v2, cmd, eti) => {
+    const c = v2.querySelector('#mdl-cont-comando'), e = v2.querySelector('#mdl-cont-etichetta');
+    if (!c || !e) return 'il riquadro aperto non è quello del contatore: ' + v2.innerHTML.slice(0, 120);
+    c.value = cmd; e.value = eti;
+    return '';
+  };
+  const g1 = scrivi(velo, 'cadute', 'Cadute');
+  if (g1) return fuori.concat(g1);
+  velo.querySelector('[data-cont="qui"]').click();
+  await attesa(900);
+  if (document.querySelector('.bv-velo.mdl-chiedi')) fuori.push('il riquadro non si chiude dopo «Crea e mettilo qui»');
+  if (!_conta.some((c) => c.comando === 'cadute')) return fuori.concat('il contatore non nasce');
+  if (!_inOverlay('cont:cadute')) fuori.push('il contatore appena creato non entra nell’overlay aperto');
+  if (!document.getElementById('ap-cont-cadute')) fuori.push('il contatore appena creato non compare sulla tela');
+  if (overlays.length !== quanti) fuori.push('creando un contatore è comparso un overlay in più');
+
+  const velo2 = await apri();
+  if (!velo2) return fuori.concat('la seconda volta il riquadro non si apre');
+  const g2 = scrivi(velo2, 'boss', 'Boss');
+  if (g2) return fuori.concat(g2);
+  velo2.querySelector('[data-cont="copia"]').click();
+  await attesa(1800);
+  if (overlays.length !== quanti + 1) return fuori.concat('la copia dell’overlay non è nata');
+  if (overlaySel === primo) fuori.push('dopo la copia sto ancora sull’overlay di prima');
+  if (!_inOverlay('cont:boss')) fuori.push('nella copia il contatore nuovo non si vede');
+  if (!_inOverlay('cont:cadute')) fuori.push('la copia non si è portata dietro la scena di prima');
+  const vecchio = overlays.find((o) => o.id === primo);
+  if (!vecchio || (vecchio.mostra || {})['cont:boss'] !== false) fuori.push('l’overlay di tutti i giorni si è preso il contatore nuovo lo stesso');
   return fuori;
 });
 
@@ -446,7 +526,8 @@ verde = dice(storti.length === 0,
   storti.join(' · ')) && verde;
 verde = dice(provati >= 6, `elementi davvero provati: ${provati}`, 'la scena della demo ne ha troppo pochi scoperti') && verde;
 verde = dice(!!occhio.elementoVia, 'l’occhio toglie davvero l’elemento dalla scena', JSON.stringify(occhio)) && verde;
-verde = dice(!!occhio.cambiata, 'e l’occhio si vede che è chiuso', JSON.stringify(occhio)) && verde;
+verde = dice(!!occhio.cambiata, 'e si vede: la riga lascia i livelli e passa tra quelli da rimettere', JSON.stringify(occhio)) && verde;
+verde = dice(!!occhio.tornato, 'e da lì si rimette dov’era', JSON.stringify(occhio)) && verde;
 verde = dice(incoerenti.length === 0, `scegliendo un elemento si vedono solo i suoi comandi: ${chiavi.length} elementi`, incoerenti.join(' · ')) && verde;
 verde = dice(dopoScelta.visti === 0 && dopoScelta.sel === 0 && dopoScelta.chiuso,
   'e lasciandolo non resta niente acceso', JSON.stringify(dopoScelta)) && verde;
@@ -460,6 +541,7 @@ verde = dice(trapelati.length === 0, 'ogni overlay ha il suo layout: spostare qu
 verde = dice(storiaMista.length === 0, 'e il suo annulla, che non scavalca gli altri overlay', storiaMista.join(' · ')) && verde;
 verde = dice(marce.length === 0, 'le marce del trascinamento: fine, dritto, niente aggancio, rotella sicura', marce.join(' · ')) && verde;
 verde = dice(occhiTrapelati.length === 0, 'l’occhio toglie l’elemento da questo overlay, non da tutti', occhiTrapelati.join(' · ')) && verde;
+verde = dice(contaNuovo.length === 0, 'un contatore nuovo si fa dal banco, e la copia dell’overlay non tocca l’originale', contaNuovo.join(' · ')) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · ')) && verde;
 
 console.log(verde ? '\ncollaudo verde ✓\n' : '\ncollaudo ROSSO ✗\n');

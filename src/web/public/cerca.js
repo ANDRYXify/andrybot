@@ -26,7 +26,7 @@
     regia: 'regia diretta live comandi rapidi durante la diretta titolo categoria pubblicità stream directo título anuncios',
     clip: 'clip momenti highlight ritaglia registra clips momentos grabar',
     musica: 'musica spotify song request canzoni richieste brani coda music playlist canciones cola dj',
-    alert: 'overlay alert studio scena widget browser source obs allerte follow sub bit raid chat a schermo emote 7tv avvisi notifica a schermo layout editor livelli sovrimpressione escena capa aviso occasione occasioni subathon torno subito pausa serata speciale compleanno evento modelli aggiunta temporanea ocasion ocasiones occasion',
+    alert: 'overlay alert studio scena widget browser source obs allerte follow sub bit raid chat a schermo emote 7tv avvisi notifica a schermo layout editor livelli sovrimpressione escena capa aviso occasione occasioni subathon torno subito pausa serata speciale compleanno evento modelli aggiunta temporanea ocasion ocasiones occasion contatore contatori counter contador copia dell overlay duplica scena',
     effetti: 'effetti suoni audio sound sfx gif immagini video premi punti canale riscatto riscatti redeem efectos sonidos',
     emote: 'emote 7tv emoji faccine emoticon emotes',
     statistiche: 'statistiche numeri classifiche ore viste spettatori picco follower grafici estadísticas clasificaciones',

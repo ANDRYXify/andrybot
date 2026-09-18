@@ -216,9 +216,7 @@
 .ap-stage .ap-el.sel  { outline: 3px dashed var(--acc); outline-offset: 6px; z-index: 20; }
 .ap-stage .ap-el.spento { opacity: .35; }
 .ap-stage .ap-el.bloccato { cursor: default; }
-.ap-stage .ap-el.bloccato .ap-handle { display: none; }
 .ap-stage .ap-el.nel-riquadro.sel { outline: none; }
-.ap-stage .ap-el.nel-riquadro .ap-handle { display: none; }
 #ap-riquadro { position: absolute; z-index: 25; pointer-events: none; outline: 3px dashed var(--acc); outline-offset: 2px; transform-origin: center; }
 #ap-parti { position: absolute; inset: 0; z-index: 26; pointer-events: none; }
 #ap-parti[hidden] { display: none; }
@@ -249,6 +247,8 @@
   cursor: pointer; user-select: none; z-index: 5;
 }
 .ap-stage .ap-el.sel .ap-handle { display: flex; }
+.ap-stage .ap-el.bloccato .ap-handle, .ap-stage .ap-el.nel-riquadro .ap-handle { display: none; }
+.ap-stage .ap-el.stretto .ap-h-scala { display: none; }
 .ap-stage .ap-h-scala { right: -30px; bottom: -30px; cursor: nwse-resize; transform-origin: center; }
 .ap-stage .ap-h-ruota { top: -78px; left: 50%; margin-left: -30px; cursor: grab; transform-origin: center; }
 .ap-stage .ap-h-ruota.sotto { top: auto; bottom: -78px; }

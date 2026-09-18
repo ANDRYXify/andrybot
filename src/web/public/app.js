@@ -502,6 +502,21 @@ function apiDemo(percorso, opzioni = {}) {
     }));
   }
 
+  if (via === '/api/contatori') {
+    const lista = _demoScritture.contatori || _demoGet('/api/contatori').contatori.map((c) => ({ ...c }));
+    const b = opzioni.body || {};
+    const cmd = String(b.comando || '').toLowerCase();
+    let c = lista.find((x) => x.comando === cmd);
+    if (!c) { c = { comando: cmd, etichetta: '', emoji: '', valore: 0, step: 1, auto_parola: '', reward_id: '', verbiCfg: {}, overlayCfg: {} }; lista.push(c); }
+    if (b.etichetta != null) c.etichetta = String(b.etichetta);
+    if (b.emoji != null) c.emoji = String(b.emoji);
+    if (b.step != null) c.step = Number(b.step) || 1;
+    if (b.autoParola != null) c.auto_parola = String(b.autoParola);
+    if (b.overlay) c.overlayCfg = { ...c.overlayCfg, ...b.overlay };
+    _demoScritture.contatori = lista;
+    return Promise.resolve({ ok: true, contatore: c });
+  }
+
   if (via === '/api/streamer/occasione') {
     const lista = (_demoScritture.overlays || _demoGet('/api/streamer/overlays').overlays || []);
     const ov = lista.find((o) => o.id === opzioni.body?.overlay) || lista[0];
@@ -539,6 +554,7 @@ function apiDemo(percorso, opzioni = {}) {
 
 function _demoGet(via) {
   if (via === '/api/streamer/overlays' && _demoScritture.overlays) return { overlays: _demoScritture.overlays };
+  if (via === '/api/contatori' && _demoScritture.contatori) return { contatori: _demoScritture.contatori };
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
@@ -7756,10 +7772,12 @@ const NOME_ANG = () => ({
 });
 
 const RUOTA_SU = 78;
+const SCALA_SPAZIO = 94;
 
 function _maniglieAPosto(el, sf, topVisivo) {
   el.querySelectorAll('.ap-handle').forEach((h) => { h.style.transform = sf === 1 ? 'none' : `scale(${1 / sf})`; });
   el.querySelector('.ap-h-ruota')?.classList.toggle('sotto', topVisivo < RUOTA_SU);
+  el.classList.toggle('stretto', el.offsetWidth * sf < SCALA_SPAZIO || el.offsetHeight * sf < SCALA_SPAZIO);
 }
 
 function _posAncora(el, ang) {
@@ -7948,7 +7966,7 @@ function _scriviProp(campo, v) {
   _mostraProp();
   _rendiLivelli();
   aggiornaPiedeBanco();
-  _ricorda('prop:' + campo);
+  _ricorda('prop:' + campo + ':' + selezione);
   _salvaPosDebounced(selezione);
 }
 
@@ -8648,6 +8666,125 @@ function _mettiDentro(k) {
   seleziona(k);
 }
 
+const MAX_OVERLAY = 12;
+const _contaC = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
+const _contaGia = (cmd) => _conta.some((c) => String(c.comando || '').toLowerCase() === cmd);
+
+function chiediContatore({ copie = true } = {}) {
+  return new Promise((risolvi) => {
+    const el = document.createElement('div');
+    el.className = 'bv-velo mdl-chiedi';
+    const facolt = esc(L('facolt.', 'optional', 'opcional'));
+    el.innerHTML = `<div class="bv-carta mdl-carta" role="dialog" aria-modal="true" aria-labelledby="mdl-cont-tit">
+      <h2 id="mdl-cont-tit">${esc(L('Un contatore nuovo', 'A new counter', 'Un contador nuevo'))}</h2>
+      <p class="bv-intro">${esc(L('Un numero che tu e i moderatori muovete dalla chat. Lo fai qui e resti sulla tela.', 'A number you and your mods move from chat. You make it here and stay on the canvas.', 'Un n\u00famero que t\u00fa y los moderadores mov\u00e9is desde el chat. Lo haces aqu\u00ed y te quedas en la tela.'))}</p>
+      <div class="griglia-campi">
+        <div><label class="campo" for="mdl-cont-comando">${esc(L('Comando (senza !)', 'Command (no !)', 'Comando (sin !)'))}</label>
+          <input type="text" id="mdl-cont-comando" maxlength="30" placeholder="morti" autocomplete="off"></div>
+        <div><label class="campo" for="mdl-cont-etichetta">${esc(L('Etichetta', 'Label', 'Etiqueta'))}</label>
+          <input type="text" id="mdl-cont-etichetta" maxlength="40" placeholder="Morti"></div>
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        <div><label class="campo" for="mdl-cont-emoji">${esc(L('Emoji', 'Emoji', 'Emoji'))} <span class="suggerimento">(${facolt})</span></label>
+          <input type="text" id="mdl-cont-emoji" maxlength="4" placeholder="\ud83d\udc80"></div>
+        <div><label class="campo" for="mdl-cont-step">${esc(L('Passo (+)', 'Step (+)', 'Paso (+)'))}</label>
+          <input type="number" id="mdl-cont-step" min="1" max="1000" value="1"></div>
+      </div>
+      <label class="campo spazio-sopra" for="mdl-cont-parola">${esc(L('Parola automatica', 'Auto word', 'Palabra autom\u00e1tica'))} <span class="suggerimento">(${facolt})</span></label>
+      <input type="text" id="mdl-cont-parola" maxlength="40" placeholder="${esc(L('es. \u00ablol\u00bb: +1 ogni volta che appare in chat', 'e.g. \u00ablol\u00bb: +1 each time it shows up in chat', 'ej. \u00ablol\u00bb: +1 cada vez que aparece en el chat'))}">
+      <p class="tg-stato guaio" id="mdl-cont-guaio" hidden></p>
+      <p class="suggerimento spazio-sopra">${esc(copie
+        ? L('La copia nasce con tutto quello che vedi adesso e ha un link suo: il contatore si vede solo l\u00ec, e l\u2019overlay di tutti i giorni resta com\u2019\u00e8.', 'The copy starts with everything you see now and has its own link: the counter shows only there, and your everyday overlay stays as it is.', 'La copia nace con todo lo que ves ahora y tiene su propio enlace: el contador se ve solo ah\u00ed, y tu overlay de cada d\u00eda queda como est\u00e1.')
+        : L('Hai gi\u00e0 dodici overlay: per farne una copia devi prima liberarne uno.', 'You already have twelve overlays: to make a copy you have to free one first.', 'Ya tienes doce overlays: para hacer una copia antes tienes que liberar uno.'))}</p>
+      <div class="bv-azioni">
+        <button type="button" class="btn grande" data-cont="qui">${esc(L('Crea e mettilo qui', 'Create it here', 'Cr\u00e9alo aqu\u00ed'))}</button>
+        <button type="button" class="btn grande secondario" data-cont="copia"${copie ? '' : ' disabled'}>${esc(L('Crea in una copia dell\u2019overlay', 'Create it in a copy of the overlay', 'Cr\u00e9alo en una copia del overlay'))}</button>
+        <button type="button" class="btn grande testo" data-cont="no">${esc(L('Esci', 'Close', 'Salir'))}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('dentro'));
+    const q = (id) => el.querySelector('#mdl-cont-' + id);
+    q('comando').focus();
+    const guaio = (t) => {
+      const n = q('guaio');
+      n.innerHTML = t ? _bIco('<circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/>') + esc(t) : '';
+      n.hidden = !t;
+    };
+    const leggi = () => {
+      const comando = _contaC(q('comando').value);
+      if (!comando) { guaio(L('Scrivi il comando: lettere e numeri, senza punto esclamativo.', 'Write the command: letters and numbers, no exclamation mark.', 'Escribe el comando: letras y n\u00fameros, sin signo de exclamaci\u00f3n.')); q('comando').focus(); return null; }
+      if (_contaGia(comando)) { guaio(L('Il comando \u00ab' + comando + '\u00bb \u00e8 gi\u00e0 di un altro contatore: quello lo rimetti dall\u2019elenco, sopra \u00abCrea\u00bb.', 'The command \u00ab' + comando + '\u00bb already belongs to another counter: put that one back from the list, above \u00abCreate\u00bb.', 'El comando \u00ab' + comando + '\u00bb ya es de otro contador: ese lo vuelves a poner desde la lista, encima de \u00abCrear\u00bb.')); q('comando').focus(); return null; }
+      return { comando, etichetta: q('etichetta').value, emoji: q('emoji').value, step: q('step').value, parola: q('parola').value };
+    };
+    let chiuso = false;
+    const via = (v) => {
+      if (chiuso) return; chiuso = true;
+      document.removeEventListener('keydown', tasti, true);
+      el.classList.remove('dentro');
+      setTimeout(() => el.remove(), 240);
+      risolvi(v);
+    };
+    const tasti = (ev) => {
+      if (ev.key === 'Escape') { ev.preventDefault(); via(null); }
+      else if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') { ev.preventDefault(); const r = leggi(); if (r) via({ ...r, dove: 'qui' }); }
+    };
+    document.addEventListener('keydown', tasti, true);
+    el.addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-cont]');
+      if (b) {
+        if (b.dataset.cont === 'no') return via(null);
+        const r = leggi();
+        if (r) via({ ...r, dove: b.dataset.cont });
+        return;
+      }
+      if (ev.target === el) via(null);
+    });
+  });
+}
+
+async function _contaInCopia(k, comeSiChiama) {
+  const ov = _ovAttuale();
+  if (!ov) return false;
+  const nome = (ov.nome + ' ' + L('con', 'with', 'con') + ' ' + comeSiChiama).trim().slice(0, 40);
+  const clone = JSON.parse(JSON.stringify({ mostra: ov.mostra || {}, xy: ov.xy || {}, css: ov.css || '', stile: ov.stile || null }));
+  delete clone.mostra[k];
+  const id = 'ov' + Math.random().toString(36).slice(2, 8);
+  overlays.push({ id, nome, ...clone });
+  (ov.mostra = ov.mostra || {})[k] = false;
+  overlaySel = id;
+  occSel = '';
+  await _spingiOverlays();
+  await caricaOverlays();
+  if (!overlays.find((o) => o.id === id)) {
+    toast(L('La copia non si \u00e8 salvata: riprova.', 'The copy did not save: try again.', 'La copia no se ha guardado: int\u00e9ntalo otra vez.'), 'errore');
+    return false;
+  }
+  return true;
+}
+
+async function nuovoContatoreQui() {
+  const r = await chiediContatore({ copie: overlays.length < MAX_OVERLAY });
+  if (!r) return;
+  if (r.dove === 'copia' && _salvaSporco && !(await _chiediPrimaDiUscire())) return;
+  const k = 'cont:' + r.comando;
+  try {
+    await api('/api/contatori', { method: 'POST', body: {
+      comando: r.comando, etichetta: r.etichetta, emoji: r.emoji, step: r.step,
+      autoParola: r.parola, overlay: { mostra: true },
+    } });
+  } catch (e) {
+    toast(L('Non riesco a creare il contatore: riprova.', 'I can\u2019t create the counter: try again.', 'No consigo crear el contador: int\u00e9ntalo otra vez.'), 'errore');
+    return;
+  }
+  if (r.dove === 'copia' && !(await _contaInCopia(k, (r.etichetta || '').trim() || r.comando))) return;
+  await caricaContaStudio();
+  _mettiDentro(k);
+  toast(r.dove === 'copia'
+    ? L('Contatore creato nella copia \u2713', 'Counter created in the copy \u2713', 'Contador creado en la copia \u2713')
+    : L('Contatore creato \u2713', 'Counter created \u2713', 'Contador creado \u2713'));
+}
+
 const _occDi = (ov) => (Array.isArray(ov?.occasioni) ? ov.occasioni : []);
 const MAX_OCC = 8;
 
@@ -8947,9 +9084,12 @@ function collegaEditorOvl() {
     const nuovo = e.target.closest('[data-nuovo]');
     if (nuovo) {
       e.stopPropagation();
-      const dove = { cart: 'btn-agg-cart', goal: 'btn-agg-goal' }[nuovo.dataset.nuovo];
+      const fam = nuovo.dataset.nuovo;
+      const box = _g('ovl-agg');
+      if (box) { box.hidden = true; _g('ovl-liv-aggiungi')?.setAttribute('aria-expanded', 'false'); }
+      if (fam === 'cont') { nuovoContatoreQui(); return; }
+      const dove = { cart: 'btn-agg-cart', goal: 'btn-agg-goal' }[fam];
       if (dove) { _g(dove)?.click(); _g(dove)?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'center' }); }
-      else vaiAScheda('moduli');
       return;
     }
     const occ = e.target.closest('[data-occhio]');
@@ -9076,6 +9216,7 @@ function _iniettaManiglie(chiave) {
 
 function _dragManiglia(chiave, e, tipo) {
   e.preventDefault(); e.stopPropagation();
+  if (_bloccato(chiave)) { seleziona(chiave); return; }
   const el = _nodo(chiave);
   const rect = el.getBoundingClientRect();
   const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
@@ -9772,7 +9913,7 @@ async function salvaLayoutOverlay(silenzioso) {
   if (ok && !silenzioso) toast(L('Overlay salvato ✓', 'Overlay saved ✓', 'Overlay guardado ✓'));
 }
 async function nuovoOverlayDaPreset() {
-  if (overlays.length >= 12) { toast(L('Massimo 12 overlay.', 'Maximum 12 overlays.', 'Máximo 12 overlays.')); return; }
+  if (overlays.length >= MAX_OVERLAY) { toast(L('Massimo ' + MAX_OVERLAY + ' overlay.', 'Maximum ' + MAX_OVERLAY + ' overlays.', 'Máximo ' + MAX_OVERLAY + ' overlays.')); return; }
   const corr = overlays.find((o) => o.id === overlaySel);
   const opzioni = [['corrente', L('Come quello che sto modificando', 'Same as the one I am editing', 'Como el que estoy editando')]]
     .concat(TEMPLATE_BUILTIN.map((t, k) => ['b' + k, t.nome]));
@@ -9810,7 +9951,7 @@ function _stileDaPreset(t) {
 }
 
 async function duplicaOverlay() {
-  if (overlays.length >= 12) { toast(L('Massimo 12 overlay.', 'Maximum 12 overlays.', 'Máximo 12 overlays.')); return; }
+  if (overlays.length >= MAX_OVERLAY) { toast(L('Massimo ' + MAX_OVERLAY + ' overlay.', 'Maximum ' + MAX_OVERLAY + ' overlays.', 'Máximo ' + MAX_OVERLAY + ' overlays.')); return; }
   const ov = overlays.find((o) => o.id === overlaySel); if (!ov) return;
   const base = ov.nome + ' ' + L('(copia)', '(copy)', '(copia)');
   const nome = (await chiediTesto({
