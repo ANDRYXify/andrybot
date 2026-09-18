@@ -547,15 +547,95 @@ export class Helix {
     }
   }
 
-  // Elenco VIP attuali → [{ user_id, user_login, user_name }] o [].
+  // Elenco VIP attuali → [{ user_id, user_login, user_name }], oppure `null`
+  // quando NON LO SAPPIAMO (permesso mancante, Twitch muto). Sono due cose
+  // diverse: un elenco vuoto vuol dire «non c'e' nessun VIP», `null` vuol dire
+  // «non l'ho potuto chiedere». Chi le confonde, la prima volta che Twitch
+  // tossisce, tratta mezzo canale come se avesse perso il VIP.
   async getVips(channelLogin) {
     const s = streamers.get(channelLogin);
-    if (!s?.user_id) return [];
+    if (!s?.user_id) return null;
     const token = await this.auth.getToken('broadcaster', channelLogin);
     try {
       const j = await this._request('GET', '/channels/vips', { query: { broadcaster_id: s.user_id, first: 100 }, token });
       return j?.data || [];
-    } catch { return []; }
+    } catch (e) { log.debug('getVips:', e?.message || e); return null; }
+  }
+
+  // CHI, FRA QUESTI, E' ABBONATO. Scope 'channel:read:subscriptions'.
+  // Si chiede in blocchi da cento: una domanda sola per cento persone, invece
+  // di cento domande. Torna un insieme di id, o `null` se non l'abbiamo potuto
+  // chiedere — mai un insieme vuoto per dire «boh».
+  async abbonati(channelLogin, userIds = []) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    const ids = [...new Set((userIds || []).map((x) => String(x || '')).filter(Boolean))];
+    if (!ids.length) return new Set();
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    const fuori = new Set();
+    try {
+      for (let i = 0; i < ids.length; i += 100) {
+        const params = new URLSearchParams();
+        params.append('broadcaster_id', s.user_id);
+        for (const id of ids.slice(i, i + 100)) params.append('user_id', id);
+        const j = await this._request('GET', '/subscriptions?' + params.toString(), { token });
+        for (const r of j?.data || []) if (r?.user_id) fuori.add(String(r.user_id));
+      }
+      return fuori;
+    } catch (e) { log.debug('abbonati:', e?.message || e); return null; }
+  }
+
+  // CHI, FRA QUESTI, TI SEGUE. Scope 'moderator:read:followers'.
+  // Twitch la fa chiedere una persona alla volta, e qui sta il punto: se UNA
+  // chiamata cade, non si torna una fotografia a meta'. Una fotografia a meta'
+  // si leggerebbe come «questi non ti seguono», e chi la usa per dare o
+  // togliere ruoli farebbe un danno. O si sa di tutti, o non si sa.
+  async seguono(channelLogin, persone = []) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    const lista = (persone || []).map((p) => ({ login: String(p?.login || '').toLowerCase(), id: String(p?.id || '') }))
+      .filter((p) => p.login && p.id);
+    if (!lista.length) return new Set();
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    const fuori = new Set();
+    try {
+      for (const p of lista) {
+        const j = await this._request('GET', '/channels/followers', { query: { broadcaster_id: s.user_id, user_id: p.id }, token });
+        if (j?.data?.[0]?.followed_at) fuori.add(p.login);
+      }
+      return fuori;
+    } catch (e) { log.debug('seguono:', e?.message || e); return null; }
+  }
+
+  // LA FOTOGRAFIA DI TWITCH per un gruppo di persone: chi segue, chi e'
+  // abbonato, chi e' VIP, chi e' moderatore. Un fatto che manca non c'e'
+  // proprio: chi legge questa fotografia deve poter distinguere «no» da «non
+  // lo so», e l'unico modo perche' non le confonda e' che il «non lo so» sia
+  // l'assenza della chiave.
+  async ruoliDi(channelLogin, gente = []) {
+    const foto = {};
+    const persone = (gente || []).map((g) => ({
+      login: String(g?.login || '').toLowerCase(),
+      id: String(g?.user_id || g?.userId || ''),
+    })).filter((p) => p.login);
+    if (!persone.length) return foto;
+
+    const senza = persone.filter((p) => !p.id).map((p) => p.login);
+    if (senza.length) {
+      const trovati = await this.getUsersByLogin(senza);
+      const mappa = new Map((trovati || []).map((u) => [String(u.login || '').toLowerCase(), String(u.id || '')]));
+      for (const p of persone) if (!p.id) p.id = mappa.get(p.login) || '';
+    }
+
+    const mods = await this.getModerators(channelLogin);
+    if (mods) foto.mod = new Set(mods.map((m) => String(m?.user_login || '').toLowerCase()).filter(Boolean));
+    const vip = await this.getVips(channelLogin);
+    if (vip) foto.vip = new Set(vip.map((v) => String(v?.user_login || '').toLowerCase()).filter(Boolean));
+    const sub = await this.abbonati(channelLogin, persone.map((p) => p.id));
+    if (sub) foto.sub = new Set(persone.filter((p) => p.id && sub.has(p.id)).map((p) => p.login));
+    const seg = await this.seguono(channelLogin, persone);
+    if (seg) foto.follower = seg;
+    return foto;
   }
 
   // ------------------------------------------------------------- MODERAZIONE

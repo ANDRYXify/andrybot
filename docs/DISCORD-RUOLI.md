@@ -70,11 +70,6 @@ servizio che non c'e' piu'.
 
 Questo pezzo e' in costruzione. Cosa resta, in ordine:
 
-- **Il giro.** Legge le regole, chiede a Discord i ruoli e l'altezza del bot,
-  poi per ogni persona collegata mette insieme cosa sappiamo (monete e ore dal
-  database, serie e dirette dalle presenze, follower/sub/VIP/mod da Twitch) e
-  scrive la differenza. Le quattro cose di Twitch arrivano da una funzione sola,
-  che sta nello strato di Twitch: il giro non deve sapere come si chiede.
 - **Il collegamento dello spettatore.** Due meta': chi sei su Twitch e chi sei
   su Discord. La seconda vuole un'applicazione Discord con OAuth `identify`, ed
   e' **della piattaforma** (`DISCORD_CLIENT_ID` e `DISCORD_CLIENT_SECRET`, vedi
@@ -83,6 +78,39 @@ Questo pezzo e' in costruzione. Cosa resta, in ordine:
   tasto che non funziona.
 - **Il pannello** (le regole, la prova del collegamento, cosa ha fatto l'ultimo
   giro e cosa non ha potuto fare) e la **vetrina**.
+
+## Il giro, e il difetto piu' pericoloso di tutti
+
+Ogni quarto d'ora, sui canali accesi: si leggono le regole, si chiedono a
+Discord i ruoli del server e l'altezza del bot, e per ogni persona collegata si
+scrive **solo la differenza**. Un giro in cui non cambia niente non chiama
+nessuno, quindi costa quanto una lettura.
+
+Il pericolo non e' sbagliare a dare un ruolo: e' **leggere «non lo so» come
+«no»**. Se Twitch tace per un minuto — un permesso revocato, una chiamata andata
+storta — e noi capiamo «non e' abbonato», il giro dopo toglie il ruolo dei sub a
+tutto il server. Un guasto di lettura diventa una scrittura irreversibile su
+casa di qualcun altro, e quei ruoli poi li ridai a mano, uno per uno.
+
+Percio' la regola e' scritta in negativo, e vale da cima a fondo:
+
+- nello strato di Twitch, `null` vuol dire «non l'ho potuto chiedere» ed e'
+  diverso da un elenco vuoto, che vuol dire «non c'e' nessuno». `getVips`
+  tornava `[]` in tutti e due i casi: adesso no. Chi segue si chiede una
+  persona alla volta, e se **una** chiamata cade non si torna una fotografia a
+  meta': o si sa di tutti, o non si sa;
+- nella fotografia (`helix.ruoliDi`) un fatto che non sappiamo **non c'e'
+  proprio**: e' l'assenza della chiave, non un `false`. Un valore che non esiste
+  non si puo' confondere con un no;
+- nel giro, una condizione che non sappiamo valutare per quella persona, in
+  quel giro, **non e' una regola**: non da' e non toglie niente. Il ruolo resta
+  dov'e'.
+
+Il resto viene da se': si respira fra una persona e l'altra, e se Discord chiede
+una lunga attesa il giro si ferma e torna dopo — non e' il filo a decidere
+quanto insistere, e' chi sta girando. «Fammi vedere cosa faresti» percorre la
+**stessa** strada senza scrivere: se fosse una strada sua, mostrerebbe una cosa
+e ne farebbe un'altra.
 
 ## Le due applicazioni, e perche' sono due
 
