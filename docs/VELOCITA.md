@@ -133,3 +133,49 @@ giusta non e "alzo il tetto?": e "cosa e rientrato dalla finestra?".
 
 Resta da fare, e vale un'altra fetta: `style.css` e `anime.css` sono ancora
 interi (52 kB gzip sui 82), e per buona parte sono stile del pannello.
+
+### La seconda fetta: le animazioni che non la riguardano
+
+Misura, non stima: la vetrina usa **44 regole su 856** di `anime.css`. Il resto
+e' lo Studio, la ricerca, le tabelle, le schede del pannello. Novanta per cento
+di roba che a chi passa a leggere non serve.
+
+Per toglierla c'erano due strade, e la differenza sta tutta in chi rischia.
+**Spostare** le regole comuni in un file terzo sarebbe la cosa pulita, ma
+cambia l'ORDINE in cui le regole si sovrascrivono per il pannello — e
+sull'ordine si regge il suo aspetto. **Copiarle** in un file della vetrina non
+tocca i file del pannello nemmeno di un byte: li' non puo' rompersi niente per
+definizione. Il prezzo e' che quelle regole esistono in due posti.
+
+Si e' scelto di copiare, e di far sorvegliare le copie. `anime-vetrina.css` sta
+nello STESSO punto della catena in cui stava `anime.css` — prima di
+`vetrina.css` — quindi per la vetrina l'ordine non cambia di una virgola.
+
+Il cancello (`scripts/verifica-dieta.mjs`) guarda le copie in tre modi:
+
+1. **Ogni regola copiata esiste identica in `anime.css`.** Confronto testuale,
+   con i `@media` normalizzati (due media annidati e un media solo con la «and»
+   dicono la stessa cosa e devono dare la stessa chiave).
+2. **Rimettendo `anime.css` sulla vetrina non cambia niente.** Si confronta lo
+   stile calcolato di ogni elemento, coi suoi due strati disegnati, in tre stati:
+   a riposo, con tutto acceso (avviso, toast, domande aperte, pacchetti scelti) e
+   sul telefono. Le animazioni si spengono da tutte e due le parti: non e' una
+   scorciatoia, e' l'unico modo di avere due misure confrontabili, perche' la
+   stessa animazione fotografata due volte da' due valori diversi anche quando la
+   regola e' identica.
+3. **Le animazioni vive sono le stesse.** Spente le animazioni, un `@keyframes`
+   dimenticato nella copia non si vedrebbe piu': la regola `animation: respiro …`
+   resta scritta uguale ma non anima niente. Quindi si confronta anche l'ELENCO
+   delle animazioni attive — su quale elemento, con che nome.
+
+Tre rotture di prova (una regola che sparisce, una che dice un'altra cosa, i
+fotogrammi che non ci sono piu') sono viste tutte e tre.
+
+| | prima | dopo la prima fetta | dopo la seconda |
+| --- | ---: | ---: | ---: |
+| home, HTML + CSS + JS (gzip) | 554 kB | 82 kB | **65 kB** |
+
+Resta `style.css`: 118 regole usate su 1230, cioe' altri 25 kB. Li' le regole
+che servono sono SPARSE — l'ultima utile e' la numero 1007 su 1230 — quindi non
+esiste un punto dove tagliare, e la copia sarebbe di centoventi regole invece di
+quarantaquattro. Si e' preferito fermarsi: e' una scelta, non una dimenticanza.
