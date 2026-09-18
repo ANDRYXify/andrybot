@@ -758,8 +758,8 @@ function _demoGet(via) {
       posta: { disponibile: true, email: 'andry@esempio.it', confermata: true, inAttesa: false },
       rapporti: [
         { id: 3, inizio: 1789574400000, fine: 1789583040000, letto: false, inviato: 'telegram,mail', ts: 1789583040000, dati: { durataMs: 8640000, picco: 61, media: 44, giri: 28, messaggi: 1240, persone: 96, top: [{ user: 'lucaplays', n: 120 }, { user: 'giada_ttv', n: 98 }, { user: 'marco99', n: 77 }], follow: 14, sub: 5, regali: 2, raid: 1, raidSpettatori: 35, presenti: 71, primeVolte: 9, clip: 2, donazioni: 2, donazioniCent: 1500, clipElenco: [
-          { url: 'https://clips.twitch.tv/EsempioUno', motivo: 'la chat si è accesa', ts: 1789578840000 },
-          { url: 'https://clips.twitch.tv/EsempioDue', motivo: 'reazione al jumpscare', ts: 1789581720000 },
+          { id: 'EsempioUno', url: 'https://clips.twitch.tv/EsempioUno', titolo: 'Il salto che non doveva riuscire', durata: 34, motivo: 'la chat si è accesa', ts: 1789578840000 },
+          { id: 'EsempioDue', url: 'https://clips.twitch.tv/EsempioDue', titolo: 'Reazione al jumpscare, con sedia', durata: 21, motivo: 'modulo', ts: 1789581720000 },
         ] } },
         { id: 2, inizio: 1789401600000, fine: 1789410960000, letto: true, inviato: 'telegram', ts: 1789410960000, dati: { durataMs: 9360000, picco: 48, media: 33, giri: 31, messaggi: 980, persone: 80, top: [{ user: 'giada_ttv', n: 101 }, { user: 'il_nonno', n: 64 }, { user: 'sara_gg', n: 52 }], follow: 9, sub: 3, regali: 0, raid: 0, raidSpettatori: 0, presenti: 58, primeVolte: 5, clip: 2, donazioni: 0, donazioniCent: 0 } },
         { id: 1, inizio: 1789228800000, fine: 1789236000000, letto: true, inviato: '', ts: 1789236000000, dati: { durataMs: 7200000, picco: 39, media: 27, giri: 24, messaggi: 610, persone: 54, top: [{ user: 'marco99', n: 70 }, { user: 'lucaplays', n: 66 }, { user: 'sara_gg', n: 40 }], follow: 6, sub: 1, regali: 0, raid: 0, raidSpettatori: 0, presenti: 40, primeVolte: 3, clip: 1, donazioni: 1, donazioniCent: 500 } },
@@ -13905,9 +13905,18 @@ function clipRapporto(elenco) {
   const clip = (Array.isArray(elenco) ? elenco : []).filter((c) => c?.url);
   if (!clip.length) return '';
   const ora = (ts) => new Date(Number(ts) || 0).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-  return `<div class="rap-clip">${clip.map((c) => `<a href="${esc(c.url)}" target="_blank" rel="noopener">
-      <strong>${esc(c.motivo || L('Clip della diretta', 'Stream clip', 'Clip del directo'))}</strong>
-      <span>${esc(ora(c.ts))}</span></a>`).join('')}</div>`;
+  const quanto = (s) => { const n = Math.round(Number(s) || 0); return n > 0 ? `${n}s` : ''; };
+  return `<div class="rap-clip">${clip.map((c) => {
+    const titolo = String(c.titolo || '').trim();
+    const nota = [quanto(c.durata), String(c.motivo || '').trim()].filter(Boolean).join(' · ');
+    return `<a href="${esc(c.url)}" target="_blank" rel="noopener">
+      ${c.anteprima ? `<img src="${esc(c.anteprima)}" alt="" loading="lazy" width="96" height="54">` : ''}
+      <span class="rap-clip-testo">
+        <strong>${esc(titolo || c.motivo || L('Clip della diretta', 'Stream clip', 'Clip del directo'))}</strong>
+        ${titolo && nota ? `<em>${esc(nota)}</em>` : (quanto(c.durata) ? `<em>${esc(quanto(c.durata))}</em>` : '')}
+      </span>
+      <span>${esc(ora(c.ts))}</span></a>`;
+  }).join('')}</div>`;
 }
 
 function canaliRapportoHtml(d) {

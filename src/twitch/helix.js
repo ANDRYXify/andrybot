@@ -460,6 +460,29 @@ export class Helix {
     }
   }
 
+  // COS'E' QUELLA CLIP. Quando la si crea, Twitch risponde con un id e basta: il
+  // titolo, la durata, il gioco e l'anteprima nascono dopo, e sono suoi. Noi
+  // salvavamo l'id e il MOTIVO per cui l'avevamo fatta — «modulo», «chat» — e nel
+  // rapporto quel motivo finiva al posto del titolo: una parola tecnica dove uno
+  // si aspetta di leggere cosa c'e' dentro.
+  //
+  // Cento per volta, come le dirette: un rapporto ne ha al massimo otto, ma
+  // chiederle una per una sarebbe stata una chiamata per clip per ogni serata.
+  async dettagliClip(ids) {
+    const lista = [...new Set((ids || []).map((x) => String(x || '').trim()).filter(Boolean))].slice(0, 100);
+    if (!lista.length) return [];
+    const j = await this._request('GET', '/clips', { query: lista.map((i) => ['id', i]) });
+    return (j?.data || []).map((c) => ({
+      id: String(c.id || ''),
+      titolo: String(c.title || '').trim(),
+      durata: Number(c.duration) || 0,
+      gioco: String(c.game_id || ''),
+      anteprima: String(c.thumbnail_url || ''),
+      visite: Number(c.view_count) || 0,
+      autore: String(c.creator_name || ''),
+    }));
+  }
+
   // ------------------------------------------------------------- VIP
   // Richiedono lo scope 'channel:manage:vips' sul token del broadcaster.
 
