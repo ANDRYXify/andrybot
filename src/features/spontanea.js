@@ -57,6 +57,24 @@ export function scegliMomento({ ora, dose, live, soloLive, momenti = [], ultimaS
   return { tipo: null, perche: 'troppo presto' };
 }
 
+// «NON SO QUANDO HO PARLATO L'ULTIMA VOLTA» VUOL DIRE ADESSO, NON MAI.
+//
+// I riposi stanno in memoria, e a un riavvio ripartono da zero. Zero pero' vuol
+// dire «l'ultima volta e' stata nel 1970», cioe' «e' passato tutto il tempo del
+// mondo»: al primo giro dopo l'avvio ogni riposo risulta finito, e il bot parla
+// subito. Un riavvio ogni tanto e' una riga in piu' e non se ne accorge nessuno;
+// un processo che si riavvia spesso diventa una raffica — e da fuori sembra un
+// bot impazzito che spara battute a caso, senza che niente nella regola sia
+// rotto.
+//
+// La cura non e' un tetto in piu': e' che l'assenza di memoria valga come «ho
+// appena parlato». Cosi' un riavvio costa al massimo un giro di silenzio, mai
+// una raffica — qualunque sia il motivo per cui il processo e' ripartito.
+export function ultimoNoto(mappa, login, nato) {
+  const v = Number(mappa?.get?.(String(login || '').toLowerCase()) || 0);
+  return v > 0 ? v : (Number(nato) || 0);
+}
+
 // Il registro di cosa ha detto da solo: una lista corta per canale, in memoria.
 // E' di seduta — da quando il bot e' acceso — e il pannello lo dice.
 export function registra(mappa, login, voce, max = REGISTRO_MAX) {
