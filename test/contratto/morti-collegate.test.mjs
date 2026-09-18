@@ -31,8 +31,10 @@ test('le regole del riconoscimento arrivano davvero alla pagina', () => {
 });
 
 test('qualcuno accende la guardia, e qualcuno collega la carta', () => {
-  assert.match(app, /if \(id === 'regia'\) \{[^}]*collegaMorti\(\)/,
-    'aprendo la scheda Regia nessuno collega la carta delle morti');
+  assert.match(app, /if \(id === 'moduli'\) \{[^}]*collegaMorti\(\)/,
+    'aprendo i Comandi nessuno collega CONTATORify');
+  assert.ok(!/if \(id === 'regia'\) \{[^}]*collegaMorti\(\)/.test(app),
+    'e la Regia non deve piu\' collegarla: di li\' se n\'e\' andata');
   assert.match(app, /collegaRegiaRicordata\(\);\s*\n\s*_mortiRiavvia\(\);/,
     'la guardia non riparte all\'avvio: contarebbe solo con la scheda Regia aperta');
 });
@@ -45,7 +47,7 @@ test('il giro guarda, conta una volta sola e solo in onda', () => {
 });
 
 test('la carta si basta da sola: fonti e contatori se li prende lei', () => {
-  const carta = app.slice(app.indexOf('function _mortiCarta'), app.indexOf('function pannelloRegia'));
+  const carta = app.slice(app.indexOf('function _mortiCarte'), app.indexOf('function pannelloModuli'));
   assert.ok(!/_cons\.fonti/.test(carta), 'la carta si scrive dentro le fonti: se arrivano dopo, resta vuota');
   assert.ok(!/_conta/.test(carta), 'la carta si scrive dentro i contatori di un\'altra scheda');
   assert.match(app, /async function _mortiContiLista\(\)[\s\S]*?api\('\/api\/contatori'\)/,

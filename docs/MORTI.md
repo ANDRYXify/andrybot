@@ -1,4 +1,17 @@
-# Le morti contate da sole
+# CONTATORify — i numeri che salgono da soli
+
+Sta nei **Comandi**, accanto ai contatori che muove: la cosa che fa salire un
+contatore da sola non ha motivo di stare in un'altra stanza. Si chiama
+CONTATORify, ma si identifica `morti` come le rotte del server — il cancello
+delle sezioni pesa ogni area contando le porte che le appartengono e le riconosce
+dal nome, e con un identificativo diverso la peserebbe zero proprio mentre cresce.
+
+E una cosa che conviene sapere subito: **il meccanismo non sa cosa conta.** Il
+contatore da far salire lo scegli tu, quindi insegnandogli la schermata di
+vittoria hai `!vittorie` e quella del boss abbattuto ti da' `!boss`. Qui sotto si
+parla di morti perche' e' il caso per cui nasce, non perche' sia l'unico.
+
+## Le morti contate da sole
 
 Il contatore `!morti` esiste da sempre, e da sempre qualcuno lo deve far salire:
 lo streamer che scrive in chat mentre sta morendo, o un mod che guarda. Chi

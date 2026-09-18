@@ -14,7 +14,7 @@
     conoscenza: 'conoscenza sapere informazioni faq risposte curate cosa sa insegna knowledge teach conocimiento enseñar',
     memoria: 'memoria ricordi cervello storia conversazioni persone statistiche memory remember memoria recuerdos',
     avatar: 'avatar 3d mente grafo nodi cervello di lia plasticità appraisal essere coscienza mind brain mente',
-    moduli: 'comandi command custom variabili trigger risposte automatiche contatori comando commands comandos automazioni macro alias',
+    moduli: 'comandi command custom variabili trigger risposte automatiche contatori comando commands comandos automazioni macro alias contatorify morti deaths muertes schermata automatico automatici vittorie boss tentativi counter',
     ascolto: 'comandi vocali voce parlato speech ascolto microfono a voce voice mic dettatura comandos de voz micrófono',
     regole: 'moderazione moderation ban timeout kick spam filtri parole vietate link maiuscole flood automod chat pulita silenzia silenziare muta mute banna bannare espelli caps blacklist parolacce insulti moderación silenciar expulsar',
     scudo: 'scudo anti-bot antibot blocca bot follow-bot follow bot hate-raid raid ondata ondate sospetti blocklist allowlist lista bot commanderroot sery_bot shield protezione difesa attacco livelli sola osservazione prudente bilanciata aggressiva escudo protección',

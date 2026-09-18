@@ -2782,6 +2782,10 @@ function tFamiglia(id, def) {
 }
 
 const SOTTO_SCHEDE = {
+  moduli: {
+    attributo: 'zona',
+    voci: [['comandi', 'Comandi e contatori'], ['morti', 'CONTATORify']],
+  },
   notifiche: {
     attributo: 'rete',
     voci: [
@@ -2817,7 +2821,7 @@ function applicaSottoSchede(scheda) {
   const pan = document.querySelector('.pannello-scheda.visibile');
   if (!pan) return;
   const ora = sottoScelta(scheda);
-  for (const c of pan.querySelectorAll('.carta[data-' + cfg.attributo + ']')) {
+  for (const c of pan.querySelectorAll('[data-' + cfg.attributo + ']')) {
     c.hidden = c.dataset[cfg.attributo] !== ora;
   }
 }
@@ -11317,13 +11321,16 @@ function _mortiLista() {
     : `<p class="vuoto">${L('Nessuna schermata insegnata: la prima volta che muori, premi il tasto qui sopra.', 'No screen taught yet: the first time you die, press the button above.', 'Ninguna pantalla enseñada: la primera vez que mueras, pulsa el botón de arriba.')}</p>`;
 }
 
-const _mortiGioco = () => {
-  const t = String(document.getElementById('regia-gioco-sel')?.textContent || '').trim();
-  return (!t || t.startsWith('—') || t === '-') ? '' : t;
-};
+async function _mortiGioco() {
+  try {
+    const d = await api('/api/streamer/regia');
+    const t = String(d?.canale?.gameName || '').trim();
+    return (!t || t.startsWith('—') || t === '-') ? '' : t;
+  } catch { return ''; }
+}
 
 async function _mortiPubblica(firme, contatore, da) {
-  const gioco = _mortiGioco();
+  const gioco = await _mortiGioco();
   if (!gioco) return null;
   try {
     const d = await api('/api/streamer/morti/pubblica', { method: 'POST', body: {
@@ -11398,7 +11405,7 @@ function collegaMorti() {
       });
       const nome = String(r || '').trim();
       if (!nome) return;
-      const gioco = _mortiGioco();
+      const gioco = await _mortiGioco();
       const meglio = gioco && _g('morti-condividi')?.checked
         ? await _mortiPubblica([scatto.firma], contatore, '')
         : null;
@@ -11495,64 +11502,9 @@ function collegaMorti() {
   });
 }
 
-function _mortiCarta() {
-  const m = _mortiCfg();
-  return `
-    <div class="carta">
-      <h2>${_hIco(ICO.dado)}${L('Le morti contate da sole', 'Deaths counted by themselves', 'Las muertes contadas solas')}</h2>
-      <p>${L('La schermata di morte di un gioco è sempre', 'A game\'s death screen is always', 'La pantalla de muerte de un juego es siempre')} <strong class="primo-piano">${L('la stessa immagine', 'the same image', 'la misma imagen')}</strong>. ${L('Gliela fai vedere una volta e da lì in poi il contatore sale da solo, senza che tu scriva niente mentre giochi.', 'You show it once and from then on the counter goes up by itself, without you typing anything while you play.', 'Se la enseñas una vez y desde entonces el contador sube solo, sin que escribas nada mientras juegas.')}</p>
-      <p class="suggerimento">${L('Serve il', 'You need the', 'Hace falta el')} <strong>${L('programma con cui mandi in onda collegato', 'broadcast program connected', 'programa de emisión conectado')}</strong> ${L('qui sotto, e questo pannello aperto su quel computer. L\'immagine dello schermo', 'below, and this panel open on that computer. The picture of your screen', 'aquí abajo, y este panel abierto en ese ordenador. La imagen de tu pantalla')} <strong>${L('non esce di lì', 'never leaves it', 'no sale de ahí')}</strong>: ${L('al server arriva solo «+1».', 'only «+1» reaches the server.', 'al servidor solo llega «+1».')}</p>
-      <div class="riga-interruttore spazio-sopra">
-        <label class="interruttore"><input type="checkbox" id="morti-attivo" ${m.attivo ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">${L('Conta le morti guardando lo schermo', 'Count deaths by watching the screen', 'Cuenta las muertes mirando la pantalla')}</span>
-      </div>
-      <div class="griglia-campi spazio-sopra">
-        <div>
-          <label class="campo" for="morti-fonte">${L('Quale fonte guardo', 'Which source I watch', 'Qué fuente miro')}</label>
-          <select id="morti-fonte" class="campo-largo"></select>
-        </div>
-        <div>
-          <label class="campo" for="morti-ogni">${L('Ogni quanto guardo (secondi)', 'How often I look (seconds)', 'Cada cuánto miro (segundos)')}</label>
-          <input type="number" id="morti-ogni" class="campo-largo" min="1" max="30" step="1" value="${Math.round(m.ogniMs / 1000)}">
-        </div>
-      </div>
-      <p class="suggerimento" id="morti-spia">—</p>
-      <div class="riga-flessibile spazio-sopra">
-        <div style="max-width:220px">
-          <label class="campo" for="morti-conta">${L('Quale contatore faccio salire', 'Which counter I raise', 'Qué contador subo')}</label>
-          <select id="morti-conta" class="campo-largo"></select>
-        </div>
-        <button class="btn" id="morti-impara" disabled>${L('Sono morto adesso: è questa', 'I just died: this is it', 'Acabo de morir: es esta')}</button>
-      </div>
-      <label class="ovl-spunta spazio-sopra"><input type="checkbox" id="morti-condividi" checked><span>${L('Mettila in comune con gli altri streamer', 'Share it with the other streamers', 'Compartirla con los demás streamers')}</span></label>
-      <p class="suggerimento">${L('Premilo', 'Press it', 'Púlsalo')} <strong>${L('mentre la schermata di morte è a schermo', 'while the death screen is on screen', 'mientras la pantalla de muerte está en pantalla')}</strong>. ${L('Ne puoi insegnare una per gioco: quella che combacia vince, così non devi dire tu a cosa stai giocando.', 'You can teach one per game: whichever matches wins, so you don\'t have to say what you\'re playing.', 'Puedes enseñar una por juego: gana la que coincide, así no tienes que decir a qué juegas.')}</p>
-      <div id="morti-lista" class="goal-lista spazio-sopra"></div>
-
-      <h3 class="spazio-sopra">${L('Le schermate che hanno già insegnato gli altri', 'The screens other people already taught', 'Las pantallas que ya han enseñado los demás')}</h3>
-      <p>${L('Ogni volta che qualcuno insegna la morte di un gioco, quel gioco lo sanno tutti. Cerca il tuo: se c\'è, la prendi e non devi insegnare niente.', 'Every time someone teaches a game\'s death, everyone knows that game. Look for yours: if it is there, you take it and teach nothing.', 'Cada vez que alguien enseña la muerte de un juego, ese juego lo saben todos. Busca el tuyo: si está, la coges y no enseñas nada.')}</p>
-      <div class="riga-flessibile spazio-sopra">
-        <div style="flex:1">
-          <label class="campo" for="morti-cerca">${L('Che gioco stai giocando', 'What game are you playing', 'A qué juego juegas')}</label>
-          <input type="search" id="morti-cerca" class="campo-largo" placeholder="${esc(L('Dark Souls, Minecraft, Elden Ring…', 'Dark Souls, Minecraft, Elden Ring…', 'Dark Souls, Minecraft, Elden Ring…'))}">
-        </div>
-        <button class="btn secondario" id="morti-cerca-vai">${L('Cerca', 'Search', 'Buscar')}</button>
-      </div>
-      <div id="morti-libreria" class="goal-lista spazio-sopra"></div>
-
-      <h3 class="spazio-sopra">${L('Certi giochi lo dicono da soli', 'Some games say it themselves', 'Algunos juegos lo dicen solos')}</h3>
-      <p>${L('Counter-Strike e Dota pubblicano quante volte sei morto. Dove succede non c\'è niente da riconoscere: il numero è quello del gioco, e non sbaglia.', 'Counter-Strike and Dota publish how many times you died. Where that happens there is nothing to recognise: the number is the game\'s own, and it does not miss.', 'Counter-Strike y Dota publican cuántas veces has muerto. Donde pasa no hay nada que reconocer: el número es el del juego, y no falla.')}</p>
-      <p class="suggerimento">${L('Scarichi il file, lo metti nella cartella scritta qui sotto e riavvii il gioco. Qui non serve nemmeno', 'Download the file, drop it in the folder written below and restart the game. Here you don\u2019t even need', 'Descargas el archivo, lo pones en la carpeta escrita abajo y reinicias el juego. Aquí ni siquiera hace falta')} <strong>${L('questo pannello aperto', 'this panel open', 'este panel abierto')}</strong>: ${L('a parlare col bot è il gioco. Fuori diretta legge ma non conta, come la schermata.', 'it is the game talking to the bot. Off air it reads but does not count, same as the screen.', 'quien habla con el bot es el juego. Fuera de directo lee pero no cuenta, igual que la pantalla.')}</p>
-      <div id="morti-gsi-lista" class="goal-lista spazio-sopra"></div>
-      <p class="suggerimento" id="morti-gsi-spia">&mdash;</p>
-      <p><button class="btn secondario mini" id="morti-gsi-rinnova">${L('Rifai la chiave', 'Make a new key', 'Rehacer la clave')}</button></p>
-    </div>
-`;
-}
-
 function pannelloRegia() {
   return pannello('regia', `
     <div class="carta evidenziata" id="regia-permessi-banner" hidden></div>
-    ${_mortiCarta()}
 
     <div class="carta">
       <h2>${_hIco(ICO.onda)}${L('Stato diretta', 'Stream status', 'Estado del directo')}</h2>
@@ -13554,6 +13506,64 @@ async function _svtvCaricaSet() {
   })));
 }
 
+function _mortiCarte() {
+  const m = _mortiCfg();
+  return `
+    <div class="carta">
+      <h2>${_hIco(ICO.dado)}${L('Le morti contate da sole', 'Deaths counted by themselves', 'Las muertes contadas solas')}</h2>
+      <p>${L('La schermata di morte di un gioco è sempre', 'A game\'s death screen is always', 'La pantalla de muerte de un juego es siempre')} <strong class="primo-piano">${L('la stessa immagine', 'the same image', 'la misma imagen')}</strong>. ${L('Gliela fai vedere una volta e da lì in poi il contatore sale da solo, senza che tu scriva niente mentre giochi.', 'You show it once and from then on the counter goes up by itself, without you typing anything while you play.', 'Se la enseñas una vez y desde entonces el contador sube solo, sin que escribas nada mientras juegas.')}</p>
+      <p class="suggerimento">${L('Serve il', 'You need the', 'Hace falta el')} <strong>${L('programma con cui mandi in onda collegato', 'broadcast program connected', 'programa de emisión conectado')}</strong> ${L('qui sotto, e questo pannello aperto su quel computer. L\'immagine dello schermo', 'below, and this panel open on that computer. The picture of your screen', 'aquí abajo, y este panel abierto en ese ordenador. La imagen de tu pantalla')} <strong>${L('non esce di lì', 'never leaves it', 'no sale de ahí')}</strong>: ${L('al server arriva solo «+1».', 'only «+1» reaches the server.', 'al servidor solo llega «+1».')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="morti-attivo" ${m.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Conta le morti guardando lo schermo', 'Count deaths by watching the screen', 'Cuenta las muertes mirando la pantalla')}</span>
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="morti-fonte">${L('Quale fonte guardo', 'Which source I watch', 'Qué fuente miro')}</label>
+          <select id="morti-fonte" class="campo-largo"></select>
+        </div>
+        <div>
+          <label class="campo" for="morti-ogni">${L('Ogni quanto guardo (secondi)', 'How often I look (seconds)', 'Cada cuánto miro (segundos)')}</label>
+          <input type="number" id="morti-ogni" class="campo-largo" min="1" max="30" step="1" value="${Math.round(m.ogniMs / 1000)}">
+        </div>
+      </div>
+      <p class="suggerimento" id="morti-spia">—</p>
+      <div class="riga-flessibile spazio-sopra">
+        <div style="max-width:220px">
+          <label class="campo" for="morti-conta">${L('Quale contatore faccio salire', 'Which counter I raise', 'Qué contador subo')}</label>
+          <select id="morti-conta" class="campo-largo"></select>
+        </div>
+        <button class="btn" id="morti-impara" disabled>${L('Sono morto adesso: è questa', 'I just died: this is it', 'Acabo de morir: es esta')}</button>
+      </div>
+      <label class="ovl-spunta spazio-sopra"><input type="checkbox" id="morti-condividi" checked><span>${L('Mettila in comune con gli altri streamer', 'Share it with the other streamers', 'Compartirla con los demás streamers')}</span></label>
+      <p class="suggerimento">${L('Premilo', 'Press it', 'Púlsalo')} <strong>${L('mentre la schermata di morte è a schermo', 'while the death screen is on screen', 'mientras la pantalla de muerte está en pantalla')}</strong>. ${L('Ne puoi insegnare una per gioco: quella che combacia vince, così non devi dire tu a cosa stai giocando.', 'You can teach one per game: whichever matches wins, so you don\'t have to say what you\'re playing.', 'Puedes enseñar una por juego: gana la que coincide, así no tienes que decir a qué juegas.')}</p>
+      <div id="morti-lista" class="goal-lista spazio-sopra"></div>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.lista)}${L('Le schermate che hanno già insegnato gli altri', 'The screens other people already taught', 'Las pantallas que ya han enseñado los demás')}</h2>
+      <p>${L('Ogni volta che qualcuno insegna la morte di un gioco, quel gioco lo sanno tutti. Cerca il tuo: se c\'è, la prendi e non devi insegnare niente.', 'Every time someone teaches a game\'s death, everyone knows that game. Look for yours: if it is there, you take it and teach nothing.', 'Cada vez que alguien enseña la muerte de un juego, ese juego lo saben todos. Busca el tuyo: si está, la coges y no enseñas nada.')}</p>
+      <div class="riga-flessibile spazio-sopra">
+        <div style="flex:1">
+          <label class="campo" for="morti-cerca">${L('Che gioco stai giocando', 'What game are you playing', 'A qué juego juegas')}</label>
+          <input type="search" id="morti-cerca" class="campo-largo" placeholder="${esc(L('Dark Souls, Minecraft, Elden Ring…', 'Dark Souls, Minecraft, Elden Ring…', 'Dark Souls, Minecraft, Elden Ring…'))}">
+        </div>
+        <button class="btn secondario" id="morti-cerca-vai">${L('Cerca', 'Search', 'Buscar')}</button>
+      </div>
+      <div id="morti-libreria" class="goal-lista spazio-sopra"></div>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.spina)}${L('Certi giochi lo dicono da soli', 'Some games say it themselves', 'Algunos juegos lo dicen solos')}</h2>
+      <p>${L('Counter-Strike e Dota pubblicano quante volte sei morto. Dove succede non c\'è niente da riconoscere: il numero è quello del gioco, e non sbaglia.', 'Counter-Strike and Dota publish how many times you died. Where that happens there is nothing to recognise: the number is the game\'s own, and it does not miss.', 'Counter-Strike y Dota publican cuántas veces has muerto. Donde pasa no hay nada que reconocer: el número es el del juego, y no falla.')}</p>
+      <p class="suggerimento">${L('Scarichi il file, lo metti nella cartella scritta qui sotto e riavvii il gioco. Qui non serve nemmeno', 'Download the file, drop it in the folder written below and restart the game. Here you don\u2019t even need', 'Descargas el archivo, lo pones en la carpeta escrita abajo y reinicias el juego. Aquí ni siquiera hace falta')} <strong>${L('questo pannello aperto', 'this panel open', 'este panel abierto')}</strong>: ${L('a parlare col bot è il gioco. Fuori diretta legge ma non conta, come la schermata.', 'it is the game talking to the bot. Off air it reads but does not count, same as the screen.', 'quien habla con el bot es el juego. Fuera de directo lee pero no cuenta, igual que la pantalla.')}</p>
+      <div id="morti-gsi-lista" class="goal-lista spazio-sopra"></div>
+      <p class="suggerimento" id="morti-gsi-spia">&mdash;</p>
+      <p><button class="btn secondario mini" id="morti-gsi-rinnova">${L('Rifai la chiave', 'Make a new key', 'Rehacer la clave')}</button></p>
+    </div>
+`;
+}
+
 function pannelloModuli() {
   const imp = impostazioni();
   const cch = imp.comandiChat || {};
@@ -13561,6 +13571,7 @@ function pannelloModuli() {
   const chipsRapido = ['$user', '$touser', '$canale', '$uptime', '$gioco', '$spettatori', '$followage', '$ore', '$chattercaso', '$ora', '$giocotarget', '$titolo($args)', '$categoria($args)', '$count(morti)', '$random(1,100)']
     .map((v) => `<button type="button" class="chip-var" data-qc="${esc(v)}" title="${esc(tooltipVar(v))}">${esc(v)}</button>`).join('');
   return pannello('moduli', `
+    <div data-zona="comandi">
     <div class="carta">
       <h2>${_hIco(ICO.fulmine)}${L('Comando rapido', 'Quick command', 'Comando rápido')}</h2>
       <p>${L('Il modo più veloce: scrivi il', 'The fastest way: type the', 'La forma más rápida: escribe el')} <strong class="primo-piano">${L('nome', 'name', 'nombre')}</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">${L('cosa deve rispondere', 'what it should reply', 'qué debe responder')}</strong>. ${L('Fatto — niente altro da compilare.', 'Done — nothing else to fill in.', 'Listo — nada más que rellenar.')}</p>
@@ -13674,6 +13685,11 @@ function pannelloModuli() {
       <p class="suggerimento">${L('Un comando tuo con lo stesso nome vince sempre su quello pronto.', 'A command of yours with the same name always wins over the built-in one.', 'Un comando tuyo con el mismo nombre siempre gana al de serie.')}</p>
       <ul class="gc-lista" id="lista-cmd-pronti"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-gcmd-2">${L('Salva i comandi', 'Save the commands', 'Guardar los comandos')}</button></p>
+    </div>
+    </div>
+
+    <div data-zona="morti">
+    ${_mortiCarte()}
     </div>
 `);
 }
@@ -18504,12 +18520,12 @@ function caricaDatiScheda(id) {
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
     riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
-  if (id === 'regia') { caricaRegia(); collegaMorti(); }
+  if (id === 'regia') caricaRegia();
   if (id === 'consolify') caricaConsolify();
   if (id === 'studio') caricaStudio();
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); caricaTracking(); }
   if (id === 'emote') caricaEmote7TV();
-  if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); }
+  if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
