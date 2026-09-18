@@ -1393,6 +1393,12 @@ const OVERLAY = {
     { p: ['Il <strong>tetto</strong> è su quanto manca, non su quanto hai aggiunto in tutto: «non può mancare più di dodici ore» risponde alla domanda vera, cioè a che ora vai a dormire. A zero ore non c\'è tetto. Se il conto è già arrivato a zero, un sub non lo fa ripartire: la diretta è finita, e riaprirla è una tua scelta.'] },
     { p: ['Con l\'avviso acceso il bot dice in chat quanto è salito e per merito di chi (<code>{chi}</code>, <code>{quanto}</code>). Chi guarda può chiedere <code>!subathon</code> per sapere quanto manca.'] },
 
+    { h2: 'I cartelli' },
+    { p: ['Una scritta o un’immagine tua, ferma in scena. Non la muove nessun evento: la scrivi, la metti dove vuoi e resta lì — il titolo della serata, le regole della chat, il tuo logo, un «torno subito» sulla schermata di pausa. Ne puoi avere fino a otto.'] },
+    { p: ['La <strong>scritta</strong> va a capo dove la mandi tu, e se le dai una larghezza va a capo anche da sola; a zero il cartello è largo quanto la riga più lunga. L’<strong>immagine</strong> si sceglie fra quelle che hai già in <em>Effetti &amp; suoni</em>: si caricano lì, e qui si trovano già pronte.'] },
+    { p: ['Di suo un cartello non ha nessuna scatola dietro: sono parole (o un disegno) posate sulla scena. Se la vuoi, alzi l’opacità dello sfondo e scegli forma, materia e cornice come per ogni altro elemento.'] },
+    { p: ['Quel che c’è scritto è <strong>uno solo e vale per tutti i tuoi overlay</strong>. Quello che cambia da scena a scena è <strong>se si vede, dove sta e come appare</strong>: due scene, due posti, due vesti, lo stesso cartello. E se ne vuoi uno diverso per scena, ne fai due e in ogni overlay ne accendi uno.'] },
+
     { h2: 'L’hype train' },
     { p: ['Il treno lo fa Twitch, non il bot: livello, punti, traguardo e quanto manca li decide lui. Qui si vedono, e basta accendere l’elemento nell’overlay. Non c’è niente da far partire e niente da contare: quando il treno parte, compare; quando Twitch dice che è finito, il cartello resta il tempo di leggere il livello raggiunto e poi se ne va.'] },
     { p: ['Nella scena si vede il <strong>livello</strong>, la barra fino al livello dopo, <strong>quanto manca</strong> prima che scada e, se vuoi, <strong>chi sta spingendo di più</strong> e il record del canale. È un elemento come gli altri: si trascina nello Studio, prende la veste che gli dai, e ogni overlay decide se mostrarlo.'] },

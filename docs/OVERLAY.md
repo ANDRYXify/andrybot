@@ -1340,3 +1340,49 @@ e guarda che un treno scaduto se ne vada, che un elemento spento resti spento,
 che la scena segua i livelli e che le due scelte (chi spinge, il record) contino
 davvero. `verifica-anteprima` misura che il treno dello Studio e quello in onda
 siano lo stesso oggetto. `test/unita/treno.test.mjs` tiene ferme le regole.
+
+## I cartelli: una scritta o un'immagine, e sono la stessa cosa
+
+Erano due voci separate nella lista delle cose da fare — «testo libero» e
+«immagine» — e per un pezzo sono sembrate due lavori. Non lo sono: un cartello
+e' un pezzo di scena che NON lo muove nessun evento. Lo scrivi o lo scegli tu,
+e sta li'. Quel che cambia fra i due tipi e' solo da dove viene il contenuto —
+dalle parole o dalla libreria Effetti — mentre posto, veste, riquadro,
+interruttore per overlay e trascinamento sono quelli di tutti gli altri
+elementi.
+
+Quindi una lista sola (`settings.overlayCartelli`), un editor solo, un disegno
+solo con due rami, una famiglia di chiavi sola (`cart:<id>`, come `goal:<id>`).
+Due elenchi separati avrebbero voluto dire la stessa cosa detta due volte, e
+due occasioni di dirla diversa.
+
+L'immagine **non si carica qui**: si sceglie fra quelle che stanno gia' nella
+libreria Effetti, che ha gia' i suoi limiti, il suo spazio e il suo modo di
+servirle — e arriva all'overlay gia' risolta in indirizzo, come le icone dei
+widget. Un secondo posto dove caricare file sarebbe stato un secondo posto dove
+dimenticarsi di cancellarli.
+
+### Il difetto che si vedeva solo guardando
+
+Un cartello nasce **senza scatola**: sono parole posate sulla scena, non un
+pannello. Messo a schermo la prima volta, invece, era una lastra rosa piena.
+
+Il riquadro di ogni elemento si disegna a due strati: sotto la cornice, dipinta
+col colore d'accento, sopra il riempimento, rientrato dello spessore della
+cornice. Con la cornice a «nessuna» lo spessore va a zero e il riempimento la
+copre tutta: invisibile, ma **dipinta**. Bastava portare l'opacita' del
+riempimento a zero — cioe' chiedere «nessuno sfondo» — per ritrovarsi la
+cornice al posto dell'elemento. Non era un difetto dei cartelli: valeva per
+obiettivi, conto alla rovescia, treno, chiunque. Un cartello e' solo il primo
+che nasce con lo sfondo a zero, e quindi il primo a inciamparci.
+
+La cura sta dove sta il difetto, una riga in `overlay-skin.css`:
+`.cornice-nessuna::before { background: none; }`. Per tutti gli altri elementi
+non cambia niente — la cornice era gia' invisibile, coperta.
+
+Cancelli: `node scripts/verifica-cartelli.mjs` (`--selftest`) apre un overlay
+vero e guarda che «nessuno sfondo» voglia dire nessuno sfondo cornice compresa,
+che un cartello vuoto non lasci una scatola in scena, che gli interruttori
+contino uno per uno, e che la larghezza mandi a capo. `verifica-anteprima`
+misura che il cartello dello Studio e quello in onda siano lo stesso oggetto.
+`test/unita/cartelli.test.mjs` tiene ferma la porta d'ingresso.

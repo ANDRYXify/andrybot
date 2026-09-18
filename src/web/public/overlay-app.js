@@ -724,6 +724,46 @@ function goal(lista, conti) {
   for (const id of Object.keys(goalEl)) if (!vivi.has(id)) { goalEl[id].remove(); delete goalEl[id]; }
 }
 
+const cartelloEl = {};
+
+function unCartello(cfg) {
+  const id = cfg && cfg.id;
+  let el = cartelloEl[id];
+  const via = () => { if (el) { el.remove(); delete cartelloEl[id]; } };
+  if (!id || cfg.attivo === false || !mostra('cart') || !mostra('cart:' + id)) return via();
+  const immagine = cfg.tipo === 'immagine';
+  if (immagine && !cfg.url) return via();
+  if (!immagine && !String(cfg.testo || '').trim()) return via();
+  if (!el) { el = document.createElement('div'); cartelloEl[id] = el; }
+  posa(wboxes[cfg.posizione] || wboxes['basso-sinistra'] || document.body, el);
+  const st = cfg.stile || {};
+  el.className = 'ovl-widget ovl-cartello ' + (immagine ? 'ca-immagine' : 'ca-scritta')
+    + ' dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna')
+    + ' all-' + (cfg.allinea || 'sinistra');
+  applicaVars(el, {
+    '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
+    '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null,
+    '--font': fontDi(st) || null,
+  });
+  const largo = Number(cfg.larghezza) > 0 && !el.classList.contains('riquadro');
+  el.style.maxWidth = largo ? Number(cfg.larghezza) + 'vw' : '';
+  if (immagine) {
+    let img = el.querySelector('img');
+    if (!img) { el.textContent = ''; img = document.createElement('img'); img.alt = ''; el.appendChild(img); }
+    if (img.getAttribute('src') !== cfg.url) img.setAttribute('src', cfg.url);
+  } else {
+    if (el.querySelector('img')) el.textContent = '';
+    if (el.textContent !== cfg.testo) el.textContent = cfg.testo || '';
+  }
+  posaElemento(el, 'cart:' + id, cfg);
+}
+
+function cartelli(lista) {
+  const vivi = new Set();
+  for (const c of (Array.isArray(lista) ? lista : [])) { vivi.add(c.id); unCartello(c); }
+  for (const id of Object.keys(cartelloEl)) if (!vivi.has(id)) { cartelloEl[id].remove(); delete cartelloEl[id]; }
+}
+
 function posa(box, el) {
   if (box && el.parentNode !== box) box.appendChild(el);
 }
@@ -1164,6 +1204,8 @@ function applicaTema(t) {
   widget('ultimoSub', mostra('ws') ? w.ultimoSub : { attivo: false }, stato.ultimoSub);
   MIO.goals = Array.isArray(t.goals) ? t.goals : [];
   goal(MIO.goals, t.conti || stato.goals || {});
+  MIO.cartelli = Array.isArray(t.cartelli) ? t.cartelli : [];
+  cartelli(MIO.cartelli);
 
   MIO.musica = t.musica || null;
   MIO.timer = t.timer || null;
