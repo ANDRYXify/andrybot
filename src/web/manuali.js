@@ -1083,6 +1083,13 @@ const VETRINA = {
     ] },
     { p: ['Da quel momento, quando vai live il gruppo lo sa. Il terzo passo è quello che si dimentica: senza <code>/collega</code> scritto <em>dentro</em> al gruppo, il bot non sa dove scrivere.'] },
     { p: ['Se hai collegato anche la <strong>chat privata</strong>, a fine diretta il bot può scriverti lì il rapporto della serata: lo accendi nella scheda <em>Dirette</em>, dove il rapporto resta comunque, insieme all\'opzione via mail.'] },
+    { h3: 'Chi entra nel gruppo' },
+    { p: ['Un gruppo aperto si riempie di account che entrano, spammano e spariscono. Il <strong>cancello</strong> fa la cosa vecchia che funziona: chi entra non può scrivere finché non preme un tasto. Un bot il tasto non lo preme, perché non sa che c\'è.'] },
+    { p: ['Serve il <strong>bot interattivo</strong> acceso, e che il bot sia <strong>amministratore</strong> del gruppo con il permesso <em>Blocca utenti</em>. Senza, il cancello non si accende e il pannello dice quale delle due cose manca: un interruttore che si accende e non fa niente è peggio di uno che rifiuta.'] },
+    { p: ['Decidi tu <strong>quanto tempo</strong> ha per rispondere (da uno a sessanta minuti), <strong>cosa gli scrivi</strong> (con <code>{nome}</code> e <code>{minuti}</code>), <strong>cosa c\'è scritto sul tasto</strong>, e cosa succede a chi non risponde: lo togli dal gruppo — potrà rientrare e riprovare, non è un bando — oppure resta dentro ma muto.'] },
+    { p: ['Chi passa il cancello riprende <strong>i permessi del gruppo</strong>, quelli che hanno tutti gli altri: non una lista decisa da noi, che gli darebbe più o meno diritti degli altri. E se i permessi del gruppo non si riescono a leggere, il cancello non silenzia nessuno: non si toglie la parola a qualcuno se non si sa come ridargliela.'] },
+    { p: ['Gli amministratori e gli altri bot non passano dal cancello, e chi era già dentro non viene toccato.'] },
+
     { h3: 'Compleanni' },
     { p: ['Gli auguri partono in due posti, e sono due cose separate perché i momenti sono diversi. Nel <strong>gruppo Telegram</strong> partono a mezzanotte italiana. In <strong>chat</strong> la mezzanotte non esiste — a quell\'ora non c\'è nessuno — quindi partono al <strong>primo messaggio</strong> di chi compie gli anni quel giorno, una volta l\'anno.'] },
     { p: ['Con gli auguri in chat accesi, chi ti guarda si segna da solo scrivendo <code>!compleanno 25/12</code>; <code>!compleanno</code> da solo rilegge la data, <code>!compleanno via</code> la toglie. Tu scrivi il testo (con <code>{nome}</code>) e, se vuoi, scegli un <strong>effetto</strong> della tua libreria che parte insieme agli auguri.'] },

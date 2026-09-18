@@ -508,6 +508,16 @@ CREATE TABLE IF NOT EXISTS tg_membri (    -- roster dei membri visti scrivere ne
   PRIMARY KEY (channel, tg_user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_tgmembri_ch ON tg_membri(channel, ultimo);
+CREATE TABLE IF NOT EXISTS tg_attesa (    -- chi e' entrato nel gruppo e deve ancora premere il tasto
+  channel TEXT NOT NULL,                   -- login twitch (proprietario del bot)
+  chat_id TEXT NOT NULL,                   -- gruppo in cui e' entrato
+  tg_user_id TEXT NOT NULL,                -- chi e' entrato
+  nome TEXT NOT NULL DEFAULT '',
+  msg_id TEXT NOT NULL DEFAULT '',         -- il messaggio col tasto, da cancellare quando finisce
+  scad INTEGER NOT NULL DEFAULT 0,         -- quando scade l'attesa
+  PRIMARY KEY (channel, chat_id, tg_user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_tgattesa_scad ON tg_attesa(scad);
 CREATE TABLE IF NOT EXISTS giochi (          -- giochi personalizzati per canale (manche)
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
@@ -683,6 +693,13 @@ function aggiungiColonna(tabella, colonna, definizione) {
 // EXISTS non tocca una tabella che c'e' gia', e senza queste due righe un
 // database che aveva gia' visto le battute restava senza le colonne — con
 // l'errore inghiottito dal try/catch, quindi muto.
+// Il cancello del gruppo Telegram: spento finche' non lo accendi tu. Un bot che
+// silenzia le persone senza che gliel'abbia chiesto nessuno e' un danno.
+aggiungiColonna('telegram', 'ingresso', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('telegram', 'ingresso_minuti', 'INTEGER NOT NULL DEFAULT 5');
+aggiungiColonna('telegram', 'ingresso_scaduto', "TEXT NOT NULL DEFAULT 'caccia'");
+aggiungiColonna('telegram', 'ingresso_testo', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('telegram', 'ingresso_tasto', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('battute', 'dette', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('battute', 'risate', 'INTEGER NOT NULL DEFAULT 0');
 // Quale SCHEMA l'ha costruita. Senza, si potrebbe sapere se una battuta ha fatto
@@ -2477,6 +2494,23 @@ export const tgConf = {
     db.prepare('UPDATE telegram SET msg_id_tk=? WHERE channel=?').run(String(msgId || ''), String(channel).toLowerCase());
   },
   // modalità interattiva (webhook): accende/spegne e memorizza il segreto del path
+  // Il cancello del gruppo. Un setter suo: il salvataggio grande di qui sopra
+  // riscrive ogni campo che tocca, e infilarci dentro anche questi vorrebbe dire
+  // che ogni salvataggio di un'altra cosa passa di qui.
+  setIngresso(channel, campi = {}) {
+    const c = String(channel).toLowerCase();
+    const cur = db.prepare('SELECT ingresso, ingresso_minuti, ingresso_scaduto, ingresso_testo, ingresso_tasto FROM telegram WHERE channel=?').get(c) || {};
+    const v = {
+      ingresso: campi.attivo !== undefined ? (campi.attivo ? 1 : 0) : (cur.ingresso || 0),
+      minuti: campi.minuti !== undefined ? Math.max(1, Math.min(60, Math.round(Number(campi.minuti) || 5))) : (cur.ingresso_minuti || 5),
+      scaduto: campi.scaduto !== undefined ? (campi.scaduto === 'muto' ? 'muto' : 'caccia') : (cur.ingresso_scaduto || 'caccia'),
+      testo: campi.testo !== undefined ? String(campi.testo).slice(0, 400) : (cur.ingresso_testo || ''),
+      tasto: campi.tasto !== undefined ? String(campi.tasto).slice(0, 64) : (cur.ingresso_tasto || ''),
+    };
+    db.prepare('UPDATE telegram SET ingresso=?, ingresso_minuti=?, ingresso_scaduto=?, ingresso_testo=?, ingresso_tasto=? WHERE channel=?')
+      .run(v.ingresso, v.minuti, v.scaduto, v.testo, v.tasto, c);
+    return this.get(c);
+  },
   setInterattivo(channel, attivo, secret) {
     db.prepare('UPDATE telegram SET interattivo=?, webhook_secret=? WHERE channel=?')
       .run(attivo ? 1 : 0, String(secret || ''), String(channel).toLowerCase());
@@ -2556,6 +2590,39 @@ export const membri = {
   list(channel, limit = 200) {
     return db.prepare('SELECT * FROM tg_membri WHERE channel=? ORDER BY ultimo DESC LIMIT ?')
       .all(String(channel).toLowerCase(), limit | 0);
+  },
+};
+
+// CHI E' IN ATTESA AL CANCELLO del gruppo Telegram.
+//
+// Sta nel database e non in memoria per una ragione sola: un riavvio non deve
+// lasciare della gente muta per sempre. Chi e' entrato l'abbiamo silenziato noi,
+// e il dovere di riaprirgli la bocca non puo' dipendere dal fatto che il
+// processo sia rimasto acceso.
+export const tgAttesa = {
+  metti({ channel, chatId, userId, nome = '', msgId = '', scad = 0 }) {
+    db.prepare(`INSERT INTO tg_attesa (channel, chat_id, tg_user_id, nome, msg_id, scad)
+      VALUES (?,?,?,?,?,?)
+      ON CONFLICT(channel, chat_id, tg_user_id) DO UPDATE SET
+        nome=excluded.nome, msg_id=excluded.msg_id, scad=excluded.scad`)
+      .run(String(channel).toLowerCase(), String(chatId), String(userId), String(nome || '').slice(0, 64), String(msgId || ''), Number(scad) || 0);
+  },
+  prendi(channel, chatId, userId) {
+    return db.prepare('SELECT * FROM tg_attesa WHERE channel=? AND chat_id=? AND tg_user_id=?')
+      .get(String(channel).toLowerCase(), String(chatId), String(userId)) || null;
+  },
+  // chi preme il tasto puo' averlo premuto in un gruppo qualsiasi fra i suoi: il
+  // dato del tasto porta l'id della persona, il gruppo arriva dal messaggio.
+  togli(channel, chatId, userId) {
+    db.prepare('DELETE FROM tg_attesa WHERE channel=? AND chat_id=? AND tg_user_id=?')
+      .run(String(channel).toLowerCase(), String(chatId), String(userId));
+  },
+  scaduti(ora = now(), limite = 50) {
+    return db.prepare('SELECT * FROM tg_attesa WHERE scad>0 AND scad<=? ORDER BY scad LIMIT ?')
+      .all(Number(ora) || now(), limite | 0);
+  },
+  quanti(channel) {
+    return db.prepare('SELECT COUNT(*) n FROM tg_attesa WHERE channel=?').get(String(channel).toLowerCase())?.n || 0;
   },
 };
 

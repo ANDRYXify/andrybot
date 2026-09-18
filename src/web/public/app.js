@@ -383,6 +383,7 @@ function statoDemo() {
     preaddestramento: { preaddestramento_ts: '2026-05-01T20:00:00Z', preaddestramento_esito: 'pagina profilo letta ("Andryx — creator e streamer da Genova · Twitch, YouTube, gaming"), 5 link social; gioco recente: Fortnite; profilo Twitch letto' },
     telegram: { configurato: true, gruppoOk: true, attivo: true, pinLive: true,
       interattivo: true, botUsername: 'andryx_live_bot', gruppo: 'Community di Andryx', messaggio: '',
+      ingresso: { attivo: true, minuti: 5, scaduto: 'caccia', testo: '', tasto: '', inAttesa: 2 },
       dmModo: 'me', dmCollegato: true, dmNome: 'Andryx' },
     streamer: {
       status: 'approved',
@@ -15619,6 +15620,7 @@ function pannelloGiochi() {
 function pannelloTelegram() {
   const tg = stato.telegram || { configurato: false, gruppoOk: false, attivo: false, messaggio: '', botUsername: '', gruppo: '', pinLive: true };
   const msgDefault = '{nome} \u00e8 in diretta!\n\n{titolo}\n{gioco}\n\n{link}';
+  const ing = tg.ingresso || { attivo: false, minuti: 5, scaduto: 'caccia', testo: '', tasto: '', inAttesa: 0 };
   return pannello('telegram', `
     <div class="carta" id="box-tglogin" hidden></div>
     <div class="carta">
@@ -15707,6 +15709,39 @@ function pannelloTelegram() {
       <p class="suggerimento">${L('Ogni tanto è <strong>lei</strong> a scriverti in privato di sua iniziativa: ti fa una domanda, ti chiede una cosa che ancora non sa, commenta. Come una persona — non a orari fissi, mai di notte, e senza esagerare. Serve aver <strong>collegato</strong> il tuo Telegram qui sopra. Il nome con cui si presenta lo scegli in', 'Now and then <strong>it</strong> writes to you in private on its own: asks you a question, asks something it doesn’t know yet, comments. Like a person — not on a fixed schedule, never at night, and without overdoing it. You need to have <strong>linked</strong> your Telegram above. You choose the name it introduces itself with in', 'De vez en cuando <strong>ella</strong> te escribe en privado por iniciativa propia: te hace una pregunta, te pide algo que aún no sabe, comenta. Como una persona — sin horarios fijos, nunca de noche y sin pasarse. Hace falta haber <strong>vinculado</strong> tu Telegram arriba. El nombre con el que se presenta lo eliges en')} <strong>${L('Admin → Anima', 'Admin → Soul', 'Admin → Alma')}</strong>.</p>
 
       <p class="suggerimento">${L('Nel <strong>gruppo</strong> invece il bot funziona per tutti (e impara dalla chat come su Twitch). Il privato resta solo tuo.', 'In the <strong>group</strong>, instead, the bot works for everyone (and learns from chat like on Twitch). Private stays yours only.', 'En el <strong>grupo</strong>, en cambio, el bot funciona para todos (y aprende del chat como en Twitch). El privado sigue siendo solo tuyo.')}</p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.scudo)}${L('Chi entra nel gruppo', 'Who joins the group', 'Quién entra en el grupo')}</h2>
+      <p>${L('Un gruppo aperto si riempie di account che entrano, spammano e spariscono. Col', 'An open group fills up with accounts that join, spam and vanish. With the', 'Un grupo abierto se llena de cuentas que entran, spamean y desaparecen. Con el')} <strong class="primo-piano">${L('cancello', 'gate', 'portero')}</strong> ${L('chi entra non può scrivere finché non preme un tasto. Un bot il tasto non lo preme, perché non sa che c\'è.', 'whoever joins cannot write until they press a button. A bot does not press it, because it does not know it is there.', 'quien entra no puede escribir hasta que pulse un botón. Un bot no lo pulsa, porque no sabe que está.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="chk-tg-ingresso" ${ing.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Chiedi una prova a chi entra', 'Ask newcomers for proof', 'Pide una prueba a quien entra')}</span>
+        ${ing.attivo ? `<span class="badge verde">${L('attivo', 'active', 'activo')}</span>` : ''}
+        ${ing.inAttesa ? `<span class="badge">${ing.inAttesa} ${L('in attesa', 'waiting', 'esperando')}</span>` : ''}
+      </div>
+      <p class="suggerimento">${L('Serve il <strong>bot interattivo</strong> acceso qui sopra, e che il bot sia <strong>amministratore</strong> del gruppo con il permesso <em>«Blocca utenti»</em>. Senza, il cancello non si accende: te lo dico invece di far finta.', 'Needs the <strong>interactive bot</strong> on above, and the bot to be a group <strong>admin</strong> with the <em>“Ban users”</em> permission. Without it the gate will not turn on: I tell you instead of pretending.', 'Necesita el <strong>bot interactivo</strong> encendido arriba, y que el bot sea <strong>administrador</strong> del grupo con el permiso <em>«Bloquear usuarios»</em>. Sin eso el portero no se enciende: te lo digo en vez de fingir.')}</p>
+      <div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="tg-ing-minuti">${L('Quanto tempo ha per rispondere', 'How long they have to answer', 'Cuánto tiempo tiene para responder')}</label>
+          <input type="number" id="tg-ing-minuti" class="campo-largo" min="1" max="60" step="1" value="${Number(ing.minuti) || 5}">
+        </div>
+        <div>
+          <label class="campo" for="tg-ing-scaduto">${L('Se non risponde', 'If they do not answer', 'Si no responde')}</label>
+          <select id="tg-ing-scaduto" class="campo-largo">
+            <option value="caccia"${ing.scaduto !== 'muto' ? ' selected' : ''}>${L('Lo tolgo dal gruppo (può rientrare e riprovare)', 'I remove them (they can come back and retry)', 'Lo saco del grupo (puede volver a entrar)')}</option>
+            <option value="muto"${ing.scaduto === 'muto' ? ' selected' : ''}>${L('Resta dentro, ma muto', 'They stay, but muted', 'Se queda dentro, pero mudo')}</option>
+          </select>
+        </div>
+      </div>
+      <label class="campo spazio-sopra" for="tg-ing-testo">${L('Cosa gli scrivo', 'What I write to them', 'Qué le escribo')}</label>
+      <input type="text" id="tg-ing-testo" class="campo-largo" maxlength="400" placeholder="${esc(L('Ciao {nome}, benvenuto. Premi qui sotto entro {minuti} e potrai scrivere.', 'Hi {nome}, welcome. Press below within {minuti} and you will be able to write.', 'Hola {nome}, bienvenido. Pulsa abajo en {minuti} y podrás escribir.'))}" value="${esc(ing.testo || '')}">
+      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> · <code>{minuti}</code></p>
+      <label class="campo" for="tg-ing-tasto">${L('Cosa c\'è scritto sul tasto', 'What the button says', 'Qué pone en el botón')}</label>
+      <input type="text" id="tg-ing-tasto" class="campo-largo" maxlength="64" placeholder="${esc(L('Non sono un bot', 'I am not a bot', 'No soy un bot'))}" value="${esc(ing.tasto || '')}">
+      <div class="riga-flessibile spazio-sopra">
+        <button class="btn" id="btn-tg-ingresso">${L('Salva il cancello', 'Save the gate', 'Guardar el portero')}</button>
+      </div>
     </div>
 
     <div class="carta">
@@ -17302,6 +17337,29 @@ function attivaPiattaforma() {
     toast(L('Telegram scollegato.', 'Telegram disconnected.', 'Telegram desconectado.'));
     stato = await api('/api/me'); render();
   }));
+
+  document.getElementById('btn-tg-ingresso')?.addEventListener('click', async (ev) => {
+    const b = ev.currentTarget;
+    b.disabled = true;
+    try {
+      const d = await api('/api/streamer/telegram/ingresso', { method: 'POST', body: {
+        attivo: !!_g('chk-tg-ingresso')?.checked,
+        minuti: Number(_g('tg-ing-minuti')?.value) || 5,
+        scaduto: _g('tg-ing-scaduto')?.value || 'caccia',
+        testo: _g('tg-ing-testo')?.value || '',
+        tasto: _g('tg-ing-tasto')?.value || '',
+      } });
+      if (stato.telegram) stato.telegram.ingresso = d.ingresso || stato.telegram.ingresso;
+      toast(d.ingresso?.attivo
+        ? L('Cancello acceso: chi entra dovrà premere il tasto.', 'Gate on: newcomers will have to press the button.', 'Portero encendido: quien entre tendrá que pulsar el botón.')
+        : L('Cancello spento.', 'Gate off.', 'Portero apagado.'));
+    } catch (e) {
+      const chk = _g('chk-tg-ingresso');
+      if (chk) chk.checked = !!(stato.telegram?.ingresso?.attivo);
+      toast(e.message || L('Non riesco a salvare il cancello.', 'I can\'t save the gate.', 'No consigo guardar el portero.'), 'errore');
+    }
+    b.disabled = false;
+  });
 
   document.getElementById('chk-tg-interattivo')?.addEventListener('change', (ev) => {
     const chk = ev.target;

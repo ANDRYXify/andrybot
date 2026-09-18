@@ -169,3 +169,71 @@ Il collaudo dovrebbe averlo già fermato; se è successo lo stesso, il messaggio
 in dashboard ti dice cosa fare: scrivere `/collega` **dentro** il gruppo (un
 comando arriva sempre al bot, un messaggio normale no se la privacy del bot è
 accesa) e riprovare — così il webhook lo registra e il rilevamento lo trova.
+
+## Il cancello: chi entra e' muto finche' non fa vedere che c'e'
+
+Un gruppo aperto si riempie di account che entrano, spammano e spariscono. La
+cura e' vecchia e funziona: chi entra non puo' scrivere finche' non preme un
+tasto. Un bot il tasto non lo preme, perche' non sa che c'e'.
+
+Il ragionamento sta in `src/features/tg-ingresso.js` e si prova senza rete e
+senza gruppo; i gesti (silenziare, scrivere, riaprire, cacciare) stanno in
+`src/features/tg-cancello.js`, che prende Telegram e il database **da fuori** —
+non per vezzo: e' l'unico modo per mettere alla prova l'ordine dei gesti, che
+qui e' la cosa che conta di piu'.
+
+### Quattro difetti che non possono esistere
+
+**Si guarda la TRANSIZIONE, non lo stato.** Passa dal cancello solo chi va da
+`left`/`kicked` a `member`. Guardando lo stato, ogni cambio di permessi —
+compreso quello che il cancello stesso fa un istante dopo — rimuterebbe chi era
+gia' dentro, in un giro che non finisce.
+
+**I permessi da ridare sono QUELLI DEL GRUPPO.** Si leggono con `getChat` e si
+rimettono quelli. Una lista scritta nel nostro codice darebbe a chi passa
+diritti diversi da quelli di tutti gli altri: piu' o meno, e nessuno dei due e'
+giusto. E se i permessi del gruppo non si riescono a leggere, il cancello **non
+silenzia nessuno**: non si toglie la parola a qualcuno se non si sa come
+ridargliela.
+
+**L'ordine dei gesti, e il passo indietro.**
+
+1. si leggono i permessi del gruppo. Se non si leggono, non si tocca nessuno;
+2. si silenzia;
+3. si scrive il messaggio col tasto. **Se questo fallisce si ridanno subito i
+   permessi**: aver tolto la parola senza aver dato il modo di riprendersela non
+   e' uno stato in cui quel codice puo' lasciare qualcuno;
+4. solo adesso si segna l'attesa.
+
+**A ogni pressione si risponde.** Telegram tiene la rotellina sul tasto finche'
+non arriva `answerCallbackQuery`: non rispondere e' un tasto che sembra rotto
+anche quando ha funzionato. `esitoTasto` non ha un ramo che esca senza una
+frase, compreso quello di chi preme un tasto che non e' suo.
+
+### Le due cose che potevano rompersi in silenzio
+
+`allowed_updates` **sostituisce** la lista precedente, e Telegram manda solo
+cio' che gli si chiede: un tipo di update non elencato non arriva mai, e non
+arriva nemmeno un errore. Per questo la lista e' una costante sola
+(`UPDATE_VOLUTI`) ed e' fissata da una prova. Il webhook viene ri-registrato a
+ogni avvio, quindi la lista nuova arriva da se' a chi il bot ce l'aveva gia'.
+
+Chi e' in attesa sta nel **database** (`tg_attesa`), non in memoria: un riavvio
+non deve lasciare della gente muta per sempre. La ronda delle scadenze toglie la
+riga **comunque**, anche quando il canale o il bot non ci sono piu': tenerla
+vorrebbe dire riprovarci per sempre.
+
+### Cosa serve, e cosa si dice quando manca
+
+Il bot dev'essere amministratore del gruppo con il permesso di limitare i
+membri. Accendendo il cancello il pannello lo **chiede a Telegram** e, se manca
+qualcosa, non accende niente e dice cosa manca: un interruttore che si accende e
+poi non fa nulla e' peggio di un interruttore che rifiuta.
+
+Nel pannello, se il server rifiuta di accendere il cancello l'interruttore torna
+com'era: non deve restare acceso a schermo qualcosa che acceso non e'.
+
+Prove: `test/unita/tg-ingresso.test.mjs` (la regola) e
+`test/contratto/tg-cancello.test.mjs` (l'ordine dei gesti, con un Telegram
+finto: il passo indietro dopo un messaggio che non parte e' una prova che gira,
+non una buona intenzione in un commento).

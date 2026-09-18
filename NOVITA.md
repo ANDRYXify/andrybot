@@ -17,6 +17,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-18
 
+- Il bot fa il portiere del gruppo Telegram: chi entra non può scrivere finché non preme un tasto, e chi non risponde in tempo esce (e può rientrare). Lo accendi tu, ed è spento finché non lo fai. [vai: telegram]
 - Per le sere diverse dalle altre ci sono le occasioni: un'aggiunta sopra l'overlay che hai già. La accendi e compare, la spegni e torna tutto com'era, e in OBS non tocchi niente. [vai: alert]
 - Le occasioni partono da un modello che guardi prima di sceglierlo: subathon, torno subito, serata speciale, o una vuota da farsi da sé. [vai: alert]
 - Nella colonna dei livelli la posizione scritta adesso è quella vera anche appena apri lo Studio. [vai: alert]

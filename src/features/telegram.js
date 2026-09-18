@@ -61,7 +61,9 @@ async function tgCall(token, metodo, { params = {}, post = false, modulo = null,
 export async function validaToken(token) {
   const r = await tgCall(String(token || '').trim(), 'getMe');
   if (!r.ok) return { ok: false, errore: r.errore };
-  return { ok: true, username: r.result?.username || '', nome: r.result?.first_name || '' };
+  // l'id serve a chiedere a Telegram cosa puo' fare il bot DENTRO un gruppo:
+  // getChatMember vuole un id, non uno username
+  return { ok: true, id: String(r.result?.id || ''), username: r.result?.username || '', nome: r.result?.first_name || '' };
 }
 
 // --------------------------------------------------------- scelta del gruppo
@@ -81,13 +83,15 @@ export function scegliGruppo(destinazioni) {
 }
 
 // --------------------------------------------------------- invio
-export async function inviaMessaggio(token, chatId, testo, { anteprima = true, threadId = '' } = {}) {
+export async function inviaMessaggio(token, chatId, testo, { anteprima = true, threadId = '', tastiera = null } = {}) {
   const params = {
     chat_id: chatId,
     text: testo,
     parse_mode: 'HTML',
     disable_web_page_preview: !anteprima,
   };
+  // i tasti sotto al messaggio (il cancello del gruppo ne usa uno)
+  if (tastiera) params.reply_markup = tastiera;
   // topic dei gruppi in modalita forum: senza questo il messaggio finisce nel
   // «Generale» anche se lo streamer ha scelto un argomento preciso.
   const t = String(threadId || '').trim();
@@ -218,10 +222,16 @@ export async function rilevaDestinazioni(token) {
 // --------------------------------------------------------- webhook (interattivo)
 // Attiva il webhook: Telegram consegnerà gli update (messaggi) al nostro URL.
 // `secret` viaggia sia nel path dell'URL sia nell'header di verifica.
+// Telegram manda SOLO cio' che gli si chiede, e la lista sostituisce la
+// precedente: un tipo di update non elencato qui non arriva mai, e chi lo
+// aspetta resta ad aspettare senza un errore da nessuna parte. `chat_member`
+// serve a sapere chi entra nel gruppo, `callback_query` a sapere chi preme un
+// tasto, `my_chat_member` a sapere quando il bot stesso entra o viene promosso.
+export const UPDATE_VOLUTI = ['message', 'callback_query', 'chat_member', 'my_chat_member'];
 export async function impostaWebhook(token, url, secret) {
   return tgCall(token, 'setWebhook', {
     post: true,
-    params: { url, secret_token: secret, allowed_updates: ['message'], drop_pending_updates: true },
+    params: { url, secret_token: secret, allowed_updates: UPDATE_VOLUTI, drop_pending_updates: true },
   });
 }
 // Spegne il webhook (torna possibile getUpdates → rilevamento gruppo classico).
@@ -240,6 +250,58 @@ export async function membriAdmin(token, chatId) {
     .filter((u) => u && !u.is_bot)
     .map((u) => ({ id: String(u.id), nome: u.first_name || u.username || '', username: u.username || '' }));
   return { ok: true, membri };
+}
+
+// --------------------------------------------------------- il cancello del gruppo
+// Cosa dice Telegram del gruppo: serve per i PERMESSI che i membri hanno di
+// norma, che sono quelli da ridare a chi passa il cancello.
+export async function infoChat(token, chatId) {
+  const r = await tgCall(token, 'getChat', { post: true, params: { chat_id: chatId } });
+  return r.ok ? { ok: true, chat: r.result || null } : { ok: false, errore: r.errore };
+}
+
+// Cosa puo' fare il BOT in quel gruppo. Senza il permesso di limitare i membri
+// il cancello non si puo' nemmeno accendere.
+export async function ioNelGruppo(token, chatId, botId) {
+  const r = await tgCall(token, 'getChatMember', { post: true, params: { chat_id: chatId, user_id: botId } });
+  if (!r.ok) return { ok: false, errore: r.errore };
+  const m = r.result || {};
+  return {
+    ok: true,
+    stato: String(m.status || ''),
+    admin: m.status === 'administrator' || m.status === 'creator',
+    possoLimitare: !!m.can_restrict_members || m.status === 'creator',
+    possoCancellare: !!m.can_delete_messages || m.status === 'creator',
+  };
+}
+
+// Mette (o rimette) i permessi di un membro. `permessi` e' un oggetto intero:
+// quel che non c'e' dentro Telegram lo considera negato, quindi va passato tutto.
+export async function limitaMembro(token, chatId, userId, permessi) {
+  return tgCall(token, 'restrictChatMember', {
+    post: true,
+    params: { chat_id: chatId, user_id: userId, permissions: JSON.stringify(permessi || {}) },
+  });
+}
+
+// Caccia: si butta fuori e si riapre subito la porta, cosi' chi era una persona
+// vera puo' rientrare e riprovare. Un bando definitivo per non aver premuto un
+// tasto sarebbe una condanna sproporzionata.
+export async function cacciaMembro(token, chatId, userId) {
+  const r = await tgCall(token, 'banChatMember', { post: true, params: { chat_id: chatId, user_id: userId } });
+  if (!r.ok) return r;
+  await tgCall(token, 'unbanChatMember', { post: true, params: { chat_id: chatId, user_id: userId, only_if_banned: true } });
+  return { ok: true };
+}
+
+// La risposta alla pressione di un tasto. Telegram tiene la rotellina addosso al
+// tasto finche' questa non arriva: non mandarla e' un tasto che sembra rotto
+// anche quando ha funzionato.
+export async function rispondiTasto(token, callbackId, testo, { avviso = false } = {}) {
+  return tgCall(token, 'answerCallbackQuery', {
+    post: true,
+    params: { callback_query_id: callbackId, text: String(testo || '').slice(0, 200), show_alert: !!avviso },
+  });
 }
 
 // --------------------------------------------------------- fissa / elimina
