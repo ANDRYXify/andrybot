@@ -61,14 +61,31 @@ test('un\'impronta piatta non entra, e non c\'e\' una seconda strada per scriver
 });
 
 test('mettere in comune si sceglie, ed e\' segnato di suo', () => {
-  const carta = app.slice(app.indexOf('function _mortiCarta'), app.indexOf('function pannelloRegia'));
+  const carta = app.slice(app.indexOf('function _mortiCarte'), app.indexOf('function pannelloModuli'));
   assert.match(carta, /id="morti-condividi" checked/, 'di suo si condivide');
   assert.match(app, /_g\('morti-condividi'\)\?\.checked/, 'ma la spunta deve contare davvero');
 });
 
-test('il nome del gioco non se lo inventa lo streamer: e\' la categoria che ha', () => {
-  assert.match(app, /const _mortiGioco = \(\) => \{[\s\S]*?regia-gioco-sel/,
-    'il gioco va preso dalla categoria di Twitch, se no ognuno lo scrive a modo suo');
-  assert.match(app, /startsWith\('\\u2014'\)|startsWith\('—'\)/,
-    'e un trattino non e\' un gioco: finirebbe in libreria come se lo fosse');
+// IL NOME DEL GIOCO, E DA DOVE ARRIVA.
+//
+// Lo prendeva dal DOM della scheda Regia, dove la categoria e' scritta a schermo.
+// Finche' la carta stava li' funzionava; spostandola nei Comandi quell'elemento
+// non c'e' piu', e pubblicare in libreria avrebbe smesso di funzionare IN
+// SILENZIO — nessun errore, solo schede che non nascono. Adesso la categoria si
+// chiede al server, che la sa comunque, e la carta non dipende piu' da nessun'altra
+// scheda.
+test('il nome del gioco lo chiede al server, non lo legge da un\'altra scheda', () => {
+  const g = app.slice(app.indexOf('async function _mortiGioco()'), app.indexOf('async function _mortiPubblica'));
+  assert.ok(g.length > 50, 'la funzione che trova il gioco non c\'e\' piu\'');
+  assert.match(g, /api\('\/api\/streamer\/regia'\)/, 'la categoria va chiesta a chi la sa');
+  assert.ok(!/getElementById/.test(g), 'leggerla dal DOM la lega alla scheda in cui quel DOM vive');
+  assert.match(g, /startsWith\('—'\)/, 'e un trattino non e\' un gioco: finirebbe in libreria come se lo fosse');
+});
+
+test('CONTATORify e\' una sotto-voce dei Comandi, e si identifica come le sue rotte', () => {
+  const sotto = app.slice(app.indexOf('const SOTTO_SCHEDE = {'), app.indexOf('function sottoScelta'));
+  assert.match(sotto, /\['morti', 'CONTATORify'\]/,
+    'il nome e\' CONTATORify, ma l\'identificativo deve restare quello delle rotte: se no il cancello delle sezioni la pesa zero');
+  assert.match(app, /<div data-zona="morti">/, 'la zona che la contiene non c\'e\'');
+  assert.match(app, /<div data-zona="comandi">/, 'e senza la zona dei comandi si vedrebbero tutte e due insieme');
 });
