@@ -48,7 +48,11 @@ test('la colonna dei livelli e\' l\'unico elenco, e non ha un doppione', () => {
   assert.ok(!/ovlElemento\(/.test(APP), 'la seconda lista non deve tornare');
   assert.ok(!/id="mostra-/.test(APP), 'e nemmeno le sue caselle: lo stato sta nei dati dell\'overlay');
   assert.match(APP, /const mostraChk = \(k\) => _quiDentro\(k\);/, 'chi chiede «si vede?» legge i dati, non una casella');
-  assert.match(APP, /box\.innerHTML = ELEMENTI\(\)\.map/, 'la colonna si disegna dagli elementi veri');
+  assert.match(APP, /const tutti = ELEMENTI\(\);/, 'la colonna si disegna dagli elementi veri');
+  // e mostra QUELLO CHE C'E': il resto sta dietro «Aggiungi», non in fondo
+  // all'elenco spento, dove il proprio overlay era la minoranza
+  assert.match(APP, /const qui = tutti\.filter\(\(l\) => _inOverlay\(l\.k\) \|\| toltaQui\(l\.k\)\);/, 'nell\'elenco c\'e\' quello che c\'e\'');
+  assert.match(APP, /id="ovl-liv-aggiungi"/, 'e quello che non c\'e\' si aggiunge da li\'');
 });
 
 // Il difetto vero: l'occhio di «Obiettivo» e «Contatori» si spegneva e al
@@ -352,7 +356,7 @@ test('la posizione di un elemento appartiene all’overlay in cui la metti', () 
 // due livelli, come per l'alert.
 test('un elemento si toglie da una scena senza toglierlo dalle altre', () => {
   const occhio = APP.slice(APP.indexOf('function _occhio(k)'), APP.indexOf('\nfunction seleziona('));
-  assert.ok(/_ovMostra\(\)/.test(occhio), 'l’occhio scrive nella scena in cui stai lavorando');
+  assert.ok(/_accendiQui\(/.test(occhio), 'l’occhio scrive nello strato in cui stai lavorando');
   assert.ok(!/goal\.attivo|overlayCfg\b/.test(occhio), 'e non tocca più l’interruttore di canale');
   const dentro = APP.slice(APP.indexOf('function _inOverlay(k)'), APP.indexOf('let _bozzaEl'));
   assert.ok(/_quiDentro\(k\)/.test(dentro), 'e chi disegna legge la stessa cosa');

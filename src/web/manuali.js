@@ -1322,6 +1322,15 @@ const OVERLAY = {
       '<strong>Se il link è scappato</strong> — in un video, in uno screenshot, in una chat — accanto al link c\'è il tasto per farne uno nuovo: quello vecchio smette di funzionare all\'istante, per tutti i tuoi overlay, e il nuovo lo rimetti nelle sorgenti del programma con cui mandi in onda. Non serve chiedere niente a nessuno.',
     ] },
 
+    { h2: 'Le occasioni' },
+    { p: [
+      'Un\'occasione è un\'<strong>aggiunta sopra l\'overlay che hai già</strong>: «i miei overlay ce li ho, ma stasera è subathon e voglio anche il conto alla rovescia». La accendi e compare, la spegni e torna tutto com\'era. Il link in OBS resta lo stesso: non tocchi niente di là.',
+      'Nel banco, accanto alla tendina dell\'overlay c\'è quella dell\'<strong>occasione</strong>. Su <em>Tutti i giorni</em> stai lavorando all\'overlay di sempre. Se ne scegli una, una fascia sopra la tela te lo dice, e da quel momento <strong>quello che accendi, spegni e sposti finisce nell\'occasione</strong>, non nell\'overlay di sempre. I livelli lo segnano: <em>in più</em>, <em>via</em>, <em>spostato</em>.',
+      'Sceglierla <strong>non la manda in onda</strong>: quello è un gesto a parte, la spunta <em>In onda adesso</em> nella fascia. Ne va in onda <strong>una alla volta</strong>, così alla domanda «cosa sto vedendo?» c\'è sempre una risposta sola.',
+      '<strong>Nuova…</strong> apre i modelli, con l\'anteprima di come verrebbe su questo overlay e la riga di cosa cambierebbe davvero: Subathon, Torno subito, Serata speciale, o una vuota da farsi da sé. Se un modello dice «queste cose ce le hai già così» non è rotto: vuol dire che su questo overlay quella roba è già accesa.',
+      'Rimettere una cosa com\'era la toglie dall\'occasione: l\'occasione si tiene solo ciò che <strong>differisce</strong>. Per questo spegnerla non perde niente, e per questo se domani cambi l\'overlay di sempre l\'occasione ti segue, tranne che su ciò che nomina lei.',
+    ] },
+
     { h2: 'Alert eventi' },
     { p: ['Cinque eventi, ognuno con il suo interruttore, il suo testo, il suo suono e il suo colore.'] },
     { tabella: [

@@ -59,7 +59,9 @@ test('i salvataggi dell\'overlay passano da una coda sola, e la rete che cade si
   const aTempo = ['salvaCfgElemento', 'salvaGoalDaScena', 'salvaContoDaScena', 'salvaCartDaScena'];
   assert.ok(!/\.catch\(\(\) => \{\s*\}\)/.test(aTempo.map(corpoDi).join('')), 'nessun errore di rete ingoiato in silenzio');
   for (const nome of aTempo) assert.match(corpoDi(nome), /_avvisaSalvataggio\(\)/, `${nome} non dice niente quando la rete cade`);
-  assert.equal((APP.match(/(?<!function )_avvisaSalvataggio\(\)/g) || []).length, aTempo.length + 1, 'l\'avviso e\' uno, usato dalla coda e da ogni salvataggio a tempo');
+  // +2: la coda, e l'interruttore dell'occasione (che non passa dalla coda perche'
+  // ha una porta sua, ma quando la rete cade lo deve dire con la stessa voce)
+  assert.equal((APP.match(/(?<!function )_avvisaSalvataggio\(\)/g) || []).length, aTempo.length + 2, 'l\'avviso e\' uno, usato dalla coda, dall\'occasione e da ogni salvataggio a tempo');
   assert.equal((APP.match(/await _spingiOverlays\(\);/g) || []).length, 5, 'nuovo, duplica, rinomina, elimina e il layout passano tutti dalla coda');
   assert.ok(!/function _salvaFamiglia/.test(APP), 'niente funzione morta');
   assert.ok(/function _salvaPos\(chiave\) \{\n  const e = chiave \? ELEM\(chiave\) : null;\n  if \(e && e\.cont\) salvaContoDaScena\(e\.cont\);/.test(APP), 'il ripristino di un contatore si salva davvero');
@@ -78,10 +80,12 @@ test('l\'annulla non spara una raffica, la griglia si toglie, lo zoom gira attor
 test('durante il trascinamento si aggiorna la riga del livello, non tutto il pannello', () => {
   const rt = corpoDi('rendiTrascinabile');
   const move = rt.slice(rt.indexOf('const move = (ev) => {'), rt.indexOf('const partenza'));
-  assert.ok(!/aggiornaInspector\(\)/.test(move) && /_mostraProp\(\); _aggiornaRigaLivello\(chiave\);/.test(move), 'nel movimento niente innerHTML del pannello');
+  // `st` passato di mano: la riga la scrive chi il numero ce l'ha gia', invece di
+  // riandarlo a misurare dalla pagina a ogni movimento
+  assert.ok(!/aggiornaInspector\(\)/.test(move) && /_mostraProp\(\); _aggiornaRigaLivello\(chiave, st\);/.test(move), 'nel movimento niente innerHTML del pannello, e niente misure rilette');
   assert.ok(/const up = \(\) => \{ chiudi\(\); aggiornaInspector\(\); _ricorda\(\); _salvaPos\(chiave\); \};/.test(rt), 'al rilascio il pannello si ridisegna una volta');
   const dm = corpoDi('_dragManiglia');
-  assert.ok(/_posElemento\(el, st\); _mostraProp\(\); _aggiornaRigaLivello\(chiave\);/.test(dm) && /aggiornaInspector\(\); _ricorda\(\); _salvaPos\(chiave\);/.test(dm), 'anche le maniglie, e ricordano il passo per l\'annulla');
+  assert.ok(/_posElemento\(el, st\); _mostraProp\(\); _aggiornaRigaLivello\(chiave, st\);/.test(dm) && /aggiornaInspector\(\); _ricorda\(\); _salvaPos\(chiave\);/.test(dm), 'anche le maniglie, e ricordano il passo per l\'annulla');
 });
 
 test('un livello bloccato non si sposta, e il lucchetto viaggia con l\'overlay', () => {

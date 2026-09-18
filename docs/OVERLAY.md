@@ -1453,3 +1453,164 @@ che un cartello vuoto non lasci una scatola in scena, che gli interruttori
 contino uno per uno, e che la larghezza mandi a capo. `verifica-anteprima`
 misura che il cartello dello Studio e quello in onda siano lo stesso oggetto.
 `test/unita/cartelli.test.mjs` tiene ferma la porta d'ingresso.
+
+## Le occasioni: un secondo strato, non una seconda copia
+
+«I miei overlay ce li ho, ma stasera e' subathon e voglio anche questo.»
+
+Un'occasione e' un pacchetto di **differenze** sopra la base di un overlay:
+cosa compare in piu', cosa sparisce, cosa sta da un'altra parte. Si accende e
+compare, si spegne e torna tutto com'era. Il modello sta in
+`src/features/occasioni.js`; nel pannello vive accanto alla tendina
+dell'overlay, e la fascia sopra la tela dice sempre su cosa stai lavorando.
+
+Tre difetti non possono esistere, e non perche' qualcuno si ricordi di evitarli:
+
+- **Spegnere non perde niente.** L'occasione non tocca mai la base: e' un
+  secondo strato. Quando la spegni non c'e' niente da ripristinare, perche' non
+  c'era niente da rovinare.
+- **Le differenze sono sparse.** Ci stanno solo le chiavi che l'occasione nomina
+  davvero — e solo quelle che **differiscono**: se accendi una cosa che la base
+  gia' mostra, la chiave sparisce invece di restare li' a dire una cosa ovvia.
+  Riempirle tutte, come si riempie una base, farebbe smettere l'occasione di
+  essere un secondo strato: diventerebbe una copia che sovrascrive tutto, e
+  cambiare la base domani non si vedrebbe piu' sotto l'occasione.
+- **Una sola accesa** per overlay. Due pacchetti sovrapposti e la domanda «cosa
+  sto vedendo?» non ha piu' una risposta sola.
+
+### Dove sta la cucitura, nel pannello
+
+Il banco leggeva e scriveva le visibilita' e le posizioni dalla stessa funzione.
+Sono due gesti diversi, e adesso sono due funzioni diverse:
+
+- `_baseMostra()` / `_baseXY()` — l'overlay di tutti i giorni;
+- `_ovMostra()` / `_ovXY()` — **dove finiscono le scritture**: la base, oppure le
+  differenze dell'occasione aperta;
+- `_vedoMostra()` / `_vedoXY()` — **cosa si vede**: la base con sopra le
+  differenze. Tutte le letture passano di qui.
+
+Da questa separazione discende che il difetto «modifico l'occasione e mi ritrovo
+cambiata la base» non si puo' scrivere: la scrittura non ha un modo per
+arrivarci. Per lo stesso motivo `salvaLayoutOverlay` normalizza `ov.mostra` in
+mappa completa **solo** quando non c'e' un'occasione aperta.
+
+### Chi possiede l'interruttore
+
+Accendere un'occasione e' un gesto da diretta e passa da una porta sua,
+`POST /api/streamer/occasione`, che emette `{tipo:'tema'}`: la fonte in OBS si
+riprende il tema da sola e nessuno tocca niente di la'. Il salvataggio normale
+degli overlay porta il **disegno** delle occasioni ma non il loro interruttore:
+lo stato `attiva` lo riprende sempre da quello memorizzato. Cosi' un salvataggio
+partito un istante prima non puo' rimettere indietro l'interruttore, perche'
+non lo tocca proprio.
+
+### I modelli si guardano
+
+`Nuova…` apre i modelli con l'anteprima di **questo** overlay con l'aggiunta gia'
+accesa, nelle posizioni vere (lo stesso `_posDove` della tela), piu' la riga di
+cosa cambierebbe davvero. Anteprima e creazione passano dalla stessa funzione
+(`_occDiff`), quindi la scheda non puo' promettere una cosa e il tasto «Crea»
+farne un'altra. Se un modello dice «queste cose ce le hai gia' cosi'» non e'
+rotto: su quell'overlay quella roba e' gia' accesa.
+
+La riga di un livello si aggiorna da sola anche quando cambia solo il segno:
+`_aggiornaRigaLivello(k, st)` riscrive la posizione E la targhetta
+dell'occasione, perche' sono la stessa riga e dipendono dallo stesso fatto.
+
+Cancello: `node scripts/verifica-occasioni.mjs` (`--selftest`) prende l'impronta
+della scena di tutti i giorni, fa tutto il giro — crea, togli, rimetti, sposta,
+accendi, spegni, elimina — e pretende la stessa impronta identica alla fine. Lo
+spostamento lo fa dal campo X delle Proprieta' dopo aver scelto il livello **dal
+nome**: al centro della riga c'e' il lucchetto, e premere li' non seleziona
+niente (non e' un difetto, e' dove sta il lucchetto).
+`test/unita/occasioni.test.mjs` tiene ferme le regole del modello.
+
+### La posizione scritta nei livelli
+
+La riga di un livello dice dove sta quell'elemento, e quel numero si calcola
+dalla **misura** dell'elemento. Gli elementi che la scena ricostruisce a ogni
+giro (obiettivi, player, timer, treno, sfida) nascono vuoti e si riempiono un
+istante dopo: chiederne la posizione prima non da' un errore, da' un numero
+finto — l'angolo di partenza — e la colonna dei livelli restava li' a
+raccontare una posizione che non era quella vera (91% invece di 98%, per un
+elemento appoggiato al bordo destro).
+
+Non c'e' un istante buono da indovinare: il numero dipende dalla misura, quindi
+si rifa' **quando la misura cambia**. Un `ResizeObserver` sugli elementi della
+scena (presi con `_nodo`, la stessa regola di tutto il resto) riscrive le righe
+appena qualcosa si ridimensiona.
+
+## Lo Studio che non si impunta
+
+Il banco era pesante, e non per una ragione sola. Misurato con il profilo del
+browser, il tempo non stava quasi mai nel codice: stava nel DISEGNO.
+
+### Un gradiente non si sfoca
+
+Sotto tutto c'e' un campo decorativo (`#an-campo`, e il gemello
+`#anime-sfondo::after`): una sfumatura radiale che finisce in trasparente, con
+sopra `filter: blur(64px)`. La sfocatura non aggiunge niente che si veda — una
+sfumatura e' gia' morbida — e costringe il browser a disegnare mezzo schermo in
+un foglio a parte e a sfocarlo da capo a ogni ridisegno, cioe' a ogni movimento
+dentro lo Studio.
+
+Misura, sullo stesso computer, trascinando un elemento: **171,8 ms per
+movimento con la sfocatura, 94,5 ms senza** — togliendo solo quella riga e
+allargando l'ultima tappa della sfumatura, che costa zero. A occhio la pagina e'
+la stessa (confrontate due schermate, home e pannello).
+
+### Un movimento non e' un fotogramma
+
+Il puntatore manda eventi piu' spesso di quanto lo schermo disegni. A ogni
+evento il trascinamento rifaceva tutto il giro: scrivere lo stile dell'elemento,
+poi RILEGGERE le misure dalla pagina — che obbliga il browser a rifare i conti
+del layout li' per li' — e poi riscrivere. Due o tre volte dentro lo stesso
+fotogramma, per un disegno solo.
+
+`aFotogramma(fn)` fa il lavoro una volta per fotogramma, con l'ultima posizione
+arrivata: quelle in mezzo non le avrebbe viste nessuno. La corrispondenza fra la
+funzione vera e quella a fotogrammi sta in una `WeakMap`, cosi' `addEventListener`
+e `removeEventListener` parlano dello stesso oggetto senza che ogni punto di
+trascinamento debba ricordarsene; `_stacca(fn)` toglie l'ascoltatore e annulla
+il fotogramma gia' in coda, cosi' finito il trascinamento non arriva un ultimo
+movimento in ritardo.
+
+E la lettura che obbligava a rimisurare e' sparita alla radice:
+`_aggiornaRigaLivello(k, st)` prende la posizione da chi ce l'ha gia' in mano.
+Rimisurarla dalla pagina serviva solo a riottenere lo stesso numero.
+
+Stessa ragione per il controllo delle misure della scena: rifa' **solo** la riga
+di chi e' cambiato davvero, e mai durante un trascinamento.
+
+## L'elenco dei livelli e' quello che c'e'
+
+La colonna mostrava TUTTO quello che potrebbe stare in un overlay, comprese le
+dodici cose che in quell'overlay non c'erano: un elenco lungo in cui il proprio
+overlay era la minoranza, e in cui per capire cosa c'era davvero bisognava
+leggere riga per riga.
+
+Adesso i livelli sono i livelli. Quello che non c'e' sta dietro **«Aggiungi»**,
+che e' anche il posto dove si scopre cosa si puo' mettere — cartelli e immagini
+compresi, che e' la voce che nessuno trovava. Creare un cartello, un obiettivo o
+un contatore si fa dove si e' sempre fatto: li' c'e' solo la strada, non una
+seconda copia del gesto.
+
+Un'eccezione, e ha una ragione: una cosa **tolta da un'occasione** resta
+nell'elenco, segnata «via». E' un cambiamento che l'occasione fa, e va visto e
+disfatto dov'e' successo. Una cosa che non c'e' e basta, invece, non e' un
+cambiamento di nessuno.
+
+## L'anteprima di un modello mostra la differenza
+
+Una miniatura fedele di una scena piena, larga un dito, e' una pila di
+rettangoli sovrapposti: e' illeggibile per come e' fatta, non per come e'
+disegnata. E quello che uno vuole sapere guardando un modello e' una cosa sola:
+**cosa cambierebbe da me**.
+
+Quindi la scena che hai gia' fa da ombra (`.occ-o`), e le cose che il modello
+nomina vengono avanti come targhette (`.occ-c`) grandi abbastanza da vedersi
+anche quando in scena sono un filo di testo, in tre stati: `piu` (entra), `via`
+(esce), `gia` (ce l'hai gia' cosi'). Due targhette che si coprirebbero si
+scostano per regola, non per caso. Una famiglia che il modello nomina ma di cui
+non hai ancora nessun pezzo — nessun cartello, nessun obiettivo — sta in fondo:
+l'anteprima non fa finta che quella riga del modello non ci sia.

@@ -95,6 +95,7 @@
   --ease-back: var(--an-morbido); --molla: .22s var(--an-morbido); --spring: var(--an-morbido);
   --sheen: rgba(255, 255, 255, .35);
 
+  --g-def: #68625a;
   --g-bot: #68625a; --g-pubblico: #68625a; --g-diretta: #68625a;
   --g-scena: #68625a; --g-vetrina: #68625a; --g-account: #68625a; --g-admin: var(--acc);
 
@@ -153,6 +154,7 @@
   --om-l: 0 10px 30px rgba(0, 0, 0, .45);
   --sheen: rgba(255, 255, 255, .05);
 
+  --g-def: #918c80;
   --g-bot: #918c80; --g-pubblico: #918c80; --g-diretta: #918c80;
   --g-scena: #918c80; --g-vetrina: #918c80; --g-account: #918c80; --g-admin: var(--acc);
 }
