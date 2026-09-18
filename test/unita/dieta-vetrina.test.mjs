@@ -11,7 +11,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
-  guscioVetrina, guscioPannello, vetrinaHtml, RISORSE_VETRINA, SCRIPT_VETRINA,
+  guscioVetrina, guscioPannello, vetrinaHtml, RISORSE_VETRINA, SCRIPT_VETRINA, SOLO_VETRINA,
 } from '../../src/web/vetrina-vista.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -66,15 +66,30 @@ test('un guscio senza roba del pannello e\' un filtro che non ha filtrato niente
   assert.throws(() => guscioVetrina(magro, 'it', { piani: PIANI }), /nessuna risorsa del pannello/);
 });
 
-test('il pannello perde lo script della vetrina, e si accorge se non c\'e\'', () => {
+test('il pannello perde quel che e\' solo della vetrina, e si accorge se non c\'e\'', () => {
   const p = guscioPannello(GUSCIO);
-  assert.ok(!p.includes('vetrina-app.js'));
-  assert.ok(p.includes('app.js'));
+  assert.ok(!p.includes('vetrina-app.js'), 'lo script della vetrina non ha niente da agganciare, li\'');
+  assert.ok(!p.includes('anime-vetrina.css'), 'e le copie nemmeno: quelle regole il pannello ce le ha in anime.css');
+  assert.ok(p.includes('app.js') && p.includes('anime.css'), 'il resto resta');
   assert.throws(() => guscioPannello(p), /non trovo/);
 });
 
-test('index.html nomina lo script della vetrina, sennò il cancello lo chiude fuori', () => {
-  assert.ok(GUSCIO.includes(SCRIPT_VETRINA));
+test('la vetrina porta le copie al posto di anime.css, non tutte e due', () => {
+  const h = guscioVetrina(GUSCIO, 'it', { piani: PIANI });
+  assert.ok(h.includes('anime-vetrina.css'), 'le copie ci sono');
+  assert.ok(!h.includes('"anime.css"'), 'e il file intero no');
+  // Nello STESSO PUNTO della catena in cui stava anime.css: se le copie
+  // finissero dopo vetrina.css si sovrascriverebbero cose che prima vincevano,
+  // e la pagina cambierebbe senza che nessuno abbia cambiato una regola.
+  assert.ok(h.indexOf('anime-vetrina.css') < h.indexOf('vetrina.css'), 'e stanno prima di vetrina.css, come stava anime.css');
+});
+
+test('index.html nomina tutto quel che e\' solo della vetrina, sennò il cancello lo chiude fuori', () => {
+  // Le porte pubbliche si RICAVANO da index.html: un file che la vetrina carica
+  // ma che li' dentro non e' nominato resterebbe chiuso, e la pagina si
+  // aprirebbe a meta' senza che nessun errore lo dica.
+  for (const riga of SOLO_VETRINA) assert.ok(GUSCIO.includes(riga), riga);
+  assert.ok(SOLO_VETRINA.includes(SCRIPT_VETRINA));
 });
 
 test('il listino lo disegna il server: prezzi, pacchetti e configuratore', () => {

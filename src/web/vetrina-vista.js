@@ -512,14 +512,29 @@ export function inserisciVetrina(guscio, lingua, opzioni) {
 // gia' fallito altrove, e non poteva fare altro.
 export const RISORSE_VETRINA = [
   'tema.js',          // il tema prima del primo disegno, o la pagina lampeggia
-  'font.css', 'style.css', 'tema.css', 'anime.css', 'vetrina.css',
+  'font.css', 'style.css', 'tema.css', 'vetrina.css',
+  // LE ANIMAZIONI, SOLO LA PARTE CHE LE TOCCA. `anime.css` sono novecento regole
+  // e la vetrina ne usa quarantacinque: il resto e' lo Studio, la ricerca, le
+  // tabelle. La sua parte sta in un file suo, nello stesso punto della catena in
+  // cui stava prima, cosi' l'ordine con cui le regole si sovrascrivono non
+  // cambia di una virgola. Le regole sono le stesse, scritte due volte: a
+  // tenerle uguali ci pensa il cancello della dieta, che rimette `anime.css`
+  // sulla vetrina e pretende che non cambi niente.
+  'anime-vetrina.css',
   'splash.js',        // toglie il velo
   'cookie.js',        // la striscia del cookie tecnico
   'cinema.js',        // lo sfondo animato e la modalita' leggera
   'vetrina-app.js',   // il velo via subito, il conto del configuratore
 ];
 
-export const SCRIPT_VETRINA = '<script src="vetrina-app.js" defer></script>';
+// Quel che carica SOLO la vetrina: il guscio del pannello se lo toglie di
+// dosso, perche' li' non serve a niente (le sue regole ce le ha gia' in
+// anime.css, e lo script della vetrina non ha nessuna vetrina da agganciare).
+export const SOLO_VETRINA = [
+  '<script src="vetrina-app.js" defer></script>',
+  '<link rel="stylesheet" href="anime-vetrina.css">',
+];
+export const SCRIPT_VETRINA = SOLO_VETRINA[0];
 
 const _nudo = (via) => String(via || '').split('?')[0].replace(/^\.?\//, '');
 
@@ -557,8 +572,10 @@ export function guscioVetrina(guscio, lingua, opzioni) {
 // Il guscio di chi e' entrato (e della demo): tutto il pannello, senza lo
 // script della vetrina che li' non ha niente da fare.
 export function guscioPannello(guscio) {
-  if (!guscio.includes(SCRIPT_VETRINA)) {
-    throw new Error(`pannello: non trovo ${SCRIPT_VETRINA} in index.html`);
+  let h = guscio;
+  for (const riga of SOLO_VETRINA) {
+    if (!h.includes(riga)) throw new Error(`pannello: non trovo ${riga} in index.html`);
+    h = h.replace('  ' + riga + '\n', '').replace(riga, '');
   }
-  return guscio.replace('  ' + SCRIPT_VETRINA + '\n', '').replace(SCRIPT_VETRINA, '');
+  return h;
 }
