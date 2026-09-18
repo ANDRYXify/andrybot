@@ -149,3 +149,24 @@ leggerli tutti per sommarli in JavaScript vorrebbe dire aprire un JSON per ogni
 diretta mai fatta. Le ultime dirette invece non dipendono dal periodo: sono
 l'elenco di com'è andata le ultime volte, e a chi guarda «sette giorni» dopo una
 pausa di un mese una tabella vuota non direbbe niente.
+
+## L'hype train, e il registro che si rileggeva a meta'
+
+Il rapporto non tiene un conto suo: legge il registro degli eventi, come fa per
+follow, sub e raid. Il treno si conta quando **finisce** — Twitch manda un
+evento a ogni contributo, e sommarli vorrebbe dire raccontare dieci treni al
+posto di uno — e il livello che si dice e' il piu' alto della serata, con chi
+ha spinto quel treno li'.
+
+Aggiungendolo e' venuto fuori un difetto piu' vecchio. Ogni evento lascia una
+riga «tipo + contenuto in JSON», tagliata a 300 caratteri: un hype train ne
+occupa **606**, e il taglio cadeva in mezzo al JSON. Il tipo restava leggibile,
+il contenuto no, e chi lo rileggeva otteneva un oggetto vuoto — senza che
+niente lo dicesse, perche' una riga tagliata sembra una riga. Non riguardava
+solo il treno: qualunque evento un po' lungo, per esempio un abbonamento con un
+messaggio, perdeva il suo contenuto per tutti quelli che leggono il registro.
+
+Adesso `rigaEvento()` in `src/bot.js` tiene una regola sola: **o ci sta tutto, o
+si scrive il tipo e basta**. Un contenuto che dichiara di non esserci e' piu'
+onesto di un mezzo contenuto che finge di esserci.
+`test/unita/registro-eventi.test.mjs` la tiene ferma.
