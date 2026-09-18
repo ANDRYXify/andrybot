@@ -257,6 +257,7 @@ async function caricaStato() {
   esitoPostaDaIndirizzo();
   avvisaRapporti();
   collegaRegiaRicordata();
+  _mortiRiavvia();
   invito();
 }
 
@@ -10444,6 +10445,7 @@ async function caricaScene() {
       : `<p class="vuoto">${esc(L('non riesco a leggere le scene', 'cannot read the scenes', 'no puedo leer las escenas'))}</p>`;
   }
   if (_cons.aperto !== null && _cons.aperto !== undefined) disegnaSchedaTasto();
+  _mortiFonti();
 }
 
 function segnaScenaViva(nome) {
@@ -11067,9 +11069,239 @@ function appendiConsolifyCampi() {
   });
 }
 
+
+const MORTI_DEF = { attivo: false, fonte: '', ogniMs: 2000, soglia: 8, riarmoMs: 4000, schermate: [] };
+const _mortiCfg = () => ({ ...MORTI_DEF, ...(impostazioni().morti || {}) });
+let _mortiTimer = null;
+let _mortiStato = {};
+let _mortiVisto = null;
+let _mortiInGiro = false;
+
+async function _mortiGrigi(dataUrl) {
+  const img = new Image();
+  img.src = dataUrl;
+  await img.decode();
+  const c = document.createElement('canvas');
+  c.width = window.SB_MORTI.LARGA;
+  c.height = window.SB_MORTI.ALTA;
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.imageSmoothingEnabled = true;
+  x.drawImage(img, 0, 0, c.width, c.height);
+  const d = x.getImageData(0, 0, c.width, c.height).data;
+  const g = [];
+  for (let i = 0; i < d.length; i += 4) g.push((d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000);
+  return g;
+}
+
+async function _mortiScatta(fonte) {
+  if (!window.RegiaEsterna || !RegiaEsterna.collegato() || !fonte) return null;
+  const r = await RegiaEsterna.chiedi('GetSourceScreenshot', {
+    sourceName: fonte, imageFormat: 'jpg', imageWidth: 64, imageHeight: 36, imageCompressionQuality: 60,
+  }).catch(() => null);
+  const dati = r && r.imageData;
+  if (!dati) return null;
+  return { dataUrl: dati, firma: window.SB_MORTI.impronta(await _mortiGrigi(dati)) };
+}
+
+async function _mortiInOnda() {
+  if (!window.RegiaEsterna || !RegiaEsterna.collegato()) return false;
+  const s = await RegiaEsterna.chiedi('GetStreamStatus', {}).catch(() => null);
+  return !!(s && s.outputActive);
+}
+
+async function _mortiGiro() {
+  if (_mortiInGiro) return;
+  _mortiInGiro = true;
+  try {
+    const cfg = _mortiCfg();
+    if (!cfg.attivo || !cfg.fonte || !cfg.schermate.length) return;
+    const scatto = await _mortiScatta(cfg.fonte);
+    if (!scatto || !scatto.firma) { _mortiVisto = null; _mortiSpia(); return; }
+    const t = window.SB_MORTI.vicina(cfg.schermate, scatto.firma, cfg.soglia);
+    const r = window.SB_MORTI.guarda(_mortiStato, { dentro: !!t, ora: Date.now(), riarmoMs: cfg.riarmoMs });
+    _mortiStato = r.stato;
+    _mortiVisto = { distanza: t ? t.distanza : null, nome: t ? t.quale.nome : '', quando: Date.now() };
+    _mortiSpia();
+    if (!r.conta) return;
+    if (!await _mortiInOnda()) return;
+    const d = await api('/api/streamer/azione', { method: 'POST', body: { id: 'contatore:piu:' + t.quale.contatore } }).catch(() => null);
+    if (d && d.ok) {
+      _mortiVisto.contata = d.mostra || t.quale.contatore;
+      _mortiSpia();
+      toast(`${t.quale.nome}: ${d.mostra || ''}`.trim());
+    }
+  } finally { _mortiInGiro = false; }
+}
+
+function _mortiSpia() {
+  const el = _g('morti-spia');
+  if (!el) return;
+  const cfg = _mortiCfg();
+  if (!cfg.attivo) { el.textContent = L('Spento.', 'Off.', 'Apagado.'); return; }
+  if (!window.RegiaEsterna || !RegiaEsterna.collegato()) {
+    el.textContent = L('La regia non è collegata: senza, non posso guardare niente.', 'The program is not connected: without it I can\'t watch anything.', 'El programa no está conectado: sin él no puedo mirar nada.');
+    return;
+  }
+  if (!_mortiVisto) { el.textContent = L('Guardo…', 'Watching…', 'Miro…'); return; }
+  const v = _mortiVisto;
+  el.textContent = v.contata
+    ? L(`Contata: ${v.contata}`, `Counted: ${v.contata}`, `Contada: ${v.contata}`)
+    : (v.nome
+      ? L(`Adesso vedo «${v.nome}» (distanza ${v.distanza}).`, `I see «${v.nome}» now (distance ${v.distanza}).`, `Ahora veo «${v.nome}» (distancia ${v.distanza}).`)
+      : L('Nessuna schermata riconosciuta adesso.', 'No screen recognised right now.', 'Ninguna pantalla reconocida ahora.'));
+}
+
+function _mortiRiavvia() {
+  clearInterval(_mortiTimer);
+  _mortiTimer = null;
+  _mortiStato = {};
+  const cfg = _mortiCfg();
+  if (DEMO || !cfg.attivo || !cfg.schermate.length) { _mortiSpia(); return; }
+  _mortiTimer = setInterval(() => { _mortiGiro().catch(() => {}); }, cfg.ogniMs);
+  _mortiSpia();
+}
+
+
+function _mortiFonti() {
+  const sel = _g('morti-fonte');
+  if (!sel) return;
+  const scelta = _mortiCfg().fonte;
+  const lista = (_cons.fonti || []).slice();
+  if (scelta && !lista.includes(scelta)) lista.push(scelta);
+  sel.innerHTML = `<option value="">${esc(L('— scegli —', '— pick one —', '— elige —'))}</option>`
+    + lista.map((f) => `<option value="${esc(f)}"${f === scelta ? ' selected' : ''}>${esc(f)}</option>`).join('');
+  sel.value = scelta || '';
+}
+
+async function _mortiConti() {
+  let lista = (_conta || []).map((c) => c.comando).filter(Boolean);
+  if (!lista.length) {
+    try { const d = await api('/api/contatori'); lista = (d?.contatori || []).map((c) => c.comando).filter(Boolean); }
+    catch { lista = []; }
+  }
+  const sel = _g('morti-conta');
+  if (!sel) return;
+  const scelta = sel.value;
+  sel.innerHTML = lista.length
+    ? lista.map((c) => `<option value="${esc(c)}"${c === scelta ? ' selected' : ''}>!${esc(c)}</option>`).join('')
+    : `<option value="">${esc(L('nessun contatore', 'no counters', 'sin contadores'))}</option>`;
+  const b = _g('morti-impara');
+  if (b) b.disabled = !lista.length;
+}
+
+function _mortiLista() {
+  const box = _g('morti-lista');
+  if (!box) return;
+  const m = _mortiCfg();
+  box.innerHTML = m.schermate.length
+    ? m.schermate.map((s, i) => `<div class="goal-riga">
+        <strong>${esc(s.nome)}</strong>
+        <span class="tenue">→ !${esc(s.contatore)}</span>
+        <span class="tenue">${s.firme.length > 1 ? L(`${s.firme.length} impronte`, `${s.firme.length} prints`, `${s.firme.length} huellas`) : ''}</span>
+        <button type="button" class="btn secondario mini ovl-elimina" data-morti-via="${i}">${L('Togli', 'Remove', 'Quitar')}</button>
+      </div>`).join('')
+    : `<p class="vuoto">${L('Nessuna schermata insegnata: la prima volta che muori, premi il tasto qui sopra.', 'No screen taught yet: the first time you die, press the button above.', 'Ninguna pantalla enseñada: la primera vez que mueras, pulsa el botón de arriba.')}</p>`;
+}
+
+async function _mortiSalva(nuovo) {
+  const m = { ..._mortiCfg(), ...nuovo };
+  await salvaImpostazioni({ morti: m }, null);
+  impostazioni().morti = m;
+  _mortiLista();
+  _mortiRiavvia();
+  return m;
+}
+
+function collegaMorti() {
+  const carta = _g('morti-attivo');
+  if (!carta || carta.dataset.collegato) return;
+  carta.dataset.collegato = '1';
+  _mortiFonti();
+  _mortiConti().catch(() => {});
+  _mortiLista();
+  _mortiRiavvia();
+
+  carta.addEventListener('change', async () => {
+    try { await _mortiSalva({ attivo: carta.checked }); }
+    catch (e) { carta.checked = !carta.checked; toast(e.message || L('Non riesco a salvare.', 'I can\'t save.', 'No consigo guardar.'), 'errore'); }
+  });
+  _g('morti-fonte')?.addEventListener('change', (e) => _mortiSalva({ fonte: e.target.value }).catch(() => {}));
+  _g('morti-ogni')?.addEventListener('change', (e) => _mortiSalva({ ogniMs: Math.max(1, Math.min(30, Number(e.target.value) || 2)) * 1000 }).catch(() => {}));
+
+  _g('morti-impara')?.addEventListener('click', async (ev) => {
+    const b = ev.currentTarget;
+    const cfg = _mortiCfg();
+    const contatore = _g('morti-conta')?.value || '';
+    if (!cfg.fonte) { toast(L('Scegli prima quale fonte devo guardare.', 'Pick which source I should watch first.', 'Elige antes qué fuente debo mirar.'), 'errore'); return; }
+    if (!contatore) { toast(L('Serve un contatore da far salire: creane uno nella scheda Comandi.', 'I need a counter to raise: create one in the Commands tab.', 'Hace falta un contador que subir: crea uno en la pestaña Comandos.'), 'errore'); return; }
+    b.disabled = true;
+    try {
+      const scatto = await _mortiScatta(cfg.fonte);
+      if (!scatto || !scatto.firma) throw new Error(L('Non riesco a guardare quella fonte: la regia è collegata?', 'I can\'t look at that source: is the program connected?', '¿No consigo mirar esa fuente: está conectado el programa?'));
+      const gia = window.SB_MORTI.vicina(cfg.schermate, scatto.firma, cfg.soglia);
+      if (gia) { toast(L(`Questa la conosco già: «${gia.quale.nome}».`, `I already know this one: «${gia.quale.nome}».`, `Esta ya la conozco: «${gia.quale.nome}».`)); return; }
+      const r = await chiediTesto({
+        titolo: L('Che schermata è', 'What screen is this', 'Qué pantalla es'),
+        testo: L('Un nome per ricordartelo: il gioco, di solito.', 'A name to remember it by: the game, usually.', 'Un nombre para recordarla: el juego, normalmente.'),
+        valore: L('Morte', 'Death', 'Muerte'),
+        ok: L('Impara', 'Learn', 'Aprender'),
+      });
+      const nome = String(r || '').trim();
+      if (!nome) return;
+      await _mortiSalva({ schermate: cfg.schermate.concat([{ nome, firme: [scatto.firma], contatore }]) });
+      toast(L('Imparata. Alla prossima morte sale da sola.', 'Learned. Next death it goes up by itself.', 'Aprendida. A la próxima muerte sube sola.'));
+    } catch (e) { toast(e.message || String(e), 'errore'); }
+    b.disabled = false;
+  });
+
+  _g('morti-lista')?.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-morti-via]');
+    if (!b) return;
+    const i = Number(b.dataset.mortiVia);
+    const cfg = _mortiCfg();
+    await _mortiSalva({ schermate: cfg.schermate.filter((_, k) => k !== i) }).catch(() => {});
+  });
+}
+
+function _mortiCarta() {
+  const m = _mortiCfg();
+  return `
+    <div class="carta">
+      <h2>${_hIco(ICO.dado)}${L('Le morti contate da sole', 'Deaths counted by themselves', 'Las muertes contadas solas')}</h2>
+      <p>${L('La schermata di morte di un gioco è sempre', 'A game\'s death screen is always', 'La pantalla de muerte de un juego es siempre')} <strong class="primo-piano">${L('la stessa immagine', 'the same image', 'la misma imagen')}</strong>. ${L('Gliela fai vedere una volta e da lì in poi il contatore sale da solo, senza che tu scriva niente mentre giochi.', 'You show it once and from then on the counter goes up by itself, without you typing anything while you play.', 'Se la enseñas una vez y desde entonces el contador sube solo, sin que escribas nada mientras juegas.')}</p>
+      <p class="suggerimento">${L('Serve il', 'You need the', 'Hace falta el')} <strong>${L('programma con cui mandi in onda collegato', 'broadcast program connected', 'programa de emisión conectado')}</strong> ${L('qui sotto, e questo pannello aperto su quel computer. L\'immagine dello schermo', 'below, and this panel open on that computer. The picture of your screen', 'aquí abajo, y este panel abierto en ese ordenador. La imagen de tu pantalla')} <strong>${L('non esce di lì', 'never leaves it', 'no sale de ahí')}</strong>: ${L('al server arriva solo «+1».', 'only «+1» reaches the server.', 'al servidor solo llega «+1».')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="morti-attivo" ${m.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Conta le morti guardando lo schermo', 'Count deaths by watching the screen', 'Cuenta las muertes mirando la pantalla')}</span>
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="morti-fonte">${L('Quale fonte guardo', 'Which source I watch', 'Qué fuente miro')}</label>
+          <select id="morti-fonte" class="campo-largo"></select>
+        </div>
+        <div>
+          <label class="campo" for="morti-ogni">${L('Ogni quanto guardo (secondi)', 'How often I look (seconds)', 'Cada cuánto miro (segundos)')}</label>
+          <input type="number" id="morti-ogni" class="campo-largo" min="1" max="30" step="1" value="${Math.round(m.ogniMs / 1000)}">
+        </div>
+      </div>
+      <p class="suggerimento" id="morti-spia">—</p>
+      <div class="riga-flessibile spazio-sopra">
+        <div style="max-width:220px">
+          <label class="campo" for="morti-conta">${L('Quale contatore faccio salire', 'Which counter I raise', 'Qué contador subo')}</label>
+          <select id="morti-conta" class="campo-largo"></select>
+        </div>
+        <button class="btn" id="morti-impara" disabled>${L('Sono morto adesso: è questa', 'I just died: this is it', 'Acabo de morir: es esta')}</button>
+      </div>
+      <p class="suggerimento">${L('Premilo', 'Press it', 'Púlsalo')} <strong>${L('mentre la schermata di morte è a schermo', 'while the death screen is on screen', 'mientras la pantalla de muerte está en pantalla')}</strong>. ${L('Ne puoi insegnare una per gioco: quella che combacia vince, così non devi dire tu a cosa stai giocando.', 'You can teach one per game: whichever matches wins, so you don\'t have to say what you\'re playing.', 'Puedes enseñar una por juego: gana la que coincide, así no tienes que decir a qué juegas.')}</p>
+      <div id="morti-lista" class="goal-lista spazio-sopra"></div>
+    </div>
+`;
+}
+
 function pannelloRegia() {
   return pannello('regia', `
     <div class="carta evidenziata" id="regia-permessi-banner" hidden></div>
+    ${_mortiCarta()}
 
     <div class="carta">
       <h2>${_hIco(ICO.onda)}${L('Stato diretta', 'Stream status', 'Estado del directo')}</h2>
@@ -18021,7 +18253,7 @@ function caricaDatiScheda(id) {
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
     riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
-  if (id === 'regia') caricaRegia();
+  if (id === 'regia') { caricaRegia(); collegaMorti(); }
   if (id === 'consolify') caricaConsolify();
   if (id === 'studio') caricaStudio();
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); caricaTracking(); }
