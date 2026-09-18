@@ -144,3 +144,22 @@ test('il nome del mittente si vede nell\'elenco della posta', () => {
   assert.match(pst, /componi\(\{ da: mittenteIntestazione\(\)/, 'il From porta il nome');
   assert.match(pst, /consegna\(\{ a, da, messaggio/, 'la busta porta il solo indirizzo');
 });
+
+// APRIRE NON E' ANNUNCIARE, e per un po' l'ha deciso la stessa riga.
+//
+// Al primo rilevamento — il bot che riparte a diretta gia' accesa — si usciva
+// prima di aprire la serata, per non gridare «è live!» una seconda volta. Ma la
+// serata resta aperta lo stesso: il risultato era che una pubblicazione fatta a
+// diretta iniziata faceva dire alla scheda dei numeri zero minuti e zero picco,
+// e quando quella diretta finiva non c'era niente da chiudere — nessun rapporto,
+// e la serata spariva anche dal conto delle dirette.
+test('un riavvio a diretta accesa non fa sparire la serata', () => {
+  const live = BOT.slice(BOT.indexOf('_setLive(login, isLive, data) {'), BOT.indexOf('_rapportoDiretta(login) {'));
+  const apre = live.indexOf('rapporto.apri(ch,');
+  const esce = live.indexOf('if (prev === undefined) return;');
+  assert.ok(apre > 0 && esce > 0, 'le due righe devono esserci tutte e due');
+  assert.ok(apre < esce,
+    'la contabilita\' della diretta va fatta PRIMA dell\'uscita al primo rilevamento: dopo, un riavvio a diretta accesa la perde');
+  const annuncia = live.indexOf('this._annunciaTwitch(ch)');
+  assert.ok(annuncia > esce, 'l\'annuncio invece resta dopo: un riavvio non e\' una transizione, e non si grida due volte');
+});

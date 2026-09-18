@@ -28,10 +28,28 @@ export function normalizza(b) {
   return { telegram: (r.telegram ?? r.attivo) !== false, mail: r.mail === true };
 }
 
+// DA QUANDO E' COMINCIATA non e' una cosa che ci ricordiamo noi: e' una cosa
+// che sappiamo. La dice Twitch quando va in onda, e quando non ce l'abbiamo
+// sotto mano la sanno le presenze, che quella data la scrivono sul disco. La
+// nostra memoria e' l'ultima delle tre, non la prima: se fosse la prima, un
+// riavvio farebbe ricominciare la serata da adesso.
+function daQuando(ch, inizio, ora) {
+  if (inizio > 0 && inizio <= ora) return inizio;
+  const vista = Number(store.diretta(ch)?.corrente_ts) || 0;
+  return (vista > 0 && vista <= ora) ? vista : ora;
+}
+
 export function apri(channel, { ora = Date.now(), inizio = 0 } = {}) {
   const ch = norm(channel);
   if (!ch) return null;
-  const s = { inizio: inizio > 0 && inizio <= ora ? inizio : ora, picco: 0, somma: 0, giri: 0 };
+  const da = daQuando(ch, Number(inizio) || 0, ora);
+  // Riaprire la STESSA diretta non la ricomincia. Il picco e la media di stasera
+  // sono di stasera: un secondo rilevamento della stessa serata — il bot che
+  // riparte, il watcher che ripassa — non deve azzerarli. Solo un inizio diverso
+  // e' una serata diversa.
+  const gia = sessioni.get(ch);
+  if (gia && gia.inizio === da) return gia;
+  const s = { inizio: da, picco: 0, somma: 0, giri: 0 };
   sessioni.set(ch, s);
   return s;
 }
@@ -43,7 +61,7 @@ export function osservaGiro(channel, { spettatori = null, ora = Date.now() } = {
   const ch = norm(channel);
   if (!ch) return null;
   let s = sessioni.get(ch);
-  if (!s) s = apri(ch, { ora, inizio: store.diretta(ch)?.corrente_ts || 0 });
+  if (!s) s = apri(ch, { ora });
   const n = Number(spettatori);
   if (Number.isFinite(n) && n >= 0) { s.picco = Math.max(s.picco, n); s.somma += n; s.giri++; }
   return s;

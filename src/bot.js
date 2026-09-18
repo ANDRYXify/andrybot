@@ -1092,13 +1092,23 @@ export class BotManager {
     this._liveState.set(ch, isLive);
     // riconcilia le unità: la modalità "quando live" entra/esce col live
     this.syncChannels().catch(() => {});
+    // LA DIRETTA E' UN FATTO, L'ANNUNCIO E' UNA TRANSIZIONE: due cose diverse, e
+    // per un po' le ha decise la stessa riga. Al primo rilevamento si usciva
+    // subito — giusto per non gridare «è live!» quando il bot riparte a diretta
+    // in corso, sbagliato per la serata, che resta aperta lo stesso.
+    //
+    // Si vedeva, ed era peggio di un dettaglio: mentre eri in onda la scheda dei
+    // numeri diceva zero minuti e zero picco, e una diretta che finiva dopo un
+    // riavvio non lasciava NESSUN rapporto — alla chiusura non c'era niente da
+    // chiudere, e quella serata spariva. Percio' la contabilità si fa sempre, e
+    // prima: aprirla due volte non la ricomincia.
+    if (isLive) rapporto.apri(ch, { inizio: Date.parse(data?.started_at) || 0 });
     // Primo rilevamento (bot appena avviato): NON è una transizione vera.
     // Evita di annunciare "è live!" se il bot riparte a diretta già in corso.
     if (prev === undefined) return;
     const ev = { channel: ch, type: isLive ? 'stream.online' : 'stream.offline', data: data || {} };
     this._dispatchEvent(ev);
     if (isLive) {
-      rapporto.apri(ch, { inizio: Date.parse(data?.started_at) || 0 });
       this._annunciaTwitch(ch).catch((e) => log.error(`avviso live #${ch}:`, e?.message || e));
     } else {
       this._chiudiTelegram(ch);
