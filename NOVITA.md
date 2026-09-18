@@ -19,6 +19,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 - Se il bot riparte mentre sei in onda la serata non si perde più: prima i numeri dicevano zero minuti, e quella diretta finiva senza lasciare il suo rapporto. [vai: statistiche]
 - Quando parla di sua iniziativa non si intromette più fra due che stanno parlando: prende l'ultima cosa detta a tutti, e se non ce n'è una sta zitto. [vai: personalita]
+- Nel rapporto di fine diretta le clip hanno il loro titolo vero, con quanto durano: prima c'era scritto solo perché il bot le aveva fatte, tipo «modulo». [vai: dirette]
 - Parla di meno ma meglio: si aggiunge a un discorso vero fra due persone, non a una riga qualsiasi, e quando parte ha il taglio di uno della chat invece che di chi presenta la serata. [vai: personalita]
 - Tutto quello che fa salire un contatore da solo sta in un posto suo: nei Comandi trovi CONTATORify, accanto ai contatori che muove. [vai: moduli]
 - Le schermate di morte adesso stanno in comune: cerchi il gioco, la prendi e non insegni niente. Se una non ti prende bene la sistemi, e la sistemi per tutti. [vai: moduli]

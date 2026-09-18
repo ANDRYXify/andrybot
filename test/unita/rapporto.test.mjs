@@ -61,7 +61,8 @@ test('la raccolta legge la finestra giusta: chat, eventi, presenze, clip, donazi
   assert.equal(d.presenti, 2); assert.equal(d.primeVolte, 1);
   assert.equal(d.clip, 1);
   assert.equal(d.donazioni, 2); assert.equal(d.donazioniCent, 1500);
-  assert.deepEqual(d.clipElenco, [{ url: 'u', motivo: 'hype', ts: da + 9 * MIN }], 'la clip fuori finestra non entra');
+  assert.deepEqual(d.clipElenco, [{ id: 'c1', url: 'u', motivo: 'hype', ts: da + 9 * MIN }],
+    'la clip fuori finestra non entra, e l\'id viene con lei: senza, il titolo non si potrebbe nemmeno chiedere');
   const t = r.testo({ durataMs: 134 * MIN, picco: 48, media: 31, giri: 20, ...d });
   assert.equal(t, [
     '<b>È arrivato un raid, con 35 persone al seguito.</b>',
@@ -212,4 +213,38 @@ test('un inizio impossibile non passa: nel futuro non si e\' cominciato niente',
   const t0 = 1_700_000_000_000;
   const s = r.apri(ch, { ora: t0, inizio: t0 + 86_400_000 });
   assert.equal(s.inizio, t0, 'una diretta cominciata domani darebbe una durata negativa');
+});
+
+// COSA C'E' DENTRO QUELLA CLIP.
+//
+// Di nostro sappiamo solo PERCHE' l'abbiamo fatta: «modulo», «momento hype».
+// Quella parola finiva dov'e' il titolo, e nel rapporto si leggeva «modulo» sette
+// volte di fila senza sapere cosa si stesse per riaprire. Il titolo, la durata e
+// l'anteprima sono di Twitch, che le fa nascere dopo: si chiedono, e si uniscono.
+test('il titolo arriva da Twitch, il motivo scende a nota', () => {
+  const elenco = [
+    { id: 'aaa', url: 'https://clips.twitch.tv/aaa', motivo: 'modulo', ts: 10 },
+    { id: 'bbb', url: 'https://clips.twitch.tv/bbb', motivo: 'momento hype: chat', ts: 20 },
+  ];
+  const uniti = r.unisciClip(elenco, [
+    { id: 'aaa', titolo: 'Il salto impossibile', durata: 31.5, anteprima: 'https://x/%{width}x%{height}.jpg' },
+  ]);
+  assert.equal(r.nomeClip(uniti[0]), 'Il salto impossibile');
+  assert.equal(r.notaClip(uniti[0]), '32s · modulo', 'il motivo resta, ma accanto');
+  assert.equal(uniti[0].anteprima, 'https://x/480x272.jpg', 'l\'anteprima va chiesta di una misura vera');
+  assert.equal(uniti[0].url, elenco[0].url, 'e il resto non si tocca');
+
+  // quella che Twitch non ci ha raccontato resta com'era: un nome brutto e'
+  // meglio di nessun nome, ma solo quando non c'e' il nome vero.
+  assert.equal(r.nomeClip(uniti[1]), 'momento hype: chat');
+  assert.equal(r.notaClip(uniti[1]), '', 'senza titolo il motivo fa da nome, e non si ripete anche sotto');
+});
+
+test('se Twitch non risponde, l\'elenco resta quello che era', () => {
+  const elenco = [{ id: 'aaa', url: 'https://clips.twitch.tv/aaa', motivo: 'modulo', ts: 10 }];
+  for (const niente of [[], null, undefined, 'boh', [{ titolo: 'senza id' }]]) {
+    assert.deepEqual(r.unisciClip(elenco, niente), elenco);
+  }
+  assert.deepEqual(r.unisciClip(null, []), []);
+  assert.equal(r.nomeClip(null), 'Clip della diretta', 'e una clip senza niente ha comunque un nome');
 });

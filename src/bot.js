@@ -1115,7 +1115,7 @@ export class BotManager {
       this._annunciaTwitch(ch).catch((e) => log.error(`avviso live #${ch}:`, e?.message || e));
     } else {
       this._chiudiTelegram(ch);
-      this._rapportoDiretta(ch);
+      this._rapportoDiretta(ch).catch((e) => log.error(`rapporto #${ch}:`, e?.message || e));
     }
     this._reagisciAllaDiretta(ch, isLive);   // lei se ne accorge e ti scrive (presente/consapevole)
   }
@@ -1123,11 +1123,23 @@ export class BotManager {
   // A diretta finita, il rapporto in privato: numeri, non aggettivi. Solo se lo
   // streamer lo vuole e ha collegato la chat privata. Il rapporto e' suo, e
   // stare zitti quando non lo vuole vale quanto scrivere quando lo vuole.
-  _rapportoDiretta(login) {
+  async _rapportoDiretta(login) {
     try {
       const chiuso = rapporto.chiudi(login);
       if (!chiuso) return;
       const dati = { ...chiuso, ...rapporto.raccogli(login, chiuso) };
+      // COSA C'ERA DENTRO QUELLE CLIP. Di nostro sappiamo solo perche' le abbiamo
+      // fatte; il titolo, la durata e l'anteprima li fa nascere Twitch dopo, e si
+      // chiedono. Una volta sola, per tutte insieme, e QUI: il rapporto si scrive
+      // una volta e da li' in poi lo rileggono il pannello, la mail e Telegram.
+      //
+      // Best-effort per forza: se Twitch non risponde il rapporto si salva lo
+      // stesso, con i titoli che aveva prima. Un rapporto senza titoli e' peggio
+      // di uno con; un rapporto che non si salva e' peggio di tutti e due.
+      try {
+        const ids = (dati.clipElenco || []).map((c) => c?.id).filter(Boolean);
+        if (ids.length) dati.clipElenco = rapporto.unisciClip(dati.clipElenco, await this.helix.dettagliClip(ids));
+      } catch (e) { log.debug(`#${login} titoli delle clip:`, e?.message || e); }
       // il rapporto resta sempre, nella scheda Dirette: i canali sono in piu'
       const id = rapporti.salva(login, { inizio: chiuso.inizio, fine: chiuso.fine, dati });
       const c = rapporto.cfg(login);

@@ -144,8 +144,8 @@ export function raccogli(channel, { inizio, fine, picco = 0 }) {
   // LE CLIP PER INTERO, non solo quante. Un numero non si riguarda; un elenco di
   // titoli con il loro link si riapre la sera dopo, ed e' il pezzo del rapporto
   // che vale di piu': l'unico che si puo' rivedere.
-  out.clipElenco = db.prepare('SELECT url, reason, ts FROM clips WHERE channel=? AND ts>=? AND ts<=? ORDER BY ts LIMIT 8')
-    .all(ch, da, a).map((c) => ({ url: String(c.url || ''), motivo: String(c.reason || ''), ts: Number(c.ts) || 0 }))
+  out.clipElenco = db.prepare('SELECT clip_id, url, reason, ts FROM clips WHERE channel=? AND ts>=? AND ts<=? ORDER BY ts LIMIT 8')
+    .all(ch, da, a).map((c) => ({ id: String(c.clip_id || ''), url: String(c.url || ''), motivo: String(c.reason || ''), ts: Number(c.ts) || 0 }))
     .filter((c) => c.url);
   // Un picco non dice niente da solo: dice qualcosa confrontato con le altre
   // sere. Il massimo di prima si legge dai rapporti gia' salvati, e questo non
@@ -156,6 +156,50 @@ export function raccogli(channel, { inizio, fine, picco = 0 }) {
     WHERE login=? AND stato='pagata' AND pagata_at>=? AND pagata_at<=? AND rimborsata_at=0`).get(ch, da, a);
   out.donazioni = don.n | 0; out.donazioniCent = don.s | 0;
   return out;
+}
+
+// COSA C'E' DENTRO QUELLA CLIP, e chi lo sa.
+//
+// Di una clip sapevamo l'indirizzo e il MOTIVO per cui l'avevamo fatta — una
+// parola nostra, tecnica: «modulo», «comando esterno». Nel rapporto quel motivo
+// finiva dov'e' il titolo, e uno leggeva «modulo» sette volte di fila senza
+// sapere cosa stesse per riaprire.
+//
+// Il titolo, la durata e l'anteprima non sono cose che possiamo dedurre: sono di
+// Twitch, che le fa nascere dopo. Si chiedono. Il motivo resta, ma al suo posto:
+// una nota accanto all'ora, non il nome della cosa.
+//
+// Qui c'e' solo l'unione, che e' pura e si puo' provare: chi va a chiederle sta
+// fuori, e se non risponde l'elenco resta quello di prima — un rapporto senza
+// titoli e' peggio di uno con, ma un rapporto che non si salva e' peggio di
+// tutti e due.
+// COME SI CHIAMA UNA CLIP, e cosa le sta accanto. Una regola sola, perche' il
+// rapporto lo leggono in tre posti — il pannello, la mail, Telegram — e tre copie
+// di «cosa ci scrivo sopra» sono tre modi di divergere.
+//
+// Il nome e' il TITOLO, quello di Twitch. Il motivo — «modulo», «momento hype» —
+// e' perche' e' nata, e sta nella nota: quando manca il titolo vale da nome,
+// perche' un nome sbagliato e' meglio di nessun nome, ma solo allora.
+export const nomeClip = (c) => String(c?.titolo || '').trim() || String(c?.motivo || '').trim() || 'Clip della diretta';
+export const notaClip = (c) => {
+  const d = Math.round(Number(c?.durata) || 0);
+  const motivo = String(c?.motivo || '').trim();
+  return [d > 0 ? `${d}s` : '', String(c?.titolo || '').trim() ? motivo : ''].filter(Boolean).join(' · ');
+};
+
+export function unisciClip(elenco, dettagli) {
+  const per = new Map();
+  for (const d of (Array.isArray(dettagli) ? dettagli : [])) if (d?.id) per.set(String(d.id), d);
+  return (Array.isArray(elenco) ? elenco : []).map((c) => {
+    const d = c?.id ? per.get(String(c.id)) : null;
+    if (!d) return c;
+    return {
+      ...c,
+      titolo: String(d.titolo || '').trim(),
+      durata: Number(d.durata) || 0,
+      anteprima: String(d.anteprima || '').replace('%{width}x%{height}', '480x272'),
+    };
+  });
 }
 
 export function durata(ms) {
@@ -260,7 +304,7 @@ ${dueColonneHtml(
     resto.length ? sezioneHtml('Il resto della serata') + `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">${resto.join('')}</table>` : '',
   )}
 ${clip.length ? sezioneHtml(`${clip.length === 1 ? 'La clip della serata' : `Le clip della serata (${clip.length})`}`)
-    + clip.map((c) => cartaLinkHtml({ titolo: c.motivo || 'Clip della diretta', link: c.url, nota: `${ORA_IT(c.ts)} · ${dominioDi(c.url)}` })).join('') : ''}
+    + clip.map((c) => cartaLinkHtml({ titolo: nomeClip(c), link: c.url, nota: [ORA_IT(c.ts), notaClip(c), dominioDi(c.url)].filter(Boolean).join(' · ') })).join('') : ''}
 <div style="margin-top:22px;">${tastoHtml('Apri le tue dirette', `${config.baseUrl}/#dirette`)}</div>`;
   return guscioHtml({
     codice,
@@ -299,7 +343,8 @@ export function testo(dati) {
   // Le clip: qui i link si possono aprire, quindi si aprono. Su Telegram sono
   // la parte che si riguarda, come nella mail.
   for (const c of (d.clipElenco || []).filter((x) => x?.url)) {
-    righe.push(`<a href="${esc(c.url)}">${esc(c.motivo || 'Clip della diretta')}</a>`);
+    const nota = notaClip(c);
+    righe.push(`<a href="${esc(c.url)}">${esc(nomeClip(c))}</a>${nota ? ` — ${esc(nota)}` : ''}`);
   }
   return righe.join('\n');
 }

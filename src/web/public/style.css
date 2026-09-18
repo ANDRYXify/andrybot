@@ -2282,6 +2282,11 @@ body.ce-aperto { overflow: hidden; }
 .rap-clip { display: flex; flex-direction: column; gap: .3rem; margin-top: .55rem; }
 .rap-clip a { display: flex; gap: .6rem; justify-content: space-between; align-items: baseline; text-decoration: none;
   background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-m); padding: .4rem .6rem; color: var(--acc); }
+.rap-clip a { align-items: center; }
+.rap-clip img { flex: none; width: 96px; height: 54px; object-fit: cover; border-radius: calc(var(--r-m) - 3px); background: var(--surface-3); }
+.rap-clip-testo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .1rem; }
+.rap-clip-testo strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rap-clip-testo em { font-style: normal; color: var(--testo-2); font-size: .74rem; }
 .rap-clip span { color: var(--testo-2); font-size: .78rem; font-variant-numeric: tabular-nums; }
 @media (hover: hover) { .rap-clip a:hover { border-color: var(--acc-bordo); } }
 .rap-num b { display: block; font-size: 1.15rem; font-variant-numeric: tabular-nums; }

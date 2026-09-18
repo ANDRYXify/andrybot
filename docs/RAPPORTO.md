@@ -170,3 +170,34 @@ Adesso `rigaEvento()` in `src/bot.js` tiene una regola sola: **o ci sta tutto, o
 si scrive il tipo e basta**. Un contenuto che dichiara di non esserci e' piu'
 onesto di un mezzo contenuto che finge di esserci.
 `test/unita/registro-eventi.test.mjs` la tiene ferma.
+
+## Le clip: il titolo e' di Twitch, il motivo e' nostro
+
+Di una clip sapevamo l'indirizzo e il MOTIVO per cui l'avevamo fatta — «modulo»,
+«momento hype», «comando esterno». Parole nostre, tecniche, scritte per noi.
+
+Nel rapporto quel motivo finiva dov'e' il titolo. Chi apriva la scheda Dirette
+leggeva «modulo» sette volte di fila e non aveva idea di cosa stesse per
+riaprire: sette righe identiche, nessuna informazione, e la parte del rapporto
+che vale di piu' — l'unica che si puo' rivedere — ridotta a un elenco di parole
+uguali.
+
+Il titolo, la durata e l'anteprima non sono cose che possiamo dedurre: le fa
+nascere Twitch dopo, e sono sue. Si chiedono — e non le avevamo mai chieste. E'
+lo stesso errore dell'inizio di una diretta: una cosa che qualcun altro SA,
+sostituita da una che noi ricordiamo.
+
+Adesso, quando il rapporto si chiude, si chiedono tutte insieme (cento per volta,
+non una chiamata per clip) e si uniscono all'elenco. Il nome di una clip e' il suo
+titolo; il motivo scende accanto all'ora, dove serve davvero: dice perche' quella
+clip esiste. Quando il titolo manca — Twitch non risponde, un rapporto vecchio —
+il motivo torna a fare da nome, perche' un nome brutto e' meglio di nessun nome.
+
+Due cose tenute ferme da altrettante prove:
+
+- **Il rapporto si salva comunque.** La richiesta dei titoli sta dentro un `try`
+  suo: un rapporto senza titoli e' peggio di uno con, ma un rapporto che non si
+  salva e' peggio di tutti e due.
+- **Il nome si decide in un posto solo.** Il rapporto lo leggono in tre — il
+  pannello, la mail, Telegram — e tre copie della regola «cosa ci scrivo sopra»
+  sono tre modi di divergere.

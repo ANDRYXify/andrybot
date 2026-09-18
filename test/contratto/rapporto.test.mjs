@@ -17,7 +17,11 @@ const SRV = leggi('src/web/server.js');
 test('il bot: apre all\'online, misura a ogni giro, chiude, salva sempre e poi manda dove serve', () => {
   const live = BOT.slice(BOT.indexOf('_setLive(login, isLive, data) {'), BOT.indexOf('_rapportoDiretta(login) {'));
   assert.ok(live.includes("rapporto.apri(ch, { inizio: Date.parse(data?.started_at) || 0 });"));
-  assert.ok(live.includes('this._rapportoDiretta(ch);'));
+  // Chiedere i titoli delle clip a Twitch ha reso il rapporto una cosa che
+  // aspetta: percio' parte e si lascia andare, e un errore suo non puo' fermare
+  // il resto di quello che succede quando una diretta finisce.
+  assert.match(live, /this\._rapportoDiretta\(ch\)\.catch\(/,
+    'il rapporto parte a diretta finita, e se qualcosa va storto non trascina giu\' il resto');
   assert.ok(BOT.includes('rapporto.osservaGiro(login, { spettatori: stream.viewer_count });'), 'gli spettatori dallo stesso giro delle ore');
   const f = BOT.slice(BOT.indexOf('_rapportoDiretta(login) {'), BOT.indexOf('_reagisciAllaDiretta(login, isLive) {'));
   assert.ok(f.includes('const id = rapporti.salva(login, { inizio: chiuso.inizio, fine: chiuso.fine, dati });'), 'il rapporto resta, sempre');
@@ -162,4 +166,39 @@ test('un riavvio a diretta accesa non fa sparire la serata', () => {
     'la contabilita\' della diretta va fatta PRIMA dell\'uscita al primo rilevamento: dopo, un riavvio a diretta accesa la perde');
   const annuncia = live.indexOf('this._annunciaTwitch(ch)');
   assert.ok(annuncia > esce, 'l\'annuncio invece resta dopo: un riavvio non e\' una transizione, e non si grida due volte');
+});
+
+// IL NOME DI UNA CLIP, DETTO UGUALE IN TRE POSTI.
+//
+// Il rapporto lo leggono in tre: il pannello, la mail, Telegram. Il nome di una
+// clip era il MOTIVO per cui l'avevamo fatta — «modulo» — cioe' una parola
+// nostra dove uno si aspetta di leggere cosa c'e' dentro. Adesso il nome e' il
+// titolo di Twitch, e il motivo e' una nota. Tre posti sono tre modi di
+// divergere: qui si tiene ferma la precedenza in tutti e tre.
+test('il nome di una clip e\' il titolo, e il motivo scende a nota — dappertutto', () => {
+  const RAP = leggi('src/features/rapporto.js');
+  assert.match(RAP, /export const nomeClip = \(c\) => String\(c\?\.titolo \|\| ''\)\.trim\(\) \|\| String\(c\?\.motivo/,
+    'prima il titolo, e solo se manca il motivo');
+  assert.ok(!/cartaLinkHtml\(\{ titolo: c\.motivo/.test(RAP), 'la mail non deve piu\' intitolare col motivo');
+  assert.match(RAP, /cartaLinkHtml\(\{ titolo: nomeClip\(c\)/, 'la mail passa dalla regola');
+  assert.match(RAP, /esc\(nomeClip\(c\)\)\}<\/a>/, 'e Telegram pure');
+  // il pannello ha il suo, perche' gira nel browser: la precedenza dev'essere
+  // la stessa, e se qualcuno la gira da una parte sola questo diventa rosso.
+  const clipPan = APP.slice(APP.indexOf('function clipRapporto('), APP.indexOf('function canaliRapportoHtml('));
+  assert.match(clipPan, /titolo \|\| c\.motivo \|\|/, 'nel pannello il titolo deve venire prima del motivo');
+  assert.match(clipPan, /c\.anteprima/, 'e l\'anteprima, che e\' il motivo per cui una riga sembra una clip');
+});
+
+test('i titoli si chiedono a Twitch, e non possono impedire al rapporto di salvarsi', () => {
+  const f = BOT.slice(BOT.indexOf('async _rapportoDiretta(login) {'));
+  assert.match(f, /this\.helix\.dettagliClip\(ids\)/, 'i titoli non sono roba che possiamo dedurre: sono di Twitch');
+  assert.match(f, /rapporto\.unisciClip\(/, 'e si uniscono con la regola pura');
+  const prima = f.indexOf('dettagliClip');
+  const salva = f.indexOf('rapporti.salva');
+  assert.ok(prima > 0 && salva > prima, 'si chiedono PRIMA di salvare: il rapporto si scrive una volta sola');
+  const blocco = f.slice(f.indexOf('try {', f.indexOf("COSA C'ERA DENTRO")), salva);
+  assert.match(blocco, /catch \(e\)/, 'ma dentro un try: se Twitch non risponde, il rapporto si salva lo stesso');
+  const HELIX = leggi('src/twitch/helix.js');
+  assert.match(HELIX, /async dettagliClip\(ids\)/);
+  assert.match(HELIX, /\.slice\(0, 100\)/, 'cento per volta, non una chiamata per clip');
 });
