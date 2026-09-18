@@ -72,6 +72,7 @@ import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
 import { LiveListener } from './stream/listener.js';
 import { avviaBackupAuto, stopBackupAuto } from './backup.js';
+import * as dcGiro from './features/discord-giro.js';
 
 const log = makeLog('bot');
 
@@ -268,6 +269,13 @@ export class BotManager {
     // 3 ore ci ritorna sopra. È il suo obiettivo che poi guida la curiosità.
     this._risveglioTO = setTimeout(() => this._percorso(), 60_000);   // ~1 min dopo l'avvio
     this._percorsoTimer = setInterval(() => this._percorso(), 3 * 60 * 60_000);
+    // I ruoli su Discord: ogni quarto d'ora, sui canali che l'hanno acceso. Non
+    // e' legato alla diretta apposta — monete, ore e serie si muovono anche dopo,
+    // e chi si collega a mezzogiorno non deve aspettare la sera per avere il suo
+    // ruolo. Un giro in cui non cambia niente non chiama nessuno, quindi costa
+    // quanto una lettura.
+    this._dcRuoliTimer = setInterval(() => this._giroDiscord(), 15 * 60_000);
+    setTimeout(() => this._giroDiscord(), 90_000);
     log.info('SocialBot avviato');
   }
 
@@ -288,6 +296,7 @@ export class BotManager {
     clearInterval(this._distillaTimer);
     clearInterval(this._mancheTimer);
     clearInterval(this._compleTimer);
+    clearInterval(this._dcRuoliTimer);
     clearInterval(this._cancelloTimer);
     clearInterval(this._tgProattivoTimer);
     clearInterval(this._percorsoTimer);
@@ -1432,6 +1441,16 @@ export class BotManager {
   // Auguri di compleanno: per ogni streamer con la funzione accesa e il gruppo
   // collegato, manda gli auguri a chi compie gli anni oggi (fuso italiano). Un
   // membro riceve gli auguri al massimo una volta l'anno (campo last_auguri).
+  // IL GIRO DEI RUOLI SU DISCORD. Qui dentro c'e' solo il collegamento fra i due
+  // mondi: la fotografia di chi e' chi su Twitch la fa chi parla con Twitch, e
+  // il giro non deve sapere come si chiede. Se quella fotografia manca un fatto,
+  // il giro lo trattera' come «non lo so» e quel ruolo non lo toccherà.
+  async _giroDiscord() {
+    try {
+      await dcGiro.giroTutti({ quadro: (canale, gente) => this.helix.ruoliDi(canale, gente) });
+    } catch (e) { log.debug('giroDiscord:', e?.message || e); }
+  }
+
   async _controllaCompleanni() {
     try {
       const { giorno, mese, anno } = compleanniFeat.oggiRoma();

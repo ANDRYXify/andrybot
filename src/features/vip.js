@@ -172,7 +172,7 @@ export async function giaPerSempre(helix, channel) {
     if (!v.until) perenni.add(v.user);
   }
   try {
-    for (const v of await helix.getVips(channel)) {
+    for (const v of (await helix.getVips(channel)) || []) {
       const u = String(v.user_login || '').toLowerCase();
       if (u && !nostri.has(u)) perenni.add(u);   // VIP del canale, non nostro: per noi e' per sempre
     }
