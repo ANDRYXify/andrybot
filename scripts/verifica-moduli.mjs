@@ -116,6 +116,49 @@ const conosciuta = (v) => note.has(v) || note.has(v.replace('(', ''))
 const promesseVuote = [...spiegate].filter((v) => v !== '$…' && !conosciuta(v));
 dice(promesseVuote.length === 0, 'ogni variabile spiegata esiste davvero nel motore', promesseVuote.join(' '));
 
+// ---- 6. le CONDIZIONI: il motore le guarda, il pannello le sa scrivere ----
+// Una condizione vive in tre posti: il motore che la valuta, il pannello che la
+// disegna e lo stesso pannello che la rilegge per salvarla. Se il motore ne
+// guarda una che il pannello non manda mai, quella condizione non si puo'
+// usare; se il pannello ne manda una che il motore non guarda, lo streamer
+// riempie una casella che non fa niente. Ne' l'una ne' l'altra da' errore.
+const sezione = (testo, da, a2) => {
+  const i = testo.indexOf(da);
+  if (i < 0) return '';
+  const j = testo.indexOf(a2, i);
+  return j < 0 ? testo.slice(i) : testo.slice(i, j);
+};
+const corpoCond = sezione(motore, 'async _condizioniOk(', '// Quanto costa questo modulo');
+const guardate = new Set([
+  ...[...corpoCond.matchAll(/\bc\.([a-zA-Z]+)/g)].map((m) => m[1]),
+  ...[...motore.matchAll(/modulo\.condizioni\?\.([a-zA-Z]+)/g)].map((m) => m[1]),
+]);
+const bloccoCond = sezione(app, 'const condizioni = {', '};');
+const scritte = new Set([
+  ...[...bloccoCond.matchAll(/^\s{4}([a-zA-Z]+):/gm)].map((m) => m[1]),
+  ...[...app.matchAll(/condizioni\.([a-zA-Z]+) = /g)].map((m) => m[1]),
+]);
+dice(guardate.size > 8 && scritte.size > 8, `condizioni guardate ${guardate.size} · scritte dal pannello ${scritte.size}`);
+const mai = [...guardate].filter((x) => !scritte.has(x));
+dice(mai.length === 0, 'ogni condizione che il motore guarda, il pannello la sa mandare', mai.join(' '));
+const inutili = [...scritte].filter((x) => !guardate.has(x));
+dice(inutili.length === 0, 'e il pannello non chiede niente che il motore ignori', inutili.join(' '));
+
+// ---- 7. la scala degli eventi -------------------------------------------
+// Le due mappe devono dire le stesse cose, e ogni evento con una scala deve
+// essere un evento che dal pannello si puo' davvero scegliere.
+const chiaviMappa = (testo, nome2) => {
+  const m = new RegExp(`const ${nome2} = \\{([^}]*)\\}`).exec(testo);
+  return m ? [...m[1].matchAll(/([a-zA-Z]+)\s*:/g)].map((x) => x[1]).sort() : [];
+};
+const scalaMotore = chiaviMappa(motore, 'QUANTITA_EVENTO');
+const scalaApp = chiaviMappa(app, 'SCALA_EVENTO');
+dice(scalaMotore.length > 0 && scalaMotore.join(' ') === scalaApp.join(' '),
+  `eventi con una scala: ${scalaMotore.join(' ') || '(nessuno)'}`, `pannello: ${scalaApp.join(' ')}`);
+const eventiOfferti = new Set([...listaDi(app, 'EVENTI').matchAll(/\['([a-z]+)'/g)].map((m) => m[1]));
+const scalaFantasma = scalaMotore.filter((e) => !eventiOfferti.has(e));
+dice(scalaFantasma.length === 0, 'ogni evento con una scala si puo\' scegliere dal pannello', scalaFantasma.join(' '));
+
 const rossi = esiti.filter((e) => !e.ok);
 for (const e of esiti) console.log((e.ok ? '  ✓ ' : '  ✗ ') + e.msg + (e.extra && !e.ok ? `  → ${e.extra}` : ''));
 console.log(rossi.length ? `\n${rossi.length} cose non tornano.` : '\nMotore e pannello sanno le stesse cose. ✓');

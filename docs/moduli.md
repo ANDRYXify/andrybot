@@ -26,7 +26,21 @@ il bot esegue una o più azioni.
   - `timer`: `minuti` (ogni N minuti) e/o `minMessaggi` (almeno N messaggi umani nuovi).
   - `manuale`: si attiva solo da "Prova" o via API in ingresso.
 - **condizioni** (tutte facoltative): `tier` (scala `tutti < sub < vip < mod`), `cooldown`
-  (secondi), `probabilita` (0..100), `soloLive`, `soloOffline`.
+  (secondi), `probabilita` (0..100), `soloLive`, `soloOffline`, `minQuantita`/`maxQuantita`.
+- **La scala di un evento** (`minQuantita` / `maxQuantita`): certi eventi portano un
+  numero, e quel numero e' la posta. Oggi: `cheer` → Bit, `raid` → spettatori,
+  `subscribe` → mesi. Un innesco che non ha una scala (un comando, un timer, un
+  follow) non viene toccato dalle due soglie: non c'e' niente da misurare. Dentro
+  un evento che la scala ce l'ha, un numero che non arriva vale ZERO e la soglia
+  lo ferma.
+  - `0` = nessun limite. Un tetto piu' basso del pavimento si butta al
+    salvataggio: e' un refuso, e lascerebbe un modulo che non scatta mai.
+  - Le due soglie si valutano PRIMA di tutto cio' che consuma (costo, cooldown,
+    cooldown per utente), quindi un cheer da 10 su un modulo «da 1000 in su» non
+    paga niente e non brucia nessuna pausa.
+  - Servono a scrivere una SCALA: un modulo per fascia (`1-99`, `100-999`,
+    `1000` in su). Senza il tetto, un cheer da 5000 farebbe scattare insieme
+    tutti gli scaglioni sotto di lui.
 - **azioni** (in sequenza, max 8 eseguite per modulo):
   - `messaggio` `{ testo }` → scrive in chat (testo troncato a 400).
   - `effetto` `{ comando }` → fa partire un effetto/suono (salta tier e cooldown dell'effetto).
