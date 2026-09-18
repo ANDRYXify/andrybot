@@ -63,6 +63,25 @@ const MAPPA_EVENTI = {
   'tracking.gesture': 'gesto',
 };
 
+// QUANTI. Certi eventi portano un numero, e quel numero e' la scala del gesto:
+// i Bit di un cheer, gli spettatori di una raid, i mesi di un abbonamento.
+// Senza guardarlo, un Bit e cinquemila Bit ottengono la stessa identica cosa, e
+// chi alza la posta non compra niente di piu'.
+//
+// La mappa dice QUALI inneschi hanno una scala. Un innesco che non c'e' (un
+// comando, un timer) non ha un quanto da misurare: la soglia non si applica,
+// invece di rifiutare a vuoto. Dentro gli eventi che ce l'hanno, un valore che
+// non arriva vale ZERO e la soglia lo ferma: sbagliare da questa parte fa
+// perdere un effetto, sbagliare dall'altra lo regala a chi non ha messo nulla.
+const QUANTITA_EVENTO = { cheer: 'bits', raid: 'viewers', subscribe: 'mesi' };
+
+export function quantitaEvento(evento, vars) {
+  const chiave = QUANTITA_EVENTO[String(evento || '')];
+  if (!chiave) return null;
+  const n = Number(vars?.[chiave]);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const norm = (s) => String(s || '').toLowerCase();
 
@@ -638,6 +657,19 @@ export class ModulesEngine {
     if (Array.isArray(c.piattaforme) && c.piattaforme.length) {
       const da = ctx.piattaforma || 'twitch';
       if (!c.piattaforme.includes(da)) return no('piattaforma');
+    }
+
+    // QUANTI: da N in su, e fino a M. Sta qui, prima di tutto cio' che consuma,
+    // perche' un cheer da 10 su un modulo "da 1000 in su" non deve bruciare il
+    // cooldown ne' pagare il costo di un modulo che non era per lui.
+    // Il massimo serve a scrivere una SCALA: senza, un cheer da 5000 farebbe
+    // scattare insieme lo scaglione da 100, quello da 1000 e quello da 5000.
+    const quanti = quantitaEvento(ctx.evento, ctx._vars);
+    if (quanti !== null) {
+      const min = Math.max(0, Number(c.minQuantita) || 0);
+      const max = Math.max(0, Number(c.maxQuantita) || 0);
+      if (min > 0 && quanti < min) return no('quantita');
+      if (max > 0 && quanti > max) return no('quantita');
     }
 
     // solo se in live / solo se offline

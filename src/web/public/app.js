@@ -17352,6 +17352,9 @@ function attivaPiattaforma() {
       if (ev.target.matches('[data-trigger-tipo]')) {
         const box = document.getElementById('campi-quando');
         if (box) box.innerHTML = disegnaCampiQuando({ tipo: ev.target.value });
+        _rinfrescaQuanti();
+      } else if (ev.target.id === 'mod-evento') {
+        _rinfrescaQuanti();
       } else if (ev.target.matches('[data-azione-tipo]')) {
         const riga = ev.target.closest('.azione-riga');
         if (riga) riga.outerHTML = disegnaAzione({ tipo: ev.target.value });
@@ -18546,6 +18549,34 @@ const EVENTI_TXT = {
   first: 'un utente scrive per la prima volta', online: 'vai in live', offline: 'finisce la live',
   gesto: 'fai un gesto alla webcam (usa $gesto / $emozione nel testo)',
 };
+const SCALA_EVENTO = { cheer: 'Bit', raid: 'spettatori', subscribe: 'mesi' };
+
+function _quantiModulo(t, c) {
+  const unita = (t && t.tipo === 'evento') ? SCALA_EVENTO[t.evento || ''] : '';
+  if (!unita) return '';
+  return `
+    <div class="griglia-campi spazio-sopra">
+      <div>
+        <label class="campo" for="mod-min-quantita">Da quanti ${esc(unita)} in su</label>
+        <input type="number" id="mod-min-quantita" min="0" max="10000000" value="${Number(c.minQuantita) || 0}">
+      </div>
+      <div>
+        <label class="campo" for="mod-max-quantita">Fino a quanti ${esc(unita)}</label>
+        <input type="number" id="mod-max-quantita" min="0" max="10000000" value="${Number(c.maxQuantita) || 0}">
+      </div>
+    </div>
+    <p class="suggerimento">Zero vuol dire nessun limite. Servono a fare una <strong>scala</strong>: un modulo per fascia (1-99, 100-999, 1000 in su), così chi alza la posta ottiene qualcosa di diverso invece della solita risposta uguale per tutti. Chi resta fuori dalla fascia non paga costi e non consuma il cooldown.</p>`;
+}
+
+function _rinfrescaQuanti() {
+  const box = document.getElementById('mod-quanti');
+  if (!box) return;
+  box.innerHTML = _quantiModulo({
+    tipo: document.getElementById('mod-trigger-tipo')?.value || '',
+    evento: document.getElementById('mod-evento')?.value || '',
+  }, moduloInModifica?.condizioni || {});
+}
+
 const TRIGGER = [
   ['comando', 'Un comando in chat'],
   ['parola', 'Una parola, frase o domanda in chat'],
@@ -18761,6 +18792,9 @@ function riassuntoSe(c) {
   if (c.cooldown > 0) parti.push(`max ogni ${c.cooldown}s`);
   if (c.cooldownUtente > 0) parti.push(`ogni ${c.cooldownUtente}s a testa`);
   if (c.minPunti > 0) parti.push(`serve almeno ${c.minPunti} ${nomeMonetaUI()}`);
+  if (c.minQuantita > 0 && c.maxQuantita > 0) parti.push(`da ${c.minQuantita} a ${c.maxQuantita}`);
+  else if (c.minQuantita > 0) parti.push(`da ${c.minQuantita} in su`);
+  else if (c.maxQuantita > 0) parti.push(`fino a ${c.maxQuantita}`);
   if (typeof c.costo === 'string' && c.costo.includes('$')) parti.push(`costa ${c.costo} ${nomeMonetaUI()}`);
   else if (c.costo > 0) parti.push(`costa ${c.costo} ${nomeMonetaUI()}`);
   if (typeof c.probabilita === 'number' && c.probabilita >= 0 && c.probabilita < 100) parti.push(`${c.probabilita}% delle volte`);
@@ -18964,6 +18998,7 @@ function apriEditor(modulo, dove = 'editor-modulo') {
           </div>
         </div>
         <p class="suggerimento">Il <strong>cooldown</strong> ferma tutti; quello <strong>per persona</strong> ferma solo chi l'ha appena usato — è quello che serve ai giochi.</p>
+        <div id="mod-quanti">${_quantiModulo(m.trigger || {}, c)}</div>
         <div class="griglia-campi spazio-sopra">
           <div>
             <label class="campo" for="mod-costo">Costa (${esc(nomeMonetaUI())})</label>
@@ -19366,6 +19401,8 @@ function leggiForm() {
     soloOffline: !!g('mod-solo-offline')?.checked,
     costo: (() => { const v = (g('mod-costo')?.value || '').trim(); return v.includes('$') ? v : (Number(v) || 0); })(),
     minPunti: Number(g('mod-min-punti')?.value) || 0,
+    minQuantita: Number(g('mod-min-quantita')?.value) || 0,
+    maxQuantita: Number(g('mod-max-quantita')?.value) || 0,
     costoMessaggio: (g('mod-costo-messaggio')?.value || '').trim(),
   };
   const scelte = [...document.querySelectorAll('.mod-piatt-c')].filter((x) => x.checked).map((x) => x.value);

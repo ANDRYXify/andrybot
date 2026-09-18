@@ -3613,11 +3613,22 @@ function normCondizioni(c) {
     const n = intero(out.costo, 0, 1_000_000);
     if (n === null || n === 0) delete out.costo; else out.costo = n;
   }
-  for (const [campo, lo, hi] of [['minPunti', 0, 1_000_000], ['cooldownUtente', 0, 86_400]]) {
+  // `minQuantita`/`maxQuantita` sono la scala degli eventi che portano un numero
+  // (i Bit di un cheer, gli spettatori di una raid, i mesi di un abbonamento).
+  // Zero vuol dire «nessun limite» e sparisce: un massimo a zero fermerebbe
+  // tutto invece di non fermare niente.
+  for (const [campo, lo, hi] of [['minPunti', 0, 1_000_000], ['cooldownUtente', 0, 86_400],
+    ['minQuantita', 0, 10_000_000], ['maxQuantita', 0, 10_000_000]]) {
     if (out[campo] === undefined || out[campo] === '' || out[campo] === null) { delete out[campo]; continue; }
     const n = intero(out[campo], lo, hi);
     if (n === null || n === 0) delete out[campo]; else out[campo] = n;
   }
+  // Un tetto piu' basso del pavimento non e' una fascia: e' un refuso, e
+  // lascerebbe un modulo che non puo' scattare mai senza che si capisca perche'.
+  // Il pavimento e' la parte voluta di una scala («da N in su»), il tetto la
+  // rifinitura: la rifinitura che contraddice la base si butta.
+  if (out.maxQuantita !== undefined && out.minQuantita !== undefined
+      && out.maxQuantita < out.minQuantita) delete out.maxQuantita;
   if (out.costoMessaggio !== undefined) {
     const t = String(out.costoMessaggio).slice(0, 300).trim();
     if (t) out.costoMessaggio = t; else delete out.costoMessaggio;
