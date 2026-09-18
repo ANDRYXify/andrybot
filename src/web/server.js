@@ -7028,7 +7028,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         const pulisci = (x) => String(x ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
         const dove = tid ? `«${pulisci(nome || 'questo argomento')}»` : (chat.type === 'channel' ? 'questo canale' : 'questo gruppo');
         telegram.inviaMessaggio(conf.token, String(chat.id),
-          `✅ Ti vedo: ${dove}.\n\nOra nel pannello, in <b>Notifiche → Telegram</b>, premi <b>«Aggiungi gruppo, canale o topic»</b> e mi troverai in elenco.`,
+          `✅ Ti vedo: ${dove}.\n\nOra nel pannello, nella scheda <b>Telegram</b>, premi <b>«Aggiungi gruppo, canale o topic»</b> e mi troverai in elenco.`,
           { threadId: tid }).catch(() => {});
         return;
       }
@@ -7042,7 +7042,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           pendingLinkTg.delete(login);
           telegram.inviaMessaggio(conf.token, chat.id, '✅ Collegato! Da ora ti risponderò qui in privato.').catch(() => {});
         } else {
-          telegram.inviaMessaggio(conf.token, chat.id, '❌ Codice non valido o scaduto. Rigeneralo dalla dashboard (Notifiche → Telegram).').catch(() => {});
+          telegram.inviaMessaggio(conf.token, chat.id, '❌ Codice non valido o scaduto. Rigeneralo dalla dashboard, scheda Telegram.').catch(() => {});
         }
         return;
       }

@@ -1002,7 +1002,7 @@ const DIRETTA = {
 
 const VETRINA = {
   slug: 'vetrina',
-  schede: ['pagina', 'donazioni', 'grafiche', 'notifiche'],
+  schede: ['pagina', 'donazioni', 'grafiche', 'notifiche', 'telegram'],
   titolo: 'Manuale della vetrina: pagina link, grafiche e notifiche social | SocialBot',
   h1: 'Manuale della vetrina: pagina link, grafiche e notifiche social',
   desc: 'La pagina pubblica da mettere in bio, le due grafiche pronte da pubblicare e gli avvisi automatici quando vai in diretta o pubblichi qualcosa.',
@@ -1101,7 +1101,7 @@ const VETRINA = {
 
 const ACCOUNT = {
   slug: 'account',
-  schede: ['sottoscrizione'],
+  schede: ['stato', 'sottoscrizione'],
   titolo: 'Manuale dell\'abbonamento: piani, extra e moderatori | SocialBot',
   h1: 'Manuale dell\'abbonamento: piani, extra e moderatori',
   desc: 'Cosa è gratis per sempre, cosa aggiungono i singoli extra, come si cambia o si disdice, e cosa succede a quello che hai creato.',

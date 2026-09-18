@@ -1,140 +1,72 @@
-# Le sezioni: struttura e peso
+<!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
+<!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 
-Come sono organizzate le pagine della dashboard, e perché così.
+# Le sezioni del pannello: chi merita una stanza sua
 
-## La misura di partenza
+## Il difetto da cui nasce
 
-Ho misurato tutte e 24 le sezioni a 1440×950, contando altezza, carte e campi.
-Il risultato smentisce l'idea che ci fossero semplicemente «troppi menu»:
+Telegram era una **sotto-voce** di «Notifiche social», accanto a TikTok e
+Instagram, come se fossero cose della stessa taglia. Non lo erano:
 
-- **8 sezioni su 24 stavano sotto una schermata.** Giveaway 0,6; Abbonamento
-  0,6; Clip 0,7; Musica 0,7; Sondaggi 0,8. Troppo poco per meritare una voce di
-  menu tutta sua.
-- **4 superavano le 4 schermate.** Notifiche social 7,6 con 106 campi. Troppo
-  per stare in una pagina sola.
+| area      | porte sul server |
+|-----------|------------------|
+| telegram  | 29 (+7 per login e mini app) |
+| tiktok    | 5 |
+| youtube   | 1 |
+| instagram | 1 |
 
-Il difetto era lo **squilibrio**, non il numero. E fondere a caso lo avrebbe
-peggiorato: unire due sezioni pesanti produce una pagina infinita, che è
-l'opposto di compatto.
+Telegram gestiva quattordici cose — gruppo, destinazioni, topic, membri, amici,
+community, compleanni, rapporto, privato, verifica, token, carta — dentro una
+voce che si chiamava «notifiche», dentro una scheda che stava in «La tua
+vetrina». E «Notifiche social» stava lì perché quando è nata mandava solo un
+messaggio quando andavi live.
 
-Quindi due movimenti opposti, non uno: **accorpare le piccole che hanno lo
-stesso scopo**, e **spezzare la grande**.
+Nessuno se n'era accorto perche' **una sotto-voce che cresce non fa rumore**:
+diventa solo una pagina piu' lunga.
 
-## Famiglie: accorpare
+## La regola
 
-Una famiglia è un insieme di sezioni che condividono una voce di menu e si
-scelgono con una riga di schede dentro la pagina.
+Una cosa e' una **sezione a se'** quando ha tutte e tre queste:
 
-| Famiglia | Contiene | Perché |
-|---|---|---|
-| Il bot | Personalità, Conoscenza, Memoria | Tre facce dello stesso oggetto: come parla e cosa sa |
-| Comandi | Comandi, Comandi vocali | Stesso obiettivo, cambia se si scrive o si dice |
-| Moderazione | Filtri e regole, Scudo anti-bot | Difendere la chat è una cosa sola |
-| Giochi | Giochi, Sondaggi, Giveaway, Penitenze | Tutte servono a far partecipare la chat |
-| Regia | Regia, Clip, Musica | Strumenti che si usano mentre si è in diretta |
+1. **un'identita' che si collega e si scollega** — un bot, un account, un
+   server. Non «un indirizzo dove mandare un avviso»;
+2. **della gente dentro**, su cui fa qualcosa in base a chi e' — membri, ruoli,
+   chi entra, chi si comporta in un certo modo;
+3. **roba sua da tenere in ordine** che non vive altrove — destinazioni,
+   elenchi, messaggi, impostazioni.
 
-**Da 24 voci di menu a 14.** In più «Durante la diretta» è diventata una voce
-diretta: un gruppo con una sola voce dentro è un passaggio inutile.
+Chi ne ha **una sola** e' un **avviso**, e sta con gli altri avvisi.
 
-### Gli id non cambiano, ed è la parte importante
+Applicata: Telegram le ha tutte e tre → sezione sua, nel gruppo nuovo «Le tue
+community». TikTok, YouTube e Instagram nessuna → restano in «Avvisi» (che
+prima si chiamava «Notifiche social»). Discord oggi ne ha zero (e' solo un
+webhook che annuncia) → resta in «Avvisi», e diventa sezione il giorno che
+comincia a gestire i ruoli dei membri.
 
-C'erano trenta riferimenti agli id delle sezioni nella sola ricerca, più i
-collegamenti interni, l'ancora nell'indirizzo e i comandi vocali. Rinominarli per
-una questione di menu avrebbe rotto tutto quanto.
+## La misura, perche' la regola non basta
 
-Quindi `vaiAScheda('memoria')` continua a funzionare esattamente come prima: apre
-la famiglia giusta con la sua scheda accesa. E le schede portano `data-scheda`,
-cioè usano la navigazione che c'è già invece di aggiungerne una seconda che
-possa divergere dalla prima.
+La regola in parole serve a **decidere**. Non serve a **non dimenticarsene**
+fra sei mesi, quando la stessa cosa ricrescera' da un'altra parte.
 
-Fra schede della stessa famiglia non c'è il morph: è navigazione interna, non un
-cambio di sezione.
+Le **porte del server** sono il conto di quante cose un'area gestisce davvero, e
+si contano da sole. `scripts/verifica-sezioni.mjs`:
 
-## Sotto-schede: spezzare
+- conta le porte di ogni sotto-voce e va **rosso** se una supera le dieci: una
+  sotto-voce di quella taglia e' una sezione mascherata;
+- pretende che ogni sezione del menu abbia **icona, descrizione, aiuto e le
+  parole per trovarla dalla ricerca**. Sono quattro elenchi in tre file diversi,
+  e dimenticarne uno non da' nessun errore: da' un pannello con un buco.
 
-Le famiglie accorpano sezioni diverse. Le sotto-schede fanno l'opposto: dividono
-**una** sezione troppo grande, filtrando le carte invece di cambiare pagina.
+Il secondo controllo ha trovato subito quattro buchi vecchi: «Donazioni»,
+«Grafiche» e «CONSOLify» senza descrizione, «Stato» senza aiuto, e quattro
+schede che dalla ricerca non si trovavano.
 
-Notifiche social pesava 7,6 schermate con 106 campi, e chi voleva configurare
-TikTok doveva scorrere in mezzo a tutto Telegram per arrivarci.
+Il tetto e' largo di proposito (la mediana delle aree sta fra due e quattro
+porte): serve a prendere i mappazzoni, non a discutere di due porte in piu'.
 
-| Scheda | Carte | Campi | Schermate |
-|---|---|---|---|
-| Telegram | 4 | 84 | 4,0 |
-| TikTok | 2 | 7 | 1,5 |
-| YouTube | 1 | 5 | 0,8 |
-| Instagram | 1 | 5 | 0,7 |
-| Discord | 1 | 5 | 0,8 |
+## Cosa NON dice il cancello
 
-Chi configura Instagram vede **5 campi invece di 106**.
-
-Telegram resta la più pesante, e va bene: di quei 84 campi, 66 sono l'elenco
-delle destinazioni degli avvisi. Un elenco lungo è lungo — il difetto era averlo
-nella stessa pagina di cose che non c'entrano.
-
-Le carte nascoste **restano nel documento**: non vengono ricostruite, e quello
-che ci hai scritto dentro resta dov'è se cambi scheda e torni. La scelta si
-ricorda anche cambiando sezione.
-
-Il meccanismo è generico (`SOTTO_SCHEDE`): dividere un'altra sezione vuol dire
-marcare le sue carte con un attributo e aggiungere una voce.
-
-## Il collaudo
-
-- `t_famiglie.mjs`: conta le voci di menu, e verifica che **ognuno** dei sedici
-  vecchi indirizzi apra ancora il suo pannello, con la voce di menu accesa e la
-  scheda giusta.
-- `t_sotto.mjs`: per ogni rete misura carte, campi e schermate, verifica che non
-  si veda nessuna carta di un'altra rete, e che la scelta si ricordi.
-- `t_testata.mjs`: che arrivando **direttamente** su una sezione la testata sia
-  visibile — il difetto che avevo introdotto con la comparsa orchestrata.
-
-## La barra «hai modifiche non salvate»
-
-Le sezioni lunghe hanno un problema semplice: modifichi un campo in cima e il
-pulsante che salva è tre schermate più giù. La barra serve a questo, e solo a
-questo — **indicare il pulsante di salvataggio che in quel momento non vedi**.
-
-Detto così, la regola viene da sé: la barra deve essere legata a **un**
-pulsante, quello della zona che stai modificando. Non a «un salva qualsiasi
-nella pagina».
-
-Per due volte non lo è stata, e si è visto.
-
-**Indicava il salva di un'altra carta.** Chi modificava un comando — l'editor
-dei comandi non ha un pulsante con «salva» nell'id — si vedeva offrire il salva
-di «Comodità in chat». Premerlo salvava una cosa che nessuno aveva toccato e
-lasciava il comando non salvato: il difetto peggiore possibile per un pulsante,
-perché fa qualcosa e sembra aver fatto quello che chiedevi.
-
-**Non si spegneva quando salvavi davvero.** Riconosceva un salvataggio dal
-nome del pulsante (`id` contenente «salva»/«save»), e il salva dell'editor
-comandi è marcato con un attributo. Salvavi, e la barra restava lì a dirti di no
-— l'unico modo di zittirla era premere il *suo* pulsante, cioè quello sbagliato.
-
-### La regione
-
-Ora c'è un solo concetto: la **regione di salvataggio** di un campo è la carta
-più vicina che ha un salvataggio proprio. Se nessuna carta ce l'ha, il pannello
-— ma soltanto se lì il salva è uno solo: con due o più non sappiamo quale sia il
-tuo, e **tacere è meglio che indicare quello sbagliato**.
-
-La regione decide entrambe le cose, che prima erano decise separatamente:
-
-- quale pulsante mostra la barra;
-- quale clic la spegne (un salva fuori dalla tua regione non ti riguarda).
-
-E ne segue una proprietà che vale la pena dire per esteso: **un campo che non
-appartiene a nessuna regione non accende l'avviso.** Le schede fatte di moduli
-d'azione — sondaggi, giveaway, emote, conoscenza — non hanno un salvataggio da
-indicare, e infatti ora stanno zitte, invece di far comparire una barra che
-punta altrove. Prima era il contrario, ed è il motivo per cui «usciva sempre».
-
-Il modo di dire «questo comanda un salvataggio» è **uno solo**, `SEL_SALVA`:
-un id che contiene salva/save, oppure la marca `data-salva`. Un salva che non
-rientra in nessuna delle due non viene riconosciuto — e allora la barra non
-compare affatto, che è il modo giusto di sbagliare.
-
-`scripts/verifica-barra-salva.mjs` tiene ferme queste regole, ed è stato visto
-rosso su tutti e tre i difetti veri: il ripiego sul pannello, lo spegnimento
-cieco alla regione, e la marca ad attributo non riconosciuta.
+Non dice se una sezione e' **lunga**. «Overlay Studio» ha 264 campi in una
+scheda sola ed e' la piu' densa del pannello, ma e' una cosa sola — la scena —
+e chi ci lavora ci lavora a lungo. Quella e' una domanda diversa, e ha una
+risposta diversa (una barra dentro la scheda, non una sezione nuova).

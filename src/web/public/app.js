@@ -858,7 +858,8 @@ const SPIEGA_DEMO = {
   effetti: 'Suoni ed effetti da lanciare in chat o in overlay: un comando e parte l\'applauso, la tromba o i coriandoli.',
   clip: 'Le clip automatiche nei momenti di hype, così non perdi mai il momento migliore della live.',
   ascolto: 'Comandi il bot a voce mentre streammi: parli e lui esegue, senza toccare la tastiera.',
-  notifiche: 'Gli avvisi quando vai in diretta: Telegram (con messaggio fissato e auguri di compleanno ai membri) e TikTok.',
+  notifiche: 'Gli avvisi quando esci allo scoperto: Discord quando vai in diretta, e i nuovi post su TikTok, YouTube e Instagram.',
+  telegram: 'Il bot dentro il tuo gruppo Telegram: avvisa quando parti, risponde ai comandi, si ricorda i compleanni dei membri e ti manda il rapporto della serata in privato.',
 };
 
 function montaDemo() {
@@ -2296,7 +2297,10 @@ const GRUPPI = [
     ['pagina', 'Pagina link'],
     ['donazioni', 'Donazioni'],
     ['grafiche', 'Grafiche'],
-    ['notifiche', 'Notifiche social'],
+    ['notifiche', 'Avvisi'],
+  ] },
+  { id: 'community', nome: 'Le tue community', schede: [
+    ['telegram', 'Telegram'],
   ] },
   { id: 'account', nome: 'Account', schede: [
     ['stato', 'Stato'],
@@ -2323,6 +2327,7 @@ const T_GRUPPO = {
   diretta: ['Durante la diretta', 'During the live', 'Durante el directo'],
   scena: ['Scena & overlay', 'Scene & overlay', 'Escena y overlay'],
   vetrina: ['La tua vetrina', 'Your showcase', 'Tu escaparate'],
+  community: ['Le tue community', 'Your communities', 'Tus comunidades'],
   account: ['Account', 'Account', 'Cuenta'],
   admin: ['Admin', 'Admin', 'Admin'],
 };
@@ -2348,7 +2353,8 @@ const T_SCHEDA = {
   penitenze: ['Penitenze', 'Forfeits', 'Penitencias'],
   alert: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'],
   emote: ['Emote (7TV)', 'Emotes (7TV)', 'Emotes (7TV)'],
-  notifiche: ['Notifiche social', 'Social notifications', 'Notificaciones sociales'],
+  notifiche: ['Avvisi', 'Alerts', 'Avisos'],
+  telegram: ['Telegram', 'Telegram', 'Telegram'],
   dirette: ['Dirette', 'Streams', 'Directos'],
   sottoscrizione: ['Abbonamento', 'Subscription', 'Suscripción'],
   pagina: ['Pagina link', 'Link page', 'Página de enlaces'],
@@ -2387,6 +2393,7 @@ const ICONA = {
   alert:       _ico('<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/><path d="M6 8h4"/><path d="M6 11h2"/>'),
   emote:       _ico('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><line x1="9" x2="9.01" y1="9.5" y2="9.5"/><line x1="15" x2="15.01" y1="9.5" y2="9.5"/>'),
   notifiche:   _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
+  telegram:    _ico('<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12Z"/><path d="M8.5 12h.01"/><path d="M12 12h.01"/><path d="M15.5 12h.01"/>'),
   grafiche:    _ico('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5a2 2 0 0 0-2.8 0L4 22"/>'),
   dirette:     _ico('<path d="M3 13h3l3-7 4 14 3-9 2 4h3"/>'),
   sottoscrizione: _ico('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 14.5h4"/>'),
@@ -2418,7 +2425,11 @@ const DESC = {
   penitenze: ['Con i punti canale la chat ti vieta una parola — o ti obbliga a dire solo quella. Se sbagli, penitenza.', 'With channel points chat bans a word for you — or forces you to say only that one. Slip up and you owe a forfeit.', 'Con los puntos de canal el chat te prohíbe una palabra — o te obliga a decir solo esa. Si fallas, penitencia.'],
   alert: ['Il tuo overlay: alert, chat a schermo, widget e temi, tutto personalizzabile.', 'Your stream overlay: alerts, on-screen chat, widgets and themes, all customizable.', 'Tu overlay: alertas, chat en pantalla, widgets y temas, todo personalizable.'],
   emote: ['Gestisci le emote 7TV del tuo canale: aggiungi, togli e rinomina, senza uscire dal bot.', 'Manage your channel’s 7TV emotes: add, remove and rename, without leaving the bot.', 'Gestiona las emotes 7TV de tu canal: añade, quita y renombra, sin salir del bot.'],
-  notifiche: ['Avvisi su Telegram e Discord quando vai in diretta, e dei nuovi post su TikTok, YouTube e Instagram.', 'Alerts on Telegram and Discord when you go live, and for new posts on TikTok, YouTube and Instagram.', 'Avisos en Telegram y Discord cuando estás en directo, y de los nuevos posts en TikTok, YouTube e Instagram.'],
+  notifiche: ['Avvisi quando vai in diretta su Discord, e dei nuovi post su TikTok, YouTube e Instagram.', 'Alerts on Discord when you go live, and for new posts on TikTok, YouTube and Instagram.', 'Avisos en Discord cuando estás en directo, y de los nuevos posts en TikTok, YouTube e Instagram.'],
+  donazioni: ['Ricevi donazioni sul tuo conto, con l’avviso in diretta e il grazie in chat che partono da soli.', 'Receive donations on your own account, with the on-stream alert and the chat thanks firing on their own.', 'Recibe donaciones en tu propia cuenta, con el aviso en directo y el gracias en el chat que salen solos.'],
+  grafiche: ['La locandina della diretta da postare sui social, coi tuoi colori e il tuo nome.', 'The stream poster to post on socials, with your colours and your name.', 'El cartel del directo para publicar en redes, con tus colores y tu nombre.'],
+  consolify: ['I tasti del tuo canale sotto le dita: sul telefono, sul tablet o su una tastiera vera.', 'Your channel’s keys under your fingers: on your phone, tablet or a real key pad.', 'Las teclas de tu canal bajo los dedos: en el móvil, la tablet o un teclado de verdad.'],
+  telegram: ['Il tuo bot nel tuo gruppo: avvisi, comandi, compleanni, membri e il rapporto della serata in privato.', 'Your bot in your group: alerts, commands, birthdays, members and the night report in private.', 'Tu bot en tu grupo: avisos, comandos, cumpleaños, miembros y el informe de la noche en privado.'],
   dirette: ['Il rapporto di ogni diretta: spettatori, chat, follower, presenti, clip e donazioni. E dove riceverlo.', 'The report of every stream: viewers, chat, followers, attendees, clips and donations. And where to get it.', 'El informe de cada directo: espectadores, chat, seguidores, presentes, clips y donaciones. Y dónde recibirlo.'],
   sottoscrizione: ['Cosa hai attivo, cosa comprende e come annullare.', 'What you have active, what it includes and how to cancel.', 'Qué tienes activo, qué incluye y cómo cancelar.'],
   pagina: ['La tua pagina pubblica con tutti i link, su socialbot.live/u/iltuonome.', 'Your public page with all your links, at socialbot.live/u/yourname.', 'Tu página pública con todos tus enlaces, en socialbot.live/u/tunombre.'],
@@ -2426,7 +2437,7 @@ const DESC = {
 };
 const descScheda = (id) => { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) : ''; };
 
-const SCHEDA_FUNZ = { giochi: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', effetti: 'effetti', sondaggi: 'effetti', studio: 'studio' };
+const SCHEDA_FUNZ = { giochi: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', telegram: 'notifiche', effetti: 'effetti', sondaggi: 'effetti', studio: 'studio' };
 const FUNZ_ADDON = { giochi: 'giochi', musica: 'musica', voce: 'voce', notifiche: 'base', effetti: 'effetti', clipAuto: 'clip', studio: 'base', moderatori: 'base' };
 
 const NOME_ADDON = {
@@ -2576,8 +2587,10 @@ const GUIDE = {
     come: [['Apri il giveaway indicando il premio; puoi dare più possibilità a sub e VIP e scegliere la parola d\'ingresso.', 'Open the giveaway and set the prize; you can give subs and VIPs better odds and pick the join keyword.', 'Abre el sorteo indicando el premio; puedes dar más posibilidades a subs y VIPs y elegir la palabra de entrada.', '#gw-premio'], ['La community entra scrivendo !join (o la tua parola) in chat. Con !biglietti @nome regali chance extra.', 'The community joins by typing !join (or your keyword) in chat. With !biglietti @name you grant extra chances.', 'La comunidad entra escribiendo !join (o tu palabra) en el chat. Con !biglietti @nombre das chances extra.', '#gw-keyword'], ['Estrai uno o più vincitori dal pannello o con !estrai N (puoi ripetere).', 'Draw one or more winners from the panel or with !estrai N (you can repeat).', 'Saca uno o varios ganadores desde el panel o con !estrai N (puedes repetir).', '#giveaway-stato']] },
   penitenze: { serve: ['Trasformare un premio a punti canale in una sfida a tempo: il bot conta quante volte sbagli (con «+1» a schermo) e alla fine fa partire una penitenza.', 'Turn a channel-point reward into a timed challenge: the bot counts your slip-ups (with an on-screen «+1») and triggers a forfeit at the end.', 'Convertir una recompensa de puntos de canal en un reto cronometrado: el bot cuenta cuántas veces fallas (con un «+1» en pantalla) y al final lanza una penitencia.'],
     come: [['Accendi le penitenze: perché funzionino servono i Punti canale e il riconoscimento vocale della scheda «Comandi a voce».', 'Turn forfeits on: for them to work you need Channel Points and the voice recognition from the «Voice commands» tab.', 'Enciende las penitencias: para que funcionen hacen falta los Puntos de canal y el reconocimiento de voz de la pestaña «Comandos por voz».', '#pen-attivo'], ['Scegli i due premi: «Vieta la parola» (non dirla) e «Usa solo la parola» (dì solo quella).', 'Choose the two rewards: «Ban the word» (don’t say it) and «Use only the word» (say only that).', 'Elige las dos recompensas: «Prohíbe la palabra» (no la digas) y «Usa solo la palabra» (di solo esa).', '#pen-box-vieta'], ['Decidi la penitenza (tua lista o inventata dall\'IA) e dove mostrare il contatore nell\'overlay.', 'Decide the forfeit (your list or AI-generated) and where to show the counter in the overlay.', 'Decide la penitencia (tu lista o inventada por la IA) y dónde mostrar el contador en el overlay.', '#pen-penitenze']] },
-  notifiche: { serve: ['Avvisare le tue community su Telegram e Discord quando vai in diretta, e segnalare i nuovi post/video su TikTok, YouTube e Instagram.', 'Alert your Telegram and Discord communities when you go live, and flag new posts/videos on TikTok, YouTube and Instagram.', 'Avisar a tus comunidades de Telegram y Discord cuando estás en directo, y señalar los nuevos posts/vídeos en TikTok, YouTube e Instagram.'],
-    come: [['Collega Telegram (login) e/o incolla il webhook Discord del canale.', 'Connect Telegram (login) and/or paste the channel’s Discord webhook.', 'Conecta Telegram (login) y/o pega el webhook de Discord del canal.', '#inp-tg-token'], ['Aggiungi i tuoi profili social per gli avvisi dei nuovi contenuti.', 'Add your social profiles for new-content alerts.', 'Añade tus perfiles sociales para los avisos de nuevo contenido.', '#feed-fonti'], ['Attiva gli avvisi che vuoi e personalizza i messaggi (usa «Prova» per un test).', 'Turn on the alerts you want and customize the messages (use “Test” for a preview).', 'Activa los avisos que quieras y personaliza los mensajes (usa «Probar» para una prueba).', '#chk-tg-attivo']] },
+  notifiche: { serve: ['Avvisare su Discord quando vai in diretta, e segnalare i nuovi post e video su TikTok, YouTube e Instagram.', 'Alert on Discord when you go live, and flag new posts and videos on TikTok, YouTube and Instagram.', 'Avisar en Discord cuando estás en directo, y señalar los nuevos posts y vídeos en TikTok, YouTube e Instagram.'],
+    come: [['Scegli qui in cima la piattaforma che vuoi collegare.', 'Pick the platform you want to connect, up here.', 'Elige aquí arriba la plataforma que quieras conectar.'], ['Aggiungi i tuoi profili social per gli avvisi dei nuovi contenuti.', 'Add your social profiles for new-content alerts.', 'A\u00f1ade tus perfiles sociales para los avisos de nuevo contenido.', '#feed-fonti'], ['Attiva gli avvisi che vuoi e personalizza i messaggi (usa \u00abProva\u00bb per un test).', 'Turn on the alerts you want and customize the messages (use \u201cTest\u201d for a preview).', 'Activa los avisos que quieras y personaliza los mensajes (usa \u00abProbar\u00bb para una prueba).', '#chk-promo']] },
+  telegram: { serve: ['Portare il bot nel tuo gruppo Telegram: avvisa quando vai in diretta, risponde ai comandi, fa gli auguri ai membri e ti manda il rapporto della serata in privato.', 'Bring the bot into your Telegram group: it alerts when you go live, answers commands, wishes members happy birthday and sends you the night\u2019s report in private.', 'Llevar el bot a tu grupo de Telegram: avisa cuando est\u00e1s en directo, responde a los comandos, felicita a los miembros y te manda el informe de la noche en privado.'],
+    come: [['Incolla la chiave del TUO bot, quella che ti d\u00e0 BotFather.', 'Paste the key of YOUR bot, the one BotFather gives you.', 'Pega la clave de TU bot, la que te da BotFather.', '#inp-tg-token'], ['Aggiungi il bot al gruppo e premi \u00abCollega\u00bb: ti trova da solo.', 'Add the bot to the group and press \u00abConnect\u00bb: it finds itself.', 'A\u00f1ade el bot al grupo y pulsa \u00abConectar\u00bb: se encuentra solo.', '#btn-tg-rileva'], ['Accendi l\'avviso e scrivi il messaggio come lo vuoi tu.', 'Turn on the alert and write the message the way you want it.', 'Enciende el aviso y escribe el mensaje como lo quieras.', '#chk-tg-attivo']] },
   studio: { serve: ['Andare in diretta su Twitch dal browser, senza installare niente: componi scene con webcam, schermo, immagini, video, testo e overlay, regola l’audio col mixer e premi «Vai live».', 'Go live on Twitch from the browser, without installing anything: compose scenes with webcam, screen, images, video, text and overlay, tune the audio with the mixer and hit “Go live”.', 'Emitir en Twitch desde el navegador, sin instalar nada: compón escenas con webcam, pantalla, imágenes, vídeo, texto y overlay, ajusta el audio con el mezclador y pulsa «Emitir».'],
     come: [['Scegli fotocamera, microfono e qualità in «Ingressi & qualità».', 'Pick camera, microphone and quality in “Inputs & quality”.', 'Elige cámara, micrófono y calidad en «Entradas y calidad».', '#studio-cam-sel'], ['Aggiungi le fonti e sistemale sul palco (trascina per spostare/ridimensionare), o usa un layout rapido.', 'Add the sources and arrange them on the stage (drag to move/resize), or use a quick layout.', 'Añade las fuentes y colócalas en el escenario (arrastra para mover/redimensionar), o usa un diseño rápido.', '#studio-fonti'], ['Aggiungi la fonte «Overlay» per avere a schermo alert, chat ed effetti a punti canale.', 'Add the “Overlay” source to get alerts, chat and channel-point effects on screen.', 'Añade la fuente «Overlay» para tener en pantalla alertas, chat y efectos de puntos de canal.', '#studio-ov-sel'], ['Premi «Vai live» e tieni aperta questa scheda mentre trasmetti.', 'Hit “Go live” and keep this tab open while you broadcast.', 'Pulsa «Emitir» y mantén esta pestaña abierta mientras transmites.', '#studio-live']] },
   alert: { serve: ['Comporre quello che si vede sulla diretta — alert, chat a schermo, obiettivi, contatori — e prendere il link da mettere in OBS.', 'Compose what shows on your stream — alerts, on-screen chat, goals, counters — and get the link to put in OBS.', 'Componer lo que se ve en el directo — alertas, chat en pantalla, objetivos, contadores — y coger el enlace para poner en OBS.'],
@@ -2751,7 +2764,7 @@ const SOTTO_SCHEDE = {
   notifiche: {
     attributo: 'rete',
     voci: [
-      ['telegram', 'Telegram'], ['tiktok', 'TikTok'], ['youtube', 'YouTube'],
+      ['tiktok', 'TikTok'], ['youtube', 'YouTube'],
       ['instagram', 'Instagram'], ['discord', 'Discord'],
     ],
   },
@@ -2774,7 +2787,7 @@ function sottoSchedeHtml(scheda) {
     return `<button type="button" class="fam-scheda${on ? ' on' : ''}" data-sotto="${esc(id)}"`
       + `${on ? ' aria-current="true"' : ''}>${esc(nome)}</button>`;
   }).join('');
-  return `<div class="fam-barra" role="tablist">${voci}</div>`;
+  return `<div class="fam-barra" id="sotto-${esc(scheda)}" role="tablist">${voci}</div>`;
 }
 
 function applicaSottoSchede(scheda) {
@@ -3497,6 +3510,7 @@ function vistaPiattaforma() {
     ${pannelloAlert()}
     ${pannelloEffetti()}
     ${pannello7TV()}
+    ${pannelloTelegram()}
     ${pannelloNotifiche()}
     ${pannelloPaginaLink()}
     ${pannelloDonazioni()}
@@ -15160,16 +15174,12 @@ function pannelloGiochi() {
     </div>`);
 }
 
-function pannelloNotifiche() {
+function pannelloTelegram() {
   const tg = stato.telegram || { configurato: false, gruppoOk: false, attivo: false, messaggio: '', botUsername: '', gruppo: '', pinLive: true };
-  const tkc = impostazioni().tiktok || {};
-  const ytc = impostazioni().youtube || {};
-  const igc = impostazioni().instagram || {};
-  const msgDefault = '{nome} è in diretta!\n\n{titolo}\n{gioco}\n\n{link}';
-  const s = impostazioni();
-  return pannello('notifiche', `
-    <div class="carta" data-rete="telegram" id="box-tglogin" hidden></div>
-    <div class="carta" data-rete="telegram">
+  const msgDefault = '{nome} \u00e8 in diretta!\n\n{titolo}\n{gioco}\n\n{link}';
+  return pannello('telegram', `
+    <div class="carta" id="box-tglogin" hidden></div>
+    <div class="carta">
       <h2>${_hIco(ICO.megafono)}${L('Avviso "sono in diretta" su Telegram', '"I’m live" alert on Telegram', 'Aviso "estoy en directo" en Telegram')}</h2>
       <p>${L('Collega il', 'Connect', 'Conecta')} <strong class="primo-piano">${L('tuo', 'your own', 'tu')}</strong> ${L('bot Telegram e il tuo gruppo: quando vai live, il bot avvisa i tuoi follower nel gruppo. Le chiavi sono tue e restano tue.', 'Telegram bot and your group: when you go live, the bot alerts your followers in the group. The keys are yours and stay yours.', 'bot de Telegram y tu grupo: cuando estás en directo, el bot avisa a tus seguidores en el grupo. Las claves son tuyas y siguen siéndolo.')}</p>
 
@@ -15197,7 +15207,6 @@ function pannelloNotifiche() {
       </div>
 
       <div id="tg-destinazioni" class="spazio-sopra"></div>
-      <div id="feed-fonti" class="spazio-sopra"></div>
 
       <label class="campo spazio-sopra" for="txt-tg-messaggio">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
       <textarea id="txt-tg-messaggio" rows="5" placeholder="${esc(msgDefault)}">${esc(tg.messaggio || '')}</textarea>
@@ -15223,10 +15232,10 @@ function pannelloNotifiche() {
       ` : ''}
     </div>
 
-    ${tg.configurato ? '<div class="carta" data-rete="telegram" id="box-carta-live" hidden></div>' : ''}
+    ${tg.configurato ? '<div class="carta" id="box-carta-live" hidden></div>' : ''}
 
     ${tg.configurato ? `
-    <div class="carta" data-rete="telegram">
+    <div class="carta">
       <h2>${_hIco(ICO.bot)}${L('Bot interattivo su Telegram', 'Interactive bot on Telegram', 'Bot interactivo en Telegram')}</h2>
       <p>${L('Con la', 'With', 'Con el')} <strong class="primo-piano">${L('modalità interattiva', 'interactive mode', 'modo interactivo')}</strong> ${L('il bot <strong>legge i messaggi</strong> del gruppo e risponde ai comandi. I comandi si creano in <strong>Chat &amp; comandi → Comandi</strong>: crea un modulo con innesco <em>Comando</em> e spunta <strong>«Abilita anche su Telegram»</strong> (su Telegram funziona anche senza <code>!</code>). Valgono anche a voce dall\'ascolto vocale.', 'the bot <strong>reads the group’s messages</strong> and replies to commands. Commands are created in <strong>Chat &amp; commands → Commands</strong>: create a module with a <em>Command</em> trigger and check <strong>“Enable on Telegram too”</strong> (on Telegram it works even without <code>!</code>). They also work by voice from voice listening.', 'el bot <strong>lee los mensajes</strong> del grupo y responde a los comandos. Los comandos se crean en <strong>Chat y comandos → Comandos</strong>: crea un módulo con disparador <em>Comando</em> y marca <strong>«Habilitar también en Telegram»</strong> (en Telegram funciona incluso sin <code>!</code>). También valen por voz desde la escucha por voz.')}</p>
 
@@ -15259,12 +15268,21 @@ function pannelloNotifiche() {
       <p class="suggerimento">${L('Nel <strong>gruppo</strong> invece il bot funziona per tutti (e impara dalla chat come su Twitch). Il privato resta solo tuo.', 'In the <strong>group</strong>, instead, the bot works for everyone (and learns from chat like on Twitch). Private stays yours only.', 'En el <strong>grupo</strong>, en cambio, el bot funciona para todos (y aprende del chat como en Twitch). El privado sigue siendo solo tuyo.')}</p>
     </div>
 
-    <div class="carta" data-rete="telegram">
+    <div class="carta">
       <h2>${_hIco(ICO.torta)}${L('Auguri di compleanno', 'Birthday wishes', 'Felicitaciones de cumpleaños')}</h2>
       <p>${L('Il bot fa gli', 'The bot sends', 'El bot da las')} <strong class="primo-piano">${L('auguri automatici', 'automatic wishes', 'felicitaciones automáticas')}</strong> ${L('nel gruppo il giorno del compleanno dei membri. Loro possono registrarsi da soli scrivendo', 'in the group on members’ birthdays. They can register themselves by typing', 'en el grupo el día del cumpleaños de los miembros. Ellos pueden registrarse solos escribiendo')} <code>/compleanno 25/12</code> ${L('nel gruppo (serve il bot interattivo qui sopra), oppure li aggiungi tu qui sotto.', 'in the group (needs the interactive bot above), or you add them below.', 'en el grupo (necesita el bot interactivo de arriba), o los añades tú abajo.')}</p>
       <div id="box-compleanni"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
     ` : ''}
+`);
+}
+
+function pannelloNotifiche() {
+  const tkc = impostazioni().tiktok || {};
+  const ytc = impostazioni().youtube || {};
+  const igc = impostazioni().instagram || {};
+  const s = impostazioni();
+  return pannello('notifiche', `
 
     <div class="carta" data-rete="tiktok">
       <h2>${_hIco(ICO.musica)}${L('Notifica live TikTok', 'TikTok live alert', 'Aviso de directo en TikTok')}</h2>
@@ -15325,6 +15343,12 @@ function pannelloNotifiche() {
       </div>
       <p class="spazio-sopra"><button class="btn" id="btn-tk-post-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
       <p class="suggerimento">${L('Il controllo parte ogni ~10 minuti; il primo giro dopo il collegamento memorizza solo l\'ultimo video (non avvisa).', 'The check runs every ~10 minutes; the first pass after connecting only stores the latest video (no alert).', 'La comprobación se hace cada ~10 minutos; la primera vuelta tras conectar solo memoriza el último vídeo (no avisa).')}</p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.fotocamera)}${L('Da dove prendo i nuovi post', 'Where I watch for new posts', 'De d\u00f3nde saco los nuevos posts')}</h2>
+      <p>${L('I profili che tengo d\u2019occhio: quando ci esce qualcosa di nuovo lo dico dove hai acceso l\u2019avviso.', 'The profiles I keep an eye on: when something new shows up there I say it wherever you turned the alert on.', 'Los perfiles que vigilo: cuando sale algo nuevo lo digo donde hayas encendido el aviso.')}</p>
+      <div id="feed-fonti" class="spazio-sopra"></div>
     </div>
 
     <div class="carta" data-rete="discord">
