@@ -76,12 +76,55 @@ Questo pezzo e' in costruzione. Cosa resta, in ordine:
   scrive la differenza. Le quattro cose di Twitch arrivano da una funzione sola,
   che sta nello strato di Twitch: il giro non deve sapere come si chiede.
 - **Il collegamento dello spettatore.** Due meta': chi sei su Twitch e chi sei
-  su Discord. La seconda vuole un'applicazione Discord con OAuth `identify`.
-  Scelta: quella e' **della piattaforma** (una sola, dalle variabili d'ambiente),
-  mentre il bot che scrive i ruoli resta **dello streamer**. Cosi' lo streamer
-  incolla due cose — il token del suo bot e l'id del suo server — invece di
-  quattro, e il riconoscimento non tocca mai il suo server. Dove l'applicazione
-  non e' configurata, il pannello lo dice invece di offrire un tasto che non
-  funziona.
+  su Discord. La seconda vuole un'applicazione Discord con OAuth `identify`, ed
+  e' **della piattaforma** (`DISCORD_CLIENT_ID` e `DISCORD_CLIENT_SECRET`, vedi
+  sotto), mentre il bot che scrive i ruoli resta **dello streamer**. Dove
+  l'applicazione non e' configurata, il pannello lo dice invece di offrire un
+  tasto che non funziona.
 - **Il pannello** (le regole, la prova del collegamento, cosa ha fatto l'ultimo
   giro e cosa non ha potuto fare) e la **vetrina**.
+
+## Le due applicazioni, e perche' sono due
+
+Sono due cose diverse e vanno tenute diverse:
+
+| | chi la crea | a cosa serve | cosa puo' fare |
+|---|---|---|---|
+| **l'applicazione che riconosce** | la piattaforma, una sola | lo spettatore dice «questo account Discord sono io» | leggere il suo id e il suo nome (`identify`). Nient'altro |
+| **il bot che muove i ruoli** | ogni streamer, per il suo server | dare e togliere ruoli | quello che gli permette il suo posto nella scala dei ruoli |
+
+Chi riconosce non entra in nessun server. Chi scrive non sa chi sei su Twitch.
+Sono due poteri diversi in due mani diverse, ed e' questo che rende innocuo il
+fatto che l'applicazione del riconoscimento sia una sola per tutti.
+
+### L'applicazione della piattaforma (una volta sola, nel `.env`)
+
+1. https://discord.com/developers/applications → **New Application**, un nome e
+   accetta i termini.
+2. **OAuth2** nel menu a sinistra. Copia **Client ID** (e' anche l'Application
+   ID, solo cifre) e premi **Reset Secret** per avere il **Client Secret**: si
+   vede una volta sola, se lo perdi se ne rigenera un altro.
+3. Sempre in OAuth2, **Redirects** → **Add Redirect** e incolla
+   `https://socialbot.live/discord/oidc/callback` — identico, senza barra in
+   fondo. Salva.
+4. Nel `.env` del server: `DISCORD_CLIENT_ID=` e `DISCORD_CLIENT_SECRET=`, poi
+   riavvia. Niente bot, niente permessi, niente invito: quell'applicazione non
+   entra da nessuna parte.
+
+Facoltativo ma gentile: in **General Information** metti icona e descrizione —
+sono quelle che lo spettatore vede nella schermata di Discord che gli chiede il
+permesso.
+
+### Il bot dello streamer (una volta per server)
+
+Questo lo fa lo streamer, e il pannello glielo spieghera' li' dentro:
+
+1. Stessa pagina, **New Application** (la sua), poi **Bot** → **Reset Token** e
+   copia il token: e' un segreto, va solo nel pannello di SocialBot.
+2. **Installation** (o OAuth2 → URL Generator): scope `bot`, permesso **Manage
+   Roles**. Apri il link e scegli il suo server.
+3. In **Impostazioni server → Ruoli**, trascina il ruolo del bot **sopra** tutti
+   i ruoli che deve poter dare. Discord non guarda il nome del permesso, guarda
+   la posizione: sotto un ruolo, non lo tocca.
+4. Id del server: clic destro sul server → **Copia ID server** (serve la
+   Modalita' sviluppatore in Impostazioni → Avanzate).

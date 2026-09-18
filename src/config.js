@@ -236,6 +236,31 @@ export const config = {
     };
   })(),
 
+  // Discord: l'applicazione che RICONOSCE lo spettatore — OPZIONALE.
+  //
+  // Due cose diverse, e vanno tenute diverse: il bot che DA' e TOGLIE i ruoli e'
+  // dello streamer (token suo, server suo, nel database cifrato), mentre questa
+  // e' l'applicazione con cui uno spettatore dice «questo account Discord sono
+  // io». Serve solo a riconoscere (scope `identify`): non entra in nessun server
+  // e non tocca nessun ruolo. Percio' e' UNA SOLA, della piattaforma: cosi' lo
+  // streamer incolla due cose invece di quattro.
+  //
+  // Su https://discord.com/developers/applications → OAuth2: Client ID, Client
+  // Secret e, fra i Redirect, https://socialbot.live/discord/oidc/callback.
+  // Senza queste due righe il collegamento resta spento, e il pannello lo dice
+  // invece di offrire un tasto che non funziona.
+  discordApp: (() => {
+    const clientId = env('DISCORD_CLIENT_ID');
+    const clientSecret = env('DISCORD_CLIENT_SECRET');
+    const base = env('BASE_URL', 'http://localhost:8090').replace(/\/$/, '');
+    return {
+      clientId,
+      clientSecret,
+      redirectUri: env('DISCORD_REDIRECT_URI') || (base + '/discord/oidc/callback'),
+      attivo: !!(clientId && clientSecret),
+    };
+  })(),
+
   // Promo "settimana gratis": al primo accesso, con una certa probabilità, un
   // account che non ha MAI avuto il bot riceve alcuni giorni di accesso Pro (un
   // trial, non "community"). Si revoca da sé alla scadenza.
