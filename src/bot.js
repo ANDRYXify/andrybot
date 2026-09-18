@@ -44,6 +44,7 @@ import * as feed from './features/feed.js';
 import * as compleanniFeat from './features/compleanni.js';
 import * as subathonFeat from './features/subathon.js';
 import * as trenoFeat from './features/treno.js';
+import * as bit from './features/bit.js';
 import * as gamesbridge from './features/gamesbridge.js';
 import * as quotes from './features/quotes.js';
 import * as battute from './features/battute.js';
@@ -1046,6 +1047,10 @@ export class BotManager {
     try { this.alerts?.onEvent(ev); } catch (e) { log.debug(`#${channel} alert evento:`, e?.message || e); }
     // clip automatiche: sub/bit/raid sono momenti forti (le clip li "sentono")
     try { this.clips?.onEvent(ev); } catch (e) { log.debug(`#${channel} clip evento:`, e?.message || e); }
+    // la classifica dei Bit tenuta in memoria non vale piu': un cheer e' l'unico
+    // momento in cui puo' essere cambiata, quindi e' l'unico in cui vale la pena
+    // richiederla. Cosi' chi scrive «!bit» appena dopo si vede gia' dentro.
+    if (type === 'channel.cheer') { try { bit.scorda(channel); } catch { /* niente */ } }
     // anti-bot: follow-bot (raffiche + nomi noti) e hate-raid
     try {
       if (type === 'channel.follow') this.antibot?.onFollow(ev);

@@ -67,6 +67,7 @@ const DECISO = [
   ['features/badges.js', 'cache7', 'volatile', 'cache dei badge 7TV'],
   ['features/cartalive.js', '_facce', 'volatile', 'cache degli avatar'],
   ['features/cartalive.js', '_cercati', 'volatile', 'cache delle facce cercate su Helix'],
+  ['features/bit.js', 'cache', 'volatile', 'la classifica dei Bit di Twitch, tenuta per tre minuti: al riavvio si richiede, e chiederla di nuovo costa una chiamata, non un dato perso'],
   ['features/clips.js', '_inCorso', 'volatile', 'clip gia\' in volo: al riavvio nessuna e\' in volo'],
   ['features/clips.js', '_buf', 'volatile', 'ritmo recente della chat, finestra corta'],
   ['features/clips.js', '_boost', 'volatile', 'evento recente che alza la soglia'],

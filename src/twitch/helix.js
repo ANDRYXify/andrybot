@@ -570,6 +570,36 @@ export class Helix {
     } catch { return null; }
   }
 
+  // LA CLASSIFICA DEI BIT, quella di Twitch. Scope 'bits:read'.
+  // `periodo`: day | week | month | year | all (all ignora la data di inizio).
+  //
+  // Torna `null` quando NON LO SAPPIAMO — permesso mancante, Twitch muto — e un
+  // elenco vuoto quando non ha cheerato nessuno. Sono due cose diverse: la prima
+  // va detta, la seconda e' una risposta. Confonderle vorrebbe dire scrivere
+  // «non ha ancora cheerato nessuno» a un canale che invece ci ha appena speso
+  // duemila Bit, solo perche' manca un permesso.
+  async getClassificaBit(channelLogin, { periodo = 'month', quanti = 10 } = {}) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    const p = ['day', 'week', 'month', 'year', 'all'].includes(periodo) ? periodo : 'month';
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      const j = await this._request('GET', '/bits/leaderboard', {
+        query: { count: Math.min(100, Math.max(1, Math.round(quanti) || 10)), period: p },
+        token,
+      });
+      return (j?.data || []).map((r) => ({
+        login: String(r.user_login || '').toLowerCase(),
+        nome: String(r.user_name || r.user_login || '').slice(0, 40),
+        posto: Math.max(1, Math.round(Number(r.rank) || 1)),
+        bit: Math.max(0, Math.round(Number(r.score) || 0)),
+      })).filter((r) => r.login);
+    } catch (e) {
+      log.debug(`getClassificaBit #${channelLogin}:`, e?.message || e);
+      return null;
+    }
+  }
+
   // Follower recenti del canale (dai più nuovi). [{ user_id, user_login, user_name, followed_at }].
   // Richiede lo scope 'moderator:read:followers' sul token del broadcaster.
   async getRecentFollowers(channelLogin, { first = 100, dopo = '' } = {}) {
