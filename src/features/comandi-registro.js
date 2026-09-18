@@ -296,12 +296,27 @@ export function preparaComando(channel, msg) {
   if (!r) return null;
   if (r.spento || r.moduloSpento) return { id: r.comando.id, salta: true, motivo: r.spento ? 'spento' : 'modulo' };
   if (!puoUsare(r.chi, msg)) {
-    return { id: r.comando.id, rifiuta: r.chi, messaggio: `!${parola} qui e' riservato a ${ETICHETTA[r.chi]}.` };
+    return { id: r.comando.id, rifiuta: r.chi, messaggio: rifiutoDi(parola, r.chi) };
   }
   return { id: r.comando.id, testo: '!' + r.comando.id + resto };
 }
 
-const ETICHETTA = { sub: 'chi e\' abbonato', vip: 'i VIP', mod: 'moderatori e streamer', tutti: 'tutti' };
+// A CHI E' RISERVATO, detto per intero, PREPOSIZIONE COMPRESA. Prima la
+// preposizione stava nel messaggio («riservato a ...») e ogni etichetta doveva
+// incastrarcisi dentro: veniva fuori «riservato a i VIP», che non e' italiano,
+// e «riservato a moderatori e streamer», che sembra la categoria degli streamer
+// invece della persona che ha il canale. Con la preposizione dentro l'etichetta
+// ogni caso si scrive come si dice.
+// La frase del rifiuto sta in un posto solo: la dicono i comandi pronti e i
+// contatori, e non possono divergere perche' e' la stessa funzione.
+export const rifiutoDi = (parola, livello) => `!${parola} qui \u00e8 riservato ${ETICHETTA[livello] || ETICHETTA.tutti}.`;
+
+const ETICHETTA = {
+  sub: 'a chi \u00e8 abbonato',
+  vip: 'ai VIP',
+  mod: 'ai moderatori e allo streamer',
+  tutti: 'a tutti',
+};
 
 // L'elenco che !giochi scrive in chat: uno solo, e dice quello che RISPONDE
 // davvero. Prima erano due moduli con due liste scritte a mano, e chi non usa la

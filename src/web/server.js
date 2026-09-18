@@ -3584,7 +3584,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   const gCont = (req, res, next) => next();
   // elenco (leggibile anche dai moderatori); include la config overlay già parsata
   app.get('/api/contatori', requireLogin, (req, res) => {
-    const list = contatori.list(currentUser(req).login).map((c) => ({ ...c, overlayCfg: contatori.overlayDi(c) }));
+    const list = contatori.list(currentUser(req).login)
+      .map((c) => ({ ...c, overlayCfg: contatori.overlayDi(c), verbiCfg: contatori.verbiDi(c) }));
     res.json({ contatori: list });
   });
   // crea/aggiorna un contatore (comando, etichetta, emoji, step, parola auto, valore)
@@ -3599,6 +3600,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       autoParola: b.autoParola,
       valore: b.valore,   // consente di correggere il valore a mano
       overlay: puliConta(b.overlay), // aspetto/posizione del widget a schermo
+      // i verbi di QUESTO contatore: quali parole fanno cosa e chi puo'. Li
+      // ripulisce il database (normVerbiCont), non questa porta: la regola su
+      // cosa e' un verbo valido deve stare dove stanno i verbi.
+      verbi: b.verbi,
     });
     // aggiorna dal vivo il widget sull'overlay della diretta (posizione/colore/valore/mostra)
     try { if (c) effects.emit(login, contatori.payloadOverlay(c)); } catch (e) { /* niente */ }

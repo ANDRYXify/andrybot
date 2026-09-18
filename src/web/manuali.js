@@ -444,6 +444,23 @@ const MODULI = {
     { esempio: 'QUANDO   comando  !scommetti\nSE       costo $arg1 · probabilità 45\nALLORA   dai punti  a chi scrive  +$arg1\nALLORA   scrivi in chat\n         $user punta $costo $monete e vince! Ora ne ha $punti.\nALTRIMENTI  scrivi in chat\n         $user punta $costo $monete e perde tutto. Ne restano $saldo.' },
     { p: ['Nel terzo: il costo è la cifra scritta da chi gioca, si paga sempre, e la vincita raddoppia perché la puntata era già uscita.'] },
 
+    { h2: 'I contatori, e i comandi che decidi tu' },
+    { p: ['Un contatore \u00e8 un numero con un nome: le morti, i tentativi, le volte che l\u2019hai detto. Sale, scende, torna a zero, e pu\u00f2 comparire a schermo nell\u2019overlay che hai gi\u00e0.'] },
+    { p: ['<strong>Le parole le scegli tu</strong>, contatore per contatore. Sette verbi, e per ognuno decidi con quali parole si chiama e <strong>chi pu\u00f2 usarlo</strong>: tutti, solo i sub, i VIP in su, oppure mod e streamer. Se vuoi che aggiungere sia aperto a tutti ma azzerare no, si fa.'] },
+    { tabella: [
+      ['Leggi', 'il nome da solo', 'dice a che punto \u00e8'],
+      ['Aggiungi', '<code>+</code> \u00b7 <code>add</code>', 'sale del passo, o del numero che scrivi'],
+      ['Togli', '<code>-</code> \u00b7 <code>meno</code>', 'scende'],
+      ['Azzera', '<code>reset</code> \u00b7 <code>azzera</code>', 'torna a zero'],
+      ['Imposta', '<code>set</code>', 'lo porta al numero che scrivi'],
+      ['Mostra a schermo', '<code>on</code> \u00b7 <code>mostra</code>', 'lo fa comparire, <strong>senza toccare il numero</strong>'],
+      ['Nascondi', '<code>off</code> \u00b7 <code>nascondi</code>', 'lo toglie dallo schermo'],
+    ] },
+    { p: ['Quelle in tabella sono le parole di partenza: cambiale come vuoi. Lasciare una casella vuota <strong>toglie</strong> quel comando.'] },
+    { p: ['<strong>Il numero vale attaccato o staccato</strong>, sempre: <code>!morti +3</code> e <code>!morti + 3</code> sono la stessa cosa, e lo stesso vale per tutti gli altri verbi. Senza numero vale il <strong>passo</strong> del contatore.'] },
+    { p: ['<strong>Mostrare non azzera.</strong> Prima lo faceva, e chi aveva quarantasette morti e voleva solo farle comparire se le ritrovava a zero. Sono due verbi diversi: se vuoi tutte e due le cose, scrivi due comandi \u2014 o mettili sullo stesso tasto di CONSOLify.'] },
+    { p: ['A chi non pu\u00f2, il bot <strong>lo dice</strong> invece di tacere, una volta ogni tanto per persona: un rifiuto muto sembra un bot rotto, uno a ogni tentativo diventa un modo per farlo parlare a raffica.'] },
+
     { h2: 'I comandi pronti, e chi vince' },
     { p: ['Il bot porta con sé una quarantina di comandi già fatti — giochi, sorteggi, ore guardate, shoutout, VIP, sondaggi, musica. In <em>Comandi</em>, in fondo alla scheda, ci sono tutti: ognuno si <strong>spegne</strong>, si <strong>rinomina</strong> e si può <strong>riservare</strong> ad abbonati, VIP o moderatori.'] },
     { p: ['Rinominare <strong>sostituisce</strong>: se chiami <code>!slot</code> in un altro modo, il nome di serie smette di rispondere. Un comando ha un nome, e lo scegli tu.'] },

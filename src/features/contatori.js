@@ -1,17 +1,17 @@
 // Contatori configurabili (morti, tentativi, parole…). Lo streamer/moderatori li
 // gestiscono da comandi chat; tutti possono leggerne il valore. Tre modi di far
 // salire un contatore:
-//   1) comando chat (mod/streamer):  !morti+   !morti +3   !morti-   !morti reset   !morti set 10
+//   1) comando chat: i VERBI sono del contatore, non del motore — quali parole
+//      fanno cosa e chi puo' farlo lo decide lo streamer (vedi VERBI_CONT)
 //   2) parola automatica: ogni volta che una parola appare in chat → +1 (silenzioso)
 //   3) riscatto di un premio a punti canale collegato → +step (con annuncio)
-import { contatori as store } from '../db.js';
+import { contatori as store, VERBI_CONT } from '../db.js';
+import { puoUsare, rifiutoDi } from './comandi-registro.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('contatori');
 
 function escapeRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-
-const puoGestire = (msg) => !!(msg.isMod || msg.isBroadcaster);
 
 // emette l'aggiornamento del contatore sull'overlay OBS (stesso feed SSE di
 // alert/effetti/chat). Best-effort.
@@ -19,16 +19,51 @@ function verso(emit, canale, comando) {
   try { if (typeof emit !== 'function') return; const c = store.get(canale, comando); if (c) emit(store.payloadOverlay(c)); }
   catch { /* niente */ }
 }
-// come verso(), ma solo se il widget è impostato "mostra" (per auto-parola/riscatto)
+// come verso(), ma solo se il widget e' impostato "mostra" (per auto-parola/riscatto)
 function versoSeMostra(emit, riga) {
   try { if (typeof emit !== 'function' || !riga) return; const o = store.overlayDi(riga); if (o.mostra) emit(store.payloadOverlay(riga)); }
   catch { /* niente */ }
 }
 
-// Comando chat "!<comando> [op] [arg]". Ritorna true se il messaggio era un
-// comando di un contatore (così il chiamante può fermarsi). `emit` (opzionale)
-// aggiorna l'overlay OBS. Op: (nulla)=leggi · + - reset set N · on/off (mostra il
-// widget da 0 / lo nasconde).
+// Quando uno non puo', glielo si dice UNA volta ogni tanto: un rifiuto muto
+// sembra un bot rotto, un rifiuto a ogni tentativo diventa un modo per farlo
+// parlare a raffica.
+const PAUSA_RIFIUTO_MS = 60_000;
+const rifiutato = new Map();
+
+function diciNo(say, canale, comando, verbo, utente, livello) {
+  const chiave = `${canale}|${comando}|${verbo}|${String(utente || '').toLowerCase()}`;
+  const ora = Date.now();
+  if (ora < (rifiutato.get(chiave) || 0)) return;
+  rifiutato.set(chiave, ora + PAUSA_RIFIUTO_MS);
+  if (rifiutato.size > 5000) rifiutato.clear();
+  try { say(rifiutoDi(comando, livello)); } catch { /* niente */ }
+}
+
+// TROVA IL VERBO. Una regola sola per tutti: la parola puo' essere scritta da
+// sola («reset») o con il numero attaccato («+3», «set10»), e vale lo stesso se
+// il numero arriva staccato dopo. Prima «+3» funzionava e «+ 3» no, mentre
+// «set 10» funzionava e «set10» no: due grammatiche dentro lo stesso comando.
+function trovaVerbo(verbi, parola) {
+  const p = String(parola || '').toLowerCase();
+  if (!p) return null;
+  for (const id of VERBI_CONT) {
+    for (const w of (verbi[id]?.parole || [])) {
+      if (!w) continue;
+      if (p === w) return { id, arg: '' };
+      if (p.startsWith(w) && /^\d+$/.test(p.slice(w.length))) return { id, arg: p.slice(w.length) };
+    }
+  }
+  return null;
+}
+
+// Il nome del contatore puo' avere il verbo ATTACCATO, ma solo se e' un simbolo
+// («morti+», «morti-2»): una parola attaccata («mortireset») non la scrive
+// nessuno, e cercarla vorrebbe dire interrogare il database a ogni «!» che passa.
+const ATTACCATO = /^([a-z0-9_]+?)([+\-=]+\d*)$/;
+
+// Comando chat di un contatore. Ritorna true se il messaggio era suo (cosi' chi
+// chiama si ferma). `emit` aggiorna il widget sull'overlay.
 export function tryComando(msg, say, emit) {
   try {
     const testo = String(msg?.text || '').trim();
@@ -36,49 +71,57 @@ export function tryComando(msg, say, emit) {
     const canale = String(msg.channel || '').toLowerCase();
     const parti = testo.slice(1).split(/\s+/);
     let primo = parti[0].toLowerCase();
-    let opInline = '';
-    const attaccato = primo.match(/^([a-z0-9_]+?)([+-])$/);   // "morti+" / "morti-"
-    if (attaccato) { primo = attaccato[1]; opInline = attaccato[2]; }
-    const c = store.get(canale, primo);
-    if (!c) return false;
+    let attaccato = '';
+    let c = store.get(canale, primo);
+    if (!c) {
+      const m = ATTACCATO.exec(primo);
+      if (!m) return false;
+      c = store.get(canale, m[1]);
+      if (!c) return false;
+      primo = m[1];
+      attaccato = m[2];
+    }
 
+    const verbi = store.verbiDi(c);
     const emoji = c.emoji ? c.emoji + ' ' : '';
     const nome = c.etichetta || c.comando;
     const annuncia = (v) => { try { say(`${emoji}${nome}: ${v}`); } catch { /* niente */ } };
 
-    // parole per ACCENDERE/SPEGNERE il widget: un set di default ampio + quelle
-    // personalizzate dallo streamer per QUESTO contatore (campo parolaOn/parolaOff).
-    const cfg = store.overlayDi(c);
-    const extra = (s) => String(s || '').toLowerCase().split(/[\s,]+/).filter(Boolean);
-    const onWords = new Set(['on', 'acceso', 'accendi', 'accendilo', 'ok', 'okay', 'vai', 'via', 'start', 'avvia', 'parti', 'go', 'mostra', 'attiva', ...extra(cfg.parolaOn)]);
-    const offWords = new Set(['off', 'spento', 'spegni', 'spegnilo', 'stop', 'ferma', 'basta', 'nascondi', 'disattiva', 'down', ...extra(cfg.parolaOff)]);
-
-    // interpreta operatore e argomento
-    let op = opInline, arg = null;
-    if (!op && parti[1]) {
-      const p1 = parti[1].toLowerCase();
-      if (p1 === '+' || p1 === 'add' || p1 === 'more') op = '+';
-      else if (p1 === '-' || p1 === 'meno') op = '-';
-      else if (p1 === 'reset' || p1 === 'azzera' || p1 === 'zero') op = 'reset';
-      else if (onWords.has(p1)) op = 'on';
-      else if (offWords.has(p1)) op = 'off';
-      else if (p1 === 'set' || p1 === '=') { op = 'set'; arg = parti[2]; }
-      else if (/^[+-]\d+$/.test(p1)) { op = p1[0]; arg = p1.slice(1); }
-      else if (/^\d+$/.test(p1)) { op = 'set'; arg = p1; }
+    // che cosa ha chiesto
+    let trovato = attaccato ? trovaVerbo(verbi, attaccato) : null;
+    if (!trovato && !attaccato && parti[1]) {
+      trovato = trovaVerbo(verbi, parti[1]);
+      // «!morti 7»: un numero da solo vale «imposta», come prima
+      if (!trovato && /^\d+$/.test(parti[1]) && verbi.imposta?.parole.length) trovato = { id: 'imposta', arg: parti[1] };
+    }
+    const verbo = trovato?.id || 'leggi';
+    // l'argomento: attaccato al verbo o subito dopo, e' lo stesso
+    let arg = trovato?.arg || '';
+    if (!arg) {
+      const dopo = attaccato ? parti[1] : parti[2];
+      if (/^\d+$/.test(String(dopo || ''))) arg = dopo;
     }
 
-    if (!op) { annuncia(c.valore); return true; }   // sola lettura: per tutti
-    if (!puoGestire(msg)) return true;              // modifiche solo mod/streamer (in silenzio)
+    const chi = verbi[verbo]?.chi || 'mod';
+    if (!puoUsare(chi, msg)) {
+      if (verbo !== 'leggi') diciNo(say, canale, primo, verbo, msg.user, chi);
+      return true;
+    }
 
-    const passo = arg && /^\d+$/.test(arg) ? Math.max(1, parseInt(arg, 10)) : (c.step || 1);
+    if (verbo === 'leggi') { annuncia(c.valore); return true; }
+
+    const passo = /^\d+$/.test(arg) ? Math.max(1, parseInt(arg, 10)) : (c.step || 1);
     let nuovo = null;
-    if (op === '+') nuovo = store.incrementa(canale, primo, passo);
-    else if (op === '-') nuovo = store.incrementa(canale, primo, -passo);
-    else if (op === 'reset') nuovo = store.setValore(canale, primo, 0);
-    else if (op === 'set') nuovo = store.setValore(canale, primo, arg ? (parseInt(arg, 10) || 0) : 0);
-    else if (op === 'on') { store.setValore(canale, primo, 0); nuovo = store.patchOverlay(canale, primo, { mostra: true }); }   // avvia da 0 e mostra a schermo
-    else if (op === 'off') { nuovo = store.patchOverlay(canale, primo, { mostra: false }); }
-    if (nuovo) { annuncia(nuovo.valore); verso(emit, canale, primo); }   // aggiorna sempre l'overlay (mostra/valore)
+    if (verbo === 'piu') nuovo = store.incrementa(canale, primo, passo);
+    else if (verbo === 'meno') nuovo = store.incrementa(canale, primo, -passo);
+    else if (verbo === 'azzera') nuovo = store.setValore(canale, primo, 0);
+    else if (verbo === 'imposta') nuovo = store.setValore(canale, primo, /^\d+$/.test(arg) ? parseInt(arg, 10) : 0);
+    // MOSTRA NON AZZERA. Erano due verbi in uno: chi aveva quarantasette morti e
+    // voleva solo farli comparire a schermo se li ritrovava a zero, in silenzio
+    // e senza ritorno. Chi vuole tutte e due le cose scrive due comandi.
+    else if (verbo === 'mostra') nuovo = store.patchOverlay(canale, primo, { mostra: true });
+    else if (verbo === 'nascondi') nuovo = store.patchOverlay(canale, primo, { mostra: false });
+    if (nuovo) { annuncia(nuovo.valore); verso(emit, canale, primo); }
     return true;
   } catch (e) { log.debug('tryComando:', e?.message || e); return false; }
 }

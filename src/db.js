@@ -879,6 +879,7 @@ rinnovaChiaviOverlayUnaTantum();
   try {
     const cols = db.prepare('PRAGMA table_info(contatori)').all();
     if (!cols.some((c) => c.name === 'overlay')) db.exec("ALTER TABLE contatori ADD COLUMN overlay TEXT NOT NULL DEFAULT ''");
+    if (!cols.some((c) => c.name === 'verbi')) db.exec("ALTER TABLE contatori ADD COLUMN verbi TEXT NOT NULL DEFAULT ''");
   } catch { /* best-effort */ }
 })();
 
@@ -3051,6 +3052,49 @@ export const linkPage = storePagina('link_page');
 export const paginaDona = storePagina('pagina_dona');
 
 // NB: distinto dai `counters` di sotto (store low-level usato dalle azioni dei moduli).
+// I VERBI DI UN CONTATORE: quali parole fanno cosa, e chi puo'.
+//
+// Prima la grammatica stava scritta dentro il motore e la indovinava: «+», «-»,
+// «reset», «set», piu' un elenco di una ventina di parole (ok, vai, via, go,
+// start, stop, basta, ferma, down...) che accendevano e spegnevano il widget
+// senza che nessuno le avesse mai viste. Chi voleva un comando diverso non
+// poteva, e chi scriveva «!morti stop» si ritrovava il widget sparito.
+//
+// Adesso i verbi sono DEL CONTATORE. Il motore non conosce nessuna parola: legge
+// queste e fa quello che dicono. I valori di partenza fanno esattamente quello
+// che si faceva prima, cosi' chi i contatori ce li ha gia' non si accorge di
+// niente — tranne che le cose rotte smettono di esserlo.
+export const VERBI_CONT = ['leggi', 'piu', 'meno', 'azzera', 'imposta', 'mostra', 'nascondi'];
+const VERBI_DEF = {
+  leggi:    { parole: [], chi: 'tutti' },          // parole vuote = il nome nudo
+  piu:      { parole: ['+', 'add'], chi: 'mod' },
+  meno:     { parole: ['-', 'meno'], chi: 'mod' },
+  azzera:   { parole: ['reset', 'azzera'], chi: 'mod' },
+  imposta:  { parole: ['set'], chi: 'mod' },
+  mostra:   { parole: ['on', 'mostra'], chi: 'mod' },
+  nascondi: { parole: ['off', 'nascondi'], chi: 'mod' },
+};
+const LIV_CONT = ['tutti', 'sub', 'vip', 'mod'];
+
+// Ripulisce quello che manda il pannello. Una parola vuota o doppia sparisce; un
+// livello inventato torna a quello di fabbrica. Un verbo SENZA parole e senza
+// default (cioe' tutti tranne «leggi») non si puo' piu' chiamare: e' spento, ed
+// e' un modo legittimo di toglierlo.
+export function normVerbiCont(x) {
+  const out = {};
+  const dato = (x && typeof x === 'object') ? x : {};
+  for (const v of VERBI_CONT) {
+    const d = VERBI_DEF[v];
+    const r = (dato[v] && typeof dato[v] === 'object') ? dato[v] : null;
+    const parole = r && Array.isArray(r.parole)
+      ? [...new Set(r.parole.map((w) => String(w || '').toLowerCase().trim().slice(0, 20)).filter(Boolean))].slice(0, 6)
+      : d.parole;
+    const chi = r && LIV_CONT.includes(r.chi) ? r.chi : d.chi;
+    out[v] = { parole, chi };
+  }
+  return out;
+}
+
 export const contatori = {
   list(channel) { return db.prepare('SELECT * FROM contatori WHERE channel=? ORDER BY comando').all(String(channel).toLowerCase()); },
   get(channel, comando) { return db.prepare('SELECT * FROM contatori WHERE channel=? AND comando=?').get(String(channel).toLowerCase(), String(comando).toLowerCase()) || null; },
@@ -3059,6 +3103,28 @@ export const contatori = {
     return db.prepare('SELECT * FROM contatori WHERE channel=? AND reward_id=?').get(String(channel).toLowerCase(), r) || null;
   },
   autoParola(channel) { return this.list(channel).filter((c) => c.auto_parola); },
+  // i verbi di questo contatore, con i valori di partenza dove non ha scelto.
+  //
+  // Chi aveva scritto delle parole sue per accendere e spegnere le trova al
+  // posto giusto senza fare niente: erano nella configurazione del widget
+  // (parolaOn/parolaOff) perche' li' era finita la vecchia lista magica, e da
+  // qui in poi sono parole del verbo come tutte le altre. Si travasano solo
+  // finche' i verbi non sono stati scritti a mano: dopo, comanda la sua scelta.
+  verbiDi(row) {
+    let v = {}; try { v = row && row.verbi ? JSON.parse(row.verbi) : {}; } catch { v = {}; }
+    const fatti = normVerbiCont(v);
+    if (row && !row.verbi) {
+      const o = this.overlayDi(row);
+      const extra = (x) => String(x || '').toLowerCase().split(/[\s,]+/).filter(Boolean);
+      const piu = (verbo, parole) => {
+        if (!parole.length) return;
+        fatti[verbo].parole = [...new Set([...fatti[verbo].parole, ...parole])].slice(0, 6);
+      };
+      piu('mostra', extra(o.parolaOn));
+      piu('nascondi', extra(o.parolaOff));
+    }
+    return fatti;
+  },
   // config del widget a schermo, con default sensati
   overlayDi(row) {
     const def = { mostra: false, x: 4, y: 94, r: 0, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}', parolaOn: '', parolaOff: '' };
@@ -3081,7 +3147,7 @@ export const contatori = {
     db.prepare('UPDATE contatori SET overlay=?, ts=? WHERE channel=? AND comando=?').run(JSON.stringify(o), now(), c, cmd);
     return this.get(c, cmd);
   },
-  upsert(channel, { comando, etichetta, emoji, step, autoParola, rewardId, valore, overlay } = {}) {
+  upsert(channel, { comando, etichetta, emoji, step, autoParola, rewardId, valore, overlay, verbi } = {}) {
     const c = String(channel).toLowerCase();
     const cmd = String(comando || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
     if (!cmd) return null;
@@ -3096,11 +3162,13 @@ export const contatori = {
       // merge sulla config attuale (con default): così un overlay PARZIALE
       // (es. {mostra:true} da un pulsante) non azzera posizione/colori salvati.
       overlay: overlay !== undefined ? JSON.stringify({ ...this.overlayDi(cur), ...(overlay && typeof overlay === 'object' ? overlay : {}) }) : (cur?.overlay || ''),
+      verbi: verbi !== undefined ? JSON.stringify(normVerbiCont(verbi)) : (cur?.verbi || ''),
     };
-    db.prepare(`INSERT INTO contatori (channel, comando, etichetta, emoji, valore, step, auto_parola, reward_id, overlay, ts)
-      VALUES (@channel,@comando,@etichetta,@emoji,@valore,@step,@auto_parola,@reward_id,@overlay,@ts)
+    db.prepare(`INSERT INTO contatori (channel, comando, etichetta, emoji, valore, step, auto_parola, reward_id, overlay, verbi, ts)
+      VALUES (@channel,@comando,@etichetta,@emoji,@valore,@step,@auto_parola,@reward_id,@overlay,@verbi,@ts)
       ON CONFLICT(channel,comando) DO UPDATE SET etichetta=excluded.etichetta, emoji=excluded.emoji, valore=excluded.valore,
-        step=excluded.step, auto_parola=excluded.auto_parola, reward_id=excluded.reward_id, overlay=excluded.overlay, ts=excluded.ts`)
+        step=excluded.step, auto_parola=excluded.auto_parola, reward_id=excluded.reward_id, overlay=excluded.overlay,
+        verbi=excluded.verbi, ts=excluded.ts`)
       .run({ channel: c, comando: cmd, ...v, ts: now() });
     return this.get(c, cmd);
   },
