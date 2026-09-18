@@ -23,7 +23,8 @@ test('parlare da solo parte da un momento della chat, non da un dado su un timer
   assert.match(f, /if \(tipo === 'domanda'\)/, 'una domanda rimasta sola si tratta a parte');
   assert.match(f, /this\.brain\.chatReply\(\{ channel: login, user: q\.user/, 'e si risponde come a una menzione');
   assert.match(f, /rispondiA: q\.id/, 'agganciata alla domanda');
-  assert.match(f, /this\.brain\.iniziativa\(login, \{ spunto \}\)/, 'il motivo arriva al cervello');
+  assert.match(f, /this\.brain\.iniziativa\(login, \{ spunto, aggancio: momento\.aggancio \}\)/,
+    'il motivo E la riga a cui agganciarsi arrivano al cervello: la riga la sceglie chi la chat ce l\'ha in mano, non chi scrive la frase');
   assert.equal((f.match(/Promise\.resolve\(\)\.then\(\(\) => this\.brain\./g) || []).length, 2, 'le chiamate al cervello stanno in una promessa: un errore su un canale non spezza il giro degli altri');
   for (const tipo of ['domanda', 'battuta', 'promo']) assert.match(f, new RegExp(`_dettaDaSoloConCalma\\(login, '${tipo}'`), `${tipo} esce con calma e finisce nel registro`);
   assert.match(BOT, /this\._momentiTimer = setInterval\(\(\) => this\._valutaMomenti\(\), 15_000\);/, 'ogni quindici secondi');
@@ -34,12 +35,23 @@ test('la chat osservata comprende le righe dello streamer e del bot: senza, una 
   const say = BOT.slice(BOT.indexOf('  say(channel, text, opzioni) {'), BOT.indexOf('  _dettaDaSolo('));
   assert.match(say, /this\._momenti\.osserva\(channel, \{ ts: Date\.now\(\), user: channel, testo: t, dalBot: true \}\)/);
   const el = BOT.slice(BOT.indexOf('  _elaboraMessaggio('), BOT.indexOf('  async reconcileListeners()'));
-  assert.match(el, /this\._momenti\.osserva\(login, \{ ts: Date\.now\(\), user: msg\.user, display: msg\.display, testo: msg\.text, isSelf: !!msg\.isSelf, id: msg\.id \}\)/);
+  assert.match(el, /this\._momenti\.osserva\(login, \{ ts: Date\.now\(\), user: msg\.user, display: msg\.display, testo: msg\.text, isSelf: !!msg\.isSelf, id: msg\.id, rispostaA: msg\.rispostaA \}\)/,
+    'e con l\'informazione che il messaggio e\' appeso a un altro: senza, non si puo\' sapere che e\' roba fra due');
+  const CHAT = readFileSync(join(RAD, 'src/twitch/chat.js'), 'utf8');
+  assert.match(CHAT, /rispostaA: tags\['reply-parent-msg-id'\] \|\| '',/, 'il tag di Twitch che lo dichiara va letto');
 });
 
 test('il cervello del bot accetta un motivo e sa dire se conosce una risposta', () => {
   const BR = readFileSync(join(RAD, 'src/ai/brain.js'), 'utf8');
-  assert.match(BR, /async iniziativa\(channel, \{ spunto = '' \} = \{\}\)/);
+  assert.match(BR, /async iniziativa\(channel, \{ spunto = '', aggancio = null \} = \{\}\)/);
+  // LA RIGA A CUI AGGANCIARSI NON SE LA PESCA PIU' DA SOLO. Si agganciava
+  // all'ultima riga vera della chat, qualunque fosse: anche una risposta a un
+  // altro, anche una riga che chiamava qualcuno per nome. Da fuori sembrava che
+  // parlasse a caso, perche' si stava intromettendo fra due.
+  const ini = BR.slice(BR.indexOf('async iniziativa(channel,'), BR.indexOf('  saQualcosa(channel, testo)'));
+  assert.ok(!/righe\[righe\.length - 1\]/.test(ini), 'l\'ultima riga qualunque non e\' una riga a cui agganciarsi');
+  assert.match(ini, /perLaStanza\(String\(r\.text \|\| ''\)\)/, 'e chi chiama senza passarne una trova la stessa regola come rete');
+  assert.match(ini, /if \(!ultima\) return null;/, 'e se non c\'e\' nessuna riga buona, si tace');
   assert.match(BR, /situazione: \[this\._situazione\(channel\), spunto \? String\(spunto\)\.slice\(0, 200\) : ''\]\.filter\(Boolean\)\.join\('\\n'\)/, 'lo spunto entra nella situazione, che il modello legge');
   assert.match(BR, /saQualcosa\(channel, testo\) \{\s*try \{ return !!this\._cercaConoscenza\(channel, testo\); \}/, 'stessa soglia della scorciatoia: sa = e\' gia\' la risposta');
 });
