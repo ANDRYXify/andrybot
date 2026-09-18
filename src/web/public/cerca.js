@@ -36,7 +36,7 @@
     pagina: 'pagina link bio linktree profilo vetrina sito i miei link logo avatar página enlaces',
     grafiche: 'grafiche immagini sfondi banner locandine social gráficos fondos imágenes',
     notifiche: 'avvisi notifiche social tiktok instagram youtube discord nuovi post live notificaciones avisos',
-    telegram: 'telegram bot gruppo canale topic membri amici community compleanni rapporto privato verifica token destinazioni miembros cumpleaños',
+    telegram: 'telegram bot gruppo canale topic membri amici community compleanni rapporto privato verifica token destinazioni miembros cumpleaños cancello ingresso verifica captcha benvenuto antispam bot chi entra muto portiere guardia entrada bienvenida',
     stato: 'stato account piano pacchetti panoramica permessi status cuenta plan',
     sottoscrizione: 'abbonamento subscription pagamento fattura rinnovo piano prezzo pacchetti costo carta suscripción pago precio',
     admin: 'admin operatore llm modello ecosistema vita di lia anima backup salute'

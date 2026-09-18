@@ -21,7 +21,7 @@ import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andr
 import * as licenza from '../licenza.js';      // il nome con cui questo software si presenta
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi } from '../db.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
@@ -37,6 +37,8 @@ import { spazioCartella, inMega } from '../features/spazio.js';
 import * as spontanea from '../features/spontanea.js';
 import { paginaManuale, paginaIndiceManuali, urlManuali, aiutiPerScheda } from './manuali.js';
 import { conOccasione, normOccasioni, accendi as accendiOccasione } from '../features/occasioni.js';
+import * as cancello from '../features/tg-cancello.js';
+import { permessiDi as permessiDiChat, guai as guaiCancello } from '../features/tg-ingresso.js';
 import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
 import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
@@ -901,6 +903,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       dmModo: c?.dm_modo || 'me',                 // chat privata: me | tutti | off
       dmCollegato: !!(c && c.owner_tg_id),        // proprietario legato al suo Telegram?
       dmNome: c?.owner_tg_nome || '',             // nome dell'account legato (solo per mostrarlo)
+      // il cancello del gruppo: chi entra e' muto finche' non preme il tasto
+      ingresso: {
+        attivo: !!(c && c.ingresso),
+        minuti: Number(c?.ingresso_minuti) || 5,
+        scaduto: c?.ingresso_scaduto === 'muto' ? 'muto' : 'caccia',
+        testo: c?.ingresso_testo || '',
+        tasto: c?.ingresso_tasto || '',
+        inAttesa: c ? tgAttesa.quanti(login) : 0,
+      },
     };
   };
 
@@ -6874,6 +6885,38 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   }));
 
   // salva impostazioni notifica (accesa/spenta + testo)
+  // IL CANCELLO DEL GRUPPO. Accendendolo si controlla SUBITO che il bot possa
+  // davvero fare il portiere: se non e' amministratore col permesso di limitare
+  // i membri, il cancello non si accende e si dice perche'. Un interruttore che
+  // si accende e poi non fa niente e' peggio di un interruttore che rifiuta.
+  app.post('/api/streamer/telegram/ingresso', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
+    const attivo = !!req.body?.attivo;
+    if (attivo && !c.interattivo) return res.status(400).json({ errore: 'prima accendi la chat interattiva: il cancello ha bisogno che il bot legga quello che succede nel gruppo' });
+    if (attivo && !c.chat_id) return res.status(400).json({ errore: 'collega prima il gruppo' });
+    if (attivo) {
+      const io = await telegram.validaToken(c.token).catch(() => null);
+      const info = await telegram.infoChat(c.token, c.chat_id).catch(() => null);
+      const permessi = permessiDiChat(info?.chat);
+      const me = io?.id ? await telegram.ioNelGruppo(c.token, c.chat_id, io.id).catch(() => null) : null;
+      if (!me?.ok) return res.status(400).json({ errore: 'non riesco a chiedere a Telegram cosa posso fare in quel gruppo: controlla che il bot sia ancora dentro' });
+      const guaio = guaiCancello({ ioSonoAdmin: me.admin, possoLimitare: me.possoLimitare, permessi });
+      if (guaio === 'permessi') return res.status(400).json({ errore: 'non riesco a leggere i permessi del gruppo: riprova fra poco, o controlla che il bot sia ancora dentro' });
+      if (guaio === 'admin') return res.status(400).json({ errore: 'il bot deve essere amministratore del gruppo' });
+      if (guaio === 'limitare') return res.status(400).json({ errore: 'il bot e\' amministratore ma non puo\' limitare i membri: dagli il permesso «Blocca utenti»' });
+    }
+    tgConf.setIngresso(login, {
+      attivo,
+      minuti: req.body?.minuti,
+      scaduto: req.body?.scaduto,
+      testo: req.body?.testo,
+      tasto: req.body?.tasto,
+    });
+    res.json({ ok: true, ingresso: statoTelegram(login).ingresso });
+  }));
+
   app.post('/api/streamer/telegram/impostazioni', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const c = tgConf.get(login);
@@ -7059,6 +7102,17 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     }
     res.json({ ok: true });   // conferma subito a Telegram, poi elabora
     try {
+      // IL CANCELLO prima di tutto: chi entra e chi preme il tasto non hanno
+      // niente a che vedere con i messaggi, e farli passare per la strada dei
+      // messaggi vorrebbe dire attraversare venti controlli che non li riguardano.
+      if (req.body?.chat_member) {
+        cancello.entrato(conf, req.body).catch((e) => log.debug('cancello:', e?.message || e));
+        return;
+      }
+      if (req.body?.callback_query) {
+        cancello.premuto(conf, req.body.callback_query).catch((e) => log.debug('cancello:', e?.message || e));
+        return;
+      }
       const msg = req.body?.message || req.body?.channel_post;
       const chat = msg?.chat;
       const testo = msg?.text;

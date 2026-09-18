@@ -60,6 +60,7 @@ import { voceYoutube } from './youtube/voce.js';
 import { collegati as youtubeCollegati } from './youtube/api.js';
 import * as avvisi from './features/avvisi.js';
 import { dirette, guide } from './db.js';
+import * as cancello from './features/tg-cancello.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
@@ -242,6 +243,10 @@ export class BotManager {
     // un membro riceve gli auguri UNA volta l'anno, all'inizio del suo giorno).
     this._compleTimer = setInterval(() => this._controllaCompleanni().catch(() => {}), 60 * 60_000);
     setTimeout(() => this._controllaCompleanni().catch(() => {}), 30_000);
+    // Il cancello del gruppo Telegram: chi e' entrato e non ha premuto il tasto.
+    // Ogni mezzo minuto, perche' l'attesa piu' corta che si puo' scegliere e' un
+    // minuto e un controllo ogni minuto la farebbe scadere fino al doppio tardi.
+    this._cancelloTimer = setInterval(() => cancello.giroScadenze((ch) => tgConf.get(ch)).catch(() => {}), 30_000);
     // Manche automatiche: il bot lancia un gioco a caso, a intervalli casuali,
     // sui canali che l'hanno attivato (controllo ogni minuto).
     this._mancheProx = new Map();     // login → ts della prossima manche
@@ -279,6 +284,7 @@ export class BotManager {
     clearInterval(this._distillaTimer);
     clearInterval(this._mancheTimer);
     clearInterval(this._compleTimer);
+    clearInterval(this._cancelloTimer);
     clearInterval(this._tgProattivoTimer);
     clearInterval(this._percorsoTimer);
     clearTimeout(this._risveglioTO);
