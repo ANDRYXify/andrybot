@@ -295,6 +295,7 @@
 .alert-card::after, .chat-riga::after, .ovl-widget::after {
   inset: var(--spessore); background: var(--materia);
 }
+.cornice-nessuna::before { background: none; }
 .alert-card { --ombra-fuori: drop-shadow(0 12px 28px rgba(0, 0, 0, .48)); }
 
 .forma-carta { border-radius: var(--radius, 14px); --sagoma: none; }
@@ -419,6 +420,22 @@
 .ovl-goal.dim-piccola { font-size: .85rem; min-width: 12rem; }
 .ovl-goal.dim-grande { font-size: 1.25rem; min-width: 19rem; }
 .ovl-goal.dim-enorme { font-size: 1.6rem; min-width: 24rem; }
+
+.ovl-cartello { display: block; white-space: pre-wrap; overflow-wrap: anywhere; font-weight: 800; line-height: 1.18; }
+.ovl-cartello.all-centro { text-align: center; }
+.ovl-cartello.all-destra { text-align: right; }
+.ovl-cartello.ca-immagine { padding: 0; line-height: 0; font-size: 0; }
+.ovl-cartello.ca-immagine img { display: block; width: 100%; height: auto; border-radius: inherit; }
+.ovl-cartello.ca-immagine.dim-piccola { width: 8vw; }
+.ovl-cartello.ca-immagine.dim-media { width: 14vw; }
+.ovl-cartello.ca-immagine.dim-grande { width: 22vw; }
+.ovl-cartello.ca-immagine.dim-enorme { width: 34vw; }
+.ovl-cartello.ca-immagine.riquadro { width: auto; }
+.ovl-cartello.ca-immagine.riquadro img { height: 100%; object-fit: contain; }
+.ovl-cartello.ca-scritta.dim-piccola { font-size: 1.1rem; }
+.ovl-cartello.ca-scritta.dim-media { font-size: 1.8rem; }
+.ovl-cartello.ca-scritta.dim-grande { font-size: 2.8rem; }
+.ovl-cartello.ca-scritta.dim-enorme { font-size: 4rem; }
 
 .ovl-treno { display: grid; gap: .34rem; min-width: 15rem; }
 .ovl-treno .tr-testa { display: flex; align-items: center; gap: .5rem; }

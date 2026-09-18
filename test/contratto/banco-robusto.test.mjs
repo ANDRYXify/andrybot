@@ -56,8 +56,10 @@ test('i salvataggi dell\'overlay passano da una coda sola, e la rete che cade si
   assert.ok(!/salvaImpostazioni\(\{ overlays: _overlaysPayload\(\) \}/.test(APP), 'nessuno spedisce gli overlay saltando la coda');
   assert.ok(/const ok = await _spingiOverlays\(\{ alerts: alertsCanale, chatOverlay: chatCanale \}\);/.test(APP), 'anche «Salva overlay» passa dalla coda');
   assert.ok(/if \(!ok\) \{ _salvaSporco = true; _salvaChiusa = false; aggiornaBarraSalva\(\); return; \}/.test(APP), 'se non riesce, la pagina resta sporca');
-  assert.ok(!/\.catch\(\(\) => \{\s*\}\)/.test(corpoDi('salvaCfgElemento') + corpoDi('salvaGoalDaScena') + corpoDi('salvaContoDaScena')), 'nessun errore di rete ingoiato in silenzio');
-  assert.equal((APP.match(/(?<!function )_avvisaSalvataggio\(\)/g) || []).length, 4, 'l\'avviso e\' uno, usato da tutti (coda + tre salvataggi a tempo)');
+  const aTempo = ['salvaCfgElemento', 'salvaGoalDaScena', 'salvaContoDaScena', 'salvaCartDaScena'];
+  assert.ok(!/\.catch\(\(\) => \{\s*\}\)/.test(aTempo.map(corpoDi).join('')), 'nessun errore di rete ingoiato in silenzio');
+  for (const nome of aTempo) assert.match(corpoDi(nome), /_avvisaSalvataggio\(\)/, `${nome} non dice niente quando la rete cade`);
+  assert.equal((APP.match(/(?<!function )_avvisaSalvataggio\(\)/g) || []).length, aTempo.length + 1, 'l\'avviso e\' uno, usato dalla coda e da ogni salvataggio a tempo');
   assert.equal((APP.match(/await _spingiOverlays\(\);/g) || []).length, 5, 'nuovo, duplica, rinomina, elimina e il layout passano tutti dalla coda');
   assert.ok(!/function _salvaFamiglia/.test(APP), 'niente funzione morta');
   assert.ok(/function _salvaPos\(chiave\) \{\n  const e = chiave \? ELEM\(chiave\) : null;\n  if \(e && e\.cont\) salvaContoDaScena\(e\.cont\);/.test(APP), 'il ripristino di un contatore si salva davvero');

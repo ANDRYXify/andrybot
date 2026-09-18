@@ -96,7 +96,7 @@ if (!browser) { console.log('  –  saltato: manca Chromium o Playwright'); proc
 // il tema e il brano che il finto bot serve alla pagina dell'overlay: li scrive
 // l'editor, caso per caso, cosi' le due pagine vestono la stessa cosa
 let TEMA = null, MUSICA = { stato: 'niente' };
-const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, pen: true, effetti: true, consolify: true };
+const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, effetti: true, consolify: true };
 const ovl = overlayFinto({ tema: () => TEMA, musica: () => MUSICA });
 const { base, chiudi } = await apriSito({ overlay: ovl });
 
@@ -365,6 +365,33 @@ try {
   dice(testiTreno[0] && testiTreno[1] && testiTreno[0][0] === testiTreno[1][0] && testiTreno[0][1] === testiTreno[1][1],
     `hype train: stesso livello e stesso nome di qua e di la' — editor «${(testiTreno[0] || []).join(' · ')}», diretta «${(testiTreno[1] || []).join(' · ')}»`,
     'l\'editor racconta un treno diverso da quello in onda');
+
+  // --- 6-ter. i cartelli -----------------------------------------------------
+  // Un cartello e' solo quel che ci hai scritto, quindi l'unica cosa che puo'
+  // scollarsi e' la misura: stesso testo, stesso corpo, stessa larghezza di
+  // qua e di la'. E la larghezza e' quella che scotta, perche' l'editor la fa
+  // in pixel sulla tela e la diretta in centesimi di schermo.
+  const CART_FINTO = { id: 'c1', attivo: true, tipo: 'scritta', nome: '',
+    testo: 'TORNO SUBITO\nun attimo e sono da voi', effetto: '', larghezza: 22, allinea: 'centro',
+    posizione: 'alto-sinistra', xy: null,
+    stile: { dim: 'grande', sfondo: '#12021f', opacita: 70, testo: '#ffe066', accento: '#f72fa7', bordoRaggio: 14, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'linea' } };
+  const cfgCart = await ed.evaluate(async (c) => {
+    _cartBozza = [JSON.parse(JSON.stringify(c))];
+    disegnaCartelli();
+    const xy = _ovXY(); for (const k of Object.keys(xy)) delete xy[k];
+    xy['cart:c1'] = { x: 50, y: 50, s: 100, r: 0 };
+    aggiornaAnteprima();
+    await new Promise((r) => setTimeout(r, 300));
+    return true;
+  }, CART_FINTO);
+  const edCart = cfgCart ? await misuraEd('#ap-cart-c1 .ovl-cartello') : null;
+  TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, treno: null,
+    cartelli: [CART_FINTO], stato: {}, mostra: MOSTRA, xy: { 'cart:c1': { x: 50, y: 50, s: 100, r: 0 } }, alertStile: null, chatStile: null };
+  await apriLive(() => document.querySelector('.ovl-cartello'));
+  await attesa(200);
+  const lvCart = await misuraLive('.ovl-cartello');
+  dice(edCart && lvCart && vicino(edCart.w, lvCart.w) && vicino(edCart.h, lvCart.h) && vicino(edCart.font, lvCart.font, 0.6),
+    `cartello: editor ${edCart ? mis(edCart) : '–'} = diretta ${lvCart ? mis(lvCart) : '–'}`, 'editor e diretta non coincidono');
 
   // --- 7. il player, pezzo per pezzo -----------------------------------------
   // tre giri sullo stesso player (tema vinile, due righe, tempi): senza misure,

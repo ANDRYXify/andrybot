@@ -489,8 +489,8 @@ test('un elemento che resta a schermo non viene ri-appeso a ogni disegno', () =>
   // l'animazione era a 0 invece che a 1517ms nel suo giro.
   //
   // Vale per tutti i pezzi che restano a schermo (contatori, obiettivo,
-  // musica, conto alla rovescia, hype train), non solo per il disco: le onde e
-  // il titolo che scorre ripartivano allo stesso modo.
+  // musica, conto alla rovescia, hype train, cartelli), non solo per il disco:
+  // le onde e il titolo che scorre ripartivano allo stesso modo.
   const riAppesi = [...OVL.matchAll(/^\s*\(?wboxes\[[^\n]*\.appendChild\(/gm)];
   assert.equal(riAppesi.length, 0,
     `questi rimettono a posto un elemento che c'è già, e gli azzerano le animazioni: ${riAppesi.map((m) => m[0].trim()).join(' · ')}`);
@@ -503,5 +503,5 @@ test('un elemento che resta a schermo non viene ri-appeso a ogni disegno', () =>
   // e' nato un elemento nuovo, e va guardato che anche lui si posi invece di
   // farsi ri-appendere.
   const quanti = (OVL.match(/\n\s*posa\(wboxes\[/g) || []).length;
-  assert.equal(quanti, 5, `i pezzi che restano a schermo sono cinque (contatori, obiettivo, musica, conto alla rovescia, treno), e devono passare tutti dalla posa (${quanti})`);
+  assert.equal(quanti, 6, `i pezzi che restano a schermo sono sei (contatori, obiettivo, musica, conto alla rovescia, treno, cartelli), e devono passare tutti dalla posa (${quanti})`);
 });

@@ -125,6 +125,7 @@ function impostazioni() {
     overlayMusica: (s.overlayMusica && typeof s.overlayMusica === 'object') ? s.overlayMusica : {},
     overlayTimer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : {},
     overlayTreno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : {},
+    overlayCartelli: Array.isArray(s.overlayCartelli) ? s.overlayCartelli : [],
     donazioni: (s.donazioni && typeof s.donazioni === 'object') ? s.donazioni : { attivo: false, link: '', etichetta: '', messaggio: '', valuta: 'EUR', annunciaChat: false, testoChat: '', kofiSet: false },
     grafiche: (s.grafiche && typeof s.grafiche === 'object') ? s.grafiche : null,
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
@@ -2598,6 +2599,7 @@ const _hIco = (d) => `<svg class="h-ico" viewBox="0 0 24 24" width="20" height="
 const ICO = {
   meno: '<line x1="5" x2="19" y1="12" y2="12"/>',
   orologio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
+  cartello: '<path d="M4 5h16v11H4z"/><path d="M12 16v5"/><path d="M8 21h8"/>',
   treno: '<rect x="4" y="3" width="16" height="12" rx="2"/><path d="M4 9h16"/><path d="M8 19l-2 2"/><path d="M16 19l2 2"/><circle cx="8.5" cy="18" r="1.5"/><circle cx="15.5" cy="18" r="1.5"/>',
   musica: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
   sliders: '<line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/>',
@@ -6010,6 +6012,148 @@ function disegnaVociGoal() {
   }
 }
 
+let _cartBozza = null;
+
+function cartBozza() {
+  if (!_cartBozza) _cartBozza = JSON.parse(JSON.stringify(impostazioni().overlayCartelli || []));
+  return _cartBozza;
+}
+
+const nomeCartello = (c, i) => String(c.nome || '').trim()
+  || String(c.testo || '').trim().split('\n')[0].slice(0, 30)
+  || (L('Cartello', 'Sign', 'Cartel') + ' ' + (i + 1));
+
+function cartNuovo() {
+  const usati = new Set(cartBozza().map((c) => c.id));
+  let n = 1;
+  while (usati.has('c' + n)) n++;
+  return { id: 'c' + n, attivo: true, tipo: 'scritta', nome: '', testo: '', effetto: '',
+    larghezza: 0, allinea: 'sinistra', posizione: 'basso-sinistra', xy: null,
+    stile: { dim: 'media', sfondo: '#0f0f14', opacita: 0, testo: '#ffffff', accento: '#f72fa7',
+      bordoRaggio: 12, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna' } };
+}
+
+const CART_TIPI = () => [['scritta', L('una scritta', 'some words', 'un texto')], ['immagine', L('un’immagine', 'an image', 'una imagen')]];
+const CART_ALLINEA = () => [['sinistra', L('a sinistra', 'left', 'a la izquierda')], ['centro', L('al centro', 'centred', 'al centro')], ['destra', L('a destra', 'right', 'a la derecha')]];
+
+const _optImgCartello = (sel) => `<option value="">${L('— scegli un’immagine —', '— pick an image —', '— elige una imagen —')}</option>`
+  + _EFFETTI.filter((e) => e.tipo === 'immagine')
+    .map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>!${esc(e.comando)}</option>`).join('');
+
+function disegnaCartelli() {
+  const box = document.getElementById('lista-cart');
+  if (!box) return;
+  const aperte = new Set([...box.querySelectorAll('.cart-voce-guscio[open]')].map((d) => d.dataset.cartId));
+  const lista = cartBozza();
+  const st = (c) => c.stile || {};
+  box.innerHTML = lista.length ? lista.map((c, i) => {
+    const img = c.tipo === 'immagine';
+    return `<details class="cart-voce-guscio goal-voce-guscio" data-cart-id="${esc(c.id)}">
+    <summary class="goal-voce">
+      <label class="interruttore mini"><input type="checkbox" data-k="attivo" ${c.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
+      <span class="goal-voce-nome">${esc(nomeCartello(c, i))}</span>
+      <span class="goal-ora">${img ? L('immagine', 'image', 'imagen') : L('scritta', 'words', 'texto')}</span>
+      <span class="btn secondario mini" data-k-vesti>${L('Dov’è', 'Where', 'Dónde')}</span>
+      <span class="btn pericolo mini" data-k-via>${L('Togli', 'Remove', 'Quitar')}</span>
+    </summary>
+    <div class="goal-meta">
+      <div class="goal-campi">
+        <label class="campo-num">${L('Cos’è', 'What it is', 'Qué es')}<select data-k="tipo">${CART_TIPI().map(([v, t]) => `<option value="${v}"${c.tipo === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Nome', 'Name', 'Nombre')} <span class="tenue">${L('per te', 'for you', 'para ti')}</span><input type="text" data-k="nome" maxlength="40" value="${esc(c.nome || '')}" placeholder="${L('Cartello', 'Sign', 'Cartel')} ${i + 1}"></label>
+      </div>
+      ${img
+        ? `<label class="campo" for="cart-img-${esc(c.id)}">${L('Quale immagine', 'Which image', 'Qué imagen')}</label>
+           <select id="cart-img-${esc(c.id)}" data-k="effetto">${_optImgCartello(c.effetto)}</select>
+           <p class="suggerimento">${L('Sono le immagini della tua libreria in «Effetti & suoni»: caricale lì e le trovi qui.', 'These are the images in your «Effects & sounds» library: upload them there and you find them here.', 'Son las imágenes de tu biblioteca en «Efectos y sonidos»: súbelas allí y las encuentras aquí.')}</p>`
+        : `<label class="campo" for="cart-txt-${esc(c.id)}">${L('Cosa c’è scritto', 'What it says', 'Qué pone')}</label>
+           <textarea id="cart-txt-${esc(c.id)}" data-k="testo" rows="2" maxlength="300" placeholder="${L('Torno subito', 'Be right back', 'Vuelvo enseguida')}">${esc(c.testo || '')}</textarea>
+           <div class="goal-campi">
+             <label class="campo-num">${L('Allineato', 'Aligned', 'Alineado')}<select data-k="allinea">${CART_ALLINEA().map(([v, t]) => `<option value="${v}"${(c.allinea || 'sinistra') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+             <label class="campo-num">${L('Va a capo dopo (% schermo)', 'Wraps after (% of screen)', 'Salta de línea tras (% pantalla)')}<input type="number" data-k="larghezza" min="0" max="100" value="${Number(c.larghezza) || 0}"></label>
+           </div>
+           <p class="suggerimento">${L('A zero non va mai a capo da solo: il cartello è largo quanto la riga più lunga.', 'At zero it never wraps on its own: the sign is as wide as its longest line.', 'En cero nunca salta de línea solo: el cartel es tan ancho como su línea más larga.')}</p>`}
+    </div>
+  </details>`;
+  }).join('')
+    : `<p class="vuoto">${L('Nessun cartello. Aggiungine uno: una scritta o un’immagine tua, ferma in scena.', 'No signs yet. Add one: some words or an image of yours, sitting on the scene.', 'Ningún cartel. Añade uno: un texto o una imagen tuya, quieta en la escena.')}</p>`;
+
+  for (const d of box.querySelectorAll('.cart-voce-guscio')) if (aperte.has(d.dataset.cartId)) d.open = true;
+
+  const vesti = document.getElementById('cart-vesti');
+  if (!vesti) return;
+  if (vesti.dataset.pieno === JSON.stringify(lista.map((c) => c.id + ':' + c.tipo))) { disegnaVociCart(); return; }
+  vesti.dataset.pieno = JSON.stringify(lista.map((c) => c.id + ':' + c.tipo));
+  vesti.innerHTML = lista.map((c) => `<div class="asp-blocco el-blocco cart-vesti" data-asp="cart:${esc(c.id)}" data-cart-id="${esc(c.id)}" hidden>
+      <p class="suggerimento">${L('Qui decidi come appare <strong>in questa scena</strong>. Cosa c’è scritto, o quale immagine, si cambia sopra: è uno solo e vale per tutti gli overlay.', 'Here you decide how it looks <strong>in this scene</strong>. What it says, or which image, is changed above: it is a single one and applies to every overlay.', 'Aquí decides cómo se ve <strong>en esta escena</strong>. Lo que pone, o qué imagen, se cambia arriba: es uno solo y vale para todos los overlays.')}</p>
+      <div class="goal-campi">
+        <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-k="posizione">${GOAL_ANGOLI().map(([v, t]) => `<option value="${v}"${c.posizione === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Dimensione', 'Size', 'Tamaño')}<select data-k="stile.dim">${DIM_OPTS().map(([v, t]) => `<option value="${v}"${(st(c).dim || 'media') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+      </div>
+      ${c.tipo === 'immagine' ? '' : `<div class="goal-campi">
+        <label class="campo-num">${L('Carattere', 'Font', 'Fuente')}<select data-k="stile.font">${GOAL_FONT.map((v) => `<option value="${v}"${(st(c).font || 'sistema') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Testo', 'Text', 'Texto')}<input type="color" data-k="stile.testo" value="${esc(st(c).testo || '#ffffff')}"></label>
+      </div>`}
+      <div class="goal-campi">
+        <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<input type="color" data-k="stile.sfondo" value="${esc(st(c).sfondo || '#0f0f14')}"></label>
+        <label class="campo-num">${L('Opacità sfondo', 'Background opacity', 'Opacidad del fondo')}<input type="number" data-k="stile.opacita" min="0" max="100" value="${st(c).opacita != null ? st(c).opacita : 0}"></label>
+        <label class="campo-num">${L('Angoli', 'Corners', 'Esquinas')}<input type="number" data-k="stile.bordoRaggio" min="0" max="30" value="${st(c).bordoRaggio != null ? st(c).bordoRaggio : 12}"></label>
+      </div>
+      <div class="goal-campi">
+        <label class="campo-num">${L('Forma', 'Shape', 'Forma')}<select data-k="stile.forma">${FORMA_OPTS().map(([v, t]) => `<option value="${v}"${(st(c).forma || 'carta') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Materia', 'Material', 'Material')}<select data-k="stile.materia">${MATERIA_OPTS().map(([v, t]) => `<option value="${v}"${(st(c).materia || 'piatta') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Cornice', 'Frame', 'Marco')}<select data-k="stile.cornice">${CORNICE_OPTS().map(([v, t]) => `<option value="${v}"${(st(c).cornice || 'nessuna') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+      </div>
+    </div>`).join('');
+  if (!document.getElementById('ovl-aspetto')) vesti.querySelectorAll('.cart-vesti').forEach((b) => { b.hidden = false; });
+  else for (const b of vesti.querySelectorAll('.cart-vesti')) aFisarmonica(b);
+}
+
+function disegnaVociCart() {
+  for (const [i, c] of cartBozza().entries()) {
+    const v = document.querySelector(`.cart-voce-guscio[data-cart-id="${CSS.escape(c.id)}"]`);
+    const nome = v && v.querySelector('.goal-voce-nome');
+    if (nome) nome.textContent = nomeCartello(c, i);
+  }
+}
+
+function leggiCartelliDalForm() {
+  const lista = cartBozza();
+  const per = new Map(lista.map((c) => [c.id, c]));
+  document.querySelectorAll('[data-cart-id]').forEach((pezzo) => {
+    const c = per.get(pezzo.dataset.cartId);
+    if (!c) return;
+    pezzo.querySelectorAll('[data-k]').forEach((campo) => {
+      const via = campo.dataset.k.split('.');
+      const val = campo.type === 'checkbox' ? campo.checked : (campo.type === 'number' ? Number(campo.value) : campo.value);
+      if (via.length === 2) { c[via[0]] = c[via[0]] || {}; c[via[0]][via[1]] = val; }
+      else c[via[0]] = val;
+    });
+  });
+  return lista;
+}
+
+function _vestiCartello(box, c) {
+  const img = c.tipo === 'immagine';
+  const st = c.stile || {};
+  box.className = 'ovl-widget ovl-cartello ' + (img ? 'ca-immagine' : 'ca-scritta')
+    + ' dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna') + ' all-' + (c.allinea || 'sinistra');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 0) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
+  const largo = Number(c.larghezza) > 0 && !box.classList.contains('riquadro');
+  box.style.maxWidth = largo ? (Number(c.larghezza) / 100) * OVL_W + 'px' : '';
+  if (img) {
+    const url = urlEffetto(c.effetto);
+    let el = box.querySelector('img');
+    if (!el) { box.textContent = ''; el = document.createElement('img'); el.alt = ''; box.appendChild(el); }
+    if (url) el.setAttribute('src', url); else el.removeAttribute('src');
+    box.classList.toggle('ca-vuota', !url);
+  } else {
+    if (box.querySelector('img')) box.textContent = '';
+    const testo = String(c.testo || '') || L('Scrivi qui', 'Type here', 'Escribe aquí');
+    if (box.textContent !== testo) box.textContent = testo;
+  }
+}
+
 function leggiGoalDalForm() {
   const lista = goalBozza();
   const per = new Map(lista.map((g) => [g.id, g]));
@@ -6319,6 +6463,7 @@ function pannelloAlert() {
         ${ovlElemento('ws', ICO.medaglia, L('Ultimo sub', 'Latest sub', 'Último sub'), '')}
         ${ovlElemento('goal', ICO.trofeo, L('Obiettivo', 'Goal', 'Objetivo'), 'sez-goal')}
         ${ovlElemento('cont', ICO.grafico, L('Contatori', 'Counters', 'Contadores'), '')}
+        ${ovlElemento('cart', ICO.cartello, L('Cartelli', 'Signs', 'Carteles'), 'sez-cart')}
         ${ovlElemento('musica', ICO.musica, L('Player musica', 'Music player', 'Reproductor de música'), 'sez-musica')}
         ${ovlElemento('timer', ICO.orologio, L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), 'sez-timer')}
         ${ovlElemento('treno', ICO.treno, L('Hype train', 'Hype train', 'Hype train'), 'sez-treno')}
@@ -6488,6 +6633,18 @@ function pannelloAlert() {
         <button class="btn" id="btn-salva-goal">${L('Salva', 'Save', 'Guardar')}</button>
       </p>
     </details>
+    <details class="carta sez" data-parte="aspetto" id="sez-cart">
+      <summary><h3>${_hIco(ICO.cartello)}${L('Cartelli', 'Signs', 'Carteles')}</h3></summary>
+      <p>${L('Una scritta o un’immagine tua, ferma in scena. Non la muove nessun evento: la scrivi, la metti dove vuoi e resta lì — il titolo della serata, le regole, il tuo logo, un «torno subito».', 'Some words or an image of yours, sitting on the scene. No event moves it: you write it, put it where you want and it stays — tonight’s title, the rules, your logo, a «be right back».', 'Un texto o una imagen tuya, quieta en la escena. No la mueve ningún evento: la escribes, la pones donde quieras y se queda — el título de la noche, las reglas, tu logo, un «vuelvo enseguida».')}</p>
+      <p class="suggerimento">${L('Il contenuto è <strong>uno solo e vale per tutti i tuoi overlay</strong>. Quello che cambia da scena a scena è <strong>se si vede, dove sta e come appare</strong>, e lo scegli nello Studio.', 'The content is <strong>one and applies to all your overlays</strong>. What changes per scene is <strong>whether it shows, where it sits and how it looks</strong>, and you pick that in the Studio.', 'El contenido es <strong>uno solo y vale para todos tus overlays</strong>. Lo que cambia por escena es <strong>si se ve, dónde está y cómo aparece</strong>, y eso lo eliges en el Studio.')}</p>
+      <div id="lista-cart" class="goal-lista"></div>
+      <div id="cart-vesti" class="goal-lista"></div>
+      <p class="spazio-sopra">
+        <button class="btn secondario" id="btn-agg-cart">${_bIco(ICO.piu)}${L('Aggiungi cartello', 'Add a sign', 'Añadir cartel')}</button>
+        <button class="btn" id="btn-salva-cart">${L('Salva', 'Save', 'Guardar')}</button>
+      </p>
+    </details>
+
     <details class="carta sez" data-parte="aspetto" id="sez-alert">
       <summary><h3>${_hIco(ICO.megafono)}${L('Alert eventi', 'Event alerts', 'Alertas de eventos')}</h3></summary>
       <p>${L('Un cartello animato con suono quando arriva un follow, un sub, dei bit o un raid.', 'An animated banner with sound when a follow, sub, bits or a raid comes in.', 'Un cartel animado con sonido cuando llega un follow, un sub, bits o un raid.')}</p>
@@ -6735,7 +6892,7 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'musica', 'timer', 'treno', 'pen', 'effetti', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'pen', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
 const _mostraOra = () => {
@@ -6919,6 +7076,7 @@ const ATTIVO_DI = { alert: 'al-attivo', chat: 'co-attivo', wf: 'wf-attivo', ws: 
 function _elementoAcceso(k) {
   const e = ELEM(k);
   if (e && e.goal) return e.goal.attivo !== false;
+  if (e && e.cart) return e.cart.attivo !== false;
   if (e && e.cont) return !!(e.cont.overlayCfg || {}).mostra;
   if (e && e.cfg) return !!_cfgEl(k).attivo;
   const id = ATTIVO_DI[k];
@@ -7178,7 +7336,7 @@ function _sincronizzaScena() {
   if (!stage) return;
   const vivi = new Set(FISSI.map(_idEl));
   for (const e of ELEMENTI()) {
-    if (!e.goal && !e.cont && !e.cfg) continue;
+    if (!e.goal && !e.cont && !e.cart && !e.cfg) continue;
     const id = _idEl(e.k);
     vivi.add(id);
     let nodo = _g(id);
@@ -7192,6 +7350,7 @@ function _sincronizzaScena() {
     }
     if (e.goal) _vestiGoal(nodo.firstElementChild, e.goal);
     else if (e.cont) _vestiCont(nodo.firstElementChild, e.cont);
+    else if (e.cart) _vestiCartello(nodo.firstElementChild, e.cart);
     else if (VESTITORE[e.k]) VESTITORE[e.k](nodo.firstElementChild, _cfgEl(e.k));
     nodo.classList.toggle('sel', selezione === e.k);
   }
@@ -7542,6 +7701,7 @@ function _cornerXY(c) { const a = ANCORA[c] || ANCORA['basso-destra']; return { 
 function _angoloDi(k) {
   const e = ELEM(k);
   if (e && e.goal) return e.goal.posizione || 'alto-sinistra';
+  if (e && e.cart) return e.cart.posizione || 'basso-sinistra';
   if (e && e.cont) return null;
   if (k === 'pen') return (_cfgEl(k).overlay || {}).posizione || 'alto-destra';
   if (e && e.cfg) return _cfgEl(k).posizione || (k === 'timer' ? 'alto-destra' : 'basso-sinistra');
@@ -8005,6 +8165,7 @@ const ELEMENTI = () => {
   ];
   goalBozza().forEach((g, i) => out.push({ k: 'goal:' + g.id, ico: ICO.trofeo, n: nomeGoal(g, i), goal: g }));
   for (const c of _conta) out.push({ k: 'cont:' + c.comando, ico: ICO.grafico, n: c.etichetta || c.comando, cont: c });
+  cartBozza().forEach((c, i) => out.push({ k: 'cart:' + c.id, ico: ICO.cartello, n: nomeCartello(c, i), cart: c }));
   out.push({ k: 'musica', ico: ICO.musica, n: L('Player musica', 'Music player', 'Reproductor de música'), cfg: 'overlayMusica' });
   out.push({ k: 'timer', ico: ICO.orologio, n: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), cfg: 'overlayTimer' });
   out.push({ k: 'treno', ico: ICO.treno, n: L('Hype train', 'Hype train', 'Hype train'), cfg: 'overlayTreno' });
@@ -8020,6 +8181,7 @@ function _inOverlay(k) {
   if (!e) return false;
   if (e.goal) return mostraChk('goal') && _quiDentro(k);
   if (e.cont) return mostraChk('cont') && _quiDentro(k);
+  if (e.cart) return mostraChk('cart') && _quiDentro(k);
   return mostraChk(k);
 }
 
@@ -8081,6 +8243,7 @@ function _semePos(k) {
   if (!e) return null;
   if (e.goal) return e.goal.xy || null;
   if (e.cont) return e.cont._st || _stCont(e.cont);
+  if (e.cart) return e.cart.xy || null;
   if (e.cfg) return _cfgEl(k).xy || null;
   return _SEME_FISSO[k] || null;
 }
@@ -8564,6 +8727,7 @@ function _applicaIstantanea(foto) {
     _rendiQualiChat();
     if (d.parti && ELEM('musica') && JSON.stringify(_cfgEl('musica').parti) !== JSON.stringify(d.parti)) { _cfgEl('musica').parti = d.parti; salvaCfgElemento('musica'); }
     disegnaGoal();
+    disegnaCartelli();
     aggiornaAnteprima();
     salvaLayoutOverlay(true);
     salvaGoalDaScena();
@@ -8774,6 +8938,15 @@ function salvaCfgElemento(k) {
 }
 
 let _timerGoal = null;
+let _timerCart = null;
+function salvaCartDaScena() {
+  clearTimeout(_timerCart);
+  _timerCart = setTimeout(() => {
+    if (!_g('lista-cart')) return;
+    salvaImpostazioni({ overlayCartelli: leggiCartelliDalForm() }, null).catch(() => _avvisaSalvataggio());
+  }, 600);
+}
+
 function salvaGoalDaScena() {
   clearTimeout(_timerGoal);
   _timerGoal = setTimeout(() => {
@@ -16344,6 +16517,57 @@ function attivaPiattaforma() {
       toast(L('Obiettivo azzerato.', 'Goal reset.', 'Objetivo puesto a cero.'));
     });
   });
+  document.getElementById('btn-salva-cart')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({ overlayCartelli: leggiCartelliDalForm() }, L('Cartelli salvati', 'Signs saved', 'Carteles guardados'));
+    _cartBozza = null;
+    disegnaCartelli();
+    aggiornaAnteprima();
+  }));
+
+  document.getElementById('btn-agg-cart')?.addEventListener('click', () => {
+    leggiCartelliDalForm();
+    if (_cartBozza.length >= 8) { toast(L('Otto cartelli sono il massimo.', 'Eight signs is the maximum.', 'Ocho carteles es el máximo.'), 'errore'); return; }
+    _cartBozza.push(cartNuovo());
+    disegnaCartelli();
+    aggiornaAnteprima();
+    seleziona('cart:' + _cartBozza[_cartBozza.length - 1].id);
+  });
+
+  _g('scheda-alert')?.addEventListener('click', (ev) => {
+    const riga = ev.target.closest('[data-cart-id]');
+    if (!riga || !ev.target.closest('[data-k-vesti], [data-k-via]')) return;
+    if (ev.target.closest('summary')) ev.preventDefault();
+    const i = cartBozza().findIndex((c) => c.id === riga.dataset.cartId);
+    if (i < 0) return;
+    if (ev.target.closest('[data-k-via]')) {
+      leggiCartelliDalForm();
+      _cartBozza.splice(i, 1);
+      disegnaCartelli();
+      deseleziona();
+      aggiornaAnteprima();
+      salvaCartDaScena();
+      return;
+    }
+    const c = cartBozza()[i];
+    if (!c) return;
+    if (!_g('ovl-aspetto')) { const b = document.querySelector(`.cart-vesti[data-cart-id="${c.id}"]`); if (b) b.hidden = !b.hidden; return; }
+    seleziona('cart:' + c.id);
+    _g('ovl-preview')?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'center' });
+  });
+
+  for (const evento of ['input', 'change']) {
+    _g('scheda-alert')?.addEventListener(evento, (ev) => {
+      if (!ev.target.closest('[data-cart-id]')) return;
+      const primaTipo = JSON.stringify(cartBozza().map((c) => c.tipo));
+      leggiCartelliDalForm();
+      if (JSON.stringify(cartBozza().map((c) => c.tipo)) !== primaTipo) disegnaCartelli();
+      else disegnaVociCart();
+      aggiornaAnteprima();
+      _rendiLivelli();
+      salvaCartDaScena();
+    });
+  }
+
   document.getElementById('btn-salva-gcmd-2')?.addEventListener('click', salvaGiochiComandi);
 
   document.getElementById('btn-salva-promo')?.addEventListener('click', () => conErrore(async () => {
@@ -17264,7 +17488,7 @@ function caricaDatiScheda(id) {
   if (id === 'sondaggi') caricaSondaggi();
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
-  if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _bozzaEl = {}; disegnaGoal(); caricaContaStudio();
+  if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
     riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();

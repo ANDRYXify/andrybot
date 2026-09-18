@@ -420,6 +420,14 @@ export class AlertsEngine {
       musica: this._musicaConVideo(channel, s.overlayMusica),
       timer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : null,
       treno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : null,
+      // I CARTELLI arrivano all'overlay con l'immagine gia' risolta in
+      // indirizzo, come le icone dei widget: la pagina non sa niente della
+      // libreria Effetti, e non deve saperlo.
+      cartelli: (Array.isArray(s.overlayCartelli) ? s.overlayCartelli : []).map((c) => {
+        if (!c || c.tipo !== 'immagine' || !c.effetto) return c;
+        const eff = this._risolviEffetto(channel, c.effetto);
+        return (eff && eff.tipo === 'immagine') ? { ...c, url: eff.url } : c;
+      }),
       stato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     };
   }

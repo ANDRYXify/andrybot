@@ -232,6 +232,77 @@ export const normGoals = (lista) => {
   return fuori;
 };
 
+// I CARTELLI: una scritta o un'immagine tua, ferma in scena.
+//
+// Sono la stessa cosa, e per questo stanno in una lista sola invece che in due.
+// Un cartello e' un pezzo di scena che NON lo muove nessun evento: lo scrivi o
+// lo scegli tu, e sta li'. Quel che cambia fra i due tipi e' solo da dove viene
+// il contenuto — dalle parole o dalla libreria Effetti — mentre posto, veste,
+// riquadro, interruttore per overlay e trascinamento sono quelli di tutti gli
+// altri elementi. Due elenchi separati avrebbero voluto dire due editor, due
+// disegni e due porte: la stessa cosa detta due volte, e due occasioni di
+// dirla diversa.
+//
+// L'immagine non si carica qui: si sceglie fra quelle che stanno gia' nella
+// libreria Effetti, che ha gia' i suoi limiti, il suo spazio e il suo modo di
+// servirle. Un secondo posto dove caricare file sarebbe un secondo posto dove
+// dimenticarsi di cancellarli.
+export const MAX_CARTELLI = 8;
+export const TIPI_CARTELLO = ['scritta', 'immagine'];
+
+// UN CARTELLO NON E' UN PANNELLO. Gli altri elementi sono riquadri che
+// raccontano qualcosa — un obiettivo, una chat, un orologio — e una scatola
+// dietro ci sta bene. Un cartello e' una scritta o un'immagine posata sulla
+// scena: la scatola, di suo, non ce l'ha. Quindi la veste e' quella di tutti,
+// ma due valori di partenza cambiano: niente sfondo e niente cornice, e chi
+// li vuole se li accende. Si guarda se il valore E' STATO SCRITTO, non se e'
+// zero: cosi' chi mette lo sfondo a zero apposta non se lo ritrova rimesso.
+const stileCartello = (st) => {
+  const base = normWidgetStile(st);
+  st = st || {};
+  if (st.opacita == null) base.opacita = 0;
+  if (st.cornice == null) base.cornice = 'nessuna';
+  return base;
+};
+
+export const normCartello = (c, i = 0) => {
+  c = c || {};
+  const id = String(c.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 12) || ('c' + (i + 1));
+  return {
+    id,
+    attivo: c.attivo !== false,
+    tipo: unoDi(c.tipo, TIPI_CARTELLO, 'scritta'),
+    nome: String(c.nome || '').slice(0, 40),
+    // La scritta puo' andare a capo: e' un cartello, non un'etichetta.
+    testo: String(c.testo || '').slice(0, 300),
+    // Il riferimento alla libreria Effetti, nella forma che usano gia' le
+    // icone degli alert. Chi lo mostra riceve l'indirizzo gia' risolto.
+    effetto: /^effetto:[a-z0-9_-]{1,40}$/i.test(String(c.effetto || '')) ? String(c.effetto) : '',
+    // Quanto sta stretto il testo prima di andare a capo da solo. A zero
+    // nessun limite: il cartello e' largo quanto la sua riga piu' lunga.
+    larghezza: clampInt(c.larghezza, 0, 100, 0),
+    allinea: unoDi(c.allinea, ['sinistra', 'centro', 'destra'], 'sinistra'),
+    posizione: unoDi(c.posizione, POS_ANG, 'basso-sinistra'),
+    xy: xyOk(c.xy),
+    stile: stileCartello(c.stile),
+  };
+};
+
+export const normCartelli = (lista) => {
+  const dentro = Array.isArray(lista) ? lista : [];
+  const visti = new Set();
+  const fuori = [];
+  for (const [i, c] of dentro.slice(0, MAX_CARTELLI).entries()) {
+    const n = normCartello(c, i);
+    // due cartelli con lo stesso nome interno si ruberebbero il posto a vicenda
+    let k = 2;
+    while (visti.has(n.id)) n.id = n.id.replace(/\d+$/, '') + (k++);
+    visti.add(n.id);
+    fuori.push(n);
+  }
+  return fuori;
+};
+
 // IL PLAYER. Quello che stai ascoltando, a schermo. E' un elemento della scena
 // come gli altri — stessa veste, stesso angolo, stesso trascinamento — piu' le
 // scelte che sono solo sue: che forma ha la copertina (anche un vinile che
