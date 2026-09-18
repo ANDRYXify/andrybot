@@ -40,6 +40,13 @@ export function normalizza(b) {
         .map((f) => String(f || '').toLowerCase())
         .filter((f) => FIRMA.test(f)))].slice(0, MAX_FIRME),
       contatore: normComando(String(s?.contatore || '')),
+      // Da quale scheda della libreria viene, se viene da li'. Le IMPRONTE sono
+      // gia' copiate qui sopra: questi tre campi non servono a farla funzionare,
+      // servono solo a poterle dire «ne e' uscita una versione nuova». Se la
+      // libreria sparisse domani, questa schermata conterebbe come oggi.
+      scheda: String(s?.scheda || '').slice(0, 32),
+      radice: String(s?.radice || '').slice(0, 32),
+      versione: Math.max(0, Math.round(Number(s?.versione) || 0)),
     }))
     // Una schermata senza nemmeno un'impronta valida, o senza un contatore da
     // far salire, non e' una schermata: e' una riga che non potra' mai fare

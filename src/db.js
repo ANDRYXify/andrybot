@@ -518,6 +518,23 @@ CREATE TABLE IF NOT EXISTS tg_attesa (    -- chi e' entrato nel gruppo e deve an
   PRIMARY KEY (channel, chat_id, tg_user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_tgattesa_scad ON tg_attesa(scad);
+CREATE TABLE IF NOT EXISTS morti_schede (   -- la libreria delle schermate, di tutti
+  id TEXT PRIMARY KEY,
+  radice TEXT NOT NULL DEFAULT '',         -- la prima versione di questa cosa: e' lei che si segue
+  da TEXT NOT NULL DEFAULT '',             -- da quale versione viene
+  versione INTEGER NOT NULL DEFAULT 1,
+  gioco TEXT NOT NULL DEFAULT '',          -- chiave: minuscolo, senza accenti, spazi singoli
+  gioco_nome TEXT NOT NULL DEFAULT '',     -- come l'ha scritto chi l'ha pubblicata
+  lingua TEXT NOT NULL DEFAULT 'nessuna',
+  firme TEXT NOT NULL DEFAULT '[]',
+  autore TEXT NOT NULL DEFAULT '',
+  nato INTEGER NOT NULL DEFAULT 0,
+  presa INTEGER NOT NULL DEFAULT 0,        -- quante volte qualcuno se l'e' copiata
+  tolta INTEGER NOT NULL DEFAULT 0         -- il proprietario puo' togliere qualunque scheda
+);
+CREATE INDEX IF NOT EXISTS idx_mortischede_gioco ON morti_schede(gioco, lingua);
+CREATE INDEX IF NOT EXISTS idx_mortischede_radice ON morti_schede(radice, versione);
+CREATE INDEX IF NOT EXISTS idx_mortischede_autore ON morti_schede(autore, nato);
 CREATE TABLE IF NOT EXISTS gsi_stato (     -- l'ultimo numero che il gioco ha detto di se'
   channel TEXT PRIMARY KEY,                -- login twitch
   partita TEXT NOT NULL DEFAULT '',        -- gioco + partita: quando cambia, si ribasa
@@ -2629,6 +2646,78 @@ export const tgAttesa = {
   },
   quanti(channel) {
     return db.prepare('SELECT COUNT(*) n FROM tg_attesa WHERE channel=?').get(String(channel).toLowerCase())?.n || 0;
+  },
+};
+
+// LA LIBRERIA DELLE SCHERMATE. E' l'unica cosa in tutto il bot che uno streamer
+// scrive e un altro legge, quindi qui c'e' una regola che altrove non serve: una
+// riga non si aggiorna MAI. Chi migliora una scheda ne scrive una nuova che
+// dichiara da quale viene, e la vecchia resta dov'e'. Non c'e' un UPDATE sulle
+// firme perche' non deve esistere: se esistesse, un giorno qualcuno lo userebbe e
+// romperebbe le dirette di chi quella scheda ce l'aveva gia' e gli funzionava.
+export const mortiSchede = {
+  pubblica({ id, radice = '', da = '', versione = 1, gioco, giocoNome = '', lingua = 'nessuna', firme = [], autore = '' }) {
+    const rad = radice || id;
+    db.prepare(`INSERT INTO morti_schede (id, radice, da, versione, gioco, gioco_nome, lingua, firme, autore, nato)
+      VALUES (?,?,?,?,?,?,?,?,?,?)`)
+      .run(String(id), String(rad), String(da || ''), Number(versione) || 1, String(gioco || ''),
+        String(giocoNome || '').slice(0, 60), String(lingua || 'nessuna'), JSON.stringify(firme || []),
+        String(autore || '').toLowerCase(), now());
+    return this.prendi(id);
+  },
+  _riga(r) {
+    if (!r) return null;
+    let firme = [];
+    try { firme = JSON.parse(r.firme); } catch { firme = []; }
+    return { id: r.id, radice: r.radice, da: r.da, versione: r.versione, gioco: r.gioco,
+      giocoNome: r.gioco_nome, lingua: r.lingua, firme: Array.isArray(firme) ? firme : [],
+      autore: r.autore, nato: r.nato, presa: r.presa };
+  },
+  prendi(id) {
+    return this._riga(db.prepare('SELECT * FROM morti_schede WHERE id=? AND tolta=0').get(String(id || '')));
+  },
+  // L'ultima versione di una cosa. Se l'ultima e' stata tolta, vale quella prima:
+  // una scheda tolta non deve portarsi dietro anche le versioni buone.
+  ultima(radice) {
+    return this._riga(db.prepare('SELECT * FROM morti_schede WHERE radice=? AND tolta=0 ORDER BY versione DESC LIMIT 1')
+      .get(String(radice || '')));
+  },
+  versioni(radice) {
+    return db.prepare('SELECT * FROM morti_schede WHERE radice=? AND tolta=0 ORDER BY versione DESC')
+      .all(String(radice || '')).map((r) => this._riga(r));
+  },
+  // Cerca per nome. Solo l'ultima versione di ogni cosa: le vecchie esistono per
+  // chi ce l'ha gia', non per chi sta scegliendo adesso.
+  cerca({ gioco = '', lingua = '', limite = 40 } = {}) {
+    const q = String(gioco || '').trim();
+    const righe = db.prepare(`SELECT * FROM morti_schede m WHERE tolta=0
+        AND (? = '' OR m.gioco LIKE ?)
+        AND (? = '' OR m.lingua = ?)
+        AND m.versione = (SELECT MAX(versione) FROM morti_schede v WHERE v.radice = m.radice AND v.tolta=0)
+      ORDER BY m.presa DESC, m.nato DESC LIMIT ?`)
+      .all(q, `%${q}%`, String(lingua || ''), String(lingua || ''), limite | 0);
+    return righe.map((r) => this._riga(r));
+  },
+  // Tutte le impronte in giro, per cercare una schermata senza sapere che gioco e'.
+  impronte(limite = 4000) {
+    return db.prepare(`SELECT * FROM morti_schede m WHERE tolta=0
+        AND m.versione = (SELECT MAX(versione) FROM morti_schede v WHERE v.radice = m.radice AND v.tolta=0)
+      ORDER BY m.presa DESC LIMIT ?`).all(limite | 0).map((r) => this._riga(r));
+  },
+  quante(autore) {
+    return db.prepare('SELECT COUNT(*) n FROM morti_schede WHERE autore=? AND tolta=0').get(String(autore || '').toLowerCase())?.n || 0;
+  },
+  daQuando(autore, da) {
+    return db.prepare('SELECT COUNT(*) n FROM morti_schede WHERE autore=? AND nato>=?').get(String(autore || '').toLowerCase(), Number(da) || 0)?.n || 0;
+  },
+  usata(id) {
+    db.prepare('UPDATE morti_schede SET presa=presa+1 WHERE id=?').run(String(id || ''));
+  },
+  togli(id) {
+    db.prepare('UPDATE morti_schede SET tolta=1 WHERE id=?').run(String(id || ''));
+  },
+  ultime(limite = 50) {
+    return db.prepare('SELECT * FROM morti_schede WHERE tolta=0 ORDER BY nato DESC LIMIT ?').all(limite | 0).map((r) => this._riga(r));
   },
 };
 
