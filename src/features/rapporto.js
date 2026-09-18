@@ -79,13 +79,25 @@ export function raccogli(channel, { inizio, fine, picco = 0 }) {
   const top = db.prepare(`SELECT user, MAX(display) display, COUNT(*) n FROM messages
     WHERE channel=? AND ts>=? AND ts<=? AND from_bot=0 AND user<>? AND user NOT LIKE '[%'
     GROUP BY user ORDER BY n DESC, user LIMIT 3`).all(ch, da, a, padroneDi(ch)).map((r) => ({ user: r.display || r.user, n: r.n }));
-  const out = { messaggi: chat.n | 0, persone: chat.p | 0, top, follow: 0, sub: 0, regali: 0, raid: 0, raidSpettatori: 0 };
+  const out = { messaggi: chat.n | 0, persone: chat.p | 0, top, follow: 0, sub: 0, regali: 0, raid: 0, raidSpettatori: 0, treni: 0, trenoLivello: 0, trenoChi: '' };
   for (const r of db.prepare(`SELECT text FROM messages WHERE channel=? AND user='[evento]' AND ts>=? AND ts<=?`).all(ch, da, a)) {
     const { tipo, dati } = evento(r.text);
     if (tipo === 'channel.follow') out.follow++;
     else if (tipo === 'channel.subscribe') { out.sub++; if (dati.is_gift) out.regali++; }
     else if (tipo === 'channel.subscription.gift') { const n = Number(dati.total) || 1; out.sub += n; out.regali += n; }
     else if (tipo === 'channel.raid') { out.raid++; out.raidSpettatori += Number(dati.viewers) || 0; }
+    // L'HYPE TRAIN: si conta solo quando FINISCE. Twitch manda un evento a ogni
+    // contributo, e il livello che conta e' quello a cui il treno si e' fermato;
+    // sommare i passaggi vorrebbe dire raccontare dieci treni al posto di uno.
+    else if (tipo === 'channel.hype_train.end') {
+      out.treni++;
+      const liv = Number(dati.level) || 0;
+      if (liv > out.trenoLivello) {
+        out.trenoLivello = liv;
+        const primo = Array.isArray(dati.top_contributions) ? dati.top_contributions[0] : null;
+        out.trenoChi = String(primo?.user_name || primo?.user_login || '').slice(0, 40);
+      }
+    }
   }
   const d = store.diretta(ch);
   out.presenti = d?.corrente
@@ -137,6 +149,17 @@ const PIU_NOTEVOLE = [
   [(d) => d.messaggi > 0, (d) => `${d.messaggi === 1 ? 'Un messaggio' : `${d.messaggi} messaggi`} in chat.`],
   [() => true, () => 'Serata tranquilla.'],
 ];
+// L'hype train, detto come lo direbbe una persona: il livello a cui e'
+// arrivato, e chi ce l'ha portato. Se ne sono passati piu' d'uno si dice
+// quanti, perche' due treni in una sera sono una sera diversa da una con uno.
+export function trenoValore(d) {
+  const liv = `livello ${d.trenoLivello || 1}`;
+  return d.treni > 1 ? `${d.treni} treni, il migliore al ${liv}` : liv;
+}
+export function trenoDetto(d) {
+  return `Hype train: ${trenoValore(d)}${d.trenoChi ? ` — l'ha spinto ${esc(d.trenoChi)}` : ''}`;
+}
+
 export function apertura(dati) {
   const d = dati || {};
   return (PIU_NOTEVOLE.find(([quando]) => quando(d)) || [])[1](d);
@@ -181,6 +204,7 @@ export function html(dati, { display = '', quando = '', codice = '' } = {}) {
   if (d.sub) resto.push(rigaHtml('Sub', `${d.sub}${d.regali ? ` (${d.regali} regalat${d.regali === 1 ? 'o' : 'i'})` : ''}`));
   if (d.raid) resto.push(rigaHtml('Raid', `${d.raid} (${d.raidSpettatori} person${d.raidSpettatori === 1 ? 'a' : 'e'})`));
   if (d.presenti) resto.push(rigaHtml('Presenti', `${d.presenti}${d.primeVolte ? ` (${d.primeVolte} nuov${d.primeVolte === 1 ? 'o' : 'i'})` : ''}`));
+  if (d.treni) resto.push(rigaHtml('Hype train', trenoValore(d)));
   if (d.donazioni) resto.push(rigaHtml('Donazioni', `${d.donazioni} · ${euro(d.donazioniCent || 0)}`));
 
   const clip = (d.clipElenco || []).filter((c) => c?.url);
@@ -231,6 +255,7 @@ export function testo(dati) {
   if (d.raid) conto.push(`Raid: ${d.raid} (${d.raidSpettatori} spettatori)`);
   righe.push(conto.join(' · '));
   if (d.presenti) righe.push(`Presenti: ${d.presenti}${d.primeVolte ? `, di cui ${d.primeVolte} alla prima volta` : ''}`);
+  if (d.treni) righe.push(trenoDetto(d));
   const extra = [];
   if (d.clip) extra.push(`Clip: ${d.clip}`);
   if (d.donazioni) extra.push(`Donazioni: ${d.donazioni} (${euro(d.donazioniCent || 0)})`);

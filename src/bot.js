@@ -83,6 +83,27 @@ export function canarinoLibero(login, ora = Date.now()) {
   return true;
 }
 
+// IL REGISTRO DEGLI EVENTI. Ogni evento di Twitch lascia una riga: il tipo, e
+// accanto il suo contenuto in JSON. La leggono il rapporto di fine diretta e il
+// cervello, e la rileggono rifacendo il JSON.
+//
+// UNA RIGA TAGLIATA A META' NON E' UN RECORD. Il taglio era a 300 caratteri, e
+// un evento un po' lungo — un hype train ne occupa seicento, un abbonamento con
+// un messaggio ci arriva vicino — veniva troncato in mezzo al JSON. Il tipo
+// restava leggibile, il contenuto no: chi rileggeva otteneva un oggetto vuoto,
+// e non c'era modo di accorgersene, perche' una riga tagliata sembra una riga.
+//
+// Quindi: o ci sta tutto, o si scrive il tipo e basta. Un contenuto che dichiara
+// di non esserci e' piu' onesto di un mezzo contenuto che finge di esserci.
+export const RIGA_EVENTO_MAX = 1000;
+export function rigaEvento(tipo, dati) {
+  const t = String(tipo || '').slice(0, 80);
+  let corpo = '{}';
+  try { corpo = JSON.stringify(dati || {}); } catch { corpo = '{}'; }
+  const riga = `${t} ${corpo}`;
+  return riga.length <= RIGA_EVENTO_MAX ? riga : `${t} {}`;
+}
+
 export class BotManager {
   constructor({ auth, helix, effects, modules, bus }) {
     this.auth = auth;
@@ -1019,7 +1040,7 @@ export class BotManager {
   // Consegna un evento a cervello + moduli + plugin (parte comune).
   _dispatchEvent(ev) {
     const { channel, type, data } = ev;
-    memory.logMessage(channel, '[evento]', '', `${type} ${JSON.stringify(data || {})}`.slice(0, 300), true);
+    memory.logMessage(channel, '[evento]', '', rigaEvento(type, data), true);
     this.brain?.onEvent?.(ev, (text) => this.say(channel, text));
     // alert overlay (follow/sub/cheer/raid): notifica animata + suono
     try { this.alerts?.onEvent(ev); } catch (e) { log.debug(`#${channel} alert evento:`, e?.message || e); }

@@ -28,6 +28,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - L’hype train adesso sta nella scena: livello, barra, quanto manca e chi spinge di più. Il bot lo dice in chat quando parte, quando sale e quando finisce. [vai: alert]
 - Puoi mettere in scena scritte e immagini tue: il titolo della serata, le regole, il logo, un «torno subito». Le trascini dove vuoi, fino a otto. [vai: alert]
 - Un elemento con lo sfondo a zero diventava una lastra colorata invece di sparire. Adesso «senza sfondo» vuol dire davvero senza niente dietro. [vai: alert]
+- Il rapporto di fine diretta dice anche a che livello è arrivato l’hype train e chi l’ha spinto. [vai: dirette]
+- Gli eventi più lunghi venivano registrati a metà e il rapporto non riusciva più a rileggerli. Adesso ci stanno interi. [vai: dirette]
 - In fondo a ogni mail che ti mandiamo c'è un codice di verifica. Lo ritrovi solo nella scheda Stato: se non combacia, quella mail non è nostra. [vai: stato]
 - Nell'elenco della posta adesso si legge il nome di chi scrive, non il pezzo prima della chiocciola. [vai: dirette]
 - C'è una scheda «Statistiche»: i numeri del canale per sette giorni, trenta o da sempre, e cinque classifiche. Prima erano sparsi fra Memoria, Giochi e Dirette. [vai: statistiche]
