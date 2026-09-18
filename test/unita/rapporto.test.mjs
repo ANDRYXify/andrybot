@@ -157,3 +157,59 @@ test('le clip si possono riaprire: link nella mail, link su Telegram, indirizzo 
   const h = r.html(d, {});
   assert.ok(h.includes('Le clip della serata (2)') && h.includes('clips.twitch.tv'), 'nella mail sono due, con il loro nome');
 });
+
+// UN RIAVVIO NON CANCELLA LA SERATA.
+//
+// La diretta in corso stava SOLO nella memoria del processo, e si apriva solo
+// sulla TRANSIZIONE spento→acceso. Bastava quindi una pubblicazione a diretta
+// iniziata: il bot ripartiva, vedeva il canale gia' acceso, e — per non gridare
+// «è live!» due volte — usciva prima di aprire la serata. Da li' in poi, mentre
+// eri in onda, la scheda dei numeri diceva zero minuti e zero picco; e quando la
+// diretta finiva non c'era niente da chiudere, quindi quella sera non lasciava
+// nessun rapporto e spariva anche dal conto delle dirette.
+//
+// Aprire non e' annunciare. Qui si prova che aprire due volte non ricomincia, e
+// che l'inizio non lo decide la nostra memoria.
+test('riaprire la stessa diretta non azzera quello che ha gia\' visto', () => {
+  const ch = 'ripresa-uno';
+  const t0 = 1_700_000_000_000;
+  r.apri(ch, { ora: t0 + 60_000, inizio: t0 });
+  r.osservaGiro(ch, { spettatori: 120, ora: t0 + 300_000 });
+  r.osservaGiro(ch, { spettatori: 80, ora: t0 + 600_000 });
+  assert.equal(r.inCorso(ch, { ora: t0 + 600_000 }).picco, 120);
+
+  // il bot riparte: rivede la stessa diretta, con lo stesso inizio
+  r.apri(ch, { ora: t0 + 700_000, inizio: t0 });
+  const c = r.inCorso(ch, { ora: t0 + 700_000 });
+  assert.equal(c.picco, 120, 'il picco di stasera e\' di stasera: un secondo rilevamento non lo azzera');
+  assert.equal(c.inizio, t0);
+  assert.equal(c.durataMs, 700_000, 'e i minuti si contano da quando e\' cominciata, non da adesso');
+});
+
+test('una diretta diversa e\' una diretta diversa, e riparte da zero', () => {
+  const ch = 'ripresa-due';
+  const t0 = 1_700_000_000_000;
+  r.apri(ch, { ora: t0, inizio: t0 });
+  r.osservaGiro(ch, { spettatori: 300, ora: t0 + 60_000 });
+  const domani = t0 + 86_400_000;
+  r.apri(ch, { ora: domani, inizio: domani });
+  const c = r.inCorso(ch, { ora: domani + 60_000 });
+  assert.equal(c.picco, 0, 'il picco di ieri non e\' il picco di stasera');
+  assert.equal(c.inizio, domani);
+});
+
+test('senza un inizio da fuori non si comincia da adesso, si chiede in giro', () => {
+  const ch = 'ripresa-tre';
+  const t0 = 1_700_000_000_000;
+  store.setDiretta(ch, { corrente: 'abc', corrente_ts: t0 });
+  const s = r.apri(ch, { ora: t0 + 3_600_000 });
+  assert.equal(s.inizio, t0, 'l\'inizio lo sanno le presenze, che lo scrivono sul disco');
+  assert.equal(r.inCorso(ch, { ora: t0 + 3_600_000 }).durataMs, 3_600_000);
+});
+
+test('un inizio impossibile non passa: nel futuro non si e\' cominciato niente', () => {
+  const ch = 'ripresa-quattro';
+  const t0 = 1_700_000_000_000;
+  const s = r.apri(ch, { ora: t0, inizio: t0 + 86_400_000 });
+  assert.equal(s.inizio, t0, 'una diretta cominciata domani darebbe una durata negativa');
+});
