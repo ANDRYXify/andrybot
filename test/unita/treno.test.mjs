@@ -177,3 +177,92 @@ test('le impostazioni hanno valori sensati anche se nessuno le tocca', () => {
 });
 
 test.after(() => usaEGetta.pulisci());
+
+// --- IL RICHIAMO NELL'ULTIMO QUARTO ----------------------------------------
+//
+// E" l"unico momento in cui dire "manca poco" sposta qualcosa: prima e" presto,
+// dopo e" fatta. E va detto UNA VOLTA per livello, perche" `progress` arriva a
+// ogni contributo e ripeterlo a ognuno e" la stessa raffica che gia" evitiamo
+// per i passaggi di livello.
+const CON_QUASI = normTreno({
+  attivo: true, annuncia: true,
+  testoParte: 'parte', testoLivello: 'liv {livello}', testoFine: 'fine',
+  testoQuasi: 'quasi {livello}, mancano {manca}',
+});
+
+test('nell ultimo quarto il bot dice quanto manca, e lo dice una volta sola', () => {
+  prepara(CON_QUASI);
+  const dette = [];
+  const say = (ch, t) => dette.push(t);
+  treno.suEvento(CH, 'channel.hype_train.begin', EV(), { say, ora: ORA });
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ progress: 300 }), { say, ora: ORA + 1000 });
+  assert.deepEqual(dette, ['parte'], 'a tre quinti la cima non si vede ancora');
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ progress: 380 }), { say, ora: ORA + 2000 });
+  assert.deepEqual(dette, ['parte', 'quasi 2, mancano 120']);
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ progress: 420 }), { say, ora: ORA + 3000 });
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ progress: 490 }), { say, ora: ORA + 4000 });
+  assert.deepEqual(dette, ['parte', 'quasi 2, mancano 120'], 'ogni contributo dopo non e una notizia');
+});
+
+test('al livello dopo il richiamo torna disponibile', () => {
+  prepara(CON_QUASI);
+  const dette = [];
+  const say = (ch, t) => dette.push(t);
+  treno.suEvento(CH, 'channel.hype_train.begin', EV(), { say, ora: ORA });
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ progress: 400 }), { say, ora: ORA + 1000 });
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ level: 3, progress: 30, goal: 800 }), { say, ora: ORA + 2000 });
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ level: 3, progress: 700, goal: 800 }), { say, ora: ORA + 3000 });
+  assert.deepEqual(dette, ['parte', 'quasi 2, mancano 100', 'liv 3', 'quasi 3, mancano 100']);
+});
+
+test('il passaggio di livello batte il richiamo, ma non se lo mangia', () => {
+  prepara(CON_QUASI);
+  const dette = [];
+  const say = (ch, t) => dette.push(t);
+  treno.suEvento(CH, 'channel.hype_train.begin', EV(), { say, ora: ORA });
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ level: 3, progress: 450 }), { say, ora: ORA + 1000 });
+  assert.deepEqual(dette, ['parte', 'liv 3'], 'un evento, una frase: quella che conta di piu');
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ level: 3, progress: 470 }), { say, ora: ORA + 2000 });
+  assert.deepEqual(dette, ['parte', 'liv 3', 'quasi 3, mancano 30'],
+    'il richiamo era solo rimandato: segnarlo speso senza dirlo lo avrebbe perso per sempre');
+});
+
+test('e il treno che parte gia in cima non brucia il richiamo', () => {
+  prepara(CON_QUASI);
+  const dette = [];
+  const say = (ch, t) => dette.push(t);
+  treno.suEvento(CH, 'channel.hype_train.begin', EV({ progress: 480 }), { say, ora: ORA });
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ progress: 490 }), { say, ora: ORA + 1000 });
+  assert.deepEqual(dette, ['parte', 'quasi 2, mancano 10']);
+});
+
+test('il numero che manca e per il livello DOPO, non per quello in cui siamo', () => {
+  prepara(normTreno({ attivo: true, annuncia: true }));
+  const dette = [];
+  const say = (ch, t) => dette.push(t);
+  treno.suEvento(CH, 'channel.hype_train.begin', EV(), { say, ora: ORA });
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ progress: 400 }), { say, ora: ORA + 1000 });
+  assert.equal(dette.at(-1), 'Manca poco al livello 3: 100 punti!',
+    'siamo al 2 e Twitch manda i punti verso il 3: scrivere "al livello 2" sarebbe un traguardo gia passato');
+});
+
+test('svuotando il testo il richiamo non si dice piu', () => {
+  prepara(normTreno({ attivo: true, annuncia: true, testoParte: 'parte', testoQuasi: '' }));
+  const dette = [];
+  const say = (ch, t) => dette.push(t);
+  treno.suEvento(CH, 'channel.hype_train.begin', EV(), { say, ora: ORA });
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ progress: 490 }), { say, ora: ORA + 1000 });
+  assert.deepEqual(dette, ['parte']);
+});
+
+test('un treno nuovo si riprende il diritto al richiamo', () => {
+  prepara(CON_QUASI);
+  const dette = [];
+  const say = (ch, t) => dette.push(t);
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ progress: 400 }), { say, ora: ORA });
+  treno.suEvento(CH, 'channel.hype_train.begin', EV({ id: 't2', progress: 400 }), { say, ora: ORA + 1000 });
+  assert.deepEqual(dette, ['quasi 2, mancano 100', 'parte'],
+    'il secondo treno non eredita il richiamo gia speso dal primo');
+  treno.suEvento(CH, 'channel.hype_train.progress', EV({ id: 't2', progress: 450 }), { say, ora: ORA + 2000 });
+  assert.deepEqual(dette, ['quasi 2, mancano 100', 'parte', 'quasi 2, mancano 50']);
+});

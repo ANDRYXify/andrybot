@@ -481,6 +481,9 @@ export const normTreno = (x) => {
     testoParte: String(x.testoParte == null ? 'Hype train partito! Spingiamo.' : x.testoParte).slice(0, 200),
     testoLivello: String(x.testoLivello == null ? 'Hype train al livello {livello}!' : x.testoLivello).slice(0, 200),
     testoFine: String(x.testoFine == null ? 'Treno finito al livello {livello}. Grazie {chi}!' : x.testoFine).slice(0, 200),
+    // IL RICHIAMO, nell'ultimo quarto della salita: e' l'unico momento in cui
+    // dire «manca poco» serve a qualcosa. Si spegne svuotando il testo.
+    testoQuasi: String(x.testoQuasi == null ? 'Manca poco al livello {prossimo}: {manca} punti!' : x.testoQuasi).slice(0, 200),
     posizione: unoDi(x.posizione, POS_ANG, 'alto-destra'),
     xy: xyOk(x.xy),
     stile: normWidgetStile(x.stile),
