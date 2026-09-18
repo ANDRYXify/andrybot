@@ -74,3 +74,44 @@ test('un periodo sconosciuto ricade sui sette giorni', () => {
   assert.equal(st.periodoValido('tutto'), 'tutto');
   assert.equal(st.periodoValido(30), '30');
 });
+
+// LA SERATA IN CORSO. Un rapporto nasce quando la diretta finisce: finche' eri
+// in onda la scheda diceva zero dirette, zero minuti, zero picco — mentre i
+// messaggi in chat, che sono righe nel database, salivano. Da fuori sembrava
+// rotta.
+test('la diretta in corso si conta, col suo picco e i suoi minuti', () => {
+  const senza = st.riassunto(CH, { periodo: '7', ora: ORA });
+  const con = st.riassunto(CH, { periodo: '7', ora: ORA, inCorso: { inizio: ORA - 3600_000, picco: 12 } });
+  assert.equal(con.dirette.n, senza.dirette.n + 1, 'una diretta in piu\': quella di adesso');
+  assert.equal(con.dirette.oreMs, senza.dirette.oreMs + 3600_000, 'e i minuti da quando e\' cominciata');
+  assert.equal(con.dirette.inCorso.picco, 12);
+  assert.equal(con.dirette.inCorso.durataMs, 3600_000);
+  assert.ok(!senza.dirette.inCorso, 'senza diretta in corso non compare niente');
+});
+
+test('il picco e\' il piu\' alto, non la somma', () => {
+  const alto = st.riassunto(CH, { periodo: '7', ora: ORA, inCorso: { inizio: ORA - 1000, picco: 500 } });
+  assert.equal(alto.dirette.picco, 500, 'se adesso c\'e\' piu\' gente che mai, il picco e\' quello');
+  const basso = st.riassunto(CH, { periodo: '7', ora: ORA, inCorso: { inizio: ORA - 1000, picco: 2 } });
+  const senza = st.riassunto(CH, { periodo: '7', ora: ORA });
+  assert.equal(basso.dirette.picco, senza.dirette.picco, 'se e\' meno del record del periodo, il record resta quello');
+});
+
+test('una serata cominciata prima del periodo porta dentro solo la sua parte di adesso', () => {
+  const senza = st.riassunto(CH, { periodo: '7', ora: ORA });
+  // accesa da venti giorni (caso limite, ma la regola dev\'essere quella)
+  const con = st.riassunto(CH, { periodo: '7', ora: ORA, inCorso: { inizio: ORA - 20 * G, picco: 5 } });
+  assert.equal(con.dirette.oreMs, senza.dirette.oreMs + 7 * G, 'non porta dentro le ore di prima del periodo');
+  // e «da sempre» le conta tutte
+  const sempre = st.riassunto(CH, { periodo: 'tutto', ora: ORA, inCorso: { inizio: ORA - 20 * G, picco: 5 } });
+  const sempreSenza = st.riassunto(CH, { periodo: 'tutto', ora: ORA });
+  assert.equal(sempre.dirette.oreMs, sempreSenza.dirette.oreMs + 20 * G);
+});
+
+test('una diretta che comincia adesso non fa sparire niente', () => {
+  const senza = st.riassunto(CH, { periodo: '7', ora: ORA });
+  const con = st.riassunto(CH, { periodo: '7', ora: ORA, inCorso: { inizio: ORA, picco: 0 } });
+  assert.equal(con.dirette.oreMs, senza.dirette.oreMs, 'zero minuti in piu\'');
+  assert.equal(con.dirette.n, senza.dirette.n + 1, 'ma la diretta c\'e\'');
+  assert.equal(con.messaggi, senza.messaggi, 'e la chat non cambia');
+});

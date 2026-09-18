@@ -2145,3 +2145,15 @@ input[type="file"]::file-selector-button {
 @media (prefers-reduced-motion: reduce) {
   .cerca-mira { animation: none; outline: var(--contorno-sp) solid var(--acc); outline-offset: 3px; }
 }
+
+.stat.in-onda { position: relative; border-color: var(--acc-bordo); }
+.stat-vivo {
+  position: absolute; top: 6px; right: 8px;
+  display: inline-flex; align-items: center; gap: .3em;
+  font-size: .58rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--acc);
+}
+.stat-vivo::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--acc); }
+@media (prefers-reduced-motion: no-preference) {
+  .stat-vivo::before { animation: statPulsa 2s ease-in-out infinite; }
+}
+@keyframes statPulsa { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }

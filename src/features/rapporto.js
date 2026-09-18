@@ -59,6 +59,24 @@ export function chiudi(channel, { ora = Date.now() } = {}) {
 
 export function aperta(channel) { return sessioni.has(norm(channel)); }
 
+// LA DIRETTA IN CORSO, se ce n'e' una.
+//
+// Serve a chi fa i numeri del canale: prima una serata esisteva solo dopo che
+// era finita — il rapporto si scrive alla chiusura — e mentre eri in onda la
+// scheda diceva zero dirette, zero minuti, zero picco. La sessione con dentro
+// inizio e picco ce l'ha gia' questo modulo: la si mostra, invece di tenerne un
+// secondo conto da qualche altra parte che poi non torna.
+export function inCorso(channel, { ora = Date.now() } = {}) {
+  const s = sessioni.get(norm(channel));
+  if (!s) return null;
+  return {
+    inizio: s.inizio,
+    durataMs: Math.max(0, ora - s.inizio),
+    picco: s.picco,
+    media: s.giri ? Math.round(s.somma / s.giri) : 0,
+  };
+}
+
 // Quello che e' successo fra inizio e fine, letto dal database. Pura sui dati.
 function evento(testo) {
   const t = String(testo || '');
