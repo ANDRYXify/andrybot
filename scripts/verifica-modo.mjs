@@ -43,14 +43,17 @@ const ROTTURE = [
     'l\'attesa torna cieca al ritmo della chat'],
   ['src/features/handler.js', 'chat.say(channel, risposta, { rispondiA: msg.id });', 'chat.say(channel, risposta);',
     'la risposta non si aggancia piu\' alla domanda'],
-  ['src/bot.js', 'return (t, o) => this.say(msg.channel, t, o);', 'return (t) => this.say(msg.channel, t);',
+  ['src/bot.js', 'return con((t, o) => this.say(msg.channel, t, o));', 'return con((t) => this.say(msg.channel, t));',
     'la voce di una piattaforma perde per strada l\'id'],
   ['src/features/handler.js', '    primo: !!msg.isFirst,', '    primo: !!msg.isFirst,\n    caro: persona.amicizia(msg.user).livello,',
     'nel ruolo rientra la memoria di chi ha davanti'],
   ['src/ai/brain.js', '        iniziativa: true,', '', 'parla da solo senza sapere che sta partendo lui'],
   ['src/ai/brainpy.js', 'iniziativa: iniziativa || undefined,', '', "l'iniziativa non arriva al cervello"],
-  ['src/bot.js', 'this.brain?.iniziativa?.(login)', 'this.brain?.nonEsiste?.(login)',
-    'il battito torna a non passare dal cervello'],
+  // Qui ce n'era una terza, «il battito torna a non passare dal cervello»: il
+  // battito ogni tre minuti tirava una moneta e ogni tanto faceva parlare il bot.
+  // Quella strada non esiste piu' — chi parla da solo parte dai momenti, e a
+  // guardarli ci sono i controlli qui sopra. Una rottura che rompe una cosa che
+  // non c'e' piu' non prova niente: si toglie, invece di tenerla a dire «scaduta».
 ];
 
 if (process.argv.includes('--selftest')) {
@@ -126,8 +129,19 @@ dice(spontanee.length === 1, 'quando parte lui, guarda la chat prima di parlare'
     : 'nessuna: la riga d\'iniziativa non passa piu\' dal cervello');
 dice(/\biniziativa\b/.test(corpoHttp), 'e l\'iniziativa viaggia nel corpo della richiesta',
   'il cervello non sapra\' mai che nessuno gli ha chiesto niente');
-dice(/this\.brain\.iniziativa\(login, \{ spunto \}\)/.test(botJs), 'ed e\' il bot a chiederglielo, dai momenti e con il motivo',
+// Qui si guardava la forma ESATTA della chiamata, e la forma e' cambiata il
+// giorno che l'iniziativa ha smesso di pescarsi la riga da sola. Un cancello che
+// inchioda una firma invece dell'invariante diventa rosso per un miglioramento —
+// e chi lo vede rosso impara a non credergli. Adesso chiede le due cose che
+// contano davvero, e sono due.
+dice(/this\.brain\.iniziativa\(login, \{[^}]*\bspunto\b/.test(botJs), 'ed e\' il bot a chiederglielo, dai momenti e con il motivo',
   'la riga d\'iniziativa non passa dal cervello con lo spunto: torna a uscire da un elenco, o parte senza motivo');
+// E la riga a cui agganciarsi gliela passa CHI LA CHAT CE L'HA IN MANO. Da solo
+// si agganciava all'ultima riga qualunque — anche una risposta a un altro, anche
+// una che chiamava qualcuno per nome — e finiva per intromettersi fra due.
+dice(/this\.brain\.iniziativa\(login, \{[^}]*\baggancio\b/.test(botJs),
+  'e con la riga a cui agganciarsi, scelta da chi la chat ce l\'ha in mano',
+  'senza, il cervello si ripesca l\'ultima riga qualunque: torna a intromettersi fra due che parlano');
 dice(!/proattiva|PROATTIVE/.test(senzaCommentiJs(leggi('src/ai/persona.js'))),
   'e l\'elenco di frasi buone per qualunque chat non esiste piu\'',
   'finche\' c\'e\', prima o poi qualcuno ci ricasca');
@@ -137,8 +151,15 @@ dice(!/proattiva|PROATTIVE/.test(senzaCommentiJs(leggi('src/ai/persona.js'))),
 // qua — quattro distintivi, e dentro al ruolo solo cio' che sta NEL messaggio.
 const corpoRuolo = (handlerNudo.split('function ruoloDi(msg) {')[1] || '').split('\n}')[0];
 const diQua = [...corpoRuolo.matchAll(/^\s*(\w+):/gm)].map((m) => m[1]).sort();
-dice(diQua.length === 4, `i distintivi sono quattro (${diQua.join(', ')})`,
-  `ne trovo ${diQua.length}: il cervello ne capisce quattro, quelli spaiati non arrivano`);
+// I NOMI, non solo quanti sono. Contarli e basta lasciava passare la cosa da cui
+// nasce il controllo: un distintivo RINOMINATO da un lato solo. I nomi restano
+// quattro, il conto torna, e il cervello riceve una chiave che non conosce —
+// perde quel distintivo e nessuno se ne accorge. Il gemello di questo cancello,
+// nel repository del cervello, legge proprio questo file: se qui si aggiunge un
+// distintivo, va insegnato anche a lui, ed e' giusto che costi un passaggio.
+const DISTINTIVI = ['mod', 'primo', 'sub', 'vip'];
+dice(diQua.join(',') === DISTINTIVI.join(','), `i distintivi sono quattro e si chiamano cosi' (${diQua.join(', ')})`,
+  `qui trovo ${diQua.join(', ') || 'niente'}: il cervello capisce ${DISTINTIVI.join(', ')}, e quelli spaiati non arrivano`);
 dice(!/amicizia|persona\./.test(corpoRuolo),
   'nel ruolo entra solo cio\' che sta NEL messaggio: il bot non ricorda nessuno',
   'l\'affinita\' fra canali sarebbe memoria di una persona');
