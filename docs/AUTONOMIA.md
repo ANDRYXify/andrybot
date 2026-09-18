@@ -106,3 +106,27 @@ dall'avvio del processo). Cosi' un riavvio costa al massimo un giro di silenzio,
 mai una raffica, qualunque sia il motivo per cui il processo e' ripartito — e il
 motivo resta comunque da guardare, perche' un bot che si riavvia spesso ha un
 guaio suo.
+
+## Il credito che si spendeva tutto insieme
+
+Lo stesso difetto della raffica, da un'altra porta. I riposi si **fermavano**
+nei momenti in cui parlare era impossibile:
+
+- a canale spento, per chi ha scelto «solo in diretta»;
+- a dose zero;
+- e soprattutto a **chat ferma** — perche' senza un momento buono il giro esce
+  prima ancora di arrivare alla decisione.
+
+Un'ora cosi' diventava un gettone: l'intervallo risultava finito da un pezzo, e
+appena la chat riprendeva il gettone si spendeva subito. Da fuori si vede cosi':
+«si bloccano a diretta spenta e tornano tutte insieme quando si accende».
+
+La regola adesso e' una sola, e vale anche per il riavvio: **il silenzio conta
+come riposo solo se e' stato scelto**. Quando parlare era vietato
+(`spontanea.vietato`) o non c'era niente da dire, l'orologio va avanti con l'ora
+(`spontanea.riposaOra`). Cosi' l'intervallo si misura sul tempo in cui c'era
+davvero qualcosa da dire, e al ritorno della chat non c'e' niente da recuperare.
+
+Il vietato sta in una funzione sola perche' lo devono sapere in due: chi decide
+se parlare, e chi tiene i riposi. Scritto due volte, prima o poi uno dei due
+avrebbe avuto un'idea diversa di cosa vuol dire «non si puo'».

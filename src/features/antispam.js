@@ -160,6 +160,11 @@ let ultimaPulizia = 0;
 
 const norm = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
+// Chi sta mandando bit. Il numero arriva dal messaggio (chat.js lo tira fuori
+// dai tag una volta per tutte), cosi' nessuno qui deve sapere come si chiama il
+// campo su Twitch.
+export const conBit = (msg) => (Number(msg?.bits) || 0) > 0;
+
 function registraMessaggio(chiave, testo) {
   const ora = Date.now();
   const lista = (recenti.get(chiave) || []).filter((r) => ora - r.ts < FIN_RIPET);
@@ -188,20 +193,32 @@ export function valuta(msg, cfg) {
   // esenzioni: mod e broadcaster sempre; VIP esenti da tutto (fidati)
   if (msg.isBroadcaster || msg.isMod || msg.isVip) return null;
 
+  // UN MESSAGGIO CHE PORTA DEI BIT NON SI CONTA FRA LE RIPETIZIONI.
+  //
+  // Mandare «5 bit» cinque volte di fila e' quello che fa chi sta pagando, non
+  // chi sta spammando: sono cinque messaggi uguali per forza, perche' il
+  // cheermote e' quello. Cancellarli e' il falso positivo piu' caro che ci sia —
+  // costa soldi allo streamer e fa fare una figura a chi li ha mandati.
+  //
+  // E non entrano nemmeno nella memoria: se ci entrassero, il cheer di prima
+  // farebbe sembrare ripetuto il messaggio normale di dopo. Le regole sul
+  // CONTENUTO (link, maiuscole, simboli, lunghezza) valgono lo stesso: qualche
+  // bit non e' un lasciapassare per un messaggio pubblicitario.
+  const daPagante = conBit(msg);
   const chiave = msg.channel + '|' + msg.user;
-  const lista = registraMessaggio(chiave, testo);
+  const lista = daPagante ? [] : registraMessaggio(chiave, testo);
 
   // link non autorizzati (in base al tier consentito)
   if (cfg.link && tierUtente(msg) < (RANK[cfg.linkTier] ?? 1) && haLinkNonPermesso(testo, msg.channel, cfg)) {
     return { motivo: 'link non consentito' };
   }
   // copypasta / stesso messaggio ripetuto da poco
-  if (cfg.ripetizioni) {
+  if (cfg.ripetizioni && !daPagante) {
     const n = norm(testo);
     if (n.length >= 6 && lista.filter((r) => r.testo === n).length >= 3) return { motivo: 'messaggio ripetuto (spam)' };
   }
   // flood: troppi messaggi in pochi secondi
-  if (cfg.flood) {
+  if (cfg.flood && !daPagante) {
     const ora = Date.now();
     if (lista.filter((r) => ora - r.ts < FIN_FLOOD).length >= MAX_FLOOD) return { motivo: 'flood (troppi messaggi)' };
   }

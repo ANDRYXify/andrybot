@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-18
 
+- Chi manda bit non viene più preso per spam: cinque «5 bit» di fila sono cinque messaggi uguali per forza, e adesso il filtro lo sa. [vai: regole]
+- Le cose che il bot dice da solo non si accumulano più mentre la chat è ferma o la diretta è spenta: prima tornavano tutte insieme appena si riaccendeva. [vai: personalita]
 - Il bot non spara più una riga appena si riavvia: se non si ricorda quando ha parlato l'ultima volta, conta da adesso. Se il processo ripartiva spesso, sembrava impazzito. [vai: personalita]
 - Il bot fa il portiere del gruppo Telegram: chi entra non può scrivere finché non preme un tasto, e chi non risponde in tempo esce (e può rientrare). Lo accendi tu, ed è spento finché non lo fai. [vai: telegram]
 - Per le sere diverse dalle altre ci sono le occasioni: un'aggiunta sopra l'overlay che hai già. La accendi e compare, la spegni e torna tutto com'era, e in OBS non tocchi niente. [vai: alert]

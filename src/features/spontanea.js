@@ -29,10 +29,19 @@ const PRIORITA = ['domanda', 'hype', 'rilancio', 'flusso'];
 
 // Ritorna { tipo: null, perche } oppure { tipo, momento } dove tipo e' cosa dire:
 // 'domanda' | 'hype' | 'rilancio' | 'iniziativa' | 'battuta' | 'promo'.
+// QUANDO PARLARE E' VIETATO IN PARTENZA — non «non c'e' niente da dire», proprio
+// vietato. Sta qui, in una funzione sola, perche' lo deve sapere anche chi tiene
+// i riposi: in questi momenti un riposo non deve accumulare credito.
+export function vietato({ dose, live, soloLive } = {}) {
+  if ((Number(dose) || 0) <= 0) return 'dose a zero';
+  if (soloLive && live !== true) return 'non in diretta';
+  return '';
+}
+
 export function scegliMomento({ ora, dose, live, soloLive, momenti = [], ultimaSpontanea = 0, ultimaPromo = 0, ultimoTipo = '', promoAccesa = true, battutaPronta = false, caso = {} }) {
   const d = Math.min(DOSE_MAX, Math.max(0, Number(dose) || 0));
-  if (d <= 0) return { tipo: null, perche: 'dose a zero' };
-  if (soloLive && live !== true) return { tipo: null, perche: 'non in diretta' };
+  const no = vietato({ dose: d, live, soloLive });
+  if (no) return { tipo: null, perche: no };
   if (!momenti.length) return { tipo: null, perche: 'nessun momento' };
   const daUltima = ora - (Number(ultimaSpontanea) || 0);
   const ordinati = [...momenti].sort((a, b) => PRIORITA.indexOf(a.tipo) - PRIORITA.indexOf(b.tipo));
@@ -70,6 +79,24 @@ export function scegliMomento({ ora, dose, live, soloLive, momenti = [], ultimaS
 // La cura non e' un tetto in piu': e' che l'assenza di memoria valga come «ho
 // appena parlato». Cosi' un riavvio costa al massimo un giro di silenzio, mai
 // una raffica — qualunque sia il motivo per cui il processo e' ripartito.
+// E UN RIPOSO E' UN OROLOGIO, NON UNA CODA.
+//
+// I riposi si fermavano nei momenti in cui parlare era impossibile: a canale
+// spento (con «solo in diretta»), a dose zero, e soprattutto a CHAT FERMA —
+// perche' senza un momento buono il giro esce prima ancora di decidere. Ogni ora
+// cosi' diventava un gettone: l'intervallo risultava finito da un pezzo, e appena
+// la chat riprendeva il gettone si spendeva subito. Da fuori: «si bloccano a
+// diretta spenta e tornano tutte insieme quando si accende».
+//
+// Il silenzio conta come riposo solo se e' stato SCELTO. Quando parlare non si
+// poteva, l'orologio va avanti con l'ora: cosi' l'intervallo si misura sul tempo
+// in cui c'era davvero qualcosa da dire, e al ritorno della chat non c'e' niente
+// da recuperare.
+export function riposaOra(mappe, login, ora) {
+  const l = String(login || '').toLowerCase();
+  for (const m of (Array.isArray(mappe) ? mappe : [])) m?.set?.(l, Number(ora) || Date.now());
+}
+
 export function ultimoNoto(mappa, login, nato) {
   const v = Number(mappa?.get?.(String(login || '').toLowerCase()) || 0);
   return v > 0 ? v : (Number(nato) || 0);

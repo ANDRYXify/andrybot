@@ -343,6 +343,7 @@ export class ChatBot extends EventEmitter {
       isBroadcaster,
       isSub: tags['subscriber'] === '1' || badges.includes('subscriber/') || badges.includes('founder/'),
       isVip: tags['vip'] === '1' || badges.includes('vip/'),
+      bits: Number(tags['bits']) || 0,                         // quanti bit porta questo messaggio (0 = nessuno)
       isFirst: tags['first-msg'] === '1',                      // prima volta che scrive in questo canale
       isSelf: user === this._login,
       tags,

@@ -2,7 +2,7 @@
 // con il caso in mano.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { scegliMomento, intervalloDose, registra, elenco, ultimoNoto, FLOOR_MS, FLOOR_DOMANDA_MS, PROMO_MIN_MS, DOSE_MAX, REGISTRO_MAX, INTERVALLO_MAX_MS } from '../../src/features/spontanea.js';
+import { scegliMomento, intervalloDose, registra, elenco, ultimoNoto, vietato, riposaOra, FLOOR_MS, FLOOR_DOMANDA_MS, PROMO_MIN_MS, DOSE_MAX, REGISTRO_MAX, INTERVALLO_MAX_MS } from '../../src/features/spontanea.js';
 
 const ORA = 1_760_000_000_000;
 const M = 60_000;
@@ -111,4 +111,40 @@ test('appena avviato non parla: il riposo comincia dall\'avvio', () => {
     ultimaSpontanea: 0, battutaPronta: true, caso: { jitter: 0.5, scelta: 0.5 },
   });
   assert.notEqual(vecchio.tipo, null, 'con lo zero parlava subito: e\' quello che faceva la raffica');
+});
+
+// IL CREDITO CHE SI SPENDE TUTTO INSIEME.
+//
+// A chat ferma il giro esce prima ancora di decidere, quindi i riposi restavano
+// fermi. Ogni ora di silenzio diventava un gettone, e appena la chat riprendeva
+// il gettone si spendeva subito: da fuori «si bloccano a diretta spenta e
+// tornano tutte insieme quando si accende».
+test('parlare vietato: a dose zero e a canale spento, quando e\' chiesta la diretta', () => {
+  assert.equal(vietato({ dose: 0, live: true, soloLive: false }), 'dose a zero');
+  assert.equal(vietato({ dose: 0.3, live: false, soloLive: true }), 'non in diretta');
+  assert.equal(vietato({ dose: 0.3, live: false, soloLive: false }), '', 'senza «solo in diretta» a canale spento si puo\' parlare');
+  assert.equal(vietato({ dose: 0.3, live: true, soloLive: true }), '');
+  assert.equal(vietato({}), 'dose a zero');
+});
+
+test('un riposo e\' un orologio: quando non si poteva parlare va avanti con l\'ora', () => {
+  const a = new Map([['andryx', 100]]);
+  const b = new Map();
+  riposaOra([a, b, null], 'ANDRYX', 5_000);
+  assert.equal(a.get('andryx'), 5_000, 'l\'orologio si sposta in avanti');
+  assert.equal(b.get('andryx'), 5_000, 'anche quello che non aveva ancora niente');
+});
+
+test('dopo un\'ora di chat ferma non esce niente al primo messaggio', () => {
+  const momenti = [{ tipo: 'flusso', dati: {}, spunto: '' }];
+  const ORA2 = ORA + 60 * M;
+  // com'era: il riposo fermo a un'ora fa → parla all'istante
+  assert.notEqual(scegliMomento({ ...base, ora: ORA2, momenti, ultimaSpontanea: ORA }).tipo, null);
+  // com'e': l'orologio e' andato avanti mentre la chat era ferma
+  const fermi = new Map();
+  riposaOra([fermi], 'andryx', ORA2);
+  assert.equal(scegliMomento({ ...base, ora: ORA2, momenti, ultimaSpontanea: ultimoNoto(fermi, 'andryx', 0) }).tipo, null,
+    'l\'intervallo si misura sul tempo in cui c\'era qualcosa da dire');
+  // e dopo un intervallo pieno di chat viva, parla
+  assert.notEqual(scegliMomento({ ...base, ora: ORA2 + 20 * M, momenti, ultimaSpontanea: ultimoNoto(fermi, 'andryx', 0) }).tipo, null);
 });
