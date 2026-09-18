@@ -6250,16 +6250,6 @@ function _vesteCampi() {
     </div>`;
 }
 
-function ovlElemento(k, ico, nome, sez) {
-  const mirabile = ELEM_SCENA.includes(k);
-  return `<div class="ovl-elem"${mirabile ? ` data-mira="${k}"` : ''}>
-    <span class="oe-ico">${_bIco(ico)}</span>
-    <span class="oe-nome">${esc(nome)}</span>
-    <button type="button" class="oe-mod" ${sez ? `data-apri-sez="${sez}"` : `data-scegli="${k}"`}>${L('Modifica', 'Edit', 'Editar')}</button>
-    <label class="interruttore oe-sw" title="${L('Mostra', 'Show', 'Mostrar')} «${esc(nome)}» ${L('in questo overlay', 'in this overlay', 'en este overlay')}"><input type="checkbox" id="mostra-${k}" checked><span class="levetta"></span></label>
-  </div>`;
-}
-
 function vesteRiga(asp) {
   const chip = TEMPLATE_BUILTIN.map((t, i) =>
     `<button type="button" class="veste-b" data-veste="${i}"${t.che ? ` title="${esc(t.che)}"` : ''}>${esc(t.nome)}</button>`).join('');
@@ -6472,22 +6462,6 @@ function pannelloAlert() {
           <li>${L('Incolla il link e metti <b>1920 × 1080</b>', 'Paste the link and set <b>1920 × 1080</b>', 'Pega el enlace y pon <b>1920 × 1080</b>')}</li>
           <li>${L('Spunta <b>«Aggiorna browser quando la scena diventa attiva»</b>', 'Tick <b>«Refresh browser when scene becomes active»</b>', 'Marca <b>«Actualizar navegador cuando la escena se active»</b>')}</li>
         </ol>
-      <label class="campo spazio-sopra">${L('Elementi (fonti) di questo overlay', 'Elements (sources) of this overlay', 'Elementos (fuentes) de este overlay')} <span class="tenue">— ${L('accendi/spegni cosa compare, poi personalizzali con «Modifica»', 'turn on/off what appears, then customize them with «Edit»', 'activa/desactiva qué aparece, luego personalízalos con «Editar»')}</span></label>
-      <div class="ovl-elementi">
-        ${ovlElemento('alert', ICO.megafono, L('Alert eventi', 'Event alerts', 'Alertas de eventos'), 'sez-alert')}
-        ${ovlElemento('chat', ICO.chat, L('Chat a schermo', 'On-screen chat', 'Chat en pantalla'), 'sez-chat')}
-        ${ovlElemento('wf', ICO.cuore, L('Ultimo follower', 'Latest follower', 'Último seguidor'), '')}
-        ${ovlElemento('ws', ICO.medaglia, L('Ultimo sub', 'Latest sub', 'Último sub'), '')}
-        ${ovlElemento('goal', ICO.trofeo, L('Obiettivo', 'Goal', 'Objetivo'), 'sez-goal')}
-        ${ovlElemento('cont', ICO.grafico, L('Contatori', 'Counters', 'Contadores'), '')}
-        ${ovlElemento('cart', ICO.cartello, L('Cartelli', 'Signs', 'Carteles'), 'sez-cart')}
-        ${ovlElemento('musica', ICO.musica, L('Player musica', 'Music player', 'Reproductor de música'), 'sez-musica')}
-        ${ovlElemento('timer', ICO.orologio, L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), 'sez-timer')}
-        ${ovlElemento('treno', ICO.treno, L('Hype train', 'Hype train', 'Hype train'), 'sez-treno')}
-        ${ovlElemento('pen', ICO.penitenza, L('Sfida a tempo', 'Timed challenge', 'Reto a tiempo'), 'penitenze')}
-        ${ovlElemento('effetti', ICO.effetti, L('Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'), 'effetti')}
-        ${ovlElemento('consolify', ICO.onda, L('Tasti di CONSOLify', 'CONSOLify keys', 'Teclas de CONSOLify'), 'consolify')}
-      </div>
       <p class="suggerimento">${L('Tienilo per te: chi ha questo link può far comparire cose nel tuo overlay.', 'Keep it to yourself: anyone with this link can make things appear in your overlay.', 'Guárdalo para ti: quien tenga este enlace puede hacer aparecer cosas en tu overlay.')}</p>
     </div>
 
@@ -6915,10 +6889,9 @@ const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
 const _mostraOra = () => {
-  const o = ELEM_OVL.reduce((q, k) => (q[k] = mostraChk(k), q), {});
   const m = (_ovAttuale() || {}).mostra || {};
-  for (const e of ELEMENTI()) if ((e.goal || e.cont) && m[e.k] === false) o[e.k] = false;
-  for (const [id] of CHAT_DA) if (m['chat:' + id] === false) o['chat:' + id] = false;
+  const o = ELEM_OVL.reduce((q, k) => (q[k] = m[k] !== false, q), {});
+  for (const [k, v] of Object.entries(m)) if (v === false) o[k] = false;
   return o;
 };
 const _ovMostra = () => { const o = _ovAttuale(); if (!o) return {}; return (o.mostra = o.mostra || {}); };
@@ -6927,7 +6900,7 @@ const _idEl = (k) => 'ap-' + String(k).replace(/[^a-z0-9]/gi, '-');
 const _nodo = (k) => _g(_idEl(k));
 let overlays = [];
 let overlaySel = '';
-const mostraChk = (k) => !!_g('mostra-' + k)?.checked;
+const mostraChk = (k) => _quiDentro(k);
 const AP_ICO_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
 const AP_ICO_WIDGET = { ultimoFollower: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>', ultimoSub: AP_ICO_ALERT };
 const _g = (id) => document.getElementById(id);
@@ -7111,23 +7084,6 @@ function _accendiElemento(k, v) {
   c.dispatchEvent(new Event('change', { bubbles: true }));
   return true;
 }
-function _aggiornaStatoLivelli() {
-  for (const k of ELEM_SCENA) {
-    const riga = document.querySelector(`.ovl-elem[data-mira="${k}"]`);
-    if (!riga) continue;
-    const spento = mostraChk(k) && !_elementoAcceso(k);
-    riga.classList.toggle('oe-spento', spento);
-    let n = riga.querySelector('.oe-nota');
-    if (spento && !n) {
-      n = document.createElement('button');
-      n.type = 'button'; n.className = 'oe-nota'; n.dataset.accendi = k;
-      n.textContent = L('spento — accendi', 'off — turn on', 'apagado — enciende');
-      n.title = L('Questo elemento è spento del tutto: nell’overlay non comparirà.', 'This element is fully off: it won’t appear in the overlay.', 'Este elemento está apagado del todo: no aparecerá en el overlay.');
-      riga.insertBefore(n, riga.querySelector('.oe-mod'));
-    } else if (!spento && n) n.remove();
-  }
-}
-
 function _anteprimaWidget(pref, id, nome) {
   const box = _g(`ap-${pref}`);
   if (!box) return;
@@ -7343,7 +7299,6 @@ function aggiornaAnteprima() {
     if (st) _posElemento(nodo, st);
     else _posAncora(nodo, _angoloDi(e.k));
   }
-  _aggiornaStatoLivelli();
   _disegnaRiquadro();
 }
 
@@ -7840,11 +7795,14 @@ function _occhio(k) {
     aggiornaAnteprima(); _rendiLivelli(); _ricorda(); _salvaPos();
     return;
   }
-  const c = _g('mostra-' + k);
-  if (!c) return;
-  c.checked = !c.checked;
-  c.dispatchEvent(new Event('change', { bubbles: true }));
+  const m = _ovMostra();
+  const acceso = m[k] === false;
+  if (acceso) delete m[k]; else m[k] = false;
+  if (acceso && !_elementoAcceso(k)) _accendiElemento(k, true);
+  aggiornaAnteprima();
   _rendiLivelli();
+  _ricorda();
+  salvaLayoutOverlay(true);
 }
 
 function seleziona(chiave) {
@@ -7857,6 +7815,30 @@ function deseleziona() {
   _g('ap-stage')?.querySelectorAll('.ap-el').forEach((n) => n.classList.remove('sel'));
   aggiornaInspector();
 }
+const ALTROVE = {
+  cont: ['moduli', ['Comandi', 'Commands', 'Comandos']],
+  pen: ['penitenze', ['Penitenze', 'Forfeits', 'Penitencias']],
+  effetti: ['effetti', ['Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos']],
+  consolify: ['consolify', ['CONSOLify', 'CONSOLify', 'CONSOLify']],
+};
+
+function _altrove(box) {
+  const fam = String(selezione || '').split(':')[0];
+  const dove = ALTROVE[fam];
+  const haBlocco = [...box.querySelectorAll('.asp-blocco')].some((b) => !b.hidden);
+  let nota = box.querySelector('.insp-altrove');
+  if (!dove || haBlocco) { if (nota) nota.hidden = true; return; }
+  if (!nota) {
+    nota = document.createElement('p');
+    nota.className = 'insp-altrove suggerimento';
+    box.appendChild(nota);
+  }
+  nota.hidden = false;
+  const nome = L(dove[1][0], dove[1][1], dove[1][2]);
+  nota.innerHTML = `${esc(L('Qui lo sposti e lo vesti. Quello che fa si cambia in', 'Here you move it and dress it. What it does is changed in', 'Aqu\u00ed lo mueves y lo vistes. Lo que hace se cambia en'))} `
+    + `<button type="button" class="btn secondario mini" data-vai-scheda="${esc(dove[0])}">${esc(nome)}</button>`;
+}
+
 function aggiornaInspector() {
   const box = _g('ovl-inspector');
   _rendiLivelli();
@@ -7870,6 +7852,7 @@ function aggiornaInspector() {
   const nome = _g('insp-nome'); if (nome) nome.textContent = _nomeEl(selezione);
   const luc = _g('insp-blocca');
   if (luc) { const b = _bloccato(selezione); luc.textContent = b ? L('Sblocca', 'Unlock', 'Desbloquear') : L('Blocca', 'Lock', 'Bloquear'); luc.classList.toggle('chiuso', b); }
+  _altrove(box);
   _mostraProp();
 }
 
@@ -8521,7 +8504,7 @@ function _rendiLivelli() {
       <span class="ovl-liv-corpo"><strong>${esc(l.n)}</strong><span>${acceso
         ? _testoPos(st)
         : L('non in questo overlay', 'not in this overlay', 'no en este overlay')}</span></span>
-      ${spento ? `<span class="ovl-liv-avviso" title="${L('L’elemento è spento del tutto', 'The element is fully off', 'El elemento está apagado del todo')}">!</span>` : ''}
+      ${spento ? `<span class="ovl-liv-avviso" data-accendi="${l.k}" role="button" tabindex="0" title="${L('È spento del tutto: premi per accenderlo', 'It is fully off: press to turn it on', 'Está apagado del todo: pulsa para encenderlo')}">!</span>` : ''}
       ${acceso ? `<span class="ovl-liv-lucchetto${_bloccato(l.k) ? ' chiuso' : ''}" data-lucchetto="${l.k}" role="button" tabindex="0" title="${_bloccato(l.k) ? L('Sblocca: torna a spostarsi', 'Unlock: it can move again', 'Desbloquear: vuelve a moverse') : L('Blocca: non si sposta per sbaglio', 'Lock: it won’t move by accident', 'Bloquear: no se mueve por error')}">${_bIco(ICO.lucchetto)}</span>` : ''}
       <span class="ovl-liv-occhio" data-occhio="${l.k}" role="button" tabindex="0"
         title="${acceso ? L('Togli da questo overlay', 'Remove from this overlay', 'Quitar de este overlay') : L('Metti in questo overlay', 'Add to this overlay', 'Poner en este overlay')}">${_bIco(acceso ? ICO.occhio : ICO.occhioNo)}</span>
@@ -8735,13 +8718,12 @@ function _ricorda(fusione) {
 function _applicaIstantanea(foto) {
   try {
     const d = JSON.parse(foto);
-    for (const [k, v] of Object.entries(d.mostra || {})) { const c = _g('mostra-' + k); if (c) c.checked = !!v; }
     const m = _ovMostra();
     _storiaInCorso = true;
     for (const e of ELEMENTI()) {
       if (d.pos && e.k in d.pos) _scriviPos(e.k, d.pos[e.k]);
       if (d.acceso && e.k in d.acceso) _accendiDi(e.k, d.acceso[e.k]);
-      if (d.mostra && (e.goal || e.cont)) { if (d.mostra[e.k] === false) m[e.k] = false; else delete m[e.k]; }
+      if (d.mostra && e.k in d.mostra) { if (d.mostra[e.k] === false) m[e.k] = false; else delete m[e.k]; }
     }
     for (const [id] of CHAT_DA) { if (d.mostra && d.mostra['chat:' + id] === false) m['chat:' + id] = false; else delete m['chat:' + id]; }
     _rendiQualiChat();
@@ -9307,7 +9289,6 @@ function caricaOverlaySel() {
   const ov = overlays.find((o) => o.id === overlaySel) || overlays[0];
   if (!ov) return;
   ov.xy = ov.xy || {};
-  ELEM_OVL.forEach((k) => { const c = _g('mostra-' + k); if (c) c.checked = ov.mostra?.[k] !== false; });
   const i = _g('inp-overlay-url'); if (i) i.value = ov.url || '';
   _rendiQualiChat();
   _applicaStileOverlay(ov);
@@ -9473,46 +9454,22 @@ function caricaAlert() {
     requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco));
   });
   _g('scheda-alert')?.addEventListener('click', (e) => {
-    if (e.target.closest('.oe-mod, .oe-sw, input, label')) return;
-    const r = e.target.closest('[data-mira]');
-    if (!r) return;
-    const fam = r.dataset.mira;
-    if (!mostraChk(fam)) { toast(L('Questo livello è spento in questo overlay.', 'This layer is off in this overlay.', 'Esta capa está apagada en este overlay.')); return; }
-    const k = _primoDi(fam);
-    if (!k) { toast(L('Non c’è ancora niente da mettere in scena: creane uno qui sotto.', 'Nothing to stage yet: create one below.', 'Todavía no hay nada que poner en escena: crea uno abajo.')); return; }
-    seleziona(k);
-    _g('ovl-preview')?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'center' });
-  });
-  _g('btn-apri-overlay')?.addEventListener('click', () => {
-    const u = _g('inp-overlay-url')?.value;
-    if (!u) { toast(L('URL non ancora pronto, riprova tra un attimo.', 'URL not ready yet, try again in a moment.', 'URL aún no lista, inténtalo de nuevo en un momento.'), 'errore'); return; }
-    window.open(u, '_blank', 'noopener');
-  });
-  ELEM_OVL.forEach((k) => _g('mostra-' + k)?.addEventListener('change', (e) => {
-    if (e.target.checked && !_elementoAcceso(k)) _accendiElemento(k, true);
-    aggiornaAnteprima(); salvaLayoutOverlay(true);
-  }));
-  _g('scheda-alert')?.addEventListener('click', (e) => {
     const b = e.target.closest('[data-accendi]');
     if (!b) return;
     e.stopPropagation();
     _accendiElemento(b.dataset.accendi, true);
     aggiornaAnteprima();
-    toast(L('Elemento acceso ✓', 'Element turned on ✓', 'Elemento encendido ✓'));
+    _rendiLivelli();
+    toast(L('Elemento acceso \u2713', 'Element turned on \u2713', 'Elemento encendido \u2713'));
   });
-
-  scheda?.addEventListener('click', (e) => {
-    const sc = e.target.closest('[data-scegli]');
-    if (sc) {
-      seleziona(sc.dataset.scegli);
-      _g('ovl-preview')?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'center' });
-      return;
-    }
-    const b = e.target.closest('[data-apri-sez]'); if (!b) return;
-    const s = b.dataset.apriSez;
-    if (s === 'effetti' || s === 'penitenze') { vaiAScheda(s); return; }
-    const det = _g(s);
-    if (det) { det.open = true; det.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' }); }
+  _g('scheda-alert')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-vai-scheda]');
+    if (b) vaiAScheda(b.dataset.vaiScheda);
+  });
+  _g('btn-apri-overlay')?.addEventListener('click', () => {
+    const u = _g('inp-overlay-url')?.value;
+    if (!u) { toast(L('URL non ancora pronto, riprova tra un attimo.', 'URL not ready yet, try again in a moment.', 'URL no lista todav\u00eda, prueba dentro de un momento.')); return; }
+    window.open(u, '_blank', 'noopener');
   });
 
   _g('insp-blocca')?.addEventListener('click', () => { if (selezione) _blocca(selezione, !_bloccato(selezione)); });

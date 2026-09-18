@@ -1289,6 +1289,54 @@ Nell'editor la stessa scelta si vede sulla tela: l'anteprima disegna le righe
 delle sole sorgenti accese, col segno se è acceso. Anteprima uguale alla diretta,
 come per tutto il resto.
 
+## Un elenco solo: la colonna dei livelli
+
+Il difetto: lo STESSO elenco dei livelli stava due volte nella stessa pagina.
+Una accanto alla tela (nome, percentuali, lucchetto, occhio) e una
+millecinquecento pixel piu' sotto, fuori schermo, in righe con «Modifica» e un
+interruttore. Quattordici righe, una per livello. E l'interruttore della seconda
+voleva dire esattamente la stessa cosa dell'occhio della prima.
+
+Peggio: l'occhio della colonna **accendeva la casella della seconda lista**. La
+lista non era decorativa, era il posto dove quello stato viveva. Meta' dello
+stato stava nei dati dell'overlay (i singoli obiettivi, contatori, cartelli) e
+meta' in quelle caselle.
+
+**Adesso la verita' e' una sola: i dati dell'overlay.** `mostraChk(k)` legge
+`_quiDentro(k)`, l'occhio scrive nei dati e basta, e quello che si salva si
+RICAVA dallo stato invece di enumerare le famiglie a mano. L'elenco scritto a
+mano si era gia' dimenticato i cartelli: nascondere un cartello in un overlay
+non restava nascosto dopo il salvataggio.
+
+## Il livello e' l'unita'
+
+Il giro era: scegli il livello accanto alla tela, a destra si accende
+«Proprieta'» e ti fa cambiare SOLO il vestito; per cambiare cosa quel livello
+FA devi scorrere via dalla tela, trovare la seconda lista, premere «Modifica» e
+aprire una sezione ancora piu' giu'. Si cambiava alla cieca.
+
+Il meccanismo per farlo bene c'era gia' — `raccogliBlocchi()` prende le sezioni
+e le trasporta dentro l'ispettore come fisarmoniche — ma copriva **cinque
+livelli su tredici**. Gli altri erano rimasti indietro, e quei rimasugli erano
+il mappazzone.
+
+Adesso ogni livello risponde alla domanda «dove si cambia?», e ci sono solo tre
+risposte possibili:
+
+- **qui accanto alla tela**: alert, chat, obiettivi, cartelli, player, timer,
+  treno — la sezione vive dentro «Proprieta'»;
+- **in un'altra scheda, e ti ci porto**: i contatori stanno in Comandi, la
+  sfida a tempo in Penitenze, gli effetti e CONSOLify nelle loro
+  (`ALTROVE` in `app.js`), con un tasto che ci va;
+- **si veste e basta**: ultimo follower, ultimo sub — il vestito e' gia' li'.
+
+Il cartellino «spento» nella colonna adesso e' premibile: prima era un punto
+esclamativo che diceva il problema, e il tasto per accenderlo stava nella
+seconda lista, cioe' fuori schermo.
+
+Misurato col browser: la scheda e' passata da **2079 a 1289 pixel** di altezza,
+e la tela resta in vista qualunque livello si scelga.
+
 ## L'hype train: rispecchiato, non ricalcolato
 
 Il treno lo potevamo contare da soli — i sub e i bit ci passano davanti uno per
