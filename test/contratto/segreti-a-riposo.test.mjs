@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
 
 const casa = cartellaUsaEGetta('segreti-riposo-');
-const { db, tokens, tgConf, spotifyTokens, tiktokTokens, seventvTokens, CAMPI_SEGRETI, migraSegreti } = await import('../../src/db.js');
+const { db, tokens, tgConf, spotifyTokens, tiktokTokens, seventvTokens, dcRuoli, CAMPI_SEGRETI, migraSegreti } = await import('../../src/db.js');
 test.after(() => casa.pulisci());
 
 const grezzo = (tabella, colonna, dove, val) =>
@@ -44,6 +44,15 @@ test('TikTok e 7TV', () => {
   assert.ok(!grezzo('seventv_tokens', 'token', 'login', 'andryx').includes('JWT-DI-SETTETIVU'));
   assert.equal(tiktokTokens.get('andryx').access, 'ACCESS-TIKTOK');
   assert.equal(seventvTokens.get('andryx').token, 'JWT-DI-SETTETIVU');
+});
+
+test('il token del bot Discord che muove i ruoli non e\u2019 nel database in chiaro', () => {
+  const vero = 'MTA5OTk5.finto.token-del-bot-che-muove-i-ruoli';
+  dcRuoli.set('andryx', { token: vero, guild: '123456789012345678' });
+  const dentro = grezzo('discord_ruoli', 'token', 'channel', 'andryx');
+  assert.ok(!dentro.includes(vero), 'chi ruba il file comanda il bot del server Discord');
+  assert.ok(dentro.startsWith('enc:2:'), 'dev\u2019essere nella busta di adesso');
+  assert.equal(dcRuoli.get('andryx').token, vero, 'e noi lo dobbiamo poter rileggere');
 });
 
 test('i token OAuth non si possono spostare da un account all’altro', () => {
