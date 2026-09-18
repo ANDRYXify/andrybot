@@ -62,7 +62,7 @@ test('i salvataggi dell\'overlay passano da una coda sola, e la rete che cade si
   // +2: la coda, e l'interruttore dell'occasione (che non passa dalla coda perche'
   // ha una porta sua, ma quando la rete cade lo deve dire con la stessa voce)
   assert.equal((APP.match(/(?<!function )_avvisaSalvataggio\(\)/g) || []).length, aTempo.length + 2, 'l\'avviso e\' uno, usato dalla coda, dall\'occasione e da ogni salvataggio a tempo');
-  assert.equal((APP.match(/await _spingiOverlays\(\);/g) || []).length, 5, 'nuovo, duplica, rinomina, elimina e il layout passano tutti dalla coda');
+  assert.equal((APP.match(/await _spingiOverlays\(\);/g) || []).length, 6, 'nuovo, duplica, rinomina, elimina, il layout e la copia per un contatore passano tutti dalla coda');
   assert.ok(!/function _salvaFamiglia/.test(APP), 'niente funzione morta');
   assert.ok(/function _salvaPos\(chiave\) \{\n  const e = chiave \? ELEM\(chiave\) : null;\n  if \(e && e\.cont\) salvaContoDaScena\(e\.cont\);/.test(APP), 'il ripristino di un contatore si salva davvero');
 });
@@ -99,7 +99,15 @@ test('un livello bloccato non si sposta, e il lucchetto viaggia con l\'overlay',
   assert.ok(/blocchi: _blocchiDiOverlay\(o\?\.blocchi\)/.test(SRV) && /if \(CHIAVE_EL\.test\(k\) && b\[k\] === true\) q\[k\] = true;/.test(SRV), 'il server lo tiene, con le chiavi degli elementi');
   assert.ok(/blocchi: o\.blocchi \|\| \{\}, css: o\.css/.test(SRV), 'e lo rimanda al pannello');
   assert.ok(/data-lucchetto="\$\{l\.k\}"/.test(APP) && /id="insp-blocca"/.test(APP), 'si chiude dal livello e dalle proprieta\'');
-  assert.ok(/\.ap-stage \.ap-el\.bloccato \.ap-handle \{ display: none; \}/.test(SKIN), 'un livello bloccato non mostra le maniglie');
+  // Le maniglie si vedono solo sull'elemento SCELTO, quindi l'eccezione «qui
+  // non si vedono» deve venire DOPO la regola che le accende: stessa
+  // specificita', vince l'ultima. Scritta prima, era morta da sempre — e un
+  // livello bloccato le mostrava, con dentro il ridimensiona che funzionava.
+  const accende = SKIN.indexOf('.ap-stage .ap-el.sel .ap-handle { display: flex; }');
+  const spegne = SKIN.indexOf('.ap-stage .ap-el.bloccato .ap-handle, .ap-stage .ap-el.nel-riquadro .ap-handle { display: none; }');
+  assert.ok(spegne > 0, 'un livello bloccato non mostra le maniglie');
+  assert.ok(spegne > accende, 'e l\'eccezione viene dopo la regola che le accende, sennò non vale');
+  assert.match(corpoDi('_dragManiglia'), /if \(_bloccato\(chiave\)\)/, 'e la maniglia stessa si rifiuta, non solo il foglio di stile');
 });
 
 test('l\'aggancio si spegne con una spunta che si ricorda', () => {

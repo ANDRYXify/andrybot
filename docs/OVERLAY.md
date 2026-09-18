@@ -1614,3 +1614,90 @@ anche quando in scena sono un filo di testo, in tre stati: `piu` (entra), `via`
 scostano per regola, non per caso. Una famiglia che il modello nomina ma di cui
 non hai ancora nessun pezzo — nessun cartello, nessun obiettivo — sta in fondo:
 l'anteprima non fa finta che quella riga del modello non ci sia.
+
+## Un contatore si fa dove si mette
+
+Nell'«Aggiungi» del banco ci sono tre cose da creare: un cartello, un obiettivo,
+un contatore. Le prime due nascono li' e restano li'. La terza no: premere «Un
+contatore» apriva un'altra scheda. Il motivo c'era, ed e' vero: un cartello e un
+obiettivo vivono **nella bozza dell'overlay**, mentre un contatore e' roba del
+**canale** — ha un comando, lo muovono i moderatori in chat, esiste anche con
+l'overlay spento. Quindi, per farlo, ti si mandava a casa sua.
+
+Il difetto non e' dove vive il contatore: e' che per crearlo si perdeva la tela,
+la selezione e il filo del discorso. E il pezzo che mancava sono quattro campi.
+Quindi il banco li chiede li' dov'e', e poi bussa alla **stessa porta di
+sempre** (`POST /api/contatori`): non esiste una seconda strada per far nascere
+un contatore, e quindi non c'e' una seconda regola da tenere allineata. Nasce
+con `overlay: {mostra: true}`, perche' chi lo crea da qui lo sta mettendo sulla
+tela, e poi entra nella scena da `_mettiDentro`, come qualunque altro elemento.
+
+Le uscite sono tre, e la seconda e' quella che serve davvero:
+
+- **Crea e mettilo qui** — l'overlay che stai modificando prende il contatore.
+- **Crea in una copia dell'overlay** — la scena che hai viene duplicata (stesso
+  layout, stesso aspetto, link suo) e il contatore si accende **solo li'**.
+  Serve a provare una cosa senza toccare l'overlay che in questo momento e'
+  dentro OBS, e senza rifare la scena da capo.
+- **Esci** — non nasce niente.
+
+Il punto delicato della copia e' cosa si scrive **nell'originale**. La mappa
+`mostra` di un overlay e' un elenco di eccezioni: una chiave assente vuol dire
+«c'e'». Un contatore appena nato non e' in nessuna mappa, quindi comparirebbe in
+tutti gli overlay. Percio' la copia si prende prima (senza la chiave, cioe' col
+contatore acceso) e nell'originale si scrive `mostra['cont:<comando>'] = false`.
+L'originale resta esattamente com'era anche da dentro: non «per come lo
+guardiamo», ma per quello che c'e' scritto.
+
+Un'ultima cosa, e vale per costruzione: passare a un altro overlay con modifiche
+non salvate le perde, e la domanda «salvo?» esiste gia' in `scegliOverlay`.
+Anche questa strada ci passa (`_chiediPrimaDiUscire`), invece di saltarla o di
+rifarne una sua.
+
+## Il cancello del banco era fermo al primo controllo
+
+Il collaudo del banco (`scripts/verifica-studio.mjs`) gira in un browser vero, e
+si e' scoperto che **moriva alla prima verifica**: l'occhio di un livello. Non
+era un guasto del prodotto — era il collaudo rimasto indietro. Da quando i
+livelli sono l'elenco di **chi c'e'**, togliere una cosa non la lascia spenta in
+fondo alla lista: la riga se ne va e ricompare tra quelle da rimettere. Il
+collaudo cercava ancora la riga spenta, non la trovava, e scoppiava.
+
+Un cancello che scoppia alla prima riga e' peggio di un cancello assente: tutto
+quello che veniva dopo non era mai stato guardato. Sotto c'erano cinque
+semafori rossi, e vale la pena tenere separato cosa era misura e cosa era
+prodotto.
+
+**Misura** (lo strumento sporcava e poi si stupiva):
+
+- Il collaudo scrive nei campi dello stile per provare l'anteprima, e cosi'
+  accende la barra «hai modifiche non salvate». Da li' in poi ogni cambio di
+  overlay apriva — giustamente — la domanda «salvo?», e il velo fermava tutto
+  quello che veniva dopo. Da qui il finto «gli overlay si copiano il layout» e
+  il trascinamento che non si muoveva.
+- Il trascinamento si applica **a fotogramma**, e chi molla il tasto annulla la
+  coda: il collaudo mandava movimento e rilascio nello stesso istante, quindi
+  misurava la coda buttata via, non il trascinamento. Un dito vero un fotogramma
+  ce lo mette sempre.
+- «Ogni elemento mostra i suoi comandi» pretendeva un blocco anche dalla sfida a
+  tempo, che si veste nella sua scheda e al suo posto mostra il rimando. La
+  regola giusta e': o i comandi sono qui, o c'e' scritto dove sono.
+
+**Prodotto** (difetti veri, che nessuno vedeva perche' il cancello era fermo):
+
+- L'annulla di un elemento ne riportava indietro un altro. Le modifiche vicine
+  nel tempo si **fondono** in un solo passo di annulla, e la chiave della
+  fusione era solo `prop:x` — senza l'elemento. Muovere la x di A e poi quella
+  di B entro 700 ms diventava un passo solo. La rotella la chiave giusta ce
+  l'aveva gia' (`rotella:<elemento>`): stessa regola scritta in due posti, e in
+  uno dei due mancava un pezzo.
+- Le maniglie di un elemento **bloccato** o **nel riquadro** erano dichiarate
+  nascoste, ma due righe piu' sotto `.ap-el.sel .ap-handle { display: flex }`
+  aveva la stessa specificita' e veniva dopo. Le due eccezioni erano morte da
+  quando esistevano: l'eccezione va dopo la regola, non prima.
+- Su un elemento piccolo la maniglia «ridimensiona» finisce **sotto** la
+  maniglia del lato del riquadro, che sta piu' in alto e prende il clic: ci
+  cliccavi sopra e invece di ingrandirlo gli davi un perimetro. Un tasto che
+  mente e' peggio di un tasto che non c'e', quindi sotto la misura in cui i due
+  cerchi si toccano (`SCALA_SPAZIO`) la maniglia propria non si disegna — la
+  dimensione resta nel pannello, con Alt+rotella e col perimetro.

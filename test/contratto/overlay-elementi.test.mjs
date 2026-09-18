@@ -516,3 +516,56 @@ test('un elemento che resta a schermo non viene ri-appeso a ogni disegno', () =>
   const quanti = (OVL.match(/\n\s*posa\(wboxes\[/g) || []).length;
   assert.equal(quanti, 6, `i pezzi che restano a schermo sono sei (contatori, obiettivo, musica, conto alla rovescia, treno, cartelli), e devono passare tutti dalla posa (${quanti})`);
 });
+
+test('un contatore nuovo si fa dal banco, non mandando lo streamer altrove', () => {
+  // «Crea → Un contatore» apriva un'altra scheda. Cartelli e obiettivi no: li
+  // crei li' dove li metti, perche' vivono nella bozza dell'overlay. Un
+  // contatore invece e' roba del canale, e per quello lo si mandava a casa
+  // sua — perdendo la tela, la selezione e il filo del discorso. Ma il pezzo
+  // che manca sono quattro campi: si chiedono li'.
+  const gestore = APP.slice(APP.indexOf("const nuovo = e.target.closest('[data-nuovo]')"));
+  const blocco = gestore.slice(0, gestore.indexOf('\n    }'));
+  assert.ok(!/vaiAScheda/.test(blocco), 'dal banco non si esce per creare un contatore');
+  assert.match(blocco, /fam === 'cont'.*nuovoContatoreQui\(\)/s, 'si apre il riquadro del contatore nuovo');
+});
+
+test('e passa dalla porta di sempre: una sola strada per far nascere un contatore', () => {
+  // Una seconda strada per creare la stessa cosa e' una seconda regola da
+  // tenere allineata. Il riquadro del banco chiede i campi e poi bussa dove
+  // bussa la scheda Comandi.
+  const f = APP.slice(APP.indexOf('async function nuovoContatoreQui('));
+  const corpo = f.slice(0, f.indexOf('\n}\n'));
+  assert.match(corpo, /api\('\/api\/contatori', \{ method: 'POST'/, 'la porta e’ quella dei contatori');
+  assert.match(corpo, /overlay: \{ mostra: true \}/, 'nasce gia’ acceso a schermo: lo si sta mettendo sulla tela');
+  assert.match(corpo, /_mettiDentro\(k\)/, 'e entra nell’overlay come qualunque altro elemento');
+});
+
+test('la copia dell’overlay lascia l’originale com’era', () => {
+  // La seconda uscita del riquadro: il contatore nuovo lo vuoi provare, ma non
+  // sull'overlay che hai gia' in OBS. Allora se ne fa una copia — stesso
+  // layout, stesso aspetto, link suo — e il contatore si accende solo li'.
+  // Nell'originale resta scritto che quel contatore non c'e': se non lo
+  // scrivessimo, comparirebbe anche li', perche' un contatore assente dalla
+  // mappa e' un contatore che si vede.
+  const f = APP.slice(APP.indexOf('async function _contaInCopia('));
+  const corpo = f.slice(0, f.indexOf('\n}\n'));
+  assert.match(corpo, /delete clone\.mostra\[k\]/, 'nella copia il contatore c’è');
+  assert.match(corpo, /\(ov\.mostra = ov\.mostra \|\| \{\}\)\[k\] = false/, 'nell’originale no');
+  assert.match(corpo, /overlaySel = id/, 'e lo Studio passa alla copia');
+});
+
+test('e prima di cambiare overlay chiede, come chiede sempre', () => {
+  // Cambiare overlay con modifiche non salvate le perde: la domanda esiste
+  // gia' ed e' una sola, quindi la usa anche questa strada invece di rifarne
+  // una sua (o di saltarla).
+  const f = APP.slice(APP.indexOf('async function nuovoContatoreQui('));
+  assert.match(f.slice(0, 400), /_salvaSporco && !\(await _chiediPrimaDiUscire\(\)\)/,
+    'la copia passa dalla stessa domanda di scegliOverlay');
+});
+
+test('il tetto degli overlay è scritto una volta sola', () => {
+  // Erano tre posti a dire «dodici»: il nuovo, il duplicato e ora la copia.
+  assert.match(APP, /const MAX_OVERLAY = 12;/, 'c’è il tetto');
+  const dodici = [...APP.matchAll(/overlays\.length >= 12\b/g)];
+  assert.equal(dodici.length, 0, `qualcuno conta ancora a mano fino a dodici (${dodici.length})`);
+});

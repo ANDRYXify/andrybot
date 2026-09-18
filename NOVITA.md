@@ -17,6 +17,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-18
 
+- Un contatore nuovo lo fai dal banco di regia, senza cambiare scheda: premi «Aggiungi», gli dai un comando e compare sulla tela già acceso. [vai: alert]
+- Vuoi provarlo senza toccare l'overlay che hai già in OBS? Il banco te ne fa una copia, stesso layout e link suo, col contatore acceso solo lì. [vai: alert]
+- L'annulla dello Studio non riporta più indietro anche l'elemento spostato un attimo prima: ogni cosa ha il suo passo. [vai: alert]
+- Su un widget piccolo la maniglia per ingrandire finiva sotto quella del perimetro: ci cliccavi e invece di ingrandirlo gli davi una cornice. Adesso lì non c'è, e la dimensione la cambi dal pannello. [vai: alert]
+- Il lucchetto tiene davvero: prima le maniglie restavano lì, e con quelle un elemento bloccato si poteva ancora ingrandire o girare. [vai: alert]
 - Se il bot riparte mentre sei in onda la serata non si perde più: prima i numeri dicevano zero minuti, e quella diretta finiva senza lasciare il suo rapporto. [vai: statistiche]
 - Quando parla di sua iniziativa non si intromette più fra due che stanno parlando: prende l'ultima cosa detta a tutti, e se non ce n'è una sta zitto. [vai: personalita]
 - Nel rapporto di fine diretta le clip hanno il loro titolo vero, con quanto durano: prima c'era scritto solo perché il bot le aveva fatte, tipo «modulo». [vai: dirette]
