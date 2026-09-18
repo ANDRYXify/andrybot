@@ -34,6 +34,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Un’automazione può chiedere quanti Bit sono arrivati: sotto la soglia non parte, e con una fascia per scaglione scrivi una scala. Vale anche per gli spettatori di un raid e i mesi di un sub. [vai: moduli]
 - Quando il treno è nell’ultimo quarto della salita il bot dice quanti punti mancano al livello dopo. Una volta per livello, e la frase la scrivi tu. [vai: alert]
 - «!bit» dice chi ha messo più Bit oggi, questa settimana, questo mese o da sempre. E a chi non è sul podio dice a che posto è. [vai: moduli]
+- Telegram adesso ha una scheda sua, nel gruppo nuovo «Le tue community»: era una voce dentro le notifiche, con dentro più roba di tutte le altre messe insieme. [vai: telegram]
 - In fondo a ogni mail che ti mandiamo c'è un codice di verifica. Lo ritrovi solo nella scheda Stato: se non combacia, quella mail non è nostra. [vai: stato]
 - Nell'elenco della posta adesso si legge il nome di chi scrive, non il pezzo prima della chiocciola. [vai: dirette]
 - C'è una scheda «Statistiche»: i numeri del canale per sette giorni, trenta o da sempre, e cinque classifiche. Prima erano sparsi fra Memoria, Giochi e Dirette. [vai: statistiche]
@@ -51,9 +52,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Chi rinnova l'abbonamento adesso fa scattare l'alert e conta negli obiettivi. Prima il rinnovo al bot non arrivava proprio. [vai: alert]
 - Una raffica di regali conta un sub per ogni sub, non uno in più: l'annuncio della raffica serve all'alert, non al conto. [vai: alert]
 - Nelle classifiche del canale non ci sei più tu: ore, monete, messaggi e serie contano chi ti guarda. Il totale dei messaggi resta intero. [vai: statistiche]
-- Gli auguri di compleanno adesso arrivano anche in chat, al primo messaggio di chi li compie. Nel gruppo restano a mezzanotte, come prima. [vai: notifiche]
-- Chi ti guarda si segna il compleanno da solo: scrive !compleanno 25/12 e tu non devi toccare niente. Con !compleanno via lo toglie. [vai: notifiche]
-- Insieme agli auguri in chat può partire un effetto della tua libreria. Lo scegli dalla scheda Notifiche. [vai: notifiche]
+- Gli auguri di compleanno adesso arrivano anche in chat, al primo messaggio di chi li compie. Nel gruppo restano a mezzanotte, come prima. [vai: telegram]
+- Chi ti guarda si segna il compleanno da solo: scrive !compleanno 25/12 e tu non devi toccare niente. Con !compleanno via lo toglie. [vai: telegram]
+- Insieme agli auguri in chat può partire un effetto della tua libreria. Lo scegli dalla scheda Telegram. [vai: telegram]
 
 ## 2026-09-16
 
