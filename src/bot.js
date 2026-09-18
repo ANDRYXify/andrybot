@@ -135,6 +135,10 @@ export class BotManager {
     // Quello che dice da solo: quando l'ultima volta (il tetto), quando l'ultimo
     // promemoria dei link e l'ultima battuta (i loro riposi), e il registro che
     // il pannello mostra.
+    // Quando il processo e' nato. Un riposo che non c'e' in memoria vale da qui,
+    // non da zero: vedi spontanea.ultimoNoto — senza, ogni riavvio regalava una
+    // riga immediata, e riavvii frequenti diventavano una raffica.
+    this._nato = Date.now();
     this._ultimaSpontanea = new Map();   // login → ts dell'ultima volta che ha parlato da solo
     this._ultimaPromo = new Map();       // login → ts dell'ultimo promemoria dei link
     this._ultimaBattuta = new Map();     // login → ts dell'ultima battuta di sua iniziativa
@@ -383,11 +387,11 @@ export class BotManager {
         // una battuta e' pronta solo se il serbatoio ne ha una, e' passato il suo
         // riposo, e non si sta ancora misurando se la precedente ha fatto ridere
         const battutaPronta = s.settings?.battuteAuto !== false && !battute.stoAscoltando(login)
-          && ora - (this._ultimaBattuta.get(login) || 0) > 20 * 60_000;
+          && ora - spontanea.ultimoNoto(this._ultimaBattuta, login, this._nato) > 20 * 60_000;
         const scelta = spontanea.scegliMomento({
           ora, dose, live, soloLive: s.settings?.proattivoSoloLive === true, momenti,
-          ultimaSpontanea: this._ultimaSpontanea.get(login) || 0,
-          ultimaPromo: this._ultimaPromo.get(login) || 0,
+          ultimaSpontanea: spontanea.ultimoNoto(this._ultimaSpontanea, login, this._nato),
+          ultimaPromo: spontanea.ultimoNoto(this._ultimaPromo, login, this._nato),
           ultimoTipo: this._ultimoTipo.get(login) || '',
           promoAccesa: s.settings?.promoSocial !== false,
           battutaPronta,

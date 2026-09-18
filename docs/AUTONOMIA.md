@@ -84,3 +84,25 @@ memoria della chat.
 Il battito ospita anche due cose del cervello privato (il respiro dell'umore, la
 posta che mette fuori) e i suoi messaggi proattivi su Telegram hanno una strada
 loro. Non sono autonomia del bot. Il confine è descritto nel suo repository.
+
+## La raffica dopo il riavvio
+
+I riposi di quello che il bot dice da solo — l'ultima volta in assoluto, l'ultima
+battuta, l'ultimo promemoria dei link — stanno in memoria. A un riavvio
+ripartivano da **zero**, e zero non vuol dire «non lo so»: vuol dire «l'ultima
+volta e' stata nel 1970», cioe' «e' passato tutto il tempo del mondo». Al primo
+giro dopo l'avvio ogni riposo risultava finito, e il bot parlava subito.
+
+Dentro un processo solo la raffica **non e' possibile**: c'e' un pavimento di sei
+minuti fra una cosa e l'altra, un intervallo dalla dose che al massimo del
+cursore e' di quindici minuti, e venti minuti di riposo fra due battute. Se da
+fuori sembra un bot impazzito che spara battute a caso, la regola non e' rotta:
+e' lo **stato che riparte da capo** — un processo che si riavvia spesso, o due
+copie del bot accese insieme.
+
+La cura non e' un tetto in piu', che non servirebbe: e' che l'assenza di memoria
+valga come «ho appena parlato» (`spontanea.ultimoNoto`, il riposo parte
+dall'avvio del processo). Cosi' un riavvio costa al massimo un giro di silenzio,
+mai una raffica, qualunque sia il motivo per cui il processo e' ripartito — e il
+motivo resta comunque da guardare, perche' un bot che si riavvia spesso ha un
+guaio suo.

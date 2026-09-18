@@ -2,7 +2,7 @@
 // con il caso in mano.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { scegliMomento, intervalloDose, registra, elenco, FLOOR_MS, FLOOR_DOMANDA_MS, PROMO_MIN_MS, DOSE_MAX, REGISTRO_MAX, INTERVALLO_MAX_MS } from '../../src/features/spontanea.js';
+import { scegliMomento, intervalloDose, registra, elenco, ultimoNoto, FLOOR_MS, FLOOR_DOMANDA_MS, PROMO_MIN_MS, DOSE_MAX, REGISTRO_MAX, INTERVALLO_MAX_MS } from '../../src/features/spontanea.js';
 
 const ORA = 1_760_000_000_000;
 const M = 60_000;
@@ -76,4 +76,39 @@ test('il registro tiene le ultime trenta, dalla piu\' recente, e non mischia i c
   assert.equal(uno[0].testo, 'r39');
   assert.equal(elenco(m, 'due').length, 1);
   assert.deepEqual(elenco(m, 'tre'), []);
+});
+
+// LA RAFFICA DOPO IL RIAVVIO.
+//
+// I riposi stanno in memoria. A un riavvio ripartono da zero, e zero vuol dire
+// «l'ultima volta e' stata nel 1970»: al primo giro ogni riposo risulta finito e
+// il bot parla subito. Una volta non se ne accorge nessuno; un processo che si
+// riavvia spesso diventa una raffica di battute a caso, senza che niente nella
+// regola sia rotto. Qui si tiene ferma la cura: non sapere vuol dire «adesso».
+test('un riposo che non c\'e\' in memoria vale dall\'avvio, non dal 1970', () => {
+  const nato = 1_000_000;
+  const vuota = new Map();
+  assert.equal(ultimoNoto(vuota, 'andryx', nato), nato, 'senza memoria si parte dall\'avvio');
+  const piena = new Map([['andryx', 1_500_000]]);
+  assert.equal(ultimoNoto(piena, 'andryx', nato), 1_500_000, 'con la memoria vince la memoria');
+  assert.equal(ultimoNoto(piena, 'ANDRYX', nato), 1_500_000, 'il nome del canale non e\' sensibile alle maiuscole');
+  assert.equal(ultimoNoto(null, 'andryx', nato), nato, 'e senza nemmeno la mappa non si torna al 1970');
+});
+
+test('appena avviato non parla: il riposo comincia dall\'avvio', () => {
+  const nato = 1_000_000;
+  const momenti = [{ tipo: 'flusso', spunto: 'la chat scorre' }];
+  const subito = scegliMomento({
+    ora: nato + 1000, dose: 0.5, live: true, soloLive: false, momenti,
+    ultimaSpontanea: ultimoNoto(new Map(), 'andryx', nato),
+    battutaPronta: true, caso: { jitter: 0.5, scelta: 0.5 },
+  });
+  assert.equal(subito.tipo, null, 'un secondo dopo l\'avvio non deve uscire niente');
+
+  // e col conto vecchio (zero) invece usciva subito: e' il difetto che c'era
+  const vecchio = scegliMomento({
+    ora: nato + 1000, dose: 0.5, live: true, soloLive: false, momenti,
+    ultimaSpontanea: 0, battutaPronta: true, caso: { jitter: 0.5, scelta: 0.5 },
+  });
+  assert.notEqual(vecchio.tipo, null, 'con lo zero parlava subito: e\' quello che faceva la raffica');
 });
