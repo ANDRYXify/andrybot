@@ -151,3 +151,19 @@ manopola per la fiducia sarebbe un modo per farsi del male da soli.
 I **gruppi** e i **livelli** non hanno comandi propri: i livelli si scelgono con
 «quanto presto reagire», i gruppi non si configurano. Si vedono nel Registro,
 dentro l'incidente, come racconto di quello che è successo.
+
+## Chi manda bit non sta spammando
+
+Cinque «5 bit» di fila sono cinque messaggi **uguali per forza**: il cheermote e'
+quello, non c'e' un altro modo di scriverlo. La regola delle ripetizioni li
+leggeva come copypasta e li cancellava — il falso positivo piu' caro che ci sia,
+perche' costa soldi allo streamer e fa fare una figura a chi li ha mandati.
+
+Un messaggio che porta dei bit (`msg.bits`, tirato fuori dai tag una volta per
+tutte in `chat.js`, cosi' nessuno a valle deve sapere come si chiama il campo su
+Twitch) non passa dalle regole che guardano la **forma ripetuta**: ripetizioni e
+flood. E non entra nemmeno nella memoria delle ripetizioni: se ci entrasse, il
+cheer di prima farebbe sembrare ripetuto il messaggio normale di dopo.
+
+Le regole sul **contenuto** valgono lo stesso — link, maiuscole, simboli,
+lunghezza. Qualche bit non e' un lasciapassare per un messaggio pubblicitario.

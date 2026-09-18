@@ -74,3 +74,29 @@ test('un messaggio vuoto non fa niente', () => {
   assert.equal(valuta(msg(''), cfg), null);
   assert.equal(valuta(msg(null), cfg), null);
 });
+
+// CHI MANDA BIT NON STA SPAMMANDO.
+//
+// «5 bit» cinque volte di fila sono cinque messaggi uguali per forza: il
+// cheermote e' quello. Cancellarli e' il falso positivo piu' caro che ci sia.
+test('cinque cheer uguali non sono spam, e non sporcano il conto degli altri', () => {
+  const cfg = { ripetizioni: true, flood: true, link: false, maiuscole: false, menzioni: false, simboli: false, lungo: false };
+  const cheer = (i) => ({ channel: '#c' + i, user: 'ada', text: 'Cheer5', bits: 5 });
+
+  // cinque volte di fila nello stesso canale: nessuna deve essere toccata
+  const canale = '#bit' + Date.now();
+  for (let i = 0; i < 5; i++) {
+    const r = valuta({ channel: canale, user: 'ada', text: 'Cheer5', bits: 5 }, cfg);
+    assert.equal(r, null, `il cheer numero ${i + 1} e' stato preso per spam`);
+  }
+  // e i cheer non devono aver riempito la memoria delle ripetizioni: un
+  // messaggio normale ripetuto due volte dopo di loro e' ancora sotto la soglia
+  assert.equal(valuta({ channel: canale, user: 'ada', text: 'Cheer5' }, cfg), null, 'lo stesso testo senza bit, la prima volta, non e\' spam');
+  void cheer;
+});
+
+test('qualche bit non e\' un lasciapassare per il contenuto', () => {
+  const cfg = { ripetizioni: true, flood: true, link: true, linkTier: 'tutti', maiuscole: true, menzioni: true, simboli: true, lungo: true, lungoMax: 50 };
+  const lungo = { channel: '#c-bit-lungo', user: 'ada', text: 'x'.repeat(200), bits: 5 };
+  assert.ok(valuta(lungo, cfg), 'un muro di testo resta un muro di testo anche con i bit');
+});

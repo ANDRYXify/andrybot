@@ -55,7 +55,16 @@ test('il cursore parte da zero: pannello, manuale e bot dicono lo stesso numero'
   assert.match(MAN, /\['Chat autonoma', '0%', '0–50%'/, 'il manuale dice 0%');
   const sp = readFileSync(join(RAD, 'src/features/spontanea.js'), 'utf8');
   assert.match(sp, /Number\(dose\) \|\| 0/, 'e il bot legge «non impostata» come zero');
-  assert.match(BOT, /const dose = Number\(s\.settings\?\.spontaneita\) \|\| 0;\s*if \(dose <= 0\) continue;/, 'a zero non guarda nemmeno i momenti');
+  // «a zero non guarda nemmeno i momenti» adesso passa da spontanea.vietato, che
+  // e' lo stesso posto da cui lo sa chi decide: prima era scritto due volte.
+  const iDose = BOT.indexOf('const dose = Number(s.settings?.spontaneita) || 0;');
+  const iMomenti = BOT.indexOf('this._momenti.vedi(', iDose);
+  assert.ok(iDose > 0 && iMomenti > iDose, 'la dose si legge prima dei momenti');
+  const prima = BOT.slice(iDose, iMomenti);
+  assert.match(prima, /spontanea\.vietato\(\{ dose[\s\S]*?continue;/, 'a zero non guarda nemmeno i momenti');
+  // e il silenzio che non si e' scelto non diventa credito da spendere dopo
+  assert.match(prima, /spontanea\.riposaOra\(riposi, login, ora\);/, 'quando parlare era vietato, i riposi vanno avanti con l\'ora');
+  assert.match(BOT, /if \(!momenti\.length\) \{ spontanea\.riposaOra\(riposi, login, ora\); continue; \}/, 'e anche quando non c\'era niente da dire');
 });
 
 test('«solo mentre sono in diretta» si disegna, si salva e si accetta', () => {

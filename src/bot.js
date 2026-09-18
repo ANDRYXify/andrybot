@@ -380,10 +380,17 @@ export class BotManager {
         const s = streamers.get(login);
         if (!s || s.settings?.proattivo === false) continue;
         const dose = Number(s.settings?.spontaneita) || 0;
-        if (dose <= 0) continue;                                 // a zero parla solo se lo chiami
         const live = this._liveState.get(login) === true;
+        // I riposi sono orologi, non code: quando parlare era vietato o
+        // impossibile vanno avanti con l'ora, se no il silenzio diventa credito e
+        // il credito si spende tutto insieme appena la chat riprende.
+        const riposi = [this._ultimaSpontanea, this._ultimaBattuta, this._ultimaPromo];
+        if (spontanea.vietato({ dose, live, soloLive: s.settings?.proattivoSoloLive === true })) {
+          spontanea.riposaOra(riposi, login, ora);
+          continue;
+        }
         const momenti = this._momenti.vedi(login, { ora, live, saQualcosa: (t) => !!this.brain?.saQualcosa?.(login, t) });
-        if (!momenti.length) continue;
+        if (!momenti.length) { spontanea.riposaOra(riposi, login, ora); continue; }
         // una battuta e' pronta solo se il serbatoio ne ha una, e' passato il suo
         // riposo, e non si sta ancora misurando se la precedente ha fatto ridere
         const battutaPronta = s.settings?.battuteAuto !== false && !battute.stoAscoltando(login)
