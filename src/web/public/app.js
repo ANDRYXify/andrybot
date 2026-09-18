@@ -500,6 +500,14 @@ function apiDemo(percorso, opzioni = {}) {
     }));
   }
 
+  if (via === '/api/streamer/occasione') {
+    const lista = (_demoScritture.overlays || _demoGet('/api/streamer/overlays').overlays || []);
+    const ov = lista.find((o) => o.id === opzioni.body?.overlay) || lista[0];
+    const occ = (ov?.occasioni || []).map((o) => ({ ...o, attiva: opzioni.body?.accendi !== false && o.id === opzioni.body?.occasione }));
+    if (ov) { ov.occasioni = occ; _demoScritture.overlays = lista; }
+    return Promise.resolve({ ok: true, occasioni: occ });
+  }
+
   if (via === '/api/me') return Promise.resolve(statoDemo());
   if (via === '/api/moderatori') return Promise.resolve({ invito: 'https://socialbot.live/mod?token=demo' });
   if (via === '/api/streamer/apikey') return Promise.resolve({ apikey: 'demo_' + 'x'.repeat(24) });
@@ -2596,7 +2604,7 @@ const GUIDE = {
   studio: { serve: ['Andare in diretta su Twitch dal browser, senza installare niente: componi scene con webcam, schermo, immagini, video, testo e overlay, regola l’audio col mixer e premi «Vai live».', 'Go live on Twitch from the browser, without installing anything: compose scenes with webcam, screen, images, video, text and overlay, tune the audio with the mixer and hit “Go live”.', 'Emitir en Twitch desde el navegador, sin instalar nada: compón escenas con webcam, pantalla, imágenes, vídeo, texto y overlay, ajusta el audio con el mezclador y pulsa «Emitir».'],
     come: [['Scegli fotocamera, microfono e qualità in «Ingressi & qualità».', 'Pick camera, microphone and quality in “Inputs & quality”.', 'Elige cámara, micrófono y calidad en «Entradas y calidad».', '#studio-cam-sel'], ['Aggiungi le fonti e sistemale sul palco (trascina per spostare/ridimensionare), o usa un layout rapido.', 'Add the sources and arrange them on the stage (drag to move/resize), or use a quick layout.', 'Añade las fuentes y colócalas en el escenario (arrastra para mover/redimensionar), o usa un diseño rápido.', '#studio-fonti'], ['Aggiungi la fonte «Overlay» per avere a schermo alert, chat ed effetti a punti canale.', 'Add the “Overlay” source to get alerts, chat and channel-point effects on screen.', 'Añade la fuente «Overlay» para tener en pantalla alertas, chat y efectos de puntos de canal.', '#studio-ov-sel'], ['Premi «Vai live» e tieni aperta questa scheda mentre trasmetti.', 'Hit “Go live” and keep this tab open while you broadcast.', 'Pulsa «Emitir» y mantén esta pestaña abierta mientras transmites.', '#studio-live']] },
   alert: { serve: ['Comporre quello che si vede sulla diretta — alert, chat a schermo, obiettivi, contatori — e prendere il link da mettere in OBS.', 'Compose what shows on your stream — alerts, on-screen chat, goals, counters — and get the link to put in OBS.', 'Componer lo que se ve en el directo — alertas, chat en pantalla, objetivos, contadores — y coger el enlace para poner en OBS.'],
-    come: [['Nei «Livelli», a sinistra, c\'è tutto quello che può comparire: l\'occhio lo toglie da questo overlay.', 'In «Layers», on the left, there is everything that can show up: the eye takes it out of this overlay.', 'En «Capas», a la izquierda, está todo lo que puede aparecer: el ojo lo quita de este overlay.', '#ovl-livelli'], ['Sulla tela trascini ogni cosa dove la vuoi: si aggancia da sola ai bordi e agli altri, le frecce la spostano al pixel.', 'On the canvas you drag everything where you want it: it snaps to the edges and to the others, the arrows move it pixel by pixel.', 'En el lienzo arrastras cada cosa donde la quieras: se ajusta sola a los bordes y a las demás, las flechas la mueven píxel a píxel.', '#ovl-preview'], ['A destra, in «Proprietà», l\'elemento scelto si veste: colori, carattere, forma, dimensione, rotazione.', 'On the right, in «Properties», the chosen element gets dressed: colors, font, shape, size, rotation.', 'A la derecha, en «Propiedades», el elemento elegido se viste: colores, fuente, forma, tamaño, rotación.', '#ovl-inspector'], ['Copia il link qui sopra e mettilo in OBS come sorgente Browser, 1920×1080. Ogni overlay ha il suo.', 'Copy the link above and put it in OBS as a Browser source, 1920×1080. Each overlay has its own.', 'Copia el enlace de arriba y ponlo en OBS como fuente Navegador, 1920×1080. Cada overlay tiene el suyo.', '#inp-overlay-url']] },
+    come: [['Nei «Livelli», a sinistra, c\'è tutto quello che può comparire: l\'occhio lo toglie da questo overlay.', 'In «Layers», on the left, there is everything that can show up: the eye takes it out of this overlay.', 'En «Capas», a la izquierda, está todo lo que puede aparecer: el ojo lo quita de este overlay.', '#ovl-livelli'], ['Sulla tela trascini ogni cosa dove la vuoi: si aggancia da sola ai bordi e agli altri, le frecce la spostano al pixel.', 'On the canvas you drag everything where you want it: it snaps to the edges and to the others, the arrows move it pixel by pixel.', 'En el lienzo arrastras cada cosa donde la quieras: se ajusta sola a los bordes y a las demás, las flechas la mueven píxel a píxel.', '#ovl-preview'], ['A destra, in «Proprietà», l\'elemento scelto si veste: colori, carattere, forma, dimensione, rotazione.', 'On the right, in «Properties», the chosen element gets dressed: colors, font, shape, size, rotation.', 'A la derecha, en «Propiedades», el elemento elegido se viste: colores, fuente, forma, tamaño, rotación.', '#ovl-inspector'], ['Copia il link qui sopra e mettilo in OBS come sorgente Browser, 1920×1080. Ogni overlay ha il suo.', 'Copy the link above and put it in OBS as a Browser source, 1920×1080. Each overlay has its own.', 'Copia el enlace de arriba y ponlo en OBS como fuente Navegador, 1920×1080. Cada overlay tiene el suyo.', '#inp-overlay-url'], ['Per le sere diverse dalle altre c\'è l\'occasione: un\'aggiunta sopra l\'overlay che hai già. La accendi e compare, la spegni e torna tutto com\'era.', 'For the nights that are not like the others there is the occasion: an add-on over the overlay you already have. Turn it on and it shows up, turn it off and everything is back as it was.', 'Para las noches que no son como las demás está la ocasión: un añadido sobre el overlay que ya tienes. La enciendes y aparece, la apagas y todo vuelve como estaba.', '#ovl-occ-quale']] },
   emote: { serve: ['Gestire a 360° le emote 7TV del tuo canale — aggiungerle, toglierle e rinominarle — direttamente dal bot. Le emote 7TV compaiono anche nella chat a schermo dell\'overlay.', 'Fully manage your channel’s 7TV emotes — add, remove and rename them — right from the bot. 7TV emotes also show up in the overlay’s on-screen chat.', 'Gestiona al 100% las emotes 7TV de tu canal — añadirlas, quitarlas y renombrarlas — directamente desde el bot. Las emotes 7TV también aparecen en el chat en pantalla del overlay.'],
     come: [['Collega il tuo account 7TV incollando il token (c\'è la guida qui sotto).', 'Connect your 7TV account by pasting the token (there’s a guide below).', 'Conecta tu cuenta 7TV pegando el token (hay una guía abajo).', '#svtv-token'], ['Cerca un\'emote nella directory 7TV e premi «Aggiungi» (puoi dargli un alias).', 'Search an emote in the 7TV directory and hit «Add» (you can give it an alias).', 'Busca una emote en el directorio 7TV y pulsa «Añadir» (puedes ponerle un alias).', '#svtv-cerca'], ['Nel tuo set puoi rinominare o togliere le emote con un clic.', 'In your set you can rename or remove emotes with one click.', 'En tu set puedes renombrar o quitar emotes con un clic.', '#svtv-set']] },
   avatar: { serve: ['Guardare il bot mentre pensa: la sfera si accende quando legge la chat, decide e risponde.', 'Watch the bot while it thinks: the sphere lights up as it reads chat, decides and answers.', 'Ver el bot mientras piensa: la esfera se enciende cuando lee el chat, decide y responde.'],
@@ -2866,7 +2874,7 @@ const nuovoDi = (id) => (id === 'dirette' && stato?.rapportiNuovi > 0 ? '<i clas
 function navTopHtml() {
   return elencoGruppi().map((g) => {
     const attivo = g.schede.some(([id]) => id === schedaAttiva) ? ' attivo' : '';
-    const col = `--gc:var(--g-${g.id})`;
+    const col = `--gc:var(--g-${g.id}, var(--g-def))`;
     if (g.schede.length === 1) {
       const [id] = g.schede[0];
       return `<div class="grp${attivo}" data-grp="${g.id}" style="${col}">
@@ -2939,7 +2947,7 @@ function navDrawerHtml() {
   return elencoGruppi().map((g) => {
     const voci = g.schede.map(([id, nome]) =>
       `<button class="drawer-voce${id === schedaAttiva ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}${nuovoDi(id)}<span>${esc(tScheda(id, nome))}</span>${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`).join('');
-    return `<div class="drawer-grp" style="--gc:var(--g-${g.id})"><div class="drawer-grp-tit">${esc(tGruppo(g.id, g.nome))}</div>${voci}</div>`;
+    return `<div class="drawer-grp" style="--gc:var(--g-${g.id}, var(--g-def))"><div class="drawer-grp-tit">${esc(tGruppo(g.id, g.nome))}</div>${voci}</div>`;
   }).join('');
 }
 
@@ -2953,7 +2961,7 @@ function aggiornaTestataPagina() {
   const desc = descScheda(schedaAttiva);
 
   const gid = gruppoDiScheda(schedaAttiva);
-  if (gid) el.style.setProperty('--gc', `var(--g-${gid})`); else el.style.removeProperty('--gc');
+  if (gid) el.style.setProperty('--gc', `var(--g-${gid}, var(--g-def))`); else el.style.removeProperty('--gc');
   const h1Prima = el.querySelector('h1');
   const stessoTitolo = !!h1Prima && h1Prima.textContent.trim() === String(titolo).trim();
   el.innerHTML =
@@ -6364,6 +6372,9 @@ function pannelloAlert() {
       <div class="riga-flessibile ovl-testa-banco">
         <label class="ovl-quale" for="ovl-quale">${L('Overlay', 'Overlay', 'Overlay')}</label>
         <select id="ovl-quale" data-aiuto="${esc(L('Ogni overlay ha colori, posizioni e aspetto suoi. I testi degli alert restano gli stessi per tutti.', 'Each overlay has its own colors, positions and look. Alert texts stay the same across all of them.', 'Cada overlay tiene sus colores, posiciones y aspecto. Los textos de las alertas son los mismos para todos.'))}"></select>
+        <label class="ovl-quale" for="ovl-occ-quale">${L('Occasione', 'Occasion', 'Ocasión')}</label>
+        <select id="ovl-occ-quale" data-aiuto="${esc(L('Un\'occasione è un\'aggiunta sopra questo overlay: la accendi e compare, la spegni e torna tutto com\'era. Il link in OBS resta lo stesso.', 'An occasion is an add-on over this overlay: turn it on and it shows up, turn it off and everything is back as it was. The OBS link stays the same.', 'Una ocasión es un añadido sobre este overlay: la enciendes y aparece, la apagas y todo vuelve como estaba. El enlace en OBS sigue igual.'))}"></select>
+        <button class="btn secondario mini" id="ovl-occ-nuova" type="button" data-aiuto="${esc(L('Parti da un modello e guarda prima come viene.', 'Start from a template and see how it looks first.', 'Empieza desde una plantilla y mira antes cómo queda.'))}">${L('Nuova…', 'New…', 'Nueva…')}</button>
         <span class="ovl-link">
           <span class="ovl-link-eti">${L('link overlay', 'overlay link', 'enlace overlay')}</span>
           <input type="password" id="inp-overlay-url" class="ovl-url" readonly autocomplete="off" tabindex="-1" aria-label="${esc(L('Link di questo overlay (nascosto)', 'Link for this overlay (hidden)', 'Enlace de este overlay (oculto)'))}" data-aiuto="${esc(L('Sta nascosto apposta: chi ha questo link può mandare roba sul tuo schermo in diretta.', 'Hidden on purpose: anyone with this link can push things onto your screen while you are live.', 'Esta oculto a proposito: quien tenga este enlace puede mandar cosas a tu pantalla en directo.'))}" value="">
@@ -6413,6 +6424,14 @@ function pannelloAlert() {
           <button type="button" class="ovl-tasto" id="ovl-zoom-piu" title="${L('Ingrandisci', 'Zoom in', 'Acercar')}">${_bIco('<circle cx="11" cy="11" r="7"/><path d="M8 11h6M11 8v6M21 21l-4.3-4.3"/>')}</button>
           <button type="button" class="ovl-tasto testo" id="ovl-zoom-fit" title="${esc(L('Riporta lo zoom a far stare tutta la scena nello schermo', 'Brings the zoom back so the whole scene fits the screen', 'Devuelve el zoom para que toda la escena quepa en la pantalla'))}">${L('Adatta', 'Fit', 'Ajustar')}</button>
         </div>
+      </div>
+      <div class="ovl-occ-fascia" id="ovl-occ-fascia" hidden>
+        <span class="ovl-occ-tit">${L('Stai modificando', 'You are editing', 'Estás editando')}</span>
+        <strong class="ovl-occ-nome" id="ovl-occ-nome"></strong>
+        <span class="ovl-occ-dice" id="ovl-occ-dice"></span>
+        <label class="ovl-spunta ovl-occ-sp"><input type="checkbox" id="ovl-occ-on"><span>${L('In onda adesso', 'On air now', 'En directo ahora')}</span></label>
+        <button type="button" class="btn secondario mini" id="ovl-occ-esci">${L('Torna a tutti i giorni', 'Back to every day', 'Volver a todos los días')}</button>
+        <button type="button" class="btn secondario mini ovl-elimina" id="ovl-occ-via">${L('Elimina', 'Delete', 'Eliminar')}</button>
       </div>
       <div class="ovl-scena">
       <div class="ovl-tela" id="ovl-tela">
@@ -6888,14 +6907,28 @@ const FISSI = ['alert', 'chat', 'wf', 'ws'];
 const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'pen', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
+let occSel = '';
+const _occAttuale = () => {
+  const o = _ovAttuale();
+  if (!o || !occSel) return null;
+  return (o.occasioni || []).find((x) => x && x.id === occSel) || null;
+};
+const _baseMostra = () => { const o = _ovAttuale(); if (!o) return {}; return (o.mostra = o.mostra || {}); };
+const _vedoMostra = () => { const oc = _occAttuale(); return oc ? { ..._baseMostra(), ...(oc.mostra || {}) } : _baseMostra(); };
+const _differisce = (k, si) => (!!si !== (_baseMostra()[k] !== false));
+function _accendiQui(k, si) {
+  const oc = _occAttuale();
+  if (!oc) { const m = _baseMostra(); if (si) delete m[k]; else m[k] = false; return; }
+  const d = (oc.mostra = oc.mostra || {});
+  if (_differisce(k, si)) d[k] = !!si; else delete d[k];
+}
 const _mostraOra = () => {
-  const m = (_ovAttuale() || {}).mostra || {};
+  const m = _vedoMostra();
   const o = ELEM_OVL.reduce((q, k) => (q[k] = m[k] !== false, q), {});
   for (const [k, v] of Object.entries(m)) if (v === false) o[k] = false;
   return o;
 };
-const _ovMostra = () => { const o = _ovAttuale(); if (!o) return {}; return (o.mostra = o.mostra || {}); };
-const _quiDentro = (k) => _ovMostra()[k] !== false;
+const _quiDentro = (k) => _vedoMostra()[k] !== false;
 const _idEl = (k) => 'ap-' + String(k).replace(/[^a-z0-9]/gi, '-');
 const _nodo = (k) => _g(_idEl(k));
 let overlays = [];
@@ -6994,14 +7027,13 @@ function _rendiQualiChat() {
   const lista = _chatDaCollegate();
   box.hidden = lista.length < 2;
   if (box.hidden) { box.innerHTML = ''; return; }
-  const m = _ovMostra();
+  const m = _vedoMostra();
   box.innerHTML = `<label class="campo">${L('Quali chat in questo overlay', 'Which chats in this overlay', 'Qué chats en este overlay')}</label>
     <div class="riga-flessibile">${lista.map(([id, nome]) => `
       <label class="riga-check"><input type="checkbox" class="co-da-c" value="${id}"${m['chat:' + id] === false ? '' : ' checked'}> ${esc(nome)}</label>`).join('')}</div>
     <p class="tenue">${L('Spegnine una e resta fuori di qui. Per tenerle divise, fai un secondo overlay con l\'altra accesa.', 'Turn one off and it stays out of here. To keep them apart, make a second overlay with the other one on.', 'Apaga uno y se queda fuera de aquí. Para tenerlos separados, haz un segundo overlay con el otro encendido.')}</p>`;
   box.querySelectorAll('.co-da-c').forEach((c) => c.addEventListener('change', () => {
-    const q = _ovMostra();
-    if (c.checked) delete q['chat:' + c.value]; else q['chat:' + c.value] = false;
+    _accendiQui('chat:' + c.value, c.checked);
     aggiornaAnteprima(); _ricorda(); salvaChatOverlay(true);
   }));
 }
@@ -7130,7 +7162,7 @@ function _messaggiFinti(riempi) {
 function _chatDaAccese() {
   const coll = _chatDaCollegate();
   if (coll.length < 2) return ['twitch'];
-  const m = _ovMostra();
+  const m = _vedoMostra();
   return coll.map(([id]) => id).filter((id) => m['chat:' + id] !== false);
 }
 const _segnoDaHtml = (id) => `<svg class="chat-da" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PIATT_ICO[id] || ''}</svg>`;
@@ -7529,6 +7561,19 @@ function _disegnaParti() {
   }
   strato.innerHTML = html;
 }
+const _AFOTO = new WeakMap();
+function aFotogramma(fn) {
+  let f = _AFOTO.get(fn);
+  if (f) return f;
+  let ultimo = null, id = 0;
+  const giro = () => { id = 0; const ev = ultimo; ultimo = null; if (ev) fn(ev); };
+  f = (ev) => { ultimo = ev; if (!id) id = requestAnimationFrame(giro); };
+  f.ferma = () => { if (id) cancelAnimationFrame(id); id = 0; ultimo = null; };
+  _AFOTO.set(fn, f);
+  return f;
+}
+const _stacca = (fn) => { const f = aFotogramma(fn); f.ferma(); return f; };
+
 function _presaParte(parte, e, muovi) {
   e.preventDefault(); e.stopPropagation();
   const el = _nodo('musica'), box = el && el.firstElementChild;
@@ -7543,7 +7588,7 @@ function _presaParte(parte, e, muovi) {
   const move = (ev) => { muovi(p, v0, g.locale(ev.clientX - p0.x, ev.clientY - p0.y), g, n); ridisegna(); };
   const fine = () => {
     _inTrascinamento = false;
-    window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointermove', _stacca(move)); window.removeEventListener('pointerup', up);
     document.removeEventListener('keydown', fuga, true);
   };
   const up = () => { fine(); _ricorda(); salvaCfgElemento('musica'); };
@@ -7552,7 +7597,7 @@ function _presaParte(parte, e, muovi) {
     ev.preventDefault(); ev.stopImmediatePropagation();
     Object.assign(p, v0); ridisegna(); fine();
   };
-  window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  window.addEventListener('pointermove', aFotogramma(move)); window.addEventListener('pointerup', up);
   document.addEventListener('keydown', fuga, true);
 }
 function _trascinaParte(parte, e) {
@@ -7789,16 +7834,13 @@ function _azzeraPos(k) {
 
 function _occhio(k) {
   const e = ELEM(k);
+  const cera = _quiDentro(k);
+  _accendiQui(k, !cera);
   if (e && (e.goal || e.cont)) {
-    const m = _ovMostra();
-    if (m[k] === false) delete m[k]; else m[k] = false;
     aggiornaAnteprima(); _rendiLivelli(); _ricorda(); _salvaPos();
     return;
   }
-  const m = _ovMostra();
-  const acceso = m[k] === false;
-  if (acceso) delete m[k]; else m[k] = false;
-  if (acceso && !_elementoAcceso(k)) _accendiElemento(k, true);
+  if (!cera && !_elementoAcceso(k)) _accendiElemento(k, true);
   aggiornaAnteprima();
   _rendiLivelli();
   _ricorda();
@@ -8239,7 +8281,9 @@ function _cfgEl(k) {
 let _SEME_FISSO = {};
 
 function _ovAttuale() { return overlays.find((o) => o.id === overlaySel) || overlays[0] || null; }
-function _ovXY() { const o = _ovAttuale(); if (!o) return {}; return (o.xy = o.xy || {}); }
+function _baseXY() { const o = _ovAttuale(); if (!o) return {}; return (o.xy = o.xy || {}); }
+function _ovXY() { const oc = _occAttuale(); if (!oc) return _baseXY(); return (oc.xy = oc.xy || {}); }
+function _vedoXY() { const oc = _occAttuale(); return oc ? { ..._baseXY(), ...(oc.xy || {}) } : _baseXY(); }
 
 function _semePos(k) {
   const e = ELEM(k);
@@ -8251,7 +8295,7 @@ function _semePos(k) {
   return _SEME_FISSO[k] || null;
 }
 
-function _posCorrente(k) { return _ovXY()[k] || _semePos(k); }
+function _posCorrente(k) { return _vedoXY()[k] || _semePos(k); }
 
 function _scriviPos(k, st) {
   const xy = _ovXY();
@@ -8288,12 +8332,53 @@ function _posDove(k) {
 
 const _corpoPan = (el) => (el ? (el.querySelector(':scope > .pan-corpo') || el) : null);
 
-function _aggiornaRigaLivello(k) {
-  const riga = _g('ovl-livelli')?.querySelector(`[data-liv="${k}"] .ovl-liv-corpo span`);
+function _aggiornaRigaLivello(k, st) {
+  const riga = _g('ovl-livelli')?.querySelector(`[data-liv="${k}"]`);
   if (!riga || !_inOverlay(k)) return;
-  const st = _posDove(k);
-  riga.textContent = _testoPos(st);
+  const dove = riga.querySelector('.ovl-liv-corpo span');
+  if (dove) dove.textContent = _testoPos(st || _posDove(k));
+  const tag = riga.querySelector('.ovl-liv-tag');
+  const html = _occTag(k);
+  if (tag) tag.outerHTML = html;
+  else if (html) riga.querySelector('.ovl-liv-corpo')?.insertAdjacentHTML('afterend', html);
 }
+function _ripassaPosizioni(chiavi, giri = 0) {
+  const tela = _g('ovl-preview');
+  if (!tela) return;
+  if (!tela.getBoundingClientRect().width) {
+    if (giri < 10) requestAnimationFrame(() => _ripassaPosizioni(chiavi, giri + 1));
+    return;
+  }
+  for (const e of ELEMENTI()) if (!chiavi || chiavi.has(e.k)) _aggiornaRigaLivello(e.k);
+}
+
+let _misure = null;
+const _chiaveDiNodo = new WeakMap();
+let _daRipassare = null, _ripassoInCoda = false;
+function _seguiMisure() {
+  if (typeof ResizeObserver === 'undefined') return;
+  if (_misure) _misure.disconnect();
+  _misure = new ResizeObserver((voci) => {
+    if (_inTrascinamento) return;
+    _daRipassare = _daRipassare || new Set();
+    for (const v of voci) { const k = _chiaveDiNodo.get(v.target); if (k) _daRipassare.add(k); }
+    if (_ripassoInCoda || !_daRipassare.size) return;
+    _ripassoInCoda = true;
+    requestAnimationFrame(() => {
+      _ripassoInCoda = false;
+      const chiavi = _daRipassare;
+      _daRipassare = null;
+      _ripassaPosizioni(chiavi);
+    });
+  });
+  for (const e of ELEMENTI()) {
+    const n = _nodo(e.k);
+    if (!n) continue;
+    _chiaveDiNodo.set(n, e.k);
+    _misure.observe(n);
+  }
+}
+
 const _testoPos = (st) => (Number(st.w) > 0
   ? `${Math.round(st.x)}% · ${Math.round(st.y)}% · ${Math.round(st.w)}×${Math.round(st.h)}%`
   : `${Math.round(st.x)}% · ${Math.round(st.y)}%${st.s !== 100 ? ' · ' + st.s + '%' : ''}`);
@@ -8398,13 +8483,13 @@ function _dragRiquadro(lato, e) {
     if (h < 2) { if (lato.includes('n')) y = r0.y + r0.h - 2; h = 2; }
     x = _tra(x, 0, 98); y = _tra(y, 0, 98); w = _tra(w, 2, 100 - x); h = _tra(h, 2, 100 - y);
     st.x = _arr(x); st.y = _arr(y); st.w = _arr(w); st.h = _arr(h);
-    _posElemento(el, st); _mostraGuide(guide); _mostraProp(); _aggiornaRigaLivello(k);
+    _posElemento(el, st); _mostraGuide(guide); _mostraProp(); _aggiornaRigaLivello(k, st);
   };
   const up = () => {
-    window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointermove', _stacca(move)); window.removeEventListener('pointerup', up);
     _mostraGuide([]); aggiornaInspector(); _ricorda(); _salvaPos(k);
   };
-  window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  window.addEventListener('pointermove', aFotogramma(move)); window.addEventListener('pointerup', up);
 }
 
 function _trascinaRiquadro(k, e) {
@@ -8438,11 +8523,11 @@ function _trascinaRiquadro(k, e) {
       if (ay) { y = ay.a.v - ay.off; guide.push(ay.a.g); }
     }
     st.x = _arr(_tra(x, 0, 100 - st.w)); st.y = _arr(_tra(y, 0, 100 - st.h));
-    _posElemento(el, st); _mostraGuide(guide); _mostraProp(); _aggiornaRigaLivello(k);
+    _posElemento(el, st); _mostraGuide(guide); _mostraProp(); _aggiornaRigaLivello(k, st);
   };
   const fine = () => {
     _inTrascinamento = false; el.style.cursor = 'grab';
-    window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointermove', _stacca(move)); window.removeEventListener('pointerup', up);
     document.removeEventListener('keydown', fuga, true);
     _mostraGuide([]);
   };
@@ -8452,7 +8537,7 @@ function _trascinaRiquadro(k, e) {
     ev.preventDefault(); ev.stopImmediatePropagation();
     st.x = r0.x; st.y = r0.y; _posElemento(el, st); fine(); aggiornaInspector(); _salvaPos(k);
   };
-  window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  window.addEventListener('pointermove', aFotogramma(move)); window.addEventListener('pointerup', up);
   document.addEventListener('keydown', fuga, true);
 }
 
@@ -8495,21 +8580,323 @@ function _blocca(k, v) {
 function _rendiLivelli() {
   const box = _corpoPan(_g('ovl-livelli'));
   if (!box) return;
-  box.innerHTML = ELEMENTI().map((l) => {
-    const acceso = _inOverlay(l.k);
-    const spento = acceso && !_elementoAcceso(l.k);
+  const tutti = ELEMENTI();
+  const oc = _occAttuale();
+  const toltaQui = (k) => !!oc && (oc.mostra || {})[k] === false;
+  const qui = tutti.filter((l) => _inOverlay(l.k) || toltaQui(l.k));
+  const fuori = tutti.filter((l) => !_inOverlay(l.k) && !toltaQui(l.k));
+  const righe = qui.map((l) => {
+    const dentro = _inOverlay(l.k);
+    const spento = dentro && !_elementoAcceso(l.k);
     const st = _posDove(l.k);
-    return `<button type="button" class="ovl-liv${selezione === l.k ? ' scelto' : ''}${acceso ? '' : ' via'}" data-liv="${l.k}">
+    return `<button type="button" class="ovl-liv${selezione === l.k ? ' scelto' : ''}${dentro ? '' : ' via'}" data-liv="${l.k}">
       <span class="ovl-liv-ico">${_bIco(l.ico)}</span>
-      <span class="ovl-liv-corpo"><strong>${esc(l.n)}</strong><span>${acceso
+      <span class="ovl-liv-corpo"><strong>${esc(l.n)}</strong><span>${dentro
         ? _testoPos(st)
-        : L('non in questo overlay', 'not in this overlay', 'no en este overlay')}</span></span>
+        : L('tolto in questa occasione', 'removed in this occasion', 'quitado en esta ocasión')}</span></span>
+      ${_occTag(l.k)}
       ${spento ? `<span class="ovl-liv-avviso" data-accendi="${l.k}" role="button" tabindex="0" title="${L('È spento del tutto: premi per accenderlo', 'It is fully off: press to turn it on', 'Está apagado del todo: pulsa para encenderlo')}">!</span>` : ''}
-      ${acceso ? `<span class="ovl-liv-lucchetto${_bloccato(l.k) ? ' chiuso' : ''}" data-lucchetto="${l.k}" role="button" tabindex="0" title="${_bloccato(l.k) ? L('Sblocca: torna a spostarsi', 'Unlock: it can move again', 'Desbloquear: vuelve a moverse') : L('Blocca: non si sposta per sbaglio', 'Lock: it won’t move by accident', 'Bloquear: no se mueve por error')}">${_bIco(ICO.lucchetto)}</span>` : ''}
+      ${dentro ? `<span class="ovl-liv-lucchetto${_bloccato(l.k) ? ' chiuso' : ''}" data-lucchetto="${l.k}" role="button" tabindex="0" title="${_bloccato(l.k) ? L('Sblocca: torna a spostarsi', 'Unlock: it can move again', 'Desbloquear: vuelve a moverse') : L('Blocca: non si sposta per sbaglio', 'Lock: it won’t move by accident', 'Bloquear: no se mueve por error')}">${_bIco(ICO.lucchetto)}</span>` : ''}
       <span class="ovl-liv-occhio" data-occhio="${l.k}" role="button" tabindex="0"
-        title="${acceso ? L('Togli da questo overlay', 'Remove from this overlay', 'Quitar de este overlay') : L('Metti in questo overlay', 'Add to this overlay', 'Poner en este overlay')}">${_bIco(acceso ? ICO.occhio : ICO.occhioNo)}</span>
+        title="${dentro ? L('Togli da questo overlay', 'Remove from this overlay', 'Quitar de este overlay') : L('Rimettilo com\'era', 'Put it back as it was', 'Vuelve a ponerlo como estaba')}">${_bIco(dentro ? ICO.occhio : ICO.occhioNo)}</span>
     </button>`;
   }).join('');
+  const vuoto = qui.length ? '' : `<p class="tenue ovl-liv-vuoto">${L('Questo overlay è vuoto: con «Aggiungi» ci metti dentro quello che vuoi.', 'This overlay is empty: with «Add» you put in whatever you want.', 'Este overlay está vacío: con «Añadir» pones dentro lo que quieras.')}</p>`;
+  box.innerHTML = righe + vuoto + `
+    <button type="button" class="ovl-liv-agg" id="ovl-liv-aggiungi" aria-expanded="false">
+      ${_bIco('<path d="M12 5v14"/><path d="M5 12h14"/>')}<span>${L('Aggiungi', 'Add', 'Añadir')}</span></button>
+    <div class="ovl-agg" id="ovl-agg" hidden>${_htmlAggiungi(fuori)}</div>`;
+  requestAnimationFrame(() => _ripassaPosizioni(null));
+  _seguiMisure();
+}
+
+function _htmlAggiungi(fuori) {
+  const voci = fuori.map((l) => `<button type="button" class="ovl-agg-v" data-metti="${l.k}">
+    <span class="ovl-liv-ico">${_bIco(l.ico)}</span><span>${esc(l.n)}</span></button>`).join('');
+  const nuovi = [
+    ['cart', ICO.cartello, L('Un cartello o un\'immagine', 'A sign or an image', 'Un cartel o una imagen')],
+    ['goal', ICO.trofeo, L('Un obiettivo', 'A goal', 'Un objetivo')],
+    ['cont', ICO.grafico, L('Un contatore', 'A counter', 'Un contador')],
+  ].map(([fam, ico, nome]) => `<button type="button" class="ovl-agg-v nuovo" data-nuovo="${fam}">
+    <span class="ovl-liv-ico">${_bIco(ico)}</span><span>${esc(nome)}</span></button>`).join('');
+  return (voci ? `<p class="ovl-agg-tit">${L('Rimetti in questo overlay', 'Put back in this overlay', 'Vuelve a poner en este overlay')}</p>${voci}` : '')
+    + `<p class="ovl-agg-tit">${L('Crea', 'Create', 'Crear')}</p>${nuovi}`;
+}
+
+function _mettiDentro(k) {
+  _accendiQui(k, true);
+  if (!_elementoAcceso(k)) _accendiElemento(k, true);
+  aggiornaAnteprima();
+  _rendiLivelli();
+  _ricorda();
+  salvaLayoutOverlay(true);
+  seleziona(k);
+}
+
+const _occDi = (ov) => (Array.isArray(ov?.occasioni) ? ov.occasioni : []);
+const MAX_OCC = 8;
+
+const NOME_FAM = () => ({
+  goal: L('Obiettivi', 'Goals', 'Objetivos'),
+  cont: L('Contatori', 'Counters', 'Contadores'),
+  cart: L('Cartelli', 'Signs', 'Carteles'),
+  effetti: L('Effetti a schermo', 'On-screen effects', 'Efectos en pantalla'),
+  consolify: 'CONSOLify',
+});
+const _nomeChiave = (k) => (ELEM(k) ? _nomeEl(k) : (NOME_FAM()[k] || k));
+
+function _occDice(oc) {
+  const m = (oc && oc.mostra) || {}, x = (oc && oc.xy) || {};
+  const piu = [], via = [];
+  for (const [k, v] of Object.entries(m)) (v ? piu : via).push(_nomeChiave(k));
+  const parti = [];
+  if (piu.length) parti.push(L('in più', 'added', 'de más') + ': ' + piu.join(', '));
+  if (via.length) parti.push(L('via', 'removed', 'fuera') + ': ' + via.join(', '));
+  const sp = Object.keys(x).length;
+  if (sp) parti.push(sp + ' ' + (sp === 1 ? L('spostato', 'moved', 'movido') : L('spostati', 'moved', 'movidos')));
+  return parti.length ? parti.join(' · ') : L('per ora non cambia niente', 'nothing changes yet', 'por ahora no cambia nada');
+}
+
+function _occTag(k) {
+  const oc = _occAttuale();
+  if (!oc) return '';
+  const m = oc.mostra || {}, x = oc.xy || {};
+  const p = [];
+  if (k in m) p.push(m[k] ? L('in più', 'added', 'de más') : L('via', 'off', 'fuera'));
+  if (k in x) p.push(L('spostato', 'moved', 'movido'));
+  return p.length ? `<span class="ovl-liv-tag">${esc(p.join(' · '))}</span>` : '';
+}
+
+function _rendiOccasioni() {
+  const sel = _g('ovl-occ-quale');
+  if (!sel) return;
+  const lista = _occDi(_ovAttuale());
+  if (occSel && !lista.some((o) => o.id === occSel)) occSel = '';
+  const inOnda = L('in onda', 'on air', 'en directo');
+  sel.innerHTML = `<option value="">${esc(L('Tutti i giorni', 'Every day', 'Todos los días'))}</option>`
+    + lista.map((o) => `<option value="${esc(o.id)}"${o.id === occSel ? ' selected' : ''}>${esc(o.nome)}${o.attiva ? ' · ' + esc(inOnda) : ''}</option>`).join('');
+  sel.value = occSel;
+  const oc = _occAttuale();
+  const fascia = _g('ovl-occ-fascia');
+  if (fascia) fascia.hidden = !oc;
+  if (oc) {
+    const n = _g('ovl-occ-nome'); if (n) n.textContent = oc.nome;
+    const d = _g('ovl-occ-dice'); if (d) d.textContent = _occDice(oc);
+    const on = _g('ovl-occ-on'); if (on) on.checked = !!oc.attiva;
+  }
+  document.body.classList.toggle('in-occasione', !!oc);
+}
+
+function _apriOccasione(id) {
+  occSel = String(id || '');
+  deseleziona();
+  _rendiOccasioni();
+  _rendiQualiChat();
+  _rendiLivelli();
+  aggiornaAnteprima();
+  aggiornaInspector();
+}
+
+async function _accendiOcc(id, si) {
+  const ov = _ovAttuale();
+  if (!ov) return;
+  try {
+    const d = await api('/api/streamer/occasione', { method: 'POST', body: { overlay: ov.id, occasione: id, accendi: !!si } });
+    ov.occasioni = Array.isArray(d.occasioni) ? d.occasioni : [];
+    toast(si
+      ? L('In onda. Su OBS non tocchi niente.', 'On air. Nothing to touch in OBS.', 'En directo. No tocas nada en OBS.')
+      : L('Spenta: torna tutto com\'era.', 'Off: everything is back as it was.', 'Apagada: todo vuelve como estaba.'));
+  } catch (e) {
+    const on = _g('ovl-occ-on'); if (on) on.checked = !si;
+    _avvisaSalvataggio();
+    return;
+  }
+  _rendiOccasioni();
+}
+
+const OCC_MODELLI = () => [
+  { nome: L('Subathon', 'Subathon', 'Subathon'),
+    dice: L('Il conto alla rovescia in vista, con obiettivi e hype train accesi.', 'The countdown in plain sight, with goals and hype train on.', 'La cuenta atrás a la vista, con objetivos y hype train encendidos.'),
+    mostra: { timer: true, goal: true, treno: true } },
+  { nome: L('Torno subito', 'Back soon', 'Vuelvo enseguida'),
+    dice: L('Lo schermo si svuota: restano la musica e il conto alla rovescia.', 'The screen empties out: music and countdown stay.', 'La pantalla se vacía: quedan la música y la cuenta atrás.'),
+    mostra: { alert: false, chat: false, wf: false, ws: false, musica: true, timer: true } },
+  { nome: L('Serata speciale', 'Special night', 'Noche especial'),
+    dice: L('Cartelli, effetti e obiettivo in vista: compleanno, anniversario, evento.', 'Signs, effects and goal in sight: birthday, anniversary, event.', 'Carteles, efectos y objetivo a la vista: cumpleaños, aniversario, evento.'),
+    mostra: { cart: true, effetti: true, goal: true } },
+  { nome: L('La faccio io', 'I build it myself', 'La hago yo'),
+    dice: L('Parte uguale a com\'è adesso: accendi e sposti quello che vuoi tu.', 'It starts exactly as it is now: you turn on and move whatever you like.', 'Empieza igual que ahora: enciendes y mueves lo que quieras.'),
+    mostra: {} },
+];
+
+function _occDiff(mostra) {
+  const d = {};
+  for (const [k, v] of Object.entries(mostra || {})) if (_differisce(k, v)) d[k] = !!v;
+  return d;
+}
+
+function _rettMini(k) {
+  const st = _posDove(k);
+  if (Number(st.w) > 0 && Number(st.h) > 0) return { x: st.x, y: st.y, w: st.w, h: st.h };
+  const el = _nodo(k);
+  const tela = _g('ovl-preview')?.getBoundingClientRect();
+  if (!el || !tela || !tela.width || !el.offsetWidth) return { x: st.x * 0.9, y: st.y * 0.94, w: 10, h: 6 };
+  const sc = tela.width / OVL_W;
+  const f = (Number(st.s) || 100) / 100;
+  const w = _tra(el.offsetWidth / sc * f / OVL_W * 100, 2, 100);
+  const h = _tra(el.offsetHeight / sc * f / OVL_H * 100, 2, 100);
+  return { x: st.x / 100 * (100 - w), y: st.y / 100 * (100 - h), w, h };
+}
+
+const ICO_FAM = () => ({ goal: ICO.trofeo, cont: ICO.grafico, cart: ICO.cartello, effetti: ICO.effetti, consolify: ICO.monitor });
+
+const MINI_W = 30, MINI_H = 19;
+function _chipMini(r) {
+  const w = Math.max(r.w, MINI_W), h = Math.max(r.h, MINI_H);
+  const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+  return { x: _tra(cx - w / 2, 1, 99 - w), y: _tra(cy - h / 2, 1, 99 - h), w, h };
+}
+function _sparpaglia(chips) {
+  const messe = [];
+  for (const c of chips) {
+    let giri = 0;
+    while (giri++ < 6 && messe.some((m) => c.x < m.x + m.w && m.x < c.x + c.w && c.y < m.y + m.h && m.y < c.y + c.h)) {
+      c.y = c.y + MINI_H + 2;
+      if (c.y + c.h > 99) { c.y = 1; c.x = _tra(c.x + MINI_W + 2, 1, 99 - c.w); }
+    }
+    messe.push(c);
+  }
+  return chips;
+}
+
+function _occMini(modello, diff) {
+  const base = _baseMostra();
+  const vis = { ...base, ...diff };
+  const ce = (m, e) => { const fam = e.k.split(':')[0]; return m[e.k] !== false && (fam === e.k || m[fam] !== false); };
+  const nominata = (k) => { const fam = k.split(':')[0]; return (k in modello) ? k : ((fam in modello) ? fam : ''); };
+  const ombre = [], chips = [];
+  for (const e of ELEMENTI()) {
+    const nom = nominata(e.k);
+    const r = _rettMini(e.k);
+    if (!nom) { if (ce(vis, e)) ombre.push(`<i class="occ-o" style="left:${_arr(r.x)}%;top:${_arr(r.y)}%;width:${_arr(r.w)}%;height:${_arr(r.h)}%"></i>`); continue; }
+    const che = (nom in diff) ? (diff[nom] ? 'piu' : 'via') : 'gia';
+    chips.push({ ..._chipMini(r), che, e });
+  }
+  const coperte = new Set(ELEMENTI().map((e) => nominata(e.k)).filter(Boolean));
+  const fam = ICO_FAM();
+  let ax = 4;
+  for (const k of Object.keys(modello)) {
+    if (coperte.has(k) || !fam[k]) continue;
+    const che = (k in diff) ? (diff[k] ? 'piu' : 'via') : 'gia';
+    chips.push({ x: ax, y: 99 - MINI_H - 2, w: MINI_W, h: MINI_H, che, e: { ico: fam[k] }, fisso: true });
+    ax += MINI_W + 2;
+  }
+  const targhe = _sparpaglia(chips).map((c) => `<i class="occ-c ${c.che}" style="left:${_arr(c.x)}%;top:${_arr(c.y)}%;width:${_arr(c.w)}%;height:${_arr(c.h)}%">${_bIco(c.e.ico)}</i>`).join('');
+  const vuoto = chips.length ? '' : `<em class="occ-vuoto">${esc(L('la scena che hai adesso', 'the scene you have now', 'la escena que tienes ahora'))}</em>`;
+  return `<span class="occ-mini">${ombre.join('')}${targhe}${vuoto}</span>`;
+}
+
+function chiediOccasione() {
+  return new Promise((risolvi) => {
+    const mod = OCC_MODELLI().map((m) => {
+      const diff = _occDiff(m.mostra);
+      const effetto = Object.keys(diff).length ? _occDice({ mostra: diff })
+        : L('queste cose ce le hai già così', 'you already have these as they are', 'estas cosas ya las tienes así');
+      return { ...m, diff, effetto };
+    });
+    const el = document.createElement('div');
+    el.className = 'bv-velo mdl-chiedi';
+    el.innerHTML = `<div class="bv-carta mdl-carta occ-carta" role="dialog" aria-modal="true">
+      <h2>${esc(L('Nuova occasione', 'New occasion', 'Nueva ocasión'))}</h2>
+      <p class="bv-intro">${esc(L('Guarda come viene prima di scegliere: l\'anteprima è questo overlay con l\'aggiunta già accesa. Poi cambi quello che vuoi.', 'See how it looks before choosing: the preview is this overlay with the add-on already on. Then you change whatever you like.', 'Mira cómo queda antes de elegir: la vista previa es este overlay con el añadido ya encendido. Luego cambias lo que quieras.'))}</p>
+      <div class="occ-galleria">${mod.map((m, i) => `
+        <button type="button" class="occ-modello${i === 0 ? ' scelto' : ''}" data-mod="${i}" aria-pressed="${i === 0}">
+          ${_occMini(m.mostra, m.diff)}
+          <strong>${esc(m.nome)}</strong>
+          <span>${esc(m.dice)}</span>
+          <span class="occ-eff">${esc(m.effetto)}</span>
+        </button>`).join('')}</div>
+      <label class="campo spazio-sopra" for="occ-nome">${esc(L('Come la chiami', 'What you call it', 'Cómo la llamas'))}</label>
+      <input type="text" class="campo-largo" id="occ-nome" maxlength="40" value="${esc(mod[0].nome)}" autocomplete="off">
+      <div class="bv-azioni">
+        <button type="button" class="btn grande" data-mdl="ok">${esc(L('Crea', 'Create', 'Crear'))}</button>
+        <button type="button" class="btn grande secondario" data-mdl="no">${L('Annulla', 'Cancel', 'Cancelar')}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('dentro'));
+    const campo = el.querySelector('#occ-nome');
+    let scelto = 0;
+    let chiuso = false;
+    const via = (v) => {
+      if (chiuso) return; chiuso = true;
+      document.removeEventListener('keydown', tasti, true);
+      el.classList.remove('dentro');
+      setTimeout(() => el.remove(), 240);
+      risolvi(v);
+    };
+    const esito = () => {
+      const nome = campo.value.trim();
+      return nome ? { nome, mostra: mod[scelto].diff } : null;
+    };
+    const tasti = (ev) => {
+      if (ev.key === 'Escape') { ev.preventDefault(); via(null); }
+      else if (ev.key === 'Enter' && ev.target === campo) { ev.preventDefault(); via(esito()); }
+    };
+    document.addEventListener('keydown', tasti, true);
+    el.addEventListener('click', (ev) => {
+      const m = ev.target.closest('[data-mod]');
+      if (m) {
+        const prima = scelto;
+        scelto = Number(m.dataset.mod);
+        el.querySelectorAll('[data-mod]').forEach((b) => {
+          const suo = Number(b.dataset.mod) === scelto;
+          b.classList.toggle('scelto', suo);
+          b.setAttribute('aria-pressed', String(suo));
+        });
+        if (campo.value.trim() === mod[prima].nome) campo.value = mod[scelto].nome;
+        return;
+      }
+      const b = ev.target.closest('[data-mdl]');
+      if (b) return via(b.dataset.mdl === 'ok' ? esito() : null);
+      if (ev.target === el) via(null);
+    });
+    campo.focus(); campo.select();
+  });
+}
+
+async function nuovaOccasione() {
+  const ov = _ovAttuale();
+  if (!ov) return;
+  const lista = _occDi(ov);
+  if (lista.length >= MAX_OCC) {
+    toast(L(`Massimo ${MAX_OCC} occasioni per overlay.`, `Maximum ${MAX_OCC} occasions per overlay.`, `Máximo ${MAX_OCC} ocasiones por overlay.`));
+    return;
+  }
+  const r = await chiediOccasione();
+  if (!r) return;
+  const mostra = { ...r.mostra };
+  const id = 'oc' + Math.random().toString(36).slice(2, 8);
+  ov.occasioni = lista.concat([{ id, nome: r.nome, attiva: false, mostra, xy: {} }]);
+  await salvaLayoutOverlay(true);
+  _apriOccasione(id);
+}
+
+async function eliminaOccasione() {
+  const ov = _ovAttuale(), oc = _occAttuale();
+  if (!ov || !oc) return;
+  const r = await chiediScelta({
+    titolo: L('Elimino questa occasione?', 'Delete this occasion?', '¿Elimino esta ocasión?'),
+    testo: L('L\'overlay di tutti i giorni resta com\'è: se ne va solo l\'aggiunta.', 'Your every-day overlay stays as it is: only the add-on goes.', 'Tu overlay de todos los días queda como está: solo se va el añadido.'),
+    azioni: [
+      { id: 'si', testo: L('Elimina', 'Delete', 'Eliminar') },
+      { id: 'no', testo: L('Lascia stare', 'Keep it', 'Déjalo'), tono: 'secondario' },
+    ],
+  });
+  if (r !== 'si') return;
+  ov.occasioni = _occDi(ov).filter((o) => o.id !== oc.id);
+  _apriOccasione('');
+  await salvaLayoutOverlay(true);
 }
 
 let _zoomOvl = 1;
@@ -8533,6 +8920,23 @@ function collegaEditorOvl() {
   scheda.dataset.editor = '1';
 
   _g('ovl-livelli')?.addEventListener('click', (e) => {
+    const agg = e.target.closest('#ovl-liv-aggiungi');
+    if (agg) {
+      e.stopPropagation();
+      const box = _g('ovl-agg');
+      if (box) { box.hidden = !box.hidden; agg.setAttribute('aria-expanded', String(!box.hidden)); }
+      return;
+    }
+    const metti = e.target.closest('[data-metti]');
+    if (metti) { e.stopPropagation(); _mettiDentro(metti.dataset.metti); return; }
+    const nuovo = e.target.closest('[data-nuovo]');
+    if (nuovo) {
+      e.stopPropagation();
+      const dove = { cart: 'btn-agg-cart', goal: 'btn-agg-goal' }[nuovo.dataset.nuovo];
+      if (dove) { _g(dove)?.click(); _g(dove)?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'center' }); }
+      else vaiAScheda('moduli');
+      return;
+    }
     const occ = e.target.closest('[data-occhio]');
     if (occ) {
       e.stopPropagation();
@@ -8547,9 +8951,25 @@ function collegaEditorOvl() {
     }
     const b = e.target.closest('[data-liv]');
     if (!b) return;
-    const k = b.dataset.liv;
-    if (!_inOverlay(k)) { toast(L('Questo livello non è in questo overlay: accendilo con l’occhio.', 'This layer is not in this overlay: turn it on with the eye.', 'Esta capa no está en este overlay: enciéndela con el ojo.')); return; }
-    seleziona(k);
+    seleziona(b.dataset.liv);
+  });
+
+  _g('ovl-occ-quale')?.addEventListener('change', (e) => _apriOccasione(e.target.value));
+  _g('ovl-occ-nuova')?.addEventListener('click', nuovaOccasione);
+  _g('ovl-occ-via')?.addEventListener('click', eliminaOccasione);
+  _g('ovl-occ-esci')?.addEventListener('click', () => _apriOccasione(''));
+  _g('ovl-occ-on')?.addEventListener('change', (e) => {
+    const oc = _occAttuale();
+    if (!oc) return;
+    _accendiOcc(oc.id, e.target.checked);
+  });
+
+  document.addEventListener('click', (e) => {
+    const box = _g('ovl-agg');
+    if (!box || box.hidden) return;
+    if (e.target.closest('#ovl-agg') || e.target.closest('#ovl-liv-aggiungi')) return;
+    box.hidden = true;
+    _g('ovl-liv-aggiungi')?.setAttribute('aria-expanded', 'false');
   });
 
   _g('ovl-annulla')?.addEventListener('click', annullaOvl);
@@ -8657,10 +9077,10 @@ function _dragManiglia(chiave, e, tipo) {
       while (deg > 180) deg -= 360; while (deg < -180) deg += 360;
       st.r = Math.round(deg);
     }
-    _posElemento(el, st); _mostraProp(); _aggiornaRigaLivello(chiave);
+    _posElemento(el, st); _mostraProp(); _aggiornaRigaLivello(chiave, st);
   };
-  const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); aggiornaInspector(); _ricorda(); _salvaPos(chiave); };
-  window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  const up = () => { window.removeEventListener('pointermove', _stacca(move)); window.removeEventListener('pointerup', up); aggiornaInspector(); _ricorda(); _salvaPos(chiave); };
+  window.addEventListener('pointermove', aFotogramma(move)); window.addEventListener('pointerup', up);
 }
 
 function scalaAnteprima() {
@@ -8718,14 +9138,13 @@ function _ricorda(fusione) {
 function _applicaIstantanea(foto) {
   try {
     const d = JSON.parse(foto);
-    const m = _ovMostra();
     _storiaInCorso = true;
     for (const e of ELEMENTI()) {
       if (d.pos && e.k in d.pos) _scriviPos(e.k, d.pos[e.k]);
       if (d.acceso && e.k in d.acceso) _accendiDi(e.k, d.acceso[e.k]);
-      if (d.mostra && e.k in d.mostra) { if (d.mostra[e.k] === false) m[e.k] = false; else delete m[e.k]; }
+      if (d.mostra && e.k in d.mostra) _accendiQui(e.k, d.mostra[e.k] !== false);
     }
-    for (const [id] of CHAT_DA) { if (d.mostra && d.mostra['chat:' + id] === false) m['chat:' + id] = false; else delete m['chat:' + id]; }
+    for (const [id] of CHAT_DA) _accendiQui('chat:' + id, !(d.mostra && d.mostra['chat:' + id] === false));
     _rendiQualiChat();
     if (d.parti && ELEM('musica') && JSON.stringify(_cfgEl('musica').parti) !== JSON.stringify(d.parti)) { _cfgEl('musica').parti = d.parti; salvaCfgElemento('musica'); }
     disegnaGoal();
@@ -8883,14 +9302,14 @@ function rendiTrascinabile(el, chiave) {
       st.y = _arr(_tra(xDaCentro(cy, h, OVL_H), 0, 100));
       _posElemento(el, st);
       _mostraGuide(guide);
-      _mostraProp(); _aggiornaRigaLivello(chiave);
+      _mostraProp(); _aggiornaRigaLivello(chiave, st);
     };
     const partenza = { x: st.x, y: st.y };
     _inTrascinamento = true;
     const chiudi = () => {
       _inTrascinamento = false;
       el.style.cursor = 'grab';
-      el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointermove', _stacca(move)); el.removeEventListener('pointerup', up);
       document.removeEventListener('keydown', fuga, true);
       _mostraGuide([]);
     };
@@ -8903,7 +9322,7 @@ function rendiTrascinabile(el, chiave) {
       try { el.releasePointerCapture(e.pointerId); } catch (_) {  }
       chiudi(); _salvaPos(chiave);
     };
-    el.addEventListener('pointermove', move);
+    el.addEventListener('pointermove', aFotogramma(move));
     el.addEventListener('pointerup', up);
     document.addEventListener('keydown', fuga, true);
   });
@@ -9289,6 +9708,8 @@ function caricaOverlaySel() {
   const ov = overlays.find((o) => o.id === overlaySel) || overlays[0];
   if (!ov) return;
   ov.xy = ov.xy || {};
+  occSel = '';
+  _rendiOccasioni();
   const i = _g('inp-overlay-url'); if (i) i.value = ov.url || '';
   _rendiQualiChat();
   _applicaStileOverlay(ov);
@@ -9301,7 +9722,7 @@ function caricaOverlaySel() {
 
 function _overlaysPayload() {
 
-  return overlays.map((o) => ({ id: o.id, nome: o.nome, mostra: o.mostra, xy: o.xy, css: o.css || '', stile: o.stile || null, blocchi: o.blocchi || {} }));
+  return overlays.map((o) => ({ id: o.id, nome: o.nome, mostra: o.mostra, xy: o.xy, css: o.css || '', stile: o.stile || null, blocchi: o.blocchi || {}, occasioni: o.occasioni || [] }));
 }
 
 let _avvisoSalvataggio = 0;
@@ -9331,7 +9752,7 @@ function _spingiOverlays(extra) {
 async function salvaLayoutOverlay(silenzioso) {
   const ov = overlays.find((o) => o.id === overlaySel);
   if (!ov) return;
-  ov.mostra = _mostraOra();
+  if (!_occAttuale()) ov.mostra = _mostraOra();
   const ok = await _spingiOverlays();
   if (ok && !silenzioso) toast(L('Overlay salvato ✓', 'Overlay saved ✓', 'Overlay guardado ✓'));
 }
@@ -10315,7 +10736,6 @@ function disegnaIndirizziConsole() {
 
   box.innerHTML = testa + (righe || `<p class="vuoto">${L('Nessun tasto ancora: creane uno nella plancia qui sopra e il suo indirizzo compare qui.', 'No keys yet: make one on the board above and its address appears here.', 'Aún no hay teclas: crea una en el tablero de arriba y su dirección aparece aquí.')}</p>`);
 }
-
 
 async function salvaPlancia({ ridisegna = true } = {}) {
   const es = document.getElementById('cons-esito');
@@ -12360,8 +12780,8 @@ function _premioEditorPos(box, comando, tipo, st, salva) {
       st.xy.y = Math.round(_tra(xDaCentro(ev.clientY - rect.top, l.h, rect.height), 0, 100));
       posEl();
     };
-    const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); salva(); };
-    el.addEventListener('pointermove', move); el.addEventListener('pointerup', up);
+    const up = () => { el.removeEventListener('pointermove', _stacca(move)); el.removeEventListener('pointerup', up); salva(); };
+    el.addEventListener('pointermove', aFotogramma(move)); el.addEventListener('pointerup', up);
   });
   box.querySelector('.pp-s').addEventListener('input', (e) => { st.xy.s = Number(e.target.value); box.querySelector('.pp-s-v').textContent = st.xy.s; posEl(); });
   box.querySelector('.pp-s').addEventListener('change', salva);
@@ -14714,7 +15134,6 @@ async function caricaContatori() {
         <span class="cont-comandi-tit">${L('Comandi in chat', 'Chat commands', 'Comandos en el chat')}</span>
         ${_verbiRiassunto(c)}
 
-
       </div>
       ${_verbiContHtml(c)}
       <details class="cont-ov">
@@ -15280,7 +15699,6 @@ function pannelloTelegram() {
           : `${L('Per rispondere solo a te, lega una volta il tuo Telegram:', 'To reply only to you, link your Telegram once:', 'Para responder solo a ti, vincula tu Telegram una vez:')} <a href="#" id="btn-tg-dm-collega">${L('genera un codice', 'generate a code', 'genera un código')}</a> ${L('e scrivi', 'and type', 'y escribe')} <code>/collega CODICE</code> ${L('al bot in privato. Finché non colleghi, in privato non risponde a nessuno.', 'to the bot in private. Until you link it, it replies to no one in private.', 'al bot en privado. Hasta que lo vincules, en privado no responde a nadie.')}`}
       </p>
       <div id="tg-dm-codice"></div>
-
 
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="chk-tg-proattiva" ${impostazioni().proattivoTg !== false ? 'checked' : ''}><span class="levetta"></span></label>

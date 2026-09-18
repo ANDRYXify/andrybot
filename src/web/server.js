@@ -36,6 +36,7 @@ import * as novita from './novita.js';
 import { spazioCartella, inMega } from '../features/spazio.js';
 import * as spontanea from '../features/spontanea.js';
 import { paginaManuale, paginaIndiceManuali, urlManuali, aiutiPerScheda } from './manuali.js';
+import { conOccasione, normOccasioni, accendi as accendiOccasione } from '../features/occasioni.js';
 import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
 import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
@@ -165,6 +166,28 @@ const _xyDiOverlay = (xy) => {
   }
   return q;
 };
+// Le DIFFERENZE di un'occasione sono SPARSE: solo le chiavi che nomina davvero.
+// La ripulitura della base riempie invece OGNI chiave, perche' una base deve
+// essere completa: usarla qui farebbe smettere l'occasione di essere un secondo
+// strato, e diventerebbe una copia che sovrascrive tutto.
+//
+// QUALI chiavi sono valide e' roba di qui, dove sta la base. COSA sia
+// un'occasione (una sola accesa, le differenze, la fusione) sta in
+// features/occasioni.js, dove si puo' provare senza tirare su un server.
+const _mostraDiffOverlay = (m) => {
+  const q = {};
+  if (!m || typeof m !== 'object') return q;
+  for (const k of Object.keys(m).slice(0, 120)) {
+    if (!(ELEM_OVERLAY.includes(k) || CHIAVE_EL.test(k) || CHIAVE_CHAT.test(k))) continue;
+    q[k] = m[k] !== false;
+  }
+  return q;
+};
+const _occasioniDiOverlay = (x) => normOccasioni(x, {
+  pulisciMostra: _mostraDiffOverlay,
+  pulisciXy: (xy) => _xyDiOverlay(xy || {}),
+});
+
 function overlaysDi(settings) {
   const s = settings || {};
   if (Array.isArray(s.overlays) && s.overlays.length) return s.overlays;
@@ -1204,6 +1227,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // l'Opzione B, il SUO stile completo. Ciò che non ha, lo eredita dal canale.
     const ov = overlayById(streamers.get(login)?.settings, String(req.query.o || ''));
     const st = ov.stile || {};
+    const vis = conOccasione(ov, _mostraDefault());
     res.json({
       // CSS: quello dell'overlay se impostato, altrimenti quello di canale
       css: (ov.css != null && ov.css !== '') ? ov.css : base.css,
@@ -1217,8 +1241,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       timer: base.timer,
       treno: base.treno,
       stato: base.stato,
-      mostra: ov.mostra || _mostraDefault(),
-      xy: ov.xy || {},
+      // gia' fuso con l'occasione accesa, se ce n'e' una: chi guarda la diretta
+      // deve vedere una cosa sola, non una base e una correzione
+      mostra: vis.mostra,
+      xy: vis.xy,
       // STILE di alert/chat di QUESTO overlay (null → l'overlay usa lo stile che
       // arriva con l'evento, cioè quello di canale). Così ogni link ha il suo look.
       alertStile: st.alerts || null,
@@ -4262,6 +4288,16 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // PIÙ OVERLAY: lista di layout, ognuno col suo id/nome/visibilità/posizioni/css.
     if (b.overlays !== undefined) {
       const arr = Array.isArray(b.overlays) ? b.overlays : [];
+      // CHI E' ACCESA lo decide una porta sola, /api/streamer/occasione, perche'
+      // e' un gesto da diretta. Qui si salva il disegno delle occasioni, non il
+      // loro interruttore: un salvataggio partito prima dell'interruttore non
+      // puo' rimetterlo indietro, perche' non lo tocca proprio.
+      const acceseOra = new Map();
+      for (const o of overlaysDi(s?.settings)) {
+        for (const oc of (Array.isArray(o?.occasioni) ? o.occasioni : [])) {
+          if (oc?.attiva) acceseOra.set(`${o.id}\u0000${oc.id}`, true);
+        }
+      }
       const puliti = arr.slice(0, 12).map((o, i) => {
         const m = o?.mostra || {};
         const xy = o?.xy || {};
@@ -4271,6 +4307,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           mostra: _mostraDiOverlay(m),
           xy: _xyDiOverlay(xy),
           blocchi: _blocchiDiOverlay(o?.blocchi),
+          occasioni: _occasioniDiOverlay((Array.isArray(o?.occasioni) ? o.occasioni : [])
+            .map((oc) => ({ ...oc, attiva: acceseOra.has(`${id}\u0000${oc?.id}`) }))),
           css: String(o?.css || '').slice(0, 8000),
           stile: normOverlayStile(o?.stile),   // Opzione B: aspetto proprio (null → eredita dal canale)
         };
@@ -5278,12 +5316,37 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // elenco dei PIÙ OVERLAY dello streamer: per ognuno id, nome, layout e il suo
   // link OBS (con ?o=id). Lo usa l'Overlay Studio per gestirli.
+  // ACCENDI O SPEGNI UN'OCCASIONE. Una porta sola e corta, perche' e' un gesto
+  // da fare in diretta: dal pannello, da un tasto di CONSOLify o da un Modulo.
+  // Passa dal salvataggio normale delle impostazioni, quindi la regola «una
+  // sola accesa» la fa rispettare la stessa ripulitura di sempre.
+  app.post('/api/streamer/occasione', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const b2 = req.body || {};
+    const ovId = String(b2.overlay || '');
+    const ocId = String(b2.occasione || '');
+    const accendi = b2.accendi !== false;
+    const s2 = streamers.get(login)?.settings || {};
+    const lista = overlaysDi(s2).map((o) => ({ ...o }));
+    const ov = lista.find((o) => String(o.id) === ovId) || lista[0];
+    if (!ov) return res.status(404).json({ errore: 'overlay sconosciuto' });
+    const occ = Array.isArray(ov.occasioni) ? ov.occasioni : [];
+    if (ocId && !occ.some((o) => String(o.id) === ocId)) return res.status(404).json({ errore: 'occasione sconosciuta' });
+    // spegnere non cerca nessuno: spegne e basta. Accendere ne accende UNA.
+    ov.occasioni = accendiOccasione(occ, ocId, accendi);
+    streamers.setSettings(login, { ...s2, overlays: lista });
+    // l'overlay in onda si riprende il tema da solo: nessuno tocca OBS
+    try { effects.emit(login, { tipo: 'tema' }); } catch (e) { /* niente */ }
+    res.json({ ok: true, occasioni: ov.occasioni });
+  }));
+
   app.get('/api/streamer/overlays', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const base = effects.overlayUrl(login);
     const sep = base.includes('?') ? '&' : '?';
     const overlays = overlaysDi(streamers.get(login)?.settings).map((o) => ({
       id: o.id, nome: o.nome, mostra: o.mostra || _mostraDefault(), xy: o.xy || {}, blocchi: o.blocchi || {}, css: o.css || '', stile: o.stile || null,
+      occasioni: Array.isArray(o.occasioni) ? o.occasioni : [],
       // il link porta la chiave in se': e' l'unico modo in cui un link e' un segreto
       url: `${base}${sep}o=${encodeURIComponent(o.id)}`,
     }));

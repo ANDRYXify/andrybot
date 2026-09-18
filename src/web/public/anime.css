@@ -674,8 +674,8 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
 
 #anime-sfondo::after {
   content: ""; position: absolute; inset: -30%;
-  background: radial-gradient(38% 42% at 32% 28%, var(--acc-tint), transparent 68%);
-  filter: blur(48px); opacity: .5;
+  background: radial-gradient(52% 56% at 32% 28%, var(--acc-tint), transparent 100%);
+  opacity: .5;
   animation: respiro 26s ease-in-out infinite alternate;
 }
 @keyframes respiro {
@@ -823,8 +823,8 @@ body.pad-guida, body.pad-guida * { cursor: none !important; }
 
 #an-campo {
   position: absolute; inset: -25%; pointer-events: none;
-  background: radial-gradient(30% 34% at 62% 66%, color-mix(in srgb, var(--acc) 26%, transparent), transparent 70%);
-  filter: blur(64px); opacity: .3;
+  background: radial-gradient(42% 46% at 62% 66%, color-mix(in srgb, var(--acc) 26%, transparent), transparent 100%);
+  opacity: .3;
   will-change: transform; backface-visibility: hidden;
 }
 
@@ -1504,9 +1504,85 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
   flex: 0 0 auto; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%;
   font-size: .66rem; font-weight: 700; color: var(--bg); background: var(--ambra);
 }
+.ovl-liv-vuoto { margin: .4rem .3rem; font-size: .72rem; }
+.ovl-liv-agg {
+  display: flex; align-items: center; gap: .45rem; width: 100%; margin-top: 3px;
+  padding: .45rem; border-radius: var(--r-s); border: 1px dashed var(--border);
+  background: transparent; color: var(--testo-2); font: inherit; font-size: .78rem; cursor: pointer;
+  transition: border-color .18s ease, color .18s ease;
+}
+@media (hover: hover) { .ovl-liv-agg:hover { border-color: var(--acc-bordo); color: var(--testo); } }
+.ovl-agg { display: grid; gap: 2px; margin-top: 4px; padding: 5px; border: 1px solid var(--border-2); border-radius: var(--r-s); background: var(--surface-2); }
+.ovl-agg[hidden] { display: none; }
+.ovl-agg-tit { margin: .25rem .3rem .1rem; font-size: .62rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--testo-3); }
+.ovl-agg-v {
+  display: flex; align-items: center; gap: .5rem; width: 100%; text-align: left;
+  padding: .35rem .4rem; border: 0; border-radius: var(--r-s); background: transparent;
+  color: var(--testo); font: inherit; font-size: .78rem; cursor: pointer;
+}
+@media (hover: hover) { .ovl-agg-v:hover { background: var(--surface-3); } }
+.ovl-agg-v.nuovo { color: var(--testo-2); }
 .ovl-liv-occhio { flex: 0 0 auto; display: grid; place-items: center; padding: 2px; border-radius: 5px; color: var(--testo-3); }
 @media (hover: hover) {
 .ovl-liv-occhio:hover { background: var(--surface); color: var(--acc); }
+}
+
+.ovl-testa-banco > #ovl-occ-quale { flex: 0 1 200px; width: auto; min-width: 120px; max-width: 260px; margin: 0; }
+.ovl-testa-banco > #ovl-occ-nuova { flex: none; }
+@media (max-width: 900px) { .ovl-testa-banco > #ovl-occ-quale { flex-basis: 150px; } }
+
+.carta.ovl-banco .ovl-occ-fascia {
+  flex: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 6px 12px; border-top: 1px solid var(--border-2);
+  border-left: 3px solid var(--ambra); background: var(--ambra-soft);
+}
+.ovl-occ-tit { font-size: .66rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--testo-3); }
+.ovl-occ-nome { font-size: .86rem; }
+.ovl-occ-dice { font-size: .72rem; color: var(--testo-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ovl-occ-fascia .ovl-occ-sp { margin-left: auto; }
+.ovl-occ-fascia .btn.mini { min-height: 28px; }
+.ovl-liv-tag {
+  flex: 0 0 auto; padding: 1px 6px; border-radius: 999px; white-space: nowrap;
+  font-size: .6rem; font-weight: 700; color: var(--ambra); background: var(--ambra-soft);
+  border: 1px solid var(--ambra-bordo);
+}
+
+.occ-carta { max-width: 720px; }
+.occ-galleria { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
+.occ-modello {
+  display: grid; gap: 5px; align-content: start; text-align: left; padding: 8px;
+  border: 1px solid var(--border); border-radius: var(--r-m);
+  background: var(--surface); color: var(--testo); font: inherit; cursor: pointer;
+  transition: border-color .18s ease, background .18s ease;
+}
+.occ-modello.scelto { border-color: var(--acc-bordo); background: var(--acc-soft); }
+@media (hover: hover) { .occ-modello:hover { border-color: var(--acc-bordo); } }
+.occ-modello strong { font-size: .82rem; }
+.occ-modello > span { font-size: .69rem; color: var(--testo-3); }
+.occ-modello .occ-eff { font-size: .66rem; color: var(--testo-2); font-weight: 600; }
+.occ-mini {
+  position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden;
+  border: 1px solid var(--border-2); border-radius: var(--r-s);
+  background: linear-gradient(160deg, #1d1b22, #121016);
+  background-image: linear-gradient(160deg, #1d1b22, #121016),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 25%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 25%);
+}
+.occ-o {
+  position: absolute; border-radius: 3px; box-sizing: border-box;
+  background: rgba(255, 255, 255, .09);
+}
+.occ-c {
+  position: absolute; display: grid; place-items: center; box-sizing: border-box;
+  border-radius: 4px; border: 1px solid; overflow: hidden;
+}
+.occ-c svg { width: 13px; height: 13px; }
+.occ-c.piu { border-color: var(--acc); background: var(--acc); color: var(--su-acc); }
+.occ-c.via { border-style: dashed; border-color: rgba(255, 255, 255, .5); background: transparent; color: rgba(255, 255, 255, .5); }
+.occ-c.gia { border-color: rgba(255, 255, 255, .42); background: rgba(255, 255, 255, .17); color: rgba(255, 255, 255, .85); }
+.occ-vuoto {
+  position: absolute; inset: auto 6% 8% 6%; text-align: center;
+  font-size: .62rem; font-style: normal; color: rgba(255, 255, 255, .5);
 }
 
 .ap-guida { position: absolute; z-index: 40; pointer-events: none; background: var(--acc); opacity: .9; }
