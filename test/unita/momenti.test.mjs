@@ -165,10 +165,29 @@ test('se le ultime righe sono roba fra due, non c\'e\' nessun discorso a cui agg
   riga(m, T0 + 10_000, 'caio', '@tizio io sto ancora finendo il primo');
   riga(m, T0 + 20_000, 'tizio', 'ciuf ciuf, che succede?', { rispostaA: 'id' + (T0 + 10_000) });
   const out = m.vedi('canale', { ora: T0 + 25_000, live: true });
+  assert.ok(!out.some((x) => x.tipo === 'flusso'),
+    'la chat si muove, ma alla stanza ha parlato uno solo: non c\'e\' nessuna conversazione a cui aggiungersi');
+});
+
+// E IL CASO BUONO, che e' l'altra meta' della stessa regola: senza, «parla di
+// meno» si otterrebbe anche non parlando mai, e non sarebbe un risultato.
+test('due che parlano alla stanza sono una conversazione, e li\' ci si aggiunge', () => {
+  const m = new Momenti();
+  riga(m, T0, 'tizio', 'stasera che si gioca? dimmi tutto');
+  riga(m, T0 + 15_000, 'caio', 'io spero il secondo, il primo mi ha distrutto');
+  const out = m.vedi('canale', { ora: T0 + 20_000, live: true });
   const flusso = out.find((x) => x.tipo === 'flusso');
-  assert.ok(flusso, 'il discorso scorre: il momento c\'e\'');
-  assert.equal(flusso.aggancio.testo, 'stasera che si gioca? dimmi tutto',
-    'ma ci si aggancia all\'ultima riga detta alla STANZA, non all\'ultima riga qualunque');
+  assert.ok(flusso, 'due persone, due righe per la stanza: e\' un discorso');
+  assert.equal(flusso.aggancio.testo, 'io spero il secondo, il primo mi ha distrutto',
+    'e ci si aggancia all\'ultima detta alla stanza');
+});
+
+test('due righe della stessa persona non sono una conversazione', () => {
+  const m = new Momenti();
+  riga(m, T0, 'tizio', 'stasera che si gioca? dimmi tutto');
+  riga(m, T0 + 15_000, 'tizio', 'io comunque il primo l\'ho finito ieri');
+  const out = m.vedi('canale', { ora: T0 + 20_000, live: true });
+  assert.ok(!out.some((x) => x.tipo === 'flusso'), 'uno che parla da solo non e\' un discorso in cui inserirsi');
 });
 
 test('se alla stanza non ha parlato piu\' nessuno da un pezzo, non si parte affatto', () => {

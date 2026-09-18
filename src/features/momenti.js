@@ -26,6 +26,19 @@ export const HYPE_RIPOSO_MS = 15 * 60_000;  //   una riga sull'onda al piu' ogni
 export const STREAMER_PARLA_MS = 45_000;    // se lo streamer ha scritto da poco, si lascia a lui
 export const FLUSSO_RITMO_MIN = 1;          // il discorso «scorre» da un messaggio al minuto in su
 export const FLUSSO_ULTIMA_MS = 90_000;     // ...e l'ultima riga non e' vecchia
+// E CHE CI SIA UNA CONVERSAZIONE, NON UNA RIGA. «Il discorso scorre» era l'unico
+// dei quattro momenti a non essere un momento: gli altri tre sono fatti — uno e'
+// rimasto senza risposta, la chat e' esplosa, la chat si e' fermata dopo essere
+// stata viva — mentre questo diceva solo che la chat non e' morta. Cioe' era il
+// vecchio dado rivestito: ogni tanto di' qualcosa.
+//
+// Una persona non si mette a commentare perche' qualcuno ha scritto una riga. Si
+// aggiunge a un discorso: due righe dette alla stanza, da due persone diverse,
+// negli ultimi due minuti. Con una riga sola non c'e' niente a cui aggiungersi,
+// e la parola in piu' e' una parola in mezzo.
+export const CONVERSA_FINESTRA_MS = 2 * 60_000;
+export const CONVERSA_RIGHE = 2;
+export const CONVERSA_PERSONE = 2;
 
 const norm = (s) => String(s || '').toLowerCase().trim();
 
@@ -153,7 +166,9 @@ export class Momenti {
     //    non c'e' nessun discorso a cui aggiungersi, e si sta zitti.
     const ultimoMinuto = righe.filter((r) => !r.dalBot && ora - r.ts <= 60_000).length;
     const agganciFreschi = aggancio && ora - aggancio.ts <= FLUSSO_ULTIMA_MS;
-    if (ultimoMinuto >= FLUSSO_RITMO_MIN && ultimaVoce && ora - ultimaVoce.ts <= FLUSSO_ULTIMA_MS && !inMano && !(ultima && ultima.dalBot) && agganciFreschi) {
+    const discorso = righe.filter((r) => !r.dalBot && !r.isSelf && ora - r.ts <= CONVERSA_FINESTRA_MS && perLaStanza(r));
+    const conversano = discorso.length >= CONVERSA_RIGHE && new Set(discorso.map((r) => r.user)).size >= CONVERSA_PERSONE;
+    if (ultimoMinuto >= FLUSSO_RITMO_MIN && ultimaVoce && ora - ultimaVoce.ts <= FLUSSO_ULTIMA_MS && !inMano && !(ultima && ultima.dalBot) && agganciFreschi && conversano) {
       out.push({ tipo: 'flusso', dati: { ritmo: ultimoMinuto }, aggancio, spunto: '' });
     }
     return out;

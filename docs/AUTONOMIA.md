@@ -160,3 +160,23 @@ insieme al momento: e' l'ultima riga detta ALLA STANZA. Se non ce n'e' una
 fresca, il momento non nasce proprio — che era gia' la promessa scritta («se non
 ha niente da dire, non dice niente»), applicata alla cosa giusta. Chi scrive la
 frase non pesca piu' da solo: riceve la riga, e se non ne riceve nessuna tace.
+
+## Un motivo che sia un motivo
+
+Guardati di fila, i quattro momenti non erano quattro. Tre sono FATTI: qualcuno e'
+rimasto senza risposta, la chat e' esplosa, la chat si e' fermata dopo essere
+stata viva. Il quarto — «il discorso scorre» — diceva solo che la chat non e'
+morta: un messaggio al minuto, e l'ultima riga non vecchia.
+
+Non e' un motivo per parlare, e' l'assenza di un motivo. Era il vecchio dado
+rivestito: *ogni tanto di' qualcosa*.
+
+Una persona non si mette a commentare perche' qualcuno ha scritto una riga. Si
+aggiunge a un DISCORSO — e un discorso sono almeno due righe dette alla stanza, da
+due persone diverse, negli ultimi due minuti. Con una riga sola non c'e' niente a
+cui aggiungersi, e la parola in piu' e' una parola in mezzo; due righe della
+stessa persona sono uno che parla da solo, e nemmeno quello e' un discorso.
+
+Il risultato e' «meno, ma meglio» — ottenuto alzando la qualita' del motivo, non
+allungando un intervallo. La manopola della spontaneita' resta quella di prima e
+continua a fare il suo: decide ogni quanto, non se.
