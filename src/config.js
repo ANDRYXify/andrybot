@@ -266,6 +266,7 @@ export const SCOPES = {
     'moderator:read:followers',   // eventi follow
     'channel:read:redemptions',   // riscatti punti canale (eventi)
     'channel:read:hype_train',    // l'hype train: livello, punti e chi spinge
+    'bits:read',                  // la classifica dei Bit, quella vera di Twitch
     'channel:manage:redemptions', // creare/gestire i premi a punti canale (alert)
     'channel:manage:vips',        // assegnare/togliere i VIP (comando vocale, premi)
     'channel:manage:broadcast',   // cambiare categoria/titolo del canale (comando vocale)

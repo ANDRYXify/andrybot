@@ -151,6 +151,8 @@ export const COMANDI = [
     cosa: ['Dice da quanto tempo una persona segue il canale.', 'Says how long someone has followed the channel.', 'Dice desde cuándo una persona sigue el canal.'] },
   { id: 'uptime', modulo: 'base', nomi: ['uptime'], titolo: ['Da quanto sei in diretta', 'How long you\'ve been live', 'Cuánto llevas en directo'],
     cosa: ['Dice da quanto è cominciata la diretta.', 'Says how long ago the stream started.', 'Dice cuándo empezó el directo.'] },
+  { id: 'bit', modulo: 'base', nomi: ['bit', 'bits', 'classificabit'], titolo: ['La classifica dei Bit', 'The Bits leaderboard', 'La clasificación de Bits'],
+    cosa: ['Mostra chi ha messo più Bit e a che posto sei tu. Puoi chiedere oggi, settimana, mese, anno o sempre.', 'Shows who cheered the most Bits and where you stand. You can ask for today, week, month, year or all time.', 'Muestra quién ha puesto más Bits y en qué puesto estás. Puedes pedir hoy, semana, mes, año o siempre.'] },
   { id: 'bot', modulo: 'base', nomi: ['bot', 'socialbot', 'ia', 'ai'], titolo: ['Parla col bot', 'Talk to the bot', 'Habla con el bot'],
     cosa: ['Chiama il bot e gli fa una domanda.', 'Calls the bot and asks it a question.', 'Llama al bot y le hace una pregunta.'] },
 

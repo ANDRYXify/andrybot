@@ -1,11 +1,12 @@
 // Comandi "base" pronti all'uso: quelli che ogni streamer si aspetta già
 // funzionanti senza doverli costruire a mano — !so/!shoutout, !followage,
-// !uptime. Vivono qui come add-on OPT-OUT (accesi salvo che lo streamer li
+// !uptime, !bit. Vivono qui come add-on OPT-OUT (accesi salvo che lo streamer li
 // spenga) e NON prevalgono MAI su un comando o un Modulo che lo streamer ha
 // creato con lo stesso nome: la SUA versione vince sempre (niente doppioni,
 // niente sorprese). Restano deterministici: mai passano dall'IA.
 import { streamers } from '../db.js';
 import { personalizzato } from './personalizzati.js';
+import * as bit from './bit.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('comandibase');
@@ -103,6 +104,20 @@ export async function tryComando(helix, msg, say) {
       if (!uid) { say('🤔 Non trovo questo utente.'); return true; }
       const iso = await helix.getFollowAge(ch, uid);
       say(iso ? `💜 @${nome} segue il canale da ${fmtDurata(iso)}.` : `@${nome} non segue (ancora) il canale.`);
+      return true;
+    }
+
+    // ---- BIT: !bit / !bits / !classificabit — la classifica di Twitch ----
+    // Tace quando non la sappiamo: il pannello avverte già lo streamer dei
+    // permessi mancanti, e in chat non si raccontano i nostri tubi.
+    if (cmd === 'bit' || cmd === 'bits' || cmd === 'classificabit') {
+      if (personalizzato(ch, cmd)) return false;
+      const quando = { oggi: 'day', giorno: 'day', settimana: 'week', mese: 'month', anno: 'year', sempre: 'all' };
+      const riga = await bit.riga(helix, ch, {
+        mio: String(msg.user || '').toLowerCase(),
+        periodo: quando[(parti[0] || '').toLowerCase()] || 'month',
+      });
+      if (riga) say(riga);
       return true;
     }
 
