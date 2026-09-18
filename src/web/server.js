@@ -52,6 +52,7 @@ import * as abbonamenti from '../features/abbonamenti.js';
 import * as presenze from '../features/presenze.js';
 import * as statistiche from '../features/statistiche.js';
 import * as rapporto from '../features/rapporto.js';
+import * as morti from '../features/morti.js';
 import * as posta from '../features/posta.js';
 import * as donazioni from '../features/donazioni.js';
 import * as donaStripe from '../features/donazioni-stripe.js';
@@ -4495,6 +4496,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.presenze !== undefined) out.presenze = presenze.normalizza(b.presenze, s.settings?.presenze);
     // il rapporto di fine diretta: su Telegram di serie, via mail se acceso
     if (b.rapporto !== undefined) out.rapporto = rapporto.normalizza(b.rapporto);
+    if (b.morti !== undefined) out.morti = morti.normalizza(b.morti);
     // ore guardate (watchtime): sempre attive salvo che lo streamer le spenga
     if (b.watchtime !== undefined) {
       out.watchtime = { attivo: (b.watchtime || {}).attivo !== false };
@@ -5079,6 +5081,20 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   app.post('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
   app.get('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
+
+  // Un'azione della console fatta fare DAL PANNELLO, da chi e' entrato. La strada
+  // e' la stessa (consolle.esegui): un secondo modo di far salire un contatore
+  // sarebbe un secondo posto in cui si rompe. Qui non serve la chiave, perche'
+  // qui c'e' gia' la sessione — chiedergliela sarebbe una seconda porta in casa
+  // propria. Le morti contate da sole passano di qui.
+  app.post('/api/streamer/azione', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    res.json(consolle.esegui(login, String(req.body?.id || ''), {
+      say: (t) => { try { manager.say(login, t); } catch { /* niente */ } },
+      emit: (p) => { try { effects.emit(login, p); } catch { /* niente */ } },
+      effetti: effects,
+    }));
+  }));
 
   app.post('/api/console/:login/:azione', guardiaConsole, consoleAgisci);
   app.get('/api/console/:login/:azione', guardiaConsole, consoleAgisci);
