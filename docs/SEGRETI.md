@@ -61,6 +61,17 @@ torna. Senza questo, chi può scrivere nel database si copia il token
 dell'amministratore nella propria riga e diventa lui — senza rompere nessuna
 cifratura.
 
+### Un segreto nuovo entra nell'elenco, non solo nella tabella
+
+`CAMPI_SEGRETI` (con `RIGA_SEGRETI` e `CHIAVE_SEGRETI` accanto) non serve a
+cifrare — quello lo fa chi scrive, con `cifra()`. Serve alla **migrazione**: e'
+l'elenco di cosa andare a riprendere quando una chiave cambia, o quando in una
+riga e' rimasto del chiaro di prima. Una colonna cifrata in scrittura ma assente
+da li' e' un segreto che nessuno ripassera' mai piu': funziona oggi e resta
+indietro al primo giro d'anello. Ultimo arrivato: `discord_ruoli.token`, il
+token del bot Discord che muove i ruoli sul server dello streamer — chi lo ruba
+puo' dare e togliere ruoli a casa sua.
+
 ### Chiavi che cambiano
 
 Le chiavi maestre sono un **anello**. Ognuna ha un numero (`kid`), e si ricava dal

@@ -541,6 +541,28 @@ CREATE TABLE IF NOT EXISTS gsi_stato (     -- l'ultimo numero che il gioco ha de
   morti INTEGER NOT NULL DEFAULT 0,        -- il TOTALE di quella partita, non un conto nostro
   quando INTEGER NOT NULL DEFAULT 0        -- l'ultima volta che il gioco ha parlato
 );
+CREATE TABLE IF NOT EXISTS discord_ruoli (   -- il gestore dei privilegi: il bot DELLO STREAMER sul SUO server
+  channel TEXT PRIMARY KEY,                  -- login twitch minuscolo
+  token TEXT NOT NULL DEFAULT '',            -- token del bot Discord dello streamer (cifrato)
+  guild TEXT NOT NULL DEFAULT '',            -- id del server Discord
+  guild_nome TEXT NOT NULL DEFAULT '',       -- nome del server (solo per mostrarlo)
+  bot_nome TEXT NOT NULL DEFAULT '',         -- nome del bot (solo per mostrarlo)
+  attivo INTEGER NOT NULL DEFAULT 0,         -- il giro gira?
+  regole TEXT NOT NULL DEFAULT '[]',         -- JSON: [{tipo, ruolo, soglia}]
+  ultimo_giro INTEGER NOT NULL DEFAULT 0,    -- quando e' passato l'ultima volta
+  ultimo_esito TEXT NOT NULL DEFAULT '{}',   -- JSON: cosa ha fatto e cosa non ha potuto fare
+  ts INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS discord_link (    -- chi ha detto «questo account Discord sono io»
+  channel TEXT NOT NULL,                     -- il consenso vale per UN canale: non e' una rubrica globale
+  login TEXT NOT NULL,                       -- login twitch dello spettatore
+  user_id TEXT NOT NULL DEFAULT '',          -- id twitch (per chiedere a Twitch chi e')
+  dc_id TEXT NOT NULL,                       -- id Discord
+  dc_nome TEXT NOT NULL DEFAULT '',          -- nome Discord (solo per mostrarlo)
+  ts INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, login)
+);
+CREATE INDEX IF NOT EXISTS idx_dclink_dc ON discord_link(channel, dc_id);
 CREATE TABLE IF NOT EXISTS giochi (          -- giochi personalizzati per canale (manche)
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
@@ -1255,6 +1277,7 @@ export const CAMPI_SEGRETI = {
   seventv_tokens: ['token'],
   conti_donazioni: ['chiave'],
   conti_satispay: ['chiave'],
+  discord_ruoli: ['token'],
 };
 
 // Come si chiama la riga, tabella per tabella. Serve alla busta: è il «dove
@@ -1267,6 +1290,7 @@ const RIGA_SEGRETI = {
   seventv_tokens: (r) => r.login,
   conti_donazioni: (r) => r.login,
   conti_satispay: (r) => r.login,
+  discord_ruoli: (r) => r.channel,
 };
 const CHIAVE_SEGRETI = {
   tokens: ['kind', 'login'],
@@ -1276,6 +1300,7 @@ const CHIAVE_SEGRETI = {
   seventv_tokens: ['login'],
   conti_donazioni: ['login'],
   conti_satispay: ['login'],
+  discord_ruoli: ['channel'],
 };
 
 // Porta nella busta di ADESSO tutto quello che è rimasto indietro: il chiaro di
@@ -2185,6 +2210,88 @@ export const dcConf = {
     return v;
   },
   setUltimaLive(channel, streamId) { this.set(channel, { ultimaLive: String(streamId || '') }); },
+};
+
+// ---------------------------------------------------------------- Discord: i ruoli
+// Il gestore dei privilegi ha una tabella sua e non `settings` per una ragione
+// sola: dentro c'e' un TOKEN, e i segreti stanno nella busta (src/segreti.js).
+// Il token non esce mai verso il browser (vedi la porta, non manda mai `token`).
+export const dcRuoli = {
+  get(channel) {
+    const c = String(channel).toLowerCase();
+    const r = db.prepare('SELECT * FROM discord_ruoli WHERE channel=?').get(c) || null;
+    if (!r) return null;
+    const v = apriSegreti('discord_ruoli', c, r, ['token']);
+    return { ...v, regole: safeJson(v.regole) || [], ultimo_esito: safeJson(v.ultimo_esito) || {} };
+  },
+  set(channel, campi = {}) {
+    const c = String(channel).toLowerCase();
+    const cur = this.get(c) || { token: '', guild: '', guild_nome: '', bot_nome: '', attivo: 0, regole: [], ultimo_giro: 0, ultimo_esito: {} };
+    const v = {
+      token: cifra(campi.token !== undefined ? String(campi.token) : String(cur.token || ''), _dove('discord_ruoli', 'token', c)),
+      guild: campi.guild !== undefined ? String(campi.guild).replace(/[^0-9]/g, '').slice(0, 24) : cur.guild,
+      guild_nome: campi.guildNome !== undefined ? String(campi.guildNome).slice(0, 120) : cur.guild_nome,
+      bot_nome: campi.botNome !== undefined ? String(campi.botNome).slice(0, 120) : cur.bot_nome,
+      attivo: campi.attivo !== undefined ? (campi.attivo ? 1 : 0) : (cur.attivo ? 1 : 0),
+      regole: JSON.stringify(campi.regole !== undefined ? (campi.regole || []) : (cur.regole || [])),
+      ultimo_giro: campi.ultimoGiro !== undefined ? msIntero(campi.ultimoGiro) : msIntero(cur.ultimo_giro),
+      ultimo_esito: JSON.stringify(campi.ultimoEsito !== undefined ? (campi.ultimoEsito || {}) : (cur.ultimo_esito || {})),
+    };
+    db.prepare(`INSERT INTO discord_ruoli (channel, token, guild, guild_nome, bot_nome, attivo, regole, ultimo_giro, ultimo_esito, ts)
+      VALUES (@channel, @token, @guild, @guild_nome, @bot_nome, @attivo, @regole, @ultimo_giro, @ultimo_esito, @ts)
+      ON CONFLICT(channel) DO UPDATE SET token=excluded.token, guild=excluded.guild, guild_nome=excluded.guild_nome,
+        bot_nome=excluded.bot_nome, attivo=excluded.attivo, regole=excluded.regole,
+        ultimo_giro=excluded.ultimo_giro, ultimo_esito=excluded.ultimo_esito, ts=excluded.ts`)
+      .run({ channel: c, ...v, ts: now() });
+    return this.get(c);
+  },
+  // I canali su cui il giro ha davvero qualcosa da fare.
+  attivi() {
+    return db.prepare("SELECT channel FROM discord_ruoli WHERE attivo=1 AND token<>'' AND guild<>''").all().map((r) => r.channel);
+  },
+  esito(channel, esito) { this.set(channel, { ultimoGiro: now(), ultimoEsito: esito || {} }); },
+  scorda(channel) {
+    const c = String(channel).toLowerCase();
+    db.prepare('DELETE FROM discord_ruoli WHERE channel=?').run(c);
+    db.prepare('DELETE FROM discord_link WHERE channel=?').run(c);
+  },
+};
+
+// CHI HA DETTO «QUESTO ACCOUNT DISCORD SONO IO», e per QUALE canale.
+//
+// Il consenso e' per canale apposta: collegarsi al server di uno streamer non
+// vuol dire farsi riconoscere da tutti gli altri. Chi si scollega sparisce da
+// qui, e da quel momento il giro non lo tocca piu' — ne' per dare ne' per
+// togliere: i ruoli che ha restano suoi.
+export const dcLink = {
+  metti(channel, { login, userId = '', dcId, dcNome = '' } = {}) {
+    const c = String(channel).toLowerCase(), l = String(login || '').toLowerCase();
+    const d = String(dcId || '');
+    if (!c || !l || !d) return null;
+    db.prepare(`INSERT INTO discord_link (channel, login, user_id, dc_id, dc_nome, ts) VALUES (?,?,?,?,?,?)
+      ON CONFLICT(channel, login) DO UPDATE SET user_id=excluded.user_id, dc_id=excluded.dc_id, dc_nome=excluded.dc_nome, ts=excluded.ts`)
+      .run(c, l, String(userId || ''), d, String(dcNome || '').slice(0, 64), now());
+    return this.prendi(c, l);
+  },
+  prendi(channel, login) {
+    return db.prepare('SELECT * FROM discord_link WHERE channel=? AND login=?')
+      .get(String(channel).toLowerCase(), String(login || '').toLowerCase()) || null;
+  },
+  perDc(channel, dcId) {
+    return db.prepare('SELECT * FROM discord_link WHERE channel=? AND dc_id=?')
+      .get(String(channel).toLowerCase(), String(dcId || '')) || null;
+  },
+  lista(channel, limite = 500) {
+    return db.prepare('SELECT * FROM discord_link WHERE channel=? ORDER BY ts ASC LIMIT ?')
+      .all(String(channel).toLowerCase(), Math.max(1, Math.min(2000, limite | 0)));
+  },
+  quanti(channel) {
+    return db.prepare('SELECT COUNT(*) n FROM discord_link WHERE channel=?').get(String(channel).toLowerCase())?.n || 0;
+  },
+  togli(channel, login) {
+    db.prepare('DELETE FROM discord_link WHERE channel=? AND login=?')
+      .run(String(channel).toLowerCase(), String(login || '').toLowerCase());
+  },
 };
 
 const _csv = (x) => (Array.isArray(x) ? x : String(x || '').split(','))
