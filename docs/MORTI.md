@@ -164,3 +164,71 @@ deve raccontare a chi lo trova se quel canale esista.
 
 Il corpo del messaggio non si scrive da nessuna parte, nemmeno negli errori:
 dentro c'e' l'identificativo del suo account di gioco, e non e' roba nostra.
+
+## La libreria: il sapere su un gioco messo in comune
+
+La schermata di morte di Dark Souls e' la stessa sul computer di chi la insegna e
+su quello di chiunque altro. Quel sapere non ha motivo di restare in casa di uno:
+il primo che insegna un gioco lo puo' insegnare a tutti.
+
+Una SCHEDA e' **gioco + lingua**, piu' le impronte che lo riconoscono. Non il gioco
+da solo, perche' «YOU DIED» e «SEI MORTO» sono pixel diversi e una scheda inglese
+su un gioco italiano fallirebbe MUTA — il peggiore dei modi di fallire, perche'
+chi la usa non capisce perche'.
+
+Il nome del gioco non lo scrive lui: e' la categoria che ha su Twitch in quel
+momento, cosi' viene scritto uguale da tutti. E la casella «mettila in comune» e'
+segnata di suo: chi streama un gioco non ancora uscito la toglie e la tiene sua.
+
+### Perche' un'impronta vale su ogni monitor
+
+Se si chiedesse lo scatto a una misura fissa, il programma della diretta ci
+schiaccerebbe dentro qualunque sorgente: un 21:9 diventerebbe un'altra immagine.
+Cosi' la proporzione sarebbe entrata nell'identita' della scheda e la libreria si
+sarebbe spezzata in tre.
+
+Invece si prende lo scatto com'e' e si tiene il **16:9 centrale**. Il centro e' dove
+ogni gioco mette le scritte di morte; i lati che si perdono in 21:9 sono i lati, e
+in 4:3 si perdono il cielo e il pavimento.
+
+### Come si migliora senza rompere nessuno
+
+Una scheda non si sovrascrive mai — e non perche' qualcuno se ne ricordi: nel
+deposito **non esiste** la scrittura che cambierebbe le firme di una riga gia'
+pubblicata. Chi migliora ne scrive una VERSIONE, che dichiara da quale viene;
+tutte le versioni della stessa cosa condividono una RADICE.
+
+Quando una schermata non viene presa c'e' un tasto — «non l'ha presa adesso» — che
+prende l'impronta di questo istante, la aggiunge alle tue e ti chiede se
+pubblicarla per tutti. Quasi sempre migliorare vuol dire AGGIUNGERE l'immagine che
+mancava: una dissolvenza, uno sfondo diverso. Non rifare.
+
+E chi ha gia' quella che gli funziona non viene aggiornato da solo: gli si dice
+che ce n'e' una nuova e quante impronte ha in piu'. Se la prende, le sue restano e
+quelle nuove si aggiungono.
+
+### Le reti, che non sono guardie
+
+**La piu' importante e' una copia, non un controllo.** Quando prendi una scheda, le
+sue impronte finiscono nelle tue impostazioni. Da li' in poi la tua diretta non
+dipende dalla libreria in nessun momento: se la libreria cade, o quella scheda
+sparisce, o qualcuno ci mette dentro una versione peggiore, tu continui a contare
+esattamente come stasera.
+
+**Un'impronta piatta non si pubblica.** Uno schermo nero da' 64 bit quasi tutti
+uguali e combacia con mezzo mondo: chi lo pubblicasse farebbe contare morti a caso
+a chiunque lo prenda. Si guarda quanti bit sono a uno, e fuori da una finestra
+centrale la scheda non entra. Non serve accorgersene: non si puo' fare.
+
+E poi le cose ovvie: niente si applica da solo, l'autore resta scritto, c'e' un
+tetto a quante schede uno pubblica e quante al giorno, e il proprietario puo'
+togliere qualunque scheda.
+
+### La distanza esiste in due posti, e devono dire la stessa cosa
+
+Riconoscere mentre giochi succede nel browser, e li' non puo' passare dal server.
+Cercare in libreria succede sul server, perche' mandare l'intera libreria al
+browser sarebbe peggio. Due copie della stessa regola sono un posto in cui
+divergere, quindi c'e' una prova che fa passare le stesse coppie da tutte e due e
+pretende lo stesso numero: se una cambiasse e l'altra no, prenderesti dalla
+libreria schede che poi non ti prendono niente.

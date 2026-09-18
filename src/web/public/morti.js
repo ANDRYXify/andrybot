@@ -9,6 +9,15 @@
   var SOGLIA = 8;
   var RIARMO_MS = 4000;
 
+  function ritaglio(larghezza, altezza) {
+    var w = Number(larghezza) || 0;
+    var h = Number(altezza) || 0;
+    if (w <= 0 || h <= 0) return { x: 0, y: 0, w: 0, h: 0 };
+    if (w * 9 > h * 16) { var cw = Math.round(h * 16 / 9); return { x: Math.round((w - cw) / 2), y: 0, w: cw, h: h }; }
+    var ch = Math.round(w * 9 / 16);
+    return { x: 0, y: Math.round((h - ch) / 2), w: w, h: ch };
+  }
+
   function impronta(grigi, larghezza, altezza) {
     var w = larghezza || LARGA;
     var h = altezza || ALTA;
@@ -70,7 +79,7 @@
   }
 
   window.SB_MORTI = {
-    impronta: impronta, distanza: distanza, vicina: vicina, guarda: guarda,
+    impronta: impronta, distanza: distanza, vicina: vicina, guarda: guarda, ritaglio: ritaglio,
     LARGA: LARGA, ALTA: ALTA, SOGLIA: SOGLIA, RIARMO_MS: RIARMO_MS,
   };
 })();

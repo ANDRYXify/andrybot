@@ -542,6 +542,11 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
+    '/api/morti/libreria': { schede: [
+      { id: 'a1', gioco: 'dark souls iii', giocoNome: 'Dark Souls III', lingua: 'it', firme: ['a5c3966a5a3c69a5', '5a3c69a5a5c3966a'], presa: 12, versione: 3, radice: 'a0' },
+      { id: 'b2', gioco: 'elden ring', giocoNome: 'Elden Ring', lingua: 'en', firme: ['0f0f0f0f0f0f0f0f'], presa: 4, versione: 1, radice: 'b2' },
+      { id: 'c3', gioco: 'minecraft', giocoNome: 'Minecraft', lingua: 'it', firme: ['3c69a5a5c3966a5a', 'c3966a5a3c69a5a5'], presa: 31, versione: 2, radice: 'c0' },
+    ] },
     '/api/streamer/morti/gsi': { indirizzo: 'https://socialbot.live/api/gsi/andryx_demo', ultimo: Date.now() - 7 * 60000, quale: 'cs2', giochi: [
       { id: 'cs2', nome: 'Counter-Strike 2', cartella: 'game/csgo/cfg', file: 'gamestate_integration_socialbot_cs2.cfg' },
       { id: 'dota2', nome: 'Dota 2', cartella: 'game/dota/cfg/gamestate_integration', file: 'gamestate_integration_socialbot_dota2.cfg' },
@@ -11073,7 +11078,6 @@ function appendiConsolifyCampi() {
   });
 }
 
-
 const MORTI_DEF = { attivo: false, fonte: '', ogniMs: 2000, soglia: 8, riarmoMs: 4000, schermate: [] };
 const _mortiCfg = () => ({ ...MORTI_DEF, ...(impostazioni().morti || {}) });
 let _mortiTimer = null;
@@ -11090,7 +11094,8 @@ async function _mortiGrigi(dataUrl) {
   c.height = window.SB_MORTI.ALTA;
   const x = c.getContext('2d', { willReadFrequently: true });
   x.imageSmoothingEnabled = true;
-  x.drawImage(img, 0, 0, c.width, c.height);
+  const r = window.SB_MORTI.ritaglio(img.naturalWidth, img.naturalHeight);
+  x.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, c.width, c.height);
   const d = x.getImageData(0, 0, c.width, c.height).data;
   const g = [];
   for (let i = 0; i < d.length; i += 4) g.push((d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000);
@@ -11100,7 +11105,7 @@ async function _mortiGrigi(dataUrl) {
 async function _mortiScatta(fonte) {
   if (!window.RegiaEsterna || !RegiaEsterna.collegato() || !fonte) return null;
   const r = await RegiaEsterna.chiedi('GetSourceScreenshot', {
-    sourceName: fonte, imageFormat: 'jpg', imageWidth: 64, imageHeight: 36, imageCompressionQuality: 60,
+    sourceName: fonte, imageFormat: 'jpg', imageWidth: 128, imageCompressionQuality: 60,
   }).catch(() => null);
   const dati = r && r.imageData;
   if (!dati) return null;
@@ -11164,7 +11169,6 @@ function _mortiRiavvia() {
   _mortiTimer = setInterval(() => { _mortiGiro().catch(() => {}); }, cfg.ogniMs);
   _mortiSpia();
 }
-
 
 function _mortiFonti() {
   const sel = _g('morti-fonte');
@@ -11238,11 +11242,56 @@ function _mortiGsiLista(conti) {
   }
 }
 
+const _MORTI_LINGUE = { it: 'italiano', en: 'English', es: 'español', pt: 'português', fr: 'français', de: 'Deutsch' };
+
+async function _mortiCercaLibreria() {
+  const box = _g('morti-libreria');
+  if (!box) return;
+  const q = _g('morti-cerca')?.value || '';
+  box.innerHTML = `<p class="vuoto">${L('Cerco…', 'Searching…', 'Buscando…')}</p>`;
+  let schede = [];
+  try { schede = (await api('/api/morti/libreria?gioco=' + encodeURIComponent(q)))?.schede || []; }
+  catch { box.innerHTML = `<p class="vuoto">${L('La libreria non risponde.', 'The library is not answering.', 'La biblioteca no responde.')}</p>`; return; }
+  if (!_g('morti-libreria')) return;
+  const conti = await _mortiContiLista();
+  box.innerHTML = schede.length ? schede.map((s) => `<div class="goal-riga">
+      <div>
+        <strong>${esc(s.giocoNome || s.gioco)}</strong>
+        <div class="tenue">${esc(_MORTI_LINGUE[s.lingua] || L('senza scritte', 'no text', 'sin texto'))} · ${L(`${s.firme.length} impronte`, `${s.firme.length} prints`, `${s.firme.length} huellas`)}${s.presa ? ' · ' + L(`presa ${s.presa} volte`, `taken ${s.presa} times`, `cogida ${s.presa} veces`) : ''}</div>
+      </div>
+      <div>
+        <label class="campo" for="morti-lib-${esc(s.id)}">${L('Quale contatore', 'Which counter', 'Qué contador')}</label>
+        <select id="morti-lib-${esc(s.id)}" class="campo-largo">${_mortiOpzioni(conti, '', '')}</select>
+      </div>
+      <button type="button" class="btn secondario mini" data-morti-prendi="${esc(s.id)}">${L('Prendila', 'Take it', 'Cogerla')}</button>
+    </div>`).join('')
+    : `<p class="vuoto">${L('Nessuno l\'ha ancora insegnata. Insegnala tu qui sopra: il prossimo la trova.', 'Nobody has taught it yet. Teach it above: the next one will find it.', 'Nadie la ha enseñado todavía. Enséñala arriba: el siguiente la encontrará.')}</p>`;
+}
+
 async function _mortiCarica() {
   const conti = await _mortiContiLista();
   _mortiRiempiConti(conti);
   try { _gsiDati = await api('/api/streamer/morti/gsi'); } catch { _gsiDati = null; }
   _mortiGsiLista(conti);
+  await _mortiGuardaVersioni().catch(() => {});
+}
+
+let _mortiNuove = {};
+async function _mortiGuardaVersioni() {
+  const m = _mortiCfg();
+  const radici = [...new Set(m.schermate.map((s) => s.radice).filter(Boolean))];
+  _mortiNuove = {};
+  for (const r of radici) {
+    try {
+      const d = await api('/api/morti/libreria/' + encodeURIComponent(r));
+      const ultima = (d?.versioni || [])[0];
+      const mia = m.schermate.find((s) => s.radice === r);
+      if (ultima && mia && Number(ultima.versione) > Number(mia.versione || 0)) {
+        _mortiNuove[r] = { id: ultima.id, versione: ultima.versione, firme: ultima.firme || [] };
+      }
+    } catch { /* la libreria non risponde: le sue schermate restano quelle che ha */ }
+  }
+  _mortiLista();
 }
 
 function _mortiLista() {
@@ -11250,13 +11299,38 @@ function _mortiLista() {
   if (!box) return;
   const m = _mortiCfg();
   box.innerHTML = m.schermate.length
-    ? m.schermate.map((s, i) => `<div class="goal-riga">
-        <strong>${esc(s.nome)}</strong>
-        <span class="tenue">→ !${esc(s.contatore)}</span>
-        <span class="tenue">${s.firme.length > 1 ? L(`${s.firme.length} impronte`, `${s.firme.length} prints`, `${s.firme.length} huellas`) : ''}</span>
+    ? m.schermate.map((s, i) => {
+      const n = s.radice ? _mortiNuove[s.radice] : null;
+      const piu = n ? n.firme.filter((f) => !(s.firme || []).includes(f)).length : 0;
+      return `<div class="goal-riga">
+        <div>
+          <strong>${esc(s.nome)}</strong>
+          <span class="tenue">→ !${esc(s.contatore)}</span>
+          <span class="tenue">${s.firme.length > 1 ? L(`${s.firme.length} impronte`, `${s.firme.length} prints`, `${s.firme.length} huellas`) : ''}</span>
+          ${n ? `<div class="tenue">${L(`Qualcuno l\'ha migliorata: ${piu} impronte in più.`, `Someone improved it: ${piu} more prints.`, `Alguien la ha mejorado: ${piu} huellas más.`)}</div>` : ''}
+        </div>
+        ${n ? `<button type="button" class="btn secondario mini" data-morti-aggiorna="${i}">${L('Prendi la versione nuova', 'Take the new version', 'Coger la versión nueva')}</button>` : ''}
+        <button type="button" class="btn secondario mini" data-morti-manca="${i}">${L('Non l\'ha presa adesso', 'It missed it just now', 'No la ha cogido ahora')}</button>
         <button type="button" class="btn secondario mini ovl-elimina" data-morti-via="${i}">${L('Togli', 'Remove', 'Quitar')}</button>
-      </div>`).join('')
+      </div>`;
+    }).join('')
     : `<p class="vuoto">${L('Nessuna schermata insegnata: la prima volta che muori, premi il tasto qui sopra.', 'No screen taught yet: the first time you die, press the button above.', 'Ninguna pantalla enseñada: la primera vez que mueras, pulsa el botón de arriba.')}</p>`;
+}
+
+const _mortiGioco = () => {
+  const t = String(document.getElementById('regia-gioco-sel')?.textContent || '').trim();
+  return (!t || t.startsWith('—') || t === '-') ? '' : t;
+};
+
+async function _mortiPubblica(firme, contatore, da) {
+  const gioco = _mortiGioco();
+  if (!gioco) return null;
+  try {
+    const d = await api('/api/streamer/morti/pubblica', { method: 'POST', body: {
+      giocoNome: gioco, lingua: LINGUA, firme, contatore, da: da || '',
+    } });
+    return d?.scheda || null;
+  } catch { return null; }
 }
 
 async function _mortiSalva(nuovo) {
@@ -11296,6 +11370,26 @@ function collegaMorti() {
       if (!scatto || !scatto.firma) throw new Error(L('Non riesco a guardare quella fonte: la regia è collegata?', 'I can\'t look at that source: is the program connected?', '¿No consigo mirar esa fuente: está conectado el programa?'));
       const gia = window.SB_MORTI.vicina(cfg.schermate, scatto.firma, cfg.soglia);
       if (gia) { toast(L(`Questa la conosco già: «${gia.quale.nome}».`, `I already know this one: «${gia.quale.nome}».`, `Esta ya la conozco: «${gia.quale.nome}».`)); return; }
+
+      let daLibreria = null;
+      try { daLibreria = (await api('/api/morti/libreria/cerca', { method: 'POST', body: { firma: scatto.firma, soglia: cfg.soglia } }))?.trovata || null; }
+      catch { daLibreria = null; }
+      if (daLibreria) {
+        const quante = (daLibreria.firme || []).length;
+        const si = confirm(L(
+          `Questa schermata la conosce già qualcun altro: è la morte di «${daLibreria.giocoNome}». Prendo la sua, con tutte e ${quante} le impronte che ha imparato?`,
+          `Someone else already knows this screen: it is the death of «${daLibreria.giocoNome}». Shall I take theirs, with all ${quante} prints it has learned?`,
+          `Esta pantalla ya la conoce otra persona: es la muerte de «${daLibreria.giocoNome}». ¿Cojo la suya, con las ${quante} huellas que ha aprendido?`));
+        if (si) {
+          await api('/api/streamer/morti/prendi', { method: 'POST', body: { id: daLibreria.id, contatore } });
+          impostazioni().morti = null;
+          const st = await api('/api/me');
+          if (st?.streamer?.settings) stato.streamer.settings = st.streamer.settings;
+          _mortiLista(); _mortiRiavvia(); _mortiGuardaVersioni().catch(() => {});
+          toast(L('Presa. Non hai dovuto insegnarle niente.', 'Taken. You had to teach it nothing.', 'Cogida. No has tenido que enseñarle nada.'));
+          return;
+        }
+      }
       const r = await chiediTesto({
         titolo: L('Che schermata è', 'What screen is this', 'Qué pantalla es'),
         testo: L('Un nome per ricordartelo: il gioco, di solito.', 'A name to remember it by: the game, usually.', 'Un nombre para recordarla: el juego, normalmente.'),
@@ -11304,9 +11398,37 @@ function collegaMorti() {
       });
       const nome = String(r || '').trim();
       if (!nome) return;
-      await _mortiSalva({ schermate: cfg.schermate.concat([{ nome, firme: [scatto.firma], contatore }]) });
-      toast(L('Imparata. Alla prossima morte sale da sola.', 'Learned. Next death it goes up by itself.', 'Aprendida. A la próxima muerte sube sola.'));
+      const gioco = _mortiGioco();
+      const meglio = gioco && _g('morti-condividi')?.checked
+        ? await _mortiPubblica([scatto.firma], contatore, '')
+        : null;
+      await _mortiSalva({ schermate: cfg.schermate.concat([{
+        nome, firme: [scatto.firma], contatore,
+        scheda: meglio?.id || '', radice: meglio?.radice || '', versione: meglio?.versione || 0,
+      }]) });
+      toast(meglio
+        ? L('Imparata, e messa in comune: adesso ce l\'hanno tutti.', 'Learned, and shared: everyone has it now.', 'Aprendida y compartida: ahora la tienen todos.')
+        : L('Imparata. Alla prossima morte sale da sola.', 'Learned. Next death it goes up by itself.', 'Aprendida. A la próxima muerte sube sola.'));
     } catch (e) { toast(e.message || String(e), 'errore'); }
+    b.disabled = false;
+  });
+
+  _g('morti-cerca-vai')?.addEventListener('click', () => { _mortiCercaLibreria().catch(() => {}); });
+  _g('morti-cerca')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); _mortiCercaLibreria().catch(() => {}); } });
+
+  _g('morti-libreria')?.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-morti-prendi]');
+    if (!b) return;
+    const id = b.dataset.mortiPrendi;
+    const contatore = _g('morti-lib-' + id)?.value || '';
+    if (!contatore) { toast(L('Scegli quale contatore deve far salire.', 'Pick which counter it should raise.', 'Elige qué contador debe subir.'), 'errore'); return; }
+    b.disabled = true;
+    try {
+      const d = await api('/api/streamer/morti/prendi', { method: 'POST', body: { id, contatore } });
+      if (d?.morti) impostazioni().morti = d.morti;
+      _mortiLista(); _mortiRiavvia();
+      toast(L('Presa: è tua adesso. Quello che succede alla libreria non la tocca più.', 'Taken: it is yours now. Whatever happens to the library no longer touches it.', 'Cogida: ahora es tuya. Lo que le pase a la biblioteca ya no la toca.'));
+    } catch (er) { toast(er.message || String(er), 'errore'); }
     b.disabled = false;
   });
 
@@ -11324,11 +11446,52 @@ function collegaMorti() {
   });
 
   _g('morti-lista')?.addEventListener('click', async (e) => {
-    const b = e.target.closest('[data-morti-via]');
-    if (!b) return;
-    const i = Number(b.dataset.mortiVia);
-    const cfg = _mortiCfg();
-    await _mortiSalva({ schermate: cfg.schermate.filter((_, k) => k !== i) }).catch(() => {});
+    const via = e.target.closest('[data-morti-via]');
+    if (via) {
+      const i = Number(via.dataset.mortiVia);
+      const cfg = _mortiCfg();
+      await _mortiSalva({ schermate: cfg.schermate.filter((_, k) => k !== i) }).catch(() => {});
+      return;
+    }
+
+    const manca = e.target.closest('[data-morti-manca]');
+    if (manca) {
+      const i = Number(manca.dataset.mortiManca);
+      const cfg = _mortiCfg();
+      const s = cfg.schermate[i];
+      if (!s) return;
+      manca.disabled = true;
+      try {
+        const scatto = await _mortiScatta(cfg.fonte);
+        if (!scatto?.firma) throw new Error(L('Non riesco a guardare quella fonte.', 'I can\'t look at that source.', 'No consigo mirar esa fuente.'));
+        if (s.firme.includes(scatto.firma)) { toast(L('Questa impronta ce l\'ha già: il problema è altrove.', 'It already has this print: the problem is elsewhere.', 'Ya tiene esta huella: el problema está en otro sitio.')); return; }
+        const firme = s.firme.concat([scatto.firma]);
+        let scheda = s.scheda;
+        let versione = s.versione;
+        if (s.scheda && confirm(L('Aggiunta. La pubblico anche per gli altri, così non ci ricascano?', 'Added. Shall I publish it for the others too, so they don\'t hit it again?', 'Añadida. ¿La publico también para los demás, para que no les pase?'))) {
+          const nuova = await _mortiPubblica(firme, s.contatore, s.scheda);
+          if (nuova) { scheda = nuova.id; versione = nuova.versione; }
+        }
+        await _mortiSalva({ schermate: cfg.schermate.map((x, k) => (k === i ? { ...x, firme, scheda, versione } : x)) });
+        toast(L('Aggiunta: adesso la riconosce anche così.', 'Added: now it recognises it that way too.', 'Añadida: ahora también la reconoce así.'));
+      } catch (er) { toast(er.message || String(er), 'errore'); }
+      manca.disabled = false;
+      return;
+    }
+
+    const agg = e.target.closest('[data-morti-aggiorna]');
+    if (agg) {
+      const i = Number(agg.dataset.mortiAggiorna);
+      const cfg = _mortiCfg();
+      const s = cfg.schermate[i];
+      const n = s && _mortiNuove[s.radice];
+      if (!n) return;
+      const firme = [...new Set([...(s.firme || []), ...n.firme])];
+      await _mortiSalva({ schermate: cfg.schermate.map((x, k) => (k === i ? { ...x, firme, scheda: n.id, versione: n.versione } : x)) }).catch(() => {});
+      delete _mortiNuove[s.radice];
+      _mortiLista();
+      toast(L('Presa. Le tue impronte restano, queste si aggiungono.', 'Taken. Your prints stay, these are added.', 'Cogida. Tus huellas se quedan, estas se añaden.'));
+    }
   });
 }
 
@@ -11361,8 +11524,20 @@ function _mortiCarta() {
         </div>
         <button class="btn" id="morti-impara" disabled>${L('Sono morto adesso: è questa', 'I just died: this is it', 'Acabo de morir: es esta')}</button>
       </div>
+      <label class="ovl-spunta spazio-sopra"><input type="checkbox" id="morti-condividi" checked><span>${L('Mettila in comune con gli altri streamer', 'Share it with the other streamers', 'Compartirla con los demás streamers')}</span></label>
       <p class="suggerimento">${L('Premilo', 'Press it', 'Púlsalo')} <strong>${L('mentre la schermata di morte è a schermo', 'while the death screen is on screen', 'mientras la pantalla de muerte está en pantalla')}</strong>. ${L('Ne puoi insegnare una per gioco: quella che combacia vince, così non devi dire tu a cosa stai giocando.', 'You can teach one per game: whichever matches wins, so you don\'t have to say what you\'re playing.', 'Puedes enseñar una por juego: gana la que coincide, así no tienes que decir a qué juegas.')}</p>
       <div id="morti-lista" class="goal-lista spazio-sopra"></div>
+
+      <h3 class="spazio-sopra">${L('Le schermate che hanno già insegnato gli altri', 'The screens other people already taught', 'Las pantallas que ya han enseñado los demás')}</h3>
+      <p>${L('Ogni volta che qualcuno insegna la morte di un gioco, quel gioco lo sanno tutti. Cerca il tuo: se c\'è, la prendi e non devi insegnare niente.', 'Every time someone teaches a game\'s death, everyone knows that game. Look for yours: if it is there, you take it and teach nothing.', 'Cada vez que alguien enseña la muerte de un juego, ese juego lo saben todos. Busca el tuyo: si está, la coges y no enseñas nada.')}</p>
+      <div class="riga-flessibile spazio-sopra">
+        <div style="flex:1">
+          <label class="campo" for="morti-cerca">${L('Che gioco stai giocando', 'What game are you playing', 'A qué juego juegas')}</label>
+          <input type="search" id="morti-cerca" class="campo-largo" placeholder="${esc(L('Dark Souls, Minecraft, Elden Ring…', 'Dark Souls, Minecraft, Elden Ring…', 'Dark Souls, Minecraft, Elden Ring…'))}">
+        </div>
+        <button class="btn secondario" id="morti-cerca-vai">${L('Cerca', 'Search', 'Buscar')}</button>
+      </div>
+      <div id="morti-libreria" class="goal-lista spazio-sopra"></div>
 
       <h3 class="spazio-sopra">${L('Certi giochi lo dicono da soli', 'Some games say it themselves', 'Algunos juegos lo dicen solos')}</h3>
       <p>${L('Counter-Strike e Dota pubblicano quante volte sei morto. Dove succede non c\'è niente da riconoscere: il numero è quello del gioco, e non sbaglia.', 'Counter-Strike and Dota publish how many times you died. Where that happens there is nothing to recognise: the number is the game\'s own, and it does not miss.', 'Counter-Strike y Dota publican cuántas veces has muerto. Donde pasa no hay nada que reconocer: el número es el del juego, y no falla.')}</p>

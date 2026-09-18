@@ -21,7 +21,7 @@ import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andr
 import * as licenza from '../licenza.js';      // il nome con cui questo software si presenta
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi } from '../db.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
@@ -54,6 +54,7 @@ import * as statistiche from '../features/statistiche.js';
 import * as rapporto from '../features/rapporto.js';
 import * as morti from '../features/morti.js';
 import * as gsi from '../features/gsi.js';
+import * as libreria from '../features/morti-libreria.js';
 import * as posta from '../features/posta.js';
 import * as donazioni from '../features/donazioni.js';
 import * as donaStripe from '../features/donazioni-stripe.js';
@@ -5082,6 +5083,81 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   app.post('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
   app.get('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
+
+  // ── LA LIBRERIA DELLE SCHERMATE ───────────────────────────────────────────
+  //
+  // E' l'unica cosa del bot che uno streamer scrive e un altro legge. Quindi:
+  //
+  //  · SI PRENDE COPIANDO. Quando qualcuno prende una scheda, le sue impronte
+  //    finiscono nelle SUE impostazioni. Da li' in poi la sua diretta non dipende
+  //    piu' dalla libreria: se la libreria cade, o quella scheda sparisce, lui
+  //    continua a contare. E' la difesa piu' importante, e non e' una guardia.
+  //  · NIENTE SI AGGIORNA DA SOLO. Una versione nuova si ANNUNCIA. Se si
+  //    applicasse da sola, chi ha pubblicato una versione peggiore romperebbe la
+  //    serata a chi stava bene.
+  //  · UN'IMPRONTA PIATTA NON ENTRA. Uno schermo nero combacia con mezzo mondo:
+  //    pubblicarlo farebbe contare morti a caso a chiunque lo prenda. Lo dice la
+  //    regola pura, e qui non c'e' una seconda strada per scriverla.
+  app.get('/api/morti/libreria', requireLogin, wrap(async (req, res) => {
+    res.json({ schede: mortiSchede.cerca({
+      gioco: libreria.chiaveGioco(req.query.gioco || ''),
+      lingua: libreria.LINGUE.includes(String(req.query.lingua || '')) ? String(req.query.lingua) : '',
+    }) });
+  }));
+
+  // Cercare una schermata SENZA sapere che gioco e'. Arriva un'impronta, sedici
+  // cifre: non e' un'immagine, e non ci si torna indietro.
+  app.post('/api/morti/libreria/cerca', requireLogin, wrap(async (req, res) => {
+    const f = String(req.body?.firma || '').toLowerCase();
+    if (!/^[0-9a-f]{16}$/.test(f)) return res.json({ trovata: null });
+    const v = libreria.piuVicina(mortiSchede.impronte(), f, Number(req.body?.soglia) || 8);
+    res.json({ trovata: v ? { ...v.scheda, distanza: v.distanza } : null });
+  }));
+
+  app.get('/api/morti/libreria/:radice', requireLogin, wrap(async (req, res) => {
+    res.json({ versioni: mortiSchede.versioni(String(req.params.radice || '')) });
+  }));
+
+  // Pubblicare. Con `da` e' una VERSIONE di una scheda che c'e' gia'.
+  app.post('/api/streamer/morti/pubblica', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const vecchia = req.body?.da ? mortiSchede.prendi(String(req.body.da)) : null;
+    const base = libreria.normScheda(vecchia ? { ...req.body, giocoNome: req.body?.giocoNome || vecchia.giocoNome, lingua: req.body?.lingua || vecchia.lingua } : req.body);
+    const v = libreria.prossima(vecchia, base.firme);
+    const scheda = { ...base, firme: vecchia ? v.firme : base.firme };
+    const guaio = libreria.perche(scheda, {
+      quante: mortiSchede.quante(login),
+      oggi: mortiSchede.daQuando(login, Date.now() - 86_400_000),
+    });
+    if (guaio) return res.status(400).json({ errore: guaio });
+    const nata = mortiSchede.pubblica({
+      id: crypto.randomBytes(9).toString('hex'),
+      radice: v.radice, da: v.da, versione: v.versione,
+      gioco: scheda.gioco, giocoNome: scheda.giocoNome, lingua: scheda.lingua,
+      firme: scheda.firme, autore: login,
+    });
+    res.json({ ok: true, scheda: nata });
+  }));
+
+  // Prenderne una: si copia nelle sue impostazioni, e la libreria conta un uso.
+  app.post('/api/streamer/morti/prendi', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = mortiSchede.prendi(String(req.body?.id || ''));
+    if (!s) return res.status(404).json({ errore: 'non c\'e\' piu\'' });
+    const st = streamers.get(login);
+    const cfg = morti.normalizza(st?.settings?.morti);
+    const nuova = libreria.copia(s, req.body?.contatore);
+    if (!nuova.contatore) return res.status(400).json({ errore: 'serve un contatore' });
+    const fuori = morti.normalizza({ ...cfg, schermate: [...cfg.schermate, nuova] });
+    streamers.setSettings(login, { ...(st?.settings || {}), morti: fuori });
+    mortiSchede.usata(s.id);
+    res.json({ ok: true, morti: fuori });
+  }));
+
+  app.post('/api/admin/morti/togli', requireAdmin, wrap(async (req, res) => {
+    mortiSchede.togli(String(req.body?.id || ''));
+    res.json({ ok: true });
+  }));
 
   // ── I GIOCHI CHE LO DICONO DA SOLI ────────────────────────────────────────
   //
