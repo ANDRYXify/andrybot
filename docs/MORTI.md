@@ -118,3 +118,49 @@ Muori, e **mentre la schermata e' a schermo** premi il tasto. Il pannello prende
 l'impronta, controlla di non conoscerla gia', ti chiede come chiamarla e la
 salva insieme al contatore che deve far salire. Una per gioco: quando ne combacia
 una, vince quella, cosi' non devi dire tu a cosa stai giocando.
+
+## La seconda strada: i giochi che lo dicono da soli
+
+Qualche gioco pubblica il proprio stato. Gli metti un file di configurazione
+nella sua cartella e da li' in poi e' LUI a mandare un messaggio a un indirizzo
+che gli hai dato, con dentro anche quante volte sei morto. Counter-Strike lo fa
+ufficialmente — si chiama Game State Integration — e Dota 2 di fatto.
+
+Dove c'e', e' la strada giusta: non si riconosce niente e non si indovina niente.
+E non serve nemmeno il pannello aperto, perche' a parlare col nostro server e' il
+gioco: su quel computer puo' esserci solo il gioco e il programma della diretta.
+
+### Le due cose che non possono esistere
+
+**Non si contano le morti di un altro.** Quando guardi una partita da spettatore
+o riguardi un replay, il giocatore dentro al messaggio non sei tu: e' quello
+inquadrato. Il numero si legge solo quando il giocatore del messaggio e' quello
+seduto a quel computer, che il gioco dichiara a parte. Non e' un controllo
+aggiunto dopo: senza quella prova il numero non si legge affatto.
+
+**Il numero e' un totale, non un evento.** Il gioco non dice «sei morto»: dice
+«finora sei morto tre volte», e a ogni partita nuova riparte da zero. Percio' si
+conta il salto in su, e ogni altra cosa — sceso, partita cambiata, salto
+impossibile in mezzo secondo — ribasa senza contare. Un ribaseline che sbaglia
+perde una morte; un ribaseline che manca ne conta trenta in un colpo solo.
+
+E alla prima lettura non si conta mai: non si sa da dove si veniva, e le morti
+gia' fatte nella partita in corso non sono successe adesso. E' per questo che
+quello che si ricorda sta nel DATABASE e non in memoria — in memoria, il primo
+messaggio dopo un riavvio del bot troverebbe un ricordo vuoto.
+
+### La chiave
+
+E' una chiave a parte da quella della consolle, e non per ordine: questa finisce
+scritta in chiaro dentro un file, in una cartella che si condivide fra mod, guide
+e pacchetti di configurazione che girano in rete. Una chiave che sta li' non puo'
+essere la stessa che accende gli effetti, cambia scena e muove ogni contatore.
+Questa fa una cosa sola: portare un numero. Chi la ruba fa salire un contatore, e
+basta — e la rifai con un tasto.
+
+Per lo stesso motivo un canale che non esiste e una chiave sbagliata ricevono la
+STESSA risposta: quell'indirizzo sta scritto in un file che si puo' leggere, e non
+deve raccontare a chi lo trova se quel canale esista.
+
+Il corpo del messaggio non si scrive da nessuna parte, nemmeno negli errori:
+dentro c'e' l'identificativo del suo account di gioco, e non e' roba nostra.

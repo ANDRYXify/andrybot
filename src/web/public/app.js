@@ -542,6 +542,10 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
+    '/api/streamer/morti/gsi': { indirizzo: 'https://socialbot.live/api/gsi/andryx_demo', ultimo: Date.now() - 7 * 60000, quale: 'cs2', giochi: [
+      { id: 'cs2', nome: 'Counter-Strike 2', cartella: 'game/csgo/cfg', file: 'gamestate_integration_socialbot_cs2.cfg' },
+      { id: 'dota2', nome: 'Dota 2', cartella: 'game/dota/cfg/gamestate_integration', file: 'gamestate_integration_socialbot_dota2.cfg' },
+    ] },
     '/api/contatori': { contatori: [
       { comando: 'morti', etichetta: 'Morti', emoji: '', valore: 7, step: 1, auto_parola: '', reward_id: '',
         verbiCfg: { leggi: { parole: [], chi: 'tutti' }, piu: { parole: ['+', 'add'], chi: 'mod' }, meno: { parole: ['-', 'meno'], chi: 'mod' }, azzera: { parole: ['reset', 'azzera'], chi: 'mod' }, imposta: { parole: ['set'], chi: 'mod' }, mostra: { parole: ['on', 'mostra'], chi: 'mod' }, nascondi: { parole: ['off', 'nascondi'], chi: 'mod' } },
@@ -11173,20 +11177,72 @@ function _mortiFonti() {
   sel.value = scelta || '';
 }
 
-async function _mortiConti() {
+async function _mortiContiLista() {
   let lista = (_conta || []).map((c) => c.comando).filter(Boolean);
   if (!lista.length) {
     try { const d = await api('/api/contatori'); lista = (d?.contatori || []).map((c) => c.comando).filter(Boolean); }
     catch { lista = []; }
   }
+  return lista;
+}
+
+const _mortiOpzioni = (lista, scelta, vuoto) => (vuoto ? `<option value="">${esc(vuoto)}</option>` : '')
+  + lista.map((c) => `<option value="${esc(c)}"${c === scelta ? ' selected' : ''}>!${esc(c)}</option>`).join('');
+
+function _mortiRiempiConti(lista) {
   const sel = _g('morti-conta');
   if (!sel) return;
   const scelta = sel.value;
   sel.innerHTML = lista.length
-    ? lista.map((c) => `<option value="${esc(c)}"${c === scelta ? ' selected' : ''}>!${esc(c)}</option>`).join('')
+    ? _mortiOpzioni(lista, scelta, '')
     : `<option value="">${esc(L('nessun contatore', 'no counters', 'sin contadores'))}</option>`;
   const b = _g('morti-impara');
   if (b) b.disabled = !lista.length;
+}
+
+let _gsiDati = null;
+
+const _mortiQuando = (ts) => {
+  const m = Math.round((Date.now() - (Number(ts) || 0)) / 60000);
+  if (m < 1) return L('proprio adesso', 'just now', 'ahora mismo');
+  if (m < 60) return m + L(' minuti fa', ' minutes ago', ' minutos');
+  const h = Math.round(m / 60);
+  return h < 24 ? h + L(' ore fa', ' hours ago', ' horas') : Math.round(h / 24) + L(' giorni fa', ' days ago', ' días');
+};
+
+function _mortiGsiLista(conti) {
+  const box = _g('morti-gsi-lista');
+  if (!box) return;
+  const m = _mortiCfg();
+  const giochi = _gsiDati?.giochi || [];
+  box.innerHTML = giochi.map((g) => `<div class="goal-riga">
+      <div>
+        <strong>${esc(g.nome)}</strong>
+        <div class="tenue">${esc(g.cartella)}</div>
+      </div>
+      <div>
+        <label class="campo" for="morti-gsi-${esc(g.id)}">${L('Quale contatore', 'Which counter', 'Qué contador')}</label>
+        <select id="morti-gsi-${esc(g.id)}" class="campo-largo" data-gsi-gioco="${esc(g.id)}">
+          ${_mortiOpzioni(conti, m.gsi?.[g.id] || '', L('non contare', 'don\'t count', 'no contar'))}
+        </select>
+      </div>
+      <a class="btn secondario mini" href="/api/streamer/morti/gsi/file?gioco=${encodeURIComponent(g.id)}" download="${esc(g.file)}">${L('Scarica il file', 'Download the file', 'Descargar el archivo')}</a>
+    </div>`).join('');
+  const spia = _g('morti-gsi-spia');
+  if (spia) {
+    const q = Number(_gsiDati?.ultimo) || 0;
+    const chi = giochi.find((g) => g.id === _gsiDati?.quale);
+    spia.textContent = q
+      ? L(`${chi ? chi.nome : 'Un gioco'} ha parlato ${_mortiQuando(q)}.`, `${chi ? chi.nome : 'A game'} spoke ${_mortiQuando(q)}.`, `${chi ? chi.nome : 'Un juego'} habló ${_mortiQuando(q)}.`)
+      : L('Nessun gioco ha ancora parlato.', 'No game has spoken yet.', 'Ningún juego ha hablado todavía.');
+  }
+}
+
+async function _mortiCarica() {
+  const conti = await _mortiContiLista();
+  _mortiRiempiConti(conti);
+  try { _gsiDati = await api('/api/streamer/morti/gsi'); } catch { _gsiDati = null; }
+  _mortiGsiLista(conti);
 }
 
 function _mortiLista() {
@@ -11217,7 +11273,7 @@ function collegaMorti() {
   if (!carta || carta.dataset.collegato) return;
   carta.dataset.collegato = '1';
   _mortiFonti();
-  _mortiConti().catch(() => {});
+  _mortiCarica().catch(() => {});
   _mortiLista();
   _mortiRiavvia();
 
@@ -11252,6 +11308,19 @@ function collegaMorti() {
       toast(L('Imparata. Alla prossima morte sale da sola.', 'Learned. Next death it goes up by itself.', 'Aprendida. A la próxima muerte sube sola.'));
     } catch (e) { toast(e.message || String(e), 'errore'); }
     b.disabled = false;
+  });
+
+  _g('morti-gsi-lista')?.addEventListener('change', async (e) => {
+    const sel = e.target.closest('[data-gsi-gioco]');
+    if (!sel) return;
+    const m = _mortiCfg();
+    await _mortiSalva({ gsi: { ...(m.gsi || {}), [sel.dataset.gsiGioco]: sel.value } }).catch(() => {});
+  });
+
+  _g('morti-gsi-rinnova')?.addEventListener('click', async () => {
+    if (!confirm(L('Rifare la chiave? I file che hai già messo nelle cartelle dei giochi smettono di funzionare: vanno riscaricati e rimessi.', 'Make a new key? The files you already put in the game folders stop working: they have to be downloaded and placed again.', '¿Rehacer la clave? Los archivos que ya pusiste en las carpetas de los juegos dejan de funcionar: hay que volver a descargarlos y colocarlos.'))) return;
+    try { await api('/api/streamer/morti/gsi/revoca', { method: 'POST' }); await _mortiCarica(); toast(L('Fatta. Riscarica i file.', 'Done. Download the files again.', 'Hecho. Vuelve a descargar los archivos.')); }
+    catch (e) { toast(e.message || String(e), 'errore'); }
   });
 
   _g('morti-lista')?.addEventListener('click', async (e) => {
@@ -11294,6 +11363,13 @@ function _mortiCarta() {
       </div>
       <p class="suggerimento">${L('Premilo', 'Press it', 'Púlsalo')} <strong>${L('mentre la schermata di morte è a schermo', 'while the death screen is on screen', 'mientras la pantalla de muerte está en pantalla')}</strong>. ${L('Ne puoi insegnare una per gioco: quella che combacia vince, così non devi dire tu a cosa stai giocando.', 'You can teach one per game: whichever matches wins, so you don\'t have to say what you\'re playing.', 'Puedes enseñar una por juego: gana la que coincide, así no tienes que decir a qué juegas.')}</p>
       <div id="morti-lista" class="goal-lista spazio-sopra"></div>
+
+      <h3 class="spazio-sopra">${L('Certi giochi lo dicono da soli', 'Some games say it themselves', 'Algunos juegos lo dicen solos')}</h3>
+      <p>${L('Counter-Strike e Dota pubblicano quante volte sei morto. Dove succede non c\'è niente da riconoscere: il numero è quello del gioco, e non sbaglia.', 'Counter-Strike and Dota publish how many times you died. Where that happens there is nothing to recognise: the number is the game\'s own, and it does not miss.', 'Counter-Strike y Dota publican cuántas veces has muerto. Donde pasa no hay nada que reconocer: el número es el del juego, y no falla.')}</p>
+      <p class="suggerimento">${L('Scarichi il file, lo metti nella cartella scritta qui sotto e riavvii il gioco. Qui non serve nemmeno', 'Download the file, drop it in the folder written below and restart the game. Here you don\u2019t even need', 'Descargas el archivo, lo pones en la carpeta escrita abajo y reinicias el juego. Aquí ni siquiera hace falta')} <strong>${L('questo pannello aperto', 'this panel open', 'este panel abierto')}</strong>: ${L('a parlare col bot è il gioco. Fuori diretta legge ma non conta, come la schermata.', 'it is the game talking to the bot. Off air it reads but does not count, same as the screen.', 'quien habla con el bot es el juego. Fuera de directo lee pero no cuenta, igual que la pantalla.')}</p>
+      <div id="morti-gsi-lista" class="goal-lista spazio-sopra"></div>
+      <p class="suggerimento" id="morti-gsi-spia">&mdash;</p>
+      <p><button class="btn secondario mini" id="morti-gsi-rinnova">${L('Rifai la chiave', 'Make a new key', 'Rehacer la clave')}</button></p>
     </div>
 `;
 }

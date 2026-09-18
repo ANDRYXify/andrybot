@@ -41,6 +41,7 @@ const DECISO = [
   ['features/battute.js', 'inAscolto', 'volatile', 'la finestra di 45 secondi in cui si contano le risate: perderne una a meta\' non toglie niente a nessuno, e la battuta esce di nuovo un\'altra volta'],
   ['features/console.js', '_ponti', 'volatile', 'le pagine di regia di guardia in questo momento: sono CONNESSIONI aperte, quindi muoiono col processo per definizione — e non e\' un dato che si possa salvare, perche\' dopo un riavvio quelle connessioni non esistono piu\'. Chi era di guardia si riannuncia da se\' quando il browser riapre il flusso.'],
   ['features/console.js', '_colpi', 'volatile', 'il minuto in cui si contano le pressioni dei tasti: dopo un riavvio riparte da zero, e l\'unico effetto e\' che chi stava per essere fermato ha un minuto in regalo — un riavvio non e\' un modo pratico per aggirare un tetto'],
+  ['features/gsi.js', '_colpi', 'volatile', 'lo stesso tetto, per i messaggi che mandano i giochi: riparte da zero e regala un minuto. Tenerlo fuori dal processo costerebbe una scrittura ogni mezzo secondo per ogni gioco acceso, per difendere un contatore da un minuto di troppo'],
   ['features/antibot.js', 'listaEsterna', 'volatile', 'lista di bot conosciuti, si riscarica da sola'],
   ['features/antibot.js', 'finestre', 'volatile', 'finestra di trenta secondi: dopo un riavvio la raffica si rivede subito'],
   ['features/antibot.js', 'raffiche', 'volatile', 'idem, e l\'allarme si rialza da solo se l\'attacco continua'],
