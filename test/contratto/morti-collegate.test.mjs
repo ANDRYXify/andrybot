@@ -48,8 +48,9 @@ test('la carta si basta da sola: fonti e contatori se li prende lei', () => {
   const carta = app.slice(app.indexOf('function _mortiCarta'), app.indexOf('function pannelloRegia'));
   assert.ok(!/_cons\.fonti/.test(carta), 'la carta si scrive dentro le fonti: se arrivano dopo, resta vuota');
   assert.ok(!/_conta/.test(carta), 'la carta si scrive dentro i contatori di un\'altra scheda');
-  assert.match(app, /async function _mortiConti\(\)[\s\S]*?api\('\/api\/contatori'\)/,
+  assert.match(app, /async function _mortiContiLista\(\)[\s\S]*?api\('\/api\/contatori'\)/,
     'i contatori non se li va a prendere nessuno');
+  assert.match(app, /_mortiCarica\(\)\.catch/, 'e nessuno li va a prendere quando la carta si apre');
   assert.match(app, /_mortiFonti\(\);\s*\n\}\s*\n\s*function segnaScenaViva/,
     'quando le fonti del programma arrivano, il menu non si aggiorna');
 });

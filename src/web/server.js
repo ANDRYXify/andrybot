@@ -21,7 +21,7 @@ import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andr
 import * as licenza from '../licenza.js';      // il nome con cui questo software si presenta
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi } from '../db.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
@@ -53,6 +53,7 @@ import * as presenze from '../features/presenze.js';
 import * as statistiche from '../features/statistiche.js';
 import * as rapporto from '../features/rapporto.js';
 import * as morti from '../features/morti.js';
+import * as gsi from '../features/gsi.js';
 import * as posta from '../features/posta.js';
 import * as donazioni from '../features/donazioni.js';
 import * as donaStripe from '../features/donazioni-stripe.js';
@@ -5081,6 +5082,80 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   app.post('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
   app.get('/api/console/:login/tasto/:id', guardiaConsole, consoleTasto);
+
+  // ── I GIOCHI CHE LO DICONO DA SOLI ────────────────────────────────────────
+  //
+  // A bussare qui non e' un browser: e' il gioco, sul computer di chi streama,
+  // che manda il proprio stato a un indirizzo scritto in un file di
+  // configurazione dentro la sua cartella. Nessuna sessione, quindi, e nessun
+  // pannello aperto: funziona anche se sul quel computer c'e' solo il gioco.
+  //
+  // IL CORPO NON SI SCRIVE DA NESSUNA PARTE, nemmeno negli errori: dentro c'e'
+  // l'identificativo del suo account di gioco, e non e' roba nostra.
+  //
+  // E un solo esito per «canale che non esiste» e «chiave sbagliata»: questo
+  // indirizzo sta in un file su un disco, in una cartella che si condivide, e
+  // non deve raccontare a chi lo trova se quel canale esista.
+  app.post('/api/gsi/:login', wrap(async (req, res) => {
+    const login = String(req.params.login || '').toLowerCase();
+    if (!streamers.get(login) || !gsi.chiaveOk(login, req.body?.auth?.token)) return res.status(403).json({ ok: false });
+    if (gsi.troppiColpi(login)) return res.status(429).json({ ok: false });
+
+    const letto = gsi.leggi(req.body);
+    if (!letto) return res.json({ ok: true });
+
+    const r = gsi.salto(gsiStato.prendi(login), letto);
+    if (r.stato) gsiStato.metti(login, r.stato);
+    if (!r.morti) return res.json({ ok: true });
+
+    // Fuori diretta si legge ma non si conta: le partite di prova e quelle del
+    // pomeriggio non devono sporcare il numero della serata. E' la stessa regola
+    // che vale per la schermata riconosciuta: una sola, non due.
+    if (!rapporto.inCorso(login)) return res.json({ ok: true });
+
+    const cfg = morti.normalizza(streamers.get(login)?.settings?.morti);
+    const contatore = cfg.gsi[letto.gioco];
+    if (!contatore) return res.json({ ok: true });
+    for (let i = 0; i < r.morti; i++) {
+      consolle.esegui(login, 'contatore:piu:' + contatore, {
+        say: (t) => { try { manager.say(login, t); } catch { /* niente */ } },
+        emit: (p) => { try { effects.emit(login, p); } catch { /* niente */ } },
+        effetti: effects,
+      });
+    }
+    res.json({ ok: true });
+  }));
+
+  // Il pannello: l'indirizzo, i giochi che sappiamo, e quando hanno parlato.
+  app.get('/api/streamer/morti/gsi', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const st = gsiStato.prendi(login);
+    res.json({
+      indirizzo: `${config.baseUrl}/api/gsi/${login}`,
+      giochi: gsi.GIOCHI.map((g) => ({ id: g.id, nome: g.nome, cartella: g.cartella, file: gsi.nomeFile(g.id) })),
+      ultimo: st?.quando || 0,
+      quale: st?.partita ? String(st.partita).split('|')[0] : '',
+    });
+  }));
+
+  // Il file da mettere nella cartella del gioco. Lo compone il server perche' e'
+  // il server a sapere la chiave: il pannello non la vede mai passare.
+  app.get('/api/streamer/morti/gsi/file', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const id = String(req.query.gioco || '');
+    const testo = gsi.configurazione({ gioco: id, indirizzo: `${config.baseUrl}/api/gsi/${login}`, chiave: gsi.chiave(login) });
+    if (!testo) return res.status(400).json({ errore: 'gioco sconosciuto' });
+    res.setHeader('content-type', 'text/plain; charset=utf-8');
+    res.setHeader('content-disposition', `attachment; filename="${gsi.nomeFile(id)}"`);
+    res.send(testo);
+  }));
+
+  app.post('/api/streamer/morti/gsi/revoca', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    gsi.revoca(login);
+    gsiStato.scorda(login);
+    res.json({ ok: true });
+  }));
 
   // Un'azione della console fatta fare DAL PANNELLO, da chi e' entrato. La strada
   // e' la stessa (consolle.esegui): un secondo modo di far salire un contatore

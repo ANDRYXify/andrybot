@@ -8,6 +8,7 @@
 // un'immagine: da una firma non si torna indietro a quello che c'era sullo
 // schermo, ed e' per questo che si puo' tenere qui senza tenere niente di tuo.
 import { normComando } from '../db.js';
+import { GIOCHI } from './gsi.js';
 
 export const MAX_SCHERMATE = 8;
 // Una schermata di morte quasi mai e' un fotogramma solo: entra in dissolvenza,
@@ -46,7 +47,17 @@ export function normalizza(b) {
     .filter((s) => s.firme.length && s.contatore)
     .filter((s) => { const k = s.firme.join(',') + '|' + s.contatore; if (viste.has(k)) return false; viste.add(k); return true; })
     .slice(0, MAX_SCHERMATE);
+  // I giochi che lo dicono da soli: per ognuno, quale contatore far salire.
+  // Nessun contatore vuol dire spento per quel gioco — non c'e' un interruttore
+  // a parte che possa dire il contrario di quello che c'e' scritto qui.
+  const gsi = {};
+  const dentro = (o.gsi && typeof o.gsi === 'object') ? o.gsi : {};
+  for (const g of GIOCHI) {
+    const c = normComando(String(dentro[g.id] || ''));
+    if (c) gsi[g.id] = c;
+  }
   return {
+    gsi,
     attivo: !!o.attivo && schermate.length > 0,
     fonte: String(o.fonte || '').slice(0, 120),
     ogniMs: tra(o.ogniMs, OGNI_MIN_MS, OGNI_MAX_MS, OGNI_DEF_MS),

@@ -107,8 +107,17 @@ if (process.argv.includes('--selftest')) {
 }
 
 const trovate = [];
+
+// L'APOSTROFO SCRITTO CON LA BARRA. Dentro una stringa fra apici singoli, «c'e»
+// si scrive «c\\'e»: la barra sta li' solo per il codice, ma spezza la parola e
+// la regola non la trova piu'. E' successo davvero — «non c'e' niente» e «il
+// numero e' quello» sono finiti nel pannello e questo cancello e' rimasto verde.
+// Qui la barra si toglie PRIMA di guardare, cosi' il cancello legge la frase come
+// la legge chi la vede a schermo, che e' l'unica cosa che conta.
+const comeSiLegge = (t) => String(t).replace(/\\(['"`])/g, '$1');
+
 for (const [file, estrai] of POSTI) {
-  const testo = estrai(leggi(file));
+  const testo = comeSiLegge(estrai(leggi(file)));
   for (const riga of testo.split('\n')) {
     for (const m of riga.matchAll(RE_PAROLE)) trovate.push({ file, parola: m[1], giusta: PAROLE[m[1]], riga: riga.trim().slice(0, 90) });
     for (const m of riga.matchAll(RE_VERBO)) trovate.push({ file, parola: m[1], giusta: GIUSTA[m[1]], riga: riga.trim().slice(0, 90) });

@@ -140,7 +140,7 @@ for (const r of rotte) {
 //    avere la chiave del suo schermo. Il motivo nell'elenco descriveva il buco,
 //    e l'elenco lo benediceva. Quindi l'elenco non basta: una rotta senza
 //    guardiano non puo' nemmeno NOMINARE una funzione che produce una chiave.
-const FABBRICHE = /\b(overlayKey|overlayUrl|mediaUrl|nuovaChiave)\s*\(|consolle\.chiave\s*\(/;
+const FABBRICHE = /\b(overlayKey|overlayUrl|mediaUrl|nuovaChiave)\s*\(|(consolle|gsi)\.chiave\s*\(/;
 for (const r of senza) {
   if (FABBRICHE.test(r.corpo)) guai.push(`${r.chiave}: e' pubblica ma tocca una chiave`);
 }

@@ -518,6 +518,12 @@ CREATE TABLE IF NOT EXISTS tg_attesa (    -- chi e' entrato nel gruppo e deve an
   PRIMARY KEY (channel, chat_id, tg_user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_tgattesa_scad ON tg_attesa(scad);
+CREATE TABLE IF NOT EXISTS gsi_stato (     -- l'ultimo numero che il gioco ha detto di se'
+  channel TEXT PRIMARY KEY,                -- login twitch
+  partita TEXT NOT NULL DEFAULT '',        -- gioco + partita: quando cambia, si ribasa
+  morti INTEGER NOT NULL DEFAULT 0,        -- il TOTALE di quella partita, non un conto nostro
+  quando INTEGER NOT NULL DEFAULT 0        -- l'ultima volta che il gioco ha parlato
+);
 CREATE TABLE IF NOT EXISTS giochi (          -- giochi personalizzati per canale (manche)
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
@@ -2623,6 +2629,27 @@ export const tgAttesa = {
   },
   quanti(channel) {
     return db.prepare('SELECT COUNT(*) n FROM tg_attesa WHERE channel=?').get(String(channel).toLowerCase())?.n || 0;
+  },
+};
+
+// I GIOCHI CHE PARLANO DA SOLI: dove ci si ricorda a che punto erano.
+//
+// Sta nel database e non in memoria per un motivo solo, ed e' quello che conta:
+// se stesse in memoria, il primo messaggio dopo un riavvio del bot troverebbe un
+// ricordo vuoto e conterebbe di colpo tutte le morti della partita in corso.
+export const gsiStato = {
+  prendi(channel) {
+    const r = db.prepare('SELECT partita, morti, quando FROM gsi_stato WHERE channel=?')
+      .get(String(channel).toLowerCase());
+    return r ? { partita: r.partita, morti: r.morti, quando: r.quando } : null;
+  },
+  metti(channel, { partita = '', morti = 0, quando = now() } = {}) {
+    db.prepare(`INSERT INTO gsi_stato (channel, partita, morti, quando) VALUES (?,?,?,?)
+      ON CONFLICT(channel) DO UPDATE SET partita=excluded.partita, morti=excluded.morti, quando=excluded.quando`)
+      .run(String(channel).toLowerCase(), String(partita || ''), Number(morti) || 0, Number(quando) || now());
+  },
+  scorda(channel) {
+    db.prepare('DELETE FROM gsi_stato WHERE channel=?').run(String(channel).toLowerCase());
   },
 };
 
