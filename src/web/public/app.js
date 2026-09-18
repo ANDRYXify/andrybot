@@ -18989,20 +18989,33 @@ async function caricaCodiciPosta() {
     : `<p class="vuoto">${L('Nessun codice per questo mese.', 'No code for this month.', 'Ningún código para este mes.')}</p>`;
 }
 
+let _statTimer = null;
+function _statSegui(vivo) {
+  clearTimeout(_statTimer);
+  _statTimer = null;
+  if (!vivo) return;
+  _statTimer = setTimeout(() => {
+    if (!document.getElementById('griglia-stat')) return;
+    if (document.hidden) return _statSegui(true);
+    caricaStatistiche().catch(() => {});
+  }, 30_000);
+}
+
 async function caricaStatistiche() {
   const griglia = document.getElementById('griglia-stat');
-  if (!griglia) return;
+  if (!griglia) { clearTimeout(_statTimer); _statTimer = null; return; }
   document.querySelectorAll('[data-stat-periodo]').forEach((b) => b.classList.toggle('scelto', b.dataset.statPeriodo === _statPeriodo));
   let s;
   try { s = await api('/api/streamer/statistiche?periodo=' + encodeURIComponent(_statPeriodo)); }
   catch (e) { griglia.innerHTML = `<div class="vuoto">${L('Errore:', 'Error:', 'Error:')} ${esc(e.message)}</div>`; return; }
 
   const d = s.dirette || {};
-  const riquadro = (n, et) => `<div class="stat"><div class="numero">${esc(n)}</div><div class="etichetta">${esc(et)}</div></div>`;
+  const vivo = d.inCorso || null;
+  const riquadro = (n, et, ora) => `<div class="stat${ora ? ' in-onda' : ''}"><div class="numero">${esc(n)}</div><div class="etichetta">${esc(et)}</div>${ora ? `<span class="stat-vivo">${L('adesso', 'now', 'ahora')}</span>` : ''}</div>`;
   griglia.innerHTML = [
-    riquadro(_statNum(d.n), L('dirette', 'streams', 'directos')),
-    riquadro(_statOre(Math.round((d.oreMs || 0) / 1000)), L('in onda', 'on air', 'en antena')),
-    riquadro(_statNum(d.picco), L('picco di spettatori', 'viewer peak', 'pico de espectadores')),
+    riquadro(_statNum(d.n), L('dirette', 'streams', 'directos'), !!vivo),
+    riquadro(_statOre(Math.round((d.oreMs || 0) / 1000)), L('in onda', 'on air', 'en antena'), !!vivo),
+    riquadro(_statNum(d.picco), L('picco di spettatori', 'viewer peak', 'pico de espectadores'), !!vivo),
     riquadro(_statNum(s.messaggi), L('messaggi in chat', 'chat messages', 'mensajes en el chat')),
     riquadro(_statNum(s.persone), L('persone che hanno scritto', 'people who wrote', 'personas que escribieron')),
     riquadro(_statNum(s.messaggiBot), L('interventi del bot', 'bot messages', 'intervenciones del bot')),
@@ -19012,6 +19025,8 @@ async function caricaStatistiche() {
     riquadro(_statNum(s.clip), 'clip'),
     d.donazioni ? riquadro(((d.donazioniCent || 0) / 100).toFixed(2).replace('.', ',') + ' €', L(`donazioni (${d.donazioni})`, `donations (${d.donazioni})`, `donaciones (${d.donazioni})`)) : '',
   ].filter(Boolean).join('');
+
+  _statSegui(!!vivo);
 
   const fila = (n) => `${n} ${n === 1 ? L('diretta di fila', 'stream in a row', 'directo seguido') : L('dirette di fila', 'streams in a row', 'directos seguidos')}`;
   _statGara('lista-presenze', (s.presenze || []).map((p) => ({ chi: p.user, quanto: `${fila(p.serie)} · ${p.dirette} ${L('in tutto', 'overall', 'en total')}` })),

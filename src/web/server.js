@@ -4839,7 +4839,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   }));
 
   app.get('/api/streamer/statistiche', requireLogin, wrap(async (req, res) => {
-    res.json(statistiche.riassunto(currentUser(req).login, { periodo: req.query.periodo }));
+    // la serata in corso la sa il rapporto, che la sta gia' seguendo: di qui passa
+    // solo, cosi' non nascono due conti della stessa cosa
+    const login = currentUser(req).login;
+    res.json(statistiche.riassunto(login, { periodo: req.query.periodo, inCorso: rapporto.inCorso(login) }));
   }));
 
   // stato della "piccola rete che impara" per questo canale (cruscotto Panoramica)

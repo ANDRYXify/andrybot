@@ -18,10 +18,27 @@ test('il calcolo sta in un modulo, e la porta si limita a servirlo', () => {
   const srv = leggi('src/web/server.js');
   const riga = srv.split('\n').filter((r) => r.includes('statistiche.riassunto('));
   assert.equal(riga.length, 1, 'una sola riga lo chiama');
-  assert.match(riga[0], /statistiche\.riassunto\(currentUser\(req\)\.login, \{ periodo: req\.query\.periodo \}\)/,
-    'il canale viene da chi e\' entrato, il periodo dalla richiesta');
+  assert.match(riga[0], /statistiche\.riassunto\(login, \{ periodo: req\.query\.periodo, inCorso: rapporto\.inCorso\(login\) \}\)/,
+    'il canale viene da chi e\' entrato, il periodo dalla richiesta, e la diretta in corso da chi la sta gia\' seguendo');
+  const st0 = leggi('src/features/statistiche.js');
+  assert.ok(!/from '\.\/rapporto\.js'/.test(st0), 'i numeri non vanno a prendersi la sessione da soli: arriva da fuori');
   const porta = srv.slice(srv.indexOf("app.get('/api/streamer/statistiche'"), srv.indexOf("app.get('/api/streamer/statistiche'") + 220);
   assert.match(porta, /requireLogin/, 'e ha il suo guardiano');
+});
+
+// LA DIRETTA IN CORSO. Un rapporto nasce quando la serata finisce: finche' eri
+// in onda la scheda diceva zero dirette, zero minuti, zero picco, mentre i
+// messaggi salivano. Adesso la serata in corso si aggiunge — e solo per la parte
+// che sta DENTRO la finestra del periodo.
+test('la diretta in corso entra nei numeri, per la parte dentro il periodo', () => {
+  const st = leggi('src/features/statistiche.js');
+  assert.match(st, /function conInCorso\(ch, dirette, inCorso, da, ora\)/, 'c\'e\' un posto solo che la aggiunge');
+  assert.match(st, /const dentro = Math\.max\(Number\(da\) \|\| 0, Number\(inCorso\.inizio\)\);/,
+    'una serata cominciata prima del periodo porta dentro solo la sua parte di adesso');
+  assert.match(st, /n: dirette\.n \+ 1/);
+  assert.match(st, /picco: Math\.max\(dirette\.picco, intero\(inCorso\.picco\)\)/, 'il picco e\' il piu\' alto fra i due, non la somma');
+  const rap = leggi('src/features/rapporto.js');
+  assert.match(rap, /export function inCorso\(channel/, 'e la sessione la espone chi gia\' la tiene');
 });
 
 test('le dirette vengono dai rapporti, non da un secondo conto', () => {

@@ -27,7 +27,50 @@ export function periodoValido(p) {
 const intero = (v) => Math.trunc(Number(v)) || 0;
 const norm = (s) => String(s || '').toLowerCase();
 
-export function riassunto(channel, { periodo = '7', ora = Date.now(), n = 10 } = {}) {
+// LA DIRETTA IN CORSO NON ESISTEVA NEI NUMERI.
+//
+// I numeri delle dirette si sommano dai RAPPORTI, e un rapporto si scrive quando
+// la serata finisce. Finche' eri in onda la scheda diceva zero dirette, zero
+// minuti, zero picco — mentre i messaggi in chat, che sono righe nel database,
+// salivano. Da fuori sembrava rotta.
+//
+// La serata in corso arriva da FUORI (`inCorso`), da chi la sta gia' tenendo in
+// mano: il rapporto. Qui non si apre una seconda contabilita' della stessa cosa,
+// che poi sarebbe un secondo posto in cui il picco puo' essere diverso.
+//
+// Quello che aggiunge e' solo la sua PARTE DENTRO LA FINESTRA: una serata
+// cominciata prima dei sette giorni e ancora accesa non porta dentro le ore di
+// prima, porta quelle da quando comincia il periodo.
+function conInCorso(ch, dirette, inCorso, da, ora) {
+  if (!inCorso || !(Number(inCorso.inizio) > 0)) return dirette;
+  const dentro = Math.max(Number(da) || 0, Number(inCorso.inizio));
+  if (dentro > ora) return dirette;
+  const ev = db.prepare(`SELECT text FROM messages WHERE channel=? AND user='[evento]' AND ts>=? AND ts<=?`).all(ch, dentro, ora);
+  let follow = 0, sub = 0, raid = 0;
+  for (const r of ev) {
+    const t = String(r.text || '');
+    const tipo = t.slice(0, t.indexOf(' ') > 0 ? t.indexOf(' ') : t.length);
+    if (tipo === 'channel.follow') follow++;
+    else if (tipo === 'channel.subscribe') sub++;
+    else if (tipo === 'channel.subscription.gift') {
+      let n2 = 1;
+      try { n2 = Number(JSON.parse(t.slice(t.indexOf(' ') + 1))?.total) || 1; } catch { n2 = 1; }
+      sub += n2;
+    } else if (tipo === 'channel.raid') raid++;
+  }
+  return {
+    ...dirette,
+    n: dirette.n + 1,
+    oreMs: dirette.oreMs + Math.max(0, ora - dentro),
+    picco: Math.max(dirette.picco, intero(inCorso.picco)),
+    follow: dirette.follow + follow,
+    sub: dirette.sub + sub,
+    raid: dirette.raid + raid,
+    inCorso: { da: intero(inCorso.inizio), picco: intero(inCorso.picco), durataMs: Math.max(0, ora - intero(inCorso.inizio)) },
+  };
+}
+
+export function riassunto(channel, { periodo = '7', ora = Date.now(), n = 10, inCorso = null } = {}) {
   const ch = norm(channel);
   const p = periodoValido(periodo);
   const da = PERIODI[p] ? ora - PERIODI[p] : 0;
@@ -53,10 +96,10 @@ export function riassunto(channel, { periodo = '7', ora = Date.now(), n = 10 } =
       COALESCE(SUM(json_extract(dati,'$.donazioni')), 0) donazioni,
       COALESCE(SUM(json_extract(dati,'$.donazioniCent')), 0) donazioniCent
     FROM rapporti WHERE channel=? AND fine>=?`).get(ch, da);
-  const dirette = {
+  const dirette = conInCorso(ch, {
     n: intero(r.n), oreMs: intero(r.oreMs), picco: intero(r.picco), follow: intero(r.follow),
     sub: intero(r.sub), raid: intero(r.raid), donazioni: intero(r.donazioni), donazioniCent: intero(r.donazioniCent),
-  };
+  }, inCorso, da, ora);
 
   // Le ultime dirette NON dipendono dal periodo: sono l'elenco di com'e' andata
   // le ultime volte, e se uno guarda «sette giorni» dopo una pausa di un mese
