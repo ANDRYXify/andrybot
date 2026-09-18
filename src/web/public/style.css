@@ -1217,6 +1217,13 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 @media (hover: hover) {
 .cont-ov > summary:hover { color: var(--testo); }
 }
+.cont-verbi { flex-basis: 100%; margin-top: .35rem; }
+.cont-verbi > summary { cursor: pointer; font-size: .82rem; color: var(--testo-2); }
+.cont-verbi-form { padding: .5rem .2rem .2rem; }
+.cont-verbo { display: grid; grid-template-columns: minmax(9rem, 1.2fr) minmax(7rem, 1fr) auto; gap: .4rem; align-items: center; margin-bottom: .35rem; }
+.cont-verbo .cv-nome { font-size: .84rem; }
+.cont-verbo input, .cont-verbo select { min-width: 0; }
+@media (max-width: 620px) { .cont-verbo { grid-template-columns: 1fr; gap: .2rem; } }
 .cont-ov-form { padding: .6rem .2rem .2rem; }
 .cont-ov-form .riga-mostra { padding: .4rem .55rem; border: 1px solid var(--acc-bordo); border-radius: var(--r-s); background: var(--acc-soft); }
 .cont-fine { margin-top: .55rem; }

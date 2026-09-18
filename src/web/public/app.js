@@ -534,8 +534,10 @@ function _demoGet(via) {
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
     '/api/contatori': { contatori: [
       { comando: 'morti', etichetta: 'Morti', emoji: '', valore: 7, step: 1, auto_parola: '', reward_id: '',
+        verbiCfg: { leggi: { parole: [], chi: 'tutti' }, piu: { parole: ['+', 'add'], chi: 'mod' }, meno: { parole: ['-', 'meno'], chi: 'mod' }, azzera: { parole: ['reset', 'azzera'], chi: 'mod' }, imposta: { parole: ['set'], chi: 'mod' }, mostra: { parole: ['on', 'mostra'], chi: 'mod' }, nascondi: { parole: ['off', 'nascondi'], chi: 'mod' } },
         overlayCfg: { mostra: true, x: 50, y: 8, r: 0, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } },
       { comando: 'tentativi', etichetta: 'Tentativi', emoji: '', valore: 23, step: 1, auto_parola: '', reward_id: '',
+        verbiCfg: { leggi: { parole: [], chi: 'tutti' }, piu: { parole: ['+', 'add'], chi: 'mod' }, meno: { parole: ['-', 'meno'], chi: 'mod' }, azzera: { parole: ['reset', 'azzera'], chi: 'mod' }, imposta: { parole: ['set'], chi: 'mod' }, mostra: { parole: ['on', 'mostra'], chi: 'mod' }, nascondi: { parole: ['off', 'nascondi'], chi: 'mod' } },
         overlayCfg: { mostra: false, x: 50, y: 94, r: 0, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } },
     ] },
     '/api/streamer/comandi-pronti': { comandi: [
@@ -14630,7 +14632,7 @@ function carteContatori() {
           L('<strong>Accendilo a schermo</strong> scrivendo in chat <code>!morti on</code> (parte da 0 e appare nell’overlay). Lo spegni con <code>!morti off</code>.', '<strong>Turn it on screen</strong> by typing <code>!deaths on</code> in chat (starts from 0 and appears in the overlay). Turn it off with <code>!deaths off</code>.', '<strong>Enciéndelo en pantalla</strong> escribiendo <code>!muertes on</code> en el chat (empieza en 0 y aparece en el overlay). Lo apagas con <code>!muertes off</code>.'),
           L('<strong>Fallo salire</strong> (solo tu e i mod): <code>!morti+</code>, <code>!morti +3</code>, <code>!morti-</code>, <code>!morti reset</code>, <code>!morti set 10</code>. Chiunque può leggerlo con <code>!morti</code>.', '<strong>Make it go up</strong> (you and mods only): <code>!deaths+</code>, <code>!deaths +3</code>, <code>!deaths-</code>, <code>!deaths reset</code>, <code>!deaths set 10</code>. Anyone can read it with <code>!deaths</code>.', '<strong>Súbelo</strong> (solo tú y los mods): <code>!muertes+</code>, <code>!muertes +3</code>, <code>!muertes-</code>, <code>!muertes reset</code>, <code>!muertes set 10</code>. Cualquiera lo lee con <code>!muertes</code>.'),
           L('<strong>In automatico</strong>: metti una «parola automatica» (es. «lol») e il contatore sale da solo ogni volta che appare in chat; oppure premi «Crea premio» per collegarlo a un <strong>punto canale</strong>.', '<strong>Automatically</strong>: set an “auto word” (e.g. “lol”) and the counter rises on its own whenever it shows up in chat; or hit “Create reward” to link it to a <strong>channel point</strong>.', '<strong>En automático</strong>: pon una «palabra automática» (ej. «lol») y el contador sube solo cada vez que aparece en el chat; o pulsa «Crear premio» para vincularlo a un <strong>punto de canal</strong>.'),
-          L('<strong>Scegli dove appare</strong>: attiva «Mostra in overlay» e usa il menu <strong>Posizione a schermo</strong> (in alto a destra, in basso al centro…). Sotto puoi personalizzare colori, dimensione, font, formato del testo e le <strong>parole per accendere/spegnere</strong>.', '<strong>Choose where it shows</strong>: turn on “Show in overlay” and use the <strong>On-screen position</strong> menu (top right, bottom center…). Below you can customize colors, size, font, text format and the <strong>words to turn on/off</strong>.', '<strong>Elige dónde aparece</strong>: activa «Mostrar en overlay» y usa el menú <strong>Posición en pantalla</strong> (arriba a la derecha, abajo en el centro…). Debajo puedes personalizar colores, tamaño, fuente, formato del texto y las <strong>palabras para encender/apagar</strong>.'),
+          L('<strong>Scegli dove appare</strong>: attiva «Mostra in overlay» e usa il menu <strong>Posizione a schermo</strong> (in alto a destra, in basso al centro…). Sotto puoi personalizzare colori, dimensione, font, formato del testo.', '<strong>Choose where it shows</strong>: turn on “Show in overlay” and use the <strong>On-screen position</strong> menu (top right, bottom center…). Below you can customize colors, size, font, text format and the <strong>words to turn on/off</strong>.', '<strong>Elige dónde aparece</strong>: activa «Mostrar en overlay» y usa el menú <strong>Posición en pantalla</strong> (arriba a la derecha, abajo en el centro…). Debajo puedes personalizar colores, tamaño, fuente, formato del texto.'),
         ],
         note: [
           L('Il contatore usa lo <strong>stesso overlay della diretta</strong> di alert ed effetti: se ce l’hai già in OBS, non devi aggiungere nulla.', 'The counter uses the <strong>same stream overlay</strong> as alerts and effects: if it’s already in OBS, you don’t need to add anything.', 'El contador usa el <strong>mismo overlay del directo</strong> que las alertas y los efectos: si ya lo tienes en OBS, no hace falta añadir nada.'),
@@ -14653,6 +14655,60 @@ function carteContatori() {
       <input type="text" id="cont-parola" maxlength="40" placeholder="${esc(L('es. «lol» → +1 ogni volta che appare in chat', 'e.g. «lol» → +1 each time it appears in chat', 'ej. «lol» → +1 cada vez que aparece en el chat'))}">
       <p class="spazio-sopra"><button class="btn" id="cont-crea">${L('Crea contatore', 'Create counter', 'Crear contador')}</button></p>
     </div>`;
+}
+
+const VERBI_CONT_UI = [
+  ['leggi', ['Leggi', 'Read', 'Leer'], ['dice a che punto \u00e8', 'says where it stands', 'dice en qu\u00e9 punto est\u00e1']],
+  ['piu', ['Aggiungi', 'Add', 'Suma'], ['sale del passo, o del numero che scrivi', 'goes up by the step, or by the number you type', 'sube el paso, o el n\u00famero que escribas']],
+  ['meno', ['Togli', 'Subtract', 'Resta'], ['scende', 'goes down', 'baja']],
+  ['azzera', ['Azzera', 'Reset', 'Pon a cero'], ['torna a zero', 'back to zero', 'vuelve a cero']],
+  ['imposta', ['Imposta', 'Set', 'Fija'], ['lo porta al numero che scrivi', 'takes it to the number you type', 'lo lleva al n\u00famero que escribas']],
+  ['mostra', ['Mostra a schermo', 'Show on screen', 'Muestra en pantalla'], ['lo fa comparire, senza toccare il numero', 'makes it appear, without touching the number', 'lo hace aparecer, sin tocar el n\u00famero']],
+  ['nascondi', ['Nascondi', 'Hide', 'Oculta'], ['lo toglie dallo schermo', 'takes it off the screen', 'lo quita de la pantalla']],
+];
+const CHI_CONT = [['tutti', ['Tutti', 'Everyone', 'Todos']], ['sub', ['Solo sub', 'Subs only', 'Solo subs']],
+  ['vip', ['VIP e sopra', 'VIP and up', 'VIP y superiores']], ['mod', ['Mod e streamer', 'Mods and streamer', 'Mods y streamer']]];
+
+const _verbiDi = (c) => (c && c.verbiCfg && typeof c.verbiCfg === 'object') ? c.verbiCfg : {};
+
+function _verbiRiassunto(c) {
+  const v = _verbiDi(c);
+  const cmd = esc(c.comando);
+  const pezzi = [`<code>!${cmd}</code> <span class="tenue">${L('leggi', 'read', 'leer')}</span>`];
+  for (const [id, nome] of VERBI_CONT_UI) {
+    if (id === 'leggi') continue;
+    const parole = (v[id] && v[id].parole) || [];
+    if (!parole.length) continue;
+    const w = esc(parole[0]);
+    const come = /^[a-z0-9]/i.test(parole[0]) ? `!${cmd} ${w}` : `!${cmd}${w}`;
+    const altre = parole.length > 1 ? ` <span class="tenue">(+${parole.length - 1})</span>` : '';
+    pezzi.push(`<code>${come}</code>${altre} <span class="tenue">${esc(L(nome[0], nome[1], nome[2]).toLowerCase())}</span>`);
+  }
+  return pezzi.join(' \u00b7 ');
+}
+
+function _verbiContHtml(c) {
+  const v = _verbiDi(c);
+  const righe = VERBI_CONT_UI.map(([id, nome, che]) => {
+    const r = v[id] || { parole: [], chi: 'mod' };
+    const parole = (r.parole || []).join(' ');
+    const opt = CHI_CONT.map(([k, n]) => `<option value="${k}"${r.chi === k ? ' selected' : ''}>${esc(L(n[0], n[1], n[2]))}</option>`).join('');
+    const eti = esc(L(nome[0], nome[1], nome[2]));
+    return `<div class="cont-verbo" data-verbo="${id}">
+      <span class="cv-nome">${eti}<span class="tenue"> \u2014 ${esc(L(che[0], che[1], che[2]))}</span></span>
+      <input type="text" data-vk="parole" maxlength="80" value="${esc(parole)}" aria-label="${eti} \u2014 ${esc(L('parole', 'words', 'palabras'))}"
+        placeholder="${id === 'leggi' ? esc(L('il nome da solo', 'the name alone', 'el nombre solo')) : esc(L('una o pi\u00f9 parole', 'one or more words', 'una o m\u00e1s palabras'))}"${id === 'leggi' ? ' disabled' : ''}>
+      <select data-vk="chi" aria-label="${eti} \u2014 ${esc(L('chi pu\u00f2', 'who can', 'qui\u00e9n puede'))}">${opt}</select>
+    </div>`;
+  }).join('');
+  return `<details class="cont-verbi">
+    <summary>${L('Comandi e permessi', 'Commands and permissions', 'Comandos y permisos')}</summary>
+    <div class="cont-verbi-form" data-vbform="${esc(c.comando)}">
+      <p class="suggerimento">${L('Le parole le scegli tu, separate da uno spazio. Il numero vale attaccato o staccato: <code>+3</code> e <code>+ 3</code> sono la stessa cosa. Lascia vuoto per togliere quel comando.', 'You pick the words, separated by a space. The number works attached or apart: <code>+3</code> and <code>+ 3</code> are the same. Leave empty to remove that command.', 'T\u00fa eliges las palabras, separadas por un espacio. El n\u00famero vale junto o separado: <code>+3</code> y <code>+ 3</code> son lo mismo. D\u00e9jalo vac\u00edo para quitar ese comando.')}</p>
+      ${righe}
+      <p><button type="button" class="btn secondario mini" data-ca="salva-verbi" data-cmd="${esc(c.comando)}">${L('Salva comandi', 'Save commands', 'Guardar comandos')}</button></p>
+    </div>
+  </details>`;
 }
 
 async function caricaContatori() {
@@ -14699,10 +14755,11 @@ async function caricaContatori() {
       </span>
       <div class="cont-comandi">
         <span class="cont-comandi-tit">${L('Comandi in chat', 'Chat commands', 'Comandos en el chat')}</span>
-        <code>!${esc(c.comando)}</code> <span class="tenue">${L('leggi', 'read', 'leer')}</span>
-        · <code>!${esc(c.comando)} on</code> / <code>!${esc(c.comando)} off</code> <span class="tenue">${L('accendi/spegni a schermo (parte da 0)', 'show/hide on screen (starts from 0)', 'encender/apagar en pantalla (empieza en 0)')}</span>
-        · <code>!${esc(c.comando)}+</code> <code>!${esc(c.comando)} +3</code> <code>!${esc(c.comando)}-</code> <code>!${esc(c.comando)} reset</code> <code>!${esc(c.comando)} set 10</code> <span class="tenue">(${L('solo mod/streamer', 'mods/streamer only', 'solo mods/streamer')})</span>
+        ${_verbiRiassunto(c)}
+
+
       </div>
+      ${_verbiContHtml(c)}
       <details class="cont-ov">
         <summary>${L('Personalizza l\'aspetto a schermo (overlay)', 'Customize the on-screen look (overlay)', 'Personaliza el aspecto en pantalla (overlay)')}</summary>
         <div class="cont-ov-form" data-ovform="${esc(c.comando)}">
@@ -14729,11 +14786,6 @@ async function caricaContatori() {
           <label class="campo spazio-sopra">${L('Formato del testo', 'Text format', 'Formato del texto')}</label>
           <input type="text" data-ovk="formato" maxlength="80" aria-label="${esc(L('Formato del testo', 'Text format', 'Formato del texto') + ' — ' + (c.etichetta || c.comando))}" value="${esc(o.formato || '{emoji} {etichetta}: {valore}')}" placeholder="{emoji} {etichetta}: {valore}">
           <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{emoji}</code> <code>{etichetta}</code> <code>{valore}</code></p>
-          <div class="griglia-campi spazio-sopra">
-            <div><label class="campo">${L('Parola per ACCENDERE', 'Word to TURN ON', 'Palabra para ENCENDER')}</label><input aria-label="${esc(L('Parola per ACCENDERE', 'Word to TURN ON', 'Palabra para ENCENDER'))}" type="text" data-ovk="parolaOn" maxlength="60" value="${esc(o.parolaOn || '')}" placeholder="es. acceso, ok, vai"></div>
-            <div><label class="campo">${L('Parola per SPEGNERE', 'Word to TURN OFF', 'Palabra para APAGAR')}</label><input aria-label="${esc(L('Parola per SPEGNERE', 'Word to TURN OFF', 'Palabra para APAGAR'))}" type="text" data-ovk="parolaOff" maxlength="60" value="${esc(o.parolaOff || '')}" placeholder="es. spento, stop"></div>
-          </div>
-          <p class="suggerimento">${L('Parole extra per <code>!' + esc(c.comando) + ' &lt;parola&gt;</code> (oltre alle standard on/acceso/ok/vai · off/spento/stop). Separale con virgole.', 'Extra words for <code>!' + esc(c.comando) + ' &lt;word&gt;</code> (besides the defaults on/ok/go · off/stop). Comma-separated.', 'Palabras extra para <code>!' + esc(c.comando) + ' &lt;palabra&gt;</code> (además de las estándar on/ok/vai · off/stop). Sepáralas con comas.')}</p>
           <p><button type="button" class="btn secondario mini" data-ca="salva-ov" data-cmd="${esc(c.comando)}">${L('Salva aspetto', 'Save look', 'Guardar aspecto')}</button></p>
         </div>
       </details>
@@ -14753,6 +14805,20 @@ async function caricaContatori() {
     const b = ev.target.closest('[data-ca]'); if (!b) return;
     const cmd = b.dataset.cmd, az = b.dataset.ca;
     conErrore(async () => {
+      if (az === 'salva-verbi') {
+        const form = box.querySelector(`[data-vbform="${cmd}"]`); if (!form) return;
+        const verbi = {};
+        for (const r of form.querySelectorAll('.cont-verbo')) {
+          verbi[r.dataset.verbo] = {
+            parole: String(r.querySelector('[data-vk="parole"]')?.value || '').split(/[\s,]+/).filter(Boolean),
+            chi: r.querySelector('[data-vk="chi"]')?.value || 'mod',
+          };
+        }
+        await api('/api/contatori', { method: 'POST', body: { comando: cmd, verbi } });
+        toast(L('Comandi salvati \u2713', 'Commands saved \u2713', 'Comandos guardados \u2713'));
+        caricaContatori();
+        return;
+      }
       if (az === 'salva-ov') {
         const form = box.querySelector(`[data-ovform="${cmd}"]`); if (!form) return;
         const g = (k) => form.querySelector(`[data-ovk="${k}"]`);
@@ -14768,7 +14834,7 @@ async function caricaContatori() {
         toast(L('Aspetto salvato ✓ (aggiornato nell\'overlay)', 'Look saved ✓ (updated in overlay)', 'Aspecto guardado ✓ (actualizado en el overlay)'));
         return;
       }
-      if (az === 'on') { await api('/api/contatori', { method: 'POST', body: { comando: cmd, valore: 0, overlay: { mostra: true } } }); toast(L('Contatore acceso a schermo ✓ (da 0)', 'Counter shown on screen ✓ (from 0)', 'Contador encendido en pantalla ✓ (desde 0)')); }
+      if (az === 'on') { await api('/api/contatori', { method: 'POST', body: { comando: cmd, overlay: { mostra: true } } }); toast(L('Contatore a schermo \u2713', 'Counter on screen \u2713', 'Contador en pantalla \u2713')); }
       else if (az === 'off') { await api('/api/contatori', { method: 'POST', body: { comando: cmd, overlay: { mostra: false } } }); toast(L('Contatore tolto dallo schermo.', 'Counter hidden from screen.', 'Contador quitado de la pantalla.')); }
       else if (az === 'piu') await salvaVal(cmd, (Number(b.dataset.val) || 0) + (Number(b.dataset.step) || 1));
       else if (az === 'meno') await salvaVal(cmd, (Number(b.dataset.val) || 0) - (Number(b.dataset.step) || 1));

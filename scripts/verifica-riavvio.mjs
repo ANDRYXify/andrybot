@@ -68,6 +68,7 @@ const DECISO = [
   ['features/cartalive.js', '_facce', 'volatile', 'cache degli avatar'],
   ['features/cartalive.js', '_cercati', 'volatile', 'cache delle facce cercate su Helix'],
   ['features/bit.js', 'cache', 'volatile', 'la classifica dei Bit di Twitch, tenuta per tre minuti: al riavvio si richiede, e chiederla di nuovo costa una chiamata, non un dato perso'],
+  ['features/contatori.js', 'rifiutato', 'volatile', 'l\'ultima volta che si e\' detto a qualcuno che un comando non e\' suo: perderlo vale un "riservato a..." in piu\' subito dopo una pubblicazione, scriverlo costerebbe un giro sul disco a ogni rifiuto'],
   ['features/clips.js', '_inCorso', 'volatile', 'clip gia\' in volo: al riavvio nessuna e\' in volo'],
   ['features/clips.js', '_buf', 'volatile', 'ritmo recente della chat, finestra corta'],
   ['features/clips.js', '_boost', 'volatile', 'evento recente che alza la soglia'],
