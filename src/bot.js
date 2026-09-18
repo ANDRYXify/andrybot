@@ -428,7 +428,10 @@ export class BotManager {
       return;
     }
     if (tipo === 'hype' || tipo === 'rilancio' || tipo === 'iniziativa') {
-      Promise.resolve().then(() => this.brain.iniziativa(login, { spunto }))
+      // L'aggancio viene da chi la chat ce l'ha in mano: e' l'ultima riga detta
+      // ALLA STANZA, non l'ultima riga qualunque. Il cervello dice la sua su
+      // quella, invece di pescarsela da solo.
+      Promise.resolve().then(() => this.brain.iniziativa(login, { spunto, aggancio: momento.aggancio }))
         .then((t) => this._dettaDaSoloConCalma(login, tipo, t))
         .catch((e) => log.debug(`#${login} ${tipo}:`, e?.message || e));
       return;
@@ -802,7 +805,7 @@ export class BotManager {
     onMessage(msg).catch(e => log.error(`#${login} gestione messaggio:`, e?.message || e));
     if (filigrana.eCanarino(msg.text) && canarinoLibero(login)) { parla(filigrana.rispostaCanarino(licenza.firma())); return; }
     if (!msg.piattaforma || msg.piattaforma === 'twitch') {
-      try { this._momenti.osserva(login, { ts: Date.now(), user: msg.user, display: msg.display, testo: msg.text, isSelf: !!msg.isSelf, id: msg.id }); }
+      try { this._momenti.osserva(login, { ts: Date.now(), user: msg.user, display: msg.display, testo: msg.text, isSelf: !!msg.isSelf, id: msg.id, rispostaA: msg.rispostaA }); }
       catch (e) { log.debug(`#${login} momenti:`, e?.message || e); }
     }
     if (!msg.isSelf) this.clips.onActivity(msg);   // rilevatore "hype" per le clip automatiche (chat)

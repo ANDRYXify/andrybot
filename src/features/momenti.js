@@ -28,11 +28,43 @@ export const FLUSSO_RITMO_MIN = 1;          // il discorso «scorre» da un mess
 export const FLUSSO_ULTIMA_MS = 90_000;     // ...e l'ultima riga non e' vecchia
 
 const norm = (s) => String(s || '').toLowerCase().trim();
-const eDomanda = (t) => {
-  const s = String(t || '').trim();
-  if (s.length < 8 || s.startsWith('!') || s.startsWith('/') || s.includes('@')) return false;
-  return /\?\s*$/.test(s);
-};
+
+// PER LA STANZA, O PER UNA PERSONA?
+//
+// La regola piu' importante di tutto il modulo, e per un po' e' esistita solo a
+// meta': la conosceva chi cerca le domande lasciate sole, non chi decide su cosa
+// dire la propria. Il risultato si e' visto in chat — il bot si e' agganciato a
+// una riga che era una risposta a un altro, con dentro una @, e ci ha commentato
+// sopra. Non e' una frase sbagliata: e' entrare in mezzo a un discorso fra due
+// persone e dire la propria sull'ultima cosa sentita. Chiunque farebbe quella
+// figura.
+//
+// Una riga e' per la stanza quando non e' di nessuno in particolare: non e' un
+// comando, non chiama qualcuno per nome, non e' una risposta appesa a un altro
+// messaggio (Twitch lo dichiara nei suoi tag), e ha abbastanza dentro da dire
+// qualcosa. Tutto il resto e' roba di due, e non ci si intromette.
+export function perLaStanza(riga) {
+  // Si accetta una riga o il suo testo, ma DICHIARANDOLO: con un `riga || {}` la
+  // stringa vuota diventava un oggetto senza testo, e da li' in poi si giudicava
+  // «[object Object]» — che non e' un comando, non ha una @, e passava.
+  const r = (riga && typeof riga === 'object') ? riga : { testo: riga };
+  const t = String(r.testo ?? '').trim();
+  if (!t) return false;
+  if (t.startsWith('!') || t.startsWith('/')) return false;
+  if (t.includes('@')) return false;
+  if (String(r.rispostaA || '')) return false;
+  return true;
+}
+
+// E DENTRO C'E' QUALCOSA DA DIRE? E' un'altra domanda, e per un po' le ho tenute
+// insieme: la lunghezza non c'entra niente con «a chi e' rivolta». «bravo!» e'
+// detto a tutti — e' per la stanza — ma non offre niente su cui dire la propria.
+// Servono tutte e due, e separate: chi vuole sapere di chi e' una riga chiede la
+// prima, chi ci si vuole agganciare chiede questa.
+const testoDi = (r) => String((r && typeof r === 'object') ? (r.testo ?? '') : (r ?? '')).trim();
+export const daDire = (r) => perLaStanza(r) && testoDi(r).length >= 8;
+
+const eDomanda = (r) => daDire(r) && /\?\s*$/.test(testoDi(r));
 
 export class Momenti {
   constructor() { this._canali = new Map(); }
@@ -46,16 +78,16 @@ export class Momenti {
 
   // Ogni riga che passa in chat, comprese quelle del bot (dalBot) e dello
   // streamer (isSelf): senza le sue non si saprebbe se una domanda ha avuto risposta.
-  osserva(login, { ts, user, display, testo, isSelf = false, dalBot = false, id = '' } = {}) {
+  osserva(login, { ts, user, display, testo, isSelf = false, dalBot = false, id = '', rispostaA = '' } = {}) {
     const st = this._stato(login);
-    const riga = { ts: Number(ts) || Date.now(), user: norm(user), display: display || user || '', testo: String(testo || ''), isSelf: !!isSelf, dalBot: !!dalBot, id: String(id || '') };
+    const riga = { ts: Number(ts) || Date.now(), user: norm(user), display: display || user || '', testo: String(testo || ''), isSelf: !!isSelf, dalBot: !!dalBot, id: String(id || ''), rispostaA: String(rispostaA || '') };
     st.righe.push(riga);
     while (st.righe.length > RIGHE_MAX) st.righe.shift();
 
     // Una riga di QUALCUN ALTRO chiude le domande aperte: o le ha risposte, o il
     // discorso e' andato avanti e non tocca a noi tornare indietro.
     for (const [k, d] of st.domande) if (d.user !== riga.user) st.domande.delete(k);
-    if (!riga.isSelf && !riga.dalBot && eDomanda(riga.testo)) {
+    if (!riga.isSelf && !riga.dalBot && eDomanda(riga)) {
       st.domande.set(riga.id || String(riga.ts), { ts: riga.ts, user: riga.user, display: riga.display, testo: riga.testo, id: riga.id });
     }
   }
@@ -69,6 +101,11 @@ export class Momenti {
     const righe = st.righe;
     const ultima = righe[righe.length - 1];
     const ultimaVoce = [...righe].reverse().find((r) => !r.dalBot);
+    // LA RIGA A CUI CI SI PUO' AGGANCIARE. La sceglie chi la chat ce l'ha in
+    // mano, non chi scrive la frase: e' l'ultima riga che parlava ALLA STANZA.
+    // Senza, non c'e' niente su cui dire la propria — e i momenti che vivono di
+    // aggancio non nascono nemmeno.
+    const aggancio = [...righe].reverse().find((r) => !r.dalBot && !r.isSelf && daDire(r)) || null;
 
     // se lo streamer ha appena scritto, la chat e' sua: si lascia a lui
     const streamerAdesso = [...righe].reverse().find((r) => r.isSelf);
@@ -92,8 +129,8 @@ export class Momenti {
     if (recenti.length >= HYPE_RIGHE && persone >= HYPE_PERSONE && ora - st.ultimoHype > HYPE_RIPOSO_MS && !inMano) {
       const prima = righe.filter((r) => !r.dalBot && ora - r.ts > HYPE_FINESTRA_MS && ora - r.ts <= 5 * 60_000 + HYPE_FINESTRA_MS);
       const ritmoPrima = prima.length / 10;   // per mezzo minuto, sui cinque minuti prima
-      if (recenti.length >= ritmoPrima * HYPE_RAPPORTO) {
-        out.push({ tipo: 'hype', dati: { righe: recenti.length, persone }, spunto: `la chat e' esplosa adesso: ${recenti.length} messaggi in mezzo minuto da ${persone} persone diverse` });
+      if (recenti.length >= ritmoPrima * HYPE_RAPPORTO && aggancio) {
+        out.push({ tipo: 'hype', dati: { righe: recenti.length, persone }, aggancio, spunto: `la chat e' esplosa adesso: ${recenti.length} messaggi in mezzo minuto da ${persone} persone diverse` });
       }
     }
 
@@ -101,16 +138,23 @@ export class Momenti {
     if (live && ultimaVoce && ora - ultimaVoce.ts >= SILENZIO_MS && st.rilanciatoA !== ultimaVoce.ts && !inMano) {
       const vive = righe.filter((r) => !r.dalBot && !r.isSelf && ultimaVoce.ts - r.ts <= VIVA_FINESTRA_MS);
       const gente = new Set(vive.map((r) => r.user)).size;
-      if (vive.length >= VIVA_RIGHE && gente >= VIVA_PERSONE) {
+      // di cosa si parlava: solo quello che era per la stanza. Rilanciare su un
+      // discorso privato fra due e' lo stesso sbaglio, fatto in ritardo.
+      const diCosa = vive.filter(perLaStanza);
+      if (vive.length >= VIVA_RIGHE && gente >= VIVA_PERSONE && diCosa.length) {
         const minuti = Math.round((ora - ultimaVoce.ts) / 60_000);
-        out.push({ tipo: 'rilancio', dati: { minuti, ultime: vive.slice(-3).map((r) => r.testo) }, spunto: `la chat si e' fermata da ${minuti} minuti dopo un momento vivo: rilancia con una domanda leggera legata a quello di cui si parlava, senza salutare` });
+        out.push({ tipo: 'rilancio', dati: { minuti, ultime: diCosa.slice(-3).map((r) => r.testo) }, aggancio: [...diCosa].reverse().find(daDire) || null, spunto: `la chat si e' fermata da ${minuti} minuti dopo un momento vivo: rilancia con una domanda leggera legata a quello di cui si parlava, senza salutare` });
       }
     }
 
     // 4) il discorso scorre: ogni tanto una parola sua
+    // 4) il discorso scorre: ogni tanto una parola sua — ma solo se il discorso
+    //    e' della stanza. Se le ultime righe sono due che se le dicono fra loro,
+    //    non c'e' nessun discorso a cui aggiungersi, e si sta zitti.
     const ultimoMinuto = righe.filter((r) => !r.dalBot && ora - r.ts <= 60_000).length;
-    if (ultimoMinuto >= FLUSSO_RITMO_MIN && ultimaVoce && ora - ultimaVoce.ts <= FLUSSO_ULTIMA_MS && !inMano && !(ultima && ultima.dalBot)) {
-      out.push({ tipo: 'flusso', dati: { ritmo: ultimoMinuto }, spunto: '' });
+    const agganciFreschi = aggancio && ora - aggancio.ts <= FLUSSO_ULTIMA_MS;
+    if (ultimoMinuto >= FLUSSO_RITMO_MIN && ultimaVoce && ora - ultimaVoce.ts <= FLUSSO_ULTIMA_MS && !inMano && !(ultima && ultima.dalBot) && agganciFreschi) {
+      out.push({ tipo: 'flusso', dati: { ritmo: ultimoMinuto }, aggancio, spunto: '' });
     }
     return out;
   }

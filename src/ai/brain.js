@@ -13,6 +13,7 @@ import * as brainpy from './brainpy.js';
 import { daAssistente } from './registro.js';
 import { genereDi, scegliAccordando, istruzioneGenere } from './genere.js';
 import * as conti from '../features/conti.js';
+import { perLaStanza } from '../features/momenti.js';
 
 const log = makeLog('brain');
 
@@ -1249,7 +1250,7 @@ export class Brain {
   // `spunto`: il motivo per cui parte adesso (la chat ferma da quattro minuti,
   // un'esplosione di messaggi). Entra nel blocco «com'e' la diretta adesso»,
   // che e' il posto in cui il modello legge la situazione.
-  async iniziativa(channel, { spunto = '' } = {}) {
+  async iniziativa(channel, { spunto = '', aggancio = null } = {}) {
     try {
       const streamer = streamers.get(channel);
       if (!streamer) return null;
@@ -1257,11 +1258,24 @@ export class Brain {
       if (settings.iaLocale === false) return null;
       // ha appena parlato con qualcuno: non ci si intromette anche da soli
       if (Date.now() - (this._ultimaRisposta.get(channel) || 0) < COOLDOWN_RISPOSTA) return null;
-      // il discorso a cui agganciarsi: l'ultima riga vera della chat. Senza,
-      // non c'e' niente su cui dire qualcosa, e si tace.
-      const righe = (memory.recentMessages(channel, 14) || [])
-        .filter((r) => !r.from_bot && r.text && !String(r.text).startsWith('!'));
-      const ultima = righe[righe.length - 1];
+      // IL DISCORSO A CUI AGGANCIARSI, e chi lo sceglie.
+      //
+      // Lo sceglieva qui, ed era l'ultima riga vera della chat: qualunque fosse.
+      // Ma l'ultima riga puo' essere una risposta a un'altra persona, o una riga
+      // che chiama qualcuno per nome — cioe' roba fra due. Dire la propria su
+      // quella e' entrare in mezzo a un discorso altrui e commentare l'ultima
+      // frase sentita: la riga esce sensata, la situazione no, e da fuori sembra
+      // che il bot parli a caso. E' successo davvero.
+      //
+      // Adesso la riga la sceglie chi la chat ce l'ha in mano (momenti.js), che
+      // la passa insieme al momento: e' l'ultima riga detta ALLA STANZA. Qui si
+      // tiene la stessa regola come rete per chi chiama senza passarne una, e se
+      // non c'e' nessuna riga buona si tace — che era gia' la promessa.
+      const ultima = aggancio && aggancio.testo
+        ? { user: aggancio.user, display: aggancio.display, text: aggancio.testo }
+        : (memory.recentMessages(channel, 14) || [])
+          .filter((r) => !r.from_bot && perLaStanza(String(r.text || '')))
+          .slice(-1)[0];
       if (!ultima) return null;
       const tono = TONI.includes(settings.tono) ? settings.tono : 'scherzoso';
       const grezza = await brainpy.rispondi({

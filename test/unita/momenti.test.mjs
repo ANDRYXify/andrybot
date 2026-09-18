@@ -2,7 +2,7 @@
 // tempo in mano.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Momenti, DOMANDA_ATTESA_MS, DOMANDA_SCADE_MS, SILENZIO_MS } from '../../src/features/momenti.js';
+import { Momenti, perLaStanza, daDire, DOMANDA_ATTESA_MS, DOMANDA_SCADE_MS, SILENZIO_MS } from '../../src/features/momenti.js';
 
 const T0 = 1_760_000_000_000;
 const M = 60_000;
@@ -132,4 +132,62 @@ test('i canali non si mischiano e il ritmo e\' quello dell\'ultimo minuto senza 
   assert.equal(m.ritmo('canale', T0 + 2000), 1);
   assert.equal(m.ritmo('altro', T0 + 2000), 1);
   assert.equal(m.ritmo('nessuno', T0), 0);
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// PER LA STANZA, O PER UNA PERSONA.
+//
+// Il caso vero da cui nasce: in chat c'era una riga che era una RISPOSTA a
+// un'altra persona e che chiamava un terzo per nome. Il bot ci si e' agganciato
+// e ha detto la sua. La frase non era sbagliata: era entrare in mezzo a un
+// discorso fra due e commentare l'ultima cosa sentita. Da fuori sembra che parli
+// a caso, e in un certo senso e' cosi' — ma la colpa e' della riga scelta, non
+// della frase.
+test('una riga che parla a qualcuno non e\' una riga per la stanza', () => {
+  assert.equal(perLaStanza('stasera si gioca a Dark Souls'), true);
+  assert.equal(perLaStanza('@MGRoxas2 ciuf ciuf, che succede?'), false, 'chiama qualcuno per nome');
+  assert.equal(perLaStanza({ testo: 'ciuf ciuf, che succede?', rispostaA: 'abc123' }), false, 'e\' appesa a un altro messaggio');
+  assert.equal(perLaStanza('!morti'), false);
+  assert.equal(perLaStanza('/me balla'), false);
+  assert.equal(perLaStanza(''), false);
+  assert.equal(perLaStanza({ testo: 'stasera si gioca a Dark Souls', rispostaA: '' }), true);
+  // «a chi e' rivolta» e «c'e' qualcosa da dire» sono due domande diverse:
+  // «bravo!» e' detto a tutti, ma non offre niente su cui aggiungere una parola.
+  assert.equal(perLaStanza('bravo!'), true, 'e\' detta a tutti');
+  assert.equal(daDire('bravo!'), false, 'ma non c\'e\' niente su cui dire la propria');
+  assert.equal(daDire('stasera si gioca a Dark Souls'), true);
+  assert.equal(daDire('@tizio stasera si gioca a Dark Souls'), false, 'e resta valida la prima domanda');
+});
+
+test('se le ultime righe sono roba fra due, non c\'e\' nessun discorso a cui aggiungersi', () => {
+  const m = new Momenti();
+  riga(m, T0, 'tizio', 'stasera che si gioca? dimmi tutto');
+  riga(m, T0 + 10_000, 'caio', '@tizio io sto ancora finendo il primo');
+  riga(m, T0 + 20_000, 'tizio', 'ciuf ciuf, che succede?', { rispostaA: 'id' + (T0 + 10_000) });
+  const out = m.vedi('canale', { ora: T0 + 25_000, live: true });
+  const flusso = out.find((x) => x.tipo === 'flusso');
+  assert.ok(flusso, 'il discorso scorre: il momento c\'e\'');
+  assert.equal(flusso.aggancio.testo, 'stasera che si gioca? dimmi tutto',
+    'ma ci si aggancia all\'ultima riga detta alla STANZA, non all\'ultima riga qualunque');
+});
+
+test('se alla stanza non ha parlato piu\' nessuno da un pezzo, non si parte affatto', () => {
+  const m = new Momenti();
+  riga(m, T0, 'tizio', 'stasera che si gioca? dimmi tutto');
+  // due che se le dicono fra loro per due minuti: il discorso scorre, ma non e' della stanza
+  for (let i = 1; i <= 6; i++) {
+    riga(m, T0 + i * 20_000, i % 2 ? 'caio' : 'tizio', `@${i % 2 ? 'tizio' : 'caio'} ma figurati, e' il contrario`);
+  }
+  const ora = T0 + 6 * 20_000 + 5_000;
+  const out = m.vedi('canale', { ora, live: true });
+  assert.ok(!out.some((x) => x.tipo === 'flusso'),
+    'l\'ultima riga per la stanza e\' vecchia: non c\'e\' niente di fresco su cui dire la propria');
+});
+
+test('una domanda appesa a un altro messaggio non e\' una domanda lasciata sola', () => {
+  const m = new Momenti();
+  riga(m, T0, 'caio', 'ma quindi il pc nuovo ce l\'hai?', { rispostaA: 'id-di-un-altro' });
+  const out = m.vedi('canale', { ora: T0 + DOMANDA_ATTESA_MS + 1000, live: true, saQualcosa: () => true });
+  assert.ok(!out.some((x) => x.tipo === 'domanda'),
+    'stava chiedendo a qualcuno in particolare, e quel qualcuno non e\' il bot');
 });

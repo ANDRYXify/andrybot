@@ -130,3 +130,33 @@ davvero qualcosa da dire, e al ritorno della chat non c'e' niente da recuperare.
 Il vietato sta in una funzione sola perche' lo devono sapere in due: chi decide
 se parlare, e chi tiene i riposi. Scritto due volte, prima o poi uno dei due
 avrebbe avuto un'idea diversa di cosa vuol dire «non si puo'».
+
+## Per la stanza, o per una persona
+
+Il momento «il discorso scorre» diceva solo che la chat era viva, e chi scriveva
+la frase si agganciava all'ULTIMA riga: qualunque fosse.
+
+Ma l'ultima riga puo' essere una risposta appesa a un altro messaggio, o una riga
+che chiama qualcuno per nome. Quella e' roba fra due. Dire la propria su quella
+e' entrare in mezzo a un discorso altrui e commentare l'ultima frase sentita: la
+frase esce sensata, la situazione no, e da fuori sembra che il bot parli a caso.
+E' successo davvero, ed e' cosi' che si e' capito.
+
+La regola esisteva gia', ma a meta': la conosceva chi cerca le domande lasciate
+sole — una riga con dentro una @ non veniva presa — e non la conosceva chi decide
+su cosa dire la propria. Due strade, due idee di cosa sia una riga a cui si puo'
+rispondere.
+
+Adesso e' una regola sola, in `momenti.js`, che e' il modulo che la chat ce l'ha
+in mano. E sono DUE domande, tenute separate perche' sono diverse davvero:
+
+- **per la stanza**: non e' un comando, non chiama qualcuno per nome, non e'
+  appesa a un altro messaggio. Dice di CHI e' la riga.
+- **c'e' qualcosa da dire**: e in piu' e' abbastanza lunga da offrire un
+  appiglio. «bravo!» e' per la stanza — e' detto a tutti — ma non offre niente.
+
+Chi riconosce il momento sceglie anche la riga a cui agganciarsi, e la passa
+insieme al momento: e' l'ultima riga detta ALLA STANZA. Se non ce n'e' una
+fresca, il momento non nasce proprio — che era gia' la promessa scritta («se non
+ha niente da dire, non dice niente»), applicata alla cosa giusta. Chi scrive la
+frase non pesca piu' da solo: riceve la riga, e se non ne riceve nessuna tace.
