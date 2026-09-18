@@ -32,16 +32,23 @@ const listaDi = (testo, nome) => {
 };
 
 test('l’elenco degli elementi e quello che l’overlay mostra dicono le stesse cose', () => {
-  const i = APP.indexOf('<div class="ovl-elementi">');
-  const elenco = APP.slice(i, APP.indexOf('</div>', i));
-  const nel = [...elenco.matchAll(/ovlElemento\('([a-z]+)'/g)].map((m) => m[1]);
   const cliente = listaDi(APP, 'ELEM_OVL');
   const servo = listaDi(SRV, 'ELEM_OVERLAY');
-  assert.deepEqual([...nel].sort(), [...cliente].sort(), 'stessi elementi nel pannello e nella pagina');
   assert.deepEqual([...cliente].sort(), [...servo].sort(), 'stessi elementi di qua e di là dal filo');
   for (const k of ['alert', 'chat', 'wf', 'ws', 'effetti', 'cont', 'goal']) {
-    assert.ok(nel.includes(k), `c'è «${k}»`);
+    assert.ok(cliente.includes(k), `c'è «${k}»`);
   }
+});
+
+// La colonna «Livelli» accanto alla tela E' l'elenco: prima ce n'era una seconda
+// in fondo alla pagina, con gli stessi nomi e gli stessi interruttori, e due
+// elenchi della stessa cosa prima o poi si scollano. Adesso ce n'e' uno solo, e
+// quello che si vede lo decide la stessa fonte che l'overlay legge.
+test('la colonna dei livelli e\' l\'unico elenco, e non ha un doppione', () => {
+  assert.ok(!/ovlElemento\(/.test(APP), 'la seconda lista non deve tornare');
+  assert.ok(!/id="mostra-/.test(APP), 'e nemmeno le sue caselle: lo stato sta nei dati dell\'overlay');
+  assert.match(APP, /const mostraChk = \(k\) => _quiDentro\(k\);/, 'chi chiede «si vede?» legge i dati, non una casella');
+  assert.match(APP, /box\.innerHTML = ELEMENTI\(\)\.map/, 'la colonna si disegna dagli elementi veri');
 });
 
 // Il difetto vero: l'occhio di «Obiettivo» e «Contatori» si spegneva e al

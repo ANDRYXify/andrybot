@@ -422,7 +422,8 @@ test('un tasto arriva a TUTTI gli overlay, e ogni overlay puo\' dire di no', () 
   assert.match(ov, /dati\.da === 'consolify' && !mostra\('consolify'\)/, 'e l\'overlay puo\' rifiutarli');
 
   const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
-  assert.match(app, /ovlElemento\('consolify'/, 'l\'interruttore sta nell\'elenco degli elementi, come gli altri');
+  assert.match(app, /const ELEM_OVL = \[[^\]]*'consolify'/, 'sta nell\'elenco degli elementi, come gli altri');
+  assert.match(app, /consolify: \['consolify'/, 'e dalla colonna dei livelli si arriva ai suoi tasti');
 });
 
 test('l\'interruttore di CONSOLify sopravvive al salvataggio', () => {

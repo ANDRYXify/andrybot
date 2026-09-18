@@ -34,7 +34,9 @@ test('il conto con «parte da solo» parte al passaggio spento → acceso, e il 
 });
 
 test('la sfida a tempo e\' un elemento della scena, di qua e di la\' dal filo', () => {
-  assert.ok(/const ELEM_OVERLAY = \[[^\]]*'pen'/.test(SRV) && /const ELEM_OVL = \[[^\]]*'pen'/.test(APP) && /ovlElemento\('pen'/.test(APP), 'nell\'elenco degli elementi, da tutte e due le parti');
+  assert.ok(/const ELEM_OVERLAY = \[[^\]]*'pen'/.test(SRV) && /const ELEM_OVL = \[[^\]]*'pen'/.test(APP), 'nell\'elenco degli elementi, da tutte e due le parti');
+  assert.ok(/\{ k: 'pen', ico: ICO\.penitenza/.test(APP), 'e nella colonna dei livelli, accanto alla tela');
+  assert.ok(/pen: \['penitenze'/.test(APP), 'e dice dove si cambia quello che fa');
   assert.ok(/const CHIAVE_EL = \/\^\([^)]*\|pen\|/.test(SRV), 'la sua posizione passa dalla stessa porta delle altre');
   assert.ok(/if \(mostra\('pen'\)\) penitenza\(dati\);/.test(OVL), 'si accende e si spegne per overlay col suo interruttore');
   assert.ok(/function penPosa\(\) \{ posizionaContenitore\(penBox, MIO\.xy\.pen, penBox\._angolo \|\| 'alto-destra'\); \}/.test(OVL), 'si posa come gli altri: punto, riquadro o angolo');
