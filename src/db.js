@@ -2331,9 +2331,13 @@ export const dcConf = {
   set(channel, campi = {}) {
     const c = String(channel).toLowerCase();
     const s = streamers.get(c);
-    const cur = (s && s.settings && s.settings.discord) || { webhook: '', messaggio: '', nome_bot: '', avatar: '', attivo: 0, ultima_live: '' };
+    // `canale` e' la strada nuova: il bot sta gia' nel server, quindi l'avviso
+    // lo scrive lui li' dentro. `webhook` resta per chi ce l'ha gia' — toglierlo
+    // vorrebbe dire spegnere gli avvisi a chi li aveva, per un miglioramento.
+    const cur = (s && s.settings && s.settings.discord) || { webhook: '', canale: '', messaggio: '', nome_bot: '', avatar: '', attivo: 0, ultima_live: '' };
     const v = {
       webhook: campi.webhook !== undefined ? String(campi.webhook) : cur.webhook,
+      canale: campi.canale !== undefined ? String(campi.canale || '').replace(/[^0-9]/g, '') : (cur.canale || ''),
       messaggio: campi.messaggio !== undefined ? String(campi.messaggio) : cur.messaggio,
       nome_bot: campi.nomeBot !== undefined ? String(campi.nomeBot) : cur.nome_bot,
       avatar: campi.avatar !== undefined ? String(campi.avatar) : cur.avatar,

@@ -2314,7 +2314,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // conto suo e si annunciano in diretta. Questi arrivano sul conto di casa e
   // basta. Sono tre porte e nessuna vuole un account: chi sostiene non deve
   // iscriversi a niente per farlo.
-  const SOSTIENI_HTML = guscio.pagina('sostieni.html');
+  // La pagina del sostegno e le tre porte che le servono: chi arriva a donare
+  // non ha un account e non deve averne uno. Il listino si legge, il pagamento
+  // si apre, e il ritorno da Stripe torna qui — tutto senza sessione, perche'
+  // una sessione non ce l'ha e non gliela chiediamo.
+  const SOSTIENI_HTML = guscio.pagina('sostieni.html', '/sostieni', '/api/sostieni', '/api/sostieni/esito');
   app.get('/sostieni', (req, res) => res.sendFile(SOSTIENI_HTML));
 
   app.get('/api/sostieni', (req, res) => {
@@ -4302,7 +4306,23 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // anche altro.
     dcGiri.segna(login, { chi: identitaDi(currentUser(req)), distruttivo: togliere, impronta: e.impronta,
       creati: e.creati, sistemati: e.sistemati, tolti: e.tolti, nomi: e.tolti ? (e.nomiTolti || []) : [], errori: e.errori });
-    res.json(e);
+
+    // COSTRUIRE IL SERVER BASTA.
+    //
+    // La traccia delle dirette crea un canale che nel suo argomento dice «Lo
+    // scrive il bot quando comincio». Finire con quel canale li' e un avviso
+    // che non sa dove andare vorrebbe dire aver costruito una promessa.
+    //
+    // Si scrive SOLO se una destinazione non c'e' ancora: chi aveva gia'
+    // scelto un canale, o chi usa il suo webhook, non se lo vede cambiare
+    // sotto le mani da un giro del costruttore.
+    let avvisiVerso = '';
+    const cfg = dcConf.get(login);
+    if (e.canaleAvvisi && !cfg?.canale && !cfg?.webhook) {
+      dcConf.set(login, { canale: e.canaleAvvisi });
+      avvisiVerso = String(e.canaleAvvisi);
+    }
+    res.json({ ...e, avvisiVerso });
   }));
 
   // Cosa e' successo su questo server, in ordine di tempo. Serve il giorno che

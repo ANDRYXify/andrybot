@@ -201,7 +201,15 @@ export const tokenDi = (riga) => String(riga?.token || '').trim() || String(conf
 export const MANAGE_ROLES = 1n << 28n;      // 268435456
 export const MANAGE_CHANNELS = 1n << 4n;    // 16
 export const ADMINISTRATOR = 1n << 3n;      // 8
-export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS);
+// I tre che servono al bot per DIRE una cosa. Da quando sta dentro il server,
+// l'avviso di diretta non ha piu' bisogno di un webhook creato a mano: lo
+// scrive lui nel canale scelto. Per farlo deve vedere il canale, poterci
+// scrivere, e poter far comparire il riquadro — un avviso senza anteprima e'
+// una riga di testo.
+export const VIEW_CHANNEL = 1n << 10n;      // 1024
+export const SEND_MESSAGES = 1n << 11n;     // 2048
+export const EMBED_LINKS = 1n << 14n;       // 16384
+export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS);
 
 // I permessi che il bot ha nel server: l'unione di quelli dei suoi ruoli. Si
 // calcolano da cose che chiediamo GIA' (l'elenco dei ruoli e quelli del bot),
@@ -223,6 +231,46 @@ export const puo = (bits, flag) => {
 };
 export const puoCanali = (bits) => puo(bits, MANAGE_CHANNELS);
 export const puoRuoli = (bits) => puo(bits, MANAGE_ROLES);
+export const puoVedere = (bits) => puo(bits, VIEW_CHANNEL);
+export const puoScrivere = (bits) => puo(bits, SEND_MESSAGES);
+export const puoIncorniciare = (bits) => puo(bits, EMBED_LINKS);
+
+// COSA PUO' IL BOT DENTRO UN CANALE, che non e' quello che puo' nel server.
+//
+// Le regole del singolo canale battono quelle generali: un ruolo che nel
+// server puo' scrivere, in un canale dove «tutti» ha il divieto, sta zitto. E'
+// il motivo per cui guardare i soli permessi del server direbbe di si' e poi
+// l'avviso non partirebbe.
+//
+// L'ordine qui sotto e' quello di Discord, non uno nostro: si parte dai
+// permessi dei ruoli, poi la riga di @everyone (prima il divieto, poi il
+// permesso), poi le righe dei ruoli tutte insieme, e in fondo quella della
+// persona — che vince su tutto. Chi e' amministratore salta la fila.
+export function permessiNelCanale({ ruoli = [], guildId, bot = {}, bits } = {}, canale) {
+  let base = 0n;
+  try { base = typeof bits === 'bigint' ? bits : BigInt(bits || 0); } catch { base = 0n; }
+  if ((base & ADMINISTRATOR) === ADMINISTRATOR) return base;
+  const righe = new Map((canale?.overwrites || []).map((o) => [String(o.id), o]));
+  const leggi = (o) => {
+    let a = 0n; let d = 0n;
+    try { a = BigInt(o?.allow || 0); } catch { a = 0n; }
+    try { d = BigInt(o?.deny || 0); } catch { d = 0n; }
+    return { a, d };
+  };
+  const tutti = righe.get(String(guildId));
+  if (tutti) { const { a, d } = leggi(tutti); base = (base & ~d) | a; }
+  let nega = 0n; let da = 0n;
+  for (const id of (bot.ruoli || []).map(String)) {
+    const o = righe.get(id);
+    if (!o) continue;
+    const { a, d } = leggi(o);
+    nega |= d; da |= a;
+  }
+  base = (base & ~nega) | da;
+  const mia = righe.get(String(bot.id));
+  if (mia) { const { a, d } = leggi(mia); base = (base & ~d) | a; }
+  return base;
+}
 
 // QUANDO, da un id. Dentro uno snowflake di Discord c'e' il momento in cui e'
 // nato: e' cosi' che si sa «questo canale non parla da otto mesi» SENZA leggere
@@ -402,6 +450,22 @@ export async function sistemaCanale(token, id, cambia) {
   if (Array.isArray(cambia?.permessi)) corpo.permission_overwrites = permessiVerso(cambia.permessi);
   if (!Object.keys(corpo).length) return { ok: true, dati: null, niente: true };
   return chiama(token, `/channels/${id}`, { metodo: 'PATCH', corpo });
+}
+
+// Il bot dice una cosa in un canale. Niente nome ne' faccia per messaggio:
+// quelli erano del webhook, e un bot non li puo' cambiare a ogni riga — parla
+// col nome che ha. Va detto a chi ne aveva messo uno, invece di farglielo
+// scoprire dalla prima diretta.
+export async function mandaMessaggio(token, canale, messaggio) {
+  if (!idOk(canale)) return { ok: false, errore: 'id del canale non valido' };
+  const corpo = {};
+  if (messaggio?.content) corpo.content = String(messaggio.content).slice(0, 2000);
+  if (Array.isArray(messaggio?.embeds) && messaggio.embeds.length) corpo.embeds = messaggio.embeds.slice(0, 10);
+  if (messaggio?.allowed_mentions) corpo.allowed_mentions = messaggio.allowed_mentions;
+  if (!corpo.content && !corpo.embeds) return { ok: false, errore: 'un messaggio vuoto non si manda' };
+  const r = await chiama(token, `/channels/${canale}/messages`, { metodo: 'POST', corpo });
+  if (!r.ok) return r;
+  return { ok: true, id: String(r.dati?.id || '') };
 }
 
 export async function togliCanale(token, id) {

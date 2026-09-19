@@ -9,6 +9,7 @@
 // anche canary/ptb). L'URL è fornito dallo streamer: la regex stretta evita che
 // venga usato per SSRF verso host arbitrari. Timeout su ogni chiamata.
 import { makeLog } from '../logger.js';
+import * as api from './discord-api.js';
 
 const log = makeLog('discord');
 
@@ -83,6 +84,39 @@ async function invia(webhook, payload) {
   finally { clearTimeout(to); }
 }
 
+// DUE STRADE PER DIRE LA STESSA COSA, e una sola che le sceglie.
+//
+// Il webhook e' la strada vecchia: lo streamer lo crea a mano nelle
+// impostazioni del canale e incolla qui un indirizzo segreto. Funziona, ma e'
+// un passaggio a carico suo — e da quando il bot sta DENTRO il server non
+// serve piu': puo' scrivere lui.
+//
+// Il webhook non si spegne per questo. Chi ce l'ha continua a funzionare senza
+// fare niente: togliere una strada che gira vorrebbe dire spegnere gli avvisi
+// a qualcuno in cambio di un miglioramento che non ha chiesto.
+//
+// Il nome e la faccia per messaggio sono del webhook e restano suoi: un bot
+// parla col nome che ha. Chi passa al canale lo deve sapere prima, non
+// scoprirlo dalla prima diretta.
+export const configurato = (c) => !!(c && ((c.canale && c.token) || c.webhook));
+
+export async function manda(conf, payload) {
+  if (conf?.canale && conf?.token) {
+    const r = await api.mandaMessaggio(conf.token, conf.canale, payload);
+    if (r.ok) return r;
+    // 403 qui vuol dire una cosa sola e precisa: il canale c'e', il bot c'e',
+    // ma li' dentro non puo' parlare. La cura non e' riprovare.
+    if (r.stato === 403) return { ...r, muto: true, errore: 'il bot non puo\' scrivere in quel canale' };
+    if (r.stato === 404) return { ...r, morto: true, errore: 'quel canale non c\'e\' piu\'' };
+    return r;
+  }
+  if (!conf?.webhook) return { ok: false, errore: 'discord non configurato' };
+  const conVeste = { ...payload };
+  if (conf.nome_bot) conVeste.username = String(conf.nome_bot).slice(0, 80);
+  if (conf.avatar && /^https:\/\//.test(conf.avatar)) conVeste.avatar_url = conf.avatar;
+  return invia(conf.webhook, conVeste);
+}
+
 // Verifica che il webhook esista davvero (GET). Ritorna { ok, nomeCanale } | { ok:false }.
 export async function verifica(webhook) {
   if (!webhookValido(webhook)) return { ok: false, errore: 'URL non valido: incolla il webhook completo del canale Discord' };
@@ -99,15 +133,13 @@ export async function verifica(webhook) {
 
 // Avviso "è live". `conf` = { webhook, messaggio, nome_bot, avatar }.
 export async function notificaLive(conf, streamer, info) {
-  if (!conf?.webhook) return { ok: false, errore: 'discord non configurato' };
+  if (!configurato(conf)) return { ok: false, errore: 'discord non configurato' };
   const payload = {
     content: risolvi(streamer, info, conf.messaggio),
     embeds: [embedLive(streamer, info)],
     allowed_mentions: { parse: ['roles', 'everyone'] },   // permette @everyone/@role SOLO se scritti dallo streamer nel messaggio
   };
-  if (conf.nome_bot) payload.username = String(conf.nome_bot).slice(0, 80);
-  if (conf.avatar && /^https:\/\//.test(conf.avatar)) payload.avatar_url = conf.avatar;
-  const r = await invia(conf.webhook, payload);
+  const r = await manda(conf, payload);
   if (!r.ok) log.warn(`notifica live #${streamer?.login}: ${r.errore}`);
   return r;
 }
@@ -121,7 +153,7 @@ const COLORI = { twitch: VIOLA, kick: 0x53fc18, youtube: 0xff0000, tiktok: 0x000
 const NOMI = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', tiktok: 'TikTok' };
 
 export async function notificaDiretta(conf, d) {
-  if (!conf?.webhook) return { ok: false, errore: 'discord non configurato' };
+  if (!configurato(conf)) return { ok: false, errore: 'discord non configurato' };
   if (!d?.login) return { ok: false, errore: 'diretta senza streamer' };
   const p = String(d.piattaforma || 'twitch');
   const campi = [];
@@ -143,21 +175,16 @@ export async function notificaDiretta(conf, d) {
     embeds: [emb],
     allowed_mentions: { parse: ['roles', 'everyone'] },
   };
-  if (conf.nome_bot) payload.username = String(conf.nome_bot).slice(0, 80);
-  if (conf.avatar && /^https:\/\//.test(conf.avatar)) payload.avatar_url = conf.avatar;
-  const r = await invia(conf.webhook, payload);
+  const r = await manda(conf, payload);
   if (!r.ok) log.warn(`avviso ${p} #${d.login}: ${r.errore}`);
   return r;
 }
 
 // Messaggio di prova (dalla dashboard).
 export async function prova(conf, streamer) {
-  if (!conf?.webhook) return { ok: false, errore: 'discord non configurato' };
-  const payload = {
+  if (!configurato(conf)) return { ok: false, errore: 'discord non configurato' };
+  return manda(conf, {
     content: '✅ Collegamento riuscito! Qui arriveranno i tuoi avvisi **quando vai in diretta**.',
     embeds: [embedLive(streamer, { title: 'Esempio di avviso live', game_name: 'Just Chatting', viewer_count: 0 })],
-  };
-  if (conf.nome_bot) payload.username = String(conf.nome_bot).slice(0, 80);
-  if (conf.avatar && /^https:\/\//.test(conf.avatar)) payload.avatar_url = conf.avatar;
-  return invia(conf.webhook, payload);
+  });
 }

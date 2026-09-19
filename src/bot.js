@@ -11,7 +11,7 @@ import { config } from './config.js';
 import * as filigrana from './watermark.js';
 import * as licenza from './licenza.js';
 import { canaleHa } from './features/accesso.js';
-import { tokens, streamers, memory, tgConf, tgDest, tgAmici, tgMsg, feedFonti, dcConf, compleanni, pointAlerts, rapporti, postaStreamer } from './db.js';
+import { tokens, streamers, memory, tgConf, tgDest, tgAmici, tgMsg, feedFonti, dcConf, dcRuoli, compleanni, pointAlerts, rapporti, postaStreamer } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
@@ -36,6 +36,7 @@ import * as ruoli from './features/ruoli.js';
 import * as telegram from './features/telegram.js';
 import * as cartaLive from './features/cartalive.js';
 import * as discord from './features/discord.js';
+import * as dcApi from './features/discord-api.js';
 import * as contatori from './features/contatori.js';
 import * as antispam from './features/antispam.js';
 import * as tiktok from './features/tiktok.js';
@@ -1276,9 +1277,14 @@ export class BotManager {
     } catch (e) { log.error(`avviso Telegram ${piattaforma} #${login}:`, e?.message || e); }
 
     try {
+      // Il token del bot non sta nella configurazione degli avvisi: sta nella
+      // busta dei segreti, con gli altri. Si prende qui e si passa, cosi' la
+      // configurazione resta una cosa che si puo' guardare senza scoprire
+      // niente. Chi va ancora di webhook non ne ha bisogno e non lo usa.
       const conf = dcConf.get(login);
-      if (conf?.attivo && conf.webhook) {
-        const r = await discord.notificaDiretta(conf, conNome);
+      const conToken = conf?.canale ? { ...conf, token: dcApi.tokenDi(dcRuoli.get(login)) } : conf;
+      if (conf?.attivo && discord.configurato(conToken)) {
+        const r = await discord.notificaDiretta(conToken, conNome);
         if (r?.ok) inviati++;
       }
     } catch (e) { log.error(`avviso Discord ${piattaforma} #${login}:`, e?.message || e); }
