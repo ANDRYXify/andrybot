@@ -73,6 +73,7 @@ import { StreamWatcher } from './stream/watcher.js';
 import { LiveListener } from './stream/listener.js';
 import { avviaBackupAuto, stopBackupAuto } from './backup.js';
 import * as dcGiro from './features/discord-giro.js';
+import * as dcCollega from './features/discord-collega.js';
 
 const log = makeLog('bot');
 
@@ -868,6 +869,10 @@ export class BotManager {
     // il proprio compleanno (!compleanno GG/MM): opt-in, vive con gli auguri in chat
     try { compleanniFeat.tryComando(cmdMsg, parla); }
     catch (e) { log.error(`#${login} compleanno:`, e?.message || e); }
+    // il proprio account Discord (!discord CODICE): il codice nasce sul web e
+    // si chiude qui, perche' solo la chat puo' dire che quel Twitch sei tu
+    try { dcCollega.tryComando(cmdMsg, parla); }
+    catch (e) { log.error(`#${login} discord:`, e?.message || e); }
     // quanto manca alla fine del subathon (!subathon)
     try { subathonFeat.tryComando(cmdMsg, parla); }
     catch (e) { log.error(`#${login} subathon:`, e?.message || e); }
