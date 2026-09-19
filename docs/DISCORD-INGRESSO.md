@@ -106,3 +106,11 @@ Il pannello CONTA i canali scelti e dice quanti ne vuole Discord; il verdetto
 vero lo da' l'anteprima, che e' l'unico posto dove quella regola e' scritta.
 Contarla anche nel pannello vorrebbe dire due implementazioni della stessa
 regola, e un giorno una delle due direbbe un'altra cosa.
+
+E passare dall'una all'altra non e' un'uscita: la finestra «hai modifiche non
+salvate» non compare, perche' non si sta lasciando niente — e si metterebbe
+davanti ai tasti proprio mentre si va a controllare l'altra meta'. Ma non
+chiedere non vuol dire dimenticare: la traccia resta sporca, la barra del
+salvataggio si riaggancia alla carta dei tasti della scheda nuova, e uscendo
+DAVVERO la domanda arriva. Le schede che scrivono la stessa cosa stanno
+dichiarate in `STESSA_ROBA`.
