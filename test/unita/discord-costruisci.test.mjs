@@ -23,7 +23,11 @@ const RUOLO_BOT = '800000000000000001';
 const ALTRO = '810000000000000002';
 const MANAGE_ROLES = 1n << 28n;
 const MANAGE_CHANNELS = 1n << 4n;
-const TUTTI = String(MANAGE_ROLES | MANAGE_CHANNELS);
+// I permessi del bot finto sono quelli del bot VERO, presi da dove si
+// dichiarano. Scriverli a mano qui significherebbe provare un bot che non
+// esiste: e' successo — «vedere il canale» era entrato nell'invito e il finto
+// non ce l'aveva, quindi le prove misuravano un bot cieco.
+const TUTTI = api.PERMESSI_BOT;
 const C1 = '111111111111111111';
 const C2 = '222222222222222222';
 const C3 = '333333333333333333';
@@ -392,5 +396,40 @@ test('un preset importato non tocca i permessi che il server aveva', async () =>
     assert.equal(e.niente, true);
     assert.deepEqual(st.canali.find((c) => c.id === C2).permission_overwrites,
       [{ id: ALTRO, type: 0, allow: '0', deny: '1024' }], 'e restano identici');
+  } finally { ripulisci(); }
+});
+
+test('quello che il bot non arriva a toccare non entra fra le cose da fare', async () => {
+  // Il difetto vero, visto su un server vero: l'anteprima diceva ventotto da
+  // cancellare e ne cancellava tre. Discord manda l'elenco di TUTTI i canali,
+  // anche quelli che il bot non puo' nemmeno vedere; l'anteprima li contava, e
+  // poi ogni cancellazione tornava indietro con un no. Venticinque messaggi
+  // identici, che l'elenco degli errori riduce a uno: sembrava essersi
+  // fermato, e invece aveva provato tutto.
+  //
+  // Un'anteprima che promette cose che non si possono fare e' peggio di una
+  // che ne promette meno: e' quella che fa perdere fiducia in tutto il resto.
+  const NASCOSTO = '666666666666666666';
+  const st = casa({ canali: [
+    { id: C1, name: 'visibile', type: TIPI.testo },
+    // a questo il bot non vede niente: @everyone senza «vedere», e lui non ha
+    // una riga sua che glielo ridia
+    { id: NASCOSTO, name: 'riservato-staff', type: TIPI.testo,
+      permission_overwrites: [{ id: GUILD, type: 0, allow: '0', deny: String(1n << 10n) }] },
+  ] });
+  try {
+    const a = await C.anteprima('tok', GUILD, { canali: [], categorie: [] }, { togliere: true });
+    assert.equal(a.ok, true, a.errore);
+    const nomi = a.differenza.togli.map((x) => x.nome);
+    assert.deepEqual(nomi, ['visibile'], 'si promette solo quello che si puo\' fare davvero');
+    assert.deepEqual(a.fuoriPortata.map((x) => x.nome), ['riservato-staff'],
+      'e l\'altro si dice a parte, PRIMA, invece di provarci venticinque volte');
+
+    // e applicando, quello fuori portata non si tocca nemmeno
+    const e = await C.applica('tok', GUILD, { canali: [], categorie: [] }, opz({ togliere: true }));
+    assert.equal(e.tolti, 1);
+    assert.deepEqual(e.nomiTolti, ['visibile']);
+    assert.ok(!st.chiamate.some((c) => c.startsWith('DELETE') && c.includes(NASCOSTO)),
+      'non si bussa a una porta che sappiamo chiusa');
   } finally { ripulisci(); }
 });

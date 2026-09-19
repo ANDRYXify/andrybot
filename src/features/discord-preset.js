@@ -313,9 +313,30 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
 }
 
 // LA DIFFERENZA. `togliere` decide se ne fa parte anche la terza direzione.
-export function differenza(foto, preset, { togliere = false } = {}) {
+export function differenza(foto, preset, { togliere = false, puoiToccare = null } = {}) {
   const idx = indice(foto);
   const fuoriMano = intoccabili(foto);
+  // FIN DOVE ARRIVA IL BOT, canale per canale.
+  //
+  // Discord manda l'elenco di TUTTI i canali, anche quelli che il bot non puo'
+  // nemmeno vedere. Senza questa domanda l'anteprima li contava fra le cose da
+  // fare e poi Discord diceva di no, uno per uno: «ventotto da cancellare» e
+  // tre cancellati davvero, con un errore solo perche' venticinque messaggi
+  // identici diventano una riga.
+  //
+  // Un'anteprima che promette cose che non si possono fare e' peggio di
+  // un'anteprima che ne promette meno: e' quella che fa perdere fiducia in
+  // tutto il resto. Quindi quello che non si puo' toccare non entra
+  // nell'elenco — si dice a parte, prima.
+  const fuoriPortata = [];
+  if (puoiToccare) {
+    for (const c of idx.canali) {
+      if (fuoriMano.has(String(c.id))) continue;
+      if (puoiToccare(c)) continue;
+      fuoriMano.add(String(c.id));
+      fuoriPortata.push({ id: String(c.id), nome: c.nome, tipo: c.tipo });
+    }
+  }
   const lista = voluti(preset);
 
   const crea = [];
@@ -356,6 +377,7 @@ export function differenza(foto, preset, { togliere = false } = {}) {
     // non si tira fuori. Spostare verso una casa e' rimettere a posto,
     // spostare verso il nulla e' far sparire dalla vista.
     if (v.dentro && idx.dentroDi(gia) !== v.dentro) cambia.dentro = v.dentro;
+    if (fuoriMano.has(String(gia.id))) continue;
     if (Object.keys(cambia).length) sistema.push({ id: String(gia.id), nome: gia.nome, tipo: gia.tipo, ...cambia });
   }
 
@@ -391,7 +413,7 @@ export function differenza(foto, preset, { togliere = false } = {}) {
     }
   }
 
-  return { crea, sistema, togli, avvisi, intoccabili: fuoriMano };
+  return { crea, sistema, togli, avvisi, fuoriPortata, intoccabili: fuoriMano };
 }
 
 // «Non c'e' niente da fare» detto una volta sola, cosi' chi chiama non deve

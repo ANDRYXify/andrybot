@@ -44,6 +44,12 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Su Discord l'avviso di diretta lo scrive il bot nel canale che scegli: non devi più creare un webhook a mano. Chi ce l'ha già lo tiene. [vai: notifiche]
 - Un canale in sola lettura non zittisce più il bot: «sono-in-onda» resta di sola lettura per le persone, e lui ci scrive. [vai: dcserver]
 - Il bot adesso può dare ai ruoli anche i poteri di moderazione, così «Moderatori» nasce già con i suoi: se l'avevi invitato prima, rifallo. [vai: ruoli]
+- Dal costruttore decidi anche i ruoli: nome, colore, se stanno a parte, e cosa possono fare. Le tracce ne portano già quattro. [vai: dcserver]
+- In piazza pulita spariscono anche i ruoli che non sono nella traccia, e si cancellano per ultimi: se qualcosa va storto non resti senza privilegi. [vai: dcserver]
+- Quello che il bot non può toccare adesso te lo dice prima: i ruoli sopra di lui, e i privilegi che non ha da passare. [vai: dcserver]
+- Quando una cosa non riesce, il messaggio parla di quella cosa: se non è riuscito a cancellare un canale non ti manda più a guardare i ruoli.
+- I canali che il bot non vede o non può gestire adesso restano fuori dall'elenco, e te li dice prima: non ti promette più cose che poi non riescono. [vai: dcserver]
+- In fondo alla home c'è un invito a dare una mano al progetto, al posto di un link perso fra privacy e termini.
 
 ## 2026-09-18
 

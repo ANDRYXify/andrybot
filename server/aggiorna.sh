@@ -56,9 +56,29 @@ RAMO="$(git rev-parse --abbrev-ref HEAD)"
 NUOVI="$(git rev-list --count HEAD..origin/"$RAMO" 2>/dev/null || echo 0)"
 PERSI="$(git rev-list --count origin/"$RAMO"..HEAD 2>/dev/null || echo 0)"
 
+# COSA GIRA, che non e' la stessa domanda di «c'e' un commit nuovo».
+#
+# Il caso e' successo: un giro tira giu' il codice, il collaudo va rosso e si
+# ferma prima di ricostruire. Il repository resta aggiornato, il container
+# resta vecchio. Al giro dopo «commit nuovi: zero» sembrava voler dire «non c'e'
+# niente da fare», e si usciva — lasciando il server con codice vecchio e
+# nessun modo di accorgersene, perche' lo script diceva «gia' aggiornato».
+#
+# Il segno di cosa gira davvero lo lascia QUESTO script, e solo quando la
+# ricostruzione e' andata a buon fine: finche' quel segno non combacia con
+# HEAD, c'e' lavoro da fare anche se git non ha niente da portare.
+SEGNO="$RADICE/data/.deployato"
+GIRA="$(cat "$SEGNO" 2>/dev/null || echo '')"
+ATTESO="$(git rev-parse HEAD)"
 if [ "$NUOVI" = "0" ] && [ "$PERSI" = "0" ]; then
-  echo "già aggiornato: non c'è niente di nuovo."
-  [ "$PROVA" = "1" ] || exit 0
+  if [ "$GIRA" = "$ATTESO" ]; then
+    echo "già aggiornato: non c'è niente di nuovo, e gira proprio questo."
+    [ "$PROVA" = "1" ] || exit 0
+  fi
+  echo "niente di nuovo da prendere, MA quello che gira non è questo codice:"
+  echo "  in esecuzione: ${GIRA:-(mai segnato)}"
+  echo "  qui:           $ATTESO"
+  echo "ricostruisco."
 fi
 
 if [ "$PERSI" != "0" ]; then
@@ -132,12 +152,21 @@ else
   passo "Collaudo (se è rosso, quello che gira non viene toccato)"
   command -v node >/dev/null || muori "serve Node sul server per il collaudo. Installalo, oppure usa --salta-prove."
 
+  # SI TORNA INDIETRO DAVVERO, non si stampa come si farebbe.
+  #
+  # Prima qui c'era solo il comando da copiare, e sembrava prudente: «decidi
+  # tu». Ma lasciava il repository avanti e il container indietro — due cose
+  # che non combaciano, e nessuno che lo dica. Il giro dopo sembrava tutto a
+  # posto. Un aggiornamento che fallisce deve lasciare le cose COME STAVANO,
+  # e «come stavano» comprende anche il repository.
   torna_indietro() {
     echo
     echo "Il codice nuovo NON passa il collaudo. Quello che gira non è stato toccato."
-    echo "Per rimettere il repository com'era:"
-    echo "    git -C $RADICE reset --hard $PRIMA"
-    [ "$SERVE_LIA" = "1" ] && echo "    git -C $LIA_DIR reset --hard $LIA_PRIMA"
+    echo "Rimetto il repository com'era ($(git rev-parse --short "$PRIMA")), così quello che c'è qui"
+    echo "è quello che gira davvero."
+    git reset --hard "$PRIMA" >/dev/null
+    [ "$SERVE_LIA" = "1" ] && git -C "$LIA_DIR" reset --hard "$LIA_PRIMA" >/dev/null
+    echo "Per vedere cosa non andava, guarda il collaudo qui sopra."
     exit 1
   }
 
@@ -211,6 +240,10 @@ aspetta_sano() {   # esce 0 se entro 60 secondi il bot risponde sano o degradato
 
 passo "Controllo che sia tornato su"
 if aspetta_sano; then
+  # Il segno si lascia QUI e solo qui: dopo che il container e' stato
+  # ricostruito E ha risposto sano. Scriverlo prima vorrebbe dire dichiarare
+  # deployata una versione che magari non parte.
+  mkdir -p "$(dirname "$SEGNO")" && git rev-parse HEAD > "$SEGNO"
   echo "aggiornato a $(git rev-parse --short HEAD) — se nei log c'è «chiavi degli overlay rinnovate», i link degli overlay vanno rimessi nelle sorgenti di regia."
   exit 0
 fi

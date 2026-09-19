@@ -77,10 +77,18 @@ export async function anteprima(token, guild, preset, { togliere = false } = {})
   // senza che quella frase diventi un'offerta di cancellarli: il modo decide
   // se si agisce, non se si guarda. E l'impronta e' di quello che si FA, cosi'
   // in avanti e in distruttivo non si confondono fra loro.
-  const tutto = differenza(foto, risolto, { togliere: true });
+  // Cosa puo' fare il bot DENTRO ogni canale, non solo nel server: le regole
+  // del singolo canale battono quelle generali, e un canale che il bot non
+  // vede non lo sa nemmeno cancellare.
+  const puoiToccare = (c) => {
+    const bits = api.permessiNelCanale(foto, c);
+    return api.puoVedere(bits) && api.puoCanali(bits);
+  };
+  const tutto = differenza(foto, risolto, { togliere: true, puoiToccare });
   const d = togliere ? { ...tutto, ruoli: dRuoli } : { ...tutto, togli: [], ruoli: { ...dRuoli, togli: [] } };
   return { ok: true, foto, differenza: d, fuori: tutto.togli, fuoriRuoli: dRuoli.togli,
-    impronta: improntaDi(d), vuota: vuota(d), mancanti, nonPosso: dRuoli.nonPosso };
+    impronta: improntaDi(d), vuota: vuota(d), mancanti, nonPosso: dRuoli.nonPosso,
+    fuoriPortata: tutto.fuoriPortata || [] };
 }
 
 // Le categorie che esistono, per nome. Serve a tradurre il «dentro» della

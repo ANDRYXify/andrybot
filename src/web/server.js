@@ -4220,7 +4220,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // lingue lo sa il pannello. Un permesso senza parola mostrerebbe il suo
       // nome tecnico, e nessuno saprebbe cosa sta togliendo a chi.
       permessi: Object.keys(dcCatalogo.PERMESSI),
-      max: { categorie: dcCatalogo.MAX_CATEGORIE, canali: dcCatalogo.MAX_CANALI },
+      // I privilegi di un ruolo sono un altro elenco: valgono nel server, non
+      // dentro un canale, e non si mescolano mai coi permessi di sopra.
+      privilegi: Object.keys(dcCatalogo.PERMESSI_RUOLO),
+      max: { categorie: dcCatalogo.MAX_CATEGORIE, canali: dcCatalogo.MAX_CANALI, ruoli: dcCatalogo.MAX_RUOLI },
     });
   }));
 
@@ -4257,10 +4260,22 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // `fuori` dice cosa il preset non prevede — si sa anche quando non si
     // tocca, perche' non dirlo lascerebbe credere che il server sia gia'
     // uguale al preset quando non lo e'.
+    const r = a.differenza.ruoli || { crea: [], sistema: [], togli: [], ambigui: [], fuoriPortata: [] };
     res.json({ ok: true, impronta: a.impronta, mancanti: a.mancanti, vuota: a.vuota, distruttivo: togliere,
       crea: a.differenza.crea, sistema: a.differenza.sistema, fuori: a.fuori,
       togli: togliere ? a.differenza.togli : [],
-      peso: togliere ? pesoDanno(a.differenza.togli) : null,
+      peso: togliere ? pesoDanno([...a.differenza.togli, ...r.togli]) : null,
+      // I ruoli viaggiano a parte, perche' nel pannello si leggono a parte: un
+      // elenco solo mescolerebbe «nasce un canale» e «cambia chi puo' bannare».
+      ruoli: { crea: r.crea, sistema: r.sistema, togli: togliere ? r.togli : [],
+        fuori: r.togli, ambigui: r.ambigui, fuoriPortata: r.fuoriPortata },
+      // Quello che il bot NON puo' passare si dice qui, prima: la cura e'
+      // ripassare dal tasto dell'invito, non riprovare.
+      nonPosso: a.nonPosso || [],
+      // I canali che il bot non arriva a toccare: si dicono PRIMA, e non
+      // entrano fra le cose da fare. Dirli dopo vorrebbe dire «ventotto da
+      // cancellare» e tre cancellati.
+      fuoriPortata: a.fuoriPortata || [],
       server: a.foto?.guild?.nome || '' });
   }));
 
@@ -4305,7 +4320,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // compare solo quando si cancella non dice se quel giorno era stato fatto
     // anche altro.
     dcGiri.segna(login, { chi: identitaDi(currentUser(req)), distruttivo: togliere, impronta: e.impronta,
-      creati: e.creati, sistemati: e.sistemati, tolti: e.tolti, nomi: e.tolti ? (e.nomiTolti || []) : [], errori: e.errori });
+      creati: e.creati, sistemati: e.sistemati, tolti: e.tolti,
+      ruoliCreati: e.ruoliCreati, ruoliSistemati: e.ruoliSistemati, ruoliTolti: e.ruoliTolti,
+      nomi: [...(e.tolti ? (e.nomiTolti || []) : []), ...(e.ruoliTolti ? (e.nomiRuoliTolti || []) : [])],
+      errori: e.errori });
 
     // COSTRUIRE IL SERVER BASTA.
     //

@@ -39,12 +39,34 @@ const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Il messaggio che leggera' una persona. Il codice di Discord conta piu' dello
 // stato HTTP: 50013 e' «non ho il permesso», e capita anche con un 403 generico.
-function spiega(stato, corpo) {
+// DI COSA PARLAVA LA CHIAMATA, ricavato dalla chiamata stessa.
+//
+// Questo messaggio e' nato quando il bot faceva solo i ruoli, e diceva «manca
+// il permesso Gestire i ruoli» per ogni 403. Poi sono arrivati i canali, e
+// quella frase ha continuato a uscire: chi provava a cancellare un canale si
+// sentiva parlare di ruoli, e andava a controllare la cosa sbagliata.
+//
+// Non si corregge ricordandosi di aggiornare la frase quando si aggiunge una
+// funzione: si ricava dal percorso, che e' l'unica cosa che sa davvero cosa si
+// stava facendo.
+const diCosa = (via) => {
+  const v = String(via || '');
+  if (/\/roles(\/|$)/.test(v)) return { cosa: 'quel ruolo', permesso: 'Gestire i ruoli' };
+  if (/\/channels\//.test(v)) return { cosa: 'quel canale', permesso: 'Gestire i canali' };
+  if (/\/messages(\/|$)/.test(v)) return { cosa: 'quel canale', permesso: 'Inviare messaggi' };
+  if (/\/members\//.test(v)) return { cosa: 'quella persona', permesso: 'Gestire i ruoli' };
+  return { cosa: 'quella cosa', permesso: 'quello che serve' };
+};
+
+function spiega(stato, corpo, via) {
   const cod = Number(corpo?.code) || 0;
+  const { cosa, permesso } = diCosa(via);
   if (stato === 401) return 'il token del bot non vale piu\': rigeneralo su Discord e rimettilo qui';
-  if (cod === 50013 || cod === 50001) return 'al bot manca il permesso «Gestire i ruoli», oppure il ruolo sta piu\' in alto di lui';
-  if (stato === 403) return 'Discord non lascia fare questa cosa al bot: controlla i suoi permessi e la sua posizione';
-  if (stato === 404) return 'non trovato: il server, la persona o il ruolo non ci sono piu\'';
+  if (cod === 50013 || cod === 50001) {
+    return `su ${cosa} il bot non puo\' intervenire: gli manca «${permesso}», oppure quella cosa sta piu' in alto di lui`;
+  }
+  if (stato === 403) return `Discord non lascia toccare ${cosa} al bot: controlla i suoi permessi e la sua posizione`;
+  if (stato === 404) return `non trovato: ${cosa} non c'e' piu'`;
   if (stato >= 500) return 'Discord non sta bene in questo momento';
   return corpo?.message ? String(corpo.message).slice(0, 140) : ('HTTP ' + stato);
 }
@@ -79,9 +101,9 @@ async function chiama(token, via, { metodo = 'GET', corpo = null, riprova = true
     if (r.status === 204) return { ok: true, dati: null };
     const d = await r.json().catch(() => null);
     if (r.ok) return { ok: true, dati: d };
-    if (r.status === 404) return { ok: false, errore: spiega(404, d), stato: 404, assente: true };
+    if (r.status === 404) return { ok: false, errore: spiega(404, d, via), stato: 404, assente: true };
     log.warn('chiamata', metodo, via.replace(/\d{5,}/g, '#'), '→', r.status);
-    return { ok: false, errore: spiega(r.status, d), stato: r.status };
+    return { ok: false, errore: spiega(r.status, d, via), stato: r.status };
   } catch (e) {
     return { ok: false, errore: 'Discord irraggiungibile' };
   } finally { clearTimeout(to); }
@@ -295,7 +317,12 @@ export const puoIncorniciare = (bits) => puo(bits, EMBED_LINKS);
 // permessi dei ruoli, poi la riga di @everyone (prima il divieto, poi il
 // permesso), poi le righe dei ruoli tutte insieme, e in fondo quella della
 // persona — che vince su tutto. Chi e' amministratore salta la fila.
-export function permessiNelCanale({ ruoli = [], guildId, bot = {}, bits } = {}, canale) {
+export function permessiNelCanale({ ruoli = [], guildId, guild, bot = {}, bits } = {}, canale) {
+  // La fotografia dice `guild.id`; chi chiama a mano puo' passare `guildId`.
+  // Leggerne una sola vorrebbe dire che l'altra forma passa di qui senza
+  // trovare la riga di  — e senza quella il conto torna sbagliato in
+  // silenzio, dicendo che il bot puo' fare cose che non puo'.
+  const idServer = String(guildId ?? guild?.id ?? '');
   let base = 0n;
   try { base = typeof bits === 'bigint' ? bits : BigInt(bits || 0); } catch { base = 0n; }
   if ((base & ADMINISTRATOR) === ADMINISTRATOR) return base;
@@ -306,7 +333,7 @@ export function permessiNelCanale({ ruoli = [], guildId, bot = {}, bits } = {}, 
     try { d = BigInt(o?.deny || 0); } catch { d = 0n; }
     return { a, d };
   };
-  const tutti = righe.get(String(guildId));
+  const tutti = righe.get(idServer);
   if (tutti) { const { a, d } = leggi(tutti); base = (base & ~d) | a; }
   let nega = 0n; let da = 0n;
   for (const id of (bot.ruoli || []).map(String)) {
