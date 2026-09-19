@@ -122,3 +122,20 @@ test('e raccontata fuori, come ogni cosa che si aggiunge', () => {
   assert.match(VISTA, /scheda: 'dcentra'/, 'la vetrina');
   assert.match(VETRINA, /'dcserver', 'dcentra'/, 'il manuale');
 });
+
+test('la modalita\' distruttiva si vede anche da qui, che e\' da dove si costruisce', () => {
+  const CSS = readFileSync(join(RAD, 'src/web/public/style.css'), 'utf8');
+  const f = fetta(APP, 'function _distApplica()', '\nfunction _distConta');
+  assert.match(f, /'scheda-dcserver', 'scheda-dcentra'/, 'tinge tutte e due le schede');
+  assert.match(f, /querySelectorAll\('\.dcs-fascia'\)/, 'la fascia rossa compare in tutte e due');
+  assert.match(APP, /\$\{fasciaDistruttiva\('dce'\)\}/);
+  assert.match(APP, /_g\('dce-esci'\)\?\.addEventListener/, 'e da tutte e due si esce');
+  assert.match(CSS, /#dcs-costruisci, \[data-distruttivo="1"\] #dce-costruisci/, 'il tasto e\' rosso in tutte e due');
+  const conta = fetta(APP, 'function _distConta()', '\nasync function _distEntra');
+  assert.match(conta, /querySelectorAll\('\.dist-resta'\)/, 'e il tempo che resta scorre in tutte e due');
+});
+
+test('la fascia della modalita\' distruttiva e\' scritta una volta sola', () => {
+  assert.equal(APP.split('function fasciaDistruttiva(').length - 1, 1);
+  assert.equal(APP.split('Modalit\u00e0 distruttiva').length - 1, 1, 'due copie direbbero due cose diverse');
+});
