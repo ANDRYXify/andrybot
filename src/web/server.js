@@ -53,7 +53,7 @@ import * as presenze from '../features/presenze.js';
 import * as statistiche from '../features/statistiche.js';
 import * as rapporto from '../features/rapporto.js';
 import * as bitFeat from '../features/bit.js';
-const { SALUTO_RE } = bitFeat;
+import * as premio from '../features/premio.js';
 import * as morti from '../features/morti.js';
 import * as gsi from '../features/gsi.js';
 import * as libreria from '../features/morti-libreria.js';
@@ -4795,27 +4795,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         giorni,
       };
     }
-    // premio VIP periodico (a chi ha piu' monete, o piu' Bit)
-    if (b.premioVip !== undefined) {
-      const p = b.premioVip || {};
-      // La frase per il re dei Bit: una frase VUOTA vuol dire «non dirlo», e
-      // non va scambiata per «non me l'hanno mandata». Quindi si sostituisce
-      // solo quando arriva davvero una stringa.
-      const prima = s.settings?.premioVip || {};
-      out.premioVip = {
-        saluto: typeof p.saluto === 'string' ? p.saluto.trim().slice(0, 200)
-          : (typeof prima.saluto === 'string' ? prima.saluto : SALUTO_RE),
-        attivo: !!p.attivo,
-        // da dove si pesca. Una scelta che non conosciamo torna alle monete,
-        // che sono l'unica classifica che sappiamo sempre.
-        da: p.da === 'bit' ? 'bit' : 'monete',
-        periodo: ['settimana', 'mese'].includes(p.periodo) ? p.periodo : 'settimana',
-        quanti: Math.min(5, Math.max(1, Math.round(Number(p.quanti)) || 1)),
-        // acceso salvo richiesta contraria: darlo a chi ce l'ha gia' per sempre
-        // gli metterebbe addosso una scadenza che prima non aveva.
-        saltaPerenni: p.saltaPerenni !== false,
-      };
-    }
+    // Il premio in VIP: due gare, posizioni con nome e durata in dirette. La
+    // regola sta in `features/premio.js` ed e' pura — si prova senza accendere
+    // un server, e legge da sola le impostazioni del formato vecchio.
+    if (b.premioVip !== undefined) out.premioVip = premio.normalizza(b.premioVip, s.settings?.premioVip);
 
     // gating per funzioni effettive: ciò che non è incluso nel piano base + add-on
     // resta spento (i membri community hanno tutto attivo, quindi mai limitati).

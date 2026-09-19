@@ -24,6 +24,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Chi guida i Bit diventa il re: tiene una corona accanto al nome nella chat a schermo, e quando torna a scrivere il bot lo saluta con la frase che hai scritto. [vai: giochi]
 - La classifica dei Bit puoi metterla in scena: la scegli dallo Studio come ogni altro elemento, dici di quando e quante righe, e si aggiorna da sola quando arriva un cheer. [vai: alert]
 - Collegare Discord adesso è un tasto: ti manda a scegliere il server dall'elenco e torni a posto. Niente bot da creare, niente id da copiare. [vai: ruoli]
+- Un VIP a premio adesso dura DIRETTE, non giorni: se salti una settimana ti aspetta. E le gare sono due, monete e Bit, che vanno avanti insieme. [vai: giochi]
+- Ogni posizione ha il nome che le dai tu — re, principe, cavaliere — e la sua durata: al primo posto puoi dare cinque dirette e al terzo una. [vai: giochi]
 
 ## 2026-09-18
 

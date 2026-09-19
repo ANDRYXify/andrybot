@@ -3,6 +3,7 @@
 // che dici tu) e scadenza automatica. Serve lo scope 'channel:manage:vips'.
 import { vips, memory, points, padroneDi } from '../db.js';
 import { migliaia } from './bit.js';
+import { dette } from './premio.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('vip');
@@ -108,16 +109,27 @@ export async function togliVip(helix, channel, nome, say) {
 // Un VIP SENZA scadenza non si accorcia mai. Scrivergli sopra `until` lo
 // trasformerebbe in un VIP a tempo, e una settimana dopo controllaScadenze
 // glielo toglierebbe: un premio che revoca cio' che premia.
+// La durata puo' essere un TEMPO (`{ms, txt}`, i VIP dati a mano) o un numero di
+// DIRETTE (`{dirette, txt}`, i premi). Sono due misure diverse e non si mescolano
+// su una stessa riga: chi ha un conto a dirette non ha una scadenza, e viceversa.
+const aTempo = (d) => Number(d?.ms) > 0;
+const aDirette = (d) => Number(d?.dirette) > 0;
+
 export async function assegnaVipLogin(helix, channel, login, durata, motivo = 'premio', say) {
   try {
     const u = await helix.getUserByLogin(login).catch(() => null);
     if (!u?.id) return { ok: false };
     const gia = vips.get(channel, login);
-    if (gia && !gia.until && durata.ms > 0) return { ok: false, perenne: true, display: gia.display || login };
+    // Un VIP SENZA scadenza non si accorcia mai — ne' con un tempo ne' con un
+    // conto a dirette: sarebbe un premio che revoca cio' che premia.
+    if (gia && !gia.until && !gia.dirette && (aTempo(durata) || aDirette(durata))) {
+      return { ok: false, perenne: true, display: gia.display || login };
+    }
     const r = await helix.addVip(channel, u.id);
     if (!r.ok) return { ok: false, motivo: r.motivo };
-    const until = durata.ms > 0 ? Date.now() + durata.ms : 0;
-    vips.set(channel, { user: login.toLowerCase(), userId: u.id, display: u.display_name || login, until, motivo });
+    const until = aTempo(durata) ? Date.now() + durata.ms : 0;
+    const dirette = aDirette(durata) ? Math.round(durata.dirette) : 0;
+    vips.set(channel, { user: login.toLowerCase(), userId: u.id, display: u.display_name || login, until, dirette, motivo });
     say?.(`👑 ${u.display_name} ha vinto il VIP ${motivo === 'premio' ? 'come premio' : ''} per ${durata.txt}! 🎉`);
     return { ok: true, display: u.display_name };
   } catch (e) { log.error('assegnaVipLogin:', e?.message || e); return { ok: false }; }
@@ -201,6 +213,11 @@ export const puoVincere = (channel, login) => {
 // Cosi' le monete e i Bit sono la stessa cosa vista da due sorgenti diverse, e
 // la terza che verra' non avra' bisogno di un terzo giro di premiazione.
 //
+// I POSTI NON SONO TUTTI UGUALI. `posti` e' l'elenco delle posizioni in palio,
+// e ognuna ha la SUA durata e il SUO nome: il primo puo' valere cinque dirette
+// e il terzo una. Quanti posti ci sono lo dice la lunghezza dell'elenco — non
+// c'e' un secondo numero che possa smentirla.
+//
 // Tre regole, e ognuna nasce da un fatto, non da un gusto:
 //
 //  · SALTA chi non puo' vincere (staff, padrone di casa): vedi sopra.
@@ -208,45 +225,50 @@ export const puoVincere = (channel, login) => {
 //    dargli il VIP non aggiunge niente a lui e toglie il posto a chi verrebbe
 //    dopo — e, peggio, gli metterebbe una scadenza addosso.
 //  · SCORRE: se qualcuno viene saltato o rifiutato, il posto va al successivo.
-//    I posti promessi sono `quanti`, e `quanti` devono essere assegnati finche'
-//    c'e' gente in classifica.
-export async function premia(helix, channel, { gente = [], quanti = 1, durata, saltaPerenni = true, say, frase } = {}) {
+//    I posti promessi sono quelli, e vanno assegnati finche' c'e' gente in
+//    classifica.
+export async function premia(helix, channel, { gente = [], posti = [], saltaPerenni = true, say, frase } = {}) {
   try {
-    const posti = Math.max(1, Number(quanti) || 1);
-    const d = durata || parseDurata('');
-    // L'elenco serve in ogni caso, non solo quando si salta: l'interruttore
-    // decide se uno puo' VINCERE un posto, non se ci sia permesso rovinargli
-    // quello che ha. Un VIP per sempre non prende mai una scadenza.
+    const palio = (Array.isArray(posti) ? posti : []).filter((p) => p && Number(p.dirette) > 0);
+    if (!palio.length) return [];
     const perenni = await giaPerSempre(helix, channel);
     const vincitori = [];
     const saltati = [];
     for (const chi of gente) {
-      if (vincitori.length >= posti) break;
+      if (vincitori.length >= palio.length) break;
       const login = String(chi || '').toLowerCase();
       if (!login || !puoVincere(channel, login)) continue;
       const perenne = perenni.has(login);
       if (perenne && saltaPerenni) { saltati.push(login); continue; }
-      const r = await assegnaVipLogin(helix, channel, login, perenne ? SEMPRE : d, 'premio');
-      if (r.ok) vincitori.push({ login, display: r.display || login });
+      const posto = palio[vincitori.length];
+      const dirette = Math.max(1, Math.round(Number(posto.dirette) || 1));
+      const durata = perenne ? SEMPRE : { dirette, txt: dette(dirette) };
+      const r = await assegnaVipLogin(helix, channel, login, durata, 'premio');
+      if (r.ok) vincitori.push({ login, display: r.display || login, posto: vincitori.length + 1, titolo: posto.titolo || '', dirette });
       else if (r.perenne) saltati.push(login);
     }
     if (saltati.length) log.info(`premio VIP #${channel}: saltati (ce l'hanno gia' per sempre) ${saltati.join(', ')}`);
-    if (vincitori.length && frase) { const t = frase(vincitori, d); if (t) say?.(t); }
+    if (vincitori.length && frase) { const t = frase(vincitori); if (t) say?.(t); }
     return vincitori;
   } catch (e) { log.error('premia:', e?.message || e); return []; }
 }
 
+// Come si nomina un vincitore: col titolo che gli ha dato lo streamer, o col
+// posto se non gliene ha dato uno. Una riga sola, cosi' le due gare non si
+// inventano due modi di dire la stessa cosa.
+const nomato = (v) => (v.titolo ? v.titolo : `${v.posto}° posto`);
+const conMaiuscola = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+
 // Premio periodico: il VIP a chi ha piu' monete. La classifica e' nostra, e ha
 // gia' la sua gara del pubblico: qui si pesca profondo perche' scorrendo
 // servono candidati di riserva.
-export async function premiaTopMonete(helix, channel, quanti, durata, say, opzioni = {}) {
-  const posti = Math.max(1, Number(quanti) || 1);
-  const gente = points.top(channel, posti * 4 + 10, 'pubblico').map((t) => t.user);
-  const v = await premia(helix, channel, {
-    gente, quanti: posti, durata, say, saltaPerenni: opzioni.saltaPerenni !== false,
-    frase: (vinti, d) => `🏆 Premio ${d.txt}: VIP a ${vinti.map((x) => x.display).join(', ')} — i più affezionati! 💜`,
+export async function premiaTopMonete(helix, channel, blocco, say) {
+  const quanti = (blocco?.posti || []).length || 1;
+  const gente = points.top(channel, quanti * 4 + 10, 'pubblico').map((t) => t.user);
+  return premia(helix, channel, {
+    gente, posti: blocco?.posti || [], say, saltaPerenni: blocco?.saltaPerenni !== false,
+    frase: (vinti) => '🏆 ' + vinti.map((v) => `${conMaiuscola(nomato(v))}: ${v.display} (VIP per ${dette(v.dirette)})`).join(' · '),
   });
-  return v.map((x) => x.display);
 }
 
 // Premio periodico: il VIP a chi ha messo piu' Bit.
@@ -255,19 +277,18 @@ export async function premiaTopMonete(helix, channel, quanti, durata, say, opzio
 // Bit e' di Twitch, e un suo silenzio («non lo so») non e' «non ha cheerato
 // nessuno». Chi chiama e' l'unico che puo' distinguerli, perche' e' lui che
 // decide se il periodo e' passato o va riprovato piu' tardi.
-export async function premiaTopBit(helix, channel, righe, quanti, durata, say, opzioni = {}) {
-  const posti = Math.max(1, Number(quanti) || 1);
+export async function premiaTopBit(helix, channel, righe, blocco, say) {
   const ordinate = (Array.isArray(righe) ? righe : []).filter((r) => r?.login);
-  const nomi = new Map(ordinate.map((r) => [r.login, r]));
+  const dati = new Map(ordinate.map((r) => [r.login, r]));
   const v = await premia(helix, channel, {
-    gente: ordinate.map((r) => r.login), quanti: posti, durata, say, saltaPerenni: opzioni.saltaPerenni !== false,
-    frase: (vinti, d) => {
-      const re = vinti[0];
-      const quanti2 = nomi.get(re.login)?.bit || 0;
-      const corte = vinti.slice(1).map((x) => x.display).join(', ');
-      return `👑 Re dei Bit: ${re.display}${quanti2 ? ` con ${migliaia(quanti2)} Bit` : ''} — VIP per ${d.txt}!`
-        + (corte ? ` Sul podio anche ${corte}.` : '');
+    gente: ordinate.map((r) => r.login), posti: blocco?.posti || [], say, saltaPerenni: blocco?.saltaPerenni !== false,
+    frase: (vinti) => {
+      const primo = vinti[0];
+      const bit = dati.get(primo.login)?.bit || 0;
+      const testa = `👑 ${conMaiuscola(nomato(primo))}: ${primo.display}${bit ? ` con ${migliaia(bit)} Bit` : ''} — VIP per ${dette(primo.dirette)}.`;
+      const coda = vinti.slice(1).map((x) => `${conMaiuscola(nomato(x))}: ${x.display}`).join(' · ');
+      return coda ? `${testa} ${coda}.` : testa;
     },
   });
-  return v.map((x) => ({ ...x, bit: nomi.get(x.login)?.bit || 0, nome: nomi.get(x.login)?.nome || x.display }));
+  return v.map((x) => ({ ...x, bit: dati.get(x.login)?.bit || 0, nome: dati.get(x.login)?.nome || x.display }));
 }

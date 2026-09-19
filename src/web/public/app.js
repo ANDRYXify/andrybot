@@ -89,6 +89,114 @@ async function firmaPngBlob(blob) {
 }
 
 const SALUTO_RE = '{user} è il re dei Bit, con {bit} Bit. Bentornato.';
+const PREMIO_DEF = {
+  monete: { attivo: false, periodo: 'settimana', saltaPerenni: true, posti: [{ dirette: 3, titolo: '' }] },
+  bit: { attivo: false, periodo: 'mese', saltaPerenni: true, saluto: SALUTO_RE,
+    posti: [{ dirette: 4, titolo: 're' }, { dirette: 2, titolo: 'principe' }, { dirette: 1, titolo: 'cavaliere' }] },
+};
+
+function premioDi(s) {
+  const p = (s && typeof s === 'object') ? s : {};
+  if (!p.monete && !p.bit && ('attivo' in p || 'quanti' in p || 'da' in p)) {
+    const gara = p.da === 'bit' ? 'bit' : 'monete';
+    const quanti = Math.min(5, Math.max(1, Number(p.quanti) || 1));
+    const dirette = p.periodo === 'mese' ? 12 : 3;
+    const vecchio = { ...PREMIO_DEF[gara], attivo: !!p.attivo, periodo: p.periodo === 'mese' ? 'mese' : 'settimana',
+      saltaPerenni: p.saltaPerenni !== false,
+      posti: Array.from({ length: quanti }, (_, i) => ({ dirette, titolo: PREMIO_DEF[gara].posti[i]?.titolo || '' })) };
+    if (gara === 'bit' && typeof p.saluto === 'string') vecchio.saluto = p.saluto;
+    return { ...struttPremio(), [gara]: vecchio };
+  }
+  const fuori = struttPremio();
+  for (const g of ['monete', 'bit']) {
+    const v = (p[g] && typeof p[g] === 'object') ? p[g] : {};
+    fuori[g] = { ...fuori[g], ...v, posti: Array.isArray(v.posti) && v.posti.length ? v.posti.map((x) => ({ dirette: Number(x.dirette) || 1, titolo: String(x.titolo || '') })) : fuori[g].posti };
+  }
+  return fuori;
+}
+const struttPremio = () => JSON.parse(JSON.stringify(PREMIO_DEF));
+let _premio = null;
+
+function _premioGara(gara, titolo, chiSale) {
+  const b = (_premio || (_premio = premioDi(impostazioni().premioVip)))[gara];
+  const bit = gara === 'bit';
+  return `<div class="carta-interna spazio-sopra" data-gara="${gara}">
+    <div class="riga-interruttore">
+      <label class="interruttore"><input type="checkbox" id="pr-${gara}-attivo" ${b.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+      <span class="etichetta-stato"><strong>${esc(titolo)}</strong> — ${esc(chiSale)}</span>
+    </div>
+    <div class="riga-flessibile spazio-sopra">
+      <span class="suggerimento">${L('Si premia ogni', 'Awarded every', 'Se premia cada')}</span>
+      <select id="pr-${gara}-periodo" aria-label="${esc(L('Ogni quanto si assegna', 'How often it is awarded', 'Cada cuanto se da'))}">
+        <option value="settimana" ${b.periodo === 'settimana' ? 'selected' : ''}>${L('settimana', 'week', 'semana')}</option>
+        <option value="mese" ${b.periodo === 'mese' ? 'selected' : ''}>${L('mese', 'month', 'mes')}</option>
+      </select>
+    </div>
+    <div id="pr-${gara}-posti" class="spazio-sopra"></div>
+    <p class="riga-flessibile">
+      <button type="button" class="btn secondario mini" id="pr-${gara}-piu">${_bIco(ICO.piu)}${L('Aggiungi una posizione', 'Add a place', 'Añadir una posición')}</button>
+    </p>
+    ${bit ? `<div class="riga-flessibile spazio-sopra">
+      <label class="suggerimento" for="pr-bit-saluto">${L('Quando il re torna a scrivere', 'When the king writes again', 'Cuando el rey vuelve a escribir')}</label>
+      <input type="text" id="pr-bit-saluto" maxlength="200" style="flex:1;min-width:16rem" value="${esc(typeof b.saluto === 'string' ? b.saluto : SALUTO_RE)}" placeholder="${esc(SALUTO_RE)}">
+    </div>
+    <p class="suggerimento">${L('Segnaposti: {user}, {bit} e {titolo}. Lascia vuoto e il bot non dice niente. Chi vince il primo posto porta anche una corona accanto al nome nella chat a schermo.', 'Placeholders: {user}, {bit} and {titolo}. Leave it empty and the bot says nothing. Whoever takes first place also wears a crown next to their name in the on-screen chat.', 'Marcadores: {user}, {bit} y {titolo}. Déjalo vacío y el bot no dice nada. Quien gana el primer puesto lleva también una corona junto al nombre en el chat en pantalla.')}</p>` : ''}
+    <div class="riga-check spazio-sopra">
+      <input type="checkbox" id="pr-${gara}-salta" ${b.saltaPerenni !== false ? 'checked' : ''}>
+      <label for="pr-${gara}-salta">${L('Salta chi ha già il VIP per sempre (il premio scorre al successivo)', 'Skip people who already have VIP forever (the reward slides to the next)', 'Salta a quien ya tiene VIP para siempre (el premio pasa al siguiente)')}</label>
+    </div>
+  </div>`;
+}
+
+function _premioRighe(gara) {
+  const box = _g('pr-' + gara + '-posti');
+  if (!box || !_premio) return;
+  const posti = _premio[gara].posti;
+  box.innerHTML = posti.map((p, i) => `<div class="pr-posto riga-flessibile" data-i="${i}">
+    <span class="suggerimento" style="min-width:2.4rem">${i + 1}°</span>
+    <input type="text" data-pr="titolo" maxlength="24" value="${esc(p.titolo || '')}" placeholder="${esc(L('come lo chiami', 'what you call it', 'cómo lo llamas'))}" style="max-width:11rem" aria-label="${esc(L('Nome della posizione', 'Name of the place', 'Nombre de la posición'))}">
+    <span class="suggerimento">${L('VIP per', 'VIP for', 'VIP por')}</span>
+    <input type="number" data-pr="dirette" min="1" max="60" value="${Number(p.dirette) || 1}" style="max-width:5.5rem" aria-label="${esc(L('Quante dirette', 'How many streams', 'Cuántos directos'))}">
+    <span class="suggerimento">${L('dirette', 'streams', 'directos')}</span>
+    ${posti.length > 1 ? `<button type="button" class="btn secondario mini" data-pr="via">${esc(L('Togli', 'Remove', 'Quitar'))}</button>` : ''}
+  </div>`).join('');
+}
+
+function _premioLeggi(gara) {
+  const box = _g('pr-' + gara + '-posti');
+  const posti = box ? [...box.querySelectorAll('.pr-posto')].map((n) => ({
+    titolo: n.querySelector('[data-pr="titolo"]')?.value || '',
+    dirette: Math.min(60, Math.max(1, Number(n.querySelector('[data-pr="dirette"]')?.value) || 1)),
+  })) : [];
+  const fuori = {
+    attivo: !!_g('pr-' + gara + '-attivo')?.checked,
+    periodo: _g('pr-' + gara + '-periodo')?.value === 'mese' ? 'mese' : 'settimana',
+    saltaPerenni: !!_g('pr-' + gara + '-salta')?.checked,
+    posti: posti.length ? posti : PREMIO_DEF[gara].posti,
+  };
+  if (gara === 'bit') fuori.saluto = _g('pr-bit-saluto')?.value ?? SALUTO_RE;
+  return fuori;
+}
+
+function _premioTasti(gara) {
+  _premioRighe(gara);
+  _g('pr-' + gara + '-posti')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pr="via"]');
+    if (!b || !_premio) return;
+    const i = Number(b.closest('.pr-posto')?.dataset.i);
+    _premio[gara] = { ..._premio[gara], ..._premioLeggi(gara) };
+    _premio[gara].posti.splice(i, 1);
+    _premioRighe(gara);
+  });
+}
+
+function _premioAggiungi(gara) {
+  if (!_premio || _premio[gara].posti.length >= 5) return;
+  _premio[gara] = { ..._premio[gara], ..._premioLeggi(gara) };
+  const ultimo = _premio[gara].posti[_premio[gara].posti.length - 1];
+  _premio[gara].posti.push({ dirette: Math.max(1, (Number(ultimo?.dirette) || 2) - 1), titolo: '' });
+  _premioRighe(gara);
+}
 function impostazioni() {
   const s = stato?.streamer?.settings || {};
   return {
@@ -111,7 +219,7 @@ function impostazioni() {
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
     punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, perPresenza: 5, perAttivita: 5, moltSub: 1.5, moltVip: 1.25, lurkPasso: 0.15, lurkMinimo: 0.35, soloLive: true, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
     manche: { attivo: false, minMin: 15, maxMin: 45, soloLive: false, ...(s.manche && typeof s.manche === 'object' ? s.manche : {}) },
-    premioVip: (s.premioVip && typeof s.premioVip === 'object') ? { da: 'monete', saltaPerenni: true, saluto: SALUTO_RE, ...s.premioVip } : { attivo: false, da: 'monete', periodo: 'settimana', quanti: 1, saltaPerenni: true, saluto: SALUTO_RE },
+    premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : {},
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
     antibot: (s.antibot && typeof s.antibot === 'object') ? s.antibot : {},
     comandiChat: (s.comandiChat && typeof s.comandiChat === 'object') ? s.comandiChat : { attivo: false },
@@ -398,7 +506,11 @@ function statoDemo() {
         cambioCategoria: { attivo: true, trigger: 'categoria', annuncia: true },
         cambioTitolo: { attivo: false, trigger: 'titolo', annuncia: true },
         imparaVoce: { attivo: false },
-        premioVip: { attivo: true, da: 'monete', periodo: 'settimana', quanti: 2, saltaPerenni: true },
+        premioVip: {
+          monete: { attivo: true, periodo: 'settimana', saltaPerenni: true, posti: [{ dirette: 3, titolo: '' }, { dirette: 2, titolo: '' }] },
+          bit: { attivo: true, periodo: 'mese', saltaPerenni: true, saluto: '{user} è il re dei Bit, con {bit} Bit. Bentornato.',
+            posti: [{ dirette: 4, titolo: 're' }, { dirette: 2, titolo: 'principe' }, { dirette: 1, titolo: 'cavaliere' }] },
+        },
         manche: { attivo: true, minMin: 20, maxMin: 60, soloLive: false },
         paroleVietate: ['spoiler', 'link-truffa'],
         maiDire: ['Taliento', 'via Mazzini'],
@@ -16266,40 +16378,11 @@ function pannelloGiochi() {
       <h2>${_hIco(ICO.trofeo)}${L('Classifica & VIP', 'Leaderboard & VIP', 'Clasificación y VIP')}</h2>
       ${stato.vipOk ? '' : `<p class="suggerimento">${L('Per assegnare i VIP serve un permesso in più (aggiunto dopo).', 'Assigning VIPs needs one more permission (added later).', 'Asignar VIP necesita un permiso más (añadido después).')}
         <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>`}
-      <div class="riga-check">
-        <input type="checkbox" id="chk-premiovip" ${s.premioVip.attivo ? 'checked' : ''}>
-        <label for="chk-premiovip">${L('Premio VIP automatico ai più affezionati', 'Automatic VIP reward for your most loyal', 'Premio VIP automático a los más fieles')}</label>
-      </div>
-      <div class="riga-flessibile">
-        <span class="suggerimento">${L('Ogni', 'Every', 'Cada')}</span>
-        <select aria-label="${esc(L('Ogni quanto si assegna il premio', 'How often the prize is awarded', 'Cada cuanto se da el premio'))}" id="sel-premio-periodo">
-          <option value="settimana" ${s.premioVip.periodo === 'settimana' ? 'selected' : ''}>${L('settimana', 'week', 'semana')}</option>
-          <option value="mese" ${s.premioVip.periodo === 'mese' ? 'selected' : ''}>${L('mese', 'month', 'mes')}</option>
-        </select>
-        <span class="suggerimento">${L('ai primi', 'to the top', 'a los primeros')}</span>
-        <input aria-label="${esc(L('A quanti in classifica', 'To how many in the leaderboard', 'A cuantos de la clasificacion'))}" type="number" id="num-premio-quanti" min="1" max="5" value="${Number(s.premioVip.quanti) || 1}">
-        <span class="suggerimento">${L('della classifica', 'of the leaderboard', 'de la clasificación')}</span>
-        <select aria-label="${esc(L('Quale classifica premia', 'Which leaderboard the prize uses', 'Que clasificacion premia'))}" id="sel-premio-da">
-          <option value="monete" ${s.premioVip.da === 'bit' ? '' : 'selected'}>${esc(s.nomeMonete)}</option>
-          <option value="bit" ${s.premioVip.da === 'bit' ? 'selected' : ''}>Bit</option>
-        </select>
-      </div>
-      <div id="blocco-premio-bit" ${s.premioVip.da === 'bit' ? '' : 'hidden'}>
-      <div class="riga-flessibile">
-        <label class="suggerimento" for="txt-premio-saluto">${L('Quando il re dei Bit torna a scrivere', 'When the Bits king writes again', 'Cuando el rey de los Bits vuelve a escribir')}</label>
-        <input type="text" id="txt-premio-saluto" maxlength="200" style="flex:1;min-width:16rem" value="${esc(typeof s.premioVip.saluto === 'string' ? s.premioVip.saluto : SALUTO_RE)}" placeholder="${esc(SALUTO_RE)}">
-      </div>
-      <p class="suggerimento">${L('Segnaposti: {user} e {bit}. Lascia vuoto e il bot non dice niente.', 'Placeholders: {user} and {bit}. Leave it empty and the bot says nothing.', 'Marcadores: {user} y {bit}. Déjalo vacío y el bot no dice nada.')}</p>
-      <p class="suggerimento">${L('Con i Bit la classifica è quella di Twitch, e chi la guida diventa il re dei Bit: si tiene la corona in chat fino al premio dopo, e la volta che torna il bot lo saluta. Se Twitch non risponde il premio non salta: si riprova più tardi.', 'With Bits the leaderboard is Twitch’s own, and whoever leads it becomes the Bits king: the crown stays in chat until the next prize, and the bot greets them next time they show up. If Twitch does not answer the prize is not skipped: it retries later.', 'Con los Bits la clasificación es la de Twitch, y quien la lidera se convierte en el rey de los Bits: mantiene la corona en el chat hasta el siguiente premio, y la próxima vez que vuelve el bot le saluda. Si Twitch no responde el premio no se salta: se reintenta más tarde.')}</p>
-      </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-premio-salta" ${s.premioVip.saltaPerenni !== false ? 'checked' : ''}>
-        <label for="chk-premio-salta">${L('Salta chi ha già il VIP per sempre (il premio scorre al successivo)', 'Skip people who already have VIP forever (the reward slides to the next)', 'Salta a quien ya tiene VIP para siempre (el premio pasa al siguiente)')}</label>
-      </div>
-      <p class="suggerimento">${L('Il premio pesca dalla classifica del pubblico: Twitch non permette di dare il VIP a un moderatore, quindi lo staff non entra fra i candidati.', 'The reward draws from the public leaderboard: Twitch does not allow giving VIP to a moderator, so staff are not among the candidates.', 'El premio se elige de la clasificación del público: Twitch no permite dar VIP a un moderador, así que el staff no entra entre los candidatos.')}</p>
-      <p class="suggerimento">${L('Il bot dà il VIP, per la stessa durata, a chi sta in cima alla classifica che hai scelto.', 'The bot gives VIP, for the same duration, to whoever leads the leaderboard you picked.', 'El bot da el VIP, por la misma duración, a quien lidera la clasificación que has elegido.')} ${L('Puoi anche darlo', 'You can also give it', 'También puedes darlo')}
-      <strong class="primo-piano">${L('a voce', 'by voice', 'por voz')}</strong> ${L('(Comandi a voce → "vip a nome", default 1 settimana; di\' "mese" per un mese)', '(Voice commands → "vip to name", default 1 week; say "month" for a month)', '(Comandos por voz → "vip a nombre", por defecto 1 semana; di "mes" para un mes)')}
-      ${L('o in chat con', 'or in chat with', 'o en el chat con')} <code>!vip @${L('nome', 'name', 'nombre')}</code>.</p>
+      ${_premioGara('monete', L('Chi ti segue sempre', 'Who is always there', 'Quien siempre está'), esc(s.nomeMonete))}
+      ${_premioGara('bit', L('Chi mette i Bit', 'Who puts in the Bits', 'Quien pone los Bits'), 'Bit')}
+      <p class="suggerimento spazio-sopra">${L('Le due gare sono indipendenti: puoi accenderne una, l’altra o tutt’e due. Il premio non pesca mai dallo staff né da te: Twitch non permette di dare il VIP a un moderatore, quindi il posto scorre a chi può davvero riceverlo.', 'The two races are independent: turn on one, the other, or both. The prize never draws from your staff or from you: Twitch does not allow giving VIP to a moderator, so the spot slides to someone who can actually get it.', 'Las dos carreras son independientes: puedes encender una, la otra o las dos. El premio nunca se elige del staff ni de ti: Twitch no permite dar VIP a un moderador, así que el puesto pasa a quien sí puede recibirlo.')}</p>
+      <p class="suggerimento">${L('Puoi darlo anche', 'You can also give it', 'También puedes darlo')}
+      <strong class="primo-piano">${L('a voce', 'by voice', 'por voz')}</strong> ${L('(Comandi a voce → "vip a nome") o in chat con', '(Voice commands → "vip to name") or in chat with', '(Comandos por voz → "vip a nombre") o en el chat con')} <code>!vip @${L('nome', 'name', 'nombre')}</code>${L(': quelli durano un tempo, non delle dirette.', ': those last a length of time, not a number of streams.', ': esos duran un tiempo, no directos.')}</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-premio">${L('Salva premio', 'Save reward', 'Guardar premio')}</button></p>
       ${stato.ruolo === 'moderatore' ? '' : `<div class="riga-flessibile spazio-sopra">
         <input aria-label="${esc(L('nome utente', 'username', 'nombre de usuario'))}" type="text" id="pt-utente" placeholder="${L('nome utente', 'username', 'nombre de usuario')}" style="max-width:14rem">
@@ -18287,23 +18370,15 @@ function attivaPiattaforma() {
     caricaClassifica();
   }));
 
-  document.getElementById('sel-premio-da')?.addEventListener('change', (e) => {
-    const b = document.getElementById('blocco-premio-bit');
-    if (b) b.hidden = e.target.value !== 'bit';
-  });
+  _premioTasti('monete');
+  _premioTasti('bit');
+  _g('pr-monete-piu')?.addEventListener('click', () => _premioAggiungi('monete'));
+  _g('pr-bit-piu')?.addEventListener('click', () => _premioAggiungi('bit'));
 
   document.getElementById('btn-salva-premio')?.addEventListener('click', () => conErrore(async () => {
-    const quanti = Math.min(5, Math.max(1, Number(document.getElementById('num-premio-quanti').value) || 1));
-    await salvaImpostazioni({
-      premioVip: {
-        attivo: document.getElementById('chk-premiovip').checked,
-        da: document.getElementById('sel-premio-da').value === 'bit' ? 'bit' : 'monete',
-        saluto: document.getElementById('txt-premio-saluto').value,
-        periodo: document.getElementById('sel-premio-periodo').value === 'mese' ? 'mese' : 'settimana',
-        quanti,
-        saltaPerenni: document.getElementById('chk-premio-salta').checked,
-      },
-    }, 'Premio VIP salvato');
+    const premioVip = { monete: _premioLeggi('monete'), bit: _premioLeggi('bit') };
+    _premio = premioDi(premioVip);
+    await salvaImpostazioni({ premioVip }, 'Premio VIP salvato');
   }));
 
   document.getElementById('btn-salva-modalita')?.addEventListener('click', () => conErrore(async () => {

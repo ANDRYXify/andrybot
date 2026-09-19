@@ -20,20 +20,23 @@ const BOT = leggi('src/bot.js');
 const giro = BOT.slice(BOT.indexOf('async _controllaPremi()'), BOT.indexOf('async _tickWatchtime()'));
 
 test('la classifica dei Bit si chiede a chi la tiene, col periodo che ha scelto lo streamer', () => {
-  assert.match(giro, /bit\.classifica\(this\.helix, login, \{ periodo: mese \? 'month' : 'week' \}\)/);
+  assert.match(giro, /bit\.classifica\(this\.helix, login, \{ periodo: blocco\.periodo === 'mese' \? 'month' : 'week' \}\)/);
 });
 
 test('e finche\' non si sa, il periodo resta da premiare', () => {
   const stop = giro.indexOf('if (!righe) continue;');
-  const segno = giro.indexOf('premioVipUltimo: Date.now()');
+  const segno = giro.indexOf('premio.segnaGiro(');
   assert.ok(stop > 0, 'manca l\'uscita quando la classifica non c\'è');
   assert.ok(segno > stop, 'il giro si segna come fatto DOPO aver saputo, mai prima');
-  assert.equal((giro.match(/premioVipUltimo: Date\.now\(\)/g) || []).length, 1,
+  assert.equal((giro.match(/premio\.segnaGiro\(/g) || []).length, 1,
     'una sola scrittura: due strade che si segnano da sole si scollano al primo cambio');
+  // e il segno e' per GARA: due gare che si segnassero sullo stesso numero si
+  // spegnerebbero a vicenda.
+  assert.match(giro, /premio\.segnaGiro\(dopo, gara\)/);
 });
 
 test('il re si ricorda solo quando il premio e\' quello dei Bit', () => {
-  assert.match(giro, /\.\.\.\(p\.da === 'bit' \? \{ reBit: re \} : \{\}\)/,
+  assert.match(giro, /\.\.\.\(gara === 'bit' \? \{ reBit: re \} : \{\}\)/,
     'un premio a monete non deve toccare un re che non ha incoronato lui');
 });
 
