@@ -10,7 +10,7 @@ import express from 'express';
 import { normalizzaAntispam, normalizzaAntibot } from './impostazioni-moderazione.js';
 import cookieSession from 'cookie-session';
 import multer from 'multer';
-import dns from 'node:dns/promises';
+import https from 'node:https';
 import crypto from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync, statSync, unlinkSync, renameSync, copyFileSync } from 'node:fs';
 import { unlink, readFile, mkdir, rename } from 'node:fs/promises';
@@ -318,12 +318,37 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Lo stesso giro per l'indirizzo corto del sostegno: sostieni.<dominio>.
   // Una funzione sola per tutti e due — due sonde scritte a mano sarebbero due
   // cose da tenere d'accordo, e la seconda e' sempre quella che si scorda.
+  //
+  // E la domanda giusta non e' «quel nome esiste nel DNS»: e' «quell'indirizzo
+  // RISPONDE». Sono due cose diverse, e la differenza si e' vista. Appena il
+  // record e' stato creato la sonda ha acceso l'indirizzo corto, ma davanti
+  // c'era una porta che per quel nome non aveva ancora un certificato: il DNS
+  // diceva di si', il browser diceva «connessione non sicura», e il sito
+  // intanto offriva quel link alla gente.
+  //
+  // Percio' si bussa per davvero, in HTTPS. Non conta cosa risponde — un 302
+  // va bene quanto un 200 — conta che la stretta di mano sia andata a buon
+  // fine: vuol dire che per quel nome un certificato c'e'. Se non risponde,
+  // l'indirizzo corto resta spento e si riprova fra dieci minuti. Spento e'
+  // il modo giusto di sbagliare: si perde un indirizzo piu' breve, non si
+  // manda nessuno contro un avviso rosso.
+  const rispondeInHttps = (host) => new Promise((risolvi) => {
+    const req = https.request({ host, port: 443, method: 'HEAD', path: '/', servername: host, timeout: 8000 },
+      (r) => { r.resume(); risolvi(true); });
+    req.on('error', () => risolvi(false));
+    req.on('timeout', () => { req.destroy(); risolvi(false); });
+    req.end();
+  });
   const sondaHost = (candidato, metti, come) => {
     if (!candidato) return;
-    const prova = () => dns.lookup(candidato).then(() => {
-      metti(candidato);
-      log.info(`${come}: ${candidato}`);
-    }).catch(() => { setTimeout(prova, 10 * 60_000).unref?.(); });
+    const prova = async () => {
+      if (await rispondeInHttps(candidato)) {
+        metti(candidato);
+        log.info(`${come}: ${candidato}`);
+        return;
+      }
+      setTimeout(prova, 10 * 60_000).unref?.();
+    };
     prova();
   };
   sondaHost(candidatoDona, (h) => { config.donaHost = h; }, 'indirizzo corto delle donazioni acceso');

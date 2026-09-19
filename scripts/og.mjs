@@ -6,8 +6,10 @@
 // ridisegnandola a mano. Ora il sorgente è questo file: si cambia il testo e si
 // rigenera.
 //
-//   node scripts/og.mjs            → src/web/public/icons/og.png
-//   node scripts/og.mjs --guide    → anche l'immagine delle guide
+//   node scripts/og.mjs             → src/web/public/icons/og.png
+//   node scripts/og.mjs --guide     → quella delle guide
+//   node scripts/og.mjs --sostieni  → quella della pagina del sostegno
+//   node scripts/og.mjs --tutte     → tutte quante
 //
 // Serve Playwright e un Chromium (vedi PLAYWRIGHT_BROWSERS_PATH).
 
@@ -79,6 +81,16 @@ const IMMAGINI = {
     sotto: 'Uno spettatore scrive <strong>!social</strong> e risponde il tuo account, non un bot. Comandi, moderazione, <strong>overlay per la diretta</strong>, clip e avvisi live.',
     pastiglie: ['Con il tuo nome', 'Overlay ed effetti', 'In italiano', 'Gratis'],
   }),
+  // La pagina del sostegno ha la SUA carta. Con quella del sito diceva «il bot
+  // che in chat scrive con il tuo nome»: vera, ma di un'altra pagina — e chi
+  // riceve il link in chat legge l'anteprima, non l'indirizzo.
+  'og-sostieni.png': pagina({
+    occhiello: 'Sostieni',
+    titolo: 'SocialBot lo scrivo io,',
+    evidenza: 'e quasi tutto resta gratis',
+    sotto: 'Se ti è utile e ti va di darmi una mano, qui si può: <strong>quanto vuoi tu</strong>, una volta sola, senza iscriverti a niente.',
+    pastiglie: ['Quanto vuoi tu', 'Una volta sola', 'Niente iscrizioni'],
+  }),
   'og-guide.png': pagina({
     occhiello: 'Guide',
     titolo: 'Come si sta',
@@ -93,9 +105,16 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage', '--force-color-profile=srgb'],
 });
-const soloOg = !process.argv.includes('--guide');
+// Senza argomenti si rifa' solo quella del sito, che e' il caso di tutti i
+// giorni. `--tutte` le rifa' tutte, `--<nome>` una sola.
+const chieste = process.argv.slice(2).map((a) => a.replace(/^--/, ''));
+const vuole = (nome) => {
+  if (chieste.includes('tutte')) return true;
+  if (!chieste.length) return nome === 'og.png';
+  return chieste.some((c) => nome === (c === 'sito' ? 'og.png' : `og-${c}.png`));
+};
 for (const [nome, html] of Object.entries(IMMAGINI)) {
-  if (soloOg && nome !== 'og.png') continue;
+  if (!vuole(nome)) continue;
   const pg = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 2 });
   await pg.setContent(html, { waitUntil: 'load' });
   await pg.evaluate(() => document.fonts.ready);
