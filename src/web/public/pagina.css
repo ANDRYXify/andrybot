@@ -98,6 +98,8 @@ p.piccolo { color: var(--testo-3); font-size: .84rem; margin-top: 14px; }
   font-size: 1.15rem; font-weight: 700; letter-spacing: .06em; user-select: all;
 }
 .minuta { font-size: .84rem; color: var(--testo-3); }
+.entrato { font-weight: 600; color: var(--verde); }
+.entrato[hidden] { display: none; }
 
 .card.larga { max-width: 480px; }
 .sos-cifre { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 20px 0 6px; }

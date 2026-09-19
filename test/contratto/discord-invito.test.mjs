@@ -57,7 +57,7 @@ test('al bot si chiedono solo i permessi che usiamo, e il numero non si scrive a
   const r = /export const PERMESSI_BOT = String\(([A-Z_ |]+)\);/.exec(API);
   assert.ok(r, 'i permessi dell\'invito si compongono da costanti con un nome');
   const chiesti = r[1].split('|').map((x) => x.trim()).sort();
-  assert.deepEqual(chiesti, ['DA_DARE', 'EMBED_LINKS', 'MANAGE_CHANNELS', 'MANAGE_ROLES', 'SEND_MESSAGES', 'VIEW_CHANNEL'],
+  assert.deepEqual(chiesti, ['CREATE_INSTANT_INVITE', 'DA_DARE', 'EMBED_LINKS', 'MANAGE_CHANNELS', 'MANAGE_ROLES', 'SEND_MESSAGES', 'VIEW_CHANNEL'],
     'quello che il bot usa, piu\' quello che deve poter passare: nient\'altro');
 
   // DUE MOTIVI DIVERSI PER CHIEDERE UN PERMESSO, e non vanno confusi.

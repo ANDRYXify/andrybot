@@ -12,8 +12,9 @@ function dici(testo, male) {
   m.textContent = testo || '';
 }
 
-function mostraCodice(codice) {
+function mostraCodice(codice, dentro) {
   $('codice').textContent = '!discord ' + codice;
+  $('dentro').hidden = !dentro;
   $('fatto').hidden = false;
   $('btn').hidden = true;
   dici('');
@@ -25,7 +26,7 @@ async function prepara() {
     dici('Non ha funzionato. Riprova da qui.', true);
   }
   const codice = (parametri.get('codice') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
-  if (codice) { mostraCodice(codice); return; }
+  if (codice) { mostraCodice(codice, parametri.get('dentro') === '1'); return; }
   if (!canale) { dici('Manca il nome del canale nell’indirizzo.', true); return; }
   let d = null;
   try {

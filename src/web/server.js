@@ -354,6 +354,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   sondaHost(candidatoDona, (h) => { config.donaHost = h; }, 'indirizzo corto delle donazioni acceso');
   sondaHost(!config.sostieniHost && !config.sostieniHostSpento ? donazioni.candidatoHost(config.baseUrl, 'sostieni') : '',
     (h) => { config.sostieniHost = h; }, 'indirizzo corto del sostegno acceso');
+  sondaHost(!config.discordHost && !config.discordHostSpento ? donazioni.candidatoHost(config.baseUrl, 'discord') : '',
+    (h) => { config.discordHost = h; }, 'porta d\'ingresso di Discord accesa');
 
   app.use((req, res, next) => {
     // Sull'indirizzo corto del sostegno la radice E' la pagina. Tutto il resto
@@ -361,6 +363,22 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // aprirebbe nuda.
     if (config.sostieniHost && String(req.hostname || '').toLowerCase() === config.sostieniHost) {
       if (req.path === '/') { req.url = '/sostieni'; }
+      return next();
+    }
+    // La porta d'ingresso di Discord: discord.<dominio>/<canale> E' la pagina
+    // del collegamento di quel canale. La radice non e' niente di suo, quindi
+    // rimanda al sito invece di mostrare una pagina a meta'.
+    if (config.discordHost && String(req.hostname || '').toLowerCase() === config.discordHost) {
+      // L'informativa e' un indirizzo, non un canale: la pagina ci linka, e
+      // senza questa riga finirebbe nel collegamento di un canale che non c'e'.
+      if (req.path === '/privacy') return next();
+      const d = /^\/([a-z0-9_]{1,30})\/?$/i.exec(req.path);
+      if (d) {
+        const q = req.url.indexOf('?');
+        req.url = '/collega/' + d[1].toLowerCase() + (q >= 0 ? req.url.slice(q) : '');
+        return next();
+      }
+      if (req.path === '/') return res.redirect(302, config.baseUrl + '/');
       return next();
     }
     if (!config.donaHost || String(req.hostname || '').toLowerCase() !== config.donaHost) return next();
@@ -4117,6 +4135,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     regole: c?.regole || [],
     ultimoGiro: Number(c?.ultimo_giro) || 0,
     ultimoEsito: c?.ultimo_esito || {},
+    // Le frasi in chat: le sue, e accanto quelle di casa — cosi' il pannello
+    // puo' mostrare il segnaposto giusto senza ricopiarsele addosso.
+    frasi: c?.frasi || {},
+    frasiDiCasa: dcCollega.FRASI,
   });
 
   app.get('/api/streamer/ruoli', requireOwner, (req, res) => {
@@ -4140,6 +4162,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // il pannello non ce l'ha, quindi non puo' nemmeno rimandarlo indietro.
     if (typeof b.token === 'string' && b.token.trim()) campi.token = b.token.trim();
     if (b.regole !== undefined) campi.regole = normRegole(b.regole);
+    if (b.frasi !== undefined) campi.frasi = dcCollega.normalizzaFrasi(b.frasi);
     if (b.attivo !== undefined) campi.attivo = !!b.attivo;
     const prima = dcRuoli.get(login);
     // L'ID DEL SERVER SI SCRIVE A MANO SOLO COL BOT SUO.
@@ -4418,7 +4441,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     puliziaDc();
     const state = crypto.randomUUID();
     dcStati.set(state, { tipo: 'spettatore', canale, ts: Date.now() });
-    res.json({ url: dcApi.urlAutorizzazione({ ...config.discordApp, state }) });
+    // `entrare`: oltre a dire chi sei, Discord ci lascia metterti DENTRO il
+    // server. Qui si puo' chiedere perche' `apertoA()` ha gia' garantito che un
+    // server collegato c'e': un permesso che poi non si usa non si chiede.
+    res.json({ url: dcApi.urlAutorizzazione({ ...config.discordApp, state, entrare: true }) });
   });
 
   // PORTARE IL BOT NEL SERVER, senza tutorial. Discord mostra la SUA scelta del
@@ -4430,7 +4456,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     puliziaDc();
     const state = crypto.randomUUID();
     dcStati.set(state, { tipo: 'bot', login: currentUser(req).login, ts: Date.now() });
-    res.json({ url: dcApi.urlInvitoBot({ ...config.discordApp, state }) });
+    // ?pieni=1 e' l'invito con l'Amministratore, e lo chiede solo chi preme il
+    // tasto apposta: qui non c'e' nessuna preferenza ricordata che un giorno si
+    // accende da sola. Chi non lo chiede riceve i permessi di sempre.
+    res.json({ url: dcApi.urlInvitoBot({ ...config.discordApp, state, pieni: req.query.pieni === '1' }) });
   });
 
   app.get('/discord/oidc/callback', wrap(async (req, res) => {
@@ -4450,11 +4479,18 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     }
     const dove = '/collega/' + st.canale;
     if (!req.query.code) return res.redirect(dove + '?esito=no');
-    const r = await dcApi.scambiaCodice({ ...config.discordApp, codice: String(req.query.code) });
+    // Il server del canale: serve a farlo ENTRARE mentre siamo qui. Il permesso
+    // della persona non esce da discord-api.js, che lo usa e lo lascia morire.
+    const c = dcRuoli.get(st.canale);
+    const r = await dcApi.scambiaCodice({
+      ...config.discordApp,
+      codice: String(req.query.code),
+      entraIn: c?.guild ? { guild: c.guild, botToken: dcApi.tokenDi(c) } : null,
+    });
     if (!r.ok) return res.redirect(dove + '?esito=no');
     const a = dcCollega.apri(st.canale, { dcId: r.id, dcNome: r.nome });
     if (!a) return res.redirect(dove + '?esito=no');
-    res.redirect(dove + '?codice=' + encodeURIComponent(a.codice));
+    res.redirect(dove + '?codice=' + encodeURIComponent(a.codice) + (r.dentro ? '&dentro=1' : ''));
   }));
 
   // Premi a punti canale per le richieste musicali: elenco (per capire quanti ne

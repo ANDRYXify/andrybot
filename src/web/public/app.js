@@ -774,6 +774,14 @@ function _demoGet(via) {
       attivo: true, collegamentoOk: true, invitoOk: true, suo: false, collegati: 14, ultimoGiro: Date.now() - 11 * 60000,
       ultimoEsito: { visti: 14, dati: 2, tolti: 1, fuori: 1, bloccati: [], scartate: 0, errori: [] },
       regole: [{ tipo: 'sub', ruolo: '100000000000000010', soglia: 0 }, { tipo: 'ore', ruolo: '100000000000000011', soglia: 10 }],
+      frasi: {},
+      frasiDiCasa: {
+        inizio: '@{nome} apri {link}: ti faccio entrare nel Discord e ti do un codice da riscrivere qui, cosi\' ti sistemo i ruoli.',
+        fatto: '@{nome} collegato ✓ Al prossimo giro ti metto a posto i ruoli su Discord.',
+        scaduto: '@{nome} quel codice non vale piu\'. Riparti da {link}.',
+        via: '@{nome} scollegato. I ruoli che hai adesso restano tuoi: non tocco piu\' niente.',
+        estraneo: '@{nome} non risulti collegato.',
+      },
       tipi: [{ id: 'follower', soglia: false }, { id: 'sub', soglia: false }, { id: 'vip', soglia: false }, { id: 'mod', soglia: false },
         { id: 'monete', soglia: true }, { id: 'ore', soglia: true }, { id: 'serie', soglia: true }, { id: 'dirette', soglia: true }] },
     '/api/contatori': { contatori: [
@@ -16584,6 +16592,13 @@ function pannelloRuoli() {
       <p class="suggerimento">${L('Ti manda su Discord: scegli il server dall’elenco — ci sono solo quelli dove comandi tu — e confermi i due permessi, «Gestire i ruoli» e «Gestire i canali». Torni qui e sei a posto: l’id del server ce lo dice Discord, non devi copiarlo.', 'It takes you to Discord: pick the server from the list — only the ones you run are there — and confirm the two permissions, «Manage Roles» and «Manage Channels». Come back and you are set: Discord tells us the server id, you do not have to copy it.', 'Te lleva a Discord: eliges el servidor de la lista — solo están aquellos donde mandas tú — y confirmas los dos permisos, «Gestionar roles» y «Gestionar canales». Vuelves y ya está: el id del servidor nos lo dice Discord, no tienes que copiarlo.')}</p>
       <p class="suggerimento">${L('Una cosa resta a mano, e non per pigrizia: su Discord, in Impostazioni server → Ruoli, trascina il ruolo del bot SOPRA quelli che deve poter dare. Discord non lascia che un bot si sposti da solo più in alto di dov’è — è la regola che gli impedisce di promuoversi. Qui sotto ti diciamo quali ruoli restano fuori dalla sua portata.', 'One thing stays manual, and not out of laziness: on Discord, in Server Settings → Roles, drag the bot’s role ABOVE the ones it must be able to give. Discord does not let a bot move itself higher than it is — that is the rule that stops it from promoting itself. Below we tell you which roles stay out of its reach.', 'Una cosa queda a mano, y no por pereza: en Discord, en Ajustes del servidor → Roles, arrastra el rol del bot POR ENCIMA de los que debe poder dar. Discord no deja que un bot se mueva solo más arriba de donde está — es la regla que le impide ascenderse. Aquí abajo te decimos qué roles quedan fuera de su alcance.')}</p>
 
+      <details class="spazio-sopra" id="dc-pieni-box">
+        <summary>${L('Vuoi che gestisca tutto il server?', 'Want it to run the whole server?', '¿Quieres que lleve todo el servidor?')}</summary>
+        <p class="suggerimento">${L('Di partenza il bot chiede solo quello che gli serve. Con i pieni poteri diventa amministratore: da qui muovi canali, ruoli e permessi senza tornare su Discord. In cambio vede anche i canali privati, quindi daglieli solo se ti fidi — e puoi sempre riportarlo indietro reinvitandolo dal tasto di sopra.', 'By default the bot asks only for what it needs. With full powers it becomes an administrator: from here you move channels, roles and permissions without going back to Discord. In exchange it also sees private channels, so grant this only if you trust it — and you can always take it back by re-inviting it with the button above.', 'De partida el bot pide solo lo que necesita. Con plenos poderes pasa a ser administrador: desde aquí mueves canales, roles y permisos sin volver a Discord. A cambio ve también los canales privados, así que dáselos solo si te fías — y siempre puedes volver atrás reinvitándolo con el botón de arriba.')}</p>
+        <p class="suggerimento">${L('Una cosa non cambia nemmeno così: i ruoli più in alto del suo restano fuori portata, e il proprietario del server non lo tocca nessuno. Discord non lascia che un bot si promuova, e nessun permesso lo compra.', 'One thing does not change even then: roles above its own stay out of reach, and nobody touches the server owner. Discord does not let a bot promote itself, and no permission buys that.', 'Una cosa no cambia ni así: los roles por encima del suyo quedan fuera de su alcance, y al dueño del servidor no lo toca nadie. Discord no deja que un bot se ascienda, y ningún permiso lo compra.')}</p>
+        <p class="spazio-sopra"><button class="btn secondario" id="dc-pieni">${L('Portalo con i pieni poteri', 'Bring it with full powers', 'Llévalo con plenos poderes')}</button></p>
+      </details>
+
       <details class="spazio-sopra" id="dc-avanzate">
         <summary>${L('Preferisci un bot tuo?', 'Prefer your own bot?', '¿Prefieres un bot tuyo?')}</summary>
         <p class="suggerimento">${L('Se hai già un bot tuo su Discord, incolla il suo token e l’id del server: da quel momento è lui a dare i ruoli, al posto del nostro. Lascia vuoto e usiamo il nostro.', 'If you already have your own Discord bot, paste its token and the server id: from then on it gives the roles instead of ours. Leave it empty and ours is used.', 'Si ya tienes un bot tuyo en Discord, pega su token y el id del servidor: desde ese momento es él quien da los roles, en vez del nuestro. Déjalo vacío y usamos el nuestro.')}</p>
@@ -16618,9 +16633,38 @@ function pannelloRuoli() {
     <div class="carta">
       <h2>${_hIco(ICO.medaglia)}${L('Chi si è collegato', 'Who linked up', 'Quién se ha vinculado')}</h2>
       <p id="dc-collegati">${L('Carico…', 'Loading…', 'Cargando…')}</p>
-      <p class="suggerimento">${L('Si collegano da soli: scrivono', 'They link themselves: they type', 'Se vinculan solos: escriben')} <code>!discord</code> ${L('in chat e seguono le istruzioni. Finché non si collegano, il bot non li tocca — e con', 'in chat and follow the steps. Until they link, the bot does not touch them — and with', 'en el chat y siguen los pasos. Hasta que no se vinculan, el bot no los toca — y con')} <code>!discord via</code> ${L('si staccano, tenendosi i ruoli che hanno.', 'they unlink, keeping the roles they have.', 'se desvinculan, quedándose con los roles que tienen.')}</p>
+      <p class="suggerimento">${L('Si collegano da soli: scrivono', 'They link themselves: they type', 'Se vinculan solos: escriben')} <code>!discord</code> ${L('in chat e aprono l’indirizzo che gli do. Da lì entrano nel server e ricevono il codice da riscrivere in chat: finché non lo scrivono, il bot non li tocca — e con', 'in chat and open the address it gives them. From there they get into the server and receive the code to type back in chat: until they type it, the bot does not touch them — and with', 'en el chat y abren la dirección que les doy. Desde ahí entran en el servidor y reciben el código para reescribir en el chat: hasta que no lo escriben, el bot no los toca — y con')} <code>!discord via</code> ${L('si staccano, tenendosi i ruoli che hanno.', 'they unlink, keeping the roles they have.', 'se desvinculan, quedándose con los roles que tienen.')}</p>
+      <p class="suggerimento">${L('Se il bot era già nel tuo server prima d’oggi, riportacelo col tasto qui sopra: reinvitare aggiorna i permessi, e senza quello nuovo la porta li accompagna fino all’ingresso e poi non li fa entrare.', 'If the bot was already in your server before today, bring it back with the button above: re-inviting updates its permissions, and without the new one the door walks people up to it and then does not let them in.', 'Si el bot ya estaba en tu servidor antes de hoy, vuelve a llevarlo con el botón de arriba: reinvitarlo actualiza los permisos, y sin el nuevo la puerta los acompaña hasta la entrada y luego no los deja pasar.')}</p>
       <p class="suggerimento" id="dc-ultimo"></p>
+
+      <details class="spazio-sopra" id="dc-frasi-box">
+        <summary>${L('Le parole che dice in chat', 'The words it says in chat', 'Las palabras que dice en el chat')}</summary>
+        <p class="suggerimento">${L('Sono tue: scrivile come parli tu. Lascia vuoto un campo e usa le mie. Dentro puoi mettere', 'They are yours: write them the way you talk. Leave a field empty and mine are used. Inside you can put', 'Son tuyas: escríbelas como hablas tú. Deja un campo vacío y uso las mías. Dentro puedes poner')} <code>{nome}</code>, <code>{link}</code> ${L('e', 'and', 'y')} <code>{codice}</code>.</p>
+        <div class="griglia-campi spazio-sopra" id="dc-frasi"></div>
+        <p class="spazio-sopra"><button class="btn secondario" id="dc-frasi-salva">${L('Salva le frasi', 'Save the wording', 'Guardar las frases')}</button></p>
+      </details>
     </div>`);
+}
+
+const T_DCFRASI = () => ({
+  inizio: L('Quando chiedono come si fa', 'When they ask how it works', 'Cuando preguntan cómo se hace'),
+  fatto: L('Quando si sono collegati', 'When they have linked', 'Cuando se han vinculado'),
+  scaduto: L('Quando il codice non vale più', 'When the code is no longer valid', 'Cuando el código ya no vale'),
+  via: L('Quando si staccano', 'When they unlink', 'Cuando se desvinculan'),
+  estraneo: L('Quando si staccano senza esserci mai stati', 'When they unlink without ever being linked', 'Cuando se desvinculan sin haber estado'),
+});
+
+function _dcDisegnaFrasi() {
+  const box = _g('dc-frasi');
+  if (!box) return;
+  const nomi = T_DCFRASI();
+  const mie = _dc?.frasi || {};
+  const casa = _dc?.frasiDiCasa || {};
+  box.innerHTML = Object.keys(nomi).map((k) => `<div>
+    <label class="campo" for="dc-frase-${esc(k)}">${esc(nomi[k])}</label>
+    <textarea id="dc-frase-${esc(k)}" data-frase="${esc(k)}" rows="2" maxlength="300"
+      placeholder="${esc(casa[k] || '')}">${esc(mie[k] || '')}</textarea>
+  </div>`).join('');
 }
 
 function _dcRigaRegola(r, i, tipi) {
@@ -16698,6 +16742,7 @@ function _dcMostraStato() {
   const u = _g('dc-ultimo');
   if (u) u.textContent = _dc.ultimoGiro ? L('Ultimo giro: ', 'Last round: ', 'Última vuelta: ') + dataIt(_dc.ultimoGiro) + ' · ' + _dcEsito(_dc.ultimoEsito) : '';
   _dcDisegnaRegole();
+  _dcDisegnaFrasi();
 }
 
 function _dcEsito(e) {
@@ -16734,10 +16779,20 @@ function collegaRuoli() {
   if (!scheda || scheda.dataset.pronta) return;
   scheda.dataset.pronta = '1';
 
-  _g('dc-invita')?.addEventListener('click', () => conErrore(async () => {
-    const r = await api('/api/discord/invito');
+  const _dcPorta = (pieni) => conErrore(async () => {
+    const r = await api('/api/discord/invito' + (pieni ? '?pieni=1' : ''));
     if (r && r.url) location.href = r.url;
+  });
+  _g('dc-frasi-salva')?.addEventListener('click', () => conErrore(async () => {
+    const frasi = {};
+    for (const t of document.querySelectorAll('#dc-frasi [data-frase]')) frasi[t.dataset.frase] = t.value.trim();
+    const r = await api('/api/streamer/ruoli', { method: 'POST', body: { frasi } });
+    _dc = { ..._dc, frasi: r?.frasi || frasi };
+    toast(L('Salvato ✓', 'Saved ✓', 'Guardado ✓'));
   }));
+
+  _g('dc-invita')?.addEventListener('click', () => _dcPorta(false));
+  _g('dc-pieni')?.addEventListener('click', () => _dcPorta(true));
 
   _g('dc-prova')?.addEventListener('click', () => conErrore(async () => {
     const corpo = { token: _v('dc-token') || '', guild: _v('dc-guild') || '' };

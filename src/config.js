@@ -92,6 +92,12 @@ export const config = {
   // risponde lo accende da solo. «no» lo tiene spento.
   sostieniHost: /^(no|off)$/i.test(env('SOSTIENI_HOST', '')) ? '' : env('SOSTIENI_HOST', '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
   sostieniHostSpento: /^(no|off)$/i.test(env('SOSTIENI_HOST', '')),
+  // La porta d'ingresso al Discord dello streamer (discord.<dominio>/<canale>).
+  // Stessa regola delle altre due: senza nome il server bussa al DNS e lo
+  // accende da solo quando risponde in HTTPS; «no» lo tiene spento. Spento non
+  // rompe niente, l'indirizzo lungo funziona sempre.
+  discordHost: /^(no|off)$/i.test(env('DISCORD_HOST', '')) ? '' : env('DISCORD_HOST', '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
+  discordHostSpento: /^(no|off)$/i.test(env('DISCORD_HOST', '')),
   sessionSecret: sessionSecret(),
 
   // kick — app registrata su kick.com/settings/developer.
