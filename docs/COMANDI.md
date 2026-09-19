@@ -130,3 +130,33 @@ node scripts/verifica-comandi.mjs
   costruisce il registro, che è il difetto originale reso impossibile.
 
 Provato rosso su tutti e cinque prima di dichiararlo verde.
+
+## Chi può scrivere un comando: chiunque, lo streamer compreso
+
+Su Twitch il bot scrive **con l'account dello streamer** — è il motivo per cui
+esiste. Ne segue una cosa che sembra un dettaglio e non lo è: `isSelf` non vuol
+dire «l'ha scritto il bot», vuol dire **«l'ha scritto il nostro account»**, e
+quell'account è quello del padrone di casa.
+
+Percio' `if (msg.isSelf) return false` dentro un gestore di comandi non protegge
+da niente: dice «a lui non rispondere». Il risultato e' un difetto che nessuno
+segnala, perche' il bot funziona per tutti tranne che per chi lo ha installato —
+e lui pensa di aver sbagliato la configurazione. E' successo con `!discord`, e
+c'era in sei moduli.
+
+Il loop da cui ci si voleva difendere **non esiste**, su nessuna delle tre
+piattaforme:
+
+- **Twitch**: gli echi del bot non tornano indietro su quella connessione
+  (`src/twitch/chat.js`), quindi un PRIVMSG dal nostro login è sempre una
+  persona;
+- **Kick**: l'eco torna, e lo filtra il TUBO prima del vaglio, riconoscendo
+  *cosa* abbiamo appena detto invece di *chi* l'ha detto (`src/kick/eco.js`);
+- **YouTube**: `isSelf` non si accende mai, perché al costruttore del messaggio
+  l'id del bot non viene nemmeno passato.
+
+La regola, allora: **un gestore di comandi non guarda `isSelf`**. Dove serve
+davvero — contare i messaggi, imparare dalla chat, la chiacchiera proattiva —
+si guarda, perché lì la domanda è un'altra: «questa riga è ambiente o è una
+richiesta?». Il collaudo `test/contratto/comandi-streamer` tiene ferma la
+divisione.

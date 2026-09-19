@@ -22,7 +22,7 @@ import * as licenza from '../licenza.js';      // il nome con cui questo softwar
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
-import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri } from '../db.js';
+import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi } from '../db.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { renderLinkPage, renderInformativa, accentoDi } from '../features/linkpagina.js';
@@ -100,7 +100,7 @@ import * as persona from '../ai/persona.js';
 import * as brainpy from '../ai/brainpy.js';
 import { impronta, combacia } from '../segreti.js';
 import { redeemPass } from './gate.js';
-import { eLoginNostro, loginKick, loginYoutube, loginSu, nomeSu, piattaformaDi, PIATTAFORME } from '../identita.js';
+import { eLoginNostro, loginKick, loginYoutube, loginDiscord, loginSu, nomeSu, piattaformaDi, conDiretta, PIATTAFORME } from '../identita.js';
 import { provaModerazione, verificabile } from '../moderatori/prova.js';
 import { creaGuscio } from './vetrina.js';
 import { creaImpronte, montaStatici } from './impronte.js';
@@ -289,6 +289,15 @@ const INVITI = [
     return !postaStreamer.get(user.login)?.email;
   }],
   ['vetrina', (req, user) => streamers.get(user.login)?.settings?.vetrinaLive !== true],
+  // IL CAFFE' AL PROGETTO, a chi usa SocialBot solo per Discord.
+  //
+  // Per lui le funzioni a pagamento non esistono: sono tutte di diretta, e la
+  // scala «paghi quando ti serve di piu'» non scatta mai. Chiedere una volta e'
+  // onesto. Ma si chiede DOPO che qualcosa ha funzionato — il costruttore e'
+  // passato almeno una volta — non sulla porta: chiedere prima di essere stati
+  // utili e' un'altra cosa, e si sente.
+  ['sostieni', (req, user) => piattaformaDi(user.login) === 'discord'
+    && (dcGiri.ultimi(user.login, 1) || []).length > 0],
 ];
 const INVITI_ID = INVITI.map(([id]) => id);
 
@@ -2111,7 +2120,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       .join('\n');
     const voci = Object.values(LINGUE_URL).map((u) => ({ u, p: '1.0', f: 'weekly', alt: true }));
     for (const g of [...urlGuide(novita.pubbliche(novita.leggi(NOVITA_MD))), ...urlManuali()]) voci.push({ u: g.loc, p: g.prio, f: g.freq, m: g.lastmod });
-    voci.push({ u: `${b}/sostieni`, p: '0.4', f: 'yearly' });
+    // L'indirizzo che si dichiara e' quello vero: dichiararne uno che rimanda
+    // vorrebbe dire far indicizzare un rimbalzo.
+    voci.push({ u: donazioni.urlSostieni(), p: '0.4', f: 'yearly' });
     voci.push({ u: `${b}/privacy`, p: '0.3', f: 'yearly' });
     voci.push({ u: `${b}/termini`, p: '0.3', f: 'yearly' });
     try {
@@ -2350,6 +2361,21 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // si apre, e il ritorno da Stripe torna qui — tutto senza sessione, perche'
   // una sessione non ce l'ha e non gliela chiediamo.
   const SOSTIENI_HTML = guscio.pagina('sostieni.html', '/sostieni', '/api/sostieni', '/api/sostieni/esito');
+  // LA PAGINA DEL SOSTEGNO VIVE SUL SOTTODOMINIO, e li' soltanto.
+  //
+  // Due indirizzi per la stessa pagina sono due pagine per chi guarda da fuori:
+  // il motore di ricerca ne sceglie una a caso, i link che la gente si passa
+  // sono meta' e meta', e la piu' corta — quella che si detta a voce — non e'
+  // sempre quella che vince. Percio' `/sostieni` manda al sottodominio.
+  //
+  // MA solo se il sottodominio risponde davvero: finche' la sonda non l'ha
+  // acceso, mandare qualcuno li' vorrebbe dire mandarlo contro un avviso rosso.
+  // Spento, la pagina resta dov'e'. Spento e' il modo giusto di sbagliare.
+  app.get('/sostieni', (req, res, next) => {
+    if (!config.sostieniHost) return next();
+    if (String(req.hostname || '').toLowerCase() === config.sostieniHost) return next();
+    return res.redirect(301, 'https://' + config.sostieniHost + '/');
+  });
   app.get('/sostieni', (req, res) => res.sendFile(SOSTIENI_HTML));
 
   app.get('/api/sostieni', (req, res) => {
@@ -3659,6 +3685,57 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // (il login diretto con Twitch è gestito sopra da GET /entra senza ?pass)
 
   // Login self-service con Twitch per abbonarsi. Attivo solo con Stripe acceso.
+  // CHI ENTRA CON DISCORD: chi e', e che spazio gli tocca.
+  //
+  // Chi torna si riconosce dall'ID di Discord, non dal nome: il nome su Discord
+  // si cambia, e chi lo cambia deve ritrovare il suo server, non trovarne uno
+  // nuovo e vuoto. Il canale si chiama `dc.<nome>` — un login Twitch non puo'
+  // contenere un punto, quindi non puo' collidere con nessuno. Non e' un
+  // controllo, e' una forma (vedi src/identita.js).
+  async function registraDiscord(req, { dcId, nome }) {
+    const id = String(dcId || '').replace(/[^0-9]/g, '');
+    if (!id) return { errore: 'Discord non ha detto chi sei' };
+    const display = String(nome || '').trim().slice(0, 60) || ('discord:' + id);
+
+    let login = dcAccesso.perDc(id)?.login || '';
+    if (!login) {
+      login = loginDiscord(nome);
+      // Nome gia' preso da un ALTRO account Discord: si tiene il suo, e a
+      // questo si aggiunge l'id, che e' unico.
+      if (!login || streamers.get(login)) login = 'dc.d' + id;
+      // Un login che non ha la forma giusta non entra: da quella forma dipende
+      // anche la sicurezza dei percorsi su disco, quindi qui non si improvvisa.
+      if (!eLoginNostro(login)) return { errore: 'quel nome non si puo\' usare qui' };
+    }
+
+    const promoVinta = primoAccesso(login, display);
+    dcAccesso.lega(id, login, { nome: display });
+    const invitato = abbinaInviti(login, display);
+
+    const contesti = contestiPer(login);
+    if (!contesti.length) return { login, errore: 'spazio non disponibile' };
+    req.session.user = sessionePer(login, display, contestoDefault(contesti, invitato));
+    const dove = await doveDopoAcquisto(req, login);
+    return { login, dove: dove || (promoVinta ? '/?promo=1' : '/?benvenuto=1') };
+  }
+
+  // ENTRARE CON DISCORD E BASTA.
+  //
+  // Chi ha un server Discord e di Twitch non gli importa non ha un canale da
+  // collegare: il suo account E' quello di Discord. Il giro e' il terzo su
+  // questa stessa porta — a dire quale dei tre e' stato e' lo `state` monouso,
+  // non l'indirizzo, che su Discord se ne registra uno solo.
+  app.get('/accedi/discord', (req, res) => {
+    if (!dcCollega.attivo()) return res.redirect('/');
+    if (currentUser(req)) return res.redirect('/');        // gia' dentro: non serve un secondo accesso
+    puliziaDc();
+    const state = crypto.randomUUID();
+    dcStati.set(state, { tipo: 'accesso', ts: Date.now() });
+    // Qui NON si chiede `guilds.join`: non c'e' nessun server in cui farlo
+    // entrare. Si chiede solo chi e', che e' quello che serve per un accesso.
+    res.redirect(dcApi.urlAutorizzazione({ ...config.discordApp, state }));
+  });
+
   app.get('/accedi', (req, res) => {
     if (!config.stripe.attivo) return res.redirect('/');   // paywall spento: niente ingresso extra
     ricordaAcquisto(req, req.query);
@@ -4540,6 +4617,18 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (!g.ok) return res.redirect('/?discord=no');
       dcRuoli.set(st.login, { guild: g.guild, guildNome: g.nome });
       return res.redirect('/?discord=ok');
+    }
+    if (st.tipo === 'accesso') {
+      const male = (m) => res.redirect('/?accesso=' + encodeURIComponent(m));
+      if (!req.query.code) return male('hai annullato l\'accesso con Discord');
+      const r = await dcApi.scambiaCodice({ ...config.discordApp, codice: String(req.query.code) });
+      if (!r.ok) return male(r.errore || 'Discord non ha confermato');
+      let esito;
+      try { esito = await registraDiscord(req, { dcId: r.id, nome: r.nome }); }
+      catch (e) { log.error('registrazione Discord fallita:', e?.message || e); return male('non sono riuscito a crearti lo spazio'); }
+      if (!esito?.login) return male(esito?.errore || 'non sono riuscito a crearti lo spazio');
+      log.info(`@${esito.login}: entrato con Discord (${r.nome || '?'}, id ${r.id})`);
+      return res.redirect(esito.dove || '/');
     }
     const dove = '/collega/' + st.canale;
     if (!req.query.code) return res.redirect(dove + '?esito=no');

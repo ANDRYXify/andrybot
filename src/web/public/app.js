@@ -387,6 +387,16 @@ const INVITI = {
       return true;
     },
   }),
+  sostieni: () => ({
+    titolo: L('Ti è servito?', 'Was it useful?', '¿Te ha servido?'),
+    testo: L('Il tuo server adesso è a posto, e non ti è costato niente. Per il tuo Discord SocialBot resta gratis: i piani servono a chi trasmette, e a te non servono.', 'Your server is sorted now, and it cost you nothing. For your Discord SocialBot stays free: the plans are for people who stream, and you do not need them.', 'Tu servidor ya está en orden, y no te ha costado nada. Para tu Discord SocialBot sigue siendo gratis: los planes son para quien hace directos, y tú no los necesitas.'),
+    corpo: `<p class="suggerimento">${L('Se ti va, puoi offrire un caffè al progetto. Non cambia niente di quello che hai: niente si sblocca, niente si spegne, e non te lo richiedo più.', 'If you feel like it, you can buy the project a coffee. Nothing about what you have changes: nothing unlocks, nothing switches off, and I will not ask you again.', 'Si te apetece, puedes invitar a un café al proyecto. No cambia nada de lo que tienes: nada se desbloquea, nada se apaga, y no te lo vuelvo a pedir.')}</p>`,
+    si: L('Offro un caffè', 'Buy a coffee', 'Invito a un café'),
+    fai: async () => {
+      window.open('/sostieni', '_blank', 'noopener');
+      return true;
+    },
+  }),
   vetrina: () => ({
     titolo: L('Ti va di comparire sulla nostra home quando sei in diretta?', 'Fancy showing up on our home when you are live?', '¿Te apetece aparecer en nuestra home cuando estés en directo?'),
     testo: L('Sulla pagina iniziale di SocialBot c’è una fascia con chi è in onda adesso. Se vuoi ci sei anche tu.', 'The SocialBot home page has a band with who is on air right now. If you like, you are in it too.', 'La página de inicio de SocialBot tiene una franja con quién está en directo ahora. Si quieres, tú también.'),
@@ -2635,8 +2645,15 @@ const T_SCHEDA = {
 const tGruppo = (id, fb) => { const t = T_GRUPPO[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
 const tScheda = (id, fb) => { const t = T_SCHEDA[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
 
+const SOLO_DISCORD = new Set(['ruoli', 'dcserver', 'pagina', 'stato', 'sottoscrizione']);
+const senzaDiretta = () => stato?.piattaforma === 'discord';
+
 function elencoGruppi() {
-  return stato.isAdmin ? GRUPPI.concat([GRUPPO_ADMIN]) : GRUPPI;
+  const base = stato.isAdmin ? GRUPPI.concat([GRUPPO_ADMIN]) : GRUPPI;
+  if (!senzaDiretta()) return base;
+  return base
+    .map((g) => ({ ...g, schede: g.schede.filter(([id]) => SOLO_DISCORD.has(id) || SOLO_ADMIN.has(id)) }))
+    .filter((g) => g.schede.length);
 }
 
 const _ico = (d) => `<svg class="lat-svg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -16752,7 +16769,17 @@ function _dcComandoHtml() {
   const c = _dc?.comando || {};
   const nome = '<code>!discord</code>';
   if (c.risponde) {
-    return `<p class="suggerimento">${nome} ${L('manda a', 'sends them to', 'los manda a')} <code>${esc(c.indirizzo || '')}</code>: ${L('si apre, si entra nel server, e si riscrive qui il codice. Con', 'they open it, they get into the server, and type the code back here. With', 'la abren, entran en el servidor y reescriben aquí el código. Con')} <code>!discord via</code> ${L('si staccano, tenendosi i ruoli che hanno.', 'they unlink, keeping the roles they have.', 'se desvinculan, quedándose con los roles que tienen.')}</p>`;
+    const via = String(c.indirizzo || '');
+    const mostra = via.replace(/^https?:\/\//, '');
+    return `<div class="dc-porta">
+      <p class="campo">${L('La tua porta d’ingresso', 'Your entrance', 'Tu puerta de entrada')}</p>
+      <div class="riga-flessibile">
+        <code class="dc-indirizzo" id="dc-via">${esc(mostra)}</code>
+        <button type="button" class="btn secondario mini" id="dc-copia">${L('Copia', 'Copy', 'Copiar')}</button>
+        <a class="btn secondario mini" href="${esc(via.startsWith('http') ? via : 'https://' + via)}" target="_blank" rel="noopener">${L('Aprila', 'Open it', 'Ábrela')}</a>
+      </div>
+      <p class="suggerimento">${L('Chi la apre entra nel tuo server e riceve il codice da riscrivere in chat. La dà anche', 'Whoever opens it gets into your server and receives the code to type back in chat. It is also given by', 'Quien la abre entra en tu servidor y recibe el código para reescribir en el chat. La da también')} ${nome}, ${L('e con', 'and with', 'y con')} <code>!discord via</code> ${L('si staccano tenendosi i ruoli che hanno.', 'they unlink, keeping the roles they have.', 'se desvinculan quedándose con los roles que tienen.')}</p>
+    </div>`;
   }
   const perche = {
     server: L('non c’è ancora un server collegato.', 'there is no server connected yet.', 'todavía no hay un servidor conectado.'),
@@ -16836,6 +16863,15 @@ function collegaRuoli() {
     const r = await api('/api/discord/invito' + (pieni ? '?pieni=1' : ''));
     if (r && r.url) location.href = r.url;
   });
+  _g('dc-comando')?.addEventListener('click', (e) => {
+    if (!e.target.closest('#dc-copia')) return;
+    const via = _g('dc-via')?.textContent || '';
+    if (!via) return;
+    navigator.clipboard?.writeText('https://' + via.replace(/^https?:\/\//, ''))
+      .then(() => toast(L('Copiata ✓', 'Copied ✓', 'Copiada ✓')))
+      .catch(() => toast(L('Non riesco a copiarla: selezionala a mano.', 'I cannot copy it: select it by hand.', 'No puedo copiarla: selecciónala a mano.'), 'errore'));
+  });
+
   _g('dc-frasi-salva')?.addEventListener('click', () => conErrore(async () => {
     const frasi = {};
     for (const t of document.querySelectorAll('#dc-frasi [data-frase]')) frasi[t.dataset.frase] = t.value.trim();
@@ -23014,6 +23050,7 @@ function _scambiaScheda(id, sezioni) {
 }
 
 function vaiAScheda(id) {
+  if (senzaDiretta() && id && !SOLO_DISCORD.has(id) && !SOLO_ADMIN.has(id)) id = 'ruoli';
   if (id !== schedaAttiva && _salvaSporco && !_uscitaInCorso) {
     _uscitaInCorso = true;
     _chiediPrimaDiUscire().then((si) => { _uscitaInCorso = false; if (si) vaiAScheda(id); },

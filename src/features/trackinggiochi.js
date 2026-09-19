@@ -26,7 +26,7 @@ const _ultimoSfida = new Map();   // "canale|user" → ts (anti-spam !sfida per 
 
 export function tryComando(effects, msg, say) {
   try {
-    if (!msg || msg.isSelf) return false;
+    if (!msg) return false;   // lo streamer scrive col NOSTRO account: scartarlo scarta lui (docs/COMANDI.md)
     const testo = String(msg.text || '').trim();
     if (testo[0] !== '!') return false;
     const ch = msg.channel;

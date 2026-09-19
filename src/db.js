@@ -634,6 +634,13 @@ CREATE TABLE IF NOT EXISTS telegram_login ( -- "Accedi con Telegram" / Mini App:
   created_at INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_tglogin_login ON telegram_login(login);
+CREATE TABLE IF NOT EXISTS discord_accesso ( -- «entra con Discord»: id Discord → canale dc.<nome>
+  dc_id TEXT PRIMARY KEY,                     -- id numerico dell'account Discord
+  login TEXT NOT NULL,                        -- il canale che gli appartiene
+  nome TEXT NOT NULL DEFAULT '',              -- come si chiama su Discord (per la UI)
+  created_at INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_dcaccesso_login ON discord_accesso(login);
 CREATE TABLE IF NOT EXISTS linee_guida (     -- regole/limiti che lo streamer dà a "lia": lei le rispetta SEMPRE
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
@@ -2034,6 +2041,29 @@ export const tgLogin = {
   },
   unlinkByLogin(login) { db.prepare('DELETE FROM telegram_login WHERE login=?').run(String(login).toLowerCase()); },
   unlinkByTg(tgId) { db.prepare('DELETE FROM telegram_login WHERE tg_id=?').run(String(tgId)); },
+};
+
+// CHI ENTRA CON DISCORD E BASTA.
+//
+// Il canale si chiama `dc.<nome>`, ma chi torna si riconosce dall'ID, non dal
+// nome: su Discord il nome si cambia, e chi lo cambia deve ritrovare il suo
+// server, non trovarne uno nuovo e vuoto. E' la stessa regola di Kick e
+// YouTube, scritta dove serve per Discord.
+export const dcAccesso = {
+  perDc(dcId) {
+    return db.prepare('SELECT * FROM discord_accesso WHERE dc_id=?').get(String(dcId)) || null;
+  },
+  perLogin(login) {
+    return db.prepare('SELECT * FROM discord_accesso WHERE login=?').get(String(login).toLowerCase()) || null;
+  },
+  lega(dcId, login, { nome = '' } = {}) {
+    db.prepare(`INSERT INTO discord_accesso (dc_id, login, nome, created_at)
+      VALUES (?,?,?,?)
+      ON CONFLICT(dc_id) DO UPDATE SET login=excluded.login, nome=excluded.nome`)
+      .run(String(dcId), String(login).toLowerCase(), String(nome || '').slice(0, 120), now());
+    return this.perDc(dcId);
+  },
+  scorda(login) { db.prepare('DELETE FROM discord_accesso WHERE login=?').run(String(login).toLowerCase()); },
 };
 
 // ---------------------------------------------------------------- IA locale (modello)

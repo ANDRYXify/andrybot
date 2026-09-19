@@ -396,7 +396,10 @@ function listinoHtml(L, piani) {
 
     <div class="vt-comp-guscio vt-rivela" id="vt-comp-guscio">${configuratoreHtml(L, piani)}</div>
 
-    <p class="vt-community vt-rivela">${L('<strong>Ti serve solo la parte di Discord?</strong> Va bene lo stesso, e non costa niente: il costruttore del server e i ruoli dati da quello che succede in chat stanno nell’Essenziale. Entri con l’account con cui trasmetti, colleghi il server, e il resto del bot lo lasci spento.', '<strong>Do you only need the Discord side?</strong> That is fine, and it costs nothing: the server builder and the roles given by what happens in chat are in the Essenziale plan. You log in with the account you stream with, connect the server, and leave the rest of the bot off.', '<strong>¿Solo necesitas la parte de Discord?</strong> Está bien igual, y no cuesta nada: el constructor del servidor y los roles que da lo que pasa en el chat están en el plan Essenziale. Entras con la cuenta con la que haces directo, conectas el servidor, y el resto del bot lo dejas apagado.')}</p>
+    <div class="vt-solodc vt-rivela">
+      <p>${L('<strong>Hai bisogno di un bot per il tuo Discord, e di Twitch o Kick non ti importa?</strong> Entra con Discord e basta: costruisci il server, sistemi canali, ruoli e permessi da qui, e tutto quello che parla di dirette non lo vedi nemmeno. È gratis, e i piani restano lì per il giorno che ti servirà altro.', '<strong>Do you need a bot for your Discord, and Twitch or Kick are not your thing?</strong> Log in with Discord alone: build the server, sort out channels, roles and permissions from here, and everything about streaming you do not even see. It is free, and the plans stay there for the day you need something else.', '<strong>¿Necesitas un bot para tu Discord y Twitch o Kick no te interesan?</strong> Entra solo con Discord: construyes el servidor, arreglas canales, roles y permisos desde aquí, y todo lo que habla de directos ni lo ves. Es gratis, y los planes se quedan ahí para el día que necesites otra cosa.')}</p>
+      <a class="vt-btn vt-btn-primo" href="/accedi/discord">${L('Entra con Discord', 'Log in with Discord', 'Entra con Discord')}</a>
+    </div>
     <p class="vt-community vt-rivela">${L('<strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot è <strong>gratis e completo</strong> per te: non ti serve nessun piano.', '<strong>Already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community?</strong> SocialBot is <strong>free and complete</strong> for you: no plan needed.', '<strong>¿Ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot es <strong>gratis y completo</strong> para ti: no necesitas ningún plan.')}</p>
   </div>`;
 }
@@ -505,6 +508,9 @@ function corpo(L, l, kick, youtube, dirette, piani) {
         <a href="/sblocca">${L('Entra con passkey', 'Log in with a passkey', 'Entra con passkey')}</a>
         <span aria-hidden="true">·</span>
         <a href="/mod">${L('Accesso moderatore', 'Moderator access', 'Acceso moderador')}</a>
+      </p>
+      <p class="vt-sotto">${L('SocialBot lo tengo su io, e l’Essenziale resta gratis.', 'I keep SocialBot running, and Essenziale stays free.', 'SocialBot lo mantengo yo, y Essenziale sigue siendo gratis.')}
+        <a href="/sostieni">${L('Sostieni il progetto', 'Support the project', 'Apoya el proyecto')}</a>
       </p>
     </section>`;
 }

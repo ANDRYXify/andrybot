@@ -3,7 +3,8 @@
 
 
 const $ = (id) => document.getElementById(id);
-const canale = decodeURIComponent((location.pathname.split('/')[2] || '')).toLowerCase().replace(/[^a-z0-9_]/g, '');
+const _pezzi = location.pathname.split('/').map(decodeURIComponent).filter(Boolean);
+const canale = String((_pezzi[0] === 'collega' ? _pezzi[1] : _pezzi[0]) || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
 const parametri = new URLSearchParams(location.search);
 
 function dici(testo, male) {

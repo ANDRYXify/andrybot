@@ -108,7 +108,7 @@ const cfgChat = (channel) => streamers.get(channel)?.settings?.chatAuguri || nul
 // quelli, segnarsi non servirebbe a niente, e un comando che non fa niente e'
 // peggio di un comando che non c'e'.
 export function tryComando(msg, parla) {
-  if (!msg || msg.isSelf) return false;
+  if (!msg) return false;   // lo streamer scrive col NOSTRO account: scartarlo scarta lui (docs/COMANDI.md)
   const testo = String(msg.text || '').trim();
   if (!testo.startsWith('!')) return false;
   // In chat il nome del comando arriva gia' riportato a quello canonico dal
@@ -146,7 +146,7 @@ export function tryComando(msg, parla) {
 // PRIMA di parlare: se il messaggio non partisse, un ritentativo a ogni riga
 // della chat diventerebbe una filastrocca di auguri.
 export function auguriInChat(msg, parla, fuoco) {
-  if (!msg || msg.isSelf) return false;
+  if (!msg) return false;   // lo streamer scrive col NOSTRO account: scartarlo scarta lui (docs/COMANDI.md)
   const ch = msg.channel;
   const cfg = cfgChat(ch);
   if (!cfg?.attivo) return false;

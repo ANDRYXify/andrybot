@@ -76,6 +76,7 @@ const ROTTE = new Set([
   '/mod', '/auth/mod', '/auth/callback',      // invito e login dei moderatori delegati
   '/accedi/kick', '/auth/kick', '/auth/kick/callback',   // entrare con Kick: la sessione nasce qui
   '/accedi/youtube', '/auth/youtube', '/auth/youtube/callback',   // e con YouTube, allo stesso modo
+  '/accedi/discord',                          // e con Discord soltanto, per chi un canale non ce l'ha
   '/robots.txt', '/sitemap.xml', '/llms.txt', // SEO: i motori devono poterli leggere
   '/.well-known/security.txt',                // RFC 9116: dove scrivere se trovi un buco
   '/accedi',                                  // abbonamenti self-service (login con Twitch)
