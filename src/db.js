@@ -709,6 +709,28 @@ CREATE TABLE IF NOT EXISTS donazioni (         -- il registro delle donazioni: q
   media_at INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_donazioni_login ON donazioni(login, stato, pagata_at);
+
+-- I SOSTEGNI AL PROGETTO, che non sono donazioni a uno streamer.
+--
+-- Stanno in una tabella loro e non in «donazioni» con un login finto. La
+-- tentazione c'era: la forma e' la stessa. Ma quella tabella e' fatta per un
+-- CANALE — da li' passano l'avviso in diretta, l'obiettivo in overlay,
+-- l'immagine da approvare, il rimborso, il blocco «chi ha donato» sulla pagina
+-- di qualcuno. Un login finto la' dentro vorrebbe dire ricordarsi di escluderlo
+-- in sei posti, e il settimo sarebbe quello che un giorno fa comparire il
+-- sostegno di uno sconosciuto nel pannello di uno streamer.
+CREATE TABLE IF NOT EXISTS sostegni (
+  id TEXT PRIMARY KEY,                         -- 'stripe:cs_…'
+  stato TEXT NOT NULL DEFAULT 'attesa',        -- attesa | pagato | scaduto
+  importo INTEGER NOT NULL DEFAULT 0,          -- in centesimi
+  valuta TEXT NOT NULL DEFAULT 'EUR',
+  nome TEXT NOT NULL DEFAULT '',               -- come si firma chi sostiene, o vuoto
+  messaggio TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL DEFAULT 0,
+  pagato_at INTEGER NOT NULL DEFAULT 0,
+  riferimento TEXT NOT NULL DEFAULT ''         -- il pagamento presso Stripe (pi_…)
+);
+CREATE INDEX IF NOT EXISTS idx_sostegni_stato ON sostegni(stato, created_at);
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -1668,6 +1690,40 @@ export const contiSatispay = {
     return this.get(l);
   },
   togli(login) { db.prepare('DELETE FROM conti_satispay WHERE login=?').run(String(login).toLowerCase()); },
+};
+
+// Il registro dei sostegni al progetto. Piccolo apposta: apri, paga, scadi,
+// leggi. Niente rimborsi da qui (si fanno dal Dashboard di Stripe, dove i
+// soldi stanno davvero) e niente media: un sostegno non va in onda da nessuna
+// parte, quindi non c'e' niente da approvare.
+export const sostegni = {
+  apri(id, { importo = 0, valuta = 'EUR', nome = '', messaggio = '' }) {
+    return db.prepare(`INSERT OR IGNORE INTO sostegni (id, stato, importo, valuta, nome, messaggio, created_at)
+      VALUES (?, 'attesa', ?, ?, ?, ?, ?)`)
+      .run(String(id), Math.max(0, Math.round(Number(importo) || 0)),
+        String(valuta || 'EUR').toUpperCase().slice(0, 3), String(nome || '').slice(0, 60),
+        String(messaggio || '').slice(0, 300), now()).changes > 0;
+  },
+  get(id) { return db.prepare('SELECT * FROM sostegni WHERE id=?').get(String(id)) || null; },
+  // Il passaggio attesa → pagato avviene UNA volta sola: torna vero solo a chi
+  // ci arriva per primo, cosi' il ritorno sulla pagina e la ronda non contano
+  // due volte lo stesso pagamento.
+  paga(id, importo, riferimento = '') {
+    const r = db.prepare("UPDATE sostegni SET stato='pagato', pagato_at=?, importo=?, riferimento=? WHERE id=? AND stato='attesa'")
+      .run(now(), Math.max(0, Math.round(Number(importo) || 0)), String(riferimento || '').slice(0, 80), String(id));
+    return r.changes > 0;
+  },
+  scadi(id) { db.prepare("UPDATE sostegni SET stato='scaduto' WHERE id=? AND stato='attesa'").run(String(id)); },
+  inAttesa(prima) {
+    return db.prepare("SELECT * FROM sostegni WHERE stato='attesa' AND created_at<? ORDER BY created_at LIMIT 40").all(msIntero(prima));
+  },
+  ultimi(quanti = 50) {
+    return db.prepare("SELECT * FROM sostegni WHERE stato='pagato' ORDER BY pagato_at DESC LIMIT ?").all(Math.max(1, Math.min(200, quanti | 0)));
+  },
+  quanto() {
+    const r = db.prepare("SELECT COUNT(*) n, COALESCE(SUM(importo),0) tot FROM sostegni WHERE stato='pagato'").get();
+    return { quanti: Number(r?.n) || 0, totale: Number(r?.tot) || 0 };
+  },
 };
 
 // Il registro delle donazioni. Una riga per pagamento, con l'id che gli da' chi

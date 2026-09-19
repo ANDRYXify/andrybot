@@ -88,7 +88,11 @@
 # dona.socialbot.live e' la pagina delle donazioni con l'indirizzo corto
 # (dona.socialbot.live/<login>): stesso sito, stesse intestazioni, e' il
 # server che traduce l'indirizzo. Serve il record DNS e DONA_HOST nel .env.
-socialbot.live, dona.socialbot.live {
+#
+# sostieni.socialbot.live e' la stessa idea per il sostegno al progetto: la
+# radice porta alla pagina, il resto del sito continua a funzionare da li'. Si
+# accende da solo appena il DNS risponde — nessuna variabile obbligatoria.
+socialbot.live, dona.socialbot.live, sostieni.socialbot.live {
 	# zstd prima di gzip: Chrome lo prende e comprime meglio, gli altri
 	# ricadono su gzip. app.js e un file grosso, qui si vede.
 	encode zstd gzip
