@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fdfbf6">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png?v=8">
+  <title>SocialBot — Collega Discord</title>
+  <link rel="stylesheet" href="/font.css">
+  <link rel="stylesheet" href="/tema.css">
+  <link rel="stylesheet" href="/pagina.css">
+  <script src="/tema.js"></script>
+  <meta name="description" content="Collega il tuo account Discord al canale: i ruoli che ti spettano per quello che fai in chat te li mette il bot, senza chiedere niente a nessuno.">
+  <meta name="copyright" content="© 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live">
+  <meta name="robots" content="noindex, follow">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SocialBot">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:title" content="Collega il tuo Discord">
+  <meta property="og:description" content="Collega il tuo account Discord al canale: i ruoli che ti spettano te li mette il bot.">
+  <meta property="og:image" content="https://socialbot.live/icons/og.png?v=8">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="SocialBot — il bot che in chat scrive con il tuo nome, per Twitch e Kick">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Collega il tuo Discord">
+  <meta name="twitter:description" content="Collega il tuo account Discord al canale: i ruoli che ti spettano te li mette il bot.">
+  <meta name="twitter:image" content="https://socialbot.live/icons/og.png?v=8">
+  <meta name="twitter:image:alt" content="SocialBot — il bot che in chat scrive con il tuo nome, per Twitch e Kick">
+</head>
+<body class="centrata">
+  <div class="card">
+    <img src="/icons/marchio-barra.png?v=8" alt="SocialBot" width="132" height="84">
+    <h1>Collega il tuo Discord</h1>
+    <p id="intro">I ruoli che ti spetti su <strong id="canale">questo canale</strong> te li mette il bot, da solo. Prima deve sapere quale account Discord è il tuo.</p>
+    <button class="azione" id="btn" hidden>Continua con Discord</button>
+    <div class="msg" id="msg"></div>
+    <div id="fatto" hidden>
+      <p>Adesso scrivi questo nella chat del canale:</p>
+      <p><code id="codice" class="codice-grosso"></code></p>
+      <p class="minuta">Vale dieci minuti, e una volta sola. Serve a dire al bot che quel Twitch sei tu: nessun altro può scriverlo al posto tuo senza esserci.</p>
+    </div>
+    <div style="margin-top:10px"><a href="/privacy" style="font-size:.82rem;color:#8b83ad">Privacy &amp; Sicurezza</a></div>
+  </div>
+
+  <script src="/collega.js" defer></script>
+
+<!-- Questo software e tutto il suo contenuto (codice, logica, dati, motori di ragionamento e la persona "Lia") sono proprieta intellettuale di Andrea Taliento (ANDRYXify). © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live. ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
+<span style="display:none" aria-hidden="true">​‌​‌​​​‌​‌‌‌​‌​‌​‌‌​​‌​‌​‌‌‌​​‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​‌‌​​‌‌‌​‌​​​‌‌‌​‌‌‌​‌‌​​​​‌​‌‌‌​​‌​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌‌​‌​‌​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​​‌​​​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​‌​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​​​‌‌​‌‌‌‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​​‌​​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​‌​‌‌​‌‌‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​‌‌‌​​‌​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​​​​‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​‌‌​‌‌​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌​‌‌​​​‌‌​​​​‌​​‌​​​​​​‌‌‌​​​​​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​​‌​​​​​​​‌​​​‌​​‌​​‌‌​​​‌‌​‌​​‌​‌‌​​​​‌​​‌​​​‌​​​‌​‌​​‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌‌‌‌​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌‌​‌​​​‌‌​​​​‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌​​​‌‌​‌‌​​​‌‌​​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​‌‌‌​​​‌​​​​​‌‌​​​​‌​‌​‌​‌​​‌​​‌​​​​​​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​​‌‌​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌‌​​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌​‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​​‌‌​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​‌‌​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌​​‌​‌‌‌​​​‌​​​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​​‌​‌‌​‌​‌​​‌​​‌​‌​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​​‌‌​​​​‌​​‌‌​‌‌‌​‌‌​​‌‌​​​‌‌​​‌‌​​‌‌‌​​‌​‌‌​​​‌‌​​‌‌​​​‌​‌‌​​‌​‌​​‌‌‌​​​​‌‌​​​‌​​​‌‌​‌​​​​‌‌​​‌​​​‌‌​‌​​​‌‌​​‌​​​​‌‌‌​​‌​​‌‌​​​​​​‌​‌‌​‌​​‌‌​‌​​​‌‌​​‌‌​​​‌‌​‌‌‌​‌‌​​​‌​​​‌​‌‌​‌​‌‌‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌‌‌​‌​​​‌‌‌​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌⁣</span></body>
+</html>

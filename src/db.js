@@ -563,6 +563,14 @@ CREATE TABLE IF NOT EXISTS discord_link (    -- chi ha detto «questo account Di
   PRIMARY KEY (channel, login)
 );
 CREATE INDEX IF NOT EXISTS idx_dclink_dc ON discord_link(channel, dc_id);
+CREATE TABLE IF NOT EXISTS discord_attesa (  -- chi ha detto a Discord chi e', e aspetta di dirlo in chat
+  codice TEXT PRIMARY KEY,                   -- sei caratteri, vivono dieci minuti
+  channel TEXT NOT NULL,                     -- vale per un canale solo
+  dc_id TEXT NOT NULL,                       -- l'account Discord che ha autorizzato
+  dc_nome TEXT NOT NULL DEFAULT '',          -- il suo nome (solo per mostrarlo)
+  scad INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_dcattesa_dc ON discord_attesa(channel, dc_id);
 CREATE TABLE IF NOT EXISTS giochi (          -- giochi personalizzati per canale (manche)
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
@@ -2292,6 +2300,24 @@ export const dcLink = {
     db.prepare('DELETE FROM discord_link WHERE channel=? AND login=?')
       .run(String(channel).toLowerCase(), String(login || '').toLowerCase());
   },
+};
+
+// CHI STA PER COLLEGARSI. Un codice vive dieci minuti, vale per un canale solo
+// e muore appena viene usato. Sta nel database e non in memoria per lo stesso
+// motivo del cancello di Telegram: un riavvio non deve lasciare una persona a
+// meta' strada con un codice che non vale piu' niente e nessuno che glielo dica.
+export const dcAttesa = {
+  metti({ codice, channel, dcId, dcNome = '', scad = 0 }) {
+    db.prepare(`INSERT INTO discord_attesa (codice, channel, dc_id, dc_nome, scad) VALUES (?,?,?,?,?)
+      ON CONFLICT(codice) DO UPDATE SET channel=excluded.channel, dc_id=excluded.dc_id, dc_nome=excluded.dc_nome, scad=excluded.scad`)
+      .run(String(codice), String(channel).toLowerCase(), String(dcId), String(dcNome || '').slice(0, 64), msIntero(scad));
+  },
+  prendi(codice) { return db.prepare('SELECT * FROM discord_attesa WHERE codice=?').get(String(codice || '')) || null; },
+  consuma(codice) { db.prepare('DELETE FROM discord_attesa WHERE codice=?').run(String(codice || '')); },
+  scordaDi(channel, dcId) {
+    db.prepare('DELETE FROM discord_attesa WHERE channel=? AND dc_id=?').run(String(channel).toLowerCase(), String(dcId || ''));
+  },
+  pulisci(ora = now()) { db.prepare('DELETE FROM discord_attesa WHERE scad<=?').run(msIntero(ora)); },
 };
 
 const _csv = (x) => (Array.isArray(x) ? x : String(x || '').split(','))

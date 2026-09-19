@@ -88,3 +88,11 @@ body.centrata { display: grid; place-items: center; }
 
 a.piccolo { color: var(--testo-3); font-size: .84rem; display: inline-block; margin-top: 16px; }
 p.piccolo { color: var(--testo-3); font-size: .84rem; margin-top: 14px; }
+
+.codice-grosso {
+  display: inline-block; margin: 6px 0 2px; padding: .5rem .9rem;
+  border-radius: 10px; background: var(--surface-2, rgba(0,0,0,.06));
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.15rem; font-weight: 700; letter-spacing: .06em; user-select: all;
+}
+.minuta { font-size: .84rem; color: var(--testo-3); }

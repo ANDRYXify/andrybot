@@ -70,14 +70,45 @@ servizio che non c'e' piu'.
 
 Questo pezzo e' in costruzione. Cosa resta, in ordine:
 
-- **Il collegamento dello spettatore.** Due meta': chi sei su Twitch e chi sei
-  su Discord. La seconda vuole un'applicazione Discord con OAuth `identify`, ed
-  e' **della piattaforma** (`DISCORD_CLIENT_ID` e `DISCORD_CLIENT_SECRET`, vedi
-  sotto), mentre il bot che scrive i ruoli resta **dello streamer**. Dove
-  l'applicazione non e' configurata, il pannello lo dice invece di offrire un
-  tasto che non funziona.
 - **Il pannello** (le regole, la prova del collegamento, cosa ha fatto l'ultimo
   giro e cosa non ha potuto fare) e la **vetrina**.
+
+## Il collegamento, e il verso in cui va il codice
+
+Servono due meta': chi sei su Discord e chi sei su Twitch. La prima la dice
+Discord, con la sua schermata del permesso. La seconda e' il problema, perche'
+uno spettatore su SocialBot non ha un account.
+
+La strada ovvia — il bot scrive in chat un link personale e tu lo apri — e'
+**sbagliata**, e si rompe in un modo che non si vede: la chat e' pubblica. Chi
+sta guardando vede il tuo link, lo apre prima di te, autorizza il SUO Discord, e
+da quel momento e' lui a prendersi i tuoi ruoli. Nessuno se ne accorge, e il
+derubato pensa di aver sbagliato qualcosa.
+
+Quindi il codice va nell'altro verso:
+
+1. apri `socialbot.live/collega/<canale>` e premi **Continua con Discord**;
+2. Discord ti chiede il permesso (`identify`, niente altro) e torna da noi;
+3. la pagina ti mostra un **codice di sei caratteri**, che sta solo sul tuo
+   schermo;
+4. lo scrivi nella chat dello streamer: `!discord ABC123`. Quel messaggio —
+   che porta con se' l'autorita' di Twitch — chiude il collegamento, e **lo
+   consuma**.
+
+Chi legge il codice in chat lo legge gia' bruciato: e' arrivato secondo per
+costruzione, perche' prima del tuo messaggio quel codice non esisteva per
+nessun altro. E se lo scrivi nella chat sbagliata muore lo stesso — e' comunque
+finito in pubblico, quindi non deve valere piu' nemmeno a casa sua.
+
+Il resto sono conseguenze: un codice vive dieci minuti e vale per un canale
+solo; ricominciare sostituisce quello di prima; lo stesso account Discord non
+puo' restare appeso a due persone sullo stesso canale (sarebbe la stessa rapina,
+fatta piano); e `!discord via` stacca, lasciando dov'e' quello che hai — i ruoli
+non si tolgono per ripicca.
+
+Il codice sta nel database e non in memoria per lo stesso motivo del cancello di
+Telegram: un riavvio non deve lasciare una persona a meta' strada con un codice
+che non vale piu' niente e nessuno che glielo dica.
 
 ## Il giro, e il difetto piu' pericoloso di tutti
 

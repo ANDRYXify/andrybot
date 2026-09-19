@@ -150,6 +150,61 @@ export async function togli(token, guild, utente, ruolo) {
   return chiama(token, `/guilds/${guild}/members/${utente}/roles/${ruolo}`, { metodo: 'DELETE' });
 }
 
+// ---------------------------------------------------------------- riconoscere
+// L'altra meta' del filo, e ha un'autorita' diversa: qui non parla il bot di
+// uno streamer, parla l'applicazione che chiede a una persona «sei tu?». Puo'
+// leggere il suo id e il suo nome, e nient'altro: lo scope e' `identify`, e non
+// entra in nessun server.
+export function urlAutorizzazione({ clientId, redirectUri, state }) {
+  const p = new URLSearchParams({
+    client_id: String(clientId || ''),
+    redirect_uri: String(redirectUri || ''),
+    response_type: 'code',
+    scope: 'identify',
+    state: String(state || ''),
+    prompt: 'none',
+  });
+  return 'https://discord.com/oauth2/authorize?' + p.toString();
+}
+
+// Il codice di ritorno diventa un nome e un id. Il segreto dell'applicazione
+// viaggia nel corpo, come vuole Discord, e non esce mai di qui.
+export async function scambiaCodice({ clientId, clientSecret, redirectUri, codice }) {
+  if (!clientId || !clientSecret || !codice) return { ok: false, errore: 'collegamento non configurato' };
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), TIMEOUT_MS);
+  try {
+    const r = await fetch(API + '/oauth2/token', {
+      method: 'POST',
+      signal: ac.signal,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': UA },
+      body: new URLSearchParams({
+        client_id: String(clientId),
+        client_secret: String(clientSecret),
+        grant_type: 'authorization_code',
+        code: String(codice),
+        redirect_uri: String(redirectUri || ''),
+      }).toString(),
+    });
+    if (!r.ok) return { ok: false, errore: 'Discord non ha riconosciuto il codice' };
+    const d = await r.json().catch(() => null);
+    const tok = String(d?.access_token || '');
+    if (!tok) return { ok: false, errore: 'Discord non ha dato un permesso' };
+    const u = await fetch(API + '/users/@me', {
+      signal: ac.signal,
+      headers: { Authorization: 'Bearer ' + tok, 'User-Agent': UA },
+    });
+    if (!u.ok) return { ok: false, errore: 'Discord non dice chi sei' };
+    const me = await u.json().catch(() => null);
+    const id = String(me?.id || '');
+    if (!idOk(id)) return { ok: false, errore: 'Discord non dice chi sei' };
+    return { ok: true, id, nome: String(me?.global_name || me?.username || '') };
+  } catch (e) {
+    log.warn('scambiaCodice:', e?.message || e);
+    return { ok: false, errore: 'Discord irraggiungibile' };
+  } finally { clearTimeout(to); }
+}
+
 // La prova che si fa dal pannello: il token vale, il bot e' dentro, e questi
 // sono i ruoli che puo' davvero muovere.
 export async function prova(token, guild) {

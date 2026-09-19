@@ -75,6 +75,8 @@ import * as compleanniFeat from '../features/compleanni.js';
 import * as vetrinaLive from '../features/vetrina-live.js';
 import * as tiktok from '../features/tiktok.js';
 import * as discord from '../features/discord.js';
+import * as dcApi from '../features/discord-api.js';
+import * as dcCollega from '../features/discord-collega.js';
 import * as instagram from '../features/instagram.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
@@ -3909,6 +3911,47 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const map = tgLogin.getByTg(r.sub);                   // non loggato → ACCEDO se collegato
     if (map && apriSessionePerLogin(req, map.login)) return res.redirect('/');
     return res.redirect('/?tgapp=noncollegato');
+  }));
+
+  // ── Collegare uno spettatore a Discord ──
+  //
+  // Il codice va nel verso giusto: si parte dal web, Discord dice chi sei, e la
+  // pagina mostra un codice che sta SOLO sul tuo schermo. Poi lo scrivi nella
+  // chat dello streamer, e quel messaggio — che porta con se' l'autorita' di
+  // Twitch — chiude il collegamento e brucia il codice. Il contrario (un link
+  // personale scritto in chat) sarebbe regalabile a chiunque stia guardando.
+  const dcStati = new Map();   // state → { canale, ts }
+  const puliziaDc = () => { const ora = Date.now(); for (const [k, v] of dcStati) if (ora - v.ts > 600_000) dcStati.delete(k); };
+  const canaleDi = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
+
+  const COLLEGA_HTML = guscio.pagina('collega.html');
+  app.get('/collega/:canale', (req, res) => res.sendFile(COLLEGA_HTML));
+
+  // Dove mandare la persona lo dice il server: l'indirizzo con dentro l'id
+  // dell'applicazione non si costruisce nel browser.
+  app.get('/api/discord/collega/:canale', (req, res) => {
+    const canale = canaleDi(req.params.canale);
+    if (!dcCollega.attivo()) return res.status(503).json({ errore: 'Il collegamento con Discord non è acceso su questo server.' });
+    if (!canale || !dcCollega.apertoA(canale)) return res.status(404).json({ errore: 'Questo canale non ha i ruoli di Discord accesi.' });
+    puliziaDc();
+    const state = crypto.randomUUID();
+    dcStati.set(state, { canale, ts: Date.now() });
+    res.json({ url: dcApi.urlAutorizzazione({ ...config.discordApp, state }) });
+  });
+
+  app.get('/discord/oidc/callback', wrap(async (req, res) => {
+    puliziaDc();
+    const state = String(req.query.state || '');
+    const st = dcStati.get(state);
+    dcStati.delete(state);
+    if (!st) return res.redirect('/?discord=scaduto');
+    const dove = '/collega/' + st.canale;
+    if (!req.query.code) return res.redirect(dove + '?esito=no');
+    const r = await dcApi.scambiaCodice({ ...config.discordApp, codice: String(req.query.code) });
+    if (!r.ok) return res.redirect(dove + '?esito=no');
+    const a = dcCollega.apri(st.canale, { dcId: r.id, dcNome: r.nome });
+    if (!a) return res.redirect(dove + '?esito=no');
+    res.redirect(dove + '?codice=' + encodeURIComponent(a.codice));
   }));
 
   // Premi a punti canale per le richieste musicali: elenco (per capire quanti ne
