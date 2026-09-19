@@ -239,6 +239,18 @@ le proprie regole muoverebbero i ruoli di casa d'altri. Quello buono sta nella
 RISPOSTA dello scambio del codice (`scambiaInvito`), che viaggia da Discord a
 noi e non passa da nessuna parte in mezzo.
 
+### Il buco che apre un bot condiviso
+
+Finche' ogni streamer si portava il suo bot, scrivere a mano nel pannello l'id
+del server di un altro era inutile: quel bot li' dentro non c'era. Con un bot
+della piattaforma il conto cambia — il nostro bot sta in TUTTI i server dei
+nostri streamer, e un id scritto a mano sarebbe una chiave per casa d'altri.
+
+Quindi la regola: **col bot della casa il server lo dice Discord, e basta**.
+L'id dal pannello si accetta solo insieme a un token suo, dove il problema non
+esiste per costruzione. Vale per il salvataggio e per la prova, e sta in
+`test/contratto/discord-invito.test.mjs`.
+
 Resta a mano **una cosa sola**, e non per pigrizia: in **Impostazioni server →
 Ruoli**, trascinare il ruolo del bot **sopra** quelli che deve poter dare.
 Discord non lascia che un bot si sposti piu' in alto di dov'e' — e' la regola

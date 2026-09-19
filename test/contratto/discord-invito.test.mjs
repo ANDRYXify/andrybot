@@ -68,3 +68,30 @@ test('il token con cui si parla e\' uno solo, e lo decide un posto solo', () => 
   const COLL = leggi('src/features/discord-collega.js');
   assert.match(COLL, /c\.guild && tokenDi\(c\)/, 'e nemmeno chi decide se un canale accetta collegamenti');
 });
+
+// IL BUCO CHE APRE UN BOT CONDIVISO.
+//
+// Finche' ogni streamer si portava il suo bot, scrivere a mano l'id di un
+// server altrui era inutile: quel bot li' dentro non c'era. Con un bot della
+// piattaforma il conto cambia — il nostro bot sta in TUTTI i server dei nostri
+// streamer, e un id scritto nel pannello sarebbe una chiave per casa d'altri.
+//
+// Quindi: col bot della casa il server lo dice Discord, e basta. L'id a mano si
+// accetta solo insieme a un token suo, dove il problema non esiste per
+// costruzione.
+test('col bot della casa, l\'id del server non si scrive a mano', () => {
+  const i = SRV.indexOf("app.post('/api/streamer/ruoli', requireOwner");
+  const corpo = SRV.slice(i, SRV.indexOf('res.json(ruoliVisti', i));
+  assert.match(corpo, /const suo = campi\.token \|\| String\(prima\?\.token \|\| ''\)\.trim\(\);/,
+    'si guarda se se n\'e\' portato uno suo');
+  assert.match(corpo, /if \(chiesto && suo\) campi\.guild = chiesto;/,
+    'l\'id dal pannello si accetta solo col bot suo');
+  assert.match(corpo, /return res\.status\(400\)/, 'e sennò si dice di no, invece di ignorarlo in silenzio');
+});
+
+test('e nemmeno la prova si fa contro un server che non e\' il nostro', () => {
+  const i = SRV.indexOf("app.post('/api/streamer/ruoli/prova', requireOwner");
+  const corpo = SRV.slice(i, SRV.indexOf('const r = await dcApi.prova', i));
+  assert.match(corpo, /\(suo \? req\.body\?\.guild : undefined\)/,
+    'col bot della casa la prova guarda il server salvato, non quello che arriva dal pannello');
+});
