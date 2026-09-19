@@ -43,6 +43,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Il puntatore disegnato c'era solo sulla vetrina. Adesso è su ogni pagina del sito, 404 compreso.
 - Su Discord l'avviso di diretta lo scrive il bot nel canale che scegli: non devi più creare un webhook a mano. Chi ce l'ha già lo tiene. [vai: notifiche]
 - Un canale in sola lettura non zittisce più il bot: «sono-in-onda» resta di sola lettura per le persone, e lui ci scrive. [vai: dcserver]
+- Il bot adesso può dare ai ruoli anche i poteri di moderazione, così «Moderatori» nasce già con i suoi: se l'avevi invitato prima, rifallo. [vai: ruoli]
 
 ## 2026-09-18
 
