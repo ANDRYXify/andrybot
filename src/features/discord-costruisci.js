@@ -30,8 +30,8 @@
 // E il limite delle mosse non e' un troncamento silenzioso: quando si ferma lo
 // dice, e dice perche'.
 import * as api from './discord-api.js';
-import { differenza, vuota, improntaDi, TIPI, nomeCanale } from './discord-preset.js';
-import { risolvi } from './discord-catalogo.js';
+import { differenza, differenzaRuoli, vuota, improntaDi, TIPI, nomeCanale } from './discord-preset.js';
+import { risolvi, nonPuoDare } from './discord-catalogo.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('discord-costruisci');
@@ -58,15 +58,29 @@ export async function anteprima(token, guild, preset, { togliere = false } = {})
   // server sotto gli occhi, quelle parole diventano id. E' anche il punto in
   // cui si scopre che un ruolo nominato non c'e': quella riga di permessi si
   // salta e si dice quale, perche' un ruolo che non esiste non e' «nessuno».
-  const { preset: risolto, mancanti } = risolvi(preset, { guildId: foto.guild.id, ruoli: foto.ruoli, botId: foto.bot?.id });
+  // I RUOLI SI CALCOLANO PRIMA, e non e' un ordine di comodo: un canale che nel
+  // preset nomina «Moderatori» ha bisogno che quel ruolo esista. Se il
+  // costruttore lo creasse dopo, la prima applicazione salterebbe tutti i suoi
+  // permessi e la seconda li metterebbe — cioe' «funziona alla seconda volta»,
+  // che e' il difetto peggiore perche' sembra funzionare.
+  //
+  // Un ruolo che la traccia sta per creare quindi NON e' mancante: e' uno che
+  // non c'e' ancora. Si risolve su un elenco che comprende anche quelli, con un
+  // id finto che nessun permesso di adesso puo' avere — cosi' il canale che lo
+  // nomina risulta da sistemare, che e' esattamente quello che succedera'.
+  const dRuoli = differenzaRuoli(foto, preset, { togliere, puoiDare: (p) => !nonPuoDare([p], foto.bits).length });
+  const nasceranno = dRuoli.crea.map((r) => ({ id: 'nuovo:' + r.nome.toLowerCase(), nome: r.nome }));
+  const { preset: risolto, mancanti } = risolvi(preset, {
+    guildId: foto.guild.id, ruoli: [...foto.ruoli, ...nasceranno], botId: foto.bot?.id });
   // COSA RESTA FUORI DAL PRESET SI SA SEMPRE, anche quando non si tocca.
   // Serve a dire «il tuo server ha sette canali che questo preset non prevede»
   // senza che quella frase diventi un'offerta di cancellarli: il modo decide
   // se si agisce, non se si guarda. E l'impronta e' di quello che si FA, cosi'
   // in avanti e in distruttivo non si confondono fra loro.
   const tutto = differenza(foto, risolto, { togliere: true });
-  const d = togliere ? tutto : { ...tutto, togli: [] };
-  return { ok: true, foto, differenza: d, fuori: tutto.togli, impronta: improntaDi(d), vuota: vuota(d), mancanti };
+  const d = togliere ? { ...tutto, ruoli: dRuoli } : { ...tutto, togli: [], ruoli: { ...dRuoli, togli: [] } };
+  return { ok: true, foto, differenza: d, fuori: tutto.togli, fuoriRuoli: dRuoli.togli,
+    impronta: improntaDi(d), vuota: vuota(d), mancanti, nonPosso: dRuoli.nonPosso };
 }
 
 // Le categorie che esistono, per nome. Serve a tradurre il «dentro» della
@@ -108,6 +122,7 @@ export async function applica(token, guild, preset, { togliere = false, impronta
   // della creazione — ed e' l'unico momento in cui lo si puo' sapere senza
   // rileggere tutto il server.
   const esito = { creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, nomiTolti: [],
+    ruoliCreati: 0, ruoliSistemati: 0, ruoliTolti: 0, nomiRuoliTolti: [],
     canaleAvvisi: d.avvisi?.id ? String(d.avvisi.id) : '' };
   const passo = async (fn, conta) => {
     if (esito.fermo) return null;
@@ -123,6 +138,33 @@ export async function applica(token, guild, preset, { togliere = false, impronta
     if (!esito.fermo && pausa > 0) await dormi(pausa);
     return x;
   };
+
+  // I RUOLI PRIMA DI TUTTO, perche' i canali li nominano.
+  //
+  // E appena ne nasce uno, il suo id vero si mette al posto di quello finto che
+  // l'anteprima aveva usato per dire «questo ruolo arrivera'». Da qui in poi i
+  // permessi dei canali parlano di ruoli che esistono davvero: e' l'unico
+  // momento in cui si puo' fare, e farlo dopo vorrebbe dire mandare a Discord
+  // un id inventato.
+  const r = d.ruoli || { crea: [], sistema: [], togli: [] };
+  const idVeri = new Map();
+  for (const v of (r.crea || [])) {
+    if (esito.fermo) break;
+    const x = await passo(() => api.creaRuolo(token, guild, v), 'ruoliCreati');
+    if (x?.ok && x.id) idVeri.set('nuovo:' + v.nome.toLowerCase(), String(x.id));
+  }
+  for (const v of (r.sistema || [])) {
+    if (esito.fermo) break;
+    await passo(() => api.sistemaRuolo(token, guild, v.id, v), 'ruoliSistemati');
+  }
+  // Un id finto che non e' diventato vero vuol dire che quel ruolo non si e'
+  // potuto creare. Il permesso che lo nomina si salta: dargli un id a caso
+  // sarebbe peggio, e lasciarlo scritto «nuovo:...» farebbe fallire la
+  // chiamata a meta' costruzione.
+  const veri = (righe) => (righe || []).map((p) => (String(p.id).startsWith('nuovo:')
+    ? { ...p, id: idVeri.get(String(p.id)) || '' } : p)).filter((p) => p.id);
+  for (const v of d.crea) if (v.permessi) v.permessi = veri(v.permessi);
+  for (const v of d.sistema) if (Array.isArray(v.permessi)) v.permessi = veri(v.permessi);
 
   for (const v of d.crea) {
     if (v.tipo !== TIPI.categoria) continue;
@@ -165,6 +207,17 @@ export async function applica(token, guild, preset, { togliere = false, impronta
       // mesi un id non dice niente a una persona, e quello che si vuole
       // ricordare e' «c'era un canale che si chiamava cosi'».
       if (x?.ok) esito.nomiTolti.push(String(t.nome || ''));
+    }
+    // I RUOLI SI CANCELLANO PER ULTIMI, dopo i canali.
+    //
+    // Cancellare un ruolo lo toglie di mano a tutti quelli che ce l'hanno, e lo
+    // fa in silenzio. Se ci si ferma prima — per un limite, per un guasto — ci
+    // si e' fermati con un server a meta' costruzione, non con un server dove
+    // meta' delle persone ha perso i suoi privilegi.
+    for (const t of (r.togli || [])) {
+      if (esito.fermo) break;
+      const x = await passo(() => api.togliRuolo(token, guild, t.id), 'ruoliTolti');
+      if (x?.ok) esito.nomiRuoliTolti.push(String(t.nome || ''));
     }
   }
 

@@ -203,7 +203,11 @@ test('il modo distruttivo toglie prima i canali e poi le categorie, per non lasc
     const a = await C.applica('tok', GUILD, PRESET, opz({ togliere: true }));
     assert.equal(a.ok, true, a.errore);
     assert.equal(a.tolti, 3);
-    const cancellati = st.chiamate.filter((c) => c.startsWith('DELETE')).map((c) => c.split('/').pop());
+    // Fra i CANALI la categoria va per ultima: cancellarla prima lascerebbe i
+    // suoi canali orfani in cima al server. I ruoli si cancellano dopo tutti i
+    // canali, ed e' un'altra regola — sta nella prova dei ruoli.
+    const cancellati = st.chiamate.filter((c) => c.startsWith('DELETE') && c.includes('/channels/'))
+      .map((c) => c.split('/').pop());
     assert.deepEqual(cancellati.slice(-1), [C1], 'la categoria va per ultima');
     assert.equal(st.canali.length, 6, 'e resta esattamente il preset');
     // I NOMI, non gli id: sul server quei canali non esistono piu', e il

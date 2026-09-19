@@ -22,7 +22,7 @@ test('una prova vale finche\' dura: lo decide la data, non la ronda', () => {
   subscriptions.set('prova', { tier: 'base', pacchetti: ab.ADDON_IDS, status: 'trialing', periodEnd: T + 3 * G });
   assert.equal(subscriptions.attivo('prova', T), true);
   assert.equal(subscriptions.attivo('prova', T + 4 * G), false, 'finita la prova, finito l\'accesso');
-  assert.equal(ab.abilitata(funzioniDelPiano('prova'), 'clipAuto'), true, 'adesso la prova e\' in corso');
+  assert.equal(ab.abilitata(funzioniDelPiano('prova', T), 'clipAuto'), true, 'adesso la prova e\' in corso');
   subscriptions.set('pagante', { tier: 'base', pacchetti: ['clip'], status: 'active', periodEnd: T - G });
   assert.equal(subscriptions.attivo('pagante', T), true, 'un pagante lo chiude il webhook, non la data');
   subscriptions.set('spento', { tier: 'base', status: 'canceled' });
