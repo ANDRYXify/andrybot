@@ -312,3 +312,26 @@ test('i canali che Discord gestisce da se\' non si toccano nemmeno nel modo dist
     assert.ok(st.canali.some((c) => c.id === AVVISI_DC));
   } finally { ripulisci(); }
 });
+
+test('cosa resta fuori dal preset si sa anche quando non si tocca niente', async () => {
+  // E' la frase che serve a decidere: «il tuo server ha due cose che questo
+  // preset non prevede». Saperlo non e' un'offerta di cancellarle.
+  const st = casa({ canali: [
+    { id: C1, name: 'roba-vecchia', type: TIPI.testo },
+    { id: C2, name: 'Altra Roba', type: TIPI.categoria },
+  ] });
+  try {
+    const avanti = await C.anteprima('tok', GUILD, PRESET, { togliere: false });
+    assert.equal(avanti.fuori.length, 2, 'si vedono lo stesso');
+    assert.deepEqual(avanti.differenza.togli, [], 'ma non sono fra le cose da fare');
+
+    // e l'impronta di «vado avanti» non e' quella di «faccio piazza pulita»:
+    // sennò una conferma data per una cosa varrebbe per l'altra
+    const pulizia = await C.anteprima('tok', GUILD, PRESET, { togliere: true });
+    assert.notEqual(avanti.impronta, pulizia.impronta);
+
+    await C.applica('tok', GUILD, PRESET, opz({ impronta: avanti.impronta }));
+    assert.ok(st.canali.some((c) => c.id === C1), 'e andando avanti non si e\' cancellato niente');
+    assert.ok(!st.chiamate.some((c) => c.startsWith('DELETE')));
+  } finally { ripulisci(); }
+});

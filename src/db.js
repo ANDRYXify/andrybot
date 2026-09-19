@@ -758,6 +758,9 @@ aggiungiColonna('telegram', 'ingresso_tasto', "TEXT NOT NULL DEFAULT ''");
 // evapora mentre lo streamer sta fermo non e' un premio. `until` resta per i
 // VIP dati a mano, che sono un'altra cosa.
 aggiungiColonna('vips', 'dirette', 'INTEGER NOT NULL DEFAULT 0');
+// Il server che lo streamer vuole, scritto a parole. Vuoto vuol dire «non ne
+// ho ancora scelto uno», e allora il pannello gli fa vedere il catalogo.
+aggiungiColonna('discord_ruoli', 'preset', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('battute', 'dette', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('battute', 'risate', 'INTEGER NOT NULL DEFAULT 0');
 // Quale SCHEMA l'ha costruita. Senza, si potrebbe sapere se una battuta ha fatto
@@ -2255,11 +2258,11 @@ export const dcRuoli = {
     const r = db.prepare('SELECT * FROM discord_ruoli WHERE channel=?').get(c) || null;
     if (!r) return null;
     const v = apriSegreti('discord_ruoli', c, r, ['token']);
-    return { ...v, regole: safeJson(v.regole) || [], ultimo_esito: safeJson(v.ultimo_esito) || {} };
+    return { ...v, regole: safeJson(v.regole) || [], ultimo_esito: safeJson(v.ultimo_esito) || {}, preset: safeJson(v.preset) || null };
   },
   set(channel, campi = {}) {
     const c = String(channel).toLowerCase();
-    const cur = this.get(c) || { token: '', guild: '', guild_nome: '', bot_nome: '', attivo: 0, regole: [], ultimo_giro: 0, ultimo_esito: {} };
+    const cur = this.get(c) || { token: '', guild: '', guild_nome: '', bot_nome: '', attivo: 0, regole: [], ultimo_giro: 0, ultimo_esito: {}, preset: null };
     const v = {
       token: cifra(campi.token !== undefined ? String(campi.token) : String(cur.token || ''), _dove('discord_ruoli', 'token', c)),
       guild: campi.guild !== undefined ? String(campi.guild).replace(/[^0-9]/g, '').slice(0, 24) : cur.guild,
@@ -2269,12 +2272,13 @@ export const dcRuoli = {
       regole: JSON.stringify(campi.regole !== undefined ? (campi.regole || []) : (cur.regole || [])),
       ultimo_giro: campi.ultimoGiro !== undefined ? msIntero(campi.ultimoGiro) : msIntero(cur.ultimo_giro),
       ultimo_esito: JSON.stringify(campi.ultimoEsito !== undefined ? (campi.ultimoEsito || {}) : (cur.ultimo_esito || {})),
+      preset: campi.preset !== undefined ? (campi.preset ? JSON.stringify(campi.preset) : '') : (cur.preset ? JSON.stringify(cur.preset) : ''),
     };
-    db.prepare(`INSERT INTO discord_ruoli (channel, token, guild, guild_nome, bot_nome, attivo, regole, ultimo_giro, ultimo_esito, ts)
-      VALUES (@channel, @token, @guild, @guild_nome, @bot_nome, @attivo, @regole, @ultimo_giro, @ultimo_esito, @ts)
+    db.prepare(`INSERT INTO discord_ruoli (channel, token, guild, guild_nome, bot_nome, attivo, regole, ultimo_giro, ultimo_esito, preset, ts)
+      VALUES (@channel, @token, @guild, @guild_nome, @bot_nome, @attivo, @regole, @ultimo_giro, @ultimo_esito, @preset, @ts)
       ON CONFLICT(channel) DO UPDATE SET token=excluded.token, guild=excluded.guild, guild_nome=excluded.guild_nome,
         bot_nome=excluded.bot_nome, attivo=excluded.attivo, regole=excluded.regole,
-        ultimo_giro=excluded.ultimo_giro, ultimo_esito=excluded.ultimo_esito, ts=excluded.ts`)
+        ultimo_giro=excluded.ultimo_giro, ultimo_esito=excluded.ultimo_esito, preset=excluded.preset, ts=excluded.ts`)
       .run({ channel: c, ...v, ts: now() });
     return this.get(c);
   },
