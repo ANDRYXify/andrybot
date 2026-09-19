@@ -3974,10 +3974,25 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // un campo vuoto vuol dire «non l'ho toccato», non «cancellalo»: il token
     // il pannello non ce l'ha, quindi non puo' nemmeno rimandarlo indietro.
     if (typeof b.token === 'string' && b.token.trim()) campi.token = b.token.trim();
-    if (b.guild !== undefined) campi.guild = b.guild;
     if (b.regole !== undefined) campi.regole = normRegole(b.regole);
     if (b.attivo !== undefined) campi.attivo = !!b.attivo;
     const prima = dcRuoli.get(login);
+    // L'ID DEL SERVER SI SCRIVE A MANO SOLO COL BOT SUO.
+    //
+    // Col bot della casa, l'unico che puo' dire in quale server siamo e'
+    // Discord, al ritorno dell'invito. Se si accettasse un id scritto nel
+    // pannello, uno streamer potrebbe metterci quello del server di un ALTRO
+    // dove il nostro bot e' gia' dentro — e da li' in poi le sue regole
+    // muoverebbero i ruoli di casa d'altri. Col bot suo il problema non esiste:
+    // quel bot sta solo dove lo ha invitato lui.
+    // Come per il token, un campo vuoto vuol dire «non l'ho toccato»: si
+    // svuota tutto con «Scollega», non salvando una riga di regole.
+    const suo = campi.token || String(prima?.token || '').trim();
+    const chiesto = b.guild === undefined ? '' : String(b.guild).replace(/[^0-9]/g, '');
+    if (chiesto && suo) campi.guild = chiesto;
+    else if (chiesto && chiesto !== String(prima?.guild || '')) {
+      return res.status(400).json({ errore: 'Il server lo scegli dalla schermata di Discord, col tasto qui sopra.' });
+    }
     const token = campi.token || dcApi.tokenDi(prima);
     const guild = campi.guild !== undefined ? String(campi.guild).replace(/[^0-9]/g, '') : (prima?.guild || '');
     if (campi.attivo && !(token && guild)) {
@@ -3991,8 +4006,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.post('/api/streamer/ruoli/prova', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const c = dcRuoli.get(login);
-    const token = (typeof req.body?.token === 'string' && req.body.token.trim()) || dcApi.tokenDi(c);
-    const guild = String(req.body?.guild ?? c?.guild ?? '').replace(/[^0-9]/g, '');
+    const suo = (typeof req.body?.token === 'string' && req.body.token.trim()) || String(c?.token || '').trim();
+    const token = suo || dcApi.tokenDi(c);
+    // Stessa regola della scrittura: col bot della casa si prova il server che
+    // ci ha detto Discord, non quello che arriva dal pannello.
+    const guild = String((suo ? req.body?.guild : undefined) ?? c?.guild ?? '').replace(/[^0-9]/g, '');
     const r = await dcApi.prova(token, guild);
     if (!r.ok) return res.status(400).json({ errore: r.errore });
     dcRuoli.set(login, { guildNome: r.server, botNome: r.bot });
