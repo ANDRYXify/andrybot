@@ -460,7 +460,7 @@ export function accentoDi(pagina) {
   return (pagina?.tema && pagina.tema.accent) || pre.acc;
 }
 
-export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, donatori, immagineAnteprima } = {}) {
+export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, urlLink, donatori, immagineAnteprima } = {}) {
   // l'indirizzo vero della pagina: quello corto delle donazioni, se c'e'
   const urlCanonico = dona ? (urlDona || `${baseUrl}/dona/${login}`) : `${baseUrl}/u/${login}`;
   const pre = PRESET[pagina.template] || PRESET.minimal;
@@ -499,6 +499,12 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   // una volta sola, non un cartello da sbloccare a ogni video.
   const chiedi = !anteprima;
   const banner = t.consenso !== 'chiedi';
+  // L'INFORMATIVA E' DELLA PAGINA, NON DEL DOMINIO. Le due pagine pubbliche
+  // sono due cose diverse — contenuti diversi, tema diverso, host diverso — e
+  // ognuna ha la sua. Calcolata qui una volta, cosi' i due posti che la
+  // nominano (il piede e la fascia dei contenuti altrui) non possono finire a
+  // puntare in due direzioni.
+  const viaPrivacy = dona ? `${urlDona || ''}/privacy` : `/u/${login}/privacy`;
   // Titoli "parola per parola": ogni parola è un pezzo a sé, così può entrare
   // con un attimo di ritardo sulla precedente. Si fa qui, a mano, perché farlo
   // in pagina vorrebbe dire JavaScript su una pagina che deve aprirsi subito.
@@ -1331,8 +1337,9 @@ ${/* l'anteprima nelle chat: la carta disegnata dal server (coi colori della
     <h1>${esc(titolo)}</h1>
     ${pagina.tagline ? `<p class="tag">${esc(pagina.tagline)}</p>` : ''}
     ${corpo ? `<nav class="lista">${corpo}</nav>` : `<p class="vuoto">Questa pagina non ha ancora contenuti.</p>`}
-    <p class="piede">Pagina creata con <a href="${esc(baseUrl)}/" target="_blank" rel="noopener">SocialBot</a>
-      · <a href="/u/${esc(login)}/privacy">Privacy</a>${banner && corpo.includes('chiedi-b')
+    <p class="piede">Pagina creata con <a href="${esc(baseUrl)}/" target="_blank" rel="noopener">SocialBot</a>${
+      dona && urlLink ? ` · <a href="${esc(urlLink)}">I link di ${esc(display || login)}</a>` : ''}
+      · <a href="${esc(viaPrivacy)}">Privacy</a>${banner && corpo.includes('chiedi-b')
         ? ` · <button type="button" id="ri-consenso" class="come-link">Contenuti di altri siti</button>` : ''}</p>
   </main>
 <script src="/pagina-link.js?v=11" defer></script>
@@ -1340,7 +1347,7 @@ ${banner && corpo.includes('chiedi-b') ? `
   <aside class="fascia" id="fascia" hidden>
     <p><b>Video e musica di altri siti.</b> Questa pagina non usa cookie, ma i riquadri di YouTube, Spotify,
       Twitch e simili sono pezzi dei loro siti e possono usarne di propri. Li carichiamo solo se dici di sì —
-      <a href="/u/${esc(login)}/privacy">i dettagli sono qui</a>.</p>
+      <a href="${esc(viaPrivacy)}">i dettagli sono qui</a>.</p>
     <div class="fascia-b">
       <button type="button" id="fascia-si">Va bene, carica tutto</button>
       <button type="button" id="fascia-no" class="due">Solo l'essenziale</button>
@@ -1359,7 +1366,16 @@ ${fxScript}
 // usano cookie non essenziali, ma dire chi tratta i dati, quali e perché è un
 // obbligo che non dipende dai cookie. Sta su una pagina sua, con lo stesso tema
 // della pagina link, così non sembra un pezzo di un altro sito.
-export function renderInformativa({ login, display, baseUrl, pagina, contatto }) {
+// `quale` dice di CHI e' questa informativa: della pagina link o di quella
+// delle donazioni. Non e' un dettaglio estetico — il tasto in fondo riporta
+// indietro, e riportare alla pagina sbagliata e' un vicolo cieco travestito da
+// uscita. E il verso non lo indovina la pagina: glielo dice la rotta da cui
+// arriva, che e' l'unica cosa che lo sa per certo.
+//
+// `urlTorna` e' un indirizzo INTERO, non un percorso. La pagina delle donazioni
+// vive su un altro host (dona.<dominio>): un «/u/tizio» li' dentro porterebbe
+// da un'altra parte, e nessuno se ne accorgerebbe finche' non lo prova.
+export function renderInformativa({ login, display, baseUrl, pagina, contatto, quale = 'link', urlTorna = '' }) {
   const t = { ...(pagina?.tema || {}) };
   const c = { ...(PRESET[pagina?.template] || PRESET.minimal) };
   for (const k of ['bg', 'bg2', 'testo', 'tenue', 'card', 'bordo']) if (t[k]) c[k] = t[k];
@@ -1373,7 +1389,7 @@ export function renderInformativa({ login, display, baseUrl, pagina, contatto })
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Privacy · ${esc(nome)}</title>
+<title>Privacy · ${esc(nome)}${quale === 'dona' ? ' · donazioni' : ''}</title>
 <meta name="robots" content="noindex, follow">
 <style>${facciaFont(t.font)}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1396,7 +1412,7 @@ export function renderInformativa({ login, display, baseUrl, pagina, contatto })
 <body>
   <main>
     <h1>Privacy di questa pagina</h1>
-    ${p(`Questa è la pagina pubblica di <strong>${esc(nome)}</strong>, ospitata da SocialBot. Qui c'è scritto, in italiano e senza giri di parole, cosa succede ai dati quando la apri.`)}
+    ${p(`Questa è la pagina ${quale === 'dona' ? 'delle donazioni' : 'pubblica'} di <strong>${esc(nome)}</strong>, ospitata da SocialBot. Qui c'è scritto, in italiano e senza giri di parole, cosa succede ai dati quando la apri.`)}
 
     <h2>Cookie: non ce ne sono</h2>
     ${p('Questa pagina <strong>non usa cookie</strong> e non salva niente sul tuo dispositivo. Non c\'è nessun banner da accettare perché non c\'è niente da accettare.')}
@@ -1422,7 +1438,7 @@ export function renderInformativa({ login, display, baseUrl, pagina, contatto })
     ${p(`I contenuti di questa pagina li sceglie <strong>${esc(nome)}</strong>. SocialBot la ospita e la mostra per suo conto.`)}
     ${p(`Per chiedere di vedere, correggere o cancellare qualcosa${contatto ? `, scrivi a <a href="mailto:${esc(contatto)}">${esc(contatto)}</a>` : ', usa i contatti che trovi sulla pagina'}. La pagina si può togliere dal web in qualsiasi momento, e con lei il contatore.`)}
 
-    <a class="torna" href="/u/${esc(login)}">← Torna alla pagina</a>
+    <a class="torna" href="${esc(urlTorna || `/u/${login}`)}">← Torna alla pagina${quale === 'dona' ? ' delle donazioni' : ''}</a>
     <p class="data">SocialBot · ${esc(baseUrl || '')}</p>
   </main>
 </body>

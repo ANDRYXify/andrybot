@@ -321,8 +321,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }
   app.use((req, res, next) => {
     if (!config.donaHost || String(req.hostname || '').toLowerCase() !== config.donaHost) return next();
-    const m = /^\/([a-z0-9_]{1,30})\/?$/i.exec(req.path);
-    if (m) { const q = req.url.indexOf('?'); req.url = '/dona/' + m[1].toLowerCase() + (q >= 0 ? req.url.slice(q) : ''); return next(); }
+    // Sull'indirizzo corto vivono la pagina e la SUA informativa. Senza la
+    // seconda, «Privacy» da li' dentro cadrebbe su una rotta che non c'e', o
+    // peggio su quella della pagina link — che parla di un'altra pagina.
+    const m = /^\/([a-z0-9_]{1,30})(\/privacy)?\/?$/i.exec(req.path);
+    if (m) {
+      const q = req.url.indexOf('?');
+      req.url = '/dona/' + m[1].toLowerCase() + (m[2] ? '/privacy' : '') + (q >= 0 ? req.url.slice(q) : '');
+      return next();
+    }
     if (req.path === '/') return res.redirect(302, config.baseUrl + '/');
     next();
   });
@@ -1684,7 +1691,24 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.set('Cache-Control', 'public, max-age=0, s-maxage=300');
     res.type('html').send(renderInformativa({
       login, display: s?.display || login, baseUrl: config.baseUrl, pagina: p,
-      contatto: config.contattoPrivacy || '',
+      contatto: config.contattoPrivacy || '', quale: 'link', urlTorna: `${config.baseUrl}/u/${login}`,
+    }));
+  }));
+
+  // L'informativa della pagina delle DONAZIONI. E' una rotta sua, non un
+  // parametro: cosi' il tasto «torna» non deve fidarsi di quello che gli
+  // scrive il browser, e il tema e' quello della pagina giusta invece di
+  // quello della pagina link.
+  app.get('/dona/:user/privacy', wrap(async (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    const p = paginaDona.get(login);
+    if (!p || !p.attiva) return notFound(res);
+    const s = streamers.get(login);
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=300');
+    res.type('html').send(renderInformativa({
+      login, display: s?.display || login, baseUrl: config.baseUrl, pagina: p,
+      contatto: config.contattoPrivacy || '', quale: 'dona', urlTorna: donazioni.urlPaginaDona(login),
     }));
   }));
 
@@ -1760,6 +1784,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
       sostieni: donazioni.datiSostieni(s?.settings, conti), grazie, dona: true,
       urlDona: donazioni.urlPaginaDona(login),
+      // Chi arriva qui da un link diretto non ha mai visto la sua pagina. Il
+      // collegamento compare solo se quella pagina esiste ed e' accesa: un
+      // link verso il nulla e' peggio che non averlo.
+      urlLink: linkPage.get(login)?.attiva ? `${config.baseUrl}/u/${login}` : '',
       donatori: donatoriPer(login, p.blocchi),
       immagineAnteprima: immagineAnteprimaDi(login, 'dona'),
     });

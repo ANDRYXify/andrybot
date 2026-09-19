@@ -31,6 +31,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Prima di toccare niente ti fa vedere l'elenco esatto di quello che farebbe. Va solo in avanti: quello che non è nella traccia resta dov'è, e te lo dice. [vai: dcserver]
 - Dentro ogni canale scrivi chi può fare cosa, con parole normali: «tutti — non può — scrivere». I permessi che non nomini nessuno li tocca. [vai: dcserver]
 - Alcuni tasti comparivano quando non servivano a niente: «Scollega tutto» senza niente da scollegare, «Ferma la diretta» senza diretta. Adesso restano via finché non servono.
+- Dalla privacy della pagina donazioni il tasto «Torna alla pagina» riportava alla pagina link. Adesso torna dov'eri, e quell'informativa parla della pagina giusta.
+- In fondo alla pagina delle donazioni c'è il collegamento ai tuoi link: chi arriva da un link diretto trova anche il resto. [vai: donazioni]
 
 ## 2026-09-18
 
