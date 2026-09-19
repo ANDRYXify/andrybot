@@ -2293,3 +2293,24 @@ body.ce-aperto { overflow: hidden; }
 .rap-num b { display: block; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
 .rap-num span { font-size: .78rem; color: var(--testo-2); }
 .rap-top { margin: .5rem 0 0; font-size: .88rem; color: var(--testo-2); }
+
+.dcs-tracce { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .9rem; }
+.dcs-traccia { display: flex; flex-direction: column; gap: .35rem; padding: .95rem 1rem 1rem; border: 1px solid var(--border); border-radius: var(--r-l); background: var(--surface-2); }
+.dcs-traccia h3 { margin: 0; font-size: 1rem; }
+.dcs-traccia p { margin: 0; }
+.dcs-traccia .dcs-quanti { font-size: .78rem; color: var(--testo-2); font-variant-numeric: tabular-nums; }
+.dcs-traccia button { margin-top: auto; align-self: flex-start; }
+.dcs-cima, .dcs-cat { margin: 0 0 .9rem; padding: .85rem .9rem .9rem; border: 1px solid var(--border); border-radius: var(--r-l); background: var(--surface-2); }
+.dcs-cat > .riga-flessibile > input { flex: 1 1 12rem; font-weight: 600; }
+.dcs-canali { margin: .6rem 0 .6rem .9rem; display: flex; flex-direction: column; gap: .4rem; }
+.dcs-cima { display: flex; flex-direction: column; gap: .4rem; }
+.dcs-ch { border: 1px solid var(--border); border-radius: var(--r-m); padding: .5rem .7rem; background: var(--surface); }
+.dcs-ch > summary { cursor: pointer; font-size: .92rem; }
+.dcs-ch > summary > span { margin-left: .4rem; font-size: .78rem; }
+.dcs-ch input[type="text"] { flex: 1 1 10rem; }
+.dcs-permessi { margin: .6rem 0 0 .9rem; display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; }
+.dcs-perm { gap: .4rem; }
+.dcs-perm > select { min-width: 6.5rem; }
+@media (max-width: 640px) {
+  .dcs-canali, .dcs-permessi { margin-left: .35rem; }
+}

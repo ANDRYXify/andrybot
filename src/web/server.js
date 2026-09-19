@@ -4060,12 +4060,21 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   };
   const NON_PRONTO = { errore: 'Prima porta il bot nel tuo server: senza, non c\'è niente da costruire.' };
 
-  app.get('/api/streamer/dcserver', requireOwner, (req, res) => {
-    const { c, pronto } = dcTokenE(currentUser(req).login);
+  app.get('/api/streamer/dcserver', requireOwner, wrap(async (req, res) => {
+    const { c, token, guild, pronto } = dcTokenE(currentUser(req).login);
+    // I ruoli servono a poter dire «questo canale lo vedono i moderatori».
+    // Se Discord non risponde, restano vuoti e nel pannello si puo' parlare
+    // solo di «tutti»: e' meno, ma e' vero. Un elenco finto sarebbe peggio.
+    let ruoli = [];
+    if (pronto) {
+      const r = await dcApi.ruoli(token, guild);
+      if (r.ok) ruoli = r.ruoli.filter((x) => x.id !== guild).map((x) => ({ id: x.id, nome: x.nome }));
+    }
     res.json({
       pronto,
       guildNome: String(c?.guild_nome || ''),
       preset: c?.preset || null,
+      ruoli,
       catalogo: dcCatalogo.CATALOGO,
       // QUALI permessi esistono lo dice il catalogo; COME si chiamano in tre
       // lingue lo sa il pannello. Un permesso senza parola mostrerebbe il suo
@@ -4073,7 +4082,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       permessi: Object.keys(dcCatalogo.PERMESSI),
       max: { categorie: dcCatalogo.MAX_CATEGORIE, canali: dcCatalogo.MAX_CANALI },
     });
-  });
+  }));
 
   app.post('/api/streamer/dcserver', requireOwner, (req, res) => {
     const login = currentUser(req).login;
@@ -4082,6 +4091,17 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     dcRuoli.set(login, { preset });
     res.json({ ok: true, preset });
   });
+
+  // «Parti dal server che hai gia'». Chi ha un server vivo non ricomincia da
+  // zero: la sua forma diventa il primo preset, e da li' lo cambia. Legge e
+  // basta — non scrive niente ne' qui ne' su Discord.
+  app.post('/api/streamer/dcserver/dalserver', requireOwner, wrap(async (req, res) => {
+    const { token, guild, pronto } = dcTokenE(currentUser(req).login);
+    if (!pronto) return res.status(400).json(NON_PRONTO);
+    const foto = await dcApi.fotografia(token, guild);
+    if (!foto.ok) return res.status(400).json({ errore: foto.errore });
+    res.json({ ok: true, preset: dcCatalogo.dallaFotografia(foto) });
+  }));
 
   app.post('/api/streamer/dcserver/anteprima', requireOwner, wrap(async (req, res) => {
     const { token, guild, pronto } = dcTokenE(currentUser(req).login);

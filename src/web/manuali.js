@@ -1022,7 +1022,7 @@ const DIRETTA = {
 
 const VETRINA = {
   slug: 'vetrina',
-  schede: ['pagina', 'donazioni', 'grafiche', 'notifiche', 'telegram', 'ruoli'],
+  schede: ['pagina', 'donazioni', 'grafiche', 'notifiche', 'telegram', 'ruoli', 'dcserver'],
   titolo: 'Manuale della vetrina: pagina link, grafiche e notifiche social | SocialBot',
   h1: 'Manuale della vetrina: pagina link, grafiche e notifiche social',
   desc: 'La pagina pubblica da mettere in bio, le due grafiche pronte da pubblicare e gli avvisi automatici quando vai in diretta o pubblichi qualcosa.',
@@ -1100,7 +1100,8 @@ const VETRINA = {
 
     { h2: 'I ruoli del tuo Discord' },
     { p: ['Discord i <strong>sub</strong> di Twitch se li sincronizza da solo. Tutto il resto no: chi ti segue, chi &egrave; VIP, chi &egrave; moderatore, quante ore ti ha guardato, quante monete ha, da quante dirette di fila c\'&egrave;. Quei dati ce li abbiamo noi, e qui diventano ruoli sul tuo server.'] },
-    { p: ['Si comincia con <strong>un tasto</strong>: «Porta il bot nel tuo server». Ti manda su Discord, che ti fa scegliere il server da un elenco &mdash; ci sono solo quelli dove comandi tu &mdash; e ti chiede di confermare un permesso solo, <em>Gestire i ruoli</em>. Torni qui e ti diciamo come si chiama il server e quali ruoli il bot riesce davvero a muovere. L&rsquo;id del server non devi copiarlo: ce lo dice Discord.'] },
+    { p: ['Si comincia con <strong>un tasto</strong>: «Porta il bot nel tuo server». Ti manda su Discord, che ti fa scegliere il server da un elenco &mdash; ci sono solo quelli dove comandi tu &mdash; e ti chiede di confermare due permessi: <em>Gestire i ruoli</em> e <em>Gestire i canali</em>. Torni qui e ti diciamo come si chiama il server e quali ruoli il bot riesce davvero a muovere. L&rsquo;id del server non devi copiarlo: ce lo dice Discord.'] },
+    { p: ['Se avevi gi&agrave; portato il bot prima che arrivasse il costruttore, ripassa da quel tasto: reinvitarlo &egrave; il modo con cui Discord gli aggiorna i permessi. Non succede niente di brutto se te ne scordi &mdash; il costruttore se ne accorge e te lo dice prima di cominciare, invece di fermarsi a met&agrave; strada.'] },
     { p: ['Se invece hai gi&agrave; un <strong>bot tuo</strong>, apri &laquo;Preferisci un bot tuo?&raquo; e incolla il suo token: da quel momento &egrave; lui a dare i ruoli, e resta cifrato da noi.'] },
     { p: ['Quella riga &mdash; &laquo;quali riesce a muovere&raquo; &mdash; &egrave; il passo che si sbaglia sempre. Discord non guarda il nome del permesso, guarda la <strong>posizione</strong>: se il ruolo del bot sta sotto quello che deve dare, non lo tocca, e nessuno ti dice perch&eacute;. Vai in <em>Impostazioni server &rarr; Ruoli</em> e trascina il bot sopra.'] },
     { p: ['Poi scrivi le regole: una condizione e il ruolo che le corrisponde. &laquo;&Egrave; abbonato&raquo;, &laquo;ti segue&raquo;, &laquo;ha almeno 500 monete&raquo;, &laquo;ti ha guardato almeno 10 ore&raquo;, &laquo;&egrave; di fila da 5 dirette&raquo;.'] },
@@ -1108,6 +1109,19 @@ const VETRINA = {
     { p: ['Chi ti guarda si collega <strong>da solo</strong>: scrive <code>!discord</code> in chat, apre il link, dice a Discord che &egrave; lui, e riscrive in chat il codice che gli diamo. Quel codice sta solo sul suo schermo e vale una volta: chi lo ricopia dalla chat lo trova gi&agrave; bruciato. Con <code>!discord via</code> si stacca, e i ruoli che ha restano suoi.'] },
     { p: ['Il bot tocca <strong>solo</strong> chi si &egrave; collegato, e <strong>solo</strong> i ruoli che le tue regole nominano. Un ruolo che hai dato a mano, o che d&agrave; un altro bot, non lo guarda nemmeno: sennonch&eacute; la prima volta che accendi l\'interruttore spoglierebbe il server.'] },
     { p: ['E se Twitch per un momento non risponde, non conclude che &laquo;allora non &egrave; abbonato&raquo;: quella condizione, per quel giro, non vale. Meglio un ruolo dato in ritardo che mezzo server spogliato per una domanda caduta.'] },
+
+    { h2: 'Il server Discord, costruito da qui' },
+    { p: ['Nella scheda <strong>Il server</strong> descrivi com&rsquo;&egrave; fatto il tuo Discord: le categorie, i canali dentro, di cosa si parla in ognuno e chi pu&ograve; fare cosa. Poi guardi cosa cambierebbe, e se ti convince lo fa lui.'] },
+    { p: ['Non parti dal foglio bianco. Ci sono quattro tracce &mdash; <em>Si comincia</em>, <em>Intorno alle dirette</em>, <em>Si gioca insieme</em>, <em>Siamo in tanti</em> &mdash; e ognuna risponde a una domanda diversa. Se il server ce l&rsquo;hai gi&agrave;, c&rsquo;&egrave; <em>Leggi il mio server</em>: prende la forma che ha adesso e la usa come punto di partenza, e da l&igrave; cambi quello che vuoi.'] },
+    { h3: 'Si guarda, poi si fa' },
+    { p: ['&laquo;Fammi vedere cosa faresti&raquo; non &egrave; un riassunto di cortesia: &egrave; esattamente l&rsquo;elenco che verr&agrave; eseguito. Le categorie si creano prima dei canali, perch&eacute; un canale ci va dentro solo se la categoria esiste gi&agrave;. Un canale che qualcuno aveva trascinato fuori dalla sua categoria non viene rifatto: viene <strong>rimesso a posto</strong>, con dentro tutto quello che ci si erano detti.'] },
+    { p: ['Fra il &laquo;guarda&raquo; e il &laquo;fai&raquo; passa del tempo, e in quel tempo il server &egrave; vivo: qualcuno pu&ograve; creare un canale, spostarne un altro. Se succede, il costruttore <strong>si ferma</strong> e ti rifa&rsquo; vedere invece di applicare alla cieca quello che avevi guardato prima.'] },
+    { h3: 'Quello che non si tocca' },
+    { p: ['Il costruttore va solo in avanti: crea quello che manca e sistema quello che &egrave; fuori posto. Quello che il tuo server ha e la traccia non prevede te lo <strong>elenca</strong>, con da quanto tempo &egrave; fermo, e lo lascia dov&rsquo;&egrave;.'] },
+    { p: ['Quel &laquo;da quanto tempo &egrave; fermo&raquo; non viene da un messaggio letto. Dentro ogni identificativo di Discord c&rsquo;&egrave; l&rsquo;istante in cui &egrave; nato, e l&rsquo;ultimo messaggio di un canale &egrave; un identificativo: cos&igrave; si sa che un canale non parla da otto mesi <strong>senza aprire la conversazione di nessuno</strong>. Non &egrave; discrezione, &egrave; che quel permesso il bot non ce l&rsquo;ha proprio.'] },
+    { h3: 'Chi pu&ograve; fare cosa' },
+    { p: ['Dentro ogni canale scrivi righe come &laquo;tutti &mdash; non pu&ograve; &mdash; scrivere&raquo;, oppure con un ruolo al posto di &laquo;tutti&raquo;. Il preset &egrave; un <strong>pacchetto di differenze</strong>, non una copia: tocca solo i permessi che nomina, e tutti gli altri &mdash; quelli messi a mano, quelli di un altro bot &mdash; restano dove sono.'] },
+    { p: ['Se una riga nomina un ruolo che nel server non c&rsquo;&egrave; pi&ugrave;, quella riga viene <strong>saltata</strong> e te lo diciamo. Un ruolo che non esiste non &egrave; &laquo;nessuno&raquo;: se lo trattassimo cos&igrave;, un permesso scritto per proteggere un canale lo chiuderebbe a tutto il server, e sembrerebbe una scelta tua.'] },
 
     { h3: 'TikTok, YouTube, Instagram' },
     { tabella: [

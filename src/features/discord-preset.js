@@ -85,6 +85,16 @@ export function intoccabili(foto) {
 // per metterci dentro roba a mano.
 function voluti(preset) {
   const fuori = [];
+  // I canali che stanno in cima, fuori da ogni categoria. Discord li permette
+  // e quasi tutti i server ne hanno uno: se il modello non li sapesse dire,
+  // «parti dal server che hai» perderebbe proprio quelli.
+  for (const ch of (preset?.canali || [])) {
+    if (!ch || !String(ch.nome || '').trim()) continue;
+    const tipo = TIPI[ch.tipo] ?? TIPI.testo;
+    if (tipo === TIPI.categoria) continue;
+    fuori.push({ tipo, nome: nomeCanale(tipo, ch.nome), dentro: null, permessi: ch.permessi || null, argomento: ch.argomento || '' });
+    if (fuori.length >= MAX_CANALI) return fuori;
+  }
   for (const c of (preset?.categorie || []).slice(0, MAX_CATEGORIE)) {
     if (!c || !String(c.nome || '').trim()) continue;
     const cat = { tipo: TIPI.categoria, nome: nomeCanale(TIPI.categoria, c.nome), dentro: null, permessi: c.permessi || null };
@@ -191,7 +201,10 @@ export function differenza(foto, preset, { togliere = false } = {}) {
     if (permessiDiversi(v.permessi, gia)) cambia.permessi = fondiPermessi(gia, v.permessi);
     if (v.argomento && String(gia.argomento || '') !== v.argomento) cambia.argomento = v.argomento;
     // Un canale finito fuori dalla sua categoria si rimette dentro: e' la cosa
-    // che succede davvero quando qualcuno trascina per sbaglio.
+    // che succede davvero quando qualcuno trascina per sbaglio. Il contrario
+    // no: un canale che il preset vuole in cima ma che sta dentro a qualcosa
+    // non si tira fuori. Spostare verso una casa e' rimettere a posto,
+    // spostare verso il nulla e' far sparire dalla vista.
     if (v.dentro && idx.dentroDi(gia) !== v.dentro) cambia.dentro = v.dentro;
     if (Object.keys(cambia).length) sistema.push({ id: String(gia.id), nome: gia.nome, tipo: gia.tipo, ...cambia });
   }
