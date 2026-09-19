@@ -18,6 +18,7 @@ import { risolviCategoria } from './categoria.js';
 import * as presenze from './presenze.js';
 import { canaleHa } from './accesso.js';
 import * as spotify from './spotify.js';
+import { comeSiChiama } from './bit.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('moduli');
@@ -1332,7 +1333,7 @@ export class ModulesEngine {
   _ctxDaEvento(ev, channel, evento) {
     const d = ev.data || {};
     const raider = d.from_broadcaster_user_name || '';
-    const user = d.user_name || d.user_login || raider || '';
+    const user = comeSiChiama(d, raider || '');
     return {
       channel,
       user,

@@ -133,3 +133,39 @@ test("con Twitch la riga esce, e porta la posizione di chi ha chiesto", async ()
   assert.match(r, /Mario 5\.000/);
   assert.match(r, /12\u00b0 posto/);
 });
+
+// IL CHEER SENZA NOME.
+//
+// Twitch lascia cheerare in anonimo e in quel caso non manda nessun nome. Il
+// pericolo non e' restare senza una parola: e' inventarne una. Due domande
+// diverse — «chi e' stato?» e «come lo chiamo?» — devono dare due risposte
+// diverse, e una delle due deve poter essere NIENTE.
+test('chi e\' anonimo non ha un nome, e nessuno gliene da\' uno', () => {
+  assert.equal(bit.chiHaCheerato({ is_anonymous: true, user_name: 'Ludo' }), '',
+    'anche se per sbaglio arrivasse un nome, chi ha chiesto l\'anonimato non entra in una classifica');
+  assert.equal(bit.chiHaCheerato({ user_name: 'Ludo' }), 'Ludo');
+  assert.equal(bit.chiHaCheerato({ user_login: 'ludo' }), 'ludo', 'il login va bene quando il nome non c\'e\'');
+  assert.equal(bit.chiHaCheerato({}), '');
+  assert.equal(bit.chiHaCheerato(null), '');
+  assert.equal(bit.chiHaCheerato({ user_name: 'x'.repeat(90) }).length, 40, 'un nome lunghissimo non sfonda le righe');
+});
+
+test('e per una frase da leggere c\'e\' una parola onesta, non un nome finto', () => {
+  assert.equal(bit.comeSiChiama({ is_anonymous: true }), bit.ANONIMO);
+  assert.ok(!/anonymous|null|undefined/i.test(bit.ANONIMO), `«${bit.ANONIMO}» non deve sembrare una parola del sistema`);
+  assert.equal(bit.comeSiChiama({ user_name: 'Ludo' }), 'Ludo');
+  assert.equal(bit.comeSiChiama({}), 'qualcuno', 'non sapere chi e\' e\' un\'altra cosa dall\'essere anonimi');
+  assert.equal(bit.comeSiChiama({}, 'un canale amico'), 'un canale amico', 'e chi chiama puo\' dire lui come chiamarlo');
+});
+
+// La regola sta in un posto solo APPOSTA: se un avviso o un Modulo se la
+// riscrive per conto suo, il giorno che cambia cambia in tre quarti dei posti.
+test('gli avvisi e i Moduli prendono il nome da qui, non se lo rifanno', async () => {
+  const { readFileSync } = await import('node:fs');
+  for (const f of ['src/features/alerts.js', 'src/features/modules.js']) {
+    const s = readFileSync(new URL('../../' + f, import.meta.url), 'utf8');
+    assert.match(s, /comeSiChiama/, `${f}: il nome da mostrare viene dalla regola condivisa`);
+    assert.ok(!/user: d\.user_name \|\| d\.user_login/.test(s) && !/const user = d\.user_name \|\| d\.user_login/.test(s),
+      `${f}: e non c'e' piu' un ripiego scritto a mano, che dell'anonimato non sa niente`);
+  }
+});

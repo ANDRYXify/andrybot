@@ -7,6 +7,7 @@
 import { streamers, effects as effectsDb } from '../db.js';
 import * as subathon from './subathon.js';
 import * as treno from './treno.js';
+import { comeSiChiama } from './bit.js';
 import * as stemmi from './badges.js';
 import * as emote from './emotes.js';
 import { makeLog } from '../logger.js';
@@ -86,7 +87,7 @@ export class AlertsEngine {
   _vars(d = {}) {
     const raider = d.from_broadcaster_user_name || '';
     return {
-      user: d.user_name || d.user_login || raider || 'qualcuno',
+      user: comeSiChiama(d, raider || 'qualcuno'),
       mesi: d.cumulative_months ?? d.duration_months ?? 1,
       bits: d.bits ?? 0,
       viewers: d.viewers ?? 0,
