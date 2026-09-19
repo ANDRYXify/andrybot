@@ -147,7 +147,7 @@ function voluti(preset) {
     if (!ch || !String(ch.nome || '').trim()) continue;
     const tipo = TIPI[ch.tipo] ?? TIPI.testo;
     if (tipo === TIPI.categoria) continue;
-    fuori.push({ tipo, nome: nomeCanale(tipo, ch.nome), dentro: null, permessi: ch.permessi || null, argomento: ch.argomento || '' });
+    fuori.push({ tipo, nome: nomeCanale(tipo, ch.nome), dentro: null, permessi: ch.permessi || null, argomento: ch.argomento || '', avvisi: !!ch.avvisi });
     if (fuori.length >= MAX_CANALI) return fuori;
   }
   for (const c of (preset?.categorie || []).slice(0, MAX_CATEGORIE)) {
@@ -158,7 +158,7 @@ function voluti(preset) {
       if (!ch || !String(ch.nome || '').trim()) continue;
       const tipo = TIPI[ch.tipo] ?? TIPI.testo;
       if (tipo === TIPI.categoria) continue;   // una categoria dentro una categoria non esiste
-      fuori.push({ tipo, nome: nomeCanale(tipo, ch.nome), dentro: cat.nome, permessi: ch.permessi || null, argomento: ch.argomento || '' });
+      fuori.push({ tipo, nome: nomeCanale(tipo, ch.nome), dentro: cat.nome, permessi: ch.permessi || null, argomento: ch.argomento || '', avvisi: !!ch.avvisi });
       if (fuori.length >= MAX_CANALI + MAX_CATEGORIE) return fuori;
     }
   }
@@ -249,8 +249,14 @@ export function differenza(foto, preset, { togliere = false } = {}) {
       preso.add(String(solo.uno.id));
     }
   }
+  // QUAL E' IL CANALE DEGLI AVVISI, che sia nato adesso o ci fosse gia'. Chi
+  // applica lo passa alla scheda degli avvisi, cosi' costruire il server
+  // BASTA: non si finisce con un canale che si chiama «sono-in-onda» e un
+  // avviso che non sa dove andare.
+  let avvisi = null;
   for (const v of lista) {
     const gia = trovati.get(v);
+    if (v.avvisi) avvisi = gia ? { id: String(gia.id), nome: gia.nome } : { nome: v.nome, dentro: v.dentro };
     if (!gia) { crea.push({ ...v, perche: 'non c\'e\'' }); continue; }
     const cambia = {};
     if (permessiDiversi(v.permessi, gia)) cambia.permessi = fondiPermessi(gia, v.permessi);
@@ -296,7 +302,7 @@ export function differenza(foto, preset, { togliere = false } = {}) {
     }
   }
 
-  return { crea, sistema, togli, intoccabili: fuoriMano };
+  return { crea, sistema, togli, avvisi, intoccabili: fuoriMano };
 }
 
 // «Non c'e' niente da fare» detto una volta sola, cosi' chi chiama non deve

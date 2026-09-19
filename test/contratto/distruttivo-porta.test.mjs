@@ -98,7 +98,7 @@ test('del giro resta scritto chi, quando e cosa — coi nomi, se ha cancellato',
     'il registro dice chi era e in che modo');
   assert.match(corpo, /nomi: e\.tolti \? \(e\.nomiTolti \|\| \[\]\) : \[\]/,
     'e i nomi di quello che non c\'e\' piu\', che e\' l\'unico posto dove restano');
-  assert.ok(corpo.indexOf('dcGiri.segna') < corpo.indexOf('res.json(e)'), 'si scrive prima di rispondere');
+  assert.ok(corpo.indexOf('dcGiri.segna') < corpo.indexOf('res.json('), 'si scrive prima di rispondere');
 });
 
 test('l\'anteprima dice sempre cosa resta fuori, e conta i danni solo se si cancella', () => {

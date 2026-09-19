@@ -115,6 +115,9 @@ function chiE(chi, guildId, perNome) {
   // silenzioso possibile: una chiave scritta storta chiuderebbe un canale a
   // tutto il server, e sembrerebbe una scelta.
   if (chi === TUTTI) return String(guildId);
+  // Una riga puo' parlare di una PERSONA invece che di un ruolo: il bot stesso,
+  // o chi passa dal varco d'ingresso. Li' l'id c'e' gia', non si cerca per nome.
+  if (chi && chi.persona && chi.id) return String(chi.id);
   const n = String(chi?.ruolo || chi || '').trim().toLowerCase();
   if (!n) return null;
   return perNome.get(n) || null;
@@ -123,7 +126,37 @@ function chiE(chi, guildId, perNome) {
 // IL PRESET, RISOLTO SU QUESTO SERVER. Entra un preset scritto a parole, esce
 // lo stesso preset con gli id e i numeri che vuole Discord — e l'elenco di chi
 // non si e' trovato, che il pannello deve dire invece di far finta di niente.
-export function risolvi(preset, { guildId, ruoli = [] } = {}) {
+// QUELLO CHE SERVE AL BOT PER DIRE UNA COSA in un canale. Tre, non tutti:
+// vedere il canale, scrivere, e far comparire l'anteprima (l'avviso di
+// diretta e' un riquadro, non una riga di testo).
+const SERVONO_AL_BOT = ['vedere', 'scrivere', 'link'];
+
+// «SOLA LETTURA» VUOL DIRE PER LE PERSONE, NON PER IL BOT.
+//
+// Il difetto che questa regola cancella esisteva davvero, ed era scritto nella
+// traccia delle dirette: il canale «sono-in-onda» ha per argomento «Lo scrive
+// il bot quando comincio», e insieme nega a «tutti» di scrivere. Ma su Discord
+// il bot sta dentro «tutti» come chiunque altro — quindi quella traccia
+// costruiva un canale che prometteva il bot e lo zittiva nello stesso gesto.
+//
+// Non si corregge canale per canale: sarebbe un elenco da tenere aggiornato, e
+// il prossimo canale in sola lettura lo dimenticherebbe. Si deriva dalla
+// regola: dove il preset toglie qualcosa a TUTTI, quel qualcosa il bot se lo
+// riprende — e solo quello che gli serve per parlare. Vale per «annunci», per
+// «regole», e per quelli che nascono domani senza che nessuno ci pensi.
+function rigaDelBot(righe, botId) {
+  if (!botId) return null;
+  const negati = new Set();
+  for (const p of (righe || [])) {
+    const chi = String(p?.chi?.ruolo || p?.chi || '');
+    if (chi !== TUTTI) continue;
+    for (const k of (p?.nega || [])) if (SERVONO_AL_BOT.includes(k)) negati.add(k);
+  }
+  if (!negati.size) return null;
+  return { chi: { id: String(botId), persona: true }, da: [...negati] };
+}
+
+export function risolvi(preset, { guildId, ruoli = [], botId = '' } = {}) {
   const perNome = new Map();
   for (const r of ruoli) {
     const k = String(r?.nome || '').trim().toLowerCase();
@@ -138,13 +171,15 @@ export function risolvi(preset, { guildId, ruoli = [] } = {}) {
   // E quello che hai concesso non si nega: se lo stesso permesso finisce sia
   // fra i «puo'» che fra i «non puo'», vince il puo'. Non e' una preferenza,
   // e' l'unica regola che non dipende dall'ordine in cui hai scritto le righe.
-  const righe = (elenco) => {
-    if (!Array.isArray(elenco) || !elenco.length) return null;
+  const righe = (elencoDato) => {
+    if (!Array.isArray(elencoDato) || !elencoDato.length) return null;
+    const mia = rigaDelBot(elencoDato, botId);
+    const elenco = mia ? [...elencoDato, mia] : elencoDato;
     const per = new Map();
     for (const p of elenco) {
       const id = chiE(p?.chi, guildId, perNome);
       if (!id) { const q = String(p?.chi?.ruolo || p?.chi || ''); if (q && !mancanti.includes(q)) mancanti.push(q); continue; }
-      const a = per.get(id) || { id, tipo: 0, allow: 0n, deny: 0n };
+      const a = per.get(id) || { id, tipo: (p?.chi?.persona ? 1 : 0), allow: 0n, deny: 0n };
       a.allow |= somma(p?.da);
       a.deny |= somma(p?.nega);
       per.set(id, a);
@@ -153,7 +188,7 @@ export function risolvi(preset, { guildId, ruoli = [] } = {}) {
     for (const a of per.values()) {
       const deny = a.deny & ~a.allow;
       if (!a.allow && !deny) continue;
-      fuori.push({ id: a.id, tipo: 0, allow: String(a.allow), deny: String(deny) });
+      fuori.push({ id: a.id, tipo: a.tipo, allow: String(a.allow), deny: String(deny) });
     }
     return fuori.length ? fuori : null;
   };
@@ -162,6 +197,12 @@ export function risolvi(preset, { guildId, ruoli = [] } = {}) {
     tipo: ch?.tipo,
     argomento: ch?.argomento,
     permessi: righe(ch?.permessi),
+    // Il contrassegno del canale degli avvisi passa di qui intero. Qui dentro
+    // si traducono le PAROLE in id: quello che non e' una parola da tradurre
+    // va portato dall'altra parte com'e', sennò si perde a meta' strada — e si
+    // perde in silenzio, perche' un preset senza contrassegno e' un preset
+    // valido che semplicemente non collega niente.
+    ...(ch?.avvisi ? { avvisi: true } : {}),
   });
   return {
     mancanti,
@@ -214,7 +255,7 @@ export const CATALOGO = Object.freeze([
         { nome: 'presentati', argomento: 'Due righe su di te. Nessuno le corregge.' },
       ] },
       { nome: 'Diretta', canali: [
-        { nome: 'sono-in-onda', argomento: 'Lo scrive il bot quando comincio.', permessi: soloLettura },
+        { nome: 'sono-in-onda', argomento: 'Lo scrive il bot quando comincio.', permessi: soloLettura, avvisi: true },
         { nome: 'clip', argomento: 'I momenti da rivedere.' },
         { nome: 'richieste', argomento: 'Giochi, canzoni, sfide: chiedi pure.' },
       ] },
@@ -321,6 +362,14 @@ export function normalizzaPreset(x) {
       tipo: TIPI_CANALE.includes(ch?.tipo) ? ch.tipo : 'testo',
       argomento: String(ch?.argomento || '').slice(0, 1024),
       permessi: righePulite(ch?.permessi),
+      // IL CANALE DEGLI AVVISI SI DICHIARA, non si indovina dal nome.
+      //
+      // La traccia sa qual e' il canale dove va l'avviso di diretta, e lo dice
+      // con un contrassegno. Riconoscerlo dal nome («sono-in-onda») sembrerebbe
+      // piu' semplice e si romperebbe alla prima volta che uno lo rinomina in
+      // «live» — che e' la prima cosa che si rinomina. Il contrassegno invece
+      // segue il canale ovunque lo porti, e sopravvive all'editor.
+      ...(ch?.avvisi ? { avvisi: true } : {}),
     };
   };
   const canali = (Array.isArray(x?.canali) ? x.canali : []).map(unCanale).filter(Boolean);

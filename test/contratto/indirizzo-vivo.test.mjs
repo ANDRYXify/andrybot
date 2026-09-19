@@ -67,6 +67,29 @@ test('i nomi che il sito promette sono nomi che la porta d\'ingresso conosce', (
   }
 });
 
+test('la pagina del sostegno si apre a chi NON e\' dentro, che e\' chi dona', async () => {
+  // Il difetto piu' brutto dei tre, perche' non somigliava a un difetto: la
+  // pagina rispondeva 200 a chi era gia' loggato e 404 a tutti gli altri.
+  // Guardandola dal proprio browser funzionava benissimo.
+  //
+  // Il cancello delle sessioni apre solo gli indirizzi dichiarati. Dichiarare
+  // il FILE («sostieni.html») non dichiara l'INDIRIZZO («/sostieni»): sono due
+  // cose, e ne mancava una. Adesso si dichiarano insieme, e questa prova
+  // guarda proprio la domanda che fa il cancello.
+  const { creaGuscio } = await import('../../src/web/vetrina.js');
+  const g = creaGuscio(join(RAD, 'src/web/public'));
+  g.pagina('sostieni.html', '/sostieni', '/api/sostieni', '/api/sostieni/esito');
+  for (const via of ['/sostieni', '/api/sostieni', '/api/sostieni/esito']) {
+    assert.equal(g.aperto(via), true, `${via}: chi arriva a donare non ha una sessione, e non deve averne una`);
+  }
+  assert.equal(g.aperto('/api/streamer/dcserver'), false, 'e il cancello resta un cancello');
+  // e le due cose si dichiarano insieme, sennò la prossima pagina rifà la stessa fine
+  assert.match(leggi('src/web/vetrina.js'), /pagina\(nome, \.\.\.rotte\) \{[\s\S]*for \(const r of rotte\) ROTTE\.add/,
+    'il file e gli indirizzi a cui risponde si dichiarano nello stesso posto');
+  assert.match(leggi('src/web/server.js'), /guscio\.pagina\('sostieni\.html', '\/sostieni'/,
+    'e la pagina del sostegno li dichiara');
+});
+
 test('la pagina del sostegno ha la SUA anteprima, non quella del sito', () => {
   // Chi riceve il link in chat legge l'immagine, non l'indirizzo: con la carta
   // del sito l'anteprima parlava del bot per Twitch, che e' un'altra pagina.

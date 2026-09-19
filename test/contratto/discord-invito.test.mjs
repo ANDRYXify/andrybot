@@ -57,8 +57,12 @@ test('al bot si chiedono solo i permessi che usiamo, e il numero non si scrive a
   const r = /export const PERMESSI_BOT = String\(([A-Z_ |]+)\);/.exec(API);
   assert.ok(r, 'i permessi dell\'invito si compongono da costanti con un nome');
   const chiesti = r[1].split('|').map((x) => x.trim()).sort();
-  assert.deepEqual(chiesti, ['MANAGE_CHANNELS', 'MANAGE_ROLES'],
-    'i ruoli per i privilegi, i canali per il costruttore: nient\'altro');
+  assert.deepEqual(chiesti, ['EMBED_LINKS', 'MANAGE_CHANNELS', 'MANAGE_ROLES', 'SEND_MESSAGES', 'VIEW_CHANNEL'],
+    'i ruoli per i privilegi, i canali per il costruttore, e i tre per dire una cosa in un canale: nient\'altro');
+  // I tre ultimi sono entrati quando l'avviso di diretta ha smesso di passare
+  // da un webhook creato a mano. Il bot sta gia' nel server: farsi dare un
+  // indirizzo segreto per scrivere in un canale dove e' dentro era un passaggio
+  // in piu' a carico dello streamer, non una precauzione.
   // E ognuno di quelli che chiediamo deve servire a qualcosa. Un permesso che
   // non usiamo mai e' potere tenuto in tasca per niente, e su casa d'altri.
   for (const p of chiesti) {

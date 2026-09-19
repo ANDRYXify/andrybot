@@ -58,7 +58,7 @@ export async function anteprima(token, guild, preset, { togliere = false } = {})
   // server sotto gli occhi, quelle parole diventano id. E' anche il punto in
   // cui si scopre che un ruolo nominato non c'e': quella riga di permessi si
   // salta e si dice quale, perche' un ruolo che non esiste non e' «nessuno».
-  const { preset: risolto, mancanti } = risolvi(preset, { guildId: foto.guild.id, ruoli: foto.ruoli });
+  const { preset: risolto, mancanti } = risolvi(preset, { guildId: foto.guild.id, ruoli: foto.ruoli, botId: foto.bot?.id });
   // COSA RESTA FUORI DAL PRESET SI SA SEMPRE, anche quando non si tocca.
   // Serve a dire «il tuo server ha sette canali che questo preset non prevede»
   // senza che quella frase diventi un'offerta di cancellarli: il modo decide
@@ -103,7 +103,12 @@ export async function applica(token, guild, preset, { togliere = false, impronta
   const cat = categorieDi(a.foto.canali);
   const dentroId = (nome) => (nome ? cat.get(nomeCanale(TIPI.categoria, nome).toLowerCase()) || null : null);
 
-  const esito = { creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, nomiTolti: [] };
+  // IL CANALE DEGLI AVVISI, se la traccia ne dichiara uno. Se c'era gia' lo si
+  // sa dalla differenza; se nasce adesso l'id arriva da Discord al momento
+  // della creazione — ed e' l'unico momento in cui lo si puo' sapere senza
+  // rileggere tutto il server.
+  const esito = { creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, nomiTolti: [],
+    canaleAvvisi: d.avvisi?.id ? String(d.avvisi.id) : '' };
   const passo = async (fn, conta) => {
     if (esito.fermo) return null;
     if (esito.fatte >= max) { esito.fermo = 'limite'; return null; }
@@ -128,9 +133,10 @@ export async function applica(token, guild, preset, { togliere = false, impronta
   for (const v of d.crea) {
     if (esito.fermo) break;
     if (v.tipo === TIPI.categoria) continue;
-    await passo(() => api.creaCanale(token, guild, {
+    const x = await passo(() => api.creaCanale(token, guild, {
       nome: v.nome, tipo: v.tipo, argomento: v.argomento, permessi: v.permessi, dentroId: dentroId(v.dentro),
     }), 'creati');
+    if (v.avvisi && x?.ok && x.id) esito.canaleAvvisi = String(x.id);
   }
 
   for (const s of d.sistema) {

@@ -463,3 +463,23 @@ dalla carta.
 
 `--selftest` toglie il contorno ai cartellini e pretende che il cancello se ne
 accorga: ne vede 36.
+
+## Il puntatore sta in `tema.css`, e non è un dettaglio di dove
+
+Il puntatore disegnato è parte del marchio come il colore e il carattere: dove
+c'è il sito, c'è lui.
+
+Per un po' non è stato così, e il motivo era solo l'indirizzo del file. Le due
+regole stavano in `style.css`, che è il foglio del **pannello** e lo carica una
+pagina sola — la vetrina. Tutte le altre pagine pubbliche (il sostegno, la
+privacy, i termini, il 404) caricano `pagina.css` e mostravano la freccia di
+sistema. Un difetto che non dà nessun segnale: la pagina è giusta, i colori
+sono giusti, e la cosa che manca si vede solo passandoci sopra col mouse.
+
+Adesso le regole stanno in `tema.css`, che lo caricano **tutte** le pagine del
+sito. Non è una scelta di comodo: è che così non esiste un elenco di pagine da
+tenere aggiornato, e la prossima pagina nasce già col puntatore giusto senza
+che nessuno se lo ricordi.
+
+Fuori resta solo l'overlay, che `tema.css` non lo carica — e in diretta un
+puntatore del mouse non ci va.

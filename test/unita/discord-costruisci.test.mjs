@@ -257,9 +257,16 @@ test('i permessi si mandano FUSI con quelli che c\'erano, non al posto loro', as
     assert.equal(a.sistemati, 1);
     const ow = st.canali.find((c) => c.id === C2).permission_overwrites;
     const ids = ow.map((o) => o.id).sort();
-    assert.deepEqual(ids, [ALTRO, GUILD].sort(), 'restano tutti e due: quello di prima e quello nuovo');
+    // Tre righe, non due. La terza e' il bot, e c'e' per una regola: dove il
+    // preset toglie qualcosa a TUTTI, il bot se lo riprende — sennò un canale
+    // «riservato» lo chiuderebbe anche a lui, che e' dentro «tutti» come
+    // chiunque. Un canale privato resta privato per le persone.
+    assert.deepEqual(ids, [ALTRO, GUILD, BOT].sort(), 'quello di prima, quello nuovo, e il bot');
     assert.equal(ow.find((o) => o.id === GUILD).deny, '1024');
     assert.equal(ow.find((o) => o.id === ALTRO).allow, '2048', 'quello di prima non si tocca');
+    const suo = ow.find((o) => o.id === BOT);
+    assert.equal(suo.allow, '1024', 'e al bot torna proprio quello che era stato tolto a tutti');
+    assert.equal(suo.type, 1, 'su una PERSONA, non su un ruolo: il bot non ha un ruolo da nominare nel preset');
   } finally { ripulisci(); }
 });
 

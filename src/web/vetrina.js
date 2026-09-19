@@ -164,9 +164,22 @@ export function creaGuscio(publicDir) {
     // «Questa pagina la servo senza sessione»: la dichiara chi la serve, e in
     // cambio riceve il percorso del file da mandare. Una riga sola, nel punto
     // in cui l'informazione è vera.
-    pagina(nome) {
+    // LA PAGINA DICHIARA ANCHE L'INDIRIZZO A CUI RISPONDE.
+    //
+    // Dichiarare il file non basta, e la differenza e' costata una pagina
+    // viva: «sostieni.html» era dichiarata, ma la pagina si serve a
+    // «/sostieni», e QUELL'indirizzo non risultava aperto. Il cancello lo
+    // lasciava passare solo a chi aveva gia' una sessione — cioe' a chi e'
+    // dentro, che e' esattamente il contrario di chi deve poter donare. Da
+    // fuori: 404. Ed era un 404 che non somigliava a un difetto di permessi.
+    //
+    // Percio' le due cose si dichiarano insieme, in una riga sola: il file e
+    // gli indirizzi a cui quel file risponde. Cosi' non si puo' piu' aprire
+    // una porta e lasciare chiuso il corridoio.
+    pagina(nome, ...rotte) {
       const file = join(publicDir, nome);
       pubblici.add('/' + nome);
+      for (const r of rotte) ROTTE.add(String(r));
       esplora('/' + nome, file);
       return file;
     },
