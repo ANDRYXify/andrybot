@@ -816,6 +816,32 @@ const segnoDomande = (modo, ds) => `${modo}|` + (ds || []).map((d) => [
 ].join('/')).join('||');
 const segnoBenvenuto = (v) => (v ? `${v.testo || ''}|` + (v.canali || []).map((c) => [chiaveNome(c.canale), c.testo || '', c.emoji || ''].join('~')).join(';') : '');
 
+// QUANTI CANALI CONTANO, e quanti sono aperti a tutti. Discord ne vuole sette e
+// cinque prima di accendere la porta, e questa e' l'unica conta: la fa chi
+// SCRIVE una porta per sapere se nascera' accesa, e la rifa' chi la confronta
+// col server per dire perche' Discord direbbe di no. Due conte sarebbero due
+// risposte diverse alla stessa domanda.
+export function contaPorta(preset, foto, ingresso) {
+  const modo = (ingresso?.domande || []).length ? 1 : 0;
+  const mondo = canaliDelDopo(preset, foto);
+  const contano = new Set((ingresso?.canaliDiPartenza || []).map(chiaveNome));
+  if (modo === 1) {
+    for (const d of (ingresso.domande || [])) {
+      for (const r of (d.risposte || [])) for (const c of (r.canali || [])) contano.add(chiaveNome(c));
+    }
+  }
+  // Un nome che nessun canale porta non lo conta nemmeno Discord: al momento
+  // di costruire quella voce sparisce.
+  const veri = [...contano].filter((k) => mondo.has(k));
+  const aperti = veri.filter((k) => mondo.get(k).apre).length;
+  return { veri: veri.length, aperti, basta: veri.length >= MIN_PARTENZA && aperti >= MIN_APERTI };
+}
+
+// Nascerebbe accesa? Serve a chi scrive una porta senza avere un server sotto
+// gli occhi: il catalogo, e il tasto che ne scrive una su misura della traccia.
+export const portaAccendibile = (preset, ingresso) =>
+  contaPorta(preset, { canali: [], ruoli: [], guild: {} }, ingresso).basta;
+
 export function differenzaIngresso(preset, foto, stato = {}) {
   // Si normalizza QUI, non si spera che l'abbia fatto chi chiama: le due porte
   // da confrontare devono passare per la stessa strada, o un campo lasciato
@@ -867,20 +893,9 @@ export function differenzaIngresso(preset, foto, stato = {}) {
   if (!(foto?.caratteristiche || []).includes('COMMUNITY')) {
     blocco = 'questo server non e\' di tipo Community: la schermata di benvenuto e le domande d\'ingresso Discord le accende solo li\', dalle sue impostazioni';
   } else if (laPorta && vuole.acceso) {
-    const mondo = canaliDelDopo(preset, foto);
-    const contano = new Set((vuole.canaliDiPartenza || []).map(chiaveNome));
-    if (modo === 1) {
-      for (const d of (vuole.domande || [])) {
-        for (const r of (d.risposte || [])) for (const c of (r.canali || [])) contano.add(chiaveNome(c));
-      }
-    }
-    // Un nome che nessun canale porta non lo conta nemmeno Discord: al momento
-    // di costruire quella voce sparisce, e contarla qui vorrebbe dire dire di sì
-    // a una porta che poi verra' rifiutata.
-    const veri = [...contano].filter((k) => mondo.has(k));
-    const aperti = veri.filter((k) => mondo.get(k).apre).length;
-    if (veri.length < MIN_PARTENZA || aperti < MIN_APERTI) {
-      blocco = `per accendere la porta Discord vuole almeno ${MIN_PARTENZA} canali fra quelli che chi entra si apre, e almeno ${MIN_APERTI} dove tutti possono scrivere: qui sono ${veri.length} e ${aperti}`;
+    const c = contaPorta(preset, foto, vuole);
+    if (!c.basta) {
+      blocco = `per accendere la porta Discord vuole almeno ${MIN_PARTENZA} canali fra quelli che chi entra si apre, e almeno ${MIN_APERTI} dove tutti possono scrivere: qui sono ${c.veri} e ${c.aperti}`;
     }
   }
 

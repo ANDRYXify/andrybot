@@ -697,6 +697,25 @@ function apiDemo(percorso, opzioni = {}) {
         sistema: [{ id: '5', nome: 'VIP', permessi: '2' }], togli: [], fuori: ruoliFuori,
         ambigui: [], fuoriPortata: ['Padrone di casa'] } });
   }
+  if (via === '/api/streamer/dcserver/pronti') {
+    const p = opzioni.body?.preset || {};
+    const cats = (p.categorie || []).filter((c) => (c.canali || []).some((x) => (x.tipo || 'testo') === 'testo'));
+    const testo = (c) => (c.canali || []).filter((x) => (x.tipo || 'testo') === 'testo').map((x) => x.nome);
+    const tutti = cats.flatMap(testo);
+    return Promise.resolve({ ok: true,
+      ingresso: tutti.length ? {
+        acceso: tutti.length >= 7,
+        canaliDiPartenza: tutti,
+        benvenuto: { testo: 'Da qui si comincia. Sotto trovi dove si scrive cosa.', canali: tutti.slice(0, 3).map((n) => ({ canale: n, testo: '' })) },
+        domande: [{ titolo: 'Di cosa ti va di parlare?', unaSola: false,
+          risposte: cats.filter((c) => !/^benvenuto$/i.test(c.nome)).map((c) => ({ titolo: c.nome, canali: testo(c) })) }],
+      } : null,
+      filtro: [
+        { tipo: 'liste', nome: 'Le liste di Discord', liste: ['parolacce', 'insulti'], azioni: { blocca: true }, esentiRuoli: ['Moderatori'], esentiCanali: [] },
+        { tipo: 'spam', nome: 'Spam', azioni: { blocca: true }, esentiRuoli: ['Moderatori'], esentiCanali: [] },
+        { tipo: 'menzioni', nome: 'Raffiche di menzioni', tettoMenzioni: 5, raid: true, azioni: { blocca: true }, esentiRuoli: ['Moderatori'], esentiCanali: [] },
+      ] });
+  }
   if (via === '/api/streamer/dcserver/applica') {
     const tolti = opzioni.body?.chiave ? 2 : 0;
     return Promise.resolve({ ok: true, creati: 3, sistemati: 1, tolti, errori: [], fermo: '', fatte: 4 + tolti, mancanti: [],
@@ -17967,6 +17986,12 @@ function pannelloChiEntra() {
     </div>
 
     <div class="carta">
+      <h2>${_hIco(ICO.piu)}${L('Non da zero', 'Not from scratch', 'No desde cero')}</h2>
+      <p class="suggerimento">${L('Una porta scritta sui canali che hai: i canali di partenza, la prima schermata e una domanda con una risposta per categoria. Poi la cambi come vuoi.', 'A door written on the channels you have: the starting channels, the first screen and one question with an answer per category. Then you change it however you like.', 'Una puerta escrita sobre los canales que tienes: los canales de partida, la primera pantalla y una pregunta con una respuesta por categoría. Luego la cambias como quieras.')}</p>
+      <p class="spazio-sopra"><button type="button" class="btn secondario" id="dce-pronta">${_bIco(ICO.piu)}${L('Scrivimi una porta di partenza', 'Write me a starting door', 'Escríbeme una puerta de partida')}</button></p>
+    </div>
+
+    <div class="carta">
       <h2>${_hIco(ICO.ruoli)}${L('Le domande', 'The questions', 'Las preguntas')}</h2>
       <p class="suggerimento">${L('Chi entra risponde, e ogni risposta gli apre i canali che gli interessano e gli dà il ruolo che gli spetta. Chi arriva trova dentro solo quello che ha chiesto, invece di quaranta canali tutti insieme.', 'People answer as they join, and each answer opens the channels they care about and hands them the role that fits. They find only what they asked for, instead of forty channels at once.', 'Quien entra responde, y cada respuesta le abre los canales que le interesan y le da el rol que le toca. Encuentra solo lo que ha pedido, en vez de cuarenta canales de golpe.')}</p>
       <div id="dce-porta" class="spazio-sopra"></div>
@@ -18253,6 +18278,15 @@ function collegaChiEntra() {
     }
   });
 
+  _g('dce-pronta')?.addEventListener('click', () => conErrore(async () => {
+    if (!_dcs?.preset) { toast(L('Scegli prima una traccia.', 'Pick a track first.', 'Elige antes una plantilla.')); return; }
+    const r = await api('/api/streamer/dcserver/pronti', { method: 'POST', body: { preset: _dcsPulito() } });
+    if (!r.ingresso) { toast(L('Non ci sono canali da cui partire.', 'There are no channels to start from.', 'No hay canales de los que partir.')); return; }
+    _dcs.preset.ingresso = _dcsPrepara({ ingresso: r.ingresso }).ingresso;
+    _dceDisegna();
+    _dcsTocca();
+    toast(L('Scritta \u2713 adesso cambiala come vuoi.', 'Written \u2713 now change it however you like.', 'Escrita \u2713 ahora c\u00e1mbiala como quieras.'));
+  }));
   _g('dce-esci')?.addEventListener('click', () => _distEsci(false));
   _g('dce-salva')?.addEventListener('click', () => conErrore(_dcsSalvaTraccia));
   _g('dce-vedi')?.addEventListener('click', () => conErrore(() => _dcsVedi('dce')));
@@ -18273,6 +18307,8 @@ function pannelloFiltro() {
       <h2>${_hIco(ICO.scudo)}${L('Cosa non si scrive', 'What does not get written', 'Lo que no se escribe')}</h2>
       <p>${L('Questo filtro è di Discord e gira dentro Discord: ferma il messaggio prima che esista, cosa che un bot in ascolto non può fare — lui lo vedrebbe dopo. Tu scrivi le regole qui, e poi ci stai fuori.', 'This filter is Discord’s own and runs inside Discord: it stops the message before it exists, which a listening bot cannot do — it would see it afterwards. You write the rules here, then you stay out of it.', 'Este filtro es de Discord y funciona dentro de Discord: para el mensaje antes de que exista, cosa que un bot a la escucha no puede hacer — lo vería después. Tú escribes las reglas aquí, y luego te quedas fuera.')}</p>
       <p class="suggerimento" id="dcf-conto"></p>
+      <p class="spazio-sopra"><button type="button" class="btn secondario" id="dcf-pronto">${_bIco(ICO.piu)}${L('Mettimi le regole di base', 'Give me the basic rules', 'Ponme las reglas b\u00e1sicas')}</button></p>
+      <p class="suggerimento">${L('Le tre cose che si accendono su qualunque server: le liste di Discord, lo spam e le raffiche di menzioni, coi tuoi moderatori che passano. Le parole tue le scrivi tu, perch\u00e9 dipendono dal tuo server.', 'The three things any server switches on: Discord\u2019s lists, spam and mention raids, with your moderators getting through. Your own words you write yourself, because they depend on your server.', 'Las tres cosas que se encienden en cualquier servidor: las listas de Discord, el spam y las r\u00e1fagas de menciones, con tus moderadores pasando. Tus palabras las escribes t\u00fa, porque dependen de tu servidor.')}</p>
     </div>
 
     ${carta('dcf-parole', ICO.moduli, L('Parole da non scrivere', 'Words that do not get written', 'Palabras que no se escriben'),
@@ -18487,6 +18523,18 @@ function collegaFiltro() {
     }
   });
 
+  _g('dcf-pronto')?.addEventListener('click', () => conErrore(async () => {
+    if (!_dcs?.preset) { toast(L('Scegli prima una traccia.', 'Pick a track first.', 'Elige antes una plantilla.')); return; }
+    const r = await api('/api/streamer/dcserver/pronti', { method: 'POST', body: { preset: _dcsPulito() } });
+    const ci = new Set(_dcfRegole().map((x) => x.tipo));
+    for (const n of (r.filtro || [])) {
+      if (ci.has(n.tipo)) continue;
+      _dcfRegole().push({ _k: ++_dcsChiave, ...n });
+    }
+    _dcfDisegna();
+    _dcsTocca();
+    toast(L('Messe \u2713 adesso cambiale come vuoi.', 'Added \u2713 now change them however you like.', 'Puestas \u2713 ahora c\u00e1mbialas como quieras.'));
+  }));
   _g('dcf-esci')?.addEventListener('click', () => _distEsci(false));
   _g('dcf-salva')?.addEventListener('click', () => conErrore(_dcsSalvaTraccia));
   _g('dcf-vedi')?.addEventListener('click', () => conErrore(() => _dcsVedi('dcf')));

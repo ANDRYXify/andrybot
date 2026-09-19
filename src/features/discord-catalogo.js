@@ -81,7 +81,7 @@ export function nonPuoDare(permessi, bitsBot) {
 // Quanto puo' chiedere un preset: i limiti sono quelli del motore della
 // differenza, e stanno scritti li'. Averne una seconda copia qui vorrebbe dire
 // due numeri che un giorno non coincidono piu'.
-import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI, TUTTI, normalizzaIngresso, normalizzaFiltro, TIPI_FILTRO, LISTE_FILTRO } from './discord-preset.js';
+import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI, TUTTI, normalizzaIngresso, normalizzaFiltro, TIPI_FILTRO, LISTE_FILTRO, portaAccendibile } from './discord-preset.js';
 export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, TUTTI, TIPI_FILTRO, LISTE_FILTRO };
 export const TIPI_CANALE = Object.freeze(['testo', 'voce', 'annunci', 'palco', 'forum', 'media']);
 
@@ -221,13 +221,87 @@ const ruoliDiretta = [
 ];
 const riservato = [{ chi: TUTTI, nega: ['vedere'] }];
 
+// LA PORTA E IL FILTRO GIA' SCRITTI.
+//
+// Le tracce propongono canali e ruoli, e per quelli nessuno parte dal foglio
+// bianco. La porta d'ingresso e il filtro invece nascevano vuoti: una scheda
+// che ti chiede di inventarti sette canali di partenza, tre domande e una lista
+// di parole e' una scheda che non usa nessuno.
+//
+// SI DERIVANO DALLA TRACCIA, non si scrivono a mano una per una. Non e'
+// pigrizia: una porta scritta a mano puo' nominare un canale che quella traccia
+// non ha, e allora al momento di costruire quel nome cade. Derivandola dai
+// canali che la traccia HA, quel difetto non puo' esistere — e vale anche per
+// la traccia che nasce da «leggi il mio server», che nessuno ha mai visto.
+//
+// Chi le usa: il catalogo qui sotto, e il tasto del pannello per chi una
+// traccia ce l'ha gia' e la porta no.
+
+// Un canale e' NASCOSTO se lui o la sua categoria tolgono a tutti il vedere:
+// metterlo fra quelli che chi entra si trova davanti sarebbe offrirgli una
+// porta chiusa.
+const nascosto = (righe) => (righe || []).some((r) => String(r?.chi?.ruolo || r?.chi || '') === TUTTI
+  && (r?.nega || []).includes('vedere'));
+
+// I canali di una categoria che possono stare in una porta: quelli che si
+// leggono, e di testo — i vocali Discord li conta a modo suo, e una porta che
+// si fa rifiutare e' peggio di una porta spenta.
+const DA_PORTA = new Set(['testo', 'annunci', 'forum', 'media']);
+const daPorta = (cat) => (nascosto(cat?.permessi) ? []
+  : (cat?.canali || []).filter((c) => DA_PORTA.has(String(c?.tipo || 'testo')) && !nascosto(c?.permessi)));
+
+export function portaPronta(preset, { testo = '', domanda = '' } = {}) {
+  const cats = (preset?.categorie || []).filter((c) => daPorta(c).length);
+  const tutti = cats.flatMap((c) => daPorta(c).map((x) => String(x.nome || '')).filter(Boolean));
+  if (!tutti.length) return null;
+  // In mostra i primi tre, che sono quelli che una persona guarda davvero.
+  const mostra = tutti.slice(0, 3).map((nome) => ({ canale: nome, testo: '' }));
+  // UNA RISPOSTA PER CATEGORIA, non per canale: chi entra sceglie di cosa gli
+  // va di parlare, non spunta quindici caselle. E le categorie sono quelle
+  // della traccia, quindi i nomi esistono per forza.
+  const risposte = cats
+    .filter((c) => daPorta(c).length && !/^benvenuto$/i.test(String(c.nome || '')))
+    .map((c) => ({ titolo: String(c.nome || ''), canali: daPorta(c).map((x) => String(x.nome || '')) }));
+  const porta = {
+    // ACCESA O SPENTA NON LO DECIDE CHI SCRIVE LA TRACCIA: lo decide la conta
+    // di Discord, fatta sui canali che la traccia ha. Una porta accesa che
+    // Discord rifiuterebbe sarebbe una promessa rotta al primo «Costruisci»; e
+    // decidendolo a mano, il giorno che la traccia cresce nessuno si
+    // ricorderebbe di riaccenderla.
+    acceso: false,
+    canaliDiPartenza: tutti,
+    benvenuto: { testo: testo || 'Da qui si comincia. Sotto trovi dove si scrive cosa.', canali: mostra },
+    domande: risposte.length ? [{
+      titolo: domanda || 'Di cosa ti va di parlare?',
+      unaSola: false,
+      risposte,
+    }] : [],
+  };
+  return { ...porta, acceso: portaAccendibile(preset, porta) };
+}
+
+// IL FILTRO DI PARTENZA: le tre cose che le guide dicono di accendere su
+// qualunque server, e nient'altro. Le parole tue non le mettiamo noi — quelle
+// dipendono da chi sei e da chi ti guarda, e una lista scritta da noi sarebbe
+// una lista che non c'entra niente col tuo server.
+export function filtroPronto(preset) {
+  const staff = (preset?.ruoli || []).map((r) => String(r?.nome || ''))
+    .filter((n) => /moderat|staff|admin/i.test(n));
+  const base = { esentiRuoli: staff, esentiCanali: [], azioni: { blocca: true } };
+  return [
+    { ...base, tipo: 'liste', nome: 'Le liste di Discord', liste: ['parolacce', 'insulti'] },
+    { ...base, tipo: 'spam', nome: 'Spam' },
+    { ...base, tipo: 'menzioni', nome: 'Raffiche di menzioni', tettoMenzioni: 5, raid: true },
+  ];
+}
+
 // ------------------------------------------------------------- il catalogo
 // Quattro, non quindici. Un elenco lungo di preset che si somigliano non aiuta
 // a scegliere: fa scegliere a caso. Questi quattro rispondono a quattro
 // domande diverse — comincio da zero, trasmetto, gioco con gli altri, siamo
 // diventati tanti — e chi non si riconosce in nessuno parte da quello piu'
 // vicino e lo cambia.
-export const CATALOGO = Object.freeze([
+const CATALOGO_GREZZO = [
   {
     id: 'inizio',
     nome: 'Si comincia',
@@ -327,7 +401,26 @@ export const CATALOGO = Object.freeze([
       ] },
     ],
   },
-]);
+];
+
+// LE PAROLE DELLA PORTA, una per traccia: la forma la deriva `portaPronta` dai
+// canali, ma cosa si legge e cosa si chiede dipende da che server e'.
+const PAROLE_PORTA = {
+  inizio: { testo: 'Benvenuto. Le regole sono due righe, poi si chiacchiera.', domanda: 'Di cosa ti va di parlare?' },
+  dirette: { testo: 'Casa di chi guarda le dirette. Qui si sa sempre quando si comincia.', domanda: 'Cosa ti interessa?' },
+  giocare: { testo: 'Qui ci si organizza per giocare, non solo per parlarne.', domanda: 'A cosa giochi?' },
+  grande: { testo: 'Siamo in tanti, e ognuno ha il suo angolo. Scegli i tuoi.', domanda: 'Di cosa ti va di parlare?' },
+};
+
+// LE TRACCE SI PORTANO DIETRO LA PORTA E IL FILTRO, e non a mano: derivati dai
+// canali che la traccia HA. Scriverli a mano vorrebbe dire poter nominare un
+// canale che quella traccia non prevede — un difetto che si vedrebbe solo al
+// momento di costruire, quando quel nome cade.
+export const CATALOGO = Object.freeze(CATALOGO_GREZZO.map((t) => Object.freeze({
+  ...t,
+  ingresso: portaPronta(t, PAROLE_PORTA[t.id] || {}),
+  filtro: filtroPronto(t),
+})));
 
 export const daId = (id) => CATALOGO.find((p) => p.id === String(id || '')) || null;
 

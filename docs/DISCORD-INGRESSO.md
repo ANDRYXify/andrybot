@@ -114,3 +114,37 @@ chiedere non vuol dire dimenticare: la traccia resta sporca, la barra del
 salvataggio si riaggancia alla carta dei tasti della scheda nuova, e uscendo
 DAVVERO la domanda arriva. Le schede che scrivono la stessa cosa stanno
 dichiarate in `STESSA_ROBA`.
+
+## La porta gia' scritta
+
+Una scheda che ti chiede di inventarti sette canali di partenza, tre domande e
+una lista di parole e' una scheda che non usa nessuno. Percio' la porta e il
+filtro arrivano scritti — ma NON si scrivono a mano nel catalogo: si DERIVANO
+dai canali che la traccia ha (`portaPronta` e `filtroPronto`).
+
+Non e' pigrizia. Una porta scritta a mano puo' nominare un canale che quella
+traccia non ha, e al momento di costruire quel nome cade: una porta monca senza
+che nessuno abbia sbagliato niente. Derivandola dai canali che ci sono, quel
+difetto non puo' esistere — e la stessa funzione serve al tasto «scrivimi una
+porta di partenza», che lavora su una traccia letta da un server che nessuno
+aveva mai visto.
+
+Le regole della derivazione:
+
+- **niente canali nascosti**: offrire una porta chiusa e' peggio che non
+  offrirla;
+- **niente vocali**: Discord li conta a modo suo, e una porta che si fa
+  rifiutare e' peggio di una porta spenta;
+- **una risposta per CATEGORIA**, non per canale: chi entra sceglie di cosa gli
+  va di parlare, non spunta quindici caselle;
+- **accesa o spenta non lo decide chi scrive la traccia**: lo decide la conta di
+  Discord (`contaPorta`, la stessa che spiega il rifiuto nell'anteprima). Due
+  delle quattro tracce del catalogo nascono spente perche' non arrivano a sette
+  canali, e il giorno che crescono si accendono da sole. Deciderlo a mano
+  vorrebbe dire che quel giorno non se ne accorge nessuno.
+
+Il filtro di partenza sono le tre cose che le guide dicono di accendere su
+qualunque server — le liste di Discord, lo spam, le raffiche di menzioni — coi
+ruoli dello staff esentati. **Le parole tue non le mettiamo noi**: dipendono da
+chi sei e da chi ti guarda, e una lista scritta da noi sarebbe una lista che non
+c'entra niente col tuo server.

@@ -4737,6 +4737,19 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ...e, avvisiVerso });
   }));
 
+  // UNA PORTA E UN FILTRO GIA' SCRITTI, per la traccia che si ha in mano.
+  //
+  // Le quattro tracce del catalogo se li portano dietro; chi e' partito dal suo
+  // server invece no, perche' quel server non l'aveva mai visto nessuno. La
+  // stessa funzione che li deriva per il catalogo li deriva anche qui: un posto
+  // solo, e i nomi vengono per forza dai canali che ci sono.
+  app.post('/api/streamer/dcserver/pronti', requireOwner, (req, res) => {
+    const preset = dcCatalogo.normalizzaPreset(req.body?.preset);
+    res.json({ ok: true,
+      ingresso: dcCatalogo.portaPronta(preset),
+      filtro: dcCatalogo.filtroPronto(preset) });
+  });
+
   // Cosa e' successo su questo server, in ordine di tempo. Serve il giorno che
   // qualcuno chiede «chi ha cancellato #generale».
   app.get('/api/streamer/dcserver/registro', requireOwner, (req, res) => {
