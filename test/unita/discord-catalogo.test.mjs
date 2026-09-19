@@ -154,10 +154,13 @@ test('il preset che arriva dal pannello si rifa\' da zero', () => {
       { nome: '  Moderatori  ', colore: 99999999, separato: 'si', privilegi: ['moderare', 'volare', 'moderare'] },
       { nome: '' },
     ],
+    risparmia: ['81000000000000001x', 'boh', '  ', '810000000000000022', '810000000000000022'],
     cosaCiFaQui: true,
   };
   const p = C.normalizzaPreset(sporco);
-  assert.deepEqual(Object.keys(p).sort(), ['canali', 'categorie', 'ruoli'], 'i campi che non esistono non passano');
+  assert.deepEqual(Object.keys(p).sort(), ['canali', 'categorie', 'risparmia', 'ruoli'], 'i campi che non esistono non passano');
+  assert.deepEqual(p.risparmia, ['81000000000000001', '810000000000000022'],
+    'i ruoli risparmiati restano id e basta, senza doppioni: quello che non e\' un id cade');
   assert.equal(p.ruoli.length, 1, 'un ruolo senza nome non e\' un ruolo');
   assert.equal(p.ruoli[0].nome, 'Moderatori');
   assert.deepEqual(p.ruoli[0].privilegi, ['moderare'], 'i privilegi inventati cadono, e i doppioni sono uno solo');

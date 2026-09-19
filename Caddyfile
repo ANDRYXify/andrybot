@@ -92,7 +92,14 @@
 # sostieni.socialbot.live e' la stessa idea per il sostegno al progetto: la
 # radice porta alla pagina, il resto del sito continua a funzionare da li'. Si
 # accende da solo appena il DNS risponde — nessuna variabile obbligatoria.
-socialbot.live, dona.socialbot.live, sostieni.socialbot.live {
+#
+# discord.socialbot.live e' la porta d'ingresso al Discord di uno streamer
+# (discord.socialbot.live/<canale>): chi la apre entra nel server e riceve il
+# codice per i ruoli. IL NOME VA SCRITTO QUI, sempre: il record DNS da solo non
+# basta, perche' il certificato lo chiede Caddy e lo chiede solo per i nomi che
+# conosce. Senza questa riga il browser dice ERR_SSL_PROTOCOL_ERROR e sembra un
+# guasto del sito — e' successo con sostieni, ed e' successo di nuovo qui.
+socialbot.live, dona.socialbot.live, sostieni.socialbot.live, discord.socialbot.live {
 	# zstd prima di gzip: Chrome lo prende e comprime meglio, gli altri
 	# ricadono su gzip. app.js e un file grosso, qui si vede.
 	encode zstd gzip

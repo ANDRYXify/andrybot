@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-19
 
+- Adesso ti dico quali dei tuoi ruoli Discord terrei e come li chiamerei, affiancati a quelli della traccia. Rinominarli tiene dentro chi ce l’aveva, cancellarli lo toglie a tutti. [vai: dcserver]
+- Se «!discord» non risponde in chat, la scheda ti dice quale delle tre cose manca invece di lasciartelo indovinare. [vai: ruoli]
+- Niente più spiegazioni per cose che hai già fatto: i permessi te li chiedo solo se mancano davvero. [vai: ruoli]
 - Entrare nel tuo Discord adesso è un indirizzo solo: si apre, si dice a Discord chi si è, e si è dentro. Poi il codice in chat e i ruoli arrivano da soli. [vai: ruoli]
 - Quello che il bot risponde quando gli chiedono del Discord lo scrivi tu: cinque frasi, col nome di chi scrive e il link dentro. [vai: ruoli]
 - Vuoi che gestisca tutto il server? C’è un tasto che lo riporta su Discord come amministratore, e prima ti dice per bene cosa comporta. [vai: ruoli]

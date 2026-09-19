@@ -1372,6 +1372,13 @@ table.tabella { width: 100%; border-collapse: collapse; font-size: .9rem; margin
 .campo-largo { flex: 1; min-width: 180px; }
 .griglia-campi { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .8rem; }
 .griglia-campi input[type="number"] { width: 100%; }
+.dcs-confronto { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem 1.4rem; }
+.dcs-confronto h3 { margin: 0 0 .4rem; font-size: .95rem; }
+.dcs-verdetto { font-size: .78rem; font-weight: 600; padding: .1rem .45rem; border-radius: 999px; border: 1px solid var(--border); }
+.dcs-verdetto.prende { color: var(--acc); border-color: var(--acc-bordo); background: var(--acc-tint); }
+.dcs-verdetto.tiene { color: var(--verde); border-color: var(--verde-bordo); background: var(--verde-soft); }
+.dcs-verdetto.togli { color: var(--testo-3); }
+
 #dc-frasi { grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
 #dc-frasi textarea { min-height: 92px; }
 

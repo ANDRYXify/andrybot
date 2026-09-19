@@ -62,7 +62,7 @@ test('e se non risponde resta spento, che è il modo giusto di sbagliare', () =>
 test('i nomi che il sito promette sono nomi che la porta d\'ingresso conosce', () => {
   // Un indirizzo corto acceso nel codice e assente dal Caddyfile e' lo stesso
   // difetto visto dall'altra parte: il sito lo offre, e fuori non esiste.
-  for (const nome of ['dona.socialbot.live', 'sostieni.socialbot.live']) {
+  for (const nome of ['dona.socialbot.live', 'sostieni.socialbot.live', 'discord.socialbot.live']) {
     assert.ok(CADDY.includes(nome), `${nome} non è fra i nomi serviti`);
   }
 });
