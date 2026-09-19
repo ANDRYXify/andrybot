@@ -4584,6 +4584,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       privilegi: Object.keys(dcCatalogo.PERMESSI_RUOLO),
       max: { categorie: dcCatalogo.MAX_CATEGORIE, canali: dcCatalogo.MAX_CANALI, ruoli: dcCatalogo.MAX_RUOLI,
         domande: dcCatalogo.MAX_DOMANDE, risposte: dcCatalogo.MAX_RISPOSTE },
+      // I tetti del filtro sono di Discord: il pannello li mostra invece di
+      // far chiedere una settima regola di parole e farla rifiutare.
+      filtro: { tipi: dcCatalogo.TIPI_FILTRO, liste: dcCatalogo.LISTE_FILTRO,
+        tetti: dcApi.TETTO_AUTOMOD, pausaMax: dcApi.PAUSA_MAX },
       // Quanti canali Discord pretende prima di accendere la porta: il pannello
       // li conta mentre si scrive, invece di dirlo dopo il rifiuto.
       porta: { partenza: dcPreset.MIN_PARTENZA, aperti: dcPreset.MIN_APERTI },
@@ -4617,7 +4621,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       ]);
       porta = { benvenuto: b?.ok ? b : null, ingresso: g?.ok ? g : null };
     }
-    res.json({ ok: true, preset: dcCatalogo.dallaFotografia(foto, { porta }) });
+    // E le regole del filtro, che non chiedono di essere Community: chi ne ha
+    // gia' e non se le porta dietro, al primo «rimettilo a posto» se le vede
+    // cancellare.
+    const rr = await dcApi.regoleAuto(token, guild).catch(() => ({ ok: false }));
+    res.json({ ok: true, preset: dcCatalogo.dallaFotografia(foto, { porta, regole: rr?.ok ? rr.regole : null }) });
   }));
 
   app.post('/api/streamer/dcserver/anteprima', requireOwner, wrap(async (req, res) => {
@@ -4658,6 +4666,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // LA PORTA D'INGRESSO: cosa cambierebbe, e il motivo per cui Discord
       // direbbe di no. Il motivo arriva prima di applicare, non dopo.
       ingresso: a.differenza.ingresso || null,
+      // IL FILTRO: cosa nasce, cosa cambia, e cosa il filtro di adesso ha e la
+      // traccia non prevede — che si dice sempre, anche quando non si tocca.
+      filtro: a.differenza.filtro || null,
+      fuoriFiltro: a.fuoriFiltro || [],
       server: a.foto?.guild?.nome || '' });
   }));
 

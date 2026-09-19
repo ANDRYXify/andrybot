@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-19
 
+- Il filtro del tuo server Discord si scrive da qui: le tue parole, le liste che Discord tiene aggiornate da sé, lo spam e le raffiche di menzioni. [vai: dcfiltro]
+- Per ogni regola scegli cosa succede quando scatta, e chi non tocca: i tuoi moderatori passano sempre. [vai: dcfiltro]
+- Le regole che hai già non te le riscrivo: te le leggo, e cambio solo quello che è diverso. [vai: dcfiltro]
 - Adesso i comandi rispondono anche a te: il bot scrive col tuo account, e per sbaglio scartava i messaggi tuoi come se fossero i suoi. [vai: moduli]
 - Il tasto del Discord in chat portava a un indirizzo con i due punti attaccati dentro: adesso il link finisce dove finisce, e si apre. [vai: ruoli]
 - Gli avvisi su Discord adesso hanno una scheda loro: quanti canali vuoi, e per ognuno quali avvisi, di chi, con che parole. [vai: dcavvisi]

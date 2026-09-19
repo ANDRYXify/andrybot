@@ -30,7 +30,7 @@
 // E il limite delle mosse non e' un troncamento silenzioso: quando si ferma lo
 // dice, e dice perche'.
 import * as api from './discord-api.js';
-import { differenza, differenzaRuoli, differenzaIngresso, vuota, improntaDi, TIPI, nomeCanale, chiaveNome, consiglioRuoli, applicaConsiglio } from './discord-preset.js';
+import { differenza, differenzaRuoli, differenzaIngresso, differenzaFiltro, vuota, improntaDi, TIPI, nomeCanale, chiaveNome, consiglioRuoli, applicaConsiglio } from './discord-preset.js';
 import { risolvi, nonPuoDare } from './discord-catalogo.js';
 import { makeLog } from '../logger.js';
 
@@ -51,6 +51,8 @@ const MOTIVO = Object.freeze({
   ruoloTolto: 'non e\' nella traccia, e la modalita\' distruttiva era accesa',
   server: 'impostazioni rimesse come dice la traccia',
   ingresso: 'la porta d\'ingresso, come dice la traccia',
+  filtro: 'il filtro, come dice la traccia',
+  filtroTolto: 'non e\' nella traccia, e la modalita\' distruttiva era accesa',
 });
 
 export const PAUSA_MS = 350;
@@ -121,7 +123,18 @@ export async function anteprima(token, guild, preset, { togliere = false } = {})
       benvenuto: ben?.ok ? ben : null, ingresso: ing?.ok ? ing : null });
     if (ip) d.ingresso = ip;
   }
-  return { ok: true, foto, differenza: d, fuori: tutto.togli, fuoriRuoli: dRuoli.togli,
+  // IL FILTRO, anche lui solo se la traccia ne parla: e' una lettura in piu',
+  // e una traccia che di filtro non dice niente non deve pagarla.
+  let fuoriFiltro = [];
+  if (preset_?.filtro) {
+    const rr = await api.regoleAuto(token, guild);
+    const fp = differenzaFiltro(preset_, foto, rr?.ok ? rr.regole : []);
+    if (fp) {
+      fuoriFiltro = fp.togli;
+      d.filtro = togliere ? fp : { ...fp, togli: [] };
+    }
+  }
+  return { ok: true, foto, differenza: d, fuori: tutto.togli, fuoriRuoli: dRuoli.togli, fuoriFiltro,
     impronta: improntaDi(d), vuota: vuota(d), mancanti, nonPosso: dRuoli.nonPosso,
     fuoriPortata: tutto.fuoriPortata || [], consiglio };
 }
@@ -168,6 +181,7 @@ export async function applica(token, guild, preset, { togliere = false, impronta
     ruoliCreati: 0, ruoliSistemati: 0, ruoliTolti: 0, nomiRuoliTolti: [],
     serverSistemato: 0, serverDice: [],
     ingressoSistemato: 0, ingressoDice: [], ingressoPersi: [],
+    filtroCreate: 0, filtroSistemate: 0, filtroTolte: 0, nomiFiltroTolte: [],
     canaleAvvisi: d.avvisi?.id ? String(d.avvisi.id) : '' };
   const passo = async (fn, conta) => {
     if (esito.fermo) return null;
@@ -312,6 +326,59 @@ export async function applica(token, guild, preset, { togliere = false, impronta
       if (esito.ingressoSistemato) esito.ingressoDice = d.ingresso.dice || [];
       esito.ingressoPersi = persi;
     }
+  }
+
+  // IL FILTRO, dopo la porta e con lo stesso passaggio: i nomi diventano id.
+  // Una regola puo' avvisare in un canale e risparmiare dei ruoli, e quei
+  // canali e quei ruoli la traccia li ha appena creati.
+  if (!esito.fermo && d.filtro) {
+    const canPerNome = new Map();
+    for (const c of (a.foto.canali || [])) {
+      if (Number(c.tipo) === TIPI.categoria) continue;
+      canPerNome.set(chiaveNome(c.nome), String(c.id));
+    }
+    for (const [k, v] of nuoviCanali) canPerNome.set(k, v);
+    const ruoPerNome = new Map();
+    for (const x of (a.foto.ruoli || [])) ruoPerNome.set(chiaveNome(x.nome), String(x.id));
+    for (const [k, v] of idVeri) ruoPerNome.set(chiaveNome(k.slice('nuovo:'.length)), v);
+    const persi = [];
+    const trova = (m) => (n) => {
+      const i = m.get(chiaveNome(n));
+      if (!i && !persi.includes(String(n))) persi.push(String(n));
+      return i || null;
+    };
+    const canId = trova(canPerNome);
+    const ruoId = trova(ruoPerNome);
+    // Un canale nominato che non si trova NON diventa «nessun canale»: la
+    // regola perde solo quell'avviso, e si dice quale. Zittire un avviso senza
+    // dirlo sarebbe una regola che sembra accesa e non avvisa nessuno.
+    const conId = (r) => ({
+      ...r,
+      azioni: { ...r.azioni, ...(r.azioni?.avvisaIn ? { avvisaIn: canId(r.azioni.avvisaIn) || '' } : {}) },
+      esentiRuoli: (r.esentiRuoli || []).map(ruoId).filter(Boolean),
+      esentiCanali: (r.esentiCanali || []).map(canId).filter(Boolean),
+    });
+    for (const r of (d.filtro.crea || [])) {
+      if (esito.fermo) break;
+      await passo(() => api.creaRegolaAuto(token, guild, conId(r), MOTIVO.filtro), 'filtroCreate');
+    }
+    for (const r of (d.filtro.sistema || [])) {
+      if (esito.fermo) break;
+      await passo(() => api.sistemaRegolaAuto(token, guild, r.id, conId(r), MOTIVO.filtro), 'filtroSistemate');
+    }
+    // LA SECONDA SERRATURA, come per i canali. Non e' lei a proteggere: a
+    // proteggere e' l'anteprima, che in avanti consegna l'elenco vuoto — ed e'
+    // quello che il collaudo misura, da un capo all'altro. Questa sta qui per
+    // la stessa ragione dell'altra: sull'unica cosa che toglie roba a qualcuno,
+    // la domanda si rifa' nel punto in cui si toglie, non solo dove si e' deciso.
+    if (togliere) {
+      for (const r of (d.filtro.togli || [])) {
+        if (esito.fermo) break;
+        const x = await passo(() => api.togliRegolaAuto(token, guild, r.id, MOTIVO.filtroTolto), 'filtroTolte');
+        if (x?.ok) esito.nomiFiltroTolte.push(String(r.nome || ''));
+      }
+    }
+    for (const n of persi) aggiungi(esito.errori, `nel filtro non ho trovato «${n}» sul server`);
   }
 
   if (togliere) {

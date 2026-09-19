@@ -98,7 +98,7 @@ test('«leggi il mio server» legge anche la porta, e solo dove Discord ce l\'ha
   assert.match(f, /dcApi\.benvenuto\(token, guild\)/);
   assert.match(f, /dcApi\.ingresso\(token, guild\)/);
   assert.match(f, /includes\('COMMUNITY'\)/, 'senza Community quelle due porte non rispondono');
-  assert.match(f, /dallaFotografia\(foto, \{ porta \}\)/);
+  assert.match(f, /dallaFotografia\(foto, \{ porta\b/, 'la porta letta dev\'entrare nella traccia');
 });
 
 test('il pannello sa dire se il server e\' di tipo Community', () => {
@@ -107,7 +107,11 @@ test('il pannello sa dire se il server e\' di tipo Community', () => {
 });
 
 test('la scheda e\' registrata dove si registrano le schede', () => {
-  assert.match(APP, /parti: \['ruoli', 'dcavvisi', 'dcserver', 'dcentra'\]/, 'la barra della famiglia Discord');
+  // La barra della famiglia cresce; quello che conta e' che «Chi entra» ci sia.
+  // Fissare l'elenco intero vorrebbe dire un collaudo rosso ogni volta che si
+  // aggiunge una scheda accanto — e un rosso che non e' un difetto insegna a
+  // ignorare i rossi.
+  assert.match(APP, /\{ id: 'discord', nome: 'Discord', parti: \[[^\]]*'dcentra'/, 'la barra della famiglia Discord');
   assert.match(APP, /SOLO_DISCORD = new Set\(\[[^\]]*'dcentra'/, 'chi entra solo da Discord deve vederla');
   assert.match(APP, /\n {2}dcentra: \['Chi entra nel server'/, 'il nome della scheda');
   assert.match(APP, /\n {2}dcentra: \['Chi entra', /, 'il nome corto nella barra');

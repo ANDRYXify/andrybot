@@ -24,7 +24,7 @@
 // vero sarebbe scomodo costruire.
 
 import { createHash } from 'node:crypto';
-import { PRIVILEGI, DA_DARE, VIEW_CHANNEL, SEND_MESSAGES } from './discord-api.js';
+import { PRIVILEGI, DA_DARE, VIEW_CHANNEL, SEND_MESSAGES, TETTO_AUTOMOD, PAUSA_MAX } from './discord-api.js';
 
 // La somma dei privilegi che una traccia nomina. I NUMERI stanno in un posto
 // solo, con gli altri numeri di Discord: qui si leggono, non si ricopiano. Non
@@ -898,11 +898,173 @@ export function differenzaIngresso(preset, foto, stato = {}) {
   };
 }
 
+// ------------------------------------------------------ il filtro (AutoMod)
+//
+// AutoMod e' di Discord e gira DENTRO Discord: blocca il messaggio prima che
+// esista. Un bot in ascolto non puo' farlo — lui lo vede dopo, e cancellarlo e'
+// un'altra cosa. Percio' il filtro non lo scriviamo noi: lo scriviamo A LORO,
+// e poi ci stiamo fuori.
+//
+// Sta nella traccia come i canali e la porta, per le stesse tre ragioni: «leggi
+// il mio server» se lo porta dietro, l'anteprima lo mostra insieme al resto, e
+// si costruisce in un giro solo.
+//
+// I NOMI, NON GLI ID. Una regola puo' avvisare in un canale e risparmiare dei
+// ruoli, e quei canali e quei ruoli la traccia li sta creando: valgono le
+// stesse regole della porta d'ingresso, e lo stesso passaggio nel costruttore.
+//
+// I TETTI SONO DI DISCORD, non nostri: sei regole di parole, una per ogni
+// altro tipo. Chiederne una in piu' torna un errore, e conviene saperlo qui.
+export const TIPI_FILTRO = Object.freeze(['parole', 'liste', 'spam', 'menzioni', 'profilo']);
+
+// La pausa Discord la accetta solo su parole e menzioni. Mandarla sulle altre
+// vorrebbe dire una regola rifiutata per intero a causa di un campo che
+// l'editor non avrebbe nemmeno dovuto mostrare.
+const CON_PAUSA = new Set(['parole', 'menzioni']);
+// Le liste pronte che Discord ha gia' scritto, chiamate come si chiamano da noi.
+export const LISTE_FILTRO = Object.freeze(['parolacce', 'sesso', 'insulti']);
+
+const NOME_FILTRO = Object.freeze({
+  parole: 'Parole da non scrivere',
+  liste: 'Le liste di Discord',
+  spam: 'Spam',
+  menzioni: 'Raffiche di menzioni',
+  profilo: 'Nomi e profili',
+});
+
+export function normalizzaFiltro(v) {
+  if (!Array.isArray(v)) return null;
+  const testo = (x, max) => String(x || '').replace(/\s+/g, ' ').trim().slice(0, max);
+  const lista = (x, quante, lunghe) => [...new Set((Array.isArray(x) ? x : [])
+    .map((y) => testo(y, lunghe)).filter(Boolean))].slice(0, quante);
+  const quanti = {};
+  const fuori = [];
+  for (const r of v) {
+    const tipo = TIPI_FILTRO.includes(String(r?.tipo)) ? String(r.tipo) : '';
+    if (!tipo) continue;
+    const tetto = TETTO_AUTOMOD[tipo] || 1;
+    quanti[tipo] = (quanti[tipo] || 0) + 1;
+    if (quanti[tipo] > tetto) continue;          // il tetto e' di Discord, non nostro
+    const a = r?.azioni || {};
+    const azioni = {
+      blocca: a.blocca !== false,
+      messaggio: testo(a.messaggio, 150),
+      avvisaIn: testo(a.avvisaIn, 100),
+      pausa: CON_PAUSA.has(tipo) ? Math.max(0, Math.min(PAUSA_MAX, Math.round(Number(a.pausa)) || 0)) : 0,
+      isola: !!a.isola,
+    };
+    // Una regola che non fa niente e' peggio di non averla, perche' sembra
+    // accesa. Se non hanno detto cosa fare, almeno blocca.
+    if (!azioni.blocca && !azioni.avvisaIn && !azioni.pausa && !azioni.isola) azioni.blocca = true;
+    const voce = {
+      tipo,
+      nome: testo(r?.nome, 100) || NOME_FILTRO[tipo],
+      accesa: r?.accesa !== false,
+      azioni,
+      esentiRuoli: lista(r?.esentiRuoli, 20, 100),
+      esentiCanali: lista(r?.esentiCanali, 50, 100),
+    };
+    if (tipo === 'parole' || tipo === 'profilo') {
+      voce.parole = lista(r?.parole, 1000, 60);
+      voce.espressioni = lista(r?.espressioni, 10, 260);
+      voce.passano = lista(r?.passano, 100, 60);
+      // Una regola di parole senza parole non filtra niente: non si manda.
+      if (!voce.parole.length && !voce.espressioni.length) { quanti[tipo]--; continue; }
+    }
+    if (tipo === 'liste') {
+      voce.liste = lista(r?.liste, 3, 20).filter((k) => LISTE_FILTRO.includes(k));
+      voce.passano = lista(r?.passano, 1000, 60);
+      if (!voce.liste.length) { quanti[tipo]--; continue; }
+    }
+    if (tipo === 'menzioni') {
+      voce.tettoMenzioni = Math.max(1, Math.min(50, Math.round(Number(r?.tettoMenzioni)) || 5));
+      voce.raid = !!r?.raid;
+    }
+    fuori.push(voce);
+  }
+  return fuori.length ? fuori : null;
+}
+
+// Due regole sono la stessa regola se sono dello stesso TIPO — e, per le
+// parole, se si chiamano allo stesso modo. Non serve un contrassegno nostro:
+// il tetto di Discord e' gia' la chiave, perche' di spam ce n'e' una sola.
+const chiaveFiltro = (r) => (r.tipo === 'parole' ? 'parole:' + chiaveNome(r.nome) : r.tipo);
+
+// Il segno di una regola: due regole con lo stesso segno non si riscrivono.
+const segnoFiltro = (r) => [
+  r.accesa ? 1 : 0, chiaveNome(r.nome),
+  (r.parole || []).slice().sort().join('|'),
+  (r.espressioni || []).slice().sort().join('|'),
+  (r.passano || []).slice().sort().join('|'),
+  (r.liste || []).slice().sort().join('|'),
+  r.tettoMenzioni || 0, r.raid ? 1 : 0,
+  r.azioni?.blocca ? 1 : 0, r.azioni?.messaggio || '',
+  chiaveNome(r.azioni?.avvisaIn), r.azioni?.pausa || 0, r.azioni?.isola ? 1 : 0,
+  (r.esentiRuoli || []).map(chiaveNome).sort().join('+'),
+  (r.esentiCanali || []).map(chiaveNome).sort().join('+'),
+].join('~');
+
+// Le regole di adesso, lette in NOMI: e' cosi' che la traccia le sa dire.
+function filtroOra(regole, foto) {
+  const nomeCan = new Map((foto?.canali || []).map((c) => [String(c?.id || ''), String(c?.nome || '')]));
+  const nomeRuo = new Map((foto?.ruoli || []).map((r) => [String(r?.id || ''), String(r?.nome || '')]));
+  const daId = (m) => (l) => (l || []).map((i) => m.get(String(i))).filter(Boolean);
+  return (regole || []).filter((r) => TIPI_FILTRO.includes(r?.tipo)).map((r) => ({
+    id: String(r.id || ''),
+    tipo: r.tipo,
+    nome: String(r.nome || ''),
+    accesa: !!r.accesa,
+    parole: (r.parole || []).map(String),
+    espressioni: (r.espressioni || []).map(String),
+    passano: (r.passano || []).map(String),
+    liste: (r.liste || []).map(String),
+    tettoMenzioni: Number(r.tettoMenzioni) || 0,
+    raid: !!r.raid,
+    azioni: {
+      blocca: !!r.azioni?.blocca,
+      messaggio: String(r.azioni?.messaggio || ''),
+      avvisaIn: nomeCan.get(String(r.azioni?.avvisaIn)) || '',
+      pausa: Number(r.azioni?.pausa) || 0,
+      isola: !!r.azioni?.isola,
+    },
+    esentiRuoli: daId(nomeRuo)(r.esentiRuoli),
+    esentiCanali: daId(nomeCan)(r.esentiCanali),
+  }));
+}
+
+export function differenzaFiltro(preset, foto, regole) {
+  // Come per la porta, si normalizza QUI: le due cose da confrontare devono
+  // passare per la stessa strada, o un campo lasciato vuoto diventa una
+  // differenza che non c'e' — e una regola riscritta ogni sera.
+  const vuole = normalizzaFiltro(preset?.filtro);
+  if (!vuole) return null;
+  const ora = filtroOra(regole, foto);
+  const perChiave = new Map(ora.map((r) => [chiaveFiltro(r), r]));
+  const crea = [];
+  const sistema = [];
+  const dice = [];
+  const visti = new Set();
+  for (const r of vuole) {
+    const k = chiaveFiltro(r);
+    visti.add(k);
+    const gia = perChiave.get(k);
+    if (!gia) { crea.push(r); dice.push({ campo: 'crea', tipo: r.tipo, nome: r.nome }); continue; }
+    if (segnoFiltro(gia) === segnoFiltro(r)) continue;
+    sistema.push({ ...r, id: gia.id });
+    dice.push({ campo: 'sistema', tipo: r.tipo, nome: r.nome });
+  }
+  const togli = ora.filter((r) => !visti.has(chiaveFiltro(r)))
+    .map((r) => ({ id: r.id, tipo: r.tipo, nome: r.nome }));
+  if (!crea.length && !sistema.length && !togli.length) return null;
+  return { crea, sistema, togli, dice };
+}
+
 // «Non c'e' niente da fare» detto una volta sola, cosi' chi chiama non deve
 // contare tre elenchi per sapere se applicare due volte ha fatto qualcosa.
 export const vuota = (d) => !(d?.crea?.length || d?.sistema?.length || d?.togli?.length
   || d?.ruoli?.crea?.length || d?.ruoli?.sistema?.length || d?.ruoli?.togli?.length
-  || d?.server?.dice?.length || d?.ingresso?.dice?.length);
+  || d?.server?.dice?.length || d?.ingresso?.dice?.length
+  || d?.filtro?.dice?.length || d?.filtro?.togli?.length);
 
 // L'IMPRONTA DI QUELLO CHE HAI VISTO.
 //
@@ -941,6 +1103,10 @@ export function improntaDi(d) {
     // in piu' puo' dare un ruolo a chiunque entri. Guardarla e poi applicare
     // un'altra porta sarebbe la firma in bianco peggiore delle tre.
     ...(d?.ingresso?.dice || []).map((x) => `i|${x.campo}|${x.a ?? ''}`),
+    // E il filtro, che decide cosa non si puo' scrivere: una regola cambiata
+    // fra il guardare e il fare e' una regola che non hai guardato.
+    ...(d?.filtro?.dice || []).map((x) => `f|${x.campo}|${x.tipo}|${x.nome || ''}`),
+    ...(d?.filtro?.togli || []).map((x) => `fx|${x.id}`),
   ].sort();
   return createHash('sha1').update(righe.join('\n')).digest('hex').slice(0, 12);
 }

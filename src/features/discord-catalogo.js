@@ -81,8 +81,8 @@ export function nonPuoDare(permessi, bitsBot) {
 // Quanto puo' chiedere un preset: i limiti sono quelli del motore della
 // differenza, e stanno scritti li'. Averne una seconda copia qui vorrebbe dire
 // due numeri che un giorno non coincidono piu'.
-import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI, TUTTI, normalizzaIngresso } from './discord-preset.js';
-export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, TUTTI };
+import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI, TUTTI, normalizzaIngresso, normalizzaFiltro, TIPI_FILTRO, LISTE_FILTRO } from './discord-preset.js';
+export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, TUTTI, TIPI_FILTRO, LISTE_FILTRO };
 export const TIPI_CANALE = Object.freeze(['testo', 'voce', 'annunci', 'palco', 'forum', 'media']);
 
 const somma = (nomi) => (nomi || []).reduce((t, n) => t | (PERMESSI[n] || 0n), 0n);
@@ -461,6 +461,10 @@ export function normalizzaPreset(x) {
   // per una maiuscola, e la porta si riscriverebbe tutte le sere.
   const ingresso = normalizzaIngresso(x?.ingresso);
 
+  // IL FILTRO, per la stessa ragione della porta: la normalizzazione sta con
+  // la differenza, perche' e' li' che si confronta quel che vuoi con quel che c'e'.
+  const filtro = normalizzaFiltro(x?.filtro);
+
   // I ruoli che lo streamer tiene anche se la traccia non li prevede. In
   // modalita' normale non cambia niente — non si cancella mai; in distruttiva
   // sono gli unici che si salvano, ed e' il motivo per cui esistono.
@@ -468,7 +472,8 @@ export function normalizzaPreset(x) {
     .map((v) => String(v || '').replace(/[^0-9]/g, '').slice(0, 24)).filter(Boolean))].slice(0, MAX_RUOLI * 4);
   return { ruoli, canali, categorie, risparmia,
     ...(Object.keys(imp).length ? { server: imp } : {}),
-    ...(ingresso ? { ingresso } : {}) };
+    ...(ingresso ? { ingresso } : {}),
+    ...(filtro ? { filtro } : {}) };
 }
 
 // PARTI DAL SERVER CHE HAI GIA'.
@@ -479,7 +484,7 @@ export function normalizzaPreset(x) {
 // permessi e' un preset che non li tocca, e quelli che ci sono restano come
 // sono. Rileggerli e riscriverli identici sarebbe lo stesso risultato passando
 // per un giro in cui qualcosa puo' andare storto.
-export function dallaFotografia(foto, { porta = null, TIPI_ID = { 0: 'testo', 2: 'voce', 5: 'annunci', 13: 'palco', 15: 'forum', 16: 'media' } } = {}) {
+export function dallaFotografia(foto, { porta = null, regole = null, TIPI_ID = { 0: 'testo', 2: 'voce', 5: 'annunci', 13: 'palco', 15: 'forum', 16: 'media' } } = {}) {
   const canali = (foto?.canali || []).filter((c) => c && c.id != null);
   const categorie = canali.filter((c) => Number(c.tipo) === 4);
   const perId = new Map(categorie.map((c) => [String(c.id), c]));
@@ -544,9 +549,23 @@ export function dallaFotografia(foto, { porta = null, TIPI_ID = { 0: 'testo', 2:
     ...(b ? { benvenuto: { testo: b.testo,
       canali: (b.canali || []).map((c) => ({ canale: nomeCan.get(String(c?.canale)) || '', testo: c?.testo, emoji: c?.emoji })).filter((c) => c.canale) } } : {}),
   } : null;
+  // E IL FILTRO, dove qualcuno l'ha letto. Le regole di Discord nominano
+  // canali e ruoli per id; qui tornano nomi, perche' e' cosi' che la traccia
+  // sa dirle — e perche' senza, il primo «rimettilo a posto» cancellerebbe le
+  // regole che c'erano gia'.
+  const filtroOra = Array.isArray(regole) ? regole.map((r) => ({
+    tipo: r?.tipo, nome: r?.nome, accesa: !!r?.accesa,
+    parole: r?.parole, espressioni: r?.espressioni, passano: r?.passano,
+    liste: r?.liste, tettoMenzioni: r?.tettoMenzioni, raid: r?.raid,
+    azioni: { ...(r?.azioni || {}),
+      ...(r?.azioni?.avvisaIn ? { avvisaIn: nomeCan.get(String(r.azioni.avvisaIn)) || '' } : {}) },
+    esentiRuoli: daId(nomeRuo)(r?.esentiRuoli),
+    esentiCanali: daId(nomeCan)(r?.esentiCanali),
+  })) : null;
   return normalizzaPreset({
     ruoli,
     ...(ingresso ? { ingresso } : {}),
+    ...(filtroOra && filtroOra.length ? { filtro: filtroOra } : {}),
     // le impostazioni di adesso entrano nella traccia: se non ci fossero, il
     // primo «rimettilo a posto» le azzererebbe tutte in silenzio
     ...(foto?.impostazioni ? { server: foto.impostazioni } : {}),
