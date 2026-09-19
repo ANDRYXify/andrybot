@@ -173,14 +173,24 @@ test('la locandina vale anche per le dirette degli amici', () => {
   // stessa strada, stesso disegno, stesso testo corto. Con un compositore suo,
   // gli amici sarebbero rimasti col messaggio lungo e senza immagine — e
   // nessuno se ne accorge, perché il messaggio arriva lo stesso.
+  //
+  // La strada comune adesso serve DUE trasporti, quindi il giro non chiama piu'
+  // Telegram di persona: chiama il punto unico, ed e' quello a saper parlare a
+  // tutti e due. Misurare ancora la chiamata a Telegram vorrebbe dire pretendere
+  // la strada vecchia proprio mentre si controlla che si passi dalla nuova.
   const bot = leggi('src/bot.js');
-  const amici = bot.slice(bot.indexOf('for (const a of tgAmici.daGuardare('));
+  const amici = bot.slice(bot.indexOf('for (const a of amici.daGuardare('));
   const corpo = amici.slice(0, 2200);
-  assert.match(corpo, /_diffondiTelegram\(/, 'passa dalla strada comune');
-  assert.match(corpo, /chi: a\.login/, 'e la locandina prende i dati di CHI è live, non del padrone del gruppo');
-  assert.match(corpo, /avvisi\.messaggio\(/, 'e il testo lo compone la stessa funzione');
+  assert.match(corpo, /this\._diffondi\(ch, avvisi\.eventoDi\('twitch'\), a\.login,/, 'passa dalla strada comune');
+  assert.match(corpo, /avvisi\.diretta\(\{/, 'e la locandina prende i dati di CHI è live, non del padrone del gruppo');
   assert.doesNotMatch(corpo, /costruisciMessaggioLive/, 'un compositore suo lascerebbe gli amici col testo lungo');
-  assert.doesNotMatch(corpo, /_diffondiTelegram\(ch, conf, 'live'/, 'l’evento non si scrive a mano');
+  assert.doesNotMatch(corpo, /_diffondi\(ch, 'live'/, 'l’evento non si scrive a mano');
+
+  // e la strada comune, dentro, fa ancora le due cose che contano
+  const f = bot.slice(bot.indexOf('async _diffondi(login, evento, chi, d,'));
+  const comune = f.slice(0, f.indexOf('\n  }'));
+  assert.match(comune, /avvisi\.messaggio\(/, 'il testo lo compone la stessa funzione');
+  assert.match(comune, /chi: altrui/, 'l’avviso di un altro va ricordato per streamer, se no la sua live finita chiude la mia');
 });
 
 test('tutte e due le prove mandano quello che partirà davvero', () => {

@@ -152,31 +152,101 @@ export async function notificaLive(conf, streamer, info) {
 const COLORI = { twitch: VIOLA, kick: 0x53fc18, youtube: 0xff0000, tiktok: 0x000000 };
 const NOMI = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', tiktok: 'TikTok' };
 
-export async function notificaDiretta(conf, d) {
-  if (!configurato(conf)) return { ok: false, errore: 'discord non configurato' };
-  if (!d?.login) return { ok: false, errore: 'diretta senza streamer' };
-  const p = String(d.piattaforma || 'twitch');
+// L'INCORNICIATO della diretta. Sta in una funzione sua perche' lo usano in
+// due: l'avviso che parte da solo e quello che parte verso piu' canali. Due
+// copie vorrebbero dire due incorniciati che col tempo diventano diversi.
+export function incornicia(d) {
+  const p = String(d?.piattaforma || 'twitch');
   const campi = [];
-  if (d.gioco) campi.push({ name: '🎮 Gioco', value: String(d.gioco).slice(0, 100), inline: true });
-  if (d.spettatori != null) campi.push({ name: '👥 Spettatori', value: String(d.spettatori), inline: true });
+  if (d?.gioco) campi.push({ name: '🎮 Gioco', value: String(d.gioco).slice(0, 100), inline: true });
+  if (d?.spettatori != null) campi.push({ name: '👥 Spettatori', value: String(d.spettatori), inline: true });
 
   const emb = {
-    title: `🔴 ${d.display || d.login} è in diretta${p === 'twitch' ? '' : ' su ' + (NOMI[p] || p)}!`,
-    url: d.url,
-    description: d.titolo || undefined,
+    title: `🔴 ${d?.display || d?.login} è in diretta${p === 'twitch' ? '' : ' su ' + (NOMI[p] || p)}!`,
+    url: d?.url,
+    description: d?.titolo || undefined,
     color: COLORI[p] ?? VIOLA,
     ...(campi.length ? { fields: campi } : {}),
     footer: { text: 'SocialBot • ' + (NOMI[p] || p) },
   };
-  if (d.miniatura) emb.image = { url: d.miniatura + `?t=${Math.floor(Date.now() / 1000)}` };
+  if (d?.miniatura) emb.image = { url: d.miniatura + `?t=${Math.floor(Date.now() / 1000)}` };
+  return emb;
+}
 
+// IL TESTO DI UN AVVISO, per qualunque piattaforma. Gli stessi segnaposto di
+// Telegram: chi scrive il messaggio non deve imparare due lingue perche' lo
+// manda in due posti. Quello che non c'e' non diventa uno zero finto — la sua
+// riga sparisce, come di la'.
+//
+// Qui si sfugge per il markdown e non per l'HTML: un titolo con un asterisco
+// dentro, su Discord, si porterebbe via meta' messaggio in corsivo.
+const escMd = (s) => String(s ?? '').replace(/([\\`*_~|])/g, '\\$1');
+
+export const TESTO_DEFAULT = '🔴 **{nome}** è in diretta · {link}';
+
+export function testoDiretta(d, template = '') {
+  if (!d) return '';
+  const valori = {
+    nome: escMd(d.display || d.login),
+    titolo: escMd(d.titolo || ''),
+    gioco: escMd(d.gioco || ''),
+    spettatori: d.spettatori == null ? '' : String(d.spettatori),
+    link: d.url || '',
+    login: escMd(d.login || ''),
+    piattaforma: NOMI[String(d.piattaforma || '')] || String(d.piattaforma || ''),
+  };
+  const t = (template && String(template).trim()) || TESTO_DEFAULT;
+  return t.replace(/\{(nome|titolo|gioco|spettatori|link|login|piattaforma)\}/g, (_, k) => valori[k] ?? '')
+    .split('\n')
+    .filter((r, i, tutte) => r.trim() !== '' || (i > 0 && i < tutte.length - 1 && tutte[i - 1].trim() !== ''))
+    .join('\n')
+    .replace(/^[^\p{L}\p{N}]*$/gmu, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .slice(0, 1800);
+}
+
+// LO STESSO AVVISO A PIU' CANALI, ognuno col suo testo e il suo ruolo da
+// chiamare. Sequenziale di proposito, come di la': Discord limita la frequenza,
+// e un canale che rifiuta non deve impedire agli altri di ricevere.
+//
+// La menzione: `allowed_mentions` elenca SOLO il ruolo scelto per QUELLA
+// destinazione. Prima era `parse: ['roles','everyone']` per tutti, cioe' un
+// «@everyone» scritto per sbaglio nel testo svegliava l'intero server.
+export async function diffondi(token, dest, d, { conIncorniciato = true } = {}) {
+  const emb = conIncorniciato ? incornicia(d) : null;
+  const out = [];
+  for (const t of (dest || [])) {
+    const testo = testoDiretta(d, t.messaggio);
+    const ruolo = String(t.ruolo || '').replace(/[^0-9]/g, '');
+    const payload = {
+      content: ((ruolo ? `<@&${ruolo}> ` : '') + testo).slice(0, 1990),
+      allowed_mentions: ruolo ? { roles: [ruolo] } : { parse: [] },
+    };
+    if (emb) payload.embeds = [emb];
+    const r = await api.mandaMessaggio(token, t.canale, payload)
+      .catch((e) => ({ ok: false, errore: e?.message || String(e) }));
+    if (!r.ok) log.warn(`discord → ${t.canale_nome || t.canale}: ${r.errore}`);
+    out.push({ dest: t, ...r });
+  }
+  return out;
+}
+
+export async function eliminaMessaggio(token, canale, msgId) {
+  if (!msgId) return { ok: false, errore: 'nessun messaggio da eliminare' };
+  return api.togliMessaggio(token, canale, msgId);
+}
+
+export async function notificaDiretta(conf, d) {
+  if (!configurato(conf)) return { ok: false, errore: 'discord non configurato' };
+  if (!d?.login) return { ok: false, errore: 'diretta senza streamer' };
   const payload = {
     content: String(d.testo || '').slice(0, 1800) || undefined,
-    embeds: [emb],
+    embeds: [incornicia(d)],
     allowed_mentions: { parse: ['roles', 'everyone'] },
   };
   const r = await manda(conf, payload);
-  if (!r.ok) log.warn(`avviso ${p} #${d.login}: ${r.errore}`);
+  if (!r.ok) log.warn(`avviso ${d.piattaforma || 'twitch'} #${d.login}: ${r.errore}`);
   return r;
 }
 

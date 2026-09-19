@@ -368,6 +368,32 @@ CREATE TABLE IF NOT EXISTS telegram_msg (  -- avvisi live mandati: uno per desti
   PRIMARY KEY (channel, dest_id, streamer)
 );
 
+CREATE TABLE IF NOT EXISTS discord_dest (   -- DOVE notificare su Discord: piu canali, ognuno coi suoi filtri
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,                   -- login che possiede la configurazione
+  canale TEXT NOT NULL,                    -- id del canale Discord
+  canale_nome TEXT NOT NULL DEFAULT '',    -- nome leggibile (solo per mostrarlo)
+  eventi TEXT NOT NULL DEFAULT '',         -- CSV degli eventi ammessi (vuoto = tutti)
+  streamer TEXT NOT NULL DEFAULT '',       -- CSV di login ammessi (vuoto = tutti)
+  messaggio TEXT NOT NULL DEFAULT '',      -- il testo di QUESTA destinazione (vuoto = quello di casa)
+  ruolo TEXT NOT NULL DEFAULT '',          -- id del ruolo da menzionare (vuoto = nessuno)
+  chiudi INTEGER NOT NULL DEFAULT 0,       -- togli l'avviso quando la diretta finisce
+  attivo INTEGER NOT NULL DEFAULT 1,
+  msg_id TEXT NOT NULL DEFAULT '',         -- ultimo avviso mandato QUI (per toglierlo dopo)
+  ts INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(channel, canale)
+);
+CREATE INDEX IF NOT EXISTS idx_dcdest_ch ON discord_dest(channel);
+
+CREATE TABLE IF NOT EXISTS discord_msg (   -- avvisi mandati su Discord: uno per destinazione E per streamer
+  channel TEXT NOT NULL,
+  dest_id INTEGER NOT NULL,
+  streamer TEXT NOT NULL,
+  msg_id TEXT NOT NULL DEFAULT '',
+  ts INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, dest_id, streamer)
+);
+
 CREATE TABLE IF NOT EXISTS telegram_visto (  -- chat e topic che il bot ha VISTO passare
   channel TEXT NOT NULL,                   -- login twitch che possiede il bot
   chat_id TEXT NOT NULL,
@@ -2569,6 +2595,92 @@ export const tgDest = {
   },
 };
 
+// E la stessa cosa per Discord. La gemella sta QUI, attaccata alla sorella, e
+// non nel quartiere di Discord: un avviso e' il prodotto di CHI va in diretta
+// per DOVE deve arrivare, e quel prodotto non cambia forma a seconda del
+// trasporto. Due modelli vorrebbero dire due matrici nel pannello e due posti
+// dove ricordarsi le stesse regole — cioe' uno dove dimenticarsele.
+export const dcDest = {
+  lista(channel) {
+    return db.prepare('SELECT * FROM discord_dest WHERE channel=? ORDER BY id').all(String(channel).toLowerCase());
+  },
+  get(channel, id) {
+    return db.prepare('SELECT * FROM discord_dest WHERE channel=? AND id=?')
+      .get(String(channel).toLowerCase(), Number(id) || 0) || null;
+  },
+  perEvento(channel, evento, streamerLogin) {
+    return this.lista(channel).filter((d) => d.attivo
+      && _inCsv(d.eventi, evento)
+      && _inCsv(d.streamer, streamerLogin || channel));
+  },
+  aggiungi({ channel, canale, canaleNome = '', eventi = '', streamer = '', messaggio = '', ruolo = '', chiudi = 0, attivo = 1 }) {
+    const ch = String(channel).toLowerCase();
+    const cn = String(canale || '').replace(/[^0-9]/g, '');
+    if (!ch || !cn) return 0;
+    const info = db.prepare(`INSERT INTO discord_dest (channel, canale, canale_nome, eventi, streamer, messaggio, ruolo, chiudi, attivo, ts)
+      VALUES (?,?,?,?,?,?,?,?,?,?)
+      ON CONFLICT(channel, canale) DO UPDATE SET canale_nome=excluded.canale_nome, attivo=excluded.attivo, ts=excluded.ts`)
+      .run(ch, cn, String(canaleNome || '').slice(0, 120), _csv(eventi).join(','), _csv(streamer).join(','),
+        String(messaggio || '').slice(0, 1800), String(ruolo || '').replace(/[^0-9]/g, ''),
+        chiudi ? 1 : 0, attivo ? 1 : 0, Date.now());
+    return info.lastInsertRowid
+      || (db.prepare('SELECT id FROM discord_dest WHERE channel=? AND canale=?').get(ch, cn)?.id || 0);
+  },
+  aggiorna(channel, id, campi = {}) {
+    const d = this.get(channel, id);
+    if (!d) return null;
+    const v = {
+      canale_nome: campi.canaleNome !== undefined ? String(campi.canaleNome).slice(0, 120) : d.canale_nome,
+      eventi: campi.eventi !== undefined ? _csv(campi.eventi).join(',') : d.eventi,
+      streamer: campi.streamer !== undefined ? _csv(campi.streamer).join(',') : d.streamer,
+      messaggio: campi.messaggio !== undefined ? String(campi.messaggio).slice(0, 1800) : d.messaggio,
+      ruolo: campi.ruolo !== undefined ? String(campi.ruolo || '').replace(/[^0-9]/g, '') : d.ruolo,
+      chiudi: campi.chiudi !== undefined ? (campi.chiudi ? 1 : 0) : d.chiudi,
+      attivo: campi.attivo !== undefined ? (campi.attivo ? 1 : 0) : d.attivo,
+    };
+    db.prepare(`UPDATE discord_dest SET canale_nome=@canale_nome, eventi=@eventi, streamer=@streamer,
+      messaggio=@messaggio, ruolo=@ruolo, chiudi=@chiudi, attivo=@attivo, ts=@ts WHERE id=@id`)
+      .run({ ...v, id: d.id, ts: Date.now() });
+    return this.get(channel, id);
+  },
+  rimuovi(channel, id) {
+    return db.prepare('DELETE FROM discord_dest WHERE channel=? AND id=?')
+      .run(String(channel).toLowerCase(), Number(id) || 0).changes > 0;
+  },
+  setMsgId(id, msgId) {
+    db.prepare('UPDATE discord_dest SET msg_id=? WHERE id=?').run(String(msgId || ''), Number(id) || 0);
+  },
+  // Chi aveva gia' l'avviso acceso su un canale se lo ritrova come destinazione
+  // numero uno, senza rifare niente. Idempotente: gira a ogni lettura.
+  // Il webhook non si migra: e' un indirizzo, non un canale, e chi manda sa
+  // ancora usarlo. Spostarlo qui vorrebbe dire scrivere una cosa falsa sul dove.
+  migra(channel, conf) {
+    const ch = String(channel).toLowerCase();
+    if (!conf?.canale) return;
+    const n = db.prepare('SELECT COUNT(*) c FROM discord_dest WHERE channel=?').get(ch)?.c || 0;
+    if (n > 0) return;
+    this.aggiungi({ channel: ch, canale: conf.canale, messaggio: conf.messaggio || '', attivo: conf.attivo ? 1 : 0 });
+  },
+};
+
+// Gli avvisi mandati su Discord, per destinazione E per streamer: senza questo,
+// la diretta di un amico che finisce cancellerebbe l'avviso della mia.
+export const dcMsg = {
+  segna(channel, destId, streamer, msgId) {
+    db.prepare(`INSERT INTO discord_msg (channel, dest_id, streamer, msg_id, ts) VALUES (?,?,?,?,?)
+      ON CONFLICT(channel, dest_id, streamer) DO UPDATE SET msg_id=excluded.msg_id, ts=excluded.ts`)
+      .run(String(channel).toLowerCase(), Number(destId) || 0, String(streamer).toLowerCase(), String(msgId || ''), Date.now());
+  },
+  perStreamer(channel, streamer) {
+    return db.prepare('SELECT * FROM discord_msg WHERE channel=? AND streamer=? AND msg_id<>\'\'')
+      .all(String(channel).toLowerCase(), String(streamer).toLowerCase());
+  },
+  pulisci(channel, streamer) {
+    db.prepare('DELETE FROM discord_msg WHERE channel=? AND streamer=?')
+      .run(String(channel).toLowerCase(), String(streamer).toLowerCase());
+  },
+};
+
 // Chat e topic che il bot ha visto passare. Serve quando il webhook e acceso:
 // in quel caso getUpdates e vietato da Telegram, ma ogni messaggio arriva
 // comunque a noi — quindi i posti li impariamo da li, senza spegnere niente.
@@ -2659,8 +2771,60 @@ export const tgMsg = {
   },
 };
 
+// LE PREFERENZE DEGLI AVVISI che non appartengono a nessun trasporto.
+//
+// «Segui le dirette della community» stava dentro la configurazione di Telegram,
+// e li' dentro voleva dire una cosa sola: chi non aveva un bot Telegram non
+// poteva accenderla. Chi ha solo Discord non ha nemmeno la riga — quindi per lui
+// la levetta non esisteva proprio, ed e' esattamente la persona a cui serve.
+//
+// La migrazione si fa LEGGENDO: finche' nessuno salva qui, vale la vecchia
+// levetta di Telegram. Nessun dato si sposta, e chi l'aveva accesa la ritrova accesa.
+//
+// La levetta e' PER TRASPORTO, non una sola per tutti: accenderla su Discord non
+// deve far partire gli annunci anche nel gruppo Telegram. Le due sezioni si
+// guardano la stessa lista ma decidono da sole chi far entrare.
+export const TRASPORTI = ['telegram', 'discord'];
+
+export const avvisiConf = {
+  get(channel) {
+    const c = String(channel).toLowerCase();
+    const a = streamers.get(c)?.settings?.avvisi;
+    const vecchia = !!tgConf.get(c)?.community_live;
+    const com = a && a.community && typeof a.community === 'object' ? a.community : null;
+    return {
+      community: {
+        // finche' nessuno salva qui, per Telegram vale la vecchia levetta
+        telegram: com && com.telegram !== undefined ? !!com.telegram : vecchia,
+        discord: com && com.discord !== undefined ? !!com.discord : false,
+      },
+    };
+  },
+  // `community` e' l'oggetto per trasporto: si passa solo quello che cambia.
+  set(channel, campi = {}) {
+    const c = String(channel).toLowerCase();
+    const cur = this.get(c).community;
+    const settings = streamers.get(c)?.settings || {};
+    const com = campi.community || {};
+    const v = { community: {} };
+    for (const t of TRASPORTI) v.community[t] = (com[t] !== undefined ? !!com[t] : !!cur[t]) ? 1 : 0;
+    streamers.setSettings(c, { ...settings, avvisi: v });
+    return this.get(c);
+  },
+  // qualcuno, da qualche parte, vuole le dirette della community?
+  vuoleCommunity(channel) {
+    const com = this.get(channel).community;
+    return TRASPORTI.some((t) => com[t]);
+  },
+};
+
 // ALTRI streamer di cui annunciare la diretta (oltre alla propria).
-export const tgAmici = {
+//
+// La tabella si chiama ancora `telegram_amico` perche' i dati stanno li' dentro
+// da sempre e spostarli non aggiungerebbe niente. Il NOME invece contava: questa
+// lista non e' di Telegram, e' di chiunque annunci — Telegram, Discord, e quel
+// che verra'. Chiamarla `tgAmici` faceva dire una bugia a ogni richiamo.
+export const amici = {
   lista(channel) {
     return db.prepare('SELECT * FROM telegram_amico WHERE channel=? ORDER BY login').all(String(channel).toLowerCase());
   },
@@ -2714,6 +2878,13 @@ export const tgAmici = {
         .run(ch, lg, disp, Date.now());
     }
     return voluti.size;
+  },
+  // Da dove viene questo amico: l'ha aggiunto lui a mano, o e' entrato con la
+  // community? Serve a ogni sezione per decidere se annunciarlo: la lista e'
+  // una sola, ma «anche la community» lo si accende dove si vuole.
+  fonteDi(channel, login) {
+    return db.prepare('SELECT fonte FROM telegram_amico WHERE channel=? AND login=?')
+      .get(String(channel).toLowerCase(), String(login || '').toLowerCase())?.fonte || '';
   },
   // Tutti gli streamer da guardare per questo canale: quelli a mano + la community
   // (se il canale l'ha accesa). La distinzione la porta la colonna `fonte`.

@@ -22,7 +22,7 @@ import * as licenza from '../licenza.js';      // il nome con cui questo softwar
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
-import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso } from '../db.js';
+import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi } from '../db.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { renderLinkPage, renderInformativa, accentoDi } from '../features/linkpagina.js';
@@ -4290,6 +4290,138 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     });
   }));
 
+  // ── GLI AVVISI DEL SERVER DISCORD ─────────────────────────────────────────
+  //
+  // La sezione e' SUA e funziona da sola: qui si decide in quali canali arrivano
+  // gli avvisi, di chi, con che testo e chi menzionare. Telegram ha la sua, con
+  // le sue destinazioni e le sue scelte: spegnere una non tocca l'altra.
+  //
+  // La lista di CHI guardare invece e' una sola, e si vede da tutte e due — un
+  // amico aggiunto di la' compare anche qui. Chiedere a Twitch due volte come
+  // sta lo stesso canale sarebbe il doppio delle chiamate per la stessa
+  // risposta; quello che resta di ognuno e' la decisione di annunciarlo o no.
+  const DC_EVENTI = [
+    ...avvisi.eventiDiretta(),
+    { k: 'yt', it: 'Nuovo video su YouTube', en: 'New YouTube video', es: 'Nuevo vídeo en YouTube' },
+    { k: 'ig', it: 'Nuovo post su Instagram', en: 'New Instagram post', es: 'Nueva publicación en Instagram' },
+    { k: 'tt', it: 'Nuovo post su TikTok', en: 'New TikTok post', es: 'Nueva publicación en TikTok' },
+  ];
+
+  const dcAvvisiVisti = (login) => {
+    dcDest.migra(login, dcConf.get(login));
+    return dcDest.lista(login).map((d) => ({
+      id: d.id, canale: d.canale, canaleNome: d.canale_nome,
+      eventi: d.eventi ? d.eventi.split(',') : [], streamer: d.streamer ? d.streamer.split(',') : [],
+      messaggio: d.messaggio || '', ruolo: d.ruolo || '', chiudi: !!d.chiudi, attivo: !!d.attivo,
+    }));
+  };
+
+  app.get('/api/streamer/discord/avvisi', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = dcRuoli.get(login);
+    const token = dcApi.tokenDi(c);
+    const guild = String(c?.guild || '');
+    // I canali dove il bot puo' davvero scrivere. Offrirne uno muto vorrebbe
+    // dire far scegliere un posto che poi non funziona, senza dire perche'.
+    let canali = [];
+    let ruoli = [];
+    if (token && guild) {
+      const [cc, rr, me] = await Promise.all([
+        dcApi.canali(token, guild).catch(() => ({ ok: false })),
+        dcApi.ruoli(token, guild).catch(() => ({ ok: false })),
+        dcApi.io(token, guild).catch(() => ({ ok: false })),
+      ]);
+      if (cc.ok && rr.ok && me.ok) {
+        // senza i permessi di partenza il conto per canale torna zero, cioe'
+        // «non puo' scrivere da nessuna parte»: sarebbe un elenco tutto muto
+        const bits = dcApi.permessiBot(rr.ruoli, me.ruoli);
+        const ctx = { ruoli: rr.ruoli, guildId: guild, bot: me, bits };
+        canali = (cc.canali || [])
+          .filter((x) => Number(x.tipo) === 0 || Number(x.tipo) === 5)
+          .map((x) => {
+            const bits = dcApi.permessiNelCanale(ctx, x);
+            return { id: x.id, nome: x.nome, muto: !(dcApi.puoVedere(bits) && dcApi.puoScrivere(bits)) };
+          });
+        ruoli = (rr.ruoli || []).filter((x) => String(x.id) !== guild).map((x) => ({ id: x.id, nome: x.nome }));
+      }
+    }
+    res.json({
+      collegato: !!(token && guild),
+      guildNome: String(c?.guild_nome || ''),
+      destinazioni: dcAvvisiVisti(login),
+      canali,
+      ruoli,
+      eventi: DC_EVENTI,
+      amici: amici.lista(login).map((a) => ({ id: a.id, login: a.login, display: a.display, attivo: !!a.attivo, fonte: a.fonte || 'mano' })),
+      community: !!avvisiConf.get(login).community.discord,
+      communityQuanti: streamers.membriCommunity(login).length,
+      io: login,
+      conDiretta: conDiretta(piattaformaDi(login)),
+      testoDiCasa: discord.TESTO_DEFAULT,
+    });
+  }));
+
+  app.post('/api/streamer/discord/avvisi', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const canale = String(req.body?.canale || '').replace(/[^0-9]/g, '');
+    if (!canale) return res.status(400).json({ errore: 'scegli il canale' });
+    if (dcDest.lista(login).length >= 20) return res.status(400).json({ errore: 'massimo 20 canali' });
+    const id = dcDest.aggiungi({
+      channel: login, canale,
+      canaleNome: String(req.body?.canaleNome || '').slice(0, 120),
+      eventi: req.body?.eventi, streamer: req.body?.streamer,
+      messaggio: String(req.body?.messaggio || ''),
+      ruolo: String(req.body?.ruolo || ''),
+      chiudi: !!req.body?.chiudi,
+    });
+    res.json({ ok: true, id });
+  }));
+
+  app.patch('/api/streamer/discord/avvisi/:id', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!dcDest.aggiorna(login, req.params.id, req.body || {})) return res.status(404).json({ errore: 'canale non trovato' });
+    res.json({ ok: true });
+  }));
+
+  app.delete('/api/streamer/discord/avvisi/:id', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!dcDest.rimuovi(login, req.params.id)) return res.status(404).json({ errore: 'canale non trovato' });
+    res.json({ ok: true });
+  }));
+
+  // La prova va ESATTAMENTE dove finirebbe davvero, col testo e la menzione di
+  // quella destinazione: una prova che passa da un'altra strada prova altro.
+  app.post('/api/streamer/discord/avvisi/:id/prova', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const d = dcDest.get(login, req.params.id);
+    const token = dcApi.tokenDi(dcRuoli.get(login));
+    if (!d || !token) return res.status(400).json({ errore: 'canale non trovato' });
+    const s = streamers.get(login);
+    const p = conDiretta(piattaformaDi(login)) ? (piattaformaDi(login) || 'twitch') : 'twitch';
+    const info = await helix.getStream(login).catch(() => null);
+    const dir = avvisi.diretta({
+      piattaforma: p, login, display: s?.display || login,
+      titolo: info?.title || '', gioco: info?.game_name || '',
+      spettatori: info?.viewer_count ?? null, id: String(info?.id || 'prova'),
+    });
+    const esiti = await discord.diffondi(token, [d], dir);
+    const r = esiti[0] || { ok: false, errore: 'nessun canale' };
+    if (!r.ok) return res.status(400).json({ errore: r.errore });
+    res.json({ ok: true });
+  }));
+
+  // «Annuncia anche le dirette della community», per il SOLO Discord.
+  app.post('/api/streamer/discord/avvisi/community', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const attivo = !!req.body?.attivo;
+    avvisiConf.set(login, { community: { discord: attivo } });
+    // la lista e' condivisa: si svuota solo se non la vuole piu' nessuno
+    amici.sincronizzaCommunity(login, avvisiConf.vuoleCommunity(login)
+      ? streamers.membriCommunity(login).map((x) => ({ login: x.login, display: x.display }))
+      : []);
+    res.json({ ok: true, quanti: attivo ? amici.lista(login).filter((a) => a.fonte === 'community').length : 0 });
+  }));
+
   app.post('/api/streamer/ruoli', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const b = req.body || {};
@@ -7588,7 +7720,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         eventi: d.eventi ? d.eventi.split(',') : [], streamer: d.streamer ? d.streamer.split(',') : [],
         pin: !!d.pin, attivo: !!d.attivo,
       })),
-      amici: tgAmici.lista(login).map((a) => ({ id: a.id, login: a.login, display: a.display, messaggio: a.messaggio, attivo: !!a.attivo, fonte: a.fonte || 'mano' })),
+      amici: amici.lista(login).map((a) => ({ id: a.id, login: a.login, display: a.display, messaggio: a.messaggio, attivo: !!a.attivo, fonte: a.fonte || 'mano' })),
       communityLive: !!c?.community_live,
       communityQuanti: streamers.membriCommunity(login).length,
       eventi: TG_EVENTI,
@@ -7749,10 +7881,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const attivo = !!req.body?.attivo;
     tgConf.set(login, { communityLive: attivo });
     // allinea subito la lista, senza aspettare il giro dei due minuti
-    tgAmici.sincronizzaCommunity(login, attivo
+    amici.sincronizzaCommunity(login, attivo
       ? streamers.membriCommunity(login).map((x) => ({ login: x.login, display: x.display }))
       : []);
-    res.json({ ok: true, quanti: attivo ? tgAmici.lista(login).filter((a) => a.fonte === 'community').length : 0 });
+    res.json({ ok: true, quanti: attivo ? amici.lista(login).filter((a) => a.fonte === 'community').length : 0 });
   }));
 
   // ── AMICI: altri streamer di cui annunciare la diretta ────────────────────
@@ -7761,24 +7893,24 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const chiesto = String(req.body?.login || '').trim().toLowerCase().replace(/^@/, '');
     if (!/^[a-z0-9_]{3,25}$/.test(chiesto)) return res.status(400).json({ errore: 'nome canale Twitch non valido' });
     if (chiesto === login) return res.status(400).json({ errore: 'il tuo canale è già annunciato' });
-    if (tgAmici.lista(login).length >= 10) return res.status(400).json({ errore: 'massimo 10 streamer' });
+    if (amici.lista(login).length >= 10) return res.status(400).json({ errore: 'massimo 10 streamer' });
     // esiste davvero su Twitch? meglio dirlo subito che restare in silenzio per sempre
     const u = await helix.getUserByLogin(chiesto).catch(() => null);
     if (!u) return res.status(400).json({ errore: `su Twitch non trovo il canale «${chiesto}»` });
-    const id = tgAmici.aggiungi({ channel: login, login: chiesto, display: u.display_name || chiesto, messaggio: String(req.body?.messaggio || '').slice(0, 600) });
+    const id = amici.aggiungi({ channel: login, login: chiesto, display: u.display_name || chiesto, messaggio: String(req.body?.messaggio || '').slice(0, 600) });
     res.json({ ok: true, id, display: u.display_name || chiesto });
   }));
 
   app.patch('/api/streamer/telegram/amici/:id', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const a = tgAmici.aggiorna(login, req.params.id, req.body || {});
+    const a = amici.aggiorna(login, req.params.id, req.body || {});
     if (!a) return res.status(404).json({ errore: 'streamer non trovato' });
     res.json({ ok: true });
   }));
 
   app.delete('/api/streamer/telegram/amici/:id', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    if (!tgAmici.rimuovi(login, req.params.id)) return res.status(404).json({ errore: 'streamer non trovato' });
+    if (!amici.rimuovi(login, req.params.id)) return res.status(404).json({ errore: 'streamer non trovato' });
     res.json({ ok: true });
   }));
 

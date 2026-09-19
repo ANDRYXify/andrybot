@@ -76,9 +76,9 @@ export function indirizzo(channel) {
 //
 // I segnaposto sono tre e bastano: chi scrive, dove andare, e il codice.
 export const FRASI = Object.freeze({
-  inizio: '@{nome} apri {link}: ti faccio entrare nel Discord e ti do un codice da riscrivere qui, cosi\' ti sistemo i ruoli.',
+  inizio: '@{nome} ti faccio entrare nel Discord e ti do un codice da riscrivere qui, cosi\' ti sistemo i ruoli. Si comincia qui {link}',
   fatto: '@{nome} collegato ✓ Al prossimo giro ti metto a posto i ruoli su Discord.',
-  scaduto: '@{nome} quel codice non vale piu\'. Riparti da {link}.',
+  scaduto: '@{nome} quel codice non vale piu\'. Si riparte da qui {link}',
   via: '@{nome} scollegato. I ruoli che hai adesso restano tuoi: non tocco piu\' niente.',
   estraneo: '@{nome} non risulti collegato.',
 });
@@ -102,7 +102,18 @@ export function frasiDi(channel) {
   return { ...FRASI, ...sue };
 }
 
+// UN LINK FINISCE DOVE FINISCE LO SPAZIO.
+//
+// «apri {link}: ti faccio entrare» diventava «apri https://…/andryxify: ti» e i
+// due punti entravano NELL'INDIRIZZO: chi ci cliccava trovava una pagina che non
+// esiste. Non e' un errore di quella frase — e' un errore possibile in ogni
+// frase, comprese quelle che scrive lo streamer, e quelle non le rilegge nessuno.
+//
+// Quindi dopo il link ci va uno spazio, sempre. Brutto e funzionante batte
+// elegante e rotto; le frasi di casa non ci arrivano mai, perche' il link sta
+// in fondo.
 export const riempi = (testo, valori = {}) => String(testo || '')
+  .replace(/\{link\}(?=\S)/g, '{link} ')
   .replace(/\{(nome|link|codice)\}/g, (_, k) => String(valori[k] ?? ''));
 
 // In chat: «!discord ABC123» collega, «!discord via» scollega, «!discord» da

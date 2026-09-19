@@ -612,6 +612,14 @@ export async function mandaMessaggio(token, canale, messaggio) {
   return { ok: true, id: String(r.dati?.id || '') };
 }
 
+// Togliere il PROPRIO messaggio non chiede permessi: un bot cancella sempre
+// cio' che ha scritto lui. Serve a chiudere l'avviso quando la diretta finisce,
+// come fa Telegram con il suo.
+export async function togliMessaggio(token, canale, id) {
+  if (!idOk(canale) || !idOk(id)) return { ok: false, errore: 'id non valido' };
+  return chiama(token, `/channels/${canale}/messages/${id}`, { metodo: 'DELETE' });
+}
+
 export async function togliCanale(token, id) {
   if (!idOk(id)) return { ok: false, errore: 'id del canale non valido' };
   return chiama(token, `/channels/${id}`, { metodo: 'DELETE' });
