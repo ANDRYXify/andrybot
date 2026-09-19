@@ -81,9 +81,9 @@ export function nonPuoDare(permessi, bitsBot) {
 // Quanto puo' chiedere un preset: i limiti sono quelli del motore della
 // differenza, e stanno scritti li'. Averne una seconda copia qui vorrebbe dire
 // due numeri che un giorno non coincidono piu'.
-import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, ruoliIntoccabili } from './discord-preset.js';
+import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI } from './discord-preset.js';
 export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI };
-export const TIPI_CANALE = Object.freeze(['testo', 'voce', 'annunci', 'forum']);
+export const TIPI_CANALE = Object.freeze(['testo', 'voce', 'annunci', 'palco', 'forum', 'media']);
 
 const somma = (nomi) => (nomi || []).reduce((t, n) => t | (PERMESSI[n] || 0n), 0n);
 
@@ -365,11 +365,28 @@ export function normalizzaPreset(x) {
     const n = String(ch?.nome || '').trim().slice(0, 100);
     if (!n || canaliTotali >= MAX_CANALI) return null;
     canaliTotali++;
+    const tipo = TIPI_CANALE.includes(ch?.tipo) ? ch.tipo : 'testo';
+    const num = TIPI[tipo];
     return {
       nome: n,
-      tipo: TIPI_CANALE.includes(ch?.tipo) ? ch.tipo : 'testo',
-      argomento: String(ch?.argomento || '').slice(0, 1024),
+      tipo,
+      argomento: String(ch?.argomento || '').slice(0, tipo === 'forum' || tipo === 'media' ? 4096 : 1024),
       permessi: righePulite(ch?.permessi),
+      // LE COSE CHE UN CANALE HA DAVVERO, e solo dove hanno senso.
+      //
+      // Una lentezza su una categoria, un tag su un canale di voce, una durata
+      // d'archivio dove i fili non esistono: Discord li rifiuta, e la
+      // costruzione si fermerebbe a meta' per un campo che non doveva partire.
+      // Quindi non si mandano «a tutti e poi si vede»: si mandano dove il tipo
+      // li prevede, e basta.
+      ...(CON_LENTEZZA.has(num) && LENTEZZE.includes(Number(ch?.lento))
+        ? { lento: Number(ch.lento) } : {}),
+      ...(ch?.adulti ? { adulti: true } : {}),
+      ...(CON_FILI.has(num) && ARCHIVI.includes(Number(ch?.archivia))
+        ? { archivia: Number(ch.archivia) } : {}),
+      ...(CON_TAG.has(num) && Array.isArray(ch?.tag) && ch.tag.length
+        ? { tag: ch.tag.map((t) => String(t?.nome ?? t ?? '').trim().slice(0, 20)).filter(Boolean).slice(0, 20) } : {}),
+      ...(CON_TAG.has(num) && ch?.tagObbligatorio ? { tagObbligatorio: true } : {}),
       // IL CANALE DEGLI AVVISI SI DICHIARA, non si indovina dal nome.
       //
       // La traccia sa qual e' il canale dove va l'avviso di diretta, e lo dice
@@ -428,7 +445,7 @@ export function normalizzaPreset(x) {
 // permessi e' un preset che non li tocca, e quelli che ci sono restano come
 // sono. Rileggerli e riscriverli identici sarebbe lo stesso risultato passando
 // per un giro in cui qualcosa puo' andare storto.
-export function dallaFotografia(foto, { TIPI_ID = { 0: 'testo', 2: 'voce', 5: 'annunci', 15: 'forum' } } = {}) {
+export function dallaFotografia(foto, { TIPI_ID = { 0: 'testo', 2: 'voce', 5: 'annunci', 13: 'palco', 15: 'forum', 16: 'media' } } = {}) {
   const canali = (foto?.canali || []).filter((c) => c && c.id != null);
   const categorie = canali.filter((c) => Number(c.tipo) === 4);
   const perId = new Map(categorie.map((c) => [String(c.id), c]));
@@ -437,7 +454,16 @@ export function dallaFotografia(foto, { TIPI_ID = { 0: 'testo', 2: 'voce', 5: 'a
   for (const c of canali) {
     const tipo = TIPI_ID[Number(c.tipo)];
     if (!tipo) continue;                       // categorie e tipi che non sappiamo fare
+    // «Parti dal server che hai» deve portarsi dietro anche COME sono fatti i
+    // canali, non solo come si chiamano: se leggesse solo il nome, il primo
+    // «rimettilo a posto» spazzerebbe via lentezza, tag e durata dei fili che
+    // qualcuno aveva messo a mano — e nessuno collegherebbe la cosa al tasto.
     const voce = { nome: String(c.nome || ''), tipo, argomento: String(c.argomento || '') };
+    if (Number(c.lento) > 0) voce.lento = Number(c.lento);
+    if (c.adulti) voce.adulti = true;
+    if (Number(c.archivia) > 0) voce.archivia = Number(c.archivia);
+    if (Array.isArray(c.tag) && c.tag.length) voce.tag = c.tag.slice(0, 20);
+    if (c.tagObbligatorio) voce.tagObbligatorio = true;
     const p = c.parent_id ? String(c.parent_id) : '';
     if (p && perId.has(p)) dentro.get(p).push(voce);
     else cima.push(voce);

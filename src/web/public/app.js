@@ -10103,22 +10103,52 @@ function vestiTendina(sel) {
     if (!el.length) return;
     evidenziato = Math.max(0, Math.min(el.length - 1, i));
     el.forEach((v, k) => v.classList.toggle('su', k === evidenziato));
-    el[evidenziato].scrollIntoView({ block: 'nearest' });
+    const v = el[evidenziato];
+    const su = v.offsetTop, giu = su + v.offsetHeight;
+    if (su < lista.scrollTop) lista.scrollTop = su;
+    else if (giu > lista.scrollTop + lista.clientHeight) lista.scrollTop = giu - lista.clientHeight;
   };
   const chiudi = (tornaAlBottone) => {
     if (!aperta) return;
     aperta = false;
     lista.hidden = true;
+    lista.classList.remove('volante');
+    guscio.appendChild(lista);
     bottone.setAttribute('aria-expanded', 'false');
+    window.removeEventListener('scroll', viaAllaSvelta, true);
+    window.removeEventListener('resize', viaAllaSvelta);
     if (tornaAlBottone) bottone.focus();
+  };
+  const posiziona = () => {
+    const b = bottone.getBoundingClientRect();
+    const vh = window.innerHeight, vw = window.innerWidth;
+    const sotto = Math.max(0, vh - b.bottom - 12);
+    const sopra = Math.max(0, b.top - 12);
+    const giu = sotto >= Math.min(220, sopra);
+    const alta = Math.max(120, Math.min(giu ? sotto : sopra, Math.round(vh * 0.6)));
+    const largo = Math.min(Math.max(b.width, 160), Math.max(200, vw - 24));
+    lista.style.minWidth = Math.round(largo) + 'px';
+    lista.style.left = Math.round(Math.max(12, Math.min(b.left, vw - largo - 12))) + 'px';
+    lista.style.maxHeight = Math.round(alta) + 'px';
+    if (giu) { lista.style.top = Math.round(Math.min(Math.max(12, b.bottom + 7), vh - 60)) + 'px'; lista.style.bottom = 'auto'; }
+    else { lista.style.bottom = Math.round(Math.min(Math.max(12, vh - b.top + 7), vh - 60)) + 'px'; lista.style.top = 'auto'; }
   };
   const apri = () => {
     if (aperta || bottone.disabled) return;
     disegna();
     aperta = true;
+    document.body.appendChild(lista);
     lista.hidden = false;
+    lista.classList.add('volante');
+    posiziona();
     bottone.setAttribute('aria-expanded', 'true');
     evidenzia(sel.selectedIndex < 0 ? 0 : sel.selectedIndex);
+    window.addEventListener('scroll', viaAllaSvelta, true);
+    window.addEventListener('resize', viaAllaSvelta);
+  };
+  const viaAllaSvelta = (e) => {
+    if (e && e.target && e.target !== document && lista.contains(e.target)) return;
+    chiudi(false);
   };
   const scegli = (i) => {
     if (i < 0 || i >= sel.options.length) return;
@@ -10160,7 +10190,9 @@ function vestiTendina(sel) {
       }
     }
   });
-  document.addEventListener('pointerdown', (e) => { if (!guscio.contains(e.target)) chiudi(false); });
+  document.addEventListener('pointerdown', (e) => {
+    if (!guscio.contains(e.target) && !lista.contains(e.target)) chiudi(false);
+  });
   sel.addEventListener('change', titolo);
   new MutationObserver(() => { titolo(); if (aperta) { disegna(); evidenzia(sel.selectedIndex); } })
     .observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ['value', 'disabled'] });
@@ -16599,24 +16631,24 @@ let _dcsConsiglio = null;
 function pannelloRuoli() {
   return pannello('ruoli', `
     <div class="carta">
-      <h2>${_hIco(ICO.scudo)}${L('Il bot del tuo server', 'Your server’s bot', 'El bot de tu servidor')}</h2>
-      <p>${L('Discord i', 'Discord syncs your Twitch', 'Discord sincroniza los')} <strong>${L('sub', 'subs', 'subs')}</strong> ${L('di Twitch se li sincronizza da solo. Tutto il resto no: chi ti segue, chi è VIP, chi è moderatore, quante ore ti ha guardato, quante monete ha, da quante dirette di fila c’è. Quei dati ce li abbiamo, e qui diventano ruoli.', 'by itself. Everything else it does not: who follows you, who is a VIP, who is a moderator, how many hours they watched, how many coins they have, how long their streak is. We have that, and here it becomes roles.', 'de Twitch solo. Todo lo demás no: quién te sigue, quién es VIP, quién es moderador, cuántas horas te ha visto, cuántas monedas tiene, cuántos directos seguidos lleva. Eso lo tenemos, y aquí se convierte en roles.')}</p>
+      <h2>${_hIco(ICO.spina)}${L('Il collegamento', 'The connection', 'La conexión')}</h2>
+      <p class="tg-stato" id="dc-stato" hidden></p>
+      <div id="dc-serve"></div>
       <p class="spazio-sopra riga-flessibile">
         <button class="btn" id="dc-invita">${L('Porta il bot nel tuo server', 'Bring the bot to your server', 'Lleva el bot a tu servidor')}</button>
         <button class="btn secondario" id="dc-scorda" hidden>${L('Scollega tutto', 'Disconnect everything', 'Desconectar todo')}</button>
       </p>
-      <div id="dc-serve" class="spazio-sopra"></div>
 
       <details class="spazio-sopra" id="dc-pieni-box" hidden>
-        <summary>${L('Vuoi che gestisca tutto il server?', 'Want it to run the whole server?', '¿Quieres que lleve todo el servidor?')}</summary>
+        <summary>${L('Dagli i pieni poteri', 'Give it full powers', 'Dale plenos poderes')}</summary>
         <p class="suggerimento">${L('Di partenza il bot chiede solo quello che gli serve. Con i pieni poteri diventa amministratore: da qui muovi canali, ruoli e permessi senza tornare su Discord. In cambio vede anche i canali privati, quindi daglieli solo se ti fidi — e puoi sempre riportarlo indietro reinvitandolo dal tasto di sopra.', 'By default the bot asks only for what it needs. With full powers it becomes an administrator: from here you move channels, roles and permissions without going back to Discord. In exchange it also sees private channels, so grant this only if you trust it — and you can always take it back by re-inviting it with the button above.', 'De partida el bot pide solo lo que necesita. Con plenos poderes pasa a ser administrador: desde aquí mueves canales, roles y permisos sin volver a Discord. A cambio ve también los canales privados, así que dáselos solo si te fías — y siempre puedes volver atrás reinvitándolo con el botón de arriba.')}</p>
-        <p class="suggerimento">${L('Una cosa non cambia nemmeno così: i ruoli più in alto del suo restano fuori portata, e il proprietario del server non lo tocca nessuno. Discord non lascia che un bot si promuova, e nessun permesso lo compra.', 'One thing does not change even then: roles above its own stay out of reach, and nobody touches the server owner. Discord does not let a bot promote itself, and no permission buys that.', 'Una cosa no cambia ni así: los roles por encima del suyo quedan fuera de su alcance, y al dueño del servidor no lo toca nadie. Discord no deja que un bot se ascienda, y ningún permiso lo compra.')}</p>
+        <p class="suggerimento">${L('Una cosa non cambia nemmeno così: i ruoli più in alto del suo restano fuori portata, e il proprietario del server non lo tocca nessuno.', 'One thing does not change even then: roles above its own stay out of reach, and nobody touches the server owner.', 'Una cosa no cambia ni así: los roles por encima del suyo quedan fuera de su alcance, y al dueño del servidor no lo toca nadie.')}</p>
         <p class="spazio-sopra"><button class="btn secondario" id="dc-pieni">${L('Portalo con i pieni poteri', 'Bring it with full powers', 'Llévalo con plenos poderes')}</button></p>
       </details>
 
       <details class="spazio-sopra" id="dc-avanzate">
-        <summary>${L('Preferisci un bot tuo?', 'Prefer your own bot?', '¿Prefieres un bot tuyo?')}</summary>
-        <p class="suggerimento">${L('Se hai già un bot tuo su Discord, incolla il suo token e l’id del server: da quel momento è lui a dare i ruoli, al posto del nostro. Lascia vuoto e usiamo il nostro.', 'If you already have your own Discord bot, paste its token and the server id: from then on it gives the roles instead of ours. Leave it empty and ours is used.', 'Si ya tienes un bot tuyo en Discord, pega su token y el id del servidor: desde ese momento es él quien da los roles, en vez del nuestro. Déjalo vacío y usamos el nuestro.')}</p>
+        <summary>${L('Usa un bot tuo invece del nostro', 'Use your own bot instead of ours', 'Usa un bot tuyo en vez del nuestro')}</summary>
+        <p class="suggerimento">${L('Se hai già un bot tuo su Discord, incolla il suo token e l’id del server: da quel momento è lui a dare i ruoli. Lascia vuoto e usiamo il nostro.', 'If you already have your own Discord bot, paste its token and the server id: from then on it gives the roles. Leave it empty and ours is used.', 'Si ya tienes un bot tuyo en Discord, pega su token y el id del servidor: desde ese momento es él quien da los roles. Déjalo vacío y usamos el nuestro.')}</p>
         <div class="griglia-campi spazio-sopra">
           <div><label class="campo" for="dc-token">${L('Token del bot', 'Bot token', 'Token del bot')}</label>
             <input type="password" id="dc-token" autocomplete="off" placeholder="${L('incollalo qui', 'paste it here', 'pégalo aquí')}"></div>
@@ -16625,11 +16657,10 @@ function pannelloRuoli() {
         </div>
         <p class="spazio-sopra"><button class="btn secondario" id="dc-prova">${L('Prova e salva', 'Test and save', 'Probar y guardar')}</button></p>
       </details>
-      <p class="tg-stato" id="dc-stato" hidden></p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.moduli)}${L('Le regole', 'The rules', 'Las reglas')}</h2>
+      <h2>${_hIco(ICO.moduli)}${L('Chi prende quale ruolo', 'Who gets which role', 'Quién recibe qué rol')}</h2>
       <p>${L('Una condizione e il ruolo che le corrisponde. Il bot tocca solo i ruoli che nomini qui: quelli che dai a mano non li guarda nemmeno.', 'A condition and the role that matches it. The bot only touches the roles you name here: the ones you give by hand it does not even look at.', 'Una condición y el rol que le corresponde. El bot solo toca los roles que nombras aquí: los que das a mano ni los mira.')}</p>
       <div id="dc-regole" class="spazio-sopra"></div>
       <p class="spazio-sopra"><button class="btn secondario" id="dc-piu">${_bIco(ICO.piu)}${L('Aggiungi una regola', 'Add a rule', 'Añadir una regla')}</button></p>
@@ -16639,20 +16670,21 @@ function pannelloRuoli() {
       </div>
       <p class="spazio-sopra riga-flessibile">
         <button class="btn" id="dc-salva">${L('Salva', 'Save', 'Guardar')}</button>
-        <button class="btn secondario" id="dc-vedi">${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
-        <button class="btn secondario" id="dc-adesso">${L('Passa adesso', 'Go round now', 'Pasa ahora')}</button>
+        <button class="btn secondario mini" id="dc-vedi">${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
+        <button class="btn secondario mini" id="dc-adesso">${L('Passa adesso', 'Go round now', 'Pasa ahora')}</button>
       </p>
       <p class="tg-stato" id="dc-esito" hidden></p>
+      <p class="suggerimento" id="dc-ultimo"></p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.medaglia)}${L('Chi si è collegato', 'Who linked up', 'Quién se ha vinculado')}</h2>
-      <p id="dc-collegati">${L('Carico…', 'Loading…', 'Cargando…')}</p>
-      <div id="dc-comando"></div>
-      <p class="suggerimento" id="dc-ultimo"></p>
+      <h2>${_hIco(ICO.chiave)}${L('La porta d’ingresso', 'The way in', 'La puerta de entrada')}</h2>
+      <p>${L('Questo è l’indirizzo da dare a chi ti guarda: lo apre, entra nel tuo server e si fa riconoscere. Da lì in poi i ruoli glieli dà il bot.', 'This is the address to give your viewers: they open it, join your server and get recognised. From then on the bot gives them their roles.', 'Esta es la dirección que das a quien te ve: la abre, entra en tu servidor y se da a conocer. A partir de ahí los roles se los da el bot.')}</p>
+      <div id="dc-comando" class="spazio-sopra"></div>
+      <p class="suggerimento spazio-sopra" id="dc-collegati">${L('Carico…', 'Loading…', 'Cargando…')}</p>
 
       <details class="spazio-sopra" id="dc-frasi-box">
-        <summary>${L('Le parole che dice in chat', 'The words it says in chat', 'Las palabras que dice en el chat')}</summary>
+        <summary>${L('Cambia le parole che dice in chat', 'Change the words it says in chat', 'Cambia las palabras que dice en el chat')}</summary>
         <p class="suggerimento">${L('Sono tue: scrivile come parli tu. Lascia vuoto un campo e usa le mie. Dentro puoi mettere', 'They are yours: write them the way you talk. Leave a field empty and mine are used. Inside you can put', 'Son tuyas: escríbelas como hablas tú. Deja un campo vacío y uso las mías. Dentro puedes poner')} <code>{nome}</code>, <code>{link}</code> ${L('e', 'and', 'y')} <code>{codice}</code>.</p>
         <div class="griglia-campi spazio-sopra" id="dc-frasi"></div>
         <p class="spazio-sopra"><button class="btn secondario" id="dc-frasi-salva">${L('Salva le frasi', 'Save the wording', 'Guardar las frases')}</button></p>
@@ -16762,7 +16794,6 @@ function _dcComandoHtml() {
     const via = String(c.indirizzo || '');
     const mostra = via.replace(/^https?:\/\//, '');
     return `<div class="dc-porta">
-      <p class="campo">${L('La tua porta d’ingresso', 'Your entrance', 'Tu puerta de entrada')}</p>
       <div class="riga-flessibile">
         <code class="dc-indirizzo" id="dc-via">${esc(mostra)}</code>
         <button type="button" class="btn secondario mini" id="dc-copia">${L('Copia', 'Copy', 'Copiar')}</button>

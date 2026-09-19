@@ -503,13 +503,27 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-conto-tot b { font-family: Archivo, system-ui, sans-serif; font-size: 1.7rem; font-weight: 700; letter-spacing: -.03em; }
 .vt-conto-tot span { font-size: .82rem; color: var(--testo-3); margin-left: .3rem; }
 .vt-conto .vt-btn { margin-left: auto; min-height: 46px; }
-.vt-solodc {
-  margin: 1.4rem 0 0; padding: 1.2rem 1.3rem; border-radius: 14px;
-  border: 1px dashed var(--border-2); background: var(--surface);
-  display: flex; flex-wrap: wrap; align-items: center; gap: 1rem;
+.vt-dcbox {
+  position: relative;
+  margin: 1.5rem auto 0; max-width: 46rem; padding: 1.15rem 1.3rem 1.2rem;
+  border-radius: 16px; border: 2px solid var(--testo); background: var(--surface);
+  box-shadow: 4px 5px 0 var(--testo);
+  display: flex; flex-wrap: wrap; align-items: center; gap: .9rem 1.2rem; text-align: left;
 }
-.vt-solodc p { margin: 0; flex: 1 1 320px; font-size: .9rem; line-height: 1.55; color: var(--testo-2); }
-.vt-solodc .vt-btn { flex: 0 0 auto; }
+.vt-dcbox-eti {
+  position: absolute; top: -.72rem; left: 1.1rem;
+  padding: .12rem .55rem; border-radius: 999px;
+  border: 2px solid var(--testo); background: var(--bg);
+  font-size: .68rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+}
+.vt-dcbox-corpo { flex: 1 1 22rem; display: flex; flex-direction: column; gap: .25rem; }
+.vt-dcbox-corpo strong { font-size: 1rem; line-height: 1.35; }
+.vt-dcbox-corpo span { font-size: .87rem; line-height: 1.5; color: var(--testo-2); }
+.vt-dcbox-btn { flex: 0 0 auto; }
+@media (max-width: 620px) {
+  .vt-dcbox { padding: 1.25rem 1rem 1.1rem; }
+  .vt-dcbox-btn { width: 100%; text-align: center; }
+}
 
 .vt-velo[hidden] { display: none; }
 .vt-velo {

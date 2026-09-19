@@ -249,6 +249,24 @@ function datiConto(L, piani) {
   };
 }
 
+// IL RIQUADRO «SOLO DISCORD», sotto ai tasti di registrazione.
+//
+// Sta li' e non in fondo alla pagina per una ragione sola: chi arriva cercando
+// un bot per il suo Discord decide nei primi cinque secondi, e in fondo alla
+// pagina non ci arriva. E' un riquadro a se' e non un quinto tasto in fila
+// perche' non e' la stessa cosa degli altri: gli altri ti registrano come
+// streamer, questo apre un prodotto piu' stretto — e va detto prima, non dopo.
+function soloDiscordHtml(L) {
+  return `<div class="vt-dcbox">
+    <span class="vt-dcbox-eti">${L('Solo Discord', 'Discord only', 'Solo Discord')}</span>
+    <div class="vt-dcbox-corpo">
+      <strong>${L('Ti serve un bot per il tuo Discord, e delle dirette non ti importa?', 'Need a bot for your Discord, and streaming is not your thing?', '¿Necesitas un bot para tu Discord y los directos no te interesan?')}</strong>
+      <span>${L('Entra con Discord e basta: costruisci il server, sistemi canali, ruoli e permessi da qui e tutto quello che parla di dirette non lo vedi nemmeno. Gratis.', 'Log in with Discord alone: build the server, sort out channels, roles and permissions from here, and everything about streaming you do not even see. Free.', 'Entra solo con Discord: construyes el servidor, arreglas canales, roles y permisos desde aquí, y todo lo que habla de directos ni lo ves. Gratis.')}</span>
+    </div>
+    <a class="vt-btn vt-btn-primo vt-dcbox-btn" href="/accedi/discord">${L('Entra con Discord', 'Log in with Discord', 'Entra con Discord')}</a>
+  </div>`;
+}
+
 function configuratoreHtml(L, piani) {
   const disponibili = piani.addon || [];
   if (!disponibili.length) return '';
@@ -397,10 +415,6 @@ function listinoHtml(L, piani) {
 
     <div class="vt-comp-guscio vt-rivela" id="vt-comp-guscio">${configuratoreHtml(L, piani)}</div>
 
-    <div class="vt-solodc vt-rivela">
-      <p>${L('<strong>Hai bisogno di un bot per il tuo Discord, e di Twitch o Kick non ti importa?</strong> Entra con Discord e basta: costruisci il server, sistemi canali, ruoli e permessi da qui, e tutto quello che parla di dirette non lo vedi nemmeno. È gratis, e i piani restano lì per il giorno che ti servirà altro.', '<strong>Do you need a bot for your Discord, and Twitch or Kick are not your thing?</strong> Log in with Discord alone: build the server, sort out channels, roles and permissions from here, and everything about streaming you do not even see. It is free, and the plans stay there for the day you need something else.', '<strong>¿Necesitas un bot para tu Discord y Twitch o Kick no te interesan?</strong> Entra solo con Discord: construyes el servidor, arreglas canales, roles y permisos desde aquí, y todo lo que habla de directos ni lo ves. Es gratis, y los planes se quedan ahí para el día que necesites otra cosa.')}</p>
-      <a class="vt-btn vt-btn-primo" href="/accedi/discord">${L('Entra con Discord', 'Log in with Discord', 'Entra con Discord')}</a>
-    </div>
     <p class="vt-community vt-rivela">${L('<strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot è <strong>gratis e completo</strong> per te: non ti serve nessun piano.', '<strong>Already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community?</strong> SocialBot is <strong>free and complete</strong> for you: no plan needed.', '<strong>¿Ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot es <strong>gratis y completo</strong> para ti: no necesitas ningún plan.')}</p>
   </div>`;
 }
@@ -458,6 +472,7 @@ function corpo(L, l, kick, youtube, dirette, piani) {
           : `<span class="vt-btn vt-btn-spento" aria-disabled="true">${L('YouTube · in arrivo', 'YouTube · coming soon', 'YouTube · muy pronto')}</span>`}
       </div>
       <p class="vt-sotto">${L('L’<b>Essenziale è gratis per sempre</b> · nessuna carta richiesta · <a href="/?demo=1">guarda la demo</a>', 'The <b>Essenziale plan is free forever</b> · no card needed · <a href="/?demo=1">see the demo</a>', 'El <b>plan Essenziale es gratis para siempre</b> · sin tarjeta · <a href="/?demo=1">mira la demo</a>')}</p>
+      ${soloDiscordHtml(L)}
       ${heroAnteprima(L)}
       ${fasciaLive(L, l, dirette)}
     </section>

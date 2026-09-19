@@ -36,6 +36,21 @@ import { makeLog } from '../logger.js';
 
 const log = makeLog('discord-costruisci');
 
+// IL MOTIVO CHE FINISCE NEL REGISTRO DEL SERVER.
+//
+// Discord scrive accanto a ogni azione chi l'ha fatta; il perche' lo scrive
+// solo se glielo si dice. Senza, fra sei mesi il registro di casa altrui dice
+// «SocialBot ha cancellato un canale» e nessuno sa piu' in nome di cosa — men
+// che meno chi quel giorno non c'era.
+const MOTIVO = Object.freeze({
+  creato: 'creato dal costruttore, come da traccia',
+  sistemato: 'rimesso come dice la traccia',
+  tolto: 'non e\' nella traccia, e la modalita\' distruttiva era accesa',
+  ruoloCreato: 'creato dal costruttore, come da traccia',
+  ruoloSistemato: 'rimesso come dice la traccia',
+  ruoloTolto: 'non e\' nella traccia, e la modalita\' distruttiva era accesa',
+});
+
 export const PAUSA_MS = 350;
 export const MAX_MOSSE = 80;
 const MAX_ERRORI = 3;
@@ -165,12 +180,12 @@ export async function applica(token, guild, preset, { togliere = false, impronta
   const idVeri = new Map();
   for (const v of (r.crea || [])) {
     if (esito.fermo) break;
-    const x = await passo(() => api.creaRuolo(token, guild, v), 'ruoliCreati');
+    const x = await passo(() => api.creaRuolo(token, guild, v, MOTIVO.ruoloCreato), 'ruoliCreati');
     if (x?.ok && x.id) idVeri.set('nuovo:' + v.nome.toLowerCase(), String(x.id));
   }
   for (const v of (r.sistema || [])) {
     if (esito.fermo) break;
-    await passo(() => api.sistemaRuolo(token, guild, v.id, v), 'ruoliSistemati');
+    await passo(() => api.sistemaRuolo(token, guild, v.id, v, MOTIVO.ruoloSistemato), 'ruoliSistemati');
   }
   // Un id finto che non e' diventato vero vuol dire che quel ruolo non si e'
   // potuto creare. Il permesso che lo nomina si salta: dargli un id a caso
@@ -183,7 +198,7 @@ export async function applica(token, guild, preset, { togliere = false, impronta
 
   for (const v of d.crea) {
     if (v.tipo !== TIPI.categoria) continue;
-    const x = await passo(() => api.creaCanale(token, guild, { nome: v.nome, tipo: v.tipo, permessi: v.permessi }), 'creati');
+    const x = await passo(() => api.creaCanale(token, guild, { nome: v.nome, tipo: v.tipo, permessi: v.permessi }, MOTIVO.creato), 'creati');
     if (x?.ok && x.id) cat.set(v.nome.toLowerCase(), String(x.id));
     if (esito.fermo) break;
   }
@@ -192,7 +207,7 @@ export async function applica(token, guild, preset, { togliere = false, impronta
     if (v.tipo === TIPI.categoria) continue;
     const x = await passo(() => api.creaCanale(token, guild, {
       nome: v.nome, tipo: v.tipo, argomento: v.argomento, permessi: v.permessi, dentroId: dentroId(v.dentro),
-    }), 'creati');
+    }, MOTIVO.creato), 'creati');
     if (v.avvisi && x?.ok && x.id) esito.canaleAvvisi = String(x.id);
   }
 
@@ -210,14 +225,14 @@ export async function applica(token, guild, preset, { togliere = false, impronta
       cambia.dentroId = pid;
     }
     if (!Object.keys(cambia).length) continue;
-    await passo(() => api.sistemaCanale(token, s.id, cambia), 'sistemati');
+    await passo(() => api.sistemaCanale(token, s.id, cambia, MOTIVO.sistemato), 'sistemati');
   }
 
   if (togliere) {
     const prima = (x) => (x.tipo === TIPI.categoria ? 1 : 0);
     for (const t of [...d.togli].sort((x, y) => prima(x) - prima(y))) {
       if (esito.fermo) break;
-      const x = await passo(() => api.togliCanale(token, t.id), 'tolti');
+      const x = await passo(() => api.togliCanale(token, t.id, MOTIVO.tolto), 'tolti');
       // I NOMI di quello che e' sparito, per il registro. Non gli id: fra sei
       // mesi un id non dice niente a una persona, e quello che si vuole
       // ricordare e' «c'era un canale che si chiamava cosi'».
@@ -231,7 +246,7 @@ export async function applica(token, guild, preset, { togliere = false, impronta
     // meta' delle persone ha perso i suoi privilegi.
     for (const t of (r.togli || [])) {
       if (esito.fermo) break;
-      const x = await passo(() => api.togliRuolo(token, guild, t.id), 'ruoliTolti');
+      const x = await passo(() => api.togliRuolo(token, guild, t.id, MOTIVO.ruoloTolto), 'ruoliTolti');
       if (x?.ok) esito.nomiRuoliTolti.push(String(t.nome || ''));
     }
   }
