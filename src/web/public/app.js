@@ -657,7 +657,10 @@ function apiDemo(percorso, opzioni = {}) {
     return Promise.resolve({ ok: true, impronta: 'a1b2c3d4e5f6', mancanti: [], vuota: false,
       crea: [{ nome: 'Diretta', tipo: 4, dentro: null }, { nome: 'sono-in-onda', tipo: 0, dentro: 'Diretta' }, { nome: 'clip', tipo: 0, dentro: 'Diretta' }],
       sistema: [{ id: '1', nome: 'generale', tipo: 0, dentro: 'Chiacchiere' }],
-      fuori: [{ id: '2', nome: 'vecchio-canale', tipo: 0, dentro: null, ultimoMessaggio: Date.now() - 240 * 86400000, nato: 0 }] });
+      fuori: [
+        { id: '2', nome: 'vecchio-canale', tipo: 0, dentro: null, ultimoMessaggio: Date.now() - 240 * 86400000, nato: 0 },
+        { id: '3', nome: 'Roba Vecchia', tipo: 4, dentro: null, ultimoMessaggio: Date.now() - 40 * 86400000, nato: 0, dentroCi: 3 },
+      ] });
   }
   if (via === '/api/streamer/dcserver/applica') {
     return Promise.resolve({ ok: true, creati: 3, sistemati: 1, tolti: 0, errori: [], fermo: '', fatte: 4, mancanti: [] });
@@ -17004,10 +17007,17 @@ const _dcsDaQuanto = (ts) => {
 };
 
 const _dcsQuando = (x) => {
+  const dentro = Number(x.dentroCi);
+  const cat = Number.isFinite(dentro);
   const ts = Number(x.ultimoMessaggio) || 0;
-  if (ts) return L('ferma da ', 'quiet for ', 'parado desde hace ') + _dcsDaQuanto(ts);
+  if (cat && !dentro) return L('vuota', 'empty', 'vacía');
+  const quanti = cat
+    ? (dentro === 1 ? L('1 canale', '1 channel', '1 canal') : dentro + L(' canali', ' channels', ' canales'))
+    : '';
+  if (ts) return (cat ? quanti + L(', ferma da ', ', quiet for ', ', parado desde hace ') : L('ferma da ', 'quiet for ', 'parado desde hace ')) + _dcsDaQuanto(ts);
+  if (cat) return quanti + L(', nessuno ha mai scritto dentro', ', nobody ever wrote in them', ', nadie ha escrito nunca dentro');
   const nato = Number(x.nato) || 0;
-  return nato ? L('mai usata, aperta ', 'never used, opened ', 'nunca usada, abierta ') + _dcsDaQuanto(nato) + L(' fa', ' ago', ' atrás')
+  return nato ? L('mai usato, aperto ', 'never used, opened ', 'nunca usado, abierto ') + _dcsDaQuanto(nato) + L(' fa', ' ago', ' atrás')
     : L('non so da quanto', 'I do not know since when', 'no sé desde cuándo');
 };
 

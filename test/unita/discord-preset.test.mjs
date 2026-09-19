@@ -228,3 +228,22 @@ test('di cio\' che si cancella si sa da quanto tace, e da quanto esiste', () => 
   assert.equal(per.get('appena-nato').ultimoMessaggio, 0, 'mai parlato');
   assert.equal(per.get('appena-nato').nato, 1750000000000, 'ma si sa quando e\' nato');
 });
+
+test('una categoria non dice «mai usata»: la sua vita e\' quella dei canali che ha dentro', () => {
+  // Una categoria non riceve messaggi MAI, per come e' fatta Discord. Dirlo
+  // come un giudizio («mai usata, aperta 7 anni fa») e' la frase che fa
+  // cancellare una categoria piena di roba viva.
+  const ieri = Date.now() - 86400000;
+  const d = P.differenza(foto([
+    cat('30', 'Roba Mia'),
+    testo('31', 'viva', '30', { ultimoMessaggio: ieri }),
+    testo('32', 'zitta', '30'),
+    cat('40', 'Vuota'),
+  ]), PRESET, { togliere: true });
+  const per = new Map(d.togli.map((x) => [x.nome, x]));
+  assert.equal(per.get('Roba Mia').ultimoMessaggio, ieri, 'la categoria parla per l\'ultimo dei suoi');
+  assert.equal(per.get('Roba Mia').dentroCi, 2, 'e dice quanti ne ha dentro: e\' quello il motivo per tenerla');
+  assert.equal(per.get('Vuota').dentroCi, 0);
+  assert.equal(per.get('Vuota').ultimoMessaggio, 0);
+  assert.equal(per.get('zitta').dentroCi, undefined, 'un canale non conta i figli: non ne ha');
+});

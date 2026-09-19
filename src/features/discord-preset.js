@@ -217,13 +217,27 @@ export function differenza(foto, preset, { togliere = false } = {}) {
       // nuovo vuoto al suo posto, che e' il modo peggiore di avere ragione.
       if (preso.has(String(c.id))) continue;
       if (fuoriMano.has(String(c.id))) continue;
+      // IL PESO, per l'anteprima: quanto costa perderlo.
+      //
+      // Un canale che non ha mai parlato non e' per forza morto: puo' essere
+      // nato ieri. Percio' vanno tutte e due le date, e chi mostra sceglie
+      // quale raccontare.
+      //
+      // Una CATEGORIA non riceve messaggi mai, per come e' fatta Discord. La
+      // sua ultima parola e' l'ultima dei canali che contiene, e i canali che
+      // contiene sono il vero motivo per cui cancellarla o no: dire «mai
+      // usata» di una categoria piena di roba viva e' la frase che ti fa
+      // premere il tasto sbagliato.
+      const suoi = c.tipo === TIPI.categoria
+        ? idx.canali.filter((x) => x.parent_id && String(x.parent_id) === String(c.id))
+        : null;
       togli.push({ id: String(c.id), nome: c.nome, tipo: c.tipo,
-        // il PESO, per l'anteprima: quanto costa perderlo. Un canale che non ha
-        // mai parlato non e' per forza morto: puo' essere nato ieri. Percio'
-        // vanno tutte e due le date, e chi mostra sceglie quale raccontare.
-        ultimoMessaggio: Number(c.ultimoMessaggio) || 0,
+        ultimoMessaggio: suoi
+          ? suoi.reduce((t, x) => Math.max(t, Number(x.ultimoMessaggio) || 0), 0)
+          : (Number(c.ultimoMessaggio) || 0),
         nato: Number(c.nato) || 0,
-        dentro: idx.dentroDi(c) });
+        dentro: idx.dentroDi(c),
+        ...(suoi ? { dentroCi: suoi.length } : {}) });
     }
   }
 
