@@ -98,6 +98,7 @@ import { redeemPass } from './gate.js';
 import { eLoginNostro, loginKick, loginYoutube, loginSu, nomeSu, piattaformaDi, PIATTAFORME } from '../identita.js';
 import { provaModerazione, verificabile } from '../moderatori/prova.js';
 import { creaGuscio } from './vetrina.js';
+import { creaImpronte, montaStatici } from './impronte.js';
 import { salute } from '../salute.js';
 import { anteprima as anteprimaImport, moduloDa } from '../features/importacomandi.js';
 import { esporta as esportaDati } from '../features/esporta.js';
@@ -602,6 +603,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }
 
   const publicDir = join(dirname(fileURLToPath(import.meta.url)), 'public');
+  // L'impronta dei file serviti: la stessa che marca i gusci e quella che poi
+  // decide chi riceve `immutable`. Una sola, sennò le due meta' si scollano.
+  const impronte = creaImpronte(publicDir);
   const NOVITA_MD = join(dirname(fileURLToPath(import.meta.url)), '../../NOVITA.md');
   // Le cose del cervello stanno in un repository a parte, montato in sola lettura
   // (LIA_ROOT; in Docker /app/lia, in sviluppo la cartella accanto a questa). Da
@@ -724,7 +728,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     cambia(`<meta name="twitter:title" content="${base.twTitolo}">`, `<meta name="twitter:title" content="${m.twTitolo}">`);
     cambia(`<meta name="twitter:description" content="${base.twDesc}">`, `<meta name="twitter:description" content="${m.twDesc}">`);
     h = h.split('"inLanguage": "it-IT"').join(`"inLanguage": "${m.html}-${m.html === 'en' ? 'GB' : m.html.toUpperCase()}"`);
-    return h;
+    // L'impronta entra qui, nell'ultimo momento in cui la pagina e' una stringa:
+    // `app.js` diventa `app.js?v=1a2b3c4d`, e da li' in poi quel file si puo'
+    // tenere per sempre. Vedi impronte.js.
+    return impronte.marca(h);
   };
 
   // Quattro gusci precalcolati: tre lingue per chi non e loggato (con
@@ -759,7 +766,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   };
   setTimeout(ronda, 4000).unref?.();
   setInterval(ronda, vetrinaLive.FRESCHEZZA_MS).unref?.();
-  const PANNELLO = guscioPannello(gusciaHtml);
+  const PANNELLO = impronte.marca(guscioPannello(gusciaHtml));
   const serviGuscio = (req, res) => {
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.set('Cache-Control', 'no-cache');
@@ -770,10 +777,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   };
   app.get(['/', '/index.html'], serviGuscio);
 
-  // Prima dello statico: i .js escono minificati e coi nomi interni accorciati.
-  // Vedi src/web/minifica.js — e SB_SORGENTI=1 lo spegne.
-  app.use(creaMinifica(publicDir));
-  app.use(express.static(publicDir));
+  // Gli statici: l'impronta nel nome, `immutable` a chi la porta giusta, e i
+  // .js minificati per strada (src/web/minifica.js; SB_SORGENTI=1 lo spegne).
+  // Il montaggio sta tutto in impronte.js, cosi' quello che prova il collaudo e'
+  // esattamente quello che gira qui.
+  montaStatici(app, publicDir, { minifica: creaMinifica(publicDir), impronte });
 
   // IL DISEGNO DELLA CARTA, SERVITO AL BROWSER.
   //
