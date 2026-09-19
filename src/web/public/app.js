@@ -16919,7 +16919,15 @@ function _dcsCanaleHtml(c, dove) {
   </details>`;
 }
 
+function _dcsTocca() {
+  const fai = _g('dcs-costruisci');
+  if (fai) fai.hidden = true;
+  const box = _g('dcs-diff');
+  if (box) box.innerHTML = '';
+}
+
 function _dcsDisegna() {
+  _dcsTocca();
   const box = _g('dcs-editor');
   if (!box || !_dcs || !_dcs.preset) return;
   const p = _dcs.preset;
@@ -17139,6 +17147,7 @@ function collegaDcServer() {
     const t = e.target;
     const campo = t?.dataset?.dcs;
     if (!campo || !_dcs?.preset) return;
+    _dcsTocca();
     if (campo === 'cat-nome') {
       const c = _dcsTrova('cat:' + t.closest('.dcs-cat')?.dataset.k);
       if (c) c.nome = t.value;
