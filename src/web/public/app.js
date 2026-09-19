@@ -17022,12 +17022,13 @@ let _dist = null;
 let _distOrologio = null;
 
 function _distApplica() {
-  const s = _g('scheda-dcserver');
-  if (s) s.dataset.distruttivo = _dist ? '1' : '';
+  for (const id of ['scheda-dcserver', 'scheda-dcentra']) {
+    const s = _g(id);
+    if (s) s.dataset.distruttivo = _dist ? '1' : '';
+  }
   const e = _g('dcs-entra');
   if (e) e.hidden = !!_dist;
-  const f = _g('dcs-fascia');
-  if (f) f.hidden = !_dist;
+  for (const f of document.querySelectorAll('.dcs-fascia')) f.hidden = !_dist;
   _dcsTocca();
   _dcsDisegna();
 }
@@ -17037,8 +17038,8 @@ function _distConta() {
   if (!_dist) return;
   const scrivi = () => {
     const resta = Math.max(0, _dist.fino - Date.now());
-    const n = _g('dcs-resta');
-    if (n) n.textContent = Math.ceil(resta / 60000) + L(' min', ' min', ' min');
+    const quanto = Math.ceil(resta / 60000) + L(' min', ' min', ' min');
+    for (const n of document.querySelectorAll('.dist-resta')) n.textContent = quanto;
     if (resta <= 0) _distEsci(true);
   };
   scrivi();
@@ -17255,14 +17256,18 @@ function pannelloDcAvvisi() {
     </div>`);
 }
 
-function pannelloDcServer() {
-  return pannello('dcserver', `
-    <p class="dcs-fascia" id="dcs-fascia" role="status" hidden>
+function fasciaDistruttiva(pre) {
+  return `<p class="dcs-fascia" role="status" hidden>
       <strong>${L('Modalità distruttiva', 'Destructive mode', 'Modo destructivo')}</strong>
       ${L('— quello che non è nella traccia verrà cancellato. Si chiude da sola fra', '— whatever is not in the track will be deleted. It closes on its own in', '— lo que no esté en la plantilla se borrará. Se cierra sola en')}
-      <b id="dcs-resta">10 min</b>.
-      <button type="button" class="btn secondario mini" id="dcs-esci">${L('Esci', 'Leave', 'Salir')}</button>
-    </p>
+      <b class="dist-resta">10 min</b>.
+      <button type="button" class="btn secondario mini" id="${pre}-esci">${L('Esci', 'Leave', 'Salir')}</button>
+    </p>`;
+}
+
+function pannelloDcServer() {
+  return pannello('dcserver', `
+    ${fasciaDistruttiva('dcs')}
 
     <div class="carta">
       <h2>${_hIco(ICO.moduli)}${L('Da dove parti', 'Where you start from', 'Desde dónde empiezas')}</h2>
@@ -17911,6 +17916,8 @@ async function caricaDcServer() {
 
 function pannelloChiEntra() {
   return pannello('dcentra', `
+    ${fasciaDistruttiva('dce')}
+
     <div class="carta">
       <h2>${_hIco(ICO.scudo)}${L('Chi può scrivere appena entra', 'Who can write right after joining', 'Quién puede escribir nada más entrar')}</h2>
       <p class="suggerimento">${L('Contro chi entra, spamma e sparisce. «email + cinque minuti» ferma quasi tutto senza scocciare nessuno.', 'Against people who join, spam and vanish. «email + five minutes» stops nearly all of it without bothering anyone.', 'Contra quien entra, spamea y desaparece. «correo + cinco minutos» para casi todo sin molestar.')}</p>
@@ -18019,7 +18026,7 @@ function _dceDisegnaBenvenuto() {
       <select data-dce="ben-canale" aria-label="${esc(L('Canale', 'Channel', 'Canal'))}">
         ${canali.map((x) => `<option value="${esc(x.nome)}"${x.nome === c.canale ? ' selected' : ''}>${esc(x.nome)}</option>`).join('')}
       </select>
-      <input type="text" data-dce="ben-emoji" maxlength="8" value="${esc(c.emoji || '')}" placeholder="🙂" aria-label="${esc(L('Faccina', 'Emoji', 'Emoji'))}" class="dce-emoji">
+      <input type="text" data-dce="ben-emoji" maxlength="8" value="${esc(c.emoji || '')}" aria-label="${esc(L('Faccina', 'Emoji', 'Emoji'))}" class="dce-emoji">
       <input type="text" data-dce="ben-testo" maxlength="50" value="${esc(c.testo || '')}" placeholder="${esc(L('cosa si fa qui', 'what happens here', 'qué se hace aquí'))}" aria-label="${esc(L('Descrizione', 'Description', 'Descripción'))}">
       <button type="button" class="btn secondario mini" data-dce="ben-via">${esc(L('Togli', 'Remove', 'Quitar'))}</button>
     </div>`).join('');
@@ -18065,7 +18072,7 @@ function _dceDisegnaPorta() {
         <details class="dce-risposta" data-k="${r._k}">
           <summary>${esc(r.titolo || L('senza titolo', 'untitled', 'sin título'))} <span class="suggerimento">${(r.canali || []).length ? (r.canali || []).length + L(' canali', ' channels', ' canales') : L('niente', 'nothing', 'nada')}${(r.ruoli || []).length ? ' · ' + (r.ruoli || []).length + L(' ruoli', ' roles', ' roles') : ''}</span></summary>
           <div class="riga-flessibile spazio-sopra">
-            <input type="text" data-dce="r-emoji" maxlength="8" value="${esc(r.emoji || '')}" placeholder="🙂" aria-label="${esc(L('Faccina', 'Emoji', 'Emoji'))}" class="dce-emoji">
+            <input type="text" data-dce="r-emoji" maxlength="8" value="${esc(r.emoji || '')}" aria-label="${esc(L('Faccina', 'Emoji', 'Emoji'))}" class="dce-emoji">
             <input type="text" data-dce="r-titolo" maxlength="50" value="${esc(r.titolo || '')}" placeholder="${esc(L('I giochi', 'Games', 'Los juegos'))}" aria-label="${esc(L('La risposta', 'The answer', 'La respuesta'))}">
             <button type="button" class="btn secondario mini" data-dce="r-via">${esc(L('Togli', 'Remove', 'Quitar'))}</button>
           </div>
@@ -18210,6 +18217,7 @@ function collegaChiEntra() {
     }
   });
 
+  _g('dce-esci')?.addEventListener('click', () => _distEsci(false));
   _g('dce-salva')?.addEventListener('click', () => conErrore(_dcsSalvaTraccia));
   _g('dce-vedi')?.addEventListener('click', () => conErrore(() => _dcsVedi('dce')));
   _g('dce-costruisci')?.addEventListener('click', () => conErrore(() => _dcsFai('dce')));

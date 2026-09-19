@@ -2347,5 +2347,5 @@ body.ce-aperto { overflow: hidden; }
 .dcs-giro > details, .dcs-giro > .tg-stato { flex-basis: 100%; margin: .4rem 0 0; }
 [data-distruttivo="1"] .carta { border-color: color-mix(in oklab, var(--rosso) 35%, var(--border)); }
 [data-distruttivo="1"] .carta h2 { background: var(--rosso); }
-[data-distruttivo="1"] #dcs-costruisci { background: var(--rosso); border-color: var(--rosso); }
-[data-distruttivo="1"] .dcs-cat, [data-distruttivo="1"] .dcs-cima { background: color-mix(in oklab, var(--rosso) 5%, var(--surface-2)); }
+[data-distruttivo="1"] #dcs-costruisci, [data-distruttivo="1"] #dce-costruisci { background: var(--rosso); border-color: var(--rosso); }
+[data-distruttivo="1"] .dcs-cat, [data-distruttivo="1"] .dcs-cima, [data-distruttivo="1"] .dce-domanda { background: color-mix(in oklab, var(--rosso) 5%, var(--surface-2)); }
