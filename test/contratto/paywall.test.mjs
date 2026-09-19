@@ -32,7 +32,9 @@ test('il ritorno dal Checkout porta l\'id della sessione e si conferma da Stripe
 });
 
 test('chi ha gia\' una sottoscrizione riceve gli extra dentro quella: rotta e login self-service passano dallo stesso posto', () => {
-  assert.equal((SRV.match(/await avviaAcquisto\(\{ login/g) || []).length, 2, 'la rotta del pannello e il ritorno dal login con Twitch');
+  assert.equal((SRV.match(/(?:await|return) avviaAcquisto\(\{ login/g) || []).length, 2, 'la rotta del pannello, e il gesto che riscuote il carrello');
+  assert.match(fra(SRV, 'async function riscuotiAcquisto(', '\n  }\n'), /return avviaAcquisto\(\{ login/,
+    'tutte le porte d\'ingresso passano di li\': vedi test/contratto/carrello-porte');
   const f = fra(SRV, 'async function avviaAcquisto(', '\n  }\n');
   assert.ok(f.includes('abbonamenti.aggiungiAlAbbonamento({ subId: s.stripe_sub'));
   assert.ok(f.includes("['past_due', 'unpaid', 'incomplete'].includes(s.status)"), 'con un pagamento non riuscito prima si sistema quello');

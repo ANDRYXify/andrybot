@@ -2407,10 +2407,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (contesti.length) req.session.user = sessionePer(login, disp, contestoDefault(contesti));
       // veniva da "attiva il bot" (Base + add-on scelti)? → dritti al checkout
       // Stripe. La sessione c'è già, quindi al rientro è dentro.
-      if (sf.compra && config.stripe.attivo) {
-        const r = await avviaAcquisto({ login, pacchetti: sf.pacchetti || [], bundle: sf.bundle || null });
-        if (r.url) { if (!req.session.user) req.session.abbonando = { login, display: disp }; return res.redirect(r.url); }
-        if (r.ok) return res.redirect('/?abbonato=1');
+      if (sf.compra) {
+        const dove = await doveDopoAcquisto(req, login);
+        if (dove) { if (!req.session.user) req.session.abbonando = { login, display: disp }; return res.redirect(dove); }
       }
       if (req.session.user) {
         if (promoVinta) return res.redirect('/?promo=1');
@@ -2713,7 +2712,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       const contesti = contestiPer(login);
       if (!contesti.length) return { login, errore: 'canale non disponibile' };
       req.session.user = sessionePer(login, display, contestoDefault(contesti, invitato));
-      return { login, dove: promoVinta ? '/?promo=1' : '/?benvenuto=1' };
+      // veniva da «Attiva» sulla vetrina? Il carrello e' ancora suo: si paga ora.
+      const dove = await doveDopoAcquisto(req, login);
+      return { login, dove: dove || (promoVinta ? '/?promo=1' : '/?benvenuto=1') };
     },
   });
 
@@ -2746,7 +2747,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       const contesti = contestiPer(login);
       if (!contesti.length) return { login, errore: 'canale non disponibile' };
       req.session.user = sessionePer(login, display, contestoDefault(contesti, invitato));
-      return { login, dove: promoVinta ? '/?promo=1' : '/?benvenuto=1' };
+      // veniva da «Attiva» sulla vetrina? Il carrello e' ancora suo: si paga ora.
+      const dove = await doveDopoAcquisto(req, login);
+      return { login, dove: dove || (promoVinta ? '/?promo=1' : '/?benvenuto=1') };
     },
   });
 
@@ -3245,6 +3248,43 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json(r);
   }));
 
+  // UN ACQUISTO CHE SOPRAVVIVE ALL'INGRESSO. Chi preme «Attiva» sceglie PRIMA di
+  // dire chi e': fra il click e il login c'e' un giro dal fornitore, e quello che
+  // aveva scelto deve ritrovarselo di la'. Due gesti soli, e uno solo per porta:
+  // si ricorda qui, si riscuote dove la persona ha finalmente un nome. Se invece
+  // la scelta vivesse dentro il flusso di Twitch, ogni porta nuova (Kick,
+  // YouTube, quella di domani) se la riscriverebbe per conto suo — e chi entra da
+  // li' perderebbe il carrello senza che nessuno se ne accorga.
+  function ricordaAcquisto(req, q = {}) {
+    // BUNDLE curato (?bundle=creator|interazione|tutto) → prezzo unico scontato.
+    // Altrimenti add-on a la carte (CSV). Retrocompat: ?tier=pro → tutti gli add-on.
+    const bundle = abbonamenti.bundleById(q.bundle);
+    const pacchetti = String(q.tier || '').toLowerCase() === 'pro'
+      ? abbonamenti.ADDON_IDS : abbonamenti.normalizzaPacchetti(q.pacchetti);
+    req.session.compra = { pacchetti, bundle: bundle?.id || null };
+  }
+
+  // Usa-e-getta come il giro OAuth: si spende una volta e sparisce, cosi' un
+  // checkout abbandonato non riparte da solo al prossimo accesso. Ritorna quello
+  // che ritorna avviaAcquisto ({url} | {ok,...} | {errore,codice}), o null se non
+  // c'era niente da riscuotere.
+  async function riscuotiAcquisto(req, login) {
+    const c = req.session?.compra || null;
+    if (req.session) delete req.session.compra;
+    if (!c || !config.stripe.attivo) return null;
+    return avviaAcquisto({ login, pacchetti: c.pacchetti || [], bundle: c.bundle || null });
+  }
+
+  // Dove si va dopo aver riscosso: al Checkout se c'e' da pagare, al pannello se
+  // gli extra sono entrati nell'abbonamento che gia' c'era, altrove se non c'era
+  // nessun acquisto in sospeso.
+  async function doveDopoAcquisto(req, login) {
+    const r = await riscuotiAcquisto(req, login);
+    if (r?.url) return r.url;
+    if (r?.ok) return '/?abbonato=1';
+    return '';
+  }
+
   // UN ACQUISTO, da qualunque porta arrivi (pannello, vetrina dopo il login).
   // Chi ha gia' una sottoscrizione viva riceve gli extra DENTRO quella, non un
   // secondo Checkout con il Base di nuovo (lo pagherebbe due volte); chi non
@@ -3590,14 +3630,15 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // Login self-service con Twitch per abbonarsi. Attivo solo con Stripe acceso.
   app.get('/accedi', (req, res) => {
     if (!config.stripe.attivo) return res.redirect('/');   // paywall spento: niente ingresso extra
+    ricordaAcquisto(req, req.query);
+    // ?come= dice con quale account trasmette. Le porte di Kick e YouTube
+    // esistono solo dove questo server ha le credenziali: chiesta una porta
+    // chiusa, si torna alla pagina invece di mandare la persona su un 503.
+    const come = String(req.query.come || '').toLowerCase();
+    if (come === 'kick') return res.redirect(conKick ? '/accedi/kick' : '/');
+    if (come === 'youtube') return res.redirect(conYoutube ? '/accedi/youtube' : '/');
     const state = crypto.randomUUID();
-    // BUNDLE curato (?bundle=creator|interazione|tutto) → prezzo unico scontato.
-    // Altrimenti add-on à la carte (CSV). Retrocompat: ?tier=pro → tutti gli add-on.
-    const bundle = abbonamenti.bundleById(req.query.bundle);
-    const pacchetti = String(req.query.tier || '').toLowerCase() === 'pro'
-      ? abbonamenti.ADDON_IDS : abbonamenti.normalizzaPacchetti(req.query.pacchetti);
-    // ricorda la scelta: dopo il login self-service si va DRITTI al checkout
-    req.session.selfFlow = { state, compra: true, pacchetti, bundle: bundle?.id || null };
+    req.session.selfFlow = { state, compra: true };
     res.redirect(auth.authUrl([], state));
   });
 

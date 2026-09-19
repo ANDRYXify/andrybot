@@ -161,6 +161,30 @@ canale, e non lo diventa.
 Chi torna si riconosce dall'**id di Kick**, non dal nome: chi cambia nome su Kick
 ritrova il suo canale.
 
+### Il carrello non è di Twitch
+
+Chi preme «Attiva» sulla vetrina sceglie i pacchetti **prima** di dire chi è: in
+mezzo c'è un giro dal fornitore, e quello che aveva scelto deve ritrovarselo
+dall'altra parte. Finché quel ricordo viveva dentro il flusso di Twitch, la
+scelta era di Twitch: chi trasmette solo su Kick veniva spedito a un login che
+non ha.
+
+Ora i gesti sono due e stanno fuori da ogni porta. `ricordaAcquisto()` scrive la
+scelta in un posto solo (`req.session.compra`); `doveDopoAcquisto()` la riscuote
+dove la persona ha finalmente un nome — il ritorno di Twitch e le registrazioni
+di Kick e YouTube chiamano tutte quella. È usa-e-getta come il giro OAuth: si
+spende una volta, così un checkout abbandonato non riparte da solo al prossimo
+accesso.
+
+`/accedi?come=kick|youtube` dice da quale porta si entra. Sulla vetrina la scelta
+sta **accanto al tasto**, non in un pannello che si apre dopo il clic: chi arriva
+da Twitch — quasi tutti — non paga un passo in più per dire una cosa sola. Dove
+la porta è una sola il selettore non si disegna. I nomi sono gli
+stessi da una parte e dall'altra (`twitch`, `kick`, `youtube`, quelli di
+`PIATTAFORME`): un tasto che la vetrina offre e il server non riconosce
+porterebbe a Twitch in silenzio, e il collaudo `test/contratto/carrello-porte`
+confronta le due liste apposta.
+
 Cosa cambia nel prodotto: niente, tranne le cose che parlano davvero con Twitch.
 Il bot non entra in una chat Twitch senza un token Twitch, quindi il giro delle
 connessioni si esclude da sé; e il pannello **spegne** le schede che su Kick non

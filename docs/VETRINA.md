@@ -135,6 +135,10 @@ dall'indirizzo.
 componente, due case** — la vetrina (dove porta a `/accedi` con i pacchetti scelti) e il cruscotto
 (dove chi ha già l'abbonamento aggiunge solo ciò che gli manca, passando `gia: [...]`).
 
+Accanto ad «Attiva» c'è il **canale**: Twitch e le altre porte aperte su questo server, come un
+selettore a pillole, acceso su Twitch. Si sceglie prima di premere e il tasto resta un clic solo;
+con una porta sola non si disegna. Il giro di quella scelta è in `docs/PIATTAFORME.md`.
+
 Spunti gli extra, vedi il totale mensile aggiornarsi, e **se un pacchetto curato costa meno della
 somma di ciò che hai scelto te lo dice e lo applica da solo** — solo se lo copre per intero. Il
 totale include il canone Base quando non ce l'hai ancora, e lo esclude quando ce l'hai già.
