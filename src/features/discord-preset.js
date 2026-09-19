@@ -24,7 +24,7 @@
 // vero sarebbe scomodo costruire.
 
 import { createHash } from 'node:crypto';
-import { PRIVILEGI, DA_DARE } from './discord-api.js';
+import { PRIVILEGI, DA_DARE, VIEW_CHANNEL, SEND_MESSAGES } from './discord-api.js';
 
 // La somma dei privilegi che una traccia nomina. I NUMERI stanno in un posto
 // solo, con gli altri numeri di Discord: qui si leggono, non si ricopiano. Non
@@ -628,11 +628,281 @@ export function differenzaServer(preset, foto) {
   return { cambia, dice };
 }
 
+// ------------------------------------------------------ la porta d'ingresso
+//
+// Chi arriva su un server incontra tre cose: la schermata di benvenuto, le
+// domande («cosa ti interessa?») e i canali che si apre rispondendo. Discord le
+// tiene in due chiamate diverse, ma il mestiere e' uno solo: dire a chi non ti
+// conosce dove andare.
+//
+// TRE REGOLE, e ognuna toglie un difetto invece di correggerlo dopo.
+//
+//  · IL MODO NON E' UNA MANOPOLA, E' UNA CONSEGUENZA. Prima di accendere la
+//    porta Discord conta i canali, e conta anche quelli che le risposte aprono
+//    solo se il modo e' quello avanzato. Metterlo fra le scelte vorrebbe dire
+//    chiedere di indovinare una regola scritta da un altro: se ci sono domande,
+//    i loro canali devono contare, e il numero lo sappiamo noi.
+//  · LE CONDIZIONI SI CONTANO PRIMA. Il server dev'essere di tipo Community, e
+//    con la porta accesa servono almeno sette canali che contano e almeno
+//    cinque dove tutti possono scrivere. Sono cose che si guardano: dirle a
+//    parole prima di partire e' un'altra cosa dal farsi rifiutare la chiamata e
+//    tradurre il rifiuto.
+//  · NON SI RISCRIVE L'UGUALE. Le risposte che le persone hanno gia' dato sono
+//    attaccate alle domande di adesso: riscriverle identiche le cancellerebbe
+//    tutte. Qui «non fare niente» non e' pigrizia, e' non rovinare.
+// Quante domande e quante risposte. Discord ne accetta di piu', ma una porta
+// d'ingresso con quindici domande non la finisce nessuno: chi entra la chiude e
+// se ne va. Questo e' il numero oltre il quale smette di essere una porta.
+export const MAX_DOMANDE = 8;
+export const MAX_RISPOSTE = 20;
+
+// LA PORTA, MESSA IN ORDINE. Sta QUI e non nel catalogo perche' la usano in
+// due: chi scrive la traccia e chi la CONFRONTA con quella che c'e' sul
+// server. Se il confronto passasse da una normalizzazione diversa, direbbe
+// «diverso» per un campo lasciato vuoto — e la porta si riscriverebbe tutte le
+// sere, cancellando ogni volta le risposte gia' date.
+//
+// Canali e ruoli si nominano per NOME, non per id: la traccia li sta creando
+// nello stesso giro, e un id scritto qui sarebbe l'id di un canale che non
+// esiste ancora, o di uno cancellato il mese scorso.
+export function normalizzaIngresso(g) {
+  if (!g || typeof g !== 'object') return null;
+  const testo = (v, max) => String(v || '').replace(/\s+/g, ' ').trim().slice(0, max);
+  const nomi = (v, max) => [...new Set((Array.isArray(v) ? v : []).map((x) => testo(x, 100)).filter(Boolean))].slice(0, max);
+  const domande = (Array.isArray(g.domande) ? g.domande : []).slice(0, MAX_DOMANDE).map((d) => {
+    const titolo = testo(d?.titolo, 100);
+    if (!titolo) return null;
+    const risposte = (Array.isArray(d.risposte) ? d.risposte : []).slice(0, MAX_RISPOSTE).map((r) => {
+      const t = testo(r?.titolo, 50);
+      if (!t) return null;
+      return { titolo: t, testo: testo(r?.testo, 100), emoji: testo(r?.emoji, 32),
+        canali: nomi(r?.canali, 20), ruoli: nomi(r?.ruoli, 10) };
+    }).filter(Boolean);
+    // Una domanda senza risposte non e' una domanda: sarebbe un muro con
+    // scritto «scegli» e niente da scegliere.
+    if (!risposte.length) return null;
+    return { titolo, tipo: Number(d?.tipo) === 1 ? 1 : 0, unaSola: !!d?.unaSola,
+      obbligatoria: !!d?.obbligatoria, allIngresso: d?.allIngresso !== false, risposte };
+  }).filter(Boolean);
+  const ben = g.benvenuto && typeof g.benvenuto === 'object' ? {
+    testo: testo(g.benvenuto.testo, 140),
+    canali: (Array.isArray(g.benvenuto.canali) ? g.benvenuto.canali : []).slice(0, 5).map((c) => {
+      const nome = testo(c?.canale ?? c?.nome, 100);
+      return nome ? { canale: nome, testo: testo(c?.testo, 50), emoji: testo(c?.emoji, 32) } : null;
+    }).filter(Boolean),
+  } : null;
+  if (!domande.length && !ben && g.acceso === undefined && !Array.isArray(g.canaliDiPartenza)) return null;
+  return { acceso: !!g.acceso, canaliDiPartenza: nomi(g.canaliDiPartenza, 20), domande,
+    ...(ben ? { benvenuto: ben } : {}) };
+}
+
+export const MIN_PARTENZA = 7;
+export const MIN_APERTI = 5;
+
+// «Tutti» e' il ruolo @everyone, che in Discord ha lo stesso id del server: non
+// e' una convenzione nostra, e' come e' fatto Discord.
+export const TUTTI = 'tutti';
+
+// Una chiave per confrontare due nomi di canale senza inciampare nel modo in
+// cui Discord li storpia: la traccia dice «Il Generale», il server risponde
+// «il-generale», ed e' lo stesso canale. Vale da tutte e due le parti, sennò il
+// confronto direbbe «diverso» a ogni giro e la porta si riscriverebbe sempre.
+export const chiaveNome = (n) => String(n || '').trim().toLowerCase().replace(/\s+/g, '-');
+
+// Una riga che toglie a TUTTI il vedere o lo scrivere chiude il canale, e un
+// canale chiuso non conta fra quelli che Discord pretende.
+const chiudeATutti = (righe) => (righe || []).some((p) => {
+  const chi = String(p?.chi?.ruolo || p?.chi || '');
+  if (chi !== TUTTI) return false;
+  return (p?.nega || []).some((k) => k === 'vedere' || k === 'scrivere');
+});
+
+// I CANALI DEL DOPO: quelli che ci saranno quando il costruttore avra' finito.
+//
+// Non quelli di adesso: la traccia ne sta creando, e sono proprio quelli che la
+// porta nomina. Contare sul server di adesso vorrebbe dire dire «ne hai tre»
+// mentre se ne stanno creando dieci, e fermare una cosa che sarebbe riuscita.
+//
+// Per ognuno la domanda che conta e' una: @everyone lo vede e ci scrive?
+export function canaliDelDopo(preset, foto) {
+  const idServer = String(foto?.guild?.id || '');
+  let base = 0n;
+  const suoDiTutti = (foto?.ruoli || []).find((r) => String(r?.id || '') === idServer);
+  try { base = BigInt(suoDiTutti?.permessi || 0); } catch { base = 0n; }
+  const AMMINISTRATORE = 1n << 3n;
+  const apreOra = (c) => {
+    if ((base & AMMINISTRATORE) === AMMINISTRATORE) return true;
+    let p = base;
+    const o = (c?.overwrites || []).find((x) => String(x?.id || '') === idServer);
+    if (o) { try { p = (p & ~BigInt(o.deny || 0)) | BigInt(o.allow || 0); } catch { /* resta com'era */ } }
+    return (p & VIEW_CHANNEL) === VIEW_CHANNEL && (p & SEND_MESSAGES) === SEND_MESSAGES;
+  };
+  const m = new Map();
+  for (const c of (foto?.canali || [])) {
+    if (Number(c?.tipo) === TIPI.categoria) continue;
+    m.set(chiaveNome(c?.nome), { nome: String(c?.nome || ''), apre: apreOra(c) });
+  }
+  // La traccia vince dove parla, e solo dove parla: un canale a cui sta per
+  // togliere la parola non conta piu', uno di cui non dice niente resta com'e'.
+  const lista = voluti(preset);
+  const categorie = new Map(lista.filter((v) => v.tipo === TIPI.categoria).map((v) => [v.nome, v]));
+  const catDelServer = (nome) => (foto?.canali || []).find((x) => Number(x?.tipo) === TIPI.categoria
+    && chiaveNome(x?.nome) === chiaveNome(nome));
+  for (const v of lista) {
+    if (v.tipo === TIPI.categoria) continue;
+    const k = chiaveNome(v.nome);
+    const gia = m.get(k);
+    let apre;
+    if (Array.isArray(v.permessi) && v.permessi.length) apre = !chiudeATutti(v.permessi);
+    else if (gia) apre = gia.apre;
+    else {
+      // Nasce adesso e senza permessi suoi: Discord lo fa uguale alla sua
+      // categoria. Ereditarlo qui e' l'unico modo di contarlo come sara'.
+      const cat = v.dentro ? categorie.get(v.dentro) : null;
+      if (cat && Array.isArray(cat.permessi) && cat.permessi.length) apre = !chiudeATutti(cat.permessi);
+      else if (v.dentro) { const c = catDelServer(v.dentro); apre = c ? apreOra(c) : true; }
+      else apre = true;
+    }
+    m.set(k, { nome: v.nome, apre });
+  }
+  return m;
+}
+
+// Le due porte di Discord lette in NOMI, cosi' si confrontano con la traccia
+// che i nomi li usa per forza (vedi sopra: un id nella traccia sarebbe l'id di
+// un canale che non esiste ancora).
+function portaOra(stato, foto) {
+  const nomeCan = new Map((foto?.canali || []).map((c) => [String(c?.id || ''), String(c?.nome || '')]));
+  const nomeRuo = new Map((foto?.ruoli || []).map((r) => [String(r?.id || ''), String(r?.nome || '')]));
+  const g = stato?.ingresso && stato.ingresso.ok !== false ? stato.ingresso : null;
+  const b = stato?.benvenuto && stato.benvenuto.ok !== false ? stato.benvenuto : null;
+  const perId = (m) => (l) => (l || []).map((i) => m.get(String(i))).filter(Boolean);
+  return {
+    acceso: !!g?.acceso,
+    canaliDiPartenza: perId(nomeCan)(g?.canaliDiPartenza),
+    domande: (g?.domande || []).map((d) => ({
+      id: String(d?.id || ''),
+      titolo: String(d?.titolo || ''),
+      tipo: Number(d?.tipo) === 1 ? 1 : 0,
+      unaSola: !!d?.unaSola,
+      obbligatoria: !!d?.obbligatoria,
+      allIngresso: d?.allIngresso !== false,
+      risposte: (d?.risposte || []).map((r) => ({
+        id: String(r?.id || ''),
+        titolo: String(r?.titolo || ''),
+        testo: String(r?.testo || ''),
+        emoji: String(r?.emoji || ''),
+        canali: perId(nomeCan)(r?.canali),
+        ruoli: perId(nomeRuo)(r?.ruoli),
+      })),
+    })),
+    modo: Number(g?.modo) || 0,
+    benvenuto: b ? {
+      testo: String(b.testo || ''),
+      canali: (b.canali || []).map((c) => ({ canale: nomeCan.get(String(c?.canale)) || '', testo: String(c?.testo || ''), emoji: String(c?.emoji || '') })).filter((c) => c.canale),
+    } : null,
+  };
+}
+
+// I segni: due porte sono la stessa porta se questi tre coincidono. L'ordine
+// delle domande conta (e' quello in cui si leggono), l'ordine dei canali di
+// partenza no.
+const segnoPartenza = (l) => (l || []).map(chiaveNome).sort().join(',');
+const segnoDomande = (modo, ds) => `${modo}|` + (ds || []).map((d) => [
+  chiaveNome(d.titolo), d.tipo, d.unaSola ? 1 : 0, d.obbligatoria ? 1 : 0, d.allIngresso ? 1 : 0,
+  (d.risposte || []).map((r) => [chiaveNome(r.titolo), r.testo || '', r.emoji || '',
+    (r.canali || []).map(chiaveNome).sort().join('+'),
+    (r.ruoli || []).map(chiaveNome).sort().join('+')].join('~')).join(';'),
+].join('/')).join('||');
+const segnoBenvenuto = (v) => (v ? `${v.testo || ''}|` + (v.canali || []).map((c) => [chiaveNome(c.canale), c.testo || '', c.emoji || ''].join('~')).join(';') : '');
+
+export function differenzaIngresso(preset, foto, stato = {}) {
+  // Si normalizza QUI, non si spera che l'abbia fatto chi chiama: le due porte
+  // da confrontare devono passare per la stessa strada, o un campo lasciato
+  // vuoto diventa una differenza che non c'e'.
+  const vuole = normalizzaIngresso(preset?.ingresso);
+  if (!vuole) return null;
+
+  // C'E' UNA PORTA DA SCRIVERE, o solo un benvenuto? Sono due chiamate diverse
+  // e due mestieri diversi: chi vuole solo presentare cinque canali non deve
+  // passare dalle condizioni delle domande, che parlano d'altro.
+  const laPorta = !!((vuole.domande || []).length || (vuole.canaliDiPartenza || []).length);
+  const modo = (vuole.domande || []).length ? 1 : 0;
+  const ora = portaOra(stato, foto);
+
+  const dice = [];
+  if (laPorta) {
+    if (!!ora.acceso !== !!vuole.acceso) dice.push({ campo: 'acceso', a: !!vuole.acceso });
+    if (segnoPartenza(ora.canaliDiPartenza) !== segnoPartenza(vuole.canaliDiPartenza)) {
+      dice.push({ campo: 'canaliDiPartenza', a: (vuole.canaliDiPartenza || []).length });
+    }
+    if (segnoDomande(ora.modo, ora.domande) !== segnoDomande(modo, vuole.domande)) {
+      dice.push({ campo: 'domande', a: (vuole.domande || []).length });
+    }
+  }
+  if (vuole.benvenuto && segnoBenvenuto(ora.benvenuto) !== segnoBenvenuto(vuole.benvenuto)) {
+    dice.push({ campo: 'benvenuto', a: (vuole.benvenuto.canali || []).length });
+  }
+  if (!dice.length) return null;
+
+  // GLI ID DELLE DOMANDE SI PORTANO AVANTI. Le risposte che le persone hanno
+  // gia' dato sono legate all'id dell'opzione: rifare le domande da zero per
+  // cambiarne una le smemorerebbe tutte. Quando il titolo coincide, l'id di
+  // prima resta suo.
+  const vecchie = new Map((ora.domande || []).map((d) => [chiaveNome(d.titolo), d]));
+  const domande = (vuole.domande || []).map((d) => {
+    const v = vecchie.get(chiaveNome(d.titolo));
+    const idRisposte = new Map((v?.risposte || []).map((r) => [chiaveNome(r.titolo), r.id]).filter(([, i]) => i));
+    return {
+      ...d,
+      ...(v?.id ? { id: v.id } : {}),
+      risposte: (d.risposte || []).map((r) => {
+        const i = idRisposte.get(chiaveNome(r.titolo));
+        return i ? { ...r, id: i } : r;
+      }),
+    };
+  });
+
+  let blocco = '';
+  if (!(foto?.caratteristiche || []).includes('COMMUNITY')) {
+    blocco = 'questo server non e\' di tipo Community: la schermata di benvenuto e le domande d\'ingresso Discord le accende solo li\', dalle sue impostazioni';
+  } else if (laPorta && vuole.acceso) {
+    const mondo = canaliDelDopo(preset, foto);
+    const contano = new Set((vuole.canaliDiPartenza || []).map(chiaveNome));
+    if (modo === 1) {
+      for (const d of (vuole.domande || [])) {
+        for (const r of (d.risposte || [])) for (const c of (r.canali || [])) contano.add(chiaveNome(c));
+      }
+    }
+    // Un nome che nessun canale porta non lo conta nemmeno Discord: al momento
+    // di costruire quella voce sparisce, e contarla qui vorrebbe dire dire di sì
+    // a una porta che poi verra' rifiutata.
+    const veri = [...contano].filter((k) => mondo.has(k));
+    const aperti = veri.filter((k) => mondo.get(k).apre).length;
+    if (veri.length < MIN_PARTENZA || aperti < MIN_APERTI) {
+      blocco = `per accendere la porta Discord vuole almeno ${MIN_PARTENZA} canali fra quelli che chi entra si apre, e almeno ${MIN_APERTI} dove tutti possono scrivere: qui sono ${veri.length} e ${aperti}`;
+    }
+  }
+
+  return {
+    cambia: {
+      porta: laPorta,
+      acceso: !!vuole.acceso,
+      modo,
+      canaliDiPartenza: [...(vuole.canaliDiPartenza || [])],
+      domande,
+      ...(vuole.benvenuto ? { benvenuto: vuole.benvenuto } : {}),
+    },
+    dice,
+    blocco,
+  };
+}
+
 // «Non c'e' niente da fare» detto una volta sola, cosi' chi chiama non deve
 // contare tre elenchi per sapere se applicare due volte ha fatto qualcosa.
 export const vuota = (d) => !(d?.crea?.length || d?.sistema?.length || d?.togli?.length
   || d?.ruoli?.crea?.length || d?.ruoli?.sistema?.length || d?.ruoli?.togli?.length
-  || d?.server?.dice?.length);
+  || d?.server?.dice?.length || d?.ingresso?.dice?.length);
 
 // L'IMPRONTA DI QUELLO CHE HAI VISTO.
 //
@@ -667,6 +937,10 @@ export function improntaDi(d) {
     // «sì, fallo» dato guardando i canali non deve autorizzare un livello di
     // verifica cambiato nel frattempo. Col VALORE, non solo col nome del campo.
     ...(d?.server?.dice || []).map((x) => `g|${x.campo}|${x.a ?? ''}`),
+    // E la porta d'ingresso, che non e' un dettaglio di contorno: una risposta
+    // in piu' puo' dare un ruolo a chiunque entri. Guardarla e poi applicare
+    // un'altra porta sarebbe la firma in bianco peggiore delle tre.
+    ...(d?.ingresso?.dice || []).map((x) => `i|${x.campo}|${x.a ?? ''}`),
   ].sort();
   return createHash('sha1').update(righe.join('\n')).digest('hex').slice(0, 12);
 }

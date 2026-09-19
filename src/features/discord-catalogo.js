@@ -81,15 +81,11 @@ export function nonPuoDare(permessi, bitsBot) {
 // Quanto puo' chiedere un preset: i limiti sono quelli del motore della
 // differenza, e stanno scritti li'. Averne una seconda copia qui vorrebbe dire
 // due numeri che un giorno non coincidono piu'.
-import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI } from './discord-preset.js';
-export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI };
+import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI, TUTTI, normalizzaIngresso } from './discord-preset.js';
+export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, TUTTI };
 export const TIPI_CANALE = Object.freeze(['testo', 'voce', 'annunci', 'palco', 'forum', 'media']);
 
 const somma = (nomi) => (nomi || []).reduce((t, n) => t | (PERMESSI[n] || 0n), 0n);
-
-// «Tutti» e' il ruolo @everyone, che in Discord ha lo stesso id del server:
-// non e' una convenzione nostra, e' come e' fatto Discord.
-export const TUTTI = 'tutti';
 
 // Da «chi» a un id vero. Torna null se quel qualcuno in questo server non c'e':
 // null vuol dire «salta la riga», mai «nessuno».
@@ -458,12 +454,21 @@ export function normalizzaPreset(x) {
     }
   }
 
+  // LA PORTA D'INGRESSO. La normalizzazione sta con la differenza, in
+  // discord-preset.js: e' li' che si confronta quello che vuoi con quello che
+  // c'e', e le due cose devono passare per la STESSA normalizzazione. Tenerne
+  // una copia qui vorrebbe dire che un giorno il confronto direbbe «diverso»
+  // per una maiuscola, e la porta si riscriverebbe tutte le sere.
+  const ingresso = normalizzaIngresso(x?.ingresso);
+
   // I ruoli che lo streamer tiene anche se la traccia non li prevede. In
   // modalita' normale non cambia niente — non si cancella mai; in distruttiva
   // sono gli unici che si salvano, ed e' il motivo per cui esistono.
   const risparmia = [...new Set((Array.isArray(x?.risparmia) ? x.risparmia : [])
     .map((v) => String(v || '').replace(/[^0-9]/g, '').slice(0, 24)).filter(Boolean))].slice(0, MAX_RUOLI * 4);
-  return { ruoli, canali, categorie, risparmia, ...(Object.keys(imp).length ? { server: imp } : {}) };
+  return { ruoli, canali, categorie, risparmia,
+    ...(Object.keys(imp).length ? { server: imp } : {}),
+    ...(ingresso ? { ingresso } : {}) };
 }
 
 // PARTI DAL SERVER CHE HAI GIA'.
@@ -474,7 +479,7 @@ export function normalizzaPreset(x) {
 // permessi e' un preset che non li tocca, e quelli che ci sono restano come
 // sono. Rileggerli e riscriverli identici sarebbe lo stesso risultato passando
 // per un giro in cui qualcosa puo' andare storto.
-export function dallaFotografia(foto, { TIPI_ID = { 0: 'testo', 2: 'voce', 5: 'annunci', 13: 'palco', 15: 'forum', 16: 'media' } } = {}) {
+export function dallaFotografia(foto, { porta = null, TIPI_ID = { 0: 'testo', 2: 'voce', 5: 'annunci', 13: 'palco', 15: 'forum', 16: 'media' } } = {}) {
   const canali = (foto?.canali || []).filter((c) => c && c.id != null);
   const categorie = canali.filter((c) => Number(c.tipo) === 4);
   const perId = new Map(categorie.map((c) => [String(c.id), c]));
@@ -517,8 +522,31 @@ export function dallaFotografia(foto, { TIPI_ID = { 0: 'testo', 2: 'voce', 5: 'a
       citabile: !!r.citabile,
       privilegi: privilegiDa(r.permessi),
     }));
+  // E LA PORTA D'INGRESSO, se qualcuno l'ha letta. Discord la scrive per id;
+  // qui torna in nomi, perche' e' cosi' che la traccia sa dirla — e perche'
+  // senza, il primo «rimettilo a posto» cancellerebbe le domande che c'erano.
+  const nomeCan = new Map(canali.map((c) => [String(c.id), String(c.nome || '')]));
+  const nomeRuo = new Map((foto?.ruoli || []).map((r) => [String(r.id), String(r.nome || '')]));
+  const daId = (m) => (l) => (l || []).map((i) => m.get(String(i))).filter(Boolean);
+  const g = porta?.ingresso;
+  const b = porta?.benvenuto;
+  const ingresso = (g || b) ? {
+    acceso: !!g?.acceso,
+    canaliDiPartenza: daId(nomeCan)(g?.canaliDiPartenza),
+    domande: (g?.domande || []).map((d) => ({
+      titolo: d?.titolo, tipo: d?.tipo, unaSola: !!d?.unaSola,
+      obbligatoria: !!d?.obbligatoria, allIngresso: d?.allIngresso !== false,
+      risposte: (d?.risposte || []).map((r) => ({
+        titolo: r?.titolo, testo: r?.testo, emoji: r?.emoji,
+        canali: daId(nomeCan)(r?.canali), ruoli: daId(nomeRuo)(r?.ruoli),
+      })),
+    })),
+    ...(b ? { benvenuto: { testo: b.testo,
+      canali: (b.canali || []).map((c) => ({ canale: nomeCan.get(String(c?.canale)) || '', testo: c?.testo, emoji: c?.emoji })).filter((c) => c.canale) } } : {}),
+  } : null;
   return normalizzaPreset({
     ruoli,
+    ...(ingresso ? { ingresso } : {}),
     // le impostazioni di adesso entrano nella traccia: se non ci fossero, il
     // primo «rimettilo a posto» le azzererebbe tutte in silenzio
     ...(foto?.impostazioni ? { server: foto.impostazioni } : {}),
