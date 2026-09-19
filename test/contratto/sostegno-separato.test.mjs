@@ -76,12 +76,13 @@ test('sostenere non chiede un account, ma non e\' una porta aperta a fare rumore
   assert.match(corpo, /extRateOk\('sostieni:'/, 'ma c\'e\' un tetto al minuto: aprire un pagamento costa una chiamata');
 });
 
-test('l\'indirizzo corto e\' una comodita\', non una seconda pagina', () => {
+test('la pagina del sostegno sta su un indirizzo solo, e quello corto', () => {
   // Due indirizzi che mostrano la stessa cosa, per i motori di ricerca, sono un
-  // doppione. La pagina dichiara UN canonico — quello lungo — e l'indirizzo
-  // corto ci rimanda: cosi' non ci sono due pagine che si fanno concorrenza.
+  // doppione: ne scelgono uno a caso, e i link che la gente si passa sono meta'
+  // e meta'. Ne vale UNO, e vale quello corto — e' quello che si detta a voce
+  // in diretta, ed e' quello che la gente si ricorda.
   const HTML = readFileSync(join(RAD, 'src/web/public/sostieni.html'), 'utf8');
-  assert.match(HTML, /<link rel="canonical" href="https:\/\/socialbot\.live\/sostieni">/);
+  assert.match(HTML, /<link rel="canonical" href="https:\/\/sostieni\.socialbot\.live\/">/);
   assert.match(SRV, /if \(req\.path === '\/'\) \{ req\.url = '\/sostieni'; \}/,
     'sull\'indirizzo corto la radice E\' la pagina');
   // e il resto del sito deve continuare a passare, sennò quella pagina si
@@ -89,6 +90,9 @@ test('l\'indirizzo corto e\' una comodita\', non una seconda pagina', () => {
   const i = SRV.indexOf("config.sostieniHost && String(req.hostname");
   assert.ok(i > 0);
   assert.match(SRV.slice(i, i + 300), /return next\(\);/, 'tutto il resto passa');
+  // E l'altro indirizzo rimanda qui, invece di essere una seconda pagina.
+  assert.match(SRV, /res\.redirect\(301, 'https:\/\/' \+ config\.sostieniHost \+ '\/'\)/,
+    '/sostieni manda al sottodominio');
 });
 
 test('il ritorno dal pagamento non crede all\'indirizzo', () => {

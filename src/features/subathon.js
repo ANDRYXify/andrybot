@@ -101,7 +101,7 @@ export function suEvento(channel, evento, { say, spingi } = {}) {
 // subathon e' acceso: un comando che risponde «non e' acceso» a ogni curioso
 // sarebbe un modo per far dire al bot cose che non servono a nessuno.
 export function tryComando(msg, parla, { ora = Date.now() } = {}) {
-  if (!msg || msg.isSelf) return false;
+  if (!msg) return false;   // lo streamer scrive col NOSTRO account: scartarlo scarta lui (docs/COMANDI.md)
   const testo = String(msg.text || '').trim();
   if (!testo.startsWith('!')) return false;
   if ((testo.slice(1).split(/\s+/)[0] || '').toLowerCase() !== 'subathon') return false;

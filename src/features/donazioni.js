@@ -209,6 +209,11 @@ export function candidatoHost(baseUrl, prefisso) {
   return prefisso + '.' + host.replace(/^www\./, '');
 }
 export const candidatoDonaHost = (baseUrl) => candidatoHost(baseUrl, 'dona');
+// Dove sta la pagina del sostegno al progetto: sul sottodominio se e' acceso,
+// altrimenti qui. Un posto solo a deciderlo, cosi' il link nel piede, quello
+// nel pannello e quello nella mappa del sito non possono dire tre cose diverse.
+export const urlSostieni = () => (config.sostieniHost ? `https://${config.sostieniHost}/` : `${config.baseUrl}/sostieni`);
+
 export function urlPaginaDona(login) {
   const l = String(login || '').toLowerCase();
   return config.donaHost ? `https://${config.donaHost}/${l}` : `${config.baseUrl}/dona/${l}`;

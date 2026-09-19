@@ -48,7 +48,7 @@ const nomeOk = (s) => /^[a-z0-9_]{2,25}$/.test(s);
 // Ritorna true se il messaggio era un comando base (gestito), false altrimenti.
 export async function tryComando(helix, msg, say) {
   try {
-    if (!msg || msg.isSelf) return false;
+    if (!msg) return false;   // lo streamer scrive col NOSTRO account: scartarlo scarta lui (docs/COMANDI.md)
     const testo = String(msg.text || '').trim();
     if (!testo.startsWith('!')) return false;
     const ch = msg.channel;

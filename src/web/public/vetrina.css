@@ -503,6 +503,14 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-conto-tot b { font-family: Archivo, system-ui, sans-serif; font-size: 1.7rem; font-weight: 700; letter-spacing: -.03em; }
 .vt-conto-tot span { font-size: .82rem; color: var(--testo-3); margin-left: .3rem; }
 .vt-conto .vt-btn { margin-left: auto; min-height: 46px; }
+.vt-solodc {
+  margin: 1.4rem 0 0; padding: 1.2rem 1.3rem; border-radius: 14px;
+  border: 1px dashed var(--border-2); background: var(--surface);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 1rem;
+}
+.vt-solodc p { margin: 0; flex: 1 1 320px; font-size: .9rem; line-height: 1.55; color: var(--testo-2); }
+.vt-solodc .vt-btn { flex: 0 0 auto; }
+
 .vt-velo[hidden] { display: none; }
 .vt-velo {
   position: fixed; inset: 0; z-index: 300; display: grid; place-items: center;

@@ -108,7 +108,7 @@ export const riempi = (testo, valori = {}) => String(testo || '')
 // In chat: «!discord ABC123» collega, «!discord via» scollega, «!discord» da
 // solo spiega dove si comincia.
 export function tryComando(msg, parla, { ora = Date.now() } = {}) {
-  if (!msg || msg.isSelf) return false;
+  if (!msg) return false;   // lo streamer scrive col NOSTRO account: scartarlo scarta lui (docs/COMANDI.md)
   const testo = String(msg.text || '').trim();
   if (!testo.startsWith('!')) return false;
   const parti = testo.slice(1).split(/\s+/);

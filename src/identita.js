@@ -30,11 +30,23 @@ const NOME = '[a-z0-9_]{1,30}';
 
 // LE PIATTAFORME. Twitch ha il prefisso vuoto perché è la casa: i canali nati
 // prima dei prefissi si chiamano ancora come si chiamavano.
+//
+// Discord e' la quarta, e non e' una piattaforma di diretta: e' il posto dove
+// il bot lavora per chi un canale non ce l'ha. Percio' non ha una `casa` — non
+// esiste un indirizzo pubblico che da un nome porti a una persona su Discord,
+// e inventarne uno vorrebbe dire mettere in giro link che non aprono niente.
+// `diretta: false` e' la cosa che il resto del prodotto guarda per sapere che
+// di questo canale non si puo' chiedere «e' in onda?».
 export const PIATTAFORME = [
-  { id: 'twitch', prefisso: '', casa: 'https://www.twitch.tv/' },
-  { id: 'kick', prefisso: 'kick.', casa: 'https://kick.com/' },
-  { id: 'youtube', prefisso: 'yt.', casa: 'https://www.youtube.com/@' },
+  { id: 'twitch', prefisso: '', casa: 'https://www.twitch.tv/', diretta: true },
+  { id: 'kick', prefisso: 'kick.', casa: 'https://kick.com/', diretta: true },
+  { id: 'youtube', prefisso: 'yt.', casa: 'https://www.youtube.com/@', diretta: true },
+  { id: 'discord', prefisso: 'dc.', casa: '', diretta: false },
 ];
+
+// Questo canale sta su una piattaforma dove si trasmette? Tutto quello che
+// parla di dirette, chat e overlay ha senso solo se la risposta e' si'.
+export const conDiretta = (piattaforma) => !!PIATTAFORME.find((p) => p.id === piattaforma)?.diretta;
 
 const CON_PREFISSO = PIATTAFORME.filter((p) => p.prefisso);
 const CASA = PIATTAFORME.find((p) => !p.prefisso);
@@ -88,7 +100,8 @@ export function urlCanale(login) {
   const nome = nomeSu(login);
   if (!nome) return '';
   const p = PIATTAFORME.find((x) => x.id === piattaformaDi(login));
-  return p ? p.casa + nome : '';
+  // Senza una casa non c'e' un indirizzo: meglio niente che un link rotto.
+  return (p && p.casa) ? p.casa + nome : '';
 }
 
 // --- le scorciatoie per piattaforma ---------------------------------
@@ -97,6 +110,10 @@ export function urlCanale(login) {
 export const loginKick = (nome) => loginSu('kick', nome);
 export const eKick = (login) => eSu('kick', login);
 export const nomeKick = (login) => (eKick(login) ? nomeSu(login) : '');
+
+export const loginDiscord = (nome) => loginSu('discord', nome);
+export const eDiscord = (login) => eSu('discord', login);
+export const nomeDiscord = (login) => (eDiscord(login) ? nomeSu(login) : '');
 
 export const loginYoutube = (nome) => loginSu('youtube', nome);
 export const eYoutube = (login) => eSu('youtube', login);

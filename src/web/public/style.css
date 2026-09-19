@@ -1379,6 +1379,12 @@ table.tabella { width: 100%; border-collapse: collapse; font-size: .9rem; margin
 .dcs-verdetto.tiene { color: var(--verde); border-color: var(--verde-bordo); background: var(--verde-soft); }
 .dcs-verdetto.togli { color: var(--testo-3); }
 
+.dc-porta { margin-top: .4rem; }
+.dc-indirizzo {
+  font-size: .9rem; padding: .35rem .6rem; border-radius: 8px;
+  background: var(--surface-2); border: 1px solid var(--border); word-break: break-all;
+}
+
 #dc-frasi { grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
 #dc-frasi textarea { min-height: 92px; }
 

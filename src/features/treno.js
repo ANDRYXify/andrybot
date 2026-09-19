@@ -190,7 +190,7 @@ export function suEvento(channel, tipo, dati, { say, spingi, ora = Date.now() } 
 // comando che dice «non c'e' nessun treno» a ogni curioso e' un modo per far
 // dire al bot cose che non servono a nessuno.
 export function tryComando(msg, parla, { ora = Date.now() } = {}) {
-  if (!msg || msg.isSelf) return false;
+  if (!msg) return false;   // lo streamer scrive col NOSTRO account: scartarlo scarta lui (docs/COMANDI.md)
   const testo = String(msg.text || '').trim();
   if (!testo.startsWith('!')) return false;
   if ((testo.slice(1).split(/\s+/)[0] || '').toLowerCase() !== 'treno') return false;
