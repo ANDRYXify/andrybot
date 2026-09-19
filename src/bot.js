@@ -1318,9 +1318,12 @@ export class BotManager {
     dcDest.migra(login, dcConf.get(login));   // il vecchio canale unico diventa la prima destinazione
     const dest = dcDest.perEvento(login, evento, chi);
     if (!dest.length) return { inviati: 0 };
+    // Il token serve a chi passa dal bot; chi ha un webhook ha gia' la sua
+    // chiave dentro l'indirizzo. Pretenderlo qui spegnerebbe i webhook.
     const token = dcApi.tokenDi(dcRuoli.get(login));
-    if (!token) return { inviati: 0 };
-    const esiti = await discord.diffondi(token, dest, d, { conIncorniciato });
+    const buoni = token ? dest : dest.filter((x) => x.webhook);
+    if (!buoni.length) return { inviati: 0 };
+    const esiti = await discord.diffondi(token, buoni, d, { conIncorniciato });
     let inviati = 0;
     for (const e of esiti) {
       if (!e.ok) continue;
@@ -1329,8 +1332,8 @@ export class BotManager {
       if (chi && chi !== login) dcMsg.segna(login, e.dest.id, chi, e.id);
       else dcDest.setMsgId(e.dest.id, e.id);
     }
-    if (inviati) log.info(`Discord: «${evento}» di #${chi} inviato a ${inviati}/${dest.length} canali di #${login}`);
-    return { inviati, totale: dest.length };
+    if (inviati) log.info(`Discord: «${evento}» di #${chi} inviato a ${inviati}/${buoni.length} canali di #${login}`);
+    return { inviati, totale: buoni.length };
   }
 
   // Un evento arrivato da un'altra piattaforma (per ora Kick) entra qui.
@@ -1492,12 +1495,12 @@ export class BotManager {
       }
       tgMsg.pulisci(login, chi);
       const token = dcApi.tokenDi(dcRuoli.get(login));
-      if (token) {
+      {
         for (const m of dcMsg.perStreamer(login, chi)) {
           const d = dcDest.get(login, m.dest_id);
           if (d?.chiudi && m.msg_id) {
-            const r = await discord.eliminaMessaggio(token, d.canale, m.msg_id);
-            if (!r.ok) log.debug(`elimina live di ${chi} in ${d.canale_nome || d.canale}: ${r.errore}`);
+            const r = await discord.chiudiMessaggio(token, d, m.msg_id, discord.testoFinita({ display: chi }));
+            if (!r.ok) log.debug(`chiudi live di ${chi} in ${d.canale_nome || d.canale}: ${r.errore}`);
           }
         }
       }
@@ -1527,15 +1530,15 @@ export class BotManager {
     } catch (e) { log.error(`chiudi Telegram #${login}:`, e?.message || e); }
     try {
       const token = dcApi.tokenDi(dcRuoli.get(login));
-      if (!token) return;
       for (const d of dcDest.lista(login)) {
+        if (!token && !d.webhook) continue;
         if (!d.msg_id) continue;
         const msgId = d.msg_id;
         dcDest.setMsgId(d.id, '');    // azzera comunque: un solo tentativo per destinazione
         if (!d.chiudi) continue;      // si toglie solo dove lo streamer l'ha chiesto
-        const r = await discord.eliminaMessaggio(token, d.canale, msgId);
-        if (r.ok) log.info(`avviso Discord tolto da ${d.canale_nome || d.canale} (live di #${login} finita)`);
-        else log.warn(`togli Discord ${d.canale_nome || d.canale}: ${r.errore}`);
+        const r = await discord.chiudiMessaggio(token, d, msgId, discord.testoFinita(streamers.get(login) || { login }));
+        if (r.ok) log.info(`avviso Discord chiuso in ${d.canale_nome || d.canale} (live di #${login} finita)`);
+        else log.warn(`chiudi Discord ${d.canale_nome || d.canale}: ${r.errore}`);
       }
     } catch (e) { log.error(`chiudi Discord #${login}:`, e?.message || e); }
   }

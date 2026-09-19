@@ -63,19 +63,27 @@ function embedLive(streamer, info) {
   return emb;
 }
 
-// POST al webhook. `payload` è il body JSON. Ritorna { ok } | { ok:false, errore }.
-async function invia(webhook, payload) {
+// POST al webhook. `payload` è il body JSON. Ritorna { ok, id } | { ok:false, errore }.
+//
+// `?wait=true` serve a farsi restituire il messaggio appena scritto: senza,
+// Discord risponde «204, fatto» e basta, e senza il suo id l'avviso non si puo'
+// togliere quando la diretta finisce. La levetta ci sarebbe e non farebbe niente.
+async function invia(webhook, payload, { voglioIndietro = true } = {}) {
   if (!webhookValido(webhook)) return { ok: false, errore: 'webhook non valido' };
   const ac = new AbortController();
   const to = setTimeout(() => ac.abort(), TIMEOUT_MS);
   try {
-    const r = await fetch(webhook, {
+    const r = await fetch(webhook + (voglioIndietro ? '?wait=true' : ''), {
       method: 'POST',
       signal: ac.signal,
       headers: { 'Content-Type': 'application/json', 'User-Agent': 'SocialBot/1.0' },
       body: JSON.stringify(payload),
     });
-    if (r.status === 204 || r.status === 200) return { ok: true };
+    if (r.status === 200) {
+      let d = null; try { d = await r.json(); } catch { /* niente */ }
+      return { ok: true, id: String(d?.id || '') };
+    }
+    if (r.status === 204) return { ok: true, id: '' };
     if (r.status === 404 || r.status === 401) return { ok: false, errore: 'webhook inesistente o revocato', morto: true };
     if (r.status === 429) return { ok: false, errore: 'troppe richieste, riprova tra poco' };
     let d = null; try { d = await r.json(); } catch { /* niente */ }
@@ -224,7 +232,11 @@ export async function diffondi(token, dest, d, { conIncorniciato = true } = {}) 
       allowed_mentions: ruolo ? { roles: [ruolo] } : { parse: [] },
     };
     if (emb) payload.embeds = [emb];
-    const r = await api.mandaMessaggio(token, t.canale, payload)
+    // Il posto e' un canale del server o un webhook: chi aveva la strada vecchia
+    // continua a ricevere senza aver fatto niente. Cambia solo chi bussa.
+    const r = await (t.webhook
+      ? invia(t.webhook, payload)
+      : api.mandaMessaggio(token, t.canale, payload))
       .catch((e) => ({ ok: false, errore: e?.message || String(e) }));
     if (!r.ok) log.warn(`discord → ${t.canale_nome || t.canale}: ${r.errore}`);
     out.push({ dest: t, ...r });
@@ -232,9 +244,42 @@ export async function diffondi(token, dest, d, { conIncorniciato = true } = {}) 
   return out;
 }
 
-export async function eliminaMessaggio(token, canale, msgId) {
-  if (!msgId) return { ok: false, errore: 'nessun messaggio da eliminare' };
-  return api.togliMessaggio(token, canale, msgId);
+// CHIUDERE UN AVVISO: l'avviso non si cancella, si RISCRIVE.
+//
+// Cancellare vorrebbe dire usare la porta che, coi privilegi che il bot tiene
+// per passarli, cancella il messaggio di chiunque. Riscrivere no: Discord
+// rifiuta sempre la modifica di un messaggio di un altro, qualunque permesso si
+// abbia — quindi questa strada, puntata altrove, non fa niente. E' anche piu'
+// onesta verso chi c'era: la riga resta, e dice che la diretta e' finita.
+export const TESTO_FINITA = '⚫ La diretta è finita.';
+
+export function testoFinita(d, quando = null) {
+  const nome = d?.display || d?.login || '';
+  const ora = quando ? ` · ${quando}` : '';
+  return nome ? `⚫ **${nome}** ha finito la diretta${ora}` : TESTO_FINITA + ora;
+}
+
+export async function chiudiMessaggio(token, dove, msgId, testo = TESTO_FINITA) {
+  if (!msgId) return { ok: false, errore: 'nessun avviso da chiudere' };
+  const corpo = { content: String(testo || TESTO_FINITA).slice(0, 1990), embeds: [], allowed_mentions: { parse: [] } };
+  const wh = String(dove?.webhook || '').trim();
+  if (wh) {
+    if (!webhookValido(wh)) return { ok: false, errore: 'webhook non valido' };
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), TIMEOUT_MS);
+    try {
+      const r = await fetch(`${wh}/messages/${encodeURIComponent(msgId)}`, {
+        method: 'PATCH', signal: ac.signal,
+        headers: { 'Content-Type': 'application/json', 'User-Agent': 'SocialBot/1.0' },
+        body: JSON.stringify(corpo),
+      });
+      if (r.status === 200 || r.status === 204) return { ok: true };
+      if (r.status === 404) return { ok: true, sparito: true };
+      return { ok: false, errore: 'HTTP ' + r.status };
+    } catch { return { ok: false, errore: 'Discord irraggiungibile' }; }
+    finally { clearTimeout(to); }
+  }
+  return api.modificaMessaggio(token, String(dove?.canale || dove || ''), msgId, corpo);
 }
 
 export async function notificaDiretta(conf, d) {

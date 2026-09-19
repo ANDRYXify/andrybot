@@ -4310,7 +4310,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   const dcAvvisiVisti = (login) => {
     dcDest.migra(login, dcConf.get(login));
     return dcDest.lista(login).map((d) => ({
-      id: d.id, canale: d.canale, canaleNome: d.canale_nome,
+      id: d.id, canale: d.canale, canaleNome: d.canale_nome, webhook: !!d.webhook,
       eventi: d.eventi ? d.eventi.split(',') : [], streamer: d.streamer ? d.streamer.split(',') : [],
       messaggio: d.messaggio || '', ruolo: d.ruolo || '', chiudi: !!d.chiudi, attivo: !!d.attivo,
     }));
@@ -7888,7 +7888,13 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   }));
 
   // ── AMICI: altri streamer di cui annunciare la diretta ────────────────────
-  app.post('/api/streamer/telegram/amici', requireLogin, wrap(async (req, res) => {
+  //
+  // La lista e' UNA e si vede da tutte e due le sezioni: chiedere a Twitch due
+  // volte come sta lo stesso canale sarebbe il doppio delle chiamate per la
+  // stessa risposta. Per questo le porte non stanno sotto «telegram»: stavano
+  // li' quando erano di Telegram, e il nome e' rimasto a dire una cosa falsa.
+  // Cosa farsene di un amico lo decide ogni sezione per conto suo.
+  app.post('/api/streamer/amici', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const chiesto = String(req.body?.login || '').trim().toLowerCase().replace(/^@/, '');
     if (!/^[a-z0-9_]{3,25}$/.test(chiesto)) return res.status(400).json({ errore: 'nome canale Twitch non valido' });
@@ -7901,14 +7907,14 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: true, id, display: u.display_name || chiesto });
   }));
 
-  app.patch('/api/streamer/telegram/amici/:id', requireLogin, wrap(async (req, res) => {
+  app.patch('/api/streamer/amici/:id', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const a = amici.aggiorna(login, req.params.id, req.body || {});
     if (!a) return res.status(404).json({ errore: 'streamer non trovato' });
     res.json({ ok: true });
   }));
 
-  app.delete('/api/streamer/telegram/amici/:id', requireLogin, wrap(async (req, res) => {
+  app.delete('/api/streamer/amici/:id', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (!amici.rimuovi(login, req.params.id)) return res.status(404).json({ errore: 'streamer non trovato' });
     res.json({ ok: true });
