@@ -40,12 +40,67 @@ export const PERMESSI = Object.freeze({
 });
 
 
+// I PRIVILEGI DI UN RUOLO, che sono un'altra cosa dai permessi di un canale.
+//
+// Quelli di sopra dicono cosa si puo' fare DENTRO un canale; questi dicono
+// cosa si puo' fare NEL SERVER, e valgono ovunque. Si somigliano solo perche'
+// Discord li scrive nello stesso modo, ma non si mescolano mai: una riga di
+// canale non puo' bannare nessuno, e un ruolo non si applica a un canale solo.
+//
+// Sono pochi apposta. Discord ne ha una cinquantina, e un muro di cinquanta
+// interruttori non si legge: si spunta a caso. Questi sono quelli per cui una
+// persona un ruolo lo crea davvero — moderare, ripulire, farsi sentire.
+//
+// I valori vengono dalla documentazione di Discord, non dalla memoria.
+export const PERMESSI_RUOLO = Object.freeze({
+  moderare: 1n << 40n,      // MODERATE_MEMBERS — mettere in pausa
+  cacciare: 1n << 1n,       // KICK_MEMBERS
+  bannare: 1n << 2n,        // BAN_MEMBERS
+  pulire: 1n << 13n,        // MANAGE_MESSAGES
+  soprannomi: 1n << 27n,    // MANAGE_NICKNAMES
+  zittire: 1n << 22n,       // MUTE_MEMBERS
+  spostare: 1n << 24n,      // MOVE_MEMBERS
+  registro: 1n << 7n,       // VIEW_AUDIT_LOG
+  eventi: 1n << 33n,        // MANAGE_EVENTS
+  chiamareTutti: 1n << 17n, // MENTION_EVERYONE
+  emojiAltrui: 1n << 18n,   // USE_EXTERNAL_EMOJIS
+  trasmettere: 1n << 9n,    // STREAM
+  priorita: 1n << 8n,       // PRIORITY_SPEAKER
+});
+
+// QUELLO CHE IL BOT DEVE AVERE PER POTERLO DARE.
+//
+// Discord: «un bot puo' dare a un ruolo soltanto i privilegi che ha lui». Non
+// e' una nostra prudenza, e' una regola loro — e senza guardarla in faccia il
+// costruttore fallirebbe a meta', dopo aver gia' creato il ruolo.
+//
+// Percio' questo numero non si scrive a mano: e' la somma esatta di quello che
+// i ruoli qui dentro sanno distribuire. Aggiungere un privilegio sopra lo fa
+// entrare anche qui, e nessuno deve ricordarsene.
+export const PERMESSI_DA_DARE = String(Object.values(PERMESSI_RUOLO).reduce((t, v) => t | v, 0n));
+
+export const sommaRuolo = (nomi) => (nomi || []).reduce((t, n) => t | (PERMESSI_RUOLO[n] || 0n), 0n);
+
+// Quali di questi privilegi il bot NON puo' passare, visti i suoi. Torna i
+// nomi, non i numeri: e' una frase da dire a una persona.
+export function nonPuoDare(permessi, bitsBot) {
+  let b = 0n;
+  try { b = typeof bitsBot === 'bigint' ? bitsBot : BigInt(bitsBot || 0); } catch { b = 0n; }
+  const AMMINISTRATORE = 1n << 3n;
+  if ((b & AMMINISTRATORE) === AMMINISTRATORE) return [];
+  return (permessi || []).filter((n) => {
+    const v = PERMESSI_RUOLO[n];
+    return v !== undefined && (b & v) !== v;
+  });
+}
+
 // Quanto puo' chiedere un preset: i limiti sono quelli del motore della
 // differenza, e stanno scritti li'. Averne una seconda copia qui vorrebbe dire
 // due numeri che un giorno non coincidono piu'.
 import { MAX_CATEGORIE, MAX_CANALI } from './discord-preset.js';
 export { MAX_CATEGORIE, MAX_CANALI };
 export const TIPI_CANALE = Object.freeze(['testo', 'voce', 'annunci', 'forum']);
+export { MAX_RUOLI } from './discord-preset.js';
 
 const somma = (nomi) => (nomi || []).reduce((t, n) => t | (PERMESSI[n] || 0n), 0n);
 

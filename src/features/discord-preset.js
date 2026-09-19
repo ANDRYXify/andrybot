@@ -31,6 +31,13 @@ export const TIPI_NOME = Object.freeze({ 0: 'testo', 2: 'voce', 4: 'categoria', 
 
 export const MAX_CATEGORIE = 20;
 export const MAX_CANALI = 60;
+export const MAX_RUOLI = 15;
+
+// COME SI RICONOSCE «LO STESSO RUOLO»: dal nome, senza badare alle maiuscole.
+// Discord i nomi dei ruoli li lascia come li scrivi, quindi qui non si storpia
+// niente: si confronta e basta.
+export const nomeRuolo = (n) => String(n || '').trim().replace(/\s+/g, ' ').slice(0, 100);
+const chiaveRuolo = (n) => nomeRuolo(n).toLowerCase();
 
 // COME SI RICONOSCE «LO STESSO CANALE».
 //
@@ -76,6 +83,54 @@ export function intoccabili(foto) {
   for (const r of (foto?.ruoli || [])) {
     if (r?.managed) fuori.add(String(r.id));
     if (String(r?.id) === String(g.id)) fuori.add(String(r.id));   // @everyone
+  }
+  return fuori;
+}
+
+// I RUOLI CHE NON SONO NOSTRI DA TOCCARE, e nemmeno qui e' un elenco che
+// manteniamo: sono tre domande al server.
+//
+//  · @everyone ha l'id del server: non e' un ruolo che si crea o si cancella.
+//  · Un ruolo `managed` e' di un'integrazione — il ruolo dei sub di Twitch ne
+//    e' l'esempio che ci riguarda di piu' — e Discord non lo lascia muovere.
+//  · Sopra il bot non si arriva. Discord: «un bot puo' modificare i ruoli in
+//    posizione piu' bassa del suo piu' alto». Il ruolo del proprietario, gli
+//    amministratori, spesso i moderatori storici: tutta roba che il costruttore
+//    non deve nemmeno mettere nell'elenco delle cose da fare, perche' provarci
+//    sarebbe un errore a meta' strada invece di una frase detta prima.
+export function ruoliIntoccabili(foto) {
+  const g = foto?.guild || {};
+  const mio = Number(foto?.bot?.livello);
+  const fuori = new Set();
+  for (const r of (foto?.ruoli || [])) {
+    if (!r?.id) continue;
+    if (String(r.id) === String(g.id)) { fuori.add(String(r.id)); continue; }
+    if (r.managed) { fuori.add(String(r.id)); continue; }
+    if (Number.isFinite(mio) && Number(r.position) >= mio) fuori.add(String(r.id));
+  }
+  return fuori;
+}
+
+// I ruoli come li vuole il preset. Il nome e' l'unica cosa obbligatoria: un
+// ruolo senza privilegi e senza colore e' legittimo — serve a dire «questo e'
+// uno di noi» e basta.
+function voluteRuoli(preset) {
+  const fuori = [];
+  const visti = new Set();
+  for (const r of (preset?.ruoli || [])) {
+    const nome = nomeRuolo(r?.nome);
+    if (!nome) continue;
+    const k = nome.toLowerCase();
+    if (visti.has(k)) continue;        // lo stesso ruolo scritto due volte e' un ruolo solo
+    visti.add(k);
+    fuori.push({
+      nome,
+      colore: Math.max(0, Math.min(0xffffff, Number(r?.colore) || 0)),
+      separato: !!r?.separato,
+      citabile: !!r?.citabile,
+      privilegi: [...new Set((Array.isArray(r?.privilegi) ? r.privilegi : []).map(String))],
+    });
+    if (fuori.length >= MAX_RUOLI) break;
   }
   return fuori;
 }
