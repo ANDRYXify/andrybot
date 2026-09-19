@@ -17,9 +17,9 @@ import { config } from '../config.js';
 import { makeLog } from '../logger.js';
 import { contiDonazioni, registroDonazioni } from '../db.js';
 import { urlPaginaDona } from './donazioni.js';
+import { chiama as chiamaStripe } from './stripe-filo.js';
 
 const log = makeLog('donazioni');
-const API = 'https://api.stripe.com/v1';
 export const SCADENZA_MS = 60 * 60 * 1000;          // una sessione di pagamento vive un'ora
 const TOLLERANZA_MS = 15 * 60 * 1000;               // poi si aspetta ancora un quarto d'ora prima di darla per scaduta
 const RONDA_MS = 2 * 60 * 1000;
@@ -28,30 +28,11 @@ const RONDA_MS = 2 * 60 * 1000;
 // puo' fare tutto, e non deve stare da nessuna parte fuori dal suo Dashboard.
 export const CHIAVE_OK = /^rk_(live|test)_[A-Za-z0-9]{16,}$/;
 
-// Una chiamata a Stripe con la chiave dello streamer. Torna { ok, dati } o
-// { ok: false, errore, codice }; non lancia mai.
-async function stripe(chiave, metodo, path, params = null) {
-  const headers = { Authorization: 'Bearer ' + chiave };
-  let body;
-  if (params) {
-    headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    body = new URLSearchParams();
-    for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== null && v !== '') body.append(k, String(v));
-  }
-  try {
-    const r = await fetch(API + path, { method: metodo, headers, body });
-    const dati = await r.json().catch(() => null);
-    if (!r.ok) {
-      const errore = dati?.error?.message || String(r.status);
-      log.warn(`stripe ${metodo} ${path}: ${errore}`);
-      return { ok: false, errore, codice: dati?.error?.code || String(r.status), stato: r.status };
-    }
-    return { ok: true, dati };
-  } catch (e) {
-    log.warn(`stripe ${metodo} ${path}: irraggiungibile`, e?.message || e);
-    return { ok: false, errore: 'irraggiungibile', codice: 'rete', stato: 0 };
-  }
-}
+// La chiamata a Stripe sta in `stripe-filo.js`: la stessa che usa il conto
+// della piattaforma per i sostegni al progetto. Qui si passa la chiave DELLO
+// STREAMER, e cambia tutto senza che il filo debba saperlo.
+const stripe = chiamaStripe;
+
 // Stripe, quando rifiuta, dice perche': con 401 la chiave non esiste piu'
 // (revocata, o del modo sbagliato), con 403 le manca un permesso, e la sua
 // frase dice quale. E' la chiave dello streamer: le parole di Stripe si

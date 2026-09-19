@@ -6,151 +6,73 @@
   <meta name="theme-color" content="#fdfbf6">
   <link rel="icon" href="/icons/icon-192.png?v=8">
   <link rel="apple-touch-icon" href="/icons/icon-192.png?v=8">
-  <title>SocialBot — Termini di Servizio</title>
+  <title>SocialBot — Sostieni il progetto</title>
   <link rel="stylesheet" href="/font.css">
   <link rel="stylesheet" href="/tema.css">
   <link rel="stylesheet" href="/pagina.css">
   <script src="/tema.js"></script>
-  <meta name="description" content="Le condizioni d’uso di SocialBot: cosa fa il servizio, cosa ci si aspetta da chi lo usa, come funzionano abbonamenti e recessi, e i limiti delle piattaforme collegate.">
+  <meta name="description" content="SocialBot lo scrivo io, e quasi tutto quello che fa resta gratis. Se ti è utile e ti va di darmi una mano, qui si può: quanto vuoi tu, una volta sola.">
   <meta name="copyright" content="© 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live">
-  <link rel="canonical" href="https://socialbot.live/termini">
-  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <link rel="canonical" href="https://socialbot.live/sostieni">
+  <meta name="robots" content="index, follow">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="SocialBot">
   <meta property="og:locale" content="it_IT">
-  <meta property="og:url" content="https://socialbot.live/termini">
-  <meta property="og:title" content="Termini di servizio di SocialBot">
-  <meta property="og:description" content="Le condizioni d’uso di SocialBot: cosa fa il servizio, cosa ci si aspetta da chi lo usa, come funzionano abbonamenti e recessi, e i limiti delle piattaforme collegate.">
+  <meta property="og:title" content="Sostieni SocialBot">
+  <meta property="og:description" content="Se SocialBot ti è utile e ti va di darmi una mano: quanto vuoi tu, una volta sola, senza iscriverti a niente.">
+  <meta property="og:url" content="https://socialbot.live/sostieni">
   <meta property="og:image" content="https://socialbot.live/icons/og.png?v=8">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="SocialBot — il bot che in chat scrive con il tuo nome, per Twitch e Kick">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Termini di servizio di SocialBot">
-  <meta name="twitter:description" content="Le condizioni d’uso di SocialBot: cosa fa il servizio, cosa ci si aspetta da chi lo usa, come funzionano abbonamenti e recessi, e i limiti delle piattaforme collegate.">
+  <meta name="twitter:title" content="Sostieni SocialBot">
+  <meta name="twitter:description" content="Se SocialBot ti è utile e ti va di darmi una mano: quanto vuoi tu, una volta sola.">
   <meta name="twitter:image" content="https://socialbot.live/icons/og.png?v=8">
   <meta name="twitter:image:alt" content="SocialBot — il bot che in chat scrive con il tuo nome, per Twitch e Kick">
 </head>
-<body>
-  <div class="wrap">
-    <header class="top">
-      <img src="/icons/marchio-barra.png?v=8" alt="SocialBot" width="82" height="52">
-      <div>
-        <h1>Termini di Servizio</h1>
-        <div class="sub">SocialBot · socialbot.live</div>
+<body class="centrata">
+  <div class="card larga">
+    <img src="/icons/marchio-barra.png?v=8" alt="SocialBot" width="132" height="84">
+    <h1>Sostieni SocialBot</h1>
+    <p>Ciao, sono Andrea. SocialBot lo scrivo io, e quasi tutto quello che fa resta gratis. Se ti è utile e ti va di darmi una mano, qui si può: quanto vuoi tu, una volta sola.</p>
+
+    <div id="modulo" hidden>
+      <div class="sos-cifre" id="cifre" role="group" aria-label="Quanto vuoi dare"></div>
+      <div class="sos-riga">
+        <input type="text" id="altro" inputmode="decimal" autocomplete="off" placeholder="o scrivi tu quanto" aria-label="Importo in euro">
+        <span class="sos-euro">€</span>
       </div>
-    </header>
+      <button class="azione" id="vai">Dai una mano</button>
+      <div class="msg" id="msg"></div>
 
-    <section>
-      <p>SocialBot è un servizio di <strong>ANDRYXify</strong> per streamer: un bot che vive nella chat di
-      <strong>Twitch</strong> — e, se lo streamer le collega, anche di <strong>Kick</strong> e
-      <strong>YouTube</strong> — con l'account dello streamer stesso, e offre comandi, moderazione, overlay per la diretta,
-      clip, richieste musicali, minigiochi, penitenze e <strong>notifiche</strong> (dirette e nuovi contenuti su
-      Twitch, Kick, YouTube, Telegram, TikTok, Instagram). Usando SocialBot accetti questi Termini.</p>
-      <p>Ci si registra <strong>con Twitch oppure con Kick</strong>: chi trasmette solo su Kick non ha bisogno di un
-      account Twitch. In quel caso valgono le funzioni che Kick permette — le parti che dipendono da Twitch
-      (moderazione automatica, clip, categoria e titolo, VIP, punti canale, emote 7TV) restano spente, e il pannello
-      lo dice apertamente invece di mostrare comandi che non farebbero nulla.</p>
-      <p class="muted">Fornitore del servizio: ANDRYXify. Contatti tramite i
-      <a href="https://www.andryxify.it">canali ufficiali di andryxify.it</a>.</p>
-    </section>
+      <details class="sos-due-righe">
+        <summary>Vuoi dirmi qualcosa?</summary>
+        <input type="text" id="nome" maxlength="60" autocomplete="off" placeholder="Come ti chiami" aria-label="Come ti chiami">
+        <textarea id="messaggio" maxlength="300" rows="3" placeholder="Quello che ti va di dirmi" aria-label="Il tuo messaggio"></textarea>
+        <p class="minuta">Le leggo io e restano fra noi: non c&rsquo;è nessuna pagina dei sostenitori.</p>
+      </details>
 
-    <section>
-      <h2>1. Chi può usarlo</h2>
-      <ul>
-        <li>Devi avere l'<strong>età minima</strong> richiesta dalle piattaforme che colleghi (almeno 13 anni, o l'età
-          prevista nel tuo Paese) ed essere titolare o moderatore autorizzato del canale che gestisci.</li>
-        <li>L'<strong>Essenziale</strong> è gratuito per chiunque si registri con il proprio account Twitch, Kick o YouTube.
-          Alcune funzioni richiedono un piano a pagamento oppure l'abilitazione come membro della community di andryxify.it.</li>
-      </ul>
-    </section>
+      <p class="minuta sos-stripe">Il pagamento lo gestisce <strong>Stripe</strong>: la carta la vedono solo loro e la tua banca, mai SocialBot.</p>
+    </div>
 
-    <section>
-      <h2>2. Cosa fa il servizio</h2>
-      <p>Attivando le funzioni, autorizzi SocialBot ad agire per tuo conto sulle piattaforme che <strong>colleghi
-      tu</strong> (via OAuth), nei limiti dei permessi concessi: scrivere in chat, creare clip, gestire VIP, moderare,
-      ricevere eventi, leggere i tuoi ultimi contenuti pubblici per inviare le notifiche. Puoi accendere e spegnere ogni
-      funzione e <strong>revocare</strong> l'accesso in qualsiasi momento scollegando l'account.</p>
-    </section>
+    <div id="grazie" hidden>
+      <h2>Grazie davvero.</h2>
+      <p id="grazie-testo">È arrivato, e conta più di quanto sembri.</p>
+      <a class="azione" href="/">Torna al sito</a>
+    </div>
 
-    <section>
-      <h2>3. Piattaforme di terzi</h2>
-      <p>SocialBot si integra con servizi di terze parti (Twitch, Kick, YouTube, TikTok, Telegram, Instagram,
-      Spotify, 7TV). L'uso di ciascuna integrazione è soggetto <strong>anche ai Termini e alle Policy di quella
-      piattaforma</strong>. Ti impegni a rispettarli. In particolare, i dati e le API di TikTok sono usati solo per
-      le funzioni che attivi (es. l'avviso di un nuovo tuo video) e nel rispetto delle regole di TikTok; allo stesso
-      modo, il bot scrive e legge su <strong>Kick</strong> e <strong>YouTube</strong> soltanto nei canali che hai
-      collegato tu, con i permessi che hai concesso tu, e smette nel momento in cui li revochi.</p>
-      <p>Le <strong>donazioni</strong> ricevute dalla pagina link passano da <strong>Stripe</strong> o da
-      <strong>Satispay</strong>, su un conto che apri tu e che resta tuo: sei tu l'esercente, a te arrivano i soldi, e a te fanno capo le commissioni di Stripe, le
-      ricevute e le eventuali contestazioni. SocialBot non incassa per tuo conto, non custodisce fondi e non trattiene
-      nulla: usa soltanto la chiave a permessi ridotti (Stripe) o il codice di attivazione (Satispay) che gli affidi tu, e
-      che puoi revocare dal tuo pannello quando vuoi. Il conto resta soggetto ai termini di Stripe o di Satispay.
-      Chi allega un'immagine a una donazione risponde di ciò che manda: niente contenuti illeciti, offensivi o di altri
-      senza permesso. Lo streamer decide se mandarla in onda, e una donazione resta una donazione anche se l'immagine
-      non va in onda.</p>
-      <p>Discorso a parte per i <strong>programmi che girano sul tuo computer</strong> — quello con cui mandi in onda e
-      simili. Non siamo partner di nessuno di loro e non li rivendiamo: SocialBot si limita a parlare con il collegamento
-      che quei programmi mettono a disposizione, se sei tu ad accenderlo e a darci l'indirizzo. Il collegamento parte dal
-      <strong>tuo browser</strong> e resta sul tuo computer: noi non lo vediamo, non conserviamo la password e non
-      possiamo comandare quei programmi per conto nostro. Se quel collegamento smette di funzionare perché il programma
-      cambia, non dipende da noi.</p>
-    </section>
+    <div id="spento" hidden>
+      <p class="msg err">In questo momento non si può sostenere il progetto da qui. Riprova più tardi.</p>
+    </div>
 
-    <section>
-      <h2>4. Uso corretto</h2>
-      <ul>
-        <li>Non usare SocialBot per <strong>spam</strong>, molestie, contenuti illegali, violazioni di copyright o per
-          aggirare le regole delle piattaforme.</li>
-        <li>Non tentare di accedere a dati non tuoi, di compromettere il servizio o di usarlo per finalità diverse da
-          quelle previste.</li>
-        <li>Sei responsabile dei contenuti che il bot pubblica <strong>col tuo account</strong> e delle configurazioni
-          che imposti.</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2>5. Dati e privacy</h2>
-      <p>Il trattamento dei dati è descritto nell'<a href="/privacy">Informativa Privacy &amp; Sicurezza</a>. In breve:
-      raccogliamo solo ciò che serve a far funzionare le funzioni che attivi, i token restano sul server e non sono mai
-      esposti al browser, non vendiamo dati e non usiamo IA a pagamento di terzi.</p>
-    </section>
-
-    <section>
-      <h2>6. Sostenere il progetto</h2>
-      <p>Da <a href="/sostieni">socialbot.live/sostieni</a> si può dare una mano al progetto. È una
-      <strong>libera donazione</strong>, non l'acquisto di qualcosa: non sblocca funzioni, non dà diritto a un piano e non
-      cambia niente nel servizio. Il pagamento lo gestisce <strong>Stripe</strong> sul conto di ANDRYXify.</p>
-      <p>Se hai sbagliato importo o hai cambiato idea, scrivi dai <a href="https://www.andryxify.it">canali ufficiali</a>
-      entro 14 giorni e ti viene restituito. Sostenere il progetto non richiede un account.</p>
-    </section>
-
-    <section>
-      <h2>7. Servizio "così com'è"</h2>
-      <p>SocialBot è offerto <strong>senza garanzie</strong> di disponibilità continua o di risultati specifici. Le API
-      di terze parti possono cambiare o non essere disponibili. Nei limiti di legge, ANDRYXify non è responsabile per
-      danni indiretti derivanti dall'uso del servizio.</p>
-    </section>
-
-    <section>
-      <h2>8. Sospensione e chiusura</h2>
-      <p>Possiamo sospendere o chiudere l'accesso in caso di abuso o di violazione di questi Termini o delle regole delle
-      piattaforme collegate. Puoi smettere di usare il servizio quando vuoi, scollegando gli account e, se abbonato,
-      gestendo l'abbonamento dalla dashboard.</p>
-    </section>
-
-    <section>
-      <h2>9. Modifiche</h2>
-      <p>Possiamo aggiornare questi Termini; le modifiche rilevanti saranno pubblicate su questa pagina. L'uso continuato
-      del servizio dopo un aggiornamento vale come accettazione.</p>
-    </section>
-
-    <footer>
-      <p><a href="/">← Torna alla dashboard</a> · <a href="/privacy">Privacy</a> · <a href="https://www.andryxify.it">andryxify.it</a></p>
-      <p class="aggiornato">SocialBot — Termini di Servizio. Ultimo aggiornamento: 2026.</p>
-    </footer>
+    <div class="sos-piede">
+      <a href="/">SocialBot</a> · <a href="/privacy">Privacy &amp; Sicurezza</a> · <a href="/termini">Termini</a>
+    </div>
   </div>
+
+  <script src="/sostieni.js" defer></script>
 
 <!-- Questo software e tutto il suo contenuto (codice, logica, dati, motori di ragionamento e la persona "Lia") sono proprieta intellettuale di Andrea Taliento (ANDRYXify). © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live. ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 <span style="display:none" aria-hidden="true">​‌​‌​​​‌​‌‌‌​‌​‌​‌‌​​‌​‌​‌‌‌​​‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​‌‌​​‌‌‌​‌​​​‌‌‌​‌‌‌​‌‌​​​​‌​‌‌‌​​‌​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌‌​‌​‌​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​​‌​​​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​‌​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​​​‌‌​‌‌‌‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​​‌​​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​‌​‌‌​‌‌‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​‌‌‌​​‌​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​​​​‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​‌‌​‌‌​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌​‌‌​​​‌‌​​​​‌​​‌​​​​​​‌‌‌​​​​​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​​‌​​​​​​​‌​​​‌​​‌​​‌‌​​​‌‌​‌​​‌​‌‌​​​​‌​​‌​​​‌​​​‌​‌​​‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌‌‌‌​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌‌​‌​​​‌‌​​​​‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌​​​‌‌​‌‌​​​‌‌​​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​‌‌‌​​​‌​​​​​‌‌​​​​‌​‌​‌​‌​​‌​​‌​​​​​​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​​‌‌​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌‌​​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌​‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​​‌‌​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​‌‌​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌​​‌​‌‌‌​​​‌​​​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​​‌​‌‌​‌​‌​​‌​​‌​‌​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​​‌‌​​​​‌​​‌‌​‌‌‌​‌‌​​‌‌​​​‌‌​​‌‌​​‌‌‌​​‌​‌‌​​​‌‌​​‌‌​​​‌​‌‌​​‌​‌​​‌‌‌​​​​‌‌​​​‌​​​‌‌​‌​​​​‌‌​​‌​​​‌‌​‌​​​‌‌​​‌​​​​‌‌‌​​‌​​‌‌​​​​​​‌​‌‌​‌​​‌‌​‌​​​‌‌​​‌‌​​​‌‌​‌‌‌​‌‌​​​‌​​​‌​‌‌​‌​‌‌‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌‌‌​‌​​​‌‌‌​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌⁣</span></body>

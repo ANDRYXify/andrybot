@@ -87,6 +87,11 @@ export const config = {
   // ha anche l'indirizzo corto dona.socialbot.live/<login>, e da li' si torna.
   donaHost: /^(no|off)$/i.test(env('DONA_HOST', '')) ? '' : env('DONA_HOST', '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
   donaHostSpento: /^(no|off)$/i.test(env('DONA_HOST', '')),
+  // L'indirizzo corto del sostegno al progetto (sostieni.<dominio>). Come
+  // quello delle donazioni: se non lo scrivi, il server prova il DNS e se
+  // risponde lo accende da solo. «no» lo tiene spento.
+  sostieniHost: /^(no|off)$/i.test(env('SOSTIENI_HOST', '')) ? '' : env('SOSTIENI_HOST', '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
+  sostieniHostSpento: /^(no|off)$/i.test(env('SOSTIENI_HOST', '')),
   sessionSecret: sessionSecret(),
 
   // kick — app registrata su kick.com/settings/developer.

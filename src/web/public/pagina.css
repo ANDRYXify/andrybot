@@ -98,3 +98,34 @@ p.piccolo { color: var(--testo-3); font-size: .84rem; margin-top: 14px; }
   font-size: 1.15rem; font-weight: 700; letter-spacing: .06em; user-select: all;
 }
 .minuta { font-size: .84rem; color: var(--testo-3); }
+
+.card.larga { max-width: 480px; }
+.sos-cifre { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 20px 0 6px; }
+.sos-cifre button {
+  flex: 1 1 5.5rem; min-height: 44px; padding: 10px 14px;
+  background: var(--surface-2); color: var(--testo); font: inherit; font-weight: 600;
+  border: 1px solid var(--border); border-radius: 12px; cursor: pointer;
+}
+.sos-cifre button.on { background: var(--acc); color: var(--su-acc); border-color: var(--acc); }
+.sos-campo { display: block; text-align: left; margin: 14px 0 5px; font-size: .84rem; color: var(--testo-2); }
+.sos-riga { display: flex; align-items: center; gap: 8px; }
+.sos-riga input { flex: 1 1 auto; }
+.sos-euro { font-weight: 600; color: var(--testo-2); }
+.card input[type="text"], .card textarea {
+  width: 100%; min-height: 44px; padding: 10px 12px; font: inherit;
+  background: var(--surface-2); color: var(--testo);
+  border: 1px solid var(--border); border-radius: 12px;
+}
+.card textarea { min-height: 72px; resize: vertical; line-height: 1.5; }
+.card input[type="text"]:focus-visible, .card textarea:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
+.sos-piede { margin-top: 22px; font-size: .82rem; color: var(--testo-3); }
+.sos-piede a { color: var(--testo-3); }
+@media (max-width: 460px) {
+  .sos-cifre { display: grid; grid-template-columns: 1fr 1fr; }
+}
+@media (hover: hover) { .sos-cifre button:hover { border-color: var(--acc); } }
+.sos-due-righe { margin-top: 18px; text-align: left; }
+.sos-due-righe > summary { cursor: pointer; font-size: .9rem; color: var(--testo-2); text-align: center; }
+.sos-due-righe > input, .sos-due-righe > textarea { margin-top: 10px; }
+.sos-due-righe .minuta { margin-top: 8px; text-align: center; }
+.sos-stripe { margin-top: 20px; }

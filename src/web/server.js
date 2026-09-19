@@ -81,6 +81,7 @@ import * as dcApi from '../features/discord-api.js';
 import * as dcCollega from '../features/discord-collega.js';
 import * as dcGiro from '../features/discord-giro.js';
 import { normRegole, fuoriPortata, mioLivello, TIPI as TIPI_RUOLO, haSoglia } from '../features/discord-ruoli.js';
+import * as sostegno from '../features/sostegno.js';
 import * as dcCatalogo from '../features/discord-catalogo.js';
 import * as dcCostruisci from '../features/discord-costruisci.js';
 import * as instagram from '../features/instagram.js';
@@ -311,15 +312,30 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // L'indirizzo corto delle donazioni si accende da solo: senza DONA_HOST si
   // prova dona.<dominio del sito> nel DNS, ogni dieci minuti finche' non
   // risponde; da quel momento le pagine e i ritorni lo usano. Basta il record.
-  const candidatoDona = !config.donaHost && !config.donaHostSpento ? donazioni.candidatoDonaHost(config.baseUrl) : '';
-  if (candidatoDona) {
-    const sondaDona = () => dns.lookup(candidatoDona).then(() => {
-      config.donaHost = candidatoDona;
-      log.info(`indirizzo corto delle donazioni acceso: ${candidatoDona}`);
-    }).catch(() => { setTimeout(sondaDona, 10 * 60_000).unref?.(); });
-    sondaDona();
-  }
+  const candidatoDona = !config.donaHost && !config.donaHostSpento ? donazioni.candidatoHost(config.baseUrl, 'dona') : '';
+  // Lo stesso giro per l'indirizzo corto del sostegno: sostieni.<dominio>.
+  // Una funzione sola per tutti e due — due sonde scritte a mano sarebbero due
+  // cose da tenere d'accordo, e la seconda e' sempre quella che si scorda.
+  const sondaHost = (candidato, metti, come) => {
+    if (!candidato) return;
+    const prova = () => dns.lookup(candidato).then(() => {
+      metti(candidato);
+      log.info(`${come}: ${candidato}`);
+    }).catch(() => { setTimeout(prova, 10 * 60_000).unref?.(); });
+    prova();
+  };
+  sondaHost(candidatoDona, (h) => { config.donaHost = h; }, 'indirizzo corto delle donazioni acceso');
+  sondaHost(!config.sostieniHost && !config.sostieniHostSpento ? donazioni.candidatoHost(config.baseUrl, 'sostieni') : '',
+    (h) => { config.sostieniHost = h; }, 'indirizzo corto del sostegno acceso');
+
   app.use((req, res, next) => {
+    // Sull'indirizzo corto del sostegno la radice E' la pagina. Tutto il resto
+    // passa: gli script, le immagini, l'informativa — sennò quella pagina si
+    // aprirebbe nuda.
+    if (config.sostieniHost && String(req.hostname || '').toLowerCase() === config.sostieniHost) {
+      if (req.path === '/') { req.url = '/sostieni'; }
+      return next();
+    }
     if (!config.donaHost || String(req.hostname || '').toLowerCase() !== config.donaHost) return next();
     // Sull'indirizzo corto vivono la pagina e la SUA informativa. Senza la
     // seconda, «Privacy» da li' dentro cadrebbe su una rotta che non c'e', o
@@ -2037,6 +2053,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       .join('\n');
     const voci = Object.values(LINGUE_URL).map((u) => ({ u, p: '1.0', f: 'weekly', alt: true }));
     for (const g of [...urlGuide(novita.pubbliche(novita.leggi(NOVITA_MD))), ...urlManuali()]) voci.push({ u: g.loc, p: g.prio, f: g.freq, m: g.lastmod });
+    voci.push({ u: `${b}/sostieni`, p: '0.4', f: 'yearly' });
     voci.push({ u: `${b}/privacy`, p: '0.3', f: 'yearly' });
     voci.push({ u: `${b}/termini`, p: '0.3', f: 'yearly' });
     try {
@@ -2263,6 +2280,44 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // Termini di servizio (pubblici: richiesti anche dalle app di terzi, es. TikTok)
   const TERMINI_HTML = guscio.pagina('termini.html');
   app.get(['/termini', '/terms'], (req, res) => res.sendFile(TERMINI_HTML));
+
+  // ── Sostenere il progetto ──
+  //
+  // Non e' la pagina delle donazioni di uno streamer: quei soldi vanno sul
+  // conto suo e si annunciano in diretta. Questi arrivano sul conto di casa e
+  // basta. Sono tre porte e nessuna vuole un account: chi sostiene non deve
+  // iscriversi a niente per farlo.
+  const SOSTIENI_HTML = guscio.pagina('sostieni.html');
+  app.get('/sostieni', (req, res) => res.sendFile(SOSTIENI_HTML));
+
+  app.get('/api/sostieni', (req, res) => {
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=300');
+    res.json({ attivo: sostegno.attivo(), importi: sostegno.IMPORTI, min: sostegno.MIN, max: sostegno.MAX });
+  });
+
+  // Aprire un pagamento costa una chiamata a Stripe, e una porta pubblica che
+  // ne apre quante gliene chiedi e' una porta che si puo' usare per fare
+  // rumore sul nostro conto. Un tetto al minuto per indirizzo.
+  app.post('/api/sostieni', wrap(async (req, res) => {
+    if (!extRateOk('sostieni:' + String(req.ip || ''))) return res.status(429).json({ errore: 'Troppe richieste: riprova fra poco.' });
+    const r = await sostegno.apri({ importo: req.body?.importo, nome: req.body?.nome, messaggio: req.body?.messaggio });
+    if (r.errore) return res.status(400).json({ errore: r.errore });
+    res.json({ url: r.url });
+  }));
+
+  // Il ritorno dal pagamento. Non si crede all'indirizzo: si rilegge la
+  // sessione da Stripe. Chi scrivesse «?ok=qualcosa» a mano si sentirebbe dire
+  // che non risulta pagato, perche' non lo e'.
+  app.get('/api/sostieni/esito', wrap(async (req, res) => {
+    res.set('Cache-Control', 'private, no-store');
+    if (!extRateOk('sostieni-ok:' + String(req.ip || ''))) return res.json({ stato: 'attesa' });
+    const e = await sostegno.conferma(req.query?.id);
+    res.json(e ? { stato: 'pagato', importo: e.importo } : { stato: 'attesa' });
+  }));
+
+  // Chi paga e chiude la scheda non sparisce: la ronda ripassa sulle sessioni
+  // rimaste in attesa e chiede a Stripe com'e' andata.
+  sostegno.avviaRonda();
 
   // ------------------------------------------------------------ MODERATORI (gestori delegati)
   // Lo streamer invita un moderatore con un link; il moderatore accetta facendo
