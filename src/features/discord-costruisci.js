@@ -31,6 +31,7 @@
 // dice, e dice perche'.
 import * as api from './discord-api.js';
 import { differenza, vuota, improntaDi, TIPI, nomeCanale } from './discord-preset.js';
+import { risolvi } from './discord-catalogo.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('discord-costruisci');
@@ -53,8 +54,13 @@ function aggiungi(elenco, cosa) {
 export async function anteprima(token, guild, preset, { togliere = false } = {}) {
   const foto = await api.fotografia(token, guild);
   if (!foto.ok) return foto;
-  const d = differenza(foto, preset, { togliere });
-  return { ok: true, foto, differenza: d, impronta: improntaDi(d), vuota: vuota(d) };
+  // Il preset parla a parole — «tutti», un ruolo per nome — e qui, con il
+  // server sotto gli occhi, quelle parole diventano id. E' anche il punto in
+  // cui si scopre che un ruolo nominato non c'e': quella riga di permessi si
+  // salta e si dice quale, perche' un ruolo che non esiste non e' «nessuno».
+  const { preset: risolto, mancanti } = risolvi(preset, { guildId: foto.guild.id, ruoli: foto.ruoli });
+  const d = differenza(foto, risolto, { togliere });
+  return { ok: true, foto, differenza: d, impronta: improntaDi(d), vuota: vuota(d), mancanti };
 }
 
 // Le categorie che esistono, per nome. Serve a tradurre il «dentro» della
@@ -85,7 +91,7 @@ export async function applica(token, guild, preset, { togliere = false, impronta
     return { ok: false, cambiato: true, impronta: a.impronta, differenza: a.differenza,
       errore: 'il server e\' cambiato da quando hai guardato: ricontrolla cosa succede e riconferma' };
   }
-  if (a.vuota) return { ok: true, creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, impronta: a.impronta, niente: true };
+  if (a.vuota) return { ok: true, creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, impronta: a.impronta, mancanti: a.mancanti, niente: true };
 
   const d = a.differenza;
   const cat = categorieDi(a.foto.canali);
@@ -147,5 +153,5 @@ export async function applica(token, guild, preset, { togliere = false, impronta
   }
 
   if (esito.errori.length) log.debug('costruito con inciampi:', esito.errori.join(' · '));
-  return { ok: true, ...esito, impronta: a.impronta };
+  return { ok: true, ...esito, impronta: a.impronta, mancanti: a.mancanti };
 }
