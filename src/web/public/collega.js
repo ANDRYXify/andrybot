@@ -17,6 +17,8 @@ function mostraCodice(codice, dentro) {
   $('dentro').hidden = !dentro;
   $('fatto').hidden = false;
   $('btn').hidden = true;
+  $('scelta').hidden = true;
+  $('passi').hidden = true;
   dici('');
 }
 
@@ -39,6 +41,8 @@ async function prepara() {
   }
   const btn = $('btn');
   btn.hidden = false;
+  $('scelta').hidden = false;
+  if (canale) $('via').href = '/u/' + encodeURIComponent(canale);
   btn.addEventListener('click', () => { btn.disabled = true; location.href = d.url; });
 }
 

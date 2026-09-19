@@ -33,16 +33,23 @@
 <body class="centrata">
   <div class="card">
     <img src="/icons/marchio-barra.png?v=8" alt="SocialBot" width="132" height="84">
-    <h1>Collega il tuo Discord</h1>
-    <p id="intro">I ruoli che ti spetti su <strong id="canale">questo canale</strong> te li mette il bot, da solo. Prima deve sapere quale account Discord è il tuo.</p>
-    <button class="azione" id="btn" hidden>Continua con Discord</button>
+    <h1>Il Discord di <span id="canale">questo canale</span></h1>
+    <p id="intro">Da qui entri nel server e ti prendi i ruoli che ti spettano: abbonato, VIP, moderatore, e gli altri che ha deciso chi trasmette.</p>
+    <ol class="passi" id="passi">
+      <li><strong>Dici a Discord che sei tu.</strong> La password la scrivi sul sito di Discord, non qui: a noi arriva solo il tuo nome.</li>
+      <li><strong>Entri nel server.</strong> Niente link d'invito da cercare, e nessuno scaduto.</li>
+      <li><strong>Riscrivi un codice nella chat.</strong> È quello che dice che quell'account sei tu, e lo puoi scrivere solo tu.</li>
+    </ol>
+    <button class="azione" id="btn" hidden>Entra nel Discord</button>
+    <p class="minuta" id="scelta" hidden>Preferisci di no? <a id="via" href="/">Lascia perdere</a>, non succede niente e nessuno se ne accorge.</p>
     <div class="msg" id="msg"></div>
     <div id="fatto" hidden>
       <p id="dentro" class="entrato" hidden>Sei dentro il server ✓</p>
       <p>Adesso scrivi questo nella chat del canale:</p>
       <p><code id="codice" class="codice-grosso"></code></p>
-      <p class="minuta">Vale dieci minuti, e una volta sola. Serve a dire al bot che quel Twitch sei tu: nessun altro può scriverlo al posto tuo senza esserci.</p>
+      <p class="minuta">Vale dieci minuti, e una volta sola. Chi lo ricopia dalla chat lo trova già bruciato.</p>
     </div>
+    <p class="minuta">Non scriviamo al posto tuo, e degli altri tuoi server non sappiamo niente.</p>
     <div style="margin-top:10px"><a href="/privacy" style="font-size:.82rem;color:#8b83ad">Privacy &amp; Sicurezza</a></div>
   </div>
 

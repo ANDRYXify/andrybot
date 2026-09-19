@@ -58,6 +58,50 @@
     if (ab || ann) { try { history.replaceState(null, '', '/'); } catch (e) {  } }
   }
 
+  var _chiesto = null;
+
+  function chiudiChiedi() {
+    var v = document.querySelector('[data-chiedi]');
+    if (!v) return;
+    v.classList.remove('dentro');
+    setTimeout(function () { v.hidden = true; }, 240);
+    _chiesto = null;
+  }
+
+  function chiediPorta(poi) {
+    var v = document.querySelector('[data-chiedi]');
+    if (!v) { poi('twitch'); return; }
+    _chiesto = poi;
+    v.hidden = false;
+    requestAnimationFrame(function () { v.classList.add('dentro'); });
+    var primo = v.querySelector('[data-porta]');
+    if (primo) primo.focus();
+  }
+
+  function montaChiedi() {
+    var v = document.querySelector('[data-chiedi]');
+    if (!v) return;
+    v.addEventListener('click', function (ev) {
+      if (ev.target === v || (ev.target.closest && ev.target.closest('[data-chiudi]'))) { chiudiChiedi(); return; }
+      var t = ev.target.closest ? ev.target.closest('[data-porta]') : null;
+      if (!t) return;
+      var poi = _chiesto;
+      chiudiChiedi();
+      if (poi) poi(t.getAttribute('data-porta'));
+    });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && !v.hidden) chiudiChiedi();
+    });
+    [].slice.call(document.querySelectorAll('a.vt-btn[href^="/entra?nuovo=1"]')).forEach(function (a) {
+      a.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        chiediPorta(function (come) {
+          location.href = (come === 'twitch' || !come) ? '/entra?nuovo=1' : '/accedi/' + come;
+        });
+      });
+    });
+  }
+
   function conto() {
     var box = document.querySelector('[data-comp]');
     if (!box) return;
@@ -138,33 +182,16 @@
       if (ev.target && ev.target.matches && ev.target.matches('input[type=checkbox]')) aggiorna();
     });
 
-    var scelta = box.querySelector('[data-scelta]');
-    var porte = scelta ? [].slice.call(scelta.querySelectorAll('[data-porta]')) : [];
-    var dove = function () {
-      var acceso = porte.filter(function (b) { return b.classList.contains('on'); })[0];
-      return acceso ? acceso.getAttribute('data-porta') : 'twitch';
-    };
-
-    if (scelta) scelta.addEventListener('click', function (ev) {
-      var t = ev.target;
-      while (t && t !== scelta && porte.indexOf(t) < 0) t = t.parentNode;
-      if (porte.indexOf(t) < 0) return;
-      porte.forEach(function (b) {
-        var on = b === t;
-        b.classList.toggle('on', on);
-        b.setAttribute('aria-pressed', on ? 'true' : 'false');
-      });
-    });
-
     vai.addEventListener('click', function () {
-      var ids = scelti();
-      var b = box.getAttribute('data-bundle');
-      var come = dove();
-      var q = new URLSearchParams();
-      if (b) q.set('bundle', b);
-      else if (ids.length) q.set('pacchetti', ids.join(','));
-      if (come !== 'twitch') q.set('come', come);
-      location.href = '/accedi' + (q.toString() ? '?' + q : '');
+      chiediPorta(function (come) {
+        var ids = scelti();
+        var b = box.getAttribute('data-bundle');
+        var q = new URLSearchParams();
+        if (b) q.set('bundle', b);
+        else if (ids.length) q.set('pacchetti', ids.join(','));
+        if (come && come !== 'twitch') q.set('come', come);
+        location.href = '/accedi' + (q.toString() ? '?' + q : '');
+      });
     });
 
     aggiorna();
@@ -173,6 +200,7 @@
   function avvia() {
     try { if (window.SB_SPLASH_OFF) window.SB_SPLASH_OFF(); } catch (e) {  }
     try { avvisi(); } catch (e) {  }
+    try { montaChiedi(); } catch (e) {  }
     try { conto(); } catch (e) {  }
   }
 

@@ -96,3 +96,27 @@ test('il comando usa le frasi, non le scrive dentro di se\'', () => {
   assert.ok(!/parla\(`@\$\{nome\}/.test(dentro), 'nessuna risposta scritta a mano nel comando');
   assert.match(SRV, /campi\.frasi = dcCollega\.normalizzaFrasi\(b\.frasi\)/, 'e dal pannello si salvano passando di li\'');
 });
+
+test('la porta si apre a chi NON e\' di casa, che e\' chi ci passa', async () => {
+  // Il difetto che non somigliava a un difetto, la seconda volta. La pagina del
+  // collegamento rispondeva a chi era gia' dentro e 404 a tutti gli altri —
+  // cioe' a TUTTI quelli a cui serve, perche' chi si collega una sessione non
+  // ce l'ha. E sul nome corto non ce l'ha nemmeno chi e' loggato sul sito: il
+  // cookie e' legato all'host.
+  const { creaGuscio } = await import('../../src/web/vetrina.js');
+  const g = creaGuscio(join(RAD, 'src/web/public'));
+  for (const via of ['/collega/andryxify', '/api/discord/collega/andryxify', '/discord/oidc/callback']) {
+    assert.equal(g.aperto(via), true, `${via}: chi arriva qui non ha una sessione, e non deve averne una`);
+  }
+  assert.equal(g.aperto('/api/streamer/ruoli'), false, 'e il cancello resta un cancello');
+});
+
+test('la pagina dice cosa succede PRIMA di mandarti da Discord', () => {
+  const html = readFileSync(join(RAD, 'src/web/public/collega.html'), 'utf8');
+  const passi = [...html.matchAll(/<li><strong>([^<]+)<\/strong>/g)].map((m) => m[1]);
+  assert.equal(passi.length, 3, 'i tre passi del giro, scritti');
+  assert.match(html, /id="btn"[^>]*hidden/, 'e il tasto non parte da solo: lo si preme');
+  assert.match(html, /id="scelta"/, 'chi non vuole collegarsi deve poter dire di no e andarsene');
+  const js = readFileSync(join(RAD, 'src/web/public/collega.js'), 'utf8');
+  assert.match(js, /\$\('via'\)\.href = '\/u\/' \+ encodeURIComponent\(canale\)/, 'e il «no» porta da qualche parte di suo');
+});

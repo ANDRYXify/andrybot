@@ -84,6 +84,7 @@ const ROTTE = new Set([
   '/spotify/callback', '/tiktok/callback',    // ritorni OAuth: si proteggono con lo `state`
   '/tgapp', '/api/tgapp/auth',                // Telegram Mini App: initData firmato dal bot token
   '/api/tgapp/oidc/start', '/telegram/oidc/callback',
+  '/discord/oidc/callback',                   // il ritorno da Discord: lo protegge lo `state` monouso, e chi si collega una sessione non ce l'ha
   '/api/me',                                  // senza sessione risponde soltanto "nessun utente"
   '/guide', '/manuale', '/novita',            // guide, manuali e novità: contenuto pubblico, indicizzabile
   '/api/novita',                              // le stesse novità, per la scheda in cima al pannello
@@ -102,6 +103,8 @@ const PREFISSI = [
   '/dona/',              // donazioni: il webhook di Ko-fi (protetto dal token) e il modulo della pagina link
   '/assets/',            // bundle JS/CSS della link-page (proxy verso Vercel)
   '/api/passkey/login/', // sblocco con passkey: serve prima di avere una sessione
+  '/collega/',           // la porta d'ingresso al Discord di uno streamer: ci arriva chi NON e' di casa
+  '/api/discord/collega/',   // e l'indirizzo dove mandarlo, che lo decide il server
 ];
 
 const RIF_HTML = /(?:src|href)\s*=\s*["']([^"']+)["']/g;

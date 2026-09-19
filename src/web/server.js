@@ -339,15 +339,28 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     req.on('timeout', () => { req.destroy(); risolvi(false); });
     req.end();
   });
+  //
+  // I PRIMI TENTATIVI SONO FITTI, e non e' impazienza. Chi aggiorna riavvia il
+  // bot PRIMA di ricaricare la porta d'ingresso (e' l'ordine giusto: la
+  // configurazione nuova arriva col codice nuovo), quindi la prima sonda cade
+  // sempre — il certificato per un nome appena aggiunto ancora non esiste.
+  // Con una sola cadenza da dieci minuti, ogni nome nuovo nasceva spento per
+  // dieci minuti buoni, e in quella finestra il sito offre l'indirizzo lungo
+  // mentre quello corto risponde 404. Tre tentativi ravvicinati coprono il
+  // tempo che ci mette Caddy a prendersi il certificato; dopo, si dirada.
+  const RITMO_SONDA = [20_000, 40_000, 90_000];
   const sondaHost = (candidato, metti, come) => {
     if (!candidato) return;
+    let quante = 0;
     const prova = async () => {
       if (await rispondeInHttps(candidato)) {
         metti(candidato);
         log.info(`${come}: ${candidato}`);
         return;
       }
-      setTimeout(prova, 10 * 60_000).unref?.();
+      const fra = RITMO_SONDA[quante] ?? 10 * 60_000;
+      quante++;
+      setTimeout(prova, fra).unref?.();
     };
     prova();
   };

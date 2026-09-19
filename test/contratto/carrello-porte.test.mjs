@@ -70,21 +70,22 @@ test('tutte e tre le porte riscuotono con lo stesso gesto', () => {
   }
 });
 
-test('con una porta sola non si sceglie niente', () => {
+test('con una porta sola non si chiede niente', () => {
   const h = vetrinaHtml('it', { kick: false, youtube: false, piani: PIANI });
   assert.ok(h.includes('data-vai'), 'il tasto Attiva c\'e\'');
-  assert.ok(!h.includes('data-scelta'), 'ma non si disegna un selettore fra una strada sola');
+  assert.ok(!h.includes('data-chiedi'), 'ma non si apre un riquadro per una strada sola');
 });
 
-test('con piu\' porte si sceglie accanto al tasto, e i nomi sono quelli che il server capisce', () => {
+test('con piu\' porte la domanda e\' una sola, e i nomi sono quelli che il server capisce', () => {
   const h = vetrinaHtml('it', { kick: true, youtube: true, piani: PIANI });
-  const conto = h.slice(h.indexOf('class="vt-conto"'), h.indexOf('data-risp'));
-  assert.ok(conto.includes('data-scelta'), 'il selettore sta nella riga del conto, non in un pannello che si apre dopo');
-  assert.ok(conto.indexOf('data-scelta') < conto.indexOf('data-vai'), 'e prima del tasto: si legge «su Kick, Attiva»');
+  assert.equal((h.match(/data-chiedi/g) || []).length, 1, 'il riquadro sta in pagina una volta sola');
+  assert.match(h, /class="vt-velo" data-chiedi hidden/, 'e nasce spento');
+  // Le classi sono della vetrina, non del pannello: riusarne una di anime.css
+  // farebbe caricare alla home il foglio del cruscotto (vedi verifica-dieta).
+  assert.ok(!/bv-velo|bv-carta|mdl-carta/.test(h), 'la vetrina non prende in prestito lo stile del pannello');
   const nomi = [...h.matchAll(/data-porta="([a-z]+)"/g)].map((m) => m[1]);
   assert.deepEqual(nomi, ['twitch', 'kick', 'youtube']);
-  assert.match(h, /data-porta="twitch" aria-pressed="true"/, 'Twitch e\' la scelta di partenza');
-  assert.equal((h.match(/aria-pressed="true"/g) || []).length, 1, 'una sola accesa');
+  assert.match(h, /data-chiudi/, 'e si puo\' chiudere senza scegliere');
   const accedi = fetta(SRV, "app.get('/accedi', (req, res)", '\n  });');
   for (const n of nomi) {
     if (n === 'twitch') continue;                       // la casa: e' la strada di sempre, senza ?come
@@ -94,10 +95,14 @@ test('con piu\' porte si sceglie accanto al tasto, e i nomi sono quelli che il s
   assert.ok(soloKick.includes('data-porta="kick"') && !soloKick.includes('data-porta="youtube"'), 'una porta chiusa non si mostra');
 });
 
-test('il tasto Attiva porta con se\' la porta accesa', () => {
-  const conto = fetta(VET, 'var scelta = box.querySelector', 'aggiorna();');
-  assert.match(conto, /q\.set\('come', come\)/);
-  assert.match(conto, /come !== 'twitch'/, 'Twitch e\' la strada di sempre: non serve dirlo');
-  assert.match(conto, /b\.setAttribute\('aria-pressed'/, 'chi sceglie lo vede e lo sente');
-  assert.doesNotMatch(conto, /\.hidden = false/, 'niente pannelli che si aprono al clic');
+test('la stessa domanda per «Inizia gratis» e per «Attiva»', () => {
+  // Due tasti che portano allo stesso bivio non possono chiederlo in due modi
+  // diversi: uno solo la faceva, e l'altro andava dritto su Twitch.
+  const conto = fetta(VET, 'vai.addEventListener', 'aggiorna();');
+  assert.match(conto, /chiediPorta\(function \(come\)/, '«Attiva» passa dalla domanda');
+  assert.match(conto, /come !== 'twitch'/, 'e Twitch e\' la strada di sempre: non serve dirlo');
+  const monta = fetta(VET, 'function montaChiedi()', '\n  }\n');
+  assert.match(monta, /a\.vt-btn\[href\^="\/entra\?nuovo=1"\]/, 'e «Inizia gratis» pure');
+  assert.match(monta, /ev\.preventDefault\(\)/, 'invece di partire per Twitch da solo');
+  assert.match(monta, /'\/accedi\/' \+ come/, 'e da li\' si registra sulla piattaforma scelta');
 });
