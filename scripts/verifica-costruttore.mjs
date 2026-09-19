@@ -35,6 +35,12 @@ const quanti = (sel) => pg.$$(sel).then((n) => n.length);
 try {
   await pg.goto(sito.base + '/?demo=1#dcserver', { waitUntil: 'networkidle' });
   await pg.waitForTimeout(800);
+  // La striscia dei cookie si toglie di mezzo per prima, come fa chiunque apra
+  // il sito: sta incollata in fondo, e un tasto che ci finisce sotto non si
+  // preme. Lasciarla li' vorrebbe dire misurare un pannello che nessuno usa
+  // cosi' — e prendere per rotto un tasto che invece funziona.
+  await pg.click('#cookie-ok').catch(() => {});
+  await pg.waitForTimeout(200);
   chiedi(await quanti('.dcs-traccia') >= 3, 'si parte da una scelta, non dal foglio bianco');
 
   await pg.click('#dcs-dalserver');
@@ -161,9 +167,53 @@ try {
   chiedi(/Crea/.test(diffD), 'e intanto crea lo stesso: distruttivo non vuol dire «solo cancella»');
   chiedi(await tasto() === 'Fai piazza pulita', 'e il tasto non dice piu\' «Costruisci»');
 
+  // DUE SCHEDE CHE SCRIVONO LA STESSA TRACCIA NON SONO DUE USCITE.
+  //
+  // «Il server» e «Chi entra» sono due meta' della stessa cosa: passare
+  // dall'una all'altra non e' uscire, e chiedere «vuoi salvare?» in mezzo
+  // sarebbe chiederlo per non aver lasciato niente — con in piu' una finestra
+  // che si mette davanti ai tasti. La barra pero' non deve sparire: quello che
+  // hai scritto e' ancora da salvare, e deve continuare a dirtelo.
+  await pg.fill('.dcs-cat:first-child > .riga-flessibile > input', 'Cambiata a mano');
+  await pg.waitForTimeout(300);
+  await pg.evaluate(() => window.vaiAScheda('dcentra'));
+  await pg.waitForTimeout(500);
+  chiedi(await quanti('.mdl-chiedi') === 0,
+    'passando all\'altra meta\' non chiede di salvare: non si sta uscendo da niente');
+  // Ma non chiedere non vuol dire dimenticare: uscendo DAVVERO, quello che hai
+  // scritto di la' dev'essere ancora li' a farsi valere.
+  await pg.evaluate(() => window.vaiAScheda('ruoli'));
+  await pg.waitForTimeout(500);
+  chiedi(await quanti('.mdl-chiedi') === 1, 'uscendo per davvero lo chiede, perche\' non l\'ha dimenticato');
+  await pg.click('.mdl-chiedi [data-mdl="resta"]');
+  await pg.waitForTimeout(400);
+  chiedi(await pg.$eval('#scheda-dcentra', (n) => n.classList.contains('visibile')),
+    'e «Resta qui» resta dov\'eri');
+  await pg.evaluate(() => window.vaiAScheda('dcserver'));
+  await pg.waitForTimeout(500);
+  await pg.click('#dcs-salva');
+  await pg.waitForTimeout(400);
+
+  // LA PORTA D'INGRESSO SI COSTRUISCE DA UN'ALTRA SCHEDA, e da li' si cancella
+  // come da qui: la stessa traccia, lo stesso giro. Quindi anche li' la pagina
+  // deve tingersi — un tasto che cancella con l'aria di un tasto che crea e'
+  // il difetto peggiore di tutta questa scheda.
+  await pg.evaluate(() => window.vaiAScheda('dcentra'));
+  await pg.waitForTimeout(400);
+  chiedi(!(await pg.$eval('#dce-fascia', (n) => n.hidden)), 'la fascia rossa si vede anche da dove si scrive la porta');
+  chiedi(await pg.$eval('#scheda-dcentra', (n) => n.dataset.distruttivo || '') === '1', 'e anche quella scheda si tinge');
+  chiedi(/\d+ min/.test(await pg.$eval('#dce-resta', (n) => n.textContent)), 'col tempo che resta, lo stesso di la\'');
+  await pg.click('#dce-vedi');
+  await pg.waitForTimeout(600);
+  chiedi(await pg.$eval('#dce-costruisci', (n) => n.textContent.trim()) === 'Fai piazza pulita',
+    'e il tasto dice quello che fa anche qui');
+  await pg.evaluate(() => window.vaiAScheda('dcserver'));
+  await pg.waitForTimeout(400);
+
   await pg.click('#dcs-esci');
   await pg.waitForTimeout(400);
   chiedi(await pg.$eval('#dcs-fascia', (n) => n.hidden) && !(await tinta()), 'si esce, e la tinta va via');
+  chiedi(await pg.$eval('#dce-fascia', (n) => n.hidden), 'e va via da tutte e due, non da una sola');
   chiedi(await pg.$eval('#dcs-costruisci', (n) => n.hidden),
     'e anche l\'anteprima che cancellava se ne va: fuori dalla modalita\' non resta un tasto che cancella');
 
@@ -179,6 +229,7 @@ try {
   // Un tasto che non fa niente non da' un «falso»: da' un'attesa che non
   // finisce. Meglio dirlo come una cosa che non torna, che come una pila di
   // chiamate — chi legge il cancello deve capire COSA si e' rotto.
+  await pg.screenshot({ path: '/tmp/gate-fallito.png' }).catch(() => {});
   chiedi(false, 'il giro si e\' interrotto: ' + String(e?.message || e).split('\n')[0]);
 } finally {
   await br.close();

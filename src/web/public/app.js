@@ -17257,10 +17257,10 @@ function pannelloDcAvvisi() {
 }
 
 function fasciaDistruttiva(pre) {
-  return `<p class="dcs-fascia" role="status" hidden>
+  return `<p class="dcs-fascia" id="${pre}-fascia" role="status" hidden>
       <strong>${L('Modalità distruttiva', 'Destructive mode', 'Modo destructivo')}</strong>
       ${L('— quello che non è nella traccia verrà cancellato. Si chiude da sola fra', '— whatever is not in the track will be deleted. It closes on its own in', '— lo que no esté en la plantilla se borrará. Se cierra sola en')}
-      <b class="dist-resta">10 min</b>.
+      <b class="dist-resta" id="${pre}-resta">10 min</b>.
       <button type="button" class="btn secondario mini" id="${pre}-esci">${L('Esci', 'Leave', 'Salir')}</button>
     </p>`;
 }
@@ -17303,7 +17303,7 @@ function pannelloDcServer() {
     <div class="carta" id="dcs-carta-diff">
       <h2>${_hIco(ICO.medaglia)}${L('Cosa succede', 'What happens', 'Qué pasa')}</h2>
       <p>${L('Prima si guarda, poi si fa. Quello che vedi qui sotto è esattamente quello che verrà fatto: non un riassunto.', 'First you look, then it happens. What you see below is exactly what will be done: not a summary.', 'Primero se mira, luego se hace. Lo que ves aquí abajo es exactamente lo que se hará: no un resumen.')}</p>
-      <p class="spazio-sopra riga-flessibile" id="dcs-azioni">
+      <p class="spazio-sopra riga-flessibile" id="dcs-azioni" data-salva-qui>
         <button class="btn secondario" id="dcs-vedi">${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
         <button class="btn" id="dcs-costruisci" hidden>${L('Costruisci', 'Build it', 'Constrúyelo')}</button>
         <button class="btn secondario" id="dcs-salva">${L('Salva e basta', 'Just save', 'Solo guardar')}</button>
@@ -17939,7 +17939,7 @@ function pannelloChiEntra() {
     <div class="carta">
       <h2>${_hIco(ICO.medaglia)}${L('Cosa succede', 'What happens', 'Qué pasa')}</h2>
       <p>${L('La porta fa parte della traccia come i canali: si guarda e si costruisce insieme al resto, in un giro solo.', 'The door is part of the track like the channels: you look at it and build it together with the rest, in one go.', 'La puerta forma parte de la plantilla como los canales: se mira y se construye junto con lo demás, de una sola vez.')}</p>
-      <p class="spazio-sopra riga-flessibile">
+      <p class="spazio-sopra riga-flessibile" id="dce-azioni" data-salva-qui>
         <button class="btn secondario" id="dce-vedi">${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
         <button class="btn" id="dce-costruisci" hidden>${L('Costruisci', 'Build it', 'Constrúyelo')}</button>
         <button class="btn secondario" id="dce-salva">${L('Salva e basta', 'Just save', 'Solo guardar')}</button>
@@ -23761,9 +23761,23 @@ function _scambiaScheda(id, sezioni) {
   if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
 }
 
+const STESSA_ROBA = [new Set(['dcserver', 'dcentra'])];
+const scriveLaStessaCosa = (a, b) => !!a && !!b && a !== b && STESSA_ROBA.some((g) => g.has(a) && g.has(b));
+
+function _riarmaBarraSalva(id) {
+  const reg = document.querySelector(`.pannello-scheda[data-scheda="${id}"] [data-salva-qui]`);
+  if (!reg) return;
+  _salvaRegione = reg;
+  _salvaSporco = true;
+  _salvaChiusa = false;
+  aggiornaBarraSalva();
+}
+
 function vaiAScheda(id) {
   if (senzaDiretta() && id && !SOLO_DISCORD.has(id) && !SOLO_ADMIN.has(id)) id = 'ruoli';
-  if (id !== schedaAttiva && _salvaSporco && !_uscitaInCorso) {
+  const insieme = scriveLaStessaCosa(schedaAttiva, id);
+  const sporcoPrima = _salvaSporco;
+  if (id !== schedaAttiva && _salvaSporco && !_uscitaInCorso && !insieme) {
     _uscitaInCorso = true;
     _chiediPrimaDiUscire().then((si) => { _uscitaInCorso = false; if (si) vaiAScheda(id); },
       () => { _uscitaInCorso = false; });
@@ -23784,6 +23798,7 @@ function vaiAScheda(id) {
   if (stessaFamiglia(prima, id)) {
     try { document.documentElement.dataset.verso = _versoVerso(prima, id); } catch (e) {  }
     _scambiaScheda(id, sezioni);
+    if (insieme && sporcoPrima) _riarmaBarraSalva(id);
     clearTimeout(_versoVia);
     _versoVia = setTimeout(() => { delete document.documentElement.dataset.verso; }, 900);
     return;

@@ -43,6 +43,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Se Discord la porta non la prenderebbe, te lo dico prima di scriverla: quanti canali mancano, o che al server serve il tipo Community. [vai: dcentra]
 - Chi aveva già risposto alle domande non ricomincia da capo: si rifanno solo quelle che hai cambiato. [vai: dcentra]
 - La modalità distruttiva adesso si vede anche dalla scheda della porta: fascia rossa, tasto rosso e il tempo che scorre, da tutte e due. [vai: dcentra]
+- Passare fra «Il server» e «Chi entra» non chiede più di salvare: sono due metà della stessa traccia, e uscendo davvero te lo ricorda lo stesso. [vai: dcentra]
 - Le impostazioni del server adesso arrivano davvero al server: il pannello le scriveva nella traccia e per strada si perdevano. [vai: dcserver]
 - Niente più spiegazioni per cose che hai già fatto: i permessi te li chiedo solo se mancano davvero. [vai: ruoli]
 - Entrare nel tuo Discord adesso è un indirizzo solo: si apre, si dice a Discord chi si è, e si è dentro. Poi il codice in chat e i ruoli arrivano da soli. [vai: ruoli]
