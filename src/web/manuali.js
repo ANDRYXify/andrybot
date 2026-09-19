@@ -184,10 +184,11 @@ const GIOCHI = {
 
     { h2: 'Il premio in VIP' },
     { p: [
-      'Ogni settimana (o ogni mese) il bot può dare il <strong>VIP</strong> ai primi della classifica del pubblico: da 1 a 5 persone, e il VIP dura fino al premio successivo.',
-      'Chi ha già il VIP <strong>per sempre</strong> viene saltato e il posto scorre al successivo: dargli un premio a scadenza significherebbe togliergli quello che aveva. Si può disattivare, ma è acceso di base.',
-      'La classifica da cui pesca la scegli tu: le <strong>monete</strong>, che sono le tue, oppure i <strong>Bit</strong>, che sono di Twitch. Né il tuo staff né tu entrate fra i candidati: Twitch rifiuta di dare il VIP a un moderatore, quindi il posto scorre a chi può davvero riceverlo.',
-      'Con i Bit chi guida la classifica diventa il <strong>re dei Bit</strong>: si tiene una corona accanto al nome nella chat a schermo fino al premio dopo, e la prima volta che torna a scrivere il bot lo saluta — con la frase che scrivi tu, o con nessuna se la lasci vuota. Se Twitch non risponde il premio non salta: si riprova più tardi, perché «non lo so» non è «non ha cheerato nessuno».',
+      'Sono <strong>due gare</strong>, e vanno avanti insieme: chi ha più <strong>monete</strong> — la classifica è la tua — e chi ha messo più <strong>Bit</strong> — quella è di Twitch. Ognuna ha il suo interruttore e il suo ritmo: ogni settimana o ogni mese.',
+      'Per ogni gara decidi <strong>le posizioni</strong>, da una a cinque. Ogni posizione ha il <strong>suo nome</strong> — re, principe, cavaliere, o come ti pare: è la parola che esce in chat — e la <strong>sua durata</strong>: il primo posto può valere cinque dirette e il terzo una.',
+      '<strong>Dirette, non giorni.</strong> Un VIP che scade sul calendario si spegne mentre tu non trasmetti, e chi l\'ha vinto non se lo gode. Qui il conto scende quando una diretta <em>finisce</em>: se salti una settimana, il premio ti aspetta. E se il bot è giù proprio alla fine di una diretta, quel giro non si conta: il premio dura una sera in più.',
+      'Chi ha già il VIP <strong>per sempre</strong> viene saltato e il posto scorre al successivo: dargli un premio a scadenza significherebbe togliergli quello che aveva. Si può disattivare, ma è acceso di base. Né il tuo staff né tu entrate fra i candidati: Twitch rifiuta di dare il VIP a un moderatore, quindi il posto va a chi può davvero riceverlo.',
+      'Chi vince il primo posto dei Bit diventa il <strong>re</strong>: porta una corona accanto al nome nella chat a schermo fino al premio dopo, e la prima volta che torna a scrivere il bot lo saluta — con la frase che scrivi tu, o con nessuna se la lasci vuota. Se Twitch non risponde il premio non salta: si riprova più tardi, perché «non lo so» non è «non ha cheerato nessuno».',
     ] },
 
     { h2: 'Fare un gioco tuo' },

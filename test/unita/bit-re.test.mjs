@@ -18,7 +18,10 @@ const vip = await import('../../src/features/vip.js');
 const bit = await import('../../src/features/bit.js');
 process.on('exit', () => usaEGetta.pulisci());
 
-const DURATA = { ms: 30 * 86400000, txt: 'un mese' };
+// Il blocco della gara dei Bit: i posti in palio, ognuno con la sua durata in
+// dirette e il suo titolo.
+const GARA = { posti: [{ dirette: 4, titolo: 're' }, { dirette: 2, titolo: 'principe' }], saltaPerenni: true };
+const unPosto = { posti: [{ dirette: 4, titolo: 're' }], saltaPerenni: true };
 const finto = ({ vipDelCanale = [], rifiuta = new Set() } = {}) => {
   const dati = [];
   return {
@@ -36,18 +39,18 @@ const finto = ({ vipDelCanale = [], rifiuta = new Set() } = {}) => {
 const righe = (...coppie) => coppie.map(([login, b], i) => ({ login, nome: login, posto: i + 1, bit: b }));
 const acceso = (ch, extra = {}) => {
   streamers.upsertApproved(ch, ch);
-  streamers.setSettings(ch, { premioVip: { attivo: true, da: 'bit', periodo: 'mese', quanti: 1, saltaPerenni: true }, ...extra });
+  streamers.setSettings(ch, { premioVip: { bit: { attivo: true, periodo: 'mese', posti: GARA.posti } }, ...extra });
 };
 
 test('il premio dei Bit va a chi ne ha messi di piu\', e lo dice con il suo numero', async () => {
   const ch = 'b1';
   const h = finto();
   const detto = [];
-  const v = await vip.premiaTopBit(h, ch, righe(['giada', 4500], ['ludo', 1200]), 1, DURATA, (t) => detto.push(t));
+  const v = await vip.premiaTopBit(h, ch, righe(['giada', 4500], ['ludo', 1200]), unPosto, (t) => detto.push(t));
   assert.deepEqual(h.dati, ['giada']);
   assert.equal(v[0].login, 'giada');
   assert.equal(v[0].bit, 4500);
-  assert.match(detto[0], /Re dei Bit: Giada con 4\.500 Bit — VIP per un mese!/);
+  assert.match(detto[0], /Re: Giada con 4\.500 Bit — VIP per 4 dirette\./);
 });
 
 test('e nemmeno qui si prova a dare il VIP a chi Twitch lo rifiuterebbe', async () => {
@@ -55,7 +58,7 @@ test('e nemmeno qui si prova a dare il VIP a chi Twitch lo rifiuterebbe', async 
   points.add(ch, 'capo', 1, 'staff');
   const h = finto({ rifiuta: new Set(['capo']) });
   // la classifica dei Bit e' di Twitch: dentro ci sono tutti, staff compreso
-  const v = await vip.premiaTopBit(h, ch, righe(['capo', 9000], ['ludo', 100]), 1, DURATA, null);
+  const v = await vip.premiaTopBit(h, ch, righe(['capo', 9000], ['ludo', 100]), unPosto, null);
   assert.deepEqual(h.dati, ['ludo'], 'il posto scorre al primo che puo\' vincerlo');
   assert.equal(v.length, 1);
   assert.ok(!h.dati.includes('capo'), 'e contro il rifiuto certo non ci ha nemmeno provato');
@@ -63,10 +66,10 @@ test('e nemmeno qui si prova a dare il VIP a chi Twitch lo rifiuterebbe', async 
 
 test('una classifica vuota non premia nessuno e non dice niente', async () => {
   const detto = [];
-  const v = await vip.premiaTopBit(finto(), 'b3', [], 1, DURATA, (t) => detto.push(t));
+  const v = await vip.premiaTopBit(finto(), 'b3', [], unPosto, (t) => detto.push(t));
   assert.deepEqual(v, []);
   assert.deepEqual(detto, []);
-  assert.deepEqual(await vip.premiaTopBit(finto(), 'b3', null, 1, DURATA, null), [], 'e nemmeno un «non lo so» inventa un vincitore');
+  assert.deepEqual(await vip.premiaTopBit(finto(), 'b3', null, unPosto, null), [], 'e nemmeno un «non lo so» inventa un vincitore');
 });
 
 test('chi puo\' vincere: non il padrone di casa, non lo staff', () => {
@@ -88,10 +91,8 @@ test('la corona e\' il premio visto da fuori: spento il premio, niente re', () =
   assert.equal(bit.portaCorona(ch, 'Giada'), true, 'il nome si confronta senza badare alle maiuscole');
   assert.equal(bit.portaCorona(ch, 'ludo'), false);
 
-  streamers.setSettings(ch, { premioVip: { attivo: true, da: 'monete' }, reBit: { login: 'giada', nome: 'Giada', bit: 4500, da: 1000 } });
-  assert.equal(bit.re(ch), null, 'spostato il premio sulle monete, il re dei Bit non regna piu\'');
-  streamers.setSettings(ch, { premioVip: { attivo: false, da: 'bit' }, reBit: { login: 'giada', nome: 'Giada', bit: 4500, da: 1000 } });
-  assert.equal(bit.re(ch), null, 'e spento il premio, nemmeno');
+  streamers.setSettings(ch, { premioVip: { bit: { attivo: false }, monete: { attivo: true } }, reBit: { login: 'giada', nome: 'Giada', bit: 4500, da: 1000 } });
+  assert.equal(bit.re(ch), null, 'spenta la gara dei Bit, il re non regna piu\' — anche se quella delle monete e\' accesa');
   assert.equal(bit.portaCorona(ch, 'giada'), false);
 });
 
@@ -137,7 +138,7 @@ test('un comando non e\' un ritorno, e una frase vuota e\' un «non dirlo»', ()
   const ch2 = 'b9';
   acceso(ch2, { reBit: { login: 'giada', nome: 'Giada', bit: 100, da: 5, salutato: 0 } });
   const s = streamers.get(ch2).settings;
-  streamers.setSettings(ch2, { ...s, premioVip: { ...s.premioVip, saluto: '   ' } });
+  streamers.setSettings(ch2, { ...s, premioVip: { ...s.premioVip, bit: { ...s.premioVip.bit, saluto: '   ' } } });
   assert.equal(bit.salutaIlRe({ channel: ch2, user: 'giada', display: 'Giada', text: 'ciao', piattaforma: 'twitch' }, say), false);
   assert.equal(detto.length, 0);
   assert.equal(bit.re(ch2).salutato, 5, 'chi ha svuotato la frase ha detto «non dirlo», non «riprovaci sempre»');

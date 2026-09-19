@@ -14,6 +14,7 @@
 // e' l'unico momento in cui vale la pena richiederla. Cosi' chi scrive «!bit»
 // subito dopo aver cheerato si vede gia' dentro.
 import { streamers } from '../db.js';
+import * as premio from './premio.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('bit');
@@ -122,18 +123,19 @@ export async function riga(helix, channel, { mio = '', periodo = 'month', ora = 
 // Il regno ha una data, e quella data e' il segno del saluto. Non un «si'»:
 // chi vince due mesi di fila comincia un regno nuovo, e il bot lo saluta di
 // nuovo. Con un «si'» sarebbe stato salutato una volta sola, per sempre.
-export const SALUTO_RE = '{user} è il re dei Bit, con {bit} Bit. Bentornato.';
-
 export function re(channel) {
   const s = streamers.get(String(channel || '').toLowerCase())?.settings || {};
-  const p = s.premioVip;
-  if (!p?.attivo || p.da !== 'bit') return null;
+  // Un solo interruttore: se la gara dei Bit e' spenta, non c'e' nessun re.
+  if (!premio.di(s).bit.attivo) return null;
   const r = s.reBit;
   if (!r?.login) return null;
   return {
     login: String(r.login).toLowerCase(),
     nome: String(r.nome || r.login).slice(0, 40),
     bit: Math.max(0, Number(r.bit) || 0),
+    // Il titolo che gli ha dato lo streamer per il primo posto: e' la parola che
+    // esce in chat, e se non gliene ha dato uno si dice «re dei Bit».
+    titolo: String(r.titolo || '').slice(0, 24),
     da: Number(r.da) || 0,
     salutato: Number(r.salutato) || 0,
   };
@@ -156,13 +158,14 @@ export function salutaIlRe(msg, say) {
     const r = re(ch);
     if (!r.da || r.salutato === r.da) return false;
     const s = streamers.get(ch)?.settings || {};
-    const modello = typeof s.premioVip?.saluto === 'string' ? s.premioVip.saluto : SALUTO_RE;
+    const modello = premio.di(s).bit.saluto;
     // Il segno si mette comunque: uno streamer che ha svuotato la frase ha
     // detto «non dirlo», non «riprovaci a ogni messaggio».
     streamers.setSettings(ch, { ...s, reBit: { ...s.reBit, salutato: r.da } });
     const frase = modello.trim()
       .split('{user}').join(msg.display || r.nome || msg.user)
       .split('{bit}').join(migliaia(r.bit))
+      .split('{titolo}').join(r.titolo || 're dei Bit')
       .trim();
     if (!frase) return false;
     say('👑 ' + frase.slice(0, 300));

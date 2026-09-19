@@ -85,14 +85,42 @@ con lo stesso nome. Accetta un periodo: `!bit oggi`, `!bit settimana`,
 
 ## 3. Il ricordo: il re dei Bit
 
-Il premio periodico in VIP c'era gia', e pescava dalle monete. Adesso lo
-streamer sceglie **da quale classifica** pesca (`premioVip.da`: `monete` o
-`bit`), e quella scelta tira dietro tutto il resto.
+Il premio periodico in VIP c'era gia', e pescava dalle monete. Adesso sono
+**due gare in parallelo** — `premioVip.monete` e `premioVip.bit` — ognuna col
+suo interruttore, il suo periodo e i suoi POSTI. Non una scelta fra le due:
+sono due meriti diversi (chi c'e' sempre e chi mette mano al portafoglio), e
+obbligare lo streamer a dire quale delle due non gli interessa era una domanda
+senza risposta giusta.
+
+**La durata si conta in DIRETTE, non in giorni.** Un VIP a scadenza di
+calendario evapora mentre lo streamer sta fermo: chi vince e poi si becca due
+settimane di pausa lo perde senza averlo mai goduto. Il conto scende quando una
+diretta **finisce** (`vips.scalaDiretta`, chiamata sulla transizione
+live→offline): scalando all'inizio, un premio da una diretta sparirebbe la sera
+dopo, prima di essere stato addosso a qualcuno per una serata intera. Se il bot
+e' giu' alla fine di una diretta quel giro non si conta, e il premio dura una
+sera in piu' — sbagliare da quella parte e' il verso giusto.
+
+Chi arriva a zero non si cancella li': diventa **scaduto** (una scadenza nel
+passato), e da li' in poi se ne occupa la ronda che toglie i VIP scaduti, che
+quella strada la sa gia' e sa gia' riprovare se Twitch non risponde. Una strada
+sola per togliere un VIP, non due che devono restare d'accordo.
+
+**Ogni posto ha il suo nome e la sua durata.** `posti: [{ dirette, titolo }]`,
+da uno a cinque: il primo puo' valere cinque dirette e il terzo una. Il titolo
+lo scrive lo streamer — re, principe, cavaliere, o quello che gli pare — ed e'
+la parola che esce in chat; senza, si dice «1° posto». Quanti posti ci sono lo
+dice la lunghezza dell'elenco: non c'e' un secondo numero che possa smentirla.
+
+**Le due gare hanno due giri separati** (`premioVipUltimo` diventa un oggetto
+per gara): due gare che si segnassero sullo stesso numero si spegnerebbero a
+vicenda. Il numero solo di prima vale come punto di partenza per tutt'e due,
+invece di far ripartire i conti da zero.
 
 **Il premio non sa da dove viene la classifica.** `vip.premia()` riceve `gente`
-gia' in ordine e la scorre; `premiaTopMonete` e `premiaTopBit` sono due modi di
-riempire quella lista. La terza sorgente che verra' non avra' bisogno di un
-terzo giro di premiazione.
+gia' in ordine e `posti` in palio, e li accoppia scorrendo; `premiaTopMonete` e
+`premiaTopBit` sono due modi di riempire quella lista. La terza sorgente che
+verra' non avra' bisogno di un terzo giro di premiazione.
 
 **Chi puo' vincere lo decide un posto solo** (`vip.puoVincere`): non il padrone
 di casa, non lo staff. Non e' una raffinatezza — Twitch RIFIUTA di dare il VIP a
@@ -129,6 +157,19 @@ secondo interruttore da ricordarsi.
 **Nel rapporto di fine diretta** i Bit della serata si sommano dagli eventi
 `channel.cheer` nella finestra della diretta, con chi ne ha messi di piu'
 *stasera*. Non e' la classifica del mese: quella e' di Twitch, e resta una sola.
+
+### Il pannello: due carte gemelle
+
+Le due gare si disegnano con la stessa funzione (`_premioGara`), e le righe
+delle posizioni con `_premioRighe`: una sola forma, due gare. I tasti pero' si
+attaccano **uno per uno e col loro nome scritto** (`pr-monete-piu`,
+`pr-bit-piu`), non dentro un giro: un ascoltatore appeso in un ciclo non si
+vede da fuori, e il cancello dei bottoni ha ragione a non fidarsi. Il «Togli»
+di una riga passa invece per delega sul contenitore, come le regole di Discord.
+
+Il pannello legge anche le impostazioni del formato vecchio (`premioDi`), per
+la stessa ragione del server: non e' il posto dove si perde una scelta gia'
+fatta.
 
 ## 4. Il cheer senza nome
 

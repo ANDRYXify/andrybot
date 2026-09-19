@@ -31,6 +31,7 @@ import * as comandichat from './features/comandichat.js';
 import * as sondaggi from './features/sondaggi.js';
 import * as songrequest from './features/songrequest.js';
 import * as vip from './features/vip.js';
+import * as premio from './features/premio.js';
 import * as ruoli from './features/ruoli.js';
 import * as telegram from './features/telegram.js';
 import * as cartaLive from './features/cartalive.js';
@@ -59,7 +60,7 @@ import { ChatYoutube } from './youtube/chat.js';
 import { voceYoutube } from './youtube/voce.js';
 import { collegati as youtubeCollegati } from './youtube/api.js';
 import * as avvisi from './features/avvisi.js';
-import { dirette, guide } from './db.js';
+import { dirette, guide, vips } from './db.js';
 import * as cancello from './features/tg-cancello.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
@@ -464,9 +465,10 @@ export class BotManager {
     }
   }
 
-  // Premi periodici: se lo streamer li ha attivati, ogni settimana/mese dà il
-  // VIP a chi sta in cima — alle monete, che sono nostre, o ai Bit, che sono di
-  // Twitch. Controllato ogni ora.
+  // Premi periodici: DUE GARE, ognuna col suo interruttore e il suo giro. Le
+  // monete e i Bit sono due meriti diversi — chi c'e' sempre e chi mette mano al
+  // portafoglio — e premiarne uno solo obbligava lo streamer a dire quale delle
+  // due cose non gli interessa. Controllato ogni ora.
   //
   // La differenza fra le due sorgenti non e' il nome: le monete le sappiamo
   // sempre, la classifica dei Bit puo' non arrivare. E li' «non lo so» non e'
@@ -477,28 +479,43 @@ export class BotManager {
     try {
       for (const login of this.units.keys()) {
         const s = streamers.get(login);
-        const p = s?.settings?.premioVip;
-        if (!p?.attivo) continue;
-        const mese = p.periodo === 'mese';
-        const periodoMs = (mese ? 30 : 7) * 24 * 60 * 60_000;
-        if (Date.now() - (Number(s.settings.premioVipUltimo) || 0) < periodoMs) continue;
-        const durata = vip.parseDurata(mese ? 'mese' : 'settimana');
-        const quanti = Math.min(5, Math.max(1, Number(p.quanti) || 1));
-        const opz = { saltaPerenni: p.saltaPerenni !== false };
+        if (!s?.settings) continue;
+        const p = premio.di(s.settings);
         const dillo = (t) => this.say(login, t);
-        await ruoli.riallinea(this.helix, login, { forza: true });   // staff e padrone di casa non vincono: prima si sa chi sono
-        let re = s.settings.reBit || null;
-        if (p.da === 'bit') {
-          const righe = await bit.classifica(this.helix, login, { periodo: mese ? 'month' : 'week' });
-          if (!righe) continue;
-          const vinti = await vip.premiaTopBit(this.helix, login, righe, quanti, durata, dillo, opz);
-          if (vinti[0]) re = { login: vinti[0].login, nome: vinti[0].nome || vinti[0].display, bit: vinti[0].bit || 0, da: Date.now(), salutato: '' };
-        } else {
-          await vip.premiaTopMonete(this.helix, login, quanti, durata, dillo, opz);
+        let tocca = false;
+        for (const gara of premio.GARE) if (premio.tocca(s.settings, gara)) { tocca = true; break; }
+        if (!tocca) continue;
+        // staff e padrone di casa non vincono: prima si sa chi sono
+        await ruoli.riallinea(this.helix, login, { forza: true });
+        let dopo = streamers.get(login)?.settings || s.settings;
+        for (const gara of premio.GARE) {
+          if (!premio.tocca(dopo, gara)) continue;
+          const blocco = premio.di(dopo)[gara];
+          let re = dopo.reBit || null;
+          if (gara === 'bit') {
+            const righe = await bit.classifica(this.helix, login, { periodo: blocco.periodo === 'mese' ? 'month' : 'week' });
+            if (!righe) continue;
+            const vinti = await vip.premiaTopBit(this.helix, login, righe, blocco, dillo);
+            if (vinti[0]) re = { login: vinti[0].login, nome: vinti[0].nome || vinti[0].display, bit: vinti[0].bit || 0,
+              titolo: vinti[0].titolo || '', da: Date.now(), salutato: '' };
+          } else {
+            await vip.premiaTopMonete(this.helix, login, blocco, dillo);
+          }
+          dopo = { ...dopo, premioVipUltimo: premio.segnaGiro(dopo, gara), ...(gara === 'bit' ? { reBit: re } : {}) };
+          streamers.setSettings(login, dopo);
         }
-        streamers.setSettings(login, { ...s.settings, premioVipUltimo: Date.now(), ...(p.da === 'bit' ? { reBit: re } : {}) });
       }
     } catch (e) { log.error('premi VIP:', e?.message || e); }
+  }
+
+  // UNA DIRETTA E' FINITA: il conto dei premi scende di uno, e chi e' arrivato
+  // a zero diventa scaduto. A toglierlo davvero da Twitch ci pensa la ronda
+  // delle scadenze, che quella strada la conosce gia' e sa riprovare.
+  _scalaVipDiretta(login) {
+    try {
+      const n = vips.scalaDiretta(login);
+      if (n) log.info(`premio VIP #${login}: ${n} ${n === 1 ? 'premio finito' : 'premi finiti'} con questa diretta`);
+    } catch (e) { log.error(`#${login} conto dei VIP:`, e?.message || e); }
   }
 
   // Ore guardate: per ogni canale connesso e LIVE, accredita 5 minuti a chi è in
@@ -1165,6 +1182,7 @@ export class BotManager {
       this._annunciaTwitch(ch).catch((e) => log.error(`avviso live #${ch}:`, e?.message || e));
     } else {
       this._chiudiTelegram(ch);
+      this._scalaVipDiretta(ch);
       this._rapportoDiretta(ch).catch((e) => log.error(`rapporto #${ch}:`, e?.message || e));
     }
     this._reagisciAllaDiretta(ch, isLive);   // lei se ne accorge e ti scrive (presente/consapevole)

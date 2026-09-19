@@ -300,6 +300,7 @@ CREATE TABLE IF NOT EXISTS vips (          -- VIP assegnati dal bot (con scadenz
   user_id TEXT NOT NULL DEFAULT '',
   display TEXT NOT NULL DEFAULT '',
   until INTEGER NOT NULL DEFAULT 0,         -- epoch ms di scadenza (0 = permanente)
+  dirette INTEGER NOT NULL DEFAULT 0,       -- dirette che restano (0 = non si conta a dirette)
   motivo TEXT NOT NULL DEFAULT '',          -- 'comando', 'voce', 'premio'
   ts INTEGER NOT NULL,
   PRIMARY KEY (channel, user)
@@ -753,6 +754,10 @@ aggiungiColonna('telegram', 'ingresso_minuti', 'INTEGER NOT NULL DEFAULT 5');
 aggiungiColonna('telegram', 'ingresso_scaduto', "TEXT NOT NULL DEFAULT 'caccia'");
 aggiungiColonna('telegram', 'ingresso_testo', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'ingresso_tasto', "TEXT NOT NULL DEFAULT ''");
+// Il premio in VIP non scade piu' a calendario ma a DIRETTE: un premio che
+// evapora mentre lo streamer sta fermo non e' un premio. `until` resta per i
+// VIP dati a mano, che sono un'altra cosa.
+aggiungiColonna('vips', 'dirette', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('battute', 'dette', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('battute', 'risate', 'INTEGER NOT NULL DEFAULT 0');
 // Quale SCHEMA l'ha costruita. Senza, si potrebbe sapere se una battuta ha fatto
@@ -1178,19 +1183,39 @@ export const postaStreamer = {
 
 // ---------------------------------------------------------------- VIP (con scadenza)
 export const vips = {
-  set(channel, { user, userId = '', display = '', until = 0, motivo = '' }) {
+  set(channel, { user, userId = '', display = '', until = 0, dirette = 0, motivo = '' }) {
     const u = String(user).toLowerCase();
-    db.prepare(`INSERT INTO vips (channel, user, user_id, display, until, motivo, ts)
-      VALUES (?,?,?,?,?,?,?)
+    db.prepare(`INSERT INTO vips (channel, user, user_id, display, until, dirette, motivo, ts)
+      VALUES (?,?,?,?,?,?,?,?)
       ON CONFLICT(channel, user) DO UPDATE SET user_id=excluded.user_id, display=excluded.display,
-        until=excluded.until, motivo=excluded.motivo, ts=excluded.ts`)
-      .run(channel, u, userId, display, until, motivo, now());
+        until=excluded.until, dirette=excluded.dirette, motivo=excluded.motivo, ts=excluded.ts`)
+      .run(channel, u, userId, display, until, msIntero(dirette), motivo, now());
   },
   get(channel, user) { return db.prepare('SELECT * FROM vips WHERE channel=? AND user=?').get(channel, String(user).toLowerCase()) || null; },
   remove(channel, user) { db.prepare('DELETE FROM vips WHERE channel=? AND user=?').run(channel, String(user).toLowerCase()); },
   list(channel) { return db.prepare('SELECT * FROM vips WHERE channel=? ORDER BY ts DESC').all(channel); },
   // VIP scaduti su TUTTI i canali (until>0 e già passato): per la rimozione automatica
   scaduti() { return db.prepare('SELECT * FROM vips WHERE until>0 AND until<?').all(now()); },
+  // UNA DIRETTA E' FINITA, e il conto di chi ha vinto un premio scende di uno.
+  //
+  // Si scala alla FINE della diretta, non all'inizio: scalando all'inizio un
+  // premio da una diretta sparirebbe la sera dopo, prima di essere stato
+  // addosso a qualcuno per una serata intera.
+  //
+  // Chi era all'ultima diretta non si cancella qui: diventa SCADUTO (una
+  // scadenza nel passato), e da li' in poi se ne occupa la ronda che toglie i
+  // VIP scaduti — che sa gia' parlare con Twitch e sa gia' riprovare se Twitch
+  // non risponde. Una strada sola per togliere un VIP, non due che devono
+  // restare d'accordo.
+  scalaDiretta(channel) {
+    const ch = String(channel).toLowerCase();
+    const giro = db.transaction(() => {
+      const finiti = db.prepare('UPDATE vips SET dirette=0, until=1 WHERE channel=? AND dirette=1').run(ch).changes;
+      db.prepare('UPDATE vips SET dirette = dirette - 1 WHERE channel=? AND dirette>1').run(ch);
+      return finiti;
+    });
+    return giro();
+  },
 };
 
 // ---------------------------------------------------------------- anima (condivisa)
