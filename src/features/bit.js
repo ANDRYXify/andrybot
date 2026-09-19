@@ -36,6 +36,28 @@ const cache = new Map();
 export const migliaia = (n) => String(Math.max(0, Math.round(Number(n) || 0)))
   .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
+// CHI HA CHEERATO, QUANDO NON C'E' UN CHI.
+//
+// Twitch lascia cheerare in anonimo, e in quel caso non manda nessun nome: i
+// campi dell'utente arrivano vuoti. Il rischio non e' restare senza una parola
+// da scrivere, e' inventarne una — ripiegare sul nome di chi ha cheerato
+// prima, o far passare per un nome una parola tecnica.
+//
+// Due domande diverse, due risposte diverse, e qui stanno insieme perche' sono
+// la stessa regola vista da due lati:
+//
+//  · «CHI e' stato?» — per una classifica, un record, un premio: se e' anonimo
+//    la risposta e' NIENTE, e chi chiama deve reggerlo (salta la riga, non
+//    assegna il premio). Un nome finto qui diventa un premio dato a un altro.
+//  · «Come lo chiamo?» — per una frase da leggere: la risposta e' una parola
+//    onesta, che dice proprio che un nome non c'e'.
+//
+// Vale per ogni evento che porta `is_anonymous`, non solo per il cheer: anche
+// un abbonamento regalato puo' arrivare senza firma.
+export const ANONIMO = 'un anonimo';
+export const chiHaCheerato = (d) => (d?.is_anonymous ? '' : String(d?.user_name || d?.user_login || '').slice(0, 40));
+export const comeSiChiama = (d, ignoto = 'qualcuno') => (d?.is_anonymous ? ANONIMO : (chiHaCheerato(d) || ignoto));
+
 // Butta la memoria di un canale (o di tutti). La chiama chi vede passare un
 // cheer, e i collaudi.
 export function scorda(channel) {

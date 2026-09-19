@@ -248,3 +248,58 @@ test('se Twitch non risponde, l\'elenco resta quello che era', () => {
   assert.deepEqual(r.unisciClip(null, []), []);
   assert.equal(r.nomeClip(null), 'Clip della diretta', 'e una clip senza niente ha comunque un nome');
 });
+
+// I BIT DELLA SERATA, E IL CHEER SENZA NOME.
+//
+// Twitch tiene la classifica del mese; noi teniamo il conto di STASERA, che e'
+// l'unica cosa che il rapporto puo' dire senza andarsela a chiedere. Il caso
+// che conta e' il cheer anonimo: i suoi Bit sono arrivati davvero e vanno
+// contati, ma un nome non ce l'ha. Metterci «Anonymous», o peggio il nome di
+// chi ha cheerato prima, vorrebbe dire scrivere nel rapporto una cosa falsa.
+test('i Bit della serata si sommano, e il primo e\' chi ne ha messi di piu\'', () => {
+  const ch = 'bit-serata';
+  streamers.upsertApproved(ch, 'Bit');
+  const da = T0 + 400 * MIN, a = da + 60 * MIN;
+  const cheer = (q, chi, quando, anonimo = false) => memory.logMessage(ch, '[evento]', '',
+    `channel.cheer ${JSON.stringify({ bits: q, user_name: chi, is_anonymous: anonimo })}`, true, quando);
+  cheer(500, 'Ludo', da + MIN);
+  cheer(1200, 'Giada', da + 2 * MIN);
+  cheer(300, 'Ludo', da + 3 * MIN);
+  cheer(900, null, da + 4 * MIN, true);
+  cheer(5000, 'Tardi', a + 10 * MIN);
+  const d = r.raccogli(ch, { inizio: da, fine: a });
+  assert.equal(d.bit, 2900, 'i Bit di fuori finestra non sono di stasera, quelli anonimi si');
+  assert.equal(d.bitChi, 'Giada');
+  assert.equal(d.bitChiQuanti, 1200);
+
+  const t = r.testo({ durataMs: 60 * MIN, messaggi: 0, persone: 0, top: [], ...d });
+  assert.ok(t.includes('Bit: 2.900 (più di tutti Giada, 1.200)'), t);
+  assert.ok(r.html({ durataMs: 60 * MIN, ...d }, {}).includes('2.900'), 'e la stessa cosa si legge nella mail');
+});
+
+test('un cheer anonimo porta i suoi Bit e non porta un nome', () => {
+  const ch = 'bit-anonimo';
+  streamers.upsertApproved(ch, 'Bit');
+  const da = T0 + 600 * MIN, a = da + 60 * MIN;
+  memory.logMessage(ch, '[evento]', '', 'channel.cheer {"bits":2000,"user_name":null,"is_anonymous":true}', true, da + MIN);
+  const d = r.raccogli(ch, { inizio: da, fine: a });
+  assert.equal(d.bit, 2000);
+  assert.equal(d.bitChi, '', 'chi non si e\' firmato non si firma da solo');
+  assert.equal(d.bitChiQuanti, 0);
+  const t = r.testo({ durataMs: 60 * MIN, messaggi: 0, persone: 0, top: [], ...d });
+  assert.ok(t.includes('Bit: 2.000'), t);
+  assert.ok(!/più di tutti/.test(t), 'senza un nome la parentesi non si apre nemmeno');
+  assert.ok(!/null|undefined|anonym/i.test(t), 'e non si ripiega su una parola tecnica');
+  assert.equal(r.apertura({ ...d, durataMs: 60 * MIN, messaggi: 1, persone: 1 }), '2.000 Bit stasera.',
+    'una serata da 2000 Bit apre con quelli, anche se non c\'e\' nessuno da nominare');
+});
+
+test('con un nome, la riga d\'apertura dei Bit lo dice; sotto i mille resta un dettaglio', () => {
+  const base = { durataMs: 60 * MIN, persone: 1, messaggi: 1, follow: 0, sub: 0, raid: 0, donazioniCent: 0, primeVolte: 0 };
+  assert.equal(r.apertura({ ...base, bit: 4500, bitChi: 'Giada', bitChiQuanti: 3000 }),
+    '4.500 Bit stasera, e Giada ne ha messi 3.000.');
+  assert.equal(r.apertura({ ...base, messaggi: 0, bit: 900, bitChi: 'Giada', bitChiQuanti: 900 }), 'Serata tranquilla.',
+    'novecento Bit sono una bella cosa, non IL fatto della serata');
+  assert.equal(r.apertura({ ...base, bit: 4500, bitChi: 'Giada', bitChiQuanti: 3000, raid: 1, raidSpettatori: 9 }),
+    'È arrivato un raid, con 9 persone al seguito.', 'e un raid resta piu\' notevole');
+});
