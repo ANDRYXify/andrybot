@@ -243,7 +243,7 @@ test('i permessi si mandano FUSI con quelli che c\'erano, non al posto loro', as
   ] });
   try {
     const a = await C.applica('tok', GUILD, {
-      categorie: [{ nome: 'Riservato', canali: [{ nome: 'staff', permessi: [{ id: GUILD, allow: '0', deny: '1024' }] }] }],
+      categorie: [{ nome: 'Riservato', canali: [{ nome: 'staff', permessi: [{ chi: 'tutti', nega: ['vedere'] }] }] }],
     }, opz());
     assert.equal(a.ok, true, a.errore);
     assert.equal(a.sistemati, 1);
