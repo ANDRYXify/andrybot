@@ -188,6 +188,7 @@ test('il modo normale non cancella niente, nemmeno quello che il preset non nomi
     assert.equal(a.ok, true, a.errore);
     assert.equal(a.tolti, 0);
     assert.ok(!st.chiamate.some((c) => c.startsWith('DELETE')), 'nel modo normale la parola DELETE non esce proprio');
+    assert.deepEqual(a.nomiTolti, [], 'e il registro di quel giro non ha nomi da scrivere');
     assert.ok(st.canali.some((c) => c.id === C1), 'il canale di prima e\' ancora li\'');
   } finally { ripulisci(); }
 });
@@ -205,6 +206,11 @@ test('il modo distruttivo toglie prima i canali e poi le categorie, per non lasc
     const cancellati = st.chiamate.filter((c) => c.startsWith('DELETE')).map((c) => c.split('/').pop());
     assert.deepEqual(cancellati.slice(-1), [C1], 'la categoria va per ultima');
     assert.equal(st.canali.length, 6, 'e resta esattamente il preset');
+    // I NOMI, non gli id: sul server quei canali non esistono piu', e il
+    // registro e' l'unico posto dove resta scritto come si chiamavano. Se
+    // tornassero gli id, fra sei mesi nessuno saprebbe cosa e' sparito.
+    assert.deepEqual([...a.nomiTolti].sort(), ['Roba Mia', 'altro', 'vecchio'],
+      'di quello che e\' sparito restano i nomi');
   } finally { ripulisci(); }
 });
 

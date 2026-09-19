@@ -643,6 +643,7 @@ function apiDemo(percorso, opzioni = {}) {
   }
 
   if (via === '/api/streamer/dcserver') return Promise.resolve({ ok: true });
+  if (via === '/api/streamer/dcserver/modo') return Promise.resolve({ chiave: 'demo', restano: 600000 });
   if (via === '/api/streamer/dcserver/dalserver') {
     return Promise.resolve({ ok: true, preset: { canali: [{ nome: 'bacheca', tipo: 'testo', argomento: '', permessi: [] }], categorie: [
       { nome: 'Benvenuto', permessi: [], canali: [
@@ -654,16 +655,25 @@ function apiDemo(percorso, opzioni = {}) {
     ] } });
   }
   if (via === '/api/streamer/dcserver/anteprima') {
-    return Promise.resolve({ ok: true, impronta: 'a1b2c3d4e5f6', mancanti: [], vuota: false,
+    const dist = !!opzioni.body?.chiave;
+    const fuori = [
+      { id: '2', nome: 'vecchio-canale', tipo: 0, dentro: null, ultimoMessaggio: Date.now() - 240 * 86400000, nato: 0 },
+      { id: '3', nome: 'Roba Vecchia', tipo: 4, dentro: null, ultimoMessaggio: Date.now() - 40 * 86400000, nato: 0, dentroCi: 3 },
+    ];
+    const comune = {
+      ok: true, mancanti: [], vuota: false, server: 'Casa di andryx', fuori,
       crea: [{ nome: 'Diretta', tipo: 4, dentro: null }, { nome: 'sono-in-onda', tipo: 0, dentro: 'Diretta' }, { nome: 'clip', tipo: 0, dentro: 'Diretta' }],
       sistema: [{ id: '1', nome: 'generale', tipo: 0, dentro: 'Chiacchiere' }],
-      fuori: [
-        { id: '2', nome: 'vecchio-canale', tipo: 0, dentro: null, ultimoMessaggio: Date.now() - 240 * 86400000, nato: 0 },
-        { id: '3', nome: 'Roba Vecchia', tipo: 4, dentro: null, ultimoMessaggio: Date.now() - 40 * 86400000, nato: 0, dentroCi: 3 },
-      ] });
+    };
+    if (dist) {
+      return Promise.resolve({ ...comune, impronta: 'ffff11112222', distruttivo: true, togli: fuori,
+        peso: { quanti: 2, categorie: 1, vivi: [], scriviIlNome: false } });
+    }
+    return Promise.resolve({ ...comune, impronta: 'a1b2c3d4e5f6' });
   }
   if (via === '/api/streamer/dcserver/applica') {
-    return Promise.resolve({ ok: true, creati: 3, sistemati: 1, tolti: 0, errori: [], fermo: '', fatte: 4, mancanti: [] });
+    const tolti = opzioni.body?.chiave ? 2 : 0;
+    return Promise.resolve({ ok: true, creati: 3, sistemati: 1, tolti, errori: [], fermo: '', fatte: 4 + tolti, mancanti: [] });
   }
 
   if (via === '/api/streamer/occasione') {
@@ -716,6 +726,10 @@ function _demoGet(via) {
     '/api/streamer/morti/gsi': { indirizzo: 'https://socialbot.live/api/gsi/andryx_demo', ultimo: Date.now() - 7 * 60000, quale: 'cs2', giochi: [
       { id: 'cs2', nome: 'Counter-Strike 2', cartella: 'game/csgo/cfg', file: 'gamestate_integration_socialbot_cs2.cfg' },
       { id: 'dota2', nome: 'Dota 2', cartella: 'game/dota/cfg/gamestate_integration', file: 'gamestate_integration_socialbot_dota2.cfg' },
+    ] },
+    '/api/streamer/dcserver/registro': { giri: [
+      { quando: Date.now() - 3 * 3600000, chi: 'andryx_demo', distruttivo: 0, creati: 3, sistemati: 1, tolti: 0, nomi: '', errori: '' },
+      { quando: Date.now() - 6 * 86400000, chi: 'andryx_demo', distruttivo: 1, creati: 0, sistemati: 2, tolti: 2, nomi: 'vecchio-canale, Roba Vecchia', errori: '' },
     ] },
     '/api/streamer/dcserver': { pronto: true, guildNome: 'Casa di andryx', preset: null,
       ruoli: [{ id: '100000000000000010', nome: 'Abbonati' }, { id: '100000000000000011', nome: 'Affezionati' }, { id: '100000000000000012', nome: 'Moderatori' }],
@@ -16784,9 +16798,58 @@ const T_DCTIPO = () => ({
 
 let _dcs = null;
 let _dcsChiave = 0;
+let _dist = null;
+let _distOrologio = null;
+
+function _distApplica() {
+  const s = _g('scheda-dcserver');
+  if (s) s.dataset.distruttivo = _dist ? '1' : '';
+  const e = _g('dcs-entra');
+  if (e) e.hidden = !!_dist;
+  const f = _g('dcs-fascia');
+  if (f) f.hidden = !_dist;
+  _dcsTocca();
+  _dcsDisegna();
+}
+
+function _distConta() {
+  clearInterval(_distOrologio);
+  if (!_dist) return;
+  const scrivi = () => {
+    const resta = Math.max(0, _dist.fino - Date.now());
+    const n = _g('dcs-resta');
+    if (n) n.textContent = Math.ceil(resta / 60000) + L(' min', ' min', ' min');
+    if (resta <= 0) _distEsci(true);
+  };
+  scrivi();
+  _distOrologio = setInterval(scrivi, 20000);
+}
+
+async function _distEntra() {
+  const r = await api('/api/streamer/dcserver/modo', { method: 'POST', body: {} });
+  _dist = { chiave: r.chiave, fino: Date.now() + (Number(r.restano) || 600000) };
+  _distApplica();
+  _distConta();
+}
+
+function _distEsci(scaduta) {
+  const chiave = _dist?.chiave;
+  _dist = null;
+  clearInterval(_distOrologio);
+  _distApplica();
+  if (chiave && !scaduta) api('/api/streamer/dcserver/modo?chiave=' + encodeURIComponent(chiave), { method: 'DELETE' }).catch(() => {});
+  if (scaduta) toast(L('La modalità distruttiva è scaduta.', 'Destructive mode has expired.', 'El modo destructivo ha caducado.'));
+}
 
 function pannelloDcServer() {
   return pannello('dcserver', `
+    <p class="dcs-fascia" id="dcs-fascia" role="status" hidden>
+      <strong>${L('Modalità distruttiva', 'Destructive mode', 'Modo destructivo')}</strong>
+      ${L('— quello che non è nella traccia verrà cancellato. Si chiude da sola fra', '— whatever is not in the track will be deleted. It closes on its own in', '— lo que no esté en la plantilla se borrará. Se cierra sola en')}
+      <b id="dcs-resta">10 min</b>.
+      <button type="button" class="btn secondario mini" id="dcs-esci">${L('Esci', 'Leave', 'Salir')}</button>
+    </p>
+
     <div class="carta">
       <h2>${_hIco(ICO.moduli)}${L('Da dove parti', 'Where you start from', 'Desde dónde empiezas')}</h2>
       <p>${L('Scegli una traccia e cambiala come vuoi: i nomi, i canali, chi può fare cosa. Niente di quello che scegli qui tocca il server finché non lo dici tu.', 'Pick a starting point and change it however you like: the names, the channels, who can do what. Nothing you choose here touches the server until you say so.', 'Elige un punto de partida y cámbialo como quieras: los nombres, los canales, quién puede hacer qué. Nada de lo que elijas aquí toca el servidor hasta que tú lo digas.')}</p>
@@ -16814,6 +16877,19 @@ function pannelloDcServer() {
       </p>
       <div id="dcs-diff" class="spazio-sopra"></div>
       <p class="tg-stato" id="dcs-esito" hidden></p>
+    </div>
+
+    <div class="carta" id="dcs-carta-modo">
+      <h2>${_hIco(ICO.scudo)}${L('Fare piazza pulita', 'Clearing the board', 'Hacer limpieza')}</h2>
+      <p>${L('Finché resti di qua, il costruttore va solo in avanti: crea quello che manca e non cancella mai niente. Di là invece il server diventa esattamente la traccia — e quello che non c’è dentro sparisce.', 'While you stay on this side, the builder only goes forward: it creates what is missing and never deletes anything. On the other side the server becomes exactly the track — and whatever is not in it disappears.', 'Mientras te quedes de este lado, el constructor solo va hacia adelante: crea lo que falta y nunca borra nada. Del otro lado el servidor se convierte exactamente en la plantilla — y lo que no esté dentro desaparece.')}</p>
+      <p class="suggerimento">${L('Su Discord un canale cancellato non torna, e con lui tutto quello che vi siete detti dentro.', 'On Discord a deleted channel does not come back, and neither does everything you said in it.', 'En Discord un canal borrado no vuelve, y con él todo lo que os habéis dicho dentro.')}</p>
+      <p class="spazio-sopra"><button class="btn secondario" id="dcs-entra">${L('Entra in modalità distruttiva', 'Enter destructive mode', 'Entrar en modo destructivo')}</button></p>
+    </div>
+
+    <div class="carta" id="dcs-carta-registro">
+      <h2>${_hIco(ICO.moduli)}${L('Cosa è stato fatto', 'What has been done', 'Qué se ha hecho')}</h2>
+      <p class="suggerimento">${L('Ogni volta che il costruttore passa resta scritto qui. Di quello che è stato cancellato restano i nomi: sul server non ci sono più.', 'Every time the builder runs it is written down here. Of what was deleted, the names remain: they are no longer on the server.', 'Cada vez que el constructor pasa queda escrito aquí. De lo que se ha borrado quedan los nombres: en el servidor ya no están.')}</p>
+      <div id="dcs-registro" class="spazio-sopra"></div>
     </div>`);
 }
 
@@ -17040,8 +17116,12 @@ function _dcsDiffHtml(d) {
       }).join('') + '</ul>');
   }
   if (d.fuori.length) {
-    blocchi.push(`<h3>${L('Non è in questa traccia', 'Not in this track', 'No está en esta plantilla')} (${d.fuori.length})</h3>`
-      + `<p class="suggerimento">${L('Resta dov’è: qui non si cancella niente.', 'It stays where it is: nothing is deleted here.', 'Se queda donde está: aquí no se borra nada.')}</p><ul class="lista-voci">`
+    blocchi.push(d.distruttivo
+      ? `<h3 class="dcs-muore">${L('Cancella', 'Deletes', 'Borra')} (${d.fuori.length})</h3>`
+        + `<p class="suggerimento">${L('Spariscono dal server, e su Discord non tornano.', 'They disappear from the server, and on Discord they do not come back.', 'Desaparecen del servidor, y en Discord no vuelven.')}</p>`
+      : `<h3>${L('Non è in questa traccia', 'Not in this track', 'No está en esta plantilla')} (${d.fuori.length})</h3>`
+        + `<p class="suggerimento">${L('Resta dov’è: qui non si cancella niente.', 'It stays where it is: nothing is deleted here.', 'Se queda donde está: aquí no se borra nada.')}</p>`);
+    blocchi.push('<ul class="lista-voci">'
       + d.fuori.map((x) => `<li>${nome(x)} <span class="suggerimento">${esc(_dcsQuando(x))}</span></li>`).join('') + '</ul>');
   }
   if ((d.mancanti || []).length) {
@@ -17051,12 +17131,42 @@ function _dcsDiffHtml(d) {
   return blocchi.join('');
 }
 
+function _dcsGiroHtml(g) {
+  const quando = (() => {
+    try { return new Date(Number(g.quando) || 0).toLocaleString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+    catch (e) { return ''; }
+  })();
+  const pezzi = [];
+  if (g.creati) pezzi.push(g.creati + L(' creati', ' created', ' creados'));
+  if (g.sistemati) pezzi.push(g.sistemati + L(' sistemati', ' fixed', ' arreglados'));
+  if (g.tolti) pezzi.push(g.tolti + L(' cancellati', ' deleted', ' borrados'));
+  const nomi = String(g.nomi || '').trim();
+  return `<li class="dcs-giro${g.distruttivo ? ' dcs-muore' : ''}">
+    <span>${esc(quando)}${g.chi ? ' · ' + esc(g.chi) : ''}${g.distruttivo ? ' · ' + L('piazza pulita', 'cleared the board', 'limpieza') : ''}</span>
+    <span class="suggerimento">${esc(pezzi.length ? pezzi.join(' · ') : L('niente da fare', 'nothing to do', 'nada que hacer'))}</span>
+    ${nomi ? `<details class="spazio-sopra"><summary class="suggerimento">${L('Cosa non c’è più', 'What is gone', 'Lo que ya no está')}</summary><p class="suggerimento">${esc(nomi)}</p></details>` : ''}
+    ${g.errori ? `<p class="tg-stato guaio">${esc(g.errori)}</p>` : ''}
+  </li>`;
+}
+
+async function _dcsCaricaRegistro() {
+  const box = _g('dcs-registro');
+  if (!box) return;
+  let r = null;
+  try { r = await api('/api/streamer/dcserver/registro'); } catch { r = null; }
+  const giri = r?.giri || [];
+  box.innerHTML = giri.length
+    ? '<ul class="lista-voci">' + giri.map(_dcsGiroHtml).join('') + '</ul>'
+    : `<p class="suggerimento">${L('Qui non è ancora passato niente.', 'Nothing has come through here yet.', 'Por aquí todavía no ha pasado nada.')}</p>`;
+}
+
 async function caricaDcServer() {
   let d = null;
   try { d = await api('/api/streamer/dcserver'); } catch { d = null; }
   if (!d) { _dcsDici('dcs-stato', L('Non riesco a leggere la configurazione.', 'I can’t read the configuration.', 'No consigo leer la configuración.'), 'guaio'); return; }
   _dcs = { ...d, preset: d.preset ? _dcsPrepara(d.preset) : null };
   _dcsMostra();
+  _dcsCaricaRegistro();
 }
 
 function collegaDcServer() {
@@ -17085,26 +17195,49 @@ function collegaDcServer() {
   _g('dcs-vedi')?.addEventListener('click', () => conErrore(async () => {
     const preset = _dcsPulito();
     await api('/api/streamer/dcserver', { method: 'POST', body: { preset } });
-    const d = await api('/api/streamer/dcserver/anteprima', { method: 'POST', body: { preset } });
-    _dcs = { ..._dcs, impronta: d.impronta };
+    const d = await api('/api/streamer/dcserver/anteprima', { method: 'POST', body: { preset, chiave: _dist?.chiave || '' } });
+    _dcs = { ..._dcs, impronta: d.impronta, peso: d.peso, server: d.server };
     const box = _g('dcs-diff');
     if (box) box.innerHTML = _dcsDiffHtml(d);
     const fai = _g('dcs-costruisci');
-    if (fai) fai.hidden = !!d.vuota;
+    if (fai) {
+      fai.hidden = !!d.vuota;
+      fai.textContent = d.distruttivo
+        ? L('Fai piazza pulita', 'Clear the board', 'Haz limpieza')
+        : L('Costruisci', 'Build it', 'Constrúyelo');
+    }
     _dcsDici('dcs-esito', '');
   }));
 
+  _g('dcs-entra')?.addEventListener('click', () => conErrore(_distEntra));
+  _g('dcs-esci')?.addEventListener('click', () => _distEsci(false));
+
   _g('dcs-costruisci')?.addEventListener('click', () => conErrore(async () => {
-    const e = await api('/api/streamer/dcserver/applica', { method: 'POST', body: { preset: _dcsPulito(), impronta: _dcs?.impronta || '' } });
+    const corpo = { preset: _dcsPulito(), impronta: _dcs?.impronta || '', chiave: _dist?.chiave || '' };
+    if (_dist && _dcs?.peso?.scriviIlNome) {
+      const p = _dcs.peso;
+      const vivi = p.vivi.length
+        ? L('Di questi, ', 'Of these, ', 'De estos, ') + p.vivi.slice(0, 5).map((x) => '«' + x + '»').join(', ')
+          + L(' hanno parlato di recente.', ' have spoken recently.', ' han hablado hace poco.')
+        : '';
+      const detto = prompt(L('Sto per cancellare ', 'I am about to delete ', 'Estoy a punto de borrar ') + p.quanti
+        + L(' cose dal tuo server. ', ' things from your server. ', ' cosas de tu servidor. ') + vivi
+        + L('\n\nSu Discord non tornano. Scrivi il nome del server per confermare:', '\n\nOn Discord they do not come back. Type the server name to confirm:', '\n\nEn Discord no vuelven. Escribe el nombre del servidor para confirmar:'));
+      if (detto === null) return;
+      corpo.conferma = detto;
+    }
+    const e = await api('/api/streamer/dcserver/applica', { method: 'POST', body: corpo });
     const p = [];
     if (e.creati) p.push(e.creati + L(' creati', ' created', ' creados'));
     if (e.sistemati) p.push(e.sistemati + L(' sistemati', ' fixed', ' arreglados'));
+    if (e.tolti) p.push(e.tolti + L(' cancellati', ' deleted', ' borrados'));
     if (e.fermo === 'attesa') p.push(L('mi sono fermata: Discord chiede di aspettare, riprova fra poco', 'I stopped: Discord asks to wait, try again shortly', 'me he parado: Discord pide esperar, inténtalo en un rato'));
     if (e.fermo === 'limite') p.push(L('mi sono fermata al limite delle mosse: premi di nuovo per il resto', 'I stopped at the move limit: press again for the rest', 'me he parado en el límite de movimientos: pulsa de nuevo para el resto'));
     if ((e.errori || []).length) p.push(e.errori.join(' · '));
     _dcsDici('dcs-esito', p.length ? p.join(' · ') : L('Non c’era niente da fare.', 'There was nothing to do.', 'No había nada que hacer.'), (e.errori || []).length || e.fermo ? 'guaio' : 'ok');
     _g('dcs-costruisci').hidden = true;
     const box = _g('dcs-diff'); if (box) box.innerHTML = '';
+    _dcsCaricaRegistro();
   }));
 
   _g('dcs-partenza')?.addEventListener('click', (e) => {

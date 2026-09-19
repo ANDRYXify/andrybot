@@ -163,6 +163,70 @@ differenza contiene l'elenco di ciò che sparisce, e `applica` lo ricontrolla
 prima di chiamare. Non è una ripetizione — sull'unica cosa irreversibile la
 domanda si fa nel punto in cui si distrugge, non solo dove si è deciso.
 
+## La modalità distruttiva
+
+Il motore sa cancellare da sempre: basta passargli `togliere: true`. Tutto il
+resto di questo capitolo serve a decidere **da dove arriva quel true**, perché
+è lì che si vince o si perde. Cancellare bene una cosa sbagliata non consola
+nessuno.
+
+### È una chiave, non un interruttore
+
+Un interruttore si dimentica acceso. Resta così domani, e il giorno che qualcuno
+preme «Costruisci» senza guardare il server si svuota — e la colpa sembra di
+chi ha premuto, non di chi ha lasciato l'interruttore.
+
+Quindi non è uno stato: è una **chiave che scade**. Il pannello chiede di
+entrare, il server ne conia una che vale dieci minuti, e quella chiave è legata
+a **chi** l'ha chiesta e a **cosa** apre — quella dei canali di Tizio non apre i
+canali di Caio, e nemmeno i ruoli di Tizio. Dopo dieci minuti non esiste più: non
+perché qualcuno si ricordi di spegnerla, ma perché il tempo è passato. Uscire la
+brucia subito.
+
+Due schede aperte non tengono la porta aperta il doppio: coniarne una seconda
+brucia la prima.
+
+E la chiave la conia il **server**. Se lo stato lo tenesse la pagina, una scheda
+rimasta aperta da ieri — o una richiesta scritta a mano — basterebbe.
+
+### La pagina si tinge
+
+Dentro la modalità la scheda cambia colore e in cima compare una fascia con
+scritto quanto le resta da vivere. Non è decorazione: il tasto che costruisce e
+il tasto che cancella sono lo stesso tasto, e l'unica cosa che dice quale dei
+due hai sotto il dito è come appare la pagina. Per questo il tasto cambia anche
+le parole — «Costruisci» di là, «Fai piazza pulita» di qua — e la differenza
+scrive **Cancella (N)** al posto di «Non è in questa traccia».
+
+Entrare e uscire buttano via l'anteprima che c'era: un'anteprima appartiene a
+una modalità, e restare a schermo dopo il cambio vorrebbe dire un tasto che
+cancella fuori dalla modalità che lo autorizza.
+
+Distruttivo non vuol dire «solo cancella»: crea e sistema come sempre, e in più
+toglie. È la stessa differenza di prima con la terza parte accesa.
+
+### La conferma pesa quanto il danno
+
+Tre «sei sicuro?» identici si cliccano a memoria: il terzo non lo legge più
+nessuno. Qui la domanda **cambia forma** quando c'è qualcosa di vivo da perdere
+— un canale in cui si è parlato nell'ultimo mese — o quando è tanta roba insieme
+(più di dieci cose). Allora non basta confermare: va **scritto il nome del
+server**, che è l'unica conferma che non può venire dalla memoria muscolare.
+
+A decidere se chiederla non è il pannello. Se lo decidesse lui, basterebbe non
+chiamarlo. Il server rifà l'anteprima da sé, pesa **quella**, e se serve il nome
+e il nome non c'è, non cancella. Per lo stesso motivo il peso non si accetta dal
+corpo della richiesta: sarebbe una firma che si porta da casa.
+
+### Cosa resta scritto
+
+Ogni giro finisce nel registro: chi era, in che modo, quante cose ha creato,
+sistemato e tolto — e, se ha tolto, **i nomi**. Sul server quei canali non
+esistono più e non tornano: quel registro è l'unico posto dove resta scritto
+come si chiamavano. Si scrive sempre, anche quando non si è cancellato niente,
+perché un registro che compare solo nei giorni brutti non dice se quel giorno
+era stato fatto anche altro.
+
 ## Il permesso, e il reinvito
 
 L'invito chiede due permessi: «Gestire i ruoli» (per il gestore dei ruoli) e
@@ -217,11 +281,6 @@ caso che in un server vero non succede mai.
 
 ## Quello che non c'è ancora
 
-- **Il modo distruttivo.** Il motore c'è ed è provato; quello che manca è la
-  serratura — si entra apposta, la pagina si tinge, e il server ci crede solo se
-  l'hai accesa. Finché non c'è, `applica` passa `togliere: false` e basta: un
-  interruttore «cancella pure» senza la modalità che lo protegge sarebbe la metà
-  pericolosa consegnata da sola.
 - **I ruoli creati dal preset.** Oggi il preset può *nominare* un ruolo che
   esiste, non crearne uno. Serve alla porta d'ingresso, e arriva con quella.
 - **«Puliamo il server».** Le date ci sono già (nasce da qui il «ferma da otto

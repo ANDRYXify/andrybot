@@ -22,7 +22,7 @@ import * as licenza from '../licenza.js';      // il nome con cui questo softwar
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
-import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink } from '../db.js';
+import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi } from '../db.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { renderLinkPage, renderInformativa, accentoDi } from '../features/linkpagina.js';
@@ -82,6 +82,8 @@ import * as dcCollega from '../features/discord-collega.js';
 import * as dcGiro from '../features/discord-giro.js';
 import { normRegole, fuoriPortata, mioLivello, TIPI as TIPI_RUOLO, haSoglia } from '../features/discord-ruoli.js';
 import * as sostegno from '../features/sostegno.js';
+import { creaChiavi, DURATA_MS as CHIAVE_MS } from './chiave-breve.js';
+import { peso as pesoDanno } from '../features/discord-peso.js';
 import * as dcCatalogo from '../features/discord-catalogo.js';
 import * as dcCostruisci from '../features/discord-costruisci.js';
 import * as instagram from '../features/instagram.js';
@@ -4143,6 +4145,32 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   };
   const NON_PRONTO = { errore: 'Prima porta il bot nel tuo server: senza, non c\'è niente da costruire.' };
 
+  // LA MODALITA' DISTRUTTIVA E' UNA CHIAVE CHE SCADE.
+  //
+  // Non c'e' un interruttore salvato da nessuna parte, e non e' una
+  // dimenticanza: un interruttore lo si puo' lasciare acceso, una chiave che
+  // fra dieci minuti non vale piu' no. Lo stato E' la chiave, ed e' legata a
+  // CHI e a COSA — quella del canale di Tizio non apre niente su quello di
+  // Caio, e quella per i canali non varra' per i ruoli.
+  //
+  // E la decide il SERVER. Se lo decidesse la pagina, un doppio clic su una
+  // scheda rimasta aperta da ieri basterebbe.
+  const chiaviDcServer = creaChiavi();
+  const SCOPO = 'dcserver';
+  const conChiave = (req, login) => chiaviDcServer.vale(req.body?.chiave || req.query?.chiave, login, SCOPO);
+
+  app.post('/api/streamer/dcserver/modo', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    const k = chiaviDcServer.conia(login, SCOPO);
+    if (!k) return res.status(400).json({ errore: 'non si può entrare adesso' });
+    res.json({ chiave: k.chiave, restano: CHIAVE_MS });
+  });
+
+  app.delete('/api/streamer/dcserver/modo', requireOwner, (req, res) => {
+    chiaviDcServer.brucia(req.query?.chiave || req.body?.chiave);
+    res.json({ ok: true });
+  });
+
   app.get('/api/streamer/dcserver', requireOwner, wrap(async (req, res) => {
     const { c, token, guild, pronto } = dcTokenE(currentUser(req).login);
     // I ruoli servono a poter dire «questo canale lo vedono i moderatori».
@@ -4190,26 +4218,73 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const { token, guild, pronto } = dcTokenE(currentUser(req).login);
     if (!pronto) return res.status(400).json(NON_PRONTO);
     const preset = dcCatalogo.normalizzaPreset(req.body?.preset);
-    // In avanti, come `applica`: l'impronta che torna e' di quello che
-    // succedera' davvero, e il pannello la rimanda indietro tale e quale.
+    // L'impronta che torna e' di quello che succedera' DAVVERO, e il pannello
+    // la rimanda indietro tale e quale. Percio' l'anteprima dev'essere del
+    // modo giusto: in avanti e distruttivo fanno due cose diverse, e due cose
+    // diverse non possono avere la stessa firma.
+    const togliere = conChiave(req, currentUser(req).login);
+    const a = await dcCostruisci.anteprima(token, guild, preset, { togliere });
+    if (!a.ok) return res.status(400).json({ errore: a.errore });
     // `fuori` dice cosa il preset non prevede — si sa anche quando non si
     // tocca, perche' non dirlo lascerebbe credere che il server sia gia'
     // uguale al preset quando non lo e'.
-    const a = await dcCostruisci.anteprima(token, guild, preset, { togliere: false });
-    if (!a.ok) return res.status(400).json({ errore: a.errore });
-    res.json({ ok: true, impronta: a.impronta, mancanti: a.mancanti, vuota: a.vuota,
-      crea: a.differenza.crea, sistema: a.differenza.sistema, fuori: a.fuori });
+    res.json({ ok: true, impronta: a.impronta, mancanti: a.mancanti, vuota: a.vuota, distruttivo: togliere,
+      crea: a.differenza.crea, sistema: a.differenza.sistema, fuori: a.fuori,
+      togli: togliere ? a.differenza.togli : [],
+      peso: togliere ? pesoDanno(a.differenza.togli) : null,
+      server: a.foto?.guild?.nome || '' });
   }));
 
   app.post('/api/streamer/dcserver/applica', requireOwner, wrap(async (req, res) => {
-    const { token, guild, pronto } = dcTokenE(currentUser(req).login);
+    const login = currentUser(req).login;
+    const { token, guild, pronto } = dcTokenE(login);
     if (!pronto) return res.status(400).json(NON_PRONTO);
     const preset = dcCatalogo.normalizzaPreset(req.body?.preset);
     const impronta = String(req.body?.impronta || '').slice(0, 32);
-    const e = await dcCostruisci.applica(token, guild, preset, { togliere: false, impronta });
+    const togliere = conChiave(req, login);
+
+    // LA CONFERMA PESA QUANTO IL DANNO, e la pesa il server.
+    //
+    // Tre «sei sicuro?» identici si cliccano a memoria: il terzo non lo legge
+    // piu' nessuno. Qui la domanda cambia forma quando c'e' qualcosa di vivo
+    // da perdere, o quando e' tanta roba insieme — e allora si chiede di
+    // SCRIVERE il nome del server, che e' l'unica conferma che non puo' venire
+    // dalla memoria muscolare.
+    //
+    // Chi decide se chiederla non e' il pannello: se lo decidesse lui,
+    // basterebbe non chiamarlo. Il server rifa' l'anteprima, pesa, e se serve
+    // il nome e il nome non c'e', non cancella.
+    if (togliere) {
+      const a = await dcCostruisci.anteprima(token, guild, preset, { togliere: true });
+      if (!a.ok) return res.status(400).json({ errore: a.errore });
+      if (impronta && impronta !== a.impronta) {
+        return res.status(409).json({ cambiato: true, impronta: a.impronta, differenza: a.differenza,
+          errore: 'il server è cambiato da quando hai guardato: ricontrolla cosa succede e riconferma' });
+      }
+      const p = pesoDanno(a.differenza.togli);
+      const atteso = String(a.foto?.guild?.nome || '').trim();
+      const scritto = String(req.body?.conferma || '').trim();
+      if (p.scriviIlNome && (!atteso || scritto.toLowerCase() !== atteso.toLowerCase())) {
+        return res.status(428).json({ scriviIlNome: true, server: atteso, peso: p,
+          errore: 'Per fare questo scrivi il nome del server, esattamente com’è.' });
+      }
+    }
+
+    const e = await dcCostruisci.applica(token, guild, preset, { togliere, impronta });
     if (!e.ok) return res.status(e.cambiato ? 409 : 400).json(e);
+    // Si scrive SEMPRE, anche quando non si e' tolto niente: un registro che
+    // compare solo quando si cancella non dice se quel giorno era stato fatto
+    // anche altro.
+    dcGiri.segna(login, { chi: identitaDi(currentUser(req)), distruttivo: togliere, impronta: e.impronta,
+      creati: e.creati, sistemati: e.sistemati, tolti: e.tolti, nomi: e.tolti ? (e.nomiTolti || []) : [], errori: e.errori });
     res.json(e);
   }));
+
+  // Cosa e' successo su questo server, in ordine di tempo. Serve il giorno che
+  // qualcuno chiede «chi ha cancellato #generale».
+  app.get('/api/streamer/dcserver/registro', requireOwner, (req, res) => {
+    res.json({ giri: dcGiri.ultimi(currentUser(req).login, 20) });
+  });
 
   app.delete('/api/streamer/ruoli', requireOwner, (req, res) => {
     dcRuoli.scorda(currentUser(req).login);

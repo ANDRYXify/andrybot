@@ -2314,3 +2314,14 @@ body.ce-aperto { overflow: hidden; }
 @media (max-width: 640px) {
   .dcs-canali, .dcs-permessi { margin-left: .35rem; }
 }
+
+.dcs-fascia { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 1rem; padding: .7rem .95rem; border: 1px solid var(--rosso); border-radius: var(--r-l); background: color-mix(in oklab, var(--rosso) 10%, var(--surface)); }
+.dcs-fascia b { font-variant-numeric: tabular-nums; }
+.dcs-fascia button { margin-left: auto; }
+.dcs-muore { color: var(--rosso); }
+.dcs-giro > span:first-child { flex: 1; min-width: 220px; }
+.dcs-giro > details, .dcs-giro > .tg-stato { flex-basis: 100%; margin: .4rem 0 0; }
+[data-distruttivo="1"] .carta { border-color: color-mix(in oklab, var(--rosso) 35%, var(--border)); }
+[data-distruttivo="1"] .carta h2 { background: var(--rosso); }
+[data-distruttivo="1"] #dcs-costruisci { background: var(--rosso); border-color: var(--rosso); }
+[data-distruttivo="1"] .dcs-cat, [data-distruttivo="1"] .dcs-cima { background: color-mix(in oklab, var(--rosso) 5%, var(--surface-2)); }
