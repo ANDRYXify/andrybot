@@ -285,3 +285,23 @@ caso che in un server vero non succede mai.
   esiste, non crearne uno. Serve alla porta d'ingresso, e arriva con quella.
 - **«Puliamo il server».** Le date ci sono già (nasce da qui il «ferma da otto
   mesi»); manca il giro che le legge e propone.
+
+## I ruoli nel pannello
+
+Tre scelte che si vedono poco e contano.
+
+**I privilegi di un ruolo non sono i permessi di un canale.** Quelli valgono
+dentro un canale, questi nel server intero. Nel pannello stanno in due posti
+diversi e non si mescolano mai, perché mescolarli farebbe credere che «non può
+scrivere» detto in un canale valga ovunque — o peggio, il contrario.
+
+**I privilegi stanno dentro un «details».** Sono tredici, e quasi sempre non si
+toccano: chi vuole aprirli li apre, chi vuole solo cambiare un nome non ci
+passa sopra. Un muro di tredici interruttori aperti si spunta a caso.
+
+**Un solo ascoltatore sulla carta, non uno per riga.** Le righe dei ruoli si
+ridisegnano a ogni modifica, e un ascoltatore attaccato a mano a una riga
+morirebbe con lei. È lo stesso difetto che «Leggi il mio server» aveva avuto:
+il tasto c'era, nel codice la riga c'era, e premerlo non faceva niente — perché
+al momento dell'aggancio quel tasto non esisteva ancora. Per quel difetto
+esiste `scripts/verifica-costruttore.mjs`, che i tasti li preme davvero.

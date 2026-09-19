@@ -752,7 +752,10 @@ CREATE TABLE IF NOT EXISTS dcserver_giri (
   creati INTEGER NOT NULL DEFAULT 0,
   sistemati INTEGER NOT NULL DEFAULT 0,
   tolti INTEGER NOT NULL DEFAULT 0,
-  nomi TEXT NOT NULL DEFAULT '',               -- cosa e' sparito, per nome
+  ruoli_creati INTEGER NOT NULL DEFAULT 0,
+  ruoli_sistemati INTEGER NOT NULL DEFAULT 0,
+  ruoli_tolti INTEGER NOT NULL DEFAULT 0,
+  nomi TEXT NOT NULL DEFAULT '',               -- cosa e' sparito, per nome (canali e ruoli)
   errori TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_dcserver_giri ON dcserver_giri(channel, quando);
@@ -808,6 +811,12 @@ aggiungiColonna('vips', 'dirette', 'INTEGER NOT NULL DEFAULT 0');
 // Il server che lo streamer vuole, scritto a parole. Vuoto vuol dire «non ne
 // ho ancora scelto uno», e allora il pannello gli fa vedere il catalogo.
 aggiungiColonna('discord_ruoli', 'preset', "TEXT NOT NULL DEFAULT ''");
+// I ruoli nel registro del costruttore sono arrivati dopo i canali: su un
+// database gia' in piedi le colonne non ci sono, e CREATE TABLE IF NOT EXISTS
+// non le aggiunge.
+aggiungiColonna('dcserver_giri', 'ruoli_creati', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('dcserver_giri', 'ruoli_sistemati', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('dcserver_giri', 'ruoli_tolti', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('battute', 'dette', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('battute', 'risate', 'INTEGER NOT NULL DEFAULT 0');
 // Quale SCHEMA l'ha costruita. Senza, si potrebbe sapere se una battuta ha fatto
@@ -1721,11 +1730,14 @@ export const contiSatispay = {
 // tolto niente: un registro che compare solo quando si cancella e' un registro
 // che non dice se quel giorno era stato fatto anche altro.
 export const dcGiri = {
-  segna(channel, { chi = '', distruttivo = false, impronta = '', creati = 0, sistemati = 0, tolti = 0, nomi = [], errori = [] }) {
-    db.prepare(`INSERT INTO dcserver_giri (channel, quando, chi, distruttivo, impronta, creati, sistemati, tolti, nomi, errori)
-      VALUES (?,?,?,?,?,?,?,?,?,?)`)
+  segna(channel, { chi = '', distruttivo = false, impronta = '', creati = 0, sistemati = 0, tolti = 0,
+    ruoliCreati = 0, ruoliSistemati = 0, ruoliTolti = 0, nomi = [], errori = [] }) {
+    db.prepare(`INSERT INTO dcserver_giri (channel, quando, chi, distruttivo, impronta, creati, sistemati, tolti,
+        ruoli_creati, ruoli_sistemati, ruoli_tolti, nomi, errori)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(String(channel).toLowerCase(), now(), String(chi || '').slice(0, 40), distruttivo ? 1 : 0,
         String(impronta || '').slice(0, 32), creati | 0, sistemati | 0, tolti | 0,
+        ruoliCreati | 0, ruoliSistemati | 0, ruoliTolti | 0,
         (Array.isArray(nomi) ? nomi : []).slice(0, 80).join(', ').slice(0, 2000),
         (Array.isArray(errori) ? errori : []).join(' · ').slice(0, 500));
   },

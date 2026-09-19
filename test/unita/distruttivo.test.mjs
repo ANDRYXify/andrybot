@@ -102,3 +102,28 @@ test('niente da togliere non chiede niente', () => {
   assert.deepEqual([p.quanti, p.vivi.length, p.scriviIlNome], [0, 0, false]);
   assert.equal(peso(null).quanti, 0, 'e nemmeno un elenco che non c\'e\'');
 });
+
+test('un ruolo pesa per il potere che porta, non per l\'eta\'', () => {
+  // Un ruolo non riceve messaggi, quindi «ha parlato di recente» non gli si
+  // puo' chiedere. La domanda vera e' la stessa dei canali — «se sparisce,
+  // qualcuno se ne accorge?» — e per un ruolo la risposta la da' il potere:
+  // sparendo, cambia chi puo' fare cosa, e non lo vede nessuno finche' non
+  // serve.
+  const decorativo = { nome: 'Vecchi', conPotere: false };
+  const conPotere = { nome: 'Moderatori', conPotere: true };
+  assert.equal(peso([decorativo], { ora: ORA }).scriviIlNome, false,
+    'un ruolo che era solo un colore si conferma come tutto il resto');
+  const p = peso([decorativo, conPotere], { ora: ORA });
+  assert.deepEqual(p.vivi, ['Moderatori']);
+  assert.equal(p.scriviIlNome, true, 'ma uno che porta privilegi cambia la domanda');
+  assert.equal(p.ruoli, 2, 'e i ruoli si contano a parte, come le categorie');
+});
+
+test('canali e ruoli si pesano INSIEME, non a due domande piu\' leggere', () => {
+  const canali = Array.from({ length: 6 }, (_, i) => morto('c' + i));
+  const ruoli = Array.from({ length: 6 }, (_, i) => ({ nome: 'r' + i, conPotere: false }));
+  assert.equal(peso(canali, { ora: ORA }).scriviIlNome, false);
+  assert.equal(peso(ruoli, { ora: ORA }).scriviIlNome, false);
+  assert.equal(peso([...canali, ...ruoli], { ora: ORA }).scriviIlNome, true,
+    'dodici cose in un colpo sono dodici, comunque si chiamino');
+});

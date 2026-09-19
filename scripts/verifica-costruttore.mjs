@@ -83,6 +83,55 @@ try {
   chiedi((await pg.$eval('#dcs-esito', (n) => n.innerText)).length > 0, 'e dopo dice com\'e\' andata');
   chiedi(await pg.$eval('#dcs-costruisci', (n) => n.hidden), 'poi si spegne, cosi\' non si preme due volte');
 
+  // I RUOLI, premuti davvero.
+  //
+  // L'editor dei ruoli ridisegna le righe a ogni modifica, e un ascoltatore
+  // attaccato a mano a una riga morirebbe con lei: il tasto ci sarebbe, nel
+  // sorgente la riga ci sarebbe, e premerlo non farebbe niente. E' successo
+  // gia' una volta con «Leggi il mio server», e `verifica-bottoni` non puo'
+  // vederlo — per questo qui si preme.
+  await pg.click('#dcs-ricomincia');
+  await pg.waitForTimeout(300);
+  await pg.click('[data-dcs="traccia"][data-id="dirette"]');
+  await pg.waitForTimeout(400);
+  const ruoli = () => quanti('.dcs-ruolo');
+  chiedi(await ruoli() >= 3, 'la traccia delle dirette porta i suoi ruoli');
+  chiedi((await pg.$$eval('.dcs-ruolo summary b', (n) => n.map((x) => x.textContent))).includes('Streamer'),
+    'compreso quello che serve solo a farsi vedere');
+
+  await pg.click('.dcs-ruolo:first-child summary');
+  await pg.waitForTimeout(200);
+  await pg.fill('.dcs-ruolo:first-child [data-dcs="r-nome"]', 'Padrone di casa');
+  await pg.click('.dcs-ruolo:nth-of-type(2) summary');
+  await pg.waitForTimeout(200);
+  chiedi(await pg.$eval('.dcs-ruolo:first-child [data-dcs="r-nome"]', (n) => n.value) === 'Padrone di casa',
+    'quello che scrivi in un ruolo resta scritto quando tocchi altro');
+
+  const spuntati = () => pg.$$eval('.dcs-ruolo:first-child [data-dcs="r-priv"]:checked', (n) => n.length);
+  const primaSpunte = await spuntati();
+  await pg.click('.dcs-ruolo:first-child [data-dcs="r-priv"]');
+  await pg.waitForTimeout(200);
+  chiedi(await spuntati() === primaSpunte + 1, 'un privilegio si spunta e resta spuntato');
+
+  const quantiPrima = await ruoli();
+  await pg.click('#dcs-ruolopiu');
+  await pg.waitForTimeout(300);
+  chiedi(await ruoli() === quantiPrima + 1, 'si aggiunge un ruolo');
+  await pg.click('.dcs-ruolo:last-child summary');
+  await pg.waitForTimeout(200);
+  await pg.click('.dcs-ruolo:last-child [data-dcs="r-via"]');
+  await pg.waitForTimeout(300);
+  chiedi(await ruoli() === quantiPrima, 'e si toglie');
+
+  await pg.click('#dcs-vedi');
+  await pg.waitForTimeout(700);
+  const dr = await pg.$eval('#dcs-diff', (n) => n.innerText);
+  chiedi(/Crea i ruoli/.test(dr), 'la differenza dice anche cosa fa ai ruoli');
+  chiedi(/piu' in alto del bot|più in alto del bot/.test(dr),
+    'e dice quali non tocca, invece di far finta di averli fatti');
+  chiedi(/non posso darli/.test(dr),
+    'e quali privilegi non puo' + '’' + ' passare, con la cura: rifare l' + '’' + 'invito');
+
   // LA MODALITA' DISTRUTTIVA, DA FUORI.
   //
   // Qui non si guarda se il motore cancella bene: quello lo dicono le prove.

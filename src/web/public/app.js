@@ -664,12 +664,19 @@ function apiDemo(percorso, opzioni = {}) {
       ok: true, mancanti: [], vuota: false, server: 'Casa di andryx', fuori,
       crea: [{ nome: 'Diretta', tipo: 4, dentro: null }, { nome: 'sono-in-onda', tipo: 0, dentro: 'Diretta' }, { nome: 'clip', tipo: 0, dentro: 'Diretta' }],
       sistema: [{ id: '1', nome: 'generale', tipo: 0, dentro: 'Chiacchiere' }],
+      nonPosso: ['bannare'],
     };
+    const ruoliFuori = [{ id: '9', nome: 'Vecchia Guardia', conPotere: true }];
     if (dist) {
       return Promise.resolve({ ...comune, impronta: 'ffff11112222', distruttivo: true, togli: fuori,
-        peso: { quanti: 2, categorie: 1, vivi: [], scriviIlNome: false } });
+        ruoli: { crea: [{ nome: 'Moderatori', colore: 0x3aa76d, permessi: '1' }], sistema: [],
+          togli: ruoliFuori, fuori: ruoliFuori, ambigui: [], fuoriPortata: ['Padrone di casa'] },
+        peso: { quanti: 3, categorie: 1, ruoli: 1, vivi: ['Vecchia Guardia'], scriviIlNome: true } });
     }
-    return Promise.resolve({ ...comune, impronta: 'a1b2c3d4e5f6' });
+    return Promise.resolve({ ...comune, impronta: 'a1b2c3d4e5f6',
+      ruoli: { crea: [{ nome: 'Moderatori', colore: 0x3aa76d, permessi: '1' }],
+        sistema: [{ id: '5', nome: 'VIP', permessi: '2' }], togli: [], fuori: ruoliFuori,
+        ambigui: [], fuoriPortata: ['Padrone di casa'] } });
   }
   if (via === '/api/streamer/dcserver/applica') {
     const tolti = opzioni.body?.chiave ? 2 : 0;
@@ -734,12 +741,21 @@ function _demoGet(via) {
     '/api/streamer/dcserver': { pronto: true, guildNome: 'Casa di andryx', preset: null,
       ruoli: [{ id: '100000000000000010', nome: 'Abbonati' }, { id: '100000000000000011', nome: 'Affezionati' }, { id: '100000000000000012', nome: 'Moderatori' }],
       permessi: ['vedere', 'scrivere', 'storia', 'reagire', 'allegare', 'link', 'discussioni', 'entrare', 'parlare', 'menzionare'],
-      max: { categorie: 20, canali: 60 },
+      privilegi: ['moderare', 'cacciare', 'bannare', 'pulire', 'soprannomi', 'zittire', 'spostare', 'registro', 'eventi', 'chiamareTutti', 'emojiAltrui', 'trasmettere', 'priorita'],
+      max: { categorie: 20, canali: 60, ruoli: 15 },
       catalogo: [
-        { id: 'inizio', nome: 'Si comincia', per: 'Un server nuovo, quando non sai da dove partire.', categorie: [
+        { id: 'inizio', nome: 'Si comincia', per: 'Un server nuovo, quando non sai da dove partire.',
+          ruoli: [{ nome: 'Moderatori', colore: 0x3aa76d, separato: true, privilegi: ['moderare', 'pulire'] }],
+          categorie: [
           { nome: 'Benvenuto', canali: [{ nome: 'regole', argomento: 'Le regole di casa.', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }, { nome: 'annunci', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }] },
           { nome: 'Chiacchiere', canali: [{ nome: 'generale' }, { nome: 'fuori-tema' }, { nome: 'Salotto', tipo: 'voce' }] }] },
-        { id: 'dirette', nome: 'Intorno alle dirette', per: 'Chi trasmette e vuole un posto dove ritrovarsi anche quando non è in onda.', categorie: [
+        { id: 'dirette', nome: 'Intorno alle dirette', per: 'Chi trasmette e vuole un posto dove ritrovarsi anche quando non è in onda.',
+          ruoli: [
+            { nome: 'Streamer', colore: 0xe6398a, separato: true, privilegi: [] },
+            { nome: 'Moderatori', colore: 0x3aa76d, separato: true, citabile: true, privilegi: ['moderare', 'cacciare', 'pulire'] },
+            { nome: 'VIP', colore: 0xc49a2c, separato: true, privilegi: ['emojiAltrui', 'priorita'] },
+          ],
+          categorie: [
           { nome: 'Benvenuto', canali: [{ nome: 'regole', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }, { nome: 'annunci', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }, { nome: 'presentati' }] },
           { nome: 'Diretta', canali: [{ nome: 'sono-in-onda', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }, { nome: 'clip' }, { nome: 'richieste' }] },
           { nome: 'Chiacchiere', canali: [{ nome: 'generale' }, { nome: 'immagini' }, { nome: 'Salotto', tipo: 'voce' }] }] },
@@ -16789,6 +16805,21 @@ const T_DCPERM = () => ({
   parlare: L('Parlare nel vocale', 'Speak in voice', 'Hablar en voz'),
   menzionare: L('Chiamare tutti', 'Mention everyone', 'Mencionar a todos'),
 });
+const T_DCPRIV = () => ({
+  moderare: L('Mettere in pausa qualcuno', 'Time someone out', 'Silenciar temporalmente'),
+  cacciare: L('Cacciare dal server', 'Kick from the server', 'Expulsar del servidor'),
+  bannare: L('Bandire dal server', 'Ban from the server', 'Banear del servidor'),
+  pulire: L('Cancellare i messaggi degli altri', 'Delete other people’s messages', 'Borrar los mensajes de otros'),
+  soprannomi: L('Cambiare i soprannomi', 'Change nicknames', 'Cambiar los apodos'),
+  zittire: L('Zittire nel vocale', 'Mute in voice', 'Silenciar en voz'),
+  spostare: L('Spostare fra i vocali', 'Move between voice channels', 'Mover entre canales de voz'),
+  registro: L('Vedere il registro del server', 'See the server log', 'Ver el registro del servidor'),
+  eventi: L('Organizzare eventi', 'Manage events', 'Organizar eventos'),
+  chiamareTutti: L('Chiamare tutti', 'Mention everyone', 'Mencionar a todos'),
+  emojiAltrui: L('Usare le emoji di altri server', 'Use other servers’ emoji', 'Usar emojis de otros servidores'),
+  trasmettere: L('Trasmettere nel vocale', 'Stream in voice', 'Transmitir en voz'),
+  priorita: L('Farsi sentire sopra gli altri', 'Priority speaker', 'Hablar por encima de los demás'),
+});
 const T_DCTIPO = () => ({
   testo: L('Testo', 'Text', 'Texto'),
   voce: L('Vocale', 'Voice', 'Voz'),
@@ -16867,6 +16898,13 @@ function pannelloDcServer() {
       </p>
     </div>
 
+    <div class="carta" id="dcs-carta-ruoli">
+      <h2>${_hIco(ICO.ruoli)}${L('Chi è chi', 'Who is who', 'Quién es quién')}</h2>
+      <p class="suggerimento">${L('I ruoli del server: come si vedono e cosa possono fare. «Streamer» è solo un colore e un posto a parte — più in alto del bot non si può creare niente, e questo è il motivo.', 'The server roles: how they look and what they can do. «Streamer» is just a colour and a separate spot — nothing can be created above the bot, and that is why.', 'Los roles del servidor: cómo se ven y qué pueden hacer. «Streamer» es solo un color y un sitio aparte — no se puede crear nada por encima del bot, y por eso es así.')}</p>
+      <div id="dcs-ruoli" class="spazio-sopra"></div>
+      <p class="spazio-sopra"><button class="btn secondario" id="dcs-ruolopiu">${_bIco(ICO.piu)}${L('Aggiungi un ruolo', 'Add a role', 'Añadir un rol')}</button></p>
+    </div>
+
     <div class="carta" id="dcs-carta-diff">
       <h2>${_hIco(ICO.medaglia)}${L('Cosa succede', 'What happens', 'Qué pasa')}</h2>
       <p>${L('Prima si guarda, poi si fa. Quello che vedi qui sotto è esattamente quello che verrà fatto: non un riassunto.', 'First you look, then it happens. What you see below is exactly what will be done: not a summary.', 'Primero se mira, luego se hace. Lo que ves aquí abajo es exactamente lo que se hará: no un resumen.')}</p>
@@ -16904,6 +16942,11 @@ function _dcsPrepara(preset) {
   };
   const ch = (c) => ({ _k: ++_dcsChiave, nome: c.nome || '', tipo: c.tipo || 'testo', argomento: c.argomento || '', permessi: perm(c.permessi) });
   return {
+    ruoli: (preset?.ruoli || []).map((r) => ({
+      _k: ++_dcsChiave, nome: r.nome || '', colore: Number(r.colore) || 0,
+      separato: !!r.separato, citabile: !!r.citabile,
+      privilegi: [...(r.privilegi || [])],
+    })),
     canali: (preset?.canali || []).map(ch),
     categorie: (preset?.categorie || []).map((c) => ({
       _k: ++_dcsChiave, nome: c.nome || '', permessi: perm(c.permessi), canali: (c.canali || []).map(ch),
@@ -16916,8 +16959,12 @@ function _dcsPulito() {
     chi: r.chi, da: r.verso === 'puo' ? [r.perm] : [], nega: r.verso === 'puo' ? [] : [r.perm],
   }));
   const ch = (c) => ({ nome: c.nome, tipo: c.tipo, argomento: c.argomento, permessi: perm(c.permessi) });
-  const p = _dcs?.preset || { canali: [], categorie: [] };
+  const p = _dcs?.preset || { ruoli: [], canali: [], categorie: [] };
   return {
+    ruoli: (p.ruoli || []).map((r) => ({
+      nome: r.nome, colore: r.colore, separato: !!r.separato, citabile: !!r.citabile,
+      privilegi: [...(r.privilegi || [])],
+    })),
     canali: (p.canali || []).map(ch),
     categorie: (p.categorie || []).map((c) => ({ nome: c.nome, permessi: perm(c.permessi), canali: (c.canali || []).map(ch) })),
   };
@@ -17021,11 +17068,44 @@ function _dcsDisegna() {
       <div class="dcs-canali">${(c.canali || []).map((x) => _dcsCanaleHtml(x, 'ch:' + c._k + ':' + x._k)).join('')}</div>
       <button type="button" class="btn secondario mini" data-dcs="ch-piu" data-k="${c._k}">${_bIco(ICO.piu)}${L('Aggiungi un canale', 'Add a channel', 'Añadir un canal')}</button>
     </div>`).join('');
+  const rbox = _g('dcs-ruoli');
+  if (rbox) {
+    rbox.innerHTML = (p.ruoli || []).length
+      ? (p.ruoli || []).map(_dcsRuoloHtml).join('')
+      : `<p class="suggerimento">${L('Nessun ruolo in questa traccia. Il tuo server tiene i suoi.', 'No roles in this track. Your server keeps its own.', 'Ningún rol en esta plantilla. Tu servidor conserva los suyos.')}</p>`;
+  }
   box.innerHTML = (cima ? `<div class="dcs-cima">${cima}</div>` : '') + cat
     || `<p class="suggerimento">${L('Ancora niente: aggiungi una categoria qui sotto.', 'Nothing yet: add a category below.', 'Aún nada: añade una categoría aquí abajo.')}</p>`;
   const n = _dcsConta(p);
   _dcsDici('dcs-stato', `${(p.categorie || []).length}${L(' categorie · ', ' categories · ', ' categorías · ')}${n}${L(' canali', ' channels', ' canales')}`
     + (_dcs.guildNome ? ' · ' + _dcs.guildNome : ''), 'ok');
+}
+
+function _dcsRuoloHtml(r) {
+  const parole = T_DCPRIV();
+  const elenco = (_dcs?.privilegi || []).map((p) => `
+    <label class="dcs-priv"><input type="checkbox" data-dcs="r-priv" data-p="${esc(p)}"${(r.privilegi || []).includes(p) ? ' checked' : ''}>
+      <span>${esc(parole[p] || p)}</span></label>`).join('');
+  const colore = '#' + Number(r.colore || 0).toString(16).padStart(6, '0');
+  const quanti = (r.privilegi || []).length;
+  return `<details class="dcs-ruolo" data-k="${r._k}">
+    <summary><b style="color:${esc(colore)}">${esc(r.nome || L('Senza nome', 'Unnamed', 'Sin nombre'))}</b>
+      <span class="suggerimento">${quanti
+        ? quanti + (quanti === 1 ? L(' privilegio', ' privilege', ' privilegio') : L(' privilegi', ' privileges', ' privilegios'))
+        : L('solo un colore', 'just a colour', 'solo un color')}</span></summary>
+    <div class="riga-flessibile spazio-sopra">
+      <input type="text" data-dcs="r-nome" maxlength="100" value="${esc(r.nome || '')}" aria-label="${esc(L('Nome del ruolo', 'Role name', 'Nombre del rol'))}">
+      <input type="color" data-dcs="r-colore" value="${esc(colore)}" aria-label="${esc(L('Colore del ruolo', 'Role colour', 'Color del rol'))}">
+      <button type="button" class="btn secondario mini" data-dcs="r-via">${esc(L('Togli', 'Remove', 'Quitar'))}</button>
+    </div>
+    <p class="riga-flessibile">
+      <label class="dcs-priv"><input type="checkbox" data-dcs="r-separato"${r.separato ? ' checked' : ''}>
+        <span>${L('Mostralo a parte nell’elenco delle persone', 'Show it separately in the member list', 'Mostrarlo aparte en la lista de personas')}</span></label>
+      <label class="dcs-priv"><input type="checkbox" data-dcs="r-citabile"${r.citabile ? ' checked' : ''}>
+        <span>${L('Si può chiamare con @', 'Can be mentioned with @', 'Se puede mencionar con @')}</span></label>
+    </p>
+    <div class="dcs-privilegi">${elenco}</div>
+  </details>`;
 }
 
 function _dcsTrova(dove) {
@@ -17124,6 +17204,45 @@ function _dcsDiffHtml(d) {
     blocchi.push('<ul class="lista-voci">'
       + d.fuori.map((x) => `<li>${nome(x)} <span class="suggerimento">${esc(_dcsQuando(x))}</span></li>`).join('') + '</ul>');
   }
+  const r = d.ruoli || {};
+  const parole = T_DCPRIV();
+  const dice = (x) => (x.privilegi || []).map((p) => parole[p] || p).join(', ');
+  if ((r.crea || []).length) {
+    blocchi.push(`<h3>${L('Crea i ruoli', 'Creates the roles', 'Crea los roles')} (${r.crea.length})</h3><ul class="lista-voci">`
+      + r.crea.map((x) => `<li><span style="color:${esc('#' + Number(x.colore || 0).toString(16).padStart(6, '0'))}">${esc(x.nome)}</span>
+        <span class="suggerimento">${esc(x.permessi && x.permessi !== '0' ? L('con privilegi', 'with privileges', 'con privilegios') : L('solo un colore', 'just a colour', 'solo un color'))}</span></li>`).join('') + '</ul>');
+  }
+  if ((r.sistema || []).length) {
+    blocchi.push(`<h3>${L('Sistema i ruoli', 'Fixes the roles', 'Arregla los roles')} (${r.sistema.length})</h3><ul class="lista-voci">`
+      + r.sistema.map((x) => `<li>${esc(x.nome)} <span class="suggerimento">${esc([
+        x.colore !== undefined ? L('colore', 'colour', 'color') : '',
+        x.separato !== undefined ? L('come si vede', 'how it shows', 'cómo se ve') : '',
+        x.permessi !== undefined ? L('cosa può fare', 'what it can do', 'qué puede hacer') : '',
+      ].filter(Boolean).join(' · '))}</span></li>`).join('') + '</ul>');
+  }
+  if ((r.togli || []).length) {
+    blocchi.push(`<h3 class="dcs-muore">${L('Cancella i ruoli', 'Deletes the roles', 'Borra los roles')} (${r.togli.length})</h3>`
+      + `<p class="suggerimento">${L('Spariscono di mano a tutti quelli che ce l’hanno.', 'They disappear from everyone who has them.', 'Desaparecen de todos los que los tienen.')}</p><ul class="lista-voci">`
+      + r.togli.map((x) => `<li>${esc(x.nome)} <span class="suggerimento">${esc(x.conPotere
+        ? L('porta dei privilegi', 'carries privileges', 'lleva privilegios')
+        : L('solo un colore', 'just a colour', 'solo un color'))}</span></li>`).join('') + '</ul>');
+  }
+  if ((r.fuoriPortata || []).length) {
+    blocchi.push(`<p class="suggerimento">${L('Questi ruoli stanno più in alto del bot, quindi non li tocca: ', 'These roles are above the bot, so it does not touch them: ', 'Estos roles están por encima del bot, así que no los toca: ')}${esc(r.fuoriPortata.join(', '))}</p>`);
+  }
+  if ((r.ambigui || []).length) {
+    blocchi.push(`<p class="suggerimento">${L('Di questi ne hai più d’uno con lo stesso nome, e non indovino quale intendi: ', 'You have more than one of these with the same name, and I will not guess which one you mean: ', 'De estos tienes más de uno con el mismo nombre, y no adivino cuál quieres: ')}${esc(r.ambigui.join(', '))}</p>`);
+  }
+  if ((d.fuoriPortata || []).length) {
+    blocchi.push(`<p class="suggerimento">${L('A questi canali il bot non arriva — non li vede o non li può gestire — quindi li lascia stare: ', 'The bot cannot reach these channels — it cannot see or manage them — so it leaves them alone: ', 'A estos canales el bot no llega — no los ve o no puede gestionarlos — así que los deja en paz: ')}`
+      + esc((d.fuoriPortata || []).map((x) => x.nome).join(', '))
+      + `. ${L('Aprigli il canale su Discord, o spostalo più in basso del suo ruolo.', 'Give it access to the channel on Discord, or move it below its role.', 'Dale acceso al canal en Discord, o muévelo por debajo de su rol.')}</p>`);
+  }
+  if ((d.nonPosso || []).length) {
+    blocchi.push(`<p class="tg-stato guaio">${L('Questi privilegi non posso darli, perché non ce li ho io: ', 'I cannot hand these privileges over, because I do not have them: ', 'Estos privilegios no puedo darlos, porque no los tengo yo: ')}`
+      + esc((d.nonPosso || []).map((p) => parole[p] || p).join(', '))
+      + `. ${L('Rifai l’invito del bot dalla scheda Ruoli e torna qui.', 'Re-invite the bot from the Roles tab and come back.', 'Vuelve a invitar al bot desde la pestaña Roles y vuelve aquí.')}</p>`);
+  }
   if ((d.mancanti || []).length) {
     blocchi.push(`<p class="tg-stato guaio">${L('Questi ruoli non ci sono più, e quelle regole le ho saltate: ', 'These roles are gone, and I skipped those rules: ', 'Estos roles ya no están, y me he saltado esas reglas: ')}${esc(d.mancanti.join(', '))}</p>`);
   }
@@ -17140,10 +17259,15 @@ function _dcsGiroHtml(g) {
   if (g.creati) pezzi.push(g.creati + L(' creati', ' created', ' creados'));
   if (g.sistemati) pezzi.push(g.sistemati + L(' sistemati', ' fixed', ' arreglados'));
   if (g.tolti) pezzi.push(g.tolti + L(' cancellati', ' deleted', ' borrados'));
+  if (g.ruoli_creati) pezzi.push(g.ruoli_creati + L(' ruoli creati', ' roles created', ' roles creados'));
+  if (g.ruoli_sistemati) pezzi.push(g.ruoli_sistemati + L(' ruoli sistemati', ' roles fixed', ' roles arreglados'));
+  if (g.ruoli_tolti) pezzi.push(g.ruoli_tolti + L(' ruoli cancellati', ' roles deleted', ' roles borrados'));
   const nomi = String(g.nomi || '').trim();
   return `<li class="dcs-giro${g.distruttivo ? ' dcs-muore' : ''}">
     <span>${esc(quando)}${g.chi ? ' · ' + esc(g.chi) : ''}${g.distruttivo ? ' · ' + L('piazza pulita', 'cleared the board', 'limpieza') : ''}</span>
-    <span class="suggerimento">${esc(pezzi.length ? pezzi.join(' · ') : L('niente da fare', 'nothing to do', 'nada que hacer'))}</span>
+    <span class="suggerimento">${esc(pezzi.length
+      ? pezzi.join(' · ')
+      : (g.errori ? L('non è riuscito', 'it did not go through', 'no ha salido') : L('niente da fare', 'nothing to do', 'nada que hacer')))}</span>
     ${nomi ? `<details class="spazio-sopra"><summary class="suggerimento">${L('Cosa non c’è più', 'What is gone', 'Lo que ya no está')}</summary><p class="suggerimento">${esc(nomi)}</p></details>` : ''}
     ${g.errori ? `<p class="tg-stato guaio">${esc(g.errori)}</p>` : ''}
   </li>`;
@@ -17173,6 +17297,18 @@ function collegaDcServer() {
   const scheda = _g('scheda-dcserver');
   if (!scheda || scheda.dataset.pronta) return;
   scheda.dataset.pronta = '1';
+
+  _g('dcs-ruolopiu')?.addEventListener('click', () => {
+    if (!_dcs?.preset) return;
+    const p = _dcs.preset;
+    p.ruoli = p.ruoli || [];
+    if (p.ruoli.length >= (_dcs.max?.ruoli || 15)) {
+      toast(L('Più di così non se ne possono chiedere.', 'You cannot ask for more than this.', 'No se pueden pedir más.'));
+      return;
+    }
+    p.ruoli.push({ _k: ++_dcsChiave, nome: L('Nuovo ruolo', 'New role', 'Nuevo rol'), colore: 0, separato: false, citabile: false, privilegi: [] });
+    _dcsDisegna();
+  });
 
   _g('dcs-catpiu')?.addEventListener('click', () => {
     if (!_dcs?.preset) return;
@@ -17234,11 +17370,53 @@ function collegaDcServer() {
     if (e.fermo === 'attesa') p.push(L('mi sono fermata: Discord chiede di aspettare, riprova fra poco', 'I stopped: Discord asks to wait, try again shortly', 'me he parado: Discord pide esperar, inténtalo en un rato'));
     if (e.fermo === 'limite') p.push(L('mi sono fermata al limite delle mosse: premi di nuovo per il resto', 'I stopped at the move limit: press again for the rest', 'me he parado en el límite de movimientos: pulsa de nuevo para el resto'));
     if ((e.errori || []).length) p.push(e.errori.join(' · '));
-    _dcsDici('dcs-esito', p.length ? p.join(' · ') : L('Non c’era niente da fare.', 'There was nothing to do.', 'No había nada que hacer.'), (e.errori || []).length || e.fermo ? 'guaio' : 'ok');
+    if (e.ruoliCreati) p.push(e.ruoliCreati + L(' ruoli creati', ' roles created', ' roles creados'));
+    if (e.ruoliSistemati) p.push(e.ruoliSistemati + L(' ruoli sistemati', ' roles fixed', ' roles arreglados'));
+    if (e.ruoliTolti) p.push(e.ruoliTolti + L(' ruoli cancellati', ' roles deleted', ' roles borrados'));
+    const nulla = !p.length && !(e.errori || []).length;
+    _dcsDici('dcs-esito', p.length ? p.join(' · ')
+      : (nulla ? L('Non c’era niente da fare.', 'There was nothing to do.', 'No había nada que hacer.')
+        : L('Non è riuscito.', 'It did not go through.', 'No ha salido.')),
+      (e.errori || []).length || e.fermo ? 'guaio' : 'ok');
     _g('dcs-costruisci').hidden = true;
     const box = _g('dcs-diff'); if (box) box.innerHTML = '';
     _dcsCaricaRegistro();
   }));
+
+  const _rTrova = (nodo) => {
+    const d = nodo.closest('.dcs-ruolo');
+    return d ? (_dcs?.preset?.ruoli || []).find((r) => String(r._k) === d.dataset.k) || null : null;
+  };
+  _g('dcs-ruoli')?.addEventListener('input', (e) => {
+    const r = _rTrova(e.target);
+    if (!r) return;
+    const q = e.target.dataset.dcs;
+    if (q === 'r-nome') r.nome = e.target.value;
+    else if (q === 'r-colore') r.colore = parseInt(String(e.target.value).replace('#', ''), 16) || 0;
+    else return;
+    _dcsTocca();
+  });
+  _g('dcs-ruoli')?.addEventListener('change', (e) => {
+    const r = _rTrova(e.target);
+    if (!r) return;
+    const q = e.target.dataset.dcs;
+    if (q === 'r-separato') r.separato = e.target.checked;
+    else if (q === 'r-citabile') r.citabile = e.target.checked;
+    else if (q === 'r-priv') {
+      const p = e.target.dataset.p;
+      r.privilegi = e.target.checked
+        ? [...new Set([...(r.privilegi || []), p])]
+        : (r.privilegi || []).filter((x) => x !== p);
+    } else return;
+    _dcsTocca();
+  });
+  _g('dcs-ruoli')?.addEventListener('click', (e) => {
+    if (!e.target.closest('[data-dcs="r-via"]')) return;
+    const r = _rTrova(e.target);
+    if (!r || !_dcs?.preset) return;
+    _dcs.preset.ruoli = (_dcs.preset.ruoli || []).filter((x) => x !== r);
+    _dcsDisegna();
+  });
 
   _g('dcs-partenza')?.addEventListener('click', (e) => {
     if (e.target.closest('#dcs-dalserver')) {

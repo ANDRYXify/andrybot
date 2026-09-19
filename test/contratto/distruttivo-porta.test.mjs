@@ -96,8 +96,14 @@ test('del giro resta scritto chi, quando e cosa — coi nomi, se ha cancellato',
   const corpo = rotta('post', '/api/streamer/dcserver/applica');
   assert.match(corpo, /dcGiri\.segna\(login, \{ chi: identitaDi\(currentUser\(req\)\), distruttivo: togliere/,
     'il registro dice chi era e in che modo');
-  assert.match(corpo, /nomi: e\.tolti \? \(e\.nomiTolti \|\| \[\]\) : \[\]/,
+  // I NOMI DI TUTTO QUELLO CHE E' SPARITO, canali e ruoli insieme. Un ruolo
+  // cancellato non lascia traccia da nessuna parte — sparisce di mano a tutti
+  // in silenzio — quindi se il registro tenesse solo i canali, di quei ruoli
+  // non resterebbe scritto niente da nessuna parte.
+  assert.match(corpo, /nomi: \[\.\.\.\(e\.tolti \? \(e\.nomiTolti \|\| \[\]\) : \[\]\), \.\.\.\(e\.ruoliTolti \? \(e\.nomiRuoliTolti \|\| \[\]\) : \[\]\)\]/,
     'e i nomi di quello che non c\'e\' piu\', che e\' l\'unico posto dove restano');
+  assert.match(corpo, /ruoliCreati: e\.ruoliCreati, ruoliSistemati: e\.ruoliSistemati, ruoliTolti: e\.ruoliTolti,/,
+    'e quanti ruoli ha toccato, che e\' una cosa che si vuole sapere dopo');
   assert.ok(corpo.indexOf('dcGiri.segna') < corpo.indexOf('res.json('), 'si scrive prima di rispondere');
 });
 
@@ -105,6 +111,9 @@ test('l\'anteprima dice sempre cosa resta fuori, e conta i danni solo se si canc
   const corpo = rotta('post', '/api/streamer/dcserver/anteprima');
   assert.match(corpo, /fuori: a\.fuori,/, 'cosa il preset non prevede si sa in tutti e due i modi');
   assert.match(corpo, /togli: togliere \? a\.differenza\.togli : \[\],/, 'ma l\'elenco di quello che muore esiste solo in uno');
-  assert.match(corpo, /peso: togliere \? pesoDanno\(a\.differenza\.togli\) : null,/);
+  // Il peso conta i canali E i ruoli insieme: cancellare un ruolo e' distruttivo
+  // quanto cancellare un canale, e pesarli a parte vorrebbe dire due domande
+  // piu' leggere al posto di una onesta.
+  assert.match(corpo, /peso: togliere \? pesoDanno\(\[\.\.\.a\.differenza\.togli, \.\.\.r\.togli\]\) : null,/);
   assert.match(corpo, /distruttivo: togliere,/, 'e la pagina sa in che modo e\' la risposta che ha in mano');
 });
