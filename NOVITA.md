@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-19
 
+- Prima di mandarti su Twitch adesso ti chiedo con quale account: lo stesso riquadro per «Inizia gratis» e per «Attiva». [vai: sottoscrizione]
+- La pagina per collegare il Discord si apre a chiunque, anche senza account, e prima di mandarti da Discord ti dice in tre righe cosa succede. [vai: ruoli]
+- Ti serve solo la parte di Discord? Adesso c’è scritto sul sito che si può fare e che è gratis. [vai: dcserver]
 - Adesso ti dico quali dei tuoi ruoli Discord terrei e come li chiamerei, affiancati a quelli della traccia. Rinominarli tiene dentro chi ce l’aveva, cancellarli lo toglie a tutti. [vai: dcserver]
 - Se «!discord» non risponde in chat, la scheda ti dice quale delle tre cose manca invece di lasciartelo indovinare. [vai: ruoli]
 - Niente più spiegazioni per cose che hai già fatto: i permessi te li chiedo solo se mancano davvero. [vai: ruoli]

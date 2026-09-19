@@ -276,8 +276,8 @@ test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le o
   // test/contratto/indirizzo-vivo.test.mjs, qui basta che la sonda ci sia e
   // che accenda l'indirizzo delle donazioni.
   assert.ok(SRV.includes("const candidatoDona = !config.donaHost && !config.donaHostSpento ? donazioni.candidatoHost(config.baseUrl, 'dona') : '';"), 'il candidato si costruisce dal dominio del sito');
-  assert.match(SRV, /const sondaHost = \(candidato, metti, come\) => \{[\s\S]*setTimeout\(prova, 10 \* 60_000\)\.unref\?\.\(\)/,
-    'senza DONA_HOST il nome si prova da solo, ogni dieci minuti finche\' non risponde');
+  assert.match(SRV, /const sondaHost = \(candidato, metti, come\) => \{[\s\S]*setTimeout\(prova, fra\)\.unref\?\.\(\)/,
+    'senza DONA_HOST il nome si prova da solo, finche\' non risponde (il ritmo lo fissa test/contratto/indirizzo-vivo)');
   assert.match(SRV, /sondaHost\(candidatoDona, \(h\) => \{ config\.donaHost = h; \}/, 'e quando risponde, da quel momento si usa');
   assert.ok(leggi('src/config.js').includes("donaHostSpento: /^(no|off)$/i.test(env('DONA_HOST', ''))"), 'e si puo\' spegnere con DONA_HOST=no');
   assert.match(leggi('Caddyfile'), /^socialbot\.live,[^{]*\bdona\.socialbot\.live\b[^{]*\{/m, 'e Caddy conosce il nome');

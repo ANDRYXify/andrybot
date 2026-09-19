@@ -98,6 +98,11 @@ p.piccolo { color: var(--testo-3); font-size: .84rem; margin-top: 14px; }
   font-size: 1.15rem; font-weight: 700; letter-spacing: .06em; user-select: all;
 }
 .minuta { font-size: .84rem; color: var(--testo-3); }
+.passi { text-align: left; margin: 1.1rem 0 1.2rem; padding-left: 1.3rem; display: grid; gap: .55rem; }
+.passi li { font-size: .9rem; line-height: 1.45; color: var(--testo-2); }
+.passi li strong { color: var(--testo); }
+.passi[hidden] { display: none; }
+
 .entrato { font-weight: 600; color: var(--verde); }
 .entrato[hidden] { display: none; }
 

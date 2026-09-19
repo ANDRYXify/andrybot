@@ -248,7 +248,7 @@ function datiConto(L, piani) {
   };
 }
 
-function configuratoreHtml(L, piani, porte = ['twitch']) {
+function configuratoreHtml(L, piani) {
   const disponibili = piani.addon || [];
   if (!disponibili.length) return '';
   const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -269,7 +269,6 @@ function configuratoreHtml(L, piani, porte = ['twitch']) {
     <div class="vt-conto">
       <span class="vt-conto-tot"><b data-tot>${esc(eur(piani.base.prezzo))}</b><span>${L('/mese', '/month', '/mes')}</span></span>
       <span class="vt-conto-nota" data-nota>${L('solo il canone Base', 'Base fee only', 'solo la cuota Base')}</span>
-      ${porteHtml(L, porte)}
       <button type="button" class="vt-btn vt-btn-primo" data-vai>${L('Attiva', 'Activate', 'Activar')}</button>
       <span class="vt-risparmio" data-risp hidden></span>
     </div>
@@ -286,26 +285,32 @@ export function porteAperte(kick, youtube) {
   return p;
 }
 
-// CON QUALE ACCOUNT. Il conto lo paga la persona, ma il bot lavora su un canale:
-// quale, si sceglie accanto al tasto, PRIMA di premerlo. Un pannello che si apre
-// dopo il clic sarebbe un passo in piu' per dire una cosa sola, e chi arriva da
-// Twitch — quasi tutti — lo pagherebbe senza averne bisogno. Con una porta sola
-// non c'e' niente da scegliere e il selettore non si disegna.
+// CON QUALE ACCOUNT. Il conto lo paga la persona, ma il bot lavora su un
+// canale: quale, si chiede in un riquadro piccolo, e la domanda e' la stessa
+// per «Inizia gratis» e per «Attiva» — due tasti che portano allo stesso bivio
+// non possono chiederlo in due modi diversi.
+//
+// Il riquadro sta in pagina UNA volta sola, spento. Con una porta sola non si
+// disegna nemmeno: non c'e' niente da scegliere, e il tasto va dritto.
 function porteHtml(L, porte) {
   const nomi = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
   const aperte = (porte || []).filter((p) => nomi[p]);
   if (aperte.length < 2) return '';
-  return `<span class="vt-scelta" role="group" aria-label="${esc(L('Su quale canale', 'Which channel', 'En qué canal'))}" data-scelta>
-    ${aperte.map((p, i) => `<button type="button" class="vt-porta${i ? '' : ' on'}" data-porta="${esc(p)}" aria-pressed="${i ? 'false' : 'true'}">${esc(nomi[p])}</button>`).join('')}
-  </span>`;
+  // Le classi sono SUE, non prese in prestito dal pannello: la vetrina non
+  // carica `anime.css`, e riusarne una qui vorrebbe dire farglielo caricare —
+  // cioe' far pagare a chi guarda la home il conto del cruscotto.
+  return `<div class="vt-velo" data-chiedi hidden>
+    <div class="vt-velo-carta" role="dialog" aria-modal="true" aria-labelledby="vt-chiedi-tit">
+      <h2 id="vt-chiedi-tit">${L('Con quale account?', 'With which account?', '\u00bfCon qu\u00e9 cuenta?')}</h2>
+      <p>${L('\u00c8 il canale su cui accendo il bot. Lo cambi quando vuoi.', 'It is the channel I switch the bot on for. You can change it whenever you like.', 'Es el canal en el que enciendo el bot. Lo cambias cuando quieras.')}</p>
+      <div class="vt-velo-azioni">
+        ${aperte.map((p) => `<button type="button" class="vt-btn vt-btn-primo" data-porta="${esc(p)}">${esc(nomi[p])}</button>`).join('')}
+        <button type="button" class="vt-velo-no" data-chiudi>${L('Annulla', 'Cancel', 'Cancelar')}</button>
+      </div>
+    </div>
+  </div>`;
 }
 
-// LE POCHE PAROLE CHE IL BROWSER DEVE ANCORA DIRE. Sono quattro avvisi che
-// dipendono da come uno e' arrivato qui (un accesso annullato su Twitch, un
-// pagamento tornato indietro), quindi non si possono disegnare in un guscio
-// precalcolato. Ma nemmeno si scrivono in `vetrina-app.js`: la copia sta qui,
-// in tre lingue, come tutto il resto della vetrina, e di la' resta solo il
-// gesto di mostrarla.
 function avvisiHtml(L) {
   const parole = {
     errore: {
@@ -323,7 +328,7 @@ function avvisiHtml(L) {
   return '<div class="vt-avvisi" data-avvisi="' + esc(JSON.stringify(parole)) + '"></div>';
 }
 
-function listinoHtml(L, piani, porte = ['twitch']) {
+function listinoHtml(L, piani) {
   if (!piani || !piani.base || !piani.free) return '';
   const perMese = L('/mese', '/month', '/mes');
   const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -389,8 +394,9 @@ function listinoHtml(L, piani, porte = ['twitch']) {
       </div>
     </div>` : ''}
 
-    <div class="vt-comp-guscio vt-rivela" id="vt-comp-guscio">${configuratoreHtml(L, piani, porte)}</div>
+    <div class="vt-comp-guscio vt-rivela" id="vt-comp-guscio">${configuratoreHtml(L, piani)}</div>
 
+    <p class="vt-community vt-rivela">${L('<strong>Ti serve solo la parte di Discord?</strong> Va bene lo stesso, e non costa niente: il costruttore del server e i ruoli dati da quello che succede in chat stanno nell’Essenziale. Entri con l’account con cui trasmetti, colleghi il server, e il resto del bot lo lasci spento.', '<strong>Do you only need the Discord side?</strong> That is fine, and it costs nothing: the server builder and the roles given by what happens in chat are in the Essenziale plan. You log in with the account you stream with, connect the server, and leave the rest of the bot off.', '<strong>¿Solo necesitas la parte de Discord?</strong> Está bien igual, y no cuesta nada: el constructor del servidor y los roles que da lo que pasa en el chat están en el plan Essenziale. Entras con la cuenta con la que haces directo, conectas el servidor, y el resto del bot lo dejas apagado.')}</p>
     <p class="vt-community vt-rivela">${L('<strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot è <strong>gratis e completo</strong> per te: non ti serve nessun piano.', '<strong>Already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community?</strong> SocialBot is <strong>free and complete</strong> for you: no plan needed.', '<strong>¿Ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot es <strong>gratis y completo</strong> para ti: no necesitas ningún plan.')}</p>
   </div>`;
 }
@@ -424,6 +430,7 @@ function corpo(L, l, kick, youtube, dirette, piani) {
 
   return `
     ${avvisiHtml(L)}
+    ${porteHtml(L, porteAperte(kick, youtube))}
     <section class="vt-scena">
       <header class="vt-barra">
         <a class="vt-marchio" href="/" aria-label="SocialBot"><img src="/icons/logo-barra.png?v=8" alt="SocialBot" width="80" height="30"></a>
@@ -473,7 +480,7 @@ function corpo(L, l, kick, youtube, dirette, piani) {
         <h2 class="vt-tit">${L('Quanto costa', 'What it costs', 'Cuánto cuesta')}</h2>
         <p class="vt-testo">${L('L’Essenziale è gratis e resta gratis. Il resto si aggiunge un pacchetto alla volta, dal pannello, e si toglie allo stesso modo. Se un rinnovo non passa, il bot resta: si spengono solo le funzioni in più.', 'Essenziale is free and stays free. The rest is added one package at a time, from the panel, and removed the same way. If a renewal fails, the bot stays: only the extra features switch off.', 'Essenziale es gratis y sigue siéndolo. Lo demás se añade de paquete en paquete, desde el panel, y se quita igual. Si una renovación falla, el bot se queda: solo se apagan las funciones extra.')}</p>
       </div>
-      ${listinoHtml(L, piani, porteAperte(kick, youtube))}
+      ${listinoHtml(L, piani)}
     </section>
 
     <section class="vt-sez">

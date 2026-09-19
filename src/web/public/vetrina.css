@@ -503,20 +503,30 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-conto-tot b { font-family: Archivo, system-ui, sans-serif; font-size: 1.7rem; font-weight: 700; letter-spacing: -.03em; }
 .vt-conto-tot span { font-size: .82rem; color: var(--testo-3); margin-left: .3rem; }
 .vt-conto .vt-btn { margin-left: auto; min-height: 46px; }
-.vt-scelta {
-  display: inline-flex; gap: 2px; margin-left: auto; padding: 3px;
-  border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
+.vt-velo[hidden] { display: none; }
+.vt-velo {
+  position: fixed; inset: 0; z-index: 300; display: grid; place-items: center;
+  padding: 20px; overflow-y: auto;
+  background: color-mix(in srgb, var(--bg) 76%, transparent);
+  backdrop-filter: blur(10px) saturate(1.2); -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  opacity: 0; transition: opacity .24s ease;
 }
-.vt-scelta + .vt-btn { margin-left: 0; }
-.vt-porta {
-  border: 0; background: none; color: var(--testo-3); font: inherit; font-size: .8rem;
-  font-weight: 600; padding: .34rem .72rem; border-radius: 999px; cursor: pointer;
-  transition: color var(--molla), background var(--molla);
+.vt-velo.dentro { opacity: 1; }
+.vt-velo-carta {
+  width: min(420px, 100%); padding: 1.6rem 1.7rem 1.5rem; border-radius: 18px; text-align: center;
+  background: var(--surface); border: 1px solid var(--border-2); box-shadow: var(--om-l);
+  transform: translateY(14px) scale(.97); transition: transform .24s ease;
 }
-@media (hover: hover) {
-  .vt-porta:hover { color: var(--testo); }
+.vt-velo.dentro .vt-velo-carta { transform: none; }
+.vt-velo-carta h2 { margin: 0 0 .5rem; font-size: 1.35rem; letter-spacing: -.02em; }
+.vt-velo-carta p { margin: 0; font-size: .9rem; line-height: 1.5; color: var(--testo-2); }
+.vt-velo-azioni { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 1.2rem; }
+.vt-velo-no {
+  border: 0; background: none; color: var(--testo-3); font: inherit; font-size: .86rem;
+  padding: .4rem .7rem; cursor: pointer; flex-basis: 100%;
 }
-.vt-porta.on { background: var(--acc-tint); color: var(--acc); box-shadow: inset 0 0 0 1px var(--acc-bordo); }
+@media (hover: hover) { .vt-velo-no:hover { color: var(--testo); } }
+@media (prefers-reduced-motion: reduce) { .vt-velo, .vt-velo-carta { transition: none; } }
 
 .vt-risparmio[hidden] { display: none; }
 .vt-risparmio {
@@ -629,7 +639,6 @@ body.vetrina em, body.vetrina .vt-corsivo {
   .vt-cam { display: none; }
   .vt-alert { font-size: .78rem; padding: .5rem .8rem; max-width: 88%; white-space: normal; }
   .vt-conto .vt-btn { margin-left: 0; width: 100%; }
-  .vt-scelta { margin-left: 0; width: 100%; justify-content: center; }
   .vt-comp, .vt-piano { padding: 1.1rem 1.1rem 1.2rem; }
   .vt-cap { padding: 1rem 1rem 1.1rem; }
   .vt-pacco { padding-right: 1.35rem; }

@@ -52,7 +52,13 @@ test('la sonda dell\'indirizzo corto bussa all\'indirizzo, non al DNS', () => {
 test('e se non risponde resta spento, che è il modo giusto di sbagliare', () => {
   const i = SRV.indexOf('const sondaHost = (candidato, metti, come) =>');
   const corpo = SRV.slice(i, i + 700);
-  assert.match(corpo, /setTimeout\(prova, 10 \* 60_000\)/, 'si riprova più tardi');
+  assert.match(corpo, /setTimeout\(prova, fra\)/, 'si riprova più tardi');
+  // I primi tentativi sono fitti apposta: chi aggiorna riavvia il bot PRIMA di
+  // ricaricare la porta d'ingresso, quindi la prima sonda cade sempre. Con una
+  // cadenza sola da dieci minuti, ogni nome nuovo nasceva spento per dieci
+  // minuti — e in quella finestra l'indirizzo corto risponde 404.
+  assert.match(SRV, /const RITMO_SONDA = \[20_000, 40_000, 90_000\];/, 'e i primi tentativi sono ravvicinati');
+  assert.match(corpo, /RITMO_SONDA\[quante\] \?\? 10 \* 60_000/, 'poi si dirada, invece di bussare per sempre');
   const chiama = corpo.indexOf('metti(candidato)');
   const riprova = corpo.indexOf('setTimeout(prova');
   assert.ok(chiama > 0 && riprova > chiama,
