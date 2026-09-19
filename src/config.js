@@ -236,28 +236,43 @@ export const config = {
     };
   })(),
 
-  // Discord: l'applicazione che RICONOSCE lo spettatore — OPZIONALE.
+  // Discord: un'applicazione sola, due poteri diversi — OPZIONALE.
   //
-  // Due cose diverse, e vanno tenute diverse: il bot che DA' e TOGLIE i ruoli e'
-  // dello streamer (token suo, server suo, nel database cifrato), mentre questa
-  // e' l'applicazione con cui uno spettatore dice «questo account Discord sono
-  // io». Serve solo a riconoscere (scope `identify`): non entra in nessun server
-  // e non tocca nessun ruolo. Percio' e' UNA SOLA, della piattaforma: cosi' lo
-  // streamer incolla due cose invece di quattro.
+  //  · RICONOSCERE (client id + secret, scope `identify`): con questa uno
+  //    spettatore dice «questo account Discord sono io». Non entra in nessun
+  //    server e non tocca nessun ruolo.
+  //  · DARE E TOGLIERE I RUOLI (il token del bot): questo e' il bot che entra
+  //    nei server degli streamer — quando sono LORO a invitarlo dal pannello,
+  //    scegliendo il server dalla schermata di Discord. Uno per la piattaforma.
   //
-  // Su https://discord.com/developers/applications → OAuth2: Client ID, Client
-  // Secret e, fra i Redirect, https://socialbot.live/discord/oidc/callback.
-  // Senza queste due righe il collegamento resta spento, e il pannello lo dice
-  // invece di offrire un tasto che non funziona.
+  // Sono tenute distinte apposta: la prima la usa chi guarda e legge un nome,
+  // la seconda muove i privilegi di casa d'altri. Chi preferisce portarsi il
+  // bot suo puo' ancora incollarne uno nel pannello, e quello vince.
+  //
+  // Su https://discord.com/developers/applications: OAuth2 per client id e
+  // secret, Bot → Reset Token per il token. Fra i Redirect ci va
+  // https://socialbot.live/discord/oidc/callback — UNO SOLO, perche' i due giri
+  // tornano dalla stessa porta e a distinguerli e' lo stato monouso.
+  // Senza le prime due il collegamento resta spento e il pannello lo dice;
+  // senza il token resta solo la strada di chi si porta il bot suo.
   discordApp: (() => {
     const clientId = env('DISCORD_CLIENT_ID');
     const clientSecret = env('DISCORD_CLIENT_SECRET');
+    // Il bot DELLA PIATTAFORMA: uno solo, che entra nei server degli streamer
+    // quando loro lo invitano. Senza questo, resta solo la strada di chi si
+    // porta il bot suo — e va detto prima, non fallito dopo.
+    const botToken = env('DISCORD_BOT_TOKEN');
     const base = env('BASE_URL', 'http://localhost:8090').replace(/\/$/, '');
     return {
       clientId,
       clientSecret,
+      botToken,
+      // Un solo indirizzo di ritorno per tutt'e due i giri (lo spettatore che si
+      // riconosce, lo streamer che invita il bot): a distinguerli e' lo stato
+      // monouso, non l'indirizzo. Cosi' su Discord ne va registrato uno solo.
       redirectUri: env('DISCORD_REDIRECT_URI') || (base + '/discord/oidc/callback'),
       attivo: !!(clientId && clientSecret),
+      bot: !!(clientId && clientSecret && botToken),
     };
   })(),
 

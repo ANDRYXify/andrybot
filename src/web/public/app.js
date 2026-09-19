@@ -571,6 +571,7 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
+    '/api/discord/invito': { url: '' },
     '/api/morti/libreria': { schede: [
       { id: 'a1', gioco: 'dark souls iii', giocoNome: 'Dark Souls III', lingua: 'it', firme: ['a5c3966a5a3c69a5', '5a3c69a5a5c3966a'], presa: 12, versione: 3, radice: 'a0' },
       { id: 'b2', gioco: 'elden ring', giocoNome: 'Elden Ring', lingua: 'en', firme: ['0f0f0f0f0f0f0f0f'], presa: 4, versione: 1, radice: 'b2' },
@@ -581,7 +582,7 @@ function _demoGet(via) {
       { id: 'dota2', nome: 'Dota 2', cartella: 'game/dota/cfg/gamestate_integration', file: 'gamestate_integration_socialbot_dota2.cfg' },
     ] },
     '/api/streamer/ruoli': { configurato: true, guild: '123456789012345678', guildNome: 'Casa di andryx', botNome: 'SocialBot',
-      attivo: true, collegamentoOk: true, collegati: 14, ultimoGiro: Date.now() - 11 * 60000,
+      attivo: true, collegamentoOk: true, invitoOk: true, suo: false, collegati: 14, ultimoGiro: Date.now() - 11 * 60000,
       ultimoEsito: { visti: 14, dati: 2, tolti: 1, fuori: 1, bloccati: [], scartate: 0, errori: [] },
       regole: [{ tipo: 'sub', ruolo: '100000000000000010', soglia: 0 }, { tipo: 'ore', ruolo: '100000000000000011', soglia: 10 }],
       tipi: [{ id: 'follower', soglia: false }, { id: 'sub', soglia: false }, { id: 'vip', soglia: false }, { id: 'mod', soglia: false },
@@ -2654,7 +2655,7 @@ const GUIDE = {
   telegram: { serve: ['Portare il bot nel tuo gruppo Telegram: avvisa quando vai in diretta, risponde ai comandi, fa gli auguri ai membri e ti manda il rapporto della serata in privato.', 'Bring the bot into your Telegram group: it alerts when you go live, answers commands, wishes members happy birthday and sends you the night\u2019s report in private.', 'Llevar el bot a tu grupo de Telegram: avisa cuando est\u00e1s en directo, responde a los comandos, felicita a los miembros y te manda el informe de la noche en privado.'],
     come: [['Incolla la chiave del TUO bot, quella che ti d\u00e0 BotFather.', 'Paste the key of YOUR bot, the one BotFather gives you.', 'Pega la clave de TU bot, la que te da BotFather.', '#inp-tg-token'], ['Aggiungi il bot al gruppo e premi \u00abCollega\u00bb: ti trova da solo.', 'Add the bot to the group and press \u00abConnect\u00bb: it finds itself.', 'A\u00f1ade el bot al grupo y pulsa \u00abConectar\u00bb: se encuentra solo.', '#btn-tg-rileva'], ['Accendi l\'avviso e scrivi il messaggio come lo vuoi tu.', 'Turn on the alert and write the message the way you want it.', 'Enciende el aviso y escribe el mensaje como lo quieras.', '#chk-tg-attivo']] },
   ruoli: { serve: ['Dare i ruoli del tuo server Discord in base a quello che succede su Twitch: chi ti segue, chi è abbonato, chi è VIP o moderatore, quante ore ti ha guardato, quante monete ha, da quante dirette di fila c’è.', 'Give your Discord server’s roles based on what happens on Twitch: who follows you, who is subscribed, who is a VIP or moderator, how many hours they watched, how many coins they have, how long their streak is.', 'Dar los roles de tu servidor de Discord según lo que pasa en Twitch: quién te sigue, quién está suscrito, quién es VIP o moderador, cuántas horas te ha visto, cuántas monedas tiene, cuántos directos seguidos lleva.'],
-    come: [['Incolla il token del TUO bot Discord e l’id del tuo server, poi premi «Prova»: ti dico come si chiama il server e quali ruoli riesce a muovere.', 'Paste the token of YOUR Discord bot and your server id, then press «Test»: I tell you the server’s name and which roles it can move.', 'Pega el token de TU bot de Discord y el id de tu servidor, luego pulsa «Probar»: te digo cómo se llama el servidor y qué roles puede mover.', '#dc-token'], ['Su Discord, in Impostazioni server → Ruoli, trascina il ruolo del bot SOPRA quelli che deve poter dare: più in basso di un ruolo, non lo tocca.', 'On Discord, in Server Settings → Roles, drag the bot’s role ABOVE the ones it must be able to give: below a role, it cannot touch it.', 'En Discord, en Ajustes del servidor → Roles, arrastra el rol del bot POR ENCIMA de los que debe poder dar: por debajo de un rol, no lo toca.', ''], ['Scrivi le regole: una condizione e il ruolo che le corrisponde. Poi accendi.', 'Write the rules: a condition and the role that matches it. Then turn it on.', 'Escribe las reglas: una condición y el rol que le corresponde. Luego enciende.', '#dc-regole'], ['Chi ti guarda si collega da solo: scrive !discord in chat e segue le istruzioni. Finché non si collega, il bot non lo tocca.', 'Your viewers link themselves: they type !discord in chat and follow the steps. Until they link, the bot does not touch them.', 'Quien te ve se vincula solo: escribe !discord en el chat y sigue los pasos. Hasta que no se vincula, el bot no lo toca.', '#dc-collegati']] },
+    come: [['Premi «Porta il bot nel tuo server»: Discord ti fa scegliere il server dall’elenco e ti chiede di confermare un permesso. Torni qui e ti dico quali ruoli riesce a muovere.', 'Press «Bring the bot to your server»: Discord lets you pick the server from a list and asks you to confirm one permission. Come back and I tell you which roles it can move.', 'Pulsa «Lleva el bot a tu servidor»: Discord te deja elegir el servidor de una lista y te pide confirmar un permiso. Vuelves y te digo qué roles puede mover.', '#dc-invita'], ['Su Discord, in Impostazioni server → Ruoli, trascina il ruolo del bot SOPRA quelli che deve poter dare: più in basso di un ruolo, non lo tocca.', 'On Discord, in Server Settings → Roles, drag the bot’s role ABOVE the ones it must be able to give: below a role, it cannot touch it.', 'En Discord, en Ajustes del servidor → Roles, arrastra el rol del bot POR ENCIMA de los que debe poder dar: por debajo de un rol, no lo toca.', ''], ['Scrivi le regole: una condizione e il ruolo che le corrisponde. Poi accendi.', 'Write the rules: a condition and the role that matches it. Then turn it on.', 'Escribe las reglas: una condición y el rol que le corresponde. Luego enciende.', '#dc-regole'], ['Chi ti guarda si collega da solo: scrive !discord in chat e segue le istruzioni. Finché non si collega, il bot non lo tocca.', 'Your viewers link themselves: they type !discord in chat and follow the steps. Until they link, the bot does not touch them.', 'Quien te ve se vincula solo: escribe !discord en el chat y sigue los pasos. Hasta que no se vincula, el bot no lo toca.', '#dc-collegati']] },
   studio: { serve: ['Andare in diretta su Twitch dal browser, senza installare niente: componi scene con webcam, schermo, immagini, video, testo e overlay, regola l’audio col mixer e premi «Vai live».', 'Go live on Twitch from the browser, without installing anything: compose scenes with webcam, screen, images, video, text and overlay, tune the audio with the mixer and hit “Go live”.', 'Emitir en Twitch desde el navegador, sin instalar nada: compón escenas con webcam, pantalla, imágenes, vídeo, texto y overlay, ajusta el audio con el mezclador y pulsa «Emitir».'],
     come: [['Scegli fotocamera, microfono e qualità in «Ingressi & qualità».', 'Pick camera, microphone and quality in “Inputs & quality”.', 'Elige cámara, micrófono y calidad en «Entradas y calidad».', '#studio-cam-sel'], ['Aggiungi le fonti e sistemale sul palco (trascina per spostare/ridimensionare), o usa un layout rapido.', 'Add the sources and arrange them on the stage (drag to move/resize), or use a quick layout.', 'Añade las fuentes y colócalas en el escenario (arrastra para mover/redimensionar), o usa un diseño rápido.', '#studio-fonti'], ['Aggiungi la fonte «Overlay» per avere a schermo alert, chat ed effetti a punti canale.', 'Add the “Overlay” source to get alerts, chat and channel-point effects on screen.', 'Añade la fuente «Overlay» para tener en pantalla alertas, chat y efectos de puntos de canal.', '#studio-ov-sel'], ['Premi «Vai live» e tieni aperta questa scheda mentre trasmetti.', 'Hit “Go live” and keep this tab open while you broadcast.', 'Pulsa «Emitir» y mantén esta pestaña abierta mientras transmites.', '#studio-live']] },
   alert: { serve: ['Comporre quello che si vede sulla diretta — alert, chat a schermo, obiettivi, contatori — e prendere il link da mettere in OBS.', 'Compose what shows on your stream — alerts, on-screen chat, goals, counters — and get the link to put in OBS.', 'Componer lo que se ve en el directo — alertas, chat en pantalla, objetivos, contadores — y coger el enlace para poner en OBS.'],
@@ -16400,22 +16401,24 @@ function pannelloRuoli() {
     <div class="carta">
       <h2>${_hIco(ICO.scudo)}${L('Il bot del tuo server', 'Your server’s bot', 'El bot de tu servidor')}</h2>
       <p>${L('Discord i', 'Discord syncs your Twitch', 'Discord sincroniza los')} <strong>${L('sub', 'subs', 'subs')}</strong> ${L('di Twitch se li sincronizza da solo. Tutto il resto no: chi ti segue, chi è VIP, chi è moderatore, quante ore ti ha guardato, quante monete ha, da quante dirette di fila c’è. Quei dati ce li abbiamo, e qui diventano ruoli.', 'by itself. Everything else it does not: who follows you, who is a VIP, who is a moderator, how many hours they watched, how many coins they have, how long their streak is. We have that, and here it becomes roles.', 'de Twitch solo. Todo lo demás no: quién te sigue, quién es VIP, quién es moderador, cuántas horas te ha visto, cuántas monedas tiene, cuántos directos seguidos lleva. Eso lo tenemos, y aquí se convierte en roles.')}</p>
-      <ol class="passi">
-        <li><strong>${L('Crea il bot', 'Create the bot', 'Crea el bot')}</strong>: ${L('su', 'on', 'en')} <a href="https://discord.com/developers/applications" target="_blank" rel="noopener">Discord Developers</a> → <em>New Application</em> → <em>Bot</em> → <em>Reset Token</em>.</li>
-        <li><strong>${L('Invitalo sul tuo server', 'Invite it to your server', 'Invítalo a tu servidor')}</strong> ${L('col permesso', 'with the', 'con el permiso')} <em>${L('Gestire i ruoli', 'Manage Roles', 'Gestionar roles')}</em>.</li>
-        <li><strong>${L('Mettilo in alto', 'Put it high up', 'Ponlo arriba')}</strong>: ${L('in Impostazioni server → Ruoli, trascina il suo ruolo SOPRA quelli che deve poter dare. Discord non guarda il nome del permesso, guarda la posizione.', 'in Server Settings → Roles, drag its role ABOVE the ones it must be able to give. Discord does not look at the permission name, it looks at the position.', 'en Ajustes del servidor → Roles, arrastra su rol POR ENCIMA de los que debe poder dar. Discord no mira el nombre del permiso, mira la posición.')}</li>
-        <li><strong>${L('L’id del server', 'The server id', 'El id del servidor')}</strong>: ${L('clic destro sul server → Copia ID server.', 'right click on the server → Copy Server ID.', 'clic derecho en el servidor → Copiar ID del servidor.')}</li>
-      </ol>
-      <div class="griglia-campi spazio-sopra">
-        <div><label class="campo" for="dc-token">${L('Token del bot', 'Bot token', 'Token del bot')}</label>
-          <input type="password" id="dc-token" autocomplete="off" placeholder="${L('incollalo qui', 'paste it here', 'pégalo aquí')}"></div>
-        <div><label class="campo" for="dc-guild">${L('Id del server', 'Server id', 'Id del servidor')}</label>
-          <input type="text" id="dc-guild" inputmode="numeric" maxlength="24" placeholder="123456789012345678"></div>
-      </div>
       <p class="spazio-sopra riga-flessibile">
-        <button class="btn" id="dc-prova">${L('Prova e salva', 'Test and save', 'Probar y guardar')}</button>
+        <button class="btn" id="dc-invita">${L('Porta il bot nel tuo server', 'Bring the bot to your server', 'Lleva el bot a tu servidor')}</button>
         <button class="btn secondario" id="dc-scorda" hidden>${L('Scollega tutto', 'Disconnect everything', 'Desconectar todo')}</button>
       </p>
+      <p class="suggerimento">${L('Ti manda su Discord: scegli il server dall’elenco — ci sono solo quelli dove comandi tu — e confermi il permesso «Gestire i ruoli». Torni qui e sei a posto: l’id del server ce lo dice Discord, non devi copiarlo.', 'It takes you to Discord: pick the server from the list — only the ones you run are there — and confirm the «Manage Roles» permission. Come back and you are set: Discord tells us the server id, you do not have to copy it.', 'Te lleva a Discord: eliges el servidor de la lista — solo están aquellos donde mandas tú — y confirmas el permiso «Gestionar roles». Vuelves y ya está: el id del servidor nos lo dice Discord, no tienes que copiarlo.')}</p>
+      <p class="suggerimento">${L('Una cosa resta a mano, e non per pigrizia: su Discord, in Impostazioni server → Ruoli, trascina il ruolo del bot SOPRA quelli che deve poter dare. Discord non lascia che un bot si sposti da solo più in alto di dov’è — è la regola che gli impedisce di promuoversi. Qui sotto ti diciamo quali ruoli restano fuori dalla sua portata.', 'One thing stays manual, and not out of laziness: on Discord, in Server Settings → Roles, drag the bot’s role ABOVE the ones it must be able to give. Discord does not let a bot move itself higher than it is — that is the rule that stops it from promoting itself. Below we tell you which roles stay out of its reach.', 'Una cosa queda a mano, y no por pereza: en Discord, en Ajustes del servidor → Roles, arrastra el rol del bot POR ENCIMA de los que debe poder dar. Discord no deja que un bot se mueva solo más arriba de donde está — es la regla que le impide ascenderse. Aquí abajo te decimos qué roles quedan fuera de su alcance.')}</p>
+
+      <details class="spazio-sopra" id="dc-avanzate">
+        <summary>${L('Preferisci un bot tuo?', 'Prefer your own bot?', '¿Prefieres un bot tuyo?')}</summary>
+        <p class="suggerimento">${L('Se hai già un bot tuo su Discord, incolla il suo token e l’id del server: da quel momento è lui a dare i ruoli, al posto del nostro. Lascia vuoto e usiamo il nostro.', 'If you already have your own Discord bot, paste its token and the server id: from then on it gives the roles instead of ours. Leave it empty and ours is used.', 'Si ya tienes un bot tuyo en Discord, pega su token y el id del servidor: desde ese momento es él quien da los roles, en vez del nuestro. Déjalo vacío y usamos el nuestro.')}</p>
+        <div class="griglia-campi spazio-sopra">
+          <div><label class="campo" for="dc-token">${L('Token del bot', 'Bot token', 'Token del bot')}</label>
+            <input type="password" id="dc-token" autocomplete="off" placeholder="${L('incollalo qui', 'paste it here', 'pégalo aquí')}"></div>
+          <div><label class="campo" for="dc-guild">${L('Id del server', 'Server id', 'Id del servidor')}</label>
+            <input type="text" id="dc-guild" inputmode="numeric" maxlength="24" placeholder="123456789012345678"></div>
+        </div>
+        <p class="spazio-sopra"><button class="btn secondario" id="dc-prova">${L('Prova e salva', 'Test and save', 'Probar y guardar')}</button></p>
+      </details>
       <p class="tg-stato" id="dc-stato" hidden></p>
     </div>
 
@@ -16495,8 +16498,18 @@ function _dcMostraStato() {
   _imposta('dc-guild', _dc.guild || '');
   _imposta('dc-attivo', !!_dc.attivo);
   const via = _g('dc-scorda'); if (via) via.hidden = !_dc.configurato;
+  const porta = _g('dc-invita');
+  if (porta) {
+    porta.hidden = !_dc.invitoOk;
+    porta.textContent = _dc.configurato
+      ? L('Cambia server', 'Change server', 'Cambiar servidor')
+      : L('Porta il bot nel tuo server', 'Bring the bot to your server', 'Lleva el bot a tu servidor');
+  }
+  const avanzate = _g('dc-avanzate');
+  if (avanzate && (_dc.suo || !_dc.invitoOk)) avanzate.open = true;
   const dove = _dc.guildNome ? `${_dc.guildNome}${_dc.botNome ? ' · ' + _dc.botNome : ''}` : '';
   if (!_dc.collegamentoOk) _dcDici('dc-stato', L('Il collegamento con Discord non è acceso su questo server: chi ti guarda non può collegarsi.', 'The Discord link is not on for this server: your viewers cannot connect.', 'La conexión con Discord no está activa en este servidor: quien te ve no puede vincularse.'), 'guaio');
+  else if (!_dc.invitoOk && !_dc.configurato) _dcDici('dc-stato', L('Qui non c’è un bot della piattaforma: serve il tuo, qui sotto.', 'There is no platform bot here: yours is needed, below.', 'Aquí no hay un bot de la plataforma: hace falta el tuyo, aquí abajo.'), 'guaio');
   else if (_dc.configurato) _dcDici('dc-stato', dove || L('Configurato.', 'Configured.', 'Configurado.'), 'ok');
   else _dcDici('dc-stato', '');
   const q = _g('dc-collegati');
@@ -16528,6 +16541,9 @@ async function caricaRuoli() {
   try { d = await api('/api/streamer/ruoli'); } catch { d = null; }
   if (!d) { _dcDici('dc-stato', L('Non riesco a leggere la configurazione.', 'I can’t read the configuration.', 'No consigo leer la configuración.'), 'guaio'); return; }
   _dc = { ...d, ruoli: (_dc && _dc.ruoli) || [] };
+  const q = new URLSearchParams(location.search);
+  if (q.get('discord') === 'ok') toast(L('Bot nel tuo server ✓', 'Bot in your server ✓', 'Bot en tu servidor ✓'));
+  else if (q.get('discord') === 'no') toast(L('Non è andata: riprova da qui.', 'It did not work: try again from here.', 'No ha funcionado: reinténtalo desde aquí.'), 'errore');
   _dcMostraStato();
   if (!d.configurato) return;
   try {
@@ -16541,6 +16557,11 @@ function collegaRuoli() {
   const scheda = _g('scheda-ruoli');
   if (!scheda || scheda.dataset.pronta) return;
   scheda.dataset.pronta = '1';
+
+  _g('dc-invita')?.addEventListener('click', () => conErrore(async () => {
+    const r = await api('/api/discord/invito');
+    if (r && r.url) location.href = r.url;
+  }));
 
   _g('dc-prova')?.addEventListener('click', () => conErrore(async () => {
     const corpo = { token: _v('dc-token') || '', guild: _v('dc-guild') || '' };

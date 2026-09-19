@@ -1099,7 +1099,8 @@ const VETRINA = {
 
     { h2: 'I ruoli del tuo Discord' },
     { p: ['Discord i <strong>sub</strong> di Twitch se li sincronizza da solo. Tutto il resto no: chi ti segue, chi &egrave; VIP, chi &egrave; moderatore, quante ore ti ha guardato, quante monete ha, da quante dirette di fila c\'&egrave;. Quei dati ce li abbiamo noi, e qui diventano ruoli sul tuo server.'] },
-    { p: ['Anche qui il bot &egrave; <strong>tuo</strong>: lo crei tu su Discord, il token &egrave; tuo e resta cifrato da noi. Nel pannello incolli token e id del server, premi <em>Prova</em> e ti diciamo come si chiama il server e quali ruoli il bot riesce davvero a muovere.'] },
+    { p: ['Si comincia con <strong>un tasto</strong>: «Porta il bot nel tuo server». Ti manda su Discord, che ti fa scegliere il server da un elenco &mdash; ci sono solo quelli dove comandi tu &mdash; e ti chiede di confermare un permesso solo, <em>Gestire i ruoli</em>. Torni qui e ti diciamo come si chiama il server e quali ruoli il bot riesce davvero a muovere. L&rsquo;id del server non devi copiarlo: ce lo dice Discord.'] },
+    { p: ['Se invece hai gi&agrave; un <strong>bot tuo</strong>, apri &laquo;Preferisci un bot tuo?&raquo; e incolla il suo token: da quel momento &egrave; lui a dare i ruoli, e resta cifrato da noi.'] },
     { p: ['Quella riga &mdash; &laquo;quali riesce a muovere&raquo; &mdash; &egrave; il passo che si sbaglia sempre. Discord non guarda il nome del permesso, guarda la <strong>posizione</strong>: se il ruolo del bot sta sotto quello che deve dare, non lo tocca, e nessuno ti dice perch&eacute;. Vai in <em>Impostazioni server &rarr; Ruoli</em> e trascina il bot sopra.'] },
     { p: ['Poi scrivi le regole: una condizione e il ruolo che le corrisponde. &laquo;&Egrave; abbonato&raquo;, &laquo;ti segue&raquo;, &laquo;ha almeno 500 monete&raquo;, &laquo;ti ha guardato almeno 10 ore&raquo;, &laquo;&egrave; di fila da 5 dirette&raquo;.'] },
     { h3: 'Chi si collega, e come' },

@@ -22,6 +22,7 @@
 import crypto from 'node:crypto';
 import { dcAttesa, dcLink, dcRuoli } from '../db.js';
 import { config } from '../config.js';
+import { tokenDi } from './discord-api.js';
 
 // Niente 0/O e 1/I: un codice si legge ad alta voce e si ricopia a mano.
 const ALFABETO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -40,7 +41,7 @@ export const attivo = () => !!config.discordApp?.attivo;
 // altrimenti staremmo raccogliendo un consenso per una cosa che non esiste.
 export function apertoA(channel) {
   const c = dcRuoli.get(channel);
-  return !!(c && c.attivo && c.token && c.guild);
+  return !!(c && c.attivo && c.guild && tokenDi(c));
 }
 
 // Dopo che Discord ha detto chi sei: nasce il codice da scrivere in chat.

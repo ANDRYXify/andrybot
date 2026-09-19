@@ -3942,7 +3942,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // il segreto che gli hai dato e' un segreto in piu' in giro, e non serve a
   // niente: chi lo rivuole lo rigenera su Discord.
   const ruoliVisti = (c) => ({
-    configurato: !!(c?.token && c?.guild),
+    configurato: !!(dcApi.tokenDi(c) && c?.guild),
+    // di chi e' il bot che entra: il nostro salvo che se ne sia portato uno suo
+    suo: !!String(c?.token || '').trim(),
     guild: String(c?.guild || ''),
     guildNome: String(c?.guild_nome || ''),
     botNome: String(c?.bot_nome || ''),
@@ -3957,6 +3959,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({
       ...ruoliVisti(dcRuoli.get(login)),
       collegamentoOk: dcCollega.attivo(),
+      invitoOk: !!config.discordApp?.bot,
       collegati: dcLink.quanti(login),
       // QUALI condizioni esistono lo dice la regola, non il pannello. Le
       // PAROLE con cui si chiamano le sa il pannello, che parla tre lingue.
@@ -3975,10 +3978,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.regole !== undefined) campi.regole = normRegole(b.regole);
     if (b.attivo !== undefined) campi.attivo = !!b.attivo;
     const prima = dcRuoli.get(login);
-    const token = campi.token || prima?.token || '';
+    const token = campi.token || dcApi.tokenDi(prima);
     const guild = campi.guild !== undefined ? String(campi.guild).replace(/[^0-9]/g, '') : (prima?.guild || '');
     if (campi.attivo && !(token && guild)) {
-      return res.status(400).json({ errore: 'Prima il token del bot e l\'id del server: senza, non c\'e\' niente da accendere.' });
+      return res.status(400).json({ errore: 'Prima porta il bot nel tuo server: senza, non c\'e\' niente da accendere.' });
     }
     res.json(ruoliVisti(dcRuoli.set(login, campi)));
   }));
@@ -3988,7 +3991,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.post('/api/streamer/ruoli/prova', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const c = dcRuoli.get(login);
-    const token = (typeof req.body?.token === 'string' && req.body.token.trim()) || c?.token || '';
+    const token = (typeof req.body?.token === 'string' && req.body.token.trim()) || dcApi.tokenDi(c);
     const guild = String(req.body?.guild ?? c?.guild ?? '').replace(/[^0-9]/g, '');
     const r = await dcApi.prova(token, guild);
     if (!r.ok) return res.status(400).json({ errore: r.errore });
@@ -4005,7 +4008,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       prova: !!req.body?.prova,
       quadro: (gente) => helix.ruoliDi(login, gente),
     });
-    if (!e) return res.status(400).json({ errore: 'Prima il token del bot e l\'id del server.' });
+    if (!e) return res.status(400).json({ errore: 'Prima porta il bot nel tuo server.' });
     res.json(e);
   }));
 
@@ -4021,7 +4024,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // chat dello streamer, e quel messaggio — che porta con se' l'autorita' di
   // Twitch — chiude il collegamento e brucia il codice. Il contrario (un link
   // personale scritto in chat) sarebbe regalabile a chiunque stia guardando.
-  const dcStati = new Map();   // state → { canale, ts }
+  const dcStati = new Map();   // state → { tipo, canale | login, ts }
   const puliziaDc = () => { const ora = Date.now(); for (const [k, v] of dcStati) if (ora - v.ts > 600_000) dcStati.delete(k); };
   const canaleDi = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
 
@@ -4036,8 +4039,20 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!canale || !dcCollega.apertoA(canale)) return res.status(404).json({ errore: 'Questo canale non ha i ruoli di Discord accesi.' });
     puliziaDc();
     const state = crypto.randomUUID();
-    dcStati.set(state, { canale, ts: Date.now() });
+    dcStati.set(state, { tipo: 'spettatore', canale, ts: Date.now() });
     res.json({ url: dcApi.urlAutorizzazione({ ...config.discordApp, state }) });
+  });
+
+  // PORTARE IL BOT NEL SERVER, senza tutorial. Discord mostra la SUA scelta del
+  // server — solo quelli dove lo streamer e' amministratore — e il permesso da
+  // confermare. Torna indietro con un codice; l'id del server lo prendiamo dallo
+  // scambio di quel codice, non dalla query (vedi discord-api.js).
+  app.get('/api/discord/invito', requireOwner, (req, res) => {
+    if (!config.discordApp?.bot) return res.status(503).json({ errore: 'Su questo server non c\'è un bot della piattaforma: serve il tuo.' });
+    puliziaDc();
+    const state = crypto.randomUUID();
+    dcStati.set(state, { tipo: 'bot', login: currentUser(req).login, ts: Date.now() });
+    res.json({ url: dcApi.urlInvitoBot({ ...config.discordApp, state }) });
   });
 
   app.get('/discord/oidc/callback', wrap(async (req, res) => {
@@ -4046,6 +4061,15 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const st = dcStati.get(state);
     dcStati.delete(state);
     if (!st) return res.redirect('/?discord=scaduto');
+    // Due giri tornano dalla stessa porta, e a dire quale e' stato e' lo stato
+    // monouso — non l'indirizzo, che su Discord ne va registrato uno solo.
+    if (st.tipo === 'bot') {
+      if (!req.query.code) return res.redirect('/?discord=no');
+      const g = await dcApi.scambiaInvito({ ...config.discordApp, codice: String(req.query.code) });
+      if (!g.ok) return res.redirect('/?discord=no');
+      dcRuoli.set(st.login, { guild: g.guild, guildNome: g.nome });
+      return res.redirect('/?discord=ok');
+    }
     const dove = '/collega/' + st.canale;
     if (!req.query.code) return res.redirect(dove + '?esito=no');
     const r = await dcApi.scambiaCodice({ ...config.discordApp, codice: String(req.query.code) });

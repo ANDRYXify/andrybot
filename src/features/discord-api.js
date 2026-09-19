@@ -22,6 +22,7 @@
 //
 // «Non e' nel server» NON e' un errore: e' una risposta. Un ruolo non si puo'
 // dare a chi non c'e', e va detto cosi', non come un guasto.
+import { config } from '../config.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('discord-api');
@@ -148,6 +149,66 @@ export async function dai(token, guild, utente, ruolo) {
 export async function togli(token, guild, utente, ruolo) {
   if (!idOk(guild) || !idOk(utente) || !idOk(ruolo)) return { ok: false, errore: 'id non valido' };
   return chiama(token, `/guilds/${guild}/members/${utente}/roles/${ruolo}`, { metodo: 'DELETE' });
+}
+
+// IL TOKEN CON CUI SI PARLA. Il suo, se se n'e' portato uno; sennò il nostro.
+// Un campo vuoto non vuol dire «niente bot»: vuol dire «quello della casa».
+export const tokenDi = (riga) => String(riga?.token || '').trim() || String(config.discordApp?.botToken || '').trim();
+
+// ------------------------------------------------------------ invitare il bot
+// Il giro che toglie di mezzo il tutorial: lo streamer clicca, Discord gli mostra
+// LA SUA scelta del server (solo quelli dove e' amministratore), lui conferma il
+// permesso e il bot entra.
+//
+// Chiediamo un permesso solo, «Gestire i ruoli», perche' e' l'unico che serve:
+// una lista lunga di permessi su una schermata di conferma e' il modo migliore
+// per farsi dire di no, e sarebbe anche potere che non ci serve.
+//
+// L'ID DEL SERVER NON ARRIVA DALLA QUERY. Discord lo rimanda anche li'
+// (`guild_id`), ma quella query passa dal browser di chi autorizza e si
+// riscrive: chi volesse potrebbe puntare le proprie regole al server di un
+// altro streamer dove il nostro bot e' gia' dentro. Quello buono sta nella
+// RISPOSTA dello scambio del codice, che arriva da Discord a noi.
+export const PERMESSI_BOT = '268435456';   // solo MANAGE_ROLES
+
+export function urlInvitoBot({ clientId, redirectUri, state }) {
+  const p = new URLSearchParams({
+    client_id: String(clientId || ''),
+    scope: 'bot',
+    permissions: PERMESSI_BOT,
+    response_type: 'code',
+    redirect_uri: String(redirectUri || ''),
+    state: String(state || ''),
+  });
+  return 'https://discord.com/oauth2/authorize?' + p.toString();
+}
+
+export async function scambiaInvito({ clientId, clientSecret, redirectUri, codice }) {
+  if (!clientId || !clientSecret || !codice) return { ok: false, errore: 'collegamento non configurato' };
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), TIMEOUT_MS);
+  try {
+    const r = await fetch(API + '/oauth2/token', {
+      method: 'POST',
+      signal: ac.signal,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': UA },
+      body: new URLSearchParams({
+        client_id: String(clientId),
+        client_secret: String(clientSecret),
+        grant_type: 'authorization_code',
+        code: String(codice),
+        redirect_uri: String(redirectUri || ''),
+      }).toString(),
+    });
+    if (!r.ok) return { ok: false, errore: 'Discord non ha riconosciuto il codice' };
+    const d = await r.json().catch(() => null);
+    const id = String(d?.guild?.id || '');
+    if (!idOk(id)) return { ok: false, errore: 'Discord non dice in quale server e\' entrato' };
+    return { ok: true, guild: id, nome: String(d?.guild?.name || '').slice(0, 100) };
+  } catch (e) {
+    log.warn('scambiaInvito:', e?.message || e);
+    return { ok: false, errore: 'Discord irraggiungibile' };
+  } finally { clearTimeout(to); }
 }
 
 // ---------------------------------------------------------------- riconoscere
