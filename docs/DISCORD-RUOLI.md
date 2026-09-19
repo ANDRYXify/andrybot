@@ -219,6 +219,57 @@ Facoltativo ma gentile: in **General Information** metti icona e descrizione —
 sono quelle che si vedono nella schermata di Discord che chiede il permesso, e
 sono la faccia del bot nei server degli streamer.
 
+## Quello che si chiede all'invito, e i due motivi diversi
+
+L'invito chiede più di quanto il bot adoperi, e la differenza va detta chiara
+perché non è la stessa cosa.
+
+**Quelli che usa lui.** «Gestire i ruoli» per il gestore dei privilegi,
+«Gestire i canali» per il costruttore, e «vedere il canale», «scrivere»,
+«anteprima dei link» per l'avviso di diretta — da quando lo scrive il bot e non
+più un webhook creato a mano. Ognuno di questi deve servire a qualcosa, e un
+cancello controlla che sia così: un permesso che non usiamo mai è potere tenuto
+in tasca per niente, e su casa d'altri.
+
+**Quelli che non usa mai.** Cacciare, bannare, mettere in pausa, ripulire,
+soprannomi, zittire, spostare, e gli altri della tabella. Il bot non li adopera
+in nessun caso: li tiene perché **Discord non lascia dare a un ruolo un
+privilegio che chi lo crea non ha**. Senza averli, un «Moderatori» costruito
+dal preset nascerebbe senza poteri — un ruolo finto, che sembra fatto e non
+serve a niente.
+
+Il prezzo è reale: il bot quei poteri li **detiene** su ogni server che lo
+invita. Una frase come «ma non li usiamo» scritta in un commento non vale
+niente — vale finché qualcuno non aggiunge una riga, magari in buona fede, per
+una funzione comoda. Perciò non è una promessa, è un cancello:
+`scripts/verifica-poteri.mjs` controlla che in tutto il codice non si chiami
+mai una porta di Discord che quei poteri li **esercita** — bannare, cacciare,
+mettere in pausa, cancellare messaggi altrui, cambiare il soprannome.
+Distribuirli sì, usarli mai.
+
+E controlla anche il contrario: che dare e togliere ruoli a una persona resti
+quello che il bot sa fare. Un cancello diventato verde perché abbiamo tolto il
+gestore dei privilegi avrebbe misurato la cosa sbagliata.
+
+### Il numero non si scrive a mano
+
+```js
+export const DA_DARE = Object.values(PRIVILEGI).reduce((t, v) => t | v, 0n);
+export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | VIEW_CHANNEL
+                                 | SEND_MESSAGES | EMBED_LINKS | DA_DARE);
+```
+
+Aggiungere un privilegio alla tabella lo fa entrare da solo nell'invito.
+Un numero battuto a mano sarebbe la cosa che un giorno non coincide più, e
+nessuno saprebbe cosa è entrato o uscito.
+
+### Chi aveva già invitato il bot
+
+Non ce li ha, e non lo deve scoprire da un errore a metà costruzione. I
+permessi di un bot si aggiornano **reinvitandolo**, cioè ripassando dal tasto
+che lo porta nel server: è lo stesso giro di prima, dura un clic, e i canali e
+i ruoli restano dove sono.
+
 ## Come lo streamer porta il bot nel suo server
 
 Un tasto. Il pannello chiede `/api/discord/invito`, che risponde con

@@ -198,6 +198,39 @@ export const tokenDi = (riga) => String(riga?.token || '').trim() || String(conf
 // costruttore serve anche «Gestire i canali» — e chi ha gia' invitato il bot
 // deve ripassare dal tasto, perche' reinvitare aggiorna i permessi. Non lo si
 // lascia scoprire da un errore: `puoCanali()` lo dice prima.
+// I PRIVILEGI CHE IL COSTRUTTORE SA DISTRIBUIRE, coi valori di Discord.
+//
+// Stanno qui, con gli altri numeri, per la ragione che decide tutto il resto:
+// Discord dice che «un bot puo' dare a un ruolo soltanto i privilegi che ha
+// lui». Quindi questa tabella non e' un dettaglio del catalogo — e' quello che
+// il bot deve CHIEDERE all'invito, e chiederlo si fa da qui.
+//
+// Pochi apposta: Discord ne ha una cinquantina, e un muro di cinquanta
+// interruttori non si legge, si spunta a caso. Questi sono quelli per cui un
+// ruolo lo si crea davvero.
+//
+// I valori vengono dalla documentazione, non dalla memoria.
+export const PRIVILEGI = Object.freeze({
+  moderare: 1n << 40n,      // MODERATE_MEMBERS — mettere in pausa
+  cacciare: 1n << 1n,       // KICK_MEMBERS
+  bannare: 1n << 2n,        // BAN_MEMBERS
+  pulire: 1n << 13n,        // MANAGE_MESSAGES
+  soprannomi: 1n << 27n,    // MANAGE_NICKNAMES
+  zittire: 1n << 22n,       // MUTE_MEMBERS
+  spostare: 1n << 24n,      // MOVE_MEMBERS
+  registro: 1n << 7n,       // VIEW_AUDIT_LOG
+  eventi: 1n << 33n,        // MANAGE_EVENTS
+  chiamareTutti: 1n << 17n, // MENTION_EVERYONE
+  emojiAltrui: 1n << 18n,   // USE_EXTERNAL_EMOJIS
+  trasmettere: 1n << 9n,    // STREAM
+  priorita: 1n << 8n,       // PRIORITY_SPEAKER
+});
+
+// LA SOMMA NON SI SCRIVE A MANO. E' quella esatta dei privilegi qui sopra:
+// aggiungerne uno lo fa entrare anche nell'invito, e nessuno deve ricordarsene.
+// Un numero battuto a mano sarebbe la cosa che un giorno non coincide piu'.
+export const DA_DARE = Object.values(PRIVILEGI).reduce((t, v) => t | v, 0n);
+
 export const MANAGE_ROLES = 1n << 28n;      // 268435456
 export const MANAGE_CHANNELS = 1n << 4n;    // 16
 export const ADMINISTRATOR = 1n << 3n;      // 8
@@ -209,7 +242,23 @@ export const ADMINISTRATOR = 1n << 3n;      // 8
 export const VIEW_CHANNEL = 1n << 10n;      // 1024
 export const SEND_MESSAGES = 1n << 11n;     // 2048
 export const EMBED_LINKS = 1n << 14n;       // 16384
-export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS);
+// QUELLO CHE SI CHIEDE ALL'INVITO, e perche' e' piu' di quanto il bot usa.
+//
+// I primi cinque il bot li adopera lui: i ruoli e i canali per costruire, e i
+// tre per scrivere l'avviso di diretta nel canale.
+//
+// `DA_DARE` e' un'altra cosa, e va detta chiara: sono i privilegi che il bot
+// NON usa mai e tiene solo per poterli PASSARE ai ruoli che gli chiedi di
+// creare. Cacciare, bannare, mettere in pausa. Senza averli non puo' darli —
+// non e' una prudenza nostra, e' una regola di Discord — e senza poterli dare
+// un ruolo «Moderatori» nascerebbe senza poteri, cioe' un ruolo finto.
+//
+// Il prezzo e' vero: il bot li detiene su ogni server che lo invita. La
+// contropartita non e' una promessa scritta in un commento — e' un cancello
+// (`scripts/verifica-poteri.mjs`) che controlla che da nessuna parte, in tutto
+// il codice, si chiami una porta di Discord che quei poteri li ESERCITA.
+// Distribuirli si', usarli mai.
+export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | DA_DARE);
 
 // I permessi che il bot ha nel server: l'unione di quelli dei suoi ruoli. Si
 // calcolano da cose che chiediamo GIA' (l'elenco dei ruoli e quelli del bot),

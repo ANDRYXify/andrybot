@@ -11,7 +11,7 @@
 // nessuna parte in mezzo.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -57,17 +57,29 @@ test('al bot si chiedono solo i permessi che usiamo, e il numero non si scrive a
   const r = /export const PERMESSI_BOT = String\(([A-Z_ |]+)\);/.exec(API);
   assert.ok(r, 'i permessi dell\'invito si compongono da costanti con un nome');
   const chiesti = r[1].split('|').map((x) => x.trim()).sort();
-  assert.deepEqual(chiesti, ['EMBED_LINKS', 'MANAGE_CHANNELS', 'MANAGE_ROLES', 'SEND_MESSAGES', 'VIEW_CHANNEL'],
-    'i ruoli per i privilegi, i canali per il costruttore, e i tre per dire una cosa in un canale: nient\'altro');
-  // I tre ultimi sono entrati quando l'avviso di diretta ha smesso di passare
-  // da un webhook creato a mano. Il bot sta gia' nel server: farsi dare un
-  // indirizzo segreto per scrivere in un canale dove e' dentro era un passaggio
-  // in piu' a carico dello streamer, non una precauzione.
-  // E ognuno di quelli che chiediamo deve servire a qualcosa. Un permesso che
-  // non usiamo mai e' potere tenuto in tasca per niente, e su casa d'altri.
-  for (const p of chiesti) {
+  assert.deepEqual(chiesti, ['DA_DARE', 'EMBED_LINKS', 'MANAGE_CHANNELS', 'MANAGE_ROLES', 'SEND_MESSAGES', 'VIEW_CHANNEL'],
+    'quello che il bot usa, piu\' quello che deve poter passare: nient\'altro');
+
+  // DUE MOTIVI DIVERSI PER CHIEDERE UN PERMESSO, e non vanno confusi.
+  //
+  // I cinque con un nome proprio il bot li ADOPERA, e ognuno deve servire a
+  // qualcosa: un permesso che non usiamo mai e' potere tenuto in tasca per
+  // niente, e su casa d'altri.
+  const usati = chiesti.filter((p) => p !== 'DA_DARE');
+  for (const p of usati) {
     assert.match(API, new RegExp(`puo\\(bits, ${p}\\)`), `${p} si chiede all'invito ma non lo usa nessuno`);
   }
+
+  // `DA_DARE` e' l'altro motivo: privilegi che il bot non usa MAI e tiene solo
+  // per poterli passare ai ruoli che gli si chiede di creare — Discord non
+  // lascia dare a un ruolo un privilegio che chi lo crea non ha. Percio' qui
+  // non si chiede che siano usati: si chiede che siano esattamente quelli
+  // distribuibili, calcolati e non battuti a mano, e che nessuno li eserciti.
+  assert.match(API, /export const DA_DARE = Object\.values\(PRIVILEGI\)\.reduce\(\(t, v\) => t \| v, 0n\);/,
+    'la somma e\' quella esatta dei privilegi, cosi\' aggiungerne uno lo fa entrare da solo');
+  assert.ok(!/DA_DARE = \d/.test(API), 'e non un numero scritto a mano, che un giorno non coincide piu\'');
+  assert.ok(existsSync(join(RAD, 'scripts/verifica-poteri.mjs')),
+    'e c\'e\' un cancello che controlla che quei poteri si passino soltanto, non si usino');
   // Allargare i permessi ha un prezzo: chi aveva gia' invitato il bot non ce
   // li ha. Non lo deve scoprire da un errore a meta' costruzione.
   const COS = leggi('src/features/discord-costruisci.js');
