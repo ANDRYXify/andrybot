@@ -117,14 +117,25 @@ test('le pagine servite come stringa escono marcate, e il montaggio e\' quello v
     'niente un secondo montaggio nudo accanto: servirebbe gli stessi file senza la regola');
 });
 
-// Il service worker puo' rispondere SENZA RETE a un indirizzo che porta
-// l'impronta, perche' quell'indirizzo non puo' cambiare contenuto. Senza
-// impronta sarebbe una scommessa; con l'impronta e' una proprieta'.
-test('il service worker si fida solo di chi porta l\'impronta', async () => {
+// E IL SERVICE WORKER RESTA COM'ERA, di proposito.
+//
+// Con l'impronta, far rispondere il worker dalla cache sarebbe stato
+// difendibile: quell'indirizzo non puo' cambiare contenuto. Ma non pagava il
+// prezzo che chiedeva — la velocita' la da' gia' `immutable` sugli header (quei
+// file il browser non li chiede proprio), e il worker ci avrebbe aggiunto solo
+// l'offline, in cambio di un'eccezione a una regola nata da un danno vero: una
+// copia locale che vinceva sulla rete aveva congelato il logo vecchio nella
+// linguetta, col file nuovo sul server e nessun errore da nessuna parte.
+//
+// Quindi qui si fissa il contrario di quello che si era tentati di scrivere: il
+// worker parte sempre dalla rete. La cosa da non perdere e' il RAGIONAMENTO,
+// sennò fra sei mesi qualcuno lo riprova pensando di aver avuto un'idea.
+test('la velocita\' la fanno gli header, non il service worker', async () => {
   const { readFileSync } = await import('node:fs');
   const SW = readFileSync(new URL('../../src/web/public/sw.js', import.meta.url), 'utf8');
-  assert.match(SW, /url\.searchParams\.get\('v'\)/, 'la scorciatoia vale solo per gli indirizzi marcati');
-  assert.match(SW, /async function eterno/);
-  assert.match(SW, /if \(avuta\) return avuta;/, 'prima la cache, poi la rete');
-  assert.match(SW, /await c\.delete\(vecchia\)/, 'e le versioni vecchie dello stesso file si buttano');
+  assert.ok(!/searchParams\.get\('v'\)/.test(SW), 'il worker non deve interessarsi delle impronte');
+  assert.ok(!/ETERNI/.test(SW), 'e non deve tenersi una seconda dispensa');
+  for (const m of SW.matchAll(/respondWith\(([\s\S]*?)\);\n/g)) {
+    assert.match(m[1].trim(), /^fetch\(/, 'si parte sempre dalla rete: la copia locale e\' il paracadute');
+  }
 });
