@@ -265,9 +265,15 @@ test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le o
   assert.ok(SRV.includes("const ritorno = String(req.body?.pagina || '') === 'dona' ? 'dona' : 'link';"), 'il modulo dice da dove torna');
   assert.ok(leggi('src/features/donazioni-stripe.js').includes("ritorno === 'dona' ? urlPaginaDona(login)") && leggi('src/features/donazioni-satispay.js').includes("ritorno === 'dona' ? urlPaginaDona(login)"), 'e tutti e due i mezzi tornano li\', anche con l\'indirizzo corto');
   assert.ok(SRV.includes("if (!config.donaHost || String(req.hostname || '').toLowerCase() !== config.donaHost) return next();") && SRV.includes("req.url = '/dona/' + m[1].toLowerCase()"), 'con il sottodominio, dona.<dominio>/<login> si traduce prima delle rotte, e il nome si legge a ogni richiesta');
-  assert.ok(SRV.includes("const candidatoDona = !config.donaHost && !config.donaHostSpento ? donazioni.candidatoDonaHost(config.baseUrl) : '';") && SRV.includes("const sondaDona = () => dns.lookup(candidatoDona).then(() => {") && SRV.includes("setTimeout(sondaDona, 10 * 60_000).unref?.()"), 'senza DONA_HOST il nome si prova da solo nel DNS, ogni dieci minuti finche\' non risponde');
+  // La sonda e' una sola per tutti gli indirizzi corti (dona, sostieni): quello
+  // che conta non e' come si chiama la funzione, e' che senza la variabile il
+  // nome si provi da solo nel DNS e si riprovi finche' non risponde.
+  assert.ok(SRV.includes("const candidatoDona = !config.donaHost && !config.donaHostSpento ? donazioni.candidatoHost(config.baseUrl, 'dona') : '';"), 'il candidato si costruisce dal dominio del sito');
+  assert.match(SRV, /const sondaHost = \(candidato, metti, come\) => \{[\s\S]*dns\.lookup\(candidato\)[\s\S]*setTimeout\(prova, 10 \* 60_000\)\.unref\?\.\(\)/,
+    'senza DONA_HOST il nome si prova da solo nel DNS, ogni dieci minuti finche\' non risponde');
+  assert.match(SRV, /sondaHost\(candidatoDona, \(h\) => \{ config\.donaHost = h; \}/, 'e quando risponde, da quel momento si usa');
   assert.ok(leggi('src/config.js').includes("donaHostSpento: /^(no|off)$/i.test(env('DONA_HOST', ''))"), 'e si puo\' spegnere con DONA_HOST=no');
-  assert.ok(leggi('Caddyfile').includes('socialbot.live, dona.socialbot.live {'), 'e Caddy conosce il nome');
+  assert.match(leggi('Caddyfile'), /^socialbot\.live,[^{]*\bdona\.socialbot\.live\b[^{]*\{/m, 'e Caddy conosce il nome');
   assert.match(APP, /const lpApi = \(\) => \(LP\.quale === 'dona' \? '\/api\/paginadona' : '\/api\/linkpage'\);/, 'un editor, due porte');
   assert.equal((APP.match(/api\(lpApi\(\)/g) || []).length, 4, 'carica, salva, spegni e anteprima passano dalla porta giusta');
   assert.ok(APP.includes("api(lpApi() + '/anteprima'"), 'anche l\'anteprima');
