@@ -1450,6 +1450,11 @@ const OVERLAY = {
     { p: ['In chat il bot parla in tre momenti: quando il treno <strong>parte</strong>, quando <strong>sale di livello</strong> (<code>{livello}</code>) e quando <strong>finisce</strong> (<code>{livello}</code>, <code>{chi}</code>, <code>{punti}</code>). Non a ogni sub: quello lo dicono già gli alert. La chat e la scena sono due interruttori separati, così chi il treno ce l’ha già a schermo da Twitch può tenersi solo le righe in chat. Chi guarda può chiedere <code>!treno</code>.'] },
     { p: ['I sub e i bit che fanno crescere il treno <strong>contano già</strong> negli obiettivi e nel subathon, uno per uno: qui non si contano una seconda volta. E serve il permesso nuovo su Twitch: se il pannello te lo chiede, è per questo.'] },
 
+    { h2: 'La classifica dei Bit' },
+    { p: ['Chi ha messo più Bit, in un angolo della scena. Scegli <strong>di quando</strong> — oggi, questa settimana, questo mese, quest\u2019anno, da sempre — e <strong>quante righe</strong>, da una a dieci. È un elemento come gli altri: si trascina nello Studio, prende la veste che gli dai, e ogni overlay decide se mostrarlo.'] },
+    { p: ['I numeri sono quelli di <strong>Twitch</strong>, gli stessi che rispondono a <code>!bit</code>: non è un conto nostro che con il suo non torna. Si aggiorna da sola quando arriva un cheer, perché è l\u2019unico momento in cui può cambiare. Chi ha cheerato in anonimo non compare, perché non compare nemmeno da Twitch.'] },
+    { p: ['Se Twitch per un momento non risponde, la classifica <strong>resta quella di prima</strong> invece di sparire: un intoppo di un minuto non deve svuotare un angolo della scena. E serve il permesso di leggere i Bit: se il pannello te lo chiede, è per questo.'] },
+
     { h2: 'I contatori' },
     { p: ['Sono i numeri che vivono in chat — <code>!morti</code>, <code>!tentativi</code> — e si creano in <em>Comandi</em>. Nell\'overlay sono un elemento come gli altri: si spengono tutti insieme dall\'elenco e prendono la veste della scena.'] },
     { p: ['Se a un contatore dai colore, sfondo o posizione tuoi, <strong>quelli vincono</strong>: la scena veste solo quello che non hai deciso.'] },

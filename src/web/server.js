@@ -52,7 +52,8 @@ import * as abbonamenti from '../features/abbonamenti.js';
 import * as presenze from '../features/presenze.js';
 import * as statistiche from '../features/statistiche.js';
 import * as rapporto from '../features/rapporto.js';
-import { SALUTO_RE } from '../features/bit.js';
+import * as bitFeat from '../features/bit.js';
+const { SALUTO_RE } = bitFeat;
 import * as morti from '../features/morti.js';
 import * as gsi from '../features/gsi.js';
 import * as libreria from '../features/morti-libreria.js';
@@ -118,7 +119,7 @@ import {
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
-  normMusica, normTimer, normTreno, normCartelli,
+  normMusica, normTimer, normTreno, normBit, normCartelli,
 } from './stile.js';
 
 // --- PIÙ OVERLAY: ogni overlay ha un suo LAYOUT (quali elementi mostra e dove)
@@ -126,7 +127,7 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'pen', 'effetti', 'consolify'];
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'effetti', 'consolify'];
 const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {});
 
 // Un overlay E' un layout: tiene la posizione di OGNI cosa che ci puo' comparire,
@@ -1307,6 +1308,24 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     musicaCache.set(login, { ts: ora, dati });
     res.set('Cache-Control', 'no-store');
     res.json(dati);
+  }));
+
+  // LA CLASSIFICA DEI BIT per l'elemento in scena. La chiede l'overlay, una volta
+  // al caricamento: da li' in poi arriva spinta, perche' cambia solo quando
+  // passa un cheer. La risposta e' quella di Twitch, tenuta per qualche minuto
+  // in `features/bit.js` — dieci fonti OBS aperte non fanno dieci chiamate.
+  //
+  // `righe: null` vuol dire NON LO SAPPIAMO (permesso mancante, Twitch muto), e
+  // l'overlay lo tratta diverso da un elenco vuoto: una classifica che sparisce
+  // dalla scena per un intoppo di un minuto e' peggio di una ferma.
+  app.get('/overlay/:login/bit', wrap(async (req, res) => {
+    if (!chiaveOk(req)) return notFound(res);
+    const login = String(req.params.login).toLowerCase();
+    const cfg = streamers.get(login)?.settings?.overlayBit;
+    if (!cfg?.attivo) return res.json({ righe: [] });
+    const righe = await bitFeat.classifica(helix, login, { periodo: cfg.periodo || 'month' });
+    res.set('Cache-Control', 'no-store');
+    res.json({ righe: righe ? righe.slice(0, 10) : null });
   }));
 
   // Mappa emote 7TV (globali + del canale) per la "chat a schermo": l'overlay la
@@ -4406,6 +4425,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.overlayTimer !== undefined) {
       out.overlayTimer = normTimer(b.overlayTimer);
     }
+    if (b.overlayBit !== undefined) out.overlayBit = normBit(b.overlayBit);
     if (b.overlayTreno !== undefined) {
       out.overlayTreno = normTreno(b.overlayTreno);
     }
@@ -4791,7 +4811,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayTreno', 'overlayCartelli'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayTreno', 'overlayBit', 'overlayCartelli'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }

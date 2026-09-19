@@ -479,6 +479,31 @@
 .ovl-treno.dentro { opacity: 1; transform: none; }
 .ovl-treno.esce { opacity: 0; transform: translateY(-10px) scale(.96); transition: opacity .34s ease, transform .4s ease; }
 
+.ovl-bit { display: grid; gap: .34rem; min-width: 13rem; }
+.ovl-bit .bt-testa { display: flex; align-items: center; gap: .5rem; }
+.ovl-bit .bt-ico { display: inline-flex; color: var(--acc); }
+.ovl-bit .bt-ico svg { display: block; width: var(--dim-ico, 20px); height: var(--dim-ico, 20px); }
+.ovl-bit .bt-tit { font-weight: 800; letter-spacing: .01em; }
+.ovl-bit .bt-tit:empty { display: none; }
+.ovl-bit .bt-righe { list-style: none; margin: 0; padding: 0; display: grid; gap: .18rem; }
+.ovl-bit .bt-righe li { display: flex; align-items: baseline; gap: .5rem; font-weight: 700; }
+.ovl-bit .bt-posto {
+  min-width: 1.4em; text-align: right; color: var(--acc);
+  font-variant-numeric: tabular-nums; font-weight: 800; font-size: .86em;
+}
+.ovl-bit .bt-posto::after { content: '\00b0'; }
+.ovl-bit .bt-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ovl-bit .bt-quanti { margin-left: auto; font-variant-numeric: tabular-nums; opacity: .84; }
+.ovl-bit .bt-righe li:first-child { font-size: 1.06em; }
+.ovl-bit.riquadro { align-content: center; }
+.ovl-bit.dim-piccola { font-size: .85rem; min-width: 11rem; }
+.ovl-bit.dim-grande { font-size: 1.25rem; min-width: 16rem; }
+.ovl-bit.dim-enorme { font-size: 1.6rem; min-width: 20rem; }
+
+.ovl-bit { opacity: 0; transition: opacity .4s ease, transform .45s cubic-bezier(.2, .9, .25, 1); transform: translateY(-8px); }
+.ovl-bit.dentro { opacity: 1; transform: none; }
+.ovl-bit.esce { opacity: 0; transform: translateY(-10px) scale(.96); transition: opacity .34s ease, transform .4s ease; }
+
 .contatore-widget.ovl-widget { display: inline-flex; align-items: center; gap: .5rem; }
 
 .ovl-musica {
