@@ -27,6 +27,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Collegare Discord adesso è un tasto: ti manda a scegliere il server dall'elenco e torni a posto. Niente bot da creare, niente id da copiare. [vai: ruoli]
 - Un VIP a premio adesso dura DIRETTE, non giorni: se salti una settimana ti aspetta. E le gare sono due, monete e Bit, che vanno avanti insieme. [vai: giochi]
 - Ogni posizione ha il nome che le dai tu — re, principe, cavaliere — e la sua durata: al primo posto puoi dare cinque dirette e al terzo una. [vai: giochi]
+- Categorie e canali del tuo Discord li scegli da qui: parti da una traccia pronta o fagli leggere il server che hai già, e lui lo mette su. [vai: dcserver]
+- Prima di toccare niente ti fa vedere l'elenco esatto di quello che farebbe. Va solo in avanti: quello che non è nella traccia resta dov'è, e te lo dice. [vai: dcserver]
+- Dentro ogni canale scrivi chi può fare cosa, con parole normali: «tutti — non può — scrivere». I permessi che non nomini nessuno li tocca. [vai: dcserver]
 
 ## 2026-09-18
 

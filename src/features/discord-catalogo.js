@@ -75,31 +75,47 @@ export function risolvi(preset, { guildId, ruoli = [] } = {}) {
     if (k && !perNome.has(k)) perNome.set(k, String(r.id));
   }
   const mancanti = [];
+  // Piu' righe che parlano della stessa persona diventano UNA riga: Discord
+  // ha un permesso solo per ogni destinatario su ogni canale, e se ne
+  // mandassimo due l'ultima cancellerebbe la prima. «Tutti non puo' scrivere»
+  // e «tutti non puo' reagire» sono due frasi e un permesso solo.
+  //
+  // E quello che hai concesso non si nega: se lo stesso permesso finisce sia
+  // fra i «puo'» che fra i «non puo'», vince il puo'. Non e' una preferenza,
+  // e' l'unica regola che non dipende dall'ordine in cui hai scritto le righe.
   const righe = (elenco) => {
     if (!Array.isArray(elenco) || !elenco.length) return null;
-    const fuori = [];
+    const per = new Map();
     for (const p of elenco) {
       const id = chiE(p?.chi, guildId, perNome);
       if (!id) { const q = String(p?.chi?.ruolo || p?.chi || ''); if (q && !mancanti.includes(q)) mancanti.push(q); continue; }
-      const allow = somma(p?.da);
-      const deny = somma(p?.nega);
-      if (!allow && !deny) continue;
-      fuori.push({ id, tipo: 0, allow: String(allow), deny: String(deny) });
+      const a = per.get(id) || { id, tipo: 0, allow: 0n, deny: 0n };
+      a.allow |= somma(p?.da);
+      a.deny |= somma(p?.nega);
+      per.set(id, a);
+    }
+    const fuori = [];
+    for (const a of per.values()) {
+      const deny = a.deny & ~a.allow;
+      if (!a.allow && !deny) continue;
+      fuori.push({ id: a.id, tipo: 0, allow: String(a.allow), deny: String(deny) });
     }
     return fuori.length ? fuori : null;
   };
+  const unCanale = (ch) => ({
+    nome: ch?.nome,
+    tipo: ch?.tipo,
+    argomento: ch?.argomento,
+    permessi: righe(ch?.permessi),
+  });
   return {
     mancanti,
     preset: {
+      canali: (preset?.canali || []).map(unCanale),
       categorie: (preset?.categorie || []).map((c) => ({
         nome: c?.nome,
         permessi: righe(c?.permessi),
-        canali: (c?.canali || []).map((ch) => ({
-          nome: ch?.nome,
-          tipo: ch?.tipo,
-          argomento: ch?.argomento,
-          permessi: righe(ch?.permessi),
-        })),
+        canali: (c?.canali || []).map(unCanale),
       })),
     },
   };
@@ -241,23 +257,55 @@ function righePulite(elenco) {
 export function normalizzaPreset(x) {
   const categorie = [];
   let canaliTotali = 0;
+  const unCanale = (ch) => {
+    const n = String(ch?.nome || '').trim().slice(0, 100);
+    if (!n || canaliTotali >= MAX_CANALI) return null;
+    canaliTotali++;
+    return {
+      nome: n,
+      tipo: TIPI_CANALE.includes(ch?.tipo) ? ch.tipo : 'testo',
+      argomento: String(ch?.argomento || '').slice(0, 1024),
+      permessi: righePulite(ch?.permessi),
+    };
+  };
+  const canali = (Array.isArray(x?.canali) ? x.canali : []).map(unCanale).filter(Boolean);
   for (const c of (Array.isArray(x?.categorie) ? x.categorie : []).slice(0, MAX_CATEGORIE)) {
     const nome = String(c?.nome || '').trim().slice(0, 100);
     if (!nome) continue;
-    const canali = [];
+    const dentro = [];
     for (const ch of (Array.isArray(c?.canali) ? c.canali : [])) {
-      const n = String(ch?.nome || '').trim().slice(0, 100);
-      if (!n) continue;
-      if (canaliTotali >= MAX_CANALI) break;
-      canaliTotali++;
-      canali.push({
-        nome: n,
-        tipo: TIPI_CANALE.includes(ch?.tipo) ? ch.tipo : 'testo',
-        argomento: String(ch?.argomento || '').slice(0, 1024),
-        permessi: righePulite(ch?.permessi),
-      });
+      const y = unCanale(ch);
+      if (y) dentro.push(y);
     }
-    categorie.push({ nome, permessi: righePulite(c?.permessi), canali });
+    categorie.push({ nome, permessi: righePulite(c?.permessi), canali: dentro });
   }
-  return { categorie };
+  return { canali, categorie };
+}
+
+// PARTI DAL SERVER CHE HAI GIA'.
+//
+// Chi ha un server vivo non ricomincia da zero: la sua forma diventa il primo
+// preset, e da li' lo cambia. Si prendono i nomi, i tipi, dove stanno e gli
+// argomenti — NON i permessi. Non per dimenticanza: un preset che non nomina i
+// permessi e' un preset che non li tocca, e quelli che ci sono restano come
+// sono. Rileggerli e riscriverli identici sarebbe lo stesso risultato passando
+// per un giro in cui qualcosa puo' andare storto.
+export function dallaFotografia(foto, { TIPI_ID = { 0: 'testo', 2: 'voce', 5: 'annunci', 15: 'forum' } } = {}) {
+  const canali = (foto?.canali || []).filter((c) => c && c.id != null);
+  const categorie = canali.filter((c) => Number(c.tipo) === 4);
+  const perId = new Map(categorie.map((c) => [String(c.id), c]));
+  const dentro = new Map(categorie.map((c) => [String(c.id), []]));
+  const cima = [];
+  for (const c of canali) {
+    const tipo = TIPI_ID[Number(c.tipo)];
+    if (!tipo) continue;                       // categorie e tipi che non sappiamo fare
+    const voce = { nome: String(c.nome || ''), tipo, argomento: String(c.argomento || '') };
+    const p = c.parent_id ? String(c.parent_id) : '';
+    if (p && perId.has(p)) dentro.get(p).push(voce);
+    else cima.push(voce);
+  }
+  return normalizzaPreset({
+    canali: cima,
+    categorie: categorie.map((c) => ({ nome: String(c.nome || ''), canali: dentro.get(String(c.id)) || [] })),
+  });
 }

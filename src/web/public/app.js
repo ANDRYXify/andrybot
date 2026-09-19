@@ -642,6 +642,27 @@ function apiDemo(percorso, opzioni = {}) {
     ] });
   }
 
+  if (via === '/api/streamer/dcserver') return Promise.resolve({ ok: true });
+  if (via === '/api/streamer/dcserver/dalserver') {
+    return Promise.resolve({ ok: true, preset: { canali: [{ nome: 'bacheca', tipo: 'testo', argomento: '', permessi: [] }], categorie: [
+      { nome: 'Benvenuto', permessi: [], canali: [
+        { nome: 'regole', tipo: 'testo', argomento: 'Le regole di casa.', permessi: [{ chi: 'tutti', da: [], nega: ['scrivere'] }] },
+        { nome: 'annunci', tipo: 'testo', argomento: '', permessi: [] }] },
+      { nome: 'Chiacchiere', permessi: [], canali: [
+        { nome: 'generale', tipo: 'testo', argomento: '', permessi: [] },
+        { nome: 'Salotto', tipo: 'voce', argomento: '', permessi: [] }] },
+    ] } });
+  }
+  if (via === '/api/streamer/dcserver/anteprima') {
+    return Promise.resolve({ ok: true, impronta: 'a1b2c3d4e5f6', mancanti: [], vuota: false,
+      crea: [{ nome: 'Diretta', tipo: 4, dentro: null }, { nome: 'sono-in-onda', tipo: 0, dentro: 'Diretta' }, { nome: 'clip', tipo: 0, dentro: 'Diretta' }],
+      sistema: [{ id: '1', nome: 'generale', tipo: 0, dentro: 'Chiacchiere' }],
+      fuori: [{ id: '2', nome: 'vecchio-canale', tipo: 0, dentro: null, ultimoMessaggio: Date.now() - 240 * 86400000, nato: 0 }] });
+  }
+  if (via === '/api/streamer/dcserver/applica') {
+    return Promise.resolve({ ok: true, creati: 3, sistemati: 1, tolti: 0, errori: [], fermo: '', fatte: 4, mancanti: [] });
+  }
+
   if (via === '/api/streamer/occasione') {
     const lista = (_demoScritture.overlays || _demoGet('/api/streamer/overlays').overlays || []);
     const ov = lista.find((o) => o.id === opzioni.body?.overlay) || lista[0];
@@ -693,6 +714,29 @@ function _demoGet(via) {
       { id: 'cs2', nome: 'Counter-Strike 2', cartella: 'game/csgo/cfg', file: 'gamestate_integration_socialbot_cs2.cfg' },
       { id: 'dota2', nome: 'Dota 2', cartella: 'game/dota/cfg/gamestate_integration', file: 'gamestate_integration_socialbot_dota2.cfg' },
     ] },
+    '/api/streamer/dcserver': { pronto: true, guildNome: 'Casa di andryx', preset: null,
+      ruoli: [{ id: '100000000000000010', nome: 'Abbonati' }, { id: '100000000000000011', nome: 'Affezionati' }, { id: '100000000000000012', nome: 'Moderatori' }],
+      permessi: ['vedere', 'scrivere', 'storia', 'reagire', 'allegare', 'link', 'discussioni', 'entrare', 'parlare', 'menzionare'],
+      max: { categorie: 20, canali: 60 },
+      catalogo: [
+        { id: 'inizio', nome: 'Si comincia', per: 'Un server nuovo, quando non sai da dove partire.', categorie: [
+          { nome: 'Benvenuto', canali: [{ nome: 'regole', argomento: 'Le regole di casa.', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }, { nome: 'annunci', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }] },
+          { nome: 'Chiacchiere', canali: [{ nome: 'generale' }, { nome: 'fuori-tema' }, { nome: 'Salotto', tipo: 'voce' }] }] },
+        { id: 'dirette', nome: 'Intorno alle dirette', per: 'Chi trasmette e vuole un posto dove ritrovarsi anche quando non è in onda.', categorie: [
+          { nome: 'Benvenuto', canali: [{ nome: 'regole', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }, { nome: 'annunci', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }, { nome: 'presentati' }] },
+          { nome: 'Diretta', canali: [{ nome: 'sono-in-onda', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }, { nome: 'clip' }, { nome: 'richieste' }] },
+          { nome: 'Chiacchiere', canali: [{ nome: 'generale' }, { nome: 'immagini' }, { nome: 'Salotto', tipo: 'voce' }] }] },
+        { id: 'giocare', nome: 'Si gioca insieme', per: 'Un server dove ci si organizza per giocare, non solo per parlarne.', categorie: [
+          { nome: 'Benvenuto', canali: [{ nome: 'regole', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }, { nome: 'annunci', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }] },
+          { nome: 'Si gioca', canali: [{ nome: 'cerchiamo-gente' }, { nome: 'clip-e-schermate' }, { nome: 'consigli' }] },
+          { nome: 'Vocali', canali: [{ nome: 'Squadra 1', tipo: 'voce' }, { nome: 'Squadra 2', tipo: 'voce' }, { nome: 'Due chiacchiere', tipo: 'voce' }] }] },
+        { id: 'grande', nome: 'Siamo in tanti', per: 'Quando un canale solo non basta più e serve un po’ di ordine.', categorie: [
+          { nome: 'Benvenuto', canali: [{ nome: 'regole', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }, { nome: 'annunci', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }, { nome: 'presentati' }] },
+          { nome: 'Chiacchiere', canali: [{ nome: 'generale' }, { nome: 'fuori-tema' }, { nome: 'immagini' }, { nome: 'musica' }] },
+          { nome: 'Aiuto', canali: [{ nome: 'domande' }, { nome: 'segnalazioni' }] },
+          { nome: 'Vocali', canali: [{ nome: 'Salotto', tipo: 'voce' }, { nome: 'Angolo tranquillo', tipo: 'voce' }, { nome: 'Riunione', tipo: 'voce' }] },
+          { nome: 'Staff', permessi: [{ chi: 'tutti', nega: ['vedere'] }], canali: [{ nome: 'staff', permessi: [{ chi: 'tutti', nega: ['vedere'] }] }] }] },
+      ] },
     '/api/streamer/ruoli': { configurato: true, guild: '123456789012345678', guildNome: 'Casa di andryx', botNome: 'SocialBot',
       attivo: true, collegamentoOk: true, invitoOk: true, suo: false, collegati: 14, ultimoGiro: Date.now() - 11 * 60000,
       ultimoEsito: { visti: 14, dati: 2, tolti: 1, fuori: 1, bloccati: [], scartate: 0, errori: [] },
@@ -1031,6 +1075,7 @@ const SPIEGA_DEMO = {
   notifiche: 'Gli avvisi quando esci allo scoperto: Discord quando vai in diretta, e i nuovi post su TikTok, YouTube e Instagram.',
   telegram: 'Il bot dentro il tuo gruppo Telegram: avvisa quando parti, risponde ai comandi, si ricorda i compleanni dei membri e ti manda il rapporto della serata in privato.',
   ruoli: 'I ruoli del tuo server Discord dati da quello che succede su Twitch: chi ti segue, chi è abbonato, chi c’è sempre.',
+  dcserver: 'Categorie, canali e permessi del tuo server Discord: scegli come lo vuoi, guardi cosa cambierebbe, e lo costruisce lui.',
 };
 
 function montaDemo() {
@@ -2440,6 +2485,7 @@ const FAMIGLIE = [
   { id: 'moderazione', nome: 'Moderazione', parti: ['regole', 'scudo', 'registro'] },
   { id: 'interazione', nome: 'Giochi', parti: ['giochi', 'sondaggi', 'giveaway', 'penitenze'] },
   { id: 'inonda', nome: 'Regia', parti: ['regia', 'clip', 'musica'] },
+  { id: 'discord', nome: 'Discord', parti: ['ruoli', 'dcserver'] },
 ];
 const famigliaDi = (scheda) => FAMIGLIE.find((f) => f.parti.includes(scheda)) || null;
 const stessaFamiglia = (a, b) => { const fa = famigliaDi(a); return !!fa && fa === famigliaDi(b); };
@@ -2514,6 +2560,7 @@ const T_SCHEDA = {
   regole: ['Moderazione', 'Moderation', 'Moderación'],
   scudo: ['Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'],
   registro: ['Registro dello scudo', 'Shield log', 'Registro del escudo'],
+  dcserver: ['Il server Discord', 'Your Discord server', 'Tu servidor de Discord'],
   giochi: ['Giochi & classifiche', 'Games & leaderboards', 'Juegos y clasificaciones'],
   regia: ['Regia', 'Control room', 'Realización'],
   studio: ['Studio Web', 'Web Studio', 'Estudio Web'],
@@ -2559,6 +2606,7 @@ const ICONA = {
   effetti:     _ico('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9.5a4 4 0 0 1 0 5"/>'),
   clip:        _ico('<rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="M8 5v14"/><path d="M16 5v14"/><path d="M3 9.5h5"/><path d="M16 9.5h5"/><path d="M3 14.5h5"/><path d="M16 14.5h5"/>'),
   ascolto:     _ico('<rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4"/>'),
+  dcserver:    _ico('<path d="M4 5h6v5H4z"/><path d="M4 14h6v5H4z"/><path d="M13 7.5h7"/><path d="M13 16.5h7"/>'),
   musica:      _ico('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
   sondaggi:    _ico('<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>'),
   giveaway:    _ico('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>'),
@@ -2593,6 +2641,7 @@ const DESC = {
   studio: ['Vai live dal browser: webcam, schermo, overlay e audio in un click.', 'Go live from the browser: webcam, screen, overlay and audio in one click.', 'Emite desde el navegador: webcam, pantalla, overlay y audio con un clic.'],
   clip: ['Clip automatiche nei momenti di hype.', 'Automatic clips in the hype moments.', 'Clips automáticos en los momentos de hype.'],
   ascolto: ['Comanda il bot a voce mentre streammi.', 'Control the bot by voice while you stream.', 'Controla el bot por voz mientras haces directo.'],
+  dcserver: ['Categorie, canali e permessi del tuo server Discord, decisi da qui.', 'Categories, channels and permissions of your Discord server, decided from here.', 'Categorías, canales y permisos de tu servidor de Discord, decididos desde aquí.'],
   musica: ['Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.', 'Music requests: viewers queue songs on Spotify.', 'Peticiones musicales: los espectadores ponen canciones en cola en Spotify.'],
   sondaggi: ['Crea sondaggi e predizioni Twitch al volo.', 'Create Twitch polls and predictions on the fly.', 'Crea encuestas y predicciones de Twitch al vuelo.'],
   giveaway: ['Organizza estrazioni a premi per la community.', 'Run prize giveaways for your community.', 'Organiza sorteos de premios para tu comunidad.'],
@@ -2768,6 +2817,8 @@ const GUIDE = {
     come: [['Incolla la chiave del TUO bot, quella che ti d\u00e0 BotFather.', 'Paste the key of YOUR bot, the one BotFather gives you.', 'Pega la clave de TU bot, la que te da BotFather.', '#inp-tg-token'], ['Aggiungi il bot al gruppo e premi \u00abCollega\u00bb: ti trova da solo.', 'Add the bot to the group and press \u00abConnect\u00bb: it finds itself.', 'A\u00f1ade el bot al grupo y pulsa \u00abConectar\u00bb: se encuentra solo.', '#btn-tg-rileva'], ['Accendi l\'avviso e scrivi il messaggio come lo vuoi tu.', 'Turn on the alert and write the message the way you want it.', 'Enciende el aviso y escribe el mensaje como lo quieras.', '#chk-tg-attivo']] },
   ruoli: { serve: ['Dare i ruoli del tuo server Discord in base a quello che succede su Twitch: chi ti segue, chi è abbonato, chi è VIP o moderatore, quante ore ti ha guardato, quante monete ha, da quante dirette di fila c’è.', 'Give your Discord server’s roles based on what happens on Twitch: who follows you, who is subscribed, who is a VIP or moderator, how many hours they watched, how many coins they have, how long their streak is.', 'Dar los roles de tu servidor de Discord según lo que pasa en Twitch: quién te sigue, quién está suscrito, quién es VIP o moderador, cuántas horas te ha visto, cuántas monedas tiene, cuántos directos seguidos lleva.'],
     come: [['Premi «Porta il bot nel tuo server»: Discord ti fa scegliere il server dall’elenco e ti chiede di confermare un permesso. Torni qui e ti dico quali ruoli riesce a muovere.', 'Press «Bring the bot to your server»: Discord lets you pick the server from a list and asks you to confirm one permission. Come back and I tell you which roles it can move.', 'Pulsa «Lleva el bot a tu servidor»: Discord te deja elegir el servidor de una lista y te pide confirmar un permiso. Vuelves y te digo qué roles puede mover.', '#dc-invita'], ['Su Discord, in Impostazioni server → Ruoli, trascina il ruolo del bot SOPRA quelli che deve poter dare: più in basso di un ruolo, non lo tocca.', 'On Discord, in Server Settings → Roles, drag the bot’s role ABOVE the ones it must be able to give: below a role, it cannot touch it.', 'En Discord, en Ajustes del servidor → Roles, arrastra el rol del bot POR ENCIMA de los que debe poder dar: por debajo de un rol, no lo toca.', ''], ['Scrivi le regole: una condizione e il ruolo che le corrisponde. Poi accendi.', 'Write the rules: a condition and the role that matches it. Then turn it on.', 'Escribe las reglas: una condición y el rol que le corresponde. Luego enciende.', '#dc-regole'], ['Chi ti guarda si collega da solo: scrive !discord in chat e segue le istruzioni. Finché non si collega, il bot non lo tocca.', 'Your viewers link themselves: they type !discord in chat and follow the steps. Until they link, the bot does not touch them.', 'Quien te ve se vincula solo: escribe !discord en el chat y sigue los pasos. Hasta que no se vincula, el bot no lo toca.', '#dc-collegati']] },
+  dcserver: { serve: ['Decidere com’è fatto il tuo server Discord — categorie, canali, di cosa si parla in ognuno e chi può fare cosa — e lasciare che lo metta su lui, dopo averti fatto vedere esattamente cosa farebbe.', 'Decide how your Discord server is laid out — categories, channels, what each one is about and who can do what — and let it set it up, after showing you exactly what it would do.', 'Decidir cómo está hecho tu servidor de Discord — categorías, canales, de qué se habla en cada uno y quién puede hacer qué — y dejar que lo monte él, tras enseñarte exactamente qué haría.'],
+    come: [['Scegli da dove parti: una delle quattro tracce, oppure «Leggi il mio server» se ce l’hai già e vuoi partire da com’è adesso.', 'Choose where you start from: one of the four tracks, or «Read my server» if you already have one and want to start from how it is now.', 'Elige desde dónde empiezas: una de las cuatro plantillas, o «Leer mi servidor» si ya lo tienes y quieres partir de cómo está ahora.', '#dcs-partenza'], ['Cambia i nomi, aggiungi o togli categorie e canali. Apri un canale per scrivere di cosa si parla e chi può fare cosa.', 'Change the names, add or remove categories and channels. Open a channel to write what it is about and who can do what.', 'Cambia los nombres, añade o quita categorías y canales. Abre un canal para escribir de qué se habla y quién puede hacer qué.', '#dcs-editor'], ['Premi «Fammi vedere cosa faresti»: quello che compare è l’elenco esatto, non un riassunto. Quello che non è nella traccia resta dov’è.', 'Press «Show me what you would do»: what appears is the exact list, not a summary. Whatever is not in the track stays where it is.', 'Pulsa «Enséñame qué harías»: lo que aparece es la lista exacta, no un resumen. Lo que no está en la plantilla se queda donde está.', '#dcs-vedi'], ['Se ti convince, «Costruisci». Se nel frattempo qualcuno ha toccato il server, mi fermo e te lo rifaccio vedere.', 'If it convinces you, «Build it». If someone touched the server meanwhile, I stop and show it to you again.', 'Si te convence, «Constrúyelo». Si mientras tanto alguien ha tocado el servidor, me paro y te lo enseño otra vez.', '#dcs-costruisci']] },
   studio: { serve: ['Andare in diretta su Twitch dal browser, senza installare niente: componi scene con webcam, schermo, immagini, video, testo e overlay, regola l’audio col mixer e premi «Vai live».', 'Go live on Twitch from the browser, without installing anything: compose scenes with webcam, screen, images, video, text and overlay, tune the audio with the mixer and hit “Go live”.', 'Emitir en Twitch desde el navegador, sin instalar nada: compón escenas con webcam, pantalla, imágenes, vídeo, texto y overlay, ajusta el audio con el mezclador y pulsa «Emitir».'],
     come: [['Scegli fotocamera, microfono e qualità in «Ingressi & qualità».', 'Pick camera, microphone and quality in “Inputs & quality”.', 'Elige cámara, micrófono y calidad en «Entradas y calidad».', '#studio-cam-sel'], ['Aggiungi le fonti e sistemale sul palco (trascina per spostare/ridimensionare), o usa un layout rapido.', 'Add the sources and arrange them on the stage (drag to move/resize), or use a quick layout.', 'Añade las fuentes y colócalas en el escenario (arrastra para mover/redimensionar), o usa un diseño rápido.', '#studio-fonti'], ['Aggiungi la fonte «Overlay» per avere a schermo alert, chat ed effetti a punti canale.', 'Add the “Overlay” source to get alerts, chat and channel-point effects on screen.', 'Añade la fuente «Overlay» para tener en pantalla alertas, chat y efectos de puntos de canal.', '#studio-ov-sel'], ['Premi «Vai live» e tieni aperta questa scheda mentre trasmetti.', 'Hit “Go live” and keep this tab open while you broadcast.', 'Pulsa «Emitir» y mantén esta pestaña abierta mientras transmites.', '#studio-live']] },
   alert: { serve: ['Comporre quello che si vede sulla diretta — alert, chat a schermo, obiettivi, contatori — e prendere il link da mettere in OBS.', 'Compose what shows on your stream — alerts, on-screen chat, goals, counters — and get the link to put in OBS.', 'Componer lo que se ve en el directo — alertas, chat en pantalla, objetivos, contadores — y coger el enlace para poner en OBS.'],
@@ -3005,6 +3056,8 @@ const T_PARTE = {
   regole: ['Chat', 'Chat', 'Chat'],
   scudo: ['Scudo', 'Shield', 'Escudo'],
   registro: ['Registro', 'Log', 'Registro'],
+  ruoli: ['Ruoli', 'Roles', 'Roles'],
+  dcserver: ['Il server', 'The server', 'El servidor'],
 };
 
 function barraFamigliaHtml(id) {
@@ -3027,6 +3080,7 @@ const NOMI_SCHEDA = {
   giochi: 'Giochi & classifiche', sondaggi: 'Sondaggi & predizioni',
   giveaway: 'Giveaway', penitenze: 'Penitenze',
   regia: 'Regia', clip: 'Clip', musica: 'Musica',
+  ruoli: 'Discord', dcserver: 'Il server Discord',
 };
 const _nomeSchedaGrezzo = (id) => NOMI_SCHEDA[id] || id;
 
@@ -3693,6 +3747,7 @@ function vistaPiattaforma() {
     ${pannelloEffetti()}
     ${pannello7TV()}
     ${pannelloRuoli()}
+    ${pannelloDcServer()}
     ${pannelloTelegram()}
     ${pannelloNotifiche()}
     ${pannelloPaginaLink()}
@@ -16705,6 +16760,403 @@ function collegaRuoli() {
   }));
 }
 
+const T_DCPERM = () => ({
+  vedere: L('Vedere il canale', 'See the channel', 'Ver el canal'),
+  scrivere: L('Scrivere', 'Write', 'Escribir'),
+  storia: L('Leggere i messaggi di prima', 'Read earlier messages', 'Leer los mensajes anteriores'),
+  reagire: L('Mettere reazioni', 'Add reactions', 'Poner reacciones'),
+  allegare: L('Allegare file', 'Attach files', 'Adjuntar archivos'),
+  link: L('Far vedere l’anteprima dei link', 'Show link previews', 'Mostrar vista previa de enlaces'),
+  discussioni: L('Aprire discussioni', 'Start threads', 'Abrir hilos'),
+  entrare: L('Entrare nel vocale', 'Join the voice channel', 'Entrar en el canal de voz'),
+  parlare: L('Parlare nel vocale', 'Speak in voice', 'Hablar en voz'),
+  menzionare: L('Chiamare tutti', 'Mention everyone', 'Mencionar a todos'),
+});
+const T_DCTIPO = () => ({
+  testo: L('Testo', 'Text', 'Texto'),
+  voce: L('Vocale', 'Voice', 'Voz'),
+  annunci: L('Annunci', 'Announcements', 'Anuncios'),
+  forum: L('Forum', 'Forum', 'Foro'),
+});
+
+let _dcs = null;
+let _dcsChiave = 0;
+
+function pannelloDcServer() {
+  return pannello('dcserver', `
+    <div class="carta">
+      <h2>${_hIco(ICO.moduli)}${L('Da dove parti', 'Where you start from', 'Desde dónde empiezas')}</h2>
+      <p>${L('Scegli una traccia e cambiala come vuoi: i nomi, i canali, chi può fare cosa. Niente di quello che scegli qui tocca il server finché non lo dici tu.', 'Pick a starting point and change it however you like: the names, the channels, who can do what. Nothing you choose here touches the server until you say so.', 'Elige un punto de partida y cámbialo como quieras: los nombres, los canales, quién puede hacer qué. Nada de lo que elijas aquí toca el servidor hasta que tú lo digas.')}</p>
+      <div id="dcs-partenza" class="spazio-sopra"></div>
+      <p class="tg-stato" id="dcs-stato" hidden></p>
+    </div>
+
+    <div class="carta" id="dcs-carta-editor" hidden>
+      <h2>${_hIco(ICO.scudo)}${L('Come lo vuoi', 'How you want it', 'Cómo lo quieres')}</h2>
+      <p class="suggerimento">${L('Le categorie stanno in ordine, i canali dentro. Apri un canale per scrivere di cosa si parla e chi può fare cosa.', 'Categories go in order, channels inside them. Open a channel to write what it is about and who can do what.', 'Las categorías van en orden, los canales dentro. Abre un canal para escribir de qué se habla y quién puede hacer qué.')}</p>
+      <div id="dcs-editor" class="spazio-sopra"></div>
+      <p class="spazio-sopra riga-flessibile">
+        <button class="btn secondario" id="dcs-catpiu">${_bIco(ICO.piu)}${L('Aggiungi una categoria', 'Add a category', 'Añadir una categoría')}</button>
+        <button class="btn secondario" id="dcs-ricomincia">${L('Riparti da un’altra traccia', 'Start from another track', 'Empezar desde otra plantilla')}</button>
+      </p>
+    </div>
+
+    <div class="carta" id="dcs-carta-diff" hidden>
+      <h2>${_hIco(ICO.medaglia)}${L('Cosa succede', 'What happens', 'Qué pasa')}</h2>
+      <p>${L('Prima si guarda, poi si fa. Quello che vedi qui sotto è esattamente quello che verrà fatto: non un riassunto.', 'First you look, then it happens. What you see below is exactly what will be done: not a summary.', 'Primero se mira, luego se hace. Lo que ves aquí abajo es exactamente lo que se hará: no un resumen.')}</p>
+      <p class="spazio-sopra riga-flessibile">
+        <button class="btn secondario" id="dcs-vedi">${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
+        <button class="btn" id="dcs-costruisci" hidden>${L('Costruisci', 'Build it', 'Constrúyelo')}</button>
+        <button class="btn secondario" id="dcs-salva">${L('Salva e basta', 'Just save', 'Solo guardar')}</button>
+      </p>
+      <div id="dcs-diff" class="spazio-sopra"></div>
+      <p class="tg-stato" id="dcs-esito" hidden></p>
+    </div>`);
+}
+
+function _dcsPrepara(preset) {
+  const perm = (righe) => {
+    const fuori = [];
+    for (const r of (righe || [])) {
+      for (const k of (r.da || [])) fuori.push({ _k: ++_dcsChiave, chi: r.chi, verso: 'puo', perm: k });
+      for (const k of (r.nega || [])) fuori.push({ _k: ++_dcsChiave, chi: r.chi, verso: 'no', perm: k });
+    }
+    return fuori;
+  };
+  const ch = (c) => ({ _k: ++_dcsChiave, nome: c.nome || '', tipo: c.tipo || 'testo', argomento: c.argomento || '', permessi: perm(c.permessi) });
+  return {
+    canali: (preset?.canali || []).map(ch),
+    categorie: (preset?.categorie || []).map((c) => ({
+      _k: ++_dcsChiave, nome: c.nome || '', permessi: perm(c.permessi), canali: (c.canali || []).map(ch),
+    })),
+  };
+}
+
+function _dcsPulito() {
+  const perm = (righe) => (righe || []).filter((r) => r.perm).map((r) => ({
+    chi: r.chi, da: r.verso === 'puo' ? [r.perm] : [], nega: r.verso === 'puo' ? [] : [r.perm],
+  }));
+  const ch = (c) => ({ nome: c.nome, tipo: c.tipo, argomento: c.argomento, permessi: perm(c.permessi) });
+  const p = _dcs?.preset || { canali: [], categorie: [] };
+  return {
+    canali: (p.canali || []).map(ch),
+    categorie: (p.categorie || []).map((c) => ({ nome: c.nome, permessi: perm(c.permessi), canali: (c.canali || []).map(ch) })),
+  };
+}
+
+const _dcsConta = (p) => (p?.categorie || []).reduce((t, c) => t + (c.canali || []).length, 0) + (p?.canali || []).length;
+
+function _dcsDici(id, testo, tono) {
+  const n = _g(id);
+  if (!n) return;
+  n.className = 'tg-stato' + (tono ? ' ' + tono : '');
+  n.textContent = testo || '';
+  n.hidden = !testo;
+}
+
+function _dcsCarteCatalogo() {
+  const c = (_dcs && _dcs.catalogo) || [];
+  return `<div class="dcs-tracce">${c.map((p) => `
+    <div class="dcs-traccia">
+      <h3>${esc(p.nome)}</h3>
+      <p class="suggerimento">${esc(p.per)}</p>
+      <p class="dcs-quanti">${p.categorie.length}${L(' categorie · ', ' categories · ', ' categorías · ')}${_dcsConta(p)}${L(' canali', ' channels', ' canales')}</p>
+      <button type="button" class="btn secondario mini" data-dcs="traccia" data-id="${esc(p.id)}">${L('Parti da qui', 'Start from here', 'Empezar aquí')}</button>
+    </div>`).join('')}
+    <div class="dcs-traccia">
+      <h3>${L('Il server che ho già', 'The server I already have', 'El servidor que ya tengo')}</h3>
+      <p class="suggerimento">${L('Legge com’è fatto adesso e lo usa come punto di partenza. I permessi che ci sono restano come sono.', 'It reads how it is now and uses that as the starting point. The permissions already there stay as they are.', 'Lee cómo está ahora y lo usa como punto de partida. Los permisos que ya hay se quedan como están.')}</p>
+      <button type="button" class="btn secondario mini" id="dcs-dalserver">${L('Leggi il mio server', 'Read my server', 'Leer mi servidor')}</button>
+    </div>
+  </div>`;
+}
+
+function _dcsOpzioniChi(scelto) {
+  const lista = (_dcs && _dcs.ruoli) || [];
+  const nome = scelto && scelto !== 'tutti' ? String(scelto.ruolo || '') : '';
+  const fuori = nome && !lista.some((r) => r.nome === nome)
+    ? `<option value="${esc(nome)}" selected>${esc(nome)}${L(' — non c’è più', ' — gone', ' — ya no está')}</option>` : '';
+  return `<option value="tutti"${scelto === 'tutti' ? ' selected' : ''}>${L('Tutti', 'Everyone', 'Todos')}</option>`
+    + fuori + lista.map((r) => `<option value="${esc(r.nome)}"${r.nome === nome ? ' selected' : ''}>${esc(r.nome)}</option>`).join('');
+}
+
+function _dcsRigaPermesso(r, dove) {
+  const parole = T_DCPERM();
+  const perm = ((_dcs && _dcs.permessi) || []).map((k) => `<option value="${esc(k)}"${k === r.perm ? ' selected' : ''}>${esc(parole[k] || k)}</option>`).join('');
+  return `<div class="dcs-perm riga-flessibile" data-k="${r._k}" data-dove="${esc(dove)}">
+    <select data-dcs="p-chi" aria-label="${esc(L('Chi', 'Who', 'Quién'))}">${_dcsOpzioniChi(r.chi)}</select>
+    <select data-dcs="p-verso" aria-label="${esc(L('Può o non può', 'Can or cannot', 'Puede o no puede'))}">
+      <option value="puo"${r.verso === 'puo' ? ' selected' : ''}>${L('può', 'can', 'puede')}</option>
+      <option value="no"${r.verso === 'puo' ? '' : ' selected'}>${L('non può', 'cannot', 'no puede')}</option>
+    </select>
+    <select data-dcs="p-quale" aria-label="${esc(L('Cosa', 'What', 'Qué'))}">${perm}</select>
+    <button type="button" class="btn secondario mini" data-dcs="p-via">${esc(L('Togli', 'Remove', 'Quitar'))}</button>
+  </div>`;
+}
+
+function _dcsPermessiHtml(el, dove) {
+  const righe = (el.permessi || []).map((r) => _dcsRigaPermesso(r, dove)).join('');
+  return `<div class="dcs-permessi">${righe}
+    <button type="button" class="btn secondario mini" data-dcs="p-piu" data-dove="${esc(dove)}">${_bIco(ICO.piu)}${L('Chi può fare cosa', 'Who can do what', 'Quién puede hacer qué')}</button>
+  </div>`;
+}
+
+function _dcsCanaleHtml(c, dove) {
+  const tipi = T_DCTIPO();
+  const quanti = (c.permessi || []).length;
+  const segno = quanti ? ` · ${quanti} ${quanti === 1 ? L('regola', 'rule', 'regla') : L('regole', 'rules', 'reglas')}` : '';
+  return `<details class="dcs-ch" data-k="${c._k}" data-dove="${esc(dove)}">
+    <summary>${esc(c.nome || L('senza nome', 'unnamed', 'sin nombre'))} <span class="suggerimento">${esc(tipi[c.tipo] || c.tipo)}${esc(segno)}</span></summary>
+    <div class="riga-flessibile spazio-sopra">
+      <input type="text" data-dcs="ch-nome" maxlength="100" value="${esc(c.nome || '')}" aria-label="${esc(L('Nome del canale', 'Channel name', 'Nombre del canal'))}">
+      <select data-dcs="ch-tipo" aria-label="${esc(L('Tipo', 'Type', 'Tipo'))}">${Object.keys(tipi).map((k) => `<option value="${k}"${k === c.tipo ? ' selected' : ''}>${esc(tipi[k])}</option>`).join('')}</select>
+      <button type="button" class="btn secondario mini" data-dcs="ch-via">${esc(L('Togli', 'Remove', 'Quitar'))}</button>
+    </div>
+    <input type="text" data-dcs="ch-arg" maxlength="1024" class="spazio-sopra" value="${esc(c.argomento || '')}"
+      placeholder="${esc(L('Di cosa si parla qui', 'What this channel is about', 'De qué se habla aquí'))}"
+      aria-label="${esc(L('Di cosa si parla qui', 'What this channel is about', 'De qué se habla aquí'))}">
+    ${_dcsPermessiHtml(c, dove)}
+  </details>`;
+}
+
+function _dcsDisegna() {
+  const box = _g('dcs-editor');
+  if (!box || !_dcs || !_dcs.preset) return;
+  const p = _dcs.preset;
+  const cima = (p.canali || []).map((c) => _dcsCanaleHtml(c, 'cima:' + c._k)).join('');
+  const cat = (p.categorie || []).map((c) => `
+    <div class="dcs-cat" data-k="${c._k}">
+      <div class="riga-flessibile">
+        <input type="text" data-dcs="cat-nome" maxlength="100" value="${esc(c.nome || '')}" aria-label="${esc(L('Nome della categoria', 'Category name', 'Nombre de la categoría'))}">
+        <button type="button" class="btn secondario mini" data-dcs="cat-via">${esc(L('Togli', 'Remove', 'Quitar'))}</button>
+      </div>
+      ${_dcsPermessiHtml(c, 'cat:' + c._k)}
+      <div class="dcs-canali">${(c.canali || []).map((x) => _dcsCanaleHtml(x, 'ch:' + c._k + ':' + x._k)).join('')}</div>
+      <button type="button" class="btn secondario mini" data-dcs="ch-piu" data-k="${c._k}">${_bIco(ICO.piu)}${L('Aggiungi un canale', 'Add a channel', 'Añadir un canal')}</button>
+    </div>`).join('');
+  box.innerHTML = (cima ? `<div class="dcs-cima">${cima}</div>` : '') + cat
+    || `<p class="suggerimento">${L('Ancora niente: aggiungi una categoria qui sotto.', 'Nothing yet: add a category below.', 'Aún nada: añade una categoría aquí abajo.')}</p>`;
+  const n = _dcsConta(p);
+  _dcsDici('dcs-stato', `${(p.categorie || []).length}${L(' categorie · ', ' categories · ', ' categorías · ')}${n}${L(' canali', ' channels', ' canales')}`
+    + (_dcs.guildNome ? ' · ' + _dcs.guildNome : ''), 'ok');
+}
+
+function _dcsTrova(dove) {
+  const p = _dcs?.preset;
+  if (!p) return null;
+  const parti = String(dove || '').split(':');
+  if (parti[0] === 'cima') return (p.canali || []).find((c) => String(c._k) === parti[1]) || null;
+  if (parti[0] === 'cat') return (p.categorie || []).find((c) => String(c._k) === parti[1]) || null;
+  if (parti[0] === 'ch') {
+    const cat = (p.categorie || []).find((c) => String(c._k) === parti[1]);
+    return cat ? (cat.canali || []).find((x) => String(x._k) === parti[2]) || null : null;
+  }
+  return null;
+}
+
+function _dcsDoveDi(nodo) {
+  const perm = nodo.closest('.dcs-perm');
+  if (perm) return perm.dataset.dove;
+  const ch = nodo.closest('.dcs-ch');
+  if (ch) return ch.dataset.dove;
+  const cat = nodo.closest('.dcs-cat');
+  return cat ? 'cat:' + cat.dataset.k : '';
+}
+
+function _dcsMostra() {
+  const ha = !!(_dcs && _dcs.preset);
+  const e = _g('dcs-carta-editor'); if (e) e.hidden = !ha;
+  const d = _g('dcs-carta-diff'); if (d) d.hidden = !ha;
+  const part = _g('dcs-partenza');
+  if (part) part.innerHTML = ha ? `<p class="suggerimento">${L('Stai lavorando su una traccia tua. Da qui sotto puoi ricominciare da un’altra.', 'You are working on your own track. From below you can start over from another one.', 'Estás trabajando en una plantilla tuya. Desde aquí abajo puedes empezar de nuevo con otra.')}</p>` : _dcsCarteCatalogo();
+  if (!_dcs?.pronto) {
+    _dcsDici('dcs-stato', L('Prima porta il bot nel tuo server, nella scheda Ruoli.', 'First bring the bot to your server, in the Roles tab.', 'Primero lleva el bot a tu servidor, en la pestaña Roles.'), 'guaio');
+  }
+  if (ha) _dcsDisegna();
+}
+
+const _dcsDaQuanto = (ts) => {
+  const g = Math.floor((Date.now() - (Number(ts) || 0)) / 86400000);
+  if (g < 1) return L('oggi', 'today', 'hoy');
+  if (g === 1) return L('un giorno', 'one day', 'un día');
+  if (g < 45) return g + L(' giorni', ' days', ' días');
+  const m = Math.round(g / 30);
+  if (m < 18) return m + L(' mesi', ' months', ' meses');
+  const a = Math.floor(g / 365);
+  return a === 1 ? L('un anno', 'one year', 'un año') : a + L(' anni', ' years', ' años');
+};
+
+const _dcsQuando = (x) => {
+  const ts = Number(x.ultimoMessaggio) || 0;
+  if (ts) return L('ferma da ', 'quiet for ', 'parado desde hace ') + _dcsDaQuanto(ts);
+  const nato = Number(x.nato) || 0;
+  return nato ? L('mai usata, aperta ', 'never used, opened ', 'nunca usada, abierta ') + _dcsDaQuanto(nato) + L(' fa', ' ago', ' atrás')
+    : L('non so da quanto', 'I do not know since when', 'no sé desde cuándo');
+};
+
+function _dcsDiffHtml(d) {
+  const tipi = T_DCTIPO();
+  const nome = (x) => esc(x.nome || '') + (x.dentro ? ' <span class="suggerimento">' + L('in ', 'in ', 'en ') + esc(x.dentro) + '</span>' : '');
+  const blocchi = [];
+  if (d.crea.length) {
+    blocchi.push(`<h3>${L('Crea', 'Creates', 'Crea')} (${d.crea.length})</h3><ul class="lista-voci">`
+      + d.crea.map((x) => `<li>${nome(x)} <span class="suggerimento">${esc(x.tipo === 4 ? L('categoria', 'category', 'categoría') : (tipi[({ 0: 'testo', 2: 'voce', 5: 'annunci', 15: 'forum' })[x.tipo]] || ''))}</span></li>`).join('') + '</ul>');
+  }
+  if (d.sistema.length) {
+    blocchi.push(`<h3>${L('Sistema', 'Fixes', 'Arregla')} (${d.sistema.length})</h3><ul class="lista-voci">`
+      + d.sistema.map((x) => {
+        const cosa = [];
+        if (x.dentro) cosa.push(L('lo rimette in ', 'moves it back into ', 'lo devuelve a ') + x.dentro);
+        if (x.argomento !== undefined) cosa.push(L('cambia di cosa si parla', 'changes what it is about', 'cambia de qué se habla'));
+        if (x.permessi) cosa.push(L('cambia chi può fare cosa', 'changes who can do what', 'cambia quién puede hacer qué'));
+        return `<li>${esc(x.nome || '')} <span class="suggerimento">${esc(cosa.join(' · '))}</span></li>`;
+      }).join('') + '</ul>');
+  }
+  if (d.fuori.length) {
+    blocchi.push(`<h3>${L('Non è in questa traccia', 'Not in this track', 'No está en esta plantilla')} (${d.fuori.length})</h3>`
+      + `<p class="suggerimento">${L('Resta dov’è: qui non si cancella niente.', 'It stays where it is: nothing is deleted here.', 'Se queda donde está: aquí no se borra nada.')}</p><ul class="lista-voci">`
+      + d.fuori.map((x) => `<li>${nome(x)} <span class="suggerimento">${esc(_dcsQuando(x))}</span></li>`).join('') + '</ul>');
+  }
+  if ((d.mancanti || []).length) {
+    blocchi.push(`<p class="tg-stato guaio">${L('Questi ruoli non ci sono più, e quelle regole le ho saltate: ', 'These roles are gone, and I skipped those rules: ', 'Estos roles ya no están, y me he saltado esas reglas: ')}${esc(d.mancanti.join(', '))}</p>`);
+  }
+  if (!blocchi.length) return `<p class="suggerimento">${L('Il tuo server è già così. Non c’è niente da fare.', 'Your server is already like this. There is nothing to do.', 'Tu servidor ya está así. No hay nada que hacer.')}</p>`;
+  return blocchi.join('');
+}
+
+async function caricaDcServer() {
+  let d = null;
+  try { d = await api('/api/streamer/dcserver'); } catch { d = null; }
+  if (!d) { _dcsDici('dcs-stato', L('Non riesco a leggere la configurazione.', 'I can’t read the configuration.', 'No consigo leer la configuración.'), 'guaio'); return; }
+  _dcs = { ...d, preset: d.preset ? _dcsPrepara(d.preset) : null };
+  _dcsMostra();
+}
+
+function collegaDcServer() {
+  const scheda = _g('scheda-dcserver');
+  if (!scheda || scheda.dataset.pronta) return;
+  scheda.dataset.pronta = '1';
+
+  _g('dcs-catpiu')?.addEventListener('click', () => {
+    if (!_dcs?.preset) return;
+    _dcs.preset.categorie.push({ _k: ++_dcsChiave, nome: L('Nuova categoria', 'New category', 'Nueva categoría'), permessi: [], canali: [] });
+    _dcsDisegna();
+  });
+
+  _g('dcs-ricomincia')?.addEventListener('click', () => {
+    if (!confirm(L('Butto via questa traccia e riparto dalla scelta. Il server non lo tocco.', 'I throw this track away and go back to the choice. I do not touch the server.', 'Tiro esta plantilla y vuelvo a la elección. No toco el servidor.'))) return;
+    _dcs = { ..._dcs, preset: null };
+    _dcsMostra();
+    _g('dcs-diff') && (_g('dcs-diff').innerHTML = '');
+  });
+
+  _g('dcs-salva')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/streamer/dcserver', { method: 'POST', body: { preset: _dcsPulito() } });
+    toast(L('Salvato ✓', 'Saved ✓', 'Guardado ✓'));
+  }));
+
+  _g('dcs-vedi')?.addEventListener('click', () => conErrore(async () => {
+    const preset = _dcsPulito();
+    await api('/api/streamer/dcserver', { method: 'POST', body: { preset } });
+    const d = await api('/api/streamer/dcserver/anteprima', { method: 'POST', body: { preset } });
+    _dcs = { ..._dcs, impronta: d.impronta };
+    const box = _g('dcs-diff');
+    if (box) box.innerHTML = _dcsDiffHtml(d);
+    const fai = _g('dcs-costruisci');
+    if (fai) fai.hidden = !!d.vuota;
+    _dcsDici('dcs-esito', '');
+  }));
+
+  _g('dcs-costruisci')?.addEventListener('click', () => conErrore(async () => {
+    const e = await api('/api/streamer/dcserver/applica', { method: 'POST', body: { preset: _dcsPulito(), impronta: _dcs?.impronta || '' } });
+    const p = [];
+    if (e.creati) p.push(e.creati + L(' creati', ' created', ' creados'));
+    if (e.sistemati) p.push(e.sistemati + L(' sistemati', ' fixed', ' arreglados'));
+    if (e.fermo === 'attesa') p.push(L('mi sono fermata: Discord chiede di aspettare, riprova fra poco', 'I stopped: Discord asks to wait, try again shortly', 'me he parado: Discord pide esperar, inténtalo en un rato'));
+    if (e.fermo === 'limite') p.push(L('mi sono fermata al limite delle mosse: premi di nuovo per il resto', 'I stopped at the move limit: press again for the rest', 'me he parado en el límite de movimientos: pulsa de nuevo para el resto'));
+    if ((e.errori || []).length) p.push(e.errori.join(' · '));
+    _dcsDici('dcs-esito', p.length ? p.join(' · ') : L('Non c’era niente da fare.', 'There was nothing to do.', 'No había nada que hacer.'), (e.errori || []).length || e.fermo ? 'guaio' : 'ok');
+    _g('dcs-costruisci').hidden = true;
+    const box = _g('dcs-diff'); if (box) box.innerHTML = '';
+  }));
+
+  _g('dcs-partenza')?.addEventListener('click', (e) => {
+    if (e.target.closest('#dcs-dalserver')) {
+      return conErrore(async () => {
+        const r = await api('/api/streamer/dcserver/dalserver', { method: 'POST', body: {} });
+        _dcs = { ..._dcs, preset: _dcsPrepara(r.preset) };
+        _dcsMostra();
+        toast(L('Letto ✓', 'Read ✓', 'Leído ✓'));
+      });
+    }
+    const b = e.target.closest('[data-dcs="traccia"]');
+    if (!b || !_dcs) return;
+    const p = (_dcs.catalogo || []).find((x) => x.id === b.dataset.id);
+    if (!p) return;
+    _dcs.preset = _dcsPrepara(p);
+    _dcsMostra();
+  });
+
+  _g('dcs-editor')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-dcs]');
+    if (!b || !_dcs?.preset || b.tagName !== 'BUTTON') return;
+    const azione = b.dataset.dcs;
+    const p = _dcs.preset;
+    if (azione === 'cat-via') {
+      const k = b.closest('.dcs-cat')?.dataset.k;
+      p.categorie = p.categorie.filter((c) => String(c._k) !== k);
+    } else if (azione === 'ch-piu') {
+      const cat = p.categorie.find((c) => String(c._k) === b.dataset.k);
+      if (cat) cat.canali.push({ _k: ++_dcsChiave, nome: L('nuovo-canale', 'new-channel', 'nuevo-canal'), tipo: 'testo', argomento: '', permessi: [] });
+    } else if (azione === 'ch-via') {
+      const dove = _dcsDoveDi(b).split(':');
+      if (dove[0] === 'cima') p.canali = p.canali.filter((c) => String(c._k) !== dove[1]);
+      else {
+        const cat = p.categorie.find((c) => String(c._k) === dove[1]);
+        if (cat) cat.canali = cat.canali.filter((x) => String(x._k) !== dove[2]);
+      }
+    } else if (azione === 'p-piu') {
+      const el = _dcsTrova(b.dataset.dove);
+      if (el) el.permessi.push({ _k: ++_dcsChiave, chi: 'tutti', verso: 'no', perm: (_dcs.permessi || ['scrivere'])[1] || 'scrivere' });
+    } else if (azione === 'p-via') {
+      const riga = b.closest('.dcs-perm');
+      const el = _dcsTrova(riga?.dataset.dove);
+      if (el) el.permessi = el.permessi.filter((r) => String(r._k) !== riga.dataset.k);
+    } else return;
+    _dcsDisegna();
+  });
+
+  const _dcsScritto = (e) => {
+    const t = e.target;
+    const campo = t?.dataset?.dcs;
+    if (!campo || !_dcs?.preset) return;
+    if (campo === 'cat-nome') {
+      const c = _dcsTrova('cat:' + t.closest('.dcs-cat')?.dataset.k);
+      if (c) c.nome = t.value;
+      return;
+    }
+    if (campo.startsWith('ch-')) {
+      const c = _dcsTrova(t.closest('.dcs-ch')?.dataset.dove);
+      if (!c) return;
+      if (campo === 'ch-nome') c.nome = t.value;
+      if (campo === 'ch-arg') c.argomento = t.value;
+      if (campo === 'ch-tipo') c.tipo = t.value;
+      return;
+    }
+    if (campo.startsWith('p-')) {
+      const riga = t.closest('.dcs-perm');
+      const el = _dcsTrova(riga?.dataset.dove);
+      const r = el && (el.permessi || []).find((x) => String(x._k) === riga.dataset.k);
+      if (!r) return;
+      if (campo === 'p-chi') r.chi = t.value === 'tutti' ? 'tutti' : { ruolo: t.value };
+      if (campo === 'p-verso') r.verso = t.value;
+      if (campo === 'p-quale') r.perm = t.value;
+    }
+  };
+  _g('dcs-editor')?.addEventListener('input', _dcsScritto);
+  _g('dcs-editor')?.addEventListener('change', _dcsScritto);
+}
+
 function pannelloTelegram() {
   const tg = stato.telegram || { configurato: false, gruppoOk: false, attivo: false, messaggio: '', botUsername: '', gruppo: '', pinLive: true };
   const msgDefault = '{nome} \u00e8 in diretta!\n\n{titolo}\n{gioco}\n\n{link}';
@@ -19118,6 +19570,7 @@ function caricaDatiScheda(id) {
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }
+  if (id === 'dcserver') { collegaDcServer(); caricaDcServer(); }
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'donazioni') { riempiDonazioni(); caricaStatoDonazioni(true); }
   if (id === 'grafiche') initGrafiche();

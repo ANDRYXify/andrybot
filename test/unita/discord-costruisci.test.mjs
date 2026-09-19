@@ -14,6 +14,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as C from '../../src/features/discord-costruisci.js';
 import { TIPI, improntaDi } from '../../src/features/discord-preset.js';
+import { dallaFotografia } from '../../src/features/discord-catalogo.js';
+import * as api from '../../src/features/discord-api.js';
 
 const GUILD = '900000000000000001';
 const BOT = '700000000000000001';
@@ -333,5 +335,45 @@ test('cosa resta fuori dal preset si sa anche quando non si tocca niente', async
     await C.applica('tok', GUILD, PRESET, opz({ impronta: avanti.impronta }));
     assert.ok(st.canali.some((c) => c.id === C1), 'e andando avanti non si e\' cancellato niente');
     assert.ok(!st.chiamate.some((c) => c.startsWith('DELETE')));
+  } finally { ripulisci(); }
+});
+
+test('«parti dal server che hai» da\' un preset che non ha niente da fare', async () => {
+  // E' la prova che il giro si chiude: se la forma letta e la forma voluta
+  // fossero descritte in due modi diversi, la prima anteprima direbbe «creo
+  // tutto» su un server gia' pieno.
+  const st = casa({ canali: [
+    { id: C1, name: 'Chiacchiere', type: TIPI.categoria },
+    { id: C2, name: 'generale', type: TIPI.testo, parent_id: C1, topic: 'Si parla qui.' },
+    { id: C3, name: 'Salotto', type: TIPI.voce, parent_id: C1 },
+    { id: REGOLE_DC, name: 'in-cima', type: TIPI.testo, parent_id: null },
+  ] });
+  try {
+    const foto = await api.fotografia('tok', GUILD);
+    assert.equal(foto.ok, true, foto.errore);
+    const mio = dallaFotografia(foto);
+    assert.equal(mio.canali.length, 1, 'il canale in cima non si perde per strada');
+    assert.equal(mio.categorie[0].canali.length, 2);
+
+    const a = await C.anteprima('tok', GUILD, mio, { togliere: true });
+    assert.equal(a.vuota, true, 'partendo da com\'e\', non c\'e\' niente da cambiare');
+    assert.deepEqual(a.fuori, [], 'e niente resta fuori dal preset');
+    assert.equal(st.chiamate.filter((c) => /POST|PATCH|DELETE/.test(c)).length, 0);
+  } finally { ripulisci(); }
+});
+
+test('un preset importato non tocca i permessi che il server aveva', async () => {
+  const st = casa({ canali: [
+    { id: C1, name: 'Riservato', type: TIPI.categoria },
+    { id: C2, name: 'staff', type: TIPI.testo, parent_id: C1,
+      permission_overwrites: [{ id: ALTRO, type: 0, allow: '0', deny: '1024' }] },
+  ] });
+  try {
+    const mio = dallaFotografia(await api.fotografia('tok', GUILD));
+    assert.equal(mio.categorie[0].canali[0].permessi, null, 'il preset non li nomina proprio');
+    const e = await C.applica('tok', GUILD, mio, opz());
+    assert.equal(e.niente, true);
+    assert.deepEqual(st.canali.find((c) => c.id === C2).permission_overwrites,
+      [{ id: ALTRO, type: 0, allow: '0', deny: '1024' }], 'e restano identici');
   } finally { ripulisci(); }
 });

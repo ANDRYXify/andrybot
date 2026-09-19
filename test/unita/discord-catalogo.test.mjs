@@ -117,3 +117,56 @@ test('ogni preset del catalogo si risolve senza lasciare pezzi per strada', () =
     assert.equal(quanti, attesi, `${p.id}: risolvendo si e' perso qualcosa`);
   }
 });
+
+test('piu\' righe sulla stessa persona diventano un permesso solo', () => {
+  // Discord ha UN permesso per ogni destinatario su ogni canale. Mandandone
+  // due, il secondo cancella il primo: «non puo' scrivere» sparirebbe appena
+  // aggiungi «non puo' reagire», e sembrerebbe un capriccio del pannello.
+  const r = C.risolvi(unCanale([
+    { chi: 'tutti', nega: ['scrivere'] },
+    { chi: 'tutti', nega: ['reagire'] },
+  ]), { guildId: GUILD, ruoli });
+  assert.equal(permessiDi(r).length, 1);
+  assert.equal(permessiDi(r)[0].deny, String(2048n | 64n));
+});
+
+test('quello che hai concesso non si nega', () => {
+  // Se lo stesso permesso finisce di qua e di la', vince il «può». E' l'unica
+  // regola che non dipende dall'ordine in cui hai scritto le righe.
+  const a = C.risolvi(unCanale([{ chi: 'tutti', nega: ['vedere'] }, { chi: 'tutti', da: ['vedere'] }]), { guildId: GUILD, ruoli });
+  const b = C.risolvi(unCanale([{ chi: 'tutti', da: ['vedere'] }, { chi: 'tutti', nega: ['vedere'] }]), { guildId: GUILD, ruoli });
+  assert.deepEqual(permessiDi(a), permessiDi(b), 'scrivendole al contrario esce la stessa cosa');
+  assert.equal(permessiDi(a)[0].allow, '1024');
+  assert.equal(permessiDi(a)[0].deny, '0');
+});
+
+test('il preset che arriva dal pannello si rifa\' da zero', () => {
+  const sporco = {
+    categorie: [
+      { nome: '  Benvenuto  ', canali: [
+        { nome: 'regole', tipo: 'astronave', argomento: 'x'.repeat(5000), permessi: [{ chi: 'tutti', nega: ['scrivere', 'volare'] }] },
+        { nome: '   ' },
+      ] },
+      { nome: '' },
+    ],
+    canali: [{ nome: 'in-cima' }],
+    cosaCiFaQui: true,
+  };
+  const p = C.normalizzaPreset(sporco);
+  assert.deepEqual(Object.keys(p).sort(), ['canali', 'categorie'], 'i campi che non esistono non passano');
+  assert.equal(p.categorie.length, 1, 'una categoria senza nome non e\' una categoria');
+  assert.equal(p.categorie[0].nome, 'Benvenuto');
+  assert.equal(p.categorie[0].canali.length, 1);
+  assert.equal(p.categorie[0].canali[0].tipo, 'testo', 'un tipo che non esiste diventa quello normale');
+  assert.equal(p.categorie[0].canali[0].argomento.length, 1024);
+  assert.deepEqual(p.categorie[0].canali[0].permessi, [{ chi: 'tutti', da: [], nega: ['scrivere'] }], 'i permessi inventati cadono');
+  assert.equal(p.canali.length, 1);
+});
+
+test('un preset enorme non passa: i limiti non sono un consiglio', () => {
+  const tante = Array.from({ length: 50 }, (_, i) => ({ nome: 'cat' + i, canali: [{ nome: 'a' }, { nome: 'b' }, { nome: 'c' }, { nome: 'd' }] }));
+  const p = C.normalizzaPreset({ categorie: tante });
+  assert.equal(p.categorie.length, C.MAX_CATEGORIE);
+  const quanti = p.categorie.reduce((t, c) => t + c.canali.length, 0);
+  assert.ok(quanti <= C.MAX_CANALI, `canali: ${quanti}`);
+});
