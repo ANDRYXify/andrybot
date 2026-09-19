@@ -4538,15 +4538,35 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // Se Discord non risponde, restano vuoti e nel pannello si puo' parlare
     // solo di «tutti»: e' meno, ma e' vero. Un elenco finto sarebbe peggio.
     let ruoli = [];
+    // I canali VERI del server, con il loro id: servono alle impostazioni, che
+    // nominano un canale preciso — quello delle regole, quello di sistema. Il
+    // nome non basta: Discord vuole l'id, e farlo scrivere a mano sarebbe
+    // chiedere di copiare un numero da diciotto cifre.
+    let canaliVeri = [];
+    let impostazioni = null;
     if (pronto) {
-      const r = await dcApi.ruoli(token, guild);
+      const [r, cc, ss] = await Promise.all([
+        dcApi.ruoli(token, guild).catch(() => ({ ok: false })),
+        dcApi.canali(token, guild).catch(() => ({ ok: false })),
+        dcApi.server(token, guild).catch(() => ({ ok: false })),
+      ]);
       if (r.ok) ruoli = r.ruoli.filter((x) => x.id !== guild).map((x) => ({ id: x.id, nome: x.nome }));
+      if (cc.ok) {
+        canaliVeri = (cc.canali || [])
+          .filter((x) => [0, 2, 5, 13, 15, 16].includes(Number(x.tipo)))
+          .map((x) => ({ id: x.id, nome: x.nome, voce: Number(x.tipo) === 2 || Number(x.tipo) === 13 }));
+      }
+      if (ss.ok) impostazioni = ss.impostazioni;
     }
     res.json({
       pronto,
       guildNome: String(c?.guild_nome || ''),
       preset: c?.preset || null,
       ruoli,
+      canaliVeri,
+      // Com'e' messo ADESSO: serve al pannello per dire «questo campo e' gia'
+      // cosi'» invece di far cambiare una cosa che non cambia niente.
+      impostazioni,
       catalogo: dcCatalogo.CATALOGO,
       // QUALI permessi esistono lo dice il catalogo; COME si chiamano in tre
       // lingue lo sa il pannello. Un permesso senza parola mostrerebbe il suo

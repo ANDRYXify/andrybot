@@ -28,6 +28,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Sul sito, chi cerca un bot solo per il suo Discord lo trova subito sotto ai tasti di registrazione. [vai: pagina]
 - Ogni ruolo dato o tolto adesso lascia scritto il perché nel registro del tuo server, invece di una riga muta. [vai: ruoli]
 - Il costruttore sa fare anche canali annunci, forum con i tag, media e palco, con lentezza e durata dei fili. [vai: dcserver]
+- Le impostazioni del tuo server Discord si cambiano da qui: chi può scrivere appena entra, il filtro delle immagini, i canali di sistema e regole, l'angolo AFK. [vai: dcserver]
+- Il freno d'emergenza c'è: metti in pausa tutti gli inviti con una spunta, e li riapri quando vuoi. [vai: dcserver]
 - Chi un canale non ce l’ha entra con Discord e basta: costruisce il suo server da qui, e di dirette e overlay non vede nemmeno le schede. [vai: dcserver]
 - Dalla scheda di Discord adesso copi l’indirizzo della tua porta d’ingresso e la apri, invece di leggerla dentro una frase. [vai: ruoli]
 - Sostenere il progetto ha un indirizzo solo, corto, e dal sito ci si arriva: prima la pagina esisteva e non ci portava nessuno.

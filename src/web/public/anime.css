@@ -283,6 +283,10 @@ body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .
 }
 .switch-canale-menu[hidden] { display: none; }
 
+.dcs-imp-campo { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+.dcs-imp-campo .suggerimento { display: block; }
+.dcs-imp-campo select { width: 100%; }
+
 .tendina { position: relative; display: inline-flex; }
 .tendina-vero {
   position: absolute; width: 1px; height: 1px; margin: 0; padding: 0;
@@ -2046,7 +2050,6 @@ details.carta.sez > summary { padding-top: 0; align-items: flex-start; }
 details.carta.sez > summary > h3 { margin-top: calc(-1 * var(--orlo-3)); margin-bottom: 0; }
 details.carta.sez > summary::before { align-self: center; margin-top: 0; }
 details.carta.sez[open] > summary { border-bottom: 0; margin-bottom: .45rem; }
-
 
 a:focus-visible, button:focus-visible, .btn:focus-visible, [role="button"]:focus-visible,
 summary:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible,

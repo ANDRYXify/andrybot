@@ -49,6 +49,7 @@ const MOTIVO = Object.freeze({
   ruoloCreato: 'creato dal costruttore, come da traccia',
   ruoloSistemato: 'rimesso come dice la traccia',
   ruoloTolto: 'non e\' nella traccia, e la modalita\' distruttiva era accesa',
+  server: 'impostazioni rimesse come dice la traccia',
 });
 
 export const PAUSA_MS = 350;
@@ -153,6 +154,7 @@ export async function applica(token, guild, preset, { togliere = false, impronta
   // rileggere tutto il server.
   const esito = { creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, nomiTolti: [],
     ruoliCreati: 0, ruoliSistemati: 0, ruoliTolti: 0, nomiRuoliTolti: [],
+    serverSistemato: 0, serverDice: [],
     canaleAvvisi: d.avvisi?.id ? String(d.avvisi.id) : '' };
   const passo = async (fn, conta) => {
     if (esito.fermo) return null;
@@ -226,6 +228,17 @@ export async function applica(token, guild, preset, { togliere = false, impronta
     }
     if (!Object.keys(cambia).length) continue;
     await passo(() => api.sistemaCanale(token, s.id, cambia, MOTIVO.sistemato), 'sistemati');
+  }
+
+  // LE IMPOSTAZIONI DEL SERVER, dopo i canali e prima di cio' che si toglie.
+  //
+  // Dopo i canali perche' alcune li nominano — il canale delle regole, quello
+  // di sistema — e nominarli prima che esistano vorrebbe dire nominare il
+  // nulla. Prima delle rimozioni perche' se qualcosa va storto piu' in la', il
+  // server e' comunque rimasto com'era chiesto, e non a meta'.
+  if (!esito.fermo && d.server?.cambia) {
+    const x = await passo(() => api.sistemaServer(token, guild, d.server.cambia, MOTIVO.server), 'serverSistemato');
+    if (x?.ok) esito.serverDice = d.server.dice || [];
   }
 
   if (togliere) {

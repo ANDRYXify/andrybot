@@ -57,8 +57,26 @@ test('al bot si chiedono solo i permessi che usiamo, e il numero non si scrive a
   const r = /export const PERMESSI_BOT = String\(([A-Z_ |]+)\);/.exec(API);
   assert.ok(r, 'i permessi dell\'invito si compongono da costanti con un nome');
   const chiesti = r[1].split('|').map((x) => x.trim()).sort();
-  assert.deepEqual(chiesti, ['CREATE_INSTANT_INVITE', 'DA_DARE', 'EMBED_LINKS', 'MANAGE_CHANNELS', 'MANAGE_ROLES', 'SEND_MESSAGES', 'VIEW_CHANNEL'],
+  assert.deepEqual(chiesti, ['CREATE_INSTANT_INVITE', 'DA_DARE', 'EMBED_LINKS', 'MANAGE_CHANNELS', 'MANAGE_GUILD', 'MANAGE_ROLES', 'SEND_MESSAGES', 'VIEW_CHANNEL'],
     'quello che il bot usa, piu\' quello che deve poter passare: nient\'altro');
+
+  // MANAGE_GUILD e' entrato dopo, ed e' il piu' largo dei cinque: con quello si
+  // cambiano le impostazioni del server, la schermata di benvenuto, le domande
+  // d'ingresso e la moderazione automatica — cioe' meta' di cosa vuol dire
+  // tenere su un server. Sta nell'invito NORMALE, non fra i pieni poteri,
+  // perche' chi entra col solo Discord non ha altro: senza, per lui meta' del
+  // prodotto non esisterebbe.
+  //
+  // Il prezzo: permetterebbe anche di rifare il vestito del server (nome,
+  // icona, stendardo) e di cancellare inviti altrui. Non lo facciamo, e non e'
+  // una promessa: `scripts/verifica-poteri.mjs` controlla i CAMPI che finiscono
+  // in PATCH /guilds/{id}, non solo quale porta si chiama.
+  assert.match(API, /export const MANAGE_GUILD = 1n << 5n;/, 'il bit si scrive come potenza, non come numero');
+  const poteri = readFileSync(join(RAD, 'scripts/verifica-poteri.mjs'), 'utf8');
+  assert.match(poteri, /VIETATI_SUL_SERVER = \[/, 'niente cancello sui campi che rifanno il server');
+  for (const campo of ['name', 'icon', 'vanity_url_code', 'owner_id']) {
+    assert.ok(poteri.includes(`'${campo}'`), `il cancello non guarda «${campo}»`);
+  }
 
   // DUE MOTIVI DIVERSI PER CHIEDERE UN PERMESSO, e non vanno confusi.
   //

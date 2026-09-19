@@ -172,6 +172,11 @@ export async function server(token, guild) {
       system_channel_id: forse(d.system_channel_id),
       community: (d.features || []).includes('COMMUNITY'),
     },
+    // Le impostazioni vere, lette dalla stessa risposta: non costano una
+    // chiamata in piu' e senza di loro la differenza non saprebbe mai dire
+    // «qui il livello di verifica non e' quello che hai chiesto».
+    impostazioni: impostazioniDa(d),
+    caratteristiche: (d.features || []).map(String),
   };
 }
 
@@ -300,6 +305,20 @@ export const CREATE_INSTANT_INVITE = 1n << 0n;   // 1
 // scrive lui nel canale scelto. Per farlo deve vedere il canale, poterci
 // scrivere, e poter far comparire il riquadro — un avviso senza anteprima e'
 // una riga di testo.
+// LE IMPOSTAZIONI DEL SERVER. Con questo si cambiano il livello di verifica,
+// il filtro dei contenuti, i canali di sistema, la pausa agli inviti, la
+// schermata di benvenuto, le domande d'ingresso e la moderazione automatica —
+// cioe' meta' di quello che vuol dire «tenere su un server».
+//
+// E' un permesso grosso: chi lo ha potrebbe anche cambiare nome e icona del
+// server, e cancellare inviti altrui. Il bot non lo fa, e come per gli altri
+// non e' una promessa in un commento: `scripts/verifica-poteri.mjs` controlla
+// che quelle porte non si chiamino da nessuna parte.
+//
+// Sta nell'invito NORMALE e non fra i pieni poteri per una ragione sola: chi
+// entra col solo Discord non ha altro, e senza questo meta' del prodotto per
+// lui non esisterebbe.
+export const MANAGE_GUILD = 1n << 5n;       // 32
 export const VIEW_CHANNEL = 1n << 10n;      // 1024
 export const SEND_MESSAGES = 1n << 11n;     // 2048
 export const EMBED_LINKS = 1n << 14n;       // 16384
@@ -319,7 +338,7 @@ export const EMBED_LINKS = 1n << 14n;       // 16384
 // (`scripts/verifica-poteri.mjs`) che controlla che da nessuna parte, in tutto
 // il codice, si chiami una porta di Discord che quei poteri li ESERCITA.
 // Distribuirli si', usarli mai.
-export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | DA_DARE);
+export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | MANAGE_GUILD | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | DA_DARE);
 
 // I PIENI POTERI, e perche' non sono quelli di prima.
 //
@@ -338,7 +357,7 @@ export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | CREATE_INSTA
 // La lista di prima resta dentro apposta: se un giorno qualcuno toglie
 // l'Amministratore al nostro ruolo, il bot non resta nudo, torna a fare quello
 // che faceva. Un solo bit, e quel giorno smetterebbe di funzionare in silenzio.
-export const PERMESSI_PIENI = String(ADMINISTRATOR | MANAGE_ROLES | MANAGE_CHANNELS | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | DA_DARE);
+export const PERMESSI_PIENI = String(ADMINISTRATOR | MANAGE_ROLES | MANAGE_CHANNELS | MANAGE_GUILD | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | DA_DARE);
 
 // I permessi che il bot ha nel server: l'unione di quelli dei suoi ruoli. Si
 // calcolano da cose che chiediamo GIA' (l'elenco dei ruoli e quelli del bot),
@@ -361,6 +380,7 @@ export const puo = (bits, flag) => {
 export const puoCanali = (bits) => puo(bits, MANAGE_CHANNELS);
 export const puoRuoli = (bits) => puo(bits, MANAGE_ROLES);
 export const puoVedere = (bits) => puo(bits, VIEW_CHANNEL);
+export const puoServer = (bits) => puo(bits, MANAGE_GUILD);
 export const puoScrivere = (bits) => puo(bits, SEND_MESSAGES);
 export const puoIncorniciare = (bits) => puo(bits, EMBED_LINKS);
 // Puo' far entrare qualcuno dalla porta d'ingresso? Chi ha invitato il bot
@@ -409,6 +429,297 @@ export function permessiNelCanale({ ruoli = [], guildId, guild, bot = {}, bits }
   const mia = righe.get(String(bot.id));
   if (mia) { const { a, d } = leggi(mia); base = (base & ~d) | a; }
   return base;
+}
+
+// ------------------------------------------------------ le impostazioni del server
+//
+// Quello che su Discord sta in «Impostazioni server». Non lo teniamo noi: vive
+// li' dentro, e questa e' la porta per leggerlo e cambiarlo.
+//
+// Si manda SOLO quello che la traccia ha detto. Un campo assente non e' «zero»:
+// e' «non mi interessa», e mandarlo lo stesso riscriverebbe una scelta fatta a
+// mano dallo streamer sul suo server, senza che nessuno gliel'abbia chiesto.
+
+// I valori che Discord accetta. Scritti qui e non a numeri sparsi in giro:
+// un 3 dentro una chiamata non dice niente a chi rilegge fra sei mesi.
+export const VERIFICA = Object.freeze({ nessuna: 0, email: 1, cinqueMinuti: 2, dieciMinuti: 3, telefono: 4 });
+export const FILTRO = Object.freeze({ niente: 0, senzaRuoli: 1, tutti: 2 });
+export const NOTIFICHE = Object.freeze({ tutto: 0, soloMenzioni: 1 });
+// I bit di «cosa NON scrivere nel canale di sistema».
+export const ZITTISCI = Object.freeze({
+  ingressi: 1 << 0,
+  boost: 1 << 1,
+  consigli: 1 << 2,
+  adesiviIngresso: 1 << 3,
+  abbonamentiRuolo: 1 << 4,
+  adesiviAbbonamento: 1 << 5,
+});
+// I minuti di inattivita' prima che Discord sposti nel canale AFK. Sono i
+// cinque che accetta: uno diverso lo rifiuta.
+export const ATTESE_AFK = Object.freeze([60, 300, 900, 1800, 3600]);
+
+const sommaZittisci = (z) => Object.entries(ZITTISCI)
+  .reduce((t, [k, v]) => (z && z[k] ? t | v : t), 0);
+
+export function impostazioniDa(g) {
+  const flag = Number(g?.system_channel_flags) || 0;
+  return {
+    verifica: Number(g?.verification_level) || 0,
+    filtro: Number(g?.explicit_content_filter) || 0,
+    notifiche: Number(g?.default_message_notifications) || 0,
+    canaleSistema: g?.system_channel_id ? String(g.system_channel_id) : '',
+    canaleRegole: g?.rules_channel_id ? String(g.rules_channel_id) : '',
+    canaleAvvisiStaff: g?.public_updates_channel_id ? String(g.public_updates_channel_id) : '',
+    canaleSicurezza: g?.safety_alerts_channel_id ? String(g.safety_alerts_channel_id) : '',
+    canaleAfk: g?.afk_channel_id ? String(g.afk_channel_id) : '',
+    attesaAfk: Number(g?.afk_timeout) || 300,
+    barraBoost: !!g?.premium_progress_bar_enabled,
+    lingua: String(g?.preferred_locale || ''),
+    zittisci: Object.fromEntries(Object.entries(ZITTISCI).map(([k, v]) => [k, (flag & v) !== 0])),
+    // le levette che su Discord sono «caratteristiche» e non campi
+    community: (g?.features || []).includes('COMMUNITY'),
+    invitiFermi: (g?.features || []).includes('INVITES_DISABLED'),
+  };
+}
+
+export async function sistemaServer(token, guild, v, perche = '') {
+  if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
+  const corpo = {};
+  if (v?.verifica !== undefined) corpo.verification_level = Math.max(0, Math.min(4, Number(v.verifica) || 0));
+  if (v?.filtro !== undefined) corpo.explicit_content_filter = Math.max(0, Math.min(2, Number(v.filtro) || 0));
+  if (v?.notifiche !== undefined) corpo.default_message_notifications = v.notifiche ? 1 : 0;
+  if (v?.canaleSistema !== undefined) corpo.system_channel_id = idOk(v.canaleSistema) ? String(v.canaleSistema) : null;
+  if (v?.canaleRegole !== undefined) corpo.rules_channel_id = idOk(v.canaleRegole) ? String(v.canaleRegole) : null;
+  if (v?.canaleAvvisiStaff !== undefined) corpo.public_updates_channel_id = idOk(v.canaleAvvisiStaff) ? String(v.canaleAvvisiStaff) : null;
+  if (v?.canaleSicurezza !== undefined) corpo.safety_alerts_channel_id = idOk(v.canaleSicurezza) ? String(v.canaleSicurezza) : null;
+  if (v?.canaleAfk !== undefined) corpo.afk_channel_id = idOk(v.canaleAfk) ? String(v.canaleAfk) : null;
+  if (v?.attesaAfk !== undefined) {
+    const a = Number(v.attesaAfk) || 300;
+    corpo.afk_timeout = ATTESE_AFK.includes(a) ? a : 300;
+  }
+  if (v?.barraBoost !== undefined) corpo.premium_progress_bar_enabled = !!v.barraBoost;
+  if (v?.lingua) corpo.preferred_locale = String(v.lingua).slice(0, 12);
+  if (v?.zittisci !== undefined) corpo.system_channel_flags = sommaZittisci(v.zittisci);
+  // «metti in pausa tutti gli inviti» e' una caratteristica, non un campo: si
+  // accende aggiungendola all'elenco e si spegne togliendola. Serve l'elenco
+  // di adesso, se no le altre caratteristiche sparirebbero con lei.
+  if (v?.invitiFermi !== undefined && Array.isArray(v.featuresOra)) {
+    const f = new Set(v.featuresOra);
+    if (v.invitiFermi) f.add('INVITES_DISABLED'); else f.delete('INVITES_DISABLED');
+    corpo.features = [...f];
+  }
+  if (!Object.keys(corpo).length) return { ok: true, dati: null, niente: true };
+  return chiama(token, `/guilds/${guild}`, { metodo: 'PATCH', corpo, perche });
+}
+
+// ------------------------------------------------------ la schermata di benvenuto
+// Fino a cinque canali spiegati a chi entra. Serve che il server sia Community.
+export async function benvenuto(token, guild) {
+  if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
+  const r = await chiama(token, `/guilds/${guild}/welcome-screen`);
+  if (!r.ok) return r;
+  return {
+    ok: true,
+    testo: String(r.dati?.description || ''),
+    canali: (r.dati?.welcome_channels || []).map((c) => ({
+      canale: String(c?.channel_id || ''),
+      testo: String(c?.description || ''),
+      emoji: String(c?.emoji_name || ''),
+    })).filter((c) => c.canale),
+  };
+}
+
+export async function sistemaBenvenuto(token, guild, v, perche = '') {
+  if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
+  const corpo = {};
+  if (v?.acceso !== undefined) corpo.enabled = !!v.acceso;
+  if (v?.testo !== undefined) corpo.description = String(v.testo || '').slice(0, 140);
+  if (Array.isArray(v?.canali)) {
+    corpo.welcome_channels = v.canali.slice(0, 5)
+      .filter((c) => idOk(c?.canale))
+      .map((c) => ({
+        channel_id: String(c.canale),
+        description: String(c.testo || '').slice(0, 50),
+        emoji_name: c.emoji ? String(c.emoji).slice(0, 32) : null,
+        emoji_id: null,
+      }));
+  }
+  if (!Object.keys(corpo).length) return { ok: true, dati: null, niente: true };
+  return chiama(token, `/guilds/${guild}/welcome-screen`, { metodo: 'PATCH', corpo, perche });
+}
+
+// ------------------------------------------------------ le domande d'ingresso
+// Chi entra risponde, e ogni risposta gli apre canali e gli da' ruoli. E' la
+// cosa che Discord chiama «onboarding», e fatta bene e' meta' del lavoro di un
+// server: uno arriva, dice cosa gli interessa, e trova solo quello.
+export const DOMANDA = Object.freeze({ scelte: 0, tendina: 1 });
+
+export async function ingresso(token, guild) {
+  if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
+  const r = await chiama(token, `/guilds/${guild}/onboarding`);
+  if (!r.ok) return r;
+  return {
+    ok: true,
+    acceso: !!r.dati?.enabled,
+    modo: Number(r.dati?.mode) || 0,
+    canaliDiPartenza: (r.dati?.default_channel_ids || []).map(String),
+    domande: (r.dati?.prompts || []).map((p) => ({
+      id: String(p?.id || ''),
+      titolo: String(p?.title || ''),
+      tipo: Number(p?.type) || 0,
+      unaSola: !!p?.single_select,
+      obbligatoria: !!p?.required,
+      allIngresso: p?.in_onboarding !== false,
+      risposte: (p?.options || []).map((o) => ({
+        id: String(o?.id || ''),
+        titolo: String(o?.title || ''),
+        testo: String(o?.description || ''),
+        emoji: String(o?.emoji?.name || ''),
+        canali: (o?.channel_ids || []).map(String),
+        ruoli: (o?.role_ids || []).map(String),
+      })),
+    })),
+  };
+}
+
+export async function sistemaIngresso(token, guild, v, perche = '') {
+  if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
+  const corpo = {
+    enabled: !!v?.acceso,
+    mode: Number(v?.modo) || 0,
+    default_channel_ids: (v?.canaliDiPartenza || []).filter(idOk).map(String),
+    prompts: (v?.domande || []).slice(0, 10).map((p, i) => ({
+      ...(idOk(p?.id) ? { id: String(p.id) } : { id: String(i + 1) }),
+      title: String(p?.titolo || '').slice(0, 100),
+      type: Number(p?.tipo) === 1 ? 1 : 0,
+      single_select: !!p?.unaSola,
+      required: !!p?.obbligatoria,
+      in_onboarding: p?.allIngresso !== false,
+      options: (p?.risposte || []).slice(0, 50).map((o, k) => ({
+        ...(idOk(o?.id) ? { id: String(o.id) } : { id: String(k + 1) }),
+        title: String(o?.titolo || '').slice(0, 50),
+        description: String(o?.testo || '').slice(0, 100) || null,
+        ...(o?.emoji ? { emoji: { name: String(o.emoji).slice(0, 32), id: null, animated: false } } : {}),
+        channel_ids: (o?.canali || []).filter(idOk).map(String),
+        role_ids: (o?.ruoli || []).filter(idOk).map(String),
+      })),
+    })),
+  };
+  return chiama(token, `/guilds/${guild}/onboarding`, { metodo: 'PUT', corpo, perche });
+}
+
+// ------------------------------------------------------ la moderazione automatica
+//
+// AutoMod e' di Discord e gira DENTRO Discord: blocca il messaggio prima che
+// esista, cosa che un bot in ascolto non puo' fare — lui lo vede dopo, e
+// cancellarlo e' un'altra cosa (e un potere che non usiamo).
+//
+// Quante regole si possono avere, per server: parole chiave 6, spam 1, liste
+// pronte 1, menzioni 1, profilo 1. Non e' una nostra prudenza, e' il tetto di
+// Discord: chiederne una in piu' torna un errore, e conviene saperlo prima.
+export const TIPI_AUTOMOD = Object.freeze({ parole: 1, spam: 3, liste: 4, menzioni: 5, profilo: 6 });
+export const TETTO_AUTOMOD = Object.freeze({ parole: 6, spam: 1, liste: 1, menzioni: 1, profilo: 1 });
+export const LISTE_PRONTE = Object.freeze({ parolacce: 1, sesso: 2, insulti: 3 });
+// Cosa fa quando scatta. `blocca` non chiede niente, `avvisa` vuole un canale,
+// `pausa` vuole i secondi e funziona solo su parole e menzioni.
+const AZIONI = Object.freeze({ blocca: 1, avvisa: 2, pausa: 3, isola: 4 });
+export const PAUSA_MAX = 2419200;   // 28 giorni, il massimo che Discord accetta
+
+const azioniVerso = (a) => {
+  const out = [];
+  if (a?.blocca) out.push({ type: AZIONI.blocca, metadata: { custom_message: String(a.messaggio || '').slice(0, 150) || undefined } });
+  if (idOk(a?.avvisaIn)) out.push({ type: AZIONI.avvisa, metadata: { channel_id: String(a.avvisaIn) } });
+  if (Number(a?.pausa) > 0) out.push({ type: AZIONI.pausa, metadata: { duration_seconds: Math.min(PAUSA_MAX, Number(a.pausa)) } });
+  if (a?.isola) out.push({ type: AZIONI.isola, metadata: {} });
+  return out;
+};
+
+const azioniDa = (lista) => {
+  const out = {};
+  for (const a of (Array.isArray(lista) ? lista : [])) {
+    const t = Number(a?.type);
+    if (t === AZIONI.blocca) { out.blocca = true; if (a?.metadata?.custom_message) out.messaggio = String(a.metadata.custom_message); }
+    if (t === AZIONI.avvisa && a?.metadata?.channel_id) out.avvisaIn = String(a.metadata.channel_id);
+    if (t === AZIONI.pausa) out.pausa = Number(a?.metadata?.duration_seconds) || 0;
+    if (t === AZIONI.isola) out.isola = true;
+  }
+  return out;
+};
+
+export async function regoleAuto(token, guild) {
+  if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
+  const r = await chiama(token, `/guilds/${guild}/auto-moderation/rules`);
+  if (!r.ok) return r;
+  const nomi = Object.fromEntries(Object.entries(TIPI_AUTOMOD).map(([k, v]) => [v, k]));
+  return {
+    ok: true,
+    regole: (Array.isArray(r.dati) ? r.dati : []).map((x) => ({
+      id: String(x?.id || ''),
+      nome: String(x?.name || ''),
+      tipo: nomi[Number(x?.trigger_type)] || '',
+      accesa: !!x?.enabled,
+      parole: (x?.trigger_metadata?.keyword_filter || []).map(String),
+      espressioni: (x?.trigger_metadata?.regex_patterns || []).map(String),
+      liste: (x?.trigger_metadata?.presets || []).map((p) => Object.keys(LISTE_PRONTE).find((k) => LISTE_PRONTE[k] === Number(p)) || '').filter(Boolean),
+      passano: (x?.trigger_metadata?.allow_list || []).map(String),
+      tettoMenzioni: Number(x?.trigger_metadata?.mention_total_limit) || 0,
+      raid: !!x?.trigger_metadata?.mention_raid_protection_enabled,
+      azioni: azioniDa(x?.actions),
+      esentiRuoli: (x?.exempt_roles || []).map(String),
+      esentiCanali: (x?.exempt_channels || []).map(String),
+    })).filter((x) => x.tipo),
+  };
+}
+
+function corpoAutomod(v) {
+  const tipo = TIPI_AUTOMOD[String(v?.tipo)] || TIPI_AUTOMOD.parole;
+  const meta = {};
+  if (tipo === TIPI_AUTOMOD.parole || tipo === TIPI_AUTOMOD.profilo) {
+    meta.keyword_filter = (v?.parole || []).slice(0, 1000).map((x) => String(x).slice(0, 60)).filter(Boolean);
+    meta.regex_patterns = (v?.espressioni || []).slice(0, 10).map((x) => String(x).slice(0, 260)).filter(Boolean);
+    meta.allow_list = (v?.passano || []).slice(0, 100).map((x) => String(x).slice(0, 60)).filter(Boolean);
+  }
+  if (tipo === TIPI_AUTOMOD.liste) {
+    meta.presets = (v?.liste || []).map((k) => LISTE_PRONTE[String(k)]).filter(Boolean);
+    meta.allow_list = (v?.passano || []).slice(0, 1000).map((x) => String(x).slice(0, 60)).filter(Boolean);
+  }
+  if (tipo === TIPI_AUTOMOD.menzioni) {
+    meta.mention_total_limit = Math.max(1, Math.min(50, Number(v?.tettoMenzioni) || 5));
+    meta.mention_raid_protection_enabled = !!v?.raid;
+  }
+  const corpo = {
+    name: String(v?.nome || '').slice(0, 100) || 'SocialBot',
+    event_type: String(v?.tipo) === 'profilo' ? 2 : 1,
+    trigger_type: tipo,
+    enabled: v?.accesa !== false,
+    actions: azioniVerso(v?.azioni),
+    exempt_roles: (v?.esentiRuoli || []).slice(0, 20).filter(idOk).map(String),
+    exempt_channels: (v?.esentiCanali || []).slice(0, 50).filter(idOk).map(String),
+  };
+  if (Object.keys(meta).length) corpo.trigger_metadata = meta;
+  // Una regola senza nessuna azione non fa niente: e' peggio di non averla,
+  // perche' sembra accesa. Se non l'hanno detto, almeno blocca.
+  if (!corpo.actions.length) corpo.actions = [{ type: AZIONI.blocca, metadata: {} }];
+  return corpo;
+}
+
+export async function creaRegolaAuto(token, guild, v, perche = '') {
+  if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
+  const r = await chiama(token, `/guilds/${guild}/auto-moderation/rules`, { metodo: 'POST', corpo: corpoAutomod(v), perche });
+  if (!r.ok) return r;
+  return { ok: true, id: String(r.dati?.id || '') };
+}
+
+export async function sistemaRegolaAuto(token, guild, id, v, perche = '') {
+  if (!idOk(guild) || !idOk(id)) return { ok: false, errore: 'id non valido' };
+  const corpo = corpoAutomod(v);
+  delete corpo.trigger_type;   // il tipo di una regola non si cambia: si rifa'
+  return chiama(token, `/guilds/${guild}/auto-moderation/rules/${id}`, { metodo: 'PATCH', corpo, perche });
+}
+
+export async function togliRegolaAuto(token, guild, id, perche = '') {
+  if (!idOk(guild) || !idOk(id)) return { ok: false, errore: 'id non valido' };
+  return chiama(token, `/guilds/${guild}/auto-moderation/rules/${id}`, { metodo: 'DELETE', perche });
 }
 
 // QUANDO, da un id. Dentro uno snowflake di Discord c'e' il momento in cui e'
@@ -753,6 +1064,8 @@ export async function fotografia(token, guild) {
   return {
     ok: true,
     guild: s.guild,
+    impostazioni: s.impostazioni,
+    caratteristiche: s.caratteristiche,
     ruoli: r.ruoli,
     canali: c.canali,
     bot: { id: me.id, nome: me.nome, ruoli: me.ruoli, livello },
