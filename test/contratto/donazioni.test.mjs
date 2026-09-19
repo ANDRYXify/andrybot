@@ -267,10 +267,17 @@ test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le o
   assert.ok(SRV.includes("if (!config.donaHost || String(req.hostname || '').toLowerCase() !== config.donaHost) return next();") && SRV.includes("req.url = '/dona/' + m[1].toLowerCase()"), 'con il sottodominio, dona.<dominio>/<login> si traduce prima delle rotte, e il nome si legge a ogni richiesta');
   // La sonda e' una sola per tutti gli indirizzi corti (dona, sostieni): quello
   // che conta non e' come si chiama la funzione, e' che senza la variabile il
-  // nome si provi da solo nel DNS e si riprovi finche' non risponde.
+  // nome si provi da solo e si riprovi finche' non risponde.
+  //
+  // Prima qui c'era scritto «nel DNS», ed era la cosa sbagliata da fissare: il
+  // DNS rispondeva benissimo mentre davanti a quel nome non c'era ancora un
+  // certificato, e il sito offriva un link che dava «connessione non sicura».
+  // Adesso si bussa all'indirizzo in HTTPS — il dettaglio sta in
+  // test/contratto/indirizzo-vivo.test.mjs, qui basta che la sonda ci sia e
+  // che accenda l'indirizzo delle donazioni.
   assert.ok(SRV.includes("const candidatoDona = !config.donaHost && !config.donaHostSpento ? donazioni.candidatoHost(config.baseUrl, 'dona') : '';"), 'il candidato si costruisce dal dominio del sito');
-  assert.match(SRV, /const sondaHost = \(candidato, metti, come\) => \{[\s\S]*dns\.lookup\(candidato\)[\s\S]*setTimeout\(prova, 10 \* 60_000\)\.unref\?\.\(\)/,
-    'senza DONA_HOST il nome si prova da solo nel DNS, ogni dieci minuti finche\' non risponde');
+  assert.match(SRV, /const sondaHost = \(candidato, metti, come\) => \{[\s\S]*setTimeout\(prova, 10 \* 60_000\)\.unref\?\.\(\)/,
+    'senza DONA_HOST il nome si prova da solo, ogni dieci minuti finche\' non risponde');
   assert.match(SRV, /sondaHost\(candidatoDona, \(h\) => \{ config\.donaHost = h; \}/, 'e quando risponde, da quel momento si usa');
   assert.ok(leggi('src/config.js').includes("donaHostSpento: /^(no|off)$/i.test(env('DONA_HOST', ''))"), 'e si puo\' spegnere con DONA_HOST=no');
   assert.match(leggi('Caddyfile'), /^socialbot\.live,[^{]*\bdona\.socialbot\.live\b[^{]*\{/m, 'e Caddy conosce il nome');

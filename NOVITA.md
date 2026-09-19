@@ -38,6 +38,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Vuoi che il server diventi esattamente la traccia? C'è una modalità apposta: la accendi tu, dura dieci minuti e si spegne da sola, e intanto la pagina cambia colore. [vai: dcserver]
 - Quando stai per cancellare un canale in cui si parlava ancora, o più di dieci cose insieme, ti chiedo di scrivere il nome del server: su Discord non tornano. [vai: dcserver]
 - Di ogni passaggio del costruttore resta scritto chi è stato e cosa ha fatto, coi nomi di quello che è sparito. È l'unico posto dove quei nomi restano. [vai: dcserver]
+- Quando incolli il link della pagina per dare una mano al progetto, l'anteprima adesso parla di quella pagina invece che del bot in generale.
 
 ## 2026-09-18
 

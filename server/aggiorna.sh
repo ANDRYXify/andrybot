@@ -161,6 +161,38 @@ fi
 passo "Ricostruisco e riavvio"
 docker compose up -d --build
 
+# ---- 6b. LA PORTA D'INGRESSO RILEGGE LA SUA CONFIGURAZIONE ----
+#
+# Il Caddyfile e' montato come FILE dentro il container. Cambiarne il contenuto
+# non cambia la definizione del container, quindi `docker compose up -d` non lo
+# ricrea: Caddy continua a servire la configurazione che aveva letto all'avvio.
+#
+# Il risultato non somiglia a un guasto. Il sito sta su, tutto risponde, e
+# soltanto il nome NUOVO non esiste — per lui Caddy non ha mai chiesto il
+# certificato, quindi il browser dice «connessione non sicura» e chi guarda
+# pensa a un problema di certificati. E' successo davvero con sostieni.
+#
+# Si ricarica sempre, non solo quando il file e' cambiato: una ricarica a vuoto
+# non costa niente, e «ricordarsi di farla quando serve» e' esattamente la cosa
+# che non si ricorda. Prima si VALIDA: se la configurazione nuova e' rotta non
+# si ricarica niente, e quella di prima resta a servire il sito.
+passo "La porta d'ingresso rilegge la configurazione"
+if docker compose ps --status running 2>/dev/null | grep -q caddy; then
+  if docker compose exec -T caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1; then
+    if docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; then
+      echo "configurazione riletta ✓ — un nome nuovo ci mette qualche secondo a prendersi il certificato."
+    else
+      echo "ATTENZIONE: la ricarica non e' riuscita. Il sito gira con la configurazione di prima."
+    fi
+  else
+    echo "ATTENZIONE: il Caddyfile nuovo NON e' valido, quindi non l'ho caricato."
+    echo "Il sito resta su con quello di prima. Per vedere l'errore:"
+    echo "    docker compose exec caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile"
+  fi
+else
+  echo "Caddy non sta girando: salto."
+fi
+
 # ---- 7. è tornato su davvero? ------------------------------
 # Se non torna su, si TORNA INDIETRO DA SOLI: chi aggiorna da una console
 # scomoda non deve battere a mano un comando lungo con il sito giù.
