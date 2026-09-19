@@ -1104,7 +1104,7 @@ export class BotManager {
     // la classifica dei Bit tenuta in memoria non vale piu': un cheer e' l'unico
     // momento in cui puo' essere cambiata, quindi e' l'unico in cui vale la pena
     // richiederla. Cosi' chi scrive «!bit» appena dopo si vede gia' dentro.
-    if (type === 'channel.cheer') { try { bit.scorda(channel); } catch { /* niente */ } }
+    if (type === 'channel.cheer') { try { bit.scorda(channel); this._classificaBitInScena(channel); } catch { /* niente */ } }
     // anti-bot: follow-bot (raffiche + nomi noti) e hate-raid
     try {
       if (type === 'channel.follow') this.antibot?.onFollow(ev);
@@ -1115,6 +1115,22 @@ export class BotManager {
     catch (e) { log.error(`#${channel} moduli evento:`, e?.message || e); }
     // plugin operatore (opzionali)
     try { this.bus?.emit('event', ev); } catch (e) { log.debug('bus event:', e?.message || e); }
+  }
+
+  // LA CLASSIFICA DEI BIT IN SCENA, spinta quando cambia — cioe' quando passa un
+  // cheer, l'unico momento in cui puo' essere cambiata. L'overlay se la chiede
+  // una volta al caricamento, poi resta fermo ad ascoltare: nessuno interroga
+  // Twitch a tempo per una cosa che per ore non si muove.
+  //
+  // Se non c'e' nessuna fonte OBS collegata non si chiede niente: sarebbe una
+  // chiamata a Twitch per una scena che nessuno sta guardando. E un «non lo so»
+  // non si manda: l'overlay terrebbe le righe di prima, che e' la cosa giusta.
+  _classificaBitInScena(channel) {
+    const cfg = streamers.get(channel)?.settings?.overlayBit;
+    if (!cfg?.attivo || !this.effects?.hasClients?.(channel)) return;
+    bit.classifica(this.helix, channel, { periodo: cfg.periodo || 'month' })
+      .then((righe) => { if (righe) this.effects?.emit?.(channel, { tipo: 'bit', righe: righe.slice(0, 10) }); })
+      .catch(() => { /* alla prossima */ });
   }
 
   // Fonte UNICA di verità per lo stato live/offline (arriva sia da EventSub,

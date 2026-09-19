@@ -647,6 +647,7 @@ function ricevi(m) {
     else if (dati.tipo === 'goal') { MIO.goals = Array.isArray(dati.goals) ? dati.goals : MIO.goals; goal(MIO.goals, dati.conti || {}); }
     else if (dati.tipo === 'timer') { MIO.timerFine = Number(dati.fine) || MIO.timerFine; disegnaTimer(); }
     else if (dati.tipo === 'treno') { MIO.trenoStato = dati.treno || null; disegnaTreno(); }
+    else if (dati.tipo === 'bit') { if (Array.isArray(dati.righe)) MIO.bitRighe = dati.righe; disegnaBit(); }
     else if (dati.tipo === 'tema') caricaTema();
     else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
     else if (dati.tipo === 'contatore') contatore(dati);
@@ -1168,6 +1169,76 @@ function disegnaTreno() {
   if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
 }
 
+const bitEl = {};
+const BIT_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4v-7H4z"/><path d="M10 20h4V6h-4z"/><path d="M16 20h4v-10h-4z"/></svg>';
+
+let bitInVolo = false;
+async function chiediBit() {
+  if (bitInVolo) return;
+  bitInVolo = true;
+  try {
+    const r = await fetch('/overlay/' + encodeURIComponent(login) + '/bit' + location.search);
+    if (r.ok) {
+      const d = await r.json();
+      if (Array.isArray(d && d.righe)) MIO.bitRighe = d.righe;
+    }
+  } catch (e) { /* niente: resta quello che c'era */ }
+  bitInVolo = false;
+  disegnaBit();
+}
+
+function disegnaBit() {
+  const cfg = MIO.bit;
+  const righe = Array.isArray(MIO.bitRighe) ? MIO.bitRighe : null;
+  if (!cfg || !cfg.attivo || !mostra('bit') || !righe || !righe.length) return togliBit();
+  let el = bitEl.n;
+  const nato = !el;
+  if (!el) {
+    el = document.createElement('div');
+    el.innerHTML = '<div class="bt-testa"><span class="bt-ico">' + BIT_ICO + '</span><span class="bt-tit"></span></div><ol class="bt-righe"></ol>';
+    bitEl.n = el;
+  }
+  posa(wboxes[cfg.posizione] || wboxes['alto-sinistra'] || document.body, el);
+  const st = cfg.stile || {};
+  el.className = 'ovl-widget ovl-bit dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna')
+    + (el.classList.contains('dentro') ? ' dentro' : '');
+  applicaVars(el, {
+    '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
+    '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null,
+    '--font': fontDi(st) || null, '--dim-ico': (st.dimIcona != null ? st.dimIcona : 20) + 'px',
+  });
+  el.querySelector('.bt-tit').textContent = cfg.titolo || '';
+  const quante = Math.max(1, Math.min(10, Number(cfg.quanti) || 3));
+  const ol = el.querySelector('.bt-righe');
+  ol.textContent = '';
+  for (const r of righe.slice(0, quante)) {
+    const li = document.createElement('li');
+    const p = document.createElement('span'); p.className = 'bt-posto'; p.textContent = r.posto;
+    const n = document.createElement('span'); n.className = 'bt-nome'; n.textContent = r.nome || '';
+    li.appendChild(p); li.appendChild(n);
+    if (cfg.mostraBit !== false) {
+      const q = document.createElement('span'); q.className = 'bt-quanti'; q.textContent = migliaiaBit(r.bit);
+      li.appendChild(q);
+    }
+    ol.appendChild(li);
+  }
+  posaElemento(el, 'bit', cfg);
+  if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
+}
+
+function togliBit() {
+  const el = bitEl.n;
+  if (!el) return;
+  const via = () => { el.remove(); if (bitEl.n === el) bitEl.n = null; bitEl.uscita = 0; };
+  if (fermiIMotori()) return via();
+  if (bitEl.uscita) return;
+  el.classList.remove('dentro');
+  el.classList.add('esce');
+  bitEl.uscita = setTimeout(via, 520);
+}
+
+const migliaiaBit = (n) => String(Math.max(0, Math.round(Number(n) || 0))).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
 function togliTreno() {
   const el = trenoEl.n;
   if (!el) return;
@@ -1226,6 +1297,8 @@ function applicaTema(t) {
   MIO.treno = t.treno || null;
   MIO.trenoStato = (stato.treno && typeof stato.treno === 'object') ? stato.treno : null;
   disegnaTreno();
+  MIO.bit = t.bit || null;
+  if (MIO.bit && MIO.bit.attivo && mostra('bit')) chiediBit(); else { disegnaBit(); }
   if (MIO.musica && MIO.musica.attivo && mostra('musica')) chiediMusica(); else togliMusica();
 }
 

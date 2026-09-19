@@ -425,6 +425,7 @@ export class AlertsEngine {
       musica: this._musicaConVideo(channel, s.overlayMusica),
       timer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : null,
       treno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : null,
+      bit: (s.overlayBit && typeof s.overlayBit === 'object') ? s.overlayBit : null,
       // I CARTELLI arrivano all'overlay con l'immagine gia' risolta in
       // indirizzo, come le icone dei widget: la pagina non sa niente della
       // libreria Effetti, e non deve saperlo.

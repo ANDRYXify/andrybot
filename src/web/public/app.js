@@ -126,6 +126,7 @@ function impostazioni() {
     overlayMusica: (s.overlayMusica && typeof s.overlayMusica === 'object') ? s.overlayMusica : {},
     overlayTimer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : {},
     overlayTreno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : {},
+    overlayBit: (s.overlayBit && typeof s.overlayBit === 'object') ? s.overlayBit : {},
     overlayCartelli: Array.isArray(s.overlayCartelli) ? s.overlayCartelli : [],
     donazioni: (s.donazioni && typeof s.donazioni === 'object') ? s.donazioni : { attivo: false, link: '', etichetta: '', messaggio: '', valuta: 'EUR', annunciaChat: false, testoChat: '', kofiSet: false },
     grafiche: (s.grafiche && typeof s.grafiche === 'object') ? s.grafiche : null,
@@ -435,6 +436,9 @@ function statoDemo() {
           subathon: { attivo: true, perSub: 5, perBit100: 1, perEuro: 2, tettoOre: 12, annuncia: true, testoChat: 'Grazie {chi}! Il conto sale di {quanto}.' },
           posizione: 'alto-destra', xy: null,
           stile: { dim: 'grande', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 14, font: 'condensato', forma: 'pillola', materia: 'sfumata', cornice: 'nessuna' } },
+        overlayBit: { attivo: true, titolo: 'Classifica Bit', periodo: 'month', quanti: 3, mostraBit: true,
+          posizione: 'alto-sinistra', xy: null,
+          stile: { dim: 'media', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 12, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna' } },
       },
     },
   };
@@ -2674,6 +2678,7 @@ const ICO = {
   meno: '<line x1="5" x2="19" y1="12" y2="12"/>',
   orologio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
   cartello: '<path d="M4 5h16v11H4z"/><path d="M12 16v5"/><path d="M8 21h8"/>',
+  podio: '<path d="M4 20h4v-7H4z"/><path d="M10 20h4V6h-4z"/><path d="M16 20h4v-10h-4z"/>',
   treno: '<rect x="4" y="3" width="16" height="12" rx="2"/><path d="M4 9h16"/><path d="M8 19l-2 2"/><path d="M16 19l2 2"/><circle cx="8.5" cy="18" r="1.5"/><circle cx="15.5" cy="18" r="1.5"/>',
   musica: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
   sliders: '<line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/>',
@@ -5980,6 +5985,13 @@ const GOAL_TIPI = () => [
   ['bit', L('bit', 'bits', 'bits')],
   ['euro', L('euro donati', 'euros donated', 'euros donados')],
 ];
+const PERIODI_BIT_OPTS = () => [
+  ['day', L('oggi', 'today', 'hoy')],
+  ['week', L('questa settimana', 'this week', 'esta semana')],
+  ['month', L('questo mese', 'this month', 'este mes')],
+  ['year', L('quest’anno', 'this year', 'este año')],
+  ['all', L('da sempre', 'all time', 'desde siempre')],
+];
 const GOAL_ANGOLI = () => [
   ['alto-sinistra', L('in alto a sinistra', 'top left', 'arriba izquierda')],
   ['alto-destra', L('in alto a destra', 'top right', 'arriba derecha')],
@@ -6689,6 +6701,31 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="treno">${L('Salva', 'Save', 'Guardar')}</button></p>
     </details>
 
+    <details class="carta sez" data-parte="aspetto" id="sez-bit">
+      <summary><h3>${_hIco(ICO.podio)}${L('Classifica Bit', 'Bits leaderboard', 'Clasificación de Bits')}</h3></summary>
+      <p>${L('Chi ha messo più Bit, in scena. La classifica è quella di Twitch — la stessa che risponde a !bit — quindi i numeri sono i suoi e non un conto nostro che con il suo non torna.', 'Who put in the most Bits, on screen. The leaderboard is Twitch’s own — the same one !bit answers with — so the numbers are theirs, not a count of ours that would drift from it.', 'Quién ha puesto más Bits, en escena. La clasificación es la de Twitch — la misma que responde a !bit — así que los números son suyos y no una cuenta nuestra que no cuadre con la suya.')}</p>
+      <p class="suggerimento">${L('Si aggiorna quando passa un cheer: è l’unico momento in cui può cambiare. Chi ha cheerato in anonimo non compare, perché Twitch non lo mette in classifica.', 'It refreshes when a cheer comes through: that is the only moment it can change. Anonymous cheers do not appear, because Twitch keeps them off the leaderboard.', 'Se actualiza cuando pasa un cheer: es el único momento en que puede cambiar. Quien ha cheereado en anónimo no aparece, porque Twitch no lo pone en la clasificación.')}</p>
+      <div data-cfg="bit">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="bit-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Mostrala nella scena', 'Show it on the scene', 'Muéstrala en la escena')}</span>
+        </div>
+        <div class="griglia-campi spazio-sopra">
+          <div><label class="campo" for="bit-titolo">${L('Titolo', 'Title', 'Título')}</label><input id="bit-titolo" type="text" data-c="titolo" maxlength="60"></div>
+          <div><label class="campo" for="bit-pos">${L('Dove', 'Where', 'Dónde')}</label><select id="bit-pos" data-c="posizione">${POS4_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></div>
+          <div><label class="campo" for="bit-periodo">${L('Di quando', 'Over what period', 'De cuándo')}</label><select id="bit-periodo" data-c="periodo">${PERIODI_BIT_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></div>
+          <div><label class="campo" for="bit-quanti">${L('Quante righe', 'How many rows', 'Cuántas filas')}</label><input id="bit-quanti" type="number" data-c="quanti" min="1" max="10"></div>
+        </div>
+        <label class="riga-check spazio-sopra"><input type="checkbox" data-c="mostraBit"> ${L('Mostra anche quanti Bit', 'Show the Bits count too', 'Muestra también cuántos Bits')}</label>
+
+        <div class="asp-blocco" data-asp="bit" data-cfg-di="bit">
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="bit">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
     <details class="carta sez" data-parte="aspetto" id="sez-goal">
       <summary><h3>${_hIco(ICO.trofeo)}${L('Gli obiettivi', 'Your goals', 'Tus objetivos')}</h3></summary>
       <p>${L('Barre che si riempiono da sole mentre arrivano follower, sub o bit. Un obiettivo può essere «altri 100» oppure «1000 in tutto»: con «Quanti ne ho adesso» parte dal numero che hai già.', 'Bars that fill by themselves as followers, subs or bits come in. A goal can be «100 more» or «1000 in total»: with «How many I have now» it starts from the number you already have.', 'Barras que se llenan solas mientras llegan followers, subs o bits. Un objetivo puede ser «100 más» o «1000 en total»: con «Cuántos tengo ahora» empieza desde el número que ya tienes.')}</p>
@@ -6959,7 +6996,7 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'pen', 'effetti', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
 let occSel = '';
@@ -7732,7 +7769,45 @@ function _vestiTreno(box, cfg) {
   box.querySelector('.tr-tempo').textContent = corre ? _orologioGiu(t.scade - Date.now()) : '3:12';
 }
 
-const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno };
+const _migliaia = (n) => String(Math.max(0, Math.round(Number(n) || 0))).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const PODIO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICO.podio + '</svg>';
+
+function _defBit() {
+  return { attivo: false, titolo: 'Classifica Bit', periodo: 'month', quanti: 3, mostraBit: true,
+    posizione: 'alto-sinistra', xy: null,
+    stile: { dim: 'media', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 12, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
+}
+
+const BIT_FINTI = [['Giada', 4500], ['Ludo', 1200], ['Marco', 900], ['Anna', 640], ['Pino', 410],
+  ['Sara', 320], ['Luca', 260], ['Ele', 180], ['Dario', 120], ['Vale', 60]];
+
+function _vestiBit(box, cfg) {
+  if (!box.querySelector('.bt-righe')) {
+    box.innerHTML = '<div class="bt-testa"><span class="bt-ico">' + PODIO_SVG + '</span><span class="bt-tit"></span></div><ol class="bt-righe"></ol>';
+  }
+  const st = cfg.stile || {};
+  box.className = 'ovl-widget ovl-bit dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st),
+    '--dim-ico': (st.dimIcona != null ? st.dimIcona : 20) + 'px' });
+  box.querySelector('.bt-tit').textContent = cfg.titolo || '';
+  const quante = Math.max(1, Math.min(10, Number(cfg.quanti) || 3));
+  const ol = box.querySelector('.bt-righe');
+  ol.textContent = '';
+  BIT_FINTI.slice(0, quante).forEach(([nome, q], i) => {
+    const li = document.createElement('li');
+    const p = document.createElement('span'); p.className = 'bt-posto'; p.textContent = String(i + 1);
+    const n = document.createElement('span'); n.className = 'bt-nome'; n.textContent = nome;
+    li.appendChild(p); li.appendChild(n);
+    if (cfg.mostraBit !== false) {
+      const c = document.createElement('span'); c.className = 'bt-quanti'; c.textContent = _migliaia(q);
+      li.appendChild(c);
+    }
+    ol.appendChild(li);
+  });
+}
+
+const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno, bit: _vestiBit };
 
 function _orologioGiu(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -8001,6 +8076,7 @@ const PEZZI_EL = () => [
   ['musica', '#sez-musica'],
   ['timer', '#sez-timer'],
   ['treno', '#sez-treno'],
+  ['bit', '#sez-bit'],
 ];
 
 const _apertoGrp = {};
@@ -8272,6 +8348,7 @@ const ELEMENTI = () => {
   out.push({ k: 'musica', ico: ICO.musica, n: L('Player musica', 'Music player', 'Reproductor de música'), cfg: 'overlayMusica' });
   out.push({ k: 'timer', ico: ICO.orologio, n: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), cfg: 'overlayTimer' });
   out.push({ k: 'treno', ico: ICO.treno, n: L('Hype train', 'Hype train', 'Hype train'), cfg: 'overlayTreno' });
+  out.push({ k: 'bit', ico: ICO.podio, n: L('Classifica Bit', 'Bits leaderboard', 'Clasificación de Bits'), cfg: 'overlayBit' });
   out.push({ k: 'pen', ico: ICO.penitenza, n: L('Sfida a tempo', 'Timed challenge', 'Reto a tiempo'), cfg: 'penitenze' });
   return out;
 };
@@ -8323,7 +8400,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, bit: _defBit, pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 function _cfgEl(k) {
   const e = ELEM(k);
@@ -18933,7 +19010,7 @@ function caricaDatiScheda(id) {
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
-    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
+    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); riempiCfgForm('bit'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'consolify') caricaConsolify();

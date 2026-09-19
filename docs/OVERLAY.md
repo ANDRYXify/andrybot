@@ -1701,3 +1701,28 @@ prodotto.
   mente e' peggio di un tasto che non c'e', quindi sotto la misura in cui i due
   cerchi si toccano (`SCALA_SPAZIO`) la maniglia propria non si disegna — la
   dimensione resta nel pannello, con Alt+rotella e col perimetro.
+
+## La classifica dei Bit in scena
+
+E' un elemento come gli altri — stessa veste, stesso angolo, stesso
+trascinamento, stesso interruttore nella colonna dei livelli — con due scelte
+sue: **di quando** (i cinque periodi che conosce Twitch) e **quante righe**.
+
+Le righe non sono nostre. Sono quelle di `helix/bits/leaderboard`, le stesse che
+rispondono a `!bit`, per la ragione scritta in `BIT.md`: due numeri diversi per
+la stessa domanda sono peggio di un numero solo che ogni tanto manca. Chi ha
+cheerato in anonimo non compare, perche' non compare nemmeno da Twitch.
+
+**Chi chiede, e quando.** L'overlay la chiede UNA volta, al caricamento
+(`GET /overlay/:login/bit`, protetta dalla chiave come le altre). Da li' in poi
+sta fermo ad ascoltare: quando passa un cheer il bot gliela manda
+(`{ tipo: 'bit', righe }`). E' l'unico momento in cui puo' essere cambiata —
+sommare i cheer noi sarebbe stata la seconda classifica che non vogliamo, e
+interrogare Twitch a tempo sarebbe stato chiedere a vuoto per ore.
+
+Se non c'e' nessuna fonte OBS collegata il bot non chiede niente: sarebbe una
+chiamata a Twitch per una scena che nessuno sta guardando.
+
+**`null` non e' `[]`.** Un «non lo so» (permesso mancante, Twitch muto) non si
+manda e non si disegna: l'elemento resta con le righe di prima. Una classifica
+che sparisce dalla scena per un intoppo di un minuto e' peggio di una ferma.
