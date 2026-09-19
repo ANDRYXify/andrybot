@@ -30,6 +30,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Categorie e canali del tuo Discord li scegli da qui: parti da una traccia pronta o fagli leggere il server che hai già, e lui lo mette su. [vai: dcserver]
 - Prima di toccare niente ti fa vedere l'elenco esatto di quello che farebbe. Va solo in avanti: quello che non è nella traccia resta dov'è, e te lo dice. [vai: dcserver]
 - Dentro ogni canale scrivi chi può fare cosa, con parole normali: «tutti — non può — scrivere». I permessi che non nomini nessuno li tocca. [vai: dcserver]
+- Alcuni tasti comparivano quando non servivano a niente: «Scollega tutto» senza niente da scollegare, «Ferma la diretta» senza diretta. Adesso restano via finché non servono.
 
 ## 2026-09-18
 
