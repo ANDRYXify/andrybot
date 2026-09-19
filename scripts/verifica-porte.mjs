@@ -72,6 +72,7 @@ const PUBBLICHE = new Map([
   ['GET /u/:user/anteprima-dona.png', 'l\'anteprima del link della pagina delle donazioni: come sopra'],
   ['GET /u/:user/img/:file', 'immagini della pagina link'],
   ['GET /u/:user/privacy', 'informativa della pagina link'],
+  ['GET /dona/:user/privacy', 'informativa della pagina delle donazioni: sua, perche\' e\' un\'altra pagina'],
   ['POST /dona/:login', 'il modulo delle donazioni della pagina link: chi dona non ha una sessione, e il pagamento lo conferma Stripe o Satispay, non chi bussa'],
   ['GET /dona/satispay/:login', 'la callback di Satispay: porta solo un id, e lo stato si rilegge con la chiave dello streamer; risponde ok e basta'],
   ['GET /api/streamer-verify', 'lo stesso servizio della pagina link, origine fissa'],
