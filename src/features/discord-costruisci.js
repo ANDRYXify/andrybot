@@ -59,8 +59,14 @@ export async function anteprima(token, guild, preset, { togliere = false } = {})
   // cui si scopre che un ruolo nominato non c'e': quella riga di permessi si
   // salta e si dice quale, perche' un ruolo che non esiste non e' «nessuno».
   const { preset: risolto, mancanti } = risolvi(preset, { guildId: foto.guild.id, ruoli: foto.ruoli });
-  const d = differenza(foto, risolto, { togliere });
-  return { ok: true, foto, differenza: d, impronta: improntaDi(d), vuota: vuota(d), mancanti };
+  // COSA RESTA FUORI DAL PRESET SI SA SEMPRE, anche quando non si tocca.
+  // Serve a dire «il tuo server ha sette canali che questo preset non prevede»
+  // senza che quella frase diventi un'offerta di cancellarli: il modo decide
+  // se si agisce, non se si guarda. E l'impronta e' di quello che si FA, cosi'
+  // in avanti e in distruttivo non si confondono fra loro.
+  const tutto = differenza(foto, risolto, { togliere: true });
+  const d = togliere ? tutto : { ...tutto, togli: [] };
+  return { ok: true, foto, differenza: d, fuori: tutto.togli, impronta: improntaDi(d), vuota: vuota(d), mancanti };
 }
 
 // Le categorie che esistono, per nome. Serve a tradurre il «dentro» della

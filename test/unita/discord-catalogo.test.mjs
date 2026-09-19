@@ -34,10 +34,9 @@ test('i numeri dei permessi sono quelli di Discord, non quelli che ricordiamo', 
   assert.equal(C.PERMESSI.entrare, 1048576n);
   assert.equal(C.PERMESSI.parlare, 2097152n);
   assert.equal(C.PERMESSI.discussioni, 34359738368n);
-  // e ogni permesso che offriamo ha un nome da mostrare, sennò nel pannello
-  // comparirebbe la parola tecnica
-  for (const k of Object.keys(C.PERMESSI)) assert.ok(C.NOMI_PERMESSI[k], `«${k}» non ha un nome da leggere`);
-  for (const k of Object.keys(C.NOMI_PERMESSI)) assert.ok(C.PERMESSI[k], `«${k}» ha un nome ma non esiste`);
+  // Qui ci sono i numeri e basta: le parole le sa il pannello, e che non ne
+  // manchi nessuna lo controlla il cancello dei contratti.
+  for (const v of Object.values(C.PERMESSI)) assert.equal(typeof v, 'bigint', 'i permessi si sommano, e si sommano grandi');
 });
 
 test('«tutti» e\' @everyone, e @everyone ha l\'id del server', () => {

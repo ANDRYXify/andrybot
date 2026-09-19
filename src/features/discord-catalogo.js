@@ -22,8 +22,10 @@
 // scritto per proteggere un canale lo chiuderebbe a tutti — e sembrerebbe
 // funzionare. Quella riga si salta, e si dice quale.
 
-// I permessi, coi valori di Discord. Il nome italiano e' quello che legge lo
-// streamer nel pannello: non c'e' una seconda lista da tenere d'accordo.
+// I permessi, coi valori di Discord. Qui ci sono i NUMERI e basta: le parole
+// con cui si chiamano le sa il pannello, che parla tre lingue. Tenerle anche
+// qui vorrebbe dire due elenchi da far coincidere a mano, e un cancello
+// controlla che ogni permesso abbia la sua parola.
 export const PERMESSI = Object.freeze({
   vedere: 1n << 10n,        // VIEW_CHANNEL
   scrivere: 1n << 11n,      // SEND_MESSAGES
@@ -37,18 +39,13 @@ export const PERMESSI = Object.freeze({
   menzionare: 1n << 17n,    // MENTION_EVERYONE
 });
 
-export const NOMI_PERMESSI = Object.freeze({
-  vedere: 'Vedere il canale',
-  scrivere: 'Scrivere',
-  storia: 'Leggere i messaggi di prima',
-  reagire: 'Mettere reazioni',
-  allegare: 'Allegare file',
-  link: 'Far vedere l’anteprima dei link',
-  discussioni: 'Aprire discussioni',
-  entrare: 'Entrare nel vocale',
-  parlare: 'Parlare nel vocale',
-  menzionare: 'Chiamare tutti',
-});
+
+// Quanto puo' chiedere un preset: i limiti sono quelli del motore della
+// differenza, e stanno scritti li'. Averne una seconda copia qui vorrebbe dire
+// due numeri che un giorno non coincidono piu'.
+import { MAX_CATEGORIE, MAX_CANALI } from './discord-preset.js';
+export { MAX_CATEGORIE, MAX_CANALI };
+export const TIPI_CANALE = Object.freeze(['testo', 'voce', 'annunci', 'forum']);
 
 const somma = (nomi) => (nomi || []).reduce((t, n) => t | (PERMESSI[n] || 0n), 0n);
 
@@ -217,3 +214,50 @@ export const CATALOGO = Object.freeze([
 ]);
 
 export const daId = (id) => CATALOGO.find((p) => p.id === String(id || '')) || null;
+
+// IL PRESET CHE ARRIVA DAL PANNELLO non e' il preset che applichiamo.
+//
+// Quello che arriva e' testo scritto da un browser, e un browser lo si puo'
+// convincere a mandare qualsiasi cosa. Qui si rifa' da zero: si tengono solo i
+// campi che esistono, coi limiti che esistono, e tutto il resto cade. Non si
+// controlla se e' valido — si COSTRUISCE valido, che e' un'altra cosa: un
+// controllo si puo' dimenticare un caso, una ricostruzione no.
+function righePulite(elenco) {
+  const fuori = [];
+  for (const r of (Array.isArray(elenco) ? elenco : [])) {
+    const chi = r?.chi === TUTTI ? TUTTI
+      : (String(r?.chi?.ruolo || '').trim() ? { ruolo: String(r.chi.ruolo).trim().slice(0, 100) } : null);
+    if (!chi) continue;
+    const solo = (v) => [...new Set((Array.isArray(v) ? v : []).filter((k) => PERMESSI[k]))];
+    const da = solo(r?.da);
+    const nega = solo(r?.nega);
+    if (!da.length && !nega.length) continue;
+    fuori.push({ chi, da, nega });
+    if (fuori.length >= 10) break;
+  }
+  return fuori.length ? fuori : null;
+}
+
+export function normalizzaPreset(x) {
+  const categorie = [];
+  let canaliTotali = 0;
+  for (const c of (Array.isArray(x?.categorie) ? x.categorie : []).slice(0, MAX_CATEGORIE)) {
+    const nome = String(c?.nome || '').trim().slice(0, 100);
+    if (!nome) continue;
+    const canali = [];
+    for (const ch of (Array.isArray(c?.canali) ? c.canali : [])) {
+      const n = String(ch?.nome || '').trim().slice(0, 100);
+      if (!n) continue;
+      if (canaliTotali >= MAX_CANALI) break;
+      canaliTotali++;
+      canali.push({
+        nome: n,
+        tipo: TIPI_CANALE.includes(ch?.tipo) ? ch.tipo : 'testo',
+        argomento: String(ch?.argomento || '').slice(0, 1024),
+        permessi: righePulite(ch?.permessi),
+      });
+    }
+    categorie.push({ nome, permessi: righePulite(c?.permessi), canali });
+  }
+  return { categorie };
+}

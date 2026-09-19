@@ -81,6 +81,8 @@ import * as dcApi from '../features/discord-api.js';
 import * as dcCollega from '../features/discord-collega.js';
 import * as dcGiro from '../features/discord-giro.js';
 import { normRegole, fuoriPortata, mioLivello, TIPI as TIPI_RUOLO, haSoglia } from '../features/discord-ruoli.js';
+import * as dcCatalogo from '../features/discord-catalogo.js';
+import * as dcCostruisci from '../features/discord-costruisci.js';
 import * as instagram from '../features/instagram.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
@@ -4035,6 +4037,74 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       quadro: (gente) => helix.ruoliDi(login, gente),
     });
     if (!e) return res.status(400).json({ errore: 'Prima porta il bot nel tuo server.' });
+    res.json(e);
+  }));
+
+  // ── Il costruttore del server Discord ──
+  //
+  // Lo streamer descrive il server che vuole, noi gli facciamo vedere la
+  // DIFFERENZA con quello che ha, e poi applichiamo quella. Tre porte, e la
+  // regola che le tiene insieme: guardare e fare partono dalla stessa
+  // funzione, percio' non possono raccontare due cose diverse.
+  //
+  // QUI NON SI CANCELLA. L'anteprima sa anche dire cosa un preset non prevede
+  // — e lo dice, perche' saperlo serve — ma `applica` passa `togliere: false`
+  // e basta. La direzione che distrugge arriva con la sua serratura, non
+  // prima: un interruttore «cancella pure» senza la modalita' che lo protegge
+  // sarebbe la meta' pericolosa consegnata da sola.
+  const dcTokenE = (login) => {
+    const c = dcRuoli.get(login);
+    const token = dcApi.tokenDi(c);
+    const guild = String(c?.guild || '');
+    return { c, token, guild, pronto: !!(token && guild) };
+  };
+  const NON_PRONTO = { errore: 'Prima porta il bot nel tuo server: senza, non c\'è niente da costruire.' };
+
+  app.get('/api/streamer/dcserver', requireOwner, (req, res) => {
+    const { c, pronto } = dcTokenE(currentUser(req).login);
+    res.json({
+      pronto,
+      guildNome: String(c?.guild_nome || ''),
+      preset: c?.preset || null,
+      catalogo: dcCatalogo.CATALOGO,
+      // QUALI permessi esistono lo dice il catalogo; COME si chiamano in tre
+      // lingue lo sa il pannello. Un permesso senza parola mostrerebbe il suo
+      // nome tecnico, e nessuno saprebbe cosa sta togliendo a chi.
+      permessi: Object.keys(dcCatalogo.PERMESSI),
+      max: { categorie: dcCatalogo.MAX_CATEGORIE, canali: dcCatalogo.MAX_CANALI },
+    });
+  });
+
+  app.post('/api/streamer/dcserver', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    const preset = dcCatalogo.normalizzaPreset(req.body?.preset);
+    if (!preset.categorie.length) return res.status(400).json({ errore: 'Un server senza nemmeno una categoria non si costruisce.' });
+    dcRuoli.set(login, { preset });
+    res.json({ ok: true, preset });
+  });
+
+  app.post('/api/streamer/dcserver/anteprima', requireOwner, wrap(async (req, res) => {
+    const { token, guild, pronto } = dcTokenE(currentUser(req).login);
+    if (!pronto) return res.status(400).json(NON_PRONTO);
+    const preset = dcCatalogo.normalizzaPreset(req.body?.preset);
+    // In avanti, come `applica`: l'impronta che torna e' di quello che
+    // succedera' davvero, e il pannello la rimanda indietro tale e quale.
+    // `fuori` dice cosa il preset non prevede — si sa anche quando non si
+    // tocca, perche' non dirlo lascerebbe credere che il server sia gia'
+    // uguale al preset quando non lo e'.
+    const a = await dcCostruisci.anteprima(token, guild, preset, { togliere: false });
+    if (!a.ok) return res.status(400).json({ errore: a.errore });
+    res.json({ ok: true, impronta: a.impronta, mancanti: a.mancanti, vuota: a.vuota,
+      crea: a.differenza.crea, sistema: a.differenza.sistema, fuori: a.fuori });
+  }));
+
+  app.post('/api/streamer/dcserver/applica', requireOwner, wrap(async (req, res) => {
+    const { token, guild, pronto } = dcTokenE(currentUser(req).login);
+    if (!pronto) return res.status(400).json(NON_PRONTO);
+    const preset = dcCatalogo.normalizzaPreset(req.body?.preset);
+    const impronta = String(req.body?.impronta || '').slice(0, 32);
+    const e = await dcCostruisci.applica(token, guild, preset, { togliere: false, impronta });
+    if (!e.ok) return res.status(e.cambiato ? 409 : 400).json(e);
     res.json(e);
   }));
 
