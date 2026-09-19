@@ -624,7 +624,12 @@ export async function togliCanale(token, id) {
 // tornare senza colore resterebbe colorato.
 const corpoRuolo = (r, { nuovo = false } = {}) => {
   const c = {};
-  if (r?.nome !== undefined) c.name = String(r.nome || '').trim().slice(0, 100);
+  // `rinomina` vince su `nome`: nelle righe del «cosa cambia», `nome` e' come
+  // il ruolo si chiama ADESSO — serve a raccontarlo — e `rinomina` e' come si
+  // chiamera'. Mandare il primo vorrebbe dire scrivere di nuovo il nome
+  // vecchio, cioe' fare il contrario di quello che si e' promesso.
+  if (r?.rinomina !== undefined) c.name = String(r.rinomina || '').trim().slice(0, 100);
+  else if (r?.nome !== undefined) c.name = String(r.nome || '').trim().slice(0, 100);
   if (r?.colore !== undefined || nuovo) c.color = Math.max(0, Math.min(0xffffff, Number(r?.colore) || 0));
   if (r?.separato !== undefined || nuovo) c.hoist = !!r?.separato;
   if (r?.citabile !== undefined || nuovo) c.mentionable = !!r?.citabile;

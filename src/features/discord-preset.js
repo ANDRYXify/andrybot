@@ -137,6 +137,10 @@ function voluteRuoli(preset) {
       separato: !!r?.separato,
       citabile: !!r?.citabile,
       privilegi: [...new Set((Array.isArray(r?.privilegi) ? r.privilegi : []).map(String))],
+      // «questo ruolo lo prendo da quello che c'e' gia'»: l'id di un ruolo del
+      // server che va RINOMINATO invece di nascere. Ci arriva dal consiglio,
+      // accettato dallo streamer — non si decide qui.
+      da: String(r?.da || '').replace(/[^0-9]/g, '').slice(0, 24),
     });
     if (fuori.length >= MAX_RUOLI) break;
   }
@@ -254,6 +258,10 @@ export function fondiPermessi(attuale, voluti) {
 // privilegi che sappiamo nominare, perche' quelli che non sappiamo dire non
 // potremmo nemmeno mostrarli nell'anteprima.
 export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = null, nostri = DA_DARE } = {}) {
+  // I ruoli che lo streamer ha deciso di tenere anche se la traccia non li
+  // prevede. E' una LISTA DI ID, non di nomi: un ruolo risparmiato che poi
+  // qualcuno rinomina resta risparmiato, che e' quello che voleva dire.
+  const salvi = new Set((Array.isArray(preset?.risparmia) ? preset.risparmia : []).map((x) => String(x || '').replace(/[^0-9]/g, '')).filter(Boolean));
   const fuoriMano = ruoliIntoccabili(foto);
   const lista = voluteRuoli(preset);
   const attuali = (foto?.ruoli || []).filter((r) => r?.id);
@@ -269,8 +277,18 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
 
   for (const v of lista) {
     const k = chiaveRuolo(v.nome);
-    if ((quanti.get(k) || 0) > 1) { ambigui.push(v.nome); continue; }
-    const gia = attuali.find((r) => chiaveRuolo(r.nome) === k);
+    // PRIMA si guarda se questo ruolo deve prendere il posto di uno che c'e'
+    // gia' (`da`): e' una scelta esplicita, e vince sul nome. Rinominare tiene
+    // dentro chi quel ruolo ce l'aveva; cancellare e ricreare lo toglie a tutti.
+    const chiesto = v.da ? attuali.find((r) => String(r.id) === v.da) : null;
+    if (chiesto && fuoriMano.has(v.da)) { fuoriPortata.push(chiesto.nome); continue; }
+    // Con `da` non si ripiega sul nome: il nome e' proprio quello che stava
+    // cambiando, e ripiegarci sopra vorrebbe dire fare un'altra cosa in
+    // silenzio. Se quell'id non c'e' piu', il ruolo nasce.
+    const gia = v.da
+      ? (chiesto && !preso.has(v.da) ? chiesto : null)
+      : attuali.find((r) => chiaveRuolo(r.nome) === k);
+    if (!v.da && (quanti.get(k) || 0) > 1) { ambigui.push(v.nome); continue; }
 
     // I privilegi che la traccia chiede, meno quelli che il bot non ha da dare.
     const voluti = sommaPrivilegi(v.privilegi);
@@ -283,6 +301,7 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
     if (fuoriMano.has(String(gia.id))) { fuoriPortata.push(gia.nome); continue; }
 
     const cambia = {};
+    if (chiaveRuolo(gia.nome) !== k) cambia.rinomina = v.nome;
     if (Number(gia.colore || 0) !== v.colore) cambia.colore = v.colore;
     if (!!gia.separato !== v.separato) cambia.separato = v.separato;
     if (!!gia.citabile !== v.citabile) cambia.citabile = v.citabile;
@@ -301,6 +320,7 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
   if (togliere) {
     for (const r of attuali) {
       if (preso.has(String(r.id))) continue;
+      if (salvi.has(String(r.id))) continue;
       if (fuoriMano.has(String(r.id))) continue;
       let suoi = 0n;
       try { suoi = BigInt(r.permessi || 0); } catch { suoi = 0n; }
@@ -310,6 +330,112 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
   }
 
   return { crea, sistema, togli, ambigui, fuoriPortata, nonPosso };
+}
+
+// ALTRI MODI DI DIRE LA STESSA COSA.
+//
+// Il server che uno ha gia' non usa i nomi della traccia: ha «mod» dove la
+// traccia dice «Moderatori», «sub» dove dice «Abbonati». Per il confronto sono
+// due elenchi di stringhe senza niente in comune, e abbinarli e' un'IPOTESI.
+//
+// Un'ipotesi che rinomina o cancella i ruoli di qualcuno costa: percio' qui non
+// c'e' nessun punteggio di somiglianza. C'e' una tabella scritta a mano, che si
+// legge, si discute e si corregge. «staff» sta qui perche' ce l'abbiamo messo
+// noi, non perche' un algoritmo l'ha trovato vicino a «Moderatori» — e il
+// giorno che e' sbagliato si toglie una riga.
+//
+// Quello che NON c'e' in tabella non si abbina. Mai.
+export const ALTRI_NOMI = Object.freeze({
+  moderatori: ['mod', 'mods', 'moderatore', 'moderator', 'moderators', 'staff', 'modteam'],
+  abbonati: ['sub', 'subs', 'abbonato', 'subscriber', 'subscribers', 'tier 1', 'tier1'],
+  vip: ['vips', 'vip del canale'],
+  streamer: ['host', 'broadcaster', 'padrone di casa'],
+});
+
+// IL CONSIGLIO: «sarebbe cosi', io lascerei solo questi, chiamandoli in questo
+// modo». Un'opinione con la ragione accanto, non una cosa che succede.
+//
+// Dice tre cose diverse, e sono diverse sul serio:
+//
+//  · PRENDI — questo ruolo fa gia' il mestiere di uno della traccia, sotto un
+//    altro nome. Si RINOMINA quello che c'e'. In modalita' distruttiva e' l'unico
+//    modo che non spoglia nessuno: cancellare «mod» e creare «Moderatori» toglie
+//    il ruolo a tutti quelli che ce l'avevano, e nessuno se ne accorge finche'
+//    non prova a bannare qualcuno.
+//
+//  · RISPARMIA — la traccia non lo prevede, ma ha dei poteri o si fa vedere
+//    nell'elenco delle persone. In distruttivo sparirebbe: io lo lascerei stare.
+//
+//  · TOGLI — non e' nella traccia, non ha poteri, non si fa vedere. Non resta
+//    niente da perdere.
+//
+// L'ambiguita' ferma il consiglio, come per i canali: se «mod» e «mods»
+// esistono tutti e due, quale dei due diventa «Moderatori» non lo sappiamo, e
+// tirare a indovinare qui vuol dire rinominare il ruolo sbagliato.
+export function consiglioRuoli(foto, preset) {
+  const fuoriMano = ruoliIntoccabili(foto);
+  const lista = voluteRuoli(preset);
+  const attuali = (foto?.ruoli || []).filter((r) => r?.id && !fuoriMano.has(String(r.id)));
+
+  const perChiave = new Map();
+  for (const r of attuali) {
+    const k = chiaveRuolo(r.nome);
+    if (!perChiave.has(k)) perChiave.set(k, []);
+    perChiave.get(k).push(r);
+  }
+  const unoSolo = (k) => (perChiave.get(k) || []).length === 1 ? perChiave.get(k)[0] : null;
+
+  const prendi = []; const crea = []; const impegnati = new Set();
+
+  for (const v of lista) {
+    const k = chiaveRuolo(v.nome);
+    if (perChiave.has(k)) {                       // si chiama gia' cosi': non c'e' niente da consigliare
+      for (const r of perChiave.get(k)) impegnati.add(String(r.id));
+      continue;
+    }
+    const altri = ALTRI_NOMI[k] || [];
+    const trovati = altri.map(unoSolo).filter(Boolean).filter((r) => !impegnati.has(String(r.id)));
+    if (trovati.length !== 1) { crea.push(v.nome); continue; }   // nessuno, o piu' d'uno: non si indovina
+    const r = trovati[0];
+    impegnati.add(String(r.id));
+    prendi.push({ id: String(r.id), nome: r.nome, diventa: v.nome });
+  }
+
+  const risparmia = []; const togli = [];
+  for (const r of attuali) {
+    if (impegnati.has(String(r.id))) continue;
+    let suoi = 0n;
+    try { suoi = BigInt(r.permessi || 0); } catch { suoi = 0n; }
+    const conPotere = (suoi & DA_DARE) !== 0n;
+    const riga = { id: String(r.id), nome: r.nome, conPotere, separato: !!r.separato };
+    if (conPotere || r.separato) risparmia.push(riga);
+    else togli.push(riga);
+  }
+
+  return { prendi, risparmia, togli, crea };
+}
+
+// IL CONSIGLIO APPLICATO: solo i RINOMINI, e il motivo e' preciso.
+//
+// In modalita' distruttiva il server diventa esattamente la traccia. Un
+// rinomina non tocca quell'invariante — «mod» diventa «Moderatori», e alla
+// fine il server ha esattamente i ruoli della traccia — ma non spoglia chi quel
+// ruolo ce l'aveva. E' il consiglio applicato dove applicarlo e' gratis.
+//
+// Il RISPARMIO no: risparmiare un ruolo che la traccia non prevede vuol dire
+// che il server NON diventa la traccia. Quella e' una deroga, e una deroga la
+// decide chi ha il server, non noi al posto suo. Resta un gesto, in elenco.
+export function applicaConsiglio(preset, consiglio) {
+  const prendi = consiglio?.prendi || [];
+  if (!prendi.length) return preset;
+  const per = new Map(prendi.map((p) => [nomeRuolo(p.diventa).toLowerCase(), String(p.id)]));
+  return {
+    ...preset,
+    ruoli: (preset?.ruoli || []).map((r) => {
+      const id = per.get(nomeRuolo(r?.nome).toLowerCase());
+      return (id && !r?.da) ? { ...r, da: id } : r;
+    }),
+  };
 }
 
 // LA DIFFERENZA. `togliere` decide se ne fa parte anche la terza direzione.
@@ -445,7 +571,10 @@ export function improntaDi(d) {
     ...(d?.sistema || []).map((x) => `s|${x.id}|${Object.keys(x).filter((k) => !['id', 'nome', 'tipo'].includes(k)).sort().join(',')}`),
     ...(d?.togli || []).map((x) => `x|${x.id}`),
     ...(r.crea || []).map((x) => `rc|${x.nome}|${x.permessi || '0'}`),
-    ...(r.sistema || []).map((x) => `rs|${x.id}|${Object.keys(x).filter((k) => !['id', 'nome'].includes(k)).sort().join(',')}`),
+    // Nel rinomina conta il VALORE, non solo che ci sia: due nomi diversi per
+    // lo stesso ruolo sono due cose diverse, e una firma che non li distingue
+    // autorizzerebbe la seconda avendo guardato la prima.
+    ...(r.sistema || []).map((x) => `rs|${x.id}|${Object.keys(x).filter((k) => !['id', 'nome'].includes(k)).sort().join(',')}|${x.rinomina || ''}`),
     ...(r.togli || []).map((x) => `rx|${x.id}`),
   ].sort();
   return createHash('sha1').update(righe.join('\n')).digest('hex').slice(0, 12);

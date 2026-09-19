@@ -30,7 +30,7 @@
 // E il limite delle mosse non e' un troncamento silenzioso: quando si ferma lo
 // dice, e dice perche'.
 import * as api from './discord-api.js';
-import { differenza, differenzaRuoli, vuota, improntaDi, TIPI, nomeCanale } from './discord-preset.js';
+import { differenza, differenzaRuoli, vuota, improntaDi, TIPI, nomeCanale, consiglioRuoli, applicaConsiglio } from './discord-preset.js';
 import { risolvi, nonPuoDare } from './discord-catalogo.js';
 import { makeLog } from '../logger.js';
 
@@ -68,9 +68,16 @@ export async function anteprima(token, guild, preset, { togliere = false } = {})
   // non c'e' ancora. Si risolve su un elenco che comprende anche quelli, con un
   // id finto che nessun permesso di adesso puo' avere — cosi' il canale che lo
   // nomina risulta da sistemare, che e' esattamente quello che succedera'.
-  const dRuoli = differenzaRuoli(foto, preset, { togliere, puoiDare: (p) => !nonPuoDare([p], foto.bits).length });
+  // IL CONSIGLIO: «io lascerei solo questi, chiamandoli in questo modo». Si
+  // calcola sempre — anche andando solo in avanti, perche' e' una cosa da
+  // guardare — ma si APPLICA da solo solo facendo piazza pulita, e solo nei
+  // rinomini. Vedi applicaConsiglio: il risparmio e' una deroga, e le deroghe
+  // le decide chi ha il server.
+  const consiglio = consiglioRuoli(foto, preset);
+  const preset_ = togliere ? applicaConsiglio(preset, consiglio) : preset;
+  const dRuoli = differenzaRuoli(foto, preset_, { togliere, puoiDare: (p) => !nonPuoDare([p], foto.bits).length });
   const nasceranno = dRuoli.crea.map((r) => ({ id: 'nuovo:' + r.nome.toLowerCase(), nome: r.nome }));
-  const { preset: risolto, mancanti } = risolvi(preset, {
+  const { preset: risolto, mancanti } = risolvi(preset_, {
     guildId: foto.guild.id, ruoli: [...foto.ruoli, ...nasceranno], botId: foto.bot?.id });
   // COSA RESTA FUORI DAL PRESET SI SA SEMPRE, anche quando non si tocca.
   // Serve a dire «il tuo server ha sette canali che questo preset non prevede»
@@ -88,7 +95,7 @@ export async function anteprima(token, guild, preset, { togliere = false } = {})
   const d = togliere ? { ...tutto, ruoli: dRuoli } : { ...tutto, togli: [], ruoli: { ...dRuoli, togli: [] } };
   return { ok: true, foto, differenza: d, fuori: tutto.togli, fuoriRuoli: dRuoli.togli,
     impronta: improntaDi(d), vuota: vuota(d), mancanti, nonPosso: dRuoli.nonPosso,
-    fuoriPortata: tutto.fuoriPortata || [] };
+    fuoriPortata: tutto.fuoriPortata || [], consiglio };
 }
 
 // Le categorie che esistono, per nome. Serve a tradurre il «dentro» della

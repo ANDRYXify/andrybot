@@ -395,6 +395,10 @@ export function normalizzaPreset(x) {
       // mostrerebbe un ruolo e il server ne avrebbe un altro.
       privilegi: [...new Set((Array.isArray(r?.privilegi) ? r.privilegi : [])
         .map(String).filter((p) => PRIVILEGI[p] !== undefined))],
+      // «questo ruolo prendilo da quello che c'e' gia'»: l'id di un ruolo del
+      // server, che verra' RINOMINATO invece di nascerne uno nuovo. Arriva dal
+      // consiglio, accettato a mano. Solo cifre: quello che non e' un id cade.
+      ...(String(r?.da || '').replace(/[^0-9]/g, '') ? { da: String(r.da).replace(/[^0-9]/g, '').slice(0, 24) } : {}),
     };
   }).filter(Boolean);
   const canali = (Array.isArray(x?.canali) ? x.canali : []).map(unCanale).filter(Boolean);
@@ -408,7 +412,12 @@ export function normalizzaPreset(x) {
     }
     categorie.push({ nome, permessi: righePulite(c?.permessi), canali: dentro });
   }
-  return { ruoli, canali, categorie };
+  // I ruoli che lo streamer tiene anche se la traccia non li prevede. In
+  // modalita' normale non cambia niente — non si cancella mai; in distruttiva
+  // sono gli unici che si salvano, ed e' il motivo per cui esistono.
+  const risparmia = [...new Set((Array.isArray(x?.risparmia) ? x.risparmia : [])
+    .map((v) => String(v || '').replace(/[^0-9]/g, '').slice(0, 24)).filter(Boolean))].slice(0, MAX_RUOLI * 4);
+  return { ruoli, canali, categorie, risparmia };
 }
 
 // PARTI DAL SERVER CHE HAI GIA'.

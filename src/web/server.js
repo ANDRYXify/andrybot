@@ -4141,10 +4141,56 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     frasiDiCasa: dcCollega.FRASI,
   });
 
-  app.get('/api/streamer/ruoli', requireOwner, (req, res) => {
+  // COM'E' MESSO IL BOT ADESSO, letto da Discord.
+  //
+  // Senza questo il pannello non sa niente, e allora spiega tutto sempre: come
+  // invitarlo, come dargli i permessi, come alzargli il ruolo — anche a chi ha
+  // gia' fatto tutto. E' cosi' che una pagina diventa lunga e ripetitiva, e
+  // come si arriva a chiedere a qualcuno un permesso che ci ha gia' dato.
+  //
+  // Due letture, non la fotografia intera: chi sono io in questo server, e
+  // quali ruoli ci sono. Da queste due si ricava tutto il resto.
+  const poteriDelBot = async (token, guild) => {
+    const me = await dcApi.io(token, guild);
+    if (!me.ok) return { letto: false, errore: me.errore || '' };
+    const r = await dcApi.ruoli(token, guild);
+    if (!r.ok) return { letto: false, errore: r.errore || '' };
+    const bits = dcApi.permessiBot(r.ruoli, me.ruoli);
+    const miei = new Set((me.ruoli || []).map(String));
+    const livello = Math.max(-1, ...(r.ruoli || []).filter((x) => miei.has(String(x.id))).map((x) => Number(x.position) || 0));
+    // I ruoli che gli stanno SOPRA: sono quelli che non potra' mai dare, e la
+    // cura non e' un permesso — e' trascinarlo piu' in alto su Discord.
+    const sopra = (r.ruoli || [])
+      .filter((x) => String(x.id) !== String(guild) && !miei.has(String(x.id)) && Number(x.position) >= livello)
+      .map((x) => x.nome);
+    return {
+      letto: true,
+      pieni: dcApi.puo(bits, dcApi.ADMINISTRATOR),
+      canali: dcApi.puoCanali(bits),
+      ruoli: dcApi.puoRuoli(bits),
+      farEntrare: dcApi.puoFarEntrare(bits),
+      sopra,
+    };
+  };
+
+  app.get('/api/streamer/ruoli', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
+    const c = dcRuoli.get(login);
+    const token = dcApi.tokenDi(c);
+    const guild = String(c?.guild || '');
+    const poteri = (token && guild) ? await poteriDelBot(token, guild) : { letto: false, errore: '' };
+    // PERCHE' IL COMANDO IN CHAT NON RISPONDE. Le tre condizioni sono quelle
+    // vere (`apertoA`), e si dicono una per una invece di lasciarle indovinare
+    // da un silenzio in chat.
+    const comando = {
+      risponde: dcCollega.apertoA(login),
+      manca: !guild ? 'server' : (!token ? 'bot' : (!c?.attivo ? 'interruttore' : '')),
+      indirizzo: dcCollega.indirizzo(login),
+    };
     res.json({
-      ...ruoliVisti(dcRuoli.get(login)),
+      ...ruoliVisti(c),
+      poteri,
+      comando,
       collegamentoOk: dcCollega.attivo(),
       invitoOk: !!config.discordApp?.bot,
       collegati: dcLink.quanti(login),
@@ -4152,7 +4198,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // PAROLE con cui si chiamano le sa il pannello, che parla tre lingue.
       tipi: TIPI_RUOLO.map((t) => ({ id: t, soglia: haSoglia(t) })),
     });
-  });
+  }));
 
   app.post('/api/streamer/ruoli', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
@@ -4333,6 +4379,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // elenco solo mescolerebbe «nasce un canale» e «cambia chi puo' bannare».
       ruoli: { crea: r.crea, sistema: r.sistema, togli: togliere ? r.togli : [],
         fuori: r.togli, ambigui: r.ambigui, fuoriPortata: r.fuoriPortata },
+      // IL CONSIGLIO sui ruoli: «io lascerei solo questi, chiamandoli in
+      // questo modo». Si manda in tutti e due i modi, perche' e' una cosa da
+      // GUARDARE; quello che cambia e' che facendo piazza pulita i rinomini
+      // sono gia' dentro la differenza qui sopra, e in avanti no.
+      consiglio: a.consiglio || { prendi: [], risparmia: [], togli: [], crea: [] },
       // Quello che il bot NON puo' passare si dice qui, prima: la cura e'
       // ripassare dal tasto dell'invito, non riprovare.
       nonPosso: a.nonPosso || [],

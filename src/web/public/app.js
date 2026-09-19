@@ -665,6 +665,12 @@ function apiDemo(percorso, opzioni = {}) {
       crea: [{ nome: 'Diretta', tipo: 4, dentro: null }, { nome: 'sono-in-onda', tipo: 0, dentro: 'Diretta' }, { nome: 'clip', tipo: 0, dentro: 'Diretta' }],
       sistema: [{ id: '1', nome: 'generale', tipo: 0, dentro: 'Chiacchiere' }],
       nonPosso: ['bannare'],
+      consiglio: {
+        prendi: [{ id: '7', nome: 'mod', diventa: 'Moderatori' }],
+        risparmia: [{ id: '9', nome: 'Vecchia Guardia', conPotere: true, separato: true }],
+        togli: [{ id: '8', nome: 'rosso', conPotere: false, separato: false }],
+        crea: ['Abbonati'],
+      },
     };
     const ruoliFuori = [{ id: '9', nome: 'Vecchia Guardia', conPotere: true }];
     if (dist) {
@@ -772,6 +778,8 @@ function _demoGet(via) {
       ] },
     '/api/streamer/ruoli': { configurato: true, guild: '123456789012345678', guildNome: 'Casa di andryx', botNome: 'SocialBot',
       attivo: true, collegamentoOk: true, invitoOk: true, suo: false, collegati: 14, ultimoGiro: Date.now() - 11 * 60000,
+      poteri: { letto: true, pieni: false, canali: true, ruoli: true, farEntrare: true, sopra: ['Padrone di casa'] },
+      comando: { risponde: true, manca: '', indirizzo: 'discord.socialbot.live/andryx_demo' },
       ultimoEsito: { visti: 14, dati: 2, tolti: 1, fuori: 1, bloccati: [], scartate: 0, errori: [] },
       regole: [{ tipo: 'sub', ruolo: '100000000000000010', soglia: 0 }, { tipo: 'ore', ruolo: '100000000000000011', soglia: 10 }],
       frasi: {},
@@ -16579,6 +16587,7 @@ const T_DCREG = () => ({
 });
 
 let _dc = null;
+let _dcsConsiglio = null;
 
 function pannelloRuoli() {
   return pannello('ruoli', `
@@ -16589,10 +16598,9 @@ function pannelloRuoli() {
         <button class="btn" id="dc-invita">${L('Porta il bot nel tuo server', 'Bring the bot to your server', 'Lleva el bot a tu servidor')}</button>
         <button class="btn secondario" id="dc-scorda" hidden>${L('Scollega tutto', 'Disconnect everything', 'Desconectar todo')}</button>
       </p>
-      <p class="suggerimento">${L('Ti manda su Discord: scegli il server dall’elenco — ci sono solo quelli dove comandi tu — e confermi i due permessi, «Gestire i ruoli» e «Gestire i canali». Torni qui e sei a posto: l’id del server ce lo dice Discord, non devi copiarlo.', 'It takes you to Discord: pick the server from the list — only the ones you run are there — and confirm the two permissions, «Manage Roles» and «Manage Channels». Come back and you are set: Discord tells us the server id, you do not have to copy it.', 'Te lleva a Discord: eliges el servidor de la lista — solo están aquellos donde mandas tú — y confirmas los dos permisos, «Gestionar roles» y «Gestionar canales». Vuelves y ya está: el id del servidor nos lo dice Discord, no tienes que copiarlo.')}</p>
-      <p class="suggerimento">${L('Una cosa resta a mano, e non per pigrizia: su Discord, in Impostazioni server → Ruoli, trascina il ruolo del bot SOPRA quelli che deve poter dare. Discord non lascia che un bot si sposti da solo più in alto di dov’è — è la regola che gli impedisce di promuoversi. Qui sotto ti diciamo quali ruoli restano fuori dalla sua portata.', 'One thing stays manual, and not out of laziness: on Discord, in Server Settings → Roles, drag the bot’s role ABOVE the ones it must be able to give. Discord does not let a bot move itself higher than it is — that is the rule that stops it from promoting itself. Below we tell you which roles stay out of its reach.', 'Una cosa queda a mano, y no por pereza: en Discord, en Ajustes del servidor → Roles, arrastra el rol del bot POR ENCIMA de los que debe poder dar. Discord no deja que un bot se mueva solo más arriba de donde está — es la regla que le impide ascenderse. Aquí abajo te decimos qué roles quedan fuera de su alcance.')}</p>
+      <div id="dc-serve" class="spazio-sopra"></div>
 
-      <details class="spazio-sopra" id="dc-pieni-box">
+      <details class="spazio-sopra" id="dc-pieni-box" hidden>
         <summary>${L('Vuoi che gestisca tutto il server?', 'Want it to run the whole server?', '¿Quieres que lleve todo el servidor?')}</summary>
         <p class="suggerimento">${L('Di partenza il bot chiede solo quello che gli serve. Con i pieni poteri diventa amministratore: da qui muovi canali, ruoli e permessi senza tornare su Discord. In cambio vede anche i canali privati, quindi daglieli solo se ti fidi — e puoi sempre riportarlo indietro reinvitandolo dal tasto di sopra.', 'By default the bot asks only for what it needs. With full powers it becomes an administrator: from here you move channels, roles and permissions without going back to Discord. In exchange it also sees private channels, so grant this only if you trust it — and you can always take it back by re-inviting it with the button above.', 'De partida el bot pide solo lo que necesita. Con plenos poderes pasa a ser administrador: desde aquí mueves canales, roles y permisos sin volver a Discord. A cambio ve también los canales privados, así que dáselos solo si te fías — y siempre puedes volver atrás reinvitándolo con el botón de arriba.')}</p>
         <p class="suggerimento">${L('Una cosa non cambia nemmeno così: i ruoli più in alto del suo restano fuori portata, e il proprietario del server non lo tocca nessuno. Discord non lascia che un bot si promuova, e nessun permesso lo compra.', 'One thing does not change even then: roles above its own stay out of reach, and nobody touches the server owner. Discord does not let a bot promote itself, and no permission buys that.', 'Una cosa no cambia ni así: los roles por encima del suyo quedan fuera de su alcance, y al dueño del servidor no lo toca nadie. Discord no deja que un bot se ascienda, y ningún permiso lo compra.')}</p>
@@ -16633,8 +16641,7 @@ function pannelloRuoli() {
     <div class="carta">
       <h2>${_hIco(ICO.medaglia)}${L('Chi si è collegato', 'Who linked up', 'Quién se ha vinculado')}</h2>
       <p id="dc-collegati">${L('Carico…', 'Loading…', 'Cargando…')}</p>
-      <p class="suggerimento">${L('Si collegano da soli: scrivono', 'They link themselves: they type', 'Se vinculan solos: escriben')} <code>!discord</code> ${L('in chat e aprono l’indirizzo che gli do. Da lì entrano nel server e ricevono il codice da riscrivere in chat: finché non lo scrivono, il bot non li tocca — e con', 'in chat and open the address it gives them. From there they get into the server and receive the code to type back in chat: until they type it, the bot does not touch them — and with', 'en el chat y abren la dirección que les doy. Desde ahí entran en el servidor y reciben el código para reescribir en el chat: hasta que no lo escriben, el bot no los toca — y con')} <code>!discord via</code> ${L('si staccano, tenendosi i ruoli che hanno.', 'they unlink, keeping the roles they have.', 'se desvinculan, quedándose con los roles que tienen.')}</p>
-      <p class="suggerimento">${L('Se il bot era già nel tuo server prima d’oggi, riportacelo col tasto qui sopra: reinvitare aggiorna i permessi, e senza quello nuovo la porta li accompagna fino all’ingresso e poi non li fa entrare.', 'If the bot was already in your server before today, bring it back with the button above: re-inviting updates its permissions, and without the new one the door walks people up to it and then does not let them in.', 'Si el bot ya estaba en tu servidor antes de hoy, vuelve a llevarlo con el botón de arriba: reinvitarlo actualiza los permisos, y sin el nuevo la puerta los acompaña hasta la entrada y luego no los deja pasar.')}</p>
+      <div id="dc-comando"></div>
       <p class="suggerimento" id="dc-ultimo"></p>
 
       <details class="spazio-sopra" id="dc-frasi-box">
@@ -16713,6 +16720,48 @@ function _dcDici(id, testo, tono) {
   n.hidden = !testo;
 }
 
+function _dcServeHtml() {
+  const p = _dc?.poteri || {};
+  const righe = [];
+  if (!_dc?.configurato) {
+    righe.push(L('Ti manda su Discord, scegli il server dall’elenco e torni qui. L’id non devi copiarlo: ce lo dice Discord.',
+      'It takes you to Discord, you pick the server from the list and come back. You do not copy the id: Discord tells us.',
+      'Te lleva a Discord, eliges el servidor de la lista y vuelves. El id no lo copias: nos lo dice Discord.'));
+  }
+  if (p.letto && !p.canali) {
+    righe.push(L('Gli manca «Gestire i canali»: ripassa dal tasto qui sopra, reinvitarlo è il modo con cui Discord gli aggiorna i permessi.',
+      'It is missing «Manage Channels»: go through the button above again, re-inviting is how Discord updates its permissions.',
+      'Le falta «Gestionar canales»: vuelve a pasar por el botón de arriba, reinvitarlo es como Discord le actualiza los permisos.'));
+  }
+  if (p.letto && !p.farEntrare) {
+    righe.push(L('Gli manca il permesso di far entrare la gente: senza, la porta d’ingresso li accompagna fino al server e poi non li fa entrare. Si rimedia reinvitandolo.',
+      'It is missing the permission to let people in: without it, the entrance walks them up to the server and then does not let them in. Re-inviting fixes it.',
+      'Le falta el permiso para dejar entrar a la gente: sin él, la puerta los acompaña hasta el servidor y luego no los deja pasar. Se arregla reinvitándolo.'));
+  }
+  if (p.letto && (p.sopra || []).length) {
+    righe.push(L('Su Discord, in Impostazioni server → Ruoli, trascinalo sopra questi, sennò non li tocca: ', 'On Discord, in Server Settings → Roles, drag it above these, otherwise it does not touch them: ', 'En Discord, en Ajustes del servidor → Roles, arrástralo por encima de estos, si no no los toca: ')
+      + esc(p.sopra.slice(0, 8).join(', ')) + (p.sopra.length > 8 ? '…' : '') + '.');
+  }
+  if (p.letto && p.pieni) {
+    righe.push(L('Ha i pieni poteri su questo server: da qui puoi muovere tutto.', 'It has full powers on this server: from here you can move everything.', 'Tiene plenos poderes en este servidor: desde aquí puedes moverlo todo.'));
+  }
+  return righe.map((t) => `<p class="suggerimento">${t}</p>`).join('');
+}
+
+function _dcComandoHtml() {
+  const c = _dc?.comando || {};
+  const nome = '<code>!discord</code>';
+  if (c.risponde) {
+    return `<p class="suggerimento">${nome} ${L('manda a', 'sends them to', 'los manda a')} <code>${esc(c.indirizzo || '')}</code>: ${L('si apre, si entra nel server, e si riscrive qui il codice. Con', 'they open it, they get into the server, and type the code back here. With', 'la abren, entran en el servidor y reescriben aquí el código. Con')} <code>!discord via</code> ${L('si staccano, tenendosi i ruoli che hanno.', 'they unlink, keeping the roles they have.', 'se desvinculan, quedándose con los roles que tienen.')}</p>`;
+  }
+  const perche = {
+    server: L('non c’è ancora un server collegato.', 'there is no server connected yet.', 'todavía no hay un servidor conectado.'),
+    bot: L('non c’è un bot che possa rispondere.', 'there is no bot that can answer.', 'no hay un bot que pueda responder.'),
+    interruttore: L('l’interruttore «Tieni i ruoli aggiornati» è spento.', 'the «Keep the roles up to date» switch is off.', 'el interruptor «Mantén los roles al día» está apagado.'),
+  }[c.manca] || L('manca qualcosa qui sopra.', 'something above is missing.', 'falta algo aquí arriba.');
+  return `<p class="tg-stato guaio">${nome} ${L('adesso non risponde in chat:', 'does not answer in chat right now:', 'ahora no responde en el chat:')} ${perche}</p>`;
+}
+
 function _dcMostraStato() {
   if (!_dc) return;
   _imposta('dc-guild', _dc.guild || '');
@@ -16741,6 +16790,10 @@ function _dcMostraStato() {
   }
   const u = _g('dc-ultimo');
   if (u) u.textContent = _dc.ultimoGiro ? L('Ultimo giro: ', 'Last round: ', 'Última vuelta: ') + dataIt(_dc.ultimoGiro) + ' · ' + _dcEsito(_dc.ultimoEsito) : '';
+  const serve = _g('dc-serve'); if (serve) serve.innerHTML = _dcServeHtml();
+  const com = _g('dc-comando'); if (com) com.innerHTML = _dcComandoHtml();
+  const pieni = _g('dc-pieni-box');
+  if (pieni) pieni.hidden = !_dc?.configurato || !!_dc?.poteri?.pieni;
   _dcDisegnaRegole();
   _dcDisegnaFrasi();
 }
@@ -16963,6 +17016,7 @@ function pannelloDcServer() {
       <p class="suggerimento">${L('I ruoli del server: come si vedono e cosa possono fare. «Streamer» è solo un colore e un posto a parte — più in alto del bot non si può creare niente, e questo è il motivo.', 'The server roles: how they look and what they can do. «Streamer» is just a colour and a separate spot — nothing can be created above the bot, and that is why.', 'Los roles del servidor: cómo se ven y qué pueden hacer. «Streamer» es solo un color y un sitio aparte — no se puede crear nada por encima del bot, y por eso es así.')}</p>
       <div id="dcs-ruoli" class="spazio-sopra"></div>
       <p class="spazio-sopra"><button class="btn secondario" id="dcs-ruolopiu">${_bIco(ICO.piu)}${L('Aggiungi un ruolo', 'Add a role', 'Añadir un rol')}</button></p>
+      <div id="dcs-confronto" class="spazio-sopra" hidden></div>
     </div>
 
     <div class="carta" id="dcs-carta-diff">
@@ -17006,7 +17060,9 @@ function _dcsPrepara(preset) {
       _k: ++_dcsChiave, nome: r.nome || '', colore: Number(r.colore) || 0,
       separato: !!r.separato, citabile: !!r.citabile,
       privilegi: [...(r.privilegi || [])],
+      ...(r.da ? { da: String(r.da) } : {}),
     })),
+    risparmia: [...(preset?.risparmia || [])],
     canali: (preset?.canali || []).map(ch),
     categorie: (preset?.categorie || []).map((c) => ({
       _k: ++_dcsChiave, nome: c.nome || '', permessi: perm(c.permessi), canali: (c.canali || []).map(ch),
@@ -17024,9 +17080,11 @@ function _dcsPulito() {
     ruoli: (p.ruoli || []).map((r) => ({
       nome: r.nome, colore: r.colore, separato: !!r.separato, citabile: !!r.citabile,
       privilegi: [...(r.privilegi || [])],
+      ...(r.da ? { da: r.da } : {}),
     })),
     canali: (p.canali || []).map(ch),
     categorie: (p.categorie || []).map((c) => ({ nome: c.nome, permessi: perm(c.permessi), canali: (c.canali || []).map(ch) })),
+    risparmia: [...(p.risparmia || [])],
   };
 }
 
@@ -17237,6 +17295,69 @@ const _dcsQuando = (x) => {
     : L('non so da quanto', 'I do not know since when', 'no sé desde cuándo');
 };
 
+function _dcsConfrontoHtml(c, distruttivo) {
+  const p = c?.prendi || []; const ris = c?.risparmia || []; const tol = c?.togli || []; const nuovi = c?.crea || [];
+  if (!p.length && !ris.length && !tol.length && !nuovi.length) {
+    return `<p class="suggerimento">${L('I tuoi ruoli e quelli della traccia dicono già la stessa cosa.', 'Your roles and the track’s already say the same thing.', 'Tus roles y los de la plantilla ya dicen lo mismo.')}</p>`;
+  }
+  const segno = (t, classe) => `<span class="dcs-verdetto${classe ? ' ' + classe : ''}">${esc(t)}</span>`;
+  const tuoi = [
+    ...p.map((x) => `<li><strong>${esc(x.nome)}</strong> ${segno(L('diventa «', 'becomes «', 'pasa a ser «') + x.diventa + '»', 'prende')}</li>`),
+    ...ris.map((x) => `<li><strong>${esc(x.nome)}</strong> ${segno(L('lo terrei', 'I would keep it', 'lo dejaría'), 'tiene')}
+      <span class="suggerimento">${esc(x.conPotere ? L('porta dei privilegi', 'carries privileges', 'lleva privilegios') : L('si fa vedere nell’elenco', 'it shows in the list', 'se ve en la lista'))}</span></li>`),
+    ...tol.map((x) => `<li><strong>${esc(x.nome)}</strong> ${segno(L('lo toglierei', 'I would drop it', 'lo quitaría'), 'togli')}
+      <span class="suggerimento">${L('nessun privilegio, non si fa vedere', 'no privileges, does not show', 'sin privilegios, no se ve')}</span></li>`),
+  ].join('');
+  const laTraccia = [
+    ...p.map((x) => `<li><strong>${esc(x.diventa)}</strong> <span class="suggerimento">${L('lo prendo da «', 'I take it from «', 'lo tomo de «')}${esc(x.nome)}»</span></li>`),
+    ...nuovi.map((x) => `<li><strong>${esc(x)}</strong> <span class="suggerimento">${L('lo creo', 'I create it', 'lo creo')}</span></li>`),
+  ].join('');
+  return `<div class="dcs-confronto">
+    <div><h3>${L('Sul tuo server', 'On your server', 'En tu servidor')}</h3><ul class="lista-voci">${tuoi || '<li class="suggerimento">—</li>'}</ul></div>
+    <div><h3>${L('Nella traccia', 'In the track', 'En la plantilla')}</h3><ul class="lista-voci">${laTraccia || '<li class="suggerimento">—</li>'}</ul></div>
+  </div>
+  <p class="spazio-sopra">${p.length
+    ? L('Sarebbe così: io lascerei solo questi, chiamandoli in questo modo — rinominare tiene dentro chi quel ruolo ce l’aveva, cancellare e rifare lo toglie a tutti.', 'It would go like this: I would keep only these, calling them this way — renaming keeps the people who had that role, deleting and remaking takes it from everyone.', 'Sería así: yo dejaría solo estos, llamándolos de esta forma — renombrar mantiene a quien tenía ese rol, borrar y rehacer se lo quita a todos.')
+    : L('Sarebbe così: io lascerei solo questi.', 'It would go like this: I would keep only these.', 'Sería así: yo dejaría solo estos.')}</p>
+  ${distruttivo
+    ? `<p class="suggerimento">${L('Stai facendo piazza pulita: i rinomini li ho già messi qui sotto, in «Cosa succede». Quelli che terrei io invece spariscono lo stesso, se non me lo dici tu.', 'You are clearing the board: the renames are already below, in «What happens». The ones I would keep disappear anyway, unless you tell me otherwise.', 'Estás haciendo limpieza: los renombrados ya están abajo, en «Qué pasa». Los que yo dejaría desaparecen igual, salvo que me lo digas.')}</p>`
+    : `<p class="suggerimento">${L('Di qua non si cancella niente: questo è solo per guardarlo. Il tasto qui sotto lo scrive nella traccia, e da lì in poi vale.', 'Nothing is deleted on this side: this is only to look at. The button below writes it into the track, and from then on it counts.', 'De este lado no se borra nada: esto es solo para mirarlo. El botón de abajo lo escribe en la plantilla, y a partir de ahí vale.')}</p>`}
+  <p class="spazio-sopra riga-flessibile">
+    <button type="button" class="btn secondario" id="dcs-consiglio-si">${L('Fai come dici tu', 'Do as you say', 'Hazlo como dices')}</button>
+    ${ris.length ? `<button type="button" class="btn secondario" id="dcs-consiglio-tieni">${L('Tieni quelli che terresti', 'Keep the ones you would keep', 'Quédate con los que dejarías')}</button>` : ''}
+  </p>`;
+}
+
+function _dcsMostraConfronto(consiglio, distruttivo) {
+  const box = _g('dcs-confronto');
+  if (!box) return;
+  _dcsConsiglio = consiglio || null;
+  const c = _dcsConsiglio;
+  const niente = !c || (!(c.prendi || []).length && !(c.risparmia || []).length && !(c.togli || []).length);
+  box.hidden = niente;
+  if (niente) return;
+  box.innerHTML = _dcsConfrontoHtml(c, distruttivo);
+  _g('dcs-consiglio-si')?.addEventListener('click', () => _dcsPrendiConsiglio(false));
+  _g('dcs-consiglio-tieni')?.addEventListener('click', () => _dcsPrendiConsiglio(true));
+}
+
+function _dcsPrendiConsiglio(ancheIRisparmi) {
+  const c = _dcsConsiglio;
+  if (!c || !_dcs?.preset) return;
+  const per = new Map((c.prendi || []).map((x) => [String(x.diventa || '').trim().toLowerCase(), String(x.id)]));
+  for (const r of (_dcs.preset.ruoli || [])) {
+    const id = per.get(String(r.nome || '').trim().toLowerCase());
+    if (id) r.da = id;
+  }
+  if (ancheIRisparmi) {
+    const gia = new Set(_dcs.preset.risparmia || []);
+    for (const x of (c.risparmia || [])) gia.add(String(x.id));
+    _dcs.preset.risparmia = [...gia];
+  }
+  _dcsDisegna();
+  toast(L('Scritto nella traccia ✓ Guarda di nuovo cosa succede.', 'Written into the track ✓ Look at what happens again.', 'Escrito en la plantilla ✓ Mira otra vez qué pasa.'));
+}
+
 function _dcsDiffHtml(d) {
   const tipi = T_DCTIPO();
   const nome = (x) => esc(x.nome || '') + (x.dentro ? ' <span class="suggerimento">' + L('in ', 'in ', 'en ') + esc(x.dentro) + '</span>' : '');
@@ -17395,6 +17516,7 @@ function collegaDcServer() {
     _dcs = { ..._dcs, impronta: d.impronta, peso: d.peso, server: d.server };
     const box = _g('dcs-diff');
     if (box) box.innerHTML = _dcsDiffHtml(d);
+    _dcsMostraConfronto(d.consiglio, !!d.distruttivo);
     const fai = _g('dcs-costruisci');
     if (fai) {
       fai.hidden = !!d.vuota;

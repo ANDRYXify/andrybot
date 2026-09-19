@@ -375,3 +375,56 @@ che non esiste resta scritto com'e': non si inventa un vuoto.
 spazi ridotti, trecento caratteri al massimo. Il nome del comando era gia'
 cambiabile — i soprannomi li scioglie il registro prima del vaglio
 (`preparaComando`), e il modulo guarda solo l'id canonico.
+
+## Il pannello sa com'è messo il bot, e dice solo quello che serve
+
+La scheda diceva tutto sempre: come invitarlo, come dargli i permessi, come
+alzargli il ruolo — anche a chi aveva già fatto tutte e tre le cose. Da lì
+venivano due difetti che sembrano diversi e sono lo stesso: la pagina lunga e
+ripetitiva, e il riquadro «vuoi che gestisca tutto il server?» che continuava a
+chiedere un permesso già dato.
+
+**Una pagina che spiega sempre tutto è una pagina che non sa niente.** Quindi
+`/api/streamer/ruoli` adesso legge da Discord come sta messo il bot —
+`poteriDelBot`, due letture sole: chi sono io in questo server, e quali ruoli ci
+sono — e ne ricava `pieni`, `canali`, `ruoli`, `farEntrare` e `sopra` (i ruoli
+che gli stanno più in alto, che non potrà mai dare). Nel pannello
+`_dcServeHtml()` scrive **solo le righe che valgono adesso**, e il riquadro dei
+pieni poteri sparisce quando li ha già.
+
+Lo stesso endpoint dice anche perché `!discord` tace. Il comando c'è sempre, ma
+risponde solo con tutte e tre le cose (`apertoA`: server collegato, un bot che
+possa parlare, l'interruttore acceso). Prima quel silenzio non si spiegava da
+nessuna parte, e da fuori sembrava un comando rotto — quando quasi sempre era
+solo l'interruttore «Tieni i ruoli aggiornati» spento.
+
+## Il confronto dei ruoli, e perché non si indovina
+
+Il server che uno ha già e la traccia sono due elenchi di nomi senza niente in
+comune: «mod» da una parte, «Moderatori» dall'altra. Abbinarli è un'IPOTESI, e
+in modalità distruttiva un'ipotesi sbagliata non si vede — il ruolo cancellato
+lo perdono tutti quelli che ce l'avevano, in silenzio.
+
+Perciò `ALTRI_NOMI` è una **tabella scritta a mano**, non un punteggio di
+somiglianza: «staff» sta lì perché ce l'abbiamo messo noi, e il giorno che è
+sbagliato si toglie una riga. «moderazione» somiglia quanto basta a convincere
+un algoritmo, e infatti non si abbina. Due candidati per lo stesso posto fermano
+il consiglio invece di farlo scegliere a caso, come già succede per i canali.
+
+`consiglioRuoli` dice tre cose diverse: **prendi** (stesso mestiere sotto un
+altro nome → si rinomina), **risparmia** (la traccia non lo prevede ma ha poteri
+o si fa vedere), **togli** (niente da perdere). Il rinomina è la parte che conta:
+cancellare «mod» e creare «Moderatori» toglie il ruolo a tutti, rinominarlo no.
+
+`applicaConsiglio` applica **solo i rinomini**, e solo facendo piazza pulita. Non
+è una mezza misura: un rinomina non tocca l'invariante della modalità distruttiva
+— alla fine il server ha esattamente i ruoli della traccia — mentre risparmiare
+un ruolo che la traccia non prevede vuol dire che il server NON diventa la
+traccia. Quella è una deroga, e le deroghe le decide chi ha il server: resta un
+gesto, in elenco, accanto al confronto.
+
+Il preset porta `ruoli[].da` (l'id da rinominare) e `risparmia` (gli id da non
+cancellare). `risparmia` è una lista di **id**, non di nomi: un ruolo risparmiato
+che poi qualcuno rinomina resta risparmiato, che è quello che voleva dire.
+L'impronta comprende il valore del rinomina, sennò un «sì, fallo» dato su un nome
+varrebbe per un altro.
