@@ -66,9 +66,14 @@ test('i ruoli arrivano con posizione e provenienza, che servono a sapere cosa si
     const r = await ruoli('t', '123456789');
     assert.equal(r.ok, true);
     assert.deepEqual(r.ruoli, [
-      { id: '100000000000000010', nome: 'Sub Twitch', position: 7, managed: true, colore: 10181046 },
-      { id: '100000000000000011', nome: 'Affezionati', position: 3, managed: false, colore: 0 },
+      { id: '100000000000000010', nome: 'Sub Twitch', position: 7, managed: true, colore: 10181046, permessi: '0' },
+      { id: '100000000000000011', nome: 'Affezionati', position: 3, managed: false, colore: 0, permessi: '0' },
     ], 'chi non ha id non e\' un ruolo');
+    // I permessi del ruolo servono a sapere cosa puo' fare il BOT senza
+    // chiederlo a Discord una seconda volta: i suoi permessi sono l'unione di
+    // quelli dei ruoli che ha, e i ruoli li abbiamo gia' qui.
+    const con = await (async () => { finto(() => ({ stato: 200, corpo: [{ id: '100000000000000012', name: 'Capo', permissions: '8' }] })); return ruoli('t', '123456789'); })();
+    assert.equal(con.ruoli[0].permessi, '8');
   } finally { ripulisci(); }
 });
 
@@ -210,8 +215,18 @@ test('la prova del pannello guarda tre cose: il server, il bot, i ruoli', async 
 });
 
 test('il nome del server torna indietro, cosi\' si vede a cosa ci si e\' attaccati', async () => {
-  finto(() => ({ stato: 200, corpo: { id: '123456789', name: 'Il salotto' } }));
+  finto(() => ({ stato: 200, corpo: { id: '123456789', name: 'Il salotto', rules_channel_id: '100000000000000099', features: ['COMMUNITY'] } }));
   try {
-    assert.deepEqual(await server('t', '123456789'), { ok: true, id: '123456789', nome: 'Il salotto' });
+    const s = await server('t', '123456789');
+    assert.equal(s.ok, true);
+    assert.equal(s.id, '123456789');
+    assert.equal(s.nome, 'Il salotto');
+    // E con lui i canali che Discord gestisce da se': non un elenco nostro da
+    // tenere aggiornato, ma quello che dice il server. E' cosi' che il
+    // costruttore sa cosa non puo' toccare nemmeno quando gli si dice «togli
+    // tutto quello che non e' nel preset».
+    assert.equal(s.guild.rules_channel_id, '100000000000000099');
+    assert.equal(s.guild.system_channel_id, null, 'quello che il server non nomina resta vuoto, non inventato');
+    assert.equal(s.guild.community, true);
   } finally { ripulisci(); }
 });

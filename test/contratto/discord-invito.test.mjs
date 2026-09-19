@@ -49,8 +49,26 @@ test('i due giri tornano dalla stessa porta, e a distinguerli e\' lo stato monou
   assert.match(SRV, /dcStati\.set\(state, \{ tipo: 'spettatore', canale/);
 });
 
-test('al bot si chiede un permesso solo, e non si offre una strada che non c\'e\'', () => {
-  assert.match(API, /export const PERMESSI_BOT = '268435456';/, 'solo «Gestire i ruoli»');
+test('al bot si chiedono solo i permessi che usiamo, e il numero non si scrive a mano', () => {
+  // Il numero dei permessi di Discord e' una somma di potenze di due: scritto a
+  // mano non si legge, e aggiungerne uno diventa una cifra che cambia senza che
+  // nessuno sappia cosa e' entrato. Qui si compone da permessi che hanno un
+  // nome, e la prova puo' leggerli uno per uno.
+  const r = /export const PERMESSI_BOT = String\(([A-Z_ |]+)\);/.exec(API);
+  assert.ok(r, 'i permessi dell\'invito si compongono da costanti con un nome');
+  const chiesti = r[1].split('|').map((x) => x.trim()).sort();
+  assert.deepEqual(chiesti, ['MANAGE_CHANNELS', 'MANAGE_ROLES'],
+    'i ruoli per i privilegi, i canali per il costruttore: nient\'altro');
+  // E ognuno di quelli che chiediamo deve servire a qualcosa. Un permesso che
+  // non usiamo mai e' potere tenuto in tasca per niente, e su casa d'altri.
+  for (const p of chiesti) {
+    assert.match(API, new RegExp(`puo\\(bits, ${p}\\)`), `${p} si chiede all'invito ma non lo usa nessuno`);
+  }
+  // Allargare i permessi ha un prezzo: chi aveva gia' invitato il bot non ce
+  // li ha. Non lo deve scoprire da un errore a meta' costruzione.
+  const COS = leggi('src/features/discord-costruisci.js');
+  assert.match(COS, /if \(!a\.foto\.puoCanali\) \{/, 'il costruttore guarda il permesso PRIMA di scrivere');
+  assert.match(COS, /reinvito: true/, 'e la cura che dice e\' ripassare dal tasto dell\'invito');
   const f = API.slice(API.indexOf('export function urlInvitoBot'));
   assert.match(f.slice(0, 500), /scope: 'bot'/);
   assert.ok(!/guilds|administrator|permissions: '8'/.test(f.slice(0, 500)), 'niente poteri che non ci servono');
