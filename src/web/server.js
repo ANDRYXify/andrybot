@@ -22,7 +22,7 @@ import * as licenza from '../licenza.js';      // il nome con cui questo softwar
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
-import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer } from '../db.js';
+import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi } from '../db.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { renderLinkPage, renderInformativa, accentoDi } from '../features/linkpagina.js';
@@ -77,6 +77,8 @@ import * as tiktok from '../features/tiktok.js';
 import * as discord from '../features/discord.js';
 import * as dcApi from '../features/discord-api.js';
 import * as dcCollega from '../features/discord-collega.js';
+import * as dcGiro from '../features/discord-giro.js';
+import { normRegole, fuoriPortata, mioLivello, TIPI as TIPI_RUOLO, haSoglia } from '../features/discord-ruoli.js';
 import * as instagram from '../features/instagram.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
@@ -3912,6 +3914,85 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (map && apriSessionePerLogin(req, map.login)) return res.redirect('/');
     return res.redirect('/?tgapp=noncollegato');
   }));
+
+  // ── I ruoli del server Discord ──
+  //
+  // Il token del bot NON esce mai da qui: quello che il pannello riceve dice se
+  // c'e' e come si chiama il server, non com'e' fatto. Un pannello che rimostra
+  // il segreto che gli hai dato e' un segreto in piu' in giro, e non serve a
+  // niente: chi lo rivuole lo rigenera su Discord.
+  const ruoliVisti = (c) => ({
+    configurato: !!(c?.token && c?.guild),
+    guild: String(c?.guild || ''),
+    guildNome: String(c?.guild_nome || ''),
+    botNome: String(c?.bot_nome || ''),
+    attivo: !!c?.attivo,
+    regole: c?.regole || [],
+    ultimoGiro: Number(c?.ultimo_giro) || 0,
+    ultimoEsito: c?.ultimo_esito || {},
+  });
+
+  app.get('/api/streamer/ruoli', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    res.json({
+      ...ruoliVisti(dcRuoli.get(login)),
+      collegamentoOk: dcCollega.attivo(),
+      collegati: dcLink.quanti(login),
+      // QUALI condizioni esistono lo dice la regola, non il pannello. Le
+      // PAROLE con cui si chiamano le sa il pannello, che parla tre lingue.
+      tipi: TIPI_RUOLO.map((t) => ({ id: t, soglia: haSoglia(t) })),
+    });
+  });
+
+  app.post('/api/streamer/ruoli', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const b = req.body || {};
+    const campi = {};
+    // un campo vuoto vuol dire «non l'ho toccato», non «cancellalo»: il token
+    // il pannello non ce l'ha, quindi non puo' nemmeno rimandarlo indietro.
+    if (typeof b.token === 'string' && b.token.trim()) campi.token = b.token.trim();
+    if (b.guild !== undefined) campi.guild = b.guild;
+    if (b.regole !== undefined) campi.regole = normRegole(b.regole);
+    if (b.attivo !== undefined) campi.attivo = !!b.attivo;
+    const prima = dcRuoli.get(login);
+    const token = campi.token || prima?.token || '';
+    const guild = campi.guild !== undefined ? String(campi.guild).replace(/[^0-9]/g, '') : (prima?.guild || '');
+    if (campi.attivo && !(token && guild)) {
+      return res.status(400).json({ errore: 'Prima il token del bot e l\'id del server: senza, non c\'e\' niente da accendere.' });
+    }
+    res.json(ruoliVisti(dcRuoli.set(login, campi)));
+  }));
+
+  // La prova accetta un token appena scritto e non ancora salvato: sennò per
+  // provarlo bisognerebbe prima fidarsene.
+  app.post('/api/streamer/ruoli/prova', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = dcRuoli.get(login);
+    const token = (typeof req.body?.token === 'string' && req.body.token.trim()) || c?.token || '';
+    const guild = String(req.body?.guild ?? c?.guild ?? '').replace(/[^0-9]/g, '');
+    const r = await dcApi.prova(token, guild);
+    if (!r.ok) return res.status(400).json({ errore: r.errore });
+    dcRuoli.set(login, { guildNome: r.server, botNome: r.bot });
+    const alti = fuoriPortata(r.ruoli, mioLivello(r.ruoli, r.ruoliBot));
+    res.json({ ok: true, server: r.server, bot: r.bot,
+      ruoli: r.ruoli.filter((x) => !x.managed || alti.has(x.id))
+        .map((x) => ({ id: x.id, nome: x.nome, colore: x.colore, fuoriPortata: alti.has(x.id) })) });
+  }));
+
+  app.post('/api/streamer/ruoli/giro', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const e = await dcGiro.giro(login, {
+      prova: !!req.body?.prova,
+      quadro: (gente) => helix.ruoliDi(login, gente),
+    });
+    if (!e) return res.status(400).json({ errore: 'Prima il token del bot e l\'id del server.' });
+    res.json(e);
+  }));
+
+  app.delete('/api/streamer/ruoli', requireOwner, (req, res) => {
+    dcRuoli.scorda(currentUser(req).login);
+    res.json({ ok: true });
+  });
 
   // ── Collegare uno spettatore a Discord ──
   //

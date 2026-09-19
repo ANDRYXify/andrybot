@@ -517,6 +517,14 @@ function apiDemo(percorso, opzioni = {}) {
     return Promise.resolve({ ok: true, contatore: c });
   }
 
+  if (via === '/api/streamer/ruoli/prova') {
+    return Promise.resolve({ ok: true, server: 'Casa di andryx', bot: 'SocialBot', ruoli: [
+      { id: '100000000000000010', nome: 'Abbonati', colore: 10181046, fuoriPortata: false },
+      { id: '100000000000000011', nome: 'Affezionati', colore: 3447003, fuoriPortata: false },
+      { id: '100000000000000012', nome: 'Moderatori', colore: 3066993, fuoriPortata: true },
+    ] });
+  }
+
   if (via === '/api/streamer/occasione') {
     const lista = (_demoScritture.overlays || _demoGet('/api/streamer/overlays').overlays || []);
     const ov = lista.find((o) => o.id === opzioni.body?.overlay) || lista[0];
@@ -567,6 +575,12 @@ function _demoGet(via) {
       { id: 'cs2', nome: 'Counter-Strike 2', cartella: 'game/csgo/cfg', file: 'gamestate_integration_socialbot_cs2.cfg' },
       { id: 'dota2', nome: 'Dota 2', cartella: 'game/dota/cfg/gamestate_integration', file: 'gamestate_integration_socialbot_dota2.cfg' },
     ] },
+    '/api/streamer/ruoli': { configurato: true, guild: '123456789012345678', guildNome: 'Casa di andryx', botNome: 'SocialBot',
+      attivo: true, collegamentoOk: true, collegati: 14, ultimoGiro: Date.now() - 11 * 60000,
+      ultimoEsito: { visti: 14, dati: 2, tolti: 1, fuori: 1, bloccati: [], scartate: 0, errori: [] },
+      regole: [{ tipo: 'sub', ruolo: '100000000000000010', soglia: 0 }, { tipo: 'ore', ruolo: '100000000000000011', soglia: 10 }],
+      tipi: [{ id: 'follower', soglia: false }, { id: 'sub', soglia: false }, { id: 'vip', soglia: false }, { id: 'mod', soglia: false },
+        { id: 'monete', soglia: true }, { id: 'ore', soglia: true }, { id: 'serie', soglia: true }, { id: 'dirette', soglia: true }] },
     '/api/contatori': { contatori: [
       { comando: 'morti', etichetta: 'Morti', emoji: '', valore: 7, step: 1, auto_parola: '', reward_id: '',
         verbiCfg: { leggi: { parole: [], chi: 'tutti' }, piu: { parole: ['+', 'add'], chi: 'mod' }, meno: { parole: ['-', 'meno'], chi: 'mod' }, azzera: { parole: ['reset', 'azzera'], chi: 'mod' }, imposta: { parole: ['set'], chi: 'mod' }, mostra: { parole: ['on', 'mostra'], chi: 'mod' }, nascondi: { parole: ['off', 'nascondi'], chi: 'mod' } },
@@ -898,6 +912,7 @@ const SPIEGA_DEMO = {
   ascolto: 'Comandi il bot a voce mentre streammi: parli e lui esegue, senza toccare la tastiera.',
   notifiche: 'Gli avvisi quando esci allo scoperto: Discord quando vai in diretta, e i nuovi post su TikTok, YouTube e Instagram.',
   telegram: 'Il bot dentro il tuo gruppo Telegram: avvisa quando parti, risponde ai comandi, si ricorda i compleanni dei membri e ti manda il rapporto della serata in privato.',
+  ruoli: 'I ruoli del tuo server Discord dati da quello che succede su Twitch: chi ti segue, chi è abbonato, chi c’è sempre.',
 };
 
 function montaDemo() {
@@ -2339,6 +2354,7 @@ const GRUPPI = [
   ] },
   { id: 'community', nome: 'Le tue community', schede: [
     ['telegram', 'Telegram'],
+    ['ruoli', 'Discord'],
   ] },
   { id: 'account', nome: 'Account', schede: [
     ['stato', 'Stato'],
@@ -2393,6 +2409,7 @@ const T_SCHEDA = {
   emote: ['Emote (7TV)', 'Emotes (7TV)', 'Emotes (7TV)'],
   notifiche: ['Avvisi', 'Alerts', 'Avisos'],
   telegram: ['Telegram', 'Telegram', 'Telegram'],
+  ruoli: ['Discord', 'Discord', 'Discord'],
   dirette: ['Dirette', 'Streams', 'Directos'],
   sottoscrizione: ['Abbonamento', 'Subscription', 'Suscripción'],
   pagina: ['Pagina link', 'Link page', 'Página de enlaces'],
@@ -2432,6 +2449,7 @@ const ICONA = {
   emote:       _ico('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><line x1="9" x2="9.01" y1="9.5" y2="9.5"/><line x1="15" x2="15.01" y1="9.5" y2="9.5"/>'),
   notifiche:   _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
   telegram:    _ico('<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12Z"/><path d="M8.5 12h.01"/><path d="M12 12h.01"/><path d="M15.5 12h.01"/>'),
+  ruoli:       _ico('<path d="M12 3 5 6v5c0 4.4 3 8.4 7 10 4-1.6 7-5.6 7-10V6l-7-3Z"/><circle cx="12" cy="10" r="2.2"/><path d="M8.6 16.2a3.6 3.6 0 0 1 6.8 0"/>'),
   grafiche:    _ico('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5a2 2 0 0 0-2.8 0L4 22"/>'),
   dirette:     _ico('<path d="M3 13h3l3-7 4 14 3-9 2 4h3"/>'),
   sottoscrizione: _ico('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 14.5h4"/>'),
@@ -2468,6 +2486,7 @@ const DESC = {
   grafiche: ['La locandina della diretta da postare sui social, coi tuoi colori e il tuo nome.', 'The stream poster to post on socials, with your colours and your name.', 'El cartel del directo para publicar en redes, con tus colores y tu nombre.'],
   consolify: ['I tasti del tuo canale sotto le dita: sul telefono, sul tablet o su una tastiera vera.', 'Your channel’s keys under your fingers: on your phone, tablet or a real key pad.', 'Las teclas de tu canal bajo los dedos: en el móvil, la tablet o un teclado de verdad.'],
   telegram: ['Il tuo bot nel tuo gruppo: avvisi, comandi, compleanni, membri e il rapporto della serata in privato.', 'Your bot in your group: alerts, commands, birthdays, members and the night report in private.', 'Tu bot en tu grupo: avisos, comandos, cumpleaños, miembros y el informe de la noche en privado.'],
+  ruoli: ['I ruoli del tuo server dati da quello che succede su Twitch: chi ti segue, chi è abbonato, chi c’è sempre.', 'Your server’s roles given by what happens on Twitch: who follows you, who is subscribed, who is always there.', 'Los roles de tu servidor dados por lo que pasa en Twitch: quién te sigue, quién está suscrito, quién está siempre.'],
   dirette: ['Il rapporto di ogni diretta: spettatori, chat, follower, presenti, clip e donazioni. E dove riceverlo.', 'The report of every stream: viewers, chat, followers, attendees, clips and donations. And where to get it.', 'El informe de cada directo: espectadores, chat, seguidores, presentes, clips y donaciones. Y dónde recibirlo.'],
   sottoscrizione: ['Cosa hai attivo, cosa comprende e come annullare.', 'What you have active, what it includes and how to cancel.', 'Qué tienes activo, qué incluye y cómo cancelar.'],
   pagina: ['La tua pagina pubblica con tutti i link, su socialbot.live/u/iltuonome.', 'Your public page with all your links, at socialbot.live/u/yourname.', 'Tu página pública con todos tus enlaces, en socialbot.live/u/tunombre.'],
@@ -2629,6 +2648,8 @@ const GUIDE = {
     come: [['Scegli qui in cima la piattaforma che vuoi collegare.', 'Pick the platform you want to connect, up here.', 'Elige aquí arriba la plataforma que quieras conectar.'], ['Aggiungi i tuoi profili social per gli avvisi dei nuovi contenuti.', 'Add your social profiles for new-content alerts.', 'A\u00f1ade tus perfiles sociales para los avisos de nuevo contenido.', '#feed-fonti'], ['Attiva gli avvisi che vuoi e personalizza i messaggi (usa \u00abProva\u00bb per un test).', 'Turn on the alerts you want and customize the messages (use \u201cTest\u201d for a preview).', 'Activa los avisos que quieras y personaliza los mensajes (usa \u00abProbar\u00bb para una prueba).', '#chk-promo']] },
   telegram: { serve: ['Portare il bot nel tuo gruppo Telegram: avvisa quando vai in diretta, risponde ai comandi, fa gli auguri ai membri e ti manda il rapporto della serata in privato.', 'Bring the bot into your Telegram group: it alerts when you go live, answers commands, wishes members happy birthday and sends you the night\u2019s report in private.', 'Llevar el bot a tu grupo de Telegram: avisa cuando est\u00e1s en directo, responde a los comandos, felicita a los miembros y te manda el informe de la noche en privado.'],
     come: [['Incolla la chiave del TUO bot, quella che ti d\u00e0 BotFather.', 'Paste the key of YOUR bot, the one BotFather gives you.', 'Pega la clave de TU bot, la que te da BotFather.', '#inp-tg-token'], ['Aggiungi il bot al gruppo e premi \u00abCollega\u00bb: ti trova da solo.', 'Add the bot to the group and press \u00abConnect\u00bb: it finds itself.', 'A\u00f1ade el bot al grupo y pulsa \u00abConectar\u00bb: se encuentra solo.', '#btn-tg-rileva'], ['Accendi l\'avviso e scrivi il messaggio come lo vuoi tu.', 'Turn on the alert and write the message the way you want it.', 'Enciende el aviso y escribe el mensaje como lo quieras.', '#chk-tg-attivo']] },
+  ruoli: { serve: ['Dare i ruoli del tuo server Discord in base a quello che succede su Twitch: chi ti segue, chi è abbonato, chi è VIP o moderatore, quante ore ti ha guardato, quante monete ha, da quante dirette di fila c’è.', 'Give your Discord server’s roles based on what happens on Twitch: who follows you, who is subscribed, who is a VIP or moderator, how many hours they watched, how many coins they have, how long their streak is.', 'Dar los roles de tu servidor de Discord según lo que pasa en Twitch: quién te sigue, quién está suscrito, quién es VIP o moderador, cuántas horas te ha visto, cuántas monedas tiene, cuántos directos seguidos lleva.'],
+    come: [['Incolla il token del TUO bot Discord e l’id del tuo server, poi premi «Prova»: ti dico come si chiama il server e quali ruoli riesce a muovere.', 'Paste the token of YOUR Discord bot and your server id, then press «Test»: I tell you the server’s name and which roles it can move.', 'Pega el token de TU bot de Discord y el id de tu servidor, luego pulsa «Probar»: te digo cómo se llama el servidor y qué roles puede mover.', '#dc-token'], ['Su Discord, in Impostazioni server → Ruoli, trascina il ruolo del bot SOPRA quelli che deve poter dare: più in basso di un ruolo, non lo tocca.', 'On Discord, in Server Settings → Roles, drag the bot’s role ABOVE the ones it must be able to give: below a role, it cannot touch it.', 'En Discord, en Ajustes del servidor → Roles, arrastra el rol del bot POR ENCIMA de los que debe poder dar: por debajo de un rol, no lo toca.', ''], ['Scrivi le regole: una condizione e il ruolo che le corrisponde. Poi accendi.', 'Write the rules: a condition and the role that matches it. Then turn it on.', 'Escribe las reglas: una condición y el rol que le corresponde. Luego enciende.', '#dc-regole'], ['Chi ti guarda si collega da solo: scrive !discord in chat e segue le istruzioni. Finché non si collega, il bot non lo tocca.', 'Your viewers link themselves: they type !discord in chat and follow the steps. Until they link, the bot does not touch them.', 'Quien te ve se vincula solo: escribe !discord en el chat y sigue los pasos. Hasta que no se vincula, el bot no lo toca.', '#dc-collegati']] },
   studio: { serve: ['Andare in diretta su Twitch dal browser, senza installare niente: componi scene con webcam, schermo, immagini, video, testo e overlay, regola l’audio col mixer e premi «Vai live».', 'Go live on Twitch from the browser, without installing anything: compose scenes with webcam, screen, images, video, text and overlay, tune the audio with the mixer and hit “Go live”.', 'Emitir en Twitch desde el navegador, sin instalar nada: compón escenas con webcam, pantalla, imágenes, vídeo, texto y overlay, ajusta el audio con el mezclador y pulsa «Emitir».'],
     come: [['Scegli fotocamera, microfono e qualità in «Ingressi & qualità».', 'Pick camera, microphone and quality in “Inputs & quality”.', 'Elige cámara, micrófono y calidad en «Entradas y calidad».', '#studio-cam-sel'], ['Aggiungi le fonti e sistemale sul palco (trascina per spostare/ridimensionare), o usa un layout rapido.', 'Add the sources and arrange them on the stage (drag to move/resize), or use a quick layout.', 'Añade las fuentes y colócalas en el escenario (arrastra para mover/redimensionar), o usa un diseño rápido.', '#studio-fonti'], ['Aggiungi la fonte «Overlay» per avere a schermo alert, chat ed effetti a punti canale.', 'Add the “Overlay” source to get alerts, chat and channel-point effects on screen.', 'Añade la fuente «Overlay» para tener en pantalla alertas, chat y efectos de puntos de canal.', '#studio-ov-sel'], ['Premi «Vai live» e tieni aperta questa scheda mentre trasmetti.', 'Hit “Go live” and keep this tab open while you broadcast.', 'Pulsa «Emitir» y mantén esta pestaña abierta mientras transmites.', '#studio-live']] },
   alert: { serve: ['Comporre quello che si vede sulla diretta — alert, chat a schermo, obiettivi, contatori — e prendere il link da mettere in OBS.', 'Compose what shows on your stream — alerts, on-screen chat, goals, counters — and get the link to put in OBS.', 'Componer lo que se ve en el directo — alertas, chat en pantalla, objetivos, contadores — y coger el enlace para poner en OBS.'],
@@ -3552,6 +3573,7 @@ function vistaPiattaforma() {
     ${pannelloAlert()}
     ${pannelloEffetti()}
     ${pannello7TV()}
+    ${pannelloRuoli()}
     ${pannelloTelegram()}
     ${pannelloNotifiche()}
     ${pannelloPaginaLink()}
@@ -16267,6 +16289,225 @@ function pannelloGiochi() {
     </div>`);
 }
 
+const T_DCREG = () => ({
+  follower: L('Ti segue', 'Follows you', 'Te sigue'),
+  sub: L('È abbonato', 'Is subscribed', 'Está suscrito'),
+  vip: L('È VIP', 'Is a VIP', 'Es VIP'),
+  mod: L('È moderatore', 'Is a moderator', 'Es moderador'),
+  monete: L('Ha almeno tante monete', 'Has at least this many coins', 'Tiene al menos estas monedas'),
+  ore: L('Ti ha guardato almeno tante ore', 'Has watched you at least this many hours', 'Te ha visto al menos estas horas'),
+  serie: L('È di fila da tante dirette', 'Has a streak of this many streams', 'Lleva una racha de tantos directos'),
+  dirette: L('C’è stato ad almeno tante dirette', 'Has attended at least this many streams', 'Ha estado en al menos tantos directos'),
+});
+
+let _dc = null;
+
+function pannelloRuoli() {
+  return pannello('ruoli', `
+    <div class="carta">
+      <h2>${_hIco(ICO.scudo)}${L('Il bot del tuo server', 'Your server’s bot', 'El bot de tu servidor')}</h2>
+      <p>${L('Discord i', 'Discord syncs your Twitch', 'Discord sincroniza los')} <strong>${L('sub', 'subs', 'subs')}</strong> ${L('di Twitch se li sincronizza da solo. Tutto il resto no: chi ti segue, chi è VIP, chi è moderatore, quante ore ti ha guardato, quante monete ha, da quante dirette di fila c’è. Quei dati ce li abbiamo, e qui diventano ruoli.', 'by itself. Everything else it does not: who follows you, who is a VIP, who is a moderator, how many hours they watched, how many coins they have, how long their streak is. We have that, and here it becomes roles.', 'de Twitch solo. Todo lo demás no: quién te sigue, quién es VIP, quién es moderador, cuántas horas te ha visto, cuántas monedas tiene, cuántos directos seguidos lleva. Eso lo tenemos, y aquí se convierte en roles.')}</p>
+      <ol class="passi">
+        <li><strong>${L('Crea il bot', 'Create the bot', 'Crea el bot')}</strong>: ${L('su', 'on', 'en')} <a href="https://discord.com/developers/applications" target="_blank" rel="noopener">Discord Developers</a> → <em>New Application</em> → <em>Bot</em> → <em>Reset Token</em>.</li>
+        <li><strong>${L('Invitalo sul tuo server', 'Invite it to your server', 'Invítalo a tu servidor')}</strong> ${L('col permesso', 'with the', 'con el permiso')} <em>${L('Gestire i ruoli', 'Manage Roles', 'Gestionar roles')}</em>.</li>
+        <li><strong>${L('Mettilo in alto', 'Put it high up', 'Ponlo arriba')}</strong>: ${L('in Impostazioni server → Ruoli, trascina il suo ruolo SOPRA quelli che deve poter dare. Discord non guarda il nome del permesso, guarda la posizione.', 'in Server Settings → Roles, drag its role ABOVE the ones it must be able to give. Discord does not look at the permission name, it looks at the position.', 'en Ajustes del servidor → Roles, arrastra su rol POR ENCIMA de los que debe poder dar. Discord no mira el nombre del permiso, mira la posición.')}</li>
+        <li><strong>${L('L’id del server', 'The server id', 'El id del servidor')}</strong>: ${L('clic destro sul server → Copia ID server.', 'right click on the server → Copy Server ID.', 'clic derecho en el servidor → Copiar ID del servidor.')}</li>
+      </ol>
+      <div class="griglia-campi spazio-sopra">
+        <div><label class="campo" for="dc-token">${L('Token del bot', 'Bot token', 'Token del bot')}</label>
+          <input type="password" id="dc-token" autocomplete="off" placeholder="${L('incollalo qui', 'paste it here', 'pégalo aquí')}"></div>
+        <div><label class="campo" for="dc-guild">${L('Id del server', 'Server id', 'Id del servidor')}</label>
+          <input type="text" id="dc-guild" inputmode="numeric" maxlength="24" placeholder="123456789012345678"></div>
+      </div>
+      <p class="spazio-sopra riga-flessibile">
+        <button class="btn" id="dc-prova">${L('Prova e salva', 'Test and save', 'Probar y guardar')}</button>
+        <button class="btn secondario" id="dc-scorda" hidden>${L('Scollega tutto', 'Disconnect everything', 'Desconectar todo')}</button>
+      </p>
+      <p class="tg-stato" id="dc-stato" hidden></p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.moduli)}${L('Le regole', 'The rules', 'Las reglas')}</h2>
+      <p>${L('Una condizione e il ruolo che le corrisponde. Il bot tocca solo i ruoli che nomini qui: quelli che dai a mano non li guarda nemmeno.', 'A condition and the role that matches it. The bot only touches the roles you name here: the ones you give by hand it does not even look at.', 'Una condición y el rol que le corresponde. El bot solo toca los roles que nombras aquí: los que das a mano ni los mira.')}</p>
+      <div id="dc-regole" class="spazio-sopra"></div>
+      <p class="spazio-sopra"><button class="btn secondario" id="dc-piu">${_bIco(ICO.piu)}${L('Aggiungi una regola', 'Add a rule', 'Añadir una regla')}</button></p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="dc-attivo"><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Tieni i ruoli aggiornati', 'Keep the roles up to date', 'Mantén los roles al día')}</span>
+      </div>
+      <p class="spazio-sopra riga-flessibile">
+        <button class="btn" id="dc-salva">${L('Salva', 'Save', 'Guardar')}</button>
+        <button class="btn secondario" id="dc-vedi">${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
+        <button class="btn secondario" id="dc-adesso">${L('Passa adesso', 'Go round now', 'Pasa ahora')}</button>
+      </p>
+      <p class="tg-stato" id="dc-esito" hidden></p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.medaglia)}${L('Chi si è collegato', 'Who linked up', 'Quién se ha vinculado')}</h2>
+      <p id="dc-collegati">${L('Carico…', 'Loading…', 'Cargando…')}</p>
+      <p class="suggerimento">${L('Si collegano da soli: scrivono', 'They link themselves: they type', 'Se vinculan solos: escriben')} <code>!discord</code> ${L('in chat e seguono le istruzioni. Finché non si collegano, il bot non li tocca — e con', 'in chat and follow the steps. Until they link, the bot does not touch them — and with', 'en el chat y siguen los pasos. Hasta que no se vinculan, el bot no los toca — y con')} <code>!discord via</code> ${L('si staccano, tenendosi i ruoli che hanno.', 'they unlink, keeping the roles they have.', 'se desvinculan, quedándose con los roles que tienen.')}</p>
+      <p class="suggerimento" id="dc-ultimo"></p>
+    </div>`);
+}
+
+function _dcRigaRegola(r, i, tipi) {
+  const nomi = T_DCREG();
+  const opzioni = tipi.map((t) => `<option value="${esc(t.id)}"${t.id === r.tipo ? ' selected' : ''}>${esc(nomi[t.id] || t.id)}</option>`).join('');
+  const conSoglia = (tipi.find((t) => t.id === r.tipo) || {}).soglia;
+  return `<div class="dc-regola riga-flessibile" data-i="${i}">
+    <select data-dc="tipo" aria-label="${esc(L('Condizione', 'Condition', 'Condición'))}">${opzioni}</select>
+    <input type="number" data-dc="soglia" min="1" max="100000" value="${Number(r.soglia) || 1}" aria-label="${esc(L('Quanto', 'How much', 'Cuánto'))}"${conSoglia ? '' : ' hidden'}>
+    <select data-dc="ruolo" aria-label="${esc(L('Quale ruolo', 'Which role', 'Qué rol'))}">${_dcOpzioniRuolo(r.ruolo)}</select>
+    <button type="button" class="btn secondario mini" data-dc="via">${esc(L('Togli', 'Remove', 'Quitar'))}</button>
+  </div>`;
+}
+
+function _dcOpzioniRuolo(scelto) {
+  const lista = (_dc && _dc.ruoli) || [];
+  if (!lista.length) {
+    return `<option value="${esc(scelto || '')}">${esc(scelto ? L('ruolo #', 'role #', 'rol #') + scelto : L('premi «Prova e salva»', 'press «Test and save»', 'pulsa «Probar y guardar»'))}</option>`;
+  }
+  return lista.map((x) => `<option value="${esc(x.id)}"${x.id === scelto ? ' selected' : ''}>${esc(x.nome)}${x.fuoriPortata ? ' — ' + esc(L('più in alto del bot', 'above the bot', 'por encima del bot')) : ''}</option>`).join('');
+}
+
+function _dcDisegnaRegole() {
+  const box = _g('dc-regole');
+  if (!box || !_dc) return;
+  const tipi = _dc.tipi || [];
+  box.innerHTML = (_dc.regole || []).map((r, i) => _dcRigaRegola(r, i, tipi)).join('')
+    || `<p class="suggerimento">${L('Ancora nessuna regola: senza, il bot non tocca niente.', 'No rules yet: without them, the bot touches nothing.', 'Aún ninguna regla: sin ellas, el bot no toca nada.')}</p>`;
+}
+
+function _dcLeggiRegole() {
+  const box = _g('dc-regole');
+  if (!box) return [];
+  return [...box.querySelectorAll('.dc-regola')].map((n) => ({
+    tipo: n.querySelector('[data-dc="tipo"]')?.value || '',
+    ruolo: n.querySelector('[data-dc="ruolo"]')?.value || '',
+    soglia: Number(n.querySelector('[data-dc="soglia"]')?.value) || 0,
+  })).filter((r) => r.tipo && r.ruolo);
+}
+
+function _dcDici(id, testo, tono) {
+  const n = _g(id);
+  if (!n) return;
+  n.className = 'tg-stato' + (tono ? ' ' + tono : '');
+  n.textContent = testo || '';
+  n.hidden = !testo;
+}
+
+function _dcMostraStato() {
+  if (!_dc) return;
+  _imposta('dc-guild', _dc.guild || '');
+  _imposta('dc-attivo', !!_dc.attivo);
+  const via = _g('dc-scorda'); if (via) via.hidden = !_dc.configurato;
+  const dove = _dc.guildNome ? `${_dc.guildNome}${_dc.botNome ? ' · ' + _dc.botNome : ''}` : '';
+  if (!_dc.collegamentoOk) _dcDici('dc-stato', L('Il collegamento con Discord non è acceso su questo server: chi ti guarda non può collegarsi.', 'The Discord link is not on for this server: your viewers cannot connect.', 'La conexión con Discord no está activa en este servidor: quien te ve no puede vincularse.'), 'guaio');
+  else if (_dc.configurato) _dcDici('dc-stato', dove || L('Configurato.', 'Configured.', 'Configurado.'), 'ok');
+  else _dcDici('dc-stato', '');
+  const q = _g('dc-collegati');
+  if (q) {
+    const n = Number(_dc.collegati) || 0;
+    q.textContent = n === 0 ? L('Ancora nessuno.', 'Nobody yet.', 'Todavía nadie.')
+      : (n === 1 ? L('Una persona collegata.', 'One person linked.', 'Una persona vinculada.')
+        : n + L(' persone collegate.', ' people linked.', ' personas vinculadas.'));
+  }
+  const u = _g('dc-ultimo');
+  if (u) u.textContent = _dc.ultimoGiro ? L('Ultimo giro: ', 'Last round: ', 'Última vuelta: ') + dataIt(_dc.ultimoGiro) + ' · ' + _dcEsito(_dc.ultimoEsito) : '';
+  _dcDisegnaRegole();
+}
+
+function _dcEsito(e) {
+  const x = e || {};
+  const p = [];
+  if (x.dati) p.push(x.dati + L(' dati', ' given', ' dados'));
+  if (x.tolti) p.push(x.tolti + L(' tolti', ' removed', ' quitados'));
+  if (x.fuori) p.push(x.fuori + L(' non nel server', ' not in the server', ' no están en el servidor'));
+  if ((x.bloccati || []).length) p.push((x.bloccati || []).length + L(' ruoli più in alto del bot', ' roles above the bot', ' roles por encima del bot'));
+  if (x.scartate) p.push(x.scartate + L(' regole scartate', ' rules discarded', ' reglas descartadas'));
+  if ((x.errori || []).length) p.push((x.errori || []).join(' · '));
+  return p.length ? p.join(' · ') : L('niente da cambiare', 'nothing to change', 'nada que cambiar');
+}
+
+async function caricaRuoli() {
+  let d = null;
+  try { d = await api('/api/streamer/ruoli'); } catch { d = null; }
+  if (!d) { _dcDici('dc-stato', L('Non riesco a leggere la configurazione.', 'I can’t read the configuration.', 'No consigo leer la configuración.'), 'guaio'); return; }
+  _dc = { ...d, ruoli: (_dc && _dc.ruoli) || [] };
+  _dcMostraStato();
+  if (!d.configurato) return;
+  try {
+    const r = await api('/api/streamer/ruoli/prova', { method: 'POST', body: {} });
+    _dc = { ..._dc, ruoli: r.ruoli || [], guildNome: r.server || _dc.guildNome, botNome: r.bot || _dc.botNome };
+    _dcMostraStato();
+  } catch (e) { _dcDici('dc-stato', e.message || L('Il bot non risponde.', 'The bot does not answer.', 'El bot no responde.'), 'guaio'); }
+}
+
+function collegaRuoli() {
+  const scheda = _g('scheda-ruoli');
+  if (!scheda || scheda.dataset.pronta) return;
+  scheda.dataset.pronta = '1';
+
+  _g('dc-prova')?.addEventListener('click', () => conErrore(async () => {
+    const corpo = { token: _v('dc-token') || '', guild: _v('dc-guild') || '' };
+    const r = await api('/api/streamer/ruoli/prova', { method: 'POST', body: corpo });
+    _dc = { ..._dc, ruoli: r.ruoli || [], guildNome: r.server, botNome: r.bot, configurato: true, guild: corpo.guild };
+    await api('/api/streamer/ruoli', { method: 'POST', body: corpo });
+    _imposta('dc-token', '');
+    const quanti = (r.ruoli || []).filter((x) => !x.fuoriPortata).length;
+    toast(L('Collegato ✓', 'Connected ✓', 'Conectado ✓'));
+    _dcDici('dc-stato', `${r.server} · ${r.bot} · ` + quanti + L(' ruoli che può muovere', ' roles it can move', ' roles que puede mover'), quanti ? 'ok' : 'guaio');
+    _dcDisegnaRegole();
+  }));
+
+  _g('dc-piu')?.addEventListener('click', () => {
+    if (!_dc) return;
+    _dc.regole = _dcLeggiRegole().concat([{ tipo: (_dc.tipi || [{ id: 'sub' }])[0].id, ruolo: '', soglia: 1 }]);
+    _dcDisegnaRegole();
+  });
+
+  _g('dc-regole')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-dc="via"]');
+    if (!b || !_dc) return;
+    const i = Number(b.closest('.dc-regola')?.dataset.i);
+    _dc.regole = _dcLeggiRegole().filter((_, k) => k !== i);
+    _dcDisegnaRegole();
+  });
+
+  _g('dc-regole')?.addEventListener('change', (e) => {
+    if (!e.target.matches('[data-dc="tipo"]') || !_dc) return;
+    _dc.regole = _dcLeggiRegole();
+    _dcDisegnaRegole();
+  });
+
+  _g('dc-salva')?.addEventListener('click', () => conErrore(async () => {
+    const d = await api('/api/streamer/ruoli', { method: 'POST', body: {
+      regole: _dcLeggiRegole(), attivo: !!_g('dc-attivo')?.checked, guild: _v('dc-guild') || '',
+    } });
+    _dc = { ..._dc, ...d };
+    toast(L('Salvato ✓', 'Saved ✓', 'Guardado ✓'));
+    _dcMostraStato();
+  }));
+
+  const _dcGiro = (prova) => conErrore(async () => {
+    await api('/api/streamer/ruoli', { method: 'POST', body: { regole: _dcLeggiRegole(), guild: _v('dc-guild') || '' } });
+    const e = await api('/api/streamer/ruoli/giro', { method: 'POST', body: { prova } });
+    _dcDici('dc-esito', (prova ? L('Farebbe: ', 'It would: ', 'Haría: ') : L('Fatto: ', 'Done: ', 'Hecho: ')) + _dcEsito(e), (e.errori || []).length ? 'guaio' : 'ok');
+    if (!prova) caricaRuoli();
+  });
+  _g('dc-vedi')?.addEventListener('click', () => _dcGiro(true));
+  _g('dc-adesso')?.addEventListener('click', () => _dcGiro(false));
+
+  _g('dc-scorda')?.addEventListener('click', () => conErrore(async () => {
+    if (!confirm(L('Tolgo il bot, le regole e i collegamenti di chi si era collegato. I ruoli che ha dato restano dove sono. Procedo?', 'I remove the bot, the rules and the links of those who connected. The roles it gave stay where they are. Shall I?', 'Quito el bot, las reglas y los vínculos de quien se vinculó. Los roles que dio se quedan donde están. ¿Sigo?'))) return;
+    await api('/api/streamer/ruoli', { method: 'DELETE' });
+    _dc = null;
+    toast(L('Scollegato.', 'Disconnected.', 'Desvinculado.'));
+    caricaRuoli();
+  }));
+}
+
 function pannelloTelegram() {
   const tg = stato.telegram || { configurato: false, gruppoOk: false, attivo: false, messaggio: '', botUsername: '', gruppo: '', pinLive: true };
   const msgDefault = '{nome} \u00e8 in diretta!\n\n{titolo}\n{gioco}\n\n{link}';
@@ -18680,6 +18921,7 @@ function caricaDatiScheda(id) {
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
+  if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'donazioni') { riempiDonazioni(); caricaStatoDonazioni(true); }
   if (id === 'grafiche') initGrafiche();

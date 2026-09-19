@@ -66,12 +66,43 @@ per togliere: i ruoli che ha restano suoi. Se lo streamer spegne tutto, i
 collegamenti vanno via con la configurazione: non si tengono consensi per un
 servizio che non c'e' piu'.
 
-## Quello che manca, e la strada scelta
+## Il pannello: la scheda Discord, in «Le tue community»
 
-Questo pezzo e' in costruzione. Cosa resta, in ordine:
+Sta li' e non fra gli **Avvisi** perche' sono due mestieri diversi: l'avviso
+«sono in onda» e' una notifica, questo e' un gestore di privilegi su casa di
+qualcun altro. Nel menu convivono, ognuno dove serve.
 
-- **Il pannello** (le regole, la prova del collegamento, cosa ha fatto l'ultimo
-  giro e cosa non ha potuto fare) e la **vetrina**.
+Tre carte, e ognuna risponde a una domanda:
+
+- **il bot del tuo server** — token e id, e un tasto che *prova*. La prova non
+  dice «ok»: dice come si chiama il server, come si chiama il bot, e **quanti
+  ruoli riesce davvero a muovere**. E' l'unica frase che smaschera il passo che
+  si sbaglia sempre (il ruolo del bot troppo in basso), prima che lo streamer
+  passi mezz'ora a chiedersi perche' non succede niente;
+- **le regole** — una condizione e il ruolo che le tocca. Quali condizioni
+  esistono lo dice la regola (`TIPI` viaggia dal server al pannello); come si
+  chiamano in italiano, inglese e spagnolo lo sa il pannello. Due cose diverse,
+  due posti diversi, e un cancello che controlla che l'elenco delle parole copra
+  l'elenco delle condizioni;
+- **chi si e' collegato** — quanti sono (non chi: quelli sono fatti loro), come
+  ci si collega, e cosa ha fatto l'ultimo giro, compresi i ruoli che non ha
+  potuto toccare.
+
+Due tasti che valgono piu' di quanto sembrano: **«fammi vedere cosa faresti»**
+funziona anche a interruttore spento — e' proprio li' che serve, prima di
+accendere — e non scrive niente; **«scollega tutto»** avvisa che i ruoli gia'
+dati restano dove sono, perche' toglierli sarebbe una punizione per una scelta
+dello streamer.
+
+Aprendo la scheda i ruoli si vanno a chiedere **subito**, non al primo tasto:
+una regola scritta ieri, riletta oggi, deve dire «Abbonati» e non un numero di
+diciotto cifre. E se intanto il token e' stato revocato, lo si scopre aprendo il
+pannello invece che il giorno in cui serve.
+
+Il token non torna mai indietro verso il browser. Un pannello che rimostra il
+segreto che gli hai dato e' un segreto in piu' in giro, e non serve a niente:
+chi lo rivuole lo rigenera su Discord. Percio' un campo vuoto vuol dire «non
+l'ho toccato», mai «cancellalo».
 
 ## Il collegamento, e il verso in cui va il codice
 
