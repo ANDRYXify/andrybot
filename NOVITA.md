@@ -35,6 +35,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - In fondo alla pagina delle donazioni c'è il collegamento ai tuoi link: chi arriva da un link diretto trova anche il resto. [vai: donazioni]
 - Nel costruttore Discord una categoria non risulta più «mai usata»: quel conto non esiste, e adesso ti dice quanti canali ha dentro e da quanto tacciono. [vai: dcserver]
 - C'è una pagina per dare una mano al progetto, su socialbot.live/sostieni: quanto vuoi tu, una volta sola, senza iscriverti a niente.
+- Vuoi che il server diventi esattamente la traccia? C'è una modalità apposta: la accendi tu, dura dieci minuti e si spegne da sola, e intanto la pagina cambia colore. [vai: dcserver]
+- Quando stai per cancellare un canale in cui si parlava ancora, o più di dieci cose insieme, ti chiedo di scrivere il nome del server: su Discord non tornano. [vai: dcserver]
+- Di ogni passaggio del costruttore resta scritto chi è stato e cosa ha fatto, coi nomi di quello che è sparito. È l'unico posto dove quei nomi restano. [vai: dcserver]
 
 ## 2026-09-18
 

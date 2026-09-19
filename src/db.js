@@ -731,6 +731,31 @@ CREATE TABLE IF NOT EXISTS sostegni (
   riferimento TEXT NOT NULL DEFAULT ''         -- il pagamento presso Stripe (pi_…)
 );
 CREATE INDEX IF NOT EXISTS idx_sostegni_stato ON sostegni(stato, created_at);
+
+-- IL REGISTRO DEI GIRI DEL COSTRUTTORE DISCORD.
+--
+-- Non serve a noi: serve a lui, il giorno che qualcuno chiede «chi ha
+-- cancellato #generale». Un giro distruttivo e' l'unica cosa irreversibile che
+-- questo prodotto sa fare, e una cosa irreversibile senza una riga che dica
+-- quando e cosa e' successa a nessuno.
+--
+-- Ci finiscono i NOMI di quello che e' stato tolto, non gli id: fra sei mesi
+-- un id non dice niente a una persona, e quello che si vuole ricordare e'
+-- «c'era un canale che si chiamava cosi'».
+CREATE TABLE IF NOT EXISTS dcserver_giri (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  quando INTEGER NOT NULL DEFAULT 0,
+  chi TEXT NOT NULL DEFAULT '',                -- l'identita' che ha premuto: il costruttore e' del proprietario, i moderatori non ci arrivano
+  distruttivo INTEGER NOT NULL DEFAULT 0,
+  impronta TEXT NOT NULL DEFAULT '',
+  creati INTEGER NOT NULL DEFAULT 0,
+  sistemati INTEGER NOT NULL DEFAULT 0,
+  tolti INTEGER NOT NULL DEFAULT 0,
+  nomi TEXT NOT NULL DEFAULT '',               -- cosa e' sparito, per nome
+  errori TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_dcserver_giri ON dcserver_giri(channel, quando);
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -1690,6 +1715,24 @@ export const contiSatispay = {
     return this.get(l);
   },
   togli(login) { db.prepare('DELETE FROM conti_satispay WHERE login=?').run(String(login).toLowerCase()); },
+};
+
+// I giri del costruttore Discord. Si scrive SEMPRE, anche quando non si e'
+// tolto niente: un registro che compare solo quando si cancella e' un registro
+// che non dice se quel giorno era stato fatto anche altro.
+export const dcGiri = {
+  segna(channel, { chi = '', distruttivo = false, impronta = '', creati = 0, sistemati = 0, tolti = 0, nomi = [], errori = [] }) {
+    db.prepare(`INSERT INTO dcserver_giri (channel, quando, chi, distruttivo, impronta, creati, sistemati, tolti, nomi, errori)
+      VALUES (?,?,?,?,?,?,?,?,?,?)`)
+      .run(String(channel).toLowerCase(), now(), String(chi || '').slice(0, 40), distruttivo ? 1 : 0,
+        String(impronta || '').slice(0, 32), creati | 0, sistemati | 0, tolti | 0,
+        (Array.isArray(nomi) ? nomi : []).slice(0, 80).join(', ').slice(0, 2000),
+        (Array.isArray(errori) ? errori : []).join(' · ').slice(0, 500));
+  },
+  ultimi(channel, quanti = 20) {
+    return db.prepare('SELECT * FROM dcserver_giri WHERE channel=? ORDER BY quando DESC LIMIT ?')
+      .all(String(channel).toLowerCase(), Math.max(1, Math.min(100, quanti | 0)));
+  },
 };
 
 // Il registro dei sostegni al progetto. Piccolo apposta: apri, paga, scadi,

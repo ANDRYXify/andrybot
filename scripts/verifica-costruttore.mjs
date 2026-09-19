@@ -83,6 +83,46 @@ try {
   chiedi((await pg.$eval('#dcs-esito', (n) => n.innerText)).length > 0, 'e dopo dice com\'e\' andata');
   chiedi(await pg.$eval('#dcs-costruisci', (n) => n.hidden), 'poi si spegne, cosi\' non si preme due volte');
 
+  // LA MODALITA' DISTRUTTIVA, DA FUORI.
+  //
+  // Qui non si guarda se il motore cancella bene: quello lo dicono le prove.
+  // Si guarda la cosa che il motore non puo' garantire da solo — che uno CAPISCA
+  // in che modalita' e'. Un pannello che cancella avendo l'aria di quello che
+  // costruisce e' un pannello che tradisce, anche col motore giusto.
+  const tinta = () => pg.$eval('#scheda-dcserver', (n) => n.dataset.distruttivo || '');
+  const tasto = () => pg.$eval('#dcs-costruisci', (n) => n.textContent.trim());
+  const diffOra = () => pg.$eval('#dcs-diff', (n) => n.innerText);
+
+  chiedi(await pg.$eval('#dcs-fascia', (n) => n.hidden) && !(await tinta()),
+    'di suo la scheda non e\' in modalita\' distruttiva');
+
+  await pg.click('#dcs-entra');
+  await pg.waitForTimeout(400);
+  chiedi(!(await pg.$eval('#dcs-fascia', (n) => n.hidden)), 'si entra, e lo dice una fascia');
+  chiedi(await tinta() === '1', 'e la scheda si tinge: non si puo\' non accorgersene');
+  chiedi(await pg.$eval('#dcs-entra', (n) => n.hidden), 'e non si entra due volte');
+  chiedi(/\d+ min/.test(await pg.$eval('#dcs-resta', (n) => n.textContent)), 'con scritto quanto le resta da vivere');
+  chiedi(await pg.$eval('#dcs-costruisci', (n) => n.hidden),
+    'l\'anteprima di prima non vale piu\': era di un\'altra modalita\'');
+
+  await pg.click('#dcs-vedi');
+  await pg.waitForTimeout(600);
+  const diffD = await diffOra();
+  chiedi(/Cancella \(\d+\)/.test(diffD), 'ora la differenza dice CANCELLA, col numero');
+  chiedi(/Crea/.test(diffD), 'e intanto crea lo stesso: distruttivo non vuol dire «solo cancella»');
+  chiedi(await tasto() === 'Fai piazza pulita', 'e il tasto non dice piu\' «Costruisci»');
+
+  await pg.click('#dcs-esci');
+  await pg.waitForTimeout(400);
+  chiedi(await pg.$eval('#dcs-fascia', (n) => n.hidden) && !(await tinta()), 'si esce, e la tinta va via');
+  chiedi(await pg.$eval('#dcs-costruisci', (n) => n.hidden),
+    'e anche l\'anteprima che cancellava se ne va: fuori dalla modalita\' non resta un tasto che cancella');
+
+  await pg.click('#dcs-vedi');
+  await pg.waitForTimeout(600);
+  const diffN = await diffOra();
+  chiedi(!/Cancella \(/.test(diffN) && /Resta dov/.test(diffN), 'e da fuori si torna a non cancellare niente');
+  chiedi(await tasto() === 'Costruisci', 'col tasto che torna a dire quello che fa');
   await pg.click('#dcs-salva');
   await pg.waitForTimeout(300);
   chiedi(guai.length === 0, 'e in tutto questo il browser non si e\' lamentato' + (guai.length ? ': ' + guai.join(' · ') : ''));

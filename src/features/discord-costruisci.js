@@ -97,13 +97,13 @@ export async function applica(token, guild, preset, { togliere = false, impronta
     return { ok: false, cambiato: true, impronta: a.impronta, differenza: a.differenza,
       errore: 'il server e\' cambiato da quando hai guardato: ricontrolla cosa succede e riconferma' };
   }
-  if (a.vuota) return { ok: true, creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, impronta: a.impronta, mancanti: a.mancanti, niente: true };
+  if (a.vuota) return { ok: true, creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, nomiTolti: [], impronta: a.impronta, mancanti: a.mancanti, niente: true };
 
   const d = a.differenza;
   const cat = categorieDi(a.foto.canali);
   const dentroId = (nome) => (nome ? cat.get(nomeCanale(TIPI.categoria, nome).toLowerCase()) || null : null);
 
-  const esito = { creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0 };
+  const esito = { creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, nomiTolti: [] };
   const passo = async (fn, conta) => {
     if (esito.fermo) return null;
     if (esito.fatte >= max) { esito.fermo = 'limite'; return null; }
@@ -154,7 +154,11 @@ export async function applica(token, guild, preset, { togliere = false, impronta
     const prima = (x) => (x.tipo === TIPI.categoria ? 1 : 0);
     for (const t of [...d.togli].sort((x, y) => prima(x) - prima(y))) {
       if (esito.fermo) break;
-      await passo(() => api.togliCanale(token, t.id), 'tolti');
+      const x = await passo(() => api.togliCanale(token, t.id), 'tolti');
+      // I NOMI di quello che e' sparito, per il registro. Non gli id: fra sei
+      // mesi un id non dice niente a una persona, e quello che si vuole
+      // ricordare e' «c'era un canale che si chiamava cosi'».
+      if (x?.ok) esito.nomiTolti.push(String(t.nome || ''));
     }
   }
 
