@@ -11,8 +11,9 @@ piattaforma, live, monete, probabilita') non ce n'era una che guardasse quanto
 era stato messo. Chi alzava la posta non comprava niente di piu', e soprattutto
 non lo vedeva nessuno.
 
-Da li' scendono tre cose, in ordine di quanto muovono davvero: **la scala**, **la
-gara** e **il richiamo**.
+Da li' scendono, in ordine di quanto muovono davvero: **la scala**, **la gara**,
+**il ricordo** — e, in mezzo, il caso che regge tutto il resto: **il cheer senza
+nome**.
 
 ## 1. La scala (`minQuantita` / `maxQuantita`)
 
@@ -82,7 +83,68 @@ quindi e' spegnibile, rinominabile e non vince mai su un comando dello streamer
 con lo stesso nome. Accetta un periodo: `!bit oggi`, `!bit settimana`,
 `!bit anno`, `!bit sempre`.
 
-## 3. Il richiamo del treno
+## 3. Il ricordo: il re dei Bit
+
+Il premio periodico in VIP c'era gia', e pescava dalle monete. Adesso lo
+streamer sceglie **da quale classifica** pesca (`premioVip.da`: `monete` o
+`bit`), e quella scelta tira dietro tutto il resto.
+
+**Il premio non sa da dove viene la classifica.** `vip.premia()` riceve `gente`
+gia' in ordine e la scorre; `premiaTopMonete` e `premiaTopBit` sono due modi di
+riempire quella lista. La terza sorgente che verra' non avra' bisogno di un
+terzo giro di premiazione.
+
+**Chi puo' vincere lo decide un posto solo** (`vip.puoVincere`): non il padrone
+di casa, non lo staff. Non e' una raffinatezza — Twitch RIFIUTA di dare il VIP a
+un moderatore, quindi un premio pescato da una classifica mista si brucia contro
+un rifiuto certo. La classifica delle monete ha la sua gara separata, quella dei
+Bit e' di Twitch e dentro ci sono tutti: e' li' che serviva.
+
+**Il silenzio di Twitch non e' un mese senza re.** Il giro si segna la data
+dell'ultimo premio, ed e' quella che impedisce di premiare due volte nello
+stesso periodo. Se la si scrivesse anche quando la classifica non e' arrivata
+(`null`), un permesso mancante cancellerebbe il premio del mese in silenzio.
+Quindi `bot.js` esce PRIMA di segnarsi il giro, e riprova all'ora dopo. E'
+per questo che `premiaTopBit` riceve le righe gia' decise invece di andarsele a
+prendere: distinguere «non lo so» da «non ha cheerato nessuno» tocca a chi
+decide se il periodo e' passato.
+
+**La corona e il saluto sono il premio visto da fuori.** Non hanno un loro
+interruttore: `bit.re(canale)` torna `null` se il premio e' spento o se pesca
+dalle monete. Cosi' non resta in chat un re che non regna piu', e non c'e' un
+secondo interruttore da ricordarsi.
+
+- **La corona** viaggia *col messaggio* (`corona` accanto a `piattaforma`), non
+  col tema: chi regna puo' cambiare mentre l'overlay e' aperto. Vale solo su
+  Twitch, perche' il login del re viene dalla classifica di Twitch e altrove lo
+  stesso nome e' un'altra persona. A schermo e' **disegnata** (SVG), non
+  un'emoji: un'emoji cambia faccia a ogni sistema e in una grafica in onda
+  sarebbe l'unica cosa non nostra.
+- **Il saluto** e' una volta per REGNO, e il segno e' la data
+  dell'incoronazione, non un `si'`: chi vince due mesi di fila comincia un regno
+  nuovo e viene salutato di nuovo. La frase la scrive lo streamer
+  (`premioVip.saluto`, segnaposti `{user}` e `{bit}`); vuota vuol dire «non
+  dirlo», e il segno si mette lo stesso — non «riprovaci a ogni messaggio».
+
+**Nel rapporto di fine diretta** i Bit della serata si sommano dagli eventi
+`channel.cheer` nella finestra della diretta, con chi ne ha messi di piu'
+*stasera*. Non e' la classifica del mese: quella e' di Twitch, e resta una sola.
+
+## 4. Il cheer senza nome
+
+Twitch lascia cheerare in anonimo e in quel caso non manda nessun nome. Il
+pericolo non e' restare senza una parola da scrivere: e' inventarne una —
+ripiegare sul nome di chi ha cheerato prima, o far passare per un nome una
+parola del sistema. In `features/bit.js` stanno le due risposte, perche' sono la
+stessa regola vista da due lati:
+
+    chiHaCheerato(d) -> '' se e' anonimo      (classifiche, record, premi)
+    comeSiChiama(d)  -> 'un anonimo'          (frasi da leggere)
+
+Avvisi e Moduli la prendono da li' invece di riscriversi il ripiego, e siccome
+guarda `is_anonymous` vale anche per un abbonamento regalato senza firma.
+
+## 5. Il richiamo del treno
 
 Vedi `OVERLAY.md`, sezione dell'hype train: nell'ultimo quarto della salita il
 bot dice quanti punti mancano al livello dopo, una volta per livello. Il numero
@@ -96,5 +158,6 @@ e' di Twitch, non nostro.
 - `node scripts/verifica-comandi.mjs` — `!bit` ha un gestore, non ruba il nome a
   nessuno, e la demo mostra lo stesso registro del prodotto.
 - `test/unita/moduli-quantita.test.mjs`, `test/unita/bit.test.mjs`,
+  `test/unita/bit-re.test.mjs`, `test/unita/rapporto.test.mjs`,
   `test/unita/treno.test.mjs`, `test/contratto/moduli-scala.test.mjs`,
-  `test/contratto/treno-default.test.mjs`.
+  `test/contratto/premio-bit.test.mjs`, `test/contratto/treno-default.test.mjs`.

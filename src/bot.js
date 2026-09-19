@@ -465,7 +465,14 @@ export class BotManager {
   }
 
   // Premi periodici: se lo streamer li ha attivati, ogni settimana/mese dà il
-  // VIP ai più affezionati (top monete). Controllato ogni ora.
+  // VIP a chi sta in cima — alle monete, che sono nostre, o ai Bit, che sono di
+  // Twitch. Controllato ogni ora.
+  //
+  // La differenza fra le due sorgenti non e' il nome: le monete le sappiamo
+  // sempre, la classifica dei Bit puo' non arrivare. E li' «non lo so» non e'
+  // «non ha cheerato nessuno»: se si trattassero uguali, un permesso mancante o
+  // un minuto storto di Twitch brucerebbero il premio del mese senza che nessuno
+  // se ne accorga. Quindi finche' non si sa, il periodo resta da premiare.
   async _controllaPremi() {
     try {
       for (const login of this.units.keys()) {
@@ -476,9 +483,20 @@ export class BotManager {
         const periodoMs = (mese ? 30 : 7) * 24 * 60 * 60_000;
         if (Date.now() - (Number(s.settings.premioVipUltimo) || 0) < periodoMs) continue;
         const durata = vip.parseDurata(mese ? 'mese' : 'settimana');
-        await ruoli.riallinea(this.helix, login, { forza: true });   // il premio pesca dal pubblico: prima si sa chi lo e'
-        await vip.premiaTopMonete(this.helix, login, Math.min(5, Math.max(1, Number(p.quanti) || 1)), durata, (t) => this.say(login, t), { saltaPerenni: p.saltaPerenni !== false });
-        streamers.setSettings(login, { ...s.settings, premioVipUltimo: Date.now() });
+        const quanti = Math.min(5, Math.max(1, Number(p.quanti) || 1));
+        const opz = { saltaPerenni: p.saltaPerenni !== false };
+        const dillo = (t) => this.say(login, t);
+        await ruoli.riallinea(this.helix, login, { forza: true });   // staff e padrone di casa non vincono: prima si sa chi sono
+        let re = s.settings.reBit || null;
+        if (p.da === 'bit') {
+          const righe = await bit.classifica(this.helix, login, { periodo: mese ? 'month' : 'week' });
+          if (!righe) continue;
+          const vinti = await vip.premiaTopBit(this.helix, login, righe, quanti, durata, dillo, opz);
+          if (vinti[0]) re = { login: vinti[0].login, nome: vinti[0].nome || vinti[0].display, bit: vinti[0].bit || 0, da: Date.now(), salutato: '' };
+        } else {
+          await vip.premiaTopMonete(this.helix, login, quanti, durata, dillo, opz);
+        }
+        streamers.setSettings(login, { ...s.settings, premioVipUltimo: Date.now(), ...(p.da === 'bit' ? { reBit: re } : {}) });
       }
     } catch (e) { log.error('premi VIP:', e?.message || e); }
   }
@@ -839,6 +857,8 @@ export class BotManager {
     // esiste la mezzanotte, esiste quando c'e'.
     try { compleanniFeat.auguriInChat(msg, parla, (c, eff) => this.effects?.fire(c, eff)); }
     catch (e) { log.debug(`#${login} auguri:`, e?.message || e); }
+    // Il re dei Bit che torna a scrivere: una volta per regno.
+    try { bit.salutaIlRe(msg, parla); } catch (e) { log.debug(`#${login} re dei Bit:`, e?.message || e); }
 
     // «Quello che ti sei costruito vince»: se questo e' un comando che lo
     // streamer ha gia' suo (comando semplice o Modulo), i comandi PRONTI non lo

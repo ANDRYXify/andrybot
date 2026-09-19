@@ -88,6 +88,7 @@
 .chat-riga .chat-badge:last-of-type { margin-right: .35rem; }
 
 .chat-riga .chat-da { height: .92em; width: auto; vertical-align: -0.1em; margin-right: .3rem; opacity: .72; }
+.chat-riga .chat-corona { height: 1em; width: auto; vertical-align: -0.12em; margin-right: .28rem; color: #ffcf4d; filter: drop-shadow(0 1px 2px rgba(0,0,0,.45)); }
 
 .chat-riga .emote { height: 1.5em; width: auto; vertical-align: middle; margin: -0.15em 0.05em 0; }
 .chat-riga { opacity: 0; }

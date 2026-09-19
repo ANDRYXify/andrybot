@@ -13,6 +13,7 @@
 // cheer: e' l'unico momento in cui la classifica puo' essere cambiata, quindi
 // e' l'unico momento in cui vale la pena richiederla. Cosi' chi scrive «!bit»
 // subito dopo aver cheerato si vede gia' dentro.
+import { streamers } from '../db.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('bit');
@@ -105,4 +106,66 @@ export async function riga(helix, channel, { mio = '', periodo = 'month', ora = 
   const righe = await classifica(helix, channel, { periodo, ora });
   if (!righe) { log.debug(`#${channel}: classifica Bit non disponibile`); return ''; }
   return inParole(righe, mio, periodo);
+}
+
+// ---------------------------------------------------------------- il re dei Bit
+//
+// IL RICORDO. Il premio periodico, quando pesca dai Bit, incorona chi sta in
+// cima: da li' in poi quella persona porta una corona accanto al nome nella
+// chat a schermo, e la prima volta che torna a scrivere il bot la saluta.
+//
+// Un interruttore solo. La corona e il saluto NON hanno un loro «attivo»: sono
+// il premio dei Bit visto da fuori. Se lo streamer lo spegne, o lo sposta sulle
+// monete, la corona sparisce senza che si debba ricordare di spegnerla altrove
+// — e senza lasciare in chat un re che non regna piu'.
+//
+// Il regno ha una data, e quella data e' il segno del saluto. Non un «si'»:
+// chi vince due mesi di fila comincia un regno nuovo, e il bot lo saluta di
+// nuovo. Con un «si'» sarebbe stato salutato una volta sola, per sempre.
+export const SALUTO_RE = '{user} è il re dei Bit, con {bit} Bit. Bentornato.';
+
+export function re(channel) {
+  const s = streamers.get(String(channel || '').toLowerCase())?.settings || {};
+  const p = s.premioVip;
+  if (!p?.attivo || p.da !== 'bit') return null;
+  const r = s.reBit;
+  if (!r?.login) return null;
+  return {
+    login: String(r.login).toLowerCase(),
+    nome: String(r.nome || r.login).slice(0, 40),
+    bit: Math.max(0, Number(r.bit) || 0),
+    da: Number(r.da) || 0,
+    salutato: Number(r.salutato) || 0,
+  };
+}
+
+// La corona vale SOLO su Twitch: il login del re viene dalla classifica di
+// Twitch, e su un'altra piattaforma lo stesso nome e' un'altra persona.
+export function portaCorona(channel, login, piattaforma = 'twitch') {
+  if (piattaforma && piattaforma !== 'twitch') return false;
+  const r = re(channel);
+  return !!r && !!login && r.login === String(login).toLowerCase();
+}
+
+export function salutaIlRe(msg, say) {
+  try {
+    if (!msg || msg.isSelf || msg.from_bot) return false;
+    const ch = String(msg.channel || '').toLowerCase();
+    if (!portaCorona(ch, msg.user, msg.piattaforma)) return false;
+    if (String(msg.text || '').trim().startsWith('!')) return false;
+    const r = re(ch);
+    if (!r.da || r.salutato === r.da) return false;
+    const s = streamers.get(ch)?.settings || {};
+    const modello = typeof s.premioVip?.saluto === 'string' ? s.premioVip.saluto : SALUTO_RE;
+    // Il segno si mette comunque: uno streamer che ha svuotato la frase ha
+    // detto «non dirlo», non «riprovaci a ogni messaggio».
+    streamers.setSettings(ch, { ...s, reBit: { ...s.reBit, salutato: r.da } });
+    const frase = modello.trim()
+      .split('{user}').join(msg.display || r.nome || msg.user)
+      .split('{bit}').join(migliaia(r.bit))
+      .trim();
+    if (!frase) return false;
+    say('👑 ' + frase.slice(0, 300));
+    return true;
+  } catch (e) { log.debug('salutaIlRe:', e?.message || e); return false; }
 }

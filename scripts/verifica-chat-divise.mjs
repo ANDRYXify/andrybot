@@ -30,6 +30,8 @@ const ROTTURE = [
     'il segno dell\'origine non compare nemmeno quando lo si chiede'],
   ['src/web/public/overlay-app.js', "  kick: [['path', { d: 'M4 14a1", "  kick: [['rect', { width: '20', height: '15', x: '2', y: '7', rx: '2' }], ['polyline', { points: '17 2 12 7 7 2' }]], _kick: [['path', { d: 'M4 14a1",
     'due chat diverse portano il medesimo segno'],
+  ['src/web/public/overlay-app.js', "  if (ev.corona) disegna(riga, CORONA, 'chat-corona');\n", '',
+    'il re dei Bit non porta la corona'],
 ];
 
 if (process.argv.includes('--selftest')) {
@@ -83,6 +85,7 @@ async function giro(mostra, chatStile, messaggi) {
   const righe = await page.$$eval('#chatlive .chat-riga', (l) => l.map((r) => ({
     testo: r.textContent.trim(),
     segno: r.querySelector('.chat-da') ? r.querySelector('.chat-da').innerHTML : '',
+    corona: !!r.querySelector('.chat-corona'),
   })));
   await page.close();
   return righe;
@@ -122,6 +125,14 @@ try {
   // 6. La famiglia spenta spegne tutto: la scelta delle sorgenti non la scavalca.
   r = await giro({ chat: false }, {}, [T, K]);
   dice(r.length === 0, 'chat spenta in questo overlay: non arriva niente', `sono arrivate ${r.length} righe`);
+
+  // 7. LA CORONA del re dei Bit: sta sulla riga di chi regna e su nessun'altra.
+  //    Viaggia col messaggio, non col tema, perche' chi regna puo' cambiare
+  //    mentre l'overlay e' aperto — e la riga accanto, dello stesso momento,
+  //    deve restare senza.
+  r = await giro({}, {}, [{ ...T, corona: true }, { ...K, user: 'altro', testo: 'senza corona' }]);
+  dice(r.length === 2 && r[0].corona, 'il re dei Bit porta la corona', 'la riga del re e\' senza corona');
+  dice(r.length === 2 && !r[1].corona, 'e chi non regna resta senza', 'la corona e\' finita anche su chi non l\'ha vinta');
 
   dice(errori.length === 0, 'nessun errore nella pagina', errori.join(' · '));
 } finally {

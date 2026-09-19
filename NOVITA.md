@@ -20,6 +20,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - I ruoli del tuo server Discord li dà il bot, in base a quello che succede su Twitch: chi ti segue, chi è abbonato, chi c'è sempre. Scrivi la regola, il resto lo fa lui. [vai: ruoli]
 - Chi ti guarda si collega da solo: scrive !discord in chat e segue due passi. Tocca solo chi si è collegato, e solo i ruoli che hai nominato tu. [vai: ruoli]
 - Il rapporto di fine diretta adesso conta anche i Bit della serata e ti dice chi ne ha messi di più. Chi ha cheerato in anonimo conta nel totale e resta senza nome. [vai: dirette]
+- Il premio VIP automatico adesso può pescare dai Bit invece che dalle monete: lo scegli tu, e vale la classifica vera di Twitch. [vai: giochi]
+- Chi guida i Bit diventa il re: tiene una corona accanto al nome nella chat a schermo, e quando torna a scrivere il bot lo saluta con la frase che hai scritto. [vai: giochi]
 
 ## 2026-09-18
 
