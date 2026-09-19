@@ -11,7 +11,7 @@ import { config } from './config.js';
 import * as filigrana from './watermark.js';
 import * as licenza from './licenza.js';
 import { canaleHa } from './features/accesso.js';
-import { tokens, streamers, memory, tgConf, tgDest, tgAmici, tgMsg, feedFonti, dcConf, dcRuoli, compleanni, pointAlerts, rapporti, postaStreamer } from './db.js';
+import { tokens, streamers, memory, tgConf, tgDest, amici, tgMsg, feedFonti, dcConf, dcDest, dcMsg, dcRuoli, avvisiConf, compleanni, pointAlerts, rapporti, postaStreamer } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
@@ -235,7 +235,7 @@ export class BotManager {
     this._tiktokTimer = setInterval(() => this._controllaTikTok().catch(() => {}), 3 * 60_000);
     // Dirette degli amici da annunciare su Telegram: non sono canali gestiti dal
     // bot, quindi nessun evento arriva da solo — vanno guardati.
-    this._amiciTimer = setInterval(() => this._giroAmiciTelegram().catch(() => {}), 2 * 60_000);
+    this._amiciTimer = setInterval(() => this._giroAmici().catch(() => {}), 2 * 60_000);
     // Nuovi post: avvisa quando esce un nuovo video su YouTube (via RSS, ogni 10 min).
     this._ytId = new Map();
     // La chat di YouTube si legge chiedendola: il motore che la chiede sa anche
@@ -1182,7 +1182,7 @@ export class BotManager {
     if (isLive) {
       this._annunciaTwitch(ch).catch((e) => log.error(`avviso live #${ch}:`, e?.message || e));
     } else {
-      this._chiudiTelegram(ch);
+      this._chiudiAvvisi(ch);
       this._scalaVipDiretta(ch);
       this._rapportoDiretta(ch).catch((e) => log.error(`rapporto #${ch}:`, e?.message || e));
     }
@@ -1265,32 +1265,72 @@ export class BotManager {
 
     const s = streamers.get(login);
     const conNome = { ...d, display: d.display || s?.display || login };
-    let inviati = 0;
-
-    try {
-      const conf = tgConf.get(login);
-      if (conf?.attivo && conf.token) {
-        const componi = (conLocandina) => avvisi.messaggio(conNome, piattaforma === 'twitch' ? conf.messaggio : '', { conLocandina });
-        const r = await this._diffondiTelegram(login, conf, avvisi.eventoDi(piattaforma), login, componi, { pin: true, info: d });
-        inviati += r.inviati || 0;
-      }
-    } catch (e) { log.error(`avviso Telegram ${piattaforma} #${login}:`, e?.message || e); }
-
-    try {
-      // Il token del bot non sta nella configurazione degli avvisi: sta nella
-      // busta dei segreti, con gli altri. Si prende qui e si passa, cosi' la
-      // configurazione resta una cosa che si puo' guardare senza scoprire
-      // niente. Chi va ancora di webhook non ne ha bisogno e non lo usa.
-      const conf = dcConf.get(login);
-      const conToken = conf?.canale ? { ...conf, token: dcApi.tokenDi(dcRuoli.get(login)) } : conf;
-      if (conf?.attivo && discord.configurato(conToken)) {
-        const r = await discord.notificaDiretta(conToken, conNome);
-        if (r?.ok) inviati++;
-      }
-    } catch (e) { log.error(`avviso Discord ${piattaforma} #${login}:`, e?.message || e); }
+    const { inviati } = await this._diffondi(login, avvisi.eventoDi(piattaforma), login, conNome, {
+      chiudi: true,
+      messaggioTg: piattaforma === 'twitch' ? (tgConf.get(login)?.messaggio || '') : '',
+    });
 
     if (inviati && d.id) dirette.segna(login, piattaforma, d.id);
     return { inviati };
+  }
+
+  // UN AVVISO, TUTTI I TRASPORTI.
+  //
+  // Chi scopre la notizia dice COSA e' successo e DI CHI; dove finisce lo decide
+  // la matrice, e la decide una volta sola. Prima ogni scopritore si portava
+  // dietro il proprio giro di Telegram, e Discord veniva servito a parte con una
+  // destinazione sola: cosi' «il post nuovo su Instagram» sapeva arrivare a un
+  // topic e non sapeva arrivare a un canale, senza che nessun errore lo dicesse.
+  async _diffondi(login, evento, chi, d, { chiudi = false, messaggioTg = '', conIncorniciato = true } = {}) {
+    let inviati = 0;
+    // «chi» sono io o e' un altro? La differenza non e' estetica: l'avviso di un
+    // altro va ricordato per STREAMER, se no la sua diretta che finisce chiude
+    // anche la mia.
+    const altrui = chi && chi !== login ? chi : null;
+    // La lista di chi guardare e' una sola, ma «annuncia anche la community» si
+    // accende dove si vuole: chi arriva dalla community entra solo nella sezione
+    // che l'ha chiesto. Chi e' stato aggiunto a mano entra sempre — l'hai scelto tu.
+    const daCommunity = !!altrui && amici.fonteDi(login, altrui) === 'community';
+    const vuole = avvisiConf.get(login).community;
+    const ammesso = { telegram: !daCommunity || vuole.telegram, discord: !daCommunity || vuole.discord };
+    try {
+      const conf = tgConf.get(login);
+      if (ammesso.telegram && conf?.attivo && conf.token) {
+        const componi = (conLocandina) => avvisi.messaggio(d, messaggioTg, { conLocandina });
+        const r = await this._diffondiTelegram(login, conf, evento, chi, componi, { pin: chiudi, chi: altrui, info: d });
+        inviati += r.inviati || 0;
+      }
+    } catch (e) { log.error(`avviso Telegram ${evento} #${chi}:`, e?.message || e); }
+    try {
+      if (ammesso.discord) {
+        const r = await this._diffondiDiscord(login, evento, chi, d, { chiudi, conIncorniciato });
+        inviati += r.inviati || 0;
+      }
+    } catch (e) { log.error(`avviso Discord ${evento} #${chi}:`, e?.message || e); }
+    return { inviati };
+  }
+
+  // La gemella di `_diffondiTelegram`. Il token del bot non sta nella
+  // configurazione degli avvisi: sta nella busta dei segreti, con gli altri, e
+  // si prende qui — cosi' la configurazione resta una cosa che si puo' guardare
+  // senza scoprire niente.
+  async _diffondiDiscord(login, evento, chi, d, { chiudi = false, conIncorniciato = true } = {}) {
+    dcDest.migra(login, dcConf.get(login));   // il vecchio canale unico diventa la prima destinazione
+    const dest = dcDest.perEvento(login, evento, chi);
+    if (!dest.length) return { inviati: 0 };
+    const token = dcApi.tokenDi(dcRuoli.get(login));
+    if (!token) return { inviati: 0 };
+    const esiti = await discord.diffondi(token, dest, d, { conIncorniciato });
+    let inviati = 0;
+    for (const e of esiti) {
+      if (!e.ok) continue;
+      inviati++;
+      if (!chiudi || !e.dest.chiudi || !e.id) continue;
+      if (chi && chi !== login) dcMsg.segna(login, e.dest.id, chi, e.id);
+      else dcDest.setMsgId(e.dest.id, e.id);
+    }
+    if (inviati) log.info(`Discord: «${evento}» di #${chi} inviato a ${inviati}/${dest.length} canali di #${login}`);
+    return { inviati, totale: dest.length };
   }
 
   // Un evento arrivato da un'altra piattaforma (per ora Kick) entra qui.
@@ -1376,26 +1416,30 @@ export class BotManager {
   // Le dirette degli ALTRI streamer che il canale ha scelto di annunciare.
   // Giro periodico: gli amici non sono canali gestiti dal bot, quindi nessun
   // evento arriva da solo — bisogna guardarli. Anti-doppioni sull'id diretta.
-  async _giroAmiciTelegram() {
-    const canali = new Set(tgAmici.canaliConAmici());
-    for (const s of streamers.list()) if (tgConf.get(s.login)?.community_live) canali.add(s.login);
+  async _giroAmici() {
+    const canali = new Set(amici.canaliConAmici());
+    for (const s of streamers.list()) if (avvisiConf.vuoleCommunity(s.login)) canali.add(s.login);
     for (const ch of canali) {
       try {
-        const conf = tgConf.get(ch);
-        if (!conf?.attivo || !conf.token) continue;
+        // Si gira se c'e' qualcuno che ascolta, non se c'e' un bot Telegram.
+        // Prima la prima riga chiedeva il token di Telegram: chi ha solo Discord
+        // non guardava nessun amico, e non c'era nessun errore a dirglielo.
+        if (!this._haDoveAvvisare(ch)) continue;
         // la lista automatica segue la community: chi entra compare, chi esce sparisce
-        if (conf.community_live) {
-          tgAmici.sincronizzaCommunity(ch, streamers.membriCommunity(ch)
+        // basta che la voglia UNA sezione: la lista e' condivisa, chi la
+        // annuncia lo decide ogni sezione per conto suo, al momento dell'avviso.
+        if (avvisiConf.vuoleCommunity(ch)) {
+          amici.sincronizzaCommunity(ch, streamers.membriCommunity(ch)
             .map((x) => ({ login: x.login, display: x.display })));
         } else {
-          tgAmici.sincronizzaCommunity(ch, []);
+          amici.sincronizzaCommunity(ch, []);
         }
-        for (const a of tgAmici.daGuardare(ch)) {
+        for (const a of amici.daGuardare(ch)) {
           const info = await this.helix.getStream(a.login).catch(() => null);
           const streamId = String(info?.id || '');
           if (!streamId) {
             // non è live: se avevamo annunciato la sua diretta, chiudiamola
-            if (a.ultima_live) { await this._chiudiLiveEsterna(ch, conf, a.login); tgAmici.setUltimaLive(ch, a.login, ''); }
+            if (a.ultima_live) { await this._chiudiLiveEsterna(ch, a.login); amici.setUltimaLive(ch, a.login, ''); }
             continue;
           }
           if (streamId === a.ultima_live) continue;      // già annunciata
@@ -1408,37 +1452,65 @@ export class BotManager {
             titolo: info?.title || '', gioco: info?.game_name || '',
             spettatori: info?.viewer_count ?? null, id: streamId,
           });
-          const componi = (conLocandina) => avvisi.messaggio(sua, a.messaggio || conf.messaggio, { conLocandina });
-          const r = await this._diffondiTelegram(ch, conf, avvisi.eventoDi('twitch'), a.login, componi, { pin: true, chi: a.login, info });
-          if (r.inviati) tgAmici.setUltimaLive(ch, a.login, streamId);
+          if (info?.thumbnail_url) sua.miniatura = info.thumbnail_url.replace('{width}', '1280').replace('{height}', '720');
+          const r = await this._diffondi(ch, avvisi.eventoDi('twitch'), a.login, sua, {
+            chiudi: true,
+            messaggioTg: a.messaggio || tgConf.get(ch)?.messaggio || '',
+          });
+          if (r.inviati) amici.setUltimaLive(ch, a.login, streamId);
         }
-      } catch (e) { log.debug(`amici Telegram #${ch}:`, e?.message || e); }
+      } catch (e) { log.debug(`amici #${ch}:`, e?.message || e); }
     }
+  }
+
+  // C'e' qualcuno che ascolta? Serve prima di chiedere a Twitch come sta ogni
+  // amico: le chiamate costano, e farle per un canale che non ha dove mandare
+  // l'avviso e' lavoro buttato.
+  _haDoveAvvisare(login) {
+    const conf = tgConf.get(login);
+    if (conf?.attivo && conf.token) {
+      tgDest.migra(login, conf);
+      if (tgDest.lista(login).some((d) => d.attivo)) return true;
+    }
+    dcDest.migra(login, dcConf.get(login));
+    return dcDest.lista(login).some((d) => d.attivo);
   }
 
   // Diretta di un altro streamer finita: togli l'avviso SOLO suo, in ogni
   // destinazione dove era stato fissato. Gli avvisi degli altri restano intatti.
-  async _chiudiLiveEsterna(login, conf, chi) {
+  async _chiudiLiveEsterna(login, chi) {
     try {
-      for (const m of tgMsg.perStreamer(login, chi)) {
-        const d = tgDest.get(login, m.dest_id);
-        if (d?.pin && m.msg_id) {
-          const r = await telegram.eliminaMessaggio(conf.token, d.chat_id, m.msg_id);
-          if (!r.ok) log.debug(`elimina live di ${chi} in ${d.titolo || d.chat_id}: ${r.errore}`);
+      const conf = tgConf.get(login);
+      if (conf?.token) {
+        for (const m of tgMsg.perStreamer(login, chi)) {
+          const d = tgDest.get(login, m.dest_id);
+          if (d?.pin && m.msg_id) {
+            const r = await telegram.eliminaMessaggio(conf.token, d.chat_id, m.msg_id);
+            if (!r.ok) log.debug(`elimina live di ${chi} in ${d.titolo || d.chat_id}: ${r.errore}`);
+          }
         }
       }
       tgMsg.pulisci(login, chi);
+      const token = dcApi.tokenDi(dcRuoli.get(login));
+      if (token) {
+        for (const m of dcMsg.perStreamer(login, chi)) {
+          const d = dcDest.get(login, m.dest_id);
+          if (d?.chiudi && m.msg_id) {
+            const r = await discord.eliminaMessaggio(token, d.canale, m.msg_id);
+            if (!r.ok) log.debug(`elimina live di ${chi} in ${d.canale_nome || d.canale}: ${r.errore}`);
+          }
+        }
+      }
+      dcMsg.pulisci(login, chi);
     } catch (e) { log.debug(`chiudi live esterna ${chi}:`, e?.message || e); }
   }
 
-  // Manda la notifica Discord "è live" nel canale dello streamer (via webhook),
-  // se ha configurato e acceso le notifiche. Anti-doppioni sull'id della live.
 
-
-  // Live spenta: se l'avviso era stato fissato, lo elimina dal gruppo (togliendo
-  // così anche il "fissato"). Best-effort e idempotente: se non c'è nulla da
-  // eliminare, non fa niente. Il bot può cancellare i propri messaggi entro 48h.
-  async _chiudiTelegram(login) {
+  // Live spenta: l'avviso si toglie DOVE era stato messo — in ogni gruppo e in
+  // ogni canale che l'aveva chiesto. Best-effort e idempotente: se non c'e'
+  // niente da togliere, non fa niente. Il bot puo' cancellare i propri messaggi
+  // entro 48 ore su Telegram, e i propri sempre su Discord.
+  async _chiudiAvvisi(login) {
     try {
       const conf = tgConf.get(login);
       if (!conf?.token) return;
@@ -1453,6 +1525,19 @@ export class BotManager {
       }
       if (conf.msg_id) tgConf.setMsgId(login, '');
     } catch (e) { log.error(`chiudi Telegram #${login}:`, e?.message || e); }
+    try {
+      const token = dcApi.tokenDi(dcRuoli.get(login));
+      if (!token) return;
+      for (const d of dcDest.lista(login)) {
+        if (!d.msg_id) continue;
+        const msgId = d.msg_id;
+        dcDest.setMsgId(d.id, '');    // azzera comunque: un solo tentativo per destinazione
+        if (!d.chiudi) continue;      // si toglie solo dove lo streamer l'ha chiesto
+        const r = await discord.eliminaMessaggio(token, d.canale, msgId);
+        if (r.ok) log.info(`avviso Discord tolto da ${d.canale_nome || d.canale} (live di #${login} finita)`);
+        else log.warn(`togli Discord ${d.canale_nome || d.canale}: ${r.errore}`);
+      }
+    } catch (e) { log.error(`chiudi Discord #${login}:`, e?.message || e); }
   }
 
   // Giochi del sito: per ogni canale connesso col ponte acceso, chiede al sito
@@ -1549,6 +1634,11 @@ export class BotManager {
       if (!tk?.username) return { ok: false, motivo: 'TikTok non configurato' };
       if (Date.now() - (this._tiktokUltima.get(l) || 0) < 3 * 3600_000) return { ok: false, motivo: 'gia avvisato di recente' };
       this._tiktokUltima.set(l, Date.now());
+      // Su Discord, dove lo streamer ha acceso l'avviso «TikTok».
+      await this._diffondiDiscord(l, 'tiktok', l, {
+        piattaforma: 'tiktok', login: l, display: s?.display || l,
+        titolo: '', gioco: '', spettatori: null, url: tiktok.urlLive(tk.username),
+      }).catch(() => {});
       // Telegram (basta che il bot+gruppo siano collegati: indipendente dal
       // toggle "avviso live Twitch"). Cattura il message_id per fissarlo/eliminarlo.
       const conf = tgConf.get(l);
@@ -1670,16 +1760,21 @@ export class BotManager {
       const l = String(login || '').toLowerCase();
       if (!canaleHa(l, 'notifiche')) return { ok: false, motivo: 'non nel piano' };
       const s = streamers.get(l);
+      // ogni piattaforma ha il suo evento: cosi «instagram» puo finire in un
+      // topic e «youtube» in un altro, come lo streamer ha deciso.
+      const ev = ({ instagram: 'ig', tiktok: 'tt', youtube: 'yt' })[piattaforma] || 'yt';
       const conf = tgConf.get(l);
       if (conf?.token) {
         tgDest.migra(l, conf);
-        // ogni piattaforma ha il suo evento: cosi «instagram» puo finire in un
-        // topic e «youtube» in un altro, come lo streamer ha deciso.
-        const ev = ({ instagram: 'ig', tiktok: 'tt', youtube: 'yt' })[piattaforma] || 'yt';
         const testo = telegram.costruisciMessaggioPost({ login: l, display: s?.display || l }, { piattaforma, titolo, url, messaggio });
         const dest = tgDest.perEvento(l, ev, l);
         await telegram.diffondi(conf.token, dest, testo, { anteprima: true }).catch(() => {});
       }
+      // E su Discord, dove lo streamer ha acceso quell'avviso. Un post non e'
+      // una diretta: niente incorniciato «è in diretta», solo la riga col link.
+      await this._diffondiDiscord(l, ev, l, {
+        piattaforma, login: l, display: s?.display || l, titolo, url, gioco: '', spettatori: null,
+      }, { conIncorniciato: false }).catch(() => {});
       if (annunciaChat && this.units.has(l) && url) {
         const info = { tiktok: ['🎵', 'TikTok'], instagram: ['📸', 'Instagram'], youtube: ['📺', 'YouTube'] }[piattaforma] || ['📺', 'YouTube'];
         this.say(l, `${info[0]} Nuovo contenuto su ${info[1]}! 👉 ${url}`);

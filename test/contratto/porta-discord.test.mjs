@@ -120,3 +120,23 @@ test('la pagina dice cosa succede PRIMA di mandarti da Discord', () => {
   const js = readFileSync(join(RAD, 'src/web/public/collega.js'), 'utf8');
   assert.match(js, /\$\('via'\)\.href = '\/u\/' \+ encodeURIComponent\(canale\)/, 'e il «no» porta da qualche parte di suo');
 });
+
+// IL LINK NON SI MANGIA LA PUNTEGGIATURA.
+//
+// «apri {link}: ti faccio entrare» diventava «…/andryxify: ti», e i due punti
+// finivano DENTRO l'indirizzo: il tasto c'era, la pagina no. E' un errore che
+// puo' ricomparire in ogni frase, comprese quelle scritte dallo streamer.
+test('dopo il link ci va sempre uno spazio, anche nelle frasi di chi ha il canale', () => {
+  const v = { nome: 'tizio', link: 'https://esempio.tld/pinco', codice: 'ABC123' };
+  const reso = dc.riempi('apri {link}: e poi vedi', v);
+  assert.ok(!reso.includes('/pinco:'), 'i due punti sono finiti dentro l\'indirizzo');
+  assert.match(reso, /\/pinco\s/, 'il link deve finire su uno spazio');
+});
+
+test('le frasi di casa non hanno bisogno della rete: il link sta in fondo', () => {
+  for (const k of ['inizio', 'scaduto']) {
+    const t = dc.FRASI[k];
+    if (!t.includes('{link}')) continue;
+    assert.ok(t.trimEnd().endsWith('{link}'), `«${k}»: il link non e' in fondo alla frase`);
+  }
+});
