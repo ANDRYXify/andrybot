@@ -66,9 +66,15 @@ test('i ruoli arrivano con posizione e provenienza, che servono a sapere cosa si
     const r = await ruoli('t', '123456789');
     assert.equal(r.ok, true);
     assert.deepEqual(r.ruoli, [
-      { id: '100000000000000010', nome: 'Sub Twitch', position: 7, managed: true, colore: 10181046, permessi: '0' },
-      { id: '100000000000000011', nome: 'Affezionati', position: 3, managed: false, colore: 0, permessi: '0' },
+      { id: '100000000000000010', nome: 'Sub Twitch', position: 7, managed: true, colore: 10181046, separato: false, citabile: false, permessi: '0' },
+      { id: '100000000000000011', nome: 'Affezionati', position: 3, managed: false, colore: 0, separato: false, citabile: false, permessi: '0' },
     ], 'chi non ha id non e\' un ruolo');
+    // Un ruolo non e' solo quello che puo' fare: e' anche come si vede. Senza
+    // sapere se sta «a parte» nell'elenco delle persone, il costruttore
+    // crederebbe diverso un ruolo che e' identico, e lo rifarebbe ogni volta.
+    const visto = await (async () => { finto(() => ({ stato: 200, corpo: [{ id: '100000000000000013', name: 'Streamer', hoist: true, mentionable: true }] })); return ruoli('t', '123456789'); })();
+    assert.equal(visto.ruoli[0].separato, true);
+    assert.equal(visto.ruoli[0].citabile, true);
     // I permessi del ruolo servono a sapere cosa puo' fare il BOT senza
     // chiederlo a Discord una seconda volta: i suoi permessi sono l'unione di
     // quelli dei ruoli che ha, e i ruoli li abbiamo gia' qui.

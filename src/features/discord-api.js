@@ -100,6 +100,12 @@ export async function ruoli(token, guild) {
     position: Number(x?.position) || 0,
     managed: !!x?.managed,
     colore: Number(x?.color) || 0,
+    // Un ruolo non e' solo quello che puo' fare: e' anche come si vede. Chi sta
+    // «a parte» compare in cima all'elenco delle persone col suo nome sopra, ed
+    // e' tutto il senso di un ruolo decorativo come «Streamer». Senza questi
+    // due, il costruttore ricreerebbe ogni volta un ruolo che sembra diverso.
+    separato: !!x?.hoist,
+    citabile: !!x?.mentionable,
     permessi: String(x?.permissions || '0'),
   })).filter((x) => x.id);
   return { ok: true, ruoli: lista };
@@ -403,6 +409,42 @@ export async function togliCanale(token, id) {
   return chiama(token, `/channels/${id}`, { metodo: 'DELETE' });
 }
 
+// UN RUOLO SI SCRIVE COME UN CANALE, con una differenza che conta: il colore.
+// Discord lo vuole come numero, e 0 non e' «nero», e' «nessun colore» — cioe'
+// il grigio di chi non ne ha. Percio' si manda sempre, anche quando e' zero:
+// non mandarlo vorrebbe dire «lascia quello di prima», e un ruolo che doveva
+// tornare senza colore resterebbe colorato.
+const corpoRuolo = (r, { nuovo = false } = {}) => {
+  const c = {};
+  if (r?.nome !== undefined) c.name = String(r.nome || '').trim().slice(0, 100);
+  if (r?.colore !== undefined || nuovo) c.color = Math.max(0, Math.min(0xffffff, Number(r?.colore) || 0));
+  if (r?.separato !== undefined || nuovo) c.hoist = !!r?.separato;
+  if (r?.citabile !== undefined || nuovo) c.mentionable = !!r?.citabile;
+  if (r?.permessi !== undefined || nuovo) c.permissions = String(r?.permessi ?? '0');
+  return c;
+};
+
+export async function creaRuolo(token, guild, r) {
+  if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
+  const corpo = corpoRuolo(r, { nuovo: true });
+  if (!corpo.name) return { ok: false, errore: 'un ruolo senza nome non si crea' };
+  const x = await chiama(token, `/guilds/${guild}/roles`, { metodo: 'POST', corpo });
+  if (!x.ok) return x;
+  return { ok: true, id: String(x.dati?.id || ''), nome: String(x.dati?.name || corpo.name) };
+}
+
+export async function sistemaRuolo(token, guild, id, cambia) {
+  if (!idOk(guild) || !idOk(id)) return { ok: false, errore: 'id non valido' };
+  const corpo = corpoRuolo(cambia);
+  if (!Object.keys(corpo).length) return { ok: true, dati: null, niente: true };
+  return chiama(token, `/guilds/${guild}/roles/${id}`, { metodo: 'PATCH', corpo });
+}
+
+export async function togliRuolo(token, guild, id) {
+  if (!idOk(guild) || !idOk(id)) return { ok: false, errore: 'id non valido' };
+  return chiama(token, `/guilds/${guild}/roles/${id}`, { metodo: 'DELETE' });
+}
+
 // LA FOTOGRAFIA: com'e' il server adesso, nella forma esatta che il calcolo
 // della differenza si aspetta. Quattro letture, una volta sola, e da qui in poi
 // nessuno va piu' a chiedere niente a Discord per decidere: si decide su questa.
@@ -418,12 +460,23 @@ export async function fotografia(token, guild) {
   const c = await canali(token, guild);
   if (!c.ok) return c;
   const bits = permessiBot(r.ruoli, me.ruoli);
+  // FIN DOVE ARRIVA IL BOT. Discord: un bot tocca solo i ruoli piu' in basso
+  // del suo piu' alto. Non e' una cortesia da ricordarsi al momento giusto: e'
+  // il numero che tiene fuori dall'elenco delle cose da fare tutto quello che
+  // non e' suo da toccare.
+  const miei = new Set((me.ruoli || []).map(String));
+  const livello = r.ruoli.reduce((t, x) => (miei.has(String(x.id)) ? Math.max(t, Number(x.position) || 0) : t), 0);
   return {
     ok: true,
     guild: s.guild,
     ruoli: r.ruoli,
     canali: c.canali,
-    bot: { id: me.id, nome: me.nome, ruoli: me.ruoli },
+    bot: { id: me.id, nome: me.nome, ruoli: me.ruoli, livello },
+    // I BIT COSI' COME SONO, e non solo i due «puo' / non puo'». Servono a
+    // rispondere prima a una domanda che Discord pone e basta: un bot puo'
+    // dare a un ruolo SOLO i privilegi che ha lui. Senza i bit in mano, quel
+    // limite si scoprirebbe da un errore a meta' costruzione.
+    bits: String(bits),
     puoCanali: puoCanali(bits),
     puoRuoli: puoRuoli(bits),
   };
