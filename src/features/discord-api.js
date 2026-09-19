@@ -193,6 +193,23 @@ export async function dai(token, guild, utente, ruolo) {
   return chiama(token, `/guilds/${guild}/members/${utente}/roles/${ruolo}`, { metodo: 'PUT' });
 }
 
+// FARLO ENTRARE. Il token del bot dice chi chiede, quello della persona dice
+// che lei e' d'accordo: senza il secondo Discord rifiuta, ed e' giusto cosi' —
+// nessuno deve poter infilare qualcun altro in un server.
+//
+// Chi c'e' gia' torna 204 senza corpo, e per noi e' un successo uguale: la cosa
+// che volevamo — quella persona dentro quel server — e' vera in tutti e due i
+// casi. Distinguere i due esiti servirebbe solo a scrivere due frasi dove ne
+// basta una.
+export async function entraNelServer(token, guild, utente, accessToken) {
+  if (!idOk(guild) || !idOk(utente)) return { ok: false, errore: 'id non valido' };
+  if (!String(accessToken || '').trim()) return { ok: false, errore: 'manca il consenso della persona' };
+  return chiama(token, `/guilds/${guild}/members/${utente}`, {
+    metodo: 'PUT',
+    corpo: { access_token: String(accessToken) },
+  });
+}
+
 export async function togli(token, guild, utente, ruolo) {
   if (!idOk(guild) || !idOk(utente) || !idOk(ruolo)) return { ok: false, errore: 'id non valido' };
   return chiama(token, `/guilds/${guild}/members/${utente}/roles/${ruolo}`, { metodo: 'DELETE' });
@@ -256,6 +273,12 @@ export const DA_DARE = Object.values(PRIVILEGI).reduce((t, v) => t | v, 0n);
 export const MANAGE_ROLES = 1n << 28n;      // 268435456
 export const MANAGE_CHANNELS = 1n << 4n;    // 16
 export const ADMINISTRATOR = 1n << 3n;      // 8
+// Far ENTRARE qualcuno nel server. Non e' un invito da copiare: e' la porta
+// `PUT /guilds/{server}/members/{persona}`, che Discord apre solo a chi ha
+// questo privilegio. Serve al giro della porta d'ingresso — chi apre
+// l'indirizzo e dice a Discord che e' lui si ritrova dentro, senza cercare un
+// link di invito che magari e' scaduto.
+export const CREATE_INSTANT_INVITE = 1n << 0n;   // 1
 // I tre che servono al bot per DIRE una cosa. Da quando sta dentro il server,
 // l'avviso di diretta non ha piu' bisogno di un webhook creato a mano: lo
 // scrive lui nel canale scelto. Per farlo deve vedere il canale, poterci
@@ -280,7 +303,26 @@ export const EMBED_LINKS = 1n << 14n;       // 16384
 // (`scripts/verifica-poteri.mjs`) che controlla che da nessuna parte, in tutto
 // il codice, si chiami una porta di Discord che quei poteri li ESERCITA.
 // Distribuirli si', usarli mai.
-export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | DA_DARE);
+export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | DA_DARE);
+
+// I PIENI POTERI, e perche' non sono quelli di prima.
+//
+// Chi vuole governare tutto il server da SocialBot puo' darci l'Amministratore.
+// E' una scelta sua, si fa da una porta separata, e non e' mai quello che si
+// chiede al primo invito: sulla schermata di Discord quella spunta e' la piu'
+// pesante che esista, e chiederla a chi vuole solo i ruoli sarebbe chiedere
+// molto piu' del necessario per fare molto meno.
+//
+// Va detto quello che l'Amministratore fa e quello che NON fa. Fa: scavalca i
+// permessi dei singoli canali, quindi il bot vede tutto. Non fa: scavalcare la
+// GERARCHIA. Anche da amministratore un bot non tocca i ruoli piu' in alto del
+// suo, ne' il proprietario del server — quella e' la regola che gli impedisce
+// di promuoversi, e nessun permesso la compra.
+//
+// La lista di prima resta dentro apposta: se un giorno qualcuno toglie
+// l'Amministratore al nostro ruolo, il bot non resta nudo, torna a fare quello
+// che faceva. Un solo bit, e quel giorno smetterebbe di funzionare in silenzio.
+export const PERMESSI_PIENI = String(ADMINISTRATOR | MANAGE_ROLES | MANAGE_CHANNELS | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | DA_DARE);
 
 // I permessi che il bot ha nel server: l'unione di quelli dei suoi ruoli. Si
 // calcolano da cose che chiediamo GIA' (l'elenco dei ruoli e quelli del bot),
@@ -305,6 +347,11 @@ export const puoRuoli = (bits) => puo(bits, MANAGE_ROLES);
 export const puoVedere = (bits) => puo(bits, VIEW_CHANNEL);
 export const puoScrivere = (bits) => puo(bits, SEND_MESSAGES);
 export const puoIncorniciare = (bits) => puo(bits, EMBED_LINKS);
+// Puo' far entrare qualcuno dalla porta d'ingresso? Chi ha invitato il bot
+// prima che questa porta esistesse non gli ha dato questo privilegio: il giro
+// funzionerebbe fino all'ultimo passo e poi non entrerebbe nessuno. Si dice
+// prima, e si rimedia reinvitandolo.
+export const puoFarEntrare = (bits) => puo(bits, CREATE_INSTANT_INVITE);
 
 // COSA PUO' IL BOT DENTRO UN CANALE, che non e' quello che puo' nel server.
 //
@@ -360,11 +407,12 @@ export function quandoDa(snowflake) {
   try { return Number((BigInt(t) >> 22n) + EPOCA); } catch { return 0; }
 }
 
-export function urlInvitoBot({ clientId, redirectUri, state }) {
+// `pieni` va chiesto: il valore che non si passa e' sempre quello misurato.
+export function urlInvitoBot({ clientId, redirectUri, state, pieni = false }) {
   const p = new URLSearchParams({
     client_id: String(clientId || ''),
     scope: 'bot',
-    permissions: PERMESSI_BOT,
+    permissions: pieni ? PERMESSI_PIENI : PERMESSI_BOT,
     response_type: 'code',
     redirect_uri: String(redirectUri || ''),
     state: String(state || ''),
@@ -405,12 +453,16 @@ export async function scambiaInvito({ clientId, clientSecret, redirectUri, codic
 // uno streamer, parla l'applicazione che chiede a una persona «sei tu?». Puo'
 // leggere il suo id e il suo nome, e nient'altro: lo scope e' `identify`, e non
 // entra in nessun server.
-export function urlAutorizzazione({ clientId, redirectUri, state }) {
+// `entrare` aggiunge il permesso di FAR ENTRARE questa persona nel server.
+// Si chiede solo dove si puo' mantenere — cioe' dove il canale ha un server
+// collegato — perche' chiedere un permesso e poi non usarlo insegna alla gente
+// che le schermate di Discord non vogliono dire niente.
+export function urlAutorizzazione({ clientId, redirectUri, state, entrare = false }) {
   const p = new URLSearchParams({
     client_id: String(clientId || ''),
     redirect_uri: String(redirectUri || ''),
     response_type: 'code',
-    scope: 'identify',
+    scope: entrare ? 'identify guilds.join' : 'identify',
     state: String(state || ''),
     prompt: 'none',
   });
@@ -419,7 +471,14 @@ export function urlAutorizzazione({ clientId, redirectUri, state }) {
 
 // Il codice di ritorno diventa un nome e un id. Il segreto dell'applicazione
 // viaggia nel corpo, come vuole Discord, e non esce mai di qui.
-export async function scambiaCodice({ clientId, clientSecret, redirectUri, codice }) {
+// `entraIn` fa ENTRARE la persona nel server, qui dentro e subito.
+//
+// Sta qui e non in chi chiama per una ragione sola: il permesso che Discord ci
+// da' e' SUO, vale qualche minuto e apre il suo account. Se uscisse da questa
+// funzione girerebbe per il codice del sito, finirebbe in un log per sbaglio,
+// e un giorno qualcuno lo salverebbe «per comodita'». Cosi' invece non esce
+// dalla stanza in cui serve: si usa e muore con la richiesta.
+export async function scambiaCodice({ clientId, clientSecret, redirectUri, codice, entraIn = null }) {
   if (!clientId || !clientSecret || !codice) return { ok: false, errore: 'collegamento non configurato' };
   const ac = new AbortController();
   const to = setTimeout(() => ac.abort(), TIMEOUT_MS);
@@ -448,7 +507,16 @@ export async function scambiaCodice({ clientId, clientSecret, redirectUri, codic
     const me = await u.json().catch(() => null);
     const id = String(me?.id || '');
     if (!idOk(id)) return { ok: false, errore: 'Discord non dice chi sei' };
-    return { ok: true, id, nome: String(me?.global_name || me?.username || '') };
+    // Dentro il server. Se non riesce non si butta via il giro: il
+    // collegamento dei ruoli vale lo stesso, e chi c'era gia' non se ne
+    // accorge. Si dice com'e' andata, e la pagina lo racconta.
+    let dentro = false;
+    if (entraIn?.guild && entraIn?.botToken) {
+      const e = await entraNelServer(entraIn.botToken, entraIn.guild, id, tok);
+      dentro = !!e.ok;
+      if (!e.ok) log.warn(`porta d'ingresso: non e' entrato nel server — ${e.errore || 'motivo non detto'}`);
+    }
+    return { ok: true, id, nome: String(me?.global_name || me?.username || ''), dentro };
   } catch (e) {
     log.warn('scambiaCodice:', e?.message || e);
     return { ok: false, errore: 'Discord irraggiungibile' };
@@ -619,6 +687,7 @@ export async function fotografia(token, guild) {
     bits: String(bits),
     puoCanali: puoCanali(bits),
     puoRuoli: puoRuoli(bits),
+    puoFarEntrare: puoFarEntrare(bits),
   };
 }
 

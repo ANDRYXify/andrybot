@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-19
 
+- Entrare nel tuo Discord adesso è un indirizzo solo: si apre, si dice a Discord chi si è, e si è dentro. Poi il codice in chat e i ruoli arrivano da soli. [vai: ruoli]
+- Quello che il bot risponde quando gli chiedono del Discord lo scrivi tu: cinque frasi, col nome di chi scrive e il link dentro. [vai: ruoli]
+- Vuoi che gestisca tutto il server? C’è un tasto che lo riporta su Discord come amministratore, e prima ti dice per bene cosa comporta. [vai: ruoli]
 - Accanto al tasto «Attiva» adesso scegli il canale, Twitch o Kick, e un clic basta ancora. Entri da lì e al pagamento ritrovi i pacchetti che avevi già spuntato. [vai: sottoscrizione]
 - Apri il sito e si vede prima, soprattutto dalla seconda volta: quello che non è cambiato il browser adesso se lo tiene, invece di richiederlo tutto da capo ogni volta.
 - I ruoli del tuo server Discord li dà il bot, in base a quello che succede su Twitch: chi ti segue, chi è abbonato, chi c'è sempre. Scrivi la regola, il resto lo fa lui. [vai: ruoli]

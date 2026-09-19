@@ -241,6 +241,29 @@ canali». Non lo scopre da un errore a metà costruzione: il permesso si guarda
 chiamata in più), e la cura che si dice è il tasto dell'invito — reinvitare è il
 modo con cui Discord aggiorna i permessi.
 
+## I pieni poteri, e perché non sono quelli di partenza
+
+Chi vuole governare tutto il server da SocialBot può darci l'**Amministratore**:
+il pannello ha un tasto apposta che rigenera l'invito con quel bit
+(`PERMESSI_PIENI`), e il server lo manda **solo** a chi lo chiede — nessuna
+preferenza ricordata che un giorno si accende da sola. All'invito normale non si
+chiede mai: sulla schermata di Discord quella spunta è la più pesante che esista,
+e chiederla a chi vuole solo i ruoli è chiedere molto di più del necessario per
+fare molto di meno.
+
+Va detto cosa fa e cosa **non** fa. Fa: scavalca i permessi dei singoli canali,
+quindi il bot vede tutto, anche i canali privati. Non fa: scavalcare la
+**gerarchia**. Anche da amministratore un bot non tocca i ruoli più in alto del
+suo, né il proprietario del server — è la regola che gli impedisce di
+promuoversi, e nessun permesso la compra. Per questo, quando qualcosa «non si
+applica», la causa è quasi sempre la posizione del ruolo e non un permesso
+mancante.
+
+`PERMESSI_PIENI` tiene dentro anche tutta la lista di prima. Non è ridondanza: se
+un giorno qualcuno toglie l'Amministratore al nostro ruolo, il bot torna a fare
+quello che faceva invece di restare nudo. Con un solo bit, quel giorno
+smetterebbe di funzionare in silenzio.
+
 ## Il preset che arriva dal pannello non è quello che applichiamo
 
 Quello che arriva è testo scritto da un browser, e un browser lo si convince a

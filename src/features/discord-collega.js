@@ -58,6 +58,53 @@ export function apri(channel, { dcId, dcNome = '', ora = Date.now() } = {}) {
 
 const IL_COMANDO = 'discord';
 
+// L'INDIRIZZO DELLA PORTA. Corto dove c'e' (discord.<dominio>/<canale>), lungo
+// dove non c'e': la stessa funzione per tutti e due, perche' un indirizzo
+// scritto in due posti e' un indirizzo che un giorno differisce.
+export function indirizzo(channel) {
+  const ch = String(channel || '').toLowerCase();
+  if (config.discordHost) return `https://${config.discordHost}/${ch}`;
+  return `${String(config.baseUrl || '').replace(/\/$/, '')}/collega/${ch}`;
+}
+
+// LE FRASI SONO DELLO STREAMER, NON NOSTRE.
+//
+// Queste sono solo quelle di casa: quello che il bot dice in chat lo scrive
+// chi ha il canale, col suo tono, e un campo lasciato vuoto ricade qui. Erano
+// scritte nel codice, e si vedeva: un bot che parla come il manuale di chi
+// l'ha fatto, dentro la chat di un altro.
+//
+// I segnaposto sono tre e bastano: chi scrive, dove andare, e il codice.
+export const FRASI = Object.freeze({
+  inizio: '@{nome} apri {link}: ti faccio entrare nel Discord e ti do un codice da riscrivere qui, cosi\' ti sistemo i ruoli.',
+  fatto: '@{nome} collegato ✓ Al prossimo giro ti metto a posto i ruoli su Discord.',
+  scaduto: '@{nome} quel codice non vale piu\'. Riparti da {link}.',
+  via: '@{nome} scollegato. I ruoli che hai adesso restano tuoi: non tocco piu\' niente.',
+  estraneo: '@{nome} non risulti collegato.',
+});
+
+export const CHIAVI_FRASI = Object.keys(FRASI);
+const LUNGA = 300;
+
+// Solo le chiavi che conosciamo, solo testo, e corto abbastanza da entrare in
+// un messaggio di chat: quello che arriva dal pannello non decide la forma.
+export function normalizzaFrasi(f) {
+  const fuori = {};
+  for (const k of CHIAVI_FRASI) {
+    const v = String(f?.[k] ?? '').trim().replace(/\s+/g, ' ').slice(0, LUNGA);
+    if (v) fuori[k] = v;
+  }
+  return fuori;
+}
+
+export function frasiDi(channel) {
+  const sue = normalizzaFrasi(dcRuoli.get(String(channel || '').toLowerCase())?.frasi);
+  return { ...FRASI, ...sue };
+}
+
+export const riempi = (testo, valori = {}) => String(testo || '')
+  .replace(/\{(nome|link|codice)\}/g, (_, k) => String(valori[k] ?? ''));
+
 // In chat: «!discord ABC123» collega, «!discord via» scollega, «!discord» da
 // solo spiega dove si comincia.
 export function tryComando(msg, parla, { ora = Date.now() } = {}) {
@@ -72,17 +119,18 @@ export function tryComando(msg, parla, { ora = Date.now() } = {}) {
   if (!apertoA(ch)) return false;
   const nome = String(msg.display || msg.user || '').slice(0, 60);
   const arg = String(parti.join(' ') || '').trim();
-  const dove = `${String(config.baseUrl || '').replace(/\/$/, '')}/collega/${ch}`;
+  const dove = indirizzo(ch);
+  const frasi = frasiDi(ch);
+  const di = (chiave, codice = '') => parla(riempi(frasi[chiave], { nome, link: dove, codice }));
 
   if (!arg) {
-    parla(`@${nome} apri ${dove}, di' a Discord che sei tu, e riscrivi qui il codice che ti do'.`);
+    di('inizio');
     return true;
   }
   if (/^(via|togli|scollega)$/i.test(arg)) {
     const c = dcLink.prendi(ch, chi);
     dcLink.togli(ch, chi);
-    parla(c ? `@${nome} scollegato. I ruoli che hai adesso restano tuoi: non tocco piu' niente.`
-      : `@${nome} non risulti collegato.`);
+    di(c ? 'via' : 'estraneo');
     return true;
   }
 
@@ -90,7 +138,7 @@ export function tryComando(msg, parla, { ora = Date.now() } = {}) {
   const att = codice.length === LUNGHEZZA ? dcAttesa.prendi(codice) : null;
   if (!att || att.channel !== ch || att.scad <= ora) {
     if (att) dcAttesa.consuma(codice);
-    parla(`@${nome} quel codice non vale piu'. Riparti da ${dove}.`);
+    di('scaduto', codice);
     return true;
   }
   dcAttesa.consuma(codice);
@@ -99,6 +147,6 @@ export function tryComando(msg, parla, { ora = Date.now() } = {}) {
   const gia = dcLink.perDc(ch, att.dc_id);
   if (gia && gia.login !== chi) dcLink.togli(ch, gia.login);
   dcLink.metti(ch, { login: chi, userId: String(msg.userId || ''), dcId: att.dc_id, dcNome: att.dc_nome });
-  parla(`@${nome} collegato ✓ Al prossimo giro ti metto a posto i ruoli su Discord.`);
+  di('fatto', codice);
   return true;
 }

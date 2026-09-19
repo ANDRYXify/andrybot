@@ -1372,6 +1372,8 @@ table.tabella { width: 100%; border-collapse: collapse; font-size: .9rem; margin
 .campo-largo { flex: 1; min-width: 180px; }
 .griglia-campi { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .8rem; }
 .griglia-campi input[type="number"] { width: 100%; }
+#dc-frasi { grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
+#dc-frasi textarea { min-height: 92px; }
 
 .font-browser { margin-top: .55rem; border: 1px solid var(--border); border-radius: var(--r-m); padding: .7rem; background: var(--surface); }
 .font-browser .fb-cerca { width: 100%; margin-bottom: .6rem; padding: .5rem .7rem; border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface); color: var(--testo); }

@@ -320,3 +320,58 @@ Discord non lascia che un bot si sposti piu' in alto di dov'e' — e' la regola
 che gli impedisce di promuoversi da solo, e va bene cosi'. Ma non lo lasciamo
 indovinare: il pannello sa gia' quali ruoli sono fuori portata
 (`fuoriPortata`/`mioLivello`) e li nomina.
+
+## La porta d'ingresso: un indirizzo solo, e si entra
+
+Prima il collegamento chiedeva due cose diverse in due momenti diversi: aprire
+`socialbot.live/collega/<canale>` — un indirizzo da leggere a voce in diretta —
+e, separatamente, trovare un link d'invito al server, che di solito era scaduto.
+
+Adesso l'indirizzo e' uno: **`discord.<dominio>/<canale>`**. Si accende da solo
+come gli altri due nomi corti (`dona`, `sostieni`): il server bussa in HTTPS al
+candidato `discord.<dominio del sito>` ogni dieci minuti e lo usa appena
+risponde. `DISCORD_HOST=no` lo tiene spento, e l'indirizzo lungo continua a
+funzionare — spento e' il modo giusto di sbagliare. L'indirizzo lo compone
+`indirizzo(canale)` in `features/discord-collega.js`: un posto solo, cosi' il
+comando in chat e la pagina non possono dire due cose diverse.
+
+Su quell'indirizzo il giro e' uno: Discord dice chi sei **e** ci lascia farti
+entrare. La chiave e' lo scope `guilds.join` insieme a `identify`, e la porta
+`PUT /guilds/{server}/members/{persona}` (`entraNelServer`), che vuole due cose
+insieme — il token del bot, che dice chi chiede, e il permesso della persona,
+che dice che e' d'accordo. Senza il secondo Discord rifiuta, ed e' giusto:
+nessuno deve poter infilare qualcun altro in un server.
+
+Quel permesso **non esce da `discord-api.js`**. `scambiaCodice` accetta
+`entraIn: { guild, botToken }` e fa entrare li' dentro, subito; a `server.js`
+torna solo `dentro: true|false`. Se il permesso uscisse dal modulo girerebbe per
+il codice del sito, un giorno finirebbe in un log, e il giorno dopo qualcuno lo
+salverebbe «per comodita'». Il collaudo `test/contratto/porta-discord` controlla
+che la parola `access_token` non compaia nemmeno in `server.js`.
+
+Il bot deve poterlo fare: `CREATE_INSTANT_INVITE` entra in `PERMESSI_BOT`, e
+`puoFarEntrare(bits)` dice quando manca. **Chi ha invitato il bot prima che
+questa porta esistesse non gliel'ha dato**: il giro funzionerebbe fino
+all'ultimo passo e poi non entrerebbe nessuno. Reinvitare aggiorna i permessi, e
+il pannello lo scrive invece di lasciarlo scoprire da un silenzio.
+
+Quello che **non** cambia e' il verso del codice. La chat e' pubblica: un link
+personale scritto li' lo aprirebbe chi sta guardando, autorizzerebbe il SUO
+Discord, e da quel momento sarebbe lui a prendersi i ruoli di un altro. Percio'
+il codice continua a nascere sul web, sullo schermo di chi ha autorizzato, e a
+chiudersi in chat — dove il messaggio porta con se' l'autorita' della
+piattaforma. La porta nuova accorcia la strada, non la gira.
+
+## Le parole in chat sono dello streamer
+
+Le cinque risposte del comando (`inizio`, `fatto`, `scaduto`, `via`, `estraneo`)
+erano scritte nel codice, e si vedeva: un bot che parla come il manuale di chi
+l'ha fatto, dentro la chat di un altro. Adesso stanno nella colonna `frasi` di
+`discord_ruoli`, si scrivono dal pannello, e un campo vuoto ricade su quella di
+casa (`FRASI`). I segnaposto sono tre — `{nome}`, `{link}`, `{codice}` — e uno
+che non esiste resta scritto com'e': non si inventa un vuoto.
+
+`normalizzaFrasi` decide la forma, non il pannello: solo le chiavi conosciute,
+spazi ridotti, trecento caratteri al massimo. Il nome del comando era gia'
+cambiabile — i soprannomi li scioglie il registro prima del vaglio
+(`preparaComando`), e il modulo guarda solo l'id canonico.
