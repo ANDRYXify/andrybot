@@ -612,12 +612,24 @@ export async function mandaMessaggio(token, canale, messaggio) {
   return { ok: true, id: String(r.dati?.id || '') };
 }
 
-// Togliere il PROPRIO messaggio non chiede permessi: un bot cancella sempre
-// cio' che ha scritto lui. Serve a chiudere l'avviso quando la diretta finisce,
-// come fa Telegram con il suo.
-export async function togliMessaggio(token, canale, id) {
+// CHIUDERE UN AVVISO SI FA RISCRIVENDOLO, NON CANCELLANDOLO.
+//
+// Cancellare un messaggio passa da DELETE /channels/{c}/messages/{id}, e quella
+// porta con «pulire» in mano cancella il messaggio di CHIUNQUE. Il bot quel
+// privilegio ce l'ha — lo tiene per poterlo passare al ruolo «Moderatori» — e
+// una porta che c'e' e' una porta che un giorno qualcuno punta altrove, magari
+// in buona fede. Vedi scripts/verifica-poteri.mjs: si distribuiscono, non si usano.
+//
+// Riscrivere invece e' sicuro PER COSTRUZIONE, non per promessa: Discord
+// rifiuta sempre la modifica di un messaggio scritto da un altro, qualunque
+// permesso si abbia. Questa porta, puntata su chiunque altro, non fa niente.
+export async function modificaMessaggio(token, canale, id, messaggio) {
   if (!idOk(canale) || !idOk(id)) return { ok: false, errore: 'id non valido' };
-  return chiama(token, `/channels/${canale}/messages/${id}`, { metodo: 'DELETE' });
+  const corpo = {};
+  if (messaggio?.content !== undefined) corpo.content = String(messaggio.content).slice(0, 2000);
+  corpo.embeds = Array.isArray(messaggio?.embeds) ? messaggio.embeds.slice(0, 10) : [];
+  if (messaggio?.allowed_mentions) corpo.allowed_mentions = messaggio.allowed_mentions;
+  return chiama(token, `/channels/${canale}/messages/${id}`, { metodo: 'PATCH', corpo });
 }
 
 export async function togliCanale(token, id) {

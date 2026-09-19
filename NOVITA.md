@@ -19,6 +19,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 - Adesso i comandi rispondono anche a te: il bot scrive col tuo account, e per sbaglio scartava i messaggi tuoi come se fossero i suoi. [vai: moduli]
 - Il tasto del Discord in chat portava a un indirizzo con i due punti attaccati dentro: adesso il link finisce dove finisce, e si apre. [vai: ruoli]
+- Gli avvisi su Discord adesso hanno una scheda loro: quanti canali vuoi, e per ognuno quali avvisi, di chi, con che parole. [vai: dcavvisi]
+- Puoi far chiamare un ruolo quando parte l'avviso: sveglia quello e nessun altro, mai il server intero per una parola scritta per sbaglio. [vai: dcavvisi]
+- Le dirette degli amici e della community arrivano anche sul server Discord, con la levetta separata da quella di Telegram. [vai: dcavvisi]
+- Se lo chiedi, a diretta chiusa l'avviso diventa «ha finito la diretta»: non resta un «sono in onda» appeso fino a domani. [vai: dcavvisi]
 - Chi un canale non ce l’ha entra con Discord e basta: costruisce il suo server da qui, e di dirette e overlay non vede nemmeno le schede. [vai: dcserver]
 - Dalla scheda di Discord adesso copi l’indirizzo della tua porta d’ingresso e la apri, invece di leggerla dentro una frase. [vai: ruoli]
 - Sostenere il progetto ha un indirizzo solo, corto, e dal sito ci si arriva: prima la pagina esisteva e non ci portava nessuno.

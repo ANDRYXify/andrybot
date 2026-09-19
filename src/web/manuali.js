@@ -1022,7 +1022,7 @@ const DIRETTA = {
 
 const VETRINA = {
   slug: 'vetrina',
-  schede: ['pagina', 'donazioni', 'grafiche', 'notifiche', 'telegram', 'ruoli', 'dcserver'],
+  schede: ['pagina', 'donazioni', 'grafiche', 'notifiche', 'telegram', 'ruoli', 'dcavvisi', 'dcserver'],
   titolo: 'Manuale della vetrina: pagina link, grafiche e notifiche social | SocialBot',
   h1: 'Manuale della vetrina: pagina link, grafiche e notifiche social',
   desc: 'La pagina pubblica da mettere in bio, le due grafiche pronte da pubblicare e gli avvisi automatici quando vai in diretta o pubblichi qualcosa.',
@@ -1112,6 +1112,14 @@ const VETRINA = {
     { p: ['Il bot tocca <strong>solo</strong> chi si &egrave; collegato, e <strong>solo</strong> i ruoli che le tue regole nominano. Un ruolo che hai dato a mano, o che d&agrave; un altro bot, non lo guarda nemmeno: sennonch&eacute; la prima volta che accendi l\'interruttore spoglierebbe il server.'] },
     { p: ['E se Twitch per un momento non risponde, non conclude che &laquo;allora non &egrave; abbonato&raquo;: quella condizione, per quel giro, non vale. Meglio un ruolo dato in ritardo che mezzo server spogliato per una domanda caduta.'] },
 
+    { h2: 'Gli avvisi sul tuo Discord' },
+    { p: ['Nella scheda <strong>Avvisi</strong>, dentro Discord, decidi in quali canali del tuo server arriva cosa. Non &egrave; un canale solo: le tue dirette possono stare in <code>#annunci</code>, quelle degli streamer che segui in <code>#amici-in-diretta</code>, i video nuovi da un\'altra parte ancora. Per ogni canale scegli <strong>quali avvisi</strong> (Twitch, Kick, YouTube, TikTok, i post nuovi) e <strong>di chi</strong>.'] },
+    { p: ['Il <strong>testo</strong> lo scrivi tu, per ogni canale, con gli stessi segnaposto di Telegram: <code>{nome}</code>, <code>{titolo}</code>, <code>{gioco}</code>, <code>{spettatori}</code>, <code>{link}</code>, <code>{piattaforma}</code>. Lascialo vuoto e usa quello di casa. Titolo, gioco e spettatori stanno gi&agrave; dentro il riquadro sotto il messaggio: ripeterli vuol dire dire due volte la stessa cosa.'] },
+    { p: ['Puoi far <strong>chiamare un ruolo</strong>: sveglia quello e nessun altro. Scrivere <code>@everyone</code> nel testo non serve e non funziona &mdash; il bot non lo lascia passare, perch&eacute; una parola scritta per sbaglio non deve poter svegliare un server intero.'] },
+    { p: ['Con &laquo;<strong>Chiudi l\'avviso a diretta finita</strong>&raquo; il messaggio non resta l&igrave; a dire &laquo;sono in diretta&raquo; fino a domani: a diretta chiusa diventa &laquo;ha finito la diretta&raquo;. Non sparisce, e non &egrave; una scelta estetica: cancellarlo vorrebbe dire usare la porta che cancella i messaggi di <em>chiunque</em>, e quel potere il bot lo tiene solo per passarlo al ruolo Moderatori. Riscrivere invece Discord lo permette solo su quello che hai scritto tu, quindi non pu&ograve; toccare nessun altro.'] },
+    { p: ['Nell&rsquo;elenco dei canali quelli dove il bot <strong>non pu&ograve; scrivere</strong> sono segnati e non si scelgono: sarebbe scegliere un posto che poi non funziona. E &laquo;<strong>Prova</strong>&raquo; manda l\'avviso esattamente dove finirebbe davvero, col tuo testo e la tua menzione.'] },
+    { h3: 'Chi annunciare' },
+    { p: ['Oltre alle tue: le dirette di <strong>altri streamer</strong> che aggiungi, e se vuoi quelle di chi fa parte della community. La lista &egrave; <strong>la stessa</strong> che vedi nella scheda Telegram &mdash; il bot chiede a Twitch una volta sola come stanno, non due &mdash; ma cosa farne lo decidi qui, per il tuo server: la levetta della community vale solo per Discord, e accenderla non accende niente su Telegram.'] },
     { h2: 'Il server Discord, costruito da qui' },
     { p: ['Nella scheda <strong>Il server</strong> descrivi com&rsquo;&egrave; fatto il tuo Discord: le categorie, i canali dentro, di cosa si parla in ognuno e chi pu&ograve; fare cosa. Poi guardi cosa cambierebbe, e se ti convince lo fa lui.'] },
     { p: ['Non parti dal foglio bianco. Ci sono quattro tracce &mdash; <em>Si comincia</em>, <em>Intorno alle dirette</em>, <em>Si gioca insieme</em>, <em>Siamo in tanti</em> &mdash; e ognuna risponde a una domanda diversa. Se il server ce l&rsquo;hai gi&agrave;, c&rsquo;&egrave; <em>Leggi il mio server</em>: prende la forma che ha adesso e la usa come punto di partenza, e da l&igrave; cambi quello che vuoi.'] },

@@ -750,6 +750,35 @@ function _demoGet(via) {
       { id: 'cs2', nome: 'Counter-Strike 2', cartella: 'game/csgo/cfg', file: 'gamestate_integration_socialbot_cs2.cfg' },
       { id: 'dota2', nome: 'Dota 2', cartella: 'game/dota/cfg/gamestate_integration', file: 'gamestate_integration_socialbot_dota2.cfg' },
     ] },
+    '/api/streamer/discord/avvisi': { collegato: true, guildNome: 'Casa di andryx', io: 'andryx_demo', conDiretta: true,
+      testoDiCasa: '🔴 **{nome}** è in diretta · {link}',
+      destinazioni: [
+        { id: 1, canale: '200000000000000001', canaleNome: 'annunci', webhook: false, eventi: ['live', 'kick'], streamer: ['andryx_demo'],
+          messaggio: '', ruolo: '100000000000000011', chiudi: true, attivo: true },
+        { id: 2, canale: '200000000000000002', canaleNome: 'amici-in-diretta', webhook: false, eventi: ['live'], streamer: [],
+          messaggio: '{nome} è in diretta · {link}', ruolo: '', chiudi: false, attivo: true },
+      ],
+      canali: [
+        { id: '200000000000000001', nome: 'annunci', muto: false },
+        { id: '200000000000000002', nome: 'amici-in-diretta', muto: false },
+        { id: '200000000000000003', nome: 'generale', muto: false },
+        { id: '200000000000000004', nome: 'staff', muto: true },
+      ],
+      ruoli: [{ id: '100000000000000011', nome: 'Affezionati' }, { id: '100000000000000012', nome: 'Moderatori' }],
+      eventi: [
+        { k: 'live', it: 'Diretta su Twitch', en: 'Twitch live', es: 'Directo en Twitch' },
+        { k: 'kick', it: 'Diretta su Kick', en: 'Kick live', es: 'Directo en Kick' },
+        { k: 'ytlive', it: 'Diretta su YouTube', en: 'YouTube live', es: 'Directo en YouTube' },
+        { k: 'tiktok', it: 'Diretta su TikTok', en: 'TikTok live', es: 'Directo en TikTok' },
+        { k: 'yt', it: 'Nuovo video su YouTube', en: 'New YouTube video', es: 'Nuevo vídeo en YouTube' },
+        { k: 'ig', it: 'Nuovo post su Instagram', en: 'New Instagram post', es: 'Nueva publicación en Instagram' },
+        { k: 'tt', it: 'Nuovo post su TikTok', en: 'New TikTok post', es: 'Nueva publicación en TikTok' },
+      ],
+      amici: [
+        { id: 7, login: 'pincopallo', display: 'PincoPallo', attivo: true, fonte: 'mano' },
+        { id: 8, login: 'tizia', display: 'Tizia', attivo: true, fonte: 'community' },
+      ],
+      community: true, communityQuanti: 12 },
     '/api/streamer/dcserver/registro': { giri: [
       { quando: Date.now() - 3 * 3600000, chi: 'andryx_demo', distruttivo: 0, creati: 3, sistemati: 1, tolti: 0, nomi: '', errori: '' },
       { quando: Date.now() - 6 * 86400000, chi: 'andryx_demo', distruttivo: 1, creati: 0, sistemati: 2, tolti: 2, nomi: 'vecchio-canale, Roba Vecchia', errori: '' },
@@ -1134,6 +1163,7 @@ const SPIEGA_DEMO = {
   notifiche: 'Gli avvisi quando esci allo scoperto: Discord quando vai in diretta, e i nuovi post su TikTok, YouTube e Instagram.',
   telegram: 'Il bot dentro il tuo gruppo Telegram: avvisa quando parti, risponde ai comandi, si ricorda i compleanni dei membri e ti manda il rapporto della serata in privato.',
   ruoli: 'I ruoli del tuo server Discord dati da quello che succede su Twitch: chi ti segue, chi è abbonato, chi c’è sempre.',
+  dcavvisi: 'Dove arrivano gli avvisi sul tuo server: un canale per ogni cosa, di chi vuoi tu, col testo che scrivi tu e il ruolo che vuoi chiamare.',
   dcserver: 'Categorie, canali e permessi del tuo server Discord: scegli come lo vuoi, guardi cosa cambierebbe, e lo costruisce lui.',
 };
 
@@ -2157,7 +2187,7 @@ function collegaTgDestinazioni() {
     const ta = e.target.closest('[data-amico-togli]');
     if (ta) {
       return conErrore(async () => {
-        await api('/api/streamer/telegram/amici/' + ta.dataset.amicoTogli, { method: 'DELETE' });
+        await api('/api/streamer/amici/' + ta.dataset.amicoTogli, { method: 'DELETE' });
         await caricaTgDestinazioni();
       });
     }
@@ -2166,7 +2196,7 @@ function collegaTgDestinazioni() {
       const v = (inp?.value || '').trim();
       if (!v) return;
       return conErrore(async () => {
-        const r = await api('/api/streamer/telegram/amici', { method: 'POST', body: { login: v } });
+        const r = await api('/api/streamer/amici', { method: 'POST', body: { login: v } });
         inp.value = '';
         toast(L(`«${r.display}» aggiunto: annuncerò anche le sue dirette.`, `«${r.display}» added: I'll announce their lives too.`, `«${r.display}» añadido: anunciaré también sus directos.`));
         await caricaTgDestinazioni();
@@ -2545,7 +2575,7 @@ const FAMIGLIE = [
   { id: 'moderazione', nome: 'Moderazione', parti: ['regole', 'scudo', 'registro'] },
   { id: 'interazione', nome: 'Giochi', parti: ['giochi', 'sondaggi', 'giveaway', 'penitenze'] },
   { id: 'inonda', nome: 'Regia', parti: ['regia', 'clip', 'musica'] },
-  { id: 'discord', nome: 'Discord', parti: ['ruoli', 'dcserver'] },
+  { id: 'discord', nome: 'Discord', parti: ['ruoli', 'dcavvisi', 'dcserver'] },
 ];
 const famigliaDi = (scheda) => FAMIGLIE.find((f) => f.parti.includes(scheda)) || null;
 const stessaFamiglia = (a, b) => { const fa = famigliaDi(a); return !!fa && fa === famigliaDi(b); };
@@ -2620,6 +2650,7 @@ const T_SCHEDA = {
   regole: ['Moderazione', 'Moderation', 'Moderación'],
   scudo: ['Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'],
   registro: ['Registro dello scudo', 'Shield log', 'Registro del escudo'],
+  dcavvisi: ['Avvisi su Discord', 'Discord alerts', 'Avisos en Discord'],
   dcserver: ['Il server Discord', 'Your Discord server', 'Tu servidor de Discord'],
   giochi: ['Giochi & classifiche', 'Games & leaderboards', 'Juegos y clasificaciones'],
   regia: ['Regia', 'Control room', 'Realización'],
@@ -2645,7 +2676,7 @@ const T_SCHEDA = {
 const tGruppo = (id, fb) => { const t = T_GRUPPO[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
 const tScheda = (id, fb) => { const t = T_SCHEDA[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
 
-const SOLO_DISCORD = new Set(['ruoli', 'dcserver', 'pagina', 'stato', 'sottoscrizione']);
+const SOLO_DISCORD = new Set(['ruoli', 'dcavvisi', 'dcserver', 'pagina', 'stato', 'sottoscrizione']);
 const senzaDiretta = () => stato?.piattaforma === 'discord';
 
 function elencoGruppi() {
@@ -2673,6 +2704,7 @@ const ICONA = {
   effetti:     _ico('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9.5a4 4 0 0 1 0 5"/>'),
   clip:        _ico('<rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="M8 5v14"/><path d="M16 5v14"/><path d="M3 9.5h5"/><path d="M16 9.5h5"/><path d="M3 14.5h5"/><path d="M16 14.5h5"/>'),
   ascolto:     _ico('<rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4"/>'),
+  dcavvisi:    _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/><path d="M4 5h4"/>'),
   dcserver:    _ico('<path d="M4 5h6v5H4z"/><path d="M4 14h6v5H4z"/><path d="M13 7.5h7"/><path d="M13 16.5h7"/>'),
   musica:      _ico('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
   sondaggi:    _ico('<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>'),
@@ -2708,6 +2740,7 @@ const DESC = {
   studio: ['Vai live dal browser: webcam, schermo, overlay e audio in un click.', 'Go live from the browser: webcam, screen, overlay and audio in one click.', 'Emite desde el navegador: webcam, pantalla, overlay y audio con un clic.'],
   clip: ['Clip automatiche nei momenti di hype.', 'Automatic clips in the hype moments.', 'Clips automáticos en los momentos de hype.'],
   ascolto: ['Comanda il bot a voce mentre streammi.', 'Control the bot by voice while you stream.', 'Controla el bot por voz mientras haces directo.'],
+  dcavvisi: ['In quali canali del tuo server arrivano gli avvisi, di chi e con che parole.', 'Which channels of your server get the alerts, whose, and in what words.', 'En qué canales de tu servidor llegan los avisos, de quién y con qué palabras.'],
   dcserver: ['Categorie, canali e permessi del tuo server Discord, decisi da qui.', 'Categories, channels and permissions of your Discord server, decided from here.', 'Categorías, canales y permisos de tu servidor de Discord, decididos desde aquí.'],
   musica: ['Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.', 'Music requests: viewers queue songs on Spotify.', 'Peticiones musicales: los espectadores ponen canciones en cola en Spotify.'],
   sondaggi: ['Crea sondaggi e predizioni Twitch al volo.', 'Create Twitch polls and predictions on the fly.', 'Crea encuestas y predicciones de Twitch al vuelo.'],
@@ -2888,6 +2921,8 @@ const GUIDE = {
     come: [['Incolla la chiave del TUO bot, quella che ti d\u00e0 BotFather.', 'Paste the key of YOUR bot, the one BotFather gives you.', 'Pega la clave de TU bot, la que te da BotFather.', '#inp-tg-token'], ['Aggiungi il bot al gruppo e premi \u00abCollega\u00bb: ti trova da solo.', 'Add the bot to the group and press \u00abConnect\u00bb: it finds itself.', 'A\u00f1ade el bot al grupo y pulsa \u00abConectar\u00bb: se encuentra solo.', '#btn-tg-rileva'], ['Accendi l\'avviso e scrivi il messaggio come lo vuoi tu.', 'Turn on the alert and write the message the way you want it.', 'Enciende el aviso y escribe el mensaje como lo quieras.', '#chk-tg-attivo']] },
   ruoli: { serve: ['Dare i ruoli del tuo server Discord in base a quello che succede su Twitch: chi ti segue, chi è abbonato, chi è VIP o moderatore, quante ore ti ha guardato, quante monete ha, da quante dirette di fila c’è.', 'Give your Discord server’s roles based on what happens on Twitch: who follows you, who is subscribed, who is a VIP or moderator, how many hours they watched, how many coins they have, how long their streak is.', 'Dar los roles de tu servidor de Discord según lo que pasa en Twitch: quién te sigue, quién está suscrito, quién es VIP o moderador, cuántas horas te ha visto, cuántas monedas tiene, cuántos directos seguidos lleva.'],
     come: [['Premi «Porta il bot nel tuo server»: Discord ti fa scegliere il server dall’elenco e ti chiede di confermare un permesso. Torni qui e ti dico quali ruoli riesce a muovere.', 'Press «Bring the bot to your server»: Discord lets you pick the server from a list and asks you to confirm one permission. Come back and I tell you which roles it can move.', 'Pulsa «Lleva el bot a tu servidor»: Discord te deja elegir el servidor de una lista y te pide confirmar un permiso. Vuelves y te digo qué roles puede mover.', '#dc-invita'], ['Su Discord, in Impostazioni server → Ruoli, trascina il ruolo del bot SOPRA quelli che deve poter dare: più in basso di un ruolo, non lo tocca.', 'On Discord, in Server Settings → Roles, drag the bot’s role ABOVE the ones it must be able to give: below a role, it cannot touch it.', 'En Discord, en Ajustes del servidor → Roles, arrastra el rol del bot POR ENCIMA de los que debe poder dar: por debajo de un rol, no lo toca.', ''], ['Scrivi le regole: una condizione e il ruolo che le corrisponde. Poi accendi.', 'Write the rules: a condition and the role that matches it. Then turn it on.', 'Escribe las reglas: una condición y el rol que le corresponde. Luego enciende.', '#dc-regole'], ['Chi ti guarda si collega da solo: scrive !discord in chat e segue le istruzioni. Finché non si collega, il bot non lo tocca.', 'Your viewers link themselves: they type !discord in chat and follow the steps. Until they link, the bot does not touch them.', 'Quien te ve se vincula solo: escribe !discord en el chat y sigue los pasos. Hasta que no se vincula, el bot no lo toca.', '#dc-collegati']] },
+  dcavvisi: { serve: ['Dire alla gente del tuo server che sei in diretta, o che lo è qualcuno che segui: in quale canale, con che parole e chiamando chi vuoi tu.', 'Tell the people in your server that you are live, or that someone you follow is: in which channel, with what words, pinging whoever you want.', 'Decir a la gente de tu servidor que estás en directo, o que lo está alguien que sigues: en qué canal, con qué palabras y llamando a quien tú quieras.'],
+    come: [['Scegli il canale dove far arrivare l\'avviso. Quelli in cui il bot non può scrivere li trovi segnati: sceglierne uno sarebbe scegliere un posto che poi non funziona.', 'Pick the channel where the alert lands. The ones the bot cannot write in are marked: picking one would mean picking a place that then does nothing.', 'Elige el canal donde llega el aviso. Los que el bot no puede escribir están marcados: elegir uno sería elegir un sitio que luego no funciona.', '#dca-nuovo'], ['Per ogni canale decidi quali avvisi arrivano, di chi, e scrivi il testo come lo vuoi tu.', 'For each channel decide which alerts land there, whose, and write the text the way you want it.', 'Para cada canal decide qué avisos llegan, de quién, y escribe el texto como lo quieras.', '#dca-elenco'], ['Se vuoi, fai chiamare un ruolo: sveglia solo quello, mai tutto il server per sbaglio.', 'If you want, have a role pinged: it wakes only that one, never the whole server by mistake.', 'Si quieres, haz que se llame a un rol: despierta solo a ese, nunca a todo el servidor por error.', '#dca-elenco'], ['«Prova» manda l\'avviso esattamente dove finirebbe davvero, col tuo testo.', '«Test» sends the alert exactly where it would really land, with your text.', '«Probar» manda el aviso exactamente donde llegaría de verdad, con tu texto.', '#dca-elenco']] },
   dcserver: { serve: ['Decidere com’è fatto il tuo server Discord — categorie, canali, di cosa si parla in ognuno e chi può fare cosa — e lasciare che lo metta su lui, dopo averti fatto vedere esattamente cosa farebbe.', 'Decide how your Discord server is laid out — categories, channels, what each one is about and who can do what — and let it set it up, after showing you exactly what it would do.', 'Decidir cómo está hecho tu servidor de Discord — categorías, canales, de qué se habla en cada uno y quién puede hacer qué — y dejar que lo monte él, tras enseñarte exactamente qué haría.'],
     come: [['Scegli da dove parti: una delle quattro tracce, oppure «Leggi il mio server» se ce l’hai già e vuoi partire da com’è adesso.', 'Choose where you start from: one of the four tracks, or «Read my server» if you already have one and want to start from how it is now.', 'Elige desde dónde empiezas: una de las cuatro plantillas, o «Leer mi servidor» si ya lo tienes y quieres partir de cómo está ahora.', '#dcs-partenza'], ['Cambia i nomi, aggiungi o togli categorie e canali. Apri un canale per scrivere di cosa si parla e chi può fare cosa.', 'Change the names, add or remove categories and channels. Open a channel to write what it is about and who can do what.', 'Cambia los nombres, añade o quita categorías y canales. Abre un canal para escribir de qué se habla y quién puede hacer qué.', '#dcs-editor'], ['Premi «Fammi vedere cosa faresti»: quello che compare è l’elenco esatto, non un riassunto. Quello che non è nella traccia resta dov’è.', 'Press «Show me what you would do»: what appears is the exact list, not a summary. Whatever is not in the track stays where it is.', 'Pulsa «Enséñame qué harías»: lo que aparece es la lista exacta, no un resumen. Lo que no está en la plantilla se queda donde está.', '#dcs-vedi'], ['Se ti convince, «Costruisci». Se nel frattempo qualcuno ha toccato il server, mi fermo e te lo rifaccio vedere.', 'If it convinces you, «Build it». If someone touched the server meanwhile, I stop and show it to you again.', 'Si te convence, «Constrúyelo». Si mientras tanto alguien ha tocado el servidor, me paro y te lo enseño otra vez.', '#dcs-azioni']] },
   studio: { serve: ['Andare in diretta su Twitch dal browser, senza installare niente: componi scene con webcam, schermo, immagini, video, testo e overlay, regola l’audio col mixer e premi «Vai live».', 'Go live on Twitch from the browser, without installing anything: compose scenes with webcam, screen, images, video, text and overlay, tune the audio with the mixer and hit “Go live”.', 'Emitir en Twitch desde el navegador, sin instalar nada: compón escenas con webcam, pantalla, imágenes, vídeo, texto y overlay, ajusta el audio con el mezclador y pulsa «Emitir».'],
@@ -3069,7 +3104,7 @@ const SOTTO_SCHEDE = {
     attributo: 'rete',
     voci: [
       ['tiktok', 'TikTok'], ['youtube', 'YouTube'],
-      ['instagram', 'Instagram'], ['discord', 'Discord'],
+      ['instagram', 'Instagram'],
     ],
   },
 };
@@ -3128,6 +3163,7 @@ const T_PARTE = {
   scudo: ['Scudo', 'Shield', 'Escudo'],
   registro: ['Registro', 'Log', 'Registro'],
   ruoli: ['Ruoli', 'Roles', 'Roles'],
+  dcavvisi: ['Avvisi', 'Alerts', 'Avisos'],
   dcserver: ['Il server', 'The server', 'El servidor'],
 };
 
@@ -3151,7 +3187,7 @@ const NOMI_SCHEDA = {
   giochi: 'Giochi & classifiche', sondaggi: 'Sondaggi & predizioni',
   giveaway: 'Giveaway', penitenze: 'Penitenze',
   regia: 'Regia', clip: 'Clip', musica: 'Musica',
-  ruoli: 'Discord', dcserver: 'Il server Discord',
+  ruoli: 'Discord', dcavvisi: 'Avvisi su Discord', dcserver: 'Il server Discord',
 };
 const _nomeSchedaGrezzo = (id) => NOMI_SCHEDA[id] || id;
 
@@ -3818,6 +3854,7 @@ function vistaPiattaforma() {
     ${pannelloEffetti()}
     ${pannello7TV()}
     ${pannelloRuoli()}
+    ${pannelloDcAvvisi()}
     ${pannelloDcServer()}
     ${pannelloTelegram()}
     ${pannelloNotifiche()}
@@ -5459,53 +5496,6 @@ async function caricaTikTok() {
     if (r?.vuoto) toast(L('Collegato, ma non trovo ancora video sul tuo profilo.', 'Connected, but I can\'t find any videos on your profile yet.', 'Conectado, pero aún no encuentro vídeos en tu perfil.'));
     else toast(L('Funziona: leggo il tuo ultimo video.', 'It works: I can read your latest video.', 'Funciona: leo tu último vídeo.'));
   }));
-}
-
-async function caricaDiscord() {
-  const box = document.getElementById('discord-box'); if (!box) return;
-  let d; try { d = await api('/api/discord/stato'); }
-  catch { box.innerHTML = `<p class="suggerimento">${L('Impossibile caricare lo stato Discord.', 'Couldn\'t load Discord status.', 'No se pudo cargar el estado de Discord.')}</p>`; return; }
-  const wh = !!d.configurato;
-  box.innerHTML = `
-    <label class="campo" for="inp-dc-webhook">${L('Webhook del canale Discord', 'Discord channel webhook', 'Webhook del canal de Discord')}</label>
-    <input type="password" id="inp-dc-webhook" class="campo-largo" placeholder="${wh ? esc(d.anteprima) : 'https://discord.com/api/webhooks/…'}" autocomplete="off">
-    <p class="suggerimento">${L('In Discord: <strong>Impostazioni canale → Integrazioni → Webhook → Nuovo webhook → Copia URL</strong>, poi incollalo qui. Per aggiornare messaggio/opzioni lascia questo campo vuoto.', 'In Discord: <strong>Channel settings → Integrations → Webhooks → New webhook → Copy URL</strong>, then paste it here. To update the message/options just leave this field empty.', 'En Discord: <strong>Ajustes del canal → Integraciones → Webhooks → Nuevo webhook → Copiar URL</strong>, y pégalo aquí. Para actualizar mensaje/opciones deja este campo vacío.')}</p>
-
-    <label class="campo spazio-sopra" for="txt-dc-msg">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
-    <textarea id="txt-dc-msg" rows="3" placeholder="${esc('🔴 {nome} è in diretta ora! 👉 {link}')}">${esc(d.messaggio || '')}</textarea>
-    <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code> <code>{spettatori}</code> <code>{link}</code>. ${L('Per taggare tutti scrivi <code>@everyone</code> nel messaggio.', 'To ping everyone, write <code>@everyone</code> in the message.', 'Para avisar a todos escribe <code>@everyone</code> en el mensaje.')}</p>
-
-    <div class="griglia-campi spazio-sopra">
-      <div><label class="campo" for="inp-dc-nome">${L('Nome del bot', 'Bot name', 'Nombre del bot')} <span class="suggerimento">(${L('facolt.', 'optional', 'opcional')})</span></label>
-        <input type="text" id="inp-dc-nome" class="campo-largo" value="${esc(d.nomeBot || '')}" placeholder="SocialBot"></div>
-      <div><label class="campo" for="inp-dc-avatar">${L('Avatar (URL)', 'Avatar (URL)', 'Avatar (URL)')} <span class="suggerimento">(${L('facolt.', 'optional', 'opcional')})</span></label>
-        <input type="text" id="inp-dc-avatar" class="campo-largo" value="${esc(d.avatar || '')}" placeholder="https://…/logo.png"></div>
-    </div>
-
-    <div class="riga-check spazio-sopra">
-      <input type="checkbox" id="chk-dc-attivo" ${d.attivo ? 'checked' : ''}>
-      <label for="chk-dc-attivo">${L('Avvisami quando vado in diretta', 'Alert me when I go live', 'Avísame cuando voy en directo')}</label>
-    </div>
-    <p class="spazio-sopra">
-      <button class="btn" id="btn-dc-salva">${L('Salva', 'Save', 'Guardar')}</button>
-      ${wh ? ` <button class="btn secondario mini" id="btn-dc-prova">${L('Prova', 'Test', 'Probar')}</button> <button class="btn secondario mini" id="btn-dc-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}
-    </p>`;
-  document.getElementById('btn-dc-salva').addEventListener('click', () => conErrore(async () => {
-    const webhook = document.getElementById('inp-dc-webhook').value.trim();
-    const body = {
-      messaggio: document.getElementById('txt-dc-msg').value,
-      nomeBot: document.getElementById('inp-dc-nome').value,
-      avatar: document.getElementById('inp-dc-avatar').value,
-      attivo: document.getElementById('chk-dc-attivo').checked,
-    };
-    if (webhook) body.webhook = webhook;
-    await api('/api/discord', { method: 'POST', body });
-    toast(L('Discord salvato ✓', 'Discord saved ✓', 'Discord guardado ✓')); caricaDiscord();
-  }));
-  const bp = document.getElementById('btn-dc-prova');
-  if (bp) bp.addEventListener('click', () => conErrore(async () => { await api('/api/discord/prova', { method: 'POST', body: {} }); toast(L('Messaggio di prova inviato ✓', 'Test message sent ✓', 'Mensaje de prueba enviado ✓')); }));
-  const bs = document.getElementById('btn-dc-scollega');
-  if (bs) bs.addEventListener('click', () => conErrore(async () => { await api('/api/discord/disconnect', { method: 'POST', body: {} }); toast(L('Discord scollegato.', 'Discord disconnected.', 'Discord desconectado.')); caricaDiscord(); }));
 }
 
 async function caricaTgLogin() {
@@ -17021,6 +17011,200 @@ function _distEsci(scaduta) {
   if (scaduta) toast(L('La modalità distruttiva è scaduta.', 'Destructive mode has expired.', 'El modo destructivo ha caducado.'));
 }
 
+let _dcaDati = null;
+
+async function caricaDcAvvisi() {
+  const box = document.getElementById('dca-box');
+  const chi = document.getElementById('dca-chi');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/streamer/discord/avvisi'); }
+  catch { box.innerHTML = `<p class="suggerimento">${L('Non riesco a leggere gli avvisi di Discord.', 'I can\'t read the Discord alerts.', 'No consigo leer los avisos de Discord.')}</p>`; return; }
+  _dcaDati = d;
+
+  const invito = d.collegato ? '' : `<p class="tg-stato guaio">${_bIco(ICO.avviso)}${L('Il bot non è ancora nel tuo server: per scegliere un canale portacelo dalla scheda «Ruoli».', 'The bot is not in your server yet: to pick a channel, bring it there from the «Roles» tab.', 'El bot aún no está en tu servidor: para elegir un canal, llévalo desde la pestaña «Roles».')} <button type="button" class="btn secondario mini" data-vaischeda="ruoli">${L('Vai', 'Go', 'Ir')}</button></p>`;
+
+  const eventi = d.eventi || [];
+  const nomeEv = (k) => { const e = eventi.find((x) => x.k === k); return e ? L(e.it, e.en, e.es) : k; };
+  const persone = [
+    ...(d.conDiretta ? [{ login: d.io, display: L('Io', 'Me', 'Yo') }] : []),
+    ...(d.amici || []).map((a) => ({ login: a.login, display: a.display || a.login })),
+  ];
+  const nomeCanale = (id) => (d.canali || []).find((c) => c.id === id)?.nome || '';
+
+  const carta = (t) => {
+    const nome = t.webhook ? L('webhook', 'webhook', 'webhook') : (nomeCanale(t.canale) || t.canaleNome || t.canale);
+    const evTxt = t.eventi.length ? t.eventi.map(nomeEv).join(' · ') : L('tutti gli avvisi', 'all alerts', 'todos los avisos');
+    const chiTxt = t.streamer.length
+      ? t.streamer.map((l) => (persone.find((p) => p.login === l)?.display || l)).join(', ')
+      : L('tutti', 'everyone', 'todos');
+    return `<details class="tg-dest${t.attivo ? '' : ' spenta'}" data-dca="${t.id}">
+      <summary>
+        <span class="tg-dest-ico">${_bIco(ICO.chat)}</span>
+        <span class="tg-dest-corpo"><strong>${t.webhook ? '' : '#'}${esc(nome)}</strong><span>${esc(evTxt)} · ${esc(chiTxt)}</span></span>
+        <span class="tg-dest-stato">${t.attivo ? '' : L('spento', 'off', 'apagado')}</span>
+      </summary>
+      <div class="tg-dest-corpo-apri">
+        <p class="campo">${L('Quali avvisi arrivano qui', 'Which alerts land here', 'Qué avisos llegan aquí')}</p>
+        <div class="tg-spunte">
+          ${eventi.map((e) => `<label class="tg-spunta"><input type="checkbox" data-ev="${e.k}"${t.eventi.length === 0 || t.eventi.includes(e.k) ? ' checked' : ''}><span>${esc(L(e.it, e.en, e.es))}</span></label>`).join('')}
+        </div>
+        ${persone.length ? `<p class="campo spazio-sopra">${L('Di chi', 'Whose', 'De quién')}</p>
+        <div class="tg-spunte">
+          ${persone.map((pp) => `<label class="tg-spunta"><input type="checkbox" data-chi="${esc(pp.login)}"${t.streamer.length === 0 || t.streamer.includes(pp.login) ? ' checked' : ''}><span>${esc(pp.display)}</span></label>`).join('')}
+        </div>` : ''}
+        <label class="campo spazio-sopra" for="dca-testo-${t.id}">${L('Il testo', 'The text', 'El texto')}</label>
+        <textarea rows="2" id="dca-testo-${t.id}" data-testo placeholder="${esc(d.testoDiCasa || '')}">${esc(t.messaggio || '')}</textarea>
+        <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code> <code>{spettatori}</code> <code>{link}</code> <code>{piattaforma}</code>. ${L('Vuoto = quello di casa. Titolo, gioco e spettatori sono già dentro il riquadro sotto il messaggio.', 'Empty = the house one. Title, game and viewers are already inside the box under the message.', 'Vacío = el de casa. Título, juego y espectadores ya están dentro del recuadro bajo el mensaje.')}</p>
+        <label class="campo spazio-sopra" for="dca-ruolo-${t.id}">${L('Chiama un ruolo', 'Ping a role', 'Llamar a un rol')}</label>
+        <select class="campo-largo" id="dca-ruolo-${t.id}" data-ruolo>
+          <option value=""${t.ruolo ? '' : ' selected'}>${L('nessuno', 'nobody', 'nadie')}</option>
+          ${(d.ruoli || []).map((r) => `<option value="${esc(r.id)}"${t.ruolo === r.id ? ' selected' : ''}>@${esc(r.nome)}</option>`).join('')}
+        </select>
+        <p class="suggerimento">${L('Sveglia solo quel ruolo. Scrivere «@everyone» nel testo non serve e non funziona: il bot non lo lascia passare.', 'It wakes only that role. Writing «@everyone» in the text does nothing: the bot does not let it through.', 'Despierta solo a ese rol. Escribir «@everyone» en el texto no sirve: el bot no lo deja pasar.')}</p>
+        <p class="suggerimento">${L('A diretta finita l\'avviso non sparisce: diventa «ha finito la diretta». Cancellarlo vorrebbe dire usare il potere di cancellare i messaggi altrui, e quello il bot lo passa ma non lo usa.', 'When the stream ends the alert does not vanish: it becomes «the stream is over». Deleting it would mean using the power to delete other people\'s messages, and that one the bot hands over but never uses.', 'Al terminar el directo el aviso no desaparece: pasa a decir «ha terminado el directo». Borrarlo sería usar el poder de borrar mensajes ajenos, y ese el bot lo entrega pero no lo usa.')}</p>
+        <div class="riga-flessibile spazio-sopra">
+          <label class="tg-spunta"><input type="checkbox" data-chiudi${t.chiudi ? ' checked' : ''}><span>${L('Chiudi l\'avviso a diretta finita', 'Close the alert when the stream ends', 'Cierra el aviso al terminar el directo')}</span></label>
+          <label class="tg-spunta"><input type="checkbox" data-attivo${t.attivo ? ' checked' : ''}><span>${L('Acceso', 'On', 'Encendido')}</span></label>
+          <button type="button" class="btn secondario mini" data-prova>${L('Prova', 'Test', 'Probar')}</button>
+          <button type="button" class="btn secondario mini" data-togli style="margin-left:auto;color:var(--rosso)">${L('Togli', 'Remove', 'Quitar')}</button>
+        </div>
+      </div>
+    </details>`;
+  };
+
+  const gia = new Set((d.destinazioni || []).map((x) => x.canale));
+  const liberi = (d.canali || []).filter((c) => !gia.has(c.id));
+  box.innerHTML = `
+    ${invito}
+    <div class="tg-elenco" id="dca-elenco">${(d.destinazioni || []).map(carta).join('')
+      || `<p class="vuoto">${L('Ancora nessun canale: scegline uno qui sotto e da lì in poi ti avviso.', 'No channel yet: pick one below and from then on I will tell them.', 'Aún ningún canal: elige uno abajo y a partir de ahí aviso.')}</p>`}</div>
+    <div class="riga-flessibile spazio-sopra" id="dca-nuovo"${d.collegato ? '' : ' hidden'}>
+      <select class="campo-largo" id="dca-scelta" aria-label="${esc(L('canale del server', 'server channel', 'canal del servidor'))}">
+        ${liberi.length ? liberi.map((c) => `<option value="${esc(c.id)}"${c.muto ? ' disabled' : ''}>#${esc(c.nome)}${c.muto ? ' — ' + L('qui non può scrivere', 'cannot write here', 'aquí no puede escribir') : ''}</option>`).join('')
+        : `<option value="">${L('nessun canale libero', 'no free channel', 'ningún canal libre')}</option>`}
+      </select>
+      <button type="button" class="btn secondario" id="dca-piu"${liberi.some((c) => !c.muto) ? '' : ' disabled'}>${_bIco(ICO.piu)}${L('Aggiungi', 'Add', 'Añadir')}</button>
+    </div>`;
+
+  if (chi) {
+    const mano = (d.amici || []).filter((a) => a.fonte !== 'community');
+    chi.innerHTML = `
+      <label class="tg-community">
+        <input type="checkbox" id="dca-community"${d.community ? ' checked' : ''}>
+        <span class="tg-community-corpo">
+          <strong>${L('Annuncia anche le dirette della community', 'Announce community members\' streams too', 'Anuncia también los directos de la comunidad')}</strong>
+          <span>${L(`Vale per questo server e basta: accenderlo qui non accende niente su Telegram. Entrano <strong>solo i membri verificati e confermati</strong> da andryxify.it. Ora sono <strong>${d.communityQuanti || 0}</strong> canali, e la lista si aggiorna da sé.`, `It applies to this server only: turning it on here turns nothing on in Telegram. Only <strong>verified and confirmed members</strong> of andryxify.it get in. Right now that is <strong>${d.communityQuanti || 0}</strong> channels, and the list keeps itself up to date.`, `Vale solo para este servidor: encenderlo aquí no enciende nada en Telegram. Entran <strong>solo los miembros verificados y confirmados</strong> de andryxify.it. Ahora son <strong>${d.communityQuanti || 0}</strong> canales, y la lista se actualiza sola.`)}</span>
+        </span>
+      </label>
+      <div class="tg-amici">
+        ${mano.map((a) => `<span class="tg-amico${a.attivo ? '' : ' spenta'}">${esc(a.display || a.login)}<button type="button" data-dca-amico="${a.id}" aria-label="${L('Togli', 'Remove', 'Quitar')}">×</button></span>`).join('')}
+        ${(d.amici || []).filter((a) => a.fonte === 'community').map((a) => `<span class="tg-amico auto" title="${L('Dalla community: entra ed esce da solo', 'From the community: comes and goes by itself', 'De la comunidad: entra y sale solo')}">${_bIco(ICO.utenti)}${esc(a.display || a.login)}</span>`).join('')}
+        ${(d.amici || []).length ? '' : `<span class="suggerimento">${L('Nessun altro streamer, per ora.', 'No other streamer yet.', 'Ningún otro streamer, por ahora.')}</span>`}
+      </div>
+      <div class="riga-flessibile spazio-sopra">
+        <input type="text" id="dca-amico-nome" class="campo-largo" maxlength="25" placeholder="${L('nome canale Twitch (es. pincopallo)', 'Twitch channel name (e.g. pincopallo)', 'nombre del canal de Twitch')}" aria-label="${esc(L('nome canale Twitch', 'Twitch channel name', 'nombre del canal de Twitch'))}">
+        <button type="button" class="btn secondario" id="dca-amico-piu">${L('Aggiungi', 'Add', 'Añadir')}</button>
+      </div>`;
+  }
+  _dcaCollega();
+}
+
+function _dcaLeggi(el) {
+  const spunte = (sel) => [...el.querySelectorAll(sel)].filter((i) => i.checked).map((i) => i.dataset.ev || i.dataset.chi);
+  const tuttiEv = [...el.querySelectorAll('[data-ev]')].length;
+  const tuttiChi = [...el.querySelectorAll('[data-chi]')].length;
+  const ev = spunte('[data-ev]'), chi = spunte('[data-chi]');
+  return {
+    eventi: ev.length === tuttiEv ? [] : ev,       // tutti spuntati = nessun filtro
+    streamer: chi.length === tuttiChi ? [] : chi,
+    messaggio: el.querySelector('[data-testo]')?.value || '',
+    ruolo: el.querySelector('[data-ruolo]')?.value || '',
+    chiudi: !!el.querySelector('[data-chiudi]')?.checked,
+    attivo: !!el.querySelector('[data-attivo]')?.checked,
+  };
+}
+
+function _dcaCollega() {
+  const s = document.getElementById('scheda-dcavvisi');
+  if (!s || s.dataset.collegato) return;
+  s.dataset.collegato = '1';
+
+  s.addEventListener('click', (e) => {
+    const vai = e.target.closest('[data-vaischeda]');
+    if (vai) { vaiAScheda(vai.dataset.vaischeda); return; }
+    const piu = e.target.closest('#dca-piu');
+    if (piu) {
+      const sel = document.getElementById('dca-scelta');
+      const canale = sel?.value || '';
+      if (!canale) return;
+      conErrore(async () => {
+        await api('/api/streamer/discord/avvisi', { method: 'POST', body: { canale, canaleNome: sel.selectedOptions[0]?.text || '' } });
+        await caricaDcAvvisi();
+      });
+      return;
+    }
+    const d = e.target.closest('[data-dca]');
+    if (!d) {
+      const am = e.target.closest('[data-dca-amico]');
+      if (am) conErrore(async () => { await api('/api/streamer/amici/' + am.dataset.dcaAmico, { method: 'DELETE' }); await caricaDcAvvisi(); });
+      const ap = e.target.closest('#dca-amico-piu');
+      if (ap) {
+        const inp = document.getElementById('dca-amico-nome');
+        const v = (inp?.value || '').trim().toLowerCase().replace(/^@/, '');
+        if (!v) return;
+        conErrore(async () => {
+          await api('/api/streamer/amici', { method: 'POST', body: { login: v } });
+          if (inp) inp.value = '';
+          await caricaDcAvvisi();
+        });
+      }
+      return;
+    }
+    if (e.target.closest('[data-togli]')) {
+      conErrore(async () => { await api('/api/streamer/discord/avvisi/' + d.dataset.dca, { method: 'DELETE' }); await caricaDcAvvisi(); });
+      return;
+    }
+    if (e.target.closest('[data-prova]')) {
+      conErrore(async () => {
+        await api('/api/streamer/discord/avvisi/' + d.dataset.dca + '/prova', { method: 'POST', body: {} });
+        toast(L('Mandato ✓ guarda nel canale.', 'Sent ✓ look in the channel.', 'Enviado ✓ mira en el canal.'));
+      });
+    }
+  });
+
+  const salva = (el) => conErrore(async () => {
+    await api('/api/streamer/discord/avvisi/' + el.dataset.dca, { method: 'PATCH', body: _dcaLeggi(el) });
+  });
+  s.addEventListener('change', (e) => {
+    const com = e.target.closest('#dca-community');
+    if (com) { conErrore(async () => { await api('/api/streamer/discord/avvisi/community', { method: 'POST', body: { attivo: com.checked } }); await caricaDcAvvisi(); }); return; }
+    const d = e.target.closest('[data-dca]');
+    if (d) salva(d);
+  });
+  s.addEventListener('input', (e) => {
+    const d = e.target.closest('[data-dca]');
+    if (!d || !e.target.matches('[data-testo]')) return;
+    clearTimeout(d._t);
+    d._t = setTimeout(() => salva(d), 700);
+  });
+}
+
+function pannelloDcAvvisi() {
+  return pannello('dcavvisi', `
+    <div class="carta">
+      <h2>${_hIco(ICO.megafono)}${L('In quali canali arrivano', 'Which channels they land in', 'En qué canales llegan')}</h2>
+      <p>${L('Un canale per ogni cosa: le tue dirette di qua, quelle degli amici di là, i post nuovi dove vuoi tu. Ogni canale ha il suo testo e può chiamare un ruolo.', 'A channel for each thing: your streams here, your friends\' there, new posts wherever you like. Each channel has its own text and can ping a role.', 'Un canal para cada cosa: tus directos aquí, los de tus amigos allá, los posts nuevos donde quieras. Cada canal tiene su texto y puede llamar a un rol.')}</p>
+      <div id="dca-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.utenti)}${L('Chi annunciare', 'Who to announce', 'A quién anunciar')}</h2>
+      <p>${L('Oltre a te: altri streamer, e se vuoi chi fa parte della community. La lista è la stessa che vedi su Telegram — il bot chiede a Twitch una volta sola come stanno — ma che farne lo decidi qui, per il tuo server.', 'Besides you: other streamers, and if you want, the community. The list is the same one you see on Telegram — the bot asks Twitch once how they are doing — but what to do with it you decide here, for your server.', 'Además de ti: otros streamers y, si quieres, la comunidad. La lista es la misma que ves en Telegram — el bot pregunta a Twitch una sola vez cómo están — pero qué hacer con ella lo decides aquí, para tu servidor.')}</p>
+      <div id="dca-chi" class="spazio-sopra"></div>
+    </div>`);
+}
+
 function pannelloDcServer() {
   return pannello('dcserver', `
     <p class="dcs-fascia" id="dcs-fascia" role="status" hidden>
@@ -17924,24 +18108,10 @@ function pannelloNotifiche() {
       <div id="feed-fonti" class="spazio-sopra"></div>
     </div>
 
-    <div class="carta" data-rete="discord">
-      <h2>${_hIco(ICO.moduli)}${L('Discord — avviso "sei in diretta"', 'Discord — "you\'re live" alert', 'Discord — aviso "estás en directo"')}</h2>
-      <p>${L('Quando vai in diretta, posto un avviso nel canale del tuo server Discord (embed con titolo, gioco, spettatori e miniatura). <strong>Nessun bot da creare, nessun token</strong>: incolli solo il <strong>webhook</strong> del canale.', 'When you go live, I post an alert in your Discord server channel (embed with title, game, viewers and thumbnail). <strong>No bot to create, no token</strong>: you just paste the channel <strong>webhook</strong>.', 'Cuando vas en directo, publico un aviso en el canal de tu servidor de Discord (embed con título, juego, espectadores y miniatura). <strong>Ningún bot que crear, ningún token</strong>: solo pegas el <strong>webhook</strong> del canal.')}</p>
-
-      ${miniGuida({
-        titolo: L('Tutorial: dove trovo il webhook di Discord?', 'Tutorial: where do I find the Discord webhook?', 'Tutorial: ¿dónde encuentro el webhook de Discord?'),
-        serve: L('Il <strong>webhook</strong> è un indirizzo segreto che permette di scrivere in <em>un</em> canale del tuo server. Ti serve essere admin del server (o avere il permesso «Gestire i webhook»).', 'The <strong>webhook</strong> is a secret address that lets me post in <em>one</em> channel of your server. You need to be a server admin (or have the “Manage Webhooks” permission).', 'El <strong>webhook</strong> es una dirección secreta que permite escribir en <em>un</em> canal de tu servidor. Necesitas ser admin del servidor (o tener el permiso «Gestionar webhooks»).'),
-        passi: [
-          L('Su Discord apri le <strong>Impostazioni del canale</strong> (rotellina accanto al canale) → <strong>Integrazioni</strong>.', 'In Discord open the <strong>channel settings</strong> (gear next to the channel) → <strong>Integrations</strong>.', 'En Discord abre los <strong>ajustes del canal</strong> (rueda junto al canal) → <strong>Integraciones</strong>.'),
-          L('<strong>Webhook</strong> → «Nuovo webhook» (puoi dargli un nome e un’immagine), poi «<strong>Copia URL webhook</strong>».', '<strong>Webhooks</strong> → “New Webhook” (you can give it a name and an image), then “<strong>Copy Webhook URL</strong>”.', '<strong>Webhooks</strong> → «Nuevo webhook» (puedes ponerle nombre e imagen), luego «<strong>Copiar URL del webhook</strong>».'),
-          L('<strong>Incollalo</strong> qui sotto e salva. Premi «Prova» per vedere subito il messaggio nel canale.', '<strong>Paste it</strong> below and save. Hit “Test” to see the message in the channel right away.', '<strong>Pégalo</strong> aquí abajo y guarda. Pulsa «Probar» para ver el mensaje en el canal enseguida.'),
-        ],
-        note: [
-          L('Tieni il webhook <strong>privato</strong>: chi ce l’ha può scrivere in quel canale. Se lo perdi, elimina il webhook su Discord e creane uno nuovo.', 'Keep the webhook <strong>private</strong>: anyone who has it can post in that channel. If it leaks, delete the webhook on Discord and create a new one.', 'Mantén el webhook <strong>privado</strong>: quien lo tenga puede escribir en ese canal. Si se filtra, borra el webhook en Discord y crea uno nuevo.'),
-        ],
-      })}
-
-      <div id="discord-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+    <div class="carta">
+      <h2>${_hIco(ICO.megafono)}${L('Discord', 'Discord', 'Discord')}</h2>
+      <p>${L('Gli avvisi del tuo server Discord stanno nella sua sezione, insieme ai ruoli e al server: lì scegli in quali canali arrivano, di chi, con che parole e chi chiamare.', 'Your Discord server\'s alerts live in its own section, together with the roles and the server: there you choose which channels they land in, whose, in what words, and who to ping.', 'Los avisos de tu servidor de Discord están en su sección, junto a los roles y el servidor: allí eliges en qué canales llegan, de quién, con qué palabras y a quién llamar.')}</p>
+      <p class="spazio-sopra"><button type="button" class="btn secondario" data-vai="dcavvisi">${L('Vai agli avvisi di Discord', 'Go to the Discord alerts', 'Ir a los avisos de Discord')}</button></p>
     </div>
 
     <div class="carta" data-rete="youtube">
@@ -20125,8 +20295,9 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); }
-  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
+  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }
+  if (id === 'dcavvisi') { _dcaCollega(); caricaDcAvvisi(); }
   if (id === 'dcserver') { collegaDcServer(); caricaDcServer(); }
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'donazioni') { riempiDonazioni(); caricaStatoDonazioni(true); }

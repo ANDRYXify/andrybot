@@ -57,7 +57,18 @@ test('la porta: un terzo giro sulla stessa strada, e si riconosce dall\'id', () 
 });
 
 test('il pannello non gli mostra quello che non puo\' usare', () => {
-  assert.match(APP, /const SOLO_DISCORD = new Set\(\['ruoli', 'dcserver', 'pagina', 'stato', 'sottoscrizione'\]\)/);
+  // Cosa c'e' DENTRO l'insieme, non com'e' scritto: pretendere l'elenco esatto
+  // vuol dire un cancello rosso ogni volta che si aggiunge una scheda che a lui
+  // serve davvero — e la cura sarebbe togliergliela.
+  const soloDc = /const SOLO_DISCORD = new Set\(\[([^\]]*)\]\)/.exec(APP);
+  assert.ok(soloDc, 'non trovo SOLO_DISCORD');
+  const dentro = new Set([...soloDc[1].matchAll(/'([a-z0-9]+)'/g)].map((m) => m[1]));
+  for (const id of ['ruoli', 'dcavvisi', 'dcserver', 'pagina', 'stato', 'sottoscrizione']) {
+    assert.ok(dentro.has(id), `a chi ha solo Discord manca «${id}»`);
+  }
+  for (const id of ['regia', 'dirette', 'alert', 'clip', 'consolify']) {
+    assert.ok(!dentro.has(id), `«${id}» parla di dirette: a chi non trasmette non serve`);
+  }
   assert.match(APP, /const senzaDiretta = \(\) => stato\?\.piattaforma === 'discord'/);
   // Non «bloccate»: proprio assenti. A chi non trasmette un muro su «Regia» non
   // spiega niente, gli dice solo che il prodotto non e' per lui.

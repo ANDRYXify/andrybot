@@ -103,6 +103,31 @@ test('la menzione non sveglia mai piu\' gente di quella scelta', () => {
     'un @everyone scritto per sbaglio nel testo sveglierebbe tutto il server');
 });
 
+test('un avviso si chiude riscrivendolo, mai cancellandolo', () => {
+  // Il bot TIENE «pulire» (MANAGE_MESSAGES) per poterlo passare al ruolo
+  // Moderatori: con quello in mano, DELETE su un messaggio cancella quello di
+  // chiunque. Riscrivere invece Discord lo permette solo su cio' che ha scritto
+  // il bot — la stessa chiamata puntata altrove non fa niente.
+  const api = leggi('src/features/discord-api.js');
+  assert.match(api, /PRIVILEGI = Object\.freeze\(\{[\s\S]*?pulire:/, 'il privilegio che rende pericoloso il DELETE non c\'e\' piu\': ricontrolla il ragionamento');
+  // nessuna chiamata a Discord che cancelli un messaggio, in nessun file nostro
+  for (const f of ['src/features/discord-api.js', 'src/features/discord.js', 'src/bot.js']) {
+    const codice = leggi(f).replace(/^\s*\/\/.*$/gm, '');
+    assert.ok(!/\/messages\/[^'"`\n]*`,\s*\{\s*metodo: 'DELETE'/.test(codice),
+      `${f}: e' tornata la porta che cancella i messaggi altrui`);
+    assert.ok(!/\/messages\/[\s\S]{0,60}method: 'DELETE'/.test(codice),
+      `${f}: un messaggio si cancella ancora, invece di riscriversi`);
+  }
+  assert.match(api, /export async function modificaMessaggio\(/, 'manca la strada sicura: riscrivere');
+
+  const dc = leggi('src/features/discord.js');
+  assert.match(dc, /export async function chiudiMessaggio\(/, 'manca la chiusura dell\'avviso');
+  const f = dc.slice(dc.indexOf('export async function chiudiMessaggio('));
+  const corpo = f.slice(0, f.indexOf('\n}'));
+  assert.ok(!/method: 'DELETE'/.test(corpo), 'il webhook torna a cancellare invece di riscrivere');
+  assert.match(corpo, /method: 'PATCH'/, 'il webhook deve riscrivere il suo messaggio');
+});
+
 test('l\'avviso si toglie dove era stato messo, e solo quello dello streamer giusto', () => {
   const bot = leggi('src/bot.js');
   const f = bot.slice(bot.indexOf('async _chiudiLiveEsterna(login, chi) {'));

@@ -36,6 +36,7 @@
     pagina: 'pagina link bio linktree profilo vetrina sito i miei link logo avatar página enlaces',
     grafiche: 'grafiche immagini sfondi banner locandine social gráficos fondos imágenes',
     notifiche: 'avvisi notifiche social tiktok instagram youtube discord nuovi post live notificaciones avisos',
+    dcavvisi: 'discord avvisi avviso canale live diretta annuncio menzione ruolo everyone amici community testo messaggio alerts announcement channel mention avisos anuncio canal mencion',
     ruoli: 'discord ruoli ruolo server gilda membri privilegi sub abbonati follower vip moderatori ore monete serie soglia bot token collega !discord roles server members perks rol rango servidor miembros',
     telegram: 'telegram bot gruppo canale topic membri amici community compleanni rapporto privato verifica token destinazioni miembros cumpleaños cancello ingresso verifica captcha benvenuto antispam bot chi entra muto portiere guardia entrada bienvenida',
     stato: 'stato account piano pacchetti panoramica permessi status cuenta plan',

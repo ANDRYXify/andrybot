@@ -371,8 +371,9 @@ CREATE TABLE IF NOT EXISTS telegram_msg (  -- avvisi live mandati: uno per desti
 CREATE TABLE IF NOT EXISTS discord_dest (   -- DOVE notificare su Discord: piu canali, ognuno coi suoi filtri
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,                   -- login che possiede la configurazione
-  canale TEXT NOT NULL,                    -- id del canale Discord
+  canale TEXT NOT NULL,                    -- id del canale Discord (vuoto se e' un webhook)
   canale_nome TEXT NOT NULL DEFAULT '',    -- nome leggibile (solo per mostrarlo)
+  webhook TEXT NOT NULL DEFAULT '',        -- la strada vecchia: un indirizzo invece di un canale
   eventi TEXT NOT NULL DEFAULT '',         -- CSV degli eventi ammessi (vuoto = tutti)
   streamer TEXT NOT NULL DEFAULT '',       -- CSV di login ammessi (vuoto = tutti)
   messaggio TEXT NOT NULL DEFAULT '',      -- il testo di QUESTA destinazione (vuoto = quello di casa)
@@ -2525,6 +2526,15 @@ export const dcAttesa = {
   pulisci(ora = now()) { db.prepare('DELETE FROM discord_attesa WHERE scad<=?').run(msIntero(ora)); },
 };
 
+// L'impronta corta di un indirizzo, per usarla come chiave del posto. Non e'
+// un segreto da proteggere: e' solo un modo perche' lo stesso webhook messo due
+// volte resti UN posto, e due diversi restino due.
+const _improntaCorta = (t) => {
+  let h = 2166136261;
+  for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(36);
+};
+
 const _csv = (x) => (Array.isArray(x) ? x : String(x || '').split(','))
   .map((v) => String(v || '').trim().toLowerCase()).filter(Boolean);
 const _inCsv = (campo, valore) => {
@@ -2613,14 +2623,19 @@ export const dcDest = {
       && _inCsv(d.eventi, evento)
       && _inCsv(d.streamer, streamerLogin || channel));
   },
-  aggiungi({ channel, canale, canaleNome = '', eventi = '', streamer = '', messaggio = '', ruolo = '', chiudi = 0, attivo = 1 }) {
+  // Un posto e' un canale del server OPPURE un webhook: chi aveva la strada
+  // vecchia non deve rifare niente, e non ha senso tenergli un binario a parte.
+  // La chiave resta `canale`, e per un webhook e' la sua impronta: due webhook
+  // diversi sono due posti diversi, lo stesso due volte e' lo stesso posto.
+  aggiungi({ channel, canale, canaleNome = '', webhook = '', eventi = '', streamer = '', messaggio = '', ruolo = '', chiudi = 0, attivo = 1 }) {
     const ch = String(channel).toLowerCase();
-    const cn = String(canale || '').replace(/[^0-9]/g, '');
+    const wh = String(webhook || '').trim();
+    const cn = wh ? 'w' + _improntaCorta(wh) : String(canale || '').replace(/[^0-9]/g, '');
     if (!ch || !cn) return 0;
-    const info = db.prepare(`INSERT INTO discord_dest (channel, canale, canale_nome, eventi, streamer, messaggio, ruolo, chiudi, attivo, ts)
-      VALUES (?,?,?,?,?,?,?,?,?,?)
-      ON CONFLICT(channel, canale) DO UPDATE SET canale_nome=excluded.canale_nome, attivo=excluded.attivo, ts=excluded.ts`)
-      .run(ch, cn, String(canaleNome || '').slice(0, 120), _csv(eventi).join(','), _csv(streamer).join(','),
+    const info = db.prepare(`INSERT INTO discord_dest (channel, canale, canale_nome, webhook, eventi, streamer, messaggio, ruolo, chiudi, attivo, ts)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?)
+      ON CONFLICT(channel, canale) DO UPDATE SET canale_nome=excluded.canale_nome, webhook=excluded.webhook, attivo=excluded.attivo, ts=excluded.ts`)
+      .run(ch, cn, String(canaleNome || '').slice(0, 120), wh.slice(0, 300), _csv(eventi).join(','), _csv(streamer).join(','),
         String(messaggio || '').slice(0, 1800), String(ruolo || '').replace(/[^0-9]/g, ''),
         chiudi ? 1 : 0, attivo ? 1 : 0, Date.now());
     return info.lastInsertRowid
@@ -2650,16 +2665,24 @@ export const dcDest = {
   setMsgId(id, msgId) {
     db.prepare('UPDATE discord_dest SET msg_id=? WHERE id=?').run(String(msgId || ''), Number(id) || 0);
   },
-  // Chi aveva gia' l'avviso acceso su un canale se lo ritrova come destinazione
-  // numero uno, senza rifare niente. Idempotente: gira a ogni lettura.
-  // Il webhook non si migra: e' un indirizzo, non un canale, e chi manda sa
-  // ancora usarlo. Spostarlo qui vorrebbe dire scrivere una cosa falsa sul dove.
+  // Chi aveva gia' l'avviso acceso se lo ritrova come destinazione numero uno,
+  // senza rifare niente — sia che avesse un canale, sia che avesse un webhook.
+  // Il webhook era la strada vecchia e continua a funzionare: toglierlo
+  // vorrebbe dire spegnere gli avvisi a qualcuno in cambio di un miglioramento
+  // che non ha chiesto. Idempotente: gira a ogni lettura senza duplicare.
   migra(channel, conf) {
     const ch = String(channel).toLowerCase();
-    if (!conf?.canale) return;
+    if (!conf?.canale && !conf?.webhook) return;
     const n = db.prepare('SELECT COUNT(*) c FROM discord_dest WHERE channel=?').get(ch)?.c || 0;
     if (n > 0) return;
-    this.aggiungi({ channel: ch, canale: conf.canale, messaggio: conf.messaggio || '', attivo: conf.attivo ? 1 : 0 });
+    this.aggiungi({
+      channel: ch,
+      canale: conf.canale || '',
+      webhook: conf.canale ? '' : (conf.webhook || ''),
+      canaleNome: conf.canale ? '' : 'webhook',
+      messaggio: conf.messaggio || '',
+      attivo: conf.attivo ? 1 : 0,
+    });
   },
 };
 
