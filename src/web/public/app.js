@@ -1773,6 +1773,7 @@ function montaConfiguratore(root, d, { gia = [], suOk = null } = {}) {
     if (typeof suOk === 'function') { suOk({ pacchetti: ids, bundle: b }); return; }
     const q = new URLSearchParams();
     if (b) q.set('bundle', b); else if (ids.length) q.set('pacchetti', ids.join(','));
+    if (stato?.piattaforma && stato.piattaforma !== 'twitch') q.set('come', stato.piattaforma);
     location.href = '/accedi' + (q.toString() ? '?' + q : '');
   });
   aggiorna();
@@ -2790,7 +2791,11 @@ function sbloccaAddon(addon) {
       else if (r?.ok) await dopoAcquisto(r);
       else toast(L('Il pagamento non si apre in questo momento: riprova fra poco.', 'Payment cannot open right now: try again in a bit.', 'El pago no se abre en este momento: inténtalo en un rato.'), 'errore');
     } catch (e) {
-      if (/non autenticato/i.test(e?.message || '')) { location.href = '/accedi?pacchetti=' + encodeURIComponent(addon); return; }
+      if (/non autenticato/i.test(e?.message || '')) {
+        const via = stato?.piattaforma && stato.piattaforma !== 'twitch' ? '&come=' + encodeURIComponent(stato.piattaforma) : '';
+        location.href = '/accedi?pacchetti=' + encodeURIComponent(addon) + via;
+        return;
+      }
       throw e;
     }
   });

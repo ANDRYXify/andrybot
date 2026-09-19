@@ -503,6 +503,21 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-conto-tot b { font-family: Archivo, system-ui, sans-serif; font-size: 1.7rem; font-weight: 700; letter-spacing: -.03em; }
 .vt-conto-tot span { font-size: .82rem; color: var(--testo-3); margin-left: .3rem; }
 .vt-conto .vt-btn { margin-left: auto; min-height: 46px; }
+.vt-scelta {
+  display: inline-flex; gap: 2px; margin-left: auto; padding: 3px;
+  border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
+}
+.vt-scelta + .vt-btn { margin-left: 0; }
+.vt-porta {
+  border: 0; background: none; color: var(--testo-3); font: inherit; font-size: .8rem;
+  font-weight: 600; padding: .34rem .72rem; border-radius: 999px; cursor: pointer;
+  transition: color var(--molla), background var(--molla);
+}
+@media (hover: hover) {
+  .vt-porta:hover { color: var(--testo); }
+}
+.vt-porta.on { background: var(--acc-tint); color: var(--acc); box-shadow: inset 0 0 0 1px var(--acc-bordo); }
+
 .vt-risparmio[hidden] { display: none; }
 .vt-risparmio {
   flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: .6rem;
@@ -614,6 +629,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   .vt-cam { display: none; }
   .vt-alert { font-size: .78rem; padding: .5rem .8rem; max-width: 88%; white-space: normal; }
   .vt-conto .vt-btn { margin-left: 0; width: 100%; }
+  .vt-scelta { margin-left: 0; width: 100%; justify-content: center; }
   .vt-comp, .vt-piano { padding: 1.1rem 1.1rem 1.2rem; }
   .vt-cap { padding: 1rem 1rem 1.1rem; }
   .vt-pacco { padding-right: 1.35rem; }

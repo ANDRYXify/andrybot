@@ -29,9 +29,9 @@ const LINGUE = ['it', 'en', 'es'];
 
 // Il guscio come lo manda il server: vetrina dentro, lingua dichiarata,
 // `body.vetrina` gia' messo (che e' quel che tiene ferma la larghezza).
-function guscio(lingua, kick) {
+function guscio(lingua, kick, youtube, piani) {
   const base = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8');
-  return inserisciVetrina(base, lingua, { kick })
+  return inserisciVetrina(base, lingua, { kick, youtube, piani })
     .replace('<body>', '<body class="vetrina">')
     .replace('<html lang="it">', `<html lang="${lingua}">`);
 }
@@ -80,7 +80,7 @@ export function overlayFinto({ login = 'prova', tema = () => ({}), musica = () =
 // gli si dice); `kick` accende la porta di Kick nella vetrina; `overlay` e' un
 // overlayFinto(); `rotte(req, res, q)` serve quel che un collaudo vuole in piu'
 // (torna true se ha risposto).
-export async function apriSito({ api = () => ({}), kick = true, overlay = null, rotte = null } = {}) {
+export async function apriSito({ api = () => ({}), kick = true, youtube = false, piani = null, overlay = null, rotte = null } = {}) {
   const srv = http.createServer((req, res) => {
     const via = new URL(req.url, 'http://x');
     const q = decodeURIComponent(via.pathname);
@@ -110,7 +110,7 @@ export async function apriSito({ api = () => ({}), kick = true, overlay = null, 
     if (home) {
       const chiesta = (via.searchParams.get('lang') || '').toLowerCase();
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      return res.end(guscio(LINGUE.includes(chiesta) ? chiesta : 'it', kick));
+      return res.end(guscio(LINGUE.includes(chiesta) ? chiesta : 'it', kick, youtube, piani));
     }
     res.writeHead(200, { 'content-type': TIPI[path.extname(f)] || 'application/octet-stream' });
     res.end(fs.readFileSync(f));

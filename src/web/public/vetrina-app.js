@@ -138,12 +138,32 @@
       if (ev.target && ev.target.matches && ev.target.matches('input[type=checkbox]')) aggiorna();
     });
 
+    var scelta = box.querySelector('[data-scelta]');
+    var porte = scelta ? [].slice.call(scelta.querySelectorAll('[data-porta]')) : [];
+    var dove = function () {
+      var acceso = porte.filter(function (b) { return b.classList.contains('on'); })[0];
+      return acceso ? acceso.getAttribute('data-porta') : 'twitch';
+    };
+
+    if (scelta) scelta.addEventListener('click', function (ev) {
+      var t = ev.target;
+      while (t && t !== scelta && porte.indexOf(t) < 0) t = t.parentNode;
+      if (porte.indexOf(t) < 0) return;
+      porte.forEach(function (b) {
+        var on = b === t;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    });
+
     vai.addEventListener('click', function () {
       var ids = scelti();
       var b = box.getAttribute('data-bundle');
+      var come = dove();
       var q = new URLSearchParams();
       if (b) q.set('bundle', b);
       else if (ids.length) q.set('pacchetti', ids.join(','));
+      if (come !== 'twitch') q.set('come', come);
       location.href = '/accedi' + (q.toString() ? '?' + q : '');
     });
 

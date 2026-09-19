@@ -248,7 +248,7 @@ function datiConto(L, piani) {
   };
 }
 
-function configuratoreHtml(L, piani) {
+function configuratoreHtml(L, piani, porte = ['twitch']) {
   const disponibili = piani.addon || [];
   if (!disponibili.length) return '';
   const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -269,10 +269,35 @@ function configuratoreHtml(L, piani) {
     <div class="vt-conto">
       <span class="vt-conto-tot"><b data-tot>${esc(eur(piani.base.prezzo))}</b><span>${L('/mese', '/month', '/mes')}</span></span>
       <span class="vt-conto-nota" data-nota>${L('solo il canone Base', 'Base fee only', 'solo la cuota Base')}</span>
+      ${porteHtml(L, porte)}
       <button type="button" class="vt-btn vt-btn-primo" data-vai>${L('Attiva', 'Activate', 'Activar')}</button>
       <span class="vt-risparmio" data-risp hidden></span>
     </div>
   </div>`;
+}
+
+// Le porte davvero aperte su QUESTO server, nell'ordine in cui si mostrano.
+// Twitch c'e' sempre; le altre solo dove ci sono le credenziali, perche' un
+// tasto che porta a un 503 e' peggio di un tasto che non c'e'.
+export function porteAperte(kick, youtube) {
+  const p = ['twitch'];
+  if (kick) p.push('kick');
+  if (youtube) p.push('youtube');
+  return p;
+}
+
+// CON QUALE ACCOUNT. Il conto lo paga la persona, ma il bot lavora su un canale:
+// quale, si sceglie accanto al tasto, PRIMA di premerlo. Un pannello che si apre
+// dopo il clic sarebbe un passo in piu' per dire una cosa sola, e chi arriva da
+// Twitch — quasi tutti — lo pagherebbe senza averne bisogno. Con una porta sola
+// non c'e' niente da scegliere e il selettore non si disegna.
+function porteHtml(L, porte) {
+  const nomi = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
+  const aperte = (porte || []).filter((p) => nomi[p]);
+  if (aperte.length < 2) return '';
+  return `<span class="vt-scelta" role="group" aria-label="${esc(L('Su quale canale', 'Which channel', 'En qué canal'))}" data-scelta>
+    ${aperte.map((p, i) => `<button type="button" class="vt-porta${i ? '' : ' on'}" data-porta="${esc(p)}" aria-pressed="${i ? 'false' : 'true'}">${esc(nomi[p])}</button>`).join('')}
+  </span>`;
 }
 
 // LE POCHE PAROLE CHE IL BROWSER DEVE ANCORA DIRE. Sono quattro avvisi che
@@ -298,7 +323,7 @@ function avvisiHtml(L) {
   return '<div class="vt-avvisi" data-avvisi="' + esc(JSON.stringify(parole)) + '"></div>';
 }
 
-function listinoHtml(L, piani) {
+function listinoHtml(L, piani, porte = ['twitch']) {
   if (!piani || !piani.base || !piani.free) return '';
   const perMese = L('/mese', '/month', '/mes');
   const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -364,7 +389,7 @@ function listinoHtml(L, piani) {
       </div>
     </div>` : ''}
 
-    <div class="vt-comp-guscio vt-rivela" id="vt-comp-guscio">${configuratoreHtml(L, piani)}</div>
+    <div class="vt-comp-guscio vt-rivela" id="vt-comp-guscio">${configuratoreHtml(L, piani, porte)}</div>
 
     <p class="vt-community vt-rivela">${L('<strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot è <strong>gratis e completo</strong> per te: non ti serve nessun piano.', '<strong>Already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community?</strong> SocialBot is <strong>free and complete</strong> for you: no plan needed.', '<strong>¿Ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot es <strong>gratis y completo</strong> para ti: no necesitas ningún plan.')}</p>
   </div>`;
@@ -448,7 +473,7 @@ function corpo(L, l, kick, youtube, dirette, piani) {
         <h2 class="vt-tit">${L('Quanto costa', 'What it costs', 'Cuánto cuesta')}</h2>
         <p class="vt-testo">${L('L’Essenziale è gratis e resta gratis. Il resto si aggiunge un pacchetto alla volta, dal pannello, e si toglie allo stesso modo. Se un rinnovo non passa, il bot resta: si spengono solo le funzioni in più.', 'Essenziale is free and stays free. The rest is added one package at a time, from the panel, and removed the same way. If a renewal fails, the bot stays: only the extra features switch off.', 'Essenziale es gratis y sigue siéndolo. Lo demás se añade de paquete en paquete, desde el panel, y se quita igual. Si una renovación falla, el bot se queda: solo se apagan las funciones extra.')}</p>
       </div>
-      ${listinoHtml(L, piani)}
+      ${listinoHtml(L, piani, porteAperte(kick, youtube))}
     </section>
 
     <section class="vt-sez">
