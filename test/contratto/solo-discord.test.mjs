@@ -86,7 +86,12 @@ test('sul sito pubblico c\'e\' il tasto, e dice cosa NON vedra\'', async () => {
     addon: [{ id: 'clip', nome: 'C', sommario: 'y', prezzo: 1.99 }], bundle: [],
   } });
   assert.match(h, /href="\/accedi\/discord"/, 'il tasto c\'e\'');
-  assert.match(h, /di Twitch o Kick non ti importa/, 'e la domanda e\' quella che si fa chi arriva');
+  assert.match(h, /delle dirette non ti importa/, 'e la domanda e\' quella che si fa chi arriva');
   assert.match(h, /tutto quello che parla di dirette non lo vedi nemmeno/,
     'e si dice PRIMA cosa non vedra\', invece di fargli cercare le schede che mancano');
+  // Sta SOTTO AI TASTI, non in fondo alla pagina: chi cerca un bot per il suo
+  // Discord decide nei primi secondi, e in fondo non ci arriva.
+  assert.ok(h.indexOf('vt-dcbox') > h.indexOf('vt-azioni'), 'il riquadro non e\' attaccato ai tasti');
+  assert.ok(h.indexOf('vt-dcbox') < h.indexOf('class="vt-sez"'), 'il riquadro e\' finito dopo l\'apertura');
+  assert.equal((h.match(/accedi\/discord/g) || []).length, 1, 'il tasto e\' in due posti: uno di troppo');
 });

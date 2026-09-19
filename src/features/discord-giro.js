@@ -122,7 +122,9 @@ export async function giro(channel, { quadro = null, max = MAX_PERSONE, prova = 
     for (const [ids, verbo, conta] of [[d.dare, api.dai, 'dati'], [d.togliere, api.togli, 'tolti']]) {
       for (const id of ids) {
         if (prova) { esito[conta]++; continue; }
-        const x = await verbo(token, conf.guild, g.dc_id, id);
+        // il perche' viaggia con l'azione: nel registro del server, accanto alla
+        // riga «SocialBot ha dato Abbonati», resta scritto in nome di cosa
+        const x = await verbo(token, conf.guild, g.dc_id, id, d.perche?.[id] || '');
         if (x.ok) esito[conta]++;
         else { aggiungi(esito.errori, x.errore); if (x.attesa) { fermo = true; break; } }
       }

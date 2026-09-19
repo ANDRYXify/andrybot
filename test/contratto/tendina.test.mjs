@@ -58,12 +58,17 @@ test('e\' vestita dove il pannello si collega', () => {
 test('lo stile parla la lingua del resto', () => {
   const i = css.indexOf('.tendina {');
   assert.ok(i > 0, 'lo stile esiste');
-  const s = css.slice(i, i + 2600);
+  // Le regole della tendina, tutte, senza una finestra di tanti byte: una
+  // finestra fissa diventa rossa il giorno che si aggiunge una riga, e quel
+  // rosso non parla dello stile — parla della misura.
+  const s = (css.match(/^[^{}]*\.tendina[^{}]*\{[^}]*\}/gm) || []).join('\n');
+  assert.ok(s.length > 400, 'non trovo le regole della tendina');
   assert.ok(/var\(--contorno\)/.test(s), 'il contorno e\' quello di casa');
   assert.ok(/var\(--ang-mano\)/.test(s), 'gli angoli sono quelli disegnati a mano');
-  assert.ok(/prefers-reduced-motion/.test(s), 'e chi tiene spento il movimento non lo subisce');
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]{0,240}?\.tendina-btn/,
+    'e chi tiene spento il movimento non lo subisce');
   // il select vero resta raggiungibile: nascosto alla vista, non tolto
-  assert.ok(/\.tendina-vero[\s\S]{0,200}clip-path/.test(s), 'il select si nasconde senza sparire');
+  assert.ok(/\.tendina-vero[\s\S]{0,200}clip-path/.test(css), 'il select si nasconde senza sparire');
   assert.ok(!/display:\s*none[^;]*;\s*\}/.test(css.slice(css.indexOf('.tendina-vero'), css.indexOf('.tendina-vero') + 200)),
     'e non con display:none, che lo toglierebbe anche a chi legge lo schermo');
 });
@@ -78,4 +83,44 @@ test('non serve ricordarsi di vestirle: si vestono da sé', () => {
   assert.match(app, /select:not\(\.tendina-vero\)/, 'e prende quelle non ancora vestite');
   assert.match(app, /new MutationObserver\(/, 'e guarda quello che compare dopo, non solo quello che c\'è all\'avvio');
   assert.match(app, /requestAnimationFrame\(giro\)/, 'una passata per disegno, non una per ogni nodo che cambia');
+});
+
+// UNA TENDINA NON LA TAGLIA IL SUO CONTENITORE.
+//
+// La lista si apriva dentro la carta che la contiene, e quella carta ha
+// `overflow: hidden`: con tre ruoli si vedeva tutto, con dieci la lista veniva
+// mozzata a meta' e nessuno collegava la cosa al contenitore. Non e' un caso
+// raro — e' il caso normale di chi ha un server vero.
+//
+// Due difetti, uno dentro l'altro. Mettere la lista `position: fixed` non basta:
+// un antenato con una trasformazione (le carte ne hanno una, per l'entrata)
+// diventa il riferimento anche del fixed, e la lista resta intrappolata lo
+// stesso. L'unica cosa che funziona sempre e' portarla FUORI da quel ramo.
+test('quando si apre, la lista esce dal ramo che la taglierebbe', () => {
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const i = app.indexOf('const apri = () => {');
+  assert.ok(i > 0, 'non trovo l\'apertura della tendina');
+  const apre = app.slice(i, i + 700);
+  assert.match(apre, /document\.body\.appendChild\(lista\)/,
+    'la lista resta dentro la carta: il primo contenitore che taglia se la mangia');
+  assert.match(apre, /posiziona\(\)/, 'e va messa dove sta il tasto, visto che ora e\' fuori');
+  const j = app.indexOf('const chiudi = (tornaAlBottone) => {');
+  assert.match(app.slice(j, j + 500), /guscio\.appendChild\(lista\)/,
+    'e quando si chiude torna a casa sua');
+  assert.match(readFileSync(join(RAD, 'src/web/public/anime.css'), 'utf8'),
+    /\.tendina-lista\.volante \{[^}]*position: fixed/, 'manca lo stile di quella che vola');
+});
+
+test('e non si chiude da sola mentre la si scorre', () => {
+  // Chiudere quando la PAGINA scorre e' giusto: la lista e' ancorata a un tasto
+  // che si sposta. Chiudere quando scorre LA LISTA no, ed e' quello che
+  // succedeva: scorrere le voci la faceva sparire sotto le dita.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const i = app.indexOf('const viaAllaSvelta = ');
+  assert.ok(i > 0, 'non trovo chi chiude quando si scorre');
+  assert.match(app.slice(i, i + 220), /lista\.contains\(e\.target\)\) return;/,
+    'scorrere dentro la lista la chiude');
+  // e nemmeno portare in vista una voce deve muovere la pagina
+  assert.ok(!/el\[evidenziato\]\.scrollIntoView/.test(app),
+    'portare in vista una voce scorre la pagina, e la pagina che scorre chiude la lista');
 });

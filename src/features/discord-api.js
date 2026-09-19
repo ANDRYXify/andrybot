@@ -71,8 +71,23 @@ function spiega(stato, corpo, via) {
   return corpo?.message ? String(corpo.message).slice(0, 140) : ('HTTP ' + stato);
 }
 
+// IL MOTIVO, per il registro del server.
+//
+// Discord tiene 45 giorni di registro e accanto a ogni azione puo' scriverci
+// PERCHE' e' stata fatta, se chi la fa glielo dice. Senza, chi apre il registro
+// di casa sua legge «SocialBot ha dato Abbonati» e non sa in nome di cosa: un
+// bot che muove ruoli e non rende conto.
+//
+// L'intestazione vuole testo gia' sfuggito e sta sotto i 512 caratteri: si
+// taglia prima di sfuggire, se no un accento a meta' diventerebbe un mozzicone.
+const MOTIVO_MAX = 180;
+const motivoPer = (perche) => {
+  const t = String(perche || '').replace(/\s+/g, ' ').trim().slice(0, MOTIVO_MAX);
+  return t ? { 'X-Audit-Log-Reason': encodeURIComponent('SocialBot · ' + t) } : {};
+};
+
 // Una chiamata sola. Torna { ok, dati } oppure { ok:false, errore, stato, assente }.
-async function chiama(token, via, { metodo = 'GET', corpo = null, riprova = true } = {}) {
+async function chiama(token, via, { metodo = 'GET', corpo = null, riprova = true, perche = '' } = {}) {
   const t = String(token || '').trim();
   if (!t) return { ok: false, errore: 'manca il token del bot' };
   const ac = new AbortController();
@@ -85,6 +100,7 @@ async function chiama(token, via, { metodo = 'GET', corpo = null, riprova = true
         Authorization: 'Bot ' + t,
         'User-Agent': UA,
         ...(corpo ? { 'Content-Type': 'application/json' } : {}),
+        ...motivoPer(perche),
       },
       ...(corpo ? { body: JSON.stringify(corpo) } : {}),
     });
@@ -94,7 +110,7 @@ async function chiama(token, via, { metodo = 'GET', corpo = null, riprova = true
       if (riprova && ms <= ATTESA_MAX_MS) {
         clearTimeout(to);
         await attendi(ms);
-        return chiama(token, via, { metodo, corpo, riprova: false });
+        return chiama(token, via, { metodo, corpo, riprova: false, perche });
       }
       return { ok: false, errore: 'troppe richieste: riprovo piu\' tardi', stato: 429, attesa: ms };
     }
@@ -188,9 +204,9 @@ export async function membro(token, guild, utente) {
   };
 }
 
-export async function dai(token, guild, utente, ruolo) {
+export async function dai(token, guild, utente, ruolo, perche = '') {
   if (!idOk(guild) || !idOk(utente) || !idOk(ruolo)) return { ok: false, errore: 'id non valido' };
-  return chiama(token, `/guilds/${guild}/members/${utente}/roles/${ruolo}`, { metodo: 'PUT' });
+  return chiama(token, `/guilds/${guild}/members/${utente}/roles/${ruolo}`, { metodo: 'PUT', perche });
 }
 
 // FARLO ENTRARE. Il token del bot dice chi chiede, quello della persona dice
@@ -210,9 +226,9 @@ export async function entraNelServer(token, guild, utente, accessToken) {
   });
 }
 
-export async function togli(token, guild, utente, ruolo) {
+export async function togli(token, guild, utente, ruolo, perche = '') {
   if (!idOk(guild) || !idOk(utente) || !idOk(ruolo)) return { ok: false, errore: 'id non valido' };
-  return chiama(token, `/guilds/${guild}/members/${utente}/roles/${ruolo}`, { metodo: 'DELETE' });
+  return chiama(token, `/guilds/${guild}/members/${utente}/roles/${ruolo}`, { metodo: 'DELETE', perche });
 }
 
 // IL TOKEN CON CUI SI PARLA. Il suo, se se n'e' portato uno; sennò il nostro.
@@ -540,6 +556,13 @@ const pulisciCanale = (x) => ({
   parent_id: x?.parent_id ? String(x.parent_id) : null,
   posizione: Number(x?.position) || 0,
   argomento: String(x?.topic || ''),
+  // rileggere quel che si e' scritto: senza, la differenza non vedrebbe mai uno
+  // scarto su queste cose e il costumore le riscriverebbe a ogni giro
+  lento: Number(x?.rate_limit_per_user) || 0,
+  adulti: !!x?.nsfw,
+  archivia: Number(x?.default_auto_archive_duration) || 0,
+  tag: (Array.isArray(x?.available_tags) ? x.available_tags : []).map((t) => String(t?.name || '')).filter(Boolean),
+  tagObbligatorio: ((Number(x?.flags) || 0) & (1 << 4)) !== 0,
   overwrites: (Array.isArray(x?.permission_overwrites) ? x.permission_overwrites : []).map((o) => ({
     id: String(o?.id || ''),
     tipo: Number(o?.type) || 0,
@@ -567,16 +590,43 @@ const permessiVerso = (p) => (Array.isArray(p) ? p : []).filter((x) => idOk(x?.i
   deny: String(x.deny || '0'),
 }));
 
-export async function creaCanale(token, guild, c) {
+// I MODI DI UN CANALE, tradotti per Discord.
+//
+// Stanno in una funzione sola perche' creare e sistemare devono mandare le
+// stesse cose: due elenchi separati sono due elenchi che divergono, e il
+// difetto che ne esce e' il peggiore da capire — il canale nasce giusto e al
+// primo «rimettilo a posto» perde meta' delle sue impostazioni.
+//
+// Un campo che non c'e' non si manda: `undefined` e «zero» sono due cose
+// diverse, e una lentezza a zero e' una scelta («togli il rallentatore»).
+function modiCanale(c) {
+  const out = {};
+  if (c?.lento !== undefined) out.rate_limit_per_user = Math.max(0, Math.min(21600, Number(c.lento) || 0));
+  if (c?.adulti !== undefined) out.nsfw = !!c.adulti;
+  if (c?.archivia !== undefined) out.default_auto_archive_duration = Number(c.archivia) || 1440;
+  if (c?.lentoFili !== undefined) out.default_thread_rate_limit_per_user = Math.max(0, Math.min(21600, Number(c.lentoFili) || 0));
+  if (Array.isArray(c?.tag)) {
+    out.available_tags = c.tag.slice(0, 20)
+      .map((t) => (typeof t === 'object' && t ? { name: String(t.nome ?? t.name ?? '').slice(0, 20), moderated: !!t.soloStaff } : { name: String(t || '').slice(0, 20) }))
+      .filter((t) => t.name);
+  }
+  // Il flag che obbliga a mettere un tag e' un bit, e Discord lo vuole dentro
+  // `flags`: 1 << 4. Scritto a mano sarebbe il numero che un giorno non torna.
+  if (c?.tagObbligatorio !== undefined) out.flags = c.tagObbligatorio ? (1 << 4) : 0;
+  return out;
+}
+
+export async function creaCanale(token, guild, c, perche = '') {
   if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
   const nome = String(c?.nome || '').trim().slice(0, 100);
   if (!nome) return { ok: false, errore: 'un canale senza nome non si crea' };
   const corpo = { name: nome, type: Number(c?.tipo) || 0 };
   if (idOk(c?.dentroId)) corpo.parent_id = String(c.dentroId);
-  if (c?.argomento) corpo.topic = String(c.argomento).slice(0, 1024);
+  if (c?.argomento) corpo.topic = String(c.argomento).slice(0, 4096);
+  Object.assign(corpo, modiCanale(c));
   const ow = permessiVerso(c?.permessi);
   if (ow.length) corpo.permission_overwrites = ow;
-  const r = await chiama(token, `/guilds/${guild}/channels`, { metodo: 'POST', corpo });
+  const r = await chiama(token, `/guilds/${guild}/channels`, { metodo: 'POST', corpo, perche });
   if (!r.ok) return r;
   return { ok: true, id: String(r.dati?.id || ''), nome: String(r.dati?.name || nome) };
 }
@@ -585,15 +635,16 @@ export async function creaCanale(token, guild, c) {
 // eccezione e' l'elenco dei permessi, che Discord sostituisce sempre per
 // intero — per questo chi chiama deve passare l'elenco GIA' fuso con quello di
 // adesso, e non solo i permessi nuovi (lo fa `fondiPermessi`).
-export async function sistemaCanale(token, id, cambia) {
+export async function sistemaCanale(token, id, cambia, perche = '') {
   if (!idOk(id)) return { ok: false, errore: 'id del canale non valido' };
   const corpo = {};
   if (cambia?.nome) corpo.name = String(cambia.nome).trim().slice(0, 100);
-  if (cambia?.argomento !== undefined) corpo.topic = String(cambia.argomento || '').slice(0, 1024);
+  if (cambia?.argomento !== undefined) corpo.topic = String(cambia.argomento || '').slice(0, 4096);
+  Object.assign(corpo, modiCanale(cambia));
   if (cambia?.dentroId !== undefined) corpo.parent_id = idOk(cambia.dentroId) ? String(cambia.dentroId) : null;
   if (Array.isArray(cambia?.permessi)) corpo.permission_overwrites = permessiVerso(cambia.permessi);
   if (!Object.keys(corpo).length) return { ok: true, dati: null, niente: true };
-  return chiama(token, `/channels/${id}`, { metodo: 'PATCH', corpo });
+  return chiama(token, `/channels/${id}`, { metodo: 'PATCH', corpo, perche });
 }
 
 // Il bot dice una cosa in un canale. Niente nome ne' faccia per messaggio:
@@ -632,9 +683,9 @@ export async function modificaMessaggio(token, canale, id, messaggio) {
   return chiama(token, `/channels/${canale}/messages/${id}`, { metodo: 'PATCH', corpo });
 }
 
-export async function togliCanale(token, id) {
+export async function togliCanale(token, id, perche = '') {
   if (!idOk(id)) return { ok: false, errore: 'id del canale non valido' };
-  return chiama(token, `/channels/${id}`, { metodo: 'DELETE' });
+  return chiama(token, `/channels/${id}`, { metodo: 'DELETE', perche });
 }
 
 // UN RUOLO SI SCRIVE COME UN CANALE, con una differenza che conta: il colore.
@@ -657,25 +708,25 @@ const corpoRuolo = (r, { nuovo = false } = {}) => {
   return c;
 };
 
-export async function creaRuolo(token, guild, r) {
+export async function creaRuolo(token, guild, r, perche = '') {
   if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
   const corpo = corpoRuolo(r, { nuovo: true });
   if (!corpo.name) return { ok: false, errore: 'un ruolo senza nome non si crea' };
-  const x = await chiama(token, `/guilds/${guild}/roles`, { metodo: 'POST', corpo });
+  const x = await chiama(token, `/guilds/${guild}/roles`, { metodo: 'POST', corpo, perche });
   if (!x.ok) return x;
   return { ok: true, id: String(x.dati?.id || ''), nome: String(x.dati?.name || corpo.name) };
 }
 
-export async function sistemaRuolo(token, guild, id, cambia) {
+export async function sistemaRuolo(token, guild, id, cambia, perche = '') {
   if (!idOk(guild) || !idOk(id)) return { ok: false, errore: 'id non valido' };
   const corpo = corpoRuolo(cambia);
   if (!Object.keys(corpo).length) return { ok: true, dati: null, niente: true };
-  return chiama(token, `/guilds/${guild}/roles/${id}`, { metodo: 'PATCH', corpo });
+  return chiama(token, `/guilds/${guild}/roles/${id}`, { metodo: 'PATCH', corpo, perche });
 }
 
-export async function togliRuolo(token, guild, id) {
+export async function togliRuolo(token, guild, id, perche = '') {
   if (!idOk(guild) || !idOk(id)) return { ok: false, errore: 'id non valido' };
-  return chiama(token, `/guilds/${guild}/roles/${id}`, { metodo: 'DELETE' });
+  return chiama(token, `/guilds/${guild}/roles/${id}`, { metodo: 'DELETE', perche });
 }
 
 // LA FOTOGRAFIA: com'e' il server adesso, nella forma esatta che il calcolo

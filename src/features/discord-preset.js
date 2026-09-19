@@ -34,8 +34,23 @@ import { PRIVILEGI, DA_DARE } from './discord-api.js';
 const sommaPrivilegi = (nomi) => (nomi || []).reduce((t, n) => t | (PRIVILEGI[n] || 0n), 0n);
 
 // I tipi di canale che sappiamo maneggiare, coi numeri che usa Discord.
-export const TIPI = Object.freeze({ testo: 0, voce: 2, categoria: 4, annunci: 5, forum: 15 });
-export const TIPI_NOME = Object.freeze({ 0: 'testo', 2: 'voce', 4: 'categoria', 5: 'annunci', 15: 'forum' });
+export const TIPI = Object.freeze({ testo: 0, voce: 2, categoria: 4, annunci: 5, palco: 13, forum: 15, media: 16 });
+export const TIPI_NOME = Object.freeze({ 0: 'testo', 2: 'voce', 4: 'categoria', 5: 'annunci', 13: 'palco', 15: 'forum', 16: 'media' });
+
+// QUALI CANALI FANNO FILI (thread) e quindi hanno una durata d'archivio, e
+// quali si fanno a tag. Non e' un dettaglio estetico: un tag messo su un canale
+// di voce Discord lo rifiuta, e la costruzione si fermerebbe a meta'.
+export const CON_FILI = new Set([TIPI.testo, TIPI.annunci, TIPI.forum, TIPI.media]);
+export const CON_TAG = new Set([TIPI.forum, TIPI.media]);
+export const CON_LENTEZZA = new Set([TIPI.testo, TIPI.annunci, TIPI.forum, TIPI.media, TIPI.voce]);
+
+// La lentezza («slow mode») in secondi: Discord accetta da 0 a 21600, ma le
+// scelte vere sono poche e sono queste. Un campo libero farebbe scrivere 7 a
+// qualcuno, e 7 secondi non li vuole nessuno — vuole «qualche secondo».
+export const LENTEZZE = Object.freeze([0, 5, 10, 30, 60, 300, 900, 3600, 21600]);
+// Quanto ci mette un filo a chiudersi da solo, in minuti. Sono i quattro valori
+// che Discord accetta: uno diverso lo rifiuta.
+export const ARCHIVI = Object.freeze([60, 1440, 4320, 10080]);
 
 export const MAX_CATEGORIE = 20;
 export const MAX_CANALI = 60;
@@ -69,9 +84,13 @@ const chiaveRuolo = (n) => nomeRuolo(n).toLowerCase();
 // spazi che diventano trattini — quindi «Il Generale» e «il-generale» sono lo
 // stesso canale e vanno riconosciuti tali. Nei canali VOCALI il nome resta come
 // lo scrivi, e li' si confronta senza storpiarlo.
+// Il PALCO e' un canale vocale a tutti gli effetti: il nome resta come lo
+// scrivi, maiuscole e spazi compresi. Storpiarlo come un canale di testo
+// vorrebbe dire non riconoscere piu' «Sala grande» al secondo giro.
+const NOME_LIBERO = new Set([TIPI.voce, TIPI.categoria, TIPI.palco]);
 export const nomeCanale = (tipo, nome) => {
   const t = String(nome || '').trim();
-  if (tipo === TIPI.voce || tipo === TIPI.categoria) return t.slice(0, 100);
+  if (NOME_LIBERO.has(tipo)) return t.slice(0, 100);
   return t.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9à-ɏ\-_]/g, '').slice(0, 100);
 };
 const chiave = (tipo, nome) => TIPI_NOME[tipo === TIPI.categoria ? 4 : tipo] + ':' + nomeCanale(tipo, nome).toLowerCase();
@@ -150,6 +169,14 @@ function voluteRuoli(preset) {
 // Le categorie e i canali come li vuole il preset, appiattiti in intenzioni.
 // Una categoria senza canali e' comunque un'intenzione: c'e' chi la vuole vuota
 // per metterci dentro roba a mano.
+// I MODI CHE LA TRACCIA HA DETTO, e solo quelli.
+//
+// Un campo che la traccia non nomina non e' «zero»: e' «non mi interessa», e
+// mandarlo a Discord riscriverebbe una scelta che lo streamer aveva fatto a
+// mano sul suo server. Qui passa solo cio' che e' stato scritto.
+const MODI = ['lento', 'adulti', 'archivia', 'tag', 'tagObbligatorio'];
+const modiDi = (ch) => Object.fromEntries(MODI.filter((k) => ch?.[k] !== undefined).map((k) => [k, ch[k]]));
+
 function voluti(preset) {
   const fuori = [];
   // I canali che stanno in cima, fuori da ogni categoria. Discord li permette
@@ -159,7 +186,7 @@ function voluti(preset) {
     if (!ch || !String(ch.nome || '').trim()) continue;
     const tipo = TIPI[ch.tipo] ?? TIPI.testo;
     if (tipo === TIPI.categoria) continue;
-    fuori.push({ tipo, nome: nomeCanale(tipo, ch.nome), dentro: null, permessi: ch.permessi || null, argomento: ch.argomento || '', avvisi: !!ch.avvisi });
+    fuori.push({ tipo, nome: nomeCanale(tipo, ch.nome), dentro: null, permessi: ch.permessi || null, argomento: ch.argomento || '', avvisi: !!ch.avvisi, ...modiDi(ch) });
     if (fuori.length >= MAX_CANALI) return fuori;
   }
   for (const c of (preset?.categorie || []).slice(0, MAX_CATEGORIE)) {
@@ -170,7 +197,7 @@ function voluti(preset) {
       if (!ch || !String(ch.nome || '').trim()) continue;
       const tipo = TIPI[ch.tipo] ?? TIPI.testo;
       if (tipo === TIPI.categoria) continue;   // una categoria dentro una categoria non esiste
-      fuori.push({ tipo, nome: nomeCanale(tipo, ch.nome), dentro: cat.nome, permessi: ch.permessi || null, argomento: ch.argomento || '', avvisi: !!ch.avvisi });
+      fuori.push({ tipo, nome: nomeCanale(tipo, ch.nome), dentro: cat.nome, permessi: ch.permessi || null, argomento: ch.argomento || '', avvisi: !!ch.avvisi, ...modiDi(ch) });
       if (fuori.length >= MAX_CANALI + MAX_CATEGORIE) return fuori;
     }
   }
@@ -497,6 +524,17 @@ export function differenza(foto, preset, { togliere = false, puoiToccare = null 
     const cambia = {};
     if (permessiDiversi(v.permessi, gia)) cambia.permessi = fondiPermessi(gia, v.permessi);
     if (v.argomento && String(gia.argomento || '') !== v.argomento) cambia.argomento = v.argomento;
+    // I modi: si guarda solo quel che la traccia ha detto, e si scrive solo se
+    // e' diverso da com'e' adesso. Riscrivere l'uguale vorrebbe dire una riga
+    // nel registro del server a ogni giro, per non aver cambiato niente.
+    for (const k of MODI) {
+      if (v[k] === undefined) continue;
+      const ora = gia[k];
+      const diverso = Array.isArray(v[k])
+        ? JSON.stringify([...(Array.isArray(ora) ? ora : [])].sort()) !== JSON.stringify([...v[k]].sort())
+        : String(ora ?? '') !== String(v[k]);
+      if (diverso) cambia[k] = v[k];
+    }
     // Un canale finito fuori dalla sua categoria si rimette dentro: e' la cosa
     // che succede davvero quando qualcuno trascina per sbaglio. Il contrario
     // no: un canale che il preset vuole in cima ma che sta dentro a qualcosa

@@ -24,6 +24,37 @@ Corollario: una funzione nuova nasce personalizzabile **in tutto** — nome, ico
 colore, ordine, contenuto, quante volte, in che ordine. Se un pezzo di una
 funzione nuova non si puo' cambiare da dentro, la funzione non e' finita.
 
+## Regola assoluta: PERSONALIZZAZIONE AL 100%, A 360 GRADI
+
+Niente lasciato indietro. Se una cosa la piattaforma la sa fare, lo streamer
+deve poterla decidere da qui: non «le tre opzioni piu' usate», TUTTE.
+
+E non basta che ci sia: dev'essere **a portata di mano e super comoda**. Una
+funzione che c'e' ma sta in fondo a tre schede, o che si imposta con un campo
+che non spiega cosa accetta, e' una funzione che non ha nessuno.
+
+Quindi, per ogni cosa nuova, tre domande:
+
+1. **Completa** — ho lasciato fuori qualche scelta che la piattaforma offre?
+   Se l'ho lasciata fuori, e' perche' fa male a qualcuno, non perche' era lunga.
+2. **Comoda** — si trova dove uno la cerca? Si capisce senza manuale? Le scelte
+   vere sono poche voci fra cui scegliere, non un campo libero dove sbagliare?
+3. **Robusta** — se la piattaforma rifiuta, si capisce perche'? Se qualcuno
+   scrive una cosa storta, la si raddrizza invece di spaccarsi?
+
+Una scheda che rispetta tutte e tre e' finita. Una che ne salta una, no.
+
+**La domanda da farsi su OGNI funzione**, nuova o vecchia: «si puo' modificare?»
+e «c'e' la modifica completa di tutto quello che questa funzione puo' fare?».
+Finche' la risposta non e' si', la funzione non e' finita e la customizzazione
+va migliorata. Vale anche per le cose gia' in piedi: se passando di li' ci si
+accorge che un pezzo non si puo' cambiare, si sistema.
+
+**Chi entra col solo Discord** non ha altro: per lui la piattaforma E' Discord.
+Quindi Discord si gestisce da qui al 100% e a 360 gradi — impostazioni del
+server, porta d'ingresso, moderazione automatica, canali, ruoli, eventi,
+avvisi. Non e' un di piu': e' l'unico prodotto che quella persona vede.
+
 ## Regola assoluta: quello che si fa, si dice anche FUORI
 
 Una funzione nuova nasce nel pannello, e li' la vede solo chi e' gia' dentro. Chi

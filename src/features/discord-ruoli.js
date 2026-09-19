@@ -101,6 +101,49 @@ export function ruoliDovuti(regole, dati) {
   return out;
 }
 
+// IL PERCHE', detto a parole, per il registro del server.
+//
+// Chi apre il registro di casa sua leggeva «SocialBot ha dato Abbonati» e
+// basta: un bot che muove ruoli senza dire in nome di cosa. Adesso accanto
+// all'azione c'e' la condizione che l'ha decisa.
+//
+// Nasce QUI e non da una seconda lettura fatta al momento di scrivere: sarebbe
+// un secondo conto, e due conti sulla stessa cosa sono due conti che un giorno
+// non coincidono — il registro direbbe una ragione e il ruolo ne avrebbe avuta
+// un'altra.
+const A_PAROLE = {
+  follower: 'ti segue',
+  sub: 'è abbonato',
+  vip: 'è VIP',
+  mod: 'è moderatore',
+  monete: (n) => `ha almeno ${n} monete`,
+  ore: (n) => `ti ha guardato almeno ${n} ore`,
+  serie: (n) => `è di fila da ${n} dirette`,
+  dirette: (n) => `è stato ad almeno ${n} dirette`,
+};
+
+export function perche(regola) {
+  const v = A_PAROLE[String(regola?.tipo)];
+  if (!v) return '';
+  return typeof v === 'function' ? v(Number(regola.soglia) || 0) : v;
+}
+
+// Le condizioni che, per questa persona, giustificano quel ruolo. Piu' di una
+// regola puo' puntare allo stesso ruolo: si dicono tutte, e si dicono in ordine.
+export function perCheCosa(regole, dati) {
+  const out = new Map();
+  for (const r of (Array.isArray(regole) ? regole : [])) {
+    if (!soddisfa(r, dati)) continue;
+    const id = String(r.ruolo);
+    const t = perche(r);
+    if (!t) continue;
+    const gia = out.get(id) || [];
+    if (!gia.includes(t)) gia.push(t);
+    out.set(id, gia);
+  }
+  return out;
+}
+
 // LA DIFFERENZA, che e' la cosa che si scrive davvero.
 //
 // `fuoriPortata` sono i ruoli che il bot non puo' toccare perche' stanno piu' in
@@ -123,7 +166,17 @@ export function differenza({ regole, dati, attuali, fuoriPortata } = {}) {
     if (alti.has(id)) { bloccati.push(id); continue; }
     togliere.push(id);
   }
-  return { dare: dare.sort(), togliere: togliere.sort(), bloccati: [...new Set(bloccati)].sort() };
+  // il perche' esce dalla stessa passata che ha deciso: per chi riceve un ruolo
+  // e' la condizione che l'ha fatto scattare, per chi lo perde e' che non ce
+  // n'e' piu' nessuna vera.
+  const motivi = perCheCosa(regole, dati);
+  return {
+    dare: dare.sort(), togliere: togliere.sort(), bloccati: [...new Set(bloccati)].sort(),
+    perche: Object.fromEntries([
+      ...dare.map((id) => [id, (motivi.get(id) || []).join(', ')]),
+      ...togliere.map((id) => [id, 'non rientra piu\' in nessuna condizione']),
+    ]),
+  };
 }
 
 // Cosa il bot NON puo' toccare: tutto quello che sta alla sua altezza o sopra.
