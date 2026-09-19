@@ -577,13 +577,62 @@ export function differenza(foto, preset, { togliere = false, puoiToccare = null 
     }
   }
 
-  return { crea, sistema, togli, avvisi, fuoriPortata, intoccabili: fuoriMano };
+  return { crea, sistema, togli, avvisi, fuoriPortata, intoccabili: fuoriMano,
+    server: differenzaServer(preset, foto) };
+}
+
+// LE IMPOSTAZIONI DEL SERVER: cosa cambierebbe, campo per campo.
+//
+// Solo cio' che la traccia nomina, e solo se e' DIVERSO da adesso. Riscrivere
+// l'uguale vorrebbe dire una riga nel registro del server a ogni giro, per non
+// aver cambiato niente — e chi legge quel registro si chiederebbe cosa combina
+// questo bot tutte le sere.
+//
+// I canali nominati per id vanno controllati: un canale cancellato lascerebbe
+// un id che non esiste piu', e Discord rifiuterebbe tutta la chiamata — cioe'
+// una impostazione sbagliata ne farebbe fallire otto giuste.
+const CAMPI_SERVER = ['verifica', 'filtro', 'notifiche', 'attesaAfk', 'barraBoost',
+  'lingua', 'invitiFermi'];
+const CANALI_SERVER = ['canaleSistema', 'canaleRegole', 'canaleAvvisiStaff', 'canaleSicurezza', 'canaleAfk'];
+
+export function differenzaServer(preset, foto) {
+  const voluto = preset?.server;
+  if (!voluto || typeof voluto !== 'object') return null;
+  const ora = foto?.impostazioni || {};
+  const ci = new Set((foto?.canali || []).map((c) => String(c?.id || '')).filter(Boolean));
+  const cambia = {};
+  const dice = [];
+  for (const k of CAMPI_SERVER) {
+    if (voluto[k] === undefined) continue;
+    if (String(ora[k] ?? '') === String(voluto[k])) continue;
+    cambia[k] = voluto[k];
+    dice.push({ campo: k, da: ora[k], a: voluto[k] });
+  }
+  for (const k of CANALI_SERVER) {
+    if (voluto[k] === undefined) continue;
+    const v = String(voluto[k] || '');
+    if (v && !ci.has(v)) continue;          // un canale che non c'e' piu' non si nomina
+    if (String(ora[k] || '') === v) continue;
+    cambia[k] = v;
+    dice.push({ campo: k, da: ora[k] || '', a: v });
+  }
+  if (voluto.zittisci) {
+    const oraZ = ora.zittisci || {};
+    const diverso = Object.keys(voluto.zittisci).some((k) => !!oraZ[k] !== !!voluto.zittisci[k]);
+    if (diverso) { cambia.zittisci = voluto.zittisci; dice.push({ campo: 'zittisci' }); }
+  }
+  if (!Object.keys(cambia).length) return null;
+  // «metti in pausa gli inviti» e' una caratteristica: per cambiarla serve
+  // l'elenco di adesso, se no le altre sparirebbero insieme a lei.
+  if (cambia.invitiFermi !== undefined) cambia.featuresOra = foto?.caratteristiche || [];
+  return { cambia, dice };
 }
 
 // «Non c'e' niente da fare» detto una volta sola, cosi' chi chiama non deve
 // contare tre elenchi per sapere se applicare due volte ha fatto qualcosa.
 export const vuota = (d) => !(d?.crea?.length || d?.sistema?.length || d?.togli?.length
-  || d?.ruoli?.crea?.length || d?.ruoli?.sistema?.length || d?.ruoli?.togli?.length);
+  || d?.ruoli?.crea?.length || d?.ruoli?.sistema?.length || d?.ruoli?.togli?.length
+  || d?.server?.dice?.length);
 
 // L'IMPRONTA DI QUELLO CHE HAI VISTO.
 //
@@ -614,6 +663,10 @@ export function improntaDi(d) {
     // autorizzerebbe la seconda avendo guardato la prima.
     ...(r.sistema || []).map((x) => `rs|${x.id}|${Object.keys(x).filter((k) => !['id', 'nome'].includes(k)).sort().join(',')}|${x.rinomina || ''}`),
     ...(r.togli || []).map((x) => `rx|${x.id}`),
+    // Anche le impostazioni del server, per la stessa ragione dei ruoli: un
+    // «sì, fallo» dato guardando i canali non deve autorizzare un livello di
+    // verifica cambiato nel frattempo. Col VALORE, non solo col nome del campo.
+    ...(d?.server?.dice || []).map((x) => `g|${x.campo}|${x.a ?? ''}`),
   ].sort();
   return createHash('sha1').update(righe.join('\n')).digest('hex').slice(0, 12);
 }

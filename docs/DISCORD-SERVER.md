@@ -328,3 +328,54 @@ morirebbe con lei. È lo stesso difetto che «Leggi il mio server» aveva avuto:
 il tasto c'era, nel codice la riga c'era, e premerlo non faceva niente — perché
 al momento dell'aggancio quel tasto non esisteva ancora. Per quel difetto
 esiste `scripts/verifica-costruttore.mjs`, che i tasti li preme davvero.
+
+
+## Le impostazioni del server (e perché stanno nella traccia)
+
+Quello che su Discord sta in «Impostazioni server» — livello di verifica, filtro
+dei contenuti, canale di sistema e cosa zittirci dentro, canale delle regole,
+avvisi allo staff, avvisi di sicurezza, angolo AFK, barra dei boost, pausa a
+tutti gli inviti — **non lo teniamo noi**: vive su Discord.
+
+Sta comunque **dentro la traccia**, accanto a categorie, canali e ruoli. Da
+quella scelta discendono tre cose, senza scriverle:
+
+- **«Leggi il mio server»** se le porta dietro: senza, il primo «rimettilo a
+  posto» azzererebbe in silenzio quello che qualcuno aveva messo a mano;
+- **«Fammi vedere cosa faresti»** le mostra nella stessa anteprima;
+- la **modalità distruttiva** le rimette come dice la traccia, con la stessa
+  serratura di tutto il resto.
+
+Una scheda a parte col suo tasto «Salva» sarebbe una seconda strada verso lo
+stesso server, e un'anteprima che ne racconta una sola.
+
+### Le regole che non possono saltare
+
+| regola | perché |
+|---|---|
+| un campo che la traccia non nomina non si manda | assente vuol dire «non mi interessa», non «zero»: scriverlo cambierebbe una scelta fatta a mano |
+| un valore che Discord non accetta non parte | sarebbe un errore a metà costruzione per un campo che non doveva uscire |
+| un canale nominato che non c'è più si salta | altrimenti Discord rifiuta l'intera chiamata, e una impostazione sbagliata ne fa fallire otto giuste |
+| quello che non cambia non si riscrive | una riga nel registro del server a ogni giro, per non aver fatto niente |
+| «pausa agli inviti» viaggia con l'elenco delle caratteristiche | è una caratteristica, non un campo: mandarla da sola cancellerebbe COMMUNITY, e con essa benvenuto, domande d'ingresso e canali annunci |
+
+### La firma le copre
+
+Fra «fammi vedere» e «sì, fallo» passa del tempo. L'impronta include anche le
+impostazioni **col loro valore**: un sì dato guardando i canali non autorizza un
+livello di verifica cambiato nel frattempo.
+
+### Il permesso, e il cancello che lo tiene fermo
+
+Serve `MANAGE_GUILD`, ed è nell'invito **normale**, non fra i pieni poteri: chi
+entra col solo Discord non ha altro, e senza quel permesso metà del prodotto per
+lui non esisterebbe.
+
+Quel permesso permetterebbe anche di rifare il vestito del server (nome, icona,
+stendardo, indirizzo personalizzato) e di cancellare inviti altrui. Non lo
+facciamo, e non è una promessa: `scripts/verifica-poteri.mjs` guarda **i campi**
+che finiscono in `PATCH /guilds/{id}`, non solo quale porta si chiama — perché
+quella porta è sempre la stessa, ed è la porta giusta.
+
+Chi aveva già invitato il bot deve **ripassare dal tasto** una volta: reinvitarlo
+è il modo con cui Discord gli aggiorna i permessi.

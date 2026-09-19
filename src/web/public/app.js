@@ -785,6 +785,14 @@ function _demoGet(via) {
     ] },
     '/api/streamer/dcserver': { pronto: true, guildNome: 'Casa di andryx', preset: null,
       ruoli: [{ id: '100000000000000010', nome: 'Abbonati' }, { id: '100000000000000011', nome: 'Affezionati' }, { id: '100000000000000012', nome: 'Moderatori' }],
+      canaliVeri: [
+        { id: '200000000000000001', nome: 'annunci', voce: false },
+        { id: '200000000000000002', nome: 'regole', voce: false },
+        { id: '200000000000000003', nome: 'generale', voce: false },
+        { id: '200000000000000009', nome: 'Angolo AFK', voce: true },
+      ],
+      impostazioni: { verifica: 1, filtro: 0, notifiche: 0, canaleRegole: '', attesaAfk: 300, barraBoost: false, invitiFermi: false,
+        zittisci: { ingressi: false, boost: false, consigli: false, adesiviIngresso: false, abbonamentiRuolo: false, adesiviAbbonamento: false } },
       permessi: ['vedere', 'scrivere', 'storia', 'reagire', 'allegare', 'link', 'discussioni', 'entrare', 'parlare', 'menzionare'],
       privilegi: ['moderare', 'cacciare', 'bannare', 'pulire', 'soprannomi', 'zittire', 'spostare', 'registro', 'eventi', 'chiamareTutti', 'emojiAltrui', 'trasmettere', 'priorita'],
       max: { categorie: 20, canali: 60, ruoli: 15 },
@@ -17270,6 +17278,12 @@ function pannelloDcServer() {
       <div id="dcs-confronto" class="spazio-sopra" hidden></div>
     </div>
 
+    <div class="carta" id="dcs-carta-imp">
+      <h2>${_hIco(ICO.sliders)}${L('Le impostazioni del server', 'The server settings', 'Los ajustes del servidor')}</h2>
+      <p class="suggerimento">${L('Quello che su Discord sta in «Impostazioni server». Fanno parte della traccia come i canali: le vedi nell’anteprima e partono insieme al resto. Quello che lasci su «lascia com’è» non lo tocco.', 'What lives in «Server Settings» on Discord. They are part of the track like the channels: you see them in the preview and they go out with the rest. Whatever you leave on «leave as is» I do not touch.', 'Lo que en Discord está en «Ajustes del servidor». Forman parte de la plantilla como los canales: las ves en la vista previa y salen con el resto. Lo que dejes en «déjalo como está» no lo toco.')}</p>
+      <div id="dcs-imp" class="spazio-sopra"></div>
+    </div>
+
     <div class="carta" id="dcs-carta-diff">
       <h2>${_hIco(ICO.medaglia)}${L('Cosa succede', 'What happens', 'Qué pasa')}</h2>
       <p>${L('Prima si guarda, poi si fa. Quello che vedi qui sotto è esattamente quello che verrà fatto: non un riassunto.', 'First you look, then it happens. What you see below is exactly what will be done: not a summary.', 'Primero se mira, luego se hace. Lo que ves aquí abajo es exactamente lo que se hará: no un resumen.')}</p>
@@ -17421,6 +17435,119 @@ function _dcsTocca() {
   if (box) box.innerHTML = '';
 }
 
+const DCS_VERIFICA = () => [
+  ['', L('lascia com’è', 'leave as is', 'déjalo como está')],
+  ['0', L('nessuna: entra chiunque', 'none: anyone gets in', 'ninguna: entra cualquiera')],
+  ['1', L('email verificata', 'verified email', 'correo verificado')],
+  ['2', L('email + cinque minuti su Discord', 'email + five minutes on Discord', 'correo + cinco minutos en Discord')],
+  ['3', L('e dieci minuti dentro al server', 'and ten minutes inside the server', 'y diez minutos dentro del servidor')],
+  ['4', L('telefono verificato', 'verified phone', 'teléfono verificado')],
+];
+const DCS_FILTRO = () => [
+  ['', L('lascia com’è', 'leave as is', 'déjalo como está')],
+  ['0', L('non guardare niente', 'scan nothing', 'no mires nada')],
+  ['1', L('guarda chi non ha ruoli', 'scan people without roles', 'mira a quien no tiene roles')],
+  ['2', L('guarda tutti', 'scan everyone', 'mira a todos')],
+];
+const DCS_NOTIFICHE = () => [
+  ['', L('lascia com’è', 'leave as is', 'déjalo como está')],
+  ['0', L('tutti i messaggi', 'all messages', 'todos los mensajes')],
+  ['1', L('solo quando ti nominano', 'only when you are mentioned', 'solo cuando te mencionan')],
+];
+const DCS_AFK = () => [
+  ['', L('lascia com’è', 'leave as is', 'déjalo como está')],
+  ['60', L('un minuto', 'one minute', 'un minuto')],
+  ['300', L('cinque minuti', 'five minutes', 'cinco minutos')],
+  ['900', L('un quarto d’ora', 'fifteen minutes', 'un cuarto de hora')],
+  ['1800', L('mezz’ora', 'half an hour', 'media hora')],
+  ['3600', L('un’ora', 'one hour', 'una hora')],
+];
+const DCS_ZITTISCI = () => [
+  ['ingressi', L('«è entrato qualcuno»', '«someone joined»', '«ha entrado alguien»')],
+  ['boost', L('i boost', 'boosts', 'los boosts')],
+  ['consigli', L('i consigli di Discord', 'Discord’s tips', 'los consejos de Discord')],
+  ['adesiviIngresso', L('gli adesivi di benvenuto', 'welcome stickers', 'los stickers de bienvenida')],
+  ['abbonamentiRuolo', L('gli abbonamenti ai ruoli', 'role subscriptions', 'las suscripciones a roles')],
+  ['adesiviAbbonamento', L('gli adesivi degli abbonamenti', 'subscription stickers', 'los stickers de suscripción')],
+];
+
+function _dcsCanaliVeri() {
+  return (_dcs?.canaliVeri || []).filter((c) => c && c.id);
+}
+
+function _dcsSceltaCanale(chiave, valore, soloVoce) {
+  const veri = _dcsCanaliVeri().filter((c) => (soloVoce ? c.voce : !c.voce));
+  const voci = [`<option value="">${esc(L('lascia com’è', 'leave as is', 'déjalo como está'))}</option>`,
+    `<option value="0"${valore === '0' ? ' selected' : ''}>${esc(L('nessuno', 'none', 'ninguno'))}</option>`]
+    .concat(veri.map((c) => `<option value="${esc(c.id)}"${String(valore) === String(c.id) ? ' selected' : ''}>${soloVoce ? '' : '#'}${esc(c.nome)}</option>`));
+  return `<select data-imp="${chiave}" class="campo-largo">${voci.join('')}</select>`;
+}
+
+function _dcsImpDisegna() {
+  const box = _g('dcs-imp');
+  if (!box) return;
+  if (!_dcs?.preset) {
+    box.innerHTML = `<p class="suggerimento">${L('Scegli prima da dove parti, qui sopra: le impostazioni fanno parte della traccia.', 'First choose where you start from, above: the settings are part of the track.', 'Elige primero desde dónde empiezas, arriba: los ajustes forman parte de la plantilla.')}</p>`;
+    return;
+  }
+  const v = _dcs.preset.server || {};
+  const tendina = (chiave, voci, valore) => `<select data-imp="${chiave}" class="campo-largo">${voci.map(([k, t]) =>
+    `<option value="${esc(k)}"${String(valore ?? '') === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>`;
+  const campo = (id, eti, dentro, aiuto) => `<div class="dcs-imp-campo">
+      <label class="campo" for="${id}">${esc(eti)}</label>
+      ${dentro.replace('<select ', `<select id="${id}" `)}
+      ${aiuto ? `<span class="suggerimento">${esc(aiuto)}</span>` : ''}
+    </div>`;
+  box.innerHTML = `
+    <div class="griglia-campi">
+      ${campo('imp-verifica', L('Chi può scrivere appena entra', 'Who can write right after joining', 'Quién puede escribir nada más entrar'),
+        tendina('verifica', DCS_VERIFICA(), v.verifica), L('Contro chi entra, spamma e sparisce. «email + cinque minuti» ferma quasi tutto senza scocciare nessuno.', 'Against people who join, spam and vanish. «email + five minutes» stops nearly all of it without bothering anyone.', 'Contra quien entra, spamea y desaparece. «correo + cinco minutos» para casi todo sin molestar.'))}
+      ${campo('imp-filtro', L('Immagini da controllare', 'Media to scan', 'Imágenes a revisar'),
+        tendina('filtro', DCS_FILTRO(), v.filtro), L('Lo fa Discord, non noi.', 'Discord does it, not us.', 'Lo hace Discord, no nosotros.'))}
+      ${campo('imp-notifiche', L('Di serie, le notifiche arrivano per', 'By default, notifications fire for', 'De serie, las notificaciones llegan por'),
+        tendina('notifiche', DCS_NOTIFICHE(), v.notifiche))}
+      ${campo('imp-afk', L('Dopo quanto sposta nell’angolo AFK', 'How long before moving to the AFK corner', 'Cuánto antes de mover al rincón AFK'),
+        tendina('attesaAfk', DCS_AFK(), v.attesaAfk))}
+      ${campo('imp-sistema', L('Canale dei messaggi di Discord', 'Discord’s own messages channel', 'Canal de los mensajes de Discord'),
+        _dcsSceltaCanale('canaleSistema', v.canaleSistema))}
+      ${campo('imp-regole', L('Canale delle regole', 'Rules channel', 'Canal de las reglas'),
+        _dcsSceltaCanale('canaleRegole', v.canaleRegole))}
+      ${campo('imp-staff', L('Dove Discord avvisa lo staff', 'Where Discord warns the staff', 'Dónde Discord avisa al staff'),
+        _dcsSceltaCanale('canaleAvvisiStaff', v.canaleAvvisiStaff))}
+      ${campo('imp-sicurezza', L('Dove arrivano gli avvisi di sicurezza', 'Where safety alerts land', 'Dónde llegan los avisos de seguridad'),
+        _dcsSceltaCanale('canaleSicurezza', v.canaleSicurezza))}
+      ${campo('imp-afkch', L('Angolo AFK', 'AFK corner', 'Rincón AFK'),
+        _dcsSceltaCanale('canaleAfk', v.canaleAfk, true))}
+    </div>
+    <p class="campo spazio-sopra">${L('Nel canale dei messaggi di Discord, non scrivere', 'In Discord’s messages channel, do not write', 'En el canal de mensajes de Discord, no escribas')}</p>
+    <div class="tg-spunte">
+      ${DCS_ZITTISCI().map(([k, t]) => `<label class="tg-spunta"><input type="checkbox" data-zit="${k}"${v.zittisci?.[k] ? ' checked' : ''}><span>${esc(t)}</span></label>`).join('')}
+    </div>
+    <div class="riga-flessibile spazio-sopra">
+      <label class="tg-spunta"><input type="checkbox" data-imp="barraBoost"${v.barraBoost ? ' checked' : ''}><span>${L('Mostra la barra dei boost', 'Show the boost bar', 'Muestra la barra de boosts')}</span></label>
+      <label class="tg-spunta"><input type="checkbox" data-imp="invitiFermi"${v.invitiFermi ? ' checked' : ''}><span>${L('Metti in pausa tutti gli inviti', 'Pause every invite', 'Pausa todas las invitaciones')}</span></label>
+    </div>
+    <p class="suggerimento">${L('La pausa agli inviti è il freno d’emergenza: chi ha già il link non entra più, finché non la togli.', 'Pausing invites is the emergency brake: whoever already has the link cannot get in until you lift it.', 'Pausar las invitaciones es el freno de emergencia: quien ya tiene el enlace no entra hasta que lo quites.')}</p>`;
+}
+
+function _dcsImpLeggi() {
+  const box = _g('dcs-imp');
+  if (!box || !_dcs?.preset) return;
+  const v = {};
+  for (const el of box.querySelectorAll('[data-imp]')) {
+    const k = el.dataset.imp;
+    if (el.type === 'checkbox') { v[k] = el.checked; continue; }
+    const t = el.value;
+    if (t === '') continue;                       // «lascia com'è»: non entra nella traccia
+    if (k.startsWith('canale')) { v[k] = t === '0' ? '' : t; continue; }
+    v[k] = Number(t);
+  }
+  const zit = [...box.querySelectorAll('[data-zit]')];
+  if (zit.some((x) => x.checked)) v.zittisci = Object.fromEntries(zit.map((x) => [x.dataset.zit, x.checked]));
+  _dcs.preset.server = v;
+  _dcsTocca();
+}
+
 function _dcsDisegna() {
   _dcsTocca();
   const box = _g('dcs-editor');
@@ -17445,6 +17572,7 @@ function _dcsDisegna() {
   }
   box.innerHTML = (cima ? `<div class="dcs-cima">${cima}</div>` : '') + cat
     || `<p class="suggerimento">${L('Ancora niente: aggiungi una categoria qui sotto.', 'Nothing yet: add a category below.', 'Aún nada: añade una categoría aquí abajo.')}</p>`;
+  _dcsImpDisegna();
   const n = _dcsConta(p);
   _dcsDici('dcs-stato', `${(p.categorie || []).length}${L(' categorie · ', ' categories · ', ' categorías · ')}${n}${L(' canali', ' channels', ' canales')}`
     + (_dcs.guildNome ? ' · ' + _dcs.guildNome : ''), 'ok');
@@ -17516,6 +17644,7 @@ function _dcsMostra() {
     const box = _g('dcs-editor');
     if (box) box.innerHTML = `<p class="suggerimento">${L('Scegli una traccia qui sopra e comparirà qui, pronta da cambiare.', 'Pick a track above and it appears here, ready to change.', 'Elige una plantilla arriba y aparecerá aquí, lista para cambiar.')}</p>`;
     const d = _g('dcs-diff'); if (d) d.innerHTML = '';
+    _dcsImpDisegna();
     _dcsDici('dcs-esito', '');
   }
 }
@@ -17829,6 +17958,7 @@ function collegaDcServer() {
     else return;
     _dcsTocca();
   });
+  _g('dcs-imp')?.addEventListener('change', () => _dcsImpLeggi());
   _g('dcs-ruoli')?.addEventListener('change', (e) => {
     const r = _rTrova(e.target);
     if (!r) return;

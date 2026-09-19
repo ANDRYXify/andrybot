@@ -50,7 +50,7 @@ export const PERMESSI = Object.freeze({
 // sono anche quelli che il bot deve chiedere all'invito per poterli passare.
 // Qui si riesportano: chi lavora coi preset li trova dove se li aspetta, e la
 // tabella resta una sola.
-import { PRIVILEGI, DA_DARE } from './discord-api.js';
+import { PRIVILEGI, DA_DARE, ATTESE_AFK, ZITTISCI } from './discord-api.js';
 export const PERMESSI_RUOLO = PRIVILEGI;
 export const PERMESSI_DA_DARE = String(DA_DARE);
 
@@ -429,12 +429,41 @@ export function normalizzaPreset(x) {
     }
     categorie.push({ nome, permessi: righePulite(c?.permessi), canali: dentro });
   }
+  // LE IMPOSTAZIONI DEL SERVER dentro la traccia, come i canali e i ruoli.
+  //
+  // Non le teniamo noi: vivono su Discord. Ma metterle QUI e non in una scheda
+  // a parte con un suo tasto «Salva» fa tre cose da sole: «leggi il mio server»
+  // se le porta dietro, «fammi vedere cosa faresti» le mostra nella stessa
+  // anteprima, e la modalita' distruttiva le rimette come dice la traccia.
+  // Due strade verso lo stesso server sarebbero un'anteprima che ne racconta una.
+  //
+  // Un campo che la traccia non nomina NON entra: assente vuol dire «non mi
+  // interessa», e scriverlo lo stesso cambierebbe una scelta fatta a mano.
+  const imp = {};
+  const q = x?.server;
+  if (q && typeof q === 'object') {
+    const num = (k, max) => { const v = Number(q[k]); if (Number.isFinite(v) && v >= 0 && v <= max) imp[k] = Math.round(v); };
+    num('verifica', 4);
+    num('filtro', 2);
+    num('notifiche', 1);
+    for (const k of ['canaleSistema', 'canaleRegole', 'canaleAvvisiStaff', 'canaleSicurezza', 'canaleAfk']) {
+      if (q[k] !== undefined) imp[k] = String(q[k] || '').replace(/[^0-9]/g, '').slice(0, 24);
+    }
+    if (q.attesaAfk !== undefined && ATTESE_AFK.includes(Number(q.attesaAfk))) imp.attesaAfk = Number(q.attesaAfk);
+    if (q.barraBoost !== undefined) imp.barraBoost = !!q.barraBoost;
+    if (q.invitiFermi !== undefined) imp.invitiFermi = !!q.invitiFermi;
+    if (q.lingua !== undefined) imp.lingua = String(q.lingua || '').slice(0, 12);
+    if (q.zittisci && typeof q.zittisci === 'object') {
+      imp.zittisci = Object.fromEntries(Object.keys(ZITTISCI).map((k) => [k, !!q.zittisci[k]]));
+    }
+  }
+
   // I ruoli che lo streamer tiene anche se la traccia non li prevede. In
   // modalita' normale non cambia niente — non si cancella mai; in distruttiva
   // sono gli unici che si salvano, ed e' il motivo per cui esistono.
   const risparmia = [...new Set((Array.isArray(x?.risparmia) ? x.risparmia : [])
     .map((v) => String(v || '').replace(/[^0-9]/g, '').slice(0, 24)).filter(Boolean))].slice(0, MAX_RUOLI * 4);
-  return { ruoli, canali, categorie, risparmia };
+  return { ruoli, canali, categorie, risparmia, ...(Object.keys(imp).length ? { server: imp } : {}) };
 }
 
 // PARTI DAL SERVER CHE HAI GIA'.
@@ -490,6 +519,9 @@ export function dallaFotografia(foto, { TIPI_ID = { 0: 'testo', 2: 'voce', 5: 'a
     }));
   return normalizzaPreset({
     ruoli,
+    // le impostazioni di adesso entrano nella traccia: se non ci fossero, il
+    // primo «rimettilo a posto» le azzererebbe tutte in silenzio
+    ...(foto?.impostazioni ? { server: foto.impostazioni } : {}),
     canali: cima,
     categorie: categorie.map((c) => ({ nome: String(c.nome || ''), canali: dentro.get(String(c.id)) || [] })),
   });

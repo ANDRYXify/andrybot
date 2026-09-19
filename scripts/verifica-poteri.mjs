@@ -73,6 +73,14 @@ const PROIBITE = [
   { che: 'cambiare il soprannome a qualcuno',
     perche: 'il campo del soprannome',
     colpisce: (c) => /\bnick\s*:/.test(c) },
+  // Da quando il bot chiede anche «Gestire il server» puo' toccare cose che non
+  // c'entrano col suo mestiere: gli inviti fatti da altri, e il vestito del
+  // server. Gli inviti si guardano qui, come le altre porte; il vestito no —
+  // quello si costruisce campo per campo dentro `sistemaServer`, e una porta
+  // sola da guardare non basta. Si guarda la funzione, piu' sotto.
+  { che: 'cancellare un invito fatto da altri',
+    perche: 'DELETE /invites/{codice}',
+    colpisce: (c) => verbo(c, 'DELETE') && /\/invites\//.test(c) },
 ];
 
 const sorgenti = files(join(RAD, 'src'));
@@ -85,6 +93,26 @@ for (const p of PROIBITE) {
   }
   dice(colpevoli.length === 0, `nessuno chiama la porta per ${p.che}`,
     colpevoli.length ? `${p.perche} in ${colpevoli.join(', ')}` : '');
+}
+
+// IL VESTITO DEL SERVER non si tocca, e qui non basta guardare una porta.
+//
+// `sistemaServer` costruisce il corpo un campo per volta, e la porta e' sempre
+// la stessa: PATCH /guilds/{id}. Quindi la domanda giusta non e' «quale porta
+// chiama», e' «QUALI CAMPI ci mette dentro» — e la risposta deve restare
+// l'elenco delle impostazioni, senza il nome, l'icona, lo stendardo, la vetrina
+// o il padrone. Quelle cose sono di chi il server ce l'ha.
+const VIETATI_SUL_SERVER = ['name', 'icon', 'banner', 'splash', 'discovery_splash',
+  'vanity_url_code', 'owner_id'];
+{
+  const api = readFileSync(join(RAD, 'src/features/discord-api.js'), 'utf8')
+    .replace(/^\s*\/\/.*$/gm, '');
+  const i = api.indexOf('export async function sistemaServer(');
+  const corpo = i > 0 ? api.slice(i, api.indexOf('\n}', i)) : '';
+  dice(!!corpo, 'la porta delle impostazioni del server esiste');
+  const messi = VIETATI_SUL_SERVER.filter((k) => new RegExp(`corpo\\.${k}\\s*=|\\b${k}\\s*:`).test(corpo));
+  dice(messi.length === 0, 'nessuno rifa\' il vestito del server',
+    messi.length ? `scrive ${messi.join(', ')} su PATCH /guilds/{id}` : '');
 }
 
 // E il contrario: quello che il bot fa DAVVERO coi ruoli deve continuare a
