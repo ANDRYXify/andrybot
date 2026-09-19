@@ -58,6 +58,15 @@ export const sommaRuolo = (nomi) => (nomi || []).reduce((t, n) => t | (PRIVILEGI
 
 // Quali di questi privilegi il bot NON puo' passare, visti i suoi. Torna i
 // nomi, non i numeri: e' una frase da dire a una persona.
+// Da una maschera di bit ai NOMI dei privilegi che sappiamo dire. Serve a
+// chiudere il giro: «parti dal server che hai» deve saper raccontare anche i
+// ruoli, e raccontarli vuol dire chiamarli per nome.
+export function privilegiDa(bits) {
+  let b = 0n;
+  try { b = typeof bits === 'bigint' ? bits : BigInt(bits || 0); } catch { return []; }
+  return Object.keys(PRIVILEGI).filter((n) => (b & PRIVILEGI[n]) === PRIVILEGI[n]);
+}
+
 export function nonPuoDare(permessi, bitsBot) {
   let b = 0n;
   try { b = typeof bitsBot === 'bigint' ? bitsBot : BigInt(bitsBot || 0); } catch { b = 0n; }
@@ -72,10 +81,9 @@ export function nonPuoDare(permessi, bitsBot) {
 // Quanto puo' chiedere un preset: i limiti sono quelli del motore della
 // differenza, e stanno scritti li'. Averne una seconda copia qui vorrebbe dire
 // due numeri che un giorno non coincidono piu'.
-import { MAX_CATEGORIE, MAX_CANALI } from './discord-preset.js';
-export { MAX_CATEGORIE, MAX_CANALI };
+import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, ruoliIntoccabili } from './discord-preset.js';
+export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI };
 export const TIPI_CANALE = Object.freeze(['testo', 'voce', 'annunci', 'forum']);
-export { MAX_RUOLI } from './discord-preset.js';
 
 const somma = (nomi) => (nomi || []).reduce((t, n) => t | (PERMESSI[n] || 0n), 0n);
 
@@ -194,6 +202,27 @@ export function risolvi(preset, { guildId, ruoli = [], botId = '' } = {}) {
 
 // Scritture ricorrenti, cosi' i preset qui sotto si leggono come frasi.
 const soloLettura = [{ chi: TUTTI, nega: ['scrivere'] }];
+
+// I RUOLI CHE LE TRACCE PROPONGONO, e la differenza fra i due mestieri.
+//
+// «Streamer» e' DECORATIVO: un colore e il posto a parte nell'elenco delle
+// persone, zero privilegi. Non e' una dimenticanza — e' che il bot non puo'
+// creare niente piu' in alto di se' stesso, quindi un ruolo che desse i poteri
+// del padrone di casa non potrebbe nascere da qui. Questo serve a farsi vedere,
+// e quello lo sa fare.
+//
+// «Moderatori» ha i poteri veri: mettere in pausa, cacciare, ripulire. Sono i
+// privilegi che il bot possiede apposta per poterli passare.
+//
+// VIP e Abbonati sono un riconoscimento con qualcosa in mano: farsi sentire,
+// usare le emoji degli altri server, parlare per primi in vocale.
+const ruoliDiretta = [
+  { nome: 'Streamer', colore: 0xe6398a, separato: true, privilegi: [] },
+  { nome: 'Moderatori', colore: 0x3aa76d, separato: true, citabile: true,
+    privilegi: ['moderare', 'cacciare', 'pulire', 'soprannomi', 'zittire', 'spostare', 'registro', 'chiamareTutti'] },
+  { nome: 'VIP', colore: 0xc49a2c, separato: true, privilegi: ['emojiAltrui', 'chiamareTutti', 'priorita'] },
+  { nome: 'Abbonati', colore: 0x8a5cd6, privilegi: ['emojiAltrui'] },
+];
 const riservato = [{ chi: TUTTI, nega: ['vedere'] }];
 
 // ------------------------------------------------------------- il catalogo
@@ -207,6 +236,7 @@ export const CATALOGO = Object.freeze([
     id: 'inizio',
     nome: 'Si comincia',
     per: 'Un server nuovo, quando non sai da dove partire.',
+    ruoli: ruoliDiretta.filter((r) => r.nome !== 'Streamer'),
     categorie: [
       { nome: 'Benvenuto', canali: [
         { nome: 'regole', argomento: 'Le regole di casa. Si leggono una volta e valgono sempre.', permessi: soloLettura },
@@ -223,6 +253,7 @@ export const CATALOGO = Object.freeze([
     id: 'dirette',
     nome: 'Intorno alle dirette',
     per: 'Chi trasmette e vuole un posto dove ritrovarsi anche quando non è in onda.',
+    ruoli: ruoliDiretta,
     categorie: [
       { nome: 'Benvenuto', canali: [
         { nome: 'regole', argomento: 'Le regole di casa. Si leggono una volta e valgono sempre.', permessi: soloLettura },
@@ -246,6 +277,7 @@ export const CATALOGO = Object.freeze([
     id: 'giocare',
     nome: 'Si gioca insieme',
     per: 'Un server dove ci si organizza per giocare, non solo per parlarne.',
+    ruoli: ruoliDiretta.filter((r) => r.nome !== 'Streamer'),
     categorie: [
       { nome: 'Benvenuto', canali: [
         { nome: 'regole', argomento: 'Le regole di casa. Si leggono una volta e valgono sempre.', permessi: soloLettura },
@@ -268,6 +300,7 @@ export const CATALOGO = Object.freeze([
     id: 'grande',
     nome: 'Siamo in tanti',
     per: 'Quando un canale solo non basta più e serve un po’ di ordine.',
+    ruoli: ruoliDiretta.filter((r) => r.nome !== 'Streamer'),
     categorie: [
       { nome: 'Benvenuto', canali: [
         { nome: 'regole', argomento: 'Le regole di casa. Si leggono una volta e valgono sempre.', permessi: soloLettura },
@@ -347,6 +380,23 @@ export function normalizzaPreset(x) {
       ...(ch?.avvisi ? { avvisi: true } : {}),
     };
   };
+  // I RUOLI del preset. Il nome e' l'unica cosa obbligatoria: un ruolo senza
+  // privilegi e senza colore e' legittimo — serve a dire «questo e' uno di noi»
+  // e basta, ed e' il mestiere di meta' dei ruoli che esistono.
+  const ruoli = (Array.isArray(x?.ruoli) ? x.ruoli : []).slice(0, MAX_RUOLI).map((r) => {
+    const nome = String(r?.nome || '').trim().slice(0, 100);
+    if (!nome) return null;
+    return {
+      nome,
+      colore: Math.max(0, Math.min(0xffffff, Number(r?.colore) || 0)),
+      separato: !!r?.separato,
+      citabile: !!r?.citabile,
+      // Un privilegio che non sappiamo nominare non passa: sennò il pannello
+      // mostrerebbe un ruolo e il server ne avrebbe un altro.
+      privilegi: [...new Set((Array.isArray(r?.privilegi) ? r.privilegi : [])
+        .map(String).filter((p) => PRIVILEGI[p] !== undefined))],
+    };
+  }).filter(Boolean);
   const canali = (Array.isArray(x?.canali) ? x.canali : []).map(unCanale).filter(Boolean);
   for (const c of (Array.isArray(x?.categorie) ? x.categorie : []).slice(0, MAX_CATEGORIE)) {
     const nome = String(c?.nome || '').trim().slice(0, 100);
@@ -358,7 +408,7 @@ export function normalizzaPreset(x) {
     }
     categorie.push({ nome, permessi: righePulite(c?.permessi), canali: dentro });
   }
-  return { canali, categorie };
+  return { ruoli, canali, categorie };
 }
 
 // PARTI DAL SERVER CHE HAI GIA'.
@@ -383,7 +433,28 @@ export function dallaFotografia(foto, { TIPI_ID = { 0: 'testo', 2: 'voce', 5: 'a
     if (p && perId.has(p)) dentro.get(p).push(voce);
     else cima.push(voce);
   }
+  // ANCHE I RUOLI, sennò il giro non si chiude. Senza di loro «parti dal
+  // server che hai» darebbe un preset che descrive i tuoi canali e NESSUN
+  // ruolo — e in modalità distruttiva quel preset vuol dire «cancellali
+  // tutti». Non un'anteprima sbagliata: un'anteprima giusta di una cosa
+  // terribile, partita da un tasto che promette il contrario.
+  //
+  // Si leggono solo quelli che il costruttore potrebbe davvero rifare: quelli
+  // sopra il bot, le integrazioni e @everyone non li sa costruire, e metterli
+  // in un preset vorrebbe dire descrivere una cosa che non si puo' applicare.
+  // Restano dove sono, e la differenza non li tocca comunque.
+  const fuoriMano = ruoliIntoccabili(foto);
+  const ruoli = (foto?.ruoli || [])
+    .filter((r) => r?.id && !fuoriMano.has(String(r.id)))
+    .map((r) => ({
+      nome: String(r.nome || ''),
+      colore: Number(r.colore) || 0,
+      separato: !!r.separato,
+      citabile: !!r.citabile,
+      privilegi: privilegiDa(r.permessi),
+    }));
   return normalizzaPreset({
+    ruoli,
     canali: cima,
     categorie: categorie.map((c) => ({ nome: String(c.nome || ''), canali: dentro.get(String(c.id)) || [] })),
   });

@@ -150,10 +150,19 @@ test('il preset che arriva dal pannello si rifa\' da zero', () => {
       { nome: '' },
     ],
     canali: [{ nome: 'in-cima' }],
+    ruoli: [
+      { nome: '  Moderatori  ', colore: 99999999, separato: 'si', privilegi: ['moderare', 'volare', 'moderare'] },
+      { nome: '' },
+    ],
     cosaCiFaQui: true,
   };
   const p = C.normalizzaPreset(sporco);
-  assert.deepEqual(Object.keys(p).sort(), ['canali', 'categorie'], 'i campi che non esistono non passano');
+  assert.deepEqual(Object.keys(p).sort(), ['canali', 'categorie', 'ruoli'], 'i campi che non esistono non passano');
+  assert.equal(p.ruoli.length, 1, 'un ruolo senza nome non e\' un ruolo');
+  assert.equal(p.ruoli[0].nome, 'Moderatori');
+  assert.deepEqual(p.ruoli[0].privilegi, ['moderare'], 'i privilegi inventati cadono, e i doppioni sono uno solo');
+  assert.equal(p.ruoli[0].colore <= 0xffffff, true, 'un colore che non esiste si riporta dentro i bordi');
+  assert.equal(p.ruoli[0].separato, true);
   assert.equal(p.categorie.length, 1, 'una categoria senza nome non e\' una categoria');
   assert.equal(p.categorie[0].nome, 'Benvenuto');
   assert.equal(p.categorie[0].canali.length, 1);

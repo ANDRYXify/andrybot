@@ -6,9 +6,20 @@ import { streamers, subscriptions, accessi } from '../db.js';
 import * as abbonamenti from './abbonamenti.js';
 
 // Il piano di un canale: l'abbonamento, la community, o l'Essenziale.
-export function funzioniDelPiano(login) {
+// L'OROLOGIO E' UN PARAMETRO, come per `concessioneDi` qui sotto.
+//
+// Prima leggeva l'ora da solo, e bastava per funzionare: il difetto si vedeva
+// altrove. Una prova che fissava una data e una scadenza tre giorni dopo
+// chiamava QUESTA funzione, che intanto guardava l'orologio vero — due
+// orologi nella stessa domanda. Ha retto finche' quella scadenza non e'
+// arrivata davvero, e quel giorno e' diventata rossa da sola, senza che
+// nessuno avesse toccato niente.
+//
+// Con l'ora che entra da fuori, chi prova decide il tempo in cui si trova, e
+// una prova non puo' piu' scadere per conto suo.
+export function funzioniDelPiano(login, ora = Date.now()) {
   const l = String(login || '').toLowerCase();
-  if (l && subscriptions.attivo(l)) {
+  if (l && subscriptions.attivo(l, ora)) {
     const s = subscriptions.get(l);
     return abbonamenti.funzioniDi({ tier: s.tier || 'base', pacchetti: s.pacchetti });
   }

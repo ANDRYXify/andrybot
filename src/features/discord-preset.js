@@ -24,6 +24,14 @@
 // vero sarebbe scomodo costruire.
 
 import { createHash } from 'node:crypto';
+import { PRIVILEGI, DA_DARE } from './discord-api.js';
+
+// La somma dei privilegi che una traccia nomina. I NUMERI stanno in un posto
+// solo, con gli altri numeri di Discord: qui si leggono, non si ricopiano. Non
+// e' «parlare con Discord» — e' leggere una tabella di costanti, e questo
+// modello resta quello che era, un calcolo su dati che si prova senza avere un
+// server sotto mano.
+const sommaPrivilegi = (nomi) => (nomi || []).reduce((t, n) => t | (PRIVILEGI[n] || 0n), 0n);
 
 // I tipi di canale che sappiamo maneggiare, coi numeri che usa Discord.
 export const TIPI = Object.freeze({ testo: 0, voce: 2, categoria: 4, annunci: 5, forum: 15 });
@@ -223,6 +231,87 @@ export function fondiPermessi(attuale, voluti) {
   return [...fuori.values()];
 }
 
+// LA DIFFERENZA DEI RUOLI, che e' la stessa idea dei canali su un'altra materia.
+//
+// Tre cose la rendono diversa, e sono tutte regole di Discord:
+//
+//  · SOPRA IL BOT NON SI ARRIVA. Un ruolo piu' in alto del suo non si tocca —
+//    ne' si cambia ne' si cancella — e quelli non entrano nemmeno nell'elenco
+//    delle cose da fare. Provarci sarebbe un errore a meta' strada invece di
+//    una frase detta prima.
+//  · SI PUO' DARE SOLO QUELLO CHE SI HA. Un privilegio che il bot non possiede
+//    non si puo' passare a nessuno. Non lo si prova e si fallisce: si toglie da
+//    quello che si manda, e si dice quale — un ruolo creato a meta' e' peggio
+//    di un ruolo non creato, perche' sembra a posto.
+//  · CANCELLARE UN RUOLO LO TOGLIE A TUTTI QUELLI CHE CE L'HANNO, in silenzio.
+//    Non c'e' un «ultimo messaggio» da cui capire se era vivo, quindi il peso
+//    lo da' un'altra cosa: se portava dei privilegi, perderlo cambia chi puo'
+//    fare cosa. Quello non e' un dettaglio da confermare a occhio.
+//
+// E il modo normale non spegne niente: aggiunge i privilegi che la traccia
+// nomina e lascia stare gli altri. Solo il distruttivo fa diventare il ruolo
+// ESATTAMENTE quello che dice la traccia — e anche li' tocca soltanto i
+// privilegi che sappiamo nominare, perche' quelli che non sappiamo dire non
+// potremmo nemmeno mostrarli nell'anteprima.
+export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = null, nostri = DA_DARE } = {}) {
+  const fuoriMano = ruoliIntoccabili(foto);
+  const lista = voluteRuoli(preset);
+  const attuali = (foto?.ruoli || []).filter((r) => r?.id);
+
+  const quanti = new Map();
+  for (const r of attuali) {
+    const k = chiaveRuolo(r.nome);
+    quanti.set(k, (quanti.get(k) || 0) + 1);
+  }
+
+  const crea = []; const sistema = []; const ambigui = []; const fuoriPortata = []; const nonPosso = [];
+  const preso = new Set();
+
+  for (const v of lista) {
+    const k = chiaveRuolo(v.nome);
+    if ((quanti.get(k) || 0) > 1) { ambigui.push(v.nome); continue; }
+    const gia = attuali.find((r) => chiaveRuolo(r.nome) === k);
+
+    // I privilegi che la traccia chiede, meno quelli che il bot non ha da dare.
+    const voluti = sommaPrivilegi(v.privilegi);
+    const negati = puoiDare ? v.privilegi.filter((p) => !puoiDare(p)) : [];
+    for (const p of negati) if (!nonPosso.includes(p)) nonPosso.push(p);
+    const daDare = puoiDare ? sommaPrivilegi(v.privilegi.filter((p) => puoiDare(p))) : voluti;
+
+    if (!gia) { crea.push({ nome: v.nome, colore: v.colore, separato: v.separato, citabile: v.citabile, permessi: String(daDare) }); continue; }
+    preso.add(String(gia.id));
+    if (fuoriMano.has(String(gia.id))) { fuoriPortata.push(gia.nome); continue; }
+
+    const cambia = {};
+    if (Number(gia.colore || 0) !== v.colore) cambia.colore = v.colore;
+    if (!!gia.separato !== v.separato) cambia.separato = v.separato;
+    if (!!gia.citabile !== v.citabile) cambia.citabile = v.citabile;
+    let ora = 0n;
+    try { ora = BigInt(gia.permessi || 0); } catch { ora = 0n; }
+    // Normale: si aggiunge. Distruttivo: il ruolo diventa la traccia, ma solo
+    // nei privilegi che sappiamo nominare — gli altri restano dove sono,
+    // perche' spegnere una cosa che non sappiamo dire vorrebbe dire cambiare
+    // il server senza poterlo mostrare.
+    const dopo = togliere ? ((ora & ~nostri) | daDare) : (ora | daDare);
+    if (dopo !== ora) cambia.permessi = String(dopo);
+    if (Object.keys(cambia).length) sistema.push({ id: String(gia.id), nome: gia.nome, ...cambia });
+  }
+
+  const togli = [];
+  if (togliere) {
+    for (const r of attuali) {
+      if (preso.has(String(r.id))) continue;
+      if (fuoriMano.has(String(r.id))) continue;
+      let suoi = 0n;
+      try { suoi = BigInt(r.permessi || 0); } catch { suoi = 0n; }
+      togli.push({ id: String(r.id), nome: r.nome, colore: Number(r.colore) || 0,
+        separato: !!r.separato, conPotere: (suoi & nostri) !== 0n });
+    }
+  }
+
+  return { crea, sistema, togli, ambigui, fuoriPortata, nonPosso };
+}
+
 // LA DIFFERENZA. `togliere` decide se ne fa parte anche la terza direzione.
 export function differenza(foto, preset, { togliere = false } = {}) {
   const idx = indice(foto);
@@ -307,7 +396,8 @@ export function differenza(foto, preset, { togliere = false } = {}) {
 
 // «Non c'e' niente da fare» detto una volta sola, cosi' chi chiama non deve
 // contare tre elenchi per sapere se applicare due volte ha fatto qualcosa.
-export const vuota = (d) => !(d?.crea?.length || d?.sistema?.length || d?.togli?.length);
+export const vuota = (d) => !(d?.crea?.length || d?.sistema?.length || d?.togli?.length
+  || d?.ruoli?.crea?.length || d?.ruoli?.sistema?.length || d?.ruoli?.togli?.length);
 
 // L'IMPRONTA DI QUELLO CHE HAI VISTO.
 //
@@ -323,10 +413,18 @@ export const vuota = (d) => !(d?.crea?.length || d?.sistema?.length || d?.togli?
 // da cliccare: e' che «lo stesso» ha una definizione, e la macchina la sa
 // controllare meglio di un occhio.
 export function improntaDi(d) {
+  // I RUOLI ENTRANO NELL'IMPRONTA come i canali, e non e' un di piu': se non
+  // ci fossero, un «sì, fallo» dato guardando i canali autorizzerebbe anche un
+  // cambio di ruoli arrivato nel frattempo — cioe' proprio una firma in bianco
+  // su chi puo' fare cosa.
+  const r = d?.ruoli || {};
   const righe = [
     ...(d?.crea || []).map((x) => `c|${x.tipo}|${x.dentro || ''}/${x.nome}`),
     ...(d?.sistema || []).map((x) => `s|${x.id}|${Object.keys(x).filter((k) => !['id', 'nome', 'tipo'].includes(k)).sort().join(',')}`),
     ...(d?.togli || []).map((x) => `x|${x.id}`),
+    ...(r.crea || []).map((x) => `rc|${x.nome}|${x.permessi || '0'}`),
+    ...(r.sistema || []).map((x) => `rs|${x.id}|${Object.keys(x).filter((k) => !['id', 'nome'].includes(k)).sort().join(',')}`),
+    ...(r.togli || []).map((x) => `rx|${x.id}`),
   ].sort();
   return createHash('sha1').update(righe.join('\n')).digest('hex').slice(0, 12);
 }
