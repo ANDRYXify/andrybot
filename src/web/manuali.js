@@ -1019,7 +1019,7 @@ const DIRETTA = {
 
 const VETRINA = {
   slug: 'vetrina',
-  schede: ['pagina', 'donazioni', 'grafiche', 'notifiche', 'telegram'],
+  schede: ['pagina', 'donazioni', 'grafiche', 'notifiche', 'telegram', 'ruoli'],
   titolo: 'Manuale della vetrina: pagina link, grafiche e notifiche social | SocialBot',
   h1: 'Manuale della vetrina: pagina link, grafiche e notifiche social',
   desc: 'La pagina pubblica da mettere in bio, le due grafiche pronte da pubblicare e gli avvisi automatici quando vai in diretta o pubblichi qualcosa.',
@@ -1094,6 +1094,16 @@ const VETRINA = {
     { p: ['Gli auguri partono in due posti, e sono due cose separate perché i momenti sono diversi. Nel <strong>gruppo Telegram</strong> partono a mezzanotte italiana. In <strong>chat</strong> la mezzanotte non esiste — a quell\'ora non c\'è nessuno — quindi partono al <strong>primo messaggio</strong> di chi compie gli anni quel giorno, una volta l\'anno.'] },
     { p: ['Con gli auguri in chat accesi, chi ti guarda si segna da solo scrivendo <code>!compleanno 25/12</code>; <code>!compleanno</code> da solo rilegge la data, <code>!compleanno via</code> la toglie. Tu scrivi il testo (con <code>{nome}</code>) e, se vuoi, scegli un <strong>effetto</strong> della tua libreria che parte insieme agli auguri.'] },
     { p: ['L\'elenco dei compleanni è uno solo, e accanto a ognuno c\'è da dove arriva: dal gruppo, dalla chat, o aggiunto a mano da te. Chi non passa in chat il giorno del suo compleanno non riceve auguri in chat: si fanno a chi c\'è.'] },
+
+    { h2: 'I ruoli del tuo Discord' },
+    { p: ['Discord i <strong>sub</strong> di Twitch se li sincronizza da solo. Tutto il resto no: chi ti segue, chi &egrave; VIP, chi &egrave; moderatore, quante ore ti ha guardato, quante monete ha, da quante dirette di fila c\'&egrave;. Quei dati ce li abbiamo noi, e qui diventano ruoli sul tuo server.'] },
+    { p: ['Anche qui il bot &egrave; <strong>tuo</strong>: lo crei tu su Discord, il token &egrave; tuo e resta cifrato da noi. Nel pannello incolli token e id del server, premi <em>Prova</em> e ti diciamo come si chiama il server e quali ruoli il bot riesce davvero a muovere.'] },
+    { p: ['Quella riga &mdash; &laquo;quali riesce a muovere&raquo; &mdash; &egrave; il passo che si sbaglia sempre. Discord non guarda il nome del permesso, guarda la <strong>posizione</strong>: se il ruolo del bot sta sotto quello che deve dare, non lo tocca, e nessuno ti dice perch&eacute;. Vai in <em>Impostazioni server &rarr; Ruoli</em> e trascina il bot sopra.'] },
+    { p: ['Poi scrivi le regole: una condizione e il ruolo che le corrisponde. &laquo;&Egrave; abbonato&raquo;, &laquo;ti segue&raquo;, &laquo;ha almeno 500 monete&raquo;, &laquo;ti ha guardato almeno 10 ore&raquo;, &laquo;&egrave; di fila da 5 dirette&raquo;.'] },
+    { h3: 'Chi si collega, e come' },
+    { p: ['Chi ti guarda si collega <strong>da solo</strong>: scrive <code>!discord</code> in chat, apre il link, dice a Discord che &egrave; lui, e riscrive in chat il codice che gli diamo. Quel codice sta solo sul suo schermo e vale una volta: chi lo ricopia dalla chat lo trova gi&agrave; bruciato. Con <code>!discord via</code> si stacca, e i ruoli che ha restano suoi.'] },
+    { p: ['Il bot tocca <strong>solo</strong> chi si &egrave; collegato, e <strong>solo</strong> i ruoli che le tue regole nominano. Un ruolo che hai dato a mano, o che d&agrave; un altro bot, non lo guarda nemmeno: sennonch&eacute; la prima volta che accendi l\'interruttore spoglierebbe il server.'] },
+    { p: ['E se Twitch per un momento non risponde, non conclude che &laquo;allora non &egrave; abbonato&raquo;: quella condizione, per quel giro, non vale. Meglio un ruolo dato in ritardo che mezzo server spogliato per una domanda caduta.'] },
 
     { h3: 'TikTok, YouTube, Instagram' },
     { tabella: [

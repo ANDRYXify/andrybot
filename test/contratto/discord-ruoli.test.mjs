@@ -81,3 +81,32 @@ test('il giro si ferma quando Discord chiede una lunga attesa', () => {
   assert.match(GIRO, /if \(x\.attesa\) \{ fermo = true; break; \}/, 'non si insiste contro un limite dichiarato');
   assert.match(GIRO, /if \(m\.attesa\) break;/, 'nemmeno in lettura');
 });
+
+test('le condizioni le dichiara la regola, le parole le sa il pannello — e coprono tutte', () => {
+  // Due cose diverse in due posti diversi: QUALI condizioni esistono e' roba
+  // della regola, COME si chiamano in tre lingue e' roba del pannello. Quello
+  // che non deve succedere e' una condizione senza nome: nel menu comparirebbe
+  // il suo id tecnico, e nessuno saprebbe cosa sceglie.
+  const APP = leggi('src/web/public/app.js');
+  const REG = leggi('src/features/discord-ruoli.js');
+  const tipi = (/export const TIPI = \[([^\]]*)\]/.exec(REG)?.[1] || '').match(/'([a-z]+)'/g)?.map((x) => x.slice(1, -1)) || [];
+  assert.ok(tipi.length >= 8, `le condizioni sono ${tipi.length}`);
+  const blocco = APP.slice(APP.indexOf('const T_DCREG = () => ({'));
+  const parole = new Set([...blocco.slice(0, blocco.indexOf('});')).matchAll(/^\s{2}([a-z]+):/gm)].map((m) => m[1]));
+  const mute = tipi.filter((t) => !parole.has(t));
+  assert.deepEqual(mute, [], `condizioni senza un nome da mostrare: ${mute.join(', ')}`);
+  const orfane = [...parole].filter((p) => !tipi.includes(p));
+  assert.deepEqual(orfane, [], `nomi per condizioni che non esistono: ${orfane.join(', ')}`);
+  assert.match(APP, /tipi: TIPI_RUOLO\.map/.source ? /_dc\.tipi/ : /_dc\.tipi/, 'il pannello prende l’elenco dal server, non se lo riscrive');
+});
+
+test('il token del bot non torna mai verso il pannello', () => {
+  const SRV = leggi('src/web/server.js');
+  const f = SRV.slice(SRV.indexOf('const ruoliVisti = (c) =>'));
+  const corpo = f.slice(0, f.indexOf('});'));
+  assert.ok(!/^\s*token:/m.test(corpo), 'fra le chiavi che il pannello riceve non c’è il token');
+  assert.match(corpo, /configurato: !!\(c\?\.token && c\?\.guild\)/, 'dice solo SE c’è');
+  const post = SRV.slice(SRV.indexOf("app.post('/api/streamer/ruoli', requireOwner"));
+  assert.match(post.slice(0, 900), /typeof b\.token === 'string' && b\.token\.trim\(\)/,
+    'un campo vuoto vuol dire «non l’ho toccato», non «cancellalo»');
+});

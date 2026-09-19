@@ -76,7 +76,10 @@ function aggiungi(elenco, cosa) {
 export async function giro(channel, { quadro = null, max = MAX_PERSONE, prova = false, pausa = PAUSA_MS } = {}) {
   const ch = String(channel).toLowerCase();
   const conf = dcRuoli.get(ch);
-  if (!conf || !conf.attivo || !conf.token || !conf.guild) return null;
+  if (!conf || !conf.token || !conf.guild) return null;
+  // Da spento si puo' guardare, non toccare: «fammi vedere cosa faresti» serve
+  // proprio PRIMA di accendere, e non puo' cambiare niente per costruzione.
+  if (!conf.attivo && !prova) return null;
 
   const esito = { visti: 0, dati: 0, tolti: 0, fuori: 0, bloccati: [], scartate: 0, errori: [], quando: 0 };
   const finisci = (extra = {}) => {

@@ -180,3 +180,15 @@ test('senza configurazione, o da spento, il giro non parte', async () => {
   dcRuoli.set('spento2', { token: 'tok', guild: G, attivo: false, regole: [{ tipo: 'sub', ruolo: R_SUB, soglia: 0 }] });
   assert.equal(await giro('spento2', {}), null);
 });
+
+test('ma da spento si puo\' guardare: «cosa faresti» serve proprio prima di accendere', async () => {
+  dcRuoli.set('spento3', { token: 'tok', guild: G, attivo: false, regole: [{ tipo: 'sub', ruolo: R_SUB, soglia: 0 }] });
+  dcLink.metti('spento3', { login: 'ludo', dcId: DC });
+  discordFinto({ membro: [] });
+  try {
+    const e = await giro('spento3', { quadro: async () => ({ sub: new Set(['ludo']) }), prova: true });
+    assert.equal(e.dati, 1, 'dice cosa farebbe');
+    assert.equal(scritture.length, 0, 'e da spento non tocca niente davvero');
+  } finally { ripulisci(); }
+  assert.equal(await giro('spento3', { quadro: async () => ({}) }), null, 'ma un giro vero da spento non parte');
+});
