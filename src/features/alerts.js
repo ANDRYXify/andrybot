@@ -7,7 +7,7 @@
 import { streamers, effects as effectsDb } from '../db.js';
 import * as subathon from './subathon.js';
 import * as treno from './treno.js';
-import { comeSiChiama } from './bit.js';
+import { comeSiChiama, portaCorona } from './bit.js';
 import * as stemmi from './badges.js';
 import * as emote from './emotes.js';
 import { makeLog } from '../logger.js';
@@ -353,6 +353,9 @@ export class AlertsEngine {
         // viaggia con lui, a schermo una riga di Kick e una di Twitch sono la
         // stessa cosa, e nessuna scelta a valle puo' piu' distinguerle.
         piattaforma: piattaformaDi(msg),
+        // la corona del re dei Bit: anche questa e' del messaggio, perche' chi
+        // regna puo' cambiare mentre l'overlay e' aperto.
+        corona: portaCorona(channel, msg.user, piattaformaDi(msg)),
         user: msg.display || msg.user || '',
         colore: msg?.tags?.color || '',
         testo: testo.slice(0, 200),
@@ -384,6 +387,7 @@ export class AlertsEngine {
       this.effects.emit(channel, {
         tipo: 'chat_raw',
         piattaforma: piattaformaDi(msg),
+        corona: portaCorona(channel, msg.user, piattaformaDi(msg)),
         user: msg.display || msg.user || '',
         colore: msg?.tags?.color || '',
         testo: testo.slice(0, 300),

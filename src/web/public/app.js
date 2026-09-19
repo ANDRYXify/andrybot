@@ -88,6 +88,7 @@ async function firmaPngBlob(blob) {
   } catch { return blob; }
 }
 
+const SALUTO_RE = '{user} è il re dei Bit, con {bit} Bit. Bentornato.';
 function impostazioni() {
   const s = stato?.streamer?.settings || {};
   return {
@@ -110,7 +111,7 @@ function impostazioni() {
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
     punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, perPresenza: 5, perAttivita: 5, moltSub: 1.5, moltVip: 1.25, lurkPasso: 0.15, lurkMinimo: 0.35, soloLive: true, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
     manche: { attivo: false, minMin: 15, maxMin: 45, soloLive: false, ...(s.manche && typeof s.manche === 'object' ? s.manche : {}) },
-    premioVip: (s.premioVip && typeof s.premioVip === 'object') ? { saltaPerenni: true, ...s.premioVip } : { attivo: false, periodo: 'settimana', quanti: 1, saltaPerenni: true },
+    premioVip: (s.premioVip && typeof s.premioVip === 'object') ? { da: 'monete', saltaPerenni: true, saluto: SALUTO_RE, ...s.premioVip } : { attivo: false, da: 'monete', periodo: 'settimana', quanti: 1, saltaPerenni: true, saluto: SALUTO_RE },
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
     antibot: (s.antibot && typeof s.antibot === 'object') ? s.antibot : {},
     comandiChat: (s.comandiChat && typeof s.comandiChat === 'object') ? s.comandiChat : { attivo: false },
@@ -396,7 +397,7 @@ function statoDemo() {
         cambioCategoria: { attivo: true, trigger: 'categoria', annuncia: true },
         cambioTitolo: { attivo: false, trigger: 'titolo', annuncia: true },
         imparaVoce: { attivo: false },
-        premioVip: { attivo: true, periodo: 'settimana', quanti: 2, saltaPerenni: true },
+        premioVip: { attivo: true, da: 'monete', periodo: 'settimana', quanti: 2, saltaPerenni: true },
         manche: { attivo: true, minMin: 20, maxMin: 60, soloLive: false },
         paroleVietate: ['spoiler', 'link-truffa'],
         maiDire: ['Taliento', 'via Mazzini'],
@@ -7220,6 +7221,7 @@ function _chatDaAccese() {
   return coll.map(([id]) => id).filter((id) => m['chat:' + id] !== false);
 }
 const _segnoDaHtml = (id) => `<svg class="chat-da" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PIATT_ICO[id] || ''}</svg>`;
+const _coronaHtml = () => '<svg class="chat-corona" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18h18l-1.2-9.6-4.3 3.2L12 5.4l-3.5 6.2-4.3-3.2z"/></svg>';
 
 function _righeChatFinte(cst, lista) {
   const da = _chatDaAccese();
@@ -12142,6 +12144,7 @@ function studioChatPanelPush(d) {
   const riga = document.createElement('div'); riga.className = 'studio-chat-riga';
   if (_chatDaCollegate().length > 1) riga.insertAdjacentHTML('afterbegin', _segnoDaHtml(String(d.piattaforma || 'twitch')));
   if (d.badge7tv) { const b = document.createElement('img'); b.className = 'studio-chat-badge'; b.src = d.badge7tv; b.alt = ''; riga.appendChild(b); }
+  if (d.corona) riga.insertAdjacentHTML('beforeend', _coronaHtml());
   const u = document.createElement('span'); u.className = 'studio-chat-user';
   u.textContent = (d.user || '') + ': '; if (d.colore) u.style.color = d.colore;
   riga.appendChild(u);
@@ -16197,13 +16200,26 @@ function pannelloGiochi() {
         </select>
         <span class="suggerimento">${L('ai primi', 'to the top', 'a los primeros')}</span>
         <input aria-label="${esc(L('A quanti in classifica', 'To how many in the leaderboard', 'A cuantos de la clasificacion'))}" type="number" id="num-premio-quanti" min="1" max="5" value="${Number(s.premioVip.quanti) || 1}">
+        <span class="suggerimento">${L('della classifica', 'of the leaderboard', 'de la clasificación')}</span>
+        <select aria-label="${esc(L('Quale classifica premia', 'Which leaderboard the prize uses', 'Que clasificacion premia'))}" id="sel-premio-da">
+          <option value="monete" ${s.premioVip.da === 'bit' ? '' : 'selected'}>${esc(s.nomeMonete)}</option>
+          <option value="bit" ${s.premioVip.da === 'bit' ? 'selected' : ''}>Bit</option>
+        </select>
+      </div>
+      <div id="blocco-premio-bit" ${s.premioVip.da === 'bit' ? '' : 'hidden'}>
+      <div class="riga-flessibile">
+        <label class="suggerimento" for="txt-premio-saluto">${L('Quando il re dei Bit torna a scrivere', 'When the Bits king writes again', 'Cuando el rey de los Bits vuelve a escribir')}</label>
+        <input type="text" id="txt-premio-saluto" maxlength="200" style="flex:1;min-width:16rem" value="${esc(typeof s.premioVip.saluto === 'string' ? s.premioVip.saluto : SALUTO_RE)}" placeholder="${esc(SALUTO_RE)}">
+      </div>
+      <p class="suggerimento">${L('Segnaposti: {user} e {bit}. Lascia vuoto e il bot non dice niente.', 'Placeholders: {user} and {bit}. Leave it empty and the bot says nothing.', 'Marcadores: {user} y {bit}. Déjalo vacío y el bot no dice nada.')}</p>
+      <p class="suggerimento">${L('Con i Bit la classifica è quella di Twitch, e chi la guida diventa il re dei Bit: si tiene la corona in chat fino al premio dopo, e la volta che torna il bot lo saluta. Se Twitch non risponde il premio non salta: si riprova più tardi.', 'With Bits the leaderboard is Twitch’s own, and whoever leads it becomes the Bits king: the crown stays in chat until the next prize, and the bot greets them next time they show up. If Twitch does not answer the prize is not skipped: it retries later.', 'Con los Bits la clasificación es la de Twitch, y quien la lidera se convierte en el rey de los Bits: mantiene la corona en el chat hasta el siguiente premio, y la próxima vez que vuelve el bot le saluda. Si Twitch no responde el premio no se salta: se reintenta más tarde.')}</p>
       </div>
       <div class="riga-check">
         <input type="checkbox" id="chk-premio-salta" ${s.premioVip.saltaPerenni !== false ? 'checked' : ''}>
         <label for="chk-premio-salta">${L('Salta chi ha già il VIP per sempre (il premio scorre al successivo)', 'Skip people who already have VIP forever (the reward slides to the next)', 'Salta a quien ya tiene VIP para siempre (el premio pasa al siguiente)')}</label>
       </div>
       <p class="suggerimento">${L('Il premio pesca dalla classifica del pubblico: Twitch non permette di dare il VIP a un moderatore, quindi lo staff non entra fra i candidati.', 'The reward draws from the public leaderboard: Twitch does not allow giving VIP to a moderator, so staff are not among the candidates.', 'El premio se elige de la clasificación del público: Twitch no permite dar VIP a un moderador, así que el staff no entra entre los candidatos.')}</p>
-      <p class="suggerimento">${L('Il bot dà il VIP (per la stessa durata) ai top', 'The bot gives VIP (for the same duration) to the top', 'El bot da el VIP (por la misma duración) a los mejores')} ${esc(s.nomeMonete)}. ${L('Puoi anche darlo', 'You can also give it', 'También puedes darlo')}
+      <p class="suggerimento">${L('Il bot dà il VIP, per la stessa durata, a chi sta in cima alla classifica che hai scelto.', 'The bot gives VIP, for the same duration, to whoever leads the leaderboard you picked.', 'El bot da el VIP, por la misma duración, a quien lidera la clasificación que has elegido.')} ${L('Puoi anche darlo', 'You can also give it', 'También puedes darlo')}
       <strong class="primo-piano">${L('a voce', 'by voice', 'por voz')}</strong> ${L('(Comandi a voce → "vip a nome", default 1 settimana; di\' "mese" per un mese)', '(Voice commands → "vip to name", default 1 week; say "month" for a month)', '(Comandos por voz → "vip a nombre", por defecto 1 semana; di "mes" para un mes)')}
       ${L('o in chat con', 'or in chat with', 'o en el chat con')} <code>!vip @${L('nome', 'name', 'nombre')}</code>.</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-premio">${L('Salva premio', 'Save reward', 'Guardar premio')}</button></p>
@@ -18173,11 +18189,18 @@ function attivaPiattaforma() {
     caricaClassifica();
   }));
 
+  document.getElementById('sel-premio-da')?.addEventListener('change', (e) => {
+    const b = document.getElementById('blocco-premio-bit');
+    if (b) b.hidden = e.target.value !== 'bit';
+  });
+
   document.getElementById('btn-salva-premio')?.addEventListener('click', () => conErrore(async () => {
     const quanti = Math.min(5, Math.max(1, Number(document.getElementById('num-premio-quanti').value) || 1));
     await salvaImpostazioni({
       premioVip: {
         attivo: document.getElementById('chk-premiovip').checked,
+        da: document.getElementById('sel-premio-da').value === 'bit' ? 'bit' : 'monete',
+        saluto: document.getElementById('txt-premio-saluto').value,
         periodo: document.getElementById('sel-premio-periodo').value === 'mese' ? 'mese' : 'settimana',
         quanti,
         saltaPerenni: document.getElementById('chk-premio-salta').checked,

@@ -1,7 +1,8 @@
 // Gestione VIP: assegna/toglie i VIP di Twitch, con predizione del nick (dal
 // parlato: "vip a chiara" → chiara_3008), durata (default 1 settimana, o quella
 // che dici tu) e scadenza automatica. Serve lo scope 'channel:manage:vips'.
-import { vips, memory, points } from '../db.js';
+import { vips, memory, points, padroneDi } from '../db.js';
+import { migliaia } from './bit.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('vip');
@@ -180,41 +181,93 @@ export async function giaPerSempre(helix, channel) {
   return perenni;
 }
 
-// Premio periodico: il VIP a chi ha piu' monete.
+// CHI PUO' VINCERE UN PREMIO.
+//
+// Twitch rifiuta il VIP a un moderatore e al padrone di casa («non posso,
+// forse e' mod o sei tu»), quindi un premio che parte verso di loro e' un
+// premio bruciato contro un rifiuto certo. Non e' una raffinatezza: la
+// classifica da cui si pesca non sempre sa chi e' staff — quella delle monete
+// ha la sua gara separata, quella dei Bit e' di Twitch e dentro ci sono tutti.
+// La regola sta qui una volta, e vale per ogni classifica che arrivera' dopo.
+export const puoVincere = (channel, login) => {
+  const u = String(login || '').toLowerCase();
+  if (!u || u === padroneDi(channel)) return false;
+  return points.ruoloDi(channel, u) !== 'staff';
+};
+
+// IL PREMIO NON SA DA DOVE VIENE LA CLASSIFICA.
+//
+// Gli si passa `gente` gia' in ordine, dal primo all'ultimo, e lui la scorre.
+// Cosi' le monete e i Bit sono la stessa cosa vista da due sorgenti diverse, e
+// la terza che verra' non avra' bisogno di un terzo giro di premiazione.
 //
 // Tre regole, e ognuna nasce da un fatto, non da un gusto:
 //
-//  · pesca dalla classifica del PUBBLICO. Twitch rifiuta di dare il VIP a un
-//    moderatore ("non posso, forse e' mod o sei tu"): mettendo lo staff fra i
-//    candidati il premio si bruciava contro un rifiuto certo.
+//  · SALTA chi non puo' vincere (staff, padrone di casa): vedi sopra.
 //  · SALTA chi ce l'ha gia' per sempre (a meno che non lo si voglia lo stesso):
 //    dargli il VIP non aggiunge niente a lui e toglie il posto a chi verrebbe
 //    dopo — e, peggio, gli metterebbe una scadenza addosso.
 //  · SCORRE: se qualcuno viene saltato o rifiutato, il posto va al successivo.
 //    I posti promessi sono `quanti`, e `quanti` devono essere assegnati finche'
 //    c'e' gente in classifica.
-export async function premiaTopMonete(helix, channel, quanti, durata, say, opzioni = {}) {
+export async function premia(helix, channel, { gente = [], quanti = 1, durata, saltaPerenni = true, say, frase } = {}) {
   try {
-    const saltaPerenni = opzioni.saltaPerenni !== false;
     const posti = Math.max(1, Number(quanti) || 1);
-    // profondita': serve gente in piu' da cui pescare quando si scorre.
-    const candidati = points.top(channel, posti * 4 + 10, 'pubblico');
+    const d = durata || parseDurata('');
     // L'elenco serve in ogni caso, non solo quando si salta: l'interruttore
     // decide se uno puo' VINCERE un posto, non se ci sia permesso rovinargli
     // quello che ha. Un VIP per sempre non prende mai una scadenza.
     const perenni = await giaPerSempre(helix, channel);
     const vincitori = [];
     const saltati = [];
-    for (const t of candidati) {
+    for (const chi of gente) {
       if (vincitori.length >= posti) break;
-      const perenne = perenni.has(t.user);
-      if (perenne && saltaPerenni) { saltati.push(t.user); continue; }
-      const r = await assegnaVipLogin(helix, channel, t.user, perenne ? SEMPRE : durata, 'premio');
-      if (r.ok) vincitori.push(r.display || t.user);
-      else if (r.perenne) saltati.push(t.user);
+      const login = String(chi || '').toLowerCase();
+      if (!login || !puoVincere(channel, login)) continue;
+      const perenne = perenni.has(login);
+      if (perenne && saltaPerenni) { saltati.push(login); continue; }
+      const r = await assegnaVipLogin(helix, channel, login, perenne ? SEMPRE : d, 'premio');
+      if (r.ok) vincitori.push({ login, display: r.display || login });
+      else if (r.perenne) saltati.push(login);
     }
     if (saltati.length) log.info(`premio VIP #${channel}: saltati (ce l'hanno gia' per sempre) ${saltati.join(', ')}`);
-    if (vincitori.length) say?.(`🏆 Premio ${durata.txt}: VIP a ${vincitori.join(', ')} — i più affezionati! 💜`);
+    if (vincitori.length && frase) { const t = frase(vincitori, d); if (t) say?.(t); }
     return vincitori;
-  } catch (e) { log.error('premiaTopMonete:', e?.message || e); return []; }
+  } catch (e) { log.error('premia:', e?.message || e); return []; }
+}
+
+// Premio periodico: il VIP a chi ha piu' monete. La classifica e' nostra, e ha
+// gia' la sua gara del pubblico: qui si pesca profondo perche' scorrendo
+// servono candidati di riserva.
+export async function premiaTopMonete(helix, channel, quanti, durata, say, opzioni = {}) {
+  const posti = Math.max(1, Number(quanti) || 1);
+  const gente = points.top(channel, posti * 4 + 10, 'pubblico').map((t) => t.user);
+  const v = await premia(helix, channel, {
+    gente, quanti: posti, durata, say, saltaPerenni: opzioni.saltaPerenni !== false,
+    frase: (vinti, d) => `🏆 Premio ${d.txt}: VIP a ${vinti.map((x) => x.display).join(', ')} — i più affezionati! 💜`,
+  });
+  return v.map((x) => x.display);
+}
+
+// Premio periodico: il VIP a chi ha messo piu' Bit.
+//
+// Le righe arrivano da fuori GIA' decise, e non per pigrizia: la classifica dei
+// Bit e' di Twitch, e un suo silenzio («non lo so») non e' «non ha cheerato
+// nessuno». Chi chiama e' l'unico che puo' distinguerli, perche' e' lui che
+// decide se il periodo e' passato o va riprovato piu' tardi.
+export async function premiaTopBit(helix, channel, righe, quanti, durata, say, opzioni = {}) {
+  const posti = Math.max(1, Number(quanti) || 1);
+  const ordinate = (Array.isArray(righe) ? righe : []).filter((r) => r?.login);
+  const nomi = new Map(ordinate.map((r) => [r.login, r]));
+  const v = await premia(helix, channel, {
+    gente: ordinate.map((r) => r.login), quanti: posti, durata, say, saltaPerenni: opzioni.saltaPerenni !== false,
+    frase: (vinti, d) => {
+      const re = vinti[0];
+      const quanti2 = nomi.get(re.login)?.bit || 0;
+      const corte = vinti.slice(1).map((x) => x.display).join(', ');
+      return `👑 Re dei Bit: ${re.display}${quanti2 ? ` con ${migliaia(quanti2)} Bit` : ''} — VIP per ${d.txt}!`
+        + (corte ? ` Sul podio anche ${corte}.` : '');
+    },
+  });
+  return v.map((x) => ({ ...x, bit: nomi.get(x.login)?.bit || 0, nome: nomi.get(x.login)?.nome || x.display }));
 }

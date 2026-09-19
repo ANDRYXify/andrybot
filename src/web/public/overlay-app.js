@@ -517,11 +517,11 @@ const SEGNO_DA = {
 };
 const SVGNS = 'http://www.w3.org/2000/svg';
 
-function segnaOrigine(riga, da) {
-  const pezzi = SEGNO_DA[da];
-  if (!pezzi) return;
+const CORONA = [['path', { d: 'M3 18h18l-1.2-9.6-4.3 3.2L12 5.4l-3.5 6.2-4.3-3.2z' }]];
+
+function disegna(riga, pezzi, classe) {
   const s = document.createElementNS(SVGNS, 'svg');
-  s.setAttribute('class', 'chat-da');
+  s.setAttribute('class', classe);
   s.setAttribute('viewBox', '0 0 24 24');
   s.setAttribute('fill', 'none');
   s.setAttribute('stroke', 'currentColor');
@@ -534,6 +534,11 @@ function segnaOrigine(riga, da) {
     s.appendChild(e);
   }
   riga.appendChild(s);
+}
+
+function segnaOrigine(riga, da) {
+  const pezzi = SEGNO_DA[da];
+  if (pezzi) disegna(riga, pezzi, 'chat-da');
 }
 
 function chat(ev) {
@@ -556,6 +561,7 @@ function chat(ev) {
   if (destra) riga.style.transform = 'translateX(10px)';
   if (st.segnaDaDove) segnaOrigine(riga, da);
   aggiungiStemmi(riga, ev);
+  if (ev.corona) disegna(riga, CORONA, 'chat-corona');
   const u = document.createElement('span');
   u.className = 'chat-user';
   u.textContent = ev.user || '';
