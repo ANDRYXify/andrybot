@@ -76,7 +76,9 @@ function aggiungi(elenco, cosa) {
 export async function giro(channel, { quadro = null, max = MAX_PERSONE, prova = false, pausa = PAUSA_MS } = {}) {
   const ch = String(channel).toLowerCase();
   const conf = dcRuoli.get(ch);
-  if (!conf || !conf.token || !conf.guild) return null;
+  if (!conf || !conf.guild) return null;
+  const token = api.tokenDi(conf);
+  if (!token) return null;
   // Da spento si puo' guardare, non toccare: «fammi vedere cosa faresti» serve
   // proprio PRIMA di accendere, e non puo' cambiare niente per costruzione.
   if (!conf.attivo && !prova) return null;
@@ -88,11 +90,11 @@ export async function giro(channel, { quadro = null, max = MAX_PERSONE, prova = 
     return e;
   };
 
-  const elenco = await api.ruoli(conf.token, conf.guild);
+  const elenco = await api.ruoli(token, conf.guild);
   if (!elenco.ok) return finisci({ errori: [elenco.errore] });
   const veri = new Set(elenco.ruoli.map((r) => r.id));
 
-  const me = await api.io(conf.token, conf.guild);
+  const me = await api.io(token, conf.guild);
   if (!me.ok) return finisci({ errori: [me.errore] });
   const alti = fuoriPortata(elenco.ruoli, mioLivello(elenco.ruoli, me.ruoli));
 
@@ -106,7 +108,7 @@ export async function giro(channel, { quadro = null, max = MAX_PERSONE, prova = 
   const foto = quadro ? await quadro(gente) : {};
 
   for (const g of gente) {
-    const m = await api.membro(conf.token, conf.guild, g.dc_id);
+    const m = await api.membro(token, conf.guild, g.dc_id);
     if (!m.ok) { aggiungi(esito.errori, m.errore); if (m.attesa) break; continue; }
     if (!m.dentro) { esito.fuori++; continue; }
     esito.visti++;
@@ -120,7 +122,7 @@ export async function giro(channel, { quadro = null, max = MAX_PERSONE, prova = 
     for (const [ids, verbo, conta] of [[d.dare, api.dai, 'dati'], [d.togliere, api.togli, 'tolti']]) {
       for (const id of ids) {
         if (prova) { esito[conta]++; continue; }
-        const x = await verbo(conf.token, conf.guild, g.dc_id, id);
+        const x = await verbo(token, conf.guild, g.dc_id, id);
         if (x.ok) esito[conta]++;
         else { aggiungi(esito.errori, x.errore); if (x.attesa) { fermo = true; break; } }
       }

@@ -53,10 +53,11 @@ dare a chi non c'e', e va detto cosi', non come un guasto.
 
 ## La memoria
 
-`discord_ruoli` (una riga per canale) tiene il token del bot **dello streamer**,
-l'id del server e le regole. Il token e' un segreto: sta nella busta
-(`docs/SEGRETI.md`) e non esce mai verso il browser. La tabella e' sua e non
-`settings` proprio per questo — `settings` non e' cifrato.
+`discord_ruoli` (una riga per canale) tiene l'id del server, le regole, e il
+token del bot **solo se lo streamer se n'e' portato uno suo** — di solito quella
+casella e' vuota e si usa quello della piattaforma. Quando c'e' e' un segreto:
+sta nella busta (`docs/SEGRETI.md`) e non esce mai verso il browser. La tabella
+e' sua e non `settings` proprio per questo — `settings` non e' cifrato.
 
 `discord_link` tiene chi ha detto «questo account Discord sono io», **per
 canale**. Il consenso non e' un'iscrizione all'anagrafe: collegarsi al server di
@@ -74,11 +75,12 @@ qualcun altro. Nel menu convivono, ognuno dove serve.
 
 Tre carte, e ognuna risponde a una domanda:
 
-- **il bot del tuo server** — token e id, e un tasto che *prova*. La prova non
-  dice «ok»: dice come si chiama il server, come si chiama il bot, e **quanti
-  ruoli riesce davvero a muovere**. E' l'unica frase che smaschera il passo che
-  si sbaglia sempre (il ruolo del bot troppo in basso), prima che lo streamer
-  passi mezz'ora a chiedersi perche' non succede niente;
+- **il bot del tuo server** — un tasto che lo porta su Discord a scegliere il
+  server, e poi una riga che non dice «ok»: dice come si chiama il server, come
+  si chiama il bot, e **quanti ruoli riesce davvero a muovere**. E' l'unica
+  frase che smaschera il passo che si sbaglia sempre (il ruolo del bot troppo in
+  basso), prima che lo streamer passi mezz'ora a chiedersi perche' non succede
+  niente. Sotto, piegato, il campo per chi preferisce il bot suo;
 - **le regole** — una condizione e il ruolo che le tocca. Quali condizioni
   esistono lo dice la regola (`TIPI` viaggia dal server al pannello); come si
   chiamano in italiano, inglese e spagnolo lo sa il pannello. Due cose diverse,
@@ -174,18 +176,28 @@ quanto insistere, e' chi sta girando. «Fammi vedere cosa faresti» percorre la
 **stessa** strada senza scrivere: se fosse una strada sua, mostrerebbe una cosa
 e ne farebbe un'altra.
 
-## Le due applicazioni, e perche' sono due
+## Un'applicazione sola, due poteri diversi
 
-Sono due cose diverse e vanno tenute diverse:
+Sono due cose diverse e vanno tenute diverse, anche se stanno nella stessa
+applicazione:
 
-| | chi la crea | a cosa serve | cosa puo' fare |
-|---|---|---|---|
-| **l'applicazione che riconosce** | la piattaforma, una sola | lo spettatore dice «questo account Discord sono io» | leggere il suo id e il suo nome (`identify`). Nient'altro |
-| **il bot che muove i ruoli** | ogni streamer, per il suo server | dare e togliere ruoli | quello che gli permette il suo posto nella scala dei ruoli |
+| | a cosa serve | cosa puo' fare |
+|---|---|---|
+| **riconoscere** (client id + secret) | lo spettatore dice «questo account Discord sono io» | leggere il suo id e il suo nome (`identify`). Nient'altro |
+| **il bot** (il token) | dare e togliere ruoli nei server che lo hanno invitato | quello che gli permette il suo posto nella scala dei ruoli di QUEL server |
 
-Chi riconosce non entra in nessun server. Chi scrive non sa chi sei su Twitch.
-Sono due poteri diversi in due mani diverse, ed e' questo che rende innocuo il
-fatto che l'applicazione del riconoscimento sia una sola per tutti.
+Chi riconosce non entra in nessun server. Il bot non sa chi sei su Twitch: sa
+solo che un certo id Discord deve avere un certo ruolo, e glielo dice il giro.
+
+Il bot e' **uno solo, della piattaforma**, ed e' cosi' che funzionano tutti i
+bot di Discord. Non e' una scorciatoia: chiedere a ogni streamer di creare
+un'applicazione, generare un token, incollarlo e copiare a mano l'id del server
+era fargli fare un lavoro che **Discord sa gia' fare da solo** — e in cambio di
+niente, perche' quel bot avrebbe comunque avuto in mano lo stesso potere.
+
+Chi preferisce portarsi il bot suo puo' ancora: un token nel pannello, e quello
+vince. Il campo vuoto non vuol dire «niente bot», vuol dire «quello della
+casa» — la regola sta in `tokenDi()` e la legge un posto solo.
 
 ### L'applicazione della piattaforma (una volta sola, nel `.env`)
 
@@ -196,25 +208,40 @@ fatto che l'applicazione del riconoscimento sia una sola per tutti.
    vede una volta sola, se lo perdi se ne rigenera un altro.
 3. Sempre in OAuth2, **Redirects** → **Add Redirect** e incolla
    `https://socialbot.live/discord/oidc/callback` — identico, senza barra in
-   fondo. Salva.
-4. Nel `.env` del server: `DISCORD_CLIENT_ID=` e `DISCORD_CLIENT_SECRET=`, poi
-   riavvia. Niente bot, niente permessi, niente invito: quell'applicazione non
-   entra da nessuna parte.
+   fondo. Salva. **Uno solo**: i due giri (lo spettatore che si riconosce, lo
+   streamer che invita il bot) tornano dalla stessa porta, e a distinguerli e'
+   lo stato monouso.
+4. **Bot** nel menu → **Reset Token**, e copia il token.
+5. Nel `.env` del server: `DISCORD_CLIENT_ID=`, `DISCORD_CLIENT_SECRET=` e
+   `DISCORD_BOT_TOKEN=`, poi riavvia.
 
 Facoltativo ma gentile: in **General Information** metti icona e descrizione —
-sono quelle che lo spettatore vede nella schermata di Discord che gli chiede il
-permesso.
+sono quelle che si vedono nella schermata di Discord che chiede il permesso, e
+sono la faccia del bot nei server degli streamer.
 
-### Il bot dello streamer (una volta per server)
+## Come lo streamer porta il bot nel suo server
 
-Questo lo fa lo streamer, e il pannello glielo spieghera' li' dentro:
+Un tasto. Il pannello chiede `/api/discord/invito`, che risponde con
+l'indirizzo di autorizzazione: `scope=bot`, `permissions=268435456` — **solo
+Gestire i ruoli**, perche' una lista lunga di permessi su una schermata di
+conferma e' il modo migliore per farsi dire di no, ed e' anche potere che non ci
+serve.
 
-1. Stessa pagina, **New Application** (la sua), poi **Bot** → **Reset Token** e
-   copia il token: e' un segreto, va solo nel pannello di SocialBot.
-2. **Installation** (o OAuth2 → URL Generator): scope `bot`, permesso **Manage
-   Roles**. Apri il link e scegli il suo server.
-3. In **Impostazioni server → Ruoli**, trascina il ruolo del bot **sopra** tutti
-   i ruoli che deve poter dare. Discord non guarda il nome del permesso, guarda
-   la posizione: sotto un ruolo, non lo tocca.
-4. Id del server: clic destro sul server → **Copia ID server** (serve la
-   Modalita' sviluppatore in Impostazioni → Avanzate).
+Discord mostra **la sua** scelta del server: ci sono solo quelli dove lo
+streamer e' amministratore, ed e' Discord a garantirlo. Lui conferma, il bot
+entra, e si torna indietro.
+
+**L'id del server non arriva dalla query.** Discord lo rimanda anche li'
+(`guild_id`), ma quella query passa dal browser di chi autorizza e si riscrive
+a mano nella barra degli indirizzi: chi volesse potrebbe metterci l'id del
+server di un ALTRO streamer dove il nostro bot e' gia' dentro, e da li' in poi
+le proprie regole muoverebbero i ruoli di casa d'altri. Quello buono sta nella
+RISPOSTA dello scambio del codice (`scambiaInvito`), che viaggia da Discord a
+noi e non passa da nessuna parte in mezzo.
+
+Resta a mano **una cosa sola**, e non per pigrizia: in **Impostazioni server →
+Ruoli**, trascinare il ruolo del bot **sopra** quelli che deve poter dare.
+Discord non lascia che un bot si sposti piu' in alto di dov'e' — e' la regola
+che gli impedisce di promuoversi da solo, e va bene cosi'. Ma non lo lasciamo
+indovinare: il pannello sa gia' quali ruoli sono fuori portata
+(`fuoriPortata`/`mioLivello`) e li nomina.

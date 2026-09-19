@@ -105,7 +105,8 @@ test('il token del bot non torna mai verso il pannello', () => {
   const f = SRV.slice(SRV.indexOf('const ruoliVisti = (c) =>'));
   const corpo = f.slice(0, f.indexOf('});'));
   assert.ok(!/^\s*token:/m.test(corpo), 'fra le chiavi che il pannello riceve non c’è il token');
-  assert.match(corpo, /configurato: !!\(c\?\.token && c\?\.guild\)/, 'dice solo SE c’è');
+  assert.match(corpo, /configurato: !!\(dcApi\.tokenDi\(c\) && c\?\.guild\)/, 'dice solo SE c’è');
+  assert.match(corpo, /suo: !!String\(c\?\.token \|\| ''\)\.trim\(\)/, 'e di chi e\' il bot, che non e\' il token');
   const post = SRV.slice(SRV.indexOf("app.post('/api/streamer/ruoli', requireOwner"));
   assert.match(post.slice(0, 900), /typeof b\.token === 'string' && b\.token\.trim\(\)/,
     'un campo vuoto vuol dire «non l’ho toccato», non «cancellalo»');
