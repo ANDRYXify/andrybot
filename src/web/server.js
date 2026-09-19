@@ -86,6 +86,7 @@ import { creaChiavi, DURATA_MS as CHIAVE_MS } from './chiave-breve.js';
 import { peso as pesoDanno } from '../features/discord-peso.js';
 import * as dcCatalogo from '../features/discord-catalogo.js';
 import * as dcCostruisci from '../features/discord-costruisci.js';
+import * as dcPreset from '../features/discord-preset.js';
 import * as instagram from '../features/instagram.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
@@ -4544,6 +4545,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // chiedere di copiare un numero da diciotto cifre.
     let canaliVeri = [];
     let impostazioni = null;
+    // Se il server e' di tipo Community o no. La porta d'ingresso — benvenuto e
+    // domande — Discord la accende solo li', e dirlo PRIMA e' l'unica forma
+    // onesta: mostrare i campi e farli rifiutare dopo sarebbe farli riempire
+    // per niente.
+    let community = false;
     if (pronto) {
       const [r, cc, ss] = await Promise.all([
         dcApi.ruoli(token, guild).catch(() => ({ ok: false })),
@@ -4556,10 +4562,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           .filter((x) => [0, 2, 5, 13, 15, 16].includes(Number(x.tipo)))
           .map((x) => ({ id: x.id, nome: x.nome, voce: Number(x.tipo) === 2 || Number(x.tipo) === 13 }));
       }
-      if (ss.ok) impostazioni = ss.impostazioni;
+      if (ss.ok) { impostazioni = ss.impostazioni; community = (ss.caratteristiche || []).includes('COMMUNITY'); }
     }
     res.json({
       pronto,
+      community,
       guildNome: String(c?.guild_nome || ''),
       preset: c?.preset || null,
       ruoli,
@@ -4575,7 +4582,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // I privilegi di un ruolo sono un altro elenco: valgono nel server, non
       // dentro un canale, e non si mescolano mai coi permessi di sopra.
       privilegi: Object.keys(dcCatalogo.PERMESSI_RUOLO),
-      max: { categorie: dcCatalogo.MAX_CATEGORIE, canali: dcCatalogo.MAX_CANALI, ruoli: dcCatalogo.MAX_RUOLI },
+      max: { categorie: dcCatalogo.MAX_CATEGORIE, canali: dcCatalogo.MAX_CANALI, ruoli: dcCatalogo.MAX_RUOLI,
+        domande: dcCatalogo.MAX_DOMANDE, risposte: dcCatalogo.MAX_RISPOSTE },
+      // Quanti canali Discord pretende prima di accendere la porta: il pannello
+      // li conta mentre si scrive, invece di dirlo dopo il rifiuto.
+      porta: { partenza: dcPreset.MIN_PARTENZA, aperti: dcPreset.MIN_APERTI },
     });
   }));
 
@@ -4595,7 +4606,18 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!pronto) return res.status(400).json(NON_PRONTO);
     const foto = await dcApi.fotografia(token, guild);
     if (!foto.ok) return res.status(400).json({ errore: foto.errore });
-    res.json({ ok: true, preset: dcCatalogo.dallaFotografia(foto) });
+    // Anche la porta d'ingresso, dove c'e'. Senza, «parti dal server che hai»
+    // tornerebbe una traccia che non sa delle domande gia' scritte — e il primo
+    // «rimettilo a posto» le cancellerebbe tutte.
+    let porta = null;
+    if ((foto.caratteristiche || []).includes('COMMUNITY')) {
+      const [b, g] = await Promise.all([
+        dcApi.benvenuto(token, guild).catch(() => ({ ok: false })),
+        dcApi.ingresso(token, guild).catch(() => ({ ok: false })),
+      ]);
+      porta = { benvenuto: b?.ok ? b : null, ingresso: g?.ok ? g : null };
+    }
+    res.json({ ok: true, preset: dcCatalogo.dallaFotografia(foto, { porta }) });
   }));
 
   app.post('/api/streamer/dcserver/anteprima', requireOwner, wrap(async (req, res) => {
@@ -4633,6 +4655,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // entrano fra le cose da fare. Dirli dopo vorrebbe dire «ventotto da
       // cancellare» e tre cancellati.
       fuoriPortata: a.fuoriPortata || [],
+      // LA PORTA D'INGRESSO: cosa cambierebbe, e il motivo per cui Discord
+      // direbbe di no. Il motivo arriva prima di applicare, non dopo.
+      ingresso: a.differenza.ingresso || null,
       server: a.foto?.guild?.nome || '' });
   }));
 

@@ -1022,7 +1022,7 @@ const DIRETTA = {
 
 const VETRINA = {
   slug: 'vetrina',
-  schede: ['pagina', 'donazioni', 'grafiche', 'notifiche', 'telegram', 'ruoli', 'dcavvisi', 'dcserver'],
+  schede: ['pagina', 'donazioni', 'grafiche', 'notifiche', 'telegram', 'ruoli', 'dcavvisi', 'dcserver', 'dcentra'],
   titolo: 'Manuale della vetrina: pagina link, grafiche e notifiche social | SocialBot',
   h1: 'Manuale della vetrina: pagina link, grafiche e notifiche social',
   desc: 'La pagina pubblica da mettere in bio, le due grafiche pronte da pubblicare e gli avvisi automatici quando vai in diretta o pubblichi qualcosa.',

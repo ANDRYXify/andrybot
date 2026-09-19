@@ -675,6 +675,7 @@ function apiDemo(percorso, opzioni = {}) {
       crea: [{ nome: 'Diretta', tipo: 4, dentro: null }, { nome: 'sono-in-onda', tipo: 0, dentro: 'Diretta' }, { nome: 'clip', tipo: 0, dentro: 'Diretta' }],
       sistema: [{ id: '1', nome: 'generale', tipo: 0, dentro: 'Chiacchiere' }],
       nonPosso: ['bannare'],
+      ingresso: { dice: [{ campo: 'acceso', a: true }, { campo: 'canaliDiPartenza', a: 7 }, { campo: 'domande', a: 1 }], blocco: '' },
       consiglio: {
         prendi: [{ id: '7', nome: 'mod', diventa: 'Moderatori' }],
         risparmia: [{ id: '9', nome: 'Vecchia Guardia', conPotere: true, separato: true }],
@@ -696,7 +697,8 @@ function apiDemo(percorso, opzioni = {}) {
   }
   if (via === '/api/streamer/dcserver/applica') {
     const tolti = opzioni.body?.chiave ? 2 : 0;
-    return Promise.resolve({ ok: true, creati: 3, sistemati: 1, tolti, errori: [], fermo: '', fatte: 4 + tolti, mancanti: [] });
+    return Promise.resolve({ ok: true, creati: 3, sistemati: 1, tolti, errori: [], fermo: '', fatte: 4 + tolti, mancanti: [],
+      ingressoSistemato: 1, ingressoDice: [{ campo: 'domande', a: 1 }], ingressoPersi: [] });
   }
 
   if (via === '/api/streamer/occasione') {
@@ -783,7 +785,7 @@ function _demoGet(via) {
       { quando: Date.now() - 3 * 3600000, chi: 'andryx_demo', distruttivo: 0, creati: 3, sistemati: 1, tolti: 0, nomi: '', errori: '' },
       { quando: Date.now() - 6 * 86400000, chi: 'andryx_demo', distruttivo: 1, creati: 0, sistemati: 2, tolti: 2, nomi: 'vecchio-canale, Roba Vecchia', errori: '' },
     ] },
-    '/api/streamer/dcserver': { pronto: true, guildNome: 'Casa di andryx', preset: null,
+    '/api/streamer/dcserver': { pronto: true, community: true, guildNome: 'Casa di andryx', preset: null,
       ruoli: [{ id: '100000000000000010', nome: 'Abbonati' }, { id: '100000000000000011', nome: 'Affezionati' }, { id: '100000000000000012', nome: 'Moderatori' }],
       canaliVeri: [
         { id: '200000000000000001', nome: 'annunci', voce: false },
@@ -795,7 +797,8 @@ function _demoGet(via) {
         zittisci: { ingressi: false, boost: false, consigli: false, adesiviIngresso: false, abbonamentiRuolo: false, adesiviAbbonamento: false } },
       permessi: ['vedere', 'scrivere', 'storia', 'reagire', 'allegare', 'link', 'discussioni', 'entrare', 'parlare', 'menzionare'],
       privilegi: ['moderare', 'cacciare', 'bannare', 'pulire', 'soprannomi', 'zittire', 'spostare', 'registro', 'eventi', 'chiamareTutti', 'emojiAltrui', 'trasmettere', 'priorita'],
-      max: { categorie: 20, canali: 60, ruoli: 15 },
+      max: { categorie: 20, canali: 60, ruoli: 15, domande: 8, risposte: 20 },
+      porta: { partenza: 7, aperti: 5 },
       catalogo: [
         { id: 'inizio', nome: 'Si comincia', per: 'Un server nuovo, quando non sai da dove partire.',
           ruoli: [{ nome: 'Moderatori', colore: 0x3aa76d, separato: true, privilegi: ['moderare', 'pulire'] }],
@@ -1173,6 +1176,7 @@ const SPIEGA_DEMO = {
   ruoli: 'I ruoli del tuo server Discord dati da quello che succede su Twitch: chi ti segue, chi è abbonato, chi c’è sempre.',
   dcavvisi: 'Dove arrivano gli avvisi sul tuo server: un canale per ogni cosa, di chi vuoi tu, col testo che scrivi tu e il ruolo che vuoi chiamare.',
   dcserver: 'Categorie, canali e permessi del tuo server Discord: scegli come lo vuoi, guardi cosa cambierebbe, e lo costruisce lui.',
+  dcentra: 'La porta del tuo server: chi può scrivere appena entra, la prima schermata che legge e le domande che gli aprono i canali giusti.',
 };
 
 function montaDemo() {
@@ -2583,7 +2587,7 @@ const FAMIGLIE = [
   { id: 'moderazione', nome: 'Moderazione', parti: ['regole', 'scudo', 'registro'] },
   { id: 'interazione', nome: 'Giochi', parti: ['giochi', 'sondaggi', 'giveaway', 'penitenze'] },
   { id: 'inonda', nome: 'Regia', parti: ['regia', 'clip', 'musica'] },
-  { id: 'discord', nome: 'Discord', parti: ['ruoli', 'dcavvisi', 'dcserver'] },
+  { id: 'discord', nome: 'Discord', parti: ['ruoli', 'dcavvisi', 'dcserver', 'dcentra'] },
 ];
 const famigliaDi = (scheda) => FAMIGLIE.find((f) => f.parti.includes(scheda)) || null;
 const stessaFamiglia = (a, b) => { const fa = famigliaDi(a); return !!fa && fa === famigliaDi(b); };
@@ -2660,6 +2664,7 @@ const T_SCHEDA = {
   registro: ['Registro dello scudo', 'Shield log', 'Registro del escudo'],
   dcavvisi: ['Avvisi su Discord', 'Discord alerts', 'Avisos en Discord'],
   dcserver: ['Il server Discord', 'Your Discord server', 'Tu servidor de Discord'],
+  dcentra: ['Chi entra nel server', 'Who joins the server', 'Quién entra al servidor'],
   giochi: ['Giochi & classifiche', 'Games & leaderboards', 'Juegos y clasificaciones'],
   regia: ['Regia', 'Control room', 'Realización'],
   studio: ['Studio Web', 'Web Studio', 'Estudio Web'],
@@ -2684,7 +2689,7 @@ const T_SCHEDA = {
 const tGruppo = (id, fb) => { const t = T_GRUPPO[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
 const tScheda = (id, fb) => { const t = T_SCHEDA[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
 
-const SOLO_DISCORD = new Set(['ruoli', 'dcavvisi', 'dcserver', 'pagina', 'stato', 'sottoscrizione']);
+const SOLO_DISCORD = new Set(['ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'pagina', 'stato', 'sottoscrizione']);
 const senzaDiretta = () => stato?.piattaforma === 'discord';
 
 function elencoGruppi() {
@@ -2714,6 +2719,7 @@ const ICONA = {
   ascolto:     _ico('<rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4"/>'),
   dcavvisi:    _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/><path d="M4 5h4"/>'),
   dcserver:    _ico('<path d="M4 5h6v5H4z"/><path d="M4 14h6v5H4z"/><path d="M13 7.5h7"/><path d="M13 16.5h7"/>'),
+  dcentra:     _ico('<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M15 8l4 4-4 4"/><path d="M19 12H9"/>'),
   musica:      _ico('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
   sondaggi:    _ico('<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>'),
   giveaway:    _ico('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>'),
@@ -2750,6 +2756,7 @@ const DESC = {
   ascolto: ['Comanda il bot a voce mentre streammi.', 'Control the bot by voice while you stream.', 'Controla el bot por voz mientras haces directo.'],
   dcavvisi: ['In quali canali del tuo server arrivano gli avvisi, di chi e con che parole.', 'Which channels of your server get the alerts, whose, and in what words.', 'En qué canales de tu servidor llegan los avisos, de quién y con qué palabras.'],
   dcserver: ['Categorie, canali e permessi del tuo server Discord, decisi da qui.', 'Categories, channels and permissions of your Discord server, decided from here.', 'Categorías, canales y permisos de tu servidor de Discord, decididos desde aquí.'],
+  dcentra: ['Chi può scrivere appena entra, cosa legge per primo e le domande che gli aprono i canali.', 'Who can write right after joining, what they read first, and the questions that open their channels.', 'Quién puede escribir nada más entrar, qué lee primero y las preguntas que le abren los canales.'],
   musica: ['Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.', 'Music requests: viewers queue songs on Spotify.', 'Peticiones musicales: los espectadores ponen canciones en cola en Spotify.'],
   sondaggi: ['Crea sondaggi e predizioni Twitch al volo.', 'Create Twitch polls and predictions on the fly.', 'Crea encuestas y predicciones de Twitch al vuelo.'],
   giveaway: ['Organizza estrazioni a premi per la community.', 'Run prize giveaways for your community.', 'Organiza sorteos de premios para tu comunidad.'],
@@ -2933,6 +2940,8 @@ const GUIDE = {
     come: [['Scegli il canale dove far arrivare l\'avviso. Quelli in cui il bot non può scrivere li trovi segnati: sceglierne uno sarebbe scegliere un posto che poi non funziona.', 'Pick the channel where the alert lands. The ones the bot cannot write in are marked: picking one would mean picking a place that then does nothing.', 'Elige el canal donde llega el aviso. Los que el bot no puede escribir están marcados: elegir uno sería elegir un sitio que luego no funciona.', '#dca-nuovo'], ['Per ogni canale decidi quali avvisi arrivano, di chi, e scrivi il testo come lo vuoi tu.', 'For each channel decide which alerts land there, whose, and write the text the way you want it.', 'Para cada canal decide qué avisos llegan, de quién, y escribe el texto como lo quieras.', '#dca-elenco'], ['Se vuoi, fai chiamare un ruolo: sveglia solo quello, mai tutto il server per sbaglio.', 'If you want, have a role pinged: it wakes only that one, never the whole server by mistake.', 'Si quieres, haz que se llame a un rol: despierta solo a ese, nunca a todo el servidor por error.', '#dca-elenco'], ['«Prova» manda l\'avviso esattamente dove finirebbe davvero, col tuo testo.', '«Test» sends the alert exactly where it would really land, with your text.', '«Probar» manda el aviso exactamente donde llegaría de verdad, con tu texto.', '#dca-elenco']] },
   dcserver: { serve: ['Decidere com’è fatto il tuo server Discord — categorie, canali, di cosa si parla in ognuno e chi può fare cosa — e lasciare che lo metta su lui, dopo averti fatto vedere esattamente cosa farebbe.', 'Decide how your Discord server is laid out — categories, channels, what each one is about and who can do what — and let it set it up, after showing you exactly what it would do.', 'Decidir cómo está hecho tu servidor de Discord — categorías, canales, de qué se habla en cada uno y quién puede hacer qué — y dejar que lo monte él, tras enseñarte exactamente qué haría.'],
     come: [['Scegli da dove parti: una delle quattro tracce, oppure «Leggi il mio server» se ce l’hai già e vuoi partire da com’è adesso.', 'Choose where you start from: one of the four tracks, or «Read my server» if you already have one and want to start from how it is now.', 'Elige desde dónde empiezas: una de las cuatro plantillas, o «Leer mi servidor» si ya lo tienes y quieres partir de cómo está ahora.', '#dcs-partenza'], ['Cambia i nomi, aggiungi o togli categorie e canali. Apri un canale per scrivere di cosa si parla e chi può fare cosa.', 'Change the names, add or remove categories and channels. Open a channel to write what it is about and who can do what.', 'Cambia los nombres, añade o quita categorías y canales. Abre un canal para escribir de qué se habla y quién puede hacer qué.', '#dcs-editor'], ['Premi «Fammi vedere cosa faresti»: quello che compare è l’elenco esatto, non un riassunto. Quello che non è nella traccia resta dov’è.', 'Press «Show me what you would do»: what appears is the exact list, not a summary. Whatever is not in the track stays where it is.', 'Pulsa «Enséñame qué harías»: lo que aparece es la lista exacta, no un resumen. Lo que no está en la plantilla se queda donde está.', '#dcs-vedi'], ['Se ti convince, «Costruisci». Se nel frattempo qualcuno ha toccato il server, mi fermo e te lo rifaccio vedere.', 'If it convinces you, «Build it». If someone touched the server meanwhile, I stop and show it to you again.', 'Si te convence, «Constrúyelo». Si mientras tanto alguien ha tocado el servidor, me paro y te lo enseño otra vez.', '#dcs-azioni']] },
+  dcentra: { serve: ['Mettere in piedi la porta del tuo server: quanto aspettare prima che uno possa scrivere, cosa legge appena apre, e le domande che gli fanno scegliere i canali che gli interessano.', 'Set up your server’s door: how long before someone can write, what they read as they open it, and the questions that let them pick the channels they care about.', 'Montar la puerta de tu servidor: cuánto esperar antes de que alguien pueda escribir, qué lee nada más abrirlo, y las preguntas que le hacen elegir los canales que le interesan.'],
+    come: [['Il livello di verifica è il filtro contro chi entra, spamma e sparisce: «email + cinque minuti» ferma quasi tutto.', 'The verification level is the filter against people who join, spam and vanish: «email + five minutes» stops nearly all of it.', 'El nivel de verificación es el filtro contra quien entra, spamea y desaparece: «correo + cinco minutos» para casi todo.', '#dce-verifica'], ['Scrivi la prima schermata: una riga tua e fino a cinque canali con un tasto per ognuno.', 'Write the first screen: one line of your own and up to five channels with a button each.', 'Escribe la primera pantalla: una línea tuya y hasta cinco canales con un botón para cada uno.', '#dce-benvenuto'], ['Aggiungi le domande: ogni risposta apre dei canali e dà un ruolo. I canali si scelgono per nome, anche quelli che la traccia deve ancora creare.', 'Add the questions: every answer opens channels and hands out a role. Channels are picked by name, including the ones the track has yet to create.', 'Añade las preguntas: cada respuesta abre canales y da un rol. Los canales se eligen por nombre, incluidos los que la plantilla aún tiene que crear.', '#dce-porta'], ['«Fammi vedere cosa faresti» e poi «Costruisci»: la porta parte insieme ai canali, in un giro solo.', '«Show me what you would do» and then «Build it»: the door goes out together with the channels, in one go.', '«Enséñame qué harías» y luego «Constrúyelo»: la puerta sale junto con los canales, de una sola vez.', '#dce-vedi']] },
   studio: { serve: ['Andare in diretta su Twitch dal browser, senza installare niente: componi scene con webcam, schermo, immagini, video, testo e overlay, regola l’audio col mixer e premi «Vai live».', 'Go live on Twitch from the browser, without installing anything: compose scenes with webcam, screen, images, video, text and overlay, tune the audio with the mixer and hit “Go live”.', 'Emitir en Twitch desde el navegador, sin instalar nada: compón escenas con webcam, pantalla, imágenes, vídeo, texto y overlay, ajusta el audio con el mezclador y pulsa «Emitir».'],
     come: [['Scegli fotocamera, microfono e qualità in «Ingressi & qualità».', 'Pick camera, microphone and quality in “Inputs & quality”.', 'Elige cámara, micrófono y calidad en «Entradas y calidad».', '#studio-cam-sel'], ['Aggiungi le fonti e sistemale sul palco (trascina per spostare/ridimensionare), o usa un layout rapido.', 'Add the sources and arrange them on the stage (drag to move/resize), or use a quick layout.', 'Añade las fuentes y colócalas en el escenario (arrastra para mover/redimensionar), o usa un diseño rápido.', '#studio-fonti'], ['Aggiungi la fonte «Overlay» per avere a schermo alert, chat ed effetti a punti canale.', 'Add the “Overlay” source to get alerts, chat and channel-point effects on screen.', 'Añade la fuente «Overlay» para tener en pantalla alertas, chat y efectos de puntos de canal.', '#studio-ov-sel'], ['Premi «Vai live» e tieni aperta questa scheda mentre trasmetti.', 'Hit “Go live” and keep this tab open while you broadcast.', 'Pulsa «Emitir» y mantén esta pestaña abierta mientras transmites.', '#studio-live']] },
   alert: { serve: ['Comporre quello che si vede sulla diretta — alert, chat a schermo, obiettivi, contatori — e prendere il link da mettere in OBS.', 'Compose what shows on your stream — alerts, on-screen chat, goals, counters — and get the link to put in OBS.', 'Componer lo que se ve en el directo — alertas, chat en pantalla, objetivos, contadores — y coger el enlace para poner en OBS.'],
@@ -3173,6 +3182,7 @@ const T_PARTE = {
   ruoli: ['Ruoli', 'Roles', 'Roles'],
   dcavvisi: ['Avvisi', 'Alerts', 'Avisos'],
   dcserver: ['Il server', 'The server', 'El servidor'],
+  dcentra: ['Chi entra', 'Who joins', 'Quién entra'],
 };
 
 function barraFamigliaHtml(id) {
@@ -3195,7 +3205,7 @@ const NOMI_SCHEDA = {
   giochi: 'Giochi & classifiche', sondaggi: 'Sondaggi & predizioni',
   giveaway: 'Giveaway', penitenze: 'Penitenze',
   regia: 'Regia', clip: 'Clip', musica: 'Musica',
-  ruoli: 'Discord', dcavvisi: 'Avvisi su Discord', dcserver: 'Il server Discord',
+  ruoli: 'Discord', dcavvisi: 'Avvisi su Discord', dcserver: 'Il server Discord', dcentra: 'Chi entra nel server',
 };
 const _nomeSchedaGrezzo = (id) => NOMI_SCHEDA[id] || id;
 
@@ -3864,6 +3874,7 @@ function vistaPiattaforma() {
     ${pannelloRuoli()}
     ${pannelloDcAvvisi()}
     ${pannelloDcServer()}
+    ${pannelloChiEntra()}
     ${pannelloTelegram()}
     ${pannelloNotifiche()}
     ${pannelloPaginaLink()}
@@ -17320,7 +17331,19 @@ function _dcsPrepara(preset) {
     return fuori;
   };
   const ch = (c) => ({ _k: ++_dcsChiave, nome: c.nome || '', tipo: c.tipo || 'testo', argomento: c.argomento || '', permessi: perm(c.permessi) });
+  const g = preset?.ingresso;
   return {
+    ...(preset?.server ? { server: preset.server } : {}),
+    ...(g ? { ingresso: {
+      acceso: !!g.acceso,
+      canaliDiPartenza: [...(g.canaliDiPartenza || [])],
+      domande: (g.domande || []).map((d) => ({ _k: ++_dcsChiave, titolo: d.titolo || '', tipo: Number(d.tipo) === 1 ? 1 : 0,
+        unaSola: !!d.unaSola, obbligatoria: !!d.obbligatoria, allIngresso: d.allIngresso !== false,
+        risposte: (d.risposte || []).map((r) => ({ _k: ++_dcsChiave, titolo: r.titolo || '', testo: r.testo || '',
+          emoji: r.emoji || '', canali: [...(r.canali || [])], ruoli: [...(r.ruoli || [])] })) })),
+      benvenuto: g.benvenuto ? { testo: g.benvenuto.testo || '',
+        canali: (g.benvenuto.canali || []).map((c) => ({ _k: ++_dcsChiave, canale: c.canale || '', testo: c.testo || '', emoji: c.emoji || '' })) } : null,
+    } } : {}),
     ruoli: (preset?.ruoli || []).map((r) => ({
       _k: ++_dcsChiave, nome: r.nome || '', colore: Number(r.colore) || 0,
       separato: !!r.separato, citabile: !!r.citabile,
@@ -17341,6 +17364,12 @@ function _dcsPulito() {
   }));
   const ch = (c) => ({ nome: c.nome, tipo: c.tipo, argomento: c.argomento, permessi: perm(c.permessi) });
   const p = _dcs?.preset || { ruoli: [], canali: [], categorie: [] };
+  const g = p.ingresso;
+  const domande = (g?.domande || []).map((d) => ({
+    titolo: d.titolo, tipo: d.tipo, unaSola: !!d.unaSola, obbligatoria: !!d.obbligatoria, allIngresso: !!d.allIngresso,
+    risposte: (d.risposte || []).filter((r) => String(r.titolo || '').trim())
+      .map((r) => ({ titolo: r.titolo, testo: r.testo, emoji: r.emoji, canali: [...(r.canali || [])], ruoli: [...(r.ruoli || [])] })),
+  })).filter((d) => String(d.titolo || '').trim() && d.risposte.length);
   return {
     ruoli: (p.ruoli || []).map((r) => ({
       nome: r.nome, colore: r.colore, separato: !!r.separato, citabile: !!r.citabile,
@@ -17350,6 +17379,14 @@ function _dcsPulito() {
     canali: (p.canali || []).map(ch),
     categorie: (p.categorie || []).map((c) => ({ nome: c.nome, permessi: perm(c.permessi), canali: (c.canali || []).map(ch) })),
     risparmia: [...(p.risparmia || [])],
+    ...(p.server && Object.keys(p.server).length ? { server: { ...p.server } } : {}),
+    ...(g ? { ingresso: {
+      acceso: !!g.acceso,
+      canaliDiPartenza: [...(g.canaliDiPartenza || [])],
+      domande,
+      ...(g.benvenuto ? { benvenuto: { testo: g.benvenuto.testo,
+        canali: (g.benvenuto.canali || []).filter((c) => c.canale).map((c) => ({ canale: c.canale, testo: c.testo, emoji: c.emoji })) } } : {}),
+    } } : {}),
   };
 }
 
@@ -17429,10 +17466,8 @@ function _dcsCanaleHtml(c, dove) {
 }
 
 function _dcsTocca() {
-  const fai = _g('dcs-costruisci');
-  if (fai) fai.hidden = true;
-  const box = _g('dcs-diff');
-  if (box) box.innerHTML = '';
+  for (const id of ['dcs-costruisci', 'dce-costruisci']) { const f = _g(id); if (f) f.hidden = true; }
+  for (const id of ['dcs-diff', 'dce-diff']) { const b = _g(id); if (b) b.innerHTML = ''; }
 }
 
 const DCS_VERIFICA = () => [
@@ -17500,8 +17535,6 @@ function _dcsImpDisegna() {
     </div>`;
   box.innerHTML = `
     <div class="griglia-campi">
-      ${campo('imp-verifica', L('Chi può scrivere appena entra', 'Who can write right after joining', 'Quién puede escribir nada más entrar'),
-        tendina('verifica', DCS_VERIFICA(), v.verifica), L('Contro chi entra, spamma e sparisce. «email + cinque minuti» ferma quasi tutto senza scocciare nessuno.', 'Against people who join, spam and vanish. «email + five minutes» stops nearly all of it without bothering anyone.', 'Contra quien entra, spamea y desaparece. «correo + cinco minutos» para casi todo sin molestar.'))}
       ${campo('imp-filtro', L('Immagini da controllare', 'Media to scan', 'Imágenes a revisar'),
         tendina('filtro', DCS_FILTRO(), v.filtro), L('Lo fa Discord, non noi.', 'Discord does it, not us.', 'Lo hace Discord, no nosotros.'))}
       ${campo('imp-notifiche', L('Di serie, le notifiche arrivano per', 'By default, notifications fire for', 'De serie, las notificaciones llegan por'),
@@ -17544,6 +17577,8 @@ function _dcsImpLeggi() {
   }
   const zit = [...box.querySelectorAll('[data-zit]')];
   if (zit.some((x) => x.checked)) v.zittisci = Object.fromEntries(zit.map((x) => [x.dataset.zit, x.checked]));
+  const prima = _dcs.preset.server || {};
+  if (prima.verifica !== undefined) v.verifica = prima.verifica;
   _dcs.preset.server = v;
   _dcsTocca();
 }
@@ -17573,6 +17608,8 @@ function _dcsDisegna() {
   box.innerHTML = (cima ? `<div class="dcs-cima">${cima}</div>` : '') + cat
     || `<p class="suggerimento">${L('Ancora niente: aggiungi una categoria qui sotto.', 'Nothing yet: add a category below.', 'Aún nada: añade una categoría aquí abajo.')}</p>`;
   _dcsImpDisegna();
+  _dceDisegnaBenvenuto();
+  _dceDisegnaPorta();
   const n = _dcsConta(p);
   _dcsDici('dcs-stato', `${(p.categorie || []).length}${L(' categorie · ', ' categories · ', ' categorías · ')}${n}${L(' canali', ' channels', ' canales')}`
     + (_dcs.guildNome ? ' · ' + _dcs.guildNome : ''), 'ok');
@@ -17631,14 +17668,15 @@ function _dcsMostra() {
   const ha = !!(_dcs && _dcs.preset);
   const part = _g('dcs-partenza');
   if (part) part.innerHTML = ha ? `<p class="suggerimento">${L('Stai lavorando su una traccia tua. Da qui sotto puoi ricominciare da un’altra.', 'You are working on your own track. From below you can start over from another one.', 'Estás trabajando en una plantilla tuya. Desde aquí abajo puedes empezar de nuevo con otra.')}</p>` : _dcsCarteCatalogo();
-  for (const id of ['dcs-catpiu', 'dcs-ricomincia', 'dcs-vedi', 'dcs-salva']) {
+  for (const id of ['dcs-catpiu', 'dcs-ricomincia', 'dcs-vedi', 'dcs-salva', 'dce-vedi', 'dce-salva']) {
     const b = _g(id);
     if (b) b.disabled = !ha;
   }
-  const fai = _g('dcs-costruisci'); if (fai) fai.hidden = true;
+  for (const id of ['dcs-costruisci', 'dce-costruisci']) { const f = _g(id); if (f) f.hidden = true; }
   if (!_dcs?.pronto) {
     _dcsDici('dcs-stato', L('Prima porta il bot nel tuo server, nella scheda Ruoli.', 'First bring the bot to your server, in the Roles tab.', 'Primero lleva el bot a tu servidor, en la pestaña Roles.'), 'guaio');
   }
+  _dceDisegna();
   if (ha) _dcsDisegna();
   else {
     const box = _g('dcs-editor');
@@ -17807,6 +17845,22 @@ function _dcsDiffHtml(d) {
   if ((d.mancanti || []).length) {
     blocchi.push(`<p class="tg-stato guaio">${L('Questi ruoli non ci sono più, e quelle regole le ho saltate: ', 'These roles are gone, and I skipped those rules: ', 'Estos roles ya no están, y me he saltado esas reglas: ')}${esc(d.mancanti.join(', '))}</p>`);
   }
+  if (d.ingresso) {
+    const parole = {
+      acceso: L('accende o spegne la porta', 'turns the door on or off', 'enciende o apaga la puerta'),
+      canaliDiPartenza: L('i canali che vede chi entra', 'the channels people see on arrival', 'los canales que ve quien entra'),
+      domande: L('le domande e le loro risposte', 'the questions and their answers', 'las preguntas y sus respuestas'),
+      benvenuto: L('la prima schermata', 'the first screen', 'la primera pantalla'),
+    };
+    blocchi.push(`<h3>${L('La porta d’ingresso', 'The entrance door', 'La puerta de entrada')}</h3><ul class="lista-voci">`
+      + (d.ingresso.dice || []).map((x) => `<li>${esc(parole[x.campo] || x.campo)}</li>`).join('') + '</ul>');
+    if (d.ingresso.blocco) {
+      blocchi.push(`<p class="tg-stato guaio">${esc(d.ingresso.blocco)}. `
+        + L('Il resto parte lo stesso.', 'The rest goes out all the same.', 'Lo demás sale igualmente.') + '</p>');
+    } else {
+      blocchi.push(`<p class="suggerimento">${L('Chi ha già risposto dovrà rispondere di nuovo solo alle domande che cambiano.', 'People who already answered will only be asked again about the questions that change.', 'Quien ya respondió tendrá que responder de nuevo solo a las preguntas que cambian.')}</p>`);
+    }
+  }
   if (!blocchi.length) return `<p class="suggerimento">${L('Il tuo server è già così. Non c’è niente da fare.', 'Your server is already like this. There is nothing to do.', 'Tu servidor ya está así. No hay nada que hacer.')}</p>`;
   return blocchi.join('');
 }
@@ -17846,11 +17900,381 @@ async function _dcsCaricaRegistro() {
 }
 
 async function caricaDcServer() {
+  if (_dcs) { _dcsMostra(); return; }
   let d = null;
   try { d = await api('/api/streamer/dcserver'); } catch { d = null; }
   if (!d) { _dcsDici('dcs-stato', L('Non riesco a leggere la configurazione.', 'I can’t read the configuration.', 'No consigo leer la configuración.'), 'guaio'); return; }
   _dcs = { ...d, preset: d.preset ? _dcsPrepara(d.preset) : null };
   _dcsMostra();
+  _dcsCaricaRegistro();
+}
+
+function pannelloChiEntra() {
+  return pannello('dcentra', `
+    <div class="carta">
+      <h2>${_hIco(ICO.scudo)}${L('Chi può scrivere appena entra', 'Who can write right after joining', 'Quién puede escribir nada más entrar')}</h2>
+      <p class="suggerimento">${L('Contro chi entra, spamma e sparisce. «email + cinque minuti» ferma quasi tutto senza scocciare nessuno.', 'Against people who join, spam and vanish. «email + five minutes» stops nearly all of it without bothering anyone.', 'Contra quien entra, spamea y desaparece. «correo + cinco minutos» para casi todo sin molestar.')}</p>
+      <div id="dce-verifica" class="spazio-sopra"></div>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.moduli)}${L('La prima schermata', 'The first screen', 'La primera pantalla')}</h2>
+      <p class="suggerimento">${L('Quello che legge chi apre il tuo server per la prima volta: una riga di presentazione e fino a cinque canali spiegati, con un tasto per ognuno.', 'What someone reads when they open your server for the first time: one line of introduction and up to five channels explained, with a button for each.', 'Lo que lee quien abre tu servidor por primera vez: una línea de presentación y hasta cinco canales explicados, con un botón para cada uno.')}</p>
+      <div id="dce-benvenuto" class="spazio-sopra"></div>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.ruoli)}${L('Le domande', 'The questions', 'Las preguntas')}</h2>
+      <p class="suggerimento">${L('Chi entra risponde, e ogni risposta gli apre i canali che gli interessano e gli dà il ruolo che gli spetta. Chi arriva trova dentro solo quello che ha chiesto, invece di quaranta canali tutti insieme.', 'People answer as they join, and each answer opens the channels they care about and hands them the role that fits. They find only what they asked for, instead of forty channels at once.', 'Quien entra responde, y cada respuesta le abre los canales que le interesan y le da el rol que le toca. Encuentra solo lo que ha pedido, en vez de cuarenta canales de golpe.')}</p>
+      <div id="dce-porta" class="spazio-sopra"></div>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.medaglia)}${L('Cosa succede', 'What happens', 'Qué pasa')}</h2>
+      <p>${L('La porta fa parte della traccia come i canali: si guarda e si costruisce insieme al resto, in un giro solo.', 'The door is part of the track like the channels: you look at it and build it together with the rest, in one go.', 'La puerta forma parte de la plantilla como los canales: se mira y se construye junto con lo demás, de una sola vez.')}</p>
+      <p class="spazio-sopra riga-flessibile">
+        <button class="btn secondario" id="dce-vedi">${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
+        <button class="btn" id="dce-costruisci" hidden>${L('Costruisci', 'Build it', 'Constrúyelo')}</button>
+        <button class="btn secondario" id="dce-salva">${L('Salva e basta', 'Just save', 'Solo guardar')}</button>
+      </p>
+      <div id="dce-diff" class="spazio-sopra"></div>
+      <p class="tg-stato" id="dce-esito" hidden></p>
+    </div>`);
+}
+
+function _dceCanali() {
+  const p = _dcs?.preset;
+  const fuori = [];
+  const visti = new Set();
+  const metti = (nome, dove) => {
+    const n = String(nome || '').trim();
+    const k = n.toLowerCase().replace(/\s+/g, '-');
+    if (!n || visti.has(k)) return;
+    visti.add(k);
+    fuori.push({ nome: n, dove: dove || '' });
+  };
+  for (const c of (p?.canali || [])) metti(c.nome);
+  for (const c of (p?.categorie || [])) for (const ch of (c.canali || [])) metti(ch.nome, c.nome);
+  for (const c of (_dcs?.canaliVeri || [])) metti(c.nome, L('già sul server', 'already on the server', 'ya en el servidor'));
+  return fuori;
+}
+
+function _dceRuoli() {
+  const fuori = [];
+  const visti = new Set();
+  const metti = (nome) => {
+    const n = String(nome || '').trim();
+    const k = n.toLowerCase();
+    if (!n || visti.has(k)) return;
+    visti.add(k);
+    fuori.push(n);
+  };
+  for (const r of (_dcs?.preset?.ruoli || [])) metti(r.nome);
+  for (const r of (_dcs?.ruoli || [])) metti(r.nome);
+  return fuori;
+}
+
+const _dceIng = () => {
+  const p = _dcs?.preset;
+  if (!p) return null;
+  if (!p.ingresso) p.ingresso = { acceso: false, canaliDiPartenza: [], domande: [], benvenuto: null };
+  return p.ingresso;
+};
+
+function _dceSpunte(voci, scelti, campo, k) {
+  const ha = new Set((scelti || []).map((x) => String(x).toLowerCase().replace(/\s+/g, '-')));
+  if (!voci.length) return `<p class="suggerimento">${L('Non c’è ancora nessun canale nella traccia.', 'There is no channel in the track yet.', 'Todavía no hay ningún canal en la plantilla.')}</p>`;
+  return `<div class="tg-spunte">${voci.map((v) => {
+    const nome = typeof v === 'string' ? v : v.nome;
+    const dove = typeof v === 'string' ? '' : v.dove;
+    const on = ha.has(String(nome).toLowerCase().replace(/\s+/g, '-'));
+    return `<label class="tg-spunta"><input type="checkbox" data-dce="${esc(campo)}"${k !== undefined ? ` data-k="${esc(String(k))}"` : ''} value="${esc(nome)}"${on ? ' checked' : ''}><span>${esc(nome)}${dove ? ` <span class="suggerimento">${esc(dove)}</span>` : ''}</span></label>`;
+  }).join('')}</div>`;
+}
+
+function _dceDisegnaVerifica() {
+  const box = _g('dce-verifica');
+  if (!box) return;
+  if (!_dcs?.preset) { box.innerHTML = _dceNienteTraccia(); return; }
+  const v = _dcs.preset.server || {};
+  box.innerHTML = `<select id="dce-liv" data-dce="verifica" class="campo-largo" aria-label="${esc(L('Verifica', 'Verification', 'Verificación'))}">${
+    DCS_VERIFICA().map(([k, t]) => `<option value="${esc(k)}"${String(v.verifica ?? '') === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>`;
+}
+
+const _dceNienteTraccia = () => `<p class="suggerimento">${L('Scegli prima una traccia, nella scheda «Il server»: la porta d’ingresso fa parte di quella.', 'First pick a track, in the «The server» tab: the entrance door is part of it.', 'Elige primero una plantilla, en la pestaña «El servidor»: la puerta de entrada forma parte de ella.')}</p>`;
+
+function _dceDisegnaBenvenuto() {
+  const box = _g('dce-benvenuto');
+  if (!box) return;
+  if (!_dcs?.preset) { box.innerHTML = _dceNienteTraccia(); return; }
+  const g = _dceIng();
+  const b = g.benvenuto;
+  if (!b) {
+    box.innerHTML = `<p class="suggerimento">${L('Adesso chi arriva non legge niente.', 'Right now whoever arrives reads nothing.', 'Ahora quien llega no lee nada.')}</p>
+      <p class="spazio-sopra"><button type="button" class="btn secondario" data-dce="ben-accendi">${_bIco(ICO.piu)}${L('Scrivi la schermata', 'Write the screen', 'Escribe la pantalla')}</button></p>`;
+    return;
+  }
+  const canali = _dceCanali();
+  const righe = (b.canali || []).map((c) => `<div class="dce-riga riga-flessibile" data-k="${c._k}">
+      <select data-dce="ben-canale" aria-label="${esc(L('Canale', 'Channel', 'Canal'))}">
+        ${canali.map((x) => `<option value="${esc(x.nome)}"${x.nome === c.canale ? ' selected' : ''}>${esc(x.nome)}</option>`).join('')}
+      </select>
+      <input type="text" data-dce="ben-emoji" maxlength="8" value="${esc(c.emoji || '')}" placeholder="🙂" aria-label="${esc(L('Faccina', 'Emoji', 'Emoji'))}" class="dce-emoji">
+      <input type="text" data-dce="ben-testo" maxlength="50" value="${esc(c.testo || '')}" placeholder="${esc(L('cosa si fa qui', 'what happens here', 'qué se hace aquí'))}" aria-label="${esc(L('Descrizione', 'Description', 'Descripción'))}">
+      <button type="button" class="btn secondario mini" data-dce="ben-via">${esc(L('Togli', 'Remove', 'Quitar'))}</button>
+    </div>`).join('');
+  box.innerHTML = `
+    <label class="campo" for="dce-bentesto">${L('La riga che legge chi arriva', 'The line whoever arrives reads', 'La línea que lee quien llega')}</label>
+    <input type="text" id="dce-bentesto" data-dce="ben-frase" maxlength="140" value="${esc(b.testo || '')}" placeholder="${esc(L('Casa di chi guarda le mie dirette.', 'Home of the people who watch my streams.', 'Casa de quien ve mis directos.'))}">
+    <p class="campo spazio-sopra">${L('I canali da mettere in mostra', 'The channels to show off', 'Los canales que destacar')}</p>
+    <div class="dce-righe">${righe || `<p class="suggerimento">${L('Nessuno, per ora.', 'None, for now.', 'Ninguno, por ahora.')}</p>`}</div>
+    <p class="spazio-sopra riga-flessibile">
+      <button type="button" class="btn secondario mini" data-dce="ben-piu"${(b.canali || []).length >= 5 ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi un canale', 'Add a channel', 'Añadir un canal')}</button>
+      <button type="button" class="btn secondario mini" data-dce="ben-spegni">${L('Lascia stare la schermata', 'Leave the screen alone', 'Deja la pantalla en paz')}</button>
+    </p>
+    <p class="suggerimento">${L('Cinque è il massimo che Discord mostra.', 'Five is the most Discord shows.', 'Cinco es lo máximo que enseña Discord.')}</p>`;
+}
+
+function _dceDisegnaPorta() {
+  const box = _g('dce-porta');
+  if (!box) return;
+  if (!_dcs?.preset) { box.innerHTML = _dceNienteTraccia(); return; }
+  const g = _dceIng();
+  const canali = _dceCanali();
+  const ruoli = _dceRuoli();
+  const tetto = _dcs?.max?.domande || 8;
+  const quanti = (g.canaliDiPartenza || []).length;
+  const serve = _dcs?.porta?.partenza || 7;
+  const domande = (g.domande || []).map((d, i) => `
+    <details class="dce-domanda" data-k="${d._k}"${i === 0 ? ' open' : ''}>
+      <summary>${esc(d.titolo || L('senza titolo', 'untitled', 'sin título'))} <span class="suggerimento">${(d.risposte || []).length} ${(d.risposte || []).length === 1 ? L('risposta', 'answer', 'respuesta') : L('risposte', 'answers', 'respuestas')}</span></summary>
+      <div class="riga-flessibile spazio-sopra">
+        <input type="text" data-dce="d-titolo" maxlength="100" value="${esc(d.titolo || '')}" placeholder="${esc(L('Cosa ti interessa?', 'What are you into?', '¿Qué te interesa?'))}" aria-label="${esc(L('La domanda', 'The question', 'La pregunta'))}">
+        <select data-dce="d-tipo" aria-label="${esc(L('Come si risponde', 'How it is answered', 'Cómo se responde'))}">
+          <option value="0"${Number(d.tipo) === 1 ? '' : ' selected'}>${L('a tasti', 'as buttons', 'con botones')}</option>
+          <option value="1"${Number(d.tipo) === 1 ? ' selected' : ''}>${L('a tendina', 'as a dropdown', 'con desplegable')}</option>
+        </select>
+        <button type="button" class="btn secondario mini" data-dce="d-via">${esc(L('Togli la domanda', 'Remove the question', 'Quitar la pregunta'))}</button>
+      </div>
+      <div class="riga-flessibile spazio-sopra">
+        <label class="tg-spunta"><input type="checkbox" data-dce="d-unasola"${d.unaSola ? ' checked' : ''}><span>${L('una risposta sola', 'one answer only', 'una sola respuesta')}</span></label>
+        <label class="tg-spunta"><input type="checkbox" data-dce="d-obbligo"${d.obbligatoria ? ' checked' : ''}><span>${L('si deve rispondere', 'must be answered', 'hay que responder')}</span></label>
+        <label class="tg-spunta"><input type="checkbox" data-dce="d-ingresso"${d.allIngresso === false ? '' : ' checked'}><span>${L('chiedila appena entra', 'ask it as they join', 'pregúntala al entrar')}</span></label>
+      </div>
+      <div class="dce-risposte spazio-sopra">${(d.risposte || []).map((r) => `
+        <details class="dce-risposta" data-k="${r._k}">
+          <summary>${esc(r.titolo || L('senza titolo', 'untitled', 'sin título'))} <span class="suggerimento">${(r.canali || []).length ? (r.canali || []).length + L(' canali', ' channels', ' canales') : L('niente', 'nothing', 'nada')}${(r.ruoli || []).length ? ' · ' + (r.ruoli || []).length + L(' ruoli', ' roles', ' roles') : ''}</span></summary>
+          <div class="riga-flessibile spazio-sopra">
+            <input type="text" data-dce="r-emoji" maxlength="8" value="${esc(r.emoji || '')}" placeholder="🙂" aria-label="${esc(L('Faccina', 'Emoji', 'Emoji'))}" class="dce-emoji">
+            <input type="text" data-dce="r-titolo" maxlength="50" value="${esc(r.titolo || '')}" placeholder="${esc(L('I giochi', 'Games', 'Los juegos'))}" aria-label="${esc(L('La risposta', 'The answer', 'La respuesta'))}">
+            <button type="button" class="btn secondario mini" data-dce="r-via">${esc(L('Togli', 'Remove', 'Quitar'))}</button>
+          </div>
+          <input type="text" data-dce="r-testo" maxlength="100" value="${esc(r.testo || '')}" placeholder="${esc(L('una riga di spiegazione, se serve', 'one line of explanation, if needed', 'una línea de explicación, si hace falta'))}" aria-label="${esc(L('Spiegazione', 'Explanation', 'Explicación'))}" class="spazio-sopra">
+          <p class="campo spazio-sopra">${L('Apre questi canali', 'Opens these channels', 'Abre estos canales')}</p>
+          ${_dceSpunte(canali, r.canali, 'r-canale', r._k)}
+          <p class="campo spazio-sopra">${L('E dà questi ruoli', 'And hands out these roles', 'Y da estos roles')}</p>
+          ${ruoli.length ? _dceSpunte(ruoli, r.ruoli, 'r-ruolo', r._k) : `<p class="suggerimento">${L('Non c’è ancora nessun ruolo nella traccia.', 'There is no role in the track yet.', 'Todavía no hay ningún rol en la plantilla.')}</p>`}
+        </details>`).join('') || `<p class="suggerimento">${L('Una domanda senza risposte non si può fare.', 'A question with no answers cannot be asked.', 'Una pregunta sin respuestas no se puede hacer.')}</p>`}
+      </div>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-dce="r-piu">${_bIco(ICO.piu)}${L('Aggiungi una risposta', 'Add an answer', 'Añadir una respuesta')}</button></p>
+    </details>`).join('');
+  const fuoriMano = _dcs && _dcs.pronto && _dcs.community === false
+    ? `<p class="tg-stato guaio">${L('Questo server non è di tipo Community, e la porta d’ingresso Discord la accende solo lì. Si cambia dalle impostazioni del server, su Discord.', 'This server is not a Community server, and Discord only turns the entrance door on there. You change it in the server settings, on Discord.', 'Este servidor no es de tipo Comunidad, y Discord solo enciende ahí la puerta de entrada. Se cambia en los ajustes del servidor, en Discord.')}</p>` : '';
+  box.innerHTML = fuoriMano + `
+    <label class="tg-spunta"><input type="checkbox" data-dce="acceso"${g.acceso ? ' checked' : ''}><span>${L('Accendi la porta d’ingresso', 'Turn the entrance door on', 'Enciende la puerta de entrada')}</span></label>
+    <p class="campo spazio-sopra">${L('I canali che vede chi entra, prima di rispondere', 'The channels people see when they arrive, before answering', 'Los canales que ve quien entra, antes de responder')}</p>
+    ${_dceSpunte(canali, g.canaliDiPartenza, 'partenza')}
+    <p class="suggerimento">${L('Ne hai scelti ', 'You picked ', 'Has elegido ')}<b>${quanti}</b>${L('. Per accendere la porta Discord ne vuole almeno ', '. To turn the door on Discord wants at least ', '. Para encender la puerta Discord quiere al menos ')}${serve}${L(', contando anche quelli che aprono le risposte qui sotto.', ', counting the ones the answers below open too.', ', contando también los que abren las respuestas de abajo.')}</p>
+    <div class="dce-domande spazio-sopra">${domande || `<p class="suggerimento">${L('Nessuna domanda, per ora.', 'No question, for now.', 'Ninguna pregunta, por ahora.')}</p>`}</div>
+    <p class="spazio-sopra"><button type="button" class="btn secondario" data-dce="d-piu"${(g.domande || []).length >= tetto ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi una domanda', 'Add a question', 'Añadir una pregunta')}</button></p>`;
+}
+
+function _dceDisegna() {
+  _dceDisegnaVerifica();
+  _dceDisegnaBenvenuto();
+  _dceDisegnaPorta();
+}
+
+function _dceLeggi() {
+  const p = _dcs?.preset;
+  if (!p) return;
+  const g = _dceIng();
+  const liv = _g('dce-liv');
+  if (liv) {
+    const s = { ...(p.server || {}) };
+    if (liv.value === '') delete s.verifica; else s.verifica = Number(liv.value);
+    p.server = s;
+  }
+  const porta = _g('dce-porta');
+  if (porta) {
+    g.acceso = !!porta.querySelector('[data-dce="acceso"]')?.checked;
+    g.canaliDiPartenza = [...porta.querySelectorAll('[data-dce="partenza"]')].filter((x) => x.checked).map((x) => x.value);
+    for (const nodo of porta.querySelectorAll('.dce-domanda')) {
+      const d = (g.domande || []).find((x) => String(x._k) === nodo.dataset.k);
+      if (!d) continue;
+      d.titolo = nodo.querySelector('[data-dce="d-titolo"]')?.value || '';
+      d.tipo = Number(nodo.querySelector('[data-dce="d-tipo"]')?.value) === 1 ? 1 : 0;
+      d.unaSola = !!nodo.querySelector('[data-dce="d-unasola"]')?.checked;
+      d.obbligatoria = !!nodo.querySelector('[data-dce="d-obbligo"]')?.checked;
+      d.allIngresso = !!nodo.querySelector('[data-dce="d-ingresso"]')?.checked;
+      for (const rn of nodo.querySelectorAll('.dce-risposta')) {
+        const r = (d.risposte || []).find((x) => String(x._k) === rn.dataset.k);
+        if (!r) continue;
+        r.titolo = rn.querySelector('[data-dce="r-titolo"]')?.value || '';
+        r.testo = rn.querySelector('[data-dce="r-testo"]')?.value || '';
+        r.emoji = rn.querySelector('[data-dce="r-emoji"]')?.value || '';
+        r.canali = [...rn.querySelectorAll('[data-dce="r-canale"]')].filter((x) => x.checked).map((x) => x.value);
+        r.ruoli = [...rn.querySelectorAll('[data-dce="r-ruolo"]')].filter((x) => x.checked).map((x) => x.value);
+      }
+    }
+  }
+  const ben = _g('dce-benvenuto');
+  if (ben && g.benvenuto) {
+    g.benvenuto.testo = ben.querySelector('[data-dce="ben-frase"]')?.value || '';
+    for (const nodo of ben.querySelectorAll('.dce-riga')) {
+      const c = (g.benvenuto.canali || []).find((x) => String(x._k) === nodo.dataset.k);
+      if (!c) continue;
+      c.canale = nodo.querySelector('[data-dce="ben-canale"]')?.value || '';
+      c.testo = nodo.querySelector('[data-dce="ben-testo"]')?.value || '';
+      c.emoji = nodo.querySelector('[data-dce="ben-emoji"]')?.value || '';
+    }
+  }
+  _dcsTocca();
+}
+
+function collegaChiEntra() {
+  const scheda = _g('scheda-dcentra');
+  if (!scheda || scheda.dataset.pronta) return;
+  scheda.dataset.pronta = '1';
+
+  scheda.addEventListener('change', (e) => {
+    if (!e.target.closest('[data-dce]')) return;
+    _dceLeggi();
+    if (['r-canale', 'r-ruolo', 'partenza'].includes(e.target.dataset.dce)) _dceDisegnaPorta();
+  });
+
+  scheda.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-dce]');
+    if (!b || b.tagName !== 'BUTTON') return;
+    const g = _dceIng();
+    if (!g) return;
+    const quale = b.dataset.dce;
+    if (quale === 'ben-accendi') { _dceLeggi(); g.benvenuto = { testo: '', canali: [] }; _dceDisegnaBenvenuto(); return; }
+    if (quale === 'ben-spegni') { g.benvenuto = null; _dceDisegnaBenvenuto(); _dcsTocca(); return; }
+    if (quale === 'ben-piu') {
+      _dceLeggi();
+      const primo = _dceCanali()[0];
+      if (!primo) { toast(L('Prima metti un canale nella traccia.', 'First put a channel in the track.', 'Primero pon un canal en la plantilla.')); return; }
+      g.benvenuto.canali.push({ _k: ++_dcsChiave, canale: primo.nome, testo: '', emoji: '' });
+      _dceDisegnaBenvenuto();
+      return;
+    }
+    if (quale === 'ben-via') {
+      _dceLeggi();
+      const k = b.closest('.dce-riga')?.dataset.k;
+      g.benvenuto.canali = g.benvenuto.canali.filter((x) => String(x._k) !== k);
+      _dceDisegnaBenvenuto();
+      return;
+    }
+    if (quale === 'd-piu') {
+      _dceLeggi();
+      g.domande.push({ _k: ++_dcsChiave, titolo: L('Cosa ti interessa?', 'What are you into?', '¿Qué te interesa?'),
+        tipo: 0, unaSola: false, obbligatoria: false, allIngresso: true,
+        risposte: [{ _k: ++_dcsChiave, titolo: '', testo: '', emoji: '', canali: [], ruoli: [] }] });
+      _dceDisegnaPorta();
+      return;
+    }
+    if (quale === 'd-via') {
+      const k = b.closest('.dce-domanda')?.dataset.k;
+      _dceLeggi();
+      g.domande = g.domande.filter((x) => String(x._k) !== k);
+      _dceDisegnaPorta();
+      return;
+    }
+    if (quale === 'r-piu' || quale === 'r-via') {
+      const nodo = b.closest('.dce-domanda');
+      const d = (g.domande || []).find((x) => String(x._k) === nodo?.dataset.k);
+      if (!d) return;
+      _dceLeggi();
+      if (quale === 'r-piu') {
+        if ((d.risposte || []).length >= (_dcs?.max?.risposte || 20)) {
+          toast(L('Più risposte di così non ne stanno.', 'No more answers fit than this.', 'No caben más respuestas.'));
+          return;
+        }
+        d.risposte.push({ _k: ++_dcsChiave, titolo: '', testo: '', emoji: '', canali: [], ruoli: [] });
+      } else {
+        const k = b.closest('.dce-risposta')?.dataset.k;
+        d.risposte = d.risposte.filter((x) => String(x._k) !== k);
+      }
+      _dceDisegnaPorta();
+    }
+  });
+
+  _g('dce-salva')?.addEventListener('click', () => conErrore(_dcsSalvaTraccia));
+  _g('dce-vedi')?.addEventListener('click', () => conErrore(() => _dcsVedi('dce')));
+  _g('dce-costruisci')?.addEventListener('click', () => conErrore(() => _dcsFai('dce')));
+}
+
+async function _dcsSalvaTraccia() {
+  await api('/api/streamer/dcserver', { method: 'POST', body: { preset: _dcsPulito() } });
+  toast(L('Salvato ✓', 'Saved ✓', 'Guardado ✓'));
+}
+
+async function _dcsVedi(pre) {
+  const preset = _dcsPulito();
+  await api('/api/streamer/dcserver', { method: 'POST', body: { preset } });
+  const d = await api('/api/streamer/dcserver/anteprima', { method: 'POST', body: { preset, chiave: _dist?.chiave || '' } });
+  _dcs = { ..._dcs, impronta: d.impronta, peso: d.peso, server: d.server };
+  const box = _g(pre + '-diff');
+  if (box) box.innerHTML = _dcsDiffHtml(d);
+  if (pre === 'dcs') _dcsMostraConfronto(d.consiglio, !!d.distruttivo);
+  const fai = _g(pre + '-costruisci');
+  if (fai) {
+    fai.hidden = !!d.vuota;
+    fai.textContent = d.distruttivo
+      ? L('Fai piazza pulita', 'Clear the board', 'Haz limpieza')
+      : L('Costruisci', 'Build it', 'Constrúyelo');
+  }
+  _dcsDici(pre + '-esito', '');
+}
+
+async function _dcsFai(pre) {
+  const corpo = { preset: _dcsPulito(), impronta: _dcs?.impronta || '', chiave: _dist?.chiave || '' };
+  if (_dist && _dcs?.peso?.scriviIlNome) {
+    const p = _dcs.peso;
+    const vivi = p.vivi.length
+      ? L('Di questi, ', 'Of these, ', 'De estos, ') + p.vivi.slice(0, 5).map((x) => '«' + x + '»').join(', ')
+        + L(' hanno parlato di recente.', ' have spoken recently.', ' han hablado hace poco.')
+      : '';
+    const detto = prompt(L('Sto per cancellare ', 'I am about to delete ', 'Estoy a punto de borrar ') + p.quanti
+      + L(' cose dal tuo server. ', ' things from your server. ', ' cosas de tu servidor. ') + vivi
+      + L('\n\nSu Discord non tornano. Scrivi il nome del server per confermare:', '\n\nOn Discord they do not come back. Type the server name to confirm:', '\n\nEn Discord no vuelven. Escribe el nombre del servidor para confirmar:'));
+    if (detto === null) return;
+    corpo.conferma = detto;
+  }
+  const e = await api('/api/streamer/dcserver/applica', { method: 'POST', body: corpo });
+  const p = [];
+  if (e.creati) p.push(e.creati + L(' creati', ' created', ' creados'));
+  if (e.sistemati) p.push(e.sistemati + L(' sistemati', ' fixed', ' arreglados'));
+  if (e.tolti) p.push(e.tolti + L(' cancellati', ' deleted', ' borrados'));
+  if (e.fermo === 'attesa') p.push(L('mi sono fermata: Discord chiede di aspettare, riprova fra poco', 'I stopped: Discord asks to wait, try again shortly', 'me he parado: Discord pide esperar, inténtalo en un rato'));
+  if (e.fermo === 'limite') p.push(L('mi sono fermata al limite delle mosse: premi di nuovo per il resto', 'I stopped at the move limit: press again for the rest', 'me he parado en el límite de movimientos: pulsa de nuevo para el resto'));
+  if ((e.errori || []).length) p.push(e.errori.join(' · '));
+  if (e.ruoliCreati) p.push(e.ruoliCreati + L(' ruoli creati', ' roles created', ' roles creados'));
+  if (e.ruoliSistemati) p.push(e.ruoliSistemati + L(' ruoli sistemati', ' roles fixed', ' roles arreglados'));
+  if (e.ruoliTolti) p.push(e.ruoliTolti + L(' ruoli cancellati', ' roles deleted', ' roles borrados'));
+  if (e.ingressoSistemato) p.push(L('la porta d’ingresso è a posto', 'the entrance door is set', 'la puerta de entrada está lista'));
+  if ((e.ingressoPersi || []).length) {
+    p.push(L('di questi non ho trovato traccia sul server, e le risposte che li nominavano li hanno persi: ', 'I found no trace of these on the server, and the answers naming them lost them: ', 'de estos no he encontrado rastro en el servidor, y las respuestas que los nombraban los han perdido: ')
+      + e.ingressoPersi.join(', '));
+  }
+  const nulla = !p.length && !(e.errori || []).length;
+  _dcsDici(pre + '-esito', p.length ? p.join(' · ')
+    : (nulla ? L('Non c’era niente da fare.', 'There was nothing to do.', 'No había nada que hacer.')
+      : L('Non è riuscito.', 'It did not go through.', 'No ha salido.')),
+    (e.errori || []).length || e.fermo ? 'guaio' : 'ok');
+  const fai = _g(pre + '-costruisci'); if (fai) fai.hidden = true;
+  const box = _g(pre + '-diff'); if (box) box.innerHTML = '';
   _dcsCaricaRegistro();
 }
 
@@ -17884,66 +18308,13 @@ function collegaDcServer() {
     _g('dcs-diff') && (_g('dcs-diff').innerHTML = '');
   });
 
-  _g('dcs-salva')?.addEventListener('click', () => conErrore(async () => {
-    await api('/api/streamer/dcserver', { method: 'POST', body: { preset: _dcsPulito() } });
-    toast(L('Salvato ✓', 'Saved ✓', 'Guardado ✓'));
-  }));
-
-  _g('dcs-vedi')?.addEventListener('click', () => conErrore(async () => {
-    const preset = _dcsPulito();
-    await api('/api/streamer/dcserver', { method: 'POST', body: { preset } });
-    const d = await api('/api/streamer/dcserver/anteprima', { method: 'POST', body: { preset, chiave: _dist?.chiave || '' } });
-    _dcs = { ..._dcs, impronta: d.impronta, peso: d.peso, server: d.server };
-    const box = _g('dcs-diff');
-    if (box) box.innerHTML = _dcsDiffHtml(d);
-    _dcsMostraConfronto(d.consiglio, !!d.distruttivo);
-    const fai = _g('dcs-costruisci');
-    if (fai) {
-      fai.hidden = !!d.vuota;
-      fai.textContent = d.distruttivo
-        ? L('Fai piazza pulita', 'Clear the board', 'Haz limpieza')
-        : L('Costruisci', 'Build it', 'Constrúyelo');
-    }
-    _dcsDici('dcs-esito', '');
-  }));
+  _g('dcs-salva')?.addEventListener('click', () => conErrore(_dcsSalvaTraccia));
+  _g('dcs-vedi')?.addEventListener('click', () => conErrore(() => _dcsVedi('dcs')));
 
   _g('dcs-entra')?.addEventListener('click', () => conErrore(_distEntra));
   _g('dcs-esci')?.addEventListener('click', () => _distEsci(false));
 
-  _g('dcs-costruisci')?.addEventListener('click', () => conErrore(async () => {
-    const corpo = { preset: _dcsPulito(), impronta: _dcs?.impronta || '', chiave: _dist?.chiave || '' };
-    if (_dist && _dcs?.peso?.scriviIlNome) {
-      const p = _dcs.peso;
-      const vivi = p.vivi.length
-        ? L('Di questi, ', 'Of these, ', 'De estos, ') + p.vivi.slice(0, 5).map((x) => '«' + x + '»').join(', ')
-          + L(' hanno parlato di recente.', ' have spoken recently.', ' han hablado hace poco.')
-        : '';
-      const detto = prompt(L('Sto per cancellare ', 'I am about to delete ', 'Estoy a punto de borrar ') + p.quanti
-        + L(' cose dal tuo server. ', ' things from your server. ', ' cosas de tu servidor. ') + vivi
-        + L('\n\nSu Discord non tornano. Scrivi il nome del server per confermare:', '\n\nOn Discord they do not come back. Type the server name to confirm:', '\n\nEn Discord no vuelven. Escribe el nombre del servidor para confirmar:'));
-      if (detto === null) return;
-      corpo.conferma = detto;
-    }
-    const e = await api('/api/streamer/dcserver/applica', { method: 'POST', body: corpo });
-    const p = [];
-    if (e.creati) p.push(e.creati + L(' creati', ' created', ' creados'));
-    if (e.sistemati) p.push(e.sistemati + L(' sistemati', ' fixed', ' arreglados'));
-    if (e.tolti) p.push(e.tolti + L(' cancellati', ' deleted', ' borrados'));
-    if (e.fermo === 'attesa') p.push(L('mi sono fermata: Discord chiede di aspettare, riprova fra poco', 'I stopped: Discord asks to wait, try again shortly', 'me he parado: Discord pide esperar, inténtalo en un rato'));
-    if (e.fermo === 'limite') p.push(L('mi sono fermata al limite delle mosse: premi di nuovo per il resto', 'I stopped at the move limit: press again for the rest', 'me he parado en el límite de movimientos: pulsa de nuevo para el resto'));
-    if ((e.errori || []).length) p.push(e.errori.join(' · '));
-    if (e.ruoliCreati) p.push(e.ruoliCreati + L(' ruoli creati', ' roles created', ' roles creados'));
-    if (e.ruoliSistemati) p.push(e.ruoliSistemati + L(' ruoli sistemati', ' roles fixed', ' roles arreglados'));
-    if (e.ruoliTolti) p.push(e.ruoliTolti + L(' ruoli cancellati', ' roles deleted', ' roles borrados'));
-    const nulla = !p.length && !(e.errori || []).length;
-    _dcsDici('dcs-esito', p.length ? p.join(' · ')
-      : (nulla ? L('Non c’era niente da fare.', 'There was nothing to do.', 'No había nada que hacer.')
-        : L('Non è riuscito.', 'It did not go through.', 'No ha salido.')),
-      (e.errori || []).length || e.fermo ? 'guaio' : 'ok');
-    _g('dcs-costruisci').hidden = true;
-    const box = _g('dcs-diff'); if (box) box.innerHTML = '';
-    _dcsCaricaRegistro();
-  }));
+  _g('dcs-costruisci')?.addEventListener('click', () => conErrore(() => _dcsFai('dcs')));
 
   const _rTrova = (nodo) => {
     const d = nodo.closest('.dcs-ruolo');
@@ -20460,6 +20831,7 @@ function caricaDatiScheda(id) {
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }
   if (id === 'dcavvisi') { _dcaCollega(); caricaDcAvvisi(); }
   if (id === 'dcserver') { collegaDcServer(); caricaDcServer(); }
+  if (id === 'dcentra') { collegaChiEntra(); caricaDcServer(); }
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'donazioni') { riempiDonazioni(); caricaStatoDonazioni(true); }
   if (id === 'grafiche') initGrafiche();

@@ -30,7 +30,7 @@
 // E il limite delle mosse non e' un troncamento silenzioso: quando si ferma lo
 // dice, e dice perche'.
 import * as api from './discord-api.js';
-import { differenza, differenzaRuoli, vuota, improntaDi, TIPI, nomeCanale, consiglioRuoli, applicaConsiglio } from './discord-preset.js';
+import { differenza, differenzaRuoli, differenzaIngresso, vuota, improntaDi, TIPI, nomeCanale, chiaveNome, consiglioRuoli, applicaConsiglio } from './discord-preset.js';
 import { risolvi, nonPuoDare } from './discord-catalogo.js';
 import { makeLog } from '../logger.js';
 
@@ -50,6 +50,7 @@ const MOTIVO = Object.freeze({
   ruoloSistemato: 'rimesso come dice la traccia',
   ruoloTolto: 'non e\' nella traccia, e la modalita\' distruttiva era accesa',
   server: 'impostazioni rimesse come dice la traccia',
+  ingresso: 'la porta d\'ingresso, come dice la traccia',
 });
 
 export const PAUSA_MS = 350;
@@ -109,6 +110,17 @@ export async function anteprima(token, guild, preset, { togliere = false } = {})
   };
   const tutto = differenza(foto, risolto, { togliere: true, puoiToccare });
   const d = togliere ? { ...tutto, ruoli: dRuoli } : { ...tutto, togli: [], ruoli: { ...dRuoli, togli: [] } };
+  // LA PORTA D'INGRESSO si legge solo se la traccia ne parla, e sono due
+  // chiamate in piu'. Farle sempre vorrebbe dire pagarle a ogni anteprima di
+  // ogni server, comprese le tracce che di ingresso non dicono una parola.
+  // E si legge sul preset A PAROLE, non su quello risolto: la porta nomina
+  // canali che stanno per nascere, e un id per loro non esiste ancora.
+  if (preset_?.ingresso) {
+    const [ben, ing] = await Promise.all([api.benvenuto(token, guild), api.ingresso(token, guild)]);
+    const ip = differenzaIngresso(preset_, foto, {
+      benvenuto: ben?.ok ? ben : null, ingresso: ing?.ok ? ing : null });
+    if (ip) d.ingresso = ip;
+  }
   return { ok: true, foto, differenza: d, fuori: tutto.togli, fuoriRuoli: dRuoli.togli,
     impronta: improntaDi(d), vuota: vuota(d), mancanti, nonPosso: dRuoli.nonPosso,
     fuoriPortata: tutto.fuoriPortata || [], consiglio };
@@ -155,6 +167,7 @@ export async function applica(token, guild, preset, { togliere = false, impronta
   const esito = { creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, nomiTolti: [],
     ruoliCreati: 0, ruoliSistemati: 0, ruoliTolti: 0, nomiRuoliTolti: [],
     serverSistemato: 0, serverDice: [],
+    ingressoSistemato: 0, ingressoDice: [], ingressoPersi: [],
     canaleAvvisi: d.avvisi?.id ? String(d.avvisi.id) : '' };
   const passo = async (fn, conta) => {
     if (esito.fermo) return null;
@@ -204,12 +217,18 @@ export async function applica(token, guild, preset, { togliere = false, impronta
     if (x?.ok && x.id) cat.set(v.nome.toLowerCase(), String(x.id));
     if (esito.fermo) break;
   }
+  // I CANALI CHE NASCONO, presi per nome mentre nascono. E' l'unico momento in
+  // cui il loro id si sa senza rileggere tutto il server, ed e' esattamente
+  // quello che serve alla porta d'ingresso: la traccia la scrive con i nomi
+  // proprio perche' questi canali, quando la si scriveva, non c'erano.
+  const nuoviCanali = new Map();
   for (const v of d.crea) {
     if (esito.fermo) break;
     if (v.tipo === TIPI.categoria) continue;
     const x = await passo(() => api.creaCanale(token, guild, {
       nome: v.nome, tipo: v.tipo, argomento: v.argomento, permessi: v.permessi, dentroId: dentroId(v.dentro),
     }, MOTIVO.creato), 'creati');
+    if (x?.ok && x.id) nuoviCanali.set(chiaveNome(v.nome), String(x.id));
     if (v.avvisi && x?.ok && x.id) esito.canaleAvvisi = String(x.id);
   }
 
@@ -239,6 +258,60 @@ export async function applica(token, guild, preset, { togliere = false, impronta
   if (!esito.fermo && d.server?.cambia) {
     const x = await passo(() => api.sistemaServer(token, guild, d.server.cambia, MOTIVO.server), 'serverSistemato');
     if (x?.ok) esito.serverDice = d.server.dice || [];
+  }
+
+  // LA PORTA D'INGRESSO, quando canali e ruoli esistono davvero.
+  //
+  // E' qui e non prima perche' qui i nomi diventano id: un canale creato due
+  // righe sopra ha un id solo adesso, e la porta parla proprio di quelli. Un
+  // nome che non si risolve non si inventa — quella voce cade, e si dice
+  // quale, invece di mandare a Discord un id a caso.
+  if (!esito.fermo && d.ingresso?.cambia) {
+    if (d.ingresso.blocco) aggiungi(esito.errori, d.ingresso.blocco);
+    else {
+      const canPerNome = new Map();
+      for (const c of (a.foto.canali || [])) {
+        if (Number(c.tipo) === TIPI.categoria) continue;
+        canPerNome.set(chiaveNome(c.nome), String(c.id));
+      }
+      for (const [k, v] of nuoviCanali) canPerNome.set(k, v);
+      const ruoPerNome = new Map();
+      for (const x of (a.foto.ruoli || [])) ruoPerNome.set(chiaveNome(x.nome), String(x.id));
+      for (const [k, v] of idVeri) ruoPerNome.set(chiaveNome(k.slice('nuovo:'.length)), v);
+      const persi = [];
+      const trova = (m) => (n) => {
+        const i = m.get(chiaveNome(n));
+        if (!i && !persi.includes(String(n))) persi.push(String(n));
+        return i || null;
+      };
+      const canId = trova(canPerNome);
+      const ruoId = trova(ruoPerNome);
+      const v = d.ingresso.cambia;
+      if (v.benvenuto) {
+        await passo(() => api.sistemaBenvenuto(token, guild, {
+          acceso: v.acceso,
+          testo: v.benvenuto.testo,
+          canali: (v.benvenuto.canali || []).map((c) => ({ ...c, canale: canId(c.canale) })).filter((c) => c.canale),
+        }, MOTIVO.ingresso), 'ingressoSistemato');
+      }
+      if (v.porta && !esito.fermo) {
+        await passo(() => api.sistemaIngresso(token, guild, {
+          acceso: v.acceso,
+          modo: v.modo,
+          canaliDiPartenza: (v.canaliDiPartenza || []).map(canId).filter(Boolean),
+          domande: (v.domande || []).map((q) => ({
+            ...q,
+            risposte: (q.risposte || []).map((r) => ({
+              ...r,
+              canali: (r.canali || []).map(canId).filter(Boolean),
+              ruoli: (r.ruoli || []).map(ruoId).filter(Boolean),
+            })),
+          })),
+        }, MOTIVO.ingresso), 'ingressoSistemato');
+      }
+      if (esito.ingressoSistemato) esito.ingressoDice = d.ingresso.dice || [];
+      esito.ingressoPersi = persi;
+    }
   }
 
   if (togliere) {
