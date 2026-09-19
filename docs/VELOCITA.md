@@ -115,10 +115,19 @@ risposte alla stessa domanda, e quale vinca lo decide il parser di turno. La
 regola di Caddy e' stata tolta: la cache la dichiara l'origine, che e' l'unico
 posto che sa cosa sta servendo.
 
-**Il service worker.** Con un indirizzo che non puo' cambiare contenuto puo'
-rispondere SENZA RETE: cache-first per tutto quello che porta un `?v=`, e le
-versioni vecchie dello stesso file si buttano quando ne arriva una nuova. Senza
-impronta sarebbe stata una scommessa; con l'impronta e' una proprieta'.
+**Il service worker resta com'era, ed e' una scelta.** Con l'impronta, farlo
+rispondere dalla cache sarebbe stato difendibile — quell'indirizzo non puo'
+cambiare contenuto. Ma non pagava il prezzo che chiedeva: la velocita' la danno
+gia' gli header (con `immutable` quei file il browser non li chiede proprio), e
+il worker ci avrebbe aggiunto solo l'offline, in cambio di un'eccezione a una
+regola nata da un danno vero — una copia locale che vinceva sulla rete aveva
+congelato il logo vecchio nella linguetta e nell'app installata, col file nuovo
+li' sul server e nessun errore da nessuna parte. Vedi
+`scripts/verifica-service-worker.mjs`, che quella regola la tiene.
+
+Il ragionamento sta scritto anche nel collaudo, perche' e' la parte che si
+perde: fra sei mesi la cache-first sembrera' di nuovo una buona idea a qualcuno
+che non sa del logo viola.
 
 Il collaudo (`test/contratto/impronte.test.mjs`) monta un'app Express vera con
 la STESSA funzione del server (`montaStatici`): un collaudo su una copia che gli
