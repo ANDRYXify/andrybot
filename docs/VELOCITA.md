@@ -71,6 +71,59 @@ il click e istantaneo. Sono escluse tutte le rotte con effetti collaterali
 (`/entra`, `/accedi`, `/auth/*`, `/api/*`, gli overlay, i webhook) e tutti i
 link che aprono in una nuova scheda.
 
+## 5. La cache: l'impronta nel nome
+
+**Il difetto, misurato sul sito vero.** Ogni file statico usciva con
+`Cache-Control: public, max-age=0`:
+
+| file | compresso | cache-control |
+|---|---|---|
+| `app.js` | 464 KB | `public, max-age=0` |
+| `style.css` | 30 KB | `public, max-age=0` |
+| `anime.css` | 23 KB | `public, max-age=0` |
+| `overlay-skin.css` | 12,5 KB | `public, max-age=0` |
+| `cerca.js` | 12 KB | `public, max-age=0` |
+
+`max-age=0` vuol dire: a ogni apertura il browser RICHIEDE tutti e dieci i file
+per sentirsi dire «non e' cambiato». Una decina di andate-e-ritorni prima di
+disegnare qualcosa, anche a una settimana dall'ultima pubblicazione. Da telefono
+e' proprio il mezzo secondo che si sente.
+
+**La cura non e' alzare i tempi.** Quella e' una scommessa, e si perde il giorno
+che pubblichi: chi ha in cache la versione di ieri se la tiene finche' scade. E'
+legare il NOME al CONTENUTO.
+
+`src/web/impronte.js` calcola l'impronta di ogni file servito (sha1 del
+contenuto, otto caratteri) e marca i riferimenti nei gusci HTML:
+`app.js` → `app.js?v=1a2b3c4d`. Poi `immutable` (un anno, e «non chiedere
+nemmeno se ricarico») si da' **solo a chi chiede con l'impronta giusta**. Chi
+arriva con una vecchia, o senza, riceve quello di prima — cosi' un indirizzo
+salvato nei preferiti un anno fa non resta incastrato su una pagina morta.
+
+Non e' una promessa che manteniamo stando attenti: `app.js?v=1a2b3c4d` o e'
+quel file li', o non esiste. E sparisce anche il `?v=` scritto a mano sulle
+icone, che era la stessa cosa fatta a memoria — e la memoria e' la parte che si
+rompe.
+
+**Dove entra.** Nei gusci, che il server costruisce come stringhe all'avvio
+(`gusciaDi`, `PANNELLO`). Quindi niente passo di build da ricordarsi, e nessuna
+cartella `dist` che possa andare fuori sincrono coi sorgenti.
+
+**Un solo Cache-Control per risposta.** Sui caratteri ne uscivano due in
+contraddizione — `immutable` messo da Caddy e `max-age=0` messo da noi: due
+risposte alla stessa domanda, e quale vinca lo decide il parser di turno. La
+regola di Caddy e' stata tolta: la cache la dichiara l'origine, che e' l'unico
+posto che sa cosa sta servendo.
+
+**Il service worker.** Con un indirizzo che non puo' cambiare contenuto puo'
+rispondere SENZA RETE: cache-first per tutto quello che porta un `?v=`, e le
+versioni vecchie dello stesso file si buttano quando ne arriva una nuova. Senza
+impronta sarebbe stata una scommessa; con l'impronta e' una proprieta'.
+
+Il collaudo (`test/contratto/impronte.test.mjs`) monta un'app Express vera con
+la STESSA funzione del server (`montaStatici`): un collaudo su una copia che gli
+somiglia non dice niente su quello che gira.
+
 ## Cosa NON e stato fatto, e perche
 
 `content-visibility: auto` sulle sezioni sotto la piega e il consiglio standard
@@ -78,6 +131,14 @@ per risparmiare lavoro di layout. **Qui e sbagliato:** applica
 `contain: paint`, che ritaglia il contenuto al proprio riquadro — e ci
 rimangiremmo esattamente le luci e le ombre appena liberate (vedi
 `docs/LUCI.md`). Il guadagno non vale il difetto.
+
+## Quello che resta grosso: app.js in un file solo
+
+1,45 MB minificati (464 compressi) in un unico file: il pannello non puo'
+disegnare niente finche' non e' arrivato tutto. Adesso almeno lo scarica una
+volta sola invece che a ogni apertura, ma resta il pezzo piu' pesante del sito.
+Spezzarlo vuol dire decidere cosa serve al primo disegno e cosa puo' arrivare
+dopo, ed e' un lavoro a se'.
 
 ## La vetrina non paga il conto del pannello
 
