@@ -222,10 +222,22 @@ sono la faccia del bot nei server degli streamer.
 ## Come lo streamer porta il bot nel suo server
 
 Un tasto. Il pannello chiede `/api/discord/invito`, che risponde con
-l'indirizzo di autorizzazione: `scope=bot`, `permissions=268435456` — **solo
-Gestire i ruoli**, perche' una lista lunga di permessi su una schermata di
-conferma e' il modo migliore per farsi dire di no, ed e' anche potere che non ci
-serve.
+l'indirizzo di autorizzazione: `scope=bot` e i permessi che servono davvero —
+**Gestire i ruoli** (questo gestore) e **Gestire i canali** (il costruttore del
+server, `docs/DISCORD-SERVER.md`). Due, non di piu': una lista lunga di permessi
+su una schermata di conferma e' il modo migliore per farsi dire di no, ed e'
+anche potere che non ci serve.
+
+Il numero non si scrive a mano — si compone da costanti con un nome
+(`PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS)`), e un cancello
+controlla che ognuna di quelle che chiediamo sia davvero usata da qualche parte
+nel codice: un permesso che non usiamo e' potere tenuto in tasca su casa
+d'altri.
+
+**Chi aveva invitato il bot prima** non ha «Gestire i canali»: i permessi si
+aggiornano reinvitando, cioe' ripassando da quel tasto. Non lo si lascia
+scoprire da un errore a meta' costruzione — il permesso si guarda prima, e la
+cura che si dice e' il tasto.
 
 Discord mostra **la sua** scelta del server: ci sono solo quelli dove lo
 streamer e' amministratore, ed e' Discord a garantirlo. Lui conferma, il bot
