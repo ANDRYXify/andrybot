@@ -100,16 +100,35 @@ export async function ruoli(token, guild) {
     position: Number(x?.position) || 0,
     managed: !!x?.managed,
     colore: Number(x?.color) || 0,
+    permessi: String(x?.permissions || '0'),
   })).filter((x) => x.id);
   return { ok: true, ruoli: lista };
 }
 
 // Il server: il nome, per far vedere allo streamer che si e' collegato al suo.
+// E con lui i quattro canali che Discord tiene per se' nei server Community: non
+// sono un elenco che manteniamo noi, e' il server stesso a dire quali sono, e
+// per questo non possono finire fra quelli da togliere.
 export async function server(token, guild) {
   if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
   const r = await chiama(token, `/guilds/${guild}`);
   if (!r.ok) return r;
-  return { ok: true, id: String(r.dati?.id || guild), nome: String(r.dati?.name || '') };
+  const d = r.dati || {};
+  const forse = (v) => (v ? String(v) : null);
+  return {
+    ok: true,
+    id: String(d.id || guild),
+    nome: String(d.name || ''),
+    guild: {
+      id: String(d.id || guild),
+      nome: String(d.name || ''),
+      rules_channel_id: forse(d.rules_channel_id),
+      public_updates_channel_id: forse(d.public_updates_channel_id),
+      safety_alerts_channel_id: forse(d.safety_alerts_channel_id),
+      system_channel_id: forse(d.system_channel_id),
+      community: (d.features || []).includes('COMMUNITY'),
+    },
+  };
 }
 
 // Chi e' il bot e che ruoli ha DENTRO quel server: da qui esce la sua altezza.
@@ -169,7 +188,47 @@ export const tokenDi = (riga) => String(riga?.token || '').trim() || String(conf
 // riscrive: chi volesse potrebbe puntare le proprie regole al server di un
 // altro streamer dove il nostro bot e' gia' dentro. Quello buono sta nella
 // RISPOSTA dello scambio del codice, che arriva da Discord a noi.
-export const PERMESSI_BOT = '268435456';   // solo MANAGE_ROLES
+// I permessi che chiediamo all'invito. Erano solo «Gestire i ruoli»; col
+// costruttore serve anche «Gestire i canali» — e chi ha gia' invitato il bot
+// deve ripassare dal tasto, perche' reinvitare aggiorna i permessi. Non lo si
+// lascia scoprire da un errore: `puoCanali()` lo dice prima.
+export const MANAGE_ROLES = 1n << 28n;      // 268435456
+export const MANAGE_CHANNELS = 1n << 4n;    // 16
+export const ADMINISTRATOR = 1n << 3n;      // 8
+export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS);
+
+// I permessi che il bot ha nel server: l'unione di quelli dei suoi ruoli. Si
+// calcolano da cose che chiediamo GIA' (l'elenco dei ruoli e quelli del bot),
+// senza una chiamata in piu'. Chi e' amministratore li ha tutti per definizione,
+// ed e' la regola di Discord, non una nostra semplificazione.
+export function permessiBot(ruoli, ruoliBot) {
+  const miei = new Set((ruoliBot || []).map(String));
+  let bits = 0n;
+  for (const r of (ruoli || [])) {
+    if (!miei.has(String(r?.id))) continue;
+    try { bits |= BigInt(r?.permessi ?? r?.permissions ?? 0); } catch { /* niente */ }
+  }
+  return bits;
+}
+
+export const puo = (bits, flag) => {
+  const b = typeof bits === 'bigint' ? bits : BigInt(bits || 0);
+  return (b & ADMINISTRATOR) === ADMINISTRATOR || (b & flag) === flag;
+};
+export const puoCanali = (bits) => puo(bits, MANAGE_CHANNELS);
+export const puoRuoli = (bits) => puo(bits, MANAGE_ROLES);
+
+// QUANDO, da un id. Dentro uno snowflake di Discord c'e' il momento in cui e'
+// nato: e' cosi' che si sa «questo canale non parla da otto mesi» SENZA leggere
+// un solo messaggio — l'ultimo messaggio di un canale e' un id, e l'id porta la
+// sua data. Niente occhi sulle conversazioni di nessuno, e nemmeno il permesso
+// per averli.
+const EPOCA = 1420070400000n;
+export function quandoDa(snowflake) {
+  const t = String(snowflake || '');
+  if (!/^[0-9]{5,24}$/.test(t)) return 0;
+  try { return Number((BigInt(t) >> 22n) + EPOCA); } catch { return 0; }
+}
 
 export function urlInvitoBot({ clientId, redirectUri, state }) {
   const p = new URLSearchParams({
@@ -264,6 +323,110 @@ export async function scambiaCodice({ clientId, clientSecret, redirectUri, codic
     log.warn('scambiaCodice:', e?.message || e);
     return { ok: false, errore: 'Discord irraggiungibile' };
   } finally { clearTimeout(to); }
+}
+
+// ------------------------------------------------------------ i canali
+// Di un canale si prende la FORMA, mai il contenuto: come si chiama, di che
+// tipo e', dove sta, che permessi ha scritti sopra. E una data: quella
+// dell'ultimo messaggio.
+//
+// Quella data non arriva da un messaggio letto. Arriva dall'ID dell'ultimo
+// messaggio, e dentro un id di Discord c'e' l'istante in cui e' nato. Cosi' il
+// costruttore puo' dire «questo canale non parla da otto mesi» senza aprire una
+// conversazione di nessuno — e senza chiedere il permesso per poterlo fare.
+// Non e' discrezione: e' che quel permesso non ce l'abbiamo proprio.
+const pulisciCanale = (x) => ({
+  id: String(x?.id || ''),
+  nome: String(x?.name || ''),
+  tipo: Number(x?.type) || 0,
+  parent_id: x?.parent_id ? String(x.parent_id) : null,
+  posizione: Number(x?.position) || 0,
+  argomento: String(x?.topic || ''),
+  overwrites: (Array.isArray(x?.permission_overwrites) ? x.permission_overwrites : []).map((o) => ({
+    id: String(o?.id || ''),
+    tipo: Number(o?.type) || 0,
+    allow: String(o?.allow || '0'),
+    deny: String(o?.deny || '0'),
+  })).filter((o) => o.id),
+  nato: quandoDa(x?.id),
+  ultimoMessaggio: quandoDa(x?.last_message_id),
+});
+
+export async function canali(token, guild) {
+  if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
+  const r = await chiama(token, `/guilds/${guild}/channels`);
+  if (!r.ok) return r;
+  return { ok: true, canali: (Array.isArray(r.dati) ? r.dati : []).map(pulisciCanale).filter((x) => x.id) };
+}
+
+// I permessi come li scrive Discord. Il `tipo` dice se quella riga parla di un
+// ruolo (0) o di una persona (1); noi useremo quasi sempre i ruoli, ma la riga
+// per la singola persona serve al varco d'ingresso.
+const permessiVerso = (p) => (Array.isArray(p) ? p : []).filter((x) => idOk(x?.id)).map((x) => ({
+  id: String(x.id),
+  type: Number(x.tipo ?? x.type ?? 0) === 1 ? 1 : 0,
+  allow: String(x.allow || '0'),
+  deny: String(x.deny || '0'),
+}));
+
+export async function creaCanale(token, guild, c) {
+  if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
+  const nome = String(c?.nome || '').trim().slice(0, 100);
+  if (!nome) return { ok: false, errore: 'un canale senza nome non si crea' };
+  const corpo = { name: nome, type: Number(c?.tipo) || 0 };
+  if (idOk(c?.dentroId)) corpo.parent_id = String(c.dentroId);
+  if (c?.argomento) corpo.topic = String(c.argomento).slice(0, 1024);
+  const ow = permessiVerso(c?.permessi);
+  if (ow.length) corpo.permission_overwrites = ow;
+  const r = await chiama(token, `/guilds/${guild}/channels`, { metodo: 'POST', corpo });
+  if (!r.ok) return r;
+  return { ok: true, id: String(r.dati?.id || ''), nome: String(r.dati?.name || nome) };
+}
+
+// Sistemare non e' sovrascrivere: si manda solo quello che cambia. L'unica
+// eccezione e' l'elenco dei permessi, che Discord sostituisce sempre per
+// intero — per questo chi chiama deve passare l'elenco GIA' fuso con quello di
+// adesso, e non solo i permessi nuovi (lo fa `fondiPermessi`).
+export async function sistemaCanale(token, id, cambia) {
+  if (!idOk(id)) return { ok: false, errore: 'id del canale non valido' };
+  const corpo = {};
+  if (cambia?.nome) corpo.name = String(cambia.nome).trim().slice(0, 100);
+  if (cambia?.argomento !== undefined) corpo.topic = String(cambia.argomento || '').slice(0, 1024);
+  if (cambia?.dentroId !== undefined) corpo.parent_id = idOk(cambia.dentroId) ? String(cambia.dentroId) : null;
+  if (Array.isArray(cambia?.permessi)) corpo.permission_overwrites = permessiVerso(cambia.permessi);
+  if (!Object.keys(corpo).length) return { ok: true, dati: null, niente: true };
+  return chiama(token, `/channels/${id}`, { metodo: 'PATCH', corpo });
+}
+
+export async function togliCanale(token, id) {
+  if (!idOk(id)) return { ok: false, errore: 'id del canale non valido' };
+  return chiama(token, `/channels/${id}`, { metodo: 'DELETE' });
+}
+
+// LA FOTOGRAFIA: com'e' il server adesso, nella forma esatta che il calcolo
+// della differenza si aspetta. Quattro letture, una volta sola, e da qui in poi
+// nessuno va piu' a chiedere niente a Discord per decidere: si decide su questa.
+// Se si leggesse un pezzo alla volta mentre si costruisce, il server potrebbe
+// cambiare a meta' strada e la differenza non sarebbe piu' quella mostrata.
+export async function fotografia(token, guild) {
+  const s = await server(token, guild);
+  if (!s.ok) return s;
+  const me = await io(token, guild);
+  if (!me.ok) return me;
+  const r = await ruoli(token, guild);
+  if (!r.ok) return r;
+  const c = await canali(token, guild);
+  if (!c.ok) return c;
+  const bits = permessiBot(r.ruoli, me.ruoli);
+  return {
+    ok: true,
+    guild: s.guild,
+    ruoli: r.ruoli,
+    canali: c.canali,
+    bot: { id: me.id, nome: me.nome, ruoli: me.ruoli },
+    puoCanali: puoCanali(bits),
+    puoRuoli: puoRuoli(bits),
+  };
 }
 
 // La prova che si fa dal pannello: il token vale, il bot e' dentro, e questi

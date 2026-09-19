@@ -184,3 +184,47 @@ test('un canale gia\' al posto giusto non si fa rubare il riconoscimento da uno 
   assert.deepEqual(d.sistema, [], 'quello dentro la categoria va gia\' bene');
   assert.deepEqual(d.togli.map((x) => x.id), ['99'], 'e l\'altro e\' un doppione, non l\'originale');
 });
+
+// ---- fondere i permessi --------------------------------------------------
+test('i permessi del preset si aggiungono a quelli che c\'erano, non li sostituiscono', () => {
+  // Discord, quando gli mandi l'elenco dei permessi di un canale, butta via
+  // quello di prima. Percio' l'elenco si compone qui, dove si vede com'e'
+  // adesso: chi mandasse solo i permessi del preset cancellerebbe quelli che lo
+  // streamer ha messo a mano, e non se ne accorgerebbe nessuno fino a dopo.
+  const R = '800000000000000001', S = '800000000000000002';
+  const attuale = { overwrites: [{ id: R, tipo: 0, allow: '2048', deny: '0' }] };
+  const fuso = P.fondiPermessi(attuale, [{ id: S, allow: '0', deny: '1024' }]);
+  assert.deepEqual(fuso.map((x) => x.id).sort(), [R, S].sort());
+  assert.equal(fuso.find((x) => x.id === R).allow, '2048', 'quello di prima resta com\'era');
+
+  const sopra = P.fondiPermessi(attuale, [{ id: R, allow: '0', deny: '2048' }]);
+  assert.equal(sopra.length, 1, 'e lo stesso ruolo non compare due volte');
+  assert.equal(sopra[0].deny, '2048', 'il preset ha l\'ultima parola su cio\' che nomina');
+});
+
+// ---- l'impronta ----------------------------------------------------------
+test('l\'impronta descrive cosa si fa, e cambia appena cambia', () => {
+  const vuoto = P.differenza(foto(), PRESET, { togliere: true });
+  assert.equal(P.improntaDi(vuoto), P.improntaDi(P.differenza(foto(), PRESET, { togliere: true })),
+    'la stessa differenza da\' sempre la stessa impronta');
+  const conUnPezzo = P.differenza(foto([cat('10', 'Benvenuto')]), PRESET, { togliere: true });
+  assert.notEqual(P.improntaDi(conUnPezzo), P.improntaDi(vuoto), 'un pezzo in meno da fare e\' un\'altra cosa');
+  // e soprattutto: quello che si CANCELLA pesa sull'impronta
+  const conDaTogliere = P.differenza(foto([testo('99', 'roba-vecchia')]), PRESET, { togliere: true });
+  assert.notEqual(P.improntaDi(conDaTogliere), P.improntaDi(vuoto), 'un canale in piu\' da cancellare cambia tutto');
+  assert.equal(P.improntaDi(P.differenza(foto(), PRESET)), P.improntaDi(vuoto),
+    'senza niente da togliere, normale e distruttivo fanno la stessa cosa e si somigliano');
+});
+
+test('di cio\' che si cancella si sa da quanto tace, e da quanto esiste', () => {
+  // Due date, non una: un canale che non ha mai parlato puo' essere nato ieri,
+  // e dirlo «morto da sempre» sarebbe una bugia che costa un canale.
+  const d = P.differenza(foto([
+    testo('99', 'roba-vecchia', null, { ultimoMessaggio: 1700000000000, nato: 1600000000000 }),
+    testo('98', 'appena-nato', null, { nato: 1750000000000 }),
+  ]), PRESET, { togliere: true });
+  const per = new Map(d.togli.map((x) => [x.nome, x]));
+  assert.equal(per.get('roba-vecchia').ultimoMessaggio, 1700000000000);
+  assert.equal(per.get('appena-nato').ultimoMessaggio, 0, 'mai parlato');
+  assert.equal(per.get('appena-nato').nato, 1750000000000, 'ma si sa quando e\' nato');
+});

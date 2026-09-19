@@ -23,6 +23,8 @@
 // motivo per cui le prove qui sotto possono descrivere casi che in un server
 // vero sarebbe scomodo costruire.
 
+import { createHash } from 'node:crypto';
+
 // I tipi di canale che sappiamo maneggiare, coi numeri che usa Discord.
 export const TIPI = Object.freeze({ testo: 0, voce: 2, categoria: 4, annunci: 5, forum: 15 });
 export const TIPI_NOME = Object.freeze({ 0: 'testo', 2: 'voce', 4: 'categoria', 5: 'annunci', 15: 'forum' });
@@ -133,6 +135,29 @@ function permessiDiversi(voluto, attuale) {
   return false;
 }
 
+// I PERMESSI CHE IL CANALE AVRA'. Discord non sa aggiungere una riga di
+// permessi: quando gliene mandi l'elenco, sostituisce quello che c'era. Mandargli
+// solo i permessi del preset cancellerebbe tutti gli altri — quelli che lo
+// streamer ha messo a mano, quelli di un altro bot, quelli di un ruolo che non
+// ci riguarda.
+//
+// Quindi l'elenco da mandare si compone QUI, dove abbiamo sotto gli occhi
+// com'e' adesso: si parte da quello che c'e' e si sostituiscono soltanto le
+// righe che il preset nomina. Non e' una precauzione, e' l'unico modo di dire a
+// Discord «cambia questo» usando un verbo che vuol dire «metti tutto».
+export function fondiPermessi(attuale, voluti) {
+  const riga = (o) => ({
+    id: String(o?.id || ''),
+    tipo: Number(o?.tipo ?? o?.type ?? 0) === 1 ? 1 : 0,
+    allow: String(o?.allow || '0'),
+    deny: String(o?.deny || '0'),
+  });
+  const fuori = new Map();
+  for (const o of (attuale?.overwrites || [])) { const r = riga(o); if (r.id) fuori.set(r.id, r); }
+  for (const o of (voluti || [])) { const r = riga(o); if (r.id) fuori.set(r.id, r); }
+  return [...fuori.values()];
+}
+
 // LA DIFFERENZA. `togliere` decide se ne fa parte anche la terza direzione.
 export function differenza(foto, preset, { togliere = false } = {}) {
   const idx = indice(foto);
@@ -163,7 +188,7 @@ export function differenza(foto, preset, { togliere = false } = {}) {
     const gia = trovati.get(v);
     if (!gia) { crea.push({ ...v, perche: 'non c\'e\'' }); continue; }
     const cambia = {};
-    if (permessiDiversi(v.permessi, gia)) cambia.permessi = v.permessi;
+    if (permessiDiversi(v.permessi, gia)) cambia.permessi = fondiPermessi(gia, v.permessi);
     if (v.argomento && String(gia.argomento || '') !== v.argomento) cambia.argomento = v.argomento;
     // Un canale finito fuori dalla sua categoria si rimette dentro: e' la cosa
     // che succede davvero quando qualcuno trascina per sbaglio.
@@ -180,8 +205,11 @@ export function differenza(foto, preset, { togliere = false } = {}) {
       if (preso.has(String(c.id))) continue;
       if (fuoriMano.has(String(c.id))) continue;
       togli.push({ id: String(c.id), nome: c.nome, tipo: c.tipo,
-        // il PESO, per l'anteprima: quanto costa perderlo
+        // il PESO, per l'anteprima: quanto costa perderlo. Un canale che non ha
+        // mai parlato non e' per forza morto: puo' essere nato ieri. Percio'
+        // vanno tutte e due le date, e chi mostra sceglie quale raccontare.
         ultimoMessaggio: Number(c.ultimoMessaggio) || 0,
+        nato: Number(c.nato) || 0,
         dentro: idx.dentroDi(c) });
     }
   }
@@ -192,3 +220,25 @@ export function differenza(foto, preset, { togliere = false } = {}) {
 // «Non c'e' niente da fare» detto una volta sola, cosi' chi chiama non deve
 // contare tre elenchi per sapere se applicare due volte ha fatto qualcosa.
 export const vuota = (d) => !(d?.crea?.length || d?.sistema?.length || d?.togli?.length);
+
+// L'IMPRONTA DI QUELLO CHE HAI VISTO.
+//
+// Fra l'anteprima e il «sì, fallo» passa del tempo, e quel server non e' fermo:
+// qualcuno puo' creare un canale, trascinarne un altro, scriverci dentro. Se
+// applicassimo «quello che avevi chiesto» su un server che nel frattempo e'
+// diventato un altro, la conferma sarebbe una firma in bianco — e nel modo
+// distruttivo la firma in bianco autorizza a cancellare.
+//
+// Percio' l'anteprima porta con se' l'impronta di CIO' CHE FA. Chi applica non
+// riusa quell'elenco: rifa' la fotografia, ricalcola la differenza, e se
+// l'impronta non coincide si ferma e la rimostra. Non e' una conferma in piu'
+// da cliccare: e' che «lo stesso» ha una definizione, e la macchina la sa
+// controllare meglio di un occhio.
+export function improntaDi(d) {
+  const righe = [
+    ...(d?.crea || []).map((x) => `c|${x.tipo}|${x.dentro || ''}/${x.nome}`),
+    ...(d?.sistema || []).map((x) => `s|${x.id}|${Object.keys(x).filter((k) => !['id', 'nome', 'tipo'].includes(k)).sort().join(',')}`),
+    ...(d?.togli || []).map((x) => `x|${x.id}`),
+  ].sort();
+  return createHash('sha1').update(righe.join('\n')).digest('hex').slice(0, 12);
+}
