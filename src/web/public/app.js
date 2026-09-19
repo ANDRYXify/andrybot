@@ -2758,6 +2758,7 @@ const ICONA = {
   ruoli:       _ico('<path d="M12 3 5 6v5c0 4.4 3 8.4 7 10 4-1.6 7-5.6 7-10V6l-7-3Z"/><circle cx="12" cy="10" r="2.2"/><path d="M8.6 16.2a3.6 3.6 0 0 1 6.8 0"/>'),
   grafiche:    _ico('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5a2 2 0 0 0-2.8 0L4 22"/>'),
   dirette:     _ico('<path d="M3 13h3l3-7 4 14 3-9 2 4h3"/>'),
+  calendario:  _ico('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M8 14h3"/>'),
   sottoscrizione: _ico('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 14.5h4"/>'),
   pagina:      _ico('<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.8 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.8-1.7"/>'),
   donazioni:   _ico('<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'),
@@ -17271,6 +17272,35 @@ function _dcaCollega() {
     clearTimeout(d._t);
     d._t = setTimeout(() => salva(d), 700);
   });
+
+  s.addEventListener('click', (e) => {
+    if (e.target.closest('#dcev-salva')) {
+      conErrore(async () => {
+        await api('/api/streamer/dcserver/eventi', { method: 'POST', body: { conf: _dcevLeggi() } });
+        await caricaDcEventi();
+        toast(L('Salvato \u2713', 'Saved \u2713', 'Guardado \u2713'));
+      });
+      return;
+    }
+    if (e.target.closest('#dcev-ora')) {
+      conErrore(async () => {
+        await api('/api/streamer/dcserver/eventi', { method: 'POST', body: { conf: _dcevLeggi() } });
+        const r = await api('/api/streamer/dcserver/eventi/sincronizza', { method: 'POST', body: {} });
+        const p = [];
+        if (r.creati) p.push(r.creati + L(' messi', ' added', ' puestos'));
+        if (r.sistemati) p.push(r.sistemati + L(' rimessi a posto', ' fixed', ' arreglados'));
+        if (r.tolti) p.push(r.tolti + L(' tolti', ' removed', ' quitados'));
+        if ((r.errori || []).length) p.push(r.errori.join(' \u00b7 '));
+        const n = _g('dcev-stato');
+        if (n) {
+          n.className = 'tg-stato' + ((r.errori || []).length ? ' guaio' : ' ok');
+          n.textContent = p.length ? p.join(' \u00b7 ') : L('Erano gi\u00e0 a posto.', 'They were already fine.', 'Ya estaban bien.');
+          n.hidden = false;
+        }
+        await caricaDcEventi();
+      });
+    }
+  });
 }
 
 function pannelloDcAvvisi() {
@@ -17285,7 +17315,77 @@ function pannelloDcAvvisi() {
       <h2>${_hIco(ICO.utenti)}${L('Chi annunciare', 'Who to announce', 'A quién anunciar')}</h2>
       <p>${L('Oltre a te: altri streamer, e se vuoi chi fa parte della community. La lista è la stessa che vedi su Telegram — il bot chiede a Twitch una volta sola come stanno — ma che farne lo decidi qui, per il tuo server.', 'Besides you: other streamers, and if you want, the community. The list is the same one you see on Telegram — the bot asks Twitch once how they are doing — but what to do with it you decide here, for your server.', 'Además de ti: otros streamers y, si quieres, la comunidad. La lista es la misma que ves en Telegram — el bot pregunta a Twitch una sola vez cómo están — pero qué hacer con ella lo decides aquí, para tu servidor.')}</p>
       <div id="dca-chi" class="spazio-sopra"></div>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.calendario)}${L('Gli appuntamenti sul calendario', 'The appointments on the calendar', 'Las citas en el calendario')}</h2>
+      <p>${L('L\u2019avviso dice che sei partito. Questo dice quando torni: la tua settimana finisce sul calendario del server, e chi ti segue mette il promemoria.', 'The alert says you have started. This says when you are back: your week lands on the server calendar, and your people set a reminder.', 'El aviso dice que has empezado. Esto dice cu\u00e1ndo vuelves: tu semana acaba en el calendario del servidor, y quien te sigue pone el recordatorio.')}</p>
+      <div id="dcev" class="spazio-sopra"><p class="suggerimento">${L('Carico\u2026', 'Loading\u2026', 'Cargando\u2026')}</p></div>
     </div>`);
+}
+
+const GIORNI_CORTI = () => [L('lun', 'Mon', 'lun'), L('mar', 'Tue', 'mar'), L('mer', 'Wed', 'mi\u00e9'),
+  L('gio', 'Thu', 'jue'), L('ven', 'Fri', 'vie'), L('sab', 'Sat', 's\u00e1b'), L('dom', 'Sun', 'dom')];
+
+let _dcev = null;
+
+function _dcevDisegna() {
+  const box = _g('dcev');
+  if (!box || !_dcev) return;
+  const c = _dcev.conf || {};
+  const gg = GIORNI_CORTI();
+  const fasce = _dcev.fasce || [];
+  box.innerHTML = `
+    <label class="tg-spunta"><input type="checkbox" id="dcev-on"${c.acceso ? ' checked' : ''}><span>${L('Metti la mia settimana sul calendario del server', 'Put my week on the server calendar', 'Pon mi semana en el calendario del servidor')}</span></label>
+    ${fasce.length ? `<p class="campo spazio-sopra">${L('Dalla tua programmazione verrebbero fuori questi', 'From your schedule these would come out', 'De tu programaci\u00f3n saldr\u00edan estos')}</p>
+      <ul class="lista-voci">${fasce.map((f) => `<li>${esc(f.titolo)} <span class="suggerimento">${esc(f.giorni.map((i) => gg[i]).join(', '))} \u00b7 ${esc(f.ora)}</span></li>`).join('')}</ul>`
+      : `<p class="tg-stato spazio-sopra">${L('La programmazione della settimana \u00e8 vuota, e senza quella non c\u2019\u00e8 niente da mettere sul calendario. Si scrive una volta sola, nelle Grafiche.', 'Your weekly schedule is empty, and without it there is nothing to put on the calendar. You write it once, in Graphics.', 'Tu programaci\u00f3n semanal est\u00e1 vac\u00eda, y sin ella no hay nada que poner en el calendario. Se escribe una sola vez, en Gr\u00e1ficas.')}
+        <button type="button" class="btn secondario mini" data-vai="grafiche">${L('Vai a scriverla', 'Go write it', 'Ve a escribirla')}</button></p>`}
+    <div class="griglia-campi spazio-sopra">
+      <div class="dcs-imp-campo">
+        <label class="campo" for="dcev-titolo">${L('Come si chiamano', 'What they are called', 'C\u00f3mo se llaman')}</label>
+        <input type="text" id="dcev-titolo" maxlength="100" value="${esc(c.titolo || '')}" placeholder="${esc(L('Diretta: {cosa}', 'Live: {cosa}', 'Directo: {cosa}'))}">
+        <span class="suggerimento">${L('{cosa} diventa quello che fai quel giorno. Lasciandolo vuoto, il titolo \u00e8 quello.', '{cosa} becomes what you do that day. Leave it empty and the title is just that.', '{cosa} se convierte en lo que haces ese d\u00eda. D\u00e9jalo vac\u00edo y el t\u00edtulo es eso.')}</span>
+      </div>
+      <div class="dcs-imp-campo">
+        <label class="campo" for="dcev-luogo">${L('Dove succede', 'Where it happens', 'D\u00f3nde pasa')}</label>
+        <input type="text" id="dcev-luogo" maxlength="100" value="${esc(c.luogo || '')}" placeholder="https://twitch.tv/...">
+        <span class="suggerimento">${L('Il link del tuo canale: Discord lo mette nel tasto dell\u2019appuntamento.', 'Your channel link: Discord puts it in the appointment button.', 'El enlace de tu canal: Discord lo pone en el bot\u00f3n de la cita.')}</span>
+      </div>
+      <div class="dcs-imp-campo">
+        <label class="campo" for="dcev-dura">${L('Quanto durano di solito', 'How long they usually last', 'Cu\u00e1nto duran normalmente')}</label>
+        <select id="dcev-dura" class="campo-largo">
+          ${[[60, L('un\u2019ora', 'one hour', 'una hora')], [120, L('due ore', 'two hours', 'dos horas')],
+            [180, L('tre ore', 'three hours', 'tres horas')], [240, L('quattro ore', 'four hours', 'cuatro horas')],
+            [360, L('sei ore', 'six hours', 'seis horas')]].map(([n, t]) =>
+            `<option value="${n}"${Number(c.dura) === n ? ' selected' : ''}>${esc(t)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <label class="campo spazio-sopra" for="dcev-desc">${L('Due righe di descrizione, se ti va', 'A couple of lines of description, if you feel like it', 'Dos l\u00edneas de descripci\u00f3n, si te apetece')}</label>
+    <textarea id="dcev-desc" rows="2" maxlength="1000">${esc(c.descrizione || '')}</textarea>
+    ${(_dcev.nostri || []).length ? `<p class="suggerimento spazio-sopra">${L('Adesso sul server ce ne sono ', 'Right now the server has ', 'Ahora en el servidor hay ')}<b>${_dcev.nostri.length}</b>${L(' messi da me. Quelli che hai scritto a mano non li tocco: Discord non me lo lascia fare.', ' put there by me. The ones you wrote by hand I do not touch: Discord will not let me.', ' puestos por m\u00ed. Los que has escrito a mano no los toco: Discord no me deja.')}</p>` : ''}
+    <p class="spazio-sopra riga-flessibile">
+      <button class="btn secondario" id="dcev-salva">${L('Salva', 'Save', 'Guardar')}</button>
+      <button class="btn secondario" id="dcev-ora">${L('Mettili adesso', 'Put them now', 'Ponlos ahora')}</button>
+    </p>
+    <p class="suggerimento">${L('Poi ci penso io: se cambi la programmazione, o arriva l\u2019ora legale, li rimetto a posto da sola.', 'Then I take care of it: if you change the schedule, or the clocks change, I put them back myself.', 'Luego me encargo yo: si cambias la programaci\u00f3n, o llega el cambio de hora, los arreglo sola.')}</p>
+    <p class="tg-stato" id="dcev-stato" hidden></p>`;
+}
+
+const _dcevLeggi = () => ({
+  acceso: !!_g('dcev-on')?.checked,
+  titolo: _g('dcev-titolo')?.value || '',
+  descrizione: _g('dcev-desc')?.value || '',
+  luogo: _g('dcev-luogo')?.value || '',
+  dura: Number(_g('dcev-dura')?.value) || 120,
+  fuso: (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; } })(),
+});
+
+async function caricaDcEventi() {
+  try { _dcev = await api('/api/streamer/dcserver/eventi'); } catch { _dcev = null; }
+  if (!_dcev) { const b = _g('dcev'); if (b) b.innerHTML = `<p class="tg-stato guaio">${L('Non riesco a leggerli.', 'I can\u2019t read them.', 'No consigo leerlos.')}</p>`; return; }
+  _dcevDisegna();
 }
 
 function fasciaDistruttiva(pre) {
@@ -21158,7 +21258,7 @@ function caricaDatiScheda(id) {
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }
-  if (id === 'dcavvisi') { _dcaCollega(); caricaDcAvvisi(); }
+  if (id === 'dcavvisi') { _dcaCollega(); caricaDcAvvisi(); caricaDcEventi(); }
   if (id === 'dcserver') { collegaDcServer(); caricaDcServer(); }
   if (id === 'dcentra') { collegaChiEntra(); caricaDcServer(); }
   if (id === 'dcfiltro') { collegaFiltro(); caricaDcServer(); }

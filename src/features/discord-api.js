@@ -322,10 +322,20 @@ export const MANAGE_GUILD = 1n << 5n;       // 32
 export const VIEW_CHANNEL = 1n << 10n;      // 1024
 export const SEND_MESSAGES = 1n << 11n;     // 2048
 export const EMBED_LINKS = 1n << 14n;       // 16384
+// CREARE APPUNTAMENTI, e toccare SOLO I PROPRI.
+//
+// Discord ha due permessi diversi: MANAGE_EVENTS (gia' fra quelli che il bot
+// passa ai moderatori) serve a modificare gli appuntamenti DI TUTTI;
+// CREATE_EVENTS serve a crearne, e a modificare o cancellare solo quelli che
+// hai creato tu. A noi serve il secondo, ed e' anche quello che ci fa un
+// regalo: gli appuntamenti scritti a mano dallo streamer non li possiamo
+// toccare nemmeno volendo. Non e' una promessa nostra, e' Discord a impedirlo.
+export const CREATE_EVENTS = 1n << 44n;
 // QUELLO CHE SI CHIEDE ALL'INVITO, e perche' e' piu' di quanto il bot usa.
 //
-// I primi cinque il bot li adopera lui: i ruoli e i canali per costruire, e i
-// tre per scrivere l'avviso di diretta nel canale.
+// Quelli con un nome proprio il bot li adopera lui: i ruoli e i canali per
+// costruire, i tre per scrivere l'avviso di diretta nel canale, e quello che
+// mette gli appuntamenti sul calendario.
 //
 // `DA_DARE` e' un'altra cosa, e va detta chiara: sono i privilegi che il bot
 // NON usa mai e tiene solo per poterli PASSARE ai ruoli che gli chiedi di
@@ -338,7 +348,7 @@ export const EMBED_LINKS = 1n << 14n;       // 16384
 // (`scripts/verifica-poteri.mjs`) che controlla che da nessuna parte, in tutto
 // il codice, si chiami una porta di Discord che quei poteri li ESERCITA.
 // Distribuirli si', usarli mai.
-export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | MANAGE_GUILD | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | DA_DARE);
+export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | MANAGE_GUILD | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | CREATE_EVENTS | DA_DARE);
 
 // I PIENI POTERI, e perche' non sono quelli di prima.
 //
@@ -357,7 +367,7 @@ export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | MANAGE_GUILD
 // La lista di prima resta dentro apposta: se un giorno qualcuno toglie
 // l'Amministratore al nostro ruolo, il bot non resta nudo, torna a fare quello
 // che faceva. Un solo bit, e quel giorno smetterebbe di funzionare in silenzio.
-export const PERMESSI_PIENI = String(ADMINISTRATOR | MANAGE_ROLES | MANAGE_CHANNELS | MANAGE_GUILD | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | DA_DARE);
+export const PERMESSI_PIENI = String(ADMINISTRATOR | MANAGE_ROLES | MANAGE_CHANNELS | MANAGE_GUILD | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | CREATE_EVENTS | DA_DARE);
 
 // I permessi che il bot ha nel server: l'unione di quelli dei suoi ruoli. Si
 // calcolano da cose che chiediamo GIA' (l'elenco dei ruoli e quelli del bot),
@@ -388,6 +398,11 @@ export const puoIncorniciare = (bits) => puo(bits, EMBED_LINKS);
 // funzionerebbe fino all'ultimo passo e poi non entrerebbe nessuno. Si dice
 // prima, e si rimedia reinvitandolo.
 export const puoFarEntrare = (bits) => puo(bits, CREATE_INSTANT_INVITE);
+// Puo' mettere gli appuntamenti sul calendario del server? Stessa storia, e per
+// la stessa ragione: chi ha invitato il bot prima che il calendario esistesse
+// non gli ha dato CREATE_EVENTS, e senza questa riga il giro delle sei ore
+// busserebbe a una porta chiusa due volte al giorno, in silenzio.
+export const puoAppuntamenti = (bits) => puo(bits, CREATE_EVENTS);
 
 // COSA PUO' IL BOT DENTRO UN CANALE, che non e' quello che puo' nel server.
 //
@@ -606,6 +621,82 @@ export async function sistemaIngresso(token, guild, v, perche = '') {
     })),
   };
   return chiama(token, `/guilds/${guild}/onboarding`, { metodo: 'PUT', corpo, perche });
+}
+
+// ------------------------------------------------------ gli appuntamenti
+//
+// Un appuntamento e' la riga che su Discord dice «giovedì alle 21». Il nostro e'
+// sempre di tipo ESTERNO: la diretta non succede in un canale vocale del
+// server, succede sul canale — quindi niente `channel_id`, un LUOGO (il link) e
+// una FINE, che per gli esterni Discord pretende.
+//
+// I GIORNI SI CONTANO DA LUNEDI', sia da noi che da Discord (MONDAY = 0). Non
+// e' una coincidenza da sfruttare in silenzio: e' scritto qui perche' il giorno
+// che una delle due parti cambiasse, si sappia dove guardare.
+export const EVENTO_ESTERNO = 3;
+export const RIPETI_SETTIMANA = 2;
+
+const iso = (d) => new Date(d).toISOString();
+
+export async function eventi(token, guild) {
+  if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
+  const r = await chiama(token, `/guilds/${guild}/scheduled-events`);
+  if (!r.ok) return r;
+  return {
+    ok: true,
+    eventi: (Array.isArray(r.dati) ? r.dati : []).map((x) => ({
+      id: String(x?.id || ''),
+      nome: String(x?.name || ''),
+      descrizione: String(x?.description || ''),
+      luogo: String(x?.entity_metadata?.location || ''),
+      inizio: String(x?.scheduled_start_time || ''),
+      fine: String(x?.scheduled_end_time || ''),
+      tipo: Number(x?.entity_type) || 0,
+      diChi: String(x?.creator_id || ''),
+      giorni: (x?.recurrence_rule?.by_weekday || []).map(Number).filter((n) => n >= 0 && n <= 6),
+      ogni: Number(x?.recurrence_rule?.frequency),
+    })).filter((x) => x.id),
+  };
+}
+
+function corpoEvento(v) {
+  const corpo = {
+    name: String(v?.nome || '').slice(0, 100) || 'Diretta',
+    description: String(v?.descrizione || '').slice(0, 1000) || undefined,
+    privacy_level: 2,                       // GUILD_ONLY: l'unico che Discord accetta
+    entity_type: EVENTO_ESTERNO,
+    channel_id: null,
+    entity_metadata: { location: String(v?.luogo || '').slice(0, 100) },
+    scheduled_start_time: iso(v?.inizio),
+    scheduled_end_time: iso(v?.fine),
+  };
+  const giorni = (v?.giorni || []).map(Number).filter((n) => n >= 0 && n <= 6);
+  if (giorni.length) {
+    corpo.recurrence_rule = {
+      start: iso(v?.inizio),
+      frequency: RIPETI_SETTIMANA,
+      interval: 1,
+      by_weekday: [...new Set(giorni)].sort((a, b) => a - b),
+    };
+  }
+  return corpo;
+}
+
+export async function creaEvento(token, guild, v, perche = '') {
+  if (!idOk(guild)) return { ok: false, errore: 'id del server non valido' };
+  const r = await chiama(token, `/guilds/${guild}/scheduled-events`, { metodo: 'POST', corpo: corpoEvento(v), perche });
+  if (!r.ok) return r;
+  return { ok: true, id: String(r.dati?.id || '') };
+}
+
+export async function sistemaEvento(token, guild, id, v, perche = '') {
+  if (!idOk(guild) || !idOk(id)) return { ok: false, errore: 'id non valido' };
+  return chiama(token, `/guilds/${guild}/scheduled-events/${id}`, { metodo: 'PATCH', corpo: corpoEvento(v), perche });
+}
+
+export async function togliEvento(token, guild, id, perche = '') {
+  if (!idOk(guild) || !idOk(id)) return { ok: false, errore: 'id non valido' };
+  return chiama(token, `/guilds/${guild}/scheduled-events/${id}`, { metodo: 'DELETE', perche });
 }
 
 // ------------------------------------------------------ la moderazione automatica

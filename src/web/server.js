@@ -87,6 +87,7 @@ import { peso as pesoDanno } from '../features/discord-peso.js';
 import * as dcCatalogo from '../features/discord-catalogo.js';
 import * as dcCostruisci from '../features/discord-costruisci.js';
 import * as dcPreset from '../features/discord-preset.js';
+import * as dcEventi from '../features/discord-eventi.js';
 import * as instagram from '../features/instagram.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
@@ -4749,6 +4750,53 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       ingresso: dcCatalogo.portaPronta(preset),
       filtro: dcCatalogo.filtroPronto(preset) });
   });
+
+  // ── Gli appuntamenti sul calendario del server ──
+  //
+  // Non passano dal costruttore, e non e' una dimenticanza: un appuntamento non
+  // descrive com'e' fatto il server, descrive quando ci sei. Cambia da solo —
+  // cambi il palinsesto, arriva l'ora legale — e deve rimettersi a posto senza
+  // che nessuno prema niente. Il costruttore invece parte quando lo dici tu.
+  app.get('/api/streamer/dcserver/eventi', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const { token, guild, pronto } = dcTokenE(login);
+    const s = streamers.get(login);
+    const conf = dcEventi.normalizzaEventi(s?.settings?.discordEventi);
+    const giorni = s?.settings?.grafiche?.giorni || [];
+    // Le fasce si calcolano qui e non nel pannello: la regola che raggruppa il
+    // palinsesto sta in un posto solo, e il pannello mostra quello che uscira'.
+    const fasce = dcEventi.fasceDa(giorni).map((f) => ({ ...f, titolo: dcEventi.titoloDi(conf, f) }));
+    let nostri = [];
+    if (pronto) {
+      const [ev, me] = await Promise.all([
+        dcApi.eventi(token, guild).catch(() => ({ ok: false })),
+        dcApi.io(token, guild).catch(() => ({ ok: false })),
+      ]);
+      if (ev.ok && me.ok) nostri = dcEventi.nostriOra(ev.eventi, me.id, conf.fuso);
+    }
+    res.json({ pronto, conf, fasce, nostri });
+  }));
+
+  app.post('/api/streamer/dcserver/eventi', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const conf = dcEventi.normalizzaEventi(req.body?.conf);
+    const s = streamers.get(login);
+    streamers.setSettings(login, { ...(s?.settings || {}), discordEventi: conf });
+    res.json({ ok: true, conf });
+  }));
+
+  app.post('/api/streamer/dcserver/eventi/sincronizza', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const { token, guild, pronto } = dcTokenE(login);
+    if (!pronto) return res.status(400).json(NON_PRONTO);
+    const s = streamers.get(login);
+    const me = await dcApi.io(token, guild);
+    if (!me.ok) return res.status(400).json({ errore: me.errore });
+    const e = await dcEventi.sincronizza(token, guild, me,
+      s?.settings?.discordEventi, s?.settings?.grafiche?.giorni || []);
+    if (!e.ok) return res.status(400).json({ errore: e.errore });
+    res.json(e);
+  }));
 
   // Cosa e' successo su questo server, in ordine di tempo. Serve il giorno che
   // qualcuno chiede «chi ha cancellato #generale».

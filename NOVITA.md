@@ -17,6 +17,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-19
 
+- La tua settimana finisce sul calendario del server Discord: chi ti segue vede quando torni e mette il promemoria. [vai: dcavvisi]
+- Il palinsesto non te lo richiedo: leggo quello che hai già scritto per la grafica della settimana. [vai: dcavvisi]
+- Se cambi la programmazione, o arriva l'ora legale, gli appuntamenti si rimettono a posto da soli. [vai: dcavvisi]
+- Gli appuntamenti che scrivi a mano tu non li tocco: Discord non me lo lascia fare, e va benissimo così. [vai: dcavvisi]
+- Se hai invitato il bot prima del calendario, te lo dico subito e ti dico come rimediare, invece di provarci a vuoto. [vai: dcavvisi]
 - Le tracce del server adesso arrivano con la porta d'ingresso e il filtro già scritti, sui canali che la traccia ha. [vai: dcentra]
 - Se sei partito dal tuo server, un tasto te li scrive su misura: poi li cambi come vuoi. [vai: dcentra]
 - La porta nasce accesa solo dove Discord la prenderebbe, e dove non ci arriva te lo dice invece di farti scoprire il rifiuto. [vai: dcentra]

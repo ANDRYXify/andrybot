@@ -57,7 +57,7 @@ test('al bot si chiedono solo i permessi che usiamo, e il numero non si scrive a
   const r = /export const PERMESSI_BOT = String\(([A-Z_ |]+)\);/.exec(API);
   assert.ok(r, 'i permessi dell\'invito si compongono da costanti con un nome');
   const chiesti = r[1].split('|').map((x) => x.trim()).sort();
-  assert.deepEqual(chiesti, ['CREATE_INSTANT_INVITE', 'DA_DARE', 'EMBED_LINKS', 'MANAGE_CHANNELS', 'MANAGE_GUILD', 'MANAGE_ROLES', 'SEND_MESSAGES', 'VIEW_CHANNEL'],
+  assert.deepEqual(chiesti, ['CREATE_EVENTS', 'CREATE_INSTANT_INVITE', 'DA_DARE', 'EMBED_LINKS', 'MANAGE_CHANNELS', 'MANAGE_GUILD', 'MANAGE_ROLES', 'SEND_MESSAGES', 'VIEW_CHANNEL'],
     'quello che il bot usa, piu\' quello che deve poter passare: nient\'altro');
 
   // MANAGE_GUILD e' entrato dopo, ed e' il piu' largo dei cinque: con quello si
@@ -78,11 +78,28 @@ test('al bot si chiedono solo i permessi che usiamo, e il numero non si scrive a
     assert.ok(poteri.includes(`'${campo}'`), `il cancello non guarda «${campo}»`);
   }
 
+  // CREATE_EVENTS e' entrato per ultimo, ed e' l'unico che si chiede perche' e'
+  // il PIU' STRETTO dei due che servirebbero. Discord ne ha una coppia:
+  // MANAGE_EVENTS tocca gli appuntamenti di tutti, CREATE_EVENTS lascia creare
+  // e poi modificare o cancellare soltanto i propri.
+  //
+  // Prendiamo il secondo, e non e' un ripiego: e' quello che rende gli
+  // appuntamenti scritti a mano dallo streamer intoccabili PER COSTRUZIONE. Il
+  // giro che riallinea il calendario ogni sei ore potrebbe voler cancellare
+  // qualcosa di suo — con questo permesso Discord non glielo lascia fare, e non
+  // dipende dal fatto che il nostro codice ricordi di non farlo.
+  //
+  // MANAGE_EVENTS resta dov'era: dentro `DA_DARE`, cioe' fra i privilegi che il
+  // bot passa al ruolo dei moderatori e non esercita mai.
+  assert.match(API, /export const CREATE_EVENTS = 1n << 44n;/, 'anche questo bit si scrive come potenza');
+  assert.match(API, /eventi: 1n << 33n,\s+\/\/ MANAGE_EVENTS/, 'e il permesso largo sugli eventi resta roba da passare ai moderatori');
+
   // DUE MOTIVI DIVERSI PER CHIEDERE UN PERMESSO, e non vanno confusi.
   //
-  // I cinque con un nome proprio il bot li ADOPERA, e ognuno deve servire a
+  // Quelli con un nome proprio il bot li ADOPERA, e ognuno deve servire a
   // qualcosa: un permesso che non usiamo mai e' potere tenuto in tasca per
-  // niente, e su casa d'altri.
+  // niente, e su casa d'altri. Qui non si conta quanti sono — un numero scritto
+  // in una prova invecchia da solo — si controlla che nessuno stia fermo.
   const usati = chiesti.filter((p) => p !== 'DA_DARE');
   for (const p of usati) {
     assert.match(API, new RegExp(`puo\\(bits, ${p}\\)`), `${p} si chiede all'invito ma non lo usa nessuno`);

@@ -75,6 +75,7 @@ import { StreamWatcher } from './stream/watcher.js';
 import { LiveListener } from './stream/listener.js';
 import { avviaBackupAuto, stopBackupAuto } from './backup.js';
 import * as dcGiro from './features/discord-giro.js';
+import * as dcEventi from './features/discord-eventi.js';
 import * as dcCollega from './features/discord-collega.js';
 
 const log = makeLog('bot');
@@ -279,6 +280,12 @@ export class BotManager {
     // quanto una lettura.
     this._dcRuoliTimer = setInterval(() => this._giroDiscord(), 15 * 60_000);
     setTimeout(() => this._giroDiscord(), 90_000);
+    // Gli appuntamenti cambiano poco e vanno guardati spesso abbastanza da non
+    // restare sbagliati per un giorno intero: quattro volte al giorno bastano,
+    // e la prima poco dopo l'avvio, perche' il cambio d'ora puo' essere gia'
+    // passato mentre il bot era fermo.
+    this._eventiDcTimer = setInterval(() => this._giroEventiDiscord(), 6 * 60 * 60_000);
+    setTimeout(() => this._giroEventiDiscord(), 150_000);
     log.info('SocialBot avviato');
   }
 
@@ -300,6 +307,7 @@ export class BotManager {
     clearInterval(this._mancheTimer);
     clearInterval(this._compleTimer);
     clearInterval(this._dcRuoliTimer);
+    clearInterval(this._eventiDcTimer);
     clearInterval(this._cancelloTimer);
     clearInterval(this._tgProattivoTimer);
     clearInterval(this._percorsoTimer);
@@ -1602,6 +1610,27 @@ export class BotManager {
     try {
       await dcGiro.giroTutti({ quadro: (canale, gente) => this.helix.ruoliDi(canale, gente) });
     } catch (e) { log.debug('giroDiscord:', e?.message || e); }
+  }
+
+  // GLI APPUNTAMENTI SI ALLINEANO DA SOLI.
+  //
+  // Un appuntamento sul calendario non e' una cosa che si mette una volta: il
+  // palinsesto cambia, e a fine ottobre cambia l'ora. Un appuntamento sbagliato
+  // e' peggio di nessun appuntamento, perche' manda la gente davanti a uno
+  // schermo spento — quindi non si aspetta che qualcuno prema un tasto.
+  async _giroEventiDiscord() {
+    for (const ch of dcRuoli.attivi()) {
+      try {
+        const s = streamers.get(ch);
+        const conf = s?.settings?.discordEventi;
+        if (!conf?.acceso) continue;
+        const r = dcRuoli.get(ch);
+        if (!r?.token || !r.guild) continue;
+        const me = await dcApi.io(r.token, r.guild);
+        if (!me.ok) continue;
+        await dcEventi.sincronizza(r.token, r.guild, me, conf, s?.settings?.grafiche?.giorni || []);
+      } catch (e) { log.debug('eventiDiscord', ch, e?.message || e); }
+    }
   }
 
   async _controllaCompleanni() {
