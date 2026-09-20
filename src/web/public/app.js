@@ -12111,7 +12111,69 @@ function pannelloRegia() {
         </div>
       </div>
       <p class="suggerimento spazio-sopra">${L('Clip e marker (e la pubblicità/raid) funzionano solo <strong>mentre sei in diretta</strong>. Il video della live lo fa ancora OBS — qui gestisci tutto il resto.', 'Clips and markers (and ads/raids) only work <strong>while you’re live</strong>. OBS still does the video — here you manage everything else.', 'Los clips y marcadores (y los anuncios/raids) solo funcionan <strong>mientras estás en directo</strong>. El vídeo sigue haciéndolo OBS — aquí gestionas todo lo demás.')}</p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.tv)}${L('Quando parte la pubblicità', 'When an ad break starts', 'Cuando empieza la publicidad')}</h2>
+      <p class="suggerimento">${L('La chat resta sola e chi arriva vede uno schermo che non sei tu. Tre righe evidenziate cambiano la serata: prima, durante e quando torni.', 'Chat is left alone and whoever arrives sees a screen that is not you. Three highlighted lines change the evening: before, during, and when you are back.', 'El chat se queda solo y quien llega ve una pantalla que no eres tú. Tres líneas destacadas cambian la noche: antes, durante y cuando vuelves.')}</p>
+      <div id="pub-box" class="spazio-sopra"></div>
+      <div class="riga-flessibile spazio-sopra"><button type="button" class="btn" id="pub-salva">${L('Salva', 'Save', 'Guardar')}</button></div>
     </div>`);
+}
+
+let _pub = null;
+
+function _pubDisegna() {
+  const box = _g('pub-box');
+  if (!box || !_pub) return;
+  const c = _pub.conf;
+  const lim = _pub.limiti || { colori: ['primary'], preavvisoMin: 15, preavvisoMax: 300, tolleranzaMax: 600 };
+  const nomeColore = { primary: L('come sempre', 'default', 'como siempre'), blue: L('blu', 'blue', 'azul'),
+    green: L('verde', 'green', 'verde'), orange: L('arancione', 'orange', 'naranja'), purple: L('viola', 'purple', 'morado') };
+  const momento = (q, titolo, sotto) => `
+    <div class="pub-momento">
+      <label class="dcs-priv"><input type="checkbox" data-pub="${q}-acceso"${c[q].acceso ? ' checked' : ''}>
+        <span><b>${esc(titolo)}</b></span></label>
+      <p class="suggerimento">${esc(sotto)}</p>
+      <input type="text" data-pub="${q}-testo" maxlength="480" value="${esc(c[q].testo || '')}"
+        aria-label="${esc(titolo)}" placeholder="${esc(L('Lascia vuoto per non dire niente', 'Leave empty to say nothing', 'Déjalo vacío para no decir nada'))}">
+    </div>`;
+  box.innerHTML = `
+    <label class="dcs-priv"><input type="checkbox" data-pub="acceso"${c.acceso ? ' checked' : ''}>
+      <span>${L('Parla quando c’è la pubblicità', 'Speak around ad breaks', 'Habla cuando hay publicidad')}</span></label>
+    <div class="pub-dentro"${c.acceso ? '' : ' hidden'}>
+      <div class="dcs-asp-riga spazio-sopra">
+        <label class="campo" for="pub-colore">${L('Colore dell’annuncio', 'Announcement colour', 'Color del anuncio')}</label>
+        <select id="pub-colore" data-pub="colore">
+          ${lim.colori.map((x) => `<option value="${esc(x)}"${c.colore === x ? ' selected' : ''}>${esc(nomeColore[x] || x)}</option>`).join('')}
+        </select>
+        <label class="campo" for="pub-quanto">${L('Quanto prima avviso', 'How early I warn', 'Con cuánta antelación aviso')}</label>
+        <input type="number" id="pub-quanto" data-pub="quanto" min="${lim.preavvisoMin}" max="${lim.preavvisoMax}" value="${Number(c.quanto)}">
+        <span class="suggerimento">${L('secondi', 'seconds', 'segundos')}</span>
+      </div>
+      ${momento('prima', L('Prima che parta', 'Before it starts', 'Antes de que empiece'),
+    L('Lo ricavo dalla programmazione di Twitch, che esiste solo mentre sei in onda. Sta vicino alla pausa apposta: uno snooze la sposta di cinque minuti, e un annuncio in chat non si ritira.', 'I work it out from the Twitch schedule, which only exists while you are live. It stays close to the break on purpose: a snooze moves it by five minutes, and a chat announcement cannot be taken back.', 'Lo saco de la programación de Twitch, que solo existe mientras estás en directo. Se queda cerca de la pausa a propósito: un snooze la mueve cinco minutos, y un anuncio en el chat no se retira.'))}
+      ${momento('durante', L('Appena parte', 'As it starts', 'Nada más empezar'),
+    L('Questo me lo dice Twitch, e mi dice anche quanto dura: scrivi {secondi} o {durata} e ce lo metto.', 'Twitch tells me this one, and how long it lasts: write {secondi} or {durata} and I fill it in.', 'Esto me lo dice Twitch, y también cuánto dura: escribe {secondi} o {durata} y lo pongo yo.'))}
+      ${momento('dopo', L('Quando torni', 'When you are back', 'Cuando vuelves'),
+    L('Per la fine Twitch non manda niente: conto io i secondi che mi ha detto. Se mi riavvio nel mezzo il conto si perde, e allora sto zitta invece di salutarti in ritardo.', 'Twitch sends nothing for the end: I count the seconds it told me. If I restart in the middle the count is lost, and then I keep quiet instead of greeting you late.', 'Para el final Twitch no manda nada: cuento yo los segundos que me dijo. Si me reinicio en medio se pierde la cuenta, y entonces me callo en vez de saludarte tarde.'))}
+      <div class="dcs-asp-riga spazio-sopra">
+        <label class="campo" for="pub-tolleranza">${L('Quanto ritardo accetto', 'How late I still speak', 'Cuánto retraso acepto')}</label>
+        <input type="number" id="pub-tolleranza" data-pub="tolleranza" min="0" max="${lim.tolleranzaMax}" value="${Number(c.tolleranza)}">
+        <span class="suggerimento">${L('secondi: oltre questi, il saluto non lo dico più', 'seconds: past this, I skip the greeting', 'segundos: pasados estos, ya no saludo')}</span>
+      </div>
+    </div>`;
+}
+
+function _pubLeggi() {
+  const box = _g('pub-box');
+  const v = (q) => box?.querySelector(`[data-pub="${q}"]`);
+  const spunta = (q) => !!v(q)?.checked;
+  const testo = (q) => String(v(q)?.value ?? '');
+  const c = { acceso: spunta('acceso'), colore: testo('colore'),
+    quanto: Number(testo('quanto')), tolleranza: Number(testo('tolleranza')) };
+  for (const m of ['prima', 'durante', 'dopo']) c[m] = { acceso: spunta(m + '-acceso'), testo: testo(m + '-testo') };
+  return c;
 }
 
 let _regiaGameId = '';
@@ -12156,6 +12218,12 @@ async function caricaRegia() {
   if (DEMO) {
     renderRegiaStato({ online: true, viewers: 128, startedAt: new Date(Date.now() - 5400000).toISOString() }, null);
     const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = 'Just Chatting';
+    _pub = { conf: { acceso: true, colore: 'primary', quanto: 60, tolleranza: 120,
+      prima: { acceso: true, testo: 'Fra poco parte la pubblicità: restate qui, torno subito.' },
+      durante: { acceso: true, testo: 'Pubblicità per {secondi} secondi. Non andate via, ci vediamo fra poco.' },
+      dopo: { acceso: true, testo: 'Eccomi, sono tornato.' } },
+    limiti: { colori: ['primary', 'blue', 'green', 'orange', 'purple'], preavvisoMin: 15, preavvisoMax: 300, tolleranzaMax: 600 } };
+    _pubDisegna();
     return;
   }
   let d;
@@ -12191,6 +12259,9 @@ async function caricaRegia() {
 
   const adBox = document.getElementById('regia-ad-box'); if (adBox) adBox.style.display = p.commercial ? '' : 'none';
   const raidBox = document.getElementById('regia-raid-box'); if (raidBox) raidBox.style.display = p.raid ? '' : 'none';
+
+  _pub = { conf: d.pubblicita, limiti: d.limiti };
+  _pubDisegna();
 }
 
 async function cercaGiochiRegia() {
@@ -21159,6 +21230,17 @@ function attivaPiattaforma() {
   document.getElementById('regia-raid-annulla')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/regia/raid/annulla', { method: 'POST' }); toast(L('Raid annullata', 'Raid canceled', 'Raid cancelada'));
   }));
+  _g('pub-salva')?.addEventListener('click', () => conErrore(async () => {
+    const r = await api('/api/streamer/regia/pubblicita/messaggi', { method: 'POST', body: { pubblicita: _pubLeggi() } });
+    _pub = { ..._pub, conf: r.pubblicita };
+    _pubDisegna();
+    toast(L('Salvato ✓', 'Saved ✓', 'Guardado ✓'));
+  }));
+  _g('pub-box')?.addEventListener('change', (e) => {
+    if (e.target?.dataset?.pub !== 'acceso') return;
+    const dentro = _g('pub-box')?.querySelector('.pub-dentro');
+    if (dentro) dentro.hidden = !e.target.checked;
+  });
 
   const gCerca = document.getElementById('regia-gioco-cerca');
   gCerca?.addEventListener('input', () => { clearTimeout(_regiaCercaTimer); _regiaCercaTimer = setTimeout(cercaGiochiRegia, 300); });

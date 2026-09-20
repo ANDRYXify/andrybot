@@ -77,6 +77,7 @@ import { avviaBackupAuto, stopBackupAuto } from './backup.js';
 import * as dcGiro from './features/discord-giro.js';
 import * as dcEventi from './features/discord-eventi.js';
 import * as dcCollega from './features/discord-collega.js';
+import * as pub from './features/pubblicita.js';
 
 const log = makeLog('bot');
 
@@ -134,6 +135,12 @@ export class BotManager {
     this._stopReflection = null;
     this._capAvvisoDato = false;     // il tetto ascolti è già stato loggato una volta?
     this._liveState = new Map();     // login → bool: se lo streamer è in live adesso
+    // La pubblicità, per canale: {prossima, dettoPer, ultimaPausa, finisceA,
+    // dettoDopo}. Sta in memoria e non su disco apposta: è lo stato di una
+    // pausa che dura minuti, e un riavvio nel mezzo la fa perdere — che è
+    // esattamente quello che deve succedere (vedi docs/PUBBLICITA.md).
+    this._pub = new Map();
+    this._pubTimer = null;
     this._tiktokTimer = null;
     this._tiktokLive = new Map();    // login → bool: in diretta su TikTok adesso
     this._tiktokUltima = new Map();  // login → ts ultima notifica TikTok (anti-doppioni)
@@ -286,6 +293,11 @@ export class BotManager {
     // passato mentre il bot era fermo.
     this._eventiDcTimer = setInterval(() => this._giroEventiDiscord(), 6 * 60 * 60_000);
     setTimeout(() => this._giroEventiDiscord(), 150_000);
+    // La pubblicità: il preavviso e il «sono tornato» sono tutti e due questioni
+    // di secondi, e mezzo minuto è la metà del preavviso più corto che si possa
+    // chiedere. Il giro non telefona a Twitch a ogni passaggio: vedi
+    // `pub.vaGuardato`, che decide quando vale la pena.
+    this._pubTimer = setInterval(() => this._giroPubblicita(), 30_000);
     log.info('SocialBot avviato');
   }
 
@@ -308,6 +320,7 @@ export class BotManager {
     clearInterval(this._compleTimer);
     clearInterval(this._dcRuoliTimer);
     clearInterval(this._eventiDcTimer);
+    clearInterval(this._pubTimer);
     clearInterval(this._cancelloTimer);
     clearInterval(this._tgProattivoTimer);
     clearInterval(this._percorsoTimer);
@@ -1139,6 +1152,12 @@ export class BotManager {
     // moduli: automazioni con trigger 'evento' (follow, sub, raid, cheer, ...)
     try { this.modules?.onEvent(ev, (t) => this.say(channel, t)); }
     catch (e) { log.error(`#${channel} moduli evento:`, e?.message || e); }
+    // la pubblicità che comincia: il messaggio di adesso, e la scadenza del
+    // conto per quello di dopo — che è l'unico modo di saperlo, perché un
+    // evento di fine Twitch non ce l'ha.
+    if (type === 'channel.ad_break.begin') {
+      this._pubblicitaPartita(channel, data).catch((e) => log.debug(`#${channel} pubblicità:`, e?.message || e));
+    }
     // plugin operatore (opzionali)
     try { this.bus?.emit('event', ev); } catch (e) { log.debug('bus event:', e?.message || e); }
   }
@@ -1618,6 +1637,75 @@ export class BotManager {
   // palinsesto cambia, e a fine ottobre cambia l'ora. Un appuntamento sbagliato
   // e' peggio di nessun appuntamento, perche' manda la gente davanti a uno
   // schermo spento — quindi non si aspetta che qualcuno prema un tasto.
+  // LA PUBBLICITA': il preavviso e il «sono tornato».
+  //
+  // Due cose diverse nello stesso giro, e nessuna delle due e' un evento: il
+  // preavviso lo si ricava dal programma (che Twitch riempie solo mentre sei in
+  // onda), il «sono tornato» e' il conto sui secondi che l'evento di partenza
+  // aveva dichiarato. Vedi docs/PUBBLICITA.md.
+  async _giroPubblicita() {
+    const adesso = Date.now();
+    for (const [ch, live] of this._liveState) {
+      const conf = pub.normalizzaPubblicita(streamers.get(ch)?.settings?.pubblicita);
+      if (!conf.acceso) { this._pub.delete(ch); continue; }
+      const stato = this._pub.get(ch) || {};
+
+      // Il conto scaduto si guarda SEMPRE, anche a diretta finita: se la
+      // diretta e' finita durante la pausa non c'e' niente da dire, e la
+      // tolleranza e' proprio la riga che decide di tacere.
+      const fine = pub.allaFine(conf, stato, adesso);
+      if (fine) {
+        stato.dettoDopo = true;
+        stato.finisceA = 0;
+        if (fine.testo && live) await this._annuncio(ch, conf, fine.testo);
+      }
+
+      // Fuori diretta il programma non si chiede: Twitch lo lascia vuoto
+      // apposta, e sarebbe una telefonata per una risposta che sappiamo gia'.
+      if (live && pub.vaGuardato(conf, stato, adesso)) {
+        const p = await this.helix?.getAdSchedule?.(ch).catch(() => null);
+        const quando = Date.parse(p?.nextAt || '') || 0;
+        stato.prossima = quando;
+        const avviso = quando ? pub.preavviso(conf, stato, { nextAt: p.nextAt }, adesso) : null;
+        if (avviso) {
+          stato.dettoPer = String(avviso.quando);
+          await this._annuncio(ch, conf, avviso.testo);
+        }
+      }
+      this._pub.set(ch, stato);
+    }
+  }
+
+  // L'annuncio evidenziato in chat. Se Twitch dice di no — permesso tolto,
+  // canale offline — non si riprova: un annuncio ritentato arriverebbe fuori
+  // tempo, e fuori tempo e' peggio che niente.
+  async _annuncio(ch, conf, testo) {
+    try {
+      const r = await this.helix?.announce?.(ch, testo, conf.colore);
+      if (!r?.ok) log.debug(`#${ch} annuncio pubblicita' non partito: ${r?.motivo || '?'}`);
+    } catch (e) { log.debug(`#${ch} annuncio pubblicita':`, e?.message || e); }
+  }
+
+  // LA PAUSA CHE COMINCIA. Arriva da EventSub, ed e' l'unico momento in cui
+  // Twitch ci dice qualcosa: da qui esce sia il messaggio di adesso sia la
+  // scadenza del conto per quello di dopo.
+  async _pubblicitaPartita(ch, dati) {
+    const conf = pub.normalizzaPubblicita(streamers.get(ch)?.settings?.pubblicita);
+    if (!conf.acceso) return;
+    const stato = this._pub.get(ch) || {};
+    const a = pub.allaPartenza(conf, stato, dati, Date.now());
+    if (!a) return;
+    stato.ultimaPausa = String(a.inizio);
+    stato.finisceA = a.finisceA;
+    stato.dettoDopo = false;
+    // La pausa e' cominciata: il preavviso di quella li' ha finito il suo
+    // mestiere, e la prossima e' un'altra cosa da guardare da capo.
+    stato.prossima = 0;
+    stato.dettoPer = '';
+    this._pub.set(ch, stato);
+    if (a.testo) await this._annuncio(ch, conf, a.testo);
+  }
+
   async _giroEventiDiscord() {
     for (const ch of dcRuoli.attivi()) {
       try {

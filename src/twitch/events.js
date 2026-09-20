@@ -47,6 +47,11 @@ function desiredSubs(bid) {
     { type: 'channel.hype_train.begin', version: '2', condition: { broadcaster_user_id: bid } },
     { type: 'channel.hype_train.progress', version: '2', condition: { broadcaster_user_id: bid } },
     { type: 'channel.hype_train.end', version: '2', condition: { broadcaster_user_id: bid } },
+    // LA PUBBLICITA' CHE COMINCIA. Twitch manda questo e basta: un evento per
+    // la fine NON ESISTE. E' il motivo per cui il «sono tornato» e' un conto sui
+    // secondi che questo messaggio dichiara, e non l'attesa di un altro evento
+    // che non arriverebbe mai.
+    { type: 'channel.ad_break.begin', version: '1', condition: { broadcaster_user_id: bid } },
   ];
 }
 

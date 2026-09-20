@@ -2330,6 +2330,10 @@ body.ce-aperto { overflow: hidden; }
 .dce-riga > select { flex: 1 1 9rem; }
 .dce-riga > input[type="text"]:not(.dce-emoji) { flex: 2 1 10rem; }
 .dce-emoji { flex: 0 0 3.6rem; width: 3.6rem; text-align: center; }
+.pub-momento { margin-top: .9rem; padding-top: .7rem; border-top: 1px solid var(--border); }
+.pub-momento > .suggerimento { margin: .2rem 0 .4rem; }
+.pub-dentro { margin-top: .6rem; }
+
 .dcs-aspetto { display: grid; gap: .45rem; margin: .7rem 0 .2rem; }
 .dcs-asp-riga { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 .dcs-asp-riga > .campo { margin: 0; min-width: 11rem; flex: 0 0 auto; }

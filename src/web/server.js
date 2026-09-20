@@ -88,6 +88,7 @@ import * as dcCatalogo from '../features/discord-catalogo.js';
 import * as dcCostruisci from '../features/discord-costruisci.js';
 import * as dcPreset from '../features/discord-preset.js';
 import * as dcEventi from '../features/discord-eventi.js';
+import * as pubblicita from '../features/pubblicita.js';
 import * as instagram from '../features/instagram.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
@@ -6394,8 +6395,23 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (ci) canale = { title: ci.title || '', gameId: ci.game_id || '', gameName: ci.game_name || '', tags: ci.tags || [], language: ci.broadcaster_language || '' };
     } catch { /* niente */ }
     if (permessi.ads) { try { ads = await helix.getAdSchedule(login); } catch { /* niente */ } }
-    res.json({ permessi, live, canale, ads });
+    // I tre messaggi intorno alla pausa viaggiano con la regia e non con una
+    // porta loro: la pubblicita' sta gia' qui, e una scheda nuova per tre
+    // caselle di testo sarebbe un menu in piu' da cercare.
+    res.json({ permessi, live, canale, ads, pubblicita: pubblicita.normalizzaPubblicita(s?.settings?.pubblicita),
+      // I limiti li decide il modello, non il pannello: cosi' il pannello li
+      // mostra invece di ripeterli, e un giorno non dicono due cose diverse.
+      limiti: { colori: pubblicita.COLORI, preavvisoMin: pubblicita.PREAVVISO_MIN,
+        preavvisoMax: pubblicita.PREAVVISO_MAX, tolleranzaMax: pubblicita.TOLLERANZA_MAX } });
   }));
+
+  app.post('/api/streamer/regia/pubblicita/messaggi', requireLogin, (req, res) => {
+    const login = currentUser(req).login;
+    const conf = pubblicita.normalizzaPubblicita(req.body?.pubblicita);
+    const s = streamers.get(login);
+    streamers.setSettings(login, { ...(s?.settings || {}), pubblicita: conf });
+    res.json({ ok: true, pubblicita: conf });
+  });
 
   // ricerca categorie/giochi (per il selettore della regia)
   app.get('/api/streamer/regia/giochi', requireLogin, wrap(async (req, res) => {

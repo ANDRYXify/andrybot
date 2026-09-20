@@ -99,6 +99,14 @@ const DECISO = [
   ['bot.js', '_chatKO', 'volatile', 'chi ha la chat scollegata: si riscopre al primo tentativo'],
   ['bot.js', 'listeners', 'volatile', 'ascolto audio: e\' una connessione'],
   ['bot.js', '_liveState', 'volatile', 'chi e\' in diretta adesso: si richiede a Twitch'],
+  // QUI IL VOLATILE NON E' UNA RINUNCIA, E' LA COSA GIUSTA. Twitch manda un
+  // evento per la pausa pubblicitaria che COMINCIA e nessuno per quella che
+  // finisce: il «sono tornato» e' un conto sui secondi. Se quel conto
+  // sopravvivesse a un riavvio, il bot saluterebbe a pausa finita da un pezzo,
+  // in diretta, davanti a chi sta guardando. Perderlo e' il comportamento
+  // voluto, e la tolleranza che si imposta nel pannello e' la stessa regola
+  // detta a chi lo usa.
+  ['bot.js', '_pub', 'volatile', 'il conto dei secondi di una pausa pubblicitaria: sopravvivere a un riavvio vorrebbe dire salutare in ritardo, e in ritardo e\' peggio che zitti'],
   ['bot.js', '_tiktokLive', 'volatile', 'stato TikTok, si richiede'],
   ['bot.js', '_tiktokUltima', 'volatile', 'anti-doppione a breve; il post gia\' annunciato sta nel database'],
   ['bot.js', '_ytId', 'volatile', 'cache dell\'id canale YouTube'],
