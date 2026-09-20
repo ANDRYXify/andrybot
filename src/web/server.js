@@ -984,6 +984,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:edit:commercial'));
   const adsOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:read:ads'));
+  // Parlare evidenziato in chat: serve ai tre messaggi intorno alla pubblicita'.
+  // Senza, quei messaggi non escono e non c'e' nessun errore da nessuna parte:
+  // percio' si dice PRIMA, come si fa per gli altri permessi.
+  const annunciOk = (login) =>
+    !!(tokens.get('broadcaster', login)?.scopes?.includes('moderator:manage:announcements'));
   // Studio Web: ha concesso la lettura della stream key? (per andare live dal browser)
   const studioKeyOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:read:stream_key'));
@@ -6382,7 +6387,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.get('/api/streamer/regia', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const s = streamers.get(login);
-    const permessi = { broadcast: canaleOk(login), raid: raidOk(login), commercial: commercialOk(login), ads: adsOk(login) };
+    const permessi = { broadcast: canaleOk(login), raid: raidOk(login), commercial: commercialOk(login), ads: adsOk(login), annunci: annunciOk(login) };
     let live = { online: false };
     let canale = { title: '', gameId: '', gameName: '', tags: [], language: '' };
     let ads = null;

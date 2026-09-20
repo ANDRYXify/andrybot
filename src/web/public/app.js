@@ -12138,7 +12138,13 @@ function _pubDisegna() {
       <input type="text" data-pub="${q}-testo" maxlength="480" value="${esc(c[q].testo || '')}"
         aria-label="${esc(titolo)}" placeholder="${esc(L('Lascia vuoto per non dire niente', 'Leave empty to say nothing', 'Déjalo vacío para no decir nada'))}">
     </div>`;
+  const pm = _pub.permessi || {};
+  const manca = [];
+  if (pm.ads === false) manca.push(L('programmazione pubblicità', 'ad schedule', 'programación de anuncios'));
+  if (pm.annunci === false) manca.push(L('annunci in chat', 'chat announcements', 'anuncios en el chat'));
   box.innerHTML = `
+    ${manca.length ? `<p class="tg-stato guaio">${L('Senza questi permessi non esce niente:', 'Without these permissions nothing comes out:', 'Sin estos permisos no sale nada:')}
+      <strong>${esc(manca.join(', '))}</strong>. <a href="/auth/permessi">${L('Concedili e torna qui', 'Grant them and come back', 'Concédelos y vuelve aquí')}</a></p>` : ''}
     <label class="dcs-priv"><input type="checkbox" data-pub="acceso"${c.acceso ? ' checked' : ''}>
       <span>${L('Parla quando c’è la pubblicità', 'Speak around ad breaks', 'Habla cuando hay publicidad')}</span></label>
     <div class="pub-dentro"${c.acceso ? '' : ' hidden'}>
@@ -12260,7 +12266,7 @@ async function caricaRegia() {
   const adBox = document.getElementById('regia-ad-box'); if (adBox) adBox.style.display = p.commercial ? '' : 'none';
   const raidBox = document.getElementById('regia-raid-box'); if (raidBox) raidBox.style.display = p.raid ? '' : 'none';
 
-  _pub = { conf: d.pubblicita, limiti: d.limiti };
+  _pub = { conf: d.pubblicita, limiti: d.limiti, permessi: p };
   _pubDisegna();
 }
 

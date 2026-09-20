@@ -23,6 +23,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Gli appuntamenti che scrivi a mano tu non li tocco: Discord non me lo lascia fare, e va benissimo così. [vai: dcavvisi]
 - Se hai invitato il bot prima del calendario, te lo dico subito e ti dico come rimediare, invece di provarci a vuoto. [vai: dcavvisi]
 - Quando parte la pubblicità lo dico in chat: fra poco, adesso, e quando torno. [vai: regia]
+- Se mi mancano i permessi per farlo te lo dico subito, con il posto dove concederli. [vai: regia]
 - I tre messaggi li scrivi tu, e ognuno si spegne per conto suo. [vai: regia]
 - Per la fine Twitch non manda niente: conto i secondi che mi ha detto, e se mi riavvio nel mezzo sto zitta invece di salutarti tardi. [vai: regia]
 - Ogni ruolo può avere il suo segno accanto al nome: un'emoji, o un'immagine tua. [vai: dcserver]

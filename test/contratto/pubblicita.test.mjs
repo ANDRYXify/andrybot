@@ -82,6 +82,19 @@ test('la porta che salva i messaggi non calpesta quella che manda la pubblicità
   assert.match(APP, /'\/api\/streamer\/regia\/pubblicita\/messaggi'/);
 });
 
+test('quello che non puo\' funzionare si dice PRIMA, con la cura', () => {
+  // Senza «programmazione pubblicita'» il programma non si legge e la
+  // sottoscrizione la rifiuta Twitch; senza «annunci in chat» i messaggi non
+  // escono. In tutti e due i casi non c'e' nessun errore da nessuna parte: si
+  // accende la levetta e non succede niente. E' la stessa regola del
+  // calendario e dei ruoli — il rifiuto si anticipa, non si incassa.
+  assert.match(SRV, /const annunciOk = \(login\) =>/);
+  assert.match(SRV, /annunci: annunciOk\(login\)/);
+  assert.match(APP, /if \(pm\.ads === false\) manca\.push\(/);
+  assert.match(APP, /if \(pm\.annunci === false\) manca\.push\(/);
+  assert.match(APP, /\/auth\/permessi/, 'e la cura e\' un posto dove andare, non una frase');
+});
+
 test('i testi di serie ci sono, e si possono svuotare', () => {
   const c = P.normalizzaPubblicita({ acceso: true });
   for (const m of P.MOMENTI) assert.ok(c[m].testo.length > 10, `«${m}» nasce con qualcosa da dire`);

@@ -71,6 +71,17 @@ riempirgliela col nostro testo sarebbe fare il contrario di quello che ha
 chiesto. La levetta serve a tacere per una sera, la casella vuota a non usarlo
 mai.
 
+## Quello che non può funzionare si dice prima
+
+Senza `channel:read:ads` il programma non si legge e Twitch rifiuta la
+sottoscrizione; senza `moderator:manage:announcements` i messaggi non escono.
+In tutti e due i casi non c'è nessun errore da nessuna parte: si accende la
+levetta e non succede niente.
+
+Per questo la carta guarda i due permessi e, se mancano, lo dice prima con il
+posto dove concederli. È la stessa regola del calendario e dell'aspetto dei
+ruoli: il rifiuto si anticipa, non si incassa a cose fatte.
+
 ## Le parole da sostituire
 
 `{secondi}` → `90` · `{durata}` → `1:30` · `{canale}` → il nome del canale.
