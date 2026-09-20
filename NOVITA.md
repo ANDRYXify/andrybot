@@ -22,6 +22,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Se cambi la programmazione, o arriva l'ora legale, gli appuntamenti si rimettono a posto da soli. [vai: dcavvisi]
 - Gli appuntamenti che scrivi a mano tu non li tocco: Discord non me lo lascia fare, e va benissimo così. [vai: dcavvisi]
 - Se hai invitato il bot prima del calendario, te lo dico subito e ti dico come rimediare, invece di provarci a vuoto. [vai: dcavvisi]
+- Da ogni scheda salti a quelle accanto senza tornare al menù: prima la barra c'era solo in alcune. [vai: effetti]
 - Quando parte la pubblicità lo dico in chat: fra poco, adesso, e quando torno. [vai: regia]
 - Se mi mancano i permessi per farlo te lo dico subito, con il posto dove concederli. [vai: regia]
 - I tre messaggi li scrivi tu, e ognuno si spegne per conto suo. [vai: regia]

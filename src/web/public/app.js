@@ -3218,17 +3218,26 @@ const T_PARTE = {
   dcfiltro: ['Il filtro', 'The filter', 'El filtro'],
 };
 
-function barraFamigliaHtml(id) {
+function sorelleDi(id) {
   const f = famigliaDi(id);
+  if (f) return f;
+  const g = elencoGruppi().find((x) => x.schede.some(([sid]) => sid === id));
+  if (!g) return null;
+  return { id: g.id, nome: g.nome, parti: g.schede.map(([sid]) => sid),
+    etichette: new Map(g.schede.map(([sid, nome]) => [sid, tScheda(sid, nome)])), dalGruppo: true };
+}
+
+function barraFamigliaHtml(id) {
+  const f = sorelleDi(id);
   if (!f || f.parti.length < 2) return '';
   const voci = f.parti.map((p) => {
     const c = T_PARTE[p];
-    const t = c ? L(c[0], c[1], c[2]) : tScheda(p, _nomeSchedaGrezzo(p));
+    const t = f.etichette?.get(p) || (c ? L(c[0], c[1], c[2]) : tScheda(p, _nomeSchedaGrezzo(p)));
     const on = p === id;
     return `<button type="button" class="fam-scheda${on ? ' on' : ''}" data-scheda="${esc(p)}"`
       + `${on ? ' aria-current="page"' : ''}>${esc(t)}</button>`;
   }).join('');
-  return `<div class="fam-barra" role="tablist" aria-label="${esc(tFamiglia(f.id, f.nome))}">${voci}</div>`;
+  return `<div class="fam-barra" role="tablist" aria-label="${esc(f.dalGruppo ? tGruppo(f.id, f.nome) : tFamiglia(f.id, f.nome))}">${voci}</div>`;
 }
 
 const NOMI_SCHEDA = {
