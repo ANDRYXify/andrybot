@@ -102,8 +102,13 @@ try {
   await pg.waitForTimeout(400);
   const ruoli = () => quanti('.dcs-ruolo');
   chiedi(await ruoli() >= 3, 'la traccia delle dirette porta i suoi ruoli');
-  chiedi((await pg.$$eval('.dcs-ruolo summary b', (n) => n.map((x) => x.textContent))).includes('Streamer'),
-    'compreso quello che serve solo a farsi vedere');
+  // Il titolo mostra il ruolo COME SI VEDRA' SU DISCORD: il segno e poi il
+  // nome. Percio' qui si cerca dentro la riga, non la riga intera — e si
+  // controlla anche che il segno ci sia, che e' la cosa nuova da guardare.
+  const titoli = await pg.$$eval('.dcs-ruolo summary b', (n) => n.map((x) => x.textContent));
+  const streamer = titoli.find((t) => t.includes('Streamer')) || '';
+  chiedi(!!streamer, 'compreso quello che serve solo a farsi vedere');
+  chiedi(streamer.trim().length > 'Streamer'.length, 'e porta il suo segno accanto al nome, come lo vedrai su Discord');
 
   await pg.click('.dcs-ruolo:first-child summary');
   await pg.waitForTimeout(200);

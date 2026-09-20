@@ -66,8 +66,8 @@ test('i ruoli arrivano con posizione e provenienza, che servono a sapere cosa si
     const r = await ruoli('t', '123456789');
     assert.equal(r.ok, true);
     assert.deepEqual(r.ruoli, [
-      { id: '100000000000000010', nome: 'Sub Twitch', position: 7, managed: true, colore: 10181046, separato: false, citabile: false, permessi: '0' },
-      { id: '100000000000000011', nome: 'Affezionati', position: 3, managed: false, colore: 0, separato: false, citabile: false, permessi: '0' },
+      { id: '100000000000000010', nome: 'Sub Twitch', position: 7, managed: true, colore: 10181046, separato: false, citabile: false, sfuma: null, olografico: false, icona: '', emoji: '', permessi: '0' },
+      { id: '100000000000000011', nome: 'Affezionati', position: 3, managed: false, colore: 0, separato: false, citabile: false, sfuma: null, olografico: false, icona: '', emoji: '', permessi: '0' },
     ], 'chi non ha id non e\' un ruolo');
     // Un ruolo non e' solo quello che puo' fare: e' anche come si vede. Senza
     // sapere se sta «a parte» nell'elenco delle persone, il costruttore
@@ -75,6 +75,22 @@ test('i ruoli arrivano con posizione e provenienza, che servono a sapere cosa si
     const visto = await (async () => { finto(() => ({ stato: 200, corpo: [{ id: '100000000000000013', name: 'Streamer', hoist: true, mentionable: true }] })); return ruoli('t', '123456789'); })();
     assert.equal(visto.ruoli[0].separato, true);
     assert.equal(visto.ruoli[0].citabile, true);
+    // COME SI VEDE, nei termini che Discord usa oggi. `color` e' deprecato: la
+    // verita' sta in `colors.primary_color`, e leggere solo il vecchio campo
+    // farebbe credere grigio un ruolo colorato.
+    const tinto = await (async () => { finto(() => ({ stato: 200, corpo: [{ id: '100000000000000014', name: 'Sfumato', color: 0, colors: { primary_color: 255, secondary_color: 16711680, tertiary_color: null } }] })); return ruoli('t', '123456789'); })();
+    assert.equal(tinto.ruoli[0].colore, 255, 'il colore vero e\' quello di «colors»');
+    assert.equal(tinto.ruoli[0].sfuma, 16711680);
+    assert.equal(tinto.ruoli[0].olografico, false, 'senza il terzo colore non c\'e\' olografico');
+    // E il terzo colore si legge come quello che e\': un interruttore. I suoi
+    // valori Discord li impone, quindi ricordarseli non servirebbe a niente.
+    const olo = await (async () => { finto(() => ({ stato: 200, corpo: [{ id: '100000000000000015', name: 'Olo', colors: { primary_color: 11127295, secondary_color: 16759788, tertiary_color: 16761760 } }] })); return ruoli('t', '123456789'); })();
+    assert.equal(olo.ruoli[0].olografico, true);
+    // Il segno torna come IMPRONTA, non come immagine: e\' il fatto che decide
+    // come si fa il confronto piu\' in la\'.
+    const segnato = await (async () => { finto(() => ({ stato: 200, corpo: [{ id: '100000000000000016', name: 'Con segno', icon: 'abc123', unicode_emoji: null }] })); return ruoli('t', '123456789'); })();
+    assert.equal(segnato.ruoli[0].icona, 'abc123');
+    assert.equal(segnato.ruoli[0].emoji, '');
     // I permessi del ruolo servono a sapere cosa puo' fare il BOT senza
     // chiederlo a Discord una seconda volta: i suoi permessi sono l'unione di
     // quelli dei ruoli che ha, e i ruoli li abbiamo gia' qui.

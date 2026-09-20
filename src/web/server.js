@@ -4508,6 +4508,31 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   };
   const NON_PRONTO = { errore: 'Prima porta il bot nel tuo server: senza, non c\'è niente da costruire.' };
 
+  // LE ICONE DEI RUOLI CHE ARRIVANO COL «COSTRUISCI».
+  //
+  // Discord vuole un Data URI e prende png, jpeg e gif — il webp no, anche se
+  // altrove nel pannello lo accettiamo. Quello che non e' una di quelle tre, o
+  // e' troppo grosso, non parte: se partisse, il rifiuto arriverebbe da Discord
+  // a meta' costruzione e sembrerebbe un guasto nostro.
+  //
+  // Il pannello ridisegna comunque l'immagine scelta su una tela piccola e la
+  // esporta in png: qui non si ripara niente, si controlla che sia successo.
+  const MAX_ICONA = 262144;
+  const immaginiRuoli = (v) => {
+    if (!v || typeof v !== 'object') return null;
+    const fuori = {};
+    for (const [nome, dato] of Object.entries(v).slice(0, dcCatalogo.MAX_RUOLI)) {
+      const d = String(dato || '');
+      if (!/^data:image\/(png|jpeg|gif);base64,[A-Za-z0-9+/=]+$/.test(d) || d.length > MAX_ICONA) continue;
+      // La chiave e' quella del modello, non una sua imitazione: un ruolo con
+      // due spazi nel nome deve trovarsi lo stesso, e due modi di scrivere la
+      // stessa chiave un giorno non coinciderebbero piu'.
+      const k = dcPreset.chiaveRuolo(nome);
+      if (k) fuori[k] = d;
+    }
+    return Object.keys(fuori).length ? fuori : null;
+  };
+
   // LA MODALITA' DISTRUTTIVA E' UNA CHIAVE CHE SCADE.
   //
   // Non c'e' un interruttore salvato da nessuna parte, e non e' una
@@ -4551,6 +4576,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // onesta: mostrare i campi e farli rifiutare dopo sarebbe farli riempire
     // per niente.
     let community = false;
+    let aspetto = { segni: false, tinte: false };
     if (pronto) {
       const [r, cc, ss] = await Promise.all([
         dcApi.ruoli(token, guild).catch(() => ({ ok: false })),
@@ -4563,11 +4589,21 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           .filter((x) => [0, 2, 5, 13, 15, 16].includes(Number(x.tipo)))
           .map((x) => ({ id: x.id, nome: x.nome, voce: Number(x.tipo) === 2 || Number(x.tipo) === 13 }));
       }
-      if (ss.ok) { impostazioni = ss.impostazioni; community = (ss.caratteristiche || []).includes('COMMUNITY'); }
+      if (ss.ok) {
+        impostazioni = ss.impostazioni;
+        const car = ss.caratteristiche || [];
+        community = car.includes('COMMUNITY');
+        // Cosa sa fare QUESTO server sull'aspetto dei ruoli. Sono due
+        // caratteristiche che si prendono salendo di livello: il pannello
+        // spegne i comandi e scrive il perche', invece di farli riempire e poi
+        // farli rifiutare da Discord.
+        aspetto = { segni: car.includes(dcCatalogo.CON_SEGNO), tinte: car.includes(dcCatalogo.CON_TINTE) };
+      }
     }
     res.json({
       pronto,
       community,
+      aspetto,
       guildNome: String(c?.guild_nome || ''),
       preset: c?.preset || null,
       ruoli,
@@ -4660,6 +4696,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // Quello che il bot NON puo' passare si dice qui, prima: la cura e'
       // ripassare dal tasto dell'invito, non riprovare.
       nonPosso: a.nonPosso || [],
+      // E quello che il SERVER non sa fare: la sfumatura e il segno li da'
+      // Discord ai server saliti di livello. Non e' un guasto, e la cura non e'
+      // nostra — ma saperlo prima evita di cercare dopo un ruolo nato senza.
+      manca: a.manca || [],
       // I canali che il bot non arriva a toccare: si dicono PRIMA, e non
       // entrano fra le cose da fare. Dirli dopo vorrebbe dire «ventotto da
       // cancellare» e tre cancellati.
@@ -4681,6 +4721,13 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const preset = dcCatalogo.normalizzaPreset(req.body?.preset);
     const impronta = String(req.body?.impronta || '').slice(0, 32);
     const togliere = conChiave(req, login);
+    // I BYTE DELLE ICONE VIAGGIANO QUI, e solo qui.
+    //
+    // Non entrano nella traccia — la normalizzazione li butta — quindi di loro
+    // non resta niente da nessuna parte: vivono quanto dura questa richiesta.
+    // Discord prende png, jpeg e gif; quello che non e' una di queste tre non
+    // parte, cosi' il rifiuto non arriva da la' a meta' costruzione.
+    const immagini = immaginiRuoli(req.body?.immagini);
 
     // LA CONFERMA PESA QUANTO IL DANNO, e la pesa il server.
     //
@@ -4694,7 +4741,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // basterebbe non chiamarlo. Il server rifa' l'anteprima, pesa, e se serve
     // il nome e il nome non c'e', non cancella.
     if (togliere) {
-      const a = await dcCostruisci.anteprima(token, guild, preset, { togliere: true });
+      const a = await dcCostruisci.anteprima(token, guild, preset, { togliere: true, immagini });
       if (!a.ok) return res.status(400).json({ errore: a.errore });
       if (impronta && impronta !== a.impronta) {
         return res.status(409).json({ cambiato: true, impronta: a.impronta, differenza: a.differenza,
@@ -4709,7 +4756,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       }
     }
 
-    const e = await dcCostruisci.applica(token, guild, preset, { togliere, impronta });
+    const e = await dcCostruisci.applica(token, guild, preset, { togliere, impronta, immagini });
     if (!e.ok) return res.status(e.cambiato ? 409 : 400).json(e);
     // Si scrive SEMPRE, anche quando non si e' tolto niente: un registro che
     // compare solo quando si cancella non dice se quel giorno era stato fatto

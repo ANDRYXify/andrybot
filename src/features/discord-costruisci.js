@@ -70,7 +70,7 @@ function aggiungi(elenco, cosa) {
 // L'ANTEPRIMA E' LA STESSA FUNZIONE. Guardare e fare partono da qui tutti e
 // due: se fossero due strade, divergerebbero al primo cambiamento e il pannello
 // mostrerebbe una cosa mentre ne succede un'altra.
-export async function anteprima(token, guild, preset, { togliere = false } = {}) {
+export async function anteprima(token, guild, preset, { togliere = false, immagini = null } = {}) {
   const foto = await api.fotografia(token, guild);
   if (!foto.ok) return foto;
   // Il preset parla a parole — «tutti», un ruolo per nome — e qui, con il
@@ -94,7 +94,7 @@ export async function anteprima(token, guild, preset, { togliere = false } = {})
   // le decide chi ha il server.
   const consiglio = consiglioRuoli(foto, preset);
   const preset_ = togliere ? applicaConsiglio(preset, consiglio) : preset;
-  const dRuoli = differenzaRuoli(foto, preset_, { togliere, puoiDare: (p) => !nonPuoDare([p], foto.bits).length });
+  const dRuoli = differenzaRuoli(foto, preset_, { togliere, immagini, puoiDare: (p) => !nonPuoDare([p], foto.bits).length });
   const nasceranno = dRuoli.crea.map((r) => ({ id: 'nuovo:' + r.nome.toLowerCase(), nome: r.nome }));
   const { preset: risolto, mancanti } = risolvi(preset_, {
     guildId: foto.guild.id, ruoli: [...foto.ruoli, ...nasceranno], botId: foto.bot?.id });
@@ -136,7 +136,10 @@ export async function anteprima(token, guild, preset, { togliere = false } = {})
   }
   return { ok: true, foto, differenza: d, fuori: tutto.togli, fuoriRuoli: dRuoli.togli, fuoriFiltro,
     impronta: improntaDi(d), vuota: vuota(d), mancanti, nonPosso: dRuoli.nonPosso,
-    fuoriPortata: tutto.fuoriPortata || [], consiglio };
+    // Cosa questo server non sa fare: il segno accanto al nome, la sfumatura.
+    // Si dice PRIMA di partire, perche' e' una cosa che si sapeva prima di
+    // partire — e la cura non e' nostra, e' far salire di livello il server.
+    manca: dRuoli.manca, fuoriPortata: tutto.fuoriPortata || [], consiglio };
 }
 
 // Le categorie che esistono, per nome. Serve a tradurre il «dentro» della
@@ -152,8 +155,8 @@ function categorieDi(canali) {
   return m;
 }
 
-export async function applica(token, guild, preset, { togliere = false, impronta = null, pausa = PAUSA_MS, max = MAX_MOSSE } = {}) {
-  const a = await anteprima(token, guild, preset, { togliere });
+export async function applica(token, guild, preset, { togliere = false, impronta = null, pausa = PAUSA_MS, max = MAX_MOSSE, immagini = null } = {}) {
+  const a = await anteprima(token, guild, preset, { togliere, immagini });
   if (!a.ok) return a;
 
   // Il permesso si controlla PRIMA, non si scopre a meta' strada da un errore.
@@ -182,6 +185,7 @@ export async function applica(token, guild, preset, { togliere = false, impronta
     serverSistemato: 0, serverDice: [],
     ingressoSistemato: 0, ingressoDice: [], ingressoPersi: [],
     filtroCreate: 0, filtroSistemate: 0, filtroTolte: 0, nomiFiltroTolte: [],
+    segni: [],
     canaleAvvisi: d.avvisi?.id ? String(d.avvisi.id) : '' };
   const passo = async (fn, conta) => {
     if (esito.fermo) return null;
@@ -207,14 +211,20 @@ export async function applica(token, guild, preset, { togliere = false, impronta
   // un id inventato.
   const r = d.ruoli || { crea: [], sistema: [], togli: [] };
   const idVeri = new Map();
+  // L'IMPRONTA DELL'ICONA APPENA MESSA torna indietro da qui, e da nessun altro
+  // posto: dai byte non si calcola. Chi ha mandato l'immagine se la registra, e
+  // da li' in poi «c'e' gia' quella» e' una domanda con una risposta — cioe'
+  // la volta dopo non si riscrive niente.
   for (const v of (r.crea || [])) {
     if (esito.fermo) break;
     const x = await passo(() => api.creaRuolo(token, guild, v, MOTIVO.ruoloCreato), 'ruoliCreati');
     if (x?.ok && x.id) idVeri.set('nuovo:' + v.nome.toLowerCase(), String(x.id));
+    if (x?.ok && x.icona) esito.segni.push({ nome: v.nome, icona: x.icona });
   }
   for (const v of (r.sistema || [])) {
     if (esito.fermo) break;
-    await passo(() => api.sistemaRuolo(token, guild, v.id, v, MOTIVO.ruoloSistemato), 'ruoliSistemati');
+    const x = await passo(() => api.sistemaRuolo(token, guild, v.id, v, MOTIVO.ruoloSistemato), 'ruoliSistemati');
+    if (x?.ok && x.icona) esito.segni.push({ nome: v.nome || '', icona: x.icona });
   }
   // Un id finto che non e' diventato vero vuol dire che quel ruolo non si e'
   // potuto creare. Il permesso che lo nomina si salta: dargli un id a caso

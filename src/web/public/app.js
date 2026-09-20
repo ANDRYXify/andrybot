@@ -675,6 +675,7 @@ function apiDemo(percorso, opzioni = {}) {
       crea: [{ nome: 'Diretta', tipo: 4, dentro: null }, { nome: 'sono-in-onda', tipo: 0, dentro: 'Diretta' }, { nome: 'clip', tipo: 0, dentro: 'Diretta' }],
       sistema: [{ id: '1', nome: 'generale', tipo: 0, dentro: 'Chiacchiere' }],
       nonPosso: ['bannare'],
+      manca: ['tinte'],
       ingresso: { dice: [{ campo: 'acceso', a: true }, { campo: 'canaliDiPartenza', a: 7 }, { campo: 'domande', a: 1 }], blocco: '' },
       filtro: { crea: [{ tipo: 'parole', nome: 'Insulti' }], sistema: [], togli: [], dice: [{ campo: 'crea', tipo: 'parole', nome: 'Insulti' }] },
       fuoriFiltro: [{ id: '77', tipo: 'spam', nome: 'Spam' }],
@@ -807,7 +808,7 @@ function _demoGet(via) {
       { quando: Date.now() - 3 * 3600000, chi: 'andryx_demo', distruttivo: 0, creati: 3, sistemati: 1, tolti: 0, nomi: '', errori: '' },
       { quando: Date.now() - 6 * 86400000, chi: 'andryx_demo', distruttivo: 1, creati: 0, sistemati: 2, tolti: 2, nomi: 'vecchio-canale, Roba Vecchia', errori: '' },
     ] },
-    '/api/streamer/dcserver': { pronto: true, community: true, guildNome: 'Casa di andryx', preset: null,
+    '/api/streamer/dcserver': { pronto: true, community: true, aspetto: { segni: true, tinte: true }, guildNome: 'Casa di andryx', preset: null,
       ruoli: [{ id: '100000000000000010', nome: 'Abbonati' }, { id: '100000000000000011', nome: 'Affezionati' }, { id: '100000000000000012', nome: 'Moderatori' }],
       canaliVeri: [
         { id: '200000000000000001', nome: 'annunci', voce: false },
@@ -825,14 +826,14 @@ function _demoGet(via) {
         tetti: { parole: 6, spam: 1, liste: 1, menzioni: 1, profilo: 1 }, pausaMax: 2419200 },
       catalogo: [
         { id: 'inizio', nome: 'Si comincia', per: 'Un server nuovo, quando non sai da dove partire.',
-          ruoli: [{ nome: 'Moderatori', colore: 0x3aa76d, separato: true, privilegi: ['moderare', 'pulire'] }],
+          ruoli: [{ nome: 'Moderatori', colore: 0x3aa76d, separato: true, privilegi: ['moderare', 'pulire'], segno: { tipo: 'emoji', emoji: '\u{1F6E1}\u{FE0F}' } }],
           categorie: [
           { nome: 'Benvenuto', canali: [{ nome: 'regole', argomento: 'Le regole di casa.', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }, { nome: 'annunci', permessi: [{ chi: 'tutti', nega: ['scrivere'] }] }] },
           { nome: 'Chiacchiere', canali: [{ nome: 'generale' }, { nome: 'fuori-tema' }, { nome: 'Salotto', tipo: 'voce' }] }] },
         { id: 'dirette', nome: 'Intorno alle dirette', per: 'Chi trasmette e vuole un posto dove ritrovarsi anche quando non è in onda.',
           ruoli: [
-            { nome: 'Streamer', colore: 0xe6398a, separato: true, privilegi: [] },
-            { nome: 'Moderatori', colore: 0x3aa76d, separato: true, citabile: true, privilegi: ['moderare', 'cacciare', 'pulire'] },
+            { nome: 'Streamer', colore: 0xe6398a, separato: true, privilegi: [], segno: { tipo: 'emoji', emoji: '\u{1F3A5}' } },
+            { nome: 'Moderatori', colore: 0x3aa76d, separato: true, citabile: true, privilegi: ['moderare', 'cacciare', 'pulire'], segno: { tipo: 'emoji', emoji: '\u{1F6E1}\u{FE0F}' } },
             { nome: 'VIP', colore: 0xc49a2c, separato: true, privilegi: ['emojiAltrui', 'priorita'] },
           ],
           categorie: [
@@ -17051,6 +17052,8 @@ const T_DCTIPO = () => ({
 
 let _dcs = null;
 let _dcsChiave = 0;
+let _dcsIcone = {};
+const _dcsChiaveRuolo = (n) => String(n || '').trim().replace(/\s+/g, ' ').slice(0, 100).toLowerCase();
 let _dist = null;
 let _distOrologio = null;
 
@@ -17484,6 +17487,9 @@ function _dcsPrepara(preset) {
     } } : {}),
     ruoli: (preset?.ruoli || []).map((r) => ({
       _k: ++_dcsChiave, nome: r.nome || '', colore: Number(r.colore) || 0,
+      sfuma: r.sfuma === null || r.sfuma === undefined ? null : Number(r.sfuma),
+      olografico: !!r.olografico,
+      segno: { tipo: r.segno?.tipo || 'niente', emoji: r.segno?.emoji || '', icona: r.segno?.icona || '' },
       separato: !!r.separato, citabile: !!r.citabile,
       privilegi: [...(r.privilegi || [])],
       ...(r.da ? { da: String(r.da) } : {}),
@@ -17510,7 +17516,9 @@ function _dcsPulito() {
   })).filter((d) => String(d.titolo || '').trim() && d.risposte.length);
   return {
     ruoli: (p.ruoli || []).map((r) => ({
-      nome: r.nome, colore: r.colore, separato: !!r.separato, citabile: !!r.citabile,
+      nome: r.nome, colore: r.colore, sfuma: r.sfuma ?? null, olografico: !!r.olografico,
+      segno: { tipo: r.segno?.tipo || 'niente', emoji: r.segno?.emoji || '', icona: r.segno?.icona || '' },
+      separato: !!r.separato, citabile: !!r.citabile,
       privilegi: [...(r.privilegi || [])],
       ...(r.da ? { da: r.da } : {}),
     })),
@@ -17761,16 +17769,15 @@ function _dcsRuoloHtml(r) {
   const elenco = (_dcs?.privilegi || []).map((p) => `
     <label class="dcs-priv"><input type="checkbox" data-dcs="r-priv" data-p="${esc(p)}"${(r.privilegi || []).includes(p) ? ' checked' : ''}>
       <span>${esc(parole[p] || p)}</span></label>`).join('');
-  const colore = '#' + Number(r.colore || 0).toString(16).padStart(6, '0');
+  const colore = _esa(r.colore);
   const quanti = (r.privilegi || []).length;
   return `<details class="dcs-ruolo" data-k="${r._k}">
-    <summary><b style="color:${esc(colore)}">${esc(r.nome || L('Senza nome', 'Unnamed', 'Sin nombre'))}</b>
+    <summary><b style="color:${esc(colore)}">${r.segno?.tipo === 'emoji' && r.segno.emoji ? esc(r.segno.emoji) + ' ' : ''}${esc(r.nome || L('Senza nome', 'Unnamed', 'Sin nombre'))}</b>
       <span class="suggerimento">${quanti
         ? quanti + (quanti === 1 ? L(' privilegio', ' privilege', ' privilegio') : L(' privilegi', ' privileges', ' privilegios'))
-        : L('solo un colore', 'just a colour', 'solo un color')}</span></summary>
+        : L('solo l’aspetto', 'looks only', 'solo el aspecto')}</span></summary>
     <div class="riga-flessibile spazio-sopra">
       <input type="text" data-dcs="r-nome" maxlength="100" value="${esc(r.nome || '')}" aria-label="${esc(L('Nome del ruolo', 'Role name', 'Nombre del rol'))}">
-      <input type="color" data-dcs="r-colore" value="${esc(colore)}" aria-label="${esc(L('Colore del ruolo', 'Role colour', 'Color del rol'))}">
       <button type="button" class="btn secondario mini" data-dcs="r-via">${esc(L('Togli', 'Remove', 'Quitar'))}</button>
     </div>
     <p class="riga-flessibile">
@@ -17779,8 +17786,86 @@ function _dcsRuoloHtml(r) {
       <label class="dcs-priv"><input type="checkbox" data-dcs="r-citabile"${r.citabile ? ' checked' : ''}>
         <span>${L('Si può chiamare con @', 'Can be mentioned with @', 'Se puede mencionar con @')}</span></label>
     </p>
+    ${_dcsAspettoHtml(r)}
     <div class="dcs-privilegi">${elenco}</div>
   </details>`;
+}
+
+function _dcsRiscriviTitolo(r) {
+  const b = _g('dcs-ruoli')?.querySelector(`.dcs-ruolo[data-k="${r._k}"] > summary > b`);
+  if (!b) return;
+  b.textContent = (r.segno?.tipo === 'emoji' && r.segno.emoji ? r.segno.emoji + ' ' : '')
+    + (r.nome || L('Senza nome', 'Unnamed', 'Sin nombre'));
+  b.style.color = _esa(r.colore);
+}
+
+function _dcsRidisegnaAspetto(r) {
+  const d = _g('dcs-ruoli')?.querySelector(`.dcs-ruolo[data-k="${r._k}"] .dcs-aspetto`);
+  if (d) d.outerHTML = _dcsAspettoHtml(r);
+}
+
+const LATO_ICONA = 64;
+async function _dcsIconaPronta(file) {
+  const src = await new Promise((ok, no) => {
+    const l = new FileReader();
+    l.onload = () => ok(String(l.result || ''));
+    l.onerror = () => no(new Error(L('Questo file non si legge.', 'This file cannot be read.', 'Este archivo no se puede leer.')));
+    l.readAsDataURL(file);
+  });
+  const img = await new Promise((ok, no) => {
+    const i = new Image();
+    i.onload = () => ok(i);
+    i.onerror = () => no(new Error(L('Questa non è un’immagine.', 'This is not an image.', 'Esto no es una imagen.')));
+    i.src = src;
+  });
+  const tela = document.createElement('canvas');
+  tela.width = LATO_ICONA; tela.height = LATO_ICONA;
+  const lato = Math.min(img.naturalWidth || LATO_ICONA, img.naturalHeight || LATO_ICONA);
+  const x = ((img.naturalWidth || lato) - lato) / 2;
+  const y = ((img.naturalHeight || lato) - lato) / 2;
+  tela.getContext('2d').drawImage(img, x, y, lato, lato, 0, 0, LATO_ICONA, LATO_ICONA);
+  return tela.toDataURL('image/png');
+}
+
+const _dcsModoTinta = (r) => (r.olografico ? 'olografico' : (r.sfuma === null || r.sfuma === undefined ? 'unita' : 'sfumatura'));
+const _esa = (v) => '#' + Number(v || 0).toString(16).padStart(6, '0');
+
+function _dcsAspettoHtml(r) {
+  const a = _dcs?.aspetto || { segni: false, tinte: false };
+  const modo = _dcsModoTinta(r);
+  const seg = r.segno || { tipo: 'niente' };
+  const scelto = (v, q) => (v === q ? ' selected' : '');
+  const nota = (ok, testo) => (ok ? '' : `<span class="suggerimento">${esc(testo)}</span>`);
+  const id = (q) => `r-${q}-${r._k}`;
+  return `<div class="dcs-aspetto">
+    <div class="dcs-asp-riga">
+      <label class="campo" for="${id('modo')}">${L('Tinta', 'Colour', 'Color')}</label>
+      <select id="${id('modo')}" data-dcs="r-modo"${a.tinte ? '' : ' disabled'}>
+        <option value="unita"${scelto(modo, 'unita')}>${L('Un colore', 'One colour', 'Un color')}</option>
+        <option value="sfumatura"${scelto(modo, 'sfumatura')}>${L('Sfumatura', 'Gradient', 'Degradado')}</option>
+        <option value="olografico"${scelto(modo, 'olografico')}>${L('Olografico', 'Holographic', 'Holográfico')}</option>
+      </select>
+      ${modo === 'olografico' ? '' : `<input type="color" data-dcs="r-colore" value="${esc(_esa(r.colore))}" aria-label="${esc(L('Colore del ruolo', 'Role colour', 'Color del rol'))}">`}
+      ${modo === 'sfumatura' ? `<input type="color" data-dcs="r-sfuma" value="${esc(_esa(r.sfuma))}" aria-label="${esc(L('Secondo colore', 'Second colour', 'Segundo color'))}">` : ''}
+      ${modo === 'olografico' ? `<span class="suggerimento">${L('I colori li decide Discord: non si scelgono.', 'Discord decides the colours: they are not chosen.', 'Los colores los decide Discord: no se eligen.')}</span>` : ''}
+      ${nota(a.tinte, L('Sfumatura e olografico: Discord li dà ai server saliti di livello.', 'Gradient and holographic: Discord gives them to boosted servers.', 'Degradado y holográfico: Discord los da a los servidores subidos de nivel.'))}
+    </div>
+    <div class="dcs-asp-riga">
+      <label class="campo" for="${id('segno')}">${L('Segno accanto al nome', 'Sign next to the name', 'Señal junto al nombre')}</label>
+      <select id="${id('segno')}" data-dcs="r-segno"${a.segni ? '' : ' disabled'}>
+        <option value="niente"${scelto(seg.tipo, 'niente')}>${L('Niente', 'None', 'Nada')}</option>
+        <option value="emoji"${scelto(seg.tipo, 'emoji')}>${L('Un’emoji', 'An emoji', 'Un emoji')}</option>
+        <option value="immagine"${scelto(seg.tipo, 'immagine')}>${L('Un’immagine', 'An image', 'Una imagen')}</option>
+      </select>
+      ${seg.tipo === 'emoji' ? `<input type="text" data-dcs="r-emoji" maxlength="32" value="${esc(seg.emoji || '')}" aria-label="${esc(L('Emoji del ruolo', 'Role emoji', 'Emoji del rol'))}">` : ''}
+      ${seg.tipo === 'immagine' ? `<input type="file" data-dcs="r-icona" accept="image/png,image/jpeg,image/gif" aria-label="${esc(L('Immagine del ruolo', 'Role image', 'Imagen del rol'))}">` : ''}
+      ${nota(a.segni, L('Il segno: Discord lo dà ai server saliti di livello.', 'The sign: Discord gives it to boosted servers.', 'La señal: Discord la da a los servidores subidos de nivel.'))}
+    </div>
+    ${seg.tipo === 'immagine' ? `<p class="suggerimento">${_dcsIcone[_dcsChiaveRuolo(r.nome)]
+      ? L('Immagine scelta: parte quando costruisci.', 'Image chosen: it goes when you build.', 'Imagen elegida: se envía cuando construyes.')
+      : (seg.icona ? L('C’è già la tua immagine. Scegline un’altra solo se vuoi cambiarla.', 'Your image is already there. Pick another only to change it.', 'Tu imagen ya está. Elige otra solo si quieres cambiarla.')
+        : L('Scegli il file: lo rimpicciolisco io, e non lo tengo da nessuna parte.', 'Pick the file: I shrink it, and I keep it nowhere.', 'Elige el archivo: lo reduzco yo, y no lo guardo en ninguna parte.'))}</p>` : ''}
+  </div>`;
 }
 
 function _dcsTrova(dove) {
@@ -17951,13 +18036,19 @@ function _dcsDiffHtml(d) {
   if ((r.crea || []).length) {
     blocchi.push(`<h3>${L('Crea i ruoli', 'Creates the roles', 'Crea los roles')} (${r.crea.length})</h3><ul class="lista-voci">`
       + r.crea.map((x) => `<li><span style="color:${esc('#' + Number(x.colore || 0).toString(16).padStart(6, '0'))}">${esc(x.nome)}</span>
-        <span class="suggerimento">${esc(x.permessi && x.permessi !== '0' ? L('con privilegi', 'with privileges', 'con privilegios') : L('solo un colore', 'just a colour', 'solo un color'))}</span></li>`).join('') + '</ul>');
+        <span class="suggerimento">${esc(x.permessi && x.permessi !== '0' ? L('con privilegi', 'with privileges', 'con privilegios') : L('solo l’aspetto', 'looks only', 'solo el aspecto'))}</span></li>`).join('') + '</ul>');
   }
   if ((r.sistema || []).length) {
     blocchi.push(`<h3>${L('Sistema i ruoli', 'Fixes the roles', 'Arregla los roles')} (${r.sistema.length})</h3><ul class="lista-voci">`
       + r.sistema.map((x) => `<li>${esc(x.nome)} <span class="suggerimento">${esc([
-        x.colore !== undefined ? L('colore', 'colour', 'color') : '',
+        x.rinomina !== undefined ? L('il nome', 'the name', 'el nombre') : '',
+        x.colore !== undefined ? (x.olografico ? L('olografico', 'holographic', 'holográfico')
+          : (x.sfuma ? L('sfumatura', 'gradient', 'degradado') : L('colore', 'colour', 'color'))) : '',
+        x.segno !== undefined ? (x.segno.tipo === 'niente' ? L('via il segno', 'sign removed', 'fuera la señal')
+          : (x.segno.tipo === 'emoji' ? L('l’emoji accanto al nome', 'the emoji next to the name', 'el emoji junto al nombre')
+            : L('l’immagine accanto al nome', 'the image next to the name', 'la imagen junto al nombre'))) : '',
         x.separato !== undefined ? L('come si vede', 'how it shows', 'cómo se ve') : '',
+        x.citabile !== undefined ? L('se si può chiamare', 'whether it can be pinged', 'si se puede mencionar') : '',
         x.permessi !== undefined ? L('cosa può fare', 'what it can do', 'qué puede hacer') : '',
       ].filter(Boolean).join(' · '))}</span></li>`).join('') + '</ul>');
   }
@@ -17966,7 +18057,7 @@ function _dcsDiffHtml(d) {
       + `<p class="suggerimento">${L('Spariscono di mano a tutti quelli che ce l’hanno.', 'They disappear from everyone who has them.', 'Desaparecen de todos los que los tienen.')}</p><ul class="lista-voci">`
       + r.togli.map((x) => `<li>${esc(x.nome)} <span class="suggerimento">${esc(x.conPotere
         ? L('porta dei privilegi', 'carries privileges', 'lleva privilegios')
-        : L('solo un colore', 'just a colour', 'solo un color'))}</span></li>`).join('') + '</ul>');
+        : L('solo l’aspetto', 'looks only', 'solo el aspecto'))}</span></li>`).join('') + '</ul>');
   }
   if ((r.fuoriPortata || []).length) {
     blocchi.push(`<p class="suggerimento">${L('Questi ruoli stanno più in alto del bot, quindi non li tocca: ', 'These roles are above the bot, so it does not touch them: ', 'Estos roles están por encima del bot, así que no los toca: ')}${esc(r.fuoriPortata.join(', '))}</p>`);
@@ -17983,6 +18074,13 @@ function _dcsDiffHtml(d) {
     blocchi.push(`<p class="tg-stato guaio">${L('Questi privilegi non posso darli, perché non ce li ho io: ', 'I cannot hand these privileges over, because I do not have them: ', 'Estos privilegios no puedo darlos, porque no los tengo yo: ')}`
       + esc((d.nonPosso || []).map((p) => parole[p] || p).join(', '))
       + `. ${L('Rifai l’invito del bot dalla scheda Ruoli e torna qui.', 'Re-invite the bot from the Roles tab and come back.', 'Vuelve a invitar al bot desde la pestaña Roles y vuelve aquí.')}</p>`);
+  }
+  if ((d.manca || []).length) {
+    const cosa = { tinte: L('la sfumatura e l’olografico', 'gradients and holographic', 'el degradado y el holográfico'),
+      segni: L('il segno accanto al nome', 'the sign next to the name', 'la señal junto al nombre') };
+    blocchi.push(`<p class="suggerimento">${L('Questo server non ha ancora ', 'This server does not yet have ', 'Este servidor todavía no tiene ')}`
+      + esc(d.manca.map((x) => cosa[x] || x).join(L(' né ', ' nor ', ' ni ')))
+      + `: ${L('Discord li dà ai server saliti di livello. Il resto del ruolo si fa lo stesso.', 'Discord gives those to boosted servers. The rest of the role is done anyway.', 'Discord los da a los servidores subidos de nivel. El resto del rol se hace igual.')}</p>`);
   }
   if ((d.mancanti || []).length) {
     blocchi.push(`<p class="tg-stato guaio">${L('Questi ruoli non ci sono più, e quelle regole le ho saltate: ', 'These roles are gone, and I skipped those rules: ', 'Estos roles ya no están, y me he saltado esas reglas: ')}${esc(d.mancanti.join(', '))}</p>`);
@@ -18666,6 +18764,7 @@ async function _dcsVedi(pre) {
 
 async function _dcsFai(pre) {
   const corpo = { preset: _dcsPulito(), impronta: _dcs?.impronta || '', chiave: _dist?.chiave || '' };
+  if (Object.keys(_dcsIcone).length) corpo.immagini = { ..._dcsIcone };
   if (_dist && _dcs?.peso?.scriviIlNome) {
     const p = _dcs.peso;
     const vivi = p.vivi.length
@@ -18702,6 +18801,16 @@ async function _dcsFai(pre) {
     : (nulla ? L('Non c’era niente da fare.', 'There was nothing to do.', 'No había nada que hacer.')
       : L('Non è riuscito.', 'It did not go through.', 'No ha salido.')),
     (e.errori || []).length || e.fermo ? 'guaio' : 'ok');
+  if ((e.segni || []).length) {
+    for (const x of e.segni) {
+      const r = (_dcs?.preset?.ruoli || []).find((y) => _dcsChiaveRuolo(y.nome) === _dcsChiaveRuolo(x.nome));
+      if (r) r.segno = { tipo: 'immagine', emoji: '', icona: x.icona };
+      delete _dcsIcone[_dcsChiaveRuolo(x.nome)];
+    }
+    await api('/api/streamer/dcserver', { method: 'POST', body: { preset: _dcsPulito() } });
+    _dcsDisegna();
+  }
+  _dcsIcone = {};
   const fai = _g(pre + '-costruisci'); if (fai) fai.hidden = true;
   const box = _g(pre + '-diff'); if (box) box.innerHTML = '';
   _dcsCaricaRegistro();
@@ -18720,7 +18829,7 @@ function collegaDcServer() {
       toast(L('Più di così non se ne possono chiedere.', 'You cannot ask for more than this.', 'No se pueden pedir más.'));
       return;
     }
-    p.ruoli.push({ _k: ++_dcsChiave, nome: L('Nuovo ruolo', 'New role', 'Nuevo rol'), colore: 0, separato: false, citabile: false, privilegi: [] });
+    p.ruoli.push({ _k: ++_dcsChiave, nome: L('Nuovo ruolo', 'New role', 'Nuevo rol'), colore: 0, sfuma: null, olografico: false, segno: { tipo: 'niente', emoji: '', icona: '' }, separato: false, citabile: false, privilegi: [] });
     _dcsDisegna();
   });
 
@@ -18755,7 +18864,10 @@ function collegaDcServer() {
     const q = e.target.dataset.dcs;
     if (q === 'r-nome') r.nome = e.target.value;
     else if (q === 'r-colore') r.colore = parseInt(String(e.target.value).replace('#', ''), 16) || 0;
+    else if (q === 'r-sfuma') r.sfuma = parseInt(String(e.target.value).replace('#', ''), 16) || 0;
+    else if (q === 'r-emoji') r.segno = { tipo: 'emoji', emoji: e.target.value, icona: '' };
     else return;
+    if (q !== 'r-sfuma') _dcsRiscriviTitolo(r);
     _dcsTocca();
   });
   _g('dcs-imp')?.addEventListener('change', () => _dcsImpLeggi());
@@ -18765,6 +18877,25 @@ function collegaDcServer() {
     const q = e.target.dataset.dcs;
     if (q === 'r-separato') r.separato = e.target.checked;
     else if (q === 'r-citabile') r.citabile = e.target.checked;
+    else if (q === 'r-modo') {
+      const m = e.target.value;
+      r.olografico = m === 'olografico';
+      r.sfuma = m === 'sfumatura' ? (r.sfuma ?? 0x1188ff) : null;
+      _dcsTocca(); _dcsRidisegnaAspetto(r); return;
+    } else if (q === 'r-segno') {
+      const t = e.target.value;
+      r.segno = { tipo: t, emoji: t === 'emoji' ? (r.segno?.emoji || '') : '', icona: t === 'immagine' ? (r.segno?.icona || '') : '' };
+      if (t !== 'immagine') delete _dcsIcone[_dcsChiaveRuolo(r.nome)];
+      _dcsTocca(); _dcsRidisegnaAspetto(r); return;
+    } else if (q === 'r-icona') {
+      const f = e.target.files?.[0];
+      if (!f) return;
+      conErrore(async () => {
+        _dcsIcone[_dcsChiaveRuolo(r.nome)] = await _dcsIconaPronta(f);
+        _dcsTocca(); _dcsRidisegnaAspetto(r);
+      });
+      return;
+    }
     else if (q === 'r-priv') {
       const p = e.target.dataset.p;
       r.privilegi = e.target.checked

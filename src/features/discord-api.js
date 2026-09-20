@@ -137,13 +137,25 @@ export async function ruoli(token, guild) {
     nome: String(x?.name || ''),
     position: Number(x?.position) || 0,
     managed: !!x?.managed,
-    colore: Number(x?.color) || 0,
+    // `color` e' deprecato e `colors.primary_color` e' la stessa cosa detta
+    // bene: si legge il secondo e si ripiega sul primo, cosi' un server che
+    // risponde ancora alla vecchia maniera non diventa «tutti i ruoli grigi».
+    colore: Number(x?.colors?.primary_color ?? x?.color) || 0,
     // Un ruolo non e' solo quello che puo' fare: e' anche come si vede. Chi sta
     // «a parte» compare in cima all'elenco delle persone col suo nome sopra, ed
     // e' tutto il senso di un ruolo decorativo come «Streamer». Senza questi
     // due, il costruttore ricreerebbe ogni volta un ruolo che sembra diverso.
     separato: !!x?.hoist,
     citabile: !!x?.mentionable,
+    // LA SFUMATURA E L'OLOGRAFICO. Il terzo colore non si sceglie: quando c'e',
+    // Discord impone la terna esatta, quindi leggerlo come un interruttore e'
+    // leggerlo per quello che e'.
+    sfuma: x?.colors?.secondary_color == null ? null : Number(x.colors.secondary_color) || 0,
+    olografico: x?.colors?.tertiary_color != null,
+    // Il segno: l'icona torna come IMPRONTA, non come immagine — e questo
+    // decide come si confronta piu' in la'.
+    icona: String(x?.icon || ''),
+    emoji: String(x?.unicode_emoji || ''),
     permessi: String(x?.permissions || '0'),
   })).filter((x) => x.id);
   return { ok: true, ruoli: lista };
@@ -1095,6 +1107,53 @@ export async function togliCanale(token, id, perche = '') {
 // il grigio di chi non ne ha. Percio' si manda sempre, anche quando e' zero:
 // non mandarlo vorrebbe dire «lascia quello di prima», e un ruolo che doveva
 // tornare senza colore resterebbe colorato.
+// L'OLOGRAFICO NON E' UN COLORE, E' UN INTERRUTTORE.
+//
+// Discord, alla lettera: «When sending tertiary_color the API enforces the role
+// color to be a holographic style with values of: primary_color = 11127295,
+// secondary_color = 16759788, and tertiary_color = 16761760». Cioe': i tre
+// numeri non si scelgono, si subiscono. Chiedere allo streamer tre colori e poi
+// sostituirglieli sarebbe una finta.
+//
+// Stanno qui e non nel pannello perche' sono un fatto di Discord, non un gusto:
+// se un giorno cambiano, cambia questa riga e basta.
+export const OLOGRAFICO = { primo: 11127295, secondo: 16759788, terzo: 16761760 };
+
+// QUALE CAMPO PORTA IL COLORE, e perche' non tutti e due.
+//
+// `color` e' dichiarato deprecato ma funziona su qualunque server; `colors`
+// esiste per la sfumatura e l'olografico, che vogliono la caratteristica
+// ENHANCED_ROLE_COLORS. Mandarli insieme sarebbe dire la stessa cosa due volte;
+// mandare sempre `colors` vorrebbe dire spedire il campo ricco anche dove non
+// serve a niente.
+//
+// Quindi: tinta piatta -> `color`, sfumatura o olografico -> `colors`. Un campo
+// solo per richiesta, e quello ricco parte SOLO verso un server che lo capisce.
+const tintaRuolo = (r) => {
+  if (r?.olografico) {
+    return { colors: { primary_color: OLOGRAFICO.primo, secondary_color: OLOGRAFICO.secondo, tertiary_color: OLOGRAFICO.terzo } };
+  }
+  const primo = Math.max(0, Math.min(0xffffff, Number(r?.colore) || 0));
+  if (r?.sfuma === null || r?.sfuma === undefined) return { color: primo };
+  return { colors: { primary_color: primo, secondary_color: Math.max(0, Math.min(0xffffff, Number(r.sfuma) || 0)), tertiary_color: null } };
+};
+
+// IL SEGNO: o un'emoji, o un'immagine, mai tutti e due.
+//
+// Discord ne mostra uno. Percio' quando si scrive il segno si scrivono SEMPRE
+// tutti e due i campi, e uno dei due e' `null`: mandarne uno solo lascerebbe in
+// piedi l'altro, e il ruolo finirebbe con l'emoji nuova e l'icona vecchia —
+// cioe' con due segni, che su Discord non si puo'.
+const segnoRuolo = (s) => {
+  if (s?.tipo === 'emoji' && s.emoji) return { unicode_emoji: String(s.emoji).slice(0, 32), icon: null };
+  // I byte dell'immagine non stanno nella traccia: arrivano solo quando si
+  // costruisce, e di loro non resta niente da nessuna parte.
+  if (s?.tipo === 'immagine' && s.dato) return { icon: String(s.dato), unicode_emoji: null };
+  if (s?.tipo === 'immagine') return null;   // gia' li', e non c'e' niente di nuovo da mettere
+  if (s?.tipo === 'niente') return { icon: null, unicode_emoji: null };
+  return null;
+};
+
 const corpoRuolo = (r, { nuovo = false } = {}) => {
   const c = {};
   // `rinomina` vince su `nome`: nelle righe del «cosa cambia», `nome` e' come
@@ -1103,7 +1162,8 @@ const corpoRuolo = (r, { nuovo = false } = {}) => {
   // vecchio, cioe' fare il contrario di quello che si e' promesso.
   if (r?.rinomina !== undefined) c.name = String(r.rinomina || '').trim().slice(0, 100);
   else if (r?.nome !== undefined) c.name = String(r.nome || '').trim().slice(0, 100);
-  if (r?.colore !== undefined || nuovo) c.color = Math.max(0, Math.min(0xffffff, Number(r?.colore) || 0));
+  if (r?.colore !== undefined || r?.sfuma !== undefined || r?.olografico !== undefined || nuovo) Object.assign(c, tintaRuolo(r));
+  if (r?.segno !== undefined) Object.assign(c, segnoRuolo(r.segno) || {});
   if (r?.separato !== undefined || nuovo) c.hoist = !!r?.separato;
   if (r?.citabile !== undefined || nuovo) c.mentionable = !!r?.citabile;
   if (r?.permessi !== undefined || nuovo) c.permissions = String(r?.permessi ?? '0');
@@ -1116,14 +1176,20 @@ export async function creaRuolo(token, guild, r, perche = '') {
   if (!corpo.name) return { ok: false, errore: 'un ruolo senza nome non si crea' };
   const x = await chiama(token, `/guilds/${guild}/roles`, { metodo: 'POST', corpo, perche });
   if (!x.ok) return x;
-  return { ok: true, id: String(x.dati?.id || ''), nome: String(x.dati?.name || corpo.name) };
+  // L'IMPRONTA DELL'ICONA torna indietro da qui. Non la sappiamo calcolare dai
+  // byte, quindi e' l'unico momento in cui la si puo' sapere: chi ha messo
+  // l'immagine la registra, e da li' in poi «c'e' gia' quella» e' una domanda
+  // con una risposta.
+  return { ok: true, id: String(x.dati?.id || ''), nome: String(x.dati?.name || corpo.name), icona: String(x.dati?.icon || '') };
 }
 
 export async function sistemaRuolo(token, guild, id, cambia, perche = '') {
   if (!idOk(guild) || !idOk(id)) return { ok: false, errore: 'id non valido' };
   const corpo = corpoRuolo(cambia);
   if (!Object.keys(corpo).length) return { ok: true, dati: null, niente: true };
-  return chiama(token, `/guilds/${guild}/roles/${id}`, { metodo: 'PATCH', corpo, perche });
+  const x = await chiama(token, `/guilds/${guild}/roles/${id}`, { metodo: 'PATCH', corpo, perche });
+  if (!x.ok) return x;
+  return { ...x, icona: String(x.dati?.icon || '') };
 }
 
 export async function togliRuolo(token, guild, id, perche = '') {

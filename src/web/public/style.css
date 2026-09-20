@@ -2330,6 +2330,17 @@ body.ce-aperto { overflow: hidden; }
 .dce-riga > select { flex: 1 1 9rem; }
 .dce-riga > input[type="text"]:not(.dce-emoji) { flex: 2 1 10rem; }
 .dce-emoji { flex: 0 0 3.6rem; width: 3.6rem; text-align: center; }
+.dcs-aspetto { display: grid; gap: .45rem; margin: .7rem 0 .2rem; }
+.dcs-asp-riga { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.dcs-asp-riga > .campo { margin: 0; min-width: 11rem; flex: 0 0 auto; }
+.dcs-asp-riga > select { width: auto; flex: 0 0 auto; min-width: 10rem; }
+.dcs-asp-riga > input[type="color"] { width: 2.6rem; min-width: 2.6rem; flex: 0 0 auto; }
+.dcs-asp-riga > input[type="text"] { width: 5.5rem; min-width: 5.5rem; flex: 0 0 auto; text-align: center; font-size: 1.1rem; }
+.dcs-asp-riga > input[type="file"] { flex: 1 1 14rem; max-width: 20rem; font-size: .85rem; }
+.dcs-asp-riga > .suggerimento, .dcs-aspetto > .suggerimento { margin: 0; flex: 1 1 12rem; }
+.dcs-ruolo .riga-flessibile > input[type="color"] { width: 2.6rem; min-width: 2.6rem; flex: 0 0 auto; }
+.dcs-ruolo .riga-flessibile > input[type="text"] { flex: 1 1 12rem; }
+
 .dce-domanda { padding: .85rem .9rem .9rem; border: 1px solid var(--border); border-radius: var(--r-l); background: var(--surface-2); }
 .dce-domanda > summary { cursor: pointer; font-weight: 600; }
 .dce-domanda > summary > span, .dce-risposta > summary > span { margin-left: .4rem; font-size: .78rem; font-weight: 400; }

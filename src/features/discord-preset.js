@@ -24,7 +24,7 @@
 // vero sarebbe scomodo costruire.
 
 import { createHash } from 'node:crypto';
-import { PRIVILEGI, DA_DARE, VIEW_CHANNEL, SEND_MESSAGES, TETTO_AUTOMOD, PAUSA_MAX } from './discord-api.js';
+import { PRIVILEGI, DA_DARE, VIEW_CHANNEL, SEND_MESSAGES, TETTO_AUTOMOD, PAUSA_MAX, OLOGRAFICO } from './discord-api.js';
 
 // La somma dei privilegi che una traccia nomina. I NUMERI stanno in un posto
 // solo, con gli altri numeri di Discord: qui si leggono, non si ricopiano. Non
@@ -56,11 +56,75 @@ export const MAX_CATEGORIE = 20;
 export const MAX_CANALI = 60;
 export const MAX_RUOLI = 15;
 
+// COME SI VEDE UN RUOLO, e perche' sono due cose e non quattro.
+//
+// Discord ha due caratteristiche che il server puo' avere o non avere:
+//  · ROLE_ICONS            -> il SEGNO (un'immagine oppure un'emoji)
+//  · ENHANCED_ROLE_COLORS  -> la SFUMATURA e l'OLOGRAFICO
+// Chi non le ha non deve vedersi offrire una cosa che gli verrebbe rifiutata:
+// si dice prima, come si fa col conto della porta d'ingresso.
+export const CON_SEGNO = 'ROLE_ICONS';
+export const CON_TINTE = 'ENHANCED_ROLE_COLORS';
+
+// LA TINTA. `colore` c'era gia' ed e' il primo colore: non si duplica in un
+// campo nuovo, si aggiunge solo quello che mancava.
+//
+// L'olografico FORZA la terna che Discord impone. Cosi' uno stato che Discord
+// rifiuterebbe non si puo' nemmeno salvare, e il pannello non ha niente da
+// impedire a mano: i tre modi («unita», «sfumatura», «olografico») si RICAVANO
+// da questi due campi, non si memorizzano a parte.
+const unColore = (v) => Math.max(0, Math.min(0xffffff, Number(v) || 0));
+export function normalizzaTinta(r) {
+  if (r?.olografico) return { colore: OLOGRAFICO.primo, sfuma: OLOGRAFICO.secondo, olografico: true };
+  const sfuma = r?.sfuma === null || r?.sfuma === undefined || r?.sfuma === '' ? null : unColore(r.sfuma);
+  return { colore: unColore(r?.colore), sfuma, olografico: false };
+}
+export const modoTinta = (r) => (r?.olografico ? 'olografico' : (r?.sfuma === null || r?.sfuma === undefined ? 'unita' : 'sfumatura'));
+
+// IL SEGNO: uno solo, e di un tipo.
+//
+// Discord ne mostra uno. Due campi separati — un'emoji E un'icona — potrebbero
+// essere pieni tutti e due: uno stato che su Discord non esiste e che poi
+// qualcuno dovrebbe «risolvere». Qui il tipo decide, e le caselle che non gli
+// appartengono si svuotano.
+//
+// Dell'immagine si tiene SOLO l'impronta che Discord ha risposto, mai i byte:
+// quelli viaggiano una volta sola, quando si costruisce, e non restano da
+// nessuna parte. Non e' delicatezza, e' cio' che rende impossibile conservarli
+// senza accorgersene.
+export const SEGNI = Object.freeze(['niente', 'emoji', 'immagine']);
+export function normalizzaSegno(s) {
+  const tipo = SEGNI.includes(s?.tipo) ? s.tipo : 'niente';
+  if (tipo === 'emoji') {
+    const e = String(s?.emoji || '').trim().slice(0, 32);
+    return e ? { tipo: 'emoji', emoji: e } : { tipo: 'niente' };
+  }
+  if (tipo === 'immagine') {
+    const h = String(s?.icona || '').replace(/[^a-zA-Z0-9_]/g, '').slice(0, 64);
+    return h ? { tipo: 'immagine', icona: h } : { tipo: 'niente' };
+  }
+  return { tipo: 'niente' };
+}
+// Il segno di un ruolo COM'E' ADESSO sul server, nella stessa forma di quello
+// voluto: senza, il confronto sarebbe fra due cose scritte in due modi.
+export const segnoDi = (r) => (r?.emoji ? { tipo: 'emoji', emoji: String(r.emoji) }
+  : (r?.icona ? { tipo: 'immagine', icona: String(r.icona) } : { tipo: 'niente' }));
+// «E' lo stesso segno?» — `a` e' quello che c'e', `b` quello che si vuole.
+//
+// Per l'immagine la risposta dipende da una cosa sola: se arrivano dei BYTE,
+// e' per forza un'altra immagine (nessuno carica un file per rimettere quello
+// che c'era). Senza byte si confrontano le impronte, e allora un'immagine gia'
+// li' non si riscrive — che e' anche l'unico modo di non chiedere di nuovo dei
+// byte che non abbiamo tenuto.
+export const stessoSegno = (a, b) => a.tipo === b.tipo
+  && (a.tipo !== 'emoji' || a.emoji === b.emoji)
+  && (a.tipo !== 'immagine' || (!b.dato && a.icona === b.icona));
+
 // COME SI RICONOSCE «LO STESSO RUOLO»: dal nome, senza badare alle maiuscole.
 // Discord i nomi dei ruoli li lascia come li scrivi, quindi qui non si storpia
 // niente: si confronta e basta.
 export const nomeRuolo = (n) => String(n || '').trim().replace(/\s+/g, ' ').slice(0, 100);
-const chiaveRuolo = (n) => nomeRuolo(n).toLowerCase();
+export const chiaveRuolo = (n) => nomeRuolo(n).toLowerCase();
 
 // COME SI RICONOSCE «LO STESSO CANALE».
 //
@@ -152,7 +216,8 @@ function voluteRuoli(preset) {
     visti.add(k);
     fuori.push({
       nome,
-      colore: Math.max(0, Math.min(0xffffff, Number(r?.colore) || 0)),
+      ...normalizzaTinta(r),
+      segno: normalizzaSegno(r?.segno),
       separato: !!r?.separato,
       citabile: !!r?.citabile,
       privilegi: [...new Set((Array.isArray(r?.privilegi) ? r.privilegi : []).map(String))],
@@ -284,7 +349,16 @@ export function fondiPermessi(attuale, voluti) {
 // ESATTAMENTE quello che dice la traccia — e anche li' tocca soltanto i
 // privilegi che sappiamo nominare, perche' quelli che non sappiamo dire non
 // potremmo nemmeno mostrarli nell'anteprima.
-export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = null, nostri = DA_DARE } = {}) {
+export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = null, nostri = DA_DARE, immagini = null } = {}) {
+  // QUELLO CHE IL SERVER NON SA FARE NON SI CHIEDE, e si dice quale.
+  //
+  // Il segno e la sfumatura vogliono due caratteristiche che il server puo' non
+  // avere. Mandarle lo stesso vorrebbe dire un rifiuto di Discord a meta'
+  // costruzione, su una cosa che sapevamo gia' prima di partire.
+  const caratteristiche = new Set(foto?.caratteristiche || []);
+  const puoSegni = caratteristiche.has(CON_SEGNO);
+  const puoTinte = caratteristiche.has(CON_TINTE);
+  const manca = [];
   // I ruoli che lo streamer ha deciso di tenere anche se la traccia non li
   // prevede. E' una LISTA DI ID, non di nomi: un ruolo risparmiato che poi
   // qualcuno rinomina resta risparmiato, che e' quello che voleva dire.
@@ -323,13 +397,46 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
     for (const p of negati) if (!nonPosso.includes(p)) nonPosso.push(p);
     const daDare = puoiDare ? sommaPrivilegi(v.privilegi.filter((p) => puoiDare(p))) : voluti;
 
-    if (!gia) { crea.push({ nome: v.nome, colore: v.colore, separato: v.separato, citabile: v.citabile, permessi: String(daDare) }); continue; }
+    // Quello che il server non sa fare si toglie QUI, una volta, e vale sia per
+    // i ruoli nuovi sia per quelli da sistemare: due filtri in due posti
+    // diventerebbero due regole diverse al primo cambiamento.
+    const tinta = puoTinte ? { sfuma: v.sfuma, olografico: v.olografico } : { sfuma: null, olografico: false };
+    if (!puoTinte && (v.sfuma !== null || v.olografico) && !manca.includes('tinte')) manca.push('tinte');
+    // I BYTE DI UN'IMMAGINE ENTRANO SOLO DA QUI.
+    //
+    // Non stanno nella traccia e non possono starci: arrivano con la richiesta
+    // di costruire, per nome di ruolo, e da questo punto in poi vivono quanto
+    // dura la chiamata. E' la forma che rende impossibile conservarli per
+    // sbaglio — non una regola da ricordare.
+    const dato = immagini ? String(immagini[chiaveRuolo(v.nome)] || '') : '';
+    const vuole = dato ? { tipo: 'immagine', dato } : v.segno;
+    const segno = puoSegni ? vuole : { tipo: 'niente' };
+    if (!puoSegni && vuole.tipo !== 'niente' && !manca.includes('segni')) manca.push('segni');
+
+    if (!gia) {
+      // Se l'olografico non si puo', resta il suo primo colore: e' la cosa piu'
+      // vicina a quello che aveva scelto, e il perche' e' scritto in `manca`.
+      crea.push({ nome: v.nome, colore: v.colore, ...tinta,
+        ...(segno.tipo === 'niente' ? {} : { segno }),
+        separato: v.separato, citabile: v.citabile, permessi: String(daDare) });
+      continue;
+    }
     preso.add(String(gia.id));
     if (fuoriMano.has(String(gia.id))) { fuoriPortata.push(gia.nome); continue; }
 
     const cambia = {};
     if (chiaveRuolo(gia.nome) !== k) cambia.rinomina = v.nome;
-    if (Number(gia.colore || 0) !== v.colore) cambia.colore = v.colore;
+    // LA TINTA SI CONFRONTA TUTTA INSIEME, e non un campo per volta: il primo
+    // colore da solo non distingue una sfumatura da una tinta piena, e un
+    // confronto che non distingue riscrive ogni volta lo stesso ruolo.
+    const oraTinta = normalizzaTinta(gia);
+    const vuoleTinta = normalizzaTinta({ colore: v.colore, ...tinta });
+    if (oraTinta.colore !== vuoleTinta.colore || oraTinta.sfuma !== vuoleTinta.sfuma
+      || oraTinta.olografico !== vuoleTinta.olografico) Object.assign(cambia, vuoleTinta);
+    // IL SEGNO: si scrive solo se e' davvero un altro. Un'immagine gia' li' con
+    // la stessa impronta non e' «da rimettere» — e rimetterla vorrebbe dire
+    // chiedere di nuovo dei byte che non abbiamo tenuto.
+    if (!stessoSegno(segnoDi(gia), segno)) cambia.segno = segno;
     if (!!gia.separato !== v.separato) cambia.separato = v.separato;
     if (!!gia.citabile !== v.citabile) cambia.citabile = v.citabile;
     let ora = 0n;
@@ -356,7 +463,7 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
     }
   }
 
-  return { crea, sistema, togli, ambigui, fuoriPortata, nonPosso };
+  return { crea, sistema, togli, ambigui, fuoriPortata, nonPosso, manca };
 }
 
 // ALTRI MODI DI DIRE LA STESSA COSA.

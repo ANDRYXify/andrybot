@@ -81,8 +81,8 @@ export function nonPuoDare(permessi, bitsBot) {
 // Quanto puo' chiedere un preset: i limiti sono quelli del motore della
 // differenza, e stanno scritti li'. Averne una seconda copia qui vorrebbe dire
 // due numeri che un giorno non coincidono piu'.
-import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI, TUTTI, normalizzaIngresso, normalizzaFiltro, TIPI_FILTRO, LISTE_FILTRO, portaAccendibile } from './discord-preset.js';
-export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, TUTTI, TIPI_FILTRO, LISTE_FILTRO };
+import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI, TUTTI, normalizzaIngresso, normalizzaFiltro, TIPI_FILTRO, LISTE_FILTRO, portaAccendibile, normalizzaTinta, normalizzaSegno, SEGNI, CON_SEGNO, CON_TINTE } from './discord-preset.js';
+export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, TUTTI, TIPI_FILTRO, LISTE_FILTRO, SEGNI, CON_SEGNO, CON_TINTE };
 export const TIPI_CANALE = Object.freeze(['testo', 'voce', 'annunci', 'palco', 'forum', 'media']);
 
 const somma = (nomi) => (nomi || []).reduce((t, n) => t | (PERMESSI[n] || 0n), 0n);
@@ -212,12 +212,18 @@ const soloLettura = [{ chi: TUTTI, nega: ['scrivere'] }];
 //
 // VIP e Abbonati sono un riconoscimento con qualcosa in mano: farsi sentire,
 // usare le emoji degli altri server, parlare per primi in vocale.
+// Il SEGNO accanto al nome nell'elenco delle persone. E' un'emoji e non
+// un'immagine apposta: un'immagine andrebbe scelta, caricata e tenuta, mentre
+// qui serve solo che un ruolo appena nato non sia una riga di testo in mezzo ad
+// altre righe di testo. Chi vuole la sua immagine la mette dal pannello.
+// Discord li mostra solo se il server ha la caratteristica giusta; dove non
+// c'e', restano dove sono e non si prova nemmeno.
 const ruoliDiretta = [
-  { nome: 'Streamer', colore: 0xe6398a, separato: true, privilegi: [] },
-  { nome: 'Moderatori', colore: 0x3aa76d, separato: true, citabile: true,
+  { nome: 'Streamer', colore: 0xe6398a, separato: true, privilegi: [], segno: { tipo: 'emoji', emoji: '\u{1F3A5}' } },
+  { nome: 'Moderatori', colore: 0x3aa76d, separato: true, citabile: true, segno: { tipo: 'emoji', emoji: '\u{1F6E1}\u{FE0F}' },
     privilegi: ['moderare', 'cacciare', 'pulire', 'soprannomi', 'zittire', 'spostare', 'registro', 'chiamareTutti'] },
-  { nome: 'VIP', colore: 0xc49a2c, separato: true, privilegi: ['emojiAltrui', 'chiamareTutti', 'priorita'] },
-  { nome: 'Abbonati', colore: 0x8a5cd6, privilegi: ['emojiAltrui'] },
+  { nome: 'VIP', colore: 0xc49a2c, separato: true, privilegi: ['emojiAltrui', 'chiamareTutti', 'priorita'], segno: { tipo: 'emoji', emoji: '\u2B50' } },
+  { nome: 'Abbonati', colore: 0x8a5cd6, privilegi: ['emojiAltrui'], segno: { tipo: 'emoji', emoji: '\u{1F49C}' } },
 ];
 const riservato = [{ chi: TUTTI, nega: ['vedere'] }];
 
@@ -494,7 +500,10 @@ export function normalizzaPreset(x) {
     if (!nome) return null;
     return {
       nome,
-      colore: Math.max(0, Math.min(0xffffff, Number(r?.colore) || 0)),
+      // La tinta e il segno passano dalla stessa normalizzazione del modello:
+      // qui non si ricopia nessuna regola, se no fra un mese sarebbero due.
+      ...normalizzaTinta(r),
+      segno: normalizzaSegno(r?.segno),
       separato: !!r?.separato,
       citabile: !!r?.citabile,
       // Un privilegio che non sappiamo nominare non passa: sennò il pannello

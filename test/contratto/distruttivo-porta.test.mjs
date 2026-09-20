@@ -77,7 +77,10 @@ test('il peso del danno lo misura il server, sul server di adesso', () => {
   // chiederla. E se la si pesasse sull'anteprima mandata dal pannello,
   // basterebbe mandarne una piu' leggera.
   const corpo = rotta('post', '/api/streamer/dcserver/applica');
-  assert.match(corpo, /if \(togliere\) \{[\s\S]*await dcCostruisci\.anteprima\(token, guild, preset, \{ togliere: true \}\)/,
+  // Quello che conta e' che l'anteprima si RIFACCIA qui, in modo distruttivo:
+  // cosa le si passa oltre puo' crescere, e fissarlo renderebbe rosso questo
+  // collaudo per un motivo che non c'entra niente col danno.
+  assert.match(corpo, /if \(togliere\) \{[\s\S]*await dcCostruisci\.anteprima\(token, guild, preset, \{ togliere: true[^}]*\}\)/,
     'prima di cancellare si rifa\' l\'anteprima qui');
   assert.match(corpo, /const p = pesoDanno\(a\.differenza\.togli\);/, 'e si pesa quella, non quella di chi chiede');
   assert.ok(!/req\.body\?\.peso|req\.body\?\.scriviIlNome/.test(corpo), 'il peso non arriva da fuori');

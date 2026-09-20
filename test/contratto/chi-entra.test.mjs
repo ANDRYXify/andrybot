@@ -102,7 +102,16 @@ test('«leggi il mio server» legge anche la porta, e solo dove Discord ce l\'ha
 });
 
 test('il pannello sa dire se il server e\' di tipo Community', () => {
-  assert.match(SRV, /community = \(ss\.caratteristiche \|\| \[\]\)\.includes\('COMMUNITY'\)/);
+  // Si misura il FATTO — la porta guarda le caratteristiche del server e ne
+  // manda l'esito al pannello — non come e' scritto: le caratteristiche
+  // guardate sono cresciute, e un collaudo che fissa la riga diventa rosso
+  // ogni volta che se ne aggiunge una. Un rosso che non e' un difetto insegna
+  // a ignorare i rossi.
+  const i = SRV.indexOf("app.get('/api/streamer/dcserver'");
+  const f = SRV.slice(i, SRV.indexOf('\n  }));', i));
+  assert.match(f, /caratteristiche/, 'la porta legge le caratteristiche del server');
+  assert.match(f, /includes\('COMMUNITY'\)/, 'e da li\' ricava se e\' Community');
+  assert.match(f, /community,/, 'e lo manda al pannello');
   assert.match(APP, /_dcs\.community === false/);
 });
 
