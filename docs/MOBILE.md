@@ -124,6 +124,29 @@ d'inchiostro, un filo storta. Il nome più lungo dei gruppi («Durante la
 diretta», «Durante el directo») con lo scoppio accanto sta su una riga sola di
 lato: misurato, 127 px di testo in 129 di posto.
 
+### Le colonne si scelgono sullo spazio che c'è, non sulla finestra
+
+Il menu fermo di lato si prende 15rem (240 px): da 1024 px in su la finestra
+non è più lo spazio del contenuto. Una soglia scritta sulla finestra prima del
+menu di lato mente di 240 px, e l'editor della pagina link e delle donazioni ci
+è cascato: sceglieva tre colonne da 1380 px di finestra, ma a 1440 la sua carta
+è larga 946 px, comandi (21rem) e ispettore (26rem) se ne prendevano 752 e
+all'anteprima restavano 159. Il telefono schiacciato, una parola per riga.
+
+Adesso l'editor è un contenitore (`#lp-box`, `#lp-box-dona`, `container: lp`)
+e le colonne le sceglie sulla propria larghezza. Le soglie sono la somma delle
+colonne con l'anteprima al suo minimo, cioè il telefono (24rem) con la sua
+cornice (0,8rem per lato), 26rem:
+
+| colonne | soglia | conto |
+|---|---|---|
+| una | sotto 51,1rem | comandi, ispettore e anteprima uno sotto l'altro |
+| due | da 51,1rem | 24 + 1,1 + 26 |
+| tre | da 75,2rem | 21 + 1,1 + 26 + 1,1 + 26 |
+
+`test/contratto/editor-colonne.test.mjs` legge i numeri dal foglio di stile e
+rifà i conti: una colonna cambiata senza la sua soglia è rossa.
+
 ### Il collaudo
 
 ```
