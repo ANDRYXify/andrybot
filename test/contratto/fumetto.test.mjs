@@ -53,7 +53,7 @@ test('la carta, il bottone e quello che galleggia stanno su tre gradini diversi'
     return trovate[trovate.length - 1] || null;
   };
   const carta = ombraDi('\n.carta');
-  const drawer = ombraDi('.drawer');
+  const drawer = ombraDi('\n.drawer');
   assert.ok(carta, 'la carta ha la sua ombra');
   assert.match(carta, /--ombra-ink-alta/, `la carta sta sul gradino delle carte, non su ${carta}`);
   assert.match(String(drawer), /--ombra-ink-salto/, `quello che si apre sopra tutto sta piu' in alto, non ${drawer}`);

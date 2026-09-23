@@ -1324,9 +1324,8 @@ function render() {
 
   const _syRender = (stato && stato.user) ? (window.scrollY || 0) : 0;
   renderAreaUtente();
-  const navTop = document.getElementById('nav-top');
   const navDrawer = document.getElementById('nav-drawer');
-  const svuotaNav = () => { if (navTop) navTop.innerHTML = ''; if (navDrawer) navDrawer.innerHTML = ''; };
+  const svuotaNav = () => { if (navDrawer) navDrawer.innerHTML = ''; };
 
   document.body.classList.toggle('vetrina', !stato.user);
 
@@ -1359,8 +1358,9 @@ function render() {
   mettiVesti();
 
   document.body.classList.toggle('con-nav', conPiattaforma);
-  if (navTop) navTop.innerHTML = conPiattaforma ? navTopHtml() : '';
   if (navDrawer) navDrawer.innerHTML = conPiattaforma ? navDrawerHtml() : '';
+  const salta = document.getElementById('salta');
+  if (salta) salta.textContent = L('Vai al contenuto', 'Skip to content', 'Ir al contenido');
   aggiornaTestataPagina();
 
   if (conPiattaforma) attivaPiattaforma();
@@ -1372,46 +1372,16 @@ function render() {
 
   if (conPiattaforma) document.querySelectorAll('.pannello-scheda').forEach((p) => rendiCartePieghevoli(p, p.dataset.scheda));
   rivelaCarte();
-  misuraBarraTop();
   riavviaAiuto();
   riavviaGiro();
 
   if (_syRender) requestAnimationFrame(() => { try { window.scrollTo(0, _syRender); } catch {  } });
 }
 
-const CUSCINO_BARRA = 8;
-
-function misuraBarraTop() {
-  const barra = document.querySelector('.barra-top');
-  const nav = barra?.querySelector('.nav-top');
-  if (!barra || !nav) return;
-  const corpo = document.body;
-  const eraStretta = corpo.classList.contains('barra-stretta');
-  if (eraStretta) corpo.classList.remove('barra-stretta');
-
-  const largo = (el) => (el ? el.getBoundingClientRect().width : 0);
-  const numero = (v) => (parseFloat(v) || 0);
-  const stileBarra = getComputedStyle(barra);
-  const stileNav = getComputedStyle(nav);
-  const voci = [...nav.querySelectorAll('.grp')];
-
-  const spazioPerLeVoci = barra.clientWidth
-    - numero(stileBarra.paddingLeft) - numero(stileBarra.paddingRight)
-    - numero(stileBarra.columnGap) * 2
-    - largo(barra.querySelector('.marchio'))
-    - largo(barra.querySelector('.top-strumenti'));
-  const spazioChiedono = voci.reduce((n, v) => n + largo(v), 0)
-    + numero(stileNav.columnGap) * Math.max(0, voci.length - 1);
-
-  const ciSta = !voci.length || spazioChiedono + CUSCINO_BARRA <= spazioPerLeVoci;
-  corpo.classList.toggle('barra-stretta', !ciSta);
-}
-
-let _misuraBarra = 0;
-window.addEventListener('resize', () => {
-  if (_misuraBarra) return;
-  _misuraBarra = requestAnimationFrame(() => { _misuraBarra = 0; misuraBarraTop(); });
-}, { passive: true });
+const MENU_DI_LATO = '(min-width: 64rem)';
+try {
+  window.matchMedia(MENU_DI_LATO).addEventListener('change', (ev) => { if (ev.matches) chiudiMenuMobile(); });
+} catch {  }
 
 const _menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
@@ -3453,7 +3423,6 @@ const NOMI_SCHEDA = {
 };
 const _nomeSchedaGrezzo = (id) => NOMI_SCHEDA[id] || id;
 
-const CHEVRON = '<svg class="lat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 
 function gruppoDiScheda(id) {
   const diretto = elencoGruppi().find((x) => x.schede.some(([sid]) => sid === id));
@@ -3465,23 +3434,6 @@ function gruppoDiScheda(id) {
 }
 
 const nuovoDi = (id) => (id === 'dirette' && stato?.rapportiNuovi > 0 ? '<i class="voce-nuovo"></i>' : '');
-
-function navTopHtml() {
-  return elencoGruppi().map((g) => {
-    const attivo = g.schede.some(([id]) => id === schedaAttiva) ? ' attivo' : '';
-    const col = `--gc:var(--g-${g.id}, var(--g-def))`;
-    if (g.schede.length === 1) {
-      const [id] = g.schede[0];
-      return `<div class="grp${attivo}" data-grp="${g.id}" style="${col}">
-        <button class="grp-btn" data-scheda="${id}"><span class="grp-dot"></span>${esc(tGruppo(g.id, g.nome))}</button></div>`;
-    }
-    const voci = g.schede.map(([id, nome]) =>
-      `<button class="menu-voce${id === schedaAttiva ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}${nuovoDi(id)}<span>${esc(tScheda(id, nome))}</span>${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`).join('');
-    return `<div class="grp${attivo}" data-grp="${g.id}" style="${col}">
-      <button class="grp-btn" data-menu="${g.id}" aria-expanded="false"><span class="grp-dot"></span>${esc(tGruppo(g.id, g.nome))}${CHEVRON}</button>
-      <div class="grp-menu">${voci}</div></div>`;
-  }).join('');
-}
 
 function stretto() {
   try { return !!(window.matchMedia && window.matchMedia('(max-width: 720px)').matches); } catch { return false; }
@@ -3538,10 +3490,15 @@ function osservaTitolo() {
   _ossTitolo.observe(h);
 }
 
+function voceAttiva(voce, scheda) {
+  const f = famigliaDi(scheda);
+  return voce === scheda || !!(f && f.parti.includes(voce));
+}
+
 function navDrawerHtml() {
   return elencoGruppi().map((g) => {
     const voci = g.schede.map(([id, nome]) =>
-      `<button class="drawer-voce${id === schedaAttiva ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}${nuovoDi(id)}<span>${esc(tScheda(id, nome))}</span>${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`).join('');
+      `<button class="drawer-voce${voceAttiva(id, schedaAttiva) ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}"${voceAttiva(id, schedaAttiva) ? ' aria-current="page"' : ''}>${ICONA[id] || ''}${nuovoDi(id)}<span>${esc(tScheda(id, nome))}</span>${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`).join('');
     const titolo = tGruppo(g.id, g.nome);
     const ripete = g.schede.length === 1 && tScheda(g.schede[0][0], g.schede[0][1]) === titolo;
     return `<div class="drawer-grp" style="--gc:var(--g-${g.id}, var(--g-def))">${ripete ? '' : `<div class="drawer-grp-tit">${esc(titolo)}</div>`}${voci}</div>`;
@@ -25818,21 +25775,12 @@ function chiudiMenuMobile() {
   document.getElementById('apri-menu')?.setAttribute('aria-expanded', 'false');
 }
 
-function chiudiMenuTop() {
-  document.querySelectorAll('#nav-top .grp.aperto').forEach((g) => {
-    g.classList.remove('aperto');
-    g.querySelector('[data-menu]')?.setAttribute('aria-expanded', 'false');
-  });
-}
-
 function aggiornaStatoNav(id) {
-  const gid = gruppoDiScheda(id);
-  document.querySelectorAll('#nav-top .grp').forEach((el) =>
-    el.classList.toggle('attivo', el.dataset.grp === gid));
-  const f = famigliaDi(id);
-  document.querySelectorAll('#nav-top .menu-voce, #nav-drawer .drawer-voce, #nav-top .grp-btn[data-scheda]').forEach((b) =>
-    b.classList.toggle('on', b.dataset.scheda === id
-      || !!(f && f.parti.includes(b.dataset.scheda))));
+  document.querySelectorAll('#nav-drawer .drawer-voce[data-scheda]').forEach((b) => {
+    const on = voceAttiva(b.dataset.scheda, id);
+    b.classList.toggle('on', on);
+    if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
 }
 
 async function _chiediPrimaDiUscire() {
@@ -25857,7 +25805,6 @@ async function _chiediPrimaDiUscire() {
 
 function _scambiaScheda(id, sezioni) {
   morphDa(null);
-  chiudiMenuTop();
   chiudiMenuMobile();
   aggiornaStatoNav(id);
   document.querySelectorAll('.pannello-scheda').forEach((p) =>
@@ -25907,7 +25854,7 @@ function vaiAScheda(id) {
   const org = (_morphDa && _morphDa.isConnected && _morphDa.dataset.scheda === id
     && !stessaFamiglia(id, schedaAttiva)) ? _morphDa : null;
   _morphDa = null;
-  if (id === schedaAttiva) { chiudiMenuTop(); chiudiMenuMobile(); return; }
+  if (id === schedaAttiva) { chiudiMenuMobile(); return; }
   const prima = schedaAttiva;
   schedaAttiva = id;
 
@@ -25944,7 +25891,6 @@ function _cambiaScena(id, sezioni, conVelo) {
   const corpo = () => {
     window.scrollTo({ top: 0, behavior: 'auto' });
     morphDa(null);
-    chiudiMenuTop();
     chiudiMenuMobile();
     aggiornaStatoNav(id);
     document.querySelectorAll('.pannello-scheda').forEach((p) =>
@@ -26011,28 +25957,6 @@ function initGuscio() {
     try { localStorage.setItem('guida:' + d.dataset.guida, d.open ? '1' : '0'); } catch {  }
   }, true);
 
-  document.getElementById('nav-top')?.addEventListener('click', (ev) => {
-    const men = ev.target.closest('[data-menu]');
-    if (men) {
-      const grp = men.parentElement;
-      const era = grp.classList.contains('aperto');
-      chiudiMenuTop();
-      if (!era) {
-        grp.classList.add('aperto');
-        men.setAttribute('aria-expanded', 'true');
-
-        const menu = grp.querySelector('.grp-menu');
-        if (menu) {
-          menu.classList.remove('a-destra');
-          if (menu.getBoundingClientRect().right > window.innerWidth - 8) menu.classList.add('a-destra');
-        }
-      }
-      return;
-    }
-    const b = ev.target.closest('[data-scheda]');
-    if (b) vaiAScheda(b.dataset.scheda);
-  });
-
   document.addEventListener('click', (ev) => {
     const sp = ev.target.closest('[data-stat-periodo]');
     if (sp) { ev.preventDefault(); _statPeriodo = sp.dataset.statPeriodo; caricaStatistiche(); return; }
@@ -26058,13 +25982,12 @@ function initGuscio() {
     if (b) vaiAScheda(b.dataset.scheda);
   });
 
-  document.addEventListener('click', (ev) => { if (!ev.target.closest('.grp')) chiudiMenuTop(); });
   document.addEventListener('click', (ev) => {
     if (ev.target.closest('.aiuto-box')) return;
     document.querySelectorAll('.aiuto-menu').forEach((m) => { m.hidden = true; });
     document.querySelectorAll('.aiuto-btn').forEach((b) => b.setAttribute('aria-expanded', 'false'));
   });
-  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { chiudiMenuTop(); chiudiMenuMobile(); } });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') chiudiMenuMobile(); });
 
   document.getElementById('apri-menu')?.addEventListener('click', () => {
     const aperto = document.body.classList.toggle('menu-aperto');

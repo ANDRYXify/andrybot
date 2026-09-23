@@ -48,7 +48,7 @@ test('il pannello: la scheda Dirette, il puntino, i canali; l\'interruttore non 
   for (const id of ['lista-rapporti', 'chk-rap-telegram', 'chk-rap-mail', 'inp-posta', 'btn-posta-conferma']) assert.ok(APP.includes(`id="${id}"`), `manca #${id}`);
   assert.ok(APP.includes('id="btn-posta-togli"'));
   assert.ok(APP.includes(`const nuovoDi = (id) => (id === 'dirette' && stato?.rapportiNuovi > 0 ? '<i class="voce-nuovo"></i>' : '');`));
-  assert.equal((APP.match(/\$\{nuovoDi\(id\)\}/g) || []).length, 2, 'il puntino sta nel menu in alto e nel cassetto');
+  assert.equal((APP.match(/\$\{nuovoDi\(id\)\}/g) || []).length, 1, 'il puntino sta nel menu, che e\' uno solo');
   assert.ok(APP.includes("if (id === 'dirette') caricaDirette();"));
   assert.ok(APP.includes("api('/api/streamer/rapporti/letti', { method: 'POST', body: {} })"), 'aprire la scheda segna letti');
   assert.ok(!APP.includes('chk-tg-rapporto'), 'un posto solo per scegliere dove ricevere il rapporto');

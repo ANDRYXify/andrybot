@@ -48,47 +48,50 @@ titolo».
 
 ## Cosa NON e cambiato
 
-Sopra i 720 px non si muove niente: nessuna barra in basso, guida aperta, hamburger e plancia come
-prima. Verificato a 1440 px e a 900 px, zero pageerror.
+Sopra i 720 px non c'e la barra in basso: la guida e aperta, la plancia c'e, e il menu e
+l'hamburger o, dai 1024 px, il menu di lato (sotto).
 
-## La barra in alto: quando si ritira nel cassetto
+## Il menu: uno solo, due modi di mostrarlo
 
-Su un iPad in orizzontale, con un account amministratore, la barra in alto era
-**rotta**: il logo finiva sotto la prima voce del menu e «Admin» sopra il
-selettore della lingua.
+Prima in alto c'era una barra a tendine, che si ritirava nel cassetto quando le
+voci non ci stavano. Misurandolo su un computer vero, pero, non ci stavano quasi
+mai: sotto i 1280 px il cassetto c'era per regola, a 1366 px perche le voci non
+entravano, e con otto gruppi la barra si vedeva solo sugli schermi piu larghi.
+Sul computer ogni scheda costava due clic, e dove eri lo diceva solo il titolo.
 
-La causa non era una regola sbagliata, era una **domanda sbagliata**. La barra si
-ritirava nel cassetto sotto una larghezza decisa a tavolino — 1280 px — ma
-quanto spazio serve non è un numero fisso:
+Adesso il menu e **uno**: l'elenco del cassetto (`navDrawerHtml`). Cambia solo
+come si presenta:
 
-- un **amministratore** ha una voce in più (7 invece di 6);
-- le etichette **spagnole** sono più lunghe di quelle italiane;
-- e domani un piano diverso, o un ruolo diverso, cambieranno ancora il conto.
+| larghezza | il menu |
+|---|---|
+| fino a 720 px | la barra in basso, e «Altro» apre il cassetto |
+| da 721 a 1023 px | l'hamburger apre il cassetto |
+| da 1024 px (64rem) | il cassetto sta fermo a sinistra, sempre aperto |
 
-Sopra la soglia le voci venivano disegnate anche quando non ci stavano. E
-siccome la barra le **centra**, l'eccedenza traboccava da tutte e due le parti:
-metà sul logo, metà sugli strumenti. Misurato: un amministratore in italiano
-chiede 1377 px, e un iPad Pro in orizzontale ne offre 1366.
+I 1024 px non sono un numero a occhio: sono il menu (15rem) piu la colonna piu
+stretta in cui le carte stanno ancora comode accanto a lui (49rem). Da li in su
+c'e posto per tutti e due.
 
-Ora la domanda è quella giusta: **ci sta?** `misuraBarraTop()` confronta lo
-spazio che le voci chiedono con quello che rimane davvero fra il logo e gli
-strumenti, e accende `body.barra-stretta` quando non basta. Gira al `render()`
-(le voci cambiano con il ruolo e col piano) e a ogni ridimensionamento.
+Di lato, il cassetto perde quello che serviva solo al cassetto: la testata con
+la X, il velo dietro, l'hamburger. Gli strumenti (lingua, suono, tema, aiuto,
+cambio canale, esci) tornano nella barra in alto, dove adesso c'e spazio.
 
-Due dettagli che sembrano pignoleria e non lo sono:
+Tre cose che valgono per come e fatto, non per un controllo in piu:
 
-- **Lo spazio disponibile non è `clientWidth`.** Bisogna togliere il padding
-  della barra e le spaziature fra i suoi tre blocchi — una settantina di pixel.
-  Ignorarli è esattamente l'errore che ho fatto alla prima stesura, e riappariva
-  solo in spagnolo con un account amministratore a 1400 px.
-- **Per misurare bisogna essere aperti.** Se la barra è già ritirata le voci
-  hanno larghezza zero, quindi la classe si toglie, si misura e si rimette nello
-  stesso istante: il browser non disegna mai lo stato intermedio, e non si vede
-  nessun lampeggio.
+- **Nessun secondo elenco da tenere allineato.** Le tendine in alto avevano il
+  loro HTML, i loro tasti e la loro misura: sono sparite, insieme a
+  `misuraBarraTop` e `barra-stretta`.
+- **La voce accesa ha una regola sola**, `voceAttiva`. La usano il disegno del
+  menu e il cambio di scheda, e accende la voce anche quando sei in una scheda
+  sorella della stessa famiglia. La voce accesa ha `aria-current="page"`, cosi
+  anche chi usa un lettore di schermo sa dove si trova.
+- **Di lato il cassetto non si apre.** Se la finestra si allarga col cassetto
+  aperto, si chiude da solo (`matchMedia`), e di lato il velo non esiste. Uno
+  stato che li non ha senso non puo restare acceso.
 
-La media query a 1280 px resta, ma con un compito preciso e più modesto: è il
-fondo per gli schermi piccoli, dove non ci sta mai e vale anche **prima** che il
-codice giri.
+Con trenta voci a sinistra, arrivare al contenuto con la tastiera voleva dire
+premere Tab trenta volte: il primo Tab della pagina fa comparire «Vai al
+contenuto».
 
 ### Il collaudo
 
@@ -96,18 +99,19 @@ codice giri.
 node scripts/verifica-barra.mjs
 ```
 
-Apre un browser vero, si tira su un server statico da solo e prova **84
-combinazioni** — quattordici larghezze da 390 a 2560 px, tre lingue, con e senza
-i poteri da amministratore — controllando che non ci sia una sola sovrapposizione
-fra i riquadri e che il menu resti sempre raggiungibile.
+Apre un browser vero e prova quattordici larghezze da 390 a 2560 px, tre lingue,
+con e senza i poteri da amministratore. A ogni combinazione pretende che:
 
-«Raggiungibile» sono tre cose, non una: la barra aperta, l'hamburger, oppure la
-**barra in basso** — sotto i 720 px il menu vive lì, e pretendere l'hamburger
-sarebbe stato un difetto della prova, non del prodotto.
+- il menu si raggiunga in **un modo solo** (la barra in basso, l'hamburger o il
+  menu di lato: mai nessuno, mai due);
+- nella barra in alto il logo e gli strumenti non si tocchino;
+- il menu di lato non copra il contenuto, niente esca dai suoi bordi, e l'ultima
+  voce si raggiunga scorrendo;
+- una voce sola sia quella accesa, ed e quella della scheda in cui sei.
 
-Vive fuori da `npm run cancelli` perché serve un browser, come la sonda 7TV.
-Provato rosso su entrambi i difetti veri: tornando a decidere con un numero fisso
-(14 combinazioni rotte) e ignorando padding e spaziature nella misura (4).
+Dove c'e il cassetto lo apre, controlla che niente ne esca e che si chiuda
+cliccando fuori. E allarga la finestra col cassetto aperto, per vedere che si
+chiuda da solo.
 
 ## Il cassetto si chiude cliccando fuori
 
@@ -125,10 +129,9 @@ Ora il velo segue **lo stesso stato che apre il cassetto** (`body.menu-aperto`),
 non la larghezza della finestra: una regola sola, e non possono più divergere.
 
 `scripts/verifica-barra.mjs` lo prova in un browser vero a ogni larghezza,
-lingua e ruolo: dove compare l'hamburger, apre il cassetto, clicca fuori e
-pretende che si chiuda. Rimettendo il velo dentro la media query diventa rosso
-in 15 combinazioni — tutte sopra i 1280px, che è esattamente la banda del
-difetto.
+lingua e ruolo: dove c'è il cassetto, lo apre, clicca fuori e pretende che si
+chiuda. Oggi la barra a tendine non c'è più e di lato il cassetto non si apre,
+ma la regola resta quella: il velo segue `body.menu-aperto`, e nient'altro.
 
 ## Nel cassetto non ci vanno tendine
 

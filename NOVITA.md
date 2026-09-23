@@ -57,6 +57,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Il titolo di ogni scheda si vede subito, anche al primo caricamento, e sul telefono il pannello non scivola più di lato.
 - Stato ti dice come va adesso: in diretta vedi da quanto, chi ti guarda e cosa succede in chat; fuori onda, quando è la prossima e com’è andata l’ultima. [vai: stato]
 - Piattaforme, passkey, moderatori, codici delle mail e i tuoi dati hanno una scheda loro, «Il tuo account». Il pre-addestramento sta in Conoscenza. [vai: account]
+- Sul computer il menù sta sempre a sinistra, con tutte le schede: un clic e ci sei, e vedi sempre dove sei.
 
 ## 2026-09-19
 
