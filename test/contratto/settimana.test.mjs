@@ -85,3 +85,20 @@ test('nel pannello la settimana ha una scheda sua, e le grafiche non la riscrivo
   assert.match(APP, /function grafGiorni\(giorni\) \{\n\s+const gg = GIORNI_CORTI\(\);/, 'e sulla grafica escono nella lingua del pannello');
   assert.ok(!/GR_GIORNI/.test(APP), 'non c\'e\' piu\' l\'elenco in italiano e basta');
 });
+
+test('«cosa fai» accetta un gioco o un titolo, e la categoria si vede mentre si scrive', () => {
+  assert.match(APP, /placeholder="\$\{esc\(L\('un gioco o un titolo', 'a game or a title', 'un juego o un título'\)\)\}"/, 'il campo dice che va bene l\'uno o l\'altro');
+  const r = rotta("app.get('/api/streamer/settimana/categoria'", 600);
+  assert.match(r, /requireOwner/);
+  assert.match(r, /categoria\.risolviCategoria\(helix, q\)/, 'mentre si scrive, la stessa ricerca del salvataggio');
+  assert.match(SRV, /sett\.twitch\.categorie = await settimana\.categorieDi\(helix, sett\)/, 'e il salvataggio passa da quella');
+  assert.match(APP, /api\('\/api\/streamer\/settimana\/categoria\?q=' \+ encodeURIComponent\(t\)\)/);
+});
+
+test('nel pannello le categorie di Twitch si cercano in un posto solo', () => {
+  assert.ok(!/cercaGiochiRegia/.test(APP), 'la Regia non ha piu\' la sua ricerca');
+  const usi = [...APP.matchAll(/_cercaCategorie\((\w+|document\.getElementById\('[\w-]+'\))/g)].map((m) => m[1]);
+  assert.ok(usi.includes('gCerca'), 'la Regia usa la ricerca di tutti');
+  assert.ok(usi.includes('campo'), 'e i giorni della settimana anche');
+  assert.equal([...APP.matchAll(/api\('\/api\/streamer\/regia\/giochi\?q='/g)].length, 1, 'una chiamata sola alla ricerca dei giochi');
+});

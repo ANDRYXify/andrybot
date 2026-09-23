@@ -177,3 +177,14 @@ test('le categorie si cercano una volta per attivita\', e quelle gia\' trovate n
   await S.categorieDi(helix, { ...s, twitch: { ...s.twitch, categorie: c } });
   assert.equal(cerche, prima, 'la seconda volta, nessuna ricerca');
 });
+
+test('una categoria non trovata si ricerca al salvataggio dopo: «nessuna» puo\' essere Twitch che non rispondeva', async () => {
+  let risponde = false;
+  const helix = { async searchCategories() { return risponde ? [{ id: '490147', name: 'Hollow Knight' }] : []; } };
+  const s = sett([lun('21:00', 'Hollow Knight')]);
+  const prima = await S.categorieDi(helix, s);
+  assert.deepEqual(prima, { 'hollow knight': null });
+  risponde = true;
+  const dopo = await S.categorieDi(helix, { ...s, twitch: { ...s.twitch, categorie: prima } });
+  assert.deepEqual(dopo, { 'hollow knight': { id: '490147', name: 'Hollow Knight' } }, 'ricordare «nessuna» vorrebbe dire scriverla per sempre senza categoria');
+});

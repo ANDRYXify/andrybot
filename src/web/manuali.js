@@ -1077,6 +1077,7 @@ const VETRINA = {
 
     { h2: 'La tua settimana' },
     { p: ['I giorni in cui vai in onda si scrivono una volta sola, nella scheda <strong>La tua settimana</strong>: per ogni giorno l\'ora e cosa fai, oppure «riposo», e quanto dura di solito una diretta. Da lì li prendono la grafica della settimana, il calendario del tuo server Discord e il <strong>Programma</strong> del tuo canale Twitch.'] },
+    { p: ['In «cosa fai» va bene un gioco o un titolo. Mentre scrivi compaiono le categorie di Twitch; se scrivi un titolo, sotto il giorno leggi quale categoria finirà sul Programma, o che non ce n\'è una e resta solo il titolo.'] },
     { p: ['I calendari si tengono in pari da soli: quando salvi, e poi ogni sei ore, anche quando cambia l\'ora. Sul Programma di Twitch ogni giorno diventa una diretta che si ripete, con il gioco trovato su Twitch; quelle che scrivi a mano restano tue.'] },
     { p: ['L\'immagine invece parte quando premi <em>Manda</em>, nei posti che spunti: i gruppi e i canali Telegram collegati, i canali degli avvisi su Discord, la storia di Instagram. Compaiono solo i servizi che hai collegato.'] },
     { p: ['Le storie di Twitch e di YouTube non ci sono: Twitch non le apre a nessuna app, e YouTube le ha chiuse nel 2023. Per la storia di Instagram servono un account professionale e il permesso di pubblicare.'] },

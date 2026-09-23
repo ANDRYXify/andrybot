@@ -48,6 +48,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - La promo dei tuoi social in chat si accende insieme alla personalità del bot, accanto a «si fa vivo da solo». [vai: personalita]
 - «Come funziona» si apre da solo la prima volta che entri in una scheda, poi resta chiuso finché non lo apri tu.
 - La prima schermata del tuo server Discord si scrive da sola: ogni canale in mostra ha già la sua faccina e la sua riga, nella lingua del nome. Quelle che scrivi tu restano tue. [vai: dcentra]
+- Nei giorni della settimana scrivi un gioco o un titolo: mentre scrivi compaiono le categorie di Twitch, e sotto ogni giorno leggi quale andrà sul Programma. [vai: settimana]
 
 ## 2026-09-19
 

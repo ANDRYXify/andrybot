@@ -52,7 +52,16 @@ disegnatore delle Grafiche, 1080×1350 in JPEG. Un file solo per tutti i posti.
   giorno, non per gruppi di giorni.
 - Titolo: quello che fai quel giorno. Categoria: trovata con il comando della
   categoria nuovo quando salvi, e ricordata, così il giro delle sei ore non
-  cerca niente.
+  cerca niente. Si ricorda solo una categoria **trovata**: «nessuna» si
+  ricerca al salvataggio dopo, perché può voler dire che Twitch quella volta
+  non ha risposto.
+- In «cosa fai» va bene un gioco o un titolo. Mentre scrivi compaiono le
+  categorie di Twitch che somigliano (la stessa ricerca della Regia, un pezzo
+  solo nel pannello: `_cercaCategorie`); sceglierne una scrive il nome esatto.
+  Se invece scrivi un titolo, sotto il giorno si legge quale categoria andrà
+  sul Programma, cercata con la **stessa** funzione del salvataggio
+  (`/api/streamer/settimana/categoria` chiama `risolviCategoria`): quello che
+  si legge è quello che verrà scritto.
 - **Chi è nostro** lo sappiamo solo noi: Twitch non dice chi ha scritto un
   segmento. Nostro è uno slot (giorno, ora) che abbiamo scritto noi, e quella
   memoria la tiene il server; dal pannello non arriva. Un segmento scritto a

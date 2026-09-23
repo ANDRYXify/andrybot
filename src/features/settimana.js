@@ -198,6 +198,11 @@ export function differenzaProgramma(sett, presenti) {
 // Le categorie si cercano QUANDO SI SALVA, una volta per attivita': il giro
 // delle sei ore non deve fare ricerche, e una scelta che si vede nel pannello
 // e' una scelta che si puo' correggere cambiando il testo.
+//
+// Una categoria TROVATA non si ricerca; una NON trovata si': «nessuna» puo'
+// voler dire che Twitch quella volta non ha risposto, e ricordarla per sempre
+// vorrebbe dire scrivere il segmento senza categoria mentre il pannello, che
+// cerca adesso, la mostra.
 export async function categorieDi(helix, sett) {
   const vecchie = sett?.twitch?.categorie || {};
   const nuove = {};
@@ -205,7 +210,7 @@ export async function categorieDi(helix, sett) {
     if (!inOnda(g) || !g.att) continue;
     const k = chiaveAtt(g.att);
     if (k in nuove) continue;
-    if (k in vecchie) { nuove[k] = vecchie[k]; continue; }
+    if (vecchie[k]) { nuove[k] = vecchie[k]; continue; }
     const c = await risolviCategoria(helix, g.att).catch(() => null);
     nuove[k] = c ? { id: String(c.id), name: String(c.name) } : null;
   }

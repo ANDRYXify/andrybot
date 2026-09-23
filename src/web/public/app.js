@@ -646,9 +646,22 @@ const _DEMO_RIGHE = {
 };
 const _demoRiga = (nome) => { const r = _DEMO_RIGHE[String(nome || '').trim().toLowerCase()]; return r ? { emoji: r[0], testo: r[1] } : null; };
 
+const _DEMO_GIOCHI = [
+  { id: '509658', name: 'Just Chatting' }, { id: '27471', name: 'Minecraft' }, { id: '515024', name: 'Diablo IV' },
+  { id: '33214', name: 'Fortnite' }, { id: '21779', name: 'League of Legends' }, { id: '32982', name: 'Grand Theft Auto V' },
+  { id: '512953', name: 'Elden Ring' }, { id: '1829', name: 'Hollow Knight: Silksong' }, { id: '490147', name: 'Hollow Knight' },
+  { id: '26936', name: 'Music' }, { id: '509660', name: 'Art' }, { id: '32399', name: 'Counter-Strike' },
+];
+const _demoNorma = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const _demoGiochi = (q) => { const n = _demoNorma(q); return n.length < 2 ? [] : _DEMO_GIOCHI.filter((g) => _demoNorma(g.name).includes(n) || n.includes(_demoNorma(g.name))); };
+const _demoCategoria = (q) => { const n = ` ${_demoNorma(q)} `; return _DEMO_GIOCHI.filter((g) => n.includes(` ${_demoNorma(g.name)} `)).sort((a, b) => b.name.length - a.name.length)[0] || null; };
+
 function apiDemo(percorso, opzioni = {}) {
   const metodo = (opzioni.method || 'GET').toUpperCase();
   const via = percorso.split('?')[0];
+  const domanda = new URLSearchParams(percorso.split('?')[1] || '').get('q') || '';
+  if (metodo === 'GET' && via === '/api/streamer/regia/giochi') return Promise.resolve({ giochi: _demoGiochi(domanda) });
+  if (metodo === 'GET' && via === '/api/streamer/settimana/categoria') return Promise.resolve({ categoria: _demoCategoria(domanda) });
   if (metodo === 'GET' && via === '/api/streamer/libreria') return Promise.resolve(_demoLibreria(percorso));
   if (metodo === 'GET') return Promise.resolve(_demoGet(via));
 
@@ -3140,7 +3153,7 @@ const GUIDE = {
   grafiche: { serve: ['Fare la locandina della diretta da postare sui social, con i tuoi colori e il tuo handle.', 'Make the stream poster to post on socials, with your colors and your handle.', 'Hacer el cartel del directo para publicar en redes, con tus colores y tu handle.'],
     come: [['Scrivi il titolo: è la riga grande della locandina.', 'Write the title: it is the big line of the poster.', 'Escribe el título: es la línea grande del cartel.', '#gr-titolo'], ['Scegli il colore d\'accento; il testo si adatta da solo perché resti leggibile.', 'Pick the accent color; the text adapts by itself so it stays readable.', 'Elige el color de acento; el texto se adapta solo para que siga legible.', '#gr-accento'], ['Scarica il PNG (o la versione animata) e pubblicalo: la didascalia è già pronta da copiare.', 'Download the PNG (or the animated one) and post it: the caption is ready to copy.', 'Descarga el PNG (o la versión animada) y publícalo: el pie de foto ya está listo para copiar.', '#gr-scarica']] },
   settimana: { serve: ['Scrivere una volta sola quando vai in onda e cosa fai, e mandarlo dove ti seguono.', 'Write once when you go live and what you do, and send it where people follow you.', 'Escribir una sola vez cuándo sales en directo y qué haces, y mandarlo donde te siguen.'],
-    come: [['Per ogni giorno l’ora e cosa fai; se quel giorno riposi, spunta «riposo».', 'For each day the time and what you do; if you rest that day, tick «day off».', 'Para cada día la hora y qué haces; si ese día descansas, marca «descanso».', '#sett-giorni'], ['Salvando, i calendari si rimettono in pari da soli: quello di Discord e il Programma di Twitch.', 'Saving brings the calendars in line by themselves: Discord’s and the Twitch Schedule.', 'Al guardar, los calendarios se ponen al día solos: el de Discord y el Programa de Twitch.', '#sett-salva'], ['Spunta dove mandare l’immagine e premi «Manda»: compaiono solo i posti che hai collegato.', 'Tick where to send the image and press «Send»: only the places you connected show up.', 'Marca adónde mandar la imagen y pulsa «Manda»: solo aparecen los sitios que has conectado.', '#sett-dove']] },
+    come: [['Per ogni giorno l’ora e cosa fai, un gioco o un titolo; se quel giorno riposi, spunta «riposo».', 'For each day the time and what you do, a game or a title; if you rest that day, tick «day off».', 'Para cada día la hora y qué haces, un juego o un título; si ese día descansas, marca «descanso».', '#sett-giorni'], ['Salvando, i calendari si rimettono in pari da soli: quello di Discord e il Programma di Twitch.', 'Saving brings the calendars in line by themselves: Discord’s and the Twitch Schedule.', 'Al guardar, los calendarios se ponen al día solos: el de Discord y el Programa de Twitch.', '#sett-salva'], ['Spunta dove mandare l’immagine e premi «Manda»: compaiono solo i posti che hai collegato.', 'Tick where to send the image and press «Send»: only the places you connected show up.', 'Marca adónde mandar la imagen y pulsa «Manda»: solo aparecen los sitios que has conectado.', '#sett-dove']] },
   scudo: { serve: ['La difesa dagli attacchi: le ondate di finti follower e gli account-bot che spammano in chat.', 'Defence against attacks: waves of fake followers and bot accounts spamming chat.', 'La defensa contra los ataques: oleadas de seguidores falsos y cuentas-bot que spamean el chat.'],
     come: [['Accendi la protezione: sotto trovi lo stato di adesso.', 'Turn the protection on: below you see how things stand right now.', 'Enciende la protección: debajo ves cómo está ahora.', '#chk-ab-attivo'], ['Scegli quanto presto reagire e cosa fare quando è sicuro.', 'Choose how soon to react and what to do when it is sure.', 'Elige con qué rapidez reaccionar y qué hacer cuando está seguro.', '#sel-ab-modo'], ['Se non ti fidi ancora, accendi la sola osservazione: scrive cosa farebbe e non tocca nessuno.', 'If you do not trust it yet, turn on observe-only: it logs what it would do and touches nobody.', 'Si aún no te fías, enciende solo observar: anota lo que haría y no toca a nadie.', '#chk-ab-avuoto'], ['Le due liste in fondo si salvano da sole.', 'The two lists at the bottom save themselves.', 'Las dos listas de abajo se guardan solas.', '#scudo-add-esenti']] },
   registro: { serve: ['Vedere cosa ha fatto lo scudo, decidere tu sui casi dubbi e ripulire dopo un attacco.', 'See what the shield did, decide the doubtful cases yourself and clean up after an attack.', 'Ver qué hizo el escudo, decidir tú los casos dudosos y limpiar después de un ataque.'],
@@ -4270,22 +4283,78 @@ function _settLeggiGiorni() {
   });
 }
 
+const _settCat = new Map();
+const _settCatInVolo = new Set();
+let _settCatTimer = null;
+
+const _settTwAcceso = () => !!_g('sett-tw')?.checked;
+
+function _settMostraCategorie() {
+  const box = _g('sett-giorni');
+  if (!box) return;
+  const acceso = _settTwAcceso();
+  const salvate = settimanaOra().twitch.categorie || {};
+  for (const r of box.querySelectorAll('.sett-riga')) {
+    const riga = r.querySelector('.sett-cat');
+    if (!riga) continue;
+    const att = String(r.querySelector('.sett-att')?.value || '').trim();
+    if (!acceso || r.querySelector('.sett-riposo')?.checked || !r.querySelector('.sett-ora')?.value || !att) { riga.hidden = true; continue; }
+    const k = att.toLowerCase();
+    const c = _settCat.has(k) ? _settCat.get(k) : (salvate[k] || undefined);
+    riga.hidden = false;
+    riga.innerHTML = c === undefined ? esc(L('su Twitch: cerco la categoria…', 'on Twitch: looking for the category…', 'en Twitch: busco la categoría…'))
+      : c ? `${esc(L('su Twitch: ', 'on Twitch: ', 'en Twitch: '))}<strong>${esc(c.name)}</strong>`
+      : esc(L('su Twitch: nessuna categoria, solo il titolo', 'on Twitch: no category, just the title', 'en Twitch: ninguna categoría, solo el título'));
+  }
+}
+
+function _settCercaCategorie() {
+  clearTimeout(_settCatTimer);
+  _settMostraCategorie();
+  _settCatTimer = setTimeout(async () => {
+    const box = _g('sett-giorni');
+    if (!box || !_settTwAcceso()) return;
+    const salvate = settimanaOra().twitch.categorie || {};
+    const testi = [...new Set([...box.querySelectorAll('.sett-riga')]
+      .filter((r) => !r.querySelector('.sett-riposo')?.checked && r.querySelector('.sett-ora')?.value)
+      .map((r) => String(r.querySelector('.sett-att')?.value || '').trim()).filter(Boolean))];
+    for (const t of testi) {
+      const k = t.toLowerCase();
+      if (_settCat.has(k) || salvate[k] || _settCatInVolo.has(k)) continue;
+      _settCatInVolo.add(k);
+      let d = null;
+      try { d = await api('/api/streamer/settimana/categoria?q=' + encodeURIComponent(t)); } catch { d = null; }
+      _settCatInVolo.delete(k);
+      if (d) _settCat.set(k, d.categoria || null);
+      _settMostraCategorie();
+    }
+  }, 700);
+}
+
 function _settDisegnaGiorni() {
   const box = _g('sett-giorni');
   if (!box) return;
   const w = settimanaOra();
   const nomi = GIORNI_LUNGHI();
-  const cat = w.twitch.categorie || {};
-  box.innerHTML = w.giorni.map((g, i) => {
-    const c = cat[String(g.att || '').trim().toLowerCase()];
-    return `<div class="sett-riga" data-sett-i="${i}">
+  box.innerHTML = w.giorni.map((g, i) => `<div class="sett-riga" data-sett-i="${i}">
       <span class="sett-gg">${esc(nomi[i])}</span>
       <input type="time" class="sett-ora" aria-label="${esc(L('Ora di ', 'Time on ', 'Hora del ') + nomi[i])}" value="${esc(g.ora)}"${g.off ? ' disabled' : ''}>
-      <input type="text" class="sett-att" maxlength="40" aria-label="${esc(L('Cosa fai ', 'What you do on ', 'Qué haces el ') + nomi[i])}" placeholder="${esc(L('cosa fai', 'what you do', 'qué haces'))}" value="${esc(g.att)}"${g.off ? ' disabled' : ''}>
+      <div class="cat-cerca sett-cosa">
+        <input type="text" class="sett-att" maxlength="40" aria-label="${esc(L('Cosa fai ', 'What you do on ', 'Qué haces el ') + nomi[i])}" placeholder="${esc(L('un gioco o un titolo', 'a game or a title', 'un juego o un título'))}" value="${esc(g.att)}"${g.off ? ' disabled' : ''}>
+        <div class="cat-lista" hidden></div>
+      </div>
       <label class="sett-off"><input type="checkbox" class="sett-riposo"${g.off ? ' checked' : ''}> ${L('riposo', 'day off', 'descanso')}</label>
-      ${w.twitch.acceso && c?.name && !g.off && g.ora ? `<span class="suggerimento sett-cat">${L('su Twitch: ', 'on Twitch: ', 'en Twitch: ')}${esc(c.name)}</span>` : ''}
-    </div>`;
-  }).join('');
+      <span class="suggerimento sett-cat" hidden></span>
+    </div>`).join('');
+  for (const r of box.querySelectorAll('.sett-riga')) {
+    const campo = r.querySelector('.sett-att');
+    _cercaCategorie(campo, r.querySelector('.cat-lista'), { alScegli: (c) => {
+      campo.value = c.name;
+      _settCat.set(c.name.trim().toLowerCase(), { id: String(c.id), name: String(c.name) });
+      campo.dispatchEvent(new Event('input', { bubbles: true }));
+    } });
+  }
+  _settCercaCategorie();
   const sel = _g('sett-dura');
   if (sel) {
     const d = Number(w.dura) || 120;
@@ -4318,6 +4387,7 @@ function _settDisegnaCalendari() {
   }
   box.innerHTML = righe.length ? `<p class="campo">${L('I calendari', 'The calendars', 'Los calendarios')}</p>${righe.join('')}
     <p class="suggerimento">${L('Si aggiornano quando salvi, e poi da soli ogni sei ore: anche col cambio dell’ora.', 'They update when you save, and then by themselves every six hours: clock changes included.', 'Se actualizan cuando guardas, y luego solos cada seis horas: también con el cambio de hora.')}</p>` : '';
+  _settCercaCategorie();
 }
 
 function _settDisegnaDove() {
@@ -4426,7 +4496,7 @@ function collegaSettimana() {
   if (!scheda || scheda.dataset.pronta) return;
   scheda.dataset.pronta = '1';
   scheda.addEventListener('input', (e) => {
-    if (e.target.closest('#sett-giorni')) _settDisegnaAnteprima();
+    if (e.target.closest('#sett-giorni')) { _settDisegnaAnteprima(); _settCercaCategorie(); }
     if (e.target.id === 'sett-testo') e.target.dataset.toccato = '1';
   });
   scheda.addEventListener('change', (e) => {
@@ -4434,7 +4504,9 @@ function collegaSettimana() {
     if (r && e.target.classList.contains('sett-riposo')) {
       for (const x of r.querySelectorAll('.sett-ora, .sett-att')) x.disabled = e.target.checked;
       _settDisegnaAnteprima();
+      _settCercaCategorie();
     }
+    if (e.target.id === 'sett-tw') _settCercaCategorie();
   });
   scheda.addEventListener('click', (e) => {
     if (e.target.closest('[data-sett-reinvita]')) {
@@ -12651,9 +12723,9 @@ function pannelloRegia() {
 
       <label class="campo spazio-sopra">${L('Categoria / gioco', 'Category / game', 'Categoría / juego')}</label>
       <div class="regia-gioco-cur">${L('Ora:', 'Now:', 'Ahora:')} <strong id="regia-gioco-sel">—</strong></div>
-      <div class="regia-gioco">
+      <div class="cat-cerca">
         <input aria-label="${esc(L('Cerca un gioco/categoria…', 'Search a game/category…', 'Busca un juego/categoría…'))}" type="text" id="regia-gioco-cerca" placeholder="${L('Cerca un gioco/categoria…', 'Search a game/category…', 'Busca un juego/categoría…')}" autocomplete="off">
-        <div id="regia-gioco-lista" class="regia-gioco-lista" hidden></div>
+        <div id="regia-gioco-lista" class="cat-lista" hidden></div>
       </div>
 
       <label class="campo spazio-sopra" for="regia-tags">${L('Tag', 'Tags', 'Etiquetas')} <span class="tenue">— ${L('separati da virgola, max 10', 'comma-separated, max 10', 'separadas por comas, máx. 10')}</span></label>
@@ -12758,7 +12830,7 @@ function _pubLeggi() {
 
 let _regiaGameId = '';
 let _regiaUptimeTimer = null;
-let _regiaCercaTimer = null;
+let _catListe = 0;
 
 function _fmtUptime(startedAt) {
   if (!startedAt) return '';
@@ -12844,20 +12916,69 @@ async function caricaRegia() {
   _pubDisegna();
 }
 
-async function cercaGiochiRegia() {
-  const q = (document.getElementById('regia-gioco-cerca')?.value || '').trim();
-  const lista = document.getElementById('regia-gioco-lista');
-  if (!lista) return;
-  if (q.length < 2) { lista.hidden = true; lista.innerHTML = ''; return; }
-  try {
-    const d = await api('/api/streamer/regia/giochi?q=' + encodeURIComponent(q));
-    if (!d.giochi.length) { lista.hidden = false; lista.innerHTML = `<div class="rg-vuoto">${L('Nessun risultato', 'No results', 'Sin resultados')}</div>`; return; }
+function _cercaCategorie(input, lista, { alScegli, dilloSeVuoto = false }) {
+  if (!input || !lista || input.dataset.catCerca) return;
+  input.dataset.catCerca = '1';
+  let timer = null, voci = [], attiva = -1, scelto = '';
+  const id = lista.id || ('cat-lista-' + (++_catListe));
+  lista.id = id;
+  lista.setAttribute('role', 'listbox');
+  input.setAttribute('role', 'combobox');
+  input.setAttribute('aria-autocomplete', 'list');
+  input.setAttribute('aria-controls', id);
+  input.setAttribute('aria-expanded', 'false');
+  input.setAttribute('autocomplete', 'off');
+  const chiudi = () => {
+    lista.hidden = true; lista.innerHTML = ''; voci = []; attiva = -1;
+    input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant');
+  };
+  const evidenzia = (i) => {
+    attiva = i;
+    lista.querySelectorAll('.cat-opt').forEach((b, k) => b.classList.toggle('attiva', k === i));
+    if (i >= 0) { input.setAttribute('aria-activedescendant', `${id}-${i}`); lista.querySelector(`#${id}-${i}`)?.scrollIntoView({ block: 'nearest' }); }
+    else input.removeAttribute('aria-activedescendant');
+  };
+  const scegli = (g) => { chiudi(); if (!g) return; scelto = String(g.name); alScegli(g); };
+  const dici = (testo) => { lista.hidden = false; lista.innerHTML = `<div class="cat-vuoto">${esc(testo)}</div>`; input.setAttribute('aria-expanded', 'true'); };
+  const cerca = async () => {
+    const q = input.value.trim();
+    if (q.length < 2) { chiudi(); return; }
+    let d = null, guaio = '';
+    try { d = await api('/api/streamer/regia/giochi?q=' + encodeURIComponent(q)); } catch (e) { guaio = e?.message || ''; }
+    if (input.value.trim() !== q || document.activeElement !== input) return;
+    voci = (d?.giochi || []).filter((g) => g?.id && g?.name).slice(0, 8);
+    attiva = -1;
+    if (!voci.length) {
+      if (!dilloSeVuoto) { chiudi(); return; }
+      dici(guaio ? L('Errore: ', 'Error: ', 'Error: ') + guaio : L('Nessun risultato', 'No results', 'Sin resultados'));
+      return;
+    }
     lista.hidden = false;
-    lista.innerHTML = d.giochi.map((g) => {
+    input.setAttribute('aria-expanded', 'true');
+    lista.innerHTML = voci.map((g, i) => {
       const art = g.boxArt ? g.boxArt.replace('{width}', '40').replace('{height}', '53') : '';
-      return `<button type="button" class="rg-opt" data-id="${esc(g.id)}" data-nome="${esc(g.name)}">${art ? `<img src="${esc(art)}" alt="">` : ''}<span>${esc(g.name)}</span></button>`;
+      return `<button type="button" class="cat-opt" role="option" id="${id}-${i}" data-i="${i}" tabindex="-1">${art ? `<img src="${esc(art)}" alt="">` : ''}<span>${esc(g.name)}</span></button>`;
     }).join('');
-  } catch (e) { lista.hidden = false; lista.innerHTML = `<div class="rg-vuoto">${L('Errore:', 'Error:', 'Error:')} ${esc(e.message)}</div>`; }
+  };
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    if (input.value.trim() === scelto) return;
+    scelto = '';
+    timer = setTimeout(cerca, 300);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (lista.hidden || !voci.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); evidenzia((attiva + 1) % voci.length); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); evidenzia(attiva <= 0 ? voci.length - 1 : attiva - 1); }
+    else if (e.key === 'Enter' && attiva >= 0) { e.preventDefault(); scegli(voci[attiva]); }
+    else if (e.key === 'Escape') { e.preventDefault(); chiudi(); }
+  });
+  input.addEventListener('blur', () => { clearTimeout(timer); setTimeout(chiudi, 0); });
+  lista.addEventListener('mousedown', (e) => e.preventDefault());
+  lista.addEventListener('click', (e) => {
+    const b = e.target.closest('.cat-opt');
+    if (b) scegli(voci[Number(b.dataset.i)]);
+  });
 }
 
 async function salvaRegiaCanale() {
@@ -22071,15 +22192,11 @@ function attivaPiattaforma() {
   });
 
   const gCerca = document.getElementById('regia-gioco-cerca');
-  gCerca?.addEventListener('input', () => { clearTimeout(_regiaCercaTimer); _regiaCercaTimer = setTimeout(cercaGiochiRegia, 300); });
-  const gLista = document.getElementById('regia-gioco-lista');
-  gLista?.addEventListener('click', (ev) => {
-    const opt = ev.target.closest('.rg-opt'); if (!opt) return;
-    _regiaGameId = opt.dataset.id;
-    const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = opt.dataset.nome;
-    gLista.hidden = true; if (gCerca) gCerca.value = '';
-  });
-  document.addEventListener('click', (ev) => { if (gLista && !gLista.hidden && !gLista.contains(ev.target) && ev.target !== gCerca) gLista.hidden = true; });
+  _cercaCategorie(gCerca, document.getElementById('regia-gioco-lista'), { dilloSeVuoto: true, alScegli: (g) => {
+    _regiaGameId = g.id;
+    const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = g.name;
+    gCerca.value = '';
+  } });
 
   initStudio();
 

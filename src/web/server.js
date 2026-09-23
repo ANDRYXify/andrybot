@@ -5123,6 +5123,16 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ settimana: settimana.vistaSettimana(sett), posti: await postiSettimana(login) });
   }));
 
+  // LA CATEGORIA DI UN GIORNO, mentre la si scrive: la stessa ricerca che fa il
+  // salvataggio (`risolviCategoria`), cosi' quello che il pannello mostra e'
+  // quello che finira' sul Programma.
+  app.get('/api/streamer/settimana/categoria', requireOwner, wrap(async (req, res) => {
+    const q = String(req.query.q || '').trim().slice(0, settimana.ATT_MAX);
+    if (!q) return res.json({ categoria: null });
+    const c = await categoria.risolviCategoria(helix, q).catch(() => null);
+    res.json({ categoria: c ? { id: String(c.id), name: String(c.name) } : null });
+  }));
+
   // SALVARE RIALLINEA I CALENDARI, subito: chi cambia l'ora del giovedi' vuole
   // vederla cambiata adesso, non fra sei ore.
   app.post('/api/streamer/settimana', requireOwner, wrap(async (req, res) => {
