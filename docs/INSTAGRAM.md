@@ -14,7 +14,9 @@ settembre 2026).
    monouso legato al canale e manda a `www.instagram.com/oauth/authorize` con
    l'ID app di Instagram e due permessi: `instagram_business_basic` (leggere i
    post) e `instagram_business_content_publish` (pubblicare la storia della
-   settimana). Messaggi e commenti non si chiedono.
+   settimana). Messaggi e commenti non si chiedono. Con `force_reauth=true`
+   Instagram chiede sempre con che account entrare: se il browser è già dentro
+   con un account personale, non si collega quello per sbaglio.
 2. Instagram torna su `/auth/instagram/callback` con un codice valido un'ora.
    Il codice si cambia con un token corto e l'**id di app** dell'account.
 3. Il token corto si cambia con uno lungo, che dura sessanta giorni.
@@ -22,6 +24,14 @@ settembre 2026).
 
 Se uno dei passi non va, il collegamento non si fa. Un collegamento a metà
 sembra fatto e poi non pubblica.
+
+Ogni ritorno ha la sua frase nel pannello: fatto, permesso negato, rimasto a
+metà troppo a lungo, non riuscito, e partito da fuori. L'ultimo è chi arriva
+senza stato, per esempio col link che la dashboard di Meta chiama «URL di
+incorporamento»: quel link non serve, perché il tasto costruisce il suo, con
+lo stato. La dashboard ci mette tutti i permessi del caso d'uso (messaggi,
+commenti, statistiche); il tasto ne chiede due, e alla revisione dell'app si
+presentano quei due.
 
 ## Due identificativi
 

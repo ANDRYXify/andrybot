@@ -18,12 +18,24 @@ test('il ritorno da Instagram vale solo per chi ha cominciato il giro, con la su
   const r = rotta("app.get('/auth/instagram/callback'");
   assert.match(r, /^app\.get\('\/auth\/instagram\/callback', requireOwner,/,
     'con lo stato soltanto, chi comincia per il suo canale e lo fa finire a un altro si collegherebbe l\'Instagram dell\'altro');
+  assert.match(r, /if \(!chiave\) return res\.redirect\('\/\?instagram=fuori#notifiche'\);/,
+    'chi torna da un link che non e\' partito dal tasto (quello della dashboard di Meta) lo sa, invece di un «riprova»');
   assert.match(r, /if \(!st \|\| st\.login !== login\) return/);
   assert.match(r, /igStati\.delete\(chiave\);/, 'uno stato vale una volta');
   assert.match(r, /tokens\.save\('instagram', login, \{ userId: r\.idApp, accessToken: r\.token/,
     'nella cassaforte, accanto al token, l\'id di app: e\' quello delle richieste firmate');
   assert.match(r, /instagram: \{ \.\.\.ig, userId: r\.userId, username: r\.username, via: 'instagram', token: '' \}/,
     'nelle impostazioni l\'id dell\'account, il nome, e il token a mano svuotato');
+});
+
+test('ogni esito del ritorno da Instagram ha la sua frase nel pannello', () => {
+  const r = rotta("app.get('/auth/instagram/callback'");
+  const esiti = [...new Set([...r.matchAll(/instagram=([a-z]+)#notifiche/g)].map((m) => m[1]))];
+  assert.ok(esiti.length >= 5, `esiti trovati: ${esiti.join(', ')}`);
+  const APP = leggi('src/web/public/app.js');
+  const i = APP.indexOf("get('instagram')");
+  const detto = APP.slice(i, APP.indexOf('}[esito];', i));
+  for (const e of esiti) assert.match(detto, new RegExp(`\\n\\s+${e}: \\[L\\('`), `l'esito «${e}» arriva al pannello e nessuno lo spiega`);
 });
 
 test('le porte di Meta si aprono solo con la firma', () => {

@@ -3925,6 +3925,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     puliziaStatiIg();
     const login = currentUser(req).login;
     const chiave = String(req.query.state || '');
+    if (!chiave) return res.redirect('/?instagram=fuori#notifiche');
     const st = igStati.get(chiave);
     igStati.delete(chiave);
     if (!st || st.login !== login) return res.redirect('/?instagram=scaduto#notifiche');

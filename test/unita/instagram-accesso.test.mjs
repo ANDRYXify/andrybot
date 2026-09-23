@@ -28,6 +28,7 @@ test('il tasto porta a Instagram con i due permessi e lo stato', () => {
   assert.equal(u.searchParams.get('redirect_uri'), 'https://socialbot.live/auth/instagram/callback');
   assert.equal(u.searchParams.get('response_type'), 'code');
   assert.equal(u.searchParams.get('state'), 'abc');
+  assert.equal(u.searchParams.get('force_reauth'), 'true', 'Instagram chiede con che account entrare, anche se il browser e\' dentro con un altro');
   assert.deepEqual(u.searchParams.get('scope').split(','), PERMESSI);
   assert.deepEqual(PERMESSI, ['instagram_business_basic', 'instagram_business_content_publish'],
     'leggere i post e pubblicare la storia: niente messaggi, niente commenti');

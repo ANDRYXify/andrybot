@@ -3,7 +3,9 @@
 // Verificato su developers.facebook.com (Business Login for Instagram,
 // settembre 2026). Il giro, per intero:
 //   1. lo streamer preme «Collega Instagram» → www.instagram.com/oauth/authorize
-//      con l'ID app DI INSTAGRAM (non quello di Meta), i permessi e uno stato;
+//      con l'ID app DI INSTAGRAM (non quello di Meta), i permessi e uno stato.
+//      Con force_reauth Instagram chiede sempre con che account entrare: se il
+//      browser e' gia' dentro con un altro account, non si collega quello;
 //   2. torna qui con un codice valido un'ora → api.instagram.com/oauth/access_token
 //      lo cambia con un token corto e l'id DI APP dell'account;
 //   3. graph.instagram.com/access_token cambia il corto con uno lungo, 60 giorni;
@@ -34,7 +36,7 @@ export const GRAPH = 'https://graph.instagram.com';
 
 export function urlAutorizzazione({ appId, redirectUri, state }) {
   const q = new URLSearchParams({
-    client_id: String(appId), redirect_uri: redirectUri, response_type: 'code',
+    force_reauth: 'true', client_id: String(appId), redirect_uri: redirectUri, response_type: 'code',
     scope: PERMESSI.join(','), state: String(state),
   });
   return 'https://www.instagram.com/oauth/authorize?' + q.toString();

@@ -5885,6 +5885,7 @@ async function caricaInstagram() {
     const detto = {
       ok: [L('Account Instagram collegato.', 'Instagram account connected.', 'Cuenta de Instagram conectada.')],
       no: [L('Su Instagram non hai dato il permesso: non ho collegato niente.', 'You didn’t grant the permission on Instagram: nothing is connected.', 'No diste el permiso en Instagram: no he conectado nada.'), 'errore'],
+      fuori: [L('Il collegamento va fatto da qui, col tasto «Collega Instagram»: un link preso altrove non lo accetto.', 'Connect from here, with the «Connect Instagram» button: I don’t accept a link taken from somewhere else.', 'La conexión se hace desde aquí, con el botón «Conectar Instagram»: un enlace sacado de otro sitio no lo acepto.'), 'errore'],
       scaduto: [L('Il collegamento è rimasto a metà troppo a lungo: riprova.', 'The connection was left halfway for too long: try again.', 'La conexión se quedó a medias demasiado tiempo: vuelve a intentarlo.'), 'errore'],
       errore: [L('Il collegamento con Instagram non è riuscito: riprova tra poco.', 'Connecting to Instagram didn’t work: try again shortly.', 'La conexión con Instagram no funcionó: inténtalo de nuevo en un rato.'), 'errore'],
     }[esito];
