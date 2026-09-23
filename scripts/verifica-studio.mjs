@@ -50,13 +50,21 @@ const b = await chromium.launch({ executablePath: CHROMIUM,
 const p = await b.newPage({ viewport: { width: 1440, height: 950 } });
 const rotture = [];
 p.on('pageerror', (e) => rotture.push('errore di pagina: ' + e.message));
+// Il giro guidato parte da solo alla prima visita di una scheda, dopo un
+// attimo di quiete, e qui la tela si muove da programma: il giro si
+// metterebbe davanti al trascinamento. Lo si spegne come lo spegne il
+// pannello (sb-giro), prima che la pagina parta: toglierlo dopo e' una gara
+// col suo orologio.
+await p.addInitScript(() => { try { localStorage.setItem('sb-giro', JSON.stringify({ viste: {}, mai: true })); } catch {} });
 await p.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domcontentloaded' });
 await p.waitForFunction(() => window.SB_APP, null, { timeout: 20000 });
 await p.evaluate(() => { document.getElementById('cookie-banner')?.remove(); window.SB_APP.vai('alert'); });
 await p.waitForFunction(() => (document.querySelector('.pannello-scheda.visibile') || {}).id === 'scheda-alert', null, { timeout: 20000 });
 await p.waitForFunction(() => document.querySelectorAll('#ap-stage .ap-el').length > 4, null, { timeout: 20000 });
 await p.waitForTimeout(700);
-await p.evaluate(() => document.querySelector('.giro-velo')?.remove());
+if (!await p.evaluate(() => typeof giroVisto === 'function' && giroVisto(schedaAttiva))) {
+  rotture.push('il giro guidato non si spegne piu\' con sb-giro, e puo\' coprire la tela');
+}
 
 // Il collaudo scrive nei campi dello stile per provare l'anteprima, e cosi'
 // sporca la barra «hai modifiche non salvate»: da li' in poi cambiare overlay
@@ -127,7 +135,7 @@ for (const k of chiavi) {
       liv: [...document.querySelectorAll('.ovl-liv.scelto')].map((e) => e.dataset.liv),
       nome: (document.getElementById('insp-nome') || {}).textContent,
       altrove: !!insp.querySelector('.insp-altrove:not([hidden])'),
-      atteso: _nomeEl(kk), idAtteso: _idEl(kk), inOverlay: _inOverlay(kk), chiuso: insp.hidden,
+      atteso: _nomeEl(kk), idAtteso: _idEl(kk), inOverlay: _inOverlay(kk), chiuso: insp.hidden || insp.classList.contains('vuoto'),
     };
   }, k);
   const g = [];
@@ -138,14 +146,30 @@ for (const k of chiavi) {
   if (r.inOverlay && (r.sel.length !== 1 || r.sel[0] !== r.idAtteso)) g.push(`sulla tela [${r.sel}]`);
   if (r.liv.length !== 1 || r.liv[0] !== k) g.push(`livelli [${r.liv}]`);
   if (r.nome !== r.atteso) g.push(`titolo «${r.nome}»`);
-  if (r.chiuso) g.push('pannello chiuso');
+  if (r.chiuso) g.push('pannello chiuso o vuoto');
   if (g.length) incoerenti.push(k + ': ' + g.join(', '));
 }
+// LA TELA NON CAMBIA MISURA SCEGLIENDO. Nel banco il pannello dei comandi c'e'
+// sempre, vuoto quando non c'e' niente di scelto. Se comparisse solo alla scelta
+// si prenderebbe la sua colonna proprio mentre premi per trascinare: la tela si
+// stringerebbe e la scena ti scivolerebbe sotto il dito. Era cosi': una regola
+// generale sull'attributo `hidden` batteva quella del banco, e a 1440 px la
+// tela passava da 797 a 491 px al primo tocco.
+const misureTela = await p.evaluate(() => {
+  const w = () => { const r = document.getElementById('ovl-preview').getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width)]; };
+  deseleziona(); const libera = w();
+  seleziona(ELEMENTI()[0].k); const scelta = w();
+  deseleziona(); const lasciata = w();
+  return { libera, scelta, lasciata };
+});
+const telaFerma = JSON.stringify(misureTela.libera) === JSON.stringify(misureTela.scelta)
+  && JSON.stringify(misureTela.scelta) === JSON.stringify(misureTela.lasciata);
+
 const dopoScelta = await p.evaluate(() => {
   deseleziona();
   const insp = document.getElementById('ovl-inspector');
   return { visti: [...insp.querySelectorAll('.asp-blocco')].filter((b) => b.offsetParent !== null || b.getClientRects().length).length,
-    sel: document.querySelectorAll('#ap-stage .ap-el.sel').length, chiuso: insp.hidden };
+    sel: document.querySelectorAll('#ap-stage .ap-el.sel').length, chiuso: insp.classList.contains('vuoto') };
 });
 
 // E niente deve essere rimasto sotto la tela: un campo dimenticato la' e'
@@ -529,6 +553,7 @@ verde = dice(!!occhio.elementoVia, 'l’occhio toglie davvero l’elemento dalla
 verde = dice(!!occhio.cambiata, 'e si vede: la riga lascia i livelli e passa tra quelli da rimettere', JSON.stringify(occhio)) && verde;
 verde = dice(!!occhio.tornato, 'e da lì si rimette dov’era', JSON.stringify(occhio)) && verde;
 verde = dice(incoerenti.length === 0, `scegliendo un elemento si vedono solo i suoi comandi: ${chiavi.length} elementi`, incoerenti.join(' · ')) && verde;
+verde = dice(telaFerma, 'la tela non cambia misura scegliendo o lasciando un elemento', JSON.stringify(misureTela)) && verde;
 verde = dice(dopoScelta.visti === 0 && dopoScelta.sel === 0 && dopoScelta.chiuso,
   'e lasciandolo non resta niente acceso', JSON.stringify(dopoScelta)) && verde;
 verde = dice(rimasti === 0, 'nessun comando dimenticato sotto la tela', `${rimasti} campi rimasti giù`) && verde;

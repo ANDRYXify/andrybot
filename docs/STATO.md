@@ -50,6 +50,11 @@ Su Kick e YouTube Twitch non c'è: sei in onda se il rapporto della serata è
 aperto, e da quando lo dice il suo inizio. Chi ha solo Discord non va in onda, e
 la carta non c'è.
 
+Su Twitch, quando Twitch risponde, ha ragione lui. A diretta appena finita la
+serata del bot resta aperta ancora qualche minuto, finché il suo giro non se ne
+accorge: se la Home ascoltasse la serata direbbe «in diretta» a chi ha già
+chiuso. La serata vale solo quando Twitch non risponde.
+
 ## L'orologio non si conta, si calcola
 
 Da quanto sei in onda è `adesso − inizio`, rifatto ogni secondo dall'istante

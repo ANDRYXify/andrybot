@@ -202,6 +202,20 @@ Una regola scritta prima che i pannelli avessero un'intestazione nascondeva
 cambia solo il contenuto del corpo: l'intestazione resta, perché è l'identità
 del pannello e la sua maniglia.
 
+### La tela cambiava misura scegliendo un elemento
+
+Sul computer il banco ha tre colonne: livelli, tela, ispettore. L'ispettore
+senza selezione era `hidden`, e una regola generale (`[hidden]` vuol dire «non
+c'è», sempre) vinceva su quella del banco che voleva tenerlo in vista: la sua
+colonna spariva, e scegliendo un elemento ricompariva. La tela passava da 781 a
+491 pixel sotto il dito, e un trascinamento cominciato sulla prima e finito
+sulla seconda spostava l'elemento del 40% in meno di quanto chiesto.
+
+Nel banco l'ispettore adesso c'è sempre: senza selezione ha la classe `vuoto`
+e mostra solo «niente selezionato». La colonna non cambia, quindi la tela
+neanche. `verifica-studio` lo misura: la tela ha la stessa misura prima, durante
+e dopo la scelta di un elemento.
+
 ### Il pannello poteva scendere sotto il fondo
 
 Il limite del trascinamento teneva dentro solo 34px di intestazione, quindi un

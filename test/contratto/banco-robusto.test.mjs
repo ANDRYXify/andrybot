@@ -83,7 +83,8 @@ test('durante il trascinamento si aggiorna la riga del livello, non tutto il pan
   // `st` passato di mano: la riga la scrive chi il numero ce l'ha gia', invece di
   // riandarlo a misurare dalla pagina a ogni movimento
   assert.ok(!/aggiornaInspector\(\)/.test(move) && /_mostraProp\(\); _aggiornaRigaLivello\(chiave, st\);/.test(move), 'nel movimento niente innerHTML del pannello, e niente misure rilette');
-  assert.ok(/const up = \(\) => \{ chiudi\(\); aggiornaInspector\(\); _ricorda\(\); _salvaPos\(chiave\); \};/.test(rt), 'al rilascio il pannello si ridisegna una volta');
+  assert.ok(/const up = \(\) => \{ aFotogramma\(move\)\.svuota\(\); chiudi\(\); aggiornaInspector\(\); _ricorda\(\); _salvaPos\(chiave\); \};/.test(rt),
+    'al rilascio l\'ultimo movimento si applica, poi il pannello si ridisegna una volta');
   const dm = corpoDi('_dragManiglia');
   assert.ok(/_posElemento\(el, st\); _mostraProp\(\); _aggiornaRigaLivello\(chiave, st\);/.test(dm) && /aggiornaInspector\(\); _ricorda\(\); _salvaPos\(chiave\);/.test(dm), 'anche le maniglie, e ricordano il passo per l\'annulla');
 });

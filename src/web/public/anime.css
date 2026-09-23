@@ -1398,9 +1398,8 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 .arrotolato .pan-corpo { display: none; }
 .arrotolato { max-height: none !important; }
 
-.carta.ovl-banco .ovl-inspector[hidden] { display: block; }
-.carta.ovl-banco .ovl-inspector[hidden] .pan-corpo > *:not(.ovl-vuoto) { display: none; }
-.carta.ovl-banco .ovl-inspector:not([hidden]) .pan-corpo > .ovl-vuoto { display: none; }
+.carta.ovl-banco .ovl-inspector.vuoto .pan-corpo > *:not(.ovl-vuoto) { display: none; }
+.carta.ovl-banco .ovl-inspector:not(.vuoto) .pan-corpo > .ovl-vuoto { display: none; }
 .carta.ovl-banco .ovl-vuoto {
   padding: 1.1rem .9rem; color: var(--testo-3); font-size: .86rem; line-height: 1.5;
 }

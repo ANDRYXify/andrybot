@@ -6850,13 +6850,17 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const ora = Date.now();
     const p = piattaformaDi(login);
     const corso = rapporto.inCorso(login, { ora });
+    // Se Twitch risponde, ha ragione lui: a diretta appena finita la serata del
+    // bot resta aperta ancora qualche minuto, e la Home direbbe «in diretta».
+    // La serata vale dove Twitch non c'e' (Kick, YouTube) o quando non risponde.
     let live = null;
     if (conDiretta(p)) {
-      const st = p === 'twitch' ? await helix.getStream(login).catch(() => null) : null;
+      let st = null, risposto = false;
+      if (p === 'twitch') { try { st = await helix.getStream(login); risposto = true; } catch { /* Twitch non risponde */ } }
       if (st) {
         live = { dal: Date.parse(st.started_at) || corso?.inizio || ora, titolo: String(st.title || ''), gioco: String(st.game_name || ''),
           spettatori: Number(st.viewer_count) || 0 };
-      } else if (corso) {
+      } else if (corso && !risposto) {
         live = { dal: corso.inizio, titolo: '', gioco: '', spettatori: null };
       }
     }

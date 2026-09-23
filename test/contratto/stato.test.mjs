@@ -70,6 +70,7 @@ test('la Home non conta niente di suo: legge chi i numeri li tiene gia\'', () =>
   assert.ok(i > 0, 'la porta c\'e\', e chiede la sessione');
   const corpo = SRV.slice(i, SRV.indexOf('\n  }));', i));
   assert.ok(corpo.includes('helix.getStream(login)'), 'la diretta la dice Twitch');
+  assert.ok(corpo.includes('} else if (corso && !risposto) {'), 'e se Twitch risponde che non sei in onda, la serata del bot non lo smentisce');
   assert.ok(corpo.includes('rapporto.inCorso(login'), 'la serata la tiene il rapporto');
   assert.ok(corpo.includes('rapporto.raccogli(login'), 'e la conta la stessa funzione del rapporto di fine diretta');
   assert.ok(corpo.includes('settimana.prossimaDiretta('), 'la prossima viene dalla settimana');

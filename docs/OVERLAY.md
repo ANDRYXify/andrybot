@@ -1571,9 +1571,17 @@ fotogramma, per un disegno solo.
 arrivata: quelle in mezzo non le avrebbe viste nessuno. La corrispondenza fra la
 funzione vera e quella a fotogrammi sta in una `WeakMap`, cosi' `addEventListener`
 e `removeEventListener` parlano dello stesso oggetto senza che ogni punto di
-trascinamento debba ricordarsene; `_stacca(fn)` toglie l'ascoltatore e annulla
-il fotogramma gia' in coda, cosi' finito il trascinamento non arriva un ultimo
-movimento in ritardo.
+trascinamento debba ricordarsene.
+
+Quando il trascinamento finisce, il movimento ancora in coda e' l'ultima
+posizione del dito, e le due uscite la trattano in modo diverso:
+
+- **lasciando** (`_rilascia(fn)`, o `aFotogramma(fn).svuota()`) il movimento si
+  applica subito, poi si stacca l'ascoltatore. Buttarlo lasciava l'elemento un
+  fotogramma indietro rispetto a dove l'avevi lasciato, e piu' era veloce il
+  gesto, piu' restava indietro;
+- **con Esc** (`_stacca(fn)`) il movimento si butta, perche' l'elemento torna
+  dov'era e un ultimo spostamento in ritardo lo tirerebbe fuori di nuovo.
 
 E la lettura che obbligava a rimisurare e' sparita alla radice:
 `_aggiornaRigaLivello(k, st)` prende la posizione da chi ce l'ha gia' in mano.

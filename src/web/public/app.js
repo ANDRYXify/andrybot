@@ -9049,10 +9049,12 @@ function aFotogramma(fn) {
   const giro = () => { id = 0; const ev = ultimo; ultimo = null; if (ev) fn(ev); };
   f = (ev) => { ultimo = ev; if (!id) id = requestAnimationFrame(giro); };
   f.ferma = () => { if (id) cancelAnimationFrame(id); id = 0; ultimo = null; };
+  f.svuota = () => { if (id) cancelAnimationFrame(id); id = 0; const ev = ultimo; ultimo = null; if (ev) fn(ev); };
   _AFOTO.set(fn, f);
   return f;
 }
 const _stacca = (fn) => { const f = aFotogramma(fn); f.ferma(); return f; };
+const _rilascia = (fn) => { const f = aFotogramma(fn); f.svuota(); return f; };
 
 function _presaParte(parte, e, muovi) {
   e.preventDefault(); e.stopPropagation();
@@ -9071,7 +9073,7 @@ function _presaParte(parte, e, muovi) {
     window.removeEventListener('pointermove', _stacca(move)); window.removeEventListener('pointerup', up);
     document.removeEventListener('keydown', fuga, true);
   };
-  const up = () => { fine(); _ricorda(); salvaCfgElemento('musica'); };
+  const up = () => { aFotogramma(move).svuota(); fine(); _ricorda(); salvaCfgElemento('musica'); };
   const fuga = (ev) => {
     if (ev.key !== 'Escape') return;
     ev.preventDefault(); ev.stopImmediatePropagation();
@@ -9409,8 +9411,9 @@ function aggiornaInspector() {
   if (!box) return;
   mettiVesti(box);
   for (const b of box.querySelectorAll('.asp-blocco')) b.hidden = b.dataset.asp !== selezione;
-  if (!selezione) { box.hidden = true; return; }
-  box.hidden = false;
+  box.hidden = !box.closest('.carta.ovl-banco');
+  box.classList.toggle('vuoto', !selezione);
+  if (!selezione) return;
   const nome = _g('insp-nome'); if (nome) nome.textContent = _nomeEl(selezione);
   const luc = _g('insp-blocca');
   if (luc) { const b = _bloccato(selezione); luc.textContent = b ? L('Sblocca', 'Unlock', 'Desbloquear') : L('Blocca', 'Lock', 'Bloquear'); luc.classList.toggle('chiuso', b); }
@@ -10008,7 +10011,7 @@ function _dragRiquadro(lato, e) {
     _posElemento(el, st); _mostraGuide(guide); _mostraProp(); _aggiornaRigaLivello(k, st);
   };
   const up = () => {
-    window.removeEventListener('pointermove', _stacca(move)); window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointermove', _rilascia(move)); window.removeEventListener('pointerup', up);
     _mostraGuide([]); aggiornaInspector(); _ricorda(); _salvaPos(k);
   };
   window.addEventListener('pointermove', aFotogramma(move)); window.addEventListener('pointerup', up);
@@ -10053,7 +10056,7 @@ function _trascinaRiquadro(k, e) {
     document.removeEventListener('keydown', fuga, true);
     _mostraGuide([]);
   };
-  const up = () => { fine(); aggiornaInspector(); _ricorda(); _salvaPos(k); };
+  const up = () => { aFotogramma(move).svuota(); fine(); aggiornaInspector(); _ricorda(); _salvaPos(k); };
   const fuga = (ev) => {
     if (ev.key !== 'Escape') return;
     ev.preventDefault(); ev.stopImmediatePropagation();
@@ -10724,7 +10727,7 @@ function _dragManiglia(chiave, e, tipo) {
     }
     _posElemento(el, st); _mostraProp(); _aggiornaRigaLivello(chiave, st);
   };
-  const up = () => { window.removeEventListener('pointermove', _stacca(move)); window.removeEventListener('pointerup', up); aggiornaInspector(); _ricorda(); _salvaPos(chiave); };
+  const up = () => { window.removeEventListener('pointermove', _rilascia(move)); window.removeEventListener('pointerup', up); aggiornaInspector(); _ricorda(); _salvaPos(chiave); };
   window.addEventListener('pointermove', aFotogramma(move)); window.addEventListener('pointerup', up);
 }
 
@@ -10959,7 +10962,7 @@ function rendiTrascinabile(el, chiave) {
       document.removeEventListener('keydown', fuga, true);
       _mostraGuide([]);
     };
-    const up = () => { chiudi(); aggiornaInspector(); _ricorda(); _salvaPos(chiave); };
+    const up = () => { aFotogramma(move).svuota(); chiudi(); aggiornaInspector(); _ricorda(); _salvaPos(chiave); };
     const fuga = (ev) => {
       if (ev.key !== 'Escape') return;
       ev.preventDefault(); ev.stopImmediatePropagation();
@@ -15027,7 +15030,7 @@ function _premioEditorPos(box, comando, tipo, st, salva) {
       st.xy.y = Math.round(_tra(xDaCentro(ev.clientY - rect.top, l.h, rect.height), 0, 100));
       posEl();
     };
-    const up = () => { el.removeEventListener('pointermove', _stacca(move)); el.removeEventListener('pointerup', up); salva(); };
+    const up = () => { el.removeEventListener('pointermove', _rilascia(move)); el.removeEventListener('pointerup', up); salva(); };
     el.addEventListener('pointermove', aFotogramma(move)); el.addEventListener('pointerup', up);
   });
   box.querySelector('.pp-s').addEventListener('input', (e) => { st.xy.s = Number(e.target.value); box.querySelector('.pp-s-v').textContent = st.xy.s; posEl(); });

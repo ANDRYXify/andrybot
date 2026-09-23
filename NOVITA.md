@@ -61,6 +61,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Mentre una scheda carica, al posto di «Caricamento…» vedi la forma di quello che sta arrivando.
 - Il pannello si apre e cambia scheda più in fretta, soprattutto sul telefono: prepara solo la scheda che stai guardando.
 - Le «×» che tolgono un amico o una fonte si prendono col dito anche sul telefono.
+- Nello Studio un elemento si sposta di quanto lo trascini anche appena scelto: la tela non cambia più misura sotto il dito. [vai: alert]
+- A diretta appena chiusa, Stato non dice più «in diretta»: quando Twitch risponde, vale quello che dice Twitch. [vai: stato]
 
 ## 2026-09-19
 

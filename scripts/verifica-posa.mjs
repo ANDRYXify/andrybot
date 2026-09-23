@@ -58,6 +58,12 @@ const attesa = (v, lato, tela) => (v / 100) * (tela - lato) + lato / 2;
 {
   const p = await b.newPage({ viewport: { width: 1440, height: 950 } });
   p.on('pageerror', (e) => guai.push('banco: errore di pagina — ' + e.message));
+  // Il giro guidato parte da solo alla prima visita di una scheda, dopo un
+  // attimo di quiete, e qui la tela si muove da programma: il giro si
+  // metterebbe davanti al trascinamento. Lo si spegne come lo spegne il
+  // pannello (sb-giro), prima che la pagina parta: toglierlo dopo e' una gara
+  // col suo orologio.
+  await p.addInitScript(() => { try { localStorage.setItem('sb-giro', JSON.stringify({ viste: {}, mai: true })); } catch {} });
   await p.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domcontentloaded' });
   await p.waitForFunction(() => window.SB_APP, null, { timeout: 20000 });
   await p.evaluate(() => { document.getElementById('cookie-banner')?.remove(); window.SB_APP.vai('alert'); });
@@ -65,7 +71,9 @@ const attesa = (v, lato, tela) => (v / 100) * (tela - lato) + lato / 2;
   await p.waitForFunction(() => document.querySelectorAll('#ap-stage .ap-el').length > 4, null, { timeout: 20000 });
   await p.waitForFunction(() => (document.getElementById('ovl-preview')?.getBoundingClientRect().width || 0) > 100, null, { timeout: 20000 });
   await p.waitForTimeout(700);
-  await p.evaluate(() => document.querySelector('.giro-velo')?.remove());
+  if (!await p.evaluate(() => typeof giroVisto === 'function' && giroVisto(schedaAttiva))) {
+    guai.push('banco: il giro guidato non si spegne piu\' con sb-giro, e puo\' coprire la tela');
+  }
 
   const misure = await p.evaluate(({ DIMENSIONI, vecchia }) => {
     const fuori = [];
