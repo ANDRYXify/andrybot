@@ -1572,6 +1572,10 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
 }
 .scheletro.riga { height: .95em; margin: .5rem 0; }
 .scheletro.riga.corta { width: 62%; }
+.attesa { display: block; list-style: none; margin: .1rem 0; }
+.attesa .scheletro { display: block; }
+body.leggero .scheletro::after, body.meno-moto .scheletro::after { animation: none; }
+@media (prefers-reduced-motion: reduce) { .scheletro::after { animation: none; } }
 @keyframes shimmer { to { transform: translateX(100%); } }
 
 @media (prefers-color-scheme: dark) {

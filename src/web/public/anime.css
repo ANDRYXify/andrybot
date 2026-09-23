@@ -594,7 +594,7 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
   .sc-voce { min-height: 46px; }
   .scudo-seg-azioni .btn { flex: 1 1 auto; }
   .scudo-chip { padding: 6px 6px 6px 13px; font-size: .88rem; }
-  .scudo-chip-x { min-width: 30px; min-height: 30px; display: inline-grid; place-items: center; }
+  .scudo-chip-x, .tg-amico button, .fd-togli { min-width: 30px; min-height: 30px; display: inline-grid; place-items: center; }
   table .btn.mini { min-height: 36px; }
 }
 
@@ -1172,6 +1172,7 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
 .tg-amico button {
   border: 0; background: none; cursor: pointer; color: var(--testo-3); font-size: 1rem; line-height: 1;
   padding: 0 .3rem; border-radius: 50%;
+  min-width: 24px; min-height: 24px; display: inline-grid; place-items: center;
 }
 @media (hover: hover) {
 .tg-amico button:hover { color: var(--rosso); }
@@ -1772,6 +1773,7 @@ body.con-salva { padding-bottom: 92px; }
 .fd-togli {
   border: 0; background: none; cursor: pointer; color: var(--testo-3); font-size: 1.15rem; line-height: 1;
   padding: 0 .25rem; border-radius: 50%;
+  min-width: 24px; min-height: 24px; display: inline-grid; place-items: center;
 }
 @media (hover: hover) {
 .fd-togli:hover { color: var(--rosso); }

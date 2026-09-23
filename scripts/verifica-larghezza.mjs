@@ -30,9 +30,10 @@ import { apriSito } from './_sito.mjs';
 const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
 const SELFTEST = process.argv.includes('--selftest');
-// Il telefono piu' stretto che vale la pena servire. Piu' stretto di cosi' e'
-// una scelta di prodotto, non un difetto di stile.
-const LARGO = 390;
+// Il telefono piu' stretto che vale la pena servire: 360 px e' la larghezza
+// piu' comune fra i telefoni Android. Piu' stretto di cosi' e' una scelta di
+// prodotto, non un difetto di stile. Chi ci sta a 360 ci sta anche a 390.
+const LARGO = 360;
 
 let chromium;
 try { ({ chromium } = await import(PLAYWRIGHT)); }

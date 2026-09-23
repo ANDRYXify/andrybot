@@ -518,7 +518,7 @@ dipendere dal contenuto: su un telefono tre schede uscivano dallo schermo di
 212px, e su un portatile non si vedeva niente.
 
 La cura è dire quella minima a voce: `min-width: 0` accanto a `min-height: 0`.
-Lo controlla `node scripts/verifica-larghezza.mjs`, che a 390px gira ogni scheda
+Lo controlla `node scripts/verifica-larghezza.mjs`, che a 360px gira ogni scheda
 e pretende che la pagina non scorra di lato — e quando scorre dice **chi**
 sfonda, cioè il primo elemento più largo dello spazio che il padre gli dà.
 

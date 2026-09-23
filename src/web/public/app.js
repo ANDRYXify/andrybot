@@ -18,6 +18,10 @@ let apiKeyVisibile = false;
 const app = document.getElementById('app');
 const areaUtente = document.getElementById('area-utente');
 
+function attesaHtml(tag = 'p') {
+  return `<${tag} class="attesa"><span class="solo-lettore">${L('Caricamento…', 'Loading…', 'Cargando…')}</span><span class="scheletro riga"></span><span class="scheletro riga corta"></span></${tag}>`;
+}
+
 function esc(s) {
   return String(s ?? '')
     .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -1370,8 +1374,9 @@ function render() {
     if (conPiattaforma && new URLSearchParams(location.search).get('benvenuto') === '1') mostraBenvenuto();
   } catch {  }
 
-  if (conPiattaforma) document.querySelectorAll('.pannello-scheda').forEach((p) => rendiCartePieghevoli(p, p.dataset.scheda));
-  rivelaCarte();
+  const inVista = [...document.querySelectorAll('.pannello-scheda.visibile')];
+  if (conPiattaforma) inVista.forEach((p) => rendiCartePieghevoli(p, p.dataset.scheda));
+  if (inVista.length) inVista.forEach((p) => rivelaCarte(p)); else rivelaCarte();
   riavviaAiuto();
   riavviaGiro();
 
@@ -1500,17 +1505,18 @@ function rivelaCarte(scope = document) {
   const carte = [...scope.querySelectorAll('.carta')];
   if (_menoMoto) { carte.forEach((c) => c.classList.add('rivela', 'dentro')); return; }
   const obs = _osservatore();
+  const soglia = window.innerHeight * 0.92;
+  const sopra = carte.map((c) => c.getBoundingClientRect().top);
   let inVista = 0;
-  for (const c of carte) {
+  carte.forEach((c, i) => {
     c.classList.remove('dentro');
     c.classList.add('rivela');
-    const r = c.getBoundingClientRect();
-    const visibile = r.top < window.innerHeight * 0.92;
+    const visibile = sopra[i] < soglia;
 
     c.style.setProperty('--rev-delay', visibile ? 230 + Math.min(inVista++, 5) * 55 + 'ms' : '0ms');
     if (visibile) c.style.removeProperty('--rev-x'); else c.style.setProperty('--rev-x', '0px');
     obs.observe(c);
-  }
+  });
   _reteDiSicurezza();
   _guardaLeCarteNuove();
 }
@@ -4320,7 +4326,7 @@ function pannelloSettimana() {
       <div class="sett-manda spazio-sopra">
         <canvas id="sett-anteprima" class="sett-anteprima" width="1080" height="1350" aria-label="${esc(L('La grafica della settimana', 'The weekly graphic', 'La gráfica de la semana'))}"></canvas>
         <div>
-          <div id="sett-dove"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+          <div id="sett-dove">${attesaHtml()}</div>
           <label class="campo spazio-sopra" for="sett-testo">${L('Le parole che la accompagnano', 'The words that go with it', 'Las palabras que la acompañan')}</label>
           <textarea id="sett-testo" rows="3" class="campo-largo" style="resize:vertical"></textarea>
           <p class="spazio-sopra"><button class="btn" id="sett-manda">${_bIco(ICO.condividi)}${L('Manda', 'Send', 'Manda')}</button></p>
@@ -5324,7 +5330,7 @@ function initGrafiche() {
   });
 
   async function mostraLibreriaSfondi(box) {
-    box.innerHTML = `<p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p>`;
+    box.innerHTML = `${attesaHtml()}`;
     try {
       const d = await api('/api/streamer/sfondi');
       const items = d?.items || [];
@@ -5575,7 +5581,7 @@ function pannelloAvatar() {
     <div class="carta">
       <h2>${_hIco(ICO.germoglio)}${L('Come ragiona', 'How it reasons', 'Cómo razona')}</h2>
       <p>${L('Da quale «cervello» nascono le sue risposte. Più cresce la fetta dei moduli, meno dipende dal modello linguistico: sta imparando a ragionare da sé.', 'Which “brain” its replies come from. The bigger the modules’ share, the less it depends on the language model: it’s learning to reason on its own.', 'De qué «cerebro» nacen sus respuestas. Cuanto mayor es la parte de los módulos, menos depende del modelo: está aprendiendo a razonar por sí misma.')}</p>
-      <div id="mente-cruscotto"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="mente-cruscotto">${attesaHtml()}</div>
     </div>`);
 }
 
@@ -5699,7 +5705,7 @@ function pannelloAccount() {
     <div class="carta">
       <h2>${_hIco(ICO.spina)}${L('Le tue piattaforme', 'Your platforms', 'Tus plataformas')}</h2>
       <p>${L('Dove il bot lavora per te. Collega quelle che usi: comandi, moduli, punti e memoria funzionano allo stesso modo su tutte, e una risposta torna sempre da dove è arrivata la domanda.', 'Where the bot works for you. Connect the ones you use: commands, modules, points and memory work the same on all of them, and a reply always comes back from where the question came.', 'Donde el bot trabaja para ti. Conecta las que uses: comandos, módulos, puntos y memoria funcionan igual en todas, y una respuesta vuelve siempre desde donde llegó la pregunta.')}</p>
-      <div id="piattaforme-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="piattaforme-box">${attesaHtml()}</div>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.chiave)}Passkey</h2>
@@ -5709,7 +5715,7 @@ function pannelloAccount() {
         <button class="btn" id="btn-crea-passkey" title="${esc(L("Entri con l'impronta o il volto, senza password e senza codici: la chiave resta sul tuo dispositivo", 'Sign in with your fingerprint or face, no password and no codes: the key stays on your device', 'Entra con tu huella o tu cara, sin contraseña ni códigos: la llave se queda en tu dispositivo'))}">${L('Crea una passkey', 'Create a passkey', 'Crea una passkey')}</button>
       </p>
       <h3>${L('Le tue passkey', 'Your passkeys', 'Tus passkeys')}</h3>
-      <ul class="lista-voci" id="lista-passkey"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="lista-voci" id="lista-passkey">${attesaHtml('li')}</ul>
     </div>
     ${proprietario ? `
     <div class="carta">
@@ -5731,9 +5737,9 @@ function pannelloAccount() {
       <div id="invito-creato"></div>
       <h3>${L('Chi ha chiesto di aiutarti', 'Who asked to help you', 'Quién ha pedido ayudarte')}</h3>
       <p class="suggerimento">${L('Chi ti modera già sul canale può chiedere l’accesso da sé, senza aspettare il tuo link. Su Twitch la richiesta arriva già confermata: l’abbiamo chiesto a Twitch.', 'People who already moderate your channel can ask for access themselves, without waiting for your link. On Twitch the request arrives already confirmed: we asked Twitch.', 'Quien ya te modera puede pedir acceso por su cuenta, sin esperar tu enlace. En Twitch la solicitud llega ya confirmada: se lo hemos preguntado a Twitch.')}</p>
-      <ul class="lista-voci" id="lista-richieste-mod"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="lista-voci" id="lista-richieste-mod">${attesaHtml('li')}</ul>
       <h3>${L('I tuoi moderatori', 'Your moderators', 'Tus moderadores')}</h3>
-      <ul class="lista-voci" id="lista-moderatori"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="lista-voci" id="lista-moderatori">${attesaHtml('li')}</ul>
     </div>` : ''}
     <div class="carta">
       <h2>${_hIco(ICO.utenti)}${L('Moderi il canale di qualcun altro?', 'Do you moderate someone else’s channel?', '¿Moderas el canal de otra persona?')}</h2>
@@ -5752,7 +5758,7 @@ function pannelloAccount() {
       <input type="text" id="inp-chiedi-nota" maxlength="300" placeholder="${L('sono il mod della sera', 'I’m the evening mod', 'soy el mod de la tarde')}" autocomplete="off">
       <p class="spazio-sopra"><button class="btn" id="btn-chiedi-mod">${L('Manda la richiesta', 'Send the request', 'Enviar la solicitud')}</button></p>
       <h3>${L('Le tue richieste', 'Your requests', 'Tus solicitudes')}</h3>
-      <ul class="lista-voci" id="lista-mie-richieste"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="lista-voci" id="lista-mie-richieste">${attesaHtml('li')}</ul>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.telefono)}${L('Installa l\'app', 'Install the app', 'Instala la app')}</h2>
@@ -5765,7 +5771,7 @@ function pannelloAccount() {
     ${proprietario ? `<div class="carta">
       <h2>${_hIco(ICO.scudo)}${L('Le mail che ti mandiamo', 'The mails we send you', 'Los correos que te enviamos')}</h2>
       <p>${L('In fondo a ogni nostra mail c’è un codice. Lo trovi qui, e solo qui: chi imita una nostra mail non può saperlo, perché per saperlo dovrebbe entrare in questo pannello.', 'At the bottom of every mail of ours there is a code. You find it here, and only here: whoever fakes a mail of ours cannot know it, because to know it they would have to get into this panel.', 'Al final de cada correo nuestro hay un código. Lo encuentras aquí, y solo aquí: quien imita un correo nuestro no puede saberlo, porque para saberlo tendría que entrar en este panel.')}</p>
-      <div id="codici-posta"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="codici-posta">${attesaHtml()}</div>
       <p class="suggerimento spazio-sopra">${L('Cambia ogni lunedì. Ci sono anche quelli delle settimane scorse di questo mese, per le mail che apri in ritardo. Se il codice non combacia, quella mail non l’abbiamo scritta noi: non aprire i collegamenti e scrivicelo.', 'It changes every Monday. The codes of this month’s past weeks are here too, for mails you open late. If the code does not match, we did not write that mail: do not open the links and tell us.', 'Cambia cada lunes. También están los de las semanas pasadas de este mes, para los correos que abres tarde. Si el código no coincide, ese correo no lo hemos escrito nosotros: no abras los enlaces y avísanos.')}</p>
     </div>` : ''}
     <div class="carta">
@@ -5798,8 +5804,7 @@ function cartaAdessoHtml() {
   if (senzaDiretta()) return '';
   return `<div class="carta carta-viva adesso" id="carta-adesso">
     <h2>${_hIco(ICO.tv)}${L('La tua diretta', 'Your stream', 'Tu directo')}</h2>
-    <div id="adesso-corpo" aria-busy="true"><span class="solo-lettore">${L('Caricamento…', 'Loading…', 'Cargando…')}</span>
-      <div class="scheletro riga corta"></div><div class="scheletro riga"></div><div class="scheletro riga"></div></div>
+    <div id="adesso-corpo" aria-busy="true">${attesaHtml('div')}</div>
   </div>`;
 }
 
@@ -6000,7 +6005,7 @@ function pannelloPersonalita() {
       <p class="suggerimento">${L('Parla quando c’è un motivo, non a caso: una domanda rimasta senza risposta che sa; la chat che si ferma dopo un momento vivo; un’esplosione di messaggi; e, a discorso che scorre, ogni tanto una parola sua. Il cursore dice quanto spesso al massimo: da una volta ogni tre ore a una ogni quarto d’ora, mai due di fila uguali, il promemoria dei tuoi link al più ogni tre quarti d’ora. Se hai appena scritto tu, lascia a te.', 'It speaks when there is a reason, not at random: a question left unanswered that it knows; chat going quiet after a lively moment; a burst of messages; and, when the conversation flows, a word of its own now and then. The slider sets how often at most: from once every three hours to once every fifteen minutes, never the same kind twice in a row, the reminder of your links at most every forty-five minutes. If you just wrote, it leaves it to you.', 'Habla cuando hay un motivo, no al azar: una pregunta sin respuesta que sabe; el chat que se para tras un momento vivo; una explosión de mensajes; y, con la conversación en marcha, de vez en cuando una palabra suya. El cursor dice cada cuánto como mucho: de una vez cada tres horas a una cada cuarto de hora, nunca dos iguales seguidas, el recordatorio de tus enlaces como mucho cada tres cuartos de hora. Si acabas de escribir tú, te deja a ti.')}</p>
       <div class="spazio-sopra">
         <p class="campo">${L('Cosa ha detto da solo', 'What it said on its own', 'Qué ha dicho por su cuenta')}</p>
-        <ul class="lista-voci" id="lista-spontanee"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+        <ul class="lista-voci" id="lista-spontanee">${attesaHtml('li')}</ul>
         <p class="suggerimento">${L('Le ultime volte che ha parlato senza che nessuno lo chiamasse, da quando il bot è acceso: con l’ora e il motivo. È qui che vedi se la dose è quella giusta.', 'The last times it spoke without being called, since the bot was started: with time and reason. This is where you see whether the dose is right.', 'Las últimas veces que habló sin que nadie lo llamara, desde que el bot está encendido: con la hora y el motivo. Aquí ves si la dosis es la correcta.')}</p>
       </div>
 
@@ -6056,7 +6061,7 @@ function pannelloPersonalita() {
         </select>
         <button class="btn" id="btn-guida-add">${L('Aggiungi', 'Add', 'Añadir')}</button>
       </div>
-      <ul class="lista-voci" id="lista-guide"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="lista-voci" id="lista-guide">${attesaHtml('li')}</ul>
     </div>`);
 }
 
@@ -6156,7 +6161,7 @@ function pannelloConoscenza() {
     <div class="carta">
       <h2>${_hIco(ICO.cervello)}${L('Cosa sa il bot', 'What the bot knows', 'Lo que sabe el bot')}</h2>
       <p>${L('dal sito', 'from the site', 'de la web')} &nbsp;·&nbsp; ${L('tua', 'yours', 'tuya')} &nbsp;·&nbsp; ${L('imparata dalla chat', 'learned from chat', 'aprendida del chat')}</p>
-      <ul class="lista-voci" id="lista-conoscenza"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="lista-voci" id="lista-conoscenza">${attesaHtml('li')}</ul>
     </div>
 
     <div class="carta">
@@ -6166,7 +6171,7 @@ function pannelloConoscenza() {
         <input aria-label="${esc(L('es. quando chiedono il torneo, rimanda al Discord', 'e.g. when they ask about the tournament, point them to Discord', 'p. ej. cuando pregunten por el torneo, remite al Discord'))}" type="text" class="cresce" id="inp-quaderno" maxlength="220" placeholder="${L('es. quando chiedono il torneo, rimanda al Discord', 'e.g. when they ask about the tournament, point them to Discord', 'p. ej. cuando pregunten por el torneo, remite al Discord')}">
         <button class="btn" id="btn-quaderno-add">${L('Insegna', 'Teach', 'Enseñar')}</button>
       </div>
-      <ul class="lista-voci" id="lista-quaderno"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="lista-voci" id="lista-quaderno">${attesaHtml('li')}</ul>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.libro)}${L('Pre-addestramento', 'Pre-training', 'Preentrenamiento')}</h2>
@@ -6184,7 +6189,7 @@ function pannelloConoscenza() {
     <div class="carta">
       <h2>${_hIco(ICO.germoglio)}${L('La piccola rete che impara', 'The little network that learns', 'La pequeña red que aprende')}</h2>
       <p>${L('Il motore veloce del bot che', 'The bot’s fast engine that', 'El motor rápido del bot que')} <strong class="primo-piano">${L('cresce da solo', 'grows on its own', 'crece solo')}</strong>: ${L('risponde all\'istante a ciò che ha già imparato e, quando incontra qualcosa di nuovo, se lo segna e lo impara dal maestro. Più lo alleni (anche via DM su Telegram), più sa fare da sé.', 'answers instantly to what it already learned and, when it meets something new, notes it and learns it from the teacher. The more you train it (also via Telegram DM), the more it can do on its own.', 'responde al instante a lo que ya aprendió y, cuando encuentra algo nuevo, lo anota y lo aprende del maestro. Cuanto más lo entrenas (también por DM en Telegram), más sabe hacer solo.')}</p>
-      <div id="rete-panoramica"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="rete-panoramica">${attesaHtml()}</div>
     </div>
     </div>`);
 }
@@ -6210,7 +6215,7 @@ function pannelloClip() {
     </div>
     <div class="carta">
       <h2>${L('Ultime clip', 'Latest clips', 'Últimos clips')}</h2>
-      <ul class="lista-voci" id="lista-clip"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="lista-voci" id="lista-clip">${attesaHtml('li')}</ul>
     </div>`);
 }
 
@@ -6327,7 +6332,7 @@ function pannelloMusica() {
       <p>${L('Collega Spotify: gli spettatori mettono canzoni in coda con', 'Connect Spotify: viewers queue songs with', 'Conecta Spotify: los espectadores ponen canciones en cola con')}
       <code>!sr &lt;${L('canzone', 'song', 'canción')}&gt;</code> ${L('e vedono cosa suona con', 'and see what’s playing with', 'y ven qué suena con')} <code>!song</code>.
       ${L('Serve <strong>Spotify Premium</strong> e un dispositivo attivo (l\'app aperta e in riproduzione).', 'Requires <strong>Spotify Premium</strong> and an active device (the app open and playing).', 'Necesita <strong>Spotify Premium</strong> y un dispositivo activo (la app abierta y reproduciendo).')}</p>
-      <div id="spotify-box" class="spazio-sopra"><p>${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="spotify-box" class="spazio-sopra">${attesaHtml()}</div>
     </div>
     <div class="carta">
       <h3>${_hIco(ICO.sliders)}${L('Come si richiede una canzone', 'How to request a song', 'Cómo se pide una canción')}</h3>
@@ -6812,7 +6817,7 @@ function pannelloGiveaway() {
     <div class="carta">
       <h2>${_hIco(ICO.giveaway)}Giveaway</h2>
       <p>${L('Apri un\'estrazione a premi: la community entra con <code>!join</code> in chat e tu estrai il vincitore da qui. Puoi dare <strong>più possibilità</strong> a sub e VIP e regalare biglietti extra con <code>!biglietti @nome</code>.', 'Open a prize giveaway: the community joins with <code>!join</code> in chat and you draw the winner from here. You can give <strong>better odds</strong> to subs and VIPs and grant extra tickets with <code>!biglietti @name</code>.', 'Abre un sorteo de premios: la comunidad entra con <code>!join</code> en el chat y tú sacas al ganador desde aquí. Puedes dar <strong>más posibilidades</strong> a subs y VIPs y regalar boletos extra con <code>!biglietti @nombre</code>.')}</p>
-      <div id="giveaway-stato" class="spazio-sopra"><p>${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="giveaway-stato" class="spazio-sopra">${attesaHtml()}</div>
       <div id="giveaway-apri">
         <label class="campo" for="gw-premio">${L('Premio in palio', 'Prize', 'Premio en juego')}</label>
         <input type="text" id="gw-premio" placeholder="${L('es. una gift card, un gioco Steam…', 'e.g. a gift card, a Steam game…', 'p. ej. una gift card, un juego de Steam…')}">
@@ -13183,7 +13188,7 @@ function pannelloRegia() {
 
     <div class="carta">
       <h2>${_hIco(ICO.onda)}${L('Stato diretta', 'Stream status', 'Estado del directo')}</h2>
-      <div id="regia-stato" class="regia-stato"><p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="regia-stato" class="regia-stato">${attesaHtml()}</div>
       <p class="spazio-sopra"><button type="button" class="btn secondario mini" id="regia-refresh">${_bIco(ICO.aggiorna)}${L('Aggiorna', 'Refresh', 'Actualizar')}</button></p>
     </div>
 
@@ -14865,7 +14870,7 @@ function pannelloEffetti() {
 
     <div class="carta">
       <h2>${_hIco(ICO.sliders)}${L('I tuoi effetti', 'Your effects', 'Tus efectos')}</h2>
-      <ul class="lista-voci" id="lista-effetti"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="lista-voci" id="lista-effetti">${attesaHtml('li')}</ul>
       <p class="suggerimento" id="eff-spazio" hidden></p>
     </div>
 
@@ -14876,7 +14881,7 @@ function pannelloEffetti() {
       ${L('oppure un', 'or one of your', 'o un')} <strong>${L('tuo suono, immagine o video', 'own sound, image or video', 'sonido, imagen o vídeo tuyo')}</strong> ${L('caricato in «Carica un effetto» qui sopra.', 'uploaded in «Upload an effect» above.', 'subido en «Sube un efecto» arriba.')}
       ${L('Per immagini e video puoi decidere', 'For images and videos you can decide', 'Para imágenes y vídeos puedes decidir')} <strong>${L('dove e quanto grande', 'where and how big', 'dónde y de qué tamaño')}</strong> ${L('appaiono, e per i video attivare il', 'they appear, and for videos enable the', 'aparecen, y para los vídeos activar el')}
       <strong>green screen</strong> (${L('togliere lo sfondo di un colore', 'remove a color background', 'quitar el fondo de un color')}).</p>
-      <div id="suoni-premi-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="suoni-premi-box">${attesaHtml()}</div>
     </div>
 
     <div class="carta">
@@ -14884,7 +14889,7 @@ function pannelloEffetti() {
       <p>${L('Crea un', 'Create a', 'Crea una')} <strong class="primo-piano">${L('premio a punti canale', 'channel-point reward', 'recompensa de puntos de canal')}</strong> ${L('di Twitch: quando uno spettatore lo riscatta', 'on Twitch: when a viewer redeems it', 'de Twitch: cuando un espectador la canjea')}
       (${L('spendendo i suoi punti', 'spending their points', 'gastando sus puntos')}), ${L('parte un', 'an', 'se lanza un')} <strong>${L('effetto', 'effect', 'efecto')}</strong> ${L('nell\'overlay e/o un', 'plays in the overlay and/or a', 'en el overlay y/o un')} <strong>${L('messaggio', 'message', 'mensaje')}</strong> ${L('in chat.', 'in chat.', 'en el chat.')}
       ${L('Il premio compare da solo nella tua pagina Twitch.', 'The reward appears automatically on your Twitch page.', 'La recompensa aparece sola en tu página de Twitch.')}</p>
-      <div id="premi-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="premi-box">${attesaHtml()}</div>
     </div>`);
 }
 
@@ -15098,7 +15103,7 @@ function pannello7TV() {
     <div class="carta">
       <h2>${_hIco(ICO.faccina)}${L('Il tuo account 7TV', 'Your 7TV account', 'Tu cuenta 7TV')}</h2>
       <p>${L('Collega il tuo account', 'Connect your', 'Conecta tu cuenta')} <strong class="primo-piano">7TV</strong> ${L('per gestire le emote del canale — aggiungerle, toglierle e rinominarle — senza uscire dal bot. Le emote 7TV compaiono anche nella chat a schermo del tuo overlay.', 'account to manage your channel emotes — add, remove and rename them — without leaving the bot. 7TV emotes also appear in your overlay’s on-screen chat.', 'para gestionar las emotes del canal — añadirlas, quitarlas y renombrarlas — sin salir del bot. Las emotes 7TV también aparecen en el chat en pantalla de tu overlay.')}</p>
-      <div id="svtv-conn"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="svtv-conn">${attesaHtml()}</div>
     </div>
 
     <div class="carta">
@@ -15480,7 +15485,7 @@ function pannelloModuli() {
 
     <div class="carta">
       <h2>${_hIco(ICO.lista)}${L('I tuoi moduli', 'Your modules', 'Tus módulos')}</h2>
-      <ul id="lista-moduli" class="lista-moduli"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul id="lista-moduli" class="lista-moduli">${attesaHtml('li')}</ul>
     </div>
 
     <div id="editor-modulo"></div>
@@ -15489,13 +15494,13 @@ function pannelloModuli() {
       <h2>${_hIco(ICO.spina)}${L('Connettori avanzati', 'Advanced connectors', 'Conectores avanzados')}</h2>
       <p>${L('Per far dire o fare qualcosa ad SocialBot', 'To make SocialBot say or do something', 'Para que SocialBot diga o haga algo')} <strong class="primo-piano">${L('da un tuo servizio esterno', 'from an external service of yours', 'desde un servicio externo tuyo')}</strong>
       ${L('(il bot custom che già hai): chiama l\'URL qui sotto con la tua chiave.', '(the custom bot you already have): call the URL below with your key.', '(el bot personalizado que ya tienes): llama a la URL de abajo con tu clave.')}</p>
-      <div id="connettori-moduli"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="connettori-moduli">${attesaHtml()}</div>
     </div>
     ${carteContatori()}    <div class="carta">
       <h2>${_hIco(ICO.chat)}${L('Comandi pronti', 'Built-in commands', 'Comandos de serie')}</h2>
       <p>${L('Quelli che il bot porta già con sé. Ognuno si spegne, si rinomina e si può riservare — come i tuoi.', 'The ones the bot already brings with it. Each one can be switched off, renamed and reserved — like yours.', 'Los que el bot ya trae consigo. Cada uno se apaga, se renombra y se puede reservar — como los tuyos.')}</p>
       <p class="suggerimento">${L('Un comando tuo con lo stesso nome vince sempre su quello pronto.', 'A command of yours with the same name always wins over the built-in one.', 'Un comando tuyo con el mismo nombre siempre gana al de serie.')}</p>
-      <ul class="gc-lista" id="lista-cmd-pronti"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="gc-lista" id="lista-cmd-pronti">${attesaHtml('li')}</ul>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-gcmd-2">${L('Salva i comandi', 'Save the commands', 'Guardar los comandos')}</button></p>
     </div>
     </div>
@@ -15698,12 +15703,12 @@ function pannelloDirette() {
     <div class="carta">
       <h2>${_hIco(ICO.grafico)}${L('Le tue dirette', 'Your streams', 'Tus directos')}</h2>
       <p>${L('Ogni diretta finita lascia qui il suo rapporto: quanto è durata, quanti c’erano, cosa è successo. Sono i numeri veri del canale, raccolti dal bot mentre trasmettevi.', 'Every finished stream leaves its report here: how long it lasted, how many were there, what happened. They are the channel’s real numbers, collected by the bot while you were live.', 'Cada directo terminado deja aquí su informe: cuánto duró, cuántos había, qué pasó. Son los números reales del canal, recogidos por el bot mientras emitías.')}</p>
-      <div id="lista-rapporti" class="rap-lista"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="lista-rapporti" class="rap-lista">${attesaHtml()}</div>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.megafono)}${L('Dove ricevere il rapporto', 'Where to get the report', 'Dónde recibir el informe')}</h2>
       <p>${L('Qui resta sempre. In più può arrivarti appena chiudi la diretta, su Telegram o via mail.', 'It always stays here. It can also reach you as soon as you end the stream, on Telegram or by email.', 'Aquí se queda siempre. Además puede llegarte en cuanto cierras el directo, en Telegram o por correo.')}</p>
-      <div id="box-canali-rapporto"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="box-canali-rapporto">${attesaHtml()}</div>
     </div>`);
 }
 
@@ -15818,7 +15823,7 @@ function pannelloSottoscrizione() {
     <div class="carta">
       <h2>${_hIco(ICO.carta)}${L('La tua sottoscrizione', 'Your subscription', 'Tu suscripción')}</h2>
       <p>${L('Qui vedi cosa hai attivo, cosa comprende e come cambiarlo o annullarlo. Nessun vincolo: si disdice quando vuoi.', 'Here you see what you have, what it includes and how to change or cancel it. No lock-in: cancel whenever you want.', 'Aquí ves qué tienes activo, qué incluye y cómo cambiarlo o cancelarlo. Sin compromiso: se cancela cuando quieras.')}</p>
-      <div id="sott-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="sott-box" class="spazio-sopra">${attesaHtml()}</div>
     </div>`);
 }
 
@@ -16034,7 +16039,7 @@ function pannelloPaginaLink() {
   return pannello('pagina', `
     <div class="carta">
       <h2>${_hIco(ICO.condividi)}${L('La tua pagina link', 'Your link page', 'Tu página de enlaces')}</h2>
-      <div id="lp-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="lp-box">${attesaHtml()}</div>
     </div>
     ${proprietario ? `<div class="carta">
       <h2>${_hIco(ICO.globo)}${L('La tua diretta in prima pagina', 'Your stream on the front page', 'Tu directo en portada')}</h2>
@@ -16053,7 +16058,7 @@ function pannelloDonazioni() {
     <div class="carta" id="dona-conto-carta">
       <h2>${_hIco(ICO.cuore)}${L('Donazioni', 'Donations', 'Donaciones')}</h2>
       <p>${L('Chi ti segue ti dona dalla tua pagina link. Il pagamento arriva sul tuo conto, Stripe o Satispay, aperto e gestito da te: qui incolli solo una chiave con permessi ridotti, una volta. Con tutti e due, chi dona sceglie. A ogni donazione partono l\'avviso in overlay e il grazie in chat, e sale l\'obiettivo in euro.', 'People donate to you from your link page. The payment lands on your own account, Stripe or Satispay, opened and managed by you: here you paste just a key with limited permissions, once. With both, the donor chooses. Every donation fires the overlay alert and the thanks in chat, and moves the euro goal.', 'Quien te sigue te dona desde tu página de enlaces. El pago llega a tu propia cuenta, Stripe o Satispay, abierta y gestionada por ti: aquí pegas solo una clave con permisos limitados, una vez. Con las dos, quien dona elige. Cada donación lanza el aviso en el overlay y el gracias en el chat, y sube el objetivo en euros.')}</p>
-      <div id="dona-conto-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="dona-conto-box" class="spazio-sopra">${attesaHtml()}</div>
     </div>
     <div class="carta" id="dona-carta">
       <h2>${_hIco(ICO.carta)}${L('Il tasto e le offerte', 'The button and the offers', 'El botón y las ofertas')}</h2>
@@ -16104,11 +16109,11 @@ function pannelloDonazioni() {
     <div class="carta" id="dona-pagina-carta">
       <h2>${_hIco(ICO.condividi)}${L('La tua pagina delle donazioni', 'Your donations page', 'Tu página de donaciones')}</h2>
       <p>${L('Una pagina tutta per le donazioni, con gli stessi strumenti della pagina link: qui il cuore sono le offerte e il modulo. Sulla pagina link il tasto «Sostieni» porta qui.', 'A page just for donations, with the same tools as the link page: here the heart is the offers and the form. On the link page the «Support» button leads here.', 'Una página solo para las donaciones, con las mismas herramientas que la página de enlaces: aquí lo principal son las ofertas y el formulario. En la página de enlaces el botón «Apóyame» lleva aquí.')}</p>
-      <div id="lp-box-dona"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="lp-box-dona">${attesaHtml()}</div>
     </div>
     <div class="carta" id="dona-ultime-carta">
       <h2>${_hIco(ICO.lista)}${L('Il registro delle donazioni', 'The donations register', 'El registro de donaciones')}</h2>
-      <div id="dona-ultime-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="dona-ultime-box">${attesaHtml()}</div>
     </div>
     <div class="carta" id="dona-kofi-carta">
       <h2>${_hIco(ICO.spina)}${L('Ko-fi e altri servizi', 'Ko-fi and other services', 'Ko-fi y otros servicios')}</h2>
@@ -16445,7 +16450,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
   if (quale && quale !== LP.quale) { LP.quale = quale; LP.d = null; ridisegna = false; }
   const box = document.getElementById(_lpCasa()); if (!box) return;
   const altra = document.getElementById(LP.quale === 'dona' ? 'lp-box' : 'lp-box-dona');
-  if (altra?.querySelector('.lp-editor')) altra.innerHTML = `<p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p>`;
+  if (altra?.querySelector('.lp-editor')) altra.innerHTML = `${attesaHtml()}`;
   if (!ridisegna || !LP.d) {
     let dati;
     try { dati = await api(lpApi()); }
@@ -16506,7 +16511,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
         <details class="carta sez">
           <summary><h3>${L('Quando condividi il link', 'When you share the link', 'Cuando compartes el enlace')}</h3></summary>
           <p class="suggerimento">${L('Su Telegram, WhatsApp e Discord il link mostra questa immagine, disegnata coi colori della tua pagina. La puoi rifare come vuoi con lo stesso editor delle locandine.', 'On Telegram, WhatsApp and Discord the link shows this image, drawn in your page\'s colours. You can redo it as you like with the same editor as the posters.', 'En Telegram, WhatsApp y Discord el enlace muestra esta imagen, dibujada con los colores de tu página. Puedes rehacerla como quieras con el mismo editor de los carteles.')}</p>
-          <div id="lp-carta-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+          <div id="lp-carta-box">${attesaHtml()}</div>
         </details>
 
         <details class="carta sez" open>
@@ -17360,7 +17365,7 @@ function carteContatori() {
         ],
       })}
 
-      <div id="contatori-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="contatori-box" class="spazio-sopra">${attesaHtml()}</div>
 
       <hr class="separatore">
       <h3>${L('Nuovo contatore', 'New counter', 'Nuevo contador')}</h3>
@@ -17716,7 +17721,7 @@ function pannelloGiochi() {
       <h2>${_hIco(ICO.chat)}${L('Comandi dei giochi', 'Game commands', 'Comandos de los juegos')}</h2>
       <p>${L('Questi sono i comandi che rispondono in chat. Ognuno si spegne, si rinomina e si può riservare a una parte del pubblico.', 'These are the commands that answer in chat. Each one can be switched off, renamed and reserved for part of your audience.', 'Estos son los comandos que responden en el chat. Cada uno se apaga, se renombra y se puede reservar a una parte del público.')}</p>
       <p class="suggerimento">${L('Se dai un nome tuo, i nomi di serie smettono di rispondere: un gioco ha un nome, e lo scegli tu.', 'If you set your own name, the built-in names stop answering: a game has one name, and you pick it.', 'Si le pones un nombre tuyo, los nombres de serie dejan de responder: un juego tiene un nombre, y lo eliges tú.')}</p>
-      <ul class="gc-lista" id="lista-gcmd" data-moduli="giochi,webcam,puzzle,sorteggi,sito"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="gc-lista" id="lista-gcmd" data-moduli="giochi,webcam,puzzle,sorteggi,sito">${attesaHtml('li')}</ul>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-gcmd">${L('Salva i comandi', 'Save the commands', 'Guardar los comandos')}</button></p>
     </div>
     <div class="carta">
@@ -17856,7 +17861,7 @@ function pannelloGiochi() {
       </div>
 
       <h3>${L('I giochi che hai fatto', 'The games you made', 'Los juegos que has hecho')}</h3>
-      <ul class="lista-voci" id="lista-giochi"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="lista-voci" id="lista-giochi">${attesaHtml('li')}</ul>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.trofeo)}${L('Classifica & VIP', 'Leaderboard & VIP', 'Clasificación y VIP')}</h2>
@@ -17877,7 +17882,7 @@ function pannelloGiochi() {
       <p class="suggerimento spazio-sopra">${L('Le classifiche delle monete stanno nella scheda Statistiche, insieme a tutti gli altri numeri del canale.', 'The coin leaderboards are in the Stats tab, together with all the other channel numbers.', 'Las clasificaciones de monedas están en la pestaña Estadísticas, junto a los demás números del canal.')}
         <button type="button" class="btn secondario mini" data-scheda="statistiche">${L('Vedi le classifiche', 'See the leaderboards', 'Ver las clasificaciones')}</button></p>
       <h3>${L('VIP a tempo attivi', 'Active timed VIPs', 'VIP temporales activos')}</h3>
-      <ul class="lista-voci" id="lista-vip"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="lista-voci" id="lista-vip">${attesaHtml('li')}</ul>
     </div>
 
     <div class="carta">
@@ -17926,7 +17931,7 @@ function pannelloGiochi() {
         <p id="import-cita-avviso" class="nota-lettura" hidden></p>
       </details>
 
-      <ul class="lista-voci" id="lista-citazioni"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="lista-voci" id="lista-citazioni">${attesaHtml('li')}</ul>
     </div>
 
     <div class="carta">
@@ -17946,7 +17951,7 @@ function pannelloGiochi() {
       ${autonomia ? '' : `<p class="suggerimento">${L('Per questo serve la <strong>chat autonoma</strong> accesa in Personalità: senza, il bot non parla mai di sua iniziativa e questo interruttore non cambierebbe niente.', 'This needs <strong>autonomous chatting</strong> switched on under Personality: without it the bot never speaks on its own and this switch would change nothing.', 'Para esto hace falta el <strong>chat autónomo</strong> activado en Personalidad: sin él el bot nunca habla por su cuenta y este interruptor no cambiaría nada.')}</p>`}`;
       })()}
       <p class="suggerimento">${L('Esce sempre la meno detta di recente, e quelle che fanno ridere escono più spesso: dopo ogni battuta il bot conta quante persone ridono davvero.', 'The least recently told one comes out, and the ones that land come out more often: after each joke the bot counts how many people actually laugh.', 'Sale el menos contado recientemente, y los que funcionan salen más a menudo: tras cada chiste el bot cuenta cuántas personas se ríen de verdad.')}</p>
-      <ul class="lista-voci" id="lista-battute"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="lista-voci" id="lista-battute">${attesaHtml('li')}</ul>
     </div>`);
 }
 
@@ -18017,7 +18022,7 @@ function pannelloRuoli() {
       <h2>${_hIco(ICO.chiave)}${L('La porta d’ingresso', 'The way in', 'La puerta de entrada')}</h2>
       <p>${L('Questo è l’indirizzo da dare a chi ti guarda: lo apre, entra nel tuo server e si fa riconoscere. Da lì in poi i ruoli glieli dà il bot.', 'This is the address to give your viewers: they open it, join your server and get recognised. From then on the bot gives them their roles.', 'Esta es la dirección que das a quien te ve: la abre, entra en tu servidor y se da a conocer. A partir de ahí los roles se los da el bot.')}</p>
       <div id="dc-comando" class="spazio-sopra"></div>
-      <p class="suggerimento spazio-sopra" id="dc-collegati">${L('Carico…', 'Loading…', 'Cargando…')}</p>
+      <p class="suggerimento spazio-sopra" id="dc-collegati">${attesaHtml('span')}</p>
 
       <details class="spazio-sopra" id="dc-frasi-box">
         <summary>${L('Cambia le parole che dice in chat', 'Change the words it says in chat', 'Cambia las palabras que dice en el chat')}</summary>
@@ -18628,7 +18633,7 @@ function pannelloDcAvvisi() {
     <div class="carta">
       <h2>${_hIco(ICO.megafono)}${L('In quali canali arrivano', 'Which channels they land in', 'En qué canales llegan')}</h2>
       <p>${L('Un canale per ogni cosa: le tue dirette di qua, quelle degli amici di là, i post nuovi dove vuoi tu. Ogni canale ha il suo testo e può chiamare un ruolo.', 'A channel for each thing: your streams here, your friends\' there, new posts wherever you like. Each channel has its own text and can ping a role.', 'Un canal para cada cosa: tus directos aquí, los de tus amigos allá, los posts nuevos donde quieras. Cada canal tiene su texto y puede llamar a un rol.')}</p>
-      <div id="dca-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="dca-box" class="spazio-sopra">${attesaHtml()}</div>
     </div>
 
     <div class="carta">
@@ -20606,7 +20611,7 @@ function pannelloTelegram() {
     <div class="carta">
       <h2>${_hIco(ICO.torta)}${L('Auguri di compleanno', 'Birthday wishes', 'Felicitaciones de cumpleaños')}</h2>
       <p>${L('Il bot fa gli', 'The bot sends', 'El bot da las')} <strong class="primo-piano">${L('auguri automatici', 'automatic wishes', 'felicitaciones automáticas')}</strong> ${L('nel gruppo il giorno del compleanno dei membri. Loro possono registrarsi da soli scrivendo', 'in the group on members’ birthdays. They can register themselves by typing', 'en el grupo el día del cumpleaños de los miembros. Ellos pueden registrarse solos escribiendo')} <code>/compleanno 25/12</code> ${L('nel gruppo (serve il bot interattivo qui sopra), oppure li aggiungi tu qui sotto.', 'in the group (needs the interactive bot above), or you add them below.', 'en el grupo (necesita el bot interactivo de arriba), o los añades tú abajo.')}</p>
-      <div id="box-compleanni"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="box-compleanni">${attesaHtml()}</div>
     </div>
     ` : ''}
 `);
@@ -20627,7 +20632,7 @@ function pannelloNotifiche() {
       </div>
       <div class="soc-riga">
         <h3>TikTok</h3>
-      <div id="tiktok-post-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="tiktok-post-box">${attesaHtml()}</div>
       </div>
       <div class="soc-riga">
         <h3>YouTube</h3>
@@ -20897,7 +20902,7 @@ function pannelloRegistro() {
   return pannello('registro', `
     <div class="carta">
       <h2>${_hIco(ICO.torta)}${L('Come è andata', 'How it went', 'Cómo ha ido')}</h2>
-      <div id="reg-numeri"><p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="reg-numeri">${attesaHtml()}</div>
     </div>
 
     <div class="carta" id="reg-carta-rivedere" hidden>
@@ -21048,7 +21053,7 @@ async function caricaIncidenti() {
 async function apriIncidente(id) {
   const box = document.getElementById('inc-' + id);
   if (!box) return;
-  box.innerHTML = `<p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p>`;
+  box.innerHTML = `${attesaHtml()}`;
   let d, b;
   try { d = await api('/api/antibot/incidenti/' + encodeURIComponent(id)); }
   catch (e) { box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
@@ -21364,7 +21369,7 @@ function pannelloStatistiche() {
       <div class="stat-periodo" id="stat-periodo">
         ${per('7', L('Ultimi 7 giorni', 'Last 7 days', 'Últimos 7 días'))}${per('30', L('Ultimi 30 giorni', 'Last 30 days', 'Últimos 30 días'))}${per('tutto', L('Da sempre', 'All time', 'Desde siempre'))}
       </div>
-      <div class="griglia-stat" id="griglia-stat"><div class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</div></div>
+      <div class="griglia-stat" id="griglia-stat">${attesaHtml('div')}</div>
     </div>
 
     <div class="carta">
@@ -21373,30 +21378,30 @@ function pannelloStatistiche() {
       <div class="griglia-classifiche">
         <div>
           <h3>${L('Monete del pubblico', 'Public coins', 'Monedas del público')}</h3>
-          <ul class="lista-voci" id="lista-classifica"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+          <ul class="lista-voci" id="lista-classifica">${attesaHtml('li')}</ul>
         </div>
         <div>
           <h3>${L('Monete dello staff', 'Staff coins', 'Monedas del staff')}</h3>
-          <ul class="lista-voci" id="lista-classifica-staff"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+          <ul class="lista-voci" id="lista-classifica-staff">${attesaHtml('li')}</ul>
         </div>
         <div>
           <h3>${L('Chi c’è sempre', 'Who is always there', 'Quién está siempre')}</h3>
-          <ul class="lista-voci" id="lista-presenze"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+          <ul class="lista-voci" id="lista-presenze">${attesaHtml('li')}</ul>
         </div>
         <div>
           <h3>${L('Chi scrive di più', 'Who writes the most', 'Quién escribe más')}</h3>
-          <ul class="lista-voci" id="lista-chatters"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+          <ul class="lista-voci" id="lista-chatters">${attesaHtml('li')}</ul>
         </div>
         <div>
           <h3>${L('Chi guarda di più', 'Who watches the most', 'Quién mira más')}</h3>
-          <ul class="lista-voci" id="lista-ore"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+          <ul class="lista-voci" id="lista-ore">${attesaHtml('li')}</ul>
         </div>
       </div>
     </div>
 
     <div class="carta">
       <h2>${_hIco(ICO.onda)}${L('Le ultime dirette', 'The latest streams', 'Los últimos directos')}</h2>
-      <div id="stat-dirette"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="stat-dirette">${attesaHtml()}</div>
       <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-scheda="dirette">${L('Apri i rapporti', 'Open the reports', 'Abrir los informes')}</button></p>
     </div>`);
 }
@@ -23508,7 +23513,7 @@ function scegliDallaLibreria({ tipi = ['immagine', 'video', 'audio'], titolo = '
         <input type="file" class="lsc-file" accept="${ammessi.map((t) => LIB_ACCEPT[t]).join(',')}" hidden>
         <button type="button" class="btn secondario mini lsc-carica">${_bIco(ICO.carica)}${L('Dal mio computer', 'From my computer', 'Desde mi ordenador')}</button>
       </div>
-      <div class="lib-griglia lsc-griglia"><p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div class="lib-griglia lsc-griglia">${attesaHtml()}</div>
       <div class="bv-azioni"><button type="button" class="btn grande secondario lsc-chiudi">${L('Annulla', 'Cancel', 'Cancelar')}</button></div>
     </div>`;
     document.body.appendChild(el);
@@ -23920,7 +23925,7 @@ async function caricaStatistiche() {
 async function caricaMemoria(mostraToast = false) {
   const box = document.getElementById('contenitore-memoria');
   if (!box) return;
-  box.innerHTML = '<p class="vuoto">Caricamento…</p>';
+  box.innerHTML = attesaHtml();
   try {
     const m = await api('/api/streamer/memoria');
     box.innerHTML = `
@@ -24995,12 +25000,12 @@ function vistaAdminContenuto() {
     <div class="carta">
       <h2>${_hIco(ICO.grafico)}${L('Stato del sistema', 'System status', 'Estado del sistema')}</h2>
       <p class="suggerimento">${L('Un colpo d\'occhio sulla salute del servizio. Uptime basso all\'improvviso = si è riavviato; canali «scollegati» = token da ricollegare.', 'A glance at the service health. A sudden low uptime = it restarted; «disconnected» channels = tokens to reconnect.', 'Un vistazo a la salud del servicio. Un uptime bajo de repente = se reinició; canales «desconectados» = tokens por reconectar.')}</p>
-      <div id="salute-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="salute-box">${attesaHtml()}</div>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.scudo)}${L('Backup del database', 'Database backup', 'Copia de seguridad de la base de datos')}</h2>
       <p>${L('Tutto (comandi, temi, monete, moderatori, pagine link) vive in un solo file. Il bot ne tiene copie', 'Everything (commands, themes, coins, moderators, link pages) lives in a single file. The bot keeps', 'Todo (comandos, temas, monedas, moderadores, páginas de enlaces) vive en un solo archivo. El bot guarda')} <strong class="primo-piano">${L('automatiche e sicure', 'automatic, safe copies', 'copias automáticas y seguras')}</strong> ${L('sul server. Non sono scaricabili dal web (contengono dati sensibili): si recuperano dal server.', 'on the server. They are not downloadable from the web (they hold sensitive data): recover them from the server.', 'en el servidor. No se pueden descargar desde la web (contienen datos sensibles): se recuperan desde el servidor.')}</p>
-      <div id="backup-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="backup-box">${attesaHtml()}</div>
     </div>
     <div class="carta">
       <h2>Streamer</h2>
@@ -25014,7 +25019,7 @@ function vistaAdminContenuto() {
     <div class="carta">
       <h2>${_hIco(ICO.cuore)}${L('Anima di SocialBot', "SocialBot's soul", 'El alma de SocialBot')}</h2>
       <p>${L('La personalità', 'The', 'La personalidad')} <strong class="primo-piano">${L('condivisa', 'shared', 'compartida')}</strong> ${L('personalità: un solo carattere, coerente su tutti i canali (in chat indossa poi il nome e il tono di ognuno). Gli utenti restano a compartimenti stagni: qui vedi solo', 'personality: a single character, consistent across all channels (in chat it then wears each one\'s name and tone). Users stay in watertight compartments: here you only see', 'personalidad: un solo carácter, coherente en todos los canales (en el chat lleva luego el nombre y el tono de cada uno). Los usuarios quedan en compartimentos estancos: aquí solo ves')} <em>${L('quanti amici', 'how many friends', 'cuántos amigos')}</em> ${L('e i più affini, mai cosa hanno scritto o dove.', 'and the most compatible, never what they wrote or where.', 'y los más afines, nunca qué escribieron o dónde.')}</p>
-      <div id="anima-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <div id="anima-box">${attesaHtml()}</div>
     </div>
     <div id="lia-pannello"></div>`;
 }
@@ -25861,6 +25866,7 @@ function vaiAScheda(id) {
   try { history.replaceState(null, '', '#' + id); } catch {  }
 
   const sezioni = [...document.querySelectorAll('.pannello-scheda')].filter((p) => p.dataset.scheda === id);
+  sezioni.forEach((p) => rendiCartePieghevoli(p, id));
 
   if (stessaFamiglia(prima, id)) {
     try { document.documentElement.dataset.verso = _versoVerso(prima, id); } catch (e) {  }

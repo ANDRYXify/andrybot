@@ -153,3 +153,26 @@ che la trasformazione sia tornata l'identità invece di contare i millisecondi.
 Mentre scivola, il riquadro del cassetto e quelli dei figli si arrotondano in
 modo diverso e si leggono due pixel di troppo che non esistono — la prima
 versione del controllo segnalava ventiquattro difetti immaginari per questo.
+
+## Quello che si tocca si prende col dito
+
+Una «×» di 19 per 16 pixel accanto al nome che toglie è un tasto che si
+sbaglia: col dito si prende il nome, o il vicino, o niente. Stava negli amici di
+Telegram e di Discord e nelle fonti dei post nuovi.
+
+La regola è quella delle WCAG (2.5.8, livello AA): un bersaglio è grande almeno
+24 per 24 pixel, oppure ha spazio intorno, cioè un cerchio da 24 centrato su di
+lui non tocca un altro bersaglio. Le «×» adesso sono almeno 24 pixel, e 30 dove
+c'è il dito (`pointer: coarse`), come quelle dello scudo.
+
+`scripts/verifica-bersagli.mjs` apre il pannello a 390 px col dito e misura
+ogni scheda. Due precisazioni che vengono dalla regola, non da comodità: il
+bersaglio di una casella comprende la sua etichetta (toccando la scritta si
+spunta), e un collegamento dentro una frase non conta, perché è testo. La prima
+misura non lo sapeva e segnalava ventotto caselle che si prendevano benissimo:
+una misura sbagliata non si corregge spostando le caselle. `--selftest` mette una
+«×» da 16 pixel accanto a un tasto e pretende che si veda.
+
+Il controllo della larghezza gira a 360 px, non più a 390: è la larghezza più
+comune fra i telefoni Android, e chi ci sta a 360 ci sta anche a 390.
+

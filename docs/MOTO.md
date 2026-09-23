@@ -101,6 +101,17 @@ puro, nessun ridisegno.
 
 `.regia-badge.live` e `.studio-badge-live` hanno già una pulsazione propria e restano come sono.
 
+### L'attesa ha la forma di quello che arriva
+
+Una scheda che carica mostrava «Caricamento…», in grigio, in sessanta posti. Adesso
+mostra due righe che luccicano (`attesaHtml()`, stile `.scheletro`): la forma di un
+testo che sta per arrivare, invece di una parola che dice di aspettare. Chi usa un
+lettore di schermo sente ancora «Caricamento…», che resta scritto per lui.
+
+Un segnaposto solo per tutto il pannello: prima c'erano sei modi diversi di scrivere
+la stessa attesa («Caricamento…» e «Carico…», in paragrafi, righe di elenco, riquadri).
+Il luccichio si ferma con «meno movimento», come tutto il resto.
+
 ## Spegnimento
 
 Tutto si spegne insieme, in tre modi: `prefers-reduced-motion: reduce`, la classe `leggero`
@@ -361,7 +372,35 @@ scivolava di lato sotto il dito. Adesso entrano di lato solo le carte che si
 vedono in quel momento (`rivelaCarte`); le altre salgono e basta.
 
 `test/contratto/sempre-visibile.test.mjs` controlla le due regole nel codice.
-`scripts/verifica-larghezza.mjs` apre ogni scheda a 390 px in un browser vero e
+`scripts/verifica-larghezza.mjs` apre ogni scheda a 360 px in un browser vero e
 pretende che la pagina non scorra di lato, e `scripts/verifica-contrasto.mjs`
 misura sui pixel il contrasto dei comandi, anche sotto il mouse: girano tutti e
 due a ogni push.
+
+## Si prepara solo quello che si vede
+
+Il pannello si disegna tutto insieme, trentasette schede, e a ogni `render()` le
+carte venivano preparate tutte: ripiegabili (`rendiCartePieghevoli`) e pronte a
+comparire (`rivelaCarte`). Centocinquantatré carte, trentasei schede che nessuno
+stava guardando.
+
+In più `rivelaCarte`, per ogni carta, scriveva una classe e subito dopo ne
+misurava la posizione. Ogni misura dopo una scrittura costringe il browser a
+rifare l'impaginazione: centocinquantatré volte di fila.
+
+Adesso:
+
+- al `render()` si prepara solo la scheda che si vede;
+- la scheda in cui entri si prepara **per prima cosa** in `vaiAScheda`, prima
+  della transizione e prima di chiunque altro: la ricerca, la visita guidata e
+  «Come funziona» non trovano mai una scheda non pronta;
+- `rivelaCarte` prima misura tutte le carte, poi scrive. Una misura sola, sulla
+  posizione vera della carta e non su quella già spostata dall'animazione.
+
+Misurato con lo stesso banco, sulla prova del pannello: su un computer il
+`render()` passa da 65 a 53 ms; su un telefono medio (il processore rallentato
+quattro volte) da 441 a 332 ms, con le carte pieghevoli da 93 a 4 ms e la
+comparsa da 57 a 27 ms. Il resto è il collegamento dei tasti di tutte le schede
+(`attivaPiattaforma`, quasi 100 ms sul telefono): è la prossima cosa da
+alleggerire, e non si fa senza cambiare come i tasti trovano i loro elementi.
+
