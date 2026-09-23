@@ -4167,6 +4167,8 @@ function grafFontPronti() {
 
 const GR_STILI_TITOLO = { sfumato: ['Sfumato', 'Gradient', 'Degradado'], pieno: ['Pieno', 'Solid', 'Sólido'], neon: ['Neon', 'Neon', 'Neón'] };
 const GR_STILI_RIGHE = { schede: ['Schede', 'Cards', 'Tarjetas'], pillole: ['Pillole', 'Pills', 'Píldoras'], linee: ['Linee', 'Lines', 'Líneas'] };
+const GR_FORMATI = { post: ['Post', 'Post', 'Post'], storia: ['Storia', 'Story', 'Historia'] };
+const GR_STORIA = { W: 1080, H: 1920, fascia: 250 };
 
 const GR_PRONTI = [
   { id: 'retro', nome: ['Tramonto retrò', 'Retro sunset', 'Atardecer retro'], c: { tema: 'synthwave', accento: '#ff3ca6', accento2: '#29d8ff', font: 'archivo', stileTitolo: 'neon', stileRighe: 'schede', velocita: 'normale', intensita: 100, op: { griglia: { composizione: 'poster', strisce: true, montagne: true, stelle: true } } } },
@@ -4219,7 +4221,7 @@ function grafDefault() {
     coloreTesto: '', velo: 45,
     gioco: '', sottotitolo: '',
     sfondo: 'tema', sfondoColore: '', sfondoImg: '',
-    qr: false, dest: 'u',
+    qr: false, dest: 'u', formato: 'post',
     giorni: grafGiorni(),
   };
 }
@@ -4499,7 +4501,7 @@ function _settDisegnaAnteprima() {
     _settFotogramma = requestAnimationFrame(() => {
       _settFotogramma = 0;
       const tela = _g('sett-anteprima');
-      if (tela) grafMostra(tela, { ...grafConfig(), tipo: 'programmazione', giorni: grafGiorni(_settLeggiGiorni()) });
+      if (tela) grafMostra(tela, { ...grafConfig(), tipo: 'programmazione', formato: 'post', giorni: grafGiorni(_settLeggiGiorni()) });
     });
   };
   if (c.sfondo === 'immagine' && c.sfondoImg && !_settImg.sfondo) { _settImg.sfondo = true; grafCaricaImg(c.sfondoImg, disegna); }
@@ -4603,10 +4605,11 @@ function collegaSettimana() {
     if (b) b.disabled = true;
     try {
       await grafFontPronti();
-      const cv = grafTelaNuova();
-      grafDisegna(cv, { ...grafConfig(), tipo: 'programmazione', giorni: grafGiorni(_settLeggiGiorni()) }, 0, 1);
-      const immagine = cv.toDataURL('image/jpeg', 0.9);
-      const r = await api('/api/streamer/settimana/manda', { method: 'POST', body: { immagine, testo: _g('sett-testo')?.value || '', dove } });
+      const c = { ...grafConfig(), tipo: 'programmazione', giorni: grafGiorni(_settLeggiGiorni()) };
+      const corpo = { testo: _g('sett-testo')?.value || '', dove };
+      if (dove.tg.length || dove.dc.length) corpo.immagine = grafJpeg({ ...c, formato: 'post' });
+      if (dove.ig) corpo.storia = grafJpeg({ ...c, formato: 'storia' });
+      const r = await api('/api/streamer/settimana/manda', { method: 'POST', body: corpo });
       if (stato?.streamer) stato.streamer.settings = { ...(stato.streamer.settings || {}), settimana: { ...settimanaOra(), dove } };
       const box = _g('sett-esiti');
       const tipo = { tg: 'Telegram', dc: 'Discord', ig: 'Instagram' };
@@ -4655,6 +4658,9 @@ function pannelloGrafiche() {
       <div class="gr-tipo">
         <button type="button" class="gr-tipo-b${c.tipo === 'programmazione' ? ' on' : ''}" data-gr-tipo="programmazione">${L('Programmazione', 'Schedule', 'Programación')}</button>
         <button type="button" class="gr-tipo-b${c.tipo === 'live' ? ' on' : ''}" data-gr-tipo="live">${L('Live ora', 'Live now', 'En directo')}</button>
+      </div>
+      <div class="gr-tipo gr-formato" role="group" aria-label="${esc(L('Formato', 'Format', 'Formato'))}">
+        ${Object.entries(GR_FORMATI).map(([id, nome]) => `<button type="button" class="gr-tipo-b${(c.formato === 'storia' ? 'storia' : 'post') === id ? ' on' : ''}" data-gr-formato="${id}">${esc(L(...nome))} <span class="gr-misura">${id === 'storia' ? '1080×1920' : (c.tipo === 'live' ? '1080×1080' : '1080×1350')}</span></button>`).join('')}
       </div>
 
       <div class="gr-studio">
@@ -4841,9 +4847,36 @@ function eScuroHex(hex) {
 const GR_SOGLIA = (px, peso) => { const vero = px * 0.36; return (vero >= 24 || (peso >= 700 && vero >= 18.66)) ? 3 : 4.5; };
 const GR_MARGINE = 1.05;
 
+function _grafTrasla(v, dy) {
+  if (Array.isArray(v)) return v.map((x) => _grafTrasla(x, dy));
+  if (!v || typeof v !== 'object') return v;
+  const o = {};
+  for (const [k, x] of Object.entries(v)) o[k] = (k === 'y' || k === 'base' || k === 'orizzonte') && typeof x === 'number' ? x + dy : _grafTrasla(x, dy);
+  return o;
+}
+
 function grafDisposizione(c) {
+  if (c.formato !== 'storia') return _grafDisposizionePost(c);
+  const S = GR_STORIA, margine = 30;
+  const su = S.fascia + margine - 60;
+  const alta = (S.H - S.fascia - margine + 64) - su;
+  const lay = _grafTrasla(_grafDisposizionePost(c, alta), su);
+  lay.H = S.H;
+  lay.storia = true;
+  if (lay.prog) return lay;
+  lay.barra.y = S.H - lay.barra.h;
+  const cima = Math.min(lay.badge.punto.y - lay.badge.punto.r, lay.badge.base - lay.badge.px);
+  const fine = lay.sotto.base + Math.round(lay.sotto.px * 0.3);
+  const libero = [lay.filo.y + lay.filo.h, lay.qr ? lay.qr.y - 40 : S.H - S.fascia - margine];
+  const dy = Math.round((libero[0] + libero[1]) / 2 - (cima + fine) / 2);
+  for (const k of ['badge', 'titolo', 'pillola', 'sotto']) lay[k] = _grafTrasla(lay[k], dy);
+  lay.orizzonte += dy;
+  return lay;
+}
+
+function _grafDisposizionePost(c, alta = 0) {
   const prog = c.tipo !== 'live';
-  const W = 1080, H = prog ? 1350 : 1080, pad = 96;
+  const W = 1080, H = alta || (prog ? 1350 : 1080), pad = 96;
   const lay = {
     W, H, pad, prog,
     logo: { x: pad, y: 60, w: 84, h: 84 },
@@ -5127,6 +5160,18 @@ function grafTelaNuova() {
 let _grafTelaLavoro = null;
 const grafTelaLavoro = () => _grafTelaLavoro || (_grafTelaLavoro = grafTelaNuova());
 
+const GR_JPEG_MAX = 760_000;
+function grafJpeg(c, massimo = GR_JPEG_MAX) {
+  const tela = grafTelaNuova();
+  grafDisegna(tela, c, 0, 1);
+  let url = '';
+  for (const q of [0.9, 0.82, 0.74, 0.66, 0.58, 0.5]) {
+    url = tela.toDataURL('image/jpeg', q);
+    if ((url.length - url.indexOf(',') - 1) * 0.75 <= massimo) break;
+  }
+  return url;
+}
+
 function grafMostra(canvas, c, t = 0) {
   if (grafAnimato(c)) { grafDisegna(canvas, c, t, 1); return; }
   const tela = grafTelaLavoro();
@@ -5258,8 +5303,18 @@ function initGrafiche() {
     mostraSfondo();
   };
 
+  const misuraPost = () => {
+    const m = document.querySelector('[data-gr-formato="post"] .gr-misura');
+    if (m) m.textContent = c.tipo === 'live' ? '1080×1080' : '1080×1350';
+  };
+  document.querySelectorAll('[data-gr-formato]').forEach((b) => b.addEventListener('click', () => {
+    c.formato = b.dataset.grFormato === 'storia' ? 'storia' : 'post';
+    accendi('gr-formato', c.formato);
+    ridisegna();
+  }));
   const setTipo = (t) => {
     c.tipo = t;
+    misuraPost();
     document.querySelectorAll('[data-gr-tipo]').forEach((b) => b.classList.toggle('on', b.dataset.grTipo === t));
     document.querySelectorAll('.gr-solo-prog').forEach((x) => x.toggleAttribute('hidden', t === 'live'));
     document.querySelectorAll('.gr-solo-live').forEach((x) => x.toggleAttribute('hidden', t !== 'live'));
@@ -5316,7 +5371,7 @@ function initGrafiche() {
       if (giro !== _mini || i >= bottoni.length) return;
       const b = bottoni[i], pr = GR_PRONTI.find((x) => x.id === b.dataset.grPronto), mini = b.querySelector('canvas');
       if (pr && mini) {
-        const cc = { ...c, ...pr.c, sfondo: 'tema', op: { ...(c.op || {}), ...pr.c.op } };
+        const cc = { ...c, ...pr.c, sfondo: 'tema', formato: 'post', op: { ...(c.op || {}), ...pr.c.op } };
         const lay = grafDisposizione(cc), tela = grafTelaLavoro();
         grafDisegna(tela, cc, grafDurata(cc) * 0.3, 1);
         mini.width = 120; mini.height = Math.round(120 * lay.H / lay.W);

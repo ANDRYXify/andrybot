@@ -5194,12 +5194,40 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // sta sotto il mezzo mega, e Instagram ne accetta otto.
   const SETTIMANA_MAX = 1_500_000;
   const _mandando = new Set();
+  const leggiJpeg = (v) => {
+    const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(v || ''));
+    const b = m ? Buffer.from(m[1], 'base64') : null;
+    return b && b.length <= SETTIMANA_MAX && b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF ? b : null;
+  };
 
+  // LA STORIA DI INSTAGRAM. L'immagine sta in un indirizzo pubblico solo per il
+  // tempo che Meta la scarica, e l'esito resta dove il pannello lo mostra.
+  // L'immagine e' gia' verticale (1080×1920): la disegna il pannello, perche'
+  // una grafica quadrata Instagram la ingrandisce fino a riempire lo schermo e
+  // ne taglia i lati.
+  const pubblicaStoriaIg = async (login, byte) => {
+    const ig = credenzialiInstagram(login);
+    if (!ig) return { ok: false, errore: 'Instagram non e\' collegato' };
+    spazzaPubblici();
+    mkdirSync(cartellaPubblici, { recursive: true });
+    const nome = crypto.randomBytes(16).toString('hex') + '.jpg';
+    const p = join(cartellaPubblici, nome);
+    writeFileSync(p, byte);
+    try {
+      const r = await instagram.pubblicaStoria({ ...ig, url: `${config.baseUrl.replace(/\/$/, '')}/pubblici/${nome}` });
+      instagram.ricorda(login, r);
+      return r;
+    } finally { try { unlinkSync(p); } catch { /* gia' andata */ } }
+  };
+
+  // Due immagini, una per posto: il post (1080×1350) per Telegram e Discord, la
+  // storia (1080×1920) per Instagram. Un pannello di prima manda solo il post, e
+  // la storia usa quello: com'era, invece di non partire.
   app.post('/api/streamer/settimana/manda', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(req.body?.immagine || ''));
-    const byte = m ? Buffer.from(m[1], 'base64') : null;
-    if (!byte || byte.length > SETTIMANA_MAX || !(byte[0] === 0xFF && byte[1] === 0xD8 && byte[2] === 0xFF)) {
+    const byte = leggiJpeg(req.body?.immagine);
+    const storia = leggiJpeg(req.body?.storia) || byte;
+    if (!byte && !storia) {
       return res.status(400).json({ errore: 'L\'immagine della settimana non e\' arrivata intera: riprova.' });
     }
     // Un doppio clic non manda due volte la stessa settimana.
@@ -5216,7 +5244,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // foto va da sola e il testo la segue.
       const tc = tgConf.get(login);
       const mieTg = new Map(tgDest.lista(login).map((d) => [String(d.id), d]));
-      for (const id of dove.tg) {
+      for (const id of byte ? dove.tg : []) {
         const d = mieTg.get(id);
         if (!d?.attivo || !tc?.token) continue;
         const html = telegram.escHtml(testo);
@@ -5229,25 +5257,16 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
       const { token } = dcTokenE(login);
       const mieDc = new Map(dcDest.lista(login).map((d) => [String(d.id), d]));
-      for (const id of dove.dc) {
+      for (const id of byte ? dove.dc : []) {
         const d = mieDc.get(id);
         if (!d?.attivo) continue;
         const r = await discord.mandaImmagine(token, d, testo, { byte, nome: 'settimana.jpg', tipo: 'image/jpeg' });
         esiti.push({ dove: 'dc', nome: d.canale_nome || '', ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
       }
 
-      const ig = credenzialiInstagram(login);
-      if (dove.ig && ig) {
-        spazzaPubblici();
-        mkdirSync(cartellaPubblici, { recursive: true });
-        const nome = crypto.randomBytes(16).toString('hex') + '.jpg';
-        const p = join(cartellaPubblici, nome);
-        writeFileSync(p, byte);
-        try {
-          const r = await instagram.pubblicaStoria({ ...ig, url: `${config.baseUrl.replace(/\/$/, '')}/pubblici/${nome}` });
-          instagram.ricorda(login, r);
-          esiti.push({ dove: 'ig', nome: 'storia', ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
-        } finally { try { unlinkSync(p); } catch { /* gia' andata */ } }
+      if (dove.ig && storia && credenzialiInstagram(login)) {
+        const r = await pubblicaStoriaIg(login, storia);
+        esiti.push({ dove: 'ig', nome: 'storia', ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
       }
       res.json({ ok: true, esiti });
     } finally { _mandando.delete(login); }
@@ -6067,6 +6086,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         sfondoImg: imgOk(sfImg) ? sfImg : '',
         qr: !!gr.qr,                                        // stampa il QR + link del canale
         dest: gr.dest === 'twitch' ? 'twitch' : 'u',        // destinazione: pagina /u o Twitch
+        formato: tra(gr.formato, ['post', 'storia'], 'post'),
         giorni,
       };
     }

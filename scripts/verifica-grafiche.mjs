@@ -10,7 +10,8 @@
 //    soglia e' quella WCAG per la grandezza che la scritta ha sul telefono: una
 //    grafica da 1080 si guarda a circa 390 px;
 //  · la DISPOSIZIONE: nessuna scritta ne tocca un'altra, nessuna finisce sotto
-//    il QR, e tutte stanno dentro la tela;
+//    il QR, e tutte stanno dentro la tela; nella STORIA (1080×1920) nessuna
+//    finisce nelle due fasce dove Instagram mette le sue scritte;
 //  · il GIRO: il fotogramma a fine periodo e' il primo, e il passo che scavalca
 //    la fine non e' piu' grande dei passi normali. Un numero di giri non intero
 //    si vede proprio li';
@@ -164,18 +165,21 @@ await pagina.evaluate(() => {
 });
 
 const TEMI = await pagina.evaluate(() => GR_TEMA_IDS.map((id) => ({ id, animato: !!GR_TEMI[id].anima })));
+const STORIA = await pagina.evaluate(() => GR_STORIA);
 const PRONTI = await pagina.evaluate(() => GR_PRONTI.map((p) => p.id));
 const FASI_ANIMATE = [0.125, 0.375, 0.625, 0.875];
 
-// I casi: ogni tema nei due formati (il «Live ora» col QR, la settimana
-// senza), ogni stile pronto nei due formati (a formati scambiati), e gli sfondi
-// che non vengono dal tema.
+// I casi: ogni tema nei due tipi (il «Live ora» col QR, la settimana senza),
+// in post e in storia; ogni stile pronto nei due tipi (a QR scambiati), e gli
+// sfondi che non vengono dal tema.
 function casi({ soloAnimati = false, pochi = false } = {}) {
   const fuori = [];
   for (const t of TEMI) {
     if (soloAnimati && !t.animato) continue;
     fuori.push({ nome: `${t.id} · settimana`, c: { tema: t.id, sfondo: 'tema', tipo: 'programmazione', qr: false }, animato: t.animato });
     fuori.push({ nome: `${t.id} · live col QR`, c: { tema: t.id, sfondo: 'tema', tipo: 'live', qr: true }, animato: t.animato });
+    fuori.push({ nome: `${t.id} · storia della settimana`, c: { tema: t.id, sfondo: 'tema', tipo: 'programmazione', qr: false, formato: 'storia' }, animato: t.animato });
+    fuori.push({ nome: `${t.id} · storia live col QR`, c: { tema: t.id, sfondo: 'tema', tipo: 'live', qr: true, formato: 'storia' }, animato: t.animato });
   }
   if (!soloAnimati) {
     for (const id of PRONTI) {
@@ -184,6 +188,7 @@ function casi({ soloAnimati = false, pochi = false } = {}) {
     }
     fuori.push({ nome: 'tinta scura', c: { tema: 'notte', sfondo: 'tinta', sfondoColore: '#1b1030', tipo: 'programmazione' }, animato: false });
     fuori.push({ nome: 'tinta chiara', c: { tema: 'notte', sfondo: 'tinta', sfondoColore: '#f2efe6', tipo: 'live', qr: true }, animato: false });
+    fuori.push({ nome: 'tinta chiara in storia', c: { tema: 'notte', sfondo: 'tinta', sfondoColore: '#f2efe6', tipo: 'programmazione', qr: true, formato: 'storia' }, animato: false });
     fuori.push({ nome: 'testo grigio scelto a mano', c: { tema: 'notte', sfondo: 'tema', coloreTesto: '#8a8a8a', tipo: 'programmazione', qr: true }, animato: false });
     fuori.push({ nome: 'testo grigio sulla pioggia', c: { tema: 'pioggia', sfondo: 'tema', coloreTesto: '#8a8a8a', tipo: 'live' }, animato: true });
   }
@@ -210,6 +215,7 @@ async function misura(elenco) {
       for (let i = 0; i < rr.length; i++) {
         const a = rr[i];
         if (a.x < 24 || a.y < 24 || a.x + a.w > m.W - 24 || a.y + a.h > m.H - 24) guai.posto.push(`${caso.nome}: «${m.esiti[i].testo}» esce dalla tela o tocca il bordo`);
+        if (m.H === STORIA.H && (a.y < STORIA.fascia || a.y + a.h > m.H - STORIA.fascia)) guai.posto.push(`${caso.nome}: «${m.esiti[i].testo}» finisce dove Instagram mette le sue scritte`);
         for (let j = i + 1; j < rr.length; j++) {
           const b = rr[j];
           if (a.x < b.x + b.w + 3 && b.x < a.x + a.w + 3 && a.y < b.y + b.h + 3 && b.y < a.y + a.h + 3) guai.posto.push(`${caso.nome}: «${m.esiti[i].testo}» tocca «${m.esiti[j].testo}»`);
@@ -250,8 +256,10 @@ async function synthwave() {
   return pagina.evaluate(() => {
     const guai = [];
     const S = window.SB_SCENE;
+    const oStoria = (tipo) => grafDisposizione({ tipo, formato: 'storia' }).orizzonte;
     const prove = [['settimana poster', 1080, 1350, { orizzonte: 430 }, 'poster'], ['live poster', 1080, 1080, { orizzonte: 560 }, 'poster'],
-      ['settimana classica', 1080, 1350, { orizzonte: 430 }, 'classica'], ['live classica', 1080, 1080, { orizzonte: 560 }, 'classica']];
+      ['settimana classica', 1080, 1350, { orizzonte: 430 }, 'classica'], ['live classica', 1080, 1080, { orizzonte: 560 }, 'classica'],
+      ['storia della settimana', 1080, 1920, { orizzonte: oStoria('programmazione') }, 'poster'], ['storia live', 1080, 1920, { orizzonte: oStoria('live') }, 'classica']];
     for (const [nome, W, H, lay, composizione] of prove) {
       const g = S.geometriaSynth(W, H, { lay, op: { composizione } });
       if (!(g.yV > g.cy - g.R && g.yV < g.yOr)) guai.push(`${nome}: il punto di fuga (${g.yV.toFixed(1)}) non sta dentro il sole`);
@@ -355,6 +363,11 @@ if (SELFTEST) {
   await pagina.evaluate(() => { grafDisposizione = window.__dispVero; });
   ok = dice(storta.posto.length > 0, `una scritta messa sotto il QR si vede (${storta.posto.length} guai)`) && ok;
 
+  await pagina.evaluate(() => { window.__dispVero = grafDisposizione; grafDisposizione = (c) => (c.formato === 'storia' ? { ...window.__dispVero({ ...c, formato: 'post' }), H: GR_STORIA.H, storia: true } : window.__dispVero(c)); });
+  const inAlto = await misura([{ nome: 'storia col post in cima', c: { tema: 'notte', sfondo: 'tema', tipo: 'programmazione', formato: 'storia' }, animato: false }]);
+  await pagina.evaluate(() => { grafDisposizione = window.__dispVero; });
+  ok = dice(inAlto.posto.some((g) => g.includes('Instagram')), `una storia con le scritte sotto la barra di Instagram si vede (${inAlto.posto.length} guai)`) && ok;
+
   await pagina.evaluate(() => { window.__grigliaVera = SB_SCENE.grigliaSynth; SB_SCENE.grigliaSynth = (cam, fase, passo, n) => { const r = window.__grigliaVera(cam, fase, passo, n); r.lon = r.lon.map((l) => ({ ...l, x1: cam.W / 2 })); return r; }; });
   const raggi = await synthwave();
   await pagina.evaluate(() => { SB_SCENE.grigliaSynth = window.__grigliaVera; });
@@ -376,9 +389,9 @@ if (SELFTEST) {
 }
 
 const m = await misura(casi());
-dice(!m.contrasto.length, `ogni scritta si legge: ${m.misurate} scritte misurate sui pixel, in ${TEMI.length} temi, ${PRONTI.length} stili pronti e 4 sfondi fuori tema`);
+dice(!m.contrasto.length, `ogni scritta si legge: ${m.misurate} scritte misurate sui pixel, in ${TEMI.length} temi (post e storia), ${PRONTI.length} stili pronti e 5 sfondi fuori tema`);
 for (const g of m.contrasto.slice(0, 12)) righe.push('      ' + g);
-dice(!m.posto.length, 'ogni scritta sta al suo posto: niente si tocca, niente sotto il QR, niente fuori dalla tela');
+dice(!m.posto.length, 'ogni scritta sta al suo posto: niente si tocca, niente sotto il QR, niente fuori dalla tela, e nella storia niente sotto le scritte di Instagram');
 for (const g of m.posto.slice(0, 12)) righe.push('      ' + g);
 const gg = await giri(TEMI.filter((t) => t.animato));
 dice(!gg.guai.length, `ogni scena gira senza scatti: ${gg.visti} giri, a tutte e tre le velocita'`);

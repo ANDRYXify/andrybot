@@ -83,6 +83,16 @@ disegnatore delle Grafiche, 1080×1350 in JPEG. Un file solo per tutti i posti.
   spazzino toglie quelli rimasti da un giro interrotto.
 - Una storia non ha testo, e dall'API non si mettono gli adesivi con il link:
   per questo c'è il QR sulla grafica.
+- La storia è verticale, 1080×1920, e non è l'immagine del post. Prima
+  partiva la stessa immagine dappertutto, e Instagram la ingrandiva fino a
+  riempire lo schermo tagliandone i lati. Adesso «Manda» disegna la settimana
+  due volte: il post per Telegram e Discord, la storia per Instagram (come si
+  fa la storia sta in `docs/GRAFICHE.md`). Un pannello rimasto aperto da prima
+  manda solo il post, e la storia usa quello: come prima, invece di non
+  partire.
+- Le due immagini viaggiano nella stessa richiesta, che ha un limite di 2 MB:
+  ognuna sta sotto i 760 000 byte, e se non ci sta la qualità del JPEG scende
+  a gradini finché non ci sta. Lo controlla `test/contratto/grafiche.test.mjs`.
 
 ## Discord: allegare file
 

@@ -37,8 +37,11 @@ test('le rotte sono dello streamer, e «Manda» vuole un JPEG vero e piccolo', (
     assert.match(rotta(r, 200), /requireOwner/, `${r} senza guardiano`);
   }
   const manda = rotta("app.post('/api/streamer/settimana/manda'", 5000);
-  assert.match(manda, /byte\[0\] === 0xFF && byte\[1\] === 0xD8 && byte\[2\] === 0xFF/, 'il JPEG si riconosce dai byte, non dal nome');
-  assert.match(manda, /byte\.length > SETTIMANA_MAX/);
+  const jpeg = rotta('const leggiJpeg = (v) => {', 400);
+  assert.match(jpeg, /b\[0\] === 0xFF && b\[1\] === 0xD8 && b\[2\] === 0xFF/, 'il JPEG si riconosce dai byte, non dal nome');
+  assert.match(jpeg, /b\.length <= SETTIMANA_MAX/);
+  assert.match(manda, /const byte = leggiJpeg\(req\.body\?\.immagine\);/, 'il post passa di li\'');
+  assert.match(manda, /const storia = leggiJpeg\(req\.body\?\.storia\) \|\| byte;/, 'e la storia anche');
   assert.match(manda, /_mandando\.has\(login\)/, 'un doppio clic non manda due volte');
   assert.match(manda, /finally \{ _mandando\.delete\(login\); \}/, 'e un errore a meta\' non blocca il giro dopo');
   assert.match(manda, /mieTg\.get\(id\)/, 'si manda solo nei posti che sono suoi');
@@ -51,10 +54,11 @@ test('l\'immagine per Instagram e\' pubblica solo quanto serve', () => {
   assert.match(via, /!PUBBLICO_RE\.test\(nome\)/, 'nessun altro nome passa, niente percorsi');
   assert.ok(creaGuscio(join(RAD, 'src/web/public')).aperto('/pubblici/' + 'a'.repeat(32) + '.jpg'),
     'Meta la scarica senza sessione: se il cancello non la lascia passare, Instagram riceve 404');
-  const manda = rotta("app.post('/api/streamer/settimana/manda'", 5000);
-  assert.match(manda, /crypto\.randomBytes\(16\)\.toString\('hex'\)/);
-  assert.match(manda, /finally \{ try \{ unlinkSync\(p\); \}/, 'si cancella appena pubblicata, anche se Instagram dice di no');
-  assert.match(manda, /spazzaPubblici\(\);/, 'e quelle rimaste da un giro interrotto se ne vanno');
+  const storia = rotta('const pubblicaStoriaIg = async', 900);
+  assert.match(storia, /crypto\.randomBytes\(16\)\.toString\('hex'\)/);
+  assert.match(storia, /finally \{ try \{ unlinkSync\(p\); \}/, 'si cancella appena pubblicata, anche se Instagram dice di no');
+  assert.match(storia, /spazzaPubblici\(\);/, 'e quelle rimaste da un giro interrotto se ne vanno');
+  assert.ok(!/writeFileSync/.test(rotta("app.post('/api/streamer/settimana/manda'", 5000)), '«Manda» non scrive file suoi: passa dalla storia');
 });
 
 test('il Programma di Twitch: il permesso si chiede, e il giro scrive solo la memoria di cosa e\' nostro', () => {

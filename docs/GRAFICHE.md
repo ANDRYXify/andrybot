@@ -1,6 +1,7 @@
 # Le grafiche social
 
-Due grafiche da pubblicare: la settimana (1080×1350) e «Live ora» (1080×1080).
+Due grafiche da pubblicare: la settimana (1080×1350) e «Live ora» (1080×1080),
+ognuna anche in formato storia (1080×1920).
 Si disegnano nel browser, con lo stesso disegno per l'anteprima, il PNG, la GIF,
 il video e l'immagine che «Manda» spedisce dalla scheda Settimana.
 
@@ -132,7 +133,41 @@ Il server salva tutto, e accetta solo le scelte che il pannello offre (lo
 controlla un test): un campo che il server scartasse in silenzio sarebbe una
 scelta che si fa e non succede niente.
 
-## 7. L'anteprima non rallenta chi scrive
+## 7. Il post e la storia
+
+- **Il post** è la grafica di sempre: 1080×1350 la settimana, 1080×1080 «Live
+  ora».
+- **La storia** è 1080×1920, la misura di una storia di Instagram. Una grafica
+  di un'altra forma Instagram la ingrandisce fino a riempire lo schermo e ne
+  taglia i lati: la settimana usciva con «LINSESTO» e il nome a metà.
+- La storia è composta per il verticale, con le regole del post e non con
+  una seconda disposizione da tenere allineata a mano (`grafDisposizione`):
+  - Instagram mette le sue scritte in due fasce di 250 pixel: in alto la barra
+    dei secondi e il nome, in basso la risposta. Quello che resta, da 250 a
+    1670, è la cornice della grafica;
+  - il post si compone su un'altezza tale che il logo stia 30 pixel sotto la
+    fascia di sopra e il QR finisca 30 pixel sopra quella di sotto, e poi si
+    abbassa tutto di quanto serve (`_grafTrasla` sposta ogni quota: `y`,
+    `base`, l'orizzonte della scena). Le regole del post fanno il resto: le
+    righe della settimana si allungano fino al QR o al fondo, il QR sta in
+    basso;
+  - in «Live ora» il blocco con «In diretta ora», il titolo, il gioco e il
+    sottotitolo sta **in mezzo allo spazio libero** fra l'intestazione e il QR
+    (o il fondo), e l'orizzonte della scena lo segue, come nel post. La barra
+    colorata resta sul bordo di sotto, che è il suo posto;
+  - sfondo, scena e sfumature si disegnano sull'altezza della tela, quindi la
+    coprono tutta: Instagram non aggiunge colore sopra e sotto.
+- Il collaudo misura ogni scritta di ogni tema anche nella storia: si legge,
+  non tocca le altre, e non finisce nelle fasce di Instagram.
+- Nel pannello si sceglie con **Post / Storia**, e PNG, Condividi, GIF e video
+  escono nel formato scelto; le miniature degli stili pronti restano post,
+  perché mostrano lo stile e non la forma. «Manda» della Settimana ne fa due:
+  il post per Telegram e Discord, la storia per Instagram.
+- Dall'API non si mettono adesivi, quindi la storia pubblicata dal pannello non
+  ha un link da toccare: per quello c'è il QR, o l'adesivo che metti tu
+  dall'app.
+
+## 8. L'anteprima non rallenta chi scrive
 
 Scrivendo nella scheda tutto andava a scatti, e peggiorava a ogni visita. Le
 cause erano tre, e nessuna era la grafica in sé.
@@ -166,16 +201,16 @@ anche loro su una tela da rileggere.
 La scheda Settimana ha la stessa anteprima e la stessa regola: un disegno per
 fotogramma, qualunque cosa si scriva nei giorni.
 
-## 8. Il collaudo
+## 9. Il collaudo
 
-`scripts/verifica-grafiche.mjs`, in un browser vero, per ogni tema nei due
-formati, ogni stile pronto e gli sfondi fuori tema, in quattro fotogrammi del
-giro:
+`scripts/verifica-grafiche.mjs`, in un browser vero, per ogni tema nei due tipi
+in post e in storia, ogni stile pronto e gli sfondi fuori tema, in quattro
+fotogrammi del giro:
 
 - misura il contrasto vero di ogni scritta: i pixel delle lettere contro quelli
   che le toccano da fuori;
 - controlla che nessuna scritta ne tocchi un'altra, finisca sotto il QR o esca
-  dalla tela;
+  dalla tela, e nella storia che nessuna finisca nelle fasce di Instagram;
 - per ogni scena e ogni velocità, che il fotogramma a fine giro sia il primo e
   che il passo che chiude il giro non sia più grande dei passi normali;
 - per il synthwave, che le linee escano da tutto l'orizzonte e vadano al punto
@@ -186,7 +221,8 @@ giro:
 
 `--selftest` mette le rotture e controlla che si vedano: i contorni tolti, un
 grigio lasciato com'è, un giro che non torna, una scritta sotto il QR, le linee
-a raggiera, un'animazione che gira fuori dalla scheda, una scheda che si
-riaggancia a ogni ingresso. `test/unita/graf-scene.test.mjs` prova la geometria senza browser,
+a raggiera, una storia col post in cima (sotto la barra di Instagram),
+un'animazione che gira fuori dalla scheda, una scheda che si riaggancia a ogni
+ingresso. `test/unita/graf-scene.test.mjs` prova la geometria senza browser,
 `test/contratto/grafiche.test.mjs` che temi, stili pronti, motore e server
 dicano la stessa cosa.

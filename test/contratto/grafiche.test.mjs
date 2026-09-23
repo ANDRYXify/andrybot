@@ -22,7 +22,7 @@ const T = (() => {
   const i = APP.indexOf('const GR_TEMI = {');
   const j = APP.indexOf('function grafOpzioni(', i);
   assert.ok(i >= 0 && j > i, 'non trovo le tabelle delle grafiche');
-  return vm.runInNewContext(`${APP.slice(i, j)}\n({ GR_TEMI, GR_PRONTI, GR_CARATTERI, GR_STILI_TITOLO, GR_STILI_RIGHE, GR_VELOCITA })`, { L: (it) => it, document: {}, window: {} });
+  return vm.runInNewContext(`${APP.slice(i, j)}\n({ GR_TEMI, GR_PRONTI, GR_CARATTERI, GR_STILI_TITOLO, GR_STILI_RIGHE, GR_VELOCITA, GR_FORMATI, GR_STORIA })`, { L: (it) => it, document: {}, window: {} });
 })();
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -78,6 +78,7 @@ test('il server accetta esattamente le scelte che il pannello offre', () => {
   assert.deepEqual(elenco('stileTitolo'), Object.keys(T.GR_STILI_TITOLO).sort());
   assert.deepEqual(elenco('stileRighe'), Object.keys(T.GR_STILI_RIGHE).sort());
   assert.deepEqual(elenco('velocita'), Object.keys(T.GR_VELOCITA).sort());
+  assert.deepEqual(elenco('formato'), Object.keys(T.GR_FORMATI).sort());
   assert.match(r, /accento2: \/\^#\[0-9a-fA-F\]\{6\}\$\/\.test/);
   assert.match(r, /intensita: Math\.max\(30, Math\.min\(100/);
   assert.ok(/\bop,/.test(r), 'e le opzioni delle scene');
@@ -108,4 +109,42 @@ test('niente emoji di serie: il logo e\' l\'iniziale, e il vecchio 🎮 di serie
 
 test('il cancello delle grafiche sta nella catena dei collaudi', () => {
   assert.match(leggi('package.json'), /node scripts\/verifica-grafiche\.mjs/);
+});
+
+// La storia di Instagram e' 1080×1920. Una grafica di un'altra forma Instagram
+// la ingrandisce fino a riempire lo schermo e ne taglia i lati: e' successo, e
+// dalla settimana restava «LINSESTO» e mezzo nome. Il post va nei canali, la
+// storia nella storia; il come sta in docs/GRAFICHE.md.
+test('la storia e\' verticale, e «Manda» manda a ogni posto la sua forma', () => {
+  assert.equal(T.GR_STORIA.W, 1080);
+  assert.equal(T.GR_STORIA.H, 1920);
+  const d = APP.slice(APP.indexOf('function grafDisposizione(c) {'), APP.indexOf('function _grafDisposizionePost(c, alta = 0) {'));
+  assert.ok(d.includes("if (c.formato !== 'storia') return _grafDisposizionePost(c);"), 'il post resta com\'era');
+  assert.ok(d.includes('const lay = _grafTrasla(_grafDisposizionePost(c, alta), su);'), 'la storia e\' il post composto sull\'altezza libera da Instagram');
+  assert.ok(d.includes('lay.barra.y = S.H - lay.barra.h;'), 'la barra di «Live ora» sta sul bordo di sotto');
+  assert.ok(d.includes("for (const k of ['badge', 'titolo', 'pillola', 'sotto']) lay[k] = _grafTrasla(lay[k], dy);") && d.includes('lay.orizzonte += dy;'),
+    'e il blocco di «Live ora» sta in mezzo allo spazio libero, con l\'orizzonte della scena');
+  const tr = APP.slice(APP.indexOf('function _grafTrasla(v, dy) {'), APP.indexOf('function grafDisposizione(c) {'));
+  assert.ok(/\(k === 'y' \|\| k === 'base' \|\| k === 'orizzonte'\)/.test(tr), 'si sposta tutto quello che ha una quota');
+  const manda = APP.slice(APP.indexOf("_g('sett-manda')?.addEventListener('click'"), APP.indexOf("const r = await api('/api/streamer/settimana/manda'"));
+  assert.ok(manda.includes("corpo.immagine = grafJpeg({ ...c, formato: 'post' })"), 'ai canali il post');
+  assert.ok(manda.includes("if (dove.ig) corpo.storia = grafJpeg({ ...c, formato: 'storia' })"), 'alla storia la storia');
+  const srv = SRV.slice(SRV.indexOf("app.post('/api/streamer/settimana/manda'"), SRV.indexOf("app.delete('/api/streamer/ruoli'"));
+  assert.ok(srv.includes('const storia = leggiJpeg(req.body?.storia) || byte;'), 'il server usa la storia per la storia');
+  assert.ok(srv.includes('await pubblicaStoriaIg(login, storia)'), 'e la pubblica da un posto solo');
+  assert.ok(!/pubblicaStoriaIg\(login, byte\)/.test(srv), 'mai il post nella storia, se la storia c\'e\'');
+});
+
+// Due immagini nello stesso «Manda» devono stare nel limite del corpo di una
+// richiesta (2 MB): ognuna al piu' GR_JPEG_MAX byte, che in base64 crescono di
+// un terzo.
+test('post e storia insieme stanno nel limite di una richiesta', () => {
+  const max = Number((/const GR_JPEG_MAX = ([\d_]+);/.exec(APP) || [])[1]?.replace(/_/g, ''));
+  assert.ok(max > 0, 'c\'e\' un tetto per ogni immagine');
+  const limite = /app\.use\(express\.json\(\{ limit: '(\d+)mb'/.exec(SRV);
+  assert.ok(limite, 'il limite del corpo');
+  const corpo = 2 * Math.ceil(max / 3) * 4 + 2000 * 4 + 4096;
+  assert.ok(corpo <= Number(limite[1]) * 1024 * 1024, `due immagini da ${max} byte e un testo pieno fanno ${corpo} byte`);
+  const serve = /const SETTIMANA_MAX = ([\d_]+);/.exec(SRV);
+  assert.ok(Number(serve[1].replace(/_/g, '')) >= max, 'e il server accetta quello che il pannello manda');
 });
