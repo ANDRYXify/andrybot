@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const CSS = readFileSync(new URL('../../src/web/public/style.css', import.meta.url), 'utf8');
+const ANIME = readFileSync(new URL('../../src/web/public/anime.css', import.meta.url), 'utf8');
 const rem = (s) => Number(String(s).replace('rem', ''));
 
 function blocco(soglia) {
@@ -50,4 +51,11 @@ test('le soglie sono la somma delle colonne, e l\'anteprima tiene il telefono in
   assert.ok(anteprimaDue >= minimo, `a due colonne l'anteprima parte da ${anteprimaDue}rem, il telefono ne vuole ${minimo}`);
   assert.ok(anteprimaTre >= minimo, `a tre colonne l'anteprima parte da ${anteprimaTre}rem, il telefono ne vuole ${minimo}`);
   assert.ok(Math.abs(anteprimaDue - anteprimaTre) < 1e-9, 'e la stessa anteprima minima vale per tutte e due le soglie');
+});
+
+test('l\'editor ha lo stesso spazio nella Pagina link e nelle Donazioni', () => {
+  // Lo spazio largo lo chiede l'editor, non la scheda: prima lo aveva solo la
+  // Pagina link, e le Donazioni aprivano lo stesso editor in 1080 px.
+  assert.match(ANIME, /body:has\(\.pannello-scheda\.visibile :is\(#lp-box, #lp-box-dona\)\) \.contenuto \{\n  max-width: none;/);
+  assert.doesNotMatch(ANIME, /\[data-scheda="pagina"\]\) \.contenuto/, 'nessuna scheda ha lo spazio largo per nome');
 });

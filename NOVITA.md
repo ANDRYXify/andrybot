@@ -97,6 +97,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Il menù è fatto a vignette: ogni gruppo si apre e si chiude dalla sua didascalia, e resta aperto quello della scheda in cui sei. Se dentro un gruppo chiuso c'è qualcosa di nuovo, lo vedi dal «!».
 - Nella Pagina link e nelle Donazioni l'anteprima non si schiaccia più accanto ai comandi: il telefono resta sempre intero, e le colonne si mettono in fila solo se c'è posto. [vai: donazioni]
 - Nella scheda Telegram «Auguri di compleanno», l'accesso, dove mandare gli avvisi e la carta live compaiono subito: restavano in caricamento finché non passavi da «I tuoi social». [vai: telegram]
+- Le Donazioni si aprono larghe quanto la Pagina link: l'editor è lo stesso, e adesso ha lo stesso spazio per comandi, anteprima e ispettore. [vai: donazioni]
 
 ## 2026-09-19
 

@@ -1222,7 +1222,7 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
 
 .ovl-scena { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 10px; margin-top: 10px; align-items: start; }
 
-body:has(.pannello-scheda.visibile[data-scheda="pagina"]) .contenuto {
+body:has(.pannello-scheda.visibile :is(#lp-box, #lp-box-dona)) .contenuto {
   max-width: none;
   padding-left: clamp(.8rem, 1.4vw, 1.4rem);
   padding-right: clamp(.8rem, 1.4vw, 1.4rem);

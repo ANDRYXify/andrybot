@@ -147,6 +147,13 @@ cornice (0,8rem per lato), 26rem:
 `test/contratto/editor-colonne.test.mjs` legge i numeri dal foglio di stile e
 rifà i conti: una colonna cambiata senza la sua soglia è rossa.
 
+Lo spazio largo (il contenuto senza il tetto dei 1080 px, col margine stretto)
+lo chiede l'editor, non la scheda: la regola guarda se nella scheda aperta c'è
+`#lp-box` o `#lp-box-dona`. Prima guardava la scheda «pagina» per nome, e le
+Donazioni, che aprono lo stesso editor, restavano in 1080 px: a 1440 px di
+finestra un editor di 946 px contro i 1103 della Pagina link. Adesso sono uguali
+a ogni larghezza.
+
 ### Il collaudo
 
 ```
