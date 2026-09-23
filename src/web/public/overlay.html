@@ -135,31 +135,31 @@
     .contatore-widget { position: absolute; transform: translateY(-50%); z-index: 8; pointer-events: none; }
 
     #cinque { position: fixed; inset: 0; pointer-events: none; z-index: 9; overflow: hidden; }
-    .cinque-scena { position: absolute; inset: 0; }
+    .cinque-scena { position: absolute; inset: 0; --contatto-y: calc(50% - 3.1vh); }
     .cinque-mano { position: absolute; top: 50%; width: 16vh; height: 21vh; margin-top: -14vh; color: #fff; filter: drop-shadow(0 .6vh 2vh rgba(0, 0, 0, .55)); }
     .cinque-mano svg { width: 100%; height: 100%; display: block; }
-    .cinque-mano.sx { left: 50%; margin-left: -14.5vh; animation: cinque-sx .3s cubic-bezier(.6, 0, 1, .5) both, cinque-rimbalzo-sx .5s .3s ease-out forwards, cinque-via 1.1s 1.5s ease-in forwards; }
-    .cinque-mano.dx { left: 50%; margin-left: -1.5vh; animation: cinque-dx .3s cubic-bezier(.6, 0, 1, .5) both, cinque-rimbalzo-dx .5s .3s ease-out forwards, cinque-via 1.1s 1.5s ease-in forwards; }
+    .cinque-mano.sx { left: 50%; margin-left: -12.9vh; animation: cinque-sx .3s cubic-bezier(.6, 0, 1, .5) both, cinque-rimbalzo-sx .5s .3s ease-out forwards, cinque-via 1.1s 1.5s ease-in forwards; }
+    .cinque-mano.dx { left: 50%; margin-left: -3.1vh; animation: cinque-dx .3s cubic-bezier(.6, 0, 1, .5) both, cinque-rimbalzo-dx .5s .3s ease-out forwards, cinque-via 1.1s 1.5s ease-in forwards; }
     @keyframes cinque-sx { from { transform: translateX(-60vw) rotate(-10deg); } to { transform: translateX(0) rotate(22deg); } }
     @keyframes cinque-dx { from { transform: translateX(60vw) scaleX(-1) rotate(-10deg); } to { transform: translateX(0) scaleX(-1) rotate(22deg); } }
     @keyframes cinque-rimbalzo-sx { from { transform: translateX(0) rotate(22deg); } 40% { transform: translateX(-3vh) rotate(14deg); } to { transform: translateX(-1.5vh) rotate(18deg); } }
     @keyframes cinque-rimbalzo-dx { from { transform: translateX(0) scaleX(-1) rotate(22deg); } 40% { transform: translateX(3vh) scaleX(-1) rotate(14deg); } to { transform: translateX(1.5vh) scaleX(-1) rotate(18deg); } }
     @keyframes cinque-via { to { opacity: 0; } }
-    .cinque-onda { position: absolute; left: 50%; top: 42%; width: 10vh; height: 10vh; margin: -5vh 0 0 -5vh; border-radius: 50%; border: .7vh solid #fff; opacity: 0; animation: cinque-onda .7s .3s cubic-bezier(.1, .6, .3, 1) both; }
-    .cinque-onda.due { animation-delay: .38s; border-width: .4vh; }
-    @keyframes cinque-onda { from { transform: scale(.2); opacity: .95; } to { transform: scale(7); opacity: 0; } }
-    .cinque-lampo { position: absolute; left: 50%; top: 42%; width: 70vh; height: 70vh; margin: -35vh 0 0 -35vh; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, .95) 0, rgba(255, 244, 200, .5) 22%, transparent 60%); opacity: 0; animation: cinque-lampo .35s .29s ease-out both; }
+    .cinque-onda { position: absolute; left: 50%; top: var(--contatto-y); width: 2vh; height: 2vh; transform: translate(-50%, -50%); border-radius: 50%; border: .5vh solid #fff; opacity: 0; animation: cinque-onda .7s .3s cubic-bezier(.1, .6, .3, 1) forwards; }
+    .cinque-onda.due { animation-delay: .38s; border-width: .3vh; }
+    @keyframes cinque-onda { from { width: 2vh; height: 2vh; opacity: .95; } to { width: 70vh; height: 70vh; opacity: 0; } }
+    .cinque-lampo { position: absolute; left: 50%; top: var(--contatto-y); width: 70vh; height: 70vh; margin: -35vh 0 0 -35vh; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, .95) 0, rgba(255, 244, 200, .5) 22%, transparent 60%); opacity: 0; animation: cinque-lampo .35s .29s ease-out forwards; }
     @keyframes cinque-lampo { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(1.2); } }
-    .cinque-scintille { position: absolute; left: 50%; top: 42%; width: 0; height: 0; }
-    .cinque-scintille i { position: absolute; left: -.4vh; top: -9vh; width: .8vh; height: 5vh; border-radius: .4vh; background: #ffe27a; opacity: 0; transform-origin: 50% 9vh; animation: cinque-scintilla .5s .31s ease-out both; }
-    .cinque-scintille i:nth-child(2) { transform: rotate(45deg); }
-    .cinque-scintille i:nth-child(3) { transform: rotate(90deg); }
-    .cinque-scintille i:nth-child(4) { transform: rotate(135deg); }
-    .cinque-scintille i:nth-child(5) { transform: rotate(180deg); }
-    .cinque-scintille i:nth-child(6) { transform: rotate(225deg); }
-    .cinque-scintille i:nth-child(7) { transform: rotate(270deg); }
-    .cinque-scintille i:nth-child(8) { transform: rotate(315deg); }
-    @keyframes cinque-scintilla { from { opacity: 1; top: -9vh; } to { opacity: 0; top: -16vh; } }
+    .cinque-scintille { position: absolute; left: 50%; top: var(--contatto-y); width: 0; height: 0; }
+    .cinque-scintille i { position: absolute; left: -.4vh; top: -2.5vh; width: .8vh; height: 5vh; border-radius: .4vh; background: #ffe27a; opacity: 0; --r: 0deg; transform: rotate(var(--r)) translateY(-9vh); animation: cinque-scintilla .5s .31s ease-out forwards; }
+    .cinque-scintille i:nth-child(2) { --r: 45deg; }
+    .cinque-scintille i:nth-child(3) { --r: 90deg; }
+    .cinque-scintille i:nth-child(4) { --r: 135deg; }
+    .cinque-scintille i:nth-child(5) { --r: 180deg; }
+    .cinque-scintille i:nth-child(6) { --r: 225deg; }
+    .cinque-scintille i:nth-child(7) { --r: 270deg; }
+    .cinque-scintille i:nth-child(8) { --r: 315deg; }
+    @keyframes cinque-scintilla { from { opacity: 1; transform: rotate(var(--r)) translateY(-9vh); } to { opacity: 0; transform: rotate(var(--r)) translateY(-16vh); } }
     .cinque-scritta { position: absolute; left: 0; right: 0; top: 64%; text-align: center; color: #fff; text-shadow: 0 3px 18px rgba(0, 0, 0, .75), 0 0 2px rgba(0, 0, 0, .9); animation: cinque-scritta .45s .32s cubic-bezier(.2, 1.4, .4, 1) both, cinque-via .6s 2s ease-in forwards; }
     .cinque-scritta strong { display: block; font-weight: 900; font-size: 7vh; letter-spacing: .02em; line-height: 1.05; }
     .cinque-scritta span { display: block; font-weight: 700; font-size: 3.4vh; margin-top: .6vh; }
@@ -175,8 +175,8 @@
     @media (prefers-reduced-motion: reduce) {
       .cinque-perfetto { animation: none; }
       .cinque-scena .cinque-mano.sx, .cinque-scena .cinque-mano.dx { animation: cinque-via 1.1s 1.5s ease-in forwards; }
-      .cinque-mano.sx { transform: rotate(18deg); }
-      .cinque-mano.dx { transform: scaleX(-1) rotate(18deg); }
+      .cinque-mano.sx { transform: rotate(22deg); }
+      .cinque-mano.dx { transform: scaleX(-1) rotate(22deg); }
       .cinque-scena .cinque-scritta { animation: cinque-via .6s 2s ease-in forwards; }
       .cinque-lampo, .cinque-onda, .cinque-scintille { display: none; }
     }

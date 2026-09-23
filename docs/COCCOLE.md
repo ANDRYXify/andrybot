@@ -71,6 +71,24 @@ quando le mani si toccano, non quando l'evento arriva. Chi nel sistema chiede
 meno movimento vede le mani già unite e la scritta, che poi sfumano: niente
 lampo, niente onda, niente scossa.
 
+### Dove si toccano le mani
+
+Il punto da cui partono lampo, onda e scintille non è scelto a occhio: si
+ricava dal disegno della mano. La mano è una scatola di 16 × 21 vh con dentro
+il disegno di 90 × 126 unità; l'angolo interno in alto del palmo sta a (79, 52).
+Ruotato di 22° attorno al centro della scatola finisce 5,94 vh verso l'interno e
+0,42 vh sotto il centro. Le due mani si fermano con quegli angoli sovrapposti di
+2 vh, cioè coi centri a 4,94 vh dal mezzo (`margin-left` −12,9 e −3,1 vh), e il
+contatto sta a metà schermo in orizzontale e a 3,1 vh sopra la metà in
+verticale (`--contatto-y`). Due palmi a 22° fanno fra loro 44°: l'angolo dello
+schiocco vero.
+
+Lampo, onda e scintille aspettano il contatto invisibili: la loro animazione
+tiene l'ultimo fotogramma (`forwards`) ma non anticipa il primo, che è quello
+acceso. L'onda cresce di diametro invece che di scala, così il bordo resta
+sottile come un'onda d'urto e non si gonfia; le scintille ruotano attorno al
+contatto e si allontanano lungo il loro raggio.
+
 ## Dove sta nel codice
 
 | pezzo | dove |

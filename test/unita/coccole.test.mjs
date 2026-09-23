@@ -163,4 +163,6 @@ test('l\'overlay sa fare il cinque, e lo schiocco c\'e\'', () => {
   assert.match(PR, /schiocco: +\(c, d, t\) =>/);
   assert.match(PR, /schioccoPerfetto: \(c, d, t\) =>/);
   assert.match(HTML, /prefers-reduced-motion[\s\S]*cinque-mano/, 'chi chiede meno movimento vede il cinque fermo');
+  for (const k of ['cinque-lampo', 'cinque-onda', 'cinque-scintilla']) assert.match(HTML, new RegExp(`animation: ${k} [^;]*forwards;`), `${k}: prima del contatto non si vede`);
+  assert.equal((HTML.match(/top: var\(--contatto-y\)/g) || []).length, 3, 'lampo, onda e scintille partono dal punto di contatto');
 });
