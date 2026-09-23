@@ -80,7 +80,7 @@ import * as discord from '../features/discord.js';
 import * as dcApi from '../features/discord-api.js';
 import * as dcCollega from '../features/discord-collega.js';
 import * as dcGiro from '../features/discord-giro.js';
-import { normRegole, fuoriPortata, mioLivello, TIPI as TIPI_RUOLO, haSoglia } from '../features/discord-ruoli.js';
+import { normRegole, postoDeiRuoli, livelloDi, TIPI as TIPI_RUOLO, haSoglia } from '../features/discord-ruoli.js';
 import * as sostegno from '../features/sostegno.js';
 import { creaChiavi, DURATA_MS as CHIAVE_MS } from './chiave-breve.js';
 import { peso as pesoDanno } from '../features/discord-peso.js';
@@ -4254,20 +4254,22 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await dcApi.ruoli(token, guild);
     if (!r.ok) return { letto: false, errore: r.errore || '' };
     const bits = dcApi.permessiBot(r.ruoli, me.ruoli);
-    const miei = new Set((me.ruoli || []).map(String));
-    const livello = Math.max(-1, ...(r.ruoli || []).filter((x) => miei.has(String(x.id))).map((x) => Number(x.position) || 0));
     // I ruoli che gli stanno SOPRA: sono quelli che non potra' mai dare, e la
-    // cura non e' un permesso — e' trascinarlo piu' in alto su Discord.
-    const sopra = (r.ruoli || [])
-      .filter((x) => String(x.id) !== String(guild) && !miei.has(String(x.id)) && Number(x.position) >= livello)
-      .map((x) => x.nome);
+    // cura non e' un permesso — e' trascinarlo piu' in alto su Discord. Solo
+    // quelli veri: i ruoli degli altri bot possono stare ovunque e non si
+    // toccano comunque, e metterli qui mandava a spostare il bot per niente.
+    const posto = postoDeiRuoli(r.ruoli, me.ruoli, guild);
     return {
       letto: true,
       pieni: dcApi.puo(bits, dcApi.ADMINISTRATOR),
       canali: dcApi.puoCanali(bits),
       ruoli: dcApi.puoRuoli(bits),
       farEntrare: dcApi.puoFarEntrare(bits),
-      sopra,
+      // I FATTI, prima dei consigli: chi e' il bot e qual e' il suo ruolo piu'
+      // alto. E' la prima cosa da guardare quando l'elenco qui sotto e' lungo.
+      nome: me.nome || '',
+      piuAlto: posto.piuAlto?.nome || '',
+      sopra: posto.sopra,
     };
   };
 
@@ -4478,10 +4480,14 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await dcApi.prova(token, guild);
     if (!r.ok) return res.status(400).json({ errore: r.errore });
     dcRuoli.set(login, { guildNome: r.server, botNome: r.bot });
-    const alti = fuoriPortata(r.ruoli, mioLivello(r.ruoli, r.ruoliBot));
-    res.json({ ok: true, server: r.server, bot: r.bot,
-      ruoli: r.ruoli.filter((x) => !x.managed || alti.has(x.id))
-        .map((x) => ({ id: x.id, nome: x.nome, colore: x.colore, fuoriPortata: alti.has(x.id) })) });
+    // TUTTI i ruoli, ognuno col suo posto, nell'ordine in cui li mostra Discord:
+    // decide il pannello cosa si puo' scegliere. Un ruolo che il bot non puo'
+    // dare deve restare visibile se una regola gia' lo usa, sennò salvare la
+    // cambierebbe da sola.
+    const posto = postoDeiRuoli(r.ruoli, r.ruoliBot, guild);
+    res.json({ ok: true, server: r.server, bot: r.bot, piuAlto: posto.piuAlto?.nome || '',
+      ruoli: [...r.ruoli].sort((a, b) => (Number(b.position) || 0) - (Number(a.position) || 0))
+        .map((x) => ({ id: x.id, nome: x.nome, colore: x.colore, posto: posto.tipo.get(String(x.id)) || 'sopra' })) });
   }));
 
   app.post('/api/streamer/ruoli/giro', requireOwner, wrap(async (req, res) => {
@@ -4700,6 +4706,13 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // elenco solo mescolerebbe «nasce un canale» e «cambia chi puo' bannare».
       ruoli: { crea: r.crea, sistema: r.sistema, togli: togliere ? r.togli : [],
         fuori: r.togli, ambigui: r.ambigui, fuoriPortata: r.fuoriPortata,
+        // Facendo piazza pulita: i vecchi che restano, ognuno col suo perche'.
+        // E il nome del ruolo da trascinare, per dire quale e non «quello del bot».
+        restano: togliere ? (r.restano || []) : [],
+        // I ruoli della traccia che non nascono perche' c'e' gia' chi fa quel
+        // mestiere, fuori dalla portata del bot: due «Moderatori» sarebbero peggio.
+        doppioni: r.doppioni || [],
+        botPiuAlto: livelloDi(a.foto?.ruoli || [], a.foto?.bot?.ruoli || []).piuAlto?.nome || '',
         // A chi vanno: il ruolo tuo che ti manca, le regole che la traccia
         // scrivera' nella scheda dei Ruoli, e il ruolo tuo che sta troppo in
         // alto per poterlo dare.

@@ -645,10 +645,11 @@ function apiDemo(percorso, opzioni = {}) {
   }
 
   if (via === '/api/streamer/ruoli/prova') {
-    return Promise.resolve({ ok: true, server: 'Casa di andryx', bot: 'SocialBot', ruoli: [
-      { id: '100000000000000010', nome: 'Abbonati', colore: 10181046, fuoriPortata: false },
-      { id: '100000000000000011', nome: 'Affezionati', colore: 3447003, fuoriPortata: false },
-      { id: '100000000000000012', nome: 'Moderatori', colore: 3066993, fuoriPortata: true },
+    return Promise.resolve({ ok: true, server: 'Casa di andryx', bot: 'SocialBot', piuAlto: 'SocialBot', ruoli: [
+      { id: '100000000000000012', nome: 'Moderatori', colore: 3066993, posto: 'sopra' },
+      { id: '100000000000000013', nome: 'SocialBot', colore: 0, posto: 'bot' },
+      { id: '100000000000000010', nome: 'Abbonati', colore: 10181046, posto: 'gestibile' },
+      { id: '100000000000000011', nome: 'Affezionati', colore: 3447003, posto: 'gestibile' },
     ] });
   }
 
@@ -690,7 +691,8 @@ function apiDemo(percorso, opzioni = {}) {
     if (dist) {
       return Promise.resolve({ ...comune, impronta: 'ffff11112222', distruttivo: true, togli: fuori,
         ruoli: { crea: [{ nome: 'Moderatori', colore: 0x3aa76d, permessi: '1' }], sistema: [],
-          togli: ruoliFuori, fuori: ruoliFuori, ambigui: [], fuoriPortata: ['Padrone di casa'] },
+          togli: ruoliFuori, fuori: ruoliFuori, ambigui: [], fuoriPortata: ['Padrone di casa'],
+          restano: [{ id: '3', nome: 'Veterani', perche: 'sopra' }, { id: '4', nome: 'MEE6', perche: 'altrui' }, { id: '6', nome: 'Server Booster', perche: 'altrui' }] },
         peso: { quanti: 3, categorie: 1, ruoli: 1, vivi: ['Vecchia Guardia'], scriviIlNome: true } });
     }
     return Promise.resolve({ ...comune, impronta: 'a1b2c3d4e5f6',
@@ -854,7 +856,7 @@ function _demoGet(via) {
       ] },
     '/api/streamer/ruoli': { configurato: true, guild: '123456789012345678', guildNome: 'Casa di andryx', botNome: 'SocialBot',
       attivo: true, collegamentoOk: true, invitoOk: true, suo: false, collegati: 14, ultimoGiro: Date.now() - 11 * 60000,
-      poteri: { letto: true, pieni: false, canali: true, ruoli: true, farEntrare: true, sopra: ['Padrone di casa'] },
+      poteri: { letto: true, pieni: false, canali: true, ruoli: true, farEntrare: true, nome: 'SocialBot', piuAlto: 'SocialBot', sopra: ['Padrone di casa'] },
       comando: { risponde: true, manca: '', indirizzo: 'discord.socialbot.live/andryx_demo' },
       ultimoEsito: { visti: 14, dati: 2, tolti: 1, fuori: 1, bloccati: [], scartate: 0, errori: [] },
       regole: [{ tipo: 'sub', ruolo: '100000000000000010', soglia: 0 }, { tipo: 'ore', ruolo: '100000000000000011', soglia: 10 }],
@@ -16865,12 +16867,30 @@ function _dcRigaRegola(r, i, tipi) {
   </div>`;
 }
 
+const T_POSTO_RUOLO = () => ({
+  sopra: L('sta sopra il bot', 'above the bot', 'por encima del bot'),
+  altrui: L('è di un altro bot', 'belongs to another bot', 'es de otro bot'),
+  bot: L('è del bot', 'belongs to the bot', 'es del bot'),
+  tutti: L('ce l’hanno tutti', 'everyone has it', 'lo tienen todos'),
+});
+
 function _dcOpzioniRuolo(scelto) {
   const lista = (_dc && _dc.ruoli) || [];
   if (!lista.length) {
     return `<option value="${esc(scelto || '')}">${esc(scelto ? L('ruolo #', 'role #', 'rol #') + scelto : L('premi «Prova e salva»', 'press «Test and save»', 'pulsa «Probar y guardar»'))}</option>`;
   }
-  return lista.map((x) => `<option value="${esc(x.id)}"${x.id === scelto ? ' selected' : ''}>${esc(x.nome)}${x.fuoriPortata ? ' — ' + esc(L('più in alto del bot', 'above the bot', 'por encima del bot')) : ''}</option>`).join('');
+  const nota = T_POSTO_RUOLO();
+  const righe = scelto ? [] : [`<option value="" selected disabled>${esc(L('Scegli il ruolo', 'Pick the role', 'Elige el rol'))}</option>`];
+  for (const x of lista) {
+    const qui = x.id === scelto;
+    const si = x.posto === 'gestibile';
+    if (!si && !qui && x.posto !== 'sopra') continue;
+    righe.push(`<option value="${esc(x.id)}"${qui ? ' selected' : ''}${si ? '' : ' disabled'}>${esc(x.nome)}${si ? '' : ' — ' + esc(nota[x.posto] || nota.sopra)}</option>`);
+  }
+  if (scelto && !lista.some((x) => x.id === scelto)) {
+    righe.push(`<option value="${esc(scelto)}" selected disabled>${esc(L('un ruolo che non c’è più', 'a role that is gone', 'un rol que ya no existe'))}</option>`);
+  }
+  return righe.join('');
 }
 
 function _dcDisegnaRegole() {
@@ -16917,12 +16937,26 @@ function _dcServeHtml() {
       'It is missing the permission to let people in: without it, the entrance walks them up to the server and then does not let them in. Re-inviting fixes it.',
       'Le falta el permiso para dejar entrar a la gente: sin él, la puerta los acompaña hasta el servidor y luego no los deja pasar. Se arregla reinvitándolo.'));
   }
-  if (p.letto && (p.sopra || []).length) {
-    righe.push(L('Su Discord, in Impostazioni server → Ruoli, trascinalo sopra questi, sennò non li tocca: ', 'On Discord, in Server Settings → Roles, drag it above these, otherwise it does not touch them: ', 'En Discord, en Ajustes del servidor → Roles, arrástralo por encima de estos, si no no los toca: ')
-      + esc(p.sopra.slice(0, 8).join(', ')) + (p.sopra.length > 8 ? '…' : '') + '.');
+  const sopra = p.letto ? (p.sopra || []) : [];
+  if (p.letto && p.nome) {
+    righe.push(p.piuAlto
+      ? L('Il bot è «', 'The bot is «', 'El bot es «') + esc(p.nome) + L('» e il suo ruolo più alto è «', '» and its highest role is «', '» y su rol más alto es «') + esc(p.piuAlto)
+        + L('»: tocca solo i ruoli che stanno sotto questo.', '»: it only touches the roles below this one.', '»: solo toca los roles que están por debajo de este.')
+      : L('Il bot è «', 'The bot is «', 'El bot es «') + esc(p.nome) + L('» e sul server non ha ancora un ruolo: così non può dare niente.', '» and it has no role on the server yet: so it cannot give anything.', '» y todavía no tiene ningún rol en el servidor: así no puede dar nada.'));
+  }
+  if (sopra.length) {
+    const uno = sopra.length === 1;
+    const nomi = sopra.slice(0, 8).map((n) => '«' + esc(n) + '»').join(', ') + (sopra.length > 8 ? '…' : '');
+    righe.push((uno ? L('Sopra di lui c’è ', 'Above it there is ', 'Por encima de él está ') : L('Sopra di lui ci sono ', 'Above it there are ', 'Por encima de él están ')) + nomi
+      + (uno ? L(': quello non lo può dare, cambiare o cancellare.', ': it cannot give, change or delete that one.', ': ese no puede darlo, cambiarlo ni borrarlo.')
+        : L(': quelli non li può dare, cambiare o cancellare.', ': it cannot give, change or delete those.', ': esos no puede darlos, cambiarlos ni borrarlos.'))
+      + L(' Su Discord, in Impostazioni server → Ruoli, trascina «', ' On Discord, in Server Settings → Roles, drag «', ' En Discord, en Ajustes del servidor → Roles, arrastra «')
+      + esc(p.piuAlto || p.nome || 'SocialBot') + (uno ? L('» sopra di lui.', '» above it.', '» por encima de él.') : L('» sopra di loro.', '» above them.', '» por encima de ellos.')));
   }
   if (p.letto && p.pieni) {
-    righe.push(L('Ha i pieni poteri su questo server: da qui puoi muovere tutto.', 'It has full powers on this server: from here you can move everything.', 'Tiene plenos poderes en este servidor: desde aquí puedes moverlo todo.'));
+    righe.push(sopra.length
+      ? L('Ha i pieni poteri, ma i pieni poteri non scavalcano l’ordine dei ruoli: quelli sopra di lui restano fuori finché non lo sposti.', 'It has full powers, but full powers do not skip the role order: the ones above it stay out of reach until you move it.', 'Tiene plenos poderes, pero los plenos poderes no se saltan el orden de los roles: los que están por encima quedan fuera hasta que lo muevas.')
+      : L('Ha i pieni poteri su questo server: da qui puoi muovere tutto.', 'It has full powers on this server: from here you can move everything.', 'Tiene plenos poderes en este servidor: desde aquí puedes moverlo todo.'));
   }
   return righe.map((t) => `<p class="suggerimento">${t}</p>`).join('');
 }
@@ -17050,7 +17084,7 @@ function collegaRuoli() {
     _dc = { ..._dc, ruoli: r.ruoli || [], guildNome: r.server, botNome: r.bot, configurato: true, guild: corpo.guild };
     await api('/api/streamer/ruoli', { method: 'POST', body: corpo });
     _imposta('dc-token', '');
-    const quanti = (r.ruoli || []).filter((x) => !x.fuoriPortata).length;
+    const quanti = (r.ruoli || []).filter((x) => x.posto === 'gestibile').length;
     toast(L('Collegato ✓', 'Connected ✓', 'Conectado ✓'));
     _dcDici('dc-stato', `${r.server} · ${r.bot} · ` + quanti + L(' ruoli che può muovere', ' roles it can move', ' roles que puede mover'), quanti ? 'ok' : 'guaio');
     _dcDisegnaRegole();
@@ -18060,7 +18094,8 @@ const _dcsQuando = (x) => {
 
 function _dcsConfrontoHtml(c, distruttivo) {
   const p = c?.prendi || []; const ris = c?.risparmia || []; const tol = c?.togli || []; const nuovi = c?.crea || [];
-  if (!p.length && !ris.length && !tol.length && !nuovi.length) {
+  const gemelli = c?.doppioni || [];
+  if (!p.length && !ris.length && !tol.length && !nuovi.length && !gemelli.length) {
     return `<p class="suggerimento">${L('I tuoi ruoli e quelli della traccia dicono già la stessa cosa.', 'Your roles and the track’s already say the same thing.', 'Tus roles y los de la plantilla ya dicen lo mismo.')}</p>`;
   }
   const segno = (t, classe) => `<span class="dcs-verdetto${classe ? ' ' + classe : ''}">${esc(t)}</span>`;
@@ -18074,6 +18109,7 @@ function _dcsConfrontoHtml(c, distruttivo) {
   const laTraccia = [
     ...p.map((x) => `<li><strong>${esc(x.diventa)}</strong> <span class="suggerimento">${L('lo prendo da «', 'I take it from «', 'lo tomo de «')}${esc(x.nome)}»</span></li>`),
     ...nuovi.map((x) => `<li><strong>${esc(x)}</strong> <span class="suggerimento">${L('lo creo', 'I create it', 'lo creo')}</span></li>`),
+    ...gemelli.map((x) => `<li><strong>${esc(x.diventa)}</strong> <span class="suggerimento">${L('c’è già «', 'there is already «', 'ya existe «')}${esc(x.nome)}${L('», che il bot non arriva a toccare: non ne creo un altro', '», which the bot cannot reach: I will not create another', '», que el bot no llega a tocar: no creo otro')}</span></li>`),
   ].join('');
   return `<div class="dcs-confronto">
     <div><h3>${L('Sul tuo server', 'On your server', 'En tu servidor')}</h3><ul class="lista-voci">${tuoi || '<li class="suggerimento">—</li>'}</ul></div>
@@ -18096,7 +18132,7 @@ function _dcsMostraConfronto(consiglio, distruttivo) {
   if (!box) return;
   _dcsConsiglio = consiglio || null;
   const c = _dcsConsiglio;
-  const niente = !c || (!(c.prendi || []).length && !(c.risparmia || []).length && !(c.togli || []).length);
+  const niente = !c || (!(c.prendi || []).length && !(c.risparmia || []).length && !(c.togli || []).length && !(c.doppioni || []).length);
   box.hidden = niente;
   if (niente) return;
   box.innerHTML = _dcsConfrontoHtml(c, distruttivo);
@@ -18177,6 +18213,28 @@ function _dcsDiffHtml(d) {
         ? L('porta dei privilegi', 'carries privileges', 'lleva privilegios')
         : L('solo l’aspetto', 'looks only', 'solo el aspecto'))}</span></li>`).join('') + '</ul>');
   }
+  const restano = r.restano || [];
+  const quali = (perche) => restano.filter((x) => x.perche === perche).map((x) => x.nome);
+  const tra = (xs) => { const v = xs.map((n) => '«' + esc(n) + '»'); return v.length < 2 ? v.join('') : v.slice(0, -1).join(', ') + L(' e ', ' and ', ' y ') + v[v.length - 1]; };
+  const sopraR = quali('sopra');
+  if (sopraR.length) {
+    const uno = sopraR.length === 1;
+    blocchi.push(`<p class="tg-stato guaio">${uno
+      ? L('Questo ruolo resta, perché sta sopra il bot e finché il bot sta sotto non può toglierlo: ', 'This role stays, because it is above the bot and the bot cannot remove it while it is below: ', 'Este rol se queda, porque está por encima del bot y mientras el bot esté debajo no puede quitarlo: ')
+      : L('Questi ruoli restano, perché stanno sopra il bot e finché il bot sta sotto non può toglierli: ', 'These roles stay, because they are above the bot and the bot cannot remove them while it is below: ', 'Estos roles se quedan, porque están por encima del bot y mientras el bot esté debajo no puede quitarlos: ')}`
+      + `<strong>${tra(sopraR)}</strong>. ${L('Su Discord, in Impostazioni server → Ruoli, trascina «', 'On Discord, in Server Settings → Roles, drag «', 'En Discord, en Ajustes del servidor → Roles, arrastra «')}${esc(r.botPiuAlto || 'SocialBot')}${uno
+      ? L('» sopra di lui, poi guarda di nuovo cosa succede.', '» above it, then look at what happens again.', '» por encima de él y vuelve a mirar qué pasa.')
+      : L('» sopra di loro, poi guarda di nuovo cosa succede.', '» above them, then look at what happens again.', '» por encima de ellos y vuelve a mirar qué pasa.')}</p>`);
+  }
+  const altruiR = quali('altrui');
+  if (altruiR.length) {
+    blocchi.push(`<p class="suggerimento">${altruiR.length === 1
+      ? L('Resta anche ', 'This one stays too: ', 'También se queda ') + tra(altruiR) + L(': è di un altro bot o di Discord stesso, e da qui non lo può togliere nessuno.', ': it belongs to another bot or to Discord itself, and nobody can remove it from here.', ': es de otro bot o del propio Discord, y desde aquí nadie puede quitarlo.')
+      : L('Restano anche ', 'These stay too: ', 'También se quedan ') + tra(altruiR) + L(': sono di altri bot o di Discord stesso, e da qui non li può togliere nessuno.', ': they belong to other bots or to Discord itself, and nobody can remove them from here.', ': son de otros bots o del propio Discord, y desde aquí nadie puede quitarlos.')}</p>`);
+  }
+  if (quali('bot').length) {
+    blocchi.push(`<p class="suggerimento">${L('E restano i ruoli del bot: ', 'And the bot’s own roles stay: ', 'Y se quedan los roles del bot: ')}${tra(quali('bot'))}.</p>`);
+  }
   if (r.aTe || (r.regole || []).length) {
     const t = T_A_CHI();
     blocchi.push(`<h3>${L('A chi vanno', 'Who gets them', 'A quién van')}</h3><ul class="lista-voci">`
@@ -18188,8 +18246,17 @@ function _dcsDiffHtml(d) {
   if (r.nonATe) {
     blocchi.push(`<p class="suggerimento">${L('«', '«', '«')}${esc(r.nonATe)}${L('» sta più in alto del bot, quindi non posso dartelo: trascina il ruolo del bot sopra di lui su Discord.', '» is above the bot, so I cannot give it to you: drag the bot role above it on Discord.', '» está por encima del bot, así que no puedo dártelo: arrastra el rol del bot por encima en Discord.')}</p>`);
   }
-  if ((r.fuoriPortata || []).length) {
-    blocchi.push(`<p class="suggerimento">${L('Questi ruoli stanno più in alto del bot, quindi non li tocca: ', 'These roles are above the bot, so it does not touch them: ', 'Estos roles están por encima del bot, así que no los toca: ')}${esc(r.fuoriPortata.join(', '))}</p>`);
+  const gemelli = r.doppioni || [];
+  for (const x of gemelli) {
+    blocchi.push(`<p class="suggerimento">«${esc(x.nome)}» ${x.perche === 'altrui'
+      ? L('fa già il mestiere di «', 'already does the job of «', 'ya hace el trabajo de «') + esc(x.diventa) + L('» e lo gestisce un’altra integrazione: non ne creo un doppione.', '» and another integration manages it: I will not make a duplicate.', '» y lo gestiona otra integración: no creo un duplicado.')
+      : L('fa già il mestiere di «', 'already does the job of «', 'ya hace el trabajo de «') + esc(x.diventa) + L('», ma il bot non arriva a toccarlo: non ne creo un doppione. Quando il bot starà sopra di lui, lo sistemo io.', '», but the bot cannot reach it: I will not make a duplicate. Once the bot sits above it, I will fix it myself.', '», pero el bot no llega a tocarlo: no creo un duplicado. Cuando el bot esté por encima, lo arreglo yo.')}</p>`);
+  }
+  const lontani = (r.fuoriPortata || []).filter((n) => !gemelli.some((x) => x.nome === n));
+  if (lontani.length) {
+    blocchi.push(`<p class="suggerimento">${lontani.length === 1
+      ? L('Questo ruolo della traccia c’è già, ma il bot non arriva a toccarlo, quindi resta com’è: ', 'This track role already exists, but the bot cannot reach it, so it stays as it is: ', 'Este rol de la plantilla ya existe, pero el bot no llega a tocarlo, así que se queda como está: ')
+      : L('Questi ruoli della traccia ci sono già, ma il bot non arriva a toccarli, quindi restano come sono: ', 'These track roles already exist, but the bot cannot reach them, so they stay as they are: ', 'Estos roles de la plantilla ya existen, pero el bot no llega a tocarlos, así que se quedan como están: ')}${tra(lontani)}.</p>`);
   }
   if ((r.ambigui || []).length) {
     blocchi.push(`<p class="suggerimento">${L('Di questi ne hai più d’uno con lo stesso nome, e non indovino quale intendi: ', 'You have more than one of these with the same name, and I will not guess which one you mean: ', 'De estos tienes más de uno con el mismo nombre, y no adivino cuál quieres: ')}${esc(r.ambigui.join(', '))}</p>`);
@@ -18920,6 +18987,10 @@ async function _dcsFai(pre) {
   if (e.ruoliSistemati) p.push(e.ruoliSistemati + L(' ruoli sistemati', ' roles fixed', ' roles arreglados'));
   if (e.ruoliTolti) p.push(e.ruoliTolti + L(' ruoli cancellati', ' roles deleted', ' roles borrados'));
   if (e.aTeDato) p.push(L('il tuo ruolo adesso ce l’hai', 'you now have your role', 'ya tienes tu rol'));
+  const restaSopra = (e.restano || []).filter((x) => x.perche === 'sopra').length;
+  const restaAltrui = (e.restano || []).filter((x) => x.perche === 'altrui').length;
+  if (restaSopra) p.push(restaSopra + L(' ruoli vecchi restano perché stanno sopra il bot: trascinalo più su e rifai', ' old roles stay because they are above the bot: drag it higher and redo', ' roles viejos se quedan porque están por encima del bot: súbelo y repite'));
+  if (restaAltrui) p.push(restaAltrui + L(' ruoli di altri bot restano: sono loro', ' roles of other bots stay: they belong to them', ' roles de otros bots se quedan: son suyos'));
   if ((e.regoleNuove || []).length) {
     p.push(e.regoleNuove.length === 1
       ? L('una regola nuova nei Ruoli', 'one new rule in Roles', 'una regla nueva en Roles')
@@ -18938,7 +19009,7 @@ async function _dcsFai(pre) {
   _dcsDici(pre + '-esito', p.length ? p.join(' · ')
     : (nulla ? L('Non c’era niente da fare.', 'There was nothing to do.', 'No había nada que hacer.')
       : L('Non è riuscito.', 'It did not go through.', 'No ha salido.')),
-    (e.errori || []).length || e.fermo ? 'guaio' : 'ok');
+    (e.errori || []).length || e.fermo || restaSopra ? 'guaio' : 'ok');
   if ((e.segni || []).length) {
     for (const x of e.segni) {
       const r = (_dcs?.preset?.ruoli || []).find((y) => _dcsChiaveRuolo(y.nome) === _dcsChiaveRuolo(x.nome));

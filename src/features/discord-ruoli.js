@@ -179,28 +179,64 @@ export function differenza({ regole, dati, attuali, fuoriPortata } = {}) {
   };
 }
 
-// Cosa il bot NON puo' toccare: tutto quello che sta alla sua altezza o sopra.
-// Discord non guarda il nome del permesso, guarda la posizione.
-export function fuoriPortata(ruoli, ioPosizione) {
-  const mia = Number(ioPosizione);
-  const out = new Set();
-  if (!Number.isFinite(mia)) return out;
+// DOVE STA IL BOT, e cosa vuol dire per ogni ruolo del server. Una risposta
+// sola per tutto il prodotto: prima erano quattro conti in quattro posti, e uno
+// chiamava «piu' in alto del bot» anche i ruoli degli altri bot, che possono
+// stare ovunque e non si toccano per un'altra ragione.
+//
+// Le regole sono di Discord (docs.discord.com, Permission Hierarchy): il ruolo
+// piu' alto di un bot e' quello con la «position» piu' grande, e @everyone sta
+// a 0; un bot da', modifica e ordina SOLO i ruoli piu' in basso di quello.
+// Nessuno puo' portare un ruolo sopra il proprio: il bot non si alza da solo,
+// lo alza chi gli sta sopra.
+//
+// Ogni ruolo finisce in UNO di questi posti, e ogni posto ha una risposta sola
+// nel pannello:
+//  · 'tutti'     @everyone: ce l'hanno tutti, non si da' e non si toglie;
+//  · 'bot'       i ruoli del bot stesso che non puo' muovere: il suo piu' alto,
+//                e quello che Discord gli ha dato all'ingresso;
+//  · 'altrui'    di un'integrazione (un altro bot, i booster, gli abbonamenti):
+//                non lo da' e non lo cancella nessuno, se ne va col suo bot;
+//  · 'sopra'     alla sua altezza o piu' su: finche' il bot sta sotto non lo
+//                tocca, e la cura e' spostarlo su Discord;
+//  · 'gestibile' sotto di lui: suo da dare, sistemare, togliere.
+// Due ruoli alla stessa altezza Discord li ordina per id, senza dire da che
+// parte: nel dubbio si dice «sopra», che non promette niente.
+export function livelloDi(ruoli, mieiRuoli) {
+  const miei = new Set((mieiRuoli || []).map(String));
+  let livello = 0;
+  let piuAlto = null;
   for (const r of (Array.isArray(ruoli) ? ruoli : [])) {
-    if (!r || !r.id) continue;
-    if (r.managed) { out.add(String(r.id)); continue; }   // i ruoli di un'integrazione non li da' nessuno
-    if (Number(r.position) >= mia) out.add(String(r.id));
+    if (!r?.id || !miei.has(String(r.id))) continue;
+    const p = Number(r.position) || 0;
+    if (!piuAlto || p > livello) { livello = p; piuAlto = r; }
   }
-  return out;
+  return { livello, piuAlto };
 }
 
-// La posizione del bot: la piu' alta fra i ruoli che ha.
-export function mioLivello(ruoli, mieiRuoli) {
-  const miei = new Set((mieiRuoli || []).map(String));
-  let alto = -1;
-  for (const r of (Array.isArray(ruoli) ? ruoli : [])) {
-    if (!miei.has(String(r?.id))) continue;
-    const p = Number(r.position);
-    if (Number.isFinite(p) && p > alto) alto = p;
-  }
-  return alto;
+export function tipoRuolo(r, { livello = 0, miei = [], guildId = '' } = {}) {
+  const id = String(r?.id || '');
+  const suo = new Set((miei || []).map(String)).has(id);
+  if (id && id === String(guildId)) return 'tutti';
+  if (r?.managed) return suo ? 'bot' : 'altrui';
+  if ((Number(r?.position) || 0) >= Number(livello)) return suo ? 'bot' : 'sopra';
+  return 'gestibile';
+}
+
+export function postoDeiRuoli(ruoli, mieiRuoli, guildId) {
+  const lista = (Array.isArray(ruoli) ? ruoli : []).filter((r) => r?.id);
+  const { livello, piuAlto } = livelloDi(lista, mieiRuoli);
+  const tipo = new Map(lista.map((r) => [String(r.id), tipoRuolo(r, { livello, miei: mieiRuoli, guildId })]));
+  const nomiDi = (t) => lista.filter((r) => tipo.get(String(r.id)) === t)
+    .sort((a, b) => (Number(b.position) || 0) - (Number(a.position) || 0)).map((r) => String(r.nome || ''));
+  return {
+    livello,
+    piuAlto: piuAlto ? { id: String(piuAlto.id), nome: String(piuAlto.nome || '') } : null,
+    tipo,
+    gestibile: (id) => tipo.get(String(id)) === 'gestibile',
+    // Quelli che non puo' toccare, per la regola dei membri: tutto tranne i suoi.
+    fuori: new Set(lista.filter((r) => tipo.get(String(r.id)) !== 'gestibile').map((r) => String(r.id))),
+    sopra: nomiDi('sopra'),
+    altrui: nomiDi('altrui'),
+  };
 }

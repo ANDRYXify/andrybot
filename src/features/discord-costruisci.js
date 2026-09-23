@@ -184,7 +184,11 @@ export async function applica(token, guild, preset, { togliere = false, impronta
     return { ok: false, cambiato: true, impronta: a.impronta, differenza: a.differenza,
       errore: 'il server e\' cambiato da quando hai guardato: ricontrolla cosa succede e riconferma' };
   }
-  if (a.vuota) return { ok: true, creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, nomiTolti: [], impronta: a.impronta, mancanti: a.mancanti, niente: true };
+  // Quello che resta anche facendo piazza pulita si dice anche DOPO, e anche
+  // quando non c'era altro da fare: «niente da fare» con i ruoli vecchi ancora
+  // li' sembrerebbe un lavoro lasciato a meta'.
+  const restano = togliere ? (a.differenza?.ruoli?.restano || []) : [];
+  if (a.vuota) return { ok: true, creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, nomiTolti: [], impronta: a.impronta, mancanti: a.mancanti, niente: true, restano };
 
   const d = a.differenza;
   const cat = categorieDi(a.foto.canali);
@@ -194,7 +198,7 @@ export async function applica(token, guild, preset, { togliere = false, impronta
   // sa dalla differenza; se nasce adesso l'id arriva da Discord al momento
   // della creazione — ed e' l'unico momento in cui lo si puo' sapere senza
   // rileggere tutto il server.
-  const esito = { creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, nomiTolti: [],
+  const esito = { restano, creati: 0, sistemati: 0, tolti: 0, errori: [], fermo: '', fatte: 0, nomiTolti: [],
     ruoliCreati: 0, ruoliSistemati: 0, ruoliTolti: 0, nomiRuoliTolti: [],
     serverSistemato: 0, serverDice: [],
     ingressoSistemato: 0, ingressoDice: [], ingressoPersi: [],

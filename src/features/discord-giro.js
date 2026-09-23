@@ -28,7 +28,7 @@
 //    poi succede.
 import { dcRuoli, dcLink, points, watchtime, presenze } from '../db.js';
 import * as api from './discord-api.js';
-import { normRegole, regolaOk, differenza, fuoriPortata, mioLivello } from './discord-ruoli.js';
+import { normRegole, regolaOk, differenza, postoDeiRuoli } from './discord-ruoli.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('discord-giro');
@@ -96,7 +96,7 @@ export async function giro(channel, { quadro = null, max = MAX_PERSONE, prova = 
 
   const me = await api.io(token, conf.guild);
   if (!me.ok) return finisci({ errori: [me.errore] });
-  const alti = fuoriPortata(elenco.ruoli, mioLivello(elenco.ruoli, me.ruoli));
+  const alti = postoDeiRuoli(elenco.ruoli, me.ruoli, conf.guild).fuori;
 
   const tutte = normRegole(conf.regole);
   const regole = tutte.filter((r) => regolaOk(r, veri));

@@ -138,7 +138,10 @@ try {
   await pg.waitForTimeout(700);
   const dr = await pg.$eval('#dcs-diff', (n) => n.innerText);
   chiedi(/Crea i ruoli/.test(dr), 'la differenza dice anche cosa fa ai ruoli');
-  chiedi(/piu' in alto del bot|più in alto del bot/.test(dr),
+  // La frase e' cambiata perche' la vecchia diceva il falso: «piu' in alto del
+  // bot» lo diceva anche dei ruoli degli altri bot, che stanno dove vogliono e
+  // non si toccano per un'altra ragione. Quella nuova vale per tutti e due.
+  chiedi(/il bot non arriva a toccarl[oi]/.test(dr),
     'e dice quali non tocca, invece di far finta di averli fatti');
   chiedi(/non posso darli/.test(dr),
     'e quali privilegi non puo' + '’' + ' passare, con la cura: rifare l' + '’' + 'invito');

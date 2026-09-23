@@ -25,6 +25,7 @@
 
 import { createHash } from 'node:crypto';
 import { PRIVILEGI, DA_DARE, VIEW_CHANNEL, SEND_MESSAGES, TETTO_AUTOMOD, PAUSA_MAX, OLOGRAFICO } from './discord-api.js';
+import { tipoRuolo } from './discord-ruoli.js';
 
 // La somma dei privilegi che una traccia nomina. I NUMERI stanno in un posto
 // solo, con gli altri numeri di Discord: qui si leggono, non si ricopiano. Non
@@ -210,17 +211,19 @@ export function intoccabili(foto) {
 //    amministratori, spesso i moderatori storici: tutta roba che il costruttore
 //    non deve nemmeno mettere nell'elenco delle cose da fare, perche' provarci
 //    sarebbe un errore a meta' strada invece di una frase detta prima.
+//
+// La regola e' una sola, `tipoRuolo` in discord-ruoli.js: qui si chiede a lei.
+// Una fotografia senza il livello del bot non sa dove sta il bot, e allora non
+// mette nessun ruolo «sopra»: e' il caso delle prove che guardano altro.
+const cheRuolo = (foto) => {
+  const liv = foto?.bot?.livello;
+  const livello = liv === undefined || liv === null || !Number.isFinite(Number(liv)) ? Infinity : Number(liv);
+  return (r) => tipoRuolo(r, { livello, miei: foto?.bot?.ruoli || [], guildId: foto?.guild?.id || '' });
+};
+
 export function ruoliIntoccabili(foto) {
-  const g = foto?.guild || {};
-  const mio = Number(foto?.bot?.livello);
-  const fuori = new Set();
-  for (const r of (foto?.ruoli || [])) {
-    if (!r?.id) continue;
-    if (String(r.id) === String(g.id)) { fuori.add(String(r.id)); continue; }
-    if (r.managed) { fuori.add(String(r.id)); continue; }
-    if (Number.isFinite(mio) && Number(r.position) >= mio) fuori.add(String(r.id));
-  }
-  return fuori;
+  const tipo = cheRuolo(foto);
+  return new Set((foto?.ruoli || []).filter((r) => r?.id && tipo(r) !== 'gestibile').map((r) => String(r.id)));
 }
 
 // I ruoli come li vuole il preset. Il nome e' l'unica cosa obbligatoria: un
@@ -390,6 +393,7 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
   // qualcuno rinomina resta risparmiato, che e' quello che voleva dire.
   const salvi = new Set((Array.isArray(preset?.risparmia) ? preset.risparmia : []).map((x) => String(x || '').replace(/[^0-9]/g, '')).filter(Boolean));
   const fuoriMano = ruoliIntoccabili(foto);
+  const tipo = cheRuolo(foto);
   const lista = voluteRuoli(preset);
   const attuali = (foto?.ruoli || []).filter((r) => r?.id);
 
@@ -400,6 +404,7 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
   }
 
   const crea = []; const sistema = []; const ambigui = []; const fuoriPortata = []; const nonPosso = [];
+  const doppioni = [];
   const preso = new Set();
 
   for (const v of lista) {
@@ -440,6 +445,15 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
     if (!puoSegni && vuole.tipo !== 'niente' && !manca.includes('segni')) manca.push('segni');
 
     if (!gia) {
+      const gemelli = v.da ? [] : gemelliIntoccabili(v, attuali, fuoriMano, preso);
+      if (gemelli.length) {
+        for (const g of gemelli) {
+          preso.add(String(g.id));
+          fuoriPortata.push(g.nome);
+          doppioni.push({ nome: g.nome, diventa: v.nome, perche: tipo(g) });
+        }
+        continue;
+      }
       // Se l'olografico non si puo', resta il suo primo colore: e' la cosa piu'
       // vicina a quello che aveva scelto, e il perche' e' scritto in `manca`.
       crea.push({ nome: v.nome, colore: v.colore, ...tinta,
@@ -477,11 +491,20 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
   }
 
   const togli = [];
+  // I VECCHI CHE RESTANO, e perche'. Facendo piazza pulita un ruolo che non si
+  // puo' togliere non sparisce: si dice prima, con la sua ragione. Tacerlo era
+  // il difetto — un server «ripulito» con dentro i ruoli di prima, e nessuna
+  // riga che dicesse come mai.
+  const restano = [];
   if (togliere) {
     for (const r of attuali) {
       if (preso.has(String(r.id))) continue;
       if (salvi.has(String(r.id))) continue;
-      if (fuoriMano.has(String(r.id))) continue;
+      if (fuoriMano.has(String(r.id))) {
+        const t = tipo(r);
+        if (t !== 'tutti') restano.push({ id: String(r.id), nome: r.nome, perche: t });
+        continue;
+      }
       let suoi = 0n;
       try { suoi = BigInt(r.permessi || 0); } catch { suoi = 0n; }
       togli.push({ id: String(r.id), nome: r.nome, colore: Number(r.colore) || 0,
@@ -489,7 +512,20 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
     }
   }
 
-  return { crea, sistema, togli, ambigui, fuoriPortata, nonPosso, manca };
+  return { crea, sistema, togli, restano, doppioni, ambigui, fuoriPortata, nonPosso, manca };
+}
+
+// UN RUOLO CHE FA GIA' QUEL MESTIERE, fuori dalla portata del bot. Crearne un
+// altro accanto farebbe due «Moderatori»: quello vero, coi poteri e con la
+// gente dentro, e il nostro, vuoto — ed e' quello che il proprietario si e'
+// trovato sul server. Non si crea: si dice, e il giorno che il bot arriva a
+// toccarlo lo prende il consiglio. Anche se sono due: il mestiere c'e' gia',
+// e un terzo ruolo non lo farebbe meglio — lo farebbe vuoto.
+function gemelliIntoccabili(v, attuali, fuoriMano, preso) {
+  const k = chiaveRuolo(v.nome);
+  const nomi = [k, ...(ALTRI_NOMI[k] || [])];
+  return attuali.filter((r) => fuoriMano.has(String(r.id)) && !preso.has(String(r.id))
+    && nomi.includes(chiaveRuolo(r.nome)));
 }
 
 // A CHI VANNO I RUOLI DELLA TRACCIA, con i fatti in mano.
@@ -581,8 +617,10 @@ export const ALTRI_NOMI = Object.freeze({
 // tirare a indovinare qui vuol dire rinominare il ruolo sbagliato.
 export function consiglioRuoli(foto, preset) {
   const fuoriMano = ruoliIntoccabili(foto);
+  const tipo = cheRuolo(foto);
   const lista = voluteRuoli(preset);
-  const attuali = (foto?.ruoli || []).filter((r) => r?.id && !fuoriMano.has(String(r.id)));
+  const tutti = (foto?.ruoli || []).filter((r) => r?.id);
+  const attuali = tutti.filter((r) => !fuoriMano.has(String(r.id)));
 
   const perChiave = new Map();
   for (const r of attuali) {
@@ -592,7 +630,7 @@ export function consiglioRuoli(foto, preset) {
   }
   const unoSolo = (k) => (perChiave.get(k) || []).length === 1 ? perChiave.get(k)[0] : null;
 
-  const prendi = []; const crea = []; const impegnati = new Set();
+  const prendi = []; const crea = []; const doppioni = []; const impegnati = new Set();
 
   for (const v of lista) {
     const k = chiaveRuolo(v.nome);
@@ -602,6 +640,16 @@ export function consiglioRuoli(foto, preset) {
     }
     const altri = ALTRI_NOMI[k] || [];
     const trovati = altri.map(unoSolo).filter(Boolean).filter((r) => !impegnati.has(String(r.id)));
+    // Nessuno da prendere: prima di dire «lo creo» si guarda se ce n'e' gia'
+    // uno che il bot non arriva a toccare. In quel caso non nasce un doppione.
+    const gemelli = trovati.length ? [] : gemelliIntoccabili(v, tutti, fuoriMano, impegnati);
+    if (gemelli.length) {
+      for (const g of gemelli) {
+        impegnati.add(String(g.id));
+        doppioni.push({ nome: g.nome, diventa: v.nome, perche: tipo(g) });
+      }
+      continue;
+    }
     if (trovati.length !== 1) { crea.push(v.nome); continue; }   // nessuno, o piu' d'uno: non si indovina
     const r = trovati[0];
     impegnati.add(String(r.id));
@@ -619,7 +667,7 @@ export function consiglioRuoli(foto, preset) {
     else togli.push(riga);
   }
 
-  return { prendi, risparmia, togli, crea };
+  return { prendi, risparmia, togli, crea, doppioni };
 }
 
 // IL CONSIGLIO APPLICATO: solo i RINOMINI, e il motivo e' preciso.

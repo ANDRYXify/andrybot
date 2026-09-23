@@ -24,6 +24,7 @@
 // dare a chi non c'e', e va detto cosi', non come un guasto.
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
+import { livelloDi } from './discord-ruoli.js';
 
 const log = makeLog('discord-api');
 
@@ -1255,8 +1256,7 @@ export async function fotografia(token, guild) {
   // del suo piu' alto. Non e' una cortesia da ricordarsi al momento giusto: e'
   // il numero che tiene fuori dall'elenco delle cose da fare tutto quello che
   // non e' suo da toccare.
-  const miei = new Set((me.ruoli || []).map(String));
-  const livello = r.ruoli.reduce((t, x) => (miei.has(String(x.id)) ? Math.max(t, Number(x.position) || 0) : t), 0);
+  const { livello } = livelloDi(r.ruoli, me.ruoli);
   return {
     ok: true,
     guild: s.guild,

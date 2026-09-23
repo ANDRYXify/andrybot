@@ -59,6 +59,62 @@ impronte non combaciavano mai, e costruire dopo aver scelto un'immagine per un
 ruolo gia' esistente si fermava sempre su «il server e' cambiato» — falso.
 Adesso tutte e due ricevono le stesse cose: immagini e regole di adesso.
 
+# Dove sta il bot, e cosa vuol dire per ogni ruolo
+
+Il proprietario ha costruito su un server vero e ha visto quasi tutti i ruoli
+segnati «più in alto del bot» (anche MEE6, Midjourney e i booster), la frase
+«ha i pieni poteri: da qui puoi muovere tutto» subito sotto, un secondo
+«Moderatori» vuoto accanto al suo «moderatore», e in modalità distruttiva i
+ruoli vecchi ancora lì senza una riga che dicesse perché.
+
+## Le regole di Discord (verificate su docs.discord.com, Permission Hierarchy)
+
+- Il ruolo più alto di un bot è quello con la `position` più grande; @everyone
+  sta a 0.
+- Un bot dà, modifica e ordina **solo** i ruoli di posizione più bassa del suo
+  più alto.
+- A parità di posizione Discord ordina per id, senza dire da che parte: nel
+  dubbio si dice «sopra», che non promette niente.
+- I pieni poteri (Amministratore) scavalcano i permessi dei canali, **non**
+  l'ordine dei ruoli.
+- Un ruolo `managed` è di un'integrazione (un altro bot, i booster, gli
+  abbonamenti): non lo dà e non lo cancella nessuno.
+- Nessuno porta un ruolo sopra il proprio: il bot non si alza da solo, lo alza
+  chi gli sta sopra. È l'unico passo che il pannello non può fare al posto tuo,
+  quindi lo dice con il nome esatto del ruolo da trascinare.
+
+## Una regola sola: `postoDeiRuoli`
+
+Prima i conti erano quattro (il pannello dei Ruoli, il giro dei membri, la
+fotografia del costruttore, il costruttore stesso) e non dicevano la stessa
+cosa. Uno chiamava «sopra» anche i ruoli degli altri bot. Adesso c'è
+`postoDeiRuoli` in `discord-ruoli.js`, e ogni ruolo finisce in **un** posto:
+
+| posto | cos'è | nel pannello |
+| --- | --- | --- |
+| `tutti` | @everyone | non si offre mai |
+| `bot` | il suo ruolo più alto, e quello che Discord gli dà all'ingresso | non si offre; si dice qual è il più alto |
+| `altrui` | di un'integrazione | non si offre; in distruttivo «restano, sono loro» |
+| `sopra` | alla sua altezza o più su | si vede ma non si sceglie; si dice quale ruolo trascinare |
+| `gestibile` | sotto di lui | suo da dare, sistemare, togliere |
+
+## Il doppione non nasce
+
+Se la traccia vuole «Moderatori» e sul server c'è già chi fa quel mestiere
+(stesso nome, o uno degli `ALTRI_NOMI`: «moderatore», «mod», «staff»…) che il
+bot non arriva a toccare, «Moderatori» **non si crea**. Si dice: «moderatore fa
+già il mestiere di Moderatori, ma il bot non arriva a toccarlo». Il giorno che
+il bot sta sopra, il consiglio lo prende (lo rinomina) invece di affiancarlo.
+Due ruoli per lo stesso mestiere erano peggio di uno solo non sistemato: le
+regole nuove davano quello vuoto.
+
+## Facendo piazza pulita, quello che resta si dice
+
+La differenza distruttiva porta `restano`: ogni ruolo vecchio che non si può
+togliere, col suo perché (`sopra`, `altrui`, `bot`). Si vede nell'anteprima,
+prima di confermare, e si ripete nell'esito dopo. «Non c'era niente da fare»
+con i ruoli vecchi ancora lì sembrava un lavoro lasciato a metà.
+
 # L'aspetto dei ruoli
 
 Un ruolo su Discord non è solo quello che può fare: è anche come si vede. Il
