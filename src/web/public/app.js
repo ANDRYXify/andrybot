@@ -13505,9 +13505,10 @@ function _pubDisegna() {
       ${momento('prima', L('Prima che parta', 'Before it starts', 'Antes de que empiece'),
     L('Lo ricavo dalla programmazione di Twitch, che esiste solo mentre sei in onda. Sta vicino alla pausa apposta: uno snooze la sposta di cinque minuti, e un annuncio in chat non si ritira.', 'I work it out from the Twitch schedule, which only exists while you are live. It stays close to the break on purpose: a snooze moves it by five minutes, and a chat announcement cannot be taken back.', 'Lo saco de la programación de Twitch, que solo existe mientras estás en directo. Se queda cerca de la pausa a propósito: un snooze la mueve cinco minutos, y un anuncio en el chat no se retira.'))}
       ${momento('durante', L('Appena parte', 'As it starts', 'Nada más empezar'),
-    L('Questo me lo dice Twitch, e mi dice anche quanto dura: scrivi {secondi} o {durata} e ce lo metto.', 'Twitch tells me this one, and how long it lasts: write {secondi} or {durata} and I fill it in.', 'Esto me lo dice Twitch, y también cuánto dura: escribe {secondi} o {durata} y lo pongo yo.'))}
+    L('Questo me lo dice Twitch, e mi dice anche quanto dura.', 'Twitch tells me this one, and how long it lasts.', 'Esto me lo dice Twitch, y también cuánto dura.'))}
       ${momento('dopo', L('Quando torni', 'When you are back', 'Cuando vuelves'),
     L('Per la fine Twitch non manda niente: conto io i secondi che mi ha detto. Se mi riavvio nel mezzo il conto si perde, e allora sto zitta invece di salutarti in ritardo.', 'Twitch sends nothing for the end: I count the seconds it told me. If I restart in the middle the count is lost, and then I keep quiet instead of greeting you late.', 'Para el final Twitch no manda nada: cuento yo los segundos que me dijo. Si me reinicio en medio se pierde la cuenta, y entonces me callo en vez de saludarte tarde.'))}
+      <p class="suggerimento spazio-sopra">${L('Segnaposti, uguali in tutte e tre: {secondi} è quanto dura la pausa (90), {durata} lo stesso in minuti (1:30), {canale} il nome del canale. Se Twitch non dice quanto dura, una riga che lo chiede non esce.', 'Placeholders, the same in all three: {secondi} is how long the break lasts (90), {durata} the same in minutes (1:30), {canale} the channel name. If Twitch does not say how long it lasts, a line that asks for it is not sent.', 'Marcadores, iguales en las tres: {secondi} es cuánto dura la pausa (90), {durata} lo mismo en minutos (1:30), {canale} el nombre del canal. Si Twitch no dice cuánto dura, una línea que lo pide no sale.')}</p>
       <div class="dcs-asp-riga spazio-sopra">
         <label class="campo" for="pub-tolleranza">${L('Quanto ritardo accetto', 'How late I still speak', 'Cuánto retraso acepto')}</label>
         <input type="number" id="pub-tolleranza" data-pub="tolleranza" min="0" max="${lim.tolleranzaMax}" value="${Number(c.tolleranza)}">
@@ -13541,6 +13542,18 @@ function _fmtUptime(startedAt) {
   return (h ? h + 'h ' : '') + (h ? due(m) : m) + 'm ' + due(ss) + 's';
 }
 
+function _fraSecondi(istante) {
+  const t = Number(istante) || 0;
+  return t ? Math.ceil((t - Date.now()) / 1000) : 0;
+}
+
+function _fmtSecondi(s) {
+  if (s < 60) return s + 's';
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  const due = (n) => (n < 10 ? '0' : '') + n;
+  return (h ? h + 'h ' + due(m) : m) + 'm ' + due(ss) + 's';
+}
+
 function renderRegiaStato(live, ads) {
   const box = document.getElementById('regia-stato');
   if (!box) return;
@@ -13549,10 +13562,11 @@ function renderRegiaStato(live, ads) {
     return;
   }
   let adInfo = '';
-  if (ads && ads.nextAt) {
-    const at = typeof ads.nextAt === 'number' ? ads.nextAt * 1000 : new Date(ads.nextAt).getTime();
-    const secs = Math.round((at - Date.now()) / 1000);
-    if (secs > 0) adInfo = `<div class="regia-metrica"><span>${L('Prossima pubblicità', 'Next ad', 'Próximo anuncio')}</span><strong>${Math.floor(secs / 60)}m ${secs % 60}s</strong></div>`;
+  const fra = _fraSecondi(ads?.prossima);
+  if (fra > 0) {
+    const dura = Number(ads?.durata) || 0;
+    adInfo = `<div class="regia-metrica" data-pub-prossima><span>${L('Prossima pubblicità', 'Next ad', 'Próximo anuncio')}</span><strong id="regia-pub-fra">${_fmtSecondi(fra)}</strong></div>`
+      + (dura > 0 ? `<div class="regia-metrica" data-pub-prossima><span>${L('Durerà', 'It will last', 'Durará')}</span><strong>${_fmtSecondi(dura)}</strong></div>` : '');
   }
   box.innerHTML = `
     <div class="regia-badge live">● LIVE</div>
@@ -13599,7 +13613,13 @@ async function caricaRegia() {
   if (d.live && d.live.online && d.live.startedAt) {
     _regiaUptimeTimer = setInterval(() => {
       const u = document.getElementById('regia-uptime');
-      if (u) u.textContent = _fmtUptime(d.live.startedAt); else clearInterval(_regiaUptimeTimer);
+      if (!u) { clearInterval(_regiaUptimeTimer); return; }
+      u.textContent = _fmtUptime(d.live.startedAt);
+      const f = document.getElementById('regia-pub-fra');
+      if (!f) return;
+      const fra = _fraSecondi(d.ads?.prossima);
+      if (fra > 0) f.textContent = _fmtSecondi(fra);
+      else document.querySelectorAll('[data-pub-prossima]').forEach((el) => el.remove());
     }, 1000);
   }
 

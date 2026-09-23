@@ -139,11 +139,14 @@ export class BotManager {
     this._stopReflection = null;
     this._capAvvisoDato = false;     // il tetto ascolti è già stato loggato una volta?
     this._liveState = new Map();     // login → bool: se lo streamer è in live adesso
-    // La pubblicità, per canale: {prossima, dettoPer, ultimaPausa, finisceA,
-    // dettoDopo}. Sta in memoria e non su disco apposta: è lo stato di una
-    // pausa che dura minuti, e un riavvio nel mezzo la fa perdere — che è
-    // esattamente quello che deve succedere (vedi docs/PUBBLICITA.md).
+    // La pubblicità, per canale: {prossima, letto, dettoPer, ultimaPausa,
+    // secondi, finisceA, dettoDopo}. Sta in memoria e non su disco apposta: è
+    // lo stato di una pausa che dura minuti, e un riavvio nel mezzo la fa
+    // perdere — che è esattamente quello che deve succedere (vedi
+    // docs/PUBBLICITA.md). Le sveglie sono i due istanti a cui si parla: il
+    // preavviso e il «sono tornato», per canale.
     this._pub = new Map();
+    this._pubSveglie = new Map();
     this._pubTimer = null;
     this._tiktokTimer = null;
     this._tiktokLive = new Map();    // login → bool: in diretta su TikTok adesso
@@ -299,11 +302,10 @@ export class BotManager {
     // stessa settimana scritta in un altro posto.
     this._eventiDcTimer = setInterval(() => { this._giroEventiDiscord(); this._giroProgramma(); this._giroInstagram(); }, 6 * 60 * 60_000);
     setTimeout(() => { this._giroEventiDiscord(); this._giroProgramma(); this._giroInstagram(); }, 150_000);
-    // La pubblicità: il preavviso e il «sono tornato» sono tutti e due questioni
-    // di secondi, e mezzo minuto è la metà del preavviso più corto che si possa
-    // chiedere. Il giro non telefona a Twitch a ogni passaggio: vedi
-    // `pub.vaGuardato`, che decide quando vale la pena.
-    this._pubTimer = setInterval(() => this._giroPubblicita(), 30_000);
+    // La pubblicità: il giro legge il programma di Twitch, e non a ogni
+    // passaggio (vedi `pub.vaGuardato`). Il preavviso e il «sono tornato» non
+    // li dice il giro: sono istanti, e li dicono due sveglie puntate lì.
+    this._pubTimer = setInterval(() => this._giroPubblicita(), pub.GIRO_MS);
     log.info('SocialBot avviato');
   }
 
@@ -327,6 +329,8 @@ export class BotManager {
     clearInterval(this._dcRuoliTimer);
     clearInterval(this._eventiDcTimer);
     clearInterval(this._pubTimer);
+    for (const t of this._pubSveglie.values()) clearTimeout(t);
+    this._pubSveglie.clear();
     clearInterval(this._cancelloTimer);
     clearInterval(this._tgProattivoTimer);
     clearInterval(this._percorsoTimer);
@@ -1654,49 +1658,66 @@ export class BotManager {
     } catch (e) { log.debug('giroDiscord:', e?.message || e); }
   }
 
-  // GLI APPUNTAMENTI SI ALLINEANO DA SOLI.
+  // LA PUBBLICITA': il programma, e le due sveglie.
   //
-  // Un appuntamento sul calendario non e' una cosa che si mette una volta: il
-  // palinsesto cambia, e a fine ottobre cambia l'ora. Un appuntamento sbagliato
-  // e' peggio di nessun appuntamento, perche' manda la gente davanti a uno
-  // schermo spento — quindi non si aspetta che qualcuno prema un tasto.
-  // LA PUBBLICITA': il preavviso e il «sono tornato».
-  //
-  // Due cose diverse nello stesso giro, e nessuna delle due e' un evento: il
-  // preavviso lo si ricava dal programma (che Twitch riempie solo mentre sei in
-  // onda), il «sono tornato» e' il conto sui secondi che l'evento di partenza
-  // aveva dichiarato. Vedi docs/PUBBLICITA.md.
+  // Nessuna delle due frasi e' un evento: il preavviso si ricava dal programma
+  // (che Twitch riempie solo mentre sei in onda), il «sono tornato» e' il conto
+  // sui secondi che l'evento di partenza ha dichiarato. Tutte e due cadono a
+  // un istante preciso, e a quell'istante si arriva con una sveglia: un giro
+  // ogni mezzo minuto le farebbe arrivare fino a mezzo minuto dopo. Il giro
+  // serve solo a leggere il programma. Vedi docs/PUBBLICITA.md.
   async _giroPubblicita() {
     const adesso = Date.now();
     for (const [ch, live] of this._liveState) {
       const conf = pub.normalizzaPubblicita(streamers.get(ch)?.settings?.pubblicita);
-      if (!conf.acceso) { this._pub.delete(ch); continue; }
+      if (!conf.acceso) { this._pub.delete(ch); this._spegniSveglia(ch, 'prima'); this._spegniSveglia(ch, 'dopo'); continue; }
       const stato = this._pub.get(ch) || {};
-
-      // Il conto scaduto si guarda SEMPRE, anche a diretta finita: se la
-      // diretta e' finita durante la pausa non c'e' niente da dire, e la
-      // tolleranza e' proprio la riga che decide di tacere.
-      const fine = pub.allaFine(conf, stato, adesso);
-      if (fine) {
-        stato.dettoDopo = true;
-        stato.finisceA = 0;
-        if (fine.testo && live) await this._annuncio(ch, conf, fine.testo);
-      }
-
       // Fuori diretta il programma non si chiede: Twitch lo lascia vuoto
       // apposta, e sarebbe una telefonata per una risposta che sappiamo gia'.
       if (live && pub.vaGuardato(conf, stato, adesso)) {
         const p = await this.helix?.getAdSchedule?.(ch).catch(() => null);
-        const quando = Date.parse(p?.nextAt || '') || 0;
-        stato.prossima = quando;
-        const avviso = quando ? pub.preavviso(conf, stato, { nextAt: p.nextAt }, adesso) : null;
-        if (avviso) {
-          stato.dettoPer = String(avviso.quando);
-          await this._annuncio(ch, conf, avviso.testo);
-        }
+        stato.prossima = p?.prossima || 0;
+        stato.letto = adesso;
+        const dire = pub.quandoAvvisare(conf, stato, p, adesso);
+        if (dire) this._sveglia(ch, 'prima', dire, () => this._preavviso(ch));
       }
       this._pub.set(ch, stato);
     }
+  }
+
+  // Una sveglia per canale e per frase: puntarne una nuova toglie la vecchia,
+  // cosi' la stessa frase non si dice due volte.
+  _sveglia(ch, quale, quando, fa) {
+    const k = `${ch}:${quale}`;
+    clearTimeout(this._pubSveglie.get(k));
+    const t = setTimeout(() => {
+      if (this._pubSveglie.get(k) === t) this._pubSveglie.delete(k);
+      fa().catch((e) => log.debug(`#${ch} pubblicità (${quale}):`, e?.message || e));
+    }, Math.max(0, quando - Date.now()));
+    t.unref?.();
+    this._pubSveglie.set(k, t);
+  }
+
+  _spegniSveglia(ch, quale) {
+    const k = `${ch}:${quale}`;
+    clearTimeout(this._pubSveglie.get(k));
+    this._pubSveglie.delete(k);
+  }
+
+  // IL PREAVVISO, all'istante giusto. Il programma si rilegge adesso: se uno
+  // snooze ha spostato la pausa, il preavviso di quella li' non si dice.
+  async _preavviso(ch) {
+    if (!this._liveState.get(ch)) return;
+    const conf = pub.normalizzaPubblicita(streamers.get(ch)?.settings?.pubblicita);
+    if (!conf.acceso) return;
+    const p = await this.helix?.getAdSchedule?.(ch).catch(() => null);
+    const adesso = Date.now();
+    const stato = this._pub.get(ch) || {};
+    if (p) { stato.prossima = p.prossima; stato.letto = adesso; }
+    const avviso = p ? pub.preavviso(conf, stato, p, adesso) : null;
+    if (avviso) stato.dettoPer = String(avviso.quando);
+    this._pub.set(ch, stato);
+    if (avviso) await this._annuncio(ch, conf, avviso.testo);
   }
 
   // L'annuncio evidenziato in chat. Se Twitch dice di no — permesso tolto,
@@ -1710,8 +1731,8 @@ export class BotManager {
   }
 
   // LA PAUSA CHE COMINCIA. Arriva da EventSub, ed e' l'unico momento in cui
-  // Twitch ci dice qualcosa: da qui esce sia il messaggio di adesso sia la
-  // scadenza del conto per quello di dopo.
+  // Twitch ci dice qualcosa: da qui escono il messaggio di adesso e la
+  // sveglia del «sono tornato», puntata a inizio + durata.
   async _pubblicitaPartita(ch, dati) {
     const conf = pub.normalizzaPubblicita(streamers.get(ch)?.settings?.pubblicita);
     if (!conf.acceso) return;
@@ -1719,6 +1740,7 @@ export class BotManager {
     const a = pub.allaPartenza(conf, stato, dati, Date.now());
     if (!a) return;
     stato.ultimaPausa = String(a.inizio);
+    stato.secondi = a.secondi;
     stato.finisceA = a.finisceA;
     stato.dettoDopo = false;
     // La pausa e' cominciata: il preavviso di quella li' ha finito il suo
@@ -1726,9 +1748,32 @@ export class BotManager {
     stato.prossima = 0;
     stato.dettoPer = '';
     this._pub.set(ch, stato);
+    this._spegniSveglia(ch, 'prima');
+    if (a.finisceA) this._sveglia(ch, 'dopo', a.finisceA, () => this._sonoTornato(ch));
+    else this._spegniSveglia(ch, 'dopo');
     if (a.testo) await this._annuncio(ch, conf, a.testo);
   }
 
+  // LA PAUSA CHE FINISCE. La sveglia e' sempre quella dell'ultima pausa (una
+  // pausa nuova sostituisce la sveglia della vecchia). Si dice se la diretta
+  // c'e' ancora, e dentro la tolleranza.
+  async _sonoTornato(ch) {
+    const stato = this._pub.get(ch);
+    if (!stato) return;
+    const conf = pub.normalizzaPubblicita(streamers.get(ch)?.settings?.pubblicita);
+    const fine = pub.allaFine(conf, stato, Date.now());
+    if (!fine) return;
+    stato.dettoDopo = true;
+    stato.finisceA = 0;
+    if (fine.testo && this._liveState.get(ch)) await this._annuncio(ch, conf, fine.testo);
+  }
+
+  // GLI APPUNTAMENTI SI ALLINEANO DA SOLI.
+  //
+  // Un appuntamento sul calendario non e' una cosa che si mette una volta: il
+  // palinsesto cambia, e a fine ottobre cambia l'ora. Un appuntamento sbagliato
+  // e' peggio di nessun appuntamento, perche' manda la gente davanti a uno
+  // schermo spento — quindi non si aspetta che qualcuno prema un tasto.
   async _giroEventiDiscord() {
     // Tutti quelli con un server, non «quelli coi ruoli accesi»: il calendario
     // ha il suo interruttore. E il token lo decide `tokenDi` — col bot della
@@ -1749,10 +1794,6 @@ export class BotManager {
     }
   }
 
-  // IL PROGRAMMA DI TWITCH: rimette a posto quello che il tempo sposta (l'ora
-  // legale, un segmento tolto a mano che va rimesso). Scrive solo la memoria di
-  // cosa e' nostro, e solo se nel frattempo la settimana non e' stata salvata:
-  // in quel caso il salvataggio ha gia' fatto il suo giro, e il nostro e' vecchio.
   // IL TOKEN DI INSTAGRAM SI ALLUNGA DA SOLO. Dura sessanta giorni: quando ne
   // mancano meno di trenta si chiede a Instagram di rinnovarlo, cosi' chi si e'
   // collegato una volta non deve ricordarsi di niente. Se il rinnovo non va
@@ -1771,6 +1812,10 @@ export class BotManager {
     }
   }
 
+  // IL PROGRAMMA DI TWITCH: rimette a posto quello che il tempo sposta (l'ora
+  // legale, un segmento tolto a mano che va rimesso). Scrive solo la memoria di
+  // cosa e' nostro, e solo se nel frattempo la settimana non e' stata salvata:
+  // in quel caso il salvataggio ha gia' fatto il suo giro, e il nostro e' vecchio.
   async _giroProgramma() {
     for (const s of streamers.list()) {
       try {

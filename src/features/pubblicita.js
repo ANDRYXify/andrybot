@@ -41,9 +41,18 @@ export const PREAVVISO_MIN = 15;
 export const PREAVVISO_MAX = 300;
 // Oltre questi secondi di ritardo il «sono tornato» non si dice piu'.
 export const TOLLERANZA_MAX = 600;
-// Una pausa non dura piu' di tre minuti (Twitch), ma il conto non si fida di
-// quello che arriva: un numero storto non deve poter lasciare un timer appeso.
+// Una pausa non dura piu' di tre minuti (Twitch). Un numero fuori da 1..300
+// non e' una durata: non si taglia a 300, si tratta come una durata che non si
+// sa. Tagliarlo vorrebbe dire annunciare in chat un numero che Twitch non ha
+// mai detto.
 export const DURATA_MAX = 300;
+// Ogni quanto il bot guarda il programma. Serve anche al modello: la finestra
+// in cui il programma va letto si ricava da qui (vedi `vaGuardato`).
+export const GIRO_MS = 30_000;
+// Una lettura del programma piu' vecchia di cosi' si rifa' comunque: il
+// programma puo' cambiare senza nessun evento (lo streamer tocca le
+// impostazioni della pubblicita' a diretta accesa).
+export const RILETTURA_MS = 5 * 60_000;
 
 const TESTI = Object.freeze({
   prima: 'Fra poco parte la pubblicità: restate qui, torno subito.',
@@ -56,6 +65,42 @@ const numero = (v, meno, piu, difetto) => {
   if (!Number.isFinite(n)) return difetto;
   return Math.max(meno, Math.min(piu, n));
 };
+
+// Quanto dura una pausa, in secondi, o 0 se non si sa.
+export function durataValida(v) {
+  if (v === null || v === undefined || v === '' || typeof v === 'boolean') return 0;
+  const n = Math.round(Number(v));
+  return Number.isFinite(n) && n >= 1 && n <= DURATA_MAX ? n : 0;
+}
+
+// UN ISTANTE DI TWITCH, IN MILLISECONDI. Il programma della pubblicita' e' il
+// caso storto: i documenti dicono RFC3339, e Twitch manda SECONDI UNIX interi,
+// 0 quando non c'e' niente. Lo staff l'ha confermato sul forum degli
+// sviluppatori, e non lo cambia perche' l'endpoint e' in uso da tutti. Qui si
+// leggono le due forme, e da qui in poi gli istanti sono solo millisecondi:
+// un posto che sa com'e' fatto il dato, invece di tre che lo indovinano.
+export function istante(v) {
+  if (v === null || v === undefined || typeof v === 'boolean') return 0;
+  const t = String(v).trim();
+  if (!t) return 0;
+  if (/^\d+(\.\d+)?$/.test(t)) {
+    const n = Number(t);
+    return n > 0 ? Math.round(n * 1000) : 0;
+  }
+  const ms = Date.parse(t);
+  return Number.isFinite(ms) && ms > 0 ? ms : 0;
+}
+
+// La riga di GET /helix/channels/ads, detta nei nostri termini.
+export function programmaDa(riga) {
+  if (!riga || typeof riga !== 'object') return null;
+  return {
+    prossima: istante(riga.next_ad_at),
+    durata: durataValida(riga.duration),
+    ultima: istante(riga.last_ad_at),
+    snooze: numero(riga.snooze_count, 0, 99, 0),
+  };
+}
 
 // Un testo vuoto NON e' «usa quello di sempre»: e' «non dire niente». Chi
 // svuota la casella sta spegnendo quel momento, e riempirgliela con il nostro
@@ -82,11 +127,19 @@ export function normalizzaPubblicita(v) {
 // una sera, la casella vuota a non usarlo mai.
 export const parla = (conf, quale) => !!(conf?.acceso && conf?.[quale]?.acceso && String(conf[quale].testo || '').trim());
 
+// `{secondi}` e `{durata}` vogliono dire una cosa sola in tutti e tre i
+// momenti: QUANTO DURA LA PAUSA. Prima la dice il programma, durante e dopo
+// l'evento di partenza. Se la durata non si sa, una frase che la chiede non si
+// dice: meglio zitti che un numero inventato in chat.
+const CHIEDE_DURATA = /\{(secondi|durata)\}/;
+
 export function testoDi(conf, quale, { secondi = 0, canale = '' } = {}) {
-  const s = Math.max(0, Math.round(Number(secondi) || 0));
+  const testo = String(conf?.[quale]?.testo || '');
+  const s = durataValida(secondi);
+  if (!s && CHIEDE_DURATA.test(testo)) return '';
   const mm = Math.floor(s / 60);
   const ss = String(s % 60).padStart(2, '0');
-  return String(conf?.[quale]?.testo || '')
+  return testo
     .replace(/\{secondi\}/g, String(s))
     // `{durata}` e' scritta in cifre e non a parole apposta: il testo lo scrive
     // lo streamer, nella lingua che vuole, e «un minuto e mezzo» dentro una
@@ -99,47 +152,77 @@ export function testoDi(conf, quale, { secondi = 0, canale = '' } = {}) {
 
 // ── Il preavviso ──────────────────────────────────────────────────────────
 //
-// QUANDO VALE LA PENA CHIEDERE IL PROGRAMMA. Una volta saputo che la prossima
-// pausa e' fra quaranta minuti, richiederlo ogni mezzo minuto e' chiedere
-// sessanta volte una cosa che non si muove. Si torna a chiedere quando ci si
-// avvicina — e la finestra e' larga il doppio del preavviso, cosi' uno snooze
-// arrivato nel frattempo si vede in tempo.
+// IL PREAVVISO SI DICE A `quanto` SECONDI DALLA PAUSA, non «a un giro di
+// distanza». Il giro serve solo a leggere il programma; il momento di parlare
+// e' un istante, e a un istante si arriva con una sveglia.
+//
+// QUANDO VA LETTO IL PROGRAMMA. L'istante del preavviso e' W = prossima -
+// quanto, e la sveglia va puntata prima di W. I giri sono distanti GIRO_MS:
+// in [W - 2 GIRO_MS, W) ne cadono due, quindi almeno uno anche quando un giro
+// tarda, e a quel giro alla pausa mancano al piu' quanto + 2 GIRO_MS. E' questa
+// la finestra, ricavata dal passo del giro e non scelta a occhio. Fuori
+// finestra si legge solo se non si sa niente, se la pausa e' passata, o se
+// l'ultima lettura e' vecchia.
 export function vaGuardato(conf, stato, adesso = Date.now()) {
   if (!parla(conf, 'prima')) return false;
   const prossima = Number(stato?.prossima) || 0;
-  if (!prossima) return true;                       // non si sa niente: si guarda
-  if (prossima <= adesso) return true;              // e' passata: si riguarda
-  return prossima - adesso <= conf.quanto * 2000;
+  if (!prossima) return true;
+  if (prossima <= adesso) return true;
+  if (adesso - (Number(stato?.letto) || 0) >= RILETTURA_MS) return true;
+  return prossima - adesso <= conf.quanto * 1000 + 2 * GIRO_MS;
 }
 
-// Il preavviso si da' una volta per pausa, e la pausa e' identificata
-// dall'ISTANTE annunciato: due letture dello stesso programma non sono due
-// pause, e un annuncio ripetuto in chat si nota subito.
+// L'istante a cui puntare la sveglia del preavviso, o 0 se e' ancora presto.
+// Si punta solo dentro la finestra: piu' in la' il programma si rilegge, e uno
+// snooze nel frattempo si vede.
+export function quandoAvvisare(conf, stato, programma, adesso = Date.now()) {
+  if (!parla(conf, 'prima')) return 0;
+  const quando = Number(programma?.prossima) || 0;
+  if (!quando || quando <= adesso) return 0;
+  if (String(stato?.dettoPer || '') === String(quando)) return 0;
+  const dire = Math.max(adesso, quando - conf.quanto * 1000);
+  return dire - adesso < 2 * GIRO_MS ? dire : 0;
+}
+
+// Alla sveglia: il programma si e' appena riletto, e il preavviso si da' solo
+// se la pausa e' ancora dentro `quanto`. E' questa la conferma: uno snooze la
+// sposta cinque minuti piu' in la', e alla sveglia ne mancano allora quanto +
+// cinque minuti, fuori dalla finestra per qualunque preavviso. Una volta per
+// pausa, e la pausa e' l'ISTANTE annunciato.
 export function preavviso(conf, stato, programma, adesso = Date.now()) {
   if (!parla(conf, 'prima')) return null;
-  const quando = Date.parse(programma?.nextAt || '') || Number(programma?.nextAt) || 0;
+  const quando = Number(programma?.prossima) || 0;
   if (!quando || quando <= adesso) return null;
   if (quando - adesso > conf.quanto * 1000) return null;
   if (String(stato?.dettoPer || '') === String(quando)) return null;
-  return { quando, testo: testoDi(conf, 'prima', { secondi: Math.round((quando - adesso) / 1000) }) };
+  const testo = testoDi(conf, 'prima', { secondi: programma?.durata });
+  return testo ? { quando, testo } : null;
 }
 
 // ── La pausa che comincia ─────────────────────────────────────────────────
 export function allaPartenza(conf, stato, evento, adesso = Date.now()) {
-  const inizio = Date.parse(evento?.started_at || '') || 0;
+  // L'istante dichiarato. Nei documenti si chiama `started_at`; c'e' chi l'ha
+  // ricevuto come `timestamp`, e sono la stessa cosa.
+  const inizio = istante(evento?.started_at ?? evento?.timestamp);
   // Senza un istante non si sa distinguere una pausa da un doppione, e senza
   // saperlo distinguere non si puo' promettere di non annunciarla due volte.
   if (!inizio) return null;
   if (String(stato?.ultimaPausa || '') === String(inizio)) return null;
-  const secondi = numero(evento?.duration_seconds, 0, DURATA_MAX, 0);
+  const secondi = durataValida(evento?.duration_seconds);
+  // LA PAUSA FINISCE A INIZIO + DURATA, qualunque sia il momento in cui
+  // l'evento arriva: un evento in ritardo ha gia' consumato parte della pausa,
+  // e contare da quando arriva sposterebbe la fine di tutto quel ritardo. Il
+  // minimo con adesso copre un orologio di Twitch avanti rispetto al nostro:
+  // la pausa non puo' essere cominciata dopo che ce l'hanno detto.
+  // Senza durata non c'e' una fine da contare, quindi nessun «sono tornato».
+  const finisceA = secondi ? Math.min(inizio, adesso) + secondi * 1000 : 0;
+  // A pausa gia' finita, «pubblicita' per 90 secondi» sarebbe falso.
+  const inCorso = !secondi || finisceA > adesso;
   return {
     inizio,
     secondi,
-    // Quando il conto scade. Si calcola da ADESSO e non dall'istante dichiarato:
-    // un evento che arriva in ritardo ha gia' consumato parte della pausa, e
-    // partire dall'istante dichiarato farebbe aspettare due volte quel ritardo.
-    finisceA: adesso + secondi * 1000,
-    testo: parla(conf, 'durante') ? testoDi(conf, 'durante', { secondi }) : '',
+    finisceA,
+    testo: inCorso && parla(conf, 'durante') ? testoDi(conf, 'durante', { secondi }) : '',
   };
 }
 
@@ -150,8 +233,8 @@ export function allaFine(conf, stato, adesso = Date.now()) {
   if (!finisceA || stato?.dettoDopo) return null;
   if (adesso < finisceA) return null;
   // In ritardo oltre la tolleranza non si dice niente: il bot si e' riavviato,
-  // o il conto e' rimasto indietro, e «sono tornato» dieci minuti dopo e' una
+  // o l'evento e' arrivato tardi, e «sono tornato» dieci minuti dopo e' una
   // bugia detta in diretta. Meglio zitti.
   if (adesso - finisceA > conf.tolleranza * 1000) return { scaduto: true, testo: '' };
-  return { scaduto: false, testo: testoDi(conf, 'dopo', {}) };
+  return { scaduto: false, testo: testoDi(conf, 'dopo', { secondi: stato?.secondi }) };
 }

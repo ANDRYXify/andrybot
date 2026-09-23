@@ -72,6 +72,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nelle Grafiche i tasti hanno di nuovo il contorno, come nel resto del pannello, e in Statistiche il periodo scelto non perde il bordo. [vai: grafiche]
 - Cambiare scheda è più svelto, soprattutto sul telefono, e nello Studio l'anteprima dal vivo riparte quando ci torni. [vai: alert]
 - Nello Studio la tela è molto più grande: il menù si apre dal tasto in alto e lascia la larghezza al lavoro, e i nomi dei livelli non si tagliano più. [vai: alert]
+- Pubblicità in chat: il preavviso adesso parte davvero, «sono tornato» arriva quando la pausa finisce, e i secondi nei messaggi sono sempre quanto dura la pausa. [vai: regia]
 
 ## 2026-09-19
 

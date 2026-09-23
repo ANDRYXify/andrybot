@@ -35,11 +35,26 @@ test('il permesso lo chiediamo già: nessuno deve reinvitare niente', () => {
 test('il bot ascolta l\'evento e tiene il conto', () => {
   assert.match(BOT, /if \(type === 'channel\.ad_break\.begin'\)/);
   assert.match(BOT, /_pubblicitaPartita\(/);
-  assert.match(BOT, /this\._pubTimer = setInterval\(\(\) => this\._giroPubblicita\(\), 30_000\)/);
+  // Il passo del giro e' quello da cui il modello ricava la finestra di
+  // lettura: scritto in due posti, un giorno direbbero due cose diverse.
+  assert.match(BOT, /this\._pubTimer = setInterval\(\(\) => this\._giroPubblicita\(\), pub\.GIRO_MS\)/);
   assert.match(BOT, /clearInterval\(this\._pubTimer\)/, 'e si spegne quando il bot si ferma');
+  assert.match(BOT, /for \(const t of this\._pubSveglie\.values\(\)\) clearTimeout\(t\);/, 'con le sveglie');
   // Lo stato sta in memoria: un riavvio deve PERDERE il conto, se no il saluto
   // arriverebbe in ritardo ed e' proprio quello che non deve succedere.
   assert.ok(!/pubblicita.*setSettings|setSettings.*finisceA/.test(BOT), 'il conto non si salva su disco');
+});
+
+test('il programma di Twitch lo legge un posto solo', () => {
+  // I documenti dicono RFC3339, Twitch manda secondi Unix: chi legge
+  // `next_ad_at` per conto suo lo legge sbagliato. Lo legge `programmaDa`, e
+  // fuori da li' gli istanti sono millisecondi.
+  const HELIX = leggi('src/twitch/helix.js');
+  assert.match(HELIX, /return programmaDa\(j\?\.data\?\.\[0\]\);/);
+  for (const [nome, testo] of [['helix', HELIX], ['bot', BOT], ['server', SRV], ['pannello', APP]]) {
+    assert.ok(!/next_ad_at|nextAt/.test(testo), `${nome} legge il programma per conto suo`);
+  }
+  assert.match(APP, /_fraSecondi\(ads\?\.prossima\)/, 'il pannello conta dai millisecondi');
 });
 
 test('fuori diretta non si chiede niente a Twitch', () => {

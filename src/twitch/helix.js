@@ -5,6 +5,7 @@
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
 import { streamers } from '../db.js';
+import { programmaDa } from '../features/pubblicita.js';
 
 const log = makeLog('helix');
 
@@ -267,16 +268,16 @@ export class Helix {
   }
 
   // Programmazione pubblicità (prossimo ad-break, snooze). Scope 'channel:read:ads'.
-  // Ritorna { nextAt, duration, lastAt, snoozeCount } o null (offline / niente scope).
+  // Ritorna { prossima, durata, ultima, snooze } (istanti in millisecondi,
+  // durata in secondi, 0 se non si sa) o null (niente scope / errore). Come si
+  // leggono i campi di Twitch lo sa `programmaDa`, e solo lei.
   async getAdSchedule(channelLogin) {
     const s = streamers.get(channelLogin);
     if (!s?.user_id) return null;
     const token = await this.auth.getToken('broadcaster', channelLogin);
     try {
       const j = await this._request('GET', '/channels/ads', { query: { broadcaster_id: s.user_id }, token });
-      const d = j?.data?.[0];
-      if (!d) return null;
-      return { nextAt: d.next_ad_at || 0, duration: d.duration || 0, lastAt: d.last_ad_at || 0, snoozeCount: d.snooze_count || 0 };
+      return programmaDa(j?.data?.[0]);
     } catch { return null; }
   }
 
