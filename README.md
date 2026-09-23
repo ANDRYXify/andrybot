@@ -47,17 +47,17 @@ con lui.
 
 ## Accesso: solo dal sito, solo per streamer abilitati
 
-La dashboard vive su **bot.andryxify.it** (sul server Hetzner, fuori da Vercel) ma **non è
-esplorabile**: chi ci arriva senza passare da andryxify.it vede solo un `Not Found`.
+La dashboard vive su **------** ma **non è
+esplorabile**.
 
 Il meccanismo (**zero segreti condivisi**):
 
-1. Lo streamer **verificato e abilitato** su andryxify.it apre le impostazioni del suo
+1. Lo streamer **verificato e abilitato** su -------- apre le impostazioni del suo
    account e trova la card **"🤖 Gestisci il tuo SocialBot"** (invisibile a tutti gli altri).
 2. Al clic, il sito conia un **pass usa-e-getta** (256 bit, valido 2 minuti, una volta sola)
    e reindirizza a `bot.andryxify.it/entra?pass=…`.
 3. Il bot "brucia" il pass richiamando il sito: se il sito conferma un login abilitato,
-   crea la sessione. L'ancora di fiducia è l'HTTPS di andryxify.it — **niente chiavi da
+   crea la sessione. L'ancora di fiducia è l'HTTPS di ------- — **niente chiavi da
    incollare in `.env` o nelle variabili d'ambiente**.
 
 Se il sito revoca l'abilitazione, il canale **torna all'Essenziale da solo** (controllo periodico): il bot resta, le funzioni della community si spengono.
