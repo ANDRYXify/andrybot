@@ -219,8 +219,8 @@ const GIOCHI = {
     { h3: 'Abbracci, bacini e il cinque perfetto' },
     { p: [
       'Non costano e non fanno vincere niente: servono a stare insieme. Si abbraccia e si bacia solo chi ha scritto in chat di recente, e chi scrive <code>!nococcole</code> non ne riceve più finché non lo riscrive.',
-      `Il cinque vuole due persone. <code>!cinque @nome</code> alza la mano per qualcuno, <code>!cinque</code> da solo per chiunque; chi risponde con <code>!cinque</code> la batte. Conta la prontezza, come nella vita: chi risponde entro ${ATTESA(DI_SERIE('cinque').perfetto)} fa il <strong>cinque perfetto</strong>, con lo schiocco e il lampo sull'overlay; entro ${ATTESA(DI_SERIE('cinque').pronto)} è un cinque normale, dopo è moscio. Se nessuno risponde in ${ATTESA(DI_SERIE('cinque').scadenza)} la mano resta a mezz'aria.`,
-      'Nelle regole cambi i tempi e tutte le frasi. Il cinque sull\'overlay esce con gli effetti accesi, e chi nel sistema chiede meno movimento lo vede fermo.',
+      `Il cinque vuole due persone. <code>!cinque @nome</code> alza la mano per qualcuno, <code>!cinque</code> da solo per chiunque; chi risponde con <code>!cinque</code> la batte. Ogni tanto, a sorpresa, viene un <strong>cinque perfetto</strong> (di serie ${DI_SERIE('cinque').perfetti} volte su 100). Se nessuno risponde in ${ATTESA(DI_SERIE('cinque').scadenza)} la mano resta a mezz'aria.`,
+      'Succede tutto in chat. Nelle regole cambi quanto spesso viene perfetto, i tempi e tutte le frasi.',
     ] },
 
     { h3: 'Furto' },

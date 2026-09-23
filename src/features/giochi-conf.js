@@ -82,11 +82,10 @@ const BACI = [
 const BACI_TUTTI = ['😘 {a} manda baci a tutta la chat!'];
 const CINQUE_PERFETTO = [
   '💥 CIAK! {a} e {b}: cinque perfetto, schiocco da manuale!',
-  '💥 {a} e {b} si guardano il gomito e... SCHIOCCO PERFETTO!',
-  '💥 Tempismo perfetto: il cinque di {a} e {b} si sente fino in fondo alla chat!',
+  '💥 {a} e {b}... SCHIOCCO PERFETTO!',
+  '💥 Il cinque di {a} e {b} si sente fino in fondo alla chat: perfetto!',
 ];
 const CINQUE_NORMALE = ['🙌 {a} e {b} battono il cinque!', '🙌 Cinque fra {a} e {b}!'];
-const CINQUE_MOSCIO = ['🫳 {a} e {b} battono un cinque un po\' moscio... ma vale lo stesso.', '🫳 Cinque in ritardo fra {a} e {b}: meglio tardi che mai.'];
 const CINQUE_SOSPESO = ['🙋 {a} resta con la mano alzata... nessuno batte il cinque.', '🙋 La mano di {a} resta a mezz\'aria. Che freddo.'];
 
 const COLPO_RIUSCITO = ['💰 Colpo riuscito! La banda scappa col bottino.', '💰 Il caveau si apre e la banda è già lontana.'];
@@ -239,13 +238,11 @@ export const CATALOGO = [
   {
     id: 'cinque', nome: T('Batti il cinque', 'High five', 'Choca esos cinco'),
     param: [
-      { k: 'perfetto', tipo: 'secondi', def: 4, min: 1, max: 15, eti: T('Chi risponde entro questi secondi fa il cinque perfetto', 'Answering within these seconds makes a perfect high five', 'Quien responde en estos segundos hace el cinco perfecto') },
-      { k: 'pronto', tipo: 'secondi', def: 15, min: 1, max: 120, eti: T('Entro questi è un cinque normale; dopo, moscio', 'Within these it is a normal high five; after, a limp one', 'En estos es un cinco normal; después, flojo') },
+      { k: 'perfetti', tipo: 'percento', def: 20, min: 0, max: 100, eti: T('Quante volte su cento il cinque viene perfetto', 'How many times out of a hundred the high five comes out perfect', 'Cuántas veces de cada cien el cinco sale perfecto') },
       { k: 'scadenza', tipo: 'secondi', def: 30, min: 5, max: 300, eti: T('Dopo questi la mano resta alzata', 'After these the hand is left hanging', 'Tras estos la mano se queda en el aire') },
       ATTESA(5),
       { k: 'frasiPerfetto', tipo: 'elenco', def: CINQUE_PERFETTO, max: 20, lungo: 200, segnaposto: ['a', 'b'], eti: T('Il cinque perfetto: {a} alza, {b} batte', 'The perfect high five: {a} raises, {b} hits', 'El cinco perfecto: {a} levanta, {b} choca') },
       { k: 'frasiNormale', tipo: 'elenco', def: CINQUE_NORMALE, max: 20, lungo: 200, segnaposto: ['a', 'b'], eti: T('Il cinque normale', 'The normal high five', 'El cinco normal') },
-      { k: 'frasiMoscio', tipo: 'elenco', def: CINQUE_MOSCIO, max: 20, lungo: 200, segnaposto: ['a', 'b'], eti: T('Il cinque moscio', 'The limp high five', 'El cinco flojo') },
       { k: 'frasiSospeso', tipo: 'elenco', def: CINQUE_SOSPESO, max: 20, lungo: 200, segnaposto: ['a'], eti: T('La mano rimasta alzata: {a}', 'The hand left hanging: {a}', 'La mano en el aire: {a}') },
     ],
     resa: null,

@@ -83,7 +83,6 @@ import * as settimanaFeat from './features/settimana.js';
 import * as dcCollega from './features/discord-collega.js';
 import * as pub from './features/pubblicita.js';
 import * as modalitaFeat from './features/modalita-chat.js';
-import * as coccoleFeat from './features/coccole.js';
 import * as bossFeat from './features/boss.js';
 
 const log = makeLog('bot');
@@ -189,8 +188,6 @@ export class BotManager {
     this.modalita.riprendi();
     if (this.modules) this.modules.modalita = this.modalita;
     games.impostaModalita(this.modalita);
-    // Il batti il cinque si vede e si sente sull'overlay.
-    coccoleFeat.impostaSpinta((ch, p) => this.effects?.emit?.(ch, p));
     // Il boss: la barra della vita sull'overlay, e la festa in solo emote.
     bossFeat.impostaSpinta((ch, p) => this.effects?.emit?.(ch, p));
     bossFeat.impostaModalita(this.modalita);

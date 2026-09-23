@@ -62,21 +62,12 @@
     applausi:   (c, d, t) => { for (let i = 0; i < 22; i++) { const j = t + i * 0.035 + Math.random() * 0.015; rumore(c, d, { t0: j, dur: 0.05, picco: 0.12 + Math.random() * 0.06, tipoFiltro: 'bandpass', f0: 1500 + Math.random() * 900, q: 1.2 }); } },
     laser:      (c, d, t) => { tono(c, d, { tipo: 'sawtooth', f0: 1600, f1: 180, t0: t, dur: 0.3, picco: 0.3 }); },
     salita:     (c, d, t) => { [392, 523, 659, 784, 1046].forEach((f, i) => tono(c, d, { tipo: 'square', f0: f, t0: t + i * 0.07, dur: 0.09, picco: 0.2 })); },
-    schiocco:   (c, d, t) => { rumore(c, d, { t0: t, dur: 0.07, picco: 0.55, tipoFiltro: 'bandpass', f0: 2200, f1: 1400, q: 1.1 }); tono(c, d, { tipo: 'sine', f0: 1150, f1: 900, t0: t, dur: 0.045, picco: 0.22 }); },
-    schioccoPerfetto: (c, d, t) => {
-      rumore(c, d, { t0: t, dur: 0.014, picco: 0.9, tipoFiltro: 'highpass', f0: 3200, q: 0.7 });
-      rumore(c, d, { t0: t, dur: 0.09, picco: 0.75, tipoFiltro: 'bandpass', f0: 2000, f1: 1200, q: 1.3 });
-      tono(c, d, { tipo: 'sine', f0: 1100, f1: 820, t0: t, dur: 0.06, picco: 0.34 });
-      tono(c, d, { tipo: 'sine', f0: 150, f1: 60, t0: t, dur: 0.13, picco: 0.42 });
-      rumore(c, d, { t0: t + 0.08, dur: 0.3, picco: 0.07, tipoFiltro: 'bandpass', f0: 1700, q: 0.9 });
-    },
   };
 
   const NOMI = {
     campanello: 'Campanello', campana: 'Campana', acqua: 'Goccia d\'acqua', moneta: 'Moneta',
     tamburo: 'Tamburo', trombetta: 'Trombetta', errore: 'Errore / buzzer', tada: 'Ta-daa!',
     pop: 'Pop', whoosh: 'Whoosh', applausi: 'Applausi', laser: 'Laser', salita: 'Power-up',
-    schiocco: 'Schiocco di un cinque', schioccoPerfetto: 'Schiocco del cinque perfetto',
   };
 
   const lista = Object.keys(RICETTE).map((id) => ({ id, nome: NOMI[id] || id }));

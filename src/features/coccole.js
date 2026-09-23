@@ -8,12 +8,9 @@
 //  · CHI NON NE VUOLE, NON NE RICEVE. `!nococcole` e da li' niente abbracci,
 //    bacini o cinque verso di te, finche' non lo riscrivi. Un bacio in chat da
 //    uno sconosciuto non e' per tutti, e dirlo deve costare una parola.
-//  · IL CINQUE PERFETTO E' UNA QUESTIONE DI TEMPO. Lo schiocco vero nasce quando
-//    i palmi arrivano insieme, a circa 45 gradi e sovrapposti a meta': l'aria
-//    esce cosi' in fretta da fare un'onda d'urto. Il trucco per non mancarlo e'
-//    guardare il gomito dell'altro, cioe' anticipare. In chat l'equivalente e'
-//    la prontezza: chi risponde al volo fa il cinque perfetto, e l'overlay lo
-//    fa vedere e sentire. Chi risponde tardi fa un cinque moscio, e chi non
+//  · IL CINQUE STA IN CHAT. Uno alza la mano, un altro la batte; ogni tanto, a
+//    sorpresa, viene un cinque perfetto (`perfetti` volte su cento). Niente
+//    overlay e niente suono: e' una cosa fra due persone in chat. Chi non
 //    risponde lascia l'altro con la mano alzata.
 //
 // Il ragionamento sta in docs/COCCOLE.md.
@@ -29,10 +26,6 @@ function riempi(modello, valori) {
   for (const [k, v] of Object.entries(valori)) t = t.split('{' + k + '}').join(String(v));
   return t;
 }
-
-// L'overlay lo da' il bot all'avvio: qui arriva gia' fatto.
-let spinta = null;
-export function impostaSpinta(fn) { spinta = typeof fn === 'function' ? fn : null; }
 
 // ── chi non ne vuole ──────────────────────────────────────────────────────
 const CHIAVE_NO = 'coccole-no';
@@ -84,19 +77,10 @@ export function gesto(tipo, channel, msg, args, say, { inChat }) {
 // ── il batti il cinque ────────────────────────────────────────────────────
 //
 // `!cinque @nome` alza la mano per qualcuno, `!cinque` da solo per chiunque.
-// Chi risponde con `!cinque` (o `!cinque @chi-ha-alzato`) la batte. Il tempo
-// fra la mano alzata e la risposta decide lo schiocco.
-const mani = new Map();              // canale → Map(chi-alza → { nome, per, ts, timer })
+// Chi risponde con `!cinque` (o `!cinque @chi-ha-alzato`) la batte.
+const mani = new Map();              // canale → Map(chi-alza → { nome, per, timer })
 
-const FRASI = { perfetto: 'frasiPerfetto', normale: 'frasiNormale', moscio: 'frasiMoscio' };
-
-// Le soglie non si raddrizzano: con `pronto` sotto `perfetto` il cinque
-// normale semplicemente non c'e', e oltre la scadenza la mano e' gia' giu'.
-export function livelloCinque(secondi, c) {
-  if (secondi <= c.perfetto) return 'perfetto';
-  if (secondi <= c.pronto) return 'normale';
-  return 'moscio';
-}
+export const cinquePerfetto = (c, caso = Math.random) => caso() * 100 < c.perfetti;
 
 export const maniAlzate = (channel) => [...(mani.get(channel) || new Map()).entries()].map(([chi, m]) => ({ chi, per: m.per }));
 
@@ -109,7 +93,7 @@ function abbassa(channel, chi) {
   return m;
 }
 
-export function cinque(channel, msg, args, say, { inChat }) {
+export function cinque(channel, msg, args, say, { inChat, caso = Math.random }) {
   const c = conf(channel, 'cinque');
   const io = pulito(msg.user);
   const nome = msg.display || msg.user;
@@ -130,9 +114,7 @@ export function cinque(channel, msg, args, say, { inChat }) {
   }
   if (chi) {
     const m = abbassa(channel, chi);
-    const livello = livelloCinque((Date.now() - m.ts) / 1000, c);
-    say(riempi(scegli(c[FRASI[livello]]), { a: m.nome, b: nome }));
-    try { spinta?.(channel, { tipo: 'cinque', a: m.nome, b: nome, livello }); } catch { /* l'overlay e' un di piu' */ }
+    say(riempi(scegli(cinquePerfetto(c, caso) ? c.frasiPerfetto : c.frasiNormale), { a: m.nome, b: nome }));
     return;
   }
 
@@ -148,7 +130,7 @@ export function cinque(channel, msg, args, say, { inChat }) {
     if (m) { try { say(riempi(scegli(c.frasiSospeso), { a: m.nome })); } catch { /* niente */ } }
   }, c.scadenza * 1000);
   timer.unref?.();
-  aperte.set(io, { nome, per: bersaglio || '', ts: Date.now(), timer });
+  aperte.set(io, { nome, per: bersaglio || '', timer });
   say(bersaglio
     ? `✋ ${nome} alza la mano per @${bersaglio}: !cinque per batterla!`
     : `✋ ${nome} alza la mano: chi batte il cinque? !cinque`);

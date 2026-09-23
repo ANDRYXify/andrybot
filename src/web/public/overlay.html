@@ -134,78 +134,35 @@
     
     .contatore-widget { position: absolute; transform: translateY(-50%); z-index: 8; pointer-events: none; }
 
-    #cinque { position: fixed; inset: 0; pointer-events: none; z-index: 9; overflow: hidden; }
-    .cinque-scena { position: absolute; inset: 0; --contatto-y: calc(50% - 3.1vh); }
-    .cinque-mano { position: absolute; top: 50%; width: 16vh; height: 21vh; margin-top: -14vh; color: #fff; filter: drop-shadow(0 .6vh 2vh rgba(0, 0, 0, .55)); }
-    .cinque-mano svg { width: 100%; height: 100%; display: block; }
-    .cinque-mano.sx { left: 50%; margin-left: -12.9vh; animation: cinque-sx .3s cubic-bezier(.6, 0, 1, .5) both, cinque-rimbalzo-sx .5s .3s ease-out forwards, cinque-via 1.1s 1.5s ease-in forwards; }
-    .cinque-mano.dx { left: 50%; margin-left: -3.1vh; animation: cinque-dx .3s cubic-bezier(.6, 0, 1, .5) both, cinque-rimbalzo-dx .5s .3s ease-out forwards, cinque-via 1.1s 1.5s ease-in forwards; }
-    @keyframes cinque-sx { from { transform: translateX(-60vw) rotate(-10deg); } to { transform: translateX(0) rotate(22deg); } }
-    @keyframes cinque-dx { from { transform: translateX(60vw) scaleX(-1) rotate(-10deg); } to { transform: translateX(0) scaleX(-1) rotate(22deg); } }
-    @keyframes cinque-rimbalzo-sx { from { transform: translateX(0) rotate(22deg); } 40% { transform: translateX(-3vh) rotate(14deg); } to { transform: translateX(-1.5vh) rotate(18deg); } }
-    @keyframes cinque-rimbalzo-dx { from { transform: translateX(0) scaleX(-1) rotate(22deg); } 40% { transform: translateX(3vh) scaleX(-1) rotate(14deg); } to { transform: translateX(1.5vh) scaleX(-1) rotate(18deg); } }
-    @keyframes cinque-via { to { opacity: 0; } }
-    .cinque-onda { position: absolute; left: 50%; top: var(--contatto-y); width: 2vh; height: 2vh; transform: translate(-50%, -50%); border-radius: 50%; border: .5vh solid #fff; opacity: 0; animation: cinque-onda .7s .3s cubic-bezier(.1, .6, .3, 1) forwards; }
-    .cinque-onda.due { animation-delay: .38s; border-width: .3vh; }
-    @keyframes cinque-onda { from { width: 2vh; height: 2vh; opacity: .95; } to { width: 70vh; height: 70vh; opacity: 0; } }
-    .cinque-lampo { position: absolute; left: 50%; top: var(--contatto-y); width: 70vh; height: 70vh; margin: -35vh 0 0 -35vh; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, .95) 0, rgba(255, 244, 200, .5) 22%, transparent 60%); opacity: 0; animation: cinque-lampo .35s .29s ease-out forwards; }
-    @keyframes cinque-lampo { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(1.2); } }
-    .cinque-scintille { position: absolute; left: 50%; top: var(--contatto-y); width: 0; height: 0; }
-    .cinque-scintille i { position: absolute; left: -.4vh; top: -2.5vh; width: .8vh; height: 5vh; border-radius: .4vh; background: #ffe27a; opacity: 0; --r: 0deg; transform: rotate(var(--r)) translateY(-9vh); animation: cinque-scintilla .5s .31s ease-out forwards; }
-    .cinque-scintille i:nth-child(2) { --r: 45deg; }
-    .cinque-scintille i:nth-child(3) { --r: 90deg; }
-    .cinque-scintille i:nth-child(4) { --r: 135deg; }
-    .cinque-scintille i:nth-child(5) { --r: 180deg; }
-    .cinque-scintille i:nth-child(6) { --r: 225deg; }
-    .cinque-scintille i:nth-child(7) { --r: 270deg; }
-    .cinque-scintille i:nth-child(8) { --r: 315deg; }
-    @keyframes cinque-scintilla { from { opacity: 1; transform: rotate(var(--r)) translateY(-9vh); } to { opacity: 0; transform: rotate(var(--r)) translateY(-16vh); } }
-    .cinque-scritta { position: absolute; left: 0; right: 0; top: 64%; text-align: center; color: #fff; text-shadow: 0 3px 18px rgba(0, 0, 0, .75), 0 0 2px rgba(0, 0, 0, .9); animation: cinque-scritta .45s .32s cubic-bezier(.2, 1.4, .4, 1) both, cinque-via .6s 2s ease-in forwards; }
-    .cinque-scritta strong { display: block; font-weight: 900; font-size: 7vh; letter-spacing: .02em; line-height: 1.05; }
-    .cinque-scritta span { display: block; font-weight: 700; font-size: 3.4vh; margin-top: .6vh; }
-    @keyframes cinque-scritta { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
-    .cinque-perfetto { animation: cinque-scossa .28s .3s linear both; }
-    @keyframes cinque-scossa { 0%, 100% { transform: none; } 20% { transform: translate(-1vh, .6vh); } 40% { transform: translate(.9vh, -.7vh); } 60% { transform: translate(-.6vh, -.4vh); } 80% { transform: translate(.4vh, .5vh); } }
-    .cinque-perfetto .cinque-scritta strong { font-size: 9vh; color: #ffe27a; }
-    .cinque-normale .cinque-lampo, .cinque-normale .cinque-onda.due, .cinque-normale .cinque-scintille,
-    .cinque-moscio .cinque-lampo, .cinque-moscio .cinque-onda, .cinque-moscio .cinque-scintille { display: none; }
-    .cinque-moscio .cinque-mano.sx, .cinque-moscio .cinque-mano.dx { animation-duration: .55s, .5s, 1.1s; animation-delay: 0s, .55s, 1.5s; animation-timing-function: ease-out, ease-out, ease-in; }
-    .cinque-moscio .cinque-scritta { animation-delay: .6s, 2s; }
-    .cinque-moscio .cinque-scritta strong { font-size: 5vh; font-weight: 700; opacity: .85; }
-    #boss { position: fixed; left: 50%; top: 2.5vh; width: min(64vw, 100vh); transform: translateX(-50%); pointer-events: none; z-index: 8; }
-    .boss-carta { position: relative; padding: 1.3vh 2vh 1.5vh; border-radius: 1.6vh; background: rgba(16, 13, 22, .8); border: .25vh solid rgba(255, 255, 255, .16); color: #fff; box-shadow: 0 1vh 4vh rgba(0, 0, 0, .45); animation: boss-entra .45s cubic-bezier(.2, 1.3, .4, 1) both; }
-    @keyframes boss-entra { from { opacity: 0; transform: translateY(-4vh) scale(.92); } to { opacity: 1; transform: none; } }
-    .boss-testa { display: flex; justify-content: space-between; align-items: baseline; gap: 2vh; }
-    .boss-nome { font-size: 3vh; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .boss-conto { font-size: 2.3vh; font-weight: 700; font-variant-numeric: tabular-nums; opacity: .85; white-space: nowrap; }
-    .boss-barra { position: relative; height: 2.6vh; margin-top: 1vh; border-radius: 1.3vh; background: rgba(255, 255, 255, .12); overflow: hidden; }
-    .boss-scia, .boss-vita { position: absolute; top: 0; bottom: 0; left: 0; width: 100%; border-radius: 1.3vh; }
+    #boss { position: fixed; left: 50%; top: 2.5vh; width: min(90vw, calc(var(--u) * 100)); transform: translateX(-50%); pointer-events: none; z-index: 8; --u: min(1vh, 1vw); }
+    .boss-carta { position: relative; padding: calc(var(--u) * 1.3) calc(var(--u) * 2) calc(var(--u) * 1.5); border-radius: calc(var(--u) * 1.6); background: rgba(16, 13, 22, .8); border: calc(var(--u) * .25) solid rgba(255, 255, 255, .16); color: #fff; box-shadow: 0 calc(var(--u) * 1) calc(var(--u) * 4) rgba(0, 0, 0, .45); animation: boss-entra .45s cubic-bezier(.2, 1.3, .4, 1) both; }
+    @keyframes boss-entra { from { opacity: 0; transform: translateY(calc(var(--u) * -4)) scale(.92); } to { opacity: 1; transform: none; } }
+    .boss-testa { display: flex; justify-content: space-between; align-items: baseline; gap: calc(var(--u) * 2); }
+    .boss-nome { flex: 1; min-width: 0; font-size: calc(var(--u) * 3); font-weight: 800; text-wrap: balance; overflow-wrap: anywhere; }
+    .boss-conto { font-size: calc(var(--u) * 2.3); font-weight: 700; font-variant-numeric: tabular-nums; opacity: .85; white-space: nowrap; }
+    .boss-barra { position: relative; height: calc(var(--u) * 2.6); margin-top: calc(var(--u) * 1); border-radius: calc(var(--u) * 1.3); background: rgba(255, 255, 255, .12); overflow: hidden; }
+    .boss-scia, .boss-vita { position: absolute; top: 0; bottom: 0; left: 0; width: 100%; border-radius: calc(var(--u) * 1.3); }
     .boss-scia { background: rgba(255, 255, 255, .7); transition: width .6s .35s ease-out; }
     .boss-vita { background: linear-gradient(90deg, #d9303a, #ff7b42); transition: width .25s ease-out; }
-    .boss-tempo { height: .6vh; margin-top: .9vh; border-radius: .3vh; background: rgba(255, 255, 255, .5); transform-origin: left center; animation-name: boss-tempo; animation-timing-function: linear; animation-fill-mode: forwards; }
+    .boss-tempo { height: calc(var(--u) * .6); margin-top: calc(var(--u) * .9); border-radius: calc(var(--u) * .3); background: rgba(255, 255, 255, .5); transform-origin: left center; animation-name: boss-tempo; animation-timing-function: linear; animation-fill-mode: forwards; }
     @keyframes boss-tempo { from { transform: scaleX(1); } to { transform: scaleX(0); } }
     .boss-colpito { animation: boss-scossa .22s linear; }
-    @keyframes boss-scossa { 0%, 100% { transform: none; } 25% { transform: translateX(-.8vh); } 50% { transform: translateX(.7vh); } 75% { transform: translateX(-.4vh); } }
-    .boss-danno { position: absolute; top: 100%; margin-top: .6vh; font-size: 2.4vh; font-weight: 800; color: #ffd166; text-shadow: 0 2px 10px rgba(0, 0, 0, .8); white-space: nowrap; animation: boss-danno 1.1s ease-out forwards; }
-    @keyframes boss-danno { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(3.5vh); } }
-    .boss-fine { display: none; margin-top: .8vh; text-align: center; font-size: 4.4vh; font-weight: 900; letter-spacing: .04em; }
-    .boss-ko .boss-fine, .boss-fuga .boss-fine { display: block; animation: cinque-scritta .4s cubic-bezier(.2, 1.4, .4, 1) both; }
+    @keyframes boss-scossa { 0%, 100% { transform: none; } 25% { transform: translateX(calc(var(--u) * -.8)); } 50% { transform: translateX(calc(var(--u) * .7)); } 75% { transform: translateX(calc(var(--u) * -.4)); } }
+    .boss-danni { position: absolute; left: 0; right: 0; top: 100%; display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .4); margin-top: calc(var(--u) * .8); }
+    .boss-danno { font-size: calc(var(--u) * 2.4); font-weight: 800; color: #ffd166; text-shadow: 0 2px 10px rgba(0, 0, 0, .8); white-space: nowrap; animation: boss-danno 1.1s ease-out forwards; }
+    @keyframes boss-danno { 0% { opacity: 0; transform: translateY(calc(var(--u) * -1)); } 15% { opacity: 1; transform: none; } 70% { opacity: 1; } 100% { opacity: 0; } }
+    .boss-fine { display: none; margin-top: calc(var(--u) * .8); text-align: center; font-size: calc(var(--u) * 4.4); font-weight: 900; letter-spacing: .04em; }
+    .boss-ko .boss-fine, .boss-fuga .boss-fine { display: block; animation: boss-scritta .4s cubic-bezier(.2, 1.4, .4, 1) both; }
+    @keyframes boss-scritta { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
     .boss-ko .boss-fine { color: #ffe27a; }
     .boss-fuga .boss-fine { color: rgba(255, 255, 255, .75); }
-    .boss-via { animation: cinque-via .6s ease-in forwards; }
+    .boss-via { animation: boss-via .6s ease-in forwards; }
+    @keyframes boss-via { to { opacity: 0; } }
     @media (prefers-reduced-motion: reduce) {
       .boss-carta, .boss-colpito, .boss-ko .boss-fine, .boss-fuga .boss-fine { animation: none; }
-      .boss-via { animation: cinque-via .6s ease-in forwards; }
+      .boss-via { animation: boss-via .6s ease-in forwards; }
       .boss-danno { display: none; }
       .boss-scia, .boss-vita { transition: none; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .cinque-perfetto { animation: none; }
-      .cinque-scena .cinque-mano.sx, .cinque-scena .cinque-mano.dx { animation: cinque-via 1.1s 1.5s ease-in forwards; }
-      .cinque-mano.sx { transform: rotate(22deg); }
-      .cinque-mano.dx { transform: scaleX(-1) rotate(22deg); }
-      .cinque-scena .cinque-scritta { animation: cinque-via .6s 2s ease-in forwards; }
-      .cinque-lampo, .cinque-onda, .cinque-scintille { display: none; }
     }
   </style>
 </head>
@@ -213,7 +170,6 @@
   <div id="palco"></div>
   <div id="etichette"></div>
   <div id="testi"></div>
-  <div id="cinque"></div>
   <div id="boss"></div>
   <div id="penitenze"></div>
   <div id="alert"></div>
