@@ -73,7 +73,9 @@ for (const tema of ['light', 'dark']) {
   await p.waitForTimeout(400);
 
   for (const [sel, soglia] of PROVE) {
-    const el = await p.$(sel);
+    // Il primo VISIBILE: lo stesso bottone puo' stare anche in una finestra
+    // chiusa (la scelta fra Twitch e Kick), e quello non lo guarda nessuno.
+    const el = await p.$(`${sel}:visible`);
     if (!el) { guai.push(`${tema} ${sel}: non c'e'`); continue; }
     for (const sopra of [false, true]) {
       if (sopra) { await el.hover(); await p.waitForTimeout(450); }

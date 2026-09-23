@@ -1453,6 +1453,7 @@ function preparaCarte(scope = document) {
   for (const c of scope.querySelectorAll('.carta')) {
     c.classList.remove('dentro');
     c.classList.add('rivela');
+    c.style.setProperty('--rev-x', '0px');
     obs.observe(c);
   }
   _reteDiSicurezza();
@@ -1520,6 +1521,7 @@ function rivelaCarte(scope = document) {
     const visibile = r.top < window.innerHeight * 0.92;
 
     c.style.setProperty('--rev-delay', visibile ? 230 + Math.min(inVista++, 5) * 55 + 'ms' : '0ms');
+    if (visibile) c.style.removeProperty('--rev-x'); else c.style.setProperty('--rev-x', '0px');
     obs.observe(c);
   }
   _reteDiSicurezza();

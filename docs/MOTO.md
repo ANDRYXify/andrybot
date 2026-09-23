@@ -339,3 +339,29 @@ separati — con «leggero» lo stacco c'è, con «meno movimento» no.
 Fonti: [McCloud, i sei passaggi](https://understandingcomics177.wordpress.com/about/1-2/2-2/) ·
 [linee d'azione nel manga](https://jerwoodvisualarts.org/blog/how-to-draw-manga-action-lines/) ·
 [impact frames](https://blog.sakugabooru.com/glossary/impact-frames/).
+
+## Quello che si muove non può sparire, e non può allargare la pagina
+
+Due regole, ognuna nata da un difetto vero.
+
+**Un'animazione è un di più.** Se non parte, quello che anima si deve vedere lo
+stesso. Le parole del titolo della scheda (`.pt-parola > i`) avevano l'animazione
+sempre attaccata, ferma (`animation-play-state: paused`) e con `both`: un'animazione
+ferma prima di cominciare mostra il suo primo fotogramma, e il primo fotogramma
+teneva le parole sotto il bordo, dentro una scatola che ritaglia. Finché non
+arrivava la classe `.entra` il titolo non c'era, e al primo caricamento la classe
+non arrivava. Adesso l'animazione esiste solo sotto `.entra`: senza, le parole
+stanno semplicemente al loro posto.
+
+**Un effetto d'entrata non cambia quanto è larga la pagina.** Le carte entrano
+dalla parte verso cui si va (`--rev-x`, 32 px). Lo spostamento lo prendevano
+anche le carte fuori vista, che restavano spostate finché non ci si arrivava: sul
+telefono una carta spostata a destra allargava la pagina di 15 px, e la pagina
+scivolava di lato sotto il dito. Adesso entrano di lato solo le carte che si
+vedono in quel momento (`rivelaCarte`); le altre salgono e basta.
+
+`test/contratto/sempre-visibile.test.mjs` controlla le due regole nel codice.
+`scripts/verifica-larghezza.mjs` apre ogni scheda a 390 px in un browser vero e
+pretende che la pagina non scorra di lato, e `scripts/verifica-contrasto.mjs`
+misura sui pixel il contrasto dei comandi, anche sotto il mouse: girano tutti e
+due a ogni push.
