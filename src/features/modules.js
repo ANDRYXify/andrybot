@@ -20,6 +20,7 @@ import { canaleHa } from './accesso.js';
 import * as spotify from './spotify.js';
 import { comeSiChiama } from './bit.js';
 import { makeLog } from '../logger.js';
+import { leggiDurata, DURATA_DI_SERIE } from './modalita-chat.js';
 
 const log = makeLog('moduli');
 
@@ -944,6 +945,17 @@ export class ModulesEngine {
         else if (r && !r.ok && (r.motivo || '').includes('permesso') && azione.annuncia !== false) {
           dire('🔒 Mi manca il permesso per lo shoutout: riautorizza dalla dashboard.');
         }
+        return;
+      }
+      case 'modalita': {
+        // La modalita' della chat per un tempo. La durata passa
+        // dall'espansione, cosi' «!festa $arg1» la sceglie chi scrive; vuota o
+        // storta e' quella di serie, due minuti. Il motore lo da' il bot.
+        if (!this.modalita) return;
+        const testo = String(await this.espandi(String(azione.durata ?? ''), ctx, { noAzioni: true })).trim();
+        const secondi = leggiDurata(testo) ?? DURATA_DI_SERIE;
+        const esito = await this.modalita.accendiPer(ctx.channel, azione.modo, secondi, { annuncia: azione.annuncia !== false });
+        if (!esito?.ok) log.debug(`#${ctx.channel} modalità ${azione.modo}: ${esito?.motivo || 'non riuscito'}`);
         return;
       }
       case 'regia': {

@@ -91,6 +91,7 @@ import * as dcPreset from '../features/discord-preset.js';
 import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
 import * as giochiConf from '../features/giochi-conf.js';
+import * as modalitaChat from '../features/modalita-chat.js';
 import * as instagram from '../features/instagram.js';
 import * as igAccesso from '../features/instagram-accesso.js';
 import { credenzialiInstagram } from '../features/instagram-credenziali.js';
@@ -247,7 +248,7 @@ const UPLOAD_MAX = 60 * 1024 * 1024;   // 60 MB in ingresso (per clip fino a ~30
 
 // Moduli: tipi di innesco e di azione ammessi (validazione lato API)
 const MOD_TRIGGER = ['comando', 'parola', 'evento', 'timer', 'manuale', 'voce'];
-const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip', 'categoria', 'titolo', 'musica', 'annuncia', 'shoutout', 'punti', 'regia'];
+const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip', 'categoria', 'titolo', 'musica', 'annuncia', 'shoutout', 'punti', 'regia', 'modalita'];
 const MOD_PUNTI_OP = ['aggiungi', 'togli', 'imposta'];
 const MOD_PUNTI_A = ['autore', 'destinatario', 'caso', 'nome'];
 // L'azione «regia» e' un passo di regia di CONSOLify dentro un Modulo: stesse
@@ -7756,6 +7757,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       }
       if (a.tipo === 'annuncia' && !String(a.testo || '').trim()) {
         return 'l\'azione "annuncio" ha bisogno di un testo (anche con variabili come $gioco)';
+      }
+      if (a.tipo === 'modalita') {
+        if (!Object.keys(modalitaChat.MODI).includes(a.modo)) return 'l\'azione "modalità della chat" vuole sapere quale modalità accendere';
+        if (String(a.durata ?? '').length > 40) return 'l\'azione "modalità della chat" vuole una durata corta, come 2m, 90s o $arg1';
       }
       if (a.tipo === 'regia') {
         if (!MOD_REGIA.includes(a.cosa)) return 'l\'azione "regia" vuole sapere se cambiare scena, mutare una fonte o cambiare transizione';

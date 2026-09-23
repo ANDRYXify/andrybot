@@ -78,7 +78,7 @@ test('il motore riceve il ponte dall\'avvio, il server valida l\'azione, e il po
   assert.match(motore, /case 'regia': \{[\s\S]*?await this\.regia\(ctx\.channel, passo\)/, 'l\'azione chiama la funzione ricevuta');
 
   const srv = leggi('src/web/server.js');
-  assert.match(srv, /const MOD_AZIONI = \[[^\]]*'regia'\]/);
+  assert.match(srv, /const MOD_AZIONI = \[[^\]]*'regia'[^\]]*\]/);
   const valida = srv.slice(srv.indexOf('function validaModulo('), srv.indexOf("app.get('/api/streamer/moduli'"));
   assert.match(valida, /a\.tipo === 'regia'/, 'il server valida l\'azione');
   assert.match(valida, /MOD_REGIA\.includes\(a\.cosa\)/, 'la cosa da fare e\' una delle tre');

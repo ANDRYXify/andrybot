@@ -82,6 +82,7 @@ import * as dcEventi from './features/discord-eventi.js';
 import * as settimanaFeat from './features/settimana.js';
 import * as dcCollega from './features/discord-collega.js';
 import * as pub from './features/pubblicita.js';
+import * as modalitaFeat from './features/modalita-chat.js';
 
 const log = makeLog('bot');
 
@@ -179,6 +180,12 @@ export class BotManager {
       chatSettings: (ch, o) => this.helix.chatSoloFollower(ch, !!o.followersOnly, 0),
       alert: (ch, a) => { try { this.alerts?.manuale?.(ch, a); } catch { /* facolt. */ } },
     });
+    // Le modalita' della chat a tempo (solo emote per due minuti): quello che
+    // era acceso prima di un riavvio si riprende da dove era.
+    this.modalita = new modalitaFeat.ModalitaChat({ helix: this.helix, say: (ch, t) => this.say(ch, t) });
+    this.modalita.riprendi();
+    if (this.modules) this.modules.modalita = this.modalita;
+    games.impostaModalita(this.modalita);
     this.penitenze = new PenitenzeEngine({
       say: (ch, t) => this.say(ch, t),
       effects: this.effects,
@@ -329,6 +336,7 @@ export class BotManager {
     clearInterval(this._dcRuoliTimer);
     clearInterval(this._eventiDcTimer);
     clearInterval(this._pubTimer);
+    this.modalita?.ferma();
     for (const t of this._pubSveglie.values()) clearTimeout(t);
     this._pubSveglie.clear();
     clearInterval(this._cancelloTimer);
@@ -927,6 +935,8 @@ export class BotManager {
     // Solo su Twitch, dove il trattenimento esiste.
     if (!msg.piattaforma || msg.piattaforma === 'twitch') {
       this.antibot?.tryComando?.(cmdMsg, parla)?.catch((e) => log.error(`#${login} scudo:`, e?.message || e));
+      // le modalita' della chat a tempo: !soloemote 5m, !messaggiunici, !soloabbonati
+      if (this.modalita) modalitaFeat.tryComando(this.modalita, cmdMsg, parla).catch((e) => log.error(`#${login} modalità:`, e?.message || e));
     }
     // minigiochi: !dado, !slot, !trivia, ...
     try { games.tryGame(cmdMsg, parla); }

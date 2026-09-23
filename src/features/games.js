@@ -480,6 +480,39 @@ export function pescaPesata(tab, caso = Math.random) {
   return tab[tab.length - 1];
 }
 
+// --------------------------------------------------------- sblocca la chat
+// Le modalita' a tempo le tiene un motore solo (modalita-chat.js), che il bot
+// crea all'avvio: qui arriva gia' fatto.
+let modalita = null;
+export function impostaModalita(m) { modalita = m; }
+
+// Si paga solo se la chat cambia davvero: prima si sblocca, poi si toglie.
+async function sblocca(channel, msg, args, say) {
+  const cb = conf(channel, 'sblocca');
+  const nome = msg.display || msg.user;
+  const moneta = nomeMoneta(channel);
+  const k = channel + '|sblocca';
+  const detti = args[0] === undefined ? cb.minuti : Math.round(Number(String(args[0]).replace(/[^0-9]/g, '')));
+  if (!Number.isFinite(detti) || detti < 1) { say(`🔓 Si usa così: !sblocca oppure !sblocca 5 (minuti, fino a ${cb.massimo}).`); return; }
+  const minuti = Math.min(cb.massimo, detti);
+  const costo = minuti * cb.costoMinuto;
+  if ((cooldowns.get(k) || 0) > Date.now()) { say(`🔓 La chat si potrà sbloccare di nuovo fra ${restante(k)}.`); return; }
+  if (points.get(channel, msg.user) < costo) { say(`🔓 Per ${minuti} minut${minuti === 1 ? 'o' : 'i'} servono ${costo} ${moneta}, ${nome}.`); return; }
+  if (!modalita) { say('🔓 Adesso non riesco a cambiare la chat: riprova fra poco.'); return; }
+  cooldowns.set(k, Date.now() + cb.attesa * 1000);
+  const r = await modalita.accendiPer(channel, cb.modo, minuti * 60, { annuncia: false });
+  if (!r.ok || r.esito === 'gia') {
+    cooldowns.delete(k);
+    say(r.esito === 'gia' ? '🔓 La chat è già così: non ti costa niente.' : '🔓 Non sono riuscita a cambiare la chat: le monete restano tue.');
+    return;
+  }
+  points.add(channel, msg.user, -costo);
+  const cosa = cb.modo === 'unici' ? 'messaggi unici' : 'solo emote';
+  say(r.esito === 'esteso'
+    ? `🔓 ${nome} allunga la chat ${cosa} di ${minuti} minut${minuti === 1 ? 'o' : 'i'}! (-${costo} ${moneta})`
+    : `🎉 ${nome} ha sbloccato la chat ${cosa} per ${minuti} minut${minuti === 1 ? 'o' : 'i'}! (-${costo} ${moneta})`);
+}
+
 // --------------------------------------------------------- comando principale
 // Ritorna true se il messaggio era un comando/azione di gioco (gestito).
 export function tryGame(msg, say) {
@@ -660,6 +693,11 @@ export function tryGame(msg, say) {
           if (multa > 0) { points.add(channel, msg.user, -multa); points.add(channel, vittima, multa); }
           say(`🚓 ${nome} viene beccato e paga ${multa} ${moneta()} di multa a ${vittima}! 😂`);
         }
+        return true;
+      }
+
+      case 'sblocca': {
+        sblocca(channel, msg, args, say).catch((e) => log.error('sblocca:', e?.message || e));
         return true;
       }
 

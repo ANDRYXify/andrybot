@@ -118,6 +118,17 @@ export const CATALOGO = [
     ],
     resa: null,
   },
+  {
+    id: 'sblocca', nome: T('Sblocca la chat', 'Unlock the chat', 'Desbloquea el chat'),
+    param: [
+      { k: 'modo', tipo: 'scelta', def: 'emote', scelte: [['emote', T('solo emote', 'emote-only', 'solo emotes')], ['unici', T('messaggi unici', 'unique chat', 'mensajes únicos')]], eti: T('Cosa si sblocca', 'What gets unlocked', 'Qué se desbloquea') },
+      { k: 'costoMinuto', tipo: 'monete', def: 50, min: 1, max: 100000, eti: T('Costo di ogni minuto', 'Cost of each minute', 'Coste de cada minuto') },
+      { k: 'minuti', tipo: 'numero', def: 2, min: 1, max: 60, eti: T('Minuti se non se ne dicono', 'Minutes if none are given', 'Minutos si no se dicen') },
+      { k: 'massimo', tipo: 'numero', def: 10, min: 1, max: 60, eti: T('Minuti al massimo', 'Maximum minutes', 'Minutos como máximo') },
+      { k: 'attesa', tipo: 'secondi', def: 600, min: 0, max: 86400, eti: T('Attesa fra due sblocchi, in tutto il canale', 'Wait between two unlocks, channel-wide', 'Espera entre dos desbloqueos, en todo el canal') },
+    ],
+    resa: { tipo: 'spesa' },
+  },
   { id: 'dado', nome: T('Dado', 'Dice', 'Dado'), param: [ATTESA(3)], resa: null },
   { id: 'moneta', nome: T('Testa o croce', 'Heads or tails', 'Cara o cruz'), param: [ATTESA(3)], resa: null },
 ];
@@ -166,6 +177,7 @@ function valore(p, v) {
   if (v === undefined || v === null) return null;
   if (p.tipo === 'elenco') return elenco(v, p);
   if (p.tipo === 'tabella') return tabella(v, p);
+  if (p.tipo === 'scelta') return p.scelte.some(([id]) => id === v) ? v : null;
   return intero(v, p);
 }
 
@@ -219,6 +231,7 @@ export function valoriDi(settings, id) {
 //   crea     quante ne crea al massimo in un'ora, nel canale
 //   manche   quante ne crea al massimo in un'ora, al ritmo delle manche
 //   passa    le monete passano di tasca, non se ne creano
+//   spesa    le monete escono dall'economia: e' un modo di spenderle
 // `contesto` porta quello che non sta nel gioco: la presenza oraria e ogni
 // quanti minuti al minimo parte una manche.
 function importo(expr, v) {

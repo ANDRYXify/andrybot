@@ -960,6 +960,35 @@ export class Helix {
     }
   }
 
+  // Le impostazioni della chat come sono adesso: servono a non spegnere alla
+  // fine di un tempo quello che non avevamo acceso noi. null se non si sa.
+  async leggiChat(channelLogin) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    try {
+      const j = await this._request('GET', '/chat/settings', { query: { broadcaster_id: s.user_id } });
+      return j?.data?.[0] || null;
+    } catch { return null; }
+  }
+
+  // Cambia una o piu' impostazioni della chat (emote_mode, unique_chat_mode,
+  // subscriber_mode, ...). Scope moderator:manage:chat_settings. Ritorna { ok }.
+  async impostaChat(channelLogin, campi = {}) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return { ok: false, motivo: 'dati mancanti' };
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      await this._request('PATCH', '/chat/settings', {
+        query: { broadcaster_id: s.user_id, moderator_id: s.user_id }, token, body: campi,
+      });
+      return { ok: true };
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante' };
+      log.debug('impostaChat:', e?.message || e);
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
   // Chat ai soli follower (o la riapre): la "serranda" durante un attacco
   // follow-bot. minMinuti = da quanto devono seguire (0 = anche appena seguiti).
   // Richiede lo scope moderator:manage:chat_settings. Ritorna { ok }.

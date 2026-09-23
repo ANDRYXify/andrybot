@@ -26,8 +26,11 @@ function righeRegole() {
     for (const p of g.param) {
       const base = p.tipo === 'elenco' ? `${p.def.length} frasi di serie`
         : p.tipo === 'tabella' ? `${p.def.length} righe di serie`
-          : `${CIFRA(p.def)} ${TIPO_PARAM[p.tipo] || ''}`.trim();
-      const limiti = p.tipo === 'elenco' || p.tipo === 'tabella' ? `fino a ${p.max} righe` : `${CIFRA(p.min)}–${CIFRA(p.max)}`;
+          : p.tipo === 'scelta' ? p.scelte.find(([k]) => k === p.def)[1][0]
+            : `${CIFRA(p.def)} ${TIPO_PARAM[p.tipo] || ''}`.trim();
+      const limiti = p.tipo === 'elenco' || p.tipo === 'tabella' ? `fino a ${p.max} righe`
+        : p.tipo === 'scelta' ? p.scelte.map(([, e]) => e[0]).join(' o ')
+          : `${CIFRA(p.min)}–${CIFRA(p.max)}`;
       righe.push([g.nome[0], p.eti[0], base, limiti]);
     }
   }
@@ -123,6 +126,7 @@ const GIOCHI = {
       ['<code>!roulette</code>', '<code>!rul</code>', 'Punti su rosso, nero, verde o un numero.', `${ATTESA(DI_SERIE('roulette').attesa)} a testa`],
       ['<code>!furto @nome</code>', '<code>!rapina</code>', 'Provi a rubare. Se ti beccano, paghi.', `${ATTESA(DI_SERIE('furto').attesa)} a testa`],
       ['<code>!regala @nome 50</code>', '<code>!dona</code>', 'Passi monete a qualcun altro.', '—'],
+      ['<code>!sblocca</code>', '—', `Spendi monete per mettere la chat in solo emote per ${DI_SERIE('sblocca').minuti} minuti. <code>!sblocca 5</code> per cinque.`, `${ATTESA(DI_SERIE('sblocca').attesa)} di canale`],
       ['<code>!serie</code>', '<code>!presenze</code> <code>!streak</code>', 'A quante dirette di fila sei stato presente, e a quante in tutto. Con un nome, di quella persona.', '—'],
       ['<code>!classificaserie</code>', '<code>!serietop</code> <code>!topserie</code>', 'Chi è venuto a più dirette di fila.', '—'],
     ] },
@@ -179,6 +183,28 @@ const GIOCHI = {
     { p: [
       `Una prova ogni ${ATTESA(DI_SERIE('furto').attesa)} a testa, e solo su chi ha almeno 20 monete. Va a buon fine <strong>${DI_SERIE('furto').riuscita} volte su 100</strong>: prendi fra 10 e ${CIFRA(DI_SERIE('furto').bottino)} monete (mai più di quante ne ha la vittima).`,
       `Se ti beccano paghi una multa fino a ${CIFRA(DI_SERIE('furto').multa)} monete, <strong>alla vittima</strong> e non al nulla: il furto passa monete di tasca, non ne crea.`,
+    ] },
+
+    { h3: 'Sbloccare la chat' },
+    { p: [
+      `Con <code>!sblocca</code> chi ha le monete mette la chat in solo emote per ${DI_SERIE('sblocca').minuti} minuti, o per quanti ne scrive (<code>!sblocca 5</code>, fino a ${DI_SERIE('sblocca').massimo}). Costa ${CIFRA(DI_SERIE('sblocca').costoMinuto)} monete al minuto, e dopo uno sblocco il canale aspetta ${ATTESA(DI_SERIE('sblocca').attesa)} prima del prossimo. Nelle regole scegli cosa si sblocca (solo emote o messaggi unici), il costo e i tempi.`,
+      'Si paga solo se la chat cambia davvero: se la modalità è già accesa da un mod non costa niente, e se Twitch dice di no le monete restano tue. Alla fine la chat torna com\'era da sola, anche se nel frattempo il bot si riavvia. È un modo di <strong>spendere</strong> le monete: escono dall\'economia invece di girare.',
+    ] },
+
+    { h2: 'Le modalità della chat a tempo' },
+    { p: [
+      'Twitch ha le modalità della chat ma non il tempo: si accendono e restano lì finché qualcuno si ricorda di spegnerle. Qui si accendono <strong>per un tempo</strong>, e si spengono da sole.',
+      'I mod le accendono in chat. Senza durata sono due minuti, con una durata è quella: <code>5m</code>, <code>90s</code>, <code>10</code> (minuti). Con <code>off</code> finiscono subito.',
+    ] },
+    { tabella: [
+      ['Comando', 'Cosa fa'],
+      ['<code>!soloemote</code>', 'Solo emote. <code>!soloemote 5m</code> per cinque minuti.'],
+      ['<code>!messaggiunici</code>', 'Nessuno può ripetere un messaggio già scritto.'],
+      ['<code>!soloabbonati</code>', 'Scrivono solo gli abbonati.'],
+    ] },
+    { p: [
+      'Le stesse modalità le accende un Modulo, con l\'azione «Modalità della chat a tempo»: un premio a punti canale, un evento (un hype train, un raid), un comando tuo come <code>!festa $arg1</code>.',
+      'Se la modalità era già accesa da un mod, il bot non la tocca e alla fine non la spegne: sarebbe disfare la scelta di un altro. Chat lenta e soli follower non ci sono apposta: le usa lo scudo contro gli attacchi, e uno sblocco per gioco non deve riaprire una serranda in mezzo a un raid.',
     ] },
 
     { h2: 'Le manche automatiche' },
@@ -342,6 +368,7 @@ const MODULI = {
       ['Aspetta', 'una pausa prima dell\'azione dopo', 'i secondi (fino a 30)', '—'],
       ['Chiama un webhook', 'manda i dati a un indirizzo tuo', 'l\'URL, e se usare la risposta', 'un servizio tuo'],
       ['Regia: scena, muto o transizione', 'comanda il programma con cui mandi in onda', 'la scena, o la fonte e come mutarla, o la transizione', 'il pannello aperto sul computer della regia, collegato in CONSOLify'],
+      ['Modalità della chat a tempo', 'mette la chat in solo emote, messaggi unici o solo abbonati per un tempo, poi la rimette com\'era', 'quale modalità e per quanto (vuoto = 2 minuti, oppure 5m, 90s o $arg1)', 'il permesso di gestire le impostazioni della chat'],
     ] },
     { h3: 'Dai o togli punti' },
     { p: [

@@ -46,6 +46,7 @@ export const MODULI = {
   sito: { nome: ['Giochi del sito', 'Site games', 'Juegos del sitio'], file: 'gamesbridge.js', acceso: (s) => !!(s.giochiSito?.attivo) },
   discord: { nome: ['Ruoli su Discord', 'Discord roles', 'Roles en Discord'], file: 'discord-collega.js', acceso: () => true },
   scudo: { nome: ['Scudo', 'Shield', 'Escudo'], file: 'antibot.js', acceso: (s) => !!s.antibot?.attivo },
+  modalita: { nome: ['Modalità della chat a tempo', 'Timed chat modes', 'Modos del chat con tiempo'], file: 'modalita-chat.js', acceso: () => true },
 };
 
 // AGGIUNGERE UN COMANDO E' UNA RIGA. Questa e' la forma completa: quel che non
@@ -98,6 +99,8 @@ export const COMANDI = [
     cosa: ['Punta le monete su rosso o nero.', 'Bet your coins on red or black.', 'Apuesta las monedas al rojo o al negro.'], costa: true },
   { id: 'furto', modulo: 'giochi', nomi: ['furto', 'rapina'], titolo: ['Furto', 'Heist', 'Robo'],
     cosa: ['Prova a rubare monete a un\'altra persona. Può andare male.', 'Try to steal coins from someone else. It can go wrong.', 'Intenta robar monedas a otra persona. Puede salir mal.'], costa: true },
+  { id: 'sblocca', modulo: 'giochi', nomi: ['sblocca'], titolo: ['Sblocca la chat', 'Unlock the chat', 'Desbloquea el chat'],
+    cosa: ['Chi lo scrive spende monete per mettere la chat in solo emote (o quello che scegli tu) per qualche minuto. !sblocca 5 per cinque minuti.', 'The writer spends coins to put the chat in emote-only (or what you choose) for a few minutes. !sblocca 5 for five minutes.', 'Quien lo escribe gasta monedas para poner el chat en solo emotes (o lo que elijas) unos minutos. !sblocca 5 para cinco minutos.'], costa: true },
   { id: 'regala', modulo: 'giochi', nomi: ['regala', 'dona'], titolo: ['Regala monete', 'Gift coins', 'Regala monedas'],
     cosa: ['Passa monete tue a qualcun altro.', 'Pass your coins to someone else.', 'Pasa monedas tuyas a otra persona.'], costa: true },
 
@@ -186,6 +189,15 @@ export const COMANDI = [
     cosa: ['Mette un brano nella coda di Spotify.', 'Puts a track in the Spotify queue.', 'Pone un tema en la cola de Spotify.'] },
   { id: 'song', modulo: 'musica', nomi: ['song', 'brano', 'np', 'nowplaying'], titolo: ['Cosa sta suonando', 'What\'s playing', 'Qué está sonando'],
     cosa: ['Dice il brano in riproduzione.', 'Says the track that is playing.', 'Dice el tema que está sonando.'] },
+
+  // LE MODALITA' DELLA CHAT A TEMPO: quello che Twitch accende e basta, qui si
+  // accende per un tempo. Senza durata due minuti, con «5m» cinque.
+  { id: 'soloemote', modulo: 'modalita', nomi: ['soloemote'], titolo: ['Solo emote a tempo', 'Timed emote-only', 'Solo emotes con tiempo'], chi: 'mod',
+    cosa: ['Mette la chat in solo emote per due minuti, o per il tempo che scrivi (!soloemote 5m). Poi torna com\'era da sola.', 'Puts the chat in emote-only for two minutes, or for the time you write (!soloemote 5m). Then it goes back by itself.', 'Pone el chat en solo emotes dos minutos, o el tiempo que escribas (!soloemote 5m). Luego vuelve solo a como estaba.'] },
+  { id: 'messaggiunici', modulo: 'modalita', nomi: ['messaggiunici'], titolo: ['Messaggi unici a tempo', 'Timed unique chat', 'Mensajes únicos con tiempo'], chi: 'mod',
+    cosa: ['Per un tempo nessuno può ripetere un messaggio già scritto. Due minuti se non dici quanto.', 'For a while nobody can repeat a message already written. Two minutes unless you say how long.', 'Durante un tiempo nadie puede repetir un mensaje ya escrito. Dos minutos si no dices cuánto.'] },
+  { id: 'soloabbonati', modulo: 'modalita', nomi: ['soloabbonati'], titolo: ['Solo abbonati a tempo', 'Timed subscribers-only', 'Solo suscriptores con tiempo'], chi: 'mod',
+    cosa: ['Per un tempo scrivono solo gli abbonati. Due minuti se non dici quanto.', 'For a while only subscribers can write. Two minutes unless you say how long.', 'Durante un tiempo solo escriben los suscriptores. Dos minutos si no dices cuánto.'] },
 
   // L'USCITA DAL TRATTENIMENTO. Lo scudo trattiene i messaggi degli account
   // appena nati, e l'avviso in chat dice ai mod come farli scrivere: questo e'
