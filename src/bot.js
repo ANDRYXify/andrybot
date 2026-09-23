@@ -76,6 +76,7 @@ import { LiveListener } from './stream/listener.js';
 import { avviaBackupAuto, stopBackupAuto } from './backup.js';
 import * as dcGiro from './features/discord-giro.js';
 import * as dcEventi from './features/discord-eventi.js';
+import * as settimanaFeat from './features/settimana.js';
 import * as dcCollega from './features/discord-collega.js';
 import * as pub from './features/pubblicita.js';
 
@@ -291,8 +292,10 @@ export class BotManager {
     // restare sbagliati per un giorno intero: quattro volte al giorno bastano,
     // e la prima poco dopo l'avvio, perche' il cambio d'ora puo' essere gia'
     // passato mentre il bot era fermo.
-    this._eventiDcTimer = setInterval(() => this._giroEventiDiscord(), 6 * 60 * 60_000);
-    setTimeout(() => this._giroEventiDiscord(), 150_000);
+    // Il Programma di Twitch va allo stesso passo e per la stessa ragione: e' la
+    // stessa settimana scritta in un altro posto.
+    this._eventiDcTimer = setInterval(() => { this._giroEventiDiscord(); this._giroProgramma(); }, 6 * 60 * 60_000);
+    setTimeout(() => { this._giroEventiDiscord(); this._giroProgramma(); }, 150_000);
     // La pubblicità: il preavviso e il «sono tornato» sono tutti e due questioni
     // di secondi, e mezzo minuto è la metà del preavviso più corto che si possa
     // chiedere. Il giro non telefona a Twitch a ogni passaggio: vedi
@@ -1714,15 +1717,35 @@ export class BotManager {
     for (const ch of dcRuoli.conServer()) {
       try {
         const s = streamers.get(ch);
-        const conf = s?.settings?.discordEventi;
-        if (!conf?.acceso) continue;
+        const cal = settimanaFeat.perIlCalendario(s?.settings);
+        if (!cal.conf.acceso) continue;
         const r = dcRuoli.get(ch);
         const token = dcApi.tokenDi(r);
         if (!token || !r?.guild) continue;
         const me = await dcApi.io(token, r.guild);
         if (!me.ok) continue;
-        await dcEventi.sincronizza(token, r.guild, me, conf, s?.settings?.grafiche?.giorni || []);
+        await dcEventi.sincronizza(token, r.guild, me, cal.conf, cal.giorni);
       } catch (e) { log.debug('eventiDiscord', ch, e?.message || e); }
+    }
+  }
+
+  // IL PROGRAMMA DI TWITCH: rimette a posto quello che il tempo sposta (l'ora
+  // legale, un segmento tolto a mano che va rimesso). Scrive solo la memoria di
+  // cosa e' nostro, e solo se nel frattempo la settimana non e' stata salvata:
+  // in quel caso il salvataggio ha gia' fatto il suo giro, e il nostro e' vecchio.
+  async _giroProgramma() {
+    for (const s of streamers.list()) {
+      try {
+        const sett = settimanaFeat.settimanaDi(s.settings);
+        if (!sett.twitch.acceso) continue;
+        if (!tokens.get('broadcaster', s.login)?.scopes?.includes('channel:manage:schedule')) continue;
+        const e = await settimanaFeat.sincronizzaProgramma(this.helix, s.login, sett);
+        if (!e.ok) continue;
+        const ora = streamers.get(s.login)?.settings || {};
+        const adesso = settimanaFeat.settimanaDi(ora);
+        if (settimanaFeat.improntaSettimana(adesso) !== settimanaFeat.improntaSettimana(sett)) continue;
+        streamers.setSettings(s.login, { ...ora, settimana: { ...adesso, twitch: { ...adesso.twitch, scritti: e.scritti } } });
+      } catch (err) { log.debug('programma', s.login, err?.message || err); }
     }
   }
 

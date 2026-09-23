@@ -1022,7 +1022,7 @@ const DIRETTA = {
 
 const VETRINA = {
   slug: 'vetrina',
-  schede: ['pagina', 'donazioni', 'grafiche', 'notifiche', 'telegram', 'ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'dcfiltro'],
+  schede: ['pagina', 'donazioni', 'settimana', 'grafiche', 'notifiche', 'telegram', 'ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'dcfiltro'],
   titolo: 'Manuale della vetrina: pagina link, grafiche e notifiche social | SocialBot',
   h1: 'Manuale della vetrina: pagina link, grafiche e notifiche social',
   desc: 'La pagina pubblica da mettere in bio, le due grafiche pronte da pubblicare e gli avvisi automatici quando vai in diretta o pubblichi qualcosa.',
@@ -1071,9 +1071,15 @@ const VETRINA = {
     { p: ['C\'è un\'anteprima: salvi e la apri, così vedi la pagina com\'è davvero prima di metterla in bio.'] },
 
     { h2: 'Le grafiche social' },
-    { p: ['Due grafiche pronte da pubblicare, che si scaricano in PNG: la <strong>programmazione settimanale</strong> e il <strong>«Live ora»</strong>. Le impostazioni restano salvate, quindi la settimana dopo cambi due date e riscarichi.'] },
-    { p: ['I temi sono cinque — notte, neon, tramonto, pastello, minimal — e si personalizza tutto: testi, colori, giorni, orari. L\'anteprima è dal vivo: quello che vedi è il PNG che esce.'] },
+    { p: ['Due grafiche pronte da pubblicare, che si scaricano in PNG: la <strong>programmazione settimanale</strong> e il <strong>«Live ora»</strong>. Le impostazioni restano salvate, e i giorni della programmazione arrivano dalla tua settimana: cambi un orario lì e la grafica è già aggiornata.'] },
+    { p: ['I temi sono cinque — notte, neon, tramonto, pastello, minimal — e si personalizzano testi e colori. L\'anteprima è dal vivo: quello che vedi è il PNG che esce.'] },
     { p: ['Su telefono l\'anteprima resta appiccicata in alto mentre scorri i controlli, così non devi fare avanti e indietro per vedere l\'effetto di una modifica.'] },
+
+    { h2: 'La tua settimana' },
+    { p: ['I giorni in cui vai in onda si scrivono una volta sola, nella scheda <strong>La tua settimana</strong>: per ogni giorno l\'ora e cosa fai, oppure «riposo», e quanto dura di solito una diretta. Da lì li prendono la grafica della settimana, il calendario del tuo server Discord e il <strong>Programma</strong> del tuo canale Twitch.'] },
+    { p: ['I calendari si tengono in pari da soli: quando salvi, e poi ogni sei ore, anche quando cambia l\'ora. Sul Programma di Twitch ogni giorno diventa una diretta che si ripete, con il gioco trovato su Twitch; quelle che scrivi a mano restano tue.'] },
+    { p: ['L\'immagine invece parte quando premi <em>Manda</em>, nei posti che spunti: i gruppi e i canali Telegram collegati, i canali degli avvisi su Discord, la storia di Instagram. Compaiono solo i servizi che hai collegato.'] },
+    { p: ['Le storie di Twitch e di YouTube non ci sono: Twitch non le apre a nessuna app, e YouTube le ha chiuse nel 2023. Per la storia di Instagram servono un account professionale e il permesso di pubblicare.'] },
 
     { h2: 'Le notifiche' },
     { p: ['Avvisare che sei partito, e avvisare che hai pubblicato. Ogni rete si accende da sola e ha il suo messaggio: puoi lasciare quello di base o scriverne uno tuo.'] },

@@ -106,6 +106,7 @@ const PREFISSI = [
   '/api/passkey/login/', // sblocco con passkey: serve prima di avere una sessione
   '/collega/',           // la porta d'ingresso al Discord di uno streamer: ci arriva chi NON e' di casa
   '/api/discord/collega/',   // e l'indirizzo dove mandarlo, che lo decide il server
+  '/pubblici/',          // l'immagine della settimana mentre Instagram la scarica: nome casuale da 128 bit, cancellata appena pubblicata
 ];
 
 const RIF_HTML = /(?:src|href)\s*=\s*["']([^"']+)["']/g;

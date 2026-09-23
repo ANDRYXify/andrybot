@@ -335,6 +335,7 @@ export const SCOPES = {
     'channel:manage:raids',       // Regia: avviare/annullare una raid
     'channel:edit:commercial',    // Regia: lanciare una pubblicità (ad-break)
     'channel:read:ads',           // Regia: leggere la programmazione delle pubblicità
+    'channel:manage:schedule',    // La tua settimana: scriverla nel Programma del canale
     // La stream key la si chiede SOLO se lo Studio Web e' acceso: e' la chiave
     // con cui si trasmette sul canale, e tenerla a disposizione per una funzione
     // spenta e' chiedere un potere che non si usa. Segue l'interruttore, quindi

@@ -238,6 +238,7 @@ function impostazioni() {
     overlayCartelli: Array.isArray(s.overlayCartelli) ? s.overlayCartelli : [],
     donazioni: (s.donazioni && typeof s.donazioni === 'object') ? s.donazioni : { attivo: false, link: '', etichetta: '', messaggio: '', valuta: 'EUR', annunciaChat: false, testoChat: '', kofiSet: false },
     grafiche: (s.grafiche && typeof s.grafiche === 'object') ? s.grafiche : null,
+    settimana: (s.settimana && typeof s.settimana === 'object') ? s.settimana : null,
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
     instagram: (s.instagram && typeof s.instagram === 'object') ? s.instagram : { userId: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -484,6 +485,14 @@ const _DEMO_CANALI = [
 ];
 let _demoCanale = 'andryx_demo';
 
+const _DEMO_SETTIMANA = {
+  giorni: [{ ora: '21:00', att: 'Diablo 4', off: false }, { ora: '', att: '', off: true }, { ora: '21:00', att: 'Just Chatting', off: false },
+    { ora: '21:30', att: 'Hollow Knight: Silksong', off: false }, { ora: '', att: '', off: true }, { ora: '16:00', att: 'Minecraft con la chat', off: false }, { ora: '', att: '', off: true }],
+  dura: 180, fuso: 'Europe/Rome', dove: { tg: ['1'], dc: ['1'], ig: false },
+  twitch: { acceso: true, categorie: { 'diablo 4': { id: '515024', name: 'Diablo IV' }, 'just chatting': { id: '509658', name: 'Just Chatting' },
+    'hollow knight: silksong': { id: '1829', name: 'Hollow Knight: Silksong' }, 'minecraft con la chat': { id: '27471', name: 'Minecraft' } } },
+};
+
 function statoDemo() {
   const ctx = _DEMO_CANALI.find((c) => c.canale === _demoCanale) || _DEMO_CANALI[0];
   const mod = ctx.role === 'moderatore';
@@ -516,6 +525,7 @@ function statoDemo() {
         cambioCategoria: { attivo: true, trigger: 'categoria', annuncia: true },
         cambioTitolo: { attivo: false, trigger: 'titolo', annuncia: true },
         imparaVoce: { attivo: false },
+        settimana: _DEMO_SETTIMANA,
         premioVip: {
           monete: { attivo: true, periodo: 'settimana', saltaPerenni: true, posti: [{ dirette: 3, titolo: '' }, { dirette: 2, titolo: '' }] },
           bit: { attivo: true, periodo: 'mese', saltaPerenni: true, saluto: '{user} è il re dei Bit, con {bit} Bit. Bentornato.',
@@ -653,6 +663,19 @@ function apiDemo(percorso, opzioni = {}) {
     ] });
   }
 
+  if (via === '/api/streamer/settimana') {
+    return Promise.resolve({ ok: true, settimana: { ..._DEMO_SETTIMANA, ...(opzioni.body?.settimana || {}), twitch: { ..._DEMO_SETTIMANA.twitch, acceso: !!opzioni.body?.settimana?.twitch?.acceso } },
+      esito: { twitch: { ok: true, creati: 0, sistemati: 1, tolti: 0, occupati: [] }, discord: { ok: true } } });
+  }
+  if (via === '/api/streamer/settimana/manda') {
+    toast(L('In demo non mando davvero', 'In demo mode I do not really send it', 'En demo no lo mando de verdad'));
+    const d = opzioni.body?.dove || {};
+    return Promise.resolve({ ok: true, esiti: [
+      ...(d.tg || []).map(() => ({ dove: 'tg', nome: 'Canale di andryx', ok: true, errore: '' })),
+      ...(d.dc || []).map(() => ({ dove: 'dc', nome: 'annunci', ok: true, errore: '' })),
+      ...(d.ig ? [{ dove: 'ig', nome: 'storia', ok: true, errore: '' }] : []),
+    ] });
+  }
   if (via === '/api/streamer/dcserver') return Promise.resolve({ ok: true });
   if (via === '/api/streamer/dcserver/modo') return Promise.resolve({ chiave: 'demo', restano: 600000 });
   if (via === '/api/streamer/dcserver/dalserver') {
@@ -769,6 +792,10 @@ function _demoGet(via) {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
     '/api/discord/invito': { url: '' },
+    '/api/streamer/settimana': { settimana: _DEMO_SETTIMANA, posti: {
+      tg: [{ id: 1, nome: 'Canale di andryx', dove: '', tipo: 'channel' }, { id: 2, nome: 'La combriccola', dove: 'Annunci', tipo: 'supergroup' }],
+      dc: [{ id: 1, nome: 'annunci', webhook: false, manca: '' }, { id: 2, nome: 'dirette', webhook: false, manca: 'allegare' }],
+      ig: { puo: true }, tw: { permesso: true }, dcCalendario: { acceso: true } } },
     '/api/morti/libreria': { schede: [
       { id: 'a1', gioco: 'dark souls iii', giocoNome: 'Dark Souls III', lingua: 'it', firme: ['a5c3966a5a3c69a5', '5a3c69a5a5c3966a'], presa: 12, versione: 3, radice: 'a0' },
       { id: 'b2', gioco: 'elden ring', giocoNome: 'Elden Ring', lingua: 'en', firme: ['0f0f0f0f0f0f0f0f'], presa: 4, versione: 1, radice: 'b2' },
@@ -2644,6 +2671,7 @@ const GRUPPI = [
   { id: 'vetrina', nome: 'La tua vetrina', schede: [
     ['pagina', 'Pagina link'],
     ['donazioni', 'Donazioni'],
+    ['settimana', 'Settimana'],
     ['grafiche', 'Grafiche'],
     ['notifiche', 'Avvisi'],
   ] },
@@ -2714,6 +2742,7 @@ const T_SCHEDA = {
   pagina: ['Pagina link', 'Link page', 'Página de enlaces'],
   effetti: ['Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'],
   grafiche: ['Grafiche social', 'Social graphics', 'Gráficas sociales'],
+  settimana: ['La tua settimana', 'Your week', 'Tu semana'],
   admin: ['Admin', 'Admin', 'Admin'],
 };
 const tGruppo = (id, fb) => { const t = T_GRUPPO[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
@@ -2763,6 +2792,7 @@ const ICONA = {
   grafiche:    _ico('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5a2 2 0 0 0-2.8 0L4 22"/>'),
   dirette:     _ico('<path d="M3 13h3l3-7 4 14 3-9 2 4h3"/>'),
   calendario:  _ico('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M8 14h3"/>'),
+  settimana:   _ico('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M7 14h2"/><path d="M11 14h2"/><path d="M15 14h2"/><path d="M7 17.5h2"/><path d="M11 17.5h2"/>'),
   sottoscrizione: _ico('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 14.5h4"/>'),
   pagina:      _ico('<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.8 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.8-1.7"/>'),
   donazioni:   _ico('<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'),
@@ -2799,6 +2829,7 @@ const DESC = {
   notifiche: ['Avvisi quando vai in diretta su Discord, e dei nuovi post su TikTok, YouTube e Instagram.', 'Alerts on Discord when you go live, and for new posts on TikTok, YouTube and Instagram.', 'Avisos en Discord cuando estás en directo, y de los nuevos posts en TikTok, YouTube e Instagram.'],
   donazioni: ['Ricevi donazioni sul tuo conto, con l’avviso in diretta e il grazie in chat che partono da soli.', 'Receive donations on your own account, with the on-stream alert and the chat thanks firing on their own.', 'Recibe donaciones en tu propia cuenta, con el aviso en directo y el gracias en el chat que salen solos.'],
   grafiche: ['La locandina della diretta da postare sui social, coi tuoi colori e il tuo nome.', 'The stream poster to post on socials, with your colours and your name.', 'El cartel del directo para publicar en redes, con tus colores y tu nombre.'],
+  settimana: ['I giorni in cui vai in onda, scritti una volta: da qui vanno sui calendari e dove li mandi.', 'The days you go live, written once: from here they go onto the calendars and wherever you send them.', 'Los días en que sales en directo, escritos una vez: de aquí van a los calendarios y adonde los mandes.'],
   consolify: ['I tasti del tuo canale sotto le dita: sul telefono, sul tablet o su una tastiera vera.', 'Your channel’s keys under your fingers: on your phone, tablet or a real key pad.', 'Las teclas de tu canal bajo los dedos: en el móvil, la tablet o un teclado de verdad.'],
   telegram: ['Il tuo bot nel tuo gruppo: avvisi, comandi, compleanni, membri e il rapporto della serata in privato.', 'Your bot in your group: alerts, commands, birthdays, members and the night report in private.', 'Tu bot en tu grupo: avisos, comandos, cumpleaños, miembros y el informe de la noche en privado.'],
   ruoli: ['I ruoli del tuo server dati da quello che succede su Twitch: chi ti segue, chi è abbonato, chi c’è sempre.', 'Your server’s roles given by what happens on Twitch: who follows you, who is subscribed, who is always there.', 'Los roles de tu servidor dados por lo que pasa en Twitch: quién te sigue, quién está suscrito, quién está siempre.'],
@@ -2987,6 +3018,8 @@ const GUIDE = {
     come: [['La sfera al centro è il bot: ogni filo che si illumina è un pezzo di ragionamento in corso.', 'The sphere in the middle is the bot: every thread that lights up is a piece of reasoning under way.', 'La esfera del centro es el bot: cada hilo que se ilumina es un trozo de razonamiento en marcha.', '#mente3d-canvas'], ['Sotto, il cruscotto dice cosa sta facendo adesso e quanto ci mette: se tace, qui si vede perché.', 'Below, the dashboard says what it is doing right now and how long it takes: if it goes quiet, here you see why.', 'Abajo, el panel dice qué está haciendo ahora y cuánto tarda: si se calla, aquí se ve por qué.', '#mente-cruscotto']] },
   grafiche: { serve: ['Fare la locandina della diretta da postare sui social, con i tuoi colori e il tuo handle.', 'Make the stream poster to post on socials, with your colors and your handle.', 'Hacer el cartel del directo para publicar en redes, con tus colores y tu handle.'],
     come: [['Scrivi il titolo: è la riga grande della locandina.', 'Write the title: it is the big line of the poster.', 'Escribe el título: es la línea grande del cartel.', '#gr-titolo'], ['Scegli il colore d\'accento; il testo si adatta da solo perché resti leggibile.', 'Pick the accent color; the text adapts by itself so it stays readable.', 'Elige el color de acento; el texto se adapta solo para que siga legible.', '#gr-accento'], ['Scarica il PNG (o la versione animata) e pubblicalo: la didascalia è già pronta da copiare.', 'Download the PNG (or the animated one) and post it: the caption is ready to copy.', 'Descarga el PNG (o la versión animada) y publícalo: el pie de foto ya está listo para copiar.', '#gr-scarica']] },
+  settimana: { serve: ['Scrivere una volta sola quando vai in onda e cosa fai, e mandarlo dove ti seguono.', 'Write once when you go live and what you do, and send it where people follow you.', 'Escribir una sola vez cuándo sales en directo y qué haces, y mandarlo donde te siguen.'],
+    come: [['Per ogni giorno l’ora e cosa fai; se quel giorno riposi, spunta «riposo».', 'For each day the time and what you do; if you rest that day, tick «day off».', 'Para cada día la hora y qué haces; si ese día descansas, marca «descanso».', '#sett-giorni'], ['Salvando, i calendari si rimettono in pari da soli: quello di Discord e il Programma di Twitch.', 'Saving brings the calendars in line by themselves: Discord’s and the Twitch Schedule.', 'Al guardar, los calendarios se ponen al día solos: el de Discord y el Programa de Twitch.', '#sett-salva'], ['Spunta dove mandare l’immagine e premi «Manda»: compaiono solo i posti che hai collegato.', 'Tick where to send the image and press «Send»: only the places you connected show up.', 'Marca adónde mandar la imagen y pulsa «Manda»: solo aparecen los sitios que has conectado.', '#sett-dove']] },
   scudo: { serve: ['La difesa dagli attacchi: le ondate di finti follower e gli account-bot che spammano in chat.', 'Defence against attacks: waves of fake followers and bot accounts spamming chat.', 'La defensa contra los ataques: oleadas de seguidores falsos y cuentas-bot que spamean el chat.'],
     come: [['Accendi la protezione: sotto trovi lo stato di adesso.', 'Turn the protection on: below you see how things stand right now.', 'Enciende la protección: debajo ves cómo está ahora.', '#chk-ab-attivo'], ['Scegli quanto presto reagire e cosa fare quando è sicuro.', 'Choose how soon to react and what to do when it is sure.', 'Elige con qué rapidez reaccionar y qué hacer cuando está seguro.', '#sel-ab-modo'], ['Se non ti fidi ancora, accendi la sola osservazione: scrive cosa farebbe e non tocca nessuno.', 'If you do not trust it yet, turn on observe-only: it logs what it would do and touches nobody.', 'Si aún no te fías, enciende solo observar: anota lo que haría y no toca a nadie.', '#chk-ab-avuoto'], ['Le due liste in fondo si salvano da sole.', 'The two lists at the bottom save themselves.', 'Las dos listas de abajo se guardan solas.', '#scudo-add-esenti']] },
   registro: { serve: ['Vedere cosa ha fatto lo scudo, decidere tu sui casi dubbi e ripulire dopo un attacco.', 'See what the shield did, decide the doubtful cases yourself and clean up after an attack.', 'Ver qué hizo el escudo, decidir tú los casos dudosos y limpiar después de un ataque.'],
@@ -3803,6 +3836,14 @@ document.addEventListener('click', (ev) => {
 });
 
 document.addEventListener('click', (ev) => {
+  const b = ev.target.closest?.('button[data-vai]');
+  const id = b?.dataset.vai;
+  if (!id || !schedaValida(id)) return;
+  ev.preventDefault();
+  vaiAScheda(id);
+});
+
+document.addEventListener('click', (ev) => {
   const r = ev.target.closest?.('[data-rifai-giro]');
   if (!r) return;
   ev.preventDefault();
@@ -3925,6 +3966,7 @@ function vistaPiattaforma() {
     ${pannelloNotifiche()}
     ${pannelloPaginaLink()}
     ${pannelloDonazioni()}
+    ${pannelloSettimana()}
     ${pannelloGrafiche()}
     ${stato.isAdmin ? pannello('admin', vistaAdminContenuto()) : ''}`;
 }
@@ -3935,7 +3977,6 @@ function pannello(id, contenuto) {
   return `<section class="pannello-scheda${id === schedaAttiva ? ' visibile' : ''}" id="scheda-${id}" data-scheda="${id}">${dentro}</section>`;
 }
 
-const GR_GIORNI = ['LUN', 'MAR', 'MER', 'GIO', 'VEN', 'SAB', 'DOM'];
 const GR_TEMI = {
   notte:    { nome: 'Notte',    bg: ['#0f1020', '#241b3d'], testo: '#ffffff', tenue: '#b9b6d6', acc: '#8b5cf6', riga: 'rgba(255,255,255,.07)' },
   neon:     { nome: 'Neon',     bg: ['#04111a', '#06263a'], testo: '#eafcff', tenue: '#8fd3e6', acc: '#22d3ee', riga: 'rgba(34,211,238,.10)' },
@@ -3982,8 +4023,14 @@ function grafDefault() {
     gioco: '', sottotitolo: '',
     sfondo: 'tema', sfondoColore: '', sfondoImg: '',
     qr: false, dest: 'u',
-    giorni: GR_GIORNI.map((g) => ({ g, ora: '21:00', att: '', off: false })),
+    giorni: grafGiorni(),
   };
+}
+
+function grafGiorni(giorni) {
+  const gg = GIORNI_CORTI();
+  const w = Array.isArray(giorni) ? giorni : settimanaOra().giorni;
+  return Array.from({ length: 7 }, (_, i) => ({ g: String(gg[i]).toUpperCase(), ora: String(w[i]?.ora || ''), att: String(w[i]?.att || ''), off: !!w[i]?.off }));
 }
 
 function grafUrlCanale(c) {
@@ -4030,8 +4077,276 @@ function grafConfig() {
   const s = impostazioni().grafiche;
   const d = grafDefault();
   if (!s || typeof s !== 'object') return d;
-  const giorni = Array.isArray(s.giorni) && s.giorni.length === 7 ? s.giorni : d.giorni;
-  return { ...d, ...s, giorni: giorni.map((x, i) => ({ g: GR_GIORNI[i], ora: String(x?.ora || ''), att: String(x?.att || ''), off: !!x?.off })) };
+  return { ...d, ...s, giorni: grafGiorni() };
+}
+
+const GIORNI_LUNGHI = () => [L('Lunedì', 'Monday', 'Lunes'), L('Martedì', 'Tuesday', 'Martes'), L('Mercoledì', 'Wednesday', 'Miércoles'),
+  L('Giovedì', 'Thursday', 'Jueves'), L('Venerdì', 'Friday', 'Viernes'), L('Sabato', 'Saturday', 'Sábado'), L('Domenica', 'Sunday', 'Domingo')];
+
+const DURATE_SETT = () => [[60, L('un’ora', 'one hour', 'una hora')], [90, L('un’ora e mezza', 'an hour and a half', 'hora y media')],
+  [120, L('due ore', 'two hours', 'dos horas')], [180, L('tre ore', 'three hours', 'tres horas')], [240, L('quattro ore', 'four hours', 'cuatro horas')],
+  [300, L('cinque ore', 'five hours', 'cinco horas')], [360, L('sei ore', 'six hours', 'seis horas')]];
+
+const _fusoQui = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; } };
+
+function settimanaOra() {
+  const w = impostazioni().settimana;
+  const g = Array.isArray(w?.giorni) ? w.giorni : [];
+  return {
+    giorni: Array.from({ length: 7 }, (_, i) => ({ ora: String(g[i]?.ora || ''), att: String(g[i]?.att || ''), off: !!g[i]?.off })),
+    dura: Number(w?.dura) || 120,
+    fuso: String(w?.fuso || ''),
+    dove: { tg: (w?.dove?.tg || []).map(String), dc: (w?.dove?.dc || []).map(String), ig: !!w?.dove?.ig },
+    twitch: { acceso: !!w?.twitch?.acceso, categorie: (w?.twitch?.categorie && typeof w.twitch.categorie === 'object') ? w.twitch.categorie : {} },
+  };
+}
+
+let _settPosti = null;
+
+function pannelloSettimana() {
+  return pannello('settimana', `
+    <div class="carta">
+      <h2>${_hIco(ICO.calendario || '')}${L('I tuoi giorni', 'Your days', 'Tus días')}</h2>
+      <p>${L('Scrivi una volta sola quando vai in onda e cosa fai. Da qui lo prendono la grafica della settimana, i calendari e i posti dove la mandi.', 'Write once when you go live and what you do. The weekly graphic, the calendars and the places you send it to all take it from here.', 'Escribe una sola vez cuándo sales en directo y qué haces. De aquí lo toman la gráfica de la semana, los calendarios y los sitios adonde la mandas.')}</p>
+      <div id="sett-giorni" class="sett-giorni spazio-sopra"></div>
+      <div class="riga-flessibile spazio-sopra">
+        <label class="campo" for="sett-dura" style="margin:0">${L('Di solito una diretta dura', 'A stream usually lasts', 'Un directo suele durar')}</label>
+        <select id="sett-dura"></select>
+      </div>
+      <p class="suggerimento" id="sett-fuso"></p>
+      <div id="sett-calendari" class="spazio-sopra"></div>
+      <p class="spazio-sopra"><button class="btn" id="sett-salva">${L('Salva la settimana', 'Save the week', 'Guardar la semana')}</button></p>
+      <p class="tg-stato" id="sett-stato" hidden></p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.condividi || '')}${L('Mandala', 'Send it', 'Mándala')}</h2>
+      <p>${L('L’immagine è quella delle Grafiche, con i tuoi giorni dentro. Parte quando premi «Manda», nei posti che spunti.', 'The image is the one from Graphics, with your days in it. It goes out when you press «Send», to the places you tick.', 'La imagen es la de Gráficas, con tus días dentro. Sale cuando pulsas «Manda», a los sitios que marques.')}
+        <button type="button" class="btn secondario mini" data-vai="grafiche">${L('Cambiane l’aspetto', 'Change how it looks', 'Cambia su aspecto')}</button></p>
+      <div class="sett-manda spazio-sopra">
+        <canvas id="sett-anteprima" class="sett-anteprima" width="1080" height="1350" aria-label="${esc(L('La grafica della settimana', 'The weekly graphic', 'La gráfica de la semana'))}"></canvas>
+        <div>
+          <div id="sett-dove"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+          <label class="campo spazio-sopra" for="sett-testo">${L('Le parole che la accompagnano', 'The words that go with it', 'Las palabras que la acompañan')}</label>
+          <textarea id="sett-testo" rows="3" class="campo-largo" style="resize:vertical"></textarea>
+          <p class="spazio-sopra"><button class="btn" id="sett-manda">${_bIco(ICO.condividi || '')}${L('Manda', 'Send', 'Manda')}</button></p>
+          <div id="sett-esiti" class="spazio-sopra" hidden></div>
+        </div>
+      </div>
+    </div>`);
+}
+
+function _settLeggiGiorni() {
+  const w = settimanaOra();
+  return w.giorni.map((g, i) => {
+    const r = document.querySelector(`#sett-giorni [data-sett-i="${i}"]`);
+    if (!r) return g;
+    return { ora: r.querySelector('.sett-ora')?.value || '', att: r.querySelector('.sett-att')?.value || '', off: !!r.querySelector('.sett-riposo')?.checked };
+  });
+}
+
+function _settDisegnaGiorni() {
+  const box = _g('sett-giorni');
+  if (!box) return;
+  const w = settimanaOra();
+  const nomi = GIORNI_LUNGHI();
+  const cat = w.twitch.categorie || {};
+  box.innerHTML = w.giorni.map((g, i) => {
+    const c = cat[String(g.att || '').trim().toLowerCase()];
+    return `<div class="sett-riga" data-sett-i="${i}">
+      <span class="sett-gg">${esc(nomi[i])}</span>
+      <input type="time" class="sett-ora" aria-label="${esc(L('Ora di ', 'Time on ', 'Hora del ') + nomi[i])}" value="${esc(g.ora)}"${g.off ? ' disabled' : ''}>
+      <input type="text" class="sett-att" maxlength="40" aria-label="${esc(L('Cosa fai ', 'What you do on ', 'Qué haces el ') + nomi[i])}" placeholder="${esc(L('cosa fai', 'what you do', 'qué haces'))}" value="${esc(g.att)}"${g.off ? ' disabled' : ''}>
+      <label class="sett-off"><input type="checkbox" class="sett-riposo"${g.off ? ' checked' : ''}> ${L('riposo', 'day off', 'descanso')}</label>
+      ${w.twitch.acceso && c?.name && !g.off && g.ora ? `<span class="suggerimento sett-cat">${L('su Twitch: ', 'on Twitch: ', 'en Twitch: ')}${esc(c.name)}</span>` : ''}
+    </div>`;
+  }).join('');
+  const sel = _g('sett-dura');
+  if (sel) {
+    const d = Number(w.dura) || 120;
+    const scelte = DURATE_SETT();
+    if (!scelte.some(([n]) => n === d)) scelte.push([d, d + L(' minuti', ' minutes', ' minutos')]);
+    sel.innerHTML = scelte.sort((a, b) => a[0] - b[0]).map(([n, t]) => `<option value="${n}"${n === d ? ' selected' : ''}>${esc(t)}</option>`).join('');
+  }
+  const fuso = _g('sett-fuso');
+  if (fuso) fuso.textContent = L('Gli orari sono quelli del tuo computer: ', 'Times are your computer’s: ', 'Los horarios son los de tu ordenador: ') + (_fusoQui() || w.fuso || 'Europe/Rome') + '.';
+}
+
+function _settDisegnaCalendari() {
+  const box = _g('sett-calendari');
+  if (!box) return;
+  const p = _settPosti || {};
+  const w = settimanaOra();
+  const righe = [];
+  if (p.tw) {
+    righe.push(p.tw.permesso
+      ? `<label class="tg-spunta"><input type="checkbox" id="sett-tw"${w.twitch.acceso ? ' checked' : ''}><span>${L('Scrivila nel Programma del mio canale Twitch', 'Write it into my Twitch channel Schedule', 'Escríbela en el Programa de mi canal de Twitch')}</span></label>
+         <p class="suggerimento">${L('Ogni giorno diventa una diretta che si ripete, con il gioco trovato su Twitch. Quelle che scrivi a mano sul Programma restano tue: non le tocco.', 'Each day becomes a repeating stream, with the game found on Twitch. The ones you write by hand on the Schedule stay yours: I leave them alone.', 'Cada día se vuelve un directo que se repite, con el juego encontrado en Twitch. Los que escribes a mano en el Programa siguen siendo tuyos: no los toco.')}</p>`
+      : `<p class="suggerimento">${L('Per scriverla anche nel Programma del tuo canale Twitch serve un permesso in più.', 'To also write it into your Twitch channel Schedule, one more permission is needed.', 'Para escribirla también en el Programa de tu canal de Twitch hace falta un permiso más.')}
+         <a class="btn secondario mini" href="/auth/permessi">${L('Concedilo', 'Grant it', 'Concédelo')}</a></p>`);
+  }
+  if (p.dcCalendario) {
+    righe.push(`<p class="suggerimento">${p.dcCalendario.acceso
+      ? L('Sul calendario del tuo server Discord ci va già da sola.', 'It already goes onto your Discord server calendar by itself.', 'Ya va sola al calendario de tu servidor de Discord.')
+      : L('Può andare anche sul calendario del tuo server Discord.', 'It can also go onto your Discord server calendar.', 'También puede ir al calendario de tu servidor de Discord.')}
+      <button type="button" class="btn secondario mini" data-vai="dcavvisi">${p.dcCalendario.acceso ? L('Guardalo', 'See it', 'Míralo') : L('Accendilo', 'Turn it on', 'Enciéndelo')}</button></p>`);
+  }
+  box.innerHTML = righe.length ? `<p class="campo">${L('I calendari', 'The calendars', 'Los calendarios')}</p>${righe.join('')}
+    <p class="suggerimento">${L('Si aggiornano quando salvi, e poi da soli ogni sei ore: anche col cambio dell’ora.', 'They update when you save, and then by themselves every six hours: clock changes included.', 'Se actualizan cuando guardas, y luego solos cada seis horas: también con el cambio de hora.')}</p>` : '';
+}
+
+function _settDisegnaDove() {
+  const box = _g('sett-dove');
+  if (!box) return;
+  const p = _settPosti || {};
+  const w = settimanaOra();
+  const tg = new Set(w.dove.tg); const dc = new Set(w.dove.dc);
+  const spunta = (tipo, id, nome, sotto, attiva, nota) => `<label class="tg-spunta"><input type="checkbox" data-sett-dove="${tipo}" value="${esc(String(id))}"${attiva ? ' checked' : ''}${nota ? ' disabled' : ''}><span>${esc(nome)}${sotto ? ` <span class="suggerimento">${esc(sotto)}</span>` : ''}</span></label>${nota ? `<p class="suggerimento sett-nota">${nota}</p>` : ''}`;
+  const blocchi = [];
+  if ((p.tg || []).length) {
+    blocchi.push(`<p class="campo">Telegram</p>` + p.tg.map((d) => spunta('tg', d.id, d.nome, d.dove ? L('argomento ', 'topic ', 'tema ') + d.dove : '', tg.has(String(d.id)), '')).join(''));
+  }
+  if ((p.dc || []).length) {
+    const perche = {
+      bot: L('Il bot non è più nel server.', 'The bot is no longer in the server.', 'El bot ya no está en el servidor.'),
+      canale: L('Questo canale non c’è più.', 'This channel is gone.', 'Este canal ya no existe.'),
+      scrivere: L('Il bot qui non può scrivere.', 'The bot cannot write here.', 'El bot no puede escribir aquí.'),
+      allegare: L('Al bot manca «Allegare file».', 'The bot is missing «Attach Files».', 'Al bot le falta «Adjuntar archivos».') + ` <button type="button" class="btn secondario mini" data-sett-reinvita>${L('Aggiorna i suoi permessi', 'Update its permissions', 'Actualiza sus permisos')}</button>`,
+    };
+    blocchi.push(`<p class="campo spazio-sopra">Discord</p>` + p.dc.map((d) => spunta('dc', d.id, d.webhook ? L('canale col webhook', 'webhook channel', 'canal con webhook') : '#' + (d.nome || '?'), '', dc.has(String(d.id)) && !d.manca, d.manca ? perche[d.manca] || '' : '')).join(''));
+  }
+  if (p.ig) {
+    blocchi.push(`<p class="campo spazio-sopra">Instagram</p>` + (p.ig.puo
+      ? spunta('ig', 'storia', L('Storia', 'Story', 'Historia'), L('resta 24 ore, senza testo', 'stays 24 hours, no text', 'dura 24 horas, sin texto'), w.dove.ig, '')
+      : `<p class="suggerimento">${L('Instagram è collegato, ma per pubblicare una storia serve un account professionale e il permesso di pubblicare nel token che hai dato.', 'Instagram is connected, but posting a story needs a professional account and the publishing permission in the token you gave.', 'Instagram está conectado, pero para publicar una historia hace falta una cuenta profesional y el permiso de publicar en el token que diste.')}</p>`));
+  }
+  box.innerHTML = blocchi.length ? blocchi.join('')
+    : `<p class="suggerimento">${L('Qui compaiono i posti dove mandarla appena colleghi Telegram, Discord o Instagram.', 'The places to send it show up here as soon as you connect Telegram, Discord or Instagram.', 'Aquí aparecen los sitios adonde mandarla en cuanto conectes Telegram, Discord o Instagram.')}</p>`;
+  const tasto = _g('sett-manda');
+  if (tasto) tasto.disabled = !blocchi.length;
+}
+
+let _settImg = { sfondo: false, logo: false };
+
+function _settDisegnaAnteprima() {
+  const cv = _g('sett-anteprima');
+  if (!cv) return;
+  const c = { ...grafConfig(), tipo: 'programmazione', giorni: grafGiorni(_settLeggiGiorni()) };
+  const disegna = () => grafDisegna(cv, c, 0, 1);
+  if (c.sfondo === 'immagine' && c.sfondoImg && !_settImg.sfondo) { _settImg.sfondo = true; grafCaricaImg(c.sfondoImg, disegna); }
+  if (c.logoImg && !_settImg.logo) { _settImg.logo = true; grafCaricaLogo(c.logoImg, disegna); }
+  disegna();
+  const ta = _g('sett-testo');
+  if (ta && !ta.dataset.toccato) ta.value = grafDidascalia(c);
+}
+
+function _settLeggi() {
+  const w = settimanaOra();
+  return {
+    giorni: _settLeggiGiorni(),
+    dura: Number(_g('sett-dura')?.value) || w.dura,
+    fuso: _fusoQui() || w.fuso,
+    dove: w.dove,
+    twitch: { acceso: _g('sett-tw') ? !!_g('sett-tw').checked : w.twitch.acceso },
+  };
+}
+
+function _settDoveScelti() {
+  const scelti = { tg: [], dc: [], ig: false };
+  for (const x of document.querySelectorAll('#sett-dove input[data-sett-dove]:checked')) {
+    if (x.dataset.settDove === 'ig') scelti.ig = true;
+    else scelti[x.dataset.settDove].push(String(x.value));
+  }
+  return scelti;
+}
+
+function _settDiciEsito(e) {
+  const t = [];
+  let guaio = false;
+  const tw = e?.twitch;
+  if (tw && tw.permesso) { guaio = true; t.push(L('Per il Programma di Twitch manca il permesso.', 'The Twitch Schedule permission is missing.', 'Falta el permiso del Programa de Twitch.')); }
+  else if (tw && tw.ok) {
+    const n = (tw.creati || 0) + (tw.sistemati || 0) + (tw.tolti || 0);
+    t.push(n ? L('Programma di Twitch aggiornato.', 'Twitch Schedule updated.', 'Programa de Twitch actualizado.') : L('Il Programma di Twitch era già a posto.', 'The Twitch Schedule was already right.', 'El Programa de Twitch ya estaba bien.'));
+    if ((tw.occupati || []).length) {
+      const gg = GIORNI_LUNGHI();
+      t.push(L('Questi posti sul Programma sono già occupati da dirette scritte a mano, e li ho lasciati stare: ', 'These Schedule slots already hold streams written by hand, so I left them alone: ', 'Estos huecos del Programa ya tienen directos escritos a mano, y los he dejado: ')
+        + tw.occupati.map((x) => gg[x.g] + ' ' + x.ora).join(', ') + '.');
+    }
+  } else if (tw && !tw.ok) { guaio = true; t.push(L('Il Programma di Twitch non si è aggiornato: ', 'The Twitch Schedule did not update: ', 'El Programa de Twitch no se ha actualizado: ') + (tw.errori || []).join(' · ')); }
+  const dc = e?.discord;
+  if (dc && dc.ok) t.push(L('Calendario di Discord a posto.', 'Discord calendar in order.', 'Calendario de Discord en orden.'));
+  else if (dc && !dc.ok) { guaio = true; t.push(L('Il calendario di Discord non si è aggiornato: ', 'The Discord calendar did not update: ', 'El calendario de Discord no se ha actualizado: ') + (dc.errore || '')); }
+  return { testo: t.join(' '), guaio };
+}
+
+async function caricaSettimana() {
+  let d = null;
+  try { d = await api('/api/streamer/settimana'); } catch { d = null; }
+  if (d?.settimana && stato?.streamer) stato.streamer.settings = { ...(stato.streamer.settings || {}), settimana: d.settimana };
+  _settPosti = d?.posti || {};
+  _settDisegnaGiorni();
+  _settDisegnaCalendari();
+  _settDisegnaDove();
+  _settDisegnaAnteprima();
+  collegaSettimana();
+}
+
+function collegaSettimana() {
+  const scheda = _g('scheda-settimana');
+  if (!scheda || scheda.dataset.pronta) return;
+  scheda.dataset.pronta = '1';
+  scheda.addEventListener('input', (e) => {
+    if (e.target.closest('#sett-giorni')) _settDisegnaAnteprima();
+    if (e.target.id === 'sett-testo') e.target.dataset.toccato = '1';
+  });
+  scheda.addEventListener('change', (e) => {
+    const r = e.target.closest('.sett-riga');
+    if (r && e.target.classList.contains('sett-riposo')) {
+      for (const x of r.querySelectorAll('.sett-ora, .sett-att')) x.disabled = e.target.checked;
+      _settDisegnaAnteprima();
+    }
+  });
+  scheda.addEventListener('click', (e) => {
+    if (e.target.closest('[data-sett-reinvita]')) {
+      conErrore(async () => { const r = await api('/api/discord/invito'); if (r && r.url) location.href = r.url; });
+    }
+  });
+  _g('sett-salva')?.addEventListener('click', () => conErrore(async () => {
+    const b = _g('sett-salva');
+    if (b) b.disabled = true;
+    try {
+      const r = await api('/api/streamer/settimana', { method: 'POST', body: { settimana: _settLeggi() } });
+      if (r?.settimana && stato?.streamer) stato.streamer.settings = { ...(stato.streamer.settings || {}), settimana: r.settimana };
+      _settDisegnaGiorni();
+      _settDisegnaCalendari();
+      const detto = _settDiciEsito(r?.esito);
+      _dcDici('sett-stato', L('Settimana salvata. ', 'Week saved. ', 'Semana guardada. ') + detto.testo, detto.guaio ? 'guaio' : 'ok');
+    } finally { if (b) b.disabled = false; }
+  }));
+  _g('sett-manda')?.addEventListener('click', () => conErrore(async () => {
+    const dove = _settDoveScelti();
+    if (!dove.tg.length && !dove.dc.length && !dove.ig) { toast(L('Spunta almeno un posto.', 'Tick at least one place.', 'Marca al menos un sitio.'), 'errore'); return; }
+    const b = _g('sett-manda');
+    if (b) b.disabled = true;
+    try {
+      const cv = document.createElement('canvas');
+      grafDisegna(cv, { ...grafConfig(), tipo: 'programmazione', giorni: grafGiorni(_settLeggiGiorni()) }, 0, 1);
+      const immagine = cv.toDataURL('image/jpeg', 0.9);
+      const r = await api('/api/streamer/settimana/manda', { method: 'POST', body: { immagine, testo: _g('sett-testo')?.value || '', dove } });
+      if (stato?.streamer) stato.streamer.settings = { ...(stato.streamer.settings || {}), settimana: { ...settimanaOra(), dove } };
+      const box = _g('sett-esiti');
+      const tipo = { tg: 'Telegram', dc: 'Discord', ig: 'Instagram' };
+      if (box) {
+        box.hidden = false;
+        box.innerHTML = `<ul class="lista-voci">${(r?.esiti || []).map((x) => `<li>${esc(tipo[x.dove] || '')} · ${esc(x.dove === 'ig' ? L('storia', 'story', 'historia') : (x.dove === 'dc' ? '#' + x.nome : x.nome))}
+          <span class="suggerimento">${x.ok ? esc(L('arrivata', 'delivered', 'entregada')) : esc(L('non è partita: ', 'did not go out: ', 'no ha salido: ') + (x.errore || ''))}</span></li>`).join('')}</ul>`;
+      }
+      const bene = (r?.esiti || []).filter((x) => x.ok).length;
+      if (bene) toast(L('Settimana mandata ✓', 'Week sent ✓', 'Semana enviada ✓'));
+      else toast(L('Non è partita da nessuna parte.', 'It did not go out anywhere.', 'No ha salido a ningún sitio.'), 'errore');
+    } finally { if (b) b.disabled = false; }
+  }));
 }
 
 function pannelloGrafiche() {
@@ -4042,13 +4357,6 @@ function pannelloGrafiche() {
     const anim = !!GR_TEMI[id].anima;
     return `<button type="button" class="gr-tema${c.tema === id ? ' on' : ''}${anim ? ' anima' : ''}" data-gr-tema="${id}"${anim ? ` title="${esc(etAnim)}"` : ''}>${esc(GR_TEMI[id].nome)}${anim ? `${segnoAnim}<span class="solo-lettori">${esc(etAnim)}</span>` : ''}</button>`;
   }).join('');
-  const righeProg = c.giorni.map((r, i) => `
-    <div class="gr-riga-giorno" data-gr-i="${i}">
-      <span class="gr-gg">${r.g}</span>
-      <input type="time" class="gr-ora" aria-label="${esc(L('Ora di', 'Time on', 'Hora de'))} ${esc(r.g)}" value="${esc(r.ora)}" ${r.off ? 'disabled' : ''}>
-      <input type="text" class="gr-att" maxlength="34" aria-label="${esc(L('Attività di', 'Activity on', 'Actividad de'))} ${esc(r.g)}" placeholder="${L('gioco / attività', 'game / activity', 'juego / actividad')}" value="${esc(r.att)}" ${r.off ? 'disabled' : ''}>
-      <label class="gr-off"><input type="checkbox" class="gr-riposo" ${r.off ? 'checked' : ''}> ${L('riposo', 'off', 'descanso')}</label>
-    </div>`).join('');
   return pannello('grafiche', `
     <div class="carta">
       <h2>${_hIco(ICO.grafico || ICONA.grafiche)}${L('Grafiche social', 'Social graphics', 'Gráficas sociales')}</h2>
@@ -4128,8 +4436,8 @@ function pannelloGrafiche() {
           </div>
 
           <div class="gr-solo-prog" ${c.tipo === 'live' ? 'hidden' : ''}>
-            <label class="campo spazio-sopra">${L('Settimana (orari e attività)', 'Week (times and activities)', 'Semana (horarios y actividades)')}</label>
-            <div class="gr-giorni">${righeProg}</div>
+            <p class="suggerimento spazio-sopra">${L('I giorni e gli orari si scrivono nella tua Settimana, e da lì arrivano qui.', 'Days and times are written in your Week, and they come here from there.', 'Los días y los horarios se escriben en tu Semana, y de ahí llegan aquí.')}
+              <button type="button" class="btn secondario mini" data-vai="settimana">${L('Cambiali', 'Change them', 'Cámbialos')}</button></p>
           </div>
 
           <div class="gr-solo-live" ${c.tipo === 'programmazione' ? 'hidden' : ''}>
@@ -4565,13 +4873,6 @@ function initGrafiche() {
     grafCaricaLogo('', ridisegna);
   });
 
-  document.querySelectorAll('.gr-riga-giorno').forEach((row) => {
-    const i = Number(row.dataset.grI);
-    const ora = row.querySelector('.gr-ora'), att = row.querySelector('.gr-att'), off = row.querySelector('.gr-riposo');
-    ora?.addEventListener('input', () => { c.giorni[i].ora = ora.value; ridisegna(); });
-    att?.addEventListener('input', () => { c.giorni[i].att = att.value; ridisegna(); });
-    off?.addEventListener('change', () => { c.giorni[i].off = off.checked; if (ora) ora.disabled = off.checked; if (att) att.disabled = off.checked; ridisegna(); });
-  });
 
   document.getElementById('gr-scarica')?.addEventListener('click', () => {
 
@@ -4775,6 +5076,7 @@ function pannelloStato() {
     'channel:manage:raids': L('raid', 'raids', 'raids'),
     'channel:edit:commercial': L('pubblicità', 'ads', 'publicidad'),
     'channel:read:ads': L('programmazione pubblicità', 'ad schedule', 'programación de anuncios'),
+    'channel:manage:schedule': L('il Programma del canale', 'the channel Schedule', 'el Programa del canal'),
     'channel:read:stream_key': L('Studio Web (stream key)', 'Web Studio (stream key)', 'Estudio Web (stream key)'),
     'moderator:manage:chat_settings': L('serranda dello scudo (chat ai follower, chat lenta)', 'shield shutter (followers-only, slow chat)', 'persiana del escudo (solo seguidores, chat lento)'),
     'moderator:manage:shield_mode': L('Shield Mode di Twitch', 'Twitch Shield Mode', 'Shield Mode de Twitch'),
@@ -17461,10 +17763,12 @@ function _dcevDisegna() {
   const fasce = _dcev.fasce || [];
   box.innerHTML = `
     <label class="tg-spunta"><input type="checkbox" id="dcev-on"${c.acceso ? ' checked' : ''}><span>${L('Metti la mia settimana sul calendario del server', 'Put my week on the server calendar', 'Pon mi semana en el calendario del servidor')}</span></label>
-    ${fasce.length ? `<p class="campo spazio-sopra">${L('Dalla tua programmazione verrebbero fuori questi', 'From your schedule these would come out', 'De tu programaci\u00f3n saldr\u00edan estos')}</p>
-      <ul class="lista-voci">${fasce.map((f) => `<li>${esc(f.titolo)} <span class="suggerimento">${esc(f.giorni.map((i) => gg[i]).join(', '))} \u00b7 ${esc(f.ora)}</span></li>`).join('')}</ul>`
-      : `<p class="tg-stato spazio-sopra">${L('La programmazione della settimana \u00e8 vuota, e senza quella non c\u2019\u00e8 niente da mettere sul calendario. Si scrive una volta sola, nelle Grafiche.', 'Your weekly schedule is empty, and without it there is nothing to put on the calendar. You write it once, in Graphics.', 'Tu programaci\u00f3n semanal est\u00e1 vac\u00eda, y sin ella no hay nada que poner en el calendario. Se escribe una sola vez, en Gr\u00e1ficas.')}
-        <button type="button" class="btn secondario mini" data-vai="grafiche">${L('Vai a scriverla', 'Go write it', 'Ve a escribirla')}</button></p>`}
+    ${fasce.length ? `<p class="campo spazio-sopra">${L('Dalla tua settimana verrebbero fuori questi', 'From your week these would come out', 'De tu semana saldr\u00edan estos')}</p>
+      <ul class="lista-voci">${fasce.map((f) => `<li>${esc(f.titolo)} <span class="suggerimento">${esc(f.giorni.map((i) => gg[i]).join(', '))} \u00b7 ${esc(f.ora)}</span></li>`).join('')}</ul>
+      <p class="suggerimento">${L('Giorni, orari e quanto dura una diretta vengono dalla tua settimana.', 'Days, times and how long a stream lasts come from your week.', 'Los d\u00edas, los horarios y cu\u00e1nto dura un directo vienen de tu semana.')}
+        <button type="button" class="btn secondario mini" data-vai="settimana">${L('Cambiali', 'Change them', 'C\u00e1mbialos')}</button></p>`
+      : `<p class="tg-stato spazio-sopra">${L('La tua settimana \u00e8 vuota, e senza quella non c\u2019\u00e8 niente da mettere sul calendario. Si scrive una volta sola.', 'Your week is empty, and without it there is nothing to put on the calendar. You write it once.', 'Tu semana est\u00e1 vac\u00eda, y sin ella no hay nada que poner en el calendario. Se escribe una sola vez.')}
+        <button type="button" class="btn secondario mini" data-vai="settimana">${L('Vai a scriverla', 'Go write it', 'Ve a escribirla')}</button></p>`}
     <div class="griglia-campi spazio-sopra">
       <div class="dcs-imp-campo">
         <label class="campo" for="dcev-titolo">${L('Come si chiamano', 'What they are called', 'C\u00f3mo se llaman')}</label>
@@ -17475,15 +17779,6 @@ function _dcevDisegna() {
         <label class="campo" for="dcev-luogo">${L('Dove succede', 'Where it happens', 'D\u00f3nde pasa')}</label>
         <input type="text" id="dcev-luogo" maxlength="100" value="${esc(c.luogo || '')}" placeholder="https://twitch.tv/...">
         <span class="suggerimento">${L('Il link del tuo canale: Discord lo mette nel tasto dell\u2019appuntamento.', 'Your channel link: Discord puts it in the appointment button.', 'El enlace de tu canal: Discord lo pone en el bot\u00f3n de la cita.')}</span>
-      </div>
-      <div class="dcs-imp-campo">
-        <label class="campo" for="dcev-dura">${L('Quanto durano di solito', 'How long they usually last', 'Cu\u00e1nto duran normalmente')}</label>
-        <select id="dcev-dura" class="campo-largo">
-          ${[[60, L('un\u2019ora', 'one hour', 'una hora')], [120, L('due ore', 'two hours', 'dos horas')],
-            [180, L('tre ore', 'three hours', 'tres horas')], [240, L('quattro ore', 'four hours', 'cuatro horas')],
-            [360, L('sei ore', 'six hours', 'seis horas')]].map(([n, t]) =>
-            `<option value="${n}"${Number(c.dura) === n ? ' selected' : ''}>${esc(t)}</option>`).join('')}
-        </select>
       </div>
     </div>
     <label class="campo spazio-sopra" for="dcev-desc">${L('Due righe di descrizione, se ti va', 'A couple of lines of description, if you feel like it', 'Dos l\u00edneas de descripci\u00f3n, si te apetece')}</label>
@@ -17502,8 +17797,6 @@ const _dcevLeggi = () => ({
   titolo: _g('dcev-titolo')?.value || '',
   descrizione: _g('dcev-desc')?.value || '',
   luogo: _g('dcev-luogo')?.value || '',
-  dura: Number(_g('dcev-dura')?.value) || 120,
-  fuso: (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; } })(),
 });
 
 async function caricaDcEventi() {
@@ -21626,6 +21919,7 @@ function caricaDatiScheda(id) {
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'donazioni') { riempiDonazioni(); caricaStatoDonazioni(true); }
   if (id === 'grafiche') initGrafiche();
+  if (id === 'settimana') caricaSettimana();
   modSincronizza();
   if (id === 'scudo') caricaScudo();
   if (id === 'registro') caricaRegistro();

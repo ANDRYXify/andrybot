@@ -57,8 +57,15 @@ test('al bot si chiedono solo i permessi che usiamo, e il numero non si scrive a
   const r = /export const PERMESSI_BOT = String\(([A-Z_ |]+)\);/.exec(API);
   assert.ok(r, 'i permessi dell\'invito si compongono da costanti con un nome');
   const chiesti = r[1].split('|').map((x) => x.trim()).sort();
-  assert.deepEqual(chiesti, ['CREATE_EVENTS', 'CREATE_INSTANT_INVITE', 'DA_DARE', 'EMBED_LINKS', 'MANAGE_CHANNELS', 'MANAGE_GUILD', 'MANAGE_ROLES', 'SEND_MESSAGES', 'VIEW_CHANNEL'],
+  assert.deepEqual(chiesti, ['ATTACH_FILES', 'CREATE_EVENTS', 'CREATE_INSTANT_INVITE', 'DA_DARE', 'EMBED_LINKS', 'MANAGE_CHANNELS', 'MANAGE_GUILD', 'MANAGE_ROLES', 'SEND_MESSAGES', 'VIEW_CHANNEL'],
     'quello che il bot usa, piu\' quello che deve poter passare: nient\'altro');
+
+  // ATTACH_FILES e' l'ultimo arrivato, e ha un uso solo: l'immagine della
+  // settimana, che parte quando lo streamer preme «Manda». Un'immagine in un
+  // messaggio e' un allegato; l'alternativa era tenerla pubblica su un
+  // indirizzo nostro mentre invecchia.
+  assert.match(API, /export const ATTACH_FILES = 1n << 15n;/, 'anche questo bit si scrive come potenza');
+  assert.match(API, /export async function mandaConImmagine\(/, 'e c\'e\' chi lo usa davvero');
 
   // MANAGE_GUILD e' entrato dopo, ed e' il piu' largo dei cinque: con quello si
   // cambiano le impostazioni del server, la schermata di benvenuto, le domande

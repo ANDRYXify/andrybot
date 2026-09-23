@@ -92,6 +92,42 @@ async function invia(webhook, payload, { voglioIndietro = true } = {}) {
   finally { clearTimeout(to); }
 }
 
+// La stessa cosa con un'immagine allegata. Il webhook allega senza chiedere
+// permessi: e' il canale che l'ha creato a deciderlo.
+async function inviaConImmagine(webhook, payload, immagine) {
+  if (!webhookValido(webhook)) return { ok: false, errore: 'webhook non valido' };
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), TIMEOUT_MS * 3);
+  try {
+    const r = await fetch(webhook + '?wait=true', {
+      method: 'POST',
+      signal: ac.signal,
+      headers: { 'User-Agent': 'SocialBot/1.0' },
+      body: api.moduloConImmagine(payload, immagine),
+    });
+    if (r.status === 200) {
+      let d = null; try { d = await r.json(); } catch { /* niente */ }
+      return { ok: true, id: String(d?.id || '') };
+    }
+    if (r.status === 404 || r.status === 401) return { ok: false, errore: 'webhook inesistente o revocato', morto: true };
+    if (r.status === 429) return { ok: false, errore: 'troppe richieste, riprova tra poco' };
+    let d = null; try { d = await r.json(); } catch { /* niente */ }
+    return { ok: false, errore: d?.message || ('HTTP ' + r.status) };
+  } catch (e) { log.warn('inviaConImmagine:', e?.message || e); return { ok: false, errore: 'Discord irraggiungibile' }; }
+  finally { clearTimeout(to); }
+}
+
+// UN'IMMAGINE CON DUE RIGHE, in un posto degli avvisi: canale del server o
+// webhook, come per l'avviso di diretta. Nessuna menzione: la settimana non
+// sveglia nessuno.
+export async function mandaImmagine(token, dest, testo, immagine) {
+  const payload = { content: String(testo || '').slice(0, 1990), allowed_mentions: { parse: [] } };
+  return (dest?.webhook
+    ? inviaConImmagine(dest.webhook, payload, immagine)
+    : api.mandaConImmagine(token, dest?.canale, payload, immagine))
+    .catch((e) => ({ ok: false, errore: e?.message || String(e) }));
+}
+
 // DUE STRADE PER DIRE LA STESSA COSA, e una sola che le sceglie.
 //
 // Il webhook e' la strada vecchia: lo streamer lo crea a mano nelle

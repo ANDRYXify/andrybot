@@ -280,6 +280,82 @@ export class Helix {
     } catch { return null; }
   }
 
+  // ---- Il Programma del canale (scope 'channel:manage:schedule') ----
+  // Tornano sempre { ok, ... } e non lanciano: il giro che li chiama deve poter
+  // dire cosa non e' andato, segmento per segmento, invece di fermarsi al primo.
+  async _programmaChiama(channelLogin, fare) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return { ok: false, errore: 'canale sconosciuto' };
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      return { ok: true, ...(await fare(s.user_id, token)) };
+    } catch (e) {
+      if (e?.status === 401 || e?.status === 403) return { ok: false, errore: 'manca il permesso di scrivere il Programma', permesso: true };
+      if (e?.status === 404) return { ok: false, errore: 'quel segmento non c\'e\' piu\'', assente: true };
+      const testo = String(e?.message || e).replace(/^Helix \S+ \S+ → /, '');
+      return { ok: false, errore: testo.slice(0, 160) || 'Twitch irraggiungibile' };
+    }
+  }
+
+  // I segmenti dei prossimi `giorni` giorni. Un canale senza Programma per
+  // Twitch e' un 404: per noi e' un Programma vuoto, non un errore.
+  async programma(channelLogin, { da = new Date(), giorni = 7 } = {}) {
+    const fino = da.getTime() + giorni * 86400000;
+    const r = await this._programmaChiama(channelLogin, async (id, token) => {
+      const segmenti = [];
+      let dopo = '';
+      for (let pagina = 0; pagina < 8; pagina++) {
+        const query = { broadcaster_id: id, start_time: da.toISOString(), first: '25' };
+        if (dopo) query.after = dopo;
+        let j;
+        try { j = await this._request('GET', '/schedule', { query, token }); } catch (e) {
+          if (e?.status === 404) break;
+          throw e;
+        }
+        const qui = j?.data?.segments || [];
+        let oltre = false;
+        for (const x of qui) {
+          if (new Date(x.start_time).getTime() >= fino) { oltre = true; break; }
+          segmenti.push(x);
+        }
+        dopo = j?.pagination?.cursor || '';
+        if (oltre || !dopo || !qui.length) break;
+      }
+      return { segmenti };
+    });
+    return r;
+  }
+
+  async creaSegmento(channelLogin, { inizio, fuso, dura, titolo = '', categoria = '' }) {
+    return this._programmaChiama(channelLogin, async (id, token) => {
+      const body = { start_time: inizio.toISOString(), timezone: fuso, duration: String(dura), is_recurring: true };
+      if (titolo) body.title = String(titolo).slice(0, 140);
+      if (categoria) body.category_id = String(categoria);
+      const j = await this._request('POST', '/schedule/segment', { query: { broadcaster_id: id }, body, token });
+      return { id: String(j?.data?.segments?.[0]?.id || '') };
+    });
+  }
+
+  async sistemaSegmento(channelLogin, segmento, { titolo, categoria, dura } = {}) {
+    return this._programmaChiama(channelLogin, async (id, token) => {
+      const body = {};
+      if (titolo) body.title = String(titolo).slice(0, 140);
+      if (categoria) body.category_id = String(categoria);
+      if (dura) body.duration = String(dura);
+      await this._request('PATCH', '/schedule/segment', { query: { broadcaster_id: id, id: segmento }, body, token });
+      return {};
+    });
+  }
+
+  async togliSegmento(channelLogin, segmento) {
+    const r = await this._programmaChiama(channelLogin, async (id, token) => {
+      await this._request('DELETE', '/schedule/segment', { query: { broadcaster_id: id, id: segmento }, token });
+      return {};
+    });
+    // Un segmento che non c'e' piu' e' un segmento tolto: e' quello che volevamo.
+    return r.assente ? { ok: true } : r;
+  }
+
   // ---- Punti canale: ricompense personalizzate (Custom Rewards) ----
   // Crea un premio a punti canale. Ritorna {id, title, cost} o lancia (es. 403
   // se manca lo scope channel:manage:redemptions, 400 se il titolo è duplicato).

@@ -108,11 +108,17 @@ export async function inviaMessaggio(token, chatId, testo, { anteprima = true, t
 // cosa che Telegram rifiuta. Chi chiama lo sa e manda il testo a parte.
 export const DIDASCALIA_MAX = 1024;
 
+// Il tipo si legge dai primi byte, non si dichiara: la carta della diretta e'
+// un PNG, la settimana un JPEG, e un tipo dichiarato a parte e' un tipo che un
+// giorno dice il falso.
+const eJpeg = (b) => b?.[0] === 0xFF && b?.[1] === 0xD8 && b?.[2] === 0xFF;
+
 export async function inviaFoto(token, chatId, png, didascalia = '', { threadId = '' } = {}) {
   if (!png || !png.length) return { ok: false, errore: 'nessuna immagine' };
   const modulo = new FormData();
   modulo.append('chat_id', String(chatId));
-  modulo.append('photo', new Blob([png], { type: 'image/png' }), 'live.png');
+  if (eJpeg(png)) modulo.append('photo', new Blob([png], { type: 'image/jpeg' }), 'foto.jpg');
+  else modulo.append('photo', new Blob([png], { type: 'image/png' }), 'live.png');
   if (didascalia) {
     modulo.append('caption', String(didascalia));
     modulo.append('parse_mode', 'HTML');
@@ -327,7 +333,7 @@ export async function eliminaMessaggio(token, chatId, messageId) {
 }
 
 // --------------------------------------------------------- messaggio live
-const escHtml = (s) => String(s ?? '')
+export const escHtml = (s) => String(s ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
 export function costruisciMessaggioLive(streamer, info, template) {

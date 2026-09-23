@@ -90,6 +90,7 @@ import * as dcPreset from '../features/discord-preset.js';
 import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
 import * as instagram from '../features/instagram.js';
+import * as settimana from '../features/settimana.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
 import * as ruoli from '../features/ruoli.js';
@@ -1053,6 +1054,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // Così una sessione con meno privilegi (moderatore) non se le porta via.
     if (s.settings?.apiKey) s.settings = { ...s.settings, apiKey: '', apiKeySet: true };
     if (s.settings?.overlayKey) s.settings = { ...s.settings, overlayKey: '', overlayKeySet: true };
+    // La settimana arriva gia' letta: la regola dei posti vecchi sta nel server,
+    // e il pannello non ne tiene una copia sua.
+    s.settings = { ...(s.settings || {}), settimana: settimana.vistaSettimana(settimana.settimanaDi(s.settings)) };
     return s;
   };
 
@@ -4849,8 +4853,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login;
     const { token, guild, pronto } = dcTokenE(login);
     const s = streamers.get(login);
-    const conf = dcEventi.normalizzaEventi(s?.settings?.discordEventi);
-    const giorni = s?.settings?.grafiche?.giorni || [];
+    const cal = settimana.perIlCalendario(s?.settings);
+    const conf = dcEventi.normalizzaEventi(cal.conf);
+    const giorni = cal.giorni;
     // Le fasce si calcolano qui e non nel pannello: la regola che raggruppa il
     // palinsesto sta in un posto solo, e il pannello mostra quello che uscira'.
     const fasce = dcEventi.fasceDa(giorni).map((f) => ({ ...f, titolo: dcEventi.titoloDi(conf, f) }));
@@ -4867,8 +4872,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   app.post('/api/streamer/dcserver/eventi', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const conf = dcEventi.normalizzaEventi(req.body?.conf);
     const s = streamers.get(login);
+    // La durata e il fuso adesso li scrive la settimana: il pannello del
+    // calendario non li manda piu'. Quelli che c'erano restano, perche' finche'
+    // la settimana non si salva la prima volta e' da qui che si leggono.
+    const conf = dcEventi.normalizzaEventi({ ...(s?.settings?.discordEventi || {}), ...(req.body?.conf || {}) });
     streamers.setSettings(login, { ...(s?.settings || {}), discordEventi: conf });
     res.json({ ok: true, conf });
   }));
@@ -4880,8 +4888,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const s = streamers.get(login);
     const me = await dcApi.io(token, guild);
     if (!me.ok) return res.status(400).json({ errore: me.errore });
-    const e = await dcEventi.sincronizza(token, guild, me,
-      s?.settings?.discordEventi, s?.settings?.grafiche?.giorni || []);
+    const cal = settimana.perIlCalendario(s?.settings);
+    const e = await dcEventi.sincronizza(token, guild, me, cal.conf, cal.giorni);
     if (!e.ok) return res.status(400).json({ errore: e.errore });
     res.json(e);
   }));
@@ -4891,6 +4899,188 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.get('/api/streamer/dcserver/registro', requireOwner, (req, res) => {
     res.json({ giri: dcGiri.ultimi(currentUser(req).login, 20) });
   });
+
+  // ── LA TUA SETTIMANA ──────────────────────────────────────────────────────
+  // Il ragionamento sta in docs/SETTIMANA.md. La settimana si legge SOLO da
+  // `settimana.settimanaDi`: qui si decide dove va.
+  //
+  // DUE TIPI DI POSTO. I calendari (Discord, il Programma di Twitch) sono uno
+  // stato: si riallineano quando salvi e nel giro delle sei ore. I post
+  // (Telegram, Discord, la storia di Instagram) sono un evento: partono quando
+  // premi «Manda», con l'immagine che hai davanti.
+  const programmaOk = (login) =>
+    !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:schedule'));
+
+  // I posti, solo quelli COLLEGATI: un servizio che non c'e' non compare. E per
+  // ognuno si dice prima se funzionera': un canale che rifiuta l'immagine si
+  // scopre qui, non dopo aver premuto.
+  const postiSettimana = async (login) => {
+    const s = streamers.get(login);
+    const posti = { tg: [], dc: [], ig: null, tw: null, dcCalendario: null };
+    const tc = tgConf.get(login);
+    if (tc?.token) {
+      tgDest.migra(login, tc);
+      posti.tg = tgDest.lista(login).filter((d) => d.attivo).map((d) => ({
+        id: d.id, nome: d.titolo || String(d.chat_id), dove: d.thread_nome || '', tipo: d.tipo,
+      }));
+    }
+    const { token, guild, pronto } = dcTokenE(login);
+    dcDest.migra(login, dcConf.get(login));
+    const suDiscord = dcDest.lista(login).filter((d) => d.attivo);
+    if (suDiscord.length) {
+      let perCanale = null;
+      if (pronto && suDiscord.some((d) => !d.webhook)) {
+        const [cc, rr, me] = await Promise.all([dcApi.canali(token, guild), dcApi.ruoli(token, guild), dcApi.io(token, guild)]
+          .map((p) => p.catch(() => ({ ok: false }))));
+        if (cc.ok && rr.ok && me.ok) {
+          const ctx = { ruoli: rr.ruoli, guildId: guild, bot: me, bits: dcApi.permessiBot(rr.ruoli, me.ruoli) };
+          perCanale = new Map((cc.canali || []).map((x) => [String(x.id), dcApi.permessiNelCanale(ctx, x)]));
+        }
+      }
+      posti.dc = suDiscord.map((d) => {
+        let manca = '';
+        if (!d.webhook && !pronto) manca = 'bot';
+        else if (!d.webhook && perCanale) {
+          const b = perCanale.get(String(d.canale));
+          if (b == null) manca = 'canale';
+          else if (!(dcApi.puoVedere(b) && dcApi.puoScrivere(b))) manca = 'scrivere';
+          else if (!dcApi.puoAllegare(b)) manca = 'allegare';
+        }
+        return { id: d.id, nome: d.canale_nome || '', webhook: !!d.webhook, manca };
+      });
+    }
+    const ig = s?.settings?.instagram;
+    if (ig?.userId && ig?.token) posti.ig = { puo: !!(await instagram.puoPubblicare(ig).catch(() => ({ ok: false }))).ok };
+    // Il Programma e' di Twitch: c'e' per chi e' entrato con Twitch.
+    if (tokens.get('broadcaster', login)) posti.tw = { permesso: programmaOk(login) };
+    if (pronto) posti.dcCalendario = { acceso: !!s?.settings?.discordEventi?.acceso };
+    return posti;
+  };
+
+  app.get('/api/streamer/settimana', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const sett = settimana.settimanaDi(streamers.get(login)?.settings);
+    res.json({ settimana: settimana.vistaSettimana(sett), posti: await postiSettimana(login) });
+  }));
+
+  // SALVARE RIALLINEA I CALENDARI, subito: chi cambia l'ora del giovedi' vuole
+  // vederla cambiata adesso, non fra sei ore.
+  app.post('/api/streamer/settimana', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const prima = settimana.settimanaDi(streamers.get(login)?.settings);
+    const sett = settimana.normalizzaSettimana(req.body?.settimana, prima);
+    const esito = {};
+    // Spento, il Programma si ripulisce di quello che avevamo scritto noi:
+    // «non scriverla piu'» vuol dire anche «togli quella che c'e'».
+    if (sett.twitch.acceso || prima.twitch.scritti.length) {
+      if (!programmaOk(login)) esito.twitch = { ok: false, permesso: true };
+      else {
+        if (sett.twitch.acceso) sett.twitch.categorie = await settimana.categorieDi(helix, sett);
+        const e = await settimana.sincronizzaProgramma(helix, login, sett)
+          .catch((x) => ({ ok: false, errore: String(x?.message || x) }));
+        if (e.ok) sett.twitch.scritti = e.scritti;
+        esito.twitch = { ok: e.ok, creati: e.creati || 0, sistemati: e.sistemati || 0, tolti: e.tolti || 0,
+          occupati: e.occupati || [], errori: e.errori || (e.errore ? [e.errore] : []) };
+      }
+    }
+    streamers.setSettings(login, { ...(streamers.get(login)?.settings || {}), settimana: sett });
+    const { token, guild, pronto } = dcTokenE(login);
+    const cal = settimana.perIlCalendario(streamers.get(login)?.settings);
+    if (pronto && cal.conf.acceso) {
+      const me = await dcApi.io(token, guild).catch(() => ({ ok: false }));
+      if (me.ok) {
+        const e = await dcEventi.sincronizza(token, guild, me, cal.conf, cal.giorni)
+          .catch((x) => ({ ok: false, errore: String(x?.message || x) }));
+        esito.discord = { ok: !!e.ok, creati: e.creati || 0, sistemati: e.sistemati || 0, tolti: e.tolti || 0, errore: e.errore || '' };
+      }
+    }
+    res.json({ ok: true, settimana: settimana.vistaSettimana(sett), esito });
+  }));
+
+  // LE IMMAGINI PER INSTAGRAM. Meta la scarica da un indirizzo pubblico nel
+  // momento in cui pubblica: nome casuale, cancellata appena pubblicata, e uno
+  // spazzino per quelle rimaste da un giro interrotto. Pubblica abbastanza per
+  // Meta, non per chi prova a indovinare.
+  const cartellaPubblici = join(config.dataDir, 'pubblici');
+  const PUBBLICO_RE = /^[a-f0-9]{32}\.jpg$/;
+  const PUBBLICO_VITA_MS = 30 * 60_000;
+  const spazzaPubblici = () => {
+    try {
+      for (const f of readdirSync(cartellaPubblici)) {
+        const p = join(cartellaPubblici, f);
+        if (Date.now() - statSync(p).mtimeMs > PUBBLICO_VITA_MS) unlinkSync(p);
+      }
+    } catch { /* cartella non ancora nata */ }
+  };
+  app.get('/pubblici/:nome', (req, res) => {
+    const nome = String(req.params.nome || '');
+    const p = join(cartellaPubblici, nome);
+    if (!PUBBLICO_RE.test(nome) || !existsSync(p)) return res.status(404).end();
+    res.set('Cache-Control', 'no-store');
+    res.type('image/jpeg').send(readFileSync(p));
+  });
+
+  // Un JPEG vero, e non piu' grande di quanto serve: 1080×1350 di qualita' alta
+  // sta sotto il mezzo mega, e Instagram ne accetta otto.
+  const SETTIMANA_MAX = 1_500_000;
+  const _mandando = new Set();
+
+  app.post('/api/streamer/settimana/manda', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(req.body?.immagine || ''));
+    const byte = m ? Buffer.from(m[1], 'base64') : null;
+    if (!byte || byte.length > SETTIMANA_MAX || !(byte[0] === 0xFF && byte[1] === 0xD8 && byte[2] === 0xFF)) {
+      return res.status(400).json({ errore: 'L\'immagine della settimana non e\' arrivata intera: riprova.' });
+    }
+    // Un doppio clic non manda due volte la stessa settimana.
+    if (_mandando.has(login)) return res.status(409).json({ errore: 'La sto gia\' mandando.' });
+    _mandando.add(login);
+    try {
+      const testo = String(req.body?.testo || '').slice(0, 2000);
+      const prima = settimana.settimanaDi(streamers.get(login)?.settings);
+      const { dove } = settimana.normalizzaSettimana({ ...prima, dove: req.body?.dove }, prima);
+      streamers.setSettings(login, { ...(streamers.get(login)?.settings || {}), settimana: { ...prima, dove } });
+      const esiti = [];
+
+      // Telegram: la didascalia sta sotto i 1024 caratteri; se non ci sta, la
+      // foto va da sola e il testo la segue.
+      const tc = tgConf.get(login);
+      const mieTg = new Map(tgDest.lista(login).map((d) => [String(d.id), d]));
+      for (const id of dove.tg) {
+        const d = mieTg.get(id);
+        if (!d?.attivo || !tc?.token) continue;
+        const html = telegram.escHtml(testo);
+        const dida = html.length <= telegram.DIDASCALIA_MAX ? html : '';
+        const r = await telegram.inviaFoto(tc.token, d.chat_id, byte, dida, { threadId: d.thread_id })
+          .catch((e) => ({ ok: false, errore: e?.message || String(e) }));
+        if (r.ok && !dida && testo) await telegram.inviaMessaggio(tc.token, d.chat_id, html, { anteprima: false, threadId: d.thread_id }).catch(() => {});
+        esiti.push({ dove: 'tg', nome: d.titolo || String(d.chat_id), ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
+      }
+
+      const { token } = dcTokenE(login);
+      const mieDc = new Map(dcDest.lista(login).map((d) => [String(d.id), d]));
+      for (const id of dove.dc) {
+        const d = mieDc.get(id);
+        if (!d?.attivo) continue;
+        const r = await discord.mandaImmagine(token, d, testo, { byte, nome: 'settimana.jpg', tipo: 'image/jpeg' });
+        esiti.push({ dove: 'dc', nome: d.canale_nome || '', ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
+      }
+
+      const ig = streamers.get(login)?.settings?.instagram;
+      if (dove.ig && ig?.userId && ig?.token) {
+        spazzaPubblici();
+        mkdirSync(cartellaPubblici, { recursive: true });
+        const nome = crypto.randomBytes(16).toString('hex') + '.jpg';
+        const p = join(cartellaPubblici, nome);
+        writeFileSync(p, byte);
+        try {
+          const r = await instagram.pubblicaStoria({ ...ig, url: `${config.baseUrl.replace(/\/$/, '')}/pubblici/${nome}` });
+          esiti.push({ dove: 'ig', nome: 'storia', ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
+        } finally { try { unlinkSync(p); } catch { /* gia' andata */ } }
+      }
+      res.json({ ok: true, esiti });
+    } finally { _mandando.delete(login); }
+  }));
 
   app.delete('/api/streamer/ruoli', requireOwner, (req, res) => {
     dcRuoli.scorda(currentUser(req).login);
@@ -5650,9 +5840,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.grafiche !== undefined) {
       const gr = b.grafiche || {};
       const str = (v, n) => String(v == null ? '' : v).slice(0, n);
-      const giorni = Array.isArray(gr.giorni) ? gr.giorni.slice(0, 7).map((x) => ({
-        ora: str(x?.ora, 5), att: str(x?.att, 40), off: !!x?.off,
-      })) : [];
+      // I giorni non arrivano piu' da qui: hanno una casa loro, la settimana.
+      // Quelli che c'erano restano dove sono, perche' finche' la settimana non
+      // si salva la prima volta e' li' che si leggono.
+      const giorni = Array.isArray(s.settings?.grafiche?.giorni) ? s.settings.grafiche.giorni : [];
       // sfondo: 'tema' (gradiente del tema) | 'tinta' (colore pieno) | 'immagine'
       // (data URL caricata, già ridimensionata dal client; cap per non gonfiare
       // le impostazioni). Le immagini restano nel canale; la condivisione

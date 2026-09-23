@@ -123,7 +123,7 @@ const motivoPer = (perche) => {
 };
 
 // Una chiamata sola. Torna { ok, dati } oppure { ok:false, errore, stato, assente }.
-async function chiama(token, via, { metodo = 'GET', corpo = null, riprova = true, perche = '' } = {}) {
+async function chiama(token, via, { metodo = 'GET', corpo = null, modulo = null, riprova = true, perche = '' } = {}) {
   const t = String(token || '').trim();
   if (!t) return { ok: false, errore: 'manca il token del bot' };
   const ac = new AbortController();
@@ -138,7 +138,9 @@ async function chiama(token, via, { metodo = 'GET', corpo = null, riprova = true
         ...(corpo ? { 'Content-Type': 'application/json' } : {}),
         ...motivoPer(perche),
       },
-      ...(corpo ? { body: JSON.stringify(corpo) } : {}),
+      // Un modulo in piu' parti si porta il suo Content-Type, col confine fra le
+      // parti: scriverlo a mano vorrebbe dire sbagliarlo.
+      ...(modulo ? { body: modulo } : corpo ? { body: JSON.stringify(corpo) } : {}),
     });
     if (r.status === 429) {
       const d = await r.json().catch(() => null);
@@ -146,7 +148,7 @@ async function chiama(token, via, { metodo = 'GET', corpo = null, riprova = true
       if (riprova && ms <= ATTESA_MAX_MS) {
         clearTimeout(to);
         await attendi(ms);
-        return chiama(token, via, { metodo, corpo, riprova: false, perche });
+        return chiama(token, via, { metodo, corpo, modulo, riprova: false, perche });
       }
       return { ok: false, errore: 'troppe richieste: riprovo piu\' tardi', stato: 429, attesa: ms };
     }
@@ -374,6 +376,11 @@ export const MANAGE_GUILD = 1n << 5n;       // 32
 export const VIEW_CHANNEL = 1n << 10n;      // 1024
 export const SEND_MESSAGES = 1n << 11n;     // 2048
 export const EMBED_LINKS = 1n << 14n;       // 16384
+// ALLEGARE FILE serve a una cosa sola: l'immagine della settimana, che parte
+// quando lo streamer preme «Manda». Un'immagine in un messaggio e' un allegato;
+// l'alternativa era metterla su un indirizzo nostro e farla vedere da li', cioe'
+// tenere pubblica un'immagine che nel frattempo invecchia.
+export const ATTACH_FILES = 1n << 15n;      // 32768
 // CREARE APPUNTAMENTI, e toccare SOLO I PROPRI.
 //
 // Discord ha due permessi diversi: MANAGE_EVENTS (gia' fra quelli che il bot
@@ -400,7 +407,7 @@ export const CREATE_EVENTS = 1n << 44n;
 // (`scripts/verifica-poteri.mjs`) che controlla che da nessuna parte, in tutto
 // il codice, si chiami una porta di Discord che quei poteri li ESERCITA.
 // Distribuirli si', usarli mai.
-export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | MANAGE_GUILD | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | CREATE_EVENTS | DA_DARE);
+export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | MANAGE_GUILD | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | ATTACH_FILES | CREATE_EVENTS | DA_DARE);
 
 // I PIENI POTERI, e perche' non sono quelli di prima.
 //
@@ -419,7 +426,7 @@ export const PERMESSI_BOT = String(MANAGE_ROLES | MANAGE_CHANNELS | MANAGE_GUILD
 // La lista di prima resta dentro apposta: se un giorno qualcuno toglie
 // l'Amministratore al nostro ruolo, il bot non resta nudo, torna a fare quello
 // che faceva. Un solo bit, e quel giorno smetterebbe di funzionare in silenzio.
-export const PERMESSI_PIENI = String(ADMINISTRATOR | MANAGE_ROLES | MANAGE_CHANNELS | MANAGE_GUILD | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | CREATE_EVENTS | DA_DARE);
+export const PERMESSI_PIENI = String(ADMINISTRATOR | MANAGE_ROLES | MANAGE_CHANNELS | MANAGE_GUILD | CREATE_INSTANT_INVITE | VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | ATTACH_FILES | CREATE_EVENTS | DA_DARE);
 
 // I permessi che il bot ha nel server: l'unione di quelli dei suoi ruoli. Si
 // calcolano da cose che chiediamo GIA' (l'elenco dei ruoli e quelli del bot),
@@ -445,6 +452,7 @@ export const puoVedere = (bits) => puo(bits, VIEW_CHANNEL);
 export const puoServer = (bits) => puo(bits, MANAGE_GUILD);
 export const puoScrivere = (bits) => puo(bits, SEND_MESSAGES);
 export const puoIncorniciare = (bits) => puo(bits, EMBED_LINKS);
+export const puoAllegare = (bits) => puo(bits, ATTACH_FILES);
 // Puo' far entrare qualcuno dalla porta d'ingresso? Chi ha invitato il bot
 // prima che questa porta esistesse non gli ha dato questo privilegio: il giro
 // funzionerebbe fino all'ultimo passo e poi non entrerebbe nessuno. Si dice
@@ -1113,6 +1121,26 @@ export async function mandaMessaggio(token, canale, messaggio) {
   if (messaggio?.allowed_mentions) corpo.allowed_mentions = messaggio.allowed_mentions;
   if (!corpo.content && !corpo.embeds) return { ok: false, errore: 'un messaggio vuoto non si manda' };
   const r = await chiama(token, `/channels/${canale}/messages`, { metodo: 'POST', corpo });
+  if (!r.ok) return r;
+  return { ok: true, id: String(r.dati?.id || '') };
+}
+
+// UN MESSAGGIO CON UN'IMMAGINE ALLEGATA. Discord la vuole in un modulo in piu'
+// parti: il messaggio in `payload_json`, il file in `files[0]`. Serve
+// ATTACH_FILES nel canale; senza, Discord rifiuta, e chi chiama lo dice.
+export function moduloConImmagine(messaggio, { byte, nome = 'settimana.jpg', tipo = 'image/jpeg' } = {}) {
+  const corpo = { attachments: [{ id: 0, filename: nome }], allowed_mentions: messaggio?.allowed_mentions || { parse: [] } };
+  if (messaggio?.content) corpo.content = String(messaggio.content).slice(0, 2000);
+  const modulo = new FormData();
+  modulo.append('payload_json', JSON.stringify(corpo));
+  modulo.append('files[0]', new Blob([byte], { type: tipo }), nome);
+  return modulo;
+}
+
+export async function mandaConImmagine(token, canale, messaggio, immagine = {}) {
+  if (!idOk(canale)) return { ok: false, errore: 'id del canale non valido' };
+  if (!immagine?.byte?.length) return { ok: false, errore: 'nessuna immagine' };
+  const r = await chiama(token, `/channels/${canale}/messages`, { metodo: 'POST', modulo: moduloConImmagine(messaggio, immagine) });
   if (!r.ok) return r;
   return { ok: true, id: String(r.dati?.id || '') };
 }

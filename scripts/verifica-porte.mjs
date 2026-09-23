@@ -46,6 +46,7 @@ const PUBBLICHE = new Map([
   ['GET /entra', 'la pagina di ingresso'],
   ['GET /js/carta-disegno.js', 'un file statico come gli altri del sito: il disegno della carta, senza commenti e senza dati di nessuno'],
   ['GET /font/:file', 'i caratteri della carta: solo i tre nomi dell\'elenco, e sono file gia\' pubblici per licenza'],
+  ['GET /pubblici/:nome', 'l\'immagine della settimana mentre Instagram la scarica: nome casuale da 128 bit, cancellata appena pubblicata'],
   ['GET /accedi', 'la pagina di ingresso'],
   ['GET /privacy', 'informativa: pubblica per obbligo'],
   ['GET /.well-known/security.txt', 'come segnalare un problema di sicurezza'],
