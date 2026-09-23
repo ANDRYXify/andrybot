@@ -8906,13 +8906,14 @@ function avviaVita() {
   _vivoTimer.push(setTimeout(nuoviNomi, 9000));
 }
 
-function fermaVita() {
+function fermaVita(ridisegna = true) {
+  const eraVivo = _vivo;
   _vivo = false;
   _vivoChat = null;
   document.body.classList.remove('banco-vivo');
   for (const t of _vivoTimer) clearTimeout(t);
   _vivoTimer = [];
-  if (_g('ap-alert')) aggiornaAnteprima();
+  if (ridisegna && eraVivo && _g('ap-alert')) aggiornaAnteprima();
 }
 
 let _rif = { id: null, blob: null, url: null, op: 60, on: true };
@@ -9811,6 +9812,7 @@ function montaBanco() {
   document.body.classList.add('banco-on');
   requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco));
   aggiornaInspector();
+  if (_g('ovl-vivo')?.checked && !_vivo) avviaVita();
 }
 
 function vestiPannello(el, chiave, titolo) {
@@ -9899,7 +9901,7 @@ document.addEventListener('click', (ev) => {
 });
 
 function smontaBanco() {
-  fermaVita();
+  fermaVita(false);
   document.body.classList.remove('banco-on');
   document.documentElement.style.removeProperty('--banco-sopra');
   if (_osservaTestata) { try { _osservaTestata.disconnect(); } catch (e) {  } _osservaTestata = null; }

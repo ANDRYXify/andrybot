@@ -116,3 +116,17 @@ test('l\'aggancio si spegne con una spunta che si ricorda', () => {
   assert.ok(/if \(!ev\.altKey && !fine && _agganciaOn\)/.test(APP), 'il trascinamento la rispetta');
   assert.ok(/localStorage\.setItem\('banco:aggancia'/.test(APP) && /localStorage\.getItem\('banco:aggancia'\) !== '0'/.test(APP), 'e si ricorda');
 });
+
+// Uscire dallo Studio non ridisegna un'anteprima che non si vede. Prima ogni
+// cambio di scheda, e ogni avvio del pannello, ridisegnava da capo l'anteprima
+// dell'overlay per «spegnere» un dal vivo che quasi sempre non era acceso: su
+// un telefono medio 86 ms a giro, per niente. Il ragionamento sta in
+// docs/BANCO.md.
+test('uscire dallo Studio non ridisegna l\'anteprima, e il dal vivo riprende al ritorno', () => {
+  const fv = corpoDi('fermaVita');
+  assert.ok(fv.includes('const eraVivo = _vivo;'), 'si guarda se il dal vivo era acceso');
+  assert.ok(fv.includes("if (ridisegna && eraVivo && _g('ap-alert')) aggiornaAnteprima();"), 'e si ridisegna solo se qualcosa cambia davvero');
+  assert.ok(corpoDi('smontaBanco').includes('fermaVita(false);'), 'smontando, l\'anteprima non si vede: niente da ridisegnare');
+  assert.ok(corpoDi('montaBanco').includes("if (_g('ovl-vivo')?.checked && !_vivo) avviaVita();"),
+    'la spunta dice il vero: se e\' accesa, tornando il dal vivo riparte');
+});

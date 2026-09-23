@@ -336,6 +336,25 @@ niente occupa spazio in permanenza per un uso occasionale.
 Sommando tutto il percorso, dalla disposizione a colonne di partenza: la tela è
 passata da **509×286 a 925×520** — tre volte e un terzo la superficie.
 
+## Uscire dallo Studio non costa niente
+
+Ogni cambio di scheda smonta il banco, e smontarlo spegneva l'anteprima «dal
+vivo». Spegnerla voleva dire ridisegnare da capo tutta l'anteprima dell'overlay:
+l'alert, la chat, i widget, la posizione di ogni elemento. Lo faceva sempre,
+anche se il dal vivo non era acceso, e anche se l'anteprima non si vedeva più.
+Succedeva a ogni cambio di scheda e a ogni avvio del pannello. Su un telefono
+medio erano 86 ms a giro, quasi tutto il tempo di `attivaPiattaforma`.
+
+Adesso `fermaVita` ridisegna solo se il dal vivo era acceso davvero, e chi
+smonta il banco non chiede di ridisegnare: l'anteprima non si vede, e
+rientrando nello Studio `caricaAlert` la ridisegna comunque. Misurato col
+processore rallentato quattro volte: `attivaPiattaforma` da 91-155 ms a 12-16.
+
+Una stonatura venuta fuori strada facendo: uscendo dallo Studio col dal vivo
+acceso, l'anteprima si fermava ma la spunta restava accesa, e tornando non si
+muoveva niente. Adesso la spunta dice il vero: se è accesa, montando il banco il
+dal vivo riparte (`montaBanco`).
+
 ## Le icone erano tutte spostate a sinistra
 
 Le icone dei riquadri sembravano decentrate. Misurate
