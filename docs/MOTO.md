@@ -417,6 +417,27 @@ la carta stava ferma, ed era verde. E `scripts/verifica-contrasto.mjs`
 misura sui pixel il contrasto dei comandi, anche sotto il mouse. Girano tutti a
 ogni push.
 
+## La scena nuova parte dall'inizio
+
+Cambiando sezione da una pagina scorsa in giù, la nuova compariva alla stessa
+altezza della vecchia e poi scivolava su fino in cima, con le carte che
+entravano mentre la pagina scorreva sotto. Il salto in cima c'era:
+`window.scrollTo({ top: 0, behavior: 'auto' })`. Ma «auto» non vuol dire
+«subito», vuol dire «come dice il CSS», e il CSS dice
+`html { scroll-behavior: smooth }`.
+
+`_saltaInCima` toglie lo scorrimento morbido sulla radice per il tempo della
+chiamata, fa ricalcolare lo stile, salta e lo rimette com'era. La lettura dello
+stile non è un dettaglio: senza, il browser salta con lo stile di prima e scorre
+piano lo stesso (misurato: 600 px prima, 600 px dopo). `behavior: 'instant'`
+farebbe lo stesso nei browser nuovi, ma in quelli più vecchi è un valore
+sconosciuto e la chiamata fa eccezione.
+
+`scripts/verifica-stacco.mjs` scorre in giù una scheda, cambia sezione e guarda
+`scrollY` nel momento esatto in cui la scheda nuova diventa visibile: dev'essere
+0. `test/contratto/scena-in-cima.test.mjs` controlla l'ordine del salto nel
+codice.
+
 ## Si prepara solo quello che si vede
 
 Il pannello si disegna tutto insieme, trentasette schede, e a ogni `render()` le

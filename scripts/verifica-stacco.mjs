@@ -85,6 +85,32 @@ for (let i = 1; i < schede.length; i++) {
   passaggi.push({ da: schede[i - 1], a: schede[i], esce: c.esce > 0, scena: c.scena > 0, scambio: c.scambio > 0 });
 }
 
+// La scena nuova parte dall'inizio. Cambiando sezione da una pagina scorsa in
+// giu', la nuova compariva alla stessa altezza e poi scivolava su: il salto in
+// cima chiedeva `behavior: 'auto'`, che vuol dire «come dice il CSS», e il CSS
+// dice `scroll-behavior: smooth`. Si guarda scrollY nel momento esatto in cui
+// la scheda nuova diventa visibile, non dopo: dopo, lo scivolo e' gia' finito.
+let cima = null;
+for (const x of passaggi.filter((y) => y.esce)) {
+  await p.evaluate((d) => window.SB_APP.vai(d), x.da);
+  await p.waitForTimeout(480);
+  await p.evaluate(() => window.scrollTo({ top: 600, behavior: 'instant' }));
+  if (await p.evaluate(() => scrollY) < 300) continue;
+  cima = await p.evaluate((a) => new Promise((ok) => {
+    const prima = scrollY;
+    const mo = new MutationObserver(() => {
+      if (!document.querySelector(`.pannello-scheda.visibile[data-scheda="${a}"]`)) return;
+      mo.disconnect();
+      ok({ prima, dopo: scrollY });
+    });
+    mo.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+    window.SB_APP.vai(a);
+  }), x.a);
+  cima.via = `${x.da}→${x.a}`;
+  await p.waitForTimeout(480);
+  break;
+}
+
 // I due interruttori non sono lo stesso interruttore. «Leggero» si accende DA
 // SOLO su un dispositivo che dichiara poca memoria, pochi core o una rete
 // lenta, e serve al CARICO: due translate non pesano niente, lo stacco resta.
@@ -136,6 +162,8 @@ dice(muti.length <= 1, 'ogni passaggio ha il suo stacco', muti.map((x) => `${x.d
 const senzaEntrata = scene.filter((x) => !x.scena);
 dice(!senzaEntrata.length, 'e quella nuova entra dal verso giusto (scostamento vero, non solo la classe)',
   senzaEntrata.slice(0, 4).map((x) => `${x.da}→${x.a}`).join(' · '));
+dice(!!cima && cima.dopo === 0, 'la scena nuova parte dall\'inizio, anche da una pagina scorsa in giu\'',
+  cima ? `${cima.via}: compare a ${cima.dopo}px (era a ${cima.prima})` : 'nessuna scheda abbastanza lunga da scorrere');
 dice(!veli.length, 'non resta nessun velo a tutto schermo sopra alla pagina', veli.join(' · '));
 dice(durate.uscita > 0 && durate.uscita <= 200, 'l\'uscita e\' corta: uno stacco, non una dissolvenza', `${durate.uscita}ms`);
 dice(durate.sfalso > 0 && durate.sfalso <= 60, 'i blocchi si sfalsano di poco', `${durate.sfalso}ms`);

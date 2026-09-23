@@ -102,6 +102,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nella libreria degli effetti i tasti restano dentro la loro carta anche sugli schermi medi: «Non condividere» usciva dal bordo. [vai: effetti]
 - Cambiando sezione le carte entrano davvero dal lato verso cui vai: finora, quasi sempre, salivano e basta.
 - Sul telefono, cambiando scheda, le carte entrano dal bordo e non più da fuori schermo, e le scritte accanto agli interruttori vanno a capo: la pagina non scivola più di lato.
+- Cambiando sezione da una pagina scorsa in giù, la nuova si apre dall'inizio: prima compariva a metà e scivolava su da sola.
 
 ## 2026-09-19
 

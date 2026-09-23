@@ -26486,9 +26486,18 @@ function _duraUscita() {
   return /ms$/.test(v) ? n : n * 1000;
 }
 
+function _saltaInCima() {
+  const radice = document.documentElement;
+  const prima = radice.style.scrollBehavior;
+  radice.style.scrollBehavior = 'auto';
+  void getComputedStyle(radice).scrollBehavior;
+  window.scrollTo(0, 0);
+  radice.style.scrollBehavior = prima;
+}
+
 function _cambiaScena(id, sezioni, conVelo) {
   const corpo = () => {
-    window.scrollTo({ top: 0, behavior: 'auto' });
+    _saltaInCima();
     morphDa(null);
     chiudiMenuMobile();
     aggiornaStatoNav(id);
