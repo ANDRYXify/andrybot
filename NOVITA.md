@@ -47,6 +47,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - La pagina delle donazioni si modifica dalla scheda Donazioni, e la tua diretta in prima pagina si accende dalla Pagina link. [vai: donazioni]
 - La promo dei tuoi social in chat si accende insieme alla personalità del bot, accanto a «si fa vivo da solo». [vai: personalita]
 - «Come funziona» si apre da solo la prima volta che entri in una scheda, poi resta chiuso finché non lo apri tu.
+- La prima schermata del tuo server Discord si scrive da sola: ogni canale in mostra ha già la sua faccina e la sua riga, nella lingua del nome. Quelle che scrivi tu restano tue. [vai: dcentra]
 
 ## 2026-09-19
 

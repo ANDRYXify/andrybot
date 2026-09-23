@@ -85,6 +85,7 @@ import * as sostegno from '../features/sostegno.js';
 import { creaChiavi, DURATA_MS as CHIAVE_MS } from './chiave-breve.js';
 import { peso as pesoDanno } from '../features/discord-peso.js';
 import * as dcCatalogo from '../features/discord-catalogo.js';
+import { rigaPer } from '../features/discord-righe.js';
 import * as dcCostruisci from '../features/discord-costruisci.js';
 import * as dcPreset from '../features/discord-preset.js';
 import * as dcEventi from '../features/discord-eventi.js';
@@ -4985,8 +4986,21 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.post('/api/streamer/dcserver/pronti', requireOwner, (req, res) => {
     const preset = dcCatalogo.normalizzaPreset(req.body?.preset);
     res.json({ ok: true,
-      ingresso: dcCatalogo.portaPronta(preset),
+      ingresso: dcCatalogo.portaPronta(preset, { lingua: String(req.body?.lingua || '') }),
       filtro: dcCatalogo.filtroPronto(preset) });
+  });
+
+  // Le righe della prima schermata, una per canale: dal nome, dal tipo o
+  // dall'argomento (`discord-righe.js`). Dove metterle lo decide il pannello,
+  // che le scrive solo dove la riga e' vuota.
+  app.post('/api/streamer/dcserver/righe', requireOwner, (req, res) => {
+    const canali = (Array.isArray(req.body?.canali) ? req.body.canali : []).slice(0, 60).map((c) => ({
+      nome: String(c?.nome || '').slice(0, 100),
+      tipo: String(c?.tipo || '').slice(0, 12),
+      argomento: String(c?.argomento || '').slice(0, 1024),
+    }));
+    const lingua = String(req.body?.lingua || '');
+    res.json({ ok: true, righe: canali.map((c) => rigaPer(c, lingua)) });
   });
 
   // ── Gli appuntamenti sul calendario del server ──

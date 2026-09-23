@@ -148,3 +148,37 @@ qualunque server — le liste di Discord, lo spam, le raffiche di menzioni — c
 ruoli dello staff esentati. **Le parole tue non le mettiamo noi**: dipendono da
 chi sei e da chi ti guarda, e una lista scritta da noi sarebbe una lista che non
 c'entra niente col tuo server.
+
+## Le righe della prima schermata
+
+Nella prima schermata ogni canale in mostra ha una faccina e una riga: cosa si
+fa li'. Una riga vuota non dice niente a chi arriva, e per Discord la
+descrizione e' una stringa, non un campo facoltativo. Percio' le righe si
+scrivono da sole (`src/features/discord-righe.js`, `rigaPer`), dal NOME del
+canale: e' l'unica cosa che dice a cosa serve, insieme al tipo e
+all'argomento.
+
+- **Vince la parola che dice di piu'.** «clip-e-schermate» contiene «clip» e
+  «schermate»: vince la piu' lunga, e a parita' quella piu' in fondo. Le parole
+  della piattaforma («live», «stream», «twitch») sono deboli e contano solo da
+  sole: «twitch-clip» e' un canale di clip, «live» da solo e' l'avviso della
+  diretta. Cosi' l'ordine della tabella non decide niente.
+- **La riga parla la lingua del nome.** «rules» prende una riga in inglese,
+  «reglas» in spagnolo, «regole» in italiano, qualunque sia la lingua del
+  pannello. Le parole che valgono in piu' lingue («general», «meme») prendono
+  quella di chi scrive.
+- **Se non si sa, non si inventa.** Un nome muto passa al tipo (un canale
+  annunci e' un canale annunci), poi alla prima frase dell'argomento se sta
+  nella riga, e poi a nessuno: il pannello dice quali canali la riga la devono
+  avere da chi li conosce.
+- **Si scrive solo dove e' vuoto.** Una riga scritta a mano non si tocca, e
+  nemmeno una faccina scelta. Cambiando il canale di una riga, la riga cambia
+  solo se era ancora quella scritta da sola.
+
+La porta di partenza (`portaPronta`) nasce con le righe, e le tracce del
+catalogo quindi anche. Nel pannello le scrivono il tasto «Scrivimi le
+descrizioni», l'aggiunta di un canale (che prende il primo non ancora in
+mostra) e il cambio di canale, tutti con la rotta
+`/api/streamer/dcserver/righe`. Le righe della prova del pannello sono una
+copia per la demo, e il test controlla che siano le stesse del server.
+

@@ -626,6 +626,26 @@ function _demoImport(corpo) {
   return { ok: true, anteprima: v };
 }
 
+const _DEMO_RIGHE = {
+  'regole': ['\u{1F4DC}', 'Da leggere prima di scrivere.'],
+  'annunci': ['\u{1F4E3}', 'Le novità importanti, e basta.'],
+  'presentati': ['\u{1F44B}', 'Due righe su di te, per conoscerci.'],
+  'generale': ['\u{1F4AC}', 'Due chiacchiere con tutti.'],
+  'fuori-tema': ['\u{1F3B2}', 'Tutto quello che non c’entra niente.'],
+  'sono-in-onda': ['\u{1F534}', 'L’avviso quando vado in diretta.'],
+  'clip': ['\u{1F3AC}', 'I momenti delle dirette da rivedere.'],
+  'richieste': ['\u{1F64B}', 'Giochi, canzoni, sfide: chiedi pure.'],
+  'immagini': ['\u{1F5BC}️', 'Foto e immagini da condividere.'],
+  'cerchiamo-gente': ['\u{1F3AE}', 'Trova con chi giocare.'],
+  'clip-e-schermate': ['\u{1F4F8}', 'Clip e schermate delle vostre partite.'],
+  'consigli': ['\u{1F9ED}', 'Trucchi e consigli da condividere.'],
+  'musica': ['\u{1F3B5}', 'Cosa stai ascoltando? Faccelo sentire.'],
+  'domande': ['❓', 'Hai un dubbio? Chiedi qui.'],
+  'segnalazioni': ['\u{1F6A9}', 'Se qualcosa non va, si scrive qui.'],
+  'bacheca': ['\u{1F4E3}', 'Le novità importanti, e basta.'],
+};
+const _demoRiga = (nome) => { const r = _DEMO_RIGHE[String(nome || '').trim().toLowerCase()]; return r ? { emoji: r[0], testo: r[1] } : null; };
+
 function apiDemo(percorso, opzioni = {}) {
   const metodo = (opzioni.method || 'GET').toUpperCase();
   const via = percorso.split('?')[0];
@@ -733,7 +753,7 @@ function apiDemo(percorso, opzioni = {}) {
       ingresso: tutti.length ? {
         acceso: tutti.length >= 7,
         canaliDiPartenza: tutti,
-        benvenuto: { testo: 'Da qui si comincia. Sotto trovi dove si scrive cosa.', canali: tutti.slice(0, 3).map((n) => ({ canale: n, testo: '' })) },
+        benvenuto: { testo: 'Da qui si comincia. Sotto trovi dove si scrive cosa.', canali: tutti.slice(0, 3).map((n) => ({ canale: n, testo: _demoRiga(n)?.testo || '', emoji: _demoRiga(n)?.emoji || '' })) },
         domande: [{ titolo: 'Di cosa ti va di parlare?', unaSola: false,
           risposte: cats.filter((c) => !/^benvenuto$/i.test(c.nome)).map((c) => ({ titolo: c.nome, canali: testo(c) })) }],
       } : null,
@@ -742,6 +762,9 @@ function apiDemo(percorso, opzioni = {}) {
         { tipo: 'spam', nome: 'Spam', azioni: { blocca: true }, esentiRuoli: ['Moderatori'], esentiCanali: [] },
         { tipo: 'menzioni', nome: 'Raffiche di menzioni', tettoMenzioni: 5, raid: true, azioni: { blocca: true }, esentiRuoli: ['Moderatori'], esentiCanali: [] },
       ] });
+  }
+  if (via === '/api/streamer/dcserver/righe') {
+    return Promise.resolve({ ok: true, righe: (opzioni.body?.canali || []).map((c) => _demoRiga(c?.nome)) });
   }
   if (via === '/api/streamer/dcserver/applica') {
     const tolti = opzioni.body?.chiave ? 2 : 0;
@@ -19036,6 +19059,43 @@ function _dceDisegnaVerifica() {
 
 const _dceNienteTraccia = () => `<p class="suggerimento">${L('Scegli prima una traccia, nella scheda «Il server»: la porta d’ingresso fa parte di quella.', 'First pick a track, in the «The server» tab: the entrance door is part of it.', 'Elige primero una plantilla, en la pestaña «El servidor»: la puerta de entrada forma parte de ella.')}</p>`;
 
+const _dceVuota = (c) => !String(c.testo || '').trim() || !String(c.emoji || '').trim();
+
+function _dceDescrittore(nome) {
+  const k = String(nome || '').trim().toLowerCase();
+  const p = _dcs?.preset;
+  const c = [...(p?.canali || []), ...(p?.categorie || []).flatMap((x) => x.canali || [])]
+    .find((x) => String(x.nome || '').trim().toLowerCase() === k);
+  return { nome: String(nome || ''), tipo: c?.tipo || 'testo', argomento: c?.argomento || '' };
+}
+
+async function _dceScriviRighe(righe) {
+  const vuote = righe.filter(_dceVuota);
+  if (!vuote.length) return [];
+  const r = await api('/api/streamer/dcserver/righe', { method: 'POST', body: { canali: vuote.map((c) => _dceDescrittore(c.canale)), lingua: LINGUA } });
+  const fatte = Array.isArray(r?.righe) ? r.righe : [];
+  vuote.forEach((c, i) => {
+    const f = fatte[i];
+    if (!f) return;
+    if (!String(c.testo || '').trim()) { c.testo = f.testo; c._autoT = f.testo; }
+    if (!String(c.emoji || '').trim() && f.emoji) { c.emoji = f.emoji; c._autoE = f.emoji; }
+  });
+  return vuote.filter((c) => !String(c.testo || '').trim()).map((c) => c.canale);
+}
+
+function _dceMostraScrivi() {
+  const box = _g('dce-benvenuto');
+  const tasto = box?.querySelector('[data-dce="ben-scrivi"]');
+  if (!tasto) return;
+  tasto.hidden = ![...box.querySelectorAll('.dce-riga')].some((r) => !String(r.querySelector('[data-dce="ben-testo"]')?.value || '').trim()
+    || !String(r.querySelector('[data-dce="ben-emoji"]')?.value || '').trim());
+}
+
+function _dceSegnaScritte(b) {
+  for (const c of (b?.canali || [])) { c._autoT = c.testo || ''; c._autoE = c.emoji || ''; }
+  return b;
+}
+
 function _dceDisegnaBenvenuto() {
   const box = _g('dce-benvenuto');
   if (!box) return;
@@ -19063,6 +19123,7 @@ function _dceDisegnaBenvenuto() {
     <div class="dce-righe">${righe || `<p class="suggerimento">${L('Nessuno, per ora.', 'None, for now.', 'Ninguno, por ahora.')}</p>`}</div>
     <p class="spazio-sopra riga-flessibile">
       <button type="button" class="btn secondario mini" data-dce="ben-piu"${(b.canali || []).length >= 5 ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi un canale', 'Add a channel', 'Añadir un canal')}</button>
+      <button type="button" class="btn secondario mini" data-dce="ben-scrivi"${(b.canali || []).some(_dceVuota) ? '' : ' hidden'}>${L('Scrivimi le descrizioni', 'Write me the descriptions', 'Escríbeme las descripciones')}</button>
       <button type="button" class="btn secondario mini" data-dce="ben-spegni">${L('Lascia stare la schermata', 'Leave the screen alone', 'Deja la pantalla en paz')}</button>
     </p>
     <p class="suggerimento">${L('Cinque è il massimo che Discord mostra.', 'Five is the most Discord shows.', 'Cinco es lo máximo que enseña Discord.')}</p>`;
@@ -19180,10 +19241,22 @@ function collegaChiEntra() {
   if (!scheda || scheda.dataset.pronta) return;
   scheda.dataset.pronta = '1';
 
+  scheda.addEventListener('input', (e) => {
+    if (e.target.closest('#dce-benvenuto')) _dceMostraScrivi();
+  });
+
   scheda.addEventListener('change', (e) => {
     if (!e.target.closest('[data-dce]')) return;
     _dceLeggi();
     if (['r-canale', 'r-ruolo', 'partenza'].includes(e.target.dataset.dce)) _dceDisegnaPorta();
+    if (e.target.dataset.dce === 'ben-canale') {
+      const k = e.target.closest('.dce-riga')?.dataset.k;
+      const c = (_dceIng()?.benvenuto?.canali || []).find((x) => String(x._k) === k);
+      if (!c) return;
+      if (c.testo === c._autoT) c.testo = '';
+      if (c.emoji === c._autoE) c.emoji = '';
+      conErrore(async () => { await _dceScriviRighe([c]); _dceDisegnaBenvenuto(); _dcsTocca(); });
+    }
   });
 
   scheda.addEventListener('click', (e) => {
@@ -19192,14 +19265,41 @@ function collegaChiEntra() {
     const g = _dceIng();
     if (!g) return;
     const quale = b.dataset.dce;
-    if (quale === 'ben-accendi') { _dceLeggi(); g.benvenuto = { testo: '', canali: [] }; _dceDisegnaBenvenuto(); return; }
+    if (quale === 'ben-accendi') {
+      _dceLeggi();
+      conErrore(async () => {
+        const r = await api('/api/streamer/dcserver/pronti', { method: 'POST', body: { preset: _dcsPulito(), lingua: LINGUA } });
+        const ben = r?.ingresso?.benvenuto;
+        g.benvenuto = ben ? _dceSegnaScritte({ testo: ben.testo || '', canali: (ben.canali || []).map((c) => ({ _k: ++_dcsChiave, canale: c.canale, testo: c.testo || '', emoji: c.emoji || '' })) })
+          : { testo: '', canali: [] };
+        _dceDisegnaBenvenuto();
+        _dcsTocca();
+      });
+      return;
+    }
+    if (quale === 'ben-scrivi') {
+      _dceLeggi();
+      conErrore(async () => {
+        const restano = await _dceScriviRighe(g.benvenuto?.canali || []);
+        _dceDisegnaBenvenuto();
+        _dcsTocca();
+        if (restano.length) toast(L('Per questi canali non so cosa dire, la riga scrivila tu: ', 'For these channels I do not know what to say, write the line yourself: ', 'Para estos canales no sé qué decir, escribe tú la línea: ') + restano.map((n) => '#' + n).join(', '));
+        else toast(L('Scritte ✓ cambiale come vuoi.', 'Written ✓ change them however you like.', 'Escritas ✓ cámbialas como quieras.'));
+      });
+      return;
+    }
     if (quale === 'ben-spegni') { g.benvenuto = null; _dceDisegnaBenvenuto(); _dcsTocca(); return; }
     if (quale === 'ben-piu') {
       _dceLeggi();
-      const primo = _dceCanali()[0];
+      const chiave = (n) => String(n || '').trim().toLowerCase();
+      const usati = new Set((g.benvenuto.canali || []).map((c) => chiave(c.canale)));
+      const tutti = _dceCanali();
+      const primo = tutti.find((x) => !usati.has(chiave(x.nome))) || tutti[0];
       if (!primo) { toast(L('Prima metti un canale nella traccia.', 'First put a channel in the track.', 'Primero pon un canal en la plantilla.')); return; }
-      g.benvenuto.canali.push({ _k: ++_dcsChiave, canale: primo.nome, testo: '', emoji: '' });
+      const nuovo = { _k: ++_dcsChiave, canale: primo.nome, testo: '', emoji: '' };
+      g.benvenuto.canali.push(nuovo);
       _dceDisegnaBenvenuto();
+      conErrore(async () => { await _dceScriviRighe([nuovo]); _dceDisegnaBenvenuto(); _dcsTocca(); });
       return;
     }
     if (quale === 'ben-via') {
@@ -19245,9 +19345,10 @@ function collegaChiEntra() {
 
   _g('dce-pronta')?.addEventListener('click', () => conErrore(async () => {
     if (!_dcs?.preset) { toast(L('Scegli prima una traccia.', 'Pick a track first.', 'Elige antes una plantilla.')); return; }
-    const r = await api('/api/streamer/dcserver/pronti', { method: 'POST', body: { preset: _dcsPulito() } });
+    const r = await api('/api/streamer/dcserver/pronti', { method: 'POST', body: { preset: _dcsPulito(), lingua: LINGUA } });
     if (!r.ingresso) { toast(L('Non ci sono canali da cui partire.', 'There are no channels to start from.', 'No hay canales de los que partir.')); return; }
     _dcs.preset.ingresso = _dcsPrepara({ ingresso: r.ingresso }).ingresso;
+    _dceSegnaScritte(_dcs.preset.ingresso.benvenuto);
     _dceDisegna();
     _dcsTocca();
     toast(L('Scritta \u2713 adesso cambiala come vuoi.', 'Written \u2713 now change it however you like.', 'Escrita \u2713 ahora c\u00e1mbiala como quieras.'));

@@ -82,6 +82,7 @@ export function nonPuoDare(permessi, bitsBot) {
 // differenza, e stanno scritti li'. Averne una seconda copia qui vorrebbe dire
 // due numeri che un giorno non coincidono piu'.
 import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI, TUTTI, normalizzaIngresso, normalizzaFiltro, TIPI_FILTRO, LISTE_FILTRO, portaAccendibile, normalizzaTinta, normalizzaSegno, SEGNI, CON_SEGNO, CON_TINTE, A_CHI, aChiDi } from './discord-preset.js';
+import { rigaPer } from './discord-righe.js';
 export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, TUTTI, TIPI_FILTRO, LISTE_FILTRO, SEGNI, CON_SEGNO, CON_TINTE, A_CHI };
 export const TIPI_CANALE = Object.freeze(['testo', 'voce', 'annunci', 'palco', 'forum', 'media']);
 
@@ -290,12 +291,26 @@ const DA_PORTA = new Set(['testo', 'annunci', 'forum', 'media']);
 const daPorta = (cat) => (nascosto(cat?.permessi) ? []
   : (cat?.canali || []).filter((c) => DA_PORTA.has(String(c?.tipo || 'testo')) && !nascosto(c?.permessi)));
 
-export function portaPronta(preset, { testo = '', domanda = '' } = {}) {
+// Le parole di serie, quando la traccia non ne ha di sue: nella lingua di chi
+// scrive la porta.
+const PAROLE_DI_SERIE = {
+  it: { testo: 'Da qui si comincia. Sotto trovi dove si scrive cosa.', domanda: 'Di cosa ti va di parlare?' },
+  en: { testo: 'Start here. Below you’ll find what goes where.', domanda: 'What do you feel like talking about?' },
+  es: { testo: 'Aquí se empieza. Abajo tienes qué va en cada sitio.', domanda: '¿De qué te apetece hablar?' },
+};
+
+export function portaPronta(preset, { testo = '', domanda = '', lingua = 'it' } = {}) {
   const cats = (preset?.categorie || []).filter((c) => daPorta(c).length);
-  const tutti = cats.flatMap((c) => daPorta(c).map((x) => String(x.nome || '')).filter(Boolean));
+  const canali = cats.flatMap((c) => daPorta(c)).filter((x) => String(x.nome || ''));
+  const tutti = canali.map((x) => String(x.nome));
   if (!tutti.length) return null;
-  // In mostra i primi tre, che sono quelli che una persona guarda davvero.
-  const mostra = tutti.slice(0, 3).map((nome) => ({ canale: nome, testo: '' }));
+  const serie = PAROLE_DI_SERIE[lingua] || PAROLE_DI_SERIE.it;
+  // In mostra i primi tre, che sono quelli che una persona guarda davvero, e
+  // ognuno con la sua riga: una riga vuota non dice niente a chi arriva.
+  const mostra = canali.slice(0, 3).map((x) => {
+    const riga = rigaPer(x, lingua);
+    return { canale: String(x.nome), testo: riga?.testo || '', emoji: riga?.emoji || '' };
+  });
   // UNA RISPOSTA PER CATEGORIA, non per canale: chi entra sceglie di cosa gli
   // va di parlare, non spunta quindici caselle. E le categorie sono quelle
   // della traccia, quindi i nomi esistono per forza.
@@ -310,9 +325,9 @@ export function portaPronta(preset, { testo = '', domanda = '' } = {}) {
     // ricorderebbe di riaccenderla.
     acceso: false,
     canaliDiPartenza: tutti,
-    benvenuto: { testo: testo || 'Da qui si comincia. Sotto trovi dove si scrive cosa.', canali: mostra },
+    benvenuto: { testo: testo || serie.testo, canali: mostra },
     domande: risposte.length ? [{
-      titolo: domanda || 'Di cosa ti va di parlare?',
+      titolo: domanda || serie.domanda,
       unaSola: false,
       risposte,
     }] : [],
