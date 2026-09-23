@@ -131,7 +131,8 @@ test('il pannello calcola la resa con la stessa regola del server', () => {
       const v = G.valoriDi({}, g.id);
       for (const p of g.param) {
         if (p.tipo === 'tabella') v[p.k] = v[p.k].map(([n, , w]) => [n, Math.floor(caso() * 500), 1 + Math.floor(caso() * 50)]);
-        else if (p.tipo !== 'elenco') v[p.k] = p.min + Math.floor(caso() * Math.min(p.max - p.min + 1, 5000));
+        else if (p.tipo === 'elenco') v[p.k] = Array.from({ length: (p.min || 1) + Math.floor(caso() * (p.max - (p.min || 1) + 1)) }, (_, k) => `riga ${k}`);
+        else v[p.k] = p.min + Math.floor(caso() * Math.min(p.max - p.min + 1, 5000));
       }
       const ctx = { mancheMinuti: 1 + Math.floor(caso() * 60) };
       assert.deepEqual(pannello(g.resa, v, ctx), G.valutaResa(g.resa, v, ctx), `${g.id} ${JSON.stringify(v)}`);

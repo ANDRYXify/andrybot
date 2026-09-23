@@ -11,6 +11,7 @@ import * as colpoFeat from './colpo.js';
 import * as bossFeat from './boss.js';
 import * as contaFeat from './conta.js';
 import * as bjFeat from './blackjack.js';
+import * as corsaFeat from './corsa.js';
 import { aspetta, giocato } from './attese-giochi.js';
 import { points, streamers, giochi } from '../db.js';
 import { config } from '../config.js';
@@ -1058,6 +1059,11 @@ export function tryGame(msg, say) {
 
       case 'colpo': {
         colpoFeat.colpo(channel, msg, args, say, { moneta: moneta() });
+        return true;
+      }
+
+      case 'corsa': {
+        corsaFeat.corsa(channel, msg, args, say, { moneta: moneta() });
         return true;
       }
 

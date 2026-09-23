@@ -92,6 +92,7 @@ const CINQUE_SOSPESO = ['🙋 {a} resta con la mano alzata... nessuno batte il c
 const COLPO_RIUSCITO = ['💰 Colpo riuscito! La banda scappa col bottino.', '💰 Il caveau si apre e la banda è già lontana.'];
 const COLPO_FALLITO = ['🚨 Sirene! La banda finisce dentro al completo.', '🚨 L\'allarme suona subito: presi tutti.'];
 const COLPO_META = ['💰 Colpo a metà: qualcuno scappa, qualcuno no.', '🚨 La banda si divide nella fuga: non tutti ce la fanno.'];
+const CORSA_CORRIDORI = ['🐎 Cavallo', '🐇 Lepre', '🐕 Cane', '🦆 Papera', '🐢 Tartaruga'];
 const BOSS = ['il Drago del Lag 🐉', 'la Piovra dello Spam 🐙', 'il Golem del Buffering 🗿', 'lo Scheletro del Ping Alto 💀', 'il Troll del Ritardo 👹', 'il Boss Finale 👾'];
 
 // LE DUE ATTESE DI OGNI GIOCO. A testa: dopo che una persona ha giocato,
@@ -211,6 +212,18 @@ export const CATALOGO = [
     resa: { tipo: 'blackjack' },
   },
   {
+    id: 'corsa', nome: T('Corsa', 'Race', 'Carrera'),
+    param: [
+      { k: 'rende', tipo: 'percento', def: 95, min: 50, max: 100, eti: T('Su 100 puntate ne tornano in media, qualunque corridore si scelga', 'Out of 100 bet, this many come back on average, whichever runner you pick', 'Por cada 100 apostadas vuelven de media, se elija el corredor que se elija') },
+      { k: 'posta', tipo: 'monete', def: 50, min: 1, max: 100000, eti: T('Puntata di chi non dice quanto', 'Bet for whoever does not say how much', 'Apuesta de quien no dice cuánto') },
+      { k: 'massimo', tipo: 'monete', def: 0, min: 0, max: 1000000, eti: T('Puntata massima (0 = nessun limite)', 'Maximum bet (0 = no limit)', 'Apuesta máxima (0 = sin límite)') },
+      { k: 'raccolta', tipo: 'secondi', def: 45, min: 15, max: 300, eti: T('Tempo per puntare', 'Time to bet', 'Tiempo para apostar') },
+      { k: 'corridori', tipo: 'elenco', def: CORSA_CORRIDORI, min: 2, max: 8, lungo: 40, segnaposto: [], eti: T('I corridori, dal favorito al più lento', 'The runners, from favourite to slowest', 'Los corredores, del favorito al más lento') },
+      ...ATTESE({ tutti: 300, etiTesta: T('Attesa fra due puntate, a testa', 'Wait between two bets, each', 'Espera entre dos apuestas, cada uno'), etiTutti: T('Attesa fra due corse, per tutti', 'Wait between two races, for everyone', 'Espera entre dos carreras, para todos') }),
+    ],
+    resa: { tipo: 'corsa' },
+  },
+  {
     id: 'conta', nome: T('Conta insieme', 'Count together', 'Contad juntos'),
     param: [
       { k: 'pausa', tipo: 'secondi', def: 120, min: 30, max: 1800, eti: T('Si chiude se nessuno conta per tanti secondi', 'It closes if nobody counts for this many seconds', 'Se cierra si nadie cuenta durante tantos segundos') },
@@ -302,7 +315,7 @@ function elenco(v, p) {
   const righe = (Array.isArray(v) ? v : String(v || '').split('\n'))
     .map((r) => String(r).trim().slice(0, p.lungo || 200))
     .filter((r) => r && !segnapostoIgnoti(r, p.segnaposto).length);
-  return righe.length ? righe.slice(0, p.max) : null;
+  return righe.length >= (p.min || 1) ? righe.slice(0, p.max) : null;
 }
 
 // Una riga del pescato: «nome | monete | rarita'». Le monete da 0, la rarita'
@@ -389,8 +402,21 @@ export function valoriDi(settings, id) {
 //   colpo    su 100 monete di posta, quante ne tornano con la banda piu' grande
 //   boss     il bottino a testa se tutti colpiscono uguale, e il massimo
 //   blackjack su 100 monete puntate, quante ne tornano giocando al meglio
+//   corsa    su 100 monete puntate, quante ne tornano col corridore che rende di piu'
 // `contesto` porta quello che non sta nel gioco: la presenza oraria e ogni
 // quanti minuti al minimo parte una manche.
+
+// LA CORSA, CALCOLATA. Il corridore i (da 0, il favorito) su n vince con
+// probabilita' (n − i) / (1 + 2 + … + n): pesi che scendono di uno, 5 4 3 2 1
+// con cinque corridori. Ogni 100 puntate su di lui ne tornano
+// floor(rende / p), fatto coi numeri interi (rende × somma / (n − i)) perche'
+// la divisione per un decimale non perda l'intero: per difetto, cosi' ogni
+// corridore rende al piu' `rende`, e la regola 1 vale per costruzione
+// qualunque si scelga.
+export function quoteCorsa(n, rende) {
+  const somma = n * (n + 1) / 2;
+  return Array.from({ length: n }, (_, i) => ({ p: (n - i) / somma, ritorno: Math.floor((Number(rende) || 0) * somma / (n - i)) }));
+}
 
 // IL BLACKJACK, CALCOLATO. Mazzo infinito: ogni carta esce con la probabilita'
 // del mazzo vero (asso e dal 2 al 9 un tredicesimo, dieci e figure quattro
@@ -509,6 +535,12 @@ export function valutaResa(resa, v, contesto = {}) {
     return { tipo: 'manche', perOra: ogni ? Math.round((Number(v[resa.premio]) || 0) * 60 / ogni) : 0 };
   }
   if (resa.tipo === 'blackjack') return { tipo: 'blackjack', perCento: resaBlackjack(Number(v.vincitaBJ) || 0) };
+  if (resa.tipo === 'corsa') {
+    // L'ultimo ha peso 1, quindi la sua quota e' esatta e la resa piu' alta e'
+    // proprio `rende`; il pannello dice anche quanto pagano i due estremi.
+    const q = quoteCorsa(Math.max(2, (v.corridori || []).length), v.rende);
+    return { tipo: 'corsa', perCento: Math.round(Math.max(...q.map((x) => x.p * x.ritorno)) * 10) / 10, favorito: q[0].ritorno, ultimo: q.at(-1).ritorno };
+  }
   if (resa.tipo === 'colpo') {
     // La banda piu' grande e' quella che rende di piu': con chi aggiunge
     // qualcosa la riuscita sale fino al tetto, senza resta quella di partenza.

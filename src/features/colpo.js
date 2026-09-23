@@ -73,9 +73,9 @@ function chiudi(channel) {
   clearTimeout(k.timer);
   clearInterval(k.giro);
   const c = conf(channel);
-  // L'attesa parte a colpo chiuso, per tutti e per chi era nella banda: quello
-  // e' il momento in cui si e' giocato.
-  giocato(channel, 'colpo', null);
+  // L'attesa parte a colpo chiuso, per chi era nella banda e con lei per tutti:
+  // quello e' il momento in cui si e' giocato. Nella banda c'e' sempre almeno
+  // chi l'ha organizzato.
   for (const chi of k.banda.keys()) giocato(channel, 'colpo', chi);
   const banda = [...k.banda].filter(([chi, m]) => points.get(channel, chi) >= m.posta);
   const fuori = k.banda.size - banda.length;

@@ -109,6 +109,8 @@ export const COMANDI = [
     cosa: ['Un\'altra carta nella tua mano di blackjack.', 'Another card in your blackjack hand.', 'Otra carta en tu mano de blackjack.'] },
   { id: 'stai', modulo: 'giochi', nomi: ['stai', 'stand'], titolo: ['Stai', 'Stand', 'Plántate'],
     cosa: ['Ti fermi: gioca il banco, e si vede chi vince.', 'You stop: the dealer plays, and you see who wins.', 'Te plantas: juega la banca, y se ve quién gana.'] },
+  { id: 'corsa', modulo: 'giochi', gioco: 'corsa', nomi: ['corsa', 'race'], titolo: ['Corsa', 'Race', 'Carrera'],
+    cosa: ['Apre le puntate su una corsa: !corsa 2 50 punta 50 sul secondo corridore. Il favorito paga poco, l\'ultimo tanto.', 'Opens the bets on a race: !corsa 2 50 bets 50 on the second runner. The favourite pays little, the last one a lot.', 'Abre las apuestas de una carrera: !corsa 2 50 apuesta 50 al segundo corredor. El favorito paga poco, el último mucho.'], costa: true },
   { id: 'conta', modulo: 'giochi', gioco: 'conta', nomi: ['conta', 'count'], titolo: ['Conta insieme', 'Count together', 'Contad juntos'],
     cosa: ['Apre la conta: la chat scrive 1, 2, 3, un numero a testa e mai due di fila. Chi sbaglia fa ricominciare; si batte il record del canale.', 'Opens the count: chat writes 1, 2, 3, one number each and never twice in a row. A mistake starts it over; you beat the channel record.', 'Abre la cuenta: el chat escribe 1, 2, 3, un número cada uno y nunca dos seguidos. Quien falla hace empezar de nuevo; se bate el récord del canal.'] },
   { id: 'colpo', modulo: 'giochi', gioco: 'colpo', nomi: ['colpo', 'heist'], titolo: ['Colpo di gruppo', 'Group heist', 'Golpe en grupo'],

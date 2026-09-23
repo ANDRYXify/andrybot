@@ -358,6 +358,42 @@ come con `!stai`, così una mano dimenticata non tiene ferme le monete. A 21 si
 sta da soli. Una mano alla volta a testa; `!bj` con una mano aperta dice come
 giocarla prima di parlare di attese.
 
+## La corsa (`!corsa`, `!race`)
+
+Una scommessa su un corridore, costruita perché **non esista la puntata
+furba**.
+
+**I pesi.** Con *n* corridori, il corridore *i* (da 0, il favorito) vince con
+
+    p(i) = (n − i) / (1 + 2 + … + n)
+
+cioè pesi che scendono di uno: 5 4 3 2 1 con cinque corridori, un terzo al
+favorito e un quindicesimo all'ultimo. È la forma più semplice che dà a ogni
+corridore una probabilità diversa e a nessuno zero, per ogni *n* da 2 a 8.
+
+**Le quote.** Ogni 100 monete puntate sul corridore *i* ne tornano
+`floor(rende / p(i))`, fatto coi numeri interi (`rende × somma / (n − i)`)
+perché la divisione per un decimale non perda l'intero. Per difetto, quindi
+ogni corridore rende **al più** `rende`, e la regola 1 vale per costruzione
+qualunque si scelga. L'ultimo ha peso 1: la sua quota è esatta, e la resa più
+alta è proprio `rende`. Il pannello, invece di ripetere la manopola, dice quanto
+pagano il favorito e l'ultimo, che dipende da quanti corridori ci sono: di serie
+×2,85 e ×14,25. Una prova verifica le quote per ogni *n* e ogni resa da 50 a
+100, e che per difetto non si perda mai un punto intero.
+
+**L'arrivo.** Il primo si estrae coi pesi, poi il secondo fra chi resta con gli
+stessi pesi, e così il terzo: il primo esce con la probabilità esatta della sua
+quota (una prova lo verifica ai confini fra un corridore e l'altro e su un
+milione di corse), e il podio raccontato è coerente con quella regola.
+
+**Le monete si muovono solo all'arrivo.** Si controlla il saldo quando si punta
+(per dirlo subito) e all'arrivo (per pagare). Fra la partenza e l'arrivo il bot
+dice solo «partiti!»: nessun «a metà corsa è in testa…», perché un'informazione
+sull'esito prima del pagamento permetterebbe a chi sta perdendo di regalare le
+monete e restare fuori. Così chi all'arrivo non ha più la sua puntata resta
+fuori senza perdere niente, e non ci guadagna niente: è come non aver puntato.
+Un riavvio fa sparire la corsa, e nessuno ci rimette.
+
 ## Le manche con lo stato: impiccato e più o meno
 
 Fino a qui una manche era una domanda e un controllo: il primo messaggio giusto

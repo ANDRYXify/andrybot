@@ -142,6 +142,7 @@ const GIOCHI = {
       ['<code>!blackjack 50</code>', '<code>!bj</code> <code>!21</code>', 'Una mano contro il banco: due carte a te e due a lui, una coperta.', ATTESE('blackjack')],
       ['<code>!carta</code>', '—', 'Un\'altra carta nella tua mano di blackjack.', '—'],
       ['<code>!stai</code>', '<code>!stand</code>', 'Ti fermi: gioca il banco, e si vede chi vince.', '—'],
+      ['<code>!corsa 2 50</code>', '<code>!race</code>', 'Punti su un corridore, col numero o col nome. <code>!corsa</code> da solo apre le puntate.', ATTESE('corsa')],
       ['<code>!regala @nome 50</code>', '<code>!dona</code>', 'Passi monete a qualcun altro.', '—'],
       ['<code>!duello @nome 50</code>', '—', 'Un duello con la posta: l\'altro accetta o rifiuta, e chi vince prende la posta dell\'altro.', `${ATTESA(DI_SERIE('duello').scadenza)} per rispondere`],
       ['<code>!accetta</code>', '—', 'Accetti la sfida con posta che ti hanno fatto.', '—'],
@@ -241,6 +242,13 @@ const GIOCHI = {
       `Vince chi va più vicino a 21 senza passarlo: la vittoria ti rende il doppio della puntata, il pari te la rende, e il blackjack servito (asso e una figura o un dieci) ne rende ${CIFRA(DI_SERIE('blackjack').vincitaBJ / 100)} volte, cioè 3 a 2. Se il banco ha blackjack lo dice subito, e la mano finisce lì.`,
       `Di serie, giocando al meglio, su 100 monete puntate ne tornano in media ${CIFRA(RESA('blackjack').perCento)}: il banco vince un po', come al tavolo vero, e chi gioca a caso perde di più. Nelle regole scegli quanto paga il blackjack, la puntata massima e il tempo per decidere.`,
       'La puntata esce appena si aprono le carte. Se il bot si riavvia con una mano aperta, la puntata torna a chi l\'aveva messa.',
+    ] },
+
+    { h3: 'La corsa' },
+    { p: [
+      `Con <code>!corsa</code> si aprono le puntate per ${ATTESA(DI_SERIE('corsa').raccolta)}: il bot scrive i corridori, dal favorito al più lento, ognuno con quanto paga. Si punta con <code>!corsa 2 50</code> (il secondo corridore, 50 monete) o col nome, <code>!corsa lepre 50</code>; una puntata a testa. Poi si parte, e qualche secondo dopo il bot dice il podio e chi ha vinto quanto.`,
+      `Il favorito vince spesso e paga poco, l'ultimo vince di rado e paga tanto, e le quote sono fatte perché ogni corridore renda uguale: di serie, su 100 monete puntate ne tornano in media ${CIFRA(RESA('corsa').perCento)}, qualunque corridore si scelga. Non esiste la puntata furba. Nelle regole scegli quanto rende, i nomi dei corridori (da 2 a 8) e la puntata massima.`,
+      'Le monete si muovono solo all\'arrivo, e fra la partenza e l\'arrivo non si dice niente su come va: se il bot si riavvia nel mezzo la corsa salta, e nessuno perde niente.',
     ] },
 
     { h3: 'Abbracci, bacini e il cinque perfetto' },
