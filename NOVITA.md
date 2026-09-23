@@ -25,6 +25,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - «In diretta» nasce come stanza dove si ascolta: parli tu e chi modera, gli altri ti sentono. [vai: dcserver]
 - Le tracce creano l'angolo AFK e lo impostano, se il tuo server non ne ha già uno. [vai: dcserver]
 - Scegliere un'immagine per un ruolo che c'è già non blocca più la costruzione con un falso «il server è cambiato». [vai: dcserver]
+- Il cambio di categoria, a voce, in chat o da Telegram, non scambia più «diablo 4» per «Diablo»: conta ogni parola che dici, e capisce numeri romani e sigle come «gta 5» o «cs2». [vai: ascolto]
 
 ## 2026-09-19
 
