@@ -1866,6 +1866,7 @@ export class BotManager {
         const igCr = ig?.attivo ? credenzialiInstagram(s.login) : null;
         if (igCr) {
           const p = await instagram.ultimoPost(igCr);
+          instagram.ricorda(s.login, p);
           if (p?.id) {
             const conf = tgConf.get(s.login);
             const ultimo = conf?.ig_ultimo || '';

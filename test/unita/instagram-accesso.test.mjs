@@ -12,6 +12,7 @@ import {
   urlAutorizzazione, leggiRichiestaFirmata, codiceCancellazione, codiceNostro,
   daAllungare, scambiaCodice, PERMESSI,
 } from '../../src/features/instagram-accesso.js';
+import { classifica, ricorda, problema, fresco } from '../../src/features/instagram.js';
 
 const SEGRETO = 'segreto-di-prova';
 const b64url = (b) => Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -142,3 +143,29 @@ test('le credenziali: vince il tasto, e un token del tasto scaduto non vale', as
     assert.equal(credenzialiInstagram('igprova', Date.now() + 2 * 86400_000), null, 'scaduto: si ricollega');
   } finally { usaEGetta.pulisci(); }
 });
+
+// Un collegamento puo' esserci e non funzionare: lo dice solo una chiamata vera,
+// e il pannello lo deve far vedere col rimedio giusto. Quale rimedio dipende dal
+// codice di Meta, non dal testo del messaggio.
+test('l\'errore di Instagram si legge dal codice: collegamento, permesso, tetto', () => {
+  assert.deepEqual(classifica({ errore: 'x', codice: 190 }), { tipo: 'collegamento', grave: true }, 'il token non vale piu\': si ricollega');
+  assert.equal(classifica({ errore: 'x', codice: 10 }).tipo, 'permesso');
+  assert.equal(classifica({ errore: 'x', codice: 200 }).tipo, 'permesso');
+  assert.equal(classifica({ errore: 'x', codice: 4 }).tipo, 'tetto');
+  assert.deepEqual(classifica({ errore: 'Unsupported get request', codice: 100 }), { tipo: 'altro', grave: false, testo: 'Unsupported get request' });
+  assert.equal(classifica({ id: '1' }), null, 'una risposta buona non e\' un problema');
+  assert.equal(classifica(null), null, 'nessun post non e\' un problema');
+});
+
+test('il problema resta finche\' una chiamata non va bene, e il tetto non si mostra', () => {
+  ricorda('igregistro', { errore: 'x', codice: 190 }, 1000);
+  assert.deepEqual(problema('IGRegistro'), { tipo: 'collegamento', grave: true, quando: 1000 });
+  ricorda('igregistro', { errore: 'piano', codice: 4 });
+  assert.equal(problema('igregistro').tipo, 'collegamento', 'il tetto passa da solo e non copre un guasto vero');
+  ricorda('igregistro', { id: 'post' }, 5000);
+  assert.equal(problema('igregistro'), null, 'una chiamata andata bene lo toglie');
+  assert.equal(fresco('igregistro', 1000, 5500), true, 'e anche un «va bene» ha la sua ora');
+  assert.equal(fresco('igregistro', 1000, 7000), false, 'passata la quale si richiede a Instagram');
+  assert.equal(fresco('mai-visto', 1000, 7000), false);
+});
+

@@ -56,6 +56,33 @@ test('dal pannello arrivano le scelte, non l\'identita\' di un account collegato
     'l\'account lo scrive solo il ritorno da Instagram');
 });
 
+test('chi fa una chiamata vera ne lascia l\'esito, e il pannello lo riceve coi permessi mancanti', () => {
+  assert.match(BOT, /const p = await instagram\.ultimoPost\(igCr\);\n\s+instagram\.ricorda\(s\.login, p\);/, 'il giro dei post nuovi');
+  assert.match(rotta("app.post('/api/streamer/settimana/manda'", 6000), /instagram\.ricorda\(login, r\);/, '«Manda»');
+  assert.match(rotta("app.post('/api/streamer/instagram/prova'", 900), /if \(!scritto\) instagram\.ricorda\(login,/,
+    'la prova del collegamento salvato, non quella di un token appena incollato');
+  const st = rotta("app.get('/api/instagram/stato'", 1400);
+  assert.match(st, /mancano: t \? igAccesso\.PERMESSI\.filter\(\(x\) => !\(t\.scopes \|\| \[\]\)\.includes\(x\)\) : \[\]/);
+  assert.match(st, /if \(cr && !instagram\.fresco\(login, IG_FRESCO_MS\)\) instagram\.ricorda\(login, await instagram\.ultimoPost\(cr\)\);/,
+    'senza un esito fresco si chiede a Instagram adesso: il verde non viene da un silenzio');
+  assert.match(st, /problema: cr \? instagram\.problema\(login\) : null/);
+});
+
+test('un permesso che manca o un collegamento rotto si vede, col rimedio', () => {
+  const APP = leggi('src/web/public/app.js');
+  const ig = APP.slice(APP.indexOf('async function caricaInstagram()'), APP.indexOf('async function caricaTgLogin()'));
+  for (const caso of ['if (manca.length)', "pr?.tipo === 'collegamento'", "pr?.tipo === 'permesso'", "pr?.tipo === 'altro'", 'if (d.scaduto)', 'd.aMano && pr']) {
+    const i = ig.indexOf(caso);
+    assert.ok(i >= 0, `manca il caso ${caso}`);
+    const j = ig.indexOf('problemi.push(', i);
+    assert.ok(j > 0 && ig.startsWith('problemi.push(problemaHtml({', j), `${caso}: si dice col blocco che si vede, non con una riga grigia`);
+  }
+  assert.match(ig, /const colore = pr\?\.grave \? 'rosso' : \(problemi\.length \? 'giallo' : 'verde'\);/, 'e il verde solo quando va tutto');
+  const dove = APP.slice(APP.indexOf('function _settDisegnaDove()'), APP.indexOf('function _settDisegnaDove()') + 4000);
+  assert.match(dove, /: problemaHtml\(\{\n\s+titolo: L\('La storia di Instagram non può partire'/, 'anche fra i posti della settimana');
+  assert.match(dove, /data-vai="notifiche" data-vai-sotto="instagram"/, 'con la strada per rimediare');
+});
+
 test('il token si rinnova da solo, allo stesso passo degli altri giri', () => {
   assert.match(BOT, /this\._giroProgramma\(\); this\._giroInstagram\(\); \}, 6 \* 60 \* 60_000\);/);
   const giro = BOT.slice(BOT.indexOf('async _giroInstagram()'), BOT.indexOf('async _giroInstagram()') + 800);

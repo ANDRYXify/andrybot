@@ -3884,18 +3884,29 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   const IG_STATO_MS = 10 * 60_000;
   const puliziaStatiIg = () => { for (const [k, v] of igStati) if (Date.now() - v.ts > IG_STATO_MS) igStati.delete(k); };
 
-  app.get('/api/instagram/stato', requireLogin, (req, res) => {
+  // Il riquadro mostra com'e' andata una chiamata vera di pochi minuti fa; se
+  // non c'e', la si fa adesso. Cosi' un collegamento rotto si vede anche con gli
+  // avvisi spenti, e anche subito dopo un riavvio, quando il registro e' vuoto.
+  const IG_FRESCO_MS = 10 * 60_000;
+  app.get('/api/instagram/stato', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const ig = streamers.get(login)?.settings?.instagram || {};
     const t = ig.via === 'instagram' ? tokens.get('instagram', login) : null;
+    const cr = credenzialiInstagram(login);
+    if (cr && !instagram.fresco(login, IG_FRESCO_MS)) instagram.ricorda(login, await instagram.ultimoPost(cr));
     res.json({
       appAttiva: !!igApp(),
       collegato: !!t?.accessToken,
       scaduto: !!t?.expiresAt && t.expiresAt <= Date.now(),
       username: t ? String(ig.username || '') : '',
       aMano: ig.via !== 'instagram' && !!ig.token,
+      // i permessi che Instagram ha dato davvero, e l'esito dell'ultima chiamata:
+      // il pannello li mostra col rimedio, invece di lasciarli scoprire da un
+      // avviso che non arriva
+      mancano: t ? igAccesso.PERMESSI.filter((x) => !(t.scopes || []).includes(x)) : [],
+      problema: cr ? instagram.problema(login) : null,
     });
-  });
+  }));
 
   app.get('/api/instagram/connect', requireOwner, gateFeature('notifiche', 'Le notifiche'), (req, res) => {
     const a = igApp();
@@ -3931,6 +3942,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     streamers.setSettings(login, { ...(s?.settings || {}), instagram: { ...ig, userId: r.userId, username: r.username, via: 'instagram', token: '' } });
     // come per TikTok: l'avviso lo fa il primo post NUOVO, non quello che c'e' gia'
     try { tgConf.setIgUltimo(login, ''); } catch { /* niente */ }
+    instagram.dimenticaProblema(login);
     res.redirect('/?instagram=ok#notifiche');
   }));
 
@@ -3940,6 +3952,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const ig = s?.settings?.instagram || {};
     streamers.setSettings(login, { ...(s?.settings || {}), instagram: { ...ig, userId: '', username: '', via: '', token: '', attivo: false } });
     try { tgConf.setIgUltimo(login, ''); } catch { /* niente */ }
+    instagram.dimenticaProblema(login);
   };
 
   app.post('/api/instagram/disconnect', requireOwner, (req, res) => {
@@ -5204,6 +5217,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         writeFileSync(p, byte);
         try {
           const r = await instagram.pubblicaStoria({ ...ig, url: `${config.baseUrl.replace(/\/$/, '')}/pubblici/${nome}` });
+          instagram.ricorda(login, r);
           esiti.push({ dove: 'ig', nome: 'storia', ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
         } finally { try { unlinkSync(p); } catch { /* gia' andata */ } }
       }
@@ -9196,6 +9210,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const cr = scritto ? { userId: String(b.userId || '').trim(), token: scritto, via: 'facebook' } : credenzialiInstagram(login);
     if (!cr?.userId || !cr?.token) return res.status(400).json({ errore: 'Instagram non è collegato' });
     const r = await instagram.prova(cr).catch(() => null);
+    if (!scritto) instagram.ricorda(login, r?.ok ? null : { errore: r?.motivo || 'errore', codice: r?.codice });
     res.json(r || { ok: false, motivo: 'errore' });
   }));
 

@@ -250,6 +250,13 @@ body.menu-aperto .backdrop { opacity: 1; pointer-events: auto; }
 .carta.avviso h2, .carta.avviso p { color: var(--ambra); }
 .carta.avviso-rosso { border-color: var(--rosso-bordo); background: var(--rosso-soft); }
 .carta.avviso-rosso h2 { color: var(--rosso); }
+.problema { margin: 12px 0; padding: 10px 14px; border: var(--contorno-sp) solid var(--ambra-bordo); border-width: var(--tratto-mano);
+  border-radius: var(--ang-mano-l); background: var(--ambra-soft); }
+.problema > strong { display: block; color: var(--ambra); }
+.problema > p { margin: 4px 0 0; }
+.problema .problema-rimedio { margin-top: 10px; }
+.problema.grave { border-color: var(--rosso-bordo); background: var(--rosso-soft); }
+.problema.grave > strong { color: var(--rosso); }
 
 .cap-area { border-top: 1px solid var(--border); }
 .cap-area > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: .5rem; padding: .75rem 0; font-weight: 700; font-size: .95rem; color: var(--testo); }
@@ -1687,7 +1694,7 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
 .sett-manda { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
 .sett-manda > div { flex: 1 1 300px; min-width: 0; }
 .sett-anteprima { flex: 0 1 300px; width: 100%; max-width: 300px; height: auto; border-radius: 14px; box-shadow: var(--om-m); background: #111; }
-.sett-nota { margin: 0 0 8px 26px; }
+.sett-nota { margin: 0 0 8px 26px; color: var(--ambra); font-weight: 600; }
 @media (max-width: 560px) {
   .sett-riga .sett-gg { flex-basis: 100%; }
   .sett-riga .sett-cat { margin-left: 0; }

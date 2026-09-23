@@ -3842,6 +3842,7 @@ document.addEventListener('click', (ev) => {
   const id = b?.dataset.vai;
   if (!id || !schedaValida(id)) return;
   ev.preventDefault();
+  if (b.dataset.vaiSotto) { try { localStorage.setItem('sotto:' + id, b.dataset.vaiSotto); } catch {  } }
   vaiAScheda(id);
 });
 
@@ -4220,7 +4221,11 @@ function _settDisegnaDove() {
   if (p.ig) {
     blocchi.push(`<p class="campo spazio-sopra">Instagram</p>` + (p.ig.puo
       ? spunta('ig', 'storia', L('Storia', 'Story', 'Historia'), L('resta 24 ore, senza testo', 'stays 24 hours, no text', 'dura 24 horas, sin texto'), w.dove.ig, '')
-      : `<p class="suggerimento">${L('Instagram è collegato, ma per pubblicare una storia serve un account professionale e il permesso di pubblicare nel token che hai dato.', 'Instagram is connected, but posting a story needs a professional account and the publishing permission in the token you gave.', 'Instagram está conectado, pero para publicar una historia hace falta una cuenta profesional y el permiso de publicar en el token que diste.')}</p>`));
+      : problemaHtml({
+        titolo: L('La storia di Instagram non può partire', 'The Instagram story cannot go out', 'La historia de Instagram no puede salir'),
+        testo: L('Instagram è collegato, ma per pubblicare una storia servono un account professionale e il permesso di pubblicare.', 'Instagram is connected, but posting a story needs a professional account and the publishing permission.', 'Instagram está conectado, pero para publicar una historia hacen falta una cuenta profesional y el permiso de publicar.'),
+        tasto: `<button type="button" class="btn secondario mini" data-vai="notifiche" data-vai-sotto="instagram">${L('Vai a Instagram', 'Go to Instagram', 'Ir a Instagram')}</button>`,
+      })));
   }
   box.innerHTML = blocchi.length ? blocchi.join('')
     : `<p class="suggerimento">${L('Qui compaiono i posti dove mandarla appena colleghi Telegram, Discord o Instagram.', 'The places to send it show up here as soon as you connect Telegram, Discord or Instagram.', 'Aquí aparecen los sitios adonde mandarla en cuanto conectes Telegram, Discord o Instagram.')}</p>`;
@@ -5004,6 +5009,10 @@ function initGrafiche() {
   });
 
   ridisegna();
+}
+
+function problemaHtml({ titolo, testo = '', tasto = '', grave = false }) {
+  return `<div class="problema${grave ? ' grave' : ''}" role="status"><strong>${titolo}</strong>${testo ? `<p>${testo}</p>` : ''}${tasto ? `<p class="problema-rimedio">${tasto}</p>` : ''}</div>`;
 }
 
 function badgePermesso(ok, nome) {
@@ -5887,34 +5896,71 @@ async function caricaInstagram() {
   let d = null;
   try { d = await api('/api/instagram/stato'); } catch {  }
   if (!d?.appAttiva) { box.innerHTML = ''; if (aMano) aMano.open = true; return; }
+  const collega = () => conErrore(async () => {
+    const r = await api('/api/instagram/connect');
+    if (r?.url) location.href = r.url;
+  });
+  const prova = () => conErrore(async () => {
+    const r = await api('/api/streamer/instagram/prova', { method: 'POST', body: {} });
+    if (r?.ok) toast(L('Funziona: leggo il tuo ultimo post.', 'It works: I can read your latest post.', 'Funciona: leo tu último post.'));
+    else toast(r?.motivo || L('Instagram non risponde.', 'Instagram isn’t answering.', 'Instagram no responde.'), 'errore');
+    caricaInstagram();
+  });
+  const tastoCollega = (testo) => (proprietario ? `<button class="btn" data-ig-collega>${testo}</button>` : '');
+  const soloChiHa = proprietario ? '' : ' ' + L('Lo ricollega chi ha il canale.', 'The channel owner reconnects it.', 'Lo reconecta quien tiene el canal.');
+  const ricollega = tastoCollega(L('Ricollega Instagram', 'Reconnect Instagram', 'Reconecta Instagram'));
+  const problemi = [];
+  const pr = d.problema;
   if (d.collegato && !d.scaduto) {
     if (aMano) aMano.hidden = true;
+    const manca = d.mancano || [];
+    if (manca.length) {
+      const cosa = manca.map((x) => (x === 'instagram_business_content_publish'
+        ? L('Senza il permesso di pubblicare, la storia della settimana non può partire.', 'Without the publishing permission, your weekly story cannot go out.', 'Sin el permiso de publicar, la historia de la semana no puede salir.')
+        : L('Senza il permesso di leggere i post, gli avvisi dei post nuovi non partono.', 'Without the permission to read posts, new-post alerts do not go out.', 'Sin el permiso de leer los posts, los avisos de posts nuevos no salen.')));
+      problemi.push(problemaHtml({
+        titolo: manca.length === 1 ? L('Manca un permesso su Instagram', 'An Instagram permission is missing', 'Falta un permiso en Instagram') : L('Mancano due permessi su Instagram', 'Two Instagram permissions are missing', 'Faltan dos permisos en Instagram'),
+        testo: cosa.join(' ') + ' ' + L('Ricollegalo e lascia acceso tutto quello che ti chiede.', 'Reconnect it and leave on everything it asks for.', 'Reconéctalo y deja activado todo lo que te pide.') + soloChiHa,
+        tasto: ricollega,
+      }));
+    }
+    if (pr?.tipo === 'collegamento') problemi.push(problemaHtml({ grave: true, tasto: ricollega,
+      titolo: L('Instagram non riconosce più il collegamento', 'Instagram no longer recognises the connection', 'Instagram ya no reconoce la conexión'),
+      testo: L('Gli avvisi dei post nuovi e la storia della settimana sono fermi. Succede se hai tolto l’app da Instagram o hai cambiato la password.', 'New-post alerts and your weekly story are stopped. It happens if you removed the app from Instagram or changed your password.', 'Los avisos de posts nuevos y la historia de la semana están parados. Pasa si quitaste la app de Instagram o cambiaste la contraseña.') + soloChiHa }));
+    else if (pr?.tipo === 'permesso') problemi.push(problemaHtml({ tasto: ricollega,
+      titolo: L('Instagram dice che manca un permesso', 'Instagram says a permission is missing', 'Instagram dice que falta un permiso'),
+      testo: L('Ricollegalo e lascia acceso tutto quello che ti chiede: poi riprovo io.', 'Reconnect it and leave on everything it asks for: then I try again.', 'Reconéctalo y deja activado todo lo que te pide: luego lo vuelvo a intentar.') + soloChiHa }));
+    else if (pr?.tipo === 'altro') problemi.push(problemaHtml({
+      tasto: `<button class="btn secondario mini" data-ig-prova>${L('Riprova adesso', 'Try again now', 'Vuelve a probar')}</button>`,
+      titolo: L('L’ultima volta Instagram ha risposto con un errore', 'Last time Instagram answered with an error', 'La última vez Instagram respondió con un error'),
+      testo: '«' + esc(pr.testo || '') + '». ' + L('Se succede ancora, ricollegalo.', 'If it happens again, reconnect it.', 'Si vuelve a pasar, reconéctalo.') }));
+    const colore = pr?.grave ? 'rosso' : (problemi.length ? 'giallo' : 'verde');
     box.innerHTML = `<div class="riga-interruttore">
-        <span class="badge verde"><i class="vivo"></i>${L('Instagram collegato', 'Instagram connected', 'Instagram conectado')}${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
-        <button class="btn secondario mini" id="ig-prova-tasto">${L('Prova', 'Test', 'Probar')}</button>
+        <span class="badge ${colore}">${problemi.length ? '' : '<i class="vivo"></i>'}${pr?.grave ? L('Instagram da ricollegare', 'Instagram needs reconnecting', 'Instagram por reconectar') : L('Instagram collegato', 'Instagram connected', 'Instagram conectado')}${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
+        <button class="btn secondario mini" data-ig-prova>${L('Prova', 'Test', 'Probar')}</button>
         ${proprietario ? `<button class="btn secondario mini" id="ig-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}
-      </div>`;
-    document.getElementById('ig-prova-tasto').addEventListener('click', () => conErrore(async () => {
-      const r = await api('/api/streamer/instagram/prova', { method: 'POST', body: {} });
-      if (r?.ok) toast(L('Funziona: leggo il tuo ultimo post.', 'It works: I can read your latest post.', 'Funciona: leo tu último post.'));
-      else toast(r?.motivo || L('Instagram non risponde.', 'Instagram isn’t answering.', 'Instagram no responde.'), 'errore');
-    }));
+      </div>${problemi.join('')}`;
     document.getElementById('ig-scollega')?.addEventListener('click', () => conErrore(async () => {
       await api('/api/instagram/disconnect', { method: 'POST', body: {} });
       toast(L('Instagram scollegato.', 'Instagram disconnected.', 'Instagram desconectado.'));
       stato = await api('/api/me'); render();
     }));
-    return;
+  } else {
+    if (aMano) { aMano.hidden = false; aMano.open = !!d.aMano; }
+    const perche = L('Ti mando su Instagram per due permessi: leggere i tuoi post e pubblicare la storia della settimana. Serve un account professionale, azienda o creator.', 'I send you to Instagram for two permissions: reading your posts and publishing your weekly story. You need a professional account, business or creator.', 'Te envío a Instagram para dos permisos: leer tus posts y publicar la historia de la semana. Hace falta una cuenta profesional, de empresa o de creador.');
+    if (d.scaduto) problemi.push(problemaHtml({ grave: true, tasto: ricollega,
+      titolo: L('Il collegamento con Instagram è scaduto', 'The Instagram connection has expired', 'La conexión con Instagram ha caducado'),
+      testo: L('Gli avvisi dei post nuovi e la storia della settimana sono fermi finché non lo ricolleghi.', 'New-post alerts and your weekly story are stopped until you reconnect it.', 'Los avisos de posts nuevos y la historia de la semana están parados hasta que lo reconectes.') + soloChiHa }));
+    else if (d.aMano && pr) problemi.push(problemaHtml({ grave: !!pr.grave,
+      titolo: L('Il token incollato a mano non funziona', 'The hand-pasted token isn’t working', 'El token pegado a mano no funciona'),
+      testo: (pr.tipo === 'collegamento' ? L('Instagram non lo riconosce più.', 'Instagram no longer recognises it.', 'Instagram ya no lo reconoce.') : '«' + esc(pr.testo || L('manca un permesso', 'a permission is missing', 'falta un permiso')) + '».')
+        + ' ' + L('Gli avvisi dei post nuovi sono fermi. Collega Instagram col tasto qui sotto: così il collegamento si rinnova da solo.', 'New-post alerts are stopped. Connect Instagram with the button below: that way the connection renews itself.', 'Los avisos de posts nuevos están parados. Conecta Instagram con el botón de abajo: así la conexión se renueva sola.') }));
+    box.innerHTML = problemi.join('') + (d.scaduto ? '' : (proprietario
+      ? `${tastoCollega(L('Collega Instagram', 'Connect Instagram', 'Conectar Instagram'))}<p class="suggerimento spazio-sopra">${perche}</p>`
+      : `<p class="suggerimento">${L('Instagram lo collega chi ha il canale.', 'The channel owner connects Instagram.', 'Instagram lo conecta quien tiene el canal.')}</p>`));
   }
-  if (aMano) { aMano.hidden = false; aMano.open = !!d.aMano; }
-  if (!proprietario) { box.innerHTML = `<p class="suggerimento">${L('Instagram lo collega chi ha il canale.', 'The channel owner connects Instagram.', 'Instagram lo conecta quien tiene el canal.')}</p>`; return; }
-  box.innerHTML = `${d.scaduto ? `<p class="suggerimento">${L('Il collegamento con Instagram è scaduto: collegalo di nuovo, ci vuole un attimo.', 'The Instagram connection has expired: connect it again, it takes a moment.', 'La conexión con Instagram ha caducado: conéctala de nuevo, es un momento.')}</p>` : ''}
-    <button class="btn" id="ig-collega">${L('Collega Instagram', 'Connect Instagram', 'Conectar Instagram')}</button>
-    <p class="suggerimento spazio-sopra">${L('Ti mando su Instagram per due permessi: leggere i tuoi post e pubblicare la storia della settimana. Serve un account professionale, azienda o creator.', 'I send you to Instagram for two permissions: reading your posts and publishing your weekly story. You need a professional account, business or creator.', 'Te envío a Instagram para dos permisos: leer tus posts y publicar la historia de la semana. Hace falta una cuenta profesional, de empresa o de creador.')}</p>`;
-  document.getElementById('ig-collega').addEventListener('click', () => conErrore(async () => {
-    const r = await api('/api/instagram/connect');
-    if (r?.url) location.href = r.url;
-  }));
+  box.querySelectorAll('[data-ig-collega]').forEach((b) => b.addEventListener('click', collega));
+  box.querySelectorAll('[data-ig-prova]').forEach((b) => b.addEventListener('click', prova));
 }
 
 async function caricaTgLogin() {
@@ -17282,37 +17328,38 @@ function _dcServeHtml() {
       'Te lleva a Discord, eliges el servidor de la lista y vuelves. El id no lo copias: nos lo dice Discord.'));
   }
   if (p.letto && !p.canali) {
-    righe.push(L('Gli manca «Gestire i canali»: ripassa dal tasto qui sopra, reinvitarlo è il modo con cui Discord gli aggiorna i permessi.',
-      'It is missing «Manage Channels»: go through the button above again, re-inviting is how Discord updates its permissions.',
-      'Le falta «Gestionar canales»: vuelve a pasar por el botón de arriba, reinvitarlo es como Discord le actualiza los permisos.'));
+    righe.push({ problema: L('Al bot manca «Gestire i canali»', 'The bot is missing «Manage Channels»', 'Al bot le falta «Gestionar canales»'), reinvita: true,
+      testo: L('Senza, il costruttore non crea e non sistema i canali. Reinvitarlo è il modo con cui Discord gli aggiorna i permessi.', 'Without it, the builder cannot create or fix channels. Re-inviting is how Discord updates its permissions.', 'Sin él, el constructor no crea ni arregla canales. Reinvitarlo es como Discord le actualiza los permisos.') });
   }
   if (p.letto && !p.farEntrare) {
-    righe.push(L('Gli manca il permesso di far entrare la gente: senza, la porta d’ingresso li accompagna fino al server e poi non li fa entrare. Si rimedia reinvitandolo.',
-      'It is missing the permission to let people in: without it, the entrance walks them up to the server and then does not let them in. Re-inviting fixes it.',
-      'Le falta el permiso para dejar entrar a la gente: sin él, la puerta los acompaña hasta el servidor y luego no los deja pasar. Se arregla reinvitándolo.'));
+    righe.push({ problema: L('Al bot manca il permesso di far entrare la gente', 'The bot is missing the permission to let people in', 'Al bot le falta el permiso para dejar entrar a la gente'), reinvita: true,
+      testo: L('Senza, la porta d’ingresso li accompagna fino al server e poi non li fa entrare.', 'Without it, the entrance walks them up to the server and then does not let them in.', 'Sin él, la puerta los acompaña hasta el servidor y luego no los deja pasar.') });
   }
   const sopra = p.letto ? (p.sopra || []) : [];
   if (p.letto && p.nome) {
     righe.push(p.piuAlto
       ? L('Il bot è «', 'The bot is «', 'El bot es «') + esc(p.nome) + L('» e il suo ruolo più alto è «', '» and its highest role is «', '» y su rol más alto es «') + esc(p.piuAlto)
         + L('»: tocca solo i ruoli che stanno sotto questo.', '»: it only touches the roles below this one.', '»: solo toca los roles que están por debajo de este.')
-      : L('Il bot è «', 'The bot is «', 'El bot es «') + esc(p.nome) + L('» e sul server non ha ancora un ruolo: così non può dare niente.', '» and it has no role on the server yet: so it cannot give anything.', '» y todavía no tiene ningún rol en el servidor: así no puede dar nada.'));
+      : { problema: L('Il bot non ha ancora un ruolo sul server', 'The bot has no role on the server yet', 'El bot todavía no tiene ningún rol en el servidor'), reinvita: true,
+        testo: L('Il bot è «', 'The bot is «', 'El bot es «') + esc(p.nome) + L('»: senza un ruolo non può dare niente.', '»: without a role it cannot give anything.', '»: sin un rol no puede dar nada.') });
   }
   if (sopra.length) {
     const uno = sopra.length === 1;
     const nomi = sopra.slice(0, 8).map((n) => '«' + esc(n) + '»').join(', ') + (sopra.length > 8 ? '…' : '');
-    righe.push((uno ? L('Sopra di lui c’è ', 'Above it there is ', 'Por encima de él está ') : L('Sopra di lui ci sono ', 'Above it there are ', 'Por encima de él están ')) + nomi
+    righe.push({ problema: uno ? L('Un ruolo sta sopra il bot', 'A role sits above the bot', 'Un rol está por encima del bot') : L('Alcuni ruoli stanno sopra il bot', 'Some roles sit above the bot', 'Algunos roles están por encima del bot'),
+      testo: (uno ? L('Sopra di lui c’è ', 'Above it there is ', 'Por encima de él está ') : L('Sopra di lui ci sono ', 'Above it there are ', 'Por encima de él están ')) + nomi
       + (uno ? L(': quello non lo può dare, cambiare o cancellare.', ': it cannot give, change or delete that one.', ': ese no puede darlo, cambiarlo ni borrarlo.')
         : L(': quelli non li può dare, cambiare o cancellare.', ': it cannot give, change or delete those.', ': esos no puede darlos, cambiarlos ni borrarlos.'))
       + L(' Su Discord, in Impostazioni server → Ruoli, trascina «', ' On Discord, in Server Settings → Roles, drag «', ' En Discord, en Ajustes del servidor → Roles, arrastra «')
-      + esc(p.piuAlto || p.nome || 'SocialBot') + (uno ? L('» sopra di lui.', '» above it.', '» por encima de él.') : L('» sopra di loro.', '» above them.', '» por encima de ellos.')));
+      + esc(p.piuAlto || p.nome || 'SocialBot') + (uno ? L('» sopra di lui.', '» above it.', '» por encima de él.') : L('» sopra di loro.', '» above them.', '» por encima de ellos.')) });
   }
   if (p.letto && p.pieni) {
     righe.push(sopra.length
       ? L('Ha i pieni poteri, ma i pieni poteri non scavalcano l’ordine dei ruoli: quelli sopra di lui restano fuori finché non lo sposti.', 'It has full powers, but full powers do not skip the role order: the ones above it stay out of reach until you move it.', 'Tiene plenos poderes, pero los plenos poderes no se saltan el orden de los roles: los que están por encima quedan fuera hasta que lo muevas.')
       : L('Ha i pieni poteri su questo server: da qui puoi muovere tutto.', 'It has full powers on this server: from here you can move everything.', 'Tiene plenos poderes en este servidor: desde aquí puedes moverlo todo.'));
   }
-  return righe.map((t) => `<p class="suggerimento">${t}</p>`).join('');
+  return righe.map((r) => (typeof r === 'string' ? `<p class="suggerimento">${r}</p>` : problemaHtml({ titolo: r.problema, testo: r.testo,
+    tasto: r.reinvita ? `<button type="button" class="btn secondario mini" data-dc-reinvita>${L('Aggiorna i suoi permessi', 'Update its permissions', 'Actualiza sus permisos')}</button>` : '' }))).join('');
 }
 
 function _dcComandoHtml() {
@@ -17430,6 +17477,7 @@ function collegaRuoli() {
   }));
 
   _g('dc-invita')?.addEventListener('click', () => _dcPorta(false));
+  _g('dc-serve')?.addEventListener('click', (e) => { if (e.target.closest('[data-dc-reinvita]')) _dcPorta(false); });
   _g('dc-pieni')?.addEventListener('click', () => _dcPorta(true));
 
   _g('dc-prova')?.addEventListener('click', () => conErrore(async () => {
