@@ -50,14 +50,30 @@ test('il token non si legge sul disco', () => {
   assert.equal(dcRuoli.get('segreto').token, TOKEN, 'e a noi torna in chiaro');
 });
 
-test('il giro passa solo da chi e\' acceso e finito di configurare', () => {
+test('il giro passa da chi e\' acceso e ha un server, col suo bot o con quello della casa', () => {
   dcRuoli.set('acceso', { token: TOKEN, guild: '123456789012345678', attivo: true });
   dcRuoli.set('spento', { token: TOKEN, guild: '123456789012345678', attivo: false });
   dcRuoli.set('mezzo', { token: TOKEN, guild: '', attivo: true });
-  dcRuoli.set('senzatoken', { token: '', guild: '123456789012345678', attivo: true });
+  // IL BOT DELLA CASA. Chi lo invita col tasto non ha un token suo nella riga:
+  // parla quello della piattaforma. Questa prova diceva il contrario — «senza
+  // token non gira» — ed era vera prima che il bot della casa esistesse. Dopo,
+  // voleva dire che il giro non partiva MAI per quasi tutti, e i ruoli creati
+  // dal costruttore restavano addosso a nessuno.
+  dcRuoli.set('dellacasa', { token: '', guild: '123456789012345678', attivo: true });
   const attivi = dcRuoli.attivi();
   assert.ok(attivi.includes('acceso'));
-  for (const c of ['spento', 'mezzo', 'senzatoken']) assert.ok(!attivi.includes(c), `«${c}» non deve girare`);
+  assert.ok(attivi.includes('dellacasa'), 'col bot della casa il giro deve partire');
+  for (const c of ['spento', 'mezzo']) assert.ok(!attivi.includes(c), `«${c}» non deve girare`);
+});
+
+test('chi ha un interruttore suo si sceglie senza quello dei ruoli', () => {
+  // Il calendario ha il suo «acceso»: legarlo all'interruttore dei ruoli
+  // voleva dire che spegnendo i ruoli si spegneva anche il calendario.
+  dcRuoli.set('soloCalendario', { token: '', guild: '123456789012345678', attivo: false });
+  dcRuoli.set('senzaServer', { token: '', guild: '', attivo: true });
+  const con = dcRuoli.conServer();
+  assert.ok(con.includes('solocalendario'), 'un server basta');
+  assert.ok(!con.includes('senzaserver'), 'senza server non c\'e\' dove andare');
 });
 
 test('l\'esito dell\'ultimo giro si ricorda, e non porta via il resto', () => {

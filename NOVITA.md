@@ -15,6 +15,17 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+## 2026-09-23
+
+- I ruoli che il costruttore crea adesso vanno a qualcuno: «Streamer» a te che hai il server, gli altri a moderatori, VIP e abbonati. [vai: dcserver]
+- Il giro dei ruoli non partiva per chi usa il nostro bot, e i ruoli non arrivavano mai: adesso parte. [vai: ruoli]
+- Anche gli appuntamenti sul calendario si allineano col nostro bot, e non si spengono più insieme ai ruoli. [vai: dcavvisi]
+- Ogni ruolo della traccia dice a chi va, e lo cambi tu: a te, a chi modera, ai VIP, agli abbonati, o a nessuno. [vai: dcserver]
+- Quando qualcosa non riesce, il costruttore dice su cosa: quale canale, quale regola, quale porta. [vai: dcserver]
+- «In diretta» nasce come stanza dove si ascolta: parli tu e chi modera, gli altri ti sentono. [vai: dcserver]
+- Le tracce creano l'angolo AFK e lo impostano, se il tuo server non ne ha già uno. [vai: dcserver]
+- Scegliere un'immagine per un ruolo che c'è già non blocca più la costruzione con un falso «il server è cambiato». [vai: dcserver]
+
 ## 2026-09-19
 
 - La tua settimana finisce sul calendario del server Discord: chi ti segue vede quando torni e mette il promemoria. [vai: dcavvisi]

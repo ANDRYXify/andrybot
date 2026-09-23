@@ -30,7 +30,7 @@
 // E il limite delle mosse non e' un troncamento silenzioso: quando si ferma lo
 // dice, e dice perche'.
 import * as api from './discord-api.js';
-import { differenza, differenzaRuoli, differenzaIngresso, differenzaFiltro, vuota, improntaDi, TIPI, nomeCanale, chiaveNome, consiglioRuoli, applicaConsiglio } from './discord-preset.js';
+import { differenza, differenzaRuoli, differenzaIngresso, differenzaFiltro, vuota, improntaDi, TIPI, nomeCanale, chiaveNome, consiglioRuoli, applicaConsiglio, aChiVanno } from './discord-preset.js';
 import { risolvi, nonPuoDare } from './discord-catalogo.js';
 import { makeLog } from '../logger.js';
 
@@ -52,6 +52,7 @@ const MOTIVO = Object.freeze({
   server: 'impostazioni rimesse come dice la traccia',
   ingresso: 'la porta d\'ingresso, come dice la traccia',
   filtro: 'il filtro, come dice la traccia',
+  aTe: 'e\' il ruolo della traccia che spetta a chi ha il server',
   filtroTolto: 'non e\' nella traccia, e la modalita\' distruttiva era accesa',
 });
 
@@ -70,7 +71,7 @@ function aggiungi(elenco, cosa) {
 // L'ANTEPRIMA E' LA STESSA FUNZIONE. Guardare e fare partono da qui tutti e
 // due: se fossero due strade, divergerebbero al primo cambiamento e il pannello
 // mostrerebbe una cosa mentre ne succede un'altra.
-export async function anteprima(token, guild, preset, { togliere = false, immagini = null } = {}) {
+export async function anteprima(token, guild, preset, { togliere = false, immagini = null, regoleOra = [] } = {}) {
   const foto = await api.fotografia(token, guild);
   if (!foto.ok) return foto;
   // Il preset parla a parole — «tutti», un ruolo per nome — e qui, con il
@@ -112,6 +113,19 @@ export async function anteprima(token, guild, preset, { togliere = false, immagi
   };
   const tutto = differenza(foto, risolto, { togliere: true, puoiToccare });
   const d = togliere ? { ...tutto, ruoli: dRuoli } : { ...tutto, togli: [], ruoli: { ...dRuoli, togli: [] } };
+  // A CHI VANNO I RUOLI. I ruoli del proprietario si chiedono solo se la
+  // traccia ne ha uno «tuo»: una chiamata che serve a una domanda sola, e
+  // senza quella domanda non si fa.
+  const proprietario = String(foto.guild?.proprietario || '');
+  let ruoliDelProprietario = null;
+  if (proprietario && (preset_?.ruoli || []).some((r) => r?.aChi === 'tu')) {
+    const m = await api.membro(token, guild, proprietario);
+    if (m?.ok) ruoliDelProprietario = m.ruoli || [];
+  }
+  const vanno = aChiVanno(foto, preset_, dRuoli, { ruoliDelProprietario, regoleOra });
+  if (vanno.aTe) d.ruoli.aTe = vanno.aTe;
+  if (vanno.regole.length) d.ruoli.regole = vanno.regole;
+  if (vanno.nonATe) d.ruoli.nonATe = vanno.nonATe;
   // LA PORTA D'INGRESSO si legge solo se la traccia ne parla, e sono due
   // chiamate in piu'. Farle sempre vorrebbe dire pagarle a ogni anteprima di
   // ogni server, comprese le tracce che di ingresso non dicono una parola.
@@ -155,8 +169,8 @@ function categorieDi(canali) {
   return m;
 }
 
-export async function applica(token, guild, preset, { togliere = false, impronta = null, pausa = PAUSA_MS, max = MAX_MOSSE, immagini = null } = {}) {
-  const a = await anteprima(token, guild, preset, { togliere, immagini });
+export async function applica(token, guild, preset, { togliere = false, impronta = null, pausa = PAUSA_MS, max = MAX_MOSSE, immagini = null, regoleOra = [] } = {}) {
+  const a = await anteprima(token, guild, preset, { togliere, immagini, regoleOra });
   if (!a.ok) return a;
 
   // Il permesso si controlla PRIMA, non si scopre a meta' strada da un errore.
@@ -186,6 +200,7 @@ export async function applica(token, guild, preset, { togliere = false, impronta
     ingressoSistemato: 0, ingressoDice: [], ingressoPersi: [],
     filtroCreate: 0, filtroSistemate: 0, filtroTolte: 0, nomiFiltroTolte: [],
     segni: [],
+    aTeDato: 0, regoleNuove: [],
     canaleAvvisi: d.avvisi?.id ? String(d.avvisi.id) : '' };
   const passo = async (fn, conta) => {
     if (esito.fermo) return null;
@@ -226,6 +241,21 @@ export async function applica(token, guild, preset, { togliere = false, impronta
     const x = await passo(() => api.sistemaRuolo(token, guild, v.id, v, MOTIVO.ruoloSistemato), 'ruoliSistemati');
     if (x?.ok && x.icona) esito.segni.push({ nome: v.nome || '', icona: x.icona });
   }
+  // IL RUOLO TUO VA A TE, e gli altri alle regole che li danno.
+  //
+  // Solo adesso: un ruolo appena nato ha un id da pochi istanti. Se non e'
+  // nato — Discord ha detto no, o ci si e' fermati prima — non si inventa
+  // niente: la riga cade, e l'errore della creazione dice gia' perche'.
+  const idRuolo = (x) => x?.id || idVeri.get('nuovo:' + String(x?.nome || '').toLowerCase()) || '';
+  if (!esito.fermo && r.aTe && a.foto.guild?.proprietario) {
+    const id = idRuolo(r.aTe);
+    if (id) await passo(() => api.dai(token, guild, a.foto.guild.proprietario, id, MOTIVO.aTe), 'aTeDato');
+  }
+  for (const x of (r.regole || [])) {
+    const id = idRuolo(x);
+    if (id) esito.regoleNuove.push({ tipo: x.tipo, ruolo: id, nome: x.nome });
+  }
+
   // Un id finto che non e' diventato vero vuol dire che quel ruolo non si e'
   // potuto creare. Il permesso che lo nomina si salta: dargli un id a caso
   // sarebbe peggio, e lasciarlo scritto «nuovo:...» farebbe fallire la
@@ -279,6 +309,15 @@ export async function applica(token, guild, preset, { togliere = false, impronta
   // di sistema — e nominarli prima che esistano vorrebbe dire nominare il
   // nulla. Prima delle rimozioni perche' se qualcosa va storto piu' in la', il
   // server e' comunque rimasto com'era chiesto, e non a meta'.
+  // L'angolo AFK nominato dalla traccia ha un id solo adesso, se e' nato in
+  // questo giro. Se non e' nato non si inventa niente: il campo cade, e il
+  // resto delle impostazioni parte lo stesso.
+  if (d.server?.cambia?.canaleAfkNome) {
+    const id = nuoviCanali.get(chiaveNome(d.server.cambia.canaleAfkNome));
+    if (id) d.server.cambia.canaleAfk = id;
+    delete d.server.cambia.canaleAfkNome;
+    if (!Object.keys(d.server.cambia).filter((k) => k !== 'featuresOra').length) d.server.cambia = null;
+  }
   if (!esito.fermo && d.server?.cambia) {
     const x = await passo(() => api.sistemaServer(token, guild, d.server.cambia, MOTIVO.server), 'serverSistemato');
     if (x?.ok) esito.serverDice = d.server.dice || [];

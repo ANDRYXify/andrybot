@@ -39,8 +39,19 @@ test('l’immagine entra solo dalla richiesta di costruire, e solo nei formati c
   assert.match(SRV, /const immagini = immaginiRuoli\(req\.body\?\.immagini\);/);
   assert.match(SRV, /data:image\\\/\(png\|jpeg\|gif\);base64,/, 'niente webp: Discord non lo prende');
   // L'anteprima deve vedere le stesse immagini del fare: se no mostra una cosa
-  // e ne succede un'altra.
-  assert.equal((SRV.match(/anteprima\(token, guild, preset, \{ togliere: true, immagini \}\)/g) || []).length, 1);
+  // e ne succede un'altra, e le due impronte non combaciano mai. Questa prova
+  // guardava UNA sola delle due anteprime — quella dentro «fai» — ed e' cosi'
+  // che la porta dell'anteprima vera e' rimasta senza immagini: ogni
+  // costruzione con un'immagine nuova si fermava su «il server e' cambiato».
+  // Adesso si guardano TUTTE le chiamate, e anche il pannello.
+  const chiamate = [...SRV.matchAll(/dcCostruisci\.(anteprima|applica)\(token, guild, preset, \{([^}]*)\}\)/g)];
+  assert.ok(chiamate.length >= 3, `chiamate al costruttore trovate: ${chiamate.length}`);
+  for (const [, quale, opz] of chiamate) {
+    assert.match(opz, /\bimmagini\b/, `una chiamata a ${quale} non passa le immagini: vedrebbe un server diverso dal fare`);
+    assert.match(opz, /\bregoleOra\b/, `una chiamata a ${quale} non passa le regole di adesso`);
+  }
+  assert.match(APP, /if \(Object\.keys\(_dcsIcone\)\.length\) corpo\.immagini = \{ \.\.\._dcsIcone \};\s*const d = await api\('\/api\/streamer\/dcserver\/anteprima'/,
+    'e il pannello le manda anche quando chiede di vedere');
   // E nella traccia che si salva i byte non ci arrivano.
   assert.ok(!/immagini/.test(SRV.slice(SRV.indexOf("app.post('/api/streamer/dcserver'"), SRV.indexOf("app.post('/api/streamer/dcserver'") + 600)),
     'la porta che salva la traccia non sa niente delle immagini');

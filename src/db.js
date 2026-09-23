@@ -2459,9 +2459,21 @@ export const dcRuoli = {
       .run({ channel: c, ...v, ts: now() });
     return this.get(c);
   },
-  // I canali su cui il giro ha davvero qualcosa da fare.
+  // I canali su cui il giro dei ruoli ha qualcosa da fare: acceso, e con un
+  // server. IL TOKEN QUI NON SI GUARDA, ed e' il punto: col bot della casa la
+  // riga non ne ha uno suo — parla quello della piattaforma — e un filtro
+  // «token non vuoto» lasciava fuori proprio loro, cioe' quasi tutti. Il giro
+  // non partiva mai, e dal pannello sembrava che i ruoli non funzionassero.
+  // Quale token usare lo decide `tokenDi`, in un posto solo; se non ce n'e'
+  // nessuno, e' il giro stesso a fermarsi.
   attivi() {
-    return db.prepare("SELECT channel FROM discord_ruoli WHERE attivo=1 AND token<>'' AND guild<>''").all().map((r) => r.channel);
+    return db.prepare("SELECT channel FROM discord_ruoli WHERE attivo=1 AND guild<>''").all().map((r) => r.channel);
+  },
+  // I canali che hanno un server, e basta. Serve a chi ha un interruttore suo
+  // (gli appuntamenti sul calendario): l'interruttore dei ruoli non c'entra, e
+  // legarli insieme vorrebbe dire che spegnendo i ruoli si spegne il calendario.
+  conServer() {
+    return db.prepare("SELECT channel FROM discord_ruoli WHERE guild<>''").all().map((r) => r.channel);
   },
   esito(channel, esito) { this.set(channel, { ultimoGiro: now(), ultimoEsito: esito || {} }); },
   scorda(channel) {

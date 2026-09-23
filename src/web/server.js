@@ -4680,7 +4680,13 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // modo giusto: in avanti e distruttivo fanno due cose diverse, e due cose
     // diverse non possono avere la stessa firma.
     const togliere = conChiave(req, currentUser(req).login);
-    const a = await dcCostruisci.anteprima(token, guild, preset, { togliere });
+    // LO STESSO CHE VEDRA' IL «FAI». Le immagini scelte e le regole gia'
+    // scritte cambiano cosa succede: se l'anteprima non le vedesse, la sua
+    // impronta non combacerebbe mai con quella del fare, e ogni costruzione con
+    // un'immagine nuova si fermerebbe su «il server e' cambiato» — falso.
+    const immagini = immaginiRuoli(req.body?.immagini);
+    const regoleOra = dcRuoli.get(currentUser(req).login)?.regole || [];
+    const a = await dcCostruisci.anteprima(token, guild, preset, { togliere, immagini, regoleOra });
     if (!a.ok) return res.status(400).json({ errore: a.errore });
     // `fuori` dice cosa il preset non prevede — si sa anche quando non si
     // tocca, perche' non dirlo lascerebbe credere che il server sia gia'
@@ -4693,7 +4699,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // I ruoli viaggiano a parte, perche' nel pannello si leggono a parte: un
       // elenco solo mescolerebbe «nasce un canale» e «cambia chi puo' bannare».
       ruoli: { crea: r.crea, sistema: r.sistema, togli: togliere ? r.togli : [],
-        fuori: r.togli, ambigui: r.ambigui, fuoriPortata: r.fuoriPortata },
+        fuori: r.togli, ambigui: r.ambigui, fuoriPortata: r.fuoriPortata,
+        // A chi vanno: il ruolo tuo che ti manca, le regole che la traccia
+        // scrivera' nella scheda dei Ruoli, e il ruolo tuo che sta troppo in
+        // alto per poterlo dare.
+        aTe: r.aTe || null, regole: r.regole || [], nonATe: r.nonATe || '' },
       // IL CONSIGLIO sui ruoli: «io lascerei solo questi, chiamandoli in
       // questo modo». Si manda in tutti e due i modi, perche' e' una cosa da
       // GUARDARE; quello che cambia e' che facendo piazza pulita i rinomini
@@ -4747,7 +4757,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // basterebbe non chiamarlo. Il server rifa' l'anteprima, pesa, e se serve
     // il nome e il nome non c'e', non cancella.
     if (togliere) {
-      const a = await dcCostruisci.anteprima(token, guild, preset, { togliere: true, immagini });
+      const a = await dcCostruisci.anteprima(token, guild, preset, { togliere: true, immagini, regoleOra: dcRuoli.get(login)?.regole || [] });
       if (!a.ok) return res.status(400).json({ errore: a.errore });
       if (impronta && impronta !== a.impronta) {
         return res.status(409).json({ cambiato: true, impronta: a.impronta, differenza: a.differenza,
@@ -4762,8 +4772,20 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       }
     }
 
-    const e = await dcCostruisci.applica(token, guild, preset, { togliere, impronta, immagini });
+    const e = await dcCostruisci.applica(token, guild, preset, { togliere, impronta, immagini, regoleOra: dcRuoli.get(login)?.regole || [] });
     if (!e.ok) return res.status(e.cambiato ? 409 : 400).json(e);
+    // LE REGOLE CHE LA TRACCIA HA PORTATO si aggiungono a quelle che c'erano,
+    // e non le sostituiscono: la scheda dei Ruoli e' dello streamer, e quello
+    // che ci aveva scritto resta. Dopo si cambiano da li', come tutte le altre.
+    if ((e.regoleNuove || []).length) {
+      const prima = dcRuoli.get(login)?.regole || [];
+      const tutte = normRegole([...prima, ...e.regoleNuove.map((x) => ({ tipo: x.tipo, ruolo: x.ruolo }))]);
+      dcRuoli.set(login, { regole: tutte });
+      // Scritte non vuol dire accese: se l'interruttore dei Ruoli e' spento le
+      // regole aspettano, e va detto — se no «ho scritto le regole» si legge
+      // come «da adesso i ruoli arrivano», e non e' vero.
+      e.ruoliSpenti = !dcRuoli.get(login)?.attivo;
+    }
     // Si scrive SEMPRE, anche quando non si e' tolto niente: un registro che
     // compare solo quando si cancella non dice se quel giorno era stato fatto
     // anche altro.

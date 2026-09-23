@@ -49,14 +49,45 @@ const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
 // Non si corregge ricordandosi di aggiornare la frase quando si aggiunge una
 // funzione: si ricava dal percorso, che e' l'unica cosa che sa davvero cosa si
 // stava facendo.
+// L'elenco sta qui e non sparso: `scripts/verifica-insegne.mjs` prende ogni
+// percorso che questo file chiama e pretende che una di queste righe lo
+// riconosca. Cosi' una funzione nuova che dimentica la sua riga non passa — e
+// «quella cosa» smette di poter essere la risposta per meta' del prodotto.
+const INSEGNE = [
+  [/\/messages(\/|$)/, 'quel canale', 'Inviare messaggi'],
+  [/\/members\//, 'quella persona', 'Gestire i ruoli'],
+  [/\/roles(\/|$)/, 'quel ruolo', 'Gestire i ruoli'],
+  [/\/channels(\/|$)/, 'quel canale', 'Gestire i canali'],
+  [/\/welcome-screen$/, 'la prima schermata del server', 'Gestire il server'],
+  [/\/onboarding$/, 'la porta d\'ingresso', 'Gestire il server'],
+  [/\/auto-moderation\/rules(\/|$)/, 'il filtro del server', 'Gestire il server'],
+  [/\/scheduled-events(\/|$)/, 'gli appuntamenti sul calendario', 'Creare eventi'],
+  [/^\/guilds\/\d+$/, 'le impostazioni del server', 'Gestire il server'],
+];
 const diCosa = (via) => {
-  const v = String(via || '');
-  if (/\/roles(\/|$)/.test(v)) return { cosa: 'quel ruolo', permesso: 'Gestire i ruoli' };
-  if (/\/channels\//.test(v)) return { cosa: 'quel canale', permesso: 'Gestire i canali' };
-  if (/\/messages(\/|$)/.test(v)) return { cosa: 'quel canale', permesso: 'Inviare messaggi' };
-  if (/\/members\//.test(v)) return { cosa: 'quella persona', permesso: 'Gestire i ruoli' };
+  const v = String(via || '').split('?')[0];
+  for (const [re, cosa, permesso] of INSEGNE) if (re.test(v)) return { cosa, permesso };
   return { cosa: 'quella cosa', permesso: 'quello che serve' };
 };
+
+// QUANDO DISCORD DICE «Invalid Form Body».
+//
+// E' la sua frase per «il corpo non mi va bene», in inglese e senza soggetto:
+// letta in un pannello italiano, in mezzo ad altri errori, non dice ne' cosa
+// non andava ne' dove guardare. Il dettaglio vero sta in `errors`, annidato
+// quanto il campo che ha sbagliato, e in fondo c'e' sempre un `_errors` con la
+// frase che serve. Si scende fino a li' e si riporta quella, col soggetto
+// davanti: e' l'unica parte che aiuta chi legge.
+function dettaglioForm(corpo) {
+  let dentro = corpo?.errors;
+  for (let giro = 0; dentro && typeof dentro === 'object' && giro < 8; giro++) {
+    if (Array.isArray(dentro._errors)) return String(dentro._errors[0]?.message || '').slice(0, 120);
+    const chiavi = Object.keys(dentro);
+    if (!chiavi.length) break;
+    dentro = dentro[chiavi[0]];
+  }
+  return '';
+}
 
 function spiega(stato, corpo, via) {
   const cod = Number(corpo?.code) || 0;
@@ -67,6 +98,10 @@ function spiega(stato, corpo, via) {
   }
   if (stato === 403) return `Discord non lascia toccare ${cosa} al bot: controlla i suoi permessi e la sua posizione`;
   if (stato === 404) return `non trovato: ${cosa} non c'e' piu'`;
+  if (stato === 400) {
+    const d = dettaglioForm(corpo);
+    return `su ${cosa} Discord ha rifiutato quello che gli abbiamo mandato${d ? ': ' + d : ''}`;
+  }
   if (stato >= 500) return 'Discord non sta bene in questo momento';
   return corpo?.message ? String(corpo.message).slice(0, 140) : ('HTTP ' + stato);
 }
@@ -183,6 +218,10 @@ export async function server(token, guild) {
       safety_alerts_channel_id: forse(d.safety_alerts_channel_id),
       system_channel_id: forse(d.system_channel_id),
       community: (d.features || []).includes('COMMUNITY'),
+      // CHI E' IL PROPRIETARIO. Sta nella stessa risposta, quindi non costa
+      // niente: serve a dare il ruolo della traccia che e' «tuo» a chi il
+      // server ce l'ha — senza chiedergli di collegarsi come uno spettatore.
+      proprietario: idOk(String(d.owner_id || '')) ? String(d.owner_id) : '',
     },
     // Le impostazioni vere, lette dalla stessa risposta: non costano una
     // chiamata in piu' e senza di loro la differenza non saprebbe mai dire

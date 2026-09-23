@@ -136,6 +136,18 @@ test('il token con cui si parla e\' uno solo, e lo decide un posto solo', () => 
   assert.match(GIRO, /const token = api\.tokenDi\(conf\);/);
   const COLL = leggi('src/features/discord-collega.js');
   assert.match(COLL, /c\.guild && tokenDi\(c\)/, 'e nemmeno chi decide se un canale accetta collegamenti');
+
+  // NEMMENO CHI SCEGLIE SU QUALI CANALI GIRARE. Il filtro «token non vuoto»
+  // nella query dei canali accesi era una seconda risposta alla stessa domanda,
+  // scritta prima che esistesse il bot della casa: con quello la riga non ha
+  // un token suo, e il giro dei ruoli non partiva mai per quasi nessuno.
+  const DB = leggi('src/db.js');
+  const q = DB.slice(DB.indexOf('attivi() {', DB.indexOf('export const dcRuoli')));
+  assert.ok(!/token<>''/.test(q.slice(0, 200)), 'la scelta dei canali non guarda il token: lo decide tokenDi');
+  const BOT = leggi('src/bot.js');
+  const cal = BOT.slice(BOT.indexOf('async _giroEventiDiscord()'), BOT.indexOf('async _giroEventiDiscord()') + 1200);
+  assert.ok(!/r\??\.token/.test(cal), 'e il calendario non legge il token della riga');
+  assert.match(cal, /dcApi\.tokenDi\(r\)/);
 });
 
 // IL BUCO CHE APRE UN BOT CONDIVISO.

@@ -1707,16 +1707,21 @@ export class BotManager {
   }
 
   async _giroEventiDiscord() {
-    for (const ch of dcRuoli.attivi()) {
+    // Tutti quelli con un server, non «quelli coi ruoli accesi»: il calendario
+    // ha il suo interruttore. E il token lo decide `tokenDi` — col bot della
+    // casa la riga non ne ha uno suo, e guardare quello della riga voleva dire
+    // saltare proprio loro.
+    for (const ch of dcRuoli.conServer()) {
       try {
         const s = streamers.get(ch);
         const conf = s?.settings?.discordEventi;
         if (!conf?.acceso) continue;
         const r = dcRuoli.get(ch);
-        if (!r?.token || !r.guild) continue;
-        const me = await dcApi.io(r.token, r.guild);
+        const token = dcApi.tokenDi(r);
+        if (!token || !r?.guild) continue;
+        const me = await dcApi.io(token, r.guild);
         if (!me.ok) continue;
-        await dcEventi.sincronizza(r.token, r.guild, me, conf, s?.settings?.grafiche?.giorni || []);
+        await dcEventi.sincronizza(token, r.guild, me, conf, s?.settings?.grafiche?.giorni || []);
       } catch (e) { log.debug('eventiDiscord', ch, e?.message || e); }
     }
   }

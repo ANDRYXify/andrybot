@@ -81,8 +81,8 @@ export function nonPuoDare(permessi, bitsBot) {
 // Quanto puo' chiedere un preset: i limiti sono quelli del motore della
 // differenza, e stanno scritti li'. Averne una seconda copia qui vorrebbe dire
 // due numeri che un giorno non coincidono piu'.
-import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI, TUTTI, normalizzaIngresso, normalizzaFiltro, TIPI_FILTRO, LISTE_FILTRO, portaAccendibile, normalizzaTinta, normalizzaSegno, SEGNI, CON_SEGNO, CON_TINTE } from './discord-preset.js';
-export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, TUTTI, TIPI_FILTRO, LISTE_FILTRO, SEGNI, CON_SEGNO, CON_TINTE };
+import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI, TUTTI, normalizzaIngresso, normalizzaFiltro, TIPI_FILTRO, LISTE_FILTRO, portaAccendibile, normalizzaTinta, normalizzaSegno, SEGNI, CON_SEGNO, CON_TINTE, A_CHI, aChiDi } from './discord-preset.js';
+export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, TUTTI, TIPI_FILTRO, LISTE_FILTRO, SEGNI, CON_SEGNO, CON_TINTE, A_CHI };
 export const TIPI_CANALE = Object.freeze(['testo', 'voce', 'annunci', 'palco', 'forum', 'media']);
 
 const somma = (nomi) => (nomi || []).reduce((t, n) => t | (PERMESSI[n] || 0n), 0n);
@@ -218,14 +218,48 @@ const soloLettura = [{ chi: TUTTI, nega: ['scrivere'] }];
 // altre righe di testo. Chi vuole la sua immagine la mette dal pannello.
 // Discord li mostra solo se il server ha la caratteristica giusta; dove non
 // c'e', restano dove sono e non si prova nemmeno.
+// E A CHI VANNO. Senza questa riga i quattro ruoli nascevano e restavano
+// addosso a nessuno: «Streamer» non l'aveva nemmeno lo streamer. Adesso
+// «Streamer» va a chi ha il server, e gli altri tre a chi lo e' su Twitch —
+// attraverso la scheda dei Ruoli, dove la traccia scrive la regola e dove si
+// cambia come tutte le altre.
 const ruoliDiretta = [
-  { nome: 'Streamer', colore: 0xe6398a, separato: true, privilegi: [], segno: { tipo: 'emoji', emoji: '\u{1F3A5}' } },
-  { nome: 'Moderatori', colore: 0x3aa76d, separato: true, citabile: true, segno: { tipo: 'emoji', emoji: '\u{1F6E1}\u{FE0F}' },
+  { nome: 'Streamer', colore: 0xe6398a, separato: true, privilegi: [], segno: { tipo: 'emoji', emoji: '\u{1F3A5}' }, aChi: 'tu' },
+  { nome: 'Moderatori', colore: 0x3aa76d, separato: true, citabile: true, segno: { tipo: 'emoji', emoji: '\u{1F6E1}\u{FE0F}' }, aChi: 'mod',
     privilegi: ['moderare', 'cacciare', 'pulire', 'soprannomi', 'zittire', 'spostare', 'registro', 'chiamareTutti'] },
-  { nome: 'VIP', colore: 0xc49a2c, separato: true, privilegi: ['emojiAltrui', 'chiamareTutti', 'priorita'], segno: { tipo: 'emoji', emoji: '\u2B50' } },
-  { nome: 'Abbonati', colore: 0x8a5cd6, privilegi: ['emojiAltrui'], segno: { tipo: 'emoji', emoji: '\u{1F49C}' } },
+  { nome: 'VIP', colore: 0xc49a2c, separato: true, privilegi: ['emojiAltrui', 'chiamareTutti', 'priorita'], segno: { tipo: 'emoji', emoji: '\u2B50' }, aChi: 'vip' },
+  { nome: 'Abbonati', colore: 0x8a5cd6, privilegi: ['emojiAltrui'], segno: { tipo: 'emoji', emoji: '\u{1F49C}' }, aChi: 'sub' },
 ];
 const riservato = [{ chi: TUTTI, nega: ['vedere'] }];
+// UNA STANZA DOVE SI ASCOLTA, NON DOVE SI PARLA.
+//
+// «In diretta» non e' un vocale come gli altri: e' il posto dove stai tu
+// mentre trasmetti. Nascerlo aperto a tutti vuol dire che chiunque entra e ti
+// parla sopra, e non e' una cosa da scoprire la prima sera.
+//
+// Quindi: entrano tutti e ascoltano, parlano quelli che stanno davanti.
+//
+// Chi ha il server parla comunque, e non per una regola nostra: Discord al
+// proprietario da' tutto, e i permessi dei canali su di lui non valgono. Il
+// ruolo «Streamer» serve quando in onda c'e' qualcuno che il server non ce
+// l'ha; «Moderatori» a chi deve poter intervenire. Tutti e due esistono nella
+// traccia stessa: se lo streamer ne toglie uno, quella riga cade e l'anteprima
+// dice quale — non resta una regola che nomina un ruolo che non c'e'.
+const stanzaDelloStreamer = [
+  { chi: TUTTI, nega: ['parlare'] },
+  { chi: 'Streamer', da: ['parlare'] },
+  { chi: 'Moderatori', da: ['parlare'] },
+];
+// L'ANGOLO AFK, che il pannello offriva e nessuna traccia creava.
+//
+// Nelle impostazioni del server c'e' «dopo quanto sposta nell'angolo AFK» e
+// «quale angolo»: due comandi che puntavano a un canale che non esisteva da
+// nessuna parte. Adesso la traccia lo crea, cosi' quella tendina ha qualcosa
+// da scegliere il giorno stesso.
+//
+// Discord zittisce da se' chi ci finisce dentro: qui non serve togliere
+// «parlare», servirebbe solo a scrivere una regola che non cambia niente.
+const ANGOLO_AFK = 'Angolo AFK';
 
 // LA PORTA E IL FILTRO GIA' SCRITTI.
 //
@@ -322,6 +356,7 @@ const CATALOGO_GREZZO = [
         { nome: 'generale' },
         { nome: 'fuori-tema', argomento: 'Tutto quello che non c’entra niente.' },
         { nome: 'Salotto', tipo: 'voce' },
+        { nome: ANGOLO_AFK, tipo: 'voce' },
       ] },
     ],
   },
@@ -345,7 +380,8 @@ const CATALOGO_GREZZO = [
         { nome: 'generale' },
         { nome: 'immagini' },
         { nome: 'Salotto', tipo: 'voce' },
-        { nome: 'In diretta', tipo: 'voce' },
+        { nome: 'In diretta', tipo: 'voce', permessi: stanzaDelloStreamer },
+        { nome: ANGOLO_AFK, tipo: 'voce' },
       ] },
     ],
   },
@@ -369,6 +405,7 @@ const CATALOGO_GREZZO = [
         { nome: 'Squadra 2', tipo: 'voce' },
         { nome: 'Squadra 3', tipo: 'voce' },
         { nome: 'Due chiacchiere', tipo: 'voce' },
+        { nome: ANGOLO_AFK, tipo: 'voce' },
       ] },
     ],
   },
@@ -397,6 +434,7 @@ const CATALOGO_GREZZO = [
         { nome: 'Salotto', tipo: 'voce' },
         { nome: 'Angolo tranquillo', tipo: 'voce' },
         { nome: 'Riunione', tipo: 'voce' },
+        { nome: ANGOLO_AFK, tipo: 'voce' },
       ] },
       // Nascosto a tutti vuol dire: lo vede chi ha un ruolo che glielo permette,
       // e chi amministra il server. Finche' non c'e' un ruolo dello staff, lo
@@ -422,10 +460,19 @@ const PAROLE_PORTA = {
 // canali che la traccia HA. Scriverli a mano vorrebbe dire poter nominare un
 // canale che quella traccia non prevede — un difetto che si vedrebbe solo al
 // momento di costruire, quando quel nome cade.
+//
+// E LE IMPOSTAZIONI che dipendono dai canali, per la stessa ragione: l'angolo
+// AFK si nomina solo se la traccia lo crea davvero, ed e' un vocale.
+const serverPronto = (t) => {
+  const tutti = [...(t.canali || []), ...(t.categorie || []).flatMap((c) => c.canali || [])];
+  const afk = tutti.find((c) => c.nome === ANGOLO_AFK && c.tipo === 'voce');
+  return afk ? { canaleAfkNome: ANGOLO_AFK } : undefined;
+};
 export const CATALOGO = Object.freeze(CATALOGO_GREZZO.map((t) => Object.freeze({
   ...t,
   ingresso: portaPronta(t, PAROLE_PORTA[t.id] || {}),
   filtro: filtroPronto(t),
+  ...(serverPronto(t) ? { server: { ...(t.server || {}), ...serverPronto(t) } } : {}),
 })));
 
 export const daId = (id) => CATALOGO.find((p) => p.id === String(id || '')) || null;
@@ -504,6 +551,7 @@ export function normalizzaPreset(x) {
       // qui non si ricopia nessuna regola, se no fra un mese sarebbero due.
       ...normalizzaTinta(r),
       segno: normalizzaSegno(r?.segno),
+      aChi: aChiDi(r?.aChi),
       separato: !!r?.separato,
       citabile: !!r?.citabile,
       // Un privilegio che non sappiamo nominare non passa: sennò il pannello
@@ -547,6 +595,12 @@ export function normalizzaPreset(x) {
     for (const k of ['canaleSistema', 'canaleRegole', 'canaleAvvisiStaff', 'canaleSicurezza', 'canaleAfk']) {
       if (q[k] !== undefined) imp[k] = String(q[k] || '').replace(/[^0-9]/g, '').slice(0, 24);
     }
+    // L'ANGOLO AFK PER NOME, in un campo suo. Una traccia non puo' conoscere
+    // l'id di un canale che sta per creare: lo nomina, e il costruttore lo
+    // traduce quando il canale esiste. Un campo a parte e non «un id oppure un
+    // nome» nello stesso: due tipi in una casella sola vorrebbero dire
+    // indovinare quale dei due c'e' scritto.
+    if (q.canaleAfkNome !== undefined) imp.canaleAfkNome = String(q.canaleAfkNome || '').trim().slice(0, 100);
     if (q.attesaAfk !== undefined && ATTESE_AFK.includes(Number(q.attesaAfk))) imp.attesaAfk = Number(q.attesaAfk);
     if (q.barraBoost !== undefined) imp.barraBoost = !!q.barraBoost;
     if (q.invitiFermi !== undefined) imp.invitiFermi = !!q.invitiFermi;

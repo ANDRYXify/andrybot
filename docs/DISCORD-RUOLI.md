@@ -1,3 +1,64 @@
+# I ruoli: a chi vanno e come si vedono
+
+## A chi vanno
+
+Il difetto visto dal vivo: la traccia creava «Streamer», «Moderatori», «VIP» e
+«Abbonati», e poi non li dava nessuno. «Streamer» non l'aveva nemmeno lo
+streamer, e dal server sembrava che non fosse successo niente.
+
+Le cause erano due, e la seconda nascondeva la prima.
+
+**Il giro non partiva.** `dcRuoli.attivi()` sceglieva i canali con
+`token<>''`. Col bot della casa la riga non ha un token suo — parla quello
+della piattaforma — quindi per quasi tutti il giro dei ruoli non partiva mai.
+Quale token usare lo decideva gia' `tokenDi`, in un posto solo; la query era
+una seconda risposta alla stessa domanda, scritta prima che il bot della casa
+esistesse. Adesso la scelta dei canali guarda solo «acceso e con un server», e
+il calendario ha la sua (`conServer()`), perche' ha un interruttore suo.
+
+**Nessuno diceva a chi andassero.** Adesso ogni ruolo della traccia risponde a
+una domanda sola, `aChi`:
+
+| valore | a chi va | come |
+| --- | --- | --- |
+| `tu` | a chi ha il server | Discord dice chi e' il proprietario con il server stesso (`owner_id`): il costruttore glielo da' |
+| `mod`, `vip`, `sub`, `follower` | a chi lo e' su Twitch | il costruttore scrive la regola nella scheda dei Ruoli, che li da' a chi si e' collegato |
+| (vuoto) | a nessuno in automatico | lo dai tu a mano |
+
+Un campo solo e non due («e' tuo» + «per chi»): un ruolo che fosse tutte e due
+le cose dovrebbe poi decidere quale vale. Il ruolo `tu` e' uno solo: nel
+pannello sceglierlo su un ruolo lo toglie all'altro, nel modello vince il
+primo.
+
+**Il bot puo' dare un ruolo al proprietario.** Verificato sul testo di
+Discord: la gerarchia limita il bot nel dare ruoli solo per la posizione del
+RUOLO («A bot can grant roles to other users that are of a lower position than
+its own highest role»); il bersaglio conta solo per cacciare, bandire e i
+soprannomi. Un ruolo appena creato nasce in basso, quindi si puo' dare. Se il
+ruolo «tuo» sta piu' in alto del bot, non si prova: l'anteprima lo dice.
+
+**Le regole si aggiungono, non sostituiscono.** La scheda dei Ruoli e' dello
+streamer: quelle che la traccia porta si mettono accanto a quelle che c'erano,
+senza doppioni, e da li' si cambiano come le altre. Se l'interruttore dei Ruoli
+e' spento, l'esito lo dice: scritte non vuol dire accese.
+
+**Non si rifa' l'uguale.** Il ruolo che il proprietario ha gia' non glielo si
+ridà, la regola che c'e' gia' non si riscrive: se no l'anteprima direbbe per
+sempre che c'e' qualcosa da fare.
+
+`aChiVanno()` e' pura: i ruoli del proprietario e le regole di adesso arrivano
+come dati (li legge la porta), e parte da quello che `differenzaRuoli` ha gia'
+deciso — un ruolo ambiguo o sopra il bot la' non si tocca, e qui non diventa
+«tuo» per una strada laterale.
+
+## L'anteprima e il fare vedono le stesse cose
+
+Un difetto dell'aspetto dei ruoli, trovato rileggendo le chiamate: la porta
+dell'anteprima non passava le immagini scelte, quella del fare si'. Le due
+impronte non combaciavano mai, e costruire dopo aver scelto un'immagine per un
+ruolo gia' esistente si fermava sempre su «il server e' cambiato» — falso.
+Adesso tutte e due ricevono le stesse cose: immagini e regole di adesso.
+
 # L'aspetto dei ruoli
 
 Un ruolo su Discord non è solo quello che può fare: è anche come si vede. Il

@@ -129,6 +129,32 @@ for (const [file, estrai] of POSTI) {
   }
 }
 
+// LE LETTERE SCOMPOSTE. «È» si puo' scrivere come un carattere solo oppure
+// come «E» seguita da un accento appiccicato dopo: a schermo sono uguali, per il
+// computer no. La seconda rompe le ricerche, i confronti e questo stesso
+// cancello — che cerca «è» e non la trova. E' cosi' che «C̀̀e stato» (una C con
+// due accenti appesi) e' finito fra le condizioni dei Ruoli senza che nessuno
+// se ne accorgesse. Qui si guarda tutto il codice, commenti tolti; l'unico
+// posto dove quei segni stanno di proposito e' la tabella che li toglie per
+// confrontare le parole, e quella si riconosce e si salta.
+const SCOMPOSTE = /[\u0300-\u036f]/;
+const cartelle = ['src'];
+const { readdirSync, statSync } = await import('node:fs');
+const tuttiJs = (d) => readdirSync(join(RAD, d)).flatMap((f) => {
+  const via = join(d, f);
+  return statSync(join(RAD, via)).isDirectory() ? tuttiJs(via) : (/\.(m?js|html)$/.test(f) ? [via] : []);
+});
+for (const file of cartelle.flatMap(tuttiJs)) {
+  for (const riga of senzaCommentiJs(leggi(file)).split('\n')) {
+    // la tabella «da questo accento a quest'altro» nelle espressioni che
+    // tolgono gli accenti per confrontare: e' li' di proposito
+    const senzaTabella = riga.replace(/\[[\u0300-\u036f]-[\u0300-\u036f]\]/g, '');
+    if (SCOMPOSTE.test(senzaTabella)) {
+      trovate.push({ file, parola: 'lettera scomposta', giusta: 'la stessa lettera in un carattere solo', riga: senzaTabella.trim().slice(0, 90) });
+    }
+  }
+}
+
 if (!trovate.length) {
   console.log('  ✓ quello che si legge da fuori è scritto in italiano, accenti compresi\n');
   process.exit(0);

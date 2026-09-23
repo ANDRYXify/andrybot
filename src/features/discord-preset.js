@@ -66,6 +66,27 @@ export const MAX_RUOLI = 15;
 export const CON_SEGNO = 'ROLE_ICONS';
 export const CON_TINTE = 'ENHANCED_ROLE_COLORS';
 
+// A CHI VA UN RUOLO. Una domanda sola, con una risposta sola.
+//
+// Le tracce creavano «Streamer», «Moderatori», «VIP», «Abbonati» — e poi non li
+// dava nessuno: il ruolo nasceva, restava vuoto, e dal server sembrava che non
+// fosse successo niente. Un ruolo che nessuno ha e' un'etichetta appesa al
+// muro.
+//
+// Quindi un ruolo della traccia dice a chi va:
+//  · 'tu'   — a chi il server ce l'ha, il proprietario. Discord lo sa e ce lo
+//             dice con il server stesso: non c'e' niente da collegare.
+//  · 'mod', 'vip', 'sub', 'follower' — a chi lo e' su Twitch. Questi passano
+//             per la scheda dei Ruoli, che li da' a chi si e' collegato: la
+//             traccia ci scrive la regola, e da li' si cambia come le altre.
+//  · ''     — a nessuno in automatico: lo dai tu a mano, come prima.
+//
+// Un campo solo e non due («e' tuo» + «per chi»): un ruolo che fosse tutte e
+// due le cose dovrebbe poi decidere quale delle due vale, cioe' uno stato da
+// «risolvere». Cosi' quello stato non si puo' scrivere.
+export const A_CHI = Object.freeze(['', 'tu', 'follower', 'sub', 'vip', 'mod']);
+export const aChiDi = (v) => (A_CHI.includes(String(v ?? '')) ? String(v ?? '') : '');
+
 // LA TINTA. `colore` c'era gia' ed e' il primo colore: non si duplica in un
 // campo nuovo, si aggiunge solo quello che mancava.
 //
@@ -214,10 +235,15 @@ function voluteRuoli(preset) {
     const k = nome.toLowerCase();
     if (visti.has(k)) continue;        // lo stesso ruolo scritto due volte e' un ruolo solo
     visti.add(k);
+    // Il ruolo «tuo» e' uno: il primo che lo dice lo prende, gli altri no. Due
+    // ruoli entrambi «del proprietario» non sono un errore da segnalare, sono
+    // una frase che si capisce solo a meta' — e a meta' si prende la prima.
+    const aChi = aChiDi(r?.aChi) === 'tu' && fuori.some((x) => x.aChi === 'tu') ? '' : aChiDi(r?.aChi);
     fuori.push({
       nome,
       ...normalizzaTinta(r),
       segno: normalizzaSegno(r?.segno),
+      aChi,
       separato: !!r?.separato,
       citabile: !!r?.citabile,
       privilegi: [...new Set((Array.isArray(r?.privilegi) ? r.privilegi : []).map(String))],
@@ -464,6 +490,53 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
   }
 
   return { crea, sistema, togli, ambigui, fuoriPortata, nonPosso, manca };
+}
+
+// A CHI VANNO I RUOLI DELLA TRACCIA, con i fatti in mano.
+//
+// Pura: le due cose che servono da fuori — i ruoli che il proprietario ha
+// adesso, e le regole gia' scritte nella scheda dei Ruoli — arrivano come dati.
+// Cosi' guardare e fare leggono la stessa risposta, e una prova la puo'
+// misurare senza Discord.
+//
+// Parte da quello che `differenzaRuoli` ha gia' deciso invece di rifarlo: un
+// ruolo ambiguo o fuori portata la' non si tocca, e non deve diventare
+// «tuo» qui per una strada laterale.
+//
+// E NON SI RISCRIVE L'UGUALE: il ruolo che il proprietario ha gia' non glielo
+// si ridà, e la regola che c'e' gia' non si riscrive. Altrimenti l'anteprima
+// direbbe per sempre «c'e' qualcosa da fare» su un server gia' a posto.
+export function aChiVanno(foto, preset, dRuoli, { ruoliDelProprietario = null, regoleOra = [] } = {}) {
+  const fuori = { aTe: null, nonATe: '', regole: [] };
+  const proprietario = String(foto?.guild?.proprietario || '');
+  const saltati = new Set([...(dRuoli?.ambigui || []), ...(dRuoli?.fuoriPortata || [])].map(chiaveRuolo));
+  const nasce = new Set((dRuoli?.crea || []).map((r) => chiaveRuolo(r.nome)));
+  const attuali = (foto?.ruoli || []).filter((r) => r?.id);
+  const idDi = (v) => {
+    if (v.da && attuali.some((r) => String(r.id) === v.da)) return v.da;
+    const c = attuali.filter((r) => chiaveRuolo(r.nome) === chiaveRuolo(v.nome));
+    return c.length === 1 ? String(c[0].id) : '';
+  };
+  const gia = new Set((Array.isArray(regoleOra) ? regoleOra : []).map((r) => `${r?.tipo}|${r?.ruolo}`));
+  for (const v of voluteRuoli(preset)) {
+    if (!v.aChi) continue;
+    const k = chiaveRuolo(v.nome);
+    if (saltati.has(k)) {
+      if (v.aChi === 'tu') fuori.nonATe = v.nome;
+      continue;
+    }
+    const id = nasce.has(k) ? '' : idDi(v);
+    if (!nasce.has(k) && !id) continue;             // ne' c'e' ne' nasce: non c'e' niente da dare
+    if (v.aChi === 'tu') {
+      if (!proprietario) continue;
+      if (id && Array.isArray(ruoliDelProprietario) && ruoliDelProprietario.map(String).includes(id)) continue;
+      fuori.aTe = id ? { nome: v.nome, id } : { nome: v.nome };
+      continue;
+    }
+    if (id && gia.has(`${v.aChi}|${id}`)) continue;
+    fuori.regole.push(id ? { tipo: v.aChi, nome: v.nome, id } : { tipo: v.aChi, nome: v.nome });
+  }
+  return fuori;
 }
 
 // ALTRI MODI DI DIRE LA STESSA COSA.
@@ -722,6 +795,18 @@ export function differenzaServer(preset, foto) {
     if (String(ora[k] || '') === v) continue;
     cambia[k] = v;
     dice.push({ campo: k, da: ora[k] || '', a: v });
+  }
+  // L'ANGOLO AFK NOMINATO DALLA TRACCIA vale solo se il server non ne ha gia'
+  // uno. La traccia lo crea perche' un server nuovo ne resti senza; uno che ce
+  // l'ha gia' scelto se lo tiene — e' la stessa regola del «lascia com'e'»: si
+  // riempie un vuoto, non si cambia una scelta.
+  const nomeAfk = String(voluto.canaleAfkNome || '').trim();
+  if (nomeAfk && !cambia.canaleAfk && !String(ora.canaleAfk || '')) {
+    // Un canale AFK e' per forza un vocale: Discord rifiuta il resto.
+    const c = (foto?.canali || []).find((x) => Number(x?.tipo) === TIPI.voce && chiaveNome(x?.nome) === chiaveNome(nomeAfk));
+    if (c) cambia.canaleAfk = String(c.id);
+    else cambia.canaleAfkNome = nomeAfk;
+    dice.push({ campo: 'canaleAfk', da: '', a: nomeAfk });
   }
   if (voluto.zittisci) {
     const oraZ = ora.zittisci || {};
@@ -1185,6 +1270,7 @@ export function differenzaFiltro(preset, foto, regole) {
 // contare tre elenchi per sapere se applicare due volte ha fatto qualcosa.
 export const vuota = (d) => !(d?.crea?.length || d?.sistema?.length || d?.togli?.length
   || d?.ruoli?.crea?.length || d?.ruoli?.sistema?.length || d?.ruoli?.togli?.length
+  || d?.ruoli?.aTe || d?.ruoli?.regole?.length
   || d?.server?.dice?.length || d?.ingresso?.dice?.length
   || d?.filtro?.dice?.length || d?.filtro?.togli?.length);
 
@@ -1217,6 +1303,10 @@ export function improntaDi(d) {
     // autorizzerebbe la seconda avendo guardato la prima.
     ...(r.sistema || []).map((x) => `rs|${x.id}|${Object.keys(x).filter((k) => !['id', 'nome'].includes(k)).sort().join(',')}|${x.rinomina || ''}`),
     ...(r.togli || []).map((x) => `rx|${x.id}`),
+    // A chi va un ruolo e' una decisione su una persona: un «sì» dato guardando
+    // «Streamer va a te» non deve valere per un ruolo diverso arrivato dopo.
+    ...(r.aTe ? [`ra|${r.aTe.id || 'nuovo:' + r.aTe.nome}`] : []),
+    ...(r.regole || []).map((x) => `rr|${x.tipo}|${x.id || 'nuovo:' + x.nome}`),
     // Anche le impostazioni del server, per la stessa ragione dei ruoli: un
     // «sì, fallo» dato guardando i canali non deve autorizzare un livello di
     // verifica cambiato nel frattempo. Col VALORE, non solo col nome del campo.

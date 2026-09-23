@@ -109,9 +109,16 @@ test('nei preset i permessi sono scritti a parole, e le parole esistono tutte', 
 });
 
 test('ogni preset del catalogo si risolve senza lasciare pezzi per strada', () => {
+  // UN RUOLO SI PUO' GARANTIRE SE LA TRACCIA LO CREA. E' cosi' che risolve il
+  // costruttore (`anteprima`: i ruoli di adesso piu' quelli che nasceranno), e
+  // qui si fa lo stesso. Questa prova risolveva contro un server con solo
+  // «tutti» e «Staff»: era vero finche' nessun canale nominava un ruolo, e
+  // diventava falso appena «In diretta» ha detto chi ci parla. La garanzia che
+  // conta resta intera: una traccia che nomina un ruolo che NON crea e' rossa.
   for (const p of C.CATALOGO) {
-    const r = C.risolvi(p, { guildId: GUILD, ruoli });
-    assert.deepEqual(r.mancanti, [], `${p.id}: nomina un ruolo che non si puo' garantire`);
+    const nasceranno = (p.ruoli || []).map((x) => ({ id: 'nuovo:' + String(x.nome).toLowerCase(), nome: x.nome }));
+    const r = C.risolvi(p, { guildId: GUILD, ruoli: [...ruoli, ...nasceranno] });
+    assert.deepEqual(r.mancanti, [], `${p.id}: nomina un ruolo che non crea, e quindi non si puo' garantire`);
     const quanti = r.preset.categorie.reduce((t, c) => t + 1 + c.canali.length, 0);
     const attesi = p.categorie.reduce((t, c) => t + 1 + c.canali.length, 0);
     assert.equal(quanti, attesi, `${p.id}: risolvendo si e' perso qualcosa`);
