@@ -143,6 +143,8 @@ const GIOCHI = {
       ['<code>!carta</code>', '—', 'Un\'altra carta nella tua mano di blackjack.', '—'],
       ['<code>!stai</code>', '<code>!stand</code>', 'Ti fermi: gioca il banco, e si vede chi vince.', '—'],
       ['<code>!corsa 2 50</code>', '<code>!race</code>', 'Punti su un corridore, col numero o col nome. <code>!corsa</code> da solo apre le puntate.', ATTESE('corsa')],
+      ['<code>!patata</code>', '<code>!potato</code>', 'Lanci la patata bollente: ce l\'hai in mano tu.', ATTESE('patata')],
+      ['<code>!passa @nome</code>', '<code>!pass</code>', 'Passi la patata a chi è in chat. Senza nome va a qualcuno a caso.', '—'],
       ['<code>!regala @nome 50</code>', '<code>!dona</code>', 'Passi monete a qualcun altro.', '—'],
       ['<code>!duello @nome 50</code>', '—', 'Un duello con la posta: l\'altro accetta o rifiuta, e chi vince prende la posta dell\'altro.', `${ATTESA(DI_SERIE('duello').scadenza)} per rispondere`],
       ['<code>!accetta</code>', '—', 'Accetti la sfida con posta che ti hanno fatto.', '—'],
@@ -249,6 +251,12 @@ const GIOCHI = {
       `Con <code>!corsa</code> si aprono le puntate per ${ATTESA(DI_SERIE('corsa').raccolta)}: il bot scrive i corridori, dal favorito al più lento, ognuno con quanto paga. Si punta con <code>!corsa 2 50</code> (il secondo corridore, 50 monete) o col nome, <code>!corsa lepre 50</code>; una puntata a testa. Poi si parte, e qualche secondo dopo il bot dice il podio e chi ha vinto quanto.`,
       `Il favorito vince spesso e paga poco, l'ultimo vince di rado e paga tanto, e le quote sono fatte perché ogni corridore renda uguale: di serie, su 100 monete puntate ne tornano in media ${CIFRA(RESA('corsa').perCento)}, qualunque corridore si scelga. Non esiste la puntata furba. Nelle regole scegli quanto rende, i nomi dei corridori (da 2 a 8) e la puntata massima.`,
       'Le monete si muovono solo all\'arrivo, e fra la partenza e l\'arrivo non si dice niente su come va: se il bot si riavvia nel mezzo la corsa salta, e nessuno perde niente.',
+    ] },
+
+    { h3: 'La patata bollente' },
+    { p: [
+      `Con <code>!patata</code> la lanci, e ce l'hai in mano tu. Chi ce l'ha la passa con <code>!passa @nome</code>, oppure con <code>!passa</code> e va a qualcuno a caso fra chi è in chat. Scoppia dopo un tempo che nessuno conosce, di serie fra ${ATTESA(DI_SERIE('patata').miccia)} e ${ATTESA(DI_SERIE('patata').micciaMax)}, deciso quando la lanci: passarla non lo cambia.`,
+      'Si passa solo a una persona in chat: non a te, non a chi non c\'è, non a un bot, che non potrebbe ripassarla. Di serie non costa niente a nessuno. Se vuoi, nelle regole metti una multa: chi resta con la patata ne dà tante a chi gliel\'ha passata, ma solo se aveva già giocato, cioè l\'aveva lanciata o passata. Chi la riceve senza averla mai toccata si brucia e basta.',
     ] },
 
     { h3: 'Abbracci, bacini e il cinque perfetto' },

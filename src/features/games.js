@@ -12,6 +12,7 @@ import * as bossFeat from './boss.js';
 import * as contaFeat from './conta.js';
 import * as bjFeat from './blackjack.js';
 import * as corsaFeat from './corsa.js';
+import * as patataFeat from './patata.js';
 import { aspetta, giocato } from './attese-giochi.js';
 import { points, streamers, giochi } from '../db.js';
 import { config } from '../config.js';
@@ -231,6 +232,14 @@ export function segnaPresenza(channel, utente) {
     const limite = Date.now() - VISTI_MS;
     for (const [k, t] of m) if (t < limite) m.delete(k);
   }
+}
+
+// Chi ha scritto in chat da poco, per scegliere qualcuno a caso.
+export function chiInChat(channel) {
+  const m = visti.get(String(channel || '').toLowerCase());
+  if (!m) return [];
+  const limite = Date.now() - VISTI_MS;
+  return [...m].filter(([, t]) => t > limite).map(([u]) => u);
 }
 
 export function inChat(channel, utente) {
@@ -1064,6 +1073,16 @@ export function tryGame(msg, say) {
 
       case 'corsa': {
         corsaFeat.corsa(channel, msg, args, say, { moneta: moneta() });
+        return true;
+      }
+
+      case 'patata': {
+        patataFeat.lancia(channel, msg, say, { moneta: moneta() });
+        return true;
+      }
+
+      case 'passa': {
+        patataFeat.passa(channel, msg, args, say, { inChat, chiInChat });
         return true;
       }
 

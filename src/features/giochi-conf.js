@@ -224,6 +224,16 @@ export const CATALOGO = [
     resa: { tipo: 'corsa' },
   },
   {
+    id: 'patata', nome: T('Patata bollente', 'Hot potato', 'Patata caliente'),
+    param: [
+      { k: 'miccia', tipo: 'secondi', def: 30, min: 10, max: 600, eti: T('Scoppia dopo almeno tanti secondi', 'It blows after at least this many seconds', 'Explota tras al menos tantos segundos') },
+      { k: 'micciaMax', tipo: 'secondi', def: 90, min: 10, max: 600, eti: T('E al più dopo tanti', 'And at most after this many', 'Y como mucho tras tantos') },
+      { k: 'multa', tipo: 'monete', def: 0, min: 0, max: 100000, eti: T('Chi resta con la patata ne dà tante a chi gliel\'ha passata (0 = niente)', 'Whoever is left holding it gives this many to whoever passed it (0 = nothing)', 'Quien se queda con ella da tantas a quien se la pasó (0 = nada)') },
+      ...ATTESE({ tutti: 120, etiTesta: T('Attesa fra due patate lanciate, a testa', 'Wait between two potatoes thrown, each', 'Espera entre dos patatas lanzadas, cada uno'), etiTutti: T('Attesa fra due patate, per tutti', 'Wait between two potatoes, for everyone', 'Espera entre dos patatas, para todos') }),
+    ],
+    resa: { tipo: 'passa' },
+  },
+  {
     id: 'conta', nome: T('Conta insieme', 'Count together', 'Contad juntos'),
     param: [
       { k: 'pausa', tipo: 'secondi', def: 120, min: 30, max: 1800, eti: T('Si chiude se nessuno conta per tanti secondi', 'It closes if nobody counts for this many seconds', 'Se cierra si nadie cuenta durante tantos segundos') },

@@ -394,6 +394,29 @@ monete e restare fuori. Così chi all'arrivo non ha più la sua puntata resta
 fuori senza perdere niente, e non ci guadagna niente: è come non aver puntato.
 Un riavvio fa sparire la corsa, e nessuno ci rimette.
 
+## La patata bollente (`!patata`, `!passa`)
+
+Un gioco sociale: non si vince niente, si passa in fretta. Tre scelte.
+
+**La miccia si decide al lancio**, un numero a caso fra `miccia` e `micciaMax`
+secondi, estratto una volta. Passarla non la allunga e non la accorcia: il caso
+serve a non far sapere quando scoppia, non regge niente. Se nel pannello il
+minimo supera il massimo, si prendono i due numeri nell'ordine giusto.
+
+**Si passa solo a una persona in chat** (chi ha scritto negli ultimi trenta
+minuti), non a sé e non a un bot noto: un bot non può ripassarla, e diventerebbe
+il cestino dove buttarla per chiudere il gioco senza rischio. `!passa` senza nome
+sceglie a caso fra chi è in chat, con gli stessi limiti.
+
+**La multa la paga solo chi gioca.** Di serie è zero. Se lo streamer la mette,
+chi resta con la patata ne dà `multa` (fino a quante ne ha) a chi gliel'ha
+passata: le monete passano di tasca, non se ne creano (regola 3). Ma solo se
+aveva già giocato, cioè l'aveva lanciata o passata almeno una volta: la patata
+arriva anche a chi non ha scritto `!patata`, e nessuno deve perdere monete in un
+gioco a cui non ha scelto di partecipare. Chi la riceve senza averla mai toccata
+si brucia e basta. La multa si paga solo allo scoppio: un riavvio fa sparire la
+patata senza che nessuna moneta sia in sospeso.
+
 ## Le manche con lo stato: impiccato e più o meno
 
 Fino a qui una manche era una domanda e un controllo: il primo messaggio giusto
