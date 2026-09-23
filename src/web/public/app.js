@@ -2092,7 +2092,7 @@ function disegnaCartaLive() {
   const sceltoNessuno = !d.mia;
   const bottoni = temi.map((t) => `<button type="button" class="btn secondario cl-tema${d.temaAttivo === t.id ? ' scelto' : ''}" data-tema="${esc(t.id)}">${esc(t.nome)}</button>`).join('');
   box.innerHTML = `
-    <h2>${_hIco(ICO.immagine || ICO.megafono)}${L('La locandina della diretta', 'The live poster', 'El cartel del directo')}</h2>
+    <h2>${_hIco(ICO.immagine)}${L('La locandina della diretta', 'The live poster', 'El cartel del directo')}</h2>
     <p>${L('Quando parte la diretta, l\'avviso porta con sé un\'immagine: il tuo nome, il titolo, il gioco e la tua faccia.', 'When the live starts, the alert carries an image: your name, the title, the game and your face.', 'Cuando empieza el directo, el aviso lleva una imagen: tu nombre, el título, el juego y tu cara.')}</p>
     ${d.disegnabile ? '' : `<p class="avviso-riga">${L('Adesso non riesco a disegnarla: mancano i caratteri sul server.', 'I can\'t draw it right now: fonts are missing on the server.', 'Ahora no puedo dibujarla: faltan las tipografías en el servidor.')}</p>`}
     <div class="riga-check spazio-sopra">
@@ -3190,6 +3190,11 @@ const ICO = {
   condividi: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/>',
   lucchetto: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/>',
   altoparlante: '<path d="M11 4.7 6.6 8.4H3v7.2h3.6L11 19.3z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
+  muto: '<path d="M11 4.7 6.6 8.4H3v7.2h3.6L11 19.3z"/><path d="m16 9.5 5 5"/><path d="m21 9.5-5 5"/>',
+  calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M8 14h3"/>',
+  ruoli: '<path d="M12 3 5 6v5c0 4.4 3 8.4 7 10 4-1.6 7-5.6 7-10V6l-7-3Z"/><circle cx="12" cy="10" r="2.2"/><path d="M8.6 16.2a3.6 3.6 0 0 1 6.8 0"/>',
+  faccina: '<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01"/><path d="M15 9.5h.01"/>',
+  sposta: '<path d="M12 3v18"/><path d="M3 12h18"/><path d="m9 6 3-3 3 3"/><path d="m9 18 3 3 3-3"/><path d="m6 9-3 3 3 3"/><path d="m18 9 3 3-3 3"/>',
   immagine: '<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
   video: '<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>',
   carica: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/>',
@@ -4203,7 +4208,7 @@ let _settPosti = null;
 function pannelloSettimana() {
   return pannello('settimana', `
     <div class="carta">
-      <h2>${_hIco(ICO.calendario || '')}${L('I tuoi giorni', 'Your days', 'Tus días')}</h2>
+      <h2>${_hIco(ICO.calendario)}${L('I tuoi giorni', 'Your days', 'Tus días')}</h2>
       <p>${L('Scrivi una volta sola quando vai in onda e cosa fai. Da qui lo prendono la grafica della settimana, i calendari e i posti dove la mandi.', 'Write once when you go live and what you do. The weekly graphic, the calendars and the places you send it to all take it from here.', 'Escribe una sola vez cuándo sales en directo y qué haces. De aquí lo toman la gráfica de la semana, los calendarios y los sitios adonde la mandas.')}</p>
       <div id="sett-giorni" class="sett-giorni spazio-sopra"></div>
       <div class="riga-flessibile spazio-sopra">
@@ -4217,7 +4222,7 @@ function pannelloSettimana() {
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.condividi || '')}${L('Mandala', 'Send it', 'Mándala')}</h2>
+      <h2>${_hIco(ICO.condividi)}${L('Mandala', 'Send it', 'Mándala')}</h2>
       <p>${L('L’immagine è quella delle Grafiche, con i tuoi giorni dentro. Parte quando premi «Manda», nei posti che spunti.', 'The image is the one from Graphics, with your days in it. It goes out when you press «Send», to the places you tick.', 'La imagen es la de Gráficas, con tus días dentro. Sale cuando pulsas «Manda», a los sitios que marques.')}
         <button type="button" class="btn secondario mini" data-vai="grafiche">${L('Cambiane l’aspetto', 'Change how it looks', 'Cambia su aspecto')}</button></p>
       <div class="sett-manda spazio-sopra">
@@ -4226,7 +4231,7 @@ function pannelloSettimana() {
           <div id="sett-dove"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
           <label class="campo spazio-sopra" for="sett-testo">${L('Le parole che la accompagnano', 'The words that go with it', 'Las palabras que la acompañan')}</label>
           <textarea id="sett-testo" rows="3" class="campo-largo" style="resize:vertical"></textarea>
-          <p class="spazio-sopra"><button class="btn" id="sett-manda">${_bIco(ICO.condividi || '')}${L('Manda', 'Send', 'Manda')}</button></p>
+          <p class="spazio-sopra"><button class="btn" id="sett-manda">${_bIco(ICO.condividi)}${L('Manda', 'Send', 'Manda')}</button></p>
           <div id="sett-esiti" class="spazio-sopra" hidden></div>
         </div>
       </div>
@@ -4460,7 +4465,7 @@ function pannelloGrafiche() {
   }).join('');
   return pannello('grafiche', `
     <div class="carta">
-      <h2>${_hIco(ICO.grafico || ICONA.grafiche)}${L('Grafiche social', 'Social graphics', 'Gráficas sociales')}</h2>
+      <h2>${_hIco(ICO.grafico)}${L('Grafiche social', 'Social graphics', 'Gráficas sociales')}</h2>
       <p>${L('Due grafiche pronte da pubblicare: la', 'Two ready-to-post graphics: the', 'Dos gráficas listas para publicar: la')} <strong class="primo-piano">${L('programmazione settimanale', 'weekly schedule', 'programación semanal')}</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">«${L('Live ora', 'Live now', 'En directo')}»</strong>. ${L('Scegli un tema, personalizza tutto e scarica il PNG. Le tue impostazioni restano salvate, pronte da rimodificare.', 'Pick a theme, customize everything and download the PNG. Your settings stay saved, ready to re-edit.', 'Elige un tema, personaliza todo y descarga el PNG. Tus ajustes quedan guardados, listos para reeditar.')}</p>
 
       <div class="gr-tipo">
@@ -4485,7 +4490,7 @@ function pannelloGrafiche() {
           </div>
           <div class="gr-sfondo-img spazio-sopra" ${c.sfondo === 'immagine' ? '' : 'hidden'}>
             <div class="riga-flessibile">
-              <label class="btn secondario" for="gr-sfondo-file">${_bIco(ICO.carica || '')}${L('Carica dal PC', 'Upload from PC', 'Subir desde el PC')}</label>
+              <label class="btn secondario" for="gr-sfondo-file">${_bIco(ICO.carica)}${L('Carica dal PC', 'Upload from PC', 'Subir desde el PC')}</label>
               <input type="file" id="gr-sfondo-file" accept="image/*" hidden>
               <button type="button" class="btn secondario" id="gr-sfondo-lib">${_bIco(ICO.libro)}${L('La tua libreria sfondi', 'Your background library', 'Tu biblioteca de fondos')}</button>
               <button type="button" class="btn secondario" id="gr-sfondo-media">${_bIco(ICO.immagine)}${L('Dai tuoi media', 'From your media', 'De tus medios')}</button>
@@ -4565,7 +4570,7 @@ function pannelloGrafiche() {
           </div>
 
           <p class="spazio-sopra">
-            <button class="btn secondario" id="gr-scarica">${_bIco(ICO.scarica || ICO.pacco)}${L('Scarica PNG', 'Download PNG', 'Descargar PNG')}</button>
+            <button class="btn secondario" id="gr-scarica">${_bIco(ICO.scarica)}${L('Scarica PNG', 'Download PNG', 'Descargar PNG')}</button>
             <button class="btn secondario" id="gr-scarica-gif">${_bIco(ICO.video)}${L('Scarica GIF animata', 'Download animated GIF', 'Descargar GIF animado')}</button>
             <button class="btn secondario" id="gr-scarica-video">${_bIco(ICO.video)}${L('Video (registra 5s)', 'Video (records 5s)', 'Vídeo (graba 5s)')}</button>
             <button class="btn secondario" id="gr-salva">${L('Salva impostazioni', 'Save settings', 'Guardar ajustes')}</button>
@@ -5142,7 +5147,7 @@ function pannelloAvatar() {
       </div>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.germoglio || ICO.cervello)}${L('Come ragiona', 'How it reasons', 'Cómo razona')}</h2>
+      <h2>${_hIco(ICO.germoglio)}${L('Come ragiona', 'How it reasons', 'Cómo razona')}</h2>
       <p>${L('Da quale «cervello» nascono le sue risposte. Più cresce la fetta dei moduli, meno dipende dal modello linguistico: sta imparando a ragionare da sé.', 'Which “brain” its replies come from. The bigger the modules’ share, the less it depends on the language model: it’s learning to reason on its own.', 'De qué «cerebro» nacen sus respuestas. Cuanto mayor es la parte de los módulos, menos depende del modelo: está aprendiendo a razonar por sí misma.')}</p>
       <div id="mente-cruscotto"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>`);
@@ -5173,7 +5178,7 @@ function pannelloStato() {
   const chatKO = proprietario && (stato.status?.chatKO || []).includes(login);
   const cardChatKO = !chatKO ? '' : `
     <div class="carta evidenziata avviso-rosso">
-      <h2>${_hIco(ICO.avviso || ICO.chiave)}${L('Il bot è scollegato dalla chat', 'The bot is disconnected from chat', 'El bot está desconectado del chat')}</h2>
+      <h2>${_hIco(ICO.avviso)}${L('Il bot è scollegato dalla chat', 'The bot is disconnected from chat', 'El bot está desconectado del chat')}</h2>
       <p>${L('Il permesso Twitch è', 'The Twitch permission is', 'El permiso de Twitch está')} <strong class="primo-piano">${L('scaduto o è stato revocato', 'expired or was revoked', 'caducado o fue revocado')}</strong>: ${L('il bot continua a riprovare ma non riuscirà a entrare in chat finché non lo riccolleghi. Bastano pochi secondi.', "the bot keeps retrying but won't be able to join chat until you reconnect it. It takes a few seconds.", 'el bot sigue reintentando pero no podrá entrar al chat hasta que lo reconectes. Tarda unos segundos.')}</p>
       <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">${L('Ricollega i permessi', 'Reconnect permissions', 'Reconecta los permisos')}</a></p>
     </div>`;
@@ -12878,7 +12883,7 @@ function pannelloStudio() {
       <div class="studio-scene" id="studio-scene"></div>
       <div class="studio-preset" id="studio-preset"></div>
       <div class="studio-layout-ctrl">
-        <button type="button" class="btn secondario mini" id="studio-libero-btn" data-libero="toggle" title="${L('Sposta liberamente i pannelli (e il palco) dove vuoi', 'Freely move the panels (and the stage) wherever you want', 'Mueve libremente los paneles (y el escenario) donde quieras')}">${_bIco(ICO.sposta || ICO.righello || ICO.piu)}${L('Layout libero', 'Free layout', 'Diseño libre')}</button>
+        <button type="button" class="btn secondario mini" id="studio-libero-btn" data-libero="toggle" title="${L('Sposta liberamente i pannelli (e il palco) dove vuoi', 'Freely move the panels (and the stage) wherever you want', 'Mueve libremente los paneles (y el escenario) donde quieras')}">${_bIco(ICO.sposta)}${L('Layout libero', 'Free layout', 'Diseño libre')}</button>
         <button type="button" class="btn secondario mini" data-libero="reset" title="${L('Rimetti i pannelli in ordine', 'Reset panels to the default order', 'Restablecer paneles')}">${L('Reimposta layout', 'Reset layout', 'Restablecer diseño')}</button>
       </div>
 
@@ -12910,7 +12915,7 @@ function pannelloStudio() {
             <select id="studio-qual-sel" class="campo-largo"></select>
             <label class="campo spazio-sopra" for="studio-ov-sel">${L('Overlay da mostrare', 'Overlay to show', 'Overlay a mostrar')}</label>
             <select id="studio-ov-sel" class="campo-largo"></select>
-            <button type="button" class="btn secondario mini spazio-sopra" data-io="aggiorna">${_bIco(ICO.ricarica || ICO.aggiorna || ICO.piu)}${L('Aggiorna dispositivi', 'Refresh devices', 'Actualizar dispositivos')}</button>
+            <button type="button" class="btn secondario mini spazio-sopra" data-io="aggiorna">${_bIco(ICO.aggiorna)}${L('Aggiorna dispositivi', 'Refresh devices', 'Actualizar dispositivos')}</button>
           </div>
 
           <div class="studio-box">
@@ -14478,7 +14483,7 @@ async function caricaPremi() {
 function pannello7TV() {
   return pannello('emote', `
     <div class="carta">
-      <h2>${_hIco(ICO.faccina || ICO.chat)}${L('Il tuo account 7TV', 'Your 7TV account', 'Tu cuenta 7TV')}</h2>
+      <h2>${_hIco(ICO.faccina)}${L('Il tuo account 7TV', 'Your 7TV account', 'Tu cuenta 7TV')}</h2>
       <p>${L('Collega il tuo account', 'Connect your', 'Conecta tu cuenta')} <strong class="primo-piano">7TV</strong> ${L('per gestire le emote del canale — aggiungerle, toglierle e rinominarle — senza uscire dal bot. Le emote 7TV compaiono anche nella chat a schermo del tuo overlay.', 'account to manage your channel emotes — add, remove and rename them — without leaving the bot. 7TV emotes also appear in your overlay’s on-screen chat.', 'para gestionar las emotes del canal — añadirlas, quitarlas y renombrarlas — sin salir del bot. Las emotes 7TV también aparecen en el chat en pantalla de tu overlay.')}</p>
       <div id="svtv-conn"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
@@ -14681,7 +14686,7 @@ async function _svtvCaricaSet() {
     ? `<p class="suggerimento">${L('Queste sono le emote del tuo canale (sola lettura). Collega il tuo account 7TV qui sopra per aggiungerne, toglierne o rinominarle.', 'These are your channel emotes (read-only). Connect your 7TV account above to add, remove or rename them.', 'Estas son las emotes de tu canal (solo lectura). Conecta tu cuenta 7TV arriba para añadir, quitar o renombrar.')}</p>`
     : '';
   box.innerHTML = testa + avviso + `<div class="svtv-griglia">` + emotes.map((e) => _svtvEmoteCard(e, puoModificare
-    ? `<button type="button" class="btn secondario mini svtv-rinomina" data-id="${esc(e.id)}" data-nome="${esc(e.nome)}" title="${L('Rinomina', 'Rename', 'Renombrar')}">${_bIco(ICO.scrivi || ICO.moduli)}</button>
+    ? `<button type="button" class="btn secondario mini svtv-rinomina" data-id="${esc(e.id)}" data-nome="${esc(e.nome)}" title="${L('Rinomina', 'Rename', 'Renombrar')}">${_bIco(ICO.scrivi)}</button>
        <button type="button" class="btn pericolo mini svtv-rimuovi" data-id="${esc(e.id)}" data-nome="${esc(e.nome)}" title="${L('Togli', 'Remove', 'Quitar')}">✕</button>`
     : '')).join('') + `</div>`;
 
