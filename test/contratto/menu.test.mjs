@@ -10,7 +10,8 @@
 //    codice che chiude il cassetto;
 //  · di lato non c'e' niente che serva solo al cassetto; nello Studio il menu
 //    torna cassetto, perche' li' la larghezza e' della tela;
-//  · con la tastiera si salta il menu.
+//  · con la tastiera si salta il menu;
+//  · il timbro della voce accesa vince su ogni regola che veste le voci.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -22,6 +23,7 @@ const PUB = join(RAD, 'src/web/public');
 const APP = readFileSync(join(PUB, 'app.js'), 'utf8');
 const CSS = readFileSync(join(PUB, 'style.css'), 'utf8');
 const HTML = readFileSync(join(PUB, 'index.html'), 'utf8');
+const ANIME = readFileSync(join(PUB, 'anime.css'), 'utf8');
 
 const funzione = (nome) => {
   const i = APP.indexOf(`function ${nome}(`);
@@ -75,4 +77,22 @@ test('con la tastiera si salta il menu', () => {
   assert.match(HTML, /<div class="contenuto" id="contenuto">/, 'il salto porta al contenuto');
   assert.ok(funzione('render').includes("L('Vai al contenuto', 'Skip to content', 'Ir al contenido')"), 'nella lingua del pannello');
   assert.match(CSS, /\.salta:focus \{ top: /, 'e si vede quando lo raggiungi');
+});
+
+test('il timbro della voce accesa vince su ogni regola che veste le voci', () => {
+  // Nel gruppo «Canale» le voci sono bottoni, e anime.css toglie loro sfondo e
+  // bordo (`.drawer-canali .drawer-voce`). A pari peso vince chi e' caricato
+  // dopo, e anime.css viene dopo style.css: la voce accesa restava senza
+  // timbro, un'ombra storta e basta. Il timbro deve pesare di piu' di ognuna.
+  const peso = (sel) => (sel.match(/#[\w-]+/g) || []).length * 100
+    + (sel.replace(/::[\w-]+/g, '').match(/\.[\w-]+|:[\w-]+|\[[^\]]+\]/g) || []).length;
+  const regole = (css) => [...css.replace(/@keyframes[\s\S]*?\}\s*\}/g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .map((m) => ({ sel: m[1].trim().split('\n').pop(), corpo: m[2] }));
+  const tutte = [...regole(CSS), ...regole(ANIME)];
+  const timbro = tutte.find((r) => /\.drawer-voce\.on$/.test(r.sel) && /background: var\(--acc\)/.test(r.corpo));
+  assert.ok(timbro, 'c\'e\' il timbro della voce accesa');
+  const vesti = tutte.flatMap((r) => r.sel.split(',').map((x) => x.trim())
+    .filter((x) => /\.drawer-voce$/.test(x) && /(?:^|[;\s])(?:background|border|width)\s*:/.test(r.corpo)));
+  assert.ok(vesti.length >= 2, `trovo chi veste le voci: ${vesti.join(' | ')}`);
+  for (const x of vesti) assert.ok(peso(timbro.sel) > peso(x), `${timbro.sel} pesa piu' di ${x}`);
 });

@@ -98,6 +98,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nella Pagina link e nelle Donazioni l'anteprima non si schiaccia più accanto ai comandi: il telefono resta sempre intero, e le colonne si mettono in fila solo se c'è posto. [vai: donazioni]
 - Nella scheda Telegram «Auguri di compleanno», l'accesso, dove mandare gli avvisi e la carta live compaiono subito: restavano in caricamento finché non passavi da «I tuoi social». [vai: telegram]
 - Le Donazioni si aprono larghe quanto la Pagina link: l'editor è lo stesso, e adesso ha lo stesso spazio per comandi, anteprima e ispettore. [vai: donazioni]
+- Nel menù, nel gruppo «Canale», il canale che stai guardando ha di nuovo il suo timbro: sul telefono si vedeva solo un'ombra storta.
 
 ## 2026-09-19
 

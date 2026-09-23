@@ -175,7 +175,7 @@ button.drawer-grp-tit {
 @media (hover: hover) {
 .drawer-voce:hover { background: var(--tono-carta) 0 0 / var(--tono-passo), var(--surface-2-tinta); }
 }
-.drawer-voce.on {
+.drawer .drawer-voce.on {
   width: calc(100% - 5px); margin: 2px 0 4px;
   background: var(--acc); color: var(--su-acc); font-weight: 700;
   border: 1.5px solid var(--contorno); box-shadow: 3px 3px 0 var(--contorno);
