@@ -108,6 +108,7 @@ const DECISO = [
   // voluto, e la tolleranza che si imposta nel pannello e' la stessa regola
   // detta a chi lo usa.
   ['bot.js', '_pub', 'volatile', 'il conto dei secondi di una pausa pubblicitaria: sopravvivere a un riavvio vorrebbe dire salutare in ritardo, e in ritardo e\' peggio che zitti'],
+  ['bot.js', '_pubSveglie', 'volatile', 'le sveglie del preavviso e del «sono tornato»: muoiono col conto che servono, per la stessa ragione'],
   ['bot.js', '_tiktokLive', 'volatile', 'stato TikTok, si richiede'],
   ['bot.js', '_tiktokUltima', 'volatile', 'anti-doppione a breve; il post gia\' annunciato sta nel database'],
   ['bot.js', '_ytId', 'volatile', 'cache dell\'id canale YouTube'],
