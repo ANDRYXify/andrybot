@@ -197,8 +197,6 @@ body.menu-aperto .backdrop { opacity: 1; pointer-events: auto; }
   border-radius: var(--ang-mano-l);
   box-shadow: var(--ombra-ink-alta);
 }
-.carta-novita ul { margin: .5rem 0 0; padding-left: 1.15rem; color: var(--testo-2); }
-.carta-novita li { margin: .3rem 0; line-height: 1.55; }
 .carta.avviso { border-color: var(--ambra-bordo); background: var(--ambra-soft); }
 .carta.avviso h2, .carta.avviso p { color: var(--ambra); }
 .carta.avviso-rosso { border-color: var(--rosso-bordo); background: var(--rosso-soft); }
@@ -2172,6 +2170,18 @@ body.ce-aperto { overflow: hidden; }
 .nov-testa { padding: 1.1rem 1.2rem .6rem; border-bottom: 1px solid var(--border); }
 .nov-testa h2 { font-family: var(--mano); font-size: 1.06rem; font-weight: 700; margin: 0 0 .2rem; }
 .nov-corpo { padding: .4rem 1.2rem 1rem; overflow-y: auto; max-height: min(56vh, 28rem); }
+.nov-evidenza {
+  margin: .9rem 0 .2rem; padding: .75rem .9rem .8rem;
+  background: var(--acc-soft); border: 1px solid var(--acc-bordo); border-radius: var(--r-m);
+}
+.nov-evidenza h3 {
+  display: flex; align-items: center; gap: .35rem; margin: 0 0 .4rem;
+  font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--acc);
+}
+.nov-evidenza h3 .h-ico { width: 1.05rem; height: 1.05rem; }
+.nov-evidenza ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .55rem; }
+.nov-evidenza li { font-size: .98rem; font-weight: 600; line-height: 1.45; color: var(--testo); }
+.nov-evidenza li + li { padding-top: .55rem; border-top: 1px solid var(--acc-bordo); }
 .nov-giorno { margin: .9rem 0 0; }
 .nov-giorno h3 { font-size: .74rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--testo-2); margin: 0 0 .35rem; }
 .nov-giorno ul { margin: 0; padding-left: 1.1rem; }
@@ -2201,7 +2211,6 @@ body.ce-aperto { overflow: hidden; }
   .nov-dove:hover { background: var(--acc-soft); border-color: var(--acc-bordo); transform: translate(-1px, -1px); box-shadow: var(--ombra-ink); }
 }
 .nov-dove:active { transform: translate(1px, 1px); box-shadow: none; }
-.carta-novita .nov-dove { font-size: .72rem; }
 .nov-piede { display: flex; gap: .5rem; justify-content: flex-end; align-items: center; padding: .8rem 1.2rem; border-top: 1px solid var(--border); }
 .nov-altri { margin-top: 1rem; padding-top: .7rem; border-top: 1px solid var(--border); }
 .cons-passi { display: flex; flex-direction: column; gap: .4rem; margin: .4rem 0 .6rem; }

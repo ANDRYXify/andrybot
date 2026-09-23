@@ -26,45 +26,93 @@ Tutto il resto legge quel file, e succede da sé:
   suo posto nella sitemap arriva da `urlGuide()`, con la data dell'ultima
   giornata come `lastmod`: contenuto che si aggiorna, che è quello che i motori
   guardano.
-- **La scheda in cima al pannello** — compare solo se c'è qualcosa di più
-  recente dell'ultima volta che quel browser ha detto «visto» (`/api/novita` +
-  `localStorage`). Niente da salvare sul server, niente pallino che resta acceso.
 - **La finestra all'ingresso** — chi torna dopo un aggiornamento non deve andare
   a cercare cosa è cambiato: glielo si dice una volta, entrando
   (`/api/novita/da-vedere`). Chi entra per la prima volta non si è perso niente:
-  si segna il punto e da domani vede solo il nuovo.
+  si segna il punto e da domani vede solo il nuovo. È l'unico posto delle
+  novità da vedere, e il «visto» sta sul server: vale su ogni dispositivo.
+- **`/api/novita`** — le stesse novità in forma di dati, per chi le legge da
+  fuori.
+
+C'era anche una scheda in cima al pannello, e se n'è andata. Mostrava le prime
+quattro righe dell'ultima giornata, col «visto» tenuto dal solo browser: a ogni
+riga nuova tornava, con le stesse quattro righe. Due posti per la stessa cosa,
+con due memorie diverse, non si possono tenere d'accordo; uno solo sì.
 - **Il piede della vetrina** — un collegamento in più fra le pagine pubbliche.
 
-## Il segnaposto: un punto nella lista, non un giorno
+## Il segnaposto: le righe viste, non un punto nella lista
 
 Una giornata **non è chiusa quando comincia**: resta aperta e si allunga per
 tutto il giorno. Il 10 settembre aveva 18 righe al mattino e 47 la sera.
 
-Segnarla vista col solo nome del giorno sembra funzionare e non funziona: il
-confronto è «giorno più recente di quello segnato», e quel giorno non lo sarà
-mai più. Le 29 righe arrivate dopo **non si sarebbero viste mai**. È il difetto
-di sempre — una riga che sembra fare una cosa e non la fa — travestito da valore
-che significa due cose: «visto fino a qui» e «visto tutto quel giorno».
+**Primo tentativo, il giorno.** Segnarla vista col solo nome del giorno butta
+via tutto quello che arriva dopo, e per sempre: il confronto è «giorno più
+recente di quello segnato», e quel giorno non lo sarà mai più.
 
-Quindi il segnaposto è `AAAA-MM-GG#quante`: la giornata in cima e **quante righe
-aveva quando l'hai vista**. Le righe nuove entrano in cima alla giornata, perciò
-quelle non viste sono le prime `(ora − allora)`.
+**Secondo tentativo, il conto.** `AAAA-MM-GG#quante`: la giornata e quante
+righe aveva, con l'idea che le nuove entrino in cima e siano quindi le prime
+`(ora − allora)`. Ma la regola di scrittura, qui sopra, dice **in fondo**; e
+chi guarda da amministratore ha le righe private accodate dopo le pubbliche
+della stessa giornata. Il conto indicava le righe vecchie: a ogni riga nuova
+se ne rivedeva una già vista, e quella nuova, in fondo, non usciva mai. Le
+stesse novità tornavano e le importanti (Instagram, i giochi) non arrivavano.
 
-Tre cose lo tengono in piedi:
+Non era un conto da correggere: era un modello che dipendeva da **dove** si
+scrive una riga, e non deve dipenderne. Quindi:
 
-1. **Lo calcola chi mostra, sulla forma che mostra.** A chi vede anche le righe
-   private il conto le comprende, a chi vede solo le pubbliche no. Leggere e
-   segnare passano dalla stessa funzione, quindi contano le stesse righe.
-2. **Il segnaposto torna indietro com'era.** Non è la pagina a decidere il
-   numero: riceve il segnaposto e lo ridà uguale. Fra il mostrare e il segnare
-   non c'è spazio per una riga che sparisce.
-3. **Un segnaposto vecchio — la sola data — non dice quante righe c'erano**, e
-   non si può inventare. Quella giornata si rimostra intera una volta sola:
-   rivedere qualche riga è una seccatura, perderne ventinove no.
+**Ogni riga ha un'impronta sua**, calcolata dalla data e dal testo (FNV-1a a 32
+bit, senza dipendenze). Il segnaposto è l'insieme delle impronte viste:
+
+    v2:AAAA-MM-GG:impronta.impronta.impronta
+
+Tiene le righe delle ultime tre giornate, e la data della più vecchia delle tre:
+quello che viene prima è visto. Le righe si scrivono nella giornata di oggi,
+quindi la finestra copre sempre quelle che possono ancora cambiare. Da qui:
+
+- la posizione non conta più, e pubbliche e private non si pestano i piedi;
+- una riga **riscritta** torna a vedersi: è cambiata, va riletta;
+- marcare `[importante]` una riga già vista **non** la fa tornare: il segno sta
+  fuori dal testo, e l'impronta è la stessa.
+
+Restano vere le due regole di prima: **lo calcola chi mostra, sulla forma che
+mostra** (a chi vede anche le righe private le impronte le comprendono), e **il
+segnaposto torna indietro com'era**, così fra il mostrare e il segnare non c'è
+spazio per una riga che entra di nascosto.
+
+**Il segnaposto vecchio** (`giorno#quante` o il solo giorno) non dice quali righe
+sono state viste: il conto, si è visto, indicava quelle sbagliate. Quella
+giornata si rimostra intera, una volta, e delle giornate della settimana prima si
+rimostrano le **importanti**: sono proprio quelle che il conto sbagliato può aver
+nascosto. Alla chiusura il segnaposto diventa quello nuovo.
+
+## Le importanti
+
+Non tutte le righe pesano uguale. Una funzione nuova che cambia cosa puoi fare
+non è una correzione di una virgola, e mostrarle allo stesso modo vuol dire che
+la prima si perde fra le seconde. Il peso lo decide chi scrive, nello stesso
+commit, con un segno in testa:
+
+```
+- [importante] Instagram si collega con un tasto. [vai: notifiche]
+```
+
+Il criterio sta in cima a `NOVITA.md`: una **capacità nuova** (una funzione, un
+gioco, un collegamento), non una correzione né una rifinitura. Si combina con
+`[privato]` in qualunque ordine.
+
+- **Nella finestra all'ingresso** le importanti escono per prime, in un riquadro
+  «In evidenza» più grande, dalla più recente. Hanno un tetto loro (dodici) e
+  non passano dal taglio delle altre; le altre riempiono il posto che resta.
+- **Sulla pagina `/novita`** stanno in cima alla loro giornata, in un riquadro.
+
+## Il tetto
 
 Il tetto è sulle **righe**, non sulle giornate: una giornata da quaranta righe è
 un muro anche se è una sola, e un muro non si legge. Si mostra quanto si legge,
-si dice quante restano, e restano tutte in `/novita`.
+dalla riga più recente (le righe si scrivono in fondo alla giornata, quindi la
+più nuova è l'ultima), si dice quante restano, e restano tutte in `/novita`.
+L'ordine decide solo cosa entra sotto il tetto: cosa hai visto lo decide
+l'impronta.
 
 ## Dove è successa
 

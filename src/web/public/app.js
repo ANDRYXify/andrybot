@@ -361,7 +361,6 @@ async function caricaStato() {
   render();
   mostraNovita();
   window.SB_SPLASH_OFF?.();
-  caricaNovita();
 
   if (new URLSearchParams(location.search).get('promo') === '1') {
 
@@ -4050,39 +4049,6 @@ function seguiGiro() {
 window.addEventListener('scroll', seguiGiro, { passive: true, capture: true });
 window.addEventListener('resize', seguiGiro);
 
-const NOVITA_VISTE = 'sb-novita-viste';
-
-function novitaViste() {
-  try { return localStorage.getItem(NOVITA_VISTE) || ''; } catch (e) { return ''; }
-}
-
-async function caricaNovita() {
-  if (DEMO || !stato?.user) return;
-  let d;
-  try { d = await api(stato.isAdmin ? '/api/admin/novita' : '/api/novita'); } catch (e) { return; }
-  const fin = d.segnalibro || d.ultima;
-  if (!fin || fin === novitaViste() || !d.gruppi?.length) return;
-  d.fin = fin;
-  stato.novita = d;
-  render();
-}
-
-function cardNovitaHtml() {
-  const n = stato?.novita;
-  if (!n?.gruppi?.length) return '';
-  const g = n.gruppi[0];
-  const voci = g.voci.map((v) => (typeof v === 'string' ? { testo: v, privata: false } : v));
-  const mostrate = voci.slice(0, 4);
-  const altre = voci.length - mostrate.length;
-  return `<div class="carta evidenziata carta-novita">
-    <h2>${_hIco(ICO.megafono)}${L('Novità', 'What’s new', 'Novedades')}</h2>
-    <ul>${mostrate.map((v) => `<li>${v.privata ? `<span class="badge">${L('solo tu', 'only you', 'solo tú')}</span> ` : ''}${esc(v.testo)}${novDove(v)}</li>`).join('')}</ul>
-    ${altre > 0 ? `<p class="suggerimento">${L(`E altre ${altre}.`, `And ${altre} more.`, `Y ${altre} más.`)}</p>` : ''}
-    <p class="spazio-sopra"><a class="btn secondario mini" href="/novita" target="_blank" rel="noopener">${L('Vedi tutte', 'See them all', 'Verlas todas')}</a>
-    <button class="btn secondario mini" data-novita-viste="${esc(n.fin || n.ultima)}">${L('Nascondi', 'Hide', 'Ocultar')}</button></p>
-  </div>`;
-}
-
 function cardKickHtml() {
   if (stato?.piattaforma !== 'kick') return '';
   return `<div class="carta">
@@ -5949,7 +5915,7 @@ function pannelloStato() {
       </p>
       <p><button class="btn secondario" id="btn-salva-modalita">${L('Salva modalità', 'Save mode', 'Guardar modo')}</button></p>
     </div>
-    ${bannerProvaHtml()}${cardNovitaHtml()}`);
+    ${bannerProvaHtml()}`);
 }
 
 function pannelloAccount() {
@@ -11981,17 +11947,19 @@ async function mostraNovita() {
   const fin = d.segnalibro || d.ultima;
   if (d.primo) { if (fin) segna(fin); return; }
   const gruppi = Array.isArray(d.gruppi) ? d.gruppi : [];
-  if (!gruppi.length) return;
+  const evidenza = Array.isArray(d.evidenza) ? d.evidenza : [];
+  if (!gruppi.length && !evidenza.length) return;
 
   const sezioniDi = (g) => (Array.isArray(g.sezioni) ? g.sezioni : [{ vai: null, voci: g.voci || [] }]);
   const restanti = Math.max(0, Number(d.altre) || 0);
-  const quante = gruppi.reduce((n, g) => n + sezioniDi(g).reduce((k, s) => k + s.voci.length, 0), 0) + restanti;
-  const voce = (v) => {
-    const testo = typeof v === 'string' ? v : v.testo;
-    const privata = typeof v === 'object' && v.privata;
-    return `<li>${privata ? `<span class="nov-priv">${L('solo tu', 'you only', 'solo tú')}</span> ` : ''}${esc(testo)}</li>`;
-  };
-  const corpo = gruppi.map((g) => `<section class="nov-giorno">
+  const quante = evidenza.length + gruppi.reduce((n, g) => n + sezioniDi(g).reduce((k, s) => k + s.voci.length, 0), 0) + restanti;
+  const solo = (v) => (typeof v === 'object' && v.privata ? `<span class="nov-priv">${L('solo tu', 'you only', 'solo tú')}</span> ` : '');
+  const voce = (v) => `<li>${solo(v)}${esc(typeof v === 'string' ? v : v.testo)}</li>`;
+  const cartaEvidenza = evidenza.length ? `<section class="nov-evidenza" aria-labelledby="nov-evidenza-tit">
+      <h3 id="nov-evidenza-tit">${_hIco(ICO.megafono)}${L('In evidenza', 'Highlights', 'Destacado')}</h3>
+      <ul>${evidenza.map((v) => `<li>${solo(v)}<span class="nov-ev-testo">${esc(v.testo)}</span>${novDove(v)}</li>`).join('')}</ul>
+    </section>` : '';
+  const corpo = cartaEvidenza + gruppi.map((g) => `<section class="nov-giorno">
       <h3>${esc(novGiorno(g.data))}</h3>
       ${sezioniDi(g).map((s) => {
     const tit = novTitolo(s.vai);
@@ -26052,13 +26020,6 @@ document.addEventListener('click', (ev) => {
     const f = dove.closest('dialog');
     if (f) { try { f.close(); } catch (e) {  } }
     vaiAScheda(dove.dataset.novVai);
-    return;
-  }
-  const viste = ev.target.closest?.('[data-novita-viste]');
-  if (viste) {
-    try { localStorage.setItem(NOVITA_VISTE, viste.dataset.novitaViste); } catch (e) {  }
-    if (stato) delete stato.novita;
-    render();
     return;
   }
   if (ev.target.id === 'btn-richiesta') {

@@ -7,9 +7,9 @@
 // Quindi la riga si scrive NELLO STESSO COMMIT della cosa, in NOVITA.md, e un
 // cancello (verifica-novita.mjs) rifiuta un commit che tocca il prodotto senza
 // dire cosa cambia per chi lo usa — o senza dichiarare che non cambia niente.
-// Da li' in poi e' tutto automatico: la pagina pubblica, la scheda nel
-// pannello, il pallino di "c'e' qualcosa di nuovo" e la sitemap leggono questo
-// file. Nessuno deve ricordarsi di pubblicare niente.
+// Da li' in poi e' tutto automatico: la pagina pubblica, la finestra delle
+// novita' all'ingresso del pannello e la sitemap leggono questo file. Nessuno
+// deve ricordarsi di pubblicare niente.
 //
 // Il file resta scritto a mano di proposito. Il messaggio di un commit racconta
 // il lavoro; la riga qui racconta cosa cambia per chi trasmette, e sono due
@@ -33,6 +33,18 @@ const VOCE = /^[-*]\s+(.+?)\s*$/;
 // voce privata nemmeno sbagliando.
 const PRIVATA = /^\[privat[oa]\]\s*/i;
 
+// LE NOVITÀ IMPORTANTI. Non tutte le righe pesano uguale: una funzione nuova
+// che cambia cosa puoi fare non e' una correzione di una virgola, e mostrarle
+// allo stesso modo vuol dire che la prima si perde fra le seconde. Il peso lo
+// decide chi scrive la riga, nello stesso commit, con un segno in testa:
+//
+//     - [importante] Instagram si collega con un tasto. [vai: notifiche]
+//
+// Si puo' mettere insieme a [privato], in qualunque ordine. Chi mostra le
+// importanti le mette prima e le fa vedere diverse; non finiscono mai sotto il
+// taglio di chi mostra poche righe.
+const IMPORTANTE = /^\[importante\]\s*/i;
+
 // DOVE E' SUCCESSA. Una riga dice cosa e' cambiato; da sola non dice dove
 // andare a vederlo, e chi legge deve mettersi a cercare la scheda giusta. La
 // destinazione si scrive IN FONDO ALLA RIGA, nello stesso commit della cosa:
@@ -52,10 +64,17 @@ export function analizza(testo) {
     if (g) { gruppi.push({ data: g[1], voci: [] }); continue; }
     const v = riga.match(VOCE);
     if (v && gruppi.length) {
-      const privata = PRIVATA.test(v[1]);
-      const dove = v[1].match(VAI);
-      const testo = v[1].replace(VAI, '').replace(PRIVATA, '');
-      gruppi[gruppi.length - 1].voci.push({ testo, privata, vai: dove ? dove[1].toLowerCase() : null });
+      let resto = v[1];
+      let privata = false;
+      let importante = false;
+      for (;;) {
+        if (PRIVATA.test(resto)) { privata = true; resto = resto.replace(PRIVATA, ''); continue; }
+        if (IMPORTANTE.test(resto)) { importante = true; resto = resto.replace(IMPORTANTE, ''); continue; }
+        break;
+      }
+      const dove = resto.match(VAI);
+      const testo = resto.replace(VAI, '');
+      gruppi[gruppi.length - 1].voci.push({ testo, privata, importante, vai: dove ? dove[1].toLowerCase() : null });
     }
   }
   return gruppi.filter((g) => g.voci.length);
@@ -65,7 +84,7 @@ export function analizza(testo) {
 // giorni che restano vuoti perché parlavano solo di lei.
 export function pubbliche(gruppi) {
   return gruppi
-    .map((g) => ({ data: g.data, voci: g.voci.filter((v) => !v.privata).map((v) => ({ testo: v.testo, vai: v.vai || null })) }))
+    .map((g) => ({ data: g.data, voci: g.voci.filter((v) => !v.privata).map((v) => ({ testo: v.testo, vai: v.vai || null, importante: !!v.importante })) }))
     .filter((g) => g.voci.length);
 }
 
@@ -143,64 +162,136 @@ export function ultima(gruppi) {
 
 // IL SEGNAPOSTO. Una giornata non e' chiusa quando comincia: resta aperta e si
 // allunga per tutto il giorno. Segnarla vista col solo NOME DEL GIORNO butta via
-// tutto quello che arriva dopo — e lo butta PER SEMPRE, perche' il confronto e'
-// «giorno piu' recente di quello segnato» e quel giorno non lo sara' mai piu'.
+// tutto quello che arriva dopo, e lo butta per sempre.
 //
-// Quindi il segnaposto non e' un giorno: e' un PUNTO NELLA LISTA. La data in
-// cima e QUANTE righe aveva quando l'hai vista. Le righe nuove di una giornata
-// entrano in cima, percio' quelle che non hai visto sono le prime (ora - allora).
+// Il secondo tentativo contava le righe («2026-09-23#18») e supponeva che le
+// nuove entrassero in cima alla giornata. La regola per scriverle diceva «in
+// fondo», e chi guarda da amministratore ha le righe private accodate dopo le
+// pubbliche: le righe «nuove» del conto erano le prime, cioe' quelle vecchie.
+// Ogni riga aggiunta faceva rivedere una riga gia' vista e nascondeva per sempre
+// quella nuova. Non era un conto sbagliato da correggere: era un conto che
+// dipendeva da DOVE si scrive, e non deve dipenderne.
 //
-// Lo calcola chi mostra, sulla STESSA forma che mostra: a chi vede anche le
-// righe sue il conto le comprende, a chi vede solo le pubbliche no. Leggere e
-// segnare contano le stesse righe perche' passano di qui tutte e due.
-const SEGNO = /^(\d{4}-\d{2}-\d{2})(?:#(\d{1,5}))?$/;
+// Quindi ogni riga ha un'IDENTITA' sua — un'impronta della data e del testo — e
+// il segnaposto e' l'insieme delle righe viste. La posizione non conta piu',
+// pubbliche e private non si pestano i piedi, e una riga riscritta torna a
+// vedersi (e' cambiata: va riletta).
+//
+// Per non portarsi dietro la storia intera, il segnaposto tiene le impronte
+// delle ultime FINESTRA giornate e la data della piu' vecchia di queste: tutto
+// quello che viene prima e' visto. Le righe si scrivono nella giornata di oggi,
+// quindi la finestra copre sempre quelle che possono ancora cambiare.
+//
+//     v2:AAAA-MM-GG:impronta.impronta.impronta
+//
+// Lo calcola chi mostra, sulla STESSA forma che mostra, e la pagina lo ridà
+// indietro com'era: fra il mostrare e il segnare non c'e' spazio per una riga
+// che entra di nascosto.
+const FINESTRA = 3;
+const VECCHIO = /^(\d{4}-\d{2}-\d{2})(?:#(\d{1,5}))?$/;
+const NUOVO = /^v2:(\d{4}-\d{2}-\d{2}):((?:[0-9a-z]{1,8})(?:\.[0-9a-z]{1,8})*)?$/;
+export const SEGNO_MAX = 12000;
+
+// FNV-1a a 32 bit: deterministica, senza dipendenze, e per le poche centinaia di
+// righe di una finestra lo scontro fra due impronte non e' un caso reale.
+export function idVoce(data, testo) {
+  let h = 0x811c9dc5;
+  const s = `${data}\n${testo}`;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(36);
+}
+
+const testoDi = (v) => (typeof v === 'string' ? v : v.testo);
 
 export function segnalibro(gruppi) {
-  return gruppi.length ? `${gruppi[0].data}#${gruppi[0].voci.length}` : null;
+  if (!gruppi.length) return null;
+  const dentro = gruppi.slice(0, FINESTRA);
+  const ids = dentro.flatMap((g) => g.voci.map((v) => idVoce(g.data, testoDi(v))));
+  return `v2:${dentro[dentro.length - 1].data}:${ids.join('.')}`;
 }
 
 export function segnoValido(s) {
-  return SEGNO.test(String(s || ''));
+  const t = String(s || '');
+  return t.length <= SEGNO_MAX && (VECCHIO.test(t) || NUOVO.test(t));
+}
+
+// IL TETTO. Chi torna dopo mesi non deve trovarsi un muro di quaranta righe: un
+// muro non si legge, e una finestra che non si legge vale zero. Si mostra quanto
+// si legge davvero, si dice quante ne restano, e restano tutte in «Tutte le
+// novita'». Il tetto e' sulle RIGHE, perche' e' quello che si legge.
+//
+// Le importanti non passano dal taglio delle altre: escono per prime, a parte
+// (`evidenza`), fino a EVIDENZA_MAX. Il posto che resta sotto il tetto va alle
+// altre. In tutte e due, dalla piu' recente: le giornate sono gia' in quell'ordine,
+// e dentro una giornata le righe si scrivono in fondo, quindi la piu' nuova e'
+// l'ultima. L'ordine decide solo cosa entra sotto il tetto; cosa hai visto lo
+// decide l'impronta, non la posizione.
+export const EVIDENZA_MAX = 12;
+export function taglia(gruppi, { righe = 12, giorni = 6 } = {}) {
+  const evidenza = [];
+  let altre = 0;
+  for (const g of gruppi) {
+    for (const v of [...g.voci].reverse()) {
+      if (!v.importante) continue;
+      if (evidenza.length < EVIDENZA_MAX) evidenza.push({ ...v, data: g.data });
+      else altre++;
+    }
+  }
+  const fuori = [];
+  let messe = evidenza.length;
+  for (const g of gruppi) {
+    const normali = g.voci.filter((v) => !v.importante).reverse();
+    if (!normali.length) continue;
+    const spazio = fuori.length >= giorni ? 0 : Math.max(0, righe - messe);
+    if (spazio <= 0) { altre += normali.length; continue; }
+    const prese = normali.slice(0, spazio);
+    altre += normali.length - prese.length;
+    messe += prese.length;
+    fuori.push({ data: g.data, voci: prese });
+  }
+  return { evidenza, gruppi: fuori, altre };
 }
 
 // Quello che non hai ancora visto, nella stessa forma dei gruppi.
 //
-// Un segnaposto VECCHIO — la sola data, senza il conto — non dice quante righe
-// c'erano, e non si puo' inventare. Quella giornata si rimostra intera una volta
-// sola: rivedere qualche riga e' una seccatura, perderne ventinove no.
-// IL TETTO. Chi torna dopo mesi — o chi aveva il segnaposto vecchio e si rivede
-// una giornata intera — non deve trovarsi un muro di quaranta righe: un muro non
-// si legge, e una finestra che non si legge vale zero. Si mostra quanto si legge
-// davvero, si dice quante ne restano, e restano tutte in «Tutte le novita'», che
-// e' la pagina fatta per quello. Il tetto e' sulle RIGHE, perche' e' quello che
-// si legge: una giornata da trenta righe e' un muro anche se e' una sola.
-export function taglia(gruppi, { righe = 12, giorni = 6 } = {}) {
-  const fuori = [];
-  let messe = 0;
-  let altre = 0;
-  for (const g of gruppi) {
-    const spazio = fuori.length >= giorni ? 0 : Math.max(0, righe - messe);
-    if (spazio <= 0) { altre += g.voci.length; continue; }
-    const prese = g.voci.slice(0, spazio);
-    altre += g.voci.length - prese.length;
-    messe += prese.length;
-    fuori.push({ data: g.data, voci: prese });
-  }
-  return { gruppi: fuori, altre };
+// Col segnaposto vecchio («giorno#quante» o il solo giorno) non si sa quali
+// righe hai visto davvero: il conto, come si e' detto, indicava quelle
+// sbagliate. Allora quella giornata si rimostra intera, una volta, e delle
+// giornate della settimana prima si rimostrano le IMPORTANTI: sono proprio
+// quelle che il conto sbagliato puo' aver nascosto, ed e' meglio rivedere
+// qualche riga che perdere una cosa nuova.
+const RECUPERO_GIORNI = 7;
+
+function giorniFra(a, b) {
+  return Math.round((Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / 86_400_000);
 }
 
 export function daVedere(gruppi, segno) {
-  const m = String(segno || '').match(SEGNO);
-  if (!m) return gruppi.slice();
-  const data = m[1];
-  const viste = m[2] === undefined ? null : Number(m[2]);
+  const t = String(segno || '');
+  const nuovo = t.match(NUOVO);
+  if (nuovo) {
+    const fino = nuovo[1];
+    const viste = new Set((nuovo[2] || '').split('.').filter(Boolean));
+    const fuori = [];
+    for (const g of gruppi) {
+      if (g.data < fino) break;
+      const voci = g.voci.filter((v) => !viste.has(idVoce(g.data, testoDi(v))));
+      if (voci.length) fuori.push({ data: g.data, voci });
+    }
+    return fuori;
+  }
+  const vecchio = t.match(VECCHIO);
+  if (!vecchio) return gruppi.slice();
+  const data = vecchio[1];
   const fuori = [];
   for (const g of gruppi) {
-    if (g.data > data) { fuori.push(g); continue; }
-    if (g.data < data) break;
-    const nuove = viste === null ? g.voci : g.voci.slice(0, Math.max(0, g.voci.length - viste));
-    if (nuove.length) fuori.push({ data: g.data, voci: nuove });
-    break;
+    if (g.data >= data) { fuori.push(g); continue; }
+    if (giorniFra(data, g.data) > RECUPERO_GIORNI) break;
+    const importanti = g.voci.filter((v) => v.importante);
+    if (importanti.length) fuori.push({ data: g.data, voci: importanti });
   }
   return fuori;
 }

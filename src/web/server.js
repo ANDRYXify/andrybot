@@ -2291,16 +2291,6 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ultima: novita.ultima(gruppi), segnalibro: novita.segnalibro(gruppi), gruppi: gruppi.slice(0, 3) });
   });
 
-  // LE NOVITÀ COMPLETE, per chi ha il diritto di vederle. Sta dietro una porta
-  // sua e non dentro quella pubblica con un «se sei admin»: quella risposta
-  // finisce in una cache CONDIVISA, e una riga privata servita per sbaglio a
-  // tutti non si riprende piu' indietro. Qui la cache non c'e'.
-  app.get('/api/admin/novita', requireAdmin, (req, res) => {
-    const gruppi = novita.tutte(novita.unisci(novita.leggi(NOVITA_MD), novita.leggi(LIA_NOVITA)));
-    res.set('Cache-Control', 'private, no-store');
-    res.json({ ultima: novita.ultima(gruppi), segnalibro: novita.segnalibro(gruppi), gruppi: gruppi.slice(0, 3) });
-  });
-
   // QUELLO CHE SI E' PERSO. Chi torna dopo un aggiornamento non deve andare a
   // cercare cosa e' cambiato: glielo si dice all'ingresso, una volta.
   //
@@ -2329,21 +2319,22 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // trovarsi un muro che nessuno legge. Si mostrano le righe piu' recenti e si
     // dice quante restano — e restano tutte in «Tutte le novita'», che e' la
     // pagina fatta per quello.
-    const { gruppi: persi, altre } = novita.taglia(novita.daVedere(gruppi, viste));
+    // Le importanti escono a parte e per prime (`evidenza`), le altre sotto.
+    const { evidenza, gruppi: persi, altre } = novita.taglia(novita.daVedere(gruppi, viste));
     // A sezioni, col nome del punto del pannello di cui parlano: il raggruppamento
     // si fa qui, una volta, e non in ogni posto che le mostra.
     const aSezioni = persi.map((g) => ({ data: g.data, sezioni: novita.inSezioni(g.voci) }));
-    res.json({ ok: true, ultima, segnalibro, gruppi: aSezioni, altre });
+    res.json({ ok: true, ultima, segnalibro, evidenza, gruppi: aSezioni, altre });
   });
 
   app.post('/api/novita/viste', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const suo = streamers.get(login);
     if (!suo) return res.json({ ok: false });
-    // Il segnaposto torna indietro com'era: «AAAA-MM-GG#quante». La sola data e'
-    // il formato vecchio, e si accetta ancora — chi ce l'ha in tasca da ieri non
-    // deve trovarsi la porta chiusa.
-    const fino = String(req.body?.fino || '').slice(0, 16);
+    // Il segnaposto torna indietro com'era (docs/NOVITA.md). I formati vecchi
+    // si accettano ancora: chi ce l'ha in tasca da ieri non deve trovarsi la
+    // porta chiusa, e la prossima volta riceve quello nuovo.
+    const fino = String(req.body?.fino || '');
     if (!novita.segnoValido(fino)) return res.status(400).json({ ok: false });
     streamers.setSettings(login, { ...(suo.settings || {}), novitaViste: fino });
     res.json({ ok: true });

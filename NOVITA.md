@@ -3,6 +3,13 @@
 Cosa è cambiato nel bot, in ordine di tempo. Una riga per cosa, scritta per chi
 lo usa: se non si vede da fuori, qui non ci va.
 
+Una riga che comincia con `[importante]` è una **capacità nuova**: una funzione,
+un gioco, un collegamento che prima non c'era e che cambia cosa puoi fare. Non
+lo sono le correzioni e le rifiniture, anche quando sono tante. Le importanti
+escono per prime nella finestra delle novità e in cima alla loro giornata qui
+sotto, in un riquadro loro. Si scrive nello stesso commit della riga, in fondo
+alla giornata di oggi come tutte le altre.
+
 Una riga che comincia con `[privato]` resta in casa: non arriva alla pagina
 pubblica, all'API aperta né alla sitemap, e la vede solo il proprietario nel suo
 pannello. Un giorno fatto di sole righe private non compare nemmeno come giorno:
@@ -29,25 +36,25 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nei Ruoli si sceglie solo un ruolo che il bot può dare davvero. Il pannello dice qual è il suo ruolo più alto e chi gli sta sopra, senza contare i ruoli degli altri bot. [vai: ruoli]
 - Il costruttore non crea più un secondo «Moderatori» accanto al tuo «moderatore»: se il ruolo c'è già e il bot non ci arriva, te lo dice. [vai: dcserver]
 - Facendo piazza pulita, i ruoli vecchi che restano li vedi prima, ognuno col suo perché: stanno sopra il bot, oppure sono di un altro bot. [vai: dcserver]
-- La settimana ha una scheda sua: scrivi una volta i giorni, gli orari e cosa fai, e da lì li prendono la grafica e i calendari. [vai: settimana]
+- [importante] La settimana ha una scheda sua: scrivi una volta i giorni, gli orari e cosa fai, e da lì li prendono la grafica e i calendari. [vai: settimana]
 - Con un tasto la mandi su Telegram, nei canali di Discord e nella storia di Instagram. Compaiono solo i servizi che hai collegato. [vai: settimana]
 - Anche il Programma del tuo canale Twitch può riceverla, e si rimette in pari da solo quando cambi la settimana. [vai: settimana]
 - Nella grafica della settimana i giorni seguono la lingua del pannello: in inglese non esce più «LUN MAR MER». [vai: grafiche]
 - Due tasti «Vai a…», nel calendario di Discord e negli avvisi, non portavano da nessuna parte: adesso ci portano. [vai: dcavvisi]
 - I tasti di CONSOLify funzionano davvero da una tastiera fisica, icone comprese: fino a oggi ogni pressione si perdeva per strada. [vai: consolify]
 - Con i giochi che dicono da soli quando muori, il contatore adesso sale davvero: il loro messaggio non arrivava fino a me. [vai: moduli]
-- Instagram si collega con un tasto, come TikTok: scegli con che account entrare, e niente più ID e token da copiare dal sito di Meta. Serve un account professionale. [vai: notifiche]
+- [importante] Instagram si collega con un tasto, come TikTok: scegli con che account entrare, e niente più ID e token da copiare dal sito di Meta. Serve un account professionale. [vai: notifiche]
 - Il collegamento con Instagram si rinnova da solo prima di scadere, e se togli l'app dal tuo Instagram lo cancello subito. [vai: notifiche]
 - Se a Instagram o al bot di Discord manca un permesso, o un collegamento si è rotto, lo vedi subito nella sua scheda, con il tasto per rimediare. [vai: notifiche]
 - Quando il pannello ti chiede una conferma o un nome, lo fa con la sua finestra e nella tua lingua: niente più finestre grigie del browser, che sul telefono sembravano un avviso di sistema.
 - Le scorciatoie si leggono coi tasti del tuo computer, ⌘ sul Mac e Ctrl su Windows, e sul telefono non compaiono. L'editor dell'overlay si usa anche col dito. [vai: alert]
 - Se il browser non lascia copiare, il testo compare già selezionato, col tasto giusto per il tuo dispositivo, anche nel segnalibro delle citazioni. Prima alcune copie fallivano senza dirlo.
 - Il tasto che toglie l'audio a una sorgente non resta più vuoto quando l'audio è spento, e i titoli del calendario e dei ruoli hanno di nuovo la loro icona.
-- «Avvisi» diventa «I tuoi social»: in cima i tuoi account, ognuno con il suo stato e il tasto per collegarlo, e sotto cosa annunciare quando pubblichi. Niente più riquadri ripetuti. [vai: notifiche]
+- [importante] «Avvisi» diventa «I tuoi social»: in cima i tuoi account, ognuno con il suo stato e il tasto per collegarlo, e sotto cosa annunciare quando pubblichi. Niente più riquadri ripetuti. [vai: notifiche]
 - La pagina delle donazioni si modifica dalla scheda Donazioni, e la tua diretta in prima pagina si accende dalla Pagina link. [vai: donazioni]
 - La promo dei tuoi social in chat si accende insieme alla personalità del bot, accanto a «si fa vivo da solo». [vai: personalita]
 - «Come funziona» si apre da solo la prima volta che entri in una scheda, poi resta chiuso finché non lo apri tu.
-- La prima schermata del tuo server Discord si scrive da sola: ogni canale in mostra ha già la sua faccina e la sua riga, nella lingua del nome. Quelle che scrivi tu restano tue. [vai: dcentra]
+- [importante] La prima schermata del tuo server Discord si scrive da sola: ogni canale in mostra ha già la sua faccina e la sua riga, nella lingua del nome. Quelle che scrivi tu restano tue. [vai: dcentra]
 - Nei giorni della settimana scrivi un gioco o un titolo: mentre scrivi compaiono le categorie di Twitch, e sotto ogni giorno leggi quale andrà sul Programma. [vai: settimana]
 - Il synthwave delle grafiche è in prospettiva vera: il sole sorge dietro il titolo e le linee del pavimento escono da tutto l'orizzonte. [vai: grafiche]
 - Otto temi animati nuovi per le grafiche, fra cui vaporwave, pioggia al neon, notte di stelle, sakura e lo-fi, e tredici stili pronti con l'anteprima fatta coi tuoi testi. [vai: grafiche]
@@ -66,30 +73,31 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Scrivere nelle Grafiche è di nuovo fluido, anche dopo esserci entrati più volte, e «Salva» o «Scarica» partono una volta sola. [vai: grafiche]
 - Le grafiche escono anche in verticale per le storie, 1080×1920: lo sfondo copre tutto lo schermo e le scritte stanno lontane dalle barre di Instagram. [vai: grafiche]
 - La settimana mandata nella storia di Instagram non esce più tagliata ai lati: alla storia va la versione verticale, a Telegram e Discord il post. [vai: settimana]
-- Nuovo nelle Grafiche: con «Metti nella storia» la grafica che vedi va nella tua storia di Instagram, già in verticale. Se Instagram non è collegato, il tasto per collegarlo è lì. [vai: grafiche]
-- La storia «Live ora» può partire da sola quando vai in diretta su Twitch: accendila nelle Grafiche, nel riquadro della storia, e se non parte te lo dico. [vai: grafiche]
+- [importante] Nuovo nelle Grafiche: con «Metti nella storia» la grafica che vedi va nella tua storia di Instagram, già in verticale. Se Instagram non è collegato, il tasto per collegarlo è lì. [vai: grafiche]
+- [importante] La storia «Live ora» può partire da sola quando vai in diretta su Twitch: accendila nelle Grafiche, nel riquadro della storia, e se non parte te lo dico. [vai: grafiche]
 - Settimana e «Live ora» hanno ognuna il suo titolo: quello della settimana non finisce più sulla grafica della diretta. [vai: grafiche]
 - Nelle Grafiche i tasti hanno di nuovo il contorno, come nel resto del pannello, e in Statistiche il periodo scelto non perde il bordo. [vai: grafiche]
 - Cambiare scheda è più svelto, soprattutto sul telefono, e nello Studio l'anteprima dal vivo riparte quando ci torni. [vai: alert]
 - Nello Studio la tela è molto più grande: il menù si apre dal tasto in alto e lascia la larghezza al lavoro, e i nomi dei livelli non si tagliano più. [vai: alert]
 - Pubblicità in chat: il preavviso adesso parte davvero, «sono tornato» arriva quando la pausa finisce, e i secondi nei messaggi sono sempre quanto dura la pausa. [vai: regia]
 - Chi ha l'account nuovo non viene più cacciato dallo scudo: l'avviso esce una volta sola, e un mod lo fa scrivere con !permetti nome. Un messaggio con i Bit non viene mai trattenuto. [vai: scudo]
-- Ogni gioco ha le sue regole da cambiare: costi, premi, attese, probabilità, testi e cosa si pesca, con accanto quanto rende. Di serie il banco vince sempre un po' e la pesca rende quanto la presenza. [vai: giochi]
-- La chat in solo emote per due minuti, o per il tempo che dici: la accendono i mod con !soloemote 5m, un tuo Modulo o la chat con !sblocca, e poi torna com'era da sola. [vai: moduli]
-- Quattro manche nuove: impiccato, più o meno, calcolo veloce e rebus con le emoji. Scegli tu quali girano da sole, e con !manche impiccato ne apri una per nome. [vai: giochi]
-- Duelli con la posta: !duello @nome 50, l'altro accetta o rifiuta e chi vince prende la posta dell'altro. Arriva anche la morra cinese contro il bot, per ridere o con una puntata. [vai: giochi]
-- Abbracci, bacini e il batti il cinque in chat: ogni tanto, a sorpresa, viene un cinque perfetto. Chi scrive !nococcole non ne riceve. [vai: giochi]
-- Due giochi da fare insieme: il colpo di gruppo, dove più siete più è facile scappare col bottino, e il boss, che la chat batte a colpi di !colpisci con la barra della vita sull'overlay. [vai: giochi]
+- [importante] Ogni gioco ha le sue regole da cambiare: costi, premi, attese, probabilità, testi e cosa si pesca, con accanto quanto rende. Di serie il banco vince sempre un po' e la pesca rende quanto la presenza. [vai: giochi]
+- [importante] La chat in solo emote per due minuti, o per il tempo che dici: la accendono i mod con !soloemote 5m, un tuo Modulo o la chat con !sblocca, e poi torna com'era da sola. [vai: moduli]
+- [importante] Quattro manche nuove: impiccato, più o meno, calcolo veloce e rebus con le emoji. Scegli tu quali girano da sole, e con !manche impiccato ne apri una per nome. [vai: giochi]
+- [importante] Duelli con la posta: !duello @nome 50, l'altro accetta o rifiuta e chi vince prende la posta dell'altro. Arriva anche la morra cinese contro il bot, per ridere o con una puntata. [vai: giochi]
+- [importante] Abbracci, bacini e il batti il cinque in chat: ogni tanto, a sorpresa, viene un cinque perfetto. Chi scrive !nococcole non ne riceve. [vai: giochi]
+- [importante] Due giochi da fare insieme: il colpo di gruppo, dove più siete più è facile scappare col bottino, e il boss, che la chat batte a colpi di !colpisci con la barra della vita sull'overlay. [vai: giochi]
+- La finestra delle novità non ti rimostra più le stesse righe: ognuna esce una volta. Le cose nuove più grosse stanno in cima, «In evidenza», anche nella pagina delle novità.
 
 ## 2026-09-19
 
-- La tua settimana finisce sul calendario del server Discord: chi ti segue vede quando torni e mette il promemoria. [vai: dcavvisi]
+- [importante] La tua settimana finisce sul calendario del server Discord: chi ti segue vede quando torni e mette il promemoria. [vai: dcavvisi]
 - Il palinsesto non te lo richiedo: leggo quello che hai già scritto per la grafica della settimana. [vai: dcavvisi]
 - Se cambi la programmazione, o arriva l'ora legale, gli appuntamenti si rimettono a posto da soli. [vai: dcavvisi]
 - Gli appuntamenti che scrivi a mano tu non li tocco: Discord non me lo lascia fare, e va benissimo così. [vai: dcavvisi]
 - Se hai invitato il bot prima del calendario, te lo dico subito e ti dico come rimediare, invece di provarci a vuoto. [vai: dcavvisi]
 - Da ogni scheda salti a quelle accanto senza tornare al menù: prima la barra c'era solo in alcune. [vai: effetti]
-- Quando parte la pubblicità lo dico in chat: fra poco, adesso, e quando torno. [vai: regia]
+- [importante] Quando parte la pubblicità lo dico in chat: fra poco, adesso, e quando torno. [vai: regia]
 - Se mi mancano i permessi per farlo te lo dico subito, con il posto dove concederli. [vai: regia]
 - I tre messaggi li scrivi tu, e ognuno si spegne per conto suo. [vai: regia]
 - Per la fine Twitch non manda niente: conto i secondi che mi ha detto, e se mi riavvio nel mezzo sto zitta invece di salutarti tardi. [vai: regia]
@@ -100,12 +108,12 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Le tracce del server adesso arrivano con la porta d'ingresso e il filtro già scritti, sui canali che la traccia ha. [vai: dcentra]
 - Se sei partito dal tuo server, un tasto te li scrive su misura: poi li cambi come vuoi. [vai: dcentra]
 - La porta nasce accesa solo dove Discord la prenderebbe, e dove non ci arriva te lo dice invece di farti scoprire il rifiuto. [vai: dcentra]
-- Il filtro del tuo server Discord si scrive da qui: le tue parole, le liste che Discord tiene aggiornate da sé, lo spam e le raffiche di menzioni. [vai: dcfiltro]
+- [importante] Il filtro del tuo server Discord si scrive da qui: le tue parole, le liste che Discord tiene aggiornate da sé, lo spam e le raffiche di menzioni. [vai: dcfiltro]
 - Per ogni regola scegli cosa succede quando scatta, e chi non tocca: i tuoi moderatori passano sempre. [vai: dcfiltro]
 - Le regole che hai già non te le riscrivo: te le leggo, e cambio solo quello che è diverso. [vai: dcfiltro]
 - Adesso i comandi rispondono anche a te: il bot scrive col tuo account, e per sbaglio scartava i messaggi tuoi come se fossero i suoi. [vai: moduli]
 - Il tasto del Discord in chat portava a un indirizzo con i due punti attaccati dentro: adesso il link finisce dove finisce, e si apre. [vai: ruoli]
-- Gli avvisi su Discord adesso hanno una scheda loro: quanti canali vuoi, e per ognuno quali avvisi, di chi, con che parole. [vai: dcavvisi]
+- [importante] Gli avvisi su Discord adesso hanno una scheda loro: quanti canali vuoi, e per ognuno quali avvisi, di chi, con che parole. [vai: dcavvisi]
 - Puoi far chiamare un ruolo quando parte l'avviso: sveglia quello e nessun altro, mai il server intero per una parola scritta per sbaglio. [vai: dcavvisi]
 - Le dirette degli amici e della community arrivano anche sul server Discord, con la levetta separata da quella di Telegram. [vai: dcavvisi]
 - Se lo chiedi, a diretta chiusa l'avviso diventa «ha finito la diretta»: non resta un «sono in onda» appeso fino a domani. [vai: dcavvisi]
@@ -124,7 +132,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Ti serve solo la parte di Discord? Adesso c’è scritto sul sito che si può fare e che è gratis. [vai: dcserver]
 - Adesso ti dico quali dei tuoi ruoli Discord terrei e come li chiamerei, affiancati a quelli della traccia. Rinominarli tiene dentro chi ce l’aveva, cancellarli lo toglie a tutti. [vai: dcserver]
 - Se «!discord» non risponde in chat, la scheda ti dice quale delle tre cose manca invece di lasciartelo indovinare. [vai: ruoli]
-- La porta del tuo server Discord si scrive da qui: quanto si aspetta prima di poter scrivere, cosa legge chi arriva, e le domande che gli aprono i canali. [vai: dcentra]
+- [importante] La porta del tuo server Discord si scrive da qui: quanto si aspetta prima di poter scrivere, cosa legge chi arriva, e le domande che gli aprono i canali. [vai: dcentra]
 - Ogni risposta apre dei canali e dà un ruolo, scegliendoli per nome: valgono anche quelli che la traccia deve ancora creare. [vai: dcentra]
 - Se Discord la porta non la prenderebbe, te lo dico prima di scriverla: quanti canali mancano, o che al server serve il tipo Community. [vai: dcentra]
 - Chi aveva già risposto alle domande non ricomincia da capo: si rifanno solo quelle che hai cambiato. [vai: dcentra]
@@ -137,16 +145,16 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Vuoi che gestisca tutto il server? C’è un tasto che lo riporta su Discord come amministratore, e prima ti dice per bene cosa comporta. [vai: ruoli]
 - Accanto al tasto «Attiva» adesso scegli il canale, Twitch o Kick, e un clic basta ancora. Entri da lì e al pagamento ritrovi i pacchetti che avevi già spuntato. [vai: sottoscrizione]
 - Apri il sito e si vede prima, soprattutto dalla seconda volta: quello che non è cambiato il browser adesso se lo tiene, invece di richiederlo tutto da capo ogni volta.
-- I ruoli del tuo server Discord li dà il bot, in base a quello che succede su Twitch: chi ti segue, chi è abbonato, chi c'è sempre. Scrivi la regola, il resto lo fa lui. [vai: ruoli]
+- [importante] I ruoli del tuo server Discord li dà il bot, in base a quello che succede su Twitch: chi ti segue, chi è abbonato, chi c'è sempre. Scrivi la regola, il resto lo fa lui. [vai: ruoli]
 - Chi ti guarda si collega da solo: scrive !discord in chat e segue due passi. Tocca solo chi si è collegato, e solo i ruoli che hai nominato tu. [vai: ruoli]
 - Il rapporto di fine diretta adesso conta anche i Bit della serata e ti dice chi ne ha messi di più. Chi ha cheerato in anonimo conta nel totale e resta senza nome. [vai: dirette]
 - Il premio VIP automatico adesso può pescare dai Bit invece che dalle monete: lo scegli tu, e vale la classifica vera di Twitch. [vai: giochi]
 - Chi guida i Bit diventa il re: tiene una corona accanto al nome nella chat a schermo, e quando torna a scrivere il bot lo saluta con la frase che hai scritto. [vai: giochi]
 - La classifica dei Bit puoi metterla in scena: la scegli dallo Studio come ogni altro elemento, dici di quando e quante righe, e si aggiorna da sola quando arriva un cheer. [vai: alert]
-- Collegare Discord adesso è un tasto: ti manda a scegliere il server dall'elenco e torni a posto. Niente bot da creare, niente id da copiare. [vai: ruoli]
+- [importante] Collegare Discord adesso è un tasto: ti manda a scegliere il server dall'elenco e torni a posto. Niente bot da creare, niente id da copiare. [vai: ruoli]
 - Un VIP a premio adesso dura DIRETTE, non giorni: se salti una settimana ti aspetta. E le gare sono due, monete e Bit, che vanno avanti insieme. [vai: giochi]
 - Ogni posizione ha il nome che le dai tu — re, principe, cavaliere — e la sua durata: al primo posto puoi dare cinque dirette e al terzo una. [vai: giochi]
-- Categorie e canali del tuo Discord li scegli da qui: parti da una traccia pronta o fagli leggere il server che hai già, e lui lo mette su. [vai: dcserver]
+- [importante] Categorie e canali del tuo Discord li scegli da qui: parti da una traccia pronta o fagli leggere il server che hai già, e lui lo mette su. [vai: dcserver]
 - Prima di toccare niente ti fa vedere l'elenco esatto di quello che farebbe. Va solo in avanti: quello che non è nella traccia resta dov'è, e te lo dice. [vai: dcserver]
 - Dentro ogni canale scrivi chi può fare cosa, con parole normali: «tutti — non può — scrivere». I permessi che non nomini nessuno li tocca. [vai: dcserver]
 - Alcuni tasti comparivano quando non servivano a niente: «Scollega tutto» senza niente da scollegare, «Ferma la diretta» senza diretta. Adesso restano via finché non servono.

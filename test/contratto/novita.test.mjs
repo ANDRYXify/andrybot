@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { analizza, pubbliche, tutte, unisci, inItaliano, ultima, segnalibro, daVedere, segnoValido, taglia, destinazioni, inSezioni } from '../../src/web/novita.js';
+import { analizza, pubbliche, tutte, unisci, inItaliano, ultima, segnalibro, daVedere, segnoValido, taglia, destinazioni, inSezioni, idVoce, EVIDENZA_MAX, SEGNO_MAX } from '../../src/web/novita.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const gruppi = analizza(readFileSync(join(RAD, 'NOVITA.md'), 'utf8'));
@@ -39,7 +39,7 @@ test('la prosa attorno non finisce fra le novità', () => {
     '## 2026-01-01',
     '',            // giornata vuota: non deve comparire
   ].join('\n'));
-  assert.deepEqual(pubbliche(uno), [{ data: '2026-01-02', voci: [{ testo: 'prima cosa', vai: null }, { testo: 'seconda cosa', vai: null }] }]);
+  assert.deepEqual(pubbliche(uno), [{ data: '2026-01-02', voci: [{ testo: 'prima cosa', vai: null, importante: false }, { testo: 'seconda cosa', vai: null, importante: false }] }]);
 });
 
 test('le righe scritte prima di qualsiasi giornata si ignorano', () => {
@@ -62,11 +62,11 @@ test('una riga marcata privata non arriva mai alla forma pubblica', () => {
     '- questa la vedono tutti',
     '- [privato] questa è solo mia',
   ].join('\n'));
-  assert.deepEqual(pubbliche(g), [{ data: '2026-01-02', voci: [{ testo: 'questa la vedono tutti', vai: null }] }]);
+  assert.deepEqual(pubbliche(g), [{ data: '2026-01-02', voci: [{ testo: 'questa la vedono tutti', vai: null, importante: false }] }]);
   // e a chi ha diritto arriva, marcata per quello che è
   assert.deepEqual(tutte(g), [{ data: '2026-01-02', voci: [
-    { testo: 'questa la vedono tutti', privata: false, vai: null },
-    { testo: 'questa è solo mia', privata: true, vai: null },
+    { testo: 'questa la vedono tutti', privata: false, importante: false, vai: null },
+    { testo: 'questa è solo mia', privata: true, importante: false, vai: null },
   ] }]);
 });
 
@@ -112,26 +112,49 @@ test('nel file del cervello, accanto a questo, tutto e\' privato e niente esce',
 });
 
 // ── IL SEGNAPOSTO ──────────────────────────────────────────────────────────
-// Il difetto vero, misurato: una giornata resta aperta e si allunga. Segnata col
-// solo nome del giorno, le righe arrivate dopo non si vedono MAI PIU', perche'
-// quel giorno non sara' mai «piu' recente di se stesso». Il 2026-09-10 aveva 18
-// righe al mattino e 47 la sera: 29 righe perse per sempre.
+// Due difetti veri, uno dopo l'altro. Il primo: una giornata resta aperta e si
+// allunga, e segnata col solo nome del giorno le righe arrivate dopo non si
+// vedevano MAI PIU'. Il secondo: il conto («giorno#quante») supponeva le righe
+// nuove in cima, mentre si scrivono in fondo, e per chi vede anche le private
+// quelle stanno dopo le pubbliche. Il conto indicava le righe vecchie: le stesse
+// novita' tornavano, e quelle nuove non uscivano mai. Adesso ogni riga ha la sua
+// impronta, e la posizione non conta.
 
 const GIORNATA = (data, n, da = 0) => ({ data, voci: Array.from({ length: n }, (_, i) => `riga ${da + i}`) });
+const voci = (fuori) => fuori.map((g) => [g.data, g.voci.map((v) => (typeof v === 'string' ? v : v.testo))]);
 
-test('il segnaposto dice il giorno E quante righe aveva', () => {
-  assert.equal(segnalibro([GIORNATA('2026-09-10', 18)]), '2026-09-10#18');
+test('ogni riga ha la sua impronta: data e testo, non il posto dove sta', () => {
+  assert.equal(idVoce('2026-09-10', 'una cosa'), idVoce('2026-09-10', 'una cosa'));
+  assert.notEqual(idVoce('2026-09-10', 'una cosa'), idVoce('2026-09-11', 'una cosa'), 'la stessa frase un altro giorno e\' un\'altra riga');
+  assert.notEqual(idVoce('2026-09-10', 'una cosa'), idVoce('2026-09-10', 'una cosa.'), 'una riga riscritta va riletta');
+  const g = [GIORNATA('2026-09-10', 2)];
+  assert.equal(segnalibro(g), `v2:2026-09-10:${idVoce('2026-09-10', 'riga 0')}.${idVoce('2026-09-10', 'riga 1')}`);
   assert.equal(segnalibro([]), null);
 });
 
-test('una riga aggiunta a una giornata gia\' vista si vede lo stesso', () => {
-  // le righe nuove entrano IN CIMA alla giornata: le non viste sono le prime
+test('una riga aggiunta in fondo, in cima o in mezzo a una giornata vista esce, e le altre no', () => {
   const prima = [GIORNATA('2026-09-10', 18)];
-  assert.deepEqual(daVedere(prima, segnalibro(prima)), [], 'appena segnata, niente da vedere');
+  const segno = segnalibro(prima);
+  assert.deepEqual(daVedere(prima, segno), [], 'appena segnata, niente da vedere');
+  const righe = prima[0].voci;
+  for (const [dove, dopo] of [
+    ['in fondo', [...righe, 'nuova A', 'nuova B']],
+    ['in cima', ['nuova A', 'nuova B', ...righe]],
+    ['in mezzo', [...righe.slice(0, 7), 'nuova A', ...righe.slice(7), 'nuova B']],
+  ]) {
+    assert.deepEqual(voci(daVedere([{ data: '2026-09-10', voci: dopo }], segno)), [['2026-09-10', ['nuova A', 'nuova B']]], dove);
+  }
+});
 
-  const dopo = [{ data: '2026-09-10', voci: ['nuova A', 'nuova B', ...prima[0].voci] }];
-  const persi = daVedere(dopo, segnalibro(prima));
-  assert.deepEqual(persi, [{ data: '2026-09-10', voci: ['nuova A', 'nuova B'] }]);
+test('le righe private accodate alle pubbliche non fanno rivedere le pubbliche', () => {
+  // Il difetto di chi guarda da amministratore: le sue righe stanno dopo quelle
+  // di tutti, e ogni riga sua spostava il conto sulle righe pubbliche gia' viste.
+  const ieri = analizza(['## 2026-09-10', '- pubblica uno', '- pubblica due', '- [privato] sua uno'].join('\n'));
+  const segno = segnalibro(tutte(ieri));
+  const oggi = analizza(['## 2026-09-10', '- pubblica uno', '- pubblica due', '- pubblica tre', '- [privato] sua uno', '- [privato] sua due'].join('\n'));
+  assert.deepEqual(voci(daVedere(tutte(oggi), segno)), [['2026-09-10', ['pubblica tre', 'sua due']]]);
+  assert.equal(segnalibro(tutte(oggi)).split('.').length, 5, 'chi vede anche le sue le conta');
+  assert.equal(segnalibro(pubbliche(oggi)).split('.').length, 3, 'chi vede solo le pubbliche no');
 });
 
 test('una giornata nuova intera si vede, e quella sotto no', () => {
@@ -142,76 +165,84 @@ test('una giornata nuova intera si vede, e quella sotto no', () => {
 
 test('giornata nuova E righe in piu\' in quella segnata: escono tutte e due', () => {
   const segno = segnalibro([GIORNATA('2026-09-10', 3)]);
-  const ora = [GIORNATA('2026-09-11', 1, 100), { data: '2026-09-10', voci: ['coda', ...GIORNATA('2026-09-10', 3).voci] }];
-  assert.deepEqual(daVedere(ora, segno), [
-    { data: '2026-09-11', voci: ['riga 100'] },
-    { data: '2026-09-10', voci: ['coda'] },
-  ]);
+  const ora = [GIORNATA('2026-09-11', 1, 100), { data: '2026-09-10', voci: [...GIORNATA('2026-09-10', 3).voci, 'coda'] }];
+  assert.deepEqual(voci(daVedere(ora, segno)), [['2026-09-11', ['riga 100']], ['2026-09-10', ['coda']]]);
 });
 
-test('un segnaposto vecchio — la sola data — rimostra quella giornata, non la inghiotte', () => {
-  // Non dice quante righe c'erano e non si puo' inventare. Rivedere qualche riga
-  // e' una seccatura; perderne ventinove no.
-  const ora = [GIORNATA('2026-09-10', 5), GIORNATA('2026-09-08', 2)];
-  assert.deepEqual(daVedere(ora, '2026-09-10'), [GIORNATA('2026-09-10', 5)]);
+test('il segnaposto tiene le ultime tre giornate: quelle prima sono viste', () => {
+  const ora = [GIORNATA('2026-09-12', 1, 40), GIORNATA('2026-09-11', 1, 30), GIORNATA('2026-09-10', 1, 20), GIORNATA('2026-09-08', 1, 10)];
+  const segno = segnalibro(ora);
+  assert.match(segno, /^v2:2026-09-10:/);
+  const dopo = ora.map((g) => (g.data === '2026-09-08' ? { ...g, voci: [...g.voci, 'scritta tardi'] } : g));
+  assert.deepEqual(daVedere(dopo, segno), [], 'le righe si scrivono nella giornata di oggi: quelle prima della finestra non cambiano');
+});
+
+test('col segnaposto vecchio si rimostra la sua giornata e le importanti della settimana prima', () => {
+  // Il conto vecchio indicava le righe sbagliate: non si sa cosa e' stato visto
+  // davvero. Meglio rivedere qualche riga che perdere una cosa nuova.
+  const ora = analizza([
+    '## 2026-09-23', '- oggi uno', '- oggi due',
+    '## 2026-09-19', '- [importante] instagram con un tasto', '- una rifinitura',
+    '## 2026-09-10', '- [importante] troppo vecchia per il recupero',
+  ].join('\n'));
+  for (const segno of ['2026-09-23#2', '2026-09-23']) {
+    assert.deepEqual(voci(daVedere(ora, segno)), [['2026-09-23', ['oggi uno', 'oggi due']], ['2026-09-19', ['instagram con un tasto']]], segno);
+  }
 });
 
 test('senza segnaposto non si perde niente, e le porcherie non passano', () => {
   const ora = [GIORNATA('2026-09-10', 2)];
   assert.deepEqual(daVedere(ora, ''), ora);
   assert.deepEqual(daVedere(ora, 'domani'), ora);
-  assert.equal(segnoValido('2026-09-10#47'), true);
+  assert.equal(segnoValido(segnalibro(ora)), true);
+  assert.equal(segnoValido('v2:2026-09-10:'), true, 'una giornata vista vuota e\' un segno valido');
+  assert.equal(segnoValido('2026-09-10#47'), true, 'il formato vecchio si accetta ancora');
   assert.equal(segnoValido('2026-09-10'), true);
   assert.equal(segnoValido('2026-9-10'), false);
   assert.equal(segnoValido("2026-09-10#47' or 1=1"), false);
-});
-
-test('il conto segue quello che quella persona VEDE, non il file', () => {
-  // A chi vede anche le righe sue il segnaposto le comprende; a chi vede solo le
-  // pubbliche no. Altrimenti il numero conterebbe righe che quella persona non ha
-  // davanti, e la giornata risulterebbe vista quando non lo e'.
-  const g = analizza(['## 2026-09-10', '- pubblica', '- [privato] sua', '- altra pubblica'].join('\n'));
-  assert.equal(segnalibro(tutte(g)), '2026-09-10#3');
-  assert.equal(segnalibro(pubbliche(g)), '2026-09-10#2');
+  assert.equal(segnoValido('v2:2026-09-10:abc.<script>'), false);
+  assert.equal(segnoValido('v2:2026-09-10:' + 'abcdefg.'.repeat(SEGNO_MAX / 8) + 'x'), false, 'e non oltre la misura');
 });
 
 test('il giorno segnato che sparisce dal file non fa uscire la storia vecchia', () => {
-  const ora = [GIORNATA('2026-09-08', 4)];
-  assert.deepEqual(daVedere(ora, '2026-09-10#2'), []);
+  assert.deepEqual(daVedere([GIORNATA('2026-09-08', 4)], '2026-09-10#2'), []);
+  assert.deepEqual(daVedere([GIORNATA('2026-09-08', 4)], segnalibro([GIORNATA('2026-09-10', 2)])), []);
 });
 
-test('la pagina ridà indietro il segnaposto che le è stato dato, non il giorno', () => {
-  // Il conto lo fa il server sulla forma che mostra a quella persona. Se la
-  // pagina rispondesse col solo giorno, il server sarebbe giusto e il difetto
-  // resterebbe: una riga che sembra fare una cosa e non la fa.
+test('la pagina ridà indietro il segnaposto che le è stato dato, e le novità hanno un posto solo', () => {
   const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
   const f = app.slice(app.indexOf('async function mostraNovita('), app.indexOf('function pannelloConsolify('));
   assert.match(f, /const fin = d\.segnalibro \|\| d\.ultima;/, 'il popup usa il segnaposto');
   assert.match(f, /segna\(fin\)/, 'e segna quello');
   assert.doesNotMatch(f, /segna\(d\.ultima\)/, 'e non il solo giorno');
-
-  const c = app.slice(app.indexOf('async function caricaNovita('), app.indexOf('function cardKickHtml('));
-  assert.match(c, /d\.segnalibro \|\| d\.ultima/, 'la carta in cima fa lo stesso');
-  assert.doesNotMatch(c, /d\.ultima === novitaViste\(\)/, 'e non confronta il solo giorno');
+  // La carta in cima al pannello mostrava le prime quattro righe dell'ultima
+  // giornata, con un «visto» tenuto dal solo browser: tornava a ogni riga
+  // nuova con le stesse quattro righe. Le novita' da vedere stanno nel popup.
+  assert.doesNotMatch(app, /caricaNovita|cardNovitaHtml|sb-novita-viste/);
 });
 
-test('il server manda il segnaposto da tutte e tre le porte che lo servono', () => {
+test('il server manda il segnaposto dalle porte che lo servono, e lo riceve intero', () => {
   const srv = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
-  for (const via of ['/api/novita', '/api/admin/novita', '/api/novita/da-vedere']) {
+  for (const via of ['/api/novita', '/api/novita/da-vedere']) {
     const i = srv.indexOf(`app.get('${via}'`);
     assert.ok(i > 0, `la porta ${via} esiste`);
     const blocco = srv.slice(i, srv.indexOf('});', i));
     assert.match(blocco, /segnalibro/, `${via} manda il segnaposto`);
   }
+  assert.ok(!srv.includes("app.get('/api/admin/novita'"), 'la porta della carta tolta non resta aperta per niente');
   const j = srv.indexOf("app.post('/api/novita/viste'");
   const post = srv.slice(j, srv.indexOf('}));', j));
   assert.match(post, /novita\.segnoValido\(/, 'e chi lo riceve lo valida con la stessa regola');
+  assert.doesNotMatch(post, /slice\(0, 16\)/, 'e non lo taglia a meta\': un segnaposto tagliato e\' un segnaposto sbagliato');
 });
+
+// ── IL TETTO, E LE IMPORTANTI ──────────────────────────────────────────────
 
 test('il tetto è sulle righe, non sulle giornate: una sola giornata lunga è un muro uguale', () => {
   const uno = taglia([GIORNATA('2026-09-10', 47)], { righe: 12, giorni: 6 });
   assert.equal(uno.gruppi.length, 1);
   assert.equal(uno.gruppi[0].voci.length, 12);
+  assert.deepEqual(uno.gruppi[0].voci.slice(0, 2), ['riga 46', 'riga 45'], 'dalla piu\' nuova: le righe si scrivono in fondo');
   assert.equal(uno.altre, 35, 'e dice quante ne restano');
 });
 
@@ -225,16 +256,63 @@ test('il tetto prende dalla più recente in giù, e non perde il conto', () => {
 
 test('sotto il tetto non taglia niente e non dice che ci sono altre', () => {
   const t = taglia([GIORNATA('2026-09-10', 3)], { righe: 12, giorni: 6 });
-  assert.deepEqual(t, { gruppi: [GIORNATA('2026-09-10', 3)], altre: 0 });
+  assert.deepEqual(t, { evidenza: [], gruppi: [{ data: '2026-09-10', voci: ['riga 2', 'riga 1', 'riga 0'] }], altre: 0 });
 });
 
-test('la finestra conta tutte le novità, anche quelle che non ci stanno dentro', () => {
+test('le importanti escono per prime, a parte, e il tetto delle altre non le taglia', () => {
+  const g = analizza([
+    '## 2026-09-23', ...Array.from({ length: 30 }, (_, i) => `- rifinitura ${i}`), '- [importante] i giochi nuovi', '- [importante] [privato] una cosa sua grossa',
+    '## 2026-09-19', '- [importante] instagram con un tasto', '- vecchia rifinitura',
+  ].join('\n'));
+  const t = taglia(tutte(g), { righe: 12, giorni: 6 });
+  assert.deepEqual(t.evidenza.map((v) => [v.data, v.testo, v.privata]), [
+    ['2026-09-23', 'una cosa sua grossa', true],
+    ['2026-09-23', 'i giochi nuovi', false],
+    ['2026-09-19', 'instagram con un tasto', false],
+  ], 'la piu\' nuova prima, e la privata resta segnata privata');
+  assert.equal(t.gruppi.flatMap((x) => x.voci).length, 9, 'le altre riempiono il posto che resta sotto il tetto');
+  assert.ok(t.gruppi.flatMap((x) => x.voci).every((v) => !v.importante));
+  assert.equal(t.evidenza.length + 9 + t.altre, 34, 'niente si perde per strada');
+});
+
+test('le importanti hanno anche loro un tetto, e quelle oltre si contano', () => {
+  const g = analizza(['## 2026-09-23', ...Array.from({ length: EVIDENZA_MAX + 3 }, (_, i) => `- [importante] grossa ${i}`)].join('\n'));
+  const t = taglia(pubbliche(g));
+  assert.equal(t.evidenza.length, EVIDENZA_MAX);
+  assert.equal(t.altre, 3);
+});
+
+test('[importante] si legge con [privato] in qualunque ordine, e non entra nel testo né nell\'impronta', () => {
+  for (const riga of ['- [importante] cosa [vai: giochi]', '- [IMPORTANTE] cosa [vai: giochi]', '- [privato] [importante] cosa [vai: giochi]', '- [importante] [privato] cosa [vai: giochi]']) {
+    const v = analizza('## 2026-01-02\n' + riga + '\n')[0].voci[0];
+    assert.equal(v.importante, true, riga);
+    assert.equal(v.testo, 'cosa', riga);
+    assert.equal(v.vai, 'giochi', riga);
+  }
+  assert.equal(analizza('## 2026-01-02\n- cosa\n')[0].voci[0].importante, false);
+  // Marcare importante una riga gia' vista non la fa tornare nuova.
+  const prima = analizza('## 2026-01-02\n- cosa\n');
+  const dopo = analizza('## 2026-01-02\n- [importante] cosa\n');
+  assert.deepEqual(daVedere(pubbliche(dopo), segnalibro(pubbliche(prima))), []);
+});
+
+test('nel file vero le importanti ci sono, e sono poche per giornata', () => {
+  const imp = gruppi.flatMap((g) => g.voci.filter((v) => v.importante).map((v) => [g.data, v.testo]));
+  assert.ok(imp.length > 0, 'qualche riga e\' importante');
+  for (const g of gruppi) {
+    const n = g.voci.filter((v) => v.importante).length;
+    assert.ok(n <= EVIDENZA_MAX, `${g.data}: ${n} importanti non ci stanno nel riquadro`);
+  }
+});
+
+test('la finestra conta tutte le novità, anche quelle che non ci stanno dentro, e mette prima le importanti', () => {
   // «12 cose nuove» mentre ne sono successe 47 e' una bugia per omissione.
   const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
   const f = app.slice(app.indexOf('async function mostraNovita('), app.indexOf('function pannelloConsolify('));
-  assert.match(f, /const quante = gruppi\.reduce\([^\n]*\+ restanti;/, 'il conto comprende quelle che restano fuori');
+  assert.match(f, /const quante = evidenza\.length \+ gruppi\.reduce\([^\n]*\+ restanti;/, 'il conto comprende le importanti e quelle che restano fuori');
   assert.match(f, /sezioniDi\(g\)\.reduce/, 'e le conta dentro le sezioni, non nel vecchio elenco piatto');
-  assert.doesNotMatch(f, /altriGiorni/, 'le giornate non si contano piu\': si contano le righe');
+  assert.match(f, /const corpo = cartaEvidenza \+ gruppi\.map/, 'il riquadro delle importanti sta sopra');
+  assert.match(f, /class="nov-evidenza"/);
 });
 
 // ── DOVE E' SUCCESSA ───────────────────────────────────────────────────────
@@ -245,14 +323,14 @@ test('la finestra conta tutte le novità, anche quelle che non ci stanno dentro'
 test('la riga porta la sua destinazione, e la destinazione non finisce nel testo', () => {
   const g = analizza('## 2026-01-02\n- una cosa nuova. [vai: consolify]\n- un\'altra senza\n');
   assert.deepEqual(g[0].voci, [
-    { testo: 'una cosa nuova.', privata: false, vai: 'consolify' },
-    { testo: 'un\'altra senza', privata: false, vai: null },
+    { testo: 'una cosa nuova.', privata: false, importante: false, vai: 'consolify' },
+    { testo: 'un\'altra senza', privata: false, importante: false, vai: null },
   ]);
 });
 
 test('privato e destinazione stanno insieme senza pestarsi', () => {
   const g = analizza('## 2026-01-02\n- [privato] roba sua [vai: stato]\n');
-  assert.deepEqual(g[0].voci[0], { testo: 'roba sua', privata: true, vai: 'stato' });
+  assert.deepEqual(g[0].voci[0], { testo: 'roba sua', privata: true, importante: false, vai: 'stato' });
   assert.deepEqual(pubbliche(g), [], 'e resta comunque in casa');
 });
 
@@ -311,7 +389,7 @@ test('la finestra disegna il titolo della sezione, e quel titolo porta li\'', ()
   // il nome NON si riscrive: si prende dall'elenco del pannello
   assert.match(f, /g\.schede\.find\(\(\[sid\]\) => sid === id\)/, 'il nome viene dall\'elenco vero delle schede');
 
-  const clic = app.slice(app.indexOf("const dove = ev.target.closest?.('[data-nov-vai]')"), app.indexOf("const viste = ev.target.closest"));
+  const clic = app.slice(app.indexOf("const dove = ev.target.closest?.('[data-nov-vai]')"), app.indexOf("if (ev.target.id === 'btn-richiesta')"));
   assert.match(clic, /f\.close\(\)/, 'chiude la finestra');
   assert.match(clic, /vaiAScheda\(dove\.dataset\.novVai\)/, 'e apre la scheda');
 });
@@ -319,7 +397,8 @@ test('la finestra disegna il titolo della sezione, e quel titolo porta li\'', ()
 test('la pagina pubblica manda alla pagina che spiega quella sezione', () => {
   const g = readFileSync(join(RAD, 'src/web/guide.js'), 'utf8');
   const f = g.slice(g.indexOf('export function paginaNovita('), g.indexOf('function dataItaliana('));
-  assert.match(f, /sezioni\(g\.voci\)/, 'anche qui a sezioni');
+  assert.match(f, /sezioni\(g\.voci\.filter\(\(v\) => !\(v && v\.importante\)\)\)/, 'anche qui a sezioni, le importanti a parte');
+  assert.match(f, /\$\{evidenza\(g\.voci\)\}/, 'e le importanti in cima alla giornata');
   assert.match(f, /g-dove-tit/, 'col titolo');
   assert.match(f, /href="\$\{esc\(a\.via\)\}"/, 'che e\' un collegamento vero');
   assert.doesNotMatch(f, /data-nov-vai/, 'fuori dal pannello non si apre una scheda: si apre una pagina');

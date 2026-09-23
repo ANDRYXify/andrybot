@@ -517,6 +517,10 @@ h3{font-size:1rem;margin:20px 0 6px}
 .g-novita ul{margin:0;padding-left:20px}
 .g-novita li{margin:7px 0}
 .g-dove-tit{margin:14px 0 4px;font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.g-evidenza{margin:12px 0 16px;padding:12px 16px;border:1px solid var(--contorno);border-left:4px solid var(--acc);border-radius:6px;background:var(--acc-soft)}
+.g-evidenza-tit{margin:0 0 6px;font-size:.78rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--acc)}
+.g-evidenza ul{padding-left:18px}
+.g-evidenza li{font-weight:600}
 .g-dove-tit a{display:inline-block;padding:1px 9px;border:1px solid var(--contorno);border-radius:999px;text-decoration:none;background:var(--surface)}
 .g-dove-tit a::after{content:" →"}
 .g-novita section+ul,.g-dove-tit+ul{margin-top:4px}
@@ -781,6 +785,14 @@ function sezioni(voci) {
   return [...per.values()];
 }
 
+// Le novita' importanti della giornata stanno in cima, in un riquadro loro: una
+// funzione nuova non deve perdersi fra dieci rifiniture (novita.js, IMPORTANTE).
+function evidenza(voci) {
+  const imp = voci.filter((v) => v && typeof v === 'object' && v.importante);
+  if (!imp.length) return '';
+  return `<div class="g-evidenza"><p class="g-evidenza-tit">In evidenza</p><ul>${imp.map((v) => `<li>${testo(v.testo)}</li>`).join('')}</ul></div>`;
+}
+
 // `aiuti` e' la mappa scheda → pagina che la spiega (da manuali.js, che importa
 // di qui: la passa chi chiama, cosi' non si girano intorno). Serve per dire DOVE
 // e' successa una cosa: la riga porta solo l'identificativo della scheda, il
@@ -798,8 +810,8 @@ export function paginaNovita(gruppi, aiuti = {}) {
 <main><p class="g-briciole"><a href="/">SocialBot</a> › Novità</p>
 <h1>Novità</h1>
 <p>Cosa è cambiato nel bot, in ordine di tempo. Una riga per cosa: se non si vede da fuori, qui non c'è.</p>
-${gruppi.map((g) => `<section class="g-novita"><h2>${esc(dataItaliana(g.data))}</h2>${
-    sezioni(g.voci).map((s) => {
+${gruppi.map((g) => `<section class="g-novita"><h2>${esc(dataItaliana(g.data))}</h2>${evidenza(g.voci)}${
+    sezioni(g.voci.filter((v) => !(v && v.importante))).map((s) => {
       const a = s.vai && aiuti[s.vai];
       const tit = a ? `<h3 class="g-dove-tit"><a href="${esc(a.via)}">${esc(a.titolo)}</a></h3>` : '';
       return `${tit}<ul>${s.voci.map((v) => `<li>${testo(typeof v === 'string' ? v : v.testo)}</li>`).join('')}</ul>`;
