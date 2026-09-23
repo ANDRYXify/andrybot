@@ -39,30 +39,44 @@ let chromium;
 try { ({ chromium } = await import(PLAYWRIGHT)); }
 catch { console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 
+// Chi sfonda. Due modi di uscire, e per ognuno si cerca il PRIMO: e' piu' largo
+// dello spazio che il padre gli da', oppure e' largo giusto ma sta spostato
+// oltre il bordo dello schermo (un'animazione d'entrata che parte da fuori).
+// Non conta chi sta dentro un riquadro che scorre o ritaglia per conto suo
+// (una tabella larga nel suo guscio a scorrimento): la pagina non la vede.
+// La prima versione lo segnalava, e il colpevole vero, una carta che entrava
+// da destra di 32px con 17 di margine, non compariva affatto.
 const SFONDA = `(() => {
   const out = [];
-  for (const e of document.querySelectorAll('.pannello-scheda.visibile *')) {
+  const pannello = document.querySelector('.pannello-scheda.visibile');
+  const bordo = document.documentElement.clientWidth;
+  const nome = (x, n) => (x.tagName.toLowerCase() + (String(x.className || '').trim()
+    ? '.' + String(x.className).split(/\\s+/).filter(Boolean).slice(0, n).join('.') : ''));
+  const chiuso = (e) => {
+    for (let a = e.parentElement; a && a !== pannello; a = a.parentElement) {
+      if (getComputedStyle(a).overflowX !== 'visible') return true;
+    }
+    return false;
+  };
+  for (const e of pannello ? pannello.querySelectorAll('*') : []) {
     const s = getComputedStyle(e);
     if (s.display === 'none' || s.position === 'fixed' || s.position === 'absolute') continue;
     const r = e.getBoundingClientRect();
     if (r.width < 4) continue;
     const pa = e.parentElement;
-    if (!pa) continue;
+    if (!pa || chiuso(e)) continue;
     const sp = getComputedStyle(pa);
     const dentro = pa.clientWidth - (parseFloat(sp.paddingLeft) || 0) - (parseFloat(sp.paddingRight) || 0);
-    if (dentro <= 0) continue;
-    const sfonda = Math.round(r.width - dentro);
+    const sfonda = dentro > 0 ? Math.round(r.width - dentro) : 0;
+    const esce = Math.round(r.right - bordo);
+    const padreEsce = pa.getBoundingClientRect().right - bordo > 2;
     if (sfonda > 2) {
-      out.push({
-        chi: (e.tagName.toLowerCase() + (String(e.className || '').trim()
-          ? '.' + String(e.className).split(/\\s+/).filter(Boolean).slice(0, 3).join('.') : '')).slice(0, 44),
-        padre: (pa.tagName.toLowerCase() + (String(pa.className || '').trim()
-          ? '.' + String(pa.className).split(/\\s+/).filter(Boolean).slice(0, 2).join('.') : '')).slice(0, 30),
-        sfonda,
-      });
+      out.push({ chi: nome(e, 3).slice(0, 44), come: 'sfonda ' + sfonda + 'px dentro ' + nome(pa, 2).slice(0, 30), quanto: sfonda });
+    } else if (esce > 2 && !padreEsce) {
+      out.push({ chi: nome(e, 3).slice(0, 44), come: 'esce di ' + esce + 'px dal bordo dello schermo' + (s.transform !== 'none' ? ", spostato da un'animazione" : ''), quanto: esce });
     }
   }
-  return out.sort((a, b) => b.sfonda - a.sfonda).slice(0, 3);
+  return out.sort((a, b) => b.quanto - a.quanto).slice(0, 3);
 })()`;
 
 const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
@@ -91,7 +105,7 @@ await chiudiSito();
 
 for (const r of rotte) {
   console.log(`  ✗ ${r.id}: la pagina scorre di ${r.scorre}px`);
-  for (const c of r.colpevoli) console.log(`      ${c.chi}  sfonda ${c.sfonda}px dentro ${c.padre}`);
+  for (const c of r.colpevoli) console.log(`      ${c.chi}  ${c.come}`);
 }
 console.log(`\n${schede.length} schede guardate a ${LARGO}px.`);
 if (rotte.length) {

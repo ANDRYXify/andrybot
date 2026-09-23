@@ -51,11 +51,26 @@ await p.evaluate(() => {
     if (document.querySelector('.pannello-scheda.scambio')) window.__stacchi.scambio++;
     const u = document.querySelector('.pannello-scheda.esce');
     if (u && getComputedStyle(u).animationName !== 'none') window.__stacchi.esce++;
-    const s = document.querySelector('.pannello-scheda.scena .carta.rivela');
-    if (s && Math.abs(parseFloat(getComputedStyle(s).getPropertyValue('--rev-x')) || 0) > 4) window.__stacchi.scena++;
   };
   new MutationObserver(guarda).observe(document.documentElement,
     { attributes: true, subtree: true, childList: true, attributeFilter: ['class'] });
+  // Lo scostamento si guarda a ogni fotogramma, sulle carte della scheda che
+  // entra, nella loro trasformazione: dove sta davvero. La prima misura leggeva
+  // il testo di --rev-x sulla prima carta «in scena» del documento, e sbagliava
+  // due volte. Quella carta era spesso di una scheda gia' uscita, che la classe
+  // se la tiene. E la variabile diceva 32 px mentre la carta non si spostava:
+  // la misura della posizione, fatta per sapere quali carte si vedono, fissava
+  // lo 0 come punto di partenza della transizione, e prima che partisse
+  // arrivava `dentro`. Le carte salivano e basta, e il cancello era verde.
+  const scorre = () => {
+    const segno = { avanti: 1, indietro: -1 }[document.documentElement.dataset.verso] || 0;
+    for (const c of document.querySelectorAll('.pannello-scheda.visibile.scena .carta.rivela')) {
+      const t = getComputedStyle(c).transform;
+      if (t !== 'none' && segno * new DOMMatrixReadOnly(t).m41 > 4) { window.__stacchi.scena++; break; }
+    }
+    requestAnimationFrame(scorre);
+  };
+  requestAnimationFrame(scorre);
 });
 
 const schede = await p.evaluate(() => [...document.querySelectorAll('.pannello-scheda')].map((s) => s.dataset.scheda));

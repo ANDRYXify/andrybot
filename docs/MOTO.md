@@ -371,11 +371,51 @@ telefono una carta spostata a destra allargava la pagina di 15 px, e la pagina
 scivolava di lato sotto il dito. Adesso entrano di lato solo le carte che si
 vedono in quel momento (`rivelaCarte`); le altre salgono e basta.
 
-`test/contratto/sempre-visibile.test.mjs` controlla le due regole nel codice.
-`scripts/verifica-larghezza.mjs` apre ogni scheda a 360 px in un browser vero e
-pretende che la pagina non scorra di lato, e `scripts/verifica-contrasto.mjs`
-misura sui pixel il contrasto dei comandi, anche sotto il mouse: girano tutti e
-due a ogni push.
+Restava la carta che si vede, mentre entra. Il margine della pagina sul telefono
+è 17,6 px (`clamp(1.1rem, 4vw, 2.4rem)`), lo spostamento 32: per il tempo
+dell'entrata la carta stava 14 px oltre il bordo destro, tagliata, e la pagina
+era più larga dello schermo. Non si vedeva nel collaudo perché le carte, di
+solito, a 220 ms sono già arrivate; l'ha visto sulla scheda Telegram, dove «La
+locandina della diretta» entra più tardi delle altre. La regola, adesso, non
+dipende dai tempi: **nessuno spostamento di lato supera il margine della
+pagina**. Il margine è una variabile sola (`--margine-pagina`, su `.contenuto`,
+più stretta nelle schede a tutta larghezza), e le carte (`--rev-x`), la scheda
+che esce (`pn-via-*`) e i pezzi che arrivano (`sc-da-*`) si spostano di
+`min(quello che vorrebbero, --margine-pagina)`: partono al più dal bordo, mai da
+fuori. Sul computer il margine è più largo di 32 px e non cambia niente.
+
+E le carte che si vedono, fino a qui, di lato non entravano quasi mai. Lo
+scivolo era una **transizione**: dallo stato «in attesa» (spostata di lato e 18
+px in giù) allo stato `dentro` (al suo posto). Una transizione parte dall'ultimo
+stato che il browser ha calcolato, e `rivelaCarte`, per sapere quali carte si
+vedono, le misura: quella misura calcolava lo stato quando lo spostamento di
+lato valeva ancora 0 (lo mette `preparaCarte`, perché le carte fuori vista non
+lo prendano). Subito dopo lo spostamento diventava 32 px, ma come transizione
+in ritardo (`--rev-delay`), e prima che partisse arrivava `dentro`. La carta
+andava da 0 a 0: saliva e basta. Su ventisei cambi di sezione, di lato ne
+entravano tre.
+
+Adesso l'entrata in scena è un'**animazione** (`carta-in-scena`), non una
+transizione: un'animazione parte sempre dal suo primo fotogramma, qualunque
+cosa il browser abbia calcolato prima. In scena lo spostamento non si
+transiziona più (`transition-property: opacity`), la carta aspetta il suo
+turno ferma sul primo fotogramma (`both`), e chi ha chiesto meno movimento non
+la vede partire.
+
+`test/contratto/sempre-visibile.test.mjs` controlla le tre regole nel codice,
+`test/contratto/entrate-nel-margine.test.mjs` che ogni spostamento di lato
+dentro le schede passi dal margine. `scripts/verifica-larghezza.mjs` apre ogni
+scheda a 360 px in un browser vero e pretende che la pagina non scorra di lato.
+Se scorre dice chi è stato: chi è più largo del posto che il padre gli dà, o
+chi è largo giusto ma sta oltre il bordo, spostato da un'animazione. Non conta
+chi sta in un riquadro che scorre per conto suo (una tabella larga nel suo
+guscio): la prima versione segnalava la tabella dei gruppi Telegram e non la
+carta che usciva davvero. `scripts/verifica-stacco.mjs` guarda a ogni
+fotogramma di quanto si spostano le carte della scheda che entra, e da che
+parte: la prima versione leggeva il testo di `--rev-x`, che diceva 32 px mentre
+la carta stava ferma, ed era verde. E `scripts/verifica-contrasto.mjs`
+misura sui pixel il contrasto dei comandi, anche sotto il mouse. Girano tutti a
+ogni push.
 
 ## Si prepara solo quello che si vede
 

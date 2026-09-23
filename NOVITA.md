@@ -100,6 +100,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Le Donazioni si aprono larghe quanto la Pagina link: l'editor è lo stesso, e adesso ha lo stesso spazio per comandi, anteprima e ispettore. [vai: donazioni]
 - Nel menù, nel gruppo «Canale», il canale che stai guardando ha di nuovo il suo timbro: sul telefono si vedeva solo un'ombra storta.
 - Nella libreria degli effetti i tasti restano dentro la loro carta anche sugli schermi medi: «Non condividere» usciva dal bordo. [vai: effetti]
+- Cambiando sezione le carte entrano davvero dal lato verso cui vai: finora, quasi sempre, salivano e basta.
+- Sul telefono, cambiando scheda, le carte entrano dal bordo e non più da fuori schermo, e le scritte accanto agli interruttori vanno a capo: la pagina non scivola più di lato.
 
 ## 2026-09-19
 
