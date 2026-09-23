@@ -16,7 +16,7 @@ import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync
 import { unlink, readFile, mkdir, rename } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
-import { config, SCOPES, missingConfig } from '../config.js';
+import { config, SCOPES, missingConfig, configStorta } from '../config.js';
 import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import * as licenza from '../licenza.js';      // il nome con cui questo software si presenta
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
@@ -2998,6 +2998,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       aiuti: AIUTI,
       mieiCanali: contestiPer(ident),
       missing: missingConfig(),
+      storte: configStorta(),
       status: manager.status(),
       streamer: user ? streamerSicuro(user.login) : null,
       permessiOk: user ? permessiOk(user.login) : false,
@@ -3896,6 +3897,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (cr && !instagram.fresco(login, IG_FRESCO_MS)) instagram.ricorda(login, await instagram.ultimoPost(cr));
     res.json({
       appAttiva: !!igApp(),
+      // a chi amministra il server si dice anche perche' il tasto e' spento
+      storte: isAdmin(currentUser(req)) ? (config.instagramApp?.storte || []) : [],
       collegato: !!t?.accessToken,
       scaduto: !!t?.expiresAt && t.expiresAt <= Date.now(),
       username: t ? String(ig.username || '') : '',

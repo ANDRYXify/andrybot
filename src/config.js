@@ -31,6 +31,19 @@ loadDotEnv();
 
 const env = (k, def = '') => (process.env[k] ?? def).trim();
 
+// Perche' un valore del .env non ha la forma che deve avere, detto in modo che
+// si sappia cosa correggere. Vuoto non e' storto: e' mancante, e lo dice
+// missingConfig. Il caso che l'ha fatto nascere: i tre puntini dell'esempio
+// rimasti davanti al numero, e il tasto che portava a una pagina rotta.
+export function formaStorta(nome, valore, forma, tipo) {
+  const v = String(valore || '');
+  if (!v || forma.test(v)) return [];
+  if (v.includes('…') || v.includes('...')) return [{ nome, tipo: 'puntini' }];
+  if (/^<.*>$/.test(v)) return [{ nome, tipo: 'segnaposto' }];
+  if (/\s/.test(v)) return [{ nome, tipo: 'spazi' }];
+  return [{ nome, tipo }];
+}
+
 const dataDir = resolve(process.cwd(), env('DATA_DIR', './data'));
 mkdirSync(dataDir, { recursive: true });
 
@@ -293,10 +306,18 @@ export const config = {
   // INSTAGRAM, non l'ID dell'app di Meta. Fra gli indirizzi di ritorno ci va
   // https://socialbot.live/auth/instagram/callback. Senza tutti e due, il tasto
   // «Collega Instagram» non compare e resta la strada del token incollato.
+  // Le due voci hanno una forma: l'ID e' fatto di sole cifre, la chiave di 32
+  // caratteri esadecimali. Con una voce che non ha la forma il tasto porterebbe
+  // a una pagina rotta di Instagram: resta spento, e il pannello di
+  // amministrazione dice quale riga e cosa c'e' che non va.
   instagramApp: (() => {
     const id = env('INSTAGRAM_APP_ID');
     const segreto = env('INSTAGRAM_APP_SECRET');
-    return { id, segreto, attivo: !!(id && segreto) };
+    const storte = [
+      ...formaStorta('INSTAGRAM_APP_ID', id, /^\d+$/, 'cifre'),
+      ...formaStorta('INSTAGRAM_APP_SECRET', segreto, /^[0-9a-f]{32}$/i, 'esadecimale32'),
+    ];
+    return { id, segreto, storte, attivo: !!(id && segreto) && !storte.length };
   })(),
 
   // Promo "settimana gratis": al primo accesso, con una certa probabilità, un
@@ -359,6 +380,12 @@ export const SCOPES = {
 
 // Ritorna l'elenco delle voci di configurazione critiche mancanti
 // (usato dalla dashboard per la "modalità setup").
+// Le voci del .env che ci sono ma sono scritte storte: nome e cosa non va, mai
+// il valore.
+export function configStorta() {
+  return [...(config.instagramApp?.storte || [])];
+}
+
 export function missingConfig() {
   const missing = [];
   if (!config.twitchClientId) missing.push('TWITCH_CLIENT_ID');

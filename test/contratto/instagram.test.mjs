@@ -95,6 +95,19 @@ test('un permesso che manca o un collegamento rotto si vede, col rimedio', () =>
   assert.match(dove, /data-vai="notifiche" data-vai-sotto="instagram"/, 'con la strada per rimediare');
 });
 
+test('una chiave del .env scritta storta la vede chi amministra, dove guarda', () => {
+  assert.match(SRV, /missing: missingConfig\(\),\n\s+storte: configStorta\(\),/, 'nello stato del pannello, accanto a quelle che mancano');
+  assert.match(rotta("app.get('/api/instagram/stato'", 900), /storte: isAdmin\(currentUser\(req\)\) \? \(config\.instagramApp\?\.storte \|\| \[\]\) : \[\],/,
+    'e nella scheda Instagram, solo a chi amministra il server');
+  const APP = leggi('src/web/public/app.js');
+  const admin = APP.slice(APP.indexOf('function vistaAdminContenuto()'), APP.indexOf('function vistaAdminContenuto()') + 3000);
+  assert.match(admin, /const storte = stato\.storte\?\.length \?/);
+  assert.match(admin, /\$\{avviso\}\$\{storte\}/);
+  const ig = APP.slice(APP.indexOf('async function caricaInstagram()'), APP.indexOf('async function caricaTgLogin()'));
+  assert.match(ig, /if \(!d\?\.appAttiva\) \{\n\s+box\.innerHTML = d\?\.storte\?\.length \? problemaHtml\(\{/,
+    'il tasto spento non sparisce in silenzio: si dice perche\'');
+});
+
 test('il token si rinnova da solo, allo stesso passo degli altri giri', () => {
   assert.match(BOT, /this\._giroProgramma\(\); this\._giroInstagram\(\); \}, 6 \* 60 \* 60_000\);/);
   const giro = BOT.slice(BOT.indexOf('async _giroInstagram()'), BOT.indexOf('async _giroInstagram()') + 800);

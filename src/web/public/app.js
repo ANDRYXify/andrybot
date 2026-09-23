@@ -5015,6 +5015,20 @@ function problemaHtml({ titolo, testo = '', tasto = '', grave = false }) {
   return `<div class="problema${grave ? ' grave' : ''}" role="status"><strong>${titolo}</strong>${testo ? `<p>${testo}</p>` : ''}${tasto ? `<p class="problema-rimedio">${tasto}</p>` : ''}</div>`;
 }
 
+function _dettoStorta(tipo) {
+  return {
+    puntini: L('c’è «…», i tre puntini dell’esempio: vanno tolti', 'it contains «…», the dots from the example: remove them', 'contiene «…», los puntos del ejemplo: quítalos'),
+    segnaposto: L('è rimasto il segnaposto fra < >', 'the placeholder between < > is still there', 'sigue ahí el marcador entre < >'),
+    spazi: L('ci sono spazi in mezzo', 'there are spaces in it', 'tiene espacios en medio'),
+    cifre: L('deve essere fatto di sole cifre', 'it must be digits only', 'debe tener solo cifras'),
+    esadecimale32: L('deve essere di 32 caratteri, cifre e lettere dalla a alla f', 'it must be 32 characters, digits and letters from a to f', 'debe tener 32 caracteres, cifras y letras de la a a la f'),
+  }[tipo] || tipo;
+}
+
+function _elencoStorte(storte) {
+  return `<ul>${storte.map((s) => `<li><code>${esc(s.nome)}</code>: ${esc(_dettoStorta(s.tipo))}</li>`).join('')}</ul>`;
+}
+
 function badgePermesso(ok, nome) {
   return ok
     ? `<span class="badge verde">✓ ${nome}</span>`
@@ -5896,7 +5910,16 @@ async function caricaInstagram() {
   const proprietario = stato?.ruolo !== 'moderatore';
   let d = null;
   try { d = await api('/api/instagram/stato'); } catch {  }
-  if (!d?.appAttiva) { box.innerHTML = ''; if (aMano) aMano.open = true; return; }
+  if (!d?.appAttiva) {
+    box.innerHTML = d?.storte?.length ? problemaHtml({
+      titolo: L('Il tasto «Collega Instagram» è spento', 'The «Connect Instagram» button is off', 'El botón «Conectar Instagram» está apagado'),
+      testo: L('Nel file .env del server:', 'In the server’s .env file:', 'En el archivo .env del servidor:') + _elencoStorte(d.storte)
+        + L('Correggi la riga e riavvia il bot.', 'Fix the line and restart the bot.', 'Corrige la línea y reinicia el bot.'),
+      grave: true,
+    }) : '';
+    if (aMano) aMano.open = true;
+    return;
+  }
   const collega = () => conErrore(async () => {
     const r = await api('/api/instagram/connect');
     if (r?.url) location.href = r.url;
@@ -24096,6 +24119,12 @@ function vistaAdminContenuto() {
       <p>${L('Mancano nel file', 'Missing in the file', 'Faltan en el archivo')} <code>.env</code>: ${stato.missing.map((m) => `<code>${esc(m)}</code>`).join(', ')}.
       ${L('Il bot non parte finché non le compili.', "The bot won't start until you fill them in.", 'El bot no arranca hasta que las completes.')}</p>
     </div>` : '';
+  const storte = stato.storte?.length ? `
+    <div class="carta avviso">
+      <h2>${_hIco(ICO.avviso)}${L('Nel file .env qualcosa è scritto storto', 'Something in the .env file is written wrong', 'Algo en el archivo .env está mal escrito')}</h2>
+      ${_elencoStorte(stato.storte)}
+      <p>${L('Correggi la riga e riavvia il bot: finché non torna, quella funzione resta spenta.', 'Fix the line and restart the bot: until it is right, that feature stays off.', 'Corrige la línea y reinicia el bot: hasta que esté bien, esa función sigue apagada.')}</p>
+    </div>` : '';
 
   const st = stato.status || {};
   return `
@@ -24109,7 +24138,7 @@ function vistaAdminContenuto() {
         &nbsp; ${L('Streamer registrati', 'Registered streamers', 'Streamers registrados')}: <strong class="primo-piano">${st.streamers ?? 0}</strong>
       </p>
     </div>
-    ${avviso}
+    ${avviso}${storte}
     <div class="carta">
       <h2>${_hIco(ICO.grafico)}${L('Stato del sistema', 'System status', 'Estado del sistema')}</h2>
       <p class="suggerimento">${L('Un colpo d\'occhio sulla salute del servizio. Uptime basso all\'improvviso = si è riavviato; canali «scollegati» = token da ricollegare.', 'A glance at the service health. A sudden low uptime = it restarted; «disconnected» channels = tokens to reconnect.', 'Un vistazo a la salud del servicio. Un uptime bajo de repente = se reinició; canales «desconectados» = tokens por reconectar.')}</p>

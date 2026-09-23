@@ -99,16 +99,24 @@ Le due porte stanno fra gli ingressi esterni di `vetrina.js`, e
 
 ## Cosa serve sul server
 
-Nel `.env`:
+Nel `.env`, due righe. Dopo l'uguale va il valore e basta: niente spazi,
+niente virgolette, niente puntini.
 
 ```
-INSTAGRAM_APP_ID=…
-INSTAGRAM_APP_SECRET=…
+INSTAGRAM_APP_ID=1234567890123456
+INSTAGRAM_APP_SECRET=0123456789abcdef0123456789abcdef
 ```
 
-Sono l'ID e la chiave segreta **di Instagram**, dalla sezione dell'accesso
-aziendale, non l'ID dell'app di Meta. Senza tutti e due il tasto non compare, e
-resta la strada del token a mano.
+I numeri qui sopra sono di esempio. Vanno sostituiti per intero con l'ID e la
+chiave segreta **di Instagram**, dalla sezione dell'accesso aziendale, non con
+l'ID dell'app di Meta. L'ID è fatto di sole cifre, la chiave di 32 caratteri fra
+cifre e lettere dalla a alla f.
+
+Senza tutti e due il tasto non compare, e resta la strada del token a mano. Con
+un valore che non ha la sua forma il tasto resta spento (con un ID sbagliato
+porterebbe a «pagina non disponibile» su Instagram), e il pannello di
+amministrazione dice quale riga e cosa c'è che non va. È successo davvero: i
+puntini dell'esempio rimasti davanti al numero.
 
 Sulla dashboard di Meta, nelle impostazioni dell'accesso aziendale:
 

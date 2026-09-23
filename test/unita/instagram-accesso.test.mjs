@@ -7,6 +7,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
 import {
   urlAutorizzazione, leggiRichiestaFirmata, codiceCancellazione, codiceNostro,
@@ -142,6 +144,37 @@ test('le credenziali: vince il tasto, e un token del tasto scaduto non vale', as
     assert.equal(tokens.loginPerUserId('instagram', 'ID-APP'), 'igprova', 'e con l\'id di app si ritrova chi e\'');
 
     assert.equal(credenzialiInstagram('igprova', Date.now() + 2 * 86400_000), null, 'scaduto: si ricollega');
+  } finally { usaEGetta.pulisci(); }
+});
+
+// Una voce del .env con i puntini dell'esempio davanti al numero faceva un tasto
+// che portava a «pagina non disponibile» su Instagram, senza una parola sul
+// perche'. Una voce che non ha la sua forma non e' una credenziale.
+test('una chiave scritta storta si riconosce, e si sa cosa ha', async () => {
+  const { formaStorta } = await import('../../src/config.js');
+  const ID = /^\d+$/, HEX = /^[0-9a-f]{32}$/i;
+  assert.deepEqual(formaStorta('X', '1517921860019343', ID, 'cifre'), []);
+  assert.deepEqual(formaStorta('X', '', ID, 'cifre'), [], 'vuota e\' mancante, non storta');
+  assert.deepEqual(formaStorta('X', '…1517921860019343', ID, 'cifre'), [{ nome: 'X', tipo: 'puntini' }], 'il caso vero');
+  assert.equal(formaStorta('X', '...1517921860019343', ID, 'cifre')[0].tipo, 'puntini');
+  assert.equal(formaStorta('X', '<ID di Instagram>', ID, 'cifre')[0].tipo, 'segnaposto');
+  assert.equal(formaStorta('X', '15179 21860019343', ID, 'cifre')[0].tipo, 'spazi');
+  assert.equal(formaStorta('X', 'abc123', ID, 'cifre')[0].tipo, 'cifre');
+  assert.deepEqual(formaStorta('S', '0123456789abcdef0123456789ABCDEF', HEX, 'esadecimale32'), []);
+  assert.equal(formaStorta('S', '0123456789abcdef', HEX, 'esadecimale32')[0].tipo, 'esadecimale32');
+});
+
+test('con una chiave storta il tasto resta spento, e l\'elenco dice quale', () => {
+  const usaEGetta = cartellaUsaEGetta('andrybot-igconf-');
+  try {
+    const leggi = (id, segreto) => JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e',
+      "const { config, configStorta } = await import('./src/config.js'); console.log(JSON.stringify({ attivo: config.instagramApp.attivo, storte: configStorta() }));"],
+    { cwd: fileURLToPath(new URL('../..', import.meta.url)), encoding: 'utf8',
+      env: { ...process.env, DATA_DIR: usaEGetta.dir, INSTAGRAM_APP_ID: id, INSTAGRAM_APP_SECRET: segreto } }));
+    const SEGRETO = '0123456789abcdef0123456789abcdef';
+    assert.deepEqual(leggi('1517921860019343', SEGRETO), { attivo: true, storte: [] });
+    assert.deepEqual(leggi('…1517921860019343', SEGRETO), { attivo: false, storte: [{ nome: 'INSTAGRAM_APP_ID', tipo: 'puntini' }] });
+    assert.deepEqual(leggi('1517921860019343', '…' + SEGRETO), { attivo: false, storte: [{ nome: 'INSTAGRAM_APP_SECRET', tipo: 'puntini' }] });
   } finally { usaEGetta.pulisci(); }
 });
 
