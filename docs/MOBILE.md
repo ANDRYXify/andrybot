@@ -100,6 +100,30 @@ Con trenta voci a sinistra, arrivare al contenuto con la tastiera voleva dire
 premere Tab trenta volte: il primo Tab della pagina fa comparire «Vai al
 contenuto».
 
+### I gruppi si chiudono, come vignette
+
+Trenta voci aperte erano un elenco da scorrere ogni volta. Adesso ogni gruppo è
+una vignetta, col bordo a mano e la didascalia nera come le carte della pagina,
+e la didascalia è un bottone (`aria-expanded`) che apre e chiude il gruppo.
+Resta aperto **il gruppo della scheda in cui sei**: cambiando scheda si apre
+il suo e si chiudono gli altri (`apriGruppiDi`), e quelli aperti a mano restano
+aperti finché non cambi scheda. Un gruppo di una voce sola col nome del gruppo
+(«Stato») non ha didascalia e non si chiude.
+
+Due cose tenute per costruzione:
+
+- **La voce accesa non sta mai in un gruppo chiuso**: il cambio di scheda apre
+  il suo gruppo nello stesso passo in cui accende la voce (`aggiornaStatoNav`).
+- **Una novità non si perde in un gruppo chiuso**: la didascalia mostra lo
+  scoppio «!» finché il gruppo è chiuso, e lo nasconde quando lo apri, perché
+  allora si vede sulla voce. Le voci di un gruppo chiuso sono `hidden`: non si
+  raggiungono col Tab e il lettore di schermo non le legge.
+
+La voce accesa è un timbro: fondo del colore del marchio, bordo e ombra
+d'inchiostro, un filo storta. Il nome più lungo dei gruppi («Durante la
+diretta», «Durante el directo») con lo scoppio accanto sta su una riga sola di
+lato: misurato, 127 px di testo in 129 di posto.
+
 ### Il collaudo
 
 ```
@@ -113,8 +137,13 @@ con e senza i poteri da amministratore. A ogni combinazione pretende che:
   menu di lato: mai nessuno, mai due);
 - nella barra in alto il logo e gli strumenti non si tocchino;
 - il menu di lato non copra il contenuto, niente esca dai suoi bordi, e l'ultima
-  voce si raggiunga scorrendo;
-- una voce sola sia quella accesa, ed e quella della scheda in cui sei.
+  voce si raggiunga scorrendo, **coi gruppi tutti aperti** (il caso più lungo;
+  li apre e li richiude col clic vero sulle didascalie). E che il menu scorra
+  davvero: `scrollTop` sposta anche un elemento con `overflow: hidden`, che la
+  persona invece non può scorrere, e prima il collaudo non se ne accorgeva;
+- una voce sola sia quella accesa, ed e quella della scheda in cui sei, in un
+  gruppo aperto;
+- un gruppo chiuso con dentro una novità mostri lo scoppio sulla didascalia.
 
 Dove c'e il cassetto lo apre, controlla che niente ne esca e che si chiuda
 cliccando fuori. E allarga la finestra col cassetto aperto, per vedere che si

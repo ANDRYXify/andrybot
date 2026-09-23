@@ -62,7 +62,7 @@ test('il menu ha Stato all\'inizio e «Il tuo account» nel gruppo Account', () 
   assert.match(g, /\{ id: 'account', nome: 'Account', schede: \[\n {4}\['account', 'Il tuo account'\],\n {4}\['sottoscrizione', 'Abbonamento'\],/);
   assert.match(APP, /const SOLO_DISCORD = new Set\(\[[^\]]*'account'/, 'anche chi ha solo Discord ha il suo account');
   const c = funzione(APP, 'navDrawerHtml');
-  assert.ok(c.includes('g.schede.length === 1') && c.includes("ripete ? ''"), 'un titolo che ripete l\'unica voce non si scrive');
+  assert.ok(c.includes('g.schede.length === 1') && c.includes('if (ripete) return `<div class="drawer-grp drawer-solo">${voci}</div>`;'), 'un titolo che ripete l\'unica voce non si scrive, e quel gruppo non si chiude');
 });
 
 test('la Home non conta niente di suo: legge chi i numeri li tiene gia\'', () => {

@@ -44,8 +44,8 @@ a:hover { color: var(--acc); }
 @media (hover: hover) {
 .menu-voce:hover:not(.on), .drawer-voce:hover:not(.on) { color: var(--testo); }
 }
-.menu-voce.on, .drawer-voce.on { position: relative; color: var(--testo); }
-.menu-voce.on::before, .drawer-voce.on::before {
+.menu-voce.on { position: relative; color: var(--testo); }
+.menu-voce.on::before {
   content: ""; position: absolute; left: -2px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px;
   border-radius: 50%; background: var(--acc);
 }

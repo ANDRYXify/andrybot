@@ -3560,13 +3560,41 @@ function voceAttiva(voce, scheda) {
   return voce === scheda || !!(f && f.parti.includes(voce));
 }
 
+let _gruppiAperti = null;
+const gruppiAperti = () => (_gruppiAperti ||= new Set([gruppoDiScheda(schedaAttiva)]));
+
+function apriGruppiDi(id) {
+  _gruppiAperti = new Set([gruppoDiScheda(id)]);
+  document.querySelectorAll('#nav-drawer .drawer-grp[data-grp]').forEach((el) => mostraGruppo(el, gruppiAperti().has(el.dataset.grp)));
+}
+
+function mostraGruppo(el, aperto) {
+  el.classList.toggle('chiuso', !aperto);
+  el.querySelector('.drawer-grp-tit')?.setAttribute('aria-expanded', aperto ? 'true' : 'false');
+  const voci = el.querySelector('.drawer-grp-voci');
+  if (voci) voci.hidden = !aperto;
+}
+
+function giraGruppo(bottone) {
+  const el = bottone.closest('.drawer-grp[data-grp]');
+  if (!el) return;
+  const aperti = gruppiAperti();
+  const aperto = !aperti.has(el.dataset.grp);
+  if (aperto) aperti.add(el.dataset.grp); else aperti.delete(el.dataset.grp);
+  mostraGruppo(el, aperto);
+}
+
 function navDrawerHtml() {
   return elencoGruppi().map((g) => {
     const voci = g.schede.map(([id, nome]) =>
       `<button class="drawer-voce${voceAttiva(id, schedaAttiva) ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}"${voceAttiva(id, schedaAttiva) ? ' aria-current="page"' : ''}>${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span>${nuovoDi(id)}${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`).join('');
     const titolo = tGruppo(g.id, g.nome);
     const ripete = g.schede.length === 1 && tScheda(g.schede[0][0], g.schede[0][1]) === titolo;
-    return `<div class="drawer-grp" style="--gc:var(--g-${g.id}, var(--g-def))">${ripete ? '' : `<div class="drawer-grp-tit">${esc(titolo)}</div>`}${voci}</div>`;
+    if (ripete) return `<div class="drawer-grp drawer-solo">${voci}</div>`;
+    const aperto = gruppiAperti().has(g.id);
+    const nuovo = g.schede.some(([id]) => nuovoDi(id))
+      ? `<span class="voce-nuovo grp-nuovo" role="img" aria-label="${esc(L('dentro c\'è qualcosa di nuovo', 'something new inside', 'hay algo nuevo dentro'))}"></span>` : '';
+    return `<div class="drawer-grp${aperto ? '' : ' chiuso'}" data-grp="${g.id}"><button type="button" class="drawer-grp-tit" aria-expanded="${aperto ? 'true' : 'false'}" aria-controls="grp-voci-${g.id}"><span class="grp-nome">${esc(titolo)}</span>${nuovo}<span class="grp-conta" aria-hidden="true">${g.schede.length}</span><span class="grp-freccia" aria-hidden="true"></span></button><div class="drawer-grp-voci" id="grp-voci-${g.id}"${aperto ? '' : ' hidden'}>${voci}</div></div>`;
   }).join('');
 }
 
@@ -26344,6 +26372,7 @@ function aggiornaStatoNav(id) {
     b.classList.toggle('on', on);
     if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
+  apriGruppiDi(id);
 }
 
 async function _chiediPrimaDiUscire() {
@@ -26542,6 +26571,8 @@ function initGuscio() {
   });
 
   document.getElementById('nav-drawer')?.addEventListener('click', (ev) => {
+    const tit = ev.target.closest('.drawer-grp-tit[aria-controls]');
+    if (tit) { giraGruppo(tit); return; }
     const b = ev.target.closest('[data-scheda]');
     if (b) vaiAScheda(b.dataset.scheda);
   });

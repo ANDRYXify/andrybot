@@ -94,6 +94,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - La patata bollente: !patata la lancia, !passa la passa a chi è in chat, e scoppia quando nessuno se l'aspetta. Se vuoi, chi resta con la patata paga una multa. [vai: giochi]
 - La catena di parole: !catena, e ogni parola comincia con le ultime due lettere della precedente. Si batte il record del canale, e le chiacchiere non la rompono. [vai: giochi]
 - !trivia e !manche, mentre si conta insieme, ti dicono cosa c'è in corso invece di tacere o di dire che non ci sono manche. [vai: giochi]
+- Il menù è fatto a vignette: ogni gruppo si apre e si chiude dalla sua didascalia, e resta aperto quello della scheda in cui sei. Se dentro un gruppo chiuso c'è qualcosa di nuovo, lo vedi dal «!».
 
 ## 2026-09-19
 

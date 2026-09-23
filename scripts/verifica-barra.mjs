@@ -9,7 +9,9 @@
 //  · il menu si raggiunga in UN modo solo: mai nessuno, mai due insieme;
 //  · nella barra in alto il logo e gli strumenti non si tocchino;
 //  · il menu di lato non copra il contenuto, niente esca dai suoi bordi, e
-//    l'ultima voce si raggiunga scorrendo;
+//    l'ultima voce si raggiunga scorrendo, anche coi gruppi tutti aperti;
+//  · la voce accesa stia in un gruppo aperto, e una novita' in un gruppo
+//    chiuso si veda sulla sua didascalia;
 //  · una voce sola sia accesa (`aria-current`), ed e' quella della scheda;
 //  · dove c'e' il cassetto, niente ne esca e si chiuda cliccando fuori;
 //  · allargando la finestra col cassetto aperto, il cassetto si chiuda da solo.
@@ -43,8 +45,18 @@ const MISURA = `(() => {
   if (vede(strumenti) && tocca(box(document.querySelector('.marchio')), box(strumenti))) coll.push('logo/strumenti');
   if (vede(strumenti) && strumenti.getBoundingClientRect().right > innerWidth + 0.5) coll.push('strumenti fuori dallo schermo');
   const accese = [...document.querySelectorAll('#nav-drawer [aria-current="page"]')].map((b) => b.dataset.scheda);
+  // Coi gruppi che si chiudono: la voce accesa sta sempre in un gruppo aperto,
+  // e una novita' dentro un gruppo chiuso si vede sulla sua didascalia.
+  const accesaNascosta = [...document.querySelectorAll('#nav-drawer [aria-current="page"]')].some((b) => !!b.closest('[hidden]'));
+  const novitaNascoste = [...document.querySelectorAll('#nav-drawer .drawer-grp.chiuso')]
+    .filter((g) => g.querySelector('.drawer-grp-voci .voce-nuovo') && !vede(g.querySelector('.drawer-grp-tit .grp-nuovo'))).length;
   const perLato = {};
   if (lato) {
+    // I gruppi si chiudono: la misura si prende nel caso peggiore, tutti
+    // aperti, col menu lungo quanto puo' essere. Si aprono col clic vero sulle
+    // didascalie e si richiudono dopo, come li aveva lasciati chi guarda.
+    const chiusi = [...drawer.querySelectorAll('.drawer-grp.chiuso > .drawer-grp-tit')];
+    chiusi.forEach((t) => t.click());
     const d = box(drawer);
     const main = box(document.querySelector('.area-principale'));
     perLato.copre = main.left < d.right - 0.5;
@@ -58,10 +70,14 @@ const MISURA = `(() => {
     const voci = drawer.querySelectorAll('#nav-drawer .drawer-voce');
     const ultima = voci[voci.length - 1];
     const u = box(ultima);
-    perLato.ultimaSiVede = !!ultima && u.bottom <= d.bottom + 0.5 && u.top >= d.top - 0.5;
+    // scrollTop sposta anche un elemento che la persona non puo' scorrere
+    // (overflow: hidden): se il menu e' piu' lungo dello spazio, deve scorrere.
+    const scorre = drawer.scrollHeight <= drawer.clientHeight + 1 || ['auto', 'scroll'].includes(getComputedStyle(drawer).overflowY);
+    perLato.ultimaSiVede = scorre && !!ultima && u.bottom <= d.bottom + 0.5 && u.top >= d.top - 0.5;
     drawer.scrollTop = 0;
+    chiusi.forEach((t) => t.click());
   }
-  return { modi, coll, accese, scheda: typeof schedaAttiva === 'string' ? schedaAttiva : '', ...perLato };
+  return { modi, coll, accese, accesaNascosta, novitaNascoste, scheda: typeof schedaAttiva === 'string' ? schedaAttiva : '', ...perLato };
 })()`;
 
 const LARGHEZZE = [390, 720, 721, 768, 900, 1023, 1024, 1180, 1280, 1366, 1440, 1600, 1920, 2560];
@@ -94,6 +110,8 @@ for (const admin of [false, true]) {
       }
       guai.push(...r.coll);
       if (!accesaGiusta) guai.push(`voci accese: ${r.accese.join(', ') || 'nessuna'} (la scheda e' ${r.scheda})`);
+      if (r.accesaNascosta) guai.push('la voce accesa sta in un gruppo chiuso');
+      if (r.novitaNascoste) guai.push(r.novitaNascoste === 1 ? 'un gruppo chiuso nasconde una novita\'' : `${r.novitaNascoste} gruppi chiusi nascondono una novita'`);
       if (r.modi.lato) {
         if (r.copre) guai.push('il menu di lato copre il contenuto');
         if (r.sbordano?.length) guai.push('esce dal menu di lato: ' + r.sbordano.join(', '));
