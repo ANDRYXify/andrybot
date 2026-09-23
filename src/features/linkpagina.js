@@ -929,7 +929,14 @@ ${/* l'anteprima nelle chat: la carta disegnata dal server (coi colori della
 <meta name="twitter:image" content="${esc(og)}">` : '';
   })()}
 <meta name="twitter:card" content="${urlSicuro(immagineAnteprima) || (pagina.blocchi || []).some((b) => b?.tipo === 'eroe' && b.img) ? 'summary_large_image' : 'summary'}">
-<link rel="icon" href="/icons/icon-192.png?v=8">
+${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
+     in alto, quella caricata o quella di Twitch. Chi ha scelto di non
+     mostrare nessuna foto tiene l'icona del sito. */
+  ''}${(() => {
+    const icona = mostraAvatar && imgAvatar ? imgAvatar : '/icons/icon-192.png?v=8';
+    return `<link rel="icon" href="${esc(icona)}">
+<link rel="apple-touch-icon" href="${esc(icona)}">`;
+  })()}
 <style>${facciaFont(t.font)}${cursoreCss(t, c)}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{--testo:${c.testo};--tenue:${c.tenue};--acc:${c.acc};--suacc:${suAcc};--r:${raggio}px;--w:${larghezza}rem;

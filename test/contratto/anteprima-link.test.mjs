@@ -25,6 +25,20 @@ test('la pagina dice l\'immagine giusta: la carta, altrimenti la copertina, altr
   assert.ok(!renderLinkPage({ attiva: true, blocchi: [], tema: {} }, { ...opz, immagineAnteprima: 'javascript:x' }).includes('javascript:'), 'un indirizzo che non e\' un indirizzo non entra');
 });
 
+test('l\'icona della scheda e\' la foto della pagina, e senza foto quella del sito', () => {
+  const opz = { login: 'x', display: 'X', baseUrl: 'https://s.live', avatar: 'https://a/b.png' };
+  const icone = (html) => [...html.matchAll(/<link rel="(icon|apple-touch-icon)" href="([^"]*)">/g)].map((m) => m[1] + ' ' + m[2]);
+  assert.deepEqual(icone(renderLinkPage({ attiva: true, blocchi: [], tema: {} }, opz)),
+    ['icon https://s.live/u/x/avatar', 'apple-touch-icon https://s.live/u/x/avatar'], 'la foto di Twitch, dalla nostra origine');
+  assert.deepEqual(icone(renderLinkPage({ attiva: true, avatar: 'https://s.live/u/x/img/lp_logo.png', blocchi: [], tema: {} }, opz)),
+    ['icon https://s.live/u/x/img/lp_logo.png', 'apple-touch-icon https://s.live/u/x/img/lp_logo.png'], 'la foto caricata, quando c\'e\'');
+  assert.deepEqual(icone(renderLinkPage({ attiva: true, avatar: 'no', blocchi: [], tema: {} }, opz)),
+    ['icon /icons/icon-192.png?v=8', 'apple-touch-icon /icons/icon-192.png?v=8'], 'chi non mostra nessuna foto tiene l\'icona del sito');
+  assert.deepEqual(icone(renderLinkPage({ attiva: true, blocchi: [], tema: { avatarForma: 'nessuno' } }, opz)),
+    ['icon /icons/icon-192.png?v=8', 'apple-touch-icon /icons/icon-192.png?v=8']);
+  assert.ok(!renderLinkPage({ attiva: true, avatar: 'javascript:alert(1)', blocchi: [], tema: {} }, opz).includes('href="javascript:'), 'un indirizzo che non e\' un indirizzo non diventa un\'icona');
+});
+
 test('il colore della pagina: quello del tema, sennò quello del preset', () => {
   assert.equal(accentoDi({ template: 'neon', tema: { accent: '#ff0000' } }), '#ff0000');
   assert.equal(accentoDi({ template: 'neon', tema: {} }), accentoDi({ template: 'neon' }));

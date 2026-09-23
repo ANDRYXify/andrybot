@@ -50,3 +50,14 @@ riquadri, nessun riquadro ripetuto, nessuna sotto-scheda, la promo con la
 personalità, la diretta in prima pagina con la pagina link, il vecchio testo
 su Instagram che non torna. `test/contratto/donazioni.test.mjs` tiene le due
 case dell'editor.
+
+## L'icona della pagina
+
+Nella scheda del browser, e sulla schermata home di chi la salva, la pagina link
+(e quella delle donazioni) ha come icona la foto che mostra in alto: quella
+caricata, o quella di Twitch servita dalla nostra origine. Chi ha scelto di non
+mostrare nessuna foto tiene l'icona del sito: l'icona dice di chi è la pagina,
+e non si mette una faccia che la pagina stessa ha tolto. Sta in
+`src/features/linkpagina.js`, e il test è in
+`test/contratto/anteprima-link.test.mjs`.
+
