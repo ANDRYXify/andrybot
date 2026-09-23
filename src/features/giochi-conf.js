@@ -67,6 +67,28 @@ export const MANCHE_TIPI = [
   ['impiccato', T('Impiccato', 'Hangman', 'Ahorcado')],
 ];
 
+const ABBRACCI = [
+  '🤗 {a} abbraccia forte {b}!',
+  '🤗 {a} stritola {b} in un abbraccio da orso!',
+  '🤗 {a} corre ad abbracciare {b}!',
+  '🤗 {a} e {b}, stretti stretti.',
+];
+const ABBRACCI_TUTTI = ['🤗 {a} abbraccia tutta la chat!', '🤗 {a} apre le braccia: abbraccio collettivo!'];
+const BACI = [
+  '😘 {a} manda un bacino a {b}!',
+  '😘 {a} schiocca un bacio sulla guancia di {b}!',
+  '💋 Bacino volante da {a} per {b}!',
+];
+const BACI_TUTTI = ['😘 {a} manda baci a tutta la chat!'];
+const CINQUE_PERFETTO = [
+  '💥 CIAK! {a} e {b}: cinque perfetto, schiocco da manuale!',
+  '💥 {a} e {b} si guardano il gomito e... SCHIOCCO PERFETTO!',
+  '💥 Tempismo perfetto: il cinque di {a} e {b} si sente fino in fondo alla chat!',
+];
+const CINQUE_NORMALE = ['🙌 {a} e {b} battono il cinque!', '🙌 Cinque fra {a} e {b}!'];
+const CINQUE_MOSCIO = ['🫳 {a} e {b} battono un cinque un po\' moscio... ma vale lo stesso.', '🫳 Cinque in ritardo fra {a} e {b}: meglio tardi che mai.'];
+const CINQUE_SOSPESO = ['🙋 {a} resta con la mano alzata... nessuno batte il cinque.', '🙋 La mano di {a} resta a mezz\'aria. Che freddo.'];
+
 const ATTESA = (def, eti = T('Attesa fra due volte, a testa', 'Wait between two goes, each', 'Espera entre dos veces, cada uno')) =>
   ({ k: 'attesa', tipo: 'secondi', def, min: 1, max: 3600, eti });
 
@@ -155,6 +177,38 @@ export const CATALOGO = [
       ATTESA(5),
     ],
     resa: { tipo: 'puntata', costo: 100, esiti: [[1 / 3, ['vincita', 1]], [1 / 3, 100]] },
+  },
+  {
+    id: 'abbraccio', nome: T('Abbracci', 'Hugs', 'Abrazos'),
+    param: [
+      ATTESA(10),
+      { k: 'frasi', tipo: 'elenco', def: ABBRACCI, max: 30, lungo: 200, segnaposto: ['a', 'b'], eti: T('Come si abbraccia: {a} abbraccia {b}', 'How a hug goes: {a} hugs {b}', 'Cómo se abraza: {a} abraza a {b}') },
+      { k: 'tutti', tipo: 'elenco', def: ABBRACCI_TUTTI, max: 20, lungo: 200, segnaposto: ['a'], eti: T('Senza nome, a tutta la chat: {a} abbraccia', 'With no name, the whole chat: {a} hugs', 'Sin nombre, a todo el chat: {a} abraza') },
+    ],
+    resa: null,
+  },
+  {
+    id: 'bacio', nome: T('Bacini', 'Kisses', 'Besitos'),
+    param: [
+      ATTESA(10),
+      { k: 'frasi', tipo: 'elenco', def: BACI, max: 30, lungo: 200, segnaposto: ['a', 'b'], eti: T('Come si bacia: {a} manda un bacio a {b}', 'How a kiss goes: {a} kisses {b}', 'Cómo se besa: {a} besa a {b}') },
+      { k: 'tutti', tipo: 'elenco', def: BACI_TUTTI, max: 20, lungo: 200, segnaposto: ['a'], eti: T('Senza nome, a tutta la chat: {a} manda baci', 'With no name, the whole chat: {a} sends kisses', 'Sin nombre, a todo el chat: {a} manda besos') },
+    ],
+    resa: null,
+  },
+  {
+    id: 'cinque', nome: T('Batti il cinque', 'High five', 'Choca esos cinco'),
+    param: [
+      { k: 'perfetto', tipo: 'secondi', def: 4, min: 1, max: 15, eti: T('Chi risponde entro questi secondi fa il cinque perfetto', 'Answering within these seconds makes a perfect high five', 'Quien responde en estos segundos hace el cinco perfecto') },
+      { k: 'pronto', tipo: 'secondi', def: 15, min: 1, max: 120, eti: T('Entro questi è un cinque normale; dopo, moscio', 'Within these it is a normal high five; after, a limp one', 'En estos es un cinco normal; después, flojo') },
+      { k: 'scadenza', tipo: 'secondi', def: 30, min: 5, max: 300, eti: T('Dopo questi la mano resta alzata', 'After these the hand is left hanging', 'Tras estos la mano se queda en el aire') },
+      ATTESA(5),
+      { k: 'frasiPerfetto', tipo: 'elenco', def: CINQUE_PERFETTO, max: 20, lungo: 200, segnaposto: ['a', 'b'], eti: T('Il cinque perfetto: {a} alza, {b} batte', 'The perfect high five: {a} raises, {b} hits', 'El cinco perfecto: {a} levanta, {b} choca') },
+      { k: 'frasiNormale', tipo: 'elenco', def: CINQUE_NORMALE, max: 20, lungo: 200, segnaposto: ['a', 'b'], eti: T('Il cinque normale', 'The normal high five', 'El cinco normal') },
+      { k: 'frasiMoscio', tipo: 'elenco', def: CINQUE_MOSCIO, max: 20, lungo: 200, segnaposto: ['a', 'b'], eti: T('Il cinque moscio', 'The limp high five', 'El cinco flojo') },
+      { k: 'frasiSospeso', tipo: 'elenco', def: CINQUE_SOSPESO, max: 20, lungo: 200, segnaposto: ['a'], eti: T('La mano rimasta alzata: {a}', 'The hand left hanging: {a}', 'La mano en el aire: {a}') },
+    ],
+    resa: null,
   },
   { id: 'dado', nome: T('Dado', 'Dice', 'Dado'), param: [ATTESA(3)], resa: null },
   { id: 'moneta', nome: T('Testa o croce', 'Heads or tails', 'Cara o cruz'), param: [ATTESA(3)], resa: null },

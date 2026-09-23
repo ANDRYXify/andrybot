@@ -122,7 +122,7 @@ const GIOCHI = {
       ['<code>!slot</code>', '—', 'Macchinetta: paghi, giri, forse vinci.', `${ATTESA(DI_SERIE('slot').attesa)} a testa`],
       ['<code>!duello @nome</code>', '<code>!duel</code>', 'Sfida chi è in chat. Vince uno dei due.', `${ATTESA(DI_SERIE('duello').attesa)} di canale`],
       ['<code>!trivia</code>', '<code>!quiz</code>', 'Apre una domanda per tutti.', '15s di canale'],
-      ['<code>!manche</code>', '<code>!gioca</code>', 'Apre una manche a caso fra i sei tipi.', '10s di canale'],
+      ['<code>!manche</code>', '<code>!gioca</code>', 'Apre una manche a caso fra quelle del giro. <code>!manche impiccato</code> per sceglierla.', '10s di canale'],
       ['<code>!pesca</code>', '<code>!fish</code>', 'Cala la canna. Può uscire di tutto.', `${ATTESA(DI_SERIE('pesca').attesa)} a testa`],
       ['<code>!roulette</code>', '<code>!rul</code>', 'Punti su rosso, nero, verde o un numero.', `${ATTESA(DI_SERIE('roulette').attesa)} a testa`],
       ['<code>!furto @nome</code>', '<code>!rapina</code>', 'Provi a rubare. Se ti beccano, paghi.', `${ATTESA(DI_SERIE('furto').attesa)} a testa`],
@@ -132,6 +132,10 @@ const GIOCHI = {
       ['<code>!rifiuta</code>', '—', 'Dici di no, e nessuno perde niente.', '—'],
       ['<code>!morra carta</code>', '<code>!rps</code>', 'Sasso, carta o forbice contro il bot. <code>!morra carta 20</code> per giocarci delle monete.', `${ATTESA(DI_SERIE('morra').attesa)} a testa`],
       ['<code>!sblocca</code>', '—', `Spendi monete per mettere la chat in solo emote per ${DI_SERIE('sblocca').minuti} minuti. <code>!sblocca 5</code> per cinque.`, `${ATTESA(DI_SERIE('sblocca').attesa)} di canale`],
+      ['<code>!abbraccio @nome</code>', '<code>!abbraccia</code> <code>!hug</code>', 'Abbracci chi è in chat. Senza nome, tutta la chat.', `${ATTESA(DI_SERIE('abbraccio').attesa)} a testa`],
+      ['<code>!bacio @nome</code>', '<code>!bacino</code> <code>!kiss</code>', 'Un bacino a chi è in chat. Senza nome, a tutta la chat.', `${ATTESA(DI_SERIE('bacio').attesa)} a testa`],
+      ['<code>!cinque @nome</code>', '<code>!highfive</code> <code>!hi5</code>', 'Alzi la mano per qualcuno, o per chiunque senza nome. Chi risponde con <code>!cinque</code> la batte.', `${ATTESA(DI_SERIE('cinque').attesa)} a testa`],
+      ['<code>!nococcole</code>', '—', 'Niente abbracci, bacini e cinque verso di te. Riscrivilo per tornare.', '—'],
       ['<code>!serie</code>', '<code>!presenze</code> <code>!streak</code>', 'A quante dirette di fila sei stato presente, e a quante in tutto. Con un nome, di quella persona.', '—'],
       ['<code>!classificaserie</code>', '<code>!serietop</code> <code>!topserie</code>', 'Chi è venuto a più dirette di fila.', '—'],
     ] },
@@ -193,6 +197,13 @@ const GIOCHI = {
     { h3: 'Morra cinese' },
     { p: [
       `<code>!morra sasso</code>, <code>carta</code> o <code>forbice</code> contro il bot. Senza puntata è solo per ridere; con la puntata (<code>!morra carta 20</code>) se vinci ti torna ${CIFRA(DI_SERIE('morra').vincita / 100)} volte la puntata, se fai pari ti torna la puntata, se perdi la perdi. Di serie su 100 monete giocate ne tornano in media ${CIFRA(RESA('morra').perCento)}: è un gioco giusto, e nelle regole decidi quanto paga la vittoria.`,
+    ] },
+
+    { h3: 'Abbracci, bacini e il cinque perfetto' },
+    { p: [
+      'Non costano e non fanno vincere niente: servono a stare insieme. Si abbraccia e si bacia solo chi ha scritto in chat di recente, e chi scrive <code>!nococcole</code> non ne riceve più finché non lo riscrive.',
+      `Il cinque vuole due persone. <code>!cinque @nome</code> alza la mano per qualcuno, <code>!cinque</code> da solo per chiunque; chi risponde con <code>!cinque</code> la batte. Conta la prontezza, come nella vita: chi risponde entro ${ATTESA(DI_SERIE('cinque').perfetto)} fa il <strong>cinque perfetto</strong>, con lo schiocco e il lampo sull'overlay; entro ${ATTESA(DI_SERIE('cinque').pronto)} è un cinque normale, dopo è moscio. Se nessuno risponde in ${ATTESA(DI_SERIE('cinque').scadenza)} la mano resta a mezz'aria.`,
+      'Nelle regole cambi i tempi e tutte le frasi. Il cinque sull\'overlay esce con gli effetti accesi, e chi nel sistema chiede meno movimento lo vede fermo.',
     ] },
 
     { h3: 'Furto' },

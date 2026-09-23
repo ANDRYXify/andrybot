@@ -264,6 +264,31 @@ function mostraTesto(ev) {
   }, durata);
 }
 
+const DITA = '<rect x="21" y="16" width="13" height="50" rx="6.5"/><rect x="35" y="5" width="13" height="58" rx="6.5"/><rect x="50" y="7" width="13" height="56" rx="6.5"/><rect x="65" y="18" width="12" height="46" rx="6"/><rect x="3" y="60" width="14" height="38" rx="7" transform="rotate(-32 10 79)"/><rect x="17" y="52" width="62" height="66" rx="24"/>';
+const MANO = '<svg viewBox="0 0 90 126" aria-hidden="true"><g fill="#15121a" stroke="#15121a" stroke-width="9" stroke-linejoin="round">' + DITA + '</g><g fill="currentColor">' + DITA + '</g></svg>';
+const CINQUE_SCRITTA = { perfetto: 'CINQUE PERFETTO!', normale: 'CINQUE!', moscio: 'cinque moscio' };
+
+function cinque(ev) {
+  const box = document.getElementById('cinque');
+  if (!box) return;
+  const livello = CINQUE_SCRITTA[ev.livello] ? ev.livello : 'normale';
+  const scena = document.createElement('div');
+  scena.className = 'cinque-scena cinque-' + livello;
+  scena.innerHTML = '<div class="cinque-lampo"></div><div class="cinque-onda"></div><div class="cinque-onda due"></div>'
+    + '<div class="cinque-scintille"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>'
+    + '<div class="cinque-mano sx">' + MANO + '</div><div class="cinque-mano dx">' + MANO + '</div>'
+    + '<div class="cinque-scritta"><strong></strong><span></span></div>';
+  scena.querySelector('strong').textContent = CINQUE_SCRITTA[livello];
+  scena.querySelector('span').textContent = String(ev.a || '').slice(0, 30) + ' × ' + String(ev.b || '').slice(0, 30);
+  box.appendChild(scena);
+  const contatto = fermiIMotori() ? 0 : (livello === 'moscio' ? 550 : 300);
+  const volume = { perfetto: 100, normale: 75, moscio: 40 }[livello];
+  setTimeout(() => {
+    try { window.SUONI_PRESET && window.SUONI_PRESET.suona(livello === 'perfetto' ? 'schioccoPerfetto' : 'schiocco', volume); } catch (e) {  }
+  }, contatto);
+  setTimeout(() => scena.remove(), 2800);
+}
+
 const penCard = {};
 
 function penitenza(ev) {
@@ -650,6 +675,7 @@ function ricevi(m) {
     else if (dati.tipo === 'bit') { if (Array.isArray(dati.righe)) MIO.bitRighe = dati.righe; disegnaBit(); }
     else if (dati.tipo === 'tema') caricaTema();
     else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
+    else if (dati.tipo === 'cinque') { if (mostra('effetti')) cinque(dati); }
     else if (dati.tipo === 'contatore') contatore(dati);
     else if (dati.tipo === 'immagine' || dati.tipo === 'video') { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
 }

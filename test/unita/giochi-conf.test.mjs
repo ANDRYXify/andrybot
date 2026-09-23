@@ -90,6 +90,15 @@ test('quello che arriva dal pannello si normalizza, e un valore storto non azzer
   assert.ok(!('inesistente' in n));
 });
 
+test('ogni gioco e ogni manopola hanno un nome solo: due uguali, e una sparirebbe dal pannello', () => {
+  const ids = G.CATALOGO.map((g) => g.id);
+  assert.deepEqual(ids, [...new Set(ids)]);
+  for (const g of G.CATALOGO) {
+    const chiavi = g.param.map((p) => p.k);
+    assert.deepEqual(chiavi, [...new Set(chiavi)], g.id);
+  }
+});
+
 test('ogni testo di serie si riempie senza lasciare segnaposto', () => {
   for (const g of G.CATALOGO) {
     for (const p of g.param.filter((x) => x.tipo === 'elenco')) {

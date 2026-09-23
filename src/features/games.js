@@ -6,6 +6,7 @@
 //          · !trivia · !classifica [mod|tutti] · !monete · !giochi
 import { elencoGiochiInChat } from './comandi-registro.js';
 import { valoriDi } from './giochi-conf.js';
+import * as coccole from './coccole.js';
 import { points, streamers, giochi } from '../db.js';
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
@@ -963,6 +964,26 @@ export function tryGame(msg, say) {
           if (multa > 0) { points.add(channel, msg.user, -multa); points.add(channel, vittima, multa); }
           say(`🚓 ${nome} viene beccato e paga ${multa} ${moneta()} di multa a ${vittima}! 😂`);
         }
+        return true;
+      }
+
+      case 'abbraccio': {
+        coccole.gesto('abbraccio', channel, msg, args, say, { inChat });
+        return true;
+      }
+
+      case 'bacio': {
+        coccole.gesto('bacio', channel, msg, args, say, { inChat });
+        return true;
+      }
+
+      case 'cinque': {
+        coccole.cinque(channel, msg, args, say, { inChat });
+        return true;
+      }
+
+      case 'nococcole': {
+        coccole.tryNoCoccole(channel, msg, say);
         return true;
       }
 

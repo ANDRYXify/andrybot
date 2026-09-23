@@ -78,6 +78,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - La chat in solo emote per due minuti, o per il tempo che dici: la accendono i mod con !soloemote 5m, un tuo Modulo o la chat con !sblocca, e poi torna com'era da sola. [vai: moduli]
 - Quattro manche nuove: impiccato, più o meno, calcolo veloce e rebus con le emoji. Scegli tu quali girano da sole, e con !manche impiccato ne apri una per nome. [vai: giochi]
 - Duelli con la posta: !duello @nome 50, l'altro accetta o rifiuta e chi vince prende la posta dell'altro. Arriva anche la morra cinese contro il bot, per ridere o con una puntata. [vai: giochi]
+- Abbracci, bacini e il batti il cinque: chi risponde al volo fa il cinque perfetto, con lo schiocco e il lampo sull'overlay. Chi scrive !nococcole non ne riceve. [vai: giochi]
 
 ## 2026-09-19
 

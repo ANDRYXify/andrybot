@@ -39,6 +39,8 @@ const DECISO = [
   ['features/antibot.js', 'ritmi', 'resta', 'il ritmo del canale si impara in trenta follow, e in memoria non ci arrivava mai'],
   ['features/antibot.js', 'avvisati', 'volatile', 'a chi l\'avviso del trattenimento e\' gia\' stato detto: dopo un riavvio, al massimo, lo si ridice una volta'],
   ['features/modalita-chat.js', 'sveglie', 'volatile', 'le sveglie delle modalita\' a tempo: la fine sta nel database (statoVivo), e all\'avvio si ripuntano da li\''],
+  ['features/coccole.js', 'attese', 'volatile', 'l\'attesa fra due abbracci della stessa persona: un riavvio la azzera, e al peggio si abbraccia dieci secondi prima'],
+  ['features/coccole.js', 'mani', 'volatile', 'una mano alzata per il cinque dura al massimo mezzo minuto: dopo un riavvio la si rialza'],
   ['features/games.js', 'sfide', 'volatile', 'una sfida con la posta in attesa non tiene monete da parte: un riavvio la annulla e nessuno perde niente'],
 
   ['features/battute.js', 'inAscolto', 'volatile', 'la finestra di 45 secondi in cui si contano le risate: perderne una a meta\' non toglie niente a nessuno, e la battuta esce di nuovo un\'altra volta'],
