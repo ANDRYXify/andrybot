@@ -36,6 +36,7 @@ const GUARDIANI = [
                      // quindi la chiave del canale — a tempo costante, revocabile, con tetto
   'verificaWebhook', // firma di Stripe
   'verificaFirma',   // firma RSA di Kick, controllata sui byte prima di guardare il corpo
+  'firmaDiMeta',     // richiesta firmata di Meta (revoca, cancellazione), HMAC a tempo costante
   'combacia',        // impronta di un token esterno (Ko-fi), a tempo costante: come la chiave API
   'currentUser',     // legge la sessione: senza, non c'e' niente da leggere
   'soloProprietario',
@@ -55,6 +56,7 @@ const PUBBLICHE = new Map([
   ['GET /entra', 'la pagina di ingresso'],
   ['GET /js/carta-disegno.js', 'un file statico come gli altri del sito: il disegno della carta, senza commenti e senza dati di nessuno'],
   ['GET /font/:file', 'i caratteri della carta: solo i tre nomi dell\'elenco, e sono file gia\' pubblici per licenza'],
+  ['GET /instagram/cancellazione', 'dove Meta manda chi ha chiesto di cancellare i dati: riconosce solo i codici firmati da noi, e non mostra niente di nessuno'],
   ['GET /pubblici/:nome', 'l\'immagine della settimana mentre Instagram la scarica: nome casuale da 128 bit, cancellata appena pubblicata'],
   ['GET /accedi', 'la pagina di ingresso'],
   ['GET /privacy', 'informativa: pubblica per obbligo'],

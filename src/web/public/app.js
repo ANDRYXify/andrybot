@@ -540,7 +540,7 @@ function statoDemo() {
           chiamami: 'Andry', evita: 'dove abito e il mio cognome' },
         tiktok: { username: 'andryxify', attivo: true, annunciaChat: true, messaggio: '', postAttivo: true, postAnnunciaChat: false, postMessaggio: '' },
         youtube: { canale: '@andryxify', apiKeySet: true, attivo: true, annunciaChat: false, messaggio: '' },
-        instagram: { userId: '17841400000000000', tokenSet: true, attivo: true, annunciaChat: false, messaggio: '' },
+        instagram: { userId: '17841400000000000', username: 'andryxify', via: 'instagram', attivo: true, annunciaChat: false, messaggio: '' },
         giochiSito: { attivo: true, collegato: true },
         antispam: { maiuscole: true, link: true, flood: true },
         penitenze: { attivo: true, premioVieta: 'Vietami una parola', premioSolo: 'Dì solo questa parola',
@@ -771,6 +771,7 @@ function apiDemo(percorso, opzioni = {}) {
   if (via === '/api/streamer/instagram/prova') return Promise.resolve({ ok: true });
   if (via === '/api/tiktok/prova') return Promise.resolve({ ok: true });
   if (via === '/api/tiktok/disconnect') return Promise.resolve({ ok: true });
+  if (via === '/api/instagram/disconnect') return Promise.resolve({ ok: true });
   if (via === '/api/streamer/citazioni/analizza') return Promise.resolve({ ok: true, citazioni: [
     { testo: 'Tu, molto molto bravo', autore: 'UnicornoFacinoroso', data: '2024-06-09' },
     { testo: 'ti porterò in un brodificio', autore: 'andryxify', data: '2024-06-17' },
@@ -791,6 +792,7 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
+    '/api/instagram/stato': { appAttiva: true, collegato: true, scaduto: false, username: 'andryxify', aMano: false },
     '/api/discord/invito': { url: '' },
     '/api/streamer/settimana': { settimana: _DEMO_SETTIMANA, posti: {
       tg: [{ id: 1, nome: 'Canale di andryx', dove: '', tipo: 'channel' }, { id: 2, nome: 'La combriccola', dove: 'Annunci', tipo: 'supergroup' }],
@@ -5862,6 +5864,56 @@ async function caricaTikTok() {
     const r = await api('/api/tiktok/prova', { method: 'POST', body: {} });
     if (r?.vuoto) toast(L('Collegato, ma non trovo ancora video sul tuo profilo.', 'Connected, but I can\'t find any videos on your profile yet.', 'Conectado, pero aún no encuentro vídeos en tu perfil.'));
     else toast(L('Funziona: leggo il tuo ultimo video.', 'It works: I can read your latest video.', 'Funciona: leo tu último vídeo.'));
+  }));
+}
+
+async function caricaInstagram() {
+  const box = document.getElementById('ig-collega-box');
+  if (!box) return;
+  const aMano = document.getElementById('ig-a-mano');
+  const esito = new URLSearchParams(location.search).get('instagram');
+  if (esito) {
+    const detto = {
+      ok: [L('Account Instagram collegato.', 'Instagram account connected.', 'Cuenta de Instagram conectada.')],
+      no: [L('Su Instagram non hai dato il permesso: non ho collegato niente.', 'You didn’t grant the permission on Instagram: nothing is connected.', 'No diste el permiso en Instagram: no he conectado nada.'), 'errore'],
+      scaduto: [L('Il collegamento è rimasto a metà troppo a lungo: riprova.', 'The connection was left halfway for too long: try again.', 'La conexión se quedó a medias demasiado tiempo: vuelve a intentarlo.'), 'errore'],
+      errore: [L('Il collegamento con Instagram non è riuscito: riprova tra poco.', 'Connecting to Instagram didn’t work: try again shortly.', 'La conexión con Instagram no funcionó: inténtalo de nuevo en un rato.'), 'errore'],
+    }[esito];
+    if (detto) toast(...detto);
+    try { history.replaceState(null, '', location.pathname + '#notifiche'); } catch {  }
+    document.querySelector('[data-sotto="instagram"]')?.click();
+  }
+  const proprietario = stato?.ruolo !== 'moderatore';
+  let d = null;
+  try { d = await api('/api/instagram/stato'); } catch {  }
+  if (!d?.appAttiva) { box.innerHTML = ''; if (aMano) aMano.open = true; return; }
+  if (d.collegato && !d.scaduto) {
+    if (aMano) aMano.hidden = true;
+    box.innerHTML = `<div class="riga-interruttore">
+        <span class="badge verde"><i class="vivo"></i>${L('Instagram collegato', 'Instagram connected', 'Instagram conectado')}${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
+        <button class="btn secondario mini" id="ig-prova-tasto">${L('Prova', 'Test', 'Probar')}</button>
+        ${proprietario ? `<button class="btn secondario mini" id="ig-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}
+      </div>`;
+    document.getElementById('ig-prova-tasto').addEventListener('click', () => conErrore(async () => {
+      const r = await api('/api/streamer/instagram/prova', { method: 'POST', body: {} });
+      if (r?.ok) toast(L('Funziona: leggo il tuo ultimo post.', 'It works: I can read your latest post.', 'Funciona: leo tu último post.'));
+      else toast(r?.motivo || L('Instagram non risponde.', 'Instagram isn’t answering.', 'Instagram no responde.'), 'errore');
+    }));
+    document.getElementById('ig-scollega')?.addEventListener('click', () => conErrore(async () => {
+      await api('/api/instagram/disconnect', { method: 'POST', body: {} });
+      toast(L('Instagram scollegato.', 'Instagram disconnected.', 'Instagram desconectado.'));
+      stato = await api('/api/me'); render();
+    }));
+    return;
+  }
+  if (aMano) { aMano.hidden = false; aMano.open = !!d.aMano; }
+  if (!proprietario) { box.innerHTML = `<p class="suggerimento">${L('Instagram lo collega chi ha il canale.', 'The channel owner connects Instagram.', 'Instagram lo conecta quien tiene el canal.')}</p>`; return; }
+  box.innerHTML = `${d.scaduto ? `<p class="suggerimento">${L('Il collegamento con Instagram è scaduto: collegalo di nuovo, ci vuole un attimo.', 'The Instagram connection has expired: connect it again, it takes a moment.', 'La conexión con Instagram ha caducado: conéctala de nuevo, es un momento.')}</p>` : ''}
+    <button class="btn" id="ig-collega">${L('Collega Instagram', 'Connect Instagram', 'Conectar Instagram')}</button>
+    <p class="suggerimento spazio-sopra">${L('Ti mando su Instagram per due permessi: leggere i tuoi post e pubblicare la storia della settimana. Serve un account professionale, azienda o creator.', 'I send you to Instagram for two permissions: reading your posts and publishing your weekly story. You need a professional account, business or creator.', 'Te envío a Instagram para dos permisos: leer tus posts y publicar la historia de la semana. Hace falta una cuenta profesional, de empresa o de creador.')}</p>`;
+  document.getElementById('ig-collega').addEventListener('click', () => conErrore(async () => {
+    const r = await api('/api/instagram/connect');
+    if (r?.url) location.href = r.url;
   }));
 }
 
@@ -19752,14 +19804,24 @@ function pannelloNotifiche() {
 
     <div class="carta" data-rete="instagram">
       <h2>${_hIco(ICO.fotocamera)}${L('Nuovo post su Instagram', 'New Instagram post', 'Nuevo post en Instagram')}</h2>
-      <p>${L('Quando pubblichi su', 'When you post on', 'Cuando publicas en')} <strong class="primo-piano">Instagram</strong>, ${L('avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Instagram non ha un feed pubblico, quindi serve la <strong>tua API</strong>: l\'<em>Instagram Graph API</em> (account Business/Creator collegato a una Pagina Facebook).', 'I alert the Telegram group (and, if you want, the Twitch chat). Instagram has no public feed, so you need <strong>your own API</strong>: the <em>Instagram Graph API</em> (Business/Creator account linked to a Facebook Page).', 'aviso al grupo de Telegram (y, si quieres, al chat de Twitch). Instagram no tiene feed público, así que hace falta <strong>tu API</strong>: la <em>Instagram Graph API</em> (cuenta Business/Creator vinculada a una Página de Facebook).')}</p>
+      <p>${L('Quando pubblichi su', 'When you post on', 'Cuando publicas en')} <strong class="primo-piano">Instagram</strong>, ${L('avviso il gruppo Telegram (e, se vuoi, la chat Twitch).', 'I alert the Telegram group (and, if you want, the Twitch chat).', 'aviso al grupo de Telegram (y, si quieres, al chat de Twitch).')}</p>
+      <div id="ig-collega-box" class="spazio-sopra"></div>
 
-      <label class="campo" for="inp-ig-userid">${L('ID account Instagram', 'Instagram account ID', 'ID de la cuenta de Instagram')}</label>
-      <input type="text" id="inp-ig-userid" class="campo-largo" placeholder="${L('es. 17841400000000000', 'e.g. 17841400000000000', 'p. ej. 17841400000000000')}" value="${esc(igc.userId || '')}">
-      <label class="campo spazio-sopra" for="inp-ig-token">${L('Token di accesso (Graph API)', 'Access token (Graph API)', 'Token de acceso (Graph API)')}</label>
-      <input type="password" id="inp-ig-token" class="campo-largo" placeholder="${igc.tokenSet ? L('•••••••• (impostato)', '•••••••• (set)', '•••••••• (configurado)') : L('token a lunga durata', 'long-lived token', 'token de larga duración')}" autocomplete="off">
-      <p class="suggerimento">${L('Li ottieni creando un\'app su', 'You get them by creating an app on', 'Los obtienes creando una app en')} <a href="https://developers.facebook.com/" target="_blank" rel="noopener">Meta for Developers</a>
-      ${L('e collegando il tuo account IG Business.', 'and linking your IG Business account.', 'y vinculando tu cuenta de IG Business.')} ${igc.tokenSet ? `<a href="#" id="btn-ig-token-rimuovi">${L('Rimuovi il token', 'Remove the token', 'Quitar el token')}</a>` : ''}</p>
+      <details id="ig-a-mano" class="spazio-sopra">
+        <summary>${L('Uso un token mio (avanzato)', 'I use my own token (advanced)', 'Uso un token mío (avanzado)')}</summary>
+        <p class="suggerimento">${L('Con l\'<em>Instagram Graph API</em>: account professionale collegato a una Pagina Facebook.', 'With the <em>Instagram Graph API</em>: a professional account linked to a Facebook Page.', 'Con la <em>Instagram Graph API</em>: cuenta profesional vinculada a una Página de Facebook.')}</p>
+        <label class="campo" for="inp-ig-userid">${L('ID account Instagram', 'Instagram account ID', 'ID de la cuenta de Instagram')}</label>
+        <input type="text" id="inp-ig-userid" class="campo-largo" placeholder="${L('es. 17841400000000000', 'e.g. 17841400000000000', 'p. ej. 17841400000000000')}" value="${esc(igc.userId || '')}">
+        <label class="campo spazio-sopra" for="inp-ig-token">${L('Token di accesso (Graph API)', 'Access token (Graph API)', 'Token de acceso (Graph API)')}</label>
+        <input type="password" id="inp-ig-token" class="campo-largo" placeholder="${igc.tokenSet ? L('•••••••• (impostato)', '•••••••• (set)', '•••••••• (configurado)') : L('token a lunga durata', 'long-lived token', 'token de larga duración')}" autocomplete="off">
+        <p class="suggerimento">${L('Li ottieni creando un\'app su', 'You get them by creating an app on', 'Los obtienes creando una app en')} <a href="https://developers.facebook.com/" target="_blank" rel="noopener">Meta for Developers</a>
+        ${L('e collegando il tuo account IG Business.', 'and linking your IG Business account.', 'y vinculando tu cuenta de IG Business.')} ${igc.tokenSet ? `<a href="#" id="btn-ig-token-rimuovi">${L('Rimuovi il token', 'Remove the token', 'Quitar el token')}</a>` : ''}</p>
+
+        <p>
+          <button class="btn secondario" id="btn-ig-prova">${L('Prova le credenziali', 'Test the credentials', 'Prueba las credenciales')}</button>
+          <span id="ig-esito" class="suggerimento"></span>
+        </p>
+      </details>
 
       <label class="campo spazio-sopra" for="txt-ig-messaggio">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
       <textarea id="txt-ig-messaggio" rows="4" placeholder="${esc(L('{nome} ha un nuovo post su Instagram!\n\n{titolo}\n{link}', '{nome} has a new Instagram post!\n\n{titolo}\n{link}', '¡{nome} tiene un nuevo post en Instagram!\n\n{titolo}\n{link}'))}">${esc(igc.messaggio || '')}</textarea>
@@ -19774,11 +19836,7 @@ function pannelloNotifiche() {
         <label for="chk-ig-chat">${L('Annuncia anche nella chat Twitch', 'Announce in Twitch chat too', 'Anuncia también en el chat de Twitch')}</label>
       </div>
 
-      <p class="spazio-sopra">
-        <button class="btn" id="btn-ig-salva">${L('Salva', 'Save', 'Guardar')}</button>
-        <button class="btn secondario" id="btn-ig-prova">${L('Prova le credenziali', 'Test the credentials', 'Prueba las credenciales')}</button>
-        <span id="ig-esito" class="suggerimento"></span>
-      </p>
+      <p class="spazio-sopra"><button class="btn" id="btn-ig-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>    <div class="carta">
       <h2>${_hIco(ICO.megafono)}${L('Promo social in chat', 'Social promo in chat', 'Promo social en el chat')}</h2>
       <p>${L('Ogni tanto il bot ricorda da solo i tuoi social a chi sta guardando. Non è un timer: sceglie i momenti giusti — chat viva, dopo un raid o un sub — e non insiste.', 'Now and then the bot reminds viewers of your socials on its own. It is not a timer: it picks the right moments — lively chat, after a raid or a sub — and never insists.', 'De vez en cuando el bot recuerda solo tus redes a quien está mirando. No es un temporizador: elige los momentos buenos — chat animado, tras un raid o un sub — y no insiste.')}</p>
@@ -21910,7 +21968,7 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); }
-  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
+  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaInstagram(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }
   if (id === 'dcavvisi') { _dcaCollega(); caricaDcAvvisi(); caricaDcEventi(); }
   if (id === 'dcserver') { collegaDcServer(); caricaDcServer(); }

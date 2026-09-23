@@ -58,6 +58,8 @@ export const INGRESSI_ESTERNI = [
   '/tg/',                 // Telegram: il segreto sta nel percorso
   '/api/ext/',            // ingresso esterno dello streamer: chiave API del canale
   '/dona/',               // Ko-fi (token confrontato con l'impronta, 200 subito) e il modulo della pagina link (il pagamento lo conferma Stripe)
+  '/instagram/scollega',  // Meta: qualcuno ha tolto l'app dal suo Instagram (richiesta firmata con la chiave dell'app)
+  '/instagram/cancella',  // Meta: qualcuno chiede di cancellare i suoi dati (stessa firma)
 ];
 
 export function eIngressoEsterno(via) {
@@ -90,6 +92,7 @@ const ROTTE = new Set([
   '/guide', '/manuale', '/novita',            // guide, manuali e novità: contenuto pubblico, indicizzabile
   '/api/novita',                              // le stesse novità, per la scheda in cima al pannello
   '/api/streamer-verify',                     // API JSON della link-page (proxy verso Vercel)
+  '/instagram/cancellazione',                 // dove Meta manda chi ha chiesto la cancellazione: dice com'e' andata
 ]);
 
 // Famiglie di rotte aperte, ognuna con la propria protezione.

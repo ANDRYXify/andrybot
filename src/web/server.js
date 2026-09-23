@@ -31,7 +31,7 @@ import { creaMinifica } from './minifica.js';
 import { guscioVetrina, guscioPannello } from './vetrina-vista.js';
 import { pagina404, LINGUE_SERVIZIO } from './pagine-servizio.js';
 import { montaArgine } from './argine.js';
-import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guide.js';
+import { GUIDE, paginaGuida, paginaIndice, paginaNovita, paginaServizio, urlGuide } from './guide.js';
 import * as novita from './novita.js';
 import { spazioCartella, inMega } from '../features/spazio.js';
 import * as spontanea from '../features/spontanea.js';
@@ -90,6 +90,8 @@ import * as dcPreset from '../features/discord-preset.js';
 import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
 import * as instagram from '../features/instagram.js';
+import * as igAccesso from '../features/instagram-accesso.js';
+import { credenzialiInstagram } from '../features/instagram-credenziali.js';
 import * as settimana from '../features/settimana.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
@@ -3870,6 +3872,133 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json(r);
   }));
 
+  // ── INSTAGRAM, COLLEGATO CON UN TASTO ────────────────────────────────────
+  // Il ragionamento sta in docs/INSTAGRAM.md. Il token lungo sta nella
+  // cassaforte dei token, cifrato, con l'id di app: e' quello che Meta mette
+  // nelle richieste firmate. Nelle impostazioni resta quello che si puo'
+  // mostrare: l'id dell'account professionale, che le chiamate vogliono, e il
+  // nome. Il token incollato a mano resta come strada di riserva.
+  const igApp = () => (config.instagramApp?.attivo ? config.instagramApp : null);
+  const igRitorno = () => config.baseUrl.replace(/\/$/, '') + '/auth/instagram/callback';
+  const igStati = new Map();
+  const IG_STATO_MS = 10 * 60_000;
+  const puliziaStatiIg = () => { for (const [k, v] of igStati) if (Date.now() - v.ts > IG_STATO_MS) igStati.delete(k); };
+
+  app.get('/api/instagram/stato', requireLogin, (req, res) => {
+    const login = currentUser(req).login;
+    const ig = streamers.get(login)?.settings?.instagram || {};
+    const t = ig.via === 'instagram' ? tokens.get('instagram', login) : null;
+    res.json({
+      appAttiva: !!igApp(),
+      collegato: !!t?.accessToken,
+      scaduto: !!t?.expiresAt && t.expiresAt <= Date.now(),
+      username: t ? String(ig.username || '') : '',
+      aMano: ig.via !== 'instagram' && !!ig.token,
+    });
+  });
+
+  app.get('/api/instagram/connect', requireOwner, gateFeature('notifiche', 'Le notifiche'), (req, res) => {
+    const a = igApp();
+    if (!a) return res.status(503).json({ errore: 'Il collegamento con Instagram non è ancora attivo su questo server.' });
+    puliziaStatiIg();
+    const state = crypto.randomUUID();
+    igStati.set(state, { login: currentUser(req).login, ts: Date.now() });
+    res.json({ url: igAccesso.urlAutorizzazione({ appId: a.id, redirectUri: igRitorno(), state }) });
+  });
+
+  // IL RITORNO vuole la sessione di chi e' partito, non solo lo stato. Con lo
+  // stato soltanto, chi comincia il giro per il SUO canale e lo fa finire a un
+  // altro si troverebbe collegato l'Instagram dell'altro, e ci potrebbe
+  // pubblicare storie. Quindi: stesso proprietario, stessa sessione.
+  app.get('/auth/instagram/callback', requireOwner, wrap(async (req, res) => {
+    puliziaStatiIg();
+    const login = currentUser(req).login;
+    const chiave = String(req.query.state || '');
+    const st = igStati.get(chiave);
+    igStati.delete(chiave);
+    if (!st || st.login !== login) return res.redirect('/?instagram=scaduto#notifiche');
+    if (req.query.error || !req.query.code) return res.redirect('/?instagram=no#notifiche');
+    const a = igApp();
+    if (!a) return res.redirect('/?instagram=errore#notifiche');
+    const r = await igAccesso.scambiaCodice({ appId: a.id, segreto: a.segreto, redirectUri: igRitorno(), codice: req.query.code });
+    if (!r.ok) {
+      log.warn(`#${login}: collegamento Instagram non riuscito — ${r.errore}`);
+      return res.redirect('/?instagram=errore#notifiche');
+    }
+    tokens.save('instagram', login, { userId: r.idApp, accessToken: r.token, scopes: r.permessi, expiresAt: r.scade });
+    const s = streamers.get(login);
+    const ig = s?.settings?.instagram || {};
+    streamers.setSettings(login, { ...(s?.settings || {}), instagram: { ...ig, userId: r.userId, username: r.username, via: 'instagram', token: '' } });
+    // come per TikTok: l'avviso lo fa il primo post NUOVO, non quello che c'e' gia'
+    try { tgConf.setIgUltimo(login, ''); } catch { /* niente */ }
+    res.redirect('/?instagram=ok#notifiche');
+  }));
+
+  const igDimentica = (login) => {
+    tokens.delete('instagram', login);
+    const s = streamers.get(login);
+    const ig = s?.settings?.instagram || {};
+    streamers.setSettings(login, { ...(s?.settings || {}), instagram: { ...ig, userId: '', username: '', via: '', token: '', attivo: false } });
+    try { tgConf.setIgUltimo(login, ''); } catch { /* niente */ }
+  };
+
+  app.post('/api/instagram/disconnect', requireOwner, (req, res) => {
+    igDimentica(currentUser(req).login);
+    res.json({ ok: true });
+  });
+
+  // LE DUE PORTE DI META: la revoca (lo streamer toglie l'app dal suo
+  // Instagram) e la richiesta di cancellare i dati. Non hanno sessione: chi
+  // bussa e' Meta, e lo prova la firma. Una firma che non torna non tocca niente.
+  const firmaDiMeta = (req, res, next) => {
+    const a = igApp();
+    const p = a ? igAccesso.leggiRichiestaFirmata(req.body?.signed_request, a.segreto) : null;
+    if (!p) return res.status(400).json({ errore: 'firma non valida' });
+    req.richiestaMeta = p;
+    return next();
+  };
+  // L'id che Meta manda e' quello di app. Se un giorno fosse quello
+  // dell'account, lo si riconosce lo stesso: meglio cercare in due posti che
+  // non trovare nessuno.
+  const igDiChi = (id) => {
+    const u = String(id || '');
+    if (!u) return '';
+    return tokens.loginPerUserId('instagram', u)
+      || streamers.list().find((s) => s.settings?.instagram?.via === 'instagram' && String(s.settings.instagram.userId) === u)?.login || '';
+  };
+  const moduloMeta = express.urlencoded({ extended: false, limit: '8kb' });
+
+  app.post('/instagram/scollega', moduloMeta, firmaDiMeta, (req, res) => {
+    const login = igDiChi(req.richiestaMeta.user_id);
+    if (login) { igDimentica(login); log.info(`#${login}: tolta l'app da Instagram, collegamento cancellato`); }
+    res.json({ ok: true });
+  });
+
+  app.post('/instagram/cancella', moduloMeta, firmaDiMeta, (req, res) => {
+    const login = igDiChi(req.richiestaMeta.user_id);
+    if (login) { igDimentica(login); log.info(`#${login}: cancellazione dei dati chiesta da Instagram, eseguita`); }
+    const codice = igAccesso.codiceCancellazione(config.sessionSecret);
+    res.json({ url: config.baseUrl.replace(/\/$/, '') + '/instagram/cancellazione?codice=' + codice, confirmation_code: codice });
+  });
+
+  // Dove Meta manda chi ha chiesto la cancellazione. Il codice si riconosce dalla
+  // sua firma: uno inventato non diventa «fatto».
+  app.get('/instagram/cancellazione', (req, res) => {
+    const codice = String(req.query.codice || '');
+    const nostro = igAccesso.codiceNostro(codice, config.sessionSecret);
+    const corpo = nostro
+      ? `<h1>Cancellazione fatta</h1>
+<p>Il collegamento fra il tuo account Instagram e SocialBot è stato tolto appena Instagram ce l'ha chiesto: il token è cancellato, e con lui il nome dell'account. Non teniamo altro del tuo Instagram.</p>
+<p lang="en">Done: the link between your Instagram account and SocialBot was removed as soon as Instagram asked. The token is deleted, and the account name with it. We keep nothing else from your Instagram.</p>
+<p>Codice della richiesta / Request code: <code>${codice}</code></p>
+<p><a href="/privacy#diritti">Come trattiamo i dati</a></p>`
+      : `<h1>Codice non riconosciuto</h1>
+<p>Questo codice non l'abbiamo dato noi. Se hai chiesto a Instagram di cancellare i dati di SocialBot, il codice giusto è quello che Instagram ti mostra accanto alla richiesta.</p>
+<p lang="en">We did not issue this code. If you asked Instagram to delete your SocialBot data, the right code is the one Instagram shows next to your request.</p>
+<p><a href="/privacy#diritti">Come trattiamo i dati</a></p>`;
+    res.type('html').send(paginaServizio({ titolo: 'Cancellazione dei dati di Instagram | SocialBot', url: config.baseUrl.replace(/\/$/, '') + '/instagram/cancellazione', corpo }));
+  });
+
   // ── Discord: avviso "è live" via WEBHOOK del canale del server dello streamer ──
   // Nessun bot da creare, nessun token: lo streamer incolla il webhook (Impostazioni
   // canale → Integrazioni → Webhook). Sotto l'add-on Notifiche.
@@ -4949,8 +5078,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         return { id: d.id, nome: d.canale_nome || '', webhook: !!d.webhook, manca };
       });
     }
-    const ig = s?.settings?.instagram;
-    if (ig?.userId && ig?.token) posti.ig = { puo: !!(await instagram.puoPubblicare(ig).catch(() => ({ ok: false }))).ok };
+    const ig = credenzialiInstagram(login);
+    if (ig) posti.ig = { puo: !!(await instagram.puoPubblicare(ig).catch(() => ({ ok: false }))).ok };
     // Il Programma e' di Twitch: c'e' per chi e' entrato con Twitch.
     if (tokens.get('broadcaster', login)) posti.tw = { permesso: programmaOk(login) };
     if (pronto) posti.dcCalendario = { acceso: !!s?.settings?.discordEventi?.acceso };
@@ -5066,8 +5195,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         esiti.push({ dove: 'dc', nome: d.canale_nome || '', ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
       }
 
-      const ig = streamers.get(login)?.settings?.instagram;
-      if (dove.ig && ig?.userId && ig?.token) {
+      const ig = credenzialiInstagram(login);
+      if (dove.ig && ig) {
         spazzaPubblici();
         mkdirSync(cartellaPubblici, { recursive: true });
         const nome = crypto.randomBytes(16).toString('hex') + '.jpg';
@@ -5691,15 +5820,18 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // avviso NUOVO POST su Instagram (serve la TUA API: Graph API business)
     if (b.instagram !== undefined) {
       const g = b.instagram || {};
-      const userId = String(g.userId || '').trim().replace(/[^0-9]/g, '').slice(0, 40);
-      const tokenVecchio = s.settings?.instagram?.token || '';
-      const token = g.tokenClear ? '' : (String(g.token || '').trim() || tokenVecchio);
-      out.instagram = {
-        userId, token,
-        attivo: !!g.attivo && !!userId && !!token,
-        annunciaChat: !!g.annunciaChat,
-        messaggio: String(g.messaggio || '').slice(0, 800),
-      };
+      const prima = s.settings?.instagram || {};
+      const scelte = { annunciaChat: !!g.annunciaChat, messaggio: String(g.messaggio || '').slice(0, 800) };
+      if (prima.via === 'instagram') {
+        // Collegato col tasto: l'account, il nome e la strada li scrive solo il
+        // ritorno da Instagram. Dal pannello arrivano le scelte, non l'identita'.
+        out.instagram = { userId: prima.userId || '', username: prima.username || '', via: 'instagram', token: '',
+          attivo: !!g.attivo && !!prima.userId, ...scelte };
+      } else {
+        const userId = String(g.userId || '').trim().replace(/[^0-9]/g, '').slice(0, 40);
+        const token = g.tokenClear ? '' : (String(g.token || '').trim() || prima.token || '');
+        out.instagram = { userId, token, attivo: !!g.attivo && !!userId && !!token, ...scelte };
+      }
     }
     // ponte "giochi del sito": dalla dashboard si può SOLO accendere/spegnere;
     // endpoint e segreto arrivano dal sito (redeem del pass), non dal client.
@@ -9057,12 +9189,13 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // prova le credenziali Instagram (ID account + token): legge l'ultimo post
   app.post('/api/streamer/instagram/prova', requireLogin, gateFeature('notifiche', 'Le notifiche live'), wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const cfg = streamers.get(login)?.settings?.instagram || {};
     const b = req.body || {};
-    const userId = String(b.userId || cfg.userId || '').trim();
-    const token = String(b.token || '').trim() || cfg.token || '';
-    if (!userId || !token) return res.status(400).json({ errore: 'servono ID account e token' });
-    const r = await instagram.prova({ userId, token }).catch(() => null);
+    // Un token appena incollato si prova prima di salvarlo; se no, si prova
+    // quello che c'e', da qualunque strada sia arrivato.
+    const scritto = String(b.token || '').trim();
+    const cr = scritto ? { userId: String(b.userId || '').trim(), token: scritto, via: 'facebook' } : credenzialiInstagram(login);
+    if (!cr?.userId || !cr?.token) return res.status(400).json({ errore: 'Instagram non è collegato' });
+    const r = await instagram.prova(cr).catch(() => null);
     res.json(r || { ok: false, motivo: 'errore' });
   }));
 

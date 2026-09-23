@@ -664,13 +664,13 @@ function datiStrutturati(g) {
   return blocchi.map((b) => `<script type="application/ld+json">${JSON.stringify(b)}</script>`).join('');
 }
 
-function scheletro({ titolo, desc, url, corpo, ld }) {
+function scheletro({ titolo, desc, url, corpo, ld, robots = 'index,follow,max-snippet:-1,max-image-preview:large' }) {
   return `<!doctype html><html lang="it"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(titolo)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${esc(url)}">
-<meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
+<meta name="robots" content="${esc(robots)}">
 <meta property="og:type" content="article"><meta property="og:site_name" content="SocialBot">
 <meta property="og:locale" content="it_IT">
 <meta property="og:title" content="${esc(titolo)}"><meta property="og:description" content="${esc(desc)}">
@@ -710,6 +710,14 @@ ${altreHtml(g.slug)}
 
 // Il guscio di una pagina di documentazione: la stessa forma delle guide, ma con
 // l'indice ricavato dai titoli. Serve ai manuali, che vivono in manuali.js.
+// UNA PAGINA DI SERVIZIO: lo stesso aspetto delle guide, ma fuori dai motori di
+// ricerca. Serve alle risposte che il sito deve a chi arriva da fuori, come chi
+// legge com'e' andata una richiesta di cancellazione fatta da Instagram.
+export function paginaServizio({ titolo, url, corpo }) {
+  return scheletro({ titolo, desc: titolo, url, robots: 'noindex,nofollow', ld: '',
+    corpo: `${testata('')}\n<main><article>${corpo}</article></main>${piede()}` });
+}
+
 export function paginaDoc(d) {
   const url = `${SITO}/manuale/${d.slug}`;
   const ld = [{

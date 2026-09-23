@@ -1155,7 +1155,7 @@ const VETRINA = {
       ['Rete', 'Cosa serve', 'Cosa avvisa'],
       ['TikTok', 'il tuo nome utente', 'quando vai in diretta lì, e quando pubblichi un video'],
       ['YouTube', 'il canale (<code>@nome</code>)', 'quando esce un video nuovo'],
-      ['Instagram', 'il collegamento del profilo', 'quando esce un post nuovo'],
+      ['Instagram', 'il tasto «Collega Instagram», con un account professionale', 'quando esce un post nuovo'],
     ] },
     { p: ['Ogni avviso può anche <strong>uscire nella tua chat Twitch</strong>: è la parte che di solito conviene di più, perché chi ti sta già guardando è il pubblico più facile da portare sull\'altra piattaforma.'] },
 

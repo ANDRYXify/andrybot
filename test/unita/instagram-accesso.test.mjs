@@ -1,0 +1,144 @@
+// COLLEGARE INSTAGRAM CON UN TASTO: le parti che si provano senza Instagram.
+//
+// La firma di Meta, il codice della cancellazione, il giro del codice con le
+// risposte vere della documentazione (anche quella dentro `data: [...]`), e i
+// due identificativi che non si devono scambiare. Il ragionamento sta in
+// docs/INSTAGRAM.md.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
+import { cartellaUsaEGetta } from '../aiuto.mjs';
+import {
+  urlAutorizzazione, leggiRichiestaFirmata, codiceCancellazione, codiceNostro,
+  daAllungare, scambiaCodice, PERMESSI,
+} from '../../src/features/instagram-accesso.js';
+
+const SEGRETO = 'segreto-di-prova';
+const b64url = (b) => Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const firmata = (dati, segreto = SEGRETO) => {
+  const corpo = b64url(JSON.stringify(dati));
+  return b64url(crypto.createHmac('sha256', segreto).update(corpo).digest()) + '.' + corpo;
+};
+
+test('il tasto porta a Instagram con i due permessi e lo stato', () => {
+  const u = new URL(urlAutorizzazione({ appId: '123', redirectUri: 'https://socialbot.live/auth/instagram/callback', state: 'abc' }));
+  assert.equal(u.origin + u.pathname, 'https://www.instagram.com/oauth/authorize');
+  assert.equal(u.searchParams.get('client_id'), '123');
+  assert.equal(u.searchParams.get('redirect_uri'), 'https://socialbot.live/auth/instagram/callback');
+  assert.equal(u.searchParams.get('response_type'), 'code');
+  assert.equal(u.searchParams.get('state'), 'abc');
+  assert.deepEqual(u.searchParams.get('scope').split(','), PERMESSI);
+  assert.deepEqual(PERMESSI, ['instagram_business_basic', 'instagram_business_content_publish'],
+    'leggere i post e pubblicare la storia: niente messaggi, niente commenti');
+});
+
+test('una richiesta firmata da Meta si legge, una qualunque no', () => {
+  const buona = firmata({ algorithm: 'HMAC-SHA256', issued_at: 1, user_id: '1020' });
+  assert.equal(leggiRichiestaFirmata(buona, SEGRETO)?.user_id, '1020');
+  assert.equal(leggiRichiestaFirmata(buona, 'altro-segreto'), null, 'firmata con un\'altra chiave');
+  const [firma] = buona.split('.');
+  const altriDati = b64url(JSON.stringify({ algorithm: 'HMAC-SHA256', user_id: '9999' }));
+  assert.equal(leggiRichiestaFirmata(firma + '.' + altriDati, SEGRETO), null, 'la firma di una richiesta sui dati di un\'altra');
+  assert.equal(leggiRichiestaFirmata(firmata({ algorithm: 'NIENTE', user_id: '1' }), SEGRETO), null, 'l\'algoritmo deve essere quello');
+  assert.equal(leggiRichiestaFirmata(firmata({ algorithm: 'HMAC-SHA256' }), SEGRETO), null, 'senza utente non c\'e\' niente da fare');
+  assert.equal(leggiRichiestaFirmata(buona + '.x', SEGRETO), null);
+  assert.equal(leggiRichiestaFirmata('', SEGRETO), null);
+  assert.equal(leggiRichiestaFirmata(buona, ''), null, 'senza chiave dell\'app non si fida di nessuno');
+});
+
+test('il codice della cancellazione si riconosce dalla sua firma', () => {
+  const c = codiceCancellazione('chiave');
+  assert.match(c, /^[a-f0-9]{32}$/);
+  assert.equal(codiceNostro(c, 'chiave'), true);
+  assert.equal(codiceNostro(c, 'altra'), false, 'con un\'altra chiave non e\' nostro');
+  const storto = c.slice(0, 31) + (c[31] === 'a' ? 'b' : 'a');
+  assert.equal(codiceNostro(storto, 'chiave'), false, 'un codice inventato non diventa «fatto»');
+  assert.equal(codiceNostro('<script>', 'chiave'), false);
+  assert.notEqual(codiceCancellazione('chiave'), c, 'ogni richiesta ha il suo');
+});
+
+test('il token si allunga quando mancano meno di trenta giorni, e mai da scaduto', () => {
+  const g = 86400_000, ora = 1_000_000_000_000;
+  assert.equal(daAllungare(ora + 59 * g, ora), false);
+  assert.equal(daAllungare(ora + 31 * g, ora), false);
+  assert.equal(daAllungare(ora + 29 * g, ora), true);
+  assert.equal(daAllungare(ora + 1, ora), true);
+  assert.equal(daAllungare(ora, ora), false, 'scaduto: si ricollega');
+  assert.equal(daAllungare(0, ora), false);
+});
+
+// Instagram finto, con le risposte come le scrive la documentazione.
+function instagramFinto({ meFallisce = false, meInData = false } = {}) {
+  const chiamate = [];
+  const vero = globalThis.fetch;
+  globalThis.fetch = async (url, op = {}) => {
+    const u = String(url);
+    chiamate.push(u);
+    const r = (dati, ok = true) => ({ ok, status: ok ? 200 : 400, json: async () => dati });
+    if (u === 'https://api.instagram.com/oauth/access_token') {
+      assert.equal(String(op.body.get('grant_type')), 'authorization_code');
+      assert.equal(String(op.body.get('code')), 'CODICE', 'il «#_» in fondo al codice non e\' del codice');
+      return r({ data: [{ access_token: 'corto', user_id: 'ID-APP', permissions: 'instagram_business_basic,instagram_business_content_publish' }] });
+    }
+    if (u.startsWith('https://graph.instagram.com/access_token?')) return r({ access_token: 'lungo', token_type: 'bearer', expires_in: 5184000 });
+    if (u.startsWith('https://graph.instagram.com/v26.0/me?')) {
+      if (meFallisce) return r({ error: { message: 'no' } }, false);
+      const io = { user_id: 'ID-ACCOUNT', username: 'andryxify' };
+      return r(meInData ? { data: [io] } : io);
+    }
+    return r({ error: { message: 'inatteso ' + u } }, false);
+  };
+  return { chiamate, rimetti: () => { globalThis.fetch = vero; } };
+}
+
+test('il codice diventa un collegamento con due id: quello di app e quello dell\'account', async () => {
+  const finto = instagramFinto();
+  try {
+    const r = await scambiaCodice({ appId: '1', segreto: 's', redirectUri: 'https://x/cb', codice: 'CODICE#_' });
+    assert.equal(r.ok, true);
+    assert.equal(r.token, 'lungo');
+    assert.equal(r.idApp, 'ID-APP', 'e\' quello che Meta mette nelle richieste firmate');
+    assert.equal(r.userId, 'ID-ACCOUNT', 'e\' quello che le chiamate vogliono nel percorso');
+    assert.equal(r.username, 'andryxify');
+    assert.ok(r.scade > Date.now() + 59 * 86400_000);
+    assert.deepEqual(r.permessi, PERMESSI);
+  } finally { finto.rimetti(); }
+});
+
+test('anche quando Instagram risponde dentro «data»', async () => {
+  const finto = instagramFinto({ meInData: true });
+  try {
+    const r = await scambiaCodice({ appId: '1', segreto: 's', redirectUri: 'https://x/cb', codice: 'CODICE' });
+    assert.equal(r.userId, 'ID-ACCOUNT');
+  } finally { finto.rimetti(); }
+});
+
+test('se Instagram non dice di che account si tratta, il collegamento non si fa', async () => {
+  const finto = instagramFinto({ meFallisce: true });
+  try {
+    const r = await scambiaCodice({ appId: '1', segreto: 's', redirectUri: 'https://x/cb', codice: 'CODICE' });
+    assert.equal(r.ok, false, 'con l\'id di app al posto di quello dell\'account, la storia non partirebbe mai');
+    assert.equal(r.token, undefined);
+  } finally { finto.rimetti(); }
+});
+
+test('le credenziali: vince il tasto, e un token del tasto scaduto non vale', async () => {
+  const usaEGetta = cartellaUsaEGetta('andrybot-instagram-');
+  try {
+    const { streamers, tokens } = await import('../../src/db.js');
+    const { credenzialiInstagram } = await import('../../src/features/instagram-credenziali.js');
+    streamers.upsertApproved('igprova', 'igprova');
+    assert.equal(credenzialiInstagram('igprova'), null, 'niente di collegato');
+
+    streamers.setSettings('igprova', { instagram: { userId: '555', token: 'amano' } });
+    assert.deepEqual(credenzialiInstagram('igprova'), { userId: '555', token: 'amano', via: 'facebook' });
+
+    tokens.save('instagram', 'igprova', { userId: 'ID-APP', accessToken: 'deltasto', expiresAt: Date.now() + 86400_000 });
+    streamers.setSettings('igprova', { instagram: { userId: 'ID-ACCOUNT', username: 'x', via: 'instagram', token: '' } });
+    assert.deepEqual(credenzialiInstagram('igprova'), { userId: 'ID-ACCOUNT', token: 'deltasto', via: 'instagram' },
+      'l\'id che va nel percorso e\' quello dell\'account, non quello di app della cassaforte');
+    assert.equal(tokens.loginPerUserId('instagram', 'ID-APP'), 'igprova', 'e con l\'id di app si ritrova chi e\'');
+
+    assert.equal(credenzialiInstagram('igprova', Date.now() + 2 * 86400_000), null, 'scaduto: si ricollega');
+  } finally { usaEGetta.pulisci(); }
+});

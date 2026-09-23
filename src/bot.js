@@ -42,6 +42,8 @@ import * as antispam from './features/antispam.js';
 import * as tiktok from './features/tiktok.js';
 import * as youtube from './features/youtube.js';
 import * as instagram from './features/instagram.js';
+import * as igAccesso from './features/instagram-accesso.js';
+import { credenzialiInstagram } from './features/instagram-credenziali.js';
 import * as feed from './features/feed.js';
 import * as compleanniFeat from './features/compleanni.js';
 import * as subathonFeat from './features/subathon.js';
@@ -294,8 +296,8 @@ export class BotManager {
     // passato mentre il bot era fermo.
     // Il Programma di Twitch va allo stesso passo e per la stessa ragione: e' la
     // stessa settimana scritta in un altro posto.
-    this._eventiDcTimer = setInterval(() => { this._giroEventiDiscord(); this._giroProgramma(); }, 6 * 60 * 60_000);
-    setTimeout(() => { this._giroEventiDiscord(); this._giroProgramma(); }, 150_000);
+    this._eventiDcTimer = setInterval(() => { this._giroEventiDiscord(); this._giroProgramma(); this._giroInstagram(); }, 6 * 60 * 60_000);
+    setTimeout(() => { this._giroEventiDiscord(); this._giroProgramma(); this._giroInstagram(); }, 150_000);
     // La pubblicità: il preavviso e il «sono tornato» sono tutti e due questioni
     // di secondi, e mezzo minuto è la metà del preavviso più corto che si possa
     // chiedere. Il giro non telefona a Twitch a ogni passaggio: vedi
@@ -1733,6 +1735,24 @@ export class BotManager {
   // legale, un segmento tolto a mano che va rimesso). Scrive solo la memoria di
   // cosa e' nostro, e solo se nel frattempo la settimana non e' stata salvata:
   // in quel caso il salvataggio ha gia' fatto il suo giro, e il nostro e' vecchio.
+  // IL TOKEN DI INSTAGRAM SI ALLUNGA DA SOLO. Dura sessanta giorni: quando ne
+  // mancano meno di trenta si chiede a Instagram di rinnovarlo, cosi' chi si e'
+  // collegato una volta non deve ricordarsi di niente. Se il rinnovo non va
+  // (app tolta, permesso ritirato) si riprova al giro dopo; se scade, il
+  // pannello dice di ricollegare.
+  async _giroInstagram() {
+    for (const login of tokens.logins('instagram')) {
+      try {
+        const t = tokens.get('instagram', login);
+        if (!t?.accessToken || !igAccesso.daAllungare(t.expiresAt)) continue;
+        const r = await igAccesso.allunga(t.accessToken);
+        if (!r.ok) { log.warn(`#${login}: rinnovo del token Instagram non riuscito — ${r.errore}`); continue; }
+        tokens.save('instagram', login, { ...t, accessToken: r.token, expiresAt: r.scade });
+        log.info(`#${login}: token Instagram rinnovato`);
+      } catch (e) { log.warn(`#${login}: rinnovo del token Instagram — ${e?.message || e}`); }
+    }
+  }
+
   async _giroProgramma() {
     for (const s of streamers.list()) {
       try {
@@ -1841,10 +1861,11 @@ export class BotManager {
             }
           }
         }
-        // --- Instagram (solo con la TUA Graph API: ID account + token) ---
+        // --- Instagram: collegato col tasto, o col token incollato a mano ---
         const ig = s.settings?.instagram;
-        if (ig?.attivo && ig.userId && ig.token) {
-          const p = await instagram.ultimoPost({ userId: ig.userId, token: ig.token });
+        const igCr = ig?.attivo ? credenzialiInstagram(s.login) : null;
+        if (igCr) {
+          const p = await instagram.ultimoPost(igCr);
           if (p?.id) {
             const conf = tgConf.get(s.login);
             const ultimo = conf?.ig_ultimo || '';

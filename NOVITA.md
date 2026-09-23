@@ -36,6 +36,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Due tasti «Vai a…», nel calendario di Discord e negli avvisi, non portavano da nessuna parte: adesso ci portano. [vai: dcavvisi]
 - I tasti di CONSOLify funzionano davvero da una tastiera fisica, icone comprese: fino a oggi ogni pressione si perdeva per strada. [vai: consolify]
 - Con i giochi che dicono da soli quando muori, il contatore adesso sale davvero: il loro messaggio non arrivava fino a me. [vai: moduli]
+- Instagram si collega con un tasto, come TikTok: niente più ID e token da copiare dal sito di Meta. Serve un account professionale. [vai: notifiche]
+- Il collegamento con Instagram si rinnova da solo prima di scadere, e se togli l'app dal tuo Instagram lo cancello subito. [vai: notifiche]
 
 ## 2026-09-19
 

@@ -287,6 +287,18 @@ export const config = {
     };
   })(),
 
+  // L'ACCESSO DI INSTAGRAM (Business Login for Instagram). Sulla dashboard di
+  // Meta: Instagram → configurazione API con l'accesso tramite Instagram →
+  // impostazioni dell'accesso aziendale. L'ID e la chiave sono quelli DI
+  // INSTAGRAM, non l'ID dell'app di Meta. Fra gli indirizzi di ritorno ci va
+  // https://socialbot.live/auth/instagram/callback. Senza tutti e due, il tasto
+  // «Collega Instagram» non compare e resta la strada del token incollato.
+  instagramApp: (() => {
+    const id = env('INSTAGRAM_APP_ID');
+    const segreto = env('INSTAGRAM_APP_SECRET');
+    return { id, segreto, attivo: !!(id && segreto) };
+  })(),
+
   // Promo "settimana gratis": al primo accesso, con una certa probabilità, un
   // account che non ha MAI avuto il bot riceve alcuni giorni di accesso Pro (un
   // trial, non "community"). Si revoca da sé alla scadenza.
