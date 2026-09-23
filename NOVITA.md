@@ -99,6 +99,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nella scheda Telegram «Auguri di compleanno», l'accesso, dove mandare gli avvisi e la carta live compaiono subito: restavano in caricamento finché non passavi da «I tuoi social». [vai: telegram]
 - Le Donazioni si aprono larghe quanto la Pagina link: l'editor è lo stesso, e adesso ha lo stesso spazio per comandi, anteprima e ispettore. [vai: donazioni]
 - Nel menù, nel gruppo «Canale», il canale che stai guardando ha di nuovo il suo timbro: sul telefono si vedeva solo un'ombra storta.
+- Nella libreria degli effetti i tasti restano dentro la loro carta anche sugli schermi medi: «Non condividere» usciva dal bordo. [vai: effetti]
 
 ## 2026-09-19
 
