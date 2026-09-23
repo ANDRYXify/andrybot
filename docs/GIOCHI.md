@@ -177,6 +177,24 @@ Due dettagli che sembrano piccoli e non lo sono:
   normalizzazione toglie tutto ciò che non è alfanumerico — comprese le emoji —
   quindi la sequenza di simboli sarebbe stata impossibile da vincere.
 
+## Le sfide con la posta, e la morra
+
+**Il duello con la posta** (`!duello @nome 50`) si gioca solo se l'altro
+accetta (`!accetta`, `!rifiuta`, un minuto di serie per decidere), e chi vince
+prende la posta dell'altro: le monete passano di tasca, il totale non cambia.
+Una sfida alla volta a testa, e una posta massima se la vuoi.
+
+**Le monete si muovono quando il gioco si decide, non prima.** Una sfida in
+attesa non tiene niente da parte: si ricontrolla chi ha le monete nel momento in
+cui l'altro accetta. È una scelta di costruzione: un deposito andrebbe
+ricordato attraverso un riavvio, e un riavvio nel mezzo toglierebbe monete che
+nessuno ha perso a un gioco. Così la sfida salta, e basta.
+
+**La morra** (`!morra carta 20`) contro il bot. Senza puntata è solo per ridere.
+Con la puntata di serie è **giusta**: su tre esiti uno paga il doppio, uno
+restituisce e uno perde, cioè 100 su 100. Nelle regole si decide quanto paga la
+vittoria, e la resa del pannello si confronta con i nove esiti possibili.
+
 ## Le manche con lo stato: impiccato e più o meno
 
 Fino a qui una manche era una domanda e un controllo: il primo messaggio giusto

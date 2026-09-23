@@ -657,6 +657,83 @@ export function pescaPesata(tab, caso = Math.random) {
   return tab[tab.length - 1];
 }
 
+// --------------------------------------------------------- sfide con la posta
+//
+// LE MONETE SI TOLGONO QUANDO IL GIOCO SI DECIDE, non prima. Una sfida in
+// attesa non tiene niente da parte: si ricontrolla chi ha le monete nel momento
+// in cui l'altro accetta. Cosi' un riavvio nel mezzo annulla la sfida e non
+// toglie niente a nessuno, e non c'e' un deposito da ricordare.
+const sfide = new Map();             // `${canale}|${sfidato}` → { da, daNome, a, posta, timer }
+
+export function sfidaPer(channel, chi) { return sfide.get(`${channel}|${String(chi).toLowerCase()}`) || null; }
+
+function chiudiSfida(chiave) {
+  const s = sfide.get(chiave);
+  if (s) clearTimeout(s.timer);
+  sfide.delete(chiave);
+  return s;
+}
+
+function sfidaConPosta(channel, msg, sfidato, posta, say) {
+  const cd = conf(channel, 'duello');
+  const moneta = nomeMoneta(channel);
+  const nome = msg.display || msg.user;
+  const io = msg.user.toLowerCase();
+  if (cd.postaMax > 0 && posta > cd.postaMax) { say(`⚔️ Qui la posta massima è ${cd.postaMax} ${moneta}.`); return; }
+  if ([...sfide.entries()].some(([k, s]) => k.startsWith(channel + '|') && (s.da === io || s.a === io))) { say(`⚔️ ${nome}, hai già una sfida in attesa.`); return; }
+  if (sfide.has(`${channel}|${sfidato}`)) { say(`⚔️ @${sfidato} ha già una sfida da accettare.`); return; }
+  if (points.get(channel, io) < posta) { say(`⚔️ ${nome}, non hai ${posta} ${moneta} da mettere in palio.`); return; }
+  if (points.get(channel, sfidato) < posta) { say(`⚔️ @${sfidato} non ha ${posta} ${moneta}: scegli una posta più piccola.`); return; }
+  const chiave = `${channel}|${sfidato}`;
+  const timer = setTimeout(() => {
+    const s = chiudiSfida(chiave);
+    if (s) { try { say(`⏳ @${sfidato} non ha risposto: la sfida di ${s.daNome} è scaduta.`); } catch { /* niente */ } }
+  }, cd.scadenza * 1000);
+  timer.unref?.();
+  sfide.set(chiave, { da: io, daNome: nome, a: sfidato, posta, timer });
+  say(`⚔️ @${sfidato}, ${nome} ti sfida a duello per ${posta} ${moneta}! Scrivi !accetta o !rifiuta (${cd.scadenza}s).`);
+}
+
+function accettaSfida(channel, msg, say) {
+  const io = msg.user.toLowerCase();
+  const chiave = `${channel}|${io}`;
+  const s = sfide.get(chiave);
+  const moneta = nomeMoneta(channel);
+  if (!s) { say(`⚔️ ${msg.display || msg.user}, nessuno ti ha sfidato.`); return; }
+  if (points.get(channel, s.da) < s.posta) { chiudiSfida(chiave); say(`⚔️ ${s.daNome} non ha più ${s.posta} ${moneta}: la sfida salta.`); return; }
+  if (points.get(channel, io) < s.posta) { say(`⚔️ Non hai più ${s.posta} ${moneta}: la sfida resta aperta finché scade.`); return; }
+  chiudiSfida(chiave);
+  const vinceLui = Math.random() < 0.5;
+  const [vince, perde] = vinceLui ? [s.da, io] : [io, s.da];
+  points.add(channel, perde, -s.posta);
+  points.add(channel, vince, s.posta);
+  const a = vinceLui ? s.daNome : (msg.display || msg.user);
+  const b = vinceLui ? (msg.display || msg.user) : s.daNome;
+  say('⚔️ ' + riempi(scegli(conf(channel, 'duello').esiti), { a, b }) + ` (+${s.posta} ${moneta} a ${a})`);
+}
+
+function rifiutaSfida(channel, msg, say) {
+  const s = chiudiSfida(`${channel}|${msg.user.toLowerCase()}`);
+  if (s) say(`🏳️ ${msg.display || msg.user} rifiuta la sfida di ${s.daNome}.`);
+}
+
+// --------------------------------------------------------- morra cinese
+const MORRA = { sasso: '✊', carta: '✋', forbice: '✌️' };
+const PAROLE_MORRA = { sasso: 'sasso', pietra: 'sasso', rock: 'sasso', s: 'sasso', carta: 'carta', paper: 'carta', c: 'carta', forbice: 'forbice', forbici: 'forbice', scissors: 'forbice', f: 'forbice' };
+const BATTE = { sasso: 'forbice', carta: 'sasso', forbice: 'carta' };
+
+export function esitoMorra(tu, io) {
+  if (tu === io) return 'pari';
+  return BATTE[tu] === io ? 'vinci' : 'perdi';
+}
+
+// Quanto torna di una puntata: la resa del pannello e' questa funzione.
+export function pagaMorra(esito, puntata, c) {
+  if (esito === 'vinci') return Math.round((puntata * c.vincita) / 100);
+  if (esito === 'pari') return puntata;
+  return 0;
+}
+
 // --------------------------------------------------------- sblocca la chat
 // Le modalita' a tempo le tiene un motore solo (modalita-chat.js), che il bot
 // crea all'avvio: qui arriva gia' fatto.
@@ -796,14 +873,17 @@ export function tryGame(msg, say) {
 
       case 'duello': {
         const sfidato = (args[0] || '').replace(/^@/, '').toLowerCase();
+        const posta = args[1] === undefined ? 0 : Math.round(Number(args[1]));
         if (!sfidato) { say(`⚔️ Sfida qualcuno: !duello @nome`); return true; }
         if (sfidato === msg.user.toLowerCase()) { say(`${nome}, non puoi sfidare te stesso 😄`); return true; }
         if (!/^[a-z0-9_]{3,25}$/.test(sfidato)) { say(`⚔️ «${sfidato}» non è un nome valido.`); return true; }
         // Nessun duello con i fantasmi: si sfida chi è in chat, non un nome
         // qualsiasi. Senza questo, le monete finivano su profili inesistenti.
         if (!inChat(channel, sfidato)) { say(`⚔️ @${sfidato} non è in chat: puoi sfidare solo chi c'è.`); return true; }
+        if (args[1] !== undefined && (!Number.isFinite(posta) || posta <= 0)) { say('⚔️ Uso: !duello @nome, oppure !duello @nome 50 per giocarvi delle monete.'); return true; }
         const cd = conf(channel, 'duello');
         if (inCooldown(channel + '|duello', cd.attesa * 1000)) { say(`⚔️ Un duello alla volta: il prossimo fra ${restante(channel + '|duello')}.`); return true; }
+        if (posta > 0) { cooldowns.delete(channel + '|duello'); sfidaConPosta(channel, msg, sfidato, posta, say); return true; }
         const vince = Math.random() < 0.5;
         const a = vince ? nome : sfidato, b = vince ? sfidato : nome;
         const premio = cd.premio;
@@ -883,6 +963,36 @@ export function tryGame(msg, say) {
           if (multa > 0) { points.add(channel, msg.user, -multa); points.add(channel, vittima, multa); }
           say(`🚓 ${nome} viene beccato e paga ${multa} ${moneta()} di multa a ${vittima}! 😂`);
         }
+        return true;
+      }
+
+      case 'accetta': {
+        accettaSfida(channel, msg, say);
+        return true;
+      }
+
+      case 'rifiuta': {
+        rifiutaSfida(channel, msg, say);
+        return true;
+      }
+
+      case 'morra': {
+        const cm = conf(channel, 'morra');
+        const tu = PAROLE_MORRA[String(args[0] || '').toLowerCase()];
+        if (!tu) { say('✊ Uso: !morra sasso, carta o forbice. Con una puntata ci giochi delle monete: !morra carta 20.'); return true; }
+        const puntata = args[1] === undefined ? 0 : Math.round(Number(args[1]));
+        if (args[1] !== undefined && (!Number.isFinite(puntata) || puntata <= 0)) { say('✊ La puntata è un numero di monete: !morra carta 20.'); return true; }
+        if (cm.massimo > 0 && puntata > cm.massimo) { say(`✊ Qui si punta al massimo ${cm.massimo} ${moneta()}, ${nome}.`); return true; }
+        if (puntata > 0 && points.get(channel, msg.user) < puntata) { say(`✊ ${nome}, non hai ${puntata} ${moneta()}.`); return true; }
+        if (inCooldown(channel + '|morra|' + msg.user, cm.attesa * 1000)) return true;
+        const io = scegli(Object.keys(MORRA));
+        const esito = esitoMorra(tu, io);
+        const riga = `${MORRA[tu]} ${nome}: ${tu} · io: ${io} ${MORRA[io]}`;
+        if (!puntata) { say(`${riga} → ${{ vinci: 'hai vinto!', pari: 'pari!', perdi: 'ho vinto io!' }[esito]}`); return true; }
+        points.add(channel, msg.user, -puntata);
+        const torna = pagaMorra(esito, puntata, cm);
+        if (torna) points.add(channel, msg.user, torna);
+        say(`${riga} → ${{ vinci: `hai vinto! +${torna - puntata} ${moneta()}`, pari: `pari: la puntata torna a te`, perdi: `ho vinto io, -${puntata} ${moneta()}` }[esito]}`);
         return true;
       }
 

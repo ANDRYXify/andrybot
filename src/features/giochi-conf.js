@@ -104,6 +104,8 @@ export const CATALOGO = [
     param: [
       { k: 'premio', tipo: 'monete', def: 0, min: 0, max: 100000, eti: T('Premio del duello senza posta', 'Prize of a duel without stake', 'Premio del duelo sin apuesta'), vecchio: { punti: 'duello', era: 15 } },
       { k: 'attesa', tipo: 'secondi', def: 15, min: 1, max: 3600, eti: T('Attesa fra due duelli, in tutto il canale', 'Wait between two duels, channel-wide', 'Espera entre dos duelos, en todo el canal') },
+      { k: 'postaMax', tipo: 'monete', def: 0, min: 0, max: 1000000, eti: T('Posta massima di un duello (0 = nessun limite)', 'Maximum duel stake (0 = no limit)', 'Apuesta máxima de un duelo (0 = sin límite)') },
+      { k: 'scadenza', tipo: 'secondi', def: 60, min: 15, max: 600, eti: T('Tempo per accettare una sfida con posta', 'Time to accept a staked challenge', 'Tiempo para aceptar un reto con apuesta') },
       { k: 'esiti', tipo: 'elenco', def: DUELLO, max: 30, lungo: 200, segnaposto: ['a', 'b'], eti: T('Come va a finire: {a} vince, {b} perde', 'How it ends: {a} wins, {b} loses', 'Cómo termina: {a} gana, {b} pierde') },
     ],
     resa: { tipo: 'crea', premio: 'premio', attesa: 'attesa' },
@@ -144,6 +146,15 @@ export const CATALOGO = [
       { k: 'attesa', tipo: 'secondi', def: 600, min: 0, max: 86400, eti: T('Attesa fra due sblocchi, in tutto il canale', 'Wait between two unlocks, channel-wide', 'Espera entre dos desbloqueos, en todo el canal') },
     ],
     resa: { tipo: 'spesa' },
+  },
+  {
+    id: 'morra', nome: T('Morra cinese', 'Rock paper scissors', 'Piedra, papel o tijera'),
+    param: [
+      { k: 'vincita', tipo: 'numero', def: 200, min: 100, max: 1000, eti: T('Se vinci, ogni 100 puntate ne tornano (200 = il doppio)', 'If you win, every 100 bet returns (200 = double)', 'Si ganas, por cada 100 apostadas vuelven (200 = el doble)') },
+      { k: 'massimo', tipo: 'monete', def: 0, min: 0, max: 1000000, eti: T('Puntata massima (0 = nessun limite)', 'Maximum bet (0 = no limit)', 'Apuesta máxima (0 = sin límite)') },
+      ATTESA(5),
+    ],
+    resa: { tipo: 'puntata', costo: 100, esiti: [[1 / 3, ['vincita', 1]], [1 / 3, 100]] },
   },
   { id: 'dado', nome: T('Dado', 'Dice', 'Dado'), param: [ATTESA(3)], resa: null },
   { id: 'moneta', nome: T('Testa o croce', 'Heads or tails', 'Cara o cruz'), param: [ATTESA(3)], resa: null },

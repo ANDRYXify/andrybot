@@ -127,6 +127,10 @@ const GIOCHI = {
       ['<code>!roulette</code>', '<code>!rul</code>', 'Punti su rosso, nero, verde o un numero.', `${ATTESA(DI_SERIE('roulette').attesa)} a testa`],
       ['<code>!furto @nome</code>', '<code>!rapina</code>', 'Provi a rubare. Se ti beccano, paghi.', `${ATTESA(DI_SERIE('furto').attesa)} a testa`],
       ['<code>!regala @nome 50</code>', '<code>!dona</code>', 'Passi monete a qualcun altro.', '—'],
+      ['<code>!duello @nome 50</code>', '—', 'Un duello con la posta: l\'altro accetta o rifiuta, e chi vince prende la posta dell\'altro.', `${ATTESA(DI_SERIE('duello').scadenza)} per rispondere`],
+      ['<code>!accetta</code>', '—', 'Accetti la sfida con posta che ti hanno fatto.', '—'],
+      ['<code>!rifiuta</code>', '—', 'Dici di no, e nessuno perde niente.', '—'],
+      ['<code>!morra carta</code>', '<code>!rps</code>', 'Sasso, carta o forbice contro il bot. <code>!morra carta 20</code> per giocarci delle monete.', `${ATTESA(DI_SERIE('morra').attesa)} a testa`],
       ['<code>!sblocca</code>', '—', `Spendi monete per mettere la chat in solo emote per ${DI_SERIE('sblocca').minuti} minuti. <code>!sblocca 5</code> per cinque.`, `${ATTESA(DI_SERIE('sblocca').attesa)} di canale`],
       ['<code>!serie</code>', '<code>!presenze</code> <code>!streak</code>', 'A quante dirette di fila sei stato presente, e a quante in tutto. Con un nome, di quella persona.', '—'],
       ['<code>!classificaserie</code>', '<code>!serietop</code> <code>!topserie</code>', 'Chi è venuto a più dirette di fila.', '—'],
@@ -178,6 +182,17 @@ const GIOCHI = {
     { p: [
       'Si sfida <strong>solo chi è in chat</strong> — chi ha parlato negli ultimi trenta minuti. Serviva: prima si poteva sfidare un nome inventato, e le monete finivano su un profilo che non esisteva.',
       `Vince uno dei due a testa o croce. Di serie il duello senza posta si gioca per l'onore e non dà monete: un premio che nasce dal nulla a ogni sfida gonfiava l'economia. Se vuoi, glielo dai nelle regole del duello. Un duello alla volta per canale, uno ogni ${ATTESA(DI_SERIE('duello').attesa)}.`,
+    ] },
+
+    { h3: 'Duello con la posta' },
+    { p: [
+      `Con <code>!duello @nome 50</code> la sfida vale delle monete: l'altro ha ${ATTESA(DI_SERIE('duello').scadenza)} per scrivere <code>!accetta</code> o <code>!rifiuta</code>. Se accetta, chi vince prende la posta dell'altro: le monete passano di tasca, non se ne creano.`,
+      'Le monete non si mettono da parte mentre si aspetta: si controlla chi le ha nel momento in cui l\'altro accetta. Se il bot si riavvia nel mezzo la sfida salta, e nessuno perde niente. Una sfida alla volta a testa.',
+    ] },
+
+    { h3: 'Morra cinese' },
+    { p: [
+      `<code>!morra sasso</code>, <code>carta</code> o <code>forbice</code> contro il bot. Senza puntata è solo per ridere; con la puntata (<code>!morra carta 20</code>) se vinci ti torna ${CIFRA(DI_SERIE('morra').vincita / 100)} volte la puntata, se fai pari ti torna la puntata, se perdi la perdi. Di serie su 100 monete giocate ne tornano in media ${CIFRA(RESA('morra').perCento)}: è un gioco giusto, e nelle regole decidi quanto paga la vittoria.`,
     ] },
 
     { h3: 'Furto' },
