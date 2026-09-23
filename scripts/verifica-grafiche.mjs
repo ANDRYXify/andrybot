@@ -17,7 +17,10 @@
 //  · il SYNTHWAVE: le linee del pavimento, prolungate, passano dal punto di
 //    fuga, che sta dentro il sole; all'orizzonte sono distanziate; le
 //    trasversali si infittiscono verso l'orizzonte e il giro le rimette dove
-//    erano.
+//    erano;
+//  · lo SCRIVERE nella scheda: entrata tre volte, ogni lettera ridisegna
+//    l'anteprima al piu' una volta, e l'ultima e' quella col testo scritto;
+//    uscendo dalla scheda l'animazione si ferma.
 //
 // Uso: node scripts/verifica-grafiche.mjs            (esce 1 se qualcosa non va)
 //      node scripts/verifica-grafiche.mjs --selftest (le rotture devono vedersi)
@@ -31,6 +34,9 @@ const sito = await apriSito({});
 const pagina = await (await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'it-IT' })).newPage();
 const errori = [];
 pagina.on('pageerror', (e) => errori.push(e.message));
+// Il giro guidato si prenderebbe la tastiera a meta' di una parola: si spegne
+// come lo spegne il pannello, prima che la pagina parta.
+await pagina.addInitScript(() => { try { localStorage.setItem('sb-giro', JSON.stringify({ viste: {}, mai: true })); } catch {} });
 await pagina.goto(sito.base + '/?demo=1', { waitUntil: 'networkidle' });
 await pagina.waitForFunction(() => window.SB_SCENE && typeof grafDisegna === 'function' && typeof grafDisposizione === 'function');
 await pagina.evaluate(() => grafFontPronti());
@@ -75,7 +81,7 @@ await pagina.evaluate(() => {
   };
 
   window.__misuraGrafica = (c, t) => {
-    const tela = document.createElement('canvas');
+    const tela = grafTelaNuova();
     registro = { tela, scritte: [] };
     grafDisegna(tela, c, t, 1);
     const scritte = registro.scritte;
@@ -268,6 +274,59 @@ async function synthwave() {
   });
 }
 
+// Scrivere nella scheda. La scheda si aggancia una volta sola: un ingresso che
+// riagganciasse i comandi farebbe ridisegnare l'anteprima una volta in piu' a
+// ogni lettera (e partire due volte «Salva» e «Scarica»). Si entra tre volte,
+// si scrive con una lettera ogni 150 ms, e si contano i disegni: al piu' uno
+// per lettera, e l'ultimo col testo scritto. Poi si esce con una scena
+// animata, e la tela non si deve piu' disegnare.
+// `riaggancia` e `nonEsce` sono le rotture dell'autoprova: la prima toglie il
+// segno dell'aggancio a ogni ingresso, la seconda fa credere all'animazione di
+// essere ancora nella scheda.
+async function scrivere({ riaggancia = false, nonEsce = false } = {}) {
+  const parola = 'Hades';
+  for (let visita = 1; visita <= 3; visita++) {
+    await pagina.evaluate((riaggancia) => {
+      const tela = document.getElementById('gr-canvas');
+      if (riaggancia && tela) delete tela.dataset.collegato;
+      window.SB_APP.vai('grafiche');
+    }, riaggancia);
+    await pagina.waitForFunction(() => (document.querySelector('.pannello-scheda.visibile') || {}).id === 'scheda-grafiche');
+    await pagina.evaluate(() => { document.querySelector('[data-gr-tipo="live"]').click(); document.querySelector('[data-gr-tema="notte"]').click(); });
+    await pagina.waitForTimeout(300);
+    if (visita < 3) await pagina.evaluate(() => { azzeraBarraSalva(); window.SB_APP.vai('stato'); });
+  }
+  await pagina.fill('#gr-gioco', '');
+  await pagina.waitForTimeout(200);
+  await pagina.evaluate(() => {
+    window.__mostre = 0; window.__mostraVera = grafMostra;
+    grafMostra = (cv, c, ...r) => { window.__mostre++; window.__scritto = c && c.gioco; return window.__mostraVera(cv, c, ...r); };
+  });
+  await pagina.focus('#gr-gioco');
+  await pagina.keyboard.type(parola, { delay: 150 });
+  await pagina.waitForTimeout(250);
+  const { disegni, scritto } = await pagina.evaluate(() => { grafMostra = window.__mostraVera; return { disegni: window.__mostre, scritto: window.__scritto }; });
+
+  await pagina.evaluate(() => document.querySelector('[data-gr-tema="synthwave"]').click());
+  await pagina.waitForTimeout(300);
+  await pagina.evaluate((nonEsce) => {
+    azzeraBarraSalva(); window.SB_APP.vai('stato');
+    if (nonEsce) schedaAttiva = 'grafiche';
+  }, nonEsce);
+  await pagina.waitForTimeout(200);
+  await pagina.evaluate(() => {
+    window.__fuori = 0; window.__disegnaVero = grafDisegna;
+    grafDisegna = (cv, ...r) => { if (cv && cv.id === 'gr-canvas') window.__fuori++; return window.__disegnaVero(cv, ...r); };
+  });
+  await pagina.waitForTimeout(500);
+  const fuori = await pagina.evaluate(() => { grafDisegna = window.__disegnaVero; schedaAttiva = 'stato'; return window.__fuori; });
+  const guai = [];
+  if (disegni > parola.length) guai.push(`${parola.length} lettere hanno fatto ${disegni} disegni dell'anteprima`);
+  if (!disegni || scritto !== parola) guai.push(`l'ultima anteprima non ha il testo scritto (${disegni} disegni, l'ultima con «${scritto ?? ''}»)`);
+  if (fuori) guai.push(`fuori dalla scheda la tela si e' disegnata ${fuori} volte in mezzo secondo`);
+  return { guai, disegni, fuori, lettere: parola.length };
+}
+
 const righe = [];
 const dice = (ok, testo) => { righe.push(`  ${ok ? '✓' : '✗'} ${testo}`); return ok; };
 
@@ -301,6 +360,13 @@ if (SELFTEST) {
   await pagina.evaluate(() => { SB_SCENE.grigliaSynth = window.__grigliaVera; });
   ok = dice(raggi.length > 0, `le linee che partono tutte da un punto, come raggi, si vedono (${raggi.length} guai)`) && ok;
 
+  // Prima l'animazione che non si ferma, a scheda agganciata una volta sola;
+  // poi i riagganci, che lasciano la pagina sporca e vanno per ultimi.
+  const sveglia = await scrivere({ nonEsce: true });
+  ok = dice(sveglia.fuori > 0 && sveglia.disegni <= sveglia.lettere, `un'animazione che gira fuori dalla scheda si vede (${sveglia.fuori} disegni in mezzo secondo)`) && ok;
+  const doppio = await scrivere({ riaggancia: true });
+  ok = dice(doppio.disegni > doppio.lettere, `una scheda che si riaggancia a ogni ingresso si vede (${doppio.lettere} lettere, ${doppio.disegni} disegni)`) && ok;
+
   const pulito = await misura(casi({ pochi: true }));
   ok = dice(!pulito.contrasto.length && !pulito.posto.length, `e senza rotture, i casi che provo passano (${pulito.misurate} scritte misurate)`) && ok;
   console.log('Collaudo del collaudo delle grafiche:\n' + righe.join('\n'));
@@ -320,10 +386,13 @@ for (const g of gg.guai.slice(0, 12)) righe.push('      ' + g);
 const sw = await synthwave();
 dice(!sw.length, 'il pavimento del synthwave e\' in prospettiva: le linee escono da tutto l\'orizzonte e vanno al punto di fuga dentro il sole');
 for (const g of sw) righe.push('      ' + g);
+const sc = await scrivere();
+dice(!sc.guai.length, `scrivere nella scheda: entrata tre volte, ${sc.lettere} lettere fanno ${sc.disegni} disegni dell'anteprima, e fuori dalla scheda la tela si ferma`);
+for (const g of sc.guai) righe.push('      ' + g);
 dice(!errori.length, 'la pagina non ha errori' + (errori.length ? ': ' + errori.slice(0, 3).join(' | ') : ''));
 
 await browser.close(); sito.chiudi();
 console.log('Le grafiche social:\n' + righe.join('\n'));
-const rosso = m.contrasto.length || m.posto.length || gg.guai.length || sw.length || errori.length;
+const rosso = m.contrasto.length || m.posto.length || gg.guai.length || sw.length || sc.guai.length || errori.length;
 console.log(rosso ? '\ncancello ROSSO ✗' : '\nQuello che si pubblica si legge, e gira. ✓');
 process.exit(rosso ? 1 : 0);

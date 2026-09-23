@@ -1,8 +1,8 @@
 # Le grafiche social
 
 Due grafiche da pubblicare: la settimana (1080×1350) e «Live ora» (1080×1080).
-Si disegnano nel browser, su una tela: la stessa tela fa l'anteprima, il PNG, la
-GIF, il video e l'immagine che «Manda» spedisce dalla scheda Settimana.
+Si disegnano nel browser, con lo stesso disegno per l'anteprima, il PNG, la GIF,
+il video e l'immagine che «Manda» spedisce dalla scheda Settimana.
 
 Il disegno sta in due posti: `app.js` compone la grafica (disposizione, testi,
 righe, logo, QR), `graf-scene.js` disegna gli sfondi animati.
@@ -132,7 +132,41 @@ Il server salva tutto, e accetta solo le scelte che il pannello offre (lo
 controlla un test): un campo che il server scartasse in silenzio sarebbe una
 scelta che si fa e non succede niente.
 
-## 7. Il collaudo
+## 7. L'anteprima non rallenta chi scrive
+
+Scrivendo nella scheda tutto andava a scatti, e peggiorava a ogni visita. Le
+cause erano tre, e nessuna era la grafica in sé.
+
+- **La scheda si agganciava a ogni ingresso.** `initGrafiche` gira ogni volta
+  che si apre la scheda, e ogni volta aggiungeva di nuovo i suoi ascoltatori
+  agli stessi campi. Alla quarta visita una lettera ridisegnava la grafica
+  quattro volte, e «Salva», «Scarica» e «Condividi» partivano quattro volte.
+  Adesso la tela porta il segno dell'aggancio (`data-collegato`, come le altre
+  schede): la seconda volta la scheda riprende da dov'era, rilegge solo i
+  giorni della settimana (che si scrivono altrove) e ridisegna.
+- **Ogni lettera ridisegnava subito.** Adesso un cambiamento chiede un disegno,
+  e il disegno si fa al fotogramma dopo: dieci lettere nello stesso fotogramma
+  fanno un disegno solo. Con una scena animata non si chiede niente, perché
+  l'animazione disegna già a ogni fotogramma e prende il testo nuovo da sola.
+  E si ferma quando esci dalla scheda: una tela che nessuno vede non si disegna.
+- **L'anteprima ferma costava come un'esportazione.** Si disegnava a 2160 pixel
+  (il doppio di quello che si vede) sulla tela in pagina. Su uno sfondo fermo
+  ogni scritta rilegge i pixel che ha sotto (capitolo 4), e rileggere da una
+  tela disegnata dalla scheda video costa un'attesa ogni volta, una trentina di volte
+  per disegno. Adesso l'anteprima ferma si compone a 1080 su una tela fatta
+  per essere riletta (`grafTelaNuova`, con `willReadFrequently`) e si copia in
+  pagina in un colpo solo (`grafMostra`). Le scene animate non rileggono
+  niente e restano sulla tela in pagina, dove girano più veloci.
+
+Misurato sullo stesso browser, un ridisegno dell'anteprima ferma: da 132 a 25
+ms per «Live ora», da 192 a 40 per la settimana. E non si moltiplica più per le
+visite. Le esportazioni (PNG, Condividi, Manda) restano a 2160 e si compongono
+anche loro su una tela da rileggere.
+
+La scheda Settimana ha la stessa anteprima e la stessa regola: un disegno per
+fotogramma, qualunque cosa si scriva nei giorni.
+
+## 8. Il collaudo
 
 `scripts/verifica-grafiche.mjs`, in un browser vero, per ogni tema nei due
 formati, ogni stile pronto e gli sfondi fuori tema, in quattro fotogrammi del
@@ -145,10 +179,14 @@ giro:
 - per ogni scena e ogni velocità, che il fotogramma a fine giro sia il primo e
   che il passo che chiude il giro non sia più grande dei passi normali;
 - per il synthwave, che le linee escano da tutto l'orizzonte e vadano al punto
-  di fuga dentro il sole.
+  di fuga dentro il sole;
+- entrando tre volte nella scheda e scrivendo una lettera ogni 150 ms, che ogni
+  lettera faccia al più un disegno e l'ultimo abbia il testo scritto; e che
+  uscendo dalla scheda la tela non si disegni più.
 
 `--selftest` mette le rotture e controlla che si vedano: i contorni tolti, un
 grigio lasciato com'è, un giro che non torna, una scritta sotto il QR, le linee
-a raggiera. `test/unita/graf-scene.test.mjs` prova la geometria senza browser,
+a raggiera, un'animazione che gira fuori dalla scheda, una scheda che si
+riaggancia a ogni ingresso. `test/unita/graf-scene.test.mjs` prova la geometria senza browser,
 `test/contratto/grafiche.test.mjs` che temi, stili pronti, motore e server
 dicano la stessa cosa.

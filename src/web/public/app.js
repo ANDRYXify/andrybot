@@ -4488,12 +4488,20 @@ function _settDisegnaDove() {
 }
 
 let _settImg = { sfondo: false, logo: false };
+let _settFotogramma = 0;
 
 function _settDisegnaAnteprima() {
   const cv = _g('sett-anteprima');
   if (!cv) return;
   const c = { ...grafConfig(), tipo: 'programmazione', giorni: grafGiorni(_settLeggiGiorni()) };
-  const disegna = () => grafDisegna(cv, c, 0, 1);
+  const disegna = () => {
+    if (_settFotogramma) return;
+    _settFotogramma = requestAnimationFrame(() => {
+      _settFotogramma = 0;
+      const tela = _g('sett-anteprima');
+      if (tela) grafMostra(tela, { ...grafConfig(), tipo: 'programmazione', giorni: grafGiorni(_settLeggiGiorni()) });
+    });
+  };
   if (c.sfondo === 'immagine' && c.sfondoImg && !_settImg.sfondo) { _settImg.sfondo = true; grafCaricaImg(c.sfondoImg, disegna); }
   if (c.logoImg && !_settImg.logo) { _settImg.logo = true; grafCaricaLogo(c.logoImg, disegna); }
   disegna();
@@ -4595,7 +4603,7 @@ function collegaSettimana() {
     if (b) b.disabled = true;
     try {
       await grafFontPronti();
-      const cv = document.createElement('canvas');
+      const cv = grafTelaNuova();
       grafDisegna(cv, { ...grafConfig(), tipo: 'programmazione', giorni: grafGiorni(_settLeggiGiorni()) }, 0, 1);
       const immagine = cv.toDataURL('image/jpeg', 0.9);
       const r = await api('/api/streamer/settimana/manda', { method: 'POST', body: { immagine, testo: _g('sett-testo')?.value || '', dove } });
@@ -5110,6 +5118,27 @@ function grafRighe(ctx, sc, pal, c, lay) {
   }
 }
 
+function grafTelaNuova() {
+  const tela = document.createElement('canvas');
+  tela.getContext('2d', { willReadFrequently: true });
+  return tela;
+}
+
+let _grafTelaLavoro = null;
+const grafTelaLavoro = () => _grafTelaLavoro || (_grafTelaLavoro = grafTelaNuova());
+
+function grafMostra(canvas, c, t = 0) {
+  if (grafAnimato(c)) { grafDisegna(canvas, c, t, 1); return; }
+  const tela = grafTelaLavoro();
+  grafDisegna(tela, c, t, 1);
+  if (canvas.width !== tela.width) canvas.width = tela.width;
+  if (canvas.height !== tela.height) canvas.height = tela.height;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(tela, 0, 0);
+}
+
 function grafDisegna(canvas, c, t = 0, scala = 1) {
   if (!canvas || !window.SB_SCENE) return;
   const ctx = canvas.getContext('2d');
@@ -5175,23 +5204,41 @@ function grafQr(ctx, sc, pal, c, lay) {
   } catch (e) {  }
 }
 
+let _grafRiprendi = null;
+
 function initGrafiche() {
   const canvas = document.getElementById('gr-canvas');
   if (!canvas) return;
+  if (canvas.dataset.collegato) { _grafRiprendi?.(); return; }
+  canvas.dataset.collegato = '1';
   let c = grafConfig();
 
-  const frame = () => { grafDisegna(canvas, c, performance.now()); grafRAF = requestAnimationFrame(frame); };
+  const frame = () => {
+    grafRAF = null;
+    if (schedaAttiva !== 'grafiche' || !canvas.isConnected) return;
+    grafDisegna(canvas, c, performance.now());
+    grafRAF = requestAnimationFrame(frame);
+  };
+  let _fermo = 0;
+  const disegnaFermo = () => {
+    _fermo = 0;
+    if (!grafAnimato(c) && canvas.isConnected) grafMostra(canvas, c);
+  };
   let didascaliaManuale = false;
   const aggiornaDidascalia = () => {
     const ta = document.getElementById('gr-didascalia');
     if (ta && !didascaliaManuale) ta.value = grafDidascalia(c);
   };
   const ridisegna = () => {
-    if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }
-
-    if (grafAnimato(c)) frame(); else grafDisegna(canvas, c, 0, 2);
     aggiornaDidascalia();
+    if (grafAnimato(c)) {
+      if (!grafRAF) grafRAF = requestAnimationFrame(frame);
+      return;
+    }
+    if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }
+    if (!_fermo) _fermo = requestAnimationFrame(disegnaFermo);
   };
+  _grafRiprendi = () => { c.giorni = grafGiorni(); ridisegna(); };
 
   const accendi = (chiave, valore) => document.querySelectorAll(`[data-${chiave}]`).forEach((x) => x.classList.toggle('on', x.getAttribute(`data-${chiave}`) === valore));
   const allinea = () => {
@@ -5270,7 +5317,7 @@ function initGrafiche() {
       const b = bottoni[i], pr = GR_PRONTI.find((x) => x.id === b.dataset.grPronto), mini = b.querySelector('canvas');
       if (pr && mini) {
         const cc = { ...c, ...pr.c, sfondo: 'tema', op: { ...(c.op || {}), ...pr.c.op } };
-        const lay = grafDisposizione(cc), tela = document.createElement('canvas');
+        const lay = grafDisposizione(cc), tela = grafTelaLavoro();
         grafDisegna(tela, cc, grafDurata(cc) * 0.3, 1);
         mini.width = 120; mini.height = Math.round(120 * lay.H / lay.W);
         mini.getContext('2d').drawImage(tela, 0, 0, mini.width, mini.height);
@@ -5411,7 +5458,7 @@ function initGrafiche() {
 
   document.getElementById('gr-scarica')?.addEventListener('click', async () => {
     await grafFontPronti();
-    const full = document.createElement('canvas');
+    const full = grafTelaNuova();
     grafDisegna(full, c, 0, 2);
     full.toBlob(async (blob) => {
       if (!blob) return;
@@ -5445,7 +5492,7 @@ function initGrafiche() {
     try {
 
       await grafFontPronti();
-      const full = document.createElement('canvas');
+      const full = grafTelaNuova();
       grafDisegna(full, c, 0, 2);
       const blob = await new Promise((res) => full.toBlob(res, 'image/jpeg', 0.92));
       if (!blob) throw new Error('render');
@@ -5529,7 +5576,7 @@ function initGrafiche() {
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 6000);
       btn.disabled = false; btn.textContent = testo;
-      if (!grafAnimato(c) && grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; grafDisegna(canvas, c, 0); }
+      if (!grafAnimato(c) && grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; ridisegna(); }
     };
     const dura = grafAnimato(c) ? grafVelocita(c).durata : 4000;
     btn.disabled = true; btn.textContent = L('Registro… ', 'Recording… ', 'Grabando… ') + Math.round(dura / 1000) + 's';

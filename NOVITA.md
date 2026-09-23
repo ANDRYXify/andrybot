@@ -63,6 +63,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Le «×» che tolgono un amico o una fonte si prendono col dito anche sul telefono.
 - Nello Studio un elemento si sposta di quanto lo trascini anche appena scelto: la tela non cambia più misura sotto il dito. [vai: alert]
 - A diretta appena chiusa, Stato non dice più «in diretta»: quando Twitch risponde, vale quello che dice Twitch. [vai: stato]
+- Scrivere nelle Grafiche è di nuovo fluido, anche dopo esserci entrati più volte, e «Salva» o «Scarica» partono una volta sola. [vai: grafiche]
 
 ## 2026-09-19
 
