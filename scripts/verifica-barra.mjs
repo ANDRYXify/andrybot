@@ -104,12 +104,12 @@ for (const admin of [false, true]) {
 
       if (r.modi.hamburger || r.modi.giu) {
         await p.evaluate(() => { document.body.classList.add('menu-aperto'); });
-        // La misura si prende a cassetto FERMO: l'animazione ha un rimbalzo, e
-        // mentre scivola i riquadri si arrotondano in modo diverso.
-        await p.waitForFunction(() => {
-          const t = getComputedStyle(document.querySelector('.drawer')).transform;
-          return t === 'none' || /^matrix\(1, 0, 0, 1, 0, 0\)$/.test(t);
-        }, { timeout: 3000 }).catch(() => {});
+        // La misura si prende a cassetto FERMO, e fermo vuol dire che dentro
+        // non si muove piu' niente: non solo il cassetto, che ha un rimbalzo,
+        // ma anche le voci, che entrano scivolando di 12px una dopo l'altra.
+        // Aspettare solo il cassetto misurava le voci a meta' strada quando la
+        // macchina era carica, e le dava «fuori dal cassetto».
+        await p.evaluate(() => Promise.all(document.querySelector('.drawer').getAnimations({ subtree: true }).map((a) => a.finished.catch(() => {}))));
         const sbordano = await p.evaluate(() => {
           const d = document.querySelector('.drawer');
           const r = d.getBoundingClientRect();
