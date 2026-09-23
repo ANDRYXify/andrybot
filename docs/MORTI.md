@@ -178,6 +178,16 @@ deve raccontare a chi lo trova se quel canale esista.
 Il corpo del messaggio non si scrive da nessuna parte, nemmeno negli errori:
 dentro c'e' l'identificativo del suo account di gioco, e non e' roba nostra.
 
+### Il cancello davanti
+
+Il gioco non ha una sessione, e davanti a ogni rotta del sito c'e' il cancello che
+a chi non e' entrato risponde 404. Per un periodo `/api/gsi/` non stava fra le
+porte aperte: la rotta c'era e la chiave funzionava, ma nessun messaggio ci
+arrivava. Adesso sta in `src/web/vetrina.js`, e `scripts/verifica-porte.mjs`
+pretende che ogni porta a chiave sia aperta nel cancello (docs/PORTE-DEL-SERVER.md).
+L'argine del traffico la tratta in tempo reale, come il tracking: il tetto che
+conta e' quello del gioco, 400 al minuto, e quello generale gli sta sopra.
+
 ## La libreria: il sapere su un gioco messo in comune
 
 La schermata di morte di Dark Souls e' la stessa sul computer di chi la insegna e

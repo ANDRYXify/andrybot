@@ -18,6 +18,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { classifica, CLASSI } from '../../src/web/argine.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const srv = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
@@ -26,6 +27,17 @@ const rotta = srv.slice(srv.indexOf("app.post('/api/gsi/:login'"), srv.indexOf("
 test('la porta c\'e\', e non chiede una sessione a un gioco', () => {
   assert.ok(rotta.length > 200, 'la porta dei giochi non esiste');
   assert.ok(!/requireLogin/.test(rotta), 'un gioco non ha un browser con cui accedere');
+});
+
+// Il tetto giusto lo sa chi conosce il ritmo del gioco. Quello generale, che
+// davanti a una porta senza sessione conta per indirizzo, deve stargli sopra:
+// sotto, deciderebbe lui, e dallo stesso indirizzo bussa anche la tastiera.
+test('il tetto che conta e\' quello del gioco: quello generale gli sta sopra', () => {
+  const tetto = Number(/export const MAX_AL_MINUTO = (\d+);/.exec(readFileSync(join(RAD, 'src/features/gsi.js'), 'utf8'))?.[1]);
+  assert.ok(tetto > 0, 'il tetto del gioco non si trova');
+  const classe = classifica('POST', '/api/gsi/alfa');
+  assert.ok(classe, 'senza nessun tetto generale, una chiave rubata fonderebbe il server');
+  assert.ok(CLASSI[classe].max > tetto, `il tetto generale (${classe}, ${CLASSI[classe].max}) taglierebbe prima di quello del gioco (${tetto})`);
 });
 
 test('canale sconosciuto e chiave sbagliata rispondono la stessa cosa', () => {

@@ -3,10 +3,10 @@
 
 # CONSOLify — i tasti del canale
 
-Due superfici, **un solo registro**: la webapp (CONSOLify) e uno tastiera fisica fisico
+Due superfici, **un solo registro**: la webapp (CONSOLify) e una tastiera fisica
 guardano la stessa cosa.
 
-## Cos'è davvero uno tastiera fisica (e cosa non è)
+## Cos'è davvero una tastiera fisica (e cosa non è)
 
 Dalla ricerca, tre cose che cambiano il disegno:
 
@@ -70,9 +70,17 @@ che prima o poi una dimentica il widget, e nessuno se ne accorge finché non gua
     GET|POST  /api/console/:login/:azione?key=…     → esegue, risponde {ok, mostra}
     GET       /api/console/:login?key=…             → il registro + lo stato di adesso
 
-Non chiede una sessione: uno tastiera fisica non sa tenere un cookie. Chiede la
+Non chiede una sessione: una tastiera fisica non sa tenere un cookie. Chiede la
 **chiave del canale**, e accetta anche `GET` perché i plugin HTTP generici partono
 da lì — non è bello, ed è ciò che rende la cosa utilizzabile oggi.
+
+E la sessione non la deve chiedere nemmeno il cancello davanti: `/api/console/` e
+`/icona/` stanno fra le porte aperte di `src/web/vetrina.js`. Per un periodo non
+c'erano, e ogni tasto premuto da una tastiera fisica riceveva 404 prima di arrivare
+al guardiano. Adesso lo controlla `scripts/verifica-porte.mjs`: una porta a chiave
+chiusa dal cancello è rossa (docs/PORTE-DEL-SERVER.md, «Chi bussa senza sessione»).
+Aperta a chi non è entrato, la porta non dice quali canali esistono: un canale che
+non c'è e una chiave sbagliata rispondono uguale.
 
 Il guardiano è **separato da ciò che fa** e ha un nome (`guardiaConsole`) che sta
 sulla riga della rotta. Un gestore che si controlla da dentro funziona ma non si

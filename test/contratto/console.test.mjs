@@ -14,6 +14,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
+import { classifica, CLASSI } from '../../src/web/argine.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -830,4 +831,24 @@ test('i ponti di un canale hanno un tetto, e chi accumula perde il piu\' vecchio
   assert.deepEqual(chiusi, [0], 'e' + ' se ne va il primo, non il nuovo');
   ultimo(); for (const c of aperti) c();
   assert.equal(consolle.pontiAperti(ch), 0);
+});
+
+// La porta della tastiera si apre anche a chi non e' entrato: una tastiera un
+// cookie non ce l'ha. Quindi non deve dire quali canali esistono, e il tetto
+// che conta e' il suo, non quello generale che conta per indirizzo.
+test('dalla porta della tastiera, canale che non c\'e\' e chiave sbagliata rispondono uguale', () => {
+  const srv = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
+  const guardia = srv.slice(srv.indexOf('const guardiaConsole = '), srv.indexOf('const consoleAgisci = '));
+  assert.match(guardia, /if \(!streamers\.get\(login\) \|\| !consolle\.chiaveOk\(login, key\)\) return res\.status\(403\)/,
+    'due risposte diverse direbbero a chi prova quali canali esistono');
+  assert.ok(!/status\(404\)/.test(guardia), 'un 404 e\' gia\' una risposta di troppo');
+});
+
+test('il tetto che conta e\' quello della tastiera: quello generale gli sta sopra', () => {
+  const tetto = Number(/const MAX_AL_MINUTO = (\d+);/.exec(readFileSync(join(RAD, 'src/features/console.js'), 'utf8'))?.[1]);
+  assert.ok(tetto > 0, 'il tetto della tastiera non si trova');
+  for (const metodo of ['GET', 'POST']) {
+    const classe = classifica(metodo, '/api/console/alfa/tasto/t1');
+    assert.ok(classe && CLASSI[classe].max > tetto, `${metodo}: il tetto generale (${classe}) taglierebbe prima di quello della tastiera (${tetto})`);
+  }
 });

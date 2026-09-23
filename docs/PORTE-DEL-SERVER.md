@@ -223,6 +223,56 @@ dal pannello: il link vecchio muore all'istante, quello nuovo si rimette nelle
 sorgenti. Prima non c'era modo di cambiarla: la sola difesa era non sbagliare
 mai, e un link nelle sorgenti di regia finisce in un video prima o poi.
 
+## Chi bussa senza sessione
+
+Davanti a ogni rotta ci sono due controlli, uno dopo l'altro. Il primo è il
+cancello della sessione (`src/web/vetrina.js`): a chi non è entrato risponde
+404, tranne che per quello che è dichiarato aperto. Il secondo è il guardiano
+della rotta, che decide se chi è arrivato fin lì la può usare.
+
+Il guardiano dice anche **chi** bussa. `requireLogin` e i suoi fratelli
+pretendono la sessione: parlano solo a chi è entrato, e per loro il cancello
+non conta. Tutti gli altri parlano anche a chi non è entrato. Una chiave o una
+firma vuol dire OBS, una tastiera, un gioco, una piattaforma che manda i suoi
+eventi; una rotta che legge la sessione senza pretenderla è scritta apposta
+per servire anche chi non ce l'ha. Per loro il cancello deve essere aperto,
+se no la porta c'è, è guardata bene, ed è morta proprio per chi deve usarla.
+
+Ogni collaudo guardava la sua rotta, e nessuno il cancello davanti. È successo
+quattro volte, e ogni volta si è scoperto dopo:
+
+- **Kick** si collegava e poi non mandava niente: il suo webhook riceveva 404;
+- **la tastiera di CONSOLify**: il guardiano con la chiave del canale c'era,
+  la documentazione diceva «non chiede una sessione», e ogni tasto premuto da
+  una tastiera fisica riceveva 404. Anche le icone dei tasti;
+- **i giochi che dicono da soli quando muori** mandavano il loro stato a una
+  porta chiusa, e il contatore non saliva;
+- **l'immagine della settimana**, che Meta scarica per la storia di Instagram,
+  avrebbe ricevuto 404.
+
+Adesso `scripts/verifica-porte.mjs` guarda le due cose insieme. Ricostruisce il
+cancello da vetrina.js e dalle pagine che il server gli dichiara, e per ogni
+porta che non pretende la sessione chiede se passa. Le eccezioni si scrivono
+col motivo (`SOLO_DENTRO`): i file dell'editor della carta e l'uscita, che a
+chi non è entrato non servono. L'elenco dei guardiani che pretendono la
+sessione è quello corto, così un guardiano nuovo nasce dalla parte di chi
+bussa da fuori. Le rotte di Kick e di YouTube stanno in un file loro, e si
+leggono come le altre: un file che registra rotte senza che il controllo lo
+legga è rosso. L'autoprova aggiunge una porta a chiave che il cancello tiene
+chiusa, e il controllo diventa rosso.
+
+Aprire una porta a chi non è entrato ha due conseguenze, sistemate insieme:
+
+- **non deve dire quali canali esistono.** Dalla porta della tastiera, un
+  canale che non c'è e una chiave sbagliata adesso rispondono uguale, come già
+  a quella dei giochi;
+- **il tetto che conta è quello di chi conosce il ritmo.** Il gioco manda un
+  messaggio ogni mezzo secondo, e il suo tetto è 400 al minuto per canale.
+  L'argine davanti, che senza sessione conta per indirizzo, ne lasciava 180 in
+  scrittura, e dallo stesso indirizzo bussa anche la tastiera. I giochi adesso
+  stanno nella classe del tempo reale, come il tracking, dove il tetto generale
+  sta sopra il loro.
+
 ## I tetti: quante, non solo quali
 
 Le porte dicono *chi* può bussare. Ma una connessione che resta aperta e un

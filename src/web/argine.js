@@ -67,6 +67,10 @@ export const CLASSI = {
   // effetti da gesti a tutti — un argine che rompe il prodotto è un difetto,
   // non una difesa. Queste rotte sono già protette dalla chiave dell'overlay:
   // qui serve solo un tetto perché una pagina impazzita non fonda il server.
+  // Stessa cosa per i giochi che mandano il loro stato: il tetto giusto lo sa
+  // chi conosce il ritmo del gioco (gsi.js, 400 al minuto per canale), e
+  // questo deve stargli sopra. Sotto, deciderebbe lui, alla cieca: la scrittura
+  // ne lascia 180 per indirizzo, e dallo stesso indirizzo bussa anche la tastiera.
   tempoReale: { max: 1800, finestraMs: 60_000 },
 };
 
@@ -78,7 +82,7 @@ const RE_AUTENTICAZIONE = /^\/(accedi|auth|sblocca|api\/passkey|api\/cambia-cana
 // Kick riceveva 404 dal cancello mentre qui era gia' esente.
 const RE_FLUSSO = /\/stream$/;
 const RE_CARICAMENTO = /^\/api\/(streamer\/(effetti|font|sfondi)|alert\/media)|\/media(\/|$)/;
-const RE_TEMPO_REALE = /^\/api\/tracking\//;
+const RE_TEMPO_REALE = /^\/api\/(tracking|gsi)\//;
 
 // A che classe appartiene questa richiesta? null = non si limita.
 export function classifica(metodo, percorso, multipart = false) {

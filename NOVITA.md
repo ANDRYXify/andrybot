@@ -34,6 +34,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Anche il Programma del tuo canale Twitch può riceverla, e si rimette in pari da solo quando cambi la settimana. [vai: settimana]
 - Nella grafica della settimana i giorni seguono la lingua del pannello: in inglese non esce più «LUN MAR MER». [vai: grafiche]
 - Due tasti «Vai a…», nel calendario di Discord e negli avvisi, non portavano da nessuna parte: adesso ci portano. [vai: dcavvisi]
+- I tasti di CONSOLify funzionano davvero da una tastiera fisica, icone comprese: fino a oggi ogni pressione si perdeva per strada. [vai: consolify]
+- Con i giochi che dicono da soli quando muori, il contatore adesso sale davvero: il loro messaggio non arrivava fino a me. [vai: moduli]
 
 ## 2026-09-19
 

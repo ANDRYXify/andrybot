@@ -17,9 +17,10 @@
 // Uso: node scripts/verifica-porte.mjs
 //      node scripts/verifica-porte.mjs --selftest   (deve diventare rosso)
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { creaGuscio } from '../src/web/vetrina.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SELFTEST = process.argv.includes('--selftest');
@@ -34,10 +35,18 @@ const GUARDIANI = [
   'guardiaConsole',  // CONSOLify e tastiere fisiche: una tastiera non sa tenere un cookie,
                      // quindi la chiave del canale — a tempo costante, revocabile, con tetto
   'verificaWebhook', // firma di Stripe
+  'verificaFirma',   // firma RSA di Kick, controllata sui byte prima di guardare il corpo
   'combacia',        // impronta di un token esterno (Ko-fi), a tempo costante: come la chiave API
   'currentUser',     // legge la sessione: senza, non c'e' niente da leggere
   'soloProprietario',
 ];
+
+// I guardiani che PRETENDONO la sessione. Tutti gli altri parlano anche a chi
+// non e' entrato: chi controlla una chiave o una firma aspetta OBS, una
+// tastiera, un gioco, una piattaforma; chi legge la sessione senza pretenderla
+// e' scritto apposta per servire anche chi non ce l'ha. L'elenco e' quello
+// corto, cosi' un guardiano nuovo nasce dalla parte di chi bussa da fuori.
+const SOLO_SESSIONE = new Set(['requireAdmin', 'requireLogin', 'requireMod', 'requireOwner', 'soloProprietario']);
 
 // Le porte aperte, una per una, col motivo. Sono la faccia pubblica del sito:
 // pagine che chiunque deve poter leggere, ritorni dei login esterni, e i due
@@ -97,31 +106,58 @@ const PUBBLICHE = new Map([
   ['POST /api/passkey/login/fine', 'il login non puo chiedere di essere gia loggati'],
 ]);
 
+// Pubbliche per il guardiano, ma dietro il cancello della sessione: servono a
+// chi e' gia' dentro, e da fuori il sito resta un labirinto.
+const SOLO_DENTRO = new Map([
+  ['GET /js/carta-disegno.js', 'la usa l\'editor della carta, che sta nel pannello'],
+  ['GET /font/:file', 'li usa l\'editor della carta, che sta nel pannello'],
+  ['GET /auth/logout', 'senza sessione non c\'e\' niente da chiudere'],
+]);
+
 let sorgente = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
 if (SELFTEST) {
   sorgente = sorgente.replace(
     "  app.get('/health',",
     "  app.get('/api/segreti-di-tutti', wrap(async (req, res) => res.json({ tutto: 1 })));\n"
     + "  app.get('/regalo/:login', (req, res) => res.redirect(effects.overlayUrl(req.params.login)));\n"
+    + "  app.post('/api/tastiera/:login', guardiaConsole, consoleTasto);\n"
     + "  app.get('/health',");
 }
 
+const RE_ROTTA = /app\.(get|post|put|patch|delete|all)\(\s*('[^']*'|"[^"]*")/g;
 const rotte = [];
-const re = /app\.(get|post|put|patch|delete|all)\(\s*('[^']*'|"[^"]*")/g;
-let m;
-while ((m = re.exec(sorgente))) {
-  const via = m[2].replace(/['"]/g, '');
-  let i = sorgente.indexOf('(', m.index + 4), d = 0, k = i;
-  for (; k < sorgente.length; k++) {
-    if (sorgente[k] === '(') d++;
-    else if (sorgente[k] === ')') { d--; if (!d) { k++; break; } }
+const leggiRotte = (testo, dove) => {
+  for (const m of testo.matchAll(RE_ROTTA)) {
+    const via = m[2].replace(/['"]/g, '');
+    let i = testo.indexOf('(', m.index + 4), d = 0, k = i;
+    for (; k < testo.length; k++) {
+      if (testo[k] === '(') d++;
+      else if (testo[k] === ')') { d--; if (!d) { k++; break; } }
+    }
+    const corpo = testo.slice(i, k);
+    const guardia = GUARDIANI.find((g) => new RegExp('\\b' + g + '\\b').test(corpo)) || null;
+    rotte.push({ chiave: m[1].toUpperCase() + ' ' + via, via, guardia, corpo, pos: dove(m.index) });
   }
-  const corpo = sorgente.slice(i, k);
-  const guardia = GUARDIANI.find((g) => new RegExp('\\b' + g + '\\b').test(corpo)) || null;
-  rotte.push({ chiave: m[1].toUpperCase() + ' ' + via, via, guardia, corpo });
-}
+};
+leggiRotte(sorgente, (i) => i);
+
+// Le rotte di Kick e di YouTube stanno in un file loro, montato dal server con
+// una riga: sono porte come le altre, e si leggono come le altre. Dal cancello
+// le separa la riga che le monta. E un file che registra rotte senza che qui
+// lo si legga e' rosso: una porta che il cancello non vede e' la prossima
+// che si scopre dopo.
+const moduli = [...sorgente.matchAll(/import \{ (monta\w+) \} from '(\.\.\/[\w-]+\/rotte\.js)';/g)]
+  .map((x) => ({ file: join('src', x[2].slice(3)), pos: sorgente.indexOf(`${x[1]}(app`) }));
+for (const x of moduli) leggiRotte(readFileSync(join(RAD, x.file), 'utf8'), () => x.pos);
+const conRotte = readdirSync(join(RAD, 'src'), { recursive: true })
+  .map((f) => join('src', String(f)))
+  .filter((f) => f.endsWith('.js') && !f.startsWith(join('src', 'web', 'public')))
+  .filter((f) => /\bapp\.(get|post|put|patch|delete|all)\(\s*['"]/.test(readFileSync(join(RAD, f), 'utf8')));
 
 const guai = [];
+for (const f of conRotte) {
+  if (f !== join('src', 'web', 'server.js') && !moduli.some((x) => x.file === f)) guai.push(`${f}: registra rotte che questo cancello non legge`);
+}
 
 // 1) niente porte senza guardiano che non siano dichiarate
 const senza = rotte.filter((r) => !r.guardia);
@@ -154,6 +190,34 @@ for (const r of senza) {
   if (FABBRICHE.test(r.corpo)) guai.push(`${r.chiave}: e' pubblica ma tocca una chiave`);
 }
 
+// 5) CHI BUSSA SENZA SESSIONE TROVA LA PORTA APERTA. Il guardiano dice chi bussa,
+//    ma prima del guardiano c'e' il cancello della sessione (vetrina.js), che a
+//    chi non e' entrato risponde 404. Se il cancello non lo sa, la porta c'e',
+//    e' guardata bene, ed e' morta proprio per chi deve usarla. E' successo a
+//    Kick, alla tastiera di CONSOLify, ai giochi che mandano il loro stato, a
+//    Meta che scarica l'immagine della settimana: ogni volta si e' scoperto
+//    dopo, perche' ognuno guardava la sua rotta e nessuno il cancello davanti.
+//    Qui si guardano insieme: il cancello si ricostruisce da vetrina.js e dalle
+//    pagine che il server gli dichiara, e gli si chiede se quella porta passa.
+const RIGA_CANCELLO = 'if (currentUser(req) || guscio.aperto(req.path)) return next();';
+const cancello = sorgente.indexOf(RIGA_CANCELLO);
+if (cancello < 0) guai.push('non trovo la riga del cancello: le porte senza sessione non si possono controllare');
+const guscio = creaGuscio(join(RAD, 'src/web/public'));
+for (const d of sorgente.matchAll(/guscio\.(pagina|risorsa)\(([^)]*)\)/g)) {
+  const arg = [...d[2].matchAll(/'([^']+)'/g)].map((x) => x[1]);
+  if (!arg.length) continue;   // il nome nei commenti
+  if (d[1] === 'pagina') guscio.pagina(...arg); else guscio.risorsa(arg[0]);
+}
+const esempio = (via) => via.replace(/:[A-Za-z_]+\??/g, 'x1').replace(/\*/g, 'x1');
+const daFuori = rotte.filter((r) => cancello >= 0 && r.pos > cancello
+  && (r.guardia ? !SOLO_SESSIONE.has(r.guardia) : PUBBLICHE.has(r.chiave) && !SOLO_DENTRO.has(r.chiave)));
+for (const r of daFuori) {
+  if (!guscio.aperto(esempio(r.via))) guai.push(`${r.chiave}: la usa chi e' senza sessione, e il cancello gli risponde 404`);
+}
+for (const k of SOLO_DENTRO.keys()) {
+  if (!PUBBLICHE.has(k)) guai.push(`«${k}» e' fra le porte chiuse a chi e' senza sessione, ma non e' piu' pubblica: va tolta anche da li'`);
+}
+
 const conta = {};
 for (const r of rotte) conta[r.guardia || 'pubblica'] = (conta[r.guardia || 'pubblica'] || 0) + 1;
 
@@ -162,15 +226,18 @@ console.log('\nOgni porta ha il suo guardiano, o un motivo scritto per non averl
 console.log('  ' + Object.entries(conta).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}: ${v}`).join(' · ') + '\n');
 
 let verde = true;
-verde = dice(!guai.some((g) => /nessun guardiano/.test(g)), `rotte lette: ${rotte.length}`, guai.filter((g) => /nessun guardiano/.test(g)).slice(0, 5).join(' · ')) && verde;
+verde = dice(!guai.some((g) => /nessun guardiano|non legge/.test(g)), `rotte lette: ${rotte.length}, da ${1 + moduli.length} file`, guai.filter((g) => /nessun guardiano|non legge/.test(g)).slice(0, 5).join(' · ')) && verde;
 verde = dice(!guai.some((g) => /marcire|toglila/.test(g)), `porte dichiarate pubbliche: ${PUBBLICHE.size}, tutte ancora vere`, guai.filter((g) => /toglila/.test(g)).slice(0, 5).join(' · ')) && verde;
 verde = dice(!guai.some((g) => /amministrazione/.test(g)), `porte di amministrazione: ${rotte.filter((r) => /^\/api\/admin\b/.test(r.via)).length}`, guai.filter((g) => /amministrazione/.test(g)).slice(0, 5).join(' · ')) && verde;
 verde = dice(!guai.some((g) => /tocca una chiave/.test(g)), `porte pubbliche che toccano una chiave: ${guai.filter((g) => /tocca una chiave/.test(g)).length}`, guai.filter((g) => /tocca una chiave/.test(g)).slice(0, 5).join(' · ')) && verde;
+verde = dice(!guai.some((g) => /senza sessione/.test(g)), `porte per chi e' senza sessione: ${daFuori.length}, tutte aperte nel cancello`, guai.filter((g) => /senza sessione/.test(g)).slice(0, 5).join(' · ')) && verde;
 
 if (SELFTEST) {
   const regalo = guai.some((g) => /regalo.*tocca una chiave/.test(g));
-  if (!verde && regalo) { console.log('\nAutoprova: una porta nuova senza guardiano, e una che regala una chiave, fanno diventare rosso il cancello. ✓\n'); process.exit(0); }
-  if (!verde) { console.log('\nAutoprova FALLITA: la porta che regala la chiave non e\' stata vista.\n'); process.exit(1); }
+  const tastiera = guai.some((g) => /\/api\/tastiera\/.*senza sessione/.test(g));
+  if (!verde && regalo && tastiera) { console.log('\nAutoprova: una porta nuova senza guardiano, una che regala una chiave e una a chiave chiusa dal cancello fanno diventare rosso il cancello. ✓\n'); process.exit(0); }
+  if (!verde && !regalo) { console.log('\nAutoprova FALLITA: la porta che regala la chiave non e\' stata vista.\n'); process.exit(1); }
+  if (!verde) { console.log('\nAutoprova FALLITA: la porta a chiave chiusa dal cancello non e\' stata vista.\n'); process.exit(1); }
   console.log('\nAutoprova FALLITA: il cancello non si accorge di una porta aperta.\n');
   process.exit(1);
 }

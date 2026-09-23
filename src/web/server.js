@@ -6275,8 +6275,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   const guardiaConsole = (req, res, next) => {
     const login = String(req.params.login || '').toLowerCase();
     const key = String(req.query.key || req.body?.key || '');
-    if (!streamers.get(login)) return res.status(404).json({ ok: false, mostra: 'canale sconosciuto' });
-    if (!consolle.chiaveOk(login, key)) return res.status(403).json({ ok: false, mostra: 'chiave non valida' });
+    // Canale che non c'e' e chiave sbagliata rispondono uguale, come alla porta
+    // dei giochi: questa si apre anche a chi non e' entrato, e non deve dirgli
+    // quali canali esistono.
+    if (!streamers.get(login) || !consolle.chiaveOk(login, key)) return res.status(403).json({ ok: false, mostra: 'chiave non valida' });
     if (consolle.troppiColpi(login)) return res.status(429).json({ ok: false, mostra: 'troppo in fretta' });
     return next();
   };

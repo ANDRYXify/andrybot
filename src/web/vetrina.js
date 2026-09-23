@@ -107,6 +107,9 @@ const PREFISSI = [
   '/collega/',           // la porta d'ingresso al Discord di uno streamer: ci arriva chi NON e' di casa
   '/api/discord/collega/',   // e l'indirizzo dove mandarlo, che lo decide il server
   '/pubblici/',          // l'immagine della settimana mentre Instagram la scarica: nome casuale da 128 bit, cancellata appena pubblicata
+  '/api/console/',       // la tastiera fisica di CONSOLify: un cookie non ce l'ha, e la guarda la chiave del canale
+  '/icona/',             // le icone dei tasti, che la stessa tastiera va a prendere: nomi casuali a schema fisso
+  '/api/gsi/',           // il gioco che manda il suo stato: lo guarda la chiave dei giochi
 ];
 
 const RIF_HTML = /(?:src|href)\s*=\s*["']([^"']+)["']/g;
