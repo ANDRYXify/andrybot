@@ -309,6 +309,47 @@ annuncia una volta sola, al primo numero oltre. La conta si chiude da sola dopo
 leggono i numeri scritti in chat, e un «5» non può essere insieme la risposta a
 un calcolo veloce e il prossimo numero della conta.
 
+## Il blackjack (`!blackjack`, `!bj`, `!21`)
+
+Un gioco a pagamento contro il banco, costruito perché la resa del pannello sia
+**quella del tavolo**, non una stima.
+
+**Un modello solo, per il calcolo e per il gioco.** Il mazzo è infinito: ogni
+carta esce con la probabilità del mazzo vero (asso e dal 2 al 9 un tredicesimo,
+dieci e figure quattro tredicesimi), pescata da capo ogni volta. Il banco guarda
+subito se ha blackjack e sta su ogni 17; chi gioca può solo prendere carta o
+stare (niente raddoppio né divisione: in chat ogni scelta è un comando, e una
+mano divisa sarebbe due mani da seguire). Su questo modello
+`giochi-conf.js` calcola la resa con la programmazione dinamica, per ogni
+totale e ogni carta scoperta del banco, prendendo sempre la scelta migliore: è
+il **massimo** che si può ottenere, quindi il limite giusto per la regola 1. Di
+serie (blackjack pagato 3 a 2, `vincitaBJ` 250) sono **97,6** su 100; con 2,00
+sono 95,3, con 3,00 sono 99,8. Il pannello non lascia andare oltre 300, perché
+il gioco resti sotto 100 anche a chi lo gioca perfetto. La strategia che esce
+dal calcolo è quella che si insegna (12 contro il 2 si pesca, 12 contro il 4 si
+sta, 16 contro il dieci si pesca, 18 morbido contro il 9 si pesca): una prova lo
+verifica.
+
+**La prova col tavolo vero.** Un milione di mani giocate dal motore con la
+strategia del calcolo danno 97,63 ± 0,30: lo stesso numero. Un primo confronto
+dava 96 e sembrava un difetto del calcolo; era la misura: il generatore
+`x · 1103515245 + 12345 mod 2³¹` fatto coi numeri decimali di JavaScript perde
+precisione oltre 2⁵³, e le carte non uscivano più con la probabilità giusta.
+Con un generatore a 32 bit (mulberry32) la differenza è sparita.
+
+**La puntata esce subito**, a differenza del colpo e del duello. Lì le monete si
+muovono alla fine perché nessuno vede l'esito prima; qui chi ha 15 contro un
+dieci sa già di essere messo male, e potrebbe regalare le monete a qualcuno per
+annullare la perdita. Perché un riavvio non faccia perdere niente, ogni mano
+aperta sta nel database (`statoVivo`, chiave `bj-mani`, chi e quanto), e
+all'avvio il bot rende le puntate delle mani rimaste aperte: nessuno può più
+giocarle, e nessuno deve rimetterci.
+
+**Chi non decide sta.** Dopo `tempo` secondi senza una mossa la mano si chiude
+come con `!stai`, così una mano dimenticata non tiene ferme le monete. A 21 si
+sta da soli. Una mano alla volta a testa; `!bj` con una mano aperta dice come
+giocarla prima di parlare di attese.
+
 ## Le manche con lo stato: impiccato e più o meno
 
 Fino a qui una manche era una domanda e un controllo: il primo messaggio giusto

@@ -139,6 +139,9 @@ const GIOCHI = {
       ['<code>!colpo</code>', '<code>!heist</code>', 'Organizzi un colpo, o entri nella banda. <code>!colpo 100</code> per scegliere la posta.', ATTESE('colpo')],
       ['<code>!boss</code>', '—', 'Fa arrivare un boss da battere insieme. Solo mod e streamer.', '—'],
       ['<code>!colpisci</code>', '<code>!attacca</code> <code>!hit</code>', 'Colpisci il boss di turno.', ATTESE('boss')],
+      ['<code>!blackjack 50</code>', '<code>!bj</code> <code>!21</code>', 'Una mano contro il banco: due carte a te e due a lui, una coperta.', ATTESE('blackjack')],
+      ['<code>!carta</code>', '—', 'Un\'altra carta nella tua mano di blackjack.', '—'],
+      ['<code>!stai</code>', '<code>!stand</code>', 'Ti fermi: gioca il banco, e si vede chi vince.', '—'],
       ['<code>!regala @nome 50</code>', '<code>!dona</code>', 'Passi monete a qualcun altro.', '—'],
       ['<code>!duello @nome 50</code>', '—', 'Un duello con la posta: l\'altro accetta o rifiuta, e chi vince prende la posta dell\'altro.', `${ATTESA(DI_SERIE('duello').scadenza)} per rispondere`],
       ['<code>!accetta</code>', '—', 'Accetti la sfida con posta che ti hanno fatto.', '—'],
@@ -230,6 +233,14 @@ const GIOCHI = {
       `Un boss arriva quando un mod scrive <code>!boss</code>, con un raid di almeno ${DI_SERIE('boss').dopoRaid} persone, e se vuoi da solo ogni tanto mentre sei in diretta. Ha ${DI_SERIE('boss').vitaPerPersona} punti vita per ogni persona che ha scritto in chat negli ultimi dieci minuti: chi guarda in silenzio non conta, così il boss è alla portata di chi c'è davvero.`,
       `La chat lo colpisce con <code>!colpisci</code>, un colpo ogni ${ATTESA(DI_SERIE('boss').attesaTesta)} a testa, da ${DI_SERIE('boss').dannoMin} a ${DI_SERIE('boss').dannoMax} di danno. Ha ${ATTESA(DI_SERIE('boss').durata)} prima di scappare. Se cade, il bottino va a chi l'ha colpito in proporzione al danno: se tutti colpiscono uguale ognuno prende ${CIFRA(DI_SERIE('boss').bottino)}, e chi colpisce di più prende di più, fino a ${CIFRA(RESA('boss').massimo)} a testa. Se scappa non prende niente nessuno, ma nessuno perde niente.`,
       'Sull\'overlay, con gli effetti accesi, compare la barra della vita che scende a ogni colpo, col tempo che resta. Nelle regole scegli anche una festa: se il boss cade, la chat va in solo emote per qualche minuto e poi torna com\'era.',
+    ] },
+
+    { h3: 'Blackjack' },
+    { p: [
+      `Con <code>!bj 50</code> punti 50 monete: due carte a te e due al banco, di cui una coperta. Poi <code>!carta</code> per un'altra o <code>!stai</code> per fermarti, e se per ${ATTESA(DI_SERIE('blackjack').tempo)} non scrivi niente stai da solo. Il banco gioca dopo di te e sta su ogni 17.`,
+      `Vince chi va più vicino a 21 senza passarlo: la vittoria ti rende il doppio della puntata, il pari te la rende, e il blackjack servito (asso e una figura o un dieci) ne rende ${CIFRA(DI_SERIE('blackjack').vincitaBJ / 100)} volte, cioè 3 a 2. Se il banco ha blackjack lo dice subito, e la mano finisce lì.`,
+      `Di serie, giocando al meglio, su 100 monete puntate ne tornano in media ${CIFRA(RESA('blackjack').perCento)}: il banco vince un po', come al tavolo vero, e chi gioca a caso perde di più. Nelle regole scegli quanto paga il blackjack, la puntata massima e il tempo per decidere.`,
+      'La puntata esce appena si aprono le carte. Se il bot si riavvia con una mano aperta, la puntata torna a chi l\'aveva messa.',
     ] },
 
     { h3: 'Abbracci, bacini e il cinque perfetto' },

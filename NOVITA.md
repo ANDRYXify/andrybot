@@ -89,7 +89,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] Due giochi da fare insieme: il colpo di gruppo, dove più siete più è facile scappare col bottino, e il boss, che la chat batte a colpi di !colpisci con la barra della vita sull'overlay. [vai: giochi]
 - La finestra delle novità non ti rimostra più le stesse righe: ognuna esce una volta. Le cose nuove più grosse stanno in cima, «In evidenza», anche nella pagina delle novità.
 - [importante] Ogni gioco ha due attese che scegli tu, a testa e per tutti, e partono solo quando si gioca davvero. Chi le trova se lo sente dire una volta, con quanto manca. [vai: giochi]
-- [importante] Due giochi nuovi: il wordle della chat, con i quadratini colorati, e conta insieme, dove la chat conta un numero a testa per battere il record del canale. [vai: giochi]
+- [importante] Tre giochi nuovi: il wordle della chat coi quadratini colorati, conta insieme per battere il record del canale, e il blackjack contro il banco con !bj 50. [vai: giochi]
 
 ## 2026-09-19
 

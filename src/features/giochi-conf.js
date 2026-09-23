@@ -201,6 +201,16 @@ export const CATALOGO = [
     resa: { tipo: 'boss' },
   },
   {
+    id: 'blackjack', nome: T('Blackjack', 'Blackjack', 'Blackjack'),
+    param: [
+      { k: 'vincitaBJ', tipo: 'numero', def: 250, min: 200, max: 300, eti: T('Il blackjack servito, ogni 100 puntate, ne rende (250 = 3 a 2)', 'A dealt blackjack returns, for every 100 bet (250 = 3 to 2)', 'El blackjack servido devuelve, por cada 100 apostadas (250 = 3 a 2)') },
+      { k: 'massimo', tipo: 'monete', def: 0, min: 0, max: 1000000, eti: T('Puntata massima (0 = nessun limite)', 'Maximum bet (0 = no limit)', 'Apuesta máxima (0 = sin límite)') },
+      { k: 'tempo', tipo: 'secondi', def: 60, min: 15, max: 300, eti: T('Tempo per decidere, poi si sta', 'Time to decide, then you stand', 'Tiempo para decidir, luego te plantas') },
+      ...ATTESE({ testa: 5, etiTesta: T('Attesa fra due mani, a testa', 'Wait between two hands, each', 'Espera entre dos manos, cada uno'), etiTutti: T('Attesa fra due mani, per tutti', 'Wait between two hands, for everyone', 'Espera entre dos manos, para todos') }),
+    ],
+    resa: { tipo: 'blackjack' },
+  },
+  {
     id: 'conta', nome: T('Conta insieme', 'Count together', 'Contad juntos'),
     param: [
       { k: 'pausa', tipo: 'secondi', def: 120, min: 30, max: 1800, eti: T('Si chiude se nessuno conta per tanti secondi', 'It closes if nobody counts for this many seconds', 'Se cierra si nadie cuenta durante tantos segundos') },
@@ -376,8 +386,92 @@ export function valoriDi(settings, id) {
 //   manche   quante ne crea al massimo in un'ora, al ritmo delle manche
 //   passa    le monete passano di tasca, non se ne creano
 //   spesa    le monete escono dall'economia: e' un modo di spenderle
+//   colpo    su 100 monete di posta, quante ne tornano con la banda piu' grande
+//   boss     il bottino a testa se tutti colpiscono uguale, e il massimo
+//   blackjack su 100 monete puntate, quante ne tornano giocando al meglio
 // `contesto` porta quello che non sta nel gioco: la presenza oraria e ogni
 // quanti minuti al minimo parte una manche.
+
+// IL BLACKJACK, CALCOLATO. Mazzo infinito: ogni carta esce con la probabilita'
+// del mazzo vero (asso e dal 2 al 9 un tredicesimo, dieci e figure quattro
+// tredicesimi), ed e' cosi' che pesca anche il motore: la resa e il gioco
+// stanno sullo stesso modello. Il banco guarda subito se ha blackjack e sta su
+// ogni 17; chi gioca puo' prendere carta o stare. La resa e' quella di chi gioca
+// AL MEGLIO (programmazione dinamica su ogni mano e ogni carta del banco): e' il
+// massimo che si puo' ottenere, quindi il limite giusto per la regola 1.
+const PCARTA = [0, 1 / 13, 1 / 13, 1 / 13, 1 / 13, 1 / 13, 1 / 13, 1 / 13, 1 / 13, 1 / 13, 4 / 13];
+function modelloBlackjack(vincitaBJ) {
+  const valore = (tot, soft) => (soft && tot + 10 <= 21 ? tot + 10 : tot);
+  const memoBanco = new Map();
+  const banco = (tot, soft) => {
+    const k = tot * 2 + (soft ? 1 : 0);
+    if (memoBanco.has(k)) return memoBanco.get(k);
+    const v = valore(tot, soft);
+    const d = new Array(23).fill(0);
+    if (v >= 17) d[Math.min(v, 22)] = 1;
+    else {
+      for (let c = 1; c <= 10; c++) {
+        const sub = banco(tot + c, soft || c === 1);
+        for (let f = 17; f <= 22; f++) d[f] += PCARTA[c] * sub[f];
+      }
+    }
+    memoBanco.set(k, d);
+    return d;
+  };
+  const guadagno = vincitaBJ / 100 - 1;
+  const perScoperta = [];
+  let ev = 0;
+  for (let u = 1; u <= 10; u++) {
+    const scoperta = new Array(23).fill(0);
+    let massa = 0;
+    for (let h = 1; h <= 10; h++) {
+      if ((u === 1 && h === 10) || (u === 10 && h === 1)) continue;
+      const sub = banco(u + h, u === 1 || h === 1);
+      for (let f = 17; f <= 22; f++) scoperta[f] += PCARTA[h] * sub[f];
+      massa += PCARTA[h];
+    }
+    for (let f = 17; f <= 22; f++) scoperta[f] /= massa;
+    const sta = (v) => {
+      let e = 0;
+      for (let f = 17; f <= 22; f++) e += scoperta[f] * (f === 22 || v > f ? 1 : v === f ? 0 : -1);
+      return e;
+    };
+    const memo = new Map();
+    const gioca = (tot, soft) => {
+      const v = valore(tot, soft);
+      if (v > 21) return -1;
+      const k = tot * 2 + (soft ? 1 : 0);
+      if (memo.has(k)) return memo.get(k);
+      let carta = 0;
+      for (let c = 1; c <= 10; c++) carta += PCARTA[c] * gioca(tot + c, soft || c === 1);
+      const e = Math.max(sta(v), carta);
+      memo.set(k, e);
+      return e;
+    };
+    perScoperta[u] = { sta, gioca, valore };
+    const pBJ = u === 1 ? PCARTA[10] : u === 10 ? PCARTA[1] : 0;
+    let eu = 0;
+    for (let a = 1; a <= 10; a++) {
+      for (let b = 1; b <= 10; b++) {
+        const naturale = (a === 1 && b === 10) || (a === 10 && b === 1);
+        eu += PCARTA[a] * PCARTA[b] * (naturale ? (1 - pBJ) * guadagno : -pBJ + (1 - pBJ) * gioca(a + b, a === 1 || b === 1));
+      }
+    }
+    ev += PCARTA[u] * eu;
+  }
+  // Carta o stai, per chi vuole giocare al meglio: quello che il calcolo sceglie.
+  const decidi = (tot, soft, u) => {
+    const m = perScoperta[u];
+    const v = m.valore(tot, soft);
+    let carta = 0;
+    for (let c = 1; c <= 10; c++) carta += PCARTA[c] * m.gioca(tot + c, soft || c === 1);
+    return carta > m.sta(v) ? 'carta' : 'stai';
+  };
+  return { resa: Math.round((1 + ev) * 1000) / 10, decidi };
+}
+export const resaBlackjack = (vincitaBJ) => modelloBlackjack(vincitaBJ).resa;
+export const strategiaBlackjack = () => modelloBlackjack(250).decidi;
+
 // Ogni quanti secondi, al piu', si gioca: la piu' lunga delle attese nominate
 // (una persona aspetta la sua E quella di tutti), e mai meno di un secondo.
 function ritmo(v, chiavi) {
@@ -414,6 +508,7 @@ export function valutaResa(resa, v, contesto = {}) {
     const ogni = Number(contesto.mancheMinuti) || 0;
     return { tipo: 'manche', perOra: ogni ? Math.round((Number(v[resa.premio]) || 0) * 60 / ogni) : 0 };
   }
+  if (resa.tipo === 'blackjack') return { tipo: 'blackjack', perCento: resaBlackjack(Number(v.vincitaBJ) || 0) };
   if (resa.tipo === 'colpo') {
     // La banda piu' grande e' quella che rende di piu': con chi aggiunge
     // qualcosa la riuscita sale fino al tetto, senza resta quella di partenza.

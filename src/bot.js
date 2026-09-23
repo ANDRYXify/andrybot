@@ -84,6 +84,7 @@ import * as dcCollega from './features/discord-collega.js';
 import * as pub from './features/pubblicita.js';
 import * as modalitaFeat from './features/modalita-chat.js';
 import * as bossFeat from './features/boss.js';
+import * as bjFeat from './features/blackjack.js';
 
 const log = makeLog('bot');
 const BOSS_DOPO_RAID_MS = 20_000;
@@ -188,6 +189,11 @@ export class BotManager {
     this.modalita.riprendi();
     if (this.modules) this.modules.modalita = this.modalita;
     games.impostaModalita(this.modalita);
+    // Le mani di blackjack rimaste aperte da prima di un riavvio: nessuno le puo'
+    // piu' giocare, e la puntata torna a chi l'aveva messa.
+    try {
+      for (const r of bjFeat.rimborsaDopoRiavvio()) log.info(`#${r.channel} blackjack: ${r.posta} rese a ${r.chi}, la mano era rimasta aperta`);
+    } catch (e) { log.error('blackjack rimborsi:', e?.message || e); }
     // Il boss: la barra della vita sull'overlay, e la festa in solo emote.
     bossFeat.impostaSpinta((ch, p) => this.effects?.emit?.(ch, p));
     bossFeat.impostaModalita(this.modalita);

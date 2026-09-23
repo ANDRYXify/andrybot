@@ -10,6 +10,7 @@ import * as coccole from './coccole.js';
 import * as colpoFeat from './colpo.js';
 import * as bossFeat from './boss.js';
 import * as contaFeat from './conta.js';
+import * as bjFeat from './blackjack.js';
 import { aspetta, giocato } from './attese-giochi.js';
 import { points, streamers, giochi } from '../db.js';
 import { config } from '../config.js';
@@ -1025,6 +1026,23 @@ export function tryGame(msg, say) {
           if (multa > 0) { points.add(channel, msg.user, -multa); points.add(channel, vittima, multa); }
           say(`🚓 ${nome} viene beccato e paga ${multa} ${moneta()} di multa a ${vittima}! 😂`);
         }
+        return true;
+      }
+
+      case 'blackjack': {
+        // con una mano aperta la cosa da sapere e' come giocarla, non l'attesa
+        if (!bjFeat.manoDi(channel, msg.user) && aspetta(channel, 'blackjack', msg, say)) return true;
+        if (bjFeat.apri(channel, msg, args, say, { moneta: moneta() })) giocato(channel, 'blackjack', msg.user);
+        return true;
+      }
+
+      case 'carta': {
+        bjFeat.carta(channel, msg, say);
+        return true;
+      }
+
+      case 'stai': {
+        bjFeat.stai(channel, msg, say);
         return true;
       }
 
