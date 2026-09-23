@@ -44,6 +44,7 @@ import * as youtube from './features/youtube.js';
 import * as instagram from './features/instagram.js';
 import * as igAccesso from './features/instagram-accesso.js';
 import { credenzialiInstagram } from './features/instagram-credenziali.js';
+import * as storiaIg from './features/storia-ig.js';
 import * as feed from './features/feed.js';
 import * as compleanniFeat from './features/compleanni.js';
 import * as subathonFeat from './features/subathon.js';
@@ -1213,12 +1214,29 @@ export class BotManager {
     this._dispatchEvent(ev);
     if (isLive) {
       this._annunciaTwitch(ch).catch((e) => log.error(`avviso live #${ch}:`, e?.message || e));
+      this._storiaDellaDiretta(ch).catch((e) => log.error(`storia della diretta #${ch}:`, e?.message || e));
     } else {
       this._chiudiAvvisi(ch);
       this._scalaVipDiretta(ch);
       this._rapportoDiretta(ch).catch((e) => log.error(`rapporto #${ch}:`, e?.message || e));
     }
     this._reagisciAllaDiretta(ch, isLive);   // lei se ne accorge e ti scrive (presente/consapevole)
+  }
+
+  // LA STORIA DELLA DIRETTA: se lo streamer l'ha accesa nelle Grafiche, la sua
+  // grafica «Live ora» in verticale va nella storia di Instagram. Se non parte,
+  // oltre al pannello glielo si dice in privato su Telegram, se l'ha collegato:
+  // una storia automatica che non esce, e nessuno lo sa, e' peggio di nessuna
+  // storia. Il ragionamento sta in docs/GRAFICHE.md.
+  async _storiaDellaDiretta(login) {
+    const r = await storiaIg.storiaDellaDiretta(login);
+    if (!r.fatto || r.ok) return;
+    log.warn(`#${login} storia della diretta non partita: ${r.errore}`);
+    const conf = tgConf.get(login);
+    if (conf?.token && conf.owner_tg_id && (conf.dm_modo || 'me') !== 'off') {
+      const testo = `La storia di Instagram della diretta non è partita: ${telegram.escHtml(r.errore)}. Il riquadro della storia, nelle Grafiche, dice come rimediare.`;
+      await telegram.inviaMessaggio(conf.token, conf.owner_tg_id, testo, { anteprima: false }).catch(() => {});
+    }
   }
 
   // A diretta finita, il rapporto in privato: numeri, non aggettivi. Solo se lo

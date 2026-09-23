@@ -56,8 +56,11 @@ test('le porte di Meta si aprono solo con la firma', () => {
 test('le credenziali di Instagram si leggono da un posto solo', () => {
   assert.ok(!/ig\.token|ig\?\.token/.test(BOT), 'il giro dei post nuovi chiede alle credenziali');
   assert.match(BOT, /const igCr = ig\?\.attivo \? credenzialiInstagram\(s\.login\) : null;/);
-  assert.match(SRV, /const ig = credenzialiInstagram\(login\);\n\s+if \(ig\) posti\.ig =/, 'i posti della settimana');
-  assert.match(SRV, /const pubblicaStoriaIg = async \(login, byte\) => \{\n\s+const ig = credenzialiInstagram\(login\);/, 'e la storia, per chiunque la pubblichi');
+  assert.match(SRV, /const storiaIgPossibile = async \(login\) => \{\n\s+const ig = credenzialiInstagram\(login\);/, 'se si puo\' pubblicare una storia');
+  assert.match(SRV, /posti\.ig = await storiaIgPossibile\(login\);/, 'i posti della settimana');
+  assert.match(rotta("app.get('/api/streamer/grafiche/storia'", 300), /ig: await storiaIgPossibile\(login\)/, 'e le Grafiche');
+  assert.match(leggi('src/features/storia-ig.js'), /export async function pubblicaStoria\(login, byte, \{ pubblica = instagram\.pubblicaStoria \} = \{\}\) \{\n\s+const ig = credenzialiInstagram\(login\);/,
+    'e la storia, per chiunque la pubblichi');
   assert.match(rotta("app.post('/api/streamer/settimana/manda'", 6000), /if \(dove\.ig && storia && credenzialiInstagram\(login\)\) \{/, '«Manda» compreso');
   assert.match(rotta("app.post('/api/streamer/instagram/prova'", 900), /: credenzialiInstagram\(login\);/, 'e la prova dal pannello');
 });
@@ -71,8 +74,8 @@ test('dal pannello arrivano le scelte, non l\'identita\' di un account collegato
 
 test('chi fa una chiamata vera ne lascia l\'esito, e il pannello lo riceve coi permessi mancanti', () => {
   assert.match(BOT, /const p = await instagram\.ultimoPost\(igCr\);\n\s+instagram\.ricorda\(s\.login, p\);/, 'il giro dei post nuovi');
-  assert.match(rotta('const pubblicaStoriaIg = async', 900), /instagram\.ricorda\(login, r\);/, 'la storia');
-  assert.match(rotta("app.post('/api/streamer/settimana/manda'", 6000), /await pubblicaStoriaIg\(login, storia\)/, 'e «Manda» la pubblica da li\'');
+  assert.match(leggi('src/features/storia-ig.js'), /const r = await pubblica\(\{ \.\.\.ig, url: [^\n]+\);\n\s+instagram\.ricorda\(login, r\);/, 'la storia');
+  assert.match(rotta("app.post('/api/streamer/settimana/manda'", 6000), /await storiaIg\.pubblicaStoria\(login, storia\)/, 'e «Manda» la pubblica da li\'');
   assert.match(rotta("app.post('/api/streamer/instagram/prova'", 900), /if \(!scritto\) instagram\.ricorda\(login,/,
     'la prova del collegamento salvato, non quella di un token appena incollato');
   const st = rotta("app.get('/api/instagram/stato'", 1400);
@@ -92,9 +95,13 @@ test('un permesso che manca o un collegamento rotto si vede, col rimedio', () =>
     assert.ok(j > 0 && ig.startsWith('problemi.push(problemaHtml({', j), `${caso}: si dice col blocco che si vede, non con una riga grigia`);
   }
   assert.match(ig, /const colore = pr\?\.grave \? 'rosso' : \(problemi\.length \? 'giallo' : 'verde'\);/, 'e il verde solo quando va tutto');
+  const bloccata = APP.slice(APP.indexOf('const _igStoriaBloccata = () => problemaHtml({'), APP.indexOf('function _settDisegnaDove()'));
+  assert.match(bloccata, /titolo: L\('La storia di Instagram non può partire'/, 'la storia che non puo\' partire si dice col blocco che si vede');
+  assert.match(bloccata, /data-vai="notifiche">/, 'con la strada per rimediare');
   const dove = APP.slice(APP.indexOf('function _settDisegnaDove()'), APP.indexOf('function _settDisegnaDove()') + 4000);
-  assert.match(dove, /: problemaHtml\(\{\n\s+titolo: L\('La storia di Instagram non può partire'/, 'anche fra i posti della settimana');
-  assert.match(dove, /data-vai="notifiche">/, 'con la strada per rimediare');
+  assert.match(dove, /: _igStoriaBloccata\(\)\)\);/, 'fra i posti della settimana');
+  const gr = APP.slice(APP.indexOf('function _grIgHtml('), APP.indexOf('async function caricaStoriaIg()'));
+  assert.match(gr, /if \(ig && !ig\.puo\) return _igStoriaBloccata\(\);/, 'e nelle Grafiche');
 });
 
 test('una chiave del .env scritta storta la vede chi amministra, dove guarda', () => {

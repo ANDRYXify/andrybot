@@ -33,7 +33,7 @@ const corpoDi = (nome) => {
 test('l\'aspetto cambiato nell\'ispettore sporca la pagina; posizioni e configurazioni no, perche\' si salvano da sole', () => {
   assert.ok(/const ASP_SALVA_A_MANO = '\.asp-blocco\[data-asp="alert"\], \.asp-blocco\[data-asp="chat"\], \.asp-blocco\[data-asp="wf"\], \.asp-blocco\[data-asp="ws"\]';/.test(APP),
     'i quattro blocchi che escono solo con «Salva overlay» hanno un nome');
-  assert.ok(/if \(t\.closest\('#tg-destinazioni, \.ovl-testa-banco, \.ovl-barra, \.ovl-livelli, \.cerca-guscio'\)\) return;\n\s*if \(t\.closest\('\.ovl-inspector'\) && !t\.closest\(ASP_SALVA_A_MANO\)\) return;/.test(APP),
+  assert.ok(/if \(t\.closest\('#tg-destinazioni, #gr-ig, \.ovl-testa-banco, \.ovl-barra, \.ovl-livelli, \.cerca-guscio'\)\) return;\n\s*if \(t\.closest\('\.ovl-inspector'\) && !t\.closest\(ASP_SALVA_A_MANO\)\) return;/.test(APP),
     'l\'ispettore non e\' piu\' escluso in blocco: lo sono solo le sue parti che si salvano da sole');
   const sc = corpoDi('scegliOverlay');
   assert.ok(/_salvaSporco/.test(sc) && /_chiediPrimaDiUscire\(\)/.test(sc), 'cambiare overlay con l\'aspetto non salvato chiede prima');

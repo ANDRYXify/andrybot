@@ -167,6 +167,65 @@ scelta che si fa e non succede niente.
   ha un link da toccare: per quello c'è il QR, o l'adesivo che metti tu
   dall'app.
 
+### «Metti nella storia»
+
+In cima alla scheda c'è il riquadro della storia di Instagram. Sta in cima
+perché è la novità e perché è l'uscita più breve: un tasto, e la grafica è
+pubblicata. Dice sempre come stanno le cose, in uno di tre modi:
+
+- **pronto**: il tasto «Metti nella storia», e accanto l'esito, che si legge
+  anche con un lettore di schermo. Parte la grafica che vedi, sempre in formato
+  storia, anche se stai guardando il post: nella storia il post verrebbe
+  tagliato;
+- **Instagram non collegato**: l'invito a collegarlo, col tasto che porta dove
+  si collega. Non è un errore: è una cosa che non hai ancora fatto;
+- **collegato, ma senza il permesso di pubblicare** (serve un account
+  professionale): il blocco giallo col rimedio, lo stesso della Settimana.
+
+Lo stato si chiede al server come per la Settimana (`storiaIgPossibile`: la
+porta che conta le pubblicazioni vuole lo stesso permesso e non pubblica
+niente), e si richiede ogni volta che torni nella scheda: magari Instagram
+l'hai appena collegato. La pubblicazione passa dallo stesso posto di «Manda»
+(`features/storia-ig.js`), con lo stesso JPEG controllato e la stessa guardia
+contro il doppio clic.
+
+### La storia che parte da sola quando vai in diretta
+
+Nello stesso riquadro, quando Instagram è pronto, c'è una spunta: quando vai in
+diretta su Twitch, la storia «Live ora» parte da sola. È spenta di serie.
+
+- **Chi disegna.** Il server non ha un browser, e la grafica si disegna solo
+  nel browser. Quindi la prepara il pannello: quando accendi la spunta, e ogni
+  volta che salvi le impostazioni delle grafiche. Il server la tiene
+  (`storie-live/<nome>.jpg`, accanto a un file con lo stato) fino al momento
+  giusto. Accendere senza mandare la grafica non si può: sarebbe un
+  interruttore acceso su niente.
+- **Quando parte.** Al passaggio in diretta, lo stesso momento dell'avviso «sono
+  live». Non al primo sguardo dopo un riavvio del bot a diretta già in corso:
+  quello non è un inizio. E al più una ogni tre ore: se la diretta cade e
+  riparte, la storia c'è già.
+- **Cosa c'è sopra.** La grafica «Live ora» com'era quando l'hai preparata. Il
+  gioco scritto resta quello (il server non può ridisegnarlo): chi cambia gioco
+  ogni volta lo lascia vuoto, e il pannello lo dice accanto alla spunta.
+- **Se non parte.** L'esito dell'ultima resta accanto alla spunta, col rimedio;
+  e se Telegram è collegato, arriva anche un messaggio in privato. Una storia
+  automatica che non esce, e nessuno lo sa, è peggio di nessuna storia. Un
+  fallimento non conta come storia fatta: alla diretta dopo si riprova.
+- **Lo stato non sta nelle impostazioni**, che si riscrivono da altre strade:
+  un salvataggio fatto altrove potrebbe spegnerla in silenzio.
+
+`test/unita/storia-ig.test.mjs` prova il modulo senza Instagram: il file
+pubblico che c'è solo mentre Meta lo scarica, la storia spenta, una per diretta,
+il fallimento che si riprova, la grafica che manca, il nome storto che non esce
+dalla cartella.
+
+### Due titoli, uno per grafica
+
+La settimana e «Live ora» avevano un titolo solo: chi scriveva «LA MIA
+SETTIMANA» se lo ritrovava sulla grafica della diretta, e sarebbe finito anche
+sulla storia che parte da sola. Adesso sono due (`titolo` e `titoloLive`), e il
+campo scrive quello della grafica che hai davanti.
+
 ## 8. L'anteprima non rallenta chi scrive
 
 Scrivendo nella scheda tutto andava a scatti, e peggiorava a ogni visita. Le

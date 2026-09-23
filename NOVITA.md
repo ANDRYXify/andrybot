@@ -66,6 +66,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Scrivere nelle Grafiche è di nuovo fluido, anche dopo esserci entrati più volte, e «Salva» o «Scarica» partono una volta sola. [vai: grafiche]
 - Le grafiche escono anche in verticale per le storie, 1080×1920: lo sfondo copre tutto lo schermo e le scritte stanno lontane dalle barre di Instagram. [vai: grafiche]
 - La settimana mandata nella storia di Instagram non esce più tagliata ai lati: alla storia va la versione verticale, a Telegram e Discord il post. [vai: settimana]
+- Nuovo nelle Grafiche: con «Metti nella storia» la grafica che vedi va nella tua storia di Instagram, già in verticale. Se Instagram non è collegato, il tasto per collegarlo è lì. [vai: grafiche]
+- La storia «Live ora» può partire da sola quando vai in diretta su Twitch: accendila nelle Grafiche, nel riquadro della storia, e se non parte te lo dico. [vai: grafiche]
+- Settimana e «Live ora» hanno ognuna il suo titolo: quello della settimana non finisce più sulla grafica della diretta. [vai: grafiche]
 
 ## 2026-09-19
 

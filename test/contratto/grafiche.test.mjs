@@ -102,7 +102,7 @@ test('il motore arriva prima del pannello, e i caratteri prima di disegnare', ()
 });
 
 test('niente emoji di serie: il logo e\' l\'iniziale, e il vecchio 🎮 di serie si toglie', () => {
-  assert.match(APP, /titolo: '', handle: '@' \+ canale, logo: '', logoImg: '',/);
+  assert.match(APP, /titolo: '', titoloLive: '', handle: '@' \+ canale, logo: '', logoImg: '',/);
   assert.match(APP, /if \(c\.logo === '\\u\{1F3AE\}'\) c\.logo = '';/);
   assert.ok(!/'🎮  ' \+/.test(APP), 'nella pillola del gioco niente emoji');
 });
@@ -129,10 +129,11 @@ test('la storia e\' verticale, e «Manda» manda a ogni posto la sua forma', () 
   const manda = APP.slice(APP.indexOf("_g('sett-manda')?.addEventListener('click'"), APP.indexOf("const r = await api('/api/streamer/settimana/manda'"));
   assert.ok(manda.includes("corpo.immagine = grafJpeg({ ...c, formato: 'post' })"), 'ai canali il post');
   assert.ok(manda.includes("if (dove.ig) corpo.storia = grafJpeg({ ...c, formato: 'storia' })"), 'alla storia la storia');
-  const srv = SRV.slice(SRV.indexOf("app.post('/api/streamer/settimana/manda'"), SRV.indexOf("app.delete('/api/streamer/ruoli'"));
+  const srv = SRV.slice(SRV.indexOf("app.post('/api/streamer/settimana/manda'"), SRV.indexOf("app.get('/api/streamer/grafiche/storia'"));
+  assert.ok(srv.length > 0 && srv.includes('esiti.push'), 'la rotta di «Manda», e solo lei');
   assert.ok(srv.includes('const storia = leggiJpeg(req.body?.storia) || byte;'), 'il server usa la storia per la storia');
-  assert.ok(srv.includes('await pubblicaStoriaIg(login, storia)'), 'e la pubblica da un posto solo');
-  assert.ok(!/pubblicaStoriaIg\(login, byte\)/.test(srv), 'mai il post nella storia, se la storia c\'e\'');
+  assert.ok(srv.includes('await storiaIg.pubblicaStoria(login, storia)'), 'e la pubblica da un posto solo');
+  assert.ok(!/pubblicaStoria\(login, byte\)/.test(srv), 'mai il post nella storia, se la storia c\'e\'');
 });
 
 // Due immagini nello stesso «Manda» devono stare nel limite del corpo di una
@@ -147,4 +148,67 @@ test('post e storia insieme stanno nel limite di una richiesta', () => {
   assert.ok(corpo <= Number(limite[1]) * 1024 * 1024, `due immagini da ${max} byte e un testo pieno fanno ${corpo} byte`);
   const serve = /const SETTIMANA_MAX = ([\d_]+);/.exec(SRV);
   assert.ok(Number(serve[1].replace(/_/g, '')) >= max, 'e il server accetta quello che il pannello manda');
+});
+
+// «Metti nella storia»: dalle Grafiche, la grafica che si vede va nella storia
+// di Instagram, e sempre in verticale, qualunque formato si stia guardando. Il
+// riquadro sta in cima e dice sempre come stanno le cose: pronto, da collegare,
+// o collegato senza il permesso di pubblicare. Il ragionamento sta in
+// docs/GRAFICHE.md.
+test('«Metti nella storia»: tre stati che si vedono, e parte sempre la storia', () => {
+  const gr = APP.slice(APP.indexOf('function _grIgHtml('), APP.indexOf('async function caricaStoriaIg()'));
+  assert.ok(gr.includes('if (ig && !ig.puo) return _igStoriaBloccata();'), 'collegato senza permesso: il blocco col rimedio');
+  assert.ok(/if \(!ig\) \{[\s\S]*data-vai="notifiche"[\s\S]*Collega Instagram/.test(gr), 'non collegato: il tasto per collegarlo');
+  assert.ok(gr.includes('id="gr-ig-storia"') && gr.includes('role="status"'), 'pronto: il tasto, e l\'esito che si legge');
+  const p = APP.slice(APP.indexOf('function pannelloGrafiche()'), APP.indexOf('function grClip('));
+  assert.ok(p.indexOf('id="gr-ig"') > 0 && p.indexOf('id="gr-ig"') < p.indexOf('class="gr-tipo"'), 'in cima alla scheda, prima di tutto il resto');
+  const i = APP.slice(APP.indexOf('function initGrafiche()'), APP.indexOf('function problemaHtml('));
+  assert.ok(i.includes("immagine: grafJpeg({ ...c, formato: 'storia' })"), 'nella storia va sempre la storia, anche se stai guardando il post');
+  assert.ok(i.includes('_grafRiprendi = () => { c.giorni = grafGiorni(); ridisegna(); caricaStoriaIg(); };'), 'tornando nella scheda, lo stato si rilegge: magari Instagram l\'hai appena collegato');
+  const get = SRV.slice(SRV.indexOf("app.get('/api/streamer/grafiche/storia'"), SRV.indexOf("app.post('/api/streamer/grafiche/storia'"));
+  assert.match(get, /requireOwner/);
+  assert.ok(get.includes('ig: await storiaIgPossibile(login)'), 'si chiede come per la Settimana');
+  assert.ok(get.includes('live: storiaIg.statoLive(login)'), 'e con la storia della diretta: accesa, pronta, com\'e\' andata l\'ultima');
+  const post = SRV.slice(SRV.indexOf("app.post('/api/streamer/grafiche/storia'"), SRV.indexOf("app.delete('/api/streamer/ruoli'"));
+  assert.match(post, /requireOwner/);
+  assert.ok(post.includes('const byte = leggiJpeg(req.body?.immagine);'), 'un JPEG vero e piccolo, come per «Manda»');
+  assert.ok(post.includes('_mandando.has(login)') && post.includes('finally { _mandando.delete(login); }'), 'un doppio clic non pubblica due storie');
+  assert.ok(post.includes('await storiaIg.pubblicaStoria(login, byte)'), 'e si pubblica dallo stesso posto');
+});
+
+// La storia della diretta: accesa dallo streamer, parte quando comincia la
+// diretta. Il server non disegna: la grafica la prepara il pannello quando la
+// accendi e a ogni salvataggio. Il modulo si prova in test/unita/storia-ig.
+test('la storia della diretta: la prepara il pannello, la pubblica la diretta, e se non parte si dice', () => {
+  const BOT = leggi('src/bot.js');
+  const sl = BOT.slice(BOT.indexOf('  _setLive(login, isLive, data) {'), BOT.indexOf('  async _storiaDellaDiretta(login) {'));
+  const primo = sl.indexOf('if (prev === undefined) return;');
+  const storia = sl.indexOf('this._storiaDellaDiretta(ch)');
+  assert.ok(primo > 0 && storia > primo, 'non al primo sguardo dopo un riavvio: solo quando la diretta comincia davvero');
+  const accesa = sl.indexOf('    if (isLive) {\n      this._annunciaTwitch(ch)');
+  const quando = sl.slice(accesa, sl.indexOf('    } else {', accesa));
+  assert.ok(accesa > 0 && quando.includes('this._storiaDellaDiretta(ch)'), 'e solo quando comincia, non quando finisce');
+  const sd = BOT.slice(BOT.indexOf('  async _storiaDellaDiretta(login) {'), BOT.indexOf('  // A diretta finita, il rapporto in privato'));
+  assert.ok(sd.includes('await storiaIg.storiaDellaDiretta(login)'), 'dal modulo della storia');
+  assert.ok(sd.includes('if (!r.fatto || r.ok) return;') && sd.includes('telegram.inviaMessaggio(conf.token, conf.owner_tg_id'),
+    'se non parte, lo streamer lo sa anche su Telegram');
+  const rotta = SRV.slice(SRV.indexOf("app.post('/api/streamer/grafiche/storia-live'"), SRV.indexOf("app.post('/api/streamer/grafiche/storia',"));
+  assert.match(rotta, /requireOwner/);
+  assert.ok(rotta.includes('storiaIg.spegniLive(login)') && rotta.includes('storiaIg.accendiLive(login, byte)'), 'accendere vuol dire mandare la grafica, spegnere la toglie');
+  assert.ok(rotta.includes('const byte = leggiJpeg(req.body?.immagine);'), 'un JPEG vero e piccolo');
+  const i = APP.slice(APP.indexOf('function initGrafiche()'), APP.indexOf('function problemaHtml('));
+  assert.ok(i.includes("const storiaLive = () => grafJpeg({ ...c, tipo: 'live', formato: 'storia' });"), 'la storia della diretta e\' la grafica «Live ora» in verticale');
+  assert.ok(/if \(_grIgLive\?\.attiva\) \{[\s\S]{0,200}immagine: storiaLive\(\)/.test(i), 'e salvando le grafiche si rifa\'');
+  const html = APP.slice(APP.indexOf('function _grIgLiveHtml(live) {'), APP.indexOf('function _grIgHtml('));
+  assert.ok(html.includes('live.attiva && !live.pronta') && html.includes('live.ultima && !live.ultima.ok'), 'accesa senza grafica, o l\'ultima non partita: si vede');
+});
+
+// Il titolo della settimana e quello di «Live ora» sono due: con uno solo, chi
+// scriveva «LA MIA SETTIMANA» se lo ritrovava sulla grafica della diretta, e
+// sulla storia che parte da sola.
+test('la settimana e «Live ora» hanno ognuna il suo titolo', () => {
+  assert.ok(APP.includes("grafTitolo(ctx, sc, pal, c, lay, (c.titoloLive || 'LIVE').toUpperCase());"));
+  assert.ok(APP.includes("grafTitolo(ctx, sc, pal, c, lay, (c.titolo || L('LA SETTIMANA', 'THE WEEK', 'LA SEMANA')).toUpperCase());"));
+  assert.ok(APP.includes("c[c.tipo === 'live' ? 'titoloLive' : 'titolo'] = e.target.value;"), 'il campo scrive il titolo della grafica che hai davanti');
+  assert.match(SRV, /titoloLive: str\(gr\.titoloLive, 40\)/, 'e il server lo tiene');
 });

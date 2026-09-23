@@ -34,7 +34,7 @@
     consolify: 'consolify tasti plancia telefono tablet tastiera macro scorciatoie teclas botones atajos',
     donazioni: 'donazioni dona mance stripe satispay soglie grazie pagamenti donaciones propinas pagos',
     pagina: 'pagina link bio linktree profilo vetrina sito i miei link logo avatar página enlaces',
-    grafiche: 'grafiche immagini sfondi banner locandine social gráficos fondos imágenes',
+    grafiche: 'grafiche immagini sfondi banner locandine social storia storie instagram verticale gráficos fondos imágenes story stories historia',
     settimana: 'settimana programmazione palinsesto orari giorni calendario programma twitch storia instagram telegram discord manda week schedule semana horario programación',
     notifiche: 'avvisi notifiche social tiktok instagram youtube discord nuovi post live notificaciones avisos',
     dcavvisi: 'discord avvisi avviso canale live diretta annuncio menzione ruolo everyone amici community testo messaggio alerts announcement channel mention avisos anuncio canal mencion',

@@ -93,6 +93,7 @@ import * as pubblicita from '../features/pubblicita.js';
 import * as instagram from '../features/instagram.js';
 import * as igAccesso from '../features/instagram-accesso.js';
 import { credenzialiInstagram } from '../features/instagram-credenziali.js';
+import * as storiaIg from '../features/storia-ig.js';
 import * as settimana from '../features/settimana.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
@@ -5074,6 +5075,14 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // I posti, solo quelli COLLEGATI: un servizio che non c'e' non compare. E per
   // ognuno si dice prima se funzionera': un canale che rifiuta l'immagine si
   // scopre qui, non dopo aver premuto.
+  // Si puo' pubblicare una storia? Collegato, e col permesso di pubblicare: lo
+  // si chiede alla porta che conta le pubblicazioni, che vuole lo stesso
+  // permesso e non pubblica niente. null = Instagram non e' collegato.
+  const storiaIgPossibile = async (login) => {
+    const ig = credenzialiInstagram(login);
+    return ig ? { puo: !!(await instagram.puoPubblicare(ig).catch(() => ({ ok: false }))).ok } : null;
+  };
+
   const postiSettimana = async (login) => {
     const s = streamers.get(login);
     const posti = { tg: [], dc: [], ig: null, tw: null, dcCalendario: null };
@@ -5109,8 +5118,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         return { id: d.id, nome: d.canale_nome || '', webhook: !!d.webhook, manca };
       });
     }
-    const ig = credenzialiInstagram(login);
-    if (ig) posti.ig = { puo: !!(await instagram.puoPubblicare(ig).catch(() => ({ ok: false }))).ok };
+    posti.ig = await storiaIgPossibile(login);
     // Il Programma e' di Twitch: c'e' per chi e' entrato con Twitch.
     if (tokens.get('broadcaster', login)) posti.tw = { permesso: programmaOk(login) };
     if (pronto) posti.dcCalendario = { acceso: !!s?.settings?.discordEventi?.acceso };
@@ -5168,24 +5176,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   }));
 
   // LE IMMAGINI PER INSTAGRAM. Meta la scarica da un indirizzo pubblico nel
-  // momento in cui pubblica: nome casuale, cancellata appena pubblicata, e uno
-  // spazzino per quelle rimaste da un giro interrotto. Pubblica abbastanza per
-  // Meta, non per chi prova a indovinare.
-  const cartellaPubblici = join(config.dataDir, 'pubblici');
-  const PUBBLICO_RE = /^[a-f0-9]{32}\.jpg$/;
-  const PUBBLICO_VITA_MS = 30 * 60_000;
-  const spazzaPubblici = () => {
-    try {
-      for (const f of readdirSync(cartellaPubblici)) {
-        const p = join(cartellaPubblici, f);
-        if (Date.now() - statSync(p).mtimeMs > PUBBLICO_VITA_MS) unlinkSync(p);
-      }
-    } catch { /* cartella non ancora nata */ }
-  };
+  // momento in cui pubblica; chi le mette e le toglie e' features/storia-ig.js.
+  // Qui solo la porta: un nome casuale e basta, niente percorsi.
   app.get('/pubblici/:nome', (req, res) => {
     const nome = String(req.params.nome || '');
-    const p = join(cartellaPubblici, nome);
-    if (!PUBBLICO_RE.test(nome) || !existsSync(p)) return res.status(404).end();
+    const p = join(storiaIg.cartellaPubblici(), nome);
+    if (!storiaIg.PUBBLICO_RE.test(nome) || !existsSync(p)) return res.status(404).end();
     res.set('Cache-Control', 'no-store');
     res.type('image/jpeg').send(readFileSync(p));
   });
@@ -5198,26 +5194,6 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(v || ''));
     const b = m ? Buffer.from(m[1], 'base64') : null;
     return b && b.length <= SETTIMANA_MAX && b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF ? b : null;
-  };
-
-  // LA STORIA DI INSTAGRAM. L'immagine sta in un indirizzo pubblico solo per il
-  // tempo che Meta la scarica, e l'esito resta dove il pannello lo mostra.
-  // L'immagine e' gia' verticale (1080×1920): la disegna il pannello, perche'
-  // una grafica quadrata Instagram la ingrandisce fino a riempire lo schermo e
-  // ne taglia i lati.
-  const pubblicaStoriaIg = async (login, byte) => {
-    const ig = credenzialiInstagram(login);
-    if (!ig) return { ok: false, errore: 'Instagram non e\' collegato' };
-    spazzaPubblici();
-    mkdirSync(cartellaPubblici, { recursive: true });
-    const nome = crypto.randomBytes(16).toString('hex') + '.jpg';
-    const p = join(cartellaPubblici, nome);
-    writeFileSync(p, byte);
-    try {
-      const r = await instagram.pubblicaStoria({ ...ig, url: `${config.baseUrl.replace(/\/$/, '')}/pubblici/${nome}` });
-      instagram.ricorda(login, r);
-      return r;
-    } finally { try { unlinkSync(p); } catch { /* gia' andata */ } }
   };
 
   // Due immagini, una per posto: il post (1080×1350) per Telegram e Discord, la
@@ -5265,10 +5241,42 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       }
 
       if (dove.ig && storia && credenzialiInstagram(login)) {
-        const r = await pubblicaStoriaIg(login, storia);
+        const r = await storiaIg.pubblicaStoria(login, storia);
         esiti.push({ dove: 'ig', nome: 'storia', ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
       }
       res.json({ ok: true, esiti });
+    } finally { _mandando.delete(login); }
+  }));
+
+  // LA STORIA DALLE GRAFICHE: la grafica che hai davanti, gia' verticale, nella
+  // tua storia. Il pannello chiede prima se si puo', cosi' il tasto non promette
+  // quello che non puo' fare; poi la pubblica dallo stesso posto di «Manda».
+  app.get('/api/streamer/grafiche/storia', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    res.json({ ig: await storiaIgPossibile(login), live: storiaIg.statoLive(login) });
+  }));
+
+  // La storia che parte da sola quando comincia la diretta. Accenderla vuol dire
+  // mandare la grafica gia' pronta: senza, l'interruttore sarebbe acceso su
+  // niente. Spegnerla toglie anche l'immagine.
+  app.post('/api/streamer/grafiche/storia-live', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!req.body?.attiva) return res.json({ ok: true, live: storiaIg.spegniLive(login) });
+    const byte = leggiJpeg(req.body?.immagine);
+    if (!byte) return res.status(400).json({ errore: 'La grafica non e\' arrivata intera: riprova.' });
+    res.json({ ok: true, live: storiaIg.accendiLive(login, byte) });
+  }));
+
+  app.post('/api/streamer/grafiche/storia', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const byte = leggiJpeg(req.body?.immagine);
+    if (!byte) return res.status(400).json({ errore: 'La grafica non e\' arrivata intera: riprova.' });
+    if (!credenzialiInstagram(login)) return res.status(409).json({ errore: 'Instagram non e\' collegato.' });
+    if (_mandando.has(login)) return res.status(409).json({ errore: 'Ne sto gia\' mandando una.' });
+    _mandando.add(login);
+    try {
+      const r = await storiaIg.pubblicaStoria(login, byte);
+      res.json({ ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
     } finally { _mandando.delete(login); }
   }));
 
@@ -6078,7 +6086,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         op,
         coloreTesto: /^#[0-9a-fA-F]{6}$/.test(String(gr.coloreTesto || '')) ? String(gr.coloreTesto) : '',
         velo: veloN,
-        titolo: str(gr.titolo, 40), handle: str(gr.handle, 40), logo: str(gr.logo, 8),
+        titolo: str(gr.titolo, 40), titoloLive: str(gr.titoloLive, 40), handle: str(gr.handle, 40), logo: str(gr.logo, 8),
         logoImg: imgOk(logoImg) ? logoImg : '',
         gioco: str(gr.gioco, 40), sottotitolo: str(gr.sottotitolo, 60),
         sfondo: ['tema', 'tinta', 'immagine'].includes(gr.sfondo) ? gr.sfondo : 'tema',

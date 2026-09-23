@@ -1600,6 +1600,13 @@ body.leggero .scheletro::after, body.meno-moto .scheletro::after { animation: no
 .gr-anteprima { flex: 1 1 300px; min-width: 260px; position: sticky; top: 16px; }
 #gr-canvas { width: auto; height: auto; max-width: min(100%, 420px); max-height: min(calc(100vh - 32px), 760px); border-radius: 14px; box-shadow: var(--om-m); display: block; margin: 0 auto; background: #111; }
 .gr-formato { margin-top: -.4rem; }
+.gr-ig { border: 1px solid var(--acc-bordo); background: var(--acc-tint); border-radius: var(--r-m); padding: .75rem .9rem; margin: .7rem 0 .9rem; }
+.gr-ig > p { margin: 0; }
+.gr-ig > p + p { margin-top: .6rem; }
+.gr-ig:has(> .problema) { border: 0; background: none; padding: 0; }
+.gr-ig-azione { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.gr-ig-auto { margin-top: .8rem; padding-top: .7rem; border-top: 1px solid var(--acc-bordo); }
+.gr-ig .problema { margin-top: .6rem; }
 .gr-misura { font-weight: 500; color: var(--testo-3); font-variant-numeric: tabular-nums; font-size: .82em; }
 
 @media (max-width: 720px) {

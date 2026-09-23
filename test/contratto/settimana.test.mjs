@@ -50,11 +50,12 @@ test('le rotte sono dello streamer, e «Manda» vuole un JPEG vero e piccolo', (
 
 test('l\'immagine per Instagram e\' pubblica solo quanto serve', () => {
   const via = rotta("app.get('/pubblici/:nome'", 600);
-  assert.match(SRV, /const PUBBLICO_RE = \/\^\[a-f0-9\]\{32\}\\\.jpg\$\//, 'solo nomi casuali da 128 bit');
-  assert.match(via, /!PUBBLICO_RE\.test\(nome\)/, 'nessun altro nome passa, niente percorsi');
+  const STORIA = leggi('src/features/storia-ig.js');
+  assert.match(STORIA, /export const PUBBLICO_RE = \/\^\[a-f0-9\]\{32\}\\\.jpg\$\//, 'solo nomi casuali da 128 bit');
+  assert.match(via, /!storiaIg\.PUBBLICO_RE\.test\(nome\)/, 'nessun altro nome passa, niente percorsi');
   assert.ok(creaGuscio(join(RAD, 'src/web/public')).aperto('/pubblici/' + 'a'.repeat(32) + '.jpg'),
     'Meta la scarica senza sessione: se il cancello non la lascia passare, Instagram riceve 404');
-  const storia = rotta('const pubblicaStoriaIg = async', 900);
+  const storia = STORIA.slice(STORIA.indexOf('export async function pubblicaStoria('), STORIA.indexOf('// ── la storia della diretta'));
   assert.match(storia, /crypto\.randomBytes\(16\)\.toString\('hex'\)/);
   assert.match(storia, /finally \{ try \{ unlinkSync\(p\); \}/, 'si cancella appena pubblicata, anche se Instagram dice di no');
   assert.match(storia, /spazzaPubblici\(\);/, 'e quelle rimaste da un giro interrotto se ne vanno');

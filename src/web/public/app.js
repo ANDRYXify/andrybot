@@ -681,6 +681,10 @@ function apiDemo(percorso, opzioni = {}) {
   const via = percorso.split('?')[0];
   const domanda = new URLSearchParams(percorso.split('?')[1] || '').get('q') || '';
   if (metodo === 'GET' && via === '/api/streamer/adesso') return Promise.resolve(_demoAdesso());
+  if (metodo === 'GET' && via === '/api/streamer/grafiche/storia') {
+    const accesa = !!_demoScritture.storiaLive;
+    return Promise.resolve({ ig: { puo: true }, live: { attiva: accesa, pronta: accesa, ultima: accesa ? { ts: Date.now() - 86_400_000, ok: true, errore: '' } : null } });
+  }
   if (metodo === 'GET' && via === '/api/streamer/regia/giochi') return Promise.resolve({ giochi: _demoGiochi(domanda) });
   if (metodo === 'GET' && via === '/api/streamer/settimana/categoria') return Promise.resolve({ categoria: _demoCategoria(domanda) });
   if (metodo === 'GET' && via === '/api/streamer/libreria') return Promise.resolve(_demoLibreria(percorso));
@@ -720,6 +724,14 @@ function apiDemo(percorso, opzioni = {}) {
   if (via === '/api/streamer/settimana') {
     return Promise.resolve({ ok: true, settimana: { ..._DEMO_SETTIMANA, ...(opzioni.body?.settimana || {}), twitch: { ..._DEMO_SETTIMANA.twitch, acceso: !!opzioni.body?.settimana?.twitch?.acceso } },
       esito: { twitch: { ok: true, creati: 0, sistemati: 1, tolti: 0, occupati: [] }, discord: { ok: true } } });
+  }
+  if (via === '/api/streamer/grafiche/storia') {
+    toast(L('In demo non la pubblico davvero', 'In demo mode I do not really post it', 'En demo no la publico de verdad'));
+    return Promise.resolve({ ok: true, errore: '' });
+  }
+  if (via === '/api/streamer/grafiche/storia-live') {
+    _demoScritture.storiaLive = !!opzioni.body?.attiva;
+    return Promise.resolve({ ok: true });
   }
   if (via === '/api/streamer/settimana/manda') {
     toast(L('In demo non mando davvero', 'In demo mode I do not really send it', 'En demo no lo mando de verdad'));
@@ -2534,7 +2546,7 @@ function avviaBarraSalva() {
     if (!t || !t.closest) return;
     if (!t.closest('.pannello-scheda.visibile')) return;
     if (!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
-    if (t.closest('#tg-destinazioni, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .cerca-guscio')) return;
+    if (t.closest('#tg-destinazioni, #gr-ig, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .cerca-guscio')) return;
     if (t.closest('.ovl-inspector') && !t.closest(ASP_SALVA_A_MANO)) return;
     const reg = _regioneSalva(t);
     if (!reg) return;
@@ -3156,7 +3168,7 @@ const GUIDE = {
   avatar: { serve: ['Guardare il bot mentre pensa: la sfera si accende quando legge la chat, decide e risponde.', 'Watch the bot while it thinks: the sphere lights up as it reads chat, decides and answers.', 'Ver el bot mientras piensa: la esfera se enciende cuando lee el chat, decide y responde.'],
     come: [['La sfera al centro è il bot: ogni filo che si illumina è un pezzo di ragionamento in corso.', 'The sphere in the middle is the bot: every thread that lights up is a piece of reasoning under way.', 'La esfera del centro es el bot: cada hilo que se ilumina es un trozo de razonamiento en marcha.', '#mente3d-canvas'], ['Sotto, il cruscotto dice cosa sta facendo adesso e quanto ci mette: se tace, qui si vede perché.', 'Below, the dashboard says what it is doing right now and how long it takes: if it goes quiet, here you see why.', 'Abajo, el panel dice qué está haciendo ahora y cuánto tarda: si se calla, aquí se ve por qué.', '#mente-cruscotto']] },
   grafiche: { serve: ['Fare la locandina della diretta da postare sui social, con i tuoi colori e il tuo handle.', 'Make the stream poster to post on socials, with your colors and your handle.', 'Hacer el cartel del directo para publicar en redes, con tus colores y tu handle.'],
-    come: [['Scrivi il titolo: è la riga grande della locandina.', 'Write the title: it is the big line of the poster.', 'Escribe el título: es la línea grande del cartel.', '#gr-titolo'], ['Scegli il colore d\'accento; il testo si adatta da solo perché resti leggibile.', 'Pick the accent color; the text adapts by itself so it stays readable.', 'Elige el color de acento; el texto se adapta solo para que siga legible.', '#gr-accento'], ['Scarica il PNG (o la versione animata) e pubblicalo: la didascalia è già pronta da copiare.', 'Download the PNG (or the animated one) and post it: the caption is ready to copy.', 'Descarga el PNG (o la versión animada) y publícalo: el pie de foto ya está listo para copiar.', '#gr-scarica']] },
+    come: [['Scrivi il titolo: è la riga grande della locandina.', 'Write the title: it is the big line of the poster.', 'Escribe el título: es la línea grande del cartel.', '#gr-titolo'], ['Scegli il colore d\'accento; il testo si adatta da solo perché resti leggibile.', 'Pick the accent color; the text adapts by itself so it stays readable.', 'Elige el color de acento; el texto se adapta solo para que siga legible.', '#gr-accento'], ['Scarica il PNG (o la versione animata) e pubblicalo: la didascalia è già pronta da copiare.', 'Download the PNG (or the animated one) and post it: the caption is ready to copy.', 'Descarga el PNG (o la versión animada) y publícalo: el pie de foto ya está listo para copiar.', '#gr-scarica'], ['In cima, «Metti nella storia» manda la grafica nella tua storia di Instagram, già in verticale; se Instagram non è collegato, lì trovi il tasto per collegarlo.', 'At the top, «Post to your story» sends the graphic to your Instagram story, already vertical; if Instagram is not connected, you find the button to connect it there.', 'Arriba, «Publicar en tu historia» manda la gráfica a tu historia de Instagram, ya en vertical; si Instagram no está conectado, ahí tienes el botón para conectarlo.', '#gr-ig']] },
   settimana: { serve: ['Scrivere una volta sola quando vai in onda e cosa fai, e mandarlo dove ti seguono.', 'Write once when you go live and what you do, and send it where people follow you.', 'Escribir una sola vez cuándo sales en directo y qué haces, y mandarlo donde te siguen.'],
     come: [['Per ogni giorno l’ora e cosa fai, un gioco o un titolo; se quel giorno riposi, spunta «riposo».', 'For each day the time and what you do, a game or a title; if you rest that day, tick «day off».', 'Para cada día la hora y qué haces, un juego o un título; si ese día descansas, marca «descanso».', '#sett-giorni'], ['Salvando, i calendari si rimettono in pari da soli: quello di Discord e il Programma di Twitch.', 'Saving brings the calendars in line by themselves: Discord’s and the Twitch Schedule.', 'Al guardar, los calendarios se ponen al día solos: el de Discord y el Programa de Twitch.', '#sett-salva'], ['Spunta dove mandare l’immagine e premi «Manda»: compaiono solo i posti che hai collegato.', 'Tick where to send the image and press «Send»: only the places you connected show up.', 'Marca adónde mandar la imagen y pulsa «Manda»: solo aparecen los sitios que has conectado.', '#sett-dove']] },
   scudo: { serve: ['La difesa dagli attacchi: le ondate di finti follower e gli account-bot che spammano in chat.', 'Defence against attacks: waves of fake followers and bot accounts spamming chat.', 'La defensa contra los ataques: oleadas de seguidores falsos y cuentas-bot que spamean el chat.'],
@@ -4217,7 +4229,7 @@ function grafDefault() {
   return {
     tipo: 'programmazione', tema: 'notte', accento: '', accento2: '',
     font: 'archivo', stileTitolo: 'sfumato', stileRighe: 'schede', velocita: 'normale', intensita: 100, op: {},
-    titolo: '', handle: '@' + canale, logo: '', logoImg: '',
+    titolo: '', titoloLive: '', handle: '@' + canale, logo: '', logoImg: '',
     coloreTesto: '', velo: 45,
     gioco: '', sottotitolo: '',
     sfondo: 'tema', sfondoColore: '', sfondoImg: '',
@@ -4454,6 +4466,12 @@ function _settDisegnaCalendari() {
   _settCercaCategorie();
 }
 
+const _igStoriaBloccata = () => problemaHtml({
+  titolo: L('La storia di Instagram non può partire', 'The Instagram story cannot go out', 'La historia de Instagram no puede salir'),
+  testo: L('Instagram è collegato, ma per pubblicare una storia servono un account professionale e il permesso di pubblicare.', 'Instagram is connected, but posting a story needs a professional account and the publishing permission.', 'Instagram está conectado, pero para publicar una historia hacen falta una cuenta profesional y el permiso de publicar.'),
+  tasto: `<button type="button" class="btn secondario mini" data-vai="notifiche">${L('Vai a Instagram', 'Go to Instagram', 'Ir a Instagram')}</button>`,
+});
+
 function _settDisegnaDove() {
   const box = _g('sett-dove');
   if (!box) return;
@@ -4477,11 +4495,7 @@ function _settDisegnaDove() {
   if (p.ig) {
     blocchi.push(`<p class="campo spazio-sopra">Instagram</p>` + (p.ig.puo
       ? spunta('ig', 'storia', L('Storia', 'Story', 'Historia'), L('resta 24 ore, senza testo', 'stays 24 hours, no text', 'dura 24 horas, sin texto'), w.dove.ig, '')
-      : problemaHtml({
-        titolo: L('La storia di Instagram non può partire', 'The Instagram story cannot go out', 'La historia de Instagram no puede salir'),
-        testo: L('Instagram è collegato, ma per pubblicare una storia servono un account professionale e il permesso di pubblicare.', 'Instagram is connected, but posting a story needs a professional account and the publishing permission.', 'Instagram está conectado, pero para publicar una historia hacen falta una cuenta profesional y el permiso de publicar.'),
-        tasto: `<button type="button" class="btn secondario mini" data-vai="notifiche">${L('Vai a Instagram', 'Go to Instagram', 'Ir a Instagram')}</button>`,
-      })));
+      : _igStoriaBloccata()));
   }
   box.innerHTML = blocchi.length ? blocchi.join('')
     : `<p class="suggerimento">${L('Qui compaiono i posti dove mandarla appena colleghi Telegram, Discord o Instagram.', 'The places to send it show up here as soon as you connect Telegram, Discord or Instagram.', 'Aquí aparecen los sitios adonde mandarla en cuanto conectes Telegram, Discord o Instagram.')}</p>`;
@@ -4639,6 +4653,9 @@ function _grafOpzioniHtml(c) {
     : `<div class="gr-op-scelta"><span class="campo">${esc(L(...o.nome))}</span><div class="gr-sfondo-scelte">${o.voci.map(([id, ...nome]) => `<button type="button" class="gr-tema${val[o.id] === id ? ' on' : ''}" data-gr-op="${o.id}" data-gr-val="${id}">${esc(L(...nome))}</button>`).join('')}</div></div>`)).join('');
 }
 
+const _grafTitoloDi = (c) => (c.tipo === 'live' ? c.titoloLive : c.titolo) || '';
+const _grafSegnaTitolo = (tipo) => (tipo === 'live' ? L('es. LIVE', 'e.g. LIVE', 'p. ej. EN DIRECTO') : L('es. LA SETTIMANA', 'e.g. THE WEEK', 'p. ej. LA SEMANA'));
+
 function pannelloGrafiche() {
   const c = grafConfig();
   const etAnim = L('tema animato', 'animated theme', 'tema animado');
@@ -4654,6 +4671,8 @@ function pannelloGrafiche() {
     <div class="carta">
       <h2>${_hIco(ICO.grafico)}${L('Grafiche social', 'Social graphics', 'Gráficas sociales')}</h2>
       <p>${L('Due grafiche pronte da pubblicare: la', 'Two ready-to-post graphics: the', 'Dos gráficas listas para publicar: la')} <strong class="primo-piano">${L('programmazione settimanale', 'weekly schedule', 'programación semanal')}</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">«${L('Live ora', 'Live now', 'En directo')}»</strong>. ${L('Parti da uno stile pronto o da un tema, cambia quello che vuoi e scarica. Le tue impostazioni restano salvate.', 'Start from a ready-made style or a theme, change what you want and download. Your settings stay saved.', 'Empieza por un estilo listo o un tema, cambia lo que quieras y descarga. Tus ajustes quedan guardados.')}</p>
+
+      <div class="gr-ig" id="gr-ig">${attesaHtml()}</div>
 
       <div class="gr-tipo">
         <button type="button" class="gr-tipo-b${c.tipo === 'programmazione' ? ' on' : ''}" data-gr-tipo="programmazione">${L('Programmazione', 'Schedule', 'Programación')}</button>
@@ -4710,7 +4729,7 @@ function pannelloGrafiche() {
           <div class="riga-flessibile spazio-sopra">
             <div style="flex:1 1 180px">
               <label class="campo" for="gr-titolo">${L('Titolo', 'Title', 'Título')}</label>
-              <input type="text" id="gr-titolo" maxlength="30" placeholder="${L('es. LA SETTIMANA', 'e.g. THE WEEK', 'p. ej. LA SEMANA')}" value="${esc(c.titolo)}">
+              <input type="text" id="gr-titolo" maxlength="30" placeholder="${esc(_grafSegnaTitolo(c.tipo))}" value="${esc(_grafTitoloDi(c))}">
             </div>
             <div style="width:96px">
               <label class="campo" for="gr-accento">${L('Accento', 'Accent', 'Acento')}</label>
@@ -5211,7 +5230,7 @@ function grafDisegna(canvas, c, t = 0, scala = 1) {
     const b = lay.badge;
     ctx.save(); ctx.shadowColor = 'rgba(255,59,48,.9)'; ctx.shadowBlur = 24; ctx.beginPath(); ctx.arc(b.punto.x, b.punto.y, b.punto.r, 0, Math.PI * 2); ctx.fillStyle = '#ff3b30'; ctx.fill(); ctx.restore();
     grafScritta(ctx, sc, pal, { testo: L('IN DIRETTA ORA', 'LIVE NOW', 'EN DIRECTO'), x: b.x, base: b.base, font: `800 ${b.px}px ${GR_BASE}`, colori: [pal.tenue], ls: 7, px: b.px, peso: b.peso });
-    grafTitolo(ctx, sc, pal, c, lay, (c.titolo || 'LIVE').toUpperCase());
+    grafTitolo(ctx, sc, pal, c, lay, (c.titoloLive || 'LIVE').toUpperCase());
     if (c.gioco) grafPillola(ctx, pal, lay, String(c.gioco));
     if (c.sottotitolo) {
       const so = lay.sotto;
@@ -5251,6 +5270,54 @@ function grafQr(ctx, sc, pal, c, lay) {
 
 let _grafRiprendi = null;
 
+let _grIgLive = null;
+
+function _grIgLiveHtml(live) {
+  if (!live) return '';
+  const quando = (ts) => new Date(Number(ts) || 0).toLocaleString(localePannello(), { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  let esito = '';
+  if (live.attiva && !live.pronta) {
+    esito = problemaHtml({
+      titolo: L('La storia automatica è accesa, ma la grafica non è pronta', 'The automatic story is on, but the graphic is not ready', 'La historia automática está activada, pero la gráfica no está lista'),
+      testo: L('Spegnila e riaccendila: la grafica si prepara di nuovo.', 'Turn it off and on again: the graphic gets prepared again.', 'Desactívala y vuelve a activarla: la gráfica se prepara de nuevo.'),
+    });
+  } else if (live.ultima && !live.ultima.ok) {
+    esito = problemaHtml({
+      titolo: L('L’ultima storia automatica non è partita', 'The last automatic story did not go out', 'La última historia automática no ha salido'),
+      testo: `${esc(quando(live.ultima.ts))}: ${esc(live.ultima.errore || '')}`,
+      tasto: `<button type="button" class="btn secondario mini" data-vai="notifiche">${L('Vai a Instagram', 'Go to Instagram', 'Ir a Instagram')}</button>`,
+    });
+  } else if (live.ultima?.ok) {
+    esito = `<p class="suggerimento">${L('L’ultima è partita il', 'The last one went out on', 'La última salió el')} ${esc(quando(live.ultima.ts))}.</p>`;
+  }
+  return `<label class="riga-check gr-ig-auto"><input type="checkbox" id="gr-ig-live"${live.attiva ? ' checked' : ''}> ${L('Quando vai in diretta su Twitch, la storia «Live ora» parte da sola', 'When you go live on Twitch, the «Live now» story goes out by itself', 'Cuando sales en directo en Twitch, la historia «En directo» sale sola')}</label>
+    <p class="suggerimento">${L('Parte la tua grafica «Live ora» in verticale, com’è quando accendi l’opzione o salvi le impostazioni. Il gioco scritto resta quello: se cambia ogni volta, lascialo vuoto. Al massimo una per diretta.', 'Your «Live now» graphic goes out, vertical, as it is when you turn this on or save the settings. The game you wrote stays the same: if it changes every time, leave it empty. At most one per stream.', 'Sale tu gráfica «En directo» en vertical, tal como está cuando activas la opción o guardas los ajustes. El juego escrito se queda igual: si cambia cada vez, déjalo vacío. Como mucho una por directo.')}</p>
+    ${esito}`;
+}
+
+function _grIgHtml(ig, errore = false, live = null) {
+  const ora = L('Ora le tue grafiche vanno nella storia di Instagram con un tasto, già in verticale.', 'Now your graphics go to your Instagram story in one tap, already vertical.', 'Ahora tus gráficas van a tu historia de Instagram con un toque, ya en vertical.');
+  if (errore) return `<p class="suggerimento">${L('Non riesco a sapere se Instagram è collegato: riprova tra poco.', 'I cannot tell whether Instagram is connected: try again shortly.', 'No consigo saber si Instagram está conectado: inténtalo de nuevo en un rato.')}</p>`;
+  if (ig && !ig.puo) return _igStoriaBloccata();
+  if (!ig) {
+    return `<p><strong>${ora}</strong> ${L('Collega Instagram e la metti nella storia da qui.', 'Connect Instagram and post it to your story from here.', 'Conecta Instagram y publícala en tu historia desde aquí.')}</p>
+      <p><button type="button" class="btn secondario" data-vai="notifiche">${L('Collega Instagram', 'Connect Instagram', 'Conectar Instagram')}</button></p>`;
+  }
+  return `<p><strong>${ora}</strong> ${L('Parte la grafica che vedi, in formato storia, e resta 24 ore.', 'The graphic you see goes out, in story format, and stays 24 hours.', 'Sale la gráfica que ves, en formato historia, y dura 24 horas.')}</p>
+    <p class="gr-ig-azione"><button type="button" class="btn" id="gr-ig-storia">${_bIco(ICO.condividi)}${L('Metti nella storia', 'Post to your story', 'Publicar en tu historia')}</button>
+    <span id="gr-ig-esito" class="suggerimento" role="status"></span></p>
+    ${_grIgLiveHtml(live)}`;
+}
+
+async function caricaStoriaIg() {
+  const box = _g('gr-ig');
+  if (!box) return;
+  let d = null;
+  try { d = await api('/api/streamer/grafiche/storia'); } catch { d = null; }
+  _grIgLive = d?.live || null;
+  if (_g('gr-ig') === box) box.innerHTML = _grIgHtml(d?.ig ?? null, !d, _grIgLive);
+}
+
 function initGrafiche() {
   const canvas = document.getElementById('gr-canvas');
   if (!canvas) return;
@@ -5283,7 +5350,45 @@ function initGrafiche() {
     if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }
     if (!_fermo) _fermo = requestAnimationFrame(disegnaFermo);
   };
-  _grafRiprendi = () => { c.giorni = grafGiorni(); ridisegna(); };
+  _grafRiprendi = () => { c.giorni = grafGiorni(); ridisegna(); caricaStoriaIg(); };
+  caricaStoriaIg();
+  const storiaLive = () => grafJpeg({ ...c, tipo: 'live', formato: 'storia' });
+  document.getElementById('gr-ig')?.addEventListener('change', (ev) => {
+    const x = ev.target.closest('#gr-ig-live');
+    if (!x) return;
+    const accendi = x.checked;
+    x.disabled = true;
+    conErrore(async () => {
+      try {
+        if (accendi) await grafFontPronti();
+        await api('/api/streamer/grafiche/storia-live', { method: 'POST', body: accendi ? { attiva: true, immagine: storiaLive() } : { attiva: false } });
+        toast(accendi ? L('Storia automatica accesa ✓', 'Automatic story on ✓', 'Historia automática activada ✓') : L('Storia automatica spenta', 'Automatic story off', 'Historia automática desactivada'));
+        await caricaStoriaIg();
+      } catch (e) { x.checked = !accendi; throw e; } finally { x.disabled = false; }
+    });
+  });
+  document.getElementById('gr-ig')?.addEventListener('click', (ev) => {
+    const b = ev.target.closest('#gr-ig-storia');
+    if (!b || b.disabled) return;
+    const esito = document.getElementById('gr-ig-esito');
+    const prima = b.innerHTML;
+    b.disabled = true;
+    b.textContent = L('La metto nella storia…', 'Posting it to your story…', 'La publico en tu historia…');
+    if (esito) esito.textContent = '';
+    conErrore(async () => {
+      try {
+        await grafFontPronti();
+        const r = await api('/api/streamer/grafiche/storia', { method: 'POST', body: { immagine: grafJpeg({ ...c, formato: 'storia' }) } });
+        if (r?.ok) {
+          if (esito) esito.textContent = L('Fatto: è nella tua storia.', 'Done: it is in your story.', 'Hecho: está en tu historia.');
+          toast(L('È nella tua storia ✓', 'It is in your story ✓', 'Está en tu historia ✓'));
+        } else {
+          if (esito) esito.textContent = L('Non è partita: ', 'It did not go out: ', 'No ha salido: ') + (r?.errore || '');
+          toast(L('La storia non è partita.', 'The story did not go out.', 'La historia no ha salido.'), 'errore');
+        }
+      } finally { b.disabled = false; b.innerHTML = prima; }
+    });
+  });
 
   const accendi = (chiave, valore) => document.querySelectorAll(`[data-${chiave}]`).forEach((x) => x.classList.toggle('on', x.getAttribute(`data-${chiave}`) === valore));
   const allinea = () => {
@@ -5315,6 +5420,8 @@ function initGrafiche() {
   const setTipo = (t) => {
     c.tipo = t;
     misuraPost();
+    const tit = document.getElementById('gr-titolo');
+    if (tit) { tit.value = _grafTitoloDi(c); tit.placeholder = _grafSegnaTitolo(t); }
     document.querySelectorAll('[data-gr-tipo]').forEach((b) => b.classList.toggle('on', b.dataset.grTipo === t));
     document.querySelectorAll('.gr-solo-prog').forEach((x) => x.toggleAttribute('hidden', t === 'live'));
     document.querySelectorAll('.gr-solo-live').forEach((x) => x.toggleAttribute('hidden', t !== 'live'));
@@ -5329,7 +5436,8 @@ function initGrafiche() {
     ridisegna();
   }));
   const bind = (id, k) => document.getElementById(id)?.addEventListener('input', (e) => { c[k] = e.target.value; ridisegna(); });
-  bind('gr-titolo', 'titolo'); bind('gr-handle', 'handle'); bind('gr-logo', 'logo');
+  document.getElementById('gr-titolo')?.addEventListener('input', (e) => { c[c.tipo === 'live' ? 'titoloLive' : 'titolo'] = e.target.value; ridisegna(); });
+  bind('gr-handle', 'handle'); bind('gr-logo', 'logo');
   bind('gr-gioco', 'gioco'); bind('gr-sottotitolo', 'sottotitolo');
   document.getElementById('gr-accento')?.addEventListener('input', (e) => {
     c.accento = e.target.value;
@@ -5527,6 +5635,11 @@ function initGrafiche() {
   });
   document.getElementById('gr-salva')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({ grafiche: c }, L('Grafica salvata ✓', 'Graphic saved ✓', 'Gráfica guardada ✓'));
+    if (_grIgLive?.attiva) {
+      await grafFontPronti();
+      await api('/api/streamer/grafiche/storia-live', { method: 'POST', body: { attiva: true, immagine: storiaLive() } });
+      await caricaStoriaIg();
+    }
   }));
 
   document.querySelectorAll('[data-gr-dest]').forEach((b) => b.addEventListener('click', () => {
