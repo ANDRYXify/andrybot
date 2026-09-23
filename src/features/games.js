@@ -757,7 +757,7 @@ async function sblocca(channel, msg, args, say) {
   const r = await modalita.accendiPer(channel, cb.modo, minuti * 60, { annuncia: false });
   if (!r.ok || r.esito === 'gia') {
     cooldowns.delete(k);
-    say(r.esito === 'gia' ? '🔓 La chat è già così: non ti costa niente.' : '🔓 Non sono riuscita a cambiare la chat: le monete restano tue.');
+    say(r.esito === 'gia' ? '🔓 La chat è già così: non ti costa niente.' : '🔓 Non sono riuscita a cambiare la chat: non ti costa niente.');
     return;
   }
   points.add(channel, msg.user, -costo);

@@ -23435,8 +23435,8 @@ function _rgTestoResa(r, ctx) {
   const n = _rgNumero;
   if (r.tipo === 'puntata') {
     return r.perCento > 100
-      ? L(`Su 100 ${m} giocate ne tornano ${n(r.perCento)}: così il gioco crea ${m}.`, `Out of 100 ${m} played, ${n(r.perCento)} come back: this way the game creates ${m}.`, `De cada 100 ${m} jugadas vuelven ${n(r.perCento)}: así el juego crea ${m}.`)
-      : L(`Su 100 ${m} giocate ne tornano in media ${n(r.perCento)}.`, `Out of 100 ${m} played, ${n(r.perCento)} come back on average.`, `De cada 100 ${m} jugadas vuelven de media ${n(r.perCento)}.`);
+      ? L(`Su 100 ${m} di puntata ne tornano ${n(r.perCento)}: così il gioco crea ${m}.`, `Out of 100 ${m} bet, ${n(r.perCento)} come back: this way the game creates ${m}.`, `Por cada 100 ${m} de apuesta vuelven ${n(r.perCento)}: así el juego crea ${m}.`)
+      : L(`Su 100 ${m} di puntata ne tornano in media ${n(r.perCento)}.`, `Out of 100 ${m} bet, ${n(r.perCento)} come back on average.`, `Por cada 100 ${m} de apuesta vuelven de media ${n(r.perCento)}.`);
   }
   if (r.tipo === 'tabella') {
     return L(`In media ${n(r.media)} a lancio, fino a ${n(r.perOra)} all'ora. La presenza ne dà ${n(ctx.presenzaOraria)}.`, `On average ${n(r.media)} per cast, up to ${n(r.perOra)} an hour. Presence gives ${n(ctx.presenzaOraria)}.`, `De media ${n(r.media)} por lance, hasta ${n(r.perOra)} por hora. La presencia da ${n(ctx.presenzaOraria)}.`);
@@ -23449,8 +23449,8 @@ function _rgTestoResa(r, ctx) {
   if (r.tipo === 'manche') {
     return L(`Con una manche al massimo ogni ${n(ctx.mancheMinuti)} minuti, fino a ${n(r.perOra)} ${m} all'ora.`, `With a round at most every ${n(ctx.mancheMinuti)} minutes, up to ${n(r.perOra)} ${m} an hour.`, `Con una ronda como máximo cada ${n(ctx.mancheMinuti)} minutos, hasta ${n(r.perOra)} ${m} por hora.`);
   }
-  if (r.tipo === 'passa') return L(`Le ${m} passano di tasca in tasca: non se ne creano.`, `The ${m} pass from pocket to pocket: none are created.`, `Las ${m} pasan de bolsillo en bolsillo: no se crean.`);
-  if (r.tipo === 'spesa') return L(`Toglie ${m} dall'economia: è un modo di spenderle.`, `It takes ${m} out of the economy: a way to spend them.`, `Saca ${m} de la economía: es una forma de gastarlas.`);
+  if (r.tipo === 'passa') return L(`Passano di tasca in tasca: il gioco non ne crea.`, `They pass from pocket to pocket: the game creates none.`, `Pasan de bolsillo en bolsillo: el juego no crea más.`);
+  if (r.tipo === 'spesa') return L(`Toglie ${m} dall'economia: è un modo di spendere.`, `It takes ${m} out of the economy: a way to spend.`, `Saca ${m} de la economía: es una forma de gastar.`);
   return '';
 }
 
