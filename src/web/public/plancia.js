@@ -6,6 +6,7 @@
   function A() { return window.SB_APP; }
   function L(it, en, es) { try { return A().L(it, en, es); } catch (e) { return it; } }
   function esc(s) { try { return A().esc(String(s)); } catch (e) { return String(s == null ? '' : s); } }
+  function tasto(n) { try { return A().scorciatoia(n); } catch (e) { return n === 'invio' ? L('Invio', 'Enter', 'Intro') : n; } }
   function menoMoto() { try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; } }
 
   var K_MODO = 'sb-plancia', K_SUONO = 'sb-plancia-suono';
@@ -57,7 +58,7 @@
       '<div class="pl-guida">' +
       '<b class="pl-cop"><span>←→</span> ' + esc(L('scorri', 'scroll', 'desplaza')) + '</b>' +
       '<b class="pl-cop"><span>↑↓</span> ' + esc(L('salta gruppo', 'jump group', 'saltar grupo')) + '</b>' +
-      '<b class="pl-cop"><span>Invio</span> ' + esc(L('apri', 'open', 'abrir')) + '</b>' +
+      '<b class="pl-cop"><span>' + esc(tasto('invio')) + '</span> ' + esc(L('apri', 'open', 'abrir')) + '</b>' +
       '<b class="pl-cop"><span>Esc</span> ' + esc(L('esci', 'exit', 'salir')) + '</b>' +
       '<b class="pl-cop"><span>A</span><span>B</span> ' + esc(L('col controller', 'with a controller', 'con el mando')) + '</b>' +
       '</div>';

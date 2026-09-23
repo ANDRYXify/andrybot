@@ -374,23 +374,23 @@ async function caricaStato() {
 
 const INVITI = {
   posta: () => ({
-    titolo: L('Ti mando com’è andata, quando chiudi?', 'Shall I send you how it went, when you stop?', '¿Te mando qué tal fue, cuando cierras?'),
-    testo: L('Appena finisci la diretta ti arriva il riepilogo: spettatori, chat, follower nuovi e le clip da riguardare.', 'As soon as your stream ends you get the recap: viewers, chat, new followers and the clips to watch again.', 'En cuanto cierras el directo te llega el resumen: espectadores, chat, seguidores nuevos y los clips para volver a verlos.'),
+    titolo: L('Vuoi il riepilogo di ogni diretta per mail?', 'Want a recap of every stream by email?', '¿Quieres el resumen de cada directo por correo?'),
+    testo: L('Quando finisci la diretta ti arrivano spettatori, chat, follower nuovi e le clip da riguardare.', 'When your stream ends you get viewers, chat, new followers and the clips to watch again.', 'Cuando termina tu directo te llegan espectadores, chat, seguidores nuevos y los clips para volver a ver.'),
     corpo: `<label class="campo" for="inv-posta-mail">${L('Il tuo indirizzo', 'Your address', 'Tu dirección')}</label>
       <input type="email" id="inv-posta-mail" class="campo-largo" placeholder="tu@esempio.it" autocomplete="email">
-      <p class="suggerimento spazio-sopra">${L('Ti mando una mail per confermarlo: vale solo dopo il clic. Serve a questo e basta, e lo togli quando vuoi dalla scheda Dirette.', 'I send you a mail to confirm it: it only counts after the click. It is used for this and nothing else, and you remove it whenever you want from the Streams tab.', 'Te mando un correo para confirmarla: solo vale tras el clic. Sirve para esto y nada más, y la quitas cuando quieras desde la pestaña Directos.')}</p>`,
-    si: L('Mandami la conferma', 'Send me the confirmation', 'Mándame la confirmación'),
+            <p class="suggerimento spazio-sopra">${L('Prima ti scrivo per confermare l’indirizzo: i riepiloghi partono quando premi il link nella mail. Lo uso solo per questo, e lo togli quando vuoi dalla scheda Dirette.', 'First I write to you to confirm the address: the recaps start when you click the link in the email. I use it only for this, and you can remove it whenever you like from the Streams tab.', 'Primero te escribo para confirmar la dirección: los resúmenes empiezan cuando pulsas el enlace del correo. Solo la uso para esto, y la quitas cuando quieras desde la pestaña Directos.')}</p>`,
+    si: L('Sì, mandameli', 'Yes, send them to me', 'Sí, mándamelos'),
     fai: async () => {
       const email = (document.getElementById('inv-posta-mail')?.value || '').trim();
       if (!email) { toast(L('Scrivi il tuo indirizzo.', 'Type your address.', 'Escribe tu dirección.'), 'errore'); return false; }
       await api('/api/streamer/posta', { method: 'POST', body: { email } });
-      toast(L('Ti ho scritto: apri la mail e conferma.', 'I wrote to you: open the mail and confirm.', 'Te he escrito: abre el correo y confirma.'));
+      toast(L('Ti ho scritto: apri la mail e premi il link per confermare.', 'I wrote to you: open the email and click the link to confirm.', 'Te he escrito: abre el correo y pulsa el enlace para confirmar.'));
       return true;
     },
   }),
   sostieni: () => ({
     titolo: L('Ti è servito?', 'Was it useful?', '¿Te ha servido?'),
-    testo: L('Il tuo server adesso è a posto, e non ti è costato niente. Per il tuo Discord SocialBot resta gratis: i piani servono a chi trasmette, e a te non servono.', 'Your server is sorted now, and it cost you nothing. For your Discord SocialBot stays free: the plans are for people who stream, and you do not need them.', 'Tu servidor ya está en orden, y no te ha costado nada. Para tu Discord SocialBot sigue siendo gratis: los planes son para quien hace directos, y tú no los necesitas.'),
+    testo: L('Il tuo server adesso è a posto, e non ti è costato niente. Per chi usa solo Discord, SocialBot è gratis: i piani sono per chi fa dirette.', 'Your server is sorted now, and it cost you nothing. For people who only use Discord, SocialBot is free: the plans are for people who stream.', 'Tu servidor ya está en orden, y no te ha costado nada. Para quien solo usa Discord, SocialBot es gratis: los planes son para quien hace directos.'),
     corpo: `<p class="suggerimento">${L('Se ti va, puoi offrire un caffè al progetto. Non cambia niente di quello che hai: niente si sblocca, niente si spegne, e non te lo richiedo più.', 'If you feel like it, you can buy the project a coffee. Nothing about what you have changes: nothing unlocks, nothing switches off, and I will not ask you again.', 'Si te apetece, puedes invitar a un café al proyecto. No cambia nada de lo que tienes: nada se desbloquea, nada se apaga, y no te lo vuelvo a pedir.')}</p>`,
     si: L('Offro un caffè', 'Buy a coffee', 'Invito a un café'),
     fai: async () => {
@@ -399,8 +399,8 @@ const INVITI = {
     },
   }),
   vetrina: () => ({
-    titolo: L('Ti va di comparire sulla nostra home quando sei in diretta?', 'Fancy showing up on our home when you are live?', '¿Te apetece aparecer en nuestra home cuando estés en directo?'),
-    testo: L('Sulla pagina iniziale di SocialBot c’è una fascia con chi è in onda adesso. Se vuoi ci sei anche tu.', 'The SocialBot home page has a band with who is on air right now. If you like, you are in it too.', 'La página de inicio de SocialBot tiene una franja con quién está en directo ahora. Si quieres, tú también.'),
+    titolo: L('Ti va di comparire sulla prima pagina di SocialBot quando sei in diretta?', 'Would you like to appear on the SocialBot front page when you are live?', '¿Te apetece aparecer en la portada de SocialBot cuando estés en directo?'),
+    testo: L('C’è una fascia con chi è in onda adesso: chi passa di lì può trovarti.', 'There is a band with who is on air right now: people passing by can find you.', 'Hay una franja con quién está en directo ahora: quien pase por ahí puede encontrarte.'),
     corpo: `<p class="suggerimento">${L('Si vedono il tuo nome, il titolo della diretta, la categoria e quante persone ti guardano, con un collegamento al tuo canale. Niente dei tuoi spettatori, e niente che non sia già pubblico sul tuo canale. Lo spegni quando vuoi dalla scheda Stato.', 'It shows your name, the stream title, the category and how many people are watching, with a link to your channel. Nothing about your viewers, and nothing that is not already public on your channel. You turn it off whenever you want from the Status tab.', 'Se ven tu nombre, el título del directo, la categoría y cuánta gente te ve, con un enlace a tu canal. Nada de tus espectadores, y nada que no sea ya público en tu canal. Lo apagas cuando quieras desde la pestaña Estado.')}</p>`,
     si: L('Sì, fammi comparire', 'Yes, show me', 'Sí, muéstrame'),
     fai: async () => {
@@ -1905,7 +1905,97 @@ function montaConfiguratore(root, d, { gia = [], suOk = null } = {}) {
   aggiorna();
 }
 
-function chiediScelta({ titolo = '', testo = '', azioni = [] } = {}) {
+const _dispositivo = (() => {
+  let apple = false, soloTocco = false;
+  try {
+    const p = navigator.userAgentData?.platform || navigator.platform || '';
+    apple = /mac|iphone|ipad|ipod/i.test(p) || /Mac OS X|iPhone|iPad/.test(navigator.userAgent || '');
+    soloTocco = !!window.matchMedia && !window.matchMedia('(any-pointer: fine)').matches;
+  } catch {  }
+  return { apple, soloTocco };
+})();
+
+function scorciatoia(...pezzi) {
+  const nomi = { mod: ['⌘', 'Ctrl'], alt: ['⌥', 'Alt'], maiusc: ['⇧', L('Maiusc', 'Shift', 'Mayús')], invio: [L('Invio', 'Return', 'Intro'), L('Invio', 'Enter', 'Intro')] };
+  const p = pezzi.map((x) => (nomi[x] ? nomi[x][_dispositivo.apple ? 0 : 1] : x));
+  return _dispositivo.apple ? p.join('') : p.join('+');
+}
+
+function traTasti(combo) {
+  return _dispositivo.soloTocco ? '' : ` (${combo})`;
+}
+
+function _piedeTasti() {
+  if (_dispositivo.soloTocco) return '';
+  const m = scorciatoia('mod'), s = scorciatoia('maiusc'), a = scorciatoia('alt');
+  return `<span class="ovl-piede-dx">${esc(L(`${m} marcia fine · ${s} dritto · ${a} niente aggancio · frecce al pixel`, `${m} fine gear · ${s} straight · ${a} no snapping · arrows by pixel`, `${m} marcha fina · ${s} recto · ${a} sin ajuste · flechas al píxel`))}</span>`;
+}
+
+function _aiutoEditorOverlay() {
+  if (_dispositivo.soloTocco) {
+    return `<strong>${L('Tocca', 'Tap', 'Toca')}</strong> ${L('un elemento per selezionarlo, poi <strong>trascinalo</strong> col dito: le maniglie tonde lo ridimensionano e lo ruotano. Con «Prova» li vedi nell’overlay, dove l’hai messo.', 'an element to select it, then <strong>drag</strong> it with your finger: the round handles resize and rotate it. Use «Test» to see them in the overlay, wherever you put it.', 'un elemento para seleccionarlo, luego <strong>arrástralo</strong> con el dedo: las asas redondas lo redimensionan y lo giran. Con «Probar» los ves en el overlay, donde lo hayas puesto.')}`;
+  }
+  const m = scorciatoia('mod'), s = scorciatoia('maiusc'), a = scorciatoia('alt');
+  return `<strong>${L('Clicca', 'Click', 'Haz clic en')}</strong> ${L(
+    `un elemento per selezionarlo, poi <strong>trascinalo</strong>. Tenendo premuto mentre trascini: <strong>${m}</strong> va a passo di un quinto, per il lavoro fine; <strong>${s}</strong> lo tiene dritto su un asse; <strong>${a}</strong> toglie l’aggancio. Le <strong>frecce</strong> spostano di un pixel, con ${s} di dieci. <strong>${a}+rotellina</strong> ridimensiona, <strong>${s}+rotellina</strong> ruota, <strong>doppio clic</strong> ripristina. Con «Prova» li vedi nell’overlay, dove l’hai messo.`,
+    `an element to select it, then <strong>drag</strong> it. While dragging, hold: <strong>${m}</strong> to move at one fifth speed, for fine work; <strong>${s}</strong> to keep it straight on one axis; <strong>${a}</strong> to drop snapping. <strong>Arrows</strong> move by one pixel, with ${s} by ten. <strong>${a}+wheel</strong> resizes, <strong>${s}+wheel</strong> rotates, <strong>double click</strong> resets. Use «Test» to see them in the overlay, wherever you put it.`,
+    `un elemento para seleccionarlo, luego <strong>arrástralo</strong>. Mientras arrastras, mantén: <strong>${m}</strong> para ir a un quinto de velocidad, para el trabajo fino; <strong>${s}</strong> para mantenerlo recto en un eje; <strong>${a}</strong> para quitar el ajuste. Las <strong>flechas</strong> mueven un píxel, con ${s} diez. <strong>${a}+rueda</strong> redimensiona, <strong>${s}+rueda</strong> gira, <strong>doble clic</strong> restablece. Con «Probar» los ves en el overlay, donde lo hayas puesto.`)}`;
+}
+
+function comeCopiare() {
+  return _dispositivo.soloTocco
+    ? L('Tieni premuto sul testo e scegli «Copia».', 'Press and hold the text, then choose «Copy».', 'Mantén pulsado el texto y elige «Copiar».')
+    : L(`È già selezionato: premi ${scorciatoia('mod', 'C')}.`, `It is already selected: press ${scorciatoia('mod', 'C')}.`, `Ya está seleccionado: pulsa ${scorciatoia('mod', 'C')}.`);
+}
+
+async function chiediSe({ titolo, testo = '', si, no = L('Lascia stare', 'Never mind', 'Déjalo'), pericolo = false } = {}) {
+  const r = await chiediScelta({ titolo, testo, fuoco: pericolo ? 'no' : 'si',
+    azioni: [{ id: 'si', testo: si, tono: pericolo ? 'pericolo' : '' }, { id: 'no', testo: no, tono: 'secondario' }] });
+  return r === 'si';
+}
+
+function chiediCopia({ testo = '', msgOk = '', titolo = L('Copialo da qui', 'Copy it from here', 'Cópialo desde aquí'), spiega = L('Il browser non mi ha lasciato copiarlo da sola.', 'The browser did not let me copy it myself.', 'El navegador no me dejó copiarlo yo sola.') } = {}) {
+  return new Promise((risolvi) => {
+    const el = document.createElement('div');
+    el.className = 'bv-velo mdl-chiedi';
+    el.innerHTML = `<div class="bv-carta mdl-carta" role="dialog" aria-modal="true">
+      <h2>${esc(titolo)}</h2>
+      ${spiega ? `<p class="bv-intro">${esc(spiega)}</p>` : ''}
+      <textarea class="campo-largo mdl-campo" rows="3" readonly>${esc(testo)}</textarea>
+      <p class="suggerimento mdl-come" hidden>${esc(comeCopiare())}</p>
+      <div class="bv-azioni">
+        <button type="button" class="btn grande" data-mdl="copia">${esc(L('Copia', 'Copy', 'Copiar'))}</button>
+        <button type="button" class="btn grande secondario" data-mdl="chiudi">${esc(L('Chiudi', 'Close', 'Cerrar'))}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('dentro'));
+    const campo = el.querySelector('.mdl-campo');
+    const come = el.querySelector('.mdl-come');
+    campo.focus(); campo.select();
+    let chiuso = false;
+    const via = (v) => {
+      if (chiuso) return; chiuso = true;
+      document.removeEventListener('keydown', tasti, true);
+      el.classList.remove('dentro');
+      setTimeout(() => el.remove(), 240);
+      risolvi(v);
+    };
+    const tasti = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); via(false); } };
+    document.addEventListener('keydown', tasti, true);
+    el.addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-mdl]');
+      if (!b) { if (ev.target === el) via(false); return; }
+      if (b.dataset.mdl === 'chiudi') return via(false);
+      campo.focus(); campo.select();
+      let fatto = false;
+      try { fatto = document.execCommand('copy'); } catch {  }
+      if (fatto) { if (msgOk) toast(msgOk); via(true); } else { come.hidden = false; }
+    });
+  });
+}
+
+function chiediScelta({ titolo = '', testo = '', azioni = [], fuoco = '' } = {}) {
   return new Promise((risolvi) => {
     const el = document.createElement('div');
     el.className = 'bv-velo mdl-chiedi';
@@ -1916,7 +2006,7 @@ function chiediScelta({ titolo = '', testo = '', azioni = [] } = {}) {
     </div>`;
     document.body.appendChild(el);
     requestAnimationFrame(() => el.classList.add('dentro'));
-    const primo = el.querySelector('[data-mdl]');
+    const primo = el.querySelector(fuoco ? `[data-mdl="${fuoco}"]` : '[data-mdl]') || el.querySelector('[data-mdl]');
     if (primo) primo.focus();
     let chiuso = false;
     const via = (v) => {
@@ -1936,7 +2026,7 @@ function chiediScelta({ titolo = '', testo = '', azioni = [] } = {}) {
   });
 }
 
-function chiediTesto({ titolo = '', testo = '', valore = '', ok = 'OK', scelte = null } = {}) {
+function chiediTesto({ titolo = '', testo = '', valore = '', ok = 'OK', scelte = null, max = 40, pericolo = false } = {}) {
   return new Promise((risolvi) => {
     const el = document.createElement('div');
     el.className = 'bv-velo mdl-chiedi';
@@ -1945,11 +2035,11 @@ function chiediTesto({ titolo = '', testo = '', valore = '', ok = 'OK', scelte =
     el.innerHTML = `<div class="bv-carta mdl-carta" role="dialog" aria-modal="true">
       <h2>${esc(titolo)}</h2>
       ${testo ? `<p class="bv-intro">${esc(testo)}</p>` : ''}
-      <input type="text" class="campo-largo mdl-campo" value="${esc(valore)}" maxlength="40" autocomplete="off">
+      <input type="text" class="campo-largo mdl-campo" value="${esc(valore)}" maxlength="${Number(max) || 40}" autocomplete="off">
       ${bloccoScelte}
       <div class="bv-azioni">
-        <button type="button" class="btn grande" data-mdl="ok">${esc(ok)}</button>
-        <button type="button" class="btn grande secondario" data-mdl="no">${L('Annulla', 'Cancel', 'Cancelar')}</button>
+        <button type="button" class="btn grande${pericolo ? ' pericolo' : ''}" data-mdl="ok">${esc(ok)}</button>
+        <button type="button" class="btn grande secondario" data-mdl="no">${L('Lascia stare', 'Never mind', 'Déjalo')}</button>
       </div>
     </div>`;
     document.body.appendChild(el);
@@ -2248,8 +2338,10 @@ function collegaTgDestinazioni() {
     const togli = e.target.closest('[data-togli]');
     if (togli) {
       const d = togli.closest('.tg-dest');
-      if (!confirm(L('Togliere questa destinazione? Gli avvisi non arriveranno più lì.', 'Remove this destination? Alerts will stop landing there.', '¿Quitar este destino? Los avisos dejarán de llegar ahí.'))) return;
       return conErrore(async () => {
+        if (!(await chiediSe({ titolo: L('Tolgo questa destinazione?', 'Remove this destination?', '¿Quito este destino?'),
+          testo: L('Gli avvisi non arriveranno più lì. Puoi rimetterla quando vuoi.', 'Alerts will stop landing there. You can add it back whenever you like.', 'Los avisos dejarán de llegar ahí. Puedes volver a ponerlo cuando quieras.'),
+          si: L('Toglila', 'Remove it', 'Quítalo') }))) return;
         await api('/api/streamer/telegram/destinazioni/' + d.dataset.dest, { method: 'DELETE' });
         await caricaTgDestinazioni();
       });
@@ -2511,8 +2603,10 @@ function collegaFeed() {
     });
     const tg = e.target.closest('[data-fd-togli]');
     if (tg) {
-      if (!confirm(L('Togliere questa sorgente?', 'Remove this source?', '¿Quitar esta fuente?'))) return;
       return conErrore(async () => {
+        if (!(await chiediSe({ titolo: L('Tolgo questa sorgente?', 'Remove this source?', '¿Quito esta fuente?'),
+          testo: L('Smetto di guardare se pubblica qualcosa di nuovo. Puoi rimetterla quando vuoi.', 'I stop checking it for new posts. You can add it back whenever you like.', 'Dejo de mirar si publica algo nuevo. Puedes volver a ponerla cuando quieras.'),
+          si: L('Toglila', 'Remove it', 'Quítala') }))) return;
         await api('/api/streamer/feed/' + tg.dataset.fdTogli, { method: 'DELETE' });
         await caricaFeed();
       });
@@ -4909,8 +5003,7 @@ function initGrafiche() {
   taDida?.addEventListener('input', () => { didascaliaManuale = true; });
   document.getElementById('gr-copia-didascalia')?.addEventListener('click', async () => {
     const t = (document.getElementById('gr-didascalia')?.value || grafDidascalia(c)).trim();
-    try { await navigator.clipboard.writeText(t); toast(L('Didascalia copiata ✓', 'Caption copied ✓', 'Descripción copiada ✓')); }
-    catch { toast(L('Copia non riuscita: selezionala a mano.', 'Copy failed: select it manually.', 'No se pudo copiar: selecciónala a mano.'), 'errore'); }
+    await copiaTesto(t, L('Didascalia copiata ✓', 'Caption copied ✓', 'Descripción copiada ✓'));
   });
   document.getElementById('gr-condividi')?.addEventListener('click', async (ev) => {
     const btn = ev.currentTarget, testo0 = btn.textContent;
@@ -4930,8 +5023,8 @@ function initGrafiche() {
 
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
         a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-        try { await navigator.clipboard.writeText(dida); } catch {  }
-        toast(L('Immagine scaricata e didascalia copiata: apri Instagram e incolla', 'Image downloaded and caption copied: open Instagram and paste', 'Imagen descargada y descripción copiada: abre Instagram y pega'));
+        await copiaTesto(dida, L('Immagine scaricata e didascalia copiata: apri Instagram e incolla', 'Image downloaded and caption copied: open Instagram and paste', 'Imagen descargada y descripción copiada: abre Instagram y pega'),
+          { titolo: L('Immagine scaricata: copia la didascalia', 'Image downloaded: copy the caption', 'Imagen descargada: copia la descripción') });
       }
     } catch (e) {
       if (!e || e.name !== 'AbortError') toast(L('Condivisione non riuscita.', 'Sharing failed.', 'No se pudo compartir.'), 'errore');
@@ -6014,7 +6107,9 @@ async function caricaTgLogin() {
       </div>
       ${linkBot ? `<p class="suggerimento spazio-sopra">${L('Apri la Mini App:', 'Open the Mini App:', 'Abre la Mini App:')} <a href="${linkBot}" target="_blank" rel="noopener">@${esc(d.bot)}</a></p>` : ''}`;
     document.getElementById('tgl-scollega')?.addEventListener('click', () => conErrore(async () => {
-      if (!confirm(L('Scollegare Telegram da questo canale?', 'Unlink Telegram from this channel?', '¿Desvincular Telegram de este canal?'))) return;
+      if (!(await chiediSe({ titolo: L('Scollego Telegram da questo canale?', 'Unlink Telegram from this channel?', '¿Desvinculo Telegram de este canal?'),
+        testo: L('Dalla Mini App non potrai più aprire questo canale, finché non lo ricolleghi.', 'You will not be able to open this channel from the Mini App until you link it again.', 'Desde la Mini App no podrás abrir este canal hasta que lo vuelvas a vincular.'),
+        si: L('Scollega', 'Unlink', 'Desvincula') }))) return;
       await api('/api/tgapp/scollega', { method: 'POST', body: {} });
       toast(L('Telegram scollegato.', 'Telegram unlinked.', 'Telegram desvinculado.')); caricaTgLogin();
     }));
@@ -7178,8 +7273,8 @@ function pannelloAlert() {
       </div>
       <div class="ovl-barra spazio-sopra">
         <div class="ovl-gruppo">
-          <button type="button" class="ovl-tasto" id="ovl-annulla" title="${L('Annulla', 'Undo', 'Deshacer')} (Ctrl+Z)" disabled>${_bIco('<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>')}</button>
-          <button type="button" class="ovl-tasto" id="ovl-ripeti" title="${L('Ripeti', 'Redo', 'Rehacer')} (Ctrl+Y)" disabled>${_bIco('<path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/>')}</button>
+          <button type="button" class="ovl-tasto" id="ovl-annulla" title="${L('Annulla', 'Undo', 'Deshacer')}${traTasti(scorciatoia('mod', 'Z'))}" disabled>${_bIco('<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>')}</button>
+          <button type="button" class="ovl-tasto" id="ovl-ripeti" title="${L('Ripeti', 'Redo', 'Rehacer')}${traTasti(_dispositivo.apple ? scorciatoia('mod', 'maiusc', 'Z') : scorciatoia('mod', 'Y'))}" disabled>${_bIco('<path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/>')}</button>
         </div>
         <div class="ovl-gruppo" id="ovl-allinea">
           <button type="button" class="ovl-tasto" data-all="sx" title="${L('Allinea a sinistra', 'Align left', 'Alinear a la izquierda')}">${_bIco('<path d="M4 3v18"/><rect x="8" y="6" width="12" height="5" rx="1"/><rect x="8" y="14" width="8" height="5" rx="1"/>')}</button>
@@ -7254,7 +7349,7 @@ function pannelloAlert() {
           <label class="ovl-insp-mis"><input type="number" id="insp-r" step="1" min="-180" max="180"><i>°</i></label>
         </div>
       </div>
-      <p class="suggerimento"><strong>${L('Clicca', 'Click', 'Haz clic en')}</strong> ${L('un elemento per selezionarlo, poi <strong>trascinalo</strong>. Tenendo premuto mentre trascini: <strong>Ctrl</strong> (o ⌘) va a passo di un quinto, per il lavoro fine; <strong>Maiusc</strong> lo tiene dritto su un asse; <strong>Alt</strong> toglie l\'aggancio. Le <strong>frecce</strong> spostano di un pixel, con Maiusc di dieci. <strong>Alt+rotellina</strong> ridimensiona, <strong>Maiusc+rotellina</strong> ruota, <strong>doppio clic</strong> ripristina. Con «Prova» li vedi nell\'overlay, dove l\'hai messo.', 'an element to select it, then <strong>drag</strong> it. While dragging, hold: <strong>Ctrl</strong> (or ⌘) to move at one fifth speed, for fine work; <strong>Shift</strong> to keep it straight on one axis; <strong>Alt</strong> to drop snapping. <strong>Arrows</strong> move by one pixel, with Shift by ten. <strong>Alt+wheel</strong> resizes, <strong>Shift+wheel</strong> rotates, <strong>double click</strong> resets. Use «Test» to see them in the overlay, wherever you put it.', 'un elemento para seleccionarlo, luego <strong>arrástralo</strong>. Mientras arrastras, mantén: <strong>Ctrl</strong> (o ⌘) para ir a un quinto de velocidad, para el trabajo fino; <strong>Mayús</strong> para mantenerlo recto en un eje; <strong>Alt</strong> para quitar el ajuste. Las <strong>flechas</strong> mueven un píxel, con Mayús diez. <strong>Alt+rueda</strong> redimensiona, <strong>Mayús+rueda</strong> rota, <strong>doble clic</strong> restablece. Con «Probar» los ves en el overlay, donde lo hayas puesto.')}</p>
+      <p class="suggerimento">${_aiutoEditorOverlay()}</p>
     </div>
 
     <div class="carta" data-parte="overlay">
@@ -9039,7 +9134,7 @@ function aggiornaPiedeBanco() {
   const sel = typeof selezione !== 'undefined' ? selezione : null;
   if (!sel) {
     piede.innerHTML = `<span>${esc(L('Niente selezionato', 'Nothing selected', 'Nada seleccionado'))}</span>`
-      + `<span class="ovl-piede-dx">${esc(L('Ctrl marcia fine · Maiusc dritto · Alt niente aggancio · frecce al pixel', 'Ctrl fine gear · Shift straight · Alt no snapping · arrows by pixel', 'Ctrl marcha fina · Mayús recto · Alt sin ajuste · flechas al píxel'))}</span>`;
+      + _piedeTasti();
     return;
   }
   const st = _posDove(sel);
@@ -9048,7 +9143,7 @@ function aggiornaPiedeBanco() {
     + `<span>X <b>${_arr(st.x)}%</b></span><span>Y <b>${_arr(st.y)}%</b></span>`
     + `<span>${esc(L('Dim', 'Size', 'Tam'))} <b>${st.s}%</b></span>`
     + `<span>${esc(L('Rot', 'Rot', 'Rot'))} <b>${st.r}°</b></span>`
-    + `<span class="ovl-piede-dx">${esc(L('Ctrl marcia fine · Maiusc dritto · Alt niente aggancio · frecce al pixel', 'Ctrl fine gear · Shift straight · Alt no snapping · arrows by pixel', 'Ctrl marcha fina · Mayús recto · Alt sin ajuste · flechas al píxel'))}</span>`;
+    + _piedeTasti();
 }
 
 window.addEventListener('resize', () => { misuraSopraBanco(); });
@@ -10236,7 +10331,8 @@ function rendiTrascinabile(el, chiave) {
   if (!el || el.dataset.trascinabile) return;
   el.dataset.trascinabile = '1';
   el.style.cursor = 'grab';
-  el.title = L('Clic per selezionare · trascina per spostare (Ctrl = fine, Maiusc = dritto, Alt = niente aggancio) · doppio clic per ripristinare', 'Click to select · drag to move (Ctrl = fine, Shift = straight, Alt = no snapping) · double click to reset', 'Clic para seleccionar · arrastra para mover (Ctrl = fino, Mayús = recto, Alt = sin ajuste) · doble clic para restablecer');
+  const [tMod, tMaiusc, tAlt] = [scorciatoia('mod'), scorciatoia('maiusc'), scorciatoia('alt')];
+  el.title = L(`Clic per selezionare · trascina per spostare (${tMod} = fine, ${tMaiusc} = dritto, ${tAlt} = niente aggancio) · doppio clic per ripristinare`, `Click to select · drag to move (${tMod} = fine, ${tMaiusc} = straight, ${tAlt} = no snapping) · double click to reset`, `Clic para seleccionar · arrastra para mover (${tMod} = fino, ${tMaiusc} = recto, ${tAlt} = sin ajuste) · doble clic para restablecer`);
   _iniettaManiglie(chiave);
   el.addEventListener('pointerdown', (e) => {
     if (e.button != null && e.button !== 0) return;
@@ -10307,10 +10403,12 @@ function rendiTrascinabile(el, chiave) {
     e.preventDefault();
     if (_bloccato(chiave)) return;
     const st = _statoXY(chiave);
-    const passo = e.ctrlKey || e.metaKey ? 1 : 4;
-    if (e.shiftKey) { let r = (st.r || 0) + (e.deltaY < 0 ? passo : -passo); while (r > 180) r -= 360; while (r < -180) r += 360; st.r = r; }
-    else if (window.SB_RIQUADRO.e(st)) { _ridimensionaRiquadro(st, e.deltaY < 0 ? passo : -passo); }
-    else { st.s = Math.max(30, Math.min(300, (st.s || 100) + (e.deltaY < 0 ? passo : -passo))); }
+    const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (!d) return;
+    const passo = (e.ctrlKey || e.metaKey ? 1 : 4) * (d < 0 ? 1 : -1);
+    if (e.shiftKey) { let r = (st.r || 0) + passo; while (r > 180) r -= 360; while (r < -180) r += 360; st.r = r; }
+    else if (window.SB_RIQUADRO.e(st)) { _ridimensionaRiquadro(st, passo); }
+    else { st.s = Math.max(30, Math.min(300, (st.s || 100) + passo)); }
     seleziona(chiave); _posElemento(el, st); aggiornaInspector(); _ricorda('rotella:' + chiave); _salvaPosDebounced(chiave);
   }, { passive: false });
   el.addEventListener('dblclick', () => { _azzeraPos(chiave); deseleziona(); aggiornaAnteprima(); _ricorda(); _salvaPos(chiave); });
@@ -10835,7 +10933,9 @@ async function rinominaOverlay() {
 async function eliminaOverlay() {
   if (overlays.length <= 1) { toast(L('Deve restare almeno un overlay.', 'At least one overlay must remain.', 'Debe quedar al menos un overlay.')); return; }
   const ov = overlays.find((o) => o.id === overlaySel); if (!ov) return;
-  if (!confirm(L(`Eliminare l'overlay "${ov.nome}"? Il suo link OBS smetterà di funzionare.`, `Delete the overlay "${ov.nome}"? Its OBS link will stop working.`, `¿Eliminar el overlay "${ov.nome}"? Su enlace OBS dejará de funcionar.`))) return;
+  if (!(await chiediSe({ titolo: L(`Elimino l'overlay «${ov.nome}»?`, `Delete the overlay «${ov.nome}»?`, `¿Elimino el overlay «${ov.nome}»?`), pericolo: true,
+    testo: L('Il suo link in OBS smette di funzionare, e non si torna indietro.', 'Its OBS link stops working, and there is no going back.', 'Su enlace en OBS deja de funcionar, y no hay vuelta atrás.'),
+    si: L('Eliminalo', 'Delete it', 'Elimínalo') }))) return;
   overlays = overlays.filter((o) => o.id !== overlaySel);
   overlaySel = overlays[0].id;
   await _spingiOverlays();
@@ -10960,7 +11060,9 @@ function caricaAlert() {
   _g('font-miei-elenco')?.addEventListener('click', (e) => conErrore(async () => {
     const b = e.target.closest('[data-font-via]'); if (!b) return;
     const nome = b.dataset.fontVia;
-    if (!confirm(L(`Togliere il font «${nome}»?`, `Remove the font «${nome}»?`, `¿Quitar la fuente «${nome}»?`))) return;
+    if (!(await chiediSe({ titolo: L(`Tolgo il carattere «${nome}»?`, `Remove the font «${nome}»?`, `¿Quito la fuente «${nome}»?`), pericolo: true,
+      testo: L('Il file si cancella: per riaverlo va caricato di nuovo.', 'The file is deleted: to get it back you upload it again.', 'El archivo se borra: para recuperarlo hay que volver a subirlo.'),
+      si: L('Toglilo', 'Remove it', 'Quítala') }))) return;
     await api('/api/streamer/font/' + encodeURIComponent(nome), { method: 'DELETE' });
     FONT_MIEI = FONT_MIEI.filter((x) => x.nome !== nome);
     _rendiFontMiei();
@@ -11776,8 +11878,7 @@ function appendiConsolify() {
     if (occhio) { _cons.scoperta = !_cons.scoperta; disegnaIndirizziConsole(); disegnaSchedaTasto(); return; }
     const copia = ev.target.closest('.cons-copia');
     if (copia) {
-      try { await navigator.clipboard.writeText(copia.dataset.url); copia.textContent = L('copiato', 'copied', 'copiado'); }
-      catch { /* niente appunti: resta l'indirizzo da selezionare a mano */ }
+      if (await copiaTesto(copia.dataset.url, '')) copia.textContent = L('copiato', 'copied', 'copiado');
       return;
     }
     const ic = ev.target.closest('[data-cons-icona]');
@@ -11791,7 +11892,7 @@ function appendiConsolify() {
     const vuoto = ev.target.closest('[data-cons-vuoto]');
     if (vuoto) {
       const lista = pg().tasti;
-      if (lista.length >= 48) { alert(L('Quarantotto tasti per pagina bastano: fanne un\'altra pagina.', 'Forty-eight keys per page is plenty: make another page.', 'Cuarenta y ocho teclas por página bastan: haz otra página.')); return; }
+      if (lista.length >= 48) { toast(L('Quarantotto tasti per pagina bastano: fanne un\'altra pagina.', 'Forty-eight keys per page is plenty: make another page.', 'Cuarenta y ocho teclas por página bastan: haz otra página.'), 'errore'); return; }
       lista.push({ passi: [], nome: '', icona: '', colore: '', conferma: false, vuoto: true });
       _cons.aperto = lista.length - 1;
       disegnaConsolify();
@@ -11820,7 +11921,9 @@ function appendiConsolify() {
       if (_cons.modifica) return;
       const t = pg()?.tasti?.[Number(tasto.dataset.consTasto)];
       if (!t) return;
-      if (t.conferma && !confirm(`${consNome(t, consAzione(t))}: ${L('sicuro?', 'sure?', '¿seguro?')}`)) return;
+      if (t.conferma && !(await chiediSe({ titolo: L(`Faccio partire «${consNome(t, consAzione(t))}»?`, `Run «${consNome(t, consAzione(t))}»?`, `¿Lanzo «${consNome(t, consAzione(t))}»?`),
+        testo: L('Questo tasto l\'hai impostato per chiedere prima di partire.', 'You set this key to ask before it runs.', 'Esta tecla la configuraste para preguntar antes de lanzarse.'),
+        si: L('Fallo partire', 'Run it', 'Lánzala') }))) return;
       const stato = tasto.querySelector('.cons-stato');
       if (stato) stato.textContent = '\u2026';
       try {
@@ -11848,13 +11951,15 @@ function appendiConsolify() {
     }
     if (id === 'cons-rinomina') {
       const p = pg();
-      const nome = (prompt(L('Nome della pagina', 'Page name', 'Nombre de la página'), p.nome || '') || '').trim();
+      const nome = ((await chiediTesto({ titolo: L('Come chiamo questa pagina?', 'What should this page be called?', '¿Cómo llamo a esta página?'), valore: p.nome || '', ok: L('Rinomina', 'Rename', 'Renombrar'), max: 24 })) || '').trim();
       if (!nome) return;
       p.nome = nome.slice(0, 24); disegnaConsolify(); await salvaPlancia(); return;
     }
     if (id === 'cons-togli-pagina') {
       if (_cons.plancia.pagine.length < 2) return;
-      if (!confirm(L('Eliminare questa pagina e i suoi tasti?', 'Delete this page and its keys?', '¿Eliminar esta página y sus teclas?'))) return;
+      if (!(await chiediSe({ titolo: L('Elimino questa pagina?', 'Delete this page?', '¿Elimino esta página?'), pericolo: true,
+        testo: L('Con lei se ne vanno i suoi tasti, e non si torna indietro.', 'Its keys go with it, and there is no going back.', 'Sus teclas se van con ella, y no hay vuelta atrás.'),
+        si: L('Eliminala', 'Delete it', 'Elimínala') }))) return;
       _cons.plancia.pagine.splice(_cons.pagina, 1);
       _cons.pagina = 0; _cons.aperto = null;
       disegnaConsolify(); await salvaPlancia(); return;
@@ -11882,7 +11987,9 @@ function appendiConsolify() {
     if (id === 're-collega') { _cons.regiaFerma = false; await provaCollegamento(false); return; }
     if (id === 're-stacca') { _cons.regiaFerma = true; RegiaEsterna.chiudi(); disegnaSpiaRegia(); await caricaScene(); return; }
     if (id === 're-scorda') {
-      if (!confirm(L('Scordare indirizzo e password? Restano solo su questo computer, e le riscrivi quando vuoi.', 'Forget address and password? They only live on this computer, and you can type them again whenever.', '¿Olvidar dirección y contraseña? Solo viven en este ordenador, y las reescribes cuando quieras.'))) return;
+      if (!(await chiediSe({ titolo: L('Scordo indirizzo e password?', 'Forget address and password?', '¿Olvido dirección y contraseña?'),
+        testo: L('Stanno solo su questo computer, e le riscrivi quando vuoi.', 'They only live on this computer, and you can type them again whenever you like.', 'Solo viven en este ordenador, y las vuelves a escribir cuando quieras.'),
+        si: L('Scordale', 'Forget them', 'Olvídalas') }))) return;
       RegiaEsterna.chiudi(); RegiaEsterna.scorda();
       ['re-ip', 're-porta', 're-pass'].forEach((k) => { const el = document.getElementById(k); if (el) el.value = k === 're-ip' ? '127.0.0.1' : k === 're-porta' ? '4455' : ''; });
       _cons.scene = []; disegnaSpiaRegia(); await caricaScene();
@@ -11906,7 +12013,7 @@ function appendiConsolify() {
     const ptogli = ev.target.closest('[data-cons-ptogli]');
     if (ptogli) {
       const t = aperto(); if (!t) return;
-      if (t.passi.length < 2) { alert(L('Un tasto deve fare almeno una cosa. Cambiala, oppure togli il tasto.', 'A key has to do at least one thing. Change it, or remove the key.', 'Una tecla debe hacer al menos una cosa. Cámbiala, o quita la tecla.')); return; }
+      if (t.passi.length < 2) { toast(L('Un tasto deve fare almeno una cosa. Cambiala, oppure togli il tasto.', 'A key has to do at least one thing. Change it, or remove the key.', 'Una tecla debe hacer al menos una cosa. Cámbiala, o quita la tecla.'), 'errore'); return; }
       t.passi.splice(Number(ptogli.dataset.consPtogli), 1);
       disegnaSchedaTasto(); await salvaPlancia({ ridisegna: false }); rinfrescaTasto(_cons.aperto); return;
     }
@@ -11921,7 +12028,7 @@ function appendiConsolify() {
                 : tipo === 'muto' ? { tipo, fonte: (_cons.fonti || [])[0] || '', come: 'inverti' }
                   : tipo === 'transizione' ? { tipo, transizione: (_cons.transizioni || [])[0] || '' }
                     : { tipo: 'attesa', ms: 1000 };
-      if (t.passi.length >= 8) { alert(L('Otto passi bastano: oltre, un tasto non si capisce più.', 'Eight steps is plenty: past that, a key stops being readable.', 'Ocho pasos bastan: más allá, una tecla deja de entenderse.')); return; }
+      if (t.passi.length >= 8) { toast(L('Otto passi bastano: oltre, un tasto non si capisce più.', 'Eight steps is plenty: past that, a key stops being readable.', 'Ocho pasos bastan: más allá, una tecla deja de entenderse.'), 'errore'); return; }
       t.passi.push(nuovo);
       disegnaSchedaTasto(); return;
     }
@@ -11937,7 +12044,9 @@ function appendiConsolify() {
       _cons.aperto = null; disegnaConsolify(); await salvaPlancia(); return;
     }
     if (id === 'cons-revoca') {
-      if (!confirm(L('Rigenerare la chiave? Gli indirizzi vecchi smettono di funzionare subito, e vanno reincollati dove li avevi messi.', 'Regenerate the key? The old addresses stop working immediately, and have to be pasted again wherever you put them.', '¿Regenerar la clave? Las direcciones viejas dejan de funcionar enseguida, y hay que volver a pegarlas donde las pusiste.'))) return;
+      if (!(await chiediSe({ titolo: L('Faccio una chiave nuova?', 'Make a new key?', '¿Hago una clave nueva?'), pericolo: true,
+        testo: L('Gli indirizzi di adesso smettono di funzionare subito: vanno reincollati dove li avevi messi, per esempio sulla tastiera.', 'The current addresses stop working immediately: paste them again wherever you put them, for example on your keypad.', 'Las direcciones actuales dejan de funcionar enseguida: hay que volver a pegarlas donde las pusiste, por ejemplo en el teclado.'),
+        si: L('Fai la chiave nuova', 'Make the new key', 'Haz la clave nueva') }))) return;
       const es = document.getElementById('cons-esito');
       try {
         const d = await api('/api/streamer/console/revoca', { method: 'POST' });
@@ -12049,14 +12158,14 @@ function appendiConsolifyCampi() {
       try {
         const r = await fetch('/api/streamer/console/media', { method: 'POST', body: fd, credentials: 'same-origin' });
         const d = await r.json().catch(() => null);
-        if (!d?.ok) { if (es) es.textContent = ''; alert(d?.motivo || L('non caricato', 'not uploaded', 'no subido')); return; }
+        if (!d?.ok) { if (es) es.textContent = ''; toast(d?.motivo || L('Il file non è arrivato: riprova.', 'The file did not arrive: try again.', 'El archivo no llegó: vuelve a intentarlo.'), 'errore'); return; }
         passo.file = d.file; passo.genere = d.genere;
         passo.durata = Math.max(500, Math.min(30000, Number(d.durata) || 5000));
         if (es) es.textContent = '';
         disegnaSchedaTasto();
         await salvaPlancia({ ridisegna: false });
         rinfrescaTasto(_cons.aperto);
-      } catch { if (es) es.textContent = ''; alert(L('non caricato', 'not uploaded', 'no subido')); }
+      } catch { if (es) es.textContent = ''; toast(L('Il file non è arrivato: riprova.', 'The file did not arrive: try again.', 'El archivo no llegó: vuelve a intentarlo.'), 'errore'); }
       return;
     }
     if (id === 'cons-c-file' && t) {
@@ -12067,10 +12176,10 @@ function appendiConsolifyCampi() {
       try {
         const r = await fetch('/api/streamer/console/icona', { method: 'POST', body: fd, credentials: 'same-origin' });
         const d = await r.json().catch(() => null);
-        if (!d?.ok) { alert(d?.motivo || L('non caricata', 'not uploaded', 'no subida')); return; }
+        if (!d?.ok) { toast(d?.motivo || L('L\'immagine non è arrivata: riprova.', 'The image did not arrive: try again.', 'La imagen no llegó: vuelve a intentarlo.'), 'errore'); return; }
         t.icona = d.icona;
         disegnaConsolify(); await salvaPlancia();
-      } catch { alert(L('non caricata', 'not uploaded', 'no subida')); }
+      } catch { toast(L('L\'immagine non è arrivata: riprova.', 'The image did not arrive: try again.', 'La imagen no llegó: vuelve a intentarlo.'), 'errore'); }
     }
   });
 }
@@ -12376,10 +12485,10 @@ function collegaMorti() {
       catch { daLibreria = null; }
       if (daLibreria) {
         const quante = (daLibreria.firme || []).length;
-        const si = confirm(L(
-          `Questa schermata la conosce già qualcun altro: è la morte di «${daLibreria.giocoNome}». Prendo la sua, con tutte e ${quante} le impronte che ha imparato?`,
-          `Someone else already knows this screen: it is the death of «${daLibreria.giocoNome}». Shall I take theirs, with all ${quante} prints it has learned?`,
-          `Esta pantalla ya la conoce otra persona: es la muerte de «${daLibreria.giocoNome}». ¿Cojo la suya, con las ${quante} huellas que ha aprendido?`));
+        const si = await chiediSe({
+          titolo: L(`La conosco già: è la morte di «${daLibreria.giocoNome}»`, `I already know it: it is the death of «${daLibreria.giocoNome}»`, `Ya la conozco: es la muerte de «${daLibreria.giocoNome}»`),
+          testo: L(`Qualcun altro me l'ha già insegnata, con ${quante} impronte. Prendo la sua, così non devi insegnarmela tu?`, `Someone else already taught it to me, with ${quante} prints. Shall I take theirs, so you do not have to teach it?`, `Otra persona ya me la enseñó, con ${quante} huellas. ¿Cojo la suya, así no tienes que enseñármela tú?`),
+          si: L('Prendi la sua', 'Take theirs', 'Coge la suya'), no: L('La insegno io', 'I will teach it', 'La enseño yo') });
         if (si) {
           await api('/api/streamer/morti/prendi', { method: 'POST', body: { id: daLibreria.id, contatore } });
           impostazioni().morti = null;
@@ -12391,7 +12500,7 @@ function collegaMorti() {
         }
       }
       const r = await chiediTesto({
-        titolo: L('Che schermata è', 'What screen is this', 'Qué pantalla es'),
+        titolo: L('Che schermata è?', 'What screen is this?', '¿Qué pantalla es?'),
         testo: L('Un nome per ricordartelo: il gioco, di solito.', 'A name to remember it by: the game, usually.', 'Un nombre para recordarla: el juego, normalmente.'),
         valore: L('Morte', 'Death', 'Muerte'),
         ok: L('Impara', 'Learn', 'Aprender'),
@@ -12440,7 +12549,9 @@ function collegaMorti() {
   });
 
   _g('morti-gsi-rinnova')?.addEventListener('click', async () => {
-    if (!confirm(L('Rifare la chiave? I file che hai già messo nelle cartelle dei giochi smettono di funzionare: vanno riscaricati e rimessi.', 'Make a new key? The files you already put in the game folders stop working: they have to be downloaded and placed again.', '¿Rehacer la clave? Los archivos que ya pusiste en las carpetas de los juegos dejan de funcionar: hay que volver a descargarlos y colocarlos.'))) return;
+    if (!(await chiediSe({ titolo: L('Faccio una chiave nuova per i giochi?', 'Make a new key for the games?', '¿Hago una clave nueva para los juegos?'), pericolo: true,
+      testo: L('I file che hai già messo nelle cartelle dei giochi smettono di funzionare: vanno riscaricati e rimessi.', 'The files you already put in the game folders stop working: download them and put them back.', 'Los archivos que ya pusiste en las carpetas de los juegos dejan de funcionar: hay que volver a descargarlos y colocarlos.'),
+      si: L('Fai la chiave nuova', 'Make the new key', 'Haz la clave nueva') }))) return;
     try { await api('/api/streamer/morti/gsi/revoca', { method: 'POST' }); await _mortiCarica(); toast(L('Fatta. Riscarica i file.', 'Done. Download the files again.', 'Hecho. Vuelve a descargar los archivos.')); }
     catch (e) { toast(e.message || String(e), 'errore'); }
   });
@@ -12468,7 +12579,9 @@ function collegaMorti() {
         const firme = s.firme.concat([scatto.firma]);
         let scheda = s.scheda;
         let versione = s.versione;
-        if (s.scheda && confirm(L('Aggiunta. La pubblico anche per gli altri, così non ci ricascano?', 'Added. Shall I publish it for the others too, so they don\'t hit it again?', 'Añadida. ¿La publico también para los demás, para que no les pase?'))) {
+        if (s.scheda && await chiediSe({ titolo: L('Aggiunta. La pubblico anche per gli altri?', 'Added. Shall I publish it for the others too?', 'Añadida. ¿La publico también para los demás?'),
+          testo: L('Chi usa la stessa scheda la riconoscerà subito, senza doverla insegnare.', 'Whoever uses the same card will recognise it straight away, without teaching it.', 'Quien use la misma ficha la reconocerá enseguida, sin tener que enseñarla.'),
+          si: L('Pubblicala', 'Publish it', 'Publícala'), no: L('Solo per me', 'Just for me', 'Solo para mí') })) {
           const nuova = await _mortiPubblica(firme, s.contatore, s.scheda);
           if (nuova) { scheda = nuova.id; versione = nuova.versione; }
         }
@@ -13712,8 +13825,8 @@ function renderStudioPreset() {
     <button type="button" class="btn secondario mini" data-preset="elimina"${vuoto ? ' disabled' : ''}>${L('Elimina', 'Delete', 'Eliminar')}</button>`;
 }
 
-function studioSalvaPreset() {
-  const nome = prompt(L('Nome del preset di layout:', 'Layout preset name:', 'Nombre del preset de diseño:'), L('Il mio layout', 'My layout', 'Mi diseño')); if (!nome) return;
+async function studioSalvaPreset() {
+  const nome = await chiediTesto({ titolo: L('Come chiamo questo layout?', 'What should this layout be called?', '¿Cómo llamo a este diseño?'), valore: L('Il mio layout', 'My layout', 'Mi diseño'), ok: L('Salva', 'Save', 'Guardar') }); if (!nome) return;
   const arr = studioLeggiPreset();
   arr.push({ nome: nome.slice(0, 40), scene: studioSerializzaScene() });
   studioScriviPreset(arr); renderStudioPreset(); toast(L('Preset salvato ✓', 'Preset saved ✓', 'Preset guardado ✓'));
@@ -13725,9 +13838,11 @@ function studioApplicaPreset(idx) {
   if (!STUDIO.scene.length) studioNuovaScena(L('Scena 1', 'Scene 1', 'Escena 1'));
   STUDIO.attiva = 0; STUDIO.sel = null; renderStudioTutto(); toast(L('Preset applicato ✓', 'Preset applied ✓', 'Preset aplicado ✓'));
 }
-function studioEliminaPreset(idx) {
+async function studioEliminaPreset(idx) {
   const arr = studioLeggiPreset(); if (!arr[idx]) return;
-  if (!confirm(L('Eliminare il preset «', 'Delete the preset “', 'Eliminar el preset «') + arr[idx].nome + L('»?', '”?', '»?'))) return;
+  if (!(await chiediSe({ titolo: L(`Elimino il layout «${arr[idx].nome}»?`, `Delete the layout «${arr[idx].nome}»?`, `¿Elimino el diseño «${arr[idx].nome}»?`), pericolo: true,
+    testo: L('Le scene di adesso restano come sono.', 'Your current scenes stay as they are.', 'Tus escenas actuales se quedan como están.'),
+    si: L('Eliminalo', 'Delete it', 'Elimínalo') }))) return;
   arr.splice(idx, 1); studioScriviPreset(arr); renderStudioPreset(); toast(L('Preset eliminato', 'Preset deleted', 'Preset eliminado'));
 }
 
@@ -13829,17 +13944,19 @@ function posizionaBoxStudio(f) {
   box.style.width = f.w / 1280 * 100 + '%'; box.style.height = f.h / 720 * 100 + '%';
 }
 
-function onStudioClick(ev) {
+async function onStudioClick(ev) {
   const t = ev.target;
   const add = t.closest('[data-add]'); if (add) return conErrore(() => studioAggiungi(add.dataset.add));
   if (t.closest('[data-scena-nuova]')) { studioNuovaScena(); STUDIO.attiva = STUDIO.scene.length - 1; STUDIO.sel = null; renderStudioTutto(); return; }
   const azione = t.closest('[data-scena-azione]');
   if (azione) {
     const s = studioSceneAttiva(); if (!s) return;
-    if (azione.dataset.scenaAzione === 'rinomina') { const n = prompt(L('Nome della scena:', 'Scene name:', 'Nombre de la escena:'), s.nome); if (n) { s.nome = n.slice(0, 24); renderStudioScene(); } }
+    if (azione.dataset.scenaAzione === 'rinomina') { const n = await chiediTesto({ titolo: L('Come chiamo questa scena?', 'What should this scene be called?', '¿Cómo llamo a esta escena?'), valore: s.nome, ok: L('Rinomina', 'Rename', 'Renombrar'), max: 24 }); if (n) { s.nome = n.slice(0, 24); renderStudioScene(); } }
     else if (azione.dataset.scenaAzione === 'elimina') {
       if (STUDIO.scene.length <= 1) { toast(L('Serve almeno una scena.', 'You need at least one scene.', 'Hace falta al menos una escena.')); return; }
-      if (!confirm(L('Eliminare la scena «', 'Delete the scene “', 'Eliminar la escena «') + s.nome + L('»?', '”?', '»?'))) return;
+      if (!(await chiediSe({ titolo: L(`Elimino la scena «${s.nome}»?`, `Delete the scene «${s.nome}»?`, `¿Elimino la escena «${s.nome}»?`), pericolo: true,
+        testo: L('Con lei se ne va quello che ci avevi messo dentro.', 'What you put in it goes with it.', 'Lo que pusiste dentro se va con ella.'),
+        si: L('Eliminala', 'Delete it', 'Elimínala') }))) return;
       STUDIO.scene.splice(STUDIO.attiva, 1); STUDIO.attiva = Math.max(0, STUDIO.attiva - 1); STUDIO.sel = null; renderStudioTutto();
     }
     return;
@@ -14349,7 +14466,9 @@ async function caricaPremi() {
     caricaPremi();
   }));
   box.querySelectorAll('.rimuovi-premio').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
-    if (!confirm(L('Eliminare questo premio da Twitch?', 'Delete this reward from Twitch?', '¿Eliminar esta recompensa de Twitch?'))) return;
+    if (!(await chiediSe({ titolo: L('Elimino questo premio da Twitch?', 'Delete this reward from Twitch?', '¿Elimino esta recompensa de Twitch?'), pericolo: true,
+      testo: L('Sparisce dal tuo canale su Twitch, e non si torna indietro.', 'It disappears from your Twitch channel, and there is no going back.', 'Desaparece de tu canal de Twitch, y no hay vuelta atrás.'),
+      si: L('Eliminalo', 'Delete it', 'Elimínala') }))) return;
     await api('/api/streamer/premi/' + encodeURIComponent(a.dataset.id), { method: 'DELETE' });
     toast(L('Premio eliminato.', 'Reward deleted.', 'Recompensa eliminada.'));
     caricaPremi();
@@ -14427,7 +14546,9 @@ async function caricaEmote7TV() {
       </div>
       ${proprietario ? '' : `<p class="suggerimento spazio-sopra">${L('Solo il proprietario del canale può collegare o scollegare 7TV.', 'Only the channel owner can connect or disconnect 7TV.', 'Solo el propietario del canal puede conectar o desconectar 7TV.')}</p>`}`;
     document.getElementById('svtv-scollega')?.addEventListener('click', () => conErrore(async () => {
-      if (!confirm(L('Scollegare 7TV? Il token verrà rimosso dal server.', 'Disconnect 7TV? The token will be removed from the server.', '¿Desconectar 7TV? El token se eliminará del servidor.'))) return;
+      if (!(await chiediSe({ titolo: L('Scollego 7TV?', 'Disconnect 7TV?', '¿Desconecto 7TV?'),
+        testo: L('Cancello il suo token: da qui non potrai più cambiare le emote, finché non lo ricolleghi.', 'I delete its token: you will not be able to change emotes from here until you connect it again.', 'Borro su token: desde aquí no podrás cambiar las emotes hasta que lo vuelvas a conectar.'),
+        si: L('Scollega', 'Disconnect', 'Desconecta') }))) return;
       await api('/api/seventv/disconnect', { method: 'POST', body: {} });
       toast(L('7TV scollegato.', '7TV disconnected.', '7TV desconectado.')); caricaEmote7TV();
     }));
@@ -14565,12 +14686,14 @@ async function _svtvCaricaSet() {
     : '')).join('') + `</div>`;
 
   box.querySelectorAll('.svtv-rimuovi').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
-    if (!confirm(L('Togliere «', 'Remove «', 'Quitar «') + b.dataset.nome + L('» dal tuo canale?', '» from your channel?', '» de tu canal?'))) return;
+    if (!(await chiediSe({ titolo: L(`Tolgo «${b.dataset.nome}» dal tuo canale?`, `Remove «${b.dataset.nome}» from your channel?`, `¿Quito «${b.dataset.nome}» de tu canal?`),
+      testo: L('Puoi rimetterla da 7TV quando vuoi.', 'You can add it back from 7TV whenever you like.', 'Puedes volver a ponerla desde 7TV cuando quieras.'),
+      si: L('Toglila', 'Remove it', 'Quítala') }))) return;
     await api('/api/seventv/rimuovi', { method: 'POST', body: { emoteId: b.dataset.id } });
     toast(L('Emote rimossa.', 'Emote removed.', 'Emote quitada.')); _svtvCaricaSet();
   })));
   box.querySelectorAll('.svtv-rinomina').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
-    const nome = (prompt(L('Nuovo nome per l\'emote:', 'New name for the emote:', 'Nuevo nombre para la emote:'), b.dataset.nome) || '').trim();
+    const nome = ((await chiediTesto({ titolo: L('Come chiamo questa emote?', 'What should this emote be called?', '¿Cómo llamo a esta emote?'), valore: b.dataset.nome, ok: L('Rinomina', 'Rename', 'Renombrar'), max: 100 })) || '').trim();
     if (!nome || nome === b.dataset.nome) return;
     await api('/api/seventv/rinomina', { method: 'POST', body: { emoteId: b.dataset.id, nome } });
     toast(L('Emote rinominata ✓', 'Emote renamed ✓', 'Emote renombrada ✓')); _svtvCaricaSet();
@@ -14910,32 +15033,47 @@ function modelloPronto(nome) {
 }
 
 function _xlaGrabFn() {
+  var T = __TESTI__;
   try {
-    var L = (document.body.innerText || '').split('\n').map(function (s) { return s.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+    var righePagina = (document.body.innerText || '').split('\n').map(function (s) { return s.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
     var M = /^(.{1,48}?)\s*[|·•–-]\s*(\d{1,2}[.\/]\d{1,2}[.\/]\d{2,4})$/;
     var G = /please enable javascript|enable javascript|xsolla partner network|shortcut icon/i;
     var o = [], seen = {};
-    for (var i = 0; i < L.length; i++) {
-      if (M.test(L[i]) || G.test(L[i])) continue;
-      var q = L[i].replace(/^[“"'«\s]+|[”"'»\s]+$/g, '').trim();
+    for (var i = 0; i < righePagina.length; i++) {
+      if (M.test(righePagina[i]) || G.test(righePagina[i])) continue;
+      var q = righePagina[i].replace(/^[“"'«\s]+|[”"'»\s]+$/g, '').trim();
       if (q.length < 6 || q.length > 300) continue;
       if (q.split(' ').length < 2) continue;
       if (!/[a-zA-Zà-ÿ]/.test(q)) continue;
       var k = q.toLowerCase();
       if (seen[k]) continue; seen[k] = 1;
-      var mm = M.exec(L[i + 1] || '');
-      o.push('"' + q + '"' + (mm ? '\n' + L[i + 1] : ''));
+      var mm = M.exec(righePagina[i + 1] || '');
+      o.push('"' + q + '"' + (mm ? '\n' + righePagina[i + 1] : ''));
       if (mm) i++;
     }
-    if (!o.length) { alert('Nessuna quote trovata: scorri la pagina x.la fino in fondo per caricarle tutte, poi riprova.'); return; }
+    if (!o.length) { alert(T.nessuna); return; }
     var t = o.join('\n\n');
-    var done = function () { alert('Copiate ' + o.length + ' quote! Torna sul bot, incollale in "Importa citazioni" e premi "Riconosci e importa".'); };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { window.prompt(L('Copia con Ctrl+C:', 'Copy with Ctrl+C:', 'Copia con Ctrl+C:'), t); });
-    else window.prompt(L('Copia con Ctrl+C:', 'Copy with Ctrl+C:', 'Copia con Ctrl+C:'), t);
-  } catch (e) { alert('Errore: ' + e.message); }
+    var mac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || '') || /Mac OS X|iPhone|iPad/.test(navigator.userAgent || '');
+    var soloTocco = !!window.matchMedia && !window.matchMedia('(any-pointer: fine)').matches;
+    var done = function () { alert(T.copiate.replace('{n}', o.length)); };
+    var aMano = function () { window.prompt(soloTocco ? T.tocco : T.tasti.replace('{tasto}', mac ? T.cmd : 'Ctrl+C'), t); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, aMano);
+    else aMano();
+  } catch (e) { alert(T.errore + e.message); }
 }
 
-const bookmarkletXla = 'javascript:(' + _xlaGrabFn.toString().replace(/\n\s*/g, ' ') + ')()';
+function bookmarkletXla() {
+  const testi = {
+    nessuna: L('Non trovo nessuna citazione: scorri la pagina x.la fino in fondo, così si caricano tutte, poi riprova.', 'I cannot find any quotes: scroll your x.la page to the bottom so they all load, then try again.', 'No encuentro ninguna cita: baja la página de x.la hasta el final para que se carguen todas y vuelve a intentarlo.'),
+    copiate: L('Ho copiato {n} citazioni. Torna nel pannello, incollale in «Importa citazioni» e premi «Riconosci e importa».', 'I copied {n} quotes. Go back to the panel, paste them into «Import quotes» and press «Recognize and import».', 'He copiado {n} citas. Vuelve al panel, pégalas en «Importar citas» y pulsa «Reconocer e importar».'),
+    tasti: L('Il browser non mi lascia copiarle da sola. Sono già selezionate qui sotto: premi {tasto}.', 'The browser does not let me copy them myself. They are already selected below: press {tasto}.', 'El navegador no me deja copiarlas yo sola. Ya están seleccionadas aquí abajo: pulsa {tasto}.'),
+    tocco: L('Il browser non mi lascia copiarle da sola. Tieni premuto sul testo qui sotto e scegli «Copia».', 'The browser does not let me copy them myself. Press and hold the text below, then choose «Copy».', 'El navegador no me deja copiarlas yo sola. Mantén pulsado el texto de abajo y elige «Copiar».'),
+    cmd: '⌘C',
+    errore: L('Qualcosa non è andato: ', 'Something went wrong: ', 'Algo salió mal: '),
+  };
+  const codice = _xlaGrabFn.toString().replace('__TESTI__', JSON.stringify(testi)).replace(/\n\s*/g, ' ');
+  return 'javascript:(' + codice.replace(/%/g, '%25').replace(/[\u0080-\uffff]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')) + ')()';
+}
 
 function pannelloDirette() {
   return pannello('dirette', `
@@ -16134,7 +16272,9 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
 
   const spegni = document.getElementById('lp-spegni');
   if (spegni) spegni.onclick = () => conErrore(async () => {
-    if (!confirm(L('Togliere la pagina dal web? I contenuti restano salvati.', 'Take the page offline? The contents stay saved.', '¿Quitar la página de la web? El contenido queda guardado.'))) return;
+    if (!(await chiediSe({ titolo: L('Tolgo la pagina dal web?', 'Take the page offline?', '¿Quito la página de la web?'),
+      testo: L('Chi apre il tuo indirizzo non la trova più. Quello che c\'è dentro resta salvato, e la rimetti online quando vuoi.', 'Whoever opens your address will not find it anymore. What is inside stays saved, and you can put it back online whenever you like.', 'Quien abra tu dirección ya no la encontrará. Lo que tiene dentro queda guardado, y la vuelves a poner en línea cuando quieras.'),
+      si: L('Toglila dal web', 'Take it offline', 'Quítala de la web') }))) return;
     await api(lpApi(), { method: 'DELETE' });
     toast(L('Pagina tolta dal web.', 'Page taken offline.', 'Página quitada de la web.'));
     conScrollFermo(() => caricaPaginaLink());
@@ -16795,13 +16935,19 @@ async function caricaContatori() {
       else if (az === 'piu') await salvaVal(cmd, (Number(b.dataset.val) || 0) + (Number(b.dataset.step) || 1));
       else if (az === 'meno') await salvaVal(cmd, (Number(b.dataset.val) || 0) - (Number(b.dataset.step) || 1));
       else if (az === 'reset') await salvaVal(cmd, 0);
-      else if (az === 'del') { if (!confirm(L('Eliminare il contatore «', 'Delete counter «', 'Eliminar el contador «') + cmd + '»?')) return; await api('/api/contatori/' + encodeURIComponent(cmd), { method: 'DELETE' }); }
+      else if (az === 'del') {
+        if (!(await chiediSe({ titolo: L(`Elimino il contatore «${cmd}»?`, `Delete the counter «${cmd}»?`, `¿Elimino el contador «${cmd}»?`), pericolo: true,
+          testo: L('Il suo numero si perde, e il comando in chat smette di rispondere.', 'Its number is lost, and the chat command stops answering.', 'Su número se pierde, y el comando del chat deja de responder.'),
+          si: L('Eliminalo', 'Delete it', 'Elimínalo') }))) return;
+        await api('/api/contatori/' + encodeURIComponent(cmd), { method: 'DELETE' }); }
       else if (az === 'reward') {
         if (b.textContent.includes('Scollega') || b.textContent.includes('Unlink') || b.textContent.includes('Desvincular')) {
           await api('/api/contatori/' + encodeURIComponent(cmd) + '/reward', { method: 'POST', body: { scollega: true } });
           toast(L('Premio scollegato.', 'Reward unlinked.', 'Premio desvinculado.'));
         } else {
-          const costo = prompt(L('Costo in punti canale del premio (riscattarlo fa +passo):', 'Channel-point cost of the reward (redeeming it does +step):', 'Coste en puntos de canal del premio (canjearlo hace +paso):'), '100');
+          const costo = await chiediTesto({ titolo: L('Quanti punti canale costa il premio?', 'How many channel points does the reward cost?', '¿Cuántos puntos de canal cuesta el premio?'),
+            testo: L('Chi lo riscatta fa salire il contatore di un passo.', 'Whoever redeems it moves the counter up one step.', 'Quien lo canjea sube el contador un paso.'),
+            valore: '100', ok: L('Crea il premio', 'Create the reward', 'Crear el premio'), max: 7 });
           if (costo === null) return;
           await api('/api/contatori/' + encodeURIComponent(cmd) + '/reward', { method: 'POST', body: { costo: parseInt(costo, 10) || 100 } });
           toast(L('Premio a punti canale creato ✓', 'Channel-point reward created ✓', 'Premio de puntos de canal creado ✓'));
@@ -17487,9 +17633,7 @@ function collegaRuoli() {
     if (!e.target.closest('#dc-copia')) return;
     const via = _g('dc-via')?.textContent || '';
     if (!via) return;
-    navigator.clipboard?.writeText('https://' + via.replace(/^https?:\/\//, ''))
-      .then(() => toast(L('Copiata ✓', 'Copied ✓', 'Copiada ✓')))
-      .catch(() => toast(L('Non riesco a copiarla: selezionala a mano.', 'I cannot copy it: select it by hand.', 'No puedo copiarla: selecciónala a mano.'), 'errore'));
+    copiaTesto('https://' + via.replace(/^https?:\/\//, ''), L('Copiata ✓', 'Copied ✓', 'Copiada ✓'));
   });
 
   _g('dc-frasi-salva')?.addEventListener('click', () => conErrore(async () => {
@@ -17555,7 +17699,9 @@ function collegaRuoli() {
   _g('dc-adesso')?.addEventListener('click', () => _dcGiro(false));
 
   _g('dc-scorda')?.addEventListener('click', () => conErrore(async () => {
-    if (!confirm(L('Tolgo il bot, le regole e i collegamenti di chi si era collegato. I ruoli che ha dato restano dove sono. Procedo?', 'I remove the bot, the rules and the links of those who connected. The roles it gave stay where they are. Shall I?', 'Quito el bot, las reglas y los vínculos de quien se vinculó. Los roles que dio se quedan donde están. ¿Sigo?'))) return;
+    if (!(await chiediSe({ titolo: L('Scollego il bot da questo server?', 'Disconnect the bot from this server?', '¿Desconecto el bot de este servidor?'), pericolo: true,
+      testo: L('Tolgo il bot, le regole e i collegamenti di chi si era collegato. I ruoli che ha dato restano dove sono.', 'I remove the bot, the rules and the links of those who connected. The roles it gave stay where they are.', 'Quito el bot, las reglas y los vínculos de quien se vinculó. Los roles que dio se quedan donde están.'),
+      si: L('Scollega', 'Disconnect', 'Desconecta') }))) return;
     await api('/api/streamer/ruoli', { method: 'DELETE' });
     _dc = null;
     toast(L('Scollegato.', 'Disconnected.', 'Desvinculado.'));
@@ -19386,9 +19532,9 @@ async function _dcsFai(pre) {
       ? L('Di questi, ', 'Of these, ', 'De estos, ') + p.vivi.slice(0, 5).map((x) => '«' + x + '»').join(', ')
         + L(' hanno parlato di recente.', ' have spoken recently.', ' han hablado hace poco.')
       : '';
-    const detto = prompt(L('Sto per cancellare ', 'I am about to delete ', 'Estoy a punto de borrar ') + p.quanti
-      + L(' cose dal tuo server. ', ' things from your server. ', ' cosas de tu servidor. ') + vivi
-      + L('\n\nSu Discord non tornano. Scrivi il nome del server per confermare:', '\n\nOn Discord they do not come back. Type the server name to confirm:', '\n\nEn Discord no vuelven. Escribe el nombre del servidor para confirmar:'));
+    const detto = await chiediTesto({ titolo: L(`Cancello ${p.quanti} cose dal tuo server?`, `Delete ${p.quanti} things from your server?`, `¿Borro ${p.quanti} cosas de tu servidor?`),
+      testo: (vivi ? vivi + ' ' : '') + L('Su Discord non tornano. Per confermare scrivi il nome del server.', 'On Discord they do not come back. To confirm, type the server name.', 'En Discord no vuelven. Para confirmar, escribe el nombre del servidor.'),
+      ok: L('Cancella', 'Delete', 'Borrar'), max: 100, pericolo: true });
     if (detto === null) return;
     corpo.conferma = detto;
   }
@@ -19465,8 +19611,10 @@ function collegaDcServer() {
     _dcsDisegna();
   });
 
-  _g('dcs-ricomincia')?.addEventListener('click', () => {
-    if (!confirm(L('Butto via questa traccia e riparto dalla scelta. Il server non lo tocco.', 'I throw this track away and go back to the choice. I do not touch the server.', 'Tiro esta plantilla y vuelvo a la elección. No toco el servidor.'))) return;
+  _g('dcs-ricomincia')?.addEventListener('click', async () => {
+    if (!(await chiediSe({ titolo: L('Butto via questa traccia?', 'Throw this track away?', '¿Tiro esta plantilla?'),
+      testo: L('Riparto dalla scelta. Il server non lo tocco.', 'I go back to the choice. I do not touch the server.', 'Vuelvo a la elección. No toco el servidor.'),
+      si: L('Buttala via', 'Throw it away', 'Tírala') }))) return;
     _dcs = { ..._dcs, preset: null };
     _dcsMostra();
     _g('dcs-diff') && (_g('dcs-diff').innerHTML = '');
@@ -20868,7 +21016,9 @@ function attivaPiattaforma() {
           caricaStatoDonazioni(false);
         } finally { b.disabled = false; }
       } else if (cosa === 'scollega') {
-        if (!confirm(L('Scollegare il conto? Il tuo conto Stripe resta tuo; qui le donazioni sul conto si fermano finché non lo ricolleghi.', 'Disconnect the account? Your Stripe account stays yours; donations on the account stop here until you connect it again.', '¿Desconectar la cuenta? Tu cuenta de Stripe sigue siendo tuya; aquí las donaciones en cuenta se detienen hasta que la conectes de nuevo.'))) return;
+        if (!(await chiediSe({ titolo: L('Scollego il conto Stripe?', 'Disconnect the Stripe account?', '¿Desconecto la cuenta de Stripe?'),
+          testo: L('Il conto resta tuo. Qui le donazioni sul conto si fermano, finché non lo ricolleghi.', 'The account stays yours. Donations to the account stop here until you connect it again.', 'La cuenta sigue siendo tuya. Aquí las donaciones en la cuenta se detienen hasta que la vuelvas a conectar.'),
+          si: L('Scollega', 'Disconnect', 'Desconecta') }))) return;
         await api('/api/donazioni/conto/scollega', { method: 'POST', body: {} });
         toast(L('Conto scollegato', 'Account disconnected', 'Cuenta desconectada'));
         caricaStatoDonazioni(false);
@@ -20882,7 +21032,9 @@ function attivaPiattaforma() {
           caricaStatoDonazioni(false);
         } finally { b.disabled = false; }
       } else if (cosa === 'satispay-scollega') {
-        if (!confirm(L('Scollegare Satispay? Il tuo negozio online resta nel tuo pannello; qui i pagamenti con Satispay si fermano finché non lo ricolleghi.', 'Disconnect Satispay? Your online shop stays in your panel; Satispay payments stop here until you connect it again.', '¿Desconectar Satispay? Tu tienda online sigue en tu panel; aquí los pagos con Satispay se detienen hasta que la conectes de nuevo.'))) return;
+        if (!(await chiediSe({ titolo: L('Scollego Satispay?', 'Disconnect Satispay?', '¿Desconecto Satispay?'),
+          testo: L('Il tuo negozio online resta nel pannello di Satispay. Qui i pagamenti con Satispay si fermano, finché non lo ricolleghi.', 'Your online shop stays in the Satispay panel. Satispay payments stop here until you connect it again.', 'Tu tienda online sigue en el panel de Satispay. Aquí los pagos con Satispay se detienen hasta que lo vuelvas a conectar.'),
+          si: L('Scollega', 'Disconnect', 'Desconecta') }))) return;
         await api('/api/donazioni/satispay/scollega', { method: 'POST', body: {} });
         toast(L('Satispay scollegato', 'Satispay disconnected', 'Satispay desconectado'));
         caricaStatoDonazioni(false);
@@ -20913,9 +21065,15 @@ function attivaPiattaforma() {
     const li = b.closest('.dona-riga'); const id = li?.dataset.id; if (!id) return;
     const cosa = b.dataset.donaRiga;
     conErrore(async () => {
-      if (cosa === 'elimina' && !confirm(L('Togliere questa donazione dal registro? Nome, messaggio e immagine spariscono. L\'obiettivo in euro non cambia.', 'Remove this donation from the register? Name, message and image disappear. The euro goal does not change.', '¿Quitar esta donación del registro? Nombre, mensaje e imagen desaparecen. El objetivo en euros no cambia.'))) return;
-      if (cosa === 'scarta' && !confirm(L('Scartare questa immagine? Si cancella dal server; la donazione resta nel registro.', 'Discard this image? It is deleted from the server; the donation stays in the register.', '¿Descartar esta imagen? Se borra del servidor; la donación se queda en el registro.'))) return;
-      if (cosa === 'rimborsa' && !confirm(L('Rimborsare questa donazione dal tuo conto Stripe? Non si può annullare.', 'Refund this donation from your Stripe account? This cannot be undone.', '¿Reembolsar esta donación desde tu cuenta de Stripe? No se puede deshacer.'))) return;
+      if (cosa === 'elimina' && !(await chiediSe({ titolo: L('Tolgo questa donazione dal registro?', 'Remove this donation from the register?', '¿Quito esta donación del registro?'), pericolo: true,
+        testo: L('Nome, messaggio e immagine spariscono. L\'obiettivo in euro non cambia.', 'Name, message and image disappear. The euro goal does not change.', 'Nombre, mensaje e imagen desaparecen. El objetivo en euros no cambia.'),
+        si: L('Toglila', 'Remove it', 'Quítala') }))) return;
+      if (cosa === 'scarta' && !(await chiediSe({ titolo: L('Scarto questa immagine?', 'Discard this image?', '¿Descarto esta imagen?'), pericolo: true,
+        testo: L('Si cancella dal server. La donazione resta nel registro.', 'It is deleted from the server. The donation stays in the register.', 'Se borra del servidor. La donación se queda en el registro.'),
+        si: L('Scartala', 'Discard it', 'Descártala') }))) return;
+      if (cosa === 'rimborsa' && !(await chiediSe({ titolo: L('Rimborso questa donazione?', 'Refund this donation?', '¿Reembolso esta donación?'), pericolo: true,
+        testo: L('I soldi tornano a chi te li ha mandati, dal tuo conto Stripe. Non si può annullare.', 'The money goes back to whoever sent it, from your Stripe account. It cannot be undone.', 'El dinero vuelve a quien te lo mandó, desde tu cuenta de Stripe. No se puede deshacer.'),
+        si: L('Rimborsa', 'Refund', 'Reembolsa') }))) return;
       b.disabled = true;
       try {
         await api('/api/donazioni/azione', { method: 'POST', body: { id, cosa } });
@@ -21015,7 +21173,9 @@ function attivaPiattaforma() {
     }
     if (ev.target.closest('[data-g-azzera]')) conErrore(async () => {
       const g = goalBozza()[i];
-      if (!g || !confirm(L('Far ripartire questo obiettivo da zero?', 'Start this goal over from zero?', '¿Empezar este objetivo de cero?'))) return;
+      if (!g || !(await chiediSe({ titolo: L('Faccio ripartire l\'obiettivo da zero?', 'Start the goal over from zero?', '¿Empiezo el objetivo de cero?'), pericolo: true,
+        testo: L('Quello che ha raccolto finora torna a zero, anche sullo schermo.', 'What it has collected so far goes back to zero, on screen too.', 'Lo que ha reunido hasta ahora vuelve a cero, también en pantalla.'),
+        si: L('Riparti da zero', 'Start over', 'Empieza de cero') }))) return;
       await api('/api/streamer/goal/azzera', { method: 'POST', body: { id: g.id } });
       stato = await api('/api/me');
       disegnaGoal();
@@ -21209,13 +21369,13 @@ function attivaPiattaforma() {
 
   const bmXla = document.getElementById('bm-xla');
   if (bmXla) {
-    bmXla.href = bookmarkletXla;
+    bmXla.href = bookmarkletXla();
 
     bmXla.addEventListener('click', (e) => { e.preventDefault(); toast(L('Trascinami nella barra dei preferiti, poi cliccami mentre sei sulla tua pagina x.la', 'Drag me to your bookmarks bar, then click me while you\'re on your x.la page', 'Arrástrame a la barra de favoritos, luego haz clic en mí mientras estás en tu página x.la')); });
   }
   document.getElementById('bm-xla-copia')?.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(bookmarkletXla); toast(L('Codice copiato. Crea un preferito e incollalo come indirizzo', 'Code copied. Create a bookmark and paste it as the address', 'Código copiado. Crea un favorito y pégalo como dirección')); }
-    catch { window.prompt(L('Copia con Ctrl+C, poi crea un preferito con questo indirizzo:', 'Copy with Ctrl+C, then create a bookmark with this address:', 'Copia con Ctrl+C, luego crea un favorito con esta dirección:'), bookmarkletXla); }
+    await copiaTesto(bookmarkletXla(), L('Codice copiato. Crea un preferito e incollalo come indirizzo.', 'Code copied. Create a bookmark and paste it as the address.', 'Código copiado. Crea un favorito y pégalo como dirección.'),
+      { titolo: L('Copia il codice del preferito', 'Copy the bookmark code', 'Copia el código del favorito'), spiega: L('Il browser non mi ha lasciato copiarlo da sola. Copialo da qui, poi crea un preferito e incollalo come indirizzo.', 'The browser did not let me copy it myself. Copy it from here, then create a bookmark and paste it as the address.', 'El navegador no me dejó copiarlo yo sola. Cópialo desde aquí, luego crea un favorito y pégalo como dirección.') });
   });
 
   document.getElementById('btn-importa-citazioni')?.addEventListener('click', () => conErrore(async () => {
@@ -21332,7 +21492,9 @@ function attivaPiattaforma() {
   }));
 
   document.getElementById('btn-tg-scollega')?.addEventListener('click', () => conErrore(async () => {
-    if (!confirm(L('Scollegare il bot Telegram? Dovrai reincollare il token per riattivarlo.', 'Disconnect the Telegram bot? You\'ll have to paste the token again to reactivate it.', '¿Desconectar el bot de Telegram? Tendrás que volver a pegar el token para reactivarlo.'))) return;
+    if (!(await chiediSe({ titolo: L('Scollego il bot di Telegram?', 'Disconnect the Telegram bot?', '¿Desconecto el bot de Telegram?'),
+      testo: L('Per riattivarlo dovrai incollare di nuovo il suo token.', 'To turn it back on you will have to paste its token again.', 'Para reactivarlo tendrás que volver a pegar su token.'),
+      si: L('Scollega', 'Disconnect', 'Desconecta') }))) return;
     await api('/api/streamer/telegram', { method: 'DELETE' });
     toast(L('Telegram scollegato.', 'Telegram disconnected.', 'Telegram desconectado.'));
     stato = await api('/api/me'); render();
@@ -21749,14 +21911,7 @@ function attivaPiattaforma() {
   document.getElementById('btn-copia-overlay')?.addEventListener('click', async () => {
     const inp = document.getElementById('inp-overlay-url');
     if (!inp?.value) { toast(L('URL non ancora pronto, riprova tra un attimo.', 'URL not ready yet, try again in a moment.', 'URL aún no lista, inténtalo de nuevo en un momento.'), 'errore'); return; }
-    try {
-      await navigator.clipboard.writeText(inp.value);
-      toast(L('URL dell\'overlay copiato', 'Overlay URL copied', 'URL del overlay copiada'));
-    } catch {
-      inp.select();
-      try { document.execCommand('copy'); toast(L('URL selezionato: premi Ctrl+C', 'URL selected: press Ctrl+C', 'URL seleccionada: pulsa Ctrl+C')); }
-      catch { toast(L('Copia manualmente l\'URL selezionato.', 'Copy the selected URL manually.', 'Copia manualmente la URL seleccionada.'), 'errore'); }
-    }
+    await copiaTesto(inp.value, L('URL dell\'overlay copiato', 'Overlay URL copied', 'URL del overlay copiada'), { titolo: L('Copia l\'indirizzo dell\'overlay', 'Copy the overlay address', 'Copia la dirección del overlay') });
   });
 
   (() => {
@@ -21861,7 +22016,9 @@ function attivaPiattaforma() {
   document.getElementById('btn-carica-memoria')?.addEventListener('click', () => caricaMemoria(true));
 
   document.getElementById('btn-reset')?.addEventListener('click', () => conErrore(async () => {
-    if (!confirm(L('Sicuro? Il bot dimenticherà lezioni, ricordi sugli utenti e conoscenza imparata dalla chat. Non si torna indietro.', 'Are you sure? The bot will forget lessons, memories about users and knowledge learned from chat. There\'s no going back.', '¿Seguro? El bot olvidará lecciones, recuerdos sobre los usuarios y conocimiento aprendido del chat. No hay vuelta atrás.'))) return;
+    if (!(await chiediSe({ titolo: L('Azzero la memoria del bot?', 'Wipe the bot\'s memory?', '¿Borro la memoria del bot?'), pericolo: true,
+      testo: L('Dimentico le lezioni, i ricordi su chi scrive in chat e quello che ho imparato dalla chat. Non si torna indietro.', 'I forget the lessons, what I remember about people in chat and what I learned from the chat. There is no going back.', 'Olvido las lecciones, lo que recuerdo de quien escribe en el chat y lo que aprendí del chat. No hay vuelta atrás.'),
+      si: L('Azzera la memoria', 'Wipe the memory', 'Borra la memoria') }))) return;
     await api('/api/streamer/memoria/reset', { method: 'POST', body: {} });
     toast(L('Memoria azzerata. Il bot riparte da zero (ma la tua conoscenza resta).', 'Memory wiped. The bot starts from scratch (but your knowledge stays).', 'Memoria borrada. El bot empieza de cero (pero tu conocimiento se queda).'));
     document.getElementById('contenitore-memoria').innerHTML = '';
@@ -22286,7 +22443,9 @@ async function caricaGiochi() {
       caricaGiochi();
     });
     else if (del) conErrore(async () => {
-      if (!confirm(L('Eliminare questo gioco?', 'Delete this game?', '¿Eliminar este juego?'))) return;
+      if (!(await chiediSe({ titolo: L('Elimino questo gioco?', 'Delete this game?', '¿Elimino este juego?'), pericolo: true,
+        testo: L('Il suo comando in chat smette di rispondere, e non si torna indietro.', 'Its chat command stops answering, and there is no going back.', 'Su comando del chat deja de responder, y no hay vuelta atrás.'),
+        si: L('Eliminalo', 'Delete it', 'Elimínalo') }))) return;
       await api('/api/streamer/giochi/' + del.dataset.giocoElimina, { method: 'DELETE' });
       toast(L('Gioco eliminato.', 'Game deleted.', 'Juego eliminado.')); caricaGiochi();
     });
@@ -22425,7 +22584,7 @@ async function caricaTracking() {
 
   document.querySelectorAll('[data-trk-copy]').forEach((b) => { b.onclick = () => {
     const v = document.getElementById(b.dataset.trkCopy)?.value || '';
-    if (v && navigator.clipboard) navigator.clipboard.writeText(v).then(() => toast(L('Link copiato ✓', 'Link copied ✓', 'Enlace copiado ✓'))).catch(() => {});
+    if (v) copiaTesto(v, L('Link copiato ✓', 'Link copied ✓', 'Enlace copiado ✓'));
   }; });
 
   try {
@@ -22436,7 +22595,7 @@ async function caricaTracking() {
   const btnCopia = document.getElementById('trk-copia');
   if (btnCopia) btnCopia.onclick = () => {
     const v = urlEl.value || '';
-    if (v && navigator.clipboard) navigator.clipboard.writeText(v).then(() => toast(L('Link copiato ✓', 'Link copied ✓', 'Enlace copiado ✓'))).catch(() => {});
+    if (v) copiaTesto(v, L('Link copiato ✓', 'Link copied ✓', 'Enlace copiado ✓'));
   };
   document.querySelectorAll('.mm-lib').forEach((b) => { b.onclick = () => conErrore(async () => {
     const scelta = await scegliDallaLibreria({ tipi: ['immagine'], titolo: L('Scegli il meme', 'Choose the meme', 'Elige el meme') });
@@ -22551,7 +22710,9 @@ async function caricaEffetti() {
         });
       } else if (del) {
         conErrore(async () => {
-          if (!confirm(L('Eliminare questo effetto? Il file verrà cancellato.', 'Delete this effect? The file will be deleted.', '¿Eliminar este efecto? El archivo se borrará.'))) return;
+          if (!(await chiediSe({ titolo: L('Elimino questo effetto?', 'Delete this effect?', '¿Elimino este efecto?'), pericolo: true,
+            testo: L('Il file si cancella dal server, e dove lo usavi non parte più.', 'The file is deleted from the server, and wherever you used it, it no longer plays.', 'El archivo se borra del servidor, y donde lo usabas ya no se reproduce.'),
+            si: L('Eliminalo', 'Delete it', 'Elimínalo') }))) return;
           await api('/api/streamer/effetti/' + del.dataset.eliminaEff, { method: 'DELETE' });
           toast(L('Effetto eliminato', 'Effect deleted', 'Efecto eliminado'));
           caricaEffetti();
@@ -22561,7 +22722,7 @@ async function caricaEffetti() {
           const rendiPubblico = pub.dataset.stato !== '1';
           let nome = pub.dataset.nome || '';
           if (rendiPubblico) {
-            nome = (prompt(L('Con che nome vuoi condividerlo nella libreria?', 'What name do you want to share it with in the library?', '¿Con qué nombre quieres compartirlo en la biblioteca?'), nome) || '').trim();
+            nome = ((await chiediTesto({ titolo: L('Con che nome lo condivido nella libreria?', 'What name should I share it under in the library?', '¿Con qué nombre lo comparto en la biblioteca?'), valore: nome, ok: L('Condividi', 'Share', 'Compartir'), max: 60 })) || '').trim();
             if (!nome) return;
           }
           await api('/api/streamer/effetti/' + pub.dataset.pubblica + '/pubblico', { method: 'PATCH', body: { pubblico: rendiPubblico, nome } });
@@ -23486,7 +23647,9 @@ function disegnaListaModuli() {
       if (m) apriEditor(m);
     } else if (elimina) {
       conErrore(async () => {
-        if (!confirm(L('Eliminare questo modulo? Non si torna indietro.', 'Delete this module? There\'s no going back.', '¿Eliminar este módulo? No hay vuelta atrás.'))) return;
+        if (!(await chiediSe({ titolo: L('Elimino questo modulo?', 'Delete this module?', '¿Elimino este módulo?'), pericolo: true,
+          testo: L('Smette di rispondere in chat, e non si torna indietro.', 'It stops answering in chat, and there is no going back.', 'Deja de responder en el chat, y no hay vuelta atrás.'),
+          si: L('Eliminalo', 'Delete it', 'Elimínalo') }))) return;
         await api('/api/streamer/moduli/' + encodeURIComponent(elimina.dataset.eliminaModulo), { method: 'DELETE' });
         toast(L('Modulo eliminato', 'Module deleted', 'Módulo eliminado'));
         aggiornaListe();
@@ -24091,7 +24254,9 @@ function disegnaConnettori() {
     } else if (azione === 'rigenera') {
       conErrore(async () => {
         const nuova = !!(datiModuli?.apiKey || datiModuli?.apiKeySet);
-        if (nuova && !confirm(L('Rigenerare la chiave? Quella vecchia smetterà subito di funzionare.', 'Regenerate the key? The old one will stop working immediately.', '¿Regenerar la clave? La antigua dejará de funcionar de inmediato.'))) return;
+        if (nuova && !(await chiediSe({ titolo: L('Faccio una chiave nuova?', 'Make a new key?', '¿Hago una clave nueva?'), pericolo: true,
+          testo: L('Quella di adesso smette subito di funzionare, e va sostituita dove la usavi.', 'The current one stops working immediately, and has to be replaced wherever you used it.', 'La actual deja de funcionar enseguida, y hay que cambiarla donde la usabas.'),
+          si: L('Fai la chiave nuova', 'Make the new key', 'Haz la clave nueva') }))) return;
         const res = await api('/api/streamer/apikey', { method: 'POST', body: {} });
         if (datiModuli) { datiModuli.apiKey = res.apiKey; datiModuli.apiKeySet = true; }
         apiKeyVisibile = true;
@@ -24102,13 +24267,14 @@ function disegnaConnettori() {
   };
 }
 
-async function copiaTesto(testo, msgOk) {
-  if (!testo) { toast(L('Niente da copiare.', 'Nothing to copy.', 'Nada que copiar.'), 'errore'); return; }
+async function copiaTesto(testo, msgOk, finestra = {}) {
+  if (!testo) { toast(L('Niente da copiare.', 'Nothing to copy.', 'Nada que copiar.'), 'errore'); return false; }
   try {
     await navigator.clipboard.writeText(testo);
-    toast(msgOk);
+    if (msgOk) toast(msgOk);
+    return true;
   } catch {
-    toast(L('Copia non riuscita, fallo a mano.', 'Copy failed, do it by hand.', 'Copia fallida, hazlo a mano.'), 'errore');
+    return chiediCopia({ ...finestra, testo, msgOk });
   }
 }
 
@@ -24347,7 +24513,7 @@ function collegaCancella() {
     const r = await api('/api/streamer/cancella', { method: 'POST', body: { conferma: inp.value.trim() } });
     const addio = L('Fatto: non è rimasto niente di tuo. Adesso esci.', 'Done: nothing of yours is left. Signing out now.', 'Hecho: no queda nada tuyo. Ahora sales.');
     try { await window.SB_NUVOLETTA.dillo(addio, { attenzione: true, bottone: L('Esci', 'Sign out', 'Salir') }); }
-    catch (e) { alert(addio); }
+    catch (e) { await chiediScelta({ titolo: addio, azioni: [{ id: 'esci', testo: L('Esci', 'Sign out', 'Salir') }] }); }
     location.href = '/entra';
   }));
 }
@@ -24378,7 +24544,10 @@ async function caricaPiattaforme() {
   })));
   box.querySelectorAll('[data-scollega]').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
     const id = b.dataset.scollega;
-    if (!confirm(L(`Scollegare ${id}? Il bot smette di lavorare lì.`, `Disconnect ${id}? The bot stops working there.`, `¿Desconectar ${id}? El bot deja de trabajar ahí.`))) return;
+    const nomeP = { kick: 'Kick', youtube: 'YouTube' }[id] || id;
+    if (!(await chiediSe({ titolo: L(`Scollego ${nomeP}?`, `Disconnect ${nomeP}?`, `¿Desconecto ${nomeP}?`),
+      testo: L('Il bot smette di lavorare lì, finché non lo ricolleghi.', 'The bot stops working there until you connect it again.', 'El bot deja de trabajar ahí hasta que lo vuelvas a conectar.'),
+      si: L('Scollega', 'Disconnect', 'Desconecta') }))) return;
     await api('/api/streamer/' + id, { method: 'DELETE' });
     toast(L('Scollegata', 'Disconnected', 'Desconectada'));
     caricaPiattaforme();
@@ -24651,14 +24820,18 @@ async function caricaTabellaAdmin() {
       conErrore(async () => {
         if (azione === 'accessi') { await apriAccessi(btn.closest('tr'), login); return; }
         if (azione === 'rimuovi') {
-          if (!confirm(L(`Rimuovere del tutto ${login}? Verranno eliminati anche i suoi permessi.`, `Completely remove ${login}? Their permissions will be deleted too.`, `¿Eliminar por completo a ${login}? También se borrarán sus permisos.`))) return;
+          if (!(await chiediSe({ titolo: L(`Rimuovo del tutto ${login}?`, `Completely remove ${login}?`, `¿Elimino por completo a ${login}?`), pericolo: true,
+            testo: L('Se ne vanno anche i suoi permessi, e non si torna indietro.', 'Their permissions go too, and there is no going back.', 'Sus permisos también se van, y no hay vuelta atrás.'),
+            si: L('Rimuovilo', 'Remove them', 'Elimínalo') }))) return;
           await api('/api/admin/rimuovi', { method: 'POST', body: { login } });
           toast(L(`${login} rimosso.`, `${login} removed.`, `${login} eliminado.`));
         } else if (azione === 'auto') {
           await api('/api/admin/stato', { method: 'POST', body: { login, status: btn.dataset.stato || 'approved', manuale: false } });
           toast(L(`${login} torna in automatico (sync col sito).`, `${login} back to auto (site sync).`, `${login} vuelve a automático (sync del sitio).`));
         } else {
-          if (azione === 'disabled' && !confirm(L(`Disabilitare ${login}? Il bot uscirà dal suo canale.`, `Disable ${login}? The bot will leave their channel.`, `¿Deshabilitar a ${login}? El bot saldrá de su canal.`))) return;
+          if (azione === 'disabled' && !(await chiediSe({ titolo: L(`Disabilito ${login}?`, `Disable ${login}?`, `¿Deshabilito a ${login}?`),
+            testo: L('Il bot esce dal suo canale. Lo riabiliti quando vuoi.', 'The bot leaves their channel. You can enable it again whenever you like.', 'El bot sale de su canal. Lo vuelves a habilitar cuando quieras.'),
+            si: L('Disabilita', 'Disable', 'Deshabilita') }))) return;
           await api('/api/admin/stato', { method: 'POST', body: { login, status: azione } });
           toast(azione === 'approved' ? L(`${login} approvato (manuale)! Il bot si sta pre-addestrando.`, `${login} approved (manual)! The bot is pre-training.`, `¡${login} aprobado (manual)! El bot se está pre-entrenando.`) : L(`${login} disabilitato (manuale).`, `${login} disabled (manual).`, `${login} deshabilitado (manual).`));
         }
@@ -24800,7 +24973,9 @@ async function caricaRichiesteMod() {
         caricaRichiesteMod(); caricaModeratori();
       });
       if (b.dataset.modNo) return conErrore(async () => {
-        if (!confirm(L('Rifiutare questa richiesta?', 'Decline this request?', '¿Rechazar esta solicitud?'))) return;
+        if (!(await chiediSe({ titolo: L('Rifiuto questa richiesta?', 'Decline this request?', '¿Rechazo esta solicitud?'),
+          testo: L('Chi l\'ha mandata non diventa moderatore.', 'Whoever sent it does not become a moderator.', 'Quien la envió no se convierte en moderador.'),
+          si: L('Rifiuta', 'Decline', 'Rechaza') }))) return;
         await api('/api/moderatori/' + b.dataset.modNo + '/rifiuta', { method: 'POST', body: {} });
         toast(L('Fatto.', 'Done.', 'Hecho.')); caricaRichiesteMod();
       });
@@ -24880,7 +25055,9 @@ async function caricaModeratori() {
         mostraInvito(r.invito); toast(L('Nuovo link generato.', 'New link generated.', 'Nuevo enlace generado.')); caricaModeratori();
       });
       if (b.dataset.modRimuovi) return conErrore(async () => {
-        if (!confirm(L('Rimuovere questo moderatore / annullare l’invito?', 'Remove this moderator / cancel the invite?', '¿Quitar este moderador / cancelar la invitación?'))) return;
+        if (!(await chiediSe({ titolo: L('Tolgo questo moderatore?', 'Remove this moderator?', '¿Quito este moderador?'),
+          testo: L('Se l\'invito era ancora in attesa, lo annullo. Se era già dentro, non entra più nel pannello.', 'If the invite was still pending, I cancel it. If they were already in, they can no longer enter the panel.', 'Si la invitación aún estaba pendiente, la anulo. Si ya estaba dentro, ya no entra al panel.'),
+          si: L('Toglilo', 'Remove them', 'Quítalo') }))) return;
         await api('/api/moderatori/' + b.dataset.modRimuovi, { method: 'DELETE' });
         toast(L('Fatto.', 'Done.', 'Hecho.')); caricaModeratori();
       });
@@ -25206,7 +25383,7 @@ window.SB_APP = {
   get menoMoto() { return _menoMoto; },
   vai(id) { try { return vaiAScheda(id); } catch (e) { location.hash = '#' + id; } },
   applicaPreset(i) { const t = TEMPLATE_BUILTIN[i]; if (t) applicaTemplate(t.dati); },
-  tScheda, tGruppo, L, esc,
+  tScheda, tGruppo, L, esc, scorciatoia,
   icona(id) { return (typeof ICONA !== 'undefined' && ICONA[id]) || ''; },
   desc(id) { try { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) : ''; } catch (e) { return ''; } },
   schedaValida(id) { try { return schedaValida(id); } catch (e) { return true; } },

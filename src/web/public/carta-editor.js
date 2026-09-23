@@ -96,8 +96,8 @@ export function apri(stato, { salva, aggiorna } = {}) {
     <div class="ce-testa">
       <strong>${esc(stato.titolo || L('Editor della locandina', 'Poster editor', 'Editor del cartel'))}</strong>
       <span class="ce-spinta"></span>
-      <button type="button" class="btn secondario mini" data-fa="annulla" title="${L('Annulla (Ctrl+Z)', 'Undo (Ctrl+Z)', 'Deshacer (Ctrl+Z)')}">${L('Annulla', 'Undo', 'Deshacer')}</button>
-      <button type="button" class="btn secondario mini" data-fa="rifai" title="${L('Rifai (Ctrl+Maiusc+Z)', 'Redo (Ctrl+Shift+Z)', 'Rehacer (Ctrl+Mayús+Z)')}">${L('Rifai', 'Redo', 'Rehacer')}</button>
+      <button type="button" class="btn secondario mini" data-fa="annulla" title="${L('Annulla', 'Undo', 'Deshacer')}${window.traTasti(window.scorciatoia('mod', 'Z'))}">${L('Annulla', 'Undo', 'Deshacer')}</button>
+      <button type="button" class="btn secondario mini" data-fa="rifai" title="${L('Rifai', 'Redo', 'Rehacer')}${window.traTasti(window.scorciatoia('mod', 'maiusc', 'Z'))}">${L('Rifai', 'Redo', 'Rehacer')}</button>
       <button type="button" class="btn" data-fa="salva">${L('Salva', 'Save', 'Guardar')}</button>
       <button type="button" class="btn secondario" data-fa="chiudi">${L('Chiudi', 'Close', 'Cerrar')}</button>
     </div>
@@ -395,7 +395,10 @@ export function apri(stato, { salva, aggiorna } = {}) {
     } else if (che === 'chiudi') chiudi();
   });
 
+  let chiedendo = false;
+
   function tasti(ev) {
+    if (chiedendo) return;
     if (ev.target.matches('input, textarea, select')) {
       if (ev.key === 'Escape') ev.target.blur();
       return;
@@ -418,9 +421,16 @@ export function apri(stato, { salva, aggiorna } = {}) {
     }
   }
 
-  function chiudi(salvato) {
-    if (!salvato && JSON.stringify(carta) !== partenza
-      && !confirm(L('Hai cambiato la locandina e non l’hai salvata. Chiudo lo stesso?', 'You changed the poster and did not save. Close anyway?', 'Has cambiado el cartel y no lo has guardado. ¿Cierro igualmente?'))) return;
+  async function chiudi(salvato) {
+    if (chiedendo) return;
+    if (!salvato && JSON.stringify(carta) !== partenza) {
+      chiedendo = true;
+      const esci = await window.chiediSe({ titolo: L('Chiudo senza salvare?', 'Close without saving?', '¿Cierro sin guardar?'), pericolo: true,
+        testo: L('Hai cambiato la locandina e non l’hai salvata: le modifiche si perdono.', 'You changed the poster and did not save it: the changes will be lost.', 'Has cambiado el cartel y no lo has guardado: los cambios se pierden.'),
+        si: L('Chiudi senza salvare', 'Close without saving', 'Cerrar sin guardar'), no: L('Resta qui', 'Stay here', 'Quedarme') });
+      chiedendo = false;
+      if (!esci) return;
+    }
     document.removeEventListener('keydown', tasti, true);
     window.removeEventListener('resize', suMisura);
     document.body.classList.remove('ce-aperto');

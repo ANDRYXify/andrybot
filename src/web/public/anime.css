@@ -100,6 +100,9 @@ body.cerca-aperta { overflow: hidden; }
   border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-1);
   border-radius: var(--ang-mano); box-shadow: var(--alone-contorno), var(--ombra-ink-timbro);
 }
+@media not all and (any-pointer: fine) {
+  .cerca-kbd, .pl-guida { display: none; }
+}
 .cerca-filtri { display: flex; gap: 10px; flex-wrap: wrap; padding: 14px 18px 6px; }
 .cerca-filtro {
   font-size: .76rem; font-weight: 600; padding: .28rem .7rem; cursor: pointer;
@@ -1479,6 +1482,7 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 }
 .ovl-tela { --ovl-zoom: 1; overflow: auto; }
 .ovl-tela #ovl-preview { width: calc(100% * var(--ovl-zoom)); min-width: 0; max-width: none; margin: 0; }
+#ovl-preview .ap-el, #ovl-preview #ap-riquadro, #ovl-preview #ap-parti { touch-action: none; }
 
 @media (min-width: 761px) {
   .carta.ovl-banco .ovl-tela { container-type: size; place-content: safe center; }
