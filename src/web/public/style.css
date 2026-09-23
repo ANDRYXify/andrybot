@@ -1652,7 +1652,8 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
 #gr-canvas { width: 100%; height: auto; max-width: 420px; border-radius: 14px; box-shadow: var(--om-m); display: block; margin: 0 auto; background: #111; }
 
 @media (max-width: 720px) {
-  .gr-studio { flex-direction: column; gap: 12px; }
+  .gr-studio { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 12px; }
+  .gr-controlli { min-width: 0; }
   .gr-anteprima {
     order: -1;
     position: sticky; top: var(--top-h); z-index: 20;
@@ -1664,6 +1665,17 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
   #gr-canvas { width: auto; height: auto; max-width: 62vw; max-height: 38vh; }
 }
 .gr-temi, .gr-sfondo-scelte { display: flex; flex-wrap: wrap; gap: 6px; }
+.gr-pronti { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 2px 2px 8px; margin: 0 -2px; }
+.gr-pronto { flex: 0 0 104px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: stretch; gap: 5px; padding: 5px; border: 1px solid var(--bordo); border-radius: var(--r-m); background: transparent; color: var(--testo-2); font-size: .78rem; font-weight: 600; line-height: 1.2; text-align: center; cursor: pointer; }
+.gr-pronto canvas { width: 100%; height: auto; border-radius: 6px; background: #111; display: block; }
+.gr-pronto:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+@media (hover: hover) {
+.gr-pronto:hover { border-color: var(--acc-bordo); color: var(--testo); }
+}
+.gr-scena { padding: .7rem .8rem; border: 1px dashed var(--bordo); border-radius: var(--r-m); }
+.gr-opzioni { display: flex; flex-direction: column; gap: 6px; }
+.gr-op-scelta { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.gr-op-scelta > .campo { margin: 0; }
 .gr-lib-box { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; margin-top: 8px; max-height: 240px; overflow: auto; }
 .gr-lib-el { position: relative; padding: 0; border: 1px solid var(--bordo); border-radius: 8px; overflow: hidden; cursor: pointer; background: none; aspect-ratio: 1; }
 .gr-lib-el img { width: 100%; height: 100%; object-fit: cover; display: block; }

@@ -49,6 +49,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - «Come funziona» si apre da solo la prima volta che entri in una scheda, poi resta chiuso finché non lo apri tu.
 - La prima schermata del tuo server Discord si scrive da sola: ogni canale in mostra ha già la sua faccina e la sua riga, nella lingua del nome. Quelle che scrivi tu restano tue. [vai: dcentra]
 - Nei giorni della settimana scrivi un gioco o un titolo: mentre scrivi compaiono le categorie di Twitch, e sotto ogni giorno leggi quale andrà sul Programma. [vai: settimana]
+- Il synthwave delle grafiche è in prospettiva vera: il sole sorge dietro il titolo e le linee del pavimento escono da tutto l'orizzonte. [vai: grafiche]
+- Otto temi animati nuovi per le grafiche, fra cui vaporwave, pioggia al neon, notte di stelle, sakura e lo-fi, e tredici stili pronti con l'anteprima fatta coi tuoi testi. [vai: grafiche]
+- Nelle grafiche scegli il carattere e lo stile del titolo, la forma delle righe, e per le scene animate cosa si vede, la velocità e quanto si nota. [vai: grafiche]
+- Le scritte delle grafiche si leggono sempre, anche sopra le scene che si muovono, e GIF e video ricominciano senza scatti. Col QR, niente più righe coperte. [vai: grafiche]
 
 ## 2026-09-19
 

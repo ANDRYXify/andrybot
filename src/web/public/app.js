@@ -4116,27 +4116,90 @@ function pannello(id, contenuto) {
 }
 
 const GR_TEMI = {
-  notte:    { nome: 'Notte',    bg: ['#0f1020', '#241b3d'], testo: '#ffffff', tenue: '#b9b6d6', acc: '#8b5cf6', riga: 'rgba(255,255,255,.07)' },
-  neon:     { nome: 'Neon',     bg: ['#04111a', '#06263a'], testo: '#eafcff', tenue: '#8fd3e6', acc: '#22d3ee', riga: 'rgba(34,211,238,.10)' },
-  tramonto: { nome: 'Tramonto', bg: ['#2a0e2e', '#7a1f3d'], testo: '#fff5f0', tenue: '#ffd0c4', acc: '#ff7a59', riga: 'rgba(255,255,255,.08)' },
-  pastello: { nome: 'Pastello', bg: ['#f4f0ff', '#e6f0ff'], testo: '#241b3d', tenue: '#6b6a86', acc: '#7c5cff', riga: 'rgba(60,40,120,.08)' },
-  minimal:  { nome: 'Minimal',  bg: ['#111113', '#111113'], testo: '#ffffff', tenue: '#a8a8b3', acc: '#ffffff', riga: 'rgba(255,255,255,.10)' },
-  manga:    { nome: 'Manga',    bg: ['#f7f4ef', '#efe9e0'], testo: '#0b0b0b', tenue: '#57534e', acc: '#b80858', riga: 'rgba(11,11,11,.12)' },
-  manganotte: { nome: 'Manga di notte', bg: ['#0f0a0e', '#231b22'], testo: '#f1e9ee', tenue: '#b0a2aa', acc: '#f72fa7', riga: 'rgba(244,236,241,.10)' },
+  notte:    { nome: ['Notte', 'Night', 'Noche'], bg: ['#0f1020', '#241b3d'], testo: '#ffffff', tenue: '#b9b6d6', acc: '#8b5cf6', riga: 'rgba(255,255,255,.07)' },
+  neon:     { nome: ['Neon', 'Neon', 'Neón'], bg: ['#04111a', '#06263a'], testo: '#eafcff', tenue: '#8fd3e6', acc: '#22d3ee', riga: 'rgba(34,211,238,.10)' },
+  tramonto: { nome: ['Tramonto', 'Sunset', 'Atardecer'], bg: ['#2a0e2e', '#7a1f3d'], testo: '#fff5f0', tenue: '#ffd0c4', acc: '#ff7a59', riga: 'rgba(255,255,255,.08)' },
+  pastello: { nome: ['Pastello', 'Pastel', 'Pastel'], bg: ['#f4f0ff', '#e6f0ff'], testo: '#241b3d', tenue: '#6b6a86', acc: '#7c5cff', riga: 'rgba(60,40,120,.08)' },
+  minimal:  { nome: ['Minimal', 'Minimal', 'Minimal'], bg: ['#111113', '#111113'], testo: '#ffffff', tenue: '#a8a8b3', acc: '#ffffff', riga: 'rgba(255,255,255,.10)' },
+  manga:    { nome: ['Manga', 'Manga', 'Manga'], bg: ['#f7f4ef', '#efe9e0'], testo: '#0b0b0b', tenue: '#57534e', acc: '#b80858', riga: 'rgba(11,11,11,.12)' },
+  manganotte: { nome: ['Manga di notte', 'Night manga', 'Manga nocturno'], bg: ['#0f0a0e', '#231b22'], testo: '#f1e9ee', tenue: '#b0a2aa', acc: '#f72fa7', riga: 'rgba(244,236,241,.10)' },
 
-  aurora:    { nome: 'Aurora',  bg: ['#07132a', '#0b2a3f'], testo: '#eaf6ff', tenue: '#a9cbe0', acc: '#38bdf8', riga: 'rgba(56,189,248,.10)', anima: 'aurora' },
-  particelle:{ nome: 'Particelle', bg: ['#0d0b1a', '#1b1436'], testo: '#ffffff', tenue: '#c3bde0', acc: '#a855f7', riga: 'rgba(168,85,247,.10)', anima: 'particelle' },
-  onde:      { nome: 'Onde',   bg: ['#08131f', '#0c2233'], testo: '#eafcff', tenue: '#8fd3e6', acc: '#22d3ee', riga: 'rgba(34,211,238,.10)', anima: 'onde' },
-  matrix:    { nome: 'Matrix', bg: ['#010a02', '#031006'], testo: '#c9ffd2', tenue: '#5fd77a', acc: '#33ff77', riga: 'rgba(51,255,119,.12)', anima: 'matrix' },
-  synthwave: { nome: 'Synthwave', bg: ['#1a0533', '#3a0a4a'], testo: '#ffffff', tenue: '#ffb3e6', acc: '#ff3ca6', riga: 'rgba(255,60,166,.12)', anima: 'griglia' },
-  scanline:  { nome: 'Scanline', bg: ['#04121a', '#071a26'], testo: '#eafcff', tenue: '#8fd3e6', acc: '#2ee6c6', riga: 'rgba(46,230,198,.12)', anima: 'scanline' },
+  synthwave: { nome: ['Synthwave', 'Synthwave', 'Synthwave'], bg: ['#1a0533', '#3a0a4a'], testo: '#ffffff', tenue: '#ffb3e6', acc: '#ff3ca6', acc2: '#29d8ff', riga: 'rgba(255,60,166,.12)', anima: 'griglia' },
+  vaporwave: { nome: ['Vaporwave', 'Vaporwave', 'Vaporwave'], bg: ['#241344', '#b44d9e'], testo: '#ffffff', tenue: '#ffd6f3', acc: '#ff71ce', acc2: '#01cdfe', riga: 'rgba(255,113,206,.12)', anima: 'vaporwave' },
+  pioggia:   { nome: ['Pioggia al neon', 'Neon rain', 'Lluvia de neón'], bg: ['#070a1a', '#1a1033'], testo: '#f2f7ff', tenue: '#a9b8e6', acc: '#ff2e88', acc2: '#00e5ff', riga: 'rgba(0,229,255,.10)', anima: 'pioggia' },
+  cromo:     { nome: ['Cromo', 'Chrome', 'Cromo'], bg: ['#dfe6f0', '#b9c6d8'], testo: '#101828', tenue: '#3b4a63', acc: '#6c3cff', acc2: '#00b3ff', riga: 'rgba(16,24,40,.08)', anima: 'cromo' },
+  stelle:    { nome: ['Notte di stelle', 'Starry night', 'Noche estrellada'], bg: ['#050816', '#0d1b3a'], testo: '#f5f7ff', tenue: '#b4c0e0', acc: '#ffd66b', acc2: '#7aa2ff', riga: 'rgba(255,214,107,.10)', anima: 'stelle' },
+  sakura:    { nome: ['Sakura', 'Sakura', 'Sakura'], bg: ['#fff1f5', '#ffd9e6'], testo: '#3a1d2b', tenue: '#7a4d61', acc: '#d63c74', acc2: '#8a5a44', riga: 'rgba(58,29,43,.08)', anima: 'sakura' },
+  lofi:      { nome: ['Lo-fi', 'Lo-fi', 'Lo-fi'], bg: ['#2a1b2e', '#5a3a4a'], testo: '#fff4e6', tenue: '#e6c9b5', acc: '#ffb86b', acc2: '#9b8cff', riga: 'rgba(255,184,107,.10)', anima: 'lofi' },
+  arcade:    { nome: ['Sala giochi', 'Arcade', 'Salón recreativo'], bg: ['#07040f', '#120a24'], testo: '#ffffff', tenue: '#c9c2e6', acc: '#ffd400', acc2: '#ff3b6b', riga: 'rgba(255,212,0,.10)', anima: 'arcade' },
+  iperspazio: { nome: ['Iperspazio', 'Hyperspace', 'Hiperespacio'], bg: ['#02030a', '#0b1030'], testo: '#ffffff', tenue: '#b8c6ff', acc: '#7cf7ff', acc2: '#a78bfa', riga: 'rgba(124,247,255,.10)', anima: 'iperspazio' },
+  aurora:    { nome: ['Aurora', 'Aurora', 'Aurora'], bg: ['#07132a', '#0b2a3f'], testo: '#eaf6ff', tenue: '#a9cbe0', acc: '#38bdf8', acc2: '#34d399', riga: 'rgba(56,189,248,.10)', anima: 'aurora' },
+  particelle: { nome: ['Particelle', 'Particles', 'Partículas'], bg: ['#0d0b1a', '#1b1436'], testo: '#ffffff', tenue: '#c3bde0', acc: '#a855f7', acc2: '#6366f1', riga: 'rgba(168,85,247,.10)', anima: 'particelle' },
+  onde:      { nome: ['Onde', 'Waves', 'Ondas'], bg: ['#08131f', '#0c2233'], testo: '#eafcff', tenue: '#8fd3e6', acc: '#22d3ee', acc2: '#3b82f6', riga: 'rgba(34,211,238,.10)', anima: 'onde' },
+  matrix:    { nome: ['Codice', 'Code', 'Código'], bg: ['#010a02', '#031006'], testo: '#c9ffd2', tenue: '#5fd77a', acc: '#33ff77', acc2: '#0f9d58', riga: 'rgba(51,255,119,.12)', anima: 'matrix' },
+  scanline:  { nome: ['Scanline', 'Scanline', 'Scanline'], bg: ['#04121a', '#071a26'], testo: '#eafcff', tenue: '#8fd3e6', acc: '#2ee6c6', acc2: '#0ea5e9', riga: 'rgba(46,230,198,.12)', anima: 'scanline' },
 };
 const GR_TEMA_IDS = Object.keys(GR_TEMI);
+const grafNomeTema = (t) => L(...t.nome);
 const grafAnimato = (c) => !!(GR_TEMI[c.tema] && GR_TEMI[c.tema].anima) && c.sfondo === 'tema';
 
-const GR_STELLE = Array.from({ length: 90 }, (_, i) => ({
-  x: ((i * 97) % 100) / 100, y: ((i * 53) % 100) / 100, r: 0.6 + (i % 5) * 0.5, f: 0.4 + (i % 7) / 10,
-}));
+const GR_VELOCITA = {
+  lenta: { durata: 8000, vel: 1 },
+  normale: { durata: 4000, vel: 1 },
+  veloce: { durata: 4000, vel: 2 },
+};
+const grafVelocita = (c) => GR_VELOCITA[c.velocita] || GR_VELOCITA.normale;
+const grafDurata = (c) => (grafAnimato(c) ? grafVelocita(c).durata : 0);
+
+const GR_BASE = 'Archivo, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+const GR_CARATTERI = {
+  archivo: { nome: ['Moderno', 'Modern', 'Moderno'], famiglia: GR_BASE, peso: 800, stile: '' },
+  serif: { nome: ['Elegante', 'Elegant', 'Elegante'], famiglia: '"Instrument Serif", Georgia, serif', peso: 400, stile: 'italic ' },
+  pennarello: { nome: ['Pennarello', 'Marker', 'Rotulador'], famiglia: '"Permanent Marker", "Trebuchet MS", sans-serif', peso: 400, stile: '' },
+  gothic: { nome: ['Pulito', 'Clean', 'Limpio'], famiglia: '"Zen Kaku Gothic New", system-ui, sans-serif', peso: 700, stile: '' },
+};
+const grafCarattere = (c) => GR_CARATTERI[c.font] || GR_CARATTERI.archivo;
+let _grafFont = null;
+function grafFontPronti() {
+  if (!_grafFont) {
+    _grafFont = (document.fonts && document.fonts.load
+      ? Promise.all(['800 40px Archivo', '500 40px Archivo', 'italic 400 40px "Instrument Serif"', '400 40px "Permanent Marker"', '700 40px "Zen Kaku Gothic New"']
+        .map((f) => document.fonts.load(f).catch(() => null)))
+      : Promise.resolve()).then(() => true);
+  }
+  return _grafFont;
+}
+
+const GR_STILI_TITOLO = { sfumato: ['Sfumato', 'Gradient', 'Degradado'], pieno: ['Pieno', 'Solid', 'Sólido'], neon: ['Neon', 'Neon', 'Neón'] };
+const GR_STILI_RIGHE = { schede: ['Schede', 'Cards', 'Tarjetas'], pillole: ['Pillole', 'Pills', 'Píldoras'], linee: ['Linee', 'Lines', 'Líneas'] };
+
+const GR_PRONTI = [
+  { id: 'retro', nome: ['Tramonto retrò', 'Retro sunset', 'Atardecer retro'], c: { tema: 'synthwave', accento: '#ff3ca6', accento2: '#29d8ff', font: 'archivo', stileTitolo: 'neon', stileRighe: 'schede', velocita: 'normale', intensita: 100, op: { griglia: { composizione: 'poster', strisce: true, montagne: true, stelle: true } } } },
+  { id: 'autostrada', nome: ['Autostrada di notte', 'Night drive', 'Autopista nocturna'], c: { tema: 'synthwave', accento: '#22d3ee', accento2: '#a855f7', font: 'archivo', stileTitolo: 'sfumato', stileRighe: 'linee', velocita: 'veloce', intensita: 100, op: { griglia: { composizione: 'classica', strisce: false, montagne: true, stelle: true } } } },
+  { id: 'miami', nome: ['Miami', 'Miami', 'Miami'], c: { tema: 'vaporwave', accento: '#ff71ce', accento2: '#01cdfe', font: 'serif', stileTitolo: 'pieno', stileRighe: 'pillole', velocita: 'lenta', intensita: 100, op: { vaporwave: { pavimento: 'scacchi', palme: true } } } },
+  { id: 'citta', nome: ['Città sotto la pioggia', 'City in the rain', 'Ciudad bajo la lluvia'], c: { tema: 'pioggia', accento: '#ff2e88', accento2: '#00e5ff', font: 'archivo', stileTitolo: 'neon', stileRighe: 'schede', velocita: 'normale', intensita: 100, op: { pioggia: { pioggia: 'tanta', glitch: true } } } },
+  { id: 'y2k', nome: ['Y2K', 'Y2K', 'Y2K'], c: { tema: 'cromo', accento: '#6c3cff', accento2: '#00b3ff', font: 'archivo', stileTitolo: 'sfumato', stileRighe: 'pillole', velocita: 'normale', intensita: 100, op: { cromo: { bolle: true, scintille: true } } } },
+  { id: 'luna', nome: ['Luna piena', 'Full moon', 'Luna llena'], c: { tema: 'stelle', accento: '#ffd66b', accento2: '#7aa2ff', font: 'serif', stileTitolo: 'pieno', stileRighe: 'linee', velocita: 'lenta', intensita: 100, op: { stelle: { luna: true, costellazioni: true, cadenti: true } } } },
+  { id: 'primavera', nome: ['Primavera', 'Springtime', 'Primavera'], c: { tema: 'sakura', accento: '#d63c74', accento2: '#8a5a44', font: 'gothic', stileTitolo: 'pieno', stileRighe: 'pillole', velocita: 'lenta', intensita: 100, op: { sakura: { petali: 'tanti', ramo: true } } } },
+  { id: 'tranquillo', nome: ['Pomeriggio tranquillo', 'Quiet afternoon', 'Tarde tranquila'], c: { tema: 'lofi', accento: '#ffb86b', accento2: '#9b8cff', font: 'pennarello', stileTitolo: 'pieno', stileRighe: 'schede', velocita: 'lenta', intensita: 100, op: { lofi: { vetro: true } } } },
+  { id: 'gettone', nome: ['Gettone', 'Insert coin', 'Ficha'], c: { tema: 'arcade', accento: '#ffd400', accento2: '#ff3b6b', font: 'archivo', stileTitolo: 'neon', stileRighe: 'schede', velocita: 'normale', intensita: 100, op: { arcade: { stelle: true, scanline: true } } } },
+  { id: 'luce', nome: ['Velocità luce', 'Light speed', 'Velocidad luz'], c: { tema: 'iperspazio', accento: '#7cf7ff', accento2: '#a78bfa', font: 'archivo', stileTitolo: 'sfumato', stileRighe: 'linee', velocita: 'veloce', intensita: 100, op: { iperspazio: { densita: 'tante' } } } },
+  { id: 'nord', nome: ['Cielo del nord', 'Northern sky', 'Cielo del norte'], c: { tema: 'aurora', accento: '#38bdf8', accento2: '#34d399', font: 'gothic', stileTitolo: 'pieno', stileRighe: 'pillole', velocita: 'lenta', intensita: 100, op: {} } },
+  { id: 'essenziale', nome: ['Essenziale', 'Essential', 'Esencial'], c: { tema: 'minimal', accento: '#ffffff', accento2: '', font: 'archivo', stileTitolo: 'pieno', stileRighe: 'linee', velocita: 'normale', intensita: 100, op: {} } },
+  { id: 'fumetto', nome: ['Fumetto', 'Comic', 'Cómic'], c: { tema: 'manga', accento: '#b80858', accento2: '', font: 'pennarello', stileTitolo: 'pieno', stileRighe: 'schede', velocita: 'normale', intensita: 100, op: {} } },
+];
+
+function grafOpzioni(c, scena) {
+  const def = window.SB_SCENE?.SCENE?.[scena];
+  const mie = (c.op && typeof c.op === 'object' && c.op[scena] && typeof c.op[scena] === 'object') ? c.op[scena] : {};
+  const fuori = {};
+  for (const o of def?.opzioni || []) {
+    const v = mie[o.id];
+    if (o.tipo === 'si') fuori[o.id] = typeof v === 'boolean' ? v : true;
+    else fuori[o.id] = o.voci.some((x) => x[0] === v) ? v : o.voci[0][0];
+  }
+  return fuori;
+}
 
 const grafImg = { el: null, pronto: false, src: '' };
 const grafLogo = { el: null, pronto: false, src: '' };
@@ -4155,8 +4218,9 @@ const grafCaricaLogo = (src, poi) => grafCaricaIn(grafLogo, src, poi);
 function grafDefault() {
   const canale = stato?.user?.login || 'iltuocanale';
   return {
-    tipo: 'programmazione', tema: 'notte', accento: '',
-    titolo: '', handle: '@' + canale, logo: '🎮', logoImg: '',
+    tipo: 'programmazione', tema: 'notte', accento: '', accento2: '',
+    font: 'archivo', stileTitolo: 'sfumato', stileRighe: 'schede', velocita: 'normale', intensita: 100, op: {},
+    titolo: '', handle: '@' + canale, logo: '', logoImg: '',
     coloreTesto: '', velo: 45,
     gioco: '', sottotitolo: '',
     sfondo: 'tema', sfondoColore: '', sfondoImg: '',
@@ -4215,7 +4279,10 @@ function grafConfig() {
   const s = impostazioni().grafiche;
   const d = grafDefault();
   if (!s || typeof s !== 'object') return d;
-  return { ...d, ...s, giorni: grafGiorni() };
+  const c = { ...d, ...s, giorni: grafGiorni() };
+  if (c.logo === '\u{1F3AE}') c.logo = '';
+  if (!GR_TEMI[c.tema]) c.tema = d.tema;
+  return c;
 }
 
 const GIORNI_LUNGHI = () => [L('Lunedì', 'Monday', 'Lunes'), L('Martedì', 'Tuesday', 'Martes'), L('Mercoledì', 'Wednesday', 'Miércoles'),
@@ -4435,6 +4502,7 @@ function _settDisegnaAnteprima() {
   if (c.sfondo === 'immagine' && c.sfondoImg && !_settImg.sfondo) { _settImg.sfondo = true; grafCaricaImg(c.sfondoImg, disegna); }
   if (c.logoImg && !_settImg.logo) { _settImg.logo = true; grafCaricaLogo(c.logoImg, disegna); }
   disegna();
+  grafFontPronti().then(disegna);
   const ta = _g('sett-testo');
   if (ta && !ta.dataset.toccato) ta.value = grafDidascalia(c);
 }
@@ -4531,6 +4599,7 @@ function collegaSettimana() {
     const b = _g('sett-manda');
     if (b) b.disabled = true;
     try {
+      await grafFontPronti();
       const cv = document.createElement('canvas');
       grafDisegna(cv, { ...grafConfig(), tipo: 'programmazione', giorni: grafGiorni(_settLeggiGiorni()) }, 0, 1);
       const immagine = cv.toDataURL('image/jpeg', 0.9);
@@ -4550,18 +4619,35 @@ function collegaSettimana() {
   }));
 }
 
+function _grafScelte(dati, attivo, chiave, extra = () => '') {
+  return Object.entries(dati).map(([id, nome]) => `<button type="button" class="gr-tema${attivo === id ? ' on' : ''}" data-${chiave}="${id}"${extra(id)}>${esc(L(...nome))}</button>`).join('');
+}
+
+function _grafOpzioniHtml(c) {
+  const tema = GR_TEMI[c.tema];
+  const def = tema?.anima ? window.SB_SCENE?.SCENE?.[tema.anima] : null;
+  if (!def) return '';
+  const val = grafOpzioni(c, tema.anima);
+  return (def.opzioni || []).map((o) => (o.tipo === 'si'
+    ? `<label class="riga-check"><input type="checkbox" data-gr-op="${o.id}"${val[o.id] ? ' checked' : ''}> ${esc(L(...o.nome))}</label>`
+    : `<div class="gr-op-scelta"><span class="campo">${esc(L(...o.nome))}</span><div class="gr-sfondo-scelte">${o.voci.map(([id, ...nome]) => `<button type="button" class="gr-tema${val[o.id] === id ? ' on' : ''}" data-gr-op="${o.id}" data-gr-val="${id}">${esc(L(...nome))}</button>`).join('')}</div></div>`)).join('');
+}
+
 function pannelloGrafiche() {
   const c = grafConfig();
   const etAnim = L('tema animato', 'animated theme', 'tema animado');
   const segnoAnim = `<svg class="gr-anim" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>`;
   const temaChips = GR_TEMA_IDS.map((id) => {
     const anim = !!GR_TEMI[id].anima;
-    return `<button type="button" class="gr-tema${c.tema === id ? ' on' : ''}${anim ? ' anima' : ''}" data-gr-tema="${id}"${anim ? ` title="${esc(etAnim)}"` : ''}>${esc(GR_TEMI[id].nome)}${anim ? `${segnoAnim}<span class="solo-lettori">${esc(etAnim)}</span>` : ''}</button>`;
+    return `<button type="button" class="gr-tema${c.tema === id ? ' on' : ''}${anim ? ' anima' : ''}" data-gr-tema="${id}"${anim ? ` title="${esc(etAnim)}"` : ''}>${esc(grafNomeTema(GR_TEMI[id]))}${anim ? `${segnoAnim}<span class="solo-lettori">${esc(etAnim)}</span>` : ''}</button>`;
   }).join('');
+  const stili = GR_PRONTI.map((p) => `<button type="button" class="gr-pronto" data-gr-pronto="${p.id}"><canvas width="120" height="150" aria-hidden="true"></canvas><span>${esc(L(...p.nome))}</span></button>`).join('');
+  const caratteri = Object.entries(GR_CARATTERI).map(([id, f]) => `<button type="button" class="gr-tema${(c.font || 'archivo') === id ? ' on' : ''}" data-gr-font="${id}" style="font-family:${esc(f.famiglia)};${f.stile ? 'font-style:italic;' : ''}">${esc(L(...f.nome))}</button>`).join('');
+  const animato = grafAnimato(c);
   return pannello('grafiche', `
     <div class="carta">
       <h2>${_hIco(ICO.grafico)}${L('Grafiche social', 'Social graphics', 'Gráficas sociales')}</h2>
-      <p>${L('Due grafiche pronte da pubblicare: la', 'Two ready-to-post graphics: the', 'Dos gráficas listas para publicar: la')} <strong class="primo-piano">${L('programmazione settimanale', 'weekly schedule', 'programación semanal')}</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">«${L('Live ora', 'Live now', 'En directo')}»</strong>. ${L('Scegli un tema, personalizza tutto e scarica il PNG. Le tue impostazioni restano salvate, pronte da rimodificare.', 'Pick a theme, customize everything and download the PNG. Your settings stay saved, ready to re-edit.', 'Elige un tema, personaliza todo y descarga el PNG. Tus ajustes quedan guardados, listos para reeditar.')}</p>
+      <p>${L('Due grafiche pronte da pubblicare: la', 'Two ready-to-post graphics: the', 'Dos gráficas listas para publicar: la')} <strong class="primo-piano">${L('programmazione settimanale', 'weekly schedule', 'programación semanal')}</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">«${L('Live ora', 'Live now', 'En directo')}»</strong>. ${L('Parti da uno stile pronto o da un tema, cambia quello che vuoi e scarica. Le tue impostazioni restano salvate.', 'Start from a ready-made style or a theme, change what you want and download. Your settings stay saved.', 'Empieza por un estilo listo o un tema, cambia lo que quieras y descarga. Tus ajustes quedan guardados.')}</p>
 
       <div class="gr-tipo">
         <button type="button" class="gr-tipo-b${c.tipo === 'programmazione' ? ' on' : ''}" data-gr-tipo="programmazione">${L('Programmazione', 'Schedule', 'Programación')}</button>
@@ -4570,8 +4656,20 @@ function pannelloGrafiche() {
 
       <div class="gr-studio">
         <div class="gr-controlli">
-          <label class="campo">${L('Tema', 'Theme', 'Tema')}</label>
+          <label class="campo">${L('Stili pronti', 'Ready-made styles', 'Estilos listos')}</label>
+          <div class="gr-pronti" id="gr-pronti">${stili}</div>
+
+          <label class="campo spazio-sopra">${L('Tema', 'Theme', 'Tema')}</label>
           <div class="gr-temi">${temaChips}</div>
+
+          <div class="gr-scena spazio-sopra" id="gr-scena"${animato ? '' : ' hidden'}>
+            <p class="campo">${L('La scena', 'The scene', 'La escena')}</p>
+            <div class="gr-opzioni" id="gr-opzioni">${_grafOpzioniHtml(c)}</div>
+            <div class="gr-op-scelta"><span class="campo">${L('Velocità', 'Speed', 'Velocidad')}</span>
+              <div class="gr-sfondo-scelte">${_grafScelte({ lenta: ['Lenta', 'Slow', 'Lenta'], normale: ['Normale', 'Normal', 'Normal'], veloce: ['Veloce', 'Fast', 'Rápida'] }, c.velocita || 'normale', 'gr-vel')}</div></div>
+            <label class="campo spazio-sopra" for="gr-intensita">${L('Quanto si vede la scena', 'How much the scene shows', 'Cuánto se ve la escena')} <span class="tenue" id="gr-intensita-val">${Number(c.intensita) || 100}%</span></label>
+            <input type="range" id="gr-intensita" min="30" max="100" value="${Number(c.intensita) || 100}" style="width:100%">
+          </div>
 
           <label class="campo spazio-sopra">${L('Sfondo', 'Background', 'Fondo')}</label>
           <div class="gr-sfondo-scelte">
@@ -4595,21 +4693,32 @@ function pannelloGrafiche() {
               ${c.sfondoImg ? `· <a href="#" id="gr-sfondo-togli">${L('togli immagine', 'remove image', 'quitar imagen')}</a>` : ''}</p>
           </div>
 
-          <div class="gr-velo-box spazio-sopra" ${c.sfondo === 'tema' ? 'hidden' : ''}>
-            <label class="campo" for="gr-velo">${L('Leggibilità (velo sullo sfondo)', 'Readability (veil over background)', 'Legibilidad (velo sobre el fondo)')} <span class="tenue" id="gr-velo-val">${Number(c.velo) || 0}%</span></label>
+          <div class="gr-velo-box spazio-sopra" ${c.sfondo === 'immagine' ? '' : 'hidden'}>
+            <label class="campo" for="gr-velo">${L('Velo sull’immagine', 'Veil over the image', 'Velo sobre la imagen')} <span class="tenue" id="gr-velo-val">${Number(c.velo) || 0}%</span></label>
             <input type="range" id="gr-velo" min="0" max="85" value="${Number(c.velo) || 0}" style="width:100%">
           </div>
 
           <div class="riga-flessibile spazio-sopra">
-            <div style="flex:1">
+            <div style="flex:1 1 180px">
               <label class="campo" for="gr-titolo">${L('Titolo', 'Title', 'Título')}</label>
               <input type="text" id="gr-titolo" maxlength="30" placeholder="${L('es. LA SETTIMANA', 'e.g. THE WEEK', 'p. ej. LA SEMANA')}" value="${esc(c.titolo)}">
             </div>
-            <div style="width:120px">
+            <div style="width:96px">
               <label class="campo" for="gr-accento">${L('Accento', 'Accent', 'Acento')}</label>
               <input type="color" id="gr-accento" value="${esc(c.accento || GR_TEMI[c.tema].acc)}">
             </div>
+            <div style="width:96px">
+              <label class="campo" for="gr-accento2">${L('Seconda tinta', 'Second tint', 'Segundo tono')}</label>
+              <input type="color" id="gr-accento2" value="${esc(grafTavolozza(c, grafDisposizione(c)).acc2)}">
+            </div>
           </div>
+
+          <div class="gr-op-scelta spazio-sopra"><span class="campo">${L('Carattere del titolo', 'Title typeface', 'Letra del título')}</span>
+            <div class="gr-sfondo-scelte">${caratteri}</div></div>
+          <div class="gr-op-scelta spazio-sopra"><span class="campo">${L('Stile del titolo', 'Title style', 'Estilo del título')}</span>
+            <div class="gr-sfondo-scelte">${_grafScelte(GR_STILI_TITOLO, c.stileTitolo || 'sfumato', 'gr-stile')}</div></div>
+          <div class="gr-op-scelta spazio-sopra gr-solo-prog" ${c.tipo === 'live' ? 'hidden' : ''}><span class="campo">${L('Le righe dei giorni', 'The day rows', 'Las filas de los días')}</span>
+            <div class="gr-sfondo-scelte">${_grafScelte(GR_STILI_RIGHE, c.stileRighe || 'schede', 'gr-righe')}</div></div>
 
           <div class="spazio-sopra">
             <label class="campo" for="gr-coloretesto">${L('Colore del testo', 'Text colour', 'Color del texto')}</label>
@@ -4625,9 +4734,9 @@ function pannelloGrafiche() {
               <label class="campo" for="gr-handle">${L('Handle / nome', 'Handle / name', 'Handle / nombre')}</label>
               <input type="text" id="gr-handle" maxlength="30" value="${esc(c.handle)}">
             </div>
-            <div style="width:120px">
-              <label class="campo" for="gr-logo">${L('Logo (emoji)', 'Logo (emoji)', 'Logo (emoji)')}</label>
-              <input type="text" id="gr-logo" maxlength="4" value="${esc(c.logo)}" ${c.logoImg ? 'disabled' : ''}>
+            <div style="width:140px">
+              <label class="campo" for="gr-logo">${L('Logo (testo)', 'Logo (text)', 'Logo (texto)')}</label>
+              <input type="text" id="gr-logo" maxlength="4" value="${esc(c.logo)}" placeholder="${esc(L('l’iniziale', 'your initial', 'la inicial'))}" ${c.logoImg ? 'disabled' : ''}>
             </div>
           </div>
           <div class="riga-flessibile spazio-sopra">
@@ -4667,10 +4776,10 @@ function pannelloGrafiche() {
           <p class="spazio-sopra">
             <button class="btn secondario" id="gr-scarica">${_bIco(ICO.scarica)}${L('Scarica PNG', 'Download PNG', 'Descargar PNG')}</button>
             <button class="btn secondario" id="gr-scarica-gif">${_bIco(ICO.video)}${L('Scarica GIF animata', 'Download animated GIF', 'Descargar GIF animado')}</button>
-            <button class="btn secondario" id="gr-scarica-video">${_bIco(ICO.video)}${L('Video (registra 5s)', 'Video (records 5s)', 'Vídeo (graba 5s)')}</button>
+            <button class="btn secondario" id="gr-scarica-video">${_bIco(ICO.video)}${L('Scarica video', 'Download video', 'Descargar vídeo')}</button>
             <button class="btn secondario" id="gr-salva">${L('Salva impostazioni', 'Save settings', 'Guardar ajustes')}</button>
           </p>
-          <p class="suggerimento">${L('PNG e Condividi escono in alta risoluzione 2× (2160 px): più nitidi, e Instagram li ridimensiona invece di sgranarli. La GIF animata si crea al volo, senza registrare (ideale per i temi animati); il video WebM è più pesante ma di qualità più alta.', 'PNG and Share export at 2× high resolution (2160 px): sharper, and Instagram downsizes them instead of making them grainy. The animated GIF is built on the fly, no recording (ideal for animated themes); the WebM video is heavier but higher quality.', 'PNG y Compartir salen en alta resolución 2× (2160 px): más nítidos, e Instagram los redimensiona en vez de granularlos. El GIF animado se crea al vuelo, sin grabar (ideal para temas animados); el vídeo WebM es más pesado pero de mayor calidad.')}</p>
+          <p class="suggerimento">${L('PNG e Condividi escono in alta risoluzione 2× (2160 px): più nitidi, e Instagram li ridimensiona invece di sgranarli. La GIF e il video fanno un giro intero dell’animazione, 4 secondi (8 se è lenta), e ricominciano senza scatti; il video WebM è più pesante ma di qualità più alta.', 'PNG and Share export at 2× high resolution (2160 px): sharper, and Instagram downsizes them instead of making them grainy. The GIF and the video hold one full loop of the animation, 4 seconds (8 when slow), and start over without a jump; the WebM video is heavier but higher quality.', 'PNG y Compartir salen en alta resolución 2× (2160 px): más nítidos, e Instagram los redimensiona en vez de granularlos. El GIF y el vídeo hacen una vuelta entera de la animación, 4 segundos (8 si es lenta), y vuelven a empezar sin saltos; el vídeo WebM pesa más pero tiene más calidad.')}</p>
         </div>
 
         <div class="gr-anteprima">
@@ -4696,193 +4805,358 @@ function grRoundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-function grafAnimaSfondo(ctx, W, H, t, tipo, acc) {
-  const s = t / 1000;
-  if (tipo === 'aurora') {
-    const col = [acc, '#22d3ee', '#a855f7'];
-    for (let i = 0; i < 3; i++) {
-      const y = H * (0.22 + 0.24 * i) + Math.sin(s * 0.6 + i) * 60;
-      const g = ctx.createLinearGradient(0, y - 190, 0, y + 190);
-      g.addColorStop(0, col[i] + '00'); g.addColorStop(0.5, col[i] + '3a'); g.addColorStop(1, col[i] + '00');
-      ctx.fillStyle = g; ctx.fillRect(0, y - 190, W, 380);
-    }
-  } else if (tipo === 'particelle') {
-    ctx.fillStyle = '#ffffff';
-    for (const st of GR_STELLE) {
-      ctx.globalAlpha = 0.25 + 0.5 * (0.5 + 0.5 * Math.sin(s * st.f * 3 + st.x * 20));
-      const px = (st.x * W + s * 9 * st.f) % W;
-      ctx.beginPath(); ctx.arc(px, st.y * H, st.r, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-  } else if (tipo === 'onde') {
-    ctx.strokeStyle = acc + '3a'; ctx.lineWidth = 3;
-    for (let k = 0; k < 4; k++) {
-      ctx.beginPath();
-      for (let x = 0; x <= W; x += 12) {
-        const y = H * (0.34 + 0.14 * k) + Math.sin(x / 120 + s * 1.2 + k) * 26;
-        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    }
-  } else if (tipo === 'matrix') {
+const grRgb = (h) => window.SB_SCENE.rgb(h);
+const grRgba = (h, a) => { const [r, g, b] = grRgb(h); return `rgba(${r},${g},${b},${a})`; };
 
-    ctx.font = '28px "Courier New", monospace'; ctx.textAlign = 'left';
-    const passo = 30, cols = Math.floor(W / passo);
-    for (let i = 0; i < cols; i++) {
-      const vel = 90 + (i * 37) % 120;
-      const head = (s * vel + i * 131) % (H + 300);
-      for (let j = 0; j < 14; j++) {
-        const y = head - j * passo;
-        if (y < -passo || y > H) continue;
-        const ch = String.fromCharCode(0x30A0 + ((i * 7 + j * 13 + ((s * 6) | 0)) % 96));
-        ctx.fillStyle = j === 0 ? 'rgba(210,255,215,.95)' : `rgba(51,255,119,${Math.max(0, 0.55 - j * 0.045)})`;
-        ctx.fillText(ch, i * passo + 5, y);
-      }
-    }
-  } else if (tipo === 'griglia') {
-
-    const hor = H * 0.6;
-    const sun = ctx.createLinearGradient(0, hor - 200, 0, hor + 30);
-    sun.addColorStop(0, '#ffd15c'); sun.addColorStop(1, acc);
-    ctx.fillStyle = sun; ctx.beginPath(); ctx.arc(W / 2, hor, 150, Math.PI, 0); ctx.fill();
-    ctx.strokeStyle = acc + '77'; ctx.lineWidth = 2;
-    for (let i = -12; i <= 12; i++) { ctx.beginPath(); ctx.moveTo(W / 2, hor); ctx.lineTo(W / 2 + i * (W / 7), H); ctx.stroke(); }
-    for (let k = 0; k < 16; k++) {
-      const yy = hor + ((s * 70 + k * 42) % (H - hor));
-      ctx.globalAlpha = (yy - hor) / (H - hor);
-      ctx.beginPath(); ctx.moveTo(0, yy); ctx.lineTo(W, yy); ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-  } else if (tipo === 'scanline') {
-
-    ctx.fillStyle = acc + '14';
-    for (let y = ((s * 40) % 8); y < H; y += 8) ctx.fillRect(0, y, W, 2);
-    const by = ((s * 130) % (H + 240)) - 120;
-    const bg = ctx.createLinearGradient(0, by - 120, 0, by + 120);
-    bg.addColorStop(0, acc + '00'); bg.addColorStop(0.5, acc + '26'); bg.addColorStop(1, acc + '00');
-    ctx.fillStyle = bg; ctx.fillRect(0, by - 120, W, 240);
-  }
-}
-
-let _grNoise = null;
-const grHexRgb = (h) => { const m = /^#?([0-9a-fA-F]{6})$/.exec(String(h || '')); if (!m) return [136, 92, 246]; const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
-const grRgba = (h, a) => { const [r, g, b] = grHexRgb(h); return `rgba(${r},${g},${b},${a})`; };
-
-function grHueShift(h, deg) {
-  let [r, g, b] = grHexRgb(h); r /= 255; g /= 255; b /= 255;
+function grTinta(h, deg) {
+  let [r, g, b] = grRgb(h); r /= 255; g /= 255; b /= 255;
   const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; let hh = 0, s = 0; const l = (mx + mn) / 2;
   if (d) { s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); hh = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; hh /= 6; }
   hh = (hh + deg / 360) % 1; if (hh < 0) hh += 1;
   const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
   const cv = (tt) => { if (tt < 0) tt += 1; if (tt > 1) tt -= 1; if (tt < 1 / 6) return p + (q - p) * 6 * tt; if (tt < 1 / 2) return q; if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6; return p; };
-  const to = (x) => Math.round(x * 255);
-  return `rgb(${to(cv(hh + 1 / 3))},${to(cv(hh))},${to(cv(hh - 1 / 3))})`;
+  return window.SB_SCENE.hex([cv(hh + 1 / 3), cv(hh), cv(hh - 1 / 3)].map((x) => x * 255));
 }
 
-function grNoise(ctx) {
-  if (!_grNoise) { const c = document.createElement('canvas'); c.width = c.height = 140; const x = c.getContext('2d'), d = x.createImageData(140, 140); for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; } x.putImageData(d, 0, 0); _grNoise = c; }
-  return ctx.createPattern(_grNoise, 'repeat');
-}
-
-function grTxt(ctx, s, x, y, ls) {
-  s = String(s); const sp = ls || 0; if (!sp) { ctx.fillText(s, x, y); return; }
+function grTxt(ctx, s, x, y, ls, modo = 'fill') {
+  s = String(s); const sp = ls || 0;
+  const scrivi = (t, xx) => (modo === 'stroke' ? ctx.strokeText(t, xx, y) : ctx.fillText(t, xx, y));
+  if (!sp) { scrivi(s, x); return; }
   const al = ctx.textAlign; let cx = x;
   if (al === 'right' || al === 'center') { let tot = 0; for (const ch of s) tot += ctx.measureText(ch).width + sp; cx = al === 'right' ? x - tot + sp : x - tot / 2; }
-  ctx.textAlign = 'left'; for (const ch of s) { ctx.fillText(ch, cx, y); cx += ctx.measureText(ch).width + sp; } ctx.textAlign = al;
+  ctx.textAlign = 'left'; for (const ch of s) { scrivi(ch, cx); cx += ctx.measureText(ch).width + sp; } ctx.textAlign = al;
+}
+
+function eScuroHex(hex) {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || ''));
+  if (!m) return true;
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) < 140;
+}
+
+const GR_SOGLIA = (px, peso) => { const vero = px * 0.36; return (vero >= 24 || (peso >= 700 && vero >= 18.66)) ? 3 : 4.5; };
+const GR_MARGINE = 1.05;
+
+function grafDisposizione(c) {
+  const prog = c.tipo !== 'live';
+  const W = 1080, H = prog ? 1350 : 1080, pad = 96;
+  const lay = {
+    W, H, pad, prog,
+    logo: { x: pad, y: 60, w: 84, h: 84 },
+    handle: { x: W - pad, base: 126, max: W - pad * 2 - 84 - 40, px: 38, peso: 700 },
+    filo: { x: pad, y: 168, w: W - pad * 2, h: 3 },
+    qr: null,
+  };
+  if (c.qr) {
+    const P = prog ? 190 : 180;
+    lay.qr = { x: W - pad - P, y: H - 64 - P, w: P, h: P };
+    lay.qr.url = { x: pad, base: lay.qr.y + P / 2 + 12, max: W - pad * 2 - P - 32, px: 36, peso: 700 };
+  }
+  if (prog) {
+    const y0 = 452, fondo = lay.qr ? lay.qr.y - 24 : H - pad + 6;
+    const rh = (fondo - y0) / 7, gap = lay.qr ? 12 : 16;
+    lay.occhiello = { x: pad, base: 268, max: W - pad * 2, px: 34, peso: 800 };
+    lay.titolo = { x: pad, base: 372, max: W - pad * 2, px: 104, min: 64 };
+    lay.righe = Array.from({ length: 7 }, (_, i) => ({ x: pad, y: y0 + i * rh, w: W - pad * 2, h: rh - gap }));
+    lay.orizzonte = y0 - 22;
+  } else {
+    lay.badge = { x: pad + 66, base: 358, max: W - pad * 2 - 66, px: 40, peso: 800, punto: { x: pad + 20, y: 344, r: 22 } };
+    lay.titolo = { x: pad, base: 520, max: W - pad * 2, px: 168, min: 96 };
+    lay.pillola = { x: pad, y: 576, h: 104, max: W - pad * 2, px: 46, peso: 800 };
+    lay.sotto = { x: pad, base: 790, max: W - pad * 2, px: 54, peso: 500 };
+    lay.barra = { x: 0, y: H - 22, w: W, h: 22 };
+    lay.orizzonte = 560;
+  }
+  return lay;
+}
+
+function grafTavolozza(c, lay) {
+  const S = window.SB_SCENE;
+  const tema = GR_TEMI[c.tema] || GR_TEMI.notte;
+  const hex6 = (v) => /^#[0-9a-fA-F]{6}$/.test(String(v || ''));
+  const acc = hex6(c.accento) ? c.accento : tema.acc;
+  const acc2 = hex6(c.accento2) ? c.accento2 : (hex6(c.accento) ? grTinta(acc, -42) : (tema.acc2 || grTinta(tema.acc, -42)));
+  const bgScuro = c.sfondo === 'immagine' ? true : c.sfondo === 'tinta' ? eScuroHex(c.sfondoColore || '#141225') : eScuroHex(tema.bg[0]);
+  const txt = hex6(c.coloreTesto) ? c.coloreTesto : (c.sfondo === 'tema' ? tema.testo : (bgScuro ? '#ffffff' : '#0d0d12'));
+  const chiaro = S.contrasto(grRgb(txt), [0, 0, 0]) >= S.contrasto(grRgb(txt), [255, 255, 255]);
+  const tenue = (c.sfondo === 'tema' && !hex6(c.coloreTesto)) ? tema.tenue : S.mescola(txt, chiaro ? '#000000' : '#ffffff', 0.28);
+  const base = c.sfondo === 'tema' ? tema.bg[0] : (chiaro ? '#0b0b12' : '#f7f7fb');
+  const contorno = chiaro ? S.mescola(base, '#000000', 0.7) : S.mescola(base, '#ffffff', 0.85);
+  const anima = grafAnimato(c) ? tema.anima : '';
+  const v = grafVelocita(c);
+  const scena = anima ? {
+    acc, acc2, bg: tema.bg, testo: txt, tenue, op: grafOpzioni(c, anima),
+    lay: { orizzonte: lay.orizzonte, titoloY: lay.titolo.base - lay.titolo.px * 0.35, testa: lay.filo.y + lay.filo.h },
+    vel: v.vel, durata: v.durata, intensita: Math.max(30, Math.min(100, Number(c.intensita) || 100)) / 100,
+  } : null;
+  return { tema, acc, acc2, txt, tenue, chiaro, contorno, anima, scena };
+}
+
+function grafSfondo(ctx, c, W, H, t, pal) {
+  const hex6 = (v) => /^#[0-9a-fA-F]{6}$/.test(String(v || ''));
+  const tema = pal.tema;
+  if (c.sfondo === 'immagine' && grafImg.el && grafImg.pronto) {
+    const iw = grafImg.el.naturalWidth || 1, ih = grafImg.el.naturalHeight || 1, k = Math.max(W / iw, H / ih);
+    ctx.drawImage(grafImg.el, (W - iw * k) / 2, (H - ih * k) / 2, iw * k, ih * k);
+  } else if (c.sfondo === 'tinta') {
+    ctx.fillStyle = hex6(c.sfondoColore) ? c.sfondoColore : '#141225'; ctx.fillRect(0, 0, W, H);
+  } else {
+    const g = ctx.createLinearGradient(0, 0, W * 0.3, H); g.addColorStop(0, tema.bg[0]); g.addColorStop(1, tema.bg[1]); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    if (pal.anima) window.SB_SCENE.disegna(ctx, W, H, t, pal.anima, pal.scena);
+  }
+  const velo = Math.max(0, Math.min(85, Number(c.velo) || 0)) / 100;
+  if (velo > 0 && c.sfondo === 'immagine') { ctx.fillStyle = pal.chiaro ? `rgba(6,6,14,${velo})` : `rgba(250,250,255,${velo})`; ctx.fillRect(0, 0, W, H); }
+  if (!pal.anima) {
+    const blob = (cx, cy, r, col, a) => { const gg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r); gg.addColorStop(0, grRgba(col, a)); gg.addColorStop(1, grRgba(col, 0)); ctx.fillStyle = gg; ctx.fillRect(0, 0, W, H); };
+    const su = c.sfondo === 'immagine' ? 0.7 : 1, scuro = !pal.chiaro;
+    blob(W * 0.92, H * 0.06, W * 0.9, pal.acc, (scuro ? 0.42 : 0.30) * su);
+    blob(W * 0.05, H * 0.98, W * 0.85, pal.acc2, (scuro ? 0.34 : 0.24) * su);
+    blob(W * 0.15, H * 0.08, W * 0.5, pal.acc, (scuro ? 0.14 : 0.10) * su);
+  }
+  const vg = ctx.createRadialGradient(W / 2, H * 0.42, H * 0.3, W / 2, H * 0.5, H * 0.85); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, pal.chiaro ? 'rgba(0,0,0,.38)' : 'rgba(0,0,0,.10)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.globalAlpha = pal.chiaro ? 0.05 : 0.035; ctx.globalCompositeOperation = 'overlay'; ctx.fillStyle = window.SB_SCENE.grana(ctx); ctx.fillRect(0, 0, W, H); ctx.restore();
+}
+
+function grafCampioni(ctx, sc, x, y, w, h) {
+  const X = Math.max(0, Math.floor(x * sc)), Y = Math.max(0, Math.floor(y * sc));
+  const w2 = Math.min(ctx.canvas.width - X, Math.ceil(w * sc)), h2 = Math.min(ctx.canvas.height - Y, Math.ceil(h * sc));
+  if (w2 < 1 || h2 < 1) return [];
+  const d = ctx.getImageData(X, Y, w2, h2).data;
+  const visti = new Map();
+  for (let i = 0; i < d.length; i += 12) {
+    const k = ((d[i] >> 2) << 12) | ((d[i + 1] >> 2) << 6) | (d[i + 2] >> 2);
+    if (!visti.has(k)) visti.set(k, [d[i], d[i + 1], d[i + 2]]);
+  }
+  return [...visti.values()];
+}
+
+function grafColoreSu(pal, col, soglia) {
+  const S = window.SB_SCENE, sotto = [grRgb(pal.contorno)];
+  return S.regge(col, sotto, soglia * GR_MARGINE) ? col : S.coloreCheRegge(col, sotto, soglia * GR_MARGINE, pal.chiaro ? '#ffffff' : '#000000');
+}
+
+function grafSotto(ctx, sc, rett) {
+  return grafCampioni(ctx, sc, rett.x - 4, rett.y - 4, rett.w + 8, rett.h + 8);
+}
+
+function grafDecidi(pal, campioni, colori, soglia, alone = null) {
+  const S = window.SB_SCENE, s = soglia * GR_MARGINE;
+  const conContorno = () => ({ contorno: true, colori: colori.map((col) => grafColoreSu(pal, col, soglia)) });
+  if (pal.anima || !campioni) return conContorno();
+  const sotto = alone ? campioni.concat([grRgb(alone)]) : campioni;
+  if (!sotto.length || colori.every((col) => S.regge(col, sotto, s))) return { contorno: false, colori };
+  const verso = pal.chiaro ? '#ffffff' : '#000000';
+  const piu = colori.map((col) => (S.regge(col, sotto, s) ? col : S.coloreCheRegge(col, sotto, s, verso)));
+  if (piu.every((col) => S.regge(col, sotto, s))) return { contorno: false, colori: piu };
+  return conContorno();
+}
+
+function grafRett(ctx, testo, x, base, ls) {
+  const m = ctx.measureText(testo);
+  const extra = ls ? [...String(testo)].length * ls : 0;
+  const w = m.width + extra, al = ctx.textAlign;
+  const x0 = al === 'right' ? x - w : al === 'center' ? x - w / 2 : x;
+  const su = m.actualBoundingBoxAscent || m.fontBoundingBoxAscent || 0, giu = m.actualBoundingBoxDescent || 0;
+  return { x: x0 - (m.actualBoundingBoxLeft > 0 && al === 'left' ? m.actualBoundingBoxLeft : 0), y: base - su, w: w + 2, h: su + giu };
+}
+
+function grafScritta(ctx, sc, pal, { testo, x, base, font, colori, ls = 0, allinea = 'left', px, peso = 400, riempi, eco = null, alone = null, deciso = null }) {
+  ctx.font = font; ctx.textAlign = allinea; ctx.textBaseline = 'alphabetic';
+  const soglia = GR_SOGLIA(px, peso);
+  let campioni = null;
+  if (!deciso && !pal.anima) { try { campioni = grafSotto(ctx, sc, grafRett(ctx, testo, x, base, ls)); } catch (e) { campioni = null; } }
+  const d = deciso || grafDecidi(pal, campioni, colori, soglia, alone);
+  const serve = d.contorno, fin = d.colori;
+  const lw = Math.max(7, Math.round(px * 0.1));
+  const ombra = () => { if (eco) { ctx.shadowColor = grRgba(pal.contorno, 0.55); ctx.shadowOffsetY = eco; ctx.shadowBlur = 0; } };
+  if (alone) {
+    ctx.save(); ctx.shadowColor = grRgba(alone, 0.9); ctx.shadowBlur = px * 0.22; ctx.strokeStyle = alone; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.miterLimit = 2;
+    grTxt(ctx, testo, x, base, ls, 'stroke'); ctx.restore();
+  }
+  if (serve) {
+    ctx.save(); ombra(); ctx.strokeStyle = pal.contorno; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.miterLimit = 2;
+    grTxt(ctx, testo, x, base, ls, 'stroke'); ctx.restore();
+  }
+  ctx.save();
+  if (!serve) ombra();
+  ctx.fillStyle = riempi ? riempi(fin) : fin[0];
+  grTxt(ctx, testo, x, base, ls);
+  ctx.restore();
+  return serve;
+}
+
+function grafScrittaSu(fondo) {
+  const S = window.SB_SCENE, bianco = '#ffffff', nero = '#000000';
+  const scritta = S.contrasto(grRgb(bianco), grRgb(fondo)) >= S.contrasto(grRgb(nero), grRgb(fondo)) ? bianco : nero;
+  const s = 4.5 * GR_MARGINE;
+  const tiene = S.regge(scritta, [grRgb(fondo)], s) ? fondo : S.coloreCheRegge(fondo, [grRgb(scritta)], s, scritta === bianco ? nero : bianco);
+  return { scritta, fondo: tiene };
+}
+
+function grafTitoloAdatto(ctx, c, lay, testo) {
+  const car = grafCarattere(c), t = lay.titolo;
+  const font = (px) => `${car.stile}${car.peso} ${px}px ${car.famiglia}`;
+  ctx.font = font(t.px);
+  const w = ctx.measureText(testo).width;
+  const px = w <= t.max ? t.px : Math.max(t.min, Math.floor(t.px * t.max / w));
+  ctx.font = font(px);
+  return { px, font: font(px), testo: grClip(ctx, testo, t.max), peso: car.peso };
+}
+
+function grafTitolo(ctx, sc, pal, c, lay, testo) {
+  const T = grafTitoloAdatto(ctx, c, lay, testo), t = lay.titolo;
+  const stile = GR_STILI_TITOLO[c.stileTitolo] ? c.stileTitolo : 'sfumato';
+  ctx.font = T.font;
+  const larghezza = ctx.measureText(T.testo).width;
+  const colori = stile === 'sfumato' ? [pal.txt, pal.acc] : [pal.txt];
+  grafScritta(ctx, sc, pal, {
+    testo: T.testo, x: t.x, base: t.base, font: T.font, colori, px: T.px, peso: T.peso,
+    eco: stile === 'neon' ? null : Math.max(4, Math.round(T.px * 0.05)),
+    alone: stile === 'neon' ? pal.acc : null,
+    riempi: stile === 'sfumato' ? (fin) => { const g = ctx.createLinearGradient(t.x, 0, Math.min(lay.W - lay.pad, t.x + larghezza), 0); g.addColorStop(0, fin[0]); g.addColorStop(1, fin[1]); return g; } : null,
+  });
+}
+
+function grafLogoDisegna(ctx, sc, pal, c, lay) {
+  const r = lay.logo;
+  if (c.logoImg && grafLogo.el && grafLogo.pronto) {
+    const li = grafLogo.el, lw = li.naturalWidth || 1, lh = li.naturalHeight || 1, k = Math.max(r.w / lw, r.h / lh);
+    ctx.save(); grRoundRect(ctx, r.x, r.y, r.w, r.h, 20); ctx.clip(); ctx.drawImage(li, r.x + (r.w - lw * k) / 2, r.y + (r.h - lh * k) / 2, lw * k, lh * k); ctx.restore();
+    return;
+  }
+  const logo = String(c.logo || '').trim();
+  if (logo) {
+    grafScritta(ctx, sc, pal, { testo: logo, x: r.x, base: r.y + 72, font: `54px ${GR_BASE}`, colori: [pal.txt], px: 54, peso: 400 });
+    return;
+  }
+  const iniziale = (String(c.handle || '').replace(/^@/, '').trim()[0] || String(stato?.user?.login || 'S')[0] || 'S').toUpperCase();
+  const { scritta, fondo } = grafScrittaSu(pal.acc);
+  ctx.save();
+  ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + r.h / 2, r.w / 2, 0, Math.PI * 2); ctx.fillStyle = fondo; ctx.fill();
+  ctx.font = `800 44px ${GR_BASE}`; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = scritta;
+  const m = ctx.measureText(iniziale), alto = m.actualBoundingBoxAscent || 32;
+  ctx.fillText(iniziale, r.x + r.w / 2, r.y + r.h / 2 + alto / 2);
+  ctx.restore();
+}
+
+function grafPillola(ctx, pal, lay, gioco) {
+  const S = window.SB_SCENE, P = lay.pillola;
+  ctx.font = `800 ${P.px}px ${GR_BASE}`; ctx.textAlign = 'left';
+  const testo = grClip(ctx, gioco, P.max - 84);
+  const w = Math.min(P.max, ctx.measureText(testo).width + 84);
+  const { scritta, fondo: inizio } = grafScrittaSu(pal.acc);
+  const verso = scritta === '#ffffff' ? '#000000' : '#ffffff';
+  const s4 = 4.5 * GR_MARGINE;
+  const tiene = (col) => { for (let k = 0; k <= 10; k++) if (!S.regge(scritta, [grRgb(S.mescola(inizio, col, k / 10))], s4)) return false; return true; };
+  let fine = grTinta(inizio, -30);
+  for (let k = 1; k <= 20 && !tiene(fine); k++) fine = S.mescola(grTinta(inizio, -30), verso, k / 20);
+  grRoundRect(ctx, P.x, P.y, w, P.h, P.h / 2);
+  const g = ctx.createLinearGradient(P.x, 0, P.x + w, 0); g.addColorStop(0, inizio); g.addColorStop(1, fine); ctx.fillStyle = g; ctx.fill();
+  ctx.fillStyle = scritta; ctx.fillText(testo, P.x + 42, P.y + 68);
+}
+
+function grafRighe(ctx, sc, pal, c, lay) {
+  const stile = GR_STILI_RIGHE[c.stileRighe] ? c.stileRighe : 'schede';
+  const vetro = pal.anima || c.sfondo === 'immagine';
+  const carta = pal.chiaro ? window.SB_SCENE.mescola(pal.tema.bg[0], '#000000', 0.35) : window.SB_SCENE.mescola(pal.tema.bg[0], '#ffffff', 0.6);
+  lay.righe.forEach((r, i) => {
+    const raggio = stile === 'pillole' ? r.h / 2 : 24;
+    if (stile !== 'linee') {
+      grRoundRect(ctx, r.x, r.y, r.w, r.h, raggio);
+      ctx.fillStyle = vetro ? grRgba(carta, pal.chiaro ? (i % 2 ? 0.42 : 0.5) : (i % 2 ? 0.5 : 0.58))
+        : (pal.chiaro ? `rgba(255,255,255,${i % 2 ? 0.05 : 0.085})` : `rgba(0,0,0,${i % 2 ? 0.05 : 0.09})`);
+      ctx.fill();
+      ctx.strokeStyle = grRgba(pal.txt, 0.06); ctx.lineWidth = 1.5; ctx.stroke();
+    } else if (i < lay.righe.length - 1) {
+      ctx.fillStyle = grRgba(pal.txt, 0.18); ctx.fillRect(r.x, r.y + r.h + (lay.righe[1].y - lay.righe[0].y - r.h) / 2 - 1, r.w, 2);
+    }
+    if (stile !== 'pillole') { grRoundRect(ctx, r.x, r.y + r.h * 0.18, 10, r.h * 0.64, 5); ctx.fillStyle = c.giorni[i]?.off ? grRgba(pal.txt, 0.25) : pal.acc; ctx.fill(); }
+  });
+  const px = Math.min(42, Math.round(lay.righe[0].h * 0.55)), pxAtt = Math.round(px * 37 / 42), pxRip = Math.round(px * 34 / 42);
+  const caratteri = {
+    giorno: { font: `800 ${px}px ${GR_BASE}`, px, peso: 800 },
+    ora: { font: `800 ${px}px ${GR_BASE}`, px, peso: 800 },
+    att: { font: `500 ${pxAtt}px ${GR_BASE}`, px: pxAtt, peso: 500 },
+    riposo: { font: `600 ${pxRip}px ${GR_BASE}`, px: pxRip, peso: 600 },
+  };
+  const x0 = lay.pad;
+  ctx.font = caratteri.att.font;
+  const voci = lay.righe.map((r, i) => {
+    const g = c.giorni[i] || {};
+    return { g, my: r.y + r.h / 2 + px * 0.36, att: grClip(ctx, g.att || '—', r.w - 470) };
+  });
+  const pezzi = {
+    giorno: (v) => ({ testo: v.g.g, x: x0 + 42, colori: [v.g.off ? pal.tenue : pal.acc] }),
+    ora: (v) => (v.g.off ? null : { testo: v.g.ora || '—', x: x0 + 210, colori: [pal.txt] }),
+    att: (v) => (v.g.off ? null : { testo: v.att, x: x0 + 430, colori: [pal.tenue] }),
+    riposo: (v) => (v.g.off ? { testo: L('RIPOSO', 'DAY OFF', 'DESCANSO'), x: x0 + 210, ls: 3, colori: [pal.tenue] } : null),
+  };
+  const decisi = {};
+  for (const [k, pezzo] of Object.entries(pezzi)) {
+    const T = caratteri[k];
+    ctx.font = T.font; ctx.textAlign = 'left';
+    const colori = [...new Set(voci.map((v) => pezzo(v)).filter(Boolean).flatMap((t) => t.colori))];
+    let campioni = [];
+    if (!pal.anima) {
+      try {
+        for (const v of voci) { const t = pezzo(v); if (t) campioni = campioni.concat(grafSotto(ctx, sc, grafRett(ctx, t.testo, t.x, v.my, t.ls || 0))); }
+      } catch (e) { campioni = null; }
+    }
+    const d = grafDecidi(pal, campioni, colori, GR_SOGLIA(T.px, T.peso));
+    decisi[k] = (col) => ({ contorno: d.contorno, colori: [d.colori[colori.indexOf(col)] || col] });
+  }
+  for (const [k, pezzo] of Object.entries(pezzi)) {
+    const T = caratteri[k];
+    for (const v of voci) {
+      const t = pezzo(v);
+      if (t) grafScritta(ctx, sc, pal, { testo: t.testo, x: t.x, base: v.my, font: T.font, colori: t.colori, px: T.px, peso: T.peso, ls: t.ls || 0, deciso: decisi[k](t.colori[0]) });
+    }
+  }
 }
 
 function grafDisegna(canvas, c, t = 0, scala = 1) {
-  if (!canvas) return;
+  if (!canvas || !window.SB_SCENE) return;
   const ctx = canvas.getContext('2d');
-  const tema = GR_TEMI[c.tema] || GR_TEMI.notte;
-  const acc = /^#[0-9a-fA-F]{6}$/.test(c.accento || '') ? c.accento : tema.acc;
-  const acc2 = grHueShift(acc, -42);
-  const prog = c.tipo !== 'live';
-  const W = 1080, H = prog ? 1350 : 1080;
+  const lay = grafDisposizione(c);
+  const pal = grafTavolozza(c, lay);
+  const { W, H, pad } = lay;
   const sc = Math.max(1, Math.min(3, Number(scala) || 1));
   canvas.width = Math.round(W * sc); canvas.height = Math.round(H * sc);
   ctx.setTransform(sc, 0, 0, sc, 0, 0);
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-  const S = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+  grafSfondo(ctx, c, W, H, t, pal);
 
-  const hex = (v) => /^#[0-9a-fA-F]{6}$/.test(String(v || ''));
-  const bgScuro = c.sfondo === 'immagine' ? true
-    : c.sfondo === 'tinta' ? eScuroHex(c.sfondoColore || '#141225')
-    : eScuroHex(tema.bg[0]);
-  const txt = hex(c.coloreTesto) ? c.coloreTesto
-    : (c.sfondo === 'tema' ? tema.testo : (bgScuro ? '#ffffff' : '#0d0d12'));
-  const scuroTxt = eScuroHex(txt);
-  const tenue2 = (c.sfondo === 'tema' && !hex(c.coloreTesto)) ? tema.tenue : grRgba(txt, 0.72);
-  const accRGB = 'rgb(' + grHexRgb(acc).join(',') + ')';
-  const blob = (cx, cy, r, col, a) => { const gg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r); gg.addColorStop(0, col.replace('rgb(', 'rgba(').replace(')', ',' + a + ')')); gg.addColorStop(1, col.replace('rgb(', 'rgba(').replace(')', ',0)')); ctx.fillStyle = gg; ctx.fillRect(0, 0, W, H); };
+  grafLogoDisegna(ctx, sc, pal, c, lay);
+  ctx.font = `700 ${lay.handle.px}px ${GR_BASE}`; ctx.textAlign = 'right';
+  grafScritta(ctx, sc, pal, { testo: grClip(ctx, c.handle || '', lay.handle.max), x: lay.handle.x, base: lay.handle.base, font: `700 ${lay.handle.px}px ${GR_BASE}`, colori: [pal.tenue], ls: 1, allinea: 'right', px: lay.handle.px, peso: 700 });
+  const hl = ctx.createLinearGradient(pad, 0, W - pad, 0); hl.addColorStop(0, grRgba(pal.acc, 0)); hl.addColorStop(0.15, grRgba(pal.acc, 0.9)); hl.addColorStop(0.85, grRgba(pal.txt, 0.25)); hl.addColorStop(1, grRgba(pal.txt, 0));
+  ctx.fillStyle = hl; ctx.fillRect(lay.filo.x, lay.filo.y, lay.filo.w, lay.filo.h);
 
-  const conAnima = c.sfondo === 'tema' && tema.anima;
-  if (c.sfondo === 'immagine' && grafImg.el && grafImg.pronto) {
-    const iw = grafImg.el.naturalWidth || 1, ih = grafImg.el.naturalHeight || 1, sc = Math.max(W / iw, H / ih);
-    ctx.drawImage(grafImg.el, (W - iw * sc) / 2, (H - ih * sc) / 2, iw * sc, ih * sc);
-  } else if (c.sfondo === 'tinta') {
-    ctx.fillStyle = hex(c.sfondoColore) ? c.sfondoColore : '#141225'; ctx.fillRect(0, 0, W, H);
+  if (lay.prog) {
+    const o = lay.occhiello;
+    grafScritta(ctx, sc, pal, { testo: L('PALINSESTO SETTIMANALE', 'WEEKLY SCHEDULE', 'PROGRAMACIÓN SEMANAL'), x: o.x, base: o.base, font: `800 ${o.px}px ${GR_BASE}`, colori: [pal.acc], ls: 8, px: o.px, peso: o.peso });
+    grafTitolo(ctx, sc, pal, c, lay, (c.titolo || L('LA SETTIMANA', 'THE WEEK', 'LA SEMANA')).toUpperCase());
+    grafRighe(ctx, sc, pal, c, lay);
   } else {
-    const g = ctx.createLinearGradient(0, 0, W * 0.3, H); g.addColorStop(0, tema.bg[0]); g.addColorStop(1, tema.bg[1]); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    if (conAnima) grafAnimaSfondo(ctx, W, H, t, tema.anima, acc);
+    const b = lay.badge;
+    ctx.save(); ctx.shadowColor = 'rgba(255,59,48,.9)'; ctx.shadowBlur = 24; ctx.beginPath(); ctx.arc(b.punto.x, b.punto.y, b.punto.r, 0, Math.PI * 2); ctx.fillStyle = '#ff3b30'; ctx.fill(); ctx.restore();
+    grafScritta(ctx, sc, pal, { testo: L('IN DIRETTA ORA', 'LIVE NOW', 'EN DIRECTO'), x: b.x, base: b.base, font: `800 ${b.px}px ${GR_BASE}`, colori: [pal.tenue], ls: 7, px: b.px, peso: b.peso });
+    grafTitolo(ctx, sc, pal, c, lay, (c.titolo || 'LIVE').toUpperCase());
+    if (c.gioco) grafPillola(ctx, pal, lay, String(c.gioco));
+    if (c.sottotitolo) {
+      const so = lay.sotto;
+      ctx.font = `500 ${so.px}px ${GR_BASE}`; ctx.textAlign = 'left';
+      grafScritta(ctx, sc, pal, { testo: grClip(ctx, c.sottotitolo, so.max), x: so.x, base: so.base, font: `500 ${so.px}px ${GR_BASE}`, colori: [pal.tenue], px: so.px, peso: so.peso });
+    }
+    const bb = ctx.createLinearGradient(0, 0, W, 0); bb.addColorStop(0, pal.acc); bb.addColorStop(1, grTinta(pal.acc, -40)); ctx.fillStyle = bb; ctx.fillRect(lay.barra.x, lay.barra.y, lay.barra.w, lay.barra.h);
   }
-  const velo = Math.max(0, Math.min(85, Number(c.velo) || 0)) / 100;
-  if (velo > 0 && c.sfondo !== 'tema') { ctx.fillStyle = scuroTxt ? `rgba(250,250,255,${velo})` : `rgba(6,6,14,${velo})`; ctx.fillRect(0, 0, W, H); }
-  if (!conAnima) {
-    const su = c.sfondo === 'immagine' ? 0.7 : 1;
-    blob(W * 0.92, H * 0.06, W * 0.9, accRGB, (scuroTxt ? 0.42 : 0.30) * su);
-    blob(W * 0.05, H * 0.98, W * 0.85, acc2, (scuroTxt ? 0.34 : 0.24) * su);
-    blob(W * 0.15, H * 0.08, W * 0.5, accRGB, (scuroTxt ? 0.14 : 0.10) * su);
-  } else { blob(W * 0.9, H * 0.08, W * 0.7, accRGB, 0.20); }
-  const vg = ctx.createRadialGradient(W / 2, H * 0.42, H * 0.3, W / 2, H * 0.5, H * 0.85); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, scuroTxt ? 'rgba(0,0,0,.38)' : 'rgba(0,0,0,.10)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
-  ctx.save(); ctx.globalAlpha = scuroTxt ? 0.05 : 0.035; ctx.globalCompositeOperation = 'overlay'; ctx.fillStyle = grNoise(ctx); ctx.fillRect(0, 0, W, H); ctx.restore();
-
-  const pad = 96;
-
-  ctx.textBaseline = 'alphabetic';
-  if (c.logoImg && grafLogo.el && grafLogo.pronto) {
-    const L0 = 84, li = grafLogo.el, lw = li.naturalWidth || 1, lh = li.naturalHeight || 1, ls = Math.max(L0 / lw, L0 / lh);
-    ctx.save(); grRoundRect(ctx, pad, 60, L0, L0, 20); ctx.clip(); ctx.drawImage(li, pad + (L0 - lw * ls) / 2, 60 + (L0 - lh * ls) / 2, lw * ls, lh * ls); ctx.restore();
-  } else { const logo = String(c.logo || '').trim(); if (logo) { ctx.textAlign = 'left'; ctx.font = `54px ${S}`; ctx.fillStyle = txt; ctx.fillText(logo, pad, 132); } }
-  ctx.textAlign = 'right'; ctx.font = `700 38px ${S}`; ctx.fillStyle = tenue2;
-  grTxt(ctx, grClip(ctx, c.handle || '', W - pad * 2 - 130), W - pad, 126, 1);
-  const hl = ctx.createLinearGradient(pad, 0, W - pad, 0); hl.addColorStop(0, grRgba(acc, 0)); hl.addColorStop(0.15, grRgba(acc, 0.9)); hl.addColorStop(0.85, grRgba(txt, 0.25)); hl.addColorStop(1, grRgba(txt, 0)); ctx.fillStyle = hl; ctx.fillRect(pad, 168, W - pad * 2, 3);
-
-  if (prog) {
-    ctx.textAlign = 'left'; ctx.fillStyle = acc; ctx.font = `800 34px ${S}`;
-    grTxt(ctx, L('PALINSESTO SETTIMANALE', 'WEEKLY SCHEDULE', 'PROGRAMACIÓN SEMANAL').toUpperCase(), pad, 268, 8);
-    ctx.font = `900 104px ${S}`;
-    const tit = grClip(ctx, (c.titolo || L('LA SETTIMANA', 'THE WEEK', 'LA SEMANA')).toUpperCase(), W - pad * 2);
-    const tw = ctx.measureText(tit).width, tg = ctx.createLinearGradient(pad, 0, Math.min(W - pad, pad + tw), 0); tg.addColorStop(0, txt); tg.addColorStop(1, acc);
-    ctx.fillStyle = grRgba(acc, 0.5); ctx.fillText(tit, pad + 3, 377); ctx.fillStyle = tg; ctx.fillText(tit, pad, 372);
-    const y0 = 452, rh = (H - y0 - pad + 6) / 7;
-    c.giorni.forEach((r, i) => {
-      const y = y0 + i * rh, hh = rh - 16;
-      grRoundRect(ctx, pad, y, W - pad * 2, hh, 24); ctx.fillStyle = scuroTxt ? `rgba(255,255,255,${i % 2 ? 0.05 : 0.085})` : `rgba(0,0,0,${i % 2 ? 0.05 : 0.09})`; ctx.fill();
-      ctx.strokeStyle = grRgba(txt, 0.06); ctx.lineWidth = 1.5; ctx.stroke();
-      grRoundRect(ctx, pad, y + hh * 0.18, 10, hh * 0.64, 5); ctx.fillStyle = r.off ? grRgba(txt, 0.25) : acc; ctx.fill();
-      const my = y + hh / 2 + 2;
-      ctx.textAlign = 'left'; ctx.fillStyle = r.off ? tenue2 : acc; ctx.font = `800 42px ${S}`; ctx.fillText(r.g, pad + 42, my);
-      if (r.off) { ctx.fillStyle = tenue2; ctx.font = `600 34px ${S}`; grTxt(ctx, L('RIPOSO', 'DAY OFF', 'DESCANSO'), pad + 210, my, 3); }
-      else { ctx.fillStyle = txt; ctx.font = `800 42px ${S}`; ctx.fillText(r.ora || '—', pad + 210, my); ctx.fillStyle = tenue2; ctx.font = `500 37px ${S}`; ctx.fillText(grClip(ctx, r.att || '—', W - pad * 2 - 470), pad + 430, my); }
-    });
-  } else {
-    const cy = 520;
-    ctx.save(); ctx.shadowColor = 'rgba(255,59,48,.9)'; ctx.shadowBlur = 24; ctx.beginPath(); ctx.arc(pad + 20, cy - 176, 22, 0, Math.PI * 2); ctx.fillStyle = '#ff3b30'; ctx.fill(); ctx.restore();
-    ctx.textAlign = 'left'; ctx.fillStyle = tenue2; ctx.font = `800 40px ${S}`; grTxt(ctx, L('IN DIRETTA ORA', 'LIVE NOW', 'EN DIRECTO'), pad + 66, cy - 162, 7);
-    ctx.font = `900 168px ${S}`; const tit = grClip(ctx, (c.titolo || 'LIVE').toUpperCase(), W - pad * 2);
-    const tw = ctx.measureText(tit).width, tg = ctx.createLinearGradient(pad, 0, Math.min(W - pad, pad + tw), cy); tg.addColorStop(0, txt); tg.addColorStop(1, acc);
-    ctx.fillStyle = grRgba(acc, 0.5); ctx.fillText(tit, pad + 3, cy + 5); ctx.fillStyle = tg; ctx.fillText(tit, pad, cy);
-    if (c.gioco) { ctx.font = `800 46px ${S}`; const gw = Math.min(W - pad * 2, ctx.measureText(c.gioco).width + 250); grRoundRect(ctx, pad, cy + 56, gw, 104, 52); const cg = ctx.createLinearGradient(pad, 0, pad + gw, 0); cg.addColorStop(0, acc); cg.addColorStop(1, grHueShift(acc, -30)); ctx.fillStyle = cg; ctx.fill(); ctx.fillStyle = eScuroHex(acc) ? '#fff' : '#111'; ctx.textAlign = 'left'; ctx.fillText('🎮  ' + grClip(ctx, c.gioco, W - pad * 2 - 280), pad + 42, cy + 124); }
-    if (c.sottotitolo) { ctx.fillStyle = tenue2; ctx.font = `500 54px ${S}`; ctx.textAlign = 'left'; ctx.fillText(grClip(ctx, c.sottotitolo, W - pad * 2), pad, cy + 270); }
-    const bb = ctx.createLinearGradient(0, 0, W, 0); bb.addColorStop(0, acc); bb.addColorStop(1, grHueShift(acc, -40)); ctx.fillStyle = bb; ctx.fillRect(0, H - 22, W, 22);
-  }
-  grafQr(ctx, c, W, H, pad, txt, S);
+  grafQr(ctx, sc, pal, c, lay);
 }
 
 let _grQr = null;
-function grafQr(ctx, c, W, H, pad, txt, S) {
-  if (!c || !c.qr || typeof qrcode !== 'function') return;
+function grafQr(ctx, sc, pal, c, lay) {
+  if (!lay.qr || typeof qrcode !== 'function') return;
   try {
     const url = grafUrlCanale(c);
     const full = 'https://' + url;
@@ -4892,30 +5166,18 @@ function grafQr(ctx, c, W, H, pad, txt, S) {
       for (let r = 0; r < nn; r++) { const row = []; for (let col = 0; col < nn; col++) row.push(q.isDark(r, col)); mods.push(row); }
       _grQr = { url: full, n: nn, mods };
     }
-    const P = 210, cardX = W - pad - P, cardY = H - pad - P - 46;
-
+    const { x, y, w: P } = lay.qr;
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.30)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 6;
-    ctx.fillStyle = '#ffffff'; grRoundRect(ctx, cardX, cardY, P, P, 26); ctx.fill(); ctx.restore();
-    const n = _grQr.n, quiet = 20, area = P - quiet * 2, cell = area / n;
+    ctx.fillStyle = '#ffffff'; grRoundRect(ctx, x, y, P, P, 26); ctx.fill(); ctx.restore();
+    const n = _grQr.n, quiet = 18, cell = (P - quiet * 2) / n;
     ctx.fillStyle = '#0d0d12';
     for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) {
-      if (_grQr.mods[r][col]) ctx.fillRect(cardX + quiet + col * cell, cardY + quiet + r * cell, cell + 0.6, cell + 0.6);
+      if (_grQr.mods[r][col]) ctx.fillRect(x + quiet + col * cell, y + quiet + r * cell, cell + 0.6, cell + 0.6);
     }
-
-    ctx.save();
-    ctx.textAlign = 'center'; ctx.font = `700 30px ${S}`;
-    ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 8; ctx.fillStyle = txt;
-    ctx.fillText(url, cardX + P / 2, cardY + P + 36);
-    ctx.restore(); ctx.textAlign = 'left';
+    const u = lay.qr.url;
+    ctx.font = `700 ${u.px}px ${GR_BASE}`; ctx.textAlign = 'left';
+    grafScritta(ctx, sc, pal, { testo: grClip(ctx, url, u.max), x: u.x, base: u.base, font: `700 ${u.px}px ${GR_BASE}`, colori: [pal.txt], px: u.px, peso: u.peso });
   } catch (e) {  }
-}
-
-function eScuroHex(hex) {
-  const m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || ''));
-  if (!m) return true;
-  const n = parseInt(m[1], 16);
-  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-  return (0.2126 * r + 0.7152 * g + 0.0722 * b) < 140;
 }
 
 function initGrafiche() {
@@ -4936,31 +5198,108 @@ function initGrafiche() {
     aggiornaDidascalia();
   };
 
+  const accendi = (chiave, valore) => document.querySelectorAll(`[data-${chiave}]`).forEach((x) => x.classList.toggle('on', x.getAttribute(`data-${chiave}`) === valore));
+  const allinea = () => {
+    accendi('gr-tema', c.tema);
+    accendi('gr-sfondo', c.sfondo);
+    accendi('gr-font', c.font || 'archivo');
+    accendi('gr-stile', c.stileTitolo || 'sfumato');
+    accendi('gr-righe', c.stileRighe || 'schede');
+    accendi('gr-vel', c.velocita || 'normale');
+    const pal = grafTavolozza(c, grafDisposizione(c));
+    const acc = document.getElementById('gr-accento'); if (acc) acc.value = pal.acc;
+    const acc2 = document.getElementById('gr-accento2'); if (acc2) acc2.value = pal.acc2;
+    const ints = document.getElementById('gr-intensita'); if (ints) ints.value = Number(c.intensita) || 100;
+    const intv = document.getElementById('gr-intensita-val'); if (intv) intv.textContent = (Number(c.intensita) || 100) + '%';
+    const scena = document.getElementById('gr-scena'); if (scena) scena.hidden = !grafAnimato(c);
+    const op = document.getElementById('gr-opzioni'); if (op) op.innerHTML = _grafOpzioniHtml(c);
+    mostraSfondo();
+  };
+
   const setTipo = (t) => {
     c.tipo = t;
     document.querySelectorAll('[data-gr-tipo]').forEach((b) => b.classList.toggle('on', b.dataset.grTipo === t));
-    document.querySelector('.gr-solo-prog')?.toggleAttribute('hidden', t === 'live');
-    document.querySelector('.gr-solo-live')?.toggleAttribute('hidden', t !== 'live');
+    document.querySelectorAll('.gr-solo-prog').forEach((x) => x.toggleAttribute('hidden', t === 'live'));
+    document.querySelectorAll('.gr-solo-live').forEach((x) => x.toggleAttribute('hidden', t !== 'live'));
     ridisegna();
+    miniature();
   };
   document.querySelectorAll('[data-gr-tipo]').forEach((b) => b.addEventListener('click', () => setTipo(b.dataset.grTipo)));
   document.querySelectorAll('[data-gr-tema]').forEach((b) => b.addEventListener('click', () => {
     c.tema = b.dataset.grTema;
-    document.querySelectorAll('[data-gr-tema]').forEach((x) => x.classList.toggle('on', x === b));
-    const accEl = document.getElementById('gr-accento');
-    if (accEl) { c.accento = ''; accEl.value = GR_TEMI[c.tema].acc; }
+    c.accento = ''; c.accento2 = '';
+    allinea();
     ridisegna();
   }));
   const bind = (id, k) => document.getElementById(id)?.addEventListener('input', (e) => { c[k] = e.target.value; ridisegna(); });
   bind('gr-titolo', 'titolo'); bind('gr-handle', 'handle'); bind('gr-logo', 'logo');
-  bind('gr-accento', 'accento'); bind('gr-gioco', 'gioco'); bind('gr-sottotitolo', 'sottotitolo');
+  bind('gr-gioco', 'gioco'); bind('gr-sottotitolo', 'sottotitolo');
+  document.getElementById('gr-accento')?.addEventListener('input', (e) => {
+    c.accento = e.target.value;
+    if (!/^#[0-9a-fA-F]{6}$/.test(c.accento2 || '')) { const a2 = document.getElementById('gr-accento2'); if (a2) a2.value = grafTavolozza(c, grafDisposizione(c)).acc2; }
+    ridisegna();
+  });
+  bind('gr-accento2', 'accento2');
+  const scelta = (chiave, campo) => document.querySelectorAll(`[data-${chiave}]`).forEach((b) => b.addEventListener('click', () => {
+    c[campo] = b.getAttribute(`data-${chiave}`);
+    accendi(chiave, c[campo]);
+    ridisegna();
+  }));
+  scelta('gr-font', 'font'); scelta('gr-stile', 'stileTitolo'); scelta('gr-righe', 'stileRighe'); scelta('gr-vel', 'velocita');
+  document.getElementById('gr-intensita')?.addEventListener('input', (e) => {
+    c.intensita = Number(e.target.value) || 100;
+    const v = document.getElementById('gr-intensita-val'); if (v) v.textContent = c.intensita + '%';
+    ridisegna();
+  });
+  const opzione = (id, valore) => {
+    const scena = GR_TEMI[c.tema]?.anima;
+    if (!scena) return;
+    c.op = { ...(c.op || {}), [scena]: { ...((c.op || {})[scena] || {}), [id]: valore } };
+    ridisegna();
+  };
+  const opBox = document.getElementById('gr-opzioni');
+  opBox?.addEventListener('change', (e) => { const x = e.target.closest('input[data-gr-op]'); if (x) opzione(x.dataset.grOp, !!x.checked); });
+  opBox?.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-gr-op]');
+    if (!b) return;
+    opzione(b.dataset.grOp, b.dataset.grVal);
+    b.parentElement.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+  });
+
+  let _mini = 0;
+  function miniature() {
+    const giro = ++_mini;
+    const bottoni = [...document.querySelectorAll('[data-gr-pronto]')];
+    const prossimo = (i) => {
+      if (giro !== _mini || i >= bottoni.length) return;
+      const b = bottoni[i], pr = GR_PRONTI.find((x) => x.id === b.dataset.grPronto), mini = b.querySelector('canvas');
+      if (pr && mini) {
+        const cc = { ...c, ...pr.c, sfondo: 'tema', op: { ...(c.op || {}), ...pr.c.op } };
+        const lay = grafDisposizione(cc), tela = document.createElement('canvas');
+        grafDisegna(tela, cc, grafDurata(cc) * 0.3, 1);
+        mini.width = 120; mini.height = Math.round(120 * lay.H / lay.W);
+        mini.getContext('2d').drawImage(tela, 0, 0, mini.width, mini.height);
+      }
+      setTimeout(() => prossimo(i + 1), 30);
+    };
+    grafFontPronti().then(() => prossimo(0));
+  }
+  document.querySelectorAll('[data-gr-pronto]').forEach((b) => b.addEventListener('click', () => {
+    const pr = GR_PRONTI.find((x) => x.id === b.dataset.grPronto);
+    if (!pr) return;
+    c = { ...c, ...pr.c, sfondo: 'tema', op: { ...(c.op || {}), ...pr.c.op } };
+    allinea();
+    ridisegna();
+    toast(L('Stile «', 'Style «', 'Estilo «') + L(...pr.nome) + L('»: adesso cambialo come vuoi.', '»: now change it however you like.', '»: ahora cámbialo como quieras.'));
+  }));
 
   if (c.sfondo === 'immagine' && c.sfondoImg) grafCaricaImg(c.sfondoImg, ridisegna);
-  const mostraSfondo = () => {
+  function mostraSfondo() {
     document.querySelector('.gr-sfondo-tinta')?.toggleAttribute('hidden', c.sfondo !== 'tinta');
     document.querySelector('.gr-sfondo-img')?.toggleAttribute('hidden', c.sfondo !== 'immagine');
-    document.querySelector('.gr-velo-box')?.toggleAttribute('hidden', c.sfondo === 'tema');
-  };
+    document.querySelector('.gr-velo-box')?.toggleAttribute('hidden', c.sfondo !== 'immagine');
+    const scena = document.getElementById('gr-scena'); if (scena) scena.hidden = !grafAnimato(c);
+  }
   document.querySelectorAll('[data-gr-sfondo]').forEach((b) => b.addEventListener('click', () => {
     c.sfondo = b.dataset.grSfondo;
     document.querySelectorAll('[data-gr-sfondo]').forEach((x) => x.classList.toggle('on', x === b));
@@ -5075,8 +5414,8 @@ function initGrafiche() {
   });
 
 
-  document.getElementById('gr-scarica')?.addEventListener('click', () => {
-
+  document.getElementById('gr-scarica')?.addEventListener('click', async () => {
+    await grafFontPronti();
     const full = document.createElement('canvas');
     grafDisegna(full, c, 0, 2);
     full.toBlob(async (blob) => {
@@ -5110,6 +5449,7 @@ function initGrafiche() {
     btn.disabled = true;
     try {
 
+      await grafFontPronti();
       const full = document.createElement('canvas');
       grafDisegna(full, c, 0, 2);
       const blob = await new Promise((res) => full.toBlob(res, 'image/jpeg', 0.92));
@@ -5138,7 +5478,7 @@ function initGrafiche() {
     if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }
     btn.disabled = true;
     try {
-
+      await grafFontPronti();
       const full = document.createElement('canvas');
       grafDisegna(full, c, 0);
       const scala = Math.min(1, 600 / Math.max(full.width, full.height));
@@ -5147,7 +5487,7 @@ function initGrafiche() {
       const octx = off.getContext('2d', { willReadFrequently: true });
       const animato = grafAnimato(c);
       const fps = 12.5, dt = 1000 / fps;
-      const nFrame = animato ? 50 : 1;
+      const nFrame = animato ? Math.round(grafVelocita(c).durata / dt) : 1;
       const frames = [];
       for (let i = 0; i < nFrame; i++) {
         grafDisegna(full, c, i * dt);
@@ -5196,12 +5536,14 @@ function initGrafiche() {
       btn.disabled = false; btn.textContent = testo;
       if (!grafAnimato(c) && grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; grafDisegna(canvas, c, 0); }
     };
-    btn.disabled = true; btn.textContent = L('Registro… 5s', 'Recording… 5s', 'Grabando… 5s');
+    const dura = grafAnimato(c) ? grafVelocita(c).durata : 4000;
+    btn.disabled = true; btn.textContent = L('Registro… ', 'Recording… ', 'Grabando… ') + Math.round(dura / 1000) + 's';
     rec.start();
-    setTimeout(() => { try { rec.stop(); } catch {  } }, 5000);
+    setTimeout(() => { try { rec.stop(); } catch {  } }, dura);
   });
 
   ridisegna();
+  grafFontPronti().then(() => { ridisegna(); miniature(); });
 }
 
 function problemaHtml({ titolo, testo = '', tasto = '', grave = false }) {

@@ -6030,10 +6030,33 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         || /^\/api\/streamer\/libreria\/media\/\d+$/.test(v)
         || /^\/api\/streamer\/sfondi\/media\/\d+$/.test(v);
       const veloN = Math.max(0, Math.min(85, Math.round(Number(gr.velo)) || 0));
+      // Le opzioni delle scene: per ogni scena, interruttori e scelte. Chi le
+      // conosce e' il pannello; qui si tiene la forma, e un valore strano torna
+      // quello di serie quando il pannello lo legge.
+      const parola = (v) => /^[a-z]{1,20}$/.test(String(v || ''));
+      const op = {};
+      if (gr.op && typeof gr.op === 'object' && !Array.isArray(gr.op)) {
+        for (const [scena, v] of Object.entries(gr.op).slice(0, 30)) {
+          if (!parola(scena) || !v || typeof v !== 'object' || Array.isArray(v)) continue;
+          const dentro = {};
+          for (const [k, x] of Object.entries(v).slice(0, 12)) {
+            if (parola(k) && (typeof x === 'boolean' || parola(x))) dentro[k] = x;
+          }
+          op[scena] = dentro;
+        }
+      }
+      const tra = (v, voci, base) => (voci.includes(v) ? v : base);
       out.grafiche = {
         tipo: ['programmazione', 'live'].includes(gr.tipo) ? gr.tipo : 'programmazione',
         tema: str(gr.tema, 20),
         accento: /^#[0-9a-fA-F]{6}$/.test(String(gr.accento || '')) ? String(gr.accento) : '',
+        accento2: /^#[0-9a-fA-F]{6}$/.test(String(gr.accento2 || '')) ? String(gr.accento2) : '',
+        font: tra(gr.font, ['archivo', 'serif', 'pennarello', 'gothic'], 'archivo'),
+        stileTitolo: tra(gr.stileTitolo, ['sfumato', 'pieno', 'neon'], 'sfumato'),
+        stileRighe: tra(gr.stileRighe, ['schede', 'pillole', 'linee'], 'schede'),
+        velocita: tra(gr.velocita, ['lenta', 'normale', 'veloce'], 'normale'),
+        intensita: Math.max(30, Math.min(100, Math.round(Number(gr.intensita)) || 100)),
+        op,
         coloreTesto: /^#[0-9a-fA-F]{6}$/.test(String(gr.coloreTesto || '')) ? String(gr.coloreTesto) : '',
         velo: veloN,
         titolo: str(gr.titolo, 40), handle: str(gr.handle, 40), logo: str(gr.logo, 8),

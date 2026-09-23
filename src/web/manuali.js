@@ -1072,7 +1072,8 @@ const VETRINA = {
 
     { h2: 'Le grafiche social' },
     { p: ['Due grafiche pronte da pubblicare, che si scaricano in PNG: la <strong>programmazione settimanale</strong> e il <strong>«Live ora»</strong>. Le impostazioni restano salvate, e i giorni della programmazione arrivano dalla tua settimana: cambi un orario lì e la grafica è già aggiornata.'] },
-    { p: ['I temi sono cinque — notte, neon, tramonto, pastello, minimal — e si personalizzano testi e colori. L\'anteprima è dal vivo: quello che vedi è il PNG che esce.'] },
+    { p: ['Si parte da uno <strong>stile pronto</strong>, con l\'anteprima vera fatta coi tuoi testi, o da uno dei ventuno temi: sette fermi e quattordici animati, fra cui synthwave, vaporwave, pioggia al neon, notte di stelle, sakura e lo-fi. Poi si cambia tutto: colori, carattere e stile del titolo, forma delle righe, e per le scene animate cosa si vede, la velocità e quanto si fa notare la scena. L\'anteprima è dal vivo: quello che vedi è quello che esce.'] },
+    { p: ['Le scritte si leggono sempre, anche sopra le scene che si muovono: dove sotto passa qualcosa di chiaro compare un contorno, e dove non serve il colore resta il tuo. La GIF e il video fanno un giro intero dell\'animazione e ricominciano senza scatti. Col QR, il riquadro ha una fascia sua in basso e le righe gli fanno posto.'] },
     { p: ['Su telefono l\'anteprima resta appiccicata in alto mentre scorri i controlli, così non devi fare avanti e indietro per vedere l\'effetto di una modifica.'] },
 
     { h2: 'La tua settimana' },
