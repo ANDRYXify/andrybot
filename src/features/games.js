@@ -52,8 +52,8 @@ function nomeMoneta(channel) {
 //   presenza   a chi c'e', anche in silenzio, a ogni giro
 //   attivita'  in piu' a chi ha scritto in quel giro
 //
-// piu' i moltiplicatori per abbonati e VIP, e una regola che il proprietario ha
-// chiesto esplicitamente: chi resta in lurk a lungo continua a guadagnare, ma
+// piu' i moltiplicatori per abbonati e VIP, e una regola chiesta
+// esplicitamente: chi resta in lurk a lungo continua a guadagnare, ma
 // GRADUALMENTE MENO. Non a zero — la presenza vale sempre qualcosa — ma
 // scendendo di un passo a ogni giro senza partecipare, fino a un minimo. Chi
 // torna a parlare risale subito a quota piena.

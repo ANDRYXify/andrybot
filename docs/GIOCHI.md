@@ -2,7 +2,7 @@
 
 ## I duelli: due difetti veri
 
-Il proprietario ha segnalato che i duelli «danno tag inesistenti» e mostrano «`{a}`
+La segnalazione: i duelli «danno tag inesistenti» e mostrano «`{a}`
 come vincente». Erano due difetti reali, e vale la pena raccontarli perché sono
 di due specie diverse.
 
@@ -64,7 +64,7 @@ flussi che si sommano**:
 più i moltiplicatori per **abbonati** (×1,5) e **VIP** (×1,25), letti dai
 distintivi dei messaggi — quindi senza una sola chiamata in più a Twitch.
 
-E la regola che il proprietario ha chiesto: chi resta in lurk continua a guadagnare,
+E la regola chiesta: chi resta in lurk continua a guadagnare,
 ma **gradualmente meno**. Un gradino per ogni giro senza partecipare, fino a un
 minimo sotto il quale non si scende:
 

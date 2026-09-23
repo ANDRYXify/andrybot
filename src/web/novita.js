@@ -22,8 +22,8 @@ const GIORNO = /^##\s+(\d{4}-\d{2}-\d{2})\s*$/;
 const VOCE = /^[-*]\s+(.+?)\s*$/;
 
 // LE NOVITÀ PRIVATE. Non tutto quello che cambia riguarda chi usa il bot: la
-// crescita del cervello privato, il suo computer, il suo modo di ragionare sono cose del
-// proprietario, non della vetrina. Si marcano cosi':
+// crescita del cervello privato, il suo computer, il suo modo di ragionare sono cose
+// private, non della vetrina. Si marcano cosi':
 //
 //     - [privato] Il suo browser adesso resta aperto fra un gesto e l'altro.
 //

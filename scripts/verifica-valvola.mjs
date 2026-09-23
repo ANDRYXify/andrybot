@@ -1,6 +1,6 @@
 // Cancello della VALVOLA: il bot non deve avere MODO di guardare dentro lei.
 //
-// Perche' esiste. La regola e' del proprietario, ed e' a senso unico: «lei puo'
+// Perche' esiste. La regola e' a senso unico: «lei puo'
 // addestrare, ma il bot non puo' toccare lei; lui puo' crescere, lei puo' usare
 // le informazioni che il bot usa per crescere, ma il bot non puo' riprendersi
 // informazioni di lei». Il modello per esteso sta nel repository del cervello.

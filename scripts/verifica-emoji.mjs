@@ -1,6 +1,6 @@
 // Cancello delle EMOJI nell'interfaccia.
 //
-// La regola del proprietario: nell'interfaccia del sito non ci vanno emoji. Non e'
+// La regola: nell'interfaccia del sito non ci vanno emoji. Non e'
 // gusto — il sito e' disegnato come una tavola a china, e un'emoji la disegna il
 // sistema operativo di chi guarda: cambia forma su ogni piattaforma, non ha il
 // nostro tratto, e in mezzo a icone fatte a mano si vede che e' un corpo

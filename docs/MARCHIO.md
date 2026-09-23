@@ -260,7 +260,7 @@ misura prima di fidarmi del verde.
 
 ## La tavola: carta, retino, linee cinetiche
 
-La mano da sola non bastava — il proprietario l'ha detto secco: «non è per nulla
+La mano da sola non bastava, e il giudizio è stato secco: «non è per nulla
 ancora manga». Aveva ragione, e la differenza è strutturale. Una pagina di manga
 non è «disegnata a mano»: è **carta**, con sopra **retino** e **linee cinetiche**,
 e il colore è l'eccezione, non l'aria.
@@ -298,7 +298,7 @@ contrasto uno.
 
 Il cancello della tavolozza confronta i token a due a due. Non vede cosa succede
 davvero a schermo: un fondo a sfumatura, un velo sopra, un lampo che attraversa
-il bottone. Il proprietario ha fotografato un bottone con la scritta illeggibile
+il bottone. Una foto ha mostrato un bottone con la scritta illeggibile
 mentre tutti i cancelli erano verdi.
 
 `scripts/verifica-contrasto.mjs` rende la pagina in un browser, ritaglia i
@@ -325,7 +325,7 @@ prende il **fondo peggiore fra quelli che coprono almeno il 4%**.
 
 Il puntatore personalizzato era un motore in `cinema.js`: tre elementi creati a
 mano, un ciclo a ogni fotogramma, e una logica che li faceva «morfare» sopra il
-bottone sotto il mouse. Da qui le due cose che il proprietario ha visto insieme —
+bottone sotto il mouse. Da qui le due cose che si vedevano insieme —
 **ritardo** («lagga molto») e **incoerenza** («bruttino»): un oggetto che insegue
 il mouse è sempre indietro di qualche fotogramma, per costruzione.
 

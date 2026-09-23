@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-#  SocialBot — setup del server Hetzner (Ubuntu 24.04, CPX12)
+#  SocialBot — setup del server (Ubuntu 24.04)
 #
 #  Da eseguire come root:
 #      bash setup-hetzner.sh
@@ -151,18 +151,24 @@ if [ -s /root/.ssh/authorized_keys ]; then
 else
   echo "Nessuna chiave in /root/.ssh/authorized_keys:"
   echo "NON disattivo l'accesso con password (resteresti chiuso fuori)."
-  echo "Esegui prima lo script setup-pc dal tuo computer, poi rilancia questo."
+  echo "Metti prima la tua chiave SSH in /root/.ssh/authorized_keys, poi rilancia questo."
 fi
 
 # ---- l. Riepilogo finale -----------------------------------
 passo "Riepilogo finale"
 docker compose ps
 echo
+# Gli indirizzi si leggono dalla macchina e il dominio dal .env: scritti qui
+# varrebbero per un server solo, e starebbero in chiaro nel repository.
+IP4="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "src") print $(i + 1)}' || true)"
+IP6="$(ip -6 route get 2606:4700:4700::1111 2>/dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "src") print $(i + 1)}' || true)"
+DOMINIO="$(grep -E '^BASE_URL=' "$APP_DIR/.env" 2>/dev/null | cut -d= -f2- | sed -E 's#^https?://##; s#/.*$##' || true)"
+DOMINIO="${DOMINIO:-il tuo dominio}"
 echo "  PROMEMORIA DNS (dal pannello del tuo dominio):"
-echo "    bot.andryxify.it  ->  A     IP-DEL-SERVER"
-echo "    bot.andryxify.it  ->  AAAA  IPV6-DEL-SERVER"
+echo "    $DOMINIO  ->  A     ${IP4:-IPv4 di questo server}"
+[ -n "$IP6" ] && echo "    $DOMINIO  ->  AAAA  $IP6"
 echo
-echo "  Dashboard: https://bot.andryxify.it"
+echo "  Pannello: https://$DOMINIO"
 echo "  (il certificato HTTPS arriva da solo al primo accesso,"
 echo "   se il DNS punta qui)"
 echo

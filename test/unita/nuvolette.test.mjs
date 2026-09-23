@@ -43,7 +43,7 @@ test('corpo e coda sono un tracciato solo, non due pezzi', () => {
 // Entrando nella coda dalla parte sbagliata il bordo attraversa la sua bocca DUE
 // volte, e disegna la riga che si voleva evitare: la coda sembra un pezzo
 // incollato. Il tracciato resta uno solo, quindi il conto dei pezzi non se ne
-// accorge — e infatti me l'ha dovuto dire il proprietario, guardando.
+// accorge — e infatti se n'e' accorto solo chi guardava.
 //
 // La misura giusta: lungo il bordo di sotto le x devono solo CALARE. Se
 // risalgono, il bordo è tornato indietro.

@@ -85,8 +85,8 @@ nel vuoto. Cambiando scheda il giro si chiude.
 
 ## La scheda deve vedersi
 
-Un faro giusto su una scheda che non si vede non serve a niente. Il proprietario ha
-mandato una foto: all'ultimo passo — quello che dice «c'è anche il manuale» — la
+Un faro giusto su una scheda che non si vede non serve a niente. Una foto l'ha
+mostrato: all'ultimo passo — quello che dice «c'è anche il manuale» — la
 scheda finiva in fondo alla pagina con i pulsanti tagliati sotto il bordo.
 
 Misurato prima di toccare niente: **sei schede su sette avevano almeno un passo

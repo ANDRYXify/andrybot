@@ -61,7 +61,7 @@ Adesso tutte e due ricevono le stesse cose: immagini e regole di adesso.
 
 # Dove sta il bot, e cosa vuol dire per ogni ruolo
 
-Il proprietario ha costruito su un server vero e ha visto quasi tutti i ruoli
+Costruendo su un server vero, quasi tutti i ruoli risultavano
 segnati «più in alto del bot» (anche MEE6, Midjourney e i booster), la frase
 «ha i pieni poteri: da qui puoi muovere tutto» subito sotto, un secondo
 «Moderatori» vuoto accanto al suo «moderatore», e in modalità distruttiva i

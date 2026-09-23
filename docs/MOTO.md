@@ -168,7 +168,7 @@ lo copriva sempre.
 
 ## Il tasto che viene avanti
 
-Il proprietario ha chiesto una cosa semplice: quando passi sopra un tasto, deve
+La richiesta era semplice: quando passi sopra un tasto, deve
 venire in primo piano, come se uscisse dallo schermo. Sotto c'erano tre cose.
 
 #### 1. Il corpo della carta tagliava l'inchiostro

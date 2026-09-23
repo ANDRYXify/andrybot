@@ -53,7 +53,7 @@ test('la data si legge come la direbbe una persona', () => {
 
 // ── quello che è tuo non esce di casa ──────────────────────────────────────
 // Non tutto quello che cambia riguarda chi usa il bot: la crescita del cervello privato e il suo
-// computer sono cose del proprietario. Il rischio non è che si veda male: è che si
+// computer sono cose private. Il rischio non è che si veda male: è che si
 // veda, e a chiunque.
 
 test('una riga marcata privata non arriva mai alla forma pubblica', () => {

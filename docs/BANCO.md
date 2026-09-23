@@ -109,7 +109,7 @@ mantenere.
 
 ## I difetti di posizionamento
 
-Il proprietario ha segnalato che «la chat portata sull'estremo lato destro va a
+La segnalazione: «la chat portata sull'estremo lato destro va a
 schiacciarsi». Misurando tutti e quattro gli elementi in nove posizioni sono
 emersi **due** difetti, di cui il secondo nessuno aveva notato.
 
@@ -324,7 +324,7 @@ passata da **509×286 a 925×520** — tre volte e un terzo la superficie.
 
 ## Le icone erano tutte spostate a sinistra
 
-Il proprietario ha notato che le icone dei riquadri sembravano decentrate. Misurate
+Le icone dei riquadri sembravano decentrate. Misurate
 tutte e 65 dentro il loro `viewBox`, il disegno era a posto: gli scarti massimi
 erano mezza unità su ventiquattro. Il difetto era altrove.
 

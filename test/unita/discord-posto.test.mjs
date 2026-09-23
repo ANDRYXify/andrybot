@@ -1,6 +1,6 @@
 // DOVE STA IL BOT, e cosa vuol dire per ogni ruolo.
 //
-// Il proprietario ha visto il suo server con quasi tutti i ruoli «piu' in alto del
+// Su un server vero quasi tutti i ruoli risultavano «piu' in alto del
 // bot», compresi MEE6, Midjourney e i booster, e la frase «ha i pieni poteri: da
 // qui puoi muovere tutto» subito sotto. Due difetti in una schermata:
 //
@@ -27,7 +27,7 @@ const leggi = (p) => readFileSync(join(RAD, p), 'utf8');
 const GUILD = '900000000000000001';
 const ruolo = (id, nome, position, extra = {}) => ({ id, nome, position, permessi: '0', ...extra });
 
-// Il server del proprietario, come lo racconta: «moderatore» e' il piu' alto
+// Il server della segnalazione: «moderatore» e' il piu' alto
 // dopo il creatore, e il bot ce l'ha. In mezzo, ruoli di altri bot a varie
 // altezze.
 const SERVER = [
@@ -132,8 +132,8 @@ test('i pieni poteri non si raccontano come se scavalcassero l\'ordine dei ruoli
   assert.match(f, /sopra\.length\s*\?/, 'la frase dei pieni poteri dipende da chi sta sopra');
 });
 
-// IL DOPPIONE. Il proprietario: «ha creato i ruoli Streamer, VIP… ma non mi ha
-// applicato i cambiamenti». Sul suo server «moderatore» era il ruolo del bot:
+// IL DOPPIONE. La segnalazione: «ha creato i ruoli Streamer, VIP… ma non mi ha
+// applicato i cambiamenti». Su quel server «moderatore» era il ruolo del bot:
 // intoccabile, quindi il consiglio lo saltava e la traccia creava un secondo
 // «Moderatori», vuoto, in fondo. Due ruoli per lo stesso mestiere, e le regole
 // nuove che davano quello sbagliato.

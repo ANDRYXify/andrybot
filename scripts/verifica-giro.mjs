@@ -1,7 +1,7 @@
 // Collaudo del GIRO GUIDATO — gira in un browser vero.
 //
 // DUE DOMANDE, e sono diverse. La prima c'era gia': il faro punta a qualcosa che
-// esiste? La seconda e' arrivata dopo, con una foto del proprietario: all'ultimo
+// esiste? La seconda e' arrivata dopo, con una foto: all'ultimo
 // passo — quello che dice «c'e' anche il manuale» — la scheda finiva in fondo
 // alla pagina con i pulsanti tagliati sotto il bordo. Misurando, sei schede su
 // sette avevano almeno un passo con la scheda fuori dallo schermo.

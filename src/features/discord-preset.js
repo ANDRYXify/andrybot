@@ -517,8 +517,8 @@ export function differenzaRuoli(foto, preset, { togliere = false, puoiDare = nul
 
 // UN RUOLO CHE FA GIA' QUEL MESTIERE, fuori dalla portata del bot. Crearne un
 // altro accanto farebbe due «Moderatori»: quello vero, coi poteri e con la
-// gente dentro, e il nostro, vuoto — ed e' quello che il proprietario si e'
-// trovato sul server. Non si crea: si dice, e il giorno che il bot arriva a
+// gente dentro, e il nostro, vuoto — ed e' quello che e' comparso su un
+// server vero. Non si crea: si dice, e il giorno che il bot arriva a
 // toccarlo lo prende il consiglio. Anche se sono due: il mestiere c'e' gia',
 // e un terzo ruolo non lo farebbe meglio — lo farebbe vuoto.
 function gemelliIntoccabili(v, attuali, fuoriMano, preso) {

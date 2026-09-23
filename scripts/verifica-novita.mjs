@@ -65,7 +65,7 @@ dice(!monotone.length, 'e non cominciano tutte allo stesso modo', monotone.join(
 
 // ---- quello che e' privato non esce di casa ------------------------------
 // Non tutto quello che cambia riguarda chi usa il bot: la crescita del cervello privato e il suo
-// computer sono cose del proprietario. Si marcano `[privato]`, e da li' in poi la
+// computer sono cose private. Si marcano `[privato]`, e da li' in poi la
 // pagina pubblica, l'API aperta e la sitemap non devono vederle. Qui non si legge
 // il codice: si prende la forma PUBBLICA vera e ci si cerca dentro cio' che
 // doveva restare fuori.
@@ -83,7 +83,7 @@ dice(!giorniSoloPrivati.some((d) => pubbliciData.has(d)),
 
 // ---- quello che e' di LEI non si racconta in giro -------------------------
 //
-// Regola del proprietario: le cose INTERNE del cervello privato — il suo computer, il suo schermo,
+// La regola: le cose INTERNE del cervello privato — il suo computer, il suo schermo,
 // il suo browser, come ragiona, come cresce — non sono cose da condividere. Non
 // e' una questione di segretezza: e' che non riguardano chi usa il bot, e la
 // pagina delle novita' e' pubblica e indicizzata.

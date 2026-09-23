@@ -1,7 +1,7 @@
 // I VOCALI DELLE TRACCE, pensati: chi entra, chi parla, e dove finisce chi
 // si allontana.
 //
-// Il proprietario l'ha visto costruendo: «Salotto» e «In diretta» nascevano
+// Si e' visto costruendo: «Salotto» e «In diretta» nascevano
 // aperti a tutti allo stesso modo, e l'angolo AFK che il pannello offriva non
 // lo creava nessuno. Le cose che devono restare vere:
 //  · «In diretta» e' una stanza dove si ascolta: tutti entrano, parla chi sta

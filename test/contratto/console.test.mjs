@@ -464,7 +464,7 @@ test('il conto dell\'attesa parte da solo, e due sorgenti non lo fanno ripartire
 });
 
 test('un tasto salvato PRIMA che esistessero gli id si aggiusta da solo, e resta aggiustato', () => {
-  // Il difetto che il proprietario ha isolato con la domanda giusta: «se funziona
+  // Il difetto isolato dalla domanda giusta: «se funziona
   // l'anteprima dall'editor overlay, perché non deve funzionare l'effetto
   // lanciato dalla consolify?». Non era il payload — è identico. Era che
   // leggere e salvare davano cose diverse: leggere restituiva i tasti così
@@ -771,7 +771,7 @@ test('il ponte non è un canale per ordini liberi', () => {
 });
 
 test('la plancia di uno non si vede da nessun altro, e non c\'è una porta per chiederla', () => {
-  // Domanda del proprietario: questi dati non sono condivisi con nessuno, vero?
+  // La domanda: questi dati non sono condivisi con nessuno, vero?
   // Non basta dire di sì: si controlla.
   const a = canale();
   const b = canale();

@@ -2,7 +2,7 @@
 //
 // Il modello puo' dire giusto e il fare sbagliare. Qui Discord e' finto ma con
 // la memoria — i ruoli nascono, le persone li prendono — e si guarda la cosa
-// che il proprietario ha visto mancare: dopo aver costruito, «Streamer» ce l'ha
+// che mancava: dopo aver costruito, «Streamer» ce l'ha
 // il proprietario. E la seconda volta non si rifa' niente.
 import test from 'node:test';
 import assert from 'node:assert/strict';

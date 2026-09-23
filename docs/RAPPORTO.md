@@ -129,7 +129,7 @@ invece di accavallarsi.
 I numeri del canale stavano in tre schede con tre facce: i sette giorni in cima a
 Memoria, le classifiche delle monete dentro la carta del premio VIP in Giochi, le
 serie di presenze di nuovo in Memoria, i rapporti in Dirette. Nessun periodo da
-scegliere, nessun confronto possibile, e il proprietario l'ha detto senza giri:
+scegliere, nessun confronto possibile, e il giudizio è stato senza giri:
 «non si capisce nulla così».
 
 Adesso c'è la scheda **Statistiche**, e il calcolo sta in

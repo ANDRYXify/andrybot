@@ -1,6 +1,6 @@
 // IL COMANDO DELLA CATEGORIA, coi nomi veri dei giochi.
 //
-// Il proprietario: «sembra funzionare molto male, specialmente con giochi di piu'
+// La segnalazione: «sembra funzionare molto male, specialmente con giochi di piu'
 // parole». Il comando passava il testo intero; il guasto era nel confronto,
 // che premiava il nome piu' CORTO — cioe' quello che lasciava fuori una parola
 // detta. Qui ogni caso e' un nome vero di Twitch, con gli altri nomi che Twitch

@@ -113,8 +113,8 @@ copre('giochi', 'ricette a punti', ricette);
 // Due schede restano fuori DI PROPOSITO, ed e' scritto qui perche' un buco
 // silenzioso e un'esclusione decisa si somigliano troppo:
 //   · 'admin'  non e' del prodotto, e' nostra;
-//   · 'studio' (andare in diretta dal browser) non si documenta per scelta del
-//              proprietario: finche' resta cosi', una pagina pubblica che la
+//   · 'studio' (andare in diretta dal browser) non si documenta, per scelta:
+//              finche' resta cosi', una pagina pubblica che la
 //              spiega prometterebbe una cosa che non vogliamo promettere.
 const FUORI = new Set(['admin', 'studio']);
 const schede = [...new Set([...app.matchAll(/pannello\('([a-z0-9-]+)'/g)].map((m) => m[1]))]

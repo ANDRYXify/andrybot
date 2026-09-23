@@ -166,9 +166,9 @@ manca. Il database e la memoria vivono nella cartella `data/` (ignorata da git).
 
 ## Deploy sul server
 
-Tutto il necessario è in **[`server/README.md`](server/README.md)**: una guida passo-passo
-(DNS, chiave SSH e FileZilla dal tuo PC, app Twitch, un solo comando sul server con Docker +
-HTTPS automatico).
+Sul server si lancia una volta `server/setup-hetzner.sh` (Docker, firewall, HTTPS automatico),
+e da lì in poi ogni aggiornamento è `server/aggiorna.sh`. I dati della macchina e la guida
+passo-passo non stanno in questo repository, che è pubblico.
 
 ---
 
