@@ -8057,8 +8057,10 @@ function pannelloAlert() {
           <button class="btn secondario mini" id="ov-duplica" type="button" data-aiuto="${esc(L('Copia colori, posizioni e aspetto in un overlay nuovo, che avrà un link suo.', 'Copies colors, positions and look into a new overlay, which gets its own link.', 'Copia colores, posiciones y aspecto en un overlay nuevo, con su propio enlace.'))}">${L('Duplica', 'Duplicate', 'Duplicar')}</button>
           <button class="btn secondario mini ovl-elimina" id="ov-elimina" type="button" data-aiuto="${esc(L('Toglie questo overlay: il suo link smette di funzionare, e in OBS resta una fonte vuota.', 'Removes this overlay: its link stops working, and OBS is left with an empty source.', 'Quita este overlay: su enlace deja de funcionar y en OBS queda una fuente vacia.'))}">${L('Elimina', 'Delete', 'Eliminar')}</button>
         </span>
-        <button type="button" class="ovl-tasto ico-sola" id="ovl-aiuto" title="${esc(L('Come funziona', 'How it works', 'Cómo funciona'))}" aria-label="${esc(L('Come funziona', 'How it works', 'Cómo funciona'))}">${_bIco('<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.2 3.2c-.5.2-.8.7-.8 1.3v.4"/><path d="M12 17.6h.01"/>')}</button>
-        <button class="btn" id="ovl-salva-tutto" data-aiuto="${esc(L('Le modifiche vanno in diretta subito: OBS non va riavviato.', 'Changes go live right away: no need to restart OBS.', 'Los cambios salen en directo enseguida: no hace falta reiniciar OBS.'))}">${L('Salva overlay', 'Save overlay', 'Guardar overlay')}</button>
+        <span class="ovl-testa-fine">
+          <button type="button" class="ovl-tasto ico-sola" id="ovl-aiuto" title="${esc(L('Come funziona', 'How it works', 'Cómo funciona'))}" aria-label="${esc(L('Come funziona', 'How it works', 'Cómo funciona'))}">${_bIco('<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.2 3.2c-.5.2-.8.7-.8 1.3v.4"/><path d="M12 17.6h.01"/>')}</button>
+          <button class="btn" id="ovl-salva-tutto" data-aiuto="${esc(L('Le modifiche vanno in diretta subito: OBS non va riavviato.', 'Changes go live right away: no need to restart OBS.', 'Los cambios salen en directo enseguida: no hace falta reiniciar OBS.'))}">${L('Salva overlay', 'Save overlay', 'Guardar overlay')}</button>
+        </span>
       </div>
       <div class="ovl-barra spazio-sopra">
         <div class="ovl-gruppo">

@@ -8,7 +8,8 @@
 //  · la voce accesa ha una regola sola, per il disegno e per il cambio scheda;
 //  · la soglia del menu di lato e' la stessa per il foglio di stile e per il
 //    codice che chiude il cassetto;
-//  · di lato non c'e' niente che serva solo al cassetto;
+//  · di lato non c'e' niente che serva solo al cassetto; nello Studio il menu
+//    torna cassetto, perche' li' la larghezza e' della tela;
 //  · con la tastiera si salta il menu.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -55,15 +56,18 @@ test('la soglia del menu di lato e\' la stessa per lo stile e per il codice', ()
     'allargando la finestra il cassetto aperto si chiude');
 });
 
-test('di lato non c\'e\' niente che serva solo al cassetto', () => {
+test('di lato non c\'e\' niente che serva solo al cassetto; nello Studio il menu torna cassetto', () => {
   const i = CSS.indexOf('@media (min-width: 64rem) {');
   const blocco = CSS.slice(i, CSS.indexOf('\n}\n', i));
-  for (const via of ['.apri-menu', '.backdrop', '.drawer-testa', '.drawer-utente']) {
-    assert.ok(blocco.includes(`body.con-nav ${via}`), `di lato ${via} non si vede`);
+  for (const via of ['.apri-menu', '.backdrop', '.drawer-testa']) {
+    assert.ok(blocco.includes(`body.con-nav:not(.banco-on) ${via}`), `di lato ${via} non si vede`);
   }
-  assert.match(blocco, /body\.con-nav \.drawer \{[^}]*transform: none;/, 'il menu di lato sta fermo');
-  assert.match(blocco, /body\.con-nav \.area-principale \{ margin-left: var\(--lato\); \}/, 'e non copre il contenuto');
+  assert.ok(blocco.includes('body.con-nav .drawer-utente { display: none; }'), 'gli strumenti stanno in alto, non nel cassetto');
+  assert.match(blocco, /body\.con-nav:not\(\.banco-on\) \.drawer \{[^}]*transform: none;/, 'il menu di lato sta fermo');
+  assert.match(blocco, /body\.con-nav:not\(\.banco-on\) \.area-principale \{ margin-left: var\(--lato\); \}/, 'e non copre il contenuto');
   assert.match(blocco, /body\.con-nav \.top-strumenti \{ display: flex; \}/, 'gli strumenti tornano in alto');
+  assert.ok(blocco.includes('body.con-nav.banco-on .apri-menu { margin-left: .5rem; }'),
+    'nello Studio il menu e\' il cassetto, e il suo tasto sta accanto agli strumenti: la larghezza va alla tela');
 });
 
 test('con la tastiera si salta il menu', () => {

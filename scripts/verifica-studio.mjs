@@ -165,6 +165,43 @@ const misureTela = await p.evaluate(() => {
 const telaFerma = JSON.stringify(misureTela.libera) === JSON.stringify(misureTela.scelta)
   && JSON.stringify(misureTela.scelta) === JSON.stringify(misureTela.lasciata);
 
+// LA LARGHEZZA E' DELLA TELA. Nello Studio il menu delle schede e' il cassetto,
+// che si apre dal tasto in alto: di lato si prendeva 240 px proprio dove
+// servono, e a 1440 la tela era larga 491. I pannelli prendono la loro base, e
+// dello spazio in piu' solo quello che alla tela non serve: la tela e' larga
+// quanto l'altezza le permette. Qui si rifa' il conto del modello e lo si
+// confronta con quello che il browser ha disposto, a tre misure di schermo.
+const MODELLO_SPAZIO = `(() => {
+  const r = (el) => el.getBoundingClientRect();
+  const scena = document.querySelector('.carta.ovl-banco .ovl-scena');
+  const tela = document.getElementById('ovl-tela'), prev = document.getElementById('ovl-preview');
+  const liv = document.getElementById('ovl-livelli'), insp = document.getElementById('ovl-inspector');
+  const area = document.querySelector('.area-principale');
+  const W = r(scena).width, H = r(scena).height, stretto = innerWidth < 1300;
+  const bLiv = stretto ? 196 : 238;
+  const bInsp = stretto ? 284 : Math.min(420, Math.max(300, 0.24 * W));
+  const utile = (H - 36) * 16 / 9 + 36;
+  const avanzo = Math.max(0, W - bLiv - bInsp - utile);
+  const atteso = { liv: Math.min(bLiv + avanzo * 0.4, 300), insp: Math.min(bInsp + avanzo * 0.6, 460) };
+  const tw = r(tela).width - 36, th = r(tela).height - 36;
+  return {
+    schermo: innerWidth + 'x' + innerHeight,
+    menuDiLato: parseFloat(getComputedStyle(area).marginLeft) || 0,
+    liv: [Math.round(r(liv).width), Math.round(atteso.liv)], insp: [Math.round(r(insp).width), Math.round(atteso.insp)],
+    tela: [Math.round(r(prev).width), Math.round(Math.min(tw, th * 16 / 9))],
+  };
+})()`;
+const spazi = [];
+for (const [w, h] of [[1440, 950], [1280, 800], [1920, 1080]]) {
+  await p.setViewportSize({ width: w, height: h });
+  await p.waitForTimeout(250);
+  spazi.push(await p.evaluate(MODELLO_SPAZIO));
+}
+await p.setViewportSize({ width: 1440, height: 950 });
+await p.waitForTimeout(250);
+const spazioStorto = spazi.filter((s) => s.menuDiLato > 0 || Math.abs(s.liv[0] - s.liv[1]) > 1.5
+  || Math.abs(s.insp[0] - s.insp[1]) > 1.5 || Math.abs(s.tela[0] - s.tela[1]) > 1.5);
+
 const dopoScelta = await p.evaluate(() => {
   deseleziona();
   const insp = document.getElementById('ovl-inspector');
@@ -554,6 +591,7 @@ verde = dice(!!occhio.cambiata, 'e si vede: la riga lascia i livelli e passa tra
 verde = dice(!!occhio.tornato, 'e da lì si rimette dov’era', JSON.stringify(occhio)) && verde;
 verde = dice(incoerenti.length === 0, `scegliendo un elemento si vedono solo i suoi comandi: ${chiavi.length} elementi`, incoerenti.join(' · ')) && verde;
 verde = dice(telaFerma, 'la tela non cambia misura scegliendo o lasciando un elemento', JSON.stringify(misureTela)) && verde;
+verde = dice(spazioStorto.length === 0, `la larghezza è della tela: a ${spazi.map((s) => s.schermo + ' ' + s.tela[0] + ' px').join(', ')}`, JSON.stringify(spazioStorto)) && verde;
 verde = dice(dopoScelta.visti === 0 && dopoScelta.sel === 0 && dopoScelta.chiuso,
   'e lasciandolo non resta niente acceso', JSON.stringify(dopoScelta)) && verde;
 verde = dice(rimasti === 0, 'nessun comando dimenticato sotto la tela', `${rimasti} campi rimasti giù`) && verde;

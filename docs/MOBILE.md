@@ -66,7 +66,7 @@ come si presenta:
 |---|---|
 | fino a 720 px | la barra in basso, e «Altro» apre il cassetto |
 | da 721 a 1023 px | l'hamburger apre il cassetto |
-| da 1024 px (64rem) | il cassetto sta fermo a sinistra, sempre aperto |
+| da 1024 px (64rem) | il cassetto sta fermo a sinistra, sempre aperto; nello Studio torna cassetto |
 
 I 1024 px non sono un numero a occhio: sono il menu (15rem) piu la colonna piu
 stretta in cui le carte stanno ancora comode accanto a lui (49rem). Da li in su
@@ -75,6 +75,13 @@ c'e posto per tutti e due.
 Di lato, il cassetto perde quello che serviva solo al cassetto: la testata con
 la X, il velo dietro, l'hamburger. Gli strumenti (lingua, suono, tema, aiuto,
 cambio canale, esci) tornano nella barra in alto, dove adesso c'e spazio.
+
+**Nello Studio il menu torna cassetto.** Lì la larghezza serve alla tela: di
+lato il menu si prendeva 240 px e a 1440 la tela era larga 491. Col banco
+aperto (`body.banco-on`) il menu si apre dall'hamburger, che sta accanto agli
+strumenti in alto; uscendo dallo Studio torna di lato. Gli strumenti restano
+nella barra in alto, quindi nel cassetto non si ripetono. Le misure e il resto
+dello spazio della tela stanno in `docs/BANCO.md`.
 
 Tre cose che valgono per come e fatto, non per un controllo in piu:
 

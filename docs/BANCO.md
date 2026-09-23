@@ -336,6 +336,40 @@ niente occupa spazio in permanenza per un uso occasionale.
 Sommando tutto il percorso, dalla disposizione a colonne di partenza: la tela è
 passata da **509×286 a 925×520** — tre volte e un terzo la superficie.
 
+## La larghezza è della tela
+
+Col menu di lato (dai 1024 px) la tela era tornata piccola: a 1440 era larga 491
+pixel. Lo spazio se lo prendevano il menu (240), i livelli (238) e le proprietà
+(27% della finestra, anche quando la finestra non era più tutta del banco).
+
+Adesso il conto parte dalla tela:
+
+- **nello Studio il menu è il cassetto**, e si apre dall'hamburger in alto
+  (`docs/MOBILE.md`);
+- **la tela prende prima la larghezza che le serve.** La scena è un contenitore
+  che conosce le sue misure (`container-type: size`). La tela è 16:9, quindi
+  più di `(altezza - 36) × 16 / 9 + 36` pixel di larghezza non le servono. I
+  pannelli hanno la loro base (livelli 238, proprietà il 24% della scena, fra
+  300 e 420; sotto i 1300 px 196 e 284), e dello spazio che avanza oltre la tela
+  prendono il 40 e il 60 per cento, fino a 300 e 460. Quando la tela è
+  limitata dall'altezza, la larghezza in più va ai pannelli, e i nomi dei
+  livelli non si tagliano più.
+
+| schermo | prima | adesso |
+|---|---|---|
+| 1024×768 | 233×131 | 470×265 |
+| 1280×800 | 482×271 | 531×299 |
+| 1440×950 | 491×276 | **785×442** |
+| 1920×1080 | 895×504 | 1110×625 |
+
+Misurato nella prova del pannello, che ha una fascia in più in cima: senza, la
+tela è ancora un po' più alta. A 1280×800 la tela era già limitata
+dall'altezza: lì la larghezza in più è andata ai livelli (da 196 a 273 px).
+
+`verifica-studio` rifà il conto del modello a 1440×950, 1280×800 e 1920×1080 e
+lo confronta con quello che il browser ha disposto: il menu non sta di lato,
+livelli e proprietà hanno la misura del modello, la tela riempie il suo spazio.
+
 ## Uscire dallo Studio non costa niente
 
 Ogni cambio di scheda smonta il banco, e smontarlo spegneva l'anteprima «dal

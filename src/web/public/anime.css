@@ -1290,11 +1290,10 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 @media (hover: hover) {
 .btn.ovl-elimina:hover { border-color: var(--rosso); color: var(--rosso); }
 }
-.ovl-testa-banco > #ovl-aiuto { margin-left: auto; }
-.ovl-testa-banco > #ovl-salva-tutto { flex: none; }
+.ovl-testa-fine { display: flex; align-items: center; gap: 8px; flex: none; margin-left: auto; }
 @media (max-width: 900px) {
   .ovl-testa-banco > #ovl-quale { flex-basis: 160px; }
-  .ovl-testa-banco > #ovl-aiuto { margin-left: 0; }
+  .ovl-testa-fine { margin-left: 0; }
 }
 
 .carta.ovl-banco .ovl-scena {
@@ -1365,13 +1364,23 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
     backdrop-filter: none; -webkit-backdrop-filter: none;
   }
   .carta.ovl-banco .ovl-livelli:not(.mosso) { grid-column: 1; border-right: 1px solid var(--border-2); }
-  .carta.ovl-banco .ovl-inspector:not(.mosso) { grid-column: 3; border-left: 1px solid var(--border-2); --pw: clamp(320px, 27vw, 460px); }
+  .carta.ovl-banco .ovl-inspector:not(.mosso) { grid-column: 3; border-left: 1px solid var(--border-2); }
+  .carta.ovl-banco .ovl-scena {
+    container-type: size;
+    --pw-liv: 238px; --pw-insp: clamp(300px, 24cqw, 420px);
+  }
+  .carta.ovl-banco .ovl-livelli:not(.mosso),
+  .carta.ovl-banco .ovl-inspector:not(.mosso) {
+    --tela-utile: calc((100cqh - 36px) * 16 / 9 + 36px);
+    --avanzo: max(0px, 100cqw - var(--pw-liv) - var(--pw-insp) - var(--tela-utile));
+  }
+  .carta.ovl-banco .ovl-livelli:not(.mosso) { width: min(var(--pw-liv) + var(--avanzo) * .4, 300px); }
+  .carta.ovl-banco .ovl-inspector:not(.mosso) { width: min(var(--pw-insp) + var(--avanzo) * .6, 460px); }
   .carta.ovl-banco .ovl-livelli.arrotolato:not(.mosso),
   .carta.ovl-banco .ovl-inspector.arrotolato:not(.mosso) { width: auto; }
 }
 @media (min-width: 1024px) and (max-width: 1299px) {
-  .carta.ovl-banco .ovl-livelli:not(.mosso) { --pw: 196px; }
-  .carta.ovl-banco .ovl-inspector:not(.mosso) { --pw: 284px; }
+  .carta.ovl-banco .ovl-scena { --pw-liv: 196px; --pw-insp: 284px; }
 }
 
 .pan-testa {

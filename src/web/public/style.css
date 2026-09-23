@@ -2377,13 +2377,15 @@ body:not(.con-nav) .salta { display: none; }
 
 @media (min-width: 64rem) {
   body.con-nav { --lato: 15rem; }
-  body.con-nav .apri-menu, body.con-nav .backdrop, body.con-nav .drawer-testa, body.con-nav .drawer-utente { display: none; }
+  body.con-nav .drawer-utente { display: none; }
   body.con-nav .top-strumenti { display: flex; }
-  body.con-nav .drawer {
+  body.con-nav:not(.banco-on) .apri-menu, body.con-nav:not(.banco-on) .backdrop, body.con-nav:not(.banco-on) .drawer-testa { display: none; }
+  body.con-nav:not(.banco-on) .drawer {
     top: var(--top-h); bottom: 0; left: 0; right: auto; height: auto; width: var(--lato);
     transform: none; transition: none; z-index: 40; overscroll-behavior: contain;
     padding: .7rem .55rem 1.6rem; background: var(--surface);
     border: 0; border-right: 1px solid var(--border); border-radius: 0; box-shadow: none;
   }
-  body.con-nav .area-principale { margin-left: var(--lato); }
+  body.con-nav:not(.banco-on) .area-principale { margin-left: var(--lato); }
+  body.con-nav.banco-on .apri-menu { margin-left: .5rem; }
 }
