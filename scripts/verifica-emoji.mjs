@@ -34,8 +34,8 @@ const PUB = join(RAD, 'src/web/public');
 // Chi non e' qui dentro non puo' avere emoji.
 const AMMESSI = {
   'app.js': {
-    perche: 'messaggi che il bot scrive in chat, simboli dei rulli della slot, le didascalie che lo streamer incolla sui social, le faccine della prima schermata di Discord nella prova del pannello, il pescato e le frasi di serie dei giochi nella copia della demo delle regole (sono quello che il bot scrive in chat, e lo streamer le modifica li\'), e l\'esempio di rebus nel creatore delle manche (le emoji SONO il rebus), le frasi di serie di abbracci, bacini e cinque nella stessa copia (anche quelle sono chat)',
-    segni: '🎮👉🔴🗓️💜😂😱🤬😭😨🤢🎰🍀💸🎁🕵️🚨💰✨💀🍒⭐💎🔥🎲❓🥿🥫🐟🦀🐙🗡️👢🧰🥊😄🕷️🧑🦁👑🤗😘💋💥🙌🫳🙋',
+    perche: 'messaggi che il bot scrive in chat, simboli dei rulli della slot, le didascalie che lo streamer incolla sui social, le faccine della prima schermata di Discord nella prova del pannello, il pescato e le frasi di serie dei giochi nella copia della demo delle regole (sono quello che il bot scrive in chat, e lo streamer le modifica li\'), e l\'esempio di rebus nel creatore delle manche (le emoji SONO il rebus), le frasi di serie di abbracci, bacini e cinque e i nomi di serie dei boss nella stessa copia (anche quelle sono chat)',
+    segni: '🎮👉🔴🗓️💜😂😱🤬😭😨🤢🎰🍀💸🎁🕵️🚨💰✨💀🍒⭐💎🔥🎲❓🥿🥫🐟🦀🐙🗡️👢🧰🥊😄🕷️🧑🦁👑🤗😘💋💥🙌🫳🙋🐉🗿👹👾',
   },
   'tracking-games.js': {
     perche: 'i gesti che la telecamera riconosce e le espressioni: qui l\'emoji E\' il dato, non un ornamento',

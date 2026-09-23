@@ -99,6 +99,12 @@ export const COMANDI = [
     cosa: ['Punta le monete su rosso o nero.', 'Bet your coins on red or black.', 'Apuesta las monedas al rojo o al negro.'], costa: true },
   { id: 'furto', modulo: 'giochi', nomi: ['furto', 'rapina'], titolo: ['Furto', 'Heist', 'Robo'],
     cosa: ['Prova a rubare monete a un\'altra persona. Può andare male.', 'Try to steal coins from someone else. It can go wrong.', 'Intenta robar monedas a otra persona. Puede salir mal.'], costa: true },
+  { id: 'colpo', modulo: 'giochi', nomi: ['colpo', 'heist'], titolo: ['Colpo di gruppo', 'Group heist', 'Golpe en grupo'],
+    cosa: ['Organizza un colpo o entra nella banda con la tua posta (!colpo 100). Più siete, più è facile scappare col bottino.', 'Plan a heist or join the crew with your stake (!colpo 100). The more you are, the easier it is to escape with the loot.', 'Organiza un golpe o entra en la banda con tu apuesta (!colpo 100). Cuantos más seáis, más fácil es escapar con el botín.'], costa: true },
+  { id: 'boss', modulo: 'giochi', nomi: ['boss'], titolo: ['Chiama il boss', 'Call the boss', 'Llama al jefe'], chi: 'mod',
+    cosa: ['Fa arrivare subito un boss che la chat deve battere insieme.', 'Brings in a boss right away that chat has to beat together.', 'Hace llegar enseguida un jefe que el chat tiene que vencer junto.'] },
+  { id: 'colpisci', modulo: 'giochi', nomi: ['colpisci', 'attacca', 'hit'], titolo: ['Colpisci il boss', 'Hit the boss', 'Golpea al jefe'],
+    cosa: ['Colpisce il boss di turno. Se cade, il bottino va a chi l\'ha colpito, in proporzione ai danni.', 'Hits the current boss. If it falls, the loot goes to whoever hit it, in proportion to the damage.', 'Golpea al jefe de turno. Si cae, el botín va a quien lo golpeó, en proporción al daño.'] },
   { id: 'abbraccio', modulo: 'giochi', nomi: ['abbraccio', 'abbraccia', 'hug'], titolo: ['Abbraccio', 'Hug', 'Abrazo'],
     cosa: ['Abbraccia qualcuno in chat (!abbraccio @nome), o tutta la chat se non dici chi.', 'Hug someone in chat (!abbraccio @nome), or the whole chat if you name nobody.', 'Abraza a alguien en el chat (!abbraccio @nome), o a todo el chat si no dices a quién.'] },
   { id: 'bacio', modulo: 'giochi', nomi: ['bacio', 'bacino', 'kiss'], titolo: ['Bacino', 'Kiss', 'Besito'],
@@ -250,6 +256,16 @@ export function nomiDi(c, scelta = {}) {
 export function nomeIn(channel, id) {
   const c = PER_ID.get(id);
   return c ? nomiDi(c, scelte(channel)[id] || {})[0] : id;
+}
+
+// Se un comando risponde davvero in QUEL canale: acceso lui e acceso il suo
+// modulo. Serve a chi fa partire qualcosa da solo: un boss che arriva quando
+// !colpisci e' spento sarebbe un boss che nessuno puo' battere.
+export function vivo(channel, id) {
+  const c = PER_ID.get(id);
+  if (!c) return false;
+  const suo = spegnibile(c) ? !(scelte(channel)[id] || {}).off : true;
+  return suo && moduloAcceso(c.modulo, impostazioni(channel));
 }
 
 export function livelloDi(c, scelta = {}) {

@@ -4,9 +4,11 @@
 // Comandi: !dado [NdM] · !moneta · !8ball <domanda> · !slot · !roulette <p> <scelta>
 //          · !pesca · !duello @tizio · !furto @tizio · !regala @tizio N
 //          · !trivia · !classifica [mod|tutti] · !monete · !giochi
-import { elencoGiochiInChat } from './comandi-registro.js';
+import { elencoGiochiInChat, nomeIn } from './comandi-registro.js';
 import { valoriDi } from './giochi-conf.js';
 import * as coccole from './coccole.js';
+import * as colpoFeat from './colpo.js';
+import * as bossFeat from './boss.js';
 import { points, streamers, giochi } from '../db.js';
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
@@ -964,6 +966,21 @@ export function tryGame(msg, say) {
           if (multa > 0) { points.add(channel, msg.user, -multa); points.add(channel, vittima, multa); }
           say(`🚓 ${nome} viene beccato e paga ${multa} ${moneta()} di multa a ${vittima}! 😂`);
         }
+        return true;
+      }
+
+      case 'colpo': {
+        colpoFeat.colpo(channel, msg, args, say, { moneta: moneta() });
+        return true;
+      }
+
+      case 'boss': {
+        if (!bossFeat.arriva(channel, say)) say('⚔️ C\'è già un boss in giro: !' + nomeIn(channel, 'colpisci') + ' per colpirlo.');
+        return true;
+      }
+
+      case 'colpisci': {
+        bossFeat.colpisci(channel, msg, say);
         return true;
       }
 

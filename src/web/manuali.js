@@ -126,6 +126,9 @@ const GIOCHI = {
       ['<code>!pesca</code>', '<code>!fish</code>', 'Cala la canna. Può uscire di tutto.', `${ATTESA(DI_SERIE('pesca').attesa)} a testa`],
       ['<code>!roulette</code>', '<code>!rul</code>', 'Punti su rosso, nero, verde o un numero.', `${ATTESA(DI_SERIE('roulette').attesa)} a testa`],
       ['<code>!furto @nome</code>', '<code>!rapina</code>', 'Provi a rubare. Se ti beccano, paghi.', `${ATTESA(DI_SERIE('furto').attesa)} a testa`],
+      ['<code>!colpo</code>', '<code>!heist</code>', 'Organizzi un colpo, o entri nella banda. <code>!colpo 100</code> per scegliere la posta.', `${ATTESA(DI_SERIE('colpo').attesa)} di canale`],
+      ['<code>!boss</code>', '—', 'Fa arrivare un boss da battere insieme. Solo mod e streamer.', '—'],
+      ['<code>!colpisci</code>', '<code>!attacca</code> <code>!hit</code>', 'Colpisci il boss di turno.', `${ATTESA(DI_SERIE('boss').attesa)} a testa`],
       ['<code>!regala @nome 50</code>', '<code>!dona</code>', 'Passi monete a qualcun altro.', '—'],
       ['<code>!duello @nome 50</code>', '—', 'Un duello con la posta: l\'altro accetta o rifiuta, e chi vince prende la posta dell\'altro.', `${ATTESA(DI_SERIE('duello').scadenza)} per rispondere`],
       ['<code>!accetta</code>', '—', 'Accetti la sfida con posta che ti hanno fatto.', '—'],
@@ -197,6 +200,20 @@ const GIOCHI = {
     { h3: 'Morra cinese' },
     { p: [
       `<code>!morra sasso</code>, <code>carta</code> o <code>forbice</code> contro il bot. Senza puntata è solo per ridere; con la puntata (<code>!morra carta 20</code>) se vinci ti torna ${CIFRA(DI_SERIE('morra').vincita / 100)} volte la puntata, se fai pari ti torna la puntata, se perdi la perdi. Di serie su 100 monete giocate ne tornano in media ${CIFRA(RESA('morra').perCento)}: è un gioco giusto, e nelle regole decidi quanto paga la vittoria.`,
+    ] },
+
+    { h3: 'Colpo di gruppo' },
+    { p: [
+      `Chi scrive <code>!colpo</code> organizza un colpo con ${CIFRA(DI_SERIE('colpo').posta)} monete di posta (o quante ne scrive: <code>!colpo 100</code>), e per ${ATTESA(DI_SERIE('colpo').raccolta)} chiunque può entrare nella banda allo stesso modo. Chi entra non viene salutato uno per uno: gli ingressi si dicono insieme, una riga ogni tanto.`,
+      `Poi si parte, se la banda è di almeno ${DI_SERIE('colpo').minimo} persone. Da soli si scappa ${DI_SERIE('colpo').riuscita} volte su 100, e ogni persona in più ne aggiunge ${DI_SERIE('colpo').perPersona}, fino a ${DI_SERIE('colpo').riuscitaMax}. Ognuno tira per sé: chi scappa riprende la posta e ${DI_SERIE('colpo').vincita - 100} su 100 in più, chi è preso la perde. Con la banda più grande, su 100 monete di posta ne tornano in media ${CIFRA(RESA('colpo').perCento)}.`,
+      'Le monete si muovono solo alla fine: entrare non toglie niente, e chi quando si parte non ha più la sua posta resta fuori senza perdere niente. Se il bot si riavvia nel mezzo il colpo salta, e nessuno ci rimette.',
+    ] },
+
+    { h3: 'Il boss da battere insieme' },
+    { p: [
+      `Un boss arriva quando un mod scrive <code>!boss</code>, con un raid di almeno ${DI_SERIE('boss').dopoRaid} persone, e se vuoi da solo ogni tanto mentre sei in diretta. Ha ${DI_SERIE('boss').vitaPerPersona} punti vita per ogni persona che ha scritto in chat negli ultimi dieci minuti: chi guarda in silenzio non conta, così il boss è alla portata di chi c'è davvero.`,
+      `La chat lo colpisce con <code>!colpisci</code>, un colpo ogni ${ATTESA(DI_SERIE('boss').attesa)} a testa, da ${DI_SERIE('boss').dannoMin} a ${DI_SERIE('boss').dannoMax} di danno. Ha ${ATTESA(DI_SERIE('boss').durata)} prima di scappare. Se cade, il bottino va a chi l'ha colpito in proporzione al danno: se tutti colpiscono uguale ognuno prende ${CIFRA(DI_SERIE('boss').bottino)}, e chi colpisce di più prende di più, fino a ${CIFRA(RESA('boss').massimo)} a testa. Se scappa non prende niente nessuno, ma nessuno perde niente.`,
+      'Sull\'overlay, con gli effetti accesi, compare la barra della vita che scende a ogni colpo, col tempo che resta. Nelle regole scegli anche una festa: se il boss cade, la chat va in solo emote per qualche minuto e poi torna com\'era.',
     ] },
 
     { h3: 'Abbracci, bacini e il cinque perfetto' },

@@ -289,6 +289,62 @@ function cinque(ev) {
   setTimeout(() => scena.remove(), 2800);
 }
 
+let bossScena = null;
+
+function bossVita(vita) {
+  const s = bossScena;
+  if (!s) return;
+  const v = Math.max(0, Math.min(s.vitaMax, Number(vita) || 0));
+  const quanto = (v / s.vitaMax * 100).toFixed(2) + '%';
+  s.carta.querySelector('.boss-vita').style.width = quanto;
+  s.carta.querySelector('.boss-scia').style.width = quanto;
+  s.carta.querySelector('.boss-conto').textContent = v + ' / ' + s.vitaMax;
+}
+
+function boss(ev) {
+  const box = document.getElementById('boss');
+  if (!box) return;
+  if (ev.azione === 'arriva') {
+    box.innerHTML = '';
+    const carta = document.createElement('div');
+    carta.className = 'boss-carta';
+    carta.innerHTML = '<div class="boss-testa"><strong class="boss-nome"></strong><span class="boss-conto"></span></div>'
+      + '<div class="boss-barra"><div class="boss-scia"></div><div class="boss-vita"></div></div>'
+      + '<div class="boss-tempo"></div><div class="boss-fine"></div>';
+    carta.querySelector('.boss-nome').textContent = String(ev.nome || '').slice(0, 80);
+    carta.querySelector('.boss-tempo').style.animationDuration = Math.max(1, Number(ev.durata) || 90) + 's';
+    box.appendChild(carta);
+    bossScena = { carta, vitaMax: Math.max(1, Number(ev.vitaMax) || 1), colpi: 0 };
+    bossVita(ev.vita);
+    return;
+  }
+  if (!bossScena) return;
+  const { carta } = bossScena;
+  if (ev.azione === 'colpo') {
+    bossVita(ev.vita);
+    carta.classList.remove('boss-colpito');
+    void carta.offsetWidth;
+    carta.classList.add('boss-colpito');
+    const d = document.createElement('span');
+    d.className = 'boss-danno';
+    d.textContent = '−' + Math.max(0, Number(ev.danno) || 0) + ' ' + String(ev.chi || '').slice(0, 25);
+    d.style.left = (6 + (bossScena.colpi++ * 37) % 64) + '%';
+    carta.appendChild(d);
+    setTimeout(() => d.remove(), 1200);
+    return;
+  }
+  if (ev.azione === 'fine') {
+    bossScena = null;
+    const tempo = carta.querySelector('.boss-tempo');
+    tempo.style.animationPlayState = 'paused';
+    carta.querySelector('.boss-fine').textContent = ev.vinto ? 'K.O.!' : 'FUGA!';
+    carta.classList.add(ev.vinto ? 'boss-ko' : 'boss-fuga');
+    try { window.SUONI_PRESET && window.SUONI_PRESET.suona(ev.vinto ? 'tada' : 'whoosh', ev.vinto ? 80 : 50); } catch (e) {  }
+    setTimeout(() => carta.classList.add('boss-via'), 2400);
+    setTimeout(() => carta.remove(), 3100);
+  }
+}
+
 const penCard = {};
 
 function penitenza(ev) {
@@ -676,6 +732,7 @@ function ricevi(m) {
     else if (dati.tipo === 'tema') caricaTema();
     else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
     else if (dati.tipo === 'cinque') { if (mostra('effetti')) cinque(dati); }
+    else if (dati.tipo === 'boss') { if (mostra('effetti')) boss(dati); }
     else if (dati.tipo === 'contatore') contatore(dati);
     else if (dati.tipo === 'immagine' || dati.tipo === 'video') { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
 }

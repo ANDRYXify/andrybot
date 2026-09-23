@@ -89,6 +89,11 @@ const CINQUE_NORMALE = ['🙌 {a} e {b} battono il cinque!', '🙌 Cinque fra {a
 const CINQUE_MOSCIO = ['🫳 {a} e {b} battono un cinque un po\' moscio... ma vale lo stesso.', '🫳 Cinque in ritardo fra {a} e {b}: meglio tardi che mai.'];
 const CINQUE_SOSPESO = ['🙋 {a} resta con la mano alzata... nessuno batte il cinque.', '🙋 La mano di {a} resta a mezz\'aria. Che freddo.'];
 
+const COLPO_RIUSCITO = ['💰 Colpo riuscito! La banda scappa col bottino.', '💰 Il caveau si apre e la banda è già lontana.'];
+const COLPO_FALLITO = ['🚨 Sirene! La banda finisce dentro al completo.', '🚨 L\'allarme suona subito: presi tutti.'];
+const COLPO_META = ['💰 Colpo a metà: qualcuno scappa, qualcuno no.', '🚨 La banda si divide nella fuga: non tutti ce la fanno.'];
+const BOSS = ['il Drago del Lag 🐉', 'la Piovra dello Spam 🐙', 'il Golem del Buffering 🗿', 'lo Scheletro del Ping Alto 💀', 'il Troll del Ritardo 👹', 'il Boss Finale 👾'];
+
 const ATTESA = (def, eti = T('Attesa fra due volte, a testa', 'Wait between two goes, each', 'Espera entre dos veces, cada uno')) =>
   ({ k: 'attesa', tipo: 'secondi', def, min: 1, max: 3600, eti });
 
@@ -143,12 +148,47 @@ export const CATALOGO = [
     resa: { tipo: 'passa' },
   },
   {
+    id: 'colpo', nome: T('Colpo di gruppo', 'Group heist', 'Golpe en grupo'),
+    param: [
+      { k: 'posta', tipo: 'monete', def: 50, min: 1, max: 100000, eti: T('Posta di chi entra senza dire quanto', 'Stake for whoever joins without saying how much', 'Apuesta de quien entra sin decir cuánto') },
+      { k: 'massimo', tipo: 'monete', def: 0, min: 0, max: 1000000, eti: T('Posta massima (0 = nessun limite)', 'Maximum stake (0 = no limit)', 'Apuesta máxima (0 = sin límite)') },
+      { k: 'raccolta', tipo: 'secondi', def: 60, min: 15, max: 600, eti: T('Tempo per entrare nella banda', 'Time to join the crew', 'Tiempo para entrar en la banda') },
+      { k: 'minimo', tipo: 'numero', def: 2, min: 1, max: 50, eti: T('Persone che servono perché parta', 'People needed for it to start', 'Personas necesarias para que empiece') },
+      { k: 'riuscita', tipo: 'percento', def: 35, min: 0, max: 100, eti: T('Quante volte su cento scappa chi lo fa da solo', 'How many times out of a hundred a lone robber escapes', 'Cuántas veces de cada cien escapa quien lo hace solo') },
+      { k: 'perPersona', tipo: 'percento', def: 5, min: 0, max: 50, eti: T('Quanto aggiunge ogni persona in più', 'How much each extra person adds', 'Cuánto añade cada persona más') },
+      { k: 'riuscitaMax', tipo: 'percento', def: 60, min: 0, max: 100, eti: T('Mai più di tante volte su cento', 'Never more than this many times out of a hundred', 'Nunca más de tantas veces de cada cien') },
+      { k: 'vincita', tipo: 'numero', def: 160, min: 100, max: 1000, eti: T('Chi scappa, ogni 100 di posta ne riprende (160 = +60%)', 'Whoever escapes gets back, for every 100 staked (160 = +60%)', 'Quien escapa recupera, por cada 100 apostadas (160 = +60%)') },
+      { k: 'attesa', tipo: 'secondi', def: 300, min: 1, max: 86400, eti: T('Attesa fra due colpi, in tutto il canale', 'Wait between two heists, channel-wide', 'Espera entre dos golpes, en todo el canal') },
+      { k: 'riuscito', tipo: 'elenco', def: COLPO_RIUSCITO, max: 20, lungo: 200, segnaposto: [], eti: T('Se scappano tutti', 'If everyone escapes', 'Si escapan todos') },
+      { k: 'fallito', tipo: 'elenco', def: COLPO_FALLITO, max: 20, lungo: 200, segnaposto: [], eti: T('Se li prendono tutti', 'If everyone is caught', 'Si los pillan a todos') },
+      { k: 'meta', tipo: 'elenco', def: COLPO_META, max: 20, lungo: 200, segnaposto: [], eti: T('Se va a metà', 'If it goes halfway', 'Si sale a medias') },
+    ],
+    resa: { tipo: 'colpo' },
+  },
+  {
     id: 'manche', nome: T('Manche', 'Rounds', 'Rondas'),
     param: [
       { k: 'premio', tipo: 'monete', def: 25, min: 0, max: 100000, eti: T('Premio a chi risponde per primo', 'Prize for the first right answer', 'Premio para quien responde primero'), vecchio: { punti: 'trivia', era: 25 } },
       { k: 'tipi', tipo: 'scelte', def: MANCHE_TIPI.map(([id]) => id), scelte: MANCHE_TIPI, eti: T('Nel giro delle manche automatiche', 'In the automatic rounds rotation', 'En la rotación de rondas automáticas') },
     ],
     resa: { tipo: 'manche', premio: 'premio' },
+  },
+  {
+    id: 'boss', nome: T('Boss da battere insieme', 'Boss to beat together', 'Jefe para vencer juntos'),
+    param: [
+      { k: 'vitaPerPersona', tipo: 'numero', def: 60, min: 10, max: 10000, eti: T('Punti vita per ogni persona che scrive in chat', 'Health points for each person writing in chat', 'Puntos de vida por cada persona que escribe en el chat') },
+      { k: 'minimo', tipo: 'numero', def: 3, min: 1, max: 100, eti: T('Contando almeno tante persone', 'Counting at least this many people', 'Contando al menos tantas personas') },
+      { k: 'dannoMin', tipo: 'numero', def: 5, min: 1, max: 10000, eti: T('Danno di un colpo, da', 'Damage of a hit, from', 'Daño de un golpe, desde') },
+      { k: 'dannoMax', tipo: 'numero', def: 15, min: 1, max: 10000, eti: T('Danno di un colpo, fino a', 'Damage of a hit, up to', 'Daño de un golpe, hasta') },
+      ATTESA(5, T('Attesa fra due colpi, a testa', 'Wait between two hits, each', 'Espera entre dos golpes, cada uno')),
+      { k: 'durata', tipo: 'secondi', def: 90, min: 20, max: 600, eti: T('Tempo per batterlo', 'Time to beat it', 'Tiempo para vencerlo') },
+      { k: 'bottino', tipo: 'monete', def: 20, min: 0, max: 100000, eti: T('Bottino a testa se cade: chi colpisce di più prende di più', 'Loot per person if it falls: whoever hits more gets more', 'Botín por cabeza si cae: quien golpea más se lleva más') },
+      { k: 'ogni', tipo: 'numero', def: 0, min: 0, max: 360, eti: T('Arriva da solo in diretta ogni tanti minuti (0 = solo con !boss)', 'Comes on its own while live every this many minutes (0 = only with !boss)', 'Llega solo en directo cada tantos minutos (0 = solo con !boss)') },
+      { k: 'dopoRaid', tipo: 'numero', def: 10, min: 0, max: 100000, eti: T('Arriva con un raid di almeno tante persone (0 = mai)', 'Comes with a raid of at least this many people (0 = never)', 'Llega con un raid de al menos tantas personas (0 = nunca)') },
+      { k: 'festa', tipo: 'numero', def: 0, min: 0, max: 10, eti: T('Se cade, minuti di festa in solo emote (0 = niente festa)', 'If it falls, minutes of emote-only party (0 = no party)', 'Si cae, minutos de fiesta en solo emotes (0 = sin fiesta)') },
+      { k: 'nomi', tipo: 'elenco', def: BOSS, max: 30, lungo: 80, segnaposto: [], eti: T('I boss', 'The bosses', 'Los jefes') },
+    ],
+    resa: { tipo: 'boss' },
   },
   {
     id: '8ball', nome: T('Palla magica', 'Magic 8-ball', 'Bola mágica'),
@@ -350,6 +390,21 @@ export function valutaResa(resa, v, contesto = {}) {
   if (resa.tipo === 'manche') {
     const ogni = Number(contesto.mancheMinuti) || 0;
     return { tipo: 'manche', perOra: ogni ? Math.round((Number(v[resa.premio]) || 0) * 60 / ogni) : 0 };
+  }
+  if (resa.tipo === 'colpo') {
+    // La banda piu' grande e' quella che rende di piu': con chi aggiunge
+    // qualcosa la riuscita sale fino al tetto, senza resta quella di partenza.
+    const p = Math.min(Number(v.riuscitaMax) || 0, Number(v.perPersona) > 0 ? 100 : Number(v.riuscita) || 0);
+    return { tipo: 'colpo', perCento: Math.round(p * (Number(v.vincita) || 0) / 10) / 10 };
+  }
+  if (resa.tipo === 'boss') {
+    // Il massimo di una persona sola: un colpo appena puo', per tutto il
+    // tempo, sempre col danno piu' alto. Il bottino va a danno fatto.
+    const colpi = Math.floor((Number(v.durata) || 0) / Math.max(1, Number(v.attesa) || 1)) + 1;
+    const danno = Math.max(Number(v.dannoMin) || 0, Number(v.dannoMax) || 0);
+    const massimo = Math.round((Number(v.bottino) || 0) * colpi * danno / Math.max(1, Number(v.vitaPerPersona) || 1));
+    const ogni = Number(v.ogni) || 0;
+    return { tipo: 'boss', massimo, ogni, perOra: ogni ? Math.round(massimo * 60 / ogni) : 0 };
   }
   return { tipo: resa.tipo };
 }

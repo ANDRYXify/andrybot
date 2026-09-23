@@ -26,6 +26,14 @@ test('di serie il banco vince sempre un po\'', () => {
   }
   assert.equal(resaDi('slot').perCento, 93.5);
   assert.equal(resaDi('roulette').perCento, 97.3);
+  assert.equal(resaDi('colpo').perCento, 96, 'il colpo, anche con la banda piu\' grande');
+});
+
+test('il boss: di serie arriva solo a mano, e ogni ora di boss automatico non rende piu\' della presenza', () => {
+  assert.equal(resaDi('boss').perOra, 0);
+  assert.equal(resaDi('boss').massimo, 95);
+  assert.ok(resaDi('boss', { giochiConf: { boss: { ogni: 60 } } }).perOra <= G.presenzaOraria({}));
+  assert.ok(resaDi('boss', { giochiConf: { boss: { ogni: 30 } } }).perOra > G.presenzaOraria({}), 'piu\' spesso si puo\', ma il pannello lo dice');
 });
 
 test('la pesca, al ritmo massimo, non rende piu\' della presenza', () => {

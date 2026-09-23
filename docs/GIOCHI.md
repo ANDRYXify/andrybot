@@ -195,6 +195,63 @@ Con la puntata di serie è **giusta**: su tre esiti uno paga il doppio, uno
 restituisce e uno perde, cioè 100 su 100. Nelle regole si decide quanto paga la
 vittoria, e la resa del pannello si confronta con i nove esiti possibili.
 
+## Il colpo di gruppo e il boss
+
+Due giochi collettivi, uno a pagamento e uno gratis, costruiti sulle stesse due
+regole dei duelli: le monete si muovono solo quando il gioco si decide, e il
+massimo che un gioco può rendere si conosce prima di giocarlo.
+
+### Il colpo (`!colpo`, `!heist`)
+
+Uno organizza, gli altri entrano con la loro posta per `raccolta` secondi, poi
+ognuno tira per sé. La riuscita di una banda di *n* persone è
+
+    p(n) = min(riuscitaMax, riuscita + (n − 1) · perPersona) / 100
+
+e chi scappa riprende la posta per `vincita` / 100. La resa del pannello è il
+**massimo** di p(n) · vincita su tutte le bande possibili: con `perPersona` > 0
+è `riuscitaMax · vincita / 100` (la banda grande tocca il tetto), altrimenti
+`min(riuscita, riuscitaMax) · vincita / 100`. Di serie 60 × 160 / 100 = **96**:
+la regola 1 vale anche per la banda più grande, e con una piccola si prende
+meno. Una prova confronta la resa col massimo del motore su trecento
+combinazioni di manopole.
+
+Chi entra non riceve una riga a testa: gli ingressi si dicono insieme, al più
+uno ogni cinque secondi. In una chat viva, venti persone in un minuto sarebbero
+venti righe del bot.
+
+### Il boss (`!boss`, `!colpisci`)
+
+**La vita è quella di chi scrive.** `vitaPerPersona` per ogni persona che ha
+scritto negli ultimi dieci minuti (dal registro dei messaggi, bot escluso), mai
+meno di `minimo` persone. Tararla sugli spettatori collegati renderebbe il boss
+imbattibile in ogni canale dove quasi tutti guardano in silenzio.
+
+**Ogni punto di danno vale lo stesso.** Chi colpisce prende
+`bottino × danno / vitaPerPersona`; il colpo finale conta solo la vita che
+restava, quindi la somma dei danni è la vita del boss e, se tutti colpiscono
+uguale, ognuno prende esattamente `bottino`.
+
+**Il massimo si conosce prima.** Una persona colpisce al più una volta ogni
+`attesa` per `durata` secondi, sempre col danno più alto:
+
+    massimo = bottino × (⌊durata / attesa⌋ + 1) × dannoMax / vitaPerPersona
+
+Di serie 20 × 19 × 15 / 60 = **95** a boss. Il boss automatico arriva a
+intervallo fisso (`ogni` minuti, non a caso, apposta), quindi il massimo all'ora
+è `massimo × 60 / ogni` e si confronta con la presenza come la pesca (regola 2):
+di serie il boss automatico è spento, con un boss all'ora sono 95 contro 120, e
+se lo si manda più spesso il pannello lo segna in rosso. I boss chiamati a mano
+e quelli dei raid non entrano nel conto, come le manche aperte a mano. Una prova
+fa colpire una persona sola al ritmo massimo e verifica che prenda proprio
+`massimo`, né di più né di meno.
+
+**Niente si perde.** Colpire non costa; se il boss scappa non si prende niente.
+Il boss automatico non parte se `!colpisci` è spento: sarebbe un boss che
+nessuno può battere. La festa in solo emote (se la accendi) passa dalle
+modalità della chat a tempo (docs/MODALITA-CHAT.md): se la chat era già in solo
+emote non si annuncia niente, e alla fine torna com'era.
+
 ## Le manche con lo stato: impiccato e più o meno
 
 Fino a qui una manche era una domanda e un controllo: il primo messaggio giusto
