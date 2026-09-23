@@ -29,7 +29,8 @@
 
   --contorno: #150910;
   --contorno-sp: 2px;
-  --posto-inchiostro: 8px;
+  --salto: 10px;
+  --posto-inchiostro: var(--salto);
   --alone-contorno: 0 0 0 0 transparent;
 
   --tratto-1: 1px 1.5px 1.5px 1px;
@@ -73,7 +74,7 @@
 
   --ombra-ink: 4px 4px 0 var(--contorno);
   --ombra-ink-alta: 6px 6px 0 var(--contorno);
-  --ombra-ink-salto: 10px 10px 0 var(--contorno);
+  --ombra-ink-salto: var(--salto) var(--salto) 0 var(--contorno);
   --ombra-ink-timbro: 1px 1px 0 var(--contorno);
   --retino: radial-gradient(var(--contorno) 1.1px, transparent 1.2px);
   --retino-passo: 6px 6px;
@@ -135,7 +136,8 @@
   --orlo-scritta: var(--contorno);
   --ombra-ink: 3px 3px 0 var(--contorno);
   --ombra-ink-alta: 5px 5px 0 var(--contorno);
-  --ombra-ink-salto: 9px 9px 0 var(--contorno);
+  --salto: 9px;
+  --ombra-ink-salto: var(--salto) var(--salto) 0 var(--contorno);
   --ombra-ink-timbro: 1px 1px 0 var(--contorno);
   --retino: radial-gradient(color-mix(in srgb, var(--acc) 80%, #fff) 1.1px, transparent 1.2px);
   --retino-forza: .2;

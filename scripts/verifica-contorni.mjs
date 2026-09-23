@@ -74,14 +74,23 @@ let chromium;
 try { ({ chromium } = await import(PLAYWRIGHT)); }
 catch { console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 
+// Quanto sporge l'inchiostro, LATO PER LATO. Un'ombra a timbro «3px 3px 0»
+// sporge a destra e sotto, e sopra e a sinistra niente: contarla uguale su tutti
+// e quattro i lati faceva vedere rasato un tasto che in cima non ha niente da
+// rasare. Il sfocato e l'allargamento sporgono da tutte le parti; un'ombra
+// «inset» sta dentro e non sporge affatto. Il contorno di messa a fuoco gira
+// tutto intorno.
 const CACCIA = `(() => {
   const est = (o) => {
-    let m = 0;
+    const m = { su: 0, giu: 0, sx: 0, dx: 0 };
     for (const parte of String(o).split(/,(?![^(]*\\))/)) {
+      if (/\\binset\\b/.test(parte)) continue;
       const n = (parte.match(/-?[\\d.]+px/g) || []).map(parseFloat);
       if (n.length < 2) continue;
-      const [dx, dy, blur = 0, spread = 0] = n;
-      m = Math.max(m, Math.abs(dx) + blur + spread, Math.abs(dy) + blur + spread);
+      const [x, y, blur = 0, spread = 0] = n;
+      const a = blur + spread;
+      m.sx = Math.max(m.sx, a - x); m.dx = Math.max(m.dx, a + x);
+      m.su = Math.max(m.su, a - y); m.giu = Math.max(m.giu, a + y);
     }
     return m;
   };
@@ -93,8 +102,10 @@ const CACCIA = `(() => {
     if (s.visibility === 'hidden' || s.display === 'none') continue;
     const r = e.getBoundingClientRect();
     if (r.width < 2 || r.height < 2) continue;
-    const ink = Math.max(est(s.boxShadow), s.outlineStyle !== 'none' ? parseFloat(s.outlineWidth) || 0 : 0);
-    const box = { top: r.top - ink, left: r.left - ink, right: r.right + ink, bottom: r.bottom + ink };
+    const om = est(s.boxShadow);
+    const anello = s.outlineStyle !== 'none' ? (parseFloat(s.outlineWidth) || 0) + Math.max(0, parseFloat(s.outlineOffset) || 0) : 0;
+    const box = { top: r.top - Math.max(om.su, anello), left: r.left - Math.max(om.sx, anello),
+      right: r.right + Math.max(om.dx, anello), bottom: r.bottom + Math.max(om.giu, anello) };
     for (let a = e.parentElement; a && a !== document.documentElement; a = a.parentElement) {
       const sa = getComputedStyle(a);
       if (sa.overflowX === 'visible' && sa.overflowY === 'visible') continue;
@@ -113,6 +124,12 @@ const CACCIA = `(() => {
       const t = Math.max(dx, dy);
       if (t > SOGLIA_JS && t <= TETTO_JS) { fuori.push({ chi: nome(e), da: nome(a), px: Math.round(t * 10) / 10 }); break; }
       if (t > TETTO_JS) break;
+      // Quello che passa questo ritaglio e' al piu' il suo rettangolo: oltre, non
+      // si vede comunque. Senza stringere, una riga fatta scorrere dentro un
+      // pannello che scorre risultava «rasata» dalla scena che contiene il
+      // pannello, mentre si raggiunge scorrendo, come deve.
+      if (sa.overflowX !== 'visible') { box.left = Math.max(box.left, ra.left - margine); box.right = Math.min(box.right, ra.right + margine); }
+      if (sa.overflowY !== 'visible') { box.top = Math.max(box.top, ra.top - margine); box.bottom = Math.min(box.bottom, ra.bottom + margine); }
     }
   }
   return fuori;

@@ -13,9 +13,12 @@
 // devono COMBACIARE, e questo cancello le confronta a una a una.
 //
 // In piu' misura i contrasti veri (WCAG): una tavolozza si puo' cambiare, ma
-// non fino a rendere illeggibile una scritta.
+// non fino a rendere illeggibile una scritta. E controlla che ogni var(--nome)
+// abbia chi lo definisce: un nome che non esiste non cambia colore, fa sparire
+// la regola.
 //
 // Uso: node scripts/verifica-tavolozza.mjs
+//      node scripts/verifica-tavolozza.mjs --selftest  (un nome senza padrone: deve diventare rosso)
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, extname } from 'node:path';
@@ -213,6 +216,46 @@ for (const tema of ['chiaro', 'scuro']) {
   if (!/\.carta h2 \{ font-family: var\(--mano\)/.test(st)) {
     guai.push('style.css: i titoli delle carte non parlano con la voce del marchio');
   }
+}
+
+// ── Z. un nome che nessuno definisce non e' un colore ────────────────────────
+// `border: 1px solid var(--bordo)`, con --bordo che non esiste, non da' un
+// bordo di un altro colore: la dichiarazione intera diventa invalida e il bordo
+// SPARISCE. Nessun errore e nessun avviso, e cosi' i tasti delle Grafiche sono
+// rimasti senza contorno, in mezzo a un pannello tutto disegnato a inchiostro.
+// Quindi ogni var(--nome) senza ripiego deve avere chi lo definisce: nel CSS
+// (`--nome:`), in uno stile scritto dal pannello (`--nome:` dentro una stringa)
+// o con setProperty('--nome').
+const SENZA_PADRONE = process.argv.includes('--selftest') ? '.prova-senza-padrone { color: var(--nessuno-mi-definisce); }' : '';
+{
+  // Un file .html e' una pagina a se': i nomi che definisce valgono solo per lei.
+  // Il CSS e il JavaScript del pannello e delle pagine invece si mescolano, e
+  // quello che uno definisce l'altro lo puo' usare.
+  const definiti = (testo, dove) => {
+    for (const m of testo.matchAll(/(--[a-zA-Z0-9-]+)\s*:/g)) dove.add(m[1]);
+    for (const m of testo.matchAll(/setProperty\(\s*['"`](--[a-zA-Z0-9-]+)['"`]/g)) dove.add(m[1]);
+  };
+  const usati = (nomeFile, testo) => {
+    // Dentro <code> un nome e' testo che si legge, non una regola: la scheda del
+    // CSS della pagina link elenca i nomi che la pagina definisce (linkpagina.js).
+    const regole = extname(nomeFile) === '.css' ? testo : testo.replace(/<code>[^<]*<\/code>/g, '');
+    return [...regole.matchAll(/var\(\s*(--[a-zA-Z0-9-]+)\s*\)/g)].map((m) => m[1]);
+  };
+  const fonti = readdirSync(PUB).filter((x) => ['.css', '.js', '.html'].includes(extname(x)))
+    .map((nomeFile) => ({ nomeFile, testo: readFileSync(join(PUB, nomeFile), 'utf8') + (nomeFile === 'style.css' ? SENZA_PADRONE : '') }));
+  const comuni = new Set();
+  for (const { nomeFile, testo } of fonti) if (extname(nomeFile) !== '.html') definiti(testo, comuni);
+  const orfani = new Map();
+  for (const { nomeFile, testo } of fonti) {
+    const qui = new Set(comuni);
+    if (extname(nomeFile) === '.html') definiti(testo, qui);
+    for (const nome of usati(nomeFile, testo)) {
+      if (qui.has(nome)) continue;
+      if (!orfani.has(nome)) orfani.set(nome, new Set());
+      orfani.get(nome).add(nomeFile);
+    }
+  }
+  for (const [nome, dove] of orfani) guai.push(`var(${nome}) in ${[...dove].join(', ')}: nessuno lo definisce, e la regola che lo usa sparisce`);
 }
 
 if (guai.length) {

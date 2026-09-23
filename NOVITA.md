@@ -69,6 +69,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nuovo nelle Grafiche: con «Metti nella storia» la grafica che vedi va nella tua storia di Instagram, già in verticale. Se Instagram non è collegato, il tasto per collegarlo è lì. [vai: grafiche]
 - La storia «Live ora» può partire da sola quando vai in diretta su Twitch: accendila nelle Grafiche, nel riquadro della storia, e se non parte te lo dico. [vai: grafiche]
 - Settimana e «Live ora» hanno ognuna il suo titolo: quello della settimana non finisce più sulla grafica della diretta. [vai: grafiche]
+- Nelle Grafiche i tasti hanno di nuovo il contorno, come nel resto del pannello, e in Statistiche il periodo scelto non perde il bordo. [vai: grafiche]
 
 ## 2026-09-19
 

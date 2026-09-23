@@ -450,7 +450,11 @@ l'attributo `style` resti uno solo.
 
 Il tema disegna a inchiostro: ogni cosa ha un contorno pieno e un'ombra dura, e
 al passaggio del mouse si solleva di un paio di pixel. Tutto questo sta **fuori**
-dalla scatola dell'elemento. `--posto-inchiostro` (8px) dice quanto sporge.
+dalla scatola dell'elemento. `--posto-inchiostro` dice quanto sporge: è il salto
+dell'ombra al passaggio del mouse (`--salto`, 10px, 9 nel tema scuro), la più
+grande che il tema disegna. È lo stesso numero scritto una volta sola: prima il
+posto era 8px e il salto 10, e una carta sollevata in una colonna che scorre
+perdeva mezzo pixel d'ombra sul bordo.
 
 **Chi ritaglia deve lasciare quel posto.** Vale per l'`overflow: hidden` messo
 per far funzionare una fisarmonica e per le colonne che scorrono: sono difetti

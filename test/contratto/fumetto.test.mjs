@@ -27,10 +27,17 @@ const SCALA = ['--ombra-ink-timbro', '--ombra-ink', '--ombra-ink-alta', '--ombra
 function scostamenti(blocco) {
   const i = tema.indexOf(blocco);
   const testo = tema.slice(i, tema.indexOf('}', i));
+  // Il salto e' scritto una volta sola (--salto) e l'ombra lo usa: si legge il
+  // numero dal nome, nello stesso blocco del tema.
+  const numero = (nome) => {
+    const m = testo.match(new RegExp(`${nome}:\\s*(?:(-?\\d+(?:\\.\\d+)?)px|var\\((--[a-z-]+)\\))`));
+    if (!m) return undefined;
+    return m[1] !== undefined ? Number(m[1]) : numero(m[2]);
+  };
   const out = {};
   for (const n of SCALA) {
-    const m = testo.match(new RegExp(`${n}:\\s*(-?\\d+(?:\\.\\d+)?)px`));
-    if (m) out[n] = Number(m[1]);
+    const v = numero(n);
+    if (v !== undefined) out[n] = v;
   }
   return out;
 }

@@ -297,6 +297,7 @@ body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .
   pointer-events: none;
 }
 .tendina-btn {
+  position: relative;
   font: inherit; color: var(--testo); background: var(--surface); cursor: pointer;
   border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-2);
   border-radius: var(--ang-mano); padding: .42rem 2rem .42rem .6rem;
@@ -311,7 +312,7 @@ body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .
   background-repeat: no-repeat;
 }
 @media (hover: hover) {
-  .tendina-btn:hover { translate: -1px -2px; box-shadow: 5px 6px 0 var(--contorno); }
+  .tendina-btn:hover { translate: -1px -2px; box-shadow: 5px 6px 0 var(--contorno); z-index: 3; }
 }
 .tendina-btn:focus-visible { outline: var(--contorno-sp) solid var(--acc); outline-offset: 2px; }
 .tendina-btn[aria-expanded="true"] { translate: 1px 2px; box-shadow: 1px 1px 0 var(--contorno); }
@@ -1516,11 +1517,11 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 .ovl-liv-vuoto { margin: .4rem .3rem; font-size: .72rem; }
 .ovl-liv-agg {
   display: flex; align-items: center; gap: .45rem; width: 100%; margin-top: 3px;
-  padding: .45rem; border-radius: var(--r-s); border: 1px dashed var(--border);
+  padding: .45rem; border-radius: var(--r-s); border: 1px dashed var(--contorno);
   background: transparent; color: var(--testo-2); font: inherit; font-size: .78rem; cursor: pointer;
-  transition: border-color .18s ease, color .18s ease;
+  transition: box-shadow .18s ease, color .18s ease;
 }
-@media (hover: hover) { .ovl-liv-agg:hover { border-color: var(--acc-bordo); color: var(--testo); } }
+@media (hover: hover) { .ovl-liv-agg:hover { color: var(--testo); box-shadow: var(--ombra-ink-timbro); } }
 .ovl-agg { display: grid; gap: 2px; margin-top: 4px; padding: 5px; border: 1px solid var(--border-2); border-radius: var(--r-s); background: var(--surface-2); }
 .ovl-agg[hidden] { display: none; }
 .ovl-agg-tit { margin: .25rem .3rem .1rem; font-size: .62rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--testo-3); }
@@ -1776,6 +1777,10 @@ body.con-salva { padding-bottom: 92px; }
 }
 @media (hover: hover) {
 .fd-togli:hover { color: var(--rosso); }
+}
+.tg-amico button, .fd-togli, .scudo-chip-x {
+  border: 1px solid var(--contorno); border-radius: 50%; background: var(--surface);
+  box-shadow: var(--ombra-ink-timbro);
 }
 .fd-nuova { margin-top: 10px; }
 .fd-nuova .suggerimento { margin-top: .45rem; }
