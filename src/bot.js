@@ -923,6 +923,11 @@ export class BotManager {
     if (vaglio?.rifiuta) { parla(vaglio.messaggio); return; }
     if (!suo && !vaglio?.salta) {
     const cmdMsg = vaglio?.testo && vaglio.testo !== msg.text ? { ...msg, text: vaglio.testo } : msg;
+    // lo scudo: !permetti nome, l'uscita dal trattenimento degli account nuovi.
+    // Solo su Twitch, dove il trattenimento esiste.
+    if (!msg.piattaforma || msg.piattaforma === 'twitch') {
+      this.antibot?.tryComando?.(cmdMsg, parla)?.catch((e) => log.error(`#${login} scudo:`, e?.message || e));
+    }
     // minigiochi: !dado, !slot, !trivia, ...
     try { games.tryGame(cmdMsg, parla); }
     catch (e) { log.error(`#${login} giochi:`, e?.message || e); }

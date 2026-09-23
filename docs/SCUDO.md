@@ -154,6 +154,41 @@ nel confronto**: venti persone che scrivono "lol" o una emote insieme sono una
 chat viva, non un attacco. Quattro bocche diverse sullo stesso messaggio lungo
 entro mezzo minuto alzano l'assetto e il messaggio viene tolto.
 
+## Gli account appena nati: trattenere non è cacciare
+
+Twitch ha una modalità «Restricted» (i messaggi di un sospetto li vedono solo i
+mod) che non ha un'API. L'equivalente più vicino che un bot può fare è
+trattenere: cancellare i messaggi di chi ha l'account da meno di `chatMinOre`
+ore (24 di serie, 72 a «difesa», 168 a «serrata») e non è sub, VIP o mod.
+
+Trattenere senza un'uscita però è cacciare. È successo così: un account nuovo e
+legittimo scrive, il messaggio sparisce, l'avviso dice «Mod, se è ok fatelo
+riscrivere». Un mod gli dice di riscrivere, lui riscrive, e sparisce di nuovo,
+con un altro avviso che lo nomina davanti a tutti. Alla terza se ne va. Il
+«fatelo riscrivere» prometteva una cosa che **non esisteva**: il controllo
+guardava l'età dell'account a ogni messaggio, e l'età non cambia in un minuto.
+
+Le regole adesso, per costruzione:
+
+- **L'uscita esiste ed è in chat**, dove sono i mod quando serve: `!permetti
+  nome` (mod o streamer) mette la persona fra gli esenti, la stessa lista del
+  «permetti» della console. Da lì scrive sempre, e il bot lo conferma. È nel
+  registro dei comandi, si può rinominare ma **non spegnere**: l'avviso la
+  promette, e una promessa spenta sarebbe di nuovo il difetto. L'avviso dice il
+  nome che il comando ha in quel canale.
+- **L'avviso si dice una volta per persona**, non a ogni messaggio. Ripeterlo è
+  spam per la chat e gogna per chi scrive. Vale anche per la sola segnalazione.
+- **Un messaggio con i Bit non si tocca**, da nessuna delle tre difese: pagare è
+  un fatto che un bot non produce, e cancellarlo vorrebbe dire cancellare soldi.
+  Un treno di cheer tutti uguali è una festa, non un coro.
+- **Il follow non esenta.** Il manuale lo prometteva, il codice non l'ha mai
+  fatto, ed è giusto il codice: seguire è un clic, e i follow-bot lo fanno. Il
+  manuale adesso dice il vero.
+- **L'assetto stringe, non allarga.** A «osservo» la scelta dello streamer di
+  trattenere diventava una semplice segnalazione. Adesso, sotto «difesa», resta
+  quello che ha scelto lo streamer; se il controllo l'ha acceso l'assetto
+  («allerta»), segnala.
+
 ## Il difetto che rendeva inutile metà del lavoro
 
 Twitch ha due azioni che sembrano equivalenti e non lo sono affatto:

@@ -705,7 +705,8 @@ const MODERAZIONE = {
 
     { h3: '4. Gli account appena creati che scrivono' },
     { p: ['Twitch ha una modalità «Restricted» che nasconde i messaggi dei sospetti a tutti tranne i mod, ma <strong>non ha un\'API</strong>: nessun bot può accenderla. Questa è l\'equivalente più vicino che si può fare da fuori.'] },
-    { p: ['Spento di base. Se acceso: chi ha l\'account da meno di <strong>24 ore</strong> (da 1 a 720) e non segue, non è sub, VIP o mod, si vede il messaggio <strong>trattenuto</strong> — oppure solo segnalato ai mod, se preferisci lasciarlo passare.'] },
+    { p: ['Spento di base. Se acceso: chi ha l\'account da meno di <strong>24 ore</strong> (da 1 a 720) e non è sub, VIP o mod, si vede il messaggio <strong>trattenuto</strong>, oppure solo segnalato ai mod se preferisci lasciarlo passare. Il follow non basta: è un clic, e i follow-bot lo fanno.'] },
+    { p: ['L\'avviso in chat si dice <strong>una volta per persona</strong>, non a ogni messaggio, e dice ai mod come farla scrivere: <code>!permetti nome</code>. Da lì quella persona scrive sempre, e la ritrovi fra gli esenti. Un messaggio con i <strong>Bit</strong> non si trattiene mai: è pagato.'] },
 
     { h3: '5. I sei livelli' },
     { p: ['Lo scudo ha sei livelli — <strong>calma</strong>, <strong>osservo</strong>, <strong>allerta</strong>, <strong>difesa</strong>, <strong>attacco</strong>, <strong>serrata</strong> — e di base si alza e si riabbassa da solo, accendendo anche lo Shield Mode di Twitch quando serve. Non devi essere davanti al computer perché funzioni: è il punto.'] },

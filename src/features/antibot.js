@@ -36,6 +36,7 @@ import * as LIV from './livelli.js';
 import * as bon from './bonifica.js';
 import * as rep from './reputazione.js';
 import { config } from '../config.js';
+import { nomeIn } from './comandi-registro.js';
 
 const log = makeLog('antibot');
 
@@ -64,8 +65,9 @@ export const ANTIBOT_DEFAULT = {
   // 4. account NUOVISSIMI in chat. La modalità "Restricted" di Twitch (messaggi
   // visibili solo ai mod) NON ha un'API: un bot non può attivarla. Qui facciamo
   // l'equivalente automatico più vicino: se chi scrive ha l'account da meno di
-  // "chatMinOre" e non segue/non è sub/VIP/mod, il messaggio viene TRATTENUTO
-  // (eliminato) o solo SEGNALATO ai mod.
+  // "chatMinOre" e non è sub/VIP/mod, non ha messo Bit e non è fra gli esenti,
+  // il messaggio viene TRATTENUTO (eliminato) o solo SEGNALATO ai mod. Il follow
+  // non conta: e' un clic, e i follow-bot lo fanno. L'uscita e' `!permetti`.
   chatNuovi: false,
   chatMinOre: 24,              // "appena creato" = più giovane di tante ore
   chatNuoviAzione: 'elimina',  // 'elimina' (trattieni) | 'segnala' (lascia, avvisa)
@@ -197,6 +199,21 @@ const raffiche = new Map();          // channel → fino a quando siamo "in alla
 // La data di nascita di un account non cambia mai: la si chiede una volta e la
 // si tiene. Chiave = userId. Potato quando è troppo grande.
 const nascita = new Map();           // userId → { creato: ms|0 }
+// A chi l'avviso del trattenimento e' gia' stato detto: una volta per persona.
+// Ripeterlo a ogni messaggio e' spam per la chat e gogna per chi scrive.
+const avvisati = new Map();          // channel → Set(userId)
+const AVVISATI_MAX = 5000;
+function primoAvviso(channel, userId) {
+  let v = avvisati.get(channel);
+  if (!v) { v = new Set(); avvisati.set(channel, v); }
+  if (v.has(userId)) return false;
+  if (v.size >= AVVISATI_MAX) v.delete(v.values().next().value);
+  v.add(userId);
+  return true;
+}
+// Quanti nomi puo' tenere la lista degli esenti: lo stesso tetto del pannello.
+export const ESENTI_MAX = 200;
+const NOME_TWITCH = /^[a-z0-9_]{2,30}$/;
 
 function segnaFollow(channel, cfg) {
   const ora = Date.now();
@@ -212,7 +229,7 @@ export const inRaffica = (channel) => (raffiche.get(channel) || 0) > Date.now();
 // Solo per il simulatore e le prove: lo scudo tiene le sue finestre in memoria
 // e due attacchi giocati di fila nello stesso processo si mescolerebbero.
 export function azzeraStati() {
-  finestre.clear(); raffiche.clear(); nascita.clear(); raidRecenti.clear();
+  finestre.clear(); raffiche.clear(); nascita.clear(); raidRecenti.clear(); avvisati.clear();
   finestreLunghe.clear(); cori.clear(); ondate.clear(); ritmi.clear();
   for (const [, a] of assetti) { if (a.timer) clearTimeout(a.timer); }
   assetti.clear();
@@ -779,9 +796,11 @@ export class AntiBot {
       presenze: a.guardaPresenze ? true : base.presenze,
       // Da «difesa» in su i messaggi degli account appena nati si trattengono;
       // a «allerta» si segnalano soltanto, che è la differenza fra guardare e
-      // mettere le mani addosso.
+      // mettere le mani addosso. L'assetto STRINGE e non allarga: se il
+      // trattenimento l'aveva acceso lo streamer, sotto «difesa» resta la sua
+      // scelta; se lo accende l'assetto, sotto «difesa» segnala.
       chatNuovi: a.segnalaNuovi ? true : base.chatNuovi,
-      chatNuoviAzione: a.trattieniNuovi ? 'elimina' : 'segnala',
+      chatNuoviAzione: a.trattieniNuovi ? 'elimina' : (base.chatNuovi ? base.chatNuoviAzione : 'segnala'),
       chatMinOre: Math.max(Number(base.chatMinOre || 24), a.oreMinime),
       rafficaChiudiChat: a.serranda ? true : base.rafficaChiudiChat,
       // NON si accende controllaAccount: una chiamata a Twitch per ogni follow,
@@ -1180,6 +1199,10 @@ export class AntiBot {
     const cfg = this.cfg(channel);
     if (!cfg.attivo) return false;
     if (msg.isBroadcaster || msg.isMod || msg.isVip || msg.isSub) return false;
+    // Un messaggio con Bit e' pagato: e' un fatto che un bot non produce, e
+    // cancellarlo vorrebbe dire cancellare soldi. Non lo tocca nessuna delle tre
+    // difese, nemmeno il coro: un treno di cheer tutti uguali e' una festa.
+    if (Number(msg.bits) > 0) return false;
     const login = norm(msg.user || msg.username);
     if (!login || BUONI.has(login) || (cfg.esenti || []).map(norm).includes(login)) return false;
 
@@ -1230,15 +1253,19 @@ export class AntiBot {
       if (ore < Number(cfg.chatMinOre || 24)) {
         if (cfg.chatNuoviAzione === 'segnala') {
           log.warn(`#${channel} account nuovissimo in chat: @${login} (${Math.floor(ore)}h)`);
-          if (cfg.avvisa) this.say?.(channel, `👀 @${login} ha un account nuovo di zecca (${Math.floor(ore)}h): occhio, mod.`);
+          if (cfg.avvisa && primoAvviso(channel, msg.userId)) this.say?.(channel, `👀 @${login} ha un account nuovo di zecca (${Math.floor(ore)}h): occhio, mod.`);
           registra(channel, { login, userId: msg.userId, azione: 'chat-segnala', motivo: `account di ${Math.floor(ore)}h che scrive`, esito: 'in-attesa', stato: 'aperto' });
           return false;                       // lasciato in chat, solo segnalato
         }
         log.info(`#${channel} messaggio trattenuto: @${login} (account di ${Math.floor(ore)}h)`);
-        if (cfg.avvisa && !this._aVuoto(cfg)) this.say?.(channel, `🛡️ Messaggio di @${login} trattenuto: account creato da poco. Mod, se è ok fatelo riscrivere.`);
+        // L'avviso dice a chi scrive cosa succede, e ai mod COME farlo scrivere,
+        // col nome che il comando ha in questo canale. Una volta per persona.
+        if (cfg.avvisa && !this._aVuoto(cfg) && primoAvviso(channel, msg.userId)) {
+          this.say?.(channel, `🛡️ @${login}, il tuo messaggio aspetta un mod: l'account è nuovo. Mod, se va bene: !${nomeIn(channel, 'permetti')} ${login}`);
+        }
         // «Limita» e non «cancella»: il messaggio non passa, ma la persona
-        // resta in chat e i mod possono farla riscrivere. È la differenza fra
-        // trattenere e punire, e va scritta anche nel registro.
+        // resta in chat e un mod la fa scrivere con `!permetti`. È la
+        // differenza fra trattenere e punire, e va scritta anche nel registro.
         await this.esecutore.esegui(verdetto({
           canale: channel, login, userId: msg.userId, azione: AZIONI.LIMITA,
           messaggio: msg.id, motivi: [`account di ${Math.floor(ore)}h`], origine: 'chat-nuovi',
@@ -1248,6 +1275,37 @@ export class AntiBot {
       }
     }
     return false;
+  }
+
+  // ── !permetti: l'uscita dal trattenimento ─────────────────────────────────
+  //
+  // Un mod o lo streamer lo scrive, e la persona va negli ESENTI: la stessa
+  // lista del «permetti» della console, quindi da quel momento scrive sempre,
+  // e lo streamer la ritrova nel pannello se vuole toglierla. Il nome arriva
+  // gia' tradotto dal vaglio dei comandi (che risponde lui a chi non e' mod).
+  async tryComando(msg, say) {
+    const testo = String(msg?.text || '').trim();
+    if (!/^!permetti(\s|$)/i.test(testo)) return false;
+    if (!(msg.isMod || msg.isBroadcaster)) return true;
+    const ch = norm(msg.channel);
+    if (!this.cfg(ch).attivo) return false;
+    const nome = nomeIn(ch, 'permetti');
+    const chi = norm(String(testo.split(/\s+/)[1] || '').replace(/^@/, ''));
+    if (!NOME_TWITCH.test(chi)) { say(`🛡️ Si usa così: !${nome} nome`); return true; }
+    const s = streamers.get(ch);
+    const ab = { ...(s?.settings?.antibot || {}) };
+    const lista = (Array.isArray(ab.esenti) ? ab.esenti : []).map(norm).filter(Boolean);
+    if (!lista.includes(chi)) {
+      if (lista.length >= ESENTI_MAX) {
+        say(`🛡️ La lista di chi può sempre scrivere è piena (${ESENTI_MAX}): togline qualcuno dal pannello, nello Scudo.`);
+        return true;
+      }
+      lista.push(chi);
+      streamers.setSettings(ch, { ...(s?.settings || {}), antibot: { ...ab, esenti: lista } });
+    }
+    registra(ch, { login: chi, azione: 'permesso', motivo: `fatto scrivere da @${norm(msg.user)}`, esito: 'fatto' });
+    say(`✓ @${chi} ora può scrivere.`);
+    return true;
   }
 
   // ── Il giro delle presenze ────────────────────────────────────────────────

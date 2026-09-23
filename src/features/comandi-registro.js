@@ -45,6 +45,7 @@ export const MODULI = {
   musica: { nome: ['Richieste musicali', 'Music requests', 'Peticiones musicales'], file: 'songrequest.js', acceso: () => true },
   sito: { nome: ['Giochi del sito', 'Site games', 'Juegos del sitio'], file: 'gamesbridge.js', acceso: (s) => !!(s.giochiSito?.attivo) },
   discord: { nome: ['Ruoli su Discord', 'Discord roles', 'Roles en Discord'], file: 'discord-collega.js', acceso: () => true },
+  scudo: { nome: ['Scudo', 'Shield', 'Escudo'], file: 'antibot.js', acceso: (s) => !!s.antibot?.attivo },
 };
 
 // AGGIUNGERE UN COMANDO E' UNA RIGA. Questa e' la forma completa: quel che non
@@ -186,6 +187,13 @@ export const COMANDI = [
   { id: 'song', modulo: 'musica', nomi: ['song', 'brano', 'np', 'nowplaying'], titolo: ['Cosa sta suonando', 'What\'s playing', 'Qué está sonando'],
     cosa: ['Dice il brano in riproduzione.', 'Says the track that is playing.', 'Dice el tema que está sonando.'] },
 
+  // L'USCITA DAL TRATTENIMENTO. Lo scudo trattiene i messaggi degli account
+  // appena nati, e l'avviso in chat dice ai mod come farli scrivere: questo e'
+  // quel come. Non si spegne, perche' l'avviso lo promette; si rinomina, e
+  // l'avviso dice il nome che ha nel canale.
+  { id: 'permetti', modulo: 'scudo', nomi: ['permetti'], titolo: ['Fai scrivere un account nuovo', 'Let a new account chat', 'Deja escribir a una cuenta nueva'], chi: 'mod', spegnibile: false,
+    cosa: ['Lo scudo trattiene i messaggi degli account appena creati. Con !permetti nome un mod lo fa scrivere, da lì in poi: finisce fra gli esenti.', 'The shield holds messages from brand new accounts. With !permetti name a mod lets them chat from then on: they join the exempt list.', 'El escudo retiene los mensajes de las cuentas recién creadas. Con !permetti nombre un mod la deja escribir desde ese momento: pasa a la lista de exentos.'] },
+
   { id: 'ag', modulo: 'sito', nomi: ['ag', 'agentify'], titolo: ['Giochi del sito', 'Site games', 'Juegos del sitio'],
     cosa: ['Manda il comando ai giochi di andryxify.it.', 'Sends the command to the andryxify.it games.', 'Manda el comando a los juegos de andryxify.it.'] },
 ];
@@ -209,6 +217,13 @@ export function nomiDi(c, scelta = {}) {
   if (!rinominabile(c)) return c.nomi;
   const mio = String(scelta.nome || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20);
   return mio ? [mio] : c.nomi;
+}
+
+// Come si chiama un comando in QUEL canale: quello che dice la chat quando lo
+// nomina deve essere quello che la chat puo' scrivere.
+export function nomeIn(channel, id) {
+  const c = PER_ID.get(id);
+  return c ? nomiDi(c, scelte(channel)[id] || {})[0] : id;
 }
 
 export function livelloDi(c, scelta = {}) {

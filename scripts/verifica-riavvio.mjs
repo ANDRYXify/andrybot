@@ -37,6 +37,7 @@ const DECISO = [
   ['features/penitenze.js', 'attive', 'resta', 'il premio a punti canale e\' gia\' stato pagato: la sfida non puo\' sparire a meta\''],
   ['features/antibot.js', 'assetti', 'resta', 'la serranda: quello che il bot ha chiuso su Twitch va riaperto, il livello di allarme no'],
   ['features/antibot.js', 'ritmi', 'resta', 'il ritmo del canale si impara in trenta follow, e in memoria non ci arrivava mai'],
+  ['features/antibot.js', 'avvisati', 'volatile', 'a chi l\'avviso del trattenimento e\' gia\' stato detto: dopo un riavvio, al massimo, lo si ridice una volta'],
 
   ['features/battute.js', 'inAscolto', 'volatile', 'la finestra di 45 secondi in cui si contano le risate: perderne una a meta\' non toglie niente a nessuno, e la battuta esce di nuovo un\'altra volta'],
   ['features/console.js', '_ponti', 'volatile', 'le pagine di regia di guardia in questo momento: sono CONNESSIONI aperte, quindi muoiono col processo per definizione — e non e\' un dato che si possa salvare, perche\' dopo un riavvio quelle connessioni non esistono piu\'. Chi era di guardia si riannuncia da se\' quando il browser riapre il flusso.'],
