@@ -107,7 +107,7 @@ import * as persona from '../ai/persona.js';
 import * as brainpy from '../ai/brainpy.js';
 import { impronta, combacia } from '../segreti.js';
 import { redeemPass } from './gate.js';
-import { eLoginNostro, loginKick, loginYoutube, loginDiscord, loginSu, nomeSu, piattaformaDi, conDiretta, PIATTAFORME } from '../identita.js';
+import { eLoginNostro, loginKick, loginYoutube, loginDiscord, loginSu, nomeSu, piattaformaDi, conDiretta, urlCanale, PIATTAFORME } from '../identita.js';
 import { provaModerazione, verificabile } from '../moderatori/prova.js';
 import { creaGuscio } from './vetrina.js';
 import { creaImpronte, montaStatici } from './impronte.js';
@@ -2224,7 +2224,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 ## Link
 - [Home](${b}/)
 - [Demo interattiva senza registrazione](${b}/?demo=1)
-- [Prezzi e pacchetti](${b}/#stato)
+- [Prezzi e pacchetti](${b}/#sottoscrizione)
 - [Privacy](${b}/privacy)
 - [Termini di servizio](${b}/termini)
 - [andryxify (l'autore)](https://andryxify.it)
@@ -6833,6 +6833,53 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // mostra invece di ripeterli, e un giorno non dicono due cose diverse.
       limiti: { colori: pubblicita.COLORI, preavvisoMin: pubblicita.PREAVVISO_MIN,
         preavvisoMax: pubblicita.PREAVVISO_MAX, tolleranzaMax: pubblicita.TOLLERANZA_MAX } });
+  }));
+
+  // ADESSO: quello che la Home dice appena apri il pannello. Sei in onda? Da
+  // quanto, quanti ti guardano, cosa e' successo finora. Se no: quando e' la
+  // prossima, e com'e' andata l'ultima.
+  //
+  // Niente conti nuovi: ogni numero ha gia' il suo padrone. Da quando sei in
+  // onda, il titolo e gli spettatori li dice Twitch; la serata (picco, messaggi,
+  // follower) la tiene il rapporto mentre trasmetti, e la conta con la stessa
+  // funzione che scrivera' il rapporto alla fine; la prossima viene dalla
+  // settimana, l'ultima dai rapporti salvati. Cosi' la Home non puo' dire una
+  // cosa e la scheda Dirette un'altra.
+  app.get('/api/streamer/adesso', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const ora = Date.now();
+    const p = piattaformaDi(login);
+    const corso = rapporto.inCorso(login, { ora });
+    let live = null;
+    if (conDiretta(p)) {
+      const st = p === 'twitch' ? await helix.getStream(login).catch(() => null) : null;
+      if (st) {
+        live = { dal: Date.parse(st.started_at) || corso?.inizio || ora, titolo: String(st.title || ''), gioco: String(st.game_name || ''),
+          spettatori: Number(st.viewer_count) || 0 };
+      } else if (corso) {
+        live = { dal: corso.inizio, titolo: '', gioco: '', spettatori: null };
+      }
+    }
+    let stasera = null;
+    if (live) {
+      live.picco = Math.max(Number(corso?.picco) || 0, Number(live.spettatori) || 0);
+      const d = rapporto.raccogli(login, { inizio: live.dal, fine: ora, picco: live.picco });
+      stasera = { messaggi: d.messaggi, persone: d.persone, follow: d.follow, sub: d.sub, regali: d.regali,
+        raid: d.raid, bit: d.bit, clip: d.clip, donazioni: d.donazioni };
+    }
+    const sett = settimana.settimanaDi(streamers.get(login)?.settings);
+    const r = rapporti.elenco(login, 1)[0];
+    const u = r?.dati || {};
+    res.json({
+      piattaforma: p, conDiretta: conDiretta(p), canale: urlCanale(login),
+      live, stasera,
+      prossima: settimana.prossimaDiretta(sett, new Date(ora)),
+      settimana: sett.giorni.some(settimana.inOnda),
+      ultima: r ? { fine: Number(r.fine) || 0, durataMs: Number(u.durataMs) || 0, picco: Number(u.picco) || 0, giri: Number(u.giri) || 0,
+        messaggi: Number(u.messaggi) || 0, persone: Number(u.persone) || 0, follow: Number(u.follow) || 0, sub: Number(u.sub) || 0,
+        clip: Number(u.clip) || 0 } : null,
+      ora,
+    });
   }));
 
   app.post('/api/streamer/regia/pubblicita/messaggi', requireLogin, (req, res) => {

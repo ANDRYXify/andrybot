@@ -656,10 +656,27 @@ const _demoNorma = (t) => String(t || '').toLowerCase().normalize('NFD').replace
 const _demoGiochi = (q) => { const n = _demoNorma(q); return n.length < 2 ? [] : _DEMO_GIOCHI.filter((g) => _demoNorma(g.name).includes(n) || n.includes(_demoNorma(g.name))); };
 const _demoCategoria = (q) => { const n = ` ${_demoNorma(q)} `; return _DEMO_GIOCHI.filter((g) => n.includes(` ${_demoNorma(g.name)} `)).sort((a, b) => b.name.length - a.name.length)[0] || null; };
 
+const _DEMO_DIRETTA = { dal: Date.now() - 5400000, titolo: 'Si costruisce il bot, dal vivo', gioco: 'Software and Game Dev', spettatori: 128 };
+
+function _demoAdesso() {
+  const ora = Date.now();
+  const minuti = Math.floor((ora - _DEMO_DIRETTA.dal) / 60000);
+  const r = _demoGet('/api/streamer/rapporti').rapporti[0];
+  return {
+    piattaforma: 'twitch', conDiretta: true, canale: 'https://twitch.tv/andryxify', ora,
+    live: { dal: _DEMO_DIRETTA.dal, titolo: _DEMO_DIRETTA.titolo, gioco: _DEMO_DIRETTA.gioco,
+      spettatori: _DEMO_DIRETTA.spettatori + (minuti % 5), picco: 141 },
+    stasera: { messaggi: 320 + minuti * 3, persone: 57 + Math.floor(minuti / 10), follow: 6 + Math.floor(minuti / 15), sub: 2, regali: 0, raid: 1, bit: 350, clip: 2, donazioni: 0 },
+    prossima: null, settimana: true,
+    ultima: { fine: r.fine, durataMs: r.dati.durataMs, picco: r.dati.picco, giri: r.dati.giri, messaggi: r.dati.messaggi, persone: r.dati.persone, follow: r.dati.follow, sub: r.dati.sub, clip: r.dati.clip },
+  };
+}
+
 function apiDemo(percorso, opzioni = {}) {
   const metodo = (opzioni.method || 'GET').toUpperCase();
   const via = percorso.split('?')[0];
   const domanda = new URLSearchParams(percorso.split('?')[1] || '').get('q') || '';
+  if (metodo === 'GET' && via === '/api/streamer/adesso') return Promise.resolve(_demoAdesso());
   if (metodo === 'GET' && via === '/api/streamer/regia/giochi') return Promise.resolve({ giochi: _demoGiochi(domanda) });
   if (metodo === 'GET' && via === '/api/streamer/settimana/categoria') return Promise.resolve({ categoria: _demoCategoria(domanda) });
   if (metodo === 'GET' && via === '/api/streamer/libreria') return Promise.resolve(_demoLibreria(percorso));
@@ -1549,6 +1566,7 @@ function rendiCartePieghevoli(scope, scheda) {
     if (carta.classList.contains('pieghevole')) continue;
     if (carta.tagName === 'DETAILS') continue;
     if (carta.classList.contains('gira-telefono')) continue;
+    if (carta.classList.contains('carta-viva')) continue;
     const h2 = carta.querySelector(':scope > h2');
     if (!h2) continue;
 
@@ -2785,6 +2803,9 @@ const famigliaDi = (scheda) => FAMIGLIE.find((f) => f.parti.includes(scheda)) ||
 const stessaFamiglia = (a, b) => { const fa = famigliaDi(a); return !!fa && fa === famigliaDi(b); };
 
 const GRUPPI = [
+  { id: 'inizio', nome: 'Stato', schede: [
+    ['stato', 'Stato'],
+  ] },
   { id: 'bot', nome: 'Il tuo bot', schede: [
     ['personalita', 'Il bot'],
   ] },
@@ -2816,7 +2837,7 @@ const GRUPPI = [
     ['ruoli', 'Discord'],
   ] },
   { id: 'account', nome: 'Account', schede: [
-    ['stato', 'Stato'],
+    ['account', 'Il tuo account'],
     ['sottoscrizione', 'Abbonamento'],
   ] },
 ];
@@ -2835,6 +2856,7 @@ function schedaValida(id) {
 }
 
 const T_GRUPPO = {
+  inizio: ['Stato', 'Status', 'Estado'],
   bot: ['Il tuo bot', 'Your bot', 'Tu bot'],
   pubblico: ['Chat e pubblico', 'Chat & audience', 'Chat y público'],
   diretta: ['Durante la diretta', 'During the live', 'Durante el directo'],
@@ -2846,6 +2868,7 @@ const T_GRUPPO = {
 };
 const T_SCHEDA = {
   stato: ['Stato', 'Status', 'Estado'],
+  account: ['Il tuo account', 'Your account', 'Tu cuenta'],
   personalita: ['Personalità', 'Personality', 'Personalidad'],
   conoscenza: ['Conoscenza', 'Knowledge', 'Conocimiento'],
   memoria: ['Memoria', 'Memory', 'Memoria'],
@@ -2884,7 +2907,7 @@ const T_SCHEDA = {
 const tGruppo = (id, fb) => { const t = T_GRUPPO[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
 const tScheda = (id, fb) => { const t = T_SCHEDA[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
 
-const SOLO_DISCORD = new Set(['ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'dcfiltro', 'pagina', 'stato', 'sottoscrizione']);
+const SOLO_DISCORD = new Set(['ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'dcfiltro', 'pagina', 'stato', 'account', 'sottoscrizione']);
 const senzaDiretta = () => stato?.piattaforma === 'discord';
 
 function elencoGruppi() {
@@ -2898,6 +2921,7 @@ function elencoGruppi() {
 const _ico = (d) => `<svg class="lat-svg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ICONA = {
   stato:       _ico('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11h14V9"/><path d="M9.5 20v-6h5v6"/>'),
+  account:     _ico('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>'),
   regia:       _ico('<circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.48M7.76 16.24a6 6 0 0 1 0-8.48M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/>'),
   studio:      _ico('<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>'),
   personalita: _ico('<path d="M12 3c.35 3.8 1.4 4.85 5 5.2-3.6.35-4.65 1.4-5 5.2-.35-3.8-1.4-4.85-5-5.2 3.6-.35 4.65-1.4 5-5.2Z"/><path d="M18.5 15c.15 1.6.6 2.05 2.2 2.2-1.6.15-2.05.6-2.2 2.2-.15-1.6-.6-2.05-2.2-2.2 1.6-.15 2.05-.6 2.2-2.2Z"/>'),
@@ -2937,7 +2961,8 @@ const ICONA = {
 };
 
 const DESC = {
-  stato: ['Accendi il bot e controlla che sia connesso alla tua chat.', 'Turn the bot on and check it’s connected to your chat.', 'Enciende el bot y comprueba que esté conectado a tu chat.'],
+  stato: ['Come va adesso: la tua diretta, il bot, e cosa c’è da sistemare.', 'How it’s going right now: your stream, the bot, and what needs fixing.', 'Cómo va ahora: tu directo, el bot y lo que hay que arreglar.'],
+  account: ['Le piattaforme, l’accesso, i moderatori e i tuoi dati.', 'Your platforms, sign-in, moderators and your data.', 'Tus plataformas, el acceso, los moderadores y tus datos.'],
   personalita: ['Il tono e il carattere con cui il bot parla in chat.', 'The tone and character the bot uses in chat.', 'El tono y el carácter con que el bot habla en el chat.'],
   conoscenza: ['Cosa sa il bot su di te e sui tuoi contenuti.', 'What the bot knows about you and your content.', 'Lo que el bot sabe sobre ti y tu contenido.'],
   memoria: ['Cosa il bot si ricorda del canale e di chi ci scrive.', 'What the bot remembers about the channel and who writes in it.', 'Lo que el bot recuerda del canal y de quien escribe.'],
@@ -3083,8 +3108,10 @@ function sbloccaAddon(addon) {
 }
 
 const GUIDE = {
-  stato: { serve: ['Accendere il bot e controllare che sia connesso alla tua chat.', 'Turn the bot on and check it’s connected to your chat.', 'Encender el bot y comprobar que esté conectado a tu chat.'],
-    come: [['Accendi l’interruttore del bot.', 'Flip the bot’s switch.', 'Activa el interruptor del bot.', '#toggle-bot'], ['Controlla il badge “in chat”: verde = sei online.', 'Check the “in chat” badge: green = you’re online.', 'Mira la insignia “en el chat”: verde = estás en línea.', '#etichetta-bot'], ['Se manca un permesso, riautorizza con un clic.', 'If a permission is missing, re-authorize with one click.', 'Si falta un permiso, reautoriza con un clic.', '#piattaforme-box']] },
+  stato: { serve: ['Vedere come va adesso: la tua diretta, il bot, e cosa c’è da sistemare.', 'See how it’s going right now: your stream, the bot, and what needs fixing.', 'Ver cómo va ahora: tu directo, el bot y lo que hay que arreglar.'],
+    come: [['Guarda la diretta: in onda vedi da quanto e chi ti guarda, fuori onda quando è la prossima e com’è andata l’ultima.', 'Look at your stream: live you see how long and who’s watching, offline when the next one is and how the last one went.', 'Mira tu directo: en directo ves desde cuándo y quién te ve, fuera de directo cuándo es el próximo y cómo fue el último.', '#carta-adesso'], ['Accendi l’interruttore del bot e scegli quando dev’essere attivo.', 'Flip the bot’s switch and choose when it should be active.', 'Activa el interruptor del bot y elige cuándo debe estar activo.', '#toggle-bot'], ['Se manca un permesso o il bot è scollegato, lo trovi in cima, col tasto per rimediare.', 'If a permission is missing or the bot is disconnected, you find it at the top, with the button to fix it.', 'Si falta un permiso o el bot está desconectado, lo encuentras arriba, con el botón para arreglarlo.', '']] },
+  account: { serve: ['Collegare le piattaforme, entrare con una passkey, far entrare i moderatori e decidere dei tuoi dati.', 'Connect your platforms, sign in with a passkey, let your moderators in and decide about your data.', 'Conectar tus plataformas, entrar con una passkey, dejar entrar a tus moderadores y decidir sobre tus datos.'],
+    come: [['Collega le piattaforme dove trasmetti: il canale resta uno solo.', 'Connect the platforms you stream on: the channel stays one.', 'Conecta las plataformas donde emites: el canal sigue siendo uno.', '#piattaforme-box'], ['Crea una passkey: rientri con l’impronta o il volto, senza password.', 'Create a passkey: you sign back in with your fingerprint or face, no password.', 'Crea una passkey: vuelves a entrar con tu huella o tu cara, sin contraseña.', '#btn-crea-passkey'], ['Scarica i tuoi dati quando vuoi: sono tuoi.', 'Download your data whenever you want: it’s yours.', 'Descarga tus datos cuando quieras: son tuyos.', '#btn-esporta']] },
   personalita: { serve: ['Dare al bot il tono e il carattere con cui parla in chat.', 'Give the bot the tone and character it speaks with in chat.', 'Darle al bot el tono y el carácter con que habla en el chat.'],
     come: [['Scegli tono e “spontaneità” (quanto interviene da solo).', 'Pick tone and “spontaneity” (how often it chimes in).', 'Elige el tono y la “espontaneidad” (cuánto interviene solo).', '#sel-tono'], ['Aggiungi regole che rispetterà SEMPRE.', 'Add rules it will ALWAYS follow.', 'Añade reglas que respetará SIEMPRE.', '#inp-guida'], ['Salva: il nuovo stile parte subito.', 'Save: the new style takes effect right away.', 'Guarda: el nuevo estilo se aplica al instante.', '#btn-salva-personalita']] },
   conoscenza: { serve: ['Decidere cosa il bot sa di te e come deve rispondere.', 'Decide what the bot knows about you and how it should reply.', 'Decidir qué sabe el bot de ti y cómo debe responder.'],
@@ -3515,7 +3542,9 @@ function navDrawerHtml() {
   return elencoGruppi().map((g) => {
     const voci = g.schede.map(([id, nome]) =>
       `<button class="drawer-voce${id === schedaAttiva ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}${nuovoDi(id)}<span>${esc(tScheda(id, nome))}</span>${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`).join('');
-    return `<div class="drawer-grp" style="--gc:var(--g-${g.id}, var(--g-def))"><div class="drawer-grp-tit">${esc(tGruppo(g.id, g.nome))}</div>${voci}</div>`;
+    const titolo = tGruppo(g.id, g.nome);
+    const ripete = g.schede.length === 1 && tScheda(g.schede[0][0], g.schede[0][1]) === titolo;
+    return `<div class="drawer-grp" style="--gc:var(--g-${g.id}, var(--g-def))">${ripete ? '' : `<div class="drawer-grp-tit">${esc(titolo)}</div>`}${voci}</div>`;
   }).join('');
 }
 
@@ -4046,7 +4075,7 @@ function cardKickHtml() {
     <h2>${_hIco(ICO.fulmine)}${L('Il tuo canale è su Kick', 'Your channel is on Kick', 'Tu canal está en Kick')}</h2>
     <p>${L('Il bot legge la tua chat di Kick e risponde lì. Funzionano i comandi, i moduli, i giochi e le monete, gli avvisi di follow e abbonamento, l’overlay della diretta e le notifiche social.', 'The bot reads your Kick chat and answers there. Commands, modules, games and coins, follow and subscription alerts, the stream overlay and social notifications all work.', 'El bot lee tu chat de Kick y responde ahí. Funcionan los comandos, los módulos, los juegos y las monedas, los avisos de follow y suscripción, el overlay del directo y las notificaciones sociales.')}</p>
     <p class="suggerimento spazio-sopra">${L('Restano fuori le cose che sono di Twitch: la moderazione automatica, le clip, il cambio di categoria e titolo, i VIP, i punti canale e le emote 7TV. E le monete su Kick arrivano dai messaggi: l’elenco di chi sta guardando in silenzio Kick non lo dà.', 'What stays out is what belongs to Twitch: automatic moderation, clips, category and title changes, VIPs, channel points and 7TV emotes. And on Kick coins come from messages: Kick doesn’t give the list of silent viewers.', 'Queda fuera lo que es de Twitch: la moderación automática, los clips, el cambio de categoría y título, los VIP, los puntos de canal y los emotes 7TV. Y en Kick las monedas llegan de los mensajes: Kick no da la lista de quien mira en silencio.')}</p>
-    <p class="suggerimento">${L('Se trasmetti anche su Twitch, collega quell’account dalla scheda Stato: il canale resta uno solo e si accende tutto.', 'If you also stream on Twitch, connect that account from the Status tab: the channel stays one and everything lights up.', 'Si también emites en Twitch, conecta esa cuenta desde la pestaña Estado: el canal sigue siendo uno y se enciende todo.')}</p>
+    <p class="suggerimento">${L('Se trasmetti anche su Twitch, collega quell’account qui sotto: il canale resta uno solo e si accende tutto.', 'If you also stream on Twitch, connect that account below: the channel stays one and everything lights up.', 'Si también emites en Twitch, conecta esa cuenta aquí abajo: el canal sigue siendo uno y se enciende todo.')}</p>
   </div>`;
 }
 
@@ -4073,6 +4102,7 @@ function vistaPiattaforma() {
 
   return `
     ${pannelloStato()}
+    ${pannelloAccount()}
     ${pannelloSottoscrizione()}
     ${pannelloPersonalita()}
     ${pannelloConoscenza()}
@@ -5597,7 +5627,6 @@ function pannelloStato() {
 
   const connessi = stato.status?.connessi || stato.status?.channels || [];
   const inChat = connessi.includes(login);
-  const pre = stato.preaddestramento || {};
   const sImp = impostazioni();
   const proprietario = stato.ruolo !== 'moderatore';
 
@@ -5657,7 +5686,8 @@ function pannelloStato() {
     </div>`;
 
   return pannello('stato', `
-    ${cardNovitaHtml()}${cardKickHtml()}${bannerProvaHtml()}${bannerMod}${cardChatKO}${cardPermessi}${cardScope}
+    ${bannerMod}${cardChatKO}${cardPermessi}${cardScope}
+    ${cartaAdessoHtml()}
     <div class="carta">
       <h2>${L('Il tuo bot', 'Your bot', 'Tu bot')}</h2>
       <div class="riga-interruttore spazio-sopra">
@@ -5669,7 +5699,6 @@ function pannelloStato() {
         ${inChat
           ? `<span class="badge verde"><i class="vivo"></i>${L('in chat adesso', 'in chat now', 'en el chat ahora')}</span>`
           : `<span class="badge"><i class="spento"></i>${L('non connesso', 'not connected', 'no conectado')}</span>`}
-        ${stato.permessiOk ? `<span class="badge verde">${L('permessi ok', 'permissions ok', 'permisos ok')}</span>` : `<span class="badge rosso">${L('permessi mancanti', 'missing permissions', 'faltan permisos')}</span>`}
       </div>
 
       ${proprietario ? `
@@ -5681,8 +5710,8 @@ function pannelloStato() {
         ${badgePermesso(!scManc.includes('moderator:manage:announcements'), L('annunci', 'announcements', 'anuncios'))}
         ${badgePermesso(!scManc.includes('moderator:read:chatters'), L('ore guardate', 'watch time', 'horas vistas'))}
       </p>
-      <p class="spazio-sopra"><a class="btn secondario mini" href="/auth/permessi">${_bIco(ICO.chiave)}${L('Aggiorna / ri-concedi i permessi', 'Update / re-grant permissions', 'Actualizar / reconceder permisos')}</a>
-        <span class="suggerimento">— ${L('apre la schermata di Twitch: conferma per aggiornare TUTTI i permessi (anche i nuovi). Le voci in giallo qui sopra sono da concedere.', 'opens the Twitch screen: confirm to update ALL permissions (new ones too). The yellow items above still need granting.', 'abre la pantalla de Twitch: confirma para actualizar TODOS los permisos (también los nuevos). Los ítems en amarillo aún faltan.')}</span></p>
+      <p class="spazio-sopra"><a class="btn secondario mini" href="/auth/permessi">${_bIco(ICO.chiave)}${L('Aggiorna i permessi', 'Update permissions', 'Actualizar permisos')}</a>
+        <span class="suggerimento">${L('Apre Twitch: confermi, e si aggiornano tutti, anche quelli nuovi.', 'Opens Twitch: you confirm, and they all update, new ones included.', 'Abre Twitch: confirmas, y se actualizan todos, también los nuevos.')}</span></p>
       <p class="suggerimento">${L('La', 'The', 'El')} <strong class="primo-piano">${L('chat', 'chat', 'chat')}</strong> ${L('fa parlare il bot,', 'lets the bot speak,', 'hace hablar al bot,')}
       <strong class="primo-piano">shoutout</strong>/<strong class="primo-piano">${L('annunci', 'announcements', 'anuncios')}</strong> ${L('per i comandi ufficiali,', 'for the official commands,', 'para los comandos oficiales,')}
       <strong class="primo-piano">${L('ore guardate', 'watch time', 'horas vistas')}</strong> ${L('per', 'for', 'para')} <code>!ore</code>. ${L('Se qualcosa non funziona, premi «Aggiorna i permessi».', 'If something doesn\'t work, press «Update permissions».', 'Si algo no funciona, pulsa «Actualizar permisos».')}</p>` : `
@@ -5703,93 +5732,18 @@ function pannelloStato() {
       </p>
       <p><button class="btn secondario" id="btn-salva-modalita">${L('Salva modalità', 'Save mode', 'Guardar modo')}</button></p>
     </div>
-    <div class="carta">
-      <h2>${_hIco(ICO.libro)}${L('Pre-addestramento', 'Pre-training', 'Preentrenamiento')}</h2>
-      <p>${L('SocialBot legge il tuo profilo su andryxify.it per conoscerti prima ancora di entrare in chat.', 'SocialBot reads your andryxify.it profile to get to know you before it even joins chat.', 'SocialBot lee tu perfil en andryxify.it para conocerte antes de entrar al chat.')}</p>
-      <p class="spazio-sopra">
-        ${L('Ultima lettura:', 'Last read:', 'Última lectura:')} <strong class="primo-piano">${esc(dataIt(pre.preaddestramento_ts))}</strong>
-        · ${L('voci di conoscenza:', 'knowledge entries:', 'entradas de conocimiento:')} <strong class="primo-piano">${stato.knowledgeCount}</strong>
-      </p>
-      ${pre.preaddestramento_esito ? `<p class="nota-lettura">${esc(pre.preaddestramento_esito)}</p>` : ''}
-      <p class="spazio-sopra">
-        <button class="btn secondario" id="btn-pretrain">${L('Ri-leggi il mio profilo andryxify.it', 'Re-read my andryxify.it profile', 'Volver a leer mi perfil de andryxify.it')}</button>
-        <span id="esito-pretrain" class="suggerimento"></span>
-      </p>
-    </div>
-    <div class="carta">
-      <h2>${_hIco(ICO.germoglio)}${L('La piccola rete che impara', 'The little network that learns', 'La pequeña red que aprende')}</h2>
-      <p>${L('Il motore veloce del bot che', 'The bot’s fast engine that', 'El motor rápido del bot que')} <strong class="primo-piano">${L('cresce da solo', 'grows on its own', 'crece solo')}</strong>: ${L('risponde all\'istante a ciò che ha già imparato e, quando incontra qualcosa di nuovo, se lo segna e lo impara dal maestro. Più lo alleni (anche via DM su Telegram), più sa fare da sé.', 'answers instantly to what it already learned and, when it meets something new, notes it and learns it from the teacher. The more you train it (also via Telegram DM), the more it can do on its own.', 'responde al instante a lo que ya aprendió y, cuando encuentra algo nuevo, lo anota y lo aprende del maestro. Cuanto más lo entrenas (también por DM en Telegram), más sabe hacer solo.')}</p>
-      <div id="rete-panoramica"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
-    </div>
+    ${bannerProvaHtml()}${cardNovitaHtml()}`);
+}
 
+function pannelloAccount() {
+  const proprietario = stato.ruolo !== 'moderatore';
+  return pannello('account', `
+    ${cardKickHtml()}
     <div class="carta">
       <h2>${_hIco(ICO.spina)}${L('Le tue piattaforme', 'Your platforms', 'Tus plataformas')}</h2>
       <p>${L('Dove il bot lavora per te. Collega quelle che usi: comandi, moduli, punti e memoria funzionano allo stesso modo su tutte, e una risposta torna sempre da dove è arrivata la domanda.', 'Where the bot works for you. Connect the ones you use: commands, modules, points and memory work the same on all of them, and a reply always comes back from where the question came.', 'Donde el bot trabaja para ti. Conecta las que uses: comandos, módulos, puntos y memoria funcionan igual en todas, y una respuesta vuelve siempre desde donde llegó la pregunta.')}</p>
       <div id="piattaforme-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
-
-    ${proprietario ? `<div class="carta">
-      <h2>${_hIco(ICO.scudo)}${L('Le mail che ti mandiamo', 'The mails we send you', 'Los correos que te enviamos')}</h2>
-      <p>${L('In fondo a ogni nostra mail c’è un codice. Lo trovi qui, e solo qui: chi imita una nostra mail non può saperlo, perché per saperlo dovrebbe entrare in questo pannello.', 'At the bottom of every mail of ours there is a code. You find it here, and only here: whoever fakes a mail of ours cannot know it, because to know it they would have to get into this panel.', 'Al final de cada correo nuestro hay un código. Lo encuentras aquí, y solo aquí: quien imita un correo nuestro no puede saberlo, porque para saberlo tendría que entrar en este panel.')}</p>
-      <div id="codici-posta"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
-      <p class="suggerimento spazio-sopra">${L('Cambia ogni lunedì. Ci sono anche quelli delle settimane scorse di questo mese, per le mail che apri in ritardo. Se il codice non combacia, quella mail non l’abbiamo scritta noi: non aprire i collegamenti e scrivicelo.', 'It changes every Monday. The codes of this month’s past weeks are here too, for mails you open late. If the code does not match, we did not write that mail: do not open the links and tell us.', 'Cambia cada lunes. También están los de las semanas pasadas de este mes, para los correos que abres tarde. Si el código no coincide, ese correo no lo hemos escrito nosotros: no abras los enlaces y avísanos.')}</p>
-    </div>` : ''}
-
-    <div class="carta">
-      <h2>${_hIco(ICO.scarica)}${L('I tuoi dati sono tuoi', 'Your data is yours', 'Tus datos son tuyos')}</h2>
-      <p>${L('Scarica', 'Download', 'Descarga')} <strong class="primo-piano">${L('tutto quello che è tuo', "everything that's yours", 'todo lo que es tuyo')}</strong> ${L('in un file: comandi, moduli, effetti, punti, ore guardate, citazioni, contatori, pagina pubblica, impostazioni. Un file solo, leggibile, che puoi tenere o portare altrove.', 'in one file: commands, modules, effects, points, watch time, quotes, counters, public page, settings. One readable file you can keep or take elsewhere.', 'en un archivo: comandos, módulos, efectos, puntos, horas vistas, citas, contadores, página pública, ajustes. Un solo archivo legible que puedes guardar o llevarte.')}</p>
-      <p class="suggerimento">${L('Non contiene le chiavi di accesso ai tuoi account, né i messaggi scritti da altre persone: quelli sono loro, non tuoi.', "It contains no access keys to your accounts, and no messages written by other people: those are theirs, not yours.", 'No contiene las claves de acceso a tus cuentas ni los mensajes escritos por otras personas: esos son suyos, no tuyos.')}</p>
-      ${stato.ruolo === 'moderatore'
-        ? `<p class="suggerimento spazio-sopra">${L('Il file lo scarica il proprietario del canale: i dati sono suoi.', 'The channel owner downloads the file: the data is theirs.', 'El archivo lo descarga el propietario del canal: los datos son suyos.')}</p>`
-        : `<p class="spazio-sopra"><a class="btn secondario" id="btn-esporta" href="/api/streamer/esporta" download title="${esc(L('Un file solo con tutto quello che è tuo: profilo, impostazioni, memoria. Non contiene le chiavi di accesso ai tuoi account', 'A single file with everything that is yours: profile, settings, memory. It does not contain your account keys', 'Un solo archivo con todo lo tuyo: perfil, ajustes, memoria. No contiene las claves de tus cuentas'))}">${_bIco(ICO.scarica)}${L('Scarica i miei dati', 'Download my data', 'Descargar mis datos')}</a></p>`}
-    </div>
-
-    <div class="carta">
-      <h2>${_hIco(ICO.cestino)}${L('Andarsene', 'Leaving', 'Marcharse')}</h2>
-      <p>${L('Se te ne vai', 'If you leave', 'Si te vas')} <strong class="primo-piano">${L('non resta niente di tuo', 'nothing of yours stays', 'no queda nada tuyo')}</strong>: ${L('comandi, moduli, effetti, punti, ore guardate, memoria della chat, pagina link, file caricati, collegamenti ai tuoi account. Il bot esce dal tuo canale.', 'commands, modules, effects, points, watch time, chat memory, link page, uploaded files, connections to your accounts. The bot leaves your channel.', 'comandos, módulos, efectos, puntos, horas vistas, memoria del chat, página de enlaces, archivos subidos, conexiones con tus cuentas. El bot sale de tu canal.')}</p>
-      <p class="suggerimento">${L('Non si annulla e non c\'è un cestino. Se vuoi tenerti qualcosa, scarica prima i tuoi dati qui sopra.', 'It cannot be undone and there is no bin. If you want to keep something, download your data above first.', 'No se puede deshacer y no hay papelera. Si quieres conservar algo, descarga antes tus datos.')}</p>
-      ${stato.ruolo === 'moderatore'
-        ? `<p class="suggerimento spazio-sopra">${L('Solo il proprietario del canale può cancellare: i dati sono suoi.', 'Only the channel owner can delete: the data is theirs.', 'Solo el propietario del canal puede borrar: los datos son suyos.')}</p>`
-        : `<details class="spazio-sopra zona-pericolo" id="det-cancella">
-            <summary>${L('Voglio cancellare tutto', 'I want to delete everything', 'Quiero borrarlo todo')}</summary>
-            <div id="resti-box" class="riquadro-info spazio-sopra"><span class="vuoto">${L('Guardo cosa c\'è…', 'Checking what is there…', 'Miro qué hay…')}</span></div>
-            <label class="campo spazio-sopra" for="inp-cancella">${L('Scrivi il nome del tuo canale per confermare', 'Type your channel name to confirm', 'Escribe el nombre de tu canal para confirmar')}</label>
-            <input type="text" id="inp-cancella" class="campo-largo" autocomplete="off" spellcheck="false" placeholder="${esc(stato.login || '')}">
-            <p class="spazio-sopra"><button type="button" class="btn pericolo" id="btn-cancella" disabled>${_bIco(ICO.cestino)}${L('Cancella tutto per sempre', 'Delete everything forever', 'Borrar todo para siempre')}</button></p>
-          </details>`}
-    </div>
-
-    <div class="carta">
-      <h2>${_hIco(ICO.telefono)}${L('Installa l\'app', 'Install the app', 'Instala la app')}</h2>
-      <p>${L('Installa la dashboard', 'Install the dashboard', 'Instala el panel')} <strong class="primo-piano">${L('come app', 'as an app', 'como app')}</strong> ${L('sul telefono o sul PC: la apri a schermo intero come un\'app vera, senza doverla cercare nel browser.', 'on your phone or PC: open it full-screen like a real app, no need to look for it in the browser.', 'en el móvil o el PC: la abres a pantalla completa como una app de verdad, sin buscarla en el navegador.')}</p>
-      <p class="spazio-sopra">
-        <button class="btn secondario" id="btn-installa">${L('Installa l\'app', 'Install the app', 'Instala la app')}</button>
-      </p>
-      <p class="suggerimento">${L('Su iPhone/iPad: apri in Safari → Condividi → “Aggiungi a Home”. Su Android/PC (Chrome): usa il bottone qui sopra o l’icona “installa” nella barra indirizzi.', 'On iPhone/iPad: open in Safari → Share → “Add to Home Screen”. On Android/PC (Chrome): use the button above or the “install” icon in the address bar.', 'En iPhone/iPad: abre en Safari → Compartir → “Añadir a inicio”. En Android/PC (Chrome): usa el botón de arriba o el icono “instalar” en la barra de direcciones.')}</p>
-    </div>
-    ${proprietario ? (() => {
-
-  const nomi = { community: 'Community', free: 'Essenziale', base: 'Base', pro: 'Pro (storico)' };
-      const tier = stato.tier || 'community';
-      const pagato = tier === 'base' || tier === 'pro';
-      return `
-    <div class="carta">
-      <h2>${_hIco(ICO.carta)}${L('Abbonamento', 'Subscription', 'Suscripción')}</h2>
-      <p>${L('Piano attuale:', 'Current plan:', 'Plan actual:')} <strong class="primo-piano">${esc(nomi[tier] || tier)}</strong>${(() => {
-        const p = provaInCorso();
-        if (p) return ` <span class="badge giallo">${L('prova gratuita', 'free trial', 'prueba gratuita')}</span>` + (p.fine ? `, ${L('fino al', 'until', 'hasta el')} <strong class="primo-piano">${esc(dataIt(p.fine))}</strong>: ${L('poi torni all\'Essenziale, gratuito.', 'then you go back to Essenziale, free.', 'luego vuelves a Essenziale, gratuito.')}` : '');
-        if (tier === 'community') return L(': accesso completo, riservato ai membri abilitati di andryxify.it.', ': full access, reserved for enabled andryxify.it members.', ': acceso completo, reservado a los miembros habilitados de andryxify.it.');
-        if (tier === 'free') return L(': gratuito, senza scadenza. Comandi illimitati, moderazione, overlay e contatori.', ': free, no expiry. Unlimited commands, moderation, overlay and counters.', ': gratuito, sin caducidad. Comandos ilimitados, moderación, overlay y contadores.');
-        return '';
-      })()}</p>
-      ${pagato || stato.abbonamento?.cliente
-        ? `<p class="spazio-sopra"><button class="btn secondario" id="btn-portale-abbonamento">${L('Gestisci abbonamento', 'Manage subscription', 'Gestionar suscripción')}</button></p>`
-        : ''}
-      ${tier === 'community' || pagato ? '' : `<p class="suggerimento spazio-sopra">${stato?.stripeAttivo
-        ? `${L('Quello che manca lo aggiungi un extra alla volta, dalla scheda', 'What you are missing you add one extra at a time, from the', 'Lo que te falta lo añades de extra en extra, desde la pestaña')} <a href="#sottoscrizione" data-scheda="sottoscrizione">${L('Abbonamento', 'Subscription', 'Suscripción')}</a>.`
-        : L('I pagamenti dal pannello non sono ancora aperti: per un extra chiedi ad andryxify.', 'Payments from the panel are not open yet: for an extra, ask andryxify.', 'Los pagos desde el panel aún no están abiertos: para un extra, pide a andryxify.')}</p>`}
-    </div>`;
-    })() : ''}
     <div class="carta">
       <h2>${_hIco(ICO.chiave)}Passkey</h2>
       <p>${L('Crea una', 'Create a', 'Crea una')} <strong class="primo-piano">passkey</strong> ${L('(impronta, volto o PIN): così rientri al volo, in modo sicuro,', '(fingerprint, face or PIN): so you get back in fast and securely,', '(huella, rostro o PIN): así vuelves a entrar al vuelo y de forma segura,')} <strong class="primo-piano">${L('senza ripassare ogni volta dal sito', 'without going through the site every time', 'sin pasar cada vez por la web')}</strong>.
@@ -5842,7 +5796,204 @@ function pannelloStato() {
       <p class="spazio-sopra"><button class="btn" id="btn-chiedi-mod">${L('Manda la richiesta', 'Send the request', 'Enviar la solicitud')}</button></p>
       <h3>${L('Le tue richieste', 'Your requests', 'Tus solicitudes')}</h3>
       <ul class="lista-voci" id="lista-mie-richieste"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.telefono)}${L('Installa l\'app', 'Install the app', 'Instala la app')}</h2>
+      <p>${L('Installa la dashboard', 'Install the dashboard', 'Instala el panel')} <strong class="primo-piano">${L('come app', 'as an app', 'como app')}</strong> ${L('sul telefono o sul PC: la apri a schermo intero come un\'app vera, senza doverla cercare nel browser.', 'on your phone or PC: open it full-screen like a real app, no need to look for it in the browser.', 'en el móvil o el PC: la abres a pantalla completa como una app de verdad, sin buscarla en el navegador.')}</p>
+      <p class="spazio-sopra">
+        <button class="btn secondario" id="btn-installa">${L('Installa l\'app', 'Install the app', 'Instala la app')}</button>
+      </p>
+      <p class="suggerimento">${L('Su iPhone/iPad: apri in Safari → Condividi → “Aggiungi a Home”. Su Android/PC (Chrome): usa il bottone qui sopra o l’icona “installa” nella barra indirizzi.', 'On iPhone/iPad: open in Safari → Share → “Add to Home Screen”. On Android/PC (Chrome): use the button above or the “install” icon in the address bar.', 'En iPhone/iPad: abre en Safari → Compartir → “Añadir a inicio”. En Android/PC (Chrome): usa el botón de arriba o el icono “instalar” en la barra de direcciones.')}</p>
+    </div>
+    ${proprietario ? `<div class="carta">
+      <h2>${_hIco(ICO.scudo)}${L('Le mail che ti mandiamo', 'The mails we send you', 'Los correos que te enviamos')}</h2>
+      <p>${L('In fondo a ogni nostra mail c’è un codice. Lo trovi qui, e solo qui: chi imita una nostra mail non può saperlo, perché per saperlo dovrebbe entrare in questo pannello.', 'At the bottom of every mail of ours there is a code. You find it here, and only here: whoever fakes a mail of ours cannot know it, because to know it they would have to get into this panel.', 'Al final de cada correo nuestro hay un código. Lo encuentras aquí, y solo aquí: quien imita un correo nuestro no puede saberlo, porque para saberlo tendría que entrar en este panel.')}</p>
+      <div id="codici-posta"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+      <p class="suggerimento spazio-sopra">${L('Cambia ogni lunedì. Ci sono anche quelli delle settimane scorse di questo mese, per le mail che apri in ritardo. Se il codice non combacia, quella mail non l’abbiamo scritta noi: non aprire i collegamenti e scrivicelo.', 'It changes every Monday. The codes of this month’s past weeks are here too, for mails you open late. If the code does not match, we did not write that mail: do not open the links and tell us.', 'Cambia cada lunes. También están los de las semanas pasadas de este mes, para los correos que abres tarde. Si el código no coincide, ese correo no lo hemos escrito nosotros: no abras los enlaces y avísanos.')}</p>
+    </div>` : ''}
+    <div class="carta">
+      <h2>${_hIco(ICO.scarica)}${L('I tuoi dati sono tuoi', 'Your data is yours', 'Tus datos son tuyos')}</h2>
+      <p>${L('Scarica', 'Download', 'Descarga')} <strong class="primo-piano">${L('tutto quello che è tuo', "everything that's yours", 'todo lo que es tuyo')}</strong> ${L('in un file: comandi, moduli, effetti, punti, ore guardate, citazioni, contatori, pagina pubblica, impostazioni. Un file solo, leggibile, che puoi tenere o portare altrove.', 'in one file: commands, modules, effects, points, watch time, quotes, counters, public page, settings. One readable file you can keep or take elsewhere.', 'en un archivo: comandos, módulos, efectos, puntos, horas vistas, citas, contadores, página pública, ajustes. Un solo archivo legible que puedes guardar o llevarte.')}</p>
+      <p class="suggerimento">${L('Non contiene le chiavi di accesso ai tuoi account, né i messaggi scritti da altre persone: quelli sono loro, non tuoi.', "It contains no access keys to your accounts, and no messages written by other people: those are theirs, not yours.", 'No contiene las claves de acceso a tus cuentas ni los mensajes escritos por otras personas: esos son suyos, no tuyos.')}</p>
+      ${stato.ruolo === 'moderatore'
+        ? `<p class="suggerimento spazio-sopra">${L('Il file lo scarica il proprietario del canale: i dati sono suoi.', 'The channel owner downloads the file: the data is theirs.', 'El archivo lo descarga el propietario del canal: los datos son suyos.')}</p>`
+        : `<p class="spazio-sopra"><a class="btn secondario" id="btn-esporta" href="/api/streamer/esporta" download title="${esc(L('Un file solo con tutto quello che è tuo: profilo, impostazioni, memoria. Non contiene le chiavi di accesso ai tuoi account', 'A single file with everything that is yours: profile, settings, memory. It does not contain your account keys', 'Un solo archivo con todo lo tuyo: perfil, ajustes, memoria. No contiene las claves de tus cuentas'))}">${_bIco(ICO.scarica)}${L('Scarica i miei dati', 'Download my data', 'Descargar mis datos')}</a></p>`}
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.cestino)}${L('Andarsene', 'Leaving', 'Marcharse')}</h2>
+      <p>${L('Se te ne vai', 'If you leave', 'Si te vas')} <strong class="primo-piano">${L('non resta niente di tuo', 'nothing of yours stays', 'no queda nada tuyo')}</strong>: ${L('comandi, moduli, effetti, punti, ore guardate, memoria della chat, pagina link, file caricati, collegamenti ai tuoi account. Il bot esce dal tuo canale.', 'commands, modules, effects, points, watch time, chat memory, link page, uploaded files, connections to your accounts. The bot leaves your channel.', 'comandos, módulos, efectos, puntos, horas vistas, memoria del chat, página de enlaces, archivos subidos, conexiones con tus cuentas. El bot sale de tu canal.')}</p>
+      <p class="suggerimento">${L('Non si annulla e non c\'è un cestino. Se vuoi tenerti qualcosa, scarica prima i tuoi dati qui sopra.', 'It cannot be undone and there is no bin. If you want to keep something, download your data above first.', 'No se puede deshacer y no hay papelera. Si quieres conservar algo, descarga antes tus datos.')}</p>
+      ${stato.ruolo === 'moderatore'
+        ? `<p class="suggerimento spazio-sopra">${L('Solo il proprietario del canale può cancellare: i dati sono suoi.', 'Only the channel owner can delete: the data is theirs.', 'Solo el propietario del canal puede borrar: los datos son suyos.')}</p>`
+        : `<details class="spazio-sopra zona-pericolo" id="det-cancella">
+            <summary>${L('Voglio cancellare tutto', 'I want to delete everything', 'Quiero borrarlo todo')}</summary>
+            <div id="resti-box" class="riquadro-info spazio-sopra"><span class="vuoto">${L('Guardo cosa c\'è…', 'Checking what is there…', 'Miro qué hay…')}</span></div>
+            <label class="campo spazio-sopra" for="inp-cancella">${L('Scrivi il nome del tuo canale per confermare', 'Type your channel name to confirm', 'Escribe el nombre de tu canal para confirmar')}</label>
+            <input type="text" id="inp-cancella" class="campo-largo" autocomplete="off" spellcheck="false" placeholder="${esc(stato.login || '')}">
+            <p class="spazio-sopra"><button type="button" class="btn pericolo" id="btn-cancella" disabled>${_bIco(ICO.cestino)}${L('Cancella tutto per sempre', 'Delete everything forever', 'Borrar todo para siempre')}</button></p>
+          </details>`}
     </div>`);
+}
+
+const localePannello = () => ({ it: 'it-IT', en: 'en-GB', es: 'es-ES' }[L('it', 'en', 'es')] || 'it-IT');
+
+function cartaAdessoHtml() {
+  if (senzaDiretta()) return '';
+  return `<div class="carta carta-viva adesso" id="carta-adesso">
+    <h2>${_hIco(ICO.tv)}${L('La tua diretta', 'Your stream', 'Tu directo')}</h2>
+    <div id="adesso-corpo" aria-busy="true"><span class="solo-lettore">${L('Caricamento…', 'Loading…', 'Cargando…')}</span>
+      <div class="scheletro riga corta"></div><div class="scheletro riga"></div><div class="scheletro riga"></div></div>
+  </div>`;
+}
+
+const _adesso = { dati: null, scarto: 0, giro: 0, orologio: 0, prima: null };
+const _oraServer = () => Date.now() + _adesso.scarto;
+
+async function caricaAdesso() {
+  const corpo = document.getElementById('adesso-corpo');
+  if (!corpo) return;
+  let d = null;
+  try { d = await api('/api/streamer/adesso'); } catch {  }
+  if (d) {
+    _adesso.scarto = Number(d.ora) ? Number(d.ora) - Date.now() : 0;
+    _adesso.dati = d;
+    disegnaAdesso();
+  } else if (!_adesso.dati) {
+    corpo.removeAttribute('aria-busy');
+    corpo.innerHTML = `<p class="vuoto">${L('Adesso non riesco a sapere se sei in onda. Riprovo fra un minuto.', 'I can’t tell right now whether you’re live. I’ll try again in a minute.', 'Ahora no puedo saber si estás en directo. Lo vuelvo a intentar en un minuto.')}</p>`;
+  }
+  clearTimeout(_adesso.giro);
+  _adesso.giro = setTimeout(() => { if (schedaAttiva === 'stato' && !document.hidden) caricaAdesso(); }, 60_000);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && schedaAttiva === 'stato' && document.getElementById('adesso-corpo')) caricaAdesso();
+});
+
+function _durataViva(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+  return `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}`;
+}
+
+function _giornoNelFuso(ms, fuso) {
+  const p = {};
+  for (const x of new Intl.DateTimeFormat('en-GB', { timeZone: fuso, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(ms))) p[x.type] = x.value;
+  return Date.UTC(+p.year, +p.month - 1, +p.day) / 86400000;
+}
+
+function _quandoProssima(p) {
+  let fuso = p.fuso || 'Europe/Rome';
+  try { new Intl.DateTimeFormat('en-GB', { timeZone: fuso }); } catch { fuso = 'Europe/Rome'; }
+  const ora = _oraServer();
+  const giorni = _giornoNelFuso(p.quando, fuso) - _giornoNelFuso(ora, fuso);
+  const rtf = new Intl.RelativeTimeFormat(localePannello(), { numeric: 'auto' });
+  const alle = L('alle', 'at', 'a las');
+  if (giorni <= 0) {
+    const min = Math.max(1, Math.round((p.quando - ora) / 60000));
+    return { giorno: `${L('Oggi', 'Today', 'Hoy')} ${alle} ${p.ora}`, fra: min < 60 ? rtf.format(min, 'minute') : rtf.format(Math.floor(min / 60), 'hour') };
+  }
+  if (giorni === 1) return { giorno: `${L('Domani', 'Tomorrow', 'Mañana')} ${alle} ${p.ora}`, fra: '' };
+  const nome = new Intl.DateTimeFormat(localePannello(), { weekday: 'long', timeZone: fuso }).format(new Date(p.quando));
+  return { giorno: `${nome.charAt(0).toUpperCase()}${nome.slice(1)} ${alle} ${p.ora}`, fra: rtf.format(giorni, 'day') };
+}
+
+function _numeroVivo(chiave, n, etichetta) {
+  const v = Number(n) || 0;
+  const prima = _adesso.prima ? _adesso.prima[chiave] : undefined;
+  _adesso.ora[chiave] = v;
+  const cifra = v.toLocaleString(localePannello());
+  const b = prima === undefined ? `<b data-conta="${v}">0</b>` : `<b>${esc(cifra)}</b>`;
+  return `<div class="rap-num${prima !== undefined && prima !== v ? ' cambiato' : ''}">${b}<span>${esc(etichetta)}</span></div>`;
+}
+
+function disegnaAdesso() {
+  const carta = document.getElementById('carta-adesso');
+  const corpo = document.getElementById('adesso-corpo');
+  const d = _adesso.dati;
+  if (!carta || !corpo || !d) return;
+  _adesso.ora = {};
+  const inOnda = !!d.live;
+  corpo.removeAttribute('aria-busy');
+  carta.classList.toggle('in-onda', inOnda);
+  corpo.innerHTML = inOnda ? _adessoInOnda(d) : _adessoFuoriOnda(d);
+  _adesso.prima = _adesso.ora;
+  animaNumeri(corpo);
+  clearInterval(_adesso.orologio);
+  _adesso.orologio = 0;
+  if (inOnda) {
+    _battiOrologio();
+    _adesso.orologio = setInterval(_battiOrologio, 1000);
+  }
+}
+
+function _battiOrologio() {
+  const el = document.querySelector('#adesso-corpo [data-dal]');
+  if (!el || schedaAttiva !== 'stato') { clearInterval(_adesso.orologio); _adesso.orologio = 0; return; }
+  if (document.hidden) return;
+  el.textContent = _durataViva(_oraServer() - Number(el.dataset.dal));
+}
+
+function _adessoInOnda(d) {
+  const v = d.live, s = d.stasera || {};
+  const regia = d.piattaforma === 'twitch' && !soloTwitch('regia');
+  return `<p class="adesso-riga"><span class="adesso-spia"><i class="vivo"></i>${L('In diretta', 'Live', 'En directo')}</span>
+      <span class="adesso-orologio"><span class="solo-lettore">${L('Da quanto sei in onda:', 'How long you’ve been live:', 'Cuánto llevas en directo:')} </span><span data-dal="${Number(v.dal) || 0}">${_durataViva(_oraServer() - (Number(v.dal) || 0))}</span></span></p>
+    ${v.titolo ? `<p class="adesso-titolo">${esc(v.titolo)}</p>` : ''}
+    ${v.gioco ? `<p class="adesso-cosa">${esc(v.gioco)}</p>` : ''}
+    <div class="rap-griglia spazio-sopra">
+      ${v.spettatori != null ? _numeroVivo('spettatori', v.spettatori, L('ti guardano adesso', 'watching now', 'te ven ahora')) : ''}
+      ${v.picco ? _numeroVivo('picco', v.picco, L('il picco di stasera', 'tonight’s peak', 'el pico de esta noche')) : ''}
+      ${_numeroVivo('messaggi', s.messaggi, L('messaggi', 'messages', 'mensajes'))}
+      ${_numeroVivo('persone', s.persone, L('persone in chat', 'people in chat', 'personas en el chat'))}
+      ${_numeroVivo('follow', s.follow, L('nuovi follower', 'new followers', 'nuevos seguidores'))}
+      ${s.sub ? _numeroVivo('sub', s.sub, 'sub') : ''}${s.raid ? _numeroVivo('raid', s.raid, 'raid') : ''}
+      ${s.bit ? _numeroVivo('bit', s.bit, 'bit') : ''}${s.clip ? _numeroVivo('clip', s.clip, 'clip') : ''}
+    </div>
+    ${regia || d.canale ? `<p class="adesso-tasti spazio-sopra">
+      ${regia ? `<button type="button" class="btn" data-vai="regia">${L('Apri la Regia', 'Open the control room', 'Abre la realización')}</button>` : ''}
+      ${d.canale ? `<a class="btn secondario" href="${esc(d.canale)}" target="_blank" rel="noopener">${L('Guarda il canale', 'Watch the channel', 'Mira el canal')}</a>` : ''}
+    </p>` : ''}`;
+}
+
+function _adessoFuoriOnda(d) {
+  const p = d.prossima, u = d.ultima;
+  const proprietario = stato.ruolo !== 'moderatore';
+  let prossima;
+  if (p) {
+    const q = _quandoProssima(p);
+    const cat = p.categoria && p.categoria.toLowerCase() !== String(p.att || '').toLowerCase() ? p.categoria : '';
+    prossima = `<div class="adesso-blocco">
+      <p class="adesso-occhiello">${L('La prossima', 'Next up', 'La próxima')}</p>
+      <p class="adesso-quando"><strong>${esc(q.giorno)}</strong>${q.fra ? ` <span class="badge">${esc(q.fra)}</span>` : ''}</p>
+      ${p.att || cat ? `<p class="adesso-cosa">${esc([p.att, cat].filter(Boolean).join(' · '))}</p>` : ''}
+    </div>`;
+  } else if (proprietario) {
+    prossima = `<div class="adesso-blocco">
+      <p class="adesso-occhiello">${L('La prossima', 'Next up', 'La próxima')}</p>
+      <p>${L('Scrivi i giorni in cui vai in onda: qui vedi quando tocca, e li usano anche la grafica e i calendari.', 'Write the days you go live: here you see when it’s next, and the graphic and the calendars use them too.', 'Escribe los días en que sales en directo: aquí ves cuándo toca, y también los usan la gráfica y los calendarios.')}</p>
+      <p><button type="button" class="btn secondario" data-vai="settimana">${L('La tua settimana', 'Your week', 'Tu semana')}</button></p>
+    </div>`;
+  } else prossima = '';
+  const ultima = u ? `<div class="adesso-blocco">
+      <p class="adesso-occhiello">${L('L’ultima', 'The last one', 'La última')}</p>
+      <p class="adesso-quando"><strong>${esc(_giornoLungo(u.fine))}</strong> <span class="badge">${esc(_durataRap(u.durataMs))}</span></p>
+      <div class="rap-griglia">
+        ${u.giri > 0 ? _numeroVivo('u-picco', u.picco, L('picco spettatori', 'viewer peak', 'pico de espectadores')) : ''}
+        ${_numeroVivo('u-follow', u.follow, L('nuovi follower', 'new followers', 'nuevos seguidores'))}
+        ${_numeroVivo('u-messaggi', u.messaggi, L('messaggi', 'messages', 'mensajes'))}
+      </div>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-vai="dirette">${L('Tutte le dirette', 'All your streams', 'Todos tus directos')}</button></p>
+    </div>` : '';
+  return `<p class="adesso-riga"><span class="adesso-spia spenta"><i class="spento"></i>${L('Non sei in diretta', 'You’re not live', 'No estás en directo')}</span></p>
+    ${prossima || ultima ? `<div class="adesso-due">${prossima}${ultima}</div>` : ''}`;
+}
+
+function _giornoLungo(ms) {
+  const t = Number(ms);
+  if (!Number.isFinite(t) || t <= 0) return '—';
+  const s = new Intl.DateTimeFormat(localePannello(), { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(t));
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function pannelloPersonalita() {
@@ -5960,7 +6111,7 @@ async function caricaSpontanee() {
   const voci = Array.isArray(d?.voci) ? d.voci : [];
   if (!voci.length) { ul.innerHTML = `<li class="vuoto">${L('Niente, finora: da quando è acceso non ha ancora parlato di sua iniziativa.', 'Nothing yet: since it was started it has not spoken on its own.', 'Nada, por ahora: desde que está encendido no ha hablado por iniciativa propia.')}</li>`; return; }
   const TIPO = { promo: L('promemoria dei link', 'link reminder', 'recordatorio de enlaces'), battuta: L('battuta', 'joke', 'broma'), iniziativa: L('una cosa sua', 'its own remark', 'una cosa suya'), manche: L('manche', 'round', 'ronda'), domanda: L('risposta a una domanda rimasta sola', 'answer to an unanswered question', 'respuesta a una pregunta sin respuesta'), rilancio: L('rilancio a chat ferma', 'restart after silence', 'relanzamiento con el chat parado'), hype: L('sull’onda della chat', 'riding the chat wave', 'con la ola del chat') };
-  const lingua = { it: 'it-IT', en: 'en-GB', es: 'es-ES' }[L('it', 'en', 'es')] || 'it-IT';
+  const lingua = localePannello();
   ul.innerHTML = voci.map((v) => `<li>
       <div class="testo-voce">
         <div class="domanda"><span class="badge">${esc(TIPO[v.tipo] || v.tipo)}</span> <span class="meta">${esc(new Date(v.ts).toLocaleTimeString(lingua, { hour: '2-digit', minute: '2-digit' }))}</span></div>
@@ -5989,6 +6140,7 @@ async function caricaGuide() {
 
 function pannelloConoscenza() {
   const sc = impostazioni().scheda || {};
+  const pre = stato.preaddestramento || {};
   const v = (k) => esc(String(sc[k] || ''));
   return pannello('conoscenza', `
     <div class="carta">
@@ -6058,6 +6210,25 @@ function pannelloConoscenza() {
         <button class="btn" id="btn-quaderno-add">${L('Insegna', 'Teach', 'Enseñar')}</button>
       </div>
       <ul class="lista-voci" id="lista-quaderno"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.libro)}${L('Pre-addestramento', 'Pre-training', 'Preentrenamiento')}</h2>
+      <p>${L('SocialBot legge il tuo profilo su andryxify.it per conoscerti prima ancora di entrare in chat.', 'SocialBot reads your andryxify.it profile to get to know you before it even joins chat.', 'SocialBot lee tu perfil en andryxify.it para conocerte antes de entrar al chat.')}</p>
+      <p class="spazio-sopra">
+        ${L('Ultima lettura:', 'Last read:', 'Última lectura:')} <strong class="primo-piano">${esc(dataIt(pre.preaddestramento_ts))}</strong>
+        · ${L('voci di conoscenza:', 'knowledge entries:', 'entradas de conocimiento:')} <strong class="primo-piano">${stato.knowledgeCount}</strong>
+      </p>
+      ${pre.preaddestramento_esito ? `<p class="nota-lettura">${esc(pre.preaddestramento_esito)}</p>` : ''}
+      <p class="spazio-sopra">
+        <button class="btn secondario" id="btn-pretrain">${L('Ri-leggi il mio profilo andryxify.it', 'Re-read my andryxify.it profile', 'Volver a leer mi perfil de andryxify.it')}</button>
+        <span id="esito-pretrain" class="suggerimento"></span>
+      </p>
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.germoglio)}${L('La piccola rete che impara', 'The little network that learns', 'La pequeña red que aprende')}</h2>
+      <p>${L('Il motore veloce del bot che', 'The bot’s fast engine that', 'El motor rápido del bot que')} <strong class="primo-piano">${L('cresce da solo', 'grows on its own', 'crece solo')}</strong>: ${L('risponde all\'istante a ciò che ha già imparato e, quando incontra qualcosa di nuovo, se lo segna e lo impara dal maestro. Più lo alleni (anche via DM su Telegram), più sa fare da sé.', 'answers instantly to what it already learned and, when it meets something new, notes it and learns it from the teacher. The more you train it (also via Telegram DM), the more it can do on its own.', 'responde al instante a lo que ya aprendió y, cuando encuentra algo nuevo, lo anota y lo aprende del maestro. Cuanto más lo entrenas (también por DM en Telegram), más sabe hacer solo.')}</p>
+      <div id="rete-panoramica"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+    </div>
     </div>`);
 }
 
@@ -11572,7 +11743,7 @@ function novTitolo(id) {
 const novGiorno = (iso) => {
   const d = new Date(`${iso}T12:00:00`);
   if (Number.isNaN(d.getTime())) return iso;
-  const lingua = { it: 'it-IT', en: 'en-GB', es: 'es-ES' }[L('it', 'en', 'es')] || 'it-IT';
+  const lingua = localePannello();
   return d.toLocaleDateString(lingua, { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
@@ -13212,8 +13383,8 @@ async function caricaRegia() {
   const box = document.getElementById('regia-stato');
   if (!box) return;
   if (DEMO) {
-    renderRegiaStato({ online: true, viewers: 128, startedAt: new Date(Date.now() - 5400000).toISOString() }, null);
-    const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = 'Just Chatting';
+    renderRegiaStato({ online: true, viewers: _DEMO_DIRETTA.spettatori, startedAt: new Date(_DEMO_DIRETTA.dal).toISOString() }, null);
+    const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = _DEMO_DIRETTA.gioco;
     _pub = { conf: { acceso: true, colore: 'primary', quanto: 60, tolleranza: 120,
       prima: { acceso: true, testo: 'Fra poco parte la pubblicità: restate qui, torno subito.' },
       durante: { acceso: true, testo: 'Pubblicità per {secondi} secondi. Non andate via, ci vediamo fra poco.' },
@@ -21314,11 +21485,6 @@ function attivaPiattaforma() {
     }
   });
 
-  document.getElementById('btn-portale-abbonamento')?.addEventListener('click', () => conErrore(async () => {
-    const r = await api('/api/abbonamento/portale', { method: 'POST', body: {} });
-    if (r?.url) location.href = r.url;
-  }));
-
   document.getElementById('btn-invita-mod')?.addEventListener('click', () => conErrore(async () => {
     const nome = (document.getElementById('inp-mod-login').value || '').trim().replace(/^@/, '');
     const piattaforma = document.getElementById('sel-mod-piattaforma')?.value || 'twitch';
@@ -22740,10 +22906,11 @@ async function conErrore(fn) {
 
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
-  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaRetePanoramica(); caricaPiattaforme(); caricaCodiciPosta(); collegaCancella(); }
+  if (id === 'stato') caricaAdesso();
+  if (id === 'account') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); collegaCancella(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'personalita') { caricaGuide(); caricaSpontanee(); }
-  if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); }
+  if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); caricaRetePanoramica(); }
   if (id === 'clip') caricaClip();
   if (id === 'musica') caricaSpotify();
   if (id === 'sondaggi') caricaSondaggi();

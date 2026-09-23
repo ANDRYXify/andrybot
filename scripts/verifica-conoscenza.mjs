@@ -147,7 +147,7 @@ for (const [verbo, rotta] of [['get', 'quaderno'], ['post', 'quaderno'], ['delet
   dice(new RegExp(`app\\.${verbo}\\('/api/streamer/${rotta}'`).test(serverjs),
     `il quaderno risponde alla ${verbo.toUpperCase()}`, 'rotta mancante');
 }
-dice(/caricaQuaderno\(\);/.test(appjs) && /id === 'conoscenza'\) \{ caricaConoscenza\(\); caricaQuaderno\(\); \}/.test(appjs),
+dice(/id === 'conoscenza'\) \{[^}\n]*\bcaricaQuaderno\(\);[^}\n]*\}/.test(appjs),
   'il quaderno si carica aprendo la scheda', 'la lista resterebbe su «Caricamento…» per sempre');
 
 // --- 7. le parole che non devono uscire ---------------------------------

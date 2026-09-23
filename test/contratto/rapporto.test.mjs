@@ -138,7 +138,7 @@ test('il codice di verifica: in fondo a ogni mail, e visibile solo da dentro il 
   assert.ok(!/INSERT INTO|CREATE TABLE/.test(pst), 'niente da conservare, quindi niente da rubare');
 
   const app = leggi('src/web/public/app.js');
-  assert.ok(app.includes('id="codici-posta"'), 'la carta c\'e\' nella scheda Stato');
+  assert.ok(app.includes('id="codici-posta"'), 'la carta c\'e\' nella scheda del tuo account');
   assert.match(app, /caricaCodiciPosta\(\);/, 'e si carica con la scheda');
 });
 

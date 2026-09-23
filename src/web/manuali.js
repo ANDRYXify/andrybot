@@ -1185,7 +1185,7 @@ const VETRINA = {
 
 const ACCOUNT = {
   slug: 'account',
-  schede: ['stato', 'sottoscrizione'],
+  schede: ['stato', 'account', 'sottoscrizione'],
   titolo: 'Manuale dell\'abbonamento: piani, extra e moderatori | SocialBot',
   h1: 'Manuale dell\'abbonamento: piani, extra e moderatori',
   desc: 'Cosa è gratis per sempre, cosa aggiungono i singoli extra, come si cambia o si disdice, e cosa succede a quello che hai creato.',
@@ -1254,7 +1254,7 @@ const ACCOUNT = {
     { d: 'Le monete degli spettatori si perdono?', r: 'No. La classifica si ferma dov\'è e riprende da lì.' },
     { d: 'Un moderatore vede i miei dati di pagamento?', r: 'No. Il portale dei pagamenti e i permessi Twitch sono cose da proprietario.' },
     { d: 'Uno sconosciuto può chiedermi di moderare il mio canale?', r: 'Su Twitch no: prima di farti arrivare la richiesta chiediamo a Twitch chi modera il tuo canale, e chi non c\'è viene fermato lì. Su Kick la richiesta può arrivare da chiunque, perché Kick non pubblica quell\'elenco: per questo te la mostriamo marcata «da controllare tu», e finché non dici di sì quella persona non vede niente. Ognuno può avere al massimo tre richieste in attesa in tutto.' },
-    { d: 'Moderavo già un canale: devo aspettare che mi mandi il link?', r: 'No. Nella scheda Stato scrivi il nome del canale che moderi e mandi la richiesta. Se il canale è su Twitch la conferma è automatica, e allo streamer arriva già verificata.' },
+    { d: 'Moderavo già un canale: devo aspettare che mi mandi il link?', r: 'No. Nella scheda «Il tuo account» scrivi il nome del canale che moderi e mandi la richiesta. Se il canale è su Twitch la conferma è automatica, e allo streamer arriva già verificata.' },
     { d: 'Posso avere il bot su due canali?', r: 'Ogni canale ha il suo abbonamento, perché ogni canale ha la sua chat, le sue monete e i suoi comandi.' },
     { d: 'Dove vedo quanto pago davvero?', r: 'Nella scheda Abbonamento in cima, e nel portale dei pagamenti con le fatture.' },
     { d: 'Ho già il Base e voglio un extra: pago di nuovo il Base?', r: 'No. L\'extra entra nell\'abbonamento che hai, e paghi solo lui: la parte di mese che resta la trovi nella prossima fattura.' },

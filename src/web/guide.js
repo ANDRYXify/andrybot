@@ -380,9 +380,9 @@ export const GUIDE = [
         '<strong>Non dare per scontato che la moderazione si comporti uguale.</strong> Prova un messaggio che dovrebbe essere bloccato, su entrambe, prima di fidarti.',
       ] },
       { h2: DENTRO, p: [
-        'Kick si collega dalla scheda <a href="/pannello#stato">Stato</a>, con lo stesso pulsante di Twitch.',
+        'Kick si collega dalla scheda <a href="/pannello#account">Il tuo account</a>, con lo stesso pulsante di Twitch.',
       ], passi: [
-        { t: 'Apri la scheda Stato e premi «Registrati con Kick»', d: 'Ti porta su Kick, non su un modulo dove scrivi la password qui. Se un servizio ti chiede la password di Kick dentro il suo sito, chiudi la pagina.' },
+        { t: 'Apri la scheda «Il tuo account» e premi «Registrati con Kick»', d: 'Ti porta su Kick, non su un modulo dove scrivi la password qui. Se un servizio ti chiede la password di Kick dentro il suo sito, chiudi la pagina.' },
         { t: 'Leggi i quattro permessi di base', d: 'Sapere chi ha autorizzato, leggere titolo e stato della diretta, scrivere in chat, ricevere gli eventi. Sono il minimo perché il bot funzioni: con meno, ammutolisce.' },
         { t: 'Decidi se vuoi anche la moderazione', d: 'Bannare e cancellare messaggi sono <strong>due permessi a parte</strong>, chiesti solo se accendi la moderazione. Se non ti serve, il bot non li ha proprio — e lo puoi verificare tu dalle connessioni del tuo account Kick, invece di fidarti.' },
         { t: 'Controlla che gli eventi arrivino', d: 'Dopo il collegamento la scheda dice se l\'iscrizione agli eventi è riuscita. Da Kick riceviamo i messaggi di chat, i follow, gli abbonamenti (nuovi, rinnovi e regalati) e il cambio di stato della diretta.' },

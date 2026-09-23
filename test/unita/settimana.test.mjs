@@ -188,3 +188,37 @@ test('una categoria non trovata si ricerca al salvataggio dopo: «nessuna» puo\
   const dopo = await S.categorieDi(helix, { ...s, twitch: { ...s.twitch, categorie: prima } });
   assert.deepEqual(dopo, { 'hollow knight': { id: '490147', name: 'Hollow Knight' } }, 'ricordare «nessuna» vorrebbe dire scriverla per sempre senza categoria');
 });
+
+// LA PROSSIMA DIRETTA, quella che la Home mostra quando non sei in onda.
+test('la prossima diretta e\' il primo giorno in onda che deve ancora cominciare, nel fuso della settimana', () => {
+  const sett = S.normalizzaSettimana({
+    giorni: [lun('21:00', 'Diablo 4'), riposo, {}, lun('18:00', 'Minecraft'), {}, {}, lun('21:00', 'Chiacchiere')],
+    fuso: ROMA,
+  });
+  sett.twitch.categorie = { minecraft: { id: '27471', name: 'Minecraft' } };
+  const p = S.prossimaDiretta(sett, new Date('2026-09-22T08:00:00Z'));
+  assert.equal(new Date(p.quando).toISOString(), '2026-09-24T16:00:00.000Z', 'martedi\' mattina: la prossima e\' giovedi\' alle 18 di Roma');
+  assert.deepEqual([p.giorno, p.ora, p.att, p.categoria, p.fuso], [3, '18:00', 'Minecraft', 'Minecraft', ROMA]);
+
+  const lunedi = S.prossimaDiretta(sett, new Date('2026-09-21T18:59:00Z'));
+  assert.equal(new Date(lunedi.quando).toISOString(), '2026-09-21T19:00:00.000Z', 'un minuto prima: e\' stasera');
+  const partita = S.prossimaDiretta(sett, new Date('2026-09-21T19:00:00Z'));
+  assert.equal(partita.giorno, 3, 'all\'ora esatta non e\' piu\' «la prossima»');
+  assert.equal(S.prossimaDiretta(sett, new Date('2026-09-21T19:00:00Z')).categoria, 'Minecraft');
+});
+
+test('la prossima diretta segue l\'ora scritta anche quando cambia l\'ora', () => {
+  const sett = S.normalizzaSettimana({ giorni: [{}, {}, {}, {}, {}, lun('21:00'), lun('21:00')], fuso: ROMA });
+  const sabato = S.prossimaDiretta(sett, new Date('2026-10-24T12:00:00Z'));
+  assert.equal(new Date(sabato.quando).toISOString(), '2026-10-24T19:00:00.000Z', 'sabato alle 21, ora legale');
+  const domenica = S.prossimaDiretta(sett, new Date('2026-10-24T19:30:00Z'));
+  assert.equal(new Date(domenica.quando).toISOString(), '2026-10-25T20:00:00.000Z', 'domenica alle 21, ora solare: sempre le 21 di Roma');
+});
+
+test('senza giorni in onda non c\'e\' una prossima, e un fuso che non esiste non la sposta', () => {
+  assert.equal(S.prossimaDiretta(S.settimanaDi({}), new Date('2026-09-22T08:00:00Z')), null, 'niente scritto: nessuna sera inventata');
+  const solo = S.normalizzaSettimana({ giorni: [riposo, { ora: '', att: 'senza ora' }], fuso: ROMA });
+  assert.equal(S.prossimaDiretta(solo, new Date('2026-09-22T08:00:00Z')), null, 'il riposo e un giorno senza ora non sono dirette');
+  const storto = { giorni: S.normalizzaGiorni([lun('21:00')]), fuso: 'Luna/Base' };
+  assert.equal(S.prossimaDiretta(storto, new Date('2026-09-22T08:00:00Z')).fuso, S.FUSO_BASE);
+});

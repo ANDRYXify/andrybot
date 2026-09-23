@@ -118,6 +118,24 @@ export const inOnda = (g) => !!g && !g.off && !!g.ora;
 
 const chiaveAtt = (att) => testo(att, ATT_MAX).toLowerCase();
 
+// LA PROSSIMA DIRETTA, da adesso: fra i giorni in onda, quello che arriva
+// prima. L'ora e' quella scritta, nel fuso della settimana, anche a cavallo del
+// cambio d'ora (`prossimaVolta` la ricalcola nel fuso, come per Discord). Una
+// diretta la cui ora e' passata non e' «la prossima»: tocca alla settimana dopo.
+// Niente giorni in onda, niente prossima: non si inventa una sera.
+export function prossimaDiretta(sett, adesso = new Date()) {
+  const fuso = fusoValido(sett?.fuso) ? sett.fuso : FUSO_BASE;
+  const cat = sett?.twitch?.categorie || {};
+  let prima = null;
+  (sett?.giorni || []).forEach((g, i) => {
+    if (!inOnda(g)) return;
+    const t = prossimaVolta(fuso, [i], g.ora, adesso);
+    if (!t || (prima && prima.quando <= t.getTime())) return;
+    prima = { quando: t.getTime(), giorno: i, ora: g.ora, att: g.att, categoria: String(cat[chiaveAtt(g.att)]?.name || ''), fuso };
+  });
+  return prima;
+}
+
 // GLI SLOT VOLUTI: uno per giorno. Twitch ripete un segmento ogni settimana
 // nello stesso giorno, e non ha una regola «lunedi', mercoledi' e venerdi'»:
 // tre sere sono tre segmenti.

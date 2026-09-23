@@ -55,6 +55,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Le scritte delle grafiche si leggono sempre, anche sopra le scene che si muovono, e GIF e video ricominciano senza scatti. Col QR, niente più righe coperte. [vai: grafiche]
 - Nella scheda del browser la tua pagina link ha come icona la tua foto, quella che mostra in alto, invece di quella di SocialBot. [vai: pagina]
 - Il titolo di ogni scheda si vede subito, anche al primo caricamento, e sul telefono il pannello non scivola più di lato.
+- Stato ti dice come va adesso: in diretta vedi da quanto, chi ti guarda e cosa succede in chat; fuori onda, quando è la prossima e com’è andata l’ultima. [vai: stato]
+- Piattaforme, passkey, moderatori, codici delle mail e i tuoi dati hanno una scheda loro, «Il tuo account». Il pre-addestramento sta in Conoscenza. [vai: account]
 
 ## 2026-09-19
 

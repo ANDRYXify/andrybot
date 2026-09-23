@@ -337,7 +337,7 @@ ${codice ? `<tr><td class="sb-bordo" style="padding:14px 28px 0;border-top:1px s
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="sb-riquadro sb-bordo" style="background:${c('surface-2-tinta')};border:1px solid ${c('border')};border-radius:10px;"><tr><td style="padding:10px 14px;">
 <div class="sb-tenue" style="font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:${c('testo-2')};">Codice di verifica di questa settimana</div>
 <div class="sb-testo" style="margin-top:3px;font-size:19px;font-weight:bold;letter-spacing:.12em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${esc(codice)}</div>
-<div class="sb-tenue" style="margin-top:4px;font-size:12px;line-height:1.45;color:${c('testo-2')};">Lo ritrovi nel tuo pannello, alla scheda Stato. Se non combacia, questa mail non l’abbiamo scritta noi: non aprire i collegamenti.</div>
+<div class="sb-tenue" style="margin-top:4px;font-size:12px;line-height:1.45;color:${c('testo-2')};">Lo ritrovi nel tuo pannello, alla scheda «Il tuo account». Se non combacia, questa mail non l’abbiamo scritta noi: non aprire i collegamenti.</div>
 </td></tr></table></td></tr>` : ''}
 <tr><td class="sb-tenue sb-bordo" style="padding:14px 28px 20px;${codice ? '' : `border-top:1px solid ${c('border')};`}font-size:12px;line-height:1.5;color:${c('testo-2')};">${piede || 'SocialBot · socialbot.live'}</td></tr>
 </table></td></tr></table></body></html>`;
@@ -410,7 +410,7 @@ export function rigaHtml(etichetta, valore) {
 // La stessa cosa per chi la posta la legge in solo testo: senza, sarebbe
 // l'unico a non poter verificare niente.
 export const codiceTesto = (codice) => (codice
-  ? `\n\nCodice di verifica di questa settimana: ${codice}\nLo ritrovi nel tuo pannello, alla scheda Stato. Se non combacia, questa mail non l’abbiamo scritta noi.`
+  ? `\n\nCodice di verifica di questa settimana: ${codice}\nLo ritrovi nel tuo pannello, alla scheda «Il tuo account». Se non combacia, questa mail non l’abbiamo scritta noi.`
   : '');
 
 // ---------------------------------------------------------------- le mail che partono

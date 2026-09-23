@@ -19,6 +19,12 @@
 // Le uniche fuori dal conto sono quelle che il pannello non mostra a nessuno:
 // le schede da admin, e lo Studio Web, nascosto apposta (vedi 5437e2f).
 //
+// E una sta da sola per costruzione: Stato, la prima scheda. E' l'inizio, da
+// li' il menu porta dappertutto, e una barra di «sorelle» la rimetterebbe
+// dentro un gruppo che non e' il suo: stava sotto «Account», ed era proprio
+// quello che la rendeva confusa (docs/STATO.md). Qui si pretende che NON abbia
+// la barra, e che le schede da sole non diventino un'abitudine.
+//
 // Uso: node scripts/verifica-sorelle.mjs   (--selftest pretende il rosso)
 
 import { readFileSync } from 'node:fs';
@@ -33,6 +39,7 @@ const esiti = [];
 const chiedi = (ok, t) => { esiti.push({ ok: !!ok, t }); console.log((ok ? '  ✓ ' : '  ✗ ') + t); };
 
 const FUORI = new Set(['admin', 'avatar', 'studio']);
+const DA_SOLE = new Set(['stato']);
 
 const sito = await apriSito({});
 const br = await apriBrowser();
@@ -57,6 +64,7 @@ try {
 
   const senza = [];
   const sola = [];
+  const conBarra = [];
   for (const s of schede) {
     if (SELFTEST && s === 'emote') continue;   // il selftest finge di averne saltata una
     await pg.evaluate((x) => window.vaiAScheda(x), s);
@@ -65,6 +73,7 @@ try {
     // cosa — le sotto-schede DENTRO una scheda — e qui non c'entra.
     const voci = await pg.$$eval('.pagina-testata > .fam-barra:not([id]) .fam-scheda',
       (n) => n.map((x) => x.dataset.scheda)).catch(() => []);
+    if (DA_SOLE.has(s)) { if (voci.length) conBarra.push(s); continue; }
     if (!voci.length) senza.push(s);
     else if (voci.length < 2) sola.push(s);
     else if (!voci.includes(s)) senza.push(s + ' (la barra non nomina se stessa)');
@@ -74,6 +83,9 @@ try {
     ? `queste schede non hanno una barra: ${[...senza, ...finte].join(', ')}`
     : 'ogni scheda porta alle sue sorelle, senza passare dal menu');
   chiedi(!sola.length, sola.length ? `barra con una voce sola: ${sola.join(', ')}` : 'e nessuna barra ha una voce sola, che non porterebbe da nessuna parte');
+  chiedi(!conBarra.length && DA_SOLE.size <= 1, conBarra.length
+    ? `stanno da sole e hanno una barra: ${conBarra.join(', ')}`
+    : `da sola per costruzione, e senza barra: ${[...DA_SOLE].join(', ')}`);
 
   // E la barra funziona: cliccando una sorella ci si arriva davvero.
   await pg.evaluate(() => window.vaiAScheda('effetti'));

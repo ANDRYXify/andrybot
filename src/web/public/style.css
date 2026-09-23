@@ -2323,6 +2323,26 @@ body.ce-aperto { overflow: hidden; }
 .rap-num span { font-size: .78rem; color: var(--testo-2); }
 .rap-top { margin: .5rem 0 0; font-size: .88rem; color: var(--testo-2); }
 
+.solo-lettore { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+.adesso-riga { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .2rem 1rem; margin: 0; }
+.adesso-spia { display: inline-flex; align-items: center; font-weight: 800; font-size: 1.05rem; }
+.carta-viva.in-onda .adesso-spia { color: var(--rosso); }
+.adesso-spia.spenta { color: var(--testo-2); font-weight: 700; }
+.adesso-orologio { color: var(--testo); font-variant-numeric: tabular-nums; font-size: clamp(1.5rem, 4vw, 2.1rem); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.adesso-titolo { margin: .45rem 0 0; font-size: 1.05rem; font-weight: 650; overflow-wrap: anywhere; }
+.adesso-cosa { margin: .15rem 0 0; color: var(--testo-2); overflow-wrap: anywhere; }
+.adesso-due { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 1.1rem 1.8rem; margin-top: .75rem; }
+.adesso-blocco > p { margin: 0 0 .35rem; }
+.adesso-occhiello { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--testo-3); }
+.adesso-quando { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .5rem; }
+.adesso-quando strong { font-size: 1.1rem; }
+.adesso-tasti { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 0; }
+.rap-num.cambiato b { animation: numero-cambia 1.4s var(--ease) both; }
+@keyframes numero-cambia { from { color: var(--acc); transform: translateY(-2px); } to { color: inherit; transform: none; } }
+body.leggero .rap-num.cambiato b, body.meno-moto .rap-num.cambiato b { animation: none; }
+@media (prefers-reduced-motion: reduce) { .rap-num.cambiato b { animation: none; } }
+
 .dcs-tracce { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .9rem; }
 .dcs-traccia { display: flex; flex-direction: column; gap: .35rem; padding: .95rem 1rem 1rem; border: 1px solid var(--border); border-radius: var(--r-l); background: var(--surface-2); }
 .dcs-traccia h3 { margin: 0; font-size: 1rem; }

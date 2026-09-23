@@ -195,7 +195,7 @@ test('i codici del mese: quelli gia\' usati, il piu\' recente segnato, nessuno f
 test('il codice sta in fondo a ogni mail, in tutte e due le forme', () => {
   const h = p.guscioHtml({ titolo: 'x', corpo: '<p>y</p>', codice: 'AB23-CD45' });
   assert.ok(h.includes('AB23-CD45') && h.includes('Codice di verifica di questa settimana'));
-  assert.ok(h.includes('scheda Stato'), 'e dice dove ritrovarlo');
+  assert.ok(h.includes('scheda «Il tuo account»'), 'e dice dove ritrovarlo');
   assert.ok(!p.guscioHtml({ titolo: 'x', corpo: 'y' }).includes('Codice di verifica'), 'senza codice non si inventa un riquadro vuoto');
   assert.ok(p.codiceTesto('AB23-CD45').includes('AB23-CD45'), 'anche per chi legge in solo testo');
   assert.equal(p.codiceTesto(''), '');
