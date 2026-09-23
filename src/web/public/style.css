@@ -567,6 +567,8 @@ details > summary:focus-visible { outline: 2px solid var(--acc); outline-offset:
 .regola-resa { flex: 1 1 16rem; min-width: 0; font-family: system-ui, sans-serif; font-size: .82rem; color: var(--testo-2); }
 .regola-resa.sopra { color: var(--rosso); font-weight: 600; }
 .regola-corpo { margin-top: .6rem; }
+.regola-scelte { border: 0; padding: 0; margin: .7rem 0 0; display: flex; flex-wrap: wrap; gap: .3rem 1rem; }
+.regola-scelte > legend { padding: 0; margin-bottom: .3rem; font-size: .88rem; color: var(--testo-2); }
 
 .guida-scheda { margin-top: 1.1rem; }
 .mini-guida { margin: .2rem 0 1rem; }

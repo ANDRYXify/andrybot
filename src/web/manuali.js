@@ -11,7 +11,7 @@
 // li', qui devono cambiare — e il cancello verifica-manuali.mjs controlla che
 // non manchi niente di quello che il motore sa fare.
 import { GUIDE, DENTRO, ancora, paginaDoc, paginaManuali } from './guide.js';
-import { CATALOGO, giocoDi, valoriDi, valutaResa, presenzaOraria } from '../features/giochi-conf.js';
+import { CATALOGO, giocoDi, valoriDi, valutaResa, presenzaOraria, MANCHE_TIPI } from '../features/giochi-conf.js';
 
 // I numeri dei giochi li legge dal catalogo, che e' quello da cui li legge il
 // motore: scritti a mano, al primo ribilancio avrebbero mentito.
@@ -27,9 +27,10 @@ function righeRegole() {
       const base = p.tipo === 'elenco' ? `${p.def.length} frasi di serie`
         : p.tipo === 'tabella' ? `${p.def.length} righe di serie`
           : p.tipo === 'scelta' ? p.scelte.find(([k]) => k === p.def)[1][0]
+            : p.tipo === 'scelte' ? 'tutte'
             : `${CIFRA(p.def)} ${TIPO_PARAM[p.tipo] || ''}`.trim();
       const limiti = p.tipo === 'elenco' || p.tipo === 'tabella' ? `fino a ${p.max} righe`
-        : p.tipo === 'scelta' ? p.scelte.map(([, e]) => e[0]).join(' o ')
+        : p.tipo === 'scelta' || p.tipo === 'scelte' ? p.scelte.map(([, e]) => e[0]).join(', ')
           : `${CIFRA(p.min)}–${CIFRA(p.max)}`;
       righe.push([g.nome[0], p.eti[0], base, limiti]);
     }
@@ -209,8 +210,8 @@ const GIOCHI = {
 
     { h2: 'Le manche automatiche' },
     { p: [
-      `Una manche è una domanda aperta a tutta la chat: chi risponde per primo prende il premio della manche (${CIFRA(DI_SERIE('manche').premio)} di base). Si aprono da sole ogni tanto (da <em>Giochi</em> scegli ogni quanti minuti, da 1 a 360, e se solo in diretta) oppure a mano con <code>!manche</code>.`,
-      'I tipi sono sei, e il bot ne pesca uno che riesca a costruire:',
+      `Una manche è una domanda aperta a tutta la chat: chi risponde per primo prende il premio della manche (${CIFRA(DI_SERIE('manche').premio)} di base). Si aprono da sole ogni tanto (da <em>Giochi</em> scegli ogni quanti minuti, da 1 a 360, e se solo in diretta) oppure a mano con <code>!manche</code>, che ne apre una a caso, o col nome: <code>!manche impiccato</code>.`,
+      `I tipi sono ${MANCHE_TIPI.length}. Nelle regole delle manche scegli quali stanno nel giro di quelle automatiche, e il bot ne pesca uno che riesca a costruire:`,
     ] },
     { tabella: [
       ['Tipo', 'Come funziona', 'Tempo', 'Materiale tuo'],
@@ -220,7 +221,12 @@ const GIOCHI = {
       ['Anagramma', 'Lettere mescolate da rimettere a posto.', '45s', 'le tue parole'],
       ['Sequenza', 'Una sequenza di simboli da ripetere.', '30s', 'i tuoi simboli'],
       ['Domanda tua', 'Domanda e risposte scritte da te.', 'da 10s a 5 min', 'domanda + risposte'],
+      ['Calcolo veloce', 'Un conto da fare di corsa, generato ogni volta: 7 × 8 + 3.', '30s', '—'],
+      ['Rebus', 'Emoji da leggere: 🕷️🧑 è Spiderman. Film, giochi e cartoni di serie.', '45s', 'i tuoi rebus'],
+      ['Più o meno', 'Un numero da 1 a 100. Chi scrive un numero stringe l\'intervallo per tutti, e il bot lo dice ogni pochi secondi.', '90s', '—'],
+      ['Impiccato', 'Una parola da scoprire una lettera alla volta, o tutta insieme. Sei lettere sbagliate e vince l\'impiccato.', '2 min', 'le tue parole'],
     ] },
+    { p: ['Nel più o meno e nell\'impiccato il bot non risponde a ogni messaggio: raccoglie i tentativi e dice come sta la partita al massimo ogni quattro secondi. In una chat viva, se no, parlerebbe più lui di tutti gli altri.'] },
     { p: ['Il materiale che aggiungi non sostituisce quello di serie: quando ce n\'è di tuo, il bot lo pesca <strong>due volte su tre</strong>, così la chat non impara le domande a memoria.'] },
 
     { h2: 'Le classifiche' },

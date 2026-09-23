@@ -76,6 +76,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Chi ha l'account nuovo non viene più cacciato dallo scudo: l'avviso esce una volta sola, e un mod lo fa scrivere con !permetti nome. Un messaggio con i Bit non viene mai trattenuto. [vai: scudo]
 - Ogni gioco ha le sue regole da cambiare: costi, premi, attese, probabilità, testi e cosa si pesca, con accanto quanto rende. Di serie il banco vince sempre un po' e la pesca rende quanto la presenza. [vai: giochi]
 - La chat in solo emote per due minuti, o per il tempo che dici: la accendono i mod con !soloemote 5m, un tuo Modulo o la chat con !sblocca, e poi torna com'era da sola. [vai: moduli]
+- Quattro manche nuove: impiccato, più o meno, calcolo veloce e rebus con le emoji. Scegli tu quali girano da sole, e con !manche impiccato ne apri una per nome. [vai: giochi]
 
 ## 2026-09-19
 

@@ -52,6 +52,21 @@ const DUELLO = [
   '{a} sconfigge {b} e ruba pure la scena ✨',
 ];
 
+// I tipi di manche: gli stessi del motore (games.js, COSTRUTTORI), e una prova
+// controlla che i due elenchi siano uguali.
+export const MANCHE_TIPI = [
+  ['trivia', T('Quiz', 'Quiz', 'Quiz')],
+  ['parola', T('Reflex', 'Reflex', 'Reflejo')],
+  ['numero', T('Numero', 'Number', 'Número')],
+  ['anagramma', T('Anagramma', 'Anagram', 'Anagrama')],
+  ['sequenza', T('Sequenza', 'Sequence', 'Secuencia')],
+  ['domanda', T('Domanda tua', 'Your question', 'Tu pregunta')],
+  ['calcolo', T('Calcolo veloce', 'Quick maths', 'Cálculo rápido')],
+  ['rebus', T('Rebus', 'Emoji rebus', 'Jeroglífico')],
+  ['piuomeno', T('Più o meno', 'Higher or lower', 'Más o menos')],
+  ['impiccato', T('Impiccato', 'Hangman', 'Ahorcado')],
+];
+
 const ATTESA = (def, eti = T('Attesa fra due volte, a testa', 'Wait between two goes, each', 'Espera entre dos veces, cada uno')) =>
   ({ k: 'attesa', tipo: 'secondi', def, min: 1, max: 3600, eti });
 
@@ -107,6 +122,7 @@ export const CATALOGO = [
     id: 'manche', nome: T('Manche', 'Rounds', 'Rondas'),
     param: [
       { k: 'premio', tipo: 'monete', def: 25, min: 0, max: 100000, eti: T('Premio a chi risponde per primo', 'Prize for the first right answer', 'Premio para quien responde primero'), vecchio: { punti: 'trivia', era: 25 } },
+      { k: 'tipi', tipo: 'scelte', def: MANCHE_TIPI.map(([id]) => id), scelte: MANCHE_TIPI, eti: T('Nel giro delle manche automatiche', 'In the automatic rounds rotation', 'En la rotación de rondas automáticas') },
     ],
     resa: { tipo: 'manche', premio: 'premio' },
   },
@@ -178,6 +194,12 @@ function valore(p, v) {
   if (p.tipo === 'elenco') return elenco(v, p);
   if (p.tipo === 'tabella') return tabella(v, p);
   if (p.tipo === 'scelta') return p.scelte.some(([id]) => id === v) ? v : null;
+  if (p.tipo === 'scelte') {
+    // Almeno una: un giro senza manche e' un interruttore spento travestito,
+    // e l'interruttore c'e' gia'.
+    const ok = (Array.isArray(v) ? v : []).filter((x) => p.scelte.some(([id]) => id === x));
+    return ok.length ? [...new Set(ok)] : null;
+  }
   return intero(v, p);
 }
 

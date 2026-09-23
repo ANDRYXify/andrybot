@@ -177,9 +177,48 @@ Due dettagli che sembrano piccoli e non lo sono:
   normalizzazione toglie tutto ciò che non è alfanumerico — comprese le emoji —
   quindi la sequenza di simboli sarebbe stata impossibile da vincere.
 
+## Le manche con lo stato: impiccato e più o meno
+
+Fino a qui una manche era una domanda e un controllo: il primo messaggio giusto
+vince. L'impiccato e il più o meno sono diversi: ogni messaggio **cambia la
+partita** (una lettera scoperta, un intervallo più stretto), e la chat gioca
+tutta insieme.
+
+Una manche così non ha `controlla` ma `suMessaggio`, che ritorna `{ vince }`,
+`{ chiudi, dire }` (l'impiccato che vince lui) o niente. Il resto del motore non
+cambia: chi vince prende il premio delle regole delle manche, e una manche vinta
+non scade.
+
+**Gli indizi non escono a ogni messaggio.** In una chat viva dieci persone
+scrivono un numero nello stesso secondo: rispondere a ognuno vorrebbe dire che
+il bot parla più di tutti gli altri insieme. I tentativi si raccolgono, e lo
+stato della partita si dice **al massimo una volta ogni quattro secondi**
+(`INDIZIO_MS`), e solo se è cambiato.
+
+| manche | cosa | quanto dura |
+|---|---|---|
+| Impiccato | una parola, una lettera alla volta o tutta insieme; sei errori e vince lui | 2 min |
+| Più o meno | un numero da 1 a 100; ogni tentativo stringe l'intervallo per tutti | 90 s |
+| Calcolo veloce | un conto generato ogni volta, mai sotto zero | 30 s |
+| Rebus | emoji da leggere (🕷️🧑 = Spiderman), venti di serie e i tuoi | 45 s |
+
+Il più o meno si risolve sempre: dimezzando l'intervallo bastano sette
+tentativi per cento numeri, e la prova lo verifica su duecento partite. Il
+calcolo veloce si confronta con un conto fatto a parte, su cinquecento conti.
+
+**Il giro si sceglie.** Nelle regole delle manche si spuntano i tipi che stanno
+nel giro di quelle automatiche (almeno uno: per spegnerle c'è l'interruttore).
+`!manche impiccato` ne apre una per nome anche se non è nel giro, e un nome
+sbagliato si dice invece di tirare a caso.
+
 ## Il collaudo
 
-`t_giochi.mjs` verifica:
+`test/unita/manche.test.mjs` verifica, per tutti i tipi, che la soluzione
+vinca. Prima di lui non c'era: la sezione qui sotto parlava di un file,
+`t_giochi.mjs`, che non è mai esistito.
+
+Quello che quel file prometteva lo verificano adesso le prove vere
+(`giochi-conf`, `manche`, `presenza-duello`):
 
 - che **ogni modello di testo** si riempia senza lasciare segnaposto, e che un
   segnaposto ripetuto venga sostituito tutte le volte;

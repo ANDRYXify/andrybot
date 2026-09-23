@@ -8165,7 +8165,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!esigiFunzione(req, res, 'giochi', 'I giochi personalizzati')) return;
     const login = currentUser(req).login;
     const b = req.body || {};
-    const tipo = ['trivia', 'parola', 'anagramma', 'sequenza', 'domanda'].includes(b.tipo) ? b.tipo : null;
+    const tipo = ['trivia', 'parola', 'anagramma', 'sequenza', 'domanda', 'rebus', 'impiccato'].includes(b.tipo) ? b.tipo : null;
     if (!tipo) return res.status(400).json({ errore: 'tipo di gioco non valido' });
     const nome = String(b.nome || '').trim().slice(0, 60);
     let config = {};
@@ -8175,6 +8175,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         .filter((d) => d.q && d.a.length).slice(0, 200);
       if (!domande.length) return res.status(400).json({ errore: 'aggiungi almeno una domanda con una risposta' });
       config = { domande };
+    } else if (tipo === 'rebus') {
+      const rebus = (Array.isArray(b.rebus) ? b.rebus : [])
+        .map((d) => ({ e: String(d?.e || '').trim().slice(0, 40), a: (Array.isArray(d?.a) ? d.a : []).map((x) => String(x).trim().slice(0, 80)).filter(Boolean).slice(0, 10) }))
+        .filter((d) => d.e && d.a.length).slice(0, 200);
+      if (!rebus.length) return res.status(400).json({ errore: 'aggiungi almeno un rebus con una risposta' });
+      config = { rebus };
     } else if (tipo === 'sequenza') {
       const simboli = (Array.isArray(b.simboli) ? b.simboli : [])
         .map((x) => String(x).trim().slice(0, 8)).filter(Boolean).slice(0, 24);
@@ -8193,6 +8199,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (!parole.length) return res.status(400).json({ errore: 'aggiungi almeno una parola' });
       if (tipo === 'anagramma' && !parole.some((p) => p.length >= 4)) {
         return res.status(400).json({ errore: 'per gli anagrammi servono parole di almeno quattro lettere' });
+      }
+      if (tipo === 'impiccato' && !parole.some((p) => /^[a-zà-ÿ]{4,20}$/i.test(p))) {
+        return res.status(400).json({ errore: 'per l\'impiccato serve almeno una parola sola, senza spazi, fra 4 e 20 lettere' });
       }
       config = { parole };
     }

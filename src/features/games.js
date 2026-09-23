@@ -327,17 +327,46 @@ function roundNumero() {
   return { tipo: 'numero', annuncio: `🔢 Ho pensato un numero da 1 a ${max}: indovinatelo!`, controlla: (t) => parseInt(t, 10) === n, soluzione: String(n), durata: 40000 };
 }
 
+// Una manche puo' avere uno stato (l'impiccato ricorda le lettere, il «piu' o
+// meno» restringe l'intervallo). Allora non ha `controlla` ma `suMessaggio`,
+// che ritorna { vince } per il vincitore, { chiudi, dire } per finire senza, o
+// niente. Gli indizi non escono a ogni messaggio: in una chat viva sarebbero
+// un messaggio del bot per ogni messaggio della chat. Si raccolgono e si
+// dicono al piu' una volta ogni INDIZIO_MS, con `round.indizio()`.
+const INDIZIO_MS = 4000;
+
 function avviaRound(channel, round, say) {
   if (!round || roundAttivo.has(channel)) return false;
   round.premio = round.premio || conf(channel, 'manche').premio;
   round.scadenza = Date.now() + round.durata;
+  round.say = say;
+  round.vivo = () => roundAttivo.get(channel) === round;
+  round.indizio = () => {
+    if (round._indizio) return;
+    round._indizio = setTimeout(() => {
+      round._indizio = null;
+      if (round.vivo()) { const t = round.statoDaDire?.(); if (t) { try { say(t); } catch { /* niente */ } } }
+    }, INDIZIO_MS);
+    round._indizio.unref?.();
+  };
+  round.fine = () => { clearTimeout(round._indizio); round._indizio = null; };
   roundAttivo.set(channel, round);
-  try { say(`${round.annuncio} — rispondete in chat! (${Math.round(round.durata / 1000)}s, +${round.premio} ${nomeMoneta(channel)})`); } catch { /* niente */ }
-  setTimeout(() => {
+  try { say(`${round.annuncio}${round.suMessaggio ? '' : ' Rispondete in chat!'} (${Math.round(round.durata / 1000)}s, +${round.premio} ${nomeMoneta(channel)})`); } catch { /* niente */ }
+  const scade = setTimeout(() => {
     const r = roundAttivo.get(channel);
-    if (r === round) { roundAttivo.delete(channel); try { say(`⏰ Tempo scaduto! La risposta era "${round.soluzione}".`); } catch { /* niente */ } }
-  }, round.durata + 1000).unref?.();
+    if (r === round) { roundAttivo.delete(channel); round.fine(); try { say(`⏰ Tempo scaduto! La risposta era "${round.soluzione}".`); } catch { /* niente */ } }
+  }, round.durata + 1000);
+  scade.unref?.();
   return true;
+}
+
+// La manche in corso in un canale, o null.
+export const mancheInCorso = (channel) => roundAttivo.get(channel) || null;
+
+// Cosa dice una manche di un messaggio: la forma stateful o quella semplice.
+export function esitoManche(round, testo, grezzo) {
+  if (round.suMessaggio) return round.suMessaggio(testo, grezzo) || null;
+  return round.controlla(testo, grezzo) ? { vince: true } : null;
 }
 
 // Lancia una manche a caso (gioco scelto a caso tra trivia/parola/numero, con i
@@ -410,6 +439,132 @@ function roundDomandaCustom(channel) {
   };
 }
 
+// ── le manche con lo stato, e quelle generate ─────────────────────────────
+
+// Un conto da fare. Si genera ogni volta, con numeri piccoli e il risultato
+// mai negativo: e' un gioco di riflessi, non un compito in classe.
+export function roundCalcolo(_channel, caso = Math.random) {
+  const n = (a, b) => a + Math.floor(caso() * (b - a + 1));
+  const forme = [
+    () => { const a = n(12, 99), b = n(12, 99); return [`${a} + ${b}`, a + b]; },
+    () => { const a = n(3, 12), b = n(3, 12); return [`${a} × ${b}`, a * b]; },
+    () => { const a = n(3, 12), b = n(3, 12), c = n(2, 30); return [`${a} × ${b} + ${c}`, a * b + c]; },
+    () => { const a = n(3, 12), b = n(3, 12), c = n(2, 20); return [`${c} + ${a} × ${b}`, c + a * b]; },
+    () => { const a = n(3, 12), b = n(3, 12), c = n(2, 9); return [`${a} × ${b} − ${c}`, a * b - c]; },
+  ];
+  const [conto, risultato] = forme[Math.floor(caso() * forme.length)]();
+  const giusto = String(risultato);
+  return {
+    tipo: 'calcolo', annuncio: `🧮 CALCOLO VELOCE: quanto fa ${conto}?`,
+    controlla: (t) => t.split(' ').includes(giusto), soluzione: giusto, durata: 30000,
+  };
+}
+
+// Rebus con le emoji: film, giochi e canzoni. Il materiale tuo si mescola con
+// questo come nel quiz, due volte su tre.
+export const BANCA_REBUS = [
+  ['🕷️🧑', ['spiderman', 'spider man', 'uomo ragno']],
+  ['🦁👑', ['il re leone', 're leone', 'the lion king']],
+  ['⭐⚔️', ['star wars', 'guerre stellari']],
+  ['❄️👸', ['frozen']],
+  ['🍄👨‍🔧', ['super mario', 'mario']],
+  ['🧙‍♂️💍', ['il signore degli anelli', 'signore degli anelli', 'lord of the rings']],
+  ['🦖🏝️', ['jurassic park']],
+  ['🚢🧊💔', ['titanic']],
+  ['👻👻👻🟡', ['pac man', 'pacman']],
+  ['🧱⛏️', ['minecraft']],
+  ['🐦😡', ['angry birds']],
+  ['🦇🧑', ['batman']],
+  ['🐠🔍', ['alla ricerca di nemo', 'nemo', 'finding nemo']],
+  ['🧸🤠🚀', ['toy story']],
+  ['🏎️💨⚡', ['cars', 'saetta mcqueen']],
+  ['🧟🔫', ['resident evil', 'the walking dead']],
+  ['🗡️🧝🛡️', ['zelda', 'the legend of zelda']],
+  ['🍫🏭', ['la fabbrica di cioccolato', 'fabbrica di cioccolato', 'willy wonka']],
+  ['🐒👑🍌', ['donkey kong']],
+  ['🦔💨💍', ['sonic']],
+];
+export function roundRebus(channel) {
+  const custom = giochiCustom(channel, 'rebus').flatMap((g) => (Array.isArray(g.config?.rebus) ? g.config.rebus : []).map((r) => [r.e, r.a]));
+  const banca = custom.length && Math.random() < 0.65 ? custom : BANCA_REBUS;
+  const voce = scegli(banca);
+  if (!voce?.[0] || !Array.isArray(voce[1]) || !voce[1].length) return null;
+  const ans = voce[1].map(norm).filter(Boolean);
+  return {
+    tipo: 'rebus', annuncio: `🧩 REBUS: ${voce[0]} che cos'è?`,
+    controlla: (t) => ans.some((a) => t === a || ` ${t} `.includes(` ${a} `)), soluzione: voce[1][0], durata: 45000,
+  };
+}
+
+// Piu' o meno: un numero da 1 a 100, e la chat lo stringe tutta insieme.
+export function roundPiuOMeno(_channel, caso = Math.random) {
+  const n = 1 + Math.floor(caso() * 100);
+  let basso = 1, alto = 100, detto = '';
+  const r = {
+    tipo: 'piuomeno', annuncio: '🔢 PIÙ O MENO: ho pensato un numero da 1 a 100. Scrivete un numero, e vi dico dove sta.',
+    soluzione: String(n), durata: 90000,
+    suMessaggio(t) {
+      if (!/^\d{1,3}$/.test(t)) return null;
+      const g = Number(t);
+      if (g === n) return { vince: true };
+      if (g < n && g >= basso) basso = g + 1;
+      if (g > n && g <= alto) alto = g - 1;
+      r.indizio?.();
+      return null;
+    },
+    statoDaDire() {
+      const ora = `🔢 Il numero è fra ${basso} e ${alto}.`;
+      if (ora === detto) return '';
+      detto = ora;
+      return ora;
+    },
+    intervallo: () => [basso, alto],
+  };
+  return r;
+}
+
+// L'impiccato: una parola, lettera per lettera. Sei errori e vince lui.
+export const BANCA_IMPICCATO = ['controller', 'tastiera', 'microfono', 'cuffie', 'streaming', 'classifica', 'avventura',
+  'campione', 'missione', 'tesoro', 'dragone', 'castello', 'cavaliere', 'astronave', 'galassia', 'labirinto', 'pozione',
+  'leggenda', 'incantesimo', 'pixel'];
+export const ERRORI_IMPICCATO = 6;
+export function roundImpiccato(channel, caso = Math.random) {
+  const custom = giochiCustom(channel, 'impiccato').flatMap((g) => (Array.isArray(g.config?.parole) ? g.config.parole : []));
+  const pool = (custom.length ? custom : BANCA_IMPICCATO).map((p) => String(p).trim()).filter((p) => /^[a-z]{4,20}$/.test(norm(p)));
+  if (!pool.length) return null;
+  const parola = pool[Math.floor(caso() * pool.length)];
+  const target = norm(parola);
+  const lettere = new Set(target);
+  const prese = new Set();
+  const sbagliate = new Set();
+  let detto = '';
+  const tavola = () => [...target].map((c) => (prese.has(c) ? c.toUpperCase() : '_')).join(' ');
+  const r = {
+    tipo: 'impiccato', soluzione: parola, durata: 120000,
+    annuncio: `🪢 IMPICCATO: ${tavola()} (${target.length} lettere). Scrivete una lettera alla volta, o la parola intera!`,
+    suMessaggio(t) {
+      if (t === target) return { vince: true };
+      if (!/^[a-z]$/.test(t)) return null;
+      if (lettere.has(t)) {
+        prese.add(t);
+        if ([...lettere].every((c) => prese.has(c))) return { vince: true };
+      } else {
+        sbagliate.add(t);
+        if (sbagliate.size >= ERRORI_IMPICCATO) return { chiudi: true, dire: `💀 Impiccato! La parola era «${parola}».` };
+      }
+      r.indizio?.();
+      return null;
+    },
+    statoDaDire() {
+      const ora = `🪢 ${tavola()} · sbagliate: ${[...sbagliate].join(' ').toUpperCase() || 'nessuna'} (${sbagliate.size}/${ERRORI_IMPICCATO})`;
+      if (ora === detto) return '';
+      detto = ora;
+      return ora;
+    },
+  };
+  return r;
+}
+
 // I tipi di manche esistenti, con il nome da mostrare e se accettano materiale
 // dallo streamer. Un posto solo: da qui si servono la dashboard, il collaudo e
 // il sorteggio, invece di tre elenchi che possono divergere.
@@ -420,7 +575,12 @@ const COSTRUTTORI = {
   anagramma: { fai: (c) => roundAnagramma(c), nome: 'Anagramma', materiale: 'parole' },
   sequenza:  { fai: (c) => roundSequenza(c),  nome: 'Sequenza',  materiale: 'simboli' },
   domanda:   { fai: (c) => roundDomandaCustom(c), nome: 'Domanda tua', materiale: 'domanda+risposte' },
+  calcolo:   { fai: (c) => roundCalcolo(c),   nome: 'Calcolo veloce', materiale: null },
+  rebus:     { fai: (c) => roundRebus(c),     nome: 'Rebus', materiale: 'emoji+risposte' },
+  piuomeno:  { fai: (c) => roundPiuOMeno(c),  nome: 'Più o meno', materiale: null },
+  impiccato: { fai: (c) => roundImpiccato(c), nome: 'Impiccato', materiale: 'parole' },
 };
+export const TIPI_COSTRUTTORI = Object.keys(COSTRUTTORI);
 
 export function tipiManche() {
   return Object.entries(COSTRUTTORI).map(([id, v]) => ({ id, nome: v.nome, materiale: v.materiale }));
@@ -434,15 +594,32 @@ export function costruisciManche(channel, tipo) {
   try { return c.fai(channel); } catch { return null; }
 }
 
-export function avviaManche(channel, say) {
+// Una manche a caso fra i tipi che lo streamer ha lasciato nel giro. `tipo`
+// la sceglie invece (!manche impiccato): chi la chiede per nome la vuole anche
+// se non e' nel giro.
+export function avviaManche(channel, say, tipo = '') {
   if (!attivi(channel) || roundAttivo.has(channel)) return false;
-  const builders = Object.values(COSTRUTTORI).map((c) => c.fai);
+  if (tipo) {
+    const c = COSTRUTTORI[tipo];
+    const r = c ? c.fai(channel) : null;
+    return r ? avviaRound(channel, r, say) : false;
+  }
+  const nelGiro = new Set(conf(channel, 'manche').tipi);
+  const builders = Object.entries(COSTRUTTORI).filter(([id]) => nelGiro.has(id)).map(([, c]) => c.fai);
   // prova qualche costruttore finché uno produce un round valido
   for (const b of builders.sort(() => Math.random() - 0.5)) {
     const r = b(channel);
     if (r) return avviaRound(channel, r, say);
   }
   return false;
+}
+
+// Il nome che si scrive dopo !manche: l'id, o il nome senza spazi e accenti.
+export function tipoMancheDa(parola) {
+  const p = norm(parola).replace(/ /g, '');
+  if (!p) return '';
+  for (const [id, c] of Object.entries(COSTRUTTORI)) if (id === p || norm(c.nome).replace(/ /g, '') === p) return id;
+  return null;
 }
 
 // --------------------------------------------------------- slot, roulette, pesca
@@ -531,11 +708,21 @@ export function tryGame(msg, say) {
       if (Date.now() > round.scadenza) { roundAttivo.delete(channel); }
       // Il testo arriva sia normalizzato sia grezzo: le manche a parole usano il
       // primo, quelle a simboli il secondo (norm() toglie le emoji).
-      else if (!String(msg.text).startsWith('!') && round.controlla(norm(msg.text), msg.text)) {
-        roundAttivo.delete(channel);
-        points.add(channel, msg.user, round.premio);
-        say(`🎉 Esatto ${nome}! (${round.soluzione}) +${round.premio} ${moneta()}!`);
-        return true;
+      else if (!String(msg.text).startsWith('!')) {
+        const esito = esitoManche(round, norm(msg.text), msg.text);
+        if (esito?.vince) {
+          roundAttivo.delete(channel);
+          round.fine?.();
+          points.add(channel, msg.user, round.premio);
+          say(`🎉 Esatto ${nome}! (${round.soluzione}) +${round.premio} ${moneta()}!`);
+          return true;
+        }
+        if (esito?.chiudi) {
+          roundAttivo.delete(channel);
+          round.fine?.();
+          if (esito.dire) say(esito.dire);
+          return true;
+        }
       }
     }
 
@@ -633,10 +820,13 @@ export function tryGame(msg, say) {
       }
 
       case 'manche': {
-        // avvia una manche a caso al volo (utile per provare / mod)
+        // avvia una manche al volo: a caso fra quelle nel giro, o quella detta
+        // per nome (!manche impiccato)
         if (roundAttivo.has(channel)) { say('🎮 C\'è già una manche in corso!'); return true; }
+        const tipo = tipoMancheDa(args.join(' '));
+        if (tipo === null) { say(`🎮 Non conosco questa manche. Ci sono: ${Object.values(COSTRUTTORI).map((c) => c.nome.toLowerCase()).join(', ')}.`); return true; }
         if (inCooldown(channel + '|manche', 10000)) return true;
-        if (!avviaManche(channel, say)) say('🎮 Nessuna manche disponibile al momento.');
+        if (!avviaManche(channel, say, tipo)) say('🎮 Nessuna manche disponibile al momento.');
         return true;
       }
 
