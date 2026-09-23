@@ -103,6 +103,8 @@ export const COMANDI = [
     cosa: ['Punta le monete su rosso o nero.', 'Bet your coins on red or black.', 'Apuesta las monedas al rojo o al negro.'], costa: true },
   { id: 'furto', modulo: 'giochi', gioco: 'furto', nomi: ['furto', 'rapina'], titolo: ['Furto', 'Heist', 'Robo'],
     cosa: ['Prova a rubare monete a un\'altra persona. Può andare male.', 'Try to steal coins from someone else. It can go wrong.', 'Intenta robar monedas a otra persona. Puede salir mal.'], costa: true },
+  { id: 'conta', modulo: 'giochi', gioco: 'conta', nomi: ['conta', 'count'], titolo: ['Conta insieme', 'Count together', 'Contad juntos'],
+    cosa: ['Apre la conta: la chat scrive 1, 2, 3, un numero a testa e mai due di fila. Chi sbaglia fa ricominciare; si batte il record del canale.', 'Opens the count: chat writes 1, 2, 3, one number each and never twice in a row. A mistake starts it over; you beat the channel record.', 'Abre la cuenta: el chat escribe 1, 2, 3, un número cada uno y nunca dos seguidos. Quien falla hace empezar de nuevo; se bate el récord del canal.'] },
   { id: 'colpo', modulo: 'giochi', gioco: 'colpo', nomi: ['colpo', 'heist'], titolo: ['Colpo di gruppo', 'Group heist', 'Golpe en grupo'],
     cosa: ['Organizza un colpo o entra nella banda con la tua posta (!colpo 100). Più siete, più è facile scappare col bottino.', 'Plan a heist or join the crew with your stake (!colpo 100). The more you are, the easier it is to escape with the loot.', 'Organiza un golpe o entra en la banda con tu apuesta (!colpo 100). Cuantos más seáis, más fácil es escapar con el botín.'], costa: true },
   { id: 'boss', modulo: 'giochi', nomi: ['boss'], titolo: ['Chiama il boss', 'Call the boss', 'Llama al jefe'], chi: 'mod',

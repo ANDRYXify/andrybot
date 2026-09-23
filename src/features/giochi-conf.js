@@ -65,6 +65,7 @@ export const MANCHE_TIPI = [
   ['rebus', T('Rebus', 'Emoji rebus', 'Jeroglífico')],
   ['piuomeno', T('Più o meno', 'Higher or lower', 'Más o menos')],
   ['impiccato', T('Impiccato', 'Hangman', 'Ahorcado')],
+  ['wordle', T('Wordle della chat', 'Chat Wordle', 'Wordle del chat')],
 ];
 
 const ABBRACCI = [
@@ -198,6 +199,15 @@ export const CATALOGO = [
       { k: 'nomi', tipo: 'elenco', def: BOSS, max: 30, lungo: 80, segnaposto: [], eti: T('I boss', 'The bosses', 'Los jefes') },
     ],
     resa: { tipo: 'boss' },
+  },
+  {
+    id: 'conta', nome: T('Conta insieme', 'Count together', 'Contad juntos'),
+    param: [
+      { k: 'pausa', tipo: 'secondi', def: 120, min: 30, max: 1800, eti: T('Si chiude se nessuno conta per tanti secondi', 'It closes if nobody counts for this many seconds', 'Se cierra si nadie cuenta durante tantos segundos') },
+      { k: 'traguardo', tipo: 'numero', def: 50, min: 0, max: 10000, eti: T('Ogni tanti numeri il bot applaude (0 = mai)', 'Every this many numbers the bot cheers (0 = never)', 'Cada tantos números el bot aplaude (0 = nunca)') },
+      ...ATTESE({ tutti: 30, etiTesta: T('Attesa fra due conte aperte, a testa', 'Wait between two counts opened, each', 'Espera entre dos cuentas abiertas, cada uno'), etiTutti: T('Attesa fra due conte aperte, per tutti', 'Wait between two counts opened, for everyone', 'Espera entre dos cuentas abiertas, para todos') }),
+    ],
+    resa: null,
   },
   {
     id: '8ball', nome: T('Palla magica', 'Magic 8-ball', 'Bola mágica'),

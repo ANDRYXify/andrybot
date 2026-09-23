@@ -288,6 +288,27 @@ nessuno può battere. La festa in solo emote (se la accendi) passa dalle
 modalità della chat a tempo (docs/MODALITA-CHAT.md): se la chat era già in solo
 emote non si annuncia niente, e alla fine torna com'era.
 
+## Il wordle della chat e conta insieme
+
+**Il wordle** è una manche come le altre (tipo `wordle`), costruita sullo stesso
+schema con lo stato dell'impiccato: una parola di cinque lettere, e ogni parola
+di cinque lettere scritta in chat è un tentativo di tutta la chat. I colori
+seguono la regola del gioco vero: prima i verdi, poi i gialli **fino a quante
+volte la lettera c'è davvero** (con «palla» contro «lampo» la seconda l resta
+nera). Un tentativo ripetuto non conta, al ventesimo sbagliato la parola si
+rivela, e i quadratini escono al ritmo degli indizi, al più una riga ogni
+quattro secondi con gli ultimi tentativi insieme. Lo streamer può dare le sue
+parole dal creatore dei giochi, come per l'impiccato.
+
+**Conta insieme** (`!conta`) non dà monete, e per questo non ha niente da
+bilanciare: la chat conta 1, 2, 3, mai due di fila la stessa persona, e chi
+sbaglia fa ricominciare. Si batte il **record del canale**, che sta nel database
+(`statoVivo`, chiave `conta-record`) e quindi sopravvive a un riavvio; si
+annuncia una volta sola, al primo numero oltre. La conta si chiude da sola dopo
+`pausa` secondi di silenzio. Conta e manche **si escludono**: tutte e due
+leggono i numeri scritti in chat, e un «5» non può essere insieme la risposta a
+un calcolo veloce e il prossimo numero della conta.
+
 ## Le manche con lo stato: impiccato e più o meno
 
 Fino a qui una manche era una domanda e un controllo: il primo messaggio giusto

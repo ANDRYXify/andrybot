@@ -135,6 +135,7 @@ const GIOCHI = {
       ['<code>!pesca</code>', '<code>!fish</code>', 'Cala la canna. Può uscire di tutto.', ATTESE('pesca')],
       ['<code>!roulette</code>', '<code>!rul</code>', 'Punti su rosso, nero, verde o un numero.', ATTESE('roulette')],
       ['<code>!furto @nome</code>', '<code>!rapina</code>', 'Provi a rubare. Se ti beccano, paghi.', ATTESE('furto')],
+      ['<code>!conta</code>', '<code>!count</code>', 'Apre la conta: la chat scrive 1, 2, 3, un numero a testa e mai due di fila.', ATTESE('conta')],
       ['<code>!colpo</code>', '<code>!heist</code>', 'Organizzi un colpo, o entri nella banda. <code>!colpo 100</code> per scegliere la posta.', ATTESE('colpo')],
       ['<code>!boss</code>', '—', 'Fa arrivare un boss da battere insieme. Solo mod e streamer.', '—'],
       ['<code>!colpisci</code>', '<code>!attacca</code> <code>!hit</code>', 'Colpisci il boss di turno.', ATTESE('boss')],
@@ -211,6 +212,12 @@ const GIOCHI = {
       `<code>!morra sasso</code>, <code>carta</code> o <code>forbice</code> contro il bot. Senza puntata è solo per ridere; con la puntata (<code>!morra carta 20</code>) se vinci ti torna ${CIFRA(DI_SERIE('morra').vincita / 100)} volte la puntata, se fai pari ti torna la puntata, se perdi la perdi. Di serie su 100 monete giocate ne tornano in media ${CIFRA(RESA('morra').perCento)}: è un gioco giusto, e nelle regole decidi quanto paga la vittoria.`,
     ] },
 
+    { h3: 'Conta insieme' },
+    { p: [
+      'Con <code>!conta</code> la chat conta insieme: 1, poi 2, poi 3, un numero a messaggio e mai due di fila la stessa persona. Chi scrive il numero sbagliato, o conta due volte di fila, fa ricominciare tutti da uno. Mentre si conta giusto il bot tace: il gioco è la chat.',
+      `Non si vincono monete: si batte il record del canale, che resta anche quando il bot si riavvia, e quando lo si supera il bot lo dice. Ogni ${DI_SERIE('conta').traguardo} numeri applaude, e se per ${ATTESA(DI_SERIE('conta').pausa)} nessuno conta la conta si chiude da sola. Mentre si conta non partono manche, perché anche loro leggono i numeri in chat.`,
+    ] },
+
     { h3: 'Colpo di gruppo' },
     { p: [
       `Chi scrive <code>!colpo</code> organizza un colpo con ${CIFRA(DI_SERIE('colpo').posta)} monete di posta (o quante ne scrive: <code>!colpo 100</code>), e per ${ATTESA(DI_SERIE('colpo').raccolta)} chiunque può entrare nella banda allo stesso modo. Chi entra non viene salutato uno per uno: gli ingressi si dicono insieme, una riga ogni tanto.`,
@@ -277,6 +284,7 @@ const GIOCHI = {
       ['Rebus', 'Emoji da leggere: 🕷️🧑 è Spiderman. Film, giochi e cartoni di serie.', '45s', 'i tuoi rebus'],
       ['Più o meno', 'Un numero da 1 a 100. Chi scrive un numero stringe l\'intervallo per tutti, e il bot lo dice ogni pochi secondi.', '90s', '—'],
       ['Impiccato', 'Una parola da scoprire una lettera alla volta, o tutta insieme. Sei lettere sbagliate e vince l\'impiccato.', '2 min', 'le tue parole'],
+      ['Wordle', 'Una parola di cinque lettere. Ogni parola di cinque lettere scritta in chat è un tentativo, e il bot risponde coi quadratini: 🟩 al posto giusto, 🟨 c\'è ma altrove, ⬛ non c\'è. Venti tentativi per tutta la chat.', '3 min', 'le tue parole'],
     ] },
     { p: ['Nel più o meno e nell\'impiccato il bot non risponde a ogni messaggio: raccoglie i tentativi e dice come sta la partita al massimo ogni quattro secondi. In una chat viva, se no, parlerebbe più lui di tutti gli altri.'] },
     { p: ['Il materiale che aggiungi non sostituisce quello di serie: quando ce n\'è di tuo, il bot lo pesca <strong>due volte su tre</strong>, così la chat non impara le domande a memoria.'] },

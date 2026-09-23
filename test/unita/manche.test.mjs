@@ -146,3 +146,44 @@ test('il giro delle manche automatiche e\' quello scelto; col nome parte anche f
   assert.deepEqual(G.normalizzaConf({}, { manche: { tipi: [] } }), { manche: {} }, 'un giro vuoto non passa: per spegnere c\'e\' l\'interruttore');
   assert.deepEqual(G.normalizzaConf({}, { manche: { tipi: ['rebus', 'inventato', 'rebus'] } }).manche.tipi, ['rebus']);
 });
+
+test('il wordle colora come il gioco vero, anche con le lettere doppie', () => {
+  assert.equal(games.coloriWordle('fiore', 'fiore'), '🟩🟩🟩🟩🟩');
+  assert.equal(games.coloriWordle('forte', 'fiore'), '🟩🟨🟨⬛🟩');
+  assert.equal(games.coloriWordle('aaaaa', 'carta'), '⬛🟩⬛⬛🟩', 'le a in piu\' non diventano gialle');
+  assert.equal(games.coloriWordle('palla', 'lampo'), '🟨🟩🟨⬛⬛', 'una l sola nella parola: la seconda resta nera');
+  for (const p of games.BANCA_WORDLE) assert.match(p, /^[a-z]{5}$/, `«${p}» non e' una parola di cinque lettere`);
+  assert.equal(new Set(games.BANCA_WORDLE).size, games.BANCA_WORDLE.length, 'nessuna parola due volte');
+});
+
+test('il wordle: i tentativi sono di tutta la chat, contano una volta, e al ventesimo si rivela', () => {
+  const r = games.roundWordle('x', () => 0);
+  const parola = r.soluzione;
+  assert.equal(games.esitoManche(r, 'ciao a tutti', ''), null, 'le chiacchiere non sono tentativi');
+  assert.equal(games.esitoManche(r, 'tre', ''), null);
+  const sbagliate = games.BANCA_WORDLE.filter((p) => p !== parola).slice(0, games.TENTATIVI_WORDLE);
+  for (const p of sbagliate.slice(0, -1)) assert.equal(games.esitoManche(r, p, ''), null);
+  assert.equal(games.esitoManche(r, sbagliate[0], ''), null, 'lo stesso tentativo due volte conta una');
+  const fine = games.esitoManche(r, sbagliate.at(-1), '');
+  assert.ok(fine?.chiudi);
+  assert.match(fine.dire, new RegExp(parola));
+  assert.ok(games.esitoManche(games.roundWordle('x', () => 0), parola, '')?.vince);
+});
+
+test('il wordle in chat: i quadratini escono al ritmo degli indizi, con gli ultimi tentativi', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: Date.parse('2026-09-23T21:00:00Z') });
+  canale('m5');
+  const detti = [];
+  const say = (x) => detti.push(x);
+  assert.equal(games.avviaManche('m5', say, 'wordle'), true);
+  assert.match(detti.at(-1), /WORDLE/);
+  const parola = games.mancheInCorso('m5').soluzione;
+  const prove = games.BANCA_WORDLE.filter((p) => p !== parola).slice(0, 2);
+  for (const p of prove) games.tryGame({ channel: 'm5', user: 'u' + p, text: p.toUpperCase() + '!' }, say);
+  const prima = detti.length;
+  t.mock.timers.tick(4000);
+  assert.equal(detti.length, prima + 1);
+  assert.equal(detti.at(-1), `${prove.map((p) => `${p.toUpperCase()} ${games.coloriWordle(p, parola)}`).join(' · ')} (2/${games.TENTATIVI_WORDLE})`);
+  games.tryGame({ channel: 'm5', user: 'vince', text: parola }, say);
+  assert.match(detti.at(-1), /vince/i);
+});

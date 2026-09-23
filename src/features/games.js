@@ -9,6 +9,7 @@ import { valoriDi } from './giochi-conf.js';
 import * as coccole from './coccole.js';
 import * as colpoFeat from './colpo.js';
 import * as bossFeat from './boss.js';
+import * as contaFeat from './conta.js';
 import { aspetta, giocato } from './attese-giochi.js';
 import { points, streamers, giochi } from '../db.js';
 import { config } from '../config.js';
@@ -324,7 +325,7 @@ function roundNumero() {
 const INDIZIO_MS = 4000;
 
 function avviaRound(channel, round, say) {
-  if (!round || roundAttivo.has(channel)) return false;
+  if (!round || roundAttivo.has(channel) || contaFeat.contaInCorso(channel)) return false;
   round.premio = round.premio || conf(channel, 'manche').premio;
   round.scadenza = Date.now() + round.durata;
   round.say = say;
@@ -553,6 +554,67 @@ export function roundImpiccato(channel, caso = Math.random) {
   return r;
 }
 
+// IL WORDLE DELLA CHAT. Una parola di cinque lettere; ogni parola di cinque
+// lettere scritta in chat e' un tentativo, e il bot risponde coi quadratini:
+// verde la lettera giusta al posto giusto, giallo c'e' ma altrove, nero non
+// c'e'. I tentativi sono di tutta la chat, e al ventesimo sbagliato la parola
+// si rivela. I quadratini escono al ritmo degli indizi (al piu' uno ogni
+// quattro secondi), con gli ultimi tentativi insieme.
+export const BANCA_WORDLE = ['gatto', 'sedia', 'piano', 'treno', 'fuoco', 'mondo', 'campo', 'carta', 'festa', 'forza',
+  'gioco', 'libro', 'lampo', 'mente', 'notte', 'palla', 'piede', 'ponte', 'porta', 'prato', 'radio', 'regno', 'sasso',
+  'scena', 'scudo', 'sogno', 'spada', 'tempo', 'terra', 'torre', 'verde', 'vento', 'viola', 'zaino', 'bravo', 'canto',
+  'cielo', 'corsa', 'drago', 'fiore', 'fiume', 'frase', 'isola', 'magia', 'mappa', 'pesca', 'pizza', 'polpo', 'razzo',
+  'salto', 'scala', 'segno', 'spina', 'tigre', 'vespa', 'volpe', 'zucca', 'arena', 'barca', 'bosco', 'calma', 'capra',
+  'cuore', 'danza', 'dente', 'fungo', 'grano', 'guida', 'metro', 'monte', 'museo', 'nuoto', 'oliva', 'perla', 'pesce',
+  'punto', 'ruota', 'sfida', 'suono', 'tasto', 'tetto', 'torta', 'vetro', 'zampa', 'bomba', 'forno', 'gomma', 'lotta',
+  'panda', 'pausa', 'penna', 'pista', 'tenda', 'turno', 'vasca', 'cesto', 'dardo', 'lince', 'rombo'];
+export const TENTATIVI_WORDLE = 20;
+
+// I colori di un tentativo, come nel gioco vero: prima i verdi, poi i gialli
+// fino a quante volte la lettera c'e' davvero, cosi' una lettera doppia nel
+// tentativo non si colora due volte se nella parola ce n'e' una.
+export function coloriWordle(prova, parola) {
+  const esito = Array(5).fill('⬛');
+  const restano = {};
+  for (let i = 0; i < 5; i++) {
+    if (prova[i] === parola[i]) esito[i] = '🟩';
+    else restano[parola[i]] = (restano[parola[i]] || 0) + 1;
+  }
+  for (let i = 0; i < 5; i++) {
+    if (esito[i] === '🟩') continue;
+    if (restano[prova[i]] > 0) { esito[i] = '🟨'; restano[prova[i]]--; }
+  }
+  return esito.join('');
+}
+
+export function roundWordle(channel, caso = Math.random) {
+  const custom = giochiCustom(channel, 'wordle').flatMap((g) => (Array.isArray(g.config?.parole) ? g.config.parole : []));
+  const pool = (custom.length ? custom : BANCA_WORDLE).map((p) => norm(p)).filter((p) => /^[a-z]{5}$/.test(p));
+  if (!pool.length) return null;
+  const parola = pool[Math.floor(caso() * pool.length)];
+  const provate = new Map();
+  let dette = 0;
+  const r = {
+    tipo: 'wordle', soluzione: parola, durata: 180000,
+    annuncio: `🟩 WORDLE: una parola di 5 lettere. Scrivete parole di 5 lettere: 🟩 giusta al posto giusto, 🟨 c'è ma altrove, ⬛ non c'è. ${TENTATIVI_WORDLE} tentativi per tutta la chat!`,
+    suMessaggio(t) {
+      if (!/^[a-z]{5}$/.test(t)) return null;
+      if (t === parola) return { vince: true };
+      provate.set(t, coloriWordle(t, parola));
+      if (provate.size >= TENTATIVI_WORDLE) return { chiudi: true, dire: `🟥 Tentativi finiti! La parola era «${parola}».` };
+      r.indizio?.();
+      return null;
+    },
+    statoDaDire() {
+      const nuove = [...provate].slice(dette);
+      if (!nuove.length) return '';
+      dette = provate.size;
+      return `${nuove.slice(-4).map(([p, c]) => `${p.toUpperCase()} ${c}`).join(' · ')} (${provate.size}/${TENTATIVI_WORDLE})`;
+    },
+  };
+  return r;
+}
+
 // I tipi di manche esistenti, con il nome da mostrare e se accettano materiale
 // dallo streamer. Un posto solo: da qui si servono la dashboard, il collaudo e
 // il sorteggio, invece di tre elenchi che possono divergere.
@@ -567,6 +629,7 @@ const COSTRUTTORI = {
   rebus:     { fai: (c) => roundRebus(c),     nome: 'Rebus', materiale: 'emoji+risposte' },
   piuomeno:  { fai: (c) => roundPiuOMeno(c),  nome: 'Più o meno', materiale: null },
   impiccato: { fai: (c) => roundImpiccato(c), nome: 'Impiccato', materiale: 'parole' },
+  wordle:    { fai: (c) => roundWordle(c),    nome: 'Wordle', materiale: 'parole' },
 };
 export const TIPI_COSTRUTTORI = Object.keys(COSTRUTTORI);
 
@@ -767,6 +830,9 @@ export function tryGame(msg, say) {
     const nome = msg.display || msg.user;
     const moneta = () => nomeMoneta(channel);
 
+    // un numero mentre si conta insieme appartiene alla conta
+    if (contaFeat.suMessaggio(channel, msg)) return true;
+
     // risposta a una manche (round) in corso: messaggio normale, non comando
     const round = roundAttivo.get(channel);
     if (round) {
@@ -959,6 +1025,16 @@ export function tryGame(msg, say) {
           if (multa > 0) { points.add(channel, msg.user, -multa); points.add(channel, vittima, multa); }
           say(`🚓 ${nome} viene beccato e paga ${multa} ${moneta()} di multa a ${vittima}! 😂`);
         }
+        return true;
+      }
+
+      case 'conta': {
+        if (roundAttivo.has(channel)) { say('🔢 C\'è una manche in corso: si conta quando finisce.'); return true; }
+        const c = contaFeat.contaInCorso(channel);
+        if (c) { say(`🔢 Si sta già contando: tocca a ${c.n + 1}. Record del canale: ${c.record}.`); return true; }
+        if (aspetta(channel, 'conta', msg, say)) return true;
+        contaFeat.apri(channel, say);
+        giocato(channel, 'conta', msg.user);
         return true;
       }
 

@@ -8156,7 +8156,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!esigiFunzione(req, res, 'giochi', 'I giochi personalizzati')) return;
     const login = currentUser(req).login;
     const b = req.body || {};
-    const tipo = ['trivia', 'parola', 'anagramma', 'sequenza', 'domanda', 'rebus', 'impiccato'].includes(b.tipo) ? b.tipo : null;
+    const tipo = ['trivia', 'parola', 'anagramma', 'sequenza', 'domanda', 'rebus', 'impiccato', 'wordle'].includes(b.tipo) ? b.tipo : null;
     if (!tipo) return res.status(400).json({ errore: 'tipo di gioco non valido' });
     const nome = String(b.nome || '').trim().slice(0, 60);
     let config = {};
@@ -8193,6 +8193,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       }
       if (tipo === 'impiccato' && !parole.some((p) => /^[a-zà-ÿ]{4,20}$/i.test(p))) {
         return res.status(400).json({ errore: 'per l\'impiccato serve almeno una parola sola, senza spazi, fra 4 e 20 lettere' });
+      }
+      if (tipo === 'wordle' && !parole.some((p) => /^[a-zà-ÿ]{5}$/i.test(p))) {
+        return res.status(400).json({ errore: 'per il wordle serve almeno una parola di cinque lettere, senza spazi' });
       }
       config = { parole };
     }

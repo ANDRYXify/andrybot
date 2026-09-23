@@ -42,6 +42,7 @@ const DECISO = [
   ['bot.js', '_bossProx', 'volatile', 'quando arriva il prossimo boss automatico: dopo un riavvio si ripianifica a un intervallo intero, e al peggio arriva un po\' dopo'],
   ['features/attese-giochi.js', 'fine', 'volatile', 'le attese fra due giocate: un riavvio le azzera, e al peggio si gioca un po\' prima. Nessuna tiene monete'],
   ['features/attese-giochi.js', 'detta', 'volatile', 'quali attese sono gia\' state dette in chat: al peggio se ne dice una volta in piu\''],
+  ['features/conta.js', 'conte', 'volatile', 'la conta in corso: un riavvio la chiude, e il record, che e\' la cosa che conta, sta nel database'],
   ['features/boss.js', 'bossi', 'volatile', 'un boss in battaglia non tiene monete di nessuno: il bottino si paga solo quando cade, e un riavvio lo fa sparire senza che nessuno ci rimetta'],
   ['features/boss.js', 'silenzi', 'volatile', 'quando ripetere «nessun boss in giro»: al peggio lo si dice una volta in piu\''],
   ['features/colpo.js', 'colpi', 'volatile', 'la banda in raccolta non ha dato monete a nessuno: si pagano solo alla fine, e un riavvio fa saltare il colpo senza che nessuno perda niente'],
