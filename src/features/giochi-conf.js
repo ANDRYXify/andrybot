@@ -93,6 +93,7 @@ const COLPO_RIUSCITO = ['💰 Colpo riuscito! La banda scappa col bottino.', '�
 const COLPO_FALLITO = ['🚨 Sirene! La banda finisce dentro al completo.', '🚨 L\'allarme suona subito: presi tutti.'];
 const COLPO_META = ['💰 Colpo a metà: qualcuno scappa, qualcuno no.', '🚨 La banda si divide nella fuga: non tutti ce la fanno.'];
 const CORSA_CORRIDORI = ['🐎 Cavallo', '🐇 Lepre', '🐕 Cane', '🦆 Papera', '🐢 Tartaruga'];
+const CATENA_INIZIO = ['casa', 'sole', 'luna', 'mare', 'pane', 'gatto', 'fiore', 'treno', 'libro', 'piano', 'tavolo', 'strada', 'notte', 'amico', 'verde', 'porta', 'carta', 'sasso', 'festa', 'lupo'];
 const BOSS = ['il Drago del Lag 🐉', 'la Piovra dello Spam 🐙', 'il Golem del Buffering 🗿', 'lo Scheletro del Ping Alto 💀', 'il Troll del Ritardo 👹', 'il Boss Finale 👾'];
 
 // LE DUE ATTESE DI OGNI GIOCO. A testa: dopo che una persona ha giocato,
@@ -232,6 +233,16 @@ export const CATALOGO = [
       ...ATTESE({ tutti: 120, etiTesta: T('Attesa fra due patate lanciate, a testa', 'Wait between two potatoes thrown, each', 'Espera entre dos patatas lanzadas, cada uno'), etiTutti: T('Attesa fra due patate, per tutti', 'Wait between two potatoes, for everyone', 'Espera entre dos patatas, para todos') }),
     ],
     resa: { tipo: 'passa' },
+  },
+  {
+    id: 'catena', nome: T('Catena di parole', 'Word chain', 'Cadena de palabras'),
+    param: [
+      { k: 'pausa', tipo: 'secondi', def: 60, min: 20, max: 600, eti: T('Si chiude se nessuno trova la parola per tanti secondi', 'It closes if nobody finds the word for this many seconds', 'Se cierra si nadie encuentra la palabra durante tantos segundos') },
+      { k: 'traguardo', tipo: 'numero', def: 10, min: 0, max: 1000, eti: T('Ogni tante parole il bot applaude (0 = mai)', 'Every this many words the bot cheers (0 = never)', 'Cada tantas palabras el bot aplaude (0 = nunca)') },
+      { k: 'inizio', tipo: 'elenco', def: CATENA_INIZIO, max: 100, lungo: 24, segnaposto: [], eti: T('Le parole da cui si parte', 'The words to start from', 'Las palabras desde las que se empieza') },
+      ...ATTESE({ tutti: 30, etiTesta: T('Attesa fra due catene aperte, a testa', 'Wait between two chains opened, each', 'Espera entre dos cadenas abiertas, cada uno'), etiTutti: T('Attesa fra due catene aperte, per tutti', 'Wait between two chains opened, for everyone', 'Espera entre dos cadenas abiertas, para todos') }),
+    ],
+    resa: null,
   },
   {
     id: 'conta', nome: T('Conta insieme', 'Count together', 'Contad juntos'),

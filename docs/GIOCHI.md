@@ -358,6 +358,36 @@ come con `!stai`, così una mano dimenticata non tiene ferme le monete. A 21 si
 sta da soli. Una mano alla volta a testa; `!bj` con una mano aperta dice come
 giocarla prima di parlare di attese.
 
+## La catena di parole (`!catena`) e un gioco che legge la chat alla volta
+
+**La catena** è costruita come conta insieme: non dà monete, si batte il record
+del canale (`statoVivo`, chiave `catena-record`), annunciato una volta al primo
+passo oltre, e si chiude dopo `pausa` secondi senza una mossa. Ogni parola
+comincia con le ultime due lettere della precedente: la sillaba vera sarebbe
+più bella, ma dividere in sillabe l'italiano ha eccezioni, e due lettere sono
+una regola che la chat vede e verifica da sola.
+
+**Conta solo la mossa.** Un messaggio è una mossa se è una parola sola (da 3 a
+24 lettere, senza accenti e senza il punto in fondo: «Città!» è «citta») che
+comincia con le due lettere giuste. Tutto il resto è chiacchiera e non tocca
+la catena, né la sua pausa. In conta ogni numero è una mossa, perché nessuno
+scrive un numero per caso; una parola invece si scrive anche per salutare, e
+se ogni parola sbagliata rompesse la catena, la chat non potrebbe parlare.
+Rompono la catena la parola già detta (compresa quella da cui si è partiti) e
+due mosse di fila della stessa persona; chi l'ha rotta può aprire la nuova.
+
+Non c'è un dizionario: la chat vede ogni parola, e il gioco non ha monete da
+proteggere. Una parola che finisce con due lettere da cui non comincia niente
+(«sport») chiude la catena per stanchezza, senza romperla: è una mossa lecita.
+
+**Un gioco che legge la chat alla volta.** Manche, conta e catena leggono i
+messaggi normali: un «5» o un «sasso» non possono appartenere a due giochi
+insieme. La regola sta in una funzione sola (`chiLeggeLaChat` in games.js), che
+ogni apertura chiede prima di partire, e che dice chi occupa la chat. Prima di
+lei `!trivia` durante una conta non partiva, non diceva niente e faceva partire
+lo stesso l'attesa; `!manche` rispondeva «nessuna manche disponibile». Adesso
+tutte e due dicono cosa c'è in corso, e l'attesa non parte.
+
 ## La corsa (`!corsa`, `!race`)
 
 Una scommessa su un corridore, costruita perché **non esista la puntata

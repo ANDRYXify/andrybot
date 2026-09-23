@@ -92,6 +92,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] Tre giochi nuovi: il wordle della chat coi quadratini colorati, conta insieme per battere il record del canale, e il blackjack contro il banco con !bj 50. [vai: giochi]
 - La corsa: !corsa apre le puntate su cinque corridori, il favorito paga poco e l'ultimo tanto, e ogni corridore rende uguale. Nomi e resa li scegli tu. [vai: giochi]
 - La patata bollente: !patata la lancia, !passa la passa a chi è in chat, e scoppia quando nessuno se l'aspetta. Se vuoi, chi resta con la patata paga una multa. [vai: giochi]
+- La catena di parole: !catena, e ogni parola comincia con le ultime due lettere della precedente. Si batte il record del canale, e le chiacchiere non la rompono. [vai: giochi]
+- !trivia e !manche, mentre si conta insieme, ti dicono cosa c'è in corso invece di tacere o di dire che non ci sono manche. [vai: giochi]
 
 ## 2026-09-19
 

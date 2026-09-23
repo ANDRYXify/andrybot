@@ -45,6 +45,7 @@ const DECISO = [
   ['features/patata.js', 'patate', 'volatile', 'la patata in giro: un riavvio la fa sparire, e nessuna moneta era in sospeso, perche\' la multa si paga solo allo scoppio'],
   ['features/corsa.js', 'corse', 'volatile', 'la corsa in corso: le monete si muovono solo all\'arrivo, quindi un riavvio la fa sparire senza che nessuno perda niente'],
   ['features/blackjack.js', 'mani', 'volatile', 'le carte di una mano aperta: un riavvio la chiude, e la puntata, che e\' la sola cosa che vale, sta nel database (bj-mani) e all\'avvio torna a chi l\'aveva messa'],
+  ['features/catena.js', 'catene', 'volatile', 'la catena in corso: un riavvio la chiude, e il record, che e\' la cosa che conta, sta nel database'],
   ['features/conta.js', 'conte', 'volatile', 'la conta in corso: un riavvio la chiude, e il record, che e\' la cosa che conta, sta nel database'],
   ['features/boss.js', 'bossi', 'volatile', 'un boss in battaglia non tiene monete di nessuno: il bottino si paga solo quando cade, e un riavvio lo fa sparire senza che nessuno ci rimetta'],
   ['features/boss.js', 'silenzi', 'volatile', 'quando ripetere «nessun boss in giro»: al peggio lo si dice una volta in piu\''],

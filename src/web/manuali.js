@@ -136,6 +136,7 @@ const GIOCHI = {
       ['<code>!roulette</code>', '<code>!rul</code>', 'Punti su rosso, nero, verde o un numero.', ATTESE('roulette')],
       ['<code>!furto @nome</code>', '<code>!rapina</code>', 'Provi a rubare. Se ti beccano, paghi.', ATTESE('furto')],
       ['<code>!conta</code>', '<code>!count</code>', 'Apre la conta: la chat scrive 1, 2, 3, un numero a testa e mai due di fila.', ATTESE('conta')],
+      ['<code>!catena</code>', '<code>!parole</code>', 'Apre la catena di parole: ogni parola comincia con le ultime due lettere della precedente.', ATTESE('catena')],
       ['<code>!colpo</code>', '<code>!heist</code>', 'Organizzi un colpo, o entri nella banda. <code>!colpo 100</code> per scegliere la posta.', ATTESE('colpo')],
       ['<code>!boss</code>', '—', 'Fa arrivare un boss da battere insieme. Solo mod e streamer.', '—'],
       ['<code>!colpisci</code>', '<code>!attacca</code> <code>!hit</code>', 'Colpisci il boss di turno.', ATTESE('boss')],
@@ -222,6 +223,13 @@ const GIOCHI = {
     { p: [
       'Con <code>!conta</code> la chat conta insieme: 1, poi 2, poi 3, un numero a messaggio e mai due di fila la stessa persona. Chi scrive il numero sbagliato, o conta due volte di fila, fa ricominciare tutti da uno. Mentre si conta giusto il bot tace: il gioco è la chat.',
       `Non si vincono monete: si batte il record del canale, che resta anche quando il bot si riavvia, e quando lo si supera il bot lo dice. Ogni ${DI_SERIE('conta').traguardo} numeri applaude, e se per ${ATTESA(DI_SERIE('conta').pausa)} nessuno conta la conta si chiude da sola. Mentre si conta non partono manche, perché anche loro leggono i numeri in chat.`,
+    ] },
+
+    { h3: 'La catena di parole' },
+    { p: [
+      `Con <code>!catena</code> il bot dice una parola, e la chat continua: ogni parola comincia con le ultime due lettere della precedente, casa, sasso, sole, leone. Conta solo un messaggio fatto di una parola che comincia con le due lettere giuste: il resto è chiacchiera e non tocca niente. Gli accenti non contano.`,
+      `La catena si rompe se una parola era già stata detta o se la stessa persona ne scrive due di fila: il bot dice perché e riparte da una parola nuova. Si batte il record del canale, che resta anche quando il bot si riavvia. Ogni ${DI_SERIE('catena').traguardo} parole il bot applaude, e se per ${ATTESA(DI_SERIE('catena').pausa)} nessuno trova la parola la catena si chiude. Le parole da cui si parte le scegli tu, nelle regole.`,
+      'Manche, conta e catena leggono tutte la chat, quindi ne gira una alla volta: finché una è aperta, le altre aspettano, e il bot lo dice.',
     ] },
 
     { h3: 'Colpo di gruppo' },

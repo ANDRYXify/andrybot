@@ -13,6 +13,7 @@ import * as contaFeat from './conta.js';
 import * as bjFeat from './blackjack.js';
 import * as corsaFeat from './corsa.js';
 import * as patataFeat from './patata.js';
+import * as catenaFeat from './catena.js';
 import { aspetta, giocato } from './attese-giochi.js';
 import { points, streamers, giochi } from '../db.js';
 import { config } from '../config.js';
@@ -335,8 +336,23 @@ function roundNumero() {
 // dicono al piu' una volta ogni INDIZIO_MS, con `round.indizio()`.
 const INDIZIO_MS = 4000;
 
+// Manche, conta e catena leggono tutte i messaggi normali della chat: un
+// «5» o un «sasso» non possono appartenere a due giochi insieme. Uno alla
+// volta, e questa e' l'unica regola che lo decide.
+export function chiLeggeLaChat(channel) {
+  if (roundAttivo.has(channel)) return 'manche';
+  if (contaFeat.contaInCorso(channel)) return 'conta';
+  if (catenaFeat.catenaInCorso(channel)) return 'catena';
+  return null;
+}
+const OCCUPATA = {
+  manche: 'C\'è una manche in corso',
+  conta: 'Si sta contando insieme',
+  catena: 'C\'è una catena di parole in corso',
+};
+
 function avviaRound(channel, round, say) {
-  if (!round || roundAttivo.has(channel) || contaFeat.contaInCorso(channel)) return false;
+  if (!round || chiLeggeLaChat(channel)) return false;
   round.premio = round.premio || conf(channel, 'manche').premio;
   round.scadenza = Date.now() + round.durata;
   round.say = say;
@@ -660,7 +676,7 @@ export function costruisciManche(channel, tipo) {
 // la sceglie invece (!manche impiccato): chi la chiede per nome la vuole anche
 // se non e' nel giro.
 export function avviaManche(channel, say, tipo = '') {
-  if (!attivi(channel) || roundAttivo.has(channel)) return false;
+  if (!attivi(channel)) return false;
   if (tipo) {
     const c = COSTRUTTORI[tipo];
     const r = c ? c.fai(channel) : null;
@@ -841,8 +857,10 @@ export function tryGame(msg, say) {
     const nome = msg.display || msg.user;
     const moneta = () => nomeMoneta(channel);
 
-    // un numero mentre si conta insieme appartiene alla conta
+    // un numero mentre si conta insieme appartiene alla conta, una parola
+    // mentre c'e' la catena alla catena
     if (contaFeat.suMessaggio(channel, msg)) return true;
+    if (catenaFeat.suMessaggio(channel, msg)) return true;
 
     // risposta a una manche (round) in corso: messaggio normale, non comando
     const round = roundAttivo.get(channel);
@@ -963,7 +981,9 @@ export function tryGame(msg, say) {
       }
 
       case 'trivia': {
-        if (roundAttivo.has(channel)) { say('🧠 C\'è già una manche in corso, rispondete!'); return true; }
+        const occupata = chiLeggeLaChat(channel);
+        if (occupata === 'manche') { say('🧠 C\'è già una manche in corso, rispondete!'); return true; }
+        if (occupata) { say(`🧠 ${OCCUPATA[occupata]}: la domanda quando finisce.`); return true; }
         if (aspetta(channel, 'manche', msg, say, { comando: 'trivia' })) return true;
         avviaRound(channel, roundTrivia(channel), say);
         giocato(channel, 'manche', msg.user);
@@ -973,7 +993,9 @@ export function tryGame(msg, say) {
       case 'manche': {
         // avvia una manche al volo: a caso fra quelle nel giro, o quella detta
         // per nome (!manche impiccato)
-        if (roundAttivo.has(channel)) { say('🎮 C\'è già una manche in corso!'); return true; }
+        const occupata = chiLeggeLaChat(channel);
+        if (occupata === 'manche') { say('🎮 C\'è già una manche in corso!'); return true; }
+        if (occupata) { say(`🎮 ${OCCUPATA[occupata]}: la manche quando finisce.`); return true; }
         const tipo = tipoMancheDa(args.join(' '));
         if (tipo === null) { say(`🎮 Non conosco questa manche. Ci sono: ${Object.values(COSTRUTTORI).map((c) => c.nome.toLowerCase()).join(', ')}.`); return true; }
         if (aspetta(channel, 'manche', msg, say)) return true;
@@ -1057,12 +1079,24 @@ export function tryGame(msg, say) {
       }
 
       case 'conta': {
-        if (roundAttivo.has(channel)) { say('🔢 C\'è una manche in corso: si conta quando finisce.'); return true; }
         const c = contaFeat.contaInCorso(channel);
         if (c) { say(`🔢 Si sta già contando: tocca a ${c.n + 1}. Record del canale: ${c.record}.`); return true; }
+        const occupata = chiLeggeLaChat(channel);
+        if (occupata) { say(`🔢 ${OCCUPATA[occupata]}: si conta quando finisce.`); return true; }
         if (aspetta(channel, 'conta', msg, say)) return true;
         contaFeat.apri(channel, say);
         giocato(channel, 'conta', msg.user);
+        return true;
+      }
+
+      case 'catena': {
+        const k = catenaFeat.catenaInCorso(channel);
+        if (k) { say(`🔗 La catena è già aperta: l'ultima parola è ${k.parola.toUpperCase()}, la prossima comincia con ${k.parola.slice(-2).toUpperCase()}.`); return true; }
+        const occupata = chiLeggeLaChat(channel);
+        if (occupata) { say(`🔗 ${OCCUPATA[occupata]}: la catena quando finisce.`); return true; }
+        if (aspetta(channel, 'catena', msg, say)) return true;
+        catenaFeat.apri(channel, say);
+        giocato(channel, 'catena', msg.user);
         return true;
       }
 
