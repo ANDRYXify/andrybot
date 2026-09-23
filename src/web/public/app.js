@@ -401,7 +401,7 @@ const INVITI = {
   vetrina: () => ({
     titolo: L('Ti va di comparire sulla prima pagina di SocialBot quando sei in diretta?', 'Would you like to appear on the SocialBot front page when you are live?', '¿Te apetece aparecer en la portada de SocialBot cuando estés en directo?'),
     testo: L('C’è una fascia con chi è in onda adesso: chi passa di lì può trovarti.', 'There is a band with who is on air right now: people passing by can find you.', 'Hay una franja con quién está en directo ahora: quien pase por ahí puede encontrarte.'),
-    corpo: `<p class="suggerimento">${L('Si vedono il tuo nome, il titolo della diretta, la categoria e quante persone ti guardano, con un collegamento al tuo canale. Niente dei tuoi spettatori, e niente che non sia già pubblico sul tuo canale. Lo spegni quando vuoi dalla scheda Stato.', 'It shows your name, the stream title, the category and how many people are watching, with a link to your channel. Nothing about your viewers, and nothing that is not already public on your channel. You turn it off whenever you want from the Status tab.', 'Se ven tu nombre, el título del directo, la categoría y cuánta gente te ve, con un enlace a tu canal. Nada de tus espectadores, y nada que no sea ya público en tu canal. Lo apagas cuando quieras desde la pestaña Estado.')}</p>`,
+    corpo: `<p class="suggerimento">${L('Si vedono il tuo nome, il titolo della diretta, la categoria e quante persone ti guardano, con un collegamento al tuo canale. Niente dei tuoi spettatori, e niente che non sia già pubblico sul tuo canale. Lo spegni quando vuoi dalla scheda Pagina link.', 'It shows your name, the stream title, the category and how many people are watching, with a link to your channel. Nothing about your viewers, and nothing that is not already public on your channel. You turn it off whenever you want from the Link page tab.', 'Se ven tu nombre, el título del directo, la categoría y cuánta gente te ve, con un enlace a tu canal. Nada de tus espectadores, y nada que no sea ya público en tu canal. Lo apagas cuando quieras desde la pestaña Página de enlaces.')}</p>`,
     si: L('Sì, fammi comparire', 'Yes, show me', 'Sí, muéstrame'),
     fai: async () => {
       await salvaImpostazioni({ vetrinaLive: true }, null);
@@ -1228,7 +1228,7 @@ const SPIEGA_DEMO = {
   effetti: 'Suoni ed effetti da lanciare in chat o in overlay: un comando e parte l\'applauso, la tromba o i coriandoli.',
   clip: 'Le clip automatiche nei momenti di hype, così non perdi mai il momento migliore della live.',
   ascolto: 'Comandi il bot a voce mentre streammi: parli e lui esegue, senza toccare la tastiera.',
-  notifiche: 'Gli avvisi quando esci allo scoperto: Discord quando vai in diretta, e i nuovi post su TikTok, YouTube e Instagram.',
+  notifiche: 'I tuoi social in un posto: in cima si collegano, e sotto scegli cosa annunciare quando pubblichi.',
   telegram: 'Il bot dentro il tuo gruppo Telegram: avvisa quando parti, risponde ai comandi, si ricorda i compleanni dei membri e ti manda il rapporto della serata in privato.',
   ruoli: 'I ruoli del tuo server Discord dati da quello che succede su Twitch: chi ti segue, chi è abbonato, chi c’è sempre.',
   dcavvisi: 'Dove arrivano gli avvisi sul tuo server: un canale per ogni cosa, di chi vuoi tu, col testo che scrivi tu e il ruolo che vuoi chiamare.',
@@ -1571,7 +1571,10 @@ function _piegaCarta(carta, aperta) {
   _cartaInMoto(carta);
 }
 
-function barraCarteHtml() {
+const CARTE_PER_BARRA = 4;
+function barraCarteHtml(id) {
+  const sez = document.getElementById('scheda-' + id);
+  if (sez && sez.querySelectorAll(':scope > .carta').length < CARTE_PER_BARRA) return '';
   return `<div class="carte-ctrl">
     <button type="button" class="btn secondario mini" data-carte="apri">${L('Apri tutto', 'Expand all', 'Abrir todo')}</button>
     <button type="button" class="btn secondario mini" data-carte="chiudi">${L('Riduci tutto', 'Collapse all', 'Reducir todo')}</button>
@@ -2572,8 +2575,7 @@ async function caricaFeed() {
   }).join('');
 
   box.innerHTML = `
-    <p class="campo">${L('Sorgenti dei post', 'Post sources', 'Fuentes de las publicaciones')}</p>
-    <p class="suggerimento">${L('Instagram non ha un modo stabile di dire «è uscito un post» senza le sue API ufficiali: qualunque scorciatoia prima o poi si rompe. Qui invece c’è una <strong>presa</strong>: incolla l’indirizzo di un feed (RSS, Atom o JSON) e lo guardo io ogni dieci minuti. Vale per Instagram come per qualunque altra cosa.', 'Instagram has no stable way to say «a post is out» without its official APIs: every shortcut breaks sooner or later. Here there’s a <strong>socket</strong> instead: paste a feed address (RSS, Atom or JSON) and I’ll watch it every ten minutes. Works for Instagram and anything else.', 'Instagram no tiene forma estable de decir «hay una publicación nueva» sin sus API oficiales: cualquier atajo acaba rompiéndose. Aquí hay un <strong>enchufe</strong>: pega la dirección de un feed (RSS, Atom o JSON) y lo miro cada diez minutos. Sirve para Instagram y para cualquier otra cosa.')}</p>
+    <p class="suggerimento">${L('Guardo ogni feed ogni dieci minuti. Se uno smette di rispondere, lo vedi scritto qui, invece di restare in silenzio.', 'I check every feed every ten minutes. If one stops answering, you see it written here, instead of silence.', 'Miro cada feed cada diez minutos. Si uno deja de responder, lo ves escrito aquí, en vez de quedarse en silencio.')}</p>
     <div class="fd-elenco">${carte || `<p class="vuoto">${L('Nessuna sorgente ancora.', 'No source yet.', 'Ninguna fuente todavía.')}</p>`}</div>
     <div class="fd-nuova">
       <div class="riga-flessibile">
@@ -2583,7 +2585,7 @@ async function caricaFeed() {
         <input aria-label="https://… (RSS, Atom o JSON)" type="text" id="fd-url" class="campo-largo" placeholder="https://… (RSS, Atom o JSON)" maxlength="500">
         <button type="button" class="btn secondario" id="fd-aggiungi">${L('Aggiungi', 'Add', 'Añadir')}</button>
       </div>
-      <p class="suggerimento">${L('Per Instagram servono ponti di terzi, che non controlliamo e possono smettere di funzionare: i più usati sono <code>rsshub.app/picuki/profile/TUONOME</code> e una <a href="https://rss-bridge.github.io/rss-bridge/" target="_blank" rel="noopener">RSS-Bridge</a> tua. Se un giorno smette, lo vedi qui scritto invece di restare in silenzio.', 'Instagram needs third-party bridges we don’t control and which can stop working: the common ones are <code>rsshub.app/picuki/profile/YOURNAME</code> and your own <a href="https://rss-bridge.github.io/rss-bridge/" target="_blank" rel="noopener">RSS-Bridge</a>. If one day it stops, you’ll read it here instead of hearing silence.', 'Para Instagram hacen falta puentes de terceros que no controlamos y que pueden dejar de funcionar: los más usados son <code>rsshub.app/picuki/profile/TUNOMBRE</code> y tu propio <a href="https://rss-bridge.github.io/rss-bridge/" target="_blank" rel="noopener">RSS-Bridge</a>. Si un día deja de ir, lo lees aquí en vez de oír silencio.')}</p>
+      <p class="suggerimento">${L('Molti siti hanno un feed: blog, podcast, notiziari. Spesso l’indirizzo finisce con <code>/feed</code> o <code>/rss</code>.', 'Many sites have a feed: blogs, podcasts, news. The address often ends in <code>/feed</code> or <code>/rss</code>.', 'Muchos sitios tienen un feed: blogs, pódcasts, noticias. A menudo la dirección termina en <code>/feed</code> o <code>/rss</code>.')}</p>
     </div>`;
 }
 
@@ -2769,7 +2771,7 @@ const GRUPPI = [
     ['donazioni', 'Donazioni'],
     ['settimana', 'Settimana'],
     ['grafiche', 'Grafiche'],
-    ['notifiche', 'Avvisi'],
+    ['notifiche', 'I tuoi social'],
   ] },
   { id: 'community', nome: 'Le tue community', schede: [
     ['telegram', 'Telegram'],
@@ -2830,7 +2832,7 @@ const T_SCHEDA = {
   penitenze: ['Penitenze', 'Forfeits', 'Penitencias'],
   alert: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'],
   emote: ['Emote (7TV)', 'Emotes (7TV)', 'Emotes (7TV)'],
-  notifiche: ['Avvisi', 'Alerts', 'Avisos'],
+  notifiche: ['I tuoi social', 'Your socials', 'Tus redes'],
   telegram: ['Telegram', 'Telegram', 'Telegram'],
   ruoli: ['Discord', 'Discord', 'Discord'],
   dirette: ['Dirette', 'Streams', 'Directos'],
@@ -2922,7 +2924,7 @@ const DESC = {
   penitenze: ['Con i punti canale la chat ti vieta una parola — o ti obbliga a dire solo quella. Se sbagli, penitenza.', 'With channel points chat bans a word for you — or forces you to say only that one. Slip up and you owe a forfeit.', 'Con los puntos de canal el chat te prohíbe una palabra — o te obliga a decir solo esa. Si fallas, penitencia.'],
   alert: ['Il tuo overlay: alert, chat a schermo, widget e temi, tutto personalizzabile.', 'Your stream overlay: alerts, on-screen chat, widgets and themes, all customizable.', 'Tu overlay: alertas, chat en pantalla, widgets y temas, todo personalizable.'],
   emote: ['Gestisci le emote 7TV del tuo canale: aggiungi, togli e rinomina, senza uscire dal bot.', 'Manage your channel’s 7TV emotes: add, remove and rename, without leaving the bot.', 'Gestiona las emotes 7TV de tu canal: añade, quita y renombra, sin salir del bot.'],
-  notifiche: ['Avvisi quando vai in diretta su Discord, e dei nuovi post su TikTok, YouTube e Instagram.', 'Alerts on Discord when you go live, and for new posts on TikTok, YouTube and Instagram.', 'Avisos en Discord cuando estás en directo, y de los nuevos posts en TikTok, YouTube e Instagram.'],
+  notifiche: ['Collega Instagram, TikTok e YouTube, e scegli cosa annunciare quando pubblichi.', 'Connect Instagram, TikTok and YouTube, and choose what to announce when you post.', 'Conecta Instagram, TikTok y YouTube, y elige qué anunciar cuando publicas.'],
   donazioni: ['Ricevi donazioni sul tuo conto, con l’avviso in diretta e il grazie in chat che partono da soli.', 'Receive donations on your own account, with the on-stream alert and the chat thanks firing on their own.', 'Recibe donaciones en tu propia cuenta, con el aviso en directo y el gracias en el chat que salen solos.'],
   grafiche: ['La locandina della diretta da postare sui social, coi tuoi colori e il tuo nome.', 'The stream poster to post on socials, with your colours and your name.', 'El cartel del directo para publicar en redes, con tus colores y tu nombre.'],
   settimana: ['I giorni in cui vai in onda, scritti una volta: da qui vanno sui calendari e dove li mandi.', 'The days you go live, written once: from here they go onto the calendars and wherever you send them.', 'Los días en que sales en directo, escritos una vez: de aquí van a los calendarios y adonde los mandes.'],
@@ -3090,8 +3092,8 @@ const GUIDE = {
     come: [['Apri il giveaway indicando il premio; puoi dare più possibilità a sub e VIP e scegliere la parola d\'ingresso.', 'Open the giveaway and set the prize; you can give subs and VIPs better odds and pick the join keyword.', 'Abre el sorteo indicando el premio; puedes dar más posibilidades a subs y VIPs y elegir la palabra de entrada.', '#gw-premio'], ['La community entra scrivendo !join (o la tua parola) in chat. Con !biglietti @nome regali chance extra.', 'The community joins by typing !join (or your keyword) in chat. With !biglietti @name you grant extra chances.', 'La comunidad entra escribiendo !join (o tu palabra) en el chat. Con !biglietti @nombre das chances extra.', '#gw-keyword'], ['Estrai uno o più vincitori dal pannello o con !estrai N (puoi ripetere).', 'Draw one or more winners from the panel or with !estrai N (you can repeat).', 'Saca uno o varios ganadores desde el panel o con !estrai N (puedes repetir).', '#giveaway-stato']] },
   penitenze: { serve: ['Trasformare un premio a punti canale in una sfida a tempo: il bot conta quante volte sbagli (con «+1» a schermo) e alla fine fa partire una penitenza.', 'Turn a channel-point reward into a timed challenge: the bot counts your slip-ups (with an on-screen «+1») and triggers a forfeit at the end.', 'Convertir una recompensa de puntos de canal en un reto cronometrado: el bot cuenta cuántas veces fallas (con un «+1» en pantalla) y al final lanza una penitencia.'],
     come: [['Accendi le penitenze: perché funzionino servono i Punti canale e il riconoscimento vocale della scheda «Comandi a voce».', 'Turn forfeits on: for them to work you need Channel Points and the voice recognition from the «Voice commands» tab.', 'Enciende las penitencias: para que funcionen hacen falta los Puntos de canal y el reconocimiento de voz de la pestaña «Comandos por voz».', '#pen-attivo'], ['Scegli i due premi: «Vieta la parola» (non dirla) e «Usa solo la parola» (dì solo quella).', 'Choose the two rewards: «Ban the word» (don’t say it) and «Use only the word» (say only that).', 'Elige las dos recompensas: «Prohíbe la palabra» (no la digas) y «Usa solo la palabra» (di solo esa).', '#pen-box-vieta'], ['Decidi la penitenza (tua lista o inventata dall\'IA) e dove mostrare il contatore nell\'overlay.', 'Decide the forfeit (your list or AI-generated) and where to show the counter in the overlay.', 'Decide la penitencia (tu lista o inventada por la IA) y dónde mostrar el contador en el overlay.', '#pen-penitenze']] },
-  notifiche: { serve: ['Avvisare su Discord quando vai in diretta, e segnalare i nuovi post e video su TikTok, YouTube e Instagram.', 'Alert on Discord when you go live, and flag new posts and videos on TikTok, YouTube and Instagram.', 'Avisar en Discord cuando estás en directo, y señalar los nuevos posts y vídeos en TikTok, YouTube e Instagram.'],
-    come: [['Scegli qui in cima la piattaforma che vuoi collegare.', 'Pick the platform you want to connect, up here.', 'Elige aquí arriba la plataforma que quieras conectar.'], ['Aggiungi i tuoi profili social per gli avvisi dei nuovi contenuti.', 'Add your social profiles for new-content alerts.', 'A\u00f1ade tus perfiles sociales para los avisos de nuevo contenido.', '#feed-fonti'], ['Attiva gli avvisi che vuoi e personalizza i messaggi (usa \u00abProva\u00bb per un test).', 'Turn on the alerts you want and customize the messages (use \u201cTest\u201d for a preview).', 'Activa los avisos que quieras y personaliza los mensajes (usa \u00abProbar\u00bb para una prueba).', '#chk-promo']] },
+  notifiche: { serve: ['Collegare i tuoi social e annunciare quello che pubblichi: i post di Instagram, i video e le dirette di TikTok, i video di YouTube.', 'Connect your socials and announce what you post: Instagram posts, TikTok videos and lives, YouTube videos.', 'Conectar tus redes y anunciar lo que publicas: los posts de Instagram, los vídeos y directos de TikTok, los vídeos de YouTube.'],
+    come: [['In cima collega Instagram e TikTok con un tasto, e scrivi il tuo canale YouTube.', 'At the top, connect Instagram and TikTok with one button, and type your YouTube channel.', 'Arriba, conecta Instagram y TikTok con un botón, y escribe tu canal de YouTube.', '#social-account'], ['Per ogni cosa da annunciare accendi l’avviso e scegli le parole: se non scrivi niente, uso le mie.', 'For each thing to announce, turn the alert on and choose the words: if you write nothing, I use mine.', 'Para cada cosa que anunciar, enciende el aviso y elige las palabras: si no escribes nada, uso las mías.', '#txt-ig-messaggio'], ['Per un altro sito, in fondo incolli l’indirizzo del suo feed.', 'For another site, paste its feed address at the bottom.', 'Para otro sitio, pega abajo la dirección de su feed.', '#feed-fonti']] },
   telegram: { serve: ['Portare il bot nel tuo gruppo Telegram: avvisa quando vai in diretta, risponde ai comandi, fa gli auguri ai membri e ti manda il rapporto della serata in privato.', 'Bring the bot into your Telegram group: it alerts when you go live, answers commands, wishes members happy birthday and sends you the night\u2019s report in private.', 'Llevar el bot a tu grupo de Telegram: avisa cuando est\u00e1s en directo, responde a los comandos, felicita a los miembros y te manda el informe de la noche en privado.'],
     come: [['Incolla la chiave del TUO bot, quella che ti d\u00e0 BotFather.', 'Paste the key of YOUR bot, the one BotFather gives you.', 'Pega la clave de TU bot, la que te da BotFather.', '#inp-tg-token'], ['Aggiungi il bot al gruppo e premi \u00abCollega\u00bb: ti trova da solo.', 'Add the bot to the group and press \u00abConnect\u00bb: it finds itself.', 'A\u00f1ade el bot al grupo y pulsa \u00abConectar\u00bb: se encuentra solo.', '#btn-tg-rileva'], ['Accendi l\'avviso e scrivi il messaggio come lo vuoi tu.', 'Turn on the alert and write the message the way you want it.', 'Enciende el aviso y escribe el mensaje como lo quieras.', '#chk-tg-attivo']] },
   ruoli: { serve: ['Dare i ruoli del tuo server Discord in base a quello che succede su Twitch: chi ti segue, chi è abbonato, chi è VIP o moderatore, quante ore ti ha guardato, quante monete ha, da quante dirette di fila c’è.', 'Give your Discord server’s roles based on what happens on Twitch: who follows you, who is subscribed, who is a VIP or moderator, how many hours they watched, how many coins they have, how long their streak is.', 'Dar los roles de tu servidor de Discord según lo que pasa en Twitch: quién te sigue, quién está suscrito, quién es VIP o moderador, cuántas horas te ha visto, cuántas monedas tiene, cuántos directos seguidos lleva.'],
@@ -3223,7 +3225,12 @@ function guidaSchedaHtml(id) {
   let aperta = !stretto() && !SOTTO_SCHEDE[id] && id !== SEZ_BANCO;
   try {
     const v = localStorage.getItem('guida:' + id);
-    if (v === '0') aperta = false; else if (v === '1') aperta = true;
+    if (v === '0') aperta = false;
+    else if (v === '1') aperta = true;
+    else if (aperta && sessionStorage.getItem('guida-oggi:' + id) !== '1') {
+      if (localStorage.getItem('guida-vista:' + id) === '1') aperta = false;
+      else { localStorage.setItem('guida-vista:' + id, '1'); sessionStorage.setItem('guida-oggi:' + id, '1'); }
+    }
   } catch {  }
   return `<details class="guida-scheda"${aperta ? ' open' : ''} data-guida="${id}">
     <summary><span class="guida-ico">${_icoGuida}</span> ${L('Come funziona', 'How it works', 'Cómo funciona')}</summary>
@@ -3285,13 +3292,6 @@ const SOTTO_SCHEDE = {
   moduli: {
     attributo: 'zona',
     voci: [['comandi', 'Comandi e contatori'], ['morti', 'CONTATORify']],
-  },
-  notifiche: {
-    attributo: 'rete',
-    voci: [
-      ['tiktok', 'TikTok'], ['youtube', 'YouTube'],
-      ['instagram', 'Instagram'],
-    ],
   },
 };
 
@@ -3501,7 +3501,7 @@ function aggiornaTestataPagina() {
     barraFamigliaHtml(schedaAttiva) +
     sottoSchedeHtml(schedaAttiva) +
     guidaSchedaHtml(schedaAttiva) +
-    barraCarteHtml();
+    barraCarteHtml(schedaAttiva);
   aggiornaBarraGiu();
   osservaTitolo();
 }
@@ -4323,7 +4323,7 @@ function _settDisegnaDove() {
       : problemaHtml({
         titolo: L('La storia di Instagram non può partire', 'The Instagram story cannot go out', 'La historia de Instagram no puede salir'),
         testo: L('Instagram è collegato, ma per pubblicare una storia servono un account professionale e il permesso di pubblicare.', 'Instagram is connected, but posting a story needs a professional account and the publishing permission.', 'Instagram está conectado, pero para publicar una historia hacen falta una cuenta profesional y el permiso de publicar.'),
-        tasto: `<button type="button" class="btn secondario mini" data-vai="notifiche" data-vai-sotto="instagram">${L('Vai a Instagram', 'Go to Instagram', 'Ir a Instagram')}</button>`,
+        tasto: `<button type="button" class="btn secondario mini" data-vai="notifiche">${L('Vai a Instagram', 'Go to Instagram', 'Ir a Instagram')}</button>`,
       })));
   }
   box.innerHTML = blocchi.length ? blocchi.join('')
@@ -5282,15 +5282,6 @@ function pannelloStato() {
       <p>${L('Il motore veloce del bot che', 'The bot’s fast engine that', 'El motor rápido del bot que')} <strong class="primo-piano">${L('cresce da solo', 'grows on its own', 'crece solo')}</strong>: ${L('risponde all\'istante a ciò che ha già imparato e, quando incontra qualcosa di nuovo, se lo segna e lo impara dal maestro. Più lo alleni (anche via DM su Telegram), più sa fare da sé.', 'answers instantly to what it already learned and, when it meets something new, notes it and learns it from the teacher. The more you train it (also via Telegram DM), the more it can do on its own.', 'responde al instante a lo que ya aprendió y, cuando encuentra algo nuevo, lo anota y lo aprende del maestro. Cuanto más lo entrenas (también por DM en Telegram), más sabe hacer solo.')}</p>
       <div id="rete-panoramica"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
-    ${proprietario ? `<div class="carta">
-      <h2>${_hIco(ICO.globo)}${L('La tua diretta sulla home di SocialBot', 'Your stream on the SocialBot home', 'Tu directo en la home de SocialBot')}</h2>
-      <p>${L('Quando sei in onda, il tuo canale può comparire fra le dirette sulla nostra pagina iniziale: il nome, cosa stai giocando e il titolo della diretta, con un collegamento al tuo canale. È spento finché non lo accendi tu, e appena lo spegni sparisci.', 'When you are live, your channel can show up among the streams on our home page: your name, what you are playing and the stream title, with a link to your channel. It is off until you turn it on, and the moment you turn it off you disappear.', 'Cuando estás en directo, tu canal puede aparecer entre los directos de nuestra página de inicio: tu nombre, a qué juegas y el título del directo, con un enlace a tu canal. Está apagado hasta que lo enciendas, y en cuanto lo apagues desapareces.')}</p>
-      <div class="riga-interruttore spazio-sopra">
-        <label class="interruttore"><input type="checkbox" id="chk-vetrina-live" ${sImp.vetrinaLive ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">${L('Fammi comparire quando sono in diretta', 'Show me when I am live', 'Muéstrame cuando esté en directo')}</span>
-      </div>
-      <p class="suggerimento spazio-sopra">${L('Non mostriamo niente dei tuoi spettatori, e niente di tuo che non sia già pubblico sul tuo canale.', 'We show nothing about your viewers, and nothing of yours that is not already public on your channel.', 'No mostramos nada de tus espectadores, ni nada tuyo que no sea ya público en tu canal.')}</p>
-    </div>` : ''}
 
     <div class="carta">
       <h2>${_hIco(ICO.spina)}${L('Le tue piattaforme', 'Your platforms', 'Tus plataformas')}</h2>
@@ -5465,6 +5456,12 @@ function pannelloPersonalita() {
         <ul class="lista-voci" id="lista-spontanee"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
         <p class="suggerimento">${L('Le ultime volte che ha parlato senza che nessuno lo chiamasse, da quando il bot è acceso: con l’ora e il motivo. È qui che vedi se la dose è quella giusta.', 'The last times it spoke without being called, since the bot was started: with time and reason. This is where you see whether the dose is right.', 'Las últimas veces que habló sin que nadie lo llamara, desde que el bot está encendido: con la hora y el motivo. Aquí ves si la dosis es la correcta.')}</p>
       </div>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-promo" ${s.promoSocial ? 'checked' : ''}>
+        <label for="chk-promo">${L('Ricorda i tuoi social in chat, nei momenti giusti', 'Remind viewers of your socials in chat, at the right moments', 'Recuerda tus redes en el chat, en los momentos adecuados')}</label>
+      </div>
+      <p class="suggerimento">${L('Non è un timer: aspetta la chat viva, un raid o un sub, e non insiste. I link li prende dal tuo profilo andryxify.it.', 'It is not a timer: it waits for a lively chat, a raid or a sub, and it does not insist. It takes the links from your andryxify.it profile.', 'No es un temporizador: espera a un chat vivo, un raid o un sub, y no insiste. Los enlaces los toma de tu perfil de andryxify.it.')}</p>
 
       <div class="riga-check">
         <input type="checkbox" id="chk-adatta" ${s.adattaCanale ? 'checked' : ''}>
@@ -5690,7 +5687,7 @@ function pannelloAscolto() {
       </p>
       <p class="suggerimento spazio-sopra">${L('Tienila aperta mentre streammi. Funziona su Chrome o Edge (Mac e Windows).', 'Keep it open while you stream. Works on Chrome or Edge (Mac and Windows).', 'Mantenla abierta mientras haces directo. Funciona en Chrome o Edge (Mac y Windows).')}</p>
       <p class="suggerimento">${L('I comandi vocali si creano e modificano in', 'Voice commands are created and edited in', 'Los comandos por voz se crean y editan en')}
-      <strong class="primo-piano">${L('Chat & comandi → Comandi', 'Chat & commands → Commands', 'Chat y comandos → Comandos')}</strong> (${L('innesco "Comando vocale"', '"Voice command" trigger', 'disparador "Comando por voz"')}).</p>
+      <strong class="primo-piano">${L('Chat e pubblico → Comandi', 'Chat & audience → Commands', 'Chat y público → Comandos')}</strong> (${L('innesco "Comando vocale"', '"Voice command" trigger', 'disparador "Comando por voz"')}).</p>
     </div>
 
     <div class="carta">
@@ -5953,18 +5950,18 @@ async function caricaTikTok() {
   else if (q.get('tiktok') === 'errore') toast(L('Collegamento TikTok non riuscito.', 'TikTok connection failed.', 'Conexión con TikTok fallida.'), 'errore');
   if (q.get('tiktok')) { try { history.replaceState(null, '', location.pathname + '#notifiche'); } catch {  } }
   const proprietario = stato?.ruolo !== 'moderatore';
-  if (!proprietario) { box.innerHTML = '<p class="suggerimento">Solo il proprietario del canale può collegare TikTok.</p>'; return; }
+  if (!proprietario) { box.innerHTML = `<p class="suggerimento">${L('Lo collega chi ha il canale.', 'The channel owner connects it.', 'Lo conecta quien tiene el canal.')}</p>`; return; }
   let d;
-  try { d = await api('/api/tiktok/stato'); } catch { box.innerHTML = '<p class="suggerimento">Impossibile caricare lo stato del connettore TikTok.</p>'; return; }
+  try { d = await api('/api/tiktok/stato'); } catch { box.innerHTML = problemaHtml({ titolo: L('Non riesco a sapere se TikTok è collegato', 'I cannot tell whether TikTok is connected', 'No consigo saber si TikTok está conectado'), testo: L('Ricarica la pagina tra poco.', 'Reload the page in a moment.', 'Recarga la página dentro de un rato.') }); return; }
 
   if (!d.appAttiva) {
-    box.innerHTML = '<p class="suggerimento">Il connettore TikTok non è ancora attivo: serve configurare l\'app TikTok (Client Key/Secret) lato server.</p>';
+    box.innerHTML = `<p class="suggerimento">${L('Il collegamento con TikTok non è ancora attivo su SocialBot.', 'The TikTok connection is not active on SocialBot yet.', 'La conexión con TikTok todavía no está activa en SocialBot.')}</p>`;
     return;
   }
 
   if (!d.collegato) {
-    box.innerHTML = `<button class="btn" id="tiktok-collega">Collega TikTok</button>
-      <p class="suggerimento spazio-sopra">Ti mando su TikTok per autorizzare la lettura dei tuoi video. Nient'altro.</p>`;
+    box.innerHTML = `<button class="btn" id="tiktok-collega">${L('Collega TikTok', 'Connect TikTok', 'Conectar TikTok')}</button>
+      <p class="suggerimento spazio-sopra">${L('Ti mando su TikTok per un permesso solo: leggere i tuoi video.', 'I send you to TikTok for one permission only: reading your videos.', 'Te mando a TikTok para un solo permiso: leer tus vídeos.')}</p>`;
     document.getElementById('tiktok-collega').addEventListener('click', () => conErrore(async () => {
       const r = await api('/api/tiktok/connect');
       if (r?.url) location.href = r.url;
@@ -5973,9 +5970,9 @@ async function caricaTikTok() {
   }
 
   box.innerHTML = `<div class="riga-interruttore">
-      <span class="badge verde"><i class="vivo"></i>TikTok collegato${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
-      <button class="btn secondario mini" id="tiktok-prova">Prova</button>
-      <button class="btn secondario mini" id="tiktok-scollega">Scollega</button>
+      <span class="badge verde"><i class="vivo"></i>${L('TikTok collegato', 'TikTok connected', 'TikTok conectado')}${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
+      <button class="btn secondario mini" id="tiktok-prova">${L('Prova', 'Test', 'Probar')}</button>
+      <button class="btn secondario mini" id="tiktok-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button>
     </div>`;
   document.getElementById('tiktok-scollega').addEventListener('click', () => conErrore(async () => {
     await api('/api/tiktok/disconnect', { method: 'POST', body: {} });
@@ -6003,7 +6000,7 @@ async function caricaInstagram() {
     }[esito];
     if (detto) toast(...detto);
     try { history.replaceState(null, '', location.pathname + '#notifiche'); } catch {  }
-    document.querySelector('[data-sotto="instagram"]')?.click();
+    requestAnimationFrame(() => document.getElementById('social-account')?.scrollIntoView({ block: 'start' }));
   }
   const proprietario = stato?.ruolo !== 'moderatore';
   let d = null;
@@ -6014,7 +6011,7 @@ async function caricaInstagram() {
       testo: L('Nel file .env del server:', 'In the server’s .env file:', 'En el archivo .env del servidor:') + _elencoStorte(d.storte)
         + L('Correggi la riga e riavvia il bot.', 'Fix the line and restart the bot.', 'Corrige la línea y reinicia el bot.'),
       grave: true,
-    }) : '';
+    }) : `<p class="suggerimento">${L('Si collega col token, dal riquadro «Nuovo post su Instagram» qui sotto.', 'It connects with a token, from the «New Instagram post» card below.', 'Se conecta con el token, desde la tarjeta «Nuevo post en Instagram» aquí abajo.')}</p>`;
     if (aMano) aMano.open = true;
     return;
   }
@@ -15416,11 +15413,23 @@ const _lpDup = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stro
 const _lpVia = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 
 function pannelloPaginaLink() {
+  const sImp = impostazioni();
+  const proprietario = stato.ruolo !== 'moderatore';
   return pannello('pagina', `
     <div class="carta">
       <h2>${_hIco(ICO.condividi)}${L('La tua pagina link', 'Your link page', 'Tu página de enlaces')}</h2>
       <div id="lp-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
-    </div>`);
+    </div>
+    ${proprietario ? `<div class="carta">
+      <h2>${_hIco(ICO.globo)}${L('La tua diretta in prima pagina', 'Your stream on the front page', 'Tu directo en portada')}</h2>
+      <p>${L('Quando sei in onda, il tuo canale può comparire fra le dirette sulla prima pagina di SocialBot: il nome, cosa stai giocando e il titolo della diretta, con un collegamento al tuo canale. È spento finché non lo accendi tu, e appena lo spegni sparisci.', 'When you are live, your channel can show up among the streams on the SocialBot front page: your name, what you are playing and the stream title, with a link to your channel. It is off until you turn it on, and the moment you turn it off you disappear.', 'Cuando estás en directo, tu canal puede aparecer entre los directos de la portada de SocialBot: tu nombre, a qué juegas y el título del directo, con un enlace a tu canal. Está apagado hasta que lo enciendas, y en cuanto lo apagues desapareces.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="chk-vetrina-live" ${sImp.vetrinaLive ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Fammi comparire quando sono in diretta', 'Show me when I am live', 'Muéstrame cuando esté en directo')}</span>
+      </div>
+      <p class="suggerimento spazio-sopra">${L('Non mostriamo niente dei tuoi spettatori, e niente di tuo che non sia già pubblico sul tuo canale.', 'We show nothing about your viewers, and nothing of yours that is not already public on your channel.', 'No mostramos nada de tus espectadores, ni nada tuyo que no sea ya público en tu canal.')}</p>
+    </div>` : ''}
+`);
 }
 
 function pannelloDonazioni() {
@@ -15429,12 +15438,6 @@ function pannelloDonazioni() {
       <h2>${_hIco(ICO.cuore)}${L('Donazioni', 'Donations', 'Donaciones')}</h2>
       <p>${L('Chi ti segue ti dona dalla tua pagina link. Il pagamento arriva sul tuo conto, Stripe o Satispay, aperto e gestito da te: qui incolli solo una chiave con permessi ridotti, una volta. Con tutti e due, chi dona sceglie. A ogni donazione partono l\'avviso in overlay e il grazie in chat, e sale l\'obiettivo in euro.', 'People donate to you from your link page. The payment lands on your own account, Stripe or Satispay, opened and managed by you: here you paste just a key with limited permissions, once. With both, the donor chooses. Every donation fires the overlay alert and the thanks in chat, and moves the euro goal.', 'Quien te sigue te dona desde tu página de enlaces. El pago llega a tu propia cuenta, Stripe o Satispay, abierta y gestionada por ti: aquí pegas solo una clave con permisos limitados, una vez. Con las dos, quien dona elige. Cada donación lanza el aviso en el overlay y el gracias en el chat, y sube el objetivo en euros.')}</p>
       <div id="dona-conto-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
-    </div>
-    <div class="carta" id="dona-pagina-carta">
-      <h2>${_hIco(ICO.condividi)}${L('La tua pagina delle donazioni', 'Your donations page', 'Tu página de donaciones')}</h2>
-      <p>${L('Una pagina tutta per le donazioni, separata dalla pagina link: stessi strumenti (stile, colori, caratteri, blocchi), ma qui il cuore sono le offerte e il modulo. Sulla pagina link il tasto «Sostieni» può portare qui.', 'A page all for donations, separate from the link page: same tools (style, colours, fonts, blocks), but here the heart is the offers and the form. On the link page the «Support me» button can send people here.', 'Una página solo para donaciones, separada de la página de enlaces: mismas herramientas (estilo, colores, tipografías, bloques), pero aquí lo central son las ofertas y el formulario. En la página de enlaces el botón «Apóyame» puede llevar aquí.')}</p>
-      <p><code id="dona-pagina-url">…</code></p>
-      <p><button type="button" class="btn" data-dona="pagina">${L('Modifica la pagina', 'Edit the page', 'Editar la página')}</button> <a class="btn secondario" id="dona-pagina-apri" href="#" target="_blank" rel="noopener">${L('Apri la pagina', 'Open the page', 'Abrir la página')}</a></p>
     </div>
     <div class="carta" id="dona-carta">
       <h2>${_hIco(ICO.carta)}${L('Il tasto e le offerte', 'The button and the offers', 'El botón y las ofertas')}</h2>
@@ -15482,6 +15485,11 @@ function pannelloDonazioni() {
       <p class="spazio-sopra"><button class="btn" id="dona-salva">${L('Salva', 'Save', 'Guardar')}</button> <button type="button" class="btn secondario" id="dona-prova">${L('Prova l\'avviso', 'Test the alert', 'Probar el aviso')}</button></p>
       <p class="suggerimento">${L('Il tasto sta nel blocco «Sostieni» della pagina link. L\'avviso si veste nella scheda Overlay come gli altri, voce «Donazione», con l\'importo minimo; l\'obiettivo in euro si aggiunge fra gli obiettivi con «Conta: euro donati».', 'The button lives in the «Support me» block of your link page. The alert is styled in the Overlay tab like the others, entry «Donation», with a minimum amount; the euro goal is added among the goals with «Count: euros donated».', 'El botón vive en el bloque «Apóyame» de tu página de enlaces. El aviso se viste en la pestaña Overlay como los demás, entrada «Donación», con importe mínimo; el objetivo en euros se añade entre los objetivos con «Cuenta: euros donados».')}</p>
     </div>
+    <div class="carta" id="dona-pagina-carta">
+      <h2>${_hIco(ICO.condividi)}${L('La tua pagina delle donazioni', 'Your donations page', 'Tu página de donaciones')}</h2>
+      <p>${L('Una pagina tutta per le donazioni, con gli stessi strumenti della pagina link: qui il cuore sono le offerte e il modulo. Sulla pagina link il tasto «Sostieni» porta qui.', 'A page just for donations, with the same tools as the link page: here the heart is the offers and the form. On the link page the «Support» button leads here.', 'Una página solo para las donaciones, con las mismas herramientas que la página de enlaces: aquí lo principal son las ofertas y el formulario. En la página de enlaces el botón «Apóyame» lleva aquí.')}</p>
+      <div id="lp-box-dona"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+    </div>
     <div class="carta" id="dona-ultime-carta">
       <h2>${_hIco(ICO.lista)}${L('Il registro delle donazioni', 'The donations register', 'El registro de donaciones')}</h2>
       <div id="dona-ultime-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
@@ -15514,8 +15522,6 @@ function riempiDonazioni() {
   _imposta('dona-proprio-attivo', pr.attivo === true); _imposta('dona-proprio-da', pr.da || 20); _imposta('dona-proprio-durata', pr.durata || 6); _imposta('dona-proprio-subito', pr.subito === true);
   if (!_EFFETTI.length) api('/api/streamer/effetti').then((lib) => { _EFFETTI = lib?.effetti || []; _disegnaLivelli(_leggiLivelli()); }).catch(() => {});
   const url = _statoDona?.paginaUrl || (location.origin + '/dona/' + (stato?.user?.login || '…'));
-  const cu = _g('dona-pagina-url'); if (cu) cu.textContent = url;
-  const ap = _g('dona-pagina-apri'); if (ap) ap.href = url;
   const w = _g('dona-webhook'); if (w) w.textContent = location.origin + '/dona/kofi/' + (stato?.user?.login || '…');
   const st = _g('dona-kofi-stato');
   if (st) st.textContent = d.kofiSet ? L('Token impostato: le mance da Ko-fi arrivano.', 'Token set: tips from Ko-fi come through.', 'Token configurado: las propinas de Ko-fi llegan.') : L('Nessun token: incollalo e salva.', 'No token yet: paste it and save.', 'Sin token: pégalo y guarda.');
@@ -15570,7 +15576,6 @@ async function caricaStatoDonazioni(rileggi) {
   try { st = await api('/api/donazioni/stato' + (rileggi ? '?rileggi=1' : '')); }
   catch (e) { box.innerHTML = `<p class="suggerimento">${esc(L('Non riesco a leggere lo stato del conto: riprova.', 'I cannot read the account state: try again.', 'No puedo leer el estado de la cuenta: inténtalo de nuevo.'))}</p>`; return; }
   _statoDona = st;
-  if (st?.paginaUrl) { const cu = _g('dona-pagina-url'); if (cu) cu.textContent = st.paginaUrl; const ap = _g('dona-pagina-apri'); if (ap) ap.href = st.paginaUrl; }
   box.innerHTML = _contoDonaHtml(st);
   const ul = _g('dona-ultime-box'); if (ul) ul.innerHTML = _ultimeDonaHtml(st);
 }
@@ -15819,9 +15824,12 @@ const lpRng = (k, eti, min, max, val, suf = '') => `
             <label class="campo spazio-sopra">${eti} <span class="tenue" data-lpv="${k}" data-suf="${suf}">${val}${suf}</span></label>
             <input type="range" data-lpk="${k}" aria-label="${esc(eti)}" min="${min}" max="${max}" value="${val}">`;
 
+const _lpCasa = () => (LP.quale === 'dona' ? 'lp-box-dona' : 'lp-box');
 async function caricaPaginaLink(ridisegna = false, quale = null) {
-  const box = document.getElementById('lp-box'); if (!box) return;
   if (quale && quale !== LP.quale) { LP.quale = quale; LP.d = null; ridisegna = false; }
+  const box = document.getElementById(_lpCasa()); if (!box) return;
+  const altra = document.getElementById(LP.quale === 'dona' ? 'lp-box' : 'lp-box-dona');
+  if (altra?.querySelector('.lp-editor')) altra.innerHTML = `<p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p>`;
   if (!ridisegna || !LP.d) {
     let dati;
     try { dati = await api(lpApi()); }
@@ -15842,13 +15850,9 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
   const NOMI_FONT = { system: L('Sistema', 'System', 'Sistema'), inter: 'Inter', mono: L('Monospaziato', 'Monospaced', 'Monoespaciado'), serif: L('Con grazie', 'Serif', 'Con serifa'), condensato: L('Condensato', 'Condensed', 'Condensada'), tondo: L('Tondo', 'Rounded', 'Redonda'), manga: L('Manga — a pennarello', 'Manga — marker', 'Manga — a rotulador') };
   const opts = (lista, sel, nomi) => lista.map((k) => `<option value="${esc(k)}"${k === sel ? ' selected' : ''}>${esc((nomi && nomi[k]) || k)}</option>`).join('');
 
-  const h2 = box.closest('.carta')?.querySelector('h2');
-  if (h2) h2.innerHTML = _hIco(ICO.condividi) + (LP.quale === 'dona' ? L('La tua pagina delle donazioni', 'Your donations page', 'Tu página de donaciones') : L('La tua pagina link', 'Your link page', 'Tu página de enlaces'));
   box.innerHTML = `
     <div class="lp-editor">
       <div class="lp-comandi">
-      <p class="lp-quale"><button type="button" class="btn mini${LP.quale === 'dona' ? ' secondario' : ''}" data-lpquale="link">${L('Pagina link', 'Link page', 'Página de enlaces')}</button> <button type="button" class="btn mini${LP.quale === 'dona' ? '' : ' secondario'}" data-lpquale="dona">${L('Pagina delle donazioni', 'Donations page', 'Página de donaciones')}</button>
-        <span class="suggerimento">${LP.quale === 'dona' ? L('Stai modificando la pagina delle donazioni: stessi strumenti, un\'altra pagina.', 'You are editing the donations page: same tools, another page.', 'Estás editando la página de donaciones: mismas herramientas, otra página.') : ''}</span></p>
         ${d.pubblicata
       ? `<p class="lp-stato on">${_bIco(ICO.globo)}${L('Online:', 'Live:', 'Online:')}
           <a href="${esc(d.url)}" target="_blank" rel="noopener"><strong>${esc((d.url || '').replace(/^https?:\/\//, ''))}</strong></a></p>`
@@ -16272,7 +16276,6 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
     conScrollFermo(() => caricaPaginaLink());
   });
 
-  document.querySelectorAll('[data-lpquale]').forEach((b) => { b.onclick = () => conScrollFermo(() => caricaPaginaLink(false, b.dataset.lpquale)); });
   caricaCartaPagina();
 
   const spegni = document.getElementById('lp-spegni');
@@ -16616,7 +16619,7 @@ function lpRenderBlocchi() {
     cont.querySelectorAll('.preso,.sopra').forEach((e) => e.classList.remove('preso', 'sopra'));
   };
 
-  const casaLp = document.getElementById('lp-box') || cont;
+  const casaLp = document.getElementById(_lpCasa()) || cont;
   casaLp.onclick = (ev) => {
     const op = ev.target.closest('[data-lpop]');
     if (op) {
@@ -19919,11 +19922,94 @@ function pannelloNotifiche() {
   const tkc = impostazioni().tiktok || {};
   const ytc = impostazioni().youtube || {};
   const igc = impostazioni().instagram || {};
-  const s = impostazioni();
   return pannello('notifiche', `
 
-    <div class="carta" data-rete="tiktok">
-      <h2>${_hIco(ICO.musica)}${L('Notifica live TikTok', 'TikTok live alert', 'Aviso de directo en TikTok')}</h2>
+    <div class="carta" id="social-account">
+      <h2>${_hIco(ICO.spina)}${L('I tuoi account', 'Your accounts', 'Tus cuentas')}</h2>
+      <p>${L('Collegali una volta. Qui sotto scegli cosa annunciare quando pubblichi, e dove.', 'Connect them once. Below, choose what to announce when you post, and where.', 'Conéctalas una vez. Aquí abajo eliges qué anunciar cuando publicas, y dónde.')}</p>
+      <div class="soc-riga">
+        <h3>Instagram</h3>
+      <div id="ig-collega-box"></div>
+      </div>
+      <div class="soc-riga">
+        <h3>TikTok</h3>
+      <div id="tiktok-post-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      </div>
+      <div class="soc-riga">
+        <h3>YouTube</h3>
+      <label class="campo" for="inp-yt-canale">${L('Il tuo canale YouTube', 'Your YouTube channel', 'Tu canal de YouTube')}</label>
+      <input type="text" id="inp-yt-canale" class="campo-largo" placeholder="${L('@iltuohandle · oppure l\'URL o l\'ID (UC…) del canale', '@yourhandle · or the channel URL or ID (UC…)', '@tuhandle · o la URL o el ID (UC…) del canal')}" value="${esc(ytc.canale || '')}">
+      <p class="suggerimento">${L('Va bene l\'<code>@handle</code>, l\'URL del canale, o l\'ID <code>UC…</code>. Lo risolvo io.', 'The <code>@handle</code>, the channel URL, or the <code>UC…</code> ID all work. I resolve it.', 'Vale el <code>@handle</code>, la URL del canal o el ID <code>UC…</code>. Yo lo resuelvo.')}</p>
+      <details class="spazio-sopra">
+        <summary>${L('La tua chiave API di YouTube (facoltativa)', 'Your YouTube API key (optional)', 'Tu clave API de YouTube (opcional)')}</summary>
+      <label class="campo" for="inp-yt-apikey">${L('La tua chiave API YouTube', 'Your YouTube API key', 'Tu clave API de YouTube')} <span class="suggerimento">(${L('facoltativa', 'optional', 'opcional')})</span></label>
+      <input type="password" id="inp-yt-apikey" class="campo-largo" placeholder="${ytc.apiKeySet ? L('•••••••• (impostata)', '•••••••• (set)', '•••••••• (configurada)') : L('YouTube Data API v3 — lascia vuoto per usare l\'RSS', 'YouTube Data API v3 — leave empty to use RSS', 'YouTube Data API v3 — déjalo vacío para usar el RSS')}" autocomplete="off">
+      <p class="suggerimento">${L('Senza chiave uso il <strong>feed RSS pubblico</strong> (va benissimo). Con la tua chiave (<em>YouTube Data API v3</em>, da', 'Without a key I use the <strong>public RSS feed</strong> (works great). With your key (<em>YouTube Data API v3</em>, from', 'Sin clave uso el <strong>feed RSS público</strong> (va perfecto). Con tu clave (<em>YouTube Data API v3</em>, de')} <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud</a>) ${L('la rilevazione è ancora più affidabile.', 'detection is even more reliable.', 'la detección es aún más fiable.')}
+      ${ytc.apiKeySet ? `<a href="#" id="btn-yt-apikey-rimuovi">${L('Rimuovi la chiave', 'Remove the key', 'Quitar la clave')}</a>` : ''}</p>
+      </details>
+        <p class="spazio-sopra"><button class="btn secondario" id="btn-yt-canale-salva">${L('Salva il canale', 'Save the channel', 'Guardar el canal')}</button></p>
+      </div>
+      <p class="suggerimento spazio-sopra">${L('Gli annunci nei canali del tuo server Discord si scelgono nella sua sezione.', 'Announcements in your Discord server’s channels are chosen in its own section.', 'Los anuncios en los canales de tu servidor de Discord se eligen en su sección.')} <button type="button" class="btn secondario mini" data-vai="dcavvisi">${L('Vai agli avvisi di Discord', 'Go to the Discord alerts', 'Ir a los avisos de Discord')}</button></p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.fotocamera)}${L('Nuovo post su Instagram', 'New Instagram post', 'Nuevo post en Instagram')}</h2>
+      <p>${L('Quando pubblichi su', 'When you post on', 'Cuando publicas en')} <strong class="primo-piano">Instagram</strong>, ${L('avviso il gruppo Telegram (e, se vuoi, la chat Twitch).', 'I alert the Telegram group (and, if you want, the Twitch chat).', 'aviso al grupo de Telegram (y, si quieres, al chat de Twitch).')}</p>
+
+      <label class="campo spazio-sopra" for="txt-ig-messaggio">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
+      <textarea id="txt-ig-messaggio" rows="4" placeholder="${esc(L('{nome} ha un nuovo post su Instagram!\n\n{titolo}\n{link}', '{nome} has a new Instagram post!\n\n{titolo}\n{link}', '¡{nome} tiene un nuevo post en Instagram!\n\n{titolo}\n{link}'))}">${esc(igc.messaggio || '')}</textarea>
+      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> (${L('didascalia', 'caption', 'pie de foto')}) <code>{link}</code>.</p>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-ig-attivo" ${igc.attivo ? 'checked' : ''}>
+        <label for="chk-ig-attivo">${L('Avvisami quando pubblico un nuovo post', 'Alert me when I post a new one', 'Avísame cuando publico un nuevo post')}</label>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-ig-chat" ${igc.annunciaChat ? 'checked' : ''}>
+        <label for="chk-ig-chat">${L('Annuncia anche nella chat Twitch', 'Announce in Twitch chat too', 'Anuncia también en el chat de Twitch')}</label>
+      </div>
+
+      <p class="spazio-sopra"><button class="btn" id="btn-ig-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
+
+      <details id="ig-a-mano" class="spazio-sopra">
+        <summary>${L('Uso un token mio (avanzato)', 'I use my own token (advanced)', 'Uso un token mío (avanzado)')}</summary>
+        <p class="suggerimento">${L('Con l\'<em>Instagram Graph API</em>: account professionale collegato a una Pagina Facebook.', 'With the <em>Instagram Graph API</em>: a professional account linked to a Facebook Page.', 'Con la <em>Instagram Graph API</em>: cuenta profesional vinculada a una Página de Facebook.')}</p>
+        <label class="campo" for="inp-ig-userid">${L('ID account Instagram', 'Instagram account ID', 'ID de la cuenta de Instagram')}</label>
+        <input type="text" id="inp-ig-userid" class="campo-largo" placeholder="${L('es. 17841400000000000', 'e.g. 17841400000000000', 'p. ej. 17841400000000000')}" value="${esc(igc.userId || '')}">
+        <label class="campo spazio-sopra" for="inp-ig-token">${L('Token di accesso (Graph API)', 'Access token (Graph API)', 'Token de acceso (Graph API)')}</label>
+        <input type="password" id="inp-ig-token" class="campo-largo" placeholder="${igc.tokenSet ? L('•••••••• (impostato)', '•••••••• (set)', '•••••••• (configurado)') : L('token a lunga durata', 'long-lived token', 'token de larga duración')}" autocomplete="off">
+        <p class="suggerimento">${L('Li ottieni creando un\'app su', 'You get them by creating an app on', 'Los obtienes creando una app en')} <a href="https://developers.facebook.com/" target="_blank" rel="noopener">Meta for Developers</a>
+        ${L('e collegando il tuo account IG Business.', 'and linking your IG Business account.', 'y vinculando tu cuenta de IG Business.')} ${igc.tokenSet ? `<a href="#" id="btn-ig-token-rimuovi">${L('Rimuovi il token', 'Remove the token', 'Quitar el token')}</a>` : ''}</p>
+
+        <p>
+          <button class="btn secondario" id="btn-ig-prova">${L('Prova le credenziali', 'Test the credentials', 'Prueba las credenciales')}</button>
+          <span id="ig-esito" class="suggerimento"></span>
+        </p>
+      </details>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.fotocamera)}${L('Nuovo video su TikTok', 'New TikTok video', 'Nuevo vídeo en TikTok')}</h2>
+      <p>${L('Quando pubblichi un', 'When you publish a', 'Cuando publicas un')} <strong class="primo-piano">${L('nuovo video', 'new video', 'nuevo vídeo')}</strong> ${L('su TikTok, avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Uso l\'<strong>API ufficiale di TikTok</strong>: colleghi il tuo account una volta, qui in cima, e ci penso io.', 'on TikTok, I alert the Telegram group (and, if you want, the Twitch chat). I use the <strong>official TikTok API</strong>: connect your account once, up here, and I take care of it.', 'en TikTok, aviso al grupo de Telegram (y, si quieres, al chat de Twitch). Uso la <strong>API oficial de TikTok</strong>: conectas tu cuenta una vez, aquí arriba, y yo me encargo.')}</p>
+
+      <label class="campo spazio-sopra" for="txt-tk-post-msg">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
+      <textarea id="txt-tk-post-msg" rows="4" placeholder="${esc(L('{nome} ha pubblicato un nuovo video su TikTok!\n\n{titolo}\n{link}', '{nome} posted a new video on TikTok!\n\n{titolo}\n{link}', '¡{nome} ha publicado un nuevo vídeo en TikTok!\n\n{titolo}\n{link}'))}">${esc(tkc.postMessaggio || '')}</textarea>
+      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{link}</code>. ${L('Lascia vuoto per usare quello standard.', 'Leave empty to use the default.', 'Déjalo vacío para usar el estándar.')}</p>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-tk-post-attivo" ${tkc.postAttivo ? 'checked' : ''}>
+        <label for="chk-tk-post-attivo">${L('Avvisami quando pubblico un nuovo video', 'Alert me when I post a new video', 'Avísame cuando publico un nuevo vídeo')}</label>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-tk-post-chat" ${tkc.postAnnunciaChat ? 'checked' : ''}>
+        <label for="chk-tk-post-chat">${L('Annuncia anche nella chat Twitch', 'Announce in Twitch chat too', 'Anuncia también en el chat de Twitch')}</label>
+      </div>
+      <p class="spazio-sopra"><button class="btn" id="btn-tk-post-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
+      <p class="suggerimento">${L('Il controllo parte ogni ~10 minuti; il primo giro dopo il collegamento memorizza solo l\'ultimo video (non avvisa).', 'The check runs every ~10 minutes; the first pass after connecting only stores the latest video (no alert).', 'La comprobación se hace cada ~10 minutos; la primera vuelta tras conectar solo memoriza el último vídeo (no avisa).')}</p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.musica)}${L('Diretta su TikTok', 'Live on TikTok', 'Directo en TikTok')}</h2>
       <p>${L('Quando vai in diretta su', 'When you go live on', 'Cuando estás en directo en')} <strong class="primo-piano">TikTok</strong>, ${L('avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Su TikTok non esiste una chat-bot come su Twitch: qui facciamo la notifica.', 'I alert the Telegram group (and, if you want, the Twitch chat). On TikTok there’s no chat-bot like on Twitch: here we do the notification.', 'aviso al grupo de Telegram (y, si quieres, al chat de Twitch). En TikTok no existe un chat-bot como en Twitch: aquí hacemos la notificación.')}</p>
 
       <label class="campo" for="inp-tk-user">${L('Il tuo username TikTok', 'Your TikTok username', 'Tu usuario de TikTok')}</label>
@@ -19934,7 +20020,7 @@ function pannelloNotifiche() {
 
       <label class="campo spazio-sopra" for="txt-tk-messaggio">${L('Messaggio dell\'avviso TikTok', 'TikTok alert message', 'Mensaje del aviso de TikTok')}</label>
       <textarea id="txt-tk-messaggio" rows="4" placeholder="${esc(L('{nome} è in diretta su TikTok!\n\n{link}', '{nome} is live on TikTok!\n\n{link}', '¡{nome} está en directo en TikTok!\n\n{link}'))}">${esc(tkc.messaggio || '')}</textarea>
-      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{link}</code> <code>{username}</code>. ${L('Lascia vuoto per usare quello standard. Se hai attivato', 'Leave empty to use the default. If you enabled', 'Déjalo vacío para usar el estándar. Si activaste')} <em>${L('«Fissa l\'avviso…»', '“Pin the alert…”', '«Fija el aviso…»')}</em> ${L('qui sopra, l\'avviso TikTok viene fissato a live attiva ed eliminato quando stacchi.', 'above, the TikTok alert is pinned while live and removed when you go offline.', 'arriba, el aviso de TikTok se fija durante el directo y se elimina cuando terminas.')}</p>
+      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{link}</code> <code>{username}</code>. ${L('Lascia vuoto per usare quello standard. Se hai attivato', 'Leave empty to use the default. If you enabled', 'Déjalo vacío para usar el estándar. Si activaste')} <em>${L('«Fissa l\'avviso…»', '“Pin the alert…”', '«Fija el aviso…»')}</em> ${L('nella scheda Telegram, l\'avviso TikTok viene fissato a live attiva ed eliminato quando stacchi.', 'in the Telegram tab, the TikTok alert is pinned while live and removed when you go offline.', 'en la pestaña Telegram, el aviso de TikTok se fija durante el directo y se elimina cuando terminas.')}</p>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-tk-attivo" ${tkc.attivo ? 'checked' : ''}>
@@ -19956,58 +20042,12 @@ function pannelloNotifiche() {
       <p class="suggerimento"><strong class="primo-piano">${L('Via affidabile (webhook):', 'Reliable way (webhook):', 'Vía fiable (webhook):')}</strong> ${L('collega una tua automazione (IFTTT/Zapier/Shortcut) all\'evento "vado live su TikTok" e falle chiamare in POST:', 'connect an automation of yours (IFTTT/Zapier/Shortcut) to the "I go live on TikTok" event and have it POST:', 'conecta una automatización tuya (IFTTT/Zapier/Shortcut) al evento "voy en directo en TikTok" y haz que llame en POST:')}</p>
       <p><code>POST ${esc(location.origin)}/api/ext/${esc(stato.user.login)}</code></p>
       <p class="suggerimento">${L('con header', 'with header', 'con cabecera')} <code>Authorization: Bearer ${L('LA-TUA-CHIAVE-API', 'YOUR-API-KEY', 'TU-CLAVE-API')}</code> ${L('e corpo', 'and body', 'y cuerpo')}
-      <code>{"azione":"tiktok-live"}</code>. ${L('La chiave API la trovi in', 'Find the API key in', 'La clave API está en')} <strong>${L('Chat & comandi → Comandi', 'Chat & commands → Commands', 'Chat y comandos → Comandos')}</strong>.</p>
-
-      <hr class="separatore">
-      <p class="suggerimento"><strong class="primo-piano">${L('Nuovo post su TikTok:', 'New TikTok post:', 'Nuevo post en TikTok:')}</strong> ${L('ora è automatico via API ufficiale — vedi la card qui sotto. In alternativa resta il webhook con corpo', 'it’s now automatic via the official API — see the card below. Alternatively the webhook remains, with body', 'ahora es automático vía API oficial — mira la tarjeta de abajo. Como alternativa queda el webhook con cuerpo')} <code>{"azione":"tiktok-post","url":"…"}</code>.</p>
-    </div>
-
-    <div class="carta" data-rete="tiktok">
-      <h2>${_hIco(ICO.fotocamera)}${L('Nuovo post su TikTok', 'New TikTok post', 'Nuevo post en TikTok')}</h2>
-      <p>${L('Quando pubblichi un', 'When you publish a', 'Cuando publicas un')} <strong class="primo-piano">${L('nuovo video', 'new video', 'nuevo vídeo')}</strong> ${L('su TikTok, avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Uso l\'<strong>API ufficiale di TikTok</strong>: colleghi il tuo account una volta e ci penso io.', 'on TikTok, I alert the Telegram group (and, if you want, the Twitch chat). I use the <strong>official TikTok API</strong>: connect your account once and I take care of it.', 'en TikTok, aviso al grupo de Telegram (y, si quieres, al chat de Twitch). Uso la <strong>API oficial de TikTok</strong>: conectas tu cuenta una vez y yo me encargo.')}</p>
-      <div id="tiktok-post-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
-
-      <label class="campo spazio-sopra" for="txt-tk-post-msg">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
-      <textarea id="txt-tk-post-msg" rows="4" placeholder="${esc(L('{nome} ha pubblicato un nuovo video su TikTok!\n\n{titolo}\n{link}', '{nome} posted a new video on TikTok!\n\n{titolo}\n{link}', '¡{nome} ha publicado un nuevo vídeo en TikTok!\n\n{titolo}\n{link}'))}">${esc(tkc.postMessaggio || '')}</textarea>
-      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{link}</code>. ${L('Lascia vuoto per usare quello standard.', 'Leave empty to use the default.', 'Déjalo vacío para usar el estándar.')}</p>
-
-      <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-tk-post-attivo" ${tkc.postAttivo ? 'checked' : ''}>
-        <label for="chk-tk-post-attivo">${L('Avvisami quando pubblico un nuovo video', 'Alert me when I post a new video', 'Avísame cuando publico un nuevo vídeo')}</label>
-      </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-tk-post-chat" ${tkc.postAnnunciaChat ? 'checked' : ''}>
-        <label for="chk-tk-post-chat">${L('Annuncia anche nella chat Twitch', 'Announce in Twitch chat too', 'Anuncia también en el chat de Twitch')}</label>
-      </div>
-      <p class="spazio-sopra"><button class="btn" id="btn-tk-post-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
-      <p class="suggerimento">${L('Il controllo parte ogni ~10 minuti; il primo giro dopo il collegamento memorizza solo l\'ultimo video (non avvisa).', 'The check runs every ~10 minutes; the first pass after connecting only stores the latest video (no alert).', 'La comprobación se hace cada ~10 minutos; la primera vuelta tras conectar solo memoriza el último vídeo (no avisa).')}</p>
+      <code>{"azione":"tiktok-live"}</code>. ${L('La chiave API la trovi in', 'Find the API key in', 'La clave API está en')} <strong>${L('Chat e pubblico → Comandi', 'Chat & audience → Commands', 'Chat y público → Comandos')}</strong>.</p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.fotocamera)}${L('Da dove prendo i nuovi post', 'Where I watch for new posts', 'De d\u00f3nde saco los nuevos posts')}</h2>
-      <p>${L('I profili che tengo d\u2019occhio: quando ci esce qualcosa di nuovo lo dico dove hai acceso l\u2019avviso.', 'The profiles I keep an eye on: when something new shows up there I say it wherever you turned the alert on.', 'Los perfiles que vigilo: cuando sale algo nuevo lo digo donde hayas encendido el aviso.')}</p>
-      <div id="feed-fonti" class="spazio-sopra"></div>
-    </div>
-
-    <div class="carta">
-      <h2>${_hIco(ICO.megafono)}${L('Discord', 'Discord', 'Discord')}</h2>
-      <p>${L('Gli avvisi del tuo server Discord stanno nella sua sezione, insieme ai ruoli e al server: lì scegli in quali canali arrivano, di chi, con che parole e chi chiamare.', 'Your Discord server\'s alerts live in its own section, together with the roles and the server: there you choose which channels they land in, whose, in what words, and who to ping.', 'Los avisos de tu servidor de Discord están en su sección, junto a los roles y el servidor: allí eliges en qué canales llegan, de quién, con qué palabras y a quién llamar.')}</p>
-      <p class="spazio-sopra"><button type="button" class="btn secondario" data-vai="dcavvisi">${L('Vai agli avvisi di Discord', 'Go to the Discord alerts', 'Ir a los avisos de Discord')}</button></p>
-    </div>
-
-    <div class="carta" data-rete="youtube">
       <h2>${_hIco(ICO.tv)}${L('Nuovo video su YouTube', 'New YouTube video', 'Nuevo vídeo en YouTube')}</h2>
       <p>${L('Quando esce un', 'When a', 'Cuando sale un')} <strong class="primo-piano">${L('nuovo video', 'new video', 'nuevo vídeo')}</strong> ${L('sul tuo canale YouTube, avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Funziona con il feed pubblico di YouTube:', 'comes out on your YouTube channel, I alert the Telegram group (and, if you want, the Twitch chat). It works with YouTube’s public feed:', 'sale en tu canal de YouTube, aviso al grupo de Telegram (y, si quieres, al chat de Twitch). Funciona con el feed público de YouTube:')} <strong>${L('affidabile e senza chiavi', 'reliable and key-free', 'fiable y sin claves')}</strong>.</p>
-
-      <label class="campo" for="inp-yt-canale">${L('Il tuo canale YouTube', 'Your YouTube channel', 'Tu canal de YouTube')}</label>
-      <input type="text" id="inp-yt-canale" class="campo-largo" placeholder="${L('@iltuohandle · oppure l\'URL o l\'ID (UC…) del canale', '@yourhandle · or the channel URL or ID (UC…)', '@tuhandle · o la URL o el ID (UC…) del canal')}" value="${esc(ytc.canale || '')}">
-      <p class="suggerimento">${L('Va bene l\'<code>@handle</code>, l\'URL del canale, o l\'ID <code>UC…</code>. Lo risolvo io.', 'The <code>@handle</code>, the channel URL, or the <code>UC…</code> ID all work. I resolve it.', 'Vale el <code>@handle</code>, la URL del canal o el ID <code>UC…</code>. Yo lo resuelvo.')}</p>
-
-      <label class="campo spazio-sopra" for="inp-yt-apikey">${L('La tua chiave API YouTube', 'Your YouTube API key', 'Tu clave API de YouTube')} <span class="suggerimento">(${L('facoltativa', 'optional', 'opcional')})</span></label>
-      <input type="password" id="inp-yt-apikey" class="campo-largo" placeholder="${ytc.apiKeySet ? L('•••••••• (impostata)', '•••••••• (set)', '•••••••• (configurada)') : L('YouTube Data API v3 — lascia vuoto per usare l\'RSS', 'YouTube Data API v3 — leave empty to use RSS', 'YouTube Data API v3 — déjalo vacío para usar el RSS')}" autocomplete="off">
-      <p class="suggerimento">${L('Senza chiave uso il <strong>feed RSS pubblico</strong> (va benissimo). Con la tua chiave (<em>YouTube Data API v3</em>, da', 'Without a key I use the <strong>public RSS feed</strong> (works great). With your key (<em>YouTube Data API v3</em>, from', 'Sin clave uso el <strong>feed RSS público</strong> (va perfecto). Con tu clave (<em>YouTube Data API v3</em>, de')} <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud</a>) ${L('la rilevazione è ancora più affidabile.', 'detection is even more reliable.', 'la detección es aún más fiable.')}
-      ${ytc.apiKeySet ? `<a href="#" id="btn-yt-apikey-rimuovi">${L('Rimuovi la chiave', 'Remove the key', 'Quitar la clave')}</a>` : ''}</p>
-
       <label class="campo spazio-sopra" for="txt-yt-messaggio">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
       <textarea id="txt-yt-messaggio" rows="4" placeholder="${esc(L('{nome} ha caricato un nuovo video su YouTube!\n\n{titolo}\n{link}', '{nome} uploaded a new video on YouTube!\n\n{titolo}\n{link}', '¡{nome} ha subido un nuevo vídeo a YouTube!\n\n{titolo}\n{link}'))}">${esc(ytc.messaggio || '')}</textarea>
       <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{link}</code>. ${L('Lascia vuoto per usare quello standard.', 'Leave empty to use the default.', 'Déjalo vacío para usar el estándar.')}</p>
@@ -20027,51 +20067,12 @@ function pannelloNotifiche() {
       <p class="suggerimento">${L('Il controllo parte ogni ~10 minuti; il primo giro serve solo a memorizzare l\'ultimo video (non avvisa).', 'The check runs every ~10 minutes; the first pass only stores the latest video (no alert).', 'La comprobación se hace cada ~10 minutos; la primera vuelta solo memoriza el último vídeo (no avisa).')}</p>
     </div>
 
-    <div class="carta" data-rete="instagram">
-      <h2>${_hIco(ICO.fotocamera)}${L('Nuovo post su Instagram', 'New Instagram post', 'Nuevo post en Instagram')}</h2>
-      <p>${L('Quando pubblichi su', 'When you post on', 'Cuando publicas en')} <strong class="primo-piano">Instagram</strong>, ${L('avviso il gruppo Telegram (e, se vuoi, la chat Twitch).', 'I alert the Telegram group (and, if you want, the Twitch chat).', 'aviso al grupo de Telegram (y, si quieres, al chat de Twitch).')}</p>
-      <div id="ig-collega-box" class="spazio-sopra"></div>
-
-      <details id="ig-a-mano" class="spazio-sopra">
-        <summary>${L('Uso un token mio (avanzato)', 'I use my own token (advanced)', 'Uso un token mío (avanzado)')}</summary>
-        <p class="suggerimento">${L('Con l\'<em>Instagram Graph API</em>: account professionale collegato a una Pagina Facebook.', 'With the <em>Instagram Graph API</em>: a professional account linked to a Facebook Page.', 'Con la <em>Instagram Graph API</em>: cuenta profesional vinculada a una Página de Facebook.')}</p>
-        <label class="campo" for="inp-ig-userid">${L('ID account Instagram', 'Instagram account ID', 'ID de la cuenta de Instagram')}</label>
-        <input type="text" id="inp-ig-userid" class="campo-largo" placeholder="${L('es. 17841400000000000', 'e.g. 17841400000000000', 'p. ej. 17841400000000000')}" value="${esc(igc.userId || '')}">
-        <label class="campo spazio-sopra" for="inp-ig-token">${L('Token di accesso (Graph API)', 'Access token (Graph API)', 'Token de acceso (Graph API)')}</label>
-        <input type="password" id="inp-ig-token" class="campo-largo" placeholder="${igc.tokenSet ? L('•••••••• (impostato)', '•••••••• (set)', '•••••••• (configurado)') : L('token a lunga durata', 'long-lived token', 'token de larga duración')}" autocomplete="off">
-        <p class="suggerimento">${L('Li ottieni creando un\'app su', 'You get them by creating an app on', 'Los obtienes creando una app en')} <a href="https://developers.facebook.com/" target="_blank" rel="noopener">Meta for Developers</a>
-        ${L('e collegando il tuo account IG Business.', 'and linking your IG Business account.', 'y vinculando tu cuenta de IG Business.')} ${igc.tokenSet ? `<a href="#" id="btn-ig-token-rimuovi">${L('Rimuovi il token', 'Remove the token', 'Quitar el token')}</a>` : ''}</p>
-
-        <p>
-          <button class="btn secondario" id="btn-ig-prova">${L('Prova le credenziali', 'Test the credentials', 'Prueba las credenciales')}</button>
-          <span id="ig-esito" class="suggerimento"></span>
-        </p>
-      </details>
-
-      <label class="campo spazio-sopra" for="txt-ig-messaggio">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
-      <textarea id="txt-ig-messaggio" rows="4" placeholder="${esc(L('{nome} ha un nuovo post su Instagram!\n\n{titolo}\n{link}', '{nome} has a new Instagram post!\n\n{titolo}\n{link}', '¡{nome} tiene un nuevo post en Instagram!\n\n{titolo}\n{link}'))}">${esc(igc.messaggio || '')}</textarea>
-      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> (${L('didascalia', 'caption', 'pie de foto')}) <code>{link}</code>.</p>
-
-      <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-ig-attivo" ${igc.attivo ? 'checked' : ''}>
-        <label for="chk-ig-attivo">${L('Avvisami quando pubblico un nuovo post', 'Alert me when I post a new one', 'Avísame cuando publico un nuevo post')}</label>
-      </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-ig-chat" ${igc.annunciaChat ? 'checked' : ''}>
-        <label for="chk-ig-chat">${L('Annuncia anche nella chat Twitch', 'Announce in Twitch chat too', 'Anuncia también en el chat de Twitch')}</label>
-      </div>
-
-      <p class="spazio-sopra"><button class="btn" id="btn-ig-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
-    </div>    <div class="carta">
-      <h2>${_hIco(ICO.megafono)}${L('Promo social in chat', 'Social promo in chat', 'Promo social en el chat')}</h2>
-      <p>${L('Ogni tanto il bot ricorda da solo i tuoi social a chi sta guardando. Non è un timer: sceglie i momenti giusti — chat viva, dopo un raid o un sub — e non insiste.', 'Now and then the bot reminds viewers of your socials on its own. It is not a timer: it picks the right moments — lively chat, after a raid or a sub — and never insists.', 'De vez en cuando el bot recuerda solo tus redes a quien está mirando. No es un temporizador: elige los momentos buenos — chat animado, tras un raid o un sub — y no insiste.')}</p>
-      <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-promo" ${s.promoSocial ? 'checked' : ''}>
-        <label for="chk-promo">${L('Promo social automatica — ogni tanto condivide da solo i tuoi link', 'Automatic social promo — now and then it shares your links on its own', 'Promo social automática — de vez en cuando comparte solo tus enlaces')}</label>
-      </div>
-      <p class="suggerimento">${L('Nei momenti giusti (chat viva, dopo un raid/sub) il bot ricorda i tuoi social presi dal profilo andryxify.it — con calma, mai spam.', 'At the right moments (lively chat, after a raid/sub) the bot reminds people of your socials taken from your andryxify.it profile — gently, never spam.', 'En los momentos oportunos (chat animado, tras un raid/sub) el bot recuerda tus redes tomadas de tu perfil andryxify.it — con calma, nunca spam.')}</p>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-promo">${L('Salva', 'Save', 'Guardar')}</button></p>
+    <div class="carta">
+      <h2>${_hIco(ICO.globo)}${L('Altri siti', 'Other sites', 'Otros sitios')}</h2>
+      <p>${L('Per un sito che non ha un tasto per collegarlo: incolla l’indirizzo del suo feed (RSS, Atom o JSON) e, quando ci esce qualcosa di nuovo, lo annuncio dove hai acceso l’avviso.', 'For a site with no button to connect it: paste its feed address (RSS, Atom or JSON) and, when something new shows up there, I announce it wherever you turned the alert on.', 'Para un sitio que no tiene botón para conectarlo: pega la dirección de su feed (RSS, Atom o JSON) y, cuando salga algo nuevo, lo anuncio donde hayas encendido el aviso.')}</p>
+      <div id="feed-fonti" class="spazio-sopra"></div>
     </div>
+
 `);
 }
 
@@ -20820,6 +20821,7 @@ function attivaPiattaforma() {
       rispostaMenzioni: document.getElementById('chk-menzioni').checked,
       proattivo: document.getElementById('chk-proattivo').checked,
       proattivoSoloLive: document.getElementById('chk-proattivo-live').checked,
+      promoSocial: document.getElementById('chk-promo').checked,
       adattaCanale: document.getElementById('chk-adatta').checked,
       iaLocale: document.getElementById('chk-ialocale').checked,
       internet: document.getElementById('chk-internet').checked,
@@ -21001,11 +21003,6 @@ function attivaPiattaforma() {
     const b = e.target.closest('.dl-via'); if (!b) return;
     b.closest('.dona-livello')?.remove();
     if (!_g('dona-livelli').querySelector('.dona-livello')) _disegnaLivelli([]);
-  });
-  _g('dona-pagina-carta')?.addEventListener('click', (e) => {
-    if (!e.target.closest('[data-dona="pagina"]')) return;
-    LP.quale = 'dona'; LP.d = null;
-    vaiAScheda('pagina');
   });
   _g('dona-conto-box')?.addEventListener('click', (e) => {
     const b = e.target.closest('[data-dona]'); if (!b) return;
@@ -21240,9 +21237,6 @@ function attivaPiattaforma() {
 
   document.getElementById('btn-salva-gcmd-2')?.addEventListener('click', salvaGiochiComandi);
 
-  document.getElementById('btn-salva-promo')?.addEventListener('click', () => conErrore(async () => {
-    await salvaImpostazioni({ promoSocial: document.getElementById('chk-promo').checked }, 'Promo salvata');
-  }));
 
   document.getElementById('btn-salva-punti')?.addEventListener('click', () => conErrore(async () => {
     const v = (id) => Number(document.getElementById(id).value);
@@ -21636,7 +21630,7 @@ function attivaPiattaforma() {
     }, 'TikTok salvato');
   }));
 
-  document.getElementById('btn-yt-salva')?.addEventListener('click', () => conErrore(async () => {
+  const salvaYoutube = () => conErrore(async () => {
     const yt = {
       canale: (document.getElementById('inp-yt-canale').value || '').trim(),
       attivo: document.getElementById('chk-yt-attivo').checked,
@@ -21646,7 +21640,9 @@ function attivaPiattaforma() {
     const ak = (document.getElementById('inp-yt-apikey')?.value || '').trim();
     if (ak) yt.apiKey = ak;
     await salvaImpostazioni({ youtube: yt }, 'YouTube salvato');
-  }));
+  });
+  document.getElementById('btn-yt-salva')?.addEventListener('click', salvaYoutube);
+  document.getElementById('btn-yt-canale-salva')?.addEventListener('click', salvaYoutube);
   document.getElementById('btn-yt-apikey-rimuovi')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await salvaImpostazioni({ youtube: { canale: (document.getElementById('inp-yt-canale').value || '').trim(), apiKeyClear: true } }, 'Chiave rimossa.');
     stato = await api('/api/me'); render();
@@ -22182,7 +22178,7 @@ async function conErrore(fn) {
 
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
-  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaRetePanoramica(); caricaPiattaforme(); caricaCodiciPosta(); collegaVetrinaLive(); collegaCancella(); }
+  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaRetePanoramica(); caricaPiattaforme(); caricaCodiciPosta(); collegaCancella(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'personalita') { caricaGuide(); caricaSpontanee(); }
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); }
@@ -22208,8 +22204,8 @@ function caricaDatiScheda(id) {
   if (id === 'dcserver') { collegaDcServer(); caricaDcServer(); }
   if (id === 'dcentra') { collegaChiEntra(); caricaDcServer(); }
   if (id === 'dcfiltro') { collegaFiltro(); caricaDcServer(); }
-  if (id === 'pagina') caricaPaginaLink();
-  if (id === 'donazioni') { riempiDonazioni(); caricaStatoDonazioni(true); }
+  if (id === 'pagina') { caricaPaginaLink(false, 'link'); collegaVetrinaLive(); }
+  if (id === 'donazioni') { riempiDonazioni(); caricaStatoDonazioni(true); caricaPaginaLink(false, 'dona'); }
   if (id === 'grafiche') initGrafiche();
   if (id === 'settimana') caricaSettimana();
   modSincronizza();
@@ -23154,7 +23150,7 @@ function collegaVetrinaLive() {
     await salvaImpostazioni({ vetrinaLive: c.checked }, null);
     toast(c.checked
       ? L('Comparirai fra le dirette quando sei in onda ✓', 'You will show up among the streams when you are live ✓', 'Aparecerás entre los directos cuando estés en directo ✓')
-      : L('Non comparirai più sulla home ✓', 'You will not show up on the home any more ✓', 'Ya no aparecerás en la home ✓'));
+      : L('Non comparirai più in prima pagina ✓', 'You will not show up on the front page any more ✓', 'Ya no aparecerás en portada ✓'));
   }));
 }
 

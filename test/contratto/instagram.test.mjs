@@ -92,7 +92,7 @@ test('un permesso che manca o un collegamento rotto si vede, col rimedio', () =>
   assert.match(ig, /const colore = pr\?\.grave \? 'rosso' : \(problemi\.length \? 'giallo' : 'verde'\);/, 'e il verde solo quando va tutto');
   const dove = APP.slice(APP.indexOf('function _settDisegnaDove()'), APP.indexOf('function _settDisegnaDove()') + 4000);
   assert.match(dove, /: problemaHtml\(\{\n\s+titolo: L\('La storia di Instagram non può partire'/, 'anche fra i posti della settimana');
-  assert.match(dove, /data-vai="notifiche" data-vai-sotto="instagram"/, 'con la strada per rimediare');
+  assert.match(dove, /data-vai="notifiche">/, 'con la strada per rimediare');
 });
 
 test('una chiave del .env scritta storta la vede chi amministra, dove guarda', () => {

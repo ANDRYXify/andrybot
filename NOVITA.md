@@ -43,6 +43,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Le scorciatoie si leggono coi tasti del tuo computer, ⌘ sul Mac e Ctrl su Windows, e sul telefono non compaiono. L'editor dell'overlay si usa anche col dito. [vai: alert]
 - Se il browser non lascia copiare, il testo compare già selezionato, col tasto giusto per il tuo dispositivo, anche nel segnalibro delle citazioni. Prima alcune copie fallivano senza dirlo.
 - Il tasto che toglie l'audio a una sorgente non resta più vuoto quando l'audio è spento, e i titoli del calendario e dei ruoli hanno di nuovo la loro icona.
+- «Avvisi» diventa «I tuoi social»: in cima i tuoi account, ognuno con il suo stato e il tasto per collegarlo, e sotto cosa annunciare quando pubblichi. Niente più riquadri ripetuti. [vai: notifiche]
+- La pagina delle donazioni si modifica dalla scheda Donazioni, e la tua diretta in prima pagina si accende dalla Pagina link. [vai: donazioni]
+- La promo dei tuoi social in chat si accende insieme alla personalità del bot, accanto a «si fa vivo da solo». [vai: personalita]
+- «Come funziona» si apre da solo la prima volta che entri in una scheda, poi resta chiuso finché non lo apri tu.
 
 ## 2026-09-19
 

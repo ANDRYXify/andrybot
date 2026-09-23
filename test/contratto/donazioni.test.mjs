@@ -137,7 +137,7 @@ test('il motore: una donazione fa crescere l\'obiettivo, spara l\'alert sopra la
 test('la scheda «Donazioni» esiste nel pannello, negli aiuti, nella vetrina e nelle novita\'', () => {
   assert.match(APP, /\['donazioni', 'Donazioni'\],/, 'e\' una scheda del pannello');
   assert.match(APP, /\$\{pannelloDonazioni\(\)\}/, 'e si compone con le altre');
-  assert.match(APP, /if \(id === 'donazioni'\) \{ riempiDonazioni\(\); caricaStatoDonazioni\(true\); \}/, 'aprendola si legge lo stato del conto');
+  assert.match(APP, /if \(id === 'donazioni'\) \{ riempiDonazioni\(\); caricaStatoDonazioni\(true\); caricaPaginaLink\(false, 'dona'\); \}/, 'aprendola si legge lo stato del conto, e si apre la sua pagina');
   assert.ok(!APP.includes("if (id === 'pagina') { caricaPaginaLink(); riempiDonazioni(); }"), 'la pagina link non la carica piu\'');
   const pagina = APP.slice(APP.indexOf('function pannelloPaginaLink() {'), APP.indexOf('function pannelloDonazioni() {'));
   assert.ok(!pagina.includes('dona-carta'), 'la carta non sta piu\' nella pagina link');
@@ -284,8 +284,10 @@ test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le o
   assert.match(APP, /const lpApi = \(\) => \(LP\.quale === 'dona' \? '\/api\/paginadona' : '\/api\/linkpage'\);/, 'un editor, due porte');
   assert.equal((APP.match(/api\(lpApi\(\)/g) || []).length, 4, 'carica, salva, spegni e anteprima passano dalla porta giusta');
   assert.ok(APP.includes("api(lpApi() + '/anteprima'"), 'anche l\'anteprima');
-  assert.match(APP, /data-lpquale="dona"/, 'l\'interruttore fra le due pagine');
-  assert.match(APP, /data-dona="pagina"/, 'dalla scheda Donazioni si va a modificarla');
+  assert.match(APP, /const _lpCasa = \(\) => \(LP\.quale === 'dona' \? 'lp-box-dona' : 'lp-box'\);/, 'ogni pagina ha la sua casa per l\'editor');
+  assert.match(APP, /<div id="lp-box-dona">/, 'e quella delle donazioni sta nella scheda Donazioni');
+  assert.match(APP, /if \(id === 'donazioni'\) \{ riempiDonazioni\(\); caricaStatoDonazioni\(true\); caricaPaginaLink\(false, 'dona'\); \}/, 'e li\' si apre');
+  assert.ok(!/data-lpquale/.test(APP), 'niente interruttore fra le due pagine: ognuna si modifica da un posto solo');
   assert.match(APP, /id="dona-livelli"/); assert.match(APP, /class="dl-effetto"/, 'le offerte si compongono nel pannello, con l\'effetto dalla libreria');
   assert.match(AL, /const liv = livelloPer\(cfgD\.livelli, importo\); if \(liv\?\.effetto\) this\._sparaEffetto\(channel, liv\.effetto, 1200\);/, 'l\'offerta raggiunta accende il suo effetto, dall\'importo pagato');
   assert.ok(AL.includes("this.effects.emit(channel, this.effects.payload(channel, eff))"), 'con lo stesso payload del tasto Prova');
