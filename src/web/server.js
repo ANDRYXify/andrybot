@@ -4354,7 +4354,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (r?.errore || !r?.sub) return res.redirect('/?tgapp=errore');
     if (st.linkLogin) {                                   // ero loggato → COLLEGO
       tgLogin.link(r.sub, st.linkLogin, { username: r.username, nome: r.nome });
-      return res.redirect('/?tgapp=collegato#notifiche');
+      return res.redirect('/?tgapp=collegato#telegram');
     }
     const map = tgLogin.getByTg(r.sub);                   // non loggato → ACCEDO se collegato
     if (map && apriSessionePerLogin(req, map.login)) return res.redirect('/');

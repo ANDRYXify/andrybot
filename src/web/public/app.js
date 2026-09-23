@@ -6919,7 +6919,7 @@ async function caricaTgLogin() {
   if (q.get('tgapp') === 'collegato') toast(L('Telegram collegato!', 'Telegram linked!', '¡Telegram vinculado!'));
   else if (q.get('tgapp') === 'errore') toast(L('Collegamento Telegram non riuscito.', 'Telegram linking failed.', 'La vinculación de Telegram falló.'), 'errore');
   else if (q.get('tgapp') === 'noncollegato') toast(L('Questo Telegram non è collegato a nessun canale.', 'This Telegram isn’t linked to any channel.', 'Este Telegram no está vinculado a ningún canal.'), 'errore');
-  if (q.get('tgapp')) { try { history.replaceState(null, '', location.pathname + '#notifiche'); } catch {  } }
+  if (q.get('tgapp')) { try { history.replaceState(null, '', location.pathname + '#telegram'); } catch {  } }
 
   let d;
   try { d = await api('/api/tgapp/login-stato'); } catch { box.hidden = true; return; }
@@ -16050,7 +16050,7 @@ function canaliRapportoHtml(d) {
     </div>
     <p class="suggerimento">${tgOk
       ? L('Arriva nella chat privata del tuo bot appena chiudi la diretta.', 'It lands in your bot’s private chat as soon as you end the stream.', 'Llega al chat privado de tu bot en cuanto cierras el directo.')
-      : `${L('Serve la chat privata collegata:', 'You need the private chat linked:', 'Hace falta el chat privado vinculado:')} <a href="#notifiche" data-scheda="notifiche">${L('la colleghi in Notifiche', 'link it under Notifications', 'la vinculas en Notificaciones')}</a>.`}</p>
+      : `${L('Serve la chat privata collegata:', 'You need the private chat linked:', 'Hace falta el chat privado vinculado:')} <a href="#telegram" data-scheda="telegram">${L('la colleghi nella scheda Telegram', 'link it in the Telegram tab', 'la vinculas en la pestaña Telegram')}</a>.`}</p>
     <h3 class="sotto-titolo">${L('Via mail', 'By email', 'Por correo')}</h3>
     ${p.disponibile ? '' : `<p class="suggerimento">${L('La posta non è configurata su questo server: per ora il rapporto arriva su Telegram.', 'Email is not set up on this server: for now the report reaches you on Telegram.', 'El correo no está configurado en este servidor: por ahora el informe llega en Telegram.')}</p>`}
     <label class="campo" for="inp-posta">${L('Indirizzo', 'Address', 'Dirección')}</label>
@@ -23221,7 +23221,8 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); caricaRegoleGiochi(); }
-  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaInstagram(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
+  if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); }
+  if (id === 'notifiche') { caricaTikTok(); caricaInstagram(); collegaFeed(); caricaFeed(); }
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }
   if (id === 'dcavvisi') { _dcaCollega(); caricaDcAvvisi(); caricaDcEventi(); }
   if (id === 'dcserver') { collegaDcServer(); caricaDcServer(); }
@@ -25053,7 +25054,7 @@ function disegnaCampiQuando(t) {
         </div>
         <div class="riga-check" style="margin-top:.4rem">
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
-          <label for="mod-telegram">Abilita anche su <b>Telegram</b> — risponde nel gruppo anche se la parola è <b>dentro una frase</b> (il <code>!</code> non serve). Attiva il <em>bot interattivo</em> in Notifiche.</label>
+          <label for="mod-telegram">Abilita anche su <b>Telegram</b> — risponde nel gruppo anche se la parola è <b>dentro una frase</b> (il <code>!</code> non serve). Attiva il <em>bot interattivo</em> <a href="#telegram" data-scheda="telegram">nella scheda Telegram</a>.</label>
         </div>`;
     case 'parola': {
       const frasi = (Array.isArray(t.testi) && t.testi.length) ? t.testi : (t.testo ? [t.testo] : ['']);
@@ -25083,7 +25084,7 @@ function disegnaCampiQuando(t) {
         </div>
         <div class="riga-check">
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
-          <label for="mod-telegram">Abilita anche su <b>Telegram</b> — reagisce anche nel gruppo. Attiva il <em>bot interattivo</em> in Notifiche.</label>
+          <label for="mod-telegram">Abilita anche su <b>Telegram</b> — reagisce anche nel gruppo. Attiva il <em>bot interattivo</em> <a href="#telegram" data-scheda="telegram">nella scheda Telegram</a>.</label>
         </div>`;
     }
     case 'voce': {
@@ -25673,7 +25674,12 @@ async function pannelloPrivato() {
   try { _lia = await import('/admin/lia.js'); } catch (e) { _lia = null; }
   return _lia;
 }
-async function caricaMente3d() { const m = await pannelloPrivato(); if (m) return m.caricaMente3d(); }
+async function caricaMente3d() {
+  const m = await pannelloPrivato();
+  if (m) return m.caricaMente3d();
+  const box = document.getElementById('mente-cruscotto');
+  if (box) box.innerHTML = `<p class="vuoto">${L('La mente del bot adesso non si può mostrare: riprova fra poco.', 'The bot\'s mind can\'t be shown right now: try again shortly.', 'La mente del bot no se puede mostrar ahora: vuelve a intentarlo en un rato.')}</p>`;
+}
 async function caricaLLM() { const m = await pannelloPrivato(); if (m) return m.caricaLLM(); }
 async function caricaEcosistema() { const m = await pannelloPrivato(); if (m) return m.caricaEcosistema(); }
 async function caricaVita() { const m = await pannelloPrivato(); if (m) return m.caricaVita(); }

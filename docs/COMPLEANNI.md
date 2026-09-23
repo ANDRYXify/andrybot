@@ -62,9 +62,32 @@ non c'e'.
 
 ## Cosa decide lo streamer
 
-Nella scheda Notifiche: interruttore, testo (con `{nome}`) e un **effetto**
+Nella scheda Telegram: interruttore, testo (con `{nome}`) e un **effetto**
 della sua libreria che parte insieme agli auguri. L'elenco dei compleanni resta
 uno solo, con accanto da dove arriva ognuno.
+
+### Il riquadro che restava in caricamento
+
+Quando Telegram ha avuto una scheda sua, i riquadri sono traslocati ma chi li
+riempie no: `caricaCompleanni`, e con lui l'accesso a Telegram, dove mandare
+gli avvisi e la carta live, partivano ancora aprendo «I tuoi social». Nella
+scheda Telegram «Auguri di compleanno» restava sotto lo scheletro di
+caricamento finché non passavi dall'altra scheda: sembrava lentezza, era un
+aggancio sbagliato. Adesso partono con la scheda che contiene i loro riquadri,
+e dopo aver collegato Telegram il sito torna su Telegram, non su «I tuoi social».
+
+`node scripts/verifica-scheletri.mjs` apre ogni scheda della demo, ognuna da
+una pagina appena caricata, e pretende che dopo tre secondi non resti nessuno
+scheletro: se un caricatore non parte con la sua scheda, dice in quale riquadro
+è rimasto fermo. Due misure sbagliate prima di quella giusta, tutte e due verdi
+sul difetto: aprire le schede una dopo l'altra nella stessa pagina (il
+caricatore di «I tuoi social» riempiva in anticipo quello di Telegram), e
+misurare prima che la scheda nuova fosse a schermo (si guardava «Stato»).
+
+Alla prima misura giusta ha trovato anche un secondo riquadro fermo: la mente
+del bot nella scheda Avatar, che dipende da un modulo a parte. Se il modulo non
+si carica, adesso il riquadro lo dice invece di restare in caricamento per
+sempre.
 
 ## Collaudo
 
