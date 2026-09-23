@@ -11,6 +11,33 @@
 // li', qui devono cambiare — e il cancello verifica-manuali.mjs controlla che
 // non manchi niente di quello che il motore sa fare.
 import { GUIDE, DENTRO, ancora, paginaDoc, paginaManuali } from './guide.js';
+import { CATALOGO, giocoDi, valoriDi, valutaResa, presenzaOraria } from '../features/giochi-conf.js';
+
+// I numeri dei giochi li legge dal catalogo, che e' quello da cui li legge il
+// motore: scritti a mano, al primo ribilancio avrebbero mentito.
+const DI_SERIE = (id) => valoriDi({}, id);
+const RESA = (id) => valutaResa(giocoDi(id).resa, DI_SERIE(id), { mancheMinuti: 15 });
+const CIFRA = (n) => Number(n).toLocaleString('it-IT');
+const ATTESA = (s) => (s >= 60 && s % 60 === 0 ? `${s / 60} min` : `${s}s`);
+const TIPO_PARAM = { monete: 'monete', secondi: 'secondi', percento: 'su 100' };
+function righeRegole() {
+  const righe = [['Gioco', 'Impostazione', 'Di base', 'Limiti']];
+  for (const g of CATALOGO) {
+    for (const p of g.param) {
+      const base = p.tipo === 'elenco' ? `${p.def.length} frasi di serie`
+        : p.tipo === 'tabella' ? `${p.def.length} righe di serie`
+          : `${CIFRA(p.def)} ${TIPO_PARAM[p.tipo] || ''}`.trim();
+      const limiti = p.tipo === 'elenco' || p.tipo === 'tabella' ? `fino a ${p.max} righe` : `${CIFRA(p.min)}–${CIFRA(p.max)}`;
+      righe.push([g.nome[0], p.eti[0], base, limiti]);
+    }
+  }
+  return righe;
+}
+function righePesca() {
+  const t = DI_SERIE('pesca').pescato;
+  const tot = t.reduce((s, r) => s + r[2], 0);
+  return [['Preda', 'Monete', 'Quante volte su 100'], ...t.map(([n, v, w]) => [n, CIFRA(v), CIFRA(Math.round((w / tot) * 1000) / 10)])];
+}
 
 const OGGI = '2026-09-04';
 
@@ -67,31 +94,34 @@ const GIOCHI = {
       ['Passo del lurk', '0,15', '0–1', 'Quanto cala a ogni giro di silenzio.'],
       ['Minimo del lurk', '0,35', '0–1', 'Sotto questa quota non si scende.'],
       ['Solo in diretta', 'sì', '—', 'Se toglierlo, presenza e partecipazione valgono anche a canale spento.'],
-      ['Premio quiz', '25', '0–100.000', 'Chi indovina una manche.'],
-      ['Premio duello', '15', '0–100.000', 'Chi vince un duello.'],
-      ['Costo slot', '10', '0–100.000', 'Quanto costa una giocata.'],
-      ['Vincita slot', '200', '0–1.000.000', 'Il tris pieno (le altre vincite si scalano da qui).'],
-      ['Coppia slot', '20', '0–100.000', 'Due simboli uguali.'],
       ['Quanti in classifica', '5', '3–10', 'Righe mostrate da !classifica.'],
     ] },
+
+    { h2: 'Le regole di ogni gioco' },
+    { p: [
+      'Nella carta «Le regole di ogni gioco» ogni gioco ha le sue manopole: costi, premi, attese, probabilità e i testi che dice in chat. Accanto al nome vedi quanto rende con i valori che hai scelto, e cambia mentre li muovi.',
+      `Di serie il banco vince sempre un po', e un gioco gratis non rende più della presenza: in un'ora di presenza e partecipazione si prendono ${CIFRA(presenzaOraria({}))} monete, e la pesca al ritmo massimo ne dà ${CIFRA(RESA('pesca').perOra)}. Puoi cambiare tutto: il pannello ti mostra cosa succede all'economia, e se un gioco comincia a creare monete lo dice in rosso.`,
+      'Un testo con un segnaposto che quel gioco non conosce non si salva: in chat uscirebbe con le graffe.',
+    ] },
+    { tabella: righeRegole() },
 
     { h2: 'I comandi pronti' },
     { p: ['Funzionano appena i giochi sono accesi, senza configurare niente. <code>!giochi</code> li elenca in chat — e l\'elenco che scrive è quello vero: i giochi accesi, coi nomi che hai scelto tu.'] },
     { tabella: [
       ['Comando', 'Anche', 'Cosa fa', 'Attesa'],
-      ['<code>!dado</code>', '<code>!roll</code>', 'Tira un dado. <code>!dado 2d20</code> per tirarne altri.', '3s a testa'],
-      ['<code>!moneta</code>', '<code>!coin</code>', 'Testa o croce.', '3s a testa'],
-      ['<code>!8ball</code>', '<code>!palla8</code>', 'Risponde a una domanda. Serve la domanda.', '3s a testa'],
+      ['<code>!dado</code>', '<code>!roll</code>', 'Tira un dado. <code>!dado 2d20</code> per tirarne altri.', `${ATTESA(DI_SERIE('dado').attesa)} a testa`],
+      ['<code>!moneta</code>', '<code>!coin</code>', 'Testa o croce.', `${ATTESA(DI_SERIE('moneta').attesa)} a testa`],
+      ['<code>!8ball</code>', '<code>!palla8</code>', 'Risponde a una domanda. Serve la domanda.', `${ATTESA(DI_SERIE('8ball').attesa)} a testa`],
       ['<code>!monete</code>', '<code>!punti</code> <code>!bilancio</code>', 'Quante ne hai.', '—'],
       ['<code>!classifica</code>', '<code>!top</code>', 'I primi del pubblico.', '—'],
       ['<code>!classifica mod</code>', '<code>!classificamod</code> <code>!classificastaff</code> <code>!topmod</code>', 'I primi dello staff.', '—'],
-      ['<code>!slot</code>', '—', 'Macchinetta: paghi, giri, forse vinci.', '5s a testa'],
-      ['<code>!duello @nome</code>', '<code>!duel</code>', 'Sfida chi è in chat. Vince uno dei due.', '15s di canale'],
+      ['<code>!slot</code>', '—', 'Macchinetta: paghi, giri, forse vinci.', `${ATTESA(DI_SERIE('slot').attesa)} a testa`],
+      ['<code>!duello @nome</code>', '<code>!duel</code>', 'Sfida chi è in chat. Vince uno dei due.', `${ATTESA(DI_SERIE('duello').attesa)} di canale`],
       ['<code>!trivia</code>', '<code>!quiz</code>', 'Apre una domanda per tutti.', '15s di canale'],
       ['<code>!manche</code>', '<code>!gioca</code>', 'Apre una manche a caso fra i sei tipi.', '10s di canale'],
-      ['<code>!pesca</code>', '<code>!fish</code>', 'Cala la canna. Può uscire di tutto.', '60s a testa'],
-      ['<code>!roulette</code>', '<code>!rul</code>', 'Punti su rosso, nero, verde o un numero.', '5s a testa'],
-      ['<code>!furto @nome</code>', '<code>!rapina</code>', 'Provi a rubare. Se ti beccano, paghi.', '45s a testa'],
+      ['<code>!pesca</code>', '<code>!fish</code>', 'Cala la canna. Può uscire di tutto.', `${ATTESA(DI_SERIE('pesca').attesa)} a testa`],
+      ['<code>!roulette</code>', '<code>!rul</code>', 'Punti su rosso, nero, verde o un numero.', `${ATTESA(DI_SERIE('roulette').attesa)} a testa`],
+      ['<code>!furto @nome</code>', '<code>!rapina</code>', 'Provi a rubare. Se ti beccano, paghi.', `${ATTESA(DI_SERIE('furto').attesa)} a testa`],
       ['<code>!regala @nome 50</code>', '<code>!dona</code>', 'Passi monete a qualcun altro.', '—'],
       ['<code>!serie</code>', '<code>!presenze</code> <code>!streak</code>', 'A quante dirette di fila sei stato presente, e a quante in tutto. Con un nome, di quella persona.', '—'],
       ['<code>!classificaserie</code>', '<code>!serietop</code> <code>!topserie</code>', 'Chi è venuto a più dirette di fila.', '—'],
@@ -112,21 +142,21 @@ const GIOCHI = {
     { p: ['È il motivo per cui prima <code>!giochi</code> rispondeva <strong>due volte</strong> — i giochi di chat e, subito sotto, quelli con la webcam — anche a chi la webcam non la usa: erano due elenchi scritti a mano che non sapevano l\'uno dell\'altro. Adesso la risposta è una sola e dice quello che risponde davvero.'] },
 
     { h3: 'Slot' },
-    { p: ['Paghi il costo (10 di base) e girano tre simboli. Le vincite si scalano tutte dalla «vincita slot» (200 di base):'] },
+    { p: [`Paghi il costo (${CIFRA(DI_SERIE('slot').costo)} di base) e girano tre simboli. I tris si scalano tutti dal tris di 💎 (${CIFRA(DI_SERIE('slot').jackpot)} di base):`] },
     { tabella: [
       ['Esito', 'Vinci', 'Con i valori di base'],
-      ['Tris di 💎', 'la vincita piena', '200'],
-      ['Tris di 7️⃣', 'il 75%', '150'],
-      ['Qualsiasi altro tris', 'il 40%', '80'],
-      ['Due uguali', 'la coppia', '20'],
+      ['Tris di 💎', 'il tris pieno', CIFRA(DI_SERIE('slot').jackpot)],
+      ['Tris di 7️⃣', 'tre quarti', CIFRA(Math.round(DI_SERIE('slot').jackpot * 0.75))],
+      ['Qualsiasi altro tris', 'due quinti', CIFRA(Math.round(DI_SERIE('slot').jackpot * 0.4))],
+      ['Due uguali', 'la coppia', CIFRA(DI_SERIE('slot').coppia)],
       ['Niente', '—', 'perdi il costo'],
     ] },
-    { p: ['Se non hai abbastanza monete il bot te lo dice e non ti fa giocare.'] },
+    { p: [`Su 100 monete giocate, di serie, ne tornano in media ${CIFRA(RESA('slot').perCento)}: il banco vince un po', come deve. Se non hai abbastanza monete il bot te lo dice e non ti fa giocare.`] },
 
     { h3: 'Roulette' },
     { p: [
       'Si scrive <code>!roulette 50 rosso</code> oppure <code>!roulette 50 17</code>. Vanno bene anche <em>nero</em>, <em>verde</em> e i nomi inglesi.',
-      'È una roulette europea: 37 caselle, lo zero è verde.',
+      `È una roulette europea: 37 caselle, lo zero è verde. Su rosso, nero o un numero tornano in media ${CIFRA(RESA('roulette').perCento)} monete ogni 100 puntate.`,
     ] },
     { tabella: [
       ['Punti su', 'Se esce', 'Ti torna'],
@@ -136,33 +166,24 @@ const GIOCHI = {
     ] },
 
     { h3: 'Pesca' },
-    { p: ['Una volta al minuto a testa. Non è a caso puro: ogni preda ha il suo peso, e più vale meno esce.'] },
-    { tabella: [
-      ['Preda', 'Monete', 'Quanto è probabile'],
-      ['Un pesciolino', '15', 'molto comune'],
-      ['Un granchio', '30', 'comune'],
-      ['Una ciabatta o una lattina', '0', 'comune'],
-      ['Un polpo', '60', 'raro'],
-      ['Un pesce spada', '120', 'raro'],
-      ['Uno stivale pieno di monete', '250', 'molto raro'],
-      ['Uno scrigno del tesoro', '500', 'rarissimo'],
-    ] },
+    { p: [`Una volta ogni ${ATTESA(DI_SERIE('pesca').attesa)} a testa. Non è a caso puro: ogni preda ha il suo peso, e più vale meno esce. In media un lancio vale ${CIFRA(RESA('pesca').media)} monete, cioè fino a ${CIFRA(RESA('pesca').perOra)} in un'ora: quanto la presenza, non di più. Cosa si pesca lo scrivi tu, nelle regole della pesca.`] },
+    { tabella: righePesca() },
 
     { h3: 'Duello' },
     { p: [
       'Si sfida <strong>solo chi è in chat</strong> — chi ha parlato negli ultimi trenta minuti. Serviva: prima si poteva sfidare un nome inventato, e le monete finivano su un profilo che non esisteva.',
-      'Vince uno dei due a testa o croce, e il vincitore prende il premio duello (15 di base). Un duello alla volta per canale.',
+      `Vince uno dei due a testa o croce. Di serie il duello senza posta si gioca per l'onore e non dà monete: un premio che nasce dal nulla a ogni sfida gonfiava l'economia. Se vuoi, glielo dai nelle regole del duello. Un duello alla volta per canale, uno ogni ${ATTESA(DI_SERIE('duello').attesa)}.`,
     ] },
 
     { h3: 'Furto' },
     { p: [
-      'Una prova ogni 45 secondi a testa, e solo su chi ha almeno 20 monete. Va a buon fine <strong>45 volte su 100</strong>: prendi fra 10 e 150 monete (mai più di quante ne ha la vittima).',
-      'Se ti beccano paghi una multa fra 10 e 60 monete — <strong>alla vittima</strong>, non al nulla.',
+      `Una prova ogni ${ATTESA(DI_SERIE('furto').attesa)} a testa, e solo su chi ha almeno 20 monete. Va a buon fine <strong>${DI_SERIE('furto').riuscita} volte su 100</strong>: prendi fra 10 e ${CIFRA(DI_SERIE('furto').bottino)} monete (mai più di quante ne ha la vittima).`,
+      `Se ti beccano paghi una multa fino a ${CIFRA(DI_SERIE('furto').multa)} monete, <strong>alla vittima</strong> e non al nulla: il furto passa monete di tasca, non ne crea.`,
     ] },
 
     { h2: 'Le manche automatiche' },
     { p: [
-      'Una manche è una domanda aperta a tutta la chat: chi risponde per primo prende il premio quiz (25 di base). Si aprono da sole ogni tanto (da <em>Giochi</em> scegli ogni quanti minuti, da 1 a 360, e se solo in diretta) oppure a mano con <code>!manche</code>.',
+      `Una manche è una domanda aperta a tutta la chat: chi risponde per primo prende il premio della manche (${CIFRA(DI_SERIE('manche').premio)} di base). Si aprono da sole ogni tanto (da <em>Giochi</em> scegli ogni quanti minuti, da 1 a 360, e se solo in diretta) oppure a mano con <code>!manche</code>.`,
       'I tipi sono sei, e il bot ne pesca uno che riesca a costruire:',
     ] },
     { tabella: [

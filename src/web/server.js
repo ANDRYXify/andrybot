@@ -90,6 +90,7 @@ import * as dcCostruisci from '../features/discord-costruisci.js';
 import * as dcPreset from '../features/discord-preset.js';
 import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
+import * as giochiConf from '../features/giochi-conf.js';
 import * as instagram from '../features/instagram.js';
 import * as igAccesso from '../features/instagram-accesso.js';
 import { credenzialiInstagram } from '../features/instagram-credenziali.js';
@@ -5919,20 +5920,28 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       out.manche = { attivo: !!m.attivo, minMin, maxMin: Math.max(minMin, cm(m.maxMin, 45, 1, 360)), soloLive: !!m.soloLive };
     }
     if (b.nomeMonete !== undefined) out.nomeMonete = String(b.nomeMonete).trim().slice(0, 20);
+    // Le manopole di ogni gioco: le dichiara e le normalizza il catalogo.
+    if (b.giochiConf !== undefined) out.giochiConf = giochiConf.normalizzaConf(s.settings?.giochiConf, b.giochiConf);
     // personalizzazione punti/classifica: quanti punti per messaggio, premi dei
     // giochi, quanti in classifica. Valori limitati a range sensati.
     if (b.punti !== undefined) {
       const p = b.punti || {};
       const c = (v, def, lo, hi) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; };
       const f = (v, def, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; };
+      // I premi e i costi dei giochi stavano qui e adesso stanno in
+      // giochiConf (giochi-conf.js). I valori vecchi si portano avanti come
+      // sono, senza riscriverli col predefinito: sono la memoria di chi li
+      // aveva scelti, e il catalogo li legge finche' non se ne sceglie uno nuovo.
+      const vecchi = {};
+      const giaQui = s.settings?.punti || {};
+      for (const [k, lo, hi] of [['trivia', 0, 100000], ['duello', 0, 100000], ['slotCosto', 0, 100000], ['slotVinci', 0, 1000000], ['slotCoppia', 0, 100000]]) {
+        if (p[k] !== undefined) vecchi[k] = c(p[k], giaQui[k] ?? 0, lo, hi);
+        else if (giaQui[k] !== undefined) vecchi[k] = giaQui[k];
+      }
       out.punti = {
+        ...vecchi,
         perMessaggio: c(p.perMessaggio, 2, 0, 1000),
         ogniSecondi:  c(p.ogniSecondi, 60, 5, 3600),
-        trivia:       c(p.trivia, 25, 0, 100000),
-        duello:       c(p.duello, 15, 0, 100000),
-        slotCosto:    c(p.slotCosto, 10, 0, 100000),
-        slotVinci:    c(p.slotVinci, 200, 0, 1000000),
-        slotCoppia:   c(p.slotCoppia, 20, 0, 100000),
         topN:         c(p.topN, 5, 3, 10),
         perPresenza:  c(p.perPresenza, 5, 0, 10000),
         perAttivita:  c(p.perAttivita, 5, 0, 10000),
@@ -8131,6 +8140,20 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.get('/api/streamer/giochi', requireLogin, wrap(async (req, res) => {
     res.json(giochiDb.list(currentUser(req).login));
   }));
+
+  // LE REGOLE DI OGNI GIOCO: le manopole e la resa che ne viene. Il catalogo
+  // arriva al pannello come dati, cosi' il pannello non ne tiene una copia.
+  app.get('/api/streamer/giochi/regole', requireLogin, (req, res) => {
+    res.json(giochiConf.catalogoPerPannello(streamers.get(currentUser(req).login)?.settings || {}));
+  });
+  app.post('/api/streamer/giochi/regole', requireLogin, (req, res) => {
+    if (!esigiFunzione(req, res, 'giochi', 'Le regole dei giochi')) return;
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const giochiConfNuovo = giochiConf.normalizzaConf(s?.settings?.giochiConf, req.body?.giochiConf);
+    streamers.setSettings(login, { ...(s?.settings || {}), giochiConf: giochiConfNuovo });
+    res.json(giochiConf.catalogoPerPannello(streamers.get(login)?.settings || {}));
+  });
 
   // crea/aggiorna un gioco personalizzato (trivia = domande, parola = elenco parole)
   app.post('/api/streamer/giochi', requireLogin, wrap(async (req, res) => {

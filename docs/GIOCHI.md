@@ -82,6 +82,75 @@ Il giro si aggancia al ciclo delle ore guardate, che ogni cinque minuti già
 chiede a Twitch chi è in chat: le monete di presenza non costano **nessuna**
 chiamata aggiuntiva.
 
+## Le regole di ogni gioco, e un'economia che non stampa monete
+
+### Cosa si è misurato
+
+Con i valori di serie, e la presenza che dà (5 + 5) × 12 = **120 monete
+all'ora**:
+
+| gioco | com'era | cosa voleva dire |
+|---|---|---|
+| `!pesca` | media 44 a lancio, un lancio al minuto | ~2.640 all'ora: **22 volte** la presenza |
+| `!slot` | tornavano 114 monete ogni 100 giocate | ogni giocata **creava** monete |
+| `!duello` | +15 dal nulla, un duello ogni 15 s | fino a ~1.800 all'ora nel canale |
+| `!roulette` | 97,3 su 100 | giusta: roulette europea |
+| `!furto`, `!regala` | passano di tasca | non creano niente |
+
+Un'economia così non ha bisogno di altri giochi: ha bisogno di smettere di
+stampare. Aggiungere giochi sopra avrebbe solo gonfiato di più le monete, e una
+moneta che si trova ovunque non vale niente, nemmeno in classifica.
+
+### Le tre regole, per costruzione
+
+1. **Un gioco a pagamento, di serie, lascia vincere il banco**: la resa sta
+   sotto 100. Slot 93,5 (la coppia paga 15 invece di 20), roulette 97,3.
+2. **Un gioco gratis a tempo, al ritmo massimo, non rende più della
+   presenza.** La pesca ora si fa ogni 5 minuti e un lancio vale in media 9,8:
+   118 all'ora contro 120.
+3. **Le sfide passano monete, non le creano.** Il duello senza posta si gioca
+   per l'onore (premio di serie 0); quello con la posta arriva con i giochi
+   nuovi, e lì si vince quello che l'altro rischia.
+
+Le tre regole sono prove (`test/unita/giochi-conf.test.mjs`): se un valore di
+serie le rompe, il collaudo diventa rosso.
+
+### Un catalogo solo
+
+`src/features/giochi-conf.js` dichiara, gioco per gioco, cosa si può cambiare:
+costi, premi, attese, probabilità, testi, il pescato. Da lì nascono:
+
+- la **normalizzazione** di quello che arriva dal pannello (un valore storto
+  tiene quello di prima, un testo con un segnaposto ignoto non passa);
+- i **valori** che legge il motore;
+- la **carta del pannello**, che riceve il catalogo come dati e non ne tiene
+  una copia;
+- i **numeri del manuale**, che li legge da lì invece di ripeterli;
+- la **copia della demo**, che una prova confronta col catalogo vero.
+
+### La resa si calcola
+
+Ogni gioco descrive il suo esito medio (`resa`), e una funzione sola lo valuta
+con i valori scelti: quante monete tornano ogni cento giocate, quante ne rende
+un'ora di pesca, quante ne crea un premio. Il pannello la mostra accanto al
+nome mentre si muovono le manopole, e la scrive in rosso quando un gioco crea
+monete o rende più della presenza. La scelta resta dello streamer, ma è
+informata.
+
+Il pannello ha la sua copia della funzione, perché il browser non legge i
+moduli del server. Una prova la estrae da `app.js` e la confronta con quella
+del server su valori a caso: se divergono, è rosso. E la resa della slot si
+confronta col motore su **tutte le 216 tirate** possibili.
+
+### Chi aveva cambiato un valore lo tiene
+
+Costo e vincite della slot, premio del duello e della manche stavano in
+`settings.punti`. Il vecchio pannello salvava sempre tutti i valori, quindi
+«salvato» non voleva dire «scelto». La regola: un valore uguale al **vecchio
+predefinito** vale come mai toccato e prende il nuovo; uno diverso è una
+scelta e resta. I valori vecchi non si riscrivono più col predefinito quando
+si salva la carta dei punti: sono la memoria di chi li aveva scelti.
+
 ## Più tipi di manche
 
 Prima lo streamer poteva creare due tipi di gioco: quiz e parola veloce. Ora

@@ -74,6 +74,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nello Studio la tela è molto più grande: il menù si apre dal tasto in alto e lascia la larghezza al lavoro, e i nomi dei livelli non si tagliano più. [vai: alert]
 - Pubblicità in chat: il preavviso adesso parte davvero, «sono tornato» arriva quando la pausa finisce, e i secondi nei messaggi sono sempre quanto dura la pausa. [vai: regia]
 - Chi ha l'account nuovo non viene più cacciato dallo scudo: l'avviso esce una volta sola, e un mod lo fa scrivere con !permetti nome. Un messaggio con i Bit non viene mai trattenuto. [vai: scudo]
+- Ogni gioco ha le sue regole da cambiare: costi, premi, attese, probabilità, testi e cosa si pesca, con accanto quanto rende. Di serie il banco vince sempre un po' e la pesca rende quanto la presenza. [vai: giochi]
 
 ## 2026-09-19
 

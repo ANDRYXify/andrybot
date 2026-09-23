@@ -5,6 +5,7 @@
 //          · !pesca · !duello @tizio · !furto @tizio · !regala @tizio N
 //          · !trivia · !classifica [mod|tutti] · !monete · !giochi
 import { elencoGiochiInChat } from './comandi-registro.js';
+import { valoriDi } from './giochi-conf.js';
 import { points, streamers, giochi } from '../db.js';
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
@@ -24,6 +25,17 @@ function inCooldown(chiave, ms) {
   cooldowns.set(chiave, ora + ms);
   return false;
 }
+// Quanto manca, detto a parole: con un'attesa di minuti «riprova tra poco» non
+// dice niente a chi aspetta.
+function restante(chiave) {
+  const s = Math.max(1, Math.ceil(((cooldowns.get(chiave) || 0) - Date.now()) / 1000));
+  if (s < 60) return `${s} second${s === 1 ? 'o' : 'i'}`;
+  const m = Math.ceil(s / 60);
+  return `${m} minut${m === 1 ? 'o' : 'i'}`;
+}
+
+// Le manopole di un gioco per questo canale: le dichiara giochi-conf.js.
+const conf = (channel, id) => valoriDi(streamers.get(channel)?.settings, id);
 
 // accredito passivo: throttle per (canale,utente)
 const ultimoAccredito = new Map();
@@ -67,7 +79,7 @@ const PUNTI_DEFAULT = {
   moltSub: 1.5, moltVip: 1.25,
   lurkPasso: 0.15, lurkMinimo: 0.35,
   soloLive: true,
-  trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5,
+  topN: 5,
 };
 function numClamp(v, def, lo, hi) { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; }
 function cfgPunti(channel) {
@@ -75,11 +87,6 @@ function cfgPunti(channel) {
   return {
     perMessaggio: numClamp(p.perMessaggio, PUNTI_DEFAULT.perMessaggio, 0, 1000),
     ogniSecondi:  numClamp(p.ogniSecondi,  PUNTI_DEFAULT.ogniSecondi, 5, 3600),
-    trivia:       numClamp(p.trivia,       PUNTI_DEFAULT.trivia, 0, 100000),
-    duello:       numClamp(p.duello,       PUNTI_DEFAULT.duello, 0, 100000),
-    slotCosto:    numClamp(p.slotCosto,    PUNTI_DEFAULT.slotCosto, 0, 100000),
-    slotVinci:    numClamp(p.slotVinci,    PUNTI_DEFAULT.slotVinci, 0, 1000000),
-    slotCoppia:   numClamp(p.slotCoppia,   PUNTI_DEFAULT.slotCoppia, 0, 100000),
     topN:         numClamp(p.topN,         PUNTI_DEFAULT.topN, 3, 10),
     perPresenza:  numClamp(p.perPresenza,  PUNTI_DEFAULT.perPresenza, 0, 10000),
     perAttivita:  numClamp(p.perAttivita,  PUNTI_DEFAULT.perAttivita, 0, 10000),
@@ -322,7 +329,7 @@ function roundNumero() {
 
 function avviaRound(channel, round, say) {
   if (!round || roundAttivo.has(channel)) return false;
-  round.premio = round.premio || cfgPunti(channel).trivia;
+  round.premio = round.premio || conf(channel, 'manche').premio;
   round.scadenza = Date.now() + round.durata;
   roundAttivo.set(channel, round);
   try { say(`${round.annuncio} — rispondete in chat! (${Math.round(round.durata / 1000)}s, +${round.premio} ${nomeMoneta(channel)})`); } catch { /* niente */ }
@@ -438,46 +445,38 @@ export function avviaManche(channel, say) {
   return false;
 }
 
-// --------------------------------------------------------- 8ball
-const OTTO = [
-  'Sì, senza dubbio.', 'Direi proprio di sì.', 'Ci puoi scommettere.', 'Assolutamente.',
-  'Mmm… non ci conterei.', 'Meglio di no.', 'Direi di no.', 'Non è detto.',
-  'Chiedimelo di nuovo più tardi.', 'Il futuro è nebbioso… riprova.', 'Le probabilità sono buone.',
-  'Segui il tuo istinto.', 'Ho i miei dubbi…', 'Ovvio che sì!', 'Nemmeno per sogno 😄',
-];
+// --------------------------------------------------------- slot, roulette, pesca
 const SLOT_SIMBOLI = ['🍒', '🍋', '🔔', '⭐', '💎', '7️⃣'];
+
+// Quanto paga una tirata della slot. Una funzione sola, perche' la resa che il
+// pannello mostra (giochi-conf.js) deve essere quella di questa funzione: la
+// prova le mette a confronto su tutte le 216 tirate possibili.
+export function vincitaSlot(r, c) {
+  if (r[0] === r[1] && r[1] === r[2]) {
+    if (r[0] === '💎') return { monete: c.jackpot, tris: true };
+    if (r[0] === '7️⃣') return { monete: Math.round(c.jackpot * 0.75), tris: true };
+    return { monete: Math.round(c.jackpot * 0.4), tris: true };
+  }
+  if (r[0] === r[1] || r[1] === r[2] || r[0] === r[2]) return { monete: c.coppia, tris: false };
+  return { monete: 0, tris: false };
+}
+export const SIMBOLI_SLOT = SLOT_SIMBOLI;
+
 // Esposti per il collaudo: ogni modello viene riempito con valori finti e deve
 // uscirne senza segnaposto residui. Cosi un {a} scritto due volte, o un {c} che
 // nessuno riempie, si scopre prima di finire in chat.
 export const MODELLI = {
-  duello: () => ({ elenco: DUELLO_ESITI, valori: { a: 'Tizio', b: 'Caio' } }),
+  duello: (channel) => ({ elenco: conf(channel, 'duello').esiti, valori: { a: 'Tizio', b: 'Caio' } }),
 };
 
-const DUELLO_ESITI = [
-  '{a} stende {b} con una mossa leggendaria! 🥊',
-  '{b} inciampa e {a} vince senza fatica 😂',
-  '{a} e {b} se le danno di santa ragione, e alla fine la spunta {a}! 🔥',
-  '{a} sconfigge {b} e ruba pure la scena ✨',
-];
-// pesca: tabella del pescato (peso = probabilità relativa, v = monete vinte)
-const PESCA = [
-  { n: 'una vecchia ciabatta 🥿', v: 0, peso: 16 },
-  { n: 'una lattina arrugginita 🥫', v: 0, peso: 12 },
-  { n: 'un pesciolino 🐟', v: 15, peso: 30 },
-  { n: 'un granchio 🦀', v: 30, peso: 18 },
-  { n: 'un polpo 🐙', v: 60, peso: 10 },
-  { n: 'un pesce spada 🗡️', v: 120, peso: 6 },
-  { n: 'uno stivale pieno di monete 👢', v: 250, peso: 4 },
-  { n: 'uno scrigno del tesoro 🧰', v: 500, peso: 2 },
-];
 // roulette europea: lo 0 è verde, gli altri numeri sono rossi o neri
 const ROULETTE_ROSSI = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
 
-// pesca pesata da una tabella con campo `peso`
-function pescaPesata(tab) {
-  const tot = tab.reduce((s, x) => s + (x.peso || 0), 0);
-  let r = Math.random() * tot;
-  for (const x of tab) { if ((r -= (x.peso || 0)) < 0) return x; }
+// pesca pesata da una tabella [nome, monete, rarita']
+export function pescaPesata(tab, caso = Math.random) {
+  const tot = tab.reduce((s, x) => s + (x[2] || 0), 0);
+  let r = caso() * tot;
+  for (const x of tab) { if ((r -= (x[2] || 0)) < 0) return x; }
   return tab[tab.length - 1];
 }
 
@@ -522,7 +521,7 @@ export function tryGame(msg, say) {
       }
 
       case 'dado': {
-        if (inCooldown(channel + '|dado|' + msg.user, 3000)) return true;
+        if (inCooldown(channel + '|dado|' + msg.user, conf(channel, 'dado').attesa * 1000)) return true;
         let n = 1, facce = 6;
         const m = /^(\d{0,2})d(\d{1,3})$/i.exec(args[0] || '');
         if (m) { n = Math.min(10, Math.max(1, parseInt(m[1] || '1', 10))); facce = Math.min(1000, Math.max(2, parseInt(m[2], 10))); }
@@ -533,15 +532,16 @@ export function tryGame(msg, say) {
       }
 
       case 'moneta': {
-        if (inCooldown(channel + '|coin|' + msg.user, 3000)) return true;
+        if (inCooldown(channel + '|coin|' + msg.user, conf(channel, 'moneta').attesa * 1000)) return true;
         say(`🪙 ${nome}: è uscito ${Math.random() < 0.5 ? 'TESTA' : 'CROCE'}!`);
         return true;
       }
 
       case '8ball': {
-        if (inCooldown(channel + '|8ball|' + msg.user, 3000)) return true;
+        const c8 = conf(channel, '8ball');
+        if (inCooldown(channel + '|8ball|' + msg.user, c8.attesa * 1000)) return true;
         if (!args.length) { say(`🎱 Fammi una domanda, ${nome}! (es. !8ball vinco stasera?)`); return true; }
-        say(`🎱 ${scegli(OTTO)}`);
+        say(`🎱 ${scegli(c8.risposte)}`);
         return true;
       }
 
@@ -560,16 +560,15 @@ export function tryGame(msg, say) {
       }
 
       case 'slot': {
-        if (inCooldown(channel + '|slot|' + msg.user, 5000)) return true;
-        const cp = cfgPunti(channel);
-        const costo = cp.slotCosto;
+        const cs = conf(channel, 'slot');
+        if (inCooldown(channel + '|slot|' + msg.user, cs.attesa * 1000)) return true;
+        const costo = cs.costo;
         if (points.get(channel, msg.user) < costo) { say(`🎰 Ti servono ${costo} ${moneta()} per giocare, ${nome}. Chatta un po' e torna!`); return true; }
         points.add(channel, msg.user, -costo);
         const r = [scegli(SLOT_SIMBOLI), scegli(SLOT_SIMBOLI), scegli(SLOT_SIMBOLI)];
-        let vincita = 0, msgWin = '';
-        // tris: 💎 = vincita piena, 7️⃣ = 75%, altro = 40% (scala su slotVinci)
-        if (r[0] === r[1] && r[1] === r[2]) { vincita = r[0] === '💎' ? cp.slotVinci : r[0] === '7️⃣' ? Math.round(cp.slotVinci * 0.75) : Math.round(cp.slotVinci * 0.4); msgWin = ' JACKPOT!! 🎉'; }
-        else if (r[0] === r[1] || r[1] === r[2] || r[0] === r[2]) { vincita = cp.slotCoppia; msgWin = ' bella coppia!'; }
+        const esito = vincitaSlot(r, cs);
+        const vincita = esito.monete;
+        const msgWin = vincita ? (esito.tris ? ' JACKPOT!! 🎉' : ' bella coppia!') : '';
         if (vincita) points.add(channel, msg.user, vincita);
         say(`🎰 [ ${r.join(' | ')} ] ${vincita ? `${nome} vince ${vincita} ${moneta()}!${msgWin}` : `niente, ritenta ${nome}!`}`);
         return true;
@@ -583,12 +582,13 @@ export function tryGame(msg, say) {
         // Nessun duello con i fantasmi: si sfida chi è in chat, non un nome
         // qualsiasi. Senza questo, le monete finivano su profili inesistenti.
         if (!inChat(channel, sfidato)) { say(`⚔️ @${sfidato} non è in chat: puoi sfidare solo chi c'è.`); return true; }
-        if (inCooldown(channel + '|duello', 15000)) { say('⚔️ Un duello alla volta, aspettate un attimo!'); return true; }
+        const cd = conf(channel, 'duello');
+        if (inCooldown(channel + '|duello', cd.attesa * 1000)) { say(`⚔️ Un duello alla volta: il prossimo fra ${restante(channel + '|duello')}.`); return true; }
         const vince = Math.random() < 0.5;
         const a = vince ? nome : sfidato, b = vince ? sfidato : nome;
-        const premio = cfgPunti(channel).duello;
-        points.add(channel, vince ? msg.user : sfidato, premio);
-        say('⚔️ ' + riempi(scegli(DUELLO_ESITI), { a, b }) + ` (+${premio} ${moneta()})`);
+        const premio = cd.premio;
+        if (premio > 0) points.add(channel, vince ? msg.user : sfidato, premio);
+        say('⚔️ ' + riempi(scegli(cd.esiti), { a, b }) + (premio > 0 ? ` (+${premio} ${moneta()})` : ''));
         return true;
       }
 
@@ -608,18 +608,22 @@ export function tryGame(msg, say) {
       }
 
       case 'pesca': {
-        if (inCooldown(channel + '|pesca|' + msg.user, 60000)) { say(`🎣 ${nome}, la canna è ancora in acqua… riprova tra poco.`); return true; }
-        const c = pescaPesata(PESCA);
-        if (c.v > 0) { points.add(channel, msg.user, c.v); say(`🎣 ${nome} pesca ${c.n} e guadagna ${c.v} ${moneta()}!`); }
-        else say(`🎣 ${nome} pesca ${c.n}… niente ${moneta()}, ritenta!`);
+        const cf = conf(channel, 'pesca');
+        const kp = channel + '|pesca|' + msg.user;
+        if (inCooldown(kp, cf.attesa * 1000)) { say(`🎣 ${nome}, la canna è ancora in acqua: riprova fra ${restante(kp)}.`); return true; }
+        const [pesce, valore] = pescaPesata(cf.pescato);
+        if (valore > 0) { points.add(channel, msg.user, valore); say(`🎣 ${nome} pesca ${pesce} e guadagna ${valore} ${moneta()}!`); }
+        else say(`🎣 ${nome} pesca ${pesce}… niente ${moneta()}, ritenta!`);
         return true;
       }
 
       case 'roulette': {
-        if (inCooldown(channel + '|roulette|' + msg.user, 5000)) return true;
+        const cr = conf(channel, 'roulette');
+        if (inCooldown(channel + '|roulette|' + msg.user, cr.attesa * 1000)) return true;
         const punta = Math.round(Number(args[0]));
         const scelta = (args[1] || '').toLowerCase();
         if (!Number.isFinite(punta) || punta <= 0 || !scelta) { say(`🎡 Uso: !roulette <puntata> <rosso|nero|verde|numero 0-36>`); return true; }
+        if (cr.massimo > 0 && punta > cr.massimo) { say(`🎡 Qui si punta al massimo ${cr.massimo} ${moneta()}, ${nome}.`); return true; }
         const saldo = points.get(channel, msg.user);
         if (saldo < punta) { say(`🎡 ${nome}, non hai abbastanza ${moneta()} (${saldo}).`); return true; }
         const numScelto = /^\d{1,2}$/.test(scelta) ? parseInt(scelta, 10) : null;
@@ -642,15 +646,17 @@ export function tryGame(msg, say) {
         const vittima = (args[0] || '').replace(/^@/, '').toLowerCase();
         if (!vittima) { say(`🦝 Uso: !furto @nome`); return true; }
         if (vittima === msg.user.toLowerCase()) { say(`${nome}, non puoi derubare te stesso 😄`); return true; }
-        if (inCooldown(channel + '|furto|' + msg.user, 45000)) { say(`🦝 ${nome}, aspetta prima di tentare un altro colpo.`); return true; }
+        const cfu = conf(channel, 'furto');
+        const kf = channel + '|furto|' + msg.user;
+        if (inCooldown(kf, cfu.attesa * 1000)) { say(`🦝 ${nome}, aspetta ${restante(kf)} prima di tentare un altro colpo.`); return true; }
         const gruzzolo = points.get(channel, vittima);
         if (gruzzolo < 20) { say(`🦝 ${vittima} ha le tasche vuote, niente da rubare.`); return true; }
-        if (Math.random() < 0.45) {                                   // colpo riuscito
-          const bottino = rnd(10, Math.min(gruzzolo, 150));
+        if (Math.random() * 100 < cfu.riuscita) {                     // colpo riuscito
+          const bottino = rnd(10, Math.max(10, Math.min(gruzzolo, cfu.bottino)));
           points.add(channel, vittima, -bottino); points.add(channel, msg.user, bottino);
           say(`🦝 Colpo riuscito! ${nome} sgraffigna ${bottino} ${moneta()} a ${vittima}! 😈`);
         } else {                                                       // beccato: multa
-          const multa = Math.min(points.get(channel, msg.user), rnd(10, 60));
+          const multa = Math.min(points.get(channel, msg.user), rnd(Math.min(10, cfu.multa), cfu.multa));
           if (multa > 0) { points.add(channel, msg.user, -multa); points.add(channel, vittima, multa); }
           say(`🚓 ${nome} viene beccato e paga ${multa} ${moneta()} di multa a ${vittima}! 😂`);
         }

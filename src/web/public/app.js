@@ -676,6 +676,23 @@ function _demoAdesso() {
   };
 }
 
+function _demoRegole() {
+  const base = JSON.parse(JSON.stringify(_demoGet('/api/streamer/giochi/regole')));
+  const scritte = _demoScritture.regole || {};
+  for (const g of base.giochi) {
+    const nuovi = scritte[g.id] || {};
+    for (const p of g.param) {
+      if (!(p.k in nuovi)) continue;
+      const v = nuovi[p.k];
+      if (p.tipo === 'tabella') { const t = v.map(_rgRiga).filter(Boolean); if (t.length) g.valori[p.k] = t; }
+      else if (p.tipo === 'elenco') { if (v.length) g.valori[p.k] = v; }
+      else if (Number.isFinite(Number(v))) g.valori[p.k] = Math.min(p.max, Math.max(p.min, Math.round(Number(v))));
+    }
+    g.resaOra = valutaResaGioco(g.resa, g.valori, base.contesto);
+  }
+  return base;
+}
+
 function apiDemo(percorso, opzioni = {}) {
   const metodo = (opzioni.method || 'GET').toUpperCase();
   const via = percorso.split('?')[0];
@@ -686,6 +703,10 @@ function apiDemo(percorso, opzioni = {}) {
     return Promise.resolve({ ig: { puo: true }, live: { attiva: accesa, pronta: accesa, ultima: accesa ? { ts: Date.now() - 86_400_000, ok: true, errore: '' } : null } });
   }
   if (metodo === 'GET' && via === '/api/streamer/regia/giochi') return Promise.resolve({ giochi: _demoGiochi(domanda) });
+  if (via === '/api/streamer/giochi/regole') {
+    if (metodo === 'POST') _demoScritture.regole = opzioni.body?.giochiConf || {};
+    return Promise.resolve(_demoRegole());
+  }
   if (metodo === 'GET' && via === '/api/streamer/settimana/categoria') return Promise.resolve({ categoria: _demoCategoria(domanda) });
   if (metodo === 'GET' && via === '/api/streamer/libreria') return Promise.resolve(_demoLibreria(percorso));
   if (metodo === 'GET') return Promise.resolve(_demoGet(via));
@@ -976,6 +997,7 @@ function _demoGet(via) {
         verbiCfg: { leggi: { parole: [], chi: 'tutti' }, piu: { parole: ['+', 'add'], chi: 'mod' }, meno: { parole: ['-', 'meno'], chi: 'mod' }, azzera: { parole: ['reset', 'azzera'], chi: 'mod' }, imposta: { parole: ['set'], chi: 'mod' }, mostra: { parole: ['on', 'mostra'], chi: 'mod' }, nascondi: { parole: ['off', 'nascondi'], chi: 'mod' } },
         overlayCfg: { mostra: false, x: 50, y: 94, r: 0, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } },
     ] },
+    '/api/streamer/giochi/regole': {"contesto":{"mancheMinuti":15,"presenzaOraria":120},"giochi":[{"id":"slot","nome":["Slot machine","Slot machine","Tragaperras"],"resa":{"tipo":"puntata","costo":"costo","esiti":[[0.004629629629629629,["jackpot",1]],[0.004629629629629629,["jackpot",0.75]],[0.018518518518518517,["jackpot",0.4]],[0.4166666666666667,["coppia",1]]]},"param":[{"k":"costo","tipo":"monete","def":10,"min":1,"max":100000,"eti":["Costo di una giocata","Cost of a play","Coste de una tirada"]},{"k":"jackpot","tipo":"monete","def":200,"min":0,"max":1000000,"eti":["Tris di 💎 (il 7 paga tre quarti, gli altri due quinti)","Three 💎 (7 pays three quarters, the others two fifths)","Trío de 💎 (el 7 paga tres cuartos, los demás dos quintos)"]},{"k":"coppia","tipo":"monete","def":15,"min":0,"max":100000,"eti":["Una coppia","A pair","Una pareja"]},{"k":"attesa","tipo":"secondi","def":5,"min":1,"max":3600,"eti":["Attesa fra due volte, a testa","Wait between two goes, each","Espera entre dos veces, cada uno"]}],"valori":{"costo":10,"jackpot":200,"coppia":15,"attesa":5},"resaOra":{"tipo":"puntata","perCento":93.5}},{"id":"roulette","nome":["Roulette","Roulette","Ruleta"],"resa":{"tipo":"puntata","costo":1,"esiti":[[0.4864864864864865,2]]},"param":[{"k":"massimo","tipo":"monete","def":0,"min":0,"max":1000000,"eti":["Puntata massima (0 = nessun limite)","Maximum bet (0 = no limit)","Apuesta máxima (0 = sin límite)"]},{"k":"attesa","tipo":"secondi","def":5,"min":1,"max":3600,"eti":["Attesa fra due volte, a testa","Wait between two goes, each","Espera entre dos veces, cada uno"]}],"valori":{"massimo":0,"attesa":5},"resaOra":{"tipo":"puntata","perCento":97.3}},{"id":"pesca","nome":["Pesca","Fishing","Pesca"],"resa":{"tipo":"tabella","tabella":"pescato","attesa":"attesa"},"param":[{"k":"attesa","tipo":"secondi","def":300,"min":1,"max":3600,"eti":["Attesa fra due lanci, a testa","Wait between two casts, each","Espera entre dos lances, cada uno"]},{"k":"pescato","tipo":"tabella","def":[["una vecchia ciabatta 🥿",0,16],["una lattina arrugginita 🥫",0,12],["un pesciolino 🐟",3,30],["un granchio 🦀",8,18],["un polpo 🐙",15,10],["un pesce spada 🗡️",30,6],["uno stivale pieno di monete 👢",50,4],["uno scrigno del tesoro 🧰",100,2]],"max":30,"eti":["Cosa si pesca: nome | monete | rarità","What can be caught: name | coins | rarity","Qué se pesca: nombre | monedas | rareza"]}],"valori":{"attesa":300,"pescato":[["una vecchia ciabatta 🥿",0,16],["una lattina arrugginita 🥫",0,12],["un pesciolino 🐟",3,30],["un granchio 🦀",8,18],["un polpo 🐙",15,10],["un pesce spada 🗡️",30,6],["uno stivale pieno di monete 👢",50,4],["uno scrigno del tesoro 🧰",100,2]]},"resaOra":{"tipo":"tabella","media":9.8,"perOra":118}},{"id":"duello","nome":["Duello","Duel","Duelo"],"resa":{"tipo":"crea","premio":"premio","attesa":"attesa"},"param":[{"k":"premio","tipo":"monete","def":0,"min":0,"max":100000,"eti":["Premio del duello senza posta","Prize of a duel without stake","Premio del duelo sin apuesta"]},{"k":"attesa","tipo":"secondi","def":15,"min":1,"max":3600,"eti":["Attesa fra due duelli, in tutto il canale","Wait between two duels, channel-wide","Espera entre dos duelos, en todo el canal"]},{"k":"esiti","tipo":"elenco","def":["{a} stende {b} con una mossa leggendaria! 🥊","{b} inciampa e {a} vince senza fatica 😂","{a} e {b} se le danno di santa ragione, e alla fine la spunta {a}! 🔥","{a} sconfigge {b} e ruba pure la scena ✨"],"max":30,"lungo":200,"segnaposto":["a","b"],"eti":["Come va a finire: {a} vince, {b} perde","How it ends: {a} wins, {b} loses","Cómo termina: {a} gana, {b} pierde"]}],"valori":{"premio":0,"attesa":15,"esiti":["{a} stende {b} con una mossa leggendaria! 🥊","{b} inciampa e {a} vince senza fatica 😂","{a} e {b} se le danno di santa ragione, e alla fine la spunta {a}! 🔥","{a} sconfigge {b} e ruba pure la scena ✨"]},"resaOra":{"tipo":"crea","perOra":0}},{"id":"furto","nome":["Furto","Heist","Robo"],"resa":{"tipo":"passa"},"param":[{"k":"riuscita","tipo":"percento","def":45,"min":0,"max":100,"eti":["Quante volte su cento riesce","How many times out of a hundred it works","Cuántas veces de cada cien sale bien"]},{"k":"bottino","tipo":"monete","def":150,"min":10,"max":100000,"eti":["Bottino massimo","Maximum loot","Botín máximo"]},{"k":"multa","tipo":"monete","def":60,"min":0,"max":100000,"eti":["Multa massima se ti beccano","Maximum fine if caught","Multa máxima si te pillan"]},{"k":"attesa","tipo":"secondi","def":45,"min":1,"max":3600,"eti":["Attesa fra due volte, a testa","Wait between two goes, each","Espera entre dos veces, cada uno"]}],"valori":{"riuscita":45,"bottino":150,"multa":60,"attesa":45},"resaOra":{"tipo":"passa"}},{"id":"manche","nome":["Manche","Rounds","Rondas"],"resa":{"tipo":"manche","premio":"premio"},"param":[{"k":"premio","tipo":"monete","def":25,"min":0,"max":100000,"eti":["Premio a chi risponde per primo","Prize for the first right answer","Premio para quien responde primero"]}],"valori":{"premio":25},"resaOra":{"tipo":"manche","perOra":100}},{"id":"8ball","nome":["Palla magica","Magic 8-ball","Bola mágica"],"resa":null,"param":[{"k":"attesa","tipo":"secondi","def":3,"min":1,"max":3600,"eti":["Attesa fra due volte, a testa","Wait between two goes, each","Espera entre dos veces, cada uno"]},{"k":"risposte","tipo":"elenco","def":["Sì, senza dubbio.","Direi proprio di sì.","Ci puoi scommettere.","Assolutamente.","Mmm… non ci conterei.","Meglio di no.","Direi di no.","Non è detto.","Chiedimelo di nuovo più tardi.","Il futuro è nebbioso… riprova.","Le probabilità sono buone.","Segui il tuo istinto.","Ho i miei dubbi…","Ovvio che sì!","Nemmeno per sogno 😄"],"max":40,"lungo":120,"segnaposto":[],"eti":["Le risposte","The answers","Las respuestas"]}],"valori":{"attesa":3,"risposte":["Sì, senza dubbio.","Direi proprio di sì.","Ci puoi scommettere.","Assolutamente.","Mmm… non ci conterei.","Meglio di no.","Direi di no.","Non è detto.","Chiedimelo di nuovo più tardi.","Il futuro è nebbioso… riprova.","Le probabilità sono buone.","Segui il tuo istinto.","Ho i miei dubbi…","Ovvio che sì!","Nemmeno per sogno 😄"]},"resaOra":null},{"id":"dado","nome":["Dado","Dice","Dado"],"resa":null,"param":[{"k":"attesa","tipo":"secondi","def":3,"min":1,"max":3600,"eti":["Attesa fra due volte, a testa","Wait between two goes, each","Espera entre dos veces, cada uno"]}],"valori":{"attesa":3},"resaOra":null},{"id":"moneta","nome":["Testa o croce","Heads or tails","Cara o cruz"],"resa":null,"param":[{"k":"attesa","tipo":"secondi","def":3,"min":1,"max":3600,"eti":["Attesa fra due volte, a testa","Wait between two goes, each","Espera entre dos veces, cada uno"]}],"valori":{"attesa":3},"resaOra":null}]},
     '/api/streamer/comandi-pronti': { comandi: [
       { id: "giochi", modulo: "giochi", moduloNome: ["Giochi in chat", "Chat games", "Juegos en el chat"], moduloAcceso: true, titolo: ["Elenco dei giochi", "Games list", "Lista de juegos"], cosa: ["Elenca in chat i giochi accesi, quelli di chat e quelli con la webcam.", "Lists the games that are on in chat, both chat games and webcam ones.", "Lista en el chat los juegos activos, los de chat y los de webcam."], costa: false, attesa: 0, spegnibile: false, rinominabile: true, acceso: true, vivo: true, nomi: ["giochi"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "dado", modulo: "giochi", moduloNome: ["Giochi in chat", "Chat games", "Juegos en el chat"], moduloAcceso: true, titolo: ["Dado", "Dice", "Dado"], cosa: ["Tira un dado. Con !dado 2d20 ne tira altri.", "Rolls a die. With !dado 2d20 it rolls others.", "Tira un dado. Con !dado 2d20 tira otros."], costa: false, attesa: 3, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["dado", "roll"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
@@ -17968,16 +17990,17 @@ function pannelloGiochi() {
       <p class="spazio-sopra"><button class="btn" id="btn-salva-gcmd">${L('Salva i comandi', 'Save the commands', 'Guardar los comandos')}</button></p>
     </div>
     <div class="carta">
+      <h2>${_hIco(ICO.dado)}${L('Le regole di ogni gioco', 'Each game\'s rules', 'Las reglas de cada juego')}</h2>
+      <p>${L('Costi, premi, attese, probabilità e testi, gioco per gioco. Accanto al nome vedi quanto rende con i valori che hai scelto, e cambia mentre li muovi.', 'Costs, prizes, waits, odds and texts, game by game. Next to the name you see what it pays out with the values you chose, and it changes as you move them.', 'Costes, premios, esperas, probabilidades y textos, juego por juego. Junto al nombre ves cuánto rinde con los valores que elegiste, y cambia mientras los mueves.')}</p>
+      <div id="regole-giochi" class="spazio-sopra">${attesaHtml('p')}</div>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-regole">${L('Salva le regole', 'Save the rules', 'Guardar las reglas')}</button></p>
+    </div>
+    <div class="carta">
       <h2>${_hIco(ICO.medaglia)}${L('Punti & classifica', 'Points & leaderboard', 'Puntos y clasificación')}</h2>
-      <p>${L('Decidi quanti', 'Decide how many', 'Decide cuántas')} <strong class="primo-piano">${esc(s.nomeMonete)}</strong> ${L('si guadagnano e i premi dei giochi. La classifica', 'are earned and the game prizes. The leaderboard', 'se ganan y los premios de los juegos. La clasificación')} <code>!classifica</code> ${L('mostra i primi in cima.', 'shows the top players.', 'muestra a los primeros.')}</p>
+      <p>${L('Decidi quanti', 'Decide how many', 'Decide cuántas')} <strong class="primo-piano">${esc(s.nomeMonete)}</strong> ${L('si guadagnano. La classifica', 'are earned. The leaderboard', 'se ganan. La clasificación')} <code>!classifica</code> ${L('mostra i primi in cima. Costi e premi dei giochi stanno nelle regole di ogni gioco, qui sopra.', 'shows the top players. Game costs and prizes are in each game\'s rules, above.', 'muestra a los primeros. Costes y premios de los juegos están en las reglas de cada juego, aquí arriba.')}</p>
       <div class="griglia-punti">
         <label class="campo-num">${L('Punti per messaggio', 'Points per message', 'Puntos por mensaje')}<input type="number" id="pt-perMessaggio" min="0" max="1000" value="${s.punti.perMessaggio}"></label>
         <label class="campo-num">${L('…ogni quanti secondi', '…every how many seconds', '…cada cuántos segundos')}<input type="number" id="pt-ogniSecondi" min="5" max="3600" value="${s.punti.ogniSecondi}"></label>
-        <label class="campo-num">${L('Premio trivia', 'Trivia prize', 'Premio trivia')}<input type="number" id="pt-trivia" min="0" max="100000" value="${s.punti.trivia}"></label>
-        <label class="campo-num">${L('Premio duello', 'Duel prize', 'Premio duelo')}<input type="number" id="pt-duello" min="0" max="100000" value="${s.punti.duello}"></label>
-        <label class="campo-num">${L('Slot: costo giocata', 'Slot: play cost', 'Slot: coste por tirada')}<input type="number" id="pt-slotCosto" min="0" max="100000" value="${s.punti.slotCosto}"></label>
-        <label class="campo-num">${L('Slot: vincita tris', 'Slot: three-of-a-kind win', 'Slot: premio trío')}<input type="number" id="pt-slotVinci" min="0" max="1000000" value="${s.punti.slotVinci}"></label>
-        <label class="campo-num">${L('Slot: vincita coppia', 'Slot: pair win', 'Slot: premio pareja')}<input type="number" id="pt-slotCoppia" min="0" max="100000" value="${s.punti.slotCoppia}"></label>
         <label class="campo-num">${L('Quanti in classifica', 'How many on the board', 'Cuántos en la clasificación')}<input type="number" id="pt-topN" min="3" max="10" value="${s.punti.topN}"></label>
       </div>
       <h3 class="sotto-titolo">${L('Guadagno mentre guardano', 'Earning while watching', 'Ganancia mientras miran')}</h3>
@@ -17991,7 +18014,7 @@ function pannelloGiochi() {
         <label class="campo-num">${L('Non scende sotto', 'Never below', 'No baja de')}<input type="number" id="pt-lurkMinimo" min="0" max="1" step="0.05" value="${s.punti.lurkMinimo}"></label>
       </div>
       <p><label class="riga-check"><input type="checkbox" id="pt-soloLive"${s.punti.soloLive !== false ? ' checked' : ''}> ${L('Solo mentre sei in diretta', 'Only while you are live', 'Solo mientras estás en directo')}</label></p>
-      <p class="suggerimento">${L('“Punti per messaggio” a 0 = nessun guadagno passivo dal chattare. Lo slot tris scala su questo valore (pieno, 7⃣ 75%, resto 40%).', '“Points per message” at 0 = no passive earning from chatting. The slot three-of-a-kind scales on this value (full, 7⃣ 75%, rest 40%).', '“Puntos por mensaje” a 0 = sin ganancia pasiva por charlar. El trío de la slot escala sobre este valor (completo, 7⃣ 75%, resto 40%).')}</p>
+      <p class="suggerimento">${L('“Punti per messaggio” a 0 = nessun guadagno passivo dal chattare.', '“Points per message” at 0 = no passive earning from chatting.', '“Puntos por mensaje” a 0 = sin ganancia pasiva por charlar.')}</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">${L('Salva punti', 'Save points', 'Guardar puntos')}</button></p>
     </div>
     <div class="carta">
@@ -22176,6 +22199,21 @@ function attivaPiattaforma() {
   document.getElementById('btn-salva-gcmd-2')?.addEventListener('click', salvaGiochiComandi);
 
 
+  document.getElementById('btn-salva-regole')?.addEventListener('click', () => conErrore(async () => {
+    const box = _g('regole-giochi');
+    if (!box || !_regole) return;
+    const giochiConf = {};
+    box.querySelectorAll('[data-rg-g]').forEach((el) => {
+      const t = el.dataset.rgT;
+      const v = t === 'elenco' || t === 'tabella' ? el.value.split('\n').map((x) => x.trim()).filter(Boolean) : Number(el.value);
+      if (!giochiConf[el.dataset.rgG]) giochiConf[el.dataset.rgG] = {};
+      giochiConf[el.dataset.rgG][el.dataset.rgK] = v;
+    });
+    _regole = await api('/api/streamer/giochi/regole', { method: 'POST', body: { giochiConf } });
+    _rgDisegna();
+    toast(L('Regole salvate ✓', 'Rules saved ✓', 'Reglas guardadas ✓'));
+  }));
+
   document.getElementById('btn-salva-punti')?.addEventListener('click', () => conErrore(async () => {
     const v = (id) => Number(document.getElementById(id).value);
     await salvaImpostazioni({ punti: {
@@ -22186,9 +22224,7 @@ function attivaPiattaforma() {
       lurkPasso: parseFloat(document.getElementById('pt-lurkPasso')?.value) ?? 0.15,
       lurkMinimo: parseFloat(document.getElementById('pt-lurkMinimo')?.value) ?? 0.35,
       soloLive: !!document.getElementById('pt-soloLive')?.checked,
-      trivia: v('pt-trivia'), duello: v('pt-duello'),
-      slotCosto: v('pt-slotCosto'), slotVinci: v('pt-slotVinci'),
-      slotCoppia: v('pt-slotCoppia'), topN: v('pt-topN'),
+      topN: v('pt-topN'),
     } }, 'Punti aggiornati');
   }));
 
@@ -23132,7 +23168,7 @@ function caricaDatiScheda(id) {
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); }
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); caricaRegoleGiochi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaInstagram(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }
   if (id === 'dcavvisi') { _dcaCollega(); caricaDcAvvisi(); caricaDcEventi(); }
@@ -23329,6 +23365,143 @@ async function caricaClip() {
   } catch (e) {
     ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`;
   }
+}
+
+let _regole = null;
+
+function valutaResaGioco(resa, v, contesto = {}) {
+  if (!resa) return null;
+  const importo = (e) => {
+    if (typeof e === 'number') return e;
+    const base = Number(v[e[0]]) || 0;
+    return e[1] === 1 ? base : Math.round(base * e[1]);
+  };
+  if (resa.tipo === 'puntata') {
+    const costo = typeof resa.costo === 'number' ? resa.costo : Number(v[resa.costo]) || 0;
+    if (!costo) return { tipo: 'puntata', perCento: 0 };
+    const media = resa.esiti.reduce((s, [p, e]) => s + p * importo(e), 0);
+    return { tipo: 'puntata', perCento: Math.round((media / costo) * 1000) / 10 };
+  }
+  if (resa.tipo === 'tabella') {
+    const t = v[resa.tabella] || [];
+    const pesi = t.reduce((s, r) => s + r[2], 0);
+    const media = pesi ? t.reduce((s, r) => s + r[1] * r[2], 0) / pesi : 0;
+    const attesa = Number(v[resa.attesa]) || 1;
+    return { tipo: 'tabella', media: Math.round(media * 10) / 10, perOra: Math.round(media * 3600 / attesa) };
+  }
+  if (resa.tipo === 'crea') {
+    const attesa = Number(v[resa.attesa]) || 1;
+    return { tipo: 'crea', perOra: Math.round((Number(v[resa.premio]) || 0) * 3600 / attesa) };
+  }
+  if (resa.tipo === 'manche') {
+    const ogni = Number(contesto.mancheMinuti) || 0;
+    return { tipo: 'manche', perOra: ogni ? Math.round((Number(v[resa.premio]) || 0) * 60 / ogni) : 0 };
+  }
+  return { tipo: resa.tipo };
+}
+
+function _rgNumero(n) {
+  try { return Number(n).toLocaleString(LINGUA || 'it'); } catch { return String(n); }
+}
+
+function _rgTestoResa(r, ctx) {
+  if (!r) return '';
+  const m = esc(impostazioni().nomeMonete || L('monete', 'coins', 'monedas'));
+  const n = _rgNumero;
+  if (r.tipo === 'puntata') {
+    return r.perCento > 100
+      ? L(`Su 100 ${m} giocate ne tornano ${n(r.perCento)}: così il gioco crea ${m}.`, `Out of 100 ${m} played, ${n(r.perCento)} come back: this way the game creates ${m}.`, `De cada 100 ${m} jugadas vuelven ${n(r.perCento)}: así el juego crea ${m}.`)
+      : L(`Su 100 ${m} giocate ne tornano in media ${n(r.perCento)}.`, `Out of 100 ${m} played, ${n(r.perCento)} come back on average.`, `De cada 100 ${m} jugadas vuelven de media ${n(r.perCento)}.`);
+  }
+  if (r.tipo === 'tabella') {
+    return L(`In media ${n(r.media)} a lancio, fino a ${n(r.perOra)} all'ora. La presenza ne dà ${n(ctx.presenzaOraria)}.`, `On average ${n(r.media)} per cast, up to ${n(r.perOra)} an hour. Presence gives ${n(ctx.presenzaOraria)}.`, `De media ${n(r.media)} por lance, hasta ${n(r.perOra)} por hora. La presencia da ${n(ctx.presenzaOraria)}.`);
+  }
+  if (r.tipo === 'crea') {
+    return r.perOra
+      ? L(`Crea fino a ${n(r.perOra)} ${m} all'ora nel canale.`, `Creates up to ${n(r.perOra)} ${m} an hour in the channel.`, `Crea hasta ${n(r.perOra)} ${m} por hora en el canal.`)
+      : L(`Non crea ${m}: si gioca per l'onore.`, `It creates no ${m}: you play for honour.`, `No crea ${m}: se juega por el honor.`);
+  }
+  if (r.tipo === 'manche') {
+    return L(`Con una manche al massimo ogni ${n(ctx.mancheMinuti)} minuti, fino a ${n(r.perOra)} ${m} all'ora.`, `With a round at most every ${n(ctx.mancheMinuti)} minutes, up to ${n(r.perOra)} ${m} an hour.`, `Con una ronda como máximo cada ${n(ctx.mancheMinuti)} minutos, hasta ${n(r.perOra)} ${m} por hora.`);
+  }
+  if (r.tipo === 'passa') return L(`Le ${m} passano di tasca in tasca: non se ne creano.`, `The ${m} pass from pocket to pocket: none are created.`, `Las ${m} pasan de bolsillo en bolsillo: no se crean.`);
+  return '';
+}
+
+function _rgSopra(r, ctx) {
+  return !!r && ((r.tipo === 'puntata' && r.perCento > 100) || (r.tipo === 'tabella' && r.perOra > ctx.presenzaOraria));
+}
+
+function _rgRiga(t) {
+  const [nome, monete, peso] = String(t).split('|').map((x) => x.trim());
+  const v = Math.round(Number(monete)), w = Math.round(Number(peso));
+  if (!nome || !Number.isFinite(v) || v < 0 || !Number.isFinite(w) || w < 1) return null;
+  return [nome, v, w];
+}
+
+function _rgCampo(g, p, v) {
+  const id = `rg-${g.id}-${p.k}`;
+  const dati = `data-rg-g="${esc(g.id)}" data-rg-k="${esc(p.k)}" data-rg-t="${esc(p.tipo)}"`;
+  if (p.tipo === 'elenco' || p.tipo === 'tabella') {
+    const testo = p.tipo === 'tabella' ? v.map((r) => r.join(' | ')).join('\n') : v.join('\n');
+    const seg = (p.segnaposto || []).map((x) => `{${x}}`).join(', ');
+    return `<label class="campo" for="${id}">${esc(L(...p.eti))}</label>
+      <textarea id="${id}" rows="${Math.min(8, Math.max(3, v.length))}" class="campo-largo" style="resize:vertical" ${dati}>${esc(testo)}</textarea>
+      <p class="suggerimento" data-rg-nota="${esc(g.id)}-${esc(p.k)}">${p.tipo === 'tabella'
+        ? L('Una riga per cosa. La rarità è un peso: 30 esce il doppio di 15.', 'One line per item. Rarity is a weight: 30 comes out twice as often as 15.', 'Una línea por cosa. La rareza es un peso: 30 sale el doble que 15.')
+        : (seg ? L(`Una riga per frase. Puoi usare ${seg}.`, `One line per sentence. You can use ${seg}.`, `Una línea por frase. Puedes usar ${seg}.`) : L('Una riga per frase.', 'One line per sentence.', 'Una línea por frase.'))}</p>`;
+  }
+  return `<label class="campo-num">${esc(L(...p.eti))}<input type="number" id="${id}" min="${p.min}" max="${p.max}" step="1" value="${Number(v)}" ${dati}></label>`;
+}
+
+function _rgGioco(g, ctx) {
+  const numeri = g.param.filter((p) => p.tipo !== 'elenco' && p.tipo !== 'tabella');
+  const testi = g.param.filter((p) => p.tipo === 'elenco' || p.tipo === 'tabella');
+  const r = g.resaOra;
+  return `<details class="regola-gioco" data-rg="${esc(g.id)}">
+    <summary><strong>${esc(L(...g.nome))}</strong><span class="regola-resa${_rgSopra(r, ctx) ? ' sopra' : ''}" data-rg-resa="${esc(g.id)}">${_rgTestoResa(r, ctx)}</span></summary>
+    <div class="regola-corpo">
+      ${numeri.length ? `<div class="griglia-punti">${numeri.map((p) => _rgCampo(g, p, g.valori[p.k])).join('')}</div>` : ''}
+      ${testi.map((p) => _rgCampo(g, p, g.valori[p.k])).join('')}
+    </div>
+  </details>`;
+}
+
+function _rgBozza(box, id) {
+  const v = {};
+  box.querySelectorAll(`[data-rg-g="${id}"]`).forEach((el) => {
+    const t = el.dataset.rgT;
+    if (t === 'elenco') v[el.dataset.rgK] = el.value.split('\n').map((x) => x.trim()).filter(Boolean);
+    else if (t === 'tabella') v[el.dataset.rgK] = el.value.split('\n').map(_rgRiga).filter(Boolean);
+    else v[el.dataset.rgK] = Math.round(Number(el.value));
+  });
+  return v;
+}
+
+function _rgDisegna() {
+  const box = _g('regole-giochi');
+  if (!box || !_regole) return;
+  const aperti = new Set([...box.querySelectorAll('details[open]')].map((d) => d.dataset.rg));
+  box.innerHTML = _regole.giochi.map((g) => _rgGioco(g, _regole.contesto)).join('');
+  box.querySelectorAll('details').forEach((d) => { if (aperti.has(d.dataset.rg)) d.open = true; });
+  if (box.dataset.collegato) return;
+  box.dataset.collegato = '1';
+  box.addEventListener('input', (ev) => {
+    const el = ev.target.closest('[data-rg-g]');
+    if (!el || !_regole) return;
+    const id = el.dataset.rgG;
+    const g = _regole.giochi.find((x) => x.id === id);
+    if (!g) return;
+    const r = valutaResaGioco(g.resa, { ...g.valori, ..._rgBozza(box, id) }, _regole.contesto);
+    const span = box.querySelector(`[data-rg-resa="${id}"]`);
+    if (span) { span.innerHTML = _rgTestoResa(r, _regole.contesto); span.classList.toggle('sopra', _rgSopra(r, _regole.contesto)); }
+  });
+}
+
+async function caricaRegoleGiochi() {
+  if (!_g('regole-giochi')) return;
+  try { _regole = await api('/api/streamer/giochi/regole'); } catch (e) { _regole = null; return; }
+  _rgDisegna();
 }
 
 async function caricaGiochi() {
