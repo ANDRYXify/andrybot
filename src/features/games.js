@@ -782,7 +782,7 @@ export function esitoMorra(tu, io) {
 
 // Quanto torna di una puntata: la resa del pannello e' questa funzione.
 export function pagaMorra(esito, puntata, c) {
-  if (esito === 'vinci') return Math.round((puntata * c.vincita) / 100);
+  if (esito === 'vinci') return Math.floor((puntata * c.vincita) / 100);
   if (esito === 'pari') return puntata;
   return 0;
 }

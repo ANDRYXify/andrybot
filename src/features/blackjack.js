@@ -66,7 +66,7 @@ export function esitoFinale(io, banco) {
   return b > 21 || a > b ? 'vinci' : a === b ? 'pari' : 'perdi';
 }
 export function rende(esito, posta, vincitaBJ) {
-  return esito === 'bj' ? Math.round(posta * vincitaBJ / 100) : esito === 'vinci' ? posta * 2 : esito === 'pari' ? posta : 0;
+  return esito === 'bj' ? Math.floor(posta * vincitaBJ / 100) : esito === 'vinci' ? posta * 2 : esito === 'pari' ? posta : 0;
 }
 function giocaBanco(banco, pescaFn = pesca) {
   while (punti(banco).tot < 17) banco.push(pescaFn());

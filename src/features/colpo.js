@@ -40,7 +40,7 @@ export function esitoColpo(banda, c, caso = Math.random) {
   const p = probabilitaColpo(banda.length, c);
   return banda.map(([chi, m]) => {
     const scappa = caso() < p;
-    return { chi, nome: m.nome, posta: m.posta, scappa, netto: scappa ? Math.round(m.posta * c.vincita / 100) - m.posta : -m.posta };
+    return { chi, nome: m.nome, posta: m.posta, scappa, netto: scappa ? Math.floor(m.posta * c.vincita / 100) - m.posta : -m.posta };
   });
 }
 

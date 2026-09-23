@@ -142,6 +142,14 @@ moduli del server. Una prova la estrae da `app.js` e la confronta con quella
 del server su valori a caso: se divergono, è rosso. E la resa della slot si
 confronta col motore su **tutte le 216 tirate** possibili.
 
+**Le vincite si arrotondano per difetto.** La resa è «su 100 monete», ma le
+poste vere sono di tutte le misure, e una vincita arrotondata al più vicino
+regala proprio alle poste piccole: al colpo, una moneta che torna 1,6 diventava
+2, cioè il 120%; al blackjack una puntata dispari col 3 a 2 prendeva mezza
+moneta in più. Colpo, blackjack e morra pagano la parte intera, così **nessuna
+posta rende più di quanto dice il pannello**: una prova lo verifica per ogni
+posta da 1 a 300 e per tutta la corsa delle manopole.
+
 ### Chi aveva cambiato un valore lo tiene
 
 Costo e vincite della slot, premio del duello e della manche stavano in
