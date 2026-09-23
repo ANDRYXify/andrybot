@@ -2341,7 +2341,7 @@ function collegaTgDestinazioni() {
       return conErrore(async () => {
         if (!(await chiediSe({ titolo: L('Tolgo questa destinazione?', 'Remove this destination?', '¿Quito este destino?'),
           testo: L('Gli avvisi non arriveranno più lì. Puoi rimetterla quando vuoi.', 'Alerts will stop landing there. You can add it back whenever you like.', 'Los avisos dejarán de llegar ahí. Puedes volver a ponerlo cuando quieras.'),
-          si: L('Toglila', 'Remove it', 'Quítalo') }))) return;
+          si: L('Toglila', 'Remove it', 'Quítalo'), pericolo: true }))) return;
         await api('/api/streamer/telegram/destinazioni/' + d.dataset.dest, { method: 'DELETE' });
         await caricaTgDestinazioni();
       });
@@ -2606,7 +2606,7 @@ function collegaFeed() {
       return conErrore(async () => {
         if (!(await chiediSe({ titolo: L('Tolgo questa sorgente?', 'Remove this source?', '¿Quito esta fuente?'),
           testo: L('Smetto di guardare se pubblica qualcosa di nuovo. Puoi rimetterla quando vuoi.', 'I stop checking it for new posts. You can add it back whenever you like.', 'Dejo de mirar si publica algo nuevo. Puedes volver a ponerla cuando quieras.'),
-          si: L('Toglila', 'Remove it', 'Quítala') }))) return;
+          si: L('Toglila', 'Remove it', 'Quítala'), pericolo: true }))) return;
         await api('/api/streamer/feed/' + tg.dataset.fdTogli, { method: 'DELETE' });
         await caricaFeed();
       });
@@ -6114,7 +6114,7 @@ async function caricaTgLogin() {
     document.getElementById('tgl-scollega')?.addEventListener('click', () => conErrore(async () => {
       if (!(await chiediSe({ titolo: L('Scollego Telegram da questo canale?', 'Unlink Telegram from this channel?', '¿Desvinculo Telegram de este canal?'),
         testo: L('Dalla Mini App non potrai più aprire questo canale, finché non lo ricolleghi.', 'You will not be able to open this channel from the Mini App until you link it again.', 'Desde la Mini App no podrás abrir este canal hasta que lo vuelvas a vincular.'),
-        si: L('Scollega', 'Unlink', 'Desvincula') }))) return;
+        si: L('Scollega', 'Unlink', 'Desvincula'), pericolo: true }))) return;
       await api('/api/tgapp/scollega', { method: 'POST', body: {} });
       toast(L('Telegram scollegato.', 'Telegram unlinked.', 'Telegram desvinculado.')); caricaTgLogin();
     }));
@@ -11994,7 +11994,7 @@ function appendiConsolify() {
     if (id === 're-scorda') {
       if (!(await chiediSe({ titolo: L('Scordo indirizzo e password?', 'Forget address and password?', '¿Olvido dirección y contraseña?'),
         testo: L('Stanno solo su questo computer, e le riscrivi quando vuoi.', 'They only live on this computer, and you can type them again whenever you like.', 'Solo viven en este ordenador, y las vuelves a escribir cuando quieras.'),
-        si: L('Scordale', 'Forget them', 'Olvídalas') }))) return;
+        si: L('Scordale', 'Forget them', 'Olvídalas'), pericolo: true }))) return;
       RegiaEsterna.chiudi(); RegiaEsterna.scorda();
       ['re-ip', 're-porta', 're-pass'].forEach((k) => { const el = document.getElementById(k); if (el) el.value = k === 're-ip' ? '127.0.0.1' : k === 're-porta' ? '4455' : ''; });
       _cons.scene = []; disegnaSpiaRegia(); await caricaScene();
@@ -14553,7 +14553,7 @@ async function caricaEmote7TV() {
     document.getElementById('svtv-scollega')?.addEventListener('click', () => conErrore(async () => {
       if (!(await chiediSe({ titolo: L('Scollego 7TV?', 'Disconnect 7TV?', '¿Desconecto 7TV?'),
         testo: L('Cancello il suo token: da qui non potrai più cambiare le emote, finché non lo ricolleghi.', 'I delete its token: you will not be able to change emotes from here until you connect it again.', 'Borro su token: desde aquí no podrás cambiar las emotes hasta que lo vuelvas a conectar.'),
-        si: L('Scollega', 'Disconnect', 'Desconecta') }))) return;
+        si: L('Scollega', 'Disconnect', 'Desconecta'), pericolo: true }))) return;
       await api('/api/seventv/disconnect', { method: 'POST', body: {} });
       toast(L('7TV scollegato.', '7TV disconnected.', '7TV desconectado.')); caricaEmote7TV();
     }));
@@ -14693,7 +14693,7 @@ async function _svtvCaricaSet() {
   box.querySelectorAll('.svtv-rimuovi').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
     if (!(await chiediSe({ titolo: L(`Tolgo «${b.dataset.nome}» dal tuo canale?`, `Remove «${b.dataset.nome}» from your channel?`, `¿Quito «${b.dataset.nome}» de tu canal?`),
       testo: L('Puoi rimetterla da 7TV quando vuoi.', 'You can add it back from 7TV whenever you like.', 'Puedes volver a ponerla desde 7TV cuando quieras.'),
-      si: L('Toglila', 'Remove it', 'Quítala') }))) return;
+      si: L('Toglila', 'Remove it', 'Quítala'), pericolo: true }))) return;
     await api('/api/seventv/rimuovi', { method: 'POST', body: { emoteId: b.dataset.id } });
     toast(L('Emote rimossa.', 'Emote removed.', 'Emote quitada.')); _svtvCaricaSet();
   })));
@@ -16279,7 +16279,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
   if (spegni) spegni.onclick = () => conErrore(async () => {
     if (!(await chiediSe({ titolo: L('Tolgo la pagina dal web?', 'Take the page offline?', '¿Quito la página de la web?'),
       testo: L('Chi apre il tuo indirizzo non la trova più. Quello che c\'è dentro resta salvato, e la rimetti online quando vuoi.', 'Whoever opens your address will not find it anymore. What is inside stays saved, and you can put it back online whenever you like.', 'Quien abra tu dirección ya no la encontrará. Lo que tiene dentro queda guardado, y la vuelves a poner en línea cuando quieras.'),
-      si: L('Toglila dal web', 'Take it offline', 'Quítala de la web') }))) return;
+      si: L('Toglila dal web', 'Take it offline', 'Quítala de la web'), pericolo: true }))) return;
     await api(lpApi(), { method: 'DELETE' });
     toast(L('Pagina tolta dal web.', 'Page taken offline.', 'Página quitada de la web.'));
     conScrollFermo(() => caricaPaginaLink());
@@ -19619,7 +19619,7 @@ function collegaDcServer() {
   _g('dcs-ricomincia')?.addEventListener('click', async () => {
     if (!(await chiediSe({ titolo: L('Butto via questa traccia?', 'Throw this track away?', '¿Tiro esta plantilla?'),
       testo: L('Riparto dalla scelta. Il server non lo tocco.', 'I go back to the choice. I do not touch the server.', 'Vuelvo a la elección. No toco el servidor.'),
-      si: L('Buttala via', 'Throw it away', 'Tírala') }))) return;
+      si: L('Buttala via', 'Throw it away', 'Tírala'), pericolo: true }))) return;
     _dcs = { ..._dcs, preset: null };
     _dcsMostra();
     _g('dcs-diff') && (_g('dcs-diff').innerHTML = '');
@@ -21023,7 +21023,7 @@ function attivaPiattaforma() {
       } else if (cosa === 'scollega') {
         if (!(await chiediSe({ titolo: L('Scollego il conto Stripe?', 'Disconnect the Stripe account?', '¿Desconecto la cuenta de Stripe?'),
           testo: L('Il conto resta tuo. Qui le donazioni sul conto si fermano, finché non lo ricolleghi.', 'The account stays yours. Donations to the account stop here until you connect it again.', 'La cuenta sigue siendo tuya. Aquí las donaciones en la cuenta se detienen hasta que la vuelvas a conectar.'),
-          si: L('Scollega', 'Disconnect', 'Desconecta') }))) return;
+          si: L('Scollega', 'Disconnect', 'Desconecta'), pericolo: true }))) return;
         await api('/api/donazioni/conto/scollega', { method: 'POST', body: {} });
         toast(L('Conto scollegato', 'Account disconnected', 'Cuenta desconectada'));
         caricaStatoDonazioni(false);
@@ -21039,7 +21039,7 @@ function attivaPiattaforma() {
       } else if (cosa === 'satispay-scollega') {
         if (!(await chiediSe({ titolo: L('Scollego Satispay?', 'Disconnect Satispay?', '¿Desconecto Satispay?'),
           testo: L('Il tuo negozio online resta nel pannello di Satispay. Qui i pagamenti con Satispay si fermano, finché non lo ricolleghi.', 'Your online shop stays in the Satispay panel. Satispay payments stop here until you connect it again.', 'Tu tienda online sigue en el panel de Satispay. Aquí los pagos con Satispay se detienen hasta que lo vuelvas a conectar.'),
-          si: L('Scollega', 'Disconnect', 'Desconecta') }))) return;
+          si: L('Scollega', 'Disconnect', 'Desconecta'), pericolo: true }))) return;
         await api('/api/donazioni/satispay/scollega', { method: 'POST', body: {} });
         toast(L('Satispay scollegato', 'Satispay disconnected', 'Satispay desconectado'));
         caricaStatoDonazioni(false);
@@ -21499,7 +21499,7 @@ function attivaPiattaforma() {
   document.getElementById('btn-tg-scollega')?.addEventListener('click', () => conErrore(async () => {
     if (!(await chiediSe({ titolo: L('Scollego il bot di Telegram?', 'Disconnect the Telegram bot?', '¿Desconecto el bot de Telegram?'),
       testo: L('Per riattivarlo dovrai incollare di nuovo il suo token.', 'To turn it back on you will have to paste its token again.', 'Para reactivarlo tendrás que volver a pegar su token.'),
-      si: L('Scollega', 'Disconnect', 'Desconecta') }))) return;
+      si: L('Scollega', 'Disconnect', 'Desconecta'), pericolo: true }))) return;
     await api('/api/streamer/telegram', { method: 'DELETE' });
     toast(L('Telegram scollegato.', 'Telegram disconnected.', 'Telegram desconectado.'));
     stato = await api('/api/me'); render();
@@ -24552,7 +24552,7 @@ async function caricaPiattaforme() {
     const nomeP = { kick: 'Kick', youtube: 'YouTube' }[id] || id;
     if (!(await chiediSe({ titolo: L(`Scollego ${nomeP}?`, `Disconnect ${nomeP}?`, `¿Desconecto ${nomeP}?`),
       testo: L('Il bot smette di lavorare lì, finché non lo ricolleghi.', 'The bot stops working there until you connect it again.', 'El bot deja de trabajar ahí hasta que lo vuelvas a conectar.'),
-      si: L('Scollega', 'Disconnect', 'Desconecta') }))) return;
+      si: L('Scollega', 'Disconnect', 'Desconecta'), pericolo: true }))) return;
     await api('/api/streamer/' + id, { method: 'DELETE' });
     toast(L('Scollegata', 'Disconnected', 'Desconectada'));
     caricaPiattaforme();
@@ -24836,7 +24836,7 @@ async function caricaTabellaAdmin() {
         } else {
           if (azione === 'disabled' && !(await chiediSe({ titolo: L(`Disabilito ${login}?`, `Disable ${login}?`, `¿Deshabilito a ${login}?`),
             testo: L('Il bot esce dal suo canale. Lo riabiliti quando vuoi.', 'The bot leaves their channel. You can enable it again whenever you like.', 'El bot sale de su canal. Lo vuelves a habilitar cuando quieras.'),
-            si: L('Disabilita', 'Disable', 'Deshabilita') }))) return;
+            si: L('Disabilita', 'Disable', 'Deshabilita'), pericolo: true }))) return;
           await api('/api/admin/stato', { method: 'POST', body: { login, status: azione } });
           toast(azione === 'approved' ? L(`${login} approvato (manuale)! Il bot si sta pre-addestrando.`, `${login} approved (manual)! The bot is pre-training.`, `¡${login} aprobado (manual)! El bot se está pre-entrenando.`) : L(`${login} disabilitato (manuale).`, `${login} disabled (manual).`, `${login} deshabilitado (manual).`));
         }
@@ -24980,7 +24980,7 @@ async function caricaRichiesteMod() {
       if (b.dataset.modNo) return conErrore(async () => {
         if (!(await chiediSe({ titolo: L('Rifiuto questa richiesta?', 'Decline this request?', '¿Rechazo esta solicitud?'),
           testo: L('Chi l\'ha mandata non diventa moderatore.', 'Whoever sent it does not become a moderator.', 'Quien la envió no se convierte en moderador.'),
-          si: L('Rifiuta', 'Decline', 'Rechaza') }))) return;
+          si: L('Rifiuta', 'Decline', 'Rechaza'), pericolo: true }))) return;
         await api('/api/moderatori/' + b.dataset.modNo + '/rifiuta', { method: 'POST', body: {} });
         toast(L('Fatto.', 'Done.', 'Hecho.')); caricaRichiesteMod();
       });
@@ -25062,7 +25062,7 @@ async function caricaModeratori() {
       if (b.dataset.modRimuovi) return conErrore(async () => {
         if (!(await chiediSe({ titolo: L('Tolgo questo moderatore?', 'Remove this moderator?', '¿Quito este moderador?'),
           testo: L('Se l\'invito era ancora in attesa, lo annullo. Se era già dentro, non entra più nel pannello.', 'If the invite was still pending, I cancel it. If they were already in, they can no longer enter the panel.', 'Si la invitación aún estaba pendiente, la anulo. Si ya estaba dentro, ya no entra al panel.'),
-          si: L('Toglilo', 'Remove them', 'Quítalo') }))) return;
+          si: L('Toglilo', 'Remove them', 'Quítalo'), pericolo: true }))) return;
         await api('/api/moderatori/' + b.dataset.modRimuovi, { method: 'DELETE' });
         toast(L('Fatto.', 'Done.', 'Hecho.')); caricaModeratori();
       });

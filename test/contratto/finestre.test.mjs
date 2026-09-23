@@ -203,3 +203,24 @@ test('ogni copia passa da copiaTesto, che non fallisce in silenzio', () => {
   assert.match(pezzo('copiaTesto'), /catch \{\n\s+return chiediCopia\(\{ \.\.\.finestra, testo, msgOk \}\);/,
     'se il browser non lascia copiare, il testo compare gia\' selezionato');
 });
+
+// ---- chi distrugge si conferma in rosso ---------------------------------------
+
+test('una conferma che toglie, elimina o scollega ha il tasto rosso e il fuoco su «Lascia stare»', () => {
+  // Il verbo del «si'» dice cosa succede: se porta via qualcosa che poi va
+  // rifatto a mano, la conferma e' pericolosa. Un Invio dato per abitudine non
+  // deve bastare.
+  const DISTRUGGE = /^(Togli|Elimin|Scolleg|Butt|Azzer|Scart|Rimbors|Rifiut|Scord|Disabilit|Rimuov|Cancell)/;
+  const senza = [];
+  for (const f of ['src/web/public/app.js', 'src/web/public/carta-editor.js']) {
+    const src = leggi(f);
+    for (const m of src.matchAll(/chiediSe\(\{/g)) {
+      let k = m.index + m[0].length - 1, d = 0;
+      for (; k < src.length; k++) { if (src[k] === '{') d++; else if (src[k] === '}' && --d === 0) break; }
+      const ogg = src.slice(m.index, k + 1);
+      const si = /si: L\('([^']*)'/.exec(ogg);
+      if (si && DISTRUGGE.test(si[1]) && !/pericolo: true/.test(ogg)) senza.push(`${f}:${src.slice(0, m.index).split('\n').length} «${si[1]}»`);
+    }
+  }
+  assert.deepEqual(senza, []);
+});

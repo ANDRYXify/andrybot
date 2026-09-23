@@ -29,6 +29,8 @@ const guai = [];
 pg.on('pageerror', (e) => guai.push('pageerror: ' + e.message));
 pg.on('console', (m) => { if (m.type() === 'error') guai.push('console: ' + m.text()); });
 pg.on('dialog', (d) => d.accept());
+// Il pannello chiede con le sue finestre: «si'» si preme come lo preme chiunque.
+const conferma = async () => { await pg.waitForSelector('.mdl-chiedi.dentro [data-mdl="si"]', { timeout: 5000 }); await pg.click('.mdl-chiedi.dentro [data-mdl="si"]'); await pg.waitForTimeout(300); };
 
 const quanti = (sel) => pg.$$(sel).then((n) => n.length);
 
@@ -50,7 +52,7 @@ try {
   chiedi(await quanti('.dcs-cima .dcs-ch') === 1, 'compreso il canale che sta in cima, fuori da tutte');
 
   await pg.click('#dcs-ricomincia');
-  await pg.waitForTimeout(300);
+  await conferma();
   chiedi(await quanti('.dcs-traccia') >= 3, 'e si puo\' tornare alla scelta');
   await pg.click('[data-dcs="traccia"]');
   await pg.waitForTimeout(300);
@@ -97,7 +99,7 @@ try {
   // gia' una volta con «Leggi il mio server», e `verifica-bottoni` non puo'
   // vederlo — per questo qui si preme.
   await pg.click('#dcs-ricomincia');
-  await pg.waitForTimeout(300);
+  await conferma();
   await pg.click('[data-dcs="traccia"][data-id="dirette"]');
   await pg.waitForTimeout(400);
   const ruoli = () => quanti('.dcs-ruolo');
