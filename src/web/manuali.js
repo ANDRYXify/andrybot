@@ -18,6 +18,14 @@ import { CATALOGO, giocoDi, valoriDi, valutaResa, presenzaOraria, MANCHE_TIPI } 
 const DI_SERIE = (id) => valoriDi({}, id);
 const RESA = (id) => valutaResa(giocoDi(id).resa, DI_SERIE(id), { mancheMinuti: 15 });
 const CIFRA = (n) => Number(n).toLocaleString('it-IT');
+// Le due attese di un gioco, come le legge chi gioca.
+const ATTESE = (id) => {
+  const v = DI_SERIE(id);
+  const parti = [];
+  if (v.attesaTesta) parti.push(`${ATTESA(v.attesaTesta)} a testa`);
+  if (v.attesaTutti) parti.push(`${ATTESA(v.attesaTutti)} per tutti`);
+  return parti.join(', ') || '—';
+};
 const ATTESA = (s) => (s >= 60 && s % 60 === 0 ? `${s / 60} min` : `${s}s`);
 const TIPO_PARAM = { monete: 'monete', secondi: 'secondi', percento: 'su 100' };
 function righeRegole() {
@@ -106,6 +114,7 @@ const GIOCHI = {
       'Nella carta «Le regole di ogni gioco» ogni gioco ha le sue manopole: costi, premi, attese, probabilità e i testi che dice in chat. Accanto al nome vedi quanto rende con i valori che hai scelto, e cambia mentre li muovi.',
       `Di serie il banco vince sempre un po', e un gioco gratis non rende più della presenza: in un'ora di presenza e partecipazione si prendono ${CIFRA(presenzaOraria({}))} monete, e la pesca al ritmo massimo ne dà ${CIFRA(RESA('pesca').perOra)}. Puoi cambiare tutto: il pannello ti mostra cosa succede all'economia, e se un gioco comincia a creare monete lo dice in rosso.`,
       'Un testo con un segnaposto che quel gioco non conosce non si salva: in chat uscirebbe con le graffe.',
+      'Ogni gioco ha due attese, e le scegli tu. <strong>A testa</strong>: dopo che una persona ha giocato, aspetta lei. <strong>Per tutti</strong>: dopo che qualcuno ha giocato, aspetta tutto il canale. Zero vuol dire nessuna attesa. L\'attesa parte quando si gioca davvero: un comando scritto male non la consuma. Chi la trova se lo sente dire una volta, con quanto manca, e poi il bot tace fino alla fine; per <code>!colpisci</code> tace sempre, perché si scrive a raffica.',
     ] },
     { tabella: righeRegole() },
 
@@ -113,31 +122,31 @@ const GIOCHI = {
     { p: ['Funzionano appena i giochi sono accesi, senza configurare niente. <code>!giochi</code> li elenca in chat — e l\'elenco che scrive è quello vero: i giochi accesi, coi nomi che hai scelto tu.'] },
     { tabella: [
       ['Comando', 'Anche', 'Cosa fa', 'Attesa'],
-      ['<code>!dado</code>', '<code>!roll</code>', 'Tira un dado. <code>!dado 2d20</code> per tirarne altri.', `${ATTESA(DI_SERIE('dado').attesa)} a testa`],
-      ['<code>!moneta</code>', '<code>!coin</code>', 'Testa o croce.', `${ATTESA(DI_SERIE('moneta').attesa)} a testa`],
-      ['<code>!8ball</code>', '<code>!palla8</code>', 'Risponde a una domanda. Serve la domanda.', `${ATTESA(DI_SERIE('8ball').attesa)} a testa`],
+      ['<code>!dado</code>', '<code>!roll</code>', 'Tira un dado. <code>!dado 2d20</code> per tirarne altri.', ATTESE('dado')],
+      ['<code>!moneta</code>', '<code>!coin</code>', 'Testa o croce.', ATTESE('moneta')],
+      ['<code>!8ball</code>', '<code>!palla8</code>', 'Risponde a una domanda. Serve la domanda.', ATTESE('8ball')],
       ['<code>!monete</code>', '<code>!punti</code> <code>!bilancio</code>', 'Quante ne hai.', '—'],
       ['<code>!classifica</code>', '<code>!top</code>', 'I primi del pubblico.', '—'],
       ['<code>!classifica mod</code>', '<code>!classificamod</code> <code>!classificastaff</code> <code>!topmod</code>', 'I primi dello staff.', '—'],
-      ['<code>!slot</code>', '—', 'Macchinetta: paghi, giri, forse vinci.', `${ATTESA(DI_SERIE('slot').attesa)} a testa`],
-      ['<code>!duello @nome</code>', '<code>!duel</code>', 'Sfida chi è in chat. Vince uno dei due.', `${ATTESA(DI_SERIE('duello').attesa)} di canale`],
-      ['<code>!trivia</code>', '<code>!quiz</code>', 'Apre una domanda per tutti.', '15s di canale'],
-      ['<code>!manche</code>', '<code>!gioca</code>', 'Apre una manche a caso fra quelle del giro. <code>!manche impiccato</code> per sceglierla.', '10s di canale'],
-      ['<code>!pesca</code>', '<code>!fish</code>', 'Cala la canna. Può uscire di tutto.', `${ATTESA(DI_SERIE('pesca').attesa)} a testa`],
-      ['<code>!roulette</code>', '<code>!rul</code>', 'Punti su rosso, nero, verde o un numero.', `${ATTESA(DI_SERIE('roulette').attesa)} a testa`],
-      ['<code>!furto @nome</code>', '<code>!rapina</code>', 'Provi a rubare. Se ti beccano, paghi.', `${ATTESA(DI_SERIE('furto').attesa)} a testa`],
-      ['<code>!colpo</code>', '<code>!heist</code>', 'Organizzi un colpo, o entri nella banda. <code>!colpo 100</code> per scegliere la posta.', `${ATTESA(DI_SERIE('colpo').attesa)} di canale`],
+      ['<code>!slot</code>', '—', 'Macchinetta: paghi, giri, forse vinci.', ATTESE('slot')],
+      ['<code>!duello @nome</code>', '<code>!duel</code>', 'Sfida chi è in chat. Vince uno dei due.', ATTESE('duello')],
+      ['<code>!trivia</code>', '<code>!quiz</code>', 'Apre una domanda per tutti.', ATTESE('manche')],
+      ['<code>!manche</code>', '<code>!gioca</code>', 'Apre una manche a caso fra quelle del giro. <code>!manche impiccato</code> per sceglierla.', ATTESE('manche')],
+      ['<code>!pesca</code>', '<code>!fish</code>', 'Cala la canna. Può uscire di tutto.', ATTESE('pesca')],
+      ['<code>!roulette</code>', '<code>!rul</code>', 'Punti su rosso, nero, verde o un numero.', ATTESE('roulette')],
+      ['<code>!furto @nome</code>', '<code>!rapina</code>', 'Provi a rubare. Se ti beccano, paghi.', ATTESE('furto')],
+      ['<code>!colpo</code>', '<code>!heist</code>', 'Organizzi un colpo, o entri nella banda. <code>!colpo 100</code> per scegliere la posta.', ATTESE('colpo')],
       ['<code>!boss</code>', '—', 'Fa arrivare un boss da battere insieme. Solo mod e streamer.', '—'],
-      ['<code>!colpisci</code>', '<code>!attacca</code> <code>!hit</code>', 'Colpisci il boss di turno.', `${ATTESA(DI_SERIE('boss').attesa)} a testa`],
+      ['<code>!colpisci</code>', '<code>!attacca</code> <code>!hit</code>', 'Colpisci il boss di turno.', ATTESE('boss')],
       ['<code>!regala @nome 50</code>', '<code>!dona</code>', 'Passi monete a qualcun altro.', '—'],
       ['<code>!duello @nome 50</code>', '—', 'Un duello con la posta: l\'altro accetta o rifiuta, e chi vince prende la posta dell\'altro.', `${ATTESA(DI_SERIE('duello').scadenza)} per rispondere`],
       ['<code>!accetta</code>', '—', 'Accetti la sfida con posta che ti hanno fatto.', '—'],
       ['<code>!rifiuta</code>', '—', 'Dici di no, e nessuno perde niente.', '—'],
-      ['<code>!morra carta</code>', '<code>!rps</code>', 'Sasso, carta o forbice contro il bot. <code>!morra carta 20</code> per giocarci delle monete.', `${ATTESA(DI_SERIE('morra').attesa)} a testa`],
-      ['<code>!sblocca</code>', '—', `Spendi monete per mettere la chat in solo emote per ${DI_SERIE('sblocca').minuti} minuti. <code>!sblocca 5</code> per cinque.`, `${ATTESA(DI_SERIE('sblocca').attesa)} di canale`],
-      ['<code>!abbraccio @nome</code>', '<code>!abbraccia</code> <code>!hug</code>', 'Abbracci chi è in chat. Senza nome, tutta la chat.', `${ATTESA(DI_SERIE('abbraccio').attesa)} a testa`],
-      ['<code>!bacio @nome</code>', '<code>!bacino</code> <code>!kiss</code>', 'Un bacino a chi è in chat. Senza nome, a tutta la chat.', `${ATTESA(DI_SERIE('bacio').attesa)} a testa`],
-      ['<code>!cinque @nome</code>', '<code>!highfive</code> <code>!hi5</code>', 'Alzi la mano per qualcuno, o per chiunque senza nome. Chi risponde con <code>!cinque</code> la batte.', `${ATTESA(DI_SERIE('cinque').attesa)} a testa`],
+      ['<code>!morra carta</code>', '<code>!rps</code>', 'Sasso, carta o forbice contro il bot. <code>!morra carta 20</code> per giocarci delle monete.', ATTESE('morra')],
+      ['<code>!sblocca</code>', '—', `Spendi monete per mettere la chat in solo emote per ${DI_SERIE('sblocca').minuti} minuti. <code>!sblocca 5</code> per cinque.`, ATTESE('sblocca')],
+      ['<code>!abbraccio @nome</code>', '<code>!abbraccia</code> <code>!hug</code>', 'Abbracci chi è in chat. Senza nome, tutta la chat.', ATTESE('abbraccio')],
+      ['<code>!bacio @nome</code>', '<code>!bacino</code> <code>!kiss</code>', 'Un bacino a chi è in chat. Senza nome, a tutta la chat.', ATTESE('bacio')],
+      ['<code>!cinque @nome</code>', '<code>!highfive</code> <code>!hi5</code>', 'Alzi la mano per qualcuno, o per chiunque senza nome. Chi risponde con <code>!cinque</code> la batte.', ATTESE('cinque')],
       ['<code>!nococcole</code>', '—', 'Niente abbracci, bacini e cinque verso di te. Riscrivilo per tornare.', '—'],
       ['<code>!serie</code>', '<code>!presenze</code> <code>!streak</code>', 'A quante dirette di fila sei stato presente, e a quante in tutto. Con un nome, di quella persona.', '—'],
       ['<code>!classificaserie</code>', '<code>!serietop</code> <code>!topserie</code>', 'Chi è venuto a più dirette di fila.', '—'],
@@ -182,13 +191,13 @@ const GIOCHI = {
     ] },
 
     { h3: 'Pesca' },
-    { p: [`Una volta ogni ${ATTESA(DI_SERIE('pesca').attesa)} a testa. Non è a caso puro: ogni preda ha il suo peso, e più vale meno esce. In media un lancio vale ${CIFRA(RESA('pesca').media)} monete, cioè fino a ${CIFRA(RESA('pesca').perOra)} in un'ora: quanto la presenza, non di più. Cosa si pesca lo scrivi tu, nelle regole della pesca.`] },
+    { p: [`Una volta ogni ${ATTESA(DI_SERIE('pesca').attesaTesta)} a testa. Non è a caso puro: ogni preda ha il suo peso, e più vale meno esce. In media un lancio vale ${CIFRA(RESA('pesca').media)} monete, cioè fino a ${CIFRA(RESA('pesca').perOra)} in un'ora: quanto la presenza, non di più. Cosa si pesca lo scrivi tu, nelle regole della pesca.`] },
     { tabella: righePesca() },
 
     { h3: 'Duello' },
     { p: [
       'Si sfida <strong>solo chi è in chat</strong> — chi ha parlato negli ultimi trenta minuti. Serviva: prima si poteva sfidare un nome inventato, e le monete finivano su un profilo che non esisteva.',
-      `Vince uno dei due a testa o croce. Di serie il duello senza posta si gioca per l'onore e non dà monete: un premio che nasce dal nulla a ogni sfida gonfiava l'economia. Se vuoi, glielo dai nelle regole del duello. Un duello alla volta per canale, uno ogni ${ATTESA(DI_SERIE('duello').attesa)}.`,
+      `Vince uno dei due a testa o croce. Di serie il duello senza posta si gioca per l'onore e non dà monete: un premio che nasce dal nulla a ogni sfida gonfiava l'economia. Se vuoi, glielo dai nelle regole del duello. Un duello alla volta per canale, uno ogni ${ATTESA(DI_SERIE('duello').attesaTutti)}.`,
     ] },
 
     { h3: 'Duello con la posta' },
@@ -212,7 +221,7 @@ const GIOCHI = {
     { h3: 'Il boss da battere insieme' },
     { p: [
       `Un boss arriva quando un mod scrive <code>!boss</code>, con un raid di almeno ${DI_SERIE('boss').dopoRaid} persone, e se vuoi da solo ogni tanto mentre sei in diretta. Ha ${DI_SERIE('boss').vitaPerPersona} punti vita per ogni persona che ha scritto in chat negli ultimi dieci minuti: chi guarda in silenzio non conta, così il boss è alla portata di chi c'è davvero.`,
-      `La chat lo colpisce con <code>!colpisci</code>, un colpo ogni ${ATTESA(DI_SERIE('boss').attesa)} a testa, da ${DI_SERIE('boss').dannoMin} a ${DI_SERIE('boss').dannoMax} di danno. Ha ${ATTESA(DI_SERIE('boss').durata)} prima di scappare. Se cade, il bottino va a chi l'ha colpito in proporzione al danno: se tutti colpiscono uguale ognuno prende ${CIFRA(DI_SERIE('boss').bottino)}, e chi colpisce di più prende di più, fino a ${CIFRA(RESA('boss').massimo)} a testa. Se scappa non prende niente nessuno, ma nessuno perde niente.`,
+      `La chat lo colpisce con <code>!colpisci</code>, un colpo ogni ${ATTESA(DI_SERIE('boss').attesaTesta)} a testa, da ${DI_SERIE('boss').dannoMin} a ${DI_SERIE('boss').dannoMax} di danno. Ha ${ATTESA(DI_SERIE('boss').durata)} prima di scappare. Se cade, il bottino va a chi l'ha colpito in proporzione al danno: se tutti colpiscono uguale ognuno prende ${CIFRA(DI_SERIE('boss').bottino)}, e chi colpisce di più prende di più, fino a ${CIFRA(RESA('boss').massimo)} a testa. Se scappa non prende niente nessuno, ma nessuno perde niente.`,
       'Sull\'overlay, con gli effetti accesi, compare la barra della vita che scende a ogni colpo, col tempo che resta. Nelle regole scegli anche una festa: se il boss cade, la chat va in solo emote per qualche minuto e poi torna com\'era.',
     ] },
 
@@ -225,13 +234,13 @@ const GIOCHI = {
 
     { h3: 'Furto' },
     { p: [
-      `Una prova ogni ${ATTESA(DI_SERIE('furto').attesa)} a testa, e solo su chi ha almeno 20 monete. Va a buon fine <strong>${DI_SERIE('furto').riuscita} volte su 100</strong>: prendi fra 10 e ${CIFRA(DI_SERIE('furto').bottino)} monete (mai più di quante ne ha la vittima).`,
+      `Una prova ogni ${ATTESA(DI_SERIE('furto').attesaTesta)} a testa, e solo su chi ha almeno 20 monete. Va a buon fine <strong>${DI_SERIE('furto').riuscita} volte su 100</strong>: prendi fra 10 e ${CIFRA(DI_SERIE('furto').bottino)} monete (mai più di quante ne ha la vittima).`,
       `Se ti beccano paghi una multa fino a ${CIFRA(DI_SERIE('furto').multa)} monete, <strong>alla vittima</strong> e non al nulla: il furto passa monete di tasca, non ne crea.`,
     ] },
 
     { h3: 'Sbloccare la chat' },
     { p: [
-      `Con <code>!sblocca</code> chi ha le monete mette la chat in solo emote per ${DI_SERIE('sblocca').minuti} minuti, o per quanti ne scrive (<code>!sblocca 5</code>, fino a ${DI_SERIE('sblocca').massimo}). Costa ${CIFRA(DI_SERIE('sblocca').costoMinuto)} monete al minuto, e dopo uno sblocco il canale aspetta ${ATTESA(DI_SERIE('sblocca').attesa)} prima del prossimo. Nelle regole scegli cosa si sblocca (solo emote o messaggi unici), il costo e i tempi.`,
+      `Con <code>!sblocca</code> chi ha le monete mette la chat in solo emote per ${DI_SERIE('sblocca').minuti} minuti, o per quanti ne scrive (<code>!sblocca 5</code>, fino a ${DI_SERIE('sblocca').massimo}). Costa ${CIFRA(DI_SERIE('sblocca').costoMinuto)} monete al minuto, e dopo uno sblocco il canale aspetta ${ATTESA(DI_SERIE('sblocca').attesaTutti)} prima del prossimo. Nelle regole scegli cosa si sblocca (solo emote o messaggi unici), il costo e i tempi.`,
       'Si paga solo se la chat cambia davvero: se la modalità è già accesa da un mod non costa niente, e se Twitch dice di no le monete restano tue. Alla fine la chat torna com\'era da sola, anche se nel frattempo il bot si riavvia. È un modo di <strong>spendere</strong> le monete: escono dall\'economia invece di girare.',
     ] },
 

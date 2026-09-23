@@ -17,17 +17,11 @@
 import { points, streamers } from '../db.js';
 import { valoriDi } from './giochi-conf.js';
 import { nomeIn } from './comandi-registro.js';
+import { aspetta, giocato } from './attese-giochi.js';
 
 const scegli = (a) => a[Math.floor(Math.random() * a.length)];
 const pulito = (s) => String(s || '').replace(/^@/, '').toLowerCase().trim();
 const conf = (channel) => valoriDi(streamers.get(channel)?.settings, 'colpo');
-
-function aParole(ms) {
-  const s = Math.max(1, Math.ceil(ms / 1000));
-  if (s < 60) return `${s} second${s === 1 ? 'o' : 'i'}`;
-  const m = Math.ceil(s / 60);
-  return `${m} minut${m === 1 ? 'o' : 'i'}`;
-}
 
 // Chi entra non riceve una riga a testa: in una chat viva sarebbero venti
 // righe in un minuto. Gli ingressi si dicono insieme, a giri fissi: ogni
@@ -36,7 +30,6 @@ const GIRO_MS = 5000;
 const ELENCO_MAX = 10;
 
 const colpi = new Map();   // canale → { banda: Map(chi → { nome, posta }), nuovi, giro, timer, say }
-const dopo = new Map();    // canale → da quando si puo' organizzare il prossimo
 
 export function probabilitaColpo(n, c) {
   return Math.min(c.riuscitaMax, c.riuscita + (n - 1) * c.perPersona) / 100;
@@ -80,7 +73,10 @@ function chiudi(channel) {
   clearTimeout(k.timer);
   clearInterval(k.giro);
   const c = conf(channel);
-  dopo.set(channel, Date.now() + c.attesa * 1000);
+  // L'attesa parte a colpo chiuso, per tutti e per chi era nella banda: quello
+  // e' il momento in cui si e' giocato.
+  giocato(channel, 'colpo', null);
+  for (const chi of k.banda.keys()) giocato(channel, 'colpo', chi);
   const banda = [...k.banda].filter(([chi, m]) => points.get(channel, chi) >= m.posta);
   const fuori = k.banda.size - banda.length;
   const nota = fuori === 0 ? '' : fuori === 1 ? ' Una persona resta fuori: non ha più la sua posta.' : ` ${fuori} persone restano fuori: non hanno più la loro posta.`;
@@ -108,6 +104,7 @@ export function colpo(channel, msg, args, say, { moneta = 'monete' } = {}) {
   if (c.massimo > 0 && posta > c.massimo) { say(`🦹 Qui la posta massima è ${c.massimo} ${moneta}.`); return; }
   const k = colpi.get(channel);
   if (k?.banda.has(io)) { say(`🦹 ${nome}, sei già nella banda.`); return; }
+  if (aspetta(channel, 'colpo', msg, say, { dire: ({ nome: chi, tempo, perTutti }) => (perTutti ? `🚓 La polizia gira ancora: il prossimo colpo fra ${tempo}.` : `🚓 ${chi}, ti cercano ancora: il prossimo colpo per te fra ${tempo}.`) })) return;
   const saldo = points.get(channel, io);
   if (saldo < posta) { say(`🦹 ${nome}, per entrare con ${posta} ${moneta} non basta quello che hai (${saldo}).`); return; }
 
@@ -116,8 +113,6 @@ export function colpo(channel, msg, args, say, { moneta = 'monete' } = {}) {
     k.nuovi.push(nome);
     return;
   }
-  const fra = (dopo.get(channel) || 0) - Date.now();
-  if (fra > 0) { say(`🚓 La polizia gira ancora: il prossimo colpo fra ${aParole(fra)}.`); return; }
   const nuovo = { banda: new Map([[io, { nome, posta }]]), nuovi: [], say };
   nuovo.timer = setTimeout(() => chiudi(channel), c.raccolta * 1000);
   nuovo.timer.unref?.();

@@ -9,6 +9,7 @@ import { valoriDi } from './giochi-conf.js';
 import * as coccole from './coccole.js';
 import * as colpoFeat from './colpo.js';
 import * as bossFeat from './boss.js';
+import { aspetta, giocato } from './attese-giochi.js';
 import { points, streamers, giochi } from '../db.js';
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
@@ -20,22 +21,6 @@ const scegli = (a) => a[Math.floor(Math.random() * a.length)];
 const rnd = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, '').trim();
 
-// cooldown in memoria: chiave → ts di sblocco
-const cooldowns = new Map();
-function inCooldown(chiave, ms) {
-  const ora = Date.now();
-  if ((cooldowns.get(chiave) || 0) > ora) return true;
-  cooldowns.set(chiave, ora + ms);
-  return false;
-}
-// Quanto manca, detto a parole: con un'attesa di minuti «riprova tra poco» non
-// dice niente a chi aspetta.
-function restante(chiave) {
-  const s = Math.max(1, Math.ceil(((cooldowns.get(chiave) || 0) - Date.now()) / 1000));
-  if (s < 60) return `${s} second${s === 1 ? 'o' : 'i'}`;
-  const m = Math.ceil(s / 60);
-  return `${m} minut${m === 1 ? 'o' : 'i'}`;
-}
 
 // Le manopole di un gioco per questo canale: le dichiara giochi-conf.js.
 const conf = (channel, id) => valoriDi(streamers.get(channel)?.settings, id);
@@ -706,6 +691,7 @@ function accettaSfida(channel, msg, say) {
   if (points.get(channel, s.da) < s.posta) { chiudiSfida(chiave); say(`⚔️ ${s.daNome} non ha più ${s.posta} ${moneta}: la sfida salta.`); return; }
   if (points.get(channel, io) < s.posta) { say(`⚔️ Non hai più ${s.posta} ${moneta}: la sfida resta aperta finché scade.`); return; }
   chiudiSfida(chiave);
+  giocato(channel, 'duello', s.da);
   const vinceLui = Math.random() < 0.5;
   const [vince, perde] = vinceLui ? [s.da, io] : [io, s.da];
   points.add(channel, perde, -s.posta);
@@ -748,18 +734,17 @@ async function sblocca(channel, msg, args, say) {
   const cb = conf(channel, 'sblocca');
   const nome = msg.display || msg.user;
   const moneta = nomeMoneta(channel);
-  const k = channel + '|sblocca';
   const detti = args[0] === undefined ? cb.minuti : Math.round(Number(String(args[0]).replace(/[^0-9]/g, '')));
   if (!Number.isFinite(detti) || detti < 1) { say(`🔓 Si usa così: !sblocca oppure !sblocca 5 (minuti, fino a ${cb.massimo}).`); return; }
   const minuti = Math.min(cb.massimo, detti);
   const costo = minuti * cb.costoMinuto;
-  if ((cooldowns.get(k) || 0) > Date.now()) { say(`🔓 La chat si potrà sbloccare di nuovo fra ${restante(k)}.`); return; }
+  if (aspetta(channel, 'sblocca', msg, say, { dire: ({ nome: chi, tempo, perTutti }) => (perTutti ? `🔓 La chat si potrà sbloccare di nuovo fra ${tempo}.` : `🔓 ${chi}, potrai sbloccare di nuovo fra ${tempo}.`) })) return;
   if (points.get(channel, msg.user) < costo) { say(`🔓 Per ${minuti} minut${minuti === 1 ? 'o' : 'i'} servono ${costo} ${moneta}, ${nome}.`); return; }
   if (!modalita) { say('🔓 Adesso non riesco a cambiare la chat: riprova fra poco.'); return; }
-  cooldowns.set(k, Date.now() + cb.attesa * 1000);
+  const segno = giocato(channel, 'sblocca', msg.user);
   const r = await modalita.accendiPer(channel, cb.modo, minuti * 60, { annuncia: false });
   if (!r.ok || r.esito === 'gia') {
-    cooldowns.delete(k);
+    segno.annulla();
     say(r.esito === 'gia' ? '🔓 La chat è già così: non ti costa niente.' : '🔓 Non sono riuscita a cambiare la chat: non ti costa niente.');
     return;
   }
@@ -821,27 +806,30 @@ export function tryGame(msg, say) {
       }
 
       case 'dado': {
-        if (inCooldown(channel + '|dado|' + msg.user, conf(channel, 'dado').attesa * 1000)) return true;
+        if (aspetta(channel, 'dado', msg, say)) return true;
         let n = 1, facce = 6;
         const m = /^(\d{0,2})d(\d{1,3})$/i.exec(args[0] || '');
         if (m) { n = Math.min(10, Math.max(1, parseInt(m[1] || '1', 10))); facce = Math.min(1000, Math.max(2, parseInt(m[2], 10))); }
         const tiri = Array.from({ length: n }, () => rnd(1, facce));
         const tot = tiri.reduce((a, b) => a + b, 0);
         say(`🎲 ${nome} tira ${n}d${facce}: ${tiri.join(' + ')}${n > 1 ? ' = ' + tot : ''}`);
+        giocato(channel, 'dado', msg.user);
         return true;
       }
 
       case 'moneta': {
-        if (inCooldown(channel + '|coin|' + msg.user, conf(channel, 'moneta').attesa * 1000)) return true;
+        if (aspetta(channel, 'moneta', msg, say)) return true;
         say(`🪙 ${nome}: è uscito ${Math.random() < 0.5 ? 'TESTA' : 'CROCE'}!`);
+        giocato(channel, 'moneta', msg.user);
         return true;
       }
 
       case '8ball': {
         const c8 = conf(channel, '8ball');
-        if (inCooldown(channel + '|8ball|' + msg.user, c8.attesa * 1000)) return true;
+        if (aspetta(channel, '8ball', msg, say)) return true;
         if (!args.length) { say(`🎱 Fammi una domanda, ${nome}! (es. !8ball vinco stasera?)`); return true; }
         say(`🎱 ${scegli(c8.risposte)}`);
+        giocato(channel, '8ball', msg.user);
         return true;
       }
 
@@ -861,10 +849,11 @@ export function tryGame(msg, say) {
 
       case 'slot': {
         const cs = conf(channel, 'slot');
-        if (inCooldown(channel + '|slot|' + msg.user, cs.attesa * 1000)) return true;
+        if (aspetta(channel, 'slot', msg, say)) return true;
         const costo = cs.costo;
         if (points.get(channel, msg.user) < costo) { say(`🎰 Ti servono ${costo} ${moneta()} per giocare, ${nome}. Chatta un po' e torna!`); return true; }
         points.add(channel, msg.user, -costo);
+        giocato(channel, 'slot', msg.user);
         const r = [scegli(SLOT_SIMBOLI), scegli(SLOT_SIMBOLI), scegli(SLOT_SIMBOLI)];
         const esito = vincitaSlot(r, cs);
         const vincita = esito.monete;
@@ -885,8 +874,9 @@ export function tryGame(msg, say) {
         if (!inChat(channel, sfidato)) { say(`⚔️ @${sfidato} non è in chat: puoi sfidare solo chi c'è.`); return true; }
         if (args[1] !== undefined && (!Number.isFinite(posta) || posta <= 0)) { say('⚔️ Uso: !duello @nome, oppure !duello @nome 50 per giocarvi delle monete.'); return true; }
         const cd = conf(channel, 'duello');
-        if (inCooldown(channel + '|duello', cd.attesa * 1000)) { say(`⚔️ Un duello alla volta: il prossimo fra ${restante(channel + '|duello')}.`); return true; }
-        if (posta > 0) { cooldowns.delete(channel + '|duello'); sfidaConPosta(channel, msg, sfidato, posta, say); return true; }
+        if (aspetta(channel, 'duello', msg, say, { dire: ({ nome: chi, tempo, perTutti }) => (perTutti ? `⚔️ Un duello alla volta: il prossimo fra ${tempo}.` : `⚔️ ${chi}, il tuo prossimo duello fra ${tempo}.`) })) return true;
+        if (posta > 0) { sfidaConPosta(channel, msg, sfidato, posta, say); return true; }
+        giocato(channel, 'duello', msg.user);
         const vince = Math.random() < 0.5;
         const a = vince ? nome : sfidato, b = vince ? sfidato : nome;
         const premio = cd.premio;
@@ -897,8 +887,9 @@ export function tryGame(msg, say) {
 
       case 'trivia': {
         if (roundAttivo.has(channel)) { say('🧠 C\'è già una manche in corso, rispondete!'); return true; }
-        if (inCooldown(channel + '|trivia', 15000)) return true;
+        if (aspetta(channel, 'manche', msg, say, { comando: 'trivia' })) return true;
         avviaRound(channel, roundTrivia(channel), say);
+        giocato(channel, 'manche', msg.user);
         return true;
       }
 
@@ -908,16 +899,17 @@ export function tryGame(msg, say) {
         if (roundAttivo.has(channel)) { say('🎮 C\'è già una manche in corso!'); return true; }
         const tipo = tipoMancheDa(args.join(' '));
         if (tipo === null) { say(`🎮 Non conosco questa manche. Ci sono: ${Object.values(COSTRUTTORI).map((c) => c.nome.toLowerCase()).join(', ')}.`); return true; }
-        if (inCooldown(channel + '|manche', 10000)) return true;
-        if (!avviaManche(channel, say, tipo)) say('🎮 Nessuna manche disponibile al momento.');
+        if (aspetta(channel, 'manche', msg, say)) return true;
+        if (!avviaManche(channel, say, tipo)) { say('🎮 Nessuna manche disponibile al momento.'); return true; }
+        giocato(channel, 'manche', msg.user);
         return true;
       }
 
       case 'pesca': {
         const cf = conf(channel, 'pesca');
-        const kp = channel + '|pesca|' + msg.user;
-        if (inCooldown(kp, cf.attesa * 1000)) { say(`🎣 ${nome}, la canna è ancora in acqua: riprova fra ${restante(kp)}.`); return true; }
+        if (aspetta(channel, 'pesca', msg, say, { dire: ({ nome: chi, tempo, perTutti, cmd }) => (perTutti ? `🎣 Il lago riposa: !${cmd} di nuovo fra ${tempo}.` : `🎣 ${chi}, la canna è ancora in acqua: riprova fra ${tempo}.`) })) return true;
         const [pesce, valore] = pescaPesata(cf.pescato);
+        giocato(channel, 'pesca', msg.user);
         if (valore > 0) { points.add(channel, msg.user, valore); say(`🎣 ${nome} pesca ${pesce} e guadagna ${valore} ${moneta()}!`); }
         else say(`🎣 ${nome} pesca ${pesce}… niente ${moneta()}, ritenta!`);
         return true;
@@ -925,7 +917,7 @@ export function tryGame(msg, say) {
 
       case 'roulette': {
         const cr = conf(channel, 'roulette');
-        if (inCooldown(channel + '|roulette|' + msg.user, cr.attesa * 1000)) return true;
+        if (aspetta(channel, 'roulette', msg, say)) return true;
         const punta = Math.round(Number(args[0]));
         const scelta = (args[1] || '').toLowerCase();
         if (!Number.isFinite(punta) || punta <= 0 || !scelta) { say(`🎡 Uso: !roulette <puntata> <rosso|nero|verde|numero 0-36>`); return true; }
@@ -936,6 +928,7 @@ export function tryGame(msg, say) {
         if (numScelto === null && !['rosso', 'nero', 'verde', 'red', 'black', 'green'].includes(scelta)) { say(`🎡 Punta su rosso, nero, verde o un numero da 0 a 36.`); return true; }
         if (numScelto !== null && (numScelto < 0 || numScelto > 36)) { say(`🎡 Il numero va da 0 a 36, ${nome}.`); return true; }
         points.add(channel, msg.user, -punta);
+        giocato(channel, 'roulette', msg.user);
         const uscito = rnd(0, 36);
         const colore = uscito === 0 ? 'verde' : (ROULETTE_ROSSI.has(uscito) ? 'rosso' : 'nero');
         let vincita = 0;
@@ -953,10 +946,10 @@ export function tryGame(msg, say) {
         if (!vittima) { say(`🦝 Uso: !furto @nome`); return true; }
         if (vittima === msg.user.toLowerCase()) { say(`${nome}, non puoi derubare te stesso 😄`); return true; }
         const cfu = conf(channel, 'furto');
-        const kf = channel + '|furto|' + msg.user;
-        if (inCooldown(kf, cfu.attesa * 1000)) { say(`🦝 ${nome}, aspetta ${restante(kf)} prima di tentare un altro colpo.`); return true; }
+        if (aspetta(channel, 'furto', msg, say, { dire: ({ nome: chi, tempo, perTutti, cmd }) => (perTutti ? `🦝 Troppi furti in giro: !${cmd} di nuovo fra ${tempo}.` : `🦝 ${chi}, aspetta ${tempo} prima di tentare un altro colpo.`) })) return true;
         const gruzzolo = points.get(channel, vittima);
         if (gruzzolo < 20) { say(`🦝 ${vittima} ha le tasche vuote, niente da rubare.`); return true; }
+        giocato(channel, 'furto', msg.user);
         if (Math.random() * 100 < cfu.riuscita) {                     // colpo riuscito
           const bottino = rnd(10, Math.max(10, Math.min(gruzzolo, cfu.bottino)));
           points.add(channel, vittima, -bottino); points.add(channel, msg.user, bottino);
@@ -1022,7 +1015,8 @@ export function tryGame(msg, say) {
         if (args[1] !== undefined && (!Number.isFinite(puntata) || puntata <= 0)) { say('✊ La puntata è un numero di monete: !morra carta 20.'); return true; }
         if (cm.massimo > 0 && puntata > cm.massimo) { say(`✊ Qui si punta al massimo ${cm.massimo} ${moneta()}, ${nome}.`); return true; }
         if (puntata > 0 && points.get(channel, msg.user) < puntata) { say(`✊ ${nome}, non hai ${puntata} ${moneta()}.`); return true; }
-        if (inCooldown(channel + '|morra|' + msg.user, cm.attesa * 1000)) return true;
+        if (aspetta(channel, 'morra', msg, say)) return true;
+        giocato(channel, 'morra', msg.user);
         const io = scegli(Object.keys(MORRA));
         const esito = esitoMorra(tu, io);
         const riga = `${MORRA[tu]} ${nome}: ${tu} · io: ${io} ${MORRA[io]}`;

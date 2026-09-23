@@ -2284,7 +2284,7 @@ body.ce-aperto { overflow: hidden; }
   .cons-vuoto:not([disabled]):hover { opacity: .9; background: var(--surface-2); }
 }
 
-.voce-nuovo { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--acc); margin-right: .45rem; flex: 0 0 auto; }
+.voce-nuovo { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--acc); margin-left: auto; flex: 0 0 auto; }
 .rap-lista { display: flex; flex-direction: column; gap: .6rem; }
 .rap-carta { border: 1px solid var(--border); border-radius: var(--r-m); padding: .7rem .85rem; background: var(--surface-2); }
 .rap-carta.nuovo { border-color: var(--acc-bordo); }

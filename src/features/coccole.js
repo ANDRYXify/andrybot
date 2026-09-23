@@ -16,6 +16,7 @@
 // Il ragionamento sta in docs/COCCOLE.md.
 import { statoVivo, streamers } from '../db.js';
 import { valoriDi } from './giochi-conf.js';
+import { aspetta, giocato } from './attese-giochi.js';
 
 const scegli = (a) => a[Math.floor(Math.random() * a.length)];
 const pulito = (s) => String(s || '').replace(/^@/, '').toLowerCase().trim();
@@ -44,16 +45,6 @@ export function cambiaNo(channel, chi) {
   return !prima;
 }
 
-// ── attese per persona ────────────────────────────────────────────────────
-const attese = new Map();
-function inAttesa(chiave, secondi) {
-  const ora = Date.now();
-  if ((attese.get(chiave) || 0) > ora) return true;
-  attese.set(chiave, ora + secondi * 1000);
-  if (attese.size > 5000) for (const [k, t] of attese) if (t < ora) attese.delete(k);
-  return false;
-}
-
 // ── abbracci e bacini ─────────────────────────────────────────────────────
 const DA_SOLI = {
   abbraccio: '🤗 {a} si abbraccia da sé: anche questo è volersi bene.',
@@ -65,13 +56,14 @@ export function gesto(tipo, channel, msg, args, say, { inChat }) {
   const io = pulito(msg.user);
   const nome = msg.display || msg.user;
   const chi = pulito(args[0]);
-  if (inAttesa(`${channel}|${tipo}|${io}`, c.attesa)) return;
-  if (!chi) { say(riempi(scegli(c.tutti), { a: nome })); return; }
+  if (aspetta(channel, tipo, msg, say)) return;
+  if (!chi) { say(riempi(scegli(c.tutti), { a: nome })); giocato(channel, tipo, io); return; }
   if (!/^[a-z0-9_]{2,25}$/.test(chi)) { say(`«${chi}» non è un nome valido.`); return; }
   if (chi === io) { say(riempi(DA_SOLI[tipo], { a: nome })); return; }
   if (!inChat(channel, chi)) { say(`@${chi} non è in chat adesso.`); return; }
   if (nonNeVuole(channel, chi)) { say(`@${chi} preferisce niente coccole, ma apprezza il pensiero.`); return; }
   say(riempi(scegli(c.frasi), { a: nome, b: chi }));
+  giocato(channel, tipo, io);
 }
 
 // ── il batti il cinque ────────────────────────────────────────────────────
@@ -124,7 +116,8 @@ export function cinque(channel, msg, args, say, { inChat, caso = Math.random }) 
   if (bersaglio && !inChat(channel, bersaglio)) { say(`@${bersaglio} non è in chat adesso.`); return; }
   if (bersaglio && nonNeVuole(channel, bersaglio)) { say(`@${bersaglio} preferisce niente coccole, ma apprezza il pensiero.`); return; }
   if (aperte.has(io)) { say(`✋ ${nome}, hai già la mano alzata.`); return; }
-  if (inAttesa(`${channel}|cinque|${io}`, c.attesa)) return;
+  if (aspetta(channel, 'cinque', msg, say)) return;
+  giocato(channel, 'cinque', io);
   const timer = setTimeout(() => {
     const m = abbassa(channel, io);
     if (m) { try { say(riempi(scegli(c.frasiSospeso), { a: m.nome })); } catch { /* niente */ } }

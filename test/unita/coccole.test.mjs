@@ -131,9 +131,11 @@ test('abbracci e bacini: a chi c\'e\', a tutta la chat, a se stessi', () => {
   assert.match(s.detti.at(-1), /@fantasma non è in chat/);
   s.scrivi('bruno', '!abbraccio');
   assert.match(s.detti.at(-1), /bruno .*(tutta la chat|collettivo)/);
+  s.scrivi('bruno', '!abbraccio @anna');
+  assert.equal(s.detti.at(-1), '⏳ bruno, !abbraccio di nuovo fra 10 secondi.', 'dieci secondi fra un abbraccio e l\'altro, detto una volta');
   const prima = s.detti.length;
   s.scrivi('bruno', '!abbraccio @anna');
-  assert.equal(s.detti.length, prima, 'dieci secondi fra un abbraccio e l\'altro');
+  assert.equal(s.detti.length, prima, 'e poi, nella stessa attesa, niente');
   s.scrivi('anna', '!bacio @anna');
   assert.match(s.detti.at(-1), /specchio/);
 });

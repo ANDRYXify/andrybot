@@ -195,6 +195,42 @@ Con la puntata di serie è **giusta**: su tre esiti uno paga il doppio, uno
 restituisce e uno perde, cioè 100 su 100. Nelle regole si decide quanto paga la
 vittoria, e la resa del pannello si confronta con i nove esiti possibili.
 
+## Le attese: due per gioco, in un posto solo
+
+Ogni gioco del catalogo ha due attese, `attesaTesta` e `attesaTutti`, e le fa
+rispettare un pezzo solo (`src/features/attese-giochi.js`). Prima ognuno aveva
+la sua, scritta a modo suo: una sola, a volte a testa e a volte per tutti, due
+fisse nel codice (`!trivia` 15 secondi, `!manche` 10) e quasi tutte mute. E la
+carta dei comandi mostrava un numero fisso del registro («5s» accanto a
+`!slot») che non cambiava quando lo streamer cambiava l'attesa nelle regole.
+
+**Si controlla prima, si segna dopo.** `aspetta` guarda se c'è da aspettare;
+`giocato` fa partire le attese, e il gioco lo chiama solo quando si è giocato
+davvero. Prima l'attesa si consumava al tentativo: un `!roulette` scritto male
+bloccava per cinque secondi quello giusto, e un `!furto` su qualcuno con le
+tasche vuote bloccava per 45 secondi il furto vero.
+
+**Si dice una volta.** Chi trova il gioco in attesa se lo sente dire con quanto
+manca; se riscrive nella stessa attesa il bot tace. L'attesa di tutti si dice
+una volta per tutto il canale, e quando le due finiscono insieme vale quella di
+tutti. Tacciono sempre solo i comandi a raffica (`!colpisci`).
+
+**Dove parte l'attesa**, gioco per gioco, è dove si è giocato: la slot quando si
+paga la giocata, il duello con la posta quando l'altro accetta, il colpo quando
+si chiude (per tutti e per chi era nella banda), lo sblocco quando la chat è
+cambiata davvero. Lo sblocco segna prima di chiedere a Twitch, perché due sblocchi
+insieme non passino tutti e due mentre si aspetta la risposta, e se Twitch dice
+di no l'attesa si annulla e torna quella di prima.
+
+**La resa legge le stesse attese.** Il ritmo di un gioco è la più lunga delle
+due (una persona aspetta la sua *e* quella di tutti): la pesca rende al massimo
+`media × 3600 / max(attesaTesta, attesaTutti)`, il boss conta i colpi con lo
+stesso ritmo. Chi aveva scelto l'attesa unica la ritrova al posto giusto
+(`prima` nel catalogo): nella slot era a testa, nel duello per tutti.
+
+La carta dei comandi mostra le attese scelte nelle regole (il registro dice di
+quale gioco è ogni comando, `gioco`), non più un numero suo.
+
 ## Il colpo di gruppo e il boss
 
 Due giochi collettivi, uno a pagamento e uno gratis, costruiti sulle stesse due

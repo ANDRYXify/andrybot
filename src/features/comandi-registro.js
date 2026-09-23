@@ -21,6 +21,7 @@
 // Le scelte dello streamer stanno in settings.comandi, una riga per comando:
 //   { furto: { off: true }, slot: { nome: 'macchinetta', chi: 'sub' } }
 import { streamers } from '../db.js';
+import { valoriDi } from './giochi-conf.js';
 
 export const LIVELLI = ['tutti', 'sub', 'vip', 'mod'];
 
@@ -60,7 +61,10 @@ export const MODULI = {
 //     cosa:   [it, en, es],     una riga di spiegazione, sempre tre lingue
 //     chi: 'mod',               livello minimo (di serie: 'tutti')
 //     costa: true,              lo dice il pannello con una pastiglia (false)
-//     attesa: 5,                secondi di attesa a testa (nessuna)
+//     attesa: 5,                secondi di attesa a testa (nessuna), per i
+//                               comandi che non sono un gioco
+//     gioco: 'slot',            il gioco del catalogo (giochi-conf.js): le sue
+//                               attese, a testa e per tutti, sono quelle vere
 //     spegnibile: false,        non si puo' spegnere (si puo')
 //     rinominabile: false }     non si puo' rinominare (si puo')
 //
@@ -75,41 +79,41 @@ export const COMANDI = [
   { id: 'giochi', modulo: 'giochi', nomi: ['giochi'], titolo: ['Elenco dei giochi', 'Games list', 'Lista de juegos'],
     cosa: ['Elenca in chat i giochi accesi, quelli di chat e quelli con la webcam.', 'Lists the games that are on in chat, both chat games and webcam ones.', 'Lista en el chat los juegos activos, los de chat y los de webcam.'], spegnibile: false },
 
-  { id: 'dado', modulo: 'giochi', nomi: ['dado', 'roll'], titolo: ['Dado', 'Dice', 'Dado'],
-    cosa: ['Tira un dado. Con !dado 2d20 ne tira altri.', 'Rolls a die. With !dado 2d20 it rolls others.', 'Tira un dado. Con !dado 2d20 tira otros.'], attesa: 3 },
-  { id: 'moneta', modulo: 'giochi', nomi: ['moneta', 'coin'], titolo: ['Testa o croce', 'Heads or tails', 'Cara o cruz'],
-    cosa: ['Lancia una moneta.', 'Flips a coin.', 'Lanza una moneda.'], attesa: 3 },
-  { id: '8ball', modulo: 'giochi', nomi: ['8ball', 'palla8'], titolo: ['Palla magica', 'Magic 8-ball', 'Bola mágica'],
-    cosa: ['Risponde a una domanda. Serve la domanda.', 'Answers a question. The question is required.', 'Responde a una pregunta. Hace falta la pregunta.'], attesa: 3 },
+  { id: 'dado', modulo: 'giochi', gioco: 'dado', nomi: ['dado', 'roll'], titolo: ['Dado', 'Dice', 'Dado'],
+    cosa: ['Tira un dado. Con !dado 2d20 ne tira altri.', 'Rolls a die. With !dado 2d20 it rolls others.', 'Tira un dado. Con !dado 2d20 tira otros.'] },
+  { id: 'moneta', modulo: 'giochi', gioco: 'moneta', nomi: ['moneta', 'coin'], titolo: ['Testa o croce', 'Heads or tails', 'Cara o cruz'],
+    cosa: ['Lancia una moneta.', 'Flips a coin.', 'Lanza una moneda.'] },
+  { id: '8ball', modulo: 'giochi', gioco: '8ball', nomi: ['8ball', 'palla8'], titolo: ['Palla magica', 'Magic 8-ball', 'Bola mágica'],
+    cosa: ['Risponde a una domanda. Serve la domanda.', 'Answers a question. The question is required.', 'Responde a una pregunta. Hace falta la pregunta.'] },
   { id: 'monete', modulo: 'giochi', nomi: ['monete', 'punti', 'bilancio'], titolo: ['Il mio saldo', 'My balance', 'Mi saldo'],
     cosa: ['Dice quante monete ha chi lo scrive.', 'Says how many coins the writer has.', 'Dice cuántas monedas tiene quien lo escribe.'] },
   { id: 'classifica', modulo: 'giochi', nomi: ['classifica', 'top', 'classificamod', 'classificastaff', 'topmod'], titolo: ['Classifica', 'Leaderboard', 'Clasificación'],
     cosa: ['I primi del pubblico. Con «mod» la gara dello staff, con «tutti» le due insieme.', 'The top viewers. With «mod» the staff race, with «tutti» both together.', 'Los primeros del público. Con «mod» la carrera del staff, con «tutti» las dos juntas.'] },
-  { id: 'slot', modulo: 'giochi', nomi: ['slot'], titolo: ['Slot machine', 'Slot machine', 'Tragaperras'],
-    cosa: ['Gioca alla slot: costa monete, il tris paga.', 'Play the slot: it costs coins, three of a kind pays.', 'Juega a la tragaperras: cuesta monedas, el trío paga.'], costa: true, attesa: 5 },
-  { id: 'duello', modulo: 'giochi', nomi: ['duello', 'duel'], titolo: ['Duello', 'Duel', 'Duelo'],
+  { id: 'slot', modulo: 'giochi', gioco: 'slot', nomi: ['slot'], titolo: ['Slot machine', 'Slot machine', 'Tragaperras'],
+    cosa: ['Gioca alla slot: costa monete, il tris paga.', 'Play the slot: it costs coins, three of a kind pays.', 'Juega a la tragaperras: cuesta monedas, el trío paga.'], costa: true },
+  { id: 'duello', modulo: 'giochi', gioco: 'duello', nomi: ['duello', 'duel'], titolo: ['Duello', 'Duel', 'Duelo'],
     cosa: ['Sfida un\'altra persona in chat. Con una posta (!duello @nome 50) l\'altro accetta o rifiuta, e chi vince prende la posta dell\'altro.', 'Challenge someone else in chat. With a stake (!duello @nome 50) the other accepts or refuses, and the winner takes the other\'s stake.', 'Reta a otra persona en el chat. Con apuesta (!duello @nome 50) el otro acepta o rechaza, y quien gana se lleva la apuesta del otro.'], costa: true },
-  { id: 'trivia', modulo: 'giochi', nomi: ['trivia', 'quiz'], titolo: ['Trivia', 'Trivia', 'Trivia'],
+  { id: 'trivia', modulo: 'giochi', gioco: 'manche', nomi: ['trivia', 'quiz'], titolo: ['Trivia', 'Trivia', 'Trivia'],
     cosa: ['Domanda a sorpresa: il primo che risponde vince.', 'Surprise question: the first to answer wins.', 'Pregunta sorpresa: el primero que responde gana.'] },
-  { id: 'manche', modulo: 'giochi', nomi: ['manche', 'gioca'], titolo: ['Manche al volo', 'Round on the fly', 'Ronda al vuelo'],
+  { id: 'manche', modulo: 'giochi', gioco: 'manche', nomi: ['manche', 'gioca'], titolo: ['Manche al volo', 'Round on the fly', 'Ronda al vuelo'],
     cosa: ['Lancia subito una manche invece di aspettare quella automatica.', 'Starts a round right away instead of waiting for the automatic one.', 'Lanza una ronda enseguida en vez de esperar la automática.'] },
-  { id: 'pesca', modulo: 'giochi', nomi: ['pesca', 'fish'], titolo: ['Pesca', 'Fishing', 'Pesca'],
+  { id: 'pesca', modulo: 'giochi', gioco: 'pesca', nomi: ['pesca', 'fish'], titolo: ['Pesca', 'Fishing', 'Pesca'],
     cosa: ['Getta la lenza: si pesca qualcosa, o niente.', 'Cast the line: you catch something, or nothing.', 'Echa el sedal: pescas algo, o nada.'], costa: true },
-  { id: 'roulette', modulo: 'giochi', nomi: ['roulette', 'rul'], titolo: ['Roulette', 'Roulette', 'Ruleta'],
+  { id: 'roulette', modulo: 'giochi', gioco: 'roulette', nomi: ['roulette', 'rul'], titolo: ['Roulette', 'Roulette', 'Ruleta'],
     cosa: ['Punta le monete su rosso o nero.', 'Bet your coins on red or black.', 'Apuesta las monedas al rojo o al negro.'], costa: true },
-  { id: 'furto', modulo: 'giochi', nomi: ['furto', 'rapina'], titolo: ['Furto', 'Heist', 'Robo'],
+  { id: 'furto', modulo: 'giochi', gioco: 'furto', nomi: ['furto', 'rapina'], titolo: ['Furto', 'Heist', 'Robo'],
     cosa: ['Prova a rubare monete a un\'altra persona. Può andare male.', 'Try to steal coins from someone else. It can go wrong.', 'Intenta robar monedas a otra persona. Puede salir mal.'], costa: true },
-  { id: 'colpo', modulo: 'giochi', nomi: ['colpo', 'heist'], titolo: ['Colpo di gruppo', 'Group heist', 'Golpe en grupo'],
+  { id: 'colpo', modulo: 'giochi', gioco: 'colpo', nomi: ['colpo', 'heist'], titolo: ['Colpo di gruppo', 'Group heist', 'Golpe en grupo'],
     cosa: ['Organizza un colpo o entra nella banda con la tua posta (!colpo 100). Più siete, più è facile scappare col bottino.', 'Plan a heist or join the crew with your stake (!colpo 100). The more you are, the easier it is to escape with the loot.', 'Organiza un golpe o entra en la banda con tu apuesta (!colpo 100). Cuantos más seáis, más fácil es escapar con el botín.'], costa: true },
   { id: 'boss', modulo: 'giochi', nomi: ['boss'], titolo: ['Chiama il boss', 'Call the boss', 'Llama al jefe'], chi: 'mod',
     cosa: ['Fa arrivare subito un boss che la chat deve battere insieme.', 'Brings in a boss right away that chat has to beat together.', 'Hace llegar enseguida un jefe que el chat tiene que vencer junto.'] },
-  { id: 'colpisci', modulo: 'giochi', nomi: ['colpisci', 'attacca', 'hit'], titolo: ['Colpisci il boss', 'Hit the boss', 'Golpea al jefe'],
+  { id: 'colpisci', modulo: 'giochi', gioco: 'boss', nomi: ['colpisci', 'attacca', 'hit'], titolo: ['Colpisci il boss', 'Hit the boss', 'Golpea al jefe'],
     cosa: ['Colpisce il boss di turno. Se cade, il bottino va a chi l\'ha colpito, in proporzione ai danni.', 'Hits the current boss. If it falls, the loot goes to whoever hit it, in proportion to the damage.', 'Golpea al jefe de turno. Si cae, el botín va a quien lo golpeó, en proporción al daño.'] },
-  { id: 'abbraccio', modulo: 'giochi', nomi: ['abbraccio', 'abbraccia', 'hug'], titolo: ['Abbraccio', 'Hug', 'Abrazo'],
+  { id: 'abbraccio', modulo: 'giochi', gioco: 'abbraccio', nomi: ['abbraccio', 'abbraccia', 'hug'], titolo: ['Abbraccio', 'Hug', 'Abrazo'],
     cosa: ['Abbraccia qualcuno in chat (!abbraccio @nome), o tutta la chat se non dici chi.', 'Hug someone in chat (!abbraccio @nome), or the whole chat if you name nobody.', 'Abraza a alguien en el chat (!abbraccio @nome), o a todo el chat si no dices a quién.'] },
-  { id: 'bacio', modulo: 'giochi', nomi: ['bacio', 'bacino', 'kiss'], titolo: ['Bacino', 'Kiss', 'Besito'],
+  { id: 'bacio', modulo: 'giochi', gioco: 'bacio', nomi: ['bacio', 'bacino', 'kiss'], titolo: ['Bacino', 'Kiss', 'Besito'],
     cosa: ['Manda un bacino a qualcuno in chat, o a tutta la chat.', 'Send a kiss to someone in chat, or to the whole chat.', 'Manda un besito a alguien en el chat, o a todo el chat.'] },
-  { id: 'cinque', modulo: 'giochi', nomi: ['cinque', 'highfive', 'hi5'], titolo: ['Batti il cinque', 'High five', 'Choca esos cinco'],
+  { id: 'cinque', modulo: 'giochi', gioco: 'cinque', nomi: ['cinque', 'highfive', 'hi5'], titolo: ['Batti il cinque', 'High five', 'Choca esos cinco'],
     cosa: ['Alza la mano per qualcuno (!cinque @nome) o per chiunque: chi risponde con !cinque la batte, e ogni tanto viene un cinque perfetto.', 'Raise your hand for someone (!cinque @nome) or anyone: whoever answers !cinque hits it, and now and then it comes out a perfect high five.', 'Levanta la mano para alguien (!cinque @nome) o para cualquiera: quien responde !cinque la choca, y de vez en cuando sale un cinco perfecto.'] },
   { id: 'nococcole', modulo: 'giochi', nomi: ['nococcole'], titolo: ['Niente coccole', 'No cuddles', 'Sin mimos'], spegnibile: false,
     cosa: ['Chi lo scrive non riceve più abbracci, bacini e cinque. Riscriverlo li riaccende.', 'Whoever writes it no longer gets hugs, kisses and high fives. Writing it again turns them back on.', 'Quien lo escribe ya no recibe abrazos, besitos ni cincos. Escribirlo de nuevo los reactiva.'] },
@@ -117,9 +121,9 @@ export const COMANDI = [
     cosa: ['Chi è stato sfidato a duello con una posta accetta: il duello si gioca subito.', 'Whoever was challenged to a staked duel accepts: the duel is played at once.', 'Quien fue retado a un duelo con apuesta acepta: el duelo se juega enseguida.'], costa: true },
   { id: 'rifiuta', modulo: 'giochi', nomi: ['rifiuta'], titolo: ['Rifiuta una sfida', 'Refuse a challenge', 'Rechaza un reto'],
     cosa: ['Chi è stato sfidato a duello con una posta dice di no, e nessuno perde niente.', 'Whoever was challenged to a staked duel says no, and nobody loses anything.', 'Quien fue retado a un duelo con apuesta dice que no, y nadie pierde nada.'] },
-  { id: 'morra', modulo: 'giochi', nomi: ['morra', 'rps'], titolo: ['Morra cinese', 'Rock paper scissors', 'Piedra, papel o tijera'],
-    cosa: ['Sasso, carta o forbice contro il bot. Con una puntata ci si giocano monete: !morra carta 20.', 'Rock, paper or scissors against the bot. With a bet you play for coins: !morra carta 20.', 'Piedra, papel o tijera contra el bot. Con una apuesta se juegan monedas: !morra carta 20.'], attesa: 5 },
-  { id: 'sblocca', modulo: 'giochi', nomi: ['sblocca'], titolo: ['Sblocca la chat', 'Unlock the chat', 'Desbloquea el chat'],
+  { id: 'morra', modulo: 'giochi', gioco: 'morra', nomi: ['morra', 'rps'], titolo: ['Morra cinese', 'Rock paper scissors', 'Piedra, papel o tijera'],
+    cosa: ['Sasso, carta o forbice contro il bot. Con una puntata ci si giocano monete: !morra carta 20.', 'Rock, paper or scissors against the bot. With a bet you play for coins: !morra carta 20.', 'Piedra, papel o tijera contra el bot. Con una apuesta se juegan monedas: !morra carta 20.'] },
+  { id: 'sblocca', modulo: 'giochi', gioco: 'sblocca', nomi: ['sblocca'], titolo: ['Sblocca la chat', 'Unlock the chat', 'Desbloquea el chat'],
     cosa: ['Chi lo scrive spende monete per mettere la chat in solo emote (o quello che scegli tu) per qualche minuto. !sblocca 5 per cinque minuti.', 'The writer spends coins to put the chat in emote-only (or what you choose) for a few minutes. !sblocca 5 for five minutes.', 'Quien lo escribe gasta monedas para poner el chat en solo emotes (o lo que elijas) unos minutos. !sblocca 5 para cinco minutos.'], costa: true },
   { id: 'regala', modulo: 'giochi', nomi: ['regala', 'dona'], titolo: ['Regala monete', 'Gift coins', 'Regala monedas'],
     cosa: ['Passa monete tue a qualcun altro.', 'Pass your coins to someone else.', 'Pasa monedas tuyas a otra persona.'], costa: true },
@@ -160,8 +164,8 @@ export const COMANDI = [
   { id: 'subathon', modulo: 'subathon', nomi: ['subathon', 'quantomanca'], titolo: ['Quanto manca', 'How long left', 'Cuánto queda'],
     cosa: ['Dice quanto manca alla fine del subathon.', 'Says how long is left before the subathon ends.', 'Dice cuánto queda para el final del subathon.'], attesa: 5 },
 
-  { id: 'treno', modulo: 'treno', nomi: ['treno', 'hypetrain', 'hype'], titolo: ['A che punto e\u2019 il treno', 'Where the train is', 'Por d\u00f3nde va el tren'],
-    cosa: ['Dice a che livello e\u2019 l\u2019hype train in corso, quanto manca al prossimo e quanti secondi restano.', 'Says what level the running hype train is at, how far to the next one and how many seconds are left.', 'Dice en qu\u00e9 nivel est\u00e1 el hype train en curso, cu\u00e1nto falta para el siguiente y cu\u00e1ntos segundos quedan.'], attesa: 5 },
+  { id: 'treno', modulo: 'treno', nomi: ['treno', 'hypetrain', 'hype'], titolo: ['A che punto \u00e8 il treno', 'Where the train is', 'Por d\u00f3nde va el tren'],
+    cosa: ['Dice a che livello \u00e8 l\u2019hype train in corso, quanto manca al prossimo e quanti secondi restano.', 'Says what level the running hype train is at, how far to the next one and how many seconds are left.', 'Dice en qu\u00e9 nivel est\u00e1 el hype train en curso, cu\u00e1nto falta para el siguiente y cu\u00e1ntos segundos quedan.'], attesa: 5 },
 
   { id: 'discord', modulo: 'discord', nomi: ['discord'], titolo: ['Collega Discord', 'Link Discord', 'Vincula Discord'],
     cosa: ['Chi lo scrive collega il suo account Discord per prendersi i ruoli che gli spettano (!discord via per staccarsi). Risponde solo se i ruoli su Discord sono accesi.', 'The writer links their Discord account to get the roles they are due (!discord via to unlink). It only answers if Discord roles are on.', 'Quien lo escribe vincula su cuenta de Discord para llevarse los roles que le tocan (!discord via para desvincularse). Solo responde si los roles de Discord están encendidos.'], attesa: 5 },
@@ -290,6 +294,14 @@ function rangoDi(msg) {
 
 export const puoUsare = (livello, msg) => rangoDi(msg) >= (RANGO[livello] ?? 0);
 
+// Le attese che il pannello mostra accanto al comando: per un gioco quelle
+// scelte nelle sue regole, altrimenti quella fissa del comando.
+function atteseDi(c, settings) {
+  if (!c.gioco) return { attesa: c.attesa || 0, attesaTutti: 0 };
+  const v = valoriDi(settings, c.gioco);
+  return { attesa: v.attesaTesta || 0, attesaTutti: v.attesaTutti || 0 };
+}
+
 // La riga come la vede il pannello: com'e' configurato QUESTO canale.
 export function elenco(channel) {
   const s = scelte(channel);
@@ -307,7 +319,7 @@ export function elenco(channel) {
       titolo: c.titolo,
       cosa: c.cosa,
       costa: !!c.costa,
-      attesa: c.attesa || 0,
+      ...atteseDi(c, cfg),
       spegnibile: spegnibile(c),
       rinominabile: rinominabile(c),
       acceso: suo,

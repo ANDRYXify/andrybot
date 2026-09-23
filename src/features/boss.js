@@ -22,6 +22,7 @@
 import { points, streamers, memory } from '../db.js';
 import { valoriDi } from './giochi-conf.js';
 import { nomeIn } from './comandi-registro.js';
+import { aspetta, giocato } from './attese-giochi.js';
 
 const scegli = (a) => a[Math.floor(Math.random() * a.length)];
 const pulito = (s) => String(s || '').replace(/^@/, '').toLowerCase().trim();
@@ -41,7 +42,6 @@ function manda(channel, p) {
 }
 
 const bossi = new Map();     // canale → { nome, vita, vitaMax, danni: Map(chi → { nome, danno }), soglia, timer, say }
-const attese = new Map();    // canale|chi → da quando puo' colpire di nuovo
 const silenzi = new Map();   // canale → fino a quando «nessun boss» non si ripete
 
 export function personeAttive(channel) {
@@ -119,11 +119,8 @@ export function colpisci(channel, msg, say, caso = Math.random) {
   }
   const c = conf(channel);
   const io = pulito(msg.user);
-  const chiave = `${channel}|${io}`;
-  const ora = Date.now();
-  if ((attese.get(chiave) || 0) > ora) return;
-  attese.set(chiave, ora + c.attesa * 1000);
-  if (attese.size > 5000) for (const [k, t] of attese) if (t < ora) attese.delete(k);
+  if (aspetta(channel, 'boss', msg, say, { comando: 'colpisci', muta: true })) return;
+  giocato(channel, 'boss', io);
 
   const basso = Math.min(c.dannoMin, c.dannoMax);
   const alto = Math.max(c.dannoMin, c.dannoMax);
