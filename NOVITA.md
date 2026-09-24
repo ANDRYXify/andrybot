@@ -70,6 +70,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - «Ri-leggi il mio profilo» dice quante cose nuove ha trovato, e se non trova niente lo dice invece di scrivere «Fatto». [vai: conoscenza]
 - In «Cosa sa il bot» e nella Memoria ogni voce ha un nome nella lingua del pannello, anche quelle trovate online o ricavate dai tuoi discorsi. [vai: conoscenza]
 - Il manuale del bot segue le tre schede, Personalità, Conoscenza e Memoria, con ogni controllo, il suo valore di base e i messaggi che leggi. [vai: personalita]
+- Premendo «Tutto schermo» il menù di lato si disfa a matita prima di lasciare il posto, e tornando indietro si ridisegna. [vai: alert]
+- Nelle Grafiche l'anteprima resta tutta visibile mentre scorri, sotto la barra in cima. [vai: grafiche]
+- Nel giro guidato il riquadro attorno a quello che ti indica si disegna a matita, a ogni passo.
 
 ## 2026-09-23
 

@@ -1873,10 +1873,14 @@ body.con-salva { padding-bottom: 92px; }
 body.giro-aperto { overflow: hidden; }
 .giro-buco {
   position: fixed; border-radius: var(--r-l); pointer-events: none;
-  box-shadow: 0 0 0 9999px rgba(10, 8, 10, .62), 0 0 0 2px var(--acc);
+  box-shadow: 0 0 0 9999px rgba(10, 8, 10, .62);
   transition: transform .26s var(--an-morbido), opacity .26s var(--an-morbido), box-shadow .26s var(--an-morbido);
 }
-.giro-buco[hidden] { display: none; }
+.giro-anello {
+  position: fixed; box-sizing: border-box; pointer-events: none;
+  border: 2px solid var(--acc); border-radius: var(--r-l);
+}
+.giro-buco[hidden], .giro-anello[hidden] { display: none; }
 .giro-velo:has(.giro-buco[hidden]) { background: rgba(10, 8, 10, .62); }
 .giro-carta {
   position: fixed; width: min(380px, calc(100vw - 24px)); max-height: 70vh; overflow: auto;

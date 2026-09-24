@@ -1626,8 +1626,8 @@ body.leggero .scheletro::after, body.meno-moto .scheletro::after { animation: no
 .gr-tipo-b.on { background: var(--acc-tint); color: var(--testo); box-shadow: 3px 3px 0 var(--contorno); }
 .gr-studio { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
 .gr-controlli { flex: 1 1 320px; min-width: 280px; }
-.gr-anteprima { flex: 1 1 300px; min-width: 260px; position: sticky; top: 16px; }
-#gr-canvas { width: auto; height: auto; max-width: min(100%, 420px); max-height: min(calc(100vh - 32px), 760px); border-radius: 14px; box-shadow: var(--om-m); display: block; margin: 0 auto; background: #111; }
+.gr-anteprima { flex: 1 1 300px; min-width: 260px; position: sticky; top: calc(var(--top-h) + 16px); }
+#gr-canvas { width: auto; height: auto; max-width: min(100%, 420px); max-height: min(calc(100vh - var(--top-h) - 32px), 760px); border-radius: 14px; box-shadow: var(--om-m); display: block; margin: 0 auto; background: #111; }
 .gr-formato { margin-top: -.4rem; }
 .gr-ig { border: 1px solid var(--acc-bordo); background: var(--acc-tint); border-radius: var(--r-m); padding: .75rem .9rem; margin: .7rem 0 .9rem; }
 .gr-ig > p { margin: 0; }

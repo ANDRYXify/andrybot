@@ -196,9 +196,39 @@ const MODELLO_SPAZIO = `(() => {
 const menuDiLato = () => p.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.area-principale')).marginLeft) || 0);
 await p.setViewportSize({ width: 1440, height: 950 });
 await p.waitForTimeout(250);
+// Premendo «Tutto schermo» il menu di lato si disfa all'indietro e solo dopo
+// lascia il posto alla pagina; ripremendo torna e si ridisegna. Si misura a
+// eventi: quando un gruppo del menu comincia a disfarsi o a disegnarsi, e
+// quando la pagina cambia davvero. Un'attesa fissa sarebbe una gara di tempi.
+// Ogni pressione ha i suoi osservatori e il suo risultato: quelli della
+// pressione prima si staccano, altrimenti scriverebbero qui col loro orologio.
+const segnaCambio = () => p.evaluate(() => {
+  (window.__schermoOss || []).forEach((o) => o.disconnect());
+  const t0 = performance.now(), g = document.querySelector('#nav-drawer > .drawer-grp');
+  const era = document.body.classList.contains('tutto-schermo');
+  const quando = () => Math.max(1, Math.round(performance.now() - t0));
+  const s = { disfa: 0, ridisegna: 0, cambia: 0 };
+  window.__schermo = s;
+  const suGruppo = new MutationObserver(() => {
+    if (g.classList.contains('dg-out') && !s.disfa) s.disfa = quando();
+    if (g.classList.contains('dg-in') && !s.ridisegna) s.ridisegna = quando();
+  });
+  suGruppo.observe(g, { attributes: true, attributeFilter: ['class'] });
+  const suPagina = new MutationObserver(() => {
+    if (document.body.classList.contains('tutto-schermo') !== era && !s.cambia) s.cambia = quando();
+  });
+  suPagina.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  window.__schermoOss = [suGruppo, suPagina];
+});
+const premi = async (a) => {
+  await segnaCambio();
+  await p.click('#pt-schermo');
+  await p.waitForFunction((x) => document.body.classList.contains('tutto-schermo') === x, a, { timeout: 4000 }).catch(() => {});
+  await p.waitForTimeout(150);
+  return p.evaluate(() => window.__schermo);
+};
 const schermo = { prima: await menuDiLato() };
-await p.click('#pt-schermo');
-await p.waitForTimeout(250);
+schermo.entra = await premi(true);
 schermo.premuto = await menuDiLato();
 const spazi = [];
 for (const [w, h] of [[1440, 950], [1280, 800], [1920, 1080]]) {
@@ -208,12 +238,12 @@ for (const [w, h] of [[1440, 950], [1280, 800], [1920, 1080]]) {
 }
 await p.setViewportSize({ width: 1440, height: 950 });
 await p.waitForTimeout(250);
-await p.click('#pt-schermo');
-await p.waitForTimeout(250);
+schermo.esce = await premi(false);
 schermo.ripremuto = await menuDiLato();
-await p.click('#pt-schermo');
-await p.waitForTimeout(250);
+await premi(true);
 const schermoGiusto = schermo.prima > 0 && schermo.premuto === 0 && schermo.ripremuto > 0;
+const schermoDisegnato = schermo.entra.disfa > 0 && schermo.entra.cambia > schermo.entra.disfa
+  && schermo.esce.cambia > 0 && schermo.esce.ridisegna > 0 && Math.abs(schermo.esce.ridisegna - schermo.esce.cambia) <= 50;
 
 // IL MENU DAL BORDO. A tutto schermo il menu aspetta sul bordo sinistro, una
 // colonna di 20 px dove la pagina non entra: ci passi sopra per andare ai
@@ -644,6 +674,7 @@ verde = dice(incoerenti.length === 0, `scegliendo un elemento si vedono solo i s
 verde = dice(telaFerma, 'la tela non cambia misura scegliendo o lasciando un elemento', JSON.stringify(misureTela)) && verde;
 verde = dice(bordoGiusto, `a tutto schermo il menu compare dal bordo dopo una sosta, disegnato, e uscendo si disfa prima di sparire`, JSON.stringify(bordo)) && verde;
 verde = dice(schermoGiusto, `il menu sta di lato finché non premi «Tutto schermo», e ripremendo torna (${schermo.prima} → ${schermo.premuto} → ${schermo.ripremuto} px)`, JSON.stringify(schermo)) && verde;
+verde = dice(schermoDisegnato, `entrando il menu si disfa prima di lasciare il lato (${schermo.entra.disfa} → ${schermo.entra.cambia} ms), uscendo si ridisegna`, JSON.stringify(schermo)) && verde;
 verde = dice(spazioStorto.length === 0, `a tutto schermo la larghezza è della tela: a ${spazi.map((s) => s.schermo + ' ' + s.tela[0] + ' px').join(', ')}`, JSON.stringify(spazioStorto)) && verde;
 verde = dice(dopoScelta.visti === 0 && dopoScelta.sel === 0 && dopoScelta.chiuso,
   'e lasciandolo non resta niente acceso', JSON.stringify(dopoScelta)) && verde;

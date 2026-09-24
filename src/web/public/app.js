@@ -3738,11 +3738,21 @@ function applicaSchermo() {
       : `${_bIco('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>')}${L('Tutto schermo', 'Full screen', 'Pantalla completa')}`;
   }
 }
+let _cambioSchermo = 0;
 function cambiaSchermo() {
+  if (_cambioSchermo) return;
   const on = !document.body.classList.contains('tutto-schermo');
   try { localStorage.setItem('schermoPieno', on ? '1' : '0'); } catch (e) {  }
-  applicaSchermo();
-  requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco));
+  const dopo = () => {
+    _cambioSchermo = 0;
+    applicaSchermo();
+    if (!on && document.body.classList.contains('con-nav')) window.SB_DISEGNO?.menu?.();
+    requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco));
+  };
+  const lato = on && document.body.classList.contains('con-nav') && !document.body.classList.contains('menu-aperto');
+  const dura = lato ? (window.SB_DISEGNO?.viaMenu?.() || 0) : 0;
+  if (!dura) { dopo(); return; }
+  _cambioSchermo = setTimeout(dopo, dura);
 }
 
 function aggiornaTestataPagina() {
@@ -4062,7 +4072,7 @@ function apriGiro(id, forzato = false) {
   const velo = document.createElement('div');
   velo.id = 'giro';
   velo.className = 'giro-velo';
-  velo.innerHTML = '<div class="giro-buco" hidden></div><div class="giro-carta" role="dialog" aria-modal="true" aria-live="polite"></div>';
+  velo.innerHTML = '<div class="giro-buco" hidden></div><div class="giro-anello" hidden></div><div class="giro-carta" role="dialog" aria-modal="true" aria-live="polite"></div>';
   document.body.appendChild(velo);
   document.body.classList.add('giro-aperto');
   _giro = { id, tappe, i: 0, velo, forzato };
@@ -4115,6 +4125,7 @@ function disegnaTappa() {
   _puntaTappa(t, _giro.id);
   const carta = velo.querySelector('.giro-carta');
   const buco = velo.querySelector('.giro-buco');
+  const anello = velo.querySelector('.giro-anello');
   const ultima = i === tappe.length - 1;
 
   if (t.bersaglio) {
@@ -4124,6 +4135,7 @@ function disegnaTappa() {
     if (!_giro) return;
     carta.classList.toggle('al-centro', !t.bersaglio);
     buco.hidden = !t.bersaglio;
+    anello.hidden = !t.bersaglio;
     const alto = carta.offsetHeight || 200;
     const largo = carta.offsetWidth || 380;
     const stretto = window.innerWidth <= 720;
@@ -4135,10 +4147,12 @@ function disegnaTappa() {
       return;
     }
     const r = t.bersaglio.getBoundingClientRect();
-    buco.style.left = (r.left - 6) + 'px';
-    buco.style.top = (r.top - 6) + 'px';
-    buco.style.width = (r.width + 12) + 'px';
-    buco.style.height = (r.height + 12) + 'px';
+    for (const x of [buco, anello]) {
+      x.style.left = (r.left - 6) + 'px';
+      x.style.top = (r.top - 6) + 'px';
+      x.style.width = (r.width + 12) + 'px';
+      x.style.height = (r.height + 12) + 'px';
+    }
     if (stretto) return;
     const fra = (v, min, max) => Math.min(Math.max(v, min), Math.max(min, max));
     const sotto = r.bottom + GIRO_MARGINE;
@@ -4165,6 +4179,7 @@ function disegnaTappa() {
     </div>`;
   _giro.posiziona = posiziona;
   posiziona();
+  if (t.bersaglio) { delete anello.dataset.dgIn; window.SB_DISEGNO?.disegna?.(anello, { veloce: true }); }
   carta.querySelector('[data-giro="avanti"]')?.focus({ preventScroll: true });
 }
 
