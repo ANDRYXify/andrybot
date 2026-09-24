@@ -61,7 +61,7 @@ test('le credenziali di Instagram si leggono da un posto solo', () => {
   assert.match(rotta("app.get('/api/streamer/grafiche/storia'", 300), /ig: await storiaIgPossibile\(login\)/, 'e le Grafiche');
   assert.match(leggi('src/features/storia-ig.js'), /export async function pubblicaStoria\(login, byte, \{ pubblica = instagram\.pubblicaStoria \} = \{\}\) \{\n\s+const ig = credenzialiInstagram\(login\);/,
     'e la storia, per chiunque la pubblichi');
-  assert.match(rotta("app.post('/api/streamer/settimana/manda'", 6000), /if \(dove\.ig && storia && credenzialiInstagram\(login\)\) \{/, '«Manda» compreso');
+  assert.match(rotta('async function mandaLaSettimana(', 3000), /if \(dove\.ig && storia && credenzialiInstagram\(login\)\) \{/, '«Manda» compreso, e la settimana che esce da sola');
   assert.match(rotta("app.post('/api/streamer/instagram/prova'", 900), /: credenzialiInstagram\(login\);/, 'e la prova dal pannello');
 });
 
@@ -75,7 +75,7 @@ test('dal pannello arrivano le scelte, non l\'identita\' di un account collegato
 test('chi fa una chiamata vera ne lascia l\'esito, e il pannello lo riceve coi permessi mancanti', () => {
   assert.match(BOT, /const p = await instagram\.ultimoPost\(igCr\);\n\s+instagram\.ricorda\(s\.login, p\);/, 'il giro dei post nuovi');
   assert.match(leggi('src/features/storia-ig.js'), /const r = await pubblica\(\{ \.\.\.ig, url: [^\n]+\);\n\s+instagram\.ricorda\(login, r\);/, 'la storia');
-  assert.match(rotta("app.post('/api/streamer/settimana/manda'", 6000), /await storiaIg\.pubblicaStoria\(login, storia\)/, 'e «Manda» la pubblica da li\'');
+  assert.match(rotta('async function mandaLaSettimana(', 3000), /await storiaIg\.pubblicaStoria\(login, storia\)/, 'e «Manda» la pubblica da li\'');
   assert.match(rotta("app.post('/api/streamer/instagram/prova'", 900), /if \(!scritto\) instagram\.ricorda\(login,/,
     'la prova del collegamento salvato, non quella di un token appena incollato');
   const st = rotta("app.get('/api/instagram/stato'", 1400);
