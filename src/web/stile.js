@@ -523,6 +523,21 @@ export const normScritta = (x) => {
   };
 };
 
+// IL NOME DEL COMANDO in scena: la pastiglia «!comando» che compare quando
+// parte un effetto. Di serie come prima: in basso al centro, del colore del
+// marchio, tonda.
+export const VESTE_ETICHETTA = { sfondo: '#ba007a', opacita: 85, testo: '#ffffff', bordoRaggio: 30 };
+export const POS_ETICHETTA = ['basso-centro'];
+export const normEtichetta = (x) => {
+  x = x || {};
+  return {
+    attivo: x.attivo !== false,
+    posizione: unoDi(x.posizione, POS_ETICHETTA, 'basso-centro'),
+    xy: xyOk(x.xy),
+    stile: normWidgetStile({ ...VESTE_ETICHETTA, ...(x.stile || {}) }),
+  };
+};
+
 // LA CLASSIFICA DEI BIT in scena. Le righe non sono nostre: sono quelle che da'
 // Twitch, e qui si sceglie solo quante mostrarne e di che periodo. Il periodo e'
 // uno dei cinque che Twitch conosce — inventarne un sesto vorrebbe dire

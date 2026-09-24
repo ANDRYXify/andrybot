@@ -1330,7 +1330,7 @@ function _demoGet(via) {
       { id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true },
         xy: { alert: { x: 50, y: 14 }, chat: { x: 16, y: 78 }, wf: { x: 86, y: 62 }, ws: { x: 86, y: 82 } },
         css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/overlay-principale' },
-      { id: 'ovsolochat', nome: 'Solo chat', mostra: { alert: false, chat: true, wf: false, ws: false, boss: false, scritta: false, effetti: false },
+      { id: 'ovsolochat', nome: 'Solo chat', mostra: { alert: false, chat: true, wf: false, ws: false, boss: false, scritta: false, etichetta: false, effetti: false },
         xy: { chat: { x: 22, y: 50 } }, css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/solo-chat' },
       { id: 'ovpausa', nome: 'Schermata di pausa', mostra: { alert: true, chat: false, wf: true, ws: true, effetti: true },
         xy: { alert: { x: 50, y: 50 }, wf: { x: 22, y: 84 }, ws: { x: 78, y: 84 } },
@@ -9226,6 +9226,23 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="scritta">${L('Salva', 'Save', 'Guardar')}</button></p>
     </details>
 
+    <details class="carta sez" data-parte="aspetto" id="sez-etichetta">
+      <summary><h3>${_hIco(ICO.fulmine)}${L('Nome del comando', 'Command name', 'Nombre del comando')}</h3></summary>
+      <p>${L('La pastiglia col nome del comando che compare quando parte un effetto, per esempio «!applausi»: chi guarda capisce chi l\'ha fatto partire e come rifarlo.', 'The pill with the command name that shows when an effect fires, for example «!applause»: viewers see what started it and how to do it again.', 'La pastilla con el nombre del comando que aparece cuando sale un efecto, por ejemplo «!aplausos»: quien mira entiende qué lo lanzó y cómo repetirlo.')}</p>
+      <p><button type="button" class="btn secondario mini" data-vai-scheda="effetti">${_bIco(ICO.effetti)}${L('Apri Effetti & suoni', 'Open Effects & sounds', 'Abrir Efectos y sonidos')}</button></p>
+      <div data-cfg="etichetta">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="eti-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Mostralo nella scena', 'Show it on the scene', 'Muéstralo en la escena')}</span>
+        </div>
+        <div class="asp-blocco" data-asp="etichetta" data-cfg-di="etichetta">
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="etichetta">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
     <details class="carta sez" data-parte="aspetto" id="sez-goal">
       <summary><h3>${_hIco(ICO.trofeo)}${L('Gli obiettivi', 'Your goals', 'Tus objetivos')}</h3></summary>
       <p>${L('Barre che si riempiono da sole mentre arrivano follower, sub o bit. Un obiettivo può essere «altri 100» oppure «1000 in tutto»: con «Quanti ne ho adesso» parte dal numero che hai già.', 'Bars that fill by themselves as followers, subs or bits come in. A goal can be «100 more» or «1000 in total»: with «How many I have now» it starts from the number you already have.', 'Barras que se llenan solas mientras llegan followers, subs o bits. Un objetivo puede ser «100 más» o «1000 en total»: con «Cuántos tengo ahora» empieza desde el número que ya tienes.')}</p>
@@ -9496,7 +9513,7 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'scritta', 'effetti', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
 let occSel = '';
@@ -10347,7 +10364,20 @@ function _vestiScritta(box, cfg) {
   box.querySelector('.scritta-corpo').textContent = L('Grazie a tutti per il raid!', 'Thanks everyone for the raid!', '¡Gracias a todos por el raid!');
 }
 
-const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, scritta: _vestiScritta };
+function _defEtichetta() {
+  return { attivo: true, posizione: 'basso-centro', xy: null,
+    stile: { dim: 'media', sfondo: '#ba007a', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 30, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
+}
+
+function _vestiEtichetta(box, cfg) {
+  const st = cfg.stile || {};
+  box.className = 'ovl-widget ovl-etichetta dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 30) + 'px', '--font': fontStile(st) });
+  box.textContent = '!' + L('applausi', 'applause', 'aplausos');
+}
+
+const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, scritta: _vestiScritta, etichetta: _vestiEtichetta };
 
 function _orologioGiu(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -10620,6 +10650,7 @@ const PEZZI_EL = () => [
   ['bit', '#sez-bit'],
   ['boss', '#sez-boss'],
   ['scritta', '#sez-scritta'],
+  ['etichetta', '#sez-etichetta'],
 ];
 
 const _apertoGrp = {};
@@ -10896,6 +10927,7 @@ const ELEMENTI = () => {
   out.push({ k: 'pen', ico: ICO.penitenza, n: L('Sfida a tempo', 'Timed challenge', 'Reto a tiempo'), cfg: 'penitenze' });
   out.push({ k: 'boss', ico: ICO.target, n: L('Boss', 'Boss', 'Jefe'), cfg: 'overlayBoss' });
   out.push({ k: 'scritta', ico: ICO.testo, n: L('Testo a schermo', 'On-screen text', 'Texto en pantalla'), cfg: 'overlayScritta' });
+  out.push({ k: 'etichetta', ico: ICO.fulmine, n: L('Nome del comando', 'Command name', 'Nombre del comando'), cfg: 'overlayEtichetta' });
   return out;
 };
 const ELEM = (k) => ELEMENTI().find((e) => e.k === k) || null;
@@ -10946,7 +10978,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, bit: _defBit, boss: _defBoss, scritta: _defScritta, pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, bit: _defBit, boss: _defBoss, scritta: _defScritta, etichetta: _defEtichetta, pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 function _cfgEl(k) {
   const e = ELEM(k);
@@ -10997,7 +11029,7 @@ function _accendiDi(k, v) {
   if (e && e.cont) { (e.cont.overlayCfg = e.cont.overlayCfg || {}).mostra = !!v; return; }
   if (e && e.cfg) {
     _cfgEl(k).attivo = !!v;
-    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo', boss: 'boss-attivo', scritta: 'scr-attivo' }[k]);
+    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo', boss: 'boss-attivo', scritta: 'scr-attivo', etichetta: 'eti-attivo' }[k]);
     if (chk) chk.checked = !!v;
     return;
   }
@@ -24434,7 +24466,7 @@ function caricaDatiScheda(id) {
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
-    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); riempiCfgForm('scritta'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
+    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); riempiCfgForm('scritta'); riempiCfgForm('etichetta'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'consolify') caricaConsolify();

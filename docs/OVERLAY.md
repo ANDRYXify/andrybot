@@ -1846,3 +1846,15 @@ del contenitore (`#testi`), come per la sfida a tempo, e ogni scritta dentro ha
 la veste. La larghezza di una scritta è quella del suo corpo, al massimo 31,5em
 (sulla tela e in onda sono la stessa misura, perché è in `em` e non in unità
 dello schermo, che nello Studio sarebbero quelle del pannello).
+
+### Il nome del comando
+
+Chiave `etichetta`, configurazione `overlayEtichetta`, di serie accesa e in
+basso al centro. È la pastiglia «!comando» che compare quando parte un effetto
+(immagine, video, suono): chi guarda capisce cosa l'ha fatto partire e come
+rifarlo. La veste di serie è quella di prima, del colore del marchio (#ba007a
+all'85%) e tonda; il suo angolo è ora il 10% dal fondo, quello che lo Studio
+conosce (prima stava al 7%, un posto che la tela non sapeva disegnare). Più
+pastiglie insieme si mettono una sotto l'altra, e la posizione è del
+contenitore (`#etichette`), come per il testo a schermo.
+

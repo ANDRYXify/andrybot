@@ -721,17 +721,38 @@ function widget(id, cfg, valore) {
   posaElemento(el, id === 'ultimoSub' ? 'ws' : 'wf', cfg);
 }
 
+function etichettaAccesa() { return mostra('etichetta') && !!MIO.etichetta && MIO.etichetta.attivo !== false; }
+
+function vestiEtichetta(el) {
+  const st = (MIO.etichetta && MIO.etichetta.stile) || {};
+  el.className = 'ovl-widget ovl-etichetta dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna') + (el._dentro ? ' dentro' : '');
+  applicaVars(el, {
+    '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
+    '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
+  });
+}
+
+function posaEtichette() { posizionaContenitore(etichette, MIO.xy.etichetta, 'basso-centro'); }
+
 function etichettaVolatile(comando, durata, conPrefisso = true) {
-  if (!comando) return;
+  if (!comando || !etichettaAccesa()) return;
   const el = document.createElement('div');
-  el.className = 'pillola';
   el.textContent = (conPrefisso ? '!' : '') + comando;
   etichette.appendChild(el);
-  requestAnimationFrame(() => el.classList.add('dentro'));
+  vestiEtichetta(el);
+  posaEtichette();
+  requestAnimationFrame(() => { el._dentro = true; el.classList.add('dentro'); });
   setTimeout(() => {
+    el._dentro = false;
     el.classList.remove('dentro');
-    setTimeout(() => el.remove(), 300);
+    setTimeout(() => { el.remove(); posaEtichette(); }, 300);
   }, Math.max(800, durata));
+}
+
+function ridisegnaEtichette() {
+  if (!etichettaAccesa()) { etichette.textContent = ''; return; }
+  etichette.querySelectorAll('.ovl-etichetta').forEach(vestiEtichetta);
+  posaEtichette();
 }
 
 function ricevi(m) {
@@ -1404,6 +1425,8 @@ function applicaTema(t) {
   ridisegnaBoss();
   MIO.scritta = t.scritta || null;
   ridisegnaScritte();
+  MIO.etichetta = t.etichetta || null;
+  ridisegnaEtichette();
   MIO.bit = t.bit || null;
   if (MIO.bit && MIO.bit.attivo && mostra('bit')) chiediBit(); else { disegnaBit(); }
   if (MIO.musica && MIO.musica.attivo && mostra('musica')) chiediMusica(); else togliMusica();

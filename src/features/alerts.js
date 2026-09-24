@@ -435,6 +435,7 @@ export class AlertsEngine {
       bit: (s.overlayBit && typeof s.overlayBit === 'object') ? s.overlayBit : null,
       boss: (s.overlayBoss && typeof s.overlayBoss === 'object') ? s.overlayBoss : null,
       scritta: (s.overlayScritta && typeof s.overlayScritta === 'object') ? s.overlayScritta : null,
+      etichetta: (s.overlayEtichetta && typeof s.overlayEtichetta === 'object') ? s.overlayEtichetta : null,
       // I CARTELLI arrivano all'overlay con l'immagine gia' risolta in
       // indirizzo, come le icone dei widget: la pagina non sa niente della
       // libreria Effetti, e non deve saperlo.

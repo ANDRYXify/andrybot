@@ -96,7 +96,7 @@ if (!browser) { console.log('  –  saltato: manca Chromium o Playwright'); proc
 // il tema e il brano che il finto bot serve alla pagina dell'overlay: li scrive
 // l'editor, caso per caso, cosi' le due pagine vestono la stessa cosa
 let TEMA = null, MUSICA = { stato: 'niente' };
-const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, boss: true, scritta: true, effetti: true, consolify: true };
+const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, boss: true, scritta: true, etichetta: true, effetti: true, consolify: true };
 const ovl = overlayFinto({ tema: () => TEMA, musica: () => MUSICA });
 const { base, chiudi } = await apriSito({ overlay: ovl });
 
@@ -434,6 +434,35 @@ try {
     dice(testo && edS && lvS && vicino(edS.w, lvS.w) && vicino(edS.h, lvS.h) && vicino(edS.font, lvS.font, 0.6)
       && edDove && lvDove && vicino(edDove.x, lvDove.x, 2) && vicino(edDove.y, lvDove.y, 2),
       `testo a schermo ${nome}: editor ${edS ? mis(edS) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvS ? mis(lvS) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
+      'editor e diretta non coincidono');
+  }
+
+  // --- 6-sexies. il nome del comando ----------------------------------------
+  // La pastiglia «!comando» di un effetto: stessa grandezza e stesso posto.
+  const ETI_VESTE = { dim: 'grande', sfondo: '#203040', opacita: 95, testo: '#ffffee', accento: '#22aa66', bordoRaggio: 4, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'linea' };
+  for (const [nome, xy, stile] of [['in un punto', { x: 20, y: 40, s: 100, r: 0 }, null], ['al suo angolo', null, null], ['vestito', { x: 70, y: 20, s: 120, r: 0 }, ETI_VESTE]]) {
+    const scritto = await ed.evaluate(async ({ xy, stile }) => {
+      const c = _cfgEl('etichetta'); c.attivo = true; c.stile = { ..._defEtichetta().stile, ...(stile || {}) };
+      const q = _ovXY(); for (const k of Object.keys(q)) delete q[k];
+      if (xy) q.etichetta = { ...xy };
+      aggiornaAnteprima();
+      await new Promise((r) => setTimeout(r, 600));
+      return document.querySelector('#ap-etichetta .ovl-etichetta')?.textContent || '';
+    }, { xy, stile });
+    const edE = await misuraEd('#ap-etichetta .ovl-etichetta');
+    const edDove = await ed.evaluate(`(${DOVE_S})('#ap-etichetta .ovl-etichetta')`);
+    const stileE = { ...(await ed.evaluate(() => _defEtichetta().stile)), ...(stile || {}) };
+    TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: xy ? { etichetta: xy } : {}, alertStile: null, chatStile: null,
+      etichetta: { attivo: true, posizione: 'basso-centro', xy: null, stile: stileE } };
+    await apriLive(() => window.MIO && window.MIO.etichetta);
+    ovl.manda({ tipo: 'audio', url: '', comando: scritto.slice(1) });
+    await live.waitForFunction(() => document.querySelector('#etichette .ovl-etichetta.dentro'), null, { timeout: 3000 }).catch(() => {});
+    await attesa(350);
+    const lvE = await misuraLive('#etichette .ovl-etichetta');
+    const lvDove = await live.evaluate(`(${DOVE_S})('#etichette .ovl-etichetta')`);
+    dice(scritto && edE && lvE && vicino(edE.w, lvE.w) && vicino(edE.h, lvE.h) && vicino(edE.font, lvE.font, 0.6)
+      && edDove && lvDove && vicino(edDove.x, lvDove.x, 2) && vicino(edDove.y, lvDove.y, 2),
+      `nome del comando ${nome}: editor ${edE ? mis(edE) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvE ? mis(lvE) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
       'editor e diretta non coincidono');
   }
 
