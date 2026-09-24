@@ -78,6 +78,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] Nella pagina link e in quella delle donazioni l'immagine di sfondo si sposta e si rimpicciolisce trascinandola sull'anteprima. Dove non arriva continuano i colori dei suoi bordi. [vai: pagina]
 - Il boss risponde a chi lo colpisce: poco dopo il primo colpo, e poi al massimo ogni venti secondi, il bot scrive chi ha colpito e quanto, la vita che resta e i secondi che mancano. [vai: giochi]
 - [importante] Nelle Grafiche c'è «In automatico»: la storia «Stasera alle…» esce da sola prima di ogni diretta, e la settimana esce il giorno che scegli, dopo che l'hai confermata dalla mail o dal pannello. [vai: grafiche]
+- Col tutto schermo acceso, passando a una scheda che non lo usa il menù torna di lato disegnandosi, e tornando si disfa prima di sparire. Anche riaprirlo mentre si sta chiudendo lo ridisegna.
 
 ## 2026-09-23
 

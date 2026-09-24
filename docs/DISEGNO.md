@@ -153,6 +153,21 @@ possa esistere.
     natura, e stringerle rimpicciolisce i tratti: la nuvoletta usciva più
     stretta della sua china. Tutte e due dichiarano `max-width: none`.
 
+17. **Si misura il contorno vero.** Mentre un elemento si disegna o si disfa,
+    il suo contorno è coperto (`dg-in`, `dg-out`: `border-color: transparent`).
+    La misura toglie per un istante quelle due classi, legge il contorno e le
+    rimette, senza che il browser dipinga in mezzo. Prima leggeva il contorno
+    coperto, concludeva «non c'è niente da disegnare» e il menu che tornava di
+    lato mentre si stava disfacendo ricompariva di colpo. Un elemento ha una
+    tela sola: se ricomincia a disegnarsi, il tratto di quando si disfaceva se
+    ne va.
+18. **Il menu segue lo stato della pagina, non il tasto.** Il tutto schermo è
+    una scelta che resta, e a cambiarlo è anche la scheda: da una scheda larga a
+    una stretta il menu torna di lato, e al contrario se ne va. Quando la pagina
+    perde `tutto-schermo` il menu si disegna, qualunque sia la strada (il tasto,
+    una voce del menu, un collegamento); prima che la prenda, se il menu è di
+    lato, si disfa e solo dopo lascia il posto (`applicaSchermo`).
+
 ## La tela viva
 
 ### Il tasto che premi si ripassa

@@ -86,9 +86,14 @@
   }
 
   function misura(el) {
+    var coperto = ['dg-in', 'dg-out'].filter(function (c) { return el.classList.contains(c); });
+    coperto.forEach(function (c) { el.classList.remove(c); });
     var st = getComputedStyle(el);
     var sp = parseFloat(st.borderTopWidth) || 0;
     var colore = st.borderTopColor;
+    var stile = st.borderTopStyle;
+    var rag = parseFloat(st.borderTopLeftRadius) || 0;
+    coperto.forEach(function (c) { el.classList.add(c); });
     var trasparente = /rgba\([^)]*,\s*0\)$/.test(colore) || colore === 'transparent';
     var z = 10, inFisso = false;
     for (var a = el; a && a !== document.body; a = a.parentElement) {
@@ -100,7 +105,7 @@
     return {
       r: el.getBoundingClientRect(),
       bordo: urlo ? { sp: SP_URLO, urlo: true, rag: 0 }
-        : (st.borderTopStyle === 'none' || sp < 0.5 || trasparente) ? null : { sp: sp, colore: colore, rag: parseFloat(st.borderTopLeftRadius) || 0 },
+        : (stile === 'none' || sp < 0.5 || trasparente) ? null : { sp: sp, colore: colore, rag: rag },
       z: z,
       inFisso: inFisso
     };
@@ -237,6 +242,8 @@
     matite.style.setProperty('--dg-da-pulizia', pu.da + 'ms');
     matite.style.setProperty('--dg-pulizia', pu.dur + 'ms');
     aggancia(t.s, el);
+    if (el._dgTela && el._dgTela !== t.s) el._dgTela.remove();
+    el._dgTela = t.s;
     return { t: t, fine: indietro ? RITORNO * p.fine : p.fine };
   }
 
@@ -498,6 +505,7 @@
         if (diventa('esce')) chiedi(el, { veloce: true }, true);
       } else if (el === document.body) {
         if (diventa('menu-aperto')) menu();
+        if (perde('tutto-schermo') && el.classList.contains('con-nav')) menu();
       } else if (el.id === 'cerca-overlay') {
         if (diventa('aperto')) chiedi(el.querySelector('.cerca-box'));
       } else {

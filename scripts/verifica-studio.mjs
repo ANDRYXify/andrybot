@@ -241,6 +241,24 @@ await p.waitForTimeout(250);
 schermo.esce = await premi(false);
 schermo.ripremuto = await menuDiLato();
 await premi(true);
+// Il tutto schermo e' una scelta che resta: a cambiarlo e' anche la scheda.
+// Col menu aperto dal bordo si va a una scheda stretta: il menu torna di lato
+// e si ridisegna li', nello stesso momento, anche se stava cominciando a
+// disfarsi (mentre si disegna o si disfa il suo contorno e' coperto, e la
+// misura deve leggere quello vero). Tornando, si disfa prima di sparire.
+const casa = await p.evaluate(() => { document.getElementById('apri-menu')?.click(); return schedaAttiva; });
+await p.waitForTimeout(900);
+const vaiA = async (id, atteso) => {
+  await segnaCambio();
+  await p.evaluate((x) => window.SB_APP.vai(x), id);
+  await p.waitForFunction((x) => document.body.classList.contains('tutto-schermo') === x, atteso, { timeout: 5000 }).catch(() => {});
+  await p.waitForTimeout(150);
+  return p.evaluate(() => window.__schermo);
+};
+schermo.aStretta = await vaiA('stato', false);
+schermo.aLarga = await vaiA(casa, true);
+const schermoNavigato = schermo.aStretta.cambia > 0 && schermo.aStretta.ridisegna > 0 && Math.abs(schermo.aStretta.ridisegna - schermo.aStretta.cambia) <= 50
+  && schermo.aLarga.disfa > 0 && schermo.aLarga.cambia > schermo.aLarga.disfa;
 const schermoGiusto = schermo.prima > 0 && schermo.premuto === 0 && schermo.ripremuto > 0;
 const schermoDisegnato = schermo.entra.disfa > 0 && schermo.entra.cambia > schermo.entra.disfa
   && schermo.esce.cambia > 0 && schermo.esce.ridisegna > 0 && Math.abs(schermo.esce.ridisegna - schermo.esce.cambia) <= 50;
@@ -675,6 +693,7 @@ verde = dice(telaFerma, 'la tela non cambia misura scegliendo o lasciando un ele
 verde = dice(bordoGiusto, `a tutto schermo il menu compare dal bordo dopo una sosta, disegnato, e uscendo si disfa prima di sparire`, JSON.stringify(bordo)) && verde;
 verde = dice(schermoGiusto, `il menu sta di lato finché non premi «Tutto schermo», e ripremendo torna (${schermo.prima} → ${schermo.premuto} → ${schermo.ripremuto} px)`, JSON.stringify(schermo)) && verde;
 verde = dice(schermoDisegnato, `entrando il menu si disfa prima di lasciare il lato (${schermo.entra.disfa} → ${schermo.entra.cambia} ms), uscendo si ridisegna`, JSON.stringify(schermo)) && verde;
+verde = dice(schermoNavigato, `cambiando scheda fa lo stesso: verso una scheda stretta il menu aperto si ridisegna di lato (${schermo.aStretta.ridisegna} ms), tornando si disfa prima di sparire (${schermo.aLarga.disfa} → ${schermo.aLarga.cambia} ms)`, JSON.stringify({ aStretta: schermo.aStretta, aLarga: schermo.aLarga })) && verde;
 verde = dice(spazioStorto.length === 0, `a tutto schermo la larghezza è della tela: a ${spazi.map((s) => s.schermo + ' ' + s.tela[0] + ' px').join(', ')}`, JSON.stringify(spazioStorto)) && verde;
 verde = dice(dopoScelta.visti === 0 && dopoScelta.sel === 0 && dopoScelta.chiuso,
   'e lasciandolo non resta niente acceso', JSON.stringify(dopoScelta)) && verde;

@@ -3757,11 +3757,22 @@ function tastoSchermoHtml() {
   if (!SCHEDE_LARGHE.has(schedaAttiva)) return '';
   return `<button type="button" class="btn secondario mini pt-schermo" id="pt-schermo" aria-pressed="false"></button>`;
 }
-function applicaSchermo() {
+let _viaSchermo = 0;
+function applicaSchermo({ subito = false } = {}) {
   const on = SCHEDE_LARGHE.has(schedaAttiva) && schermoPienoScelto();
   const prima = document.body.classList.contains('tutto-schermo');
-  document.body.classList.toggle('tutto-schermo', on);
-  if (prima !== on) chiudiMenuMobile();
+  if (_viaSchermo) {
+    clearTimeout(_viaSchermo); _viaSchermo = 0;
+    if (!on) window.SB_DISEGNO?.menu?.();
+  }
+  const posa = () => {
+    document.body.classList.toggle('tutto-schermo', on);
+    if (prima !== on) chiudiMenuMobile();
+  };
+  const lato = on && !prima && !subito && document.body.classList.contains('con-nav') && !document.body.classList.contains('menu-aperto');
+  const dura = lato ? (window.SB_DISEGNO?.viaMenu?.() || 0) : 0;
+  if (dura) _viaSchermo = setTimeout(() => { _viaSchermo = 0; posa(); requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco)); }, dura);
+  else posa();
   const b = document.getElementById('pt-schermo');
   if (b) {
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -3779,8 +3790,7 @@ function cambiaSchermo() {
   try { localStorage.setItem('schermoPieno', on ? '1' : '0'); } catch (e) {  }
   const dopo = () => {
     _cambioSchermo = 0;
-    applicaSchermo();
-    if (!on && document.body.classList.contains('con-nav')) window.SB_DISEGNO?.menu?.();
+    applicaSchermo({ subito: true });
     requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco));
   };
   const lato = on && document.body.classList.contains('con-nav') && !document.body.classList.contains('menu-aperto');
