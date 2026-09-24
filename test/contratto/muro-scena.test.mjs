@@ -74,3 +74,8 @@ test('il bot porta al muro la chat, i comandi, gli eventi, i premi e le donazion
   assert.ok(/if \(!soloAvviso && stessa\) \{ try \{ this\.muro\?\.suDono\(channel, importo\); \}/.test(ALERTS), 'nella valuta del canale, come l\'obiettivo');
   assert.ok(/app\.post\('\/api\/muro\/prova', requireOwner,/.test(SRV) && /FIGURE_MURO\.includes\(req\.body\?\.figura\)/.test(SRV));
 });
+
+test('l\'ultimo movimento acceso non si spegne: senza, il muro non avrebbe niente da far volare', () => {
+  assert.ok(/if \('insieme' in ev\.target\.dataset && !ev\.target\.checked && !box\.querySelector\(`\[data-c="\$\{ev\.target\.dataset\.c\}"\]\[data-insieme\]:checked`\)\) \{\n        ev\.target\.checked = true;/.test(APP));
+  assert.equal(normMuro({ animazioni: [] }).animazioni.length, 10, 'e se arrivasse vuoto lo stesso, il server li riaccende tutti invece di un muro muto');
+});

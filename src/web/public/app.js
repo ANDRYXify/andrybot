@@ -23411,6 +23411,11 @@ function attivaPiattaforma() {
       const box = ev.target.closest('[data-cfg], [data-cfg-di]');
       if (!box) return;
       const k = box.dataset.cfg || box.dataset.cfgDi;
+      if ('insieme' in ev.target.dataset && !ev.target.checked && !box.querySelector(`[data-c="${ev.target.dataset.c}"][data-insieme]:checked`)) {
+        ev.target.checked = true;
+        toast(L('Almeno un movimento resta acceso: senza, non volerebbe niente.', 'At least one motion stays on: without it, nothing would fly.', 'Al menos un movimiento sigue activo: sin él, no volaría nada.'));
+        return;
+      }
       if (ev.target.type === 'range' && /^misure\./.test(ev.target.dataset.c || '')) _scriviMisura(box, ev.target);
       const versoPrima = k === 'musica' ? _cfgEl('musica').verso : '';
       leggiCfgDalForm(k);

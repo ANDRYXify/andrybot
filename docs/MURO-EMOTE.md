@@ -99,6 +99,10 @@ due traiettorie valide ai due estremi.
 | `pulsa` | compare ferma in un punto e batte come un cuore | il punto è lontano dai bordi quanto l'emote al massimo del battito |
 | `orbita` | gira su un'ellisse attorno al centro dell'area | gli assi dell'ellisse sono la metà dell'area meno l'emote |
 
+Il pannello tiene acceso almeno un movimento: spegnere l'ultimo lo lascia
+acceso e lo dice, perche' un muro senza movimenti non avrebbe niente da far
+volare. Se arrivasse vuoto lo stesso, il server li riaccende tutti.
+
 Entrata e uscita (dissolvenza, zoom o niente) sono un **inviluppo** che
 moltiplica opacità o scala per un numero fra 0 e 1 nel primo e nell'ultimo
 decimo: rimpicciolire non porta mai fuori, quindi l'inviluppo non rompe
