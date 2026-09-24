@@ -465,7 +465,7 @@ function corpo(L, l, kick, youtube, dirette, piani) {
         </nav>
         <div class="vt-strumenti">${selettoreLingua(l, L)}</div>
       </header>
-      <span class="vt-occhiello"><i class="vivo"></i>${L('La piattaforma per streamer su Twitch e Kick · di andryxify.it', 'The streamer platform for Twitch and Kick · by andryxify.it', 'La plataforma para streamers de Twitch y Kick · de andryxify.it')}</span>
+      <span class="vt-occhiello"><i class="vivo"></i>${L('Per Twitch e Kick · di andryxify.it', 'For Twitch and Kick · by andryxify.it', 'Para Twitch y Kick · de andryxify.it')}</span>
       <h1 class="vt-titolo">${L('Il bot che in chat scrive', 'The bot that writes in chat', 'El bot que en el chat escribe')} <em>${L('con il tuo nome', 'under your own name', 'con tu nombre')}</em></h1>
       <p class="vt-frase">${L('Chat, alert, donazioni e pagina link in un posto solo, con un accesso solo.', 'Chat, alerts, donations and your link page in one place, with one login.', 'Chat, avisos, donaciones y página de enlaces en un solo sitio, con un solo acceso.')}</p>
       <div class="vt-azioni">

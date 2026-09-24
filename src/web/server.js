@@ -775,29 +775,29 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     it: {
       html: 'it', ogLocale: 'it_IT', url: 'https://socialbot.live/',
       titolo: 'SocialBot — bot per Twitch e Kick in italiano | socialbot.live',
-      desc: 'Il bot per Twitch e Kick in italiano che in chat scrive col tuo nome, in una piattaforma per streamer: overlay, moderazione, grafiche e pagina link. Gratis.',
+      desc: 'Il bot per Twitch e Kick in italiano che in chat scrive col tuo nome, con overlay, moderazione, grafiche social e pagina link nello stesso pannello. Gratis.',
       ogTitolo: 'Il bot che in chat scrive con il tuo nome',
-      ogDesc: 'Uno spettatore scrive !social e in chat risponde il tuo account, non un bot. Intorno, una piattaforma per streamer: overlay, moderazione, clip, grafiche social e pagina link, su Twitch e Kick. Gratis, con demo.',
+      ogDesc: 'Uno spettatore scrive !social e in chat risponde il tuo account, non un bot. Nello stesso pannello hai overlay, moderazione, clip, grafiche social e pagina link, su Twitch e Kick. Gratis, con demo.',
       twTitolo: 'Il bot che in chat scrive con il tuo nome',
-      twDesc: 'In chat risponde il tuo account, non un bot. Intorno, una piattaforma per streamer: overlay, moderazione, grafiche social e pagina link. Su Twitch e Kick, gratis.',
+      twDesc: 'In chat risponde il tuo account, non un bot. Nello stesso pannello hai overlay, moderazione, grafiche social e pagina link. Su Twitch e Kick, gratis.',
     },
     en: {
       html: 'en', ogLocale: 'en_GB', url: 'https://socialbot.live/?lang=en',
       titolo: 'SocialBot — the Twitch and Kick bot that writes in chat under your own name',
-      desc: 'The Twitch and Kick bot that writes in chat under your own name, inside a platform for streamers: overlay, moderation, social graphics and a link page. Free.',
+      desc: 'The Twitch and Kick bot that writes in chat under your own name, with overlay, moderation, social graphics and a link page in the same panel. Free.',
       ogTitolo: 'The bot that writes in chat under your own name',
-      ogDesc: 'A viewer types !social and the reply comes from your account, not from a bot. Around it, a platform for streamers: overlay, moderation, clips, social graphics and a link page, on Twitch and Kick. Free, with a demo.',
+      ogDesc: 'A viewer types !social and the reply comes from your account, not from a bot. The same panel has overlay, moderation, clips, social graphics and a link page, on Twitch and Kick. Free, with a demo.',
       twTitolo: 'The bot that writes in chat under your own name',
-      twDesc: 'The reply in chat comes from your account, not from a bot. Around it, a platform for streamers: overlay, moderation, social graphics and a link page. On Twitch and Kick, free.',
+      twDesc: 'The reply in chat comes from your account, not from a bot. The same panel has overlay, moderation, social graphics and a link page. On Twitch and Kick, free.',
     },
     es: {
       html: 'es', ogLocale: 'es_ES', url: 'https://socialbot.live/?lang=es',
       titolo: 'SocialBot — el bot de Twitch y Kick que en el chat escribe con tu nombre',
-      desc: 'El bot de Twitch y Kick que escribe en el chat con tu nombre, en una plataforma para streamers: overlay, moderación, gráficas y página de enlaces. Gratis.',
+      desc: 'El bot de Twitch y Kick que escribe en el chat con tu nombre, con overlay, moderación, gráficas sociales y página de enlaces en el mismo panel. Gratis.',
       ogTitolo: 'El bot que en el chat escribe con tu nombre',
-      ogDesc: 'Un espectador escribe !social y en el chat responde tu cuenta, no un bot. Alrededor, una plataforma para streamers: overlay, moderación, clips, gráficas sociales y página de enlaces, en Twitch y Kick. Gratis, con demo.',
+      ogDesc: 'Un espectador escribe !social y en el chat responde tu cuenta, no un bot. En el mismo panel tienes overlay, moderación, clips, gráficas sociales y página de enlaces, en Twitch y Kick. Gratis, con demo.',
       twTitolo: 'El bot que en el chat escribe con tu nombre',
-      twDesc: 'En el chat responde tu cuenta, no un bot. Alrededor, una plataforma para streamers: overlay, moderación, gráficas sociales y página de enlaces. En Twitch y Kick, gratis.',
+      twDesc: 'En el chat responde tu cuenta, no un bot. En el mismo panel tienes overlay, moderación, gráficas sociales y página de enlaces. En Twitch y Kick, gratis.',
     },
   };
 
@@ -2170,20 +2170,20 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.set('Cache-Control', 'public, max-age=0, s-maxage=86400');
     res.type('text/plain').send(`# SocialBot (${b.replace(/^https?:\/\//, '')})
 
-> SocialBot è una piattaforma per streamer di Twitch e Kick, in italiano. Al
-> centro c'è un bot che scrive nella chat CON L'ACCOUNT DELLO STREAMER, non con
-> un account-bot anonimo; intorno, overlay per la diretta, grafiche social,
-> pagina link, donazioni, Discord e Telegram. È realizzata da andryxify
-> (andryxify.it) ed è raggiungibile solo su ${b}.
+> SocialBot è un bot per Twitch e Kick, in italiano, che scrive nella chat CON
+> L'ACCOUNT DELLO STREAMER, non con un account-bot anonimo. Nello stesso pannello
+> lo streamer gestisce overlay per la diretta, grafiche social, pagina link,
+> donazioni, Discord e Telegram. È realizzato da andryxify (andryxify.it) ed è
+> raggiungibile solo su ${b}.
 
 ATTENZIONE ALLE OMONIMIE: esistono altri prodotti chiamati "SocialBot" (per
 esempio strumenti di marketing per Facebook/Instagram con chatbot Messenger e
-social commerce). NON sono questo. Questo SocialBot è una piattaforma per
+social commerce). NON sono questo. Questo SocialBot è uno strumento per
 STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
 
 ## Che cos'è
-- Categoria: piattaforma per streamer: bot per la chat di Twitch e Kick,
-  overlay e strumenti per la diretta, grafiche social, pagina link.
+- Categoria: bot per la chat di Twitch e Kick, con il pannello per la diretta
+  e i social dello streamer (overlay, grafiche social, pagina link).
 - Piattaforme: Twitch e Kick (YouTube in lavorazione). Un comando scritto su una
   piattaforma riceve la risposta SU QUELLA piattaforma.
 - Lingue dell'interfaccia: TRE — italiano, inglese e spagnolo. Le pagine

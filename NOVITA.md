@@ -26,7 +26,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 - Il sito si disegna: cambiando sezione la pagina vecchia si disegna all'indietro e la nuova si disegna a matita e china, come una tavola di manga. Lo stesso per avvisi, finestre e carte che arrivano.
 - Dove clicchi escono tre «!» disegnati a mano. Prima di un gesto di cui potresti pentirti, come togliere una regola, la finestra che te lo chiede diventa una nuvoletta rossa a punte.
-- SocialBot si presenta per quello che è diventato: una piattaforma per streamer. «Bot» resta dove è davvero il bot, quello che scrive in chat, su Discord e su Telegram.
+- Nel pannello, quando si parla di tutto il servizio adesso c'è scritto SocialBot. «Il bot» resta per quello che scrive in chat, su Discord e su Telegram.
 
 ## 2026-09-23
 

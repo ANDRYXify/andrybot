@@ -1,4 +1,4 @@
-# SocialBot — piattaforma per streamer su Twitch e Kick · https://socialbot.live
+# SocialBot — bot e pannello per streamer su Twitch e Kick · https://socialbot.live
 # La vetrina pubblica è indicizzabile; le aree private rispondono già 404 senza
 # accesso e le teniamo fuori dal crawl budget. Gli asset restano crawlabili così
 # Google può renderizzare la pagina (SPA).
