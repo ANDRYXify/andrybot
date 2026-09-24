@@ -17,6 +17,14 @@ test('chi ha i gradi non viene mai toccato', () => {
   assert.equal(valuta(msg(brutto, { isVip: true }), cfg), null);
 });
 
+test('«solo mod» vuol dire solo mod: un VIP non posta link, ma il resto dei filtri non lo tocca', () => {
+  const soloMod = { ...cfg, linkTier: 'mod' };
+  assert.deepEqual(valuta(msg('guarda qui spam-farm.xyz', { isVip: true }), soloMod), { motivo: 'link non consentito' });
+  assert.equal(valuta(msg('guarda qui spam-farm.xyz', { isVip: true }), { ...cfg, linkTier: 'vip' }), null, 'con «VIP e mod» passa');
+  assert.equal(valuta(msg('AHAHAHAHAH CHE BELLO QUESTO GIOCO @a @b @c @d', { isVip: true }), soloMod), null, 'maiuscole e menzioni restano libere per un VIP');
+  assert.equal(valuta(msg('guarda qui spam-farm.xyz', { isMod: true }), soloMod), null);
+});
+
 test('i messaggi normali passano', () => {
   for (const t of [
     'ciao a tutti!', 'ma quanto è bello questo gioco', 'GG!', 'AHAHAH', 'ok', '?',

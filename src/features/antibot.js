@@ -30,6 +30,7 @@ import { streamers, statoVivo, memory } from '../db.js';
 import { punteggio as punteggia, inCentesimi, nomeGenerato, canaliInsieme, segnaGiudizio, erroriDi, GIUDIZI_CHIAVE, SOGLIA_SEGNALA } from './punteggio.js';
 import * as rete from './rete.js';
 import { Esecutore, verdetto, AZIONI, daFare } from './enforcement.js';
+import { NOMI_MAX, nomeAccount } from '../web/impostazioni-moderazione.js';
 import * as inc from './incidenti.js';
 import { daToccare, dominante, appartiene } from './gruppi.js';
 import * as LIV from './livelli.js';
@@ -220,9 +221,23 @@ function primoAvviso(channel, userId) {
   v.add(userId);
   return true;
 }
-// Quanti nomi puo' tenere la lista degli esenti: lo stesso tetto del pannello.
-export const ESENTI_MAX = 200;
+// Quanti nomi puo' tenere ciascuna lista dello streamer, «Blocca sempre»
+// (extra) e «Non toccare mai» (esenti): il tetto e' quello del salvataggio, non
+// una copia. Si aggiunge un nome solo da qui, che sia il pannello, «Da
+// rivedere» o !permetti: prima due strade accettavano fino a 2000 nomi e il
+// salvataggio dopo li tagliava a 200 senza dirlo.
+export const ESENTI_MAX = NOMI_MAX;
 const NOME_TWITCH = /^[a-z0-9_]{2,30}$/;
+// Un nome si legge con la regola del salvataggio: uno che il salvataggio
+// scarterebbe non entra nemmeno qui, invece di sparire alla prossima volta.
+export function conNome(lista, nome) {
+  const l = (Array.isArray(lista) ? lista : []).map(nomeAccount).filter(Boolean);
+  const n = nomeAccount(nome);
+  if (!n) return { lista: l, valido: false, piena: false, nuovo: false };
+  if (l.includes(n)) return { lista: l, valido: true, piena: false, nuovo: false };
+  if (l.length >= ESENTI_MAX) return { lista: l, valido: true, piena: true, nuovo: false };
+  return { lista: [...l, n], valido: true, piena: false, nuovo: true };
+}
 
 function segnaFollow(channel, cfg) {
   const ora = Date.now();
@@ -1319,15 +1334,12 @@ export class AntiBot {
     if (!NOME_TWITCH.test(chi)) { say(`🛡️ Si usa così: !${nome} nome`); return true; }
     const s = streamers.get(ch);
     const ab = { ...(s?.settings?.antibot || {}) };
-    const lista = (Array.isArray(ab.esenti) ? ab.esenti : []).map(norm).filter(Boolean);
-    if (!lista.includes(chi)) {
-      if (lista.length >= ESENTI_MAX) {
-        say(`🛡️ La lista di chi può sempre scrivere è piena (${ESENTI_MAX}): togline qualcuno dal pannello, nello Scudo.`);
-        return true;
-      }
-      lista.push(chi);
-      streamers.setSettings(ch, { ...(s?.settings || {}), antibot: { ...ab, esenti: lista } });
+    const r = conNome(ab.esenti, chi);
+    if (r.piena) {
+      say(`🛡️ La lista di chi può sempre scrivere è piena (${ESENTI_MAX}): togline qualcuno dal pannello, nello Scudo.`);
+      return true;
     }
+    if (r.nuovo) streamers.setSettings(ch, { ...(s?.settings || {}), antibot: { ...ab, esenti: r.lista } });
     registra(ch, { login: chi, azione: 'permesso', motivo: `fatto scrivere da @${norm(msg.user)}`, esito: 'fatto' });
     say(`✓ @${chi} ora può scrivere.`);
     return true;

@@ -84,6 +84,38 @@ test('un nome storto si spiega, una lista piena si dice invece di perdere il nom
   assert.ok(!streamers.get(ch).settings.antibot.esenti.includes('nuovo_arrivato'));
 });
 
+test('un nome entra nelle liste da una porta sola, col tetto del salvataggio', async () => {
+  // Il pannello e «Da rivedere» accettavano fino a 2000 nomi, e il salvataggio
+  // dopo li tagliava a 200 senza dirlo: l'ultimo aggiunto spariva in silenzio.
+  const piena = Array.from({ length: ab.ESENTI_MAX }, (_, i) => 'amico' + i);
+  assert.deepEqual(ab.conNome(['uno'], '@Due'), { lista: ['uno', 'due'], valido: true, piena: false, nuovo: true });
+  assert.deepEqual(ab.conNome(['uno'], 'UNO'), { lista: ['uno'], valido: true, piena: false, nuovo: false }, 'chi c\'e\' gia\' non si ripete');
+  assert.deepEqual(ab.conNome(undefined, 'uno'), { lista: ['uno'], valido: true, piena: false, nuovo: true });
+  assert.equal(ab.conNome(['uno'], 'x').valido, false, 'un nome che il salvataggio scarterebbe non entra');
+  const r = ab.conNome(piena, 'nuovo_arrivato');
+  assert.equal(r.piena, true);
+  assert.equal(r.lista.length, ab.ESENTI_MAX);
+  assert.equal(ab.conNome(piena, 'amico7').piena, false, 'una lista piena non rifiuta chi c\'e\' gia\'');
+
+  const { readFileSync } = await import('node:fs');
+  const leggi = (f) => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
+  const SRV = leggi('src/web/server.js'), APP = leggi('src/web/public/app.js');
+  const rotta = (via) => { const i = SRV.indexOf(`app.post('${via}'`); return SRV.slice(i, SRV.indexOf('\n  }));', i)); };
+  for (const via of ['/api/antibot/lista', '/api/antibot/segnalazione']) {
+    const corpo = rotta(via);
+    assert.ok(corpo.includes('conNome(ab[campo], '), `${via}: aggiunge con conNome`);
+    assert.ok(corpo.includes("codice: 'lista-piena', massimo: ESENTI_MAX"), `${via}: la lista piena si dice, col suo tetto`);
+    assert.ok(!/slice\(0, 2000\)/.test(corpo), `${via}: nessun tetto suo`);
+  }
+  const seg = rotta('/api/antibot/segnalazione');
+  assert.ok(seg.indexOf("'lista-piena'") < seg.indexOf('risolviSegnalazione('), 'una lista piena non chiude il caso: resta da decidere');
+  assert.equal(APP.split("e.dati?.codice === 'lista-piena' ? testoListaPiena(e.dati.massimo)").length - 1, 2, 'il pannello lo dice in tutte e due le strade');
+  const { normalizzaAntibot } = await import('../../src/web/impostazioni-moderazione.js');
+  const salvata = normalizzaAntibot({}, { esenti: [...piena, 'nuovo_arrivato'], extra: piena });
+  assert.equal(salvata.esenti.length, ab.ESENTI_MAX, 'il salvataggio taglia allo stesso tetto dell\'aggiunta');
+  assert.deepEqual(salvata.extra, piena, 'e una lista piena accettata dall\'aggiunta si salva intera');
+});
+
 test('il comando rinominato: l\'avviso dice il nome nuovo, e il vaglio lo porta al gestore', async () => {
   const ch = 'mizu5';
   canale(ch, {}, { comandi: { permetti: { nome: 'lascia' } } });

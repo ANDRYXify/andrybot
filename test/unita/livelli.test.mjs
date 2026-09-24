@@ -262,10 +262,37 @@ test('ogni riga del registro dello scudo ha un nome nel pannello, nelle tre ling
   assert.ok(!nomiAzioni.includes('chat-trattieni'), 'niente nomi per azioni che nessuno scrive');
 });
 
-test('dal registro si ricarica il registro, e un «Banna» rifiutato dice perche\'', async () => {
+test('dal registro si ricarica il registro, e un tasto rifiutato dice perche\'', async () => {
   const { readFileSync } = await import('node:fs');
   const APP = readFileSync(new URL('../../src/web/public/app.js', import.meta.url), 'utf8');
   const SRV = readFileSync(new URL('../../src/web/server.js', import.meta.url), 'utf8');
   assert.ok(APP.includes("if (ris.closest('#scheda-registro')) caricaRegistro(); else caricaScudo();"), 'la lista che si aggiorna e\' quella dove hai premuto');
   assert.ok(SRV.includes("codice: 'permessi'") && APP.includes("e.dati?.codice === 'permessi'"), 'senza permessi lo dice, e dice dove riconcederli');
+});
+
+test('la pulizia dei follower blocca come lo scudo, e se ripiega sul ban lo dice', async () => {
+  // «Banna» lasciava il follow: il numero restava gonfiato e la persona non
+  // spariva dalla lista. Il tasto adesso fa quello che fa lo scudo, con la
+  // stessa regola, e il pannello dice quale delle due e' successa.
+  const { bloccaORipiega } = await import('../../src/features/enforcement.js');
+  const fatte = [];
+  const h = (blocco, ban) => ({
+    bloccaUtente: async () => { fatte.push('blocca'); return blocco; },
+    timeoutUser: async (_c, _u, durata) => { fatte.push('ban' + durata); return ban; },
+  });
+  assert.deepEqual(await bloccaORipiega(h({ ok: true }, { ok: true }), 'c', '1', 'm'), { ok: true });
+  assert.deepEqual(fatte.splice(0), ['blocca'], 'bloccato: niente ban in piu\'');
+  assert.deepEqual(await bloccaORipiega(h({ ok: false, motivo: 'permesso mancante' }, { ok: true }), 'c', '1', 'm'), { ok: true, ripiego: 'ban' });
+  assert.deepEqual(fatte.splice(0), ['blocca', 'ban0'], 'senza blocco un ban per sempre, non un timeout');
+  assert.deepEqual(await bloccaORipiega(h({ ok: false, motivo: 'permesso mancante' }, { ok: false }), 'c', '1', 'm'), { ok: false, motivo: 'permesso mancante' }, 'se non riesce nemmeno il ban, il motivo e\' quello del blocco');
+
+  const { readFileSync } = await import('node:fs');
+  const leggi = (f) => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
+  const APP = leggi('src/web/public/app.js'), SRV = leggi('src/web/server.js'), ESE = leggi('src/features/enforcement.js');
+  assert.ok(ESE.includes('return await bloccaORipiega(h, v.canale, v.userId, motivoCorto(v));'), 'lo scudo usa la stessa regola');
+  assert.ok(SRV.includes("await bloccaORipiega(helix, login, userId, 'anti-bot: dalla console')"), 'e anche il tasto');
+  assert.ok(SRV.includes("const fatta = azione === 'sbanna' ? 'sbanna' : (r?.ripiego || 'blocca');"), 'il registro scrive quello che e\' successo davvero');
+  assert.ok(APP.includes("data-scudo-blocca data-userid=") && APP.includes("azione: 'blocca' }"), 'il tasto chiede il blocco');
+  assert.ok(!APP.includes('data-scudo-ban'), 'nessun tasto «Banna» rimasto');
+  assert.ok(APP.includes("toast(r.ripiego === 'ban'"), 'il pannello dice se e\' stato un ban');
 });

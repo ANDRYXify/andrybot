@@ -71,6 +71,17 @@ export function verdetto({ canale, login, userId, azione, motivi = [], punti = 0
 
 export const daFare = (v) => !!v && v.azione !== AZIONI.NIENTE && v.azione !== AZIONI.OSSERVA;
 
+// Il blocco è l'unica azione che toglie il follow. Se non si può (manca il
+// permesso, o Twitch dice di no) si ripiega sul ban, che almeno impedisce di
+// scrivere, e lo si dice con «ripiego». Meglio metà difesa che nessuna. È la
+// stessa regola per lo scudo e per il tasto «Blocca» della pulizia follower.
+export async function bloccaORipiega(h, canale, userId, motivo) {
+  const r = await h?.bloccaUtente?.(canale, userId, motivo);
+  if (r?.ok) return r;
+  const b = await h?.timeoutUser?.(canale, userId, 0, motivo);
+  return b?.ok ? { ...b, ripiego: 'ban' } : (r || { ok: false, motivo: 'non disponibile' });
+}
+
 export class Esecutore {
   // `annota(canale, riga)` è dove finisce il registro: l'esecutore non sa
   // niente dello scudo, gli passa quello che ha fatto e chi lo tiene se lo
@@ -230,15 +241,8 @@ export class Esecutore {
           return (await h?.timeoutUser?.(v.canale, v.userId, v.durata || 600, motivoCorto(v))) || { ok: false, motivo: 'non disponibile' };
         case AZIONI.BAN:
           return (await h?.timeoutUser?.(v.canale, v.userId, 0, motivoCorto(v))) || { ok: false, motivo: 'non disponibile' };
-        case AZIONI.BLOCCA: {
-          const r = await h?.bloccaUtente?.(v.canale, v.userId, motivoCorto(v));
-          if (r?.ok) return r;
-          // Il blocco è l'unica azione che toglie il follow. Se non si può —
-          // manca il permesso, o Twitch dice di no — si ripiega sul ban, che
-          // almeno impedisce di scrivere. Meglio metà difesa che nessuna.
-          const b = await h?.timeoutUser?.(v.canale, v.userId, 0, motivoCorto(v));
-          return b?.ok ? { ...b, ripiego: 'ban' } : (r || { ok: false, motivo: 'non disponibile' });
-        }
+        case AZIONI.BLOCCA:
+          return await bloccaORipiega(h, v.canale, v.userId, motivoCorto(v));
         default:
           return { ok: false, motivo: 'azione sconosciuta: ' + v.azione };
       }

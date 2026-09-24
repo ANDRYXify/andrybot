@@ -41,12 +41,13 @@ import { conOccasione, normOccasioni, accendi as accendiOccasione } from '../fea
 import * as cancello from '../features/tg-cancello.js';
 import { permessiDi as permessiDiChat, guai as guaiCancello } from '../features/tg-ingresso.js';
 import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
-import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente } from '../features/antibot.js';
+import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
 import { aperto as incidenteAperto, elenco as elencoIncidenti, uno as unIncidente, sintesi as sintesiIncidente } from '../features/incidenti.js';
 import { rapporto as rapportoBonifica, anteprima as anteprimaBonifica } from '../features/bonifica.js';
 import { stato as statoRete, elenco as elencoRete, dimentica as dimenticaRete } from '../features/rete.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
+import { bloccaORipiega } from '../features/enforcement.js';
 import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
@@ -3239,21 +3240,18 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     if (!['blocca', 'permetti', 'ignora'].includes(esito)) return res.status(400).json({ errore: 'Esito non valido.' });
     const v = segnalazioniAperte(login).find((x) => x.id === id);
     if (!v) return res.status(404).json({ errore: 'Segnalazione non trovata.' });
+    const campo = esito === 'blocca' ? 'extra' : 'esenti';
+    const s = streamers.get(login);
+    const ab = { ...(s?.settings?.antibot || {}) };
+    const inLista = esito === 'ignora' ? null : conNome(ab[campo], v.login);
+    // Una lista piena non chiude il caso: resta da decidere, e lo si dice.
+    if (inLista?.piena) return res.status(409).json({ errore: `La lista è piena (${ESENTI_MAX} nomi).`, codice: 'lista-piena', massimo: ESENTI_MAX });
     // Chiudiamo PRIMA (flip sincrono di stato): se due richieste arrivano insieme,
     // solo la prima ottiene un ritorno non-null → l'altra non ri-banna né ri-scrive.
     const chiuso = risolviSegnalazione(login, id, esito);
     if (!chiuso) return res.json({ ok: true, gia: true });
     let bannato = null;
-    if (esito === 'blocca' || esito === 'permetti') {
-      const campo = esito === 'blocca' ? 'extra' : 'esenti';
-      const s = streamers.get(login);
-      const ab = { ...(s?.settings?.antibot || {}) };
-      const lista = Array.isArray(ab[campo]) ? ab[campo].slice() : [];
-      const nome = String(v.login || '').toLowerCase();
-      if (nome && !lista.includes(nome)) lista.push(nome);
-      ab[campo] = lista.slice(0, 2000);
-      streamers.setSettings(login, { ...(s?.settings || {}), antibot: ab });
-    }
+    if (inLista?.nuovo) streamers.setSettings(login, { ...(s?.settings || {}), antibot: { ...ab, [campo]: inLista.lista } });
     // "Blocca sempre" bandisce ANCHE subito, se abbiamo l'id e i permessi.
     if (esito === 'blocca' && v.userId && moderazioneOk(login)) {
       const r = await helix.timeoutUser(login, v.userId, 0, 'anti-bot: bloccato dalla console').catch(() => null);
@@ -3321,14 +3319,17 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login.toLowerCase();
     const userId = String(req.body?.userId || '');
     const nome = String(req.body?.login || '').toLowerCase();
-    const azione = req.body?.azione === 'sbanna' ? 'sbanna' : 'ban';
+    // «Blocca» toglie anche il follow, con la stessa regola dello scudo: se il
+    // blocco non si puo' fare si ripiega sul ban, e lo si dice.
+    const azione = req.body?.azione === 'sbanna' ? 'sbanna' : 'blocca';
     if (!/^\d+$/.test(userId)) return res.status(400).json({ errore: 'Utente non valido.' });
     if (!moderazioneOk(login)) return res.status(403).json({ errore: 'Servono i permessi di moderazione.', codice: 'permessi' });
     const r = azione === 'sbanna'
       ? await helix.unbanUser(login, userId).catch(() => null)
-      : await helix.timeoutUser(login, userId, 0, 'anti-bot: dalla console').catch(() => null);
-    registraAntibot(login, { login: nome, userId, azione: azione === 'sbanna' ? 'sbanna' : 'ban', motivo: 'dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
-    res.json({ ok: !!r?.ok, motivo: r?.motivo || '' });
+      : await bloccaORipiega(helix, login, userId, 'anti-bot: dalla console').catch(() => null);
+    const fatta = azione === 'sbanna' ? 'sbanna' : (r?.ripiego || 'blocca');
+    registraAntibot(login, { login: nome, userId, azione: fatta, motivo: 'dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
+    res.json({ ok: !!r?.ok, motivo: r?.motivo || '', ripiego: r?.ripiego || '' });
   }));
 
   // Aggiunge/toglie un nome dalla blocklist ('extra') o allowlist ('esenti').
@@ -3340,10 +3341,12 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     if (!nome) return res.status(400).json({ errore: 'Nome non valido.' });
     const s = streamers.get(login);
     const ab = { ...(s?.settings?.antibot || {}) };
-    let lista = Array.isArray(ab[campo]) ? ab[campo].slice() : [];
-    if (azione === 'aggiungi') { if (!lista.includes(nome)) lista.push(nome); }
-    else lista = lista.filter((x) => x !== nome);
-    ab[campo] = lista.slice(0, 2000);
+    if (azione === 'aggiungi') {
+      const r = conNome(ab[campo], nome);
+      if (!r.valido) return res.status(400).json({ errore: 'Nome non valido.' });
+      if (r.piena) return res.status(409).json({ errore: `La lista è piena (${ESENTI_MAX} nomi).`, codice: 'lista-piena', massimo: ESENTI_MAX });
+      ab[campo] = r.lista;
+    } else ab[campo] = (Array.isArray(ab[campo]) ? ab[campo] : []).filter((x) => x !== nome);
     streamers.setSettings(login, { ...(s?.settings || {}), antibot: ab });
     res.json({ ok: true, lista: ab[campo] });
   }));

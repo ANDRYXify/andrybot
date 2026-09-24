@@ -53,7 +53,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Tolto l'interruttore «Durante un'ondata, chat ai soli follower», che non faceva niente: ai soli follower la chat ci va quando lo scudo arriva ad «attacco». [vai: scudo]
 - La pulizia dopo un attacco dice quanti account toglie davvero e quanti ne lascia stare, e quando non può dice perché. [vai: registro]
 - Nel registro dello scudo ogni riga ha il suo nome nella lingua del pannello, e dopo «Permetti», «Ignora» o «Blocca sempre» si aggiorna il registro. [vai: registro]
-- «Banna» nella scansione dei follower, se mancano i permessi di moderazione, lo dice e ti dice dove riconcederli. [vai: scudo]
+- La pulizia dei follower blocca invece di bannare, così il follow sparisce e il numero torna pulito. Se il blocco non si può fare banna e lo dice, e se mancano i permessi dice dove riconcederli. [vai: registro]
+- Quando «Blocca sempre» o «Non toccare mai» sono piene il pannello lo dice, invece di perdere il nome al salvataggio, e il caso da rivedere resta lì finché non fai spazio. [vai: scudo]
+- Con «solo mod» nei link dell'antispam un VIP non posta più link. Per tutto il resto i VIP restano liberi. [vai: regole]
+- Lo scudo dice giusto chi non tocca mai: tu, i mod, i VIP e gli abbonati. Seguire il canale non basta, perché il follow è un clic e i follow-bot lo fanno. [vai: scudo]
 
 ## 2026-09-23
 

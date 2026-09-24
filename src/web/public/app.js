@@ -3347,7 +3347,7 @@ const GUIDE = {
   scudo: { serve: ['La difesa dagli attacchi: le ondate di finti follower e gli account-bot che spammano in chat.', 'Defence against attacks: waves of fake followers and bot accounts spamming chat.', 'La defensa contra los ataques: oleadas de seguidores falsos y cuentas-bot que spamean el chat.'],
     come: [['Accendi la protezione: sotto trovi lo stato di adesso.', 'Turn the protection on: below you see how things stand right now.', 'Enciende la protección: debajo ves cómo está ahora.', '#chk-ab-attivo'], ['Scegli quanto presto reagire e cosa fare quando è sicuro.', 'Choose how soon to react and what to do when it is sure.', 'Elige con qué rapidez reaccionar y qué hacer cuando está seguro.', '#sel-ab-modo'], ['Se non ti fidi ancora, accendi la sola osservazione: scrive cosa farebbe e non tocca nessuno.', 'If you do not trust it yet, turn on observe-only: it logs what it would do and touches nobody.', 'Si aún no te fías, enciende solo observar: anota lo que haría y no toca a nadie.', '#chk-ab-avuoto'], ['Le due liste in fondo si salvano da sole.', 'The two lists at the bottom save themselves.', 'Las dos listas de abajo se guardan solas.', '#scudo-add-esenti']] },
   registro: { serve: ['Vedere cosa ha fatto lo scudo, decidere tu sui casi dubbi e ripulire dopo un attacco.', 'See what the shield did, decide the doubtful cases yourself and clean up after an attack.', 'Ver qué hizo el escudo, decidir tú los casos dudosos y limpiar después de un ataque.'],
-    come: [['In cima ci sono i numeri: oggi, sette giorni, quanto è rimasto da decidere.', 'At the top there are the numbers: today, seven days, how much is left to decide.', 'Arriba están los números: hoy, siete días, cuánto queda por decidir.', '#reg-numeri'], ['Ogni intervento è scritto qui con il suo motivo e cosa ha risposto Twitch.', 'Every action is written here with its reason and what Twitch answered.', 'Cada acción se escribe aquí con su motivo y lo que respondió Twitch.', '#scudo-registro'], ['Quando c\'è qualcosa da decidere o un attacco da ripulire, qui sopra compaiono le carte che servono.', 'When there is something to decide or an attack to clean up, the cards you need appear above.', 'Cuando hay algo que decidir o un ataque que limpiar, arriba aparecen las fichas necesarias.', '#reg-numeri'], ['La pulizia dei follower passa in rassegna chi ti segue già.', 'The follower cleanup goes through who already follows you.', 'La limpieza de seguidores repasa quién ya te sigue.', '#scudo-scan-btn']] },
+    come: [['In cima ci sono i numeri: oggi, sette giorni, quanto è rimasto da decidere.', 'At the top there are the numbers: today, seven days, how much is left to decide.', 'Arriba están los números: hoy, siete días, cuánto queda por decidir.', '#reg-numeri'], ['Ogni intervento è scritto qui: cosa, a chi, perché, com\'è andata e quando.', 'Every action is written here: what, to whom, why, how it went and when.', 'Cada acción se escribe aquí: qué, a quién, por qué, cómo fue y cuándo.', '#scudo-registro'], ['Quando c\'è qualcosa da decidere o un attacco da ripulire, qui sopra compaiono le carte che servono.', 'When there is something to decide or an attack to clean up, the cards you need appear above.', 'Cuando hay algo que decidir o un ataque que limpiar, arriba aparecen las fichas necesarias.', '#reg-numeri'], ['La pulizia dei follower passa in rassegna chi ti segue già.', 'The follower cleanup goes through who already follows you.', 'La limpieza de seguidores repasa quién ya te sigue.', '#scudo-scan-btn']] },
 };
 
 const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>';
@@ -21353,7 +21353,7 @@ function pannelloScudo() {
             <option value="segnala" ${ab.chatNuoviAzione === 'segnala' ? 'selected' : ''}>${L('lascialo, avvisa i mod', 'leave it, warn mods', 'déjalo, avisa a los mods')}</option>
           </select>
         </div>
-        <p class="suggerimento">${L('La modalità «Restricted» di Twitch, con i messaggi visibili solo ai mod, non si può accendere da un bot: questo è l\'equivalente automatico più vicino. Follower, sub, VIP e mod non vengono mai toccati.', 'Twitch’s «Restricted» mode, with messages visible only to mods, can’t be set by a bot: this is the closest automatic equivalent. Followers, subs, VIPs and mods are never touched.', 'El modo «Restricted» de Twitch, con los mensajes visibles solo para los mods, no lo puede activar un bot: esto es el equivalente automático más cercano. Seguidores, subs, VIP y mods nunca se tocan.')}</p>
+        <p class="suggerimento">${L('La modalità «Restricted» di Twitch, con i messaggi visibili solo ai mod, non si può accendere da un bot: questo è l\'equivalente automatico più vicino. Tu, i mod, i VIP e gli abbonati non venite mai toccati. Seguire il canale non basta: il follow è un clic, e i follow-bot lo fanno.', 'Twitch’s «Restricted» mode, with messages visible only to mods, can’t be set by a bot: this is the closest automatic equivalent. You, mods, VIPs and subscribers are never touched. Following is not enough: a follow is one click, and follow-bots do it.', 'El modo «Restricted» de Twitch, con los mensajes visibles solo para los mods, no lo puede activar un bot: esto es el equivalente automático más cercano. A ti, a los mods, a los VIP y a los suscriptores no se os toca nunca. Seguir el canal no basta: el follow es un clic, y los follow-bots lo hacen.')}</p>
         </div>
       </div>
     </div>
@@ -21620,6 +21620,9 @@ function testoBonifica(r) {
   return L('Non riuscito: riprova fra poco.', 'It did not work: try again shortly.', 'No se pudo: inténtalo de nuevo en un momento.');
 }
 
+function testoListaPiena(n) {
+  return L(`La lista è piena (${n} nomi): togline qualcuno, poi aggiungi.`, `The list is full (${n} names): remove someone, then add.`, `La lista está llena (${n} nombres): quita a alguien y luego añade.`);
+}
 function scudoAzioneTesto(a) {
   return {
     ban: L('Bannato', 'Banned', 'Baneado'),
@@ -21666,7 +21669,7 @@ function scudoWire() {
         if (ris.dataset.esito === 'blocca') toast(r.bannato ? L('Bloccato e bannato ✓', 'Blocked and banned ✓', 'Bloqueado y baneado ✓') : L('Messo in blocklist ✓', 'Added to blocklist ✓', 'Añadido a blocklist ✓'));
         if (ris.closest('#scheda-registro')) caricaRegistro(); else caricaScudo();
       }
-      catch (e) { toast(L('Non riuscito', 'Failed', 'Falló')); }
+      catch (e) { toast(e.dati?.codice === 'lista-piena' ? testoListaPiena(e.dati.massimo) : L('Non riuscito', 'Failed', 'Falló'), 'errore'); }
       return;
     }
     if (ev.target.closest('#scudo-scan-btn')) {
@@ -21679,13 +21682,18 @@ function scudoWire() {
       btn.disabled = false;
       return;
     }
-    const ban = ev.target.closest('[data-scudo-ban]');
+    const ban = ev.target.closest('[data-scudo-blocca]');
     if (ban) {
       ev.preventDefault();
       ban.disabled = true;
       try {
-        const r = await api('/api/antibot/azione', { method: 'POST', body: { userId: ban.dataset.userid, login: ban.dataset.login, azione: 'ban' } });
-        if (r.ok) { toast(L('Bannato ✓', 'Banned ✓', 'Baneado ✓')); const row = ban.closest('.scudo-seg'); if (row) row.remove(); }
+        const r = await api('/api/antibot/azione', { method: 'POST', body: { userId: ban.dataset.userid, login: ban.dataset.login, azione: 'blocca' } });
+        if (r.ok) {
+          toast(r.ripiego === 'ban'
+            ? L('Bannato: il blocco non si poteva fare, e il follow resta.', 'Banned: blocking was not possible, and the follow stays.', 'Baneado: no se pudo bloquear, y el follow se queda.')
+            : L('Bloccato ✓: il follow non c\'è più.', 'Blocked ✓: the follow is gone.', 'Bloqueado ✓: el follow ya no está.'));
+          const row = ban.closest('.scudo-seg'); if (row) row.remove();
+        }
         else { toast(L('Non riuscito', 'Failed', 'Falló') + (r.motivo ? ': ' + r.motivo : ''), 'errore'); ban.disabled = false; }
       } catch (e) {
         toast(e.dati?.codice === 'permessi'
@@ -21702,7 +21710,7 @@ function scudoWire() {
       const nome = (inp?.value || '').trim();
       if (!nome) return;
       try { await api('/api/antibot/lista', { method: 'POST', body: { lista: campo, azione: 'aggiungi', nome } }); if (inp) inp.value = ''; caricaScudo(); }
-      catch (e) { toast(L('Non riuscito', 'Failed', 'Falló')); }
+      catch (e) { toast(e.dati?.codice === 'lista-piena' ? testoListaPiena(e.dati.massimo) : L('Non riuscito', 'Failed', 'Falló'), 'errore'); }
       return;
     }
     const del = ev.target.closest('[data-scudo-del]');
@@ -21758,7 +21766,7 @@ function scudoRenderScan(d) {
   const box = document.getElementById('scudo-scan-esito');
   if (!box) return;
   const list = d.sospetti || [];
-  const avviso = d.permessi === false ? `<p class="suggerimento">${L('Per bannare servono i permessi di moderazione.', 'To ban, moderation permissions are needed.', 'Para banear hacen falta permisos de moderación.')} <a class="btn secondario mini" href="/auth/permessi">${L('Concedi', 'Grant', 'Conceder')}</a></p>` : '';
+  const avviso = d.permessi === false ? `<p class="suggerimento">${L('Per bloccare servono i permessi di moderazione.', 'To block, moderation permissions are needed.', 'Para bloquear hacen falta permisos de moderación.')} <a class="btn secondario mini" href="/auth/permessi">${L('Concedi', 'Grant', 'Conceder')}</a></p>` : '';
   box.innerHTML = avviso + (list.length
     ? `<p class="suggerimento spazio-sopra">${L('Controllati', 'Checked', 'Comprobados')} ${d.scansionati} · <b>${list.length}</b> ${L('sospetti', 'suspects', 'sospechosos')}</p>` + list.map((v) => `
       <div class="scudo-seg">
@@ -21767,7 +21775,7 @@ function scudoRenderScan(d) {
           <span>${L('rischio', 'risk', 'riesgo')} ${v.rischio} · ${esc((v.motivi || []).join(', ') || L('nome sospetto', 'suspicious name', 'nombre sospechoso'))}</span>
         </div>
         <div class="scudo-seg-azioni">
-          <button type="button" class="btn mini" data-scudo-ban data-userid="${esc(v.userId)}" data-login="${esc(v.login)}">${L('Banna', 'Ban', 'Banear')}</button>
+          <button type="button" class="btn mini" data-scudo-blocca data-userid="${esc(v.userId)}" data-login="${esc(v.login)}">${L('Blocca', 'Block', 'Bloquear')}</button>
         </div>
       </div>`).join('')
     : `<p class="vuoto spazio-sopra">${L('Nessun follower sospetto tra i recenti. Pulito.', 'No suspicious followers among the recent ones. All clean.', 'Ningún seguidor sospechoso entre los recientes. Limpio.')}</p>`);

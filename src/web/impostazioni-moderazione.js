@@ -28,11 +28,17 @@ const CHAT_AZIONI = ['elimina', 'segnala'];
 const num = (v, min, max, def) => Math.min(max, Math.max(min, Math.round(Number(v)) || def));
 
 // I nomi degli account: minuscoli, senza chiocciola, solo quelli che Twitch
-// potrebbe davvero avere, al massimo duecento.
+// potrebbe davvero avere, al massimo NOMI_MAX. Lo stesso tetto vale quando un
+// nome si aggiunge da solo (conNome in src/features/antibot.js), cosi' il
+// salvataggio non taglia mai un nome che l'aggiunta aveva accettato.
+export const NOMI_MAX = 200;
+export const nomeAccount = (x) => {
+  const n = String(x ?? '').toLowerCase().trim().replace(/^@/, '');
+  return /^[a-z0-9_]{2,30}$/.test(n) ? n : '';
+};
 const nomi = (v) => (Array.isArray(v) ? v : String(v || '').split(/[\s,]+/))
-  .map((x) => String(x).toLowerCase().replace(/^@/, '').trim())
-  .filter((x) => /^[a-z0-9_]{2,30}$/.test(x))
-  .slice(0, 200);
+  .map(nomeAccount).filter(Boolean)
+  .slice(0, NOMI_MAX);
 
 export function normalizzaAntispam(vecchio = {}, arrivato = {}) {
   const a = { ...(vecchio || {}), ...(arrivato || {}) };

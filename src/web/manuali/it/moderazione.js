@@ -15,7 +15,7 @@ export default {
     ] },
 
     { h2: 'Chi non viene mai toccato' },
-    { p: ['Prima di ogni controllo ci sono le esenzioni, e non si possono togliere: <strong>tu, i moderatori e i VIP</strong> non vengono mai filtrati. I VIP sono esenti da tutto <em>per scelta</em>: quel badge lo dai tu a chi ti fidi.'] },
+    { p: ['Prima di ogni controllo ci sono le esenzioni, e non si possono togliere: <strong>tu e i moderatori</strong> non venite mai filtrati. I VIP sono esenti da tutto tranne i link, <em>per scelta</em>: quel badge lo dai tu a chi ti fidi. Con i link a «solo mod», nemmeno un VIP li posta.'] },
 
     { h2: 'L\'antispam: cosa guarda' },
     { p: ['Sta in <em>Moderazione</em>, e si accende con un interruttore solo. Poi si sceglie cosa filtrare, voce per voce. Le soglie sono queste, e sono quelle vere del motore.'] },
@@ -88,7 +88,7 @@ export default {
 
     { h2: 'Quando sembra rotto' },
     { ul: [
-      '<strong>Non modera nessuno.</strong> Controlla che l\'interruttore dell\'antispam sia acceso — è quello in cima alla carta, e quando è spento tutto il resto della carta si smorza — e che chi scrive non sia mod o VIP: quelli sono esenti sempre.',
+      '<strong>Non modera nessuno.</strong> Controlla che l\'interruttore dell\'antispam sia acceso — è quello in cima alla carta, e quando è spento tutto il resto della carta si smorza — e che chi scrive non sia mod o VIP: i mod sono esenti sempre, i VIP da tutto tranne i link.',
       '<strong>Cancella cose che non dovrebbe.</strong> Guarda quale filtro: il motivo lo scrive in chat se «avvisa» è acceso. Le maiuscole scattano all\'80%, quindi «AHAHAH SIIIII» conta.',
       '<strong>Il tuo Discord viene cancellato.</strong> Mettilo in lista bianca: senza, è un link come un altro.',
       '<strong>Lo scudo non parte.</strong> Serve il permesso di moderazione di Twitch: se manca, si riautorizza dalla scheda Stato.',

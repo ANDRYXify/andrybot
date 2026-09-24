@@ -190,8 +190,12 @@ export function valuta(msg, cfg) {
   const testo = String(msg.text || '');
   if (!testo) return null;
 
-  // esenzioni: mod e broadcaster sempre; VIP esenti da tutto (fidati)
-  if (msg.isBroadcaster || msg.isMod || msg.isVip) return null;
+  // esenzioni: mod e broadcaster sempre. I VIP sono fidati ed esenti da tutto
+  // tranne i link, che hanno una scala loro: con «solo mod» un VIP non passa.
+  // Prima l'esenzione veniva prima dei link, e «solo mod» voleva dire «VIP e mod».
+  if (msg.isBroadcaster || msg.isMod) return null;
+  const linkVietato = () => cfg.link && tierUtente(msg) < (RANK[cfg.linkTier] ?? 1) && haLinkNonPermesso(testo, msg.channel, cfg);
+  if (msg.isVip) return linkVietato() ? { motivo: 'link non consentito' } : null;
 
   // UN MESSAGGIO CHE PORTA DEI BIT NON SI CONTA FRA LE RIPETIZIONI.
   //
@@ -209,9 +213,7 @@ export function valuta(msg, cfg) {
   const lista = daPagante ? [] : registraMessaggio(chiave, testo);
 
   // link non autorizzati (in base al tier consentito)
-  if (cfg.link && tierUtente(msg) < (RANK[cfg.linkTier] ?? 1) && haLinkNonPermesso(testo, msg.channel, cfg)) {
-    return { motivo: 'link non consentito' };
-  }
+  if (linkVietato()) return { motivo: 'link non consentito' };
   // copypasta / stesso messaggio ripetuto da poco
   if (cfg.ripetizioni && !daPagante) {
     const n = norm(testo);
