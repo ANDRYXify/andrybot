@@ -1506,7 +1506,7 @@ function _demoGet(via) {
     '/api/passkey': [ { id: 'demo', nome: 'iPhone di Andryx', quando: '2026-04-10' } ],
   };
   F['/api/paginadona'] = { ...F['/api/linkpage'], url: 'https://dona.socialbot.live/andryxify', pagina: { ...F['/api/linkpage'].pagina, headline: 'Sostieni ANDRYXify', tagline: 'Se ti piace quello che faccio, un caffè aiuta a farne di più.', blocchi: [{ tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: '', etichetta: '', obiettivo: true, icona: 'cuore' }] } };
-  const statoDona = { paginaUrl: 'https://dona.socialbot.live/andryxify', conto: { stato: 'nessuno', coda: '', nota: '' }, satispay: { stato: 'nessuno', coda: '', nota: '' }, riepilogo: { oggi: [], mese: [], anno: [], sempre: [] }, ultime: [], daApprovare: [] };
+  const statoDona = { paginaUrl: 'https://dona.socialbot.live/andryxify', conto: { stato: 'nessuno', coda: '', nota: '' }, satispay: { stato: 'nessuno', coda: '', nota: '' }, kofi: { stato: 'nessuno', pagina: '', token: false, valuta: 'EUR', webhook: 'https://socialbot.live/dona/kofi/andryxify' }, riepilogo: { oggi: [], mese: [], anno: [], sempre: [] }, ultime: [], daApprovare: [] };
   F['/api/donazioni/stato'] = statoDona; F['/api/donazioni/stato?rileggi=1'] = statoDona;
   const cartaPag = (quale) => ({ quale, mia: false, disegnabile: true, immagine: '',
     carta: { nome: quale === 'dona' ? 'Sostienimi' : 'I miei link', larghezza: 1200, altezza: 630, fondo: {}, elementi: [] },
@@ -16657,7 +16657,7 @@ function _contoKofiHtml(st) {
   return `<p>${manca ? esc(manca) : L('Per chi ha già una pagina Ko-fi: chi dona paga lì, e l\'avviso, il grazie e l\'obiettivo partono qui come per gli altri conti. SocialBot non tocca i soldi: da Ko-fi riceve solo l\'avviso di ogni donazione.', 'For those who already have a Ko-fi page: donors pay there, and the alert, the thanks and the goal fire here as for the other accounts. SocialBot never touches the money: from Ko-fi it only receives the notice of each donation.', 'Para quien ya tiene una página de Ko-fi: quien dona paga allí, y el aviso, el gracias y el objetivo salen aquí como con las otras cuentas. SocialBot no toca el dinero: de Ko-fi solo recibe el aviso de cada donación.')}</p>
     <ol class="guida-come">
       <li>${esc(L('Scrivi qui sotto l\'indirizzo della tua pagina Ko-fi.', 'Write your Ko-fi page address below.', 'Escribe abajo la dirección de tu página de Ko-fi.'))}</li>
-      <li>${esc(L('Su Ko-fi apri «Settings» → «API», incolla questo indirizzo in «Webhook URL» e premi «Update»:', 'On Ko-fi open “Settings” → “API”, paste this address into “Webhook URL” and press “Update”:', 'En Ko-fi abre «Settings» → «API», pega esta dirección en «Webhook URL» y pulsa «Update»:'))} <code>${esc(k.webhook || '')}</code></li>
+      <li>${esc(L('Su Ko-fi apri «Settings» → «API», incolla questo indirizzo in «Webhook URL» e premi «Update»:', 'On Ko-fi open “Settings” → “API”, paste this address into “Webhook URL” and press “Update”:', 'En Ko-fi abre «Settings» → «API», pega esta dirección en «Webhook URL» y pulsa «Update»:'))} <code>${esc(k.webhook || (location.origin + '/dona/kofi/' + (stato?.user?.login || '')))}</code></li>
       <li>${esc(L('Nella stessa pagina apri «Advanced», copia il «Verification Token» e incollalo qui.', 'On the same page open “Advanced”, copy the “Verification Token” and paste it here.', 'En la misma página abre «Advanced», copia el «Verification Token» y pégalo aquí.'))}</li>
     </ol>
     <label class="campo" for="dona-kofi-pagina">${L('La tua pagina Ko-fi', 'Your Ko-fi page', 'Tu página de Ko-fi')}</label>
