@@ -88,17 +88,41 @@ export class Esecutore {
     // limit di Twitch, che può essere minuti. Chi guarda deve poter distinguere
     // «non l'ha visto» da «non ha ancora fatto in tempo».
     this._conti = { decisi: 0, chiesti: 0, fatti: 0, falliti: 0, aVuoto: 0, doppioni: 0 };
+    // Gli stessi conti, canale per canale: quello che vede uno streamer e' il
+    // suo, e il totale di tutti resta a chi guarda la macchina.
+    this._contiPer = new Map();
+  }
+
+  _conta(canale, chiave) {
+    this._conti[chiave]++;
+    const ch = norm(canale);
+    if (!ch) return;
+    if (!this._contiPer.has(ch)) this._contiPer.set(ch, { decisi: 0, chiesti: 0, fatti: 0, falliti: 0, aVuoto: 0, doppioni: 0 });
+    this._contiPer.get(ch)[chiave]++;
   }
 
   // Due numeri diversi, due nomi diversi. `inSospeso` è quanto c'è ancora da
   // riprendere; `falliti` è quante volte in tutto una chiamata è andata male.
   // Chiamarli tutti e due «falliti» non è ambiguo: è che uno dei due sparisce, e
   // chi legge la console vede il numero sbagliato senza accorgersene.
-  stato() {
-    return { inCoda: this._coda.length, inSospeso: this._falliti.length, ...this._conti };
+  //
+  // Con un canale, tutto e' di quel canale: la fila, le sospese e i conti. Chi
+  // guarda il suo scudo non deve vedere nomi, motivi o numeri di un altro.
+  stato(canale = null) {
+    if (canale == null) return { inCoda: this._coda.length, inSospeso: this._falliti.length, ...this._conti };
+    const ch = norm(canale);
+    return {
+      inCoda: this._coda.filter((x) => norm(x.v.canale) === ch).length,
+      inSospeso: this._falliti.filter((f) => norm(f.canale) === ch).length,
+      ...(this._contiPer.get(ch) || { decisi: 0, chiesti: 0, fatti: 0, falliti: 0, aVuoto: 0, doppioni: 0 }),
+    };
   }
 
-  fallitiInSospeso({ limite = 100 } = {}) { return this._falliti.slice(-limite).reverse(); }
+  fallitiInSospeso({ limite = 100, canale = null } = {}) {
+    const ch = canale == null ? null : norm(canale);
+    const tutti = ch == null ? this._falliti : this._falliti.filter((f) => norm(f.canale) === ch);
+    return tutti.slice(-limite).reverse();
+  }
 
   // Esegue un verdetto e ASPETTA il suo esito. La coda resta una sola — stesso
   // ritmo, stessa deduplica, stesso registro — ma chi ha bisogno di sapere
@@ -111,11 +135,11 @@ export class Esecutore {
       // IDEMPOTENZA. Lo stesso evento consegnato due volte da Twitch, o due
       // rilevatori che si accorgono della stessa cosa, non devono produrre due
       // ban. Si conta e si lascia perdere.
-      this._conti.doppioni++;
+      this._conta(v.canale, 'doppioni');
       return Promise.resolve({ ok: true, doppione: true });
     }
     this._inCoda.set(chiave, Date.now());
-    this._conti.decisi++;
+    this._conta(v.canale, 'decisi');
     return new Promise((risolvi) => {
       this._coda.push({ v, risolvi, tentativi: 0 });
       this._coda.sort((a, b) => (URGENZA[a.v.azione] ?? 9) - (URGENZA[b.v.azione] ?? 9) || a.v.ts - b.v.ts);
@@ -152,20 +176,20 @@ export class Esecutore {
 
   async _fai(voce) {
     const { v } = voce;
-    this._conti.chiesti++;
+    this._conta(v.canale, 'chiesti');
 
     // A VUOTO: si calcola tutto, si scrive tutto, non si tocca nessuno. È il
     // modo di tarare le soglie senza che il collaudo sia la diretta di
     // qualcuno.
     if (v.aVuoto) {
-      this._conti.aVuoto++;
+      this._conta(v.canale, 'aVuoto');
       this.annota(v.canale, rigaDi(v, { ok: true, motivo: 'a vuoto: non eseguito' }, 'a-vuoto'));
       return { ok: true, aVuoto: true };
     }
 
     const r = await this._chiama(v);
     if (r?.ok) {
-      this._conti.fatti++;
+      this._conta(v.canale, 'fatti');
       this.annota(v.canale, rigaDi(v, r));
       return r;
     }
@@ -183,7 +207,7 @@ export class Esecutore {
     // NIENTE SI PERDE IN SILENZIO. Un'azione che non è riuscita resta scritta e
     // si può riprendere: è durante un attacco che una chiamata cade, ed è
     // durante un attacco che serve.
-    this._conti.falliti++;
+    this._conta(v.canale, 'falliti');
     this._falliti.push({ ...v, motivo: r?.motivo || 'sconosciuto', tentativi: voce.tentativi + 1, quando: Date.now() });
     if (this._falliti.length > FALLITI_MAX) this._falliti.splice(0, this._falliti.length - FALLITI_MAX);
     this.annota(v.canale, rigaDi(v, r || { ok: false, motivo: 'nessuna risposta' }));

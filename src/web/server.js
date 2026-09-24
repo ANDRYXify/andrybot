@@ -3111,13 +3111,15 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
 
   // Le azioni che non sono riuscite, e il modo di riprenderle. Un'azione persa
   // durante un attacco e' proprio quella che serviva.
+  // Solo quelle del SUO canale: l'esecutore e' uno per tutti, la vista no.
   app.get('/api/antibot/sospese', requireOwner, (req, res) => {
-    res.json({ stato: statoEsecutore(), azioni: azioniFallite({ limite: 200 }) });
+    const login = currentUser(req).login.toLowerCase();
+    res.json({ stato: statoEsecutore(login), azioni: azioniFallite({ limite: 200, canale: login }) });
   });
 
   app.post('/api/antibot/sospese/riprova', requireOwner, (req, res) => {
     const login = currentUser(req).login.toLowerCase();
-    res.json({ ripresi: riprovaFallite(login), stato: statoEsecutore() });
+    res.json({ ripresi: riprovaFallite(login), stato: statoEsecutore(login) });
   });
 
   // Gli incidenti: un attacco per volta, non trecento righe di registro.
@@ -3177,7 +3179,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
         // Chi esegue e' un modulo a parte: qui si vede la sua fila, quante
         // azioni sono andate a vuoto perche' il canale e' in sola osservazione,
         // e soprattutto quante sono cadute e aspettano di essere riprese.
-        esecutore: statoEsecutore(),
+        esecutore: statoEsecutore(login),
         aVuoto: cfg.aVuoto === true,
         incidente: incidenteAperto(login) ? sintesiIncidente(incidenteAperto(login)) : null,
         // Quanto sbaglia lo scudo, contato sui suoi stessi giudizi: chi era

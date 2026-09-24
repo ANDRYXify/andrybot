@@ -115,7 +115,7 @@ test('e un gocciolamento dalla stessa fabbrica non passa piu\' indisturbato', as
   // Si conta quanti ne ha DECISI, non quanti sono già arrivati a Twitch: il
   // tetto di sei al secondo è di Twitch, e aspettarlo qui vorrebbe dire far
   // dipendere una prova dal rate limit di qualcun altro.
-  const decisi = ab.statoEsecutore().decisi;
+  const decisi = ab.statoEsecutore(ch).decisi;
   assert.ok(decisi >= 40, `decisi ${decisi} su 45`);
   await new Promise((r) => setTimeout(r, 300));
   assert.ok(presi.length > 0, 'e la coda gira davvero');

@@ -107,6 +107,29 @@ test('un\'azione fallita resta scritta e si può riprendere', async () => {
   assert.equal(e.stato().fatti, 1);
 });
 
+test('quello che si vede di un canale e\' di quel canale: nomi, motivi e conti degli altri restano fuori', async () => {
+  const { e } = banco({ timeout: () => ({ ok: false, motivo: 'permesso mancante' }) });
+  await e.esegui(v({ canale: 'tizio', login: 'bot1' }));
+  await e.esegui(v({ canale: 'caio', login: 'bot2' }));
+  await e.esegui(v({ canale: 'caio', login: 'bot3' }));
+  assert.deepEqual(e.fallitiInSospeso({ canale: 'tizio' }).map((f) => f.login), ['bot1']);
+  assert.deepEqual(e.fallitiInSospeso({ canale: 'caio' }).map((f) => f.login).sort(), ['bot2', 'bot3']);
+  assert.equal(e.stato('tizio').inSospeso, 1);
+  assert.equal(e.stato('tizio').falliti, 1, 'anche i conti sono del canale');
+  assert.equal(e.stato('caio').decisi, 2);
+  assert.equal(e.stato('nessuno').inSospeso, 0);
+  assert.equal(e.stato().inSospeso, 3, 'il totale resta a chi guarda la macchina');
+});
+
+test('le viste per il pannello senza un canale non danno niente', async () => {
+  const ab = await import('../../src/features/antibot.js');
+  assert.equal(ab.statoEsecutore(), null);
+  assert.deepEqual(ab.azioniFallite({ limite: 10 }), []);
+  assert.deepEqual(ab.codaBan(), { in_attesa: 0, in_sospeso: 0 });
+  const srv = (await import('node:fs')).readFileSync(new URL('../../src/web/server.js', import.meta.url), 'utf8');
+  assert.ok(!/statoEsecutore\(\)|azioniFallite\(\{ limite: \d+ \}\)/.test(srv), 'il server passa sempre il canale');
+});
+
 test('la coda dei falliti sopravvive a un riavvio', async () => {
   const { e } = banco({ blocca: () => ({ ok: false, motivo: 'permesso mancante' }), timeout: () => ({ ok: false, motivo: 'permesso mancante' }) });
   await e.esegui(v({ azione: E.AZIONI.BLOCCA }));

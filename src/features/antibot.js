@@ -683,13 +683,16 @@ export function ondataArtificiale(arr, cfg = {}) {
 // dell'esecutore anche da una funzione di modulo.
 let esecutore = null;
 
+// Le viste dello scudo che arrivano al pannello sono SEMPRE di un canale: senza
+// canale non tornano niente, cosi' non si puo' mostrare a uno streamer la fila,
+// i nomi o i motivi di un altro nemmeno dimenticandosi un parametro.
 export function codaBan(channel) {
-  const s = esecutore?.stato();
+  const s = channel ? esecutore?.stato(channel) : null;
   return { in_attesa: s ? s.inCoda : 0, in_sospeso: s ? s.inSospeso : 0 };
 }
 
-export const statoEsecutore = () => esecutore?.stato() || null;
-export const azioniFallite = (opz) => esecutore?.fallitiInSospeso(opz) || [];
+export const statoEsecutore = (canale) => (canale ? esecutore?.stato(canale) || null : null);
+export const azioniFallite = ({ limite = 100, canale } = {}) => (canale ? esecutore?.fallitiInSospeso({ limite, canale }) || [] : []);
 export const riprovaFallite = (ch) => esecutore?.riprovaFalliti(ch) || 0;
 
 // Quanto sbaglia lo scudo, misurato sui suoi stessi giudizi: chi era stato
