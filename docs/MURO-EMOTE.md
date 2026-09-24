@@ -169,7 +169,13 @@ colore che ruota («arcobaleno») mai, sempre o durante l'hype train.
 
 - **Il bot** decide chi passa (livello, esclusi, comandi), e manda all'overlay
   il messaggio con le emote di Twitch già risolte (`tipo: 'muro'`), le
-  esplosioni (`tipo: 'muro-esplodi'`) e l'hype train (per l'arcobaleno).
+  esplosioni (`tipo: 'muro-esplodi'`) e quanto manca alla fine dell'hype
+  train (`tipo: 'muro-treno'`, per i colori che girano). Il treno arriva
+  all'overlay da solo solo se il suo cartello e' in scena: il muro non deve
+  dipendere da un altro elemento acceso, e la durata viaggia in millisecondi
+  che restano, non in un'ora del giorno, perche' l'orologio del computer della
+  diretta puo' sbagliare. Un overlay riaperto a treno in corso lo riprende al
+  primo contributo, che durante un treno arriva di continuo.
 - **L'overlay** trova le emote nel testo (Twitch dal messaggio, 7TV dalla
   mappa del canale, emoji se accese), tiene combo e coda, e anima.
 - **Il motore** (`src/web/public/muro.js`, `window.SB_MURO`) è lo stesso nella

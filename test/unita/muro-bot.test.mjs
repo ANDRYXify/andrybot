@@ -118,3 +118,18 @@ test('il raid esplode con le emote 7TV del canale che arriva', async () => {
   await m.suEvento({ channel: ch, type: 'channel.raid', data: { viewers: 2, from_broadcaster_user_login: 'lucia' } });
   assert.equal(f.mandati.length, 1, 'sotto la soglia');
 });
+
+test('i colori durante l\'hype train: il muro si dice da se\' quanto manca, in durata e non in ora', async () => {
+  const ora = Date.parse('2026-01-01T00:00:00Z');
+  assert.equal(muro.trenoPer('channel.hype_train.begin', { expires_at: '2026-01-01T00:04:00Z' }, ora), 240000);
+  assert.equal(muro.trenoPer('channel.hype_train.progress', {}, ora), 5 * 60 * 1000, 'senza scadenza, cinque minuti');
+  assert.equal(muro.trenoPer('channel.hype_train.progress', { expires_at: '2025-12-31T23:00:00Z' }, ora), 5 * 60 * 1000, 'una scadenza gia\' passata non spegne un treno che sta crescendo');
+  assert.equal(muro.trenoPer('channel.hype_train.end', { expires_at: '2026-01-01T00:04:00Z' }, ora), 0);
+  const conColori = canale('muro_treno_si', { attivo: true, arcobaleno: 'treno', eventi: { trenoParte: { attivo: false } } });
+  const senza = canale('muro_treno_no', { attivo: true, arcobaleno: 'mai', eventi: { trenoParte: { attivo: false } } });
+  const f = finto();
+  const m = new muro.MuroEmote({ effects: f.effects });
+  await m.suEvento({ channel: conColori, type: 'channel.hype_train.begin', data: {} });
+  await m.suEvento({ channel: senza, type: 'channel.hype_train.begin', data: {} });
+  assert.deepEqual(f.mandati.map((x) => [x.ch, x.tipo, x.per]), [[conColori, 'muro-treno', 5 * 60 * 1000]], 'solo a chi ha scelto i colori del treno, anche col cartello del treno spento');
+});

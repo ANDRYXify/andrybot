@@ -775,7 +775,7 @@ function ridisegnaEtichette() {
   posaEtichette();
 }
 
-const MURO = { chiave: '', combo: null, coda: null, aperte: new Map(), esplosioni: [], esplode: false, giro: 0 };
+const MURO = { chiave: '', combo: null, coda: null, aperte: new Map(), esplosioni: [], esplode: false, giro: 0, trenoFino: 0 };
 
 function muroAcceso() { return mostra('muro') && !!MIO.muro && MIO.muro.attivo === true; }
 
@@ -786,7 +786,7 @@ function posaMuro() {
 
 function areaMuro() { return { w: muroBox.clientWidth || window.innerWidth, h: muroBox.clientHeight || window.innerHeight }; }
 
-function trenoInCorso() { const t = MIO.trenoStato; return !!(t && !t.finito && Number(t.scade) > Date.now()); }
+function trenoInCorso() { const t = MIO.trenoStato; return MURO.trenoFino > Date.now() || !!(t && !t.finito && Number(t.scade) > Date.now()); }
 function arcobalenoOra() { const a = MIO.muro && MIO.muro.arcobaleno; return a === 'sempre' || (a === 'treno' && trenoInCorso()); }
 
 function vesteMuro() { return { ombra: MIO.muro.ombra !== false, arcobaleno: arcobalenoOra() }; }
@@ -946,6 +946,7 @@ function ricevi(m) {
     else if (dati.tipo === 'chat') chat(dati);
     else if (dati.tipo === 'muro') muroChat(dati);
     else if (dati.tipo === 'muro-esplodi') muroEsplodi(dati);
+    else if (dati.tipo === 'muro-treno') MURO.trenoFino = Number(dati.per) > 0 ? Date.now() + Number(dati.per) : 0;
     else if (dati.tipo === 'widget') { if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, (MIO.widget && MIO.widget[dati.id]) || dati.cfg, dati.valore); }
     else if (dati.tipo === 'goal') { MIO.goals = Array.isArray(dati.goals) ? dati.goals : MIO.goals; goal(MIO.goals, dati.conti || {}); }
     else if (dati.tipo === 'timer') { MIO.timerFine = Number(dati.fine) || MIO.timerFine; disegnaTimer(); }

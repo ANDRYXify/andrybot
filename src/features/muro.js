@@ -65,6 +65,19 @@ export function esplosioneDi(cfg, type, data) {
   return subs ? ok('sub', subs) : null;
 }
 
+// I COLORI CHE GIRANO DURANTE L'HYPE TRAIN. Il treno arriva all'overlay solo se
+// il suo cartello e' in scena; il muro non puo' dipendere da un altro elemento
+// acceso, quindi il muro si dice da se' quanto manca alla fine. In millisecondi
+// che restano, non in un'ora del giorno: l'orologio del computer della diretta
+// puo' essere avanti o indietro, una durata no.
+const EVENTI_TRENO = new Set(['channel.hype_train.begin', 'channel.hype_train.progress', 'channel.hype_train.end']);
+const TRENO_DI_SERIE_MS = 5 * 60 * 1000;
+export function trenoPer(type, data, ora = Date.now()) {
+  if (type === 'channel.hype_train.end') return 0;
+  const fine = Date.parse(String(data?.expires_at || ''));
+  return Number.isFinite(fine) && fine > ora ? Math.min(fine - ora, 30 * 60 * 1000) : TRENO_DI_SERIE_MS;
+}
+
 const parole = (testo) => String(testo || '').trim().split(/\s+/).filter(Boolean).slice(0, MAX_PAROLE);
 
 export class MuroEmote {
@@ -121,6 +134,7 @@ export class MuroEmote {
     try {
       const { channel, type, data } = ev || {};
       const cfg = cfgDi(channel);
+      if (EVENTI_TRENO.has(type) && cfg.attivo && cfg.arcobaleno === 'treno') this._manda(channel, { tipo: 'muro-treno', per: trenoPer(type, data) });
       const e = esplosioneDi(cfg, type, data);
       if (!e) return;
       let emoti = [];

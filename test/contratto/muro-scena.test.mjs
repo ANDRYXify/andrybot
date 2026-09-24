@@ -63,6 +63,8 @@ test('in diretta si accende col suo interruttore e riceve chat, esplosioni e bos
   assert.ok(/function muroAcceso\(\) \{ return mostra\('muro'\) && !!MIO\.muro && MIO\.muro\.attivo === true; \}/.test(OVL));
   assert.ok(OVL.includes("else if (dati.tipo === 'muro') muroChat(dati);") && OVL.includes("else if (dati.tipo === 'muro-esplodi') muroEsplodi(dati);"));
   assert.ok(/MIO\.muro = t\.muro \|\| null;\n  preparaMuro\(\);/.test(OVL));
+  assert.ok(OVL.includes("else if (dati.tipo === 'muro-treno') MURO.trenoFino = Number(dati.per) > 0 ? Date.now() + Number(dati.per) : 0;"), 'il treno del muro arriva in durata, e vale anche col cartello del treno spento');
+  assert.ok(/function trenoInCorso\(\) \{ const t = MIO\.trenoStato; return MURO\.trenoFino > Date\.now\(\) \|\|/.test(OVL));
   assert.ok(/function emoteUrl\(mappa, nome\) \{\n  return mappa && Object\.prototype\.hasOwnProperty\.call\(mappa, nome\)/.test(OVL), 'anche la chat: «constructor» scritto in chat non e\' un\'emote');
 });
 
