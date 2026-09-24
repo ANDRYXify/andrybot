@@ -1330,7 +1330,7 @@ function _demoGet(via) {
       { id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true },
         xy: { alert: { x: 50, y: 14 }, chat: { x: 16, y: 78 }, wf: { x: 86, y: 62 }, ws: { x: 86, y: 82 } },
         css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/overlay-principale' },
-      { id: 'ovsolochat', nome: 'Solo chat', mostra: { alert: false, chat: true, wf: false, ws: false, effetti: false },
+      { id: 'ovsolochat', nome: 'Solo chat', mostra: { alert: false, chat: true, wf: false, ws: false, boss: false, effetti: false },
         xy: { chat: { x: 22, y: 50 } }, css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/solo-chat' },
       { id: 'ovpausa', nome: 'Schermata di pausa', mostra: { alert: true, chat: false, wf: true, ws: true, effetti: true },
         xy: { alert: { x: 50, y: 50 }, wf: { x: 22, y: 84 }, ws: { x: 78, y: 84 } },
@@ -9192,6 +9192,23 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="bit">${L('Salva', 'Save', 'Guardar')}</button></p>
     </details>
 
+    <details class="carta sez" data-parte="aspetto" id="sez-boss">
+      <summary><h3>${_hIco(ICO.target)}${L('Boss', 'Boss', 'Jefe')}</h3></summary>
+      <p>${L('La carta del boss di turno: il nome, la vita che resta, il tempo che gli rimane, chi lo colpisce e quanto. Quando arriva, quanta vita ha e quanto dura si decide nei Giochi.', 'The current boss card: its name, the life left, the time it has, who hits it and how hard. When it comes, how much life it has and how long it lasts are set in Games.', 'La carta del jefe de turno: el nombre, la vida que le queda, el tiempo que tiene, quién lo golpea y cuánto. Cuándo llega, cuánta vida tiene y cuánto dura se decide en Juegos.')}</p>
+      <p><button type="button" class="btn secondario mini" data-vai-scheda="giochi">${_bIco(ICO.giochi)}${L('Apri i Giochi', 'Open Games', 'Abrir Juegos')}</button></p>
+      <div data-cfg="boss">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="boss-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Mostralo nella scena', 'Show it on the scene', 'Muéstralo en la escena')}</span>
+        </div>
+        <div class="asp-blocco" data-asp="boss" data-cfg-di="boss">
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="boss">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
     <details class="carta sez" data-parte="aspetto" id="sez-goal">
       <summary><h3>${_hIco(ICO.trofeo)}${L('Gli obiettivi', 'Your goals', 'Tus objetivos')}</h3></summary>
       <p>${L('Barre che si riempiono da sole mentre arrivano follower, sub o bit. Un obiettivo può essere «altri 100» oppure «1000 in tutto»: con «Quanti ne ho adesso» parte dal numero che hai già.', 'Bars that fill by themselves as followers, subs or bits come in. A goal can be «100 more» or «1000 in total»: with «How many I have now» it starts from the number you already have.', 'Barras que se llenan solas mientras llegan followers, subs o bits. Un objetivo puede ser «100 más» o «1000 en total»: con «Cuántos tengo ahora» empieza desde el número que ya tienes.')}</p>
@@ -9462,7 +9479,7 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'effetti', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
 let occSel = '';
@@ -10276,7 +10293,30 @@ function _vestiBit(box, cfg) {
   });
 }
 
-const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno, bit: _vestiBit };
+function _defBoss() {
+  return { attivo: true, posizione: 'alto-centro', xy: null,
+    stile: { dim: 'media', sfondo: '#100d16', opacita: 80, testo: '#ffffff', accento: '#d9303a', bordoRaggio: 17, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
+}
+
+function _vestiBoss(box, cfg) {
+  if (!box.querySelector('.boss-barra')) {
+    box.innerHTML = '<div class="boss-corpo"><div class="boss-testa"><strong class="boss-nome"></strong><span class="boss-conto"></span></div>'
+      + '<div class="boss-barra"><div class="boss-scia"></div><div class="boss-vita"></div></div>'
+      + '<div class="boss-tempo"></div><div class="boss-fine"></div></div><div class="boss-danni"></div>';
+  }
+  const st = cfg.stile || {};
+  box.className = 'ovl-widget ovl-boss dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 80) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 17) + 'px', '--font': fontStile(st) });
+  box.querySelector('.boss-nome').textContent = L('Troll del Ritardo', 'The Lag Troll', 'El Trol del Retraso');
+  box.querySelector('.boss-conto').textContent = '240 / 360';
+  box.querySelector('.boss-barra').style.setProperty('--q', '0.6667');
+  const tempo = box.querySelector('.boss-tempo');
+  tempo.style.animation = 'none';
+  tempo.style.transform = 'scaleX(.55)';
+}
+
+const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss };
 
 function _orologioGiu(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -10547,6 +10587,7 @@ const PEZZI_EL = () => [
   ['timer', '#sez-timer'],
   ['treno', '#sez-treno'],
   ['bit', '#sez-bit'],
+  ['boss', '#sez-boss'],
 ];
 
 const _apertoGrp = {};
@@ -10821,6 +10862,7 @@ const ELEMENTI = () => {
   out.push({ k: 'treno', ico: ICO.treno, n: L('Hype train', 'Hype train', 'Hype train'), cfg: 'overlayTreno' });
   out.push({ k: 'bit', ico: ICO.podio, n: L('Classifica Bit', 'Bits leaderboard', 'Clasificación de Bits'), cfg: 'overlayBit' });
   out.push({ k: 'pen', ico: ICO.penitenza, n: L('Sfida a tempo', 'Timed challenge', 'Reto a tiempo'), cfg: 'penitenze' });
+  out.push({ k: 'boss', ico: ICO.target, n: L('Boss', 'Boss', 'Jefe'), cfg: 'overlayBoss' });
   return out;
 };
 const ELEM = (k) => ELEMENTI().find((e) => e.k === k) || null;
@@ -10871,7 +10913,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, bit: _defBit, pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, bit: _defBit, boss: _defBoss, pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 function _cfgEl(k) {
   const e = ELEM(k);
@@ -10922,7 +10964,7 @@ function _accendiDi(k, v) {
   if (e && e.cont) { (e.cont.overlayCfg = e.cont.overlayCfg || {}).mostra = !!v; return; }
   if (e && e.cfg) {
     _cfgEl(k).attivo = !!v;
-    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo' }[k]);
+    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo', boss: 'boss-attivo' }[k]);
     if (chk) chk.checked = !!v;
     return;
   }
@@ -24359,7 +24401,7 @@ function caricaDatiScheda(id) {
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
-    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); riempiCfgForm('bit'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
+    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'consolify') caricaConsolify();

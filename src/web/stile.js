@@ -490,6 +490,23 @@ export const normTreno = (x) => {
   };
 };
 
+// IL BOSS in scena (docs/OVERLAY.md, «Gli ultimi pezzi fuori dalla scena»).
+// Quello che fa lo decide la scheda Giochi; qui c'e' solo se si vede, dove sta
+// e com'e' vestito. Acceso di suo, come prima: la sua carta c'era gia'. La
+// veste di serie e' quella che aveva: fondo scuro, la vita rossa. L'angolo e'
+// uno solo, in alto al centro; per il resto lo si sposta nello Studio.
+export const VESTE_BOSS = { sfondo: '#100d16', opacita: 80, accento: '#d9303a', bordoRaggio: 17 };
+export const POS_BOSS = ['alto-centro'];
+export const normBoss = (x) => {
+  x = x || {};
+  return {
+    attivo: x.attivo !== false,
+    posizione: unoDi(x.posizione, POS_BOSS, 'alto-centro'),
+    xy: xyOk(x.xy),
+    stile: normWidgetStile({ ...VESTE_BOSS, ...(x.stile || {}) }),
+  };
+};
+
 // LA CLASSIFICA DEI BIT in scena. Le righe non sono nostre: sono quelle che da'
 // Twitch, e qui si sceglie solo quante mostrarne e di che periodo. Il periodo e'
 // uno dei cinque che Twitch conosce — inventarne un sesto vorrebbe dire

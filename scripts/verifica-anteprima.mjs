@@ -96,7 +96,7 @@ if (!browser) { console.log('  –  saltato: manca Chromium o Playwright'); proc
 // il tema e il brano che il finto bot serve alla pagina dell'overlay: li scrive
 // l'editor, caso per caso, cosi' le due pagine vestono la stessa cosa
 let TEMA = null, MUSICA = { stato: 'niente' };
-const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, effetti: true, consolify: true };
+const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, boss: true, effetti: true, consolify: true };
 const ovl = overlayFinto({ tema: () => TEMA, musica: () => MUSICA });
 const { base, chiudi } = await apriSito({ overlay: ovl });
 
@@ -365,6 +365,43 @@ try {
   dice(testiTreno[0] && testiTreno[1] && testiTreno[0][0] === testiTreno[1][0] && testiTreno[0][1] === testiTreno[1][1],
     `hype train: stesso livello e stesso nome di qua e di la' — editor «${(testiTreno[0] || []).join(' · ')}», diretta «${(testiTreno[1] || []).join(' · ')}»`,
     'l\'editor racconta un treno diverso da quello in onda');
+
+  // --- 6-quater. il boss ----------------------------------------------------
+  // docs/OVERLAY.md, «Gli ultimi pezzi fuori dalla scena». La carta dello
+  // Studio e quella in onda sono la stessa: stessa grandezza e stesso posto,
+  // messa in un punto e lasciata al suo angolo, con la veste di serie e con
+  // una cambiata.
+  const BOSS_VESTE = { dim: 'grande', sfondo: '#203040', opacita: 90, testo: '#ffffee', accento: '#22aa66', bordoRaggio: 6, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'linea' };
+  const DOVE = `(sel) => { const el = document.querySelector(sel); if (!el) return null;
+    const stage = document.getElementById('ap-stage'); const sc = stage ? stage.getBoundingClientRect().width / 1920 : 1;
+    const o = stage ? stage.getBoundingClientRect() : { left: 0, top: 0 }; const r = el.getBoundingClientRect();
+    return { x: (r.left - o.left) / sc, y: (r.top - o.top) / sc, w: r.width / sc, h: r.height / sc }; }`;
+  for (const [nome, xy, stile] of [['in un punto', { x: 50, y: 50, s: 100, r: 0 }, null], ['al suo angolo', null, null], ['vestito', { x: 30, y: 70, s: 80, r: 0 }, BOSS_VESTE]]) {
+    await ed.evaluate(async ({ xy, stile }) => {
+      const c = _cfgEl('boss'); c.attivo = true; c.stile = { ..._defBoss().stile, ...(stile || {}) };
+      const q = _ovXY(); for (const k of Object.keys(q)) delete q[k];
+      if (xy) q.boss = { ...xy };
+      aggiornaAnteprima();
+      await new Promise((r) => setTimeout(r, 600));
+    }, { xy, stile });
+    const edBoss = await misuraEd('#ap-boss .ovl-boss');
+    const edDove = await ed.evaluate(`(${DOVE})('#ap-boss .ovl-boss')`);
+    const stileBoss = { ...(await ed.evaluate(() => _defBoss().stile)), ...(stile || {}) };
+    TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: xy ? { boss: xy } : {}, alertStile: null, chatStile: null,
+      boss: { attivo: true, posizione: 'alto-centro', xy: null, stile: stileBoss } };
+    await apriLive(() => window.MIO && window.MIO.boss);
+    ovl.manda({ tipo: 'boss', azione: 'arriva', nome: 'Troll del Ritardo', vita: 240, vitaMax: 360, durata: 90 });
+    await live.waitForFunction(() => document.querySelector('#boss .ovl-boss'), null, { timeout: 5000 }).catch(() => {});
+    await attesa(600);
+    const lvBoss = await misuraLive('#boss .ovl-boss');
+    const lvDove = await live.evaluate(`(${DOVE})('#boss .ovl-boss')`);
+    const testi = await Promise.all([ed, live].map((q, i) => q.evaluate((sel) => { const n = document.querySelector(sel); return n ? [n.querySelector('.boss-nome').textContent, n.querySelector('.boss-conto').textContent, getComputedStyle(n.querySelector('.boss-vita')).transform] : null; }, i ? '#boss .ovl-boss' : '#ap-boss .ovl-boss')));
+    dice(edBoss && lvBoss && vicino(edBoss.w, lvBoss.w) && vicino(edBoss.h, lvBoss.h) && vicino(edBoss.font, lvBoss.font, 0.6)
+      && edDove && lvDove && vicino(edDove.x, lvDove.x, 2) && vicino(edDove.y, lvDove.y, 2),
+      `boss ${nome}: editor ${edBoss ? mis(edBoss) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvBoss ? mis(lvBoss) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
+      'editor e diretta non coincidono');
+    dice(testi[0] && testi[1] && testi[0].join('|') === testi[1].join('|'), `boss ${nome}: stesso nome, stessa vita, stessa barra — «${(testi[1] || []).slice(0, 2).join(' · ')}»`, JSON.stringify(testi));
+  }
 
   // --- 6-ter. i cartelli -----------------------------------------------------
   // Un cartello e' solo quel che ci hai scritto, quindi l'unica cosa che puo'

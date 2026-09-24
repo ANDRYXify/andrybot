@@ -266,32 +266,45 @@ function mostraTesto(ev) {
 
 let bossScena = null;
 const BOSS_DANNI_MAX = 4;
+const bossBox = document.getElementById('boss');
+
+function bossAcceso() { return mostra('boss') && !!MIO.boss && MIO.boss.attivo !== false; }
+
+function vestiBoss(carta) {
+  const cfg = MIO.boss || {};
+  const st = cfg.stile || {};
+  carta.className = 'ovl-widget ovl-boss dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna') + (carta._stato ? ' ' + carta._stato : '');
+  vestiElemento(carta, cfg, 'nessuna', 'boss');
+}
 
 function bossVita(vita) {
   const s = bossScena;
   if (!s) return;
   const v = Math.max(0, Math.min(s.vitaMax, Number(vita) || 0));
-  const quanto = (v / s.vitaMax * 100).toFixed(2) + '%';
-  s.carta.querySelector('.boss-vita').style.width = quanto;
-  s.carta.querySelector('.boss-scia').style.width = quanto;
+  s.carta.querySelector('.boss-barra').style.setProperty('--q', (v / s.vitaMax).toFixed(4));
   s.carta.querySelector('.boss-conto').textContent = v + ' / ' + s.vitaMax;
 }
 
+function bossVia() {
+  if (bossBox) bossBox.textContent = '';
+  bossScena = null;
+}
+
 function boss(ev) {
-  const box = document.getElementById('boss');
-  if (!box) return;
+  if (!bossBox) return;
   if (ev.azione === 'arriva') {
-    box.innerHTML = '';
+    bossVia();
+    if (!bossAcceso()) return;
     const carta = document.createElement('div');
-    carta.className = 'boss-carta';
-    carta.innerHTML = '<div class="boss-testa"><strong class="boss-nome"></strong><span class="boss-conto"></span></div>'
+    carta.innerHTML = '<div class="boss-corpo"><div class="boss-testa"><strong class="boss-nome"></strong><span class="boss-conto"></span></div>'
       + '<div class="boss-barra"><div class="boss-scia"></div><div class="boss-vita"></div></div>'
-      + '<div class="boss-tempo"></div><div class="boss-fine"></div><div class="boss-danni"></div>';
+      + '<div class="boss-tempo"></div><div class="boss-fine"></div></div><div class="boss-danni"></div>';
     carta.querySelector('.boss-nome').textContent = String(ev.nome || '').slice(0, 80);
     carta.querySelector('.boss-tempo').style.animationDuration = Math.max(1, Number(ev.durata) || 90) + 's';
-    box.appendChild(carta);
+    bossBox.appendChild(carta);
     bossScena = { carta, vitaMax: Math.max(1, Number(ev.vitaMax) || 1) };
     bossVita(ev.vita);
+    vestiBoss(carta);
     return;
   }
   if (!bossScena) return;
@@ -303,7 +316,7 @@ function boss(ev) {
     carta.classList.add('boss-colpito');
     const d = document.createElement('span');
     d.className = 'boss-danno';
-    d.textContent = '−' + Math.max(0, Number(ev.danno) || 0) + ' ' + String(ev.chi || '').slice(0, 25);
+    d.textContent = '\u2212' + Math.max(0, Number(ev.danno) || 0) + ' ' + String(ev.chi || '').slice(0, 25);
     const danni = carta.querySelector('.boss-danni');
     danni.prepend(d);
     while (danni.children.length > BOSS_DANNI_MAX) danni.lastElementChild.remove();
@@ -312,14 +325,21 @@ function boss(ev) {
   }
   if (ev.azione === 'fine') {
     bossScena = null;
-    const tempo = carta.querySelector('.boss-tempo');
-    tempo.style.animationPlayState = 'paused';
+    carta.querySelector('.boss-tempo').style.animationPlayState = 'paused';
     carta.querySelector('.boss-fine').textContent = ev.vinto ? 'K.O.!' : 'FUGA!';
-    carta.classList.add(ev.vinto ? 'boss-ko' : 'boss-fuga');
+    carta._stato = ev.vinto ? 'boss-ko' : 'boss-fuga';
+    carta.classList.add(carta._stato);
     try { window.SUONI_PRESET && window.SUONI_PRESET.suona(ev.vinto ? 'tada' : 'whoosh', ev.vinto ? 80 : 50); } catch (e) {  }
-    setTimeout(() => carta.classList.add('boss-via'), 2400);
+    setTimeout(() => { carta._stato += ' boss-via'; carta.classList.add('boss-via'); }, 2400);
     setTimeout(() => carta.remove(), 3100);
   }
+}
+
+function ridisegnaBoss() {
+  const carta = bossBox && bossBox.querySelector('.ovl-boss');
+  if (!carta) return;
+  if (!bossAcceso()) { bossVia(); return; }
+  vestiBoss(carta);
 }
 
 const penCard = {};
@@ -708,7 +728,7 @@ function ricevi(m) {
     else if (dati.tipo === 'bit') { if (Array.isArray(dati.righe)) MIO.bitRighe = dati.righe; disegnaBit(); }
     else if (dati.tipo === 'tema') caricaTema();
     else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
-    else if (dati.tipo === 'boss') { if (mostra('effetti')) boss(dati); }
+    else if (dati.tipo === 'boss') boss(dati);
     else if (dati.tipo === 'contatore') contatore(dati);
     else if (dati.tipo === 'immagine' || dati.tipo === 'video') { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
 }
@@ -1356,6 +1376,8 @@ function applicaTema(t) {
   MIO.treno = t.treno || null;
   MIO.trenoStato = (stato.treno && typeof stato.treno === 'object') ? stato.treno : null;
   disegnaTreno();
+  MIO.boss = t.boss || null;
+  ridisegnaBoss();
   MIO.bit = t.bit || null;
   if (MIO.bit && MIO.bit.attivo && mostra('bit')) chiediBit(); else { disegnaBit(); }
   if (MIO.musica && MIO.musica.attivo && mostra('musica')) chiediMusica(); else togliMusica();

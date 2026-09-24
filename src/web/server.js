@@ -137,7 +137,7 @@ import {
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
-  normMusica, normTimer, normTreno, normBit, normCartelli,
+  normMusica, normTimer, normTreno, normBit, normBoss, normCartelli,
 } from './stile.js';
 
 // --- PIÙ OVERLAY: ogni overlay ha un suo LAYOUT (quali elementi mostra e dove)
@@ -145,8 +145,21 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'effetti', 'consolify'];
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'effetti', 'consolify'];
 const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {});
+// Gli elementi nati da un interruttore che c'era gia' (docs/OVERLAY.md, «Lo
+// stesso interruttore di prima»): finche' in un overlay non sono scritti,
+// valgono quanto quello da cui dipendevano. Un overlay con gli effetti spenti
+// non si ritrova il boss in scena perche' e' nata una chiave. Vale per la base
+// e per le differenze di un'occasione, che sono sparse: si riempie solo se
+// quella da cui si eredita c'e'.
+const EREDITA_MOSTRA = { boss: 'effetti' };
+const ereditaMostra = (m) => {
+  if (!m || typeof m !== 'object') return m;
+  const q = { ...m };
+  for (const [k, da] of Object.entries(EREDITA_MOSTRA)) if (q[k] === undefined && q[da] !== undefined) q[k] = q[da] !== false;
+  return q;
+};
 
 // Un overlay E' un layout: tiene la posizione di OGNI cosa che ci puo' comparire,
 // con la stessa chiave con cui `mostra` la accende. I quattro fissi hanno la
@@ -188,6 +201,7 @@ const CHIAVE_CHAT = new RegExp(`^chat:(${CHAT_DA.join('|')})$`, 'i');
 // possono togliere una a una. Si scrive solo il «no»: quel che non c'e' compare,
 // cosi' un obiettivo nuovo entra acceso ovunque senza dover toccare niente.
 const _mostraDiOverlay = (m) => {
+  m = ereditaMostra(m || {});
   const q = ELEM_OVERLAY.reduce((acc, k) => (acc[k] = m[k] !== false, acc), {});
   if (m && typeof m === 'object') {
     for (const k of Object.keys(m).slice(0, 120)) {
@@ -226,6 +240,7 @@ const _xyDiOverlay = (xy) => {
 const _mostraDiffOverlay = (m) => {
   const q = {};
   if (!m || typeof m !== 'object') return q;
+  m = ereditaMostra(m);
   for (const k of Object.keys(m).slice(0, 120)) {
     if (!(ELEM_OVERLAY.includes(k) || CHIAVE_EL.test(k) || CHIAVE_CHAT.test(k))) continue;
     q[k] = m[k] !== false;
@@ -239,7 +254,13 @@ const _occasioniDiOverlay = (x) => normOccasioni(x, {
 
 function overlaysDi(settings) {
   const s = settings || {};
-  if (Array.isArray(s.overlays) && s.overlays.length) return s.overlays;
+  if (Array.isArray(s.overlays) && s.overlays.length) {
+    // chi legge un overlay salvato trova gia' le chiavi nuove col valore giusto
+    return s.overlays.map((o) => (o && typeof o === 'object' ? {
+      ...o, mostra: ereditaMostra(o.mostra),
+      ...(Array.isArray(o.occasioni) ? { occasioni: o.occasioni.map((c) => (c && typeof c === 'object' ? { ...c, mostra: ereditaMostra(c.mostra) } : c)) } : {}),
+    } : o));
+  }
   return [{
     id: 'principale', nome: 'Overlay principale',
     mostra: _mostraDefault(),
@@ -1376,6 +1397,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // WIDGET (config + stile): per-overlay se presente, altrimenti di canale.
       // Lo STATO (nome ultimo follower/sub) resta di canale: è un dato, non stile.
       widget: st.widget || base.widget,
+      // il boss arriva gia' completo dei suoi valori di serie: acceso, e vestito
+      boss: normBoss(base.boss),
       // gia' fuso con l'occasione accesa, se ce n'e' una: chi guarda la diretta
       // deve vedere una cosa sola, non una base e una correzione
       mostra: vis.mostra,
@@ -5982,6 +6005,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       out.overlayTimer = normTimer(b.overlayTimer);
     }
     if (b.overlayBit !== undefined) out.overlayBit = normBit(b.overlayBit);
+    if (b.overlayBoss !== undefined) out.overlayBoss = normBoss(b.overlayBoss);
     if (b.overlayTreno !== undefined) {
       out.overlayTreno = normTreno(b.overlayTreno);
     }
@@ -6409,7 +6433,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayTreno', 'overlayBit', 'overlayCartelli', 'fontPersonali'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayCartelli', 'fontPersonali'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }

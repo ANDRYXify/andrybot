@@ -23,6 +23,7 @@ esattamente quale.
 | `preset` | `effects.js` — suoni pronti | `suonaPreset()` |
 | `audio` | `effects.js` | `suona()` |
 | `immagine`, `video` | `effects.js` | coda visiva |
+| `boss` | `boss.js` (`arriva` / `colpo` / `fine`) | `boss()` |
 
 Verificati uno per uno con un `EventSource` finto: ognuno produce davvero il
 nodo che deve produrre. `widget` e `penitenza` sembravano scollegati finche non
@@ -1756,3 +1757,77 @@ posizione di un elemento (`CHIAVE_EL`) erano scritte a mano e avevano perso la
 classifica dei Bit: lo Studio la spostava, il salvataggio la buttava via. Ora
 si ricavano dall'elenco degli elementi. E caricare o togliere un carattere non
 avvisava gli overlay aperti: ora sì, come ogni altra cosa del tema.
+
+## Gli ultimi pezzi fuori dalla scena
+
+Chiesto così: «Ma il boss a schermo non si può modificare come posizione/stile
+etc dall'overlay studio?», e poi «fallo come gli altri pezzi e fai anche gli
+altri pezzi che mancano».
+
+La regola scritta sopra («Tutto quello che compare è un elemento della scena»)
+aveva quattro eccezioni. Si trovano mettendo in fila ogni nodo di
+`overlay.html` e ogni tipo di evento di `overlay-app.js`, e togliendo quelli
+che passano da un elemento:
+
+| cosa si vede | nodo | dove stava | chi lo accendeva |
+| --- | --- | --- | --- |
+| la carta del boss | `#boss` | in alto al centro, fisso nel CSS | `effetti` |
+| la scritta di un modulo («Testo a schermo») | `#testi` | al centro, fisso | `effetti` |
+| immagini e video degli effetti | `#palco` | al centro, fisso | `effetti` |
+| il nome del comando che li ha fatti partire | `#etichette` | in basso al centro, fisso | `effetti` |
+
+Tutte e quattro avevano gli stessi tre difetti, che sono la definizione di «non
+essere un elemento»: non si spostavano né si ingrandivano, la loro veste stava
+nell'HTML dell'overlay dove la tela dello Studio non la vede, e un interruttore
+solo le accendeva e spegneva tutte insieme. Lo Studio non le mostrava, quindi
+per loro l'anteprima non era la diretta: la prima volta che si vedevano era in
+onda.
+
+### Un elemento è sempre fatto nello stesso modo
+
+Ognuna diventa un elemento come il treno o la classifica dei Bit, con gli
+stessi pezzi e negli stessi posti:
+
+- **la chiave**, in `ELEM_OVL` (pannello), `ELEM_OVERLAY` e `CHIAVE_EL`
+  (server): si accende e si spegne per overlay e per occasione, e ha la sua
+  posizione per overlay;
+- **la configurazione** di canale (`overlayBoss`, …): `attivo`, l'angolo di
+  serie, `xy`, `stile` (la veste di tutti: grandezza, sfondo, opacità, testo,
+  accento, bordo, carattere, forma, materia, cornice), ripulita dal server con
+  la stessa `normWidgetStile`;
+- **la veste nella pelle** (`overlay-skin.css`), che legge anche la tela: la
+  stessa classe da tutte e due le parti, niente CSS proprio in `overlay.html`
+  oltre al contenitore d'angolo;
+- **sulla tela** un vestitore (`VESTITORE`) che disegna un esempio con lo
+  stesso markup della diretta, e nell'ispettore il suo blocco;
+- **il cancello dell'anteprima** la misura sulla tela e in diretta.
+
+### Lo stesso interruttore di prima, finché non lo cambi
+
+Fino a oggi tutte e quattro dipendevano da `effetti`. Un overlay salvato con
+`effetti` spento (la «Solo chat», per esempio) le teneva spente: non può
+ritrovarsi il boss in scena perché è nato un interruttore. Le chiavi nuove,
+quando in un overlay non sono scritte, **ereditano** quella da cui dipendevano
+(`EREDITA_MOSTRA`), sia nella base sia nelle differenze di un'occasione, e il
+server lo applica leggendo gli overlay salvati: chi li legge dopo (il pannello,
+l'overlay in diretta) trova già il valore giusto. Dal primo salvataggio la
+chiave è scritta e vale per conto suo.
+
+### Il boss
+
+Chiave `boss`, configurazione `overlayBoss`, di serie acceso e in alto al
+centro, all'angolo che lo Studio conosce (quello dell'alert, l'8% dall'alto:
+prima stava al 2,5%, un posto che la tela non sapeva disegnare). La carta è
+`ovl-widget ovl-boss`: prende la veste di tutti, e l'accento è il colore della
+vita (dall'accento a un suo tono più caldo). Le misure sono in `em` della
+carta, con gli stessi rapporti di prima: a grandezza «media» su 1920×1080 è
+grande com'era, e la grandezza e il riquadro la scalano tutta insieme.
+
+La vita scende con `transform: scaleX` invece che con la larghezza: la pelle
+non anima proprietà che rifanno l'impaginazione (`verifica-moto`), e la scia
+bianca che segue il colpo resta com'era. Senza animazioni, niente scossa,
+niente numeri che volano, la vita salta.
+
+Quello che fa il boss (quando arriva, quanta vita, quanto dura) resta nella
+scheda Giochi: nello Studio lo sposti e lo vesti, e l'ispettore porta là.
+
