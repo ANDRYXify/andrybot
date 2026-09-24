@@ -147,6 +147,29 @@ async function inviaFrase(frase) {
   }
 }
 
+let penitenzaInCorso = false;
+let timerPenitenza = null;
+async function guardaPenitenza() {
+  try {
+    const res = await fetch('/api/streamer/voce/penitenza', { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) return;
+    const dati = await res.json();
+    const ora = Number(dati.inCorso) > 0;
+    if (ora && !penitenzaInCorso) logga('Penitenza in corso: conto quello che dici finché non finisce.');
+    if (!ora && penitenzaInCorso) logga('Penitenza finita: torno ad ascoltare solo le frasi dei comandi.');
+    penitenzaInCorso = ora;
+  } catch (e) {  }
+}
+
+async function inviaPenitenza(frase) {
+  try {
+    await fetch('/api/streamer/voce/penitenza', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ frase }),
+    });
+  } catch (e) {  }
+}
+
 async function inviaImpara(frase) {
   try {
     await fetch('/api/streamer/ascolta', {
@@ -199,6 +222,11 @@ function valuta(testo, finale) {
       ultimoImpara = { t: low, ts: ora };
       inviaImpara(frase);
     }
+  }
+
+  if (finale && penitenzaInCorso) {
+    const intera = String(testo || '').replace(/\s+/g, ' ').trim();
+    if (intera) inviaPenitenza(intera.slice(0, 500));
   }
 
   for (const frase of frasi) {
@@ -261,6 +289,8 @@ function avvia() {
   aggiornaStato();
   caricaFrasi();
   if (!timerFrasi) timerFrasi = setInterval(caricaFrasi, 60000);
+  guardaPenitenza();
+  if (!timerPenitenza) timerPenitenza = setInterval(guardaPenitenza, 4000);
   if (motore === 'locale' || !SR) avviaLocale();
   else avviaNativo();
 }
@@ -271,6 +301,8 @@ function ferma() {
   fermaNativo(true);
   fermaLocale(true);
   if (timerFrasi) { clearInterval(timerFrasi); timerFrasi = null; }
+  if (timerPenitenza) { clearInterval(timerPenitenza); timerPenitenza = null; }
+  penitenzaInCorso = false;
   aggiornaStato();
   if (eraAttivo) logga('Ascolto fermato.');
 }

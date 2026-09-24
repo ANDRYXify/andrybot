@@ -7977,6 +7977,27 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     res.json({ frasi, count: frasi.length, cat, tit, impara });
   }));
 
+  // LE PENITENZE ASCOLTANO TUTTO, MA SOLO FINCHE' DURANO. Una penitenza conta
+  // le parole dette, quindi le serve il parlato intero, non le sole parole
+  // chiave dei comandi a voce: la pagina della voce chiede qui se ce n'e' una in
+  // corso e, solo allora, manda ogni frase alla rotta sotto. Il conteggio passa
+  // soltanto di li': una parola chiave detta dentro una frase non conta due
+  // volte, e senza penitenze in corso il parlato non esce dal browser.
+  app.get('/api/streamer/voce/penitenza', requireLogin, (req, res) => {
+    const login = currentUser(req).login;
+    res.json({ inCorso: (manager.penitenze?.stato?.(login) || []).length });
+  });
+
+  app.post('/api/streamer/voce/penitenza', requireLogin, (req, res) => {
+    if (!esigiFunzione(req, res, 'voce', 'Il comando a voce')) return;
+    const login = currentUser(req).login;
+    const frase = String(req.body?.frase || '').trim();
+    if (!frase || frase.length > 500) return res.status(400).json({ errore: 'frase non valida (vuota o troppo lunga)' });
+    const inCorso = (manager.penitenze?.stato?.(login) || []).length;
+    if (inCorso) { try { manager.penitenze.controllaVoce(login, frase); } catch { /* niente */ } }
+    res.json({ ok: true, inCorso });
+  });
+
   // il browser ha sentito una frase: eseguiamo i moduli 'voce' che combaciano
   app.post('/api/streamer/voce', requireLogin, wrap(async (req, res) => {
     if (!esigiFunzione(req, res, 'voce', 'Il comando a voce')) return;
@@ -8034,9 +8055,6 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
         }
       }
     }
-    // penitenze a punti canale: il bot "sente" se lo streamer dice una parola/
-    // lettera vietata da un riscatto e fa scattare la penitenza.
-    try { manager.penitenze?.controllaVoce(login, frase); } catch { /* niente */ }
     // la stessa risposta va anche nel gruppo Telegram se il modulo è abilitato
     const c = tgConf.get(login);
     const inviaTg = (t) => { if (c?.token && c.chat_id && t) telegram.inviaMessaggio(c.token, c.chat_id, t).catch(() => {}); };

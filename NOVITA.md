@@ -34,6 +34,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nel registro dello scudo le azioni rimaste in sospeso, e i numeri della coda, sono solo quelli del tuo canale. [vai: registro]
 - Cancellare l'account funziona anche per i canali Kick, YouTube e Discord, e disdice prima l'abbonamento: dopo non parte più nessun addebito. [vai: account]
 - «Salva le regole» nei Giochi salva le regole dei giochi, e il salva delle parole vietate non tocca più le regole dei giochi. [vai: giochi]
+- Le penitenze contano davvero quello che dici: finché ce n'è una in corso, la pagina della voce manda al bot tutto il parlato, non solo i comandi. [vai: penitenze]
 
 ## 2026-09-23
 
