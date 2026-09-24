@@ -94,7 +94,7 @@ const b = await chromium.launch({ executablePath: CHROMIUM,
 const p = await b.newPage({ viewport: { width: 1440, height: 950 } });
 const rotture = [];
 p.on('pageerror', (e) => rotture.push('errore di pagina: ' + e.message));
-await p.goto(`http://127.0.0.1:${PORTA}/?demo=1`, { waitUntil: 'domcontentloaded' });
+await p.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domcontentloaded' });
 await p.waitForFunction(() => window.SB_APP && typeof GUIDE === 'object', null, { timeout: 20000 });
 
 const schede = await p.evaluate(() => Object.keys(GUIDE));

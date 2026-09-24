@@ -35,7 +35,7 @@ const conferma = async () => { await pg.waitForSelector('.mdl-chiedi.dentro [dat
 const quanti = (sel) => pg.$$(sel).then((n) => n.length);
 
 try {
-  await pg.goto(sito.base + '/?demo=1#dcserver', { waitUntil: 'networkidle' });
+  await pg.goto(sito.base + '/?demo=1&lang=it#dcserver', { waitUntil: 'networkidle' });
   await pg.waitForTimeout(800);
   // La striscia dei cookie si toglie di mezzo per prima, come fa chiunque apra
   // il sito: sta incollata in fondo, e un tasto che ci finisce sotto non si

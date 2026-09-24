@@ -38,7 +38,7 @@ pagina.on('pageerror', (e) => errori.push(e.message));
 // Il giro guidato si prenderebbe la tastiera a meta' di una parola: si spegne
 // come lo spegne il pannello, prima che la pagina parta.
 await pagina.addInitScript(() => { try { localStorage.setItem('sb-giro', JSON.stringify({ viste: {}, mai: true })); } catch {} });
-await pagina.goto(sito.base + '/?demo=1', { waitUntil: 'networkidle' });
+await pagina.goto(sito.base + '/?demo=1&lang=it', { waitUntil: 'networkidle' });
 await pagina.waitForFunction(() => window.SB_SCENE && typeof grafDisegna === 'function' && typeof grafDisposizione === 'function');
 await pagina.evaluate(() => grafFontPronti());
 

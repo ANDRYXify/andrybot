@@ -174,7 +174,7 @@ if (peso > TETTO_KB * 1024) guai.push(`la home pesa ${(peso / 1024).toFixed(1)} 
 if (casa.velo) guai.push('il velo di caricamento e\' ancora li\' a pagina ferma');
 
 // 2) LA DEMO E' IL PANNELLO, E DEVE AVERLO TUTTO
-const demo = await apri('/?demo=1');
+const demo = await apri('/?demo=1&lang=it');
 if (!demo.chiesti.some((r) => r.via === 'app.js')) guai.push('la demo non carica app.js: il pannello non c\'e\'');
 
 // 3) IL SELFTEST: se il pannello rientra dalla finestra, questo cancello deve accorgersene

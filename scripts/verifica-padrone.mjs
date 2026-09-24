@@ -86,7 +86,7 @@ const { porta, chiudi } = await apriSito();
 const b = await chromium.launch({ executablePath: CHROMIUM, args: ['--use-gl=swiftshader', '--no-sandbox', '--disable-dev-shm-usage'] });
 // il magnetismo esiste solo con il moto acceso: chiederlo e' parte della prova
 const p = await b.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'no-preference' });
-await p.goto(`http://127.0.0.1:${porta}/?demo=1`, { waitUntil: 'networkidle' });
+await p.goto(`http://127.0.0.1:${porta}/?demo=1&lang=it`, { waitUntil: 'networkidle' });
 await p.waitForFunction(() => window.SB_APP, null, { timeout: 20000 });
 await p.waitForTimeout(700);
 for (let i = 0; i < 8; i++) {

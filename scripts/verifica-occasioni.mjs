@@ -72,7 +72,7 @@ const errori = [];
 const p = await browser.newPage({ viewport: { width: 1500, height: 980 } });
 p.on('pageerror', (e) => errori.push(String(e.message || e)));
 
-await p.goto(base + '/?demo=1', { waitUntil: 'domcontentloaded' });
+await p.goto(base + '/?demo=1&lang=it', { waitUntil: 'domcontentloaded' });
 await p.waitForFunction(() => window.SB_APP, null, { timeout: 20000 });
 await p.evaluate(() => window.SB_APP.vai('alert'));
 await p.waitForSelector('#ovl-occ-quale', { timeout: 20000 });

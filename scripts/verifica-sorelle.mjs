@@ -49,7 +49,7 @@ const guai = [];
 pg.on('pageerror', (e) => guai.push('pageerror: ' + e.message));
 
 try {
-  await pg.goto(sito.base + '/?demo=1', { waitUntil: 'networkidle' });
+  await pg.goto(sito.base + '/?demo=1&lang=it', { waitUntil: 'networkidle' });
   await pg.click('#cookie-ok').catch(() => {});
   await pg.addStyleTag({ content: '.giro-velo,.giro-fumetto,.giro-carta,#cookie-banner{display:none!important}' });
   await pg.waitForTimeout(600);

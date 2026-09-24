@@ -31,7 +31,7 @@ if (!br) { console.log('Playwright non c\'e\': salto.'); sito.chiudi(); process.
 
 // Le pagine, e quanto aspettare che si riempiano da sole.
 const PAGINE = [
-  ['/?demo=1', 1500, 'il pannello'],
+  ['/?demo=1&lang=it', 1500, 'il pannello'],
   ['/collega/prova', 700, 'la pagina che collega Discord'],
   ['/mod.html', 900, 'la porta dei moderatori'],
   ['/privacy.html', 500, 'le pagine di servizio'],
