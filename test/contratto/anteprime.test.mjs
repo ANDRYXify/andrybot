@@ -16,6 +16,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { META_VETRINA } from '../../src/web/vetrina-vista.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const PUB = join(RAD, 'src/web/public');
@@ -94,11 +95,7 @@ const daH1 = VISTA.indexOf('<h1 class="vt-titolo">');
 const rigaH1 = VISTA.slice(daH1, VISTA.indexOf('</h1>', daH1));
 const pezziH1 = [...rigaH1.matchAll(/L\('([^']*)', '([^']*)', '([^']*)'\)/g)];
 const h1Di = (i) => pezziH1.map((m) => m[i + 1]).join(' ').replace(/\s+/g, ' ').trim();
-const bloccoLingua = (codice) => {
-  const da = SRV.indexOf(`    ${codice}: {`, SRV.indexOf('const META_LINGUA'));
-  return SRV.slice(da, SRV.indexOf('    },', da));
-};
-const campo = (codice, nome) => bloccoLingua(codice).match(new RegExp(`${nome}: '([^']*)'`))[1];
+const campo = (codice, nome) => META_VETRINA[codice][nome];
 
 test("il titolo dell'anteprima è il titolo della pagina, in ogni lingua", () => {
   assert.equal(pezziH1.length, 2, 'l\'h1 è fatto di due pezzi tradotti');

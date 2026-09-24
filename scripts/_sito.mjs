@@ -14,7 +14,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { guscioVetrina, guscioPannello } from '../src/web/vetrina-vista.js';
+import { guscioVetrina, guscioPannello, indirizzoHome } from '../src/web/vetrina-vista.js';
 import { disegnoPerIlBrowser, CARATTERI_AMMESSI, CARTELLA_CARATTERI } from '../src/features/carta-servita.js';
 
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -25,15 +25,12 @@ const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
   '.webmanifest': 'application/manifest+json', '.json': 'application/json', '.woff2': 'font/woff2',
   '.webp': 'image/webp', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8' };
 
-const LINGUE = ['it', 'en', 'es'];
-
 // Il guscio come lo manda il server: vetrina dentro, lingua dichiarata,
 // `body.vetrina` gia' messo (che e' quel che tiene ferma la larghezza) e solo
 // le risorse della vetrina.
 function guscio(lingua, kick, youtube, piani) {
   const base = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8');
-  return guscioVetrina(base, lingua, { kick, youtube, piani })
-    .replace('<html lang="it">', `<html lang="${lingua}">`);
+  return guscioVetrina(base, lingua, { kick, youtube, piani });
 }
 
 // Il guscio della demo come lo manda il server a chi e' entrato: il pannello,
@@ -112,16 +109,16 @@ export async function apriSito({ api = () => ({}), kick = true, youtube = false,
       return res.end(fs.readFileSync(path.join(CARTELLA_CARATTERI, nome)));
     }
     const f = path.join(PUB, q === '/' ? 'index.html' : q);
-    const home = q === '/' || q === '/index.html'
-      || !f.startsWith(PUB) || !fs.existsSync(f) || fs.statSync(f).isDirectory();
+    const home = !!indirizzoHome(q) || !f.startsWith(PUB) || !fs.existsSync(f) || fs.statSync(f).isDirectory();
     if (home) {
+      const dove = indirizzoHome(q, via.search) || { lingua: 'it', rimanda: null };
       if (via.searchParams.get('demo') === '1') {
         res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
         return res.end(pannello());
       }
-      const chiesta = (via.searchParams.get('lang') || '').toLowerCase();
+      if (dove.rimanda) { res.writeHead(301, { location: dove.rimanda }); return res.end(); }
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      return res.end(guscio(LINGUE.includes(chiesta) ? chiesta : 'it', kick, youtube, piani));
+      return res.end(guscio(dove.lingua, kick, youtube, piani));
     }
     res.writeHead(200, { 'content-type': TIPI[path.extname(f)] || 'application/octet-stream' });
     res.end(fs.readFileSync(f));

@@ -24,12 +24,12 @@ import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi, recensioni as recensioniDb } from '../db.js';
-import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, datiStrutturati, jsonSicuro, TESTO_MAX } from '../features/recensioni.js';
+import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { renderLinkPage, renderInformativa, accentoDi } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
-import { guscioVetrina, guscioPannello } from './vetrina-vista.js';
+import { guscioVetrina, guscioPannello, META_VETRINA, VIA_LINGUA, indirizzoHome } from './vetrina-vista.js';
 import { pagina404, LINGUE_SERVIZIO } from './pagine-servizio.js';
 import { montaArgine } from './argine.js';
 import { GUIDE, paginaGuida, paginaIndice, paginaNovita, paginaServizio, urlGuide } from './guide.js';
@@ -772,46 +772,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // spagnola non potevano essere indicizzate, e l'intero gruppo hreflang si
   // annullava da solo. Ora ogni lingua ha il suo guscio, col proprio
   // `lang`, titolo, descrizione, og:* e canonical che punta a SE STESSO.
-  const META_LINGUA = {
-    it: {
-      html: 'it', ogLocale: 'it_IT', url: 'https://socialbot.live/',
-      titolo: 'SocialBot — bot per Twitch e Kick in italiano | socialbot.live',
-      desc: 'Il bot per Twitch e Kick in italiano che in chat scrive col tuo nome, con overlay, moderazione, grafiche social e pagina link nello stesso pannello. Gratis.',
-      ogTitolo: 'Il bot che in chat scrive con il tuo nome',
-      ogDesc: 'Uno spettatore scrive !social e in chat risponde il tuo account, non un bot. Nello stesso pannello hai overlay, moderazione, clip, grafiche social e pagina link, su Twitch e Kick. Gratis, con demo.',
-      twTitolo: 'Il bot che in chat scrive con il tuo nome',
-      twDesc: 'In chat risponde il tuo account, non un bot. Nello stesso pannello hai overlay, moderazione, grafiche social e pagina link. Su Twitch e Kick, gratis.',
-    },
-    en: {
-      html: 'en', ogLocale: 'en_GB', url: 'https://socialbot.live/?lang=en',
-      titolo: 'SocialBot — the Twitch and Kick bot that writes in chat under your own name',
-      desc: 'The Twitch and Kick bot that writes in chat under your own name, with overlay, moderation, social graphics and a link page in the same panel. Free.',
-      ogTitolo: 'The bot that writes in chat under your own name',
-      ogDesc: 'A viewer types !social and the reply comes from your account, not from a bot. The same panel has overlay, moderation, clips, social graphics and a link page, on Twitch and Kick. Free, with a demo.',
-      twTitolo: 'The bot that writes in chat under your own name',
-      twDesc: 'The reply in chat comes from your account, not from a bot. The same panel has overlay, moderation, social graphics and a link page. On Twitch and Kick, free.',
-    },
-    es: {
-      html: 'es', ogLocale: 'es_ES', url: 'https://socialbot.live/?lang=es',
-      titolo: 'SocialBot — el bot de Twitch y Kick que en el chat escribe con tu nombre',
-      desc: 'El bot de Twitch y Kick que escribe en el chat con tu nombre, con overlay, moderación, gráficas sociales y página de enlaces en el mismo panel. Gratis.',
-      ogTitolo: 'El bot que en el chat escribe con tu nombre',
-      ogDesc: 'Un espectador escribe !social y en el chat responde tu cuenta, no un bot. En el mismo panel tienes overlay, moderación, clips, gráficas sociales y página de enlaces, en Twitch y Kick. Gratis, con demo.',
-      twTitolo: 'El bot que en el chat escribe con tu nombre',
-      twDesc: 'En el chat responde tu cuenta, no un bot. En el mismo panel tienes overlay, moderación, gráficas sociales y página de enlaces. En Twitch y Kick, gratis.',
-    },
-  };
+  // I testi della testa, lingua per lingua, stanno in vetrina-vista.js
+  // (META_VETRINA): li leggono anche i dati strutturati.
+  const META_LINGUA = META_VETRINA;
 
   // Costruisce il guscio di una lingua. Ogni sostituzione e verificata: se
   // index.html cambia e un ancoraggio non c'e piu, il server NON parte, invece
   // di servire in silenzio delle alternative hreflang rotte.
   const gusciaDi = (codice) => {
-    const m = META_LINGUA[codice], base = META_LINGUA.it;
     let h = gusciaHtml;
-    const cambia = (da, a) => {
-      if (!h.includes(da)) throw new Error(`guscio ${codice}: non trovo in index.html → ${da.slice(0, 90)}`);
-      h = h.replace(da, a);
-    };
     // La vetrina: la disegna il server, qui, nella lingua del guscio. Prima
     // index.html ne conteneva una versione scritta a mano (solo italiana) che
     // app.js buttava via ridisegnandone un'altra: due pagine diverse sullo
@@ -820,21 +789,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // credenziali: un pulsante che porta a un 503 e' peggio di un pulsante che
     // non c'e'.
     h = guscioVetrina(h, codice, { kick: conKick, youtube: conYoutube, dirette: _dirette, piani: _piani, recensioni: _recensioni });
-    // Le recensioni entrano anche nei dati strutturati, calcolate dalla stessa
-    // cosa che la striscia mostra: se la striscia non c'e', non ci sono nemmeno loro.
-    const recLd = datiStrutturati(_recensioni);
-    if (recLd) cambia('"operatingSystem": "Web",', `"operatingSystem": "Web",\n        ${jsonSicuro(recLd).slice(1, -1)},`);
-    cambia('<html lang="it">', `<html lang="${m.html}">`);
-    cambia(`<title>${base.titolo}</title>`, `<title>${m.titolo}</title>`);
-    cambia(`<meta name="description" content="${base.desc}">`, `<meta name="description" content="${m.desc}">`);
-    cambia('<link rel="canonical" href="https://socialbot.live/">', `<link rel="canonical" href="${m.url}">`);
-    cambia('<meta property="og:locale" content="it_IT">', `<meta property="og:locale" content="${m.ogLocale}">`);
-    cambia('<meta property="og:url" content="https://socialbot.live/">', `<meta property="og:url" content="${m.url}">`);
-    cambia(`<meta property="og:title" content="${base.ogTitolo}">`, `<meta property="og:title" content="${m.ogTitolo}">`);
-    cambia(`<meta property="og:description" content="${base.ogDesc}">`, `<meta property="og:description" content="${m.ogDesc}">`);
-    cambia(`<meta name="twitter:title" content="${base.twTitolo}">`, `<meta name="twitter:title" content="${m.twTitolo}">`);
-    cambia(`<meta name="twitter:description" content="${base.twDesc}">`, `<meta name="twitter:description" content="${m.twDesc}">`);
-    h = h.split('"inLanguage": "it-IT"').join(`"inLanguage": "${m.html}-${m.html === 'en' ? 'GB' : m.html.toUpperCase()}"`);
+    // La testa nella lingua del guscio (titolo, descrizione, canonical, og:*,
+    // dati strutturati) la scrive guscioVetrina: e' la stessa funzione che usa
+    // il sito dei collaudi, quindi quello che si prova e' quello che esce.
     // L'impronta entra qui, nell'ultimo momento in cui la pagina e' una stringa:
     // `app.js` diventa `app.js?v=1a2b3c4d`, e da li' in poi quel file si puo'
     // tenere per sempre. Vedi impronte.js.
@@ -881,15 +838,24 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   setTimeout(ronda, 4000).unref?.();
   setInterval(ronda, vetrinaLive.FRESCHEZZA_MS).unref?.();
   const PANNELLO = impronte.marca(guscioPannello(gusciaHtml));
+  // Chi e' entrato, e la demo, hanno il pannello a ogni indirizzo della pagina
+  // iniziale: la lingua il pannello la legge da `?lang`, poi dall'indirizzo.
+  // Gli altri hanno la vetrina della lingua dell'indirizzo, e un indirizzo
+  // vecchio (`/?lang=en`, `/en/`) rimanda a quello giusto: la regola e' in
+  // indirizzoHome, la stessa del sito dei collaudi.
   const serviGuscio = (req, res) => {
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 'no-cache');
     res.set('Vary', 'Cookie');
-    if (currentUser(req) || String(req.query?.demo || '') === '1') return res.send(PANNELLO);
-    const chiesta = String(req.query?.lang || '').toLowerCase();
-    res.send(GUSCI[chiesta] || GUSCI.it);
+    const cerca = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
+    const dove = indirizzoHome(req.path, cerca);
+    if (currentUser(req) || new URLSearchParams(cerca).get('demo') === '1' || !dove) {
+      res.set('Content-Type', 'text/html; charset=utf-8').set('Cache-Control', 'no-cache');
+      return res.send(PANNELLO);
+    }
+    if (dove.rimanda) return res.redirect(301, dove.rimanda);
+    res.set('Content-Type', 'text/html; charset=utf-8').set('Cache-Control', 'no-cache');
+    res.send(GUSCI[dove.lingua]);
   };
-  app.get(['/', '/index.html'], serviGuscio);
+  app.get(['/', '/index.html', '/en', '/es', '/en/', '/es/'], serviGuscio);
 
   // Gli statici: l'impronta nel nome, `immutable` a chi la porta giusta, e i
   // .js minificati per strada (src/web/minifica.js; SB_SORGENTI=1 lo spegne).
@@ -2143,7 +2109,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/sitemap.xml', wrap(async (req, res) => {
     const b = config.baseUrl;
     const oggi = new Date().toISOString().slice(0, 10);
-    const LINGUE_URL = { it: `${b}/`, en: `${b}/?lang=en`, es: `${b}/?lang=es` };
+    const LINGUE_URL = Object.fromEntries(Object.entries(VIA_LINGUA).map(([l, via]) => [l, b + via]));
     const alternative = Object.entries(LINGUE_URL)
       .map(([l, u]) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${escXml(u)}"/>`)
       .concat([`    <xhtml:link rel="alternate" hreflang="x-default" href="${escXml(LINGUE_URL.it)}"/>`])
@@ -2199,7 +2165,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
 - Piattaforme: Twitch e Kick (YouTube in lavorazione). Un comando scritto su una
   piattaforma riceve la risposta SU QUELLA piattaforma.
 - Lingue dell'interfaccia: TRE — italiano, inglese e spagnolo. Le pagine
-  pubbliche esistono in tutte e tre: ${b}/ , ${b}/?lang=en , ${b}/?lang=es .
+  pubbliche esistono in tutte e tre: ${b}${VIA_LINGUA.it} , ${b}${VIA_LINGUA.en} , ${b}${VIA_LINGUA.es} .
   I testi che il bot scrive in chat li scrive lo streamer, quindi possono essere
   in qualunque lingua.
 - Pubblico: streamer di Twitch e Kick, soprattutto italiani ma non solo.

@@ -51,7 +51,7 @@ test('ogni lingua è una pagina intera, non una traduzione a metà', () => {
 });
 
 test('le lingue sono link veri, non pulsanti che un motore non può premere', () => {
-  for (const [l, via] of [['it', '/'], ['en', '/?lang=en'], ['es', '/?lang=es']]) {
+  for (const [l, via] of [['it', '/'], ['en', '/en'], ['es', '/es']]) {
     assert.ok(vetrinaHtml('it').includes(`href="${via}" hreflang="${l}"`), `manca il link alla lingua ${l}`);
   }
 });

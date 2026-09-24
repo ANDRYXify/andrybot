@@ -43,8 +43,7 @@ const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 
 // Il guscio si compone come fa il server: stessa funzione, non una sua imitazione.
 const GUSCIO = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8');
-const guscioDi = (lingua) => guscioVetrina(GUSCIO, lingua, { kick: true, piani: PIANI })
-  .replace('<html lang="it">', `<html lang="${lingua}">`);
+const guscioDi = (lingua) => guscioVetrina(GUSCIO, lingua, { kick: true, piani: PIANI });
 
 const srv = http.createServer((req, res) => {
   const via = new URL(req.url, 'http://x');

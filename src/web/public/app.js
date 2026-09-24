@@ -1909,6 +1909,8 @@ const LINGUE = ['it', 'en', 'es'];
 let LINGUA = (() => {
   const q = new URLSearchParams(location.search).get('lang');
   if (LINGUE.includes(q)) { try { localStorage.setItem('lingua', q); } catch (e) {  } return q; }
+  const dallIndirizzo = { '/en': 'en', '/es': 'es' }[location.pathname];
+  if (dallIndirizzo) { try { localStorage.setItem('lingua', dallIndirizzo); } catch (e) {  } return dallIndirizzo; }
   const servita = (document.documentElement.getAttribute('lang') || '').slice(0, 2).toLowerCase();
   if (LINGUE.includes(servita) && document.getElementById('app')?.querySelector('.vt-scena')) return servita;
   try { const s = localStorage.getItem('lingua'); if (LINGUE.includes(s)) return s; } catch (e) {  }
@@ -1917,11 +1919,21 @@ let LINGUA = (() => {
 })();
 try { document.documentElement.lang = LINGUA; } catch (e) {  }
 const L = (it, en, es) => (LINGUA === 'en' ? en : LINGUA === 'es' ? es : it);
-const VIA_LINGUA = { it: '/', en: '/?lang=en', es: '/?lang=es' };
+const VIA_LINGUA = { it: '/', en: '/en', es: '/es' };
+function indirizzoInLingua(l) {
+  try {
+    const u = new URL(location.href);
+    let cambia = false;
+    if (u.searchParams.has('lang')) { u.searchParams.set('lang', l); cambia = true; }
+    if (u.pathname === '/en' || u.pathname === '/es') { u.pathname = VIA_LINGUA[l]; cambia = true; }
+    if (cambia) history.replaceState(history.state, '', u.pathname + u.search + u.hash);
+  } catch (e) {  }
+}
 function cambiaLingua(l) {
   if (!LINGUE.includes(l) || l === LINGUA) return;
   if (!stato?.user) { try { localStorage.setItem('lingua', l); } catch (e) {  } location.href = VIA_LINGUA[l]; return; }
   LINGUA = l;
+  indirizzoInLingua(l);
   try { localStorage.setItem('lingua', l); } catch (e) {  }
   try { document.documentElement.lang = l; } catch (e) {  }
   try { window.SB_CERCA && window.SB_CERCA.invalida(); } catch (e) {  }

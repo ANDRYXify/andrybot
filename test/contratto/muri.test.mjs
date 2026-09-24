@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { config } from '../../src/config.js';
 import * as ab from '../../src/features/abbonamenti.js';
+import { guscioVetrina } from '../../src/web/vetrina-vista.js';
 
 // il listino si legge con i pagamenti spenti: l'esito non dipende dal .env di chi lancia i test
 config.stripe.attivo = false;
@@ -85,9 +86,19 @@ test('quello che si vende è scritto uguale in vetrina, nei dati strutturati e n
   const demo = APP.slice(APP.indexOf("'/api/abbonamento/piani': {"), APP.indexOf("'/api/linkpage': {"));
   for (const id of venduti) assert.ok(demo.includes(`id: '${id}'`), `listino demo senza ${id}`);
   for (const id of p.ritirati) assert.ok(!demo.includes(`id: '${id}'`), `listino demo offre ancora ${id}`);
-  const essenziale = HOME.match(/"name": "Essenziale",\s*"description": "([^"]+)"/)[1];
-  for (const parola of ['giochi', 'sondaggi', 'Spotify']) assert.ok(essenziale.includes(parola), `l'offerta Essenziale non dice «${parola}»`);
-  assert.ok(HOME.includes(`"price": "${ab.BASE.prezzo.toFixed(2)}"`), 'il prezzo del Base nei dati strutturati e\' quello del catalogo');
+  // I dati strutturati li scrive il server dalla stessa carta del listino che
+  // la pagina mostra (vetrina-vista.js, carteListino): stessi nomi, stessi prezzi.
+  for (const l of ['it', 'en', 'es']) {
+    const h = guscioVetrina(HOME, l, { piani: p });
+    const app = JSON.parse(h.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])['@graph'].find((x) => x['@type'] === 'SoftwareApplication');
+    const [essenziale, base] = app.offers;
+    assert.equal(essenziale.price, 0, l);
+    assert.equal(base.price, ab.BASE.prezzo, `${l}: il prezzo del Base nei dati strutturati e' quello del catalogo`);
+    const esc = (t) => t.replaceAll('&', '&amp;');
+    for (const o of base.addOn) assert.ok(h.includes(`<strong>${esc(o.name)}</strong>`) || h.includes(`<h3>${esc(o.name)}</h3>`), `${l}: «${o.name}» nei dati ma non nella pagina`);
+    assert.equal(base.addOn.length, p.addon.length + p.bundle.length, `${l}: ogni cosa in vendita, e niente di ritirato`);
+    for (const pezzo of essenziale.description.split(' · ')) assert.ok(h.includes(pezzo), `${l}: «${pezzo}» e' scritto nella carta dell'Essenziale`);
+  }
 });
 
 test('un prezzo che Stripe non conferma non si vende', () => {

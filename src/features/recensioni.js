@@ -82,7 +82,8 @@ export function piattaformaLeggibile(login) {
   return NOME_PIATTAFORMA[piattaformaDi(login)] || 'Twitch';
 }
 
-// Quello che la pagina iniziale mostra: la media e il numero di TUTTE le
+// Quello che la pagina iniziale mostra (e che i dati strutturati dicono, vedi
+// datiRecensioni in src/web/vetrina-vista.js): la media e il numero di TUTTE le
 // recensioni pubblicate (il riepilogo), e le ultime MASSIMO_STRISCIA con testo
 // (la striscia: la lista arriva dalla piu' recente). Se le recensioni con testo
 // sono meno di MINIMO_STRISCIA la striscia non c'e', e con lei nemmeno i dati
@@ -97,38 +98,10 @@ export function vetrinaDi(pubblicate = []) {
   return {
     media: Math.round((somma / valide.length) * 10) / 10,
     quanti: valide.length,
+    scala: [STELLE_MIN, STELLE_MAX],
     voci: conTesto.slice(0, MASSIMO_STRISCIA).map((r) => ({
       stelle: r.stelle, testo: r.testo, lingua: r.lingua || 'it',
       nome: r.conNome && r.display ? r.display : '', piattaforma: piattaformaLeggibile(r.login),
     })),
   };
-}
-
-// I dati strutturati, calcolati dalla stessa cosa che la pagina mostra.
-// `review` porta solo le recensioni con un autore: quelle anonime contano nella
-// media, che il riepilogo visibile dichiara, ma un autore senza nome non e' un
-// autore.
-export function datiStrutturati(v) {
-  if (!v) return null;
-  const fuori = {
-    aggregateRating: { '@type': 'AggregateRating', ratingValue: v.media, ratingCount: v.quanti, bestRating: STELLE_MAX, worstRating: STELLE_MIN },
-  };
-  const firmate = v.voci.filter((r) => r.nome);
-  if (firmate.length) {
-    fuori.review = firmate.map((r) => ({
-      '@type': 'Review',
-      author: { '@type': 'Person', name: r.nome },
-      reviewRating: { '@type': 'Rating', ratingValue: r.stelle, bestRating: STELLE_MAX, worstRating: STELLE_MIN },
-      reviewBody: r.testo,
-      inLanguage: r.lingua,
-    }));
-  }
-  return fuori;
-}
-
-// JSON dentro un <script>: un «</script>» nel testo di una recensione non deve
-// poter chiudere il blocco.
-export function jsonSicuro(o) {
-  return JSON.stringify(o).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026')
-    .replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }

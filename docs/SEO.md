@@ -37,6 +37,11 @@ Le sostituzioni in `gusciaDi()` sono **verificate una per una**: se un domani
 `index.html` cambia e un ancoraggio non c'e piu, il server non parte, invece di
 mettere online in silenzio delle alternative rotte.
 
+Poi la lingua è diventata un pezzo dell'indirizzo: `/`, `/en`, `/es`, e
+`/?lang=en` rimanda con un 301 a `/en`. Anche i dati strutturati sono nella
+lingua della pagina e ricavati da quello che la pagina mostra. Il modello e il
+perché stanno in `docs/LINGUE.md`.
+
 Difetto gemello lato client: `?lang=` veniva letto **dopo** `localStorage`,
 quindi a chi aveva gia scelto una lingua un link `?lang=en` condiviso non
 faceva niente. Ora la richiesta esplicita nell'indirizzo vince, e viene anche

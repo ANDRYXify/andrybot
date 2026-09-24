@@ -8,7 +8,7 @@ import { cartellaUsaEGetta } from '../aiuto.mjs';
 const usaEGetta = cartellaUsaEGetta('andrybot-recensioni-');
 const { db, streamers, recensioni } = await import('../../src/db.js');
 const R = await import('../../src/features/recensioni.js');
-const { vetrinaHtml } = await import('../../src/web/vetrina-vista.js');
+const { vetrinaHtml, guscioVetrina, datiRecensioni, jsonSicuro } = await import('../../src/web/vetrina-vista.js');
 const leggi = (via) => readFileSync(new URL(`../../${via}`, import.meta.url), 'utf8');
 const SERVER = leggi('src/web/server.js');
 const APP = leggi('src/web/public/app.js');
@@ -81,14 +81,22 @@ test('la pagina iniziale: la media di tutte, la striscia solo con almeno tre tes
 });
 
 test('i dati strutturati descrivono quello che la pagina mostra', () => {
-  assert.equal(R.datiStrutturati(null), null, 'senza striscia, niente dati');
+  assert.equal(datiRecensioni(null), null, 'senza striscia, niente dati');
   const v = R.vetrinaDi([voce('a', 5, 'uno'), voce('b', 4, 'due', { conNome: false }), voce('c', 3, 'tre'), voce('d', 4, '')]);
-  const ld = R.datiStrutturati(v);
-  assert.deepEqual(ld.aggregateRating, { '@type': 'AggregateRating', ratingValue: 4, ratingCount: 4, bestRating: 5, worstRating: 1 });
+  const ld = datiRecensioni(v);
+  assert.deepEqual(ld.aggregateRating, { '@type': 'AggregateRating', ratingValue: 4, ratingCount: 4, bestRating: R.STELLE_MAX, worstRating: R.STELLE_MIN });
   assert.deepEqual(ld.review.map((r) => r.author.name), ['A', 'C'], 'un autore senza nome non e\' un autore');
-  const brutto = R.jsonSicuro({ t: '</script><script>alert(1)</script>' });
+  const brutto = jsonSicuro({ t: '</script><script>alert(1)</script>' });
   assert.ok(!brutto.includes('</script>') && !brutto.includes('<'), 'un testo non chiude il blocco dei dati');
   assert.deepEqual(JSON.parse(brutto), { t: '</script><script>alert(1)</script>' });
+  const guscio = readFileSync(new URL('../../src/web/public/index.html', import.meta.url), 'utf8');
+  for (const l of ['it', 'en', 'es']) {
+    const h = guscioVetrina(guscio, l, { recensioni: v });
+    const app = JSON.parse(h.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])['@graph'].find((x) => x['@type'] === 'SoftwareApplication');
+    assert.deepEqual(app.aggregateRating, ld.aggregateRating, `${l}: la media nei dati e' quella della striscia`);
+    const senza = guscioVetrina(guscio, l, { recensioni: null });
+    assert.ok(!senza.includes('AggregateRating') && !senza.includes('"Review"'), `${l}: senza striscia, niente voti nei dati`);
+  }
 });
 
 test('nel database si legge solo chi c\'e\' ancora ed e\' approvato', () => {
@@ -139,7 +147,7 @@ test('il server: le regole vengono da un posto solo, e la pagina iniziale si rif
   assert.match(SERVER, /if \(!st\.puo\) return res\.status\(403\)/, 'chi non puo\' non scrive, qualunque cosa mostri il pannello');
   assert.match(SERVER, /const recensioniCambiate = \(\) => \{\n\s*_recensioni = vetrinaDi\(recensioniDb\.pubblicate\(\)\);\n\s*rifaiGusci\(\);/);
   assert.equal((SERVER.match(/recensioniCambiate\(\);/g) || []).length, 3, 'scrivere, togliere, moderare: tutte e tre rifanno la pagina');
-  assert.match(SERVER, /const recLd = datiStrutturati\(_recensioni\);\n\s*if \(recLd\) cambia\('"operatingSystem": "Web",'/, 'i dati strutturati vengono dalla stessa cosa che la striscia mostra');
+  assert.match(SERVER, /h = guscioVetrina\(h, codice, \{ kick: conKick, youtube: conYoutube, dirette: _dirette, piani: _piani, recensioni: _recensioni \}\);/, 'striscia e dati strutturati vengono dalla stessa cosa');
   assert.match(SERVER, /dirette: contaDirette\(user\.login\), lavoroDiscord: dcGiri\.ultimi\(user\.login, 1\)\.length > 0/);
 });
 

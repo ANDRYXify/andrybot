@@ -8,6 +8,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { guscioVetrina } from '../../src/web/vetrina-vista.js';
 import {
   CANARINO, FIRMA, COPYRIGHT, normalizzaCanarino, improntaCanarino, eCanarino, rispostaCanarino,
 } from '../../src/watermark.js';
@@ -99,11 +100,21 @@ test('all\'avvio il database riceve la marca di proprietà, e la pagina la dichi
   for (const p of ['mod', 'privacy', 'sblocca', 'termini', 'tgapp']) {
     assert.ok(readFileSync(`src/web/public/${p}.html`, 'utf8').includes('<meta name="copyright" content="© 2024–2026 Andrea Taliento (ANDRYXify)'), p);
   }
-  assert.ok(html.includes('"@type": "Person"') && html.includes('"@id": "https://socialbot.live/#autore"'));
-  assert.equal(html.split('"copyrightHolder": { "@id": "https://socialbot.live/#autore" }').length - 1, 2);
-  assert.ok(html.includes('"author": { "@id": "https://socialbot.live/#autore" }'));
-  const ld = html.slice(html.indexOf('<script type="application/ld+json">') + 35, html.indexOf('</script>', html.indexOf('<script type="application/ld+json">')));
-  assert.doesNotThrow(() => JSON.parse(ld), 'il JSON-LD resta valido');
+  // I dati strutturati li scrive il server nella lingua della pagina (vedi
+  // datiStrutturatiVetrina): la dichiarazione dev'esserci in tutte e tre.
+  for (const l of ['it', 'en', 'es']) {
+    const servita = guscioVetrina(html, l, {});
+    const blocchi = [...servita.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+    assert.equal(blocchi.length, 1, `${l}: un blocco di dati strutturati`);
+    let grafo;
+    assert.doesNotThrow(() => { grafo = JSON.parse(blocchi[0][1])['@graph']; }, `${l}: il JSON-LD resta valido`);
+    const autore = 'https://socialbot.live/#autore';
+    const persona = grafo.find((x) => x['@type'] === 'Person');
+    assert.equal(persona?.['@id'], autore, l);
+    assert.equal(persona?.name, 'Andrea Taliento', l);
+    assert.equal(grafo.filter((x) => x.copyrightHolder?.['@id'] === autore).length, 2, `${l}: il sito e il programma`);
+    assert.equal(grafo.find((x) => x['@type'] === 'SoftwareApplication')?.author?.['@id'], autore, l);
+  }
 });
 
 test('lo script che calcola l\'impronta non salva la frase da nessuna parte', () => {

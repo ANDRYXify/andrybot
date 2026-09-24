@@ -27,6 +27,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { dichiarazioni } from './tavolozza.js';
+import { VIA_LINGUA } from './vetrina-vista.js';
 
 const TOKEN = ['bg', 'surface', 'surface-2-tinta', 'border', 'testo', 'testo-2', 'testo-3',
   'acc', 'su-acc', 'mano', 'testo-font', 'contorno', 'tratto-mano', 'ang-mano',
@@ -140,7 +141,7 @@ export const LINGUE_SERVIZIO = ['it', 'en', 'es'];
 export function pagina404(lingua = 'it') {
   const l = LINGUE_SERVIZIO.includes(lingua) ? lingua : 'it';
   const t = T404[l];
-  const via = l === 'it' ? '/' : `/?lang=${l}`;
+  const via = VIA_LINGUA[l];
   return guscio(l, t.tit, `  <div class="vignetta">
     <p class="dida">${esc(t.p1)}</p>
     <h1>${esc(t.h1)}</h1>

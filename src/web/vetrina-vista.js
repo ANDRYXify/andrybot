@@ -36,11 +36,82 @@ function esc(s) {
 }
 
 export const LINGUE = ['it', 'en', 'es'];
+export const SITO = 'https://socialbot.live';
 
 // Le lingue erano PULSANTI che ridisegnavano la pagina in JS: un crawler non li
 // puo' premere, e chi cambiava lingua restava sullo stesso indirizzo. Qui sono
 // LINK ai tre indirizzi che sitemap e hreflang dichiarano gia'.
-const VIA_LINGUA = { it: '/', en: '/?lang=en', es: '/?lang=es' };
+//
+// La lingua e' un pezzo dell'indirizzo, non un parametro (docs/LINGUE.md): ogni
+// pagina ha il suo indirizzo, e `?lang=` resta al pannello. `/en` e non `/en/`:
+// la pagina chiama le sue risorse con indirizzi relativi, e da `/en` si
+// risolvono sulla radice.
+export const VIA_LINGUA = { it: '/', en: '/en', es: '/es' };
+
+// Dove va una richiesta della pagina iniziale di chi non e' entrato. Un
+// indirizzo solo per pagina: `/?lang=en` e `/en/` rimandano a `/en`, e
+// `?lang=` con una lingua che non c'e' rimanda alla radice. Il resto
+// dell'indirizzo (una campagna, un riferimento) viaggia col rimando. Lo usano
+// il server e il sito dei collaudi: la regola e' una.
+export function indirizzoHome(percorso, cerca = '') {
+  const p = String(percorso || '/');
+  const q = new URLSearchParams(cerca);
+  const dalPercorso = { '/': 'it', '/index.html': 'it', '/en': 'en', '/es': 'es', '/en/': 'en', '/es/': 'es' }[p];
+  if (!dalPercorso) return null;
+  const chiesta = q.has('lang') ? String(q.get('lang') || '').toLowerCase() : null;
+  const lingua = chiesta !== null && dalPercorso === 'it' ? (LINGUE.includes(chiesta) ? chiesta : 'it') : dalPercorso;
+  q.delete('lang');
+  const resto = q.toString();
+  const pulito = VIA_LINGUA[lingua];
+  if (chiesta !== null || p.endsWith('/') && p !== '/') return { lingua, rimanda: pulito + (resto ? '?' + resto : '') };
+  return { lingua, rimanda: null };
+}
+
+// La demo nella lingua della pagina da cui la si apre: chi arriva in inglese
+// non deve ritrovarsi il pannello in italiano.
+export const demoVia = (l) => (l === 'it' ? '/?demo=1' : `/?demo=1&amp;lang=${l}`);
+
+// La testa della pagina iniziale, lingua per lingua: titolo, descrizione,
+// anteprime per i social. La leggono il server che compone i gusci e i dati
+// strutturati qui sotto: una fonte sola.
+export const META_VETRINA = {
+  it: {
+    html: 'it', ogLocale: 'it_IT', url: SITO + VIA_LINGUA.it, inLanguage: 'it-IT',
+    titolo: 'SocialBot — bot per Twitch e Kick in italiano | socialbot.live',
+    desc: 'Il bot per Twitch e Kick in italiano che in chat scrive col tuo nome, con overlay, moderazione, grafiche social e pagina link nello stesso pannello. Gratis.',
+    ogTitolo: 'Il bot che in chat scrive con il tuo nome',
+    ogDesc: 'Uno spettatore scrive !social e in chat risponde il tuo account, non un bot. Nello stesso pannello hai overlay, moderazione, clip, grafiche social e pagina link, su Twitch e Kick. Gratis, con demo.',
+    twTitolo: 'Il bot che in chat scrive con il tuo nome',
+    twDesc: 'In chat risponde il tuo account, non un bot. Nello stesso pannello hai overlay, moderazione, grafiche social e pagina link. Su Twitch e Kick, gratis.',
+    immagineAlt: 'SocialBot — il bot che in chat scrive con il tuo nome, per Twitch e Kick',
+    sottocategoria: 'Bot per Twitch e Kick',
+    distinto: 'Bot per la chat di Twitch e Kick, con il pannello per la diretta e i social dello streamer, di andryxify. Non è un prodotto di social media marketing né un chatbot per Messenger.',
+  },
+  en: {
+    html: 'en', ogLocale: 'en_GB', url: SITO + VIA_LINGUA.en, inLanguage: 'en-GB',
+    titolo: 'SocialBot — the Twitch and Kick bot that writes in chat under your own name',
+    desc: 'The Twitch and Kick bot that writes in chat under your own name, with overlay, moderation, social graphics and a link page in the same panel. Free.',
+    ogTitolo: 'The bot that writes in chat under your own name',
+    ogDesc: 'A viewer types !social and the reply comes from your account, not from a bot. The same panel has overlay, moderation, clips, social graphics and a link page, on Twitch and Kick. Free, with a demo.',
+    twTitolo: 'The bot that writes in chat under your own name',
+    twDesc: 'The reply in chat comes from your account, not from a bot. The same panel has overlay, moderation, social graphics and a link page. On Twitch and Kick, free.',
+    immagineAlt: 'SocialBot, the bot that writes in chat under your own name, for Twitch and Kick',
+    sottocategoria: 'Twitch and Kick bot',
+    distinto: 'A chat bot for Twitch and Kick, with a panel for the streamer\u2019s stream and socials, by andryxify. It is not a social media marketing product or a Messenger chatbot.',
+  },
+  es: {
+    html: 'es', ogLocale: 'es_ES', url: SITO + VIA_LINGUA.es, inLanguage: 'es-ES',
+    titolo: 'SocialBot — el bot de Twitch y Kick que en el chat escribe con tu nombre',
+    desc: 'El bot de Twitch y Kick que escribe en el chat con tu nombre, con overlay, moderación, gráficas sociales y página de enlaces en el mismo panel. Gratis.',
+    ogTitolo: 'El bot que en el chat escribe con tu nombre',
+    ogDesc: 'Un espectador escribe !social y en el chat responde tu cuenta, no un bot. En el mismo panel tienes overlay, moderación, clips, gráficas sociales y página de enlaces, en Twitch y Kick. Gratis, con demo.',
+    twTitolo: 'El bot que en el chat escribe con tu nombre',
+    twDesc: 'En el chat responde tu cuenta, no un bot. En el mismo panel tienes overlay, moderación, gráficas sociales y página de enlaces. En Twitch y Kick, gratis.',
+    immagineAlt: 'SocialBot, el bot que en el chat escribe con tu nombre, para Twitch y Kick',
+    sottocategoria: 'Bot para Twitch y Kick',
+    distinto: 'Bot para el chat de Twitch y Kick, con el panel para el directo y las redes del streamer, de andryxify. No es un producto de marketing en redes sociales ni un chatbot para Messenger.',
+  },
+};
 const selettoreLingua = (attiva, L) =>
   `<div class="lingua-sel" role="group" aria-label="${esc(L('Lingua', 'Language', 'Idioma'))}">${LINGUE.map((x) =>
     `<a class="lingua-btn${x === attiva ? ' on' : ''}" href="${VIA_LINGUA[x]}" hreflang="${x}"${x === attiva ? ' aria-current="true"' : ''}>${x.toUpperCase()}</a>`).join('')}</div>`;
@@ -386,21 +457,37 @@ function avvisiHtml(L) {
   return '<div class="vt-avvisi" data-avvisi="' + esc(JSON.stringify(parole)) + '"></div>';
 }
 
+// Le due carte del listino come dati: le disegna listinoHtml e le ripetono
+// le offerte dei dati strutturati, parola per parola.
+function carteListino(L, piani) {
+  return {
+    free: {
+      nome: tre(piani.free, 'nome', L) || 'Essenziale',
+      testo: L('Basta registrarsi. Nessuna carta, nessuna scadenza.', 'Just sign up. No card, no expiry.', 'Solo regístrate. Sin tarjeta, sin caducidad.'),
+      voci: [
+        L('Comandi e moduli illimitati', 'Unlimited commands and modules', 'Comandos y módulos ilimitados'),
+        L('Moderazione con scudo anti-bot', 'Moderation with anti-bot shield', 'Moderación con escudo anti-bot'),
+        L('Overlay per la diretta e contatori a schermo', 'Stream overlay and on-screen counters', 'Overlay para el directo y contadores'),
+      ],
+    },
+    base: {
+      nome: tre(piani.base, 'nome', L) || 'Base',
+      testo: tre(piani.base, 'sommario', L),
+      voci: [
+        L('Tutto l’Essenziale', 'Everything in Essenziale', 'Todo lo de Essenziale'),
+        L('Avvisi live su Telegram e Discord', 'Live alerts on Telegram and Discord', 'Avisos en directo en Telegram y Discord'),
+        L('Avvisi dei nuovi post sui social', 'Alerts for new social posts', 'Avisos de nuevas publicaciones'),
+        L('Un moderatore incluso', 'One moderator included', 'Un moderador incluido'),
+      ],
+    },
+  };
+}
+
 function listinoHtml(L, piani) {
   if (!piani || !piani.base || !piani.free) return '';
   const perMese = L('/mese', '/month', '/mes');
   const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
-  const inclusiFree = [
-    L('Comandi e moduli illimitati', 'Unlimited commands and modules', 'Comandos y módulos ilimitados'),
-    L('Moderazione con scudo anti-bot', 'Moderation with anti-bot shield', 'Moderación con escudo anti-bot'),
-    L('Overlay per la diretta e contatori a schermo', 'stream overlay and on-screen counters', 'Overlay para el directo y contadores'),
-  ];
-  const inclusiBase = [
-    L('Tutto l’Essenziale', 'Everything in Essenziale', 'Todo lo de Essenziale'),
-    L('Avvisi live su Telegram e Discord', 'Live alerts on Telegram and Discord', 'Avisos en directo en Telegram y Discord'),
-    L('Avvisi dei nuovi post sui social', 'Alerts for new social posts', 'Avisos de nuevas publicaciones'),
-    L('Un moderatore incluso', 'One moderator included', 'Un moderador incluido'),
-  ];
+  const { free: cartaFree, base: cartaBase } = carteListino(L, piani);
   const piano = ({ nome, prezzo, sotto, testo, voci, punta, azione }) => `
     <article class="vt-piano${punta ? ' punta' : ''}">
       ${punta ? `<span class="vt-piano-tag">${L('il più scelto', 'most picked', 'el más elegido')}</span>` : ''}
@@ -415,20 +502,20 @@ function listinoHtml(L, piani) {
   return `<div class="vetrina-piani" id="vetrina-piani">
     <div class="vt-store">
       ${piano({
-        nome: tre(piani.free, 'nome', L) || 'Essenziale',
+        nome: cartaFree.nome,
         prezzo: L('Gratis', 'Free', 'Gratis'),
         sotto: L('per sempre', 'forever', 'para siempre'),
-        testo: L('Basta registrarsi. Nessuna carta, nessuna scadenza.', 'Just sign up. No card, no expiry.', 'Solo regístrate. Sin tarjeta, sin caducidad.'),
-        voci: inclusiFree,
+        testo: cartaFree.testo,
+        voci: cartaFree.voci,
         punta: false,
         azione: `<a class="vt-btn" href="/entra?nuovo=1">${L('Inizia gratis', 'Start free', 'Empieza gratis')}</a>`,
       })}
       ${piano({
-        nome: tre(piani.base, 'nome', L) || 'Base',
+        nome: cartaBase.nome,
         prezzo: eur(piani.base.prezzo),
         sotto: perMese,
-        testo: tre(piani.base, 'sommario', L),
-        voci: inclusiBase,
+        testo: cartaBase.testo,
+        voci: cartaBase.voci,
         punta: true,
         azione: `<button type="button" class="vt-btn" data-vai-comp>${L('Componi il tuo', 'Build yours', 'Compón el tuyo')}</button>`,
       })}
@@ -456,6 +543,22 @@ function listinoHtml(L, piani) {
   </div>`;
 }
 
+// LE DOMANDE della pagina iniziale. Le legge la pagina e le leggono i dati
+// strutturati: la FAQPage e' questa sezione, parola per parola, e non un
+// blocco scritto a parte che poteva dire altro.
+function faqVetrina(L, l) {
+  return [
+    [L('Con quale account scrive in chat?', 'Which account does it write with?', '¿Con qué cuenta escribe en el chat?'),
+      L('Con il tuo. In chat compare il tuo nome, e puoi spegnerlo o correggerlo in qualsiasi momento dal pannello.', 'Yours. Your name is what shows up in chat, and you can switch it off or correct it any time from the panel.', 'Con la tuya. En el chat aparece tu nombre, y puedes apagarlo o corregirlo cuando quieras desde el panel.')],
+    [L('Posso provarlo senza registrarmi?', 'Can I try it without signing up?', '¿Puedo probarlo sin registrarme?'),
+      L(`Sì: la <a href="${demoVia(l)}">demo</a> è il pannello vero con dati d’esempio, senza accesso.`, `Yes: the <a href="${demoVia(l)}">demo</a> is the real panel with sample data, no login.`, `Sí: la <a href="${demoVia(l)}">demo</a> es el panel real con datos de ejemplo, sin acceso.`)],
+    [L('In che lingua parla?', 'What language does it speak?', '¿En qué idioma habla?'),
+      L('Il pannello è in italiano, inglese e spagnolo. Quello che il bot scrive in chat lo scrivi tu, nella lingua che vuoi.', 'The panel comes in Italian, English and Spanish. What the bot says in chat is written by you, in whatever language you like.', 'El panel está en italiano, inglés y español. Lo que el bot escribe en el chat lo escribes tú, en el idioma que quieras.')],
+    [L('Sono nella community di andryxify.it: cambia qualcosa?', 'I am in the andryxify.it community: does that change anything?', 'Estoy en la comunidad de andryxify.it: ¿cambia algo?'),
+      L('Sì: se sei un membro abilitato hai tutto compreso. Entri con lo stesso account e il pannello è già completo.', 'Yes: enabled members get everything included. You log in with the same account and the panel is already complete.', 'Sí: si eres miembro habilitado lo tienes todo incluido. Entras con la misma cuenta y el panel ya está completo.')],
+  ];
+}
+
 function corpo(L, l, kick, youtube, dirette, piani, recensioni) {
   // con chi ci si registra: Twitch sempre, Kick e YouTube quando la porta e' aperta.
   // L'invito in fondo deve dire le stesse cose dell'apertura: una lista sola.
@@ -472,17 +575,6 @@ function corpo(L, l, kick, youtube, dirette, piani, recensioni) {
     ['23:30', L('Chiudi. Le ore guardate sono già contate, e il VIP del mese lo prende chi c’era sempre, senza che tu debba ricordartene.', 'You sign off. Watch hours are already counted, and the VIP of the month goes to whoever was always there, without you having to remember.', 'Cierras. Las horas vistas ya están contadas, y el VIP del mes se lo lleva quien siempre estuvo, sin que tengas que acordarte.')],
   ];
 
-  const FAQ = [
-    [L('Con quale account scrive in chat?', 'Which account does it write with?', '¿Con qué cuenta escribe en el chat?'),
-      L('Con il tuo. In chat compare il tuo nome, e puoi spegnerlo o correggerlo in qualsiasi momento dal pannello.', 'Yours. Your name is what shows up in chat, and you can switch it off or correct it any time from the panel.', 'Con la tuya. En el chat aparece tu nombre, y puedes apagarlo o corregirlo cuando quieras desde el panel.')],
-    [L('Posso provarlo senza registrarmi?', 'Can I try it without signing up?', '¿Puedo probarlo sin registrarme?'),
-      L('Sì: la <a href="/?demo=1">demo</a> è il pannello vero con dati d’esempio, senza accesso.', 'Yes: the <a href="/?demo=1">demo</a> is the real panel with sample data, no login.', 'Sí: la <a href="/?demo=1">demo</a> es el panel real con datos de ejemplo, sin acceso.')],
-    [L('In che lingua parla?', 'What language does it speak?', '¿En qué idioma habla?'),
-      L('Il pannello è in italiano, inglese e spagnolo. Quello che il bot scrive in chat lo scrivi tu, nella lingua che vuoi.', 'The panel comes in Italian, English and Spanish. What the bot says in chat is written by you, in whatever language you like.', 'El panel está en italiano, inglés y español. Lo que el bot escribe en el chat lo escribes tú, en el idioma que quieras.')],
-    [L('Sono nella community di andryxify.it: cambia qualcosa?', 'I am in the andryxify.it community: does that change anything?', 'Estoy en la comunidad de andryxify.it: ¿cambia algo?'),
-      L('Sì: se sei un membro abilitato hai tutto compreso. Entri con lo stesso account e il pannello è già completo.', 'Yes: enabled members get everything included. You log in with the same account and the panel is already complete.', 'Sí: si eres miembro habilitado lo tienes todo incluido. Entras con la misma cuenta y el panel ya está completo.')],
-  ];
-
   return `
     ${avvisiHtml(L)}
     ${porteHtml(L, porteAperte(kick, youtube))}
@@ -493,7 +585,7 @@ function corpo(L, l, kick, youtube, dirette, piani, recensioni) {
           <a href="/guide">${L('Guide', 'Guides', 'Guías')}</a>
           <a href="/manuale">${L('Manuali', 'Manuals', 'Manuales')}</a>
           <a href="/novita">${L('Novità', 'What’s new', 'Novedades')}</a>
-          <a href="/?demo=1">${L('Demo', 'Demo', 'Demo')}</a>
+          <a href="${demoVia(l)}">${L('Demo', 'Demo', 'Demo')}</a>
         </nav>
         <div class="vt-strumenti">${selettoreLingua(l, L)}</div>
       </header>
@@ -508,7 +600,7 @@ function corpo(L, l, kick, youtube, dirette, piani, recensioni) {
           ? `<a class="vt-btn" href="/accedi/youtube">${L('Registrati con YouTube', 'Sign up with YouTube', 'Regístrate con YouTube')}</a>`
           : `<span class="vt-btn vt-btn-spento" aria-disabled="true">${L('YouTube · in arrivo', 'YouTube · coming soon', 'YouTube · muy pronto')}</span>`}
       </div>
-      <p class="vt-sotto">${L('L’<b>Essenziale è gratis per sempre</b> · nessuna carta richiesta · <a href="/?demo=1">guarda la demo</a>', 'The <b>Essenziale plan is free forever</b> · no card needed · <a href="/?demo=1">see the demo</a>', 'El <b>plan Essenziale es gratis para siempre</b> · sin tarjeta · <a href="/?demo=1">mira la demo</a>')}</p>
+      <p class="vt-sotto">${L(`L’<b>Essenziale è gratis per sempre</b> · nessuna carta richiesta · <a href="${demoVia(l)}">guarda la demo</a>`, `The <b>Essenziale plan is free forever</b> · no card needed · <a href="${demoVia(l)}">see the demo</a>`, `El <b>plan Essenziale es gratis para siempre</b> · sin tarjeta · <a href="${demoVia(l)}">mira la demo</a>`)}</p>
       ${soloDiscordHtml(L)}
       ${heroAnteprima(L)}
       ${recensioniHtml(L, l, recensioni)}
@@ -545,7 +637,7 @@ function corpo(L, l, kick, youtube, dirette, piani, recensioni) {
         <h2 class="vt-tit">${L('Domande', 'Questions', 'Preguntas')}</h2>
       </div>
       <div class="vt-faq">
-        ${FAQ.map(([q, a]) => `<details><summary>${q}</summary><p>${a}</p></details>`).join('')}
+        ${faqVetrina(L, l).map(([q, a]) => `<details><summary>${q}</summary><p>${a}</p></details>`).join('')}
       </div>
     </section>
 
@@ -579,6 +671,116 @@ export function vetrinaHtml(lingua = 'it', { kick = false, youtube = false, dire
 }
 
 export { ICO as ICONE_VETRINA, NOME_ADDON as PACCHETTI_VETRINA, CAPACITA as FUNZIONI_VETRINA };
+
+// ── I DATI STRUTTURATI DELLA PAGINA INIZIALE ────────────────────────────────
+//
+// Stavano in index.html, scritti a mano in italiano e ricopiati uguali nelle
+// tre lingue: la pagina inglese dichiarava ai motori «SocialBot e' in
+// italiano? Si': sia il bot sia il pannello», e domande che la pagina non
+// mostrava. Un dato strutturato che descrive una cosa diversa dalla pagina e'
+// un errore, e scritto a parte lo diventa da solo alla prima modifica.
+//
+// Qui si ricavano da quello che la pagina mostra, nella sua lingua: le
+// domande sono la sezione «Domande», le funzioni sono le voci di «Cosa c'e'
+// dentro», i prezzi sono il listino, le recensioni sono la striscia. Le parti
+// che non cambiano con la lingua (chi lo fa, di chi e') restano uguali.
+// Le recensioni nei dati strutturati: arrivano gia' calcolate da vetrinaDi
+// (features/recensioni.js), le stesse che la striscia mostra. `review` porta
+// solo quelle con un autore: le anonime contano nella media, che il riepilogo
+// visibile dichiara, ma un autore senza nome non e' un autore.
+export function datiRecensioni(v) {
+  if (!v) return null;
+  const [peggiore, migliore] = v.scala;
+  const fuori = {
+    aggregateRating: { '@type': 'AggregateRating', ratingValue: v.media, ratingCount: v.quanti, bestRating: migliore, worstRating: peggiore },
+  };
+  const firmate = v.voci.filter((r) => r.nome);
+  if (firmate.length) {
+    fuori.review = firmate.map((r) => ({
+      '@type': 'Review',
+      author: { '@type': 'Person', name: r.nome },
+      reviewRating: { '@type': 'Rating', ratingValue: r.stelle, bestRating: migliore, worstRating: peggiore },
+      reviewBody: r.testo,
+      inLanguage: r.lingua,
+    }));
+  }
+  return fuori;
+}
+
+// JSON dentro un <script>: un «</script>» nel testo di una recensione non deve
+// poter chiudere il blocco.
+export function jsonSicuro(o) {
+  return JSON.stringify(o).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+}
+
+const ENTITA = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" };
+const testoPiano = (h) => String(h).replace(/<[^>]*>/g, '').replace(/&(amp|lt|gt|quot|#39);/g, (e) => ENTITA[e]).replace(/\s+/g, ' ').trim();
+
+function offerte(L, piani, url) {
+  if (!piani || !piani.base || !piani.free) return null;
+  const mese = L('al mese', 'per month', 'al mes');
+  const offerta = (nome, prezzo, descrizione) => ({
+    '@type': 'Offer', name: nome, price: Number(Number(prezzo || 0).toFixed(2)), priceCurrency: 'EUR',
+    availability: 'https://schema.org/InStock', url: url + '#listino', description: descrizione,
+  });
+  const carta = (c) => [c.testo, ...c.voci].filter(Boolean).join(' · ');
+  const { free, base: cb } = carteListino(L, piani);
+  const extra = [...(piani.bundle || []), ...(piani.addon || [])]
+    .map((a) => offerta(tre(a, 'nome', L), a.prezzo, [tre(a, 'sommario', L), `+${eur(a.prezzo)} ${mese}`].filter(Boolean).join(' · ')));
+  const base = offerta(cb.nome, piani.base.prezzo, carta(cb));
+  if (extra.length) base.addOn = extra;
+  return [offerta(free.nome, 0, carta(free)), base];
+}
+
+export function datiStrutturatiVetrina(lingua = 'it', { piani = null, recensioni = null } = {}) {
+  const l = LINGUE.includes(lingua) ? lingua : 'it';
+  const n = LINGUE.indexOf(l);
+  const L = (...t) => t[n];
+  const m = META_VETRINA[l];
+  const autore = { '@id': `${SITO}/#autore` };
+  const app = {
+    '@type': 'SoftwareApplication',
+    '@id': `${SITO}/#app`,
+    name: 'SocialBot',
+    author: autore,
+    copyrightHolder: autore,
+    alternateName: ['SocialBot Twitch', 'SocialBot by andryxify', 'socialbot.live'],
+    disambiguatingDescription: m.distinto,
+    sameAs: [`${SITO}/`, 'https://andryxify.it'],
+    availableLanguage: [
+      { '@type': 'Language', name: 'Italian', alternateName: 'it' },
+      { '@type': 'Language', name: 'English', alternateName: 'en' },
+      { '@type': 'Language', name: 'Spanish', alternateName: 'es' },
+    ],
+    inLanguage: m.inLanguage,
+    applicationCategory: 'MultimediaApplication',
+    applicationSubCategory: m.sottocategoria,
+    operatingSystem: 'Web',
+    url: m.url,
+    description: m.desc,
+    featureList: CAPACITA.flatMap((g) => g.voci.map((v) => v.t[n])),
+    publisher: { '@id': `${SITO}/#org` },
+  };
+  const prezzi = offerte(L, piani, m.url);
+  if (prezzi) app.offers = prezzi;
+  Object.assign(app, datiRecensioni(recensioni) || {});
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'WebSite', '@id': `${SITO}/#website`, url: `${SITO}/`, name: 'SocialBot', inLanguage: m.inLanguage,
+        publisher: { '@id': `${SITO}/#org` }, copyrightHolder: autore, copyrightYear: 2024 },
+      { '@type': 'WebPage', '@id': `${m.url}#webpage`, url: m.url, name: `SocialBot · ${m.ogTitolo}`, description: m.desc,
+        inLanguage: m.inLanguage, isPartOf: { '@id': `${SITO}/#website` }, about: { '@id': `${SITO}/#app` },
+        primaryImageOfPage: `${SITO}/icons/og.png?v=8` },
+      { '@type': 'Organization', '@id': `${SITO}/#org`, name: 'andryxify.it', url: 'https://andryxify.it', logo: `${SITO}/icons/icon-512.png?v=8` },
+      { '@type': 'Person', '@id': `${SITO}/#autore`, name: 'Andrea Taliento', alternateName: 'ANDRYXify', url: 'https://andryxify.it' },
+      app,
+      { '@type': 'FAQPage', '@id': `${m.url}#faq`, inLanguage: m.inLanguage,
+        mainEntity: faqVetrina(L, l).map(([q, a]) => ({ '@type': 'Question', name: testoPiano(q), acceptedAnswer: { '@type': 'Answer', text: testoPiano(a) } })) },
+    ],
+  };
+}
 
 // Il punto in cui la vetrina entra nel guscio. Sta qui, e non a fianco di chi
 // serve la pagina, perche' lo usano in due — il server e il collaudo che prova
@@ -672,10 +874,32 @@ function soloRisorseVetrina(h) {
 // Il guscio di chi non e' entrato: la vetrina gia' disegnata, la larghezza
 // giusta al primo disegno (`body.vetrina`, vedi docs/VELOCITA.md) e solo le sue
 // risorse.
-export function guscioVetrina(guscio, lingua, opzioni) {
-  let h = inserisciVetrina(guscio, lingua, opzioni);
-  if (!h.includes('<body>')) throw new Error('vetrina: non trovo <body> nel guscio');
-  h = h.replace('<body>', '<body class="vetrina">');
+//
+// La testa si scrive nella lingua del guscio. Ogni sostituzione e' verificata:
+// se index.html cambia e un ancoraggio non c'e' piu', il server non parte,
+// invece di servire in silenzio una pagina inglese col canonical italiano.
+export function guscioVetrina(guscio, lingua, opzioni = {}) {
+  const l = LINGUE.includes(lingua) ? lingua : 'it';
+  const m = META_VETRINA[l], base = META_VETRINA.it;
+  let h = inserisciVetrina(guscio, l, opzioni);
+  const cambia = (da, a) => {
+    if (!h.includes(da)) throw new Error(`guscio ${l}: non trovo in index.html → ${da.slice(0, 90)}`);
+    h = h.replace(da, a);
+  };
+  cambia('<body>', '<body class="vetrina">');
+  cambia('</head>', `  <script type="application/ld+json">${jsonSicuro(datiStrutturatiVetrina(l, opzioni))}</script>\n</head>`);
+  cambia('<html lang="it">', `<html lang="${m.html}">`);
+  cambia(`<title>${base.titolo}</title>`, `<title>${m.titolo}</title>`);
+  cambia(`<meta name="description" content="${base.desc}">`, `<meta name="description" content="${m.desc}">`);
+  cambia(`<link rel="canonical" href="${base.url}">`, `<link rel="canonical" href="${m.url}">`);
+  cambia('<meta property="og:locale" content="it_IT">', `<meta property="og:locale" content="${m.ogLocale}">`);
+  cambia(`<meta property="og:url" content="${base.url}">`, `<meta property="og:url" content="${m.url}">`);
+  cambia(`<meta property="og:title" content="${base.ogTitolo}">`, `<meta property="og:title" content="${m.ogTitolo}">`);
+  cambia(`<meta property="og:description" content="${base.ogDesc}">`, `<meta property="og:description" content="${m.ogDesc}">`);
+  cambia(`<meta name="twitter:title" content="${base.twTitolo}">`, `<meta name="twitter:title" content="${m.twTitolo}">`);
+  cambia(`<meta name="twitter:description" content="${base.twDesc}">`, `<meta name="twitter:description" content="${m.twDesc}">`);
+  cambia(`<meta property="og:image:alt" content="${base.immagineAlt}">`, `<meta property="og:image:alt" content="${m.immagineAlt}">`);
+  cambia(`<meta name="twitter:image:alt" content="${base.immagineAlt}">`, `<meta name="twitter:image:alt" content="${m.immagineAlt}">`);
   return soloRisorseVetrina(h);
 }
 
