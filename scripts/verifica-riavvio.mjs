@@ -95,6 +95,8 @@ const DECISO = [
   ['features/effects.js', '_trkClients', 'volatile', 'idem, overlay del tracking'],
   ['features/effects.js', '_cooldown', 'volatile', 'perderlo vale un effetto in piu\' subito dopo un deploy; scriverlo costa a ogni comando'],
   ['features/emotes.js', 'cacheCanale', 'volatile', 'cache delle emote'],
+  ['features/emotes.js', 'cacheSolo', 'volatile', 'cache delle emote 7TV del canale che arriva con un raid: al riavvio si richiedono al raid dopo'],
+  ['features/muro.js', 'ultimoComando', 'volatile', 'l\'attesa fra due !esplodi: un riavvio la azzera, e al peggio si esplode un po\' prima. Non tiene niente di nessuno'],
   ['features/games.js', 'ultimoAccredito', 'volatile', 'anti-doppione a finestra corta'],
   ['features/games.js', 'attiviGiro', 'volatile', 'chi ha scritto in questo giro di watchtime'],
   ['features/games.js', 'fermiDa', 'volatile', 'da quanti giri uno e\' fermo'],
