@@ -98,6 +98,7 @@ import * as igAccesso from '../features/instagram-accesso.js';
 import { credenzialiInstagram } from '../features/instagram-credenziali.js';
 import * as storiaIg from '../features/storia-ig.js';
 import * as settimana from '../features/settimana.js';
+import * as automatiche from '../features/automatiche.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
 import * as ruoli from '../features/ruoli.js';
@@ -5241,13 +5242,15 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login;
     const prima = settimana.settimanaDi(streamers.get(login)?.settings);
     const sett = settimana.normalizzaSettimana(req.body?.settimana, prima);
+    // Le categorie servono al Programma di Twitch e alle copertine delle
+    // grafiche «Stasera alle…»: si cercano sempre, non solo col Programma acceso.
+    sett.twitch.categorie = await settimana.categorieDi(helix, sett).catch(() => sett.twitch.categorie || {});
     const esito = {};
     // Spento, il Programma si ripulisce di quello che avevamo scritto noi:
     // «non scriverla piu'» vuol dire anche «togli quella che c'e'».
     if (sett.twitch.acceso || prima.twitch.scritti.length) {
       if (!programmaOk(login)) esito.twitch = { ok: false, permesso: true };
       else {
-        if (sett.twitch.acceso) sett.twitch.categorie = await settimana.categorieDi(helix, sett);
         const e = await settimana.sincronizzaProgramma(helix, login, sett)
           .catch((x) => ({ ok: false, errore: String(x?.message || x) }));
         if (e.ok) sett.twitch.scritti = e.scritti;
@@ -5293,6 +5296,41 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // Due immagini, una per posto: il post (1080×1350) per Telegram e Discord, la
   // storia (1080×1920) per Instagram. Un pannello di prima manda solo il post, e
   // la storia usa quello: com'era, invece di non partire.
+  // Mandare la settimana nei posti scelti. La stessa strada per «Manda» e per
+  // l'uscita automatica della domenica: dice cosa e' andato e cosa no.
+  async function mandaLaSettimana(login, { byte, storia, testo, dove }) {
+    const esiti = [];
+    // Telegram: la didascalia sta sotto i 1024 caratteri; se non ci sta, la
+    // foto va da sola e il testo la segue.
+    const tc = tgConf.get(login);
+    const mieTg = new Map(tgDest.lista(login).map((d) => [String(d.id), d]));
+    for (const id of byte ? dove.tg : []) {
+      const d = mieTg.get(id);
+      if (!d?.attivo || !tc?.token) continue;
+      const html = telegram.escHtml(testo);
+      const dida = html.length <= telegram.DIDASCALIA_MAX ? html : '';
+      const r = await telegram.inviaFoto(tc.token, d.chat_id, byte, dida, { threadId: d.thread_id })
+        .catch((e) => ({ ok: false, errore: e?.message || String(e) }));
+      if (r.ok && !dida && testo) await telegram.inviaMessaggio(tc.token, d.chat_id, html, { anteprima: false, threadId: d.thread_id }).catch(() => {});
+      esiti.push({ dove: 'tg', nome: d.titolo || String(d.chat_id), ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
+    }
+
+    const { token } = dcTokenE(login);
+    const mieDc = new Map(dcDest.lista(login).map((d) => [String(d.id), d]));
+    for (const id of byte ? dove.dc : []) {
+      const d = mieDc.get(id);
+      if (!d?.attivo) continue;
+      const r = await discord.mandaImmagine(token, d, testo, { byte, nome: 'settimana.jpg', tipo: 'image/jpeg' });
+      esiti.push({ dove: 'dc', nome: d.canale_nome || '', ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
+    }
+
+    if (dove.ig && storia && credenzialiInstagram(login)) {
+      const r = await storiaIg.pubblicaStoria(login, storia);
+      esiti.push({ dove: 'ig', nome: 'storia', ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
+    }
+    return esiti;
+  }
+
   app.post('/api/streamer/settimana/manda', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const byte = leggiJpeg(req.body?.immagine);
@@ -5308,37 +5346,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       const prima = settimana.settimanaDi(streamers.get(login)?.settings);
       const { dove } = settimana.normalizzaSettimana({ ...prima, dove: req.body?.dove }, prima);
       streamers.setSettings(login, { ...(streamers.get(login)?.settings || {}), settimana: { ...prima, dove } });
-      const esiti = [];
-
-      // Telegram: la didascalia sta sotto i 1024 caratteri; se non ci sta, la
-      // foto va da sola e il testo la segue.
-      const tc = tgConf.get(login);
-      const mieTg = new Map(tgDest.lista(login).map((d) => [String(d.id), d]));
-      for (const id of byte ? dove.tg : []) {
-        const d = mieTg.get(id);
-        if (!d?.attivo || !tc?.token) continue;
-        const html = telegram.escHtml(testo);
-        const dida = html.length <= telegram.DIDASCALIA_MAX ? html : '';
-        const r = await telegram.inviaFoto(tc.token, d.chat_id, byte, dida, { threadId: d.thread_id })
-          .catch((e) => ({ ok: false, errore: e?.message || String(e) }));
-        if (r.ok && !dida && testo) await telegram.inviaMessaggio(tc.token, d.chat_id, html, { anteprima: false, threadId: d.thread_id }).catch(() => {});
-        esiti.push({ dove: 'tg', nome: d.titolo || String(d.chat_id), ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
-      }
-
-      const { token } = dcTokenE(login);
-      const mieDc = new Map(dcDest.lista(login).map((d) => [String(d.id), d]));
-      for (const id of byte ? dove.dc : []) {
-        const d = mieDc.get(id);
-        if (!d?.attivo) continue;
-        const r = await discord.mandaImmagine(token, d, testo, { byte, nome: 'settimana.jpg', tipo: 'image/jpeg' });
-        esiti.push({ dove: 'dc', nome: d.canale_nome || '', ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
-      }
-
-      if (dove.ig && storia && credenzialiInstagram(login)) {
-        const r = await storiaIg.pubblicaStoria(login, storia);
-        esiti.push({ dove: 'ig', nome: 'storia', ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
-      }
-      res.json({ ok: true, esiti });
+      res.json({ ok: true, esiti: await mandaLaSettimana(login, { byte, storia, testo, dove }) });
     } finally { _mandando.delete(login); }
   }));
 
@@ -5373,6 +5381,130 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       res.json({ ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') });
     } finally { _mandando.delete(login); }
   }));
+
+  // ── LE PUBBLICAZIONI AUTOMATICHE (docs/AUTOMATICHE.md) ──────────────────
+  // La storia prima della diretta e la settimana della domenica. Le immagini
+  // le prepara il pannello; qui si tengono, si controlla che siano ancora
+  // quelle giuste, e si pubblicano nel loro momento dalla stessa strada di
+  // «Metti nella storia» e di «Manda».
+  const settDi = (login) => settimana.settimanaDi(streamers.get(login)?.settings);
+  const revDi = (login) => Number(streamers.get(login)?.settings?.grafiche?.rev) || 0;
+  const tgPrivato = (login) => { const c = tgConf.get(login); return c?.token && c.owner_tg_id && (c.dm_modo || 'me') !== 'off' ? c : null; };
+  const mailDi = (login) => { const p = postaStreamer.get(login); return p?.confermata && p.email && posta.attiva() ? p.email : ''; };
+  const vistaAutomatiche = (login) => ({
+    ...automatiche.vista(login, { sett: settDi(login), rev: revDi(login) }),
+    rev: revDi(login), mail: !!mailDi(login), telegram: !!tgPrivato(login), ig: !!credenzialiInstagram(login),
+    live: storiaIg.statoLive(login),
+    dove: (() => { const d = settDi(login).dove || {}; return { tg: (d.tg || []).length, dc: (d.dc || []).length, ig: !!d.ig }; })(),
+  });
+
+  app.get('/api/streamer/automatiche', requireOwner, wrap(async (req, res) => {
+    res.json(vistaAutomatiche(currentUser(req).login));
+  }));
+
+  app.post('/api/streamer/automatiche', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    automatiche.salvaConf(login, req.body?.conf);
+    res.json(vistaAutomatiche(login));
+  }));
+
+  app.post('/api/streamer/automatiche/immagine', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const nome = String(req.body?.nome || '');
+    if (!automatiche.IMMAGINI.includes(nome)) return res.status(400).json({ errore: 'Immagine sconosciuta.' });
+    const byte = leggiJpeg(req.body?.immagine);
+    if (!byte) return res.status(400).json({ errore: 'La grafica non e\' arrivata intera: riprova.' });
+    const impronta = String(req.body?.impronta || '');
+    if (!/^[0-9a-f]{16}$/.test(impronta)) return res.status(400).json({ errore: 'La grafica non dice da quale settimana e\' nata.' });
+    automatiche.salvaImmagine(login, nome, byte, {
+      impronta, rev: Math.max(0, Math.round(Number(req.body?.rev)) || 0),
+      anticipo: Number(req.body?.anticipo) || 0, testo: String(req.body?.testo || '').slice(0, 2000),
+    });
+    res.json({ ok: true });
+  }));
+
+  app.post('/api/streamer/automatiche/conferma', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const r = automatiche.confermaDalPannello(login, settDi(login));
+    if (!r.ok) return res.status(409).json({ errore: 'Non c\'e\' un\'uscita della settimana da confermare.' });
+    res.json(vistaAutomatiche(login));
+  }));
+
+  // Il link della mail porta qui: una pagina che dice cosa uscira' e quando, e
+  // un tasto. Conferma chi preme, non chi apre: i programmi che controllano la
+  // posta aprono i link da soli.
+  const quandoEsce = automatiche.quandoEsce;
+  const escP = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const righeSettimana = (sett) => automatiche.righeSettimana(sett).map((r) => `<li>${escP(r)}</li>`).join('');
+  const paginaConferma = (login, chiave, messaggio = '') => {
+    const u = String(login || '').toLowerCase();
+    const r = /^[a-z0-9_]{1,40}$/.test(u) && /^[A-Za-z0-9_-]{20,64}$/.test(chiave) ? automatiche.richiestaDi(u, chiave) : null;
+    const sett = r ? settDi(u) : null;
+    const corpo = !r
+      ? '<h1>Link non valido</h1><p>Questo link non è uno di quelli che abbiamo mandato. La settimana si conferma anche dal pannello, nelle Grafiche.</p>'
+      : r.scaduta
+        ? `<h1>Questa uscita è passata</h1><p>Il link valeva per ${escP(quandoEsce(sett, r.per))}. La prossima richiesta arriva il giorno prima della prossima uscita.</p>`
+        : messaggio || r.confermata
+          ? `<h1>Confermata</h1><p>${escP(quandoEsce(sett, r.per))} la tua settimana esce nei posti che hai scelto.</p><ul>${righeSettimana(sett)}</ul><p><a href="/#grafiche">Apri le Grafiche</a></p>`
+          : `<h1>La tua settimana esce così</h1><p>${escP(quandoEsce(sett, r.per))}, uguale a questa:</p><ul>${righeSettimana(sett)}</ul>
+<form method="post" action="/settimana/conferma"><input type="hidden" name="u" value="${escP(u)}"><input type="hidden" name="t" value="${escP(chiave)}"><button type="submit">Va bene così</button></form>
+<p>Vuoi cambiarla? <a href="/#settimana">Apri la tua Settimana</a>: finché non confermi, non esce.</p>`;
+    return paginaServizio({ titolo: 'La tua settimana | SocialBot', url: config.baseUrl.replace(/\/$/, '') + '/settimana/conferma', corpo });
+  };
+  app.get('/settimana/conferma', (req, res) => {
+    res.set('Cache-Control', 'no-store').set('Referrer-Policy', 'no-referrer');
+    res.type('html').send(paginaConferma(req.query.u, String(req.query.t || '')));
+  });
+  app.post('/settimana/conferma', express.urlencoded({ extended: false, limit: '2kb' }), (req, res) => {
+    const u = String(req.body?.u || '').toLowerCase(), t = String(req.body?.t || '');
+    if (!extRateOk('settimana-conferma:' + u)) return res.status(429).type('text').send('Troppe richieste: riprova fra un minuto.');
+    const ok = /^[a-z0-9_]{1,40}$/.test(u) && /^[A-Za-z0-9_-]{20,64}$/.test(t) && automatiche.confermaConChiave(u, t).ok;
+    res.set('Cache-Control', 'no-store').set('Referrer-Policy', 'no-referrer');
+    res.type('html').send(paginaConferma(u, t, ok ? 'confermata' : ''));
+  });
+
+  // Il giro: ogni minuto, per chi ha qualcosa di acceso.
+  const avvisaAutomatica = async (login, cosa, u) => {
+    const c = tgPrivato(login);
+    if (!c) return;
+    const quale = cosa === 'prima' ? 'La storia prima della diretta' : 'La tua settimana';
+    const testo = u.saltata ? `${quale} non è uscita: ${telegram.escHtml(u.errore)}.` : `${quale} non è uscita: ${telegram.escHtml(u.errore)}. Nelle Grafiche, in «In automatico», trovi com'è andata.`;
+    await telegram.inviaMessaggio(c.token, c.owner_tg_id, testo, { anteprima: false }).catch(() => {});
+  };
+  const chiediLaSettimana = async (login, per, chiave) => {
+    const sett = settDi(login);
+    const link = `${config.baseUrl.replace(/\/$/, '')}/settimana/conferma?u=${encodeURIComponent(login)}&t=${chiave}`;
+    const quando = quandoEsce(sett, per);
+    const email = mailDi(login);
+    if (email) {
+      const m = automatiche.mailRichiesta({ display: streamers.get(login)?.display || login, sett, per, link,
+        cambia: `${config.baseUrl.replace(/\/$/, '')}/#settimana`, codice: posta.codiceDi(login) });
+      await posta.invia({ a: email, oggetto: m.oggetto, testo: m.testo, html: m.html })
+        .catch((e) => log.warn(`#${login} richiesta della settimana via mail:`, e?.message || e));
+    }
+    const c = tgPrivato(login);
+    if (c) {
+      const t = `${telegram.escHtml(quando.charAt(0).toUpperCase() + quando.slice(1))} la tua settimana esce, uguale a questa. Va bene così? <a href="${link}">Conferma</a> · <a href="${config.baseUrl.replace(/\/$/, '')}/#settimana">Cambiala</a>. Finché non confermi, non esce.`;
+      await telegram.inviaMessaggio(c.token, c.owner_tg_id, t, { anteprima: false }).catch(() => {});
+    }
+  };
+  const giroAutomatiche = async () => {
+    for (const login of automatiche.accese()) {
+      const sett = settDi(login);
+      await automatiche.giro(login, {
+        sett, rev: revDi(login), inDiretta: !!manager?.inDiretta?.(login),
+        pubblicaStoria: (byte) => storiaIg.pubblicaStoria(login, byte),
+        mandaSettimana: async ({ byte, storia, testo }) => {
+          const esiti = await mandaLaSettimana(login, { byte, storia, testo, dove: sett.dove });
+          const male = esiti.filter((e) => !e.ok);
+          return { ok: esiti.length > 0 && !male.length, esiti, codice: esiti.length ? '' : 'nessun-posto', errore: male.map((e) => `${e.nome}: ${e.errore}`).join('; ') };
+        },
+        chiediConferma: (per, chiave) => chiediLaSettimana(login, per, chiave),
+        avvisa: (cosa, u) => avvisaAutomatica(login, cosa, u),
+      }).catch((e) => log.warn(`#${login} pubblicazioni automatiche:`, e?.message || e));
+    }
+  };
+  setInterval(() => { giroAutomatiche().catch(() => {}); }, 60_000).unref?.();
 
   app.delete('/api/streamer/ruoli', requireOwner, (req, res) => {
     dcRuoli.scorda(currentUser(req).login);
@@ -6218,6 +6350,10 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
         formato: tra(gr.formato, ['post', 'storia'], 'post'),
         spostati, spostaInsieme: gr.spostaInsieme !== false,
         giorni,
+        // Sale a ogni salvataggio: un'immagine preparata per le pubblicazioni
+        // automatiche porta il numero da cui e' nata, e se non e' piu' questo
+        // non esce (docs/AUTOMATICHE.md).
+        rev: (Number(s.settings?.grafiche?.rev) || 0) + 1,
       };
     }
     // Il premio in VIP: due gare, posizioni con nome e durata in dirette. La

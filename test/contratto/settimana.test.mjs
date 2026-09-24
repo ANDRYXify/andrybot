@@ -44,8 +44,11 @@ test('le rotte sono dello streamer, e «Manda» vuole un JPEG vero e piccolo', (
   assert.match(manda, /const storia = leggiJpeg\(req\.body\?\.storia\) \|\| byte;/, 'e la storia anche');
   assert.match(manda, /_mandando\.has\(login\)/, 'un doppio clic non manda due volte');
   assert.match(manda, /finally \{ _mandando\.delete\(login\); \}/, 'e un errore a meta\' non blocca il giro dopo');
-  assert.match(manda, /mieTg\.get\(id\)/, 'si manda solo nei posti che sono suoi');
-  assert.match(manda, /mieDc\.get\(id\)/);
+  // «Manda» e l'uscita automatica della domenica passano dalla stessa strada
+  assert.match(manda, /mandaLaSettimana\(login, \{ byte, storia, testo, dove \}\)/);
+  const strada = rotta('async function mandaLaSettimana(', 3000);
+  assert.match(strada, /mieTg\.get\(id\)/, 'si manda solo nei posti che sono suoi');
+  assert.match(strada, /mieDc\.get\(id\)/);
 });
 
 test('l\'immagine per Instagram e\' pubblica solo quanto serve', () => {

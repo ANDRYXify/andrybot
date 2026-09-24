@@ -849,6 +849,29 @@ function _demoProssima(ora) {
   return { quando: d.getTime(), ora: '21:00', att: 'Baldur\'s Gate 3', categoria: 'Baldur\'s Gate 3', categoriaId: '', fuso: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Rome' };
 }
 
+function _demoAuto(via, corpo) {
+  const a = _demoScritture.auto = _demoScritture.auto || { conf: { prima: { attiva: false, anticipo: 120 }, settimana: { attiva: false, giorno: 6, ora: '18:00', chiedi: true } }, confermata: 0 };
+  if (via.endsWith('/immagine')) return { ok: true };
+  if (via === '/api/streamer/automatiche' && corpo?.conf) a.conf = corpo.conf;
+  const prossima = (g, ora) => {
+    const [h, m] = String(ora).split(':').map(Number);
+    const d = new Date(); d.setHours(h, m, 0, 0);
+    let salto = (g - ((d.getDay() + 6) % 7) + 7) % 7;
+    if (!salto && d.getTime() <= Date.now()) salto = 7;
+    d.setDate(d.getDate() + salto);
+    return d.getTime();
+  };
+  const slot = _DEMO_SETTIMANA.giorni.map((g, i) => (g.ora && !g.off ? { giorno: i, quando: prossima(i, g.ora), ora: g.ora, att: g.att, categoria: g.att, categoriaId: '', fuso: 'Europe/Rome' } : null))
+    .filter(Boolean).map((x) => ({ ...x, esce: x.quando - a.conf.prima.anticipo * 60_000 }));
+  const primo = [...slot].sort((x, y) => x.quando - y.quando)[0] || null;
+  const uscita = prossima(a.conf.settimana.giorno, a.conf.settimana.ora);
+  if (via.endsWith('/conferma')) a.confermata = uscita;
+  return { conf: a.conf, impronta: '0123456789abcdef', rev: 1, pronte: {}, mail: true, telegram: true, ig: true,
+    live: { attiva: !!_demoScritture.storiaLive, pronta: !!_demoScritture.storiaLive, ultima: null }, dove: { tg: 1, dc: 1, ig: true },
+    prima: { prossima: primo ? { per: primo.quando, esce: primo.esce, giorno: primo.giorno } : null, ultima: null, slot },
+    settimana: { prossima: uscita, confermata: a.confermata === uscita, chiesta: false, ultima: null } };
+}
+
 function _demoAdesso() {
   const ora = Date.now();
   const minuti = Math.floor((ora - _DEMO_DIRETTA.dal) / 60000);
@@ -887,6 +910,7 @@ function apiDemo(percorso, opzioni = {}) {
   const via = percorso.split('?')[0];
   const domanda = new URLSearchParams(percorso.split('?')[1] || '').get('q') || '';
   if (metodo === 'GET' && via === '/api/streamer/adesso') return Promise.resolve(_demoAdesso());
+  if (via.startsWith('/api/streamer/automatiche')) return Promise.resolve(_demoAuto(via, opzioni.body));
   if (metodo === 'GET' && via === '/api/streamer/grafiche/storia') {
     const accesa = !!_demoScritture.storiaLive;
     return Promise.resolve({ ig: { puo: true }, live: { attiva: accesa, pronta: accesa, ultima: accesa ? { ts: Date.now() - 86_400_000, ok: true, errore: '' } : null } });
@@ -2627,7 +2651,7 @@ function _regioneSalva(el) {
 
 function segnaDaSalvare(t) {
   if (!t || !t.closest || !t.closest('.pannello-scheda.visibile')) return;
-  if (t.closest('#tg-destinazioni, #gr-ig, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .cerca-guscio')) return;
+  if (t.closest('#tg-destinazioni, #gr-ig, #gr-auto, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .cerca-guscio')) return;
   if (t.closest('.ovl-inspector') && !t.closest(ASP_SALVA_A_MANO)) return;
   const reg = _regioneSalva(t);
   if (!reg) return;
@@ -4475,7 +4499,7 @@ function grafDidascalia(c) {
   const handle = String(c.handle || '').trim();
   const coda = `👉 ${url}${handle ? '\n' + handle : ''}`;
   if (c.tipo === 'prossima') {
-    const gioco = grafProssimaGioco();
+    const gioco = grafProssimaGioco(c);
     return `🗓️ ${grafQuandoTesto(c)}${gioco ? ' · ' + gioco : ''}! ${L('Vi aspetto in diretta', 'See you live', 'Os espero en directo')}\n${coda}`;
   }
   if (c.tipo === 'live') {
@@ -4568,6 +4592,7 @@ function pannelloSettimana() {
           <textarea id="sett-testo" rows="3" class="campo-largo" style="resize:vertical"></textarea>
           <p class="spazio-sopra"><button class="btn" id="sett-manda">${_bIco(ICO.condividi)}${L('Manda', 'Send', 'Manda')}</button></p>
           <div id="sett-esiti" class="spazio-sopra" hidden></div>
+          <div id="sett-auto" class="sett-auto spazio-sopra"></div>
         </div>
       </div>
     </div>`);
@@ -4799,6 +4824,28 @@ async function caricaSettimana() {
   _settDisegnaDove();
   _settDisegnaAnteprima();
   collegaSettimana();
+  _settAuto();
+}
+
+async function _settAuto() {
+  const box = _g('sett-auto');
+  if (!box) return;
+  let v = null;
+  try { v = await api('/api/streamer/automatiche'); } catch { v = null; }
+  if (!v || _g('sett-auto') !== box) return;
+  const cs = v.conf.settimana;
+  const vai = `<button type="button" class="btn secondario mini" data-vai="grafiche">${L('Apri «In automatico»', 'Open «Automatic»', 'Abrir «Automático»')}</button>`;
+  if (!cs.attiva) {
+    box.innerHTML = `<p class="suggerimento">${L('Può anche uscire da sola ogni settimana, nel giorno e all’ora che scegli.', 'It can also go out by itself every week, on the day and at the time you choose.', 'También puede salir sola cada semana, el día y a la hora que elijas.')} ${vai}</p>`;
+    return;
+  }
+  const quando = v.settimana.prossima ? esc(_autoQuando(v.settimana.prossima)) : '';
+  const conferma = cs.chiedi && !v.settimana.confermata && quando
+    ? ` <button type="button" class="btn secondario mini" data-sett-conferma>${L('Va bene così', 'Looks good', 'Así está bien')}</button>` : '';
+  const riga = !quando ? '' : !cs.chiedi ? L(`In automatico: esce ${quando}.`, `Automatic: it goes out ${quando}.`, `Automático: sale ${quando}.`)
+    : v.settimana.confermata ? L(`In automatico: esce ${quando}, l’hai confermata ✓`, `Automatic: it goes out ${quando}, you confirmed it ✓`, `Automático: sale ${quando}, la has confirmado ✓`)
+      : L(`In automatico: esce ${quando}, se la confermi. Cambiala qui sopra e salvala, poi conferma.`, `Automatic: it goes out ${quando}, if you confirm it. Change it above and save it, then confirm.`, `Automático: sale ${quando}, si la confirmas. Cámbiala arriba y guárdala, luego confirma.`);
+  box.innerHTML = `<p class="suggerimento">${riga}${conferma} ${vai}</p>`;
 }
 
 function collegaSettimana() {
@@ -4819,6 +4866,13 @@ function collegaSettimana() {
     if (e.target.id === 'sett-tw') _settCercaCategorie();
   });
   scheda.addEventListener('click', (e) => {
+    const conferma = e.target.closest('[data-sett-conferma]');
+    if (conferma && !conferma.disabled) {
+      conferma.disabled = true;
+      conErrore(async () => {
+        try { await api('/api/streamer/automatiche/conferma', { method: 'POST' }); toast(L('Settimana confermata ✓', 'Week confirmed ✓', 'Semana confirmada ✓')); await _settAuto(); } finally { conferma.disabled = false; }
+      });
+    }
     if (e.target.closest('[data-sett-reinvita]')) {
       conErrore(async () => { const r = await api('/api/discord/invito'); if (r && r.url) location.href = r.url; });
     }
@@ -4833,6 +4887,8 @@ function collegaSettimana() {
       _settDisegnaCalendari();
       const detto = _settDiciEsito(r?.esito);
       _dcDici('sett-stato', L('Settimana salvata. ', 'Week saved. ', 'Semana guardada. ') + detto.testo, detto.guaio ? 'guaio' : 'ok');
+      await autoPrepara().catch(() => {});
+      _settAuto();
     } finally { if (b) b.disabled = false; }
   }));
   _g('sett-manda')?.addEventListener('click', () => conErrore(async () => {
@@ -4893,9 +4949,10 @@ function pannelloGrafiche() {
   return pannello('grafiche', `
     <div class="carta">
       <h2>${_hIco(ICO.grafico)}${L('Grafiche social', 'Social graphics', 'Gráficas sociales')}</h2>
-      <p>${L('Due grafiche pronte da pubblicare: la', 'Two ready-to-post graphics: the', 'Dos gráficas listas para publicar: la')} <strong class="primo-piano">${L('programmazione settimanale', 'weekly schedule', 'programación semanal')}</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">«${L('Live ora', 'Live now', 'En directo')}»</strong>. ${L('Parti da uno stile pronto o da un tema, cambia quello che vuoi e scarica. Le tue impostazioni restano salvate.', 'Start from a ready-made style or a theme, change what you want and download. Your settings stay saved.', 'Empieza por un estilo listo o un tema, cambia lo que quieras y descarga. Tus ajustes quedan guardados.')}</p>
+      <p>${L('Tre grafiche pronte da pubblicare: la', 'Three ready-to-post graphics: the', 'Tres gráficas listas para publicar: la')} <strong class="primo-piano">${L('programmazione settimanale', 'weekly schedule', 'programación semanal')}</strong>, <strong class="primo-piano">«${L('Live ora', 'Live now', 'En directo')}»</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">«${L('Stasera alle…', 'Tonight at…', 'Esta noche a las…')}»</strong>. ${L('Parti da uno stile pronto o da un tema, cambia quello che vuoi e scarica. Le tue impostazioni restano salvate.', 'Start from a ready-made style or a theme, change what you want and download. Your settings stay saved.', 'Empieza por un estilo listo o un tema, cambia lo que quieras y descarga. Tus ajustes quedan guardados.')}</p>
 
       <div class="gr-ig" id="gr-ig">${attesaHtml()}</div>
+      <div class="gr-auto" id="gr-auto">${attesaHtml()}</div>
 
       <div class="gr-tipo">
         <button type="button" class="gr-tipo-b${c.tipo === 'programmazione' ? ' on' : ''}" data-gr-tipo="programmazione">${L('Programmazione', 'Schedule', 'Programación')}</button>
@@ -5121,14 +5178,16 @@ const GR_PEZZI = {
 };
 const grafTipoPezzi = (c) => (GR_PEZZI[c.tipo] ? c.tipo : 'programmazione');
 
-const grafCopertinaSrc = () => (_grProssima?.categoriaId ? '/api/streamer/grafiche/copertina/' + _grProssima.categoriaId : '');
-const grafConCopertina = (c) => c.tipo === 'prossima' && c.copertina !== false && !!grafCopertinaSrc()
-  && grafCopertina.pronto && !!grafCopertina.el && grafCopertina.src === grafCopertinaSrc();
-const grafProssimaGioco = () => String(_grProssima?.categoria || _grProssima?.att || '').trim();
+const grafProssimaDi = (c) => c?._prossima || _grProssima;
+const grafCopertinaDi = (c) => c?._copertina || grafCopertina;
+const grafCopertinaSrc = (c) => { const p = grafProssimaDi(c); return p?.categoriaId ? '/api/streamer/grafiche/copertina/' + p.categoriaId : ''; };
+const grafConCopertina = (c) => { const cop = grafCopertinaDi(c), src = grafCopertinaSrc(c); return c.tipo === 'prossima' && c.copertina !== false && !!src && cop.pronto && !!cop.el && cop.src === src; };
+const grafProssimaGioco = (c) => { const p = grafProssimaDi(c); return String(p?.categoria || p?.att || '').trim(); };
 function grafQuandoTesto(c) {
   const scritto = String(c.quandoTesto || '').trim();
   if (scritto) return scritto;
-  return _grProssima ? _quandoProssima(_grProssima).giorno : L('Stasera in diretta', 'Live tonight', 'Esta noche en directo');
+  const p = grafProssimaDi(c);
+  return p ? _quandoProssima(p, c._rif).giorno : L('Stasera in diretta', 'Live tonight', 'Esta noche en directo');
 }
 
 let _grMisura = null;
@@ -5283,7 +5342,7 @@ function _grafDisposizionePost(c, alta = 0) {
     const dS = { px: 56, min: 30, peso: '800', max: W - pad * 2, padH: 36, padV: 24 };
     const quando = grafQuandoTesto(c), dove = grafUrlCanale(c);
     const q = grafAdesivoForma(quando, qS), d = grafAdesivoForma(dove, dS);
-    const pillola = grafProssimaGioco() && !grafConCopertina(c) ? 104 + 40 : 0;
+    const pillola = grafProssimaGioco(c) && !grafConCopertina(c) ? 104 + 40 : 0;
     const blocco = pillola + q.h + 24 + d.h;
     const cima = lay.filo.y + lay.filo.h, fondo = lay.qr ? lay.qr.y - 48 : H - 120;
     const yP = grafConCopertina(c) ? fondo - blocco : Math.round(cima + (fondo - cima - blocco) / 2);
@@ -5331,7 +5390,7 @@ function grafSfondo(ctx, c, W, H, t, pal) {
   const tema = pal.tema;
   const cop = grafConCopertina(c);
   if (cop) {
-    const im = grafCopertina.el, iw = im.naturalWidth || 1, ih = im.naturalHeight || 1, k = Math.max(W / iw, H / ih);
+    const im = grafCopertinaDi(c).el, iw = im.naturalWidth || 1, ih = im.naturalHeight || 1, k = Math.max(W / iw, H / ih);
     ctx.drawImage(im, (W - iw * k) / 2, (H - ih * k) / 2, iw * k, ih * k);
     const vg = ctx.createLinearGradient(0, 0, 0, H);
     vg.addColorStop(0, 'rgba(0,0,0,.6)'); vg.addColorStop(0.3, 'rgba(0,0,0,0)'); vg.addColorStop(0.62, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)');
@@ -5624,7 +5683,7 @@ function _grafDisegna(canvas, c, t, scala) {
     grafTitolo(ctx, sc, pal, c, lay, (c.titolo || L('LA SETTIMANA', 'THE WEEK', 'LA SEMANA')).toUpperCase());
     grafRighe(ctx, sc, pal, c, lay);
   } else if (lay.prossima) {
-    const gioco = grafProssimaGioco();
+    const gioco = grafProssimaGioco(c);
     if (gioco && !grafConCopertina(c)) grafPillola(ctx, pal, lay, gioco);
     grafAdesivo(ctx, lay.quando, 'quando');
     grafAdesivo(ctx, lay.dove, 'dove');
@@ -5710,8 +5769,7 @@ function _grIgHtml(ig, errore = false, live = null) {
   }
   return `<p><strong>${ora}</strong> ${L('Parte la grafica che vedi, in formato storia, e resta 24 ore.', 'The graphic you see goes out, in story format, and stays 24 hours.', 'Sale la gráfica que ves, en formato historia, y dura 24 horas.')}</p>
     <p class="gr-ig-azione"><button type="button" class="btn" id="gr-ig-storia">${_bIco(ICO.condividi)}${L('Metti nella storia', 'Post to your story', 'Publicar en tu historia')}</button>
-    <span id="gr-ig-esito" class="suggerimento" role="status"></span></p>
-    ${_grIgLiveHtml(live)}`;
+    <span id="gr-ig-esito" class="suggerimento" role="status"></span></p>`;
 }
 
 async function caricaStoriaIg() {
@@ -5721,6 +5779,116 @@ async function caricaStoriaIg() {
   try { d = await api('/api/streamer/grafiche/storia'); } catch { d = null; }
   _grIgLive = d?.live || null;
   if (_g('gr-ig') === box) box.innerHTML = _grIgHtml(d?.ig ?? null, !d, _grIgLive);
+}
+
+const AUTO_ANTICIPI = [15, 30, 60, 120, 180, 240, 360, 480, 720];
+const _autoAnticipo = (m) => (m < 60 ? L(`${m} minuti`, `${m} minutes`, `${m} minutos`) : m === 60 ? L('un\'ora', 'one hour', 'una hora') : L(`${m / 60} ore`, `${m / 60} hours`, `${m / 60} horas`));
+const _autoQuando = (ts) => new Date(Number(ts) || 0).toLocaleString(localePannello(), { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+let _grAuto = null;
+
+function _autoMotivo(u) {
+  const m = {
+    'non-pronta': L('la grafica non era pronta. Apri le Grafiche: si prepara da sola.', 'the graphic was not ready. Open Graphics: it prepares itself.', 'la gráfica no estaba lista. Abre Gráficas: se prepara sola.'),
+    'settimana-cambiata': L('la settimana era cambiata dopo che la grafica era stata preparata. Aprendo le Grafiche si ripreparano da sole.', 'the week had changed after the graphic was prepared. Opening Graphics prepares them again.', 'la semana había cambiado después de preparar la gráfica. Al abrir Gráficas se preparan de nuevo.'),
+    'grafiche-cambiate': L('le grafiche erano cambiate dopo che l’immagine era stata preparata. Aprendo le Grafiche si ripreparano da sole.', 'the graphics had changed after the image was prepared. Opening Graphics prepares them again.', 'las gráficas habían cambiado después de preparar la imagen. Al abrir Gráficas se preparan de nuevo.'),
+    'anticipo-cambiato': L('l’anticipo era cambiato dopo che la grafica era stata preparata. Aprendo le Grafiche si ripreparano da sole.', 'the lead time had changed after the graphic was prepared. Opening Graphics prepares them again.', 'la antelación había cambiado después de preparar la gráfica. Al abrir Gráficas se preparan de nuevo.'),
+    'in-diretta': L('eri già in diretta: è uscita «Live ora», se l’hai accesa.', 'you were already live: «Live now» went out, if you turned it on.', 'ya estabas en directo: salió «En directo», si la activaste.'),
+    'non-confermata': L('non l’avevi confermata, quindi non è uscita.', 'you had not confirmed it, so it did not go out.', 'no la habías confirmado, así que no salió.'),
+    'nessun-posto': L('nella Settimana non c’era nessun posto dove mandarla.', 'there was no place in your Week to send it to.', 'en tu Semana no había ningún sitio adonde mandarla.'),
+  }[u.codice];
+  return m || u.errore || '';
+}
+
+function _autoUltima(u) {
+  if (!u) return '';
+  if (u.ok) return `<p class="suggerimento">${L('L’ultima è uscita', 'The last one went out', 'La última salió')} ${esc(_autoQuando(u.ts))}.</p>`;
+  return problemaHtml({ titolo: L('L’ultima non è uscita', 'The last one did not go out', 'La última no salió'), testo: `${esc(_autoQuando(u.ts))}: ${esc(_autoMotivo(u))}` });
+}
+
+function _grAutoHtml(v) {
+  if (!v) return `<p class="suggerimento">${L('Non riesco a leggere le pubblicazioni automatiche: riprova tra poco.', 'I cannot read the automatic posts: try again shortly.', 'No consigo leer las publicaciones automáticas: inténtalo de nuevo en un rato.')}</p>`;
+  const cp = v.conf.prima, cs = v.conf.settimana;
+  const serveIg = !v.ig ? `<p class="suggerimento">${L('Serve Instagram collegato.', 'It needs Instagram connected.', 'Necesita Instagram conectado.')} <button type="button" class="btn secondario mini" data-vai="notifiche">${L('Collega Instagram', 'Connect Instagram', 'Conectar Instagram')}</button></p>` : '';
+  let primaStato = '';
+  if (v.ig && cp.attiva) {
+    primaStato = !v.prima.slot.length
+      ? L('Nella tua Settimana non c’è nessun giorno in onda.', 'Your Week has no live day.', 'Tu Semana no tiene ningún día en directo.')
+      : v.prima.prossima ? L(`La prossima esce ${_autoQuando(v.prima.prossima.esce)}, per la diretta di ${_autoQuando(v.prima.prossima.per)}.`, `The next one goes out ${_autoQuando(v.prima.prossima.esce)}, for the stream on ${_autoQuando(v.prima.prossima.per)}.`, `La próxima sale ${_autoQuando(v.prima.prossima.esce)}, para el directo del ${_autoQuando(v.prima.prossima.per)}.`) : '';
+  }
+  const anticipi = AUTO_ANTICIPI.map((m) => `<option value="${m}"${m === cp.anticipo ? ' selected' : ''}>${esc(_autoAnticipo(m))}</option>`).join('');
+  const giorni = GIORNI_LUNGHI().map((g, i) => `<option value="${i}"${i === cs.giorno ? ' selected' : ''}>${esc(g)}</option>`).join('');
+  const posti = v.dove.tg + v.dove.dc + (v.dove.ig ? 1 : 0);
+  let settStato = '';
+  if (cs.attiva) {
+    const righe = [];
+    if (!posti) righe.push(`${L('Nella Settimana non hai scelto dove mandarla: spunta i posti in «Mandala».', 'In your Week you have not chosen where to send it: tick the places in «Send it».', 'En tu Semana no has elegido adónde mandarla: marca los sitios en «Mándala».')} <button type="button" class="btn secondario mini" data-vai="settimana">${L('Apri la Settimana', 'Open the Week', 'Abrir la Semana')}</button>`);
+    if (v.settimana.prossima) {
+      const quando = esc(_autoQuando(v.settimana.prossima));
+      if (!cs.chiedi) righe.push(L(`Esce ${quando}.`, `It goes out ${quando}.`, `Sale ${quando}.`));
+      else if (v.settimana.confermata) righe.push(L(`Esce ${quando}: l’hai confermata ✓`, `It goes out ${quando}: you confirmed it ✓`, `Sale ${quando}: la has confirmado ✓`));
+      else {
+        righe.push(`${v.settimana.chiesta
+          ? L(`Esce ${quando}, se la confermi.`, `It goes out ${quando}, if you confirm it.`, `Sale ${quando}, si la confirmas.`)
+          : L(`Esce ${quando}, se la confermi. Il giorno prima te lo chiedo.`, `It goes out ${quando}, if you confirm it. I will ask you the day before.`, `Sale ${quando}, si la confirmas. Te lo pregunto el día antes.`)} <button type="button" class="btn secondario mini" data-auto-conferma>${L('Va bene così', 'Looks good', 'Así está bien')}</button>`);
+        if (!v.mail && !v.telegram) righe.push(L('Non ho una mail confermata né Telegram per chiedertelo: la richiesta la trovi qui e nella Settimana.', 'I have neither a confirmed email nor Telegram to ask you: the request is here and in your Week.', 'No tengo un correo confirmado ni Telegram para preguntártelo: la petición está aquí y en tu Semana.'));
+      }
+    }
+    settStato = righe.map((r) => `<p class="suggerimento">${r}</p>`).join('');
+  }
+  return `<h3>${L('In automatico', 'Automatic', 'Automático')}</h3>
+    <p class="suggerimento">${L('Escono da sole, con le grafiche come le hai fatte qui. Si preparano ogni volta che salvi le Grafiche o la Settimana.', 'They go out by themselves, with the graphics as you made them here. They are prepared every time you save Graphics or your Week.', 'Salen solas, con las gráficas como las hiciste aquí. Se preparan cada vez que guardas Gráficas o tu Semana.')}</p>
+    <div class="gr-auto-riga">
+      <label class="riga-check"><input type="checkbox" data-auto="prima"${cp.attiva ? ' checked' : ''}${v.ig ? '' : ' disabled'}> <span><strong>${L('Prima della diretta', 'Before the stream', 'Antes del directo')}</strong>: ${L('la storia «Stasera alle…» del giorno', 'the day’s «Tonight at…» story', 'la historia «Esta noche a las…» del día')}</span></label>
+      <label class="gr-auto-quanto">${L('Esce', 'It goes out', 'Sale')} <select data-auto-anticipo${v.ig ? '' : ' disabled'}>${anticipi}</select> ${L('prima dell’inizio', 'before the start', 'antes del inicio')}</label>
+      ${serveIg}${primaStato ? `<p class="suggerimento">${primaStato}</p>` : ''}${cp.attiva ? _autoUltima(v.prima.ultima) : ''}
+    </div>
+    <div class="gr-auto-riga">
+      <p class="gr-auto-tit"><strong>${L('Quando vai in diretta', 'When you go live', 'Cuando sales en directo')}</strong></p>
+      ${v.ig ? _grIgLiveHtml(v.live) : serveIg}
+    </div>
+    <div class="gr-auto-riga">
+      <label class="riga-check"><input type="checkbox" data-auto="settimana"${cs.attiva ? ' checked' : ''}> <span><strong>${L('La settimana', 'The week', 'La semana')}</strong>: ${L('la grafica della Settimana, nei posti di «Mandala»', 'the Week graphic, to the places in «Send it»', 'la gráfica de la Semana, en los sitios de «Mándala»')}</span></label>
+      <div class="gr-auto-quanto">${L('Ogni', 'Every', 'Cada')} <select data-auto-giorno aria-label="${esc(L('Giorno', 'Day', 'Día'))}">${giorni}</select> ${L('alle', 'at', 'a las')} <input type="time" data-auto-ora value="${esc(cs.ora)}" aria-label="${esc(L('Ora', 'Time', 'Hora'))}"></div>
+      <label class="riga-check"><input type="checkbox" data-auto-chiedi${cs.chiedi ? ' checked' : ''}> ${L('Chiedimi prima se va bene, il giorno prima', 'Ask me first if it is fine, the day before', 'Pregúntame antes si está bien, el día antes')}</label>
+      ${settStato}${cs.attiva ? _autoUltima(v.settimana.ultima) : ''}
+    </div>`;
+}
+
+async function caricaAuto() {
+  const box = _g('gr-auto');
+  if (!box) return null;
+  let v = null;
+  try { v = await api('/api/streamer/automatiche'); } catch { v = null; }
+  _grAuto = v;
+  if (v?.live) _grIgLive = v.live;
+  if (_g('gr-auto') === box) box.innerHTML = _grAutoHtml(v);
+  return v;
+}
+
+const _autoCarica = (cache, src) => new Promise((ok) => { if (!src) { ok(); return; } grafCaricaIn(cache, src, ok); });
+
+async function autoPrepara(v = null) {
+  v = v || await api('/api/streamer/automatiche').catch(() => null);
+  if (!v || (!v.conf.prima.attiva && !v.conf.settimana.attiva)) return v;
+  await grafFontPronti();
+  const c = grafConfig();
+  await Promise.all([_autoCarica(grafImg, c.sfondo === 'immagine' ? c.sfondoImg : ''), _autoCarica(grafLogo, c.logoImg)]);
+  const manda = (nome, immagine, extra = {}) => api('/api/streamer/automatiche/immagine', { method: 'POST', body: { nome, immagine, impronta: v.impronta, rev: v.rev, ...extra } });
+  if (v.conf.prima.attiva && v.ig) {
+    for (const sl of v.prima.slot) {
+      const cop = { el: null, pronto: false, src: '' };
+      const src = sl.categoriaId ? '/api/streamer/grafiche/copertina/' + sl.categoriaId : '';
+      await _autoCarica(cop, src);
+      const cc = { ...c, tipo: 'prossima', formato: 'storia', quandoTesto: '', _prossima: sl, _rif: sl.esce, _copertina: cop };
+      await manda(`prima-${sl.giorno}`, grafJpeg(cc), { anticipo: v.conf.prima.anticipo });
+    }
+  }
+  if (v.conf.settimana.attiva) {
+    const cs = { ...c, tipo: 'programmazione', giorni: grafGiorni() };
+    await manda('settimana-post', grafJpeg({ ...cs, formato: 'post' }), { testo: grafDidascalia(cs) });
+    await manda('settimana-storia', grafJpeg({ ...cs, formato: 'storia' }));
+  }
+  return api('/api/streamer/automatiche').catch(() => v);
 }
 
 function initGrafiche() {
@@ -5761,7 +5929,7 @@ function initGrafiche() {
     const auto = _grProssima ? _quandoProssima(_grProssima).giorno : '';
     if (q) q.placeholder = auto || L('es. Stasera alle 21:00', 'e.g. Tonight at 21:00', 'p. ej. Esta noche a las 21:00');
     if (da) {
-      const gioco = grafProssimaGioco();
+      const gioco = grafProssimaGioco(c);
       da.textContent = _grProssima
         ? L(`Dalla tua Settimana: ${auto}${gioco ? ' · ' + gioco : ''}. Lascialo vuoto e si aggiorna da solo.`, `From your Week: ${auto}${gioco ? ' · ' + gioco : ''}. Leave it empty and it updates itself.`, `De tu Semana: ${auto}${gioco ? ' · ' + gioco : ''}. Déjalo vacío y se actualiza solo.`)
         : L('Nella tua Settimana non c’è una diretta in programma: scrivi tu quando.', 'There is no stream planned in your Week: write when yourself.', 'En tu Semana no hay un directo previsto: escribe tú cuándo.');
@@ -5769,13 +5937,55 @@ function initGrafiche() {
   };
   const caricaProssima = () => api('/api/streamer/adesso').then((d) => {
     _grProssima = d?.prossima || null;
-    grafCaricaIn(grafCopertina, grafCopertinaSrc(), () => { mostraProssima(); ridisegna(); });
+    grafCaricaIn(grafCopertina, grafCopertinaSrc(c), () => { mostraProssima(); ridisegna(); });
   }).catch(() => {});
-  _grafRiprendi = () => { c.giorni = grafGiorni(); ridisegna(); caricaStoriaIg(); if (c.tipo === 'prossima') caricaProssima(); };
+  const riprendiAuto = () => caricaAuto().then((v) => {
+    if (v && Object.entries(v.pronte || {}).some(([n, ok]) => !ok && ((n.startsWith('prima') && v.conf.prima.attiva && v.ig) || (n.startsWith('settimana') && v.conf.settimana.attiva)))) {
+      autoPrepara(v).then(() => caricaAuto()).catch(() => {});
+    }
+  });
+  _grafRiprendi = () => { c.giorni = grafGiorni(); ridisegna(); caricaStoriaIg(); riprendiAuto(); if (c.tipo === 'prossima') caricaProssima(); };
   if (c.tipo === 'prossima') caricaProssima();
   caricaStoriaIg();
+  riprendiAuto();
   const storiaLive = () => grafJpeg({ ...c, tipo: 'live', formato: 'storia' });
-  document.getElementById('gr-ig')?.addEventListener('change', (ev) => {
+  const leggiAuto = (box) => ({
+    prima: { attiva: !!box.querySelector('[data-auto="prima"]')?.checked, anticipo: Number(box.querySelector('[data-auto-anticipo]')?.value) },
+    settimana: {
+      attiva: !!box.querySelector('[data-auto="settimana"]')?.checked, giorno: Number(box.querySelector('[data-auto-giorno]')?.value),
+      ora: box.querySelector('[data-auto-ora]')?.value || '18:00', chiedi: !!box.querySelector('[data-auto-chiedi]')?.checked,
+    },
+  });
+  document.getElementById('gr-auto')?.addEventListener('change', (ev) => {
+    const box = ev.currentTarget;
+    const t = ev.target;
+    if (!t.closest('[data-auto], [data-auto-anticipo], [data-auto-giorno], [data-auto-ora], [data-auto-chiedi]')) return;
+    const prima = _grAuto?.conf;
+    const conf = leggiAuto(box);
+    conErrore(async () => {
+      let v = await api('/api/streamer/automatiche', { method: 'POST', body: { conf } });
+      _grAuto = v;
+      box.innerHTML = _grAutoHtml(v);
+      const serve = (conf.prima.attiva && (!prima?.prima.attiva || prima.prima.anticipo !== conf.prima.anticipo)) || (conf.settimana.attiva && !prima?.settimana.attiva);
+      if (serve) { v = await autoPrepara(v); _grAuto = v; box.innerHTML = _grAutoHtml(v); }
+      toast(L('Pubblicazioni automatiche salvate ✓', 'Automatic posts saved ✓', 'Publicaciones automáticas guardadas ✓'));
+    });
+  });
+  document.getElementById('gr-auto')?.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-auto-conferma]');
+    if (!b || b.disabled) return;
+    b.disabled = true;
+    conErrore(async () => {
+      try {
+        const v = await api('/api/streamer/automatiche/conferma', { method: 'POST' });
+        _grAuto = v;
+        const box = _g('gr-auto');
+        if (box) box.innerHTML = _grAutoHtml(v);
+        toast(L('Settimana confermata ✓', 'Week confirmed ✓', 'Semana confirmada ✓'));
+      } finally { b.disabled = false; }
+    });
+  });
+  document.getElementById('gr-auto')?.addEventListener('change', (ev) => {
     const x = ev.target.closest('#gr-ig-live');
     if (!x) return;
     const accendi = x.checked;
@@ -5785,7 +5995,7 @@ function initGrafiche() {
         if (accendi) await grafFontPronti();
         await api('/api/streamer/grafiche/storia-live', { method: 'POST', body: accendi ? { attiva: true, immagine: storiaLive() } : { attiva: false } });
         toast(accendi ? L('Storia automatica accesa ✓', 'Automatic story on ✓', 'Historia automática activada ✓') : L('Storia automatica spenta', 'Automatic story off', 'Historia automática desactivada'));
-        await caricaStoriaIg();
+        await caricaAuto();
       } catch (e) { x.checked = !accendi; throw e; } finally { x.disabled = false; }
     });
   });
@@ -6271,8 +6481,9 @@ function initGrafiche() {
     if (_grIgLive?.attiva) {
       await grafFontPronti();
       await api('/api/streamer/grafiche/storia-live', { method: 'POST', body: { attiva: true, immagine: storiaLive() } });
-      await caricaStoriaIg();
     }
+    await autoPrepara();
+    await caricaAuto();
   }));
 
   document.querySelectorAll('[data-gr-dest]').forEach((b) => b.addEventListener('click', () => {
@@ -6696,10 +6907,10 @@ function _giornoNelFuso(ms, fuso) {
   return Date.UTC(+p.year, +p.month - 1, +p.day) / 86400000;
 }
 
-function _quandoProssima(p) {
+function _quandoProssima(p, adesso) {
   let fuso = p.fuso || 'Europe/Rome';
   try { new Intl.DateTimeFormat('en-GB', { timeZone: fuso }); } catch { fuso = 'Europe/Rome'; }
-  const ora = _oraServer();
+  const ora = Number(adesso) || _oraServer();
   const giorni = _giornoNelFuso(p.quando, fuso) - _giornoNelFuso(ora, fuso);
   const rtf = new Intl.RelativeTimeFormat(localePannello(), { numeric: 'auto' });
   const alle = L('alle', 'at', 'a las');

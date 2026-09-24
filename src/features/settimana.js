@@ -116,7 +116,7 @@ export const inOnda = (g) => !!g && !g.off && !!g.ora;
 
 // ── Twitch: il Programma del canale ────────────────────────────────────────
 
-const chiaveAtt = (att) => testo(att, ATT_MAX).toLowerCase();
+export const chiaveAtt = (att) => testo(att, ATT_MAX).toLowerCase();
 
 // LA PROSSIMA DIRETTA, da adesso: fra i giorni in onda, quello che arriva
 // prima. L'ora e' quella scritta, nel fuso della settimana, anche a cavallo del

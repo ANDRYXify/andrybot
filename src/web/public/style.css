@@ -1647,6 +1647,15 @@ body.leggero .scheletro::after, body.meno-moto .scheletro::after { animation: no
 .gr-ig:has(> .problema) { border: 0; background: none; padding: 0; }
 .gr-ig-azione { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .gr-ig-auto { margin-top: .8rem; padding-top: .7rem; border-top: 1px solid var(--acc-bordo); }
+.gr-auto { border: 1px solid var(--border); border-radius: var(--r-m); padding: .75rem .9rem; margin: 0 0 .9rem; }
+.gr-auto h3 { margin: 0 0 .2rem; font-size: 1rem; }
+.gr-auto > .suggerimento { margin: 0 0 .3rem; }
+.gr-auto-riga { padding: .65rem 0 .4rem; border-top: 1px solid var(--border); }
+.gr-auto-riga .riga-check { margin: 0; align-items: flex-start; }
+.gr-auto-riga .riga-check input { margin-top: .2rem; }
+.gr-auto-quanto { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: .4rem 0 .2rem 1.6rem; font-size: .9rem; }
+.gr-auto-tit { margin: 0 0 .35rem; }
+.gr-auto .gr-ig-auto { margin-top: 0; padding-top: 0; border-top: 0; }
 .gr-ig .problema { margin-top: .6rem; }
 .gr-misura { font-weight: 500; color: var(--testo-3); font-variant-numeric: tabular-nums; font-size: .82em; }
 

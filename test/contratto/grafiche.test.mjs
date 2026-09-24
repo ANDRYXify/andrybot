@@ -129,8 +129,9 @@ test('la storia e\' verticale, e «Manda» manda a ogni posto la sua forma', () 
   const manda = APP.slice(APP.indexOf("_g('sett-manda')?.addEventListener('click'"), APP.indexOf("const r = await api('/api/streamer/settimana/manda'"));
   assert.ok(manda.includes("corpo.immagine = grafJpeg({ ...c, formato: 'post' })"), 'ai canali il post');
   assert.ok(manda.includes("if (dove.ig) corpo.storia = grafJpeg({ ...c, formato: 'storia' })"), 'alla storia la storia');
-  const srv = SRV.slice(SRV.indexOf("app.post('/api/streamer/settimana/manda'"), SRV.indexOf("app.get('/api/streamer/grafiche/storia'"));
-  assert.ok(srv.length > 0 && srv.includes('esiti.push'), 'la rotta di «Manda», e solo lei');
+  const srv = SRV.slice(SRV.indexOf('async function mandaLaSettimana('), SRV.indexOf("app.get('/api/streamer/grafiche/storia'"));
+  assert.ok(srv.length > 0 && srv.includes('esiti.push'), 'la strada di «Manda», e solo lei');
+  assert.ok(srv.includes('esiti: await mandaLaSettimana(login, { byte, storia, testo, dove })'), 'la rotta passa di li\'');
   assert.ok(srv.includes('const storia = leggiJpeg(req.body?.storia) || byte;'), 'il server usa la storia per la storia');
   assert.ok(srv.includes('await storiaIg.pubblicaStoria(login, storia)'), 'e la pubblica da un posto solo');
   assert.ok(!/pubblicaStoria\(login, byte\)/.test(srv), 'mai il post nella storia, se la storia c\'e\'');
@@ -271,7 +272,8 @@ test('la copertina di un gioco arriva dal nostro indirizzo, e solo da Twitch', (
   assert.ok(!COP.test('https://static-cdn.jtvnw.net/ttv-boxart/../x/1-1080x1440.jpg'), 'e nemmeno una strada che esce');
   assert.ok(r.includes("['image/jpeg', 'image/png'].includes(tipo)"), 'solo immagini');
   assert.ok(r.includes("redirect: 'error'"), 'e niente rimandi verso altri posti');
-  assert.match(APP, /const grafCopertinaSrc = \(\) => \(_grProssima\?\.categoriaId \? '\/api\/streamer\/grafiche\/copertina\/' \+ _grProssima\.categoriaId : ''\);/, 'il pannello la chiede da li\'');
+  assert.ok(APP.includes("const grafCopertinaSrc = (c) => { const p = grafProssimaDi(c); return p?.categoriaId ? '/api/streamer/grafiche/copertina/' + p.categoriaId : ''; };"), 'il pannello la chiede da li\'');
+  assert.ok(APP.includes('const grafProssimaDi = (c) => c?._prossima || _grProssima;'), 'per la diretta che ha davanti, o per quella che gli si passa');
 });
 
 // POST E STORIA INSIEME. Lo stesso spostamento va ai due formati, ognuno dalla
