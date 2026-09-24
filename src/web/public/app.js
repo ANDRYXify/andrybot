@@ -18158,7 +18158,7 @@ function pannelloGiochi() {
       <h2>${_hIco(ICO.dado)}${L('Le regole di ogni gioco', 'Each game\'s rules', 'Las reglas de cada juego')}</h2>
       <p>${L('Costi, premi, attese, probabilità e testi, gioco per gioco. Accanto al nome vedi quanto rende con i valori che hai scelto, e cambia mentre li muovi.', 'Costs, prizes, waits, odds and texts, game by game. Next to the name you see what it pays out with the values you chose, and it changes as you move them.', 'Costes, premios, esperas, probabilidades y textos, juego por juego. Junto al nombre ves cuánto rinde con los valores que elegiste, y cambia mientras los mueves.')}</p>
       <div id="regole-giochi" class="spazio-sopra">${attesaHtml('p')}</div>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-regole">${L('Salva le regole', 'Save the rules', 'Guardar las reglas')}</button></p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-regole-giochi">${L('Salva le regole', 'Save the rules', 'Guardar las reglas')}</button></p>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.medaglia)}${L('Punti & classifica', 'Points & leaderboard', 'Puntos y clasificación')}</h2>
@@ -22373,7 +22373,7 @@ function attivaPiattaforma() {
   document.getElementById('btn-salva-gcmd-2')?.addEventListener('click', salvaGiochiComandi);
 
 
-  document.getElementById('btn-salva-regole')?.addEventListener('click', () => conErrore(async () => {
+  document.getElementById('btn-salva-regole-giochi')?.addEventListener('click', () => conErrore(async () => {
     const box = _g('regole-giochi');
     if (!box || !_regole) return;
     const giochiConf = {};

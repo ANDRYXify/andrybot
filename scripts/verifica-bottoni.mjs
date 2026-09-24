@@ -13,6 +13,8 @@
 // dito puntato, non un gestore — ed e' proprio cosi' che l'ultimo bottone morto
 // era passato inosservato.
 //
+// E un id non si ripete su due bottoni: il gestore ne raggiungerebbe uno solo.
+//
 // Fuori portata: input e select. Li' l'id fa spesso da aggancio all'etichetta
 // (<label for>) o vive in una tabella di corrispondenze, e un campo che si
 // limita a mostrare un valore non ha niente da agganciare. Il difetto "premo e
@@ -39,7 +41,18 @@ for (const f of FILE) {
   let s;
   try { s = readFileSync(f, 'utf8'); } catch { continue; }
   const ids = new Set();
-  for (const m of s.matchAll(/<button[^>]*?\bid="([a-zA-Z0-9_-]+)"/g)) ids.add(m[1]);
+  const volte = new Map();
+  for (const m of s.matchAll(/<button[^>]*?\bid="([a-zA-Z0-9_-]+)"/g)) { ids.add(m[1]); volte.set(m[1], (volte.get(m[1]) || 0) + 1); }
+
+  // LO STESSO ID SU DUE BOTTONI. Il gestore si aggancia con getElementById, che
+  // trova il primo nella pagina: il secondo bottone non fa niente, e il primo fa
+  // anche il lavoro dell'altro. Era cosi' «Salva le regole» dei Giochi, che
+  // premeva il salva della Moderazione.
+  for (const [id, n] of volte) {
+    if (n < 2) continue;
+    rotti++;
+    console.error(`✗ ${f}: il bottone «${id}» e' scritto ${n} volte — il gestore ne raggiunge uno solo.`);
+  }
 
   for (const id of [...ids].sort()) {
     contati++;
