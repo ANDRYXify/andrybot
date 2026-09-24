@@ -85,6 +85,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Il tutto schermo si ricorda per ogni scheda: acceso in Donazioni non si accende più anche in Pagina link, che resta col menù di lato finché non lo scegli lì.
 - [importante] Il boss è un pezzo dell'Overlay Studio: lo sposti, lo ingrandisci e lo vesti come gli altri, e lo spegni per ogni overlay. Nello Studio lo vedi com'è in onda. [vai: alert]
 - Nell'editor della pagina link e di quella delle donazioni l'anteprima resta ferma a metà schermo mentre scorri i campi. Sul telefono resta in cima, con «Salva e pubblica» sempre a portata. [vai: pagina]
+- Il testo che un comando mostra sull'overlay è un pezzo dello Studio: lo sposti, lo vesti (anche con un fondo) e lo spegni per ogni overlay. [vai: alert]
 
 ## 2026-09-23
 

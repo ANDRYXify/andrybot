@@ -507,6 +507,22 @@ export const normBoss = (x) => {
   };
 };
 
+// LE SCRITTE DEI MODULI in scena («Testo a schermo», docs/OVERLAY.md): cosa
+// dicono e quanto restano lo decide il modulo; qui se si vedono, dove stanno e
+// com'e' la loro veste. Di serie come prima: grandi, bianche, senza fondo, al
+// centro.
+export const VESTE_SCRITTA = { opacita: 0, testo: '#ffffff' };
+export const POS_SCRITTA = ['centro'];
+export const normScritta = (x) => {
+  x = x || {};
+  return {
+    attivo: x.attivo !== false,
+    posizione: unoDi(x.posizione, POS_SCRITTA, 'centro'),
+    xy: xyOk(x.xy),
+    stile: normWidgetStile({ ...VESTE_SCRITTA, ...(x.stile || {}) }),
+  };
+};
+
 // LA CLASSIFICA DEI BIT in scena. Le righe non sono nostre: sono quelle che da'
 // Twitch, e qui si sceglie solo quante mostrarne e di che periodo. Il periodo e'
 // uno dei cinque che Twitch conosce — inventarne un sesto vorrebbe dire

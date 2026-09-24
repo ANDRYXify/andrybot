@@ -1030,6 +1030,16 @@
 .ovl-boss.boss-via { animation: boss-via .6s ease-in forwards; }
 @keyframes boss-via { to { opacity: 0; } }
 
+.ovl-scritta { display: block; white-space: normal; text-align: center; padding: .1em .35em; font-weight: 800; line-height: 1.15; letter-spacing: .01em;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, .7), 0 0 2px rgba(0, 0, 0, .9); overflow-wrap: anywhere;
+  opacity: 0; translate: 0 .3em; scale: .98; transition: opacity .3s ease, translate .3s ease, scale .3s ease; }
+.ovl-scritta .scritta-corpo { max-width: 31.5em; }
+.ovl-scritta.dentro { opacity: 1; translate: none; scale: none; }
+.ovl-scritta.dim-piccola { font-size: 2rem; }
+.ovl-scritta.dim-media { font-size: 3.2rem; }
+.ovl-scritta.dim-grande { font-size: 4.4rem; }
+.ovl-scritta.dim-enorme { font-size: 6rem; }
+
 @media (prefers-reduced-motion: reduce) {
   .ovl-musica .m-disco, .ovl-musica .m-onde i, .ovl-musica.scorre .m-scorri, .ovl-timer.finito .t-num,
   .ovl-treno.t-treasure .tr-ico, .ovl-treno.t-golden-kappa .tr-ico,
@@ -1046,4 +1056,5 @@
   .ovl-boss.boss-via { animation: boss-via .6s ease-in forwards; }
   .ovl-boss .boss-danno { display: none; }
   .ovl-boss .boss-scia, .ovl-boss .boss-vita { transition: none; }
+  .ovl-scritta { transition: none; }
 }

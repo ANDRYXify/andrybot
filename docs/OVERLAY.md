@@ -1831,3 +1831,18 @@ niente numeri che volano, la vita salta.
 Quello che fa il boss (quando arriva, quanta vita, quanto dura) resta nella
 scheda Giochi: nello Studio lo sposti e lo vesti, e l'ispettore porta là.
 
+
+### Il testo a schermo
+
+Chiave `scritta`, configurazione `overlayScritta`, di serie accesa e al
+centro. È la scritta che un comando manda con «Mostra testo sull'overlay»: cosa
+dice e quanto resta lo decide il comando (scheda Comandi), qui c'è solo dove
+sta e com'è vestita. La veste di serie è quella di prima, grande (3,2rem a
+grandezza «media»), bianca e **senza fondo** (opacità 0): con la veste di tutti
+le si può dare un fondo, una cornice, un carattere.
+
+Due scritte che arrivano insieme si mettono una sotto l'altra: la posizione è
+del contenitore (`#testi`), come per la sfida a tempo, e ogni scritta dentro ha
+la veste. La larghezza di una scritta è quella del suo corpo, al massimo 31,5em
+(sulla tela e in onda sono la stessa misura, perché è in `em` e non in unità
+dello schermo, che nello Studio sarebbero quelle del pannello).

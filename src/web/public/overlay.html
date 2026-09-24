@@ -65,30 +65,8 @@
     .pillola.dentro { opacity: 1; transform: translateY(0); }
 
     
-    #testi {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      padding: 0 6vw;
-    }
-    .testo-overlay {
-      max-width: 84vw;
-      text-align: center;
-      color: #fff;
-      font-weight: 800;
-      font-size: 3.2rem;
-      line-height: 1.15;
-      letter-spacing: .01em;
-      text-shadow: 0 3px 18px rgba(0, 0, 0, .7), 0 0 2px rgba(0, 0, 0, .9);
-      opacity: 0;
-      transform: translateY(14px) scale(.98);
-      transition: opacity .3s ease, transform .3s ease;
-      word-break: break-word;
-    }
-    .testo-overlay.dentro { opacity: 1; transform: translateY(0) scale(1); }
+    #testi { position: fixed; display: flex; flex-direction: column; align-items: center; gap: .5rem; pointer-events: none; z-index: 6; }
+    #testi.centro { top: 50%; left: 50%; transform: translate(-50%, -50%); }
 
     
     #penitenze {
@@ -141,7 +119,7 @@
 <body>
   <div id="palco"></div>
   <div id="etichette"></div>
-  <div id="testi"></div>
+  <div id="testi" class="centro"></div>
   <div id="boss" class="alto-centro"></div>
   <div id="penitenze"></div>
   <div id="alert"></div>

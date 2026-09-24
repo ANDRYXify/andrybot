@@ -82,7 +82,7 @@ export default {
       ['Metti una canzone in coda', 'aggiunge un brano su Spotify', 'il brano, anche da <code>$args</code>', 'add-on Musica e Spotify collegato'],
       ['Annuncio in chat (/announce)', 'un messaggio evidenziato in chat', 'il testo e il colore', 'il permesso annunci'],
       ['Shoutout (banner)', 'lo shoutout ufficiale di Twitch', 'chi, o il nome dopo il comando, o chi ha raidato', 'il permesso shoutout'],
-      ['Mostra testo sull\'overlay', 'scrive a schermo nella diretta', 'il testo e per quanto', 'l\'overlay in scena'],
+      ['Mostra testo sull\'overlay', 'scrive a schermo nella diretta; dove e come si vede lo scegli nell\'Overlay Studio, elemento «Testo a schermo»', 'il testo e per quanto', 'l\'overlay in scena'],
       ['Timeout in chat', 'mette in pausa chi ha scritto', 'i secondi', 'il permesso di moderazione'],
       ['Aspetta', 'una pausa prima dell\'azione dopo', 'i secondi (fino a 30)', '—'],
       ['Chiama un webhook', 'manda i dati a un indirizzo tuo', 'l\'URL, e se usare la risposta', 'un servizio tuo'],

@@ -249,19 +249,43 @@ function suonaPreset(ev) {
   etichettaVolatile(ev.comando, 1600, false);
 }
 
+function scrittaAccesa() { return mostra('scritta') && !!MIO.scritta && MIO.scritta.attivo !== false; }
+
+function vestiScritta(el) {
+  const st = (MIO.scritta && MIO.scritta.stile) || {};
+  el.className = 'ovl-widget ovl-scritta dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna') + (el._dentro ? ' dentro' : '');
+  applicaVars(el, {
+    '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
+    '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
+  });
+}
+
+function posaScritte() { posizionaContenitore(testi, MIO.xy.scritta, 'centro'); }
+
 function mostraTesto(ev) {
   const t = String(ev.testo || '').slice(0, 400);
-  if (!t) return;
+  if (!t || !scrittaAccesa()) return;
   const durata = durataMs(ev, 5000);
   const el = document.createElement('div');
-  el.className = 'testo-overlay';
-  el.textContent = t;
+  const corpo = document.createElement('div');
+  corpo.className = 'scritta-corpo';
+  corpo.textContent = t;
+  el.appendChild(corpo);
   testi.appendChild(el);
-  requestAnimationFrame(() => el.classList.add('dentro'));
+  vestiScritta(el);
+  posaScritte();
+  requestAnimationFrame(() => { el._dentro = true; el.classList.add('dentro'); });
   setTimeout(() => {
+    el._dentro = false;
     el.classList.remove('dentro');
-    setTimeout(() => el.remove(), 320);
+    setTimeout(() => { el.remove(); posaScritte(); }, 320);
   }, durata);
+}
+
+function ridisegnaScritte() {
+  if (!scrittaAccesa()) { testi.textContent = ''; return; }
+  testi.querySelectorAll('.ovl-scritta').forEach(vestiScritta);
+  posaScritte();
 }
 
 let bossScena = null;
@@ -727,7 +751,7 @@ function ricevi(m) {
     else if (dati.tipo === 'treno') { MIO.trenoStato = dati.treno || null; disegnaTreno(); }
     else if (dati.tipo === 'bit') { if (Array.isArray(dati.righe)) MIO.bitRighe = dati.righe; disegnaBit(); }
     else if (dati.tipo === 'tema') caricaTema();
-    else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
+    else if (dati.tipo === 'testo') mostraTesto(dati);
     else if (dati.tipo === 'boss') boss(dati);
     else if (dati.tipo === 'contatore') contatore(dati);
     else if (dati.tipo === 'immagine' || dati.tipo === 'video') { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
@@ -1378,6 +1402,8 @@ function applicaTema(t) {
   disegnaTreno();
   MIO.boss = t.boss || null;
   ridisegnaBoss();
+  MIO.scritta = t.scritta || null;
+  ridisegnaScritte();
   MIO.bit = t.bit || null;
   if (MIO.bit && MIO.bit.attivo && mostra('bit')) chiediBit(); else { disegnaBit(); }
   if (MIO.musica && MIO.musica.attivo && mostra('musica')) chiediMusica(); else togliMusica();

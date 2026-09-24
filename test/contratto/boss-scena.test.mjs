@@ -39,7 +39,7 @@ test('e\' un elemento come gli altri, di qua e di la\' dal filo', () => {
   assert.ok(/\['boss', '#sez-boss'\]/.test(APP) && /<div class="asp-blocco" data-asp="boss" data-cfg-di="boss">/.test(APP), 'e nell\'ispettore il suo blocco');
   assert.ok(/if \(b\.overlayBoss !== undefined\) out\.overlayBoss = normBoss\(b\.overlayBoss\);/.test(SRV), 'il server ripulisce quello che arriva');
   assert.ok(/boss: normBoss\(base\.boss\),/.test(SRV), 'e all\'overlay lo manda completo');
-  assert.ok(/'overlayBoss', 'overlayCartelli'/.test(SRV), 'salvarlo avvisa gli overlay aperti');
+  assert.ok(/\['overlayCss'[^\]]*'overlayBoss'[^\]]*\]\.some\(\(k\) => k in out\)/.test(SRV), 'salvarlo avvisa gli overlay aperti');
 });
 
 test('in diretta si accende col suo interruttore, si veste e si posa come gli altri', () => {

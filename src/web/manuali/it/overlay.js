@@ -28,6 +28,7 @@ export default {
       ['Conto alla rovescia', 'Quanto manca all\'inizio della diretta. Con «parte da solo» parte appena lo accendi e ogni volta che un overlay si apre e lo trova fermo.', 'in alto a destra'],
       ['Sfida a tempo', 'La carta della penitenza riscattata coi punti canale: parola, colpi e tempo che manca.', 'in alto a destra'],
       ['Boss', 'La carta del boss di turno: nome, vita, tempo che resta, chi lo colpisce e quanto.', 'in alto al centro'],
+      ['Testo a schermo', 'La scritta che un comando manda con «Mostra testo sull\'overlay».', 'al centro'],
       ['Effetti & suoni', 'Immagini, video e suoni che partono da un comando o da un premio a punti.', 'al centro'],
     ] },
     { p: ['Sulla tela dello Studio ci sono <strong>tutti</strong>, obiettivi e contatori compresi: quello che vedi lì è quello che va in onda, nello stesso punto.'] },

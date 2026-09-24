@@ -96,7 +96,7 @@ if (!browser) { console.log('  –  saltato: manca Chromium o Playwright'); proc
 // il tema e il brano che il finto bot serve alla pagina dell'overlay: li scrive
 // l'editor, caso per caso, cosi' le due pagine vestono la stessa cosa
 let TEMA = null, MUSICA = { stato: 'niente' };
-const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, boss: true, effetti: true, consolify: true };
+const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, boss: true, scritta: true, effetti: true, consolify: true };
 const ovl = overlayFinto({ tema: () => TEMA, musica: () => MUSICA });
 const { base, chiudi } = await apriSito({ overlay: ovl });
 
@@ -401,6 +401,40 @@ try {
       `boss ${nome}: editor ${edBoss ? mis(edBoss) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvBoss ? mis(lvBoss) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
       'editor e diretta non coincidono');
     dice(testi[0] && testi[1] && testi[0].join('|') === testi[1].join('|'), `boss ${nome}: stesso nome, stessa vita, stessa barra — «${(testi[1] || []).slice(0, 2).join(' · ')}»`, JSON.stringify(testi));
+  }
+
+  // --- 6-quinquies. il testo a schermo -------------------------------------
+  // La scritta che un comando manda con «Mostra testo sull'overlay»: stessa
+  // grandezza e stesso posto sulla tela e in onda.
+  const SCR_VESTE = { dim: 'grande', sfondo: '#101820', opacita: 70, testo: '#ffe0a0', accento: '#22aa66', bordoRaggio: 8, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'linea' };
+  const DOVE_S = `(sel) => { const el = document.querySelector(sel); if (!el) return null;
+    const stage = document.getElementById('ap-stage'); const sc = stage ? stage.getBoundingClientRect().width / 1920 : 1;
+    const o = stage ? stage.getBoundingClientRect() : { left: 0, top: 0 }; const r = el.getBoundingClientRect();
+    return { x: (r.left - o.left) / sc, y: (r.top - o.top) / sc }; }`;
+  for (const [nome, xy, stile] of [['in un punto', { x: 30, y: 30, s: 100, r: 0 }, null], ['al suo angolo', null, null], ['vestito', { x: 60, y: 75, s: 90, r: 0 }, SCR_VESTE]]) {
+    const testo = await ed.evaluate(async ({ xy, stile }) => {
+      const c = _cfgEl('scritta'); c.attivo = true; c.stile = { ..._defScritta().stile, ...(stile || {}) };
+      const q = _ovXY(); for (const k of Object.keys(q)) delete q[k];
+      if (xy) q.scritta = { ...xy };
+      aggiornaAnteprima();
+      await new Promise((r) => setTimeout(r, 600));
+      return document.querySelector('#ap-scritta .scritta-corpo')?.textContent || '';
+    }, { xy, stile });
+    const edS = await misuraEd('#ap-scritta .ovl-scritta');
+    const edDove = await ed.evaluate(`(${DOVE_S})('#ap-scritta .ovl-scritta')`);
+    const stileS = { ...(await ed.evaluate(() => _defScritta().stile)), ...(stile || {}) };
+    TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: xy ? { scritta: xy } : {}, alertStile: null, chatStile: null,
+      scritta: { attivo: true, posizione: 'centro', xy: null, stile: stileS } };
+    await apriLive(() => window.MIO && window.MIO.scritta);
+    ovl.manda({ tipo: 'testo', testo, durata: 60000 });
+    await live.waitForFunction(() => document.querySelector('#testi .ovl-scritta.dentro'), null, { timeout: 5000 }).catch(() => {});
+    await attesa(600);
+    const lvS = await misuraLive('#testi .ovl-scritta');
+    const lvDove = await live.evaluate(`(${DOVE_S})('#testi .ovl-scritta')`);
+    dice(testo && edS && lvS && vicino(edS.w, lvS.w) && vicino(edS.h, lvS.h) && vicino(edS.font, lvS.font, 0.6)
+      && edDove && lvDove && vicino(edDove.x, lvDove.x, 2) && vicino(edDove.y, lvDove.y, 2),
+      `testo a schermo ${nome}: editor ${edS ? mis(edS) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvS ? mis(lvS) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
+      'editor e diretta non coincidono');
   }
 
   // --- 6-ter. i cartelli -----------------------------------------------------
