@@ -184,6 +184,58 @@ dice(due.scelti.length === 1 && due.scelti[0] === 2, 'sceglierne un altro sposta
   dice(!guai.length, `lo sfondo sta dove dice la regola: ${viste} misure, a due schermi, e il foglio sopra la copertina fissa uguale alla pagina`, guai.slice(0, 6).join(' · '));
 }
 
+// ---- ridisegnarsi non raddoppia niente, e l'editor resta dove sei ---------
+// Scegliere un tema pronto ridisegna l'editor. Gli ascoltatori dei clic
+// stavano sulla scatola, che resta, e a ogni disegno se ne aggiungeva un giro:
+// 5, 9, 17, 33, e un clic li faceva partire tutti. E il disegno nuovo riapriva
+// «Contenuti», portandoti via dalla scheda in cui avevi appena scelto.
+{
+  const cdp = await p.context().newCDPSession(p);
+  const ascolti = async (id) => {
+    const { result } = await cdp.send('Runtime.evaluate', { expression: `document.getElementById(${JSON.stringify(id)})` });
+    const { listeners } = await cdp.send('DOMDebugger.getEventListeners', { objectId: result.objectId });
+    return listeners.filter((l) => l.type === 'click').length;
+  };
+  const aperte = () => p.evaluate(() => [...document.querySelectorAll('.lp-tabs[data-gruppo]')]
+    .map((f) => f.dataset.gruppo + ':' + (f.querySelector('.lp-tab.sel')?.dataset.lptab || '')).join(' '));
+  const primo = await ascolti('lp-box');
+  const giri = [];
+  for (let i = 0; i < 3; i++) {
+    await p.evaluate(() => { document.querySelector('[data-lptab="aspetto"]').click(); document.querySelector('[data-lptab="asp-temi"]').click(); document.querySelectorAll('[data-lptema]')[1].click(); });
+    await p.waitForTimeout(500);
+    giri.push(await ascolti('lp-box'));
+  }
+  dice(giri.every((n) => n === primo), 'ridisegnare l\'editor non aggiunge ascoltatori', `${primo} → ${giri.join(' → ')}`);
+  const dove = await aperte();
+  dice(dove === 'testa:aspetto aspetto:asp-temi', 'dopo un tema pronto resti nella scheda da cui l\'hai scelto', dove);
+  await p.evaluate(() => document.querySelector('[data-lptab="contenuti"]').click());
+
+  // ---- la pagina delle donazioni segue l'aspetto della pagina link -------
+  // docs/DONAZIONI.md, «L'aspetto della pagina link». Con «Uguale alla pagina
+  // link» i comandi dell'aspetto non ci sono (cambiarli non cambierebbe
+  // niente) e al loro posto c'e' da dove viene; con «Tutto suo» tornano.
+  await p.evaluate(() => window.SB_APP.vai('donazioni'));
+  await p.waitForFunction(() => document.querySelector('#lp-box-dona .lp-editor'), null, { timeout: 20000 });
+  await p.evaluate(() => document.querySelectorAll('.giro-velo, .giro-carta').forEach((x) => x.remove()));
+  await p.evaluate(() => document.querySelector('#lp-box-dona [data-lptab="aspetto"]').click());
+  const vede = () => p.evaluate(() => {
+    const box = document.getElementById('lp-box-dona');
+    const si = (sel) => [...box.querySelectorAll(sel)].some((e) => e.offsetParent !== null);
+    return { scelta: si('input[data-lpaspetto]'), nota: si('.lp-segue-nota'), comandi: si('[data-lpk]') || si('.lp-tabs[data-gruppo="aspetto"]'), copia: si('[data-lpcopia]') };
+  });
+  const segue = await vede();
+  dice(segue.scelta && segue.nota && !segue.comandi && !segue.copia, 'uguale alla pagina link: la scelta e da dove viene, senza i comandi dell\'aspetto', JSON.stringify(segue));
+  await p.evaluate(() => document.querySelector('#lp-box-dona input[data-lpaspetto][value="suo"]').click());
+  const suo = await vede();
+  dice(suo.comandi && !suo.nota && suo.copia, 'tutto suo: tornano i comandi, e si puo\' partire da quello della pagina link', JSON.stringify(suo));
+  await p.evaluate(() => document.querySelector('#lp-box-dona [data-lpcopia]').click());
+  await p.waitForTimeout(400);
+  const dopoCopia = await aperte();
+  dice(dopoCopia.startsWith('testa:aspetto'), 'e dopo averlo copiato resti nell\'aspetto', dopoCopia);
+  const dona = await ascolti('lp-box-dona');
+  dice(dona <= primo, 'anche l\'editor delle donazioni non raddoppia gli ascoltatori', `${dona} contro ${primo}`);
+}
+
 dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · '));
 
 await b.close();

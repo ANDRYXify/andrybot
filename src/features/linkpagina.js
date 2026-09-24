@@ -464,6 +464,18 @@ export function accentoDi(pagina) {
   return (pagina?.tema && pagina.tema.accent) || pre.acc;
 }
 
+// L'ASPETTO DI UNA PAGINA (docs/DONAZIONI.md, «L'aspetto della pagina link»):
+// lo stile e il tema, cioe' quello della scheda «Aspetto» dell'editor. La
+// pagina delle donazioni con aspetto 'link' non ne tiene una copia: prende
+// quelli della pagina link salvata, nel momento in cui si mostra. Senza pagina
+// link non c'e' niente da seguire e resta il suo. Chiunque mostri la pagina
+// (la pagina, l'informativa, la carta dell'anteprima, l'anteprima del
+// pannello) passa da qui, cosi' nessuno la vede con un aspetto diverso.
+export function aspettoDi(pagina, link) {
+  if (!pagina || pagina.aspetto !== 'link' || !link) return pagina;
+  return { ...pagina, template: link.template, tema: link.tema };
+}
+
 // L'IMMAGINE DI SFONDO, spostata e in scala (docs/SFONDO-PAGINA.md). Il punto
 // (X, Y) dell'immagine sta sul punto (X, Y) dello schermo, e la grandezza e'
 // rispetto a «copre lo schermo»: una regola sola, che con l'immagine grande

@@ -127,6 +127,64 @@ manda il browser), e 1,2 s dopo l'avviso manda l'effetto in overlay con lo
 stesso payload del tasto «Prova» (`effects.payload`). «Rimanda l'avviso» dal
 registro non lo ripete.
 
+## L'aspetto della pagina link
+
+Chiesto così: «una pagina con il template della pagina link anche per la
+pagina delle donazioni».
+
+Le due pagine avevano la stessa forma ma due aspetti. Chi curava la pagina link
+(stile, colori, sfondo, caratteri, bottoni) si ritrovava la pagina delle
+donazioni com'era, e per farle somigliare doveva rifarla a mano, e rifarla a
+ogni ritocco. Due copie dello stesso aspetto prima o poi non tornano.
+
+**Cos'è l'aspetto.** È quello che si cambia nella scheda «Aspetto»
+dell'editor: lo stile (`template`) e il tema (`tema`: colori, sfondo e la sua
+immagine con posto e grandezza, caratteri, bottoni, animazioni, modi, CSS).
+Tutto il resto è contenuto e resta di ogni pagina: titolo, sottotitolo,
+immagine del profilo, l'anteprima del link, i blocchi.
+
+**La pagina delle donazioni può seguirlo.** Ha una scelta in più, `aspetto`:
+
+- `link`: segue la pagina link. Non ne tiene una copia: quando la pagina si
+  stampa prende lo stile e il tema della pagina link salvata. Un ritocco alla
+  pagina link cambia anche questa, e le due non possono divergere.
+- `suo`: il suo, come prima.
+
+Una pagina delle donazioni nuova parte da `link`. Una già salvata resta `suo`,
+perché il suo aspetto l'ha scelto qualcuno e cambiarlo in silenzio vorrebbe
+dire perderlo. Se la pagina link non esiste non c'è niente da seguire, e resta
+il suo: il pannello lo dice.
+
+**Una funzione sola decide l'aspetto** (`aspettoDi(dona, link)` in
+`features/linkpagina.js`), e la usa chiunque mostri la pagina: la pagina
+pubblica, la sua informativa (il tema dice come si caricano i contenuti di
+altri siti, e l'informativa lo racconta), l'immagine dell'anteprima del link,
+che prende il colore della pagina, e l'anteprima del pannello. Nessuno la può
+mostrare con un aspetto e un altro con un altro.
+
+**Salvare senza la scelta non la cambia.** Un salvataggio che non dice
+`aspetto` (un pannello aperto prima di questa regola) tiene quella che c'era.
+
+**Nel pannello.** Nell'editor della pagina delle donazioni, in cima ad
+«Aspetto»: «Uguale alla pagina link» o «Tutto suo». Con «Uguale alla pagina
+link» i comandi dell'aspetto lasciano il posto a una riga che dice da dove
+viene e porta alla pagina link, e l'anteprima mostra la pagina con
+quell'aspetto. Con «Tutto suo» tornano i comandi con l'aspetto che la pagina
+aveva, e «Parti da quello della pagina link» ne copia stile e tema, per
+cominciare da lì.
+
+**Due difetti dell'editor, trovati facendo questo.** Valgono per tutte e due
+le pagine. Gli ascoltatori dei clic stavano sulla scatola dell'editor, che
+resta quando l'editor si ridisegna, e a ogni disegno se ne aggiungeva un giro:
+dopo tre temi pronti un clic partiva otto volte, e «Carica» poteva aprire più
+finestre. Ora la scatola ha un solo ascoltatore, che si sostituisce invece di
+sommarsi, e passa anche i comandi dei blocchi: prima li assegnava per conto
+suo chi disegna i blocchi, e due padroni della stessa proprietà si cancellano
+a vicenda. E il disegno nuovo riapriva «Contenuti»: scelto un tema pronto ti
+ritrovavi altrove. Ora l'editor ricorda le schede aperte (`LP.schede`) e le
+rimette a ogni disegno. `scripts/verifica-pagina-link.mjs` conta gli
+ascoltatori veri dopo tre disegni e guarda dove sei rimasto.
+
 ## L'immagine di chi dona
 
 Chiesto così: «da un prezzo definito dallo streamer in su, si possono mandare

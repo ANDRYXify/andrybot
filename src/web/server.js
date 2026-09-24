@@ -26,7 +26,7 @@ import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passke
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi, recensioni as recensioniDb } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
-import { renderLinkPage, renderInformativa, accentoDi } from '../features/linkpagina.js';
+import { renderLinkPage, renderInformativa, accentoDi, aspettoDi } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
 import { guscioVetrina, guscioPannello, META_VETRINA, VIA_LINGUA, indirizzoHome } from './vetrina-vista.js';
@@ -1742,7 +1742,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   async function datiCartaPagina(login, quale) {
     const s = streamers.get(login);
     const display = s?.display || login;
-    const p = (quale === 'dona' ? paginaDona : linkPage).conDefault(login, display);
+    const p = quale === 'dona' ? aspettoDi(paginaDona.conDefault(login, display), linkPage.get(login)) : linkPage.conDefault(login, display);
     const url = quale === 'dona' ? donazioni.urlPaginaDona(login) : `${config.baseUrl}/u/${login}`;
     const foto = p.avatar === 'no' ? '' : (p.avatar || await avatarDi(login) || '');
     return {
@@ -1813,7 +1813,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const s = streamers.get(login);
     res.set('Cache-Control', 'public, max-age=0, s-maxage=300');
     res.type('html').send(renderInformativa({
-      login, display: s?.display || login, baseUrl: config.baseUrl, pagina: p,
+      login, display: s?.display || login, baseUrl: config.baseUrl, pagina: aspettoDi(p, linkPage.get(login)),
       contatto: config.contattoPrivacy || '', quale: 'dona', urlTorna: donazioni.urlPaginaDona(login),
       sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)),
     }));
@@ -1887,14 +1887,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (e?.nuova) donazioneArrivata(login, e.d);
       if (e) grazie = { nome: e.d.user, importo: e.d.importo, valuta: e.d.valuta };
     }
-    const html = renderLinkPage(p, {
+    const link = linkPage.get(login);
+    const html = renderLinkPage(aspettoDi(p, link), {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
       sostieni: donazioni.datiSostieni(s?.settings, conti), grazie, dona: true,
       urlDona: donazioni.urlPaginaDona(login),
       // Chi arriva qui da un link diretto non ha mai visto la sua pagina. Il
       // collegamento compare solo se quella pagina esiste ed e' accesa: un
       // link verso il nulla e' peggio che non averlo.
-      urlLink: linkPage.get(login)?.attiva ? `${config.baseUrl}/u/${login}` : '',
+      urlLink: link?.attiva ? `${config.baseUrl}/u/${login}` : '',
       donatori: donatoriPer(login, p.blocchi),
       immagineAnteprima: immagineAnteprimaDi(login, 'dona'),
     });
@@ -2025,9 +2026,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const s = streamers.get(login);
     const display = s?.display || login;
     const p = paginaDona.conDefault(login, display);
+    const link = linkPage.get(login);
     res.json({
       url: donazioni.urlPaginaDona(login),
       pubblicata: paginaDona.esiste(login) && p.attiva,
+      // l'aspetto della pagina link, per mostrare da dove viene e per partire da li'
+      aspettoLink: link ? { template: link.template, tema: link.tema } : null,
       templates: TEMPLATE_LINKPAGE, fonts: FONT_LINKPAGE, icone: ICONE_LINKPAGE, tipi: TIPI_BLOCCO, limiti: LIMITI_LINKPAGE,
       avatarTwitch: await avatarDi(login, { aggiorna: true }),
       visite: null,
@@ -2036,9 +2040,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       pagina: {
         headline: p.vuota ? `Sostieni ${display}` : (p.headline || ''), tagline: p.tagline || '', template: p.template || 'minimal',
         avatar: p.avatar || '', tema: p.tema, blocchi: p.blocchi || [], attiva: p.attiva !== false, aggiornata: p.ts || null,
+        aspetto: p.aspetto,
       },
     });
   }));
+  // Un salvataggio che non dice l'aspetto (un pannello aperto prima di questa
+  // scelta) tiene quello che c'era: la scelta non si perde per omissione.
+  const aspettoInArrivo = (login, v) => (v === 'link' || v === 'suo' ? v : paginaDona.conDefault(login).aspetto);
   app.post('/api/paginadona', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const b = req.body || {};
@@ -2046,17 +2054,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const p = paginaDona.salva(login, {
       headline: b.headline, tagline: b.tagline, template: b.template, avatar: b.avatar, tema: b.tema,
       blocchi: await risolviCanaliYoutube(b.blocchi, login), attiva: b.attiva !== false,
+      aspetto: aspettoInArrivo(login, b.aspetto),
     });
     res.json({
       ok: true, url: donazioni.urlPaginaDona(login), pubblicata: !!p?.attiva, salvati: p?.blocchi?.length || 0, inviati,
-      pagina: { headline: p.headline, tagline: p.tagline, template: p.template, avatar: p.avatar, tema: p.tema, blocchi: p.blocchi, attiva: p.attiva, aggiornata: p.ts },
+      pagina: { headline: p.headline, tagline: p.tagline, template: p.template, avatar: p.avatar, tema: p.tema, blocchi: p.blocchi, attiva: p.attiva, aggiornata: p.ts, aspetto: p.aspetto },
     });
   }));
   app.post('/api/paginadona/anteprima', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const s = streamers.get(login);
     const b = req.body || {};
-    const finta = paginaDona.pulisci({ headline: b.headline, tagline: b.tagline, template: b.template, avatar: b.avatar, tema: b.tema, blocchi: await risolviCanaliYoutube(b.blocchi, login) });
+    const finta = aspettoDi(paginaDona.pulisci({ headline: b.headline, tagline: b.tagline, template: b.template, avatar: b.avatar, tema: b.tema,
+      blocchi: await risolviCanaliYoutube(b.blocchi, login), aspetto: aspettoInArrivo(login, b.aspetto) }), linkPage.get(login));
     const html = renderLinkPage(finta, {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
       sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)), manca: donazioni.cosaManca(s?.settings, contiDi(login)),

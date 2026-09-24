@@ -36,3 +36,36 @@ test('il blocco «Chi ha donato» si ripulisce: quanti fra 3 e 20, modo e period
   assert.deepEqual(p.blocchi.map((b) => [b.quanti, b.modo, b.periodo, b.titolo]), [[5, 'top', 'mese', 'Grazie a'], [4, 'ultimi', 'sempre', '']]);
   paginaDona.rimuovi('andry');
 });
+
+// L'ASPETTO DELLA PAGINA LINK (docs/DONAZIONI.md): la pagina delle donazioni
+// puo' seguire stile e tema della pagina link invece di tenerne una copia.
+test('l\'aspetto: una pagina nuova segue la pagina link, una gia\' salvata tiene il suo', async () => {
+  const { db } = await import('../../src/db.js');
+  assert.equal(paginaDona.conDefault('nuovo', 'Nuovo').aspetto, 'link', 'chi parte da zero parte dalla pagina link');
+  assert.equal(linkPage.conDefault('nuovo', 'Nuovo').aspetto, undefined, 'la pagina link non ha niente da seguire');
+  const p = paginaDona.salva('vecchio', { headline: 'x', template: 'neon', tema: { accent: '#00ff00' } });
+  assert.equal(p.aspetto, 'suo', 'senza dirlo, il suo');
+  db.prepare("UPDATE pagina_dona SET aspetto='' WHERE channel='vecchio'").run();
+  assert.equal(paginaDona.get('vecchio').aspetto, 'suo', 'salvata prima della scelta: il suo aspetto l\'ha scelto qualcuno');
+  assert.equal(paginaDona.salva('vecchio', { ...paginaDona.get('vecchio'), aspetto: 'link' }).aspetto, 'link');
+  assert.equal(paginaDona.salva('vecchio', { ...paginaDona.get('vecchio'), attiva: false }).aspetto, 'link', 'spegnerla non cambia la scelta');
+  assert.equal(paginaDona.salva('vecchio', { ...paginaDona.get('vecchio'), aspetto: 'boh' }).aspetto, 'suo', 'solo i due valori noti');
+  assert.equal(linkPage.salva('vecchio', { headline: 'l', aspetto: 'link' }).aspetto, undefined, 'e la pagina link non la prende');
+  paginaDona.rimuovi('vecchio'); linkPage.rimuovi('vecchio');
+});
+
+test('una funzione sola decide l\'aspetto: stile e tema dalla pagina link, il resto suo', async () => {
+  const { aspettoDi, accentoDi } = await import('../../src/features/linkpagina.js');
+  const link = linkPage.salva('segue', { headline: 'I miei link', template: 'neon', avatar: 'no',
+    tema: { accent: '#123456', sfondoTipo: 'gradiente', bg: '#000000', bg2: '#ffffff', consenso: 'chiedi' }, blocchi: [{ tipo: 'titolo', testo: 'link' }] });
+  const dona = paginaDona.salva('segue', { headline: 'Sostienimi', tagline: 'un caffè', template: 'retro', avatar: '',
+    tema: { accent: '#abcdef' }, blocchi: [{ tipo: 'sostieni', titolo: 'Caffè' }], aspetto: 'link' });
+  const vista = aspettoDi(dona, link);
+  assert.equal(vista.template, 'neon'); assert.deepEqual(vista.tema, link.tema, 'tutto il tema, anche come si caricano i contenuti di altri siti');
+  assert.deepEqual([vista.headline, vista.tagline, vista.avatar, vista.blocchi], [dona.headline, dona.tagline, dona.avatar, dona.blocchi], 'i contenuti restano suoi');
+  assert.equal(accentoDi(vista), '#123456', 'e la carta dell\'anteprima prende il colore che si vede');
+  assert.equal(dona.tema.accent, '#abcdef', 'il suo aspetto resta salvato, per quando torna «tutto suo»');
+  assert.equal(aspettoDi({ ...dona, aspetto: 'suo' }, link).tema.accent, '#abcdef', 'tutto suo: il suo');
+  assert.equal(aspettoDi(dona, null), dona, 'senza pagina link non c\'e\' niente da seguire');
+  paginaDona.rimuovi('segue'); linkPage.rimuovi('segue');
+});

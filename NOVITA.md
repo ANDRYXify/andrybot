@@ -79,6 +79,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Il boss risponde a chi lo colpisce: poco dopo il primo colpo, e poi al massimo ogni venti secondi, il bot scrive chi ha colpito e quanto, la vita che resta e i secondi che mancano. [vai: giochi]
 - [importante] Nelle Grafiche c'è «In automatico»: la storia «Stasera alle…» esce da sola prima di ogni diretta, e la settimana esce il giorno che scegli, dopo che l'hai confermata dalla mail o dal pannello. [vai: grafiche]
 - Col tutto schermo acceso, passando a una scheda che non lo usa il menù torna di lato disegnandosi, e tornando si disfa prima di sparire. Anche riaprirlo mentre si sta chiudendo lo ridisegna.
+- [importante] La pagina delle donazioni può avere l'aspetto della pagina link e seguirlo quando lo cambi: nell'editor, in «Aspetto», scegli «Uguale alla pagina link». [vai: donazioni]
+- Nell'editor della pagina link e di quella delle donazioni, dopo un tema pronto resti nella scheda in cui eri, e i tasti scattano una volta sola anche dopo tanti ritocchi.
 
 ## 2026-09-23
 

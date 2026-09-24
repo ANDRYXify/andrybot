@@ -1538,7 +1538,9 @@ function _demoGet(via) {
     ] },
     '/api/passkey': [ { id: 'demo', nome: 'iPhone di Andryx', quando: '2026-04-10' } ],
   };
-  F['/api/paginadona'] = { ...F['/api/linkpage'], url: 'https://dona.socialbot.live/andryxify', pagina: { ...F['/api/linkpage'].pagina, headline: 'Sostieni ANDRYXify', tagline: 'Se ti piace quello che faccio, un caffè aiuta a farne di più.', blocchi: [{ tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: '', etichetta: '', obiettivo: true, icona: 'cuore' }] } };
+  F['/api/paginadona'] = { ...F['/api/linkpage'], url: 'https://dona.socialbot.live/andryxify',
+    aspettoLink: { template: F['/api/linkpage'].pagina.template, tema: F['/api/linkpage'].pagina.tema },
+    pagina: { ...F['/api/linkpage'].pagina, aspetto: 'link', headline: 'Sostieni ANDRYXify', tagline: 'Se ti piace quello che faccio, un caffè aiuta a farne di più.', blocchi: [{ tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: '', etichetta: '', obiettivo: true, icona: 'cuore' }] } };
   const statoDona = { paginaUrl: 'https://dona.socialbot.live/andryxify', conto: { stato: 'nessuno', coda: '', nota: '' }, satispay: { stato: 'nessuno', coda: '', nota: '' }, kofi: { stato: 'nessuno', pagina: '', token: false, valuta: 'EUR', webhook: 'https://socialbot.live/dona/kofi/andryxify' }, riepilogo: { oggi: [], mese: [], anno: [], sempre: [] }, ultime: [], daApprovare: [] };
   F['/api/donazioni/stato'] = statoDona; F['/api/donazioni/stato?rileggi=1'] = statoDona;
   const cartaPag = (quale) => ({ quale, mia: false, disegnabile: true, immagine: '',
@@ -17447,7 +17449,7 @@ function disegnaCartaPagina() {
 }
 function lpIntroHtml(d) {
   const intro = LP.quale === 'dona'
-    ? L('La pagina delle donazioni: chi la apre trova le offerte e il modulo, con lo stile che scegli qui. Il suo indirizzo è', 'The donations page: whoever opens it finds the offers and the form, in the style you pick here. Its address is', 'La página de donaciones: quien la abre encuentra las ofertas y el formulario, con el estilo que eliges aquí. Su dirección es')
+    ? L('La pagina delle donazioni: chi la apre trova le offerte e il modulo, con l\'aspetto della tua pagina link o con uno suo. Il suo indirizzo è', 'The donations page: whoever opens it finds the offers and the form, with your link page look or one of its own. Its address is', 'La página de donaciones: quien la abre encuentra las ofertas y el formulario, con el aspecto de tu página de enlaces o con uno propio. Su dirección es')
     : L('Una pagina pubblica con tutti i tuoi link, da mettere nella bio di Instagram o TikTok. Il suo indirizzo è', 'A public page with all your links, to put in your Instagram or TikTok bio. Its address is', 'Una página pública con todos tus enlaces, para poner en la bio de Instagram o TikTok. Su dirección es');
   return `<p class="suggerimento">${intro}
       <strong>${esc((d.url || '').replace(/^https?:\/\//, '') || 'socialbot.live/u/…')}</strong></p>
@@ -17463,7 +17465,7 @@ function lpIntroHtml(d) {
   })}`;
 }
 
-const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link' };
+const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', schede: { testa: 'contenuti', aspetto: 'asp-temi' } };
 const lpApi = () => (LP.quale === 'dona' ? '/api/paginadona' : '/api/linkpage');
 
 const _tema = (o) => ({ sfondoTipo: 'tinta', bg: '', bg2: '', angolo: 160, sfondoUrl: '', effetto: 'nessuno',
@@ -17562,6 +17564,42 @@ const lpRng = (k, eti, min, max, val, suf = '') => `
             <input type="range" data-lpk="${k}" aria-label="${esc(eti)}" min="${min}" max="${max}" value="${val}">`;
 
 const _lpCasa = () => (LP.quale === 'dona' ? 'lp-box-dona' : 'lp-box');
+
+function lpApriSchede(box) {
+  for (const fila of box.querySelectorAll('.lp-tabs[data-gruppo]')) {
+    const gruppo = fila.dataset.gruppo;
+    const tasti = [...fila.querySelectorAll('[data-lptab]')];
+    const quale = tasti.some((b) => b.dataset.lptab === LP.schede[gruppo]) ? LP.schede[gruppo] : tasti[0]?.dataset.lptab;
+    tasti.forEach((b) => { b.classList.toggle('sel', b.dataset.lptab === quale); b.setAttribute('aria-selected', String(b.dataset.lptab === quale)); });
+    for (const p of box.querySelectorAll(`.lp-pane[data-gruppo="${gruppo}"]`)) p.hidden = p.dataset.pane !== quale;
+  }
+}
+
+const lpSegueLink = () => LP.quale === 'dona' && LP.aspetto === 'link' && !!LP.d?.aspettoLink;
+function lpSegue(box) {
+  box.querySelector('.lp-editor')?.classList.toggle('lp-segue-link', lpSegueLink());
+  const copia = box.querySelector('.lp-segue-copia');
+  if (copia) copia.hidden = LP.aspetto === 'link';
+  const senza = box.querySelector('.lp-segue-senza');
+  if (senza) senza.hidden = LP.aspetto !== 'link';
+}
+function lpSegueHtml(d) {
+  const segue = LP.aspetto === 'link';
+  return `<div class="carta lp-segue" role="radiogroup" aria-label="${esc(L('Aspetto di questa pagina', 'Look of this page', 'Aspecto de esta página'))}">
+      <label class="riga-check"><input type="radio" name="lp-aspetto" data-lpaspetto value="link"${segue ? ' checked' : ''}> ${L('Uguale alla pagina link', 'Same as the link page', 'Igual que la página de enlaces')}</label>
+      <label class="riga-check"><input type="radio" name="lp-aspetto" data-lpaspetto value="suo"${segue ? '' : ' checked'}> ${L('Tutto suo', 'Its own', 'Propio')}</label>
+      ${d.aspettoLink
+    ? `<p class="lp-segue-copia spazio-sopra"${segue ? ' hidden' : ''}><button type="button" class="btn secondario mini" data-lpcopia>${L('Parti da quello della pagina link', 'Start from the link page one', 'Parte del de la página de enlaces')}</button></p>`
+    : `<p class="suggerimento lp-segue-senza"${segue ? '' : ' hidden'}>${L('Non hai ancora una pagina link: finché non c\'è, questa pagina tiene il suo aspetto.', 'You don\'t have a link page yet: until you do, this page keeps its own look.', 'Aún no tienes página de enlaces: hasta que exista, esta página mantiene su aspecto.')}</p>`}
+    </div>`;
+}
+function lpSegueNotaHtml(d) {
+  if (!d.aspettoLink) return '';
+  return `<div class="carta lp-segue-nota">
+      <p>${L('Stile, colori, sfondo, caratteri e bottoni sono quelli della tua pagina link: li cambi là, e cambiano anche qui.', 'Style, colours, background, fonts and buttons are your link page ones: change them there, and they change here too.', 'Estilo, colores, fondo, tipografía y botones son los de tu página de enlaces: los cambias allí, y cambian también aquí.')}</p>
+      <p class="spazio-sopra"><button type="button" class="btn secondario" data-lp-vai="pagina">${_bIco(ICO.condividi)}${L('Apri la pagina link', 'Open the link page', 'Abrir la página de enlaces')}</button></p>
+    </div>`;
+}
 async function caricaPaginaLink(ridisegna = false, quale = null) {
   if (quale && quale !== LP.quale) { LP.quale = quale; LP.d = null; ridisegna = false; }
   const box = document.getElementById(_lpCasa()); if (!box) return;
@@ -17579,6 +17617,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
     LP.tema = { ...(pag.tema || {}) };
     LP.blocchi = (pag.blocchi || []).length ? pag.blocchi.map((b) => ({ ...b })) : (dati.suggeriti || []).map((b) => ({ ...b }));
     LP.testa = { headline: pag.headline || '', tagline: pag.tagline || '', template: pag.template || 'minimal', avatar: pag.avatar || '' };
+    LP.aspetto = LP.quale === 'dona' ? (pag.aspetto === 'link' ? 'link' : 'suo') : '';
   }
   const d = LP.d;
 
@@ -17655,6 +17694,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
         </div>
 
         <div class="lp-pane" data-gruppo="testa" data-pane="aspetto" hidden>
+        ${LP.quale === 'dona' ? lpSegueHtml(d) : ''}
         <div class="lp-tabs lp-tabs-min" data-gruppo="aspetto" role="tablist">
           <button type="button" class="lp-tab sel" data-lptab="asp-temi">${L('Temi', 'Themes', 'Temas')}</button>
           <button type="button" class="lp-tab" data-lptab="asp-impianto">${L('Impianto', 'Layout', 'Estructura')}</button>
@@ -17690,6 +17730,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
           <div id="lp-campi"></div>
         </div>
         <div class="lp-pane" data-gruppo="testa" data-pane="aspetto" hidden>
+        ${LP.quale === 'dona' ? lpSegueNotaHtml(d) : ''}
         <div class="lp-pane" data-gruppo="aspetto" data-pane="asp-temi">
           <div class="carta">
             ${temiProntiHtml(LP.tema._pronto)}
@@ -17903,6 +17944,8 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
   lpSfondoPresa(box);
   lpRegolaSfondo({ solo: 'mancanti' });
   lpRenderBlocchi();
+  lpApriSchede(box);
+  lpSegue(box);
   lpAnteprima();
 
   box.oninput = (ev) => {
@@ -17928,6 +17971,11 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
       if (tw) tw.hidden = t.value !== '';
     } else if (tt === 'avatarUrl') {
       LP.testa.avatar = t.value;
+    } else if (t.dataset.lpaspetto !== undefined) {
+      if (!t.checked) return;
+      LP.aspetto = t.value === 'link' ? 'link' : 'suo';
+      _lpSfFine?.();
+      lpSegue(box);
     } else if (t.dataset.lpb !== undefined) {
       lpLeggiBlocco(t);
     } else return;
@@ -17959,7 +18007,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
     lpRenderBlocchi(); lpAnteprima();
   };
 
-  box.addEventListener('click', (ev) => {
+  const suVista = (ev) => {
     const v = ev.target.closest('[data-lpvista]'); if (!v) return;
     const cornice = box.querySelector('#lp-cornice'); if (!cornice) return;
     const orizz = v.dataset.lpvista === 'schermo';
@@ -17967,26 +18015,20 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
     box.querySelector('.lp-editor')?.classList.toggle('orizz', orizz);
     box.querySelectorAll('.lp-vista-b').forEach((b) => b.classList.toggle('sel', b === v));
     requestAnimationFrame(lpScala);
-  });
-
-  box.addEventListener('click', (ev) => {
+  };
+  const suScheda = (ev) => {
     const t = ev.target.closest('[data-lptab]'); if (!t) return;
-    const quale = t.dataset.lptab;
-    const fila = t.closest('.lp-tabs');
-    const gruppo = fila.dataset.gruppo;
-    fila.querySelectorAll('.lp-tab').forEach((b) => b.classList.toggle('sel', b === t));
-    for (const p of box.querySelectorAll(`.lp-pane[data-gruppo="${gruppo}"]`)) p.hidden = p.dataset.pane !== quale;
-  });
-
-  box.addEventListener('click', (ev) => {
+    LP.schede[t.closest('.lp-tabs').dataset.gruppo] = t.dataset.lptab;
+    lpApriSchede(box);
+  };
+  const suTema = (ev) => {
     const t = ev.target.closest('[data-lptema]'); if (!t) return;
     const tema = TEMI_PRONTI.find((x) => x.id === t.dataset.lptema); if (!tema) return;
     LP.testa.template = tema.base;
     LP.tema = { ...tema.tema, _pronto: tema.id };
     caricaPaginaLink(true).then(lpAnteprima);
-  });
-
-  box.addEventListener('click', (ev) => {
+  };
+  const suCarica = (ev) => {
     const b = ev.target.closest('[data-lpup]'); if (!b) return;
     const dove = b.dataset.lpup;
     const f = document.createElement('input');
@@ -18021,12 +18063,24 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
       } finally { b.disabled = false; }
     });
     f.click();
-  });
+  };
+  const suAspetto = (ev) => {
+    if (ev.target.closest('[data-lpcopia]')) {
+      const a = LP.d?.aspettoLink; if (!a) return;
+      LP.testa.template = a.template || 'minimal';
+      LP.tema = JSON.parse(JSON.stringify(a.tema || {}));
+      caricaPaginaLink(true);
+      return;
+    }
+    const v = ev.target.closest('[data-lp-vai]');
+    if (v) vaiAScheda(v.dataset.lpVai);
+  };
+  box.onclick = (ev) => { for (const f of [lpClicBlocchi, suVista, suScheda, suTema, suCarica, suAspetto]) f(ev); };
 
   document.getElementById('lp-salva').onclick = () => conErrore(async () => {
     const r = await api(lpApi(), { method: 'POST', body: {
       headline: LP.testa.headline, tagline: LP.testa.tagline, template: LP.testa.template,
-      avatar: LP.testa.avatar, tema: LP.tema, blocchi: LP.blocchi, attiva: true,
+      avatar: LP.testa.avatar, tema: LP.tema, blocchi: LP.blocchi, attiva: true, aspetto: LP.aspetto || undefined,
     } });
     const scartati = Math.max(0, (r?.inviati || 0) - (r?.salvati || 0));
     const esito = document.getElementById('lp-esito');
@@ -18558,53 +18612,52 @@ function lpRenderBlocchi() {
     preso = -1;
     cont.querySelectorAll('.preso,.sopra').forEach((e) => e.classList.remove('preso', 'sopra'));
   };
+}
 
-  const casaLp = document.getElementById(_lpCasa()) || cont;
-  casaLp.onclick = (ev) => {
-    const op = ev.target.closest('[data-lpop]');
-    if (op) {
-      const i = Number(op.dataset.lpb);
-      if (op.dataset.lpop === 'via') LP.blocchi.splice(i, 1);
-      else if (op.dataset.lpop === 'dup' && LP.blocchi.length < (LP.d?.limiti?.blocchi || 40)) LP.blocchi.splice(i + 1, 0, JSON.parse(JSON.stringify(LP.blocchi[i])));
-      else if (op.dataset.lpop === 'su' && i > 0) LP.blocchi.splice(i - 1, 0, LP.blocchi.splice(i, 1)[0]);
-      else if (op.dataset.lpop === 'giu' && i < LP.blocchi.length - 1) LP.blocchi.splice(i + 1, 0, LP.blocchi.splice(i, 1)[0]);
-      lpRenderBlocchi(); lpAnteprima(); return;
-    }
-    const ve = ev.target.closest('[data-lpvia-emb]');
-    if (ve) {
-      const b2 = LP.blocchi[Number(ve.dataset.lpviaEmb)];
-      if (b2) { delete b2.sfondo; lpRenderBlocchi(); lpAnteprima(); }
-      return;
-    }
-    const ip = ev.target.closest('[data-lpico]');
-    if (ip) {
-      const i = Number(ip.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
-      if (ip.dataset.lpv !== undefined) { const j = Number(ip.dataset.lpv); if (b.voci?.[j]) b.voci[j].icona = ip.dataset.lpico; }
-      else { b.icona = ip.dataset.lpico; b._icoManuale = true; }
-      lpRenderBlocchi(); lpAnteprima(); return;
-    }
+function lpClicBlocchi(ev) {
+  const op = ev.target.closest('[data-lpop]');
+  if (op) {
+    const i = Number(op.dataset.lpb);
+    if (op.dataset.lpop === 'via') LP.blocchi.splice(i, 1);
+    else if (op.dataset.lpop === 'dup' && LP.blocchi.length < (LP.d?.limiti?.blocchi || 40)) LP.blocchi.splice(i + 1, 0, JSON.parse(JSON.stringify(LP.blocchi[i])));
+    else if (op.dataset.lpop === 'su' && i > 0) LP.blocchi.splice(i - 1, 0, LP.blocchi.splice(i, 1)[0]);
+    else if (op.dataset.lpop === 'giu' && i < LP.blocchi.length - 1) LP.blocchi.splice(i + 1, 0, LP.blocchi.splice(i, 1)[0]);
+    lpRenderBlocchi(); lpAnteprima(); return;
+  }
+  const ve = ev.target.closest('[data-lpvia-emb]');
+  if (ve) {
+    const b2 = LP.blocchi[Number(ve.dataset.lpviaEmb)];
+    if (b2) { delete b2.sfondo; lpRenderBlocchi(); lpAnteprima(); }
+    return;
+  }
+  const ip = ev.target.closest('[data-lpico]');
+  if (ip) {
+    const i = Number(ip.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
+    if (ip.dataset.lpv !== undefined) { const j = Number(ip.dataset.lpv); if (b.voci?.[j]) b.voci[j].icona = ip.dataset.lpico; }
+    else { b.icona = ip.dataset.lpico; b._icoManuale = true; }
+    lpRenderBlocchi(); lpAnteprima(); return;
+  }
 
-    const vi = ev.target.closest('[data-lpvia-img],[data-lpvia-col]');
-    if (vi) {
-      const i = Number(vi.dataset.lpviaImg ?? vi.dataset.lpviaCol);
-      const b = LP.blocchi[i]; if (!b) return;
-      if (vi.dataset.lpviaImg !== undefined) b.img = '';
-      else { b.colore = ''; b.coloreTesto = ''; }
-      lpRenderBlocchi(); lpAnteprima(); return;
+  const vi = ev.target.closest('[data-lpvia-img],[data-lpvia-col]');
+  if (vi) {
+    const i = Number(vi.dataset.lpviaImg ?? vi.dataset.lpviaCol);
+    const b = LP.blocchi[i]; if (!b) return;
+    if (vi.dataset.lpviaImg !== undefined) b.img = '';
+    else { b.colore = ''; b.coloreTesto = ''; }
+    lpRenderBlocchi(); lpAnteprima(); return;
+  }
+  const so = ev.target.closest('[data-lpsoc]');
+  if (so) {
+    const i = Number(so.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
+    if (so.dataset.lpsoc === 'piu') {
+      b.voci = b.voci || [];
+      const vuota = { griglia: { img: '', titolo: '', testo: '', url: '' }, numeri: { n: '', etichetta: '' },
+        faq: { d: '', r: '' } }[b.tipo] || { icona: 'link', url: '' };
+      if (b.voci.length < 12) b.voci.push({ ...vuota });
     }
-    const so = ev.target.closest('[data-lpsoc]');
-    if (so) {
-      const i = Number(so.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
-      if (so.dataset.lpsoc === 'piu') {
-        b.voci = b.voci || [];
-        const vuota = { griglia: { img: '', titolo: '', testo: '', url: '' }, numeri: { n: '', etichetta: '' },
-          faq: { d: '', r: '' } }[b.tipo] || { icona: 'link', url: '' };
-        if (b.voci.length < 12) b.voci.push({ ...vuota });
-      }
-      else b.voci.splice(Number(so.dataset.lpv), 1);
-      lpRenderBlocchi(); lpAnteprima();
-    }
-  };
+    else b.voci.splice(Number(so.dataset.lpv), 1);
+    lpRenderBlocchi(); lpAnteprima();
+  }
 }
 
 function lpAnteprimaCliccabile(f) {
@@ -18645,7 +18698,7 @@ function lpAnteprima() {
     try {
       const r = await api(lpApi() + '/anteprima', { method: 'POST', body: {
         headline: LP.testa.headline, tagline: LP.testa.tagline, template: LP.testa.template,
-        avatar: LP.testa.avatar, tema: LP.tema, blocchi: LP.blocchi,
+        avatar: LP.testa.avatar, tema: LP.tema, blocchi: LP.blocchi, aspetto: LP.aspetto || undefined,
       } });
       if (!r?.html) return;
 

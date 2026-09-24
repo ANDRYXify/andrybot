@@ -1098,6 +1098,11 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .lp-sf-velo { position: absolute; inset: 0; z-index: 2; cursor: grab; touch-action: none; box-shadow: inset 0 0 0 3px var(--acc); }
 .lp-sf-velo.presa { cursor: grabbing; }
 .lp-sf-tasti { display: flex; flex-wrap: wrap; gap: .4rem; }
+.lp-segue { display: grid; gap: .35rem; margin-bottom: .6rem; }
+.lp-segue-nota { display: none; }
+.lp-editor.lp-segue-link .lp-segue-nota { display: block; }
+.lp-editor.lp-segue-link .lp-tabs[data-gruppo="aspetto"],
+.lp-editor.lp-segue-link .lp-pane[data-gruppo="aspetto"] { display: none; }
 #lp-sf-muovi[aria-pressed="true"] { background: var(--acc-tint); color: var(--testo); }
 .lp-azioni { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .7rem; }
 .lp-azioni .btn { flex: 0 0 auto; }

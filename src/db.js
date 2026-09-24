@@ -879,6 +879,10 @@ aggiungiColonna('battute', 'risate', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('battute', 'schema', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('point_alerts', 'suono', "TEXT NOT NULL DEFAULT ''");   // suono PRESET sul riscatto (id preset)
 aggiungiColonna('point_alerts', 'opzioni', "TEXT NOT NULL DEFAULT ''"); // posizione + green screen dell'effetto (JSON)
+// La pagina delle donazioni puo' seguire l'aspetto della pagina link invece di
+// tenerne uno suo (docs/DONAZIONI.md, «L'aspetto della pagina link»). Vuoto =
+// salvata prima di questa scelta: tiene il suo.
+aggiungiColonna('pagina_dona', 'aspetto', "TEXT NOT NULL DEFAULT ''");
 // Effetti a schermo: posizione/dimensione/rotazione, gestite dall'Overlay Studio.
 aggiungiColonna('effects', 'posx', 'INTEGER');                          // % orizzontale (NULL = centrato)
 aggiungiColonna('effects', 'posy', 'INTEGER');                          // % verticale
@@ -3583,8 +3587,12 @@ export const visitePagina = {
 // Le pagine pubbliche hanno una forma sola (testa, tema, blocchi) e due
 // tavoli: la pagina link e la pagina delle donazioni. Lo store e' uno,
 // costruito sul nome della tabella: stessa pulizia, stesso salvataggio.
-const storePagina = (tabella) => ({
+// La pagina delle donazioni ha una scelta in piu', `aspetto`: 'link' segue lo
+// stile e il tema della pagina link, 'suo' tiene i suoi. Chi la mostra passa da
+// aspettoDi (features/linkpagina.js).
+const storePagina = (tabella, { conAspetto = false } = {}) => ({
   tabella,
+  conAspetto,
   _riga(r) {
     const leggi = (s, def) => { try { const p = JSON.parse(s || 'null'); return p && typeof p === 'object' ? p : def; } catch { return def; } };
     const tema = { ...TEMA_DEF, ...leggi(r.tema, {}) };
@@ -3596,7 +3604,9 @@ const storePagina = (tabella) => ({
       if (!tema.accent && r.accent) tema.accent = r.accent;
       if (!tema.bg && r.bg) tema.bg = r.bg;
     }
-    return { ...r, tema, blocchi, attiva: r.attiva !== 0 };
+    const out = { ...r, tema, blocchi, attiva: r.attiva !== 0 };
+    if (this.conAspetto) out.aspetto = r.aspetto === 'link' ? 'link' : 'suo';
+    return out;
   },
   get(channel) {
     const r = db.prepare(`SELECT * FROM ${this.tabella} WHERE channel=?`).get(String(channel).toLowerCase());
@@ -3606,7 +3616,8 @@ const storePagina = (tabella) => ({
     const r = this.get(channel);
     if (r) return r;
     return { channel: String(channel).toLowerCase(), headline: display || channel, tagline: '',
-      template: 'minimal', avatar: '', tema: { ...TEMA_DEF }, blocchi: [], attiva: true, ts: 0, vuota: true };
+      template: 'minimal', avatar: '', tema: { ...TEMA_DEF }, blocchi: [], attiva: true, ts: 0, vuota: true,
+      ...(this.conAspetto ? { aspetto: 'link' } : {}) };
   },
   esiste(channel) { return !!this.get(channel); },
 
@@ -3806,6 +3817,7 @@ const storePagina = (tabella) => ({
       avatar: av === 'no' ? 'no' : (urlOk(av) || ''),
       tema, blocchi,
       attiva: d.attiva !== false,
+      ...(this.conAspetto ? { aspetto: scelta(d.aspetto, ['link', 'suo'], 'suo') } : {}),
     };
   },
 
@@ -3825,18 +3837,17 @@ const storePagina = (tabella) => ({
       attiva: p.attiva === false ? 0 : 1,
       ts: now(),
     };
-    db.prepare(`INSERT INTO ${this.tabella} (channel, headline, tagline, template, accent, bg, links, avatar, tema, blocchi, attiva, ts)
-      VALUES (@channel,@headline,@tagline,@template,@accent,@bg,@links,@avatar,@tema,@blocchi,@attiva,@ts)
-      ON CONFLICT(channel) DO UPDATE SET headline=excluded.headline, tagline=excluded.tagline,
-        template=excluded.template, accent=excluded.accent, bg=excluded.bg, links=excluded.links,
-        avatar=excluded.avatar, tema=excluded.tema, blocchi=excluded.blocchi,
-        attiva=excluded.attiva, ts=excluded.ts`).run(v);
+    const colonne = ['channel', 'headline', 'tagline', 'template', 'accent', 'bg', 'links', 'avatar', 'tema', 'blocchi', 'attiva', 'ts'];
+    if (this.conAspetto) { v.aspetto = p.aspetto; colonne.push('aspetto'); }
+    db.prepare(`INSERT INTO ${this.tabella} (${colonne.join(', ')})
+      VALUES (${colonne.map((c) => '@' + c).join(',')})
+      ON CONFLICT(channel) DO UPDATE SET ${colonne.filter((c) => c !== 'channel').map((c) => `${c}=excluded.${c}`).join(', ')}`).run(v);
     return this.get(c);
   },
   rimuovi(channel) { db.prepare(`DELETE FROM ${this.tabella} WHERE channel=?`).run(String(channel).toLowerCase()); },
 });
 export const linkPage = storePagina('link_page');
-export const paginaDona = storePagina('pagina_dona');
+export const paginaDona = storePagina('pagina_dona', { conAspetto: true });
 
 // NB: distinto dai `counters` di sotto (store low-level usato dalle azioni dei moduli).
 // I VERBI DI UN CONTATORE: quali parole fanno cosa, e chi puo'.

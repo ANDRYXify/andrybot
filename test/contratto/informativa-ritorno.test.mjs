@@ -73,7 +73,8 @@ test('il server ha una rotta per ognuna, e l\'indirizzo corto le serve tutte e d
   assert.match(SRV, /quale: 'dona', urlTorna: donazioni\.urlPaginaDona\(login\)/);
   assert.ok(SRV.includes('const m = RE_DONA_IN_VIA.exec(req.path);') && SRV.includes('const RE_DONA_IN_VIA = new RegExp(`^/(${CANALE_IN_VIA})(/privacy)?/?$`, \'i\');'),
     'sull\'indirizzo corto passa anche /nome/privacy, sennò «Privacy» da lì dentro cadrebbe nel vuoto');
-  assert.match(SRV, /urlLink: linkPage\.get\(login\)\?\.attiva \? `\$\{config\.baseUrl\}\/u\/\$\{login\}` : ''/,
+  const dona = SRV.slice(SRV.indexOf("app.get('/dona/:login', wrap("), SRV.indexOf("app.get('/dona/:login', wrap(") + 1400);
+  assert.ok(dona.includes('const link = linkPage.get(login);') && /urlLink: link\?\.attiva \? `\$\{config\.baseUrl\}\/u\/\$\{login\}` : ''/.test(dona),
     'e il link a casa si passa solo se casa e\' accesa');
 });
 
@@ -83,5 +84,5 @@ test('l\'informativa della pagina delle donazioni usa il tema di QUELLA pagina',
   const i = SRV.indexOf("app.get('/dona/:user/privacy'");
   const corpo = SRV.slice(i, i + 900);
   assert.match(corpo, /const p = paginaDona\.get\(login\)/, 'legge la pagina delle donazioni');
-  assert.match(corpo, /pagina: p/, 'e da\' a lei il tema');
+  assert.match(corpo, /pagina: aspettoDi\(p, linkPage\.get\(login\)\)/, 'e da\' a lei il tema: il suo, o quello della pagina link se lo segue (docs/DONAZIONI.md)');
 });
