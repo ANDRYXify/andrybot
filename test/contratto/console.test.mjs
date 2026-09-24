@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { cartellaUsaEGetta } from '../aiuto.mjs';
+import { cartellaUsaEGetta, testoManuali } from '../aiuto.mjs';
 import { classifica, CLASSI } from '../../src/web/argine.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -283,6 +283,9 @@ test('nessun marchio altrui, in nessuna delle tre lingue', () => {
     const m = piatto.match(marchi);
     assert.equal(m, null, `${f}: marchio altrui — «${m && piatto.slice(Math.max(0, m.index - 40), m.index + 30)}»`);
   }
+  const manuali = testoManuali().replace(/\s*\n\s*(\/\/|\*)?\s*/g, ' ');
+  const mm = manuali.match(marchi);
+  assert.equal(mm, null, `i manuali: marchio altrui — «${mm && manuali.slice(Math.max(0, mm.index - 40), mm.index + 30)}»`);
 });
 
 test('la plancia sul telefono si apre solo di lato', () => {
@@ -751,7 +754,7 @@ test('collegare la regia è un clic: indirizzo e porta non si chiedono, si prova
   assert.match(app, /id="re-passo" hidden/, 'di partenza è nascosto: un clic e basta');
 
   // il manuale non deve piu' promettere una riga che nel programma non esiste
-  const man = readFileSync(join(RAD, 'src/web/manuali.js'), 'utf8');
+  const man = testoManuali();
   assert.ok(!man.includes('obsws://'), 'niente istruzioni per copiare una riga che non c\'è');
 });
 

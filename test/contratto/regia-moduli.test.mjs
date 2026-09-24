@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { cartellaUsaEGetta } from '../aiuto.mjs';
+import { cartellaUsaEGetta, testoManuali } from '../aiuto.mjs';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const leggi = (p) => readFileSync(join(RAD, p), 'utf8');
@@ -133,7 +133,7 @@ test('l\'editor offre la regia coi nomi letti in pagina, e i modelli pronti usan
 });
 
 test('manuale, vetrina e novita\' lo dicono', () => {
-  const man = leggi('src/web/manuali.js');
+  const man = testoManuali();
   assert.match(man, /'Regia: scena, muto o transizione', 'comanda il programma/);
   assert.match(man, /le quindici azioni/);
   assert.ok(!/quattordici azioni/.test(man));

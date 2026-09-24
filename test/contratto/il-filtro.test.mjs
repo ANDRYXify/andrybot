@@ -4,6 +4,7 @@
 // nome: Ruoli come ci si collega, Avvisi dove arrivano, Il server com'e' fatto,
 // Chi entra la porta, Il filtro cosa non si scrive.
 import test from 'node:test';
+import { testoManuali } from '../aiuto.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -12,7 +13,7 @@ import { dirname, join } from 'node:path';
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const APP = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
 const SRV = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
-const VETRINA = readFileSync(join(RAD, 'src/web/manuali.js'), 'utf8');
+const VETRINA = testoManuali();
 const VISTA = readFileSync(join(RAD, 'src/web/vetrina-vista.js'), 'utf8');
 
 const fetta = (t, da, a) => {

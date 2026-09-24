@@ -1,6 +1,7 @@
 // L'AUTONOMIA DEL BOT, letta nel codice: la decisione sta in un posto solo, il
 // pannello e il manuale dicono lo stesso numero, e quello che dice da solo si vede.
 import test from 'node:test';
+import { testoManuali } from '../aiuto.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -10,7 +11,7 @@ const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const BOT = readFileSync(join(RAD, 'src/bot.js'), 'utf8');
 const APP = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
 const SRV = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
-const MAN = readFileSync(join(RAD, 'src/web/manuali.js'), 'utf8');
+const MAN = testoManuali();
 
 test('parlare da solo parte da un momento della chat, non da un dado su un timer', () => {
   const battito = BOT.slice(BOT.indexOf('  _battitoAnima() {'), BOT.indexOf('  _valutaMomenti() {'));

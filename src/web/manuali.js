@@ -63,6 +63,14 @@ export function alternativeManuale(id) {
   return alt;
 }
 
+// La sezione di un manuale che parla di una scheda: il blocco h2 che lo
+// dichiara (`scheda: 'id'`). L'ancora si ricava dal suo titolo, come fa la
+// pagina, quindi punta sempre a una sezione che c'e'.
+const sezioneDi = (m, s) => {
+  const b = (m.corpo || []).find((x) => x.h2 && x.scheda === s);
+  return b ? '#' + ancora(b.h2) : '';
+};
+
 const altIndice = () => Object.fromEntries(LINGUE_DOC.filter((l) => manualiIn(l).length).map((l) => [l, `${SITO}${VIE[l].manuali}`]));
 
 //
@@ -78,7 +86,7 @@ export function aiutiPerScheda(l = 'it') {
       for (const s of g.schede || []) out[s] = { titolo: g.h1, via: `${VIE[x].guide}/${g.slug}${dentro}`, tipo: 'guida' };
     }
     for (const m of manualiIn(x)) {
-      for (const s of m.schede || []) out[s] = { titolo: m.h1, via: `${VIE[x].manuali}/${m.slug}`, tipo: 'manuale' };
+      for (const s of m.schede || []) out[s] = { titolo: m.h1, via: `${VIE[x].manuali}/${m.slug}${sezioneDi(m, s)}`, tipo: 'manuale' };
     }
     return out;
   }
@@ -91,7 +99,7 @@ export function aiutiPerScheda(l = 'it') {
     for (const s of g.schede || []) out[s] = { titolo: g.h1, via: `/guide/${g.slug}${dentro}`, tipo: 'guida' };
   }
   for (const m of MANUALI) {
-    for (const s of m.schede || []) out[s] = { titolo: m.h1, via: `/manuale/${m.slug}`, tipo: 'manuale' };
+    for (const s of m.schede || []) out[s] = { titolo: m.h1, via: `/manuale/${m.slug}${sezioneDi(m, s)}`, tipo: 'manuale' };
   }
   return out;
 }

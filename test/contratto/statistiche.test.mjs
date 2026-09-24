@@ -6,6 +6,7 @@
 // gia' fatto altrove e i due numeri si scollino. Percio' si controlla che le
 // dirette vengano dai RAPPORTI e non da un secondo giro sul database.
 import test from 'node:test';
+import { testoManuali } from '../aiuto.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -75,7 +76,7 @@ test('la scheda c\'e\', il menu la porta, e le classifiche non restano anche dov
 });
 
 test('il manuale e la vetrina la raccontano, e la novita\' dice dove andare', () => {
-  const man = leggi('src/web/manuali.js');
+  const man = testoManuali();
   assert.match(man, /schede: \['regia', 'dirette', 'statistiche', 'ascolto', 'clip', 'musica'\]/);
   assert.match(man, /\{ h2: 'Le statistiche e le classifiche' \}/);
   const vet = leggi('src/web/vetrina-vista.js');
