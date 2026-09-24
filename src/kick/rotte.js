@@ -75,7 +75,7 @@ export function montaKick(app, { requireLogin, currentUser, wrap, suMessaggio, s
         return male('Kick non ha detto chi sei: riprova');
       }
       let esito;
-      try { esito = await registra(req, { userId: io.userId, nome: io.nome, token }); }
+      try { esito = await registra(req, { userId: io.userId, nome: io.nome, foto: io.foto, token }); }
       catch (e) { log.error('registrazione Kick fallita:', e?.message || e); return male('non sono riuscito a crearti il canale'); }
       if (!esito?.login) return male(esito?.errore || 'non sono riuscito a crearti il canale');
 

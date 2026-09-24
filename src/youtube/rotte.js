@@ -64,7 +64,7 @@ export function montaYoutube(app, { requireLogin, currentUser, wrap, registra })
 
     if (registrazione) {
       let creato;
-      try { creato = await registra(req, { canaleId: io.canaleId, nome: io.nome, maniglia: io.maniglia, token }); }
+      try { creato = await registra(req, { canaleId: io.canaleId, nome: io.nome, maniglia: io.maniglia, foto: io.foto, token }); }
       catch (e) { log.error('registrazione YouTube fallita:', e?.message || e); return male('non sono riuscito a crearti il canale'); }
       if (!creato?.login) return male(creato?.errore || 'non sono riuscito a crearti il canale');
       log.info(`@${creato.login}: entrato con YouTube (${io.nome || '?'}, canale ${io.canaleId})`);

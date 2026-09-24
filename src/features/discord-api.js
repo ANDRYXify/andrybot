@@ -994,7 +994,8 @@ export async function scambiaCodice({ clientId, clientSecret, redirectUri, codic
       dentro = !!e.ok;
       if (!e.ok) log.warn(`porta d'ingresso: non e' entrato nel server — ${e.errore || 'motivo non detto'}`);
     }
-    return { ok: true, id, nome: String(me?.global_name || me?.username || ''), dentro };
+    const foto = /^[a-z0-9_]{6,64}$/i.test(String(me?.avatar || '')) ? `https://cdn.discordapp.com/avatars/${id}/${me.avatar}.png?size=256` : '';
+    return { ok: true, id, nome: String(me?.global_name || me?.username || ''), foto, dentro };
   } catch (e) {
     log.warn('scambiaCodice:', e?.message || e);
     return { ok: false, errore: 'Discord irraggiungibile' };

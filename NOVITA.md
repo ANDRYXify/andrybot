@@ -46,6 +46,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nell'Overlay Studio, nelle Grafiche, nella Pagina link e nelle Donazioni c'è «Tutto schermo»: il menù lascia il lato e la pagina prende tutta la larghezza. [vai: alert]
 - A tutto schermo il menù aspetta sul bordo sinistro: ci arrivi col cursore e si disegna, lo lasci e si disfa. Nello Studio il menù resta di lato finché non scegli tu. [vai: alert]
 - I suggerimenti che compaiono passando sopra ai tasti sono più leggeri e si disegnano a matita, e dopo un clic dicono la cosa giusta.
+- Chi condivide socialbot.live/en o socialbot.live/es vede l'anteprima del link in inglese o in spagnolo, come la pagina.
+- La tua pagina link, e la sua anteprima nelle chat, mostrano la tua foto anche se entri con Kick, YouTube o Discord, dal prossimo accesso. [vai: pagina]
 
 ## 2026-09-23
 

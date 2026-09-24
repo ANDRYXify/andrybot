@@ -84,6 +84,20 @@ const IMMAGINI = {
   // La pagina del sostegno ha la SUA carta. Con quella del sito diceva «il bot
   // che in chat scrive con il tuo nome»: vera, ma di un'altra pagina — e chi
   // riceve il link in chat legge l'anteprima, non l'indirizzo.
+  'og-en.png': pagina({
+    occhiello: 'Twitch and Kick',
+    titolo: 'The bot that writes in chat',
+    evidenza: 'under your own name',
+    sotto: 'A viewer types <strong>!social</strong> and your account answers, not a bot. Commands, moderation, <strong>stream overlays</strong>, clips and live alerts.',
+    pastiglie: ['Under your name', 'Overlays and effects', 'In English', 'Free'],
+  }),
+  'og-es.png': pagina({
+    occhiello: 'Twitch y Kick',
+    titolo: 'El bot que en el chat escribe',
+    evidenza: 'con tu nombre',
+    sotto: 'Un espectador escribe <strong>!social</strong> y responde tu cuenta, no un bot. Comandos, moderación, <strong>overlays para el directo</strong>, clips y avisos en directo.',
+    pastiglie: ['Con tu nombre', 'Overlays y efectos', 'En español', 'Gratis'],
+  }),
   'og-sostieni.png': pagina({
     occhiello: 'Sostieni',
     titolo: 'SocialBot lo scrivo io,',

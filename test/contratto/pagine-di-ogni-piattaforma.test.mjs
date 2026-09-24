@@ -32,3 +32,28 @@ test('gli indirizzi corti riconoscono i canali di ogni piattaforma', () => {
   assert.deepEqual(dona.exec('/yt.nome/privacy')?.slice(1), ['yt.nome', '/privacy']);
   assert.equal(dona.exec('/../privacy'), null);
 });
+
+// E LA FOTO. La pagina link e la sua anteprima mostrano la foto dello
+// streamer: di chi entra con Twitch la dava Helix, di chi entra con Kick,
+// YouTube o Discord nessuno, e l'anteprima di quei canali usciva senza faccia.
+// La foto la dice la piattaforma al login; il server la scarica per ripassarla,
+// quindi si tiene solo un indirizzo delle piattaforme.
+test('la foto di chi entra con Kick, YouTube o Discord arriva dal login, e solo dalle piattaforme', async () => {
+  const risposta = (dati) => async () => ({ ok: true, status: 200, text: async () => JSON.stringify(dati) });
+  const kick = await import('../../src/kick/api.js');
+  const k = await kick.chiSono('t', { fetchImpl: risposta({ data: [{ user_id: 7, name: 'pippo', profile_picture: 'https://files.kick.com/images/user/7/profile_image/x.webp' }] }) });
+  assert.equal(k.foto, 'https://files.kick.com/images/user/7/profile_image/x.webp');
+  const yt = await import('../../src/youtube/api.js');
+  const y = await yt.chiSono('t', { fetchImpl: risposta({ items: [{ id: 'UC1', snippet: { title: 'P', customUrl: '@p', thumbnails: { high: { url: 'https://yt3.ggpht.com/abc=s800' } } } }] }) });
+  assert.equal(y.foto, 'https://yt3.ggpht.com/abc=s800');
+  const DC = readFileSync(new URL('../../src/features/discord-api.js', import.meta.url), 'utf8');
+  assert.ok(DC.includes('https://cdn.discordapp.com/avatars/${id}/${me.avatar}.png?size=256'), 'Discord: dall\'hash del suo avatar');
+  for (const [cosa, via] of [['kick', 'src/kick/rotte.js'], ['youtube', 'src/youtube/rotte.js']]) {
+    assert.ok(readFileSync(new URL(`../../${via}`, import.meta.url), 'utf8').includes('foto: io.foto'), `${cosa}: la rotta passa la foto`);
+  }
+  assert.equal((SERVER.match(/fotoDallaPiattaforma\(login, foto\);/g) || []).length, 3, 'Kick, YouTube e Discord la salvano entrando');
+  const re = new RegExp(/const FOTO_DELLE_PIATTAFORME = (\/.*\/i);/.exec(SERVER)[1].slice(1, -2), 'i');
+  for (const buona of ['https://static-cdn.jtvnw.net/a.png', 'https://files.kick.com/x.webp', 'https://yt3.ggpht.com/a', 'https://yt3.googleusercontent.com/a', 'https://cdn.discordapp.com/avatars/1/a.png']) assert.ok(re.test(buona), buona);
+  for (const cattiva of ['http://files.kick.com/x', 'https://kick.com.evil.io/x', 'https://evil.io/kick.com/x', 'https://169.254.169.254/latest', 'javascript:alert(1)']) assert.ok(!re.test(cattiva), cattiva);
+  assert.ok(SERVER.includes("if (piattaformaDi(l) !== 'twitch') return s.avatar || '';"), 'a Helix si chiede solo di Twitch');
+});

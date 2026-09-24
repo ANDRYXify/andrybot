@@ -106,6 +106,7 @@ export async function chiSono(accessToken, opts) {
     canaleId: String(c.id),
     nome: String(s.title || ''),
     maniglia: String(s.customUrl || '').replace(/^@/, ''),
+    foto: String(s.thumbnails?.high?.url || s.thumbnails?.medium?.url || s.thumbnails?.default?.url || ''),
   };
 }
 

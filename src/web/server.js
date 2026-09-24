@@ -1626,11 +1626,20 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // 10 minuti per canale: se l'API è giù o il canale non esiste non si martella
   // Helix a ogni visita della pagina (che è pubblica, quindi anche dai bot).
   const avatarUltimoTentativo = new Map();   // login → ts
+  // La foto di chi entra con Kick, YouTube o Discord la dice la piattaforma al
+  // login, come Twitch la dice a Helix: la pagina link e la sua anteprima la
+  // mostrano per tutti allo stesso modo. Il server la scarica per ripassarla,
+  // quindi si tiene solo un indirizzo delle piattaforme, mai uno qualsiasi.
+  const FOTO_DELLE_PIATTAFORME = /^https:\/\/([a-z0-9-]+\.)*(jtvnw\.net|kick\.com|ggpht\.com|googleusercontent\.com|discordapp\.com)\//i;
+  function fotoDallaPiattaforma(login, foto) {
+    if (FOTO_DELLE_PIATTAFORME.test(String(foto || '')) && streamers.get(login)) streamers.setAvatar(login, String(foto).slice(0, 500));
+  }
   async function avatarDi(login, { aggiorna = false } = {}) {
     const l = String(login || '').toLowerCase();
     const s = streamers.get(l);
     if (!s) return '';                        // è una cache dello streamer, non lo crea
     if (s.avatar && !aggiorna) return s.avatar;
+    if (piattaformaDi(l) !== 'twitch') return s.avatar || '';   // Helix conosce solo Twitch: la foto l'ha data la piattaforma al login
     const ultimo = avatarUltimoTentativo.get(l) || 0;
     // Se NON abbiamo ancora nessuna foto, riproviamo presto (60s): non ha senso
     // restare 10 minuti senza avatar per colpa di un singolo tentativo andato male.
@@ -2826,7 +2835,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // Il canale si chiama `kick.<nome>`: un login Twitch non puo' contenere un
     // punto, quindi il canale Kick di «pippo» e quello Twitch di «pippo» non
     // possono essere la stessa riga. Non e' un controllo, e' una forma.
-    async registra(req, { userId, nome, token }) {
+    async registra(req, { userId, nome, foto, token }) {
       // Chi torna si riconosce dall'id di Kick, non dal nome: su Kick il nome si
       // puo' cambiare, e chi lo cambia deve ritrovare il suo canale.
       let login = kickApi.loginPerKickId(userId);
@@ -2840,6 +2849,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       }
 
       const promoVinta = primoAccesso(login, display);
+      fotoDallaPiattaforma(login, foto);
       kickApi.salvaToken(login, token, userId);
       const invitato = abbinaInviti(login, display);
 
@@ -2861,7 +2871,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // e in ultimo sull'id — che c'è sempre.
   montaYoutube(app, {
     requireLogin, currentUser, wrap,
-    async registra(req, { canaleId, nome, maniglia, token }) {
+    async registra(req, { canaleId, nome, maniglia, foto, token }) {
       // Chi torna si riconosce dall'id del canale, non dal nome: su YouTube il
       // nome e la maniglia si cambiano, l'id no.
       let login = ytApi.loginPerCanaleId(canaleId);
@@ -2875,6 +2885,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       }
 
       const promoVinta = primoAccesso(login, display);
+      fotoDallaPiattaforma(login, foto);
       ytApi.salvaToken(login, token, canaleId);
       const invitato = abbinaInviti(login, display);
 
@@ -3782,7 +3793,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // nuovo e vuoto. Il canale si chiama `dc.<nome>` — un login Twitch non puo'
   // contenere un punto, quindi non puo' collidere con nessuno. Non e' un
   // controllo, e' una forma (vedi src/identita.js).
-  async function registraDiscord(req, { dcId, nome }) {
+  async function registraDiscord(req, { dcId, nome, foto }) {
     const id = String(dcId || '').replace(/[^0-9]/g, '');
     if (!id) return { errore: 'Discord non ha detto chi sei' };
     const display = String(nome || '').trim().slice(0, 60) || ('discord:' + id);
@@ -3799,6 +3810,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     }
 
     const promoVinta = primoAccesso(login, display);
+    fotoDallaPiattaforma(login, foto);
     dcAccesso.lega(id, login, { nome: display });
     const invitato = abbinaInviti(login, display);
 
@@ -5423,7 +5435,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       const r = await dcApi.scambiaCodice({ ...config.discordApp, codice: String(req.query.code) });
       if (!r.ok) return male(r.errore || 'Discord non ha confermato');
       let esito;
-      try { esito = await registraDiscord(req, { dcId: r.id, nome: r.nome }); }
+      try { esito = await registraDiscord(req, { dcId: r.id, nome: r.nome, foto: r.foto }); }
       catch (e) { log.error('registrazione Discord fallita:', e?.message || e); return male('non sono riuscito a crearti lo spazio'); }
       if (!esito?.login) return male(esito?.errore || 'non sono riuscito a crearti lo spazio');
       log.info(`@${esito.login}: entrato con Discord (${r.nome || '?'}, id ${r.id})`);

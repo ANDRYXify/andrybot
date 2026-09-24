@@ -83,6 +83,7 @@ export const META_VETRINA = {
     ogDesc: 'Uno spettatore scrive !social e in chat risponde il tuo account, non un bot. Nello stesso pannello hai overlay, moderazione, clip, grafiche social e pagina link, su Twitch e Kick. Gratis, con demo.',
     twTitolo: 'Il bot che in chat scrive con il tuo nome',
     twDesc: 'In chat risponde il tuo account, non un bot. Nello stesso pannello hai overlay, moderazione, grafiche social e pagina link. Su Twitch e Kick, gratis.',
+    immagine: `${SITO}/icons/og.png?v=8`,
     immagineAlt: 'SocialBot — il bot che in chat scrive con il tuo nome, per Twitch e Kick',
     sottocategoria: 'Bot per Twitch e Kick',
     distinto: 'Bot per la chat di Twitch e Kick, con il pannello per la diretta e i social dello streamer, di andryxify. Non è un prodotto di social media marketing né un chatbot per Messenger.',
@@ -95,6 +96,7 @@ export const META_VETRINA = {
     ogDesc: 'A viewer types !social and the reply comes from your account, not from a bot. The same panel has overlay, moderation, clips, social graphics and a link page, on Twitch and Kick. Free, with a demo.',
     twTitolo: 'The bot that writes in chat under your own name',
     twDesc: 'The reply in chat comes from your account, not from a bot. The same panel has overlay, moderation, social graphics and a link page. On Twitch and Kick, free.',
+    immagine: `${SITO}/icons/og-en.png?v=1`,
     immagineAlt: 'SocialBot, the bot that writes in chat under your own name, for Twitch and Kick',
     sottocategoria: 'Twitch and Kick bot',
     distinto: 'A chat bot for Twitch and Kick, with a panel for the streamer\u2019s stream and socials, by andryxify. It is not a social media marketing product or a Messenger chatbot.',
@@ -107,6 +109,7 @@ export const META_VETRINA = {
     ogDesc: 'Un espectador escribe !social y en el chat responde tu cuenta, no un bot. En el mismo panel tienes overlay, moderación, clips, gráficas sociales y página de enlaces, en Twitch y Kick. Gratis, con demo.',
     twTitolo: 'El bot que en el chat escribe con tu nombre',
     twDesc: 'En el chat responde tu cuenta, no un bot. En el mismo panel tienes overlay, moderación, gráficas sociales y página de enlaces. En Twitch y Kick, gratis.',
+    immagine: `${SITO}/icons/og-es.png?v=1`,
     immagineAlt: 'SocialBot, el bot que en el chat escribe con tu nombre, para Twitch y Kick',
     sottocategoria: 'Bot para Twitch y Kick',
     distinto: 'Bot para el chat de Twitch y Kick, con el panel para el directo y las redes del streamer, de andryxify. No es un producto de marketing en redes sociales ni un chatbot para Messenger.',
@@ -898,6 +901,8 @@ export function guscioVetrina(guscio, lingua, opzioni = {}) {
   cambia(`<meta property="og:description" content="${base.ogDesc}">`, `<meta property="og:description" content="${m.ogDesc}">`);
   cambia(`<meta name="twitter:title" content="${base.twTitolo}">`, `<meta name="twitter:title" content="${m.twTitolo}">`);
   cambia(`<meta name="twitter:description" content="${base.twDesc}">`, `<meta name="twitter:description" content="${m.twDesc}">`);
+  cambia(`<meta property="og:image" content="${base.immagine}">`, `<meta property="og:image" content="${m.immagine}">`);
+  cambia(`<meta name="twitter:image" content="${base.immagine}">`, `<meta name="twitter:image" content="${m.immagine}">`);
   cambia(`<meta property="og:image:alt" content="${base.immagineAlt}">`, `<meta property="og:image:alt" content="${m.immagineAlt}">`);
   cambia(`<meta name="twitter:image:alt" content="${base.immagineAlt}">`, `<meta name="twitter:image:alt" content="${m.immagineAlt}">`);
   return soloRisorseVetrina(h);

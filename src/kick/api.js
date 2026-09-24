@@ -99,7 +99,7 @@ export async function chiSono(accessToken, { fetchImpl = fetch } = {}) {
     const u = Array.isArray(dati) ? dati[0] : dati;
     const userId = String(u?.user_id ?? '');
     if (!userId) return { ok: false, errore: 'Kick non ha detto chi sei' };
-    return { ok: true, userId, nome: String(u?.name || u?.username || '') };
+    return { ok: true, userId, nome: String(u?.name || u?.username || ''), foto: String(u?.profile_picture || '') };
   } catch (e) {
     return { ok: false, errore: e?.message || String(e) };
   }

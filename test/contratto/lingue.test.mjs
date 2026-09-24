@@ -3,7 +3,7 @@
 // mostra. Il modello sta in docs/LINGUE.md.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { guscioVetrina, indirizzoHome, VIA_LINGUA, META_VETRINA, LINGUE, SITO } from '../../src/web/vetrina-vista.js';
 import { VIE, LINGUE_DOC } from '../../src/web/guide.js';
 import { creaGuscio } from '../../src/web/vetrina.js';
@@ -86,7 +86,12 @@ test('la testa e\' nella lingua della pagina', () => {
       assert.ok(h.includes(`<link rel="alternate" hreflang="${x}" href="${SITO}${via}">`), `${l}: alternativa ${x}`);
     }
     assert.ok(!h.includes('?lang='), `${l}: nessun indirizzo vecchio`);
+    assert.ok(h.includes(`<meta property="og:image" content="${m.immagine}">`) && h.includes(`<meta name="twitter:image" content="${m.immagine}">`), `${l}: l'anteprima del link e' la sua`);
+    const file = m.immagine.replace(SITO, '').split('?')[0];
+    assert.ok(existsSync(new URL(`../../src/web/public${file}`, import.meta.url)), `${l}: ${file} esiste`);
+    assert.ok(leggi('scripts/og.mjs').includes(`'${file.split('/').pop()}': pagina({`), `${l}: il generatore sa rifare ${file}`);
   }
+  assert.equal(new Set(LINGUE.map((l) => META_VETRINA[l].immagine)).size, LINGUE.length, 'un\'immagine per lingua: chi condivide la pagina inglese non vede il testo italiano');
 });
 
 test('la demo si apre nella lingua della pagina', () => {
