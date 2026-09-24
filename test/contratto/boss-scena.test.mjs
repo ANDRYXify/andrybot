@@ -43,7 +43,7 @@ test('e\' un elemento come gli altri, di qua e di la\' dal filo', () => {
 });
 
 test('in diretta si accende col suo interruttore, si veste e si posa come gli altri', () => {
-  assert.ok(OVL.includes("else if (dati.tipo === 'boss') boss(dati);") && !/boss\(dati\)[^\n]*mostra\('effetti'\)|mostra\('effetti'\)\) boss/.test(OVL), 'non dipende piu\' dagli effetti');
+  assert.ok(OVL.includes("else if (dati.tipo === 'boss') { boss(dati); muroBoss(dati); }") && !/boss\(dati\)[^\n]*mostra\('effetti'\)|mostra\('effetti'\)\) boss/.test(OVL), 'non dipende piu\' dagli effetti');
   assert.ok(/function bossAcceso\(\) \{ return mostra\('boss'\) && !!MIO\.boss && MIO\.boss\.attivo !== false; \}/.test(OVL));
   assert.ok(/vestiElemento\(carta, cfg, 'nessuna', 'boss'\);/.test(OVL), 'la posa passa dalla porta di tutti, con la sua chiave');
   const arriva = OVL.slice(OVL.indexOf("if (ev.azione === 'arriva')"), OVL.indexOf("if (ev.azione === 'colpo')"));

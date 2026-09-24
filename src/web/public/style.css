@@ -2486,3 +2486,4 @@ body:not(.con-nav) .salta { display: none; }
   .pagina-testata { position: relative; }
   .pt-schermo { position: absolute; top: 0; right: 0; }
 }
+.muro-prove { display: flex; flex-wrap: wrap; gap: .4rem; }

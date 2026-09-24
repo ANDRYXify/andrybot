@@ -89,6 +89,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Anche la pastiglia col nome del comando che compare con un effetto, per esempio «!applausi», è un pezzo dello Studio: la sposti, la vesti e la spegni per ogni overlay. [vai: alert]
 - Le immagini e i video degli effetti compaiono in un'area che sposti e ridimensioni nello Studio, e in un riquadro si adattano senza deformarsi. [vai: alert]
 - I video col green screen escono con la loro forma, invece che schiacciati a due per uno.
+- [importante] Il muro delle emote: quelle che la chat scrive volano sulla scena con dieci movimenti, la stessa ripetuta cresce e poi esplode. Eventi, premi e !esplodi fanno esplodere figure intere. [vai: alert]
 
 ## 2026-09-23
 

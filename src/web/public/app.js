@@ -1267,6 +1267,7 @@ function _demoGet(via) {
       { id: "classificaserie", modulo: "presenze", moduloNome: ["Serie di presenze","Attendance streaks","Rachas de presencia"], moduloAcceso: true, titolo: ["Classifica delle serie","Streak leaderboard","Clasificación de rachas"], cosa: ["Chi è venuto a più dirette di fila.","Who has attended the most streams in a row.","Quién ha estado en más directos seguidos."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["classificaserie","serietop","topserie","presenzetop"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "subathon", modulo: "subathon", moduloNome: ["Subathon","Subathon","Subathon"], moduloAcceso: true, titolo: ["Quanto manca","How long left","Cuánto queda"], cosa: ["Dice quanto manca alla fine del subathon.","Says how long is left before the subathon ends.","Dice cuánto queda para el final del subathon."], costa: false, attesa: 5, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["subathon","quantomanca"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "treno", modulo: "treno", moduloNome: ["Hype train","Hype train","Hype train"], moduloAcceso: true, titolo: ["A che punto è il treno","Where the train is","Por dónde va el tren"], cosa: ["Dice a che livello è l’hype train in corso, quanto manca al prossimo e quanti secondi restano.","Says what level the running hype train is at, how far to the next one and how many seconds are left.","Dice en qué nivel está el hype train en curso, cuánto falta para el siguiente y cuántos segundos quedan."], costa: false, attesa: 5, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["treno","hypetrain","hype"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
+      { id: "esplodi", modulo: "muro", moduloNome: ["Muro delle emote","Emote wall","Muro de emotes"], moduloAcceso: true, titolo: ["Esplosione di emote","Emote explosion","Explosión de emotes"], cosa: ["Fa esplodere sul muro delle emote quelle scritte nel messaggio (!esplodi Kappa PogChamp), in una figura. Fra due esplosioni c’è un’attesa per tutti, che si sceglie nel muro.","Blows up the emotes written in the message on the emote wall (!esplodi Kappa PogChamp), in a shape. Between two explosions everyone waits, for a time set in the wall.","Hace explotar en el muro de emotes las escritas en el mensaje (!esplodi Kappa PogChamp), en una figura. Entre dos explosiones todos esperan, un tiempo que se elige en el muro."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["esplodi","boom"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "discord", modulo: "discord", moduloNome: ["Ruoli su Discord","Discord roles","Roles en Discord"], moduloAcceso: true, titolo: ["Collega Discord","Link Discord","Vincula Discord"], cosa: ["Chi lo scrive collega il suo account Discord per prendersi i ruoli che gli spettano (!discord via per staccarsi). Risponde solo se i ruoli su Discord sono accesi.","The writer links their Discord account to get the roles they are due (!discord via to unlink). It only answers if Discord roles are on.","Quien lo escribe vincula su cuenta de Discord para llevarse los roles que le tocan (!discord via para desvincularse). Solo responde si los roles de Discord están encendidos."], costa: false, attesa: 5, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["discord"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "compleanno", modulo: "compleanni", moduloNome: ["Compleanni","Birthdays","Cumpleaños"], moduloAcceso: true, titolo: ["Il mio compleanno","My birthday","Mi cumpleaños"], cosa: ["Chi lo scrive si segna il compleanno (!compleanno 25/12), lo rilegge o lo toglie con «via».","The writer sets their birthday (!compleanno 25/12), reads it back or removes it with «via».","Quien lo escribe apunta su cumpleaños (!compleanno 25/12), lo consulta o lo quita con «via»."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["compleanno","compleanni","birthday"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "battuta", modulo: "battute", moduloNome: ["Battute","Jokes","Chistes"], moduloAcceso: true, titolo: ["Battuta","Joke","Chiste"], cosa: ["Dice una battuta del serbatoio del canale. Mod e streamer le aggiungono con !battuta aggiungi.","Tells a joke from the channel's bank. Mods and streamer add them with !battuta aggiungi.","Cuenta un chiste del depósito del canal. Mods y streamer los añaden con !battuta aggiungi."], costa: false, attesa: 5, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["battuta","battute","joke"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
@@ -1330,7 +1331,7 @@ function _demoGet(via) {
       { id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true },
         xy: { alert: { x: 50, y: 14 }, chat: { x: 16, y: 78 }, wf: { x: 86, y: 62 }, ws: { x: 86, y: 82 } },
         css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/overlay-principale' },
-      { id: 'ovsolochat', nome: 'Solo chat', mostra: { alert: false, chat: true, wf: false, ws: false, boss: false, scritta: false, etichetta: false, effetti: false },
+      { id: 'ovsolochat', nome: 'Solo chat', mostra: { alert: false, chat: true, wf: false, ws: false, boss: false, scritta: false, etichetta: false, muro: false, effetti: false },
         xy: { chat: { x: 22, y: 50 } }, css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/solo-chat' },
       { id: 'ovpausa', nome: 'Schermata di pausa', mostra: { alert: true, chat: false, wf: true, ws: true, effetti: true },
         xy: { alert: { x: 50, y: 50 }, wf: { x: 22, y: 84 }, ws: { x: 78, y: 84 } },
@@ -8738,18 +8739,26 @@ function _segnaTimer(fine) {
 
 const _pezziCfg = (k) => [...document.querySelectorAll(`[data-cfg="${k}"], [data-cfg-di="${k}"]`)];
 
+function _viaDi(c, via) { let v = c; for (const p of via) { if (v == null) return undefined; v = v[p]; } return v; }
+function _scriviVia(c, via, v) {
+  let o = c;
+  for (const p of via.slice(0, -1)) { o[p] = (o[p] && typeof o[p] === 'object') ? o[p] : {}; o = o[p]; }
+  o[via[via.length - 1]] = v;
+}
+const _campiCfg = (k) => [...new Set(_pezziCfg(k).flatMap((box) => [...box.querySelectorAll('[data-c]')]))];
+
 function riempiCfgForm(k) {
   const c = _cfgEl(k);
-  for (const box of _pezziCfg(k)) {
-    for (const el of box.querySelectorAll('[data-c]')) {
-      const via = el.dataset.c.split('.');
-      const v = via.length === 2 ? (c[via[0]] || {})[via[1]] : c[via[0]];
-      if (v === undefined || v === null) continue;
-      if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
-      if (el.type === 'range') _scriviMisura(box, el);
-    }
+  for (const el of _campiCfg(k)) {
+    const v = _viaDi(c, el.dataset.c.split('.'));
+    if (v === undefined || v === null) continue;
+    if ('insieme' in el.dataset) el.checked = Array.isArray(v) && v.includes(el.value);
+    else if ('lista' in el.dataset) el.value = (Array.isArray(v) ? v : []).join(', ');
+    else if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
+    if (el.type === 'range') _scriviMisura(el.closest('[data-cfg], [data-cfg-di]'), el);
   }
   if (k === 'musica') _mostraParti();
+  if (k === 'muro') _disegnaPremiMuro();
 }
 function _scriviMisura(box, el) {
   const o = box.querySelector('[data-mis-out="' + el.dataset.c.split('.')[1] + '"]');
@@ -8758,14 +8767,16 @@ function _scriviMisura(box, el) {
 
 function leggiCfgDalForm(k) {
   const c = _cfgEl(k);
-  for (const box of _pezziCfg(k)) {
-    for (const el of box.querySelectorAll('[data-c]')) {
-      const via = el.dataset.c.split('.');
-      const v = el.type === 'checkbox' ? el.checked : (el.type === 'number' || el.type === 'range' ? Number(el.value) : el.value);
-      if (via.length === 2) { c[via[0]] = c[via[0]] || {}; c[via[0]][via[1]] = v; }
-      else c[via[0]] = v;
-    }
+  const insiemi = {};
+  for (const el of _campiCfg(k)) {
+    const via = el.dataset.c.split('.');
+    if ('insieme' in el.dataset) { (insiemi[el.dataset.c] = insiemi[el.dataset.c] || { via, v: [] }); if (el.checked) insiemi[el.dataset.c].v.push(el.value); continue; }
+    const v = 'lista' in el.dataset ? el.value.split(/[\s,]+/).filter(Boolean)
+      : el.type === 'checkbox' ? el.checked : (el.type === 'number' || el.type === 'range' ? Number(el.value) : el.value);
+    _scriviVia(c, via, v);
   }
+  for (const x of Object.values(insiemi)) _scriviVia(c, x.via, x.v);
+  if (k === 'muro') c.premi = _leggiPremiMuro();
   return c;
 }
 
@@ -9243,6 +9254,81 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="etichetta">${L('Salva', 'Save', 'Guardar')}</button></p>
     </details>
 
+    <details class="carta sez" data-parte="aspetto" id="sez-muro">
+      <summary><h3>${_hIco(ICO.faccina)}${L('Muro delle emote', 'Emote wall', 'Muro de emotes')}</h3></summary>
+      <p>${L('Le emote che la chat scrive volano sulla scena, ognuna col suo movimento, dentro l\'area che scegli: di serie tutto lo schermo, oppure un riquadro. Quando la chat ripete la stessa emote ne resta una che cresce col suo contatore, e alla fine esplode; gli eventi, i premi e il comando !esplodi fanno esplodere figure intere.', 'The emotes chat writes fly across the scene, each with its own motion, inside the area you pick: the whole screen by default, or a box. When chat repeats the same emote, one stays and grows with its counter, then explodes; events, rewards and the !esplodi command blow up whole shapes.', 'Los emotes que escribe el chat vuelan por la escena, cada uno con su movimiento, dentro del área que elijas: de serie toda la pantalla, o un recuadro. Cuando el chat repite el mismo emote queda uno que crece con su contador y al final explota; los eventos, las recompensas y el comando !esplodi hacen explotar figuras enteras.')}</p>
+      <div data-cfg="muro">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="muro-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Mostralo nella scena', 'Show it on the scene', 'Muéstralo en la escena')}</span>
+        </div>
+        <div class="asp-blocco" data-asp="muro" data-cfg-di="muro">
+          <h4 class="spazio-sopra">${L('Cosa vola', 'What flies', 'Qué vuela')}</h4>
+          <label class="riga-check"><input type="checkbox" data-c="fonti.twitch"> ${L('Emote di Twitch', 'Twitch emotes', 'Emotes de Twitch')}</label>
+          <label class="riga-check"><input type="checkbox" data-c="fonti.settetv"> ${L('Emote 7TV del canale', 'Channel 7TV emotes', 'Emotes 7TV del canal')}</label>
+          <label class="riga-check"><input type="checkbox" data-c="fonti.emoji"> ${L('Emoji', 'Emoji', 'Emoji')}</label>
+          <label class="riga-check"><input type="checkbox" data-c="doppioni"> ${L('La stessa emote più volte nello stesso messaggio', 'The same emote several times in one message', 'El mismo emote varias veces en un mensaje')}</label>
+          <div class="goal-campi"><label class="campo-num">${L('Al massimo per messaggio', 'At most per message', 'Como máximo por mensaje')}<input type="number" data-c="perMessaggio" min="1" max="20"></label></div>
+          <h4 class="spazio-sopra">${L('Movimenti', 'Motions', 'Movimientos')}</h4>
+          <p class="suggerimento">${L('Ogni emote ne pesca uno fra quelli accesi.', 'Each emote picks one of those that are on.', 'Cada emote elige uno de los activos.')}</p>
+          <label class="riga-check"><input type="checkbox" data-c="animazioni" data-insieme value="sale"> ${L('Sale come una bolla', 'Rises like a bubble', 'Sube como una burbuja')}</label><label class="riga-check"><input type="checkbox" data-c="animazioni" data-insieme value="linea"> ${L('Attraversa dritta', 'Crosses straight', 'Cruza recta')}</label><label class="riga-check"><input type="checkbox" data-c="animazioni" data-insieme value="rimbalzo"> ${L('Rimbalza sul fondo', 'Bounces on the floor', 'Rebota en el fondo')}</label><label class="riga-check"><input type="checkbox" data-c="animazioni" data-insieme value="sfreccia"> ${L('Sfreccia', 'Zooms past', 'Pasa zumbando')}</label><label class="riga-check"><input type="checkbox" data-c="animazioni" data-insieme value="cade"> ${L('Resta appesa e cade', 'Hangs, then falls', 'Se queda colgada y cae')}</label><label class="riga-check"><input type="checkbox" data-c="animazioni" data-insieme value="coriandoli"> ${L('Scende come un foglio', 'Drifts down like paper', 'Baja como una hoja')}</label><label class="riga-check"><input type="checkbox" data-c="animazioni" data-insieme value="salto"> ${L('Salta dal basso', 'Hops up from below', 'Salta desde abajo')}</label><label class="riga-check"><input type="checkbox" data-c="animazioni" data-insieme value="lancio"> ${L('Lanciata, rimbalza ed esce', 'Thrown, bounces and leaves', 'Lanzada, rebota y sale')}</label><label class="riga-check"><input type="checkbox" data-c="animazioni" data-insieme value="pulsa"> ${L('Batte ferma in un punto', 'Beats in one spot', 'Late quieta en un punto')}</label><label class="riga-check"><input type="checkbox" data-c="animazioni" data-insieme value="orbita"> ${L('Gira attorno al centro', 'Circles the center', 'Gira alrededor del centro')}</label>
+          <div class="goal-campi">
+            <label class="campo-num">${L('Come compare chi nasce dentro l\'area', 'How the ones born inside the area appear', 'Cómo aparecen los que nacen dentro del área')}<select data-c="entrata"><option value="zoom">${L('Si ingrandisce', 'Grows in', 'Crece')}</option><option value="dissolvenza">${L('Appare piano', 'Fades in', 'Aparece despacio')}</option><option value="nessuna">${L('Compare e basta', 'Just appears', 'Aparece y ya')}</option></select></label>
+            <label class="campo-num">${L('Durata (secondi)', 'Duration (seconds)', 'Duración (segundos)')}<input type="number" data-c="durata" min="2" max="20"></label>
+          </div>
+          <h4 class="spazio-sopra">${L('Grandezza e veste', 'Size and look', 'Tamaño y aspecto')}</h4>
+          <div class="goal-campi">
+            <label class="campo-num">${L('Grandezza (% del lato corto dell\'area)', 'Size (% of the short side of the area)', 'Tamaño (% del lado corto del área)')}<input type="number" data-c="grandezza" min="2" max="40"></label>
+            <label class="campo-num">${L('Quanto varia (%)', 'How much it varies (%)', 'Cuánto varía (%)')}<input type="number" data-c="varia" min="0" max="100"></label>
+            <label class="campo-num">${L('Minimo (px)', 'Minimum (px)', 'Mínimo (px)')}<input type="number" data-c="minPx" min="12" max="400"></label>
+            <label class="campo-num">${L('Massimo (px)', 'Maximum (px)', 'Máximo (px)')}<input type="number" data-c="maxPx" min="12" max="600"></label>
+          </div>
+          <label class="riga-check"><input type="checkbox" data-c="ombra"> ${L('Ombra', 'Shadow', 'Sombra')}</label>
+          <div class="goal-campi"><label class="campo-num">${L('Colori che girano', 'Cycling colors', 'Colores que giran')}<select data-c="arcobaleno"><option value="mai">${L('Mai', 'Never', 'Nunca')}</option><option value="sempre">${L('Sempre', 'Always', 'Siempre')}</option><option value="treno">${L('Durante l\'hype train', 'During the hype train', 'Durante el hype train')}</option></select></label></div>
+          <h4 class="spazio-sopra">${L('Quante', 'How many', 'Cuántos')}</h4>
+          <div class="goal-campi">
+            <label class="campo-num">${L('Al massimo a schermo', 'At most on screen', 'Como máximo en pantalla')}<input type="number" data-c="maxSchermo" min="1" max="150"></label>
+            <label class="campo-num">${L('In attesa oltre il massimo', 'Waiting beyond the maximum', 'En espera más allá del máximo')}<input type="number" data-c="coda" min="0" max="100"></label>
+          </div>
+          <p class="suggerimento">${L('Quelle in attesa da più di otto secondi si lasciano perdere: arriverebbero fuori tempo.', 'Those waiting for more than eight seconds are dropped: they would arrive out of time.', 'Los que esperan más de ocho segundos se descartan: llegarían a destiempo.')}</p>
+          <h4 class="spazio-sopra">${L('Combo', 'Combos', 'Combos')}</h4>
+          <label class="riga-check"><input type="checkbox" data-c="combo.attivo"> ${L('Quando la chat ripete la stessa emote, ne resta una che cresce', 'When chat repeats the same emote, one stays and grows', 'Cuando el chat repite el mismo emote, queda uno que crece')}</label>
+          <div class="goal-campi">
+            <label class="campo-num">${L('Da quante ripetizioni', 'From how many repeats', 'Desde cuántas repeticiones')}<input type="number" data-c="combo.soglia" min="2" max="50"></label>
+            <label class="campo-num">${L('Finisce dopo (secondi senza ripetizioni)', 'Ends after (seconds without repeats)', 'Termina tras (segundos sin repeticiones)')}<input type="number" data-c="combo.finestra" min="2" max="30"></label>
+            <label class="campo-num">${L('Poi esplode in', 'Then explodes into', 'Luego explota en')}${_muroFigSel('combo.figura', true)}</label>
+          </div>
+          <label class="riga-check"><input type="checkbox" data-c="combo.diverse"> ${L('Conta una volta per persona', 'Counts once per person', 'Cuenta una vez por persona')}</label>
+          <h4 class="spazio-sopra">${L('Esplosioni', 'Explosions', 'Explosiones')}</h4>
+          <div class="goal-campi">
+            <label class="campo-num">${L('Quante emote', 'How many emotes', 'Cuántos emotes')}<input type="number" data-c="esplosioni.quante" min="5" max="80"></label>
+            <label class="campo-num">${L('Durata (secondi)', 'Duration (seconds)', 'Duración (segundos)')}<input type="number" data-c="esplosioni.durata" min="3" max="15"></label>
+            <label class="campo-num">${L('La parola della scritta', 'The word for «Word»', 'La palabra de «Palabra»')}<input type="text" data-c="esplosioni.parola" maxlength="8"></label>
+          </div>
+          <div class="goal-campi">
+            <label class="campo-num">${L('Con !esplodi', 'With !esplodi', 'Con !esplodi')}${_muroFigSel('comando.figura', true)}</label>
+            <label class="campo-num">${L('Attesa fra due !esplodi (secondi, per tutti)', 'Wait between two !esplodi (seconds, for everyone)', 'Espera entre dos !esplodi (segundos, para todos)')}<input type="number" data-c="comando.attesa" min="0" max="600"></label>
+          </div>
+          <p class="suggerimento">${L('Chi può scrivere !esplodi, come si chiama e se è acceso si sceglie nei comandi pronti.', 'Who can write !esplodi, what it is called and whether it is on is set in the built-in commands.', 'Quién puede escribir !esplodi, cómo se llama y si está activo se elige en los comandos de serie.')}</p>
+          <p><button type="button" class="btn secondario mini" data-vai-scheda="moduli">${_bIco(ICO.moduli)}${L('Apri i Comandi', 'Open Commands', 'Abrir Comandos')}</button></p>
+          <p class="suggerimento">${L('Prova una figura: la vedi qui e parte anche nell\'overlay vero.', 'Try a shape: you see it here and it also plays in the real overlay.', 'Prueba una figura: la ves aquí y sale también en el overlay real.')}</p>
+          <p class="muro-prove">${MURO_FIGURE().map(([v, t]) => `<button type="button" class="btn secondario mini" data-muro-prova="${v}">${esc(t)}</button>`).join('')}</p>
+          <h4 class="spazio-sopra">${L('Eventi', 'Events', 'Eventos')}</h4>
+          <div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.raid.attivo"> ${L('Raid', 'Raid', 'Raid')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.raid.figura', true)}</label><label class="campo-num">${L('da spettatori', 'from viewers', 'desde espectadores')}<input type="number" data-c="eventi.raid.soglia" min="1" max="100000"></label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.sub.attivo"> ${L('Abbonamenti', 'Subs', 'Suscripciones')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.sub.figura', true)}</label><label class="campo-num">${L('da quanti in un colpo', 'from how many at once', 'desde cuántas de golpe')}<input type="number" data-c="eventi.sub.soglia" min="1" max="1000"></label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.bit.attivo"> ${L('Bit', 'Bits', 'Bits')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.bit.figura', true)}</label><label class="campo-num">${L('da', 'from', 'desde')}<input type="number" data-c="eventi.bit.soglia" min="1" max="1000000"></label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.dono.attivo"> ${L('Donazioni', 'Donations', 'Donaciones')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.dono.figura', true)}</label><label class="campo-num">${L('da (nella tua valuta)', 'from (in your currency)', 'desde (en tu moneda)')}<input type="number" data-c="eventi.dono.soglia" min="1" max="100000"></label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.trenoParte.attivo"> ${L('L’hype train parte', 'The hype train starts', 'Empieza el hype train')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.trenoParte.figura', true)}</label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.trenoFine.attivo"> ${L('L’hype train finisce', 'The hype train ends', 'Termina el hype train')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.trenoFine.figura', true)}</label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.boss.attivo"> ${L('Il boss cade', 'The boss falls', 'Cae el jefe')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.boss.figura', true)}</label></div>
+          <h4 class="spazio-sopra">${L('Premi a punti canale', 'Channel-point rewards', 'Recompensas de puntos de canal')}</h4>
+          <div id="muro-premi"></div>
+          <h4 class="spazio-sopra">${L('Chi', 'Who', 'Quién')}</h4>
+          <div class="goal-campi"><label class="campo-num">${L('Chi fa volare le emote', 'Who makes emotes fly', 'Quién hace volar los emotes')}<select data-c="chi"><option value="tutti">${L('Tutti', 'Everyone', 'Todos')}</option><option value="sub">${L('Abbonati in su', 'Subs and up', 'Suscriptores y más')}</option><option value="vip">${L('VIP in su', 'VIPs and up', 'VIP y más')}</option><option value="mod">${L('Moderatori e streamer', 'Moderators and streamer', 'Moderadores y streamer')}</option></select></label></div>
+          <label class="riga-check"><input type="checkbox" data-c="escludiBot"> ${L('Escludi i bot di chat più comuni', 'Leave out the most common chat bots', 'Excluye los bots de chat más comunes')}</label>
+          <div class="goal-campi">
+            <label class="campo-num">${L('Persone escluse', 'People left out', 'Personas excluidas')}<input type="text" data-c="esclusiPersone" data-lista placeholder="nome1, nome2"></label>
+            <label class="campo-num">${L('Emote escluse', 'Emotes left out', 'Emotes excluidos')}<input type="text" data-c="esclusiEmote" data-lista placeholder="Kappa, LUL"></label>
+          </div>
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="muro">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
     <details class="carta sez" data-parte="aspetto" id="sez-goal">
       <summary><h3>${_hIco(ICO.trofeo)}${L('Gli obiettivi', 'Your goals', 'Tus objetivos')}</h3></summary>
       <p>${L('Barre che si riempiono da sole mentre arrivano follower, sub o bit. Un obiettivo può essere «altri 100» oppure «1000 in tutto»: con «Quanti ne ho adesso» parte dal numero che hai già.', 'Bars that fill by themselves as followers, subs or bits come in. A goal can be «100 more» or «1000 in total»: with «How many I have now» it starts from the number you already have.', 'Barras que se llenan solas mientras llegan followers, subs o bits. Un objetivo puede ser «100 más» o «1000 en total»: con «Cuántos tengo ahora» empieza desde el número que ya tienes.')}</p>
@@ -9513,7 +9599,7 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'effetti', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
 let occSel = '';
@@ -9962,7 +10048,7 @@ function _sincronizzaScena() {
       nodo.id = id;
       nodo.className = 'ap-el';
       nodo.innerHTML = '<div></div>';
-      stage.appendChild(nodo);
+      if (e.k === 'muro') stage.insertBefore(nodo, stage.firstChild); else stage.appendChild(nodo);
       rendiTrascinabile(nodo, e.k);
     }
     if (e.goal) _vestiGoal(nodo.firstElementChild, e.goal);
@@ -10388,7 +10474,117 @@ function _vestiEffetti(box) {
   box.innerHTML = '<img class="effetto dentro" alt="" src="' + EFFETTO_ESEMPIO + '">';
 }
 
-const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, scritta: _vestiScritta, etichetta: _vestiEtichetta, effetti: _vestiEffetti };
+const MURO_PIENO = () => ({ x: 0, y: 0, w: 100, h: 100, r: 0 });
+
+function _defMuro() {
+  return { attivo: false, posizione: 'schermo', xy: null, animazioni: ['sale', 'linea', 'rimbalzo', 'sfreccia', 'cade', 'coriandoli', 'salto', 'lancio', 'pulsa', 'orbita'], fonti: { twitch: true, settetv: true, emoji: false }, perMessaggio: 5, doppioni: true, maxSchermo: 50, coda: 20, grandezza: 8, varia: 30, minPx: 28, maxPx: 140, durata: 6, entrata: 'zoom', ombra: true, arcobaleno: 'treno', chi: 'tutti', escludiBot: true, esclusiPersone: [], esclusiEmote: [], combo: { attivo: true, soglia: 4, finestra: 6, diverse: true, figura: 'fuochi' }, esplosioni: { quante: 30, durata: 6, parola: 'HYPE' }, comando: { figura: 'caso', attesa: 30 }, eventi: { raid: { attivo: true, figura: 'fuochi', soglia: 5 }, sub: { attivo: true, figura: 'cuore', soglia: 1 }, bit: { attivo: true, figura: 'fontana', soglia: 100 }, dono: { attivo: true, figura: 'pioggia', soglia: 5 }, trenoParte: { attivo: true, figura: 'trenino' }, trenoFine: { attivo: true, figura: 'scritta' }, boss: { attivo: true, figura: 'piramide' } }, premi: [] };
+}
+
+const _muroEsempi = () => window.SB_MURO.ESEMPI.map((url, i) => ({ nome: 'e' + i, url }));
+const _muroVeste = (cfg) => ({ ombra: cfg.ombra !== false, arcobaleno: cfg.arcobaleno === 'sempre' });
+let _muroGiro = null;
+
+function _muroFerma() { if (_muroGiro) { clearInterval(_muroGiro.timer); _muroGiro = null; } }
+
+function _muroTiro() {
+  const g = _muroGiro;
+  const nodo = g && g.box.closest('.ap-el');
+  if (!g || !g.box.isConnected || !nodo || nodo.style.display === 'none' || !g.box.offsetWidth) { _muroFerma(); return; }
+  if (g.box.querySelectorAll('.muro-emote').length >= 14) return;
+  const cfg = _cfgEl('muro');
+  const es = _muroEsempi();
+  window.SB_MURO.lancia(g.box, es[Math.floor(Math.random() * es.length)], cfg, _muroVeste(cfg));
+}
+
+function _muroFermo(box, cfg) {
+  const M = window.SB_MURO;
+  const area = { w: box.clientWidth || OVL_W, h: box.clientHeight || OVL_H };
+  const s = M.lato(area, cfg, () => 0.5);
+  const posti = [[0.14, 0.3], [0.34, 0.72], [0.52, 0.28], [0.7, 0.62], [0.87, 0.36], [0.44, 0.5]];
+  const es = _muroEsempi();
+  box.querySelectorAll('.muro-emote').forEach((n) => n.remove());
+  posti.forEach(([u, v], i) => {
+    const el = M.nodo(es[i % es.length], s, _muroVeste(cfg));
+    const x = Math.min(area.w - s / 2, Math.max(s / 2, u * area.w)), y = Math.min(area.h - s / 2, Math.max(s / 2, v * area.h));
+    el.style.transform = 'translate(' + (x - s / 2) + 'px,' + (y - s / 2) + 'px)';
+    box.appendChild(el);
+  });
+}
+
+function _vestiMuro(box, cfg) {
+  box.className = 'ovl-muro';
+  if (!window.SB_MURO) return;
+  if (!cfg.attivo || _menoMoto) { _muroFerma(); _muroFermo(box, cfg); return; }
+  if (_muroGiro && _muroGiro.box === box) return;
+  _muroFerma();
+  box.querySelectorAll('.muro-emote').forEach((n) => n.remove());
+  _muroGiro = { box, timer: setInterval(_muroTiro, 850) };
+  _muroTiro();
+}
+
+function _muroProva(figura) {
+  const box = document.querySelector('#ap-muro > .ovl-muro');
+  const cfg = _cfgEl('muro');
+  if (box && window.SB_MURO && !_menoMoto) window.SB_MURO.esplosione(box, figura, _muroEsempi(), cfg.esplosioni.quante, cfg, _muroVeste(cfg));
+  return api('/api/muro/prova', { method: 'POST', body: { figura } });
+}
+
+const MURO_FIGURE = () => [
+  ['fuochi', L('Fuochi d\u2019artificio', 'Fireworks', 'Fuegos artificiales')],
+  ['fontana', L('Fontana', 'Fountain', 'Fuente')],
+  ['spirale', L('Spirale', 'Spiral', 'Espiral')],
+  ['pioggia', L('Pioggia', 'Rain', 'Lluvia')],
+  ['trenino', L('Trenino', 'Conga line', 'Trencito')],
+  ['piramide', L('Piramide', 'Pyramid', 'Pirámide')],
+  ['scritta', L('Scritta', 'Word', 'Palabra')],
+  ['cuore', L('Cuore', 'Heart', 'Corazón')],
+];
+const _muroFigSel = (campo, conCaso) => `<select data-c="${campo}">${(conCaso ? [...MURO_FIGURE(), ['caso', L('A caso', 'Random', 'Al azar')]] : MURO_FIGURE()).map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select>`;
+
+let _muroPremiTutti = null;
+function _leggiPremiMuro() {
+  return [..._g('muro-premi')?.querySelectorAll('[data-premio]') || []].map((r) => ({
+    id: r.querySelector('[data-premio-id]').value,
+    titolo: r.querySelector('[data-premio-id]').selectedOptions[0]?.textContent || '',
+    figura: r.querySelector('[data-premio-fig]').value,
+  })).filter((p) => p.id);
+}
+
+function _rigaPremioMuro(p) {
+  const tutti = _muroPremiTutti || [];
+  const opz = tutti.map((r) => `<option value="${esc(r.id)}"${r.id === p.id ? ' selected' : ''}>${esc(r.title)}</option>`).join('')
+    + (p.id && !tutti.some((r) => r.id === p.id) ? `<option value="${esc(p.id)}" selected>${esc(p.titolo || p.id)}</option>` : '');
+  const fig = [...MURO_FIGURE(), ['caso', L('A caso', 'Random', 'Al azar')]].map(([v, t]) => `<option value="${v}"${v === (p.figura || 'caso') ? ' selected' : ''}>${esc(t)}</option>`).join('');
+  return `<div class="goal-campi" data-premio>
+    <label class="campo-num">${L('Premio', 'Reward', 'Recompensa')}<select data-premio-id>${opz}</select></label>
+    <label class="campo-num">${L('Esplode in', 'Explodes into', 'Explota en')}<select data-premio-fig>${fig}</select></label>
+    <button type="button" class="btn secondario mini" data-premio-via aria-label="${esc(L('Togli questo premio', 'Remove this reward', 'Quita esta recompensa'))}">${_bIco(ICO.cestino)}</button>
+  </div>`;
+}
+
+async function _disegnaPremiMuro() {
+  const box = _g('muro-premi');
+  if (!box) return;
+  if (_muroPremiTutti === null) {
+    _muroPremiTutti = [];
+    try {
+      const d = await api('/api/streamer/premi');
+      if (!d.permessoOk) {
+        box.innerHTML = `<p class="vuoto">${L('Per scegliere un premio a punti canale serve un permesso in più.', 'Picking a channel-point reward requires an extra permission.', 'Para elegir una recompensa de puntos de canal se necesita un permiso adicional.')}
+          <a class="btn secondario mini" href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Concede el permiso')}</a></p>`;
+        return;
+      }
+      _muroPremiTutti = d.tutti || [];
+    } catch (e) { box.innerHTML = `<p class="vuoto">${esc(e.message)}</p>`; _muroPremiTutti = null; return; }
+  }
+  const premi = _cfgEl('muro').premi || [];
+  box.innerHTML = premi.map(_rigaPremioMuro).join('')
+    + (_muroPremiTutti.length
+      ? (premi.length < 10 ? `<p><button type="button" class="btn secondario mini" data-premio-piu>${_bIco(ICO.piu)}${L('Aggiungi un premio', 'Add a reward', 'Añadir una recompensa')}</button></p>` : '')
+      : `<p class="vuoto">${L('Non hai ancora premi a punti canale su Twitch: creane uno e torna qui.', 'You have no channel-point rewards on Twitch yet: create one and come back here.', 'Aún no tienes recompensas de puntos de canal en Twitch: crea una y vuelve aquí.')}</p>`);
+}
+
+const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, scritta: _vestiScritta, etichetta: _vestiEtichetta, muro: _vestiMuro, effetti: _vestiEffetti };
 
 function _orologioGiu(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -10502,7 +10698,8 @@ function _posElemento(el, xy) {
     el.style.position = 'absolute';
     el.classList.add('nel-riquadro');
     const chat = el.classList.contains('ap-chat');
-    window.SB_RIQUADRO.posa(el, xy, { tela: { w: OVL_W, h: OVL_H }, chat, dentro: chat || el.classList.contains('alert-card') ? null : el.firstElementChild });
+    const area = chat || el.id === 'ap-muro';
+    window.SB_RIQUADRO.posa(el, xy, { tela: { w: OVL_W, h: OVL_H }, chat: area, dentro: area || el.classList.contains('alert-card') ? null : el.firstElementChild });
     if (chat) { el.innerHTML = _righeChatFinte(_leggiChatStile(), _messaggiFinti(true)); _iniettaManiglie('chat'); window.SB_RIQUADRO.ritaglia(el); }
     _maniglieAPosto(el, 1, 0);
     if (selezione && el.id === _idEl(selezione)) _disegnaRiquadro();
@@ -10664,6 +10861,7 @@ const PEZZI_EL = () => [
   ['boss', '#sez-boss'],
   ['scritta', '#sez-scritta'],
   ['etichetta', '#sez-etichetta'],
+  ['muro', '#sez-muro'],
 ];
 
 const _apertoGrp = {};
@@ -10941,6 +11139,7 @@ const ELEMENTI = () => {
   out.push({ k: 'boss', ico: ICO.target, n: L('Boss', 'Boss', 'Jefe'), cfg: 'overlayBoss' });
   out.push({ k: 'scritta', ico: ICO.testo, n: L('Testo a schermo', 'On-screen text', 'Texto en pantalla'), cfg: 'overlayScritta' });
   out.push({ k: 'etichetta', ico: ICO.fulmine, n: L('Nome del comando', 'Command name', 'Nombre del comando'), cfg: 'overlayEtichetta' });
+  out.push({ k: 'muro', ico: ICO.faccina, n: L('Muro delle emote', 'Emote wall', 'Muro de emotes'), cfg: 'overlayMuro' });
   out.push({ k: 'effetti', ico: ICO.effetti, n: L('Effetti a schermo', 'On-screen effects', 'Efectos en pantalla'), cfg: 'overlayEffetti' });
   return out;
 };
@@ -10992,7 +11191,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, bit: _defBit, boss: _defBoss, scritta: _defScritta, etichetta: _defEtichetta, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, bit: _defBit, boss: _defBoss, scritta: _defScritta, etichetta: _defEtichetta, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 function _cfgEl(k) {
   const e = ELEM(k);
@@ -11018,7 +11217,7 @@ function _semePos(k) {
   if (e.goal) return e.goal.xy || null;
   if (e.cont) return e.cont._st || _stCont(e.cont);
   if (e.cart) return e.cart.xy || null;
-  if (e.cfg) return _cfgEl(k).xy || null;
+  if (e.cfg) return _cfgEl(k).xy || (k === 'muro' ? MURO_PIENO() : null);
   return _SEME_FISSO[k] || null;
 }
 
@@ -11043,7 +11242,7 @@ function _accendiDi(k, v) {
   if (e && e.cont) { (e.cont.overlayCfg = e.cont.overlayCfg || {}).mostra = !!v; return; }
   if (e && e.cfg) {
     _cfgEl(k).attivo = !!v;
-    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo', boss: 'boss-attivo', scritta: 'scr-attivo', etichetta: 'eti-attivo' }[k]);
+    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo', boss: 'boss-attivo', scritta: 'scr-attivo', etichetta: 'eti-attivo', muro: 'muro-attivo' }[k]);
     if (chk) chk.checked = !!v;
     return;
   }
@@ -23369,6 +23568,19 @@ function attivaPiattaforma() {
   _g('mus-parti-riga')?.addEventListener('click', () => {
     _cfgEl('musica').parti = _partiInRiga();
     aggiornaAnteprima(); aggiornaInspector(); _ricorda(); salvaCfgElemento('musica');
+  });
+
+  _g('scheda-alert')?.addEventListener('click', (ev) => {
+    const prova = ev.target.closest('[data-muro-prova]');
+    if (prova) { conErrore(() => _muroProva(prova.dataset.muroProva)); return; }
+    const via = ev.target.closest('[data-premio-via]');
+    const piu = ev.target.closest('[data-premio-piu]');
+    if (!via && !piu) return;
+    const c = _cfgEl('muro');
+    if (via) { via.closest('[data-premio]')?.remove(); c.premi = _leggiPremiMuro(); }
+    else c.premi = [...(c.premi || []), { id: (_muroPremiTutti || [])[0]?.id || '', titolo: (_muroPremiTutti || [])[0]?.title || '', figura: 'caso' }].filter((p) => p.id);
+    _disegnaPremiMuro();
+    salvaCfgElemento('muro');
   });
 
   _g('scheda-alert')?.addEventListener('click', (ev) => {

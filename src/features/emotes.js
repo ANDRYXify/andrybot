@@ -88,6 +88,26 @@ export async function mappaCanale(helix, login) {
   return mappa;
 }
 
+// Solo le emote 7TV DEL CANALE, senza le globali: servono al muro delle emote
+// quando arriva un raid, per far esplodere le emote di chi arriva. Le globali
+// ce le hanno tutti, e non direbbero chi e' arrivato.
+const cacheSolo = new Map();     // login → { ts, mappa }
+export async function soloCanale(helix, login) {
+  const key = String(login || '').toLowerCase().trim();
+  if (!/^[a-z0-9_]{1,25}$/.test(key)) return {};
+  const hit = cacheSolo.get(key);
+  if (hit && Date.now() - hit.ts < TTL_MS) return hit.mappa;
+  let mappa = {};
+  try {
+    const u = await helix?.getUserByLogin?.(key);
+    const id = u?.id;
+    if (id && /^\d+$/.test(String(id))) mappa = estrai((await getJson(`https://7tv.io/v3/users/twitch/${encodeURIComponent(id)}`))?.emote_set);
+  } catch (e) { log.debug(`soloCanale #${key}:`, e?.message || e); }
+  if (cacheSolo.size > 500) cacheSolo.clear();
+  cacheSolo.set(key, { ts: Date.now(), mappa });
+  return mappa;
+}
+
 // Svuota la cache di un canale (o tutta): utile se un domani vogliamo forzare
 // un refresh dopo che lo streamer cambia le sue emote su 7TV.
 export function invalida(login) {

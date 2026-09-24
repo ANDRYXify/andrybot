@@ -96,7 +96,7 @@ if (!browser) { console.log('  –  saltato: manca Chromium o Playwright'); proc
 // il tema e il brano che il finto bot serve alla pagina dell'overlay: li scrive
 // l'editor, caso per caso, cosi' le due pagine vestono la stessa cosa
 let TEMA = null, MUSICA = { stato: 'niente' };
-const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, boss: true, scritta: true, etichetta: true, effetti: true, consolify: true };
+const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, boss: true, scritta: true, etichetta: true, muro: true, effetti: true, consolify: true };
 const ovl = overlayFinto({ tema: () => TEMA, musica: () => MUSICA });
 const { base, chiudi } = await apriSito({ overlay: ovl });
 
@@ -491,6 +491,59 @@ try {
     dice(edF && lvF && vicino(edF.w, lvF.w, 2) && vicino(edF.h, lvF.h, 2) && edDove && lvDove && vicino(edDove.x, lvDove.x, 2) && vicino(edDove.y, lvDove.y, 2),
       `effetti ${nome}: editor ${edF ? mis(edF) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvF ? mis(lvF) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
       'editor e diretta non coincidono');
+  }
+
+  // --- 6-octies. il muro delle emote --------------------------------------
+  // Un'area: a tutto schermo, in una fascia, in un riquadro sopra la webcam.
+  // La stessa area sulla tela e in onda; in onda le emote nascono rispetto a
+  // lei (non allo schermo), non superano il massimo a schermo, la stessa emote
+  // ripetuta resta una e cresce, e un'esplosione fa tutti i suoi pezzi.
+  const FACCIA = await ed.evaluate(() => window.SB_MURO.ESEMPI[0]);
+  const DENTRO = `(sel) => { const a = document.querySelector(sel); if (!a) return null; const r = a.getBoundingClientRect();
+    const em = [...a.querySelectorAll('.muro-emote:not(.muro-combo)')].map((e) => { const b = e.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, s: e.offsetWidth }; });
+    return { area: { x: r.left, y: r.top, w: r.width, h: r.height }, fuori: em.filter((e) => e.x < r.left - 2 * e.s || e.x > r.right + 2 * e.s || e.y < r.top - 2 * e.s || e.y > r.bottom + 2 * e.s).length, quante: em.length }; }`;
+  for (const [nome, xy] of [['a tutto schermo', null], ['in una fascia in basso', { x: 0, y: 60, w: 100, h: 40, r: 0 }], ['in un riquadro sulla webcam', { x: 65, y: 5, w: 30, h: 35, r: 0 }]]) {
+    const cfgMuro = await ed.evaluate(async ({ xy }) => {
+      const c = _cfgEl('muro'); c.attivo = true;
+      const q = _ovXY(); for (const k of Object.keys(q)) delete q[k];
+      if (xy) q.muro = { ...xy };
+      aggiornaAnteprima();
+      await new Promise((r) => setTimeout(r, 1200));
+      return JSON.parse(JSON.stringify(c));
+    }, { xy });
+    const edA = await ed.evaluate(`(${DOVE_S})('#ap-muro')`);
+    const edM = await misuraEd('#ap-muro');
+    const edGiro = await ed.evaluate(`(${DENTRO})('#ap-muro')`);
+    TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: xy ? { muro: xy } : {}, alertStile: null, chatStile: null,
+      muro: { ...cfgMuro, maxSchermo: 6, coda: 0, combo: { ...cfgMuro.combo, soglia: 3, finestra: 2 } } };
+    await apriLive(() => window.MIO && window.MIO.muro && window.MIO.muro.attivo === true);
+    const lvA = await live.evaluate(`(${DOVE_S})('#muro')`);
+    const lvM = await live.evaluate(`(${MISURA})('#muro')`);
+    dice(edM && lvM && edA && lvA && vicino(edM.w, lvM.w, 2) && vicino(edM.h, lvM.h, 2) && vicino(edA.x, lvA.x, 2) && vicino(edA.y, lvA.y, 2),
+      `muro ${nome}: editor ${edM ? mis(edM) : '–'} a ${edA ? Math.round(edA.x) + ',' + Math.round(edA.y) : '–'} = diretta ${lvM ? mis(lvM) : '–'} a ${lvA ? Math.round(lvA.x) + ',' + Math.round(lvA.y) : '–'}`,
+      'editor e diretta non coincidono');
+    dice(edGiro && edGiro.quante > 0 && edGiro.fuori === 0, `muro ${nome}: nello Studio le emote d'esempio girano dentro l'area (${edGiro ? edGiro.quante : 0} in volo)`, 'nessuna emote, o emote lontane dall\'area');
+    for (let i = 0; i < 20; i++) ovl.manda({ tipo: 'muro', chi: 'p' + i, testo: 'EmoA' + i, emotiTwitch: { ['EmoA' + i]: FACCIA } });
+    let piu = 0, fuori = 0;
+    for (let i = 0; i < 12; i++) {
+      await attesa(120);
+      const d = await live.evaluate(`(${DENTRO})('#muro')`);
+      if (d) { piu = Math.max(piu, d.quante); fuori += d.fuori; }
+    }
+    dice(piu > 0 && piu <= 6 && fuori === 0, `muro ${nome}: venti emote di fila, al massimo ${piu} a schermo (tetto 6), tutte nate rispetto all'area`, 'troppe a schermo, o lontane dall\'area');
+    for (const [i, chi] of ['a', 'b', 'c', 'd', 'e'].entries()) { ovl.manda({ tipo: 'muro', chi, testo: 'Combo', emotiTwitch: { Combo: FACCIA } }); await attesa(i < 4 ? 80 : 400); }
+    const conta = await live.evaluate(() => { const c = document.querySelector('#muro .muro-combo'); return c ? c.querySelector('.muro-conta').textContent : ''; });
+    dice(conta === '\u00d75', `muro ${nome}: cinque persone ripetono la stessa emote e ne resta una con «${conta}»`, 'la combo non c\'e\' o conta male');
+    await live.evaluate(() => document.querySelectorAll('#muro .muro-emote').forEach((e) => e.remove()));
+    await attesa(2600);
+    const dopo = await live.evaluate(() => ({ combo: !!document.querySelector('#muro .muro-combo'), pezzi: document.querySelectorAll('#muro .muro-emote').length }));
+    dice(!dopo.combo && dopo.pezzi >= 8, `muro ${nome}: finita la finestra la combo esplode (${dopo.pezzi} emote in volo)`, JSON.stringify(dopo));
+    await live.evaluate(() => document.querySelectorAll('#muro .muro-emote').forEach((e) => e.remove()));
+    await attesa(5000);
+    ovl.manda({ tipo: 'muro-esplodi', figura: 'piramide', parole: ['Boom'], emotiTwitch: { Boom: FACCIA } });
+    await attesa(300);
+    const pir = await live.evaluate(() => document.querySelectorAll('#muro .muro-emote').length);
+    dice(pir === 28, `muro ${nome}: la piramide di trenta emote ne mette 28, sette gradini (${pir})`, 'la figura non ha tutti i suoi pezzi');
   }
 
   // --- 6-ter. i cartelli -----------------------------------------------------

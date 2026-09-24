@@ -69,6 +69,7 @@ import * as cancello from './features/tg-cancello.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
+import { MuroEmote } from './features/muro.js';
 import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco, salvaRegistro } from './features/antibot.js';
 import { censisci } from './features/punteggio.js';
 import { carica as caricaRete } from './features/rete.js';
@@ -175,7 +176,9 @@ export class BotManager {
     if (this.running) return;
 
     this.clips = new ClipEngine({ helix: this.helix, say: (ch, t) => this.say(ch, t) });
-    this.alerts = new AlertsEngine({ effects: this.effects, say: (ch, t) => this.say(ch, t) });
+    // Il muro delle emote: la chat, gli eventi e i premi che fanno volare emote.
+    this.muro = new MuroEmote({ effects: this.effects, helix: this.helix });
+    this.alerts = new AlertsEngine({ effects: this.effects, say: (ch, t) => this.say(ch, t), muro: this.muro });
     // Anti-bot (stile Sery_Bot): raffiche di follow, nomi da bot, hate-raid.
     this.antibot = new AntiBot({
       helix: this.helix,
@@ -948,6 +951,7 @@ export class BotManager {
     }
     if (!msg.isSelf) this.clips.onActivity(msg);   // rilevatore "hype" per le clip automatiche (chat)
     try { this.alerts?.onChat(login, msg); } catch (e) { log.debug(`#${login} chat overlay:`, e?.message || e); }
+    try { this.muro?.suChat(login, msg); } catch (e) { log.debug(`#${login} muro:`, e?.message || e); }
     // pannello chat dello Studio Web (feed 'chat_raw' ungated): solo se qualcuno
     // è collegato via SSE, così non pesa quando lo Studio è chiuso.
     try { this.alerts?.onChatRaw?.(login, msg); } catch (e) { log.debug(`#${login} chat studio:`, e?.message || e); }
@@ -1016,6 +1020,9 @@ export class BotManager {
     // a che punto e' l'hype train in corso (!treno)
     try { trenoFeat.tryComando(cmdMsg, parla); }
     catch (e) { log.error(`#${login} treno:`, e?.message || e); }
+    // un'esplosione sul muro delle emote (!esplodi Kappa)
+    try { this.muro?.tryComando(cmdMsg, parla); }
+    catch (e) { log.error(`#${login} muro:`, e?.message || e); }
     // comandi base pronti (!so/!shoutout, !followage, !uptime): opt-out e mai
     // sopra ai comandi/Moduli creati dallo streamer (quelli vincono).
     comandibase.tryComando(this.helix, cmdMsg, parla)
@@ -1182,6 +1189,8 @@ export class BotManager {
       try { this.penitenze?.daRiscatto(channel, data); } catch (e) { log.debug(`#${channel} penitenza:`, e?.message || e); }
       // contatore a punti canale: riscatto → +step (annuncio + overlay OBS).
       try { contatori.perRiscatto(channel, data, (t) => this.say(channel, t), (p) => this.effects?.emit?.(channel, p)); } catch (e) { log.debug(`#${channel} contatore riscatto:`, e?.message || e); }
+      // esplosione sul muro delle emote, se il premio e' fra quelli scelti
+      try { this.muro?.suPremio(channel, data); } catch (e) { log.debug(`#${channel} muro premio:`, e?.message || e); }
     }
     this._dispatchEvent(ev);
   }
@@ -1216,6 +1225,8 @@ export class BotManager {
     this.brain?.onEvent?.(ev, (text) => this.say(channel, text));
     // alert overlay (follow/sub/cheer/raid): notifica animata + suono
     try { this.alerts?.onEvent(ev); } catch (e) { log.debug(`#${channel} alert evento:`, e?.message || e); }
+    // il muro delle emote esplode per gli eventi che lo streamer ha scelto
+    this.muro?.suEvento(ev).catch((e) => log.debug(`#${channel} muro evento:`, e?.message || e));
     // clip automatiche: sub/bit/raid sono momenti forti (le clip li "sentono")
     try { this.clips?.onEvent(ev); } catch (e) { log.debug(`#${channel} clip evento:`, e?.message || e); }
     // la classifica dei Bit tenuta in memoria non vale piu': un cheer e' l'unico

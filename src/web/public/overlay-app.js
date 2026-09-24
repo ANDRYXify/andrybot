@@ -12,6 +12,7 @@ const urlTimerParti = '/overlay/' + encodeURIComponent(login) + '/timer/parti' +
 const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, stile: { alert: null, chat: null }, widget: {} };
 const mostra = (k) => MIO.mostra[k] !== false;
 
+const muroBox = document.getElementById('muro');
 const palco = document.getElementById('palco');
 const palcoLibero = document.getElementById('palco-libero');
 const etichette = document.getElementById('etichette');
@@ -494,7 +495,7 @@ function trasformaXY(xy) {
 function posizionaContenitore(el, xy, corner) {
   if (xy && xy.x != null) {
     el.className = '';
-    if (window.SB_RIQUADRO.e(xy)) { window.SB_RIQUADRO.posa(el, xy, { chat: el === chatBox }); return; }
+    if (window.SB_RIQUADRO.e(xy)) { window.SB_RIQUADRO.posa(el, xy, { chat: el === chatBox || el === muroBox }); return; }
     window.SB_RIQUADRO.togli(el);
     el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
     el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.width = 'max-content';
@@ -607,11 +608,15 @@ function aggiungiStemmi(riga, ev) {
   if (ev.badge7tv) img(ev.badge7tv, '7tv');
 }
 
+function emoteUrl(mappa, nome) {
+  return mappa && Object.prototype.hasOwnProperty.call(mappa, nome) && typeof mappa[nome] === 'string' ? mappa[nome] : '';
+}
+
 function testoConEmote(riga, testo, extra) {
   const pezzi = String(testo || '').split(/(\s+)/);
   for (const p of pezzi) {
 
-    const url = p && (EMOTE[p] || (extra && extra[p]));
+    const url = p && (emoteUrl(EMOTE, p) || emoteUrl(extra, p));
     if (url) {
       const img = document.createElement('img');
       img.className = 'emote';
@@ -770,6 +775,164 @@ function ridisegnaEtichette() {
   posaEtichette();
 }
 
+const MURO = { chiave: '', combo: null, coda: null, aperte: new Map(), esplosioni: [], esplode: false, giro: 0 };
+
+function muroAcceso() { return mostra('muro') && !!MIO.muro && MIO.muro.attivo === true; }
+
+function posaMuro() {
+  const xy = MIO.xy.muro;
+  posizionaContenitore(muroBox, window.SB_RIQUADRO.e(xy) ? xy : null, 'schermo');
+}
+
+function areaMuro() { return { w: muroBox.clientWidth || window.innerWidth, h: muroBox.clientHeight || window.innerHeight }; }
+
+function trenoInCorso() { const t = MIO.trenoStato; return !!(t && !t.finito && Number(t.scade) > Date.now()); }
+function arcobalenoOra() { const a = MIO.muro && MIO.muro.arcobaleno; return a === 'sempre' || (a === 'treno' && trenoInCorso()); }
+
+function vesteMuro() { return { ombra: MIO.muro.ombra !== false, arcobaleno: arcobalenoOra() }; }
+
+function lanciaEmote(e) {
+  const q = MURO.coda;
+  window.SB_MURO.lancia(muroBox, e, MIO.muro, vesteMuro(), () => {
+    if (MURO.coda !== q || !q) return;
+    const dopo = q.esce(Date.now());
+    if (dopo && muroAcceso()) lanciaEmote(dopo);
+  });
+}
+
+function entraEmote(e, ora) {
+  if (!MURO.coda) return;
+  if (MURO.coda.entra(e, ora).parti) lanciaEmote(e);
+}
+
+function apriCombo(e, n) {
+  const c = MIO.muro;
+  const area = areaMuro();
+  const s = window.SB_MURO.lato(area, { ...c, varia: 0 }, Math.random);
+  const kmax = Math.max(1, Math.min(3, (0.9 * Math.min(area.w, area.h)) / s));
+  const m = (s * kmax) / 2;
+  const x = m + Math.random() * Math.max(0, area.w - 2 * m);
+  const y = m + Math.random() * Math.max(0, area.h - 2 * m);
+  const el = window.SB_MURO.nodo(e, s, vesteMuro());
+  el.classList.add('muro-combo');
+  el.style.transform = 'translate(' + (x - s / 2) + 'px,' + (y - s / 2) + 'px) scale(0)';
+  const conta = document.createElement('b');
+  conta.className = 'muro-conta';
+  conta.style.fontSize = Math.round(s * 0.34) + 'px';
+  el.appendChild(conta);
+  muroBox.appendChild(el);
+  MURO.aperte.set(e.nome, { el, conta, s, x, y, kmax, soglia: MURO.combo.soglia });
+  requestAnimationFrame(() => cresciCombo(e.nome, n));
+}
+
+function cresciCombo(nome, n) {
+  const v = MURO.aperte.get(nome);
+  if (!v) return;
+  const k = Math.min(v.kmax, window.SB_MURO.crescita(n, v.soglia));
+  v.conta.textContent = '\u00d7' + n;
+  v.el.style.transform = 'translate(' + (v.x - v.s / 2) + 'px,' + (v.y - v.s / 2) + 'px) scale(' + k + ')';
+  v.el.classList.remove('batte');
+  void v.el.offsetWidth;
+  v.el.classList.add('batte');
+}
+
+function scadonoCombo() {
+  if (!MURO.combo) return;
+  for (const x of MURO.combo.scadute(Date.now())) {
+    const v = MURO.aperte.get(x.nome);
+    MURO.aperte.delete(x.nome);
+    if (v) { v.el.classList.add('scoppia'); setTimeout(() => v.el.remove(), 260); }
+    const c = MIO.muro;
+    esplodi(c.combo.figura, [x], Math.min(c.esplosioni.quante, Math.max(8, x.n)));
+  }
+}
+
+function preparaMuro() {
+  posaMuro();
+  const c = MIO.muro;
+  const chiave = muroAcceso() ? JSON.stringify([c.maxSchermo, c.coda, c.combo]) : '';
+  if (chiave === MURO.chiave) return;
+  MURO.chiave = chiave;
+  for (const v of MURO.aperte.values()) v.el.remove();
+  MURO.aperte.clear();
+  MURO.coda = chiave ? window.SB_MURO.coda({ maxSchermo: c.maxSchermo, coda: c.coda }) : null;
+  MURO.combo = chiave && c.combo && c.combo.attivo !== false ? window.SB_MURO.combo(c.combo) : null;
+  if (!chiave) { muroBox.textContent = ''; MURO.esplosioni.length = 0; }
+  clearInterval(MURO.giro);
+  MURO.giro = MURO.combo ? setInterval(scadonoCombo, 250) : 0;
+}
+
+function muroChat(d) {
+  if (!muroAcceso()) return;
+  const c = MIO.muro;
+  const lista = window.SB_MURO.emoteDi(d.testo, { twitch: d.emotiTwitch || {}, canale: EMOTE },
+    { fonti: c.fonti, esclusi: c.esclusiEmote, doppioni: c.doppioni, perMessaggio: c.perMessaggio });
+  const ora = Date.now();
+  const contate = new Set();
+  for (const e of lista) {
+    if (MURO.combo) {
+      if (contate.has(e.nome)) { if (MURO.aperte.has(e.nome)) continue; entraEmote(e, ora); continue; }
+      contate.add(e.nome);
+      const r = MURO.combo.passo(e, String(d.chi || ''), ora);
+      if (r.azione === 'apri') { apriCombo(e, r.n); continue; }
+      if (r.azione === 'cresci') { cresciCombo(e.nome, r.n); continue; }
+      if (r.azione === 'niente') continue;
+    }
+    entraEmote(e, ora);
+  }
+}
+
+function esplodi(figura, pool, n) {
+  if (!muroAcceso() || !pool.length || MURO.esplosioni.length >= 3) return;
+  MURO.esplosioni.push({ figura, pool, n });
+  if (!MURO.esplode) prossimaEsplosione();
+}
+
+function prossimaEsplosione() {
+  const job = MURO.esplosioni.shift();
+  if (!job || !muroAcceso()) { MURO.esplode = false; return; }
+  MURO.esplode = true;
+  const fine = window.SB_MURO.esplosione(muroBox, job.figura, job.pool, job.n, MIO.muro, vesteMuro());
+  setTimeout(prossimaEsplosione, Math.max(600, fine * 0.8));
+}
+
+function casuali(mappa, n) {
+  const nomi = Object.keys(mappa || {});
+  const out = [];
+  while (out.length < n && nomi.length) {
+    const k = nomi.splice(Math.floor(Math.random() * nomi.length), 1)[0];
+    if (typeof mappa[k] === 'string') out.push({ nome: k, url: mappa[k] });
+  }
+  return out;
+}
+
+function poolMuro(d) {
+  const c = MIO.muro;
+  let pool = [];
+  if (Array.isArray(d.parole) && d.parole.length) {
+    pool = window.SB_MURO.emoteDi(d.parole.join(' '), { twitch: d.emotiTwitch || {}, canale: EMOTE },
+      { fonti: c.fonti, esclusi: c.esclusiEmote, doppioni: true, perMessaggio: 20 });
+  }
+  if (!pool.length && Array.isArray(d.emoti)) {
+    pool = d.emoti.filter((e) => e && /^https:\/\/cdn\.7tv\.app\/emote\/[A-Za-z0-9]+\/2x\.webp$/.test(String(e.url)))
+      .map((e) => ({ nome: String(e.nome), url: e.url }));
+  }
+  if (!pool.length) pool = casuali(EMOTE, 8);
+  if (!pool.length) pool = window.SB_MURO.ESEMPI.map((url, i) => ({ nome: 'e' + i, url }));
+  return pool;
+}
+
+function muroEsplodi(d) {
+  if (!muroAcceso()) return;
+  esplodi(d.figura, poolMuro(d), MIO.muro.esplosioni.quante);
+}
+
+function muroBoss(d) {
+  if (!muroAcceso() || !d || d.azione !== 'fine' || !d.vinto) return;
+  const ev = MIO.muro.eventi && MIO.muro.eventi.boss;
+  if (ev && ev.attivo !== false) esplodi(ev.figura, poolMuro({}), MIO.muro.esplosioni.quante);
+}
+
 function ricevi(m) {
   let dati;
   try { dati = JSON.parse(m.data); } catch (e) { return; }
@@ -781,6 +944,8 @@ function ricevi(m) {
     else if (dati.tipo === 'penitenza') { if (mostra('pen')) penitenza(dati); }
     else if (dati.tipo === 'alert') alert(dati);
     else if (dati.tipo === 'chat') chat(dati);
+    else if (dati.tipo === 'muro') muroChat(dati);
+    else if (dati.tipo === 'muro-esplodi') muroEsplodi(dati);
     else if (dati.tipo === 'widget') { if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, (MIO.widget && MIO.widget[dati.id]) || dati.cfg, dati.valore); }
     else if (dati.tipo === 'goal') { MIO.goals = Array.isArray(dati.goals) ? dati.goals : MIO.goals; goal(MIO.goals, dati.conti || {}); }
     else if (dati.tipo === 'timer') { MIO.timerFine = Number(dati.fine) || MIO.timerFine; disegnaTimer(); }
@@ -788,7 +953,7 @@ function ricevi(m) {
     else if (dati.tipo === 'bit') { if (Array.isArray(dati.righe)) MIO.bitRighe = dati.righe; disegnaBit(); }
     else if (dati.tipo === 'tema') caricaTema();
     else if (dati.tipo === 'testo') mostraTesto(dati);
-    else if (dati.tipo === 'boss') boss(dati);
+    else if (dati.tipo === 'boss') { boss(dati); muroBoss(dati); }
     else if (dati.tipo === 'contatore') contatore(dati);
     else if (dati.tipo === 'immagine' || dati.tipo === 'video') { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
 }
@@ -1442,6 +1607,8 @@ function applicaTema(t) {
   ridisegnaScritte();
   MIO.etichetta = t.etichetta || null;
   ridisegnaEtichette();
+  MIO.muro = t.muro || null;
+  preparaMuro();
   posaEffetti();
   MIO.bit = t.bit || null;
   if (MIO.bit && MIO.bit.attivo && mostra('bit')) chiediBit(); else { disegnaBit(); }

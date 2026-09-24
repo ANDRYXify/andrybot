@@ -31,6 +31,7 @@ export default {
       ['Testo a schermo', 'La scritta che un comando manda con «Mostra testo sull\'overlay».', 'al centro'],
       ['Nome del comando', 'La pastiglia «!comando» che compare quando parte un effetto.', 'in basso al centro'],
       ['Effetti a schermo', 'L\'area dove compaiono immagini e video che partono da un comando o da un premio a punti: la sposti e la ridimensioni, e in un riquadro si adattano. I suoni partono in ogni overlay che ha gli effetti accesi.', 'al centro'],
+      ['Muro delle emote', 'Le emote che la chat scrive volano sulla scena, ognuna col suo movimento; la stessa emote ripetuta cresce e poi esplode, e gli eventi fanno esplodere figure intere. Di serie spento.', 'tutto lo schermo'],
     ] },
     { p: ['Sulla tela dello Studio ci sono <strong>tutti</strong>, obiettivi e contatori compresi: quello che vedi lì è quello che va in onda, nello stesso punto.'] },
 
@@ -55,6 +56,24 @@ export default {
     { p: ['Gli angoli della tela sono gli stessi dell\'overlay vero (un dito dai bordi), quindi un elemento «in alto a destra» sta a filo dello schermo anche in OBS. Il salvataggio è automatico: la posizione si scrive appena molli il mouse. L\'aspetto (colori, font, forma) invece esce con <strong>Salva overlay</strong>: se provi a cambiare scheda, overlay o pagina con modifiche non salvate, l\'editor te lo chiede prima. Se un salvataggio non riesce, te lo dice.'] },
     { p: ['<strong>Il riquadro.</strong> La chat dentro un riquadro va a capo alla sua larghezza, impila le righe dal basso e quando non ci stanno più la più vecchia esce dall\'alto: un riquadro di due caselle per tre mostra quante righe ci stanno. Per tutto il resto (alert, widget, obiettivi, conto alla rovescia, player, contatori) il riquadro è la scatola: l\'altezza dà la grandezza, la larghezza dà lo spazio. Il player in un riquadro largo ha tanto posto per il titolo, in uno quasi quadrato è quasi quadrato, in uno basso e largo è una barra sottile; carattere e proporzioni interne non si deformano. Niente esce dalla tela.'] },
     { p: ['Quello che vedi sulla tela ha le misure della diretta: il player tiene la stessa larghezza qualunque sia il brano, la chat si ferma alla larghezza che hai scelto, e un elemento spento resta sulla tela ma sbiadito, così lo trovi e lo riaccendi.'] },
+
+    { h2: 'Il muro delle emote' },
+    { p: ['Ogni emote scritta in chat vola nell\'area del muro: di serie <strong>tutto lo schermo</strong>, oppure un riquadro, per esempio sopra la webcam o in una fascia in basso. Sulla tela dello Studio il muro è il livello di fondo: sta sotto a tutto, e se occupa tutta la tela un clic sulla tela vuota lo sceglie. Un\'area grande quanto la tela non ha dove andare: per spostarla la stringi prima dai bordi.'] },
+    { tabella: [
+      ['Cosa', 'Come funziona', 'Di serie'],
+      ['Cosa vola', 'Le emote di Twitch, quelle 7TV del canale e, se le accendi, le emoji. Un messaggio ne lancia fino al massimo che scegli; la stessa emote più volte nello stesso messaggio solo se lo lasci.', 'Twitch e 7TV, 5 per messaggio'],
+      ['Movimenti', 'Dieci: sale come una bolla, attraversa dritta, rimbalza sul fondo, sfreccia, resta appesa e cade, scende come un foglio, salta dal basso, lanciata rimbalza ed esce, batte ferma in un punto, gira attorno al centro. Ogni emote ne pesca uno fra quelli accesi.', 'tutti accesi'],
+      ['Grandezza', 'Una percentuale del lato corto dell\'area, con quanto varia e un minimo e un massimo in pixel. Mai più di metà del lato corto, così ogni movimento ci sta anche in un\'area bassa.', '8%, varia del 30%, da 28 a 140 px'],
+      ['Quante', 'Il massimo a schermo. Oltre, le nuove aspettano in una coda breve che perde le più vecchie; quelle in attesa da più di otto secondi si lasciano perdere, perché arriverebbero fuori tempo.', '50 a schermo, 20 in attesa'],
+      ['Combo', 'Quando la chat ripete la stessa emote, dalla soglia in poi ne resta una sola che cresce con il suo contatore («×12»). Quando per la finestra scelta nessuno la ripete, esplode nella figura scelta con almeno otto emote. Di serie conta una volta per persona: una persona sola che ripete non fa una combo della chat.', 'da 4, finestra di 6 secondi, fuochi'],
+      ['Esplosioni', 'Otto figure fatte di emote: fuochi d\'artificio, fontana, spirale, pioggia, trenino, piramide, scritta (la parola che scegli, fino a 8 lettere) e cuore. Ne parte una alla volta, e al massimo tre aspettano.', '30 emote, 6 secondi, HYPE'],
+      ['!esplodi', 'Chi lo scrive fa esplodere le emote del suo messaggio: se ne scrive due volte una, pesa il doppio. Fra due esplosioni c\'è un\'attesa uguale per tutti; chi può scriverlo, come si chiama e se è acceso si sceglie nei comandi pronti.', 'figura a caso, 30 secondi'],
+      ['Eventi', 'Raid (con le emote 7TV del canale che arriva, se le ha), abbonamenti (una raffica di regali esplode una volta sola), bit, donazioni (nella valuta delle tue donazioni), hype train che parte e che finisce, boss sconfitto. Ognuno ha la sua figura, e quelli con un numero la loro soglia.', 'tutti accesi; raid da 5, bit da 100, donazioni da 5'],
+      ['Premi a punti canale', 'Fino a dieci premi, ognuno con la sua figura. Il testo scritto nel riscatto porta le sue emote.', 'nessuno'],
+      ['Chi', 'Gli stessi livelli dei comandi: tutti, abbonati, VIP, moderatori. I bot di chat più comuni restano fuori, e così le persone e le emote che scrivi negli esclusi.', 'tutti, bot esclusi'],
+      ['Veste', 'L\'ombra, e i colori che girano: mai, sempre o solo durante l\'hype train.', 'ombra, colori durante l\'hype train'],
+    ] },
+    { p: ['Nello Studio il muro gira con emote d\'esempio mosse dallo <strong>stesso motore</strong> dell\'overlay: i movimenti che vedi sulla tela sono quelli della diretta. Il tasto <strong>Prova</strong> di ogni figura la mostra sulla tela e la manda anche all\'overlay vero, con le emote 7TV del tuo canale.'] },
 
     { h2: 'Metterlo in OBS' },
     { ul: [

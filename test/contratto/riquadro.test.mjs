@@ -54,7 +54,7 @@ test('una resa sola, letta da tutte e due le pagine, e dopo il contenuto', () =>
 });
 
 test('l\'editor: la stessa resa, la conversione senza salti, i bordi che si agganciano', () => {
-  assert.ok(/window\.SB_RIQUADRO\.posa\(el, xy, \{ tela: \{ w: OVL_W, h: OVL_H \}, chat, dentro: chat \|\| el\.classList\.contains\('alert-card'\) \? null : el\.firstElementChild \}\);/.test(APP),
+  assert.ok(/const area = chat \|\| el\.id === 'ap-muro';\n    window\.SB_RIQUADRO\.posa\(el, xy, \{ tela: \{ w: OVL_W, h: OVL_H \}, chat: area, dentro: area \|\| el\.classList\.contains\('alert-card'\) \? null : el\.firstElementChild \}\);/.test(APP),
     'la tela passa le sue misure, e il tetto di larghezza va sull\'elemento dentro l\'involucro, come in diretta sta sull\'elemento');
   assert.ok(/if \(o\.dentro\) \{ o\.dentro\.style\.maxWidth = '100%'; el\._rqDentro = o\.dentro; \}/.test(RQ), 'riquadro.js lo applica prima di misurare');
   assert.ok(/el\.style\.width = \(fw \/ k\) \+ 'px'; el\.style\.height = \(fh \/ k\) \+ 'px'; el\.style\.maxWidth = 'none';/.test(RQ), 'dopo la misura la scatola diventa il riquadro: la forma la decide chi tira i bordi');

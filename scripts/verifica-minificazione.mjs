@@ -36,6 +36,7 @@ const PONTI = [
   ['suono.js', ['SB_SUONO']],
   ['flusso.js', ['SB_FLUSSO']],
   ['riquadro.js', ['SB_RIQUADRO']],
+  ['muro.js', ['SB_MURO']],
   ['disegno.js', ['SB_DISEGNO']],
 ];
 

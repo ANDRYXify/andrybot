@@ -1895,3 +1895,22 @@ non scattava mai, e ogni video col green screen usciva a 300×150, schiacciato a
 due per uno qualunque fosse la sua forma. Ora c'è un segno esplicito di «già
 misurata», e l'area si riposa appena la misura c'è.
 
+
+## Il muro delle emote
+
+Un elemento nuovo, con un modello suo: sta in docs/MURO-EMOTE.md. Qui le due
+cose che riguardano la scena.
+
+**Un'area, non un punto.** Il muro e' dove le emote volano: o tutto lo schermo
+(di serie) o un riquadro. Una posa a punto non ha senso per un'area e il
+server la butta (`normMuro`). Nello Studio, se non e' posato, il suo seme e' il
+riquadro a tutta tela, cosi' la tela lo disegna con le misure della diretta.
+In onda e' `#muro.schermo`, `inset: 0`; nel riquadro si posa come la chat,
+con `left/top/width/height` in centesimi.
+
+**Il fondo della tela.** E' il primo figlio della tela e il primo della pagina
+dell'overlay: sta sotto a tutto, e non ruba il clic agli altri elementi. A
+tutto schermo la tela vuota e' lui: un clic la' lo sceglie. Scelto, non sale
+sopra gli altri come fa un elemento scelto. Un'area grande quanto la tela non
+ha dove andare di lato: per spostarla la si stringe prima, e il cancello dello
+Studio fa lo stesso invece di chiederle lo spostamento impossibile.

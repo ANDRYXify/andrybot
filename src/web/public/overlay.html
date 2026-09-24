@@ -15,6 +15,8 @@
     }
 
     
+    #muro { position: fixed; overflow: hidden; pointer-events: none; }
+    #muro.schermo { inset: 0; }
     #palco { position: fixed; pointer-events: none; }
     #palco.centro { inset: 0; }
     #palco-libero { position: fixed; inset: 0; pointer-events: none; }
@@ -80,6 +82,7 @@
   </style>
 </head>
 <body>
+  <div id="muro" class="schermo"></div>
   <div id="palco" class="centro"></div>
   <div id="palco-libero"></div>
   <div id="etichette" class="basso-centro"></div>
@@ -97,6 +100,7 @@
   <script src="/presets.js"></script>
   <script src="/flusso.js"></script>
   <script src="/riquadro.js"></script>
+  <script src="/muro.js"></script>
   <script src="/overlay-app.js" defer></script>
 
 <!-- Questo software e tutto il suo contenuto (codice, logica, dati, motori di ragionamento e la persona "Lia") sono proprieta intellettuale di Andrea Taliento (ANDRYXify). © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live. ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->

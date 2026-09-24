@@ -47,7 +47,7 @@ test('l\'alert «donazione» esiste dove nasce, dove si veste e dove si salva', 
   assert.match(AL, /if \(!soloAvviso && cfgD\.annunciaChat && this\.say\)/, 'e il grazie in chat non si ripete');
   assert.match(AL, /importo >= \(Number\(conf\.minImporto\) \|\| 0\)/, 'rispetta l\'importo minimo');
   assert.match(AL, /cfgD\.annunciaChat && this\.say\)/, 'ringrazia in chat solo se acceso');
-  assert.match(BOT, /new AlertsEngine\(\{ effects: this\.effects, say: \(ch, t\) => this\.say\(ch, t\) \}\)/, 'il bot gli presta la chat');
+  assert.match(BOT, /new AlertsEngine\(\{ effects: this\.effects, say: \(ch, t\) => this\.say\(ch, t\)[, ]/, 'il bot gli presta la chat');
   assert.match(APP, /\{ key: 'donazione', nome: L\('Donazione'/, 'il pannello lo elenca fra gli alert');
   assert.match(APP, /soglia: \{ campo: 'minImporto'/, 'con la soglia dell\'importo minimo');
   assert.match(SRV, /donazione: \{ \.\.\.evt\(p\.donazione\), minImporto:/, 'il server lo salva');

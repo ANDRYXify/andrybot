@@ -74,9 +74,10 @@ export function contiGoal(settings) {
 const piattaformaDi = (msg) => String(msg?.piattaforma || 'twitch').toLowerCase();
 
 export class AlertsEngine {
-  constructor({ effects, say } = {}) {
+  constructor({ effects, say, muro } = {}) {
     this.effects = effects || null;
     this.say = say || null;
+    this.muro = muro || null;
   }
 
   cfg(channel) { return streamers.get(channel)?.settings || null; }
@@ -173,6 +174,8 @@ export class AlertsEngine {
       if (!soloAvviso && cfgD.annunciaChat && this.say) this.say(channel, riempi(cfgD.testoChat || 'Grazie {user} per {importo}!', vars));
       // l'offerta raggiunta accende il suo effetto, un attimo dopo l'avviso
       if (!soloAvviso && stessa) { const liv = livelloPer(cfgD.livelli, importo); if (liv?.effetto) this._sparaEffetto(channel, liv.effetto, 1200); }
+      // il muro delle emote, dalla soglia in su: nella valuta del canale, come l'obiettivo
+      if (!soloAvviso && stessa) { try { this.muro?.suDono(channel, importo); } catch { /* il muro e' un di piu' */ } }
       log.info(`donazione su #${channel}: ${vars.importo} da ${vars.user}`);
       return true;
     } catch (e) { log.debug('donazione:', e?.message || e); return false; }
@@ -436,6 +439,7 @@ export class AlertsEngine {
       boss: (s.overlayBoss && typeof s.overlayBoss === 'object') ? s.overlayBoss : null,
       scritta: (s.overlayScritta && typeof s.overlayScritta === 'object') ? s.overlayScritta : null,
       etichetta: (s.overlayEtichetta && typeof s.overlayEtichetta === 'object') ? s.overlayEtichetta : null,
+      muro: (s.overlayMuro && typeof s.overlayMuro === 'object') ? s.overlayMuro : null,
       // I CARTELLI arrivano all'overlay con l'immagine gia' risolta in
       // indirizzo, come le icone dei widget: la pagina non sa niente della
       // libreria Effetti, e non deve saperlo.

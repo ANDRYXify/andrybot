@@ -137,7 +137,7 @@ import {
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
-  normMusica, normTimer, normTreno, normBit, normBoss, normScritta, normEtichetta, normCartelli,
+  normMusica, normTimer, normTreno, normBit, normBoss, normScritta, normEtichetta, normMuro, FIGURE_MURO, normCartelli,
 } from './stile.js';
 
 // --- PIÙ OVERLAY: ogni overlay ha un suo LAYOUT (quali elementi mostra e dove)
@@ -145,7 +145,7 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'effetti', 'consolify'];
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
 const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {});
 // Gli elementi nati da un interruttore che c'era gia' (docs/OVERLAY.md, «Lo
 // stesso interruttore di prima»): finche' in un overlay non sono scritti,
@@ -1401,6 +1401,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       boss: normBoss(base.boss),
       scritta: normScritta(base.scritta),
       etichetta: normEtichetta(base.etichetta),
+      muro: normMuro(base.muro),
       // gia' fuso con l'occasione accesa, se ce n'e' una: chi guarda la diretta
       // deve vedere una cosa sola, non una base e una correzione
       mostra: vis.mostra,
@@ -5710,6 +5711,15 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     res.json({ ok: true });
   }));
 
+  // Prova un'esplosione del muro delle emote nell'overlay, con le emote del canale.
+  app.post('/api/muro/prova', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const figura = FIGURE_MURO.includes(req.body?.figura) ? req.body.figura : null;
+    if (!figura) return res.status(400).json({ errore: 'figura non valida' });
+    try { manager.muro?.prova(login, figura); } catch { /* niente */ }
+    res.json({ ok: true });
+  }));
+
   // Prova un alert / la chat / un widget nell'overlay.
   app.post('/api/alert/prova', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
@@ -6010,6 +6020,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     if (b.overlayBoss !== undefined) out.overlayBoss = normBoss(b.overlayBoss);
     if (b.overlayScritta !== undefined) out.overlayScritta = normScritta(b.overlayScritta);
     if (b.overlayEtichetta !== undefined) out.overlayEtichetta = normEtichetta(b.overlayEtichetta);
+    if (b.overlayMuro !== undefined) out.overlayMuro = normMuro(b.overlayMuro);
     if (b.overlayTreno !== undefined) {
       out.overlayTreno = normTreno(b.overlayTreno);
     }
@@ -6437,7 +6448,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayScritta', 'overlayEtichetta', 'overlayCartelli', 'fontPersonali'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayScritta', 'overlayEtichetta', 'overlayMuro', 'overlayCartelli', 'fontPersonali'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }

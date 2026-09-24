@@ -215,6 +215,7 @@
 .ap-stage .ap-el:hover { outline: 2px solid color-mix(in srgb, var(--acc) 35%, transparent); outline-offset: 6px; }
 }
 .ap-stage .ap-el.sel  { outline: 3px dashed var(--acc); outline-offset: 6px; z-index: 20; }
+.ap-stage #ap-muro.sel { z-index: auto; outline-offset: -3px; }
 .ap-stage .ap-el.spento { opacity: .35; }
 .ap-stage .ap-el.bloccato { cursor: default; }
 .ap-stage .ap-el.nel-riquadro.sel { outline: none; }
@@ -1055,6 +1056,21 @@
 .effetto.dentro { opacity: 1; transform: scale(1); }
 .riquadro > .effetto { max-width: 100%; max-height: 100%; }
 
+.ovl-muro { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.muro-emote { position: absolute; left: 0; top: 0; transform-origin: 50% 50%; will-change: transform, opacity; }
+.muro-emote img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.muro-emote .muro-emoji { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; line-height: 1; }
+.muro-emote.ombra { filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .5)); }
+.muro-emote.arcobaleno img, .muro-emote.arcobaleno .muro-emoji { animation: muro-arcobaleno 2.4s linear infinite; }
+@keyframes muro-arcobaleno { to { filter: hue-rotate(360deg); } }
+.muro-combo { transition: transform .28s cubic-bezier(.3, 1.5, .5, 1), opacity .25s ease; }
+.muro-combo.batte img, .muro-combo.batte .muro-emoji { animation: muro-batte .3s ease-out; }
+@keyframes muro-batte { 40% { scale: 1.16; } }
+.muro-combo.scoppia { opacity: 0; }
+.muro-conta { position: absolute; right: -.35em; bottom: -.3em; font-weight: 900; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #fff; line-height: 1; letter-spacing: .01em; font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 .12em #000, 0 .06em .18em rgba(0, 0, 0, .7); }
+
 @media (prefers-reduced-motion: reduce) {
   .ovl-musica .m-disco, .ovl-musica .m-onde i, .ovl-musica.scorre .m-scorri, .ovl-timer.finito .t-num,
   .ovl-treno.t-treasure .tr-ico, .ovl-treno.t-golden-kappa .tr-ico,
@@ -1072,4 +1088,6 @@
   .ovl-boss .boss-danno { display: none; }
   .ovl-boss .boss-scia, .ovl-boss .boss-vita { transition: none; }
   .ovl-scritta, .ovl-etichetta, .effetto { transition: none; }
+  .muro-combo { transition: none; }
+  .muro-combo.batte img, .muro-combo.batte .muro-emoji, .muro-emote.arcobaleno img, .muro-emote.arcobaleno .muro-emoji { animation: none; }
 }

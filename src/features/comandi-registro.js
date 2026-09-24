@@ -48,6 +48,7 @@ export const MODULI = {
   discord: { nome: ['Ruoli su Discord', 'Discord roles', 'Roles en Discord'], file: 'discord-collega.js', acceso: () => true },
   scudo: { nome: ['Scudo', 'Shield', 'Escudo'], file: 'antibot.js', acceso: (s) => !!s.antibot?.attivo },
   modalita: { nome: ['Modalità della chat a tempo', 'Timed chat modes', 'Modos del chat con tiempo'], file: 'modalita-chat.js', acceso: () => true },
+  muro: { nome: ['Muro delle emote', 'Emote wall', 'Muro de emotes'], file: 'muro.js', acceso: (s) => s.overlayMuro?.attivo === true },
 };
 
 // AGGIUNGERE UN COMANDO E' UNA RIGA. Questa e' la forma completa: quel che non
@@ -182,6 +183,8 @@ export const COMANDI = [
 
   { id: 'treno', modulo: 'treno', nomi: ['treno', 'hypetrain', 'hype'], titolo: ['A che punto \u00e8 il treno', 'Where the train is', 'Por d\u00f3nde va el tren'],
     cosa: ['Dice a che livello \u00e8 l\u2019hype train in corso, quanto manca al prossimo e quanti secondi restano.', 'Says what level the running hype train is at, how far to the next one and how many seconds are left.', 'Dice en qu\u00e9 nivel est\u00e1 el hype train en curso, cu\u00e1nto falta para el siguiente y cu\u00e1ntos segundos quedan.'], attesa: 5 },
+  { id: 'esplodi', modulo: 'muro', nomi: ['esplodi', 'boom'], titolo: ['Esplosione di emote', 'Emote explosion', 'Explosi\u00f3n de emotes'],
+    cosa: ['Fa esplodere sul muro delle emote quelle scritte nel messaggio (!esplodi Kappa PogChamp), in una figura. Fra due esplosioni c\u2019\u00e8 un\u2019attesa per tutti, che si sceglie nel muro.', 'Blows up the emotes written in the message on the emote wall (!esplodi Kappa PogChamp), in a shape. Between two explosions everyone waits, for a time set in the wall.', 'Hace explotar en el muro de emotes las escritas en el mensaje (!esplodi Kappa PogChamp), en una figura. Entre dos explosiones todos esperan, un tiempo que se elige en el muro.'] },
 
   { id: 'discord', modulo: 'discord', nomi: ['discord'], titolo: ['Collega Discord', 'Link Discord', 'Vincula Discord'],
     cosa: ['Chi lo scrive collega il suo account Discord per prendersi i ruoli che gli spettano (!discord via per staccarsi). Risponde solo se i ruoli su Discord sono accesi.', 'The writer links their Discord account to get the roles they are due (!discord via to unlink). It only answers if Discord roles are on.', 'Quien lo escribe vincula su cuenta de Discord para llevarse los roles que le tocan (!discord via para desvincularse). Solo responde si los roles de Discord están encendidos.'], attesa: 5 },

@@ -86,6 +86,15 @@ const storti = [];
 const coperti = [];
 let provati = 0;
 for (const id of elementi) {
+  // Un'area grande quanto la tela (il muro delle emote, di serie) non ha dove
+  // andare: prima la si stringe, come farebbe chiunque volesse spostarla.
+  await p.evaluate(async (s) => {
+    const k = ELEMENTI().map((e) => e.k).find((x) => _idEl(x) === s);
+    const st = k && _posDove(k);
+    if (!st || !(Number(st.w) > 50 || Number(st.h) > 50)) return;
+    seleziona(k); _scriviProp('w', 50); _scriviProp('h', 50); deseleziona();
+    await new Promise((r) => setTimeout(r, 120));
+  }, id);
   const c0 = await centro(id);
   // si tira verso il centro della tela: cosi' il limite dei bordi non c'entra
   const dx = (c0.x < c0.cw / 2 ? 40 : -40);
@@ -395,6 +404,9 @@ for (const k of await p.evaluate(() => ELEMENTI().map((e) => e.k))) {
   const r = await p.evaluate(async (kk) => {
     seleziona(kk);
     await new Promise((r) => setTimeout(r, 120));
+    // Un'area larga quanto la tela (il muro delle emote, di serie) non ha dove
+    // andare di lato: per spostarla la si stringe prima, come farebbe chiunque.
+    if (Number(_posDove(kk).w) > 50) { _scriviProp('w', 50); await new Promise((r) => setTimeout(r, 120)); }
     const prima = { ..._posDove(kk) };
     _scriviProp('x', Math.round(prima.x) === 40 ? 60 : 40);
     await new Promise((r) => setTimeout(r, 120));
@@ -471,7 +483,12 @@ const trapelati = await p.evaluate(async () => {
 
   __scegli(primo);
   await new Promise((r) => setTimeout(r, 350));
-  for (const k of chiavi) { seleziona(k); await new Promise((r) => setTimeout(r, 50)); _scriviProp('x', 77); }
+  for (const k of chiavi) {
+    seleziona(k);
+    await new Promise((r) => setTimeout(r, 50));
+    if (Number(_posDove(k).w) > 23) _scriviProp('w', 23);
+    _scriviProp('x', 77);
+  }
   await new Promise((r) => setTimeout(r, 250));
   __scegli(secondo);
   await new Promise((r) => setTimeout(r, 450));
@@ -682,7 +699,7 @@ const dice = (ok, testo, extra = '') => {
 console.log('\nIl banco di regia sposta le cose dove le porti.\n');
 let verde = true;
 verde = dice(storti.length === 0,
-  `ogni elemento si sposta di quello che chiedi: ${provati} provati${coperti.length ? ` (${coperti.length} coperti da altri)` : ''}`,
+  `ogni elemento si sposta di quello che chiedi: ${provati} provati${coperti.length ? ` (${coperti.length} coperti da altri: ${coperti.join(', ')})` : ''}`,
   storti.join(' · ')) && verde;
 verde = dice(provati >= 6, `elementi davvero provati: ${provati}`, 'la scena della demo ne ha troppo pochi scoperti') && verde;
 verde = dice(!!occhio.elementoVia, 'l’occhio toglie davvero l’elemento dalla scena', JSON.stringify(occhio)) && verde;

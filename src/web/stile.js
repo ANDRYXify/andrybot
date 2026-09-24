@@ -538,6 +538,84 @@ export const normEtichetta = (x) => {
   };
 };
 
+// IL MURO DELLE EMOTE (docs/MURO-EMOTE.md). Un'area, non un punto: di serie lo
+// schermo intero, oppure un riquadro; una posa a punto non ha senso per
+// un'area e si butta. Di serie spento: e' l'unico elemento che si muove da
+// solo a ogni messaggio, e nessuno se lo deve trovare in onda senza averlo
+// scelto.
+export const ANIM_MURO = ['sale', 'linea', 'rimbalzo', 'sfreccia', 'cade', 'coriandoli', 'salto', 'lancio', 'pulsa', 'orbita'];
+export const FIGURE_MURO = ['fuochi', 'fontana', 'spirale', 'pioggia', 'trenino', 'piramide', 'scritta', 'cuore'];
+export const FIGURA_MURO = [...FIGURE_MURO, 'caso'];
+export const ENTRATA_MURO = ['zoom', 'dissolvenza', 'nessuna'];
+export const ARCOBALENO_MURO = ['mai', 'sempre', 'treno'];
+export const LIVELLI_MURO = ['tutti', 'sub', 'vip', 'mod'];
+export const POS_MURO = ['schermo'];
+export const MAX_PREMI_MURO = 10;
+// Ogni evento: la figura di serie e, se ha un numero, la soglia sotto cui non
+// esplode (spettatori del raid, abbonamenti in un colpo, bit, importo).
+export const EVENTI_MURO = {
+  raid: { figura: 'fuochi', soglia: [1, 100000, 5] },
+  sub: { figura: 'cuore', soglia: [1, 1000, 1] },
+  bit: { figura: 'fontana', soglia: [1, 1000000, 100] },
+  dono: { figura: 'pioggia', soglia: [1, 100000, 5] },
+  trenoParte: { figura: 'trenino' },
+  trenoFine: { figura: 'scritta' },
+  boss: { figura: 'piramide' },
+};
+const listaMuro = (v, re, max, piccole) => [...new Set((Array.isArray(v) ? v : String(v || '').split(/[\s,]+/))
+  .map((x) => String(x || '').trim().replace(/^@/, '')).map((x) => (piccole ? x.toLowerCase() : x))
+  .filter((x) => re.test(x)))].slice(0, max);
+export const parolaMuro = (v) => (String(v ?? 'HYPE').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^A-Z0-9!? ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 8)) || 'HYPE';
+export const normMuro = (x) => {
+  x = x || {};
+  const xy = xyOk(x.xy);
+  const f = x.fonti || {};
+  const c = x.combo || {};
+  const e = x.esplosioni || {};
+  const k = x.comando || {};
+  const ev = x.eventi || {};
+  const animazioni = ANIM_MURO.filter((a) => Array.isArray(x.animazioni) && x.animazioni.includes(a));
+  const minPx = clampInt(x.minPx, 12, 400, 28);
+  const eventi = {};
+  for (const [nome, d] of Object.entries(EVENTI_MURO)) {
+    const v = ev[nome] || {};
+    eventi[nome] = { attivo: v.attivo !== false, figura: unoDi(v.figura, FIGURA_MURO, d.figura) };
+    if (d.soglia) eventi[nome].soglia = clampInt(v.soglia, d.soglia[0], d.soglia[1], d.soglia[2]);
+  }
+  return {
+    attivo: x.attivo === true,
+    posizione: unoDi(x.posizione, POS_MURO, 'schermo'),
+    xy: xy && xy.w ? xy : null,
+    animazioni: animazioni.length ? animazioni : [...ANIM_MURO],
+    fonti: { twitch: f.twitch !== false, settetv: f.settetv !== false, emoji: f.emoji === true },
+    perMessaggio: clampInt(x.perMessaggio, 1, 20, 5),
+    doppioni: x.doppioni !== false,
+    maxSchermo: clampInt(x.maxSchermo, 1, 150, 50),
+    coda: clampInt(x.coda, 0, 100, 20),
+    grandezza: clampInt(x.grandezza, 2, 40, 8),
+    varia: clampInt(x.varia, 0, 100, 30),
+    minPx,
+    maxPx: clampInt(x.maxPx, minPx, 600, Math.max(minPx, 140)),
+    durata: clampInt(x.durata, 2, 20, 6),
+    entrata: unoDi(x.entrata, ENTRATA_MURO, 'zoom'),
+    ombra: x.ombra !== false,
+    arcobaleno: unoDi(x.arcobaleno, ARCOBALENO_MURO, 'treno'),
+    chi: unoDi(x.chi, LIVELLI_MURO, 'tutti'),
+    escludiBot: x.escludiBot !== false,
+    esclusiPersone: listaMuro(x.esclusiPersone, /^[a-z0-9_]{1,25}$/, 40, true),
+    esclusiEmote: listaMuro(x.esclusiEmote, /^[^\s<>"'`]{1,40}$/, 60, false),
+    combo: { attivo: c.attivo !== false, soglia: clampInt(c.soglia, 2, 50, 4), finestra: clampInt(c.finestra, 2, 30, 6),
+      diverse: c.diverse !== false, figura: unoDi(c.figura, FIGURA_MURO, 'fuochi') },
+    esplosioni: { quante: clampInt(e.quante, 5, 80, 30), durata: clampInt(e.durata, 3, 15, 6), parola: parolaMuro(e.parola) },
+    comando: { figura: unoDi(k.figura, FIGURA_MURO, 'caso'), attesa: clampInt(k.attesa, 0, 600, 30) },
+    eventi,
+    premi: (Array.isArray(x.premi) ? x.premi : []).filter((p) => p && /^[a-zA-Z0-9-]{1,64}$/.test(String(p.id || '')))
+      .slice(0, MAX_PREMI_MURO)
+      .map((p) => ({ id: String(p.id), titolo: String(p.titolo || '').slice(0, 60), figura: unoDi(p.figura, FIGURA_MURO, 'caso') })),
+  };
+};
+
 // LA CLASSIFICA DEI BIT in scena. Le righe non sono nostre: sono quelle che da'
 // Twitch, e qui si sceglie solo quante mostrarne e di che periodo. Il periodo e'
 // uno dei cinque che Twitch conosce — inventarne un sesto vorrebbe dire
