@@ -14,7 +14,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { inserisciVetrina } from '../src/web/vetrina-vista.js';
+import { guscioVetrina, guscioPannello } from '../src/web/vetrina-vista.js';
 import { disegnoPerIlBrowser, CARATTERI_AMMESSI, CARTELLA_CARATTERI } from '../src/features/carta-servita.js';
 
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -28,12 +28,19 @@ const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 const LINGUE = ['it', 'en', 'es'];
 
 // Il guscio come lo manda il server: vetrina dentro, lingua dichiarata,
-// `body.vetrina` gia' messo (che e' quel che tiene ferma la larghezza).
+// `body.vetrina` gia' messo (che e' quel che tiene ferma la larghezza) e solo
+// le risorse della vetrina.
 function guscio(lingua, kick, youtube, piani) {
   const base = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8');
-  return inserisciVetrina(base, lingua, { kick, youtube, piani })
-    .replace('<body>', '<body class="vetrina">')
+  return guscioVetrina(base, lingua, { kick, youtube, piani })
     .replace('<html lang="it">', `<html lang="${lingua}">`);
+}
+
+// Il guscio della demo come lo manda il server a chi e' entrato: il pannello,
+// senza quel che serve solo alla vetrina. Servirgli la home vorrebbe dire
+// misurare la demo con fogli di stile che la demo vera non carica.
+function pannello() {
+  return guscioPannello(fs.readFileSync(path.join(PUB, 'index.html'), 'utf8'));
 }
 
 // Un finto bot per la PAGINA dell'overlay (overlay.html + overlay-app.js), da
@@ -108,6 +115,10 @@ export async function apriSito({ api = () => ({}), kick = true, youtube = false,
     const home = q === '/' || q === '/index.html'
       || !f.startsWith(PUB) || !fs.existsSync(f) || fs.statSync(f).isDirectory();
     if (home) {
+      if (via.searchParams.get('demo') === '1') {
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        return res.end(pannello());
+      }
       const chiesta = (via.searchParams.get('lang') || '').toLowerCase();
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
       return res.end(guscio(LINGUE.includes(chiesta) ? chiesta : 'it', kick, youtube, piani));
