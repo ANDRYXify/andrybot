@@ -259,6 +259,18 @@ const CHI = `(el) => el.tagName.toLowerCase()
   + (el.id ? '#' + el.id : '')
   + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\\s+/).join('.') : '')`;
 
+// LO STATO DEL DISEGNO NON E' STILE. disegno.js mette «in attesa» i pezzi fuori
+// schermo, li traccia quando entrano, e aggiunge le sue tele al corpo della
+// pagina: sono fatti di un istante, che dipendono da cosa era sullo schermo in
+// quel momento (con l'avviso aggiunto in cima la pagina scende, e un pezzo che
+// era dentro finisce fuori). Due caricamenti della stessa pagina li fotografano
+// diversi anche con fogli di stile identici. Si tolgono da tutte e due le parti
+// prima di misurare: qui si confrontano le regole, non l'orologio.
+const SENZA_DISEGNO = `() => {
+  document.querySelectorAll('svg.dg-tela').forEach((s) => s.remove());
+  document.querySelectorAll('.dg-attesa, .dg-in, .dg-out').forEach((e) => e.classList.remove('dg-attesa', 'dg-in', 'dg-out'));
+}`;
+
 const FIRMA = `() => {
   const chi = ${CHI};
   const stile = document.createElement('style');
@@ -282,7 +294,7 @@ const ANIMAZIONI = `() => {
   const fuori = [];
   for (const a of document.getAnimations()) {
     const t = a.effect && a.effect.target;
-    if (!t || !a.animationName) continue;
+    if (!t || !a.animationName || String(a.animationName).startsWith('dg-')) continue;
     fuori.push(chi(t) + (a.effect.pseudoElement || '') + ' :: ' + a.animationName);
   }
   return fuori.sort();
@@ -315,6 +327,7 @@ async function guarda(indirizzo, { largo, acceso }) {
   // chiesta adesso arriva dopo la sua. Senza, le due fotografie da confrontare
   // potevano cadere una prima e una dopo, e differire per l'orologio.
   await p.evaluate(() => new Promise((fatto) => (window.requestIdleCallback || ((f) => setTimeout(f, 200)))(() => requestAnimationFrame(() => fatto()), { timeout: 3000 })));
+  await p.evaluate(`(${SENZA_DISEGNO})()`);
   const anim = await p.evaluate(`(${ANIMAZIONI})()`);
   const stile = await p.evaluate(`(${FIRMA})()`);
   await p.close();

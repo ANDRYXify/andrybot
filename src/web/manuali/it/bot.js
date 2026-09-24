@@ -273,6 +273,12 @@ export default {
       'Il bot si ricorda anche qualcosa delle persone che scrivono spesso, e di cosa si parla adesso in diretta. Queste cose non si sfogliano dal pannello.',
       'Accanto a ogni lezione e a ogni fatto c\'è «Togli»: toglie solo quello, subito, e compare «Dimenticato ✓». Lo possono fare anche i moderatori del pannello. Se non c\'è ancora niente leggi «Nessuna lezione ancora: il bot impara osservando la chat.» e «Nessun fatto ricordato.».',
     ] },
+    { h3: 'Il bot che ti riconosce' },
+    { p: [
+      'Al primo messaggio di una persona nuova il bot la saluta, e saluta anche chi torna dopo settimane (di base tre). I due testi li scrivi tu nella scheda «Giochi & classifiche», carta «Presenze e saluti», con <code>{user}</code>, <code>{giorni}</code>, <code>{serie}</code> e <code>{dirette}</code>: un testo vuoto spegne quel saluto. Chi c\'è a più dirette di fila lo vedi nella scheda «Statistiche», nella classifica «Chi c’è sempre». Tutto il resto delle presenze sta nel <a href="/manuale/giochi">manuale dei giochi</a>.',
+      'Se ti sei costruito un modulo sul primo messaggio, vince il tuo. Il bot non saluta a raffica: un raid porta cinquanta persone in un colpo, e cinquanta saluti sarebbero spam.',
+    ] },
+
     { p: [
       '<strong>Azzera ciò che ha imparato.</strong> Butta via tutto in un colpo, e per questo lo vede solo il proprietario del canale. Il tasto rosso sotto «Zona pericolosa.» chiede conferma: «Azzero la memoria del bot?», poi «Azzera la memoria». Non si torna indietro. Alla fine compare «Memoria azzerata. Il bot riparte da zero (ma la tua conoscenza resta).».',
     ] },

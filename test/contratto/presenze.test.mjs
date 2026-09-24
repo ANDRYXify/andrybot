@@ -47,7 +47,8 @@ test('il pannello: la carta con i due testi, il salvataggio, la classifica in St
 });
 
 test('il manuale e la vetrina lo raccontano', () => {
-  const testo = JSON.stringify(MANUALI);
+  // L'apostrofo del pannello e' quello tipografico: si cerca la parola, non il segno.
+  const testo = JSON.stringify(MANUALI).replace(/’/g, "'");
   for (const parola of ['!serie', '!classificaserie', '$serie', '$dirette', '$recordserie', 'Presenze e saluti', "Chi c'è sempre", 'dieci minuti']) {
     assert.ok(testo.includes(parola), `il manuale non dice «${parola}»`);
   }
