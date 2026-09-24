@@ -2228,7 +2228,13 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // src/web/guide.js per il perché esistono e come sono fatte.
   // Ogni pagina in ogni lingua ha il suo indirizzo (VIE in guide.js): la stessa
   // rotta serve le tre lingue, e una pagina non tradotta non esiste, non esce in
-  // italiano sotto un indirizzo inglese.
+  // italiano sotto un indirizzo inglese. Gli indirizzi sono scritti per intero,
+  // perche' il cancello delle porte li legge dal testo; che siano quelli di VIE
+  // lo controlla test/contratto/lingue.test.mjs, e la lingua si ricava da li'.
+  const linguaDi = (via, cosa) => {
+    const v = String(via || '').toLowerCase().replace(/\/+$/, '');
+    return LINGUE_DOC.find((l) => v === VIE[l][cosa] || v.startsWith(VIE[l][cosa] + '/'));
+  };
   const GUIDA_HTML = new Map();
   const serviPagina = (res, cache, chiave, fai, next) => {
     if (!cache.has(chiave)) {
@@ -2240,9 +2246,11 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
     res.send(cache.get(chiave));
   };
-  for (const l of LINGUE_DOC) {
-    app.get(VIE[l].guide, (req, res, next) => serviPagina(res, GUIDA_HTML, `${l}#indice`, () => paginaIndice(l), next));
-  }
+  app.get(['/guide', '/en/guides', '/es/guias'], (req, res, next) => {
+    const l = linguaDi(req.path, 'guide');
+    if (!l) return next();
+    serviPagina(res, GUIDA_HTML, `${l}#indice`, () => paginaIndice(l), next);
+  });
   // I manuali: materiale di consultazione per chi il bot ce l'ha già. Pubblici
   // come le guide — chi valuta il bot deve poter vedere prima cosa sa fare.
   // Il «?» di ogni scheda, lingua per lingua: il pannello apre la pagina nella
@@ -2250,14 +2258,17 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   const AIUTI = aiutiPerScheda();
   const AIUTI_LINGUE = Object.fromEntries(LINGUE_DOC.map((l) => [l, aiutiPerScheda(l)]));
   const MANUALE_HTML = new Map();
-  for (const l of LINGUE_DOC) {
-    app.get(VIE[l].manuali, (req, res, next) => serviPagina(res, MANUALE_HTML, `${l}#indice`, () => paginaIndiceManuali(l), next));
-    app.get(`${VIE[l].manuali}/:slug`, (req, res, next) => {
-      const slug = String(req.params.slug || '').toLowerCase();
-      if (!/^[a-z0-9-]{2,40}$/.test(slug)) return next();
-      serviPagina(res, MANUALE_HTML, `${l}:${slug}`, () => paginaManuale(slug, l), next);
-    });
-  }
+  app.get(['/manuale', '/en/manual', '/es/manual'], (req, res, next) => {
+    const l = linguaDi(req.path, 'manuali');
+    if (!l) return next();
+    serviPagina(res, MANUALE_HTML, `${l}#indice`, () => paginaIndiceManuali(l), next);
+  });
+  app.get(['/manuale/:slug', '/en/manual/:slug', '/es/manual/:slug'], (req, res, next) => {
+    const l = linguaDi(req.path, 'manuali');
+    const slug = String(req.params.slug || '').toLowerCase();
+    if (!l || !/^[a-z0-9-]{2,40}$/.test(slug)) return next();
+    serviPagina(res, MANUALE_HTML, `${l}:${slug}`, () => paginaManuale(slug, l), next);
+  });
 
   // Le novità: stessa forma delle guide (contenuto pubblico, indicizzabile) ma
   // la fonte è NOVITA.md, scritto nello stesso commit della cosa che racconta.
@@ -2390,13 +2401,12 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     res.json({ ok: true });
   }));
 
-  for (const l of LINGUE_DOC) {
-    app.get(`${VIE[l].guide}/:slug`, (req, res, next) => {
-      const slug = String(req.params.slug || '').toLowerCase();
-      if (!/^[a-z0-9-]{2,80}$/.test(slug)) return next();
-      serviPagina(res, GUIDA_HTML, `${l}:${slug}`, () => paginaGuida(slug, l), next);
-    });
-  }
+  app.get(['/guide/:slug', '/en/guides/:slug', '/es/guias/:slug'], (req, res, next) => {
+    const l = linguaDi(req.path, 'guide');
+    const slug = String(req.params.slug || '').toLowerCase();
+    if (!l || !/^[a-z0-9-]{2,80}$/.test(slug)) return next();
+    serviPagina(res, GUIDA_HTML, `${l}:${slug}`, () => paginaGuida(slug, l), next);
+  });
 
   const PRIVACY_HTML = guscio.pagina('privacy.html');
   app.get('/privacy', (req, res) => res.sendFile(PRIVACY_HTML));

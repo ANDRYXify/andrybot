@@ -73,6 +73,7 @@ export function eIngressoEsterno(via) {
 // guscio da chi le serve.
 const ROTTE = new Set([
   '/', '/entra',                              // la vetrina e il pass monouso dal sito madre
+  '/en', '/es', '/en/', '/es/',               // la vetrina in inglese e in spagnolo (con la barra finale rimanda a quella senza)
   '/sblocca',                                 // rientro con passkey
   '/privacy', '/termini', '/terms',
   '/mod', '/auth/mod', '/auth/callback',      // invito e login dei moderatori delegati
@@ -90,6 +91,7 @@ const ROTTE = new Set([
   '/discord/oidc/callback',                   // il ritorno da Discord: lo protegge lo `state` monouso, e chi si collega una sessione non ce l'ha
   '/api/me',                                  // senza sessione risponde soltanto "nessun utente"
   '/guide', '/manuale', '/novita',            // guide, manuali e novità: contenuto pubblico, indicizzabile
+  '/en/guides', '/es/guias', '/en/manual', '/es/manual',   // le stesse guide e gli stessi manuali in inglese e in spagnolo
   '/api/novita',                              // le stesse novità, in forma di dati, per chi le legge da fuori
   '/api/streamer-verify',                     // API JSON della link-page (proxy verso Vercel)
   '/instagram/cancellazione',                 // dove Meta manda chi ha chiesto la cancellazione: dice com'e' andata
@@ -103,6 +105,7 @@ const PREFISSI = [
   '/api/tracking/',      // gesti e voce dell'overlay tracking (chiave overlay)
   '/guide/',             // le singole guide
   '/manuale/',           // i singoli manuali
+  '/en/guides/', '/es/guias/', '/en/manual/', '/es/manual/',   // e le loro traduzioni
   '/u/',                 // link-page pubblica dello streamer, servita dal DB
   '/dona/',              // donazioni: il webhook di Ko-fi (protetto dal token) e il modulo della pagina link
   '/assets/',            // bundle JS/CSS della link-page (proxy verso Vercel)

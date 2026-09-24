@@ -5,6 +5,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { guscioVetrina, indirizzoHome, VIA_LINGUA, META_VETRINA, LINGUE, SITO } from '../../src/web/vetrina-vista.js';
+import { VIE, LINGUE_DOC } from '../../src/web/guide.js';
+import { creaGuscio } from '../../src/web/vetrina.js';
 
 const leggi = (via) => readFileSync(new URL(`../../${via}`, import.meta.url), 'utf8');
 const INDEX = leggi('src/web/public/index.html');
@@ -43,6 +45,23 @@ test('il server e il sito dei collaudi seguono la stessa regola', () => {
   assert.match(SITO_PROVE, /return guscioVetrina\(base, lingua, \{ kick, youtube, piani \}\);/, 'la stessa testa del server');
   assert.match(SERVER, /h = guscioVetrina\(h, codice, /);
   assert.match(SERVER, /const LINGUE_URL = Object\.fromEntries\(Object\.entries\(VIA_LINGUA\)/, 'la sitemap dagli stessi indirizzi');
+});
+
+test('ogni indirizzo di ogni lingua ha la sua rotta scritta per intero, e si apre a chi non e\' entrato', () => {
+  const elenco = (vie) => `app.get([${vie.map((v) => `'${v}'`).join(', ')}], `;
+  for (const dove of ['guide', 'manuali']) {
+    const vie = LINGUE_DOC.map((l) => VIE[l][dove]);
+    assert.ok(SERVER.includes(elenco(vie)), `${dove}: l'indice ha le rotte di VIE`);
+    assert.ok(SERVER.includes(elenco(vie.map((v) => `${v}/:slug`))), `${dove}: le pagine hanno le rotte di VIE`);
+  }
+  const altre = LINGUE.filter((l) => l !== 'it').map((l) => VIA_LINGUA[l]);
+  assert.ok(SERVER.includes(elenco(['/', '/index.html', ...altre, ...altre.map((v) => v + '/')])), 'la pagina iniziale ha le rotte di VIA_LINGUA');
+  const guscio = creaGuscio(new URL('../../src/web/public', import.meta.url).pathname);
+  for (const l of LINGUE_DOC) {
+    for (const via of [VIA_LINGUA[l], VIE[l].guide, `${VIE[l].guide}/una-guida`, VIE[l].manuali, `${VIE[l].manuali}/un-manuale`]) {
+      assert.ok(guscio.aperto(via), `${l}: ${via} si apre senza sessione`);
+    }
+  }
 });
 
 test('il pannello legge la lingua anche dall\'indirizzo, e cambiandola non lo lascia a dire il contrario', () => {

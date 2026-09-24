@@ -64,10 +64,26 @@ const PUBBLICHE = new Map([
   ['GET /health', 'battito del servizio: solo ok, stato e da quanto e acceso'],
   ['GET /sitemap.xml', 'per i motori di ricerca'],
   ['GET /llms.txt', 'per i motori di ricerca'],
+  ['GET /', 'la pagina iniziale: a chi e\' entrato da\' il pannello, agli altri la vetrina'],
+  ['GET /index.html', 'la pagina iniziale'],
+  ['GET /en', 'la pagina iniziale in inglese'],
+  ['GET /es', 'la pagina iniziale in spagnolo'],
+  ['GET /en/', 'rimanda a /en'],
+  ['GET /es/', 'rimanda a /es'],
+  ['GET /termini', 'termini del servizio: pubblici per obbligo'],
+  ['GET /terms', 'termini del servizio: pubblici per obbligo'],
   ['GET /guide', 'le guide sono pubbliche'],
+  ['GET /en/guides', 'le guide sono pubbliche'],
+  ['GET /es/guias', 'le guide sono pubbliche'],
   ['GET /guide/:slug', 'le guide sono pubbliche'],
+  ['GET /en/guides/:slug', 'le guide sono pubbliche'],
+  ['GET /es/guias/:slug', 'le guide sono pubbliche'],
   ['GET /manuale', 'il manuale e pubblico'],
+  ['GET /en/manual', 'il manuale e pubblico'],
+  ['GET /es/manual', 'il manuale e pubblico'],
   ['GET /manuale/:slug', 'il manuale e pubblico'],
+  ['GET /en/manual/:slug', 'il manuale e pubblico'],
+  ['GET /es/manual/:slug', 'il manuale e pubblico'],
   ['GET /novita', 'le novita sono pubbliche'],
   ['GET /api/novita', 'le novita sono pubbliche'],
   ['GET /api/abbonamento/piani', 'il listino e pubblico'],
@@ -123,25 +139,57 @@ if (SELFTEST) {
     "  app.get('/api/segreti-di-tutti', wrap(async (req, res) => res.json({ tutto: 1 })));\n"
     + "  app.get('/regalo/:login', (req, res) => res.redirect(effects.overlayUrl(req.params.login)));\n"
     + "  app.post('/api/tastiera/:login', guardiaConsole, consoleTasto);\n"
+    + "  app.get(['/api/pubblico', '/api/nascosto'], (req, res) => res.json({ tutto: 1 }));\n"
+    + "  app.get(VIA_NASCOSTA, (req, res) => res.json({ tutto: 1 }));\n"
     + "  app.get('/health',");
 }
 
-const RE_ROTTA = /app\.(get|post|put|patch|delete|all)\(\s*('[^']*'|"[^"]*")/g;
+// Una rotta si legge dal suo primo argomento: un indirizzo scritto per intero,
+// o un elenco di indirizzi scritti per intero, e ognuno e' una porta. Un
+// indirizzo composto (una variabile, un modello con dentro un pezzo calcolato)
+// e' rosso: il cancello non sa dove porta, e una porta che non si legge e'
+// una porta che non si controlla. Le pagine in tre lingue lo hanno mostrato:
+// costruite in un giro, non le vedeva nessuno, e /en rispondeva 404 a chi non
+// era entrato.
+const RE_ROTTA = /app\.(get|post|put|patch|delete|all)\(\s*/g;
+const RE_LETTERALE = /^\s*('[^'`$]*'|"[^"`$]*")\s*/;
+const indirizziDi = (testo, da) => {
+  const primo = RE_LETTERALE.exec(testo.slice(da));
+  if (primo) return [primo[1].slice(1, -1)];
+  if (testo[da] !== '[') return null;
+  const fine = testo.indexOf(']', da);
+  const dentro = testo.slice(da + 1, fine);
+  const vie = [];
+  for (let resto = dentro; resto.trim(); ) {
+    const m = RE_LETTERALE.exec(resto);
+    if (!m) return null;
+    vie.push(m[1].slice(1, -1));
+    resto = resto.slice(m[0].length).replace(/^,/, '');
+  }
+  return vie.length ? vie : null;
+};
 const rotte = [];
-const leggiRotte = (testo, dove) => {
+const illeggibili = [];
+const leggiRotte = (testo, dove, file) => {
   for (const m of testo.matchAll(RE_ROTTA)) {
-    const via = m[2].replace(/['"]/g, '');
+    const riga = testo.slice(testo.lastIndexOf('\n', m.index) + 1, m.index);
+    if (/^\s*\/\//.test(riga)) continue;
     let i = testo.indexOf('(', m.index + 4), d = 0, k = i;
     for (; k < testo.length; k++) {
       if (testo[k] === '(') d++;
       else if (testo[k] === ')') { d--; if (!d) { k++; break; } }
     }
     const corpo = testo.slice(i, k);
+    const vie = indirizziDi(testo, m.index + m[0].length);
+    if (!vie) {
+      illeggibili.push(`${file}: «${testo.slice(m.index, testo.indexOf('\n', m.index)).trim().slice(0, 80)}» ha un indirizzo che il cancello non legge: va scritto per intero`);
+      continue;
+    }
     const guardia = GUARDIANI.find((g) => new RegExp('\\b' + g + '\\b').test(corpo)) || null;
-    rotte.push({ chiave: m[1].toUpperCase() + ' ' + via, via, guardia, corpo, pos: dove(m.index) });
+    for (const via of vie) rotte.push({ chiave: m[1].toUpperCase() + ' ' + via, via, guardia, corpo, pos: dove(m.index) });
   }
 };
-leggiRotte(sorgente, (i) => i);
+leggiRotte(sorgente, (i) => i, 'src/web/server.js');
 
 // Le rotte di Kick e di YouTube stanno in un file loro, montato dal server con
 // una riga: sono porte come le altre, e si leggono come le altre. Dal cancello
@@ -150,13 +198,13 @@ leggiRotte(sorgente, (i) => i);
 // che si scopre dopo.
 const moduli = [...sorgente.matchAll(/import \{ (monta\w+) \} from '(\.\.\/[\w-]+\/rotte\.js)';/g)]
   .map((x) => ({ file: join('src', x[2].slice(3)), pos: sorgente.indexOf(`${x[1]}(app`) }));
-for (const x of moduli) leggiRotte(readFileSync(join(RAD, x.file), 'utf8'), () => x.pos);
+for (const x of moduli) leggiRotte(readFileSync(join(RAD, x.file), 'utf8'), () => x.pos, x.file);
 const conRotte = readdirSync(join(RAD, 'src'), { recursive: true })
   .map((f) => join('src', String(f)))
   .filter((f) => f.endsWith('.js') && !f.startsWith(join('src', 'web', 'public')))
-  .filter((f) => /\bapp\.(get|post|put|patch|delete|all)\(\s*['"]/.test(readFileSync(join(RAD, f), 'utf8')));
+  .filter((f) => /\bapp\.(get|post|put|patch|delete|all)\(/.test(readFileSync(join(RAD, f), 'utf8')));
 
-const guai = [];
+const guai = [...illeggibili];
 for (const f of conRotte) {
   if (f !== join('src', 'web', 'server.js') && !moduli.some((x) => x.file === f)) guai.push(`${f}: registra rotte che questo cancello non legge`);
 }
@@ -237,7 +285,11 @@ verde = dice(!guai.some((g) => /senza sessione/.test(g)), `porte per chi e' senz
 if (SELFTEST) {
   const regalo = guai.some((g) => /regalo.*tocca una chiave/.test(g));
   const tastiera = guai.some((g) => /\/api\/tastiera\/.*senza sessione/.test(g));
-  if (!verde && regalo && tastiera) { console.log('\nAutoprova: una porta nuova senza guardiano, una che regala una chiave e una a chiave chiusa dal cancello fanno diventare rosso il cancello. ✓\n'); process.exit(0); }
+  const inElenco = guai.some((g) => /^GET \/api\/nascosto: nessun guardiano/.test(g));
+  const composta = guai.some((g) => /VIA_NASCOSTA.*non legge/.test(g));
+  if (!inElenco) { console.log('\nAutoprova FALLITA: la seconda porta di un elenco non e\' stata vista.\n'); process.exit(1); }
+  if (!composta) { console.log('\nAutoprova FALLITA: la porta con un indirizzo composto non e\' stata vista.\n'); process.exit(1); }
+  if (!verde && regalo && tastiera) { console.log('\nAutoprova: una porta nuova senza guardiano, una in un elenco, una con un indirizzo composto, una che regala una chiave e una a chiave chiusa dal cancello fanno diventare rosso il cancello. ✓\n'); process.exit(0); }
   if (!verde && !regalo) { console.log('\nAutoprova FALLITA: la porta che regala la chiave non e\' stata vista.\n'); process.exit(1); }
   if (!verde) { console.log('\nAutoprova FALLITA: la porta a chiave chiusa dal cancello non e\' stata vista.\n'); process.exit(1); }
   console.log('\nAutoprova FALLITA: il cancello non si accorge di una porta aperta.\n');
