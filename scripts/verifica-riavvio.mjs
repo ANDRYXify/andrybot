@@ -67,6 +67,7 @@ const DECISO = [
   ['features/antibot.js', 'cori', 'volatile', 'messaggi uguali in pochi secondi'],
   ['features/antibot.js', 'raidRecenti', 'volatile', 'da quanto e\' arrivato un raid: dieci minuti, e dopo un riavvio il raid e\' passato comunque'],
   ['features/antibot.js', 'ondate', 'volatile', 'ondata in corso, misurata su una finestra corta'],
+  ['features/enforcement.js', '_contiPer', 'volatile', 'quante azioni ha deciso, chiesto e fatto lo scudo di ogni canale da quando il processo e\' acceso: e\' il conto di questa accensione, e dopo un riavvio riparte da zero come quello di tutti'],
   ['features/enforcement.js', '_inCoda', 'volatile', 'quali azioni sono gia\' in fila adesso: serve a non farne due, e dopo un riavvio la fila non c\'e\' piu\''],
   ['features/incidenti.js', 'tutti', 'volatile', 'gli attacchi gia\' successi: stanno su disco a parte e si riprendono all\'avvio'],
   ['features/incidenti.js', 'apertiPerCanale', 'volatile', 'quale attacco e\' in corso adesso: al riavvio non ce n\'e\' nessuno in corso, ed e\' giusto cosi\''],
