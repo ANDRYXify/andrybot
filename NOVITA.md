@@ -37,6 +37,12 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Le penitenze contano davvero quello che dici: finché ce n'è una in corso, la pagina della voce manda al bot tutto il parlato, non solo i comandi. [vai: penitenze]
 - I contatori sono uno solo: l'azione «Contatore» dei comandi, $count(nome) e il contatore con !morti sono lo stesso numero, e «Incrementa (+1)» aggiunge davvero uno. [vai: moduli]
 - «Salva aspetto» dei contatori salva l'aspetto invece di dare un errore. [vai: moduli]
+- Ko-fi si collega nella carta in alto delle Donazioni, accanto a Stripe e Satispay: con la pagina e il token, chi dona trova il tasto Ko-fi fra i modi per donare. [vai: donazioni]
+- La pagina link e la pagina delle donazioni si aprono anche per i canali di Kick, YouTube e Discord, e le donazioni da Ko-fi arrivano anche a loro. [vai: pagina]
+- «Prova l'avviso» nelle Donazioni fa partire una donazione, non un follow, e l'alert Donazione accetta i tuoi suoni e le tue immagini. [vai: donazioni]
+- Dalla pagina delle donazioni si dona anche quando la pagina link è spenta. [vai: donazioni]
+- Una donazione in un'altra valuta fa partire l'avviso e il grazie, ma non conta per l'obiettivo e per le offerte, che sono nella tua valuta. [vai: donazioni]
+- L'informativa della tua pagina nomina i conti che usi davvero, Ko-fi compreso, e la privacy e i termini del sito parlano anche di Ko-fi.
 
 ## 2026-09-23
 

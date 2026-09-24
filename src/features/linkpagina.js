@@ -779,13 +779,22 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
         ? d.livelli.map((l) => ({ v: l.da, t: cifra(l.da) + (l.nome ? ' · ' + l.nome : '') }))
         : (d.importi || []).map((n) => ({ v: n, t: cifra(n) }));
       // il modo: un link esterno e' un link; sulla pagina link, se lo streamer
-      // preferisce, un rimando alla sua pagina delle donazioni; sul conto e' un
-      // modulo che apre il pagamento (in anteprima il modulo non manda niente)
+      // preferisce, un rimando alla sua pagina delle donazioni; sui conti e' un
+      // modulo che apre il pagamento (in anteprima il modulo non manda niente).
+      // Ko-fi non incassa dal modulo: e' un tasto che porta alla sua pagina, da
+      // solo se e' l'unico conto, altrimenti accanto agli altri.
+      const kofi = (d.mezzi || []).includes('kofi') ? d.kofi : '';
+      const sulConto = (d.mezzi || []).filter((m) => m !== 'kofi');
+      const mezziModulo = sulConto.length ? sulConto : (kofi ? [] : ['stripe']);
+      const tastoKofi = kofi ? `<a class="voce sost-b sost-b2" href="${esc(kofi)}" target="_blank" rel="noopener nofollow"><span class="ico">${_mIco('caffe')}</span><span class="tx"><span class="et">Oppure su Ko-fi</span></span><span class="fre" aria-hidden="true">›</span></a>` : '';
+      const nota = sulConto.includes('stripe') ? 'Pagamento sicuro con carta, Apple Pay o Google Pay.' : 'Pagamento con l\'app Satispay.';
       const azione = d.modo === 'link'
         ? `<a class="voce spicca sost-b" href="${esc(d.link)}" target="_blank" rel="noopener nofollow">${dentro}</a>`
         : (b.pagina && !dona)
           ? `<a class="voce spicca sost-b" href="${esc(urlDona || '/dona/' + login)}">${dentro}</a>`
-          : `<form class="sost-f"${anteprima ? ' data-anteprima="1"' : ` method="post" action="/dona/${esc(login)}"`}${d.proprio ? ' enctype="multipart/form-data"' : ''}>
+          : !mezziModulo.length
+            ? `<a class="voce spicca sost-b" href="${esc(kofi)}" target="_blank" rel="noopener nofollow">${dentro}</a>`
+            : `<form class="sost-f"${anteprima ? ' data-anteprima="1"' : ` method="post" action="/dona/${esc(login)}"`}${d.proprio ? ' enctype="multipart/form-data"' : ''}>
           ${dona ? '<input type="hidden" name="pagina" value="dona">' : ''}
           <div class="sost-chips" role="radiogroup" aria-label="Importo">${scelte.map((s, i) => `<label class="sost-c"><input type="radio" name="importo" value="${s.v}"${i === Math.min(1, scelte.length - 1) ? ' checked' : ''}><span>${esc(s.t)}</span></label>`).join('')}</div>
           <label class="sost-altro"><span class="sost-l">Oppure</span><input type="number" name="altro" min="${d.minimo}" max="${d.massimo}" step="0.5" inputmode="decimal" placeholder="${esc('un altro importo, da ' + cifra(d.minimo))}"></label>
@@ -793,11 +802,12 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
           ${d.conMessaggio ? `<input class="sost-i" type="text" name="messaggio" maxlength="200" placeholder="Un messaggio per la diretta (se vuoi)">` : ''}
           ${d.proprio ? `<label class="sost-file"><span class="sost-l">Da ${esc(cifra(d.proprio.da))} in su puoi allegare un'immagine o una GIF (fino a 8 MB) che va in onda in diretta: la vede prima ${esc(display || login)}.</span><input type="file" name="media" accept="image/png,image/jpeg,image/webp,image/gif" data-da="${d.proprio.da}"></label>` : ''}
           <div class="sost-np" aria-hidden="true"><label>Sito <input type="text" name="sito" tabindex="-1" autocomplete="off"></label></div>
-          ${(d.mezzi && d.mezzi.length ? d.mezzi : ['stripe']).map((m, i) => i === 0
+          ${mezziModulo.map((m, i) => i === 0
             ? `<button type="${anteprima ? 'button' : 'submit'}" class="voce spicca sost-b" name="mezzo" value="${m}">${dentro}</button>`
             : `<button type="${anteprima ? 'button' : 'submit'}" class="voce sost-b sost-b2" name="mezzo" value="${m}"><span class="ico">${_mIco('soldi')}</span><span class="tx"><span class="et">${m === 'satispay' ? 'Oppure con Satispay' : 'Oppure con carta'}</span></span><span class="fre" aria-hidden="true">›</span></button>`).join('')}
+          ${tastoKofi}
           <p class="sost-err" role="alert" hidden></p>
-          <p class="sost-nota">Pagamento sicuro con carta, Apple Pay o Google Pay. Va tutto a ${esc(display || login)}.${(pagina.blocchi || []).some((x) => x && x.tipo === 'donatori') ? ' Il nome che scrivi può comparire fra chi ha donato, qui in pagina.' : ''}</p>
+          <p class="sost-nota">${nota} Va tutto a ${esc(display || login)}.${(pagina.blocchi || []).some((x) => x && x.tipo === 'donatori') ? ' Il nome che scrivi può comparire fra chi ha donato, qui in pagina.' : ''}</p>
         </form>`;
       return `<div class="sost" id="sostieni" ${ritardo}>
         ${b.titolo ? `<span class="sost-t">${esc(b.titolo)}</span>` : ''}
@@ -1382,7 +1392,30 @@ ${fxScript}
 // `urlTorna` e' un indirizzo INTERO, non un percorso. La pagina delle donazioni
 // vive su un altro host (dona.<dominio>): un «/u/tizio» li' dentro porterebbe
 // da un'altra parte, e nessuno se ne accorgerebbe finche' non lo prova.
-export function renderInformativa({ login, display, baseUrl, pagina, contatto, quale = 'link', urlTorna = '' }) {
+// Le donazioni, come le fa QUESTA pagina: chi tocca i soldi e i dati dipende
+// dai conti che lo streamer ha collegato, e l'informativa dice quelli, non un
+// elenco fisso. `sostieni` e' quello che vede il blocco «Sostieni»
+// (datiSostieni in donazioni.js): senza, la pagina non fa donare e non c'e'
+// niente da dire.
+function informativaDonazioni(sostieni, nome, conDonatori, p) {
+  if (!sostieni) return '';
+  const n = esc(nome);
+  if (sostieni.modo === 'link') {
+    return `<h2>Donazioni</h2>${p(`Il tasto per donare ti porta su un altro sito, scelto da ${n}: da lì in poi vale la privacy di quel sito, non la nostra.`)}`;
+  }
+  const m = sostieni.mezzi || [];
+  const voci = [];
+  if (m.includes('stripe')) voci.push(`<li>Con la carta paghi su <strong>Stripe</strong>, sul conto di ${n}: i dati della carta li vedono solo Stripe e la tua banca, mai SocialBot.</li>`);
+  if (m.includes('satispay')) voci.push(`<li>Con <strong>Satispay</strong> paghi dalla sua app, sul conto di ${n}: a noi arriva solo se il pagamento è andato a buon fine.</li>`);
+  if (m.includes('kofi')) voci.push(`<li>Il tasto Ko-fi ti porta sulla pagina <strong>Ko-fi</strong> di ${n}, dove vale la privacy di Ko-fi. Da Ko-fi ci arrivano il nome e il messaggio che scrivi lì (un messaggio che tieni privato non lo mostriamo), l'importo e l'ora. Ko-fi ci manda anche il tuo indirizzo email: non lo salviamo.</li>`);
+  return `<h2>Donazioni</h2>
+    ${p(`I soldi vanno a ${n}, sul suo conto: SocialBot non li tocca.`)}
+    ${voci.length ? `<ul>${voci.join('')}</ul>` : ''}
+    ${p(`A noi resta ciò che serve per l'avviso in diretta e per il registro di chi riceve: il nome che scegli tu (anche nessuno), il messaggio, l'importo e l'ora. Il nome e il messaggio possono comparire in diretta${conDonatori ? ', e il nome anche fra chi ha donato, qui in pagina' : ''}. Si conservano un anno.`)}
+    ${sostieni.proprio ? p(`Se alleghi un'immagine, la vede prima ${n}: se la manda in onda compare in diretta, se la scarta la cancelliamo subito. In ogni caso sparisce con la donazione.`) : ''}`;
+}
+
+export function renderInformativa({ login, display, baseUrl, pagina, contatto, quale = 'link', urlTorna = '', sostieni = null }) {
   const t = { ...(pagina?.tema || {}) };
   const c = { ...(PRESET[pagina?.template] || PRESET.minimal) };
   for (const k of ['bg', 'bg2', 'testo', 'tenue', 'card', 'bordo']) if (t[k]) c[k] = t[k];
@@ -1439,8 +1472,7 @@ export function renderInformativa({ login, display, baseUrl, pagina, contatto, q
       ? p('Se in questa pagina ci sono video, musica o riquadri di YouTube, Spotify, Twitch, TikTok, Instagram o Facebook, <strong>non vengono caricati da soli</strong>: al loro posto trovi un cartello con un bottone. Finché non lo premi tu, verso quei siti non parte nessuna richiesta e quindi nessun cookie loro. Se lo premi, da quel momento vale la privacy di quel sito, non la nostra.')
       : p('In questa pagina ci possono essere video, musica o riquadri di YouTube, Spotify, Twitch, TikTok, Instagram o Facebook. Sono pezzi dei <strong>loro</strong> siti: quando li carichi, quei siti possono usare cookie propri e ricevere il tuo indirizzo IP. Vale la loro informativa, non la nostra.')}
 
-    <h2>Donazioni</h2>
-    ${p(`Se in questa pagina c'è il tasto per donare, il pagamento lo gestisce <strong>Stripe</strong>, sul conto di ${esc(nome)}: i dati della carta li vedono solo Stripe e la tua banca, mai SocialBot. A noi resta ciò che serve per l'avviso in diretta e per il registro di chi riceve: il nome che scegli tu (anche nessuno), il messaggio, l'importo e l'ora. Il nome e il messaggio possono comparire in diretta. Si conservano un anno.`)}
+    ${informativaDonazioni(sostieni, nome, (pagina?.blocchi || []).some((x) => x && x.tipo === 'donatori'), p)}
     <h2>Chi decide, e a chi scrivere</h2>
     ${p(`I contenuti di questa pagina li sceglie <strong>${esc(nome)}</strong>. SocialBot la ospita e la mostra per suo conto.`)}
     ${p(`Per chiedere di vedere, correggere o cancellare qualcosa${contatto ? `, scrivi a <a href="mailto:${esc(contatto)}">${esc(contatto)}</a>` : ', usa i contatti che trovi sulla pagina'}. La pagina si può togliere dal web in qualsiasi momento, e con lei il contatore.`)}

@@ -111,7 +111,7 @@ import * as persona from '../ai/persona.js';
 import * as brainpy from '../ai/brainpy.js';
 import { impronta, combacia } from '../segreti.js';
 import { redeemPass } from './gate.js';
-import { eLoginNostro, loginKick, loginYoutube, loginDiscord, loginSu, nomeSu, piattaformaDi, conDiretta, urlCanale, PIATTAFORME } from '../identita.js';
+import { eLoginNostro, LOGIN_RE, loginKick, loginYoutube, loginDiscord, loginSu, nomeSu, piattaformaDi, conDiretta, urlCanale, PIATTAFORME } from '../identita.js';
 import { provaModerazione, verificabile } from '../moderatori/prova.js';
 import { creaGuscio } from './vetrina.js';
 import { creaImpronte, montaStatici } from './impronte.js';
@@ -154,6 +154,17 @@ const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {})
 // obiettivi e contatori avevano UNA posizione per tutto il canale: li spostavi
 // in un overlay e si spostavano in tutti.
 const CHIAVE_EL = /^(alert|chat|wf|ws|musica|timer|treno|pen|goal:[a-z0-9_-]{1,24}|cont:[a-z0-9_]{1,30}|cart:[a-z0-9_-]{1,24})$/i;
+// Un canale scritto in un indirizzo corto (dona.<dominio>/<canale>,
+// discord.<dominio>/<canale>): la stessa forma di LOGIN_RE in identita.js, con i
+// prefissi delle altre piattaforme. Una regola sola, cosi' un canale di Kick non
+// esiste per il pannello e manca sull'indirizzo.
+// Gli eventi che hanno un alert suo, come li conosce la scheda Overlay: da qui
+// passano il caricamento dei file di un alert e la sua prova. Una lista sola,
+// cosi' un evento non si prova in una scheda e si rifiuta nell'altra.
+const ALERT_KINDS = ['follow', 'sub', 'cheer', 'raid', 'donazione'];
+const CANALE_IN_VIA = LOGIN_RE.source.replace(/^\^|\$$/g, '');
+const RE_CANALE_IN_VIA = new RegExp(`^/(${CANALE_IN_VIA})/?$`, 'i');
+const RE_DONA_IN_VIA = new RegExp(`^/(${CANALE_IN_VIA})(/privacy)?/?$`, 'i');
 // LE CHAT CHE UN OVERLAY MOSTRA. Una chat non e' un elemento a se': e' una
 // SORGENTE del riquadro della chat, quindi si accende e si spegne come ogni
 // altra cosa dell'overlay ma non ha una posizione propria. Tenerle divise
@@ -405,7 +416,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // L'informativa e' un indirizzo, non un canale: la pagina ci linka, e
       // senza questa riga finirebbe nel collegamento di un canale che non c'e'.
       if (req.path === '/privacy') return next();
-      const d = /^\/([a-z0-9_]{1,30})\/?$/i.exec(req.path);
+      const d = RE_CANALE_IN_VIA.exec(req.path);
       if (d) {
         const q = req.url.indexOf('?');
         req.url = '/collega/' + d[1].toLowerCase() + (q >= 0 ? req.url.slice(q) : '');
@@ -418,7 +429,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // Sull'indirizzo corto vivono la pagina e la SUA informativa. Senza la
     // seconda, «Privacy» da li' dentro cadrebbe su una rotta che non c'e', o
     // peggio su quella della pagina link — che parla di un'altra pagina.
-    const m = /^\/([a-z0-9_]{1,30})(\/privacy)?\/?$/i.exec(req.path);
+    const m = RE_DONA_IN_VIA.exec(req.path);
     if (m) {
       const q = req.url.indexOf('?');
       req.url = '/dona/' + m[1].toLowerCase() + (m[2] ? '/privacy' : '') + (q >= 0 ? req.url.slice(q) : '');
@@ -1486,7 +1497,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = String(req.params.login).toLowerCase();
     // anche il login è un segmento di percorso: stesso vincolo dei file (difesa
     // in profondità contro la risalita di cartella, oltre alla chiave overlay).
-    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    if (!eLoginNostro(login)) return notFound(res);
     const file = String(req.params.file || '');
     // deve essere un basename semplice: niente separatori né risalite di cartella
     if (!/^[A-Za-z0-9._-]+$/.test(file) || file.includes('..')) return notFound(res);
@@ -1746,7 +1757,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }
   const rottaCartaPagina = (quale) => wrap(async (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
-    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    if (!eLoginNostro(login)) return notFound(res);
     const p = (quale === 'dona' ? paginaDona : linkPage).get(login);
     if (!p || !p.attiva) return notFound(res);
     const png = await pngCartaPagina(login, quale);
@@ -1763,7 +1774,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // i dati e quali è un obbligo che dai cookie non dipende.
   app.get('/u/:user/privacy', wrap(async (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
-    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    if (!eLoginNostro(login)) return notFound(res);
     const p = linkPage.get(login);
     if (!p || !p.attiva) return notFound(res);
     const s = streamers.get(login);
@@ -1771,6 +1782,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.type('html').send(renderInformativa({
       login, display: s?.display || login, baseUrl: config.baseUrl, pagina: p,
       contatto: config.contattoPrivacy || '', quale: 'link', urlTorna: `${config.baseUrl}/u/${login}`,
+      sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)),
     }));
   }));
 
@@ -1780,7 +1792,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // quello della pagina link.
   app.get('/dona/:user/privacy', wrap(async (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
-    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    if (!eLoginNostro(login)) return notFound(res);
     const p = paginaDona.get(login);
     if (!p || !p.attiva) return notFound(res);
     const s = streamers.get(login);
@@ -1788,12 +1800,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.type('html').send(renderInformativa({
       login, display: s?.display || login, baseUrl: config.baseUrl, pagina: p,
       contatto: config.contattoPrivacy || '', quale: 'dona', urlTorna: donazioni.urlPaginaDona(login),
+      sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)),
     }));
   }));
 
   app.get('/u/:user', wrap(async (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
-    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    if (!eLoginNostro(login)) return notFound(res);
     const p = linkPage.get(login);
     if (!p || !p.attiva) return notFound(res);        // mai creata, o spenta dallo streamer
     const s = streamers.get(login);
@@ -1841,13 +1854,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // giorno sparisse, nessun browser resterebbe con un rimando a memoria).
   app.get('/u/:user/dona', (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
-    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    if (!eLoginNostro(login)) return notFound(res);
     const q = req.url.indexOf('?');
     res.redirect(302, donazioni.urlPaginaDona(login) + (q >= 0 ? req.url.slice(q) : ''));
   });
   app.get('/dona/:login', wrap(async (req, res) => {
     const login = String(req.params.login || '').toLowerCase();
-    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    if (!eLoginNostro(login)) return notFound(res);
     const p = paginaDona.get(login);
     if (!p || !p.attiva) return notFound(res);
     const s = streamers.get(login);
@@ -3487,16 +3500,20 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // Ko-fi ci mette dentro si confronta con l'impronta salvata dallo streamer.
   // Si risponde SUBITO, come a Kick: Ko-fi ritenta se aspetta troppo, e lo
   // stesso avviso ha sempre lo stesso message_id, quindi il doppione si scarta.
+  // Contano le mance e gli abbonamenti (KOFI_DONI), non le vendite del negozio.
+  // Una donazione vera si scrive sempre nel registro: il tetto al minuto ferma
+  // solo gli avvisi a raffica, non i soldi arrivati.
   app.post('/dona/kofi/:login', express.urlencoded({ extended: false, limit: '64kb' }), wrap(async (req, res) => {
     const login = String(req.params.login || '').toLowerCase();
-    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    if (!eLoginNostro(login)) return notFound(res);
     const st = streamers.get(login)?.settings;
     const d = donazioni.leggiKofi(req.body);
     if (!st?.donazioni?.kofiImp || !d || !combacia(d.token, st.donazioni.kofiImp, login)) return res.status(401).json({ errore: 'non riconosciuto' });
     res.json({ ok: true });
-    if (!extRateOk('dona:' + login)) return;
+    if (!donazioni.KOFI_DONI.includes(d.tipo)) return;
     const chiave = 'kofi:' + login + ':' + (d.id || crypto.randomUUID());
     if (!registroDonazioni.segna(chiave, { login, fonte: 'kofi', importo: Math.round(d.importo * 100), valuta: d.valuta, nome: d.user, messaggio: d.messaggio })) return;
+    if (!extRateOk('dona:' + login)) return;
     manager.alerts?.donazione(login, d);
   }));
 
@@ -3549,6 +3566,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       paginaUrl: donazioni.urlPaginaDona(login),
       conto: { stato: donaStripe.statoDi(c), coda: c?.coda || '', verificato: c?.verificato_at || 0, nota: c?.nota || '' },
       satispay: { stato: donaSatispay.statoDi(sp), coda: sp?.coda || '', verificato: sp?.verificato_at || 0, nota: sp?.nota || '' },
+      kofi: { ...donazioni.statoKofi(streamers.get(login)?.settings?.donazioni), valuta: streamers.get(login)?.settings?.donazioni?.valuta || 'EUR', webhook: `${config.baseUrl}/dona/kofi/${login}` },
       riepilogo: { oggi: sommeDonazioni(rp.oggi), mese: sommeDonazioni(rp.mese), anno: sommeDonazioni(rp.anno), sempre: sommeDonazioni(rp.sempre) },
       ultime: registroDonazioni.elenco(login, { n: 50 }).map(rigaDonazione),
       daApprovare: registroDonazioni.mediaDaApprovare(login).map((r) => ({ ...rigaDonazione(r), url: effects.mediaUrl(login, r.media), tipo: r.media_tipo })),
@@ -3648,7 +3666,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   app.get('/dona/satispay/:login', wrap(async (req, res) => {
     const login = String(req.params.login || '').toLowerCase();
     res.json({ ok: true });
-    if (!/^[a-z0-9_]{1,30}$/.test(login) || !extRateOk('dona-cb:' + login)) return;
+    if (!eLoginNostro(login) || !extRateOk('dona-cb:' + login)) return;
     const pid = String(req.query.payment_id || '');
     if (!/^[A-Za-z0-9-]{8,80}$/.test(pid)) return;
     const e = await donaSatispay.confermaPerRiferimento(login, pid);
@@ -3669,7 +3687,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   });
   app.post('/dona/:login', express.urlencoded({ extended: false, limit: '8kb' }), conFileDono, wrap(async (req, res) => {
     const login = String(req.params.login || '').toLowerCase();
-    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    if (!eLoginNostro(login)) return notFound(res);
     const vuoleJson = /\bapplication\/json\b/.test(String(req.get('accept') || ''));
     const h = (t) => String(t).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
     const pagina = (titolo, corpo, testa = '') => `<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>${h(titolo)}</title>${testa}<style>body{margin:0;min-height:100dvh;display:grid;place-items:center;font:16px/1.5 system-ui,sans-serif;background:#0f0f14;color:#eee;padding:1.5rem}main{max-width:26rem;text-align:center}a{color:#8ab4ff}</style></head><body><main>${corpo}</main></body></html>`;
@@ -3679,13 +3697,20 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       if (vuoleJson) return res.json(dati);
       res.set('Cache-Control', 'private, no-store').type('html');
       if (dati.url) return res.send(pagina('Vai al pagamento', `<p>Ti porto al pagamento sicuro…</p><p><a href="${h(dati.url)}">Se non succede niente, tocca qui.</a></p>`, `<meta http-equiv="refresh" content="0;url=${h(dati.url)}">`));
-      return res.send(pagina('Donazione', `<p>${h(dati.errore || 'Qualcosa non ha funzionato.')}</p><p><a href="/u/${h(login)}">Torna alla pagina</a></p>`));
+      return res.send(pagina('Donazione', `<p>${h(dati.errore || 'Qualcosa non ha funzionato.')}</p><p><a href="${h(ritorno === 'dona' ? donazioni.urlPaginaDona(login) : '/u/' + login)}">Torna alla pagina</a></p>`));
     };
+    // da dove e' partito il modulo: la pagina link o quella delle donazioni.
+    // E' quella pagina che deve essere accesa, e li' si torna.
+    const ritorno = String(req.body?.pagina || '') === 'dona' ? 'dona' : 'link';
     const s = streamers.get(login);
-    const p = linkPage.get(login);
+    const p = (ritorno === 'dona' ? paginaDona : linkPage).get(login);
     const cfg = s?.settings?.donazioni;
     const conti = contiDi(login);
     if (!p?.attiva || !cfg || cfg.modo === 'link' || donazioni.cosaManca(s?.settings, conti)) return rispondi(404, { errore: 'Le donazioni non sono aperte su questa pagina.' });
+    // il mezzo lo sceglie chi dona fra quelli che incassano dal modulo; Ko-fi ha
+    // il suo tasto, che porta alla sua pagina
+    const mezzi = donazioni.mezziDi(cfg, conti).filter((x) => donazioni.SUL_CONTO.includes(x));
+    if (!mezzi.length) return rispondi(400, { errore: 'Su questa pagina si dona su Ko-fi, dal suo tasto.' });
     if (!extRateOk('dona-modulo:' + login)) return rispondi(429, { errore: 'Troppe richieste in questo momento: riprova fra un minuto.' });
     const m = donazioni.leggiModulo(req.body, cfg);
     if (!m) return rispondi(400, { errore: 'Controlla l\'importo: da ' + donazioni.formattaImporto(cfg.minimo, cfg.valuta) + ' a ' + donazioni.formattaImporto(cfg.massimo || donazioni.LIMITI.massimoDiSerie, cfg.valuta) + '.' });
@@ -3702,11 +3727,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       try { media = await donaMedia.salva(login, req.file.path, req.file.mimetype); }
       catch (e) { log.warn('immagine di chi dona:', e?.message || e); return rispondi(400, { errore: 'L\'immagine non si e\' potuta salvare: prova con un altro file, o dona senza.' }); }
     }
-    // il mezzo lo sceglie chi dona fra quelli pronti; senza una scelta, il primo
-    const mezzi = donazioni.mezziDi(cfg, conti);
+    // senza una scelta, il primo
     const mezzo = mezzi.includes(String(req.body?.mezzo || '')) ? String(req.body.mezzo) : mezzi[0];
-    // da dove e' partito il modulo, li' si torna: la pagina link o quella delle donazioni
-    const ritorno = String(req.body?.pagina || '') === 'dona' ? 'dona' : 'link';
     const dati = { login, display: s?.display || login, importoCent: m.importoCent, valuta: cfg.valuta, nome: m.nome, messaggio: m.messaggio, ritorno, media };
     const r = mezzo === 'satispay' ? await donaSatispay.apriPagamento(dati) : await donaStripe.apriPagamento(dati);
     if (r.errore) {
@@ -5501,7 +5523,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // Prova un alert / la chat / un widget nell'overlay.
   app.post('/api/alert/prova', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const kind = ['follow', 'sub', 'cheer', 'raid', 'chat', 'ultimoFollower', 'ultimoSub'].includes(req.body?.kind) ? req.body.kind : 'follow';
+    const kind = [...ALERT_KINDS, 'chat', 'ultimoFollower', 'ultimoSub'].includes(req.body?.kind) ? req.body.kind : null;
+    if (!kind) return res.status(400).json({ errore: 'evento non valido' });
     try { manager.alerts?.prova(login, kind); } catch { /* niente */ }
     res.json({ ok: true });
   }));
@@ -6864,7 +6887,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   app.get('/icona/:login/:file', (req, res) => {
     const login = String(req.params.login || '').toLowerCase();
     const file = String(req.params.file || '');
-    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    if (!eLoginNostro(login)) return notFound(res);
     if (!/^ico_[a-f0-9]{12}\.(png|jpg|webp|gif|svg)$/.test(file)) return notFound(res);
     res.sendFile(join(effectsRoot, login, file), { maxAge: '1h' }, (err) => {
       if (err && !res.headersSent) notFound(res);
@@ -7490,7 +7513,6 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // NOME DETERMINISTICO per (evento, slot): un nuovo caricamento SOSTITUISCE il
   // precedente, così non restano effetti orfani a ogni cambio. Suono e media sono
   // due slot indipendenti → possono partire INSIEME (es. GIF + suono).
-  const ALERT_KINDS = ['follow', 'sub', 'cheer', 'raid'];
   // ---- FONT dello streamer: carica un file e usalo nell'overlay ----
   app.post('/api/streamer/font', requireLogin, (req, res) => {
     if (!esigiFunzione(req, res, 'effetti', 'I font personalizzati')) return;
@@ -9743,7 +9765,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   };
   const loginAccesso = (req, res) => {
     const login = String(req.params.login || '').toLowerCase();
-    if (!/^[a-z0-9_]{1,30}$/.test(login)) { res.status(400).json({ errore: 'login non valido' }); return ''; }
+    if (!eLoginNostro(login)) { res.status(400).json({ errore: 'login non valido' }); return ''; }
     return login;
   };
   app.get('/api/admin/accessi', requireAdmin, (req, res) => {

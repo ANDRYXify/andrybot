@@ -32,7 +32,7 @@
     statistiche: 'statistiche numeri classifiche ore viste spettatori picco follower grafici estadísticas clasificaciones',
     dirette: 'dirette rapporto fine diretta riassunto serata mail telegram storico directos informe resumen',
     consolify: 'consolify tasti plancia telefono tablet tastiera macro scorciatoie teclas botones atajos',
-    donazioni: 'donazioni dona mance stripe satispay soglie grazie pagamenti donaciones propinas pagos',
+    donazioni: 'donazioni dona mance stripe satispay kofi ko-fi soglie grazie pagamenti donaciones propinas pagos',
     pagina: 'pagina link bio linktree profilo vetrina sito i miei link logo avatar página enlaces',
     grafiche: 'grafiche immagini sfondi banner locandine social storia storie instagram verticale gráficos fondos imágenes story stories historia',
     settimana: 'settimana programmazione palinsesto orari giorni calendario programma twitch storia instagram telegram discord manda week schedule semana horario programación',

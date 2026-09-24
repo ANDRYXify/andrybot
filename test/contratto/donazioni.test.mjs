@@ -37,10 +37,11 @@ test('l\'alert «donazione» esiste dove nasce, dove si veste e dove si salva', 
   assert.match(AL, /donazione: '\{user\} ha offerto \{importo\}! \{messaggio\}'/, 'il testo di serie');
   assert.match(AL, /donazione: 'moneta'/, 'il suono di serie');
   assert.match(AL, /^  donazione\(channel, d, \{ soloAvviso = false \} = \{\}\) \{/m, 'il motore ha il metodo, e sa rimandare solo l\'avviso');
-  // Quel che una donazione muove una volta sola sta tutto dentro `if (!soloAvviso)`:
+  // Quel che una donazione muove una volta sola sta tutto dentro `if (!soloAvviso && stessa)`:
   // l'obiettivo e, da quando c'e', il tempo del subathon. Rimandare l'avviso dal
-  // registro non deve ricontare ne' riallungare niente.
-  const unaVoltaSola = AL.slice(AL.indexOf('if (!soloAvviso) {'), AL.indexOf('const a = s.alerts;'));
+  // registro non deve ricontare ne' riallungare niente (e un importo in un'altra
+  // valuta non si somma: vedi la prova della valuta).
+  const unaVoltaSola = AL.slice(AL.indexOf('if (!soloAvviso && stessa) {'), AL.indexOf('const a = s.alerts;'));
   assert.match(unaVoltaSola, /this\._contaGoal\(channel, 'donazione', importo\)/, 'rimandare l\'avviso non riconta l\'obiettivo');
   assert.match(unaVoltaSola, /subathon\.suEvento/, 'ne\' allunga di nuovo il subathon');
   assert.match(AL, /if \(!soloAvviso && cfgD\.annunciaChat && this\.say\)/, 'e il grazie in chat non si ripete');
@@ -107,7 +108,7 @@ test('il webhook e\' un ingresso dichiarato, verificato con l\'impronta, e il to
   assert.match(SRV, /donazioni: \{ \.\.\.dn, kofiImp: '', kofiSet: true \}/, '/api/me maschera l\'impronta');
   assert.match(SRV, /out\.donazioni = donazioni\.normDonazioni\(b\.donazioni, s\.settings\?\.donazioni, user\.login\);/, 'le impostazioni passano dalla pulizia');
   assert.match(SRV, /if \(azione === 'donazione'\) \{/, 'la chiave API del canale accetta una mancia');
-  assert.ok((SRV.match(/sostieni: donazioni\.datiSostieni\(s\?\.settings, (conti|contiDi\(login\))\)/g) || []).length === 4, 'le due pagine pubbliche e le due anteprime ricevono gli stessi dati, coi conti');
+  assert.ok((SRV.match(/sostieni: donazioni\.datiSostieni\(s\?\.settings, (conti|contiDi\(login\))\)/g) || []).length === 6, 'le due pagine pubbliche, le due anteprime e le due informative ricevono gli stessi dati, coi conti');
 });
 
 test('il motore: una donazione fa crescere l\'obiettivo, spara l\'alert sopra la soglia e ringrazia in chat', () => {
@@ -224,8 +225,96 @@ test('le pagine di privacy e termini, e l\'informativa della pagina link, dicono
   assert.ok(priv.includes('Donazioni (nome scelto, messaggio, importo, ora): <strong>un anno</strong>'), 'e per quanto');
   const term = leggi('src/web/public/termini.html');
   assert.ok(term.includes('sei tu l\'esercente') && term.includes('non custodisce fondi'), 'i termini: lo streamer e\' l\'esercente, SocialBot non tiene soldi');
-  const inf = renderInformativa({ login: 'x', display: 'X', baseUrl: 'http://x', pagina: { tema: {} }, contatto: '' });
-  assert.ok(inf.includes('<h2>Donazioni</h2>') && inf.includes('sul conto di X'), 'l\'informativa della pagina');
+  const inf = (sostieni, blocchi = []) => renderInformativa({ login: 'x', display: 'X', baseUrl: 'http://x', pagina: { tema: {}, blocchi }, contatto: '', sostieni });
+  assert.ok(!inf(null).includes('<h2>Donazioni</h2>'), 'una pagina che non fa donare non parla di donazioni');
+  const tutti = inf({ modo: 'conto', mezzi: ['stripe', 'satispay', 'kofi'], proprio: { da: 20 } }, [{ tipo: 'donatori' }]);
+  assert.ok(tutti.includes('<h2>Donazioni</h2>') && tutti.includes('I soldi vanno a X, sul suo conto'), 'l\'informativa della pagina');
+  assert.ok(tutti.includes('<strong>Stripe</strong>, sul conto di X') && tutti.includes('Con <strong>Satispay</strong>') && tutti.includes('pagina <strong>Ko-fi</strong> di X'), 'nomina ogni conto che la pagina usa');
+  assert.ok(tutti.includes('il tuo indirizzo email: non lo salviamo'), 'e dice cosa manda Ko-fi e cosa ne facciamo');
+  assert.ok(tutti.includes('Se alleghi un\'immagine') && tutti.includes('fra chi ha donato, qui in pagina'), 'l\'immagine allegata e il blocco dei nomi, se ci sono');
+  const soloKofi = inf({ modo: 'conto', mezzi: ['kofi'], proprio: null });
+  assert.ok(soloKofi.includes('<strong>Ko-fi</strong>') && !soloKofi.includes('<strong>Stripe</strong>') && !soloKofi.includes('Satispay') && !soloKofi.includes('Se alleghi'), 'e solo quelli');
+  assert.ok(inf({ modo: 'link', mezzi: [] }).includes('ti porta su un altro sito'), 'un link esterno porta alla privacy di quel sito');
+  assert.ok(priv.includes('collega <strong>Ko-fi</strong>, l\'indirizzo della sua pagina Ko-fi e l\'impronta del token') && priv.includes('Ko-fi Labs, Regno Unito') && priv.includes('Ko-fi ci manda anche l\'indirizzo email'), 'la privacy del sito dice Ko-fi');
+  assert.ok(term.includes('o da <strong>Ko-fi</strong>') && term.includes('il token degli avvisi (Ko-fi)'), 'e i termini');
+});
+
+test('Ko-fi e\' un conto come gli altri: in alto nel pannello, un tasto nella pagina, e le sue donazioni contano come le altre', async () => {
+  const D = await import('../../src/features/donazioni.js');
+  assert.equal(D.kofiPagina('ko-fi.com/andryxify'), 'https://ko-fi.com/andryxify');
+  assert.equal(D.kofiPagina('https://www.ko-fi.com/Andry_X/'), 'https://ko-fi.com/Andry_X');
+  assert.equal(D.kofiPagina('@andryxify'), 'https://ko-fi.com/andryxify');
+  for (const x of ['https://evil.com/ko-fi.com/x', 'ko-fi.com/../x', 'javascript:alert(1)', '']) assert.equal(D.kofiPagina(x), '', x);
+  assert.deepEqual(D.statoKofi({ kofi: 'ko-fi.com/ab', kofiImp: 'h' }), { stato: 'pronto', pagina: 'https://ko-fi.com/ab', token: true });
+  assert.equal(D.statoKofi({ kofi: 'ko-fi.com/ab' }).stato, 'meta', 'senza token e\' a meta\'');
+  assert.equal(D.statoKofi({ kofiImp: 'h', kofi: '' }).stato, 'meta', 'senza pagina anche');
+  assert.equal(D.statoKofi({ link: 'https://ko-fi.com/ab', kofiImp: 'h' }).stato, 'pronto', 'chi usava Ko-fi come link esterno lo trova gia\' collegato');
+  assert.deepEqual(D.mezziDi({ kofi: 'ko-fi.com/ab', kofiImp: 'h' }, { stripe: { pronto: true } }), ['stripe', 'kofi']);
+  assert.deepEqual(D.mezziDi({ kofi: 'ko-fi.com/ab' }, {}), [], 'a meta\' non e\' un mezzo');
+
+  const prima = D.normDonazioni({ kofi: 'ko-fi.com/ab', kofiToken: 'segreto' }, {}, 'x');
+  assert.equal(prima.kofi, 'https://ko-fi.com/ab');
+  assert.ok(prima.kofiImp && prima.kofiImp !== 'segreto', 'del token resta l\'impronta');
+  const dopo = D.normDonazioni({ attivo: true }, prima, 'x');
+  assert.equal(dopo.kofi, 'https://ko-fi.com/ab', 'salvare il resto non scollega Ko-fi');
+  assert.equal(dopo.kofiImp, prima.kofiImp);
+  const via = D.normDonazioni({ kofiClear: true, kofiTokenClear: true }, dopo, 'x');
+  assert.equal(via.kofi, ''); assert.equal(via.kofiImp, '');
+  assert.equal(D.statoKofi({ ...via, link: 'https://ko-fi.com/ab' }).stato, 'nessuno', 'scollegato resta scollegato, anche con un vecchio link');
+
+  const settings = { donazioni: { attivo: true, modo: 'conto', kofi: 'ko-fi.com/ab', kofiImp: 'h', valuta: 'EUR', proprio: { attivo: true, da: 5 } } };
+  const dati = D.datiSostieni(settings, {});
+  assert.deepEqual(dati.mezzi, ['kofi']); assert.equal(dati.kofi, 'https://ko-fi.com/ab');
+  assert.equal(dati.proprio, null, 'l\'immagine si allega solo dove si paga dal modulo');
+  const base = { attiva: true, blocchi: [{ tipo: 'sostieni', titolo: 'Un caffè' }], tema: {} };
+  const opz = { login: 'x', display: 'X', avatar: '', baseUrl: 'http://x' };
+  const solo = renderLinkPage(base, { ...opz, sostieni: dati });
+  assert.ok(solo.includes('<a class="voce spicca sost-b" href="https://ko-fi.com/ab" target="_blank" rel="noopener nofollow">') && !solo.includes('<form class="sost-f"'), 'con Ko-fi soltanto il tasto porta a Ko-fi, senza un modulo che non servirebbe');
+  const insieme = renderLinkPage(base, { ...opz, sostieni: { ...dati, mezzi: ['satispay', 'kofi'] } });
+  assert.ok(insieme.includes('name="mezzo" value="satispay"') && insieme.includes('Oppure su Ko-fi'), 'accanto agli altri, il suo tasto');
+  assert.ok(insieme.includes('Pagamento con l\'app Satispay.') && !insieme.includes('Apple Pay'), 'la nota dice il mezzo vero');
+
+  const i = SRV.indexOf("app.post('/dona/kofi/:login'");
+  const corpo = SRV.slice(i, SRV.indexOf('}));', i));
+  assert.ok(corpo.indexOf('donazioni.KOFI_DONI.includes(d.tipo)') < corpo.indexOf('registroDonazioni.segna'), 'le vendite del negozio non sono donazioni');
+  assert.ok(corpo.indexOf('registroDonazioni.segna') < corpo.indexOf("extRateOk('dona:'"), 'una donazione arrivata si scrive sempre: il tetto ferma solo gli avvisi');
+  assert.deepEqual(D.KOFI_DONI, ['Donation', 'Subscription']);
+  assert.equal(D.leggiKofi({ data: JSON.stringify({ verification_token: 't', amount: '3', from_name: 'Ada', message: 'ciao', is_public: false, type: 'Shop Order', email: 'a@b.c' }) }).messaggio, '', 'un messaggio privato resta privato');
+  assert.ok(!JSON.stringify(D.leggiKofi({ data: JSON.stringify({ amount: '3', email: 'a@b.c' }) })).includes('a@b.c'), 'l\'email di chi dona non la teniamo nemmeno in mano');
+  assert.ok(SRV.includes('const mezzi = donazioni.mezziDi(cfg, conti).filter((x) => donazioni.SUL_CONTO.includes(x));'), 'il modulo paga solo sui conti che incassano da li\'');
+  assert.ok(SRV.includes("kofi: { ...donazioni.statoKofi("), 'il pannello legge lo stato di Ko-fi dal server');
+  assert.match(APP, /\+ `<h3 class="spazio-sopra">Ko-fi<\/h3>` \+ _contoKofiHtml\(st\)/, 'nella carta in alto, dopo Stripe e Satispay');
+  assert.ok(!APP.includes('id="dona-kofi-carta"'), 'la carta in fondo non c\'e\' piu\'');
+  assert.match(APP, /data-dona="kofi-collega"/); assert.match(APP, /data-dona="kofi-scollega"/);
+});
+
+test('la valuta: l\'obiettivo e le offerte contano solo gli importi nella valuta dello streamer', () => {
+  const settings = {
+    donazioni: { attivo: true, valuta: 'EUR', livelli: [{ da: 5, nome: 'Wow', effetto: 'effetto:wow' }] },
+    alerts: { attivo: true, donazione: { attivo: true, minImporto: 50 } },
+  };
+  const emessi = [], contati = [], effetti = [];
+  const eng = new AlertsEngine({ effects: { emit: (ch, p) => emessi.push(p) }, say: () => {} });
+  eng.cfg = () => settings;
+  eng._contaGoal = (ch, kind, quanti) => contati.push(quanti);
+  eng._sparaEffetto = (ch, e) => effetti.push(e);
+  eng.donazione('prova', { user: 'Ada', importo: 10, valuta: 'USD' });
+  assert.deepEqual(contati, [], 'dieci dollari non sono dieci euro');
+  assert.deepEqual(effetti, [], 'e non raggiungono un\'offerta in euro');
+  const a = emessi.find((p) => p.tipo === 'alert');
+  assert.ok(a && a.testo.includes('$10'), 'l\'avviso parte lo stesso, con la sua valuta');
+  eng.donazione('prova', { user: 'Bea', importo: 10, valuta: 'EUR' });
+  assert.deepEqual(contati, [10]); assert.deepEqual(effetti, ['effetto:wow']);
+});
+
+test('«Prova l\'avviso» delle donazioni prova una donazione, e l\'alert Donazione accetta i suoi file', () => {
+  assert.ok(SRV.includes("const ALERT_KINDS = ['follow', 'sub', 'cheer', 'raid', 'donazione'];"));
+  assert.ok(SRV.includes("const kind = [...ALERT_KINDS, 'chat', 'ultimoFollower', 'ultimoSub'].includes(req.body?.kind) ? req.body.kind : null;"), 'una sola lista, e un evento sconosciuto non diventa un follow');
+  assert.ok(SRV.includes("if (!ALERT_KINDS.includes(kind) && !perWidget) return errore('evento non valido');"));
+});
+
+test('il modulo guarda la pagina da cui parte: la pagina delle donazioni funziona anche a pagina link spenta', () => {
+  assert.ok(SRV.includes("const p = (ritorno === 'dona' ? paginaDona : linkPage).get(login);"));
 });
 
 test('Satispay: le rotte hanno il loro guardiano o sono dichiarate, la ronda lo conosce, il blocco offre la scelta', () => {

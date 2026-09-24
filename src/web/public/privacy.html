@@ -98,6 +98,8 @@
           + id del gruppo (forniti da lui), <strong>username TikTok</strong> pubblico per la notifica live, e la
           chiave a permessi ridotti del suo conto <strong>Stripe</strong> per le donazioni, conservata cifrata; se collega
           <strong>Satispay</strong>, la chiave con cui firmiamo i pagamenti sul suo negozio online, anch'essa cifrata; se
+          collega <strong>Ko-fi</strong>, l'indirizzo della sua pagina Ko-fi e l'impronta del token con cui Ko-fi firma i
+          suoi avvisi (il token no: con l'impronta lo riconosciamo, ma non si ricava); se
           collega <strong>Instagram</strong>, il nome e l'id del suo account professionale e il token che Instagram ci
           dà, conservato cifrato, per gli avvisi dei post nuovi e, quando lo chiede lui, per pubblicare la storia con la
           sua settimana. Se toglie l'app dal suo Instagram, o chiede a Instagram di cancellare i dati, Instagram ce lo
@@ -112,8 +114,12 @@ vuole. Le mail partono dal nostro server, non da un servizio esterno, e non cont
 oltre ai numeri della diretta e ai nomi di chi ha scritto di più.</li>
 <li><strong>Passkey</strong>: solo la <strong>chiave pubblica</strong>. Nessun dato biometrico lascia mai il tuo
           dispositivo.</li>
-        <li><strong>Donazioni</strong> fatte dalla pagina link di uno streamer: il pagamento lo gestisce <strong>Stripe</strong>
-          sul conto dello streamer, e i dati della carta li vedono solo Stripe e la banca, mai noi. A noi resta il nome
+        <li><strong>Donazioni</strong> a uno streamer. Dalla sua pagina il pagamento lo gestisce <strong>Stripe</strong> o
+          <strong>Satispay</strong>, sul conto dello streamer, e i dati della carta li vedono solo Stripe e la banca, mai noi.
+          Se lo streamer ha collegato <strong>Ko-fi</strong>, chi dona paga sulla sua pagina Ko-fi e Ko-fi ci avvisa: il nome,
+          il messaggio (se chi dona non lo tiene privato), l'importo e la valuta. Ko-fi ci manda anche l'indirizzo email di
+          chi dona: non lo salviamo. Lo stesso vale per le mance che lo streamer ci passa da un altro servizio con la chiave
+          API del suo canale. A noi resta il nome
           scelto da chi dona (anche nessuno), il messaggio, l'importo e l'ora: servono per l'avviso in diretta e per il
           registro dello streamer. Il nome e il messaggio possono comparire in diretta e, se lo streamer mette il blocco
           «Chi ha donato» sulla sua pagina, il nome anche lì (il modulo lo dice prima di donare). Se lo streamer lo permette, chi dona
@@ -146,7 +152,9 @@ oltre ai numeri della diretta e ai nomi di chi ha scritto di più.</li>
       <strong>TikTok</strong> e <strong>Instagram</strong> avvengono solo se lo streamer le collega. La sua settimana va sul
       Programma del suo canale Twitch, sul calendario del suo server Discord e nei posti che sceglie lui, solo se lo chiede. Le donazioni passano da <strong>Stripe</strong>
       (Stripe Payments Europe, Irlanda) o da <strong>Satispay</strong> (Satispay Europe, Lussemburgo), sul conto che lo
-      streamer apre lì: verso di loro vanno l'importo, il nome e il messaggio scelti da chi dona. I dati vivono sul <strong>server di ANDRYXify
+      streamer apre lì: verso di loro vanno l'importo, il nome e il messaggio scelti da chi dona. Se lo streamer collega
+      <strong>Ko-fi</strong> (Ko-fi Labs, Regno Unito), chi dona lo fa sulla sua pagina Ko-fi, e da Ko-fi arrivano a noi
+      gli avvisi di quelle donazioni. I dati vivono sul <strong>server di ANDRYXify
       (Hetzner, Germania — UE)</strong>, sotto HTTPS.</p>
       <p class="muted">Nessuna vendita di dati, nessun tracciamento pubblicitario, nessuna IA a pagamento di terzi.</p>
     </section>

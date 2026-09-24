@@ -1,7 +1,8 @@
 // LE DONAZIONI VERSO LO STREAMER.
 //
-// Una configurazione sola: come si dona (sul suo conto Stripe, dalla pagina
-// link, oppure a un link esterno: Ko-fi, PayPal, Streamlabs…), gli importi
+// Una configurazione sola: come si dona (sui conti dello streamer, Stripe,
+// Satispay e Ko-fi, dalla pagina link, oppure a un link esterno: PayPal,
+// Streamlabs…), gli importi
 // suggeriti e il minimo, come si chiama il tasto, una frase, la valuta,
 // l'avviso in chat. Del token con cui Ko-fi firma i suoi avvisi si conserva
 // l'IMPRONTA, mai il token: chi legge il database non puo' fingersi Ko-fi.
@@ -116,9 +117,35 @@ export function mediaAmmesso(cfg, importo) {
   return p.attivo && (Number(importo) || 0) >= p.da;
 }
 
+// KO-FI. Chi ha gia' una pagina su Ko-fi la collega come un conto: l'indirizzo
+// della pagina, dove chi dona paga, e il token con cui Ko-fi firma i suoi
+// avvisi. Con tutti e due e' un mezzo come gli altri: il tasto nella pagina
+// delle donazioni, e da ogni donazione l'avviso, il grazie e l'obiettivo. Con
+// uno solo e' a meta', e il pannello dice quale manca.
+const KOFI_URL = /^(?:https?:\/\/)?(?:www\.)?ko-fi\.com\/([A-Za-z0-9_-]{2,50})\/?(?:[?#].*)?$/i;
+export function kofiPagina(v) {
+  const s = String(v || '').trim().replace(/^@/, '');
+  const m = KOFI_URL.exec(s) || /^([A-Za-z0-9_-]{2,50})$/.exec(s);
+  return m ? `https://ko-fi.com/${m[1]}` : '';
+}
+// La pagina Ko-fi dello streamer. Prima che esistesse il campo, chi usava Ko-fi
+// la scriveva come link esterno: finche' il campo non e' mai stato salvato, vale
+// quella.
+export const paginaKofi = (d) => (d && d.kofi !== undefined ? kofiPagina(d.kofi) : kofiPagina(d && d.link));
+export function statoKofi(d) {
+  const pagina = paginaKofi(d);
+  const token = !!(d && (d.kofiImp || d.kofiSet));
+  return { stato: pagina && token ? 'pronto' : (pagina || token ? 'meta' : 'nessuno'), pagina, token };
+}
+// Quello che arriva da Ko-fi e che e' una donazione: le mance e gli abbonamenti
+// alla pagina. Un acquisto nel negozio o una commissione sono una vendita, non
+// un sostegno, e non fanno partire niente.
+export const KOFI_DONI = ['Donation', 'Subscription'];
+
 // La configurazione, ripulita. `prima` e' quella salvata: il token arriva in
 // chiaro una volta sola e diventa impronta; senza un token nuovo resta quella
-// di prima; `kofiTokenClear` la toglie.
+// di prima; `kofiTokenClear` la toglie. La pagina Ko-fi resta quella di prima
+// se non ne arriva una nuova; `kofiClear` la toglie.
 export function normDonazioni(d, prima = {}, login = '') {
   d = (d && typeof d === 'object') ? d : {};
   const p = (prima && typeof prima === 'object') ? prima : {};
@@ -141,6 +168,7 @@ export function normDonazioni(d, prima = {}, login = '') {
     annunciaChat: d.annunciaChat === true,
     testoChat: str(d.testoChat, L.testoChat),
     kofiImp: d.kofiTokenClear === true ? '' : (nuovo ? impronta(nuovo, login) : String(p.kofiImp || '')),
+    kofi: d.kofiClear === true ? '' : (d.kofi !== undefined ? kofiPagina(d.kofi) : paginaKofi(p)),
   };
 }
 
@@ -177,7 +205,7 @@ export function leggiKofi(body) {
   return {
     token: String(j.verification_token || ''),
     id: String(j.message_id || j.kofi_transaction_id || '').slice(0, 80),
-    tipo: String(j.type || 'Donation'),
+    tipo: String(j.type || 'Donation').slice(0, 30),
     user: str(j.from_name, 60) || 'qualcuno',
     importo,
     valuta: String(j.currency || 'EUR').toUpperCase().slice(0, 3),
@@ -185,15 +213,20 @@ export function leggiKofi(body) {
   };
 }
 
-// I mezzi con cui si puo' pagare sul conto dello streamer: Stripe se il suo
+// I mezzi con cui si puo' pagare sui conti dello streamer: Stripe se il suo
 // conto e' pronto; Satispay se e' pronto e la valuta e' l'euro (Satispay non ne
-// conosce altre). `conti` = { stripe, satispay } come li da' il database.
+// conosce altre); Ko-fi se e' collegato per intero. `conti` = { stripe,
+// satispay } come li da' il database. Stripe e Satispay incassano dal modulo
+// della pagina (SUL_CONTO); Ko-fi e' un rimando alla sua pagina, dove chi dona
+// sceglie importo e messaggio.
+export const SUL_CONTO = ['stripe', 'satispay'];
 export function mezziDi(d, conti = null) {
   const c = conti && typeof conti === 'object' ? conti : {};
   const valuta = VALUTE.includes(d?.valuta) ? d.valuta : 'EUR';
   const out = [];
   if (c.stripe && c.stripe.pronto) out.push('stripe');
   if (c.satispay && c.satispay.pronto && valuta === 'EUR') out.push('satispay');
+  if (statoKofi(d).stato === 'pronto') out.push('kofi');
   return out;
 }
 
@@ -243,16 +276,19 @@ export function datiSostieni(settings, conti = null) {
   const minimo = minimoOk(d.minimo);
   const massimo = massimoOk(d.massimo, minimo);
   const pr = proprioOk(d.proprio);
+  const mezzi = modo === 'conto' ? mezziDi(d, conti) : [];
+  const sulConto = mezzi.some((m) => SUL_CONTO.includes(m));
   return {
     modo,
-    mezzi: modo === 'conto' ? mezziDi(d, conti) : [],
+    mezzi,
     link: modo === 'link' ? d.link : '',
+    kofi: mezzi.includes('kofi') ? paginaKofi(d) : '',
     importi: importiOk(d.importi, minimo, massimo),
     minimo,
     massimo,
     livelli: livelliOk(d.livelli).filter((l) => l.da >= minimo && l.da <= massimo),
     conMessaggio: d.conMessaggio !== false,
-    proprio: modo === 'conto' && pr.attivo && pr.da <= massimo ? { da: Math.max(pr.da, minimo), durata: pr.durata } : null,
+    proprio: sulConto && pr.attivo && pr.da <= massimo ? { da: Math.max(pr.da, minimo), durata: pr.durata } : null,
     etichetta: d.etichetta || 'Sostieni',
     messaggio: d.messaggio || '',
     valuta: VALUTE.includes(d.valuta) ? d.valuta : 'EUR',

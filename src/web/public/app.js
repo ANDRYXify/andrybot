@@ -3299,7 +3299,7 @@ const GUIDE = {
   pagina: { serve: ['Avere una pagina pubblica con tutti i tuoi link (Twitch, social, Discord, donazioni) da mettere nella bio di Instagram o TikTok.', 'Have a public page with all your links (Twitch, socials, Discord, donations) to put in your Instagram or TikTok bio.', 'Tener una página pública con todos tus enlaces (Twitch, redes, Discord, donaciones) para poner en la bio de Instagram o TikTok.'],
     come: [['Scrivi titolo e sottotitolo: è quello che si legge in cima. La foto la prendo dal tuo profilo Twitch.', 'Write a headline and tagline: that’s what people read at the top. I take the picture from your Twitch profile.', 'Escribe título y subtítulo: es lo que se lee arriba. La foto la tomo de tu perfil de Twitch.', '#lp-headline'], ['Aggiungi i link con etichetta e indirizzo: l’icona giusta la riconosco dall’indirizzo.', 'Add your links with a label and address: I recognise the right icon from the address.', 'Añade los enlaces con etiqueta y dirección: el icono correcto lo reconozco por la dirección.', '#lp-blocchi'], ['Metti anche video e musica (YouTube, Spotify, TikTok…) e il blocco “La mia diretta”: il player resta lì e dice da sé se sei online.', 'Add video and music too (YouTube, Spotify, TikTok…) and the “My live stream” block: the player stays there and says by itself whether you are online.', 'Pon también vídeo y música (YouTube, Spotify, TikTok…) y el bloque “Mi directo”: el reproductor se queda ahí y dice él mismo si estás online.', '#lp-blocchi'], ['Scegli stile e colori, salva e apri l’anteprima.', 'Pick style and colours, save and open the preview.', 'Elige estilo y colores, guarda y abre la vista previa.', '#lp-salva']] },
   donazioni: { serve: ['Ricevere donazioni dalla tua pagina link, sul tuo conto, con l\'avviso in diretta e il grazie in chat che partono da soli.', 'Receive donations from your link page, on your own account, with the on-stream alert and the chat thanks firing on their own.', 'Recibir donaciones desde tu página de enlaces, en tu propia cuenta, con el aviso en directo y el gracias en el chat que salen solos.'],
-    come: [['Collega il tuo conto: la chiave con restrizioni di Stripe, o il codice di attivazione di Satispay, o tutti e due. Il conto resta tuo.', 'Connect your account: the Stripe restricted key, or the Satispay activation code, or both. The account stays yours.', 'Conecta tu cuenta: la clave restringida de Stripe, o el código de activación de Satispay, o ambos. La cuenta sigue siendo tuya.', '#dona-conto-box'], ['Accendi le donazioni e scegli come si dona: sul conto, oppure con un link esterno.', 'Turn donations on and choose how people donate: on the account, or with an external link.', 'Activa las donaciones y elige cómo se dona: en la cuenta, o con un enlace externo.', '#dona-attivo'], ['Decidi gli importi suggeriti, il minimo, il massimo, se chi dona può lasciare un messaggio, e le offerte con i loro effetti.', 'Set the suggested amounts, the minimum, the maximum, whether donors can leave a message, and the offers with their effects.', 'Decide los importes sugeridos, el mínimo, el máximo, si quien dona puede dejar un mensaje, y las ofertas con sus efectos.', '#dona-importi'], ['Scrivi il testo del tasto e una frase: compaiono nel blocco «Sostieni» della pagina.', 'Write the button text and a line: they show in the «Support me» block of the page.', 'Escribe el texto del botón y una frase: aparecen en el bloque «Apóyame» de la página.', '#dona-etichetta'], ['Se vuoi, accendi il grazie in chat e prova l\'avviso.', 'If you like, turn on the chat thanks and test the alert.', 'Si quieres, activa el gracias en el chat y prueba el aviso.', '#dona-chat']] },
+    come: [['Collega dove ricevi i soldi: la chiave con restrizioni di Stripe, il codice di attivazione di Satispay, la tua pagina Ko-fi col suo token. Uno o più, e restano tuoi.', 'Connect where you receive the money: the Stripe restricted key, the Satispay activation code, your Ko-fi page with its token. One or more, and they stay yours.', 'Conecta donde recibes el dinero: la clave restringida de Stripe, el código de activación de Satispay, tu página de Ko-fi con su token. Uno o varios, y siguen siendo tuyos.', '#dona-conto-box'], ['Accendi le donazioni e scegli come si dona: dalla pagina coi conti collegati, oppure con un link esterno.', 'Turn donations on and choose how people donate: from the page with the connected accounts, or with an external link.', 'Activa las donaciones y elige cómo se dona: desde la página con las cuentas conectadas, o con un enlace externo.', '#dona-attivo'], ['Decidi gli importi suggeriti, il minimo, il massimo, se chi dona può lasciare un messaggio, e le offerte con i loro effetti.', 'Set the suggested amounts, the minimum, the maximum, whether donors can leave a message, and the offers with their effects.', 'Decide los importes sugeridos, el mínimo, el máximo, si quien dona puede dejar un mensaje, y las ofertas con sus efectos.', '#dona-importi'], ['Scrivi il testo del tasto e una frase: compaiono nel blocco «Sostieni» della pagina.', 'Write the button text and a line: they show in the «Support me» block of the page.', 'Escribe el texto del botón y una frase: aparecen en el bloque «Apóyame» de la página.', '#dona-etichetta'], ['Se vuoi, accendi il grazie in chat e prova l\'avviso.', 'If you like, turn on the chat thanks and test the alert.', 'Si quieres, activa el gracias en el chat y prueba el aviso.', '#dona-chat']] },
   regole: { serve: ['I filtri sui messaggi: le parole che il bot non dirà mai, e l\'antispam che pulisce la chat da solo.', 'Message filters: the words the bot will never say, and the anti-spam that cleans chat on its own.', 'Los filtros de los mensajes: las palabras que el bot nunca dirá, y el antispam que limpia el chat solo.'],
     come: [['Scrivi le parole vietate, una per riga.', 'Write the banned words, one per line.', 'Escribe las palabras prohibidas, una por línea.', '#txt-vietate'], ['Accendi l\'antispam: da lì in giù decidi cosa filtrare.', 'Turn on anti-spam: from there down you choose what to filter.', 'Enciende el antispam: de ahí para abajo eliges qué filtrar.', '#chk-as-attivo'], ['Scegli chi può postare link e quali domini passano sempre.', 'Choose who can post links and which domains always pass.', 'Elige quién puede publicar enlaces y qué dominios pasan siempre.', '#sel-as-linktier'], ['Salva: il bot modera da solo.', 'Save: the bot moderates on its own.', 'Guarda: el bot modera solo.', '#btn-salva-antispam']] },
   giochi: { serve: ['Minigiochi, monete e classifiche per tenere viva la chat.', 'Minigames, coins and leaderboards to keep chat alive.', 'Minijuegos, monedas y clasificaciones para animar el chat.'],
@@ -16476,7 +16476,7 @@ function pannelloDonazioni() {
   return pannello('donazioni', `
     <div class="carta" id="dona-conto-carta">
       <h2>${_hIco(ICO.cuore)}${L('Donazioni', 'Donations', 'Donaciones')}</h2>
-      <p>${L('Chi ti segue ti dona dalla tua pagina link. Il pagamento arriva sul tuo conto, Stripe o Satispay, aperto e gestito da te: qui incolli solo una chiave con permessi ridotti, una volta. Con tutti e due, chi dona sceglie. A ogni donazione partono l\'avviso in overlay e il grazie in chat, e sale l\'obiettivo in euro.', 'People donate to you from your link page. The payment lands on your own account, Stripe or Satispay, opened and managed by you: here you paste just a key with limited permissions, once. With both, the donor chooses. Every donation fires the overlay alert and the thanks in chat, and moves the euro goal.', 'Quien te sigue te dona desde tu página de enlaces. El pago llega a tu propia cuenta, Stripe o Satispay, abierta y gestionada por ti: aquí pegas solo una clave con permisos limitados, una vez. Con las dos, quien dona elige. Cada donación lanza el aviso en el overlay y el gracias en el chat, y sube el objetivo en euros.')}</p>
+      <p>${L('Chi ti segue ti dona dalla tua pagina link. I soldi arrivano dove li ricevi già, Stripe, Satispay o la tua pagina Ko-fi, aperti e gestiti da te: qui colleghi quelli che vuoi, una volta. Con più di uno, chi dona sceglie. A ogni donazione partono l\'avviso in overlay e il grazie in chat, e sale l\'obiettivo.', 'People donate to you from your link page. The money lands where you already receive it, Stripe, Satispay or your Ko-fi page, opened and managed by you: here you connect the ones you want, once. With more than one, the donor chooses. Every donation fires the overlay alert and the thanks in chat, and moves the goal.', 'Quien te sigue te dona desde tu página de enlaces. El dinero llega donde ya lo recibes, Stripe, Satispay o tu página de Ko-fi, abiertos y gestionados por ti: aquí conectas los que quieras, una vez. Con más de uno, quien dona elige. Cada donación lanza el aviso en el overlay y el gracias en el chat, y sube el objetivo.')}</p>
       <div id="dona-conto-box" class="spazio-sopra">${attesaHtml()}</div>
     </div>
     <div class="carta" id="dona-carta">
@@ -16486,8 +16486,8 @@ function pannelloDonazioni() {
         <span class="etichetta-stato">${L('Donazioni accese', 'Donations on', 'Donaciones activas')}</span>
       </div>
       <div class="spazio-sopra" role="radiogroup" aria-label="${esc(L('Come si dona', 'How people donate', 'Cómo se dona'))}">
-        <label class="riga-check"><input type="radio" name="dona-modo" value="conto" checked> ${L('Sul mio conto Stripe, direttamente dalla pagina', 'On my Stripe account, right from the page', 'En mi cuenta de Stripe, desde la página')}</label>
-        <label class="riga-check"><input type="radio" name="dona-modo" value="link"> ${L('Con un link esterno: Ko-fi, PayPal, Streamlabs…', 'With an external link: Ko-fi, PayPal, Streamlabs…', 'Con un enlace externo: Ko-fi, PayPal, Streamlabs…')}</label>
+        <label class="riga-check"><input type="radio" name="dona-modo" value="conto" checked> ${L('Dalla pagina, con i conti collegati qui sopra', 'From the page, with the accounts connected above', 'Desde la página, con las cuentas conectadas arriba')}</label>
+        <label class="riga-check"><input type="radio" name="dona-modo" value="link"> ${L('Con un link esterno: PayPal, Streamlabs…', 'With an external link: PayPal, Streamlabs…', 'Con un enlace externo: PayPal, Streamlabs…')}</label>
       </div>
       <div id="dona-campi-conto" class="griglia-campi spazio-sopra">
         <div><label class="campo" for="dona-importi">${L('Importi suggeriti', 'Suggested amounts', 'Importes sugeridos')}</label><input type="text" id="dona-importi" maxlength="60" placeholder="2, 5, 10, 20"></div>
@@ -16512,7 +16512,8 @@ function pannelloDonazioni() {
         <label class="riga-check spazio-sopra"><input type="checkbox" id="dona-proprio-subito"> ${L('Va in onda da sola, senza aspettare il mio ok', 'Goes on air on its own, without waiting for my ok', 'Sale sola, sin esperar mi visto bueno')}</label>
       </div>
       <div id="dona-campi-link" class="spazio-sopra">
-        <label class="campo" for="dona-link">${L('Dove si dona', 'Where people donate', 'Dónde se dona')}</label><input type="url" id="dona-link" class="campo-largo" maxlength="400" placeholder="https://ko-fi.com/iltuonome">
+        <label class="campo" for="dona-link">${L('Dove si dona', 'Where people donate', 'Dónde se dona')}</label><input type="url" id="dona-link" class="campo-largo" maxlength="400" placeholder="https://paypal.me/iltuonome">
+        <p class="suggerimento">${L('Da un link esterno l\'avviso non parte da solo. Se quel servizio sa mandare un avviso, fallo arrivare con la chiave API del canale (Comandi, carta «Connettori avanzati», azione «donazione»).', 'From an external link the alert does not fire by itself. If that service can send a notification, send it with the channel API key (Commands, «Advanced connectors» card, action «donazione»).', 'Desde un enlace externo el aviso no sale solo. Si ese servicio sabe mandar un aviso, envíalo con la clave API del canal (Comandos, tarjeta «Conectores avanzados», acción «donazione»).')}</p>
       </div>
       <div class="griglia-campi spazio-sopra">
         <div><label class="campo" for="dona-etichetta">${L('Testo del tasto', 'Button text', 'Texto del botón')}</label><input type="text" id="dona-etichetta" maxlength="40" placeholder="${esc(L('Offrimi un caffè', 'Buy me a coffee', 'Invítame a un café'))}"></div>
@@ -16533,15 +16534,6 @@ function pannelloDonazioni() {
     <div class="carta" id="dona-ultime-carta">
       <h2>${_hIco(ICO.lista)}${L('Il registro delle donazioni', 'The donations register', 'El registro de donaciones')}</h2>
       <div id="dona-ultime-box">${attesaHtml()}</div>
-    </div>
-    <div class="carta" id="dona-kofi-carta">
-      <h2>${_hIco(ICO.spina)}${L('Ko-fi e altri servizi', 'Ko-fi and other services', 'Ko-fi y otros servicios')}</h2>
-      <p class="suggerimento">${L('Se le mance ti arrivano altrove, l\'avviso può partire lo stesso. Su Ko-fi apri Impostazioni → API → Webhooks, incolla questo indirizzo e copia qui il «verification token»: il token non lo conserviamo, ne teniamo l\'impronta. Da un altro servizio, manda le mance con la chiave API del canale (azione «donazione»).', 'If your tips arrive elsewhere, the alert can still fire. On Ko-fi open Settings → API → Webhooks, paste this address and copy the “verification token” here: we do not keep the token, only its fingerprint. From another service, send tips with the channel API key (action «donazione»).', 'Si las propinas te llegan por otro lado, el aviso puede salir igual. En Ko-fi abre Ajustes → API → Webhooks, pega esta dirección y copia aquí el «verification token»: no guardamos el token, solo su huella. Desde otro servicio, envía las propinas con la clave API del canal (acción «donazione»).')}</p>
-      <p><code id="dona-webhook">…</code></p>
-      <label class="campo" for="dona-kofi">Verification token</label>
-      <input type="password" id="dona-kofi" class="campo-largo" autocomplete="off">
-      <p class="suggerimento" id="dona-kofi-stato"></p>
-      <p><button type="button" class="btn secondario" id="dona-kofi-salva">${L('Salva il token', 'Save the token', 'Guardar el token')}</button> <button type="button" class="btn secondario" id="dona-kofi-via" hidden style="display:none">${L('Togli il token', 'Remove the token', 'Quitar el token')}</button></p>
     </div>`);
 }
 
@@ -16562,10 +16554,6 @@ function riempiDonazioni() {
   _imposta('dona-proprio-attivo', pr.attivo === true); _imposta('dona-proprio-da', pr.da || 20); _imposta('dona-proprio-durata', pr.durata || 6); _imposta('dona-proprio-subito', pr.subito === true);
   if (!_EFFETTI.length) api('/api/streamer/effetti').then((lib) => { _EFFETTI = lib?.effetti || []; _disegnaLivelli(_leggiLivelli()); }).catch(() => {});
   const url = _statoDona?.paginaUrl || (location.origin + '/dona/' + (stato?.user?.login || '…'));
-  const w = _g('dona-webhook'); if (w) w.textContent = location.origin + '/dona/kofi/' + (stato?.user?.login || '…');
-  const st = _g('dona-kofi-stato');
-  if (st) st.textContent = d.kofiSet ? L('Token impostato: le mance da Ko-fi arrivano.', 'Token set: tips from Ko-fi come through.', 'Token configurado: las propinas de Ko-fi llegan.') : L('Nessun token: incollalo e salva.', 'No token yet: paste it and save.', 'Sin token: pégalo y guarda.');
-  const via = _g('dona-kofi-via'); if (via) { via.hidden = !d.kofiSet; via.style.display = d.kofiSet ? '' : 'none'; }
 }
 function _opzioniEffetti(sel) {
   return `<option value="">${L('— nessun effetto —', '— no effect —', '— ningún efecto —')}</option>` + (_EFFETTI || []).map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>${esc(e.comando)} · ${esc(e.tipo || '')}</option>`).join('');
@@ -16594,14 +16582,12 @@ function _mostraModoDona() {
   if (b) b.style.display = link ? '' : 'none';
 }
 function _leggiDonazioni() {
-  const tok = (_v('dona-kofi') || '').trim();
   const d = { attivo: !!_g('dona-attivo')?.checked, modo: document.querySelector('input[name="dona-modo"][value="link"]')?.checked ? 'link' : 'conto',
     link: (_v('dona-link') || '').trim(), importi: (_v('dona-importi') || '').trim(), minimo: Number(_v('dona-minimo')) || 1, massimo: Number(_v('dona-massimo')) || 500, conMessaggio: !!_g('dona-con-messaggio')?.checked,
     livelli: _leggiLivelli(),
     proprio: { attivo: !!_g('dona-proprio-attivo')?.checked, da: Number(_v('dona-proprio-da')) || 20, durata: Number(_v('dona-proprio-durata')) || 6, subito: !!_g('dona-proprio-subito')?.checked },
     etichetta: (_v('dona-etichetta') || '').trim(), messaggio: (_v('dona-messaggio') || '').trim(), valuta: _v('dona-valuta') || 'EUR',
     annunciaChat: !!_g('dona-chat')?.checked, testoChat: (_v('dona-testo-chat') || '').trim() };
-  if (tok) d.kofiToken = tok;
   return d;
 }
 function _soldi(n, valuta) {
@@ -16620,7 +16606,34 @@ async function caricaStatoDonazioni(rileggi) {
   const ul = _g('dona-ultime-box'); if (ul) ul.innerHTML = _ultimeDonaHtml(st);
 }
 function _contoDonaHtml(st) {
-  return _contoStripeHtml(st) + `<h3 class="spazio-sopra">Satispay</h3>` + _contoSatispayHtml(st);
+  return _contoStripeHtml(st) + `<h3 class="spazio-sopra">Satispay</h3>` + _contoSatispayHtml(st) + `<h3 class="spazio-sopra">Ko-fi</h3>` + _contoKofiHtml(st);
+}
+const _KOFI_PAGINA = /^(?:https?:\/\/)?(?:www\.)?ko-fi\.com\/([A-Za-z0-9_-]{2,50})\/?(?:[?#].*)?$|^@?([A-Za-z0-9_-]{2,50})$/i;
+function _contoKofiHtml(st) {
+  const k = st?.kofi || {};
+  const s = k.stato || 'nessuno';
+  const corta = String(k.pagina || '').replace(/^https:\/\//, '');
+  const altre = [...new Set((st?.ultime || []).filter((d) => d.fonte === 'kofi' && d.valuta && d.valuta !== k.valuta).map((d) => d.valuta))];
+  const valute = altre.length ? `<p class="suggerimento">${esc(L(`Da Ko-fi arrivano donazioni in ${altre.join(', ')}, le tue sono in ${k.valuta}: l'avviso e il grazie partono, l'obiettivo e le offerte no, perché non contano un cambio. Usa la stessa valuta qui e su Ko-fi.`, `Donations from Ko-fi arrive in ${altre.join(', ')}, yours are in ${k.valuta}: the alert and the thanks fire, the goal and the offers do not, because they do not guess an exchange rate. Use the same currency here and on Ko-fi.`, `De Ko-fi llegan donaciones en ${altre.join(', ')}, las tuyas son en ${k.valuta}: el aviso y el gracias salen, el objetivo y las ofertas no, porque no calculan un cambio. Usa la misma moneda aquí y en Ko-fi.`))}</p>` : '';
+  if (s === 'pronto') return `<p>${_bIco(ICO.spunta)}${L('Ko-fi collegato: chi dona sulla tua pagina Ko-fi fa partire l\'avviso, il grazie in chat e l\'obiettivo, come dalla tua pagina, e nella pagina delle donazioni c\'è il tasto per arrivarci.', 'Ko-fi connected: whoever donates on your Ko-fi page fires the alert, the thanks in chat and the goal, as from your page, and your donations page has the button to get there.', 'Ko-fi conectado: quien dona en tu página de Ko-fi lanza el aviso, el gracias en el chat y el objetivo, como desde tu página, y en la página de donaciones está el botón para llegar.')} <span class="suggerimento">${esc(corta)}</span></p>
+    <p class="suggerimento">${L('I soldi restano su Ko-fi, con le sue regole e le sue commissioni. Contano le mance e gli abbonamenti, non gli acquisti del negozio. Un messaggio che chi dona tiene privato resta privato.', 'The money stays on Ko-fi, with its rules and its fees. Tips and memberships count, shop purchases do not. A message the donor keeps private stays private.', 'El dinero se queda en Ko-fi, con sus reglas y sus comisiones. Cuentan las propinas y las suscripciones, no las compras de la tienda. Un mensaje que quien dona mantiene privado sigue privado.')}</p>
+    ${valute}
+    <p><a class="btn secondario" href="${esc(k.pagina)}" target="_blank" rel="noopener">${L('Apri Ko-fi', 'Open Ko-fi', 'Abrir Ko-fi')}</a> <button type="button" class="btn secondario" data-dona="kofi-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button></p>`;
+  const manca = s !== 'meta' ? '' : (k.token
+    ? L('Manca l\'indirizzo della tua pagina Ko-fi: senza, il tasto Ko-fi non compare fra i modi per donare.', 'Your Ko-fi page address is missing: without it, the Ko-fi button does not show among the ways to donate.', 'Falta la dirección de tu página de Ko-fi: sin ella, el botón de Ko-fi no aparece entre las formas de donar.')
+    : L('Manca il token: le donazioni su Ko-fi arrivano a te, ma qui non parte niente.', 'The token is missing: donations on Ko-fi reach you, but nothing fires here.', 'Falta el token: las donaciones en Ko-fi te llegan, pero aquí no sale nada.'));
+  return `<p>${manca ? esc(manca) : L('Per chi ha già una pagina Ko-fi: chi dona paga lì, e l\'avviso, il grazie e l\'obiettivo partono qui come per gli altri conti. SocialBot non tocca i soldi: da Ko-fi riceve solo l\'avviso di ogni donazione.', 'For those who already have a Ko-fi page: donors pay there, and the alert, the thanks and the goal fire here as for the other accounts. SocialBot never touches the money: from Ko-fi it only receives the notice of each donation.', 'Para quien ya tiene una página de Ko-fi: quien dona paga allí, y el aviso, el gracias y el objetivo salen aquí como con las otras cuentas. SocialBot no toca el dinero: de Ko-fi solo recibe el aviso de cada donación.')}</p>
+    <ol class="guida-come">
+      <li>${esc(L('Scrivi qui sotto l\'indirizzo della tua pagina Ko-fi.', 'Write your Ko-fi page address below.', 'Escribe abajo la dirección de tu página de Ko-fi.'))}</li>
+      <li>${esc(L('Su Ko-fi apri «Settings» → «API», incolla questo indirizzo in «Webhook URL» e premi «Update»:', 'On Ko-fi open “Settings” → “API”, paste this address into “Webhook URL” and press “Update”:', 'En Ko-fi abre «Settings» → «API», pega esta dirección en «Webhook URL» y pulsa «Update»:'))} <code>${esc(k.webhook || '')}</code></li>
+      <li>${esc(L('Nella stessa pagina apri «Advanced», copia il «Verification Token» e incollalo qui.', 'On the same page open “Advanced”, copy the “Verification Token” and paste it here.', 'En la misma página abre «Advanced», copia el «Verification Token» y pégalo aquí.'))}</li>
+    </ol>
+    <label class="campo" for="dona-kofi-pagina">${L('La tua pagina Ko-fi', 'Your Ko-fi page', 'Tu página de Ko-fi')}</label>
+    <input type="text" id="dona-kofi-pagina" class="campo-largo" maxlength="80" autocomplete="off" placeholder="ko-fi.com/iltuonome" value="${esc(corta)}">
+    <label class="campo" for="dona-kofi">Verification Token</label>
+    <input type="password" id="dona-kofi" class="campo-largo" autocomplete="off"${k.token ? ` placeholder="${esc(L('già salvato: incollane uno solo per cambiarlo', 'already saved: paste one only to change it', 'ya guardado: pega otro solo para cambiarlo'))}"` : ''}>
+    <p class="spazio-sopra"><button type="button" class="btn" data-dona="kofi-collega">${L('Collega Ko-fi', 'Connect Ko-fi', 'Conectar Ko-fi')}</button>${s === 'meta' ? ` <button type="button" class="btn secondario" data-dona="kofi-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}</p>
+    <p class="suggerimento">${L('Il token non lo conserviamo: ne teniamo l\'impronta, che basta a riconoscere gli avvisi di Ko-fi e non serve a nient\'altro.', 'We do not keep the token: we keep its fingerprint, which is enough to recognise Ko-fi\'s notices and is good for nothing else.', 'No guardamos el token: guardamos su huella, que basta para reconocer los avisos de Ko-fi y no sirve para nada más.')}</p>`;
 }
 function _contoStripeHtml(st) {
   const s = st?.conto?.stato || 'nessuno';
@@ -22120,12 +22133,10 @@ function attivaPiattaforma() {
     const d = _leggiDonazioni();
     const r = await salvaImpostazioni({ donazioni: d }, L('Donazioni salvate ✓', 'Donations saved ✓', 'Donaciones guardadas ✓'));
     if (stato?.streamer && r?.settings?.donazioni) stato.streamer.settings.donazioni = r.settings.donazioni;
-    else if (stato?.streamer) stato.streamer.settings.donazioni = { ...d, kofiToken: undefined, kofiSet: !!(d.kofiToken || impostazioni().donazioni?.kofiSet) };
-    const k = _g('dona-kofi'); if (k) k.value = '';
+    else if (stato?.streamer) stato.streamer.settings.donazioni = { ...impostazioni().donazioni, ...d };
     riempiDonazioni(); lpAnteprima();
   });
   _g('dona-salva')?.addEventListener('click', salvaDonazioni);
-  _g('dona-kofi-salva')?.addEventListener('click', salvaDonazioni);
   document.querySelectorAll('input[name="dona-modo"]').forEach((r) => r.addEventListener('change', _mostraModoDona));
   _g('dona-livello-piu')?.addEventListener('click', () => {
     const box = _g('dona-livelli'); if (!box) return;
@@ -22167,6 +22178,25 @@ function attivaPiattaforma() {
           toast(L('Satispay collegato', 'Satispay connected', 'Satispay conectado'));
           caricaStatoDonazioni(false);
         } finally { b.disabled = false; }
+      } else if (cosa === 'kofi-collega') {
+        const scritto = (_v('dona-kofi-pagina') || '').trim();
+        const token = (_v('dona-kofi') || '').trim();
+        const m = _KOFI_PAGINA.exec(scritto);
+        if (!m) { toast(L('Scrivi l\'indirizzo della tua pagina Ko-fi, per esempio ko-fi.com/iltuonome.', 'Write your Ko-fi page address, for example ko-fi.com/yourname.', 'Escribe la dirección de tu página de Ko-fi, por ejemplo ko-fi.com/tunombre.'), 'errore'); return; }
+        if (!token && !_statoDona?.kofi?.token) { toast(L('Incolla il Verification Token di Ko-fi.', 'Paste the Ko-fi Verification Token.', 'Pega el Verification Token de Ko-fi.'), 'errore'); return; }
+        b.disabled = true;
+        try {
+          const r = await salvaImpostazioni({ donazioni: { ..._leggiDonazioni(), kofi: 'https://ko-fi.com/' + (m[1] || m[2]), ...(token ? { kofiToken: token } : {}) } }, L('Ko-fi collegato', 'Ko-fi connected', 'Ko-fi conectado'));
+          if (stato?.streamer && r?.settings?.donazioni) stato.streamer.settings.donazioni = r.settings.donazioni;
+          caricaStatoDonazioni(false); lpAnteprima();
+        } finally { b.disabled = false; }
+      } else if (cosa === 'kofi-scollega') {
+        if (!(await chiediSe({ titolo: L('Scollego Ko-fi?', 'Disconnect Ko-fi?', '¿Desconecto Ko-fi?'),
+          testo: L('La tua pagina Ko-fi resta tua. Qui il tasto Ko-fi sparisce e le donazioni fatte lì non fanno più partire niente, finché non lo ricolleghi. Su Ko-fi puoi togliere anche l\'indirizzo del webhook.', 'Your Ko-fi page stays yours. Here the Ko-fi button disappears and donations made there no longer fire anything, until you connect it again. On Ko-fi you can also remove the webhook address.', 'Tu página de Ko-fi sigue siendo tuya. Aquí el botón de Ko-fi desaparece y las donaciones hechas allí ya no lanzan nada, hasta que lo vuelvas a conectar. En Ko-fi puedes quitar también la dirección del webhook.'),
+          si: L('Scollega', 'Disconnect', 'Desconecta'), pericolo: true }))) return;
+        const r = await salvaImpostazioni({ donazioni: { ..._leggiDonazioni(), kofiClear: true, kofiTokenClear: true } }, L('Ko-fi scollegato', 'Ko-fi disconnected', 'Ko-fi desconectado'));
+        if (stato?.streamer && r?.settings?.donazioni) stato.streamer.settings.donazioni = r.settings.donazioni;
+        caricaStatoDonazioni(false); lpAnteprima();
       } else if (cosa === 'satispay-scollega') {
         if (!(await chiediSe({ titolo: L('Scollego Satispay?', 'Disconnect Satispay?', '¿Desconecto Satispay?'),
           testo: L('Il tuo negozio online resta nel pannello di Satispay. Qui i pagamenti con Satispay si fermano, finché non lo ricolleghi.', 'Your online shop stays in the Satispay panel. Satispay payments stop here until you connect it again.', 'Tu tienda online sigue en el panel de Satispay. Aquí los pagos con Satispay se detienen hasta que lo vuelvas a conectar.'),
@@ -22223,11 +22253,6 @@ function attivaPiattaforma() {
   _g('dona-prova')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/alert/prova', { method: 'POST', body: { kind: 'donazione' } });
     toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
-  }));
-  _g('dona-kofi-via')?.addEventListener('click', () => conErrore(async () => {
-    await salvaImpostazioni({ donazioni: { ..._leggiDonazioni(), kofiToken: undefined, kofiTokenClear: true } }, L('Token tolto', 'Token removed', 'Token quitado'));
-    if (stato?.streamer) stato.streamer.settings.donazioni = { ...impostazioni().donazioni, kofiSet: false };
-    riempiDonazioni();
   }));
   _g('mus-parti-riga')?.addEventListener('click', () => {
     _cfgEl('musica').parti = _partiInRiga();
