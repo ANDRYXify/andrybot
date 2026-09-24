@@ -71,7 +71,7 @@ test('il server ha una rotta per ognuna, e l\'indirizzo corto le serve tutte e d
   // il verso non arriva dal browser: lo decide la rotta
   assert.match(SRV, /quale: 'link', urlTorna: `\$\{config\.baseUrl\}\/u\/\$\{login\}`/);
   assert.match(SRV, /quale: 'dona', urlTorna: donazioni\.urlPaginaDona\(login\)/);
-  assert.match(SRV, /const m = \/\^\\\/\(\[a-z0-9_\]\{1,30\}\)\(\\\/privacy\)\?\\\/\?\$\/i\.exec\(req\.path\)/,
+  assert.ok(SRV.includes('const m = RE_DONA_IN_VIA.exec(req.path);') && SRV.includes('const RE_DONA_IN_VIA = new RegExp(`^/(${CANALE_IN_VIA})(/privacy)?/?$`, \'i\');'),
     'sull\'indirizzo corto passa anche /nome/privacy, sennò «Privacy» da lì dentro cadrebbe nel vuoto');
   assert.match(SRV, /urlLink: linkPage\.get\(login\)\?\.attiva \? `\$\{config\.baseUrl\}\/u\/\$\{login\}` : ''/,
     'e il link a casa si passa solo se casa e\' accesa');

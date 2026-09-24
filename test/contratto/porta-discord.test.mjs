@@ -46,7 +46,7 @@ test('l\'indirizzo e\' uno solo, corto dove c\'e\' e lungo dove non c\'e\'', () 
 test('il nome corto porta al collegamento di QUEL canale, e a nient\'altro', () => {
   const m = SRV.slice(SRV.indexOf('config.discordHost && String(req.hostname'));
   assert.match(m, /req\.url = '\/collega\/' \+ d\[1\]\.toLowerCase\(\)/);
-  assert.match(m, /\^\\\/\(\[a-z0-9_\]\{1,30\}\)\\\/\?\$/, 'un canale, non un percorso qualunque');
+  assert.ok(m.includes('const d = RE_CANALE_IN_VIA.exec(req.path);') && SRV.includes('const RE_CANALE_IN_VIA = new RegExp(`^/(${CANALE_IN_VIA})/?$`, \'i\');'), 'un canale, non un percorso qualunque');
   assert.match(m.slice(0, 700), /res\.redirect\(302, config\.baseUrl \+ '\/'\)/, 'la radice non e\' una pagina: rimanda al sito');
   assert.match(m.slice(0, 700), /req\.path === '\/privacy'\) return next\(\);/,
     'e l\'informativa e\' un indirizzo, non un canale: la pagina ci linka');
