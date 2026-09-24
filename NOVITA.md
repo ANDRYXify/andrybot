@@ -57,6 +57,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Quando «Blocca sempre» o «Non toccare mai» sono piene il pannello lo dice, invece di perdere il nome al salvataggio, e il caso da rivedere resta lì finché non fai spazio. [vai: scudo]
 - Con «solo mod» nei link dell'antispam un VIP non posta più link. Per tutto il resto i VIP restano liberi. [vai: regole]
 - Lo scudo dice giusto chi non tocca mai: tu, i mod, i VIP e gli abbonati. Seguire il canale non basta, perché il follow è un clic e i follow-bot lo fanno. [vai: scudo]
+- Le conferme del pannello, come «salvato», «acceso» e «spento», escono nella lingua del pannello, e numeri e date si scrivono come si usa in quella lingua.
+- «Sfoglia i font» tiene la sua icona anche dopo che hai aperto e chiuso l'elenco. [vai: alert]
 
 ## 2026-09-23
 

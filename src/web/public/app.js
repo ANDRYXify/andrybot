@@ -4,6 +4,8 @@
 
 let stato = null;
 let schedaAttiva = 'stato';
+const COMANDO_CATEGORIA = 'categoria';
+const COMANDO_TITOLO = 'titolo';
 
 const DEMO = (() => {
   try { return new URLSearchParams(location.search).get('demo') === '1' || /^\/demo\/?$/.test(location.pathname); }
@@ -32,7 +34,7 @@ function dataIt(ts) {
   let n = Number(ts);
   if (!Number.isFinite(n) || n <= 0) n = Date.parse(ts);
   if (!Number.isFinite(n) || n <= 0) return '—';
-  return new Date(n).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
+  return new Date(n).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function toast(msg, tipo = 'ok') {
@@ -255,8 +257,8 @@ function impostazioni() {
     maiDire: Array.isArray(s.maiDire) ? s.maiDire : [],
     ascoltoLive: s.ascoltoLive === true,
     ascoltoSensibilita: typeof s.ascoltoSensibilita === 'number' ? s.ascoltoSensibilita : 5,
-    cambioCategoria: { attivo: false, trigger: 'categoria', annuncia: true, ...(s.cambioCategoria && typeof s.cambioCategoria === 'object' ? s.cambioCategoria : {}) },
-    cambioTitolo: { attivo: false, trigger: 'titolo', annuncia: true, ...(s.cambioTitolo && typeof s.cambioTitolo === 'object' ? s.cambioTitolo : {}) },
+    cambioCategoria: { attivo: false, trigger: COMANDO_CATEGORIA, annuncia: true, ...(s.cambioCategoria && typeof s.cambioCategoria === 'object' ? s.cambioCategoria : {}) },
+    cambioTitolo: { attivo: false, trigger: COMANDO_TITOLO, annuncia: true, ...(s.cambioTitolo && typeof s.cambioTitolo === 'object' ? s.cambioTitolo : {}) },
     imparaVoce: { attivo: false, ...(s.imparaVoce && typeof s.imparaVoce === 'object' ? s.imparaVoce : {}) },
     penitenze: { attivo: false, premioVieta: '', premioSolo: '', durataMin: 2,
       penitenzeModo: 'lista', penitenze: [], effetto: '', fuzzy: 80,
@@ -301,7 +303,7 @@ function impostazioni() {
   };
 }
 
-async function salvaImpostazioni(parziale, msgOk = 'Impostazioni salvate') {
+async function salvaImpostazioni(parziale, msgOk = L('Impostazioni salvate ✓', 'Settings saved ✓', 'Ajustes guardados ✓')) {
   const d = await api('/api/streamer/impostazioni', { method: 'POST', body: parziale });
   if (stato?.streamer) {
     stato.streamer.settings = { ...(stato.streamer.settings || {}), ...parziale };
@@ -704,8 +706,8 @@ function statoDemo() {
         tono: 'scherzoso', genere: 'neutro', carattere: '', spontaneita: 0.05, rispostaMenzioni: true, modalita: 'sempre',
         iaLocale: true, proattivo: true, proattivoTg: true, internet: true, adattaCanale: true, giochi: true, promoSocial: true,
         nomeMonete: 'scudi', clipAuto: true, clipAutoSoglia: 25, ascoltoLive: false, ascoltoSensibilita: 5,
-        cambioCategoria: { attivo: true, trigger: 'categoria', annuncia: true },
-        cambioTitolo: { attivo: false, trigger: 'titolo', annuncia: true },
+        cambioCategoria: { attivo: true, trigger: COMANDO_CATEGORIA, annuncia: true },
+        cambioTitolo: { attivo: false, trigger: COMANDO_TITOLO, annuncia: true },
         imparaVoce: { attivo: false },
         settimana: _DEMO_SETTIMANA,
         premioVip: {
@@ -1919,6 +1921,10 @@ let LINGUA = (() => {
 })();
 try { document.documentElement.lang = LINGUA; } catch (e) {  }
 const L = (it, en, es) => (LINGUA === 'en' ? en : LINGUA === 'es' ? es : it);
+const localePannello = () => ({ it: 'it-IT', en: 'en-GB', es: 'es-ES' }[L('it', 'en', 'es')] || 'it-IT');
+const testoAttivo = (si) => (si ? L('Attivo', 'On', 'Activo') : L('Spento', 'Off', 'Apagado'));
+const testoClipAuto = (si) => (si ? L('Clip automatiche accese', 'Automatic clips on', 'Clips automáticos activados') : L('Clip automatiche spente', 'Automatic clips off', 'Clips automáticos desactivados'));
+const testoAscolto = (si) => (si ? L('Ascolto acceso', 'Listening on', 'Escucha activada') : L('Ascolto spento', 'Listening off', 'Escucha desactivada'));
 const VIA_LINGUA = { it: '/', en: '/en', es: '/es' };
 function indirizzoInLingua(l) {
   try {
@@ -6220,7 +6226,6 @@ function pannelloAccount() {
     </div>`);
 }
 
-const localePannello = () => ({ it: 'it-IT', en: 'en-GB', es: 'es-ES' }[L('it', 'en', 'es')] || 'it-IT');
 
 function cartaAdessoHtml() {
   if (senzaDiretta()) return '';
@@ -6628,7 +6633,7 @@ function pannelloClip() {
           <input type="checkbox" id="chk-clip" ${s.clipAuto && !funzioneChiusa('clipAuto') ? 'checked' : ''}${funzioneChiusa('clipAuto') ? ' disabled' : ''}>
           <span class="levetta"></span>
         </label>
-        <span class="etichetta-stato" id="etichetta-clip">${s.clipAuto ? L('Clip automatiche accese', 'Automatic clips on', 'Clips automáticos activados') : L('Clip automatiche spente', 'Automatic clips off', 'Clips automáticos desactivados')}</span>
+        <span class="etichetta-stato" id="etichetta-clip">${testoClipAuto(s.clipAuto)}</span>
       </div>
       <label class="campo spazio-sopra" for="rng-clip-sens">${L('Sensibilità:', 'Sensitivity:', 'Sensibilidad:')} <span id="val-clip-sens">${s.clipAutoSensibilita}</span></label>
       <input type="range" id="rng-clip-sens" min="1" max="10" value="${s.clipAutoSensibilita}"${funzioneChiusa('clipAuto') ? ' disabled' : ''}>
@@ -6646,8 +6651,8 @@ function pannelloAscolto() {
   let sens = Number(s.ascoltoSensibilita);
   sens = Number.isFinite(sens) ? Math.min(10, Math.max(1, Math.round(sens))) : 5;
   const inAscolto = (stato.status?.ascoltando || []).includes(stato.user.login);
-  const cc = s.cambioCategoria || { attivo: false, trigger: 'categoria', annuncia: true };
-  const ct = s.cambioTitolo || { attivo: false, trigger: 'titolo', annuncia: true };
+  const cc = s.cambioCategoria || { attivo: false, trigger: COMANDO_CATEGORIA, annuncia: true };
+  const ct = s.cambioTitolo || { attivo: false, trigger: COMANDO_TITOLO, annuncia: true };
   const iv = s.imparaVoce || { attivo: false };
   const proprietario = stato?.ruolo !== 'moderatore';
   const mancaPermesso = !DEMO && stato.canaleOk === false;
@@ -6661,7 +6666,7 @@ function pannelloAscolto() {
           <input type="checkbox" id="toggle-ascolto" ${s.ascoltoLive ? 'checked' : ''}>
           <span class="levetta"></span>
         </label>
-        <span class="etichetta-stato" id="etichetta-ascolto">${s.ascoltoLive ? L('Ascolto acceso', 'Listening on', 'Escucha activada') : L('Ascolto spento', 'Listening off', 'Escucha desactivada')}</span>
+        <span class="etichetta-stato" id="etichetta-ascolto">${testoAscolto(s.ascoltoLive)}</span>
         ${inAscolto
           ? `<span class="badge verde"><i class="vivo"></i>${L('in ascolto ora', 'listening now', 'escuchando ahora')}</span>`
           : `<span class="badge"><i class="spento"></i>${L('non in ascolto', 'not listening', 'sin escuchar')}</span>`}
@@ -6686,17 +6691,17 @@ function pannelloAscolto() {
 
     <div class="carta">
       <h2>${_hIco(ICO.giochi)}${L('Cambia categoria a voce', 'Change category by voice', 'Cambia categoría por voz')}</h2>
-      <p>${L('Dici', 'Say', 'Di')} <strong class="primo-piano">«<span id="cat-esempio">${esc(cc.trigger || 'categoria')}</span> <em>${L('nome del gioco', 'game name', 'nombre del juego')}</em>»</strong>
+      <p>${L('Dici', 'Say', 'Di')} <strong class="primo-piano">«<span id="cat-esempio">${esc(cc.trigger || COMANDO_CATEGORIA)}</span> <em>${L('nome del gioco', 'game name', 'nombre del juego')}</em>»</strong>
       ${L('mentre streammi e il bot cambia la categoria del canale su Twitch. Se ti sente male, prova comunque a indovinare il gioco più somigliante tra le categorie di Twitch.', 'while you stream and the bot changes the channel category on Twitch. If it mishears you, it still tries to guess the closest game among Twitch categories.', 'mientras haces directo y el bot cambia la categoría del canal en Twitch. Si te oye mal, intenta igualmente adivinar el juego más parecido entre las categorías de Twitch.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
           <input type="checkbox" id="chk-categoria" ${cc.attivo ? 'checked' : ''}>
           <span class="levetta"></span>
         </label>
-        <span class="etichetta-stato" id="etichetta-categoria">${cc.attivo ? L('Attivo', 'On', 'Activo') : L('Spento', 'Off', 'Apagado')}</span>
+        <span class="etichetta-stato" id="etichetta-categoria">${testoAttivo(cc.attivo)}</span>
       </div>
       <label class="campo" for="inp-cat-trigger">${L('Parola chiave (quella che dici prima del gioco)', 'Keyword (the one you say before the game)', 'Palabra clave (la que dices antes del juego)')}</label>
-      <input type="text" id="inp-cat-trigger" class="campo-largo" maxlength="30" value="${esc(cc.trigger || 'categoria')}" placeholder="${L('categoria', 'category', 'categoría')}">
+      <input type="text" id="inp-cat-trigger" class="campo-largo" maxlength="30" value="${esc(cc.trigger || COMANDO_CATEGORIA)}" placeholder="${L('categoria', 'category', 'categoría')}">
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-cat-annuncia" ${cc.annuncia !== false ? 'checked' : ''}>
         <label for="chk-cat-annuncia">${L('Annuncia il cambio in chat', 'Announce the change in chat', 'Anuncia el cambio en el chat')}</label>
@@ -6709,17 +6714,17 @@ function pannelloAscolto() {
 
     <div class="carta">
       <h2>${_hIco(ICO.scrivi)}${L('Cambia titolo a voce', 'Change title by voice', 'Cambia el título por voz')}</h2>
-      <p>${L('Dici', 'Say', 'Di')} <strong class="primo-piano">«<span id="tit-esempio">${esc(ct.trigger || 'titolo')}</span> <em>${L('il tuo titolo', 'your title', 'tu título')}</em>»</strong>
+      <p>${L('Dici', 'Say', 'Di')} <strong class="primo-piano">«<span id="tit-esempio">${esc(ct.trigger || COMANDO_TITOLO)}</span> <em>${L('il tuo titolo', 'your title', 'tu título')}</em>»</strong>
       ${L('e il bot aggiorna il titolo dello stream su Twitch (testo libero, come lo dici).', 'and the bot updates the stream title on Twitch (free text, as you say it).', 'y el bot actualiza el título del directo en Twitch (texto libre, como lo dices).')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
           <input type="checkbox" id="chk-titolo" ${ct.attivo ? 'checked' : ''}>
           <span class="levetta"></span>
         </label>
-        <span class="etichetta-stato" id="etichetta-titolo">${ct.attivo ? L('Attivo', 'On', 'Activo') : L('Spento', 'Off', 'Apagado')}</span>
+        <span class="etichetta-stato" id="etichetta-titolo">${testoAttivo(ct.attivo)}</span>
       </div>
       <label class="campo" for="inp-tit-trigger">${L('Parola chiave (quella che dici prima del titolo)', 'Keyword (the one you say before the title)', 'Palabra clave (la que dices antes del título)')}</label>
-      <input type="text" id="inp-tit-trigger" class="campo-largo" maxlength="30" value="${esc(ct.trigger || 'titolo')}" placeholder="${L('titolo', 'title', 'título')}">
+      <input type="text" id="inp-tit-trigger" class="campo-largo" maxlength="30" value="${esc(ct.trigger || COMANDO_TITOLO)}" placeholder="${L('titolo', 'title', 'título')}">
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-tit-annuncia" ${ct.annuncia !== false ? 'checked' : ''}>
         <label for="chk-tit-annuncia">${L('Annuncia il cambio in chat', 'Announce the change in chat', 'Anuncia el cambio en el chat')}</label>
@@ -6738,7 +6743,7 @@ function pannelloAscolto() {
           <input type="checkbox" id="chk-impara" ${iv.attivo ? 'checked' : ''}>
           <span class="levetta"></span>
         </label>
-        <span class="etichetta-stato" id="etichetta-impara">${iv.attivo ? L('Attivo', 'On', 'Activo') : L('Spento', 'Off', 'Apagado')}</span>
+        <span class="etichetta-stato" id="etichetta-impara">${testoAttivo(iv.attivo)}</span>
       </div>
       <p class="suggerimento spazio-sopra">${L('L\'audio <strong>non lascia il tuo PC</strong>: la trascrizione avviene nel browser, al bot arriva solo il testo. Funziona dalla stessa pagina di ascolto vocale qui sopra.', 'The audio <strong>never leaves your PC</strong>: transcription happens in the browser, only the text reaches the bot. It works from the same voice-listening page above.', 'El audio <strong>no sale de tu PC</strong>: la transcripción ocurre en el navegador, al bot solo le llega el texto. Funciona desde la misma página de escucha por voz de arriba.')}</p>
     </div>` : ''}`);
@@ -6819,7 +6824,7 @@ function wiraMusicaConfig() {
     const v = sel.value;
     if (costoBox) costoBox.hidden = !(v === 'monete' || v === 'bit');
     if (premioBox) premioBox.hidden = v !== 'punti';
-    if (unita) unita.textContent = v === 'bit' ? 'bit' : 'monete';
+    if (unita) unita.textContent = v === 'bit' ? L('bit', 'bits', 'bits') : L('monete', 'coins', 'monedas');
     if (v === 'punti' && !premiCaricati) { premiCaricati = true; caricaPremiMusica(); }
   };
   sel.addEventListener('change', applica);
@@ -12045,7 +12050,7 @@ function caricaAlert() {
   document.querySelectorAll('.sfoglia-font').forEach((btn) => btn.addEventListener('click', () => {
     const box = _g(btn.dataset.box); if (!box) return;
     box.hidden = !box.hidden;
-    btn.textContent = box.hidden ? 'Sfoglia i font' : '▲ Chiudi elenco';
+    btn.innerHTML = _bIco(ICO.libro) + (box.hidden ? L('Sfoglia i font', 'Browse fonts', 'Explorar fuentes') : L('Chiudi l\'elenco', 'Close the list', 'Cerrar la lista'));
     if (!box.hidden && !box._montato) { box._montato = true; montaFontBrowser(box, btn.dataset.target); }
   }));
 
@@ -16187,7 +16192,7 @@ function cartaRapporto(r) {
 function clipRapporto(elenco) {
   const clip = (Array.isArray(elenco) ? elenco : []).filter((c) => c?.url);
   if (!clip.length) return '';
-  const ora = (ts) => new Date(Number(ts) || 0).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  const ora = (ts) => new Date(Number(ts) || 0).toLocaleTimeString(localePannello(), { hour: '2-digit', minute: '2-digit' });
   const quanto = (s) => { const n = Math.round(Number(s) || 0); return n > 0 ? `${n}s` : ''; };
   return `<div class="rap-clip">${clip.map((c) => {
     const titolo = String(c.titolo || '').trim();
@@ -16711,7 +16716,7 @@ function _sommeDona(lista) {
   return (lista || []).length ? lista.map((t) => _soldi(t.somma, t.valuta)).join(' + ') : _soldi(0, 'EUR');
 }
 function _rigaDonaHtml(d) {
-  const quando = (ts) => { try { return new Date(ts).toLocaleString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
+  const quando = (ts) => { try { return new Date(ts).toLocaleString(localePannello(), { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
   const fonte = d.fonte === 'kofi' ? 'Ko-fi' : (d.fonte === 'ext' ? L('chiave API', 'API key', 'clave API') : (d.fonte === 'satispay' ? 'Satispay' : 'Stripe'));
   return `<li class="dona-riga${d.rimborsata ? ' rimborsata' : ''}" data-id="${esc(d.id)}">
     <div><b>${esc(_soldi(d.importo, d.valuta))}</b> ${esc(d.nome || L('qualcuno', 'someone', 'alguien'))}${d.messaggio ? ` <span class="suggerimento">· ${esc(d.messaggio)}</span>` : ''}
@@ -19997,7 +20002,7 @@ function _dcsDiffHtml(d) {
 
 function _dcsGiroHtml(g) {
   const quando = (() => {
-    try { return new Date(Number(g.quando) || 0).toLocaleString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+    try { return new Date(Number(g.quando) || 0).toLocaleString(localePannello(), { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); }
     catch (e) { return ''; }
   })();
   const pezzi = [];
@@ -21265,7 +21270,7 @@ async function caricaStatoListaBot() {
     const r = await api('/api/antibot/lista');
     const n = Number(r?.conteggio || 0);
     if (!n) { el.textContent = L('Lista in aggiornamento…', 'List updating…', 'Lista actualizándose…'); return; }
-    const quando = r.aggiornata ? new Date(r.aggiornata).toLocaleDateString() : '';
+    const quando = r.aggiornata ? new Date(r.aggiornata).toLocaleDateString(localePannello()) : '';
     el.innerHTML = L(
       `Lista aggiornata: <strong>${n.toLocaleString('it')}</strong> bot noti${quando ? ` · ${quando}` : ''}. Si aggiorna da sola ogni 12 ore.`,
       `List up to date: <strong>${n.toLocaleString('en')}</strong> known bots${quando ? ` · ${quando}` : ''}. It refreshes itself every 12 hours.`,
@@ -21444,7 +21449,7 @@ async function caricaRegistro() {
   }
   const s = d.stato || {}, sn = d.sintesi || {};
   const lb = s.listaBot || {};
-  const quando = lb.aggiornata ? new Date(lb.aggiornata).toLocaleDateString() : '';
+  const quando = lb.aggiornata ? new Date(lb.aggiornata).toLocaleDateString(localePannello()) : '';
   const inSospeso = Number(s.esecutore?.inSospeso || 0);
   const numeri = document.getElementById('reg-numeri');
   if (numeri) numeri.innerHTML = `
@@ -21453,7 +21458,7 @@ async function caricaRegistro() {
       <div class="kpi"><b>${sn.settimana || 0}</b><span>${L('7 giorni', '7 days', '7 días')}</span></div>
       <div class="kpi ${sn.aperte ? 'warn' : ''}"><b>${sn.aperte || 0}</b><span>${L('da rivedere', 'to review', 'por revisar')}</span></div>
       <div class="kpi ${inSospeso ? 'warn' : ''}"><b>${inSospeso}</b><span>${L('in sospeso', 'pending', 'pendientes')}</span></div>
-      <div class="kpi"><b>${Number(lb.conteggio || 0).toLocaleString('it')}</b><span>${L('bot noti', 'known bots', 'bots conocidos')}${quando ? ' · ' + quando : ''}</span></div>
+      <div class="kpi"><b>${Number(lb.conteggio || 0).toLocaleString(localePannello())}</b><span>${L('bot noti', 'known bots', 'bots conocidos')}${quando ? ' · ' + quando : ''}</span></div>
     </div>
     ${s.errori && s.errori.sbagliati ? `<p class="suggerimento spazio-sopra">${L('Segnalati e poi rivelatisi persone vere:', 'Flagged and then turned out to be real people:', 'Señalados y luego resultaron personas de verdad:')} <b>${s.errori.sbagliati}</b> ${L('su', 'out of', 'de')} ${s.errori.giudicati}.</p>` : ''}`;
 
@@ -21654,7 +21659,7 @@ function scudoEsito(e) {
   return `<span class="scudo-esito ${m[0]}">${m[1]}</span>`;
 }
 function scudoQuando(ts) {
-  try { return new Date(ts).toLocaleString(undefined, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; }
+  try { return new Date(ts).toLocaleString(localePannello(), { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; }
 }
 
 let _scudoWired = false;
@@ -22007,14 +22012,14 @@ function attivaPiattaforma() {
     const out = document.getElementById('esito-pretrain');
     btn.disabled = true;
     const testoOrig = btn.textContent;
-    btn.textContent = 'Sto leggendo il tuo profilo…';
+    btn.textContent = L('Sto leggendo il tuo profilo…', 'Reading your profile…', 'Leyendo tu perfil…');
     out.textContent = '';
     try {
       const esito = await api('/api/streamer/preaddestra', { method: 'POST', body: {} });
       const riassunto = typeof esito === 'object' && esito
-        ? (esito.esito || esito.messaggio || `voci: ${esito.voci ?? esito.count ?? '?'}`)
+        ? (esito.esito || esito.messaggio || `${L('voci', 'entries', 'entradas')}: ${esito.voci ?? esito.count ?? '?'}`)
         : String(esito);
-      out.textContent = 'Fatto! ' + riassunto;
+      out.textContent = L('Fatto: ', 'Done: ', 'Hecho: ') + riassunto;
       toast(L('Profilo riletto: conoscenza aggiornata e scheda riempita dove era vuota', 'Profile re-read: knowledge updated and card filled where empty', 'Perfil releído: conocimiento actualizado y ficha rellenada donde estaba vacía'));
 
       stato = await api('/api/me');
@@ -22041,7 +22046,7 @@ function attivaPiattaforma() {
       iaLocale: document.getElementById('chk-ialocale').checked,
       internet: document.getElementById('chk-internet').checked,
       frasi: righe(document.getElementById('txt-frasi').value),
-    }, 'Personalità salvata');
+    }, L('Personalità salvata ✓', 'Personality saved ✓', 'Personalidad guardada ✓'));
   }));
 
   const aggiungiGuida = () => conErrore(async () => {
@@ -22060,7 +22065,7 @@ function attivaPiattaforma() {
 
   document.getElementById('chk-clip')?.addEventListener('change', (ev) => {
     const et = document.getElementById('etichetta-clip');
-    if (et) et.textContent = ev.target.checked ? 'Clip automatiche accese' : 'Clip automatiche spente';
+    if (et) et.textContent = testoClipAuto(ev.target.checked);
   });
   document.getElementById('rng-clip-sens')?.addEventListener('input', (ev) => {
     const v = document.getElementById('val-clip-sens');
@@ -22070,13 +22075,13 @@ function attivaPiattaforma() {
     await salvaImpostazioni({
       clipAuto: document.getElementById('chk-clip').checked,
       clipAutoSensibilita: Number(document.getElementById('rng-clip-sens').value),
-    }, 'Impostazioni clip salvate');
+    }, L('Impostazioni delle clip salvate ✓', 'Clip settings saved ✓', 'Ajustes de los clips guardados ✓'));
   }));
 
   document.getElementById('btn-salva-regole')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({
       paroleVietate: righe(document.getElementById('txt-vietate').value),
-    }, 'Regole salvate');
+    }, L('Regole salvate ✓', 'Rules saved ✓', 'Reglas guardadas ✓'));
   }));
 
   document.getElementById('btn-salva-antispam')?.addEventListener('click', () => conErrore(async () => {
@@ -22098,7 +22103,7 @@ function attivaPiattaforma() {
         timeoutRecidivi: document.getElementById('chk-as-timeout').checked,
         avvisa: document.getElementById('chk-as-avvisa').checked,
       },
-    }, 'Antispam salvato');
+    }, L('Antispam salvato ✓', 'Anti-spam saved ✓', 'Antispam guardado ✓'));
   }));
 
   document.getElementById('btn-salva-antibot')?.addEventListener('click', () => conErrore(async () => {
@@ -22121,14 +22126,14 @@ function attivaPiattaforma() {
         chatNuoviAzione: document.getElementById('sel-ab-chatazione').value,
         avvisa: document.getElementById('chk-ab-avvisa').checked,
       },
-    }, 'Anti-bot salvato');
+    }, L('Anti-bot salvato ✓', 'Anti-bot saved ✓', 'Anti-bot guardado ✓'));
   }));
 
   document.getElementById('btn-salva-giochi')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({
       giochi: document.getElementById('chk-giochi').checked,
       nomeMonete: document.getElementById('inp-monete').value.trim(),
-    }, 'Giochi salvati');
+    }, L('Giochi salvati ✓', 'Games saved ✓', 'Juegos guardados ✓'));
   }));
 
   document.getElementById('btn-salva-gcmd')?.addEventListener('click', salvaGiochiComandi);
@@ -22491,7 +22496,7 @@ function attivaPiattaforma() {
       lurkMinimo: parseFloat(document.getElementById('pt-lurkMinimo')?.value) ?? 0.35,
       soloLive: !!document.getElementById('pt-soloLive')?.checked,
       topN: v('pt-topN'),
-    } }, 'Punti aggiornati');
+    } }, L('Punti salvati ✓', 'Points saved ✓', 'Puntos guardados ✓'));
   }));
 
   document.getElementById('btn-salva-presenze')?.addEventListener('click', () => conErrore(async () => {
@@ -22510,7 +22515,7 @@ function attivaPiattaforma() {
       minMin: Number(document.getElementById('mn-min').value),
       maxMin: Number(document.getElementById('mn-max').value),
       soloLive: document.getElementById('chk-manche-live').checked,
-    } }, 'Manche salvate');
+    } }, L('Manche salvate ✓', 'Rounds saved ✓', 'Rondas guardadas ✓'));
   }));
 
   const PANNELLO_GIOCO = { trivia: 'gioco-trivia', parola: 'gioco-parola', anagramma: 'gioco-parola', impiccato: 'gioco-parola', wordle: 'gioco-parola', sequenza: 'gioco-sequenza', domanda: 'gioco-domanda', rebus: 'gioco-rebus' };
@@ -22581,7 +22586,7 @@ function attivaPiattaforma() {
   }));
 
   document.getElementById('btn-salva-giochisito')?.addEventListener('click', () => conErrore(async () => {
-    await salvaImpostazioni({ giochiSito: { attivo: document.getElementById('chk-giochisito').checked } }, 'Giochi del sito salvati');
+    await salvaImpostazioni({ giochiSito: { attivo: document.getElementById('chk-giochisito').checked } }, L('Giochi del sito salvati ✓', 'Site games saved ✓', 'Juegos del sitio guardados ✓'));
   }));
 
   document.getElementById('btn-aggiungi-citazione')?.addEventListener('click', () => conErrore(async () => {
@@ -22597,15 +22602,15 @@ function attivaPiattaforma() {
   document.getElementById('btn-estrai-citazioni')?.addEventListener('click', (ev) => conErrore(async () => {
     const url = (document.getElementById('inp-import-url').value || '').trim();
     if (!url) { toast(L('Incolla un link.', 'Paste a link.', 'Pega un enlace.'), 'errore'); return; }
-    const btn = ev.currentTarget; btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Estraggo…';
+    const btn = ev.currentTarget; btn.disabled = true; const orig = btn.textContent; btn.textContent = L('Cerco le frasi…', 'Looking for quotes…', 'Busco las frases…');
     try {
       const r = await api('/api/streamer/citazioni/da-url', { method: 'POST', body: { url } });
       const ta = document.getElementById('txt-import-citazioni');
       const esistenti = ta.value.trim();
       ta.value = (esistenti ? esistenti + '\n' : '') + (r.citazioni || []).join('\n');
       if (r.avviso) mostraAvvisoCita(r.avviso); else if (r.citazioni?.length) mostraAvvisoCita('');
-      toast(r.citazioni?.length ? `Trovate ${r.citazioni.length} possibili citazioni — controllale e importa`
-        : (r.avviso ? 'Quel link disegna le frasi col JavaScript — usa il bottone magico' : 'Nessuna citazione trovata in quel link'),
+      toast(r.citazioni?.length ? L(`Trovate ${r.citazioni.length} possibili citazioni: controllale e importa.`, `Found ${r.citazioni.length} possible quotes: check them and import.`, `Encontradas ${r.citazioni.length} posibles citas: revísalas e importa.`)
+        : (r.avviso ? L('Quel link disegna le frasi con JavaScript: usa il bottone magico.', 'That link draws its quotes with JavaScript: use the magic button.', 'Ese enlace dibuja las frases con JavaScript: usa el botón mágico.') : L('Nessuna citazione trovata in quel link.', 'No quotes found at that link.', 'No hay citas en ese enlace.')),
         r.citazioni?.length ? 'ok' : 'errore');
     } finally { btn.disabled = false; btn.textContent = orig; }
   }));
@@ -22643,7 +22648,7 @@ function attivaPiattaforma() {
     const conData = citazioni.filter((q) => q.data).length;
     const r = await api('/api/streamer/citazioni/importa', { method: 'POST', body: { citazioni } });
     document.getElementById('txt-import-citazioni').value = '';
-    if (esito) esito.textContent = `${r.aggiunte} importate (${conAutore} con autore, ${conData} con data)` + (r.saltate ? ` · ${r.saltate} doppioni` : '');
+    if (esito) esito.textContent = L(`${r.aggiunte} importate (${conAutore} con autore, ${conData} con data)`, `${r.aggiunte} imported (${conAutore} with author, ${conData} with date)`, `${r.aggiunte} importadas (${conAutore} con autor, ${conData} con fecha)`) + (r.saltate ? ` · ${r.saltate} ${L('doppioni', 'duplicates', 'duplicadas')}` : '');
     toast(L(`Importate ${r.aggiunte} citazioni con nome e data`, `Imported ${r.aggiunte} quotes with name and date`, `Importadas ${r.aggiunte} citas con nombre y fecha`));
     caricaCitazioni();
   }));
@@ -22687,7 +22692,7 @@ function attivaPiattaforma() {
       return;
     }
     const r = await api('/api/streamer/punti', { method: 'POST', body: { utente, delta } });
-    toast(`${r.utente}: ${r.saldo} ${impostazioni().nomeMonete || 'monete'}`);
+    toast(`${r.utente}: ${r.saldo} ${impostazioni().nomeMonete || L('monete', 'coins', 'monedas')}`);
     document.getElementById('pt-delta').value = '';
     caricaClassifica();
   }));
@@ -22700,11 +22705,11 @@ function attivaPiattaforma() {
   document.getElementById('btn-salva-premio')?.addEventListener('click', () => conErrore(async () => {
     const premioVip = { monete: _premioLeggi('monete'), bit: _premioLeggi('bit') };
     _premio = premioDi(premioVip);
-    await salvaImpostazioni({ premioVip }, 'Premio VIP salvato');
+    await salvaImpostazioni({ premioVip }, L('Premio VIP salvato ✓', 'VIP reward saved ✓', 'Premio VIP guardado ✓'));
   }));
 
   document.getElementById('btn-salva-modalita')?.addEventListener('click', () => conErrore(async () => {
-    await salvaImpostazioni({ modalita: document.getElementById('sel-modalita').value }, 'Modalità salvata');
+    await salvaImpostazioni({ modalita: document.getElementById('sel-modalita').value }, L('Modalità salvata ✓', 'Mode saved ✓', 'Modo guardado ✓'));
   }));
 
   document.getElementById('btn-tg-token')?.addEventListener('click', () => conErrore(async () => {
@@ -22776,14 +22781,14 @@ function attivaPiattaforma() {
     const chk = ev.target;
     conErrore(async () => {
       await api('/api/streamer/telegram/interattivo', { method: 'POST', body: { attivo: chk.checked } });
-      toast(chk.checked ? 'Bot interattivo attivato' : 'Bot interattivo spento.');
+      toast(chk.checked ? L('Bot interattivo acceso ✓', 'Interactive bot on ✓', 'Bot interactivo encendido ✓') : L('Bot interattivo spento.', 'Interactive bot off.', 'Bot interactivo apagado.'));
       stato = await api('/api/me'); render();
     }).catch(() => { chk.checked = !chk.checked; });
   });
 
   document.getElementById('chk-tg-dm')?.addEventListener('change', (ev) => conErrore(async () => {
     await api('/api/streamer/telegram/dm', { method: 'POST', body: { modo: ev.target.checked ? 'me' : 'off' } });
-    toast(ev.target.checked ? 'In privato risponderò solo a te.' : 'Chat privata spenta.');
+    toast(ev.target.checked ? L('In privato risponderò solo a te ✓', 'In private I will answer only you ✓', 'En privado responderé solo a ti ✓') : L('Chat privata spenta.', 'Private chat off.', 'Chat privado apagado.'));
     stato = await api('/api/me'); render();
   }));
   document.getElementById('btn-tg-dm-collega')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
@@ -22798,7 +22803,7 @@ function attivaPiattaforma() {
   }); });
   document.getElementById('chk-tg-proattiva')?.addEventListener('change', (ev) => conErrore(async () => {
     await salvaImpostazioni({ proattivoTg: ev.target.checked },
-      ev.target.checked ? 'Ok, ogni tanto ti scriverò io' : 'Non ti scriverò più per prima.');
+      ev.target.checked ? L('Ok, ogni tanto ti scriverò io ✓', 'Ok, now and then I will write to you first ✓', 'Vale, de vez en cuando te escribiré yo ✓') : L('Non ti scriverò più per prima.', 'I will not write to you first anymore.', 'Ya no te escribiré primero.'));
   }));
 
   document.getElementById('box-compleanni')?.addEventListener('click', (ev) => {
@@ -22808,7 +22813,7 @@ function attivaPiattaforma() {
         messaggio: document.getElementById('txt-comple-chat')?.value || '',
         effetto: document.getElementById('sel-comple-effetto')?.value || '',
       } });
-      toast('Auguri in chat salvati ✓');
+      toast(L('Auguri in chat salvati ✓', 'Chat birthday wishes saved ✓', 'Felicitaciones en el chat guardadas ✓'));
       caricaCompleanni();
     });
     if (ev.target.closest('#btn-compleanni-salva')) return conErrore(async () => {
@@ -22862,7 +22867,7 @@ function attivaPiattaforma() {
         annunciaChat: document.getElementById('chk-tk-chat').checked,
         messaggio: document.getElementById('txt-tk-messaggio')?.value || '',
       },
-    }, 'TikTok salvato');
+    }, L('TikTok salvato ✓', 'TikTok saved ✓', 'TikTok guardado ✓'));
   }));
 
   document.getElementById('btn-tk-prova')?.addEventListener('click', () => conErrore(async () => {
@@ -22877,7 +22882,7 @@ function attivaPiattaforma() {
         postAnnunciaChat: document.getElementById('chk-tk-post-chat').checked,
         postMessaggio: document.getElementById('txt-tk-post-msg')?.value || '',
       },
-    }, 'TikTok salvato');
+    }, L('TikTok salvato ✓', 'TikTok saved ✓', 'TikTok guardado ✓'));
   }));
 
   const salvaYoutube = () => conErrore(async () => {
@@ -22889,12 +22894,12 @@ function attivaPiattaforma() {
     };
     const ak = (document.getElementById('inp-yt-apikey')?.value || '').trim();
     if (ak) yt.apiKey = ak;
-    await salvaImpostazioni({ youtube: yt }, 'YouTube salvato');
+    await salvaImpostazioni({ youtube: yt }, L('YouTube salvato ✓', 'YouTube saved ✓', 'YouTube guardado ✓'));
   });
   document.getElementById('btn-yt-salva')?.addEventListener('click', salvaYoutube);
   document.getElementById('btn-yt-canale-salva')?.addEventListener('click', salvaYoutube);
   document.getElementById('btn-yt-apikey-rimuovi')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
-    await salvaImpostazioni({ youtube: { canale: (document.getElementById('inp-yt-canale').value || '').trim(), apiKeyClear: true } }, 'Chiave rimossa.');
+    await salvaImpostazioni({ youtube: { canale: (document.getElementById('inp-yt-canale').value || '').trim(), apiKeyClear: true } }, L('Chiave tolta.', 'Key removed.', 'Clave quitada.'));
     stato = await api('/api/me'); render();
   }); });
 
@@ -22907,20 +22912,20 @@ function attivaPiattaforma() {
     };
     const tk = (document.getElementById('inp-ig-token')?.value || '').trim();
     if (tk) ig.token = tk;
-    await salvaImpostazioni({ instagram: ig }, 'Instagram salvato');
+    await salvaImpostazioni({ instagram: ig }, L('Instagram salvato ✓', 'Instagram saved ✓', 'Instagram guardado ✓'));
   }));
   document.getElementById('btn-ig-token-rimuovi')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
-    await salvaImpostazioni({ instagram: { userId: (document.getElementById('inp-ig-userid').value || '').trim(), tokenClear: true } }, 'Token rimosso.');
+    await salvaImpostazioni({ instagram: { userId: (document.getElementById('inp-ig-userid').value || '').trim(), tokenClear: true } }, L('Token tolto.', 'Token removed.', 'Token quitado.'));
     stato = await api('/api/me'); render();
   }); });
   document.getElementById('btn-ig-prova')?.addEventListener('click', () => conErrore(async () => {
     const esito = document.getElementById('ig-esito');
-    if (esito) esito.textContent = 'Provo…';
+    if (esito) esito.textContent = L('Provo…', 'Testing…', 'Probando…');
     const r = await api('/api/streamer/instagram/prova', { method: 'POST', body: {
       userId: (document.getElementById('inp-ig-userid').value || '').trim(),
       token: (document.getElementById('inp-ig-token').value || '').trim(),
     } });
-    if (esito) esito.innerHTML = r && r.ok ? 'Funziona!' : `${esc((r && r.motivo) || 'errore')}`;
+    if (esito) esito.textContent = r && r.ok ? L('Funziona ✓', 'It works ✓', 'Funciona ✓') : ((r && r.motivo) || L('Non funziona.', 'It does not work.', 'No funciona.'));
   }));
 
   document.getElementById('qc-chips')?.addEventListener('mousedown', (ev) => {
@@ -23057,8 +23062,8 @@ function attivaPiattaforma() {
     const et = document.getElementById('etichetta-ascolto');
     conErrore(async () => {
       try {
-        await salvaImpostazioni({ ascoltoLive: acceso }, acceso ? 'Ascolto live acceso' : 'Ascolto live spento.');
-        if (et) et.textContent = acceso ? 'Ascolto acceso' : 'Ascolto spento';
+        await salvaImpostazioni({ ascoltoLive: acceso }, acceso ? L('Ascolto live acceso ✓', 'Live listening on ✓', 'Escucha en directo activada ✓') : L('Ascolto live spento.', 'Live listening off.', 'Escucha en directo desactivada.'));
+        if (et) et.textContent = testoAscolto(acceso);
       } catch (e) {
         ev.target.checked = !acceso;
         throw e;
@@ -23074,43 +23079,43 @@ function attivaPiattaforma() {
   document.getElementById('btn-salva-ascolto')?.addEventListener('click', () => conErrore(async () => {
     const ascoltoLive = document.getElementById('toggle-ascolto').checked;
     const ascoltoSensibilita = Number(document.getElementById('rng-ascolto').value) || 5;
-    await salvaImpostazioni({ ascoltoLive, ascoltoSensibilita }, 'Ascolto live salvato');
+    await salvaImpostazioni({ ascoltoLive, ascoltoSensibilita }, L('Ascolto live salvato ✓', 'Live listening saved ✓', 'Escucha en directo guardada ✓'));
     const et = document.getElementById('etichetta-ascolto');
-    if (et) et.textContent = ascoltoLive ? 'Ascolto acceso' : 'Ascolto spento';
+    if (et) et.textContent = testoAscolto(ascoltoLive);
   }));
 
   document.getElementById('chk-categoria')?.addEventListener('change', (ev) => {
     const et = document.getElementById('etichetta-categoria');
-    if (et) et.textContent = ev.target.checked ? 'Attivo' : 'Spento';
+    if (et) et.textContent = testoAttivo(ev.target.checked);
   });
   document.getElementById('inp-cat-trigger')?.addEventListener('input', (ev) => {
     const ex = document.getElementById('cat-esempio');
-    if (ex) ex.textContent = (ev.target.value.trim() || 'categoria');
+    if (ex) ex.textContent = (ev.target.value.trim() || COMANDO_CATEGORIA);
   });
   document.getElementById('btn-salva-categoria')?.addEventListener('click', () => conErrore(async () => {
     const attivo = document.getElementById('chk-categoria').checked;
-    const trigger = (document.getElementById('inp-cat-trigger').value || '').trim().toLowerCase() || 'categoria';
+    const trigger = (document.getElementById('inp-cat-trigger').value || '').trim().toLowerCase() || COMANDO_CATEGORIA;
     const annuncia = document.getElementById('chk-cat-annuncia').checked;
-    await salvaImpostazioni({ cambioCategoria: { attivo, trigger, annuncia } }, 'Comando categoria salvato');
+    await salvaImpostazioni({ cambioCategoria: { attivo, trigger, annuncia } }, L('Comando della categoria salvato ✓', 'Category command saved ✓', 'Comando de categoría guardado ✓'));
     const et = document.getElementById('etichetta-categoria');
-    if (et) et.textContent = attivo ? 'Attivo' : 'Spento';
+    if (et) et.textContent = testoAttivo(attivo);
   }));
 
   document.getElementById('chk-titolo')?.addEventListener('change', (ev) => {
     const et = document.getElementById('etichetta-titolo');
-    if (et) et.textContent = ev.target.checked ? 'Attivo' : 'Spento';
+    if (et) et.textContent = testoAttivo(ev.target.checked);
   });
   document.getElementById('inp-tit-trigger')?.addEventListener('input', (ev) => {
     const ex = document.getElementById('tit-esempio');
-    if (ex) ex.textContent = (ev.target.value.trim() || 'titolo');
+    if (ex) ex.textContent = (ev.target.value.trim() || COMANDO_TITOLO);
   });
   document.getElementById('btn-salva-titolo')?.addEventListener('click', () => conErrore(async () => {
     const attivo = document.getElementById('chk-titolo').checked;
-    const trigger = (document.getElementById('inp-tit-trigger').value || '').trim().toLowerCase() || 'titolo';
+    const trigger = (document.getElementById('inp-tit-trigger').value || '').trim().toLowerCase() || COMANDO_TITOLO;
     const annuncia = document.getElementById('chk-tit-annuncia').checked;
-    await salvaImpostazioni({ cambioTitolo: { attivo, trigger, annuncia } }, 'Comando titolo salvato');
+    await salvaImpostazioni({ cambioTitolo: { attivo, trigger, annuncia } }, L('Comando del titolo salvato ✓', 'Title command saved ✓', 'Comando de título guardado ✓'));
     const et = document.getElementById('etichetta-titolo');
-    if (et) et.textContent = attivo ? 'Attivo' : 'Spento';
+    if (et) et.textContent = testoAttivo(attivo);
   }));
 
   document.getElementById('chk-impara')?.addEventListener('change', (ev) => {
@@ -23118,8 +23123,8 @@ function attivaPiattaforma() {
     const et = document.getElementById('etichetta-impara');
     conErrore(async () => {
       try {
-        await salvaImpostazioni({ imparaVoce: { attivo: acceso } }, acceso ? 'Ora imparo mentre parli' : 'Ascolto per imparare spento.');
-        if (et) et.textContent = acceso ? 'Attivo' : 'Spento';
+        await salvaImpostazioni({ imparaVoce: { attivo: acceso } }, acceso ? L('Ora imparo mentre parli ✓', 'Now I learn while you talk ✓', 'Ahora aprendo mientras hablas ✓') : L('Ascolto per imparare spento.', 'Listening to learn is off.', 'Escuchar para aprender apagado.'));
+        if (et) et.textContent = testoAttivo(acceso);
       } catch (e) { ev.target.checked = !acceso; throw e; }
     });
   });
@@ -23974,7 +23979,7 @@ async function caricaClassifica() {
   const ulStaff = document.getElementById('lista-classifica-staff');
   const ulVip = document.getElementById('lista-vip');
   if (!ulCl && !ulStaff && !ulVip) return;
-  const nome = esc(impostazioni().nomeMonete || 'monete');
+  const nome = esc(impostazioni().nomeMonete || L('monete', 'coins', 'monedas'));
   const gara = (ul, righe, vuoto) => {
     if (!ul) return;
     ul.innerHTML = righe.length
@@ -23982,7 +23987,7 @@ async function caricaClassifica() {
         <li>
           <div class="testo-voce">
             <span class="domanda">${medaglia(i)} ${esc(m.user)}</span>
-            <span class="risposta">${Number(m.monete).toLocaleString('it-IT')} ${nome}</span>
+            <span class="risposta">${Number(m.monete).toLocaleString(localePannello())} ${nome}</span>
           </div>
         </li>`).join('')
       : `<li class="vuoto">${vuoto}</li>`;
@@ -24145,7 +24150,7 @@ async function caricaTracking() {
   const selCam = document.getElementById('trk-cam');
   const camSalvata = impostazioni().tracking?.camera || '';
   if (selCam && camSalvata && ![...selCam.options].some((o) => o.value === camSalvata)) {
-    const o = document.createElement('option'); o.value = camSalvata; o.textContent = camSalvata + ' (salvata)'; selCam.appendChild(o);
+    const o = document.createElement('option'); o.value = camSalvata; o.textContent = camSalvata + ' (' + L('salvata', 'saved', 'guardada') + ')'; selCam.appendChild(o);
   }
   if (selCam && camSalvata) selCam.value = camSalvata;
   const btnRileva = document.getElementById('trk-cam-rileva');
@@ -24570,7 +24575,7 @@ async function caricaMediaAlert(kind, slot, file) {
     if (!res.ok) throw new Error(dati?.errore || `errore ${res.status}`);
 
     await assegnaMediaAlert(kind, slot, dati.ref);
-    if (esito) esito.textContent = '✓ ' + (slot === 'suono' ? L('suono', 'sound', 'sonido') : (slot === 'icona' ? L('icona', 'icon', 'icono') : (dati.tipo || 'media'))) + ' ' + L('caricato e assegnato', 'uploaded and assigned', 'subido y asignado');
+    if (esito) esito.textContent = '✓ ' + (slot === 'suono' ? L('suono', 'sound', 'sonido') : (slot === 'icona' ? L('icona', 'icon', 'icono') : (dati.tipo || L('file', 'file', 'archivo')))) + ' ' + L('caricato e assegnato', 'uploaded and assigned', 'subido y asignado');
     toast(L('Caricato e assegnato all\'alert!', 'Uploaded and assigned to the alert!', '¡Subido y asignado a la alerta!'));
   } catch (e) {
     if (esito) esito.textContent = '' + e.message;
@@ -24610,10 +24615,10 @@ function animaNumeri(root) {
     const passo = (ora) => {
       const t = Math.min(1, (ora - start) / 900);
       const eased = 1 - Math.pow(1 - t, 3);
-      el.textContent = Math.round(n * eased).toLocaleString('it-IT');
+      el.textContent = Math.round(n * eased).toLocaleString(localePannello());
       if (t < 1) requestAnimationFrame(passo);
 
-      else el.textContent = /^\d+$/.test(finale) ? n.toLocaleString('it-IT') : finale;
+      else el.textContent = /^\d+$/.test(finale) ? n.toLocaleString(localePannello()) : finale;
     };
     requestAnimationFrame(passo);
   });
@@ -24626,7 +24631,7 @@ const _statOre = (s) => {
   const m = Math.round(((Number(s) || 0) % 3600) / 60);
   return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`;
 };
-const _statNum = (n) => Number(n || 0).toLocaleString('it-IT');
+const _statNum = (n) => Number(n || 0).toLocaleString(localePannello());
 
 function _statGara(id, righe, vuoto) {
   const ul = document.getElementById(id);
@@ -25123,7 +25128,7 @@ function disegnaListaModuli() {
         await api('/api/streamer/moduli/' + encodeURIComponent(id) + '/toggle', { method: 'POST', body: { attivo: acceso } });
         const m = (datiModuli.moduli || []).find((x) => String(x.id) === String(id));
         if (m) m.attivo = acceso;
-        toast(acceso ? 'Modulo acceso' : 'Modulo spento.');
+        toast(acceso ? L('Modulo acceso ✓', 'Module on ✓', 'Módulo encendido ✓') : L('Modulo spento.', 'Module off.', 'Módulo apagado.'));
       } catch (e) {
         tog.checked = !acceso;
         throw e;
@@ -25771,7 +25776,7 @@ function disegnaConnettori() {
         if (datiModuli) { datiModuli.apiKey = res.apiKey; datiModuli.apiKeySet = true; }
         apiKeyVisibile = true;
         disegnaConnettori();
-        toast(nuova ? 'Nuova chiave generata' : 'Chiave creata');
+        toast(nuova ? L('Nuova chiave creata ✓', 'New key created ✓', 'Nueva clave creada ✓') : L('Chiave creata ✓', 'Key created ✓', 'Clave creada ✓'));
       });
     }
   };
@@ -26124,7 +26129,7 @@ async function caricaBackup() {
   let d;
   try { d = await api('/api/admin/backup'); }
   catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`; return; }
-  const quando = d.ultimo ? new Date(d.ultimo).toLocaleString() : '—';
+  const quando = d.ultimo ? new Date(d.ultimo).toLocaleString(localePannello()) : '—';
   const mb = d.bytes ? (d.bytes / 1048576).toFixed(1) + ' MB' : '—';
   box.innerHTML = `
     <p>
@@ -26218,7 +26223,7 @@ function _accessiHtml(d) {
   const r = d.riga;
   const modo = d.attiva && r ? r.modo : 'piano';
   const f = (r && r.funzioni) || {};
-  const quando = (ts) => { try { return new Date(ts).toLocaleString(); } catch (e) { return ''; } };
+  const quando = (ts) => { try { return new Date(ts).toLocaleString(localePannello()); } catch (e) { return ''; } };
   const scadeVal = r && r.scade ? new Date(r.scade - new Date(r.scade).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
   const caselle = Object.keys(E).map((k) => k === 'moderatori'
     ? `<label class="riga-check"><input type="number" class="acc-num" data-acc-f="${k}" min="0" max="50" value="${typeof f[k] === 'number' ? f[k] : ''}"> ${esc(E[k])} (${L('quanti', 'how many', 'cuántos')})</label>`
