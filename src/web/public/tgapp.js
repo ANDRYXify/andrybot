@@ -9,7 +9,7 @@ const LANG = ['it', 'en', 'es'].includes(lc) ? lc : (lc === 'es' ? 'es' : lc.sta
 const L = (it, en, es) => (LANG === 'en' ? en : LANG === 'es' ? es : it);
 
 const app = document.getElementById('app');
-document.getElementById('sub').textContent = L('Il tuo bot, dentro Telegram', 'Your bot, inside Telegram', 'Tu bot, dentro de Telegram');
+document.getElementById('sub').textContent = L('SocialBot, dentro Telegram', 'SocialBot, inside Telegram', 'SocialBot, dentro de Telegram');
 
 async function api(path, opts) {
   const r = await fetch(path, {
@@ -36,7 +36,7 @@ function vistaCollega(codice, nome) {
   app.innerHTML = `
     <div class="card">
       <h2>${L('Collega il tuo canale', 'Link your channel', 'Vincula tu canal')}</h2>
-      <p>${L('Ciao', 'Hi', 'Hola')} <b>${esc(nome || '')}</b>! ${L('Per gestire il tuo bot da qui, collega una volta sola il tuo Telegram al tuo canale.', 'To manage your bot from here, link your Telegram to your channel once.', 'Para gestionar tu bot desde aquí, vincula una vez tu Telegram a tu canal.')}</p>
+      <p>${L('Ciao', 'Hi', 'Hola')} <b>${esc(nome || '')}</b>! ${L('Per gestire SocialBot da qui, collega una volta sola il tuo Telegram al tuo canale.', 'To manage SocialBot from here, link your Telegram to your channel once.', 'Para gestionar SocialBot desde aquí, vincula una vez tu Telegram a tu canal.')}</p>
       <div class="codice">${esc(codice)}</div>
       <ol>
         <li>${L('Apri la dashboard su', 'Open the dashboard at', 'Abre el panel en')} <b>socialbot.live</b> ${L('(dalla mail/notifica di andryxify).', '(from your andryxify email/notification).', '(desde tu correo/notificación de andryxify).')}</li>

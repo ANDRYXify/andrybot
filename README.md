@@ -1,6 +1,6 @@
 # SocialBot 🤖💜
 
-Il bot Twitch della community di **[andryxify.it](https://andryxify.it)**: un bot che
+La piattaforma per streamer della community di **[andryxify.it](https://andryxify.it)**. Al centro c'è un bot che
 **parla nella chat dello streamer con il suo stesso account**, **impara** dalla sua
 community e dal suo profilo sul sito, crea clip nei momenti migliori e può far partire
 **suoni ed effetti a schermo** su overlay OBS.

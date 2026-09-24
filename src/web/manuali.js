@@ -1092,7 +1092,7 @@ const DIRETTA = {
     { p: ['Titolo, categoria, annunci e clip li fa <strong>Twitch</strong> per conto tuo: se un permesso manca, il bot te lo dice invece di fallire in silenzio, e si riautorizza dalla scheda Stato.'] },
 
     { h2: 'Il rapporto di ogni diretta' },
-    { p: ['Quando chiudi, la scheda <em>Dirette</em> riceve una carta con i numeri della serata: durata, picco di spettatori e media, messaggi e chi ha scritto di più, nuovi follower e sub (con i regali), raid con gli spettatori portati, i Bit della serata con chi ne ha messi di più (chi ha cheerato in anonimo conta nel totale e resta senza nome), presenti e prime volte, l’hype train con il livello a cui è arrivato e chi l’ha spinto, clip, donazioni. Numeri, non aggettivi: sono quelli veri del canale, raccolti dal bot mentre trasmettevi. Un puntino sulla voce di menu ti dice che ce n\'è uno nuovo.'] },
+    { p: ['Quando chiudi, la scheda <em>Dirette</em> riceve una carta con i numeri della serata: durata, picco di spettatori e media, messaggi e chi ha scritto di più, nuovi follower e sub (con i regali), raid con gli spettatori portati, i Bit della serata con chi ne ha messi di più (chi ha cheerato in anonimo conta nel totale e resta senza nome), presenti e prime volte, l’hype train con il livello a cui è arrivato e chi l’ha spinto, clip, donazioni. Numeri, non aggettivi: sono quelli veri del canale, raccolti da SocialBot mentre trasmettevi. Un puntino sulla voce di menù ti dice che ce n\'è uno nuovo.'] },
     { p: ['Da lì scegli anche dove riceverlo appena chiudi: su <strong>Telegram</strong>, nella chat privata del tuo bot (va collegata in <em>Notifiche</em>), oppure <strong>via mail</strong>. Per la mail scrivi l\'indirizzo e premi <em>Conferma</em>: ti arriva un messaggio con un tasto, e l\'indirizzo vale solo dopo il clic. La mail la manda il nostro server, non un servizio esterno; se sul server la posta non è configurata, la scheda lo dice e resta Telegram.'] },
     { p: ['La mail non è un tabulato: apre con la cosa che è saltata all\'occhio quella sera (un record di spettatori, un raid, le facce nuove), poi i tre numeri grossi, chi ha scritto di più e il resto. In fondo ci sono <strong>le clip della serata</strong>, una per una, da riaprire quando vuoi: è il pezzo che si riguarda. Ha i colori del sito e si adatta al fondo chiaro o scuro del tuo programma di posta.'] },
     { h2: 'Le statistiche e le classifiche' },
@@ -1415,7 +1415,7 @@ const ACCOUNT = {
 const EMOTE = {
   slug: 'emote',
   schede: ['emote'],
-  titolo: 'Manuale delle emote 7TV: gestirle dal bot | SocialBot',
+  titolo: 'Manuale delle emote 7TV: gestirle dal pannello | SocialBot',
   h1: 'Manuale delle emote 7TV',
   desc: 'Collegare il proprio account 7TV, aggiungere e togliere emote dal set del canale, rinominarle, e caricare una GIF o un video trasformandolo in emote animata.',
   aggiornata: OGGI,

@@ -2664,7 +2664,7 @@ function mostraBenvenuto() {
   el.className = 'bv-velo';
   el.innerHTML = `<div class="bv-carta" role="dialog" aria-modal="true" aria-labelledby="bv-tit">
     <span class="bv-occhiello">${L('Benvenuto', 'Welcome', 'Bienvenido')}</span>
-    <h2 id="bv-tit">${esc(nome) ? esc(nome) + ',' : ''} ${L('il tuo bot è pronto', 'your bot is ready', 'tu bot está listo')}</h2>
+    <h2 id="bv-tit">${esc(nome) ? esc(nome) + ',' : ''} ${L('è tutto pronto', 'everything is ready', 'todo está listo')}</h2>
     <p class="bv-intro">${L('Non devi configurare niente per cominciare. Ecco dove sei.', 'You don’t have to set up anything to begin. Here’s where you are.', 'No tienes que configurar nada para empezar. Esto es lo que hay.')}</p>
     <ol class="bv-passi">
       ${passo(ICO.spina, L('Il canale è collegato', 'Your channel is connected', 'Tu canal está conectado'),
@@ -2727,11 +2727,11 @@ function vistaRichiesta() {
       <p>${L('Stai guardando', 'You are looking at', 'Estás viendo')} <strong>@${esc(stato.user.display || stato.user.login)}</strong>,
       ${L('che non ha ancora SocialBot.', "which doesn't have SocialBot yet.", 'que aún no tiene SocialBot.')}</p>
       <p class="spazio-sopra"><strong>${L('Se è il tuo canale e fai streaming', "If it's your channel and you stream", 'Si es tu canal y haces streaming')}</strong>:
-      ${L('chiedi l\'abilitazione. andryxify riceverà la richiesta e, una volta approvata, configurerai il bot da qui.', 'ask to be enabled. andryxify will get your request and, once approved, you\'ll set the bot up from here.', 'pide la habilitación. andryxify recibirá tu solicitud y, una vez aprobada, configurarás el bot desde aquí.')}</p>
+      ${L('chiedi l\'abilitazione. andryxify riceverà la richiesta e, una volta approvata, configurerai tutto da qui.', 'ask to be enabled. andryxify will get your request and, once approved, you\'ll set everything up from here.', 'pide la habilitación. andryxify recibirá tu solicitud y, una vez aprobada, lo configurarás todo desde aquí.')}</p>
       ${a
         ? `<p class="suggerimento"><strong>${L('Se ci sei finito per sbaglio', 'If you got here by mistake', 'Si has llegado aquí por error')}</strong>:
             ${L('capita cambiando canale. Torna dove stavi con il pulsante qui sotto — non hai chiesto niente e non è cambiato niente.', 'it happens when switching channels. Go back where you were with the button below — you asked for nothing and nothing changed.', 'pasa al cambiar de canal. Vuelve donde estabas con el botón de abajo — no has pedido nada y no ha cambiado nada.')}</p>`
-        : `<p class="suggerimento">${L('Se non fai streaming, qui non c\'è niente per te: questa pagina serve agli streamer che vogliono il bot nel loro canale.', "If you don't stream, there's nothing for you here: this page is for streamers who want the bot on their channel.", 'Si no haces streaming, aquí no hay nada para ti: esta página es para streamers que quieren el bot en su canal.')}</p>`}
+        : `<p class="suggerimento">${L('Se non fai streaming, qui non c\'è niente per te: SocialBot è fatto per chi trasmette.', "If you don't stream, there's nothing for you here: SocialBot is made for streamers.", 'Si no haces streaming, aquí no hay nada para ti: SocialBot está hecho para quien emite.')}</p>`}
       ${rigaUscita(`<button class="btn grande" id="btn-richiesta">${L('Richiedi SocialBot', 'Request SocialBot', 'Solicitar SocialBot')}</button>`)}
     </div>`;
 }
@@ -5908,7 +5908,7 @@ function pannelloAccount() {
       <h2>${_hIco(ICO.utenti)}${L('Moderatori', 'Moderators', 'Moderadores')}</h2>
       ${muroPacchetto('moderatori', L('Avere dei moderatori sul pannello', 'Having moderators on the panel', 'Tener moderadores en el panel'))}
       ${!funzioneChiusa('moderatori') && stato?.funzioni?.moderatori === 1 && stato?.stripeAttivo ? `<p class="suggerimento">${L('Il tuo piano ha un posto. Con «Squadra» arrivi a dieci.', 'Your plan has one seat. With «Squadra» you get ten.', 'Tu plan tiene un puesto. Con «Squadra» llegas a diez.')} <button type="button" class="btn secondario" data-sblocca="squadra">${L('Aggiungi «Squadra»', 'Add «Squadra»', 'Añadir «Squadra»')}</button></p>` : ''}
-      <p>${L('Fai aiutare qualcuno di cui ti fidi a gestire il bot. Gli mandi un', 'Let someone you trust help run the bot. You send them an', 'Deja que alguien de confianza te ayude con el bot. Le mandas un')} <strong class="primo-piano">${L('link d\'invito', 'invite link', 'enlace de invitación')}</strong>: ${L('accede con Twitch (così sappiamo che è davvero lui) e può occuparsi di tutto,', 'they sign in with Twitch (so we know it’s really them) and can handle everything,', 'entra con Twitch (así sabemos que es él de verdad) y puede ocuparse de todo,')} <strong class="primo-piano">${L('tranne', 'except', 'excepto')}</strong> ${L('le cose da proprietario — permessi Twitch e questo elenco.', 'owner-only things — Twitch permissions and this list.', 'lo de propietario — permisos de Twitch y esta lista.')}</p>
+      <p>${L('Fai aiutare qualcuno di cui ti fidi a gestire SocialBot. Gli mandi un', 'Let someone you trust help run SocialBot. You send them an', 'Deja que alguien de confianza te ayude con SocialBot. Le mandas un')} <strong class="primo-piano">${L('link d\'invito', 'invite link', 'enlace de invitación')}</strong>: ${L('accede con Twitch (così sappiamo che è davvero lui) e può occuparsi di tutto,', 'they sign in with Twitch (so we know it’s really them) and can handle everything,', 'entra con Twitch (así sabemos que es él de verdad) y puede ocuparse de todo,')} <strong class="primo-piano">${L('tranne', 'except', 'excepto')}</strong> ${L('le cose da proprietario — permessi Twitch e questo elenco.', 'owner-only things — Twitch permissions and this list.', 'lo de propietario — permisos de Twitch y esta lista.')}</p>
       <label class="campo" for="sel-mod-piattaforma">${L('Dove sta il moderatore', 'Where the moderator is', 'Dónde está el moderador')}</label>
       <div class="riga-flessibile">
         <select id="sel-mod-piattaforma">
@@ -6858,7 +6858,7 @@ async function caricaTgLogin() {
   const linkBot = d.bot ? `https://t.me/${esc(d.bot)}` : '';
 
   const testa = `<h2>${_hIco(ICO.chat)}${L('Accedi e gestisci da Telegram', 'Log in & manage from Telegram', 'Accede y gestiona desde Telegram')}</h2>
-    <p>${L('Collega il tuo Telegram al canale: potrai rientrare con un tocco e gestire il bot dalla', 'Link your Telegram to your channel: you’ll get back in with one tap and manage the bot from the', 'Vincula tu Telegram al canal: podrás volver a entrar con un toque y gestionar el bot desde la')} <strong class="primo-piano">Mini App</strong> ${L('dentro Telegram.', 'inside Telegram.', 'dentro de Telegram.')}</p>`;
+    <p>${L('Collega il tuo Telegram al canale: potrai rientrare con un tocco e gestire SocialBot dalla', 'Link your Telegram to your channel: you’ll get back in with one tap and manage SocialBot from the', 'Vincula tu Telegram al canal: podrás volver a entrar con un toque y gestionar SocialBot desde la')} <strong class="primo-piano">Mini App</strong> ${L('dentro Telegram.', 'inside Telegram.', 'dentro de Telegram.')}</p>`;
 
   if (d.collegato) {
     box.innerHTML = testa + `<div class="riga-interruttore">
@@ -13690,7 +13690,7 @@ function pannelloStudio() {
       <div class="carta evidenziata">
         <h2>${_hIco(ICO.onda)}${L('Studio Web — in arrivo', 'Web Studio — coming soon', 'Estudio Web — próximamente')}</h2>
         <p>${L('Andare in diretta dal browser, senza installare niente: scene, webcam, schermo, mixer audio e overlay già dentro.', 'Going live from the browser with nothing to install: scenes, webcam, screen, audio mixer and the overlay already inside.', 'Emitir desde el navegador sin instalar nada: escenas, webcam, pantalla, mezclador de audio y overlay ya dentro.')}</p>
-        <p class="suggerimento">${L('Non è ancora attivo, e finché non lo è preferiamo dirtelo invece di lasciartelo provare. Il resto del bot — comandi, overlay, moderazione, notifiche — funziona come sempre.', 'It is not active yet, and until it is we would rather tell you than let you try it. The rest of the bot — commands, overlay, moderation, alerts — works as always.', 'Todavía no está activo, y hasta que lo esté preferimos decírtelo en vez de dejarte probarlo. El resto del bot — comandos, overlay, moderación, avisos — funciona como siempre.')}</p>
+        <p class="suggerimento">${L('Non è ancora attivo, e finché non lo è preferiamo dirtelo invece di lasciartelo provare. Il resto di SocialBot (comandi, overlay, moderazione, notifiche) funziona come sempre.', 'It is not active yet, and until it is we would rather tell you than let you try it. The rest of SocialBot (commands, overlay, moderation, alerts) works as always.', 'Todavía no está activo, y hasta que lo esté preferimos decírtelo en vez de dejarte probarlo. El resto de SocialBot (comandos, overlay, moderación, avisos) funciona como siempre.')}</p>
       </div>`);
   }
   return pannello('studio', `
@@ -15317,7 +15317,7 @@ function pannello7TV() {
   return pannello('emote', `
     <div class="carta">
       <h2>${_hIco(ICO.faccina)}${L('Il tuo account 7TV', 'Your 7TV account', 'Tu cuenta 7TV')}</h2>
-      <p>${L('Collega il tuo account', 'Connect your', 'Conecta tu cuenta')} <strong class="primo-piano">7TV</strong> ${L('per gestire le emote del canale — aggiungerle, toglierle e rinominarle — senza uscire dal bot. Le emote 7TV compaiono anche nella chat a schermo del tuo overlay.', 'account to manage your channel emotes — add, remove and rename them — without leaving the bot. 7TV emotes also appear in your overlay’s on-screen chat.', 'para gestionar las emotes del canal — añadirlas, quitarlas y renombrarlas — sin salir del bot. Las emotes 7TV también aparecen en el chat en pantalla de tu overlay.')}</p>
+      <p>${L('Collega il tuo account', 'Connect your', 'Conecta tu cuenta')} <strong class="primo-piano">7TV</strong> ${L('per gestire le emote del canale (aggiungerle, toglierle e rinominarle) senza uscire da SocialBot. Le emote 7TV compaiono anche nella chat a schermo del tuo overlay.', 'account to manage your channel emotes (add, remove and rename them) without leaving SocialBot. 7TV emotes also appear in your overlay’s on-screen chat.', 'para gestionar las emotes del canal (añadirlas, quitarlas y renombrarlas) sin salir de SocialBot. Las emotes 7TV también aparecen en el chat en pantalla de tu overlay.')}</p>
       <div id="svtv-conn">${attesaHtml()}</div>
     </div>
 
@@ -15917,7 +15917,7 @@ function pannelloDirette() {
   return pannello('dirette', `
     <div class="carta">
       <h2>${_hIco(ICO.grafico)}${L('Le tue dirette', 'Your streams', 'Tus directos')}</h2>
-      <p>${L('Ogni diretta finita lascia qui il suo rapporto: quanto è durata, quanti c’erano, cosa è successo. Sono i numeri veri del canale, raccolti dal bot mentre trasmettevi.', 'Every finished stream leaves its report here: how long it lasted, how many were there, what happened. They are the channel’s real numbers, collected by the bot while you were live.', 'Cada directo terminado deja aquí su informe: cuánto duró, cuántos había, qué pasó. Son los números reales del canal, recogidos por el bot mientras emitías.')}</p>
+      <p>${L('Ogni diretta finita lascia qui il suo rapporto: quanto è durata, quanti c’erano, cosa è successo. Sono i numeri veri del canale, raccolti da SocialBot mentre trasmettevi.', 'Every finished stream leaves its report here: how long it lasted, how many were there, what happened. They are the channel’s real numbers, collected by SocialBot while you were live.', 'Cada directo terminado deja aquí su informe: cuánto duró, cuántos había, qué pasó. Son los números reales del canal, recogidos por SocialBot mientras emitías.')}</p>
       <div id="lista-rapporti" class="rap-lista">${attesaHtml()}</div>
     </div>
     <div class="carta">
@@ -16008,7 +16008,7 @@ async function caricaDirette() {
   catch (e) { lista.innerHTML = `<p class="vuoto">${esc(e.message)}</p>`; return; }
   const righe = d.rapporti || [];
   lista.innerHTML = righe.length ? righe.map(cartaRapporto).join('')
-    : `<p class="vuoto">${L('Ancora nessuna diretta finita da quando il bot le conta: la prossima lascerà qui il suo rapporto.', 'No finished stream yet since the bot started counting: the next one will leave its report here.', 'Aún ningún directo terminado desde que el bot los cuenta: el próximo dejará aquí su informe.')}</p>`;
+    : `<p class="vuoto">${L('Ancora nessuna diretta finita da quando SocialBot le conta: la prossima lascerà qui il suo rapporto.', 'No finished stream yet since SocialBot started counting: the next one will leave its report here.', 'Aún ningún directo terminado desde que SocialBot los cuenta: el próximo dejará aquí su informe.')}</p>`;
   box.innerHTML = canaliRapportoHtml(d);
   const salvaCanali = (msg) => salvaImpostazioni({ rapporto: { telegram: !!document.getElementById('chk-rap-telegram')?.checked, mail: !!document.getElementById('chk-rap-mail')?.checked } }, msg);
   document.getElementById('chk-rap-telegram')?.addEventListener('change', (ev) => conErrore(() => salvaCanali(ev.target.checked ? L('Il rapporto arriva su Telegram.', 'The report reaches you on Telegram.', 'El informe llega en Telegram.') : L('Niente rapporto su Telegram.', 'No report on Telegram.', 'Sin informe en Telegram.'))));
@@ -25527,7 +25527,7 @@ function vistaAdminContenuto() {
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.scudo)}${L('Backup del database', 'Database backup', 'Copia de seguridad de la base de datos')}</h2>
-      <p>${L('Tutto (comandi, temi, monete, moderatori, pagine link) vive in un solo file. Il bot ne tiene copie', 'Everything (commands, themes, coins, moderators, link pages) lives in a single file. The bot keeps', 'Todo (comandos, temas, monedas, moderadores, páginas de enlaces) vive en un solo archivo. El bot guarda')} <strong class="primo-piano">${L('automatiche e sicure', 'automatic, safe copies', 'copias automáticas y seguras')}</strong> ${L('sul server. Non sono scaricabili dal web (contengono dati sensibili): si recuperano dal server.', 'on the server. They are not downloadable from the web (they hold sensitive data): recover them from the server.', 'en el servidor. No se pueden descargar desde la web (contienen datos sensibles): se recuperan desde el servidor.')}</p>
+      <p>${L('Tutto (comandi, temi, monete, moderatori, pagine link) vive in un solo file. SocialBot ne tiene copie', 'Everything (commands, themes, coins, moderators, link pages) lives in a single file. SocialBot keeps', 'Todo (comandos, temas, monedas, moderadores, páginas de enlaces) vive en un solo archivo. SocialBot guarda')} <strong class="primo-piano">${L('automatiche e sicure', 'automatic, safe copies', 'copias automáticas y seguras')}</strong> ${L('sul server. Non sono scaricabili dal web (contengono dati sensibili): si recuperano dal server.', 'on the server. They are not downloadable from the web (they hold sensitive data): recover them from the server.', 'en el servidor. No se pueden descargar desde la web (contienen datos sensibles): se recuperan desde el servidor.')}</p>
       <div id="backup-box">${attesaHtml()}</div>
     </div>
     <div class="carta">
@@ -26143,7 +26143,7 @@ function mostraInvito(invito) {
   if (!box || !invito) return;
   box.innerHTML = `
     <p class="suggerimento spazio-sopra">${L('Manda questo link a', 'Send this link to', 'Envía este enlace a')} <strong class="primo-piano">@${esc(invito.login)}</strong>
-      (${L('vale fino al', 'valid until', 'válido hasta el')} ${esc(dataIt(invito.scade))}); ${L('accederà con Twitch e potrà gestire il bot:', 'they\'ll log in with Twitch and be able to manage the bot:', 'accederá con Twitch y podrá gestionar el bot:')}</p>
+      (${L('vale fino al', 'valid until', 'válido hasta el')} ${esc(dataIt(invito.scade))}); ${L('accederà con Twitch e potrà gestire SocialBot:', 'they\'ll log in with Twitch and be able to manage SocialBot:', 'accederá con Twitch y podrá gestionar SocialBot:')}</p>
     <div class="riga-flessibile">
       <input type="text" id="url-invito" readonly value="${esc(invito.url)}">
       <button class="btn" id="btn-copia-invito">${L('Copia', 'Copy', 'Copiar')}</button>
@@ -26182,7 +26182,7 @@ async function caricaRichiesteMod() {
       if (!b) return;
       if (b.dataset.modSi) return conErrore(async () => {
         await api('/api/moderatori/' + b.dataset.modSi + '/accetta', { method: 'POST', body: {} });
-        toast(L('Adesso può gestire il bot con te.', 'They can now run the bot with you.', 'Ahora puede gestionar el bot contigo.'));
+        toast(L('Adesso può gestire SocialBot con te.', 'They can now run SocialBot with you.', 'Ahora puede gestionar SocialBot contigo.'));
         caricaRichiesteMod(); caricaModeratori();
       });
       if (b.dataset.modNo) return conErrore(async () => {
