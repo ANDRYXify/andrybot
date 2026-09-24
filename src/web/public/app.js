@@ -2000,7 +2000,7 @@ function chiediCopia({ testo = '', msgOk = '', titolo = L('Copialo da qui', 'Cop
       if (chiuso) return; chiuso = true;
       document.removeEventListener('keydown', tasti, true);
       el.classList.remove('dentro');
-      setTimeout(() => el.remove(), 240);
+      setTimeout(() => el.remove(), _duraUscita() + 20);
       risolvi(v);
     };
     const tasti = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); via(false); } };
@@ -2035,7 +2035,7 @@ function chiediScelta({ titolo = '', testo = '', azioni = [], fuoco = '' } = {})
       if (chiuso) return; chiuso = true;
       document.removeEventListener('keydown', tasti, true);
       el.classList.remove('dentro');
-      setTimeout(() => el.remove(), 240);
+      setTimeout(() => el.remove(), _duraUscita() + 20);
       risolvi(v);
     };
     const tasti = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); via(null); } };
@@ -2075,7 +2075,7 @@ function chiediTesto({ titolo = '', testo = '', valore = '', ok = 'OK', scelte =
       if (chiuso) return; chiuso = true;
       document.removeEventListener('keydown', tasti, true);
       el.classList.remove('dentro');
-      setTimeout(() => el.remove(), 240);
+      setTimeout(() => el.remove(), _duraUscita() + 20);
       risolvi(v);
     };
     const tasti = (ev) => {
@@ -2684,7 +2684,7 @@ function mostraBenvenuto() {
 
   const chiudi = () => {
     el.classList.remove('dentro');
-    setTimeout(() => el.remove(), 260);
+    setTimeout(() => el.remove(), _duraUscita() + 20);
     try {
       const u = new URL(location.href);
       u.searchParams.delete('benvenuto');
@@ -3964,7 +3964,7 @@ function chiudiGiro(finito) {
   try { occhio?.disconnect(); } catch (e) {  }
   document.body.classList.remove('giro-aperto');
   velo.classList.remove('dentro');
-  setTimeout(() => velo.remove(), 220);
+  setTimeout(() => velo.remove(), _duraUscita() + 20);
   giroScrivi((m) => { m.viste[id] = finito ? 2 : 1; });
   if (finito) aiutoSegna(id, 'fatto', AIUTO_SA_FARE);
 }
@@ -10404,7 +10404,7 @@ function chiediContatore({ copie = true } = {}) {
       if (chiuso) return; chiuso = true;
       document.removeEventListener('keydown', tasti, true);
       el.classList.remove('dentro');
-      setTimeout(() => el.remove(), 240);
+      setTimeout(() => el.remove(), _duraUscita() + 20);
       risolvi(v);
     };
     const tasti = (ev) => {
@@ -10666,7 +10666,7 @@ function chiediOccasione() {
       if (chiuso) return; chiuso = true;
       document.removeEventListener('keydown', tasti, true);
       el.classList.remove('dentro');
-      setTimeout(() => el.remove(), 240);
+      setTimeout(() => el.remove(), _duraUscita() + 20);
       risolvi(v);
     };
     const esito = () => {
@@ -24037,7 +24037,7 @@ function scegliDallaLibreria({ tipi = ['immagine', 'video', 'audio'], titolo = '
       document.removeEventListener('keydown', tasti, true);
       clearTimeout(timer);
       el.classList.remove('dentro');
-      setTimeout(() => el.remove(), 240);
+      setTimeout(() => el.remove(), _duraUscita() + 20);
       risolvi(v);
     };
     const tasti = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); via(null); } };

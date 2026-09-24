@@ -53,7 +53,7 @@ p, li { line-height: 1.72; }
   --t-medio: 220ms;
   --t-pieno: 320ms;
   --t-scena: 420ms;
-  --t-uscita: 180ms;
+  --t-uscita: 260ms;
   --ease-uscita: cubic-bezier(.4, 0, 1, 1);
   --ease-entrata: cubic-bezier(.16, .84, .34, 1);
 
@@ -150,24 +150,32 @@ summary:focus-visible, select:focus-visible, input:focus-visible, textarea:focus
 }
 
 @property --mt-t { syntax: '<length>'; inherits: false; initial-value: 0px; }
-.dg-in {
+.dg-in, .dg-out {
   border-color: transparent !important;
   box-shadow: none !important;
   -webkit-mask-image: repeating-linear-gradient(-38deg, #000 0 var(--mt-t), transparent var(--mt-t) 7px);
   mask-image: repeating-linear-gradient(-38deg, #000 0 var(--mt-t), transparent var(--mt-t) 7px);
-  animation: dg-retino var(--dg-retino, 170ms) steps(3, jump-end) var(--dg-da-retino, 0ms) both;
 }
+.dg-in { animation: dg-retino var(--dg-retino, 170ms) steps(3, jump-end) var(--dg-da-retino, 0ms) both; }
+.dg-out { animation: dg-copri var(--dg-retino, 170ms) steps(3, jump-end) var(--dg-da-retino, 0ms) both; }
 @keyframes dg-retino { from { --mt-t: 0px; } to { --mt-t: 7px; } }
-.dg-tela { position: absolute; pointer-events: none; overflow: visible; }
+@keyframes dg-copri { from { --mt-t: 7px; } to { --mt-t: 0px; } }
+.dg-tela { position: absolute; pointer-events: none; overflow: visible; max-width: none; }
 .dg-tela path { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
 .dg-matita { stroke: color-mix(in srgb, var(--contorno) 62%, transparent); stroke-width: 1.5; }
-.dg-bianchetto { stroke: var(--bg); }
 .dg-emanata { stroke-width: 2.4; }
 .dg-rabbia { stroke: var(--rosso); }
 .dg-scintille { stroke: var(--acc); }
 .dg-traccia { animation: dg-traccia var(--dg-dur, 200ms) var(--dg-passi, steps(3, jump-end)) var(--dg-da, 0ms) forwards; }
+.dg-sfila { animation: dg-sfila var(--dg-dur, 200ms) var(--dg-passi, steps(3, jump-end)) var(--dg-da, 0ms) both; }
 @keyframes dg-traccia { to { stroke-dashoffset: 0; } }
-.dg-matite { animation: dg-via 170ms steps(2, jump-end) var(--dg-da-pulizia, 0ms) forwards; }
+@keyframes dg-sfila { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 1; } }
+.dg-matite { animation: dg-via var(--dg-pulizia, 170ms) steps(2, jump-end) var(--dg-da-pulizia, 0ms) forwards; }
+.dg-matite.dg-torna { animation-name: dg-torna; animation-fill-mode: both; }
 @keyframes dg-via { to { opacity: 0; } }
+@keyframes dg-torna { from { opacity: 0; } to { opacity: 1; } }
+.dg-esclama { overflow: visible; animation: dg-via 90ms steps(2, jump-end) 260ms forwards; }
+.dg-esclamo-alone { stroke: var(--surface); stroke-width: 7.5; }
+.dg-esclamo { stroke: var(--contorno); stroke-width: 3.2; }
 .dg-attesa { opacity: 0; }
 @media print { .dg-attesa { opacity: 1; } }

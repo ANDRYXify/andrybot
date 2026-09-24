@@ -24,7 +24,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-24
 
-- Il sito si disegna: cambiando sezione la pagina vecchia si cancella col bianchetto e la nuova si disegna a matita e china, come una tavola di manga. Lo stesso per avvisi, finestre e carte che arrivano.
+- Il sito si disegna: cambiando sezione la pagina vecchia si disegna all'indietro e la nuova si disegna a matita e china, come una tavola di manga. Lo stesso per avvisi, finestre e carte che arrivano.
+- Dove clicchi escono tre «!» disegnati a mano. Prima di un gesto di cui potresti pentirti, come togliere una regola, la finestra che te lo chiede diventa una nuvoletta rossa a punte.
 
 ## 2026-09-23
 
