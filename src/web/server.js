@@ -23,7 +23,8 @@ import * as consolle from '../features/console.js';   // CONSOLify + tastiera fi
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi, recensioni as recensioniDb } from '../db.js';
+import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, datiStrutturati, jsonSicuro, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { renderLinkPage, renderInformativa, accentoDi } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
@@ -818,7 +819,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // Le porte di Kick e YouTube esistono solo se questo server ha le
     // credenziali: un pulsante che porta a un 503 e' peggio di un pulsante che
     // non c'e'.
-    h = guscioVetrina(h, codice, { kick: conKick, youtube: conYoutube, dirette: _dirette, piani: _piani });
+    h = guscioVetrina(h, codice, { kick: conKick, youtube: conYoutube, dirette: _dirette, piani: _piani, recensioni: _recensioni });
+    // Le recensioni entrano anche nei dati strutturati, calcolate dalla stessa
+    // cosa che la striscia mostra: se la striscia non c'e', non ci sono nemmeno loro.
+    const recLd = datiStrutturati(_recensioni);
+    if (recLd) cambia('"operatingSystem": "Web",', `"operatingSystem": "Web",\n        ${jsonSicuro(recLd).slice(1, -1)},`);
     cambia('<html lang="it">', `<html lang="${m.html}">`);
     cambia(`<title>${base.titolo}</title>`, `<title>${m.titolo}</title>`);
     cambia(`<meta name="description" content="${base.desc}">`, `<meta name="description" content="${m.desc}">`);
@@ -848,9 +853,16 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // quando lui risponde (vedi abbonamenti.sorvegliaPrezzi).
   let _dirette = [];
   let _piani = abbonamenti.pianiPubblici();
+  let _recensioni = vetrinaDi(recensioniDb.pubblicate());
   const GUSCI = {};
   const rifaiGusci = () => {
     for (const codice of Object.keys(META_LINGUA)) GUSCI[codice] = gusciaDi(codice);
+  };
+  // Una recensione pubblicata, nascosta o tolta cambia la pagina iniziale
+  // subito, non al prossimo giro della ronda.
+  const recensioniCambiate = () => {
+    _recensioni = vetrinaDi(recensioniDb.pubblicate());
+    rifaiGusci();
   };
   rifaiGusci();
   let _firma = '';
@@ -2334,6 +2346,64 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     res.json({ ok: true, ultima, segnalibro, evidenza, gruppi: aSezioni, altre });
   });
 
+  // LE RECENSIONI (docs/RECENSIONI.md). Chi puo' recensire e cosa si pubblica
+  // lo decide features/recensioni.js; qui si leggono i fatti e si salva.
+  const contaDirette = (login) => db.prepare('SELECT COUNT(*) c FROM rapporti WHERE channel=?').get(String(login || '').toLowerCase()).c;
+  const statoRecensione = (req, user) => {
+    const suo = streamers.get(user.login);
+    const giudizio = puoRecensire({
+      streamer: suo ? { ...suo, login: user.login } : null, proprietario: isOwner(req), admin: isAdmin(user),
+      dirette: contaDirette(user.login), lavoroDiscord: dcGiri.ultimi(user.login, 1).length > 0,
+    });
+    const mia = recensioniDb.di(user.login);
+    return { ...giudizio, mia, invito: invitoAperto({ puo: giudizio.puo, mia, invito: suo?.settings?.recensioneInvito || {} }) };
+  };
+  app.get('/api/recensione', requireOwner, (req, res) => {
+    const st = statoRecensione(req, currentUser(req));
+    res.set('Cache-Control', 'private, no-store');
+    res.json({ ok: true, puo: st.puo, perche: st.perche, mia: st.mia, invito: st.invito, max: TESTO_MAX });
+  });
+  app.post('/api/recensione', requireOwner, wrap(async (req, res) => {
+    const user = currentUser(req);
+    const st = statoRecensione(req, user);
+    if (!st.puo) return res.status(403).json({ errore: 'Non puoi ancora lasciare una recensione.', codice: st.perche });
+    const v = validaRecensione(req.body || {});
+    if (!v.ok) {
+      const perche = { link: 'Senza link, per favore.', lungo: `Al massimo ${TESTO_MAX} caratteri.`, stelle: 'Scegli da una a cinque stelle.' };
+      return res.status(400).json({ errore: perche[v.errore] || 'Recensione non valida.', codice: v.errore });
+    }
+    const mia = recensioniDb.salva(user.login, { ...v.dato, stato: statoDopo(st.mia, v.dato) });
+    recensioniCambiate();
+    res.json({ ok: true, mia });
+  }));
+  app.delete('/api/recensione', requireOwner, wrap(async (req, res) => {
+    recensioniDb.togli(currentUser(req).login);
+    recensioniCambiate();
+    res.json({ ok: true });
+  }));
+  app.post('/api/recensione/invito', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const suo = streamers.get(login);
+    if (!suo) return res.json({ ok: false });
+    const azione = String(req.body?.azione || '');
+    if (!['dopo', 'mai'].includes(azione)) return res.status(400).json({ ok: false });
+    streamers.setSettings(login, { ...(suo.settings || {}), recensioneInvito: azione === 'mai' ? { mai: true } : { rimandaFino: rimandaFino() } });
+    res.json({ ok: true });
+  }));
+  app.get('/api/admin/recensioni', requireAdmin, (req, res) => {
+    res.set('Cache-Control', 'private, no-store');
+    res.json({ ok: true, elenco: recensioniDb.elenco() });
+  });
+  // Si pubblica o si nasconde. Si nasconde solo per insulti, spam o dati
+  // personali: mai per il voto. La regola sta scritta anche accanto ai tasti.
+  app.post('/api/admin/recensioni/:login', requireAdmin, wrap(async (req, res) => {
+    const stato = String(req.body?.stato || '');
+    if (!['pubblicata', 'nascosta'].includes(stato)) return res.status(400).json({ errore: 'stato non valido' });
+    if (!recensioniDb.modera(String(req.params.login || ''), stato)) return res.status(404).json({ errore: 'non la trovo' });
+    recensioniCambiate();
+    res.json({ ok: true });
+  }));
+
   app.post('/api/novita/viste', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const suo = streamers.get(login);
@@ -3042,6 +3112,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       // sul telefono, e uno che ha gia' detto no se lo ritrova davanti. Qui
       // invece la risposta resta con lo streamer, dovunque entri.
       inviti: invitiAperti(req, user, isOwner),
+      recensione: { invito: statoRecensione(req, user).invito },
     });
   }));
 

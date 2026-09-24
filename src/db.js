@@ -766,6 +766,23 @@ CREATE TABLE IF NOT EXISTS sostegni (
 );
 CREATE INDEX IF NOT EXISTS idx_sostegni_stato ON sostegni(stato, created_at);
 
+-- LE RECENSIONI DI SOCIALBOT: una per canale, del proprietario del canale. Le
+-- stelle da sole si pubblicano subito, un testo aspetta che qualcuno lo legga.
+-- La colonna login non e' un dettaglio: cancellare l'account la cancella e
+-- l'esportazione la porta, perche' tutte e due prendono da sole ogni tabella
+-- con quella colonna. Il modello sta in docs/RECENSIONI.md.
+CREATE TABLE IF NOT EXISTS recensioni (
+  login TEXT PRIMARY KEY,
+  stelle INTEGER NOT NULL,
+  testo TEXT NOT NULL DEFAULT '',
+  lingua TEXT NOT NULL DEFAULT 'it',
+  con_nome INTEGER NOT NULL DEFAULT 0,
+  stato TEXT NOT NULL DEFAULT 'attesa',        -- attesa | pubblicata | nascosta
+  creata INTEGER NOT NULL DEFAULT 0,
+  aggiornata INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_recensioni_stato ON recensioni(stato, aggiornata);
+
 -- IL REGISTRO DEI GIRI DEL COSTRUTTORE DISCORD.
 --
 -- Non serve a noi: serve a lui, il giorno che qualcuno chiede «chi ha
@@ -1781,6 +1798,41 @@ export const dcGiri = {
   ultimi(channel, quanti = 20) {
     return db.prepare('SELECT * FROM dcserver_giri WHERE channel=? ORDER BY quando DESC LIMIT ?')
       .all(String(channel).toLowerCase(), Math.max(1, Math.min(100, quanti | 0)));
+  },
+};
+
+// Le recensioni. Qui si legge e si scrive e basta: cosa si puo' salvare e in
+// che stato lo decide features/recensioni.js.
+const _recensione = (r) => (r ? { login: r.login, stelle: r.stelle, testo: r.testo || '', lingua: r.lingua || 'it',
+  conNome: !!r.con_nome, stato: r.stato, creata: r.creata || 0, aggiornata: r.aggiornata || 0, display: r.display || '' } : null);
+export const recensioni = {
+  di(login) {
+    return _recensione(db.prepare('SELECT * FROM recensioni WHERE login=?').get(String(login || '').toLowerCase()));
+  },
+  salva(login, { stelle, testo = '', lingua = 'it', conNome = false, stato }) {
+    const l = String(login || '').toLowerCase();
+    const ora = now();
+    db.prepare(`INSERT INTO recensioni (login, stelle, testo, lingua, con_nome, stato, creata, aggiornata) VALUES (?,?,?,?,?,?,?,?)
+      ON CONFLICT(login) DO UPDATE SET stelle=excluded.stelle, testo=excluded.testo, lingua=excluded.lingua,
+        con_nome=excluded.con_nome, stato=excluded.stato, aggiornata=excluded.aggiornata`)
+      .run(l, stelle, testo, lingua, conNome ? 1 : 0, stato, ora, ora);
+    return this.di(l);
+  },
+  togli(login) {
+    return db.prepare('DELETE FROM recensioni WHERE login=?').run(String(login || '').toLowerCase()).changes > 0;
+  },
+  modera(login, stato) {
+    return db.prepare('UPDATE recensioni SET stato=? WHERE login=?').run(stato, String(login || '').toLowerCase()).changes > 0;
+  },
+  elenco() {
+    return db.prepare(`SELECT r.*, s.display FROM recensioni r LEFT JOIN streamers s ON s.login = r.login
+      ORDER BY (r.stato = 'attesa') DESC, r.aggiornata DESC LIMIT 200`).all().map(_recensione);
+  },
+  // Solo di canali che ci sono ancora e sono approvati: chi e' stato tolto dal
+  // proprietario non parla piu' nella pagina iniziale.
+  pubblicate() {
+    return db.prepare(`SELECT r.*, s.display FROM recensioni r JOIN streamers s ON s.login = r.login
+      WHERE r.stato = 'pubblicata' AND s.status = 'approved' ORDER BY r.aggiornata DESC LIMIT 60`).all().map(_recensione);
   },
 };
 

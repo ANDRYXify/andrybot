@@ -371,6 +371,187 @@ async function caricaStato() {
   collegaRegiaRicordata();
   _mortiRiavvia();
   invito();
+  invitoRecensione();
+}
+
+const RECENSIONE_DOPO_MS = 45000;
+const RECENSIONE_RIPROVA_MS = 15000;
+let _recensioneOrologio = 0;
+
+const stelleSu5 = (i) => (i === 1 ? L('1 stella su 5', '1 star out of 5', '1 estrella de 5')
+  : L(`${i} stelle su 5`, `${i} stars out of 5`, `${i} estrellas de 5`));
+
+function formRecensioneHtml(p, mia, max) {
+  const n = mia?.stelle || 0;
+  const stella = (i) => `<input type="radio" name="${p}-stelle" id="${p}-s${i}" value="${i}"${n === i ? ' checked' : ''}><label for="${p}-s${i}"><span aria-hidden="true">★</span><span class="solo-lettori">${esc(stelleSu5(i))}</span></label>`;
+  return `<fieldset class="voto-scelta" data-voto="${n}"><legend class="solo-lettori">${L('Il tuo voto', 'Your rating', 'Tu valoración')}</legend>${[1, 2, 3, 4, 5].map(stella).join('')}</fieldset>
+    <div class="rec-parole"${n ? '' : ' hidden'}>
+      <label class="campo" for="${p}-testo">${L('Due righe, se ti va', 'A couple of lines, if you like', 'Un par de líneas, si quieres')}</label>
+      <textarea id="${p}-testo" class="campo-largo" rows="3" maxlength="${max || 400}" placeholder="${esc(L('Cosa ti piace, cosa manca', 'What you like, what is missing', 'Qué te gusta, qué falta'))}">${esc(mia?.testo || '')}</textarea>
+      <label class="riga-check"><input type="checkbox" id="${p}-nome"${mia?.conNome ? ' checked' : ''}> ${L('Fai vedere il nome del tuo canale', 'Show your channel name', 'Muestra el nombre de tu canal')}</label>
+      <p class="suggerimento">${L('Le stelle compaiono subito nella pagina iniziale, le parole dopo che le ho lette. Niente link.', 'The stars show up on the home page right away, the words after I have read them. No links.', 'Las estrellas aparecen enseguida en la página de inicio, las palabras después de que las lea. Sin enlaces.')}</p>
+    </div>`;
+}
+
+function collegaVoto(radice, p, dopo) {
+  const f = radice.querySelector('.voto-scelta');
+  f?.addEventListener('change', (ev) => {
+    if (!ev.target.matches(`input[name="${p}-stelle"]`)) return;
+    f.dataset.voto = ev.target.value;
+    const parole = radice.querySelector('.rec-parole');
+    if (parole) parole.hidden = false;
+    if (dopo) dopo();
+  });
+}
+
+function leggiRecensione(p) {
+  const scelta = document.querySelector(`input[name="${p}-stelle"]:checked`);
+  return {
+    stelle: scelta ? Number(scelta.value) : 0,
+    testo: (document.getElementById(`${p}-testo`)?.value || '').trim(),
+    conNome: !!document.getElementById(`${p}-nome`)?.checked,
+    lingua: LINGUA,
+  };
+}
+
+function grazieRecensione(mia) {
+  return mia?.stato === 'attesa'
+    ? L('Grazie! La leggo e poi la metto nella pagina iniziale.', 'Thank you! I will read it and then put it on the home page.', '¡Gracias! La leo y luego la pongo en la página de inicio.')
+    : L('Grazie! È nella pagina iniziale.', 'Thank you! It is on the home page.', '¡Gracias! Ya está en la página de inicio.');
+}
+
+function invitoRecensione() {
+  if (DEMO || !stato?.recensione?.invito) return;
+  clearTimeout(_recensioneOrologio);
+  _recensioneOrologio = setTimeout(mostraInvitoRecensione, RECENSIONE_DOPO_MS);
+}
+
+function occupatoPerInvito() {
+  const cookie = document.getElementById('cookie-banner');
+  return document.hidden || !!document.querySelector('dialog[open], .bv-velo, .giro-velo, .aiuto-banner, .rec-invito, #cerca-overlay.aperto')
+    || document.body.classList.contains('menu-aperto') || !!(cookie && !cookie.hidden);
+}
+
+function mostraInvitoRecensione() {
+  if (!stato?.recensione?.invito) return;
+  if (occupatoPerInvito()) { _recensioneOrologio = setTimeout(mostraInvitoRecensione, RECENSIONE_RIPROVA_MS); return; }
+  stato.recensione.invito = false;
+  const el = document.createElement('section');
+  el.className = 'rec-invito';
+  el.setAttribute('aria-labelledby', 'rec-inv-tit');
+  el.innerHTML = `<h2 id="rec-inv-tit">${L('Come ti trovi con SocialBot?', 'How are you finding SocialBot?', '¿Qué tal te va con SocialBot?')}</h2>
+    ${formRecensioneHtml('rec-inv', null, 400)}
+    <div class="rec-invito-azioni">
+      <button type="button" class="btn mini" data-rec-manda hidden>${L('Pubblica', 'Publish', 'Publicar')}</button>
+      <button type="button" class="btn secondario mini" data-rec-dopo>${L('Più tardi', 'Later', 'Más tarde')}</button>
+      <button type="button" class="btn testo mini" data-rec-mai>${L('Non chiedermelo più', 'Do not ask me again', 'No me lo vuelvas a preguntar')}</button>
+    </div>`;
+  document.body.appendChild(el);
+  const via = (azione) => {
+    if (azione) api('/api/recensione/invito', { method: 'POST', body: { azione } }).catch(() => {  });
+    document.removeEventListener('keydown', esc_);
+    el.classList.add('esce');
+    setTimeout(() => el.remove(), _duraUscita() + 20);
+  };
+  const esc_ = (ev) => { if (ev.key === 'Escape' && el.contains(document.activeElement)) via('dopo'); };
+  document.addEventListener('keydown', esc_);
+  collegaVoto(el, 'rec-inv', () => { el.querySelector('[data-rec-manda]').hidden = false; });
+  el.querySelector('[data-rec-dopo]').addEventListener('click', () => via('dopo'));
+  el.querySelector('[data-rec-mai]').addEventListener('click', () => via('mai'));
+  el.querySelector('[data-rec-manda]').addEventListener('click', (ev) => conErrore(async () => {
+    const b = ev.currentTarget;
+    const d = leggiRecensione('rec-inv');
+    if (!d.stelle) return;
+    b.disabled = true;
+    try {
+      const r = await api('/api/recensione', { method: 'POST', body: d });
+      el.innerHTML = `<h2 id="rec-inv-tit">${grazieRecensione(r.mia)}</h2>
+        <p class="suggerimento">${L('La cambi o la togli quando vuoi da Il tuo account.', 'You can change or remove it any time from Your account.', 'La cambias o la quitas cuando quieras desde Tu cuenta.')}</p>`;
+      setTimeout(() => via(null), 3500);
+    } finally { b.disabled = false; }
+  }));
+}
+
+const PERCHE_RECENSIONE = {
+  presto: () => L('Potrai lasciarla dopo la prima settimana con SocialBot.', 'You can leave one after your first week with SocialBot.', 'Podrás dejarla después de tu primera semana con SocialBot.'),
+  uso: () => (stato?.piattaforma === 'discord'
+    ? L('Potrai lasciarla dopo che il bot ha lavorato sul tuo server.', 'You can leave one once the bot has worked on your server.', 'Podrás dejarla cuando el bot haya trabajado en tu servidor.')
+    : L('Potrai lasciarla dopo un paio di dirette col bot acceso.', 'You can leave one after a couple of streams with the bot on.', 'Podrás dejarla después de un par de directos con el bot encendido.')),
+  autore: () => L('Chi fa SocialBot non si recensisce da solo.', 'Whoever makes SocialBot does not review it.', 'Quien hace SocialBot no se reseña a sí mismo.'),
+  approvato: () => L('Potrai lasciarla quando il tuo canale è attivo.', 'You can leave one once your channel is active.', 'Podrás dejarla cuando tu canal esté activo.'),
+};
+
+async function caricaRecensione() {
+  const box = document.getElementById('recensione-box');
+  if (!box) return;
+  try {
+    const r = await api('/api/recensione');
+    if (!r.puo && !r.mia) {
+      box.innerHTML = `<p class="suggerimento">${(PERCHE_RECENSIONE[r.perche] || PERCHE_RECENSIONE.approvato)()}</p>`;
+      return;
+    }
+    const segno = r.mia ? ({
+      attesa: `<span class="badge giallo">${L('la sto leggendo', 'I am reading it', 'la estoy leyendo')}</span>`,
+      pubblicata: `<span class="badge verde">${L('nella pagina iniziale', 'on the home page', 'en la página de inicio')}</span>`,
+      nascosta: `<span class="badge rosso">${L('non pubblicata', 'not published', 'no publicada')}</span>`,
+    }[r.mia.stato] || '') : '';
+    box.innerHTML = `${r.mia ? `<p>${segno}</p>` : `<p>${L('Dai un voto a SocialBot: chi passa dalla pagina iniziale lo vede.', 'Rate SocialBot: people visiting the home page see it.', 'Valora SocialBot: quien pase por la página de inicio lo ve.')}</p>`}
+      ${r.puo ? formRecensioneHtml('rec-acc', r.mia, r.max) : ''}
+      <p class="spazio-sopra riga-flessibile">
+        ${r.puo ? `<button type="button" class="btn" id="btn-salva-recensione">${r.mia ? L('Aggiorna', 'Update', 'Actualizar') : L('Pubblica', 'Publish', 'Publicar')}</button>` : ''}
+        ${r.mia ? `<button type="button" class="btn secondario" id="btn-togli-recensione">${L('Togli la recensione', 'Remove the review', 'Quitar la reseña')}</button>` : ''}
+      </p>`;
+    if (r.puo) collegaVoto(box, 'rec-acc');
+    document.getElementById('btn-salva-recensione')?.addEventListener('click', () => conErrore(async () => {
+      const d = leggiRecensione('rec-acc');
+      if (!d.stelle) { toast(L('Scegli da una a cinque stelle.', 'Pick from one to five stars.', 'Elige de una a cinco estrellas.'), 'errore'); return; }
+      const x = await api('/api/recensione', { method: 'POST', body: d });
+      toast(grazieRecensione(x.mia));
+      caricaRecensione();
+    }));
+    document.getElementById('btn-togli-recensione')?.addEventListener('click', () => conErrore(async () => {
+      if (!(await chiediSe({ titolo: L('Tolgo la tua recensione?', 'Remove your review?', '¿Quito tu reseña?'),
+        testo: L('Sparisce dalla pagina iniziale. Puoi scriverne un\'altra quando vuoi.', 'It disappears from the home page. You can write another one whenever you like.', 'Desaparece de la página de inicio. Puedes escribir otra cuando quieras.'),
+        si: L('Toglila', 'Remove it', 'Quítala'), pericolo: true }))) return;
+      await api('/api/recensione', { method: 'DELETE' });
+      toast(L('Recensione tolta.', 'Review removed.', 'Reseña quitada.'));
+      caricaRecensione();
+    }));
+  } catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`; }
+}
+
+async function caricaRecensioniAdmin() {
+  const ul = document.getElementById('lista-recensioni-admin');
+  if (!ul) return;
+  try {
+    const r = await api('/api/admin/recensioni');
+    const lista = r?.elenco || [];
+    if (!lista.length) { ul.innerHTML = `<li class="vuoto">${L('Nessuna recensione', 'No reviews', 'Ninguna reseña')}</li>`; return; }
+    const segno = { attesa: 'giallo', pubblicata: 'verde', nascosta: 'rosso' };
+    const nome = { attesa: L('da leggere', 'to read', 'por leer'), pubblicata: L('pubblicata', 'published', 'publicada'), nascosta: L('nascosta', 'hidden', 'oculta') };
+    ul.innerHTML = lista.map((x) => `<li>
+        <div class="testo-voce">
+          <span class="domanda"><span role="img" aria-label="${esc(stelleSu5(x.stelle))}">${'★'.repeat(x.stelle)}<span class="voto-vuoto">${'★'.repeat(5 - x.stelle)}</span></span> ${esc(x.display || x.login)} <span class="badge ${segno[x.stato] || ''}">${esc(nome[x.stato] || x.stato)}</span></span>
+          ${x.testo ? `<span class="meta" lang="${esc(x.lingua)}">«${esc(x.testo)}»</span>` : `<span class="meta">${L('solo le stelle', 'stars only', 'solo las estrellas')}</span>`}
+          <span class="meta">@${esc(x.login)} · ${x.conNome ? L('col nome', 'with the name', 'con el nombre') : L('senza nome', 'without the name', 'sin el nombre')} · ${esc(dataIt(x.aggiornata))}</span>
+        </div>
+        <div class="azioni-voce">
+          ${x.stato !== 'pubblicata' ? `<button class="btn mini" data-rec-pubblica="${esc(x.login)}">${L('Pubblica', 'Publish', 'Publicar')}</button>` : ''}
+          ${x.stato !== 'nascosta' ? `<button class="btn secondario mini" data-rec-nascondi="${esc(x.login)}">${L('Nascondi', 'Hide', 'Ocultar')}</button>` : ''}
+        </div>
+      </li>`).join('');
+    ul.onclick = (ev) => {
+      const b = ev.target.closest('[data-rec-pubblica],[data-rec-nascondi]');
+      if (!b) return;
+      const pubblica = !!b.dataset.recPubblica;
+      const login = b.dataset.recPubblica || b.dataset.recNascondi;
+      conErrore(async () => {
+        await api('/api/admin/recensioni/' + encodeURIComponent(login), { method: 'POST', body: { stato: pubblica ? 'pubblicata' : 'nascosta' } });
+        toast(pubblica ? L('Pubblicata.', 'Published.', 'Publicada.') : L('Nascosta.', 'Hidden.', 'Oculta.'));
+        caricaRecensioniAdmin();
+      });
+    };
+  } catch (e) { ul.innerHTML = `<li class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</li>`; }
 }
 
 const INVITI = {
@@ -708,6 +889,11 @@ function apiDemo(percorso, opzioni = {}) {
   }
   if (metodo === 'GET' && via === '/api/streamer/settimana/categoria') return Promise.resolve({ categoria: _demoCategoria(domanda) });
   if (metodo === 'GET' && via === '/api/streamer/libreria') return Promise.resolve(_demoLibreria(percorso));
+  if (via === '/api/recensione') {
+    if (metodo === 'POST') _demoScritture.recensione = { ...opzioni.body, stato: opzioni.body?.testo ? 'attesa' : 'pubblicata' };
+    if (metodo === 'DELETE') _demoScritture.recensione = null;
+    return Promise.resolve({ ok: true, puo: true, perche: '', mia: _demoScritture.recensione || null, invito: false, max: 400 });
+  }
   if (metodo === 'GET') return Promise.resolve(_demoGet(via));
 
   if (via === '/api/streamer/impostazioni' && Array.isArray(opzioni.body?.overlays)) {
@@ -3157,6 +3343,7 @@ const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" s
 const _hIco = (d) => `<svg class="h-ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ICO = {
   meno: '<line x1="5" x2="19" y1="12" y2="12"/>',
+  stella: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
   orologio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
   cartello: '<path d="M4 5h16v11H4z"/><path d="M12 16v5"/><path d="M8 21h8"/>',
   podio: '<path d="M4 20h4v-7H4z"/><path d="M10 20h4V6h-4z"/><path d="M16 20h4v-10h-4z"/>',
@@ -5959,6 +6146,10 @@ function pannelloAccount() {
       <p>${L('In fondo a ogni nostra mail c’è un codice. Lo trovi qui, e solo qui: chi imita una nostra mail non può saperlo, perché per saperlo dovrebbe entrare in questo pannello.', 'At the bottom of every mail of ours there is a code. You find it here, and only here: whoever fakes a mail of ours cannot know it, because to know it they would have to get into this panel.', 'Al final de cada correo nuestro hay un código. Lo encuentras aquí, y solo aquí: quien imita un correo nuestro no puede saberlo, porque para saberlo tendría que entrar en este panel.')}</p>
       <div id="codici-posta">${attesaHtml()}</div>
       <p class="suggerimento spazio-sopra">${L('Cambia ogni lunedì. Ci sono anche quelli delle settimane scorse di questo mese, per le mail che apri in ritardo. Se il codice non combacia, quella mail non l’abbiamo scritta noi: non aprire i collegamenti e scrivicelo.', 'It changes every Monday. The codes of this month’s past weeks are here too, for mails you open late. If the code does not match, we did not write that mail: do not open the links and tell us.', 'Cambia cada lunes. También están los de las semanas pasadas de este mes, para los correos que abres tarde. Si el código no coincide, ese correo no lo hemos escrito nosotros: no abras los enlaces y avísanos.')}</p>
+    </div>` : ''}
+    ${proprietario ? `<div class="carta">
+      <h2>${_hIco(ICO.stella)}${L('La tua recensione', 'Your review', 'Tu reseña')}</h2>
+      <div id="recensione-box">${attesaHtml()}</div>
     </div>` : ''}
     <div class="carta">
       <h2>${_hIco(ICO.scarica)}${L('I tuoi dati sono tuoi', 'Your data is yours', 'Tus datos son tuyos')}</h2>
@@ -23130,7 +23321,7 @@ async function conErrore(fn) {
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
   if (id === 'stato') caricaAdesso();
-  if (id === 'account') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); collegaCancella(); }
+  if (id === 'account') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'personalita') { caricaGuide(); caricaSpontanee(); }
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); caricaRetePanoramica(); }
@@ -23166,7 +23357,7 @@ function caricaDatiScheda(id) {
   if (id === 'registro') caricaRegistro();
   if (id === 'sottoscrizione') caricaSottoscrizione();
   if (id === 'dirette') caricaDirette();
-  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
+  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaRecensioniAdmin(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
 }
 
 const fmtGiornoMese = (g, m) => String(g).padStart(2, '0') + '/' + String(m).padStart(2, '0');
@@ -25538,6 +25729,11 @@ function vistaAdminContenuto() {
           <tbody id="tabella-streamer"><tr><td colspan="6" class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</td></tr></tbody>
         </table>
       </div>
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.stella)}${L('Recensioni', 'Reviews', 'Reseñas')}</h2>
+      <p class="suggerimento">${L('Si nasconde solo per insulti, spam o dati personali: mai per il voto.', 'Hide only for insults, spam or personal data: never because of the rating.', 'Solo se oculta por insultos, spam o datos personales: nunca por la nota.')}</p>
+      <ul class="lista-voci" id="lista-recensioni-admin">${attesaHtml('li')}</ul>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.cuore)}${L('Anima di SocialBot', "SocialBot's soul", 'El alma de SocialBot')}</h2>

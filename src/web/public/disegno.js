@@ -468,7 +468,7 @@
         if (diventa('esce')) esceScena(el);
       } else if (el.classList.contains('carta')) {
         if (diventa('dentro') && !el.dataset.dgFatto) chiedi(el, { da: turno() });
-      } else if (el.classList.contains('toast')) {
+      } else if (el.classList.contains('toast') || el.classList.contains('rec-invito')) {
         if (diventa('esce')) chiedi(el, { veloce: true }, true);
       } else if (el === document.body) {
         if (diventa('menu-aperto')) {
@@ -499,7 +499,7 @@
         if (!(n instanceof HTMLElement)) continue;
         if (n.classList.contains('pannello-scheda') && n.classList.contains('visibile')) scena(n);
         else if (n.classList.contains('toast')) chiedi(n, { veloce: true, emanata: n.classList.contains('errore') ? 'rabbia' : 'scintille' });
-        else if (n.classList.contains('cookie-banner') || n.classList.contains('aiuto-banner')) chiedi(n, { veloce: true });
+        else if (n.classList.contains('cookie-banner') || n.classList.contains('aiuto-banner') || n.classList.contains('rec-invito')) chiedi(n, { veloce: true });
       }
     }
     esegui();

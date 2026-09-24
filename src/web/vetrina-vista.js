@@ -189,6 +189,38 @@ function heroAnteprima(L) {
 }
 
 
+// LE RECENSIONI, sotto l'anteprima dell'overlay (docs/RECENSIONI.md). Arrivano
+// gia' pronte da features/recensioni.js: `null` vuol dire che quelle con testo
+// sono meno di tre, e allora non c'e' niente, nemmeno il titolo. Ogni recensione
+// resta nella lingua in cui e' stata scritta, col suo `lang`. Il nastro c'e' due
+// volte per scorrere senza strappi; la seconda volta e' nascosta ai lettori di
+// schermo, che la prima l'hanno gia' letta.
+function recensioniHtml(L, l, rec) {
+  if (!rec || !rec.voci.length) return '';
+  const cifra = (n) => n.toLocaleString(l === 'en' ? 'en-GB' : l === 'es' ? 'es-ES' : 'it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const voto = (n, eti) => `<span class="vt-voto"${eti ? ` role="img" aria-label="${esc(eti)}"` : ' aria-hidden="true"'}>${'★'.repeat(n)}<i>${'★'.repeat(5 - n)}</i></span>`;
+  const chi = (r) => r.nome
+    ? `${esc(r.nome)} · ${esc(r.piattaforma)}`
+    : L(`uno streamer su ${esc(r.piattaforma)}`, `a streamer on ${esc(r.piattaforma)}`, `un streamer en ${esc(r.piattaforma)}`);
+  const carta = (r, nascosta) => `<li class="vt-rec" lang="${esc(r.lingua)}"${nascosta ? ' aria-hidden="true"' : ''}>
+        ${voto(r.stelle, r.stelle === 1 ? L('1 stella su 5', '1 star out of 5', '1 estrella de 5') : L(`${r.stelle} stelle su 5`, `${r.stelle} stars out of 5`, `${r.stelle} estrellas de 5`))}
+        <blockquote>${esc(r.testo)}</blockquote>
+        <p class="vt-rec-chi">${chi(r)}</p>
+      </li>`;
+  return `<section class="vt-recensioni" aria-labelledby="vt-rec-tit">
+    <div class="vt-rec-testa">
+      <h2 class="vt-rec-tit" id="vt-rec-tit">${L('Cosa ne dicono gli streamer', 'What streamers say', 'Lo que dicen los streamers')}</h2>
+      <p class="vt-rec-media">${voto(Math.round(rec.media), '')}<b>${cifra(rec.media)}</b> ${L('su 5', 'out of 5', 'de 5')} · ${rec.quanti} ${L('streamer', rec.quanti === 1 ? 'streamer' : 'streamers', rec.quanti === 1 ? 'streamer' : 'streamers')}</p>
+    </div>
+    <div class="vt-rec-finestra">
+      <ul class="vt-rec-nastro" data-n="${rec.voci.length}">
+      ${rec.voci.map((r) => carta(r, false)).join('')}
+      ${rec.voci.map((r) => carta(r, true)).join('')}
+      </ul>
+    </div>
+  </section>`;
+}
+
 // LA FASCIA DELLE DIRETTE. Se non c'e' nessuno in onda non torna una fascia
 // vuota: non torna niente. «Nessuno in diretta ora» su una home e' una casa con
 // le luci spente, e si vede piu' di una casa che non c'e'. La disegna il server
@@ -424,7 +456,7 @@ function listinoHtml(L, piani) {
   </div>`;
 }
 
-function corpo(L, l, kick, youtube, dirette, piani) {
+function corpo(L, l, kick, youtube, dirette, piani, recensioni) {
   // con chi ci si registra: Twitch sempre, Kick e YouTube quando la porta e' aperta.
   // L'invito in fondo deve dire le stesse cose dell'apertura: una lista sola.
   const conChi = (o) => { const p = ['Twitch', kick ? 'Kick' : null, youtube ? 'YouTube' : null].filter(Boolean); return p.length > 1 ? p.slice(0, -1).join(', ') + o + p[p.length - 1] : p[0]; };
@@ -479,6 +511,7 @@ function corpo(L, l, kick, youtube, dirette, piani) {
       <p class="vt-sotto">${L('L’<b>Essenziale è gratis per sempre</b> · nessuna carta richiesta · <a href="/?demo=1">guarda la demo</a>', 'The <b>Essenziale plan is free forever</b> · no card needed · <a href="/?demo=1">see the demo</a>', 'El <b>plan Essenziale es gratis para siempre</b> · sin tarjeta · <a href="/?demo=1">mira la demo</a>')}</p>
       ${soloDiscordHtml(L)}
       ${heroAnteprima(L)}
+      ${recensioniHtml(L, l, recensioni)}
       ${fasciaLive(L, l, dirette)}
     </section>
 
@@ -539,10 +572,10 @@ function corpo(L, l, kick, youtube, dirette, piani) {
 // Il markup della vetrina nella lingua chiesta. Funzione PURA: nessun DOM,
 // nessuna richiesta, nessuna data — cosi' i gusci si precalcolano una volta
 // all'avvio e si servono senza rifare niente.
-export function vetrinaHtml(lingua = 'it', { kick = false, youtube = false, dirette = [], piani = null } = {}) {
+export function vetrinaHtml(lingua = 'it', { kick = false, youtube = false, dirette = [], piani = null, recensioni = null } = {}) {
   const l = LINGUE.includes(lingua) ? lingua : 'it';
   const L = (it, en, es) => (l === 'en' ? en : l === 'es' ? es : it);
-  return corpo(L, l, kick, youtube, dirette, piani);
+  return corpo(L, l, kick, youtube, dirette, piani, recensioni);
 }
 
 export { ICO as ICONE_VETRINA, NOME_ADDON as PACCHETTI_VETRINA, CAPACITA as FUNZIONI_VETRINA };

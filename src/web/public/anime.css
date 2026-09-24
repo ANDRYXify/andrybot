@@ -2007,6 +2007,31 @@ input[type="color"]:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-t
 
 .carta { border-width: var(--tratto-3); }
 .toast, .cookie-banner, .aiuto-banner { border-width: var(--tratto-4); }
+.rec-invito {
+  position: fixed; z-index: 80;
+  right: calc(78px + env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  width: min(340px, calc(100vw - 96px)); display: grid; gap: .55rem; padding: 14px 16px;
+  background: var(--surface); color: var(--testo);
+  border: 2px solid var(--contorno); border-width: var(--tratto-4); border-radius: var(--ang-mano); box-shadow: var(--ombra-ink);
+}
+.rec-invito h2 { margin: 0; font-family: var(--mano); font-weight: 400; font-size: 1.15rem; line-height: 1.2; }
+.rec-invito .suggerimento { margin: 0; }
+.rec-invito textarea { min-height: 4.5em; resize: vertical; }
+.rec-invito-azioni { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: flex-end; }
+.voto-scelta { display: flex; gap: .1rem; margin: 0; padding: 0; border: 0; }
+.voto-scelta input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.voto-scelta label { display: block; padding: .05rem .1rem; font-size: 1.75rem; line-height: 1; color: var(--testo-3); cursor: pointer; }
+.voto-scelta input:focus-visible + label { outline: 2px solid var(--acc); outline-offset: 2px; border-radius: 4px; }
+.voto-scelta[data-voto="1"] label:nth-of-type(-n+1), .voto-scelta[data-voto="2"] label:nth-of-type(-n+2),
+.voto-scelta[data-voto="3"] label:nth-of-type(-n+3), .voto-scelta[data-voto="4"] label:nth-of-type(-n+4),
+.voto-scelta[data-voto="5"] label:nth-of-type(-n+5) { color: var(--acc); }
+.voto-vuoto { color: var(--testo-3); }
+@media (max-width: 640px) {
+  .rec-invito { right: calc(70px + env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: min(340px, calc(100vw - 84px)); }
+}
+@media (max-width: 720px) {
+  body.con-nav .rec-invito { bottom: calc(74px + env(safe-area-inset-bottom, 0px)); right: calc(68px + env(safe-area-inset-right, 0px)); width: min(340px, calc(100vw - 82px)); }
+}
 
 .badge, .badge.verde, .badge.rosso, .badge.viola, .badge.giallo, .badge.marchio,
 .chip-var, .pillola, .pl-guida .pl-cop > span, .lp-ipick {

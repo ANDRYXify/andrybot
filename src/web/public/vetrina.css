@@ -208,6 +208,50 @@ body.vetrina em, body.vetrina .vt-corsivo {
   .vt-dirette-carta { transition: none; }
 }
 
+.vt-recensioni { margin: clamp(2rem, 5vh, 3.4rem) auto 0; width: min(100%, 940px); text-align: left; }
+.vt-rec-testa { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .3rem 1.2rem; margin-bottom: .8rem; }
+.vt-rec-tit { margin: 0; font-family: var(--mano); font-weight: 400; font-size: clamp(1.25rem, 2.6vw, 1.8rem); }
+.vt-rec-media { margin: 0; font-size: .9rem; color: var(--testo-2); display: flex; align-items: baseline; gap: .4rem; }
+.vt-rec-media b { color: var(--testo); font-size: 1.05rem; }
+.vt-voto { color: var(--acc); letter-spacing: .06em; white-space: nowrap; }
+.vt-voto i { font-style: normal; color: var(--testo-3); opacity: .45; }
+.vt-rec-finestra {
+  overflow: hidden; background: var(--surface); border: 2px solid var(--contorno); border-width: var(--tratto-4);
+  border-radius: var(--ang-mano); box-shadow: var(--ombra-ink);
+}
+.vt-rec-nastro { display: flex; width: max-content; margin: 0; padding: 0; list-style: none; }
+.vt-rec-nastro[data-n="3"] { --n: 3; }
+.vt-rec-nastro[data-n="4"] { --n: 4; }
+.vt-rec-nastro[data-n="5"] { --n: 5; }
+.vt-rec-nastro[data-n="6"] { --n: 6; }
+.vt-rec-nastro[data-n="7"] { --n: 7; }
+.vt-rec-nastro[data-n="8"] { --n: 8; }
+.vt-rec-nastro[data-n="9"] { --n: 9; }
+.vt-rec-nastro[data-n="10"] { --n: 10; }
+.vt-rec-nastro[data-n="11"] { --n: 11; }
+.vt-rec-nastro[data-n="12"] { --n: 12; }
+.vt-rec {
+  display: flex; flex-direction: column; gap: .5rem; width: min(320px, 76vw); min-width: 0;
+  padding: 1rem 1.2rem; border-right: 2px dashed var(--border-2);
+}
+.vt-rec blockquote { margin: 0; font-size: .94rem; line-height: 1.5; color: var(--testo); overflow-wrap: anywhere; white-space: pre-line; }
+.vt-rec-chi { margin: auto 0 0; font-size: .8rem; color: var(--testo-2); }
+@media not (prefers-reduced-motion: reduce) {
+  .vt-rec-nastro { animation: vt-rec-scorre calc(var(--n) * 7s) linear infinite; }
+  .vt-rec-finestra:focus-within .vt-rec-nastro { animation-play-state: paused; }
+  @keyframes vt-rec-scorre { to { transform: translateX(-50%); } }
+}
+@media (hover: hover) {
+  .vt-rec-finestra:hover .vt-rec-nastro { animation-play-state: paused; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vt-rec-finestra { overflow-x: auto; }
+  .vt-rec[aria-hidden] { display: none; }
+}
+body.leggero .vt-rec-nastro, body.meno-moto .vt-rec-nastro { animation: none; }
+body.leggero .vt-rec-finestra, body.meno-moto .vt-rec-finestra { overflow-x: auto; }
+body.leggero .vt-rec[aria-hidden], body.meno-moto .vt-rec[aria-hidden] { display: none; }
+
 .vt-vetro {
   position: relative; margin: clamp(2rem, 5vh, 3.4rem) auto 0; width: min(100%, 940px);
   border-radius: 18px; padding: 10px;

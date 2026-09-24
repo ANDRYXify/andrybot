@@ -29,6 +29,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nel pannello, quando si parla di tutto il servizio adesso c'è scritto SocialBot. «Il bot» resta per quello che scrive in chat, su Discord e su Telegram.
 - Guide e manuali non saltano più mentre si caricano i caratteri, e due guide non portano più a una pagina che non c'era.
 - La pagina iniziale pesa quasi un terzo in meno, e sul telefono si vede prima.
+- Puoi dare un voto a SocialBot, da Il tuo account o dalla carta che compare dopo un po' che lo usi. Le recensioni scorrono nella pagina iniziale, sotto l'anteprima dell'Overlay Studio. [vai: account]
 
 ## 2026-09-23
 
