@@ -410,6 +410,34 @@ async function stripeCall(path, params) {
   }
 }
 
+async function stripeDelete(path) {
+  try {
+    const r = await fetch(API + path, { method: 'DELETE', headers: { Authorization: 'Bearer ' + config.stripe.secretKey } });
+    const dati = await r.json().catch(() => null);
+    return { ok: r.ok, dati, codice: dati?.error?.code || '' };
+  } catch (e) {
+    log.warn(`stripe DELETE ${path}: irraggiungibile`, e?.message || e);
+    return { ok: false, dati: null, codice: 'rete' };
+  }
+}
+
+// CHI SE NE VA NON PAGA PIU'. Prima di cancellare un account si disdice il suo
+// abbonamento, subito e non a fine mese: dopo la cancellazione non c'e' piu' un
+// pannello da cui farlo, ne' una riga che ricordi quale cliente sia. Se non si
+// riesce a disdire, la cancellazione non parte: un addebito che continua su
+// dati spariti e' il caso che non deve poter esistere.
+//
+// Riceve la riga dell'abbonamento (subscriptions.get): questo modulo il
+// database non lo tocca.
+export async function disdiciPerSempre(s) {
+  if (!s || !s.stripe_sub || ['canceled', 'incomplete_expired'].includes(s.status)) return { ok: true, disdetto: false };
+  if (!config.stripe.attivo) return { ok: false, motivo: 'stripe-spento' };
+  const r = await stripeDelete('/subscriptions/' + encodeURIComponent(s.stripe_sub));
+  if (r.ok || r.codice === 'resource_missing') return { ok: true, disdetto: true };
+  log.warn('disdetta prima della cancellazione non riuscita:', r.dati?.error?.message || r.codice);
+  return { ok: false, motivo: 'stripe' };
+}
+
 // Crea una sessione di Checkout (abbonamento): canone BASE + gli add-on scelti,
 // come line-item multipli di UNA sola sottoscrizione. Ritorna l'URL a cui mandare
 // il browser, oppure null se Stripe è spento / manca il price della Base. Link è

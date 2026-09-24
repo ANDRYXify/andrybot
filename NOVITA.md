@@ -32,6 +32,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Puoi dare un voto a SocialBot, da Il tuo account o dalla carta che compare dopo un po' che lo usi. Le recensioni scorrono nella pagina iniziale, sotto l'anteprima dell'Overlay Studio. [vai: account]
 - La pagina iniziale in inglese e in spagnolo ha il suo indirizzo, socialbot.live/en e socialbot.live/es, e la demo aperta da lì parte già nella tua lingua.
 - Nel registro dello scudo le azioni rimaste in sospeso, e i numeri della coda, sono solo quelli del tuo canale. [vai: registro]
+- Cancellare l'account funziona anche per i canali Kick, YouTube e Discord, e disdice prima l'abbonamento: dopo non parte più nessun addebito. [vai: account]
 
 ## 2026-09-23
 

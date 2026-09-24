@@ -17,7 +17,7 @@ import { cartellaUsaEGetta } from '../aiuto.mjs';
 
 const casa = cartellaUsaEGetta('cancella-');
 const { db, streamers, commands, points, modules } = await import('../../src/db.js');
-const { cancella, restiDi, cartelleDiCanale } = await import('../../src/features/cancella.js');
+const { cancella, restiDi, cartelleDiCanale, confermaValida } = await import('../../src/features/cancella.js');
 const { tabelleDiCanale } = await import('../../src/features/esporta.js');
 test.after(() => casa.pulisci());
 
@@ -96,4 +96,33 @@ test('cancellare due volte non si lamenta: la seconda non trova niente', () => {
   cancella(MIO, { conferma: MIO });
   const secondo = cancella(MIO, { conferma: MIO });
   assert.deepEqual(secondo.righe, {}, 'niente da cancellare, e nessun errore');
+});
+
+// I canali che non stanno su Twitch hanno un prefisso nel nome (kick., yt.,
+// dc.): la cancellazione li rifiutava come «non validi». E la parola che
+// conferma e' il nome che la persona vede, non il nostro prefisso.
+test('si cancella anche un canale Kick, YouTube o Discord, confermando col nome che si vede', () => {
+  for (const login of ['kick.gamma', 'yt.delta', 'dc.123456789012345678']) {
+    riempi(login);
+    const nome = login.slice(login.indexOf('.') + 1);
+    assert.equal(confermaValida(login, nome.toUpperCase()), true, `${login}: il nome sulla piattaforma`);
+    assert.equal(confermaValida(login, login), true, `${login}: anche il nome intero`);
+    assert.equal(confermaValida(login, 'altro'), false);
+    const esito = cancella(login, { conferma: nome });
+    assert.ok(Object.keys(esito.righe).length > 0, `${login}: qualcosa e' andato via`);
+    assert.deepEqual(restiDi(login), { righe: {}, cartelle: [] }, `${login}: non resta niente`);
+  }
+  assert.equal(confermaValida('alfa', ''), false, 'vuoto non conferma niente');
+});
+
+test('il pannello conferma col nome che il server dichiara, e chi paga viene disdetto prima', () => {
+  const app = fs.readFileSync(new URL('../../src/web/public/app.js', import.meta.url), 'utf8');
+  const srv = fs.readFileSync(new URL('../../src/web/server.js', import.meta.url), 'utf8');
+  assert.ok(!/stato\.login\b/.test(app), 'stato.login non esiste: /api/me manda user.login e gestisce');
+  assert.match(app, /const mio = String\(stato\.gestisce\?\.nome \|\| ''\)\.toLowerCase\(\);/);
+  assert.match(srv, /gestisce: \{ canale: user\.login, streamer: user\.display \|\| user\.login, nome: nomeSu\(user\.login\) \},/);
+  const rotta = srv.slice(srv.indexOf("app.post('/api/streamer/cancella'"), srv.indexOf("app.post('/api/streamer/cancella'") + 1400);
+  const [conf, disd, canc] = ['confermaCancellazione(login', 'abbonamenti.disdiciPerSempre(subscriptions.get(login))', 'cancellaDati(login'].map((x) => rotta.indexOf(x));
+  assert.ok(conf > 0 && conf < disd && disd < canc, 'prima la conferma, poi la disdetta, poi i dati');
+  assert.match(rotta, /if \(!disdetta\.ok\) \{\n\s*return res\.status\(409\)/, 'se non disdice, non cancella');
 });

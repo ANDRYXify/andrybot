@@ -118,7 +118,7 @@ import { creaImpronte, montaStatici } from './impronte.js';
 import { salute } from '../salute.js';
 import { anteprima as anteprimaImport, moduloDa } from '../features/importacomandi.js';
 import { esporta as esportaDati } from '../features/esporta.js';
-import { cancella as cancellaDati, restiDi } from '../features/cancella.js';
+import { cancella as cancellaDati, restiDi, confermaValida as confermaCancellazione } from '../features/cancella.js';
 import { montaKick } from '../kick/rotte.js';
 import * as kickApi from '../kick/api.js';
 import * as kickDiario from '../kick/diario.js';
@@ -3026,7 +3026,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       identitaDisplay: user.identitaDisplay || user.modDisplay || user.display || ident,
       // chi sta gestendo ora + TUTTI i canali gestibili dall'identità, con ruolo
       // (proprio canale da proprietario + canali moderati) → alimenta lo switcher.
-      gestisce: { canale: user.login, streamer: user.display || user.login },
+      gestisce: { canale: user.login, streamer: user.display || user.login, nome: nomeSu(user.login) },
       // Su quale piattaforma vive il canale che si sta gestendo. Non e' una
       // preferenza: e' quello che decide se una funzione ha senso o no (le clip,
       // la categoria, lo scudo anti-bot esistono solo su Twitch).
@@ -9599,8 +9599,19 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     catch (e) { res.status(500).json({ errore: e?.message || 'non riesco a guardare' }); }
   }));
 
+  // Prima la conferma, poi la disdetta dell'abbonamento, poi i dati. In
+  // quest'ordine: con la conferma sbagliata non si tocca niente, e se Stripe non
+  // disdice i dati restano, perche' senza di loro l'abbonamento non si
+  // gestirebbe piu' da nessuna parte.
   app.post('/api/streamer/cancella', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
+    if (!confermaCancellazione(login, req.body?.conferma)) return res.status(400).json({ errore: 'la conferma non combacia' });
+    const disdetta = await abbonamenti.disdiciPerSempre(subscriptions.get(login));
+    if (!disdetta.ok) {
+      return res.status(409).json({ errore: disdetta.motivo === 'stripe-spento'
+        ? 'Hai un abbonamento attivo e adesso non riesco a disdirlo: scrivi ad andryxify prima di cancellare.'
+        : 'Non riesco a disdire il tuo abbonamento su Stripe: non ho cancellato niente. Riprova fra poco.' });
+    }
     let esito;
     try { esito = cancellaDati(login, { conferma: req.body?.conferma }); }
     catch (e) { return res.status(400).json({ errore: e?.message || 'cancellazione non riuscita' }); }

@@ -24,8 +24,22 @@ import path from 'node:path';
 import { db } from '../db.js';
 import { config } from '../config.js';
 import { tabelleDiCanale } from './esporta.js';
+import { eLoginNostro, nomeSu } from '../identita.js';
 
-const LOGIN_BUONO = /^[a-z0-9_]{2,30}$/;
+// Un canale valido e' quello che identita.js chiama nostro: con il suo
+// prefisso (kick., yt., dc.) o senza. Un'espressione scritta qui a parte
+// lasciava fuori tutti i canali che non sono su Twitch, e a loro la
+// cancellazione rispondeva «canale non valido».
+//
+// La parola che conferma e' il nome del canale come lo vede chi lo ha: sulla
+// sua piattaforma, senza il prefisso che usiamo noi. Va bene anche il nome
+// intero, prefisso compreso.
+export const parolaDiConferma = (login) => nomeSu(login);
+export function confermaValida(login, conferma) {
+  const chi = String(login || '').trim().toLowerCase();
+  const scritto = String(conferma || '').trim().toLowerCase();
+  return !!scritto && (scritto === chi || scritto === parolaDiConferma(chi));
+}
 
 // Le cartelle di file che appartengono a un canale, trovate guardando invece
 // che ricordando. Il login e' gia' stato validato: nessun ".." puo' entrare qui.
@@ -49,8 +63,8 @@ export function cartelleDiCanale(login) {
 // e' successo davvero, e al collaudo per pretendere che non sia rimasto niente.
 export function cancella(login, { conferma } = {}) {
   const chi = String(login || '').trim().toLowerCase();
-  if (!LOGIN_BUONO.test(chi)) throw new Error('canale non valido');
-  if (String(conferma || '').trim().toLowerCase() !== chi) throw new Error('la conferma non combacia');
+  if (!eLoginNostro(chi)) throw new Error('canale non valido');
+  if (!confermaValida(chi, conferma)) throw new Error('la conferma non combacia');
 
   const righe = {};
   const tabelle = tabelleDiCanale();

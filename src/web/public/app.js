@@ -687,7 +687,7 @@ function statoDemo() {
     tier: 'community', stripeAttivo: false,
     rapportiNuovi: 1, postaDisponibile: true, inviti: [],
     mieiCanali: _DEMO_CANALI,
-    gestisce: { canale: ctx.canale, streamer: ctx.display },
+    gestisce: { canale: ctx.canale, streamer: ctx.display, nome: ctx.canale },
     isAdmin: false,
     permessiOk: true, vipOk: true, moderazioneOk: true, canaleOk: true,
     knowledgeCount: 3,
@@ -6175,13 +6175,14 @@ function pannelloAccount() {
       <h2>${_hIco(ICO.cestino)}${L('Andarsene', 'Leaving', 'Marcharse')}</h2>
       <p>${L('Se te ne vai', 'If you leave', 'Si te vas')} <strong class="primo-piano">${L('non resta niente di tuo', 'nothing of yours stays', 'no queda nada tuyo')}</strong>: ${L('comandi, moduli, effetti, punti, ore guardate, memoria della chat, pagina link, file caricati, collegamenti ai tuoi account. Il bot esce dal tuo canale.', 'commands, modules, effects, points, watch time, chat memory, link page, uploaded files, connections to your accounts. The bot leaves your channel.', 'comandos, módulos, efectos, puntos, horas vistas, memoria del chat, página de enlaces, archivos subidos, conexiones con tus cuentas. El bot sale de tu canal.')}</p>
       <p class="suggerimento">${L('Non si annulla e non c\'è un cestino. Se vuoi tenerti qualcosa, scarica prima i tuoi dati qui sopra.', 'It cannot be undone and there is no bin. If you want to keep something, download your data above first.', 'No se puede deshacer y no hay papelera. Si quieres conservar algo, descarga antes tus datos.')}</p>
+      <p class="suggerimento">${L('Se paghi un abbonamento, prima lo disdico: dopo non parte più nessun addebito.', 'If you pay for a subscription, I cancel it first: no charge goes out after that.', 'Si pagas una suscripción, primero la cancelo: después no sale ningún cobro más.')}</p>
       ${stato.ruolo === 'moderatore'
         ? `<p class="suggerimento spazio-sopra">${L('Solo il proprietario del canale può cancellare: i dati sono suoi.', 'Only the channel owner can delete: the data is theirs.', 'Solo el propietario del canal puede borrar: los datos son suyos.')}</p>`
         : `<details class="spazio-sopra zona-pericolo" id="det-cancella">
             <summary>${L('Voglio cancellare tutto', 'I want to delete everything', 'Quiero borrarlo todo')}</summary>
             <div id="resti-box" class="riquadro-info spazio-sopra"><span class="vuoto">${L('Guardo cosa c\'è…', 'Checking what is there…', 'Miro qué hay…')}</span></div>
-            <label class="campo spazio-sopra" for="inp-cancella">${L('Scrivi il nome del tuo canale per confermare', 'Type your channel name to confirm', 'Escribe el nombre de tu canal para confirmar')}</label>
-            <input type="text" id="inp-cancella" class="campo-largo" autocomplete="off" spellcheck="false" placeholder="${esc(stato.login || '')}">
+            <label class="campo spazio-sopra" for="inp-cancella">${L(`Scrivi «${esc(stato.gestisce?.nome || '')}» per confermare`, `Type «${esc(stato.gestisce?.nome || '')}» to confirm`, `Escribe «${esc(stato.gestisce?.nome || '')}» para confirmar`)}</label>
+            <input type="text" id="inp-cancella" class="campo-largo" autocomplete="off" spellcheck="false" placeholder="${esc(stato.gestisce?.nome || '')}">
             <p class="spazio-sopra"><button type="button" class="btn pericolo" id="btn-cancella" disabled>${_bIco(ICO.cestino)}${L('Cancella tutto per sempre', 'Delete everything forever', 'Borrar todo para siempre')}</button></p>
           </details>`}
     </div>`);
@@ -25921,7 +25922,7 @@ function collegaCancella() {
   const inp = document.getElementById('inp-cancella');
   const btn = document.getElementById('btn-cancella');
   const box = document.getElementById('resti-box');
-  const mio = String(stato.login || '').toLowerCase();
+  const mio = String(stato.gestisce?.nome || '').toLowerCase();
 
   det.addEventListener('toggle', () => {
     if (!det.open || det.dataset.visto) return;
