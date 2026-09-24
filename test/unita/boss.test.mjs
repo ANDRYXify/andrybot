@@ -68,11 +68,39 @@ test('ogni colpo toglie vita, meta\' e un quarto si dicono una volta, e chi colp
   s.scrivi('fabio', '!hit');
   assert.equal(B.bossInCorso('b2').vita, 60);
   assert.equal(s.detti.length, n + 1);
-  assert.match(s.detti.at(-1), /Il Drago del Lag 🐉 è a metà: 60 punti vita su 120!/);
+  assert.equal(s.detti.at(-1), '🩸 Il Drago del Lag 🐉 è a metà: 60 punti vita su 120, mancano 90 secondi! Colpi: anna 10, bruno 10, carla 10, dario 10, elena 10, fabio 10.');
   for (const u of ['gino', 'ivo', 'luca']) s.scrivi(u, '!colpisci');
   assert.equal(s.detti.length, n + 2, 'sotto un quarto, una riga sola');
-  assert.match(s.detti.at(-1), /Ancora poco! Il Drago del Lag 🐉: 30 punti vita\./);
+  assert.equal(s.detti.at(-1), '🩸 Ancora poco! Il Drago del Lag 🐉: 30 punti vita, mancano 90 secondi! Colpi: gino 10, ivo 10, luca 10.', 'coi colpi dall\'ultima riga, non da capo');
   assert.deepEqual(s.eventi.filter((e) => e.azione === 'colpo').map((e) => e.vita), [110, 100, 90, 80, 70, 60, 50, 40, 30]);
+});
+
+test('chi colpisce lo sa: un bollettino poco dopo il primo colpo, poi al piu\' uno ogni venti secondi', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  canale('b12', { vitaPerPersona: 100, minimo: 3, dannoMin: 10, dannoMax: 10, attesa: 5, durata: 90 });
+  const s = scena('b12');
+  s.scrivi('mod', '!boss');
+  const n = s.detti.length;
+  s.scrivi('anna', '!colpisci');
+  s.scrivi('bruno', '!colpisci');
+  assert.equal(s.detti.length, n, 'non una riga a colpo');
+  t.mock.timers.tick(B.BOLLETTINO_PRIMO_MS);
+  assert.equal(s.detti.at(-1), '⚔️ Il Drago del Lag 🐉: 280 punti vita su 300, mancano 86 secondi. Colpi: anna 10, bruno 10.');
+  t.mock.timers.tick(30_000);
+  assert.equal(s.detti.length, n + 1, 'senza colpi nuovi, niente righe');
+  s.scrivi('anna', '!colpisci');
+  t.mock.timers.tick(1);
+  assert.equal(s.detti.length, n + 2, 'passati venti secondi dall\'ultima, il colpo nuovo si dice subito');
+  assert.match(s.detti.at(-1), /270 punti vita su 300, mancano 56 secondi\. Colpi: anna 10\.$/);
+  t.mock.timers.tick(5_000);
+  s.scrivi('anna', '!colpisci');
+  s.scrivi('carla', '!colpisci');
+  t.mock.timers.tick(14_000);
+  assert.equal(s.detti.length, n + 2, 'prima dei venti secondi aspetta');
+  t.mock.timers.tick(1_000);
+  assert.match(s.detti.at(-1), /250 punti vita su 300, mancano 36 secondi\. Colpi: anna 10, carla 10\.$/);
+  t.mock.timers.tick(40_000);
+  assert.match(s.detti.at(-1), /^💨 /, 'e scappato il boss, il bollettino non parla piu\'');
 });
 
 test('se cade, il bottino va a danno fatto; il colpo finale conta la vita che restava', (t) => {

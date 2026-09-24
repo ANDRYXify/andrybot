@@ -76,6 +76,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] Nelle Grafiche sposti ogni pezzo trascinandolo sull'anteprima, col mouse, col dito o con le frecce. Le guide mostrano margini, centri e dove Instagram copre la storia, e post e storia si spostano insieme. [vai: grafiche]
 - [importante] Nelle Grafiche c'è «Stasera alle…»: la storia che annuncia la prossima diretta della tua Settimana, con l'ora, il tuo indirizzo e dietro la copertina del gioco. [vai: grafiche]
 - [importante] Nella pagina link e in quella delle donazioni l'immagine di sfondo si sposta e si rimpicciolisce trascinandola sull'anteprima. Dove non arriva continuano i colori dei suoi bordi. [vai: pagina]
+- Il boss risponde a chi lo colpisce: poco dopo il primo colpo, e poi al massimo ogni venti secondi, il bot scrive chi ha colpito e quanto, la vita che resta e i secondi che mancano. [vai: giochi]
 
 ## 2026-09-23
 

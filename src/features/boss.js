@@ -13,6 +13,12 @@
 //    la vita che restava, cosi' la somma dei danni e' la vita del boss.
 //  · NIENTE SI PERDE. Colpire non costa: se il boss scappa non si prende
 //    niente, e un riavvio nel mezzo lo fa sparire senza che nessuno ci rimetta.
+//  · CHI COLPISCE LO SA. Un colpo non ha una riga sua, che in una chat viva
+//    sarebbero decine: i colpi si raccolgono in un bollettino. Il primo arriva
+//    quattro secondi dopo il primo colpo (chi comincia vede subito che conta),
+//    poi al piu' uno ogni venti secondi, solo se nel frattempo qualcuno ha
+//    colpito; la meta' e il quarto lo fanno uscire subito. Dice chi ha colpito e
+//    quanto, la vita che resta e i secondi che mancano.
 //  · IL MASSIMO SI CONOSCE PRIMA. Una persona colpisce al piu' una volta ogni
 //    `attesa` per `durata` secondi, sempre col danno piu' alto: e' il massimo a
 //    boss che il pannello mostra (`valutaResa`, tipo «boss»), e con il boss
@@ -30,6 +36,8 @@ const conf = (channel) => valoriDi(streamers.get(channel)?.settings, 'boss');
 const maiuscola = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export const ATTIVI_MS = 10 * 60 * 1000;
+export const BOLLETTINO_PRIMO_MS = 4_000;
+export const BOLLETTINO_MS = 20_000;
 const SILENZIO_MS = 30_000;
 const ELENCO_MAX = 10;
 
@@ -57,7 +65,8 @@ export function arriva(channel, say, { annuncio = '' } = {}) {
   if (bossi.has(channel)) return false;
   const c = conf(channel);
   const vitaMax = Math.max(c.minimo, personeAttive(channel)) * c.vitaPerPersona;
-  const b = { nome: scegli(c.nomi), vita: vitaMax, vitaMax, danni: new Map(), soglia: 0, say };
+  const b = { nome: scegli(c.nomi), vita: vitaMax, vitaMax, danni: new Map(), soglia: 0, say,
+    fine: Date.now() + c.durata * 1000, nuovi: new Map(), ultimo: 0, bollettino: null };
   b.timer = setTimeout(() => scappa(channel), c.durata * 1000);
   b.timer.unref?.();
   bossi.set(channel, b);
@@ -71,7 +80,28 @@ function via(channel) {
   if (!b) return null;
   bossi.delete(channel);
   clearTimeout(b.timer);
+  clearTimeout(b.bollettino);
   return b;
+}
+
+// Il bollettino: i colpi dall'ultimo, la vita, il tempo. `soglia` e' la meta'
+// (1) o il quarto (2) appena passati, che si dicono una volta.
+function bollettino(channel, soglia = 0) {
+  const b = bossi.get(channel);
+  if (!b) return;
+  clearTimeout(b.bollettino);
+  b.bollettino = null;
+  if (!b.nuovi.size) return;
+  const colpi = `Colpi: ${elenca([...b.nuovi.values()].map((d) => `${d.nome} ${d.danno}`))}.`;
+  const mancano = `mancano ${Math.max(0, Math.round((b.fine - Date.now()) / 1000))} secondi`;
+  b.nuovi.clear();
+  b.ultimo = Date.now();
+  const nome = maiuscola(b.nome);
+  try {
+    b.say(soglia === 1 ? `🩸 ${nome} è a metà: ${b.vita} punti vita su ${b.vitaMax}, ${mancano}! ${colpi}`
+      : soglia === 2 ? `🩸 Ancora poco! ${nome}: ${b.vita} punti vita, ${mancano}! ${colpi}`
+        : `⚔️ ${nome}: ${b.vita} punti vita su ${b.vitaMax}, ${mancano}. ${colpi}`);
+  } catch { /* niente */ }
 }
 
 // Quanto prende ognuno: il danno fatto, al cambio fisso del bottino.
@@ -129,17 +159,20 @@ export function colpisci(channel, msg, say, caso = Math.random) {
   const d = b.danni.get(io) || { nome: msg.display || msg.user, danno: 0 };
   d.danno += danno;
   b.danni.set(io, d);
+  const n = b.nuovi.get(io) || { nome: d.nome, danno: 0 };
+  n.danno += danno;
+  b.nuovi.set(io, n);
   manda(channel, { azione: 'colpo', chi: d.nome, danno, vita: b.vita, vitaMax: b.vitaMax });
   if (b.vita === 0) { cade(channel); return; }
 
-  // Meta' e un quarto: due righe al piu' in tutta la battaglia, e un colpo
-  // grosso che le passa tutte e due dice solo l'ultima.
+  // Meta' e un quarto escono subito, una volta sola, e un colpo grosso che le
+  // passa tutte e due dice solo l'ultima. Il resto aspetta il suo turno.
   const soglia = b.vita * 4 <= b.vitaMax ? 2 : b.vita * 2 <= b.vitaMax ? 1 : 0;
-  if (soglia > b.soglia) {
-    b.soglia = soglia;
-    b.say(soglia === 1
-      ? `🩸 ${maiuscola(b.nome)} è a metà: ${b.vita} punti vita su ${b.vitaMax}!`
-      : `🩸 Ancora poco! ${maiuscola(b.nome)}: ${b.vita} punti vita.`);
+  if (soglia > b.soglia) { b.soglia = soglia; bollettino(channel, soglia); return; }
+  if (!b.bollettino) {
+    const fra = b.ultimo ? Math.max(0, b.ultimo + BOLLETTINO_MS - Date.now()) : BOLLETTINO_PRIMO_MS;
+    b.bollettino = setTimeout(() => bollettino(channel), fra);
+    b.bollettino.unref?.();
   }
 }
 

@@ -290,6 +290,15 @@ e quelli dei raid non entrano nel conto, come le manche aperte a mano. Una prova
 fa colpire una persona sola al ritmo massimo e verifica che prenda proprio
 `massimo`, né di più né di meno.
 
+**Chi colpisce lo sa.** Un colpo non ha una riga sua: in una chat viva
+sarebbero decine. I colpi si raccolgono in un bollettino: il primo esce
+quattro secondi dopo il primo colpo, così chi comincia vede subito che il colpo
+conta, poi al più uno ogni venti secondi, e solo se nel frattempo qualcuno ha
+colpito. La metà e il quarto della vita lo fanno uscire subito, una volta sola.
+Ogni riga dice chi ha colpito e quanto dall'ultima, la vita che resta e i
+secondi che mancano: in novanta secondi sono al più sei righe. L'overlay, se
+c'è, mostra comunque ogni colpo.
+
 **Niente si perde.** Colpire non costa; se il boss scappa non si prende niente.
 Il boss automatico non parte se `!colpisci` è spento: sarebbe un boss che
 nessuno può battere. La festa in solo emote (se la accendi) passa dalle
