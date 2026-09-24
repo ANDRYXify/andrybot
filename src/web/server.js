@@ -154,7 +154,11 @@ const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {})
 // Prima qui c'erano solo i quattro fissi, quindi player, conto alla rovescia,
 // obiettivi e contatori avevano UNA posizione per tutto il canale: li spostavi
 // in un overlay e si spostavano in tutti.
-const CHIAVE_EL = /^(alert|chat|wf|ws|musica|timer|treno|pen|goal:[a-z0-9_-]{1,24}|cont:[a-z0-9_]{1,30}|cart:[a-z0-9_-]{1,24})$/i;
+// Le chiavi secche si ricavano dall'elenco degli elementi, non si ricopiano:
+// scritte a mano avevano perso la classifica dei Bit, che lo Studio spostava
+// e il salvataggio buttava via.
+const FAMIGLIE_EL = ['goal', 'cont', 'cart'];
+const CHIAVE_EL = new RegExp(`^(${ELEM_OVERLAY.filter((k) => !FAMIGLIE_EL.includes(k)).join('|')}|goal:[a-z0-9_-]{1,24}|cont:[a-z0-9_]{1,30}|cart:[a-z0-9_-]{1,24})$`, 'i');
 // Un canale scritto in un indirizzo corto (dona.<dominio>/<canale>,
 // discord.<dominio>/<canale>): la stessa forma di LOGIN_RE in identita.js, con i
 // prefissi delle altre piattaforme. Una regola sola, cosi' un canale di Kick non
@@ -1362,18 +1366,16 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const st = ov.stile || {};
     const vis = conOccasione(ov, _mostraDefault());
     res.json({
+      // TUTTO quello che il tema del canale sa, poi quello che QUESTO overlay
+      // cambia. Prima i campi si sceglievano uno per uno, e due non c'erano:
+      // la classifica dei Bit non e' mai comparsa in diretta, e i caratteri
+      // caricati si vedevano nello Studio ma non in onda.
+      ...base,
       // CSS: quello dell'overlay se impostato, altrimenti quello di canale
       css: (ov.css != null && ov.css !== '') ? ov.css : base.css,
       // WIDGET (config + stile): per-overlay se presente, altrimenti di canale.
       // Lo STATO (nome ultimo follower/sub) resta di canale: è un dato, non stile.
       widget: st.widget || base.widget,
-      goals: base.goals,
-      conti: base.conti,
-      cartelli: base.cartelli,
-      musica: base.musica,
-      timer: base.timer,
-      treno: base.treno,
-      stato: base.stato,
       // gia' fuso con l'occasione accesa, se ce n'e' una: chi guarda la diretta
       // deve vedere una cosa sola, non una base e una correzione
       mostra: vis.mostra,
@@ -6407,7 +6409,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayTreno', 'overlayBit', 'overlayCartelli'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayTreno', 'overlayBit', 'overlayCartelli', 'fontPersonali'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }
@@ -7780,6 +7782,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
         if (lista.length >= 8) return res.status(400).json({ errore: 'massimo 8 font (togline uno)' });
         settings.fontPersonali = lista.concat([{ nome, file }]);
         streamers.setSettings(login, settings);
+        // gli overlay aperti lo montano subito, come ogni altra cosa del tema
+        try { effects.emit(login, { tipo: 'tema' }); } catch (e) { /* niente */ }
         res.json({ ok: true, nome, file, url: effects.mediaUrl(login, file) });
       } catch (e) {
         await pulisciTemp(req.file?.path);
@@ -7806,6 +7810,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const via = lista.find((f) => f.nome === nome);
     settings.fontPersonali = lista.filter((f) => f.nome !== nome);
     streamers.setSettings(login, settings);
+    try { effects.emit(login, { tipo: 'tema' }); } catch (e) { /* niente */ }
     if (via) await pulisciTemp(join(effectsRoot, login, via.file));
     res.json({ ok: true });
   }));

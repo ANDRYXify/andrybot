@@ -338,10 +338,12 @@ test('la posizione di un elemento appartiene all’overlay in cui la metti', () 
   assert.ok(/\(MIO\.xy \|\| \{\}\)\['cont:' \+ cmd\]/.test(OVL), 'e con quella chiede la sua posizione');
   // il server deve accettare quelle chiavi, sennò il salvataggio le butta via
   const srv = leggi('src/web/server.js');
-  const re = /const CHIAVE_EL = ([^;]+);/.exec(srv);
-  assert.ok(re, 'il server sa che forma ha la chiave di un elemento');
-  const chiave = new RegExp(re[1].trim().replace(/^\/|\/i$/g, ''), 'i');
-  for (const k of ['alert', 'chat', 'wf', 'ws', 'musica', 'timer', 'goal:g1', 'cont:morti']) {
+  const riga = (nome) => { const m = new RegExp(`const ${nome} = [^;]+;`).exec(srv); assert.ok(m, `manca ${nome}`); return m[0]; };
+  const chiave = new Function(`${riga('ELEM_OVERLAY')} ${riga('FAMIGLIE_EL')} ${riga('CHIAVE_EL')} return CHIAVE_EL;`)();
+  const elenco = new Function(`${riga('ELEM_OVERLAY')} return ELEM_OVERLAY;`)();
+  // ogni elemento dell'elenco ha la sua posizione per overlay: scritte a mano,
+  // le chiavi avevano perso la classifica dei Bit
+  for (const k of [...elenco.filter((x) => !['goal', 'cont', 'cart'].includes(x)), 'goal:g1', 'cont:morti', 'cart:c1']) {
     assert.ok(chiave.test(k), `${k} passa il salvataggio`);
   }
   for (const k of ['../fuori', 'goal:', 'roba', '__proto__']) {

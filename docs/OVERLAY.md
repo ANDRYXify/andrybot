@@ -1734,3 +1734,25 @@ chiamata a Twitch per una scena che nessuno sta guardando.
 **`null` non e' `[]`.** Un «non lo so» (permesso mancante, Twitch muto) non si
 manda e non si disegna: l'elemento resta con le righe di prima. Una classifica
 che sparisce dalla scena per un intoppo di un minuto e' peggio di una ferma.
+
+## Due campi del tema che non arrivavano
+
+La rotta del tema (`/overlay/:login/tema`) sceglieva i campi da mandare uno per
+uno, e due non c'erano: `bit` e `fontPersonali`. Il tema del canale li
+calcolava, l'overlay li leggeva, e in mezzo si perdevano. Dal giorno in cui è
+nata, la classifica dei Bit non è mai comparsa in diretta; i caratteri caricati
+si vedevano nello Studio, che li monta da sé, e non in onda. Anteprima e
+diretta divergevano senza un errore da nessuna parte.
+
+Per costruzione, ora: la risposta è **tutto il tema del canale**, e sopra
+quello che il singolo overlay cambia (CSS, widget, cosa si vede e dove, stile
+di alert e chat). Un campo nuovo del tema arriva senza doverlo ricordare.
+`test/contratto/tema-overlay.test.mjs` confronta i due insiemi, i campi che
+`applicaTema` legge e quelli che la rotta manda; provato rosso rimettendo la
+scelta a mano.
+
+Due cose vicine, dello stesso genere. Le chiavi con cui un overlay salva la
+posizione di un elemento (`CHIAVE_EL`) erano scritte a mano e avevano perso la
+classifica dei Bit: lo Studio la spostava, il salvataggio la buttava via. Ora
+si ricavano dall'elenco degli elementi. E caricare o togliere un carattere non
+avvisava gli overlay aperti: ora sì, come ogni altra cosa del tema.
