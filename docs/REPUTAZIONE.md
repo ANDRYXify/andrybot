@@ -98,7 +98,7 @@ Il debito non lo porta chi chiama: viene letto da `incidenti.js`, che quei
 giudizi li ha già scritti mentre l'attacco succedeva.
 
 - `certo` — lo scudo ha agito su quel nome → **fermato**
-- `sospetto` e `probabile` — c'era e non l'abbiamo toccato → **presente**
+- `sospetto` — c'era e non l'abbiamo toccato → **presente**
 - `legittimo` — **non lascia traccia**: essere stati assolti non è un precedente
 
 Di ogni classe conta solo la data più recente. Contare quante volte è successo

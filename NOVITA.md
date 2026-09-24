@@ -59,6 +59,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Lo scudo dice giusto chi non tocca mai: tu, i mod, i VIP e gli abbonati. Seguire il canale non basta, perché il follow è un clic e i follow-bot lo fanno. [vai: scudo]
 - Le conferme del pannello, come «salvato», «acceso» e «spento», escono nella lingua del pannello, e numeri e date si scrivono come si usa in quella lingua.
 - «Sfoglia i font» tiene la sua icona anche dopo che hai aperto e chiuso l'elenco. [vai: alert]
+- Con il canale su YouTube o su Discord, le schede che parlano solo con Twitch sono spente e spiegate, come già su Kick, invece di mostrare pulsanti che non fanno niente.
+- Aprendo un attacco nel registro dello scudo, i conti dicono certi, sospetti e legittimi nella lingua del pannello, senza un «probabile» che restava sempre a zero. [vai: registro]
 
 ## 2026-09-23
 

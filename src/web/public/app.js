@@ -3183,9 +3183,10 @@ const NOME_ADDON = {
 };
 
 const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'emote'];
+const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord' };
 
 function soloTwitch(id) {
-  return stato?.piattaforma === 'kick' && SOLO_TWITCH.includes(id);
+  return !!stato?.piattaforma && stato.piattaforma !== 'twitch' && SOLO_TWITCH.includes(id);
 }
 
 function schedaNonUsabile(id) {
@@ -3194,10 +3195,11 @@ function schedaNonUsabile(id) {
 
 function paginaSoloTwitch(id) {
   const nomeScheda = tScheda(id, id);
+  const dove = NOME_PIATTAFORMA[stato?.piattaforma] || stato?.piattaforma || '';
   return `<div class="carta blocco-carta">
     <div class="blocco-testa">${_bIco(ICO.tv)}<h2>${esc(nomeScheda)}</h2>
       <span class="badge">${L('Solo su Twitch', 'Twitch only', 'Solo en Twitch')}</span></div>
-    <p class="blocco-cosa">${L('Questa parte parla con Twitch, e il tuo canale è su Kick: qui non avrebbe niente con cui lavorare. Preferiamo dirtelo che mostrarti dei pulsanti che non fanno niente.', 'This part talks to Twitch, and your channel is on Kick: here it would have nothing to work with. We’d rather tell you than show you buttons that do nothing.', 'Esta parte habla con Twitch y tu canal está en Kick: aquí no tendría con qué trabajar. Preferimos decírtelo antes que mostrarte botones que no hacen nada.')}</p>
+    <p class="blocco-cosa">${L(`Questa parte parla con Twitch, e il tuo canale è su ${esc(dove)}: qui non avrebbe niente con cui lavorare. Preferiamo dirtelo che mostrarti dei pulsanti che non fanno niente.`, `This part talks to Twitch, and your channel is on ${esc(dove)}: here it would have nothing to work with. We’d rather tell you than show you buttons that do nothing.`, `Esta parte habla con Twitch y tu canal está en ${esc(dove)}: aquí no tendría con qué trabajar. Preferimos decírtelo antes que mostrarte botones que no hacen nada.`)}</p>
     <p class="suggerimento">${L('Se trasmetti anche su Twitch, collega quell’account: il canale diventa uno solo e questa scheda si accende.', 'If you also stream on Twitch, connect that account: the channel becomes one and this tab lights up.', 'Si también emites en Twitch, conecta esa cuenta: el canal pasa a ser uno solo y esta pestaña se enciende.')}</p>
   </div>`;
 }
@@ -21551,7 +21553,7 @@ async function apriIncidente(id) {
   const per = r.perGiudizio || {};
   box.innerHTML = `
     <div class="reg-inc-conti">
-      ${['certo', 'probabile', 'sospetto', 'legittimo'].map((g) => `<span class="reg-conto"><b>${Number(per[g] || 0)}</b> ${esc(g)}</span>`).join('')}
+      ${[['certo', L('certi', 'certain', 'seguros')], ['sospetto', L('sospetti', 'suspect', 'sospechosos')], ['legittimo', L('legittimi', 'legitimate', 'legítimos')]].map(([g, nome]) => `<span class="reg-conto"><b>${Number(per[g] || 0)}</b> ${nome}</span>`).join('')}
     </div>
     ${(d.timeline || []).length ? `<ol class="reg-timeline">${d.timeline.slice(-12).map((t) => `<li><small>${regQuando(t.ts)}</small> ${esc(t.cosa || '')}</li>`).join('')}</ol>` : ''}
     ${ant.quanti ? `
@@ -26456,7 +26458,6 @@ function mostraInvito(invito) {
   document.getElementById('btn-copia-invito')?.addEventListener('click', () => copiaTesto(invito.url, L('Link d’invito copiato', 'Invite link copied', 'Enlace de invitación copiado')));
 }
 
-const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
 
 async function caricaRichiesteMod() {
   const ul = document.getElementById('lista-richieste-mod');

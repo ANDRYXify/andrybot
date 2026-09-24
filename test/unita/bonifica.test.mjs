@@ -42,7 +42,7 @@ test('chi è arrivato durante l\'attacco senza segnali contro non si tocca', () 
   assert.equal(r.ricevuti, 19);
   assert.equal(r.quanti.legittimo, 3);
   assert.deepEqual(r.proposta, ['certo'], 'la proposta di partenza è la più prudente che abbia senso');
-  const chi = B.candidati(id, ['certo', 'probabile', 'sospetto', 'legittimo']);
+  const chi = B.candidati(id, ['certo', 'sospetto', 'legittimo']);
   const nomi = chi.map((x) => x.login);
   for (const p of ['pierpa_gaming', 'martuxx1', 'elezz228']) {
     assert.ok(!nomi.includes(p), `${p} non deve poter finire in un'operazione di massa nemmeno chiedendolo`);
@@ -160,4 +160,19 @@ test('il pannello scrive quanti ne toglie davvero, e perche\' non ha potuto', ()
   for (const c of ['numero-cambiato', 'niente', 'scudo-spento', 'non-trovato']) assert.ok(APP.includes(`r.codice === '${c}'`), `il pannello sa dire «${c}»`);
   assert.ok(APP.includes('const e = new Error(dati?.errore || `errore ${res.status}`); e.dati = dati; throw e;'), 'un rifiuto porta con se\' quello che ha detto il server');
   assert.ok(SRV.includes("res.status(esito.ok ? 200 : (esito.codice === 'non-trovato' ? 404 : 409)).json(esito);"));
+});
+
+test('ogni giudizio ha chi lo assegna, e il registro conta proprio quelli', () => {
+  // Un giudizio che nessuno assegna e' un conto sempre a zero nel registro, e
+  // un manuale che lo spiega racconta una cosa che non succede mai.
+  const leggi = (f) => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
+  const AB = leggi('src/features/antibot.js'), APP = leggi('src/web/public/app.js');
+  for (const [chiave, g] of Object.entries(I.GIUDIZI)) {
+    assert.ok(AB.includes(`inc.GIUDIZI.${chiave}`), `«${g}»: lo scudo lo assegna`);
+  }
+  const riga = APP.match(/\$\{\[(\['certo'[^\n]*?)\]\.map\(\(\[g, nome\]\)/);
+  assert.ok(riga, 'la riga dei conti per giudizio si legge');
+  const mostrati = [...riga[1].matchAll(/\['([a-z]+)', L\(/g)].map((m) => m[1]);
+  assert.deepEqual(mostrati, Object.values(I.GIUDIZI), 'il registro mostra i giudizi che esistono, tutti');
+  assert.deepEqual(Object.keys(B.rapporto(attacco()).quanti), Object.values(I.GIUDIZI), 'e il rapporto li conta tutti');
 });

@@ -63,3 +63,16 @@ test('le schede dichiarate «solo Twitch» esistono', () => {
   assert.ok(schede.length >= 10, `schede totali: ${schede.length}`);
   for (const id of solo) assert.ok(schede.includes(id), `la scheda «${id}» esiste`);
 });
+
+test('le schede «solo Twitch» si spengono per ogni canale che non è su Twitch, e dicono dov’è', async () => {
+  // Prima si spegnevano solo su Kick: un canale YouTube o Discord vedeva
+  // pulsanti che non facevano niente, e il testo diceva sempre «su Kick».
+  const { PIATTAFORME } = await import('../../src/identita.js');
+  assert.ok(APP.includes("return !!stato?.piattaforma && stato.piattaforma !== 'twitch' && SOLO_TWITCH.includes(id);"));
+  const nomi = APP.match(/const NOME_PIATTAFORMA = \{([^}]*)\}/);
+  assert.ok(nomi, 'NOME_PIATTAFORMA c’è');
+  for (const p of PIATTAFORME) assert.match(nomi[1], new RegExp(`\\b${p.id}: '`), `${p.id} ha il suo nome`);
+  const pagina = APP.slice(APP.indexOf('function paginaSoloTwitch('), APP.indexOf('function funzioneChiusa('));
+  assert.ok(!/su Kick|on Kick|en Kick/.test(pagina), 'il testo non nomina Kick a tutti');
+  assert.equal((pagina.match(/\$\{esc\(dove\)\}/g) || []).length, 3, 'nomina la piattaforma vera, nelle tre lingue');
+});

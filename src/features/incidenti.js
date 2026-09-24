@@ -39,9 +39,12 @@ const PER_CANALE = 200;
 const VECCHI_MS = 180 * 24 * 60 * 60 * 1000;
 const FILE = () => join(config.dataDir, 'incidenti.json');
 
-// Come si giudica chi c'era. Serve a non ripulire alla cieca dopo.
-export const GIUDIZI = { CERTO: 'certo', PROBABILE: 'probabile', SOSPETTO: 'sospetto', LEGITTIMO: 'legittimo' };
-const PESO = { legittimo: 0, sospetto: 1, probabile: 2, certo: 3 };
+// Come si giudica chi c'era. Serve a non ripulire alla cieca dopo. Ogni
+// giudizio ha chi lo assegna (antibot.js): uno che nessuno assegna sarebbe un
+// conto sempre a zero nel registro. Un «probabile» fra sospetto e certo c'era,
+// e non lo dava nessuno: tolto.
+export const GIUDIZI = { CERTO: 'certo', SOSPETTO: 'sospetto', LEGITTIMO: 'legittimo' };
+const PESO = { legittimo: 0, sospetto: 1, certo: 3 };
 
 const tutti = new Map();         // id → incidente
 const apertiPerCanale = new Map();  // canale → id
@@ -172,8 +175,8 @@ export function segnaAzione(canale, { azione, esito }) {
 // quello che è già scritto negli incidenti.
 //
 // Due classi, e sono la stessa distinzione dei giudizi già registrati.
-// CERTO vuol dire che lo scudo ha agito su quel nome; SOSPETTO e PROBABILE
-// vogliono dire che c'era durante un attacco e non l'abbiamo toccato.
+// CERTO vuol dire che lo scudo ha agito su quel nome; SOSPETTO vuol dire che
+// c'era durante un attacco e non l'abbiamo toccato.
 // LEGITTIMO non lascia traccia: essere stati assolti non è un precedente.
 //
 // Di ogni classe torna solo la data PIÙ RECENTE, perché è quella che la
@@ -196,7 +199,7 @@ export function precedenti(canale, logins = []) {
       const quando = Number(c.ts) || 0;
       if (!quando) continue;
       if (c.giudizio === GIUDIZI.CERTO) { if (quando > v.colpito) v.colpito = quando; }
-      else if (c.giudizio === GIUDIZI.SOSPETTO || c.giudizio === GIUDIZI.PROBABILE) { if (quando > v.sospettato) v.sospettato = quando; }
+      else if (c.giudizio === GIUDIZI.SOSPETTO) { if (quando > v.sospettato) v.sospettato = quando; }
     }
   }
   return fuori;
@@ -224,7 +227,7 @@ export function elenco(canale, { limite = 50 } = {}) {
 // contati per giudizio invece che elencati tutti.
 export function sintesi(inc) {
   if (!inc) return null;
-  const per = { certo: 0, probabile: 0, sospetto: 0, legittimo: 0 };
+  const per = Object.fromEntries(Object.values(GIUDIZI).map((g) => [g, 0]));
   for (const v of Object.values(inc.coinvolti)) per[v.giudizio] = (per[v.giudizio] || 0) + 1;
   return {
     id: inc.id, canale: inc.canale, tipo: inc.tipo,

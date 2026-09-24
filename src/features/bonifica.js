@@ -38,22 +38,22 @@ const norm = (s) => String(s || '').toLowerCase().trim();
 // Cosa si può proporre di togliere, e cosa no. I «legittimi» non sono qui: non
 // è una dimenticanza, è che non devono poter finire in un'operazione di massa
 // nemmeno per sbaglio. Chi vuole toccarne uno lo fa a mano, uno per volta.
-export const TOGLIBILI = [inc.GIUDIZI.CERTO, inc.GIUDIZI.PROBABILE, inc.GIUDIZI.SOSPETTO];
+export const TOGLIBILI = [inc.GIUDIZI.CERTO, inc.GIUDIZI.SOSPETTO];
 
 // Il rapporto: cosa è rimasto in casa dopo l'attacco.
 export function rapporto(incidente) {
   const i = typeof incidente === 'string' ? inc.uno(incidente) : incidente;
   if (!i) return null;
-  const per = { certo: [], probabile: [], sospetto: [], legittimo: [] };
+  const per = Object.fromEntries(Object.values(inc.GIUDIZI).map((g) => [g, []]));
   for (const [login, v] of Object.entries(i.coinvolti || {})) {
     (per[v.giudizio] || per.sospetto).push({ login, userId: v.userId || '', punti: v.punti || 0, ts: v.ts });
   }
-  const g = dominante(per.certo.concat(per.probabile).map((x) => ({ login: x.login })));
+  const g = dominante(per.certo.map((x) => ({ login: x.login })));
   return {
     incidente: i.id, canale: i.canale, tipo: i.tipo,
     aperto: i.aperto, chiuso: i.chiuso,
     ricevuti: Object.keys(i.coinvolti || {}).length,
-    quanti: { certo: per.certo.length, probabile: per.probabile.length, sospetto: per.sospetto.length, legittimo: per.legittimo.length },
+    quanti: Object.fromEntries(Object.entries(per).map(([g, v]) => [g, v.length])),
     // Quanti si possono davvero togliere: senza l'id di Twitch non si tocca
     // nessuno, e dirlo prima evita di promettere un numero che non si mantiene.
     conId: TOGLIBILI.reduce((n, g2) => n + per[g2].filter((x) => x.userId).length, 0),
