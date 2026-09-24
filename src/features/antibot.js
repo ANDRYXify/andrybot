@@ -46,7 +46,6 @@ export const ANTIBOT_DEFAULT = {
   raffica: true,
   rafficaQuanti: 10,           // quanti follow…
   rafficaSecondi: 30,          // …in quanti secondi fanno scattare l'allarme
-  rafficaChiudiChat: true,     // durante la raffica, chat ai soli follower
   rafficaBanna: false,         // bannare i follow della raffica (aggressivo: default no)
   // 2. nomi da bot
   nomiBot: true,
@@ -162,6 +161,16 @@ export function nomeBot(login, cfg = {}) {
   return PATTERN_BOT.some((re) => re.test(l));
 }
 
+// La lista «Blocca sempre» e' dello streamer, e dice «sempre»: vale con lo
+// scudo acceso anche quando l'elenco dei nomi da bot e' spento. Prima stava
+// dentro nomeBot, e spegnendo quell'elenco si spegneva anche lei.
+export function inBloccaSempre(login, cfg = {}) {
+  const l = norm(login);
+  if (!l || BUONI.has(l)) return false;
+  if ((cfg.esenti || []).map(norm).includes(l)) return false;
+  return (cfg.extra || []).map(norm).filter(Boolean).includes(l);
+}
+
 // Quanto è "nuovo di zecca e vuoto" un account? Ritorna { rischio, motivi }.
 // u = oggetto utente Helix (created_at, profile_image_url, description, login).
 // Il giudizio su un account. I punti li fa il motore in punteggio.js, che è una
@@ -253,8 +262,12 @@ const REG_FILE = () => join(config.dataDir, 'registro-antibot.json');
 
 function nuovoId() { return Date.now().toString(36) + '-' + (regSeq++).toString(36); }
 
-// Registra un intervento. azione: ban|timeout|segnala|raffica|raid|chat-trattieni|chat-segnala.
-// esito: fatto|fallito|avviso|in-attesa. stato: aperto (da rivedere) | chiuso | risolto.
+// Registra un intervento. azione: quelle dell'esecutore (AZIONI in
+// enforcement.js) piu' segnala, raffica, blocco, bonifica, assetto, raid,
+// chat-segnala, permesso e sbanna. esito: fatto|fallito|avviso|in-attesa|a-vuoto.
+// stato: aperto (da rivedere) | chiuso | risolto. Il pannello da' un nome a
+// ciascuno (scudoAzioneTesto, scudoEsito), e test/unita/livelli.test.mjs
+// controlla che non ne manchi nessuno.
 export function registra(channel, dati) {
   const ch = norm(channel);
   if (!ch) return null;
@@ -710,9 +723,9 @@ export const riprovaFallite = (ch) => esecutore?.riprovaFalliti(ch) || 0;
 // processo, e nessuno stato suo.
 export async function bonifica(incidente, giudizi, conferma, { canale } = {}) {
   const r = bon.rapporto(incidente);
-  if (!r) return { ok: false, motivo: 'incidente non trovato' };
-  if (canale && norm(canale) !== r.canale) return { ok: false, motivo: 'non è un tuo incidente' };
-  if (!esecutore) return { ok: false, motivo: 'scudo non attivo' };
+  if (!r) return { ok: false, codice: 'non-trovato', motivo: 'incidente non trovato' };
+  if (canale && norm(canale) !== r.canale) return { ok: false, codice: 'non-trovato', motivo: 'non è un tuo incidente' };
+  if (!esecutore) return { ok: false, codice: 'scudo-spento', motivo: 'scudo non attivo' };
   const buona = bon.confermaValida(incidente, giudizi, conferma);
   if (!buona.ok) return { ok: false, ...buona };
 
@@ -805,7 +818,6 @@ export class AntiBot {
       chatNuovi: a.segnalaNuovi ? true : base.chatNuovi,
       chatNuoviAzione: a.trattieniNuovi ? 'elimina' : (base.chatNuovi ? base.chatNuoviAzione : 'segnala'),
       chatMinOre: Math.max(Number(base.chatMinOre || 24), a.oreMinime),
-      rafficaChiudiChat: a.serranda ? true : base.rafficaChiudiChat,
       // NON si accende controllaAccount: una chiamata a Twitch per ogni follow,
       // proprio mentre ne arrivano centinaia, amplificherebbe l'attacco invece
       // di fermarlo. Sotto ondata i follow si giudicano in aggregato.
@@ -864,6 +876,14 @@ export class AntiBot {
     if (extra.segnali) a.segnali = extra.segnali;
 
     if (cfg.assettoAuto === false) return;
+
+    // In sola osservazione lo scudo scrive cosa farebbe e non tocca la chat:
+    // nemmeno le modalita', che valgono per tutti quelli che scrivono.
+    if (this._aVuoto(cfg)) {
+      const farebbe = [dev.chatLenta ? `chat lenta ${dev.chatLenta}s` : '', dev.serranda ? 'soli follower e Shield Mode' : ''].filter(Boolean).join(', ');
+      if (farebbe) registra(ch, { azione: 'assetto', motivo: `${livello}: ${farebbe}`, esito: 'a-vuoto' });
+      return;
+    }
 
     // Ogni scalino accende quello che gli tocca, e niente di più. La chat lenta
     // arriva a «difesa», la serranda solo ad «attacco»: fra il non far niente e
@@ -1125,6 +1145,7 @@ export class AntiBot {
     }
 
     // nome già noto come bot: si agisce sempre, attacco o non attacco
+    if (inBloccaSempre(login, cfg)) return this._agisci(channel, userId, login, 'nella lista «Blocca sempre»', cfg, 'follow');
     if (cfg.nomiBot && nomeBot(login, cfg)) return this._agisci(channel, userId, login, 'nome da bot', cfg, 'follow');
 
     // Attacco in corso e ondata giudicata artificiale: ogni follow che arriva
@@ -1215,6 +1236,7 @@ export class AntiBot {
     // via anche il CORO, che e' la firma dell'hate-raid, e la trattenuta degli
     // account appena nati. Spegneva una cosa e ne perdeva tre, e nessuno glielo
     // diceva.
+    if (inBloccaSempre(login, cfg)) { await this._agisci(channel, msg.userId, login, 'nella lista «Blocca sempre»', cfg); return true; }
     if (cfg.nomiBot && nomeBot(login, cfg)) { await this._agisci(channel, msg.userId, login, 'nome da bot in chat', cfg); return true; }
 
     // Il coro: lo stesso messaggio da molte bocche diverse in pochi secondi.

@@ -9,6 +9,7 @@
 // Il modello sta in docs/BONIFICA.md.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
 
 const casa = cartellaUsaEGetta('bonifica-');
@@ -116,6 +117,8 @@ test('con la conferma sbagliata non succede niente', async () => {
   const esito = await ab.bonifica(id, ['certo'], '99', { canale: CANALE });
   assert.equal(esito.ok, false);
   assert.match(esito.motivo, /riscrivi/);
+  assert.equal(esito.codice, 'numero-cambiato', 'il pannello riceve un codice, e scrive il messaggio nella sua lingua');
+  assert.equal(esito.quanti, 12, 'col numero giusto da riscrivere');
   await new Promise((r) => setTimeout(r, 200));
   assert.equal(presi.length, 0);
 });
@@ -126,6 +129,7 @@ test('e non si bonifica l\'incidente di un altro canale', async () => {
   const esito = await ab.bonifica(id, ['certo'], '12', { canale: 'qualcunaltro' });
   assert.equal(esito.ok, false);
   assert.match(esito.motivo, /tuo incidente/);
+  assert.equal(esito.codice, 'non-trovato', 'da fuori, l\'incidente di un altro non esiste');
 });
 
 test('i bot di servizio non si toccano nemmeno qui', async () => {
@@ -146,4 +150,14 @@ test('il rapporto dice anche se i tolti venivano dalla stessa fabbrica', () => {
   const r = B.rapporto(id);
   assert.ok(r.gruppo, 'dodici nomi con la stessa forma');
   assert.match(r.gruppo.motivo, /fabbrica/);
+});
+
+test('il pannello scrive quanti ne toglie davvero, e perche\' non ha potuto', () => {
+  const APP = readFileSync(new URL('../../src/web/public/app.js', import.meta.url), 'utf8');
+  const SRV = readFileSync(new URL('../../src/web/server.js', import.meta.url), 'utf8');
+  assert.ok(!APP.includes('(r.tolti || 0)'), 'il server manda quanti, non tolti');
+  assert.ok(APP.includes('toast(testoBonifica(r));') && APP.includes("toast(testoBonifica(e.dati || {}), 'errore');"), 'la riuscita e il rifiuto passano dallo stesso testo');
+  for (const c of ['numero-cambiato', 'niente', 'scudo-spento', 'non-trovato']) assert.ok(APP.includes(`r.codice === '${c}'`), `il pannello sa dire «${c}»`);
+  assert.ok(APP.includes('const e = new Error(dati?.errore || `errore ${res.status}`); e.dati = dati; throw e;'), 'un rifiuto porta con se\' quello che ha detto il server');
+  assert.ok(SRV.includes("res.status(esito.ok ? 200 : (esito.codice === 'non-trovato' ? 404 : 409)).json(esito);"));
 });

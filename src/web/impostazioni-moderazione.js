@@ -64,7 +64,6 @@ export function normalizzaAntibot(vecchio = {}, arrivato = {}) {
     raffica: a.raffica !== false,
     rafficaQuanti: num(a.rafficaQuanti, 3, 100, 10),
     rafficaSecondi: num(a.rafficaSecondi, 5, 300, 30),
-    rafficaChiudiChat: a.rafficaChiudiChat !== false,
     rafficaBanna: !!a.rafficaBanna,
     nomiBot: a.nomiBot !== false,
     listaAuto: a.listaAuto !== false,

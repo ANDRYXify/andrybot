@@ -60,7 +60,7 @@ async function api(percorso, opzioni = {}) {
   const res = await fetch(percorso, opts);
   let dati = null;
   try { dati = await res.json(); } catch {  }
-  if (!res.ok) throw new Error(dati?.errore || `errore ${res.status}`);
+  if (!res.ok) { const e = new Error(dati?.errore || `errore ${res.status}`); e.dati = dati; throw e; }
   return dati;
 }
 
@@ -21325,7 +21325,6 @@ function pannelloScudo() {
           <span class="suggerimento">${L('secondi', 'seconds', 'segundos')}</span>
         </div>
         <div class="mod-griglia spazio-sopra">
-          ${modVoce('chk-ab-chiudi', sel(ab.rafficaChiudiChat, true), L('Durante un\'ondata, chat ai soli follower', 'During a wave, followers-only chat', 'Durante una oleada, chat solo para seguidores'))}
           ${modVoce('chk-ab-rafbanna', ab.rafficaBanna, L('Durante un\'ondata, banna anche i follow sospetti (aggressivo)', 'During a wave, also ban suspicious follows (aggressive)', 'Durante una oleada, banea también los follows sospechosos (agresivo)'))}
         </div>
         </div>
@@ -21588,9 +21587,12 @@ function regWire() {
       bon.disabled = true;
       try {
         const r = await api('/api/antibot/incidenti/' + encodeURIComponent(id) + '/bonifica', { method: 'POST', body: { giudizi: ['certo'], conferma } });
-        toast(r.ok ? L('Fatto: ', 'Done: ', 'Hecho: ') + (r.tolti || 0) : (r.errore || L('Non riuscito', 'Failed', 'Falló')));
-        if (r.ok) { const box = document.getElementById('inc-' + id); if (box) { box.dataset.pieno = ''; apriIncidente(id); box.dataset.pieno = '1'; } }
-      } catch (e) { toast(L('Non riuscito', 'Failed', 'Falló')); }
+        toast(testoBonifica(r));
+        const box = document.getElementById('inc-' + id); if (box) { box.dataset.pieno = ''; apriIncidente(id); box.dataset.pieno = '1'; }
+      } catch (e) {
+        toast(testoBonifica(e.dati || {}), 'errore');
+        if (e.dati?.codice === 'numero-cambiato') { const box = document.getElementById('inc-' + id); if (box) { box.dataset.pieno = ''; apriIncidente(id); box.dataset.pieno = '1'; } }
+      }
       bon.disabled = false;
       return;
     }
@@ -21605,15 +21607,35 @@ function regWire() {
   });
 }
 
+function testoBonifica(r) {
+  if (r.ok) {
+    const n = Number(r.quanti) || 0, salvi = Number(r.risparmiati) || 0;
+    return L(`In fila per essere tolti: ${n}. Li vedi uscire nel registro.`, `Queued for removal: ${n}. You will see them go in the log.`, `En cola para quitarlos: ${n}. Los verás salir en el registro.`)
+      + (salvi ? ' ' + L(`${salvi} lasciati stare: sembrano persone vere.`, `${salvi} left alone: they look like real people.`, `${salvi} sin tocar: parecen personas reales.`) : '');
+  }
+  if (r.codice === 'numero-cambiato') return L(`Nel frattempo sono diventati ${r.quanti}: riscrivi questo numero.`, `In the meantime they became ${r.quanti}: retype this number.`, `Mientras tanto pasaron a ser ${r.quanti}: reescribe este número.`);
+  if (r.codice === 'niente') return L('Non c\'è più niente da togliere.', 'There is nothing left to remove.', 'Ya no queda nada que quitar.');
+  if (r.codice === 'scudo-spento') return L('Lo scudo è spento: accendilo, e poi ripulisci.', 'The shield is off: turn it on, then clean up.', 'El escudo está apagado: actívalo y luego limpia.');
+  if (r.codice === 'non-trovato') return L('Questo attacco non è più nel registro.', 'This attack is no longer in the log.', 'Este ataque ya no está en el registro.');
+  return L('Non riuscito: riprova fra poco.', 'It did not work: try again shortly.', 'No se pudo: inténtalo de nuevo en un momento.');
+}
+
 function scudoAzioneTesto(a) {
   return {
     ban: L('Bannato', 'Banned', 'Baneado'),
     sbanna: L('Sbannato', 'Unbanned', 'Desbaneado'),
     timeout: L('Timeout', 'Timeout', 'Timeout'),
+    blocca: L('Bloccato', 'Blocked', 'Bloqueado'),
+    cancella: L('Messaggio tolto', 'Message removed', 'Mensaje quitado'),
+    limita: L('Messaggio trattenuto', 'Message held', 'Mensaje retenido'),
+    osserva: L('Tenuto d\'occhio', 'Watched', 'Vigilado'),
+    niente: L('Nessuna azione', 'No action', 'Ninguna acción'),
     segnala: L('Segnalato', 'Flagged', 'Señalado'),
     raffica: L('Ondata di follow', 'Follow wave', 'Oleada de follows'),
+    blocco: L('Ondata bloccata', 'Wave blocked', 'Oleada bloqueada'),
+    bonifica: L('Pulizia dopo un attacco', 'Clean-up after an attack', 'Limpieza tras un ataque'),
+    assetto: L('Livello dello scudo', 'Shield level', 'Nivel del escudo'),
     raid: L('Raid sospetto', 'Suspicious raid', 'Raid sospechoso'),
-    'chat-trattieni': L('Messaggio trattenuto', 'Message held', 'Mensaje retenido'),
     'chat-segnala': L('Account nuovo in chat', 'New account in chat', 'Cuenta nueva en chat'),
     permesso: L('Fatto scrivere da un mod', 'Let in by a mod', 'Dejado escribir por un mod'),
   }[a] || a;
@@ -21624,6 +21646,7 @@ function scudoEsito(e) {
     fallito: ['ko', L('non riuscito', 'failed', 'fallido')],
     avviso: ['warn', L('avviso', 'warning', 'aviso')],
     'in-attesa': ['warn', L('in attesa', 'pending', 'pendiente')],
+    'a-vuoto': ['', L('solo osservato', 'observed only', 'solo observado')],
   }[e] || ['', e];
   return `<span class="scudo-esito ${m[0]}">${m[1]}</span>`;
 }
@@ -21641,7 +21664,7 @@ function scudoWire() {
       try {
         const r = await api('/api/antibot/segnalazione', { method: 'POST', body: { id: ris.dataset.scudoRis, esito: ris.dataset.esito } });
         if (ris.dataset.esito === 'blocca') toast(r.bannato ? L('Bloccato e bannato ✓', 'Blocked and banned ✓', 'Bloqueado y baneado ✓') : L('Messo in blocklist ✓', 'Added to blocklist ✓', 'Añadido a blocklist ✓'));
-        caricaScudo();
+        if (ris.closest('#scheda-registro')) caricaRegistro(); else caricaScudo();
       }
       catch (e) { toast(L('Non riuscito', 'Failed', 'Falló')); }
       return;
@@ -21663,8 +21686,13 @@ function scudoWire() {
       try {
         const r = await api('/api/antibot/azione', { method: 'POST', body: { userId: ban.dataset.userid, login: ban.dataset.login, azione: 'ban' } });
         if (r.ok) { toast(L('Bannato ✓', 'Banned ✓', 'Baneado ✓')); const row = ban.closest('.scudo-seg'); if (row) row.remove(); }
-        else { toast(L('Non riuscito', 'Failed', 'Falló') + (r.motivo ? ': ' + r.motivo : '')); ban.disabled = false; }
-      } catch (e) { toast(L('Non riuscito', 'Failed', 'Falló')); ban.disabled = false; }
+        else { toast(L('Non riuscito', 'Failed', 'Falló') + (r.motivo ? ': ' + r.motivo : ''), 'errore'); ban.disabled = false; }
+      } catch (e) {
+        toast(e.dati?.codice === 'permessi'
+          ? L('Mancano i permessi di moderazione: li riconcedi da Stato, con «Aggiorna i permessi».', 'Moderation permissions are missing: grant them again from Status, with “Update permissions”.', 'Faltan los permisos de moderación: vuelve a darlos desde Estado, con «Actualizar permisos».')
+          : L('Non riuscito', 'Failed', 'Falló'), 'errore');
+        ban.disabled = false;
+      }
       return;
     }
     const add = ev.target.closest('[data-scudo-add]');
@@ -22072,7 +22100,6 @@ function attivaPiattaforma() {
         raffica: document.getElementById('chk-ab-raffica').checked,
         rafficaQuanti: Number(document.getElementById('inp-ab-quanti').value),
         rafficaSecondi: Number(document.getElementById('inp-ab-secondi').value),
-        rafficaChiudiChat: document.getElementById('chk-ab-chiudi').checked,
         rafficaBanna: document.getElementById('chk-ab-rafbanna').checked,
         nomiBot: document.getElementById('chk-ab-nomi').checked,
         listaAuto: document.getElementById('chk-ab-listaauto').checked,

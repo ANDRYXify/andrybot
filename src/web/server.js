@@ -3188,7 +3188,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login.toLowerCase();
     const giudizi = Array.isArray(req.body?.giudizi) ? req.body.giudizi : ['certo'];
     const esito = await bonificaIncidente(req.params.id, giudizi, req.body?.conferma, { canale: login });
-    res.status(esito.ok ? 200 : 400).json(esito);
+    res.status(esito.ok ? 200 : (esito.codice === 'non-trovato' ? 404 : 409)).json(esito);
   });
 
   app.get('/api/antibot/console', requireOwner, (req, res) => {
@@ -3323,7 +3323,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const nome = String(req.body?.login || '').toLowerCase();
     const azione = req.body?.azione === 'sbanna' ? 'sbanna' : 'ban';
     if (!/^\d+$/.test(userId)) return res.status(400).json({ errore: 'Utente non valido.' });
-    if (!moderazioneOk(login)) return res.status(403).json({ errore: 'Servono i permessi di moderazione.' });
+    if (!moderazioneOk(login)) return res.status(403).json({ errore: 'Servono i permessi di moderazione.', codice: 'permessi' });
     const r = azione === 'sbanna'
       ? await helix.unbanUser(login, userId).catch(() => null)
       : await helix.timeoutUser(login, userId, 0, 'anti-bot: dalla console').catch(() => null);

@@ -48,6 +48,12 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - I suggerimenti che compaiono passando sopra ai tasti sono più leggeri e si disegnano a matita, e dopo un clic dicono la cosa giusta.
 - Chi condivide socialbot.live/en o socialbot.live/es vede l'anteprima del link in inglese o in spagnolo, come la pagina.
 - La tua pagina link, e la sua anteprima nelle chat, mostrano la tua foto anche se entri con Kick, YouTube o Discord, dal prossimo accesso. [vai: pagina]
+- In sola osservazione lo scudo non cambia più le modalità della chat: nel registro scrive cosa avrebbe fatto, come per il resto. [vai: scudo]
+- «Blocca sempre» vale sempre con lo scudo acceso, anche con l'elenco dei nomi da bot spento. [vai: scudo]
+- Tolto l'interruttore «Durante un'ondata, chat ai soli follower», che non faceva niente: ai soli follower la chat ci va quando lo scudo arriva ad «attacco». [vai: scudo]
+- La pulizia dopo un attacco dice quanti account toglie davvero e quanti ne lascia stare, e quando non può dice perché. [vai: registro]
+- Nel registro dello scudo ogni riga ha il suo nome nella lingua del pannello, e dopo «Permetti», «Ignora» o «Blocca sempre» si aggiorna il registro. [vai: registro]
+- «Banna» nella scansione dei follower, se mancano i permessi di moderazione, lo dice e ti dice dove riconcederli. [vai: scudo]
 
 ## 2026-09-23
 

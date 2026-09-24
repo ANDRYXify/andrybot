@@ -47,11 +47,11 @@ export default {
 
     { h2: 'Lo scudo anti-bot' },
     { p: ['Sta in <em>Scudo</em>, ed è spento finché non lo accendi (serve il permesso di moderazione di Twitch). Sono cinque difese, messe in ordine di quanto poco rischiano di colpire una persona vera.'] },
-    { p: ['Se non ti fidi ancora, accendi la <strong>sola osservazione</strong>: lo scudo lavora normalmente e scrive nel registro cosa avrebbe fatto, senza bannare, bloccare o cancellare niente. È il modo di vederlo all\'opera sul tuo canale prima di lasciarlo agire.'] },
+    { p: ['Se non ti fidi ancora, accendi la <strong>sola osservazione</strong>: lo scudo lavora normalmente e scrive nel registro cosa avrebbe fatto, senza bannare, bloccare o cancellare niente, e senza cambiare le modalità della chat. È il modo di vederlo all\'opera sul tuo canale prima di lasciarlo agire.'] },
 
     { h3: '1. La raffica di follow' },
     { p: ['Un attacco follow-bot sono tanti follow in pochi secondi: non serve guardarli uno per uno, basta contarli. Di base <strong>10 follow in 30 secondi</strong> fanno scattare l\'allarme (da 3 a 100 follow, da 5 a 300 secondi).'] },
-    { p: ['Quando scatta, di base la chat va <strong>ai soli follower</strong> e tu vieni avvisato. <strong>Non banna</strong>: un picco di follow può arrivare anche da una clip virale, e bannare cento persone vere sarebbe peggio dell\'attacco. Bannare l\'ondata si può accendere, ma è una scelta tua e sta scritta come tale.'] },
+    { p: ['Quando scatta, lo scudo alza il suo livello e tu vieni avvisato. La chat va <strong>ai soli follower</strong> solo se il livello arriva ad «attacco», cioè quando l\'ondata sembra fatta da una macchina. <strong>Non banna</strong>: un picco di follow può arrivare anche da una clip virale, e bannare cento persone vere sarebbe peggio dell\'attacco. Bannare l\'ondata si può accendere, ma è una scelta tua e sta scritta come tale.'] },
 
     { h3: '2. I nomi da bot' },
     { p: ['Una lista di account-bot noti e di forme tipiche dei nomi da follow-bot promozionale, aggiornata da sola. Chi corrisponde viene bannato (o messo in timeout, o solo segnalato: lo scegli tu — se scegli il timeout, di base dura 14 giorni).'] },

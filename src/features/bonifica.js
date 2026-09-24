@@ -111,10 +111,10 @@ export function verdettiPer(incidente, giudizi, { aVuoto = false } = {}) {
 // quello che chi guarda aveva sotto gli occhi un minuto fa.
 export function confermaValida(incidente, giudizi, conferma) {
   const a = anteprima(incidente, giudizi);
-  if (!a) return { ok: false, motivo: 'incidente non trovato' };
-  if (!a.quanti) return { ok: false, motivo: 'non c\'è niente da togliere' };
+  if (!a) return { ok: false, codice: 'non-trovato', motivo: 'incidente non trovato' };
+  if (!a.quanti) return { ok: false, codice: 'niente', motivo: 'non c\'è niente da togliere' };
   if (String(conferma || '').trim() !== a.conferma) {
-    return { ok: false, motivo: `adesso sono ${a.quanti}: riscrivi questo numero`, quanti: a.quanti };
+    return { ok: false, codice: 'numero-cambiato', motivo: `adesso sono ${a.quanti}: riscrivi questo numero`, quanti: a.quanti };
   }
   return { ok: true, quanti: a.quanti };
 }

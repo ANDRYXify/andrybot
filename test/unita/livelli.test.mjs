@@ -187,3 +187,85 @@ test('un allarme piu\' lieve non fa scendere il livello', async () => {
   await scudo._alza(ch, 'osservo', 'una sciocchezza', scudo.cfg(ch));
   assert.equal(ab.assetto(ch).livello, 'attacco', 'una difesa che si abbassa da sola mentre l\'attacco continua non è una difesa');
 });
+
+// ─────────────────────────────────────────── sola osservazione e «Blocca sempre»
+
+test('in sola osservazione lo scudo scrive cosa farebbe, e la chat non la tocca', async () => {
+  // Le modalita' della chat valgono per tutti quelli che scrivono: in sola
+  // osservazione lo scudo non ne cambia nessuna, nemmeno salendo a «serrata».
+  const ch = 'osserva1';
+  streamers.upsertApproved(ch, 'Osserva', '95');
+  streamers.setEnabled(ch, true);
+  streamers.setSettings(ch, { antibot: { attivo: true, avvisa: false, aVuoto: true } });
+  ab.azzeraStati();
+  const toccato = [];
+  const scudo = new ab.AntiBot({ helix: {
+    chatSoloFollower: async () => { toccato.push('follower'); return { ok: true }; },
+    chatLenta: async () => { toccato.push('lenta'); return { ok: true }; },
+    shieldMode: async () => { toccato.push('shield'); return { ok: true }; },
+  } });
+  await scudo._alza(ch, 'serrata', 'prova', scudo.cfg(ch));
+  assert.deepEqual(toccato, [], 'nessuna modalita\' cambiata');
+  const riga = ab.registro(ch).find((r) => r.azione === 'assetto');
+  assert.ok(riga && riga.esito === 'a-vuoto', 'e nel registro c\'e\' cosa avrebbe fatto');
+  assert.match(riga.motivo, /soli follower/);
+});
+
+test('«Blocca sempre» vale sempre con lo scudo acceso, anche con l\'elenco dei nomi da bot spento', async () => {
+  const ch = 'sempre1';
+  streamers.upsertApproved(ch, 'Sempre', '96');
+  streamers.setEnabled(ch, true);
+  streamers.setSettings(ch, { antibot: { attivo: true, avvisa: false, nomiBot: false, extra: ['disturbo_99'] } });
+  ab.azzeraStati();
+  const presi = [];
+  const scudo = new ab.AntiBot({ helix: {
+    bloccaUtente: async (_c, uid) => { presi.push(String(uid)); return { ok: true }; },
+    timeoutUser: async (_c, uid) => { presi.push('ban:' + uid); return { ok: true }; },
+    deleteMessage: async () => ({ ok: true }),
+  } });
+  await scudo.onFollow({ channel: ch, ts: Date.now(), data: { user_id: '777', user_login: 'disturbo_99' } });
+  await scudo.onFollow({ channel: ch, ts: Date.now(), data: { user_id: '778', user_login: 'andrea_tv' } });
+  for (let i = 0; i < 100 && ab.codaBan(ch).in_attesa; i++) await new Promise((r) => setTimeout(r, 20));
+  assert.ok(presi.some((p) => p.endsWith('777')), 'chi e\' nella lista viene tolto');
+  assert.ok(!presi.some((p) => p.endsWith('778')), 'chi non c\'e\' resta');
+  assert.equal(ab.inBloccaSempre('Disturbo_99', { extra: ['disturbo_99'] }), true);
+  assert.equal(ab.inBloccaSempre('disturbo_99', { extra: ['disturbo_99'], esenti: ['disturbo_99'] }), false, 'chi e\' fra gli esenti non si tocca');
+  assert.equal(ab.inBloccaSempre('nightbot', { extra: ['nightbot'] }), false, 'i bot di servizio nemmeno');
+});
+
+test('l\'interruttore che nessuno leggeva non c\'e\' piu\'', () => {
+  assert.equal('rafficaChiudiChat' in ab.ANTIBOT_DEFAULT, false, 'durante un\'ondata decide il livello, non un interruttore a parte');
+});
+
+test('ogni riga del registro dello scudo ha un nome nel pannello, nelle tre lingue', async () => {
+  // Il registro scrive azioni ed esiti da piu' posti: lo scudo, l'esecutore,
+  // la console. Il pannello li traduce con due elenchi: un'azione nuova senza
+  // nome usciva come codice grezzo («limita», «a-vuoto»). Qui si prendono dal
+  // codice tutte le azioni e gli esiti che finiscono nel registro, e si
+  // pretende un nome per ciascuno.
+  const { readFileSync } = await import('node:fs');
+  const leggi = (f) => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
+  const AB = leggi('src/features/antibot.js'), SRV = leggi('src/web/server.js'), APP = leggi('src/web/public/app.js');
+  const { AZIONI } = await import('../../src/features/enforcement.js');
+  const azioni = new Set(Object.values(AZIONI));
+  for (const t of [AB, SRV]) {
+    for (const m of t.matchAll(/registra(?:Antibot)?\([^)]*?azione: '([a-z-]+)'/g)) azioni.add(m[1]);
+  }
+  azioni.add('sbanna');
+  const esiti = new Set(['fatto', 'fallito', 'a-vuoto']);
+  for (const m of AB.matchAll(/registra\([^)]*?esito: '([a-z-]+)'/g)) esiti.add(m[1]);
+  const corpo = (nome) => { const i = APP.indexOf(`function ${nome}(`); return APP.slice(i, APP.indexOf('\n}\n', i)); };
+  const nomiAzioni = corpo('scudoAzioneTesto'), nomiEsiti = corpo('scudoEsito');
+  const stringa = "'(?:[^'\\\\]|\\\\.)+'";
+  for (const a of azioni) assert.match(nomiAzioni, new RegExp(`(^|\\s)'?${a}'?: L\\(${stringa}, ${stringa}, ${stringa}\\)`, 'm'), `l'azione «${a}» non ha un nome`);
+  for (const e of esiti) assert.match(nomiEsiti, new RegExp(`'?${e}'?: \\['[a-z]*', L\\(`), `l'esito «${e}» non ha un nome`);
+  assert.ok(!nomiAzioni.includes('chat-trattieni'), 'niente nomi per azioni che nessuno scrive');
+});
+
+test('dal registro si ricarica il registro, e un «Banna» rifiutato dice perche\'', async () => {
+  const { readFileSync } = await import('node:fs');
+  const APP = readFileSync(new URL('../../src/web/public/app.js', import.meta.url), 'utf8');
+  const SRV = readFileSync(new URL('../../src/web/server.js', import.meta.url), 'utf8');
+  assert.ok(APP.includes("if (ris.closest('#scheda-registro')) caricaRegistro(); else caricaScudo();"), 'la lista che si aggiorna e\' quella dove hai premuto');
+  assert.ok(SRV.includes("codice: 'permessi'") && APP.includes("e.dati?.codice === 'permessi'"), 'senza permessi lo dice, e dice dove riconcederli');
+});
