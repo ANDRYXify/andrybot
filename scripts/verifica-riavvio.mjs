@@ -41,6 +41,7 @@ const DECISO = [
   ['features/modalita-chat.js', 'sveglie', 'volatile', 'le sveglie delle modalita\' a tempo: la fine sta nel database (statoVivo), e all\'avvio si ripuntano da li\''],
   ['bot.js', '_bossProx', 'volatile', 'quando arriva il prossimo boss automatico: dopo un riavvio si ripianifica a un intervallo intero, e al peggio arriva un po\' dopo'],
   ['features/attese-giochi.js', 'fine', 'volatile', 'le attese fra due giocate: un riavvio le azzera, e al peggio si gioca un po\' prima. Nessuna tiene monete'],
+  ['features/automatiche.js', 'inCorso', 'volatile', 'il lucchetto del giro delle pubblicazioni automatiche: cosa e\' uscito si scrive nel file prima di pubblicare, quindi un riavvio a meta\' non ripubblica'],
   ['features/attese-giochi.js', 'detta', 'volatile', 'quali attese sono gia\' state dette in chat: al peggio se ne dice una volta in piu\''],
   ['features/patata.js', 'patate', 'volatile', 'la patata in giro: un riavvio la fa sparire, e nessuna moneta era in sospeso, perche\' la multa si paga solo allo scoppio'],
   ['features/corsa.js', 'corse', 'volatile', 'la corsa in corso: le monete si muovono solo all\'arrivo, quindi un riavvio la fa sparire senza che nessuno perda niente'],
