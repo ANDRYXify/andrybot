@@ -28,7 +28,7 @@
 // Uso: node scripts/verifica-conoscenza.mjs             (esce 1 se qualcosa non torna)
 //      node scripts/verifica-conoscenza.mjs --selftest  (rompe e pretende il rosso)
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { senzaCommentiJs, corpoJs } from './_codice.mjs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -56,8 +56,8 @@ const ROTTURE = [
   ['src/web/public/app.js', "getElementById('txt-mai')", "getElementById('txt-mai-vecchio')", 'il campo viene rinominato solo da una parte'],
   ['src/ai/pretrain.js', 'const { scheda, messi } = uniScheda(', 'const { scheda, messi } = ((a, b) => ({ scheda: a || {}, messi: [] }))(', 'la scheda torna a nascere vuota per tutti'],
   ['src/ai/pretrain.js', 'if (gia[campo]) continue;', 'if (false) continue;', 'il precompilamento riscrive quello che ha scritto lui'],
-  ['src/web/manuali.js', "{ h3: 'Il quaderno del bot' },", "{ h3: 'Una cosa qualunque' },", 'il manuale smette di spiegare il quaderno'],
-  ['src/web/manuali.js', "{ h3: 'La tua pagina link parla al bot' },", '', 'il manuale non dice piu\' che legge la pagina link'],
+  ['src/web/manuali/it/bot.js', "{ h3: 'Il quaderno del bot' },", "{ h3: 'Una cosa qualunque' },", 'il manuale smette di spiegare il quaderno'],
+  ['src/web/manuali/it/bot.js', "{ h3: 'La tua pagina link parla al bot' },", '', 'il manuale non dice piu\' che legge la pagina link'],
   ['src/web/public/app.js', "'#sc-chi']", "'#sc-chi-che-non-esiste']", 'la guida della scheda indica un campo che non c\'e\''],
   ['src/ai/brain.js', ', ...this._vociDallaPagina(channel)]', ']', 'il bot smette di leggere la pagina link'],
   ['src/ai/brain.js', '_vociDallaPagina(channel) {', '_vociDallaPaginaVecchia(channel) {', 'la lettura della pagina cambia nome e nessuno se ne accorge'],
@@ -213,7 +213,9 @@ dice(/if \(!p \|\| p\.attiva === false\)/.test(brainjs),
 // dovrebbe spiegarla resta quella di prima. Chi la legge conclude che quella
 // cosa non esiste, ed e' peggio che non avere il manuale, perche' ci ha creduto.
 // Qui ogni riga e' una coppia: se il CODICE ha la cosa, il MANUALE deve dirla.
-const manualejs = leggi('src/web/manuali.js');
+// Ogni manuale sta nel suo file, in src/web/manuali/it/: si leggono tutti.
+const manualejs = readdirSync(join(RAD, 'src/web/manuali/it')).filter((f) => f.endsWith('.js')).sort()
+  .map((f) => leggi(`src/web/manuali/it/${f}`)).join('\n');
 const COPPIE = [
   [() => CAMPI.length > 0, 'La tua scheda', 'la scheda dello streamer'],
   [() => /aggiungiColonna\('knowledge', 'fissata'/.test(dbjs), 'fissata', 'le voci fissate'],

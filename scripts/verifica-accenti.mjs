@@ -14,7 +14,7 @@
 // Uso: node scripts/verifica-accenti.mjs             (esce 1 se ne trova)
 //      node scripts/verifica-accenti.mjs --selftest
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -72,7 +72,9 @@ const POSTI = [
   ['NOVITA.md', (t) => t.split('\n').filter((r) => r.startsWith('- ')).map((r) => r.replace(/\s*\[vai:\s*[a-z0-9-]+\]\s*$/i, '')).join('\n')],
   // I commenti si tolgono prima: quello che il programmatore scrive per sé non
   // lo legge nessuno da fuori, e un cancello che dà allarmi su quelli si spegne.
-  ['src/web/manuali.js', (t) => (senzaCommentiJs(t).match(/'[^']{25,}'/g) || []).join('\n')],
+  // Le guide e i manuali stanno in un file per pagina: si guardano tutti.
+  ...['src/web/guide/it.js', ...readdirSync(join(RAD, 'src/web/manuali/it')).filter((f) => f.endsWith('.js')).sort().map((f) => `src/web/manuali/it/${f}`)]
+    .map((f) => [f, (t) => (senzaCommentiJs(t).match(/'[^']{25,}'/g) || []).join('\n')]),
   // Nel pannello si guarda SOLO il primo argomento di L(...), che è la frase
   // italiana. Prendere tutte le stringhe del file darebbe allarmi su nomi di
   // variabili («gia»), su classi CSS («carta-novita») e sullo spagnolo («pero
@@ -139,7 +141,7 @@ for (const [file, estrai] of POSTI) {
 // confrontare le parole, e quella si riconosce e si salta.
 const SCOMPOSTE = /[\u0300-\u036f]/;
 const cartelle = ['src'];
-const { readdirSync, statSync } = await import('node:fs');
+const { statSync } = await import('node:fs');
 const tuttiJs = (d) => readdirSync(join(RAD, d)).flatMap((f) => {
   const via = join(d, f);
   return statSync(join(RAD, via)).isDirectory() ? tuttiJs(via) : (/\.(m?js|html)$/.test(f) ? [via] : []);
