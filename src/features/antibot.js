@@ -723,6 +723,15 @@ export const statoEsecutore = (canale) => (canale ? esecutore?.stato(canale) || 
 export const azioniFallite = ({ limite = 100, canale } = {}) => (canale ? esecutore?.fallitiInSospeso({ limite, canale }) || [] : []);
 export const riprovaFallite = (ch) => esecutore?.riprovaFalliti(ch) || 0;
 
+// Un blocco chiesto a mano dal pannello (la pulizia dei follower) passa dallo
+// stesso esecutore dello scudo: la stessa fila, le stesse riprove, lo stesso
+// registro, e il ripiego sul ban se il blocco non si puo' fare. E' una scelta
+// dello streamer, quindi vale anche in sola osservazione.
+export function bloccaDaConsole(canale, { login = '', userId = '' } = {}) {
+  if (!esecutore) return Promise.resolve({ ok: false, motivo: 'scudo non avviato' });
+  return esecutore.esegui(verdetto({ canale: norm(canale), login: norm(login), userId: String(userId), azione: AZIONI.BLOCCA, motivi: ['dalla console'], origine: 'console' }));
+}
+
 // Quanto sbaglia lo scudo, misurato sui suoi stessi giudizi: chi era stato
 // segnato come «probabile macchina» e poi si e' messo a parlare in chat era una
 // persona. Il conto si fa guardando la memoria della chat che c'e' gia': non

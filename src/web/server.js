@@ -41,13 +41,12 @@ import { conOccasione, normOccasioni, accendi as accendiOccasione } from '../fea
 import * as cancello from '../features/tg-cancello.js';
 import { permessiDi as permessiDiChat, guai as guaiCancello } from '../features/tg-ingresso.js';
 import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
-import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX } from '../features/antibot.js';
+import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX, bloccaDaConsole } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
 import { aperto as incidenteAperto, elenco as elencoIncidenti, uno as unIncidente, sintesi as sintesiIncidente } from '../features/incidenti.js';
 import { rapporto as rapportoBonifica, anteprima as anteprimaBonifica } from '../features/bonifica.js';
 import { stato as statoRete, elenco as elencoRete, dimentica as dimenticaRete } from '../features/rete.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
-import { bloccaORipiega } from '../features/enforcement.js';
 import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
@@ -3319,16 +3318,18 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login.toLowerCase();
     const userId = String(req.body?.userId || '');
     const nome = String(req.body?.login || '').toLowerCase();
-    // «Blocca» toglie anche il follow, con la stessa regola dello scudo: se il
-    // blocco non si puo' fare si ripiega sul ban, e lo si dice.
+    // «Blocca» toglie anche il follow e passa dall'esecutore dello scudo, che lo
+    // scrive nel registro e ripiega sul ban se il blocco non si puo' fare. Lo
+    // sbannare non punisce nessuno: resta qui.
     const azione = req.body?.azione === 'sbanna' ? 'sbanna' : 'blocca';
     if (!/^\d+$/.test(userId)) return res.status(400).json({ errore: 'Utente non valido.' });
     if (!moderazioneOk(login)) return res.status(403).json({ errore: 'Servono i permessi di moderazione.', codice: 'permessi' });
-    const r = azione === 'sbanna'
-      ? await helix.unbanUser(login, userId).catch(() => null)
-      : await bloccaORipiega(helix, login, userId, 'anti-bot: dalla console').catch(() => null);
-    const fatta = azione === 'sbanna' ? 'sbanna' : (r?.ripiego || 'blocca');
-    registraAntibot(login, { login: nome, userId, azione: fatta, motivo: 'dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
+    if (azione === 'sbanna') {
+      const r = await helix.unbanUser(login, userId).catch(() => null);
+      registraAntibot(login, { login: nome, userId, azione: 'sbanna', motivo: 'dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
+      return res.json({ ok: !!r?.ok, motivo: r?.motivo || '' });
+    }
+    const r = await bloccaDaConsole(login, { login: nome, userId }).catch(() => null);
     res.json({ ok: !!r?.ok, motivo: r?.motivo || '', ripiego: r?.ripiego || '' });
   }));
 
