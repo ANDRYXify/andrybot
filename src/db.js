@@ -4564,36 +4564,52 @@ export const statoVivo = {
 };
 // ---------------------------------------------------------------- contatori
 
-// Nome contatore normalizzato: minuscolo, senza spazi ai bordi, max 60 char.
-const normContatore = (s) => String(s || '').trim().toLowerCase().slice(0, 60);
+// I CONTATORI SONO UNO SOLO. I moduli avevano una tabella loro (`counters`),
+// separata da quella dei contatori della carta (`contatori`): $count(morti) e
+// l'azione «Contatore» di un modulo non vedevano il !morti che si vede a
+// schermo, e nessuno poteva capirlo dal pannello. Ora questa e' una vista sui
+// contatori della carta: stesso numero, per costruzione. Un contatore che un
+// modulo tocca e che non c'e' ancora nasce nella carta, come se l'avessi
+// creato da li'.
+const comandoContatore = (s) => String(s || '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
 
 export const counters = {
   get(channel, nome) {
-    const n = normContatore(nome);
-    return db.prepare('SELECT valore FROM counters WHERE channel=? AND nome=?').get(channel, n)?.valore ?? 0;
+    const cmd = comandoContatore(nome);
+    return cmd ? (contatori.get(channel, cmd)?.valore ?? 0) : 0;
   },
   // Incrementa (o decrementa con delta negativo) e ritorna il nuovo valore.
   inc(channel, nome, delta = 1) {
-    const n = normContatore(nome);
-    if (!n) return 0;
-    const d = Math.trunc(Number(delta) || 0);
-    db.prepare(`INSERT INTO counters (channel, nome, valore) VALUES (?,?,?)
-      ON CONFLICT(channel, nome) DO UPDATE SET valore = valore + excluded.valore`)
-      .run(channel, n, d);
-    return this.get(channel, n);
+    const cmd = comandoContatore(nome);
+    if (!cmd) return 0;
+    if (!contatori.get(channel, cmd)) contatori.upsert(channel, { comando: cmd });
+    return contatori.incrementa(channel, cmd, Math.trunc(Number(delta) || 0))?.valore ?? 0;
   },
   set(channel, nome, valore) {
-    const n = normContatore(nome);
-    if (!n) return 0;
-    const v = Math.trunc(Number(valore) || 0);
-    db.prepare(`INSERT INTO counters (channel, nome, valore) VALUES (?,?,?)
-      ON CONFLICT(channel, nome) DO UPDATE SET valore = excluded.valore`)
-      .run(channel, n, v);
-    return v;
+    const cmd = comandoContatore(nome);
+    if (!cmd) return 0;
+    return contatori.upsert(channel, { comando: cmd, valore: Math.trunc(Number(valore) || 0) })?.valore ?? 0;
   },
   all(channel) {
-    return db.prepare('SELECT nome, valore FROM counters WHERE channel=? ORDER BY nome').all(channel);
+    return contatori.list(channel).map((c) => ({ nome: c.comando, valore: c.valore }));
   },
 };
+
+// Una volta: i valori che stavano solo nella tabella dei moduli passano nella
+// carta. Se un contatore c'era in tutti e due i posti, vince quello della carta,
+// che e' quello che si vedeva a schermo.
+export function migraContatoriModuli() {
+  const vecchi = db.prepare('SELECT channel, nome, valore FROM counters').all();
+  if (!vecchi.length) return 0;
+  db.transaction(() => {
+    for (const r of vecchi) {
+      const cmd = comandoContatore(r.nome);
+      if (cmd && !contatori.get(r.channel, cmd)) contatori.upsert(r.channel, { comando: cmd, valore: r.valore });
+    }
+    db.prepare('DELETE FROM counters').run();
+  })();
+  return vecchi.length;
+}
+try { migraContatoriModuli(); } catch { /* database di prova senza la tabella vecchia */ }
 
 function safeJson(s) { try { return JSON.parse(s || '{}'); } catch { return {}; } }

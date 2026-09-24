@@ -169,6 +169,12 @@ export function cambia(channel, comando, delta, say, emit) {
   } catch (e) { log.debug('cambia:', e?.message || e); return null; }
 }
 
+// Un contatore cambiato da fuori (l'azione di un modulo): la scritta a schermo
+// segue, come quando lo cambia la chat.
+export function aggiornaSchermo(channel, comando, emit) {
+  versoSeMostra(emit, store.get(channel, comando));
+}
+
 export function perRiscatto(channel, data, say, emit) {
   try {
     const rewardId = data?.reward?.id; if (!rewardId) return false;

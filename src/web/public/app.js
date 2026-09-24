@@ -17972,7 +17972,6 @@ async function caricaContatori() {
           colore: g('colore').value, sfondo: g('trasp').checked ? 'transparent' : g('sfondo').value,
           dim: Number(g('dim').value) || 40, grassetto: g('grassetto').checked,
           font: g('font').value, formato: g('formato').value,
-          parolaOn: g('parolaOn').value, parolaOff: g('parolaOff').value,
         };
         await api('/api/contatori', { method: 'POST', body: { comando: cmd, overlay } });
         toast(L('Aspetto salvato ✓ (aggiornato nell\'overlay)', 'Look saved ✓ (updated in overlay)', 'Aspecto guardado ✓ (actualizado en el overlay)'));

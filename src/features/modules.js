@@ -21,6 +21,7 @@ import * as spotify from './spotify.js';
 import { comeSiChiama } from './bit.js';
 import { makeLog } from '../logger.js';
 import { leggiDurata, DURATA_DI_SERIE } from './modalita-chat.js';
+import { aggiornaSchermo } from './contatori.js';
 
 const log = makeLog('moduli');
 
@@ -825,13 +826,15 @@ export class ModulesEngine {
       case 'contatore': {
         const nome = azione.nome;
         if (!nome) return;
-        if (azione.op === 'incrementa') {
-          counters.inc(ctx.channel, nome, azione.valore != null ? Number(azione.valore) : 1);
-        } else if (azione.op === 'azzera') {
-          counters.set(ctx.channel, nome, 0);
-        } else if (azione.op === 'imposta') {
-          counters.set(ctx.channel, nome, Number(azione.valore) || 0);
-        }
+        // «Incrementa (+1)» fa +1: il campo «Valore» vale solo per «Imposta a…».
+        // Prima qui si leggeva anche per l'incremento, e il valore di partenza
+        // del campo e' 0: il contatore non si muoveva mai.
+        if (azione.op === 'incrementa') counters.inc(ctx.channel, nome, 1);
+        else if (azione.op === 'azzera') counters.set(ctx.channel, nome, 0);
+        else if (azione.op === 'imposta') counters.set(ctx.channel, nome, Number(azione.valore) || 0);
+        else return;
+        aggiornaSchermo(ctx.channel, String(nome).trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30),
+          (p) => this.effects?.emit?.(ctx.channel, p));
         return;
       }
       case 'webhook': {
