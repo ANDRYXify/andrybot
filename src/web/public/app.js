@@ -4476,7 +4476,7 @@ function grafDidascalia(c) {
   const coda = `👉 ${url}${handle ? '\n' + handle : ''}`;
   if (c.tipo === 'prossima') {
     const gioco = grafProssimaGioco();
-    return `📅 ${grafQuandoTesto(c)}${gioco ? ' · ' + gioco : ''}! ${L('Vi aspetto in diretta', 'See you live', 'Os espero en directo')}\n${coda}`;
+    return `🗓️ ${grafQuandoTesto(c)}${gioco ? ' · ' + gioco : ''}! ${L('Vi aspetto in diretta', 'See you live', 'Os espero en directo')}\n${coda}`;
   }
   if (c.tipo === 'live') {
     const gioco = String(c.gioco || '').trim();
