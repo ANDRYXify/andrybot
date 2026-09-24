@@ -307,27 +307,18 @@ Il sito ne usa due, e la scelta la fa il codice, non l'occhio: la decide
 
 | spostamento | passaggio | cosa succede |
 | --- | --- | --- |
-| fra **sottosezioni** della stessa famiglia | **da azione ad azione** — stessa scena, la macchina non si sposta | nessun lampo. I blocchi rientrano sfalsati di `--sfalso` nell'ordine di lettura, nel verso del movimento, a scatti (`--su-due`) |
-| fra **sezioni** diverse | **da scena a scena** — luogo nuovo | **fotogramma d'impatto**, poi la vignetta nuova entra a scatti dal verso giusto |
+| fra **sottosezioni** della stessa famiglia | **da azione ad azione**: stessa scena, la macchina non si sposta | niente si cancella: la scheda nuova si disegna |
+| fra **sezioni** diverse | **da scena a scena**: luogo nuovo | la vignetta vecchia si cancella col bianchetto (`--t-uscita`, 180 ms), poi la nuova si disegna |
 
-### I tre tempi
+Il sito **si disegna**, non si anima: matita, china sul bordo vero, retino,
+pulizia, a dodici disegni al secondo. Il modello, la ricerca da cui viene e le
+regole stanno in [DISEGNO.md](DISEGNO.md).
 
-Lo stacco fra scene ha **due tempi**: la vignetta vecchia esce, la nuova entra
-dal lato da cui sei arrivato.
-
-1. **Uscita** (`--t-uscita`, 96 ms): il pannello vecchio scivola via nel verso
-   del movimento, a scatti.
-2. **Entrata**: le schede rientrano dal lato da cui sei arrivato, sfalsate di
-   `--sfalso` in ordine di lettura.
-
-Il cambio di sezione **non usa la view transition**: lo strato delle view
-transition il browser lo dipinge sopra a tutto, e quel che si vuole controllare
-qui è come le vignette entrano ed escono, non una dissolvenza di sistema.
-
-La view transition resta dove serve davvero: quando apri una scheda che si
-*trasforma* nella pagina. Li' non c'e' impatto, perche' non e' uno stacco — e'
-uno zoom dentro la stessa vignetta, che nella grammatica di McCloud e' un
-passaggio da soggetto a soggetto.
+Fino al 24 settembre 2026 lo stacco era un movimento. La vignetta vecchia
+scivolava via, la nuova entrava dal lato da cui arrivavi, le sottosezioni
+rientravano sfalsate, e aprendo una scheda dal menu la voce si trasformava nella
+pagina (una View Transition). Le sezioni qui sotto raccontano i difetti di quel
+movimento: le regole che ne sono uscite valgono ancora, il movimento no.
 
 ### Il fotogramma d'impatto, e perché non c'è più
 
@@ -341,11 +332,10 @@ guarda. Se serve un'enfasi, il posto è un evento raro — la prima connessione 
 bot, l'andare in diretta — non ogni clic su una scheda.
 
 `node scripts/verifica-stacco.mjs` gira **tutti** i passaggi fra schede vicine e
-per ognuno chiede al browser quale dei due stacchi è partito — dal codice non si
-vede, perché `stessaFamiglia()` non si legge da fuori. Controlla anche che il
-lampo non resti a schermo, che non se ne accumuli uno per cambio, che duri pochi
-fotogrammi, che la pausa fra due basti, e che i due interruttori restino
-separati — con «leggero» lo stacco c'è, con «meno movimento» no.
+per ognuno osserva le tele che nascono. Pretende il bianchetto quando cambia la
+sezione e mai dentro la stessa sezione. Pretende che la scheda nuova si disegni
+in ordine di lettura e che non resti niente a disegno finito. Tiene separati i
+due interruttori: con «leggero» il disegno c'è, con «meno movimento» no.
 
 Fonti: [McCloud, i sei passaggi](https://understandingcomics177.wordpress.com/about/1-2/2-2/) ·
 [linee d'azione nel manga](https://jerwoodvisualarts.org/blog/how-to-draw-manga-action-lines/) ·
@@ -402,18 +392,20 @@ transiziona più (`transition-property: opacity`), la carta aspetta il suo
 turno ferma sul primo fotogramma (`both`), e chi ha chiesto meno movimento non
 la vede partire.
 
-`test/contratto/sempre-visibile.test.mjs` controlla le tre regole nel codice,
-`test/contratto/entrate-nel-margine.test.mjs` che ogni spostamento di lato
-dentro le schede passi dal margine. `scripts/verifica-larghezza.mjs` apre ogni
+Dal 24 settembre 2026 le carte non si spostano più: si disegnano
+([DISEGNO.md](DISEGNO.md)), e una carta che aspetta non è spostata da nessuna
+parte. Le due regole qui sopra restano nel disegno: le carte si vedono anche se
+il disegno non parte, e la tela ha la scatola della carta, quindi non allarga la
+pagina.
+
+`test/contratto/sempre-visibile.test.mjs` controlla le due regole nel codice.
+`scripts/verifica-larghezza.mjs` apre ogni
 scheda a 360 px in un browser vero e pretende che la pagina non scorra di lato.
 Se scorre dice chi è stato: chi è più largo del posto che il padre gli dà, o
 chi è largo giusto ma sta oltre il bordo, spostato da un'animazione. Non conta
 chi sta in un riquadro che scorre per conto suo (una tabella larga nel suo
 guscio): la prima versione segnalava la tabella dei gruppi Telegram e non la
-carta che usciva davvero. `scripts/verifica-stacco.mjs` guarda a ogni
-fotogramma di quanto si spostano le carte della scheda che entra, e da che
-parte: la prima versione leggeva il testo di `--rev-x`, che diceva 32 px mentre
-la carta stava ferma, ed era verde. E `scripts/verifica-contrasto.mjs`
+carta che usciva davvero. E `scripts/verifica-contrasto.mjs`
 misura sui pixel il contrasto dei comandi, anche sotto il mouse. Girano tutti a
 ogni push.
 
@@ -453,10 +445,11 @@ Adesso:
 
 - al `render()` si prepara solo la scheda che si vede;
 - la scheda in cui entri si prepara **per prima cosa** in `vaiAScheda`, prima
-  della transizione e prima di chiunque altro: la ricerca, la visita guidata e
-  «Come funziona» non trovano mai una scheda non pronta;
-- `rivelaCarte` prima misura tutte le carte, poi scrive. Una misura sola, sulla
-  posizione vera della carta e non su quella già spostata dall'animazione.
+  di chiunque altro: la ricerca, la visita guidata e «Come funziona» non trovano
+  mai una scheda non pronta;
+- `rivelaCarte` non misura più niente: scrive e basta. Misurava per decidere
+  quali carte entravano di lato; adesso cosa si vede lo misura il disegno, tutto
+  insieme prima di scrivere ([DISEGNO.md](DISEGNO.md), regola 8).
 
 Misurato con lo stesso banco, sulla prova del pannello: su un computer il
 `render()` passa da 65 a 53 ms; su un telefono medio (il processore rallentato

@@ -53,9 +53,7 @@ p, li { line-height: 1.72; }
   --t-medio: 220ms;
   --t-pieno: 320ms;
   --t-scena: 420ms;
-  --t-scambio: 150ms;
-  --t-uscita: 96ms;
-  --sfalso: 26ms;
+  --t-uscita: 180ms;
   --ease-uscita: cubic-bezier(.4, 0, 1, 1);
   --ease-entrata: cubic-bezier(.16, .84, .34, 1);
 
@@ -88,7 +86,7 @@ p, li { line-height: 1.72; }
   #anime-sfondo::after, .pl-atmo { animation: none !important; }
   .btn::after, .pl-tile::after { display: none; }
   :root { --molla-lieve: ease; --molla-medio: ease; --molla-pieno: ease; --molla-scena: ease;
-            --t-lieve: .01ms; --t-medio: .01ms; --t-pieno: .01ms; --t-scena: .01ms; --t-scambio: .01ms; --t-uscita: .01ms; --sfalso: 0ms; }
+            --t-lieve: .01ms; --t-medio: .01ms; --t-pieno: .01ms; --t-scena: .01ms; --t-uscita: .01ms; }
 }
 .btn, button.btn, a.btn {
   transition: scale var(--t-molla-su) var(--molla-medio), opacity .2s ease,
@@ -150,3 +148,26 @@ summary:focus-visible, select:focus-visible, input:focus-visible, textarea:focus
   0% { transform: scale(1); opacity: .5; }
   70%, 100% { transform: scale(2.7); opacity: 0; }
 }
+
+@property --mt-t { syntax: '<length>'; inherits: false; initial-value: 0px; }
+.dg-in {
+  border-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-mask-image: repeating-linear-gradient(-38deg, #000 0 var(--mt-t), transparent var(--mt-t) 7px);
+  mask-image: repeating-linear-gradient(-38deg, #000 0 var(--mt-t), transparent var(--mt-t) 7px);
+  animation: dg-retino var(--dg-retino, 170ms) steps(3, jump-end) var(--dg-da-retino, 0ms) both;
+}
+@keyframes dg-retino { from { --mt-t: 0px; } to { --mt-t: 7px; } }
+.dg-tela { position: absolute; pointer-events: none; overflow: visible; }
+.dg-tela path { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.dg-matita { stroke: color-mix(in srgb, var(--contorno) 62%, transparent); stroke-width: 1.5; }
+.dg-bianchetto { stroke: var(--bg); }
+.dg-emanata { stroke-width: 2.4; }
+.dg-rabbia { stroke: var(--rosso); }
+.dg-scintille { stroke: var(--acc); }
+.dg-traccia { animation: dg-traccia var(--dg-dur, 200ms) var(--dg-passi, steps(3, jump-end)) var(--dg-da, 0ms) forwards; }
+@keyframes dg-traccia { to { stroke-dashoffset: 0; } }
+.dg-matite { animation: dg-via 170ms steps(2, jump-end) var(--dg-da-pulizia, 0ms) forwards; }
+@keyframes dg-via { to { opacity: 0; } }
+.dg-attesa { opacity: 0; }
+@media print { .dg-attesa { opacity: 1; } }

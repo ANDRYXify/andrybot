@@ -4,10 +4,12 @@
 // Qui le cose che devono restare vere:
 //  · il disegno del pannello prepara le carte della scheda che si vede, non di
 //    tutte e trentasette;
-//  · la scheda in cui entri si prepara per prima cosa, prima della transizione:
-//    nessuno trova una scheda non pronta;
-//  · la comparsa misura tutte le carte e poi scrive: una misura dopo una
-//    scrittura rifa' l'impaginazione, e in un ciclo la rifa' a ogni carta.
+//  · la scheda in cui entri si prepara per prima cosa: nessuno trova una
+//    scheda non pronta;
+//  · la comparsa non misura niente, scrive e basta. Misurava per decidere
+//    quali carte entravano di lato; adesso le carte si disegnano, e cosa si
+//    vede lo misura il disegno, tutto insieme prima di scrivere
+//    (src/web/public/disegno.js, docs/DISEGNO.md).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -40,10 +42,8 @@ test('la scheda in cui entri si prepara per prima cosa', () => {
   }
 });
 
-test('la comparsa prima misura tutte le carte, poi scrive', () => {
+test('la comparsa non misura niente: scrive e basta', () => {
   const c = funzione('rivelaCarte');
-  const misura = c.indexOf('const sopra = carte.map((c) => c.getBoundingClientRect().top);');
-  const scrive = c.indexOf("c.classList.add('rivela');");
-  assert.ok(misura > 0 && scrive > misura, 'le misure vengono prima');
-  assert.equal((c.match(/getBoundingClientRect/g) || []).length, 1, 'e sono tutte li\'');
+  assert.ok(c.includes("c.classList.add('rivela');"), 'rivela le carte');
+  assert.doesNotMatch(c, /getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle/, 'senza chiedere misure al browser');
 });

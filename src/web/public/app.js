@@ -44,9 +44,7 @@ function toast(msg, tipo = 'ok') {
   box.appendChild(el);
   setTimeout(() => {
     el.classList.add('esce');
-    const via = () => el.remove();
-    el.addEventListener('animationend', via, { once: true });
-    setTimeout(via, 700);
+    setTimeout(() => el.remove(), _duraUscita() + 20);
   }, 4000);
 }
 
@@ -1448,44 +1446,6 @@ try {
 
 const _menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-let _morphDa = null;
-document.addEventListener('click', (ev) => {
-  const b = ev.target && ev.target.closest ? ev.target.closest('[data-scheda]') : null;
-  _morphDa = (b && b.dataset.scheda) ? b : null;
-}, true);
-
-let _morphEl = null;
-function morphDa(el) {
-  const app = document.getElementById('app');
-  if (_morphEl && _morphEl !== el) { try { _morphEl.style.viewTransitionName = ''; } catch {  } }
-  _morphEl = el || null;
-  if (_morphEl) {
-    if (app) app.style.viewTransitionName = 'none';
-    try { _morphEl.style.viewTransitionName = 'contenuto'; } catch {  }
-  } else if (app) app.style.viewTransitionName = '';
-}
-
-let _versoVia = 0;
-let _uscitaVia = 0;
-
-function transizione(fn) {
-  const drawer = window.matchMedia && window.matchMedia('(max-width: 1200px)').matches;
-  if (_menoMoto || drawer || !document.startViewTransition) { fn(); return { finished: Promise.resolve() }; }
-  const tr = document.startViewTransition(fn);
-  try { tr.finished.finally(() => { delete document.documentElement.dataset.verso; }); } catch (e) {  }
-  return tr;
-}
-
-function _ordineSchede() {
-  return [...document.querySelectorAll('.pannello-scheda')].map((p) => p.dataset.scheda);
-}
-
-function _versoVerso(da, a) {
-  const o = _ordineSchede();
-  const i = o.indexOf(da), j = o.indexOf(a);
-  if (i < 0 || j < 0 || i === j) return 'avanti';
-  return j > i ? 'avanti' : 'indietro';
-}
 
 let _rivObs = null;
 function _osservatore() {
@@ -1497,38 +1457,14 @@ function _osservatore() {
   return _rivObs;
 }
 
-function preparaCarte(scope = document) {
-  if (_menoMoto) return;
-  const obs = _osservatore();
-  for (const c of scope.querySelectorAll('.carta')) {
-    c.classList.remove('dentro');
-    c.classList.add('rivela');
-    c.style.setProperty('--rev-x', '0px');
-    obs.observe(c);
-  }
-  _reteDiSicurezza();
-  _guardaLeCarteNuove();
-}
-
 function avviaComparsa(sezioni) {
   const t = document.getElementById('pagina-testata');
   if (t) {
     t.classList.remove('entra');
     void t.offsetWidth;
     t.classList.add('entra');
-    t.classList.remove('pronta');
   }
   (sezioni || []).forEach((p) => rivelaCarte(p));
-}
-
-function armaComparsa() {
-  const t = document.getElementById('pagina-testata');
-  if (!t || _menoMoto) return;
-  t.classList.remove('entra');
-  t.classList.add('pronta');
-  setTimeout(() => {
-    if (t.classList.contains('pronta') && !t.classList.contains('entra')) avviaComparsa([]);
-  }, 1400);
 }
 
 let _reteCarteTimer = null;
@@ -1560,21 +1496,14 @@ function _guardaLeCarteNuove() {
 }
 
 function rivelaCarte(scope = document) {
-  const carte = [...scope.querySelectorAll('.carta')];
+  const carte = scope.querySelectorAll('.carta');
   if (_menoMoto) { carte.forEach((c) => c.classList.add('rivela', 'dentro')); return; }
   const obs = _osservatore();
-  const soglia = window.innerHeight * 0.92;
-  const sopra = carte.map((c) => c.getBoundingClientRect().top);
-  let inVista = 0;
-  carte.forEach((c, i) => {
+  for (const c of carte) {
     c.classList.remove('dentro');
     c.classList.add('rivela');
-    const visibile = sopra[i] < soglia;
-
-    c.style.setProperty('--rev-delay', visibile ? 230 + Math.min(inVista++, 5) * 55 + 'ms' : '0ms');
-    if (visibile) c.style.removeProperty('--rev-x'); else c.style.setProperty('--rev-x', '0px');
     obs.observe(c);
-  });
+  }
   _reteDiSicurezza();
   _guardaLeCarteNuove();
 }
@@ -26402,28 +26331,21 @@ async function _chiediPrimaDiUscire() {
 }
 
 function _scambiaScheda(id, sezioni) {
-  morphDa(null);
+  _saltaInCima();
   chiudiMenuMobile();
   aggiornaStatoNav(id);
   document.querySelectorAll('.pannello-scheda').forEach((p) =>
     p.classList.toggle('visibile', p.dataset.scheda === id));
   const testata = document.getElementById('pagina-testata');
-  if (testata) testata.classList.remove('entra', 'pronta');
+  if (testata) testata.classList.remove('entra');
   aggiornaTestataPagina();
-  sezioni.forEach((p) => {
-    rendiCartePieghevoli(p, id);
-    p.classList.remove('scambio');
-    [...p.children].forEach((c, i) => { c.style.setProperty('--i', Math.min(i, 6)); });
-    void p.offsetWidth;
-    if (!_menoMoto) p.classList.add('scambio');
-  });
+  sezioni.forEach((p) => rivelaCarte(p));
   applicaSottoSchede(id);
   caricaDatiScheda(id);
   azzeraBarraSalva();
   riavviaAiuto();
   riavviaGiro();
   if (DEMO) aggiornaSpiegazioneDemo();
-  if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
 }
 
 const STESSA_ROBA = [new Set(['dcserver', 'dcentra', 'dcfiltro'])];
@@ -26448,10 +26370,6 @@ function vaiAScheda(id) {
       () => { _uscitaInCorso = false; });
     return;
   }
-  morphDa(null);
-  const org = (_morphDa && _morphDa.isConnected && _morphDa.dataset.scheda === id
-    && !stessaFamiglia(id, schedaAttiva)) ? _morphDa : null;
-  _morphDa = null;
   if (id === schedaAttiva) { chiudiMenuMobile(); return; }
   const prima = schedaAttiva;
   schedaAttiva = id;
@@ -26462,23 +26380,19 @@ function vaiAScheda(id) {
   sezioni.forEach((p) => rendiCartePieghevoli(p, id));
 
   if (stessaFamiglia(prima, id)) {
-    try { document.documentElement.dataset.verso = _versoVerso(prima, id); } catch (e) {  }
     _scambiaScheda(id, sezioni);
     if (insieme && sporcoPrima) _riarmaBarraSalva(id);
-    clearTimeout(_versoVia);
-    _versoVia = setTimeout(() => { delete document.documentElement.dataset.verso; }, 900);
     return;
   }
 
-  try { document.documentElement.dataset.verso = _versoVerso(prima, id); } catch (e) {  }
-
-  if (org && !_menoMoto) { morphDa(org); _cambiaScena(id, sezioni, true); return; }
-  if (_menoMoto) { _cambiaScena(id, sezioni, true); return; }
+  if (_menoMoto) { _cambiaScena(id, sezioni); return; }
 
   for (const p of document.querySelectorAll('.pannello-scheda.visibile')) p.classList.add('esce');
   clearTimeout(_uscitaVia);
-  _uscitaVia = setTimeout(() => _cambiaScena(id, sezioni, false), _duraUscita());
+  _uscitaVia = setTimeout(() => _cambiaScena(id, sezioni), _duraUscita());
 }
+
+let _uscitaVia = 0;
 
 function _duraUscita() {
   const v = getComputedStyle(document.documentElement).getPropertyValue('--t-uscita').trim();
@@ -26495,41 +26409,22 @@ function _saltaInCima() {
   radice.style.scrollBehavior = prima;
 }
 
-function _cambiaScena(id, sezioni, conVelo) {
-  const corpo = () => {
-    _saltaInCima();
-    morphDa(null);
-    chiudiMenuMobile();
-    aggiornaStatoNav(id);
-    document.querySelectorAll('.pannello-scheda').forEach((p) =>
-      p.classList.toggle('visibile', p.dataset.scheda === id));
-    aggiornaTestataPagina();
-    armaComparsa();
-    sezioni.forEach((p) => { rendiCartePieghevoli(p, id); preparaCarte(p); });
-    applicaSottoSchede(id);
-  };
-  const finita = () => { morphDa(null); avviaComparsa(sezioni); };
-  if (conVelo) {
-    const tr = transizione(corpo);
-    try { tr.finished.then(finita, finita); } catch { finita(); }
-  } else {
-    for (const p of document.querySelectorAll('.pannello-scheda.esce')) p.classList.remove('esce');
-    corpo();
-    sezioni.forEach((p) => p.classList.add('scena'));
-    finita();
-    clearTimeout(_versoVia);
-    _versoVia = setTimeout(() => {
-      delete document.documentElement.dataset.verso;
-      for (const p of document.querySelectorAll('.pannello-scheda.scena')) p.classList.remove('scena');
-    }, 1400);
-  }
-  setTimeout(() => morphDa(null), 1600);
+function _cambiaScena(id, sezioni) {
+  for (const p of document.querySelectorAll('.pannello-scheda.esce')) p.classList.remove('esce');
+  _saltaInCima();
+  chiudiMenuMobile();
+  aggiornaStatoNav(id);
+  document.querySelectorAll('.pannello-scheda').forEach((p) =>
+    p.classList.toggle('visibile', p.dataset.scheda === id));
+  aggiornaTestataPagina();
+  sezioni.forEach((p) => rendiCartePieghevoli(p, id));
+  applicaSottoSchede(id);
+  avviaComparsa(sezioni);
   caricaDatiScheda(id);
   azzeraBarraSalva();
   riavviaAiuto();
   riavviaGiro();
   if (DEMO) aggiornaSpiegazioneDemo();
-  if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
 }
 
 function initGuscio() {

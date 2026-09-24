@@ -22,6 +22,10 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+## 2026-09-24
+
+- Il sito si disegna: cambiando sezione la pagina vecchia si cancella col bianchetto e la nuova si disegna a matita e china, come una tavola di manga. Lo stesso per avvisi, finestre e carte che arrivano.
+
 ## 2026-09-23
 
 - I ruoli che il costruttore crea adesso vanno a qualcuno: «Streamer» a te che hai il server, gli altri a moderatori, VIP e abbonati. [vai: dcserver]

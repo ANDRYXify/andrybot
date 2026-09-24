@@ -155,7 +155,7 @@ function capacitaHtml(L) {
   }).join('');
   const nFree = CAPACITA.reduce((n, g) => n + g.voci.filter((v) => v.pacc === 'free').length, 0);
   const nTot = CAPACITA.reduce((n, g) => n + g.voci.length, 0);
-  return `<div class="vt-cap vt-rivela">
+  return `<div class="vt-cap">
     <p class="vt-cap-conta">
       <b>${nTot}</b> ${L('funzioni in tutto', 'features in total', 'funciones en total')}
       <span aria-hidden="true">·</span>
@@ -208,7 +208,7 @@ function fasciaLive(L, l, dirette) {
       <span class="vt-dirette-pie"><i class="vivo"></i>${esc(conta)}</span>
     </a>`;
   }).join('');
-  return `<section class="vt-dirette vt-rivela">
+  return `<section class="vt-dirette">
     <h2 class="vt-dirette-tit">${L('In diretta adesso', 'Live right now', 'En directo ahora')}</h2>
     <p class="vt-dirette-sotto">${L('Canali che usano SocialBot e hanno scelto di comparire qui.', 'Channels using SocialBot that chose to appear here.', 'Canales que usan SocialBot y han elegido aparecer aquí.')}</p>
     <div class="vt-dirette-griglia">${carte}</div>
@@ -369,8 +369,8 @@ function listinoHtml(L, piani) {
     L('Avvisi dei nuovi post sui social', 'Alerts for new social posts', 'Avisos de nuevas publicaciones'),
     L('Un moderatore incluso', 'One moderator included', 'Un moderador incluido'),
   ];
-  const piano = ({ nome, prezzo, sotto, testo, voci, punta, azione, i }) => `
-    <article class="vt-piano${punta ? ' punta' : ''}" style="--i:${i}">
+  const piano = ({ nome, prezzo, sotto, testo, voci, punta, azione }) => `
+    <article class="vt-piano${punta ? ' punta' : ''}">
       ${punta ? `<span class="vt-piano-tag">${L('il più scelto', 'most picked', 'el más elegido')}</span>` : ''}
       <h3>${esc(nome)}</h3>
       <div class="vt-prezzo"><b>${prezzo}</b><span>${sotto}</span></div>
@@ -383,7 +383,6 @@ function listinoHtml(L, piani) {
   return `<div class="vetrina-piani" id="vetrina-piani">
     <div class="vt-store">
       ${piano({
-        i: 0,
         nome: tre(piani.free, 'nome', L) || 'Essenziale',
         prezzo: L('Gratis', 'Free', 'Gratis'),
         sotto: L('per sempre', 'forever', 'para siempre'),
@@ -393,7 +392,6 @@ function listinoHtml(L, piani) {
         azione: `<a class="vt-btn" href="/entra?nuovo=1">${L('Inizia gratis', 'Start free', 'Empieza gratis')}</a>`,
       })}
       ${piano({
-        i: 1,
         nome: tre(piani.base, 'nome', L) || 'Base',
         prezzo: eur(piani.base.prezzo),
         sotto: perMese,
@@ -406,11 +404,11 @@ function listinoHtml(L, piani) {
 
     ${bundle.length ? `
     <div class="vt-pacchi">
-      <p class="vt-pacchi-tit vt-rivela">${L('Pacchetti pronti', 'Ready-made packs', 'Packs listos')} <span>${L('un clic e ti riempio la lista qui sotto', 'one click and I fill in the list below', 'un clic y te relleno la lista de abajo')}</span></p>
+      <p class="vt-pacchi-tit">${L('Pacchetti pronti', 'Ready-made packs', 'Packs listos')} <span>${L('un clic e ti riempio la lista qui sotto', 'one click and I fill in the list below', 'un clic y te relleno la lista de abajo')}</span></p>
       <div class="vt-griglia">
-        ${bundle.map((b, i) => {
+        ${bundle.map((b) => {
           const risp = b.prezzoPieno > b.prezzo;
-          return `<button type="button" class="vt-carta vt-pacco" data-pacco="${esc(b.id)}" aria-pressed="false" style="--i:${i}">
+          return `<button type="button" class="vt-carta vt-pacco" data-pacco="${esc(b.id)}" aria-pressed="false">
             ${risp ? `<span class="vt-pacco-sconto">−${Math.round(b.sconto * 100)}%</span>` : ''}
             <h3>${esc(b.nome)}</h3>
             <p>${esc(tre(b, 'sommario', L))}</p>
@@ -420,9 +418,9 @@ function listinoHtml(L, piani) {
       </div>
     </div>` : ''}
 
-    <div class="vt-comp-guscio vt-rivela" id="vt-comp-guscio">${configuratoreHtml(L, piani)}</div>
+    <div class="vt-comp-guscio" id="vt-comp-guscio">${configuratoreHtml(L, piani)}</div>
 
-    <p class="vt-community vt-rivela">${L('<strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot è <strong>gratis e completo</strong> per te: non ti serve nessun piano.', '<strong>Already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community?</strong> SocialBot is <strong>free and complete</strong> for you: no plan needed.', '<strong>¿Ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot es <strong>gratis y completo</strong> para ti: no necesitas ningún plan.')}</p>
+    <p class="vt-community">${L('<strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot è <strong>gratis e completo</strong> per te: non ti serve nessun piano.', '<strong>Already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community?</strong> SocialBot is <strong>free and complete</strong> for you: no plan needed.', '<strong>¿Ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot es <strong>gratis y completo</strong> para ti: no necesitas ningún plan.')}</p>
   </div>`;
 }
 
@@ -485,16 +483,16 @@ function corpo(L, l, kick, youtube, dirette, piani) {
     </section>
 
     <section class="vt-sez">
-      <div class="vt-testa vt-rivela">
+      <div class="vt-testa">
         <h2 class="vt-tit">${L('Una serata, con il bot acceso', 'One evening, with the bot on', 'Una noche, con el bot encendido')}</h2>
       </div>
-      <ol class="vt-serata vt-rivela">
+      <ol class="vt-serata">
         ${SERATA.map(([t, testo]) => `<li><time>${t}</time><p>${testo}</p></li>`).join('')}
       </ol>
     </section>
 
     <section class="vt-sez">
-      <div class="vt-testa vt-rivela">
+      <div class="vt-testa">
         <h2 class="vt-tit">${L('Cosa c’è dentro', 'What is inside', 'Qué hay dentro')}</h2>
         <p class="vt-testo">${L('Tutto, con accanto scritto se è già tuo o se è un pacchetto in più.', 'All of it, each marked as already yours or as an extra package.', 'Todo, con al lado si ya es tuyo o si es un paquete extra.')}</p>
       </div>
@@ -502,7 +500,7 @@ function corpo(L, l, kick, youtube, dirette, piani) {
     </section>
 
     <section class="vt-sez" id="listino">
-      <div class="vt-testa centro vt-rivela">
+      <div class="vt-testa centro">
         <h2 class="vt-tit">${L('Quanto costa', 'What it costs', 'Cuánto cuesta')}</h2>
         <p class="vt-testo">${L('L’Essenziale è gratis e resta gratis. Il resto si aggiunge un pacchetto alla volta, dal pannello, e si toglie allo stesso modo. Se un rinnovo non passa, il bot resta: si spengono solo le funzioni in più.', 'Essenziale is free and stays free. The rest is added one package at a time, from the panel, and removed the same way. If a renewal fails, the bot stays: only the extra features switch off.', 'Essenziale es gratis y sigue siéndolo. Lo demás se añade de paquete en paquete, desde el panel, y se quita igual. Si una renovación falla, el bot se queda: solo se apagan las funciones extra.')}</p>
       </div>
@@ -510,15 +508,15 @@ function corpo(L, l, kick, youtube, dirette, piani) {
     </section>
 
     <section class="vt-sez">
-      <div class="vt-testa vt-rivela">
+      <div class="vt-testa">
         <h2 class="vt-tit">${L('Domande', 'Questions', 'Preguntas')}</h2>
       </div>
-      <div class="vt-faq vt-rivela">
+      <div class="vt-faq">
         ${FAQ.map(([q, a]) => `<details><summary>${q}</summary><p>${a}</p></details>`).join('')}
       </div>
     </section>
 
-    <section class="vt-fine vt-rivela">
+    <section class="vt-fine">
       <h2 class="vt-tit">${L('Per cominciare', 'To get started', 'Para empezar')}</h2>
       <p class="vt-testo">${L(`Serve solo l’account con cui streammi, su ${conChi(' o ')}. Entri, il piano Essenziale è già attivo, e quello che ti manca lo aggiungi quando ti manca davvero.`, `All you need is the account you stream with, on ${conChi(' or ')}. You log in, the Essenziale plan is already on, and whatever you are missing you add when you actually miss it.`, `Solo hace falta la cuenta con la que haces directo, en ${conChi(' o ')}. Entras, el plan Essenziale ya está activo, y lo que te falte lo añades cuando te falte de verdad.`)}</p>
       <div class="vt-azioni">
@@ -596,6 +594,7 @@ export const RISORSE_VETRINA = [
   'splash.js',        // toglie il velo
   'cookie.js',        // la striscia del cookie tecnico
   'cinema.js',        // lo sfondo animato e la modalita' leggera
+  'disegno.js',       // le carte si disegnano a matita e china quando entrano
   'vetrina-app.js',   // il velo via subito, il conto del configuratore
 ];
 

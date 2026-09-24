@@ -22,6 +22,8 @@ lettera per lettera — **anche quando il titolo era lo stesso titolo**.
 
 ## La regola
 
+> **Dal 24 settembre 2026 le schede non si muovono più: si disegnano** ([DISEGNO.md](DISEGNO.md)). La domanda qui sotto resta la stessa, e la risposta anche: dentro la stessa pagina niente si cancella e la scheda nuova si disegna; cambiando pagina la vecchia si cancella col bianchetto.
+
 **Il moto risponde a: quanto è cambiato?**
 
 | cosa è cambiato | cosa si muove |

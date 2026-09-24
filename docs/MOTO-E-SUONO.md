@@ -49,7 +49,9 @@ molla di risalita) e `var(--t-molla-giu)` in `:active`.
 `@view-transition { navigation: auto }` piu i nomi persistenti (`testata`,
 `marchio`, `piede`) sulla barra in alto, sul logo e sul piede: navigando fra
 pagine che condividono il foglio di stile, quegli elementi **restano** e il
-resto si scambia, invece del lampo bianco. Verificato che ogni nome sia **unico
+resto si scambia, invece del lampo bianco. Il contenuto (`contenuto`) non ha più un nome suo né
+un'animazione: si cambia e basta, poi la pagina nuova si disegna
+([DISEGNO.md](DISEGNO.md)). Verificato che ogni nome sia **unico
 nella sua pagina** — se e duplicato il browser annulla tutta la transizione.
 
 Nota onesta: `/privacy` e `/termini` oggi sono pagine **autonome**, con un
@@ -271,6 +273,8 @@ comanda la Plancia viene consumata da lei, e nessuna pressione va persa.
 ---
 
 ## Il morph: il bottone diventa la sezione
+
+> **Dal 24 settembre 2026 questo non c'è più.** Il sito si disegna invece di animarsi: vedi [DISEGNO.md](DISEGNO.md). Qui resta la storia, perché spiega da dove vengono le regole di oggi.
 
 Premi una voce del menu e quella voce **si allarga fino a diventare la sezione**,
 invece di sparire mentre la pagina fa una dissolvenza.

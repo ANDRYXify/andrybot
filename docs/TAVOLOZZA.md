@@ -558,7 +558,8 @@ Poteva succedere in due modi, nessuno dei due visibile provando il sito:
 `preparaCarte` le spegneva **senza armare l'osservatore** (contava che
 `avviaComparsa` arrivasse dopo, cosa che dipende da una transizione che può non
 finire), e una scheda **creata dopo** quel giro — un elenco che arriva dalla
-rete — non veniva mai osservata da nessuno.
+rete — non veniva mai osservata da nessuno. (`preparaCarte` e quella transizione non ci sono più: adesso le carte le
+rivela solo `rivelaCarte`, e le disegna [il disegno](DISEGNO.md).)
 
 La cura non è ricordarsi di accenderle, è che non possano restare spente:
 chi le prepara arma anche l'osservatore, una rete di sicurezza le accende

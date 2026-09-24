@@ -221,17 +221,9 @@ body.menu-aperto .backdrop { opacity: 1; pointer-events: auto; }
 }
 .pagina-testata.entra .pt-occhiello { animation-delay: 0s; }
 .pagina-testata.entra p { animation-delay: .12s; }
-.pagina-testata.entra > .guida-scheda { animation: pt-in .48s var(--molla-lieve, var(--rev-ease)) .18s backwards; }
 .pagina-testata.entra > .carte-ctrl { animation: pt-in .48s var(--molla-lieve, var(--rev-ease)) .2s backwards; }
 .pagina-testata.entra > .fam-barra { animation: pt-in .46s var(--molla-lieve, var(--rev-ease)) .15s backwards; }
 .pagina-testata.entra .pt-parola > i { animation: parola-su .58s var(--molla-lieve, var(--rev-ease)) both; animation-delay: var(--wd, 0ms); }
-@media (prefers-reduced-motion: no-preference) {
-  .pagina-testata.pronta:not(.entra) > .pt-occhiello,
-  .pagina-testata.pronta:not(.entra) > p,
-  .pagina-testata.pronta:not(.entra) > .fam-barra,
-  .pagina-testata.pronta:not(.entra) > .guida-scheda,
-  .pagina-testata.pronta:not(.entra) > .carte-ctrl { opacity: 0; }
-}
 @keyframes pt-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 
 .pt-parola { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: .06em; margin-bottom: -.06em; }
@@ -327,17 +319,11 @@ body.menu-aperto .backdrop { opacity: 1; pointer-events: auto; }
 .pannello-scheda { display: none; }
 .pannello-scheda.visibile { display: block; }
 
-.carta.rivela {
-  opacity: 0;
-  transform: translateY(26px);
-  transition: opacity .16s var(--su-tre), transform var(--colpo) var(--su-due);
-  transition-delay: var(--rev-delay, 0ms);
-  will-change: opacity, transform;
-}
-.carta.rivela.dentro { opacity: 1; transform: none; will-change: auto; }
+.carta.rivela { opacity: 0; }
+.carta.rivela.dentro { opacity: 1; }
 @keyframes appare { from { opacity: 0; } to { opacity: 1; } }
 
-#app { view-transition-name: contenuto; min-height: min(94svh, 900px); }
+#app { min-height: min(94svh, 900px); }
 
 @view-transition { navigation: auto; }
 .barra-top { view-transition-name: testata; }
@@ -1364,7 +1350,6 @@ table.tabella { width: 100%; border-collapse: collapse; font-size: .9rem; margin
   font-family: var(--mano); font-size: .92rem; line-height: 1.5;
   text-align: left; text-wrap: balance;
   box-shadow: var(--ombra-ink); max-width: 330px;
-  animation: toast-entra var(--colpo) var(--su-due) both;
 }
 .toast::before {
   content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 8px;
@@ -1378,15 +1363,9 @@ table.tabella { width: 100%; border-collapse: collapse; font-size: .9rem; margin
 .toast.errore {
   border-color: var(--rosso);
   background: color-mix(in srgb, var(--rosso) 10%, var(--surface));
-  animation: toast-entra var(--colpo) var(--su-due) both, shonen-scossa .22s var(--su-tre) var(--colpo);
 }
 .toast.errore::before { background: var(--rosso); }
 .toast.errore::after { border-top-color: var(--rosso); border-right-color: var(--rosso); }
-@keyframes toast-entra {
-  0% { opacity: 0; transform: translateX(34px) scale(.86, 1.1) rotate(2deg); }
-  55% { opacity: 1; transform: translateX(-6px) scale(1.05, .95) rotate(-1deg); }
-  100% { opacity: 1; transform: none; }
-}
 
 .campo-largo { flex: 1; min-width: min(180px, 100%); }
 .griglia-campi { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .8rem; }
@@ -1520,17 +1499,6 @@ pre.blocco-codice { background: var(--surface-2); border: 1px solid var(--border
 ::-webkit-scrollbar-thumb:hover { background: var(--testo-3); background-clip: content-box; }
 }
 
-@media (max-width: 1280px) {
-  body.menu-aperto .nav-drawer > * { animation: voce-in .4s var(--ease) backwards; }
-  body.menu-aperto .nav-drawer > *:nth-child(1) { animation-delay: .05s; }
-  body.menu-aperto .nav-drawer > *:nth-child(2) { animation-delay: .09s; }
-  body.menu-aperto .nav-drawer > *:nth-child(3) { animation-delay: .13s; }
-  body.menu-aperto .nav-drawer > *:nth-child(4) { animation-delay: .17s; }
-  body.menu-aperto .nav-drawer > *:nth-child(n+5) { animation-delay: .21s; }
-  @keyframes voce-in { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
-  #app { view-transition-name: none; }
-}
-
 @media (max-width: 640px) {
   .carta { padding: 1.05rem; border-radius: var(--r-m); }
   .blocco-quando, .blocco-se, .blocco-allora { padding: .8rem .7rem; }
@@ -1544,12 +1512,12 @@ pre.blocco-codice { background: var(--surface-2); border: 1px solid var(--border
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
-  .carta.rivela { opacity: 1 !important; transform: none !important; }
+  .carta.rivela { opacity: 1 !important; }
   .pt-parola > i { transform: none !important; }
   .btn { transform: none !important; translate: none !important; scale: none !important; }
 }
 
-.cookie-banner, .aiuto-banner { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(680px, calc(100% - 24px)); z-index: 90; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); color: var(--testo); border: 1px solid var(--border-2); border-radius: var(--r-m); padding: 12px 16px; box-shadow: var(--om-l); animation: toast-entra .35s ease-out; }
+.cookie-banner, .aiuto-banner { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(680px, calc(100% - 24px)); z-index: 90; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); color: var(--testo); border: 1px solid var(--border-2); border-radius: var(--r-m); padding: 12px 16px; box-shadow: var(--om-l); }
 .cookie-banner p, .aiuto-banner p { margin: 0; flex: 1 1 260px; font-size: .9rem; line-height: 1.45; color: var(--testo-2); }
 .cookie-banner .btn, .aiuto-banner .btn { flex: 0 0 auto; }
 .aiuto-banner strong { color: var(--testo); }
@@ -1869,13 +1837,6 @@ summary:active::after, .vt-btn:active::before { transform: scale(1.13); opacity:
   0% { opacity: 0; transform: translateY(14px) scale(.9, 1.06); }
   55% { opacity: 1; transform: translateY(-4px) scale(1.04, .97); }
   100% { opacity: 1; transform: translateY(0) scale(1, 1); }
-}
-@keyframes shonen-scossa {
-  0%, 100% { transform: translate(0, 0); }
-  20% { transform: translate(-3px, 2px); }
-  40% { transform: translate(3px, -2px); }
-  60% { transform: translate(-2px, -1px); }
-  80% { transform: translate(2px, 1px); }
 }
 
 .shonen-entra { animation: shonen-entra var(--colpo) var(--su-due) both; }

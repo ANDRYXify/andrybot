@@ -72,7 +72,14 @@ const SELFTEST = process.argv.includes('--selftest');
 // volta compressi. Non e' un numero tondo scelto a caso — e' la misura di oggi
 // con un po' d'aria sopra. Se un domani si sfora, la domanda giusta non e'
 // «alzo il tetto?»: e' «cosa e' rientrato dalla finestra?».
-const TETTO_KB = 75;
+//
+// Il 24 settembre 2026 e' entrato, apposta, il disegno: la vetrina disegna le
+// sue carte a matita e china come il pannello (docs/DISEGNO.md). Sono 3,8 kB
+// di disegno.js e 0,4 kB di regole in anime-vetrina.css; la home e' passata
+// da 73,3 a 77,3 kB. Una versione ridotta solo per la vetrina ci sarebbe stata
+// sotto, ma sarebbe stata una seconda copia del disegno da tenere uguale alla
+// prima. Il tetto va da 75 a 80: la misura di oggi, con la stessa aria sopra.
+const TETTO_KB = 80;
 
 let chromium;
 try { ({ chromium } = await import(PLAYWRIGHT)); }

@@ -36,6 +36,7 @@ const PONTI = [
   ['suono.js', ['SB_SUONO']],
   ['flusso.js', ['SB_FLUSSO']],
   ['riquadro.js', ['SB_RIQUADRO']],
+  ['disegno.js', ['SB_DISEGNO']],
 ];
 
 const files = readdirSync(PUB).filter((f) => extname(f) === '.js').sort();

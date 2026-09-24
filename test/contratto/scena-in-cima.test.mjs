@@ -11,6 +11,8 @@
 // fa ricalcolare lo stile prima di saltare: senza quella lettura il browser usa
 // ancora lo stile di prima, e scorre piano lo stesso. `behavior: 'instant'` non
 // si usa perche' nei browser piu' vecchi e' un valore sconosciuto, e fa eccezione.
+// Lo stesso vale per le sotto-schede: il disegno guarda cosa c'e' a schermo nel
+// momento in cui la scheda compare, e deve vederlo gia' dall'inizio.
 // Lo misura nel browser scripts/verifica-stacco.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -34,11 +36,13 @@ test('il salto in cima e\' un salto, qualunque cosa dica il CSS', () => {
     'toglie lo scorrimento morbido, fa ricalcolare lo stile, salta, e lo rimette com\'era');
 });
 
-test('cambiando scena si salta in cima prima di mostrare la scheda nuova', () => {
-  const scena = corpoDi('_cambiaScena');
-  const corpo = scena.slice(scena.indexOf('const corpo = () => {'));
-  const salto = corpo.indexOf('_saltaInCima();');
-  const mostra = corpo.indexOf("p.classList.toggle('visibile'");
-  assert.ok(salto > 0 && mostra > salto, 'prima il salto, poi la scheda nuova');
+test('cambiando scheda si salta in cima prima di mostrare quella nuova', () => {
+  for (const nome of ['_cambiaScena', '_scambiaScheda']) {
+    const corpo = corpoDi(nome);
+    const salto = corpo.indexOf('_saltaInCima();');
+    const mostra = corpo.indexOf("p.classList.toggle('visibile'");
+    assert.ok(salto > 0 && mostra > salto, `${nome}: prima il salto, poi la scheda nuova`);
+  }
   assert.doesNotMatch(APP, /scrollTo\(\{ top: 0, behavior: 'auto' \}\)/, 'nessuno chiede piu\' «auto» credendo che sia «subito»');
+  assert.doesNotMatch(APP, /scrollTo\(\{ top: 0, behavior: _menoMoto \? 'auto' : 'smooth' \}\)/, 'e nessuno scivola in cima dopo aver mostrato la scheda');
 });

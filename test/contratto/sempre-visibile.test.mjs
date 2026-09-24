@@ -8,8 +8,9 @@
 // Due difetti veri da cui nasce questo file: il titolo della scheda restava
 // invisibile al primo caricamento, perche' le sue parole aspettavano, ferme
 // sotto il bordo, la classe che le faceva salire; e le carte fuori vista
-// restavano spostate di lato di 32 px, allargando la pagina di 15 px. Poi un
-// terzo: le carte che si vedono non entravano di lato per niente.
+// restavano spostate di lato di 32 px, allargando la pagina di 15 px. Adesso
+// le carte non si spostano piu': si disegnano (docs/DISEGNO.md), e si vedono
+// anche se il disegno non parte.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -31,31 +32,16 @@ test('le parole del titolo si vedono anche se l\'animazione non parte', () => {
   }
 });
 
-test('le carte fuori vista non entrano di lato', () => {
-  const i = APP.indexOf('function rivelaCarte(');
-  const corpo = APP.slice(i, APP.indexOf('\n}\n', i));
-  assert.match(corpo, /if \(visibile\) c\.style\.removeProperty\('--rev-x'\); else c\.style\.setProperty\('--rev-x', '0px'\);/,
-    'solo le carte che si vedono entrano dalla direzione in cui si va; le altre salgono e basta');
-  const j = APP.indexOf('function preparaCarte(');
-  assert.match(APP.slice(j, APP.indexOf('\n}\n', j)), /c\.style\.setProperty\('--rev-x', '0px'\);/);
-});
-
-test('le carte che si vedono entrano di lato davvero: l\'entrata e\' un\'animazione', () => {
-  // Con una transizione il punto di partenza e' lo stato che il browser ha
-  // calcolato per ultimo. rivelaCarte misura le carte per sapere quali si
-  // vedono, e quella misura fissava lo spostamento a 0: la carta partiva da 0,
-  // `dentro` arrivava prima che si muovesse, e saliva soltanto. Un'animazione
-  // parte sempre dal suo primo fotogramma, qualunque cosa ci fosse prima.
-  const regola = (sel) => {
-    const corpi = [...CSS.matchAll(new RegExp('(?:^|\\n)' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\{([^}]*)\\}', 'g'))].map((m) => m[1]);
-    assert.ok(corpi.length, `c'e' ${sel}`);
-    return corpi.join(' ');
-  };
-  assert.match(regola('.pannello-scheda.scena .carta.rivela'), /transition-property: opacity;/, 'lo spostamento in scena non passa da una transizione');
-  const dentro = regola('.pannello-scheda.scena .carta.rivela.dentro');
-  const nome = (dentro.match(/animation: ([\w-]+) /) || [])[1];
-  assert.ok(nome, 'la carta che entra in scena ha la sua animazione');
-  assert.match(CSS, new RegExp(`@keyframes ${nome} \\{ from \\{ transform: translate\\(var\\(--rev-x, 0px\\), 18px\\); \\} \\}`), 'che parte da dove la carta aspetta');
-  assert.match(dentro, /var\(--rev-delay, 0ms\) both;/, 'col suo turno, e ferma sul primo fotogramma mentre aspetta');
-  assert.match(regola('body.meno-moto .pannello-scheda.scena .carta.rivela.dentro'), /animation: none;/, 'e chi ha chiesto meno movimento non la vede');
+test('una carta si vede anche se nessuno la disegna', () => {
+  // Il disegno e' un di piu': la carta la rivela la sua classe, non il tratto.
+  // Nascosta finche' non arriva nel riquadro, visibile appena ci arriva, e
+  // visibile comunque dopo la rete di sicurezza; chi chiede meno movimento la
+  // vede subito. Nessuna trasformazione: una carta che aspetta non e' spostata
+  // da nessuna parte, e non puo' allargare la pagina.
+  assert.match(CSS, /\.carta\.rivela \{ opacity: 0; \}\n\.carta\.rivela\.dentro \{ opacity: 1; \}/);
+  const regole = [...CSS.matchAll(/([^{}]*\.carta\.rivela[^{}]*)\{([^}]*)\}/g)].map((m) => m[2]).join(' ');
+  assert.doesNotMatch(regole, /transform|translate|transition/, 'la carta che aspetta non si muove');
+  const i = APP.indexOf('function _reteDiSicurezza(');
+  assert.match(APP.slice(i, APP.indexOf('\n}\n', i)), /c\.classList\.add\('dentro'\)/, 'la rete di sicurezza la mostra comunque');
+  assert.match(CSS, /prefers-reduced-motion: reduce\)[\s\S]*?\.carta\.rivela \{ opacity: 1 !important; \}/);
 });
