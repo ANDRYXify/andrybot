@@ -3826,7 +3826,7 @@ function aiutoAttesa(id) {
 }
 
 function aiutoDi(id) {
-  const a = stato?.aiuti?.[id];
+  const a = (stato?.aiuti?.[LINGUA] || stato?.aiuti?.it || {})[id];
   return (a && a.via && a.titolo) ? a : null;
 }
 

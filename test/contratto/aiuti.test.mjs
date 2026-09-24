@@ -153,7 +153,7 @@ test('da dentro il pannello si arriva a guide e manuali', () => {
 });
 
 test('il pannello sa chiedere l’aiuto della scheda che stai guardando', () => {
-  assert.match(APP, /stato\?\.aiuti\?\.\[id\]/, 'legge la mappa che arriva dal server');
+  assert.match(APP, /\(stato\?\.aiuti\?\.\[LINGUA\] \|\| stato\?\.aiuti\?\.it \|\| \{\}\)\[id\]/, 'legge la mappa che arriva dal server, nella lingua del pannello');
   assert.match(APP, /aiuto-banner/, 'e la mostra con la stessa forma della striscia dei cookie');
   assert.match(APP, /localStorage\.setItem\('sb-aiuto-'/, 'e si ricorda di chi ha detto no');
 });

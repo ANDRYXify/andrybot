@@ -49,27 +49,31 @@ arriva da una ricerca in inglese non si ritrova il pannello in italiano.
 
 ## Il modello dei contenuti
 
-Una guida, un manuale, una novità sono **una cosa in tre lingue**, non tre cose
-che si somigliano. La forma è questa:
+Una guida, un manuale, sono **una cosa in tre lingue**, non tre cose che si
+somigliano. Ogni lingua sta nei suoi file, così si scrive e si traduce una
+pagina per volta senza toccare le altre:
 
-```js
-{
-  id: 'moderazione',            // uguale in tutte le lingue, lega il gruppo hreflang
-  aggiornata: '2026-09-24',
-  schede: ['regole', 'scudo'],  // le schede del pannello che serve
-  it: { slug, titolo, h1, desc, corpo, faq },
-  en: { slug, titolo, h1, desc, corpo, faq },
-  es: { slug, titolo, h1, desc, corpo, faq },
-}
-```
+| cosa | italiano | inglese e spagnolo |
+|---|---|---|
+| guide | `src/web/guide/it.js` | `src/web/guide/en.js`, `src/web/guide/es.js` |
+| manuali | `src/web/manuali/it/<slug>.js` | `src/web/manuali/en/`, `src/web/manuali/es/` |
 
-- Il gruppo `hreflang` si ricava da questa struttura: una pagina non può
-  puntare a una traduzione che non c'è.
-- Le tabelle calcolate (i numeri dei giochi, le attese, le regole) sono
-  funzioni della lingua, e leggono i nomi dal catalogo, che li ha già in tre
-  lingue (`giochi-conf.js`). Un numero cambiato nel motore cambia in tutte e tre.
+Una traduzione è legata all'originale dall'`id`, che è lo slug italiano, e ha
+il suo `slug`, `titolo`, `h1`, `desc`, `corpo` e `faq`. Schede, tipo e data li
+eredita dalla voce italiana quando non ha i suoi.
+
+- `guideIn(lingua)` e `manualiIn(lingua)` danno le pagine di una lingua, nello
+  stesso ordine e nella stessa forma dell'italiano.
+- Il gruppo `hreflang` si ricava dalle traduzioni che esistono
+  (`alternativeGuida`, `alternativeManuale`): una pagina non può dichiarare una
+  lingua che non ha, e una pagina non tradotta non esce in italiano sotto un
+  indirizzo inglese.
+- Le tabelle calcolate del manuale dei giochi (i numeri, le attese, le regole)
+  stanno in `src/web/manuali/numeri.js` e leggono il catalogo, che ha già i nomi
+  in tre lingue (`giochi-conf.js`).
 - Le parti fisse della pagina (testata, piè di pagina, «In questa pagina»,
-  «Domande frequenti», le briciole, la data) stanno in un dizionario solo.
+  «Domande frequenti», le briciole, la data) e gli indirizzi per lingua stanno
+  una volta sola in `src/web/guide.js` (`T`, `VIE`).
 
 ## I nomi delle cose
 

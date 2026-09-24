@@ -3,9 +3,11 @@
 > «Chi usa il bot deve poter avere a portata di mano informazioni super
 > esaustive su cosa fa cosa e come fa cosa.»
 
-Due pagine, `/manuale/giochi` e `/manuale/moduli`, più il loro indice
-`/manuale`. Vivono in `src/web/manuali.js` come dati, e le compone lo stesso
-guscio delle guide (`paginaDoc`): stessa testata, stesso stile, stesso piede.
+Stanno sotto `/manuale`, uno per gruppo di schede del pannello, più il loro
+indice. Vivono come dati, un manuale per file in `src/web/manuali/it/` (le
+traduzioni accanto, vedi `docs/LINGUE.md`); li raccoglie `src/web/manuali.js`
+e li compone lo stesso guscio delle guide (`paginaDoc`): stessa testata,
+stesso stile, stesso piede.
 
 ## Perché pubbliche e non dentro il pannello
 

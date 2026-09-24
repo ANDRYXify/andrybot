@@ -32,7 +32,7 @@ import { creaMinifica } from './minifica.js';
 import { guscioVetrina, guscioPannello, META_VETRINA, VIA_LINGUA, indirizzoHome } from './vetrina-vista.js';
 import { pagina404, LINGUE_SERVIZIO } from './pagine-servizio.js';
 import { montaArgine } from './argine.js';
-import { GUIDE, paginaGuida, paginaIndice, paginaNovita, paginaServizio, urlGuide } from './guide.js';
+import { GUIDE, paginaGuida, paginaIndice, paginaNovita, paginaServizio, urlGuide, VIE, LINGUE_DOC } from './guide.js';
 import * as novita from './novita.js';
 import { spazioCartella, inMega } from '../features/spazio.js';
 import * as spontanea from '../features/spontanea.js';
@@ -2115,7 +2115,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       .concat([`    <xhtml:link rel="alternate" hreflang="x-default" href="${escXml(LINGUE_URL.it)}"/>`])
       .join('\n');
     const voci = Object.values(LINGUE_URL).map((u) => ({ u, p: '1.0', f: 'weekly', alt: true }));
-    for (const g of [...urlGuide(novita.pubbliche(novita.leggi(NOVITA_MD))), ...urlManuali()]) voci.push({ u: g.loc, p: g.prio, f: g.freq, m: g.lastmod });
+    for (const g of [...urlGuide(novita.pubbliche(novita.leggi(NOVITA_MD))), ...urlManuali()]) voci.push({ u: g.loc, p: g.prio, f: g.freq, m: g.lastmod, altDi: g.alt });
     // L'indirizzo che si dichiara e' quello vero: dichiararne uno che rimanda
     // vorrebbe dire far indicizzare un rimbalzo.
     voci.push({ u: donazioni.urlSostieni(), p: '0.4', f: 'yearly' });
@@ -2133,6 +2133,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n`
       + voci.map((v) => `  <url>\n    <loc>${escXml(v.u)}</loc>\n`
         + (v.alt ? alternative + '\n' : '')
+        + (v.altDi && Object.keys(v.altDi).length > 1 ? Object.entries(v.altDi)
+          .map(([l, u]) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${escXml(u)}"/>`)
+          .concat(v.altDi.it ? [`    <xhtml:link rel="alternate" hreflang="x-default" href="${escXml(v.altDi.it)}"/>`] : [])
+          .join('\n') + '\n' : '')
         + `    <lastmod>${v.m || oggi}</lastmod>\n    <changefreq>${v.f}</changefreq>\n    <priority>${v.p}</priority>\n  </url>`).join('\n')
       + `\n</urlset>\n`;
     res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
@@ -2222,35 +2226,38 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // Informativa privacy & sicurezza (pubblica: dev'essere sempre consultabile)
   // Le guide: pagine di contenuto vere, servite come HTML completo. Vedi
   // src/web/guide.js per il perché esistono e come sono fatte.
+  // Ogni pagina in ogni lingua ha il suo indirizzo (VIE in guide.js): la stessa
+  // rotta serve le tre lingue, e una pagina non tradotta non esiste, non esce in
+  // italiano sotto un indirizzo inglese.
   const GUIDA_HTML = new Map();
-  app.get('/guide', (req, res) => {
-    if (!GUIDA_HTML.has('#indice')) GUIDA_HTML.set('#indice', paginaIndice());
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
-    res.send(GUIDA_HTML.get('#indice'));
-  });
-  // I manuali: materiale di consultazione per chi il bot ce l'ha già. Pubblici
-  // come le guide — chi valuta il bot deve poter vedere prima cosa sa fare.
-  const AIUTI = aiutiPerScheda();
-  const MANUALE_HTML = new Map();
-  app.get('/manuale', (req, res) => {
-    if (!MANUALE_HTML.has('#indice')) MANUALE_HTML.set('#indice', paginaIndiceManuali());
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
-    res.send(MANUALE_HTML.get('#indice'));
-  });
-  app.get('/manuale/:slug', (req, res, next) => {
-    const slug = String(req.params.slug || '').toLowerCase();
-    if (!/^[a-z0-9-]{2,40}$/.test(slug)) return next();
-    if (!MANUALE_HTML.has(slug)) {
-      const h = paginaManuale(slug);
+  const serviPagina = (res, cache, chiave, fai, next) => {
+    if (!cache.has(chiave)) {
+      const h = fai();
       if (!h) return next();
-      MANUALE_HTML.set(slug, h);
+      cache.set(chiave, h);
     }
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
-    res.send(MANUALE_HTML.get(slug));
-  });
+    res.send(cache.get(chiave));
+  };
+  for (const l of LINGUE_DOC) {
+    app.get(VIE[l].guide, (req, res, next) => serviPagina(res, GUIDA_HTML, `${l}#indice`, () => paginaIndice(l), next));
+  }
+  // I manuali: materiale di consultazione per chi il bot ce l'ha già. Pubblici
+  // come le guide — chi valuta il bot deve poter vedere prima cosa sa fare.
+  // Il «?» di ogni scheda, lingua per lingua: il pannello apre la pagina nella
+  // sua lingua (l'italiano resta dove una traduzione non c'e').
+  const AIUTI = aiutiPerScheda();
+  const AIUTI_LINGUE = Object.fromEntries(LINGUE_DOC.map((l) => [l, aiutiPerScheda(l)]));
+  const MANUALE_HTML = new Map();
+  for (const l of LINGUE_DOC) {
+    app.get(VIE[l].manuali, (req, res, next) => serviPagina(res, MANUALE_HTML, `${l}#indice`, () => paginaIndiceManuali(l), next));
+    app.get(`${VIE[l].manuali}/:slug`, (req, res, next) => {
+      const slug = String(req.params.slug || '').toLowerCase();
+      if (!/^[a-z0-9-]{2,40}$/.test(slug)) return next();
+      serviPagina(res, MANUALE_HTML, `${l}:${slug}`, () => paginaManuale(slug, l), next);
+    });
+  }
 
   // Le novità: stessa forma delle guide (contenuto pubblico, indicizzabile) ma
   // la fonte è NOVITA.md, scritto nello stesso commit della cosa che racconta.
@@ -2383,18 +2390,13 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     res.json({ ok: true });
   }));
 
-  app.get('/guide/:slug', (req, res, next) => {
-    const slug = String(req.params.slug || '').toLowerCase();
-    if (!/^[a-z0-9-]{2,80}$/.test(slug)) return next();
-    if (!GUIDA_HTML.has(slug)) {
-      const h = paginaGuida(slug);
-      if (!h) return next();
-      GUIDA_HTML.set(slug, h);
-    }
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
-    res.send(GUIDA_HTML.get(slug));
-  });
+  for (const l of LINGUE_DOC) {
+    app.get(`${VIE[l].guide}/:slug`, (req, res, next) => {
+      const slug = String(req.params.slug || '').toLowerCase();
+      if (!/^[a-z0-9-]{2,80}$/.test(slug)) return next();
+      serviPagina(res, GUIDA_HTML, `${l}:${slug}`, () => paginaGuida(slug, l), next);
+    });
+  }
 
   const PRIVACY_HTML = guscio.pagina('privacy.html');
   app.get('/privacy', (req, res) => res.sendFile(PRIVACY_HTML));
@@ -3033,7 +3035,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       piattaforma: piattaformaDi(user.login),
       // Per ogni scheda del pannello, la pagina che la spiega (se c'è): la
       // dichiara la pagina stessa, accanto al proprio contenuto.
-      aiuti: AIUTI,
+      aiuti: AIUTI_LINGUE,
       mieiCanali: contestiPer(ident),
       missing: missingConfig(),
       storte: configStorta(),
