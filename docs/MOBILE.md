@@ -81,8 +81,11 @@ cambio canale, esci) tornano nella barra in alto, dove adesso c'e spazio.
 «Tutto schermo»: il menu lascia il lato e si apre dall'hamburger, che sta
 accanto agli strumenti in alto, e la pagina prende tutta la larghezza. Non è lo
 schermo intero del browser: si toglie solo il menu. Lo sceglie chi lavora, e la
-scelta si ricorda (`schermoPieno`); nelle altre pagine il menu torna di lato da
-solo (`body.tutto-schermo`, `SCHEDE_LARGHE` in `app.js`). Nello Studio conta
+scelta si ricorda **per ogni pagina** (`schermoPieno:<scheda>`); nelle altre
+pagine il menu torna di lato da solo (`body.tutto-schermo`, `SCHEDE_LARGHE` in
+`app.js`). Prima la scelta era una sola per tutte: acceso il tutto schermo in
+Donazioni, si accendeva anche in Pagina link, che chi la usava voleva col menu
+di lato. Una scelta fatta in una pagina non cambia le altre. Nello Studio conta
 di più: di lato il menu si prende 240 px, e a 1440 la tela passa da 491 a 785.
 Le misure e il resto dello spazio della tela stanno in `docs/BANCO.md`.
 

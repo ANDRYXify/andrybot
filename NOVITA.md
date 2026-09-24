@@ -82,6 +82,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] La pagina delle donazioni può avere l'aspetto della pagina link e seguirlo quando lo cambi: nell'editor, in «Aspetto», scegli «Uguale alla pagina link». [vai: donazioni]
 - Nell'editor della pagina link e di quella delle donazioni, dopo un tema pronto resti nella scheda in cui eri, e i tasti scattano una volta sola anche dopo tanti ritocchi.
 - La classifica dei Bit compare davvero in diretta, e resta dove la metti in ogni overlay. I caratteri che carichi si vedono anche in OBS, non solo nello Studio. [vai: alert]
+- Il tutto schermo si ricorda per ogni scheda: acceso in Donazioni non si accende più anche in Pagina link, che resta col menù di lato finché non lo scegli lì.
 
 ## 2026-09-23
 

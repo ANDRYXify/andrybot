@@ -81,7 +81,11 @@ test('il tutto schermo: solo nelle pagine larghe, lo sceglie chi lavora, e fuori
   assert.ok(applica.includes("document.body.classList.toggle('tutto-schermo', on);"));
   assert.ok(funzione('aggiornaTestataPagina').includes('applicaSchermo();'), 'a ogni cambio di scheda si ricalcola: uscendo, il menu torna di lato');
   assert.ok(funzione('tastoSchermoHtml').includes('id="pt-schermo" aria-pressed="false"'), 'il tasto dice se e\' premuto');
-  assert.ok(funzione('cambiaSchermo').includes("localStorage.setItem('schermoPieno'"), 'la scelta si ricorda');
+  assert.ok(funzione('cambiaSchermo').includes("localStorage.setItem(_chiaveSchermo(schedaAttiva), on ? '1' : '0')"), 'la scelta si ricorda, per quella scheda');
+  // Una scelta sola per tutte le pagine larghe voleva dire che il tutto schermo
+  // acceso in Donazioni si accendeva anche in Pagina link: ogni scheda ha la sua.
+  assert.ok(/const _chiaveSchermo = \(id\) => 'schermoPieno:' \+ id;/.test(APP) && funzione('schermoPienoScelto').includes('localStorage.getItem(_chiaveSchermo(id))'),
+    'accenderlo in una pagina non lo accende nelle altre');
   assert.ok(!/requestFullscreen/.test(APP), 'non e\' lo schermo intero del browser: si toglie solo il menu');
 });
 

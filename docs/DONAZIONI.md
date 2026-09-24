@@ -181,8 +181,9 @@ finestre. Ora la scatola ha un solo ascoltatore, che si sostituisce invece di
 sommarsi, e passa anche i comandi dei blocchi: prima li assegnava per conto
 suo chi disegna i blocchi, e due padroni della stessa proprietà si cancellano
 a vicenda. E il disegno nuovo riapriva «Contenuti»: scelto un tema pronto ti
-ritrovavi altrove. Ora l'editor ricorda le schede aperte (`LP.schede`) e le
-rimette a ogni disegno. `scripts/verifica-pagina-link.mjs` conta gli
+ritrovavi altrove. Ora l'editor ricorda le schede aperte, per ognuna delle due
+pagine (`LP.schede`), e le rimette a ogni disegno: quella aperta in una non
+cambia l'altra. `scripts/verifica-pagina-link.mjs` conta gli
 ascoltatori veri dopo tre disegni e guarda dove sei rimasto.
 
 ## L'immagine di chi dona

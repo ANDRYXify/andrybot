@@ -3752,8 +3752,9 @@ function navDrawerHtml() {
 }
 
 const SCHEDE_LARGHE = new Set(['alert', 'grafiche', 'pagina', 'donazioni']);
-function schermoPienoScelto() {
-  try { return localStorage.getItem('schermoPieno') === '1'; } catch (e) { return false; }
+const _chiaveSchermo = (id) => 'schermoPieno:' + id;
+function schermoPienoScelto(id = schedaAttiva) {
+  try { return localStorage.getItem(_chiaveSchermo(id)) === '1'; } catch (e) { return false; }
 }
 function tastoSchermoHtml() {
   if (!SCHEDE_LARGHE.has(schedaAttiva)) return '';
@@ -3789,7 +3790,7 @@ let _cambioSchermo = 0;
 function cambiaSchermo() {
   if (_cambioSchermo) return;
   const on = !document.body.classList.contains('tutto-schermo');
-  try { localStorage.setItem('schermoPieno', on ? '1' : '0'); } catch (e) {  }
+  try { localStorage.setItem(_chiaveSchermo(schedaAttiva), on ? '1' : '0'); } catch (e) {  }
   const dopo = () => {
     _cambioSchermo = 0;
     applicaSchermo({ subito: true });
@@ -17465,7 +17466,8 @@ function lpIntroHtml(d) {
   })}`;
 }
 
-const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', schede: { testa: 'contenuti', aspetto: 'asp-temi' } };
+const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', schede: { link: {}, dona: {} } };
+const lpSchede = () => LP.schede[LP.quale === 'dona' ? 'dona' : 'link'];
 const lpApi = () => (LP.quale === 'dona' ? '/api/paginadona' : '/api/linkpage');
 
 const _tema = (o) => ({ sfondoTipo: 'tinta', bg: '', bg2: '', angolo: 160, sfondoUrl: '', effetto: 'nessuno',
@@ -17569,7 +17571,7 @@ function lpApriSchede(box) {
   for (const fila of box.querySelectorAll('.lp-tabs[data-gruppo]')) {
     const gruppo = fila.dataset.gruppo;
     const tasti = [...fila.querySelectorAll('[data-lptab]')];
-    const quale = tasti.some((b) => b.dataset.lptab === LP.schede[gruppo]) ? LP.schede[gruppo] : tasti[0]?.dataset.lptab;
+    const quale = tasti.some((b) => b.dataset.lptab === lpSchede()[gruppo]) ? lpSchede()[gruppo] : tasti[0]?.dataset.lptab;
     tasti.forEach((b) => { b.classList.toggle('sel', b.dataset.lptab === quale); b.setAttribute('aria-selected', String(b.dataset.lptab === quale)); });
     for (const p of box.querySelectorAll(`.lp-pane[data-gruppo="${gruppo}"]`)) p.hidden = p.dataset.pane !== quale;
   }
@@ -18018,7 +18020,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
   };
   const suScheda = (ev) => {
     const t = ev.target.closest('[data-lptab]'); if (!t) return;
-    LP.schede[t.closest('.lp-tabs').dataset.gruppo] = t.dataset.lptab;
+    lpSchede()[t.closest('.lp-tabs').dataset.gruppo] = t.dataset.lptab;
     lpApriSchede(box);
   };
   const suTema = (ev) => {
