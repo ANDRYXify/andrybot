@@ -6,135 +6,295 @@ export default {
   schede: ['personalita', 'conoscenza', 'memoria', 'avatar'],
   titolo: 'Manuale del bot: personalità, conoscenza e memoria | SocialBot',
   h1: 'Manuale del bot: personalità, conoscenza e memoria',
-  desc: 'Come si regola il carattere del bot, cosa gli si insegna, cosa impara da solo, cosa si ricorda e come si cancella. Con i valori di base e i limiti veri.',
-  aggiornata: '2026-09-04',
+  desc: 'Come regoli tono, carattere e interventi del bot in chat, cosa gli insegni su di te, cosa si ricorda del canale e come azzeri quello che ha imparato.',
+  aggiornata: '2026-09-24',
   corpo: [
     { p: [
-      'In chat il bot parla <strong>a nome tuo</strong>: non compare un account estraneo, compare il tuo. Per questo il suo carattere non è un dettaglio — è come suoni tu quando non stai guardando la chat.',
-      'Le schede sono quattro e fanno mestieri diversi. <em>Il bot</em> decide <strong>come</strong> parla. <em>Conoscenza</em> decide <strong>cosa</strong> sa. <em>Memoria</em> mostra <strong>cosa si ricorda</strong> e permette di cancellarlo. <em>Avatar 3D</em> fa vedere <strong>come ragiona</strong>.',
+      'In chat il bot scrive <strong>a nome tuo</strong>: chi guarda vede il tuo account, non uno estraneo. Qui decidi come parla, cosa sa e cosa si ricorda.',
+      'Nel menù, sotto «Il tuo bot», trovi la pagina «Il bot» con tre schede in alto: «Personalità», «Conoscenza» e «Memoria».',
+      'Sono comprese in Essenziale, il pacchetto gratuito. Valgono nella chat della diretta di ogni canale collegato. Un canale solo Discord non le ha. Perché il bot parli in chat deve essere acceso nella scheda «Stato».',
+      'Tu e i moderatori del pannello potete cambiare tutto quello che c\'è in queste tre schede, tranne «Azzera ciò che ha imparato», che vede e usa solo il proprietario del canale. I moderatori si invitano da «Il tuo account» e servono almeno il piano Base: vedi il <a href="/manuale/account">manuale dell\'account</a>.',
     ] },
 
-    { h2: 'Come parla: tono e quanto interviene' },
-    { p: ['Sta in <em>Il bot</em>. Fra parentesi il valore con cui parti e i limiti che il server accetta.'] },
-    { tabella: [
-      ['Impostazione', 'Di base', 'Limiti', 'Cosa cambia davvero'],
-      ['Tono', 'scherzoso', 'scherzoso · amichevole · serio', 'La forma delle frasi: battute e ironia, caloroso e tranquillo, oppure sobrio e diretto.'],
-      ['Chat autonoma', '0%', '0–50%', 'Quanto si intromette da solo in una conversazione a cui nessuno lo ha chiamato. Parte a zero: parla solo se lo chiami, finché non alzi il cursore.'],
-      ['Rispondi quando mi nominano', 'acceso', '—', 'Se qualcuno scrive il tuo nome in chat, risponde lui.'],
-      ['Personalità proattiva', 'acceso', '—', 'Ogni tanto si fa vivo di sua iniziativa, anche senza essere nominato.'],
-      ['Solo mentre sono in diretta', 'spento', '—', 'Con la spunta, di sua iniziativa parla solo a diretta accesa: a canale spento tace anche se in chat c\'è gente.'],
-      ['Adatta la personalità al canale', 'acceso', '—', 'Impara il tuo stile dalla chat e ci si avvicina, senza che tu debba descriverlo.'],
-      ['Risposte intelligenti (IA locale)', 'acceso', '—', 'Il modello che gira sul nostro server: capisce la domanda anche se scritta in un altro modo.'],
-      ['Accesso a internet', 'acceso', '—', 'Se non sa una cosa può cercarla al volo invece di dire «non lo so».'],
-      ['Le tue frasi', 'vuoto', 'una per riga', 'Modi di dire tuoi che entrano nel suo repertorio.'],
+    // ------------------------------------------------------------ PERSONALITÀ
+    { h2: 'Personalità', scheda: 'personalita', p: [
+      'Decide come parla il bot: il tono, il carattere, quanto interviene da solo e le regole che rispetta sempre. Ci sono due carte: «Personalità» e «Linee guida».',
     ] },
-    { p: ['<strong>Quando parla da solo.</strong> Non a caso: parla quando c\'è un motivo, riconosciuto dalla chat. Quattro: <strong>una domanda rimasta sola</strong> — qualcuno chiede una cosa, per più di un minuto nessuno gli risponde, e il bot la sa (dalla <em>Conoscenza</em>): risponde lui, agganciato alla domanda; <strong>la chat che si ferma</strong> dopo un momento vivo, in diretta: rilancia con una domanda leggera su quello di cui si parlava, una volta sola per ogni silenzio; <strong>un\'esplosione</strong> di messaggi: partecipa con una riga sull\'onda; e, <strong>a discorso che scorre</strong>, ogni tanto una parola sua sull\'ultima cosa detta — o una battuta dal serbatoio, o il promemoria dei tuoi link.'] },
-    { p: ['<strong>Quanto spesso, al massimo.</strong> Lo dice il cursore: a 50% una cosa sua al più ogni quarto d\'ora, a 25% ogni mezz\'ora, a 10% ogni ora e un quarto, a 5% ogni due ore e mezza, più in basso ogni tre ore. Mai due di fila dello stesso genere, il promemoria dei link al più ogni tre quarti d\'ora e solo in diretta, e mai due volte in sei minuti — salvo rispondere a una domanda rimasta sola, che vale di più. Se hai appena scritto tu, la chat è tua e lui tace. E scrive con il tempo di una persona, non nell\'istante in cui decide.'] },
-    { p: ['<strong>Come non parla.</strong> Mai da assistente: niente «implementazione», «funzionalità», «non sono in grado». Se una cosa non è sua (la musica, il gioco, una scena) lo dice come uno della chat, in tre parole, e cambia discorso. Una riga di quel tipo non esce, e non gli torna in mente come esempio di come parla.'] },
-    { p: ['In fondo alla scheda c\'è <strong>Cosa ha detto da solo</strong>: le ultime volte che ha parlato senza essere chiamato, con l\'ora e il motivo, da quando il bot è acceso. È lì che vedi se la dose è quella giusta, senza stare in chat a guardare.'] },
-    { p: ['La <strong>chat autonoma</strong> è quella che si sente di più. Sotto il 10% il bot resta un servizio: risponde e tace. Sopra il 25% diventa un presente in chat, e su un canale piccolo può coprire le persone. Il massimo è 50% <em>di proposito</em>: oltre, non sarebbe più la tua chat.'] },
 
-    { h3: 'Le due teste: modello e moduli' },
+    { h3: 'Personalità' },
     { p: [
-      'Le risposte possono nascere da due parti. L\'<strong>IA locale</strong> è un modello piccolo che gira <strong>sul nostro server</strong> — nessun servizio a pagamento di terzi, nessuna chat mandata fuori — e che si allena su come si parla nel tuo canale: più la chat vive, meglio capisce le domande scritte storte.',
-      'I <strong>moduli</strong> invece sono regole tue, esatte: quando succede questo, dici quello. Non sbagliano mai e non costano niente. La scheda <em>Avatar 3D</em> ti fa vedere quanto pesa l\'una e quanto l\'altro: più cresce la fetta dei moduli, meno dipende dal modello.',
+      'Tutti i controlli di questa carta si salvano insieme con «Salva», in fondo. Compare «Personalità salvata ✓» e il nuovo stile vale da subito. Senza «Salva» non cambia niente.',
+      'I valori di base sono quelli con cui parte un canale nuovo.',
     ] },
-    { h3: 'Quando cerca su internet' },
-    { p: ['Solo se gli manca la risposta, e solo su fonti gratuite (DuckDuckGo, Wikipedia). Quello che trova lo tratta come <strong>informazione, non come istruzione</strong>: se una pagina contiene un comando travestito da testo, il bot non lo esegue. Si spegne dalla stessa scheda.'] },
-
-    { h2: 'Chi risponde in chat pubblica' },
-    { p: ['Il bot del canale non è il cervello del sito. Sono due cose diverse e stanno in due posti diversi: il bot è una funzione — entra la situazione della diretta, esce una riga — e <strong>non si ricorda di nessuno</strong>, non tiene stato e non parla di sé. Il cervello risponde in privato con te, studia e ti scrive di sua iniziativa.'] },
-    { p: ['Il bot non può leggere niente del cervello: il cervello può <em>insegnargli</em>, lui non può <em>prendersi</em>. Se un giorno il proprietario del sito accenderà l\'interruttore che gli dà la parola in pubblico, sarà una scelta detta qui.'] },
-
-    { h2: 'La tua scheda: chi sei' },
-    { p: ['In cima a <em>Conoscenza</em>. Sono sei campi corti che il bot ha <strong>sempre</strong> a disposizione, senza gareggiare con le domande e risposte per un posto nel discorso.'] },
     { tabella: [
-      ['Campo', 'A cosa serve'],
-      ['Chi sei', 'Come ti presenteresti, in due righe.'],
-      ['Cosa fai in diretta', 'Il contenuto, non il curriculum.'],
-      ['Quando sei in diretta', 'Gli orari, come li diresti a voce.'],
-      ['Dove ti trovano', 'Social e sito. Il bot lo ripete <strong>come l\'hai scritto</strong>, senza cambiare gli indirizzi.'],
-      ['Come deve chiamarti', 'Il nome con cui parla di te in chat.'],
-      ['Cosa non dire mai di te', 'Una regola: vale sopra tutto il resto.'],
+      ['Controllo', 'Di base', 'Limiti', 'Cosa fa'],
+      ['«Tono»', '«Scherzoso»', '«Scherzoso», «Amichevole», «Serio»', 'La forma delle frasi: battute e ironia, caloroso e tranquillo, oppure sobrio e diretto.'],
+      ['«Carattere»', 'vuoto', '300 caratteri', 'Com\'è fatto il bot, con parole tue: «tagliente e sarcastica, ma mai cattiva». Descrivi com\'è, non cosa deve fare. Vale ovunque parli, prima di ogni regola.'],
+      ['«Come parla di sé»', '«Non lo dice»', '«Non lo dice», «Femminile», «Maschile»', 'Il genere con cui parla di sé: «sono apparsa» o «sono apparso». Con «Non lo dice» gira la frase per non doverlo dire.'],
+      ['«Chat autonoma»', '5%', 'da 0 a 50%', 'Quanto partecipa da solo alla conversazione. A 0% parla solo se lo chiamano.'],
+      ['«Rispondi quando mi nominano in chat»', 'acceso', '', 'Risponde a chi lo chiama.'],
+      ['«Personalità proattiva»', 'acceso', '', 'Ogni tanto si fa vivo da solo, quando c\'è un motivo.'],
+      ['«Solo mentre sono in diretta»', 'spento', '', 'Con la spunta parla di sua iniziativa solo a diretta accesa.'],
+      ['«Ricorda i tuoi social in chat, nei momenti giusti»', 'acceso', 'al più ogni 45 minuti', 'In diretta ricorda l\'indirizzo della tua pagina link.'],
+      ['«Adatta la personalità al mio canale (in automatico)»', 'acceso', '', 'Il bot impara come parli dalla tua voce in diretta e dai tuoi messaggi in chat. Spento, lo stile lo decidi solo tu, col tono e con le tue frasi.'],
+      ['«Risposte intelligenti (IA locale auto-addestrata)»', 'acceso', '', 'Scrive le risposte con parole sue e capisce le domande anche scritte in un altro modo.'],
+      ['«Accesso a internet»', 'acceso', '', 'Quando non sa una cosa, può cercarla online.'],
+      ['«Le tue frasi / battute (una per riga)»', 'vuoto', '50 frasi da 200 caratteri', 'Esempi del tuo modo di scrivere, per suonare come te.'],
     ] },
-    { p: ['Non parte vuota: quando il bot rilegge il tuo profilo riempie <em>chi sei</em>, <em>gli orari</em> e <em>dove ti trovano</em> con quello che trova, e non tocca mai i campi che hai scritto tu.'] },
-    { h3: 'Parole da bloccare' },
-    { p: ['Sotto la scheda c\'è un elenco a parte: il tuo cognome, la tua via, il nome della scuola. <strong>Non è una richiesta al bot</strong> — «cosa non dire mai di te» lo è, e vale se lui la capisce. Queste sono un blocco: se una finisce in una risposta, la risposta non parte. Non moderano nessuno: valgono solo su quello che dice lui.'] },
 
-    { h2: 'Cosa sa: la conoscenza' },
-    { p: ['Sta in <em>Conoscenza</em>. Una voce è una coppia <strong>domanda → risposta</strong>. La domanda può essere una frase o un elenco di parole chiave separate da <code>/</code>: bastano quelle a far scattare la risposta, anche se in chat la domanda arriva scritta in un altro modo.'] },
-    { esempio: 'Domanda        che pc usi? / setup / configurazione\nRisposta       Gioco su un Ryzen 7 con una 4070, trovi tutto su andryxify.it!' },
-    { p: ['Puoi scriverne quante vuoi: a ogni messaggio il bot riceve le <strong>sei voci più vicine</strong> a quello che gli hanno chiesto, non le ultime che hai scritto.'] },
-    { h3: 'Quando vale, e cosa deve sapere sempre' },
-    { p: ['Ogni voce può valere <strong>sempre</strong>, <strong>solo quando sei in diretta</strong> (il codice sconto dello sponsor) o <strong>solo quando sei offline</strong> (quando torni). E può essere <strong>fissata</strong>: allora entra comunque, anche se non c\'entra con la domanda — tienile per le due o tre cose che non deve mai ignorare.'] },
-    { p: ['Si cambiano dall\'elenco, senza riscrivere la voce.'] },
-    { p: ['Le voci non arrivano tutte da te. Nell\'elenco «Cosa sa il bot» ognuna porta la sua <strong>origine</strong>, e l\'origine conta perché decide cosa succede quando azzeri.'] },
+    { p: [
+      '<strong>Chiamarlo per nome.</strong> Con «Rispondi quando mi nominano in chat» acceso, il bot risponde quando in un messaggio compare la parola «bot» o il nome del tuo canale, con o senza @. La stessa persona lo può richiamare dopo 10 secondi. Non risponde mai agli altri bot noti: Nightbot, StreamElements, Moobot, Streamlabs, Fossabot e Wizebot. Da spento, chi lo nomina non riceve risposta.',
+    ] },
+
+    { p: [
+      '<strong>La chat autonoma.</strong> Il cursore decide due cose. La prima è quanto spesso il bot risponde a un messaggio che non lo chiama: più è alto, più spesso, e alle domande risponde più volentieri. Fra due risposte di questo tipo passano almeno 45 secondi, 15 se sta continuando a parlare con la stessa persona.',
+      'La seconda è ogni quanto, al massimo, dice una cosa sua mentre il discorso scorre:',
+    ] },
     { tabella: [
-      ['Origine', 'Da dove viene', 'La cancella «Azzera»?'],
-      ['dal sito', 'Letta dal tuo profilo su andryxify.it: bio, orari, social.', 'No'],
-      ['tua', 'Scritta a mano da te in questa scheda.', 'No'],
-      ['dalla tua pagina link', 'Letta da /u/iltuonome mentre risponde. Non è salvata: si cambia sulla pagina.', 'No'],
-      ['imparata dalla chat', 'Dedotta osservando le risposte che tu e i mod date in chat.', 'Sì'],
-      ['studiata', 'Quello che si è costruito da sé leggendo e distillando.', 'No'],
+      ['«Chat autonoma»', 'Al massimo una cosa sua ogni'],
+      ['50%', '15 minuti'],
+      ['25%', '30 minuti'],
+      ['10%', 'un\'ora e un quarto'],
+      ['5%', 'due ore e mezza'],
+      ['sotto il 3,3%', '3 ore'],
+      ['0%', 'mai: parla solo se lo chiamano'],
+    ] },
+    { p: ['Il cursore si ferma a 50% di proposito. Oltre, la chat non sarebbe più la tua.'] },
+
+    { p: [
+      '<strong>Quando parla da solo.</strong> Con «Personalità proattiva» accesa e la chat autonoma sopra lo 0%, il bot guarda la chat ogni 15 secondi. Parla solo quando riconosce uno di questi momenti.',
+    ] },
+    { tabella: [
+      ['Momento', 'Quando', 'Cosa fa'],
+      ['Domanda rimasta sola', 'Qualcuno fa una domanda a tutti e per 75 secondi nessuno risponde. Vale solo se il bot sa la risposta. Dopo 4 minuti la lascia perdere.', 'Risponde, agganciato a quel messaggio.'],
+      ['Chat esplosa', 'Almeno 8 messaggi di almeno 4 persone in mezzo minuto, tre volte il ritmo dei minuti prima.', 'Una riga sull\'onda. Al più ogni 15 minuti.'],
+      ['Chat ferma', 'Solo in diretta. 4 minuti di silenzio dopo un momento vivo, cioè almeno 4 messaggi di 3 persone nei 15 minuti prima.', 'Una domanda leggera su quello di cui si parlava. Una volta per ogni silenzio.'],
+      ['Discorso che scorre', 'Almeno 2 messaggi di 2 persone diverse negli ultimi 2 minuti, rivolti a tutti.', 'Una cosa sua, una delle tue battute oppure il promemoria dei social.'],
+    ] },
+    { p: [
+      'Un messaggio è rivolto a tutti quando non è un comando, non contiene una @ e non risponde a qualcun altro. Il bot non si infila nei discorsi fra due persone.',
+      'Ci sono dei freni che valgono sempre:',
+    ] },
+    { ul: [
+      'Mai due volte in 6 minuti. Per rispondere a una domanda rimasta sola bastano 2 minuti.',
+      'Se può scegliere, non fa due volte di fila la stessa cosa.',
+      'Se hai scritto tu negli ultimi 45 secondi, la chat è tua e il bot aspetta.',
+      'Una battuta al più ogni 20 minuti. Le battute le scrivi in «Giochi & classifiche», carta «Battute», dove c\'è anche l\'interruttore «Ogni tanto ne dice una da solo» (vedi il <a href="/manuale/giochi">manuale dei giochi</a>).',
+      'Il promemoria dei social al più ogni 45 minuti, e solo in diretta.',
+      'Con «Solo mentre sono in diretta» spuntato, a diretta spenta non dice niente di sua iniziativa.',
+      'Le cose sue, le righe sull\'onda e i rilanci li scrive il modello. Con «Risposte intelligenti» spento, da solo dice solo le battute e il promemoria dei social.',
+    ] },
+
+    { p: [
+      '<strong>Ricorda i tuoi social in chat.</strong> Il promemoria parte solo durante una diretta, quando la chat sta parlando, al più ogni 45 minuti. È una frase breve con l\'indirizzo della tua pagina link, socialbot.live/u/iltuonome. Conviene averla pronta nella scheda «Pagina link» (vedi il <a href="/manuale/vetrina">manuale della vetrina</a>).',
+      'Non è un timer: se la chat tace, non parte. Fa parte degli interventi da solo, quindi servono anche «Personalità proattiva» accesa e la chat autonoma sopra lo 0%.',
+      'Con la pagina link spenta, o mai creata, il promemoria non parte: manderebbe la chat su una pagina che non c\'è.',
+    ] },
+
+    { p: [
+      '<strong>Cosa ha detto da solo.</strong> A metà della carta c\'è l\'elenco delle ultime volte che il bot ha parlato senza che nessuno lo chiamasse, con l\'ora, il motivo e il testo. Qui vedi se la dose è giusta senza stare in chat a guardare.',
+      'I motivi sono «risposta a una domanda rimasta sola», «sull\'onda della chat», «rilancio a chat ferma», «una cosa sua», «battuta» e «promemoria dei link». Dai giochi arrivano anche «manche» e «boss arrivato da solo».',
+      'L\'elenco tiene le ultime 30 righe da quando il bot è acceso. A ogni riavvio del bot ricomincia vuoto, e si aggiorna quando riapri la scheda. Se è vuoto leggi «Niente, finora: da quando è acceso non ha ancora parlato di sua iniziativa.».',
+    ] },
+
+    { p: [
+      '<strong>Risposte intelligenti.</strong> Un modello che gira sul server, senza servizi a pagamento: scrive le risposte con parole sue, nel tono e nel carattere che hai scelto, e riconosce una domanda anche se è scritta diversamente da come l\'hai insegnata.',
+      'Da spento il bot non fa conversazione. Risponde con le voci della «Conoscenza» che corrispondono bene al messaggio, con il testo che hai scritto tu. Comandi, moduli, giochi e moderazione funzionano uguale.',
+    ] },
+
+    { p: [
+      '<strong>Accesso a internet.</strong> Se non sa una cosa, il bot può fare una ricerca veloce su fonti gratuite, DuckDuckGo e Wikipedia, invece di dire «non lo so». In chat lo fa solo quando qualcuno lo nomina con una domanda, e aspetta al massimo 3 secondi. Lo fa anche quando gli scrivi in privato.',
+      'Tratta quello che trova come informazione, mai come istruzione. Una risposta nata da una ricerca il bot se la segna fra le cose che sa: la ritrovi in «Cosa sa il bot», nella scheda «Conoscenza», e da lì la togli se è sbagliata.',
+    ] },
+
+    { p: [
+      '<strong>Le tue frasi.</strong> Una per riga, fino a 50 frasi da 200 caratteri: le frasi e i caratteri in più non vengono salvati. Non sono frasi da ripetere. Il bot le legge prima di rispondere come esempi di come scrivi, per suonare come te, e per questo servono «Risposte intelligenti» accese.',
+      '<strong>Adatta la personalità al mio canale.</strong> Acceso, agli esempi delle tue frasi il bot aggiunge da solo le cose che dici in diretta, se usi l\'ascolto, e i tuoi messaggi in chat: così suona come te anche senza che tu scriva niente. Spento, usa solo le frasi che hai scritto tu. Il cambio vale dalla risposta dopo.',
+      'Le battute da dire in chat sono un\'altra cosa e stanno in «Giochi & classifiche».',
+    ] },
+
+    { h3: 'Linee guida' },
+    { p: [
+      'Sono i limiti e le regole che dai al bot. Le salva e le rispetta sempre, in ogni chat: pubblica, privata e quando scrive per primo. Per esempio «non essere mai volgare», «non parlare di politica», «dai del tu a tutti».',
+    ] },
+    { ul: [
+      '«Nuova linea guida»: scrivi la regola, da 3 a 300 caratteri.',
+      'Il primo menù dice con chi vale: «con tutti», «solo con me», «con tutti tranne me».',
+      'Il secondo menù dice dove: «ovunque», «in chat Twitch», «su Telegram», «in privato su Telegram».',
+      '«Aggiungi», oppure Invio, la salva. Compare «Regola aggiunta ✓».',
+      'Sotto c\'è l\'elenco, e accanto a ogni regola vedi con chi e dove vale. La ✕ la toglie subito, senza chiedere conferma.',
+    ] },
+    { p: [
+      'Così puoi dire «con tutti tranne me non parlare di politica», oppure «solo con me, in privato su Telegram, dammi del tu».',
+      'Le regole sono al massimo <strong>12</strong>, e ogni volta che risponde il bot le ha davanti tutte, quelle che valgono in quel posto e con quella persona. Con 12 regole il pannello non ne aggiunge un\'altra e lo dice: «Le regole sono già 12, e il bot le rispetta tutte: per aggiungerne una, togline prima una.». Niente sparisce da solo.',
+      'Se scrivi di nuovo una regola che c\'è già, cambia solo con chi e dove vale.',
+      'Una regola è una richiesta: vale se il bot la capisce. Per una parola che non deve uscire mai, usa «Parole da bloccare» nella scheda «Conoscenza».',
+    ] },
+    { p: [
+      '<strong>Da Telegram.</strong> Puoi dettarle anche nella chat privata col tuo bot su Telegram, che colleghi nella scheda «Telegram» (piano Base, vedi il <a href="/manuale/vetrina">manuale della vetrina</a>). Funziona solo dal tuo account Telegram, non da quello di un moderatore. Scrivi a parole tue, per esempio «d\'ora in poi non essere troppo formale», oppure usa i comandi.',
+    ] },
+    { tabella: [
+      ['Comando', 'Cosa fa'],
+      ['<code>/regola testo</code>', 'Aggiunge una regola.'],
+      ['<code>/regole</code>', 'Elenca le regole, ognuna con il suo numero.'],
+      ['<code>/scorda n</code>', 'Toglie la regola con quel numero.'],
+    ] },
+    { p: [
+      'Da Telegram il bot capisce da solo con chi e dove vale la regola, dalle parole che usi: «tranne me», «solo con me», «in privato», «in diretta». Ti risponde ripetendo la regola e dove vale. Se ha capito male, la togli con il <code>/scorda</code> che ti suggerisce. Con 12 regole ti risponde che ne ha già 12 e ti dice come toglierne una.',
+      'Senza regole l\'elenco dice «Nessuna regola ancora. Aggiungine una qui sopra o da Telegram.». Se compare «Non disponibile ora.», il pannello non riesce a leggerle: ricarica la pagina.',
+    ] },
+
+    { h3: 'Chi risponde in chat pubblica' },
+    { p: [
+      'In chat risponde il bot del tuo canale, sempre con le scelte di questa scheda: il tono e il carattere, le tue frasi, le regole che valgono in chat. Quello che sa lo prende dalla scheda «Conoscenza» e dalla tua pagina link.',
+      'In privato su Telegram le scelte sono le stesse, e valgono le regole che hai detto per quel posto: una regola «solo con me, in privato su Telegram» in chat non conta.',
+    ] },
+
+    // ------------------------------------------------------------ CONOSCENZA
+    { h2: 'Conoscenza', scheda: 'conoscenza', p: [
+      'Decide cosa sa il bot di te e come deve rispondere. Le carte sono sei, in quest\'ordine: «La tua scheda», «Insegnagli qualcosa», «Cosa sa il bot», «Il quaderno del bot», «Pre-addestramento» e «La piccola rete che impara».',
+      'In alto ci sono «Apri tutto» e «Riduci tutto». Ogni carta si apre e si riduce anche cliccando il suo titolo.',
+    ] },
+
+    { h3: 'La tua scheda' },
+    { p: [
+      'Chi sei, con parole tue. Il bot ce l\'ha sempre davanti quando risponde, insieme alle domande e risposte. Lascia vuoto quello che non vuoi far dire.',
+    ] },
+    { tabella: [
+      ['Campo', 'Fino a', 'A cosa serve'],
+      ['«Chi sei»', '240 caratteri', 'Come ti presenteresti, in due righe.'],
+      ['«Cosa fai in diretta»', '240 caratteri', 'Il contenuto delle tue dirette.'],
+      ['«Quando sei in diretta»', '160 caratteri', 'Gli orari, come li diresti a voce.'],
+      ['«Dove ti trovano»', '240 caratteri', 'Social e sito. Il bot lo ripete come l\'hai scritto, senza cambiare gli indirizzi. Se chiedono dei tuoi social e non c\'è una voce apposta, risponde con questo.'],
+      ['«Come deve chiamarti»', '40 caratteri', 'Il nome con cui parla di te in chat.'],
+      ['«Cosa non dire mai di te»', '240 caratteri', 'Una regola che vale sopra tutto il resto. È una richiesta: vale se il bot la capisce.'],
+    ] },
+    { p: [
+      '<strong>Parole da bloccare.</strong> Un elenco a parte, una parola per riga: il cognome, la via, il nome della scuola. Non è una richiesta. Se una di queste parole finisce in una risposta, la risposta non parte.',
+      'Il confronto non guarda maiuscole e accenti, e trova la parola anche attaccata ad altro testo. Puoi metterne fino a 40, da 2 a 60 caratteri. Non moderano nessuno: valgono solo su quello che dice il bot. Allo stesso modo il bot non dice mai le «Parole vietate» della scheda «Moderazione» (vedi il <a href="/manuale/moderazione">manuale della moderazione</a>).',
+      '«Salva la scheda» salva i campi e le parole insieme. Compare «Scheda salvata: il bot sa chi sei».',
+      'Il pre-addestramento riempie da solo «Chi sei», «Quando sei in diretta» e «Dove ti trovano» se sono vuoti. Non tocca mai quello che hai scritto tu.',
+    ] },
+
+    { h3: 'Insegnagli qualcosa' },
+    { p: ['Una voce è una coppia domanda e risposta. Quando l\'argomento compare in chat, il bot sa cosa dire.'] },
+    { ul: [
+      '«Domanda / parole chiave»: la domanda come la farebbe uno spettatore, oppure alcune parole chiave separate da <code>/</code>. Fino a 300 caratteri.',
+      '«Risposta»: quello che deve dire. Fino a 450 caratteri.',
+      'Il menù dice quando vale: «vale sempre», «solo quando sei in diretta» (il codice sconto dello sponsor), «solo quando sei offline» (quando torni).',
+      '«fissata» fa passare la voce davanti alle altre.',
+      '«Aggiungi» la salva. Compare «Il bot ha imparato qualcosa di nuovo». Se manca la domanda o la risposta leggi «Compila domanda e risposta.».',
+    ] },
+    { esempio: 'Domanda     che pc usi? / setup / configurazione\nRisposta    Gioco su un Ryzen 7 con una 4070, trovi tutto sul sito!' },
+    { p: [
+      'Puoi scriverne fino a 500. Oltre, spariscono prima le più vecchie fra quelle non scritte da te. A ogni messaggio il bot usa le <strong>sei voci più vicine</strong> a quello che gli hanno chiesto, non le ultime che hai scritto.',
+      'Le fissate entrano per prime, ma dentro quelle sei. Se ne fissi più di sei, entrano solo le sei più vicine alla domanda. Tienile per le cose che non deve mai ignorare.',
+      'Quando una voce risponde proprio alla domanda, il bot la usa come risposta e la dice con parole sue. Se la risposta contiene un indirizzo, esce identica. Con «Risposte intelligenti» spento esce sempre come l\'hai scritta.',
+    ] },
+
+    { h3: 'Cosa sa il bot' },
+    { p: ['L\'elenco di tutto quello che il bot sa, dalla voce più recente. Ogni voce mostra la domanda, la risposta, l\'origine, quando vale e la data.'] },
+    { tabella: [
+      ['Origine', 'Da dove viene', 'Come si cambia'],
+      ['«tua»', 'Scritta da te in «Insegnagli qualcosa».', 'Dall\'elenco.'],
+      ['«dal sito»', 'Letta dal tuo profilo su andryxify.it e dalla tua bio di Twitch, con il pre-addestramento.', 'Correggi il profilo e premi «Ri-leggi il mio profilo andryxify.it».'],
+      ['«dalla tua pagina link»', 'Letta dalla tua pagina link: titolo e sottotitolo, testi, link, social, griglie, conti alla rovescia e FAQ. Fino a 24 voci.', 'Solo sulla pagina. Accanto alla voce leggi «si cambia sulla pagina».'],
     ] },
     { h3: 'La tua pagina link parla al bot' },
-    { p: ['Quello che scrivi su <strong>/u/iltuonome</strong> il bot lo legge <strong>mentre risponde</strong>, non una volta ogni tanto: titolo e sottotitolo, i blocchi di testo, i link e i social con la loro etichetta, i conti alla rovescia — e soprattutto i blocchi <strong>FAQ</strong>, che sono già domande e risposte scritte da te.'] },
-    { p: ['Cambi la pagina, cambia quello che il bot sa. Non c\'è niente da rifare, e non ci sono doppioni da cancellare: non è una copia, è una lettura. Se spegni la pagina, il bot smette di usarla.'] },
+    { p: [
+      'Le voci della pagina link non sono copie: il bot legge la pagina mentre risponde. Cambi la pagina e al più entro un minuto il bot sa la cosa nuova. Se spegni la pagina, smette di usarla.',
+      'Ci sono anche voci che il bot aggiunge da solo: le risposte trovate con una ricerca online e quelle che ricava da quello che scrivi tu in chat. Si trattano come le altre. Se una è sbagliata, la togli con «Elimina».',
+      'Per ogni voce, tranne quelle della pagina link, hai tre controlli:',
+    ] },
+    { ul: [
+      'il menù accanto cambia quando vale: «sempre», «solo in diretta», «solo offline». Si salva appena scegli;',
+      '«Fissa» e «Libera» mettono e tolgono la fissata;',
+      '«Elimina» toglie la voce subito, senza conferma. Compare «Voce dimenticata.».',
+    ] },
+    { p: [
+      'Il testo di una voce non si modifica: per correggerlo la elimini e la riscrivi. Se l\'elenco è vuoto leggi «Il bot non sa ancora niente: insegnagli qualcosa qui sopra!».',
+    ] },
+
     { h3: 'Il quaderno del bot' },
-    { p: ['In fondo alla scheda. Qui non c\'è quello che <em>sa</em>, ma <strong>come deve rispondere</strong>: «quando chiedono del torneo, rimanda al Discord», «se qualcuno è arrabbiato, rispondi corto». Il bot le applica senza citarle.'] },
-    { p: ['Ogni riga dice da chi viene: tua, dal sito, o insegnata dal cervello — e quello che non ti convince lo togli, anche se l\'ha messo lui.'] },
-    { h3: 'Il pre-addestramento' },
     { p: [
-      'Dalla scheda <em>Stato</em> c\'è un tasto che rilegge il tuo profilo pubblico su andryxify.it e ne ricava le voci «dal sito»: <strong>chi sei</strong> (bio o titolo della pagina link), <strong>quando sei in diretta</strong> (programmazione) e <strong>dove ti trovano</strong> (un\'entrata per ogni social). Nello stesso giro riempie i campi vuoti della tua scheda.',
-      'Si può rifare quante volte vuoi: riparte pulito, quindi non crea doppioni. Se non hai una pagina pubblica te lo dice invece di inventarsi qualcosa.',
+      'Qui scrivi <strong>come deve rispondere</strong>, non cosa sa. Per esempio «quando chiedono del torneo, rimanda al Discord» o «se qualcuno è arrabbiato, rispondi corto». Il bot le applica senza citarle.',
+    ] },
+    { ul: [
+      'Scrivi una frase intera, da 12 a 220 caratteri, e premi «Insegna». Compare «Insegnato.». Una frase più corta non passa: leggi «Scrivi una frase intera.».',
+      'Nell\'elenco ogni riga dice da chi viene: «tua», «dal sito» o «insegnata dal cervello».',
+      '«Togli» toglie una riga del tuo canale. Compare «Tolta dal quaderno.».',
+      'Le righe con «vale ovunque» valgono per tutti i canali: le vedi, ma non si tolgono da qui.',
+    ] },
+    { p: [
+      'Se l\'elenco è vuoto leggi «Niente ancora. Scrivigli qui sopra come vuoi che risponda.». Se dice «Il cervello non risponde adesso.», il quaderno non è raggiungibile in quel momento e non puoi aggiungere né togliere righe: riprova più tardi.',
     ] },
 
-    { h2: 'Cosa si ricorda: la memoria' },
-    { p: ['Sta in <em>Memoria</em>, dietro il tasto «Mostra la memoria» — non si carica da sola perché è la parte più pesante.'] },
+    { h3: 'Pre-addestramento' },
+    { p: [
+      'Il bot legge il tuo profilo su andryxify.it per conoscerti prima ancora di entrare in chat. La carta mostra «Ultima lettura:» con data e ora, e «voci di conoscenza:», cioè quante voci ha salvato in tutto. Le voci della pagina link non si contano. Sotto c\'è l\'esito dell\'ultima lettura: quante voci ha creato e cosa ha letto.',
+      '«Ri-leggi il mio profilo andryxify.it» rilegge adesso. Mentre lavora il tasto dice «Sto leggendo il tuo profilo…». Alla fine leggi quante cose nuove ha trovato, per esempio «Fatto: 6 cose nuove sul tuo canale.», compare «Profilo riletto: conoscenza aggiornata e scheda riempita dove era vuota ✓» e la pagina si aggiorna.',
+      'Se non trova niente da leggere lo dice: «Non ho trovato niente da leggere sul tuo profilo. Riprova fra poco, oppure scrivi tu le risposte qui sotto.», e non tocca la scheda.',
+    ] },
+    { ul: [
+      'Cancella le voci «dal sito» e le rifà da capo, quindi non crea doppioni.',
+      'Crea una voce per la tua bio, una per la programmazione, una per ogni social del profilo e una per la bio di Twitch.',
+      'Riempie i campi vuoti della tua scheda: «Chi sei», «Quando sei in diretta», «Dove ti trovano».',
+      'Se non hai un profilo pubblico, l\'esito lo dice e non inventa niente.',
+    ] },
+    { p: [
+      'Parte anche da solo quando il canale viene attivato, quando concedi di nuovo i permessi di Twitch e, al più una volta a settimana, quando entri dal sito andryxify.it. Se non riesce compare «Pre-addestramento fallito:» con il motivo: riprova più tardi.',
+    ] },
+
+    { h3: 'La piccola rete che impara' },
+    { p: [
+      'Il motore veloce del bot: risponde subito a quello che ha già imparato e cresce da solo. La carta mostra cinque numeri, aggiornati ogni 5 secondi mentre la tieni aperta: «nodi appresi», «sa rispondere», «nella sua mente», «fiducia» e «curiosità». «nella sua mente» conta le voci che il bot si è costruito da solo. Su un canale nuovo partono da zero.',
+      'Sotto, a volte, c\'è una riga in corsivo con quello a cui sta pensando, e una riga con quanti fatti conosce, quanti ne ha dedotti ragionando e quante incoerenze ha notato.',
+      '«Ultime cose che non sapeva» elenca fino a quattro domande a cui non ha saputo rispondere. Se una riguarda te, insegnagliela in «Insegnagli qualcosa». Se non ce ne sono leggi «Nessuna lacuna recente: sta rispondendo bene.».',
+    ] },
+    { ul: [
+      '«Studia ora» aggiorna subito quello che il bot sa di te, invece di aspettare il giro automatico. Cerca online le cose che non sapeva, se «Accesso a internet» è acceso, e rilegge quello che hai scritto. Il tasto risponde subito con un avviso: il lavoro continua in sottofondo e i risultati arrivano in «Cosa sa il bot» nei minuti dopo.',
+      '«Scarica il dataset della sua mente» scarica un file con le coppie domanda e risposta che il bot ha imparato, insieme alle voci scritte da te, una per riga.',
+    ] },
+    { p: ['Se al posto dei numeri leggi «Non disponibile ora.», il pannello non riesce a leggerli: riprova più tardi.'] },
+
+    // ------------------------------------------------------------ MEMORIA
+    { h2: 'Memoria', scheda: 'memoria', p: [
+      'Mostra cosa il bot si ricorda del canale e ti permette di azzerarlo. C\'è una carta sola, «La memoria del bot».',
+    ] },
+
+    { h3: 'La memoria del bot' },
+    { p: ['La memoria non si carica da sola: premi «Mostra la memoria». Compare «Memoria caricata ✓» e sotto vedi due elenchi.'] },
     { tabella: [
-      ['Cosa', 'Quanto ne mostra', 'Cos\'è'],
-      ['Lezioni', 'le ultime 50', 'Regolarità che ha notato nel canale e da cui si regola.'],
-      ['Fatti', 'tutti', 'Cose stabili sul canale: date, nomi, abitudini.'],
-      ['Ricordi sugli utenti', '—', 'Cosa sa delle persone che scrivono spesso. Non si sfoglia dal pannello.'],
-      ['Contesto della diretta', '—', 'Di cosa si sta parlando adesso. Si consuma da solo.'],
-      ['Clip', 'le ultime 20', 'Le clip create in automatico.'],
-      ['Chi c\'è sempre', 'i primi 5', 'Le serie di presenze più lunghe: chi è venuto a più dirette di fila, e a quante in tutto.'],
+      ['Elenco', 'Quanti', 'Cosa c\'è'],
+      ['«Lezioni imparate»', 'le ultime 50', 'Quello che nota del canale: quando la chat è più viva, le emote del momento, chi scrive di più. Ne scrive una nuova solo quando ci sono almeno 50 messaggi in 6 ore.'],
+      ['«Fatti sul canale»', 'tutti', 'Cose stabili: «Chi scrive di più» negli ultimi 7 giorni, «Emote preferite», «La chat in settimana» e «Gioco recente».'],
     ] },
-    { h3: 'Il bot che ti riconosce' },
-    { p: ['Al primo messaggio di una persona nuova il bot dice una parola, e la dice anche a chi torna dopo settimane (di base tre). I due testi li scrivi tu nella scheda <em>Giochi</em>, sotto «Presenze e saluti», con <code>{user}</code>, <code>{giorni}</code>, <code>{serie}</code> e <code>{dirette}</code>; un testo vuoto spegne quel saluto. Se ti sei costruito un Modulo sul primo messaggio, vince il tuo. Il bot non saluta a raffica: un raid porta cinquanta persone in un colpo, e cinquanta saluti sarebbero spam.'] },
-    { h3: 'Azzerare: cosa sparisce e cosa resta' },
-    { p: ['Il tasto rosso in fondo cancella <strong>quello che il bot ha dedotto da solo</strong>: lezioni, ricordi sugli utenti, fatti, contesto della diretta e le voci di conoscenza «imparata dalla chat».'] },
-    { p: ['<strong>Restano</strong>: la conoscenza scritta da te, quella presa dal sito, quella studiata, i moduli, i comandi, le monete e le classifiche. Non è un tasto che riporta il canale a zero: è un tasto che gli fa dimenticare le conclusioni sbagliate.'] },
-
-    { h2: 'Le statistiche dei sette giorni' },
-    { p: ['In cima a <em>Memoria</em>, sempre sugli ultimi sette giorni:'] },
-    { ul: [
-      '<strong>Messaggi della chat</strong> — quelli delle persone, i suoi non contano.',
-      '<strong>Messaggi del bot</strong> — quanto ha parlato lui. Il rapporto fra i due dice se la chat autonoma è tarata bene.',
-      '<strong>Top chatter</strong> — le cinque persone che hanno scritto di più.',
-      '<strong>Clip</strong> — quante ne ha create in tutto, non solo nella settimana.',
-    ] },
-
-    { h2: 'L\'avatar 3D' },
     { p: [
-      'È uno schema navigabile del suo cervello: al centro il nucleo, attorno la logica, e nel suo «manuale su come funzionano le persone» le emozioni con i moduli che ha imparato. Si trascina per ruotare, la rotella fa zoom, un clic su un nodo dice cosa fa quel pezzo.',
-      'Sotto, «Come ragiona» mostra da quale testa nascono le risposte. Non è una decorazione: se la fetta del modello è grande e quella dei moduli piccola, vuol dire che al canale servono più regole tue — ed è la strada per un bot che sbaglia meno.',
+      'Il bot si ricorda anche qualcosa delle persone che scrivono spesso, e di cosa si parla adesso in diretta. Queste cose non si sfogliano dal pannello.',
+      'Accanto a ogni lezione e a ogni fatto c\'è «Togli»: toglie solo quello, subito, e compare «Dimenticato ✓». Lo possono fare anche i moderatori del pannello. Se non c\'è ancora niente leggi «Nessuna lezione ancora: il bot impara osservando la chat.» e «Nessun fatto ricordato.».',
     ] },
-
-    { h2: 'Quando non risponde come vuoi' },
-    { ul: [
-      '<strong>Parla troppo.</strong> Abbassa la chat autonoma prima di spegnere qualcosa: nove volte su dieci è quella.',
-      '<strong>Parla poco.</strong> Controlla che «rispondi quando mi nominano» sia acceso: senza, deve essere chiamato con un comando.',
-      '<strong>Dice una cosa sbagliata su di te.</strong> Cercala in <em>Conoscenza</em>. Se l\'origine è «imparata dalla chat» cancella quella voce; se è «dal sito», la correzione va fatta sul profilo e poi si rifà il pre-addestramento.',
-      '<strong>Non capisce una domanda scritta storta.</strong> Aggiungi parole chiave alla voce, separate da <code>/</code>: sono alternative, non una frase sola.',
-      '<strong>Non suona come te.</strong> Il tono fa metà del lavoro; l\'altra metà sono le tue frasi. Mettine dieci vere e si sente subito.',
+    { p: [
+      '<strong>Azzera ciò che ha imparato.</strong> Butta via tutto in un colpo, e per questo lo vede solo il proprietario del canale. Il tasto rosso sotto «Zona pericolosa.» chiede conferma: «Azzero la memoria del bot?», poi «Azzera la memoria». Non si torna indietro. Alla fine compare «Memoria azzerata. Il bot riparte da zero (ma la tua conoscenza resta).».',
+    ] },
+    { tabella: [
+      ['Sparisce', 'Resta'],
+      ['Le lezioni, i fatti sul canale, i ricordi sulle persone, il contesto della diretta e le voci di conoscenza con origine «dalla chat».', 'La tua scheda, le tue voci, quelle «dal sito» e della pagina link, quelle che il bot ha aggiunto da solo, il quaderno, le linee guida, le impostazioni, i moduli, i comandi, le monete e le classifiche.'],
+    ] },
+    { p: [
+      'Le voci che il bot ha aggiunto da solo restano: se una è sbagliata, toglila da «Cosa sa il bot».',
+      'Dopo l\'azzeramento «Ultima lettura», nella carta «Pre-addestramento», resta senza data. Premi «Ri-leggi il mio profilo andryxify.it» se vuoi che si aggiorni subito.',
     ] },
   ],
   faq: [
-    { d: 'Le chat vengono mandate a un servizio esterno?', r: 'No. Il modello che risponde gira sul nostro server. L\'unica cosa che esce, e solo se lasci acceso l\'accesso a internet, è la ricerca di un dubbio su fonti pubbliche gratuite.' },
-    { d: 'Se spengo l\'IA locale il bot smette di funzionare?', r: 'No: continuano a funzionare comandi, moduli, moderazione, giochi e conoscenza scritta da te. Sparisce la capacità di capire una domanda formulata in modo diverso da come l\'hai scritta.' },
-    { d: 'Il bot impara da solo anche se non faccio niente?', r: 'Sì, se «adatta la personalità al canale» è acceso: osserva come si parla nel tuo canale e ci si avvicina. Tutto quello che deduce sta in Memoria, e da lì si cancella.' },
-    { d: 'Un moderatore può cambiare la personalità?', r: 'Un moderatore può occuparsi di comandi, moduli, effetti, giochi, notifiche, regole e memoria. Le cose da proprietario — permessi e abbonamento — no.' },
-    { d: 'Perché la conoscenza «dal sito» non si cancella con Azzera?', r: 'Perché non è una deduzione del bot: è un dato tuo, che hai scritto sul tuo profilo. Si cambia dove sta, e poi si rifà il pre-addestramento.' },
+    { d: 'Il bot parla troppo in chat. Cosa abbasso?', r: 'Prima di tutto «Chat autonoma», nella scheda «Personalità»: decide sia quanto risponde a chi non lo chiama sia ogni quanto dice una cosa sua. In «Cosa ha detto da solo» vedi cosa ha detto e perché. Se vuoi che di sua iniziativa parli solo mentre sei live, spunta «Solo mentre sono in diretta».' },
+    { d: 'Lo nomino e non risponde.', r: 'Controlla che il bot sia acceso nella scheda «Stato» e che «Rispondi quando mi nominano in chat» sia spuntato. Conta come chiamata la parola «bot» o il nome del canale. La stessa persona lo può richiamare dopo 10 secondi. Con «Risposte intelligenti» spento risponde solo se una voce della «Conoscenza» corrisponde alla domanda.' },
+    { d: 'Il promemoria dei social non parte mai.', r: 'Parte solo in diretta, quando la chat sta parlando, al più ogni 45 minuti. Servono «Ricorda i tuoi social in chat, nei momenti giusti» spuntato, «Personalità proattiva» accesa, «Chat autonoma» sopra lo 0% e la pagina link accesa.' },
+    { d: 'Ha detto una cosa sbagliata su di me. Dove la correggo?', r: 'Cercala in «Cosa sa il bot», nella scheda «Conoscenza». Se è «tua» o l\'ha aggiunta lui, premi «Elimina» e riscrivila giusta. Se è «dal sito», correggi il profilo su andryxify.it e premi «Ri-leggi il mio profilo andryxify.it». Se è «dalla tua pagina link», cambiala sulla pagina. Se sta in «La tua scheda», correggi il campo e premi «Salva la scheda».' },
+    { d: 'Come faccio a essere sicuro che non dica il mio cognome?', r: 'Scrivilo in «Parole da bloccare», nella carta «La tua scheda». Una risposta che lo contiene non parte, anche con maiuscole o accenti diversi. «Cosa non dire mai di te» è una richiesta, le parole bloccate sono un blocco.' },
+    { d: 'Ho scritto una linea guida e non la rispetta.', r: 'Controlla con chi e dove vale: una regola «su Telegram» in chat non conta. Una regola è una richiesta, e vale se il bot la capisce: scrivila corta e chiara. Per una parola che non deve uscire mai usa «Parole da bloccare».' },
+    { d: 'Un moderatore può cambiare la personalità o azzerare la memoria?', r: 'Può cambiare tutto in «Personalità» e «Conoscenza», e togliere un ricordo sbagliato in «Memoria». Azzerare tutta la memoria no: lo può fare solo il proprietario del canale. Le linee guida dettate da Telegram arrivano solo dal tuo account.' },
+    { d: 'Se spengo «Risposte intelligenti» il bot smette di funzionare?', r: 'No. Comandi, moduli, giochi e moderazione restano uguali. Il bot risponde con le voci della «Conoscenza» che corrispondono bene alla domanda, con il testo che hai scritto tu, e non fa conversazione. Da solo dice solo le battute e il promemoria dei social.' },
+    { d: 'Le chat finiscono a un servizio esterno?', r: 'Le risposte le scrive un modello che gira sul server, senza servizi a pagamento di terzi. Con «Accesso a internet» acceso, quando il bot cerca un dubbio la domanda va a DuckDuckGo o Wikipedia. Se non vuoi, spegni «Accesso a internet».' },
+    { d: 'Perché «Azzera ciò che ha imparato» non cancella le voci «dal sito»?', r: 'Perché le hai scritte tu sul tuo profilo: non sono conclusioni del bot. Si cambiano sul profilo, poi premi «Ri-leggi il mio profilo andryxify.it».' },
   ],
 };

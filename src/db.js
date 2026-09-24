@@ -3393,7 +3393,15 @@ export const memory = {
       (SELECT id FROM lessons WHERE channel=? ORDER BY ts DESC LIMIT 50)`).run(channel, channel);
   },
   lessons(channel, limit = 15) {
-    return db.prepare('SELECT text, ts FROM lessons WHERE channel=? ORDER BY ts DESC LIMIT ?').all(channel, limit);
+    return db.prepare('SELECT id, text, ts FROM lessons WHERE channel=? ORDER BY ts DESC LIMIT ?').all(channel, limit);
+  },
+  // Un ricordo sbagliato si toglie da solo, senza azzerare tutto. Sempre dentro
+  // il canale: l'id di una lezione di un altro canale non tocca niente.
+  togliLezione(channel, id) {
+    return db.prepare('DELETE FROM lessons WHERE channel=? AND id=?').run(channel, Number(id)).changes > 0;
+  },
+  togliFatto(channel, key) {
+    return db.prepare('DELETE FROM facts WHERE channel=? AND key=?').run(channel, String(key)).changes > 0;
   },
   setFact(channel, key, value) {
     db.prepare(`INSERT INTO facts (channel, key, value, ts) VALUES (?,?,?,?)
@@ -4071,6 +4079,10 @@ export const knowledge = {
 // I limiti/regole che lo streamer le dà (in privato o dalla dashboard): lei li
 // SALVA e li rispetta sempre. Sono del proprietario, valgono su tutti i suoi modi.
 const GUIDA_DOVE = ['ovunque', 'twitch', 'tg', 'tg-privato'];
+// Quante regole arrivano al cervello, e quindi quante se ne possono tenere: una
+// regola salvata e' una promessa («le rispetta sempre»), e una tredicesima che
+// non arriva mai al modello sarebbe una promessa rotta senza dirlo.
+export const GUIDE_MAX = 12;
 const GUIDA_CONCHI = ['tutti', 'solo-me', 'tranne-me'];
 
 export const guide = {
@@ -4078,12 +4090,12 @@ export const guide = {
     return db.prepare('SELECT id, testo, dove, con_chi, ts FROM linee_guida WHERE channel=? ORDER BY ts ASC')
       .all(String(channel).toLowerCase());
   },
-  testi(channel, max = 12) {
-    return this.list(channel).slice(0, max).map((r) => r.testo);
+  testi(channel, max = GUIDE_MAX) {
+    return this.list(channel).slice(-max).map((r) => r.testo);
   },
   // Solo le regole che valgono NEL CONTESTO attuale (piattaforma + con chi).
   // contesto = { piattaforma:'twitch'|'telegram', privato:bool, sonoIo:bool }
-  applicabili(channel, contesto = {}, max = 12) {
+  applicabili(channel, contesto = {}, max = GUIDE_MAX) {
     const { piattaforma = 'twitch', privato = false, sonoIo = false } = contesto;
     const sue = this.list(channel).filter((g) => {
       const dove = g.dove || 'ovunque';
@@ -4096,7 +4108,7 @@ export const guide = {
       if (con === 'solo-me') return sonoIo === true;
       if (con === 'tranne-me') return sonoIo === false;
       return true;
-    }).slice(0, max).map((g) => g.testo);
+    }).slice(-max).map((g) => g.testo);   // chi ne aveva di piu' da prima: le piu' recenti
     // Il genere con cui il bot parla di se' non e' una regola che lo streamer
     // scrive: e' un'impostazione, e vale sempre. Sta QUI perche' qui nascono le
     // regole che arrivano al modello, e i punti che le chiedono sono sei: messa
@@ -4117,18 +4129,19 @@ export const guide = {
     // regole dello streamer sparirebbero per far spazio a queste.
     return [...testa.filter(Boolean), ...sue];
   },
+  // Torna { ok, id } o { ok: false, pieno: true } quando le regole sono gia'
+  // GUIDE_MAX: si toglie prima una di quelle che ci sono, niente sparisce da solo.
   add(channel, testo, ambito = {}) {
     const t = String(testo || '').replace(/\s+/g, ' ').trim().slice(0, 300);
-    if (t.length < 3) return null;
+    if (t.length < 3) return { ok: false };
     const dove = GUIDA_DOVE.includes(ambito.dove) ? ambito.dove : 'ovunque';
     const con_chi = GUIDA_CONCHI.includes(ambito.con_chi) ? ambito.con_chi : 'tutti';
     const c = String(channel).toLowerCase();
     const gia = db.prepare('SELECT id FROM linee_guida WHERE channel=? AND lower(testo)=lower(?) LIMIT 1').get(c, t);
-    if (gia) { db.prepare('UPDATE linee_guida SET dove=?, con_chi=? WHERE id=?').run(dove, con_chi, gia.id); return gia.id; }
+    if (gia) { db.prepare('UPDATE linee_guida SET dove=?, con_chi=? WHERE id=?').run(dove, con_chi, gia.id); return { ok: true, id: gia.id }; }
+    if (this.count(c) >= GUIDE_MAX) return { ok: false, pieno: true };
     const info = db.prepare('INSERT INTO linee_guida(channel, testo, dove, con_chi, ts) VALUES(?,?,?,?,?)').run(c, t, dove, con_chi, now());
-    db.prepare(`DELETE FROM linee_guida WHERE channel=? AND id NOT IN (
-      SELECT id FROM linee_guida WHERE channel=? ORDER BY ts DESC LIMIT 40)`).run(c, c);
-    return info.lastInsertRowid;
+    return { ok: true, id: info.lastInsertRowid };
   },
   remove(channel, id) {
     db.prepare('DELETE FROM linee_guida WHERE channel=? AND id=?').run(String(channel).toLowerCase(), Number(id) || 0);

@@ -1518,25 +1518,6 @@ function _demoGet(via) {
   return F[via] !== undefined ? F[via] : {};
 }
 
-const SPIEGA_DEMO = {
-  stato: 'Il quadro di comando: accendi/spegni il bot, controlli i permessi Twitch e vedi se è connesso alla chat. Da qui inviti anche i tuoi moderatori.',
-  personalita: 'Decidi il carattere del bot: tono (scherzoso, amichevole, serio), quanto è spontaneo, se risponde alle menzioni e quando può parlare.',
-  conoscenza: 'Insegni al bot cosa sa di te: domande e risposte pronte (PC, social, orari…) che userà quando qualcuno chiede in chat.',
-  memoria: 'Le statistiche del canale e ciò che il bot ricorda: clip salvate, note sulla community, sintesi di com\'è andata.',
-  moduli: 'Il cuore del bot: crei comandi e automazioni. Trigger da parola, frase, evento, voce o timer e azioni con variabili $ (come $user o $random).',
-  regole: 'La moderazione automatica: filtri anti-spam, parole vietate, limiti e scudo anti-bot (follow-bot e hate-raid), per tenere la chat pulita senza pensarci.',
-  giochi: 'Mini-giochi, monete e classifiche per la community: qui vedi la leaderboard e gestisci le citazioni.',
-  effetti: 'Suoni ed effetti da lanciare in chat o in overlay: un comando e parte l\'applauso, la tromba o i coriandoli.',
-  clip: 'Le clip automatiche nei momenti di hype, così non perdi mai il momento migliore della live.',
-  ascolto: 'Comandi il bot a voce mentre streammi: parli e lui esegue, senza toccare la tastiera.',
-  notifiche: 'I tuoi social in un posto: in cima si collegano, e sotto scegli cosa annunciare quando pubblichi.',
-  telegram: 'Il bot dentro il tuo gruppo Telegram: avvisa quando parti, risponde ai comandi, si ricorda i compleanni dei membri e ti manda il rapporto della serata in privato.',
-  ruoli: 'I ruoli del tuo server Discord dati da quello che succede su Twitch: chi ti segue, chi è abbonato, chi c’è sempre.',
-  dcavvisi: 'Dove arrivano gli avvisi sul tuo server: un canale per ogni cosa, di chi vuoi tu, col testo che scrivi tu e il ruolo che vuoi chiamare.',
-  dcserver: 'Categorie, canali e permessi del tuo server Discord: scegli come lo vuoi, guardi cosa cambierebbe, e lo costruisce lui.',
-  dcentra: 'La porta del tuo server: chi può scrivere appena entra, la prima schermata che legge e le domande che gli aprono i canali giusti.',
-  dcfiltro: 'Cosa non si scrive sul tuo server: le tue parole, le liste già pronte di Discord, lo spam e le raffiche di menzioni.',
-};
 
 function montaDemo() {
   const cont = document.querySelector('.contenuto');
@@ -3282,7 +3263,7 @@ const GUIDE = {
   account: { serve: ['Collegare le piattaforme, entrare con una passkey, far entrare i moderatori e decidere dei tuoi dati.', 'Connect your platforms, sign in with a passkey, let your moderators in and decide about your data.', 'Conectar tus plataformas, entrar con una passkey, dejar entrar a tus moderadores y decidir sobre tus datos.'],
     come: [['Collega le piattaforme dove trasmetti: il canale resta uno solo.', 'Connect the platforms you stream on: the channel stays one.', 'Conecta las plataformas donde emites: el canal sigue siendo uno.', '#piattaforme-box'], ['Crea una passkey: rientri con l’impronta o il volto, senza password.', 'Create a passkey: you sign back in with your fingerprint or face, no password.', 'Crea una passkey: vuelves a entrar con tu huella o tu cara, sin contraseña.', '#btn-crea-passkey'], ['Scarica i tuoi dati quando vuoi: sono tuoi.', 'Download your data whenever you want: it’s yours.', 'Descarga tus datos cuando quieras: son tuyos.', '#btn-esporta']] },
   personalita: { serve: ['Dare al bot il tono e il carattere con cui parla in chat.', 'Give the bot the tone and character it speaks with in chat.', 'Darle al bot el tono y el carácter con que habla en el chat.'],
-    come: [['Scegli tono e “spontaneità” (quanto interviene da solo).', 'Pick tone and “spontaneity” (how often it chimes in).', 'Elige el tono y la “espontaneidad” (cuánto interviene solo).', '#sel-tono'], ['Aggiungi regole che rispetterà SEMPRE.', 'Add rules it will ALWAYS follow.', 'Añade reglas que respetará SIEMPRE.', '#inp-guida'], ['Salva: il nuovo stile parte subito.', 'Save: the new style takes effect right away.', 'Guarda: el nuevo estilo se aplica al instante.', '#btn-salva-personalita']] },
+    come: [['Scegli il tono, e con «Chat autonoma» quanto interviene da solo.', 'Pick the tone, and with “Autonomous chatting” how often it chimes in on its own.', 'Elige el tono, y con «Chat autónomo» cuánto interviene solo.', '#sel-tono'], ['Aggiungi regole che rispetterà SEMPRE.', 'Add rules it will ALWAYS follow.', 'Añade reglas que respetará SIEMPRE.', '#inp-guida'], ['Salva: il nuovo stile parte subito.', 'Save: the new style takes effect right away.', 'Guarda: el nuevo estilo se aplica al instante.', '#btn-salva-personalita']] },
   conoscenza: { serve: ['Decidere cosa il bot sa di te e come deve rispondere.', 'Decide what the bot knows about you and how it should reply.', 'Decidir qué sabe el bot de ti y cómo debe responder.'],
     come: [
       ['Compila la tua scheda: chi sei, gli orari, dove ti trovano, cosa non deve dire di te.', 'Fill in your card: who you are, your schedule, where to find you, what it must not say about you.', 'Rellena tu ficha: quién eres, tus horarios, dónde encontrarte, qué no debe decir de ti.', '#sc-chi'],
@@ -3295,7 +3276,7 @@ const GUIDE = {
   statistiche: { serve: ['Vedere come sta andando il canale in un posto solo: i numeri del periodo che scegli, le classifiche e com\'è andata nelle ultime dirette.', 'See how the channel is doing in one place: the numbers for the period you pick, the leaderboards and how the latest streams went.', 'Ver cómo va el canal en un solo sitio: los números del periodo que elijas, las clasificaciones y cómo fueron los últimos directos.'],
     come: [['Scegli il periodo: sette giorni, trenta, oppure da sempre.', 'Pick the period: seven days, thirty, or all time.', 'Elige el periodo: siete días, treinta, o desde siempre.', '#stat-periodo'], ['Guarda i numeri: dirette, ore in onda, picco, chat, follower.', 'Look at the numbers: streams, hours on air, peak, chat, followers.', 'Mira los números: directos, horas en antena, pico, chat, seguidores.', '#griglia-stat'], ['Le classifiche dicono chi c\'è sempre, chi scrive e chi guarda.', 'The leaderboards tell you who is always there, who writes and who watches.', 'Las clasificaciones dicen quién está siempre, quién escribe y quién mira.', '#lista-presenze'], ['In fondo, le ultime dirette una accanto all\'altra.', 'At the bottom, the latest streams side by side.', 'Abajo, los últimos directos uno al lado del otro.', '#stat-dirette']] },
   memoria: { serve: ['Vedere cosa si ricorda il bot: le lezioni che ha tirato dalla chat e i fatti stabili sul canale.', 'See what the bot remembers: the lessons it drew from chat and the stable facts about the channel.', 'Ver qué recuerda el bot: las lecciones que sacó del chat y los hechos estables del canal.'],
-    come: [['I numeri del canale stanno nella scheda Statistiche.', 'The channel numbers are in the Stats tab.', 'Los números del canal están en la pestaña Estadísticas.', ''], ['Controlla i ricordi: puoi cancellare quelli sbagliati.', 'Check the memories: you can delete the wrong ones.', 'Revisa los recuerdos: puedes borrar los equivocados.', '#btn-carica-memoria'], ['Se qualcosa non ti piace, correggilo dalla scheda Conoscenza.', 'If something’s off, fix it from the Knowledge tab.', 'Si algo no te gusta, corrígelo desde la pestaña Conocimiento.', '']] },
+    come: [['I numeri del canale stanno nella scheda Statistiche.', 'The channel numbers are in the Stats tab.', 'Los números del canal están en la pestaña Estadísticas.', ''], ['Controlla i ricordi: quelli sbagliati li togli uno per uno con «Togli».', 'Check the memories: remove the wrong ones one by one with “Remove”.', 'Revisa los recuerdos: los equivocados los quitas uno a uno con «Quitar».', '#btn-carica-memoria'], ['Se qualcosa non ti piace, correggilo dalla scheda Conoscenza.', 'If something’s off, fix it from the Knowledge tab.', 'Si algo no te gusta, corrígelo desde la pestaña Conocimiento.', '']] },
   consolify: { serve: ['Avere i tasti del tuo canale sotto le dita mentre streami: contatori, effetti, una battuta, una frase — sul telefono, sul tablet o su una tastiera fisica.', 'Have your channel’s keys under your fingers while you stream: counters, effects, a joke, a line — on your phone, tablet or a physical key pad.', 'Tener las teclas de tu canal bajo los dedos mientras emites: contadores, efectos, un chiste, una frase — en el móvil, la tablet o un teclado físico.'],
     come: [['Premi «Modifica i tasti» e aggiungine uno: nell\'elenco ci sono già le tue azioni, perché nascono dai tuoi contatori e dai tuoi effetti.', 'Press “Edit the keys” and add one: your actions are already in the list, because they come from your own counters and effects.', 'Pulsa «Editar las teclas» y añade una: tus acciones ya están en la lista, porque nacen de tus contadores y tus efectos.', '#cons-modifica'], ['Premi «Fatto» e prova: sotto ogni tasto compare com\'è andata, per esempio il numero nuovo del contatore.', 'Press “Done” and try it: under each key you see how it went, for example the counter’s new number.', 'Pulsa «Hecho» y pruébalo: bajo cada tecla aparece cómo ha ido, por ejemplo el número nuevo del contador.', '#cons-plancia'], ['Apri questa pagina sul telefono e tienila lì mentre streami: la griglia si adatta da sé.', 'Open this page on your phone and keep it there while you stream: the grid adapts on its own.', 'Abre esta página en el móvil y tenla ahí mientras emites: la cuadrícula se adapta sola.', ''], ['Per una tastiera fisica: ogni tasto qui ha il suo indirizzo. Copialo e incollalo in un tasto con un componente di chiamate web: punta al tasto, non all\'azione, quindi se domani gli cambi mestiere lì non rifai niente.', 'For a physical key pad: every key here has its own address. Copy it into a key with a web-request component: it points at the key, not the action, so if tomorrow you change what it does you redo nothing there.', 'Para un teclado físico: cada tecla de aquí tiene su dirección. Cópiala en una tecla con un componente de peticiones web: apunta a la tecla, no a la acción, así si mañana cambias lo que hace no rehaces nada allí.', '#cons-indirizzi'], ['Se un indirizzo finisce in una clip, rigenera la chiave: quelli vecchi smettono di funzionare subito.', 'If an address ends up in a clip, regenerate the key: the old ones stop working immediately.', 'Si una dirección acaba en un clip, regenera la clave: las viejas dejan de funcionar enseguida.', '#cons-revoca']] },
   regia: { serve: ['Gestire la diretta dal pannello: titolo, categoria, marker e le azioni rapide, senza aprire Twitch.', 'Run your stream from the panel: title, category, markers and quick actions, without opening Twitch.', 'Gestionar el directo desde el panel: título, categoría, marcadores y acciones rápidas, sin abrir Twitch.'],
@@ -6442,7 +6423,7 @@ function pannelloPersonalita() {
         <input type="checkbox" id="chk-promo" ${s.promoSocial ? 'checked' : ''}>
         <label for="chk-promo">${L('Ricorda i tuoi social in chat, nei momenti giusti', 'Remind viewers of your socials in chat, at the right moments', 'Recuerda tus redes en el chat, en los momentos adecuados')}</label>
       </div>
-      <p class="suggerimento">${L('Non è un timer: aspetta la chat viva, un raid o un sub, e non insiste. I link li prende dal tuo profilo andryxify.it.', 'It is not a timer: it waits for a lively chat, a raid or a sub, and it does not insist. It takes the links from your andryxify.it profile.', 'No es un temporizador: espera a un chat vivo, un raid o un sub, y no insiste. Los enlaces los toma de tu perfil de andryxify.it.')}</p>
+      <p class="suggerimento">${L('Non è un timer: in diretta, quando la chat sta parlando, ricorda la tua pagina link, al massimo una volta ogni 45 minuti. Con la pagina link spenta non lo fa.', 'It is not a timer: while you are live and the chat is talking, it mentions your link page, at most once every 45 minutes. With the link page off it does not.', 'No es un temporizador: en directo, cuando el chat está hablando, recuerda tu página de enlaces, como mucho una vez cada 45 minutos. Con la página de enlaces apagada no lo hace.')}</p>
 
       <div class="riga-check">
         <input type="checkbox" id="chk-adatta" ${s.adattaCanale ? 'checked' : ''}>
@@ -21941,9 +21922,11 @@ function pannelloMemoria() {
       <p>${L('Le "lezioni" che ha imparato osservando la tua chat e i fatti stabili che ricorda sul canale.', 'The “lessons” it learned watching your chat and the stable facts it remembers about the channel.', 'Las «lecciones» que aprendió observando tu chat y los datos estables que recuerda sobre el canal.')}</p>
       <p class="spazio-sopra"><button class="btn secondario" id="btn-carica-memoria" title="${esc(L("Mostra cosa il bot si ricorda di te e da dove l'ha preso", 'Shows what the bot remembers about you and where it got it from', 'Muestra qué recuerda el bot de ti y de dónde lo sacó'))}">${L('Mostra la memoria', 'Show the memory', 'Mostrar la memoria')}</button></p>
       <div id="contenitore-memoria"></div>
+      ${stato?.ruolo !== 'moderatore' ? `
       <hr class="separatore">
       <p><strong class="primo-piano">${L('Zona pericolosa.', 'Danger zone.', 'Zona peligrosa.')}</strong> ${L('Azzera lezioni, ricordi sugli utenti, fatti e conoscenza imparata dalla chat. La conoscenza dal sito e quella scritta da te restano.', 'Wipes lessons, user memories, facts and knowledge learned from chat. Knowledge from the site and what you wrote stays.', 'Borra lecciones, recuerdos de usuarios, datos y conocimiento aprendido del chat. El conocimiento de la web y el escrito por ti se mantiene.')}</p>
       <p class="spazio-sopra"><button class="btn pericolo" id="btn-reset" title="${esc(L('Butta via tutto quello che il bot ha imparato di te e riparte da zero. Le impostazioni restano', 'Throws away everything the bot learned about you and starts over. Your settings stay', 'Tira todo lo que el bot aprendió de ti y empieza de cero. Los ajustes se quedan'))}">${L('Azzera ciò che ha imparato', 'Wipe what it learned', 'Borra lo que ha aprendido')}</button></p>
+      ` : ''}
     </div>`);
 }
 
@@ -22018,11 +22001,17 @@ function attivaPiattaforma() {
     out.textContent = '';
     try {
       const esito = await api('/api/streamer/preaddestra', { method: 'POST', body: {} });
-      const riassunto = typeof esito === 'object' && esito
-        ? (esito.esito || esito.messaggio || `${L('voci', 'entries', 'entradas')}: ${esito.voci ?? esito.count ?? '?'}`)
-        : String(esito);
-      out.textContent = L('Fatto: ', 'Done: ', 'Hecho: ') + riassunto;
-      toast(L('Profilo riletto: conoscenza aggiornata e scheda riempita dove era vuota', 'Profile re-read: knowledge updated and card filled where empty', 'Perfil releído: conocimiento actualizado y ficha rellenada donde estaba vacía'));
+      const n = Number(esito?.voci) || 0;
+      if (!esito?.ok) {
+        const msg = L('Non ho trovato niente da leggere sul tuo profilo. Riprova fra poco, oppure scrivi tu le risposte qui sotto.', 'I found nothing to read on your profile. Try again in a bit, or write the answers yourself below.', 'No encontré nada que leer en tu perfil. Vuelve a intentarlo en un rato, o escribe tú las respuestas aquí abajo.');
+        out.textContent = msg;
+        toast(msg, 'errore');
+        btn.disabled = false;
+        btn.textContent = testoOrig;
+        return;
+      }
+      out.textContent = L(`Fatto: ${n} cose nuove sul tuo canale.`, `Done: ${n} new things about your channel.`, `Hecho: ${n} cosas nuevas sobre tu canal.`);
+      toast(L('Profilo riletto: conoscenza aggiornata e scheda riempita dove era vuota ✓', 'Profile re-read: knowledge updated and card filled where empty ✓', 'Perfil releído: conocimiento actualizado y ficha rellenada donde estaba vacía ✓'));
 
       stato = await api('/api/me');
       render();
@@ -22057,10 +22046,16 @@ function attivaPiattaforma() {
     if (t.length < 3) return;
     const dove = document.getElementById('sel-guida-dove')?.value || 'ovunque';
     const con_chi = document.getElementById('sel-guida-conchi')?.value || 'tutti';
-    await api('/api/streamer/guide', { method: 'POST', body: { testo: t, dove, con_chi } });
+    try { await api('/api/streamer/guide', { method: 'POST', body: { testo: t, dove, con_chi } }); }
+    catch (e) {
+      if (e.dati?.codice !== 'guide-piene') throw e;
+      const n = e.dati.massimo;
+      toast(L(`Le regole sono già ${n}, e il bot le rispetta tutte: per aggiungerne una, togline prima una.`, `There are already ${n} rules, and the bot follows all of them: to add one, remove one first.`, `Ya hay ${n} reglas, y el bot las respeta todas: para añadir una, quita antes una.`), 'errore');
+      return;
+    }
     if (inp) inp.value = '';
     caricaGuide();
-    toast(L('Regola aggiunta', 'Rule added', 'Regla añadida'));
+    toast(L('Regola aggiunta ✓', 'Rule added ✓', 'Regla añadida ✓'));
   });
   document.getElementById('btn-guida-add')?.addEventListener('click', aggiungiGuida);
   document.getElementById('inp-guida')?.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); aggiungiGuida(); } });
@@ -23544,7 +23539,7 @@ async function caricaConoscenza() {
   try {
     const voci = await api('/api/streamer/knowledge');
     if (!voci.length) { ul.innerHTML = `<li class="vuoto">${L('Il bot non sa ancora niente: insegnagli qualcosa qui sopra!', 'The bot doesn\'t know anything yet: teach it something above!', '¡El bot aún no sabe nada: enséñale algo aquí arriba!')}</li>`; return; }
-    const badge = { auto: L('dal sito', 'from the site', 'de la web'), manuale: L('tua', 'yours', 'tuya'), chat: L('dalla chat', 'from chat', 'del chat'), pagina: L('dalla tua pagina link', 'from your link page', 'de tu página de enlaces') };
+    const badge = { auto: L('dal sito', 'from the site', 'del sitio'), manuale: L('tua', 'yours', 'tuya'), chat: L('dalla chat', 'from chat', 'del chat'), pagina: L('dalla tua pagina link', 'from your link page', 'de tu página de enlaces'), distillato: L('dai tuoi discorsi', 'from your talks', 'de tus charlas'), web: L('da internet', 'from the internet', 'de internet'), lia: L('imparata dal bot', 'learned by the bot', 'aprendida por el bot') };
     const QUANDO = {
       sempre: L('sempre', 'always', 'siempre'),
       live: L('solo in diretta', 'only when live', 'solo en directo'),
@@ -24733,25 +24728,51 @@ async function caricaStatistiche() {
   animaNumeri(griglia);
 }
 
+function nomeFatto(k) {
+  return ({
+    gioco_recente: L('Gioco recente', 'Recent game', 'Juego reciente'),
+    top_chatter: L('Chi scrive di più', 'Who chats the most', 'Quién escribe más'),
+    emote_preferite: L('Emote preferite', 'Favourite emotes', 'Emotes favoritos'),
+    attivita_settimana: L('La chat in settimana', 'The chat this week', 'El chat esta semana'),
+  })[k] || String(k).replace(/_/g, ' ');
+}
+function valoreFatto(k, v) {
+  const n = k === 'attivita_settimana' && String(v).match(/^(\d+)/);
+  return n ? L(`${n[1]} messaggi negli ultimi 7 giorni`, `${n[1]} messages in the last 7 days`, `${n[1]} mensajes en los últimos 7 días`) : String(v).slice(0, 200);
+}
 async function caricaMemoria(mostraToast = false) {
   const box = document.getElementById('contenitore-memoria');
   if (!box) return;
   box.innerHTML = attesaHtml();
   try {
     const m = await api('/api/streamer/memoria');
+    const togli = L('Togli', 'Remove', 'Quitar');
     box.innerHTML = `
-      <h3>Lezioni imparate (${m.lezioni.length})</h3>
+      <h3>${L('Lezioni imparate', 'Lessons learned', 'Lecciones aprendidas')} (${m.lezioni.length})</h3>
       <ul class="lista-voci">${m.lezioni.length
-        ? m.lezioni.map((l) => `<li><div class="testo-voce">${esc(l.text)}<div class="meta">${esc(dataIt(l.ts))}</div></div></li>`).join('')
-        : '<li class="vuoto">Nessuna lezione ancora: il bot impara osservando la chat.</li>'}</ul>
-      <h3>Fatti sul canale (${m.fatti.length})</h3>
+        ? m.lezioni.map((l) => `<li><div class="testo-voce">${esc(l.text)}<div class="meta">${esc(dataIt(l.ts))}</div></div>
+            <button type="button" class="btn secondario mini" data-memoria-togli="lezione" data-id="${Number(l.id) || 0}">${togli}</button></li>`).join('')
+        : `<li class="vuoto">${L('Nessuna lezione ancora: il bot impara osservando la chat.', 'No lessons yet: the bot learns by watching the chat.', 'Aún no hay lecciones: el bot aprende observando el chat.')}</li>`}</ul>
+      <h3>${L('Fatti sul canale', 'Facts about the channel', 'Datos del canal')} (${m.fatti.length})</h3>
       <ul class="lista-voci">${m.fatti.length
-        ? m.fatti.map((f) => `<li><div class="testo-voce"><span class="domanda">${esc(f.key)}</span>
-            <span class="risposta"> ${esc(String(f.value).slice(0, 200))}</span></div></li>`).join('')
-        : '<li class="vuoto">Nessun fatto memorizzato.</li>'}</ul>`;
-    if (mostraToast) toast(L('Memoria caricata', 'Memory loaded', 'Memoria cargada'));
+        ? m.fatti.map((f) => `<li><div class="testo-voce"><span class="domanda">${esc(nomeFatto(f.key))}</span>
+            <span class="risposta"> ${esc(valoreFatto(f.key, f.value))}</span></div>
+            <button type="button" class="btn secondario mini" data-memoria-togli="fatto" data-chiave="${esc(f.key)}">${togli}</button></li>`).join('')
+        : `<li class="vuoto">${L('Nessun fatto ricordato.', 'No facts remembered.', 'Ningún dato recordado.')}</li>`}</ul>`;
+    box.onclick = (ev) => {
+      const b = ev.target.closest('[data-memoria-togli]');
+      if (!b) return;
+      conErrore(async () => {
+        b.disabled = true;
+        try { await api('/api/streamer/memoria/togli', { method: 'POST', body: { tipo: b.dataset.memoriaTogli, id: Number(b.dataset.id) || 0, chiave: b.dataset.chiave || '' } }); }
+        finally { b.disabled = false; }
+        toast(L('Dimenticato ✓', 'Forgotten ✓', 'Olvidado ✓'));
+        caricaMemoria();
+      });
+    };
+    if (mostraToast) toast(L('Memoria caricata ✓', 'Memory loaded ✓', 'Memoria cargada ✓'));
   } catch (e) {
-    box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`;
+    box.innerHTML = `<p class="vuoto">${L('Non riesco a leggere la memoria: ', 'I cannot read the memory: ', 'No puedo leer la memoria: ')}${esc(e.message)}</p>`;
   }
 }
 

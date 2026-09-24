@@ -63,9 +63,15 @@ test('anche la manche automatica finisce nel registro, ma solo il suo annuncio',
   assert.match(f, /if \(prima\) \{ prima = false;/, 'le righe successive del gioco sono risposte, non iniziative');
 });
 
-test('il cursore parte da zero: pannello, manuale e bot dicono lo stesso numero', () => {
-  assert.match(APP, /spontaneita: typeof s\.spontaneita === 'number' \? s\.spontaneita : 0,/, 'il pannello mostra 0 a chi non ha mai salvato');
-  assert.match(MAN, /\['Chat autonoma', '0%', '0–50%'/, 'il manuale dice 0%');
+test('il cursore parte dal kit, e un valore che manca e\' zero dappertutto', async () => {
+  // Il valore «di base» e' quello che ogni canale trova al primo ingresso: lo
+  // mette il kit di partenza. Se manca, pannello, bot e cervello leggono zero.
+  const { SETTINGS_DEFAULT } = await import('../../src/features/seed.js');
+  const kit = Math.round(SETTINGS_DEFAULT.spontaneita * 100);
+  assert.match(MAN, new RegExp(`\\['«?Chat autonoma»?', '${kit}%'`), `il manuale dice ${kit}%, il valore del kit`);
+  assert.match(APP, /spontaneita: typeof s\.spontaneita === 'number' \? s\.spontaneita : 0,/, 'il pannello mostra 0 a chi non l\'ha');
+  const BRAIN = readFileSync(join(RAD, 'src/ai/brain.js'), 'utf8');
+  assert.match(BRAIN, /let p = Number\(settings\.spontaneita\) \|\| 0;/, 'e il cervello legge zero, non un numero suo');
   const sp = readFileSync(join(RAD, 'src/features/spontanea.js'), 'utf8');
   assert.match(sp, /Number\(dose\) \|\| 0/, 'e il bot legge «non impostata» come zero');
   // «a zero non guarda nemmeno i momenti» adesso passa da spontanea.vietato, che
@@ -85,7 +91,7 @@ test('«solo mentre sono in diretta» si disegna, si salva e si accetta', () => 
   assert.match(APP, /proattivoSoloLive: s\.proattivoSoloLive === true,/, 'e il pannello lo normalizza come il codice: spento se non detto');
   assert.match(APP, /proattivoSoloLive: document\.getElementById\('chk-proattivo-live'\)\.checked,/);
   assert.match(SRV, /if \(b\.proattivoSoloLive !== undefined\) out\.proattivoSoloLive = !!b\.proattivoSoloLive;/);
-  assert.match(MAN, /\['Solo mentre sono in diretta', 'spento'/);
+  assert.match(MAN, /\['«?Solo mentre sono in diretta»?', 'spento'/);
 });
 
 test('cosa ha detto da solo si vede, e solo a chi e\' entrato', () => {

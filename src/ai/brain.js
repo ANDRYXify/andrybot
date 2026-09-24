@@ -467,10 +467,16 @@ export class Brain {
   // Alcune frasi VERE scritte dallo streamer nel suo canale (i suoi messaggi
   // umani, non i comandi, non le risposte del bot): sono la sua "voce". Le
   // passiamo al cervello come esempi di stile così suona come lui. Cache 30 min.
+  //
+  // «Adatta la personalità al mio canale» decide se il bot impara da solo dalla
+  // voce e dai messaggi dello streamer. Spento, restano solo le frasi che ha
+  // scritto lui: lo stile lo sceglie a mano, col tono e con quelle. La cache
+  // ricorda con quale scelta e' stata fatta, così un cambio vale subito.
   _stileStreamer(channel) {
     try {
+      const adatta = streamers.get(channel)?.settings?.adattaCanale !== false;
       const c = this._stileCache.get(channel);
-      if (c && Date.now() - c.ts < 30 * 60_000) return c.frasi;
+      if (c && c.adatta === adatta && Date.now() - c.ts < 30 * 60_000) return c.frasi;
       const frasi = [];
       const viste = new Set();
       const aggiungi = (t, minLen) => {
@@ -483,17 +489,19 @@ export class Brain {
       // Vengono prima di tutto perché sono l'unica parte dello stile che ha
       // SCELTO: le altre due sono roba detta per caso, e per caso somiglia a lui.
       try { for (const f of (streamers.get(channel)?.settings?.frasi || [])) aggiungi(f, 6); } catch { /* niente */ }
-      // 2) la VOCE PARLATA in diretta (materiale di stile migliore: è la sua voce vera)
-      try { for (const v of voceStreamer.recent(channel, 8)) aggiungi(v, 12); } catch { /* niente */ }
-      // 3) completa con i suoi messaggi SCRITTI in chat
-      const righe = db.prepare(
-        `SELECT text FROM messages
-           WHERE channel=? AND user=? AND from_bot=0
-             AND text NOT LIKE '!%' AND length(text) BETWEEN 15 AND 160
-           ORDER BY ts DESC LIMIT 80`,
-      ).all(channel, channel);
-      for (const r of righe) aggiungi(r.text, 15);
-      this._stileCache.set(channel, { ts: Date.now(), frasi });
+      if (adatta) {
+        // 2) la VOCE PARLATA in diretta (materiale di stile migliore: è la sua voce vera)
+        try { for (const v of voceStreamer.recent(channel, 8)) aggiungi(v, 12); } catch { /* niente */ }
+        // 3) completa con i suoi messaggi SCRITTI in chat
+        const righe = db.prepare(
+          `SELECT text FROM messages
+             WHERE channel=? AND user=? AND from_bot=0
+               AND text NOT LIKE '!%' AND length(text) BETWEEN 15 AND 160
+             ORDER BY ts DESC LIMIT 80`,
+        ).all(channel, channel);
+        for (const r of righe) aggiungi(r.text, 15);
+      }
+      this._stileCache.set(channel, { ts: Date.now(), frasi, adatta });
       return frasi;
     } catch (e) {
       log.debug('stile:', e?.message || e);
@@ -934,7 +942,9 @@ export class Brain {
 
       // manopola: probabilità base "spontanea" (0 = zitto). Stesso clamp del
       // server (0..0.5), così un valore alto = bot più "chiacchierone".
-      let p = Number.isFinite(+settings.spontaneita) ? +settings.spontaneita : 0.03;
+      // Un valore che manca e' zero, come per il pannello e per chi decide le
+      // cose dette da solo (bot.js): il valore di partenza lo mette il kit.
+      let p = Number(settings.spontaneita) || 0;
       const spont = Math.min(0.5, Math.max(0, p));
       p = spont;
 

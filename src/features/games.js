@@ -15,7 +15,7 @@ import * as corsaFeat from './corsa.js';
 import * as patataFeat from './patata.js';
 import * as catenaFeat from './catena.js';
 import { aspetta, giocato } from './attese-giochi.js';
-import { points, streamers, giochi } from '../db.js';
+import { points, streamers, giochi, linkPage } from '../db.js';
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
 
@@ -1211,16 +1211,18 @@ export function tryGame(msg, say) {
 // (siteUrl/u/<canale>): una destinazione sempre corretta e sotto il suo
 // controllo. NON pesca più link dalla "conoscenza" auto-appresa, che poteva
 // contenere social non impostati dallo streamer (rischio di promuovere i link
-// sbagliati). Se non c'è un sito configurato, non propone nulla.
+// sbagliati). Se non c'è un sito configurato, non propone nulla. E nemmeno se
+// la pagina non c'e' o l'ha spenta lo streamer: la stessa regola della pagina
+// (server.js, /u/:user), altrimenti il bot manderebbe la chat su un 404.
 const APERTURE = [
-  'Se ti va, mi trovi con tutti i miei social qui:', 'Piccolo promemoria — tutti i miei link:',
+  'Se ti va, mi trovi con tutti i miei social qui:', 'Piccolo promemoria, tutti i miei link:',
   'Passa a trovarmi, trovi tutto qui:', 'Per non perderti nulla, i miei link:', 'Ci trovi qui:',
 ];
 export function promoSociale(channel) {
   try {
     const canale = String(channel || '').toLowerCase().trim();
     const base = config.hubUrl || config.siteUrl;   // dominio PUBBLICO (socialbot.live)
-    if (!canale || !base) return null;
+    if (!canale || !base || !linkPage.get(canale)?.attiva) return null;
     return `${scegli(APERTURE)} ${base}/u/${canale} ✨`;
   } catch { return null; }
 }

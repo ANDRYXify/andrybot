@@ -22,7 +22,7 @@ import * as licenza from '../licenza.js';      // il nome con cui questo softwar
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
-import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
+import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi, recensioni as recensioniDb } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
@@ -6329,15 +6329,37 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // memoria del bot: lezioni, fatti, clip
   app.get('/api/streamer/memoria', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
+    // Le due righe del pre-addestramento (quando e com'e' andato) sono conti del
+    // bot, non cose che si ricorda del canale: non si mostrano e non si tolgono.
     res.json({
       lezioni: memory.lessons(login, 50),
-      fatti: memory.facts(login),
+      fatti: memory.facts(login).filter((f) => !String(f.key).startsWith('preaddestramento_')),
       clip: clips.recent(login, 20),
     });
   }));
 
-  // azzera ciò che il bot ha imparato (NON la conoscenza manuale/dal sito)
-  app.post('/api/streamer/memoria/reset', requireLogin, wrap(async (req, res) => {
+  // Toglie un ricordo sbagliato, uno per volta: una lezione (per id) o un
+  // fatto (per chiave). Lo puo' fare anche un moderatore del pannello, come
+  // correggere la conoscenza.
+  app.post('/api/streamer/memoria/togli', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const tipo = req.body?.tipo;
+    if (tipo === 'lezione') {
+      const id = Number(req.body?.id);
+      if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ errore: 'Lezione non valida.' });
+      return res.json({ ok: memory.togliLezione(login, id) });
+    }
+    if (tipo === 'fatto') {
+      const chiave = String(req.body?.chiave || '').slice(0, 200);
+      if (!chiave) return res.status(400).json({ errore: 'Fatto non valido.' });
+      return res.json({ ok: memory.togliFatto(login, chiave) });
+    }
+    res.status(400).json({ errore: 'Tipo non valido.' });
+  }));
+
+  // azzera ciò che il bot ha imparato (NON la conoscenza manuale/dal sito).
+  // Butta via tutto in un colpo: solo il proprietario del canale.
+  app.post('/api/streamer/memoria/reset', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     db.prepare('DELETE FROM lessons WHERE channel=?').run(login);
     db.prepare('DELETE FROM user_memories WHERE channel=?').run(login);
@@ -6501,7 +6523,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const b = req.body || {};
     // ambito esplicito dai menu, sennò dedotto dal testo
     const ambito = (b.dove || b.con_chi) ? { dove: b.dove, con_chi: b.con_chi } : guide.interpreta(testo);
-    guide.add(currentUser(req).login, testo, ambito);
+    const r = guide.add(currentUser(req).login, testo, ambito);
+    if (r.pieno) return res.status(409).json({ errore: `Hai già ${GUIDE_MAX} regole: togline una.`, codice: 'guide-piene', massimo: GUIDE_MAX });
     res.json({ ok: true, guide: guide.list(currentUser(req).login) });
   }));
   app.delete('/api/streamer/guide/:id', requireLogin, wrap(async (req, res) => {
@@ -9413,7 +9436,11 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
         }
         if (regola && regola.length >= 3) {
           const ambito = guide.interpreta(regola);
-          guide.add(login, regola, ambito);
+          if (guide.add(login, regola, ambito).pieno) {
+            telegram.inviaMessaggio(conf.token, chat.id,
+              `Ho già ${GUIDE_MAX} regole, e le rispetto tutte: per questa togline prima una con /scorda e il suo numero, o dal pannello in Personalità.`).catch(() => {});
+            return;
+          }
           telegram.inviaMessaggio(conf.token, chat.id,
             `Ok, me lo segno: «${regola.slice(0, 180)}» — vale ${guide.descriviAmbito(ambito)}. ✍️ (Se non intendevi questo: /scorda ${guide.count(login)})`).catch(() => {});
           return;

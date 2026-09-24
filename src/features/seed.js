@@ -15,8 +15,9 @@ import { makeLog } from '../logger.js';
 
 const log = makeLog('seed');
 
-// Impostazioni di default sensate (attive da subito).
-const SETTINGS_DEFAULT = {
+// Impostazioni di default sensate (attive da subito). Sono i valori «di base»
+// che i manuali raccontano.
+export const SETTINGS_DEFAULT = {
   tono: 'scherzoso',
   spontaneita: 0.05,          // un po' vivace, non invadente
   rispostaMenzioni: true,

@@ -63,6 +63,13 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Aprendo un attacco nel registro dello scudo, i conti dicono certi, sospetti e legittimi nella lingua del pannello, senza un «probabile» che restava sempre a zero. [vai: registro]
 - Il manuale della moderazione segue le tre schede, Chat, Scudo e Registro, e spiega ogni voce con il suo valore di base, i suoi limiti e i messaggi che leggi. [vai: regole]
 - In guide e manuali l'indice «In questa pagina» mostra anche le parti di ogni sezione, e ognuna si apre col suo collegamento.
+- «Adatta la personalità al mio canale» fa quello che dice: spento, il bot non impara più lo stile dalla tua voce e dai tuoi messaggi, e usa solo le frasi che hai scritto tu. [vai: personalita]
+- Le regole della personalità sono al massimo 12 e arrivano al bot tutte. Prima dalla tredicesima in poi si salvavano, ma il bot non le vedeva. [vai: personalita]
+- Nella Memoria ogni lezione e ogni fatto si toglie da solo con «Togli», e azzerare tutta la memoria lo può fare solo il proprietario del canale. [vai: memoria]
+- Il promemoria dei social parte solo con la pagina link accesa, e il suggerimento sotto la spunta dice quando parte davvero. [vai: personalita]
+- «Ri-leggi il mio profilo» dice quante cose nuove ha trovato, e se non trova niente lo dice invece di scrivere «Fatto». [vai: conoscenza]
+- In «Cosa sa il bot» e nella Memoria ogni voce ha un nome nella lingua del pannello, anche quelle trovate online o ricavate dai tuoi discorsi. [vai: conoscenza]
+- Il manuale del bot segue le tre schede, Personalità, Conoscenza e Memoria, con ogni controllo, il suo valore di base e i messaggi che leggi. [vai: personalita]
 
 ## 2026-09-23
 
