@@ -15,24 +15,9 @@
     }
 
     
-    #palco {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-    }
-    .effetto {
-      max-width: 80vw;
-      max-height: 80vh;
-      opacity: 0;
-      transform: scale(.9);
-      transition: opacity .28s ease, transform .28s ease;
-      filter: drop-shadow(0 10px 40px rgba(0, 0, 0, .55));
-      border-radius: 8px;
-    }
-    .effetto.dentro { opacity: 1; transform: scale(1); }
+    #palco { position: fixed; pointer-events: none; }
+    #palco.centro { inset: 0; }
+    #palco-libero { position: fixed; inset: 0; pointer-events: none; }
     
     .effetto.libero { position: absolute; max-width: none; max-height: 92vh;
       transform: translate(var(--fx-ax, -50%), var(--fx-ay, -50%)) scale(calc(var(--fx-s, 1) * .9)) rotate(var(--fx-r, 0deg)); }
@@ -95,7 +80,8 @@
   </style>
 </head>
 <body>
-  <div id="palco"></div>
+  <div id="palco" class="centro"></div>
+  <div id="palco-libero"></div>
   <div id="etichette" class="basso-centro"></div>
   <div id="testi" class="centro"></div>
   <div id="boss" class="alto-centro"></div>

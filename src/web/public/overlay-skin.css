@@ -198,7 +198,7 @@
 .ap-riferimento[hidden] { display: none; }
 .ap-stage {
   position: absolute; top: 0; left: 0;
-  width: 1920px; height: 1080px; transform-origin: top left;
+  width: 1920px; height: 1080px; transform-origin: top left; container-type: size;
   font: 16px/normal -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -1049,6 +1049,12 @@
 .ovl-etichetta.dim-grande { font-size: 2.1rem; }
 .ovl-etichetta.dim-enorme { font-size: 2.8rem; }
 
+#palco, .ap-stage .ap-palco { display: flex; align-items: center; justify-content: center; }
+.effetto { display: block; max-width: 80cqw; max-height: 80cqh; opacity: 0; transform: scale(.9); transition: opacity .28s ease, transform .28s ease;
+  filter: drop-shadow(0 10px 40px rgba(0, 0, 0, .55)); border-radius: 8px; }
+.effetto.dentro { opacity: 1; transform: scale(1); }
+.riquadro > .effetto { max-width: 100%; max-height: 100%; }
+
 @media (prefers-reduced-motion: reduce) {
   .ovl-musica .m-disco, .ovl-musica .m-onde i, .ovl-musica.scorre .m-scorri, .ovl-timer.finito .t-num,
   .ovl-treno.t-treasure .tr-ico, .ovl-treno.t-golden-kappa .tr-ico,
@@ -1065,5 +1071,5 @@
   .ovl-boss.boss-via { animation: boss-via .6s ease-in forwards; }
   .ovl-boss .boss-danno { display: none; }
   .ovl-boss .boss-scia, .ovl-boss .boss-vita { transition: none; }
-  .ovl-scritta, .ovl-etichetta { transition: none; }
+  .ovl-scritta, .ovl-etichetta, .effetto { transition: none; }
 }

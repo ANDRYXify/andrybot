@@ -13,6 +13,7 @@ const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: tr
 const mostra = (k) => MIO.mostra[k] !== false;
 
 const palco = document.getElementById('palco');
+const palcoLibero = document.getElementById('palco-libero');
 const etichette = document.getElementById('etichette');
 const testi = document.getElementById('testi');
 const penBox = document.getElementById('penitenze');
@@ -66,6 +67,18 @@ function volume01(ev) {
 }
 
 const tiraXY = (v, f) => Math.round((50 * (f - 1) - v * f) * 100) / 100;
+
+function posaEffetti() { posizionaContenitore(palco, MIO.xy.effetti, 'centro'); }
+
+function metti(el, ev) {
+  const libero = !!(ev.posizione && ev.posizione.x != null);
+  (libero ? palcoLibero : palco).appendChild(el);
+  if (libero) return;
+  posaEffetti();
+  if (el.tagName === 'IMG' || el.tagName === 'VIDEO') el.addEventListener(el.tagName === 'IMG' ? 'load' : 'loadedmetadata', posaEffetti, { once: true });
+}
+
+function togliEffetto(el) { const suo = el.parentNode === palco; el.remove(); if (suo) posaEffetti(); }
 
 function posizionaEffetto(el, pos) {
   if (!pos || pos.x == null) return;
@@ -146,13 +159,13 @@ function mostraImmagine(ev) {
   img.className = 'effetto';
   img.src = ev.url;
   posizionaEffetto(img, ev.posizione);
-  palco.appendChild(img);
+  metti(img, ev);
   suonaAbbinato(ev);
   requestAnimationFrame(() => img.classList.add('dentro'));
   etichettaVolatile(ev.comando, durataMs(ev, 5000));
   setTimeout(() => {
     img.classList.remove('dentro');
-    setTimeout(() => { img.remove(); finito(); }, 320);
+    setTimeout(() => { togliEffetto(img); finito(); }, 320);
   }, durataMs(ev, 5000));
 }
 
@@ -166,7 +179,7 @@ function mostraVideo(ev) {
   v.playsInline = true;
   v.volume = volume01(ev);
   posizionaEffetto(v, ev.posizione);
-  palco.appendChild(v);
+  metti(v, ev);
   suonaAbbinato(ev);
   requestAnimationFrame(() => v.classList.add('dentro'));
   etichettaVolatile(ev.comando, 1800);
@@ -178,7 +191,7 @@ function mostraVideo(ev) {
     chiuso = true;
     if (fermaTimer) fermaTimer();
     v.classList.remove('dentro');
-    setTimeout(() => { try { v.pause(); } catch (e) {} v.remove(); finito(); }, 320);
+    setTimeout(() => { try { v.pause(); } catch (e) {} togliEffetto(v); finito(); }, 320);
   };
   v.addEventListener('ended', chiudi);
   v.addEventListener('error', function () { guaio('video', 'il file non si apre: ' + String(v.src || '').split('?')[0]); chiudi(); });
@@ -197,21 +210,23 @@ function mostraVideoChroma(ev) {
   const canvas = document.createElement('canvas');
   canvas.className = 'effetto';
   posizionaEffetto(canvas, ev.posizione);
-  palco.appendChild(canvas);
+  metti(canvas, ev);
   suonaAbbinato(ev);
   requestAnimationFrame(() => canvas.classList.add('dentro'));
   etichettaVolatile(ev.comando, 1800);
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const [kr, kg, kb] = hexToRgb(ev.chroma.colore);
   const soglia = Math.max(20, Math.min(300, Number(ev.chroma.soglia) || 140));
-  let raf = 0, chiuso = false;
+  let raf = 0, chiuso = false, misurata = false;
   const disegna = () => {
     if (chiuso) return;
     if (v.videoWidth) {
-      if (!canvas.width) {
+      if (!misurata) {
+        misurata = true;
         const sc = Math.min(1, 640 / v.videoWidth);
         canvas.width = Math.max(2, Math.round(v.videoWidth * sc));
         canvas.height = Math.max(2, Math.round(v.videoHeight * sc));
+        if (canvas.parentNode === palco) posaEffetti();
       }
       ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
       try {
@@ -230,7 +245,7 @@ function mostraVideoChroma(ev) {
     if (fermaTimer) fermaTimer();
     cancelAnimationFrame(raf);
     canvas.classList.remove('dentro');
-    setTimeout(() => { try { v.pause(); } catch (e) {} canvas.remove(); finito(); }, 320);
+    setTimeout(() => { try { v.pause(); } catch (e) {} togliEffetto(canvas); finito(); }, 320);
   };
   v.addEventListener('ended', chiudi);
   v.addEventListener('error', function () { guaio('video', 'il file non si apre: ' + String(v.src || '').split('?')[0]); chiudi(); });
@@ -1427,6 +1442,7 @@ function applicaTema(t) {
   ridisegnaScritte();
   MIO.etichetta = t.etichetta || null;
   ridisegnaEtichette();
+  posaEffetti();
   MIO.bit = t.bit || null;
   if (MIO.bit && MIO.bit.attivo && mostra('bit')) chiediBit(); else { disegnaBit(); }
   if (MIO.musica && MIO.musica.attivo && mostra('musica')) chiediMusica(); else togliMusica();

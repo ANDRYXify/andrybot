@@ -466,6 +466,33 @@ try {
       'editor e diretta non coincidono');
   }
 
+  // --- 6-septies. l'area degli effetti --------------------------------------
+  // Dove compaiono immagini e video: la stessa immagine, grande uguale e nello
+  // stesso posto, messa in un punto, lasciata al centro e chiusa in un
+  // riquadro, dove si adatta. Le misure sono in unita' del contenitore: nello
+  // Studio la tela, in onda lo schermo.
+  const ESEMPIO = await ed.evaluate(() => EFFETTO_ESEMPIO);
+  for (const [nome, xy] of [['in un punto', { x: 25, y: 30, s: 60, r: 0 }], ['al centro', null], ['in un riquadro', { x: 55, y: 10, w: 30, h: 40, r: 0 }]]) {
+    await ed.evaluate(async ({ xy }) => {
+      const q = _ovXY(); for (const k of Object.keys(q)) delete q[k];
+      if (xy) q.effetti = { ...xy };
+      aggiornaAnteprima();
+      await new Promise((r) => setTimeout(r, 600));
+    }, { xy });
+    const edF = await misuraEd('#ap-effetti .effetto');
+    const edDove = await ed.evaluate(`(${DOVE_S})('#ap-effetti .effetto')`);
+    TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: xy ? { effetti: xy } : {}, alertStile: null, chatStile: null };
+    await apriLive(() => window.MIO && window.MIO.mostra && window.MIO.mostra.effetti === true);
+    ovl.manda({ tipo: 'immagine', url: ESEMPIO, durata: 60000, comando: '' });
+    await live.waitForFunction(() => document.querySelector('#palco .effetto.dentro'), null, { timeout: 5000 }).catch(() => {});
+    await attesa(600);
+    const lvF = await misuraLive('#palco .effetto');
+    const lvDove = await live.evaluate(`(${DOVE_S})('#palco .effetto')`);
+    dice(edF && lvF && vicino(edF.w, lvF.w, 2) && vicino(edF.h, lvF.h, 2) && edDove && lvDove && vicino(edDove.x, lvDove.x, 2) && vicino(edDove.y, lvDove.y, 2),
+      `effetti ${nome}: editor ${edF ? mis(edF) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvF ? mis(lvF) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
+      'editor e diretta non coincidono');
+  }
+
   // --- 6-ter. i cartelli -----------------------------------------------------
   // Un cartello e' solo quel che ci hai scritto, quindi l'unica cosa che puo'
   // scollarsi e' la misura: stesso testo, stesso corpo, stessa larghezza di

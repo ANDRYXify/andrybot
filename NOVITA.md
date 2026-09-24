@@ -87,6 +87,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nell'editor della pagina link e di quella delle donazioni l'anteprima resta ferma a metà schermo mentre scorri i campi. Sul telefono resta in cima, con «Salva e pubblica» sempre a portata. [vai: pagina]
 - Il testo che un comando mostra sull'overlay è un pezzo dello Studio: lo sposti, lo vesti (anche con un fondo) e lo spegni per ogni overlay. [vai: alert]
 - Anche la pastiglia col nome del comando che compare con un effetto, per esempio «!applausi», è un pezzo dello Studio: la sposti, la vesti e la spegni per ogni overlay. [vai: alert]
+- Le immagini e i video degli effetti compaiono in un'area che sposti e ridimensioni nello Studio, e in un riquadro si adattano senza deformarsi. [vai: alert]
+- I video col green screen escono con la loro forma, invece che schiacciati a due per uno.
 
 ## 2026-09-23
 

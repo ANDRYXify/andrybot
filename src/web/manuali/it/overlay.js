@@ -30,7 +30,7 @@ export default {
       ['Boss', 'La carta del boss di turno: nome, vita, tempo che resta, chi lo colpisce e quanto.', 'in alto al centro'],
       ['Testo a schermo', 'La scritta che un comando manda con «Mostra testo sull\'overlay».', 'al centro'],
       ['Nome del comando', 'La pastiglia «!comando» che compare quando parte un effetto.', 'in basso al centro'],
-      ['Effetti & suoni', 'Immagini, video e suoni che partono da un comando o da un premio a punti.', 'al centro'],
+      ['Effetti a schermo', 'L\'area dove compaiono immagini e video che partono da un comando o da un premio a punti: la sposti e la ridimensioni, e in un riquadro si adattano. I suoni partono in ogni overlay che ha gli effetti accesi.', 'al centro'],
     ] },
     { p: ['Sulla tela dello Studio ci sono <strong>tutti</strong>, obiettivi e contatori compresi: quello che vedi lì è quello che va in onda, nello stesso punto.'] },
 

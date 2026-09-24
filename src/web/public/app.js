@@ -10377,7 +10377,18 @@ function _vestiEtichetta(box, cfg) {
   box.textContent = '!' + L('applausi', 'applause', 'aplausos');
 }
 
-const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, scritta: _vestiScritta, etichetta: _vestiEtichetta };
+const EFFETTO_ESEMPIO = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">'
+  + '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a1a6b"/><stop offset="1" stop-color="#ba007a"/></linearGradient></defs>'
+  + '<rect width="640" height="360" rx="18" fill="url(#g)"/>'
+  + '<g transform="translate(260 120) scale(5)" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + ICO.effetti + '</g></svg>');
+
+function _vestiEffetti(box) {
+  box.classList.add('ap-palco');
+  if (box.querySelector('.effetto')) return;
+  box.innerHTML = '<img class="effetto dentro" alt="" src="' + EFFETTO_ESEMPIO + '">';
+}
+
+const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, scritta: _vestiScritta, etichetta: _vestiEtichetta, effetti: _vestiEffetti };
 
 function _orologioGiu(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -10563,7 +10574,7 @@ function deseleziona() {
 const ALTROVE = {
   cont: ['moduli', ['Comandi', 'Commands', 'Comandos']],
   pen: ['penitenze', ['Penitenze', 'Forfeits', 'Penitencias']],
-  effetti: ['effetti', ['Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos']],
+  effetti: ['effetti', ['Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'], 'posto'],
   consolify: ['consolify', ['CONSOLify', 'CONSOLify', 'CONSOLify']],
 };
 
@@ -10580,7 +10591,9 @@ function _altrove(box) {
   }
   nota.hidden = false;
   const nome = L(dove[1][0], dove[1][1], dove[1][2]);
-  nota.innerHTML = `${esc(L('Qui lo sposti e lo vesti. Quello che fa si cambia in', 'Here you move it and dress it. What it does is changed in', 'Aqu\u00ed lo mueves y lo vistes. Lo que hace se cambia en'))} `
+  nota.innerHTML = `${esc(dove[2] === 'posto'
+    ? L('Qui scegli dove compaiono e quanto sono grandi: le immagini e i video stanno dentro il suo riquadro. Quello che fa ognuno si cambia in', 'Here you choose where they appear and how big they are: images and videos fit inside its box. What each one does is changed in', 'Aqu\u00ed eliges d\u00f3nde aparecen y qu\u00e9 tama\u00f1o tienen: las im\u00e1genes y los v\u00eddeos caben en su recuadro. Lo que hace cada uno se cambia en')
+    : L('Qui lo sposti e lo vesti. Quello che fa si cambia in', 'Here you move it and dress it. What it does is changed in', 'Aqu\u00ed lo mueves y lo vistes. Lo que hace se cambia en'))} `
     + `<button type="button" class="btn secondario mini" data-vai-scheda="${esc(dove[0])}">${esc(nome)}</button>`;
 }
 
@@ -10928,6 +10941,7 @@ const ELEMENTI = () => {
   out.push({ k: 'boss', ico: ICO.target, n: L('Boss', 'Boss', 'Jefe'), cfg: 'overlayBoss' });
   out.push({ k: 'scritta', ico: ICO.testo, n: L('Testo a schermo', 'On-screen text', 'Texto en pantalla'), cfg: 'overlayScritta' });
   out.push({ k: 'etichetta', ico: ICO.fulmine, n: L('Nome del comando', 'Command name', 'Nombre del comando'), cfg: 'overlayEtichetta' });
+  out.push({ k: 'effetti', ico: ICO.effetti, n: L('Effetti a schermo', 'On-screen effects', 'Efectos en pantalla'), cfg: 'overlayEffetti' });
   return out;
 };
 const ELEM = (k) => ELEMENTI().find((e) => e.k === k) || null;
@@ -10978,7 +10992,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, bit: _defBit, boss: _defBoss, scritta: _defScritta, etichetta: _defEtichetta, pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, bit: _defBit, boss: _defBoss, scritta: _defScritta, etichetta: _defEtichetta, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 function _cfgEl(k) {
   const e = ELEM(k);

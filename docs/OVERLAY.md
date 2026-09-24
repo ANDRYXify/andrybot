@@ -1858,3 +1858,40 @@ conosce (prima stava al 7%, un posto che la tela non sapeva disegnare). Più
 pastiglie insieme si mettono una sotto l'altra, e la posizione è del
 contenitore (`#etichette`), come per il testo a schermo.
 
+### Gli effetti a schermo
+
+La chiave `effetti` c'era già: è l'interruttore per overlay degli effetti, e
+spegne anche i suoni. Ora ha anche un **posto e una grandezza**: è l'area in
+cui compaiono immagini e video. Di serie è lo schermo intero, con le immagini
+al centro e al massimo all'80% di larghezza e altezza, come prima. Messa in un
+punto si sposta e si ingrandisce; chiusa in un riquadro, l'immagine si adatta
+alla scatola senza deformarsi e ci sta al centro. Non ha una veste: il suo
+contenuto è il media stesso. Non ha nemmeno un interruttore di canale: si
+accende e si spegne per overlay, come prima (nella configurazione `attivo` è
+sempre vero, e nessuna strada del pannello lo spegne).
+
+**Le misure sono del contenitore, non dello schermo.** L'80% era scritto in
+`vw`/`vh`: in onda è lo schermo, ma nello Studio sarebbe stato il pannello, e
+la tela avrebbe mostrato un'immagine grande quanto voleva la finestra del
+browser. Ora è `80cqw`/`80cqh`, e la tela dello Studio è un contenitore
+(`container-type: size`, 1920×1080): in onda, senza contenitore, le stesse
+unità valgono lo schermo. Una regola, due posti giusti.
+
+**Un premio con un posto suo resta sullo schermo intero.** Un premio a punti
+canale può scegliere dove far comparire il suo effetto: quelle coordinate sono
+dello schermo, e se l'effetto finisse nell'area spostata sarebbero diventate
+dell'area. Va su uno strato suo, a tutto schermo (`#palco-libero`).
+
+La regola che centra l'area è una sola per la diretta e per la tela (`#palco,
+.ap-stage .ap-palco` nella pelle), e l'immagine d'esempio dello Studio ha lo
+stesso markup di quella vera, senza misure fisse: il cancello le ha trovate
+diverse in un riquadro (deformata e in alto sulla tela, adattata e al centro in
+onda) finché non erano la stessa cosa.
+
+**Un difetto vecchio, trovato qui.** Il video col green screen si disegna su
+una tela che prende la misura del video al primo fotogramma, «se la tela non ha
+ancora una larghezza». Ma una tela nuova non è larga 0: è 300×150. Il controllo
+non scattava mai, e ogni video col green screen usciva a 300×150, schiacciato a
+due per uno qualunque fosse la sua forma. Ora c'è un segno esplicito di «già
+misurata», e l'area si riposa appena la misura c'è.
+
