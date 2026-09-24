@@ -236,6 +236,63 @@ dice(due.scelti.length === 1 && due.scelti[0] === 2, 'sceglierne un altro sposta
   dice(dona <= primo, 'anche l\'editor delle donazioni non raddoppia gli ascoltatori', `${dona} contro ${primo}`);
 }
 
+// ---- l'anteprima resta a meta' dello schermo -------------------------------
+// docs/MOBILE.md, «L'anteprima resta a metà dello schermo». Con due o tre
+// colonne, scorrendo dentro la sezione, il centro dell'anteprima sta al centro
+// dello spazio visibile sotto la barra, e alla fine della sezione se ne va con
+// lei. Con una colonna sola sta in cima, sotto la barra. Si misura a pagina
+// ferma: un rettangolo letto a meta' di un'animazione non e' una misura.
+{
+  const guai = [];
+  let viste = 0;
+  for (const [vw, vh] of [[1440, 900], [2200, 1100], [800, 900], [390, 844]]) {
+    const q = await b.newPage({ viewport: { width: vw, height: vh } });
+    await q.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domcontentloaded' });
+    await q.waitForFunction(() => window.SB_APP, null, { timeout: 20000 });
+    for (const [scheda, casa] of [['pagina', 'lp-box'], ['donazioni', 'lp-box-dona']]) {
+      await q.evaluate((s) => { document.getElementById('cookie-banner')?.remove(); window.SB_APP.vai(s); }, scheda);
+      await q.waitForFunction((c) => document.querySelector(`#${c} .lp-editor .lp-anteprima`), casa, { timeout: 20000 });
+      await q.waitForTimeout(1500);
+      // il giro guidato della prima visita blocca lo scorrimento: si salta
+      // come lo salterebbe una persona, non togliendolo dallo schermo
+      await q.evaluate(() => document.querySelector('[data-giro="salta"]')?.click());
+      await q.waitForTimeout(500);
+      // la regola di un elemento agganciato, scritta: sta al suo posto finche'
+      // la sezione non lo porta oltre il punto d'aggancio, e non esce dalla
+      // sezione. Si guarda in piu' punti, dall'arrivo della sezione alla sua fine.
+      const punti = await q.evaluate(async (casa) => {
+        const ed = document.querySelector(`#${casa} .lp-editor`), a = ed.querySelector('.lp-anteprima');
+        const s = document.createElement('div'); s.style.cssText = 'position:absolute;height:var(--top-h)'; document.body.appendChild(s);
+        const barra = s.getBoundingClientRect().height; s.remove();
+        const y0 = document.scrollingElement.scrollTop + ed.getBoundingClientRect().top;
+        const alta = ed.getBoundingClientRect().height;
+        const fuori = [];
+        for (let k = 0; k <= 8; k++) {
+          document.scrollingElement.scrollTo({ top: y0 - innerHeight / 2 + (alta + innerHeight / 2) * k / 8, behavior: 'instant' });
+          await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+          const e = ed.getBoundingClientRect(), r = a.getBoundingClientRect();
+          fuori.push({ barra, vh: innerHeight, colonne: getComputedStyle(ed).gridTemplateColumns.split(' ').length, eTop: e.top, eBot: e.bottom, aTop: r.top, aH: r.height });
+        }
+        return fuori;
+      }, casa);
+      const colonne = punti[0].colonne;
+      const nome = `${scheda} a ${vw}×${vh} (${colonne} colonn${colonne > 1 ? 'e' : 'a'})`;
+      let agganciata = 0;
+      for (const m of punti) {
+        viste++;
+        const aggancio = colonne > 1 ? m.barra + (m.vh - m.barra - m.aH) / 2 : m.barra;
+        const atteso = Math.min(Math.max(m.eTop, aggancio), m.eBot - m.aH);
+        if (Math.abs(m.aTop - atteso) > 2) guai.push(`${nome}: con la sezione da ${Math.round(m.eTop)} a ${Math.round(m.eBot)} l'anteprima sta a ${Math.round(m.aTop)}, la regola dice ${Math.round(atteso)}`);
+        if (m.eTop < aggancio - 20 && Math.abs(m.aTop - aggancio) <= 2) agganciata++;
+      }
+      if (!agganciata) guai.push(`${nome}: scorrendo la sezione l'anteprima non si e' mai agganciata`);
+      if (colonne === 1 && !(punti[0].aH <= (punti[0].vh - punti[0].barra) * 0.46 + 1)) guai.push(`${nome}: con una colonna l'anteprima e' alta ${Math.round(punti[0].aH)}, piu' di meta' dello spazio`);
+    }
+    await q.close();
+  }
+  dice(!guai.length, `l'anteprima resta a meta' dello schermo scorrendo la sezione, e se ne va con lei: ${viste} misure, pagina link e donazioni, da una a tre colonne`, guai.slice(0, 5).join(' · '));
+}
+
 dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · '));
 
 await b.close();

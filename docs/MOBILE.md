@@ -160,6 +160,36 @@ Donazioni, che aprono lo stesso editor, restavano in 1080 px: a 1440 px di
 finestra un editor di 946 px contro i 1103 della Pagina link. Adesso sono uguali
 a ogni larghezza.
 
+### L'anteprima resta a metà dello schermo
+
+Chiesto così: «la schermata di anteprima si fermi a metà dello schermo se si
+scrolla verso il basso (all'interno della sezione della pagina), che sia
+donazioni o link».
+
+L'editor era una scatola alta quanto lo schermo, con comandi e ispettore che
+scorrevano dentro e l'anteprima che la riempiva: scorrendo la pagina, se ne
+andava tutta insieme, anteprima compresa. E con una colonna sola (finestra
+stretta, o zoom del browser) l'anteprima stava in fondo, sotto tutti i campi:
+per vedere cosa cambiavi dovevi scendere fino alla fine.
+
+Ora l'anteprima è **agganciata** (`position: sticky`), e il suo posto si
+calcola, non si aggiusta:
+
+- **Con due o tre colonne** comandi e ispettore prendono la loro altezza e si
+  scorrono con la pagina. L'anteprima ha un'altezza sua,
+  `--ant-h = min(50rem, 100dvh − barra − 2rem)`, e si ferma a
+  `barra + (100dvh − barra − --ant-h) / 2`: il suo centro è il centro dello
+  spazio visibile sotto la barra, qualunque sia lo schermo. Un elemento
+  agganciato non esce dalla sua area della griglia, quindi resta ferma finché
+  sei nella sezione dell'editor e se ne va con lei. Con tre colonne è
+  agganciato anche l'ispettore, in cima, alto al massimo quanto lo spazio
+  visibile e con lo scorrimento suo: i campi del pezzo scelto si vedono sempre,
+  anche se il pezzo sta in fondo all'elenco.
+- **Con una colonna sola** l'anteprima va in cima e si aggancia sotto la barra,
+  alta il 45% dello spazio visibile, come l'anteprima delle Grafiche sul
+  telefono: i campi scorrono sotto, e «Salva e pubblica», che sta con
+  l'anteprima, resta sempre a portata.
+
 ### Il collaudo
 
 ```
