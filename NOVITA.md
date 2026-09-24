@@ -62,6 +62,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Con il canale su YouTube o su Discord, le schede che parlano solo con Twitch sono spente e spiegate, come già su Kick, invece di mostrare pulsanti che non fanno niente.
 - Aprendo un attacco nel registro dello scudo, i conti dicono certi, sospetti e legittimi nella lingua del pannello, senza un «probabile» che restava sempre a zero. [vai: registro]
 - Il manuale della moderazione segue le tre schede, Chat, Scudo e Registro, e spiega ogni voce con il suo valore di base, i suoi limiti e i messaggi che leggi. [vai: regole]
+- In guide e manuali l'indice «In questa pagina» mostra anche le parti di ogni sezione, e ognuna si apre col suo collegamento.
 
 ## 2026-09-23
 

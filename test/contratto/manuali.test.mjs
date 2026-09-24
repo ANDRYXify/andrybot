@@ -14,7 +14,8 @@ test('ogni manuale si compone senza inciampare nella marcatura', () => {
   for (const m of MANUALI) {
     const h = paginaManuale(m.slug);
     assert.ok(h && h.length > 5000, `${m.slug} è una pagina vera (${h?.length} byte)`);
-    assert.ok(h.includes(`<h1>${m.h1}</h1>`), `${m.slug} ha il suo titolo`);
+    const h1 = m.h1.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    assert.ok(h.includes(`<h1>${h1}</h1>`), `${m.slug} ha il suo titolo`);
     assert.ok(h.includes('rel="canonical" href="https://socialbot.live/manuale/' + m.slug), `${m.slug} ha il canonical giusto`);
   }
 });
@@ -29,14 +30,15 @@ test("l'indice della pagina punta a sezioni che esistono", () => {
     const h = paginaManuale(m.slug);
     const ancore = [...h.matchAll(/<a href="#([^"]+)">/g)].map((x) => x[1]);
     assert.ok(ancore.length >= 4, `${m.slug} ha un indice (${ancore.length} voci)`);
-    for (const a of ancore) assert.ok(h.includes(`<h2 id="${a}">`), `${m.slug}: la sezione #${a} esiste`);
+    for (const a of ancore) assert.match(h, new RegExp(`<h[23] id="${a}">`), `${m.slug}: la sezione #${a} esiste`);
+    assert.equal(new Set(ancore).size, ancore.length, `${m.slug}: due titoli uguali hanno indirizzi diversi`);
   }
 });
 
-test('ogni sezione del corpo compare nell’indice', () => {
+test('ogni sezione del corpo compare nell’indice, con le sue parti', () => {
   for (const m of MANUALI) {
     const h = paginaManuale(m.slug);
-    const sezioni = m.corpo.filter((b) => b.h2).length;
+    const sezioni = m.corpo.filter((b) => b.h2 || b.h3).length;
     const voci = [...h.matchAll(/<a href="#[^"]+">/g)].length;
     assert.equal(voci, sezioni, `${m.slug}: ${sezioni} sezioni, ${voci} voci`);
   }

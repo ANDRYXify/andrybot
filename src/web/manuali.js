@@ -10,7 +10,7 @@
 // I numeri qui dentro non sono decorativi: sono quelli del motore. Se cambiano
 // li', qui devono cambiare — e il cancello verifica-manuali.mjs controlla che
 // non manchi niente di quello che il motore sa fare.
-import { GUIDE, DENTRO, ancora, paginaDoc, paginaManuali, guideIn, VIE, LINGUE_DOC } from './guide.js';
+import { GUIDE, DENTRO, indirizzoDi, paginaDoc, paginaManuali, guideIn, VIE, LINGUE_DOC } from './guide.js';
 import { DENTRO as DENTRI } from './guide/comune.js';
 import MANUALI_EN from './manuali/en/index.js';
 import MANUALI_ES from './manuali/es/index.js';
@@ -64,12 +64,11 @@ export function alternativeManuale(id) {
 }
 
 // La sezione di un manuale che parla di una scheda: il blocco h2 che lo
-// dichiara (`scheda: 'id'`). L'ancora si ricava dal suo titolo, come fa la
-// pagina, quindi punta sempre a una sezione che c'e'.
-const sezioneDi = (m, s) => {
-  const b = (m.corpo || []).find((x) => x.h2 && x.scheda === s);
-  return b ? '#' + ancora(b.h2) : '';
-};
+// dichiara (`scheda: 'id'`). L'indirizzo e' quello che la pagina da' a quel
+// titolo, quindi punta sempre a una sezione che c'e'.
+const sezioneDi = (m, s) => indirizzoDi(m.corpo, (x) => x.h2 && x.scheda === s);
+// La sezione di una guida che parla del pannello.
+const dentroDi = (g, titolo) => indirizzoDi(g.corpo, (x) => x.h2 === titolo);
 
 const altIndice = () => Object.fromEntries(LINGUE_DOC.filter((l) => manualiIn(l).length).map((l) => [l, `${SITO}${VIE[l].manuali}`]));
 
@@ -81,9 +80,8 @@ export function aiutiPerScheda(l = 'it') {
   const x = lin(l);
   if (x !== 'it') {
     const out = { ...aiutiPerScheda('it') };
-    const dentro = '#' + ancora(DENTRI[x]);
     for (const g of guideIn(x)) {
-      for (const s of g.schede || []) out[s] = { titolo: g.h1, via: `${VIE[x].guide}/${g.slug}${dentro}`, tipo: 'guida' };
+      for (const s of g.schede || []) out[s] = { titolo: g.h1, via: `${VIE[x].guide}/${g.slug}${dentroDi(g, DENTRI[x])}`, tipo: 'guida' };
     }
     for (const m of manualiIn(x)) {
       for (const s of m.schede || []) out[s] = { titolo: m.h1, via: `${VIE[x].manuali}/${m.slug}${sezioneDi(m, s)}`, tipo: 'manuale' };
@@ -93,10 +91,9 @@ export function aiutiPerScheda(l = 'it') {
   const out = {};
   // Una guida si apre sulla sezione che parla del pannello, non dall'inizio:
   // chi la chiede da dentro vuole sapere cosa si fa QUI. Il pezzo di indirizzo
-  // si ricava dal titolo di quella sezione, quindi non puo' puntare al nulla.
-  const dentro = '#' + ancora(DENTRO);
+  // e' quello che la pagina da' a quel titolo, quindi non puo' puntare al nulla.
   for (const g of GUIDE) {
-    for (const s of g.schede || []) out[s] = { titolo: g.h1, via: `/guide/${g.slug}${dentro}`, tipo: 'guida' };
+    for (const s of g.schede || []) out[s] = { titolo: g.h1, via: `/guide/${g.slug}${dentroDi(g, DENTRO)}`, tipo: 'guida' };
   }
   for (const m of MANUALI) {
     for (const s of m.schede || []) out[s] = { titolo: m.h1, via: `/manuale/${m.slug}${sezioneDi(m, s)}`, tipo: 'manuale' };

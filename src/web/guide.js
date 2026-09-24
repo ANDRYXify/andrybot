@@ -96,6 +96,7 @@ ${REGOLA_MARCHIO}
 .g-indice::after{content:"";position:absolute;right:-1px;top:-1px;border:9px solid transparent;border-top-color:var(--contorno);border-right-color:var(--contorno)}
 .g-indice b{display:block;font-family:var(--mano);font-size:1rem;text-transform:none;letter-spacing:.01em;color:var(--testo-2);margin-bottom:8px}
 .g-indice ol{margin:0;padding-left:20px;columns:2;column-gap:26px}
+.g-indice ol ol{columns:1;padding-left:16px;margin:2px 0 6px;font-size:.92em}
 .g-indice li{margin:3px 0;break-inside:avoid}
 .g-indice a{color:var(--testo-2);text-decoration:none}
 .g-indice a:hover{color:var(--acc)}
@@ -279,11 +280,38 @@ export function ancora(t) {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
 }
 
+// I titoli di una pagina, ciascuno col suo indirizzo dentro la pagina,
+// calcolati in un posto solo: il corpo, l'indice e il «?» del pannello leggono
+// questi, quindi non possono puntare a un titolo che non c'e'. Due titoli
+// uguali (due «Cosa succede» in due sezioni) prendono indirizzi diversi.
+export function titoliDi(corpo) {
+  const visti = new Set();
+  const out = new Map();
+  for (const b of corpo || []) {
+    const testo = b.h2 || b.h3;
+    if (!testo) continue;
+    const base = ancora(testo) || 'sezione';
+    let id = base;
+    for (let n = 2; visti.has(id); n++) id = `${base}-${n}`;
+    visti.add(id);
+    out.set(b, { livello: b.h2 ? 2 : 3, testo, id });
+  }
+  return out;
+}
+
+// L'indirizzo della prima sezione che risponde a `trova`, o niente.
+export function indirizzoDi(corpo, trova) {
+  const b = (corpo || []).find(trova);
+  const t = b && titoliDi(corpo).get(b);
+  return t ? '#' + t.id : '';
+}
+
 function corpoHtml(corpo) {
+  const titoli = titoliDi(corpo);
   let h = '';
   for (const b of corpo) {
-    if (b.h2) h += `<h2 id="${ancora(b.h2)}">${esc(b.h2)}</h2>`;
-    if (b.h3) h += `<h3>${esc(b.h3)}</h3>`;
+    if (b.h2) h += `<h2 id="${titoli.get(b).id}">${esc(b.h2)}</h2>`;
+    if (b.h3) h += `<h3 id="${titoli.get(b).id}">${esc(b.h3)}</h3>`;
     if (b.p) for (const p of b.p) h += `<p>${testo(p)}</p>`;
     if (b.ul) h += `<ul>${b.ul.map((x) => `<li>${testo(x)}</li>`).join('')}</ul>`;
     if (b.passi) h += `<ol class="g-passi">${b.passi.map((s) => `<li><b>${esc(s.t)}</b>${testo(s.d)}</li>`).join('')}</ol>`;
@@ -298,11 +326,20 @@ function corpoHtml(corpo) {
 }
 
 // L'indice si ricava dai titoli del corpo: una sezione nuova ci finisce da sé.
+// Due livelli, come il corpo: le sezioni, e sotto ognuna le sue parti. Un
+// manuale diviso per scheda ha due o tre sezioni e venti parti, e un indice
+// con due voci non orienta nessuno.
 function indiceHtml(corpo, l = 'it') {
-  const voci = corpo.filter((b) => b.h2).map((b) => b.h2);
-  if (voci.length < 4) return '';
-  return `<nav class="g-indice"><b>${T[lin(l)].inPagina}</b><ol>${voci.map((v) =>
-    `<li><a href="#${ancora(v)}">${esc(v)}</a></li>`).join('')}</ol></nav>`;
+  const titoli = [...titoliDi(corpo).values()];
+  if (titoli.length < 4) return '';
+  const voce = (t) => `<a href="#${t.id}">${esc(t.testo)}</a>`;
+  const gruppi = [];
+  for (const t of titoli) {
+    if (t.livello === 2 || !gruppi.length) gruppi.push({ t, sotto: [] });
+    else gruppi[gruppi.length - 1].sotto.push(t);
+  }
+  return `<nav class="g-indice"><b>${T[lin(l)].inPagina}</b><ol>${gruppi.map((g) =>
+    `<li>${voce(g.t)}${g.sotto.length ? `<ol>${g.sotto.map((s) => `<li>${voce(s)}</li>`).join('')}</ol>` : ''}</li>`).join('')}</ol></nav>`;
 }
 
 function faqHtml(faq, l = 'it') {

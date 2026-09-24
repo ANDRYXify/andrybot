@@ -83,7 +83,7 @@ test('dove c’è un manuale, vince lui sulla guida', () => {
   const conGuida = GUIDE.filter((g) => (g.schede || []).includes('moduli'));
   assert.ok(conGuida.length >= 1, 'la guida che parla di comandi dichiara «moduli»');
   assert.equal(AIUTI.moduli.tipo, 'manuale');
-  assert.equal(AIUTI.moduli.via, '/manuale/moduli');
+  assert.match(AIUTI.moduli.via, /^\/manuale\/moduli(#|$)/, 'il manuale dei moduli, sulla sezione della scheda se ce l\'ha');
 });
 
 // Il fermo è solo uno dei modi in cui si vede che uno è in difficoltà. Gli altri
