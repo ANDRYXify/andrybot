@@ -17455,7 +17455,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
             <button type="button" class="lp-vista-b" data-lpvista="schermo">${L('Schermo', 'Desktop', 'Pantalla')}</button>
           </span>
         </div>
-        <div class="lp-telefono" id="lp-cornice"><iframe id="lp-iframe" title="anteprima"></iframe></div>
+        <div class="lp-telefono" id="lp-cornice"><iframe id="lp-iframe" title="anteprima"></iframe><div class="lp-sf-velo" hidden></div></div>
         <div class="lp-azioni">
           <button class="btn" id="lp-salva" title="${esc(L('Salva le modifiche e le mette subito online: da questo momento chi apre il link vede questa', 'Saves your changes and puts them online right away: from now on this is what visitors see', 'Guarda los cambios y los publica al momento: desde ahora quien abra el enlace ve esto'))}">${L('Salva e pubblica', 'Save and publish', 'Guardar y publicar')}</button>
           <a class="btn secondario" id="lp-apri" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri', 'Open', 'Abrir')}</a>
@@ -17554,6 +17554,24 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
             <div id="lp-sfimg-box">
               <label class="campo spazio-sopra">${L('Indirizzo dell\'immagine di sfondo', 'Background image address', 'Dirección de la imagen de fondo')}</label>
               <input type="url" data-lpk="sfondoUrl" aria-label="${esc(L('Indirizzo dell\'immagine di sfondo', 'Background image address', 'Dirección de la imagen de fondo'))}" maxlength="${d.limiti.url}" value="${esc(LP.tema.sfondoUrl || '')}" placeholder="https://…">
+              <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpup="sfondo">${_bIco(ICO.carica)}${L('Carica un\'immagine', 'Upload an image', 'Subir una imagen')}</button></p>
+              <div id="lp-sf-regola"${LP.tema.sfondoUrl ? '' : ' hidden'}>
+                <p class="lp-sf-tasti spazio-sopra">
+                  <button type="button" class="btn secondario mini" id="lp-sf-muovi" aria-pressed="false">${L('Spostala sull\'anteprima', 'Move it on the preview', 'Muévela en la vista previa')}</button>
+                  <button type="button" class="btn secondario mini" id="lp-sf-centro">${L('Rimetti al centro', 'Back to the centre', 'Volver al centro')}</button>
+                </p>
+                <p class="suggerimento" id="lp-sf-aiuto" hidden>${L('Trascina l\'immagine sull\'anteprima; con la rotella, o con due dita, cambi la grandezza. Esc per finire.', 'Drag the image on the preview; the mouse wheel, or two fingers, change its size. Esc to finish.', 'Arrastra la imagen en la vista previa; con la rueda, o con dos dedos, cambias el tamaño. Esc para terminar.')}</p>
+                ${lpRng('sfondoScala', L('Grandezza', 'Size', 'Tamaño'), 40, 200, Number(LP.tema.sfondoScala) || 100, '%')}
+                <p class="suggerimento">${L('Al 100% copre lo schermo: sotto si rimpicciolisce, sopra si ingrandisce.', 'At 100% it covers the screen: below it shrinks, above it zooms in.', 'Al 100% cubre la pantalla: por debajo se reduce, por encima se amplía.')}</p>
+                ${lpRng('sfondoX', L('Posizione orizzontale', 'Horizontal position', 'Posición horizontal'), 0, 100, Number(LP.tema.sfondoX ?? 50), '%')}
+                ${lpRng('sfondoY', L('Posizione verticale', 'Vertical position', 'Posición vertical'), 0, 100, Number(LP.tema.sfondoY ?? 50), '%')}
+                <label class="campo spazio-sopra" for="lp-sf-riempi">${L('Dove l\'immagine non arriva', 'Where the image does not reach', 'Donde la imagen no llega')}</label>
+                <select id="lp-sf-riempi" data-lpk="sfondoRiempi">
+                  <option value="bordi">${L('Continuano i colori dei suoi bordi', 'The colours of its edges carry on', 'Siguen los colores de sus bordes')}</option>
+                  <option value="tema">${L('Il colore dello sfondo', 'The background colour', 'El color del fondo')}</option>
+                </select>
+                <p class="suggerimento" id="lp-sf-nota" hidden></p>
+              </div>
             </div>
             <label class="campo spazio-sopra" for="lp-effetto">${L('Effetto sopra lo sfondo', 'Effect over the background', 'Efecto sobre el fondo')}</label>
             <select id="lp-effetto" data-lpk="effetto">
@@ -17661,6 +17679,8 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
     if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
   }
   lpMostraCampiSfondo();
+  lpSfondoPresa(box);
+  lpRegolaSfondo({ solo: 'mancanti' });
   lpRenderBlocchi();
   lpAnteprima();
 
@@ -17672,6 +17692,8 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
       const eti = box.querySelector(`[data-lpv="${k}"]`);
       if (eti) eti.textContent = t.value + (eti.dataset.suf || '');
       if (k === 'sfondoTipo') lpMostraCampiSfondo();
+      if (k === 'sfondoX' || k === 'sfondoY' || k === 'sfondoScala') lpSfondoVivo();
+      if (k === 'sfondoUrl') { clearTimeout(_lpSfTimer); _lpSfTimer = setTimeout(() => lpRegolaSfondo({ nuova: true }), 500); }
       if (k === 'ombraTipo') { const cc = box.querySelector('#lp-ombra-col'); if (cc) cc.hidden = t.value !== 'dura'; }
 
       if (LP.tema._pronto) { delete LP.tema._pronto; box.querySelector('.lp-tema.sel')?.classList.remove('sel'); }
@@ -17759,6 +17781,10 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
         if (dove === 'avatar') {
           LP.testa.avatar = r.url;
           const inp = document.getElementById('lp-avatar-url'); if (inp) inp.value = r.url;
+        } else if (dove === 'sfondo') {
+          LP.tema.sfondoUrl = r.url;
+          const inp = box.querySelector('[data-lpk="sfondoUrl"]'); if (inp) inp.value = r.url;
+          await lpRegolaSfondo({ nuova: true });
         } else {
           const [pi, pj] = String(dove).split('.');
           const bl = LP.blocchi[Number(pi)];
@@ -17811,7 +17837,184 @@ function lpMostraCampiSfondo() {
   if (g) g.hidden = t !== 'gradiente';
   if (b2) b2.hidden = t !== 'gradiente';
   if (im) im.hidden = t !== 'immagine';
+  if (t !== 'immagine') _lpSfFine?.();
 }
+
+let _lpSfTimer = null, _lpSfFine = null;
+const _lpMisure = new Map();
+function lpMisuraSfondo(url) {
+  if (_lpMisure.has(url)) return _lpMisure.get(url);
+  const p = new Promise((fatto) => {
+    const prova = (cors) => {
+      const im = new Image();
+      if (cors) im.crossOrigin = 'anonymous';
+      im.onload = () => {
+        const w = im.naturalWidth, h = im.naturalHeight;
+        if (!w || !h) { fatto(null); return; }
+        let bordi = null;
+        if (cors) { try { bordi = lpBordiDi(im, w, h); } catch { bordi = null; } }
+        fatto({ rapporto: w / h, bordi });
+      };
+      im.onerror = () => (cors ? prova(false) : fatto(null));
+      im.src = url;
+    };
+    prova(true);
+  });
+  _lpMisure.set(url, p);
+  return p;
+}
+
+function lpBordiDi(im, w, h) {
+  const k = 120 / Math.max(w, h), cw = Math.max(6, Math.round(w * k)), ch = Math.max(6, Math.round(h * k));
+  const cv = document.createElement('canvas');
+  cv.width = cw; cv.height = ch;
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(im, 0, 0, cw, ch);
+  const d = ctx.getImageData(0, 0, cw, ch).data;
+  const media = (x0, y0, x1, y1) => {
+    const n = [0, 0, 0]; let q = 0;
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { const i = (y * cw + x) * 4; n[0] += d[i]; n[1] += d[i + 1]; n[2] += d[i + 2]; q++; }
+    return '#' + n.map((v) => Math.round(v / Math.max(1, q)).toString(16).padStart(2, '0')).join('');
+  };
+  const pw = Math.max(1, Math.round(cw * 0.04)), ph = Math.max(1, Math.round(ch * 0.04));
+  const sesti = (n) => Array.from({ length: 6 }, (_, i) => [Math.floor(i * n / 6), Math.max(Math.floor(i * n / 6) + 1, Math.floor((i + 1) * n / 6))]);
+  return {
+    su: sesti(cw).map(([a, b]) => media(a, 0, b, ph)),
+    giu: sesti(cw).map(([a, b]) => media(a, ch - ph, b, ch)),
+    sx: sesti(ch).map(([a, b]) => media(0, a, pw, b)),
+    dx: sesti(ch).map(([a, b]) => media(cw - pw, a, cw, b)),
+    angoli: [media(0, 0, pw, ph), media(cw - pw, 0, cw, ph), media(0, ch - ph, pw, ch), media(cw - pw, ch - ph, cw, ch)],
+  };
+}
+
+async function lpRegolaSfondo({ nuova = false, solo = '' } = {}) {
+  const url = LP.tema.sfondoUrl;
+  const regola = document.getElementById('lp-sf-regola');
+  if (regola) regola.hidden = !url;
+  if (!url || LP.tema.sfondoTipo !== 'immagine') return;
+  if (solo === 'mancanti' && Number(LP.tema.sfondoRapporto) > 0 && (LP.tema.sfondoBordi || LP.tema.sfondoRiempi === 'tema')) return;
+  const m = await lpMisuraSfondo(url);
+  if (url !== LP.tema.sfondoUrl) return;
+  LP.tema.sfondoRapporto = m?.rapporto || 0;
+  LP.tema.sfondoBordi = m?.bordi || null;
+  if (nuova) {
+    Object.assign(LP.tema, { sfondoX: 50, sfondoY: 50, sfondoScala: 100 });
+    for (const k of ['sfondoX', 'sfondoY', 'sfondoScala']) lpSfondoCursore(k, LP.tema[k]);
+  }
+  const nota = document.getElementById('lp-sf-nota');
+  if (nota) {
+    nota.textContent = !m
+      ? L('L\'immagine non si apre da questo indirizzo: controlla che sia giusto.', 'The image does not open from this address: check that it is right.', 'La imagen no se abre desde esta dirección: comprueba que sea correcta.')
+      : !m.bordi ? L('Da questo indirizzo i colori dei bordi non si possono leggere: dove l\'immagine non arriva resta il colore dello sfondo. Caricala qui e li avrai.', 'The edge colours cannot be read from this address: where the image does not reach, the background colour stays. Upload it here to get them.', 'Desde esta dirección no se pueden leer los colores de los bordes: donde la imagen no llega queda el color del fondo. Súbela aquí y los tendrás.') : '';
+    nota.hidden = !nota.textContent;
+  }
+  lpAnteprima();
+}
+
+function lpSfondoCursore(k, v) {
+  const r = document.querySelector(`#lp-sf-regola [data-lpk="${k}"]`);
+  if (r) r.value = String(v);
+  const eti = document.querySelector(`#lp-sf-regola [data-lpv="${k}"]`);
+  if (eti) eti.textContent = v + (eti.dataset.suf || '');
+}
+
+function lpSfondoRadice() {
+  try { return document.getElementById('lp-iframe')?.contentDocument?.documentElement || null; } catch { return null; }
+}
+
+function lpSfondoVivo(v = null) {
+  const rad = lpSfondoRadice();
+  if (!rad) return;
+  const x = v ? v.x : (Number(LP.tema.sfondoX ?? 50) / 100), y = v ? v.y : (Number(LP.tema.sfondoY ?? 50) / 100);
+  const sc = v ? v.s : (Number(LP.tema.sfondoScala) || 100) / 100;
+  rad.style.setProperty('--sf-x', String(x));
+  rad.style.setProperty('--sf-y', String(y));
+  rad.style.setProperty('--sf-s', String(sc));
+  rad.style.setProperty('--sf-f', sc < 1 ? '3%' : '0%');
+}
+
+function lpSfondoPresa(box) {
+  const velo = box.querySelector('.lp-sf-velo'), tasto = box.querySelector('#lp-sf-muovi'), aiuto = box.querySelector('#lp-sf-aiuto');
+  if (!velo || !tasto) return;
+  const tra = (v, a, b) => Math.min(b, Math.max(a, v));
+  const ora = () => ({ x: Number(LP.tema.sfondoX ?? 50) / 100, y: Number(LP.tema.sfondoY ?? 50) / 100, s: (Number(LP.tema.sfondoScala) || 100) / 100 });
+  const misura = () => {
+    const f = document.getElementById('lp-iframe');
+    const sf = lpSfondoRadice()?.querySelector('.sf');
+    const r = Number(LP.tema.sfondoRapporto);
+    if (!f || !sf || !(r > 0)) return null;
+    const b = sf.getBoundingClientRect();
+    const z = f.getBoundingClientRect().width / (f.offsetWidth || 1) || 1;
+    const lc = Math.max(b.width, b.height * r);
+    return { W: b.width, H: b.height, lc, ac: lc / r, z };
+  };
+  let v = ora(), presa = null, rotella = null;
+  const punti = new Map();
+  const tieni = () => {
+    LP.tema.sfondoX = Math.round(v.x * 100);
+    LP.tema.sfondoY = Math.round(v.y * 100);
+    LP.tema.sfondoScala = Math.round(v.s * 100);
+    for (const k of ['sfondoX', 'sfondoY', 'sfondoScala']) lpSfondoCursore(k, LP.tema[k]);
+    segnaDaSalvare(tasto);
+    lpAnteprima();
+  };
+  const accendi = (si) => {
+    velo.hidden = !si;
+    if (aiuto) aiuto.hidden = !si;
+    tasto.setAttribute('aria-pressed', si ? 'true' : 'false');
+    tasto.classList.toggle('on', si);
+    if (si) { v = ora(); if (!misura()) lpRegolaSfondo(); }
+  };
+  _lpSfFine = () => { if (!velo.hidden) accendi(false); };
+  tasto.onclick = () => accendi(velo.hidden);
+  box.querySelector('#lp-sf-centro')?.addEventListener('click', () => { v = { x: 0.5, y: 0.5, s: 1 }; lpSfondoVivo(v); tieni(); });
+  const dist = () => { const [a, b] = [...punti.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
+  velo.addEventListener('pointerdown', (ev) => {
+    ev.preventDefault();
+    velo.setPointerCapture?.(ev.pointerId);
+    punti.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    const g = misura();
+    if (!g) return;
+    presa = { g, x: ev.clientX, y: ev.clientY, v: { ...v }, d: punti.size === 2 ? dist() : 0 };
+    velo.classList.add('presa');
+  });
+  velo.addEventListener('pointermove', (ev) => {
+    if (!presa || !punti.has(ev.pointerId)) return;
+    punti.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    const { g } = presa;
+    if (punti.size === 2) {
+      if (!presa.d) { presa = { ...presa, d: dist(), v: { ...v } }; return; }
+      v = { ...v, s: tra(presa.v.s * dist() / presa.d, 0.4, 2) };
+    } else {
+      const li = g.lc * presa.v.s, ai = g.ac * presa.v.s;
+      const dx = (ev.clientX - presa.x) / g.z, dy = (ev.clientY - presa.y) / g.z;
+      v = {
+        ...v,
+        x: Math.abs(g.W - li) > 0.5 ? tra(presa.v.x + dx / (g.W - li), 0, 1) : presa.v.x,
+        y: Math.abs(g.H - ai) > 0.5 ? tra(presa.v.y + dy / (g.H - ai), 0, 1) : presa.v.y,
+      };
+    }
+    lpSfondoVivo(v);
+  });
+  const lascia = (ev) => {
+    punti.delete(ev.pointerId);
+    if (!presa) return;
+    if (punti.size) { const [p] = [...punti.values()]; presa = { ...presa, x: p.x, y: p.y, v: { ...v }, d: 0 }; return; }
+    presa = null;
+    velo.classList.remove('presa');
+    tieni();
+  };
+  velo.addEventListener('pointerup', lascia);
+  velo.addEventListener('pointercancel', lascia);
+  velo.addEventListener('wheel', (ev) => {
+    ev.preventDefault();
+    v = { ...v, s: tra(v.s * Math.exp(-ev.deltaY * 0.0015), 0.4, 2) };
+    lpSfondoVivo(v);
+    clearTimeout(rotella);
+    rotella = setTimeout(tieni, 300);
+  }, { passive: false });
+}
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') _lpSfFine?.(); });
 
 function lpLeggiBlocco(t) {
   const i = Number(t.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;

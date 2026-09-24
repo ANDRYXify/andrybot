@@ -112,6 +112,78 @@ dice(due.scelti.length === 1 && due.scelti[0] === 2, 'sceglierne un altro sposta
   if (ok !== 'niente anteprima') dice(ok === 'ok', 'cliccando un pezzo nell\'anteprima si sceglie il suo', ok);
 }
 
+// ---- lo sfondo a immagine: misurato, non letto ---------------------------
+// La regola (docs/SFONDO-PAGINA.md): il punto X,Y dell'immagine sta sul punto
+// X,Y dello schermo, la grandezza e' rispetto a «copre lo schermo», e le
+// quattro fasce vanno dal bordo dello schermo fino all'immagine. Qui si rende
+// la pagina vera in un browser vero, a due schermi e cinque scelte, e si
+// confrontano i rettangoli con la formula.
+{
+  const { renderLinkPage } = await import('../src/features/linkpagina.js');
+  const R = 2400 / 1260;
+  const SEI = ['#101010', '#202020', '#303030', '#404040', '#505050', '#606060'];
+  const pagina = (x, y, sc, blocchi = []) => renderLinkPage({ headline: 'Prova', template: 'minimal', blocchi, tema: {
+    sfondoTipo: 'immagine', sfondoUrl: `http://127.0.0.1:${PORTA}/icons/og.png`, sfondoX: x, sfondoY: y, sfondoScala: sc,
+    sfondoRapporto: R, sfondoRiempi: 'bordi', sfondoBordi: { su: SEI, giu: SEI, sx: SEI, dx: SEI, angoli: SEI.slice(0, 4) } } }, { login: 'prova', baseUrl: `http://127.0.0.1:${PORTA}` });
+  const misura = (q, dove = '') => q.evaluate((dove) => {
+    const r = (sel) => { const e = document.querySelector(dove + sel); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; };
+    return { sf: r('.sf'), img: r('.sf-img'), su: r('.sf-su'), giu: r('.sf-giu'), sx: r('.sf-sx'), dx: r('.sf-dx') };
+  }, dove);
+  const guai = [];
+  let viste = 0;
+  for (const [vw, vh] of [[390, 844], [1280, 800]]) {
+    const q = await b.newPage({ viewport: { width: vw, height: vh } });
+    for (const [x, y, sc] of [[50, 50, 100], [30, 100, 60], [100, 0, 150], [0, 20, 40], [70, 40, 85], [20, 50, 45]]) {
+      await q.setContent(pagina(x, y, sc), { waitUntil: 'domcontentloaded' });
+      const m = await misura(q);
+      const W = m.sf.w, H = m.sf.h, s = sc / 100;
+      const lc = Math.max(W, H * R), ac = lc / R, li = lc * s, ai = ac * s;
+      const sx = (x / 100) * (W - li), sy = (y / 100) * (H - ai);
+      const vicino = (a, e) => Math.abs(a - e) <= 0.6;
+      const nome = `${vw}×${vh}, punto ${x},${y}, ${sc}%`;
+      viste++;
+      if (!(vicino(m.img.x, sx) && vicino(m.img.y, sy) && vicino(m.img.w, li) && vicino(m.img.h, ai))) {
+        guai.push(`${nome}: immagine ${[m.img.x, m.img.y, m.img.w, m.img.h].map(Math.round)} invece di ${[sx, sy, li, ai].map(Math.round)}`);
+      }
+      const fine = (f) => ({ fx: f.x + f.w, fy: f.y + f.h });
+      if (!(vicino(m.su.y, 0) && vicino(m.su.h, Math.max(0, sy)))) guai.push(`${nome}: la fascia sopra non arriva all'immagine`);
+      if (sy + ai < H && !(vicino(m.giu.y, sy + ai) && vicino(fine(m.giu).fy, H))) guai.push(`${nome}: la fascia sotto non parte dall'immagine`);
+      if (!(vicino(m.sx.x, 0) && vicino(m.sx.w, Math.max(0, sx)))) guai.push(`${nome}: la fascia a sinistra non arriva all'immagine`);
+      if (sx + li < W && !(vicino(m.dx.x, sx + li) && vicino(fine(m.dx).fx, W))) guai.push(`${nome}: la fascia a destra non parte dall'immagine`);
+      // Per ogni lato: piu' corta dello schermo sta tutta dentro; piu' lunga lo
+      // copre da bordo a bordo, senza lasciare un vuoto da una parte.
+      const lato = (a, l, L) => (l <= L ? a >= -0.6 && a + l <= L + 0.6 : a <= 0.6 && a + l >= L - 0.6);
+      if (!lato(m.img.x, m.img.w, W)) guai.push(`${nome}: in larghezza esce dallo schermo o lascia un vuoto`);
+      if (!lato(m.img.y, m.img.h, H)) guai.push(`${nome}: in altezza esce dallo schermo o lascia un vuoto`);
+      // Dove due fasce si toccano il colore non salta: si guarda sui pixel veri,
+      // un pixel di qua e uno di la' dai confini, sopra e sotto l'immagine.
+      if (sx > 4 && sy > 4 && sx + li < W - 4 && sy + ai < H - 4) {
+        const foto = (await q.screenshot()).toString('base64');
+        const salti = await q.evaluate(async ({ foto, punti }) => {
+          const im = new Image(); im.src = 'data:image/png;base64,' + foto; await im.decode();
+          const cv = document.createElement('canvas'); cv.width = im.width; cv.height = im.height;
+          const cx = cv.getContext('2d'); cx.drawImage(im, 0, 0);
+          const px = (x, y) => [...cx.getImageData(Math.round(x), Math.round(y), 1, 1).data].slice(0, 3);
+          return punti.map(([a, b]) => { const p1 = px(...a), p2 = px(...b); return Math.max(...p1.map((v, i) => Math.abs(v - p2[i]))); });
+        }, { foto, punti: [
+          [[sx - 1, sy / 2], [sx + 1, sy / 2]], [[sx + li - 1, sy / 2], [sx + li + 1, sy / 2]],
+          [[sx - 1, (sy + ai + H) / 2], [sx + 1, (sy + ai + H) / 2]], [[sx + li - 1, (sy + ai + H) / 2], [sx + li + 1, (sy + ai + H) / 2]],
+        ] });
+        viste++;
+        if (Math.max(...salti) > 4) guai.push(`${nome}: fra una fascia e l'altra il colore salta di ${Math.max(...salti)}`);
+      }
+    }
+    // Il foglio sopra la copertina fissa mostra lo stesso sfondo della pagina.
+    await q.setContent(pagina(30, 100, 60, [{ tipo: 'eroe', titolo: 'Ciao', fissa: true }, { tipo: 'testo', testo: 'sotto' }]), { waitUntil: 'domcontentloaded' });
+    const fuori = await misura(q), dentro = await misura(q, '.dopo ');
+    const taglio = await q.evaluate(() => getComputedStyle(document.querySelector('.dopo-sf')).clipPath);
+    if (!dentro.img || JSON.stringify(dentro.img) !== JSON.stringify(fuori.img)) guai.push(`${vw}×${vh}: nel foglio l'immagine sta altrove`);
+    if (!/inset/.test(taglio)) guai.push(`${vw}×${vh}: il foglio non ritaglia la sua copia dello sfondo`);
+    await q.close();
+  }
+  dice(!guai.length, `lo sfondo sta dove dice la regola: ${viste} misure, a due schermi, e il foglio sopra la copertina fissa uguale alla pagina`, guai.slice(0, 6).join(' · '));
+}
+
 dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · '));
 
 await b.close();

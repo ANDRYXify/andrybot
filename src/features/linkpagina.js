@@ -213,6 +213,10 @@ function urlSicuro(u) {
   if (!/^https?:\/\//i.test(v)) return '';
   try { return new URL(v).toString(); } catch { return ''; }
 }
+// Un indirizzo dentro url("…") in un <style>: li' le entita' dell'HTML non si
+// leggono, quindi niente &amp;. Quello che potrebbe chiudere la stringa o il
+// tag si scrive in percentuale, come in un indirizzo.
+const urlCss = (u) => urlSicuro(u).replace(/["'\\<>\s()]/g, (x) => '%' + x.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0'));
 const iniziale = (s) => (String(s || '?').trim()[0] || '?').toUpperCase();
 
 // Serve per la chat di Twitch: ha due temi e va scelto quello del tema pagina,
@@ -460,6 +464,64 @@ export function accentoDi(pagina) {
   return (pagina?.tema && pagina.tema.accent) || pre.acc;
 }
 
+// L'IMMAGINE DI SFONDO, spostata e in scala (docs/SFONDO-PAGINA.md). Il punto
+// (X, Y) dell'immagine sta sul punto (X, Y) dello schermo, e la grandezza e'
+// rispetto a «copre lo schermo»: una regola sola, che con l'immagine grande
+// sceglie cosa si vede e con l'immagine piccola dove sta. Tutto e' misurato
+// sullo schermo (unita' del contenitore di uno strato fisso), e lo spazio che
+// l'immagine lascia scoperto continua i colori dei suoi bordi. Niente
+// JavaScript: la pagina si apre gia' giusta.
+//
+// Le variabili --sf-* si possono cambiare da fuori: l'anteprima del pannello le
+// muove mentre trascini, e al rilascio la pagina si rifa' dal server.
+export function stratoSfondo(t, c) {
+  const url = urlSicuro(t.sfondoUrl);
+  const r = Number(t.sfondoRapporto);
+  if (t.sfondoTipo !== 'immagine' || !url || !(r >= 0.1 && r <= 10)) return null;
+  const tra = (v, a, b, d) => { const n = Number(v); return Number.isFinite(n) ? Math.min(b, Math.max(a, n)) : d; };
+  const x = tra(t.sfondoX, 0, 100, 50) / 100, y = tra(t.sfondoY, 0, 100, 50) / 100;
+  const sc = tra(t.sfondoScala, 40, 200, 100) / 100;
+  const bordi = t.sfondoRiempi !== 'tema' && t.sfondoBordi && typeof t.sfondoBordi === 'object' ? t.sfondoBordi : null;
+  const hex6 = (v) => /^#[0-9a-f]{6}$/i.test(String(v || ''));
+  // Ogni fascia continua il suo bordo: comincia col colore dell'angolo, passa
+  // per i sei colori letti lungo il bordo (ognuno al centro del suo sesto) e
+  // finisce col colore dell'altro angolo; oltre l'immagine resta quello
+  // dell'angolo. Negli angoli dello schermo due fasce si sovrappongono, e
+  // tutte e due li' hanno lo stesso colore: nessuna cucitura.
+  const [aSx, aDx, bSx, bDx] = Array.isArray(bordi?.angoli) ? bordi.angoli : [];
+  const fascia = (k, verso, inizio, lungo, primo, ultimo) => {
+    const l = bordi?.[k];
+    if (!Array.isArray(l) || l.length !== 6 || !l.every(hex6) || !hex6(primo) || !hex6(ultimo)) return '';
+    const fermi = [`${primo} ${inizio}`, ...l.map((h, i) => `${h} calc(${inizio} + ${lungo} * ${((2 * i + 1) / 12).toFixed(4)})`), `${ultimo} calc(${inizio} + ${lungo})`].join(',');
+    return `background:linear-gradient(${verso},${fermi})`;
+  };
+  const su = fascia('su', '90deg', 'var(--sx)', 'var(--li)', aSx, aDx);
+  const giu = fascia('giu', '90deg', 'var(--sx)', 'var(--li)', bSx, bDx);
+  const sx = fascia('sx', '180deg', 'var(--sy)', 'var(--ai)', aSx, bSx);
+  const dx = fascia('dx', '180deg', 'var(--sy)', 'var(--ai)', aDx, bDx);
+  const u = urlCss(url);
+  const css = `
+  :root{--sf-x:${x};--sf-y:${y};--sf-s:${sc};--sf-r:${r};--sf-f:${sc < 1 ? '3%' : '0%'}}
+  .sf{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;container-type:size}
+  .sf>*{position:absolute;
+    --lc:max(100cqw,calc(100cqh * var(--sf-r)));--ac:max(calc(100cqw / var(--sf-r)),100cqh);
+    --li:calc(var(--lc) * var(--sf-s));--ai:calc(var(--ac) * var(--sf-s));
+    --sx:calc((100cqw - var(--li)) * var(--sf-x));--sy:calc((100cqh - var(--ai)) * var(--sf-y))}
+  .sf-img{left:var(--sx);top:var(--sy);width:var(--li);height:var(--ai);
+    background:url("${u}") center/100% 100% no-repeat;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 var(--sf-f),#000 calc(100% - var(--sf-f)),transparent),linear-gradient(transparent,#000 var(--sf-f),#000 calc(100% - var(--sf-f)),transparent);
+    -webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent,#000 var(--sf-f),#000 calc(100% - var(--sf-f)),transparent),linear-gradient(transparent,#000 var(--sf-f),#000 calc(100% - var(--sf-f)),transparent);mask-composite:intersect}
+  .sf-su{left:0;right:0;top:0;height:max(0px,var(--sy));${su}}
+  .sf-giu{left:0;right:0;top:calc(var(--sy) + var(--ai));bottom:0;${giu}}
+  .sf-sx{left:0;top:0;bottom:0;width:max(0px,var(--sx));${sx}}
+  .sf-dx{left:calc(var(--sx) + var(--li));right:0;top:0;bottom:0;${dx}}
+  .dopo-sf{position:absolute;inset:0;z-index:-1;border-radius:inherit;clip-path:inset(0 round 1.6rem 1.6rem 0 0)}`;
+  const html = `<div class="sf" aria-hidden="true">${bordi ? '<div class="sf-su"></div><div class="sf-giu"></div><div class="sf-sx"></div><div class="sf-dx"></div>' : ''}<div class="sf-img"></div></div>`;
+  // Dove l'immagine non arriva e non ci sono i bordi: il fondo del tema.
+  const fondo = c.bg2 && t.sfondoRiempi === 'tema' ? `background:linear-gradient(${Number(t.angolo) || 160}deg,${c.bg},${c.bg2})` : `background:${c.bg}`;
+  return { css, html, fondo };
+}
+
 export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, urlLink, donatori, immagineAnteprima } = {}) {
   // l'indirizzo vero della pagina: quello corto delle donazioni, se c'e'
   const urlCanonico = dona ? (urlDona || `${baseUrl}/dona/${login}`) : `${baseUrl}/u/${login}`;
@@ -511,11 +573,16 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const parole = (s) => String(s || '').split(/\s+/).filter(Boolean)
     .map((w, i) => `<span class="pa" style="--i:${Math.min(i, 20)}">${esc(w)}</span>`).join(' ');
 
-  // sfondo secondo il tipo scelto
+  // sfondo secondo il tipo scelto. Un'immagine di cui il pannello ha misurato
+  // la forma va nello strato che si sposta e si scala; una di prima copre lo
+  // schermo, col punto scelto fermo, finche' il pannello non la rimisura.
   let sfondo = `background:${c.bg}`;
+  const strato = stratoSfondo(t, c);
   if (t.sfondoTipo === 'gradiente') sfondo = `background:linear-gradient(${Number(t.angolo) || 160}deg,${c.bg},${c.bg2})`;
+  else if (strato) sfondo = strato.fondo;
   else if (t.sfondoTipo === 'immagine' && urlSicuro(t.sfondoUrl)) {
-    sfondo = `background:${c.bg} url("${esc(urlSicuro(t.sfondoUrl))}") center/cover no-repeat fixed`;
+    const px = Math.min(100, Math.max(0, Number(t.sfondoX ?? 50) || 0)), py = Math.min(100, Math.max(0, Number(t.sfondoY ?? 50) || 0));
+    sfondo = `background:${c.bg} url("${urlCss(t.sfondoUrl)}") ${px}% ${py}%/cover no-repeat fixed`;
   }
   const EFFETTI = {
     aurora: `body::before{content:'';position:fixed;inset:-20%;pointer-events:none;background:radial-gradient(ellipse 50% 40% at 20% 10%,${c.acc}44,transparent 70%),radial-gradient(ellipse 45% 35% at 85% 25%,${c.acc}33,transparent 70%);filter:blur(40px)}`,
@@ -895,7 +962,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
     return fuori.join('\n');
   };
   const corpo = iFissa >= 0
-    ? inFile(0, iFissa + 1) + `\n<div class="dopo">${inFile(iFissa + 1, pezzi.length)}</div>`
+    ? inFile(0, iFissa + 1) + `\n<div class="dopo">${strato ? `<div class="dopo-sf" aria-hidden="true">${strato.html}</div>` : ''}${inFile(iFissa + 1, pezzi.length)}</div>`
     : inFile(0, pezzi.length);
 
   // "Nessuna" vuol dire NESSUNA: prima cadeva sull'iniziale del nome, cioè
@@ -1340,11 +1407,13 @@ ${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
   .sel-b:hover > *{outline:2px dashed var(--acc);outline-offset:4px;cursor:pointer}
   .sel-b.tocca > *{outline:2px solid var(--acc);outline-offset:4px}` : ''}
   ${maiusc}
+  ${strato ? strato.css : ''}
   ${cssPaginaSicuro(t.css)}
 </style>
 
 </head>
 <body>
+  ${strato ? strato.html : ''}
   ${fxCanvas}
   <main class="telo">
     ${mostraAvatar ? (imgAvatar

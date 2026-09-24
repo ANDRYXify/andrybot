@@ -1094,6 +1094,11 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .lp-telefono.schermo iframe { width: 1280px; height: 800px; transform: scale(var(--z, .3)); transform-origin: top left; }
 .lp-telefono { border: 8px solid var(--surface-3-tinta); border-radius: 26px; overflow: hidden; background: #000; box-shadow: var(--om-m); }
 .lp-telefono iframe { display: block; width: 100%; height: 30rem; border: 0; background: #000; }
+.lp-telefono { position: relative; }
+.lp-sf-velo { position: absolute; inset: 0; z-index: 2; cursor: grab; touch-action: none; box-shadow: inset 0 0 0 3px var(--acc); }
+.lp-sf-velo.presa { cursor: grabbing; }
+.lp-sf-tasti { display: flex; flex-wrap: wrap; gap: .4rem; }
+#lp-sf-muovi[aria-pressed="true"] { background: var(--acc-tint); color: var(--testo); }
 .lp-azioni { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .7rem; }
 .lp-azioni .btn { flex: 0 0 auto; }
 

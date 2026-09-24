@@ -3538,6 +3538,11 @@ export function iconaDaUrl(u) {
 const TEMA_DEF = {
   sfondoTipo: 'tinta',       // tinta | gradiente | immagine
   bg: '', bg2: '', angolo: 160, sfondoUrl: '',
+  // l'immagine: il suo punto (X, Y) sta sullo stesso punto dello schermo, e
+  // la grandezza e' rispetto a «copre lo schermo» (docs/SFONDO-PAGINA.md)
+  sfondoX: 50, sfondoY: 50, sfondoScala: 100, sfondoRapporto: 0,
+  sfondoRiempi: 'bordi',     // bordi | tema: cosa c'e' dove l'immagine non arriva
+  sfondoBordi: null,         // { su, giu, sx, dx, angoli }: sei colori per lato, e i quattro angoli
   effetto: 'nessuno',        // nessuno | aurora | maglia | grana | bolle
   testo: '', accent: '', card: '', bordo: '',
   font: 'system',
@@ -3626,11 +3631,32 @@ const storePagina = (tabella) => ({
     };
     const scelta = (v, ammessi, def) => (ammessi.includes(v) ? v : def);
     const num = (v, min, max, def) => { const n = Number(v); return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : def; };
+    // Larghezza su altezza dell'immagine di sfondo, come la misura il pannello:
+    // senza, la grandezza non si puo' calcolare e lo sfondo copre e basta.
+    const rapporto = (v) => { const n = Number(v); return Number.isFinite(n) && n >= 0.1 && n <= 10 ? Math.round(n * 10000) / 10000 : 0; };
+    // I colori lungo i bordi dell'immagine: sei per lato e i quattro angoli
+    // (alto a sinistra, alto a destra, basso a sinistra, basso a destra), tutti
+    // validi, o niente.
+    const bordi = (v) => {
+      if (!v || typeof v !== 'object') return null;
+      const o = {};
+      for (const [k, n] of [['su', 6], ['giu', 6], ['sx', 6], ['dx', 6], ['angoli', 4]]) {
+        const l = Array.isArray(v[k]) ? v[k].map((x) => String(x || '')) : [];
+        if (l.length !== n || !l.every((x) => /^#[0-9a-f]{6}$/i.test(x))) return null;
+        o[k] = l.map((x) => x.toLowerCase());
+      }
+      return o;
+    };
 
     const t = d.tema && typeof d.tema === 'object' ? d.tema : {};
     const tema = {
       sfondoTipo: scelta(t.sfondoTipo, ['tinta', 'gradiente', 'immagine'], 'tinta'),
       bg: hex(t.bg), bg2: hex(t.bg2), angolo: num(t.angolo, 0, 360, 160), sfondoUrl: urlOk(t.sfondoUrl),
+      sfondoX: num(t.sfondoX, 0, 100, 50), sfondoY: num(t.sfondoY, 0, 100, 50),
+      sfondoScala: num(t.sfondoScala, 40, 200, 100),
+      sfondoRapporto: rapporto(t.sfondoRapporto),
+      sfondoRiempi: scelta(t.sfondoRiempi, ['bordi', 'tema'], 'bordi'),
+      sfondoBordi: bordi(t.sfondoBordi),
       effetto: scelta(t.effetto, ['nessuno', 'aurora', 'maglia', 'grana', 'bolle', 'stelle', 'onde', 'griglia',
         'synthwave', 'neonpulse', 'particelle', 'matrix', 'nebulosa', 'scanline', 'raggi',
         // il retino stampato e le linee di concentrazione: due segni del disegno
