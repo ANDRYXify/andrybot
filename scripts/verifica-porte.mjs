@@ -88,6 +88,8 @@ const PUBBLICHE = new Map([
   ['GET /api/novita', 'le novita sono pubbliche'],
   ['GET /api/abbonamento/piani', 'il listino e pubblico'],
   ['GET /posta/conferma', 'il clic sulla mail di conferma: porta un codice monouso che si confronta col suo calco, e scade in un giorno'],
+  ['GET /settimana/conferma', 'il link della mail che chiede se la settimana va bene: mostra la settimana solo a chi porta la chiave, e aprirlo non conferma niente'],
+  ['POST /settimana/conferma', 'il tasto di quella pagina: conferma solo con la chiave, confrontata col suo calco a tempo costante, per un\'uscita sola e finche\' non e\' passata, con un tetto ai tentativi'],
   ['GET /abbonamento/ritorno', 'il ritorno dal Checkout di Stripe: porta solo l\'id della sessione, e lo stato si rilegge da Stripe con la chiave del server; chi bussa con un id qualunque non ottiene niente'],
   ['GET /collega/:canale', 'la pagina dove uno spettatore collega il suo Discord: chi arriva qui non ha un account da noi'],
   ['GET /api/discord/collega/:canale', 'dice solo DOVE mandare la persona su Discord: l\'id dell\'applicazione e\' pubblico per natura, il segreto non passa di qui'],

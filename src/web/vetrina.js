@@ -85,6 +85,7 @@ const ROTTE = new Set([
   '/accedi',                                  // abbonamenti self-service (login con Twitch)
   '/abbonamento/ritorno',                     // il ritorno dal Checkout: la sessione si rilegge da Stripe
   '/posta/conferma',                          // il clic sulla mail di conferma dell'indirizzo
+  '/settimana/conferma',                      // il link della mail che chiede se la settimana va bene
   '/spotify/callback', '/tiktok/callback',    // ritorni OAuth: si proteggono con lo `state`
   '/tgapp', '/api/tgapp/auth',                // Telegram Mini App: initData firmato dal bot token
   '/api/tgapp/oidc/start', '/telegram/oidc/callback',

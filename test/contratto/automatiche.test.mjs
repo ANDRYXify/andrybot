@@ -4,6 +4,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { creaGuscio } from '../../src/web/vetrina.js';
 
 const leggi = (f) => readFileSync(new URL('../../' + f, import.meta.url), 'utf8');
 const APP = leggi('src/web/public/app.js');
@@ -56,6 +59,8 @@ test('la conferma dal link vale solo premendo, e il link non si inventa', () => 
   assert.ok(post.includes("extRateOk('settimana-conferma:' + u)"), 'con un tetto ai tentativi');
   assert.match(AUTO, /crypto\.timingSafeEqual/, 'la chiave si confronta a tempo costante');
   assert.match(AUTO, /s\.settimana\.chiave = impronta\(chiave\)/, 'e si tiene solo la sua impronta');
+  const PUB = join(fileURLToPath(new URL('../../', import.meta.url)), 'src/web/public');
+  assert.ok(creaGuscio(PUB).aperto('/settimana/conferma'), 'chi arriva dalla mail una sessione non ce l\'ha: il cancello lo lascia passare');
 });
 
 test('il giro gira ogni minuto, e pubblica dalle stesse strade di sempre', () => {
