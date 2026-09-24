@@ -43,6 +43,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Dalla pagina delle donazioni si dona anche quando la pagina link è spenta. [vai: donazioni]
 - Una donazione in un'altra valuta fa partire l'avviso e il grazie, ma non conta per l'obiettivo e per le offerte, che sono nella tua valuta. [vai: donazioni]
 - L'informativa della tua pagina nomina i conti che usi davvero, Ko-fi compreso, e la privacy e i termini del sito parlano anche di Ko-fi.
+- Nell'Overlay Studio, nelle Grafiche, nella Pagina link e nelle Donazioni c'è «Tutto schermo»: il menù lascia il lato e la pagina prende tutta la larghezza. [vai: alert]
+- A tutto schermo il menù aspetta sul bordo sinistro: ci arrivi col cursore e si disegna, lo lasci e si disfa. Nello Studio il menù resta di lato finché non scegli tu. [vai: alert]
+- I suggerimenti che compaiono passando sopra ai tasti sono più leggeri e si disegnano a matita, e dopo un clic dicono la cosa giusta.
 
 ## 2026-09-23
 

@@ -31,6 +31,7 @@ import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
   let dovEra = 0;
   let uscita = 0;
   let seq = 0;
+  let segue = null;
 
   const tocco = (ev) => ev && ev.pointerType === 'touch';
 
@@ -55,6 +56,7 @@ import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
     ombra.setAttribute('class', 'aiuto-ombra');
     forma = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     forma.setAttribute('class', 'aiuto-forma');
+    forma.setAttribute('pathLength', '1');
     pensieri = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     pensieri.setAttribute('class', 'aiuto-pensieri');
     guscioSvg.append(ombra, forma, pensieri);
@@ -169,6 +171,16 @@ import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
     const mio = seq;
     el.setAttribute('aria-describedby', b.id);
     acceso = el;
+    if (segue) segue.disconnect();
+    if (typeof MutationObserver === 'function') {
+      segue = new MutationObserver(() => {
+        if (acceso !== el || seq !== mio) return;
+        const nuovo = testoDi(el);
+        if (!nuovo) { spegni(); return; }
+        if (corpo.textContent !== nuovo) { corpo.textContent = nuovo; posa(el); }
+      });
+      segue.observe(el, { attributes: true, attributeFilter: ['title', 'data-aiuto'] });
+    }
     dovEra = window.scrollY;
     posa(el);
     clearTimeout(vita);
@@ -181,6 +193,7 @@ import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
     clearTimeout(attesa); attesa = 0;
     clearTimeout(uscita); uscita = 0;
     seq += 1;
+    if (segue) { segue.disconnect(); segue = null; }
     if (acceso) acceso.removeAttribute('aria-describedby');
     acceso = null;
     if (bolla) { bolla.classList.remove('vista'); bolla.hidden = true; }
@@ -232,6 +245,9 @@ import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
   document.addEventListener('focusin', (ev) => {
     const el = bersaglio(ev.target);
     if (!el) return;
+    let daTastiera = true;
+    try { daTastiera = ev.target.matches(':focus-visible'); } catch (e) {  }
+    if (!daTastiera) return;
     spegni();
     colDito = true;
     mostra(el);

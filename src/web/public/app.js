@@ -3726,11 +3726,41 @@ function navDrawerHtml() {
   }).join('');
 }
 
+const SCHEDE_LARGHE = new Set(['alert', 'grafiche', 'pagina', 'donazioni']);
+function schermoPienoScelto() {
+  try { return localStorage.getItem('schermoPieno') === '1'; } catch (e) { return false; }
+}
+function tastoSchermoHtml() {
+  if (!SCHEDE_LARGHE.has(schedaAttiva)) return '';
+  return `<button type="button" class="btn secondario mini pt-schermo" id="pt-schermo" aria-pressed="false"></button>`;
+}
+function applicaSchermo() {
+  const on = SCHEDE_LARGHE.has(schedaAttiva) && schermoPienoScelto();
+  const prima = document.body.classList.contains('tutto-schermo');
+  document.body.classList.toggle('tutto-schermo', on);
+  if (prima !== on) chiudiMenuMobile();
+  const b = document.getElementById('pt-schermo');
+  if (b) {
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.title = on ? L('Il menù torna di lato', 'The menu goes back to the side', 'El menú vuelve al lateral')
+      : L('Toglie il menù di lato: la pagina prende tutta la larghezza, e il menù aspetta sul bordo sinistro', 'Removes the side menu: the page takes the full width, and the menu waits on the left edge', 'Quita el menú lateral: la página ocupa todo el ancho, y el menú espera en el borde izquierdo');
+    b.innerHTML = on
+      ? `${_bIco('<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>')}${L('Rimetti il menù', 'Bring the menu back', 'Vuelve a poner el menú')}`
+      : `${_bIco('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>')}${L('Tutto schermo', 'Full screen', 'Pantalla completa')}`;
+  }
+}
+function cambiaSchermo() {
+  const on = !document.body.classList.contains('tutto-schermo');
+  try { localStorage.setItem('schermoPieno', on ? '1' : '0'); } catch (e) {  }
+  applicaSchermo();
+  requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco));
+}
+
 function aggiornaTestataPagina() {
   const el = document.getElementById('pagina-testata');
   if (!el) return;
   if (!document.body.classList.contains('con-nav')) {
-    el.innerHTML = ''; aggiornaBarraGiu(); osservaTitolo(); return;
+    el.innerHTML = ''; applicaSchermo(); aggiornaBarraGiu(); osservaTitolo(); return;
   }
   const { area, titolo } = infoScheda(schedaAttiva);
   const desc = descScheda(schedaAttiva);
@@ -3742,11 +3772,13 @@ function aggiornaTestataPagina() {
   el.innerHTML =
     `${area ? `<div class="pt-occhiello">${esc(area)}</div>` : ''}` +
     `<h1${stessoTitolo ? ' class="fermo"' : ''}>${titoloParole(titolo)}</h1>` +
+    tastoSchermoHtml() +
     `${desc ? `<p>${esc(desc)}</p>` : ''}` +
     barraFamigliaHtml(schedaAttiva) +
     sottoSchedeHtml(schedaAttiva) +
     guidaSchedaHtml(schedaAttiva) +
     barraCarteHtml(schedaAttiva);
+  applicaSchermo();
   aggiornaBarraGiu();
   osservaTitolo();
 }
@@ -26529,10 +26561,42 @@ async function caricaPasskey() {
   } catch (e) { ul.innerHTML = `<li class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</li>`; }
 }
 
+let _viaMenu = 0, _lasciaMenu = 0, _sostaBordo = 0, _menuDalBordo = false;
+const menuPosato = () => document.body.classList.contains('tutto-schermo') && document.body.classList.contains('con-nav');
 function chiudiMenuMobile() {
-  document.body.classList.remove('menu-aperto');
+  clearTimeout(_lasciaMenu); _lasciaMenu = 0; _menuDalBordo = false;
   document.getElementById('apri-menu')?.setAttribute('aria-expanded', 'false');
+  if (!document.body.classList.contains('menu-aperto') || _viaMenu) return;
+  const dura = menuPosato() ? (window.SB_DISEGNO?.viaMenu?.() || 0) : 0;
+  if (!dura) { document.body.classList.remove('menu-aperto'); return; }
+  _viaMenu = setTimeout(() => { _viaMenu = 0; document.body.classList.remove('menu-aperto'); }, dura);
 }
+function apriMenu(dalBordo = false) {
+  clearTimeout(_lasciaMenu); _lasciaMenu = 0;
+  _menuDalBordo = dalBordo;
+  document.getElementById('apri-menu')?.setAttribute('aria-expanded', 'true');
+  if (_viaMenu) { clearTimeout(_viaMenu); _viaMenu = 0; window.SB_DISEGNO?.menu?.(); return; }
+  document.body.classList.add('menu-aperto');
+}
+function avviaBordoMenu() {
+  const bordo = document.getElementById('bordo-menu'), cassetto = document.getElementById('drawer');
+  if (!bordo || !cassetto) return;
+  bordo.addEventListener('pointerenter', () => {
+    if (!menuPosato() || (document.body.classList.contains('menu-aperto') && !_viaMenu)) return;
+    clearTimeout(_sostaBordo);
+    _sostaBordo = setTimeout(() => { _sostaBordo = 0; if (menuPosato()) apriMenu(true); }, SOSTA_BORDO_MS);
+  });
+  bordo.addEventListener('pointerleave', () => { clearTimeout(_sostaBordo); _sostaBordo = 0; });
+  bordo.addEventListener('click', () => { if (menuPosato()) apriMenu(true); });
+  cassetto.addEventListener('pointerenter', () => { clearTimeout(_lasciaMenu); _lasciaMenu = 0; });
+  cassetto.addEventListener('pointerleave', (ev) => {
+    if (!menuPosato() || !_menuDalBordo || ev.pointerType === 'touch') return;
+    clearTimeout(_lasciaMenu);
+    _lasciaMenu = setTimeout(chiudiMenuMobile, LASCIA_MENU_MS);
+  });
+}
+const SOSTA_BORDO_MS = 120;
+const LASCIA_MENU_MS = 260;
 
 function aggiornaStatoNav(id) {
   document.querySelectorAll('#nav-drawer .drawer-voce[data-scheda]').forEach((b) => {
@@ -26700,6 +26764,8 @@ function initGuscio() {
     const sb = ev.target.closest('[data-sblocca]');
     if (sb) { ev.preventDefault(); sbloccaAddon(sb.dataset.sblocca); return; }
 
+    if (ev.target.closest('#pt-schermo')) { cambiaSchermo(); return; }
+
     const vp = ev.target.closest('a[data-scheda],button[data-scheda]');
     if (vp && !vp.closest('#nav-drawer')) { ev.preventDefault(); vaiAScheda(vp.dataset.scheda); }
   });
@@ -26728,8 +26794,16 @@ function initGuscio() {
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') chiudiMenuMobile(); });
 
   document.getElementById('apri-menu')?.addEventListener('click', () => {
+    if (menuPosato()) {
+      if (document.body.classList.contains('menu-aperto') && !_viaMenu) chiudiMenuMobile(); else apriMenu(false);
+      return;
+    }
     const aperto = document.body.classList.toggle('menu-aperto');
     document.getElementById('apri-menu').setAttribute('aria-expanded', aperto ? 'true' : 'false');
+  });
+  avviaBordoMenu();
+  document.addEventListener('click', (ev) => {
+    if (menuPosato() && document.body.classList.contains('menu-aperto') && !ev.target.closest('#drawer, #apri-menu, #bordo-menu')) chiudiMenuMobile();
   });
   document.getElementById('backdrop')?.addEventListener('click', chiudiMenuMobile);
   document.getElementById('chiudi-menu')?.addEventListener('click', chiudiMenuMobile);

@@ -344,8 +344,9 @@ pixel. Lo spazio se lo prendevano il menu (240), i livelli (238) e le proprietà
 
 Adesso il conto parte dalla tela:
 
-- **nello Studio il menu è il cassetto**, e si apre dall'hamburger in alto
-  (`docs/MOBILE.md`);
+- **a tutto schermo il menu è il cassetto**, e si apre dall'hamburger in alto: lo
+  sceglie chi lavora col tasto «Tutto schermo» della testata (`docs/MOBILE.md`),
+  e le misure qui sotto sono quelle a tutto schermo;
 - **la tela prende prima la larghezza che le serve.** La scena è un contenitore
   che conosce le sue misure (`container-type: size`). La tela è 16:9, quindi
   più di `(altezza - 36) × 16 / 9 + 36` pixel di larghezza non le servono. I

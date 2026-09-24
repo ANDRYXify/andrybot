@@ -165,9 +165,11 @@ const misureTela = await p.evaluate(() => {
 const telaFerma = JSON.stringify(misureTela.libera) === JSON.stringify(misureTela.scelta)
   && JSON.stringify(misureTela.scelta) === JSON.stringify(misureTela.lasciata);
 
-// LA LARGHEZZA E' DELLA TELA. Nello Studio il menu delle schede e' il cassetto,
-// che si apre dal tasto in alto: di lato si prendeva 240 px proprio dove
-// servono, e a 1440 la tela era larga 491. I pannelli prendono la loro base, e
+// LA LARGHEZZA E' DELLA TELA. Di lato il menu delle schede si prende 240 px
+// proprio dove servono, e a 1440 la tela era larga 491. Per questo nello Studio
+// c'e' «Tutto schermo»: il menu diventa il cassetto, che si apre dal tasto in
+// alto. Lo sceglie chi lavora, quindi si prova col tasto vero: prima il menu e'
+// di lato, premuto non c'e' piu', ripremuto torna. I pannelli prendono la loro base, e
 // dello spazio in piu' solo quello che alla tela non serve: la tela e' larga
 // quanto l'altezza le permette. Qui si rifa' il conto del modello e lo si
 // confronta con quello che il browser ha disposto, a tre misure di schermo.
@@ -191,6 +193,13 @@ const MODELLO_SPAZIO = `(() => {
     tela: [Math.round(r(prev).width), Math.round(Math.min(tw, th * 16 / 9))],
   };
 })()`;
+const menuDiLato = () => p.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.area-principale')).marginLeft) || 0);
+await p.setViewportSize({ width: 1440, height: 950 });
+await p.waitForTimeout(250);
+const schermo = { prima: await menuDiLato() };
+await p.click('#pt-schermo');
+await p.waitForTimeout(250);
+schermo.premuto = await menuDiLato();
 const spazi = [];
 for (const [w, h] of [[1440, 950], [1280, 800], [1920, 1080]]) {
   await p.setViewportSize({ width: w, height: h });
@@ -199,6 +208,48 @@ for (const [w, h] of [[1440, 950], [1280, 800], [1920, 1080]]) {
 }
 await p.setViewportSize({ width: 1440, height: 950 });
 await p.waitForTimeout(250);
+await p.click('#pt-schermo');
+await p.waitForTimeout(250);
+schermo.ripremuto = await menuDiLato();
+await p.click('#pt-schermo');
+await p.waitForTimeout(250);
+const schermoGiusto = schermo.prima > 0 && schermo.premuto === 0 && schermo.ripremuto > 0;
+
+// IL MENU DAL BORDO. A tutto schermo il menu aspetta sul bordo sinistro, una
+// colonna di 20 px dove la pagina non entra: ci passi sopra per andare ai
+// livelli, quindi compare solo dopo una sosta. Compare dov'era, senza
+// scivolare, e si disegna come una vignetta: il contorno, poi i gruppi. Uscendo
+// si disfa all'indietro, e sparisce solo quando il disegno e' tornato indietro.
+const statoMenu = () => p.evaluate(() => {
+  const d = document.getElementById('drawer');
+  return { aperto: document.body.classList.contains('menu-aperto'), visibile: getComputedStyle(d).visibility,
+    sinistra: Math.round(d.getBoundingClientRect().left), tele: document.querySelectorAll('svg.dg-tela').length };
+});
+await p.mouse.move(700, 500);
+await p.waitForTimeout(300);
+const bordo = { pagina: await p.evaluate(() => Math.round(document.querySelector('.carta.ovl-banco').getBoundingClientRect().left)) };
+await p.mouse.move(8, 520, { steps: 5 });
+await p.waitForTimeout(40);
+bordo.primaDellaSosta = await statoMenu();
+await p.waitForTimeout(260);
+bordo.comparso = await statoMenu();
+await p.waitForTimeout(900);
+await p.evaluate(() => {
+  const d = document.getElementById('drawer'), t0 = performance.now();
+  window.__esce = { disfa: 0, chiuso: 0 };
+  new MutationObserver(() => { if (d.classList.contains('dg-out') && !__esce.disfa) __esce.disfa = Math.round(performance.now() - t0); })
+    .observe(d, { attributes: true, attributeFilter: ['class'] });
+  new MutationObserver(() => { if (!document.body.classList.contains('menu-aperto') && !__esce.chiuso) __esce.chiuso = Math.round(performance.now() - t0); })
+    .observe(document.body, { attributes: true, attributeFilter: ['class'] });
+});
+await p.mouse.move(900, 520, { steps: 6 });
+await p.waitForTimeout(1200);
+bordo.esce = await p.evaluate(() => window.__esce);
+bordo.uscito = await statoMenu();
+const bordoGiusto = bordo.pagina >= 20 && !bordo.primaDellaSosta.aperto
+  && bordo.comparso.aperto && bordo.comparso.visibile === 'visible' && bordo.comparso.sinistra < 20 && bordo.comparso.tele > 0
+  && bordo.esce.disfa > 0 && bordo.esce.chiuso > bordo.esce.disfa
+  && !bordo.uscito.aperto && bordo.uscito.visibile === 'hidden';
 const spazioStorto = spazi.filter((s) => s.menuDiLato > 0 || Math.abs(s.liv[0] - s.liv[1]) > 1.5
   || Math.abs(s.insp[0] - s.insp[1]) > 1.5 || Math.abs(s.tela[0] - s.tela[1]) > 1.5);
 
@@ -591,7 +642,9 @@ verde = dice(!!occhio.cambiata, 'e si vede: la riga lascia i livelli e passa tra
 verde = dice(!!occhio.tornato, 'e da lì si rimette dov’era', JSON.stringify(occhio)) && verde;
 verde = dice(incoerenti.length === 0, `scegliendo un elemento si vedono solo i suoi comandi: ${chiavi.length} elementi`, incoerenti.join(' · ')) && verde;
 verde = dice(telaFerma, 'la tela non cambia misura scegliendo o lasciando un elemento', JSON.stringify(misureTela)) && verde;
-verde = dice(spazioStorto.length === 0, `la larghezza è della tela: a ${spazi.map((s) => s.schermo + ' ' + s.tela[0] + ' px').join(', ')}`, JSON.stringify(spazioStorto)) && verde;
+verde = dice(bordoGiusto, `a tutto schermo il menu compare dal bordo dopo una sosta, disegnato, e uscendo si disfa prima di sparire`, JSON.stringify(bordo)) && verde;
+verde = dice(schermoGiusto, `il menu sta di lato finché non premi «Tutto schermo», e ripremendo torna (${schermo.prima} → ${schermo.premuto} → ${schermo.ripremuto} px)`, JSON.stringify(schermo)) && verde;
+verde = dice(spazioStorto.length === 0, `a tutto schermo la larghezza è della tela: a ${spazi.map((s) => s.schermo + ' ' + s.tela[0] + ' px').join(', ')}`, JSON.stringify(spazioStorto)) && verde;
 verde = dice(dopoScelta.visti === 0 && dopoScelta.sel === 0 && dopoScelta.chiuso,
   'e lasciandolo non resta niente acceso', JSON.stringify(dopoScelta)) && verde;
 verde = dice(rimasti === 0, 'nessun comando dimenticato sotto la tela', `${rimasti} campi rimasti giù`) && verde;

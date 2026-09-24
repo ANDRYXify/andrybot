@@ -309,6 +309,12 @@ async function guarda(indirizzo, { largo, acceso }) {
   await p.goto(`http://127.0.0.1:${PORTA}${indirizzo}`, { waitUntil: 'networkidle' });
   if (acceso) await p.evaluate(`(${ACCENDI})()`);
   await p.waitForTimeout(500);
+  // La pagina mette in attesa del disegno i pezzi fuori schermo quando il
+  // browser e' libero (requestIdleCallback in disegno.js). Si aspetta che quel
+  // lavoro sia fatto: le code dei momenti liberi vanno in ordine, quindi una
+  // chiesta adesso arriva dopo la sua. Senza, le due fotografie da confrontare
+  // potevano cadere una prima e una dopo, e differire per l'orologio.
+  await p.evaluate(() => new Promise((fatto) => (window.requestIdleCallback || ((f) => setTimeout(f, 200)))(() => requestAnimationFrame(() => fatto()), { timeout: 3000 })));
   const anim = await p.evaluate(`(${ANIMAZIONI})()`);
   const stile = await p.evaluate(`(${FIRMA})()`);
   await p.close();

@@ -270,6 +270,7 @@
       el.style.removeProperty('--dg-retino');
       delete el.dataset.dgOut;
     }, c.fine + 600);
+    return c.fine;
   }
 
   function segno(fai, tipo, da) {
@@ -327,6 +328,31 @@
     if (ora - filaT > 350) fila = 0;
     filaT = ora;
     return fila++ * PASSO_FILA;
+  }
+
+  function gruppiDelMenu() {
+    return [].slice.call(document.querySelectorAll('#nav-drawer > .drawer-grp'));
+  }
+
+  function menu() {
+    var cassetto = document.getElementById('drawer');
+    var posato = document.body.classList.contains('tutto-schermo') && document.body.classList.contains('con-nav');
+    if (posato && cassetto) chiedi(cassetto, { veloce: true });
+    gruppiDelMenu().forEach(function (g, j) {
+      chiedi(g, { da: (posato ? 140 : 60) + j * PASSO_FILA, veloce: true });
+    });
+  }
+
+  function viaMenu() {
+    if (meno()) return 0;
+    var cassetto = document.getElementById('drawer');
+    var tutti = gruppiDelMenu().concat(cassetto ? [cassetto] : []);
+    var misure = tutti.map(misura);
+    var fine = 0;
+    tutti.forEach(function (e, i) {
+      if (disegnabile(e, misure[i])) fine = Math.max(fine, sfila(e, misure[i], { veloce: true }));
+    });
+    return fine;
   }
 
   function vignetteDellaScena(pannello) {
@@ -471,11 +497,7 @@
       } else if (el.classList.contains('toast') || el.classList.contains('rec-invito')) {
         if (diventa('esce')) chiedi(el, { veloce: true }, true);
       } else if (el === document.body) {
-        if (diventa('menu-aperto')) {
-          [].slice.call(document.querySelectorAll('#nav-drawer > .drawer-grp')).forEach(function (g, j) {
-            chiedi(g, { da: 60 + j * PASSO_FILA, veloce: true });
-          });
-        }
+        if (diventa('menu-aperto')) menu();
       } else if (el.id === 'cerca-overlay') {
         if (diventa('aperto')) chiedi(el.querySelector('.cerca-box'));
       } else {
@@ -559,5 +581,5 @@
   }
 
   avvia();
-  window.SB_DISEGNO = { disegna: disegna, disfa: disfa, scena: scena };
+  window.SB_DISEGNO = { disegna: disegna, disfa: disfa, scena: scena, menu: function () { menu(); esegui(); }, viaMenu: viaMenu };
 })();

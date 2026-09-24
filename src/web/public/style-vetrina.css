@@ -85,6 +85,7 @@ body:not(.con-nav) .barra-top { display: none; }
   .chiudi-drawer:hover { color: var(--testo); }
 }
 .drawer-utente { border-top: 1px solid var(--border); margin-top: .5rem; padding: .8rem .3rem .3rem; display: flex; flex-direction: column; gap: .5rem; }
+.bordo-menu { display: none; }
 .backdrop {
   position: fixed; inset: 0; z-index: 50; background: rgba(15, 15, 25, .35);
   opacity: 0; pointer-events: none; transition: opacity .28s;
@@ -327,3 +328,6 @@ summary:active::after, .vt-btn:active::before { transform: scale(1.13); opacity:
 }
 .salta:focus { top: .6rem; }
 body:not(.con-nav) .salta { display: none; }
+@media (min-width: 64rem) {
+  .pagina-testata { position: relative; }
+}

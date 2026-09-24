@@ -204,6 +204,7 @@ button.drawer-grp-tit {
 .drawer-utente .chip-utente { white-space: normal; }
 .drawer-utente .btn { width: 100%; text-align: center; }
 
+.bordo-menu { display: none; }
 .backdrop {
   position: fixed; inset: 0; z-index: 50; background: rgba(15, 15, 25, .35);
   opacity: 0; pointer-events: none; transition: opacity .28s;
@@ -1241,7 +1242,7 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .studio-vai { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
 @media (max-width: 820px) { .studio-griglia { grid-template-columns: 1fr; } }
 
-.studio-largo { --lw: min(96vw, 1640px); width: var(--lw); max-width: none; margin-left: calc(50% - var(--lw) / 2); }
+.studio-largo { --lw: min(calc(96vw - var(--lato, 0px)), 1640px); width: var(--lw); max-width: none; margin-left: calc(50% - var(--lw) / 2); }
 @media (max-width: 1160px) { .studio-largo { --lw: 100%; width: 100%; margin-left: 0; } }
 
 .studio-layout-ctrl { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: .1rem 0 .7rem; }
@@ -1970,41 +1971,50 @@ body.ce-aperto { overflow: hidden; }
 
 .aiuto-bolla {
   position: fixed; z-index: 9000; left: 0; top: 0;
-  max-width: min(322px, 80vw); padding: .82rem 1.25rem .86rem;
+  max-width: min(290px, 80vw); padding: .6rem 1rem .64rem;
   color: var(--testo);
-  font-family: var(--mano); font-size: .86rem; line-height: 1.62; font-weight: 400;
-  letter-spacing: .012em;
+  font-family: var(--testo-font); font-size: .8rem; line-height: 1.45; font-weight: 500;
   text-align: center; text-wrap: balance; white-space: normal; overflow-wrap: anywhere;
   pointer-events: none;
-  transform-origin: var(--becco, 50%) 100%;
-  opacity: 0; transform: rotate(-2deg) scale(.62);
-  transition: opacity .1s ease, transform .24s cubic-bezier(.34, 1.62, .58, 1);
+  opacity: 0; transform: rotate(-1deg);
 }
 .aiuto-guscio { position: absolute; overflow: visible; pointer-events: none; max-width: none; max-height: none; }
 .aiuto-testo { position: relative; display: block; }
 .aiuto-forma {
-  fill: color-mix(in srgb, var(--surface) 95%, transparent);
-  stroke: var(--contorno); stroke-width: 3; stroke-linejoin: round;
+  fill: color-mix(in srgb, var(--surface) 96%, transparent);
+  stroke: var(--contorno); stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round;
 }
 .aiuto-ombra {
-  fill: color-mix(in srgb, var(--contorno) 52%, transparent);
-  stroke: color-mix(in srgb, var(--contorno) 52%, transparent); stroke-width: 3;
-  transform: translate(2px, 3px);
+  fill: color-mix(in srgb, var(--contorno) 18%, transparent);
+  stroke: none;
+  transform: translate(1.5px, 2px);
 }
 .aiuto-pensieri circle {
-  fill: color-mix(in srgb, var(--surface) 95%, transparent);
-  stroke: var(--contorno); stroke-width: 3;
+  fill: color-mix(in srgb, var(--surface) 96%, transparent);
+  stroke: var(--contorno); stroke-width: 1.8;
 }
-.aiuto-bolla.attenzione { padding: 1.15rem 1.9rem 1.2rem; transform: rotate(2deg) scale(.62); }
-.aiuto-bolla.attenzione .aiuto-forma { fill: color-mix(in srgb, var(--rosso) 12%, var(--surface)); stroke: var(--rosso); }
-.aiuto-bolla.attenzione .aiuto-ombra { fill: color-mix(in srgb, var(--rosso) 45%, transparent); stroke: color-mix(in srgb, var(--rosso) 45%, transparent); }
-.aiuto-bolla.attenzione.vista { transform: rotate(2deg) scale(1); }
-.aiuto-bolla.dritta { padding: .88rem 1.4rem .92rem; transform: rotate(-1.4deg) scale(.62); }
-.aiuto-bolla.dritta.vista { transform: rotate(-1.4deg) scale(1); }
-.aiuto-bolla.sotto { transform-origin: var(--becco, 50%) 0; }
-.aiuto-bolla.vista, .aiuto-bolla.sotto.vista { opacity: 1; transform: rotate(-2deg) scale(1); }
+.aiuto-bolla.attenzione { padding: .95rem 1.5rem 1rem; transform: rotate(1.5deg); }
+.aiuto-bolla.attenzione .aiuto-forma { fill: color-mix(in srgb, var(--rosso) 10%, var(--surface)); stroke: var(--rosso); }
+.aiuto-bolla.attenzione .aiuto-ombra { fill: color-mix(in srgb, var(--rosso) 22%, transparent); }
+.aiuto-bolla.dritta { padding: .7rem 1.1rem .74rem; }
+.aiuto-bolla.vista { opacity: 1; }
+.aiuto-bolla.vista .aiuto-forma {
+  stroke-dasharray: 1; stroke-dashoffset: 1; fill-opacity: 0;
+  animation: aiuto-traccia 180ms steps(4, jump-end) forwards, aiuto-riempi 90ms steps(2, jump-end) 150ms forwards;
+}
+.aiuto-bolla.vista .aiuto-ombra, .aiuto-bolla.vista .aiuto-pensieri { opacity: 0; animation: aiuto-compare 90ms steps(2, jump-end) 150ms forwards; }
+.aiuto-bolla.vista .aiuto-testo { opacity: 0; animation: aiuto-compare 90ms steps(2, jump-end) 170ms forwards; }
+@keyframes aiuto-traccia { to { stroke-dashoffset: 0; } }
+@keyframes aiuto-riempi { to { fill-opacity: 1; } }
+@keyframes aiuto-compare { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
-  .aiuto-bolla, .aiuto-bolla.attenzione, .aiuto-bolla.dritta { transition: none; transform: none; }
+  .aiuto-bolla.vista .aiuto-forma, .aiuto-bolla.vista .aiuto-ombra, .aiuto-bolla.vista .aiuto-pensieri, .aiuto-bolla.vista .aiuto-testo {
+    animation: none; opacity: 1; stroke-dashoffset: 0; fill-opacity: 1;
+  }
+}
+body.meno-moto .aiuto-bolla.vista .aiuto-forma, body.meno-moto .aiuto-bolla.vista .aiuto-ombra,
+body.meno-moto .aiuto-bolla.vista .aiuto-pensieri, body.meno-moto .aiuto-bolla.vista .aiuto-testo {
+  animation: none; opacity: 1; stroke-dashoffset: 0; fill-opacity: 1;
 }
 
 .zona-pericolo {
@@ -2408,16 +2418,43 @@ body.leggero .rap-num.cambiato b, body.meno-moto .rap-num.cambiato b { animation
 body:not(.con-nav) .salta { display: none; }
 
 @media (min-width: 64rem) {
-  body.con-nav { --lato: 15rem; }
+  body.con-nav { --largo-menu: 15rem; --lato: var(--largo-menu); }
   body.con-nav .drawer-utente { display: none; }
   body.con-nav .top-strumenti { display: flex; }
-  body.con-nav:not(.banco-on) .apri-menu, body.con-nav:not(.banco-on) .backdrop, body.con-nav:not(.banco-on) .drawer-testa { display: none; }
-  body.con-nav:not(.banco-on) .drawer {
+  body.con-nav:not(.tutto-schermo) .apri-menu, body.con-nav:not(.tutto-schermo) .backdrop, body.con-nav:not(.tutto-schermo) .drawer-testa { display: none; }
+  body.con-nav:not(.tutto-schermo) .drawer {
     top: var(--top-h); bottom: 0; left: 0; right: auto; height: auto; width: var(--lato);
     transform: none; transition: none; z-index: 40; overscroll-behavior: contain;
     padding: .7rem .55rem 1.6rem; background: var(--tono-carta) 0 0 / var(--tono-passo), var(--bg);
     border: 0; border-right: 3px solid var(--contorno); border-radius: 0; box-shadow: none;
   }
-  body.con-nav:not(.banco-on) .area-principale { margin-left: var(--lato); }
-  body.con-nav.banco-on .apri-menu { margin-left: .5rem; }
+  body.con-nav:not(.tutto-schermo) .area-principale { margin-left: var(--lato); }
+  body.con-nav.tutto-schermo { --lato: 0px; --bordo-menu: 20px; }
+  body.con-nav.tutto-schermo .apri-menu { order: -1; margin-left: 0; }
+  body.con-nav.tutto-schermo.menu-aperto .apri-menu span { transform: none; opacity: 1; }
+  body.con-nav.tutto-schermo .contenuto {
+    max-width: none;
+    --margine-pagina: clamp(.8rem, 1.4vw, 1.4rem);
+    padding-left: max(var(--margine-pagina), calc(var(--bordo-menu) + .6rem));
+    padding-right: var(--margine-pagina);
+  }
+  body.con-nav.tutto-schermo .drawer {
+    top: calc(var(--top-h) + .5rem); bottom: .5rem; left: .5rem; right: auto; height: auto; width: var(--largo-menu);
+    transform: none; transition: none; visibility: hidden; z-index: 61; overscroll-behavior: contain;
+    padding: .7rem .55rem 1.6rem;
+    border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano); border-radius: var(--ang-mano);
+    box-shadow: var(--ombra-ink-salto);
+  }
+  body.con-nav.tutto-schermo.menu-aperto .drawer { visibility: visible; }
+  body.con-nav.tutto-schermo .backdrop, body.con-nav.tutto-schermo .drawer-testa { display: none; }
+  body.con-nav.tutto-schermo .bordo-menu {
+    display: block; position: fixed; left: 0; top: var(--top-h); bottom: 0; width: var(--bordo-menu); z-index: 39;
+  }
+  body.con-nav.tutto-schermo .bordo-menu::after {
+    content: ""; position: absolute; top: 18%; bottom: 18%; left: calc(50% - 1px);
+    border-left: 2px dashed color-mix(in srgb, var(--contorno) 32%, transparent);
+  }
+  body.con-nav.tutto-schermo.menu-aperto .bordo-menu::after { opacity: 0; }
+  .pagina-testata { position: relative; }
+  .pt-schermo { position: absolute; top: 0; right: 0; }
 }

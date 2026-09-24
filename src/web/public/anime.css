@@ -1219,7 +1219,7 @@ body.banco-on .contenuto {
   padding-bottom: .8rem;
 }
 body.banco-on .pagina-testata {
-  display: grid; grid-template-columns: auto 1fr;
+  display: grid; grid-template-columns: auto 1fr auto;
   align-items: center; column-gap: 1.1rem; row-gap: .35rem;
   margin-bottom: .45rem;
 }
@@ -1228,6 +1228,7 @@ body.banco-on .pagina-testata > .pt-occhiello,
 body.banco-on .pagina-testata > .carte-ctrl { display: none; }
 body.banco-on .pagina-testata > h1 { grid-column: 1; margin: 0; }
 body.banco-on .pagina-testata > .fam-barra { grid-column: 2; justify-self: start; margin: 0; }
+body.banco-on .pagina-testata > .pt-schermo { position: static; grid-column: 3; grid-row: 1; }
 body.banco-on .pagina-testata > .guida-scheda { grid-column: 1 / -1; display: none; }
 body.banco-on.banco-guida .pagina-testata > .guida-scheda { display: block; }
 body.banco-guida #ovl-aiuto { background: var(--acc-soft); border-color: var(--acc-bordo); color: var(--acc); }
