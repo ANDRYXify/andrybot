@@ -26,7 +26,10 @@ const corpoDi = (testo, nome) => {
 
 test('si disegna solo quello che ha un contorno, e la china ricalca il bordo vero', () => {
   const m = corpoDi(DG, 'misura');
-  assert.match(m, /st\.borderTopStyle === 'none' \|\| sp < 0\.5 \|\| trasparente\) \? null/, 'senza bordo non c\'e\' niente da ripassare');
+  assert.match(m, /stile === 'none' \|\| sp < 0\.5 \|\| trasparente\) \? null/, 'senza bordo non c\'e\' niente da ripassare');
+  assert.match(m, /var coperto = \['dg-in', 'dg-out'\]\.filter/, 'e il bordo e\' quello vero, non quello coperto da un disegno in corso');
+  assert.ok(m.indexOf('coperto.forEach(function (c) { el.classList.remove(c); });') < m.indexOf('var st = getComputedStyle(el);')
+    && m.indexOf('coperto.forEach(function (c) { el.classList.add(c); });') > m.indexOf("var rag = parseFloat(st.borderTopLeftRadius)"), 'si legge a classi tolte, e si rimettono dopo');
   assert.match(corpoDi(DG, 'disegnabile'), /return !!m\.bordo &&/);
   const t = corpoDi(DG, 'piano');
   assert.match(t, /contorno\(w, h, bd\.rag, bd\.sp,/, 'col raggio e lo spessore del bordo');
@@ -176,7 +179,8 @@ test('all\'indietro si rifanno gli stessi disegni, e sull\'orologio del gesto', 
     'quanti disegni li dice il tratto d\'andata, non la durata compressa del ritorno');
   assert.match(corpoDi(DG, 'tela'), /p\.style\.setProperty\('--dg-passi', passi\(n \|\| disegni\(dur\)\)\);/);
   assert.match(corpoDi(DG, 'disegni'), /return Math\.max\(2, Math\.round\(ms \/ DUE\)\);/, 'a dodici disegni al secondo');
-  assert.match(corpoDi(DG, 'componi'), /aggancia\(t\.s, el\);\n\s*return/, 'ogni disegno si aggancia all\'istante che lo chiede');
+  assert.match(corpoDi(DG, 'componi'), /aggancia\(t\.s, el\);\n/, 'ogni disegno si aggancia all\'istante che lo chiede');
+  assert.match(corpoDi(DG, 'componi'), /if \(el\._dgTela && el\._dgTela !== t\.s\) el\._dgTela\.remove\(\);\n\s*el\._dgTela = t\.s;\n\s*return/, 'un elemento ha una tela sola');
   assert.match(corpoDi(DG, 'aggancia'), /ora: performance\.now\(\)/);
   const at = corpoDi(DG, 'agganciaTutti');
   assert.match(at, /var anime = x\.s\.getAnimations\(\{ subtree: true \}\);/, 'i tratti della tela');
