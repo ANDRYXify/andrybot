@@ -30,6 +30,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { aiutiPerScheda } from '../src/web/manuali.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
 const leggi = (f) => readFileSync(join(RAD, f), 'utf8');
@@ -68,7 +69,6 @@ if (process.argv.includes('--selftest')) {
 
 const app = leggi('src/web/public/app.js');
 const server = leggi('src/web/server.js');
-const manuali = leggi('src/web/manuali.js');
 const cerca = leggi('src/web/public/cerca.js');
 
 const esiti = [];
@@ -92,7 +92,9 @@ const chiaviDi = (testo, nome) => {
 // vedere l'italiano — brutto, non rotto.
 const icone = chiaviDi(app, 'ICONA');
 const desc = chiaviDi(app, 'DESC');
-const aiuti = new Set([...manuali.matchAll(/schede: \[([^\]]*)\]/g)].flatMap((m) => [...m[1].matchAll(/'([a-z0-9]+)'/g)].map((x) => x[1])));
+// L'aiuto di una sezione e' quello che il «?» apre: lo dice manuali.js, che
+// raccoglie le schede dichiarate da ogni guida e da ogni manuale.
+const aiuti = new Set(Object.keys(aiutiPerScheda()));
 const trova = new Set([...(/const PAROLE = \{([\s\S]*?)\n  \};/.exec(cerca)?.[1] || cerca).matchAll(/^\s{4}([a-z0-9]+):/gm)].map((m) => m[1]));
 
 for (const [cosa, insieme] of [['un\'icona', icone], ['una descrizione', desc], ['un aiuto', aiuti], ['le parole per trovarla', trova]]) {
