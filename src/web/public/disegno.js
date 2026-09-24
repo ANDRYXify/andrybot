@@ -241,6 +241,7 @@
   }
 
   function traccia(el, m, o) {
+    avviati++;
     el.dataset.dgIn = '1';
     el.dataset.dgFatto = '1';
     delete el.dataset.dgOut;
@@ -257,6 +258,7 @@
   }
 
   function sfila(el, m, o) {
+    avviati++;
     el.dataset.dgOut = '1';
     delete el.dataset.dgIn;
     var c = componi(el, m, piano(el, m, o), true);
@@ -387,47 +389,69 @@
 
   var AGISCE = 'button, a[href], [role="button"], summary, input[type="checkbox"], input[type="radio"], select';
 
-  function esclama(ev) {
+  var avviati = 0;
+  var premuti = new WeakMap();
+  var RIPASSO = 150;
+  var RIPASSO_RIPOSO = 600;
+
+  function giroDa(w, h, rag, sp, x0, y0, verso, r) {
+    var m = sp / 2, xa = m, ya = m, xb = w - m, yb = h - m;
+    var q = Math.max(0, Math.min(rag - m, (xb - xa) / 2, (yb - ya) / 2));
+    var pt = [];
+    function retta(ax, ay, bx, by) {
+      var n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 3));
+      for (var i = 0; i < n; i++) pt.push([ax + (bx - ax) * i / n, ay + (by - ay) * i / n]);
+    }
+    function arco(cx, cy, a0) {
+      var n = Math.max(1, Math.ceil(q * Math.PI / 6));
+      for (var i = 0; i < n; i++) { var a = a0 + (Math.PI / 2) * i / n; pt.push([cx + Math.cos(a) * q, cy + Math.sin(a) * q]); }
+    }
+    retta(xa + q, ya, xb - q, ya); arco(xb - q, ya + q, -Math.PI / 2);
+    retta(xb, ya + q, xb, yb - q); arco(xb - q, yb - q, 0);
+    retta(xb - q, yb, xa + q, yb); arco(xa + q, yb - q, Math.PI / 2);
+    retta(xa, yb - q, xa, ya + q); arco(xa + q, ya + q, Math.PI);
+    var n = pt.length, k = 0, dk = Infinity;
+    for (var i = 0; i < n; i++) {
+      var d = Math.hypot(pt[i][0] - x0, pt[i][1] - y0);
+      if (d < dk) { dk = d; k = i; }
+    }
+    var d = '';
+    for (var j = 0; j <= Math.ceil(n / 2); j++) {
+      var p = pt[(((k + verso * j) % n) + n) % n];
+      d += (j ? ' L' : 'M') + f(p[0] + (r() - 0.5) * 0.8) + ',' + f(p[1] + (r() - 0.5) * 0.8);
+    }
+    return d;
+  }
+
+  function ripassa(ev) {
     if (!ev.isTrusted || ev.button > 0 || meno()) return;
     var el = ev.target && ev.target.closest ? ev.target.closest(AGISCE) : null;
     if (!el || el.disabled || el.closest('.dg-tela')) return;
-    var m = misura(el);
-    var x = ev.detail ? ev.clientX : m.r.left + m.r.width / 2;
-    var y = ev.detail ? ev.clientY : m.r.top;
-    var giu = y < 48 ? -1 : 1;
-    var s = document.createElementNS(NS, 'svg');
-    s.setAttribute('class', 'dg-tela dg-esclama');
-    s.setAttribute('aria-hidden', 'true');
-    s.style.position = 'fixed';
-    s.style.zIndex = m.z + 1;
-    s.style.left = x + 'px';
-    s.style.top = y + 'px';
-    s.setAttribute('width', 1);
-    s.setAttribute('height', 1);
-    var r = caso(Math.round(x) + ':' + Math.round(y));
-    [-24, 0, 24].forEach(function (gradi, i) {
-      var a = (gradi + (r() - 0.5) * 10) * Math.PI / 180;
-      var dx = Math.sin(a), dy = -Math.cos(a) * giu;
-      var segni = [
-        'M' + f(dx * 34) + ',' + f(dy * 34) + ' L' + f(dx * 18) + ',' + f(dy * 18),
-        'M' + f(dx * 12.4) + ',' + f(dy * 12.4) + ' L' + f(dx * 12) + ',' + f(dy * 12)
-      ];
-      ['dg-esclamo-alone', 'dg-esclamo'].forEach(function (classe) {
-        segni.forEach(function (d, j) {
-          var p = document.createElementNS(NS, 'path');
-          p.setAttribute('d', d);
-          p.setAttribute('pathLength', '1');
-          p.setAttribute('class', classe + ' dg-traccia');
-          p.style.setProperty('--dg-da', (i * 30 + j * 60) + 'ms');
-          p.style.setProperty('--dg-dur', '80ms');
-          p.style.setProperty('--dg-passi', passi(disegni(80)));
-          s.appendChild(p);
+    var ora = performance.now();
+    var prima = premuti.get(el);
+    if (prima && ora - prima.t < RIPASSO_RIPOSO) return;
+    var volta = prima ? prima.n + 1 : 1;
+    premuti.set(el, { t: ora, n: volta });
+    var gia = avviati;
+    var cx = ev.detail ? ev.clientX : null, cy = ev.detail ? ev.clientY : null;
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        if (avviati !== gia || !el.isConnected) return;
+        var m = misura(el);
+        if (!disegnabile(el, m)) return;
+        var fx = cx === null ? 0.5 : Math.min(1, Math.max(0, (cx - m.r.left) / m.r.width));
+        var fy = cy === null ? 0 : Math.min(1, Math.max(0, (cy - m.r.top) / m.r.height));
+        var bd = m.bordo, seme = semeDi(el) + ':' + volta;
+        var t = tela(el, m);
+        t.s.classList.add('dg-ripasso');
+        [1, -1].forEach(function (verso) {
+          t.traccia(null, function (w, h) { return giroDa(w, h, bd.rag, bd.sp, fx * w, fy * h, verso, caso(seme + ':' + verso)); },
+            'dg-ripassa dg-traccia', 0, RIPASSO, { 'stroke-width': Math.max(1, bd.sp) + 1.5, stroke: bd.colore });
         });
+        aggancia(t.s, null);
+        setTimeout(function () { t.s.remove(); }, 460);
       });
     });
-    document.body.appendChild(s);
-    aggancia(s, null);
-    setTimeout(function () { s.remove(); }, 380);
   }
 
   var FINESTRE = [['bv-velo', '.bv-carta'], ['giro-velo', '.giro-carta']];
@@ -528,7 +552,7 @@
     var avvisi = document.getElementById('toast-box');
     if (avvisi) new MutationObserver(sulleAggiunte).observe(avvisi, { childList: true });
     new MutationObserver(sulleAggiunte).observe(document.body, { childList: true });
-    document.addEventListener('click', esclama, true);
+    document.addEventListener('click', ripassa, true);
     [].slice.call(document.querySelectorAll('.cookie-banner:not([hidden])')).forEach(function (e) { chiedi(e, { veloce: true }); });
     esegui();
     (window.requestIdleCallback || function (fn) { return setTimeout(fn, 200); })(vetrina);

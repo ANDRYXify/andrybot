@@ -183,22 +183,33 @@ test('all\'indietro si rifanno gli stessi disegni, e sull\'orologio del gesto', 
   assert.match(at, /if \(x\.el\) anime = anime\.concat\(x\.el\.getAnimations\(\)\);/, 'e il retino della carta, senza le carte che ha dentro');
   assert.match(at, /if \(String\(a\.animationName\)\.indexOf\('dg-'\) === 0\) a\.startTime = x\.ora;/,
     'se un fotogramma salta si perde un disegno, ma la fine non si sposta: l\'app toglie la finestra a quell\'ora');
-  assert.match(corpoDi(DG, 'esclama'), /aggancia\(s, null\);/);
+  assert.match(corpoDi(DG, 'ripassa'), /aggancia\(t\.s, null\);/);
 });
 
-test('dove clicchi escono i «!!!»', () => {
-  assert.match(corpoDi(DG, 'avvia'), /document\.addEventListener\('click', esclama, true\);/, 'prima di chiunque, anche di chi ferma il clic');
-  const e = corpoDi(DG, 'esclama');
-  assert.match(e, /if \(!ev\.isTrusted \|\| ev\.button > 0 \|\| meno\(\)\) return;/, 'solo i clic veri, col tasto principale, e mai a chi chiede meno movimento');
-  assert.match(e, /ev\.target\.closest\(AGISCE\)/, 'solo su quello che fa qualcosa');
-  assert.match(e, /var x = ev\.detail \? ev\.clientX : m\.r\.left \+ m\.r\.width \/ 2;/, 'dove hai cliccato; da tastiera, sopra al tasto');
-  assert.match(e, /var giu = y < 48 \? -1 : 1;/, 'in cima allo schermo si girano in giu\', per restare a schermo');
-  assert.match(e, /s\.style\.zIndex = m\.z \+ 1;/, 'sopra a quello che hai toccato, anche in una finestra');
-  assert.match(e, /\[-24, 0, 24\]\.forEach/, 'tre, a ventaglio');
-  assert.match(e, /\['dg-esclamo-alone', 'dg-esclamo'\]/, 'con l\'alone di carta sotto l\'inchiostro: si leggono anche sui tasti neri');
-  const via = Number((e.match(/setTimeout\(function \(\) \{ s\.remove\(\); \}, (\d+)\);/) || [])[1]);
-  const [dur, da] = (ANIME.match(/\.dg-esclama \{ overflow: visible; animation: dg-via (\d+)ms steps\(2, jump-end\) (\d+)ms forwards; \}/) || []).slice(1).map(Number);
-  assert.ok(via > 0 && da + dur <= via, `spariscono (${da + dur} ms) prima che la tela se ne vada (${via} ms)`);
+test('il tasto che premi si ripassa a china, e solo se il gesto non ha gia\' la sua risposta', () => {
+  assert.match(corpoDi(DG, 'avvia'), /document\.addEventListener\('click', ripassa, true\);/, 'prima di chiunque, anche di chi ferma il clic');
+  assert.doesNotMatch(DG, /esclam/, 'i «!» sono la sorpresa di un personaggio: un clic non e\' una sorpresa');
+  const r = corpoDi(DG, 'ripassa');
+  assert.match(r, /if \(!ev\.isTrusted \|\| ev\.button > 0 \|\| meno\(\)\) return;/, 'solo i clic veri, col tasto principale, e mai a chi chiede meno movimento');
+  assert.match(r, /ev\.target\.closest\(AGISCE\)/, 'solo su quello che fa qualcosa');
+  assert.match(r, /var gia = avviati;/);
+  assert.match(r, /if \(avviati !== gia \|\| !el\.isConnected\) return;/, 'se il gesto ha fatto partire un disegno, la risposta e\' quella');
+  for (const nome of ['traccia', 'sfila']) assert.match(corpoDi(DG, nome), /^\s*function \w+\(el, m, o\) \{\n\s*avviati\+\+;/, `${nome} conta i disegni partiti`);
+  assert.match(r, /if \(!disegnabile\(el, m\)\) return;/, 'si ripassa solo quello che ha un contorno');
+  assert.match(r, /if \(prima && ora - prima\.t < RIPASSO_RIPOSO\) return;/, 'chi preme a raffica non riempie lo schermo di inchiostro');
+  assert.match(r, /var fx = cx === null \? 0\.5 : /, 'da dove hai toccato; da tastiera, dall\'alto al centro');
+  assert.match(r, /\[1, -1\]\.forEach\(function \(verso\)/, 'l\'inchiostro gira nei due versi e si chiude dalla parte opposta');
+  assert.match(r, /\{ 'stroke-width': Math\.max\(1, bd\.sp\) \+ 1\.5, stroke: bd\.colore \}/, 'col colore del bordo vero, un filo piu\' spesso');
+  assert.match(r, /var bd = m\.bordo, seme = semeDi\(el\) \+ ':' \+ volta;/, 'ogni pressione ha la sua mano: due tratti a mano non sono mai uguali');
+  const g = corpoDi(DG, 'giroDa');
+  assert.match(g, /for \(var j = 0; j <= Math\.ceil\(n \/ 2\); j\+\+\)/, 'ognuno dei due tratti copre meta\' giro');
+  assert.match(g, /var m = sp \/ 2, xa = m, ya = m, xb = w - m, yb = h - m;/, 'sul centro del bordo, come la china');
+  const via = Number((r.match(/setTimeout\(function \(\) \{ t\.s\.remove\(\); \}, (\d+)\);/) || [])[1]);
+  const [dur, da] = (ANIME.match(/\.dg-ripasso \{ animation: dg-via (\d+)ms steps\(2, jump-end\) (\d+)ms forwards; \}/) || []).slice(1).map(Number);
+  const disegno = Number((DG.match(/var RIPASSO = (\d+);/) || [])[1]);
+  assert.ok(disegno > 0 && disegno < da, `prima si ripassa (${disegno} ms), poi sfuma (da ${da} ms)`);
+  assert.ok(via > 0 && da + dur <= via, `sfuma (${da + dur} ms) prima che la tela se ne vada (${via} ms)`);
+  for (const css of [ANIME, VETRINA]) assert.doesNotMatch(css, /dg-esclam/);
 });
 
 test('prima di un gesto di cui pentirsi, la nuvoletta spigolosa rossa', () => {

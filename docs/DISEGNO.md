@@ -7,10 +7,10 @@ schizzo a matita, poi il contorno a china, poi il retino che scopre il
 contenuto, e la matita che si pulisce. Un'animazione sposta una cosa già fatta;
 un processo di disegno la fa sotto gli occhi.
 
-Il sito è una **tela in lavorazione**: risponde a quello che fai. Dove clicchi
-escono tre «!»; quando stai per fare qualcosa di cui potresti pentirti, la
-finestra che te lo chiede è una nuvoletta spigolosa rossa; quello che se ne va
-si disfa con gli stessi tratti con cui si era fatto.
+Il sito è una **tela in lavorazione**: risponde a quello che fai. Il tasto che
+premi si ripassa a china; quando stai per fare qualcosa di cui potresti
+pentirti, la finestra che te lo chiede è una nuvoletta spigolosa rossa; quello
+che se ne va si disfa con gli stessi tratti con cui si era fatto.
 
 Il codice è uno solo: `src/web/public/disegno.js` (`SB_DISEGNO`), più il blocco
 `.dg-*` in `anime.css`.
@@ -45,7 +45,8 @@ Da lì le scelte:
   disegno per fotogramma: è il caso del disegno all'indietro.
 - **I segni del manga** ([iconografia](https://en.wikipedia.org/wiki/Manga_iconography)):
   sull'avviso che va bene le scintille, su quello d'errore la vena di rabbia;
-  sopra a chi si sorprende, i «!»; attorno a chi urla, la nuvoletta a punte.
+  attorno a chi urla, la nuvoletta a punte. I «!» invece no: sono la sorpresa
+  di un personaggio, e premere un tasto non è una sorpresa.
 
 ## La grammatica
 
@@ -57,7 +58,7 @@ Da lì le scelte:
 | un avviso | si disegna veloce, con le scintille o la vena di rabbia; se ne va disegnandosi all'indietro |
 | una finestra, la ricerca, la visita guidata | la loro carta si disegna sopra al velo, e chiudendola si disegna all'indietro |
 | una finestra ti chiede un gesto di cui potresti pentirti | la carta è una nuvoletta spigolosa rossa, come un urlo |
-| clicchi o tocchi qualcosa che fa qualcosa | escono tre «!» a ventaglio, dove hai cliccato |
+| premi un tasto che ha un contorno, e il gesto non fa partire altri disegni | il tasto si ripassa a china dal punto toccato, poi l'inchiostro in più sfuma |
 | apri il menù sul telefono | i gruppi si disegnano uno dopo l'altro |
 | la vetrina | ogni vignetta (un riquadro chiuso) si disegna quando entra nello schermo |
 
@@ -154,16 +155,28 @@ possa esistere.
 
 ## La tela viva
 
-### I «!!!» dove clicchi
+### Il tasto che premi si ripassa
 
-Un clic su qualcosa che fa qualcosa (un tasto, un collegamento, una casella, un
-menù a tendina) fa uscire tre «!» a ventaglio sopra il punto del clic, tracciati
-in 80 ms l'uno, 30 ms uno dopo l'altro; poi spariscono. Sono inchiostro con un
-alone di carta sotto, così si leggono anche sui tasti neri. Stanno un gradino
-sopra a quello che hai toccato, anche dentro una finestra; in cima allo schermo
-si girano in giù per restare visibili. Da tastiera non c'è un punto del clic:
-escono sopra al tasto. Contano solo i clic veri col tasto principale (quelli
-simulati dal codice no), e chi chiede meno movimento non li vede.
+La prima versione faceva uscire tre «!» sul punto del clic. Era carina e
+stancava subito: sempre uguale, sempre puntata sul dito, e diceva la cosa
+sbagliata, perché nel manga i «!» sono la reazione di un personaggio sorpreso.
+
+Adesso un gesto ha **una risposta sola**. Se il clic fa partire un disegno (una
+scheda nuova, una finestra che si apre), la risposta è quel disegno e non si
+aggiunge niente: il modulo conta i disegni partiti (`avviati`) e, due fotogrammi
+dopo il clic, se il conto è cambiato lascia stare. Altrimenti il tasto premuto
+**si ripassa a china**: l'inchiostro parte dal punto del contorno più vicino a
+dove hai toccato, gira nei due versi e si chiude dalla parte opposta, in 150 ms;
+poi l'inchiostro in più sfuma e resta il bordo di sempre. È del colore del
+bordo vero e un filo più spesso, sul centro del bordo come la china.
+
+Non è mai uguale: ogni tasto ha la sua forma, e ogni pressione ha la sua mano
+(il seme è quello del tasto più il numero della pressione). Si ripassa solo
+quello che ha un contorno: un collegamento nel testo o una voce di menù senza
+bordo non ha niente da ripassare. Da tastiera parte dall'alto al centro. Chi
+preme a raffica non riempie lo schermo: sullo stesso tasto, un ripasso ogni
+600 ms. Contano solo i clic veri col tasto principale, e chi chiede meno
+movimento non vede niente.
 
 ### La nuvoletta spigolosa
 
@@ -236,7 +249,9 @@ si disegnano più né scivolano: ci sono.
     va;
   - la finestra di un gesto pericoloso: la sagoma a punte è grande quanto la
     carta più il suo margine, e la china ripassa esattamente la sua forma;
-  - i «!!!» nel punto del clic, solo per un clic vero, e che se ne vanno;
+  - il tasto premuto si ripassa sopra al tasto stesso, solo per un clic vero,
+    e se ne va; se il gesto apre una finestra (un tasto di prova col bordo che
+    apre una conferma) non si ripassa niente;
   - la modalità leggera che disegna, e «meno movimento» che non disegna.
 
   L'autoprova toglie l'uscita e pretende il rosso.

@@ -25,8 +25,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-24
 
 - Il sito si disegna: cambiando sezione la pagina vecchia si disegna all'indietro e la nuova si disegna a matita e china, come una tavola di manga. Lo stesso per avvisi, finestre e carte che arrivano.
-- Dove clicchi escono tre «!» disegnati a mano. Prima di un gesto di cui potresti pentirti, come togliere una regola, la finestra che te lo chiede diventa una nuvoletta rossa a punte.
+- Il tasto che premi si ripassa a china per un attimo. Prima di un gesto di cui potresti pentirti, come togliere una regola, la finestra che te lo chiede diventa una nuvoletta rossa a punte.
 - Nel pannello, quando si parla di tutto il servizio adesso c'è scritto SocialBot. «Il bot» resta per quello che scrive in chat, su Discord e su Telegram.
+- Guide e manuali non saltano più mentre si caricano i caratteri, e due guide non portano più a una pagina che non c'era.
+- La pagina iniziale pesa quasi un terzo in meno, e sul telefono si vede prima.
 
 ## 2026-09-23
 

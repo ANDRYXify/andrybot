@@ -2234,7 +2234,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
 ## Link
 - [Home](${b}/)
 - [Demo interattiva senza registrazione](${b}/?demo=1)
-- [Prezzi e pacchetti](${b}/#sottoscrizione)
+- [Prezzi e pacchetti](${b}/#listino)
 - [Privacy](${b}/privacy)
 - [Termini di servizio](${b}/termini)
 - [andryxify (l'autore)](https://andryxify.it)

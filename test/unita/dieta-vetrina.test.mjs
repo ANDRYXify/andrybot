@@ -81,7 +81,17 @@ test('la vetrina porta le copie al posto di anime.css, non tutte e due', () => {
   // Nello STESSO PUNTO della catena in cui stava anime.css: se le copie
   // finissero dopo vetrina.css si sovrascriverebbero cose che prima vincevano,
   // e la pagina cambierebbe senza che nessuno abbia cambiato una regola.
-  assert.ok(h.indexOf('anime-vetrina.css') < h.indexOf('vetrina.css'), 'e stanno prima di vetrina.css, come stava anime.css');
+  assert.ok(h.indexOf('href="anime-vetrina.css') < h.indexOf('href="vetrina.css'), 'e stanno prima di vetrina.css, come stava anime.css');
+});
+
+test('la vetrina porta la copia di style.css al posto del file intero, nello stesso punto', () => {
+  const h = guscioVetrina(GUSCIO, 'it', { piani: PIANI });
+  assert.ok(h.includes('style-vetrina.css'), 'la copia c\'e\'');
+  assert.ok(!h.includes('"style.css"'), 'e il file intero no');
+  assert.ok(h.indexOf('font.css') < h.indexOf('style-vetrina.css') && h.indexOf('style-vetrina.css') < h.indexOf('tema.css'),
+    'fra font.css e tema.css, dove stava style.css: l\'ordine in cui le regole si sovrascrivono non cambia');
+  const p = guscioPannello(GUSCIO);
+  assert.ok(!p.includes('style-vetrina.css') && p.includes('style.css'), 'il pannello tiene il suo foglio intero, e la copia no');
 });
 
 test('index.html nomina tutto quel che e\' solo della vetrina, sennò il cancello lo chiude fuori', () => {

@@ -582,7 +582,12 @@ export function inserisciVetrina(guscio, lingua, opzioni) {
 // gia' fallito altrove, e non poteva fare altro.
 export const RISORSE_VETRINA = [
   'tema.js',          // il tema prima del primo disegno, o la pagina lampeggia
-  'font.css', 'style.css', 'tema.css', 'vetrina.css',
+  'font.css', 'tema.css', 'vetrina.css',
+  // STYLE.CSS, SOLO LE REGOLE CHE LA TOCCANO. Stessa storia di anime.css: la
+  // vetrina ne usa 142 regole su 1374. La copia la scrive scripts/copia-vetrina.mjs,
+  // parola per parola e nello stesso ordine, e sta nello stesso punto della
+  // catena in cui stava style.css; il cancello della dieta la sorveglia.
+  'style-vetrina.css',
   // LE ANIMAZIONI, SOLO LA PARTE CHE LE TOCCA. `anime.css` sono novecento regole
   // e la vetrina ne usa quarantacinque: il resto e' lo Studio, la ricerca, le
   // tabelle. La sua parte sta in un file suo, nello stesso punto della catena in
@@ -604,6 +609,7 @@ export const RISORSE_VETRINA = [
 export const SOLO_VETRINA = [
   '<script src="vetrina-app.js" defer></script>',
   '<link rel="stylesheet" href="anime-vetrina.css">',
+  '<link rel="stylesheet" href="style-vetrina.css">',
 ];
 export const SCRIPT_VETRINA = SOLO_VETRINA[0];
 

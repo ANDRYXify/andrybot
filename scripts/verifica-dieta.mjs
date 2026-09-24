@@ -41,16 +41,18 @@ const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playw
 // rosso. Se una rottura passa inosservata, il cancello non protegge quel che
 // dice di proteggere.
 const ROTTURE_COPIE = [
-  ['p, li { line-height: 1.72; }', '', 'una regola che sparisce dalla copia'],
-  ['line-height: 1.72', 'line-height: 1.9', 'una regola che nella copia dice un\'altra cosa'],
-  ['@keyframes respiro', '@keyframes respiro-che-non-esiste', 'i fotogrammi di un\'animazione che non ci sono piu\''],
+  ['anime-vetrina.css', 'p, li { line-height: 1.72; }', '', 'una regola che sparisce dalla copia'],
+  ['anime-vetrina.css', 'line-height: 1.72', 'line-height: 1.9', 'una regola che nella copia dice un\'altra cosa'],
+  ['anime-vetrina.css', '@keyframes respiro', '@keyframes respiro-che-non-esiste', 'i fotogrammi di un\'animazione che non ci sono piu\''],
+  ['style-vetrina.css', '.cookie-banner, .aiuto-banner { position: fixed;', '.cookie-banner-sparita { position: fixed;', 'una regola di style.css che sparisce dalla sua copia'],
+  ['style-vetrina.css', '--dur-micro: .16s;', '--dur-micro: .5s;', 'una regola di style.css che nella copia dice un\'altra cosa'],
 ];
 
 if (process.argv.includes('--selftest')) {
   const io = fileURLToPath(import.meta.url);
-  const via = path.join(RAD, 'src/web/public/anime-vetrina.css');
   let cieche = 0;
-  for (const [da, a, che] of ROTTURE_COPIE) {
+  for (const [file, da, a, che] of ROTTURE_COPIE) {
+    const via = path.join(RAD, 'src/web/public', file);
     const orig = fs.readFileSync(via, 'utf8');
     if (!orig.includes(da)) { console.log(`  ?  ${che}  → non so piu' come romperlo: l'autoprova e' scaduta`); cieche++; continue; }
     fs.writeFileSync(via, orig.replace(da, a));
@@ -79,7 +81,15 @@ const SELFTEST = process.argv.includes('--selftest');
 // da 73,3 a 77,3 kB. Una versione ridotta solo per la vetrina ci sarebbe stata
 // sotto, ma sarebbe stata una seconda copia del disegno da tenere uguale alla
 // prima. Il tetto va da 75 a 80: la misura di oggi, con la stessa aria sopra.
-const TETTO_KB = 80;
+//
+// Lo stesso giorno la home e' arrivata a 80,0 kB: il carattere di riserva con
+// le misure di quello vero (0,2 kB) e il ripasso dei tasti (0,4 kB). Invece di
+// alzare il tetto si e' tolta la fetta grossa rimasta: style.css, il foglio del
+// pannello, 28 kB compressi, di cui la vetrina usa 143 regole su 1374. Adesso
+// porta style-vetrina.css (4,5 kB), scritta da scripts/copia-vetrina.mjs e
+// sorvegliata qui come la copia di anime.css. La home e' scesa a 56,9 kB, e il
+// tetto scende con lei: 60, la misura di oggi con la stessa aria sopra.
+const TETTO_KB = 60;
 
 let chromium;
 try { ({ chromium } = await import(PLAYWRIGHT)); }
@@ -94,10 +104,17 @@ const GUSCIO = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8');
 const VETRINA = guscioVetrina(GUSCIO, 'it', { kick: true, piani: PIANI });
 const PANNELLO = guscioPannello(GUSCIO);
 
+// Le due copie, e i due fogli interi da cui vengono. Per sorvegliarle si
+// rimette il foglio intero sulla vetrina, subito prima della sua copia, cioe'
+// esattamente dove stava prima: se non cambia niente, la copia e' completa.
+const COPIE = [
+  { madre: 'anime.css', figlia: 'anime-vetrina.css', chiave: 'conanime' },
+  { madre: 'style.css', figlia: 'style-vetrina.css', chiave: 'constyle' },
+];
+const CON = Object.fromEntries(COPIE.map((c) => [c.chiave, VETRINA.replace(
+  `<link rel="stylesheet" href="${c.figlia}">`,
+  `<link rel="stylesheet" href="${c.madre}">\n  <link rel="stylesheet" href="${c.figlia}">`)]));
 // Il guasto del selftest: la vetrina si riporta in casa il pannello.
-const CON_ANIME = VETRINA.replace(
-  '<link rel="stylesheet" href="anime-vetrina.css">',
-  '<link rel="stylesheet" href="anime.css">\n  <link rel="stylesheet" href="anime-vetrina.css">');
 const GRASSA = VETRINA.replace('<script src="vetrina-app.js" defer></script>',
   '<script src="app.js" defer></script>\n  <script src="vetrina-app.js" defer></script>');
 
@@ -108,7 +125,7 @@ const srv = http.createServer((req, res) => {
   if (q === '/' || q === '/index.html') {
     const demo = via.searchParams.get('demo') === '1';
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    if (via.searchParams.get('conanime') === '1') return res.end(CON_ANIME);
+    for (const c of COPIE) if (via.searchParams.get(c.chiave) === '1') return res.end(CON[c.chiave]);
     return res.end(demo ? PANNELLO : (via.searchParams.get('grassa') === '1' ? GRASSA : VETRINA));
   }
   const f = path.join(PUB, q);
@@ -170,7 +187,7 @@ if (SELFTEST) {
 }
 
 
-let misuraCopie = { quante: 0, scollate: 0 };
+let misuraCopie = [];
 // LA COPIA E' UNA COPIA, PAROLA PER PAROLA. Il confronto a schermo dice se
 // manca qualcosa; non dice se una regola copiata e' stata cambiata, perche' una
 // regola che la vetrina sovrascrive comunque puo' scollarsi senza spostare un
@@ -201,14 +218,16 @@ function regoleDi(css) {
   })(pulito, []);
   return fuori;
 }
-{
-  const madre = regoleDi(fs.readFileSync(path.join(PUB, 'anime.css'), 'utf8'));
-  const figlia = regoleDi(fs.readFileSync(path.join(PUB, 'anime-vetrina.css'), 'utf8'));
+misuraCopie = [];
+for (const c of COPIE) {
+  const madre = regoleDi(fs.readFileSync(path.join(PUB, c.madre), 'utf8'));
+  const figlia = regoleDi(fs.readFileSync(path.join(PUB, c.figlia), 'utf8'));
   const scollate = [...figlia].filter((r) => !madre.has(r));
   if (scollate.length) {
-    guai.push(`${scollate.length} regole della copia non esistono piu' uguali in anime.css — la prima: ${scollate[0].slice(0, 120)}`);
+    guai.push(`${scollate.length} regole di ${c.figlia} non esistono piu' uguali in ${c.madre} — la prima: ${scollate[0].slice(0, 120)}`
+      + (c.madre === 'style.css' ? ' (rilancia node scripts/copia-vetrina.mjs)' : ''));
   }
-  misuraCopie = { quante: figlia.size, scollate: scollate.length };
+  misuraCopie.push({ ...c, quante: figlia.size, scollate: scollate.length });
 }
 
 // LE COPIE NON DEVONO SCOLLARSI. `anime-vetrina.css` sono le quarantaquattro
@@ -297,13 +316,14 @@ async function guarda(indirizzo, { largo, acceso }) {
 }
 
 const copie = [];
-for (const caso of [
+for (const casoBase of [
   { nome: 'a riposo', largo: 1280, acceso: false },
   { nome: 'con tutto acceso (avviso, toast, domande aperte, pacchetti)', largo: 1280, acceso: true },
   { nome: 'sul telefono', largo: 390, acceso: false },
-]) {
+]) for (const copia of COPIE) {
+  const caso = { ...casoBase, madre: copia.madre };
   const senza = await guarda('/', caso);
-  const con = await guarda('/?conanime=1', caso);
+  const con = await guarda(`/?${copia.chiave}=1`, caso);
   let diverse = 0;
   let primo = '';
   if (senza.stile.length !== con.stile.length) {
@@ -319,13 +339,13 @@ for (const caso of [
         }
       }
     }
-    if (diverse) guai.push(`${caso.nome}: ${diverse} differenze rimettendo anime.css — la prima: ${primo}`);
+    if (diverse) guai.push(`${caso.nome}: ${diverse} differenze rimettendo ${caso.madre} — la prima: ${primo}`);
   }
   const mancanti = con.anim.filter((x) => !senza.anim.includes(x));
   const doppie = senza.anim.filter((x) => !con.anim.includes(x));
   if (mancanti.length) guai.push(`${caso.nome}: ${mancanti.length} animazioni che la copia non fa partire — la prima: ${mancanti[0]}`);
   if (doppie.length) guai.push(`${caso.nome}: ${doppie.length} animazioni che la copia fa partire in piu' — la prima: ${doppie[0]}`);
-  copie.push({ nome: caso.nome, diverse: diverse + mancanti.length + doppie.length, animazioni: senza.anim.length });
+  copie.push({ nome: caso.nome, madre: caso.madre, diverse: diverse + mancanti.length + doppie.length, animazioni: senza.anim.length });
 }
 
 await b.close();
@@ -336,8 +356,8 @@ console.log('\nLa vetrina non paga il conto del pannello.\n');
 const perTipo = (l, t) => (pesoDi(l, [t]) / 1024).toFixed(1);
 console.log(`  · home:  ${perTipo(casa.chiesti, '.html')} kB di pagina, ${perTipo(casa.chiesti, '.css')} kB di stile, ${perTipo(casa.chiesti, '.js')} kB di script — ${(peso / 1024).toFixed(1)} kB in tutto (gzip)`);
 console.log(`  · script: ${casa.chiesti.filter((r) => r.tipo === '.js').map((r) => r.via).join(', ') || 'nessuno'}`);
-console.log(`  · copie: ${misuraCopie.quante} regole prese da anime.css, tutte uguali all'originale`);
-for (const c of copie) console.log(`  · copie: rimettendo anime.css ${c.nome}, ${c.diverse === 0 ? 'non cambia niente' : c.diverse + ' differenze'}`);
+for (const m of misuraCopie) console.log(`  · copie: ${m.quante} regole prese da ${m.madre}, ${m.scollate ? m.scollate + ' scollate' : 'tutte uguali all\'originale'}`);
+for (const c of copie) console.log(`  · copie: rimettendo ${c.madre} ${c.nome}, ${c.diverse === 0 ? 'non cambia niente' : c.diverse + ' differenze'}`);
 console.log(`  · demo:  ${(pesoDi(demo.chiesti, ['.html', '.js', '.css']) / 1024).toFixed(1)} kB, col pannello intero\n`);
 if (SELFTEST) dice(selftest === true, 'il cancello vede il pannello che rientra dalla finestra');
 const verde = dice(guai.length === 0, 'la home porta solo la sua roba, e sta sotto il tetto', guai.join(' · '));

@@ -174,8 +174,6 @@ summary:focus-visible, select:focus-visible, input:focus-visible, textarea:focus
 .dg-matite.dg-torna { animation-name: dg-torna; animation-fill-mode: both; }
 @keyframes dg-via { to { opacity: 0; } }
 @keyframes dg-torna { from { opacity: 0; } to { opacity: 1; } }
-.dg-esclama { overflow: visible; animation: dg-via 90ms steps(2, jump-end) 260ms forwards; }
-.dg-esclamo-alone { stroke: var(--surface); stroke-width: 7.5; }
-.dg-esclamo { stroke: var(--contorno); stroke-width: 3.2; }
+.dg-ripasso { animation: dg-via 150ms steps(2, jump-end) 260ms forwards; }
 .dg-attesa { opacity: 0; }
 @media print { .dg-attesa { opacity: 1; } }

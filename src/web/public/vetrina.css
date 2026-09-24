@@ -70,7 +70,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-marchio img { display: block; height: 30px; width: auto; }
 .vt-mappa { display: flex; align-items: center; gap: clamp(.5rem, 1.6vw, 1.3rem); flex-wrap: wrap; justify-content: center; }
 .vt-mappa a {
-  font-family: Archivo, system-ui, sans-serif; font-size: .88rem; font-weight: 600;
+  font-family: Archivo, 'Archivo Riserva', system-ui, sans-serif; font-size: .88rem; font-weight: 600;
   color: var(--testo-2); text-decoration: none; padding: .3rem .1rem;
   border-bottom: 2px solid transparent; transition: color .2s ease, border-color .2s ease;
 }
@@ -131,7 +131,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   position: relative; isolation: isolate;
   display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
   min-height: 52px; padding: 0 1.6rem; border-radius: var(--ang-mano-l);
-  font-family: Archivo, system-ui, sans-serif;
+  font-family: Archivo, 'Archivo Riserva', system-ui, sans-serif;
   font-size: 1rem; font-weight: 600; letter-spacing: -.005em; text-decoration: none;
   border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano);
   background: color-mix(in srgb, var(--surface) 80%, transparent);
@@ -241,13 +241,13 @@ body.vetrina em, body.vetrina .vt-corsivo {
 }
 .vt-scena-eti {
   position: absolute; z-index: 2; inset: 0; display: grid; place-items: center;
-  font-family: Archivo, system-ui, sans-serif; font-size: clamp(.7rem, 1.5vw, .95rem);
+  font-family: Archivo, 'Archivo Riserva', system-ui, sans-serif; font-size: clamp(.7rem, 1.5vw, .95rem);
   font-weight: 700; letter-spacing: .46em; text-transform: uppercase;
   color: rgba(239, 238, 239, .13); padding-bottom: 8%;
 }
 .vt-etichetta {
   position: absolute; z-index: 3; display: inline-flex; align-items: center; gap: .4rem;
-  font-family: Archivo, system-ui, sans-serif; font-size: .68rem; font-weight: 700; letter-spacing: .12em;
+  font-family: Archivo, 'Archivo Riserva', system-ui, sans-serif; font-size: .68rem; font-weight: 700; letter-spacing: .12em;
   text-transform: uppercase; padding: .34rem .7rem; border-radius: 999px;
   background: rgba(10, 9, 9, .72); border: 1px solid var(--border-2); color: var(--testo);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
@@ -330,7 +330,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-testa { max-width: 46ch; margin: 0 0 clamp(1.6rem, 4vh, 2.6rem); }
 .vt-testa.centro { margin-inline: auto; text-align: center; }
 .vt-occhio {
-  display: block; font-family: Archivo, system-ui, sans-serif;
+  display: block; font-family: Archivo, 'Archivo Riserva', system-ui, sans-serif;
   font-size: .66rem; font-weight: 600; letter-spacing: .3em; text-transform: uppercase;
   color: var(--acc); margin-bottom: .7rem;
 }
@@ -387,14 +387,14 @@ body.vetrina em, body.vetrina .vt-corsivo {
 }
 .vt-piano.punta { border-color: var(--acc-bordo); box-shadow: 0 0 0 1px var(--acc-tint), 0 30px 70px -40px var(--acc-tint); }
 .vt-piano-tag {
-  align-self: flex-start; font-family: Archivo, system-ui, sans-serif;
+  align-self: flex-start; font-family: Archivo, 'Archivo Riserva', system-ui, sans-serif;
   font-size: .6rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
   padding: .26rem .6rem; border-radius: 999px; color: var(--acc);
   background: var(--acc-tint); border: 1px solid var(--acc-bordo);
 }
 .vt-piano h3 { margin: 0; font-size: 1.3rem; font-weight: 700; letter-spacing: -.02em; }
 .vt-prezzo { display: flex; align-items: baseline; gap: .35rem; font-variant-numeric: tabular-nums; }
-.vt-prezzo b { font-family: Archivo, system-ui, sans-serif; font-size: 2.5rem; font-weight: 700; letter-spacing: -.04em; line-height: 1; }
+.vt-prezzo b { font-family: Archivo, 'Archivo Riserva', system-ui, sans-serif; font-size: 2.5rem; font-weight: 700; letter-spacing: -.04em; line-height: 1; }
 .vt-prezzo span { font-size: .88rem; color: var(--testo-3); }
 .vt-piano > p { margin: 0; font-size: .9rem; line-height: 1.55; color: var(--testo-2); }
 .vt-elenco { list-style: none; margin: .2rem 0 0; padding: 0; display: grid; gap: .48rem; }
@@ -404,7 +404,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
 
 .vt-pacchi { margin-top: 18px; }
 .vt-pacchi-tit {
-  margin: 0 0 .7rem; font-family: Archivo, system-ui, sans-serif;
+  margin: 0 0 .7rem; font-family: Archivo, 'Archivo Riserva', system-ui, sans-serif;
   font-size: .68rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
   color: var(--testo-2);
 }
@@ -421,7 +421,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-pacco > p { flex: 1 1 auto; }
 .vt-pacco-sconto {
   position: absolute; top: .95rem; right: 1rem; z-index: 2;
-  font-family: Archivo, system-ui, sans-serif; font-size: .66rem; font-weight: 700;
+  font-family: Archivo, 'Archivo Riserva', system-ui, sans-serif; font-size: .66rem; font-weight: 700;
   letter-spacing: .06em; padding: .2rem .5rem; border-radius: 999px;
   color: var(--verde); background: var(--verde-soft); border: 1px solid var(--verde-bordo);
   font-variant-numeric: tabular-nums;
@@ -431,7 +431,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   font-variant-numeric: tabular-nums;
 }
 .vt-pacco-prezzo s { font-size: .82rem; color: var(--testo-3); text-decoration-thickness: 1px; }
-.vt-pacco-prezzo b { font-family: Archivo, system-ui, sans-serif; font-size: 1.32rem; font-weight: 700; letter-spacing: -.03em; }
+.vt-pacco-prezzo b { font-family: Archivo, 'Archivo Riserva', system-ui, sans-serif; font-size: 1.32rem; font-weight: 700; letter-spacing: -.03em; }
 .vt-pacco-prezzo i { font-style: normal; font-size: .8rem; color: var(--testo-3); }
 .vt-pacco:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
 .vt-pacco.on { border-color: var(--acc-bordo); background: linear-gradient(168deg, var(--acc-soft), var(--surface)); }
@@ -456,7 +456,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   font-variant-numeric: tabular-nums;
 }
 .vt-cap-conta b {
-  font-family: Archivo, system-ui, sans-serif; font-size: 1.15rem;
+  font-family: Archivo, 'Archivo Riserva', system-ui, sans-serif; font-size: 1.15rem;
   font-weight: 700; letter-spacing: -.02em; color: var(--testo);
 }
 .vt-cap-conta span { color: var(--testo-3); margin: 0 .35rem; }
@@ -502,7 +502,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   border: 1px solid var(--border-2); background: var(--surface-2);
 }
 .vt-conto-tot { font-variant-numeric: tabular-nums; }
-.vt-conto-tot b { font-family: Archivo, system-ui, sans-serif; font-size: 1.7rem; font-weight: 700; letter-spacing: -.03em; }
+.vt-conto-tot b { font-family: Archivo, 'Archivo Riserva', system-ui, sans-serif; font-size: 1.7rem; font-weight: 700; letter-spacing: -.03em; }
 .vt-conto-tot span { font-size: .82rem; color: var(--testo-3); margin-left: .3rem; }
 .vt-conto .vt-btn { margin-left: auto; min-height: 46px; }
 .vt-dcbox {

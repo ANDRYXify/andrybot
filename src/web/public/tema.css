@@ -59,8 +59,8 @@
   --gutter: .95rem;
   --gutter-largo: 1.7rem;
 
-  --mano: 'Permanent Marker', 'Trebuchet MS', system-ui, sans-serif;
-  --testo-font: Archivo, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mano: 'Permanent Marker', 'Mano Riserva', 'Trebuchet MS', system-ui, sans-serif;
+  --testo-font: Archivo, 'Archivo Riserva', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --ang-mano: 5px 3px 4px 3px / 3px 5px 3px 4px;
   --ang-mano-l: 4px 2px 3px 2px / 2px 4px 2px 3px;
   --tratto-mano: var(--tratto-2);

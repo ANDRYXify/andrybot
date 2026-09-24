@@ -380,7 +380,7 @@ export const GUIDE = [
         '<strong>Non dare per scontato che la moderazione si comporti uguale.</strong> Prova un messaggio che dovrebbe essere bloccato, su entrambe, prima di fidarti.',
       ] },
       { h2: DENTRO, p: [
-        'Kick si collega dalla scheda <a href="/pannello#account">Il tuo account</a>, con lo stesso pulsante di Twitch.',
+        'Kick si collega dalla scheda <a href="/#account">Il tuo account</a>, con lo stesso pulsante di Twitch.',
       ], passi: [
         { t: 'Apri la scheda «Il tuo account» e premi «Registrati con Kick»', d: 'Ti porta su Kick, non su un modulo dove scrivi la password qui. Se un servizio ti chiede la password di Kick dentro il suo sito, chiudi la pagina.' },
         { t: 'Leggi i quattro permessi di base', d: 'Sapere chi ha autorizzato, leggere titolo e stato della diretta, scrivere in chat, ricevere gli eventi. Sono il minimo perché il bot funzioni: con meno, ammutolisce.' },
@@ -432,7 +432,7 @@ export const GUIDE = [
         'Quando valuti un bot per la moderazione, guarda proprio questo: cosa fa da solo, e cosa fa quando non è sicuro.',
       ] },
       { h2: DENTRO, p: [
-        'La moderazione sta nella scheda <a href="/pannello#regole">Moderazione</a>, e si accende un pezzo per volta.',
+        'La moderazione sta nella scheda <a href="/#regole">Moderazione</a>, e si accende un pezzo per volta.',
       ], passi: [
         { t: 'Accendi solo la regola che ti serve', d: 'Link (scegliendo chi può postarli: tutti, abbonati, VIP, mod), ripetizioni, maiuscole, menzioni, flood, simboli, messaggi troppo lunghi, raffiche di emoji. Ognuno è un interruttore suo, perché ogni chat ha il suo problema — accenderli tutti insieme è l\'errore di cui sopra.' },
         { t: 'Scrivi le parole vietate, una per riga', d: 'Il bot non le dirà mai e richiama chi le usa. Tienile poche e precise: un elenco lungo colpisce parole innocenti dentro altre parole.' },
@@ -487,7 +487,7 @@ const CSS = `
 :root[data-theme="dark"]{color-scheme:dark;${TAV.scuro}}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{position:relative;isolation:isolate;margin:0;background:var(--bg);color:var(--testo);font:16px/1.7 Archivo,system-ui,-apple-system,'Segoe UI',sans-serif;font-synthesis-weight:none}
+body{position:relative;isolation:isolate;margin:0;background:var(--bg);color:var(--testo);font:16px/1.7 Archivo,'Archivo Riserva',system-ui,-apple-system,'Segoe UI',sans-serif;font-synthesis-weight:none}
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:calc(var(--retino-forza,1) * .5);background-image:var(--retino);background-size:var(--retino-passo)}
 .g-testata{border-bottom:var(--contorno-sp) solid var(--contorno);background:var(--surface)}
 .g-testata div{max-width:760px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}

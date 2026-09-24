@@ -133,6 +133,43 @@ Il collaudo (`test/contratto/impronte.test.mjs`) monta un'app Express vera con
 la STESSA funzione del server (`montaStatici`): un collaudo su una copia che gli
 somiglia non dice niente su quello che gira.
 
+## 2 bis. Il carattere che arriva tardi non sposta più niente
+
+Sul telefono con rete lenta le guide e i manuali si disegnano a 0,7 s, e i due
+caratteri (Archivo per il testo, Permanent Marker per i titoli) arrivano a
+1,8-1,9 s. Fino ad allora il testo esce col carattere di sistema, che ha altre
+larghezze: quando arriva quello vero le righe vanno a capo in un altro punto e
+tutto scivola. Misurato sul sito: 0,17 su guide e manuali, 0,065 sulle novità,
+con la soglia buona di Google a 0,1.
+
+Il difetto si riproduce in locale facendo arrivare i caratteri due secondi dopo
+la pagina (è la condizione vera, non una media): prima della correzione 0,17 e
+0,27 sulla guida principale, 0,17 sul manuale dei giochi.
+
+La correzione è un carattere di riserva **con le misure di quello vero**
+(`'Archivo Riserva'` e `'Mano Riserva'` in `font.css`, subito dopo il carattere
+vero in ogni pila). È Arial, o Helvetica, o Liberation Sans, che hanno le
+stesse metriche, stretto o allargato con `size-adjust` perché occupi la stessa
+larghezza, e con ascendenti e discendenti riportati a quelli del carattere
+vero. I numeri non sono a occhio: vengono dalle tabelle dei due caratteri
+(`hmtx`, `hhea`, `OS/2`), e la larghezza è quella di tutto il testo delle guide
+e dei manuali (143.000 caratteri), ai pesi usati davvero (Archivo è variabile e
+il suo peso di base è 600, non 400):
+
+| riserva | per | size-adjust | ascent | descent |
+| --- | --- | --- | --- | --- |
+| Archivo Riserva, normale | testo | 98,05% | 89,54% | 21,42% |
+| Archivo Riserva, grassetto | testo | 97,71% | 89,85% | 21,49% |
+| Mano Riserva | titoli (misurata sui 219 titoli veri) | 113,7% | 97,57% | 27,91% |
+
+Dopo: 0 su sei pagine su otto, 0,015 e 0,046 sulle altre due, dove una riga al
+limite va a capo una parola prima. Lo zero assoluto si avrebbe solo senza
+scambio (`font-display: optional`): al primo accesso il testo resterebbe in
+Arial e i titoli perderebbero il pennarello. Non vale la pena.
+
+Il carattere non si chiede in anticipo (`preload`) nelle guide: provato, lo
+spostamento non cambia e il primo disegno arriva 90 ms dopo.
+
 ## Cosa NON e stato fatto, e perche
 
 `content-visibility: auto` sulle sezioni sotto la piega e il consiglio standard
@@ -249,3 +286,41 @@ Resta `style.css`: 118 regole usate su 1230, cioe' altri 25 kB. Li' le regole
 che servono sono SPARSE — l'ultima utile e' la numero 1007 su 1230 — quindi non
 esiste un punto dove tagliare, e la copia sarebbe di centoventi regole invece di
 quarantaquattro. Si e' preferito fermarsi: e' una scelta, non una dimenticanza.
+
+### La terza fetta: style.css
+
+Il 24 settembre 2026 la home ha toccato il tetto (80,0 kB), e le recensioni in
+vetrina stavano per aggiungere altro. La domanda del cancello è «cosa è
+rientrato dalla finestra?», non «alzo il tetto?»: e la fetta grossa rimasta era
+proprio questa. Adesso la vetrina carica `style-vetrina.css`: 143 regole su
+1374, 4,5 kB compressi invece di 28.
+
+Le regole sono sparse, quindi a mano sarebbe stato un lavoro da sbagliare. Le
+sceglie `scripts/copia-vetrina.mjs`. Una regola si tiene se il suo selettore
+trova un elemento della vetrina, in uno qualunque degli stati: a riposo o con
+tutto acceso, a 1280 e a 390 px, in tema chiaro e scuro, in modalità leggera e
+no, nelle tre lingue. Il selettore si cerca senza gli stati del puntatore e
+senza gli strati: il `:hover` di un tasto si tiene se il tasto c'è. I
+fotogrammi si tengono se li nomina una regola tenuta o un altro foglio della
+vetrina. Le regole si copiano come sono scritte, nello stesso ordine e dentro
+gli stessi `@media`, e il file sta nella catena dove stava `style.css`.
+
+Il cancello della dieta la sorveglia come la copia di `anime.css`: ogni regola
+esiste identica in `style.css`, e rimettendo `style.css` sulla vetrina, nei tre
+stati, lo stile calcolato di ogni elemento e l'elenco delle animazioni vive non
+cambiano. La prima prova ha trovato proprio un buco dello strumento: i
+fotogrammi `shonen-entra` stanno in `style.css` ma li usa `vetrina.css`, e la
+copia non li aveva. Se domani il pannello cambia una regola che la vetrina usa,
+il cancello diventa rosso e dice di rilanciare lo strumento.
+
+Cosa ha dato, misurato:
+
+| | prima | dopo |
+| --- | ---: | ---: |
+| home, HTML + CSS + JS (gzip) | 80,0 kB | **56,9 kB** |
+| byte che bloccano il primo disegno | +24 kB | — |
+| thread occupato da stile e impaginazione, telefono 4× | ~450 ms | ~450 ms |
+
+Il tempo del thread non si muove: dipende da quanti elementi ha la vetrina e da
+come sono disegnati, non da quanto pesa il foglio. Quello che cambia è quanto si
+scarica prima di poter disegnare: su una 4G lenta sono circa 0,12 s.
