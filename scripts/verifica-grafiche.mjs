@@ -180,6 +180,8 @@ function casi({ soloAnimati = false, pochi = false } = {}) {
     fuori.push({ nome: `${t.id} · live col QR`, c: { tema: t.id, sfondo: 'tema', tipo: 'live', qr: true }, animato: t.animato });
     fuori.push({ nome: `${t.id} · storia della settimana`, c: { tema: t.id, sfondo: 'tema', tipo: 'programmazione', qr: false, formato: 'storia' }, animato: t.animato });
     fuori.push({ nome: `${t.id} · storia live col QR`, c: { tema: t.id, sfondo: 'tema', tipo: 'live', qr: true, formato: 'storia' }, animato: t.animato });
+    fuori.push({ nome: `${t.id} · stasera alle`, c: { tema: t.id, sfondo: 'tema', tipo: 'prossima', qr: false }, animato: t.animato });
+    fuori.push({ nome: `${t.id} · storia stasera col QR`, c: { tema: t.id, sfondo: 'tema', tipo: 'prossima', qr: true, formato: 'storia', quandoTesto: 'Sabato pomeriggio alle 15:30 con tutta la chat' }, animato: t.animato });
   }
   if (!soloAnimati) {
     for (const id of PRONTI) {

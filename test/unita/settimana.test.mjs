@@ -205,6 +205,7 @@ test('la prossima diretta e\' il primo giorno in onda che deve ancora cominciare
   const partita = S.prossimaDiretta(sett, new Date('2026-09-21T19:00:00Z'));
   assert.equal(partita.giorno, 3, 'all\'ora esatta non e\' piu\' «la prossima»');
   assert.equal(S.prossimaDiretta(sett, new Date('2026-09-21T19:00:00Z')).categoria, 'Minecraft');
+  assert.match(p.categoriaId, /^\d+$/, 'e l\'id della categoria, per la copertina della storia «Stasera alle…»');
 });
 
 test('la prossima diretta segue l\'ora scritta anche quando cambia l\'ora', () => {

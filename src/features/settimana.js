@@ -131,7 +131,8 @@ export function prossimaDiretta(sett, adesso = new Date()) {
     if (!inOnda(g)) return;
     const t = prossimaVolta(fuso, [i], g.ora, adesso);
     if (!t || (prima && prima.quando <= t.getTime())) return;
-    prima = { quando: t.getTime(), giorno: i, ora: g.ora, att: g.att, categoria: String(cat[chiaveAtt(g.att)]?.name || ''), fuso };
+    const c = cat[chiaveAtt(g.att)];
+    prima = { quando: t.getTime(), giorno: i, ora: g.ora, att: g.att, categoria: String(c?.name || ''), categoriaId: /^\d{1,12}$/.test(String(c?.id || '')) ? String(c.id) : '', fuso };
   });
   return prima;
 }

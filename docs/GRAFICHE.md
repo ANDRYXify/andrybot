@@ -285,3 +285,100 @@ un'animazione che gira fuori dalla scheda, una scheda che si riaggancia a ogni
 ingresso. `test/unita/graf-scene.test.mjs` prova la geometria senza browser,
 `test/contratto/grafiche.test.mjs` che temi, stili pronti, motore e server
 dicano la stessa cosa.
+
+## 10. I pezzi si spostano a mano
+
+Sull'anteprima si prende un pezzo e lo si porta dove si vuole: il logo, il
+nome, «In diretta ora», il titolo, il gioco, il sottotitolo, il QR col suo
+indirizzo; nella settimana l'occhiello e il blocco delle righe. Il filo sotto
+l'intestazione e la barra in fondo restano dove sono: sono la cornice, non un
+contenuto.
+
+- **Dove vive lo spostamento.** In `grafDisposizione`, dopo la composizione di
+  serie: ogni pezzo spostato si trasla (`_grafSposta` muove `x`, `y` e `base`,
+  anche dentro il QR e nelle righe, e lascia stare l'orizzonte della scena).
+  Tutto quello che disegna passa da lì, quindi anteprima, PNG, GIF, video,
+  «Manda» e la storia che parte da sola escono uguali senza ripeterlo.
+- **Per formato, o insieme.** Post e storia hanno forme diverse, e ognuno
+  tiene i suoi spostamenti (`spostati[tipo][formato]`). Con «Sposta insieme
+  post e storia» (acceso di serie, `spostaInsieme`) lo stesso spostamento va
+  a tutti e due, ognuno partendo dalla sua posizione: si sistema una volta
+  sola e le due grafiche restano composte allo stesso modo. Spento, si sposta
+  solo il formato che hai davanti.
+- **Si prende quello che è disegnato.** Mentre disegna, ogni pezzo scrive il
+  suo rettangolo vero (`_grafSegna`: il testo misurato, il riquadro del QR, le
+  righe), e il puntatore cerca lì. Non c'è una seconda geometria da tenere
+  allineata a mano.
+- **Dove non si può.** `grafLimiti` dà, per un pezzo, quanto può andare a
+  destra, a sinistra, su e giù: dentro la tela, e nella storia fuori dalle
+  fasce dove Instagram mette le sue scritte. Spostando insieme si prendono i
+  limiti di tutti e due i formati e se ne tiene la parte comune
+  (`grafIncrocia`); il rettangolo del pezzo nell'altro formato si misura
+  disegnandolo su una tela di lavoro, con la stessa funzione dell'anteprima.
+  Il contrasto non si rompe spostando, perché ogni scritta decide il suo colore
+  guardando i pixel che ha sotto (capitolo 4).
+- **Le guide.** Mentre trascini compaiono i margini, i centri e, velato, lo
+  spazio dove il pezzo non può andare, con scritto perché: «Qui Instagram
+  copre la storia», oppure, spostando insieme, «Qui uscirebbe dal post» o «Qui
+  nella storia finirebbe sotto Instagram». Il perché viene dal limite che
+  ferma davvero il pezzo da quella parte.
+- **Agganci.** Ogni lato si aggancia alla sua guida, entro 14 px: il bordo
+  sinistro al margine sinistro, il destro al destro, il centro al centro (e
+  così in verticale). Un centro agganciato a un margine lascerebbe mezzo pezzo
+  fuori dall'area buona. Un aggancio che porterebbe il pezzo oltre i limiti non
+  si prende.
+- **Un pezzo sopra un altro.** Se il pezzo preso copre un altro pezzo, tutti e
+  due si contornano in ambra e compare «Copre un altro pezzo». Si misura sulle
+  parti vere, non sull'ingombro: il QR e il suo indirizzo sono un pezzo solo
+  con uno spazio vuoto in mezzo, e lì si può stare (`grafCoperti`).
+- **Tastiera.** L'anteprima prende il fuoco: le frecce spostano il pezzo scelto
+  di 4 px, con Maiusc di 20, senza agganci, così ogni pressione sposta
+  davvero.
+- **Col dito.** Il tocco si prende solo se parte da un pezzo: altrove si
+  scorre la pagina, anche sull'anteprima che sul telefono resta in cima.
+- **Rimetti a posto** toglie gli spostamenti del formato che hai davanti, e
+  spostando insieme anche quelli dell'altro. Uno spostamento accende
+  «modifiche da salvare», come un campo scritto.
+
+Il server tiene solo i pezzi che il pannello sa spostare, con numeri interi
+dentro la tela, e uno spostamento nullo non si salva. La lista è la stessa da
+tutte e due le parti, e `test/contratto/grafiche.test.mjs` lo controlla.
+
+## 11. «Stasera alle…»
+
+La terza grafica annuncia la prossima diretta: «Stasera alle 21:00», l'indirizzo
+dove trovarti, e dietro la copertina del gioco.
+
+- **Da dove arriva.** Dalla Settimana, con la regola che usa già la Home
+  (`prossimaDiretta` in `features/settimana.js`): il primo giorno in onda che
+  deve ancora cominciare, nel fuso della settimana. La regola restituisce anche
+  l'id della categoria Twitch legata a quell'attività, ed è quello che porta la
+  copertina. Il testo del giorno è quello della Home (`_quandoProssima`): oggi
+  di sera «Stasera», oggi di giorno «Oggi», poi «Domani» e il nome del giorno.
+  Si può scrivere a mano; vuoto, si aggiorna da solo.
+- **La copertina** passa dal nostro indirizzo
+  (`/api/streamer/grafiche/copertina/<id>`): una tela che disegna un'immagine
+  d'altra origine non si esporta più. L'indirizzo vero lo dà Twitch per quella
+  categoria (`box_art_url`): per i giochi più nuovi il file non si chiama come
+  l'id, e l'indirizzo «indovinato» rimanda a un'immagine vuota. Si accetta solo
+  un file sul posto delle copertine di Twitch, JPEG o PNG, senza rimandi e
+  sotto i 3 MB: da lì non si scarica altro. Sopra la
+  copertina una sfumatura scura in cima e in fondo tiene leggibili il nome e il
+  logo. Senza copertina resta lo sfondo del tema, e il gioco va nella pillola.
+- **Gli adesivi.** Quando e dove stanno su due adesivi bianchi, testo nero: il
+  contrasto regge per costruzione, su qualunque copertina. Un testo lungo va su
+  due righe, spezzato dove le due righe vengono più pari; se una riga ancora
+  non ci sta (un indirizzo è una parola sola) il carattere scende fino a farla
+  stare intera, e solo sotto il minimo si taglia. Un indirizzo tagliato non
+  porta da nessuna parte. La misura dell'adesivo la calcola una funzione sola
+  (`grafAdesivoForma`), che usano sia la disposizione sia il disegno: il
+  rettangolo che si prende col mouse è quello disegnato.
+- **Dove stanno.** Con la copertina il blocco (pillola, quando, dove) sta in
+  basso, e l'immagine fa da soggetto; senza, sta al centro dello spazio
+  libero sotto l'intestazione, con la pillola del gioco centrata come gli
+  adesivi.
+- **Il link.** L'adesivo «Link» di Instagram non si può mettere da fuori: la
+  grafica scrive l'indirizzo, e il pannello dice di metterci sopra l'adesivo
+  dall'app.
+- Si sposta come le altre (capitolo 10): i pezzi sono il logo, il nome, i due
+  adesivi, la pillola e il QR.

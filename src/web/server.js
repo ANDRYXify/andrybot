@@ -162,6 +162,11 @@ const CHIAVE_EL = /^(alert|chat|wf|ws|musica|timer|treno|pen|goal:[a-z0-9_-]{1,2
 // passano il caricamento dei file di un alert e la sua prova. Una lista sola,
 // cosi' un evento non si prova in una scheda e si rifiuta nell'altra.
 const ALERT_KINDS = ['follow', 'sub', 'cheer', 'raid', 'donazione'];
+const PEZZI_GRAFICHE = {
+  live: ['logo', 'handle', 'badge', 'titolo', 'pillola', 'sotto', 'qr'],
+  programmazione: ['logo', 'handle', 'occhiello', 'titolo', 'righe', 'qr'],
+  prossima: ['logo', 'handle', 'quando', 'dove', 'pillola', 'qr'],
+};
 const CANALE_IN_VIA = LOGIN_RE.source.replace(/^\^|\$$/g, '');
 const RE_CANALE_IN_VIA = new RegExp(`^/(${CANALE_IN_VIA})/?$`, 'i');
 const RE_DONA_IN_VIA = new RegExp(`^/(${CANALE_IN_VIA})(/privacy)?/?$`, 'i');
@@ -6171,8 +6176,25 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
         }
       }
       const tra = (v, voci, base) => (voci.includes(v) ? v : base);
+      // I pezzi spostati a mano sull'anteprima: per tipo e per formato, solo i
+      // pezzi che il pannello sa spostare (GR_PEZZI in app.js, lo controlla un
+      // test), numeri interi dentro la tela. Uno spostamento nullo non si tiene.
+      const spostati = {};
+      for (const [tp, pezzi] of Object.entries(PEZZI_GRAFICHE)) {
+        for (const f of ['post', 'storia']) {
+          const dentro = gr.spostati?.[tp]?.[f];
+          if (!dentro || typeof dentro !== 'object') continue;
+          for (const k of pezzi) {
+            const dx = Math.round(Number(dentro[k]?.dx)), dy = Math.round(Number(dentro[k]?.dy));
+            if (!Number.isFinite(dx) || !Number.isFinite(dy) || (!dx && !dy)) continue;
+            spostati[tp] = spostati[tp] || {};
+            spostati[tp][f] = spostati[tp][f] || {};
+            spostati[tp][f][k] = { dx: Math.max(-1080, Math.min(1080, dx)), dy: Math.max(-1920, Math.min(1920, dy)) };
+          }
+        }
+      }
       out.grafiche = {
-        tipo: ['programmazione', 'live'].includes(gr.tipo) ? gr.tipo : 'programmazione',
+        tipo: ['programmazione', 'live', 'prossima'].includes(gr.tipo) ? gr.tipo : 'programmazione',
         tema: str(gr.tema, 20),
         accento: /^#[0-9a-fA-F]{6}$/.test(String(gr.accento || '')) ? String(gr.accento) : '',
         accento2: /^#[0-9a-fA-F]{6}$/.test(String(gr.accento2 || '')) ? String(gr.accento2) : '',
@@ -6187,12 +6209,14 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
         titolo: str(gr.titolo, 40), titoloLive: str(gr.titoloLive, 40), handle: str(gr.handle, 40), logo: str(gr.logo, 8),
         logoImg: imgOk(logoImg) ? logoImg : '',
         gioco: str(gr.gioco, 40), sottotitolo: str(gr.sottotitolo, 60),
+        quandoTesto: str(gr.quandoTesto, 40), copertina: gr.copertina !== false,
         sfondo: ['tema', 'tinta', 'immagine'].includes(gr.sfondo) ? gr.sfondo : 'tema',
         sfondoColore: /^#[0-9a-fA-F]{6}$/.test(String(gr.sfondoColore || '')) ? String(gr.sfondoColore) : '',
         sfondoImg: imgOk(sfImg) ? sfImg : '',
         qr: !!gr.qr,                                        // stampa il QR + link del canale
         dest: gr.dest === 'twitch' ? 'twitch' : 'u',        // destinazione: pagina /u o Twitch
         formato: tra(gr.formato, ['post', 'storia'], 'post'),
+        spostati, spostaInsieme: gr.spostaInsieme !== false,
         giorni,
       };
     }
@@ -6982,6 +7006,35 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       // mostra invece di ripeterli, e un giorno non dicono due cose diverse.
       limiti: { colori: pubblicita.COLORI, preavvisoMin: pubblicita.PREAVVISO_MIN,
         preavvisoMax: pubblicita.PREAVVISO_MAX, tolleranzaMax: pubblicita.TOLLERANZA_MAX } });
+  }));
+
+  // LA COPERTINA DI UN GIOCO, dal nostro indirizzo. La storia «Stasera alle…»
+  // la mette sullo sfondo, e una tela che disegna un'immagine d'altra origine
+  // non si puo' piu' esportare: passa da qui. L'indirizzo lo da' Twitch per
+  // quella categoria (per i giochi nuovi il file non si chiama come l'id), e si
+  // accetta solo se sta sul posto delle copertine di Twitch, senza rimandi:
+  // da qui non si scarica altro.
+  const copertine = new Map();   // id → { buf, tipo, ts }
+  const COPERTINA = /^https:\/\/static-cdn\.jtvnw\.net\/ttv-boxart\/[\w.-]+-1080x1440\.(jpg|jpeg|png)$/;
+  app.get('/api/streamer/grafiche/copertina/:id', requireLogin, wrap(async (req, res) => {
+    const id = String(req.params.id || '');
+    if (!/^\d{1,12}$/.test(id)) return res.status(400).end();
+    let c = copertine.get(id);
+    if (!c || Date.now() - c.ts > 24 * 3600_000) {
+      const g = await helix.getGame(id).catch(() => null);
+      const url = String(g?.boxArt || '').replace('{width}x{height}', '1080x1440');
+      if (!COPERTINA.test(url)) return res.status(404).end();
+      const r = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(8000) }).catch(() => null);
+      const tipo = (r?.headers.get('content-type') || '').split(';')[0].trim();
+      if (!r?.ok || !['image/jpeg', 'image/png'].includes(tipo)) return res.status(404).end();
+      const buf = Buffer.from(await r.arrayBuffer());
+      if (buf.length > 3_000_000) return res.status(404).end();
+      c = { buf, tipo, ts: Date.now() };
+      if (copertine.size >= 60) copertine.delete(copertine.keys().next().value);
+      copertine.set(id, c);
+    }
+    res.set('Content-Type', c.tipo); res.set('Cache-Control', 'private, max-age=86400');
+    res.send(c.buf);
   }));
 
   // ADESSO: quello che la Home dice appena apri il pannello. Sei in onda? Da

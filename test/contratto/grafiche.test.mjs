@@ -164,7 +164,8 @@ test('«Metti nella storia»: tre stati che si vedono, e parte sempre la storia'
   assert.ok(p.indexOf('id="gr-ig"') > 0 && p.indexOf('id="gr-ig"') < p.indexOf('class="gr-tipo"'), 'in cima alla scheda, prima di tutto il resto');
   const i = APP.slice(APP.indexOf('function initGrafiche()'), APP.indexOf('function problemaHtml('));
   assert.ok(i.includes("immagine: grafJpeg({ ...c, formato: 'storia' })"), 'nella storia va sempre la storia, anche se stai guardando il post');
-  assert.ok(i.includes('_grafRiprendi = () => { c.giorni = grafGiorni(); ridisegna(); caricaStoriaIg(); };'), 'tornando nella scheda, lo stato si rilegge: magari Instagram l\'hai appena collegato');
+  assert.ok(i.includes('_grafRiprendi = () => { c.giorni = grafGiorni(); ridisegna(); caricaStoriaIg();'), 'tornando nella scheda, lo stato si rilegge: magari Instagram l\'hai appena collegato');
+  assert.match(i, /_grafRiprendi = [^\n]*if \(c\.tipo === 'prossima'\) caricaProssima\(\);/, 'e la prossima diretta, che nel frattempo puo\' essere cambiata');
   const get = SRV.slice(SRV.indexOf("app.get('/api/streamer/grafiche/storia'"), SRV.indexOf("app.post('/api/streamer/grafiche/storia'"));
   assert.match(get, /requireOwner/);
   assert.ok(get.includes('ig: await storiaIgPossibile(login)'), 'si chiede come per la Settimana');
@@ -211,4 +212,96 @@ test('la settimana e «Live ora» hanno ognuna il suo titolo', () => {
   assert.ok(APP.includes("grafTitolo(ctx, sc, pal, c, lay, (c.titolo || L('LA SETTIMANA', 'THE WEEK', 'LA SEMANA')).toUpperCase());"));
   assert.ok(APP.includes("c[c.tipo === 'live' ? 'titoloLive' : 'titolo'] = e.target.value;"), 'il campo scrive il titolo della grafica che hai davanti');
   assert.match(SRV, /titoloLive: str\(gr\.titoloLive, 40\)/, 'e il server lo tiene');
+});
+
+// I PEZZI SI SPOSTANO A MANO (docs/GRAFICHE.md, capitolo 10). Lo spostamento sta
+// dentro la disposizione, quindi anteprima, PNG, GIF, video e «Manda» lo
+// rispettano tutti; il server tiene solo i pezzi che il pannello sa spostare.
+test('pannello e server spostano gli stessi pezzi', () => {
+  const pezziDi = (testo, nome) => {
+    const blocco = testo.slice(testo.indexOf(`const ${nome} = {`), testo.indexOf('};', testo.indexOf(`const ${nome} = {`)));
+    return Object.fromEntries([...blocco.matchAll(/(\w+): \[([^\]]*)\]/g)].map(([, k, v]) => [k, [...v.matchAll(/'(\w+)'/g)].map((m) => m[1])]));
+  };
+  const nelPannello = pezziDi(APP, 'GR_PEZZI'), nelServer = pezziDi(SRV, 'PEZZI_GRAFICHE');
+  assert.ok(nelPannello.live?.length >= 5 && nelPannello.programmazione?.length >= 5, 'le liste si leggono');
+  assert.deepEqual(nelServer, nelPannello);
+  assert.match(SRV, /formato: tra\(gr\.formato, \['post', 'storia'\], 'post'\),\n\s*spostati, spostaInsieme: gr\.spostaInsieme !== false,/, 'il server salva gli spostamenti, e se post e storia si spostano insieme');
+});
+
+test('uno spostamento muove il pezzo intero, e non la scena', () => {
+  const corpo = APP.slice(APP.indexOf('function _grafSposta('), APP.indexOf('\n}\n', APP.indexOf('function _grafSposta(')) + 2);
+  const ctx = vm.createContext({});
+  vm.runInContext(corpo, ctx);
+  const sposta = (...a) => JSON.parse(JSON.stringify(vm.runInContext('_grafSposta', ctx)(...a)));
+  const qr = { x: 800, y: 1000, w: 190, h: 190, url: { x: 96, base: 1100, px: 36 } };
+  assert.deepEqual(sposta(qr, -40, 25),
+    { x: 760, y: 1025, w: 190, h: 190, url: { x: 56, base: 1125, px: 36 } }, 'il QR si porta dietro il suo indirizzo');
+  const righe = [{ x: 96, y: 452, w: 888, h: 90 }, { x: 96, y: 554, w: 888, h: 90 }];
+  assert.deepEqual(sposta(righe, 0, -30).map((r) => r.y), [422, 524], 'le righe si spostano insieme');
+  assert.equal(sposta({ orizzonte: 560 }, 0, 99).orizzonte, 560, 'l\'orizzonte della scena resta dov\'era');
+  const disp = APP.slice(APP.indexOf('function grafDisposizione(c) {'), APP.indexOf('function _grafDisposizioneBase('));
+  assert.match(disp, /for \(const k of GR_PEZZI\[grafTipoPezzi\(c\)\]\)/, 'ogni grafica passa dagli spostamenti');
+});
+
+test('i pezzi si prendono dove sono disegnati, e ogni pezzo e\' registrato', () => {
+  for (const k of ['logo', 'handle', 'badge', 'titolo', 'pillola', 'sotto', 'qr', 'occhiello', 'righe', 'quando', 'dove']) {
+    assert.ok(APP.includes(`pezzo: '${k}'`) || APP.includes(`_grafSegna('${k}'`) || APP.includes(`grafAdesivo(ctx, lay.${k}, '${k}')`), `«${k}» registra il suo rettangolo mentre si disegna`);
+  }
+  assert.match(APP, /try \{ _grafDisegna\(canvas, c, t, scala\); \} finally \{ canvas\._pezzi = _grafRaccolta; _grafRaccolta = null; \}/);
+  assert.ok(APP.includes('canvas._pezzi = tela._pezzi;'), 'l\'anteprima ferma porta con se\' i rettangoli della tela di lavoro');
+  const muovi = APP.slice(APP.indexOf('const muovi = (r0, dx, dy, altro, aggancia = true) => {'), APP.indexOf('const disegnaGuide'));
+  assert.ok(muovi.includes('const cur = grafLimiti(r0, lay, f), alt = altro ? grafLimiti(altro.r, altro.lay, altro.formato) : null;'), 'i limiti del formato che hai davanti e, spostando insieme, dell\'altro');
+  assert.ok(muovi.includes('const lim = alt ? grafIncrocia(cur, alt) : cur;'), 'il pezzo sta dove valgono tutti e due');
+  assert.ok(muovi.includes('const d = linee[i] - v;'), 'ogni lato si aggancia alla sua guida: il bordo sinistro al margine sinistro, il centro al centro');
+  assert.ok(APP.includes('muovi(q, passo[0] * n, passo[1] * n, altro, false)'), 'le frecce spostano di pixel esatti, senza agganci che le rimangiano');
+  assert.ok(APP.includes('segnaDaSalvare(canvas);'), 'uno spostamento accende «modifiche da salvare»');
+});
+
+test('la copertina di un gioco arriva dal nostro indirizzo, e solo da Twitch', () => {
+  const i = SRV.indexOf("app.get('/api/streamer/grafiche/copertina/:id'");
+  assert.ok(i > 0, 'la porta esiste');
+  const r = SRV.slice(i, SRV.indexOf('}));', i));
+  assert.match(r, /requireLogin/);
+  assert.ok(r.includes("if (!/^\\d{1,12}$/.test(id)) return res.status(400).end();"), 'un id fatto solo di cifre');
+  assert.ok(r.includes('const g = await helix.getGame(id).catch(() => null);'), 'l\'indirizzo lo da\' Twitch per quella categoria');
+  const COP = new RegExp(/const COPERTINA = (\/.*\/);/.exec(SRV)[1].slice(1, -1));
+  assert.ok(COP.test('https://static-cdn.jtvnw.net/ttv-boxart/1519388213_IGDB-1080x1440.jpg'), 'anche i giochi nuovi, col nome lungo');
+  assert.ok(COP.test('https://static-cdn.jtvnw.net/ttv-boxart/516575-1080x1440.png'), 'e le copertine in PNG');
+  assert.ok(!COP.test('https://static-cdn.jtvnw.net.altro.it/ttv-boxart/1-1080x1440.jpg'), 'un altro posto no');
+  assert.ok(!COP.test('https://static-cdn.jtvnw.net/ttv-boxart/../x/1-1080x1440.jpg'), 'e nemmeno una strada che esce');
+  assert.ok(r.includes("['image/jpeg', 'image/png'].includes(tipo)"), 'solo immagini');
+  assert.ok(r.includes("redirect: 'error'"), 'e niente rimandi verso altri posti');
+  assert.match(APP, /const grafCopertinaSrc = \(\) => \(_grProssima\?\.categoriaId \? '\/api\/streamer\/grafiche\/copertina\/' \+ _grProssima\.categoriaId : ''\);/, 'il pannello la chiede da li\'');
+});
+
+// POST E STORIA INSIEME. Lo stesso spostamento va ai due formati, ognuno dalla
+// sua posizione; il pezzo puo' andare solo dove si legge in tutti e due.
+test('spostando insieme, un pezzo resta dove si legge nel post e nella storia', () => {
+  const da = APP.indexOf('function grafLimiti(');
+  const corpo = APP.slice(da, APP.indexOf('function grafDisposizione(c) {'));
+  const ctx = vm.createContext({ GR_STORIA: { fascia: 250 } });
+  vm.runInContext(corpo + ';this.grafIncrocia = grafIncrocia;', ctx);
+  const lim = (...a) => JSON.parse(JSON.stringify(vm.runInContext('grafLimiti', ctx)(...a)));
+  const post = { W: 1080, H: 1350 }, storia = { W: 1080, H: 1920 };
+  const titoloPost = { x: 96, y: 300, w: 700, h: 120 }, titoloStoria = { x: 96, y: 520, w: 700, h: 120 };
+  assert.deepEqual(lim(titoloPost, post, 'post'), { x: [-96, 284], y: [-300, 930] }, 'nel post il limite e\' la tela');
+  assert.deepEqual(lim(titoloStoria, storia, 'storia'), { x: [-96, 284], y: [-270, 1030] }, 'nella storia le fasce di Instagram');
+  const insieme = JSON.parse(JSON.stringify(vm.runInContext('grafIncrocia', ctx)(lim(titoloPost, post, 'post'), lim(titoloStoria, storia, 'storia'))));
+  assert.deepEqual(insieme, { x: [-96, 284], y: [-270, 930] }, 'insieme: su fin dove lo permette la storia, giu\' fin dove lo permette il post');
+  const i = APP.slice(APP.indexOf('function initGrafiche()'), APP.indexOf('function problemaHtml('));
+  assert.ok(i.includes('if (altro) metti(altro.formato, k, altro.base.dx + m.dx, altro.base.dy + m.dy);'), 'l\'altro formato riceve lo stesso spostamento, dalla sua posizione');
+  assert.ok(i.includes('if (c.spostaInsieme !== false) delete c.spostati[tp][altroFormato()];'), '«Rimetti a posto» rimette tutti e due');
+  assert.match(APP, /id="gr-insieme" \$\{c\.spostaInsieme !== false \? 'checked' : ''\}/, 'di serie si spostano insieme');
+});
+
+test('un pezzo che ne copre un altro si vede, misurato sulle sue parti vere', () => {
+  const corpo = APP.slice(APP.indexOf('function grafCoperti('), APP.indexOf('const grafIncrocia'));
+  const ctx = vm.createContext({});
+  vm.runInContext(corpo + ';this.grafCoperti = grafCoperti;', ctx);
+  const coperti = (p, k) => JSON.parse(JSON.stringify(vm.runInContext('grafCoperti', ctx)(p, k)));
+  const qr = { x: 96, y: 1100, w: 888, h: 190, parti: [{ x: 794, y: 1100, w: 190, h: 190 }, { x: 96, y: 1180, w: 420, h: 30 }] };
+  assert.deepEqual(coperti({ qr, logo: { x: 600, y: 1150, w: 84, h: 84 } }, 'logo'), [], 'nel vuoto fra l\'indirizzo e il QR non copre niente');
+  assert.deepEqual(coperti({ qr, logo: { x: 760, y: 1150, w: 84, h: 84 } }, 'logo'), ['qr'], 'sopra il QR si');
+  assert.deepEqual(coperti({ qr, logo: { x: 300, y: 1170, w: 84, h: 84 } }, 'logo'), ['qr'], 'e sopra il suo indirizzo');
+  assert.ok(APP.includes('parti: [...a.parti, parte]'), 'ogni pezzo tiene le sue parti, oltre all\'ingombro');
 });

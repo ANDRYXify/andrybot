@@ -89,6 +89,15 @@ export class Helix {
     return (j?.data || []).map((c) => ({ id: c.id, name: c.name, boxArt: c.box_art_url }));
   }
 
+  // Una categoria per id → { id, name, boxArt } o null. `boxArt` e' l'indirizzo
+  // della copertina come lo da' Twitch, con {width}x{height} da riempire: per i
+  // giochi piu' nuovi il nome del file non e' solo l'id.
+  async getGame(id) {
+    const j = await this._request('GET', '/games', { query: { id: String(id) } });
+    const g = j?.data?.[0];
+    return g ? { id: String(g.id), name: String(g.name || ''), boxArt: String(g.box_art_url || '') } : null;
+  }
+
   // Imposta la categoria (game_id) e/o il titolo del canale. Richiede il token
   // del broadcaster con scope channel:manage:broadcast. Ritorna true; lancia un
   // Error con .status 401/403 se il permesso non è stato concesso.

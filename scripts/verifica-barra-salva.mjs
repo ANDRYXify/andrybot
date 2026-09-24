@@ -68,9 +68,14 @@ dice(/length === 1/.test(regione),
   'risale al pannello solo se il salva li’ e’ uno solo (con due, tacere e’ meglio che indovinare)');
 
 // ---- 4. niente regione, niente allarme ----------------------------------
+// L'avviso si accende da una porta sola, segnaDaSalvare(): la usano i campi
+// scritti e i gesti che non sono campi (un pezzo spostato su una tela).
 const avvia = corpoDi('avviaBarraSalva') || '';
-dice(/const reg = _regioneSalva\(t\);\s*\n\s*if \(!reg\) return;/.test(avvia),
+const segna = corpoDi('segnaDaSalvare') || '';
+dice(/const reg = _regioneSalva\(t\);\s*\n\s*if \(!reg\) return;/.test(segna),
   'un campo senza salvataggio da indicare non accende l\'avviso');
+dice(/segnaDaSalvare\(t\);/.test(avvia) && !/_salvaSporco = true/.test(avvia),
+  'i campi scritti passano dalla stessa porta, e non se ne fanno una loro');
 
 // ---- 5. si spegne per il TUO salva, non per un salva qualsiasi -----------
 dice(avvia.includes('!_salvaRegione.contains(b)'),

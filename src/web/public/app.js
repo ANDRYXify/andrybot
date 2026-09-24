@@ -842,6 +842,13 @@ const _demoCategoria = (q) => { const n = ` ${_demoNorma(q)} `; return _DEMO_GIO
 
 const _DEMO_DIRETTA = { dal: Date.now() - 5400000, titolo: 'Si costruisce il bot, dal vivo', gioco: 'Software and Game Dev', spettatori: 128 };
 
+function _demoProssima(ora) {
+  const d = new Date(ora);
+  d.setHours(21, 0, 0, 0);
+  if (d.getTime() <= ora) d.setDate(d.getDate() + 1);
+  return { quando: d.getTime(), ora: '21:00', att: 'Baldur\'s Gate 3', categoria: 'Baldur\'s Gate 3', categoriaId: '', fuso: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Rome' };
+}
+
 function _demoAdesso() {
   const ora = Date.now();
   const minuti = Math.floor((ora - _DEMO_DIRETTA.dal) / 60000);
@@ -851,7 +858,7 @@ function _demoAdesso() {
     live: { dal: _DEMO_DIRETTA.dal, titolo: _DEMO_DIRETTA.titolo, gioco: _DEMO_DIRETTA.gioco,
       spettatori: _DEMO_DIRETTA.spettatori + (minuti % 5), picco: 141 },
     stasera: { messaggi: 320 + minuti * 3, persone: 57 + Math.floor(minuti / 10), follow: 6 + Math.floor(minuti / 15), sub: 2, regali: 0, raid: 1, bit: 350, clip: 2, donazioni: 0 },
-    prossima: null, settimana: true,
+    prossima: _demoProssima(ora), settimana: true,
     ultima: { fine: r.fine, durataMs: r.dati.durataMs, picco: r.dati.picco, giri: r.dati.giri, messaggi: r.dati.messaggi, persone: r.dati.persone, follow: r.dati.follow, sub: r.dati.sub, clip: r.dati.clip },
   };
 }
@@ -2618,6 +2625,19 @@ function _regioneSalva(el) {
   return [...pan.querySelectorAll(SEL_SALVA)].filter(_salvaBuono).length === 1 ? pan : null;
 }
 
+function segnaDaSalvare(t) {
+  if (!t || !t.closest || !t.closest('.pannello-scheda.visibile')) return;
+  if (t.closest('#tg-destinazioni, #gr-ig, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .cerca-guscio')) return;
+  if (t.closest('.ovl-inspector') && !t.closest(ASP_SALVA_A_MANO)) return;
+  const reg = _regioneSalva(t);
+  if (!reg) return;
+  _salvaRegione = reg;
+  if (_salvaSporco) return;
+  _salvaSporco = true;
+  _salvaChiusa = false;
+  aggiornaBarraSalva();
+}
+
 function _bottoniSalva() {
   const r = _salvaRegione;
   if (!r || !r.isConnected || !r.closest('.pannello-scheda.visibile')) return [];
@@ -2703,18 +2723,8 @@ function avviaBarraSalva() {
 
   const sporca = (ev) => {
     const t = ev.target;
-    if (!t || !t.closest) return;
-    if (!t.closest('.pannello-scheda.visibile')) return;
-    if (!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
-    if (t.closest('#tg-destinazioni, #gr-ig, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .cerca-guscio')) return;
-    if (t.closest('.ovl-inspector') && !t.closest(ASP_SALVA_A_MANO)) return;
-    const reg = _regioneSalva(t);
-    if (!reg) return;
-    _salvaRegione = reg;
-    if (_salvaSporco) return;
-    _salvaSporco = true;
-    _salvaChiusa = false;
-    aggiornaBarraSalva();
+    if (!t || !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+    segnaDaSalvare(t);
   };
   document.addEventListener('input', sporca, true);
   document.addEventListener('change', sporca, true);
@@ -4418,6 +4428,8 @@ function grafOpzioni(c, scena) {
 
 const grafImg = { el: null, pronto: false, src: '' };
 const grafLogo = { el: null, pronto: false, src: '' };
+const grafCopertina = { el: null, pronto: false, src: '' };
+let _grProssima = null;
 let grafRAF = null;
 function grafCaricaIn(cache, src, poi) {
   if (!src) { cache.el = null; cache.pronto = false; cache.src = ''; poi && poi(); return; }
@@ -4439,7 +4451,8 @@ function grafDefault() {
     coloreTesto: '', velo: 45,
     gioco: '', sottotitolo: '',
     sfondo: 'tema', sfondoColore: '', sfondoImg: '',
-    qr: false, dest: 'u', formato: 'post',
+    qr: false, dest: 'u', formato: 'post', spostati: {}, spostaInsieme: true,
+    quandoTesto: '', copertina: true,
     giorni: grafGiorni(),
   };
 }
@@ -4461,6 +4474,10 @@ function grafDidascalia(c) {
   const url = grafUrlCanale(c);
   const handle = String(c.handle || '').trim();
   const coda = `👉 ${url}${handle ? '\n' + handle : ''}`;
+  if (c.tipo === 'prossima') {
+    const gioco = grafProssimaGioco();
+    return `📅 ${grafQuandoTesto(c)}${gioco ? ' · ' + gioco : ''}! ${L('Vi aspetto in diretta', 'See you live', 'Os espero en directo')}\n${coda}`;
+  }
   if (c.tipo === 'live') {
     const gioco = String(c.gioco || '').trim();
     const sub = String(c.sottotitolo || '').trim() || L('Passa a salutare in chat!', 'Come say hi in chat!', '¡Pásate a saludar en el chat!');
@@ -4883,6 +4900,7 @@ function pannelloGrafiche() {
       <div class="gr-tipo">
         <button type="button" class="gr-tipo-b${c.tipo === 'programmazione' ? ' on' : ''}" data-gr-tipo="programmazione">${L('Programmazione', 'Schedule', 'Programación')}</button>
         <button type="button" class="gr-tipo-b${c.tipo === 'live' ? ' on' : ''}" data-gr-tipo="live">${L('Live ora', 'Live now', 'En directo')}</button>
+        <button type="button" class="gr-tipo-b${c.tipo === 'prossima' ? ' on' : ''}" data-gr-tipo="prossima">${L('Stasera alle…', 'Tonight at…', 'Esta noche a las…')}</button>
       </div>
       <div class="gr-tipo gr-formato" role="group" aria-label="${esc(L('Formato', 'Format', 'Formato'))}">
         ${Object.entries(GR_FORMATI).map(([id, nome]) => `<button type="button" class="gr-tipo-b${(c.formato === 'storia' ? 'storia' : 'post') === id ? ' on' : ''}" data-gr-formato="${id}">${esc(L(...nome))} <span class="gr-misura">${id === 'storia' ? '1080×1920' : (c.tipo === 'live' ? '1080×1080' : '1080×1350')}</span></button>`).join('')}
@@ -4933,7 +4951,7 @@ function pannelloGrafiche() {
           </div>
 
           <div class="riga-flessibile spazio-sopra">
-            <div style="flex:1 1 180px">
+            <div style="flex:1 1 180px" class="gr-no-prossima"${c.tipo === 'prossima' ? ' hidden' : ''}>
               <label class="campo" for="gr-titolo">${L('Titolo', 'Title', 'Título')}</label>
               <input type="text" id="gr-titolo" maxlength="30" placeholder="${esc(_grafSegnaTitolo(c.tipo))}" value="${esc(_grafTitoloDi(c))}">
             </div>
@@ -4951,7 +4969,7 @@ function pannelloGrafiche() {
             <div class="gr-sfondo-scelte">${caratteri}</div></div>
           <div class="gr-op-scelta spazio-sopra"><span class="campo">${L('Stile del titolo', 'Title style', 'Estilo del título')}</span>
             <div class="gr-sfondo-scelte">${_grafScelte(GR_STILI_TITOLO, c.stileTitolo || 'sfumato', 'gr-stile')}</div></div>
-          <div class="gr-op-scelta spazio-sopra gr-solo-prog" ${c.tipo === 'live' ? 'hidden' : ''}><span class="campo">${L('Le righe dei giorni', 'The day rows', 'Las filas de los días')}</span>
+          <div class="gr-op-scelta spazio-sopra gr-solo-prog" ${c.tipo !== 'programmazione' ? 'hidden' : ''}><span class="campo">${L('Le righe dei giorni', 'The day rows', 'Las filas de los días')}</span>
             <div class="gr-sfondo-scelte">${_grafScelte(GR_STILI_RIGHE, c.stileRighe || 'schede', 'gr-righe')}</div></div>
 
           <div class="spazio-sopra">
@@ -4979,12 +4997,20 @@ function pannelloGrafiche() {
             ${c.logoImg ? `<img src="${esc(c.logoImg)}" alt="" class="gr-logo-prev"> <a href="#" id="gr-logo-togli" class="suggerimento">${L('togli', 'remove', 'quitar')}</a>` : ''}
           </div>
 
-          <div class="gr-solo-prog" ${c.tipo === 'live' ? 'hidden' : ''}>
+          <div class="gr-solo-prog" ${c.tipo !== 'programmazione' ? 'hidden' : ''}>
             <p class="suggerimento spazio-sopra">${L('I giorni e gli orari si scrivono nella tua Settimana, e da lì arrivano qui.', 'Days and times are written in your Week, and they come here from there.', 'Los días y los horarios se escriben en tu Semana, y de ahí llegan aquí.')}
               <button type="button" class="btn secondario mini" data-vai="settimana">${L('Cambiali', 'Change them', 'Cámbialos')}</button></p>
           </div>
 
-          <div class="gr-solo-live" ${c.tipo === 'programmazione' ? 'hidden' : ''}>
+          <div class="gr-solo-prossima" ${c.tipo !== 'prossima' ? 'hidden' : ''}>
+            <label class="campo spazio-sopra" for="gr-quando">${L('Quando', 'When', 'Cuándo')}</label>
+            <input type="text" id="gr-quando" maxlength="40" value="${esc(c.quandoTesto || '')}">
+            <p class="suggerimento" id="gr-quando-da"></p>
+            <label class="riga-check spazio-sopra"><input type="checkbox" id="gr-copertina" ${c.copertina !== false ? 'checked' : ''}> ${L('La copertina del gioco come sfondo', 'The game cover as the background', 'La portada del juego como fondo')}</label>
+            <p class="suggerimento">${L('Per rendere toccabile l’indirizzo, in Instagram mettici sopra l’adesivo «Link»: da fuori non si può aggiungere.', 'To make the address tappable, put Instagram’s “Link” sticker on it: it cannot be added from outside.', 'Para que la dirección se pueda tocar, pon encima la pegatina «Enlace» de Instagram: desde fuera no se puede añadir.')}</p>
+          </div>
+
+          <div class="gr-solo-live" ${c.tipo !== 'live' ? 'hidden' : ''}>
             <label class="campo spazio-sopra" for="gr-gioco">${L('Gioco / categoria', 'Game / category', 'Juego / categoría')}</label>
             <input type="text" id="gr-gioco" maxlength="34" placeholder="${L('es. Just Chatting', 'e.g. Just Chatting', 'p. ej. Just Chatting')}" value="${esc(c.gioco)}">
             <label class="campo spazio-sopra" for="gr-sottotitolo">${L('Sottotitolo', 'Subtitle', 'Subtítulo')}</label>
@@ -5017,7 +5043,15 @@ function pannelloGrafiche() {
         </div>
 
         <div class="gr-anteprima">
-          <canvas id="gr-canvas" width="1080" height="1080" aria-label="${L('anteprima grafica', 'graphic preview', 'vista previa')}"></canvas>
+          <div class="gr-tela">
+            <canvas id="gr-canvas" width="1080" height="1080" tabindex="0" aria-label="${L('anteprima grafica: trascina un pezzo per spostarlo, oppure usa le frecce', 'graphic preview: drag a piece to move it, or use the arrow keys', 'vista previa: arrastra una pieza para moverla, o usa las flechas')}" aria-describedby="gr-sposta-aiuto"></canvas>
+            <canvas id="gr-guide" aria-hidden="true"></canvas>
+          </div>
+          <p class="gr-sposta">
+            <span class="suggerimento" id="gr-sposta-aiuto">${L('Trascina un pezzo per spostarlo: le guide mostrano dove si vede bene. Con le frecce lo sposti di poco.', 'Drag a piece to move it: the guides show where it reads well. The arrow keys nudge it.', 'Arrastra una pieza para moverla: las guías muestran dónde se ve bien. Con las flechas la mueves un poco.')}</span>
+            <label class="riga-check gr-insieme"><input type="checkbox" id="gr-insieme" ${c.spostaInsieme !== false ? 'checked' : ''}> ${L('Sposta insieme post e storia', 'Move post and story together', 'Mover juntos post e historia')}</label>
+            <button type="button" class="btn secondario mini" id="gr-rimetti" hidden>${L('Rimetti a posto', 'Put it back', 'Volver a colocar')}</button>
+          </p>
         </div>
       </div>
     </div>`);
@@ -5080,7 +5114,128 @@ function _grafTrasla(v, dy) {
   return o;
 }
 
+const GR_PEZZI = {
+  live: ['logo', 'handle', 'badge', 'titolo', 'pillola', 'sotto', 'qr'],
+  programmazione: ['logo', 'handle', 'occhiello', 'titolo', 'righe', 'qr'],
+  prossima: ['logo', 'handle', 'quando', 'dove', 'pillola', 'qr'],
+};
+const grafTipoPezzi = (c) => (GR_PEZZI[c.tipo] ? c.tipo : 'programmazione');
+
+const grafCopertinaSrc = () => (_grProssima?.categoriaId ? '/api/streamer/grafiche/copertina/' + _grProssima.categoriaId : '');
+const grafConCopertina = (c) => c.tipo === 'prossima' && c.copertina !== false && !!grafCopertinaSrc()
+  && grafCopertina.pronto && !!grafCopertina.el && grafCopertina.src === grafCopertinaSrc();
+const grafProssimaGioco = () => String(_grProssima?.categoria || _grProssima?.att || '').trim();
+function grafQuandoTesto(c) {
+  const scritto = String(c.quandoTesto || '').trim();
+  if (scritto) return scritto;
+  return _grProssima ? _quandoProssima(_grProssima).giorno : L('Stasera in diretta', 'Live tonight', 'Esta noche en directo');
+}
+
+let _grMisura = null;
+function grafAdesivoForma(testo, s) {
+  _grMisura = _grMisura || document.createElement('canvas').getContext('2d');
+  const ctx = _grMisura;
+  const font = (px) => `${s.peso} ${px}px ${GR_BASE}`;
+  ctx.font = font(s.px);
+  const t = String(testo || '').replace(/\s+/g, ' ').trim();
+  const largo = (x) => ctx.measureText(x).width;
+  const dentro = s.max - s.padH * 2;
+  let righe = [t];
+  if (largo(t) > dentro) {
+    const parole = t.split(' ');
+    let meglio = null;
+    for (let i = 1; i < parole.length; i++) {
+      const a = parole.slice(0, i).join(' '), b = parole.slice(i).join(' ');
+      const w = Math.max(largo(a), largo(b));
+      if (!meglio || w < meglio.w) meglio = { w, righe: [a, b] };
+    }
+    if (meglio) righe = meglio.righe;
+  }
+  const piu = Math.max(...righe.map(largo));
+  const px = piu > dentro ? Math.max(s.min, Math.floor(s.px * dentro / piu)) : s.px;
+  ctx.font = font(px);
+  righe = righe.map((x) => grClip(ctx, x, dentro));
+  const lh = Math.round(px * 1.1);
+  return { righe, px, font: font(px), w: Math.min(s.max, Math.max(...righe.map(largo)) + s.padH * 2), h: righe.length * lh + s.padV * 2, lh };
+}
+
+function grafAdesivo(ctx, S, pezzo) {
+  const f = grafAdesivoForma(S.testo, S);
+  const x = S.x - f.w / 2, y = S.y;
+  _grafSegna(pezzo, { x, y, w: f.w, h: f.h });
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.30)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 8;
+  ctx.fillStyle = '#ffffff'; grRoundRect(ctx, x, y, f.w, f.h, Math.min(30, f.h / 3)); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.font = f.font; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#0d0d12';
+  const su = ctx.measureText('ÀHg').actualBoundingBoxAscent || f.px * 0.78;
+  f.righe.forEach((riga, i) => ctx.fillText(riga, S.x, y + S.padV + i * f.lh + (f.lh - f.px) / 2 + su));
+  ctx.restore();
+}
+const grafFormato = (c) => (c.formato === 'storia' ? 'storia' : 'post');
+
+let _grafRaccolta = null;
+function _grafSegna(k, r) {
+  if (!_grafRaccolta || !k || !r || !(r.w > 0) || !(r.h > 0)) return;
+  const a = _grafRaccolta[k], parte = { x: r.x, y: r.y, w: r.w, h: r.h };
+  if (!a) { _grafRaccolta[k] = { ...parte, parti: [parte] }; return; }
+  const x0 = Math.min(a.x, r.x), y0 = Math.min(a.y, r.y);
+  _grafRaccolta[k] = { x: x0, y: y0, w: Math.max(a.x + a.w, r.x + r.w) - x0, h: Math.max(a.y + a.h, r.y + r.h) - y0, parti: [...a.parti, parte] };
+}
+
+function _grafSposta(v, dx, dy) {
+  if (Array.isArray(v)) return v.map((x) => _grafSposta(x, dx, dy));
+  if (!v || typeof v !== 'object') return v;
+  const o = {};
+  for (const [k, x] of Object.entries(v)) {
+    o[k] = typeof x !== 'number' ? _grafSposta(x, dx, dy) : k === 'x' ? x + dx : (k === 'y' || k === 'base') ? x + dy : x;
+  }
+  return o;
+}
+
+function grafSpostamenti(c) {
+  const t = c.spostati?.[grafTipoPezzi(c)]?.[grafFormato(c)];
+  return t && typeof t === 'object' ? t : {};
+}
+
+function grafGuide(lay, formato) {
+  const { W, H, pad } = lay;
+  const sopra = formato === 'storia' ? GR_STORIA.fascia : 60;
+  return {
+    area: { x: pad, y: sopra, w: W - pad * 2, h: H - sopra * 2 },
+    fasce: formato === 'storia' ? [[0, GR_STORIA.fascia], [H - GR_STORIA.fascia, H]] : [],
+    x: [pad, W / 2, W - pad],
+    y: [sopra, H / 2, H - sopra],
+  };
+}
+
+function grafLimiti(r, lay, formato) {
+  const su = formato === 'storia' ? GR_STORIA.fascia : 0;
+  return { x: [-r.x, lay.W - r.x - r.w], y: [su - r.y, lay.H - su - r.y - r.h] };
+}
+function grafCoperti(pezzi, k) {
+  const q = pezzi[k];
+  if (!q) return [];
+  const tocca = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  return Object.keys(pezzi).filter((j) => j !== k && (pezzi[j].parti || [pezzi[j]]).some((a) => (q.parti || [q]).some((b) => tocca(a, b))));
+}
+const grafIncrocia = (a, b) => ({
+  x: [Math.max(a.x[0], b.x[0]), Math.min(a.x[1], b.x[1])],
+  y: [Math.max(a.y[0], b.y[0]), Math.min(a.y[1], b.y[1])],
+});
+
 function grafDisposizione(c) {
+  const lay = _grafDisposizioneBase(c);
+  const sp = grafSpostamenti(c);
+  for (const k of GR_PEZZI[grafTipoPezzi(c)]) {
+    const d = sp[k];
+    if (d && lay[k]) lay[k] = _grafSposta(lay[k], Number(d.dx) || 0, Number(d.dy) || 0);
+  }
+  return lay;
+}
+
+function _grafDisposizioneBase(c) {
   if (c.formato !== 'storia') return _grafDisposizionePost(c);
   const S = GR_STORIA, margine = 30;
   const su = S.fascia + margine - 60;
@@ -5090,6 +5245,7 @@ function grafDisposizione(c) {
   lay.storia = true;
   if (lay.prog) return lay;
   lay.barra.y = S.H - lay.barra.h;
+  if (lay.prossima) return lay;
   const cima = Math.min(lay.badge.punto.y - lay.badge.punto.r, lay.badge.base - lay.badge.px);
   const fine = lay.sotto.base + Math.round(lay.sotto.px * 0.3);
   const libero = [lay.filo.y + lay.filo.h, lay.qr ? lay.qr.y - 40 : S.H - S.fascia - margine];
@@ -5100,10 +5256,11 @@ function grafDisposizione(c) {
 }
 
 function _grafDisposizionePost(c, alta = 0) {
-  const prog = c.tipo !== 'live';
-  const W = 1080, H = alta || (prog ? 1350 : 1080), pad = 96;
+  const prossima = c.tipo === 'prossima';
+  const prog = !prossima && c.tipo !== 'live';
+  const W = 1080, H = alta || (prog || prossima ? 1350 : 1080), pad = 96;
   const lay = {
-    W, H, pad, prog,
+    W, H, pad, prog, prossima,
     logo: { x: pad, y: 60, w: 84, h: 84 },
     handle: { x: W - pad, base: 126, max: W - pad * 2 - 84 - 40, px: 38, peso: 700 },
     filo: { x: pad, y: 168, w: W - pad * 2, h: 3 },
@@ -5121,6 +5278,21 @@ function _grafDisposizionePost(c, alta = 0) {
     lay.titolo = { x: pad, base: 372, max: W - pad * 2, px: 104, min: 64 };
     lay.righe = Array.from({ length: 7 }, (_, i) => ({ x: pad, y: y0 + i * rh, w: W - pad * 2, h: rh - gap }));
     lay.orizzonte = y0 - 22;
+  } else if (prossima) {
+    const qS = { px: 80, min: 52, peso: 'italic 800', max: W - pad * 2, padH: 40, padV: 26 };
+    const dS = { px: 56, min: 30, peso: '800', max: W - pad * 2, padH: 36, padV: 24 };
+    const quando = grafQuandoTesto(c), dove = grafUrlCanale(c);
+    const q = grafAdesivoForma(quando, qS), d = grafAdesivoForma(dove, dS);
+    const pillola = grafProssimaGioco() && !grafConCopertina(c) ? 104 + 40 : 0;
+    const blocco = pillola + q.h + 24 + d.h;
+    const cima = lay.filo.y + lay.filo.h, fondo = lay.qr ? lay.qr.y - 48 : H - 120;
+    const yP = grafConCopertina(c) ? fondo - blocco : Math.round(cima + (fondo - cima - blocco) / 2);
+    const yQ = yP + pillola, yD = yQ + q.h + 24;
+    lay.quando = { ...qS, x: W / 2, y: yQ, testo: quando };
+    lay.dove = { ...dS, x: W / 2, y: yD, testo: dove };
+    lay.pillola = { x: W / 2, allinea: 'centro', y: yP, h: 104, max: W - pad * 2, px: 46, peso: 800 };
+    lay.barra = { x: 0, y: H - 22, w: W, h: 22 };
+    lay.orizzonte = Math.round(H * 0.55);
   } else {
     lay.badge = { x: pad + 66, base: 358, max: W - pad * 2 - 66, px: 40, peso: 800, punto: { x: pad + 20, y: 344, r: 22 } };
     lay.titolo = { x: pad, base: 520, max: W - pad * 2, px: 168, min: 96 };
@@ -5148,7 +5320,7 @@ function grafTavolozza(c, lay) {
   const v = grafVelocita(c);
   const scena = anima ? {
     acc, acc2, bg: tema.bg, testo: txt, tenue, op: grafOpzioni(c, anima),
-    lay: { orizzonte: lay.orizzonte, titoloY: lay.titolo.base - lay.titolo.px * 0.35, testa: lay.filo.y + lay.filo.h },
+    lay: { orizzonte: lay.orizzonte, titoloY: lay.titolo ? lay.titolo.base - lay.titolo.px * 0.35 : Math.round((lay.filo.y + lay.filo.h + lay.pillola.y) / 2), testa: lay.filo.y + lay.filo.h },
     vel: v.vel, durata: v.durata, intensita: Math.max(30, Math.min(100, Number(c.intensita) || 100)) / 100,
   } : null;
   return { tema, acc, acc2, txt, tenue, chiaro, contorno, anima, scena };
@@ -5157,7 +5329,14 @@ function grafTavolozza(c, lay) {
 function grafSfondo(ctx, c, W, H, t, pal) {
   const hex6 = (v) => /^#[0-9a-fA-F]{6}$/.test(String(v || ''));
   const tema = pal.tema;
-  if (c.sfondo === 'immagine' && grafImg.el && grafImg.pronto) {
+  const cop = grafConCopertina(c);
+  if (cop) {
+    const im = grafCopertina.el, iw = im.naturalWidth || 1, ih = im.naturalHeight || 1, k = Math.max(W / iw, H / ih);
+    ctx.drawImage(im, (W - iw * k) / 2, (H - ih * k) / 2, iw * k, ih * k);
+    const vg = ctx.createLinearGradient(0, 0, 0, H);
+    vg.addColorStop(0, 'rgba(0,0,0,.6)'); vg.addColorStop(0.3, 'rgba(0,0,0,0)'); vg.addColorStop(0.62, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)');
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  } else if (c.sfondo === 'immagine' && grafImg.el && grafImg.pronto) {
     const iw = grafImg.el.naturalWidth || 1, ih = grafImg.el.naturalHeight || 1, k = Math.max(W / iw, H / ih);
     ctx.drawImage(grafImg.el, (W - iw * k) / 2, (H - ih * k) / 2, iw * k, ih * k);
   } else if (c.sfondo === 'tinta') {
@@ -5168,7 +5347,7 @@ function grafSfondo(ctx, c, W, H, t, pal) {
   }
   const velo = Math.max(0, Math.min(85, Number(c.velo) || 0)) / 100;
   if (velo > 0 && c.sfondo === 'immagine') { ctx.fillStyle = pal.chiaro ? `rgba(6,6,14,${velo})` : `rgba(250,250,255,${velo})`; ctx.fillRect(0, 0, W, H); }
-  if (!pal.anima) {
+  if (!pal.anima && !cop) {
     const blob = (cx, cy, r, col, a) => { const gg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r); gg.addColorStop(0, grRgba(col, a)); gg.addColorStop(1, grRgba(col, 0)); ctx.fillStyle = gg; ctx.fillRect(0, 0, W, H); };
     const su = c.sfondo === 'immagine' ? 0.7 : 1, scuro = !pal.chiaro;
     blob(W * 0.92, H * 0.06, W * 0.9, pal.acc, (scuro ? 0.42 : 0.30) * su);
@@ -5222,8 +5401,9 @@ function grafRett(ctx, testo, x, base, ls) {
   return { x: x0 - (m.actualBoundingBoxLeft > 0 && al === 'left' ? m.actualBoundingBoxLeft : 0), y: base - su, w: w + 2, h: su + giu };
 }
 
-function grafScritta(ctx, sc, pal, { testo, x, base, font, colori, ls = 0, allinea = 'left', px, peso = 400, riempi, eco = null, alone = null, deciso = null }) {
+function grafScritta(ctx, sc, pal, { testo, x, base, font, colori, ls = 0, allinea = 'left', px, peso = 400, riempi, eco = null, alone = null, deciso = null, pezzo = '' }) {
   ctx.font = font; ctx.textAlign = allinea; ctx.textBaseline = 'alphabetic';
+  if (pezzo) _grafSegna(pezzo, grafRett(ctx, testo, x, base, ls));
   const soglia = GR_SOGLIA(px, peso);
   let campioni = null;
   if (!deciso && !pal.anima) { try { campioni = grafSotto(ctx, sc, grafRett(ctx, testo, x, base, ls)); } catch (e) { campioni = null; } }
@@ -5276,11 +5456,13 @@ function grafTitolo(ctx, sc, pal, c, lay, testo) {
     eco: stile === 'neon' ? null : Math.max(4, Math.round(T.px * 0.05)),
     alone: stile === 'neon' ? pal.acc : null,
     riempi: stile === 'sfumato' ? (fin) => { const g = ctx.createLinearGradient(t.x, 0, Math.min(lay.W - lay.pad, t.x + larghezza), 0); g.addColorStop(0, fin[0]); g.addColorStop(1, fin[1]); return g; } : null,
+    pezzo: 'titolo',
   });
 }
 
 function grafLogoDisegna(ctx, sc, pal, c, lay) {
   const r = lay.logo;
+  _grafSegna('logo', r);
   if (c.logoImg && grafLogo.el && grafLogo.pronto) {
     const li = grafLogo.el, lw = li.naturalWidth || 1, lh = li.naturalHeight || 1, k = Math.max(r.w / lw, r.h / lh);
     ctx.save(); grRoundRect(ctx, r.x, r.y, r.w, r.h, 20); ctx.clip(); ctx.drawImage(li, r.x + (r.w - lw * k) / 2, r.y + (r.h - lh * k) / 2, lw * k, lh * k); ctx.restore();
@@ -5288,7 +5470,7 @@ function grafLogoDisegna(ctx, sc, pal, c, lay) {
   }
   const logo = String(c.logo || '').trim();
   if (logo) {
-    grafScritta(ctx, sc, pal, { testo: logo, x: r.x, base: r.y + 72, font: `54px ${GR_BASE}`, colori: [pal.txt], px: 54, peso: 400 });
+    grafScritta(ctx, sc, pal, { testo: logo, x: r.x, base: r.y + 72, font: `54px ${GR_BASE}`, colori: [pal.txt], px: 54, peso: 400, pezzo: 'logo' });
     return;
   }
   const iniziale = (String(c.handle || '').replace(/^@/, '').trim()[0] || String(stato?.user?.login || 'S')[0] || 'S').toUpperCase();
@@ -5312,9 +5494,11 @@ function grafPillola(ctx, pal, lay, gioco) {
   const tiene = (col) => { for (let k = 0; k <= 10; k++) if (!S.regge(scritta, [grRgb(S.mescola(inizio, col, k / 10))], s4)) return false; return true; };
   let fine = grTinta(inizio, -30);
   for (let k = 1; k <= 20 && !tiene(fine); k++) fine = S.mescola(grTinta(inizio, -30), verso, k / 20);
-  grRoundRect(ctx, P.x, P.y, w, P.h, P.h / 2);
-  const g = ctx.createLinearGradient(P.x, 0, P.x + w, 0); g.addColorStop(0, inizio); g.addColorStop(1, fine); ctx.fillStyle = g; ctx.fill();
-  ctx.fillStyle = scritta; ctx.fillText(testo, P.x + 42, P.y + 68);
+  const x = P.allinea === 'centro' ? P.x - w / 2 : P.x;
+  _grafSegna('pillola', { x, y: P.y, w, h: P.h });
+  grRoundRect(ctx, x, P.y, w, P.h, P.h / 2);
+  const g = ctx.createLinearGradient(x, 0, x + w, 0); g.addColorStop(0, inizio); g.addColorStop(1, fine); ctx.fillStyle = g; ctx.fill();
+  ctx.fillStyle = scritta; ctx.fillText(testo, x + 42, P.y + 68);
 }
 
 function grafRighe(ctx, sc, pal, c, lay) {
@@ -5322,6 +5506,7 @@ function grafRighe(ctx, sc, pal, c, lay) {
   const vetro = pal.anima || c.sfondo === 'immagine';
   const carta = pal.chiaro ? window.SB_SCENE.mescola(pal.tema.bg[0], '#000000', 0.35) : window.SB_SCENE.mescola(pal.tema.bg[0], '#ffffff', 0.6);
   lay.righe.forEach((r, i) => {
+    _grafSegna('righe', r);
     const raggio = stile === 'pillole' ? r.h / 2 : 24;
     if (stile !== 'linee') {
       grRoundRect(ctx, r.x, r.y, r.w, r.h, raggio);
@@ -5401,6 +5586,7 @@ function grafMostra(canvas, c, t = 0) {
   if (grafAnimato(c)) { grafDisegna(canvas, c, t, 1); return; }
   const tela = grafTelaLavoro();
   grafDisegna(tela, c, t, 1);
+  canvas._pezzi = tela._pezzi;
   if (canvas.width !== tela.width) canvas.width = tela.width;
   if (canvas.height !== tela.height) canvas.height = tela.height;
   const ctx = canvas.getContext('2d');
@@ -5411,6 +5597,11 @@ function grafMostra(canvas, c, t = 0) {
 
 function grafDisegna(canvas, c, t = 0, scala = 1) {
   if (!canvas || !window.SB_SCENE) return;
+  _grafRaccolta = {};
+  try { _grafDisegna(canvas, c, t, scala); } finally { canvas._pezzi = _grafRaccolta; _grafRaccolta = null; }
+}
+
+function _grafDisegna(canvas, c, t, scala) {
   const ctx = canvas.getContext('2d');
   const lay = grafDisposizione(c);
   const pal = grafTavolozza(c, lay);
@@ -5423,25 +5614,32 @@ function grafDisegna(canvas, c, t = 0, scala = 1) {
 
   grafLogoDisegna(ctx, sc, pal, c, lay);
   ctx.font = `700 ${lay.handle.px}px ${GR_BASE}`; ctx.textAlign = 'right';
-  grafScritta(ctx, sc, pal, { testo: grClip(ctx, c.handle || '', lay.handle.max), x: lay.handle.x, base: lay.handle.base, font: `700 ${lay.handle.px}px ${GR_BASE}`, colori: [pal.tenue], ls: 1, allinea: 'right', px: lay.handle.px, peso: 700 });
+  grafScritta(ctx, sc, pal, { testo: grClip(ctx, c.handle || '', lay.handle.max), x: lay.handle.x, base: lay.handle.base, font: `700 ${lay.handle.px}px ${GR_BASE}`, colori: [pal.tenue], ls: 1, allinea: 'right', px: lay.handle.px, peso: 700, pezzo: 'handle' });
   const hl = ctx.createLinearGradient(pad, 0, W - pad, 0); hl.addColorStop(0, grRgba(pal.acc, 0)); hl.addColorStop(0.15, grRgba(pal.acc, 0.9)); hl.addColorStop(0.85, grRgba(pal.txt, 0.25)); hl.addColorStop(1, grRgba(pal.txt, 0));
   ctx.fillStyle = hl; ctx.fillRect(lay.filo.x, lay.filo.y, lay.filo.w, lay.filo.h);
 
   if (lay.prog) {
     const o = lay.occhiello;
-    grafScritta(ctx, sc, pal, { testo: L('PALINSESTO SETTIMANALE', 'WEEKLY SCHEDULE', 'PROGRAMACIÓN SEMANAL'), x: o.x, base: o.base, font: `800 ${o.px}px ${GR_BASE}`, colori: [pal.acc], ls: 8, px: o.px, peso: o.peso });
+    grafScritta(ctx, sc, pal, { testo: L('PALINSESTO SETTIMANALE', 'WEEKLY SCHEDULE', 'PROGRAMACIÓN SEMANAL'), x: o.x, base: o.base, font: `800 ${o.px}px ${GR_BASE}`, colori: [pal.acc], ls: 8, px: o.px, peso: o.peso, pezzo: 'occhiello' });
     grafTitolo(ctx, sc, pal, c, lay, (c.titolo || L('LA SETTIMANA', 'THE WEEK', 'LA SEMANA')).toUpperCase());
     grafRighe(ctx, sc, pal, c, lay);
+  } else if (lay.prossima) {
+    const gioco = grafProssimaGioco();
+    if (gioco && !grafConCopertina(c)) grafPillola(ctx, pal, lay, gioco);
+    grafAdesivo(ctx, lay.quando, 'quando');
+    grafAdesivo(ctx, lay.dove, 'dove');
+    const bb = ctx.createLinearGradient(0, 0, W, 0); bb.addColorStop(0, pal.acc); bb.addColorStop(1, grTinta(pal.acc, -40)); ctx.fillStyle = bb; ctx.fillRect(lay.barra.x, lay.barra.y, lay.barra.w, lay.barra.h);
   } else {
     const b = lay.badge;
+    _grafSegna('badge', { x: b.punto.x - b.punto.r, y: b.punto.y - b.punto.r, w: b.punto.r * 2, h: b.punto.r * 2 });
     ctx.save(); ctx.shadowColor = 'rgba(255,59,48,.9)'; ctx.shadowBlur = 24; ctx.beginPath(); ctx.arc(b.punto.x, b.punto.y, b.punto.r, 0, Math.PI * 2); ctx.fillStyle = '#ff3b30'; ctx.fill(); ctx.restore();
-    grafScritta(ctx, sc, pal, { testo: L('IN DIRETTA ORA', 'LIVE NOW', 'EN DIRECTO'), x: b.x, base: b.base, font: `800 ${b.px}px ${GR_BASE}`, colori: [pal.tenue], ls: 7, px: b.px, peso: b.peso });
+    grafScritta(ctx, sc, pal, { testo: L('IN DIRETTA ORA', 'LIVE NOW', 'EN DIRECTO'), x: b.x, base: b.base, font: `800 ${b.px}px ${GR_BASE}`, colori: [pal.tenue], ls: 7, px: b.px, peso: b.peso, pezzo: 'badge' });
     grafTitolo(ctx, sc, pal, c, lay, (c.titoloLive || 'LIVE').toUpperCase());
     if (c.gioco) grafPillola(ctx, pal, lay, String(c.gioco));
     if (c.sottotitolo) {
       const so = lay.sotto;
       ctx.font = `500 ${so.px}px ${GR_BASE}`; ctx.textAlign = 'left';
-      grafScritta(ctx, sc, pal, { testo: grClip(ctx, c.sottotitolo, so.max), x: so.x, base: so.base, font: `500 ${so.px}px ${GR_BASE}`, colori: [pal.tenue], px: so.px, peso: so.peso });
+      grafScritta(ctx, sc, pal, { testo: grClip(ctx, c.sottotitolo, so.max), x: so.x, base: so.base, font: `500 ${so.px}px ${GR_BASE}`, colori: [pal.tenue], px: so.px, peso: so.peso, pezzo: 'sotto' });
     }
     const bb = ctx.createLinearGradient(0, 0, W, 0); bb.addColorStop(0, pal.acc); bb.addColorStop(1, grTinta(pal.acc, -40)); ctx.fillStyle = bb; ctx.fillRect(lay.barra.x, lay.barra.y, lay.barra.w, lay.barra.h);
   }
@@ -5461,6 +5659,7 @@ function grafQr(ctx, sc, pal, c, lay) {
       _grQr = { url: full, n: nn, mods };
     }
     const { x, y, w: P } = lay.qr;
+    _grafSegna('qr', { x, y, w: P, h: P });
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.30)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 6;
     ctx.fillStyle = '#ffffff'; grRoundRect(ctx, x, y, P, P, 26); ctx.fill(); ctx.restore();
     const n = _grQr.n, quiet = 18, cell = (P - quiet * 2) / n;
@@ -5470,7 +5669,7 @@ function grafQr(ctx, sc, pal, c, lay) {
     }
     const u = lay.qr.url;
     ctx.font = `700 ${u.px}px ${GR_BASE}`; ctx.textAlign = 'left';
-    grafScritta(ctx, sc, pal, { testo: grClip(ctx, url, u.max), x: u.x, base: u.base, font: `700 ${u.px}px ${GR_BASE}`, colori: [pal.txt], px: u.px, peso: u.peso });
+    grafScritta(ctx, sc, pal, { testo: grClip(ctx, url, u.max), x: u.x, base: u.base, font: `700 ${u.px}px ${GR_BASE}`, colori: [pal.txt], px: u.px, peso: u.peso, pezzo: 'qr' });
   } catch (e) {  }
 }
 
@@ -5556,7 +5755,24 @@ function initGrafiche() {
     if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }
     if (!_fermo) _fermo = requestAnimationFrame(disegnaFermo);
   };
-  _grafRiprendi = () => { c.giorni = grafGiorni(); ridisegna(); caricaStoriaIg(); };
+  const mostraProssima = () => {
+    const q = document.getElementById('gr-quando');
+    const da = document.getElementById('gr-quando-da');
+    const auto = _grProssima ? _quandoProssima(_grProssima).giorno : '';
+    if (q) q.placeholder = auto || L('es. Stasera alle 21:00', 'e.g. Tonight at 21:00', 'p. ej. Esta noche a las 21:00');
+    if (da) {
+      const gioco = grafProssimaGioco();
+      da.textContent = _grProssima
+        ? L(`Dalla tua Settimana: ${auto}${gioco ? ' · ' + gioco : ''}. Lascialo vuoto e si aggiorna da solo.`, `From your Week: ${auto}${gioco ? ' · ' + gioco : ''}. Leave it empty and it updates itself.`, `De tu Semana: ${auto}${gioco ? ' · ' + gioco : ''}. Déjalo vacío y se actualiza solo.`)
+        : L('Nella tua Settimana non c’è una diretta in programma: scrivi tu quando.', 'There is no stream planned in your Week: write when yourself.', 'En tu Semana no hay un directo previsto: escribe tú cuándo.');
+    }
+  };
+  const caricaProssima = () => api('/api/streamer/adesso').then((d) => {
+    _grProssima = d?.prossima || null;
+    grafCaricaIn(grafCopertina, grafCopertinaSrc(), () => { mostraProssima(); ridisegna(); });
+  }).catch(() => {});
+  _grafRiprendi = () => { c.giorni = grafGiorni(); ridisegna(); caricaStoriaIg(); if (c.tipo === 'prossima') caricaProssima(); };
+  if (c.tipo === 'prossima') caricaProssima();
   caricaStoriaIg();
   const storiaLive = () => grafJpeg({ ...c, tipo: 'live', formato: 'storia' });
   document.getElementById('gr-ig')?.addEventListener('change', (ev) => {
@@ -5622,16 +5838,225 @@ function initGrafiche() {
     c.formato = b.dataset.grFormato === 'storia' ? 'storia' : 'post';
     accendi('gr-formato', c.formato);
     ridisegna();
+    rimetti();
   }));
+
+  const guida = document.getElementById('gr-guide');
+  const tastoRimetti = document.getElementById('gr-rimetti');
+  let presa = null, scelto = '', sopra = '';
+  const altroFormato = () => (grafFormato(c) === 'storia' ? 'post' : 'storia');
+  const spostatiDi = (f, crea) => {
+    const tp = grafTipoPezzi(c);
+    if (!c.spostati || typeof c.spostati !== 'object') c.spostati = {};
+    if (!crea) return c.spostati[tp]?.[f] || {};
+    c.spostati[tp] = c.spostati[tp] || {};
+    c.spostati[tp][f] = c.spostati[tp][f] || {};
+    return c.spostati[tp][f];
+  };
+  const spostati = (crea) => spostatiDi(grafFormato(c), crea);
+  const metti = (f, k, dx, dy) => {
+    const s = spostatiDi(f, true);
+    if (dx || dy) s[k] = { dx, dy }; else delete s[k];
+  };
+  const base = (f, k) => {
+    const d = spostatiDi(f, false)[k] || {};
+    return { dx: Number(d.dx) || 0, dy: Number(d.dy) || 0 };
+  };
+  let telaAltra = null;
+  const nellAltro = (k) => {
+    if (c.spostaInsieme === false) return null;
+    const cc = { ...c, formato: altroFormato() };
+    telaAltra = telaAltra || document.createElement('canvas');
+    grafDisegna(telaAltra, cc, 0);
+    const r = (telaAltra._pezzi || {})[k];
+    return r ? { r: { ...r }, lay: grafDisposizione(cc), formato: cc.formato, base: base(cc.formato, k) } : null;
+  };
+  const rimetti = () => {
+    if (tastoRimetti) tastoRimetti.hidden = !Object.keys(spostati(false)).length && !(c.spostaInsieme !== false && Object.keys(spostatiDi(altroFormato(), false)).length);
+  };
+  const inTela = (ev) => {
+    const r = canvas.getBoundingClientRect(), lay = grafDisposizione(c);
+    return { x: (ev.clientX - r.left) * lay.W / r.width, y: (ev.clientY - r.top) * lay.H / r.height };
+  };
+  const pezzoIn = (x, y) => {
+    const p = canvas._pezzi || {};
+    return [...GR_PEZZI[grafTipoPezzi(c)]].reverse().find((k) => {
+      const q = p[k];
+      return q && x >= q.x - 10 && x <= q.x + q.w + 10 && y >= q.y - 10 && y <= q.y + q.h + 10;
+    }) || '';
+  };
+  const AGGANCIO = 14;
+  const muovi = (r0, dx, dy, altro, aggancia = true) => {
+    const lay = grafDisposizione(c), f = grafFormato(c), g = grafGuide(lay, f);
+    const cur = grafLimiti(r0, lay, f), alt = altro ? grafLimiti(altro.r, altro.lay, altro.formato) : null;
+    const lim = alt ? grafIncrocia(cur, alt) : cur;
+    const tra = (v, [a, b]) => Math.min(Math.max(Math.round(v), Math.ceil(a)), Math.floor(b));
+    dx = tra(dx, lim.x); dy = tra(dy, lim.y);
+    const presi = { x: null, y: null };
+    if (!aggancia) return { dx, dy, presi, lim, r0, cur, alt };
+    const vicino = (lati, linee) => {
+      let meglio = null;
+      lati.forEach((v, i) => { const d = linee[i] - v; if (Math.abs(d) <= AGGANCIO && (!meglio || Math.abs(d) < Math.abs(meglio.d))) meglio = { d, l: linee[i] }; });
+      return meglio;
+    };
+    const dentro = (v, [a, b]) => v >= a && v <= b;
+    const ax = vicino([r0.x + dx, r0.x + dx + r0.w / 2, r0.x + dx + r0.w], g.x);
+    if (ax && dentro(dx + ax.d, lim.x)) { dx = tra(dx + ax.d, lim.x); presi.x = ax.l; }
+    const ay = vicino([r0.y + dy, r0.y + dy + r0.h / 2, r0.y + dy + r0.h], g.y);
+    if (ay && dentro(dy + ay.d, lim.y)) { dy = tra(dy + ay.d, lim.y); presi.y = ay.l; }
+    return { dx, dy, presi, lim, r0, cur, alt };
+  };
+  const sposta = (k, altro, b, m) => {
+    metti(grafFormato(c), k, b.dx + m.dx, b.dy + m.dy);
+    if (altro) metti(altro.formato, k, altro.base.dx + m.dx, altro.base.dy + m.dy);
+  };
+  const disegnaGuide = (m) => {
+    if (!guida) return;
+    const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    guida.width = Math.round(r.width * dpr); guida.height = Math.round(r.height * dpr);
+    const g2 = guida.getContext('2d');
+    g2.clearRect(0, 0, guida.width, guida.height);
+    const k = presa?.k || sopra;
+    if (!k) return;
+    const lay = grafDisposizione(c), q = (canvas._pezzi || {})[k];
+    const s = guida.width / lay.W, px = (n) => n * dpr / s;
+    g2.setTransform(s, 0, 0, s, 0, 0);
+    const accento = getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#c2185b';
+    const AMBRA = '#ffb020';
+    const scrivi = (testo, cx, cy) => {
+      if (!testo) return;
+      let n = 12;
+      const carattere = getComputedStyle(document.body).fontFamily;
+      g2.font = `700 ${px(n)}px ${carattere}`;
+      const largo = g2.measureText(testo).width;
+      if (largo + px(20) > lay.W) { n = Math.max(8, n * (lay.W - px(20)) / largo); g2.font = `700 ${px(n)}px ${carattere}`; }
+      const w = g2.measureText(testo).width + px(16), h = px(n + 10);
+      const x = Math.min(Math.max(cx - w / 2, px(2)), lay.W - w - px(2)), y = cy - h / 2;
+      g2.setLineDash([]);
+      g2.fillStyle = 'rgba(10, 10, 16, .78)'; grRoundRect(g2, x, y, w, h, h / 2); g2.fill();
+      g2.fillStyle = '#ffffff'; g2.textAlign = 'center'; g2.textBaseline = 'middle';
+      g2.fillText(testo, x + w / 2, y + h / 2);
+    };
+    const perche = (sopra) => {
+      const f = grafFormato(c);
+      const daAltro = m.alt && (sopra ? m.alt.y[0] > m.cur.y[0] : m.alt.y[1] < m.cur.y[1]);
+      if (daAltro) return f === 'storia' ? L('Qui uscirebbe dal post', 'Here it would leave the post', 'Aquí saldría del post') : L('Qui nella storia finirebbe sotto Instagram', 'In the story this would go under Instagram', 'Aquí en la historia quedaría bajo Instagram');
+      return f === 'storia' ? L('Qui Instagram copre la storia', 'Instagram covers the story here', 'Aquí Instagram tapa la historia') : '';
+    };
+    if (presa && m) {
+      const g = grafGuide(lay, grafFormato(c));
+      const z = { x0: m.r0.x + m.lim.x[0], x1: m.r0.x + m.r0.w + m.lim.x[1], y0: m.r0.y + m.lim.y[0], y1: m.r0.y + m.r0.h + m.lim.y[1] };
+      g2.fillStyle = 'rgba(200, 30, 70, .22)';
+      g2.fillRect(0, 0, lay.W, z.y0);
+      g2.fillRect(0, z.y1, lay.W, lay.H - z.y1);
+      g2.fillRect(0, z.y0, z.x0, z.y1 - z.y0);
+      g2.fillRect(z.x1, z.y0, lay.W - z.x1, z.y1 - z.y0);
+      g2.setLineDash([px(6), px(5)]); g2.lineWidth = px(1.5); g2.strokeStyle = 'rgba(255,255,255,.8)';
+      g2.strokeRect(g.area.x, g.area.y, g.area.w, g.area.h);
+      g2.beginPath(); g2.moveTo(lay.W / 2, 0); g2.lineTo(lay.W / 2, lay.H); g2.moveTo(0, lay.H / 2); g2.lineTo(lay.W, lay.H / 2); g2.stroke();
+      g2.setLineDash([]); g2.strokeStyle = accento; g2.lineWidth = px(2);
+      g2.beginPath();
+      if (m.presi.x != null) { g2.moveTo(m.presi.x, 0); g2.lineTo(m.presi.x, lay.H); }
+      if (m.presi.y != null) { g2.moveTo(0, m.presi.y); g2.lineTo(lay.W, m.presi.y); }
+      g2.stroke();
+      if (z.y0 >= px(28)) scrivi(perche(true), lay.W / 2, z.y0 / 2);
+      if (lay.H - z.y1 >= px(28)) scrivi(perche(false), lay.W / 2, (z.y1 + lay.H) / 2);
+    }
+    if (q) {
+      const coperti = grafCoperti(canvas._pezzi || {}, k);
+      g2.setLineDash([px(4), px(3)]); g2.strokeStyle = AMBRA; g2.lineWidth = px(2);
+      for (const j of coperti) { const o = canvas._pezzi[j]; g2.strokeRect(o.x - px(3), o.y - px(3), o.w + px(6), o.h + px(6)); }
+      g2.setLineDash(presa ? [] : [px(5), px(4)]); g2.strokeStyle = coperti.length ? AMBRA : accento; g2.lineWidth = px(2);
+      g2.strokeRect(q.x - px(4), q.y - px(4), q.w + px(8), q.h + px(8));
+      if (coperti.length) {
+        const h = px(22), su = q.y - px(8) - h / 2;
+        scrivi(L('Copre un altro pezzo', 'It covers another piece', 'Tapa otra pieza'), q.x + q.w / 2, su - h / 2 >= 0 ? su : q.y + q.h + px(8) + h / 2);
+      }
+    }
+  };
+  const lascia = () => {
+    if (!presa) return;
+    presa = null;
+    disegnaGuide(null);
+    rimetti();
+    segnaDaSalvare(canvas);
+  };
+  canvas.addEventListener('pointerdown', (ev) => {
+    const { x, y } = inTela(ev), k = pezzoIn(x, y);
+    if (!k) return;
+    ev.preventDefault();
+    canvas.setPointerCapture?.(ev.pointerId);
+    presa = { k, x0: x, y0: y, base: base(grafFormato(c), k), r0: { ...(canvas._pezzi[k]) }, altro: nellAltro(k) };
+    scelto = k;
+    canvas.classList.add('gr-presa');
+    disegnaGuide(muovi(presa.r0, 0, 0, presa.altro));
+  });
+  canvas.addEventListener('pointermove', (ev) => {
+    const { x, y } = inTela(ev);
+    if (!presa) {
+      const k = pezzoIn(x, y);
+      canvas.style.cursor = k ? 'grab' : '';
+      if (k !== sopra) { sopra = k; disegnaGuide(null); }
+      return;
+    }
+    const m = muovi(presa.r0, x - presa.x0, y - presa.y0, presa.altro);
+    sposta(presa.k, presa.altro, presa.base, m);
+    ridisegna();
+    requestAnimationFrame(() => disegnaGuide(m));
+  });
+  canvas.addEventListener('touchstart', (ev) => {
+    const t = ev.touches[0];
+    if (t && ev.touches.length === 1) { const { x, y } = inTela(t); if (pezzoIn(x, y)) ev.preventDefault(); }
+  }, { passive: false });
+  canvas.addEventListener('touchmove', (ev) => { if (presa) ev.preventDefault(); }, { passive: false });
+  canvas.addEventListener('pointerleave', () => { if (!presa && sopra) { sopra = ''; canvas.style.cursor = ''; disegnaGuide(null); } });
+  canvas.addEventListener('pointerup', () => { canvas.classList.remove('gr-presa'); lascia(); });
+  canvas.addEventListener('pointercancel', () => { canvas.classList.remove('gr-presa'); lascia(); });
+  canvas.addEventListener('keydown', (ev) => {
+    const passo = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[ev.key];
+    if (!passo) return;
+    const pezzi = GR_PEZZI[grafTipoPezzi(c)].filter((k) => (canvas._pezzi || {})[k]);
+    if (!pezzi.includes(scelto)) scelto = pezzi.includes('titolo') ? 'titolo' : pezzi[0];
+    const q = (canvas._pezzi || {})[scelto];
+    if (!q) return;
+    ev.preventDefault();
+    const n = ev.shiftKey ? 20 : 4;
+    const altro = nellAltro(scelto);
+    sposta(scelto, altro, base(grafFormato(c), scelto), muovi(q, passo[0] * n, passo[1] * n, altro, false));
+    sopra = scelto;
+    ridisegna();
+    requestAnimationFrame(() => disegnaGuide(null));
+    rimetti();
+    segnaDaSalvare(canvas);
+  });
+  canvas.addEventListener('blur', () => { if (!presa && sopra) { sopra = ''; disegnaGuide(null); } });
+  tastoRimetti?.addEventListener('click', () => {
+    const tp = grafTipoPezzi(c);
+    if (c.spostati?.[tp]) {
+      delete c.spostati[tp][grafFormato(c)];
+      if (c.spostaInsieme !== false) delete c.spostati[tp][altroFormato()];
+    }
+    sopra = ''; scelto = '';
+    ridisegna();
+    disegnaGuide(null);
+    rimetti();
+    segnaDaSalvare(canvas);
+  });
+  document.getElementById('gr-insieme')?.addEventListener('change', (e) => { c.spostaInsieme = e.target.checked; rimetti(); });
+  rimetti();
   const setTipo = (t) => {
     c.tipo = t;
     misuraPost();
     const tit = document.getElementById('gr-titolo');
     if (tit) { tit.value = _grafTitoloDi(c); tit.placeholder = _grafSegnaTitolo(t); }
     document.querySelectorAll('[data-gr-tipo]').forEach((b) => b.classList.toggle('on', b.dataset.grTipo === t));
-    document.querySelectorAll('.gr-solo-prog').forEach((x) => x.toggleAttribute('hidden', t === 'live'));
+    document.querySelectorAll('.gr-solo-prog').forEach((x) => x.toggleAttribute('hidden', t !== 'programmazione'));
     document.querySelectorAll('.gr-solo-live').forEach((x) => x.toggleAttribute('hidden', t !== 'live'));
+    document.querySelectorAll('.gr-solo-prossima').forEach((x) => x.toggleAttribute('hidden', t !== 'prossima'));
+    document.querySelectorAll('.gr-no-prossima').forEach((x) => x.toggleAttribute('hidden', t === 'prossima'));
+    if (t === 'prossima') caricaProssima();
     ridisegna();
+    rimetti();
     miniature();
   };
   document.querySelectorAll('[data-gr-tipo]').forEach((b) => b.addEventListener('click', () => setTipo(b.dataset.grTipo)));
@@ -5645,6 +6070,8 @@ function initGrafiche() {
   document.getElementById('gr-titolo')?.addEventListener('input', (e) => { c[c.tipo === 'live' ? 'titoloLive' : 'titolo'] = e.target.value; ridisegna(); });
   bind('gr-handle', 'handle'); bind('gr-logo', 'logo');
   bind('gr-gioco', 'gioco'); bind('gr-sottotitolo', 'sottotitolo');
+  bind('gr-quando', 'quandoTesto');
+  document.getElementById('gr-copertina')?.addEventListener('change', (e) => { c.copertina = e.target.checked; ridisegna(); });
   document.getElementById('gr-accento')?.addEventListener('input', (e) => {
     c.accento = e.target.value;
     if (!/^#[0-9a-fA-F]{6}$/.test(c.accento2 || '')) { const a2 = document.getElementById('gr-accento2'); if (a2) a2.value = grafTavolozza(c, grafDisposizione(c)).acc2; }
@@ -6278,7 +6705,8 @@ function _quandoProssima(p) {
   const alle = L('alle', 'at', 'a las');
   if (giorni <= 0) {
     const min = Math.max(1, Math.round((p.quando - ora) / 60000));
-    return { giorno: `${L('Oggi', 'Today', 'Hoy')} ${alle} ${p.ora}`, fra: min < 60 ? rtf.format(min, 'minute') : rtf.format(Math.floor(min / 60), 'hour') };
+    const sera = Number(String(p.ora).split(':')[0]) >= 17;
+    return { giorno: `${sera ? L('Stasera', 'Tonight', 'Esta noche') : L('Oggi', 'Today', 'Hoy')} ${alle} ${p.ora}`, fra: min < 60 ? rtf.format(min, 'minute') : rtf.format(Math.floor(min / 60), 'hour') };
   }
   if (giorni === 1) return { giorno: `${L('Domani', 'Tomorrow', 'Mañana')} ${alle} ${p.ora}`, fra: '' };
   const nome = new Intl.DateTimeFormat(localePannello(), { weekday: 'long', timeZone: fuso }).format(new Date(p.quando));

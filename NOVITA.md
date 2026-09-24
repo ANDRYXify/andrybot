@@ -73,6 +73,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Premendo «Tutto schermo» il menù di lato si disfa a matita prima di lasciare il posto, e tornando indietro si ridisegna. [vai: alert]
 - Nelle Grafiche l'anteprima resta tutta visibile mentre scorri, sotto la barra in cima. [vai: grafiche]
 - Nel giro guidato il riquadro attorno a quello che ti indica si disegna a matita, a ogni passo.
+- [importante] Nelle Grafiche sposti ogni pezzo trascinandolo sull'anteprima, col mouse, col dito o con le frecce. Le guide mostrano margini, centri e dove Instagram copre la storia, e post e storia si spostano insieme. [vai: grafiche]
+- [importante] Nelle Grafiche c'è «Stasera alle…»: la storia che annuncia la prossima diretta della tua Settimana, con l'ora, il tuo indirizzo e dietro la copertina del gioco. [vai: grafiche]
 
 ## 2026-09-23
 
