@@ -8595,9 +8595,9 @@ function pannelloAlert() {
         <span class="tenue" id="font-mio-esito"></span>
       </div>
       <div id="font-miei-elenco" class="font-miei"></div>
-      <label class="campo spazio-sopra" for="al-st-gfont">Font <span class="tenue">— ${L('scegli un font Google dall\'elenco con anteprima (vince sul menu qui sopra)', 'pick a Google font from the list with preview (overrides the menu above)', 'elige una fuente Google de la lista con vista previa (gana sobre el menú de arriba)')}</span></label>
+      <label class="campo spazio-sopra" for="al-st-gfont">Font <span class="tenue">— ${L('scegli un font Google dall\'elenco con anteprima (vince sul menù qui sopra)', 'pick a Google font from the list with preview (overrides the menu above)', 'elige una fuente Google de la lista con vista previa (gana sobre el menú de arriba)')}</span></label>
       <div class="riga-flessibile">
-        <input type="text" id="al-st-gfont" class="campo-largo gfont" placeholder="${L('— nessun font Google (uso il menu) —', '— no Google font (using the menu) —', '— sin fuente Google (uso el menú) —')}" value="${esc(st.googleFont || '')}">
+        <input type="text" id="al-st-gfont" class="campo-largo gfont" placeholder="${L('— nessun font Google (uso il menù) —', '— no Google font (using the menu) —', '— sin fuente Google (uso el menú) —')}" value="${esc(st.googleFont || '')}">
         <button type="button" class="btn secondario sfoglia-font" data-target="al-st-gfont" data-box="fb-al">${_bIco(ICO.libro)}${L('Sfoglia i font', 'Browse fonts', 'Explorar fuentes')}</button>
         <button type="button" class="btn secondario gfont-x" data-target="al-st-gfont" title="${L('Togli il font Google', 'Remove the Google font', 'Quitar la fuente Google')}">✕</button>
       </div>
@@ -8644,7 +8644,7 @@ function pannelloAlert() {
         ${cSel('co-st-anim', L('Animazione', 'Animation', 'Animación'), ANIM_CHAT_OPTS(), cst.animazione)}
         ${cRng('co-st-larg', L('Larghezza', 'Width', 'Ancho'), 18, 60, cst.larghezza, 'vw')}
       </div>
-      <label class="campo spazio-sopra" for="co-st-gfont">Font <span class="tenue">— ${L('font Google dall\'elenco con anteprima (opzionale, vince sul menu)', 'Google font from the list with preview (optional, overrides the menu)', 'fuente Google de la lista con vista previa (opcional, gana sobre el menú)')}</span></label>
+      <label class="campo spazio-sopra" for="co-st-gfont">Font <span class="tenue">— ${L('font Google dall\'elenco con anteprima (opzionale, vince sul menù)', 'Google font from the list with preview (optional, overrides the menu)', 'fuente Google de la lista con vista previa (opcional, gana sobre el menú)')}</span></label>
       <div class="riga-flessibile">
         <input type="text" id="co-st-gfont" class="campo-largo gfont" placeholder="${L('— nessun font Google —', '— no Google font —', '— sin fuente Google —')}" value="${esc(cst.googleFont || '')}">
         <button type="button" class="btn secondario sfoglia-font" data-target="co-st-gfont" data-box="fb-co">${_bIco(ICO.libro)}${L('Sfoglia i font', 'Browse fonts', 'Explorar fuentes')}</button>
@@ -17822,7 +17822,7 @@ function carteContatori() {
           L('<strong>Accendilo a schermo</strong> scrivendo in chat <code>!morti on</code> (parte da 0 e appare nell’overlay). Lo spegni con <code>!morti off</code>.', '<strong>Turn it on screen</strong> by typing <code>!deaths on</code> in chat (starts from 0 and appears in the overlay). Turn it off with <code>!deaths off</code>.', '<strong>Enciéndelo en pantalla</strong> escribiendo <code>!muertes on</code> en el chat (empieza en 0 y aparece en el overlay). Lo apagas con <code>!muertes off</code>.'),
           L('<strong>Fallo salire</strong> (solo tu e i mod): <code>!morti+</code>, <code>!morti +3</code>, <code>!morti-</code>, <code>!morti reset</code>, <code>!morti set 10</code>. Chiunque può leggerlo con <code>!morti</code>.', '<strong>Make it go up</strong> (you and mods only): <code>!deaths+</code>, <code>!deaths +3</code>, <code>!deaths-</code>, <code>!deaths reset</code>, <code>!deaths set 10</code>. Anyone can read it with <code>!deaths</code>.', '<strong>Súbelo</strong> (solo tú y los mods): <code>!muertes+</code>, <code>!muertes +3</code>, <code>!muertes-</code>, <code>!muertes reset</code>, <code>!muertes set 10</code>. Cualquiera lo lee con <code>!muertes</code>.'),
           L('<strong>In automatico</strong>: metti una «parola automatica» (es. «lol») e il contatore sale da solo ogni volta che appare in chat; oppure premi «Crea premio» per collegarlo a un <strong>punto canale</strong>.', '<strong>Automatically</strong>: set an “auto word” (e.g. “lol”) and the counter rises on its own whenever it shows up in chat; or hit “Create reward” to link it to a <strong>channel point</strong>.', '<strong>En automático</strong>: pon una «palabra automática» (ej. «lol») y el contador sube solo cada vez que aparece en el chat; o pulsa «Crear premio» para vincularlo a un <strong>punto de canal</strong>.'),
-          L('<strong>Scegli dove appare</strong>: attiva «Mostra in overlay» e usa il menu <strong>Posizione a schermo</strong> (in alto a destra, in basso al centro…). Sotto puoi personalizzare colori, dimensione, font, formato del testo.', '<strong>Choose where it shows</strong>: turn on “Show in overlay” and use the <strong>On-screen position</strong> menu (top right, bottom center…). Below you can customize colors, size, font, text format and the <strong>words to turn on/off</strong>.', '<strong>Elige dónde aparece</strong>: activa «Mostrar en overlay» y usa el menú <strong>Posición en pantalla</strong> (arriba a la derecha, abajo en el centro…). Debajo puedes personalizar colores, tamaño, fuente, formato del texto.'),
+          L('<strong>Scegli dove appare</strong>: attiva «Mostra in overlay» e usa il menù <strong>Posizione a schermo</strong> (in alto a destra, in basso al centro…). Sotto puoi personalizzare colori, dimensione, font, formato del testo.', '<strong>Choose where it shows</strong>: turn on “Show in overlay” and use the <strong>On-screen position</strong> menu (top right, bottom center…). Below you can customize colors, size, font, text format and the <strong>words to turn on/off</strong>.', '<strong>Elige dónde aparece</strong>: activa «Mostrar en overlay» y usa el menú <strong>Posición en pantalla</strong> (arriba a la derecha, abajo en el centro…). Debajo puedes personalizar colores, tamaño, fuente, formato del texto.'),
         ],
         note: [
           L('Il contatore usa lo <strong>stesso overlay della diretta</strong> di alert ed effetti: se ce l’hai già in OBS, non devi aggiungere nulla.', 'The counter uses the <strong>same stream overlay</strong> as alerts and effects: if it’s already in OBS, you don’t need to add anything.', 'El contador usa el <strong>mismo overlay del directo</strong> que las alertas y los efectos: si ya lo tienes en OBS, no hace falta añadir nada.'),
@@ -21956,7 +21956,7 @@ function attivaPiattaforma() {
     } else if (window.matchMedia('(display-mode: standalone)').matches) {
       toast(L('L\'app è già installata', 'The app is already installed', 'La app ya está instalada'));
     } else {
-      toast(L('Usa il menu del browser: “Installa app” / “Aggiungi a Home”.', 'Use the browser menu: “Install app” / “Add to Home”.', 'Usa el menú del navegador: “Instalar app” / “Añadir a inicio”.'));
+      toast(L('Usa il menù del browser: “Installa app” / “Aggiungi a Home”.', 'Use the browser menu: “Install app” / “Add to Home”.', 'Usa el menú del navegador: “Instalar app” / “Añadir a inicio”.'));
     }
   });
 
