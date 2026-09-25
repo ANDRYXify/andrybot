@@ -307,3 +307,24 @@ test('un pezzo che ne copre un altro si vede, misurato sulle sue parti vere', ()
   assert.deepEqual(coperti({ qr, logo: { x: 300, y: 1170, w: 84, h: 84 } }, 'logo'), ['qr'], 'e sopra il suo indirizzo');
   assert.ok(APP.includes('parti: [...a.parti, parte]'), 'ogni pezzo tiene le sue parti, oltre all\'ingombro');
 });
+
+// L'IMMAGINE DEL GIOCO: TRE MODI (docs/GRAFICHE.md). Server e pannello leggono
+// il modo con la stessa regola, e il vecchio interruttore ci torna dentro:
+// acceso (o mai toccato) e' a tutto schermo, spento e' niente.
+test('l\'immagine del gioco ha tre modi, uguali di qua e di la\', e il vecchio interruttore ci torna dentro', () => {
+  const r = SRV.slice(SRV.indexOf('if (b.grafiche !== undefined) {'), SRV.indexOf('giorni,', SRV.indexOf('if (b.grafiche !== undefined) {')));
+  const campo = (nome) => new Function('gr', 'return ' + new RegExp(`\\n\\s*${nome}: ([^\\n]+),\\n`).exec(r)[1]);
+  const server = campo('copertina');
+  const pannello = new Function('c', 'return ' + /const grafCopertinaModo = \(c\) => (\(.+\));/.exec(APP)[1]);
+  for (const [v, atteso] of [[true, 'schermo'], [undefined, 'schermo'], [false, 'no'], ['no', 'no'], ['riquadro', 'riquadro'], ['schermo', 'schermo'], ['boh', 'schermo']]) {
+    assert.equal(server({ copertina: v }), atteso, `server: ${String(v)}`);
+    assert.equal(pannello({ copertina: v }), atteso, `pannello: ${String(v)}`);
+  }
+  const velo = campo('copertinaVelo'), sfoca = campo('copertinaSfocatura'), scala = campo('copertinaScala');
+  assert.deepEqual([velo({}), velo({ copertinaVelo: 99 }), velo({ copertinaVelo: -3 })], [0, 85, 0], 'il velo va da 0 a 85, di serie niente');
+  assert.deepEqual([sfoca({}), sfoca({ copertinaSfocatura: 50 })], [0, 30], 'la sfocatura da 0 a 30, di serie niente');
+  assert.deepEqual([scala({}), scala({ copertinaScala: 10 }), scala({ copertinaScala: 999 })], [100, 40, 160], 'la grandezza dal 40 al 160%, di serie 100');
+  assert.ok(/prossima: \['logo', 'handle', 'copertina', /.test(SRV) && /prossima: \['logo', 'handle', 'copertina', /.test(APP), 'la carta si sposta come gli altri pezzi');
+  assert.ok(APP.includes("const grafPillolaProssima = (c) => !!grafProssimaGioco(c) && !grafConCopertina(c) && !grafCopertinaRiquadro(c);"), 'la pillola del gioco solo quando l\'immagine non si vede: una regola per la disposizione e per il disegno');
+  assert.ok(APP.includes("const pillola = grafPillolaProssima(c) ? 104 + 40 : 0;") && APP.includes("if (grafPillolaProssima(c)) grafPillola(ctx, pal, lay, gioco);"));
+});

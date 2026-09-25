@@ -183,7 +183,7 @@ const ALERT_KINDS = ['follow', 'sub', 'cheer', 'raid', 'donazione'];
 const PEZZI_GRAFICHE = {
   live: ['logo', 'handle', 'badge', 'titolo', 'pillola', 'sotto', 'qr'],
   programmazione: ['logo', 'handle', 'occhiello', 'titolo', 'righe', 'qr'],
-  prossima: ['logo', 'handle', 'quando', 'dove', 'pillola', 'qr'],
+  prossima: ['logo', 'handle', 'copertina', 'quando', 'dove', 'pillola', 'qr'],
 };
 const CANALE_IN_VIA = LOGIN_RE.source.replace(/^\^|\$$/g, '');
 const RE_CANALE_IN_VIA = new RegExp(`^/(${CANALE_IN_VIA})/?$`, 'i');
@@ -6400,7 +6400,14 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
         titolo: str(gr.titolo, 40), titoloLive: str(gr.titoloLive, 40), handle: str(gr.handle, 40), logo: str(gr.logo, 8),
         logoImg: imgOk(logoImg) ? logoImg : '',
         gioco: str(gr.gioco, 40), sottotitolo: str(gr.sottotitolo, 60),
-        quandoTesto: str(gr.quandoTesto, 40), copertina: gr.copertina !== false,
+        quandoTesto: str(gr.quandoTesto, 40),
+        // l'immagine del gioco: a tutto schermo, in un riquadro o niente
+        // (docs/GRAFICHE.md, «L'immagine del gioco: tre modi»); il vecchio
+        // interruttore diventa schermo o niente
+        copertina: gr.copertina === false || gr.copertina === 'no' ? 'no' : gr.copertina === 'riquadro' ? 'riquadro' : 'schermo',
+        copertinaVelo: Math.max(0, Math.min(85, Math.round(Number(gr.copertinaVelo)) || 0)),
+        copertinaSfocatura: Math.max(0, Math.min(30, Math.round(Number(gr.copertinaSfocatura)) || 0)),
+        copertinaScala: Math.max(40, Math.min(160, Math.round(Number(gr.copertinaScala)) || 100)),
         sfondo: ['tema', 'tinta', 'immagine'].includes(gr.sfondo) ? gr.sfondo : 'tema',
         sfondoColore: /^#[0-9a-fA-F]{6}$/.test(String(gr.sfondoColore || '')) ? String(gr.sfondoColore) : '',
         sfondoImg: imgOk(sfImg) ? sfImg : '',

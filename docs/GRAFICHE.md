@@ -381,4 +381,41 @@ dove trovarti, e dietro la copertina del gioco.
   grafica scrive l'indirizzo, e il pannello dice di metterci sopra l'adesivo
   dall'app.
 - Si sposta come le altre (capitolo 10): i pezzi sono il logo, il nome, i due
-  adesivi, la pillola e il QR.
+  adesivi, la pillola, il QR e, in un riquadro, la copertina.
+
+### L'immagine del gioco: tre modi
+
+Chiesto così: «diamo più libertà, qua se no c'è solo l'immagine a tutto schermo
+della categoria». La copertina ha un modo (`copertina`), e ogni modo ha le sue
+regole:
+
+| modo | l'immagine | lo sfondo | la pillola del gioco |
+|---|---|---|---|
+| `schermo` | copre tutta la grafica, con velo e sfocatura a scelta | l'immagine | no: il gioco lo dice l'immagine |
+| `riquadro` | una carta con gli angoli tondi, che si sposta e si ingrandisce | quello del tema | no |
+| `no` | niente | quello del tema | sì |
+
+- **Il tema si vede dove l'immagine non copre.** In `riquadro` e in `no` lo
+  sfondo è quello scelto nelle Grafiche (tema, tinta o immagine), animato se
+  il tema lo è; in `schermo` l'immagine è lo sfondo. Finché la copertina non
+  c'è (nessuna categoria, o non ancora arrivata) vale lo sfondo del tema in
+  ogni modo: la regola è una, `grafCopertinaModo`, e la usano disposizione e
+  disegno.
+- **Velo e sfocatura** valgono solo a tutto schermo. Il velo è un nero uniforme
+  dallo 0 all'85%, sopra la sfumatura in cima e in fondo che c'era già; la
+  sfocatura va da 0 a 30 pixel sulla grafica a grandezza vera, e per non
+  scurire i bordi l'immagine si disegna più grande di quanto sfoca. Col
+  browser che non sa sfocare una tela (`ctx.filter`), l'immagine passa da una
+  tela più piccola e torna grande: lo stesso effetto per un'altra strada. Di
+  serie tutti e due a zero: la grafica di chi non tocca niente resta quella di
+  prima.
+- **La carta** è alta quanto serve alla sua forma (le copertine di Twitch sono
+  3:4, ma vale la misura vera del file), centrata nello spazio libero sotto
+  l'intestazione insieme ai due adesivi, e non esce mai da quello spazio:
+  «Grandezza» va dal 40 al 160% della misura di serie, fino allo spazio che
+  c'è. Si sposta come gli altri pezzi, per formato o insieme, dentro i limiti
+  della tela e fuori dalle fasce di Instagram.
+- Le storie che partono da sole usano le stesse impostazioni con lo stesso
+  disegno: non c'è una seconda strada.
+- Chi aveva salvato `copertina: true` o `false` (il vecchio interruttore) li
+  ritrova come `schermo` e `no`.

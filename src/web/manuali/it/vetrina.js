@@ -7,7 +7,7 @@ export default {
   titolo: 'Manuale della vetrina: pagina link, grafiche e notifiche social | SocialBot',
   h1: 'Manuale della vetrina: pagina link, grafiche e notifiche social',
   desc: 'La pagina pubblica da mettere in bio, le tre grafiche pronte da pubblicare, quelle che escono da sole e gli avvisi quando vai in diretta o pubblichi qualcosa.',
-  aggiornata: '2026-09-04',
+  aggiornata: '2026-09-25',
   corpo: [
     { p: [
       'Tre schede che lavorano <strong>fuori dalla diretta</strong>: dove ti trovano, cosa vedono, e come sanno che sei partito.',
@@ -54,7 +54,7 @@ export default {
     { p: ['C\'è un\'anteprima: salvi e la apri, così vedi la pagina com\'è davvero prima di metterla in bio.'] },
 
     { h2: 'Le grafiche social' },
-    { p: ['Tre grafiche pronte da pubblicare, che si scaricano in PNG: la <strong>programmazione settimanale</strong>, il <strong>«Live ora»</strong> e <strong>«Stasera alle…»</strong>, che annuncia la prossima diretta con la copertina del gioco. Le impostazioni restano salvate, e i giorni arrivano dalla tua settimana: cambi un orario lì e la grafica è già aggiornata. Nella carta «In automatico» la storia prima della diretta, «Live ora» e la settimana escono da sole.'] },
+    { p: ['Tre grafiche pronte da pubblicare, che si scaricano in PNG: la <strong>programmazione settimanale</strong>, il <strong>«Live ora»</strong> e <strong>«Stasera alle…»</strong>, che annuncia la prossima diretta con la copertina del gioco. L\'immagine del gioco ha tre modi: <strong>a tutto schermo</strong>, con un velo e una sfocatura che regoli, <strong>in un riquadro</strong> che trascini sull\'anteprima e ingrandisci con «Grandezza», oppure <strong>niente</strong>, e allora si vede il tema e il gioco va nella pillola. Le impostazioni restano salvate, e i giorni arrivano dalla tua settimana: cambi un orario lì e la grafica è già aggiornata. Nella carta «In automatico» la storia prima della diretta, «Live ora» e la settimana escono da sole.'] },
     { p: ['Si parte da uno <strong>stile pronto</strong>, con l\'anteprima vera fatta coi tuoi testi, o da uno dei ventuno temi: sette fermi e quattordici animati, fra cui synthwave, vaporwave, pioggia al neon, notte di stelle, sakura e lo-fi. Poi si cambia tutto: colori, carattere e stile del titolo, forma delle righe, e per le scene animate cosa si vede, la velocità e quanto si fa notare la scena. L\'anteprima è dal vivo: quello che vedi è quello che esce.'] },
     { p: ['Le scritte si leggono sempre, anche sopra le scene che si muovono: dove sotto passa qualcosa di chiaro compare un contorno, e dove non serve il colore resta il tuo. La GIF e il video fanno un giro intero dell\'animazione e ricominciano senza scatti. Col QR, il riquadro ha una fascia sua in basso e le righe gli fanno posto.'] },
     { p: ['Su telefono l\'anteprima resta appiccicata in alto mentre scorri i controlli, così non devi fare avanti e indietro per vedere l\'effetto di una modifica.'] },

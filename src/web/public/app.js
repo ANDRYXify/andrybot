@@ -4511,7 +4511,7 @@ function grafDefault() {
     gioco: '', sottotitolo: '',
     sfondo: 'tema', sfondoColore: '', sfondoImg: '',
     qr: false, dest: 'u', formato: 'post', spostati: {}, spostaInsieme: true,
-    quandoTesto: '', copertina: true,
+    quandoTesto: '', copertina: 'schermo', copertinaVelo: 0, copertinaSfocatura: 0, copertinaScala: 100,
     giorni: grafGiorni(),
   };
 }
@@ -5098,7 +5098,19 @@ function pannelloGrafiche() {
             <label class="campo spazio-sopra" for="gr-quando">${L('Quando', 'When', 'Cuándo')}</label>
             <input type="text" id="gr-quando" maxlength="40" value="${esc(c.quandoTesto || '')}">
             <p class="suggerimento" id="gr-quando-da"></p>
-            <label class="riga-check spazio-sopra"><input type="checkbox" id="gr-copertina" ${c.copertina !== false ? 'checked' : ''}> ${L('La copertina del gioco come sfondo', 'The game cover as the background', 'La portada del juego como fondo')}</label>
+            <label class="campo spazio-sopra" for="gr-copertina">${L('L’immagine del gioco', 'The game image', 'La imagen del juego')}</label>
+            <select id="gr-copertina">${[['schermo', L('A tutto schermo', 'Full screen', 'A pantalla completa')], ['riquadro', L('In un riquadro', 'In a frame', 'En un recuadro')], ['no', L('Niente, si vede il tema', 'None, the theme shows', 'Nada, se ve el tema')]].map(([v, t]) => `<option value="${v}"${v === grafCopertinaModo(c) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+            <div class="gr-cop-schermo" ${grafCopertinaModo(c) === 'schermo' ? '' : 'hidden'}>
+              <label class="campo spazio-sopra" for="gr-cop-velo">${L('Velo sull’immagine', 'Veil over the image', 'Velo sobre la imagen')} <span class="tenue" id="gr-cop-velo-val">${Number(c.copertinaVelo) || 0}%</span></label>
+              <input type="range" id="gr-cop-velo" min="0" max="85" value="${Number(c.copertinaVelo) || 0}" style="width:100%">
+              <label class="campo" for="gr-cop-sfoca">${L('Sfocatura', 'Blur', 'Desenfoque')} <span class="tenue" id="gr-cop-sfoca-val">${Number(c.copertinaSfocatura) || 0}</span></label>
+              <input type="range" id="gr-cop-sfoca" min="0" max="30" value="${Number(c.copertinaSfocatura) || 0}" style="width:100%">
+            </div>
+            <div class="gr-cop-riquadro" ${grafCopertinaModo(c) === 'riquadro' ? '' : 'hidden'}>
+              <label class="campo spazio-sopra" for="gr-cop-scala">${L('Grandezza', 'Size', 'Tamaño')} <span class="tenue" id="gr-cop-scala-val">${Number(c.copertinaScala) || 100}%</span></label>
+              <input type="range" id="gr-cop-scala" min="40" max="160" step="5" value="${Number(c.copertinaScala) || 100}" style="width:100%">
+              <p class="suggerimento">${L('Trascinala sull’anteprima per spostarla, come gli altri pezzi.', 'Drag it on the preview to move it, like the other pieces.', 'Arrástrala en la vista previa para moverla, como las otras piezas.')}</p>
+            </div>
             <p class="suggerimento">${L('Per rendere toccabile l’indirizzo, in Instagram mettici sopra l’adesivo «Link»: da fuori non si può aggiungere.', 'To make the address tappable, put Instagram’s “Link” sticker on it: it cannot be added from outside.', 'Para que la dirección se pueda tocar, pon encima la pegatina «Enlace» de Instagram: desde fuera no se puede añadir.')}</p>
           </div>
 
@@ -5209,15 +5221,19 @@ function _grafTrasla(v, dy) {
 const GR_PEZZI = {
   live: ['logo', 'handle', 'badge', 'titolo', 'pillola', 'sotto', 'qr'],
   programmazione: ['logo', 'handle', 'occhiello', 'titolo', 'righe', 'qr'],
-  prossima: ['logo', 'handle', 'quando', 'dove', 'pillola', 'qr'],
+  prossima: ['logo', 'handle', 'copertina', 'quando', 'dove', 'pillola', 'qr'],
 };
 const grafTipoPezzi = (c) => (GR_PEZZI[c.tipo] ? c.tipo : 'programmazione');
 
 const grafProssimaDi = (c) => c?._prossima || _grProssima;
 const grafCopertinaDi = (c) => c?._copertina || grafCopertina;
 const grafCopertinaSrc = (c) => { const p = grafProssimaDi(c); return p?.categoriaId ? '/api/streamer/grafiche/copertina/' + p.categoriaId : ''; };
-const grafConCopertina = (c) => { const cop = grafCopertinaDi(c), src = grafCopertinaSrc(c); return c.tipo === 'prossima' && c.copertina !== false && !!src && cop.pronto && !!cop.el && cop.src === src; };
+const grafCopertinaModo = (c) => (c.copertina === false || c.copertina === 'no' ? 'no' : c.copertina === 'riquadro' ? 'riquadro' : 'schermo');
+const grafCopertinaPronta = (c) => { const cop = grafCopertinaDi(c), src = grafCopertinaSrc(c); return c.tipo === 'prossima' && !!src && cop.pronto && !!cop.el && cop.src === src; };
+const grafConCopertina = (c) => grafCopertinaPronta(c) && grafCopertinaModo(c) === 'schermo';
+const grafCopertinaRiquadro = (c) => grafCopertinaPronta(c) && grafCopertinaModo(c) === 'riquadro';
 const grafProssimaGioco = (c) => { const p = grafProssimaDi(c); return String(p?.categoria || p?.att || '').trim(); };
+const grafPillolaProssima = (c) => !!grafProssimaGioco(c) && !grafConCopertina(c) && !grafCopertinaRiquadro(c);
 function grafQuandoTesto(c) {
   const scritto = String(c.quandoTesto || '').trim();
   if (scritto) return scritto;
@@ -5377,10 +5393,20 @@ function _grafDisposizionePost(c, alta = 0) {
     const dS = { px: 56, min: 30, peso: '800', max: W - pad * 2, padH: 36, padV: 24 };
     const quando = grafQuandoTesto(c), dove = grafUrlCanale(c);
     const q = grafAdesivoForma(quando, qS), d = grafAdesivoForma(dove, dS);
-    const pillola = grafProssimaGioco(c) && !grafConCopertina(c) ? 104 + 40 : 0;
+    const pillola = grafPillolaProssima(c) ? 104 + 40 : 0;
     const blocco = pillola + q.h + 24 + d.h;
     const cima = lay.filo.y + lay.filo.h, fondo = lay.qr ? lay.qr.y - 48 : H - 120;
-    const yP = grafConCopertina(c) ? fondo - blocco : Math.round(cima + (fondo - cima - blocco) / 2);
+    let yP = grafConCopertina(c) ? fondo - blocco : Math.round(cima + (fondo - cima - blocco) / 2);
+    if (grafCopertinaRiquadro(c)) {
+      const im = grafCopertinaDi(c).el, forma = (im.naturalHeight || 4) / (im.naturalWidth || 3);
+      const stacco = 48, hMax = Math.max(120, fondo - cima - blocco - stacco * 2);
+      const hBase = Math.min(hMax * 0.8, (W - pad * 2) * 0.62 * forma);
+      const scala = Math.max(40, Math.min(160, Number(c.copertinaScala) || 100)) / 100;
+      const h = Math.round(Math.min(hMax, hBase * scala)), w = Math.round(h / forma);
+      const y0 = Math.round(cima + (fondo - cima - (h + stacco + blocco)) / 2);
+      lay.copertina = { x: Math.round((W - w) / 2), y: y0, w, h, r: 28 };
+      yP = y0 + h + stacco;
+    }
     const yQ = yP + pillola, yD = yQ + q.h + 24;
     lay.quando = { ...qS, x: W / 2, y: yQ, testo: quando };
     lay.dove = { ...dS, x: W / 2, y: yD, testo: dove };
@@ -5425,8 +5451,9 @@ function grafSfondo(ctx, c, W, H, t, pal) {
   const tema = pal.tema;
   const cop = grafConCopertina(c);
   if (cop) {
-    const im = grafCopertinaDi(c).el, iw = im.naturalWidth || 1, ih = im.naturalHeight || 1, k = Math.max(W / iw, H / ih);
-    ctx.drawImage(im, (W - iw * k) / 2, (H - ih * k) / 2, iw * k, ih * k);
+    grafCopriSfocato(ctx, grafCopertinaDi(c).el, W, H, Math.max(0, Math.min(30, Number(c.copertinaSfocatura) || 0)));
+    const veloCop = Math.max(0, Math.min(85, Number(c.copertinaVelo) || 0)) / 100;
+    if (veloCop > 0) { ctx.fillStyle = `rgba(0,0,0,${veloCop})`; ctx.fillRect(0, 0, W, H); }
     const vg = ctx.createLinearGradient(0, 0, 0, H);
     vg.addColorStop(0, 'rgba(0,0,0,.6)'); vg.addColorStop(0.3, 'rgba(0,0,0,0)'); vg.addColorStop(0.62, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)');
     ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
@@ -5450,6 +5477,56 @@ function grafSfondo(ctx, c, W, H, t, pal) {
   }
   const vg = ctx.createRadialGradient(W / 2, H * 0.42, H * 0.3, W / 2, H * 0.5, H * 0.85); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, pal.chiaro ? 'rgba(0,0,0,.38)' : 'rgba(0,0,0,.10)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
   ctx.save(); ctx.globalAlpha = pal.chiaro ? 0.05 : 0.035; ctx.globalCompositeOperation = 'overlay'; ctx.fillStyle = window.SB_SCENE.grana(ctx); ctx.fillRect(0, 0, W, H); ctx.restore();
+}
+
+let _grFiltro = null;
+function _grFiltroOk() {
+  if (_grFiltro !== null) return _grFiltro;
+  try { const x = document.createElement('canvas').getContext('2d'); x.filter = 'blur(2px)'; _grFiltro = x.filter === 'blur(2px)'; } catch { _grFiltro = false; }
+  return _grFiltro;
+}
+
+const _grSfocata = { chiave: '', tela: null };
+function grafCopriSfocato(ctx, im, W, H, sf) {
+  const iw = im.naturalWidth || 1, ih = im.naturalHeight || 1;
+  const m = sf * 2, k = Math.max((W + 2 * m) / iw, (H + 2 * m) / ih);
+  const w = iw * k, h = ih * k, x = (W - w) / 2, y = (H - h) / 2;
+  if (!sf) { ctx.drawImage(im, x, y, w, h); return; }
+  const sc = ctx.getTransform().a || 1;
+  const chiave = [im.src, sf, W, H, sc].join('|');
+  if (_grSfocata.chiave !== chiave) {
+    const t = document.createElement('canvas');
+    t.width = Math.round(W * sc); t.height = Math.round(H * sc);
+    const tc = t.getContext('2d');
+    tc.imageSmoothingEnabled = true; tc.imageSmoothingQuality = 'high';
+    if (_grFiltroOk()) {
+      tc.filter = `blur(${sf * sc}px)`;
+      tc.drawImage(im, x * sc, y * sc, w * sc, h * sc);
+    } else {
+      const f = Math.max(1, sf / 2.5), p = document.createElement('canvas');
+      p.width = Math.max(1, Math.round(w * sc / f)); p.height = Math.max(1, Math.round(h * sc / f));
+      const pc = p.getContext('2d'); pc.imageSmoothingEnabled = true; pc.imageSmoothingQuality = 'high';
+      pc.drawImage(im, 0, 0, p.width, p.height);
+      tc.drawImage(p, x * sc, y * sc, w * sc, h * sc);
+    }
+    _grSfocata.chiave = chiave; _grSfocata.tela = t;
+  }
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(_grSfocata.tela, 0, 0); ctx.restore();
+}
+
+function grafCopertinaCarta(ctx, c, r) {
+  const im = grafCopertinaDi(c).el;
+  _grafSegna('copertina', r);
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 48; ctx.shadowOffsetY = 18;
+  ctx.fillStyle = '#000'; grRoundRect(ctx, r.x, r.y, r.w, r.h, r.r); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  grRoundRect(ctx, r.x, r.y, r.w, r.h, r.r); ctx.clip();
+  const iw = im.naturalWidth || 1, ih = im.naturalHeight || 1, k = Math.max(r.w / iw, r.h / ih);
+  ctx.drawImage(im, r.x + (r.w - iw * k) / 2, r.y + (r.h - ih * k) / 2, iw * k, ih * k);
+  ctx.restore();
+  ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = 2; grRoundRect(ctx, r.x + 1, r.y + 1, r.w - 2, r.h - 2, r.r - 1); ctx.stroke(); ctx.restore();
 }
 
 function grafCampioni(ctx, sc, x, y, w, h) {
@@ -5719,7 +5796,8 @@ function _grafDisegna(canvas, c, t, scala) {
     grafRighe(ctx, sc, pal, c, lay);
   } else if (lay.prossima) {
     const gioco = grafProssimaGioco(c);
-    if (gioco && !grafConCopertina(c)) grafPillola(ctx, pal, lay, gioco);
+    if (lay.copertina) grafCopertinaCarta(ctx, c, lay.copertina);
+    if (grafPillolaProssima(c)) grafPillola(ctx, pal, lay, gioco);
     grafAdesivo(ctx, lay.quando, 'quando');
     grafAdesivo(ctx, lay.dove, 'dove');
     const bb = ctx.createLinearGradient(0, 0, W, 0); bb.addColorStop(0, pal.acc); bb.addColorStop(1, grTinta(pal.acc, -40)); ctx.fillStyle = bb; ctx.fillRect(lay.barra.x, lay.barra.y, lay.barra.w, lay.barra.h);
@@ -6316,7 +6394,17 @@ function initGrafiche() {
   bind('gr-handle', 'handle'); bind('gr-logo', 'logo');
   bind('gr-gioco', 'gioco'); bind('gr-sottotitolo', 'sottotitolo');
   bind('gr-quando', 'quandoTesto');
-  document.getElementById('gr-copertina')?.addEventListener('change', (e) => { c.copertina = e.target.checked; ridisegna(); });
+  document.getElementById('gr-copertina')?.addEventListener('change', (e) => {
+    c.copertina = e.target.value;
+    document.querySelector('.gr-cop-schermo')?.toggleAttribute('hidden', c.copertina !== 'schermo');
+    document.querySelector('.gr-cop-riquadro')?.toggleAttribute('hidden', c.copertina !== 'riquadro');
+    ridisegna();
+  });
+  [['gr-cop-velo', 'copertinaVelo', '%'], ['gr-cop-sfoca', 'copertinaSfocatura', ''], ['gr-cop-scala', 'copertinaScala', '%']].forEach(([id, k, u]) => document.getElementById(id)?.addEventListener('input', (e) => {
+    c[k] = Number(e.target.value);
+    const v = document.getElementById(id + '-val'); if (v) v.textContent = e.target.value + u;
+    ridisegna();
+  }));
   document.getElementById('gr-accento')?.addEventListener('input', (e) => {
     c.accento = e.target.value;
     if (!/^#[0-9a-fA-F]{6}$/.test(c.accento2 || '')) { const a2 = document.getElementById('gr-accento2'); if (a2) a2.value = grafTavolozza(c, grafDisposizione(c)).acc2; }

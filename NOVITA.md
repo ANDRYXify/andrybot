@@ -30,6 +30,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] Otto effetti pronti a tutto schermo disegnati da noi: coriandoli, fuochi d'artificio, cuori, neve, palloncini, bolle, stelle e lampo. Scegli colori, quantità e durata, e dagli un comando. [vai: effetti]
 - [importante] Ogni immagine o video dei tuoi effetti può andare a tutto schermo, riempito o intero, senza passare dall'area degli effetti dello Studio. [vai: effetti]
 - I video WebM trasparenti restano trasparenti dopo il caricamento, i PNG animati restano animati e i WebP animati si caricano. Un file che non si legge dice quali formati vanno. [vai: effetti]
+- [importante] Nella storia «Stasera alle…» l'immagine del gioco ha tre modi: a tutto schermo con velo e sfocatura, in un riquadro che sposti e ingrandisci, o niente per lasciare il tema. [vai: grafiche]
 
 ## 2026-09-24
 

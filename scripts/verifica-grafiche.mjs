@@ -21,7 +21,15 @@
 //    erano;
 //  · lo SCRIVERE nella scheda: entrata tre volte, ogni lettera ridisegna
 //    l'anteprima al piu' una volta, e l'ultima e' quella col testo scritto;
-//    uscendo dalla scheda l'animazione si ferma.
+//    uscendo dalla scheda l'animazione si ferma;
+//  · l'IMMAGINE DEL GIOCO nei suoi tre modi (docs/GRAFICHE.md, «L'immagine
+//    del gioco: tre modi»), con due copertine finte, una verticale come quelle
+//    di Twitch e una larga, dai colori accesi (il caso peggiore per le scritte
+//    in cima): a tutto schermo le scritte si leggono anche col velo a zero, la
+//    sfocatura non scurisce i bordi e il velo scurisce; in un riquadro la carta
+//    sta nello spazio libero senza toccare nessun pezzo, in post e in storia,
+//    col QR e senza, dalla grandezza piu' piccola alla piu' grande, e cresce
+//    con la grandezza; la pillola del gioco c'e' solo quando l'immagine no.
 //
 // Uso: node scripts/verifica-grafiche.mjs            (esce 1 se qualcosa non va)
 //      node scripts/verifica-grafiche.mjs --selftest (le rotture devono vedersi)
@@ -164,6 +172,20 @@ await pagina.evaluate(() => {
   window.__vero = vero;
 });
 
+await pagina.evaluate(async () => {
+  const finta = (w, h, id) => new Promise((ok) => {
+    const t = document.createElement('canvas'); t.width = w; t.height = h;
+    const x = t.getContext('2d');
+    const colori = ['#ffe600', '#00e5ff', '#ff2bd6', '#ffffff', '#7dff5c', '#ff8a00'];
+    for (let i = 0; i < colori.length; i++) { x.fillStyle = colori[i]; x.fillRect(0, (h / colori.length) * i, w, h / colori.length + 1); }
+    x.fillStyle = '#101010'; x.fillRect(w * 0.35, 0, w * 0.1, h);
+    const im = new Image(); const src = '/api/streamer/grafiche/copertina/' + id;
+    im.onload = () => ok({ el: im, pronto: true, src }); im.src = t.toDataURL('image/png');
+  });
+  window.__copertine = { alta: await finta(1080, 1440, '7'), larga: await finta(1920, 1080, '8') };
+  window.__conCopertina = (c, quale) => ({ ...c, quandoTesto: c.quandoTesto || 'Stasera alle 21:00', _prossima: { categoriaId: quale === 'larga' ? '8' : '7', categoria: 'Hollow Knight' }, _copertina: window.__copertine[quale] });
+});
+
 const TEMI = await pagina.evaluate(() => GR_TEMA_IDS.map((id) => ({ id, animato: !!GR_TEMI[id].anima })));
 const STORIA = await pagina.evaluate(() => GR_STORIA);
 const PRONTI = await pagina.evaluate(() => GR_PRONTI.map((p) => p.id));
@@ -193,6 +215,12 @@ function casi({ soloAnimati = false, pochi = false } = {}) {
     fuori.push({ nome: 'tinta chiara in storia', c: { tema: 'notte', sfondo: 'tinta', sfondoColore: '#f2efe6', tipo: 'programmazione', qr: true, formato: 'storia' }, animato: false });
     fuori.push({ nome: 'testo grigio scelto a mano', c: { tema: 'notte', sfondo: 'tema', coloreTesto: '#8a8a8a', tipo: 'programmazione', qr: true }, animato: false });
     fuori.push({ nome: 'testo grigio sulla pioggia', c: { tema: 'pioggia', sfondo: 'tema', coloreTesto: '#8a8a8a', tipo: 'live' }, animato: true });
+    for (const formato of ['post', 'storia']) for (const qr of [false, true]) {
+      fuori.push({ nome: `stasera ${formato}${qr ? ' col QR' : ''}, copertina a tutto schermo senza velo`, cop: 'alta', c: { tema: 'notte', sfondo: 'tema', tipo: 'prossima', formato, qr, copertina: 'schermo' }, animato: false });
+      fuori.push({ nome: `stasera ${formato}${qr ? ' col QR' : ''}, copertina larga a tutto schermo sfocata`, cop: 'larga', c: { tema: 'notte', sfondo: 'tema', tipo: 'prossima', formato, qr, copertina: 'schermo', copertinaVelo: 30, copertinaSfocatura: 20 }, animato: false });
+      fuori.push({ nome: `stasera ${formato}${qr ? ' col QR' : ''}, copertina in un riquadro`, cop: 'alta', c: { tema: 'synthwave', sfondo: 'tema', tipo: 'prossima', formato, qr, copertina: 'riquadro' }, animato: true });
+      fuori.push({ nome: `stasera ${formato}${qr ? ' col QR' : ''}, copertina larga nel riquadro piu' grande`, cop: 'larga', c: { tema: 'pastello', sfondo: 'tema', tipo: 'prossima', formato, qr, copertina: 'riquadro', copertinaScala: 160 }, animato: false });
+    }
   }
   return pochi ? fuori.filter((x, i) => i % 5 === 0) : fuori;
 }
@@ -204,7 +232,8 @@ async function misura(elenco) {
   for (const caso of elenco) {
     const r = await pagina.evaluate(({ caso, BASE, FASI }) => {
       const pr = caso.pronto ? GR_PRONTI.find((p) => p.id === caso.pronto) : null;
-      const c = { ...grafConfig(), ...BASE, ...(pr ? { ...pr.c, sfondo: 'tema' } : {}), ...caso.c };
+      const c0 = { ...grafConfig(), ...BASE, ...(pr ? { ...pr.c, sfondo: 'tema' } : {}), ...caso.c };
+      const c = caso.cop ? window.__conCopertina(c0, caso.cop) : c0;
       const fasi = grafAnimato(c) ? FASI.map((f) => f * grafVelocita(c).durata) : [0];
       return fasi.map((t) => window.__misuraGrafica(c, t));
     }, { caso, BASE, FASI: FASI_ANIMATE });
@@ -337,6 +366,50 @@ async function scrivere({ riaggancia = false, nonEsce = false } = {}) {
   return { guai, disegni, fuori, lettere: parola.length };
 }
 
+async function copertine() {
+  return pagina.evaluate(() => {
+    const guai = [];
+    const pezziDi = (c) => { const t = document.createElement('canvas'); grafDisegna(t, c); return { pezzi: t._pezzi || {}, t }; };
+    const tocca = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    let carte = 0;
+    for (const formato of ['post', 'storia']) for (const qr of [false, true]) for (const quale of ['alta', 'larga']) {
+      const altezze = [];
+      for (const scala of [40, 70, 100, 130, 160]) {
+        const c = window.__conCopertina({ ...grafConfig(), handle: '@andryx_demo', tipo: 'prossima', formato, qr, copertina: 'riquadro', copertinaScala: scala }, quale);
+        const { pezzi } = pezziDi(c), lay = grafDisposizione(c), r = pezzi.copertina;
+        const dove = `${formato}${qr ? ' col QR' : ''}, copertina ${quale}, grandezza ${scala}%`;
+        if (!r) { guai.push(`${dove}: la carta non c'e'`); continue; }
+        carte++;
+        altezze.push(r.h);
+        if (r.x < lay.pad - 1 || r.x + r.w > lay.W - lay.pad + 1) guai.push(`${dove}: la carta esce dai margini (${Math.round(r.x)}..${Math.round(r.x + r.w)})`);
+        const cima = lay.filo.y + lay.filo.h;
+        if (r.y < cima) guai.push(`${dove}: la carta sale sopra l'intestazione`);
+        if (formato === 'storia' && (r.y < GR_STORIA.fascia || r.y + r.h > lay.H - GR_STORIA.fascia)) guai.push(`${dove}: la carta finisce dove Instagram mette le sue scritte`);
+        for (const [k, q] of Object.entries(pezzi)) if (k !== 'copertina' && tocca(r, q)) guai.push(`${dove}: la carta tocca «${k}»`);
+        if (pezzi.pillola) guai.push(`${dove}: la pillola del gioco c'e' anche con l'immagine`);
+        const forma = quale === 'alta' ? 1440 / 1080 : 1080 / 1920;
+        if (Math.abs(r.h / r.w - forma) > 0.02) guai.push(`${dove}: la carta non ha la forma dell'immagine (${(r.h / r.w).toFixed(3)} invece di ${forma.toFixed(3)})`);
+      }
+      for (let i = 1; i < altezze.length; i++) if (altezze[i] < altezze[i - 1]) guai.push(`${formato}${qr ? ' col QR' : ''}, copertina ${quale}: piu' grande la chiedi, piu' piccola viene`);
+      if (altezze.length === 5 && !(altezze[0] < altezze[2])) guai.push(`${formato}${qr ? ' col QR' : ''}, copertina ${quale}: la grandezza non cambia niente`);
+    }
+    const media = (t, x0, x1) => { const d = t.getContext('2d').getImageData(x0, 0, x1 - x0, t.height).data; let s = 0; for (let i = 0; i < d.length; i += 4) s += d[i] + d[i + 1] + d[i + 2]; return s / (d.length / 4) / 3; };
+    for (const formato of ['post', 'storia']) {
+      const base = { ...grafConfig(), handle: '@andryx_demo', tipo: 'prossima', formato, copertina: 'schermo' };
+      const nitida = pezziDi(window.__conCopertina(base, 'alta')).t, sfocata = pezziDi(window.__conCopertina({ ...base, copertinaSfocatura: 30 }, 'alta')).t, velata = pezziDi(window.__conCopertina({ ...base, copertinaVelo: 60 }, 'alta')).t;
+      const bordo = media(sfocata, 0, 6), dentro = media(sfocata, 60, 66), bordoN = media(nitida, 0, 6), dentroN = media(nitida, 60, 66);
+      if (bordo < dentro * 0.85 && bordoN >= dentroN * 0.85) guai.push(`${formato}: la sfocatura scurisce il bordo (${bordo.toFixed(0)} contro ${dentro.toFixed(0)})`);
+      if (!(media(velata, 0, velata.width) < media(nitida, 0, nitida.width) * 0.7)) guai.push(`${formato}: il velo non scurisce l'immagine`);
+      const pn = pezziDi(window.__conCopertina({ ...base, copertina: 'no' }, 'alta')).pezzi;
+      if (!pn.pillola || pn.copertina) guai.push(`${formato}: senza immagine la pillola del gioco non c'e'`);
+      if (pezziDi(window.__conCopertina(base, 'alta')).pezzi.pillola) guai.push(`${formato}: a tutto schermo la pillola c'e' lo stesso`);
+    }
+    const vecchia = pezziDi(window.__conCopertina({ ...grafConfig(), tipo: 'prossima', copertina: false }, 'alta')).pezzi;
+    if (!vecchia.pillola) guai.push('il vecchio interruttore spento non vale piu\' «niente»');
+    return { guai, carte };
+  });
+}
+
 const righe = [];
 const dice = (ok, testo) => { righe.push(`  ${ok ? '✓' : '✗'} ${testo}`); return ok; };
 
@@ -370,6 +443,16 @@ if (SELFTEST) {
   await pagina.evaluate(() => { grafDisposizione = window.__dispVero; });
   ok = dice(inAlto.posto.some((g) => g.includes('Instagram')), `una storia con le scritte sotto la barra di Instagram si vede (${inAlto.posto.length} guai)`) && ok;
 
+  await pagina.evaluate(() => { window.__dispVero = grafDisposizione; grafDisposizione = (c) => { const l = window.__dispVero(c); if (l.copertina) l.copertina = { ...l.copertina, y: l.dove.y }; return l; }; });
+  const carta = await copertine();
+  await pagina.evaluate(() => { grafDisposizione = window.__dispVero; });
+  ok = dice(carta.guai.some((g) => g.includes('tocca')), `una carta messa sopra gli adesivi si vede (${carta.guai.length} guai)`) && ok;
+
+  await pagina.evaluate(() => { window.__copriVero = grafCopriSfocato; grafCopriSfocato = (ctx, im, W, H, sf) => { const iw = im.naturalWidth, ih = im.naturalHeight, k = Math.max(W / iw, H / ih); ctx.save(); ctx.filter = sf ? `blur(${sf}px)` : 'none'; ctx.drawImage(im, (W - iw * k) / 2, (H - ih * k) / 2, iw * k, ih * k); ctx.restore(); }; });
+  const bordi = await copertine();
+  await pagina.evaluate(() => { grafCopriSfocato = window.__copriVero; });
+  ok = dice(bordi.guai.some((g) => g.includes('bordo')), `una sfocatura che scurisce i bordi si vede (${bordi.guai.length} guai)`) && ok;
+
   await pagina.evaluate(() => { window.__grigliaVera = SB_SCENE.grigliaSynth; SB_SCENE.grigliaSynth = (cam, fase, passo, n) => { const r = window.__grigliaVera(cam, fase, passo, n); r.lon = r.lon.map((l) => ({ ...l, x1: cam.W / 2 })); return r; }; });
   const raggi = await synthwave();
   await pagina.evaluate(() => { SB_SCENE.grigliaSynth = window.__grigliaVera; });
@@ -401,6 +484,9 @@ for (const g of gg.guai.slice(0, 12)) righe.push('      ' + g);
 const sw = await synthwave();
 dice(!sw.length, 'il pavimento del synthwave e\' in prospettiva: le linee escono da tutto l\'orizzonte e vanno al punto di fuga dentro il sole');
 for (const g of sw) righe.push('      ' + g);
+const cp = await copertine();
+dice(!cp.guai.length, `l'immagine del gioco nei tre modi: ${cp.carte} carte in un riquadro stanno nello spazio libero senza toccare niente e crescono con la grandezza, a tutto schermo la sfocatura non scurisce i bordi e il velo scurisce, e la pillola c'e' solo senza immagine`);
+for (const g of cp.guai.slice(0, 12)) righe.push('      ' + g);
 const sc = await scrivere();
 dice(!sc.guai.length, `scrivere nella scheda: entrata tre volte, ${sc.lettere} lettere fanno ${sc.disegni} disegni dell'anteprima, e fuori dalla scheda la tela si ferma`);
 for (const g of sc.guai) righe.push('      ' + g);
@@ -408,6 +494,6 @@ dice(!errori.length, 'la pagina non ha errori' + (errori.length ? ': ' + errori.
 
 await browser.close(); sito.chiudi();
 console.log('Le grafiche social:\n' + righe.join('\n'));
-const rosso = m.contrasto.length || m.posto.length || gg.guai.length || sw.length || sc.guai.length || errori.length;
+const rosso = m.contrasto.length || m.posto.length || gg.guai.length || sw.length || cp.guai.length || sc.guai.length || errori.length;
 console.log(rosso ? '\ncancello ROSSO ✗' : '\nQuello che si pubblica si legge, e gira. ✓');
 process.exit(rosso ? 1 : 0);
