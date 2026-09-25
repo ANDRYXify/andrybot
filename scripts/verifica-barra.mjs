@@ -38,7 +38,11 @@ const MISURA = `(() => {
   const box = (el) => el && el.getBoundingClientRect();
   const tocca = (a, c) => a && c && a.left < c.right - 0.5 && c.left < a.right - 0.5 && a.top < c.bottom - 0.5 && c.top < a.bottom - 0.5;
   const drawer = document.querySelector('.drawer');
-  const lato = vede(drawer) && getComputedStyle(drawer).transform === 'none' && !document.body.classList.contains('menu-aperto');
+  // Il cassetto chiuso non sta piu' spostato fuori dallo schermo: sta al suo
+  // posto, nascosto (docs/DISEGNO.md, «Il cassetto del telefono»). Di lato e'
+  // quello che si vede senza che nessuno l'abbia aperto; la prima misura lo
+  // riconosceva da «transform: none», che adesso vale anche per quello chiuso.
+  const lato = vede(drawer) && getComputedStyle(drawer).visibility !== 'hidden' && !document.body.classList.contains('menu-aperto');
   const modi = { giu: vede(document.querySelector('.barra-giu')), hamburger: vede(document.querySelector('.apri-menu')), lato };
   const coll = [];
   const strumenti = document.querySelector('.top-strumenti');

@@ -38,16 +38,45 @@
       f(c2[0]) + ',' + f(c2[1]) + ' ' + f(x2 + dx * o2) + ',' + f(y2 + dy * o2);
   }
 
-  function contorno(w, h, rag, sp, r) {
+  function contorno(w, h, bd, r) {
     function j() { return (r() - 0.5) * 1.2; }
-    var m = sp / 2;
+    var m = bd.sp / 2;
     var x0 = m, y0 = m, x1 = w - m, y1 = h - m;
-    var q = Math.max(0, Math.min(rag - m, (x1 - x0) / 2, (y1 - y0) / 2));
-    return 'M' + f(x0 + q + j()) + ',' + f(y0 + j()) +
-      ' L' + f(x1 - q + j()) + ',' + f(y0 + j()) + ' Q' + f(x1) + ',' + f(y0) + ' ' + f(x1 + j()) + ',' + f(y0 + q + j()) +
-      ' L' + f(x1 + j()) + ',' + f(y1 - q + j()) + ' Q' + f(x1) + ',' + f(y1) + ' ' + f(x1 - q + j()) + ',' + f(y1 + j()) +
-      ' L' + f(x0 + q + j()) + ',' + f(y1 + j()) + ' Q' + f(x0) + ',' + f(y1) + ' ' + f(x0 + j()) + ',' + f(y1 - q + j()) +
-      ' L' + f(x0 + j()) + ',' + f(y0 + q + j()) + ' Q' + f(x0) + ',' + f(y0) + ' ' + f(x0 + q + 0.8) + ',' + f(y0 + 0.3);
+    var A = bd.angoli;
+    var k = Math.min(1, w / ((A[0][0] + A[1][0]) || 1), w / ((A[3][0] + A[2][0]) || 1),
+      h / ((A[0][1] + A[3][1]) || 1), h / ((A[1][1] + A[2][1]) || 1));
+    var q = A.map(function (a) {
+      return [Math.max(0, Math.min(a[0] * k - m, (x1 - x0) / 2)), Math.max(0, Math.min(a[1] * k - m, (y1 - y0) / 2))];
+    });
+    var V = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+    var D = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+    var L = bd.lati;
+    function asse(i) { return i % 2; }
+    function inizio(i) {
+      var c = V[i], d = D[i];
+      var t = L[(i + 3) % 4] ? q[i][asse(i)] : -m;
+      return [c[0] + d[0] * t, c[1] + d[1] * t];
+    }
+    function fine(i) {
+      var c = V[(i + 1) % 4], d = D[i];
+      var t = L[(i + 1) % 4] ? q[(i + 1) % 4][asse(i)] : -m;
+      return [c[0] - d[0] * t, c[1] - d[1] * t];
+    }
+    function pt(p) { return f(p[0] + j()) + ',' + f(p[1] + j()); }
+    function angolo(i) { return ' Q' + f(V[i][0]) + ',' + f(V[i][1]) + ' '; }
+    if (L[0] && L[1] && L[2] && L[3]) {
+      var d = 'M' + pt(inizio(0)) + ' L' + pt(fine(0));
+      for (var i = 1; i < 4; i++) d += angolo(i) + pt(inizio(i)) + ' L' + pt(fine(i));
+      return d + angolo(0) + f(x0 + q[0][0] + 0.8) + ',' + f(y0 + 0.3);
+    }
+    var s = L.findIndex(function (v, i) { return v && !L[(i + 3) % 4]; });
+    var out = '';
+    for (var n = 0; n < 4; n++) {
+      var l = (s + n) % 4;
+      if (!L[l]) continue;
+      out += (L[(l + 3) % 4] && n ? angolo(l) : (out ? ' M' : 'M')) + pt(inizio(l)) + ' L' + pt(fine(l));
+    }
+    return out;
   }
 
   function lato(i, w, h) { return [[0, 0, w, 0], [w, 0, w, h], [w, h, 0, h], [0, h, 0, 0]][i]; }
@@ -89,12 +118,24 @@
     var coperto = ['dg-in', 'dg-out'].filter(function (c) { return el.classList.contains(c); });
     coperto.forEach(function (c) { el.classList.remove(c); });
     var st = getComputedStyle(el);
-    var sp = parseFloat(st.borderTopWidth) || 0;
-    var colore = st.borderTopColor;
-    var stile = st.borderTopStyle;
-    var rag = parseFloat(st.borderTopLeftRadius) || 0;
+    var r = el.getBoundingClientRect();
+    var LATI = ['Top', 'Right', 'Bottom', 'Left'];
+    var lati = LATI.map(function (x) {
+      var c = st['border' + x + 'Color'];
+      var trasparente = /rgba\([^)]*,\s*0\)$/.test(c) || c === 'transparent';
+      return !(st['border' + x + 'Style'] === 'none' || (parseFloat(st['border' + x + 'Width']) || 0) < 0.5 || trasparente);
+    });
+    var primo = LATI[lati.indexOf(true)];
+    var sp = primo ? parseFloat(st['border' + primo + 'Width']) : 0;
+    var colore = primo ? st['border' + primo + 'Color'] : '';
+    var angoli = ['TopLeft', 'TopRight', 'BottomRight', 'BottomLeft'].map(function (x) {
+      var v = String(st['border' + x + 'Radius']).split(' ');
+      var misurato = function (t, lato) { return /%$/.test(t) ? parseFloat(t) / 100 * lato : (parseFloat(t) || 0); };
+      return [misurato(v[0], r.width), misurato(v[1] || v[0], r.height)];
+    });
+    var rag = angoli[0][0];
+    var visibile = st.visibility !== 'hidden';
     coperto.forEach(function (c) { el.classList.add(c); });
-    var trasparente = /rgba\([^)]*,\s*0\)$/.test(colore) || colore === 'transparent';
     var z = 10, inFisso = false;
     for (var a = el; a && a !== document.body; a = a.parentElement) {
       var sa = a === el ? st : getComputedStyle(a);
@@ -103,17 +144,18 @@
     }
     var urlo = el.classList.contains('dg-urlo');
     return {
-      r: el.getBoundingClientRect(),
+      r: r,
       bordo: urlo ? { sp: SP_URLO, urlo: true, rag: 0 }
-        : (stile === 'none' || sp < 0.5 || trasparente) ? null : { sp: sp, colore: colore, rag: rag },
+        : !primo ? null : { sp: sp, colore: colore, rag: rag, lati: lati, angoli: angoli },
       z: z,
-      inFisso: inFisso
+      inFisso: inFisso,
+      visibile: visibile
     };
   }
 
   function disegnabile(el, m) {
     var r = m.r;
-    return !!m.bordo && r.width >= 8 && r.height >= 8 && r.bottom > 0 && r.top < window.innerHeight;
+    return !!m.bordo && m.visibile && r.width >= 8 && r.height >= 8 && r.bottom > 0 && r.top < window.innerHeight;
   }
 
   var tele = [];
@@ -204,10 +246,11 @@
     var tratti = [];
     var tLato = 125 * k, passo = 60 * k;
     [0, 1, 2, 3].forEach(function (i) {
+      if (bd.lati && !bd.lati[i]) return;
       tratti.push({ matita: true, classe: 'dg-matita', da: da + i * passo, dur: tLato,
         fa: function (w, h) { var l = lato(i, w, h); return tratto(l[0], l[1], l[2], l[3], caso(seme + ':' + i), 7, 2.6); } });
     });
-    if (!o.veloce) {
+    if (!o.veloce && (!bd.lati || bd.lati[0])) {
       tratti.push({ matita: true, classe: 'dg-matita', da: da + 4 * passo, dur: tLato,
         fa: function (w, h) { var l = lato(0, w, h); return tratto(l[0], l[1], l[2], l[3], caso(seme + ':ripasso'), 4, 2); } });
     }
@@ -215,7 +258,7 @@
     tratti.push(bd.urlo
       ? { classe: 'dg-china dg-urlo-china', da: daChina, dur: tChina, fa: function (w, h) { return spigoli(w, h, seme); } }
       : { classe: 'dg-china', da: daChina, dur: tChina, extra: { 'stroke-width': Math.max(1, bd.sp), stroke: bd.colore },
-        fa: function (w, h) { return contorno(w, h, bd.rag, bd.sp, caso(seme + ':china')); } });
+        fa: function (w, h) { return contorno(w, h, bd, caso(seme + ':china')); } });
     var pulizia = { da: daChina + tChina, dur: PULIZIA };
     return { tratti: tratti, retino: { da: da + 220 * k, dur: 170 * k }, pulizia: pulizia, fine: pulizia.da + pulizia.dur };
   }
@@ -341,12 +384,11 @@
     return [].slice.call(document.querySelectorAll('#nav-drawer > .drawer-grp'));
   }
 
-  function menu() {
+  function menu(conCassetto) {
     var cassetto = document.getElementById('drawer');
-    var posato = document.body.classList.contains('tutto-schermo') && document.body.classList.contains('con-nav');
-    if (posato && cassetto) chiedi(cassetto, { veloce: true });
+    if (conCassetto && cassetto) chiedi(cassetto, { veloce: true });
     gruppiDelMenu().forEach(function (g, j) {
-      chiedi(g, { da: (posato ? 140 : 60) + j * PASSO_FILA, veloce: true });
+      chiedi(g, { da: (conCassetto ? 140 : 60) + j * PASSO_FILA, veloce: true });
     });
   }
 
@@ -504,8 +546,8 @@
       } else if (el.classList.contains('toast') || el.classList.contains('rec-invito')) {
         if (diventa('esce')) chiedi(el, { veloce: true }, true);
       } else if (el === document.body) {
-        if (diventa('menu-aperto')) menu();
-        if (perde('tutto-schermo') && el.classList.contains('con-nav')) menu();
+        if (diventa('menu-aperto')) menu(true);
+        if (perde('tutto-schermo') && el.classList.contains('con-nav')) menu(false);
       } else if (el.id === 'cerca-overlay') {
         if (diventa('aperto')) chiedi(el.querySelector('.cerca-box'));
       } else {
@@ -589,5 +631,5 @@
   }
 
   avvia();
-  window.SB_DISEGNO = { disegna: disegna, disfa: disfa, scena: scena, menu: function () { menu(); esegui(); }, viaMenu: viaMenu };
+  window.SB_DISEGNO = { disegna: disegna, disfa: disfa, scena: scena, menu: function () { menu(true); esegui(); }, viaMenu: viaMenu };
 })();

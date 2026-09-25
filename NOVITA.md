@@ -37,6 +37,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Una GIF o un PNG animato coi fotogrammi velocissimi va in onda al ritmo con cui lo vedi nel browser, non più fino a dieci volte più veloce. [vai: effetti]
 - Sul telefono la home non si trascina più di lato: le decorazioni della prima schermata restano dentro lo schermo, e il banner dei cookie ha di nuovo il tasto a portata di dito.
 - Nella tua pagina link un indirizzo lungo scritto in un testo va a capo, invece di uscire dallo schermo del telefono. [vai: pagina]
+- Sul telefono il menù non scorre più: si disegna quando lo apri e si disfa quando lo chiudi, con la X, toccando fuori o scegliendo una voce.
 
 ## 2026-09-24
 

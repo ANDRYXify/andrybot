@@ -1665,7 +1665,7 @@ function render() {
 
 const MENU_DI_LATO = '(min-width: 64rem)';
 try {
-  window.matchMedia(MENU_DI_LATO).addEventListener('change', (ev) => { if (ev.matches) chiudiMenuMobile(); });
+  window.matchMedia(MENU_DI_LATO).addEventListener('change', (ev) => { if (ev.matches) chiudiMenuMobile({ subito: true }); });
 } catch {  }
 
 const _menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -4300,7 +4300,7 @@ document.addEventListener('click', (ev) => {
   if (!r) return;
   ev.preventDefault();
   document.querySelectorAll('.aiuto-menu').forEach((m) => { m.hidden = true; });
-  document.body.classList.remove('menu-aperto');
+  chiudiMenuMobile();
   setTimeout(() => apriGiro(schedaAttiva, true), 60);
 });
 
@@ -28663,21 +28663,24 @@ async function caricaPasskey() {
 
 let _viaMenu = 0, _lasciaMenu = 0, _sostaBordo = 0, _menuDalBordo = false;
 const menuPosato = () => document.body.classList.contains('tutto-schermo') && document.body.classList.contains('con-nav');
-function chiudiMenuMobile() {
+function chiudiMenuMobile({ subito = false } = {}) {
   clearTimeout(_lasciaMenu); _lasciaMenu = 0; _menuDalBordo = false;
   document.getElementById('apri-menu')?.setAttribute('aria-expanded', 'false');
+  if (subito && _viaMenu) { clearTimeout(_viaMenu); _viaMenu = 0; }
   if (!document.body.classList.contains('menu-aperto') || _viaMenu) return;
-  const dura = menuPosato() ? (window.SB_DISEGNO?.viaMenu?.() || 0) : 0;
-  if (!dura) { document.body.classList.remove('menu-aperto'); return; }
-  _viaMenu = setTimeout(() => { _viaMenu = 0; document.body.classList.remove('menu-aperto'); }, dura);
+  const dura = subito ? 0 : (window.SB_DISEGNO?.viaMenu?.() || 0);
+  if (!dura) { document.body.classList.remove('menu-aperto', 'menu-via'); return; }
+  document.body.classList.add('menu-via');
+  _viaMenu = setTimeout(() => { _viaMenu = 0; document.body.classList.remove('menu-aperto', 'menu-via'); }, dura);
 }
 function apriMenu(dalBordo = false) {
   clearTimeout(_lasciaMenu); _lasciaMenu = 0;
   _menuDalBordo = dalBordo;
   document.getElementById('apri-menu')?.setAttribute('aria-expanded', 'true');
-  if (_viaMenu) { clearTimeout(_viaMenu); _viaMenu = 0; window.SB_DISEGNO?.menu?.(); return; }
+  if (_viaMenu) { clearTimeout(_viaMenu); _viaMenu = 0; document.body.classList.remove('menu-via'); window.SB_DISEGNO?.menu?.(); return; }
   document.body.classList.add('menu-aperto');
 }
+const giraMenu = () => { if (document.body.classList.contains('menu-aperto') && !_viaMenu) chiudiMenuMobile(); else apriMenu(false); };
 function avviaBordoMenu() {
   const bordo = document.getElementById('bordo-menu'), cassetto = document.getElementById('drawer');
   if (!bordo || !cassetto) return;
@@ -28770,6 +28773,7 @@ function vaiAScheda(id) {
   if (id === schedaAttiva) { chiudiMenuMobile(); return; }
   const prima = schedaAttiva;
   schedaAttiva = id;
+  chiudiMenuMobile();
 
   try { history.replaceState(null, '', '#' + id); } catch {  }
 
@@ -28873,10 +28877,7 @@ function initGuscio() {
   avviaBarraSalva();
 
   document.getElementById('barra-giu')?.addEventListener('click', (ev) => {
-    if (ev.target.closest('[data-apri-menu]')) {
-      const aperto = document.body.classList.toggle('menu-aperto');
-      document.getElementById('apri-menu')?.setAttribute('aria-expanded', aperto ? 'true' : 'false');
-    }
+    if (ev.target.closest('[data-apri-menu]')) giraMenu();
   });
 
   document.getElementById('nav-drawer')?.addEventListener('click', (ev) => {
@@ -28893,14 +28894,7 @@ function initGuscio() {
   });
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') chiudiMenuMobile(); });
 
-  document.getElementById('apri-menu')?.addEventListener('click', () => {
-    if (menuPosato()) {
-      if (document.body.classList.contains('menu-aperto') && !_viaMenu) chiudiMenuMobile(); else apriMenu(false);
-      return;
-    }
-    const aperto = document.body.classList.toggle('menu-aperto');
-    document.getElementById('apri-menu').setAttribute('aria-expanded', aperto ? 'true' : 'false');
-  });
+  document.getElementById('apri-menu')?.addEventListener('click', giraMenu);
   avviaBordoMenu();
   document.addEventListener('click', (ev) => {
     if (menuPosato() && document.body.classList.contains('menu-aperto') && !ev.target.closest('#drawer, #apri-menu, #bordo-menu')) chiudiMenuMobile();

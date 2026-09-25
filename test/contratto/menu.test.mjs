@@ -54,8 +54,8 @@ test('la soglia del menu di lato e\' la stessa per lo stile e per il codice', ()
   const css = /@media \(min-width: ([0-9.]+rem)\) \{\n {2}body\.con-nav \{ --largo-menu: 15rem; --lato: var\(--largo-menu\); \}/.exec(CSS);
   assert.ok(css, 'lo stile mette il menu di lato');
   assert.equal(js[1], css[1], 'una soglia sola: se divergono, fra le due il cassetto resta aperto di lato');
-  assert.match(APP, /matchMedia\(MENU_DI_LATO\)\.addEventListener\('change', \(ev\) => \{ if \(ev\.matches\) chiudiMenuMobile\(\); \}\)/,
-    'allargando la finestra il cassetto aperto si chiude');
+  assert.match(APP, /matchMedia\(MENU_DI_LATO\)\.addEventListener\('change', \(ev\) => \{ if \(ev\.matches\) chiudiMenuMobile\(\{ subito: true \}\); \}\)/,
+    'allargando la finestra il cassetto aperto si chiude, e subito: diventa il menu di lato, disfarlo sarebbe sbagliato');
 });
 
 test('di lato non c\'e\' niente che serva solo al cassetto; a tutto schermo il menu torna cassetto', () => {
@@ -65,7 +65,7 @@ test('di lato non c\'e\' niente che serva solo al cassetto; a tutto schermo il m
     assert.ok(blocco.includes(`body.con-nav:not(.tutto-schermo) ${via}`), `di lato ${via} non si vede`);
   }
   assert.ok(blocco.includes('body.con-nav .drawer-utente { display: none; }'), 'gli strumenti stanno in alto, non nel cassetto');
-  assert.match(blocco, /body\.con-nav:not\(\.tutto-schermo\) \.drawer \{[^}]*transform: none;/, 'il menu di lato sta fermo');
+  assert.match(blocco, /body\.con-nav:not\(\.tutto-schermo\) \.drawer \{[^}]*visibility: visible;/, 'il menu di lato si vede sempre, anche se il cassetto chiuso e\' nascosto');
   assert.match(blocco, /body\.con-nav:not\(\.tutto-schermo\) \.area-principale \{ margin-left: var\(--lato\); \}/, 'e non copre il contenuto');
   assert.match(blocco, /body\.con-nav \.top-strumenti \{ display: flex; \}/, 'gli strumenti tornano in alto');
   assert.ok(blocco.includes('body.con-nav.tutto-schermo .apri-menu { order: -1; margin-left: 0; }'),
@@ -98,11 +98,13 @@ test('a tutto schermo il menu sta sul bordo: compare dopo una sosta, si disegna 
   assert.match(blocco, /body\.con-nav\.tutto-schermo \.drawer \{[^}]*transform: none; transition: none; visibility: hidden;/, 'il cassetto non scivola: compare dov\'e\'');
   assert.ok(blocco.includes('body.con-nav.tutto-schermo.menu-aperto .drawer { visibility: visible; }'));
   const DIS = readFileSync(new URL('../../src/web/public/disegno.js', import.meta.url), 'utf8');
-  assert.ok(DIS.includes("if (posato && cassetto) chiedi(cassetto, { veloce: true });"), 'prima il contorno del cassetto');
-  assert.ok(DIS.includes("chiedi(g, { da: (posato ? 140 : 60) + j * PASSO_FILA, veloce: true });"), 'poi i gruppi, uno dopo l\'altro');
+  assert.ok(DIS.includes("if (conCassetto && cassetto) chiedi(cassetto, { veloce: true });"), 'prima il contorno del cassetto');
+  assert.ok(DIS.includes("chiedi(g, { da: (conCassetto ? 140 : 60) + j * PASSO_FILA, veloce: true });"), 'poi i gruppi, uno dopo l\'altro');
+  assert.ok(DIS.includes("if (diventa('menu-aperto')) menu(true);"), 'ogni volta che il cassetto si apre, sul telefono come a tutto schermo');
   assert.ok(DIS.includes('viaMenu: viaMenu'), 'e sa disfarlo, dicendo quanto ci mette');
   const chiudi = funzione('chiudiMenuMobile');
-  assert.ok(chiudi.includes("window.SB_DISEGNO?.viaMenu?.()") && chiudi.includes("_viaMenu = setTimeout(() => { _viaMenu = 0; document.body.classList.remove('menu-aperto'); }, dura);"), 'sparisce solo quando il disegno e\' tornato indietro');
+  assert.ok(chiudi.includes("const dura = subito ? 0 : (window.SB_DISEGNO?.viaMenu?.() || 0);")
+    && chiudi.includes("_viaMenu = setTimeout(() => { _viaMenu = 0; document.body.classList.remove('menu-aperto', 'menu-via'); }, dura);"), 'sparisce solo quando il disegno e\' tornato indietro');
   assert.match(APP, /const SOSTA_BORDO_MS = \d+;/, 'una sosta sul bordo prima di aprire');
 });
 
@@ -130,3 +132,28 @@ test('il timbro della voce accesa vince su ogni regola che veste le voci', () =>
   assert.ok(vesti.length >= 2, `trovo chi veste le voci: ${vesti.join(' | ')}`);
   for (const x of vesti) assert.ok(peso(timbro.sel) > peso(x), `${timbro.sel} pesa piu' di ${x}`);
 });
+
+// Il cassetto del telefono scorreva, «perche' e' un cassetto». Chiesto: «quando
+// schiaccio la x qui deve fare la solita animazione disegnata, non la
+// transizione». Adesso fa come il menu a tutto schermo, per ogni strada.
+test('sul telefono il cassetto non scorre: si disegna e si disfa, qualunque strada lo chiuda', () => {
+  const base = /\n\.drawer \{[^}]*\}/.exec(CSS)[0];
+  assert.doesNotMatch(base, /transform|transition/, 'niente scivolo');
+  assert.match(base, /visibility: hidden;/, 'chiuso non si vede, e col Tab non ci si arriva');
+  assert.ok(CSS.includes('body.menu-aperto .drawer { visibility: visible; }'), 'aperto si vede dov\'e\'');
+  assert.ok(CSS.includes('body.menu-aperto.menu-via .backdrop { opacity: 0; pointer-events: none; }'), 'il velo sfuma mentre il cassetto si disfa');
+  const chiudi = funzione('chiudiMenuMobile');
+  assert.doesNotMatch(chiudi, /menuPosato\(\)/, 'il disegno all\'indietro non e\' piu\' solo del tutto schermo');
+  assert.ok(chiudi.includes("document.body.classList.add('menu-via');"));
+  assert.equal((APP.match(/classList\.(add|toggle)\('menu-aperto'/g) || []).length, 1, 'il cassetto si apre in un posto solo, apriMenu');
+  assert.ok(funzione('apriMenu').includes("document.body.classList.add('menu-aperto');"));
+  assert.equal((APP.match(/classList\.remove\('menu-aperto'/g) || []).length, 2, 'e si chiude in un posto solo, chiudiMenuMobile (subito o dopo il disegno)');
+  assert.match(APP, /const giraMenu = \(\) => \{ if \(document\.body\.classList\.contains\('menu-aperto'\) && !_viaMenu\) chiudiMenuMobile\(\); else apriMenu\(false\); \};/);
+  assert.match(APP, /if \(ev\.target\.closest\('\[data-apri-menu\]'\)\) giraMenu\(\);/, 'il tasto della barra in basso');
+  assert.match(APP, /getElementById\('apri-menu'\)\?\.addEventListener\('click', giraMenu\);/, 'e l\'hamburger');
+  const vai = funzione('vaiAScheda');
+  const dopoScelta = vai.indexOf('chiudiMenuMobile();', vai.indexOf('schedaAttiva = id;'));
+  assert.ok(dopoScelta > 0 && dopoScelta < vai.indexOf('stessaFamiglia(prima, id)'),
+    'scegliendo una voce il menu si chiude al gesto, insieme alla scena che se ne va, non dopo');
+});
+

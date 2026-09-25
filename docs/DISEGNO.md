@@ -59,7 +59,8 @@ Da lì le scelte:
 | una finestra, la ricerca, la visita guidata | la loro carta si disegna sopra al velo, e chiudendola si disegna all'indietro |
 | una finestra ti chiede un gesto di cui potresti pentirti | la carta è una nuvoletta spigolosa rossa, come un urlo |
 | premi un tasto che ha un contorno, e il gesto non fa partire altri disegni | il tasto si ripassa a china dal punto toccato, poi l'inchiostro in più sfuma |
-| apri il menù sul telefono | i gruppi si disegnano uno dopo l'altro |
+| apri il menù (il cassetto del telefono, o quello del tutto schermo) | il cassetto si disegna, poi i gruppi uno dopo l'altro |
+| chiudi il menù, in qualunque modo (la X, il velo, Esc, una voce, il tasto della barra) | il cassetto e i gruppi si disegnano all'indietro dove sono, e il velo sfuma insieme |
 | la vetrina | ogni vignetta (un riquadro chiuso) si disegna quando entra nello schermo |
 
 Una carta dura circa 560 ms dall'inizio alla pulizia, ma il contenuto si legge
@@ -84,11 +85,20 @@ possa esistere.
    blocco di solo testo non ne ha, e un contorno che compare e poi sparisce
    sarebbe un errore. Senza bordo (stile `none`, spessore sotto mezzo pixel o
    colore trasparente) non si disegna niente.
-3. **La china ricalca il bordo vero.** Spessore, colore e raggio vengono
-   dall'elemento, e il tratto sta al centro del bordo (`sp/2`), dove il bordo è.
-   Quando il disegno finisce e torna il bordo del CSS non c'è nessuno scatto: le
-   carte del pannello hanno il tratto spesso, quelle della vetrina un pixel.
-   Sulla nuvoletta il bordo è la sagoma a punte, e la china ricalca quella.
+3. **La china ricalca il bordo vero, lato per lato e angolo per angolo.**
+   Spessore, colore e raggio vengono dall'elemento, e il tratto sta al centro del
+   bordo (`sp/2`), dove il bordo è. Quando il disegno finisce e torna il bordo del
+   CSS non c'è nessuno scatto: le carte del pannello hanno il tratto spesso,
+   quelle della vetrina un pixel. Sulla nuvoletta il bordo è la sagoma a punte, e
+   la china ricalca quella. Si traccia solo il lato che c'è, e un angolo si
+   arrotonda solo fra due lati veri, col suo raggio in orizzontale e in
+   verticale; i raggi che si sovrappongono si riducono tutti insieme, come fa il
+   CSS. Prima la misura leggeva un lato solo e ne tracciava sempre quattro: il
+   cassetto del telefono, che ha tre lati perché il destro sta sul bordo dello
+   schermo, avrebbe avuto un quarto lato di china che spariva a disegno finito.
+   Per un elemento a quattro lati col raggio uguale il tracciato è lo stesso di
+   prima, al decimo di pixel (provato su 108 forme). La matita abbozza solo i
+   lati che ci sono.
 4. **La tela ha la scatola dell'elemento.** L'SVG è grande esattamente quanto
    l'elemento; i tratti che sbordano sono inchiostro fuori scatola
    (`overflow: visible`) e non allargano la pagina. Sul telefono una tela con un
@@ -167,6 +177,16 @@ possa esistere.
     perde `tutto-schermo` il menu si disegna, qualunque sia la strada (il tasto,
     una voce del menu, un collegamento); prima che la prenda, se il menu è di
     lato, si disfa e solo dopo lascia il posto (`applicaSchermo`).
+19. **Si disegna solo quello che si vede.** Un gruppo dentro un cassetto
+    chiuso (nascosto, `visibility: hidden`) ha una scatola sullo schermo, e il
+    disegno la troverebbe: lascerebbe inchiostro sopra alla pagina, attorno a una
+    cosa che non c'è. La misura dice se l'elemento si vede, e chi non si vede non
+    si disegna.
+20. **Il menu si chiude al gesto.** Scegliendo una voce che cambia sezione, la
+    scena vecchia si disfa e il menu si chiude nello stesso momento. Prima il
+    menu aspettava che la scena finisse di disfarsi, e se ne andava dopo: quando
+    spariva di colpo non si notava, disegnandosi sarebbe rimasto fermo, aperto,
+    dopo che avevi già scelto.
 
 ## La tela viva
 
@@ -206,6 +226,22 @@ lo stesso seme: quando il disegno finisce resta la sagoma, senza scatti. La
 sagoma è la forma della carta, non un movimento: resta anche per chi chiede
 meno movimento.
 
+## Il cassetto del telefono
+
+Scorreva, ed era scritto qui fra le cose che restano animate: «è un
+cassetto». Chiesto così, con la foto del menu aperto: «quando schiaccio la x
+qui deve fare la solita animazione disegnata, non la transizione». Adesso il
+cassetto del telefono fa come quello del tutto schermo: non si sposta, compare
+dove sta e si disegna, e se ne va da lì disegnandosi all'indietro, qualunque
+strada lo chiuda. Chiuso è nascosto (`visibility: hidden`), non spostato fuori
+dallo schermo: così col tasto Tab non ci si arriva più, cosa che prima
+succedeva. Il velo dietro sfuma mentre il cassetto si disfa (`menu-via`), non
+dopo. Tutte le strade passano da due funzioni, `apriMenu` e `chiudiMenuMobile`:
+prima il tasto «Altro» della barra in basso e l'hamburger accendevano e
+spegnevano la classe per conto loro, e avrebbero saltato il disegno.
+Allargando la finestra col cassetto aperto, il cassetto diventa il menu di lato
+e si chiude subito: disfarlo sarebbe stato disfare il menu di lato.
+
 ## Cosa resta animato, e perché
 
 Il disegno è per le **vignette**: le cose che entrano ed escono dalla pagina.
@@ -214,7 +250,6 @@ Resta com'era quello che non è una vignetta:
 - le **micro-interazioni**: tendine, pressione e sollevamento dei tasti, hover;
 - lo stato **vivo**: le pulsazioni del «in diretta», i caricamenti, i contatori;
 - il **titolo** della scheda, che entra parola per parola: è il lettering;
-- il **cassetto** del menù, che scorre: è un cassetto;
 - tra una pagina e l'altra (`@view-transition`) la barra, il marchio e il piede
   stanno fermi, e il contenuto si cambia senza animazione: poi si disegna.
 
@@ -269,6 +304,21 @@ si disegnano più né scivolano: ci sono.
     apre una conferma) non si ripassa niente;
   - la modalità leggera che disegna, e «meno movimento» che non disegna.
 
-  L'autoprova toglie l'uscita e pretende il rosso.
+  - il cassetto del telefono, aperto e chiuso per ognuna delle cinque strade
+    (la X, il velo, Esc, una voce, il tasto della barra in basso): non si sposta
+    mai; aprendolo si disegna, con la china sui suoi tre lati; chiudendolo, a
+    ogni fotogramma finché si vede, si disfa lui coi suoi gruppi, e il velo è
+    già sfumato prima che sparisca; non lascia niente; con meno movimento si apre
+    e si chiude all'istante.
+
+  L'autoprova rompe quattro cose, ognuna in un processo suo, e pretende il
+  rosso per la ragione giusta: la scheda vecchia che non si disfa, il cassetto
+  che si chiude senza disfarsi, il cassetto che torna a scivolare, il velo che
+  aspetta la fine del disegno. Una misura a un istante fisso non basta: il
+  disegno all'indietro del cassetto dura circa 200 ms, e la prima versione lo
+  guardava quando era già finito.
+- `test/contratto/disegno.test.mjs` prova anche il contorno con un lato
+  mancante: il cassetto ha due angoli, parte e finisce sul bordo destro, e
+  nessun tratto corre lungo il lato che non c'è.
 - `scripts/verifica-larghezza.mjs` gira a 360 px col disegno acceso: nessuna
   tela allarga la pagina.

@@ -23,14 +23,48 @@
 // pannello, e questo cancello era verde: contava che una tela ci fosse, non
 // quante vignette c'erano da disfare. Adesso le conta.
 //
+// Il cassetto del menu' sul telefono. Scorreva, «perche' e' un cassetto», ed
+// era l'unica cosa che entrava e usciva senza disegnarsi. Chiesto: «quando
+// schiaccio la x qui deve fare la solita animazione disegnata, non la
+// transizione». Adesso si disegna e si disfa come il menu' a tutto schermo, e
+// qui lo si guarda da un telefono, per ogni strada che lo chiude: la X, il
+// velo, Esc, una voce, il tasto della barra in basso. Il cassetto non si
+// sposta mai; la sua china ha tre lati, come il suo bordo; chiudendolo resta
+// al suo posto finche' si e' disfatto, e il velo sfuma insieme.
+//
 // Uso: node scripts/verifica-stacco.mjs
-//      node scripts/verifica-stacco.mjs --selftest   (deve diventare rosso)
+//      node scripts/verifica-stacco.mjs --selftest   (rompe una cosa per volta)
 
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { apriSito } from './_sito.mjs';
 
 const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
-const SELFTEST = process.argv.includes('--selftest');
+const ROMPI = (process.argv.find((a) => a.startsWith('--rompi=')) || '').slice('--rompi='.length);
+
+// L'AUTOPROVA: ogni rottura in un processo suo, e il rosso deve arrivare per
+// la ragione giusta.
+const ROTTURE = [
+  ['esce', /✗ cambiare sezione disfa ogni vignetta/, 'la scheda vecchia non si disfa: la classe `esce` non arriva mai'],
+  ['cassetto-via', /✗ il cassetto del telefono si chiude disfacendosi/, 'il cassetto del telefono si chiude senza disfarsi'],
+  ['cassetto-scivola', /✗ il cassetto del telefono non si sposta/, 'il cassetto del telefono torna a scivolare'],
+  ['velo-dopo', /✗ e il velo sfuma mentre si disfa/, 'il velo aspetta la fine del disegno per sfumare'],
+];
+if (process.argv.includes('--selftest')) {
+  const io = fileURLToPath(import.meta.url);
+  let cieche = 0;
+  for (const [parte, segno, che] of ROTTURE) {
+    let uscita = '', rosso = false;
+    try { uscita = execFileSync(process.execPath, [io, `--rompi=${parte}`], { encoding: 'utf8', stdio: 'pipe' }); } catch (e) { rosso = true; uscita = String(e.stdout || ''); }
+    if (/collaudo saltato/.test(uscita)) { console.log('  ✗  senza Chromium l\'autoprova non prova niente'); process.exit(1); }
+    const visto = rosso && segno.test(uscita);
+    console.log((visto ? '  ✓  ' : '  ✗  ') + che + (visto ? '' : rosso ? '  → rosso, ma per un\'altra ragione' : '  → PASSA INOSSERVATO'));
+    if (!visto) cieche++;
+  }
+  console.log(cieche ? `\n${cieche} ${cieche === 1 ? 'rottura non vista' : 'rotture non viste'}: il cancello non protegge quello che dice.` : "\nOgni rottura e' vista. Il cancello e' vero. ✓");
+  process.exit(cieche ? 1 : 0);
+}
 
 let chromium;
 try { ({ chromium } = await import(PLAYWRIGHT)); }
@@ -44,7 +78,7 @@ await p.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domconte
 await p.waitForFunction(() => window.SB_APP && window.SB_DISEGNO, null, { timeout: 20000 });
 await p.addStyleTag({ content: '#cookie-banner,.giro-velo,.giro-fumetto{display:none!important}' });
 
-if (SELFTEST) {
+if (ROMPI === 'esce') {
   // Il difetto: la scheda vecchia non si disfa. L'uscita la chiede l'app con
   // la classe `esce`; qui la classe non arriva mai.
   await p.evaluate(() => {
@@ -259,6 +293,109 @@ const uscita = await p.evaluate(() => {
   return /ms$/.test(v) ? x : x * 1000;
 });
 
+// ---- IL CASSETTO DEL TELEFONO ----------------------------------------------
+const tel = await b.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+if (ROMPI === 'velo-dopo') {
+  await tel.addInitScript(() => document.addEventListener('DOMContentLoaded', () => {
+    const s = document.createElement('style');
+    s.textContent = 'body.menu-aperto.menu-via .backdrop { opacity: 1 !important; }';
+    document.head.appendChild(s);
+  }));
+}
+if (ROMPI === 'cassetto-scivola') {
+  await tel.addInitScript(() => document.addEventListener('DOMContentLoaded', () => {
+    const s = document.createElement('style');
+    s.textContent = '.drawer { visibility: visible !important; transform: translateX(100%); transition: transform .3s; } body.menu-aperto .drawer { transform: none; }';
+    document.head.appendChild(s);
+  }));
+}
+await tel.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domcontentloaded' });
+await tel.waitForFunction(() => window.SB_APP && window.SB_DISEGNO, null, { timeout: 20000 });
+await tel.addStyleTag({ content: '#cookie-banner,.giro-velo,.giro-fumetto{display:none!important}' });
+if (ROMPI === 'cassetto-via') await tel.evaluate(() => { window.SB_DISEGNO.viaMenu = () => 0; });
+await tel.waitForTimeout(1200);
+// Com'e' il cassetto in un istante: dove sta, se si vede, se si sta disegnando
+// o disfacendo, e la china che traccia.
+const CASSETTO = () => {
+  const d = document.getElementById('drawer'), r = d.getBoundingClientRect();
+  const tela = d._dgTela && d._dgTela.isConnected ? d._dgTela : null;
+  const china = tela && tela.querySelector('.dg-china');
+  const gruppi = [...document.querySelectorAll('#nav-drawer > .drawer-grp')];
+  const disfa = (e) => !!(e._dgTela && e._dgTela.isConnected && e._dgTela.querySelector('.dg-sfila'));
+  return {
+    aperto: document.body.classList.contains('menu-aperto'), si_vede: getComputedStyle(d).visibility === 'visible',
+    sinistra: Math.round(r.left), velo: +getComputedStyle(document.getElementById('backdrop')).opacity,
+    disegna: !!(china && !disfa(d)), disfa: disfa(d), gruppiDisfano: gruppi.filter(disfa).length,
+    china: china ? china.getAttribute('d') : '', largo: r.width, alto: r.height,
+  };
+};
+const aprire = async () => {
+  await tel.click('[data-apri-menu]');
+  const lati = [];
+  let primo = null;
+  for (let i = 0; i < 8; i++) { const c = await tel.evaluate(CASSETTO); if (!primo && c.disegna) primo = c; if (c.si_vede) lati.push(c.sinistra); await tel.waitForTimeout(40); }
+  await tel.waitForTimeout(900);
+  return { primo, lati };
+};
+const STRADE = [
+  ['la X', () => tel.click('#chiudi-menu')],
+  ['il velo', () => tel.mouse.click(20, 400)],
+  ['Esc', () => tel.keyboard.press('Escape')],
+  ['una voce', async () => {
+    await tel.click('#nav-drawer .drawer-grp.chiuso > button.drawer-grp-tit');
+    await tel.waitForTimeout(450);
+    await tel.evaluate(() => [...document.querySelectorAll('#nav-drawer [data-scheda]:not(.on)')].find((e) => e.checkVisibility()).setAttribute('data-prova-voce', ''));
+    await tel.click('[data-prova-voce]');
+    await tel.evaluate(() => document.querySelector('[data-prova-voce]')?.removeAttribute('data-prova-voce'));
+  }],
+  // a cassetto aperto il tasto sta sotto il velo: col dito si chiude dal velo,
+  // qui si prova la sua strada (quella della tastiera)
+  ['il tasto della barra in basso', () => tel.evaluate(() => document.querySelector('[data-apri-menu]').click())],
+];
+// Ogni fotogramma, dal gesto finche' il cassetto non si vede piu': non un
+// istante scelto a occhio, che il disegno all'indietro (circa 200 ms) puo'
+// aver gia' superato.
+await tel.evaluate(`window.__cassetto = ${CASSETTO.toString()}`);
+const cassetto = [];
+for (const [nome, chiudi] of STRADE) {
+  const { primo, lati } = await aprire();
+  await tel.evaluate(() => {
+    window.__fotogrammi = [];
+    const t0 = performance.now();
+    const giro = () => {
+      const c = window.__cassetto();
+      window.__fotogrammi.push({ t: Math.round(performance.now() - t0), aperto: c.aperto, si_vede: c.si_vede, disfa: c.disfa, gruppi: c.gruppiDisfano, velo: c.velo });
+      if (performance.now() - t0 < 1200) requestAnimationFrame(giro);
+    };
+    requestAnimationFrame(giro);
+  });
+  await chiudi();
+  await tel.waitForTimeout(1300);
+  const fotogrammi = await tel.evaluate(() => window.__fotogrammi);
+  const dopo = await tel.evaluate(CASSETTO);
+  const resti = await tel.evaluate(() => document.querySelectorAll('svg.dg-tela').length);
+  const disfacendo = fotogrammi.filter((f) => f.aperto && f.si_vede && f.disfa);
+  cassetto.push({ nome, primo, lati, disfacendo, dopo, resti });
+}
+// La china ha i lati del bordo vero: il cassetto non ha il lato destro, e
+// nessun tratto della china corre lungo quel lato.
+const treLati = (c) => {
+  if (!c || !c.china) return false;
+  const punti = [...c.china.matchAll(/(-?[\d.]+),(-?[\d.]+)/g)].map((m) => [+m[1], +m[2]]);
+  for (let i = 1; i < punti.length; i++) {
+    const [a, b2] = [punti[i - 1], punti[i]];
+    if (a[0] > c.largo - 4 && b2[0] > c.largo - 4 && Math.abs(a[1] - b2[1]) > c.alto / 2) return false;
+  }
+  return /^M/.test(c.china) && !/Z/.test(c.china);
+};
+await tel.evaluate(() => document.body.classList.add('meno-moto'));
+await tel.click('[data-apri-menu]');
+await tel.waitForTimeout(80);
+const fermoAperto = await tel.evaluate(() => ({ aperto: document.body.classList.contains('menu-aperto'), tele: document.querySelectorAll('svg.dg-tela').length }));
+await tel.click('#chiudi-menu');
+await tel.waitForTimeout(30);
+const fermoChiuso = await tel.evaluate(() => ({ aperto: document.body.classList.contains('menu-aperto'), tele: document.querySelectorAll('svg.dg-tela').length }));
+
 await b.close();
 await chiudiSito();
 
@@ -301,11 +438,20 @@ dice(uscita > 0 && uscita <= 300, 'l\'uscita e\' corta: il disegno all\'indietro
 dice(interruttori.leggero.visto === true, 'la modalita\' leggera non spegne il disegno: serve al carico, non al movimento');
 dice(interruttori['meno-moto'].visto === false, 'chi ha chiesto meno movimento non vede disegnare niente');
 
+const fermo = cassetto.filter((x) => new Set(x.lati).size !== 1);
+dice(!fermo.length, 'il cassetto del telefono non si sposta: compare dov\'e\' e se ne va da li\'', fermo.map((x) => `${x.nome}: ${x.lati.join(',')}`).join(' · '));
+const nonDisegna = cassetto.filter((x) => !x.primo || !treLati(x.primo));
+dice(!nonDisegna.length, 'aprendolo si disegna, con la china sui suoi tre lati: il lato destro non c\'e\'', nonDisegna.map((x) => `${x.nome}: ${x.primo ? x.primo.china.slice(0, 60) : 'nessun disegno'}`).join(' · '));
+const nonDisfa = cassetto.filter((x) => !(x.disfacendo.some((f) => f.gruppi > 0) && !x.dopo.aperto && !x.dopo.si_vede));
+dice(!nonDisfa.length, 'il cassetto del telefono si chiude disfacendosi, cassetto e gruppi, per ogni strada', nonDisfa.map((x) => `${x.nome}: ${x.disfacendo.length} fotogrammi a disfarsi, poi ${JSON.stringify({ aperto: x.dopo.aperto, si_vede: x.dopo.si_vede })}`).join(' · '));
+// all'ultimo fotogramma in cui il cassetto si vede ancora, il velo e' gia'
+// andato: se aspettasse la fine del disegno, in tutti quei fotogrammi varrebbe 1
+const velo = cassetto.filter((x) => { const u = x.disfacendo[x.disfacendo.length - 1]; return !u || !(u.velo < 0.9); });
+dice(!velo.length, 'e il velo sfuma mentre si disfa, non dopo', velo.map((x) => `${x.nome}: ${JSON.stringify(x.disfacendo.slice(-2))}`).join(' · '));
+const resti = cassetto.filter((x) => x.resti);
+dice(!resti.length, 'e non lascia niente nel documento', resti.map((x) => `${x.nome}: ${x.resti}`).join(' · '));
+dice(fermoAperto.aperto && !fermoAperto.tele && !fermoChiuso.aperto && !fermoChiuso.tele, 'con meno movimento il cassetto si apre e si chiude all\'istante, senza disegni', JSON.stringify({ fermoAperto, fermoChiuso }));
+
 const rossi = esiti.filter((x) => !x).length;
-if (SELFTEST) {
-  if (rossi) { console.log('\nAutoprova: se la scheda vecchia non si disfa, il cancello se ne accorge. ✓\n'); process.exit(0); }
-  console.log('\nAutoprova FALLITA: il cancello non vede che la scheda vecchia resta.\n');
-  process.exit(1);
-}
 console.log(rossi ? '\ncancello ROSSO ✗\n' : '\nOgni passaggio si disfa e si disegna come gli tocca. ✓\n');
 process.exit(rossi ? 1 : 0);

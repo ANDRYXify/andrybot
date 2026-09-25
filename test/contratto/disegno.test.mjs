@@ -26,15 +26,44 @@ const corpoDi = (testo, nome) => {
 
 test('si disegna solo quello che ha un contorno, e la china ricalca il bordo vero', () => {
   const m = corpoDi(DG, 'misura');
-  assert.match(m, /stile === 'none' \|\| sp < 0\.5 \|\| trasparente\) \? null/, 'senza bordo non c\'e\' niente da ripassare');
+  assert.match(m, /return !\(st\['border' \+ x \+ 'Style'\] === 'none' \|\| \(parseFloat\(st\['border' \+ x \+ 'Width'\]\) \|\| 0\) < 0\.5 \|\| trasparente\);/,
+    'un lato c\'e\' se ha uno stile, uno spessore e un colore che si vede');
+  assert.match(m, /: !primo \? null :/, 'senza nessun lato non c\'e\' niente da ripassare');
   assert.match(m, /var coperto = \['dg-in', 'dg-out'\]\.filter/, 'e il bordo e\' quello vero, non quello coperto da un disegno in corso');
   assert.ok(m.indexOf('coperto.forEach(function (c) { el.classList.remove(c); });') < m.indexOf('var st = getComputedStyle(el);')
-    && m.indexOf('coperto.forEach(function (c) { el.classList.add(c); });') > m.indexOf("var rag = parseFloat(st.borderTopLeftRadius)"), 'si legge a classi tolte, e si rimettono dopo');
-  assert.match(corpoDi(DG, 'disegnabile'), /return !!m\.bordo &&/);
+    && m.indexOf('coperto.forEach(function (c) { el.classList.add(c); });') > m.indexOf('var visibile = st.visibility !== \'hidden\';'), 'si legge a classi tolte, e si rimettono dopo');
+  assert.match(m, /\['TopLeft', 'TopRight', 'BottomRight', 'BottomLeft'\]\.map/, 'ogni angolo col suo raggio');
+  assert.match(m, /return \[misurato\(v\[0\], r\.width\), misurato\(v\[1\] \|\| v\[0\], r\.height\)\];/, 'in orizzontale e in verticale');
+  assert.match(corpoDi(DG, 'disegnabile'), /return !!m\.bordo && m\.visibile &&/, 'e si disegna solo quello che si vede');
   const t = corpoDi(DG, 'piano');
-  assert.match(t, /contorno\(w, h, bd\.rag, bd\.sp,/, 'col raggio e lo spessore del bordo');
+  assert.match(t, /contorno\(w, h, bd, caso\(seme \+ ':china'\)\)/, 'col bordo intero: lati, angoli, spessore');
   assert.match(t, /\{ 'stroke-width': Math\.max\(1, bd\.sp\), stroke: bd\.colore \}/, 'e col suo colore');
-  assert.match(corpoDi(DG, 'contorno'), /var m = sp \/ 2;/, 'il tratto sta al centro del bordo, dove il bordo e\'');
+  assert.match(t, /if \(bd\.lati && !bd\.lati\[i\]\) return;/, 'la matita abbozza solo i lati che ci sono');
+  const c = corpoDi(DG, 'contorno');
+  assert.match(c, /var m = bd\.sp \/ 2;/, 'il tratto sta al centro del bordo, dove il bordo e\'');
+  assert.match(c, /var k = Math\.min\(1, w \/ \(\(A\[0\]\[0\] \+ A\[1\]\[0\]\) \|\| 1\)/, 'i raggi che si sovrappongono si riducono come nel CSS');
+  assert.match(c, /var t = L\[\(i \+ 3\) % 4\] \? q\[i\]\[asse\(i\)\] : -m;/, 'un lato che finisce su un lato mancante arriva fino al bordo');
+  assert.match(c, /if \(L\[0\] && L\[1\] && L\[2\] && L\[3\]\) \{/, 'con quattro lati il tracciato e\' chiuso, come prima');
+});
+
+// Il cassetto del telefono ha tre lati: il destro sta sul bordo dello schermo.
+// La china ne tracciava quattro, e il quarto spariva a disegno finito.
+test('la china ricalca il bordo vero anche quando un lato non c\'e\'', () => {
+  const src = corpoDi(DG, 'contorno') + '\n  }';
+  const f = (n) => Math.round(n * 10) / 10;
+  const r = () => 0.5;
+  const contorno = new Function('f', 'return ' + src.replace(/^function contorno/, 'function'))(f);
+  const pieno = contorno(300, 120, { sp: 2, lati: [true, true, true, true], angoli: [[8, 8], [8, 8], [8, 8], [8, 8]] }, r);
+  assert.match(pieno, /^M[^M]*$/, 'quattro lati: un tratto solo, chiuso su se stesso');
+  assert.equal((pieno.match(/Q/g) || []).length, 4, 'e quattro angoli');
+  const cassetto = contorno(320, 800, { sp: 2, lati: [true, false, true, true], angoli: [[26, 16], [0, 0], [0, 0], [22, 26]] }, r);
+  const punti = [...cassetto.matchAll(/(-?[\d.]+),(-?[\d.]+)/g)].map((m) => [+m[1], +m[2]]);
+  assert.equal((cassetto.match(/Q/g) || []).length, 2, 'tre lati: solo i due angoli fra lati veri');
+  assert.deepEqual(punti[0], [320, 799], 'parte dal bordo destro, in fondo');
+  assert.deepEqual(punti[punti.length - 1], [320, 1], 'e finisce sul bordo destro, in alto');
+  for (let i = 1; i < punti.length; i++) {
+    assert.ok(!(punti[i - 1][0] > 316 && punti[i][0] > 316 && Math.abs(punti[i - 1][1] - punti[i][1]) > 400), 'nessun tratto corre lungo il lato destro');
+  }
 });
 
 test('la tela ha la scatola dell\'elemento: quello che sborda non allarga la pagina', () => {
@@ -110,7 +139,7 @@ test('il disegno ascolta le classi che l\'app scrive davvero', () => {
   assert.match(APP, /el\.className = 'toast' \+/, 'l\'avviso');
   assert.match(APP, /el\.className = 'bv-velo/, 'la finestra');
   assert.match(APP, /velo\.className = 'giro-velo';/, 'la visita guidata');
-  assert.match(APP, /document\.body\.classList\.toggle\('menu-aperto'\)/, 'il menu');
+  assert.match(APP, /document\.body\.classList\.add\('menu-aperto'\)/, 'il menu');
   assert.match(CERCA, /classList\.add\('aperto'\)/, 'la ricerca');
 });
 

@@ -76,7 +76,7 @@ body:not(.con-nav) .barra-top { display: none; }
 .drawer {
   position: fixed; top: 0; right: 0; height: 100dvh; width: min(86vw, 320px); z-index: 61;
   background: var(--tono-carta) 0 0 / var(--tono-passo), var(--bg); border-left: 1px solid var(--border); box-shadow: var(--om-l);
-  transform: translateX(100%); transition: transform .3s var(--spring);
+  visibility: hidden;
   overflow-y: auto; padding: .6rem; display: none;
 }
 .drawer-testa { display: flex; align-items: center; justify-content: space-between; padding: .5rem .5rem .7rem; font-weight: 700; }
