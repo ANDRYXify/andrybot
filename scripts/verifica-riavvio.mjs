@@ -45,6 +45,8 @@ const DECISO = [
   ['features/attese-giochi.js', 'detta', 'volatile', 'quali attese sono gia\' state dette in chat: al peggio se ne dice una volta in piu\''],
   ['features/patata.js', 'patate', 'volatile', 'la patata in giro: un riavvio la fa sparire, e nessuna moneta era in sospeso, perche\' la multa si paga solo allo scoppio'],
   ['features/corsa.js', 'corse', 'volatile', 'la corsa in corso: le monete si muovono solo all\'arrivo, quindi un riavvio la fa sparire senza che nessuno perda niente'],
+  ['bot.js', '_bjRese', 'volatile', 'le puntate di blackjack rese all\'avvio, da dire in chat quando il canale torna: le monete sono gia\' state rese nel database, e se il bot si riavvia di nuovo prima di dirlo si perde solo l\'avviso'],
+  ['features/comandi-registro.js', 'aperture', 'volatile', 'quale apertura di !giochi tocca, per canale: dopo un riavvio si riparte dalla prima, e cambia solo una frase'],
   ['features/blackjack.js', 'mani', 'volatile', 'le carte di una mano aperta: un riavvio la chiude, e la puntata, che e\' la sola cosa che vale, sta nel database (bj-mani) e all\'avvio torna a chi l\'aveva messa'],
   ['features/catena.js', 'catene', 'volatile', 'la catena in corso: un riavvio la chiude, e il record, che e\' la cosa che conta, sta nel database'],
   ['features/conta.js', 'conte', 'volatile', 'la conta in corso: un riavvio la chiude, e il record, che e\' la cosa che conta, sta nel database'],
