@@ -25,7 +25,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { COMANDI, MODULI, collisioni, LIVELLI, IN_CHAT, GRUPPI, FAMIGLIE_GIOCHI, ELENCO } from '../src/features/comandi-registro.js';
+import { COMANDI, MODULI, collisioni, LIVELLI, IN_CHAT, GRUPPI, FAMIGLIE_GIOCHI, ELENCO, FORME } from '../src/features/comandi-registro.js';
 import { giocoDi } from '../src/features/giochi-conf.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -95,8 +95,28 @@ dice(conElenco.length === 0, 'l\'elenco dei giochi in chat lo costruisce il regi
 // ---- come la chat parla dei giochi -----------------------------------------
 // Una funzione pura sulla tabella, cosi' l'autoprova la puo' rompere senza
 // toccare il file.
+// Cosa sta scritto, nell'esempio della spiegazione, al posto di ogni parola di
+// una forma: l'elenco dice «!duello @nome posta», le regole «!duello @nome 50».
+const ESEMPIO_DI = {
+  '@nome': '@nome', posta: '\\d+', quanto: '\\d+', minuti: '\\d+', corridore: '\\d+',
+  colore: '[a-zà-ù]+', mossa: '(?:sasso|carta|forbice)', domanda: '[^{}.]*\\?',
+};
+
 export function guaiInChat(tabella) {
-  const g = { posto: [], mosse: [], nominate: [], segnaposto: [], manopole: [] };
+  const g = { posto: [], mosse: [], nominate: [], segnaposto: [], manopole: [], forme: [] };
+  for (const w of FORME) if (!ESEMPIO_DI[w]) g.forme.push(`«${w}» non ha un esempio che il cancello sappia leggere`);
+  for (const [id, r] of Object.entries(tabella)) {
+    const esempi = (r.spiega || '');
+    if (r.forma === undefined) {
+      if (r.gruppo && new RegExp(`\\{${id}\\} (@nome|\\d+\\b)`).test(esempi)) g.forme.push(`${id}: si scrive con un nome o una posta, e l'elenco non lo dice`);
+      continue;
+    }
+    if (!r.gruppo) { g.forme.push(`${id}: una forma su chi non e' un gioco dell'elenco`); continue; }
+    const parole = String(r.forma).split(' ');
+    const fuori = parole.filter((w) => !FORME.includes(w));
+    if (!r.forma || fuori.length) { g.forme.push(`${id}: «${fuori.join(' ') || r.forma}» non e' una parola delle forme`); continue; }
+    if (!new RegExp(`\\{${id}\\} ${parole.map((w) => ESEMPIO_DI[w]).join(' ')}`).test(esempi)) g.forme.push(`${id}: la spiegazione non ha un esempio di «${r.forma}»`);
+  }
   const ids = new Set(COMANDI.map((c) => c.id));
   const gruppi = new Set(GRUPPI.map((x) => x.id));
   const giochi = COMANDI.filter((c) => FAMIGLIE_GIOCHI.includes(c.modulo) && c.id !== ELENCO);
@@ -131,6 +151,7 @@ dice(gc.mosse.length === 0, 'ogni mossa appartiene a un gioco vero', gc.mosse.jo
 dice(gc.nominate.length === 0, 'la spiegazione di un gioco nomina tutte le sue mosse', gc.nominate.join(', '));
 dice(gc.segnaposto.length === 0, 'ogni {nome} nelle spiegazioni e\' un comando vero', gc.segnaposto.join(', '));
 dice(gc.manopole.length === 0, 'ogni valore detto in chat viene da una manopola che non vale mai zero', gc.manopole.join(', '));
+dice(gc.forme.length === 0, `ogni gioco che vuole qualcosa dopo il nome lo dice nell'elenco, e le regole ne hanno un esempio (${Object.values(IN_CHAT).filter((r) => r.forma).length} forme)`, gc.forme.join(', '));
 
 // L'AUTOPROVA: ogni rottura su una copia della tabella, e deve accendere il
 // controllo giusto.
@@ -144,6 +165,10 @@ if (process.argv.includes('--selftest')) {
     ['segnaposto', (t) => { t.slot.spiega += ' {slott}'; }, 'un nome di comando sbagliato'],
     ['manopole', (t) => { t.slot.spiega += ' %slot.jackpot%'; }, 'una manopola che puo\' valere zero'],
     ['manopole', (t) => { t.slot.spiega += ' %slot.inventata%'; }, 'una manopola che non esiste'],
+    ['forme', (t) => { delete t.duello.forma; }, 'un gioco con la posta che l\'elenco mostra nudo'],
+    ['forme', (t) => { t.roulette.forma = 'posta numerino'; }, 'una forma con una parola inventata'],
+    ['forme', (t) => { t.blackjack.forma = '@nome posta'; }, 'una forma che le regole non mostrano'],
+    ['forme', (t) => { t.carta.forma = 'posta'; }, 'una forma su una mossa'],
   ];
   let cieche = 0;
   console.log('');

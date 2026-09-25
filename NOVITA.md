@@ -54,6 +54,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Fra i comandi dei giochi la pesca non porta più l'etichetta «costa monete»: non ne è mai costata.
 - Chi toglie e rimette il follow non fa più partire avvisi, ringraziamenti e conti da follower nuovo. Chi torna a seguirti dopo tre mesi viene salutato con un bentornato.
 - Una domanda fatta a te in chat che il bot non sa resta a te: il bot tace invece di rispondere col tuo nome. Le cose da sistemare nel pannello le dice solo a te e ai tuoi mod, mai agli spettatori.
+- L'elenco di !giochi dice come si gioca ognuno: il nome e quello che va scritto dopo, tipo !duello @nome posta. In fondo dice come chiedere le regole di un gioco.
 
 ## 2026-09-24
 

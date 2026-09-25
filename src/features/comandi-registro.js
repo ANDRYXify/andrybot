@@ -270,6 +270,11 @@ export const COMANDI = [
 // comando ha nel canale (rinominato compreso), %monete% il nome delle monete,
 // %gioco.manopola% il valore scelto nelle regole del gioco: solo manopole che
 // non valgono mai zero, cosi' nessuna frase dice «costa 0».
+//
+// `forma` e' quello che si scrive dopo il nome per giocare, se serve: nell'elenco
+// !duello diventa «!duello @nome posta», e chi legge sa gia' come si gioca senza
+// chiedere le regole. Parole solo da FORME, e la spiegazione ne mostra un esempio.
+export const FORME = ['@nome', 'posta', 'colore', 'mossa', 'corridore', 'domanda', 'quanto', 'minuti'];
 export const GRUPPI = [
   { id: 'solo', emoji: '🎲', nome: 'Da solo' },
   { id: 'sfide', emoji: '⚔️', nome: 'Contro qualcuno' },
@@ -282,36 +287,36 @@ export const GRUPPI = [
 export const IN_CHAT = {
   dado: { gruppo: 'solo', emoji: '🎲', spiega: 'Tiri un dado da sei con {dado}. Ne vuoi di più, o con più facce? {dado} 2d20 ne tira due da venti.' },
   moneta: { gruppo: 'solo', emoji: '🪙', spiega: 'Lanci una moneta con {moneta}, ed esce testa o croce.' },
-  '8ball': { gruppo: 'solo', emoji: '🎱', spiega: 'Fai una domanda e la palla magica ti risponde: {8ball} vinco stasera?' },
+  '8ball': { gruppo: 'solo', emoji: '🎱', forma: 'domanda', spiega: 'Fai una domanda e la palla magica ti risponde: {8ball} vinco stasera?' },
   monete: { gruppo: 'conto', emoji: '💰', spiega: 'Ti dice quante %monete% hai. Si guadagnano stando in chat, e giocando.' },
   classifica: { gruppo: 'conto', emoji: '🏆', spiega: 'Chi ha più %monete% nel canale, e a che posto sei tu. Con {classifica} mod vedi la gara dello staff, con {classifica} tutti le due insieme.' },
   slot: { gruppo: 'solo', emoji: '🎰', spiega: 'Tiri la leva con {slot}: ogni giocata costa %slot.costo% %monete%, con i simboli uguali si vince e il tris di 💎 è il jackpot.' },
-  duello: { gruppo: 'sfide', emoji: '⚔️', spiega: 'Sfidi qualcuno che è in chat con {duello} @nome, e vince uno dei due. Con una posta ({duello} @nome 50) l\'altro accetta con {accetta} o dice di no con {rifiuta}, e chi vince prende la posta dell\'altro.' },
+  duello: { gruppo: 'sfide', emoji: '⚔️', forma: '@nome posta', spiega: 'Sfidi qualcuno che è in chat con {duello} @nome, e vince uno dei due. Con una posta ({duello} @nome 50) l\'altro accetta con {accetta} o dice di no con {rifiuta}, e chi vince prende la posta dell\'altro.' },
   trivia: { gruppo: 'insieme', emoji: '🧠', spiega: 'Con {trivia} parte una domanda per tutta la chat: vince chi risponde giusto per primo.' },
   manche: { gruppo: 'insieme', emoji: '🎮', spiega: 'Con {manche} parte subito una manche per tutta la chat, invece di aspettare la prossima. Per sceglierla scrivi anche il nome: {manche} impiccato.' },
   pesca: { gruppo: 'solo', emoji: '🎣', spiega: 'Getti la lenza con {pesca}: può abboccare qualcosa che vale %monete%, o niente.' },
-  roulette: { gruppo: 'solo', emoji: '🎡', spiega: 'Punti su un colore o su un numero: {roulette} 50 rosso. Col colore giusto ti torna il doppio, col verde 14 volte tanto, col numero giusto 36.' },
-  furto: { gruppo: 'sfide', emoji: '🦝', spiega: 'Provi a rubare %monete% a qualcuno con {furto} @nome. Se va bene sono tue, se ti beccano paghi tu la multa, a lui.' },
-  blackjack: { gruppo: 'solo', emoji: '🃏', spiega: 'Una mano contro il banco: {blackjack} 50 per puntare, poi {carta} per un\'altra carta o {stai} per fermarti. Il banco sta su ogni 17; se non decidi entro %blackjack.tempo% secondi, stai.' },
+  roulette: { gruppo: 'solo', emoji: '🎡', forma: 'posta colore', spiega: 'Punti su un colore o su un numero: {roulette} 50 rosso. Col colore giusto ti torna il doppio, col verde 14 volte tanto, col numero giusto 36.' },
+  furto: { gruppo: 'sfide', emoji: '🦝', forma: '@nome', spiega: 'Provi a rubare %monete% a qualcuno con {furto} @nome. Se va bene sono tue, se ti beccano paghi tu la multa, a lui.' },
+  blackjack: { gruppo: 'solo', emoji: '🃏', forma: 'posta', spiega: 'Una mano contro il banco: {blackjack} 50 per puntare, poi {carta} per un\'altra carta o {stai} per fermarti. Il banco sta su ogni 17; se non decidi entro %blackjack.tempo% secondi, stai.' },
   carta: { parteDi: 'blackjack' },
   stai: { parteDi: 'blackjack' },
-  corsa: { gruppo: 'insieme', emoji: '🏁', spiega: 'Con {corsa} si apre la corsa, e %corsa.raccolta% secondi dopo si parte. Punti con {corsa} 2 50: 50 %monete% sul secondo corridore. Il favorito paga poco, l\'ultimo tanto.' },
+  corsa: { gruppo: 'insieme', emoji: '🏁', forma: 'corridore posta', spiega: 'Con {corsa} si apre la corsa, e %corsa.raccolta% secondi dopo si parte. Punti con {corsa} 2 50: 50 %monete% sul secondo corridore. Il favorito paga poco, l\'ultimo tanto.' },
   patata: { gruppo: 'insieme', emoji: '🥔', spiega: 'Lanci la patata bollente con {patata}: chi ce l\'ha la passa con {passa} @nome, o {passa} e va a qualcuno a caso. Scoppia in mano a qualcuno quando nessuno se l\'aspetta.' },
   passa: { parteDi: 'patata' },
   catena: { gruppo: 'insieme', emoji: '🔗', spiega: 'Apri la catena con {catena}: ogni parola comincia con le ultime due lettere di quella prima, una a testa e mai due di fila. Si prova a battere il record del canale.' },
   conta: { gruppo: 'insieme', emoji: '🔢', spiega: 'Apri la conta con {conta}: la chat scrive 1, 2, 3, un numero a testa e mai due di fila. Chi sbaglia fa ricominciare da capo.' },
-  colpo: { gruppo: 'insieme', emoji: '🦹', spiega: 'Organizzi un colpo, o entri nella banda, con {colpo}; con {colpo} 100 scegli la posta. Più siete, più è facile scappare col bottino, e se siete troppo pochi il colpo salta.' },
+  colpo: { gruppo: 'insieme', emoji: '🦹', forma: 'posta', spiega: 'Organizzi un colpo, o entri nella banda, con {colpo}; con {colpo} 100 scegli la posta. Più siete, più è facile scappare col bottino, e se siete troppo pochi il colpo salta.' },
   boss: { gruppo: 'insieme', emoji: '👹', nome: 'Il boss', spiega: 'Arriva un boss e tutta la chat lo colpisce con {colpisci}, entro %boss.durata% secondi. Se cade, il bottino va a chi l\'ha colpito, in proporzione ai danni. Con {boss} arriva subito.' },
   colpisci: { parteDi: 'boss' },
-  abbraccio: { gruppo: 'coccole', emoji: '🤗', spiega: 'Abbracci qualcuno con {abbraccio} @nome, o tutta la chat se non dici chi. Chi non ne vuole scrive {nococcole}.' },
-  bacio: { gruppo: 'coccole', emoji: '😘', spiega: 'Mandi un bacino a qualcuno con {bacio} @nome, o a tutta la chat se non dici chi.' },
-  cinque: { gruppo: 'coccole', emoji: '✋', spiega: 'Alzi la mano per qualcuno ({cinque} @nome) o per chiunque: chi risponde con {cinque} la batte, e ogni tanto viene un cinque perfetto.' },
+  abbraccio: { gruppo: 'coccole', emoji: '🤗', forma: '@nome', spiega: 'Abbracci qualcuno con {abbraccio} @nome, o tutta la chat se non dici chi. Chi non ne vuole scrive {nococcole}.' },
+  bacio: { gruppo: 'coccole', emoji: '😘', forma: '@nome', spiega: 'Mandi un bacino a qualcuno con {bacio} @nome, o a tutta la chat se non dici chi.' },
+  cinque: { gruppo: 'coccole', emoji: '✋', forma: '@nome', spiega: 'Alzi la mano per qualcuno ({cinque} @nome) o per chiunque: chi risponde con {cinque} la batte, e ogni tanto viene un cinque perfetto.' },
   nococcole: { parteDi: 'abbraccio' },
   accetta: { parteDi: 'duello' },
   rifiuta: { parteDi: 'duello' },
-  morra: { gruppo: 'solo', emoji: '✊', spiega: 'Sasso, carta o forbice contro il bot: {morra} carta. Con una puntata ti giochi %monete%: {morra} carta 20.' },
-  sblocca: { gruppo: 'conto', emoji: '🔓', spiega: 'Spendi %monete% per mettere la chat in %sblocca.modo% per qualche minuto: {sblocca} 5 per cinque minuti, a %sblocca.costoMinuto% %monete% al minuto.' },
-  regala: { gruppo: 'conto', emoji: '💝', spiega: 'Regali %monete% tue a qualcuno: {regala} @nome 50.' },
+  morra: { gruppo: 'solo', emoji: '✊', forma: 'mossa posta', spiega: 'Sasso, carta o forbice contro il bot: {morra} carta. Con una puntata ti giochi %monete%: {morra} carta 20.' },
+  sblocca: { gruppo: 'conto', emoji: '🔓', forma: 'minuti', spiega: 'Spendi %monete% per mettere la chat in %sblocca.modo% per qualche minuto: {sblocca} 5 per cinque minuti, a %sblocca.costoMinuto% %monete% al minuto.' },
+  regala: { gruppo: 'conto', emoji: '💝', forma: '@nome quanto', spiega: 'Regali %monete% tue a qualcuno: {regala} @nome 50.' },
 
   mima: { gruppo: 'webcam', emoji: '🎭', spiega: 'Con {mima} parte il gioco della mimica nell\'overlay della webcam.' },
   nonridere: { gruppo: 'webcam', emoji: '😐', spiega: 'Con {nonridere} parte la sfida «non ridere» nell\'overlay della webcam.' },
@@ -499,6 +504,9 @@ const nomeMonete = (channel) => {
   return (n && String(n).trim()) || 'monete';
 };
 
+// Come si scrive un gioco per giocarlo: il nome del canale e la sua forma.
+const comeSiScrive = (r) => ['!' + r.nomi[0], IN_CHAT[r.id].forma].filter(Boolean).join(' ');
+
 export function giochiInChat(channel, msg = {}, { limite = 450 } = {}) {
   const righe = elenco(channel).filter((r) => r.vivo && FAMIGLIE_GIOCHI.includes(r.modulo) && r.id !== ELENCO
     && IN_CHAT[r.id]?.gruppo && puoUsare(r.chi, msg));
@@ -508,20 +516,21 @@ export function giochiInChat(channel, msg = {}, { limite = 450 } = {}) {
     const qui = righe.filter((r) => IN_CHAT[r.id].gruppo === g.id);
     if (!qui.length) continue;
     const testa = `${g.emoji} ${g.nome.replace('%monete%', monete)}:`;
-    qui.forEach((r, i) => pezzi.push({
-      testo: i ? '!' + r.nomi[0] : `${testa} !${r.nomi[0]}`,
-      prima: i ? ', ' : ' · ',
-      daCapo: `${testa} !${r.nomi[0]}`,
-    }));
+    qui.forEach((r, i) => {
+      const come = comeSiScrive(r);
+      pezzi.push({ testo: i ? come : `${testa} ${come}`, prima: i ? ', ' : ' · ', daCapo: `${testa} ${come}` });
+    });
   }
   if (!pezzi.length) return [];
   const n = aperture.get(channel) || 0;
   aperture.set(channel, n + 1);
-  const esempio = righe.find((r) => IN_CHAT[r.id].gruppo !== 'conto') || righe[0];
+  // L'elenco dice gia' come si gioca: il nome, e quello che va scritto dopo.
+  // Il finale porta alle regole, con l'esempio di un gioco che le ha.
+  const esempio = righe.find((r) => /posta/.test(IN_CHAT[r.id].forma || '')) || righe.find((r) => IN_CHAT[r.id].forma) || righe[0];
   const giochi = nomeIn(channel, ELENCO);
   return inMessaggi(pezzi, limite, {
     testa: `🎮 ${APERTURE[n % APERTURE.length]}`,
-    coda: `Come si gioca? !${giochi} e il nome, tipo !${giochi} ${esempio.nomi[0]}.`,
+    coda: `Per le regole di un gioco: !${giochi} e il nome, tipo !${giochi} ${esempio.nomi[0]}.`,
     primaDellaCoda: '. ',
   });
 }
