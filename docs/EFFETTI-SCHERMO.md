@@ -81,9 +81,63 @@ Da qui:
 - se ffmpeg non sa leggere un file, l'errore lo dice con parole sue e dice
   quali formati vanno.
 
-Il pannello avvisa quando un'immagine già caricata è troppo piccola per il
-tutto schermo (meno di 1280 pixel di larghezza): si vedrebbe sgranata, e si
-può ricaricare dall'originale.
+Il pannello avvisa quando un media già caricato, a tutto schermo, si
+ingrandirebbe più di una volta e mezza: si vedrebbe sgranato, e si può
+ricaricare dall'originale.
+
+### Ogni video trasparente
+
+Chiesto così: «inseriamo anche il supporto ad ogni formato video trasparente».
+
+Il server usava l'ffmpeg di Debian 12, la 5.1, che non legge l'HEVC
+trasparente (quello che esportano iPhone, Final Cut e Motion): il livello alfa
+dell'HEVC lo decodifica ffmpeg dalla 8. Il Dockerfile ora prende ffmpeg e
+ffprobe 9.0.2 statici da static-ffmpeg, **fissati per impronta**: lo stesso
+file, byte per byte, su cui sono state fatte le prove qui sotto (scaricato dal
+registro con l'impronta controllata). Il build ha tutto quello che il bot già
+usava altrove: x264 e AAC per lo Studio in diretta, ebur128 per l'ascolto, opus,
+webp, rtmp.
+
+Provando ogni formato con ffmpeg 9 sono venuti fuori due difetti, e nessuno dei
+due si vedeva guardando solo se il video «ha l'alfa dentro»:
+
+1. **Il codificatore VP9 si sceglieva il formato dei pixel da solo** e prendeva
+   un 4:4:4 a 12 bit (quello del ProRes), che poi rifiutava: ProRes, GIF,
+   APNG, PNG in MOV, Animation e Ut Video fallivano tutti. Ora la scelta è
+   esplicita, `format=pix_fmts=yuva420p|yuv420p`, e la fa il grafo dei filtri
+   guardando i fotogrammi veri: con l'alfa solo se l'alfa c'è. Un video opaco
+   resta opaco (un'alfa inutile raddoppierebbe il lavoro di OBS).
+2. **I metadati d'origine cancellavano il segno della trasparenza.** Il tag
+   `alpha_mode` copiato dal WebM d'ingresso toglieva all'uscita l'elemento
+   AlphaMode, che è quello che Chrome e OBS leggono per sapere che il video è
+   trasparente: dentro l'alfa c'era, in onda sarebbe uscito nero. Ogni uscita
+   ora parte senza i metadati del file (`-map_metadata -1`), e dai media
+   caricati spariscono anche posizione, dispositivo e autore.
+
+E una regola che vale per costruzione, qualunque ffmpeg ci sia: **se il file
+dichiara la trasparenza, anche quello che va in onda ce l'ha**, letto con la
+stessa sonda (l'AlphaMode del WebM d'uscita). Se no il caricamento si ferma e
+dice come esportarlo, invece di mettere in onda un riquadro nero.
+
+| formato trasparente | come arriva in onda |
+|---|---|
+| WebM e MKV, VP8 o VP9 con l'alfa | WebM trasparente |
+| MOV ProRes 4444, Animation (QuickTime RLE), PNG in MOV | WebM trasparente |
+| MOV e MP4 HEVC con l'alfa (iPhone, Final Cut, Motion) | WebM trasparente, con ffmpeg 9* |
+| AVI Ut Video, MKV FFV1 | WebM trasparente |
+| GIF, APNG | WebM trasparente |
+| WebP animato, AVIF (fermo o animato) | tenuto com'è, lo mostra il browser |
+| PNG, TIFF, WebP fermi | WebP trasparente |
+
+Tutti provati con ffmpeg 9.0.2: il file uscito, caricato in Chromium (lo
+stesso motore di OBS), ha l'angolo trasparente e il soggetto pieno.
+\* L'HEVC trasparente non si può fabbricare qui (nessun x265 disponibile sa
+scriverlo): il decodificatore è nella libreria di ffmpeg 9, e se l'alfa si
+perdesse lo direbbe la regola qui sopra.
+
+Un file che il browser non sa nominare (arriva come
+`application/octet-stream`) si riconosce da quello che c'è dentro: si muove, è
+un video; un fotogramma solo, un'immagine; solo suono, un audio.
 
 ## I disegni
 

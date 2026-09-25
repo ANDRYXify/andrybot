@@ -31,6 +31,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] Ogni immagine o video dei tuoi effetti può andare a tutto schermo, riempito o intero, senza passare dall'area degli effetti dello Studio. [vai: effetti]
 - I video WebM trasparenti restano trasparenti dopo il caricamento, i PNG animati restano animati e i WebP animati si caricano. Un file che non si legge dice quali formati vanno. [vai: effetti]
 - [importante] Nella storia «Stasera alle…» l'immagine del gioco ha tre modi: a tutto schermo con velo e sfocatura, in un riquadro che sposti e ingrandisci, o niente per lasciare il tema. [vai: grafiche]
+- Gli effetti accettano ogni video trasparente: WebM, MOV ProRes 4444 o HEVC di iPhone e Final Cut, Animation, GIF, APNG, AVIF e WebP animati. Se la trasparenza si perdesse, il caricamento si ferma e lo dice. [vai: effetti]
 
 ## 2026-09-24
 

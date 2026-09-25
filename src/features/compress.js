@@ -43,13 +43,23 @@ function rilevaTipo(tipoDichiarato) {
   if (m.startsWith('video/')) return 'video';
   if (m.startsWith('image/')) return 'immagine';
   // scorta su estensioni note (se ci arriva un percorso/nome invece del mime)
-  if (/\.(mp3|wav|ogg|m4a|opus)$/.test(m)) return 'audio';
-  if (/\.(png|jpe?g|webp)$/.test(m)) return 'immagine';
-  if (/\.(mp4|webm|mov)$/.test(m)) return 'video';
+  if (/\.(mp3|wav|ogg|m4a|opus|flac|aac)$/.test(m)) return 'audio';
+  if (/\.(png|jpe?g|webp|avif|heic|heif|tiff?|bmp)$/.test(m)) return 'immagine';
+  if (/\.(mp4|m4v|webm|mov|mkv|avi)$/.test(m)) return 'video';
   throw new Error('tipo di file non supportato (usa audio, immagine o video)');
 }
 
-export const FORMATI_LETTI = 'PNG, JPG, WebP, GIF, TIFF, MP4, WebM, MOV, MP3, WAV e OGG';
+// Un file che il browser non sa nominare (un HEIC, un MKV su certi sistemi
+// arriva come «application/octet-stream») si riconosce da quello che c'e'
+// dentro, non dal nome: quello che si muove e' un video, un fotogramma solo e'
+// un'immagine, solo audio e' un audio.
+export function tipoDaSonda(s) {
+  if (s && s.codec) return s.animato ? 'video' : 'immagine';
+  if (s && s.audio) return 'audio';
+  return '';
+}
+
+export const FORMATI_LETTI = 'PNG, JPG, WebP, AVIF, GIF, TIFF, MP4, WebM, MOV, MKV, AVI, MP3, WAV e OGG';
 
 // COSA C'E' DENTRO UN FILE, detto da ffmpeg stesso: il codec del primo video e
 // se dichiara un canale alfa. ffmpeg senza un file d'uscita esce con errore, ma
@@ -57,17 +67,26 @@ export const FORMATI_LETTI = 'PNG, JPG, WebP, GIF, TIFF, MP4, WebM, MOV, MP3, WA
 // i metadati del flusso, nelle righe rientrate sotto la sua riga «Stream».
 // Un flusso che ffmpeg non sa leggere ha il formato dei pixel «none» (il codec
 // lo deduce dall'estensione): per noi e' come se non ci fosse, codec ''.
+// La trasparenza DICHIARATA viene da due posti: l'alpha_mode dei WebM (dove i
+// pixel sembrano yuv420p e l'alfa sta a parte) o un formato di pixel che ha il
+// canale alfa (ProRes 4444, PNG, Animation, GIF, APNG, Ut Video, FFV1...).
+const PIXEL_CON_ALFA = /^(yuva|rgba|argb|bgra|abgr|gbrap|ya[0-9]|rgba64|bgra64|pal8a)/;
 export function leggiSonda(testo) {
-  const righe = String(testo || '').split(/\r?\n/);
+  const t = String(testo || '');
+  const righe = t.split(/\r?\n/);
+  const audio = righe.some((r) => /Stream #\d+:\d+.*: Audio: /.test(r));
   const i = righe.findIndex((r) => /Stream #\d+:\d+.*: Video: /.test(r));
-  if (i < 0) return { codec: '', alfa: false };
+  if (i < 0) return { codec: '', alfa: false, formato: '', audio, animato: false };
   const m = /: Video: ([A-Za-z0-9_]+)[^,]*, ([A-Za-z0-9_]+)/.exec(righe[i]) || [];
-  const codec = m[2] && m[2] !== 'none' ? m[1].toLowerCase() : '';
-  let alfa = false;
+  const formato = m[2] && m[2] !== 'none' ? m[2].toLowerCase() : '';
+  const codec = formato ? m[1].toLowerCase() : '';
+  let alfa = PIXEL_CON_ALFA.test(formato);
   for (let j = i + 1; j < righe.length && /^\s{4,}/.test(righe[j]) && !/Stream #/.test(righe[j]); j++) {
     if (/^\s*alpha_mode\s*:\s*1\s*$/.test(righe[j])) alfa = true;
   }
-  return { codec, alfa };
+  const durata = /Duration: (\d+):(\d+):(\d+(?:\.\d+)?)/.exec(t);
+  const secondi = durata ? Number(durata[1]) * 3600 + Number(durata[2]) * 60 + Number(durata[3]) : 0;
+  return { codec, alfa, formato, audio, animato: secondi > 0.1 && !/image2|_pipe/.test((/Input #0, ([^,]+)/.exec(t) || [])[1] || '') };
 }
 
 // Il decodificatore di ffmpeg per VP8 e VP9 ignora il canale alfa dei WebM:
@@ -88,6 +107,15 @@ export function webpAnimato(testa) {
     && b.toString('latin1', 12, 16) === 'VP8X' && (b[20] & 0x02) !== 0;
 }
 
+// Un AVIF (fermo o animato) lo mostra il browser, trasparenza compresa: la
+// trasparenza di un AVIF sta in un'immagine a parte che ricomprimendo si
+// perderebbe. Si riconosce dal marchio del contenitore: «ftyp» e poi avif/avis.
+export function eAvif(testa) {
+  const b = Buffer.isBuffer(testa) ? testa : Buffer.alloc(0);
+  return b.length >= 12 && b.toString('latin1', 4, 8) === 'ftyp' && ['avif', 'avis'].includes(b.toString('latin1', 8, 12));
+}
+const TENUTO_COM_E = (testa) => (webpAnimato(testa) ? 'webp' : eAvif(testa) ? 'avif' : '');
+
 async function testaDi(percorso, n = 32) {
   const f = await open(percorso, 'r');
   try { const b = Buffer.alloc(n); const { bytesRead } = await f.read(b, 0, n, 0); return b.subarray(0, bytesRead); } finally { await f.close(); }
@@ -107,13 +135,36 @@ function sonda(percorso) {
 }
 
 // Da dove leggere: il file, col decodificatore giusto davanti, e se un'immagine
-// e' in realta' un'animazione (APNG) va per la strada dei video.
+// e' in realta' un'animazione (APNG) va per la strada dei video. `s` e' quello
+// che la sonda ha visto: serve dopo, a controllare che la trasparenza arrivi.
 async function ingresso(tempPath, tipo) {
-  if (tipo === 'audio') return { tipo, dentro: ['-i', tempPath] };
+  if (tipo === 'audio') return { tipo, dentro: ['-i', tempPath], s: null };
   const s = await sonda(tempPath);
   if (s && !s.codec) throw new Error(`questo file non lo so leggere: vanno bene ${FORMATI_LETTI}`);
-  return { tipo: tipo === 'immagine' && s?.codec === 'apng' ? 'video' : tipo, dentro: [...decodificatore(s || {}), '-i', tempPath] };
+  return { tipo: tipo === 'immagine' && s?.codec === 'apng' ? 'video' : tipo, dentro: [...decodificatore(s || {}), '-i', tempPath], s };
 }
+
+// Il tipo: dal nome che il browser da', e se non ne da' uno che conosciamo,
+// da quello che c'e' dentro.
+async function tipoDi(tempPath, tipoDichiarato) {
+  try { return rilevaTipo(tipoDichiarato); } catch (e) {
+    const t = tipoDaSonda(await sonda(tempPath));
+    if (!t) throw new Error(`questo file non lo so leggere: vanno bene ${FORMATI_LETTI}`);
+    return t;
+  }
+}
+
+// Ogni uscita parte senza i metadati del file d'origine (-map_metadata -1).
+// Con ffmpeg 9 il tag «alpha_mode» copiato dall'ingresso cancella il segno
+// AlphaMode del WebM che il browser legge per sapere che c'e' la trasparenza:
+// il video restava trasparente dentro e usciva nero in onda. E dai media
+// caricati spariscono anche posizione, dispositivo e autore.
+
+// VP9 in onda: 4:2:0 a 8 bit, con l'alfa o senza. La scelta non la fa il
+// codificatore (ffmpeg 9 gli farebbe prendere un 4:4:4 a 12 bit, che poi
+// rifiuta), e non la fa la sonda: la fa il grafo dei filtri guardando i
+// fotogrammi veri, che scelgono yuva420p solo se hanno un canale alfa.
+const PIXEL_VIDEO = 'format=pix_fmts=yuva420p|yuv420p';
 
 // Esegue ffmpeg con gli argomenti dati. Risolve se esce con codice 0,
 // altrimenti lancia un errore chiaro. Uccide il processo se supera il timeout.
@@ -176,6 +227,18 @@ function sondaDurataMs(percorso) {
   });
 }
 
+// SE IL FILE ERA TRASPARENTE, LO E' ANCHE QUELLO CHE VA IN ONDA. Un video
+// che dichiara l'alfa e ne esce senza sarebbe un riquadro nero sulla diretta:
+// meglio fermarsi e dirlo. La sonda dell'uscita e' la stessa dell'ingresso.
+export async function verificaAlfa(out, s) {
+  if (!s || !s.alfa) return;
+  const o = await sonda(out);
+  if (o && !o.alfa) {
+    try { await unlink(out); } catch { /* gia' tolto */ }
+    throw new Error('la trasparenza di questo video si perderebbe: esportalo in WebM (VP9 con canale alfa) o in MOV ProRes 4444 e riprova');
+  }
+}
+
 // Verifica che il file di output esista e non sia vuoto.
 async function verificaOutput(percorso) {
   let st;
@@ -188,20 +251,22 @@ async function verificaOutput(percorso) {
 // Ritorna { tipo, file, durata } oppure lancia un errore. Cancella SEMPRE il tempPath.
 export async function comprimi(tempPath, tipoDichiarato, destDir, id, { latoImmagine = IMG_MAX_LATO } = {}) {
   try {
-    if (rilevaTipo(tipoDichiarato) === 'immagine' && webpAnimato(await testaDi(tempPath))) {
+    const tipo0 = await tipoDi(tempPath, tipoDichiarato);
+    const tenuto = tipo0 === 'immagine' ? TENUTO_COM_E(await testaDi(tempPath)) : '';
+    if (tenuto) {
       const { size } = await stat(tempPath);
-      if (size > WEBP_ANIMATO_MAX) throw new Error('WebP animato troppo pesante: tienilo sotto gli 8 MB, o caricalo come GIF o video');
-      const file = `${id}.webp`;
+      if (size > WEBP_ANIMATO_MAX) throw new Error(`${tenuto === 'webp' ? 'WebP animato' : 'AVIF'} troppo pesante: tienilo sotto gli 8 MB, o caricalo come GIF o video`);
+      const file = `${id}.${tenuto}`;
       await copyFile(tempPath, join(destDir, file));
       return { tipo: 'immagine', file, durata: IMG_DURATA_MS };
     }
-    const { tipo, dentro } = await ingresso(tempPath, rilevaTipo(tipoDichiarato));
+    const { tipo, dentro, s } = await ingresso(tempPath, tipo0);
 
     if (tipo === 'audio') {
       const file = `${id}.ogg`;
       const out = join(destDir, file);
       await eseguiFfmpeg([
-        '-y', ...dentro,
+        '-y', ...dentro, '-map_metadata', '-1',
         '-t', String(AUDIO_MAX_S),
         '-vn',
         '-ac', '1',
@@ -219,7 +284,7 @@ export async function comprimi(tempPath, tipoDichiarato, destDir, id, { latoImma
       const file = `${id}.webp`;
       const out = join(destDir, file);
       await eseguiFfmpeg([
-        '-y', ...dentro,
+        '-y', ...dentro, '-map_metadata', '-1',
         '-vf', `scale='min(${latoImmagine},iw)':'min(${latoImmagine},ih)':force_original_aspect_ratio=decrease`,
         '-frames:v', '1',
         '-c:v', 'libwebp', '-quality', String(IMG_QUALITA),
@@ -233,15 +298,16 @@ export async function comprimi(tempPath, tipoDichiarato, destDir, id, { latoImma
     const file = `${id}.webm`;
     const out = join(destDir, file);
     await eseguiFfmpeg([
-      '-y', ...dentro,
+      '-y', ...dentro, '-map_metadata', '-1',
       '-t', String(VIDEO_MAX_S),
-      '-vf', `scale=-2:'min(${VIDEO_MAX_ALTEZZA},ih)'`,
+      '-vf', `scale=-2:'min(${VIDEO_MAX_ALTEZZA},ih)',${PIXEL_VIDEO}`,
       '-c:v', 'libvpx-vp9', '-crf', String(VIDEO_CRF), '-b:v', '0',
       '-deadline', 'good', '-cpu-used', '4', '-row-mt', '1',
       '-c:a', 'libopus', '-b:a', AUDIO_BITRATE,
       out,
     ]);
     await verificaOutput(out);
+    await verificaAlfa(out, s);
     const reale = await sondaDurataMs(out);
     const durata = Math.min(reale ?? VIDEO_MAX_S * 1000, VIDEO_MAX_S * 1000);
     return { tipo, file, durata };
@@ -256,7 +322,7 @@ export async function comprimi(tempPath, tipoDichiarato, destDir, id, { latoImma
 // oppure lancia. Cancella SEMPRE il tempPath.
 export async function convertiPerEmote(tempPath, tipoDichiarato, destDir, id) {
   try {
-    if (rilevaTipo(tipoDichiarato) === 'audio') throw new Error('un\'emote non può essere un audio');
+    if (await tipoDi(tempPath, tipoDichiarato) === 'audio') throw new Error('un\'emote non può essere un audio');
     if (webpAnimato(await testaDi(tempPath))) {
       const { size } = await stat(tempPath);
       if (size > EMOTE_MAX_BYTES) throw new Error('animazione troppo pesante: prova un video più corto o più piccolo');
@@ -264,13 +330,13 @@ export async function convertiPerEmote(tempPath, tipoDichiarato, destDir, id) {
       await copyFile(tempPath, join(destDir, file));
       return { file, animato: true, byte: size };
     }
-    const { tipo, dentro } = await ingresso(tempPath, rilevaTipo(tipoDichiarato));   // gif e apng → video
+    const { tipo, dentro } = await ingresso(tempPath, await tipoDi(tempPath, tipoDichiarato));   // gif e apng → video
     const file = `${id}.webp`;
     const out = join(destDir, file);
 
     if (tipo === 'immagine') {
       await eseguiFfmpeg([
-        '-y', ...dentro,
+        '-y', ...dentro, '-map_metadata', '-1',
         '-vf', `scale='min(${EMOTE_LATO},iw)':-2:flags=lanczos`,
         '-frames:v', '1',
         '-c:v', 'libwebp', '-lossless', '0', '-q:v', String(EMOTE_Q),
@@ -284,7 +350,7 @@ export async function convertiPerEmote(tempPath, tipoDichiarato, destDir, id) {
 
     // GIF (anche trasparenti) e video → WebP ANIMATO (loop, alpha preservata)
     await eseguiFfmpeg([
-      '-y', ...dentro,
+      '-y', ...dentro, '-map_metadata', '-1',
       '-t', String(EMOTE_MAX_S),
       '-an',
       '-vf', `fps=${EMOTE_FPS},scale='min(${EMOTE_LATO},iw)':'min(${EMOTE_LATO},ih)':force_original_aspect_ratio=decrease:flags=lanczos`,
