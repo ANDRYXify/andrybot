@@ -6,7 +6,7 @@ if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
 if(!('IntersectionObserver' in window))return;
 if(window.CSS&&CSS.supports&&CSS.supports('animation-timeline','view()'))return;
 document.documentElement.className+=' sr';
-var SEL='.lista .voce,.lista .tit,.lista .par,.lista .sep,.lista .socrow,.lista .img,.lista .emb,.lista .eroe,.lista .griglia,.lista .marq,.lista .bl';
+var SEL='.lista .voce,.lista .tit,.lista .par,.lista .sep,.lista .socrow,.lista .img,.lista .emb,.lista .eroe,.lista .griglia,.lista .marq,.lista .bl,.lista .sost';
 function tutti(){try{document.querySelectorAll(SEL).forEach(function(el){el.classList.add('vis');});}catch(e){}}
 function avvia(){try{var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('vis');io.unobserve(e.target);}});},{rootMargin:'0px 0px -6% 0px'});document.querySelectorAll(SEL).forEach(function(el){io.observe(el);});}catch(e){tutti();}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',avvia);else avvia();

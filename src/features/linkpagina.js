@@ -433,23 +433,6 @@ if(rm){frame();return;}
 var last=0;function loop(t){if(t-last>55){frame();last=t;}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 })();`;
 
-// Reveal allo scroll: rete di sicurezza SOLO dove animation-timeline non è
-// supportata. Mette la classe .sr sull'<html> PRIMA del disegno (niente lampo),
-// mette in pausa le entrate e le fa partire quando il pezzo entra nello schermo.
-// Se manca il supporto, il JS è spento o qualcosa va storto → tutto resta
-// visibile (rete di sicurezza a 5s + catch). Rispetta "riduci animazioni".
-const SCRIPT_SCROLLREVEAL = `(function(){try{
-if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
-if(!('IntersectionObserver' in window))return;
-if(window.CSS&&CSS.supports&&CSS.supports('animation-timeline','view()'))return;
-document.documentElement.className+=' sr';
-var SEL='.lista .voce,.lista .tit,.lista .par,.lista .sep,.lista .socrow,.lista .img,.lista .emb,.lista .eroe,.lista .griglia,.lista .marq,.lista .bl,.lista .sost';
-function tutti(){try{document.querySelectorAll(SEL).forEach(function(el){el.classList.add('vis');});}catch(e){}}
-function avvia(){try{var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('vis');io.unobserve(e.target);}});},{rootMargin:'0px 0px -6% 0px'});document.querySelectorAll(SEL).forEach(function(el){io.observe(el);});}catch(e){tutti();}}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',avvia);else avvia();
-setTimeout(tutti,5000);
-}catch(e){try{document.documentElement.classList.remove('sr');}catch(_){}}})();`;
-
 // cosa dire, in anteprima, quando il blocco «Sostieni» non puo' ancora comparire
 const MANCA_SOSTIENI = {
   spente: 'accendi le donazioni nella scheda «Donazioni»',

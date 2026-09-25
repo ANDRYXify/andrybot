@@ -92,6 +92,14 @@ test('il blocco «Sostieni» esiste dove si pulisce, dove si rende e dove si agg
   const stileAnim = conAnim.slice(conAnim.indexOf('<style>'), conAnim.indexOf('</style>'));
   assert.ok(stileAnim.includes('.marq,.sost{animation:ent'), 'entra come gli altri blocchi quando la pagina ha un\'entrata');
   assert.ok(stileAnim.includes(',.bl,.sost)'), 'e lo scorrimento lo rivela come gli altri');
+  // Sui browser senza animation-timeline le entrate aspettano in pausa, e le
+  // fa partire pagina-link.js quando il pezzo arriva. Un pezzo in pausa che lo
+  // script non nomina resta invisibile per sempre: era il blocco Sostieni.
+  const pausa = /html\.sr :is\(([^)]*)\)\{animation-play-state:paused\}/.exec(stileAnim);
+  const sveglia = /var SEL='([^']*)'/.exec(PLJS);
+  assert.ok(pausa && sveglia, 'la pausa dello scorrimento, e chi la toglie');
+  const svegliati = sveglia[1].split(',').map((x) => x.replace(/^\.lista /, ''));
+  assert.deepEqual(pausa[1].split(',').filter((c) => !svegliati.includes(c)), [], 'ogni pezzo messo in pausa ha chi lo fa partire');
   const senzaGoal = renderLinkPage({ ...base, blocchi: [{ tipo: 'sostieni', obiettivo: false }] }, { ...opz, sostieni: { modo: 'link', link: 'https://ko-fi.com/x', etichetta: '', messaggio: '', valuta: 'EUR', goal: { ora: 1, meta: 2 } } });
   assert.ok(!senzaGoal.includes('sost-g"') && senzaGoal.includes('>Sostieni<'), 'l\'obiettivo si puo\' nascondere; il tasto senza testo si chiama Sostieni');
 });

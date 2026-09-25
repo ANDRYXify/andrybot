@@ -41,6 +41,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nel muro delle emote il numero della combo non torna più indietro quando la scena in onda è pesante: cinque persone che ripetono la stessa emote fanno sempre ×5. [vai: alert]
 - Il menù si disegna in ogni caso: quando la pagina si carica, quando allarghi o stringi la finestra, quando giri il tablet e quando togli il tutto schermo.
 - Con «Riduci movimento» attivo le pagine, gli avvisi, le finestre e il menù si disegnano e si disfano come per tutti, invece di comparire e sparire di colpo.
+- Nella tua pagina link il blocco per sostenerti compare quando ci arrivi anche sui browser meno recenti, dove prima restava invisibile. [vai: pagina]
 
 ## 2026-09-24
 
