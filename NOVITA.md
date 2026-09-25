@@ -53,6 +53,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Il blackjack dice il conto per intero: quanto ti torna, cosa c'è dentro e quante monete hai adesso. Se il bot si riavvia con una mano aperta, lo dice in chat quando rende la puntata.
 - Fra i comandi dei giochi la pesca non porta più l'etichetta «costa monete»: non ne è mai costata.
 - Chi toglie e rimette il follow non fa più partire avvisi, ringraziamenti e conti da follower nuovo. Chi torna a seguirti dopo tre mesi viene salutato con un bentornato.
+- Una domanda fatta a te in chat che il bot non sa resta a te: il bot tace invece di rispondere col tuo nome. Le cose da sistemare nel pannello le dice solo a te e ai tuoi mod, mai agli spettatori.
 
 ## 2026-09-24
 

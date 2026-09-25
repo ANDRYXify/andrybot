@@ -188,14 +188,17 @@ const GRAZIE = {
   ],
 };
 
-// domanda diretta al bot senza risposta in memoria: onestà con stile
+// domanda fatta al BOT (chiamato «bot») senza risposta in memoria: onestà con
+// stile. Solo onestà: chi legge e' uno spettatore, e insegnare le risposte lo fa
+// lo streamer dal pannello (docs/RIMEDI.md). Dirlo in chat era chiedere a chi
+// legge una cosa che non puo' fare.
 const NON_LO_SO = [
-  'Questa ancora non la so! {user}, se vuoi me la puoi insegnare dalla dashboard 📚',
-  'Mi hai beccato: non lo so 😅 Ma si può rimediare dalla dashboard, {user}!',
-  'Bella domanda {user}! La risposta ancora non ce l\'ho, ma sto imparando ogni giorno 🤓',
-  'Boh! 😄 {user}, insegnamela dalla dashboard e la prossima volta rispondo al volo',
-  'Su questa passo, {user}. Ma se me la insegni dalla dashboard non me la scordo più 📚',
-  'Ancora non è nel mio libro, {user}! Si accettano lezioni dalla dashboard ✍️',
+  'Questa ancora non la so, {user}!',
+  'Mi hai beccato: non lo so 😅',
+  'Bella domanda {user}! La risposta ancora non ce l\'ho 🤓',
+  'Boh! 😄 Su questa non so aiutarti, {user}.',
+  'Su questa passo, {user}.',
+  'Ancora non è nel mio libro, {user}!',
 ];
 
 // quando il bot "improvvisa" con una frase generata dalla chat
@@ -370,10 +373,15 @@ function compila(template, variabili) {
   return out;
 }
 
+// il testo chiama il bot per quello che e': «bot»
+function chiamaIlBot(text) {
+  return /(^|[^a-z0-9_])bot([^a-z0-9_]|$)/.test(String(text || '').toLowerCase());
+}
+
 // il testo menziona il canale/streamer (@nome o nome come parola) o "bot"?
 function menzionaBot(text, login) {
   const t = String(text || '').toLowerCase();
-  if (/(^|[^a-z0-9_])bot([^a-z0-9_]|$)/.test(t)) return true;
+  if (chiamaIlBot(t)) return true;
   const l = String(login || '').toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   if (!l) return false;
   return new RegExp('(^|[^a-z0-9_])@?' + l + '([^a-z0-9_]|$)').test(t);
@@ -1197,7 +1205,8 @@ export class Brain {
       // ---- d. FALLBACK quando il modello non è pronto/è lento ----------
       // (primo avvio: sta scaricando/caricando il modello; oppure è lento o assente).
       // DEGRADAZIONE ELEGANTE: se mi hanno CHIAMATO non lascio mai a vuoto. Con una
-      // domanda provo il web e sennò ammetto con garbo; con un semplice richiamo
+      // domanda provo il web e sennò ammetto con garbo, se la domanda era al bot;
+      // se era allo streamer taccio e lascio a lui. Con un semplice richiamo
       // rispondo con un cenno (saluto/eccomi). Appena il modello è pronto, parla lui.
       if (menziona) {
         // IL CONTO, SE NESSUNO L'HA FATTO. Sta QUI e non piu' in cima: davanti c'e'
@@ -1224,6 +1233,16 @@ export class Brain {
               });
               if (r) return r;
             }
+          }
+          // A CHI ERA LA DOMANDA. Il bot scrive con l'account dello streamer: chi
+          // scrive @streamer sta chiedendo a LUI, e un «non lo so» uscito da quel
+          // nome e' una cosa falsa detta al posto suo (lui magari lo sa). Si tace e
+          // risponde lui. Chi scrive «bot» chiede al bot, e il bot puo' dire onesto
+          // che non lo sa.
+          const alloStreamer = !chiamaIlBot(text) && (!botLogin || botLogin === channel);
+          if (alloStreamer) {
+            log.info(`#${channel} domanda di ${user} allo streamer, senza una risposta vera: la lascio a lui`);
+            return null;
           }
           return compila(scegli(NON_LO_SO, genere), variabili);
         }

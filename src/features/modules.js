@@ -22,6 +22,7 @@ import { comeSiChiama } from './bit.js';
 import { makeLog } from '../logger.js';
 import { leggiDurata, DURATA_DI_SERIE } from './modalita-chat.js';
 import { aggiornaSchermo } from './contatori.js';
+import { aChiPuo, eStaff } from './risposte.js';
 
 const log = makeLog('moduli');
 
@@ -888,7 +889,10 @@ export class ModulesEngine {
           // scope mancante o errore Twitch: non blocca le altre azioni
           log.debug('categoria via modulo fallita:', e?.message || e);
           if (azione.annuncia !== false && (e?.status === 401 || e?.status === 403)) {
-            dire('🔒 Mi manca il permesso per cambiare categoria: riautorizza dalla dashboard.');
+            dire(aChiPuo(ctx.staff, {
+              staff: '🔒 Mi manca il permesso per cambiare categoria: riautorizza dalla dashboard.',
+              pubblico: '🔒 Adesso non posso cambiare la categoria.',
+            }));
           }
         }
         return;
@@ -898,7 +902,15 @@ export class ModulesEngine {
         // variabili ($args): comando fisso (es. !sigla → un brano preciso) oppure
         // libero (es. !metti $args). Richiede l'add-on Musica e Spotify collegato.
         if (!canaleHa(ctx.channel, 'musica')) return;
-        if (!spotify.collegato(ctx.channel)) { if (azione.annuncia !== false) dire('🎵 Spotify non è collegato: fallo dal pannello.'); return; }
+        if (!spotify.collegato(ctx.channel)) {
+          if (azione.annuncia !== false) {
+            dire(aChiPuo(ctx.staff, {
+              staff: '🎵 Spotify non è collegato: fallo dal pannello.',
+              pubblico: '🎵 La musica qui non è attiva.',
+            }));
+          }
+          return;
+        }
         const q = (await this.espandi(azione.brano, ctx)).trim();
         if (!q) return;
         const brano = await spotify.cerca(ctx.channel, q).catch(() => null);
@@ -922,7 +934,10 @@ export class ModulesEngine {
         } catch (e) {
           log.debug('titolo via modulo fallita:', e?.message || e);
           if (azione.annuncia !== false && (e?.status === 401 || e?.status === 403)) {
-            dire('🔒 Mi manca il permesso per cambiare titolo: riautorizza dalla dashboard.');
+            dire(aChiPuo(ctx.staff, {
+              staff: '🔒 Mi manca il permesso per cambiare titolo: riautorizza dalla dashboard.',
+              pubblico: '🔒 Adesso non posso cambiare il titolo.',
+            }));
           }
         }
         return;
@@ -933,7 +948,10 @@ export class ModulesEngine {
         if (!t) return;
         const r = await this.helix?.announce?.(ctx.channel, t, azione.colore || 'primary');
         if (r && !r.ok && (r.motivo || '').includes('permesso') && azione.annuncia !== false) {
-          dire('🔒 Mi manca il permesso per gli annunci: riautorizza dalla dashboard.');
+          dire(aChiPuo(ctx.staff, {
+            staff: '🔒 Mi manca il permesso per gli annunci: riautorizza dalla dashboard.',
+            pubblico: '🔒 Adesso non posso fare annunci.',
+          }));
         }
         return;
       }
@@ -946,7 +964,10 @@ export class ModulesEngine {
         const r = await this.helix?.shoutout?.(ctx.channel, chi);
         if (r?.ok && azione.testo) { const t = await this.espandi(azione.testo, ctx); if (t) dire(t); }
         else if (r && !r.ok && (r.motivo || '').includes('permesso') && azione.annuncia !== false) {
-          dire('🔒 Mi manca il permesso per lo shoutout: riautorizza dalla dashboard.');
+          dire(aChiPuo(ctx.staff, {
+            staff: '🔒 Mi manca il permesso per lo shoutout: riautorizza dalla dashboard.',
+            pubblico: '🔒 Adesso non posso fare lo shoutout.',
+          }));
         }
         return;
       }
@@ -1341,6 +1362,10 @@ export class ModulesEngine {
       argsRaw,
       evento: null,
       _livello: livello,
+      // Chi ha scritto e' dello staff: solo a lui si dice il rimedio che tocca
+      // al canale (src/features/risposte.js, «il rimedio a chi lo puo' fare»).
+      // Eventi, timer e Telegram non hanno uno staff davanti: restano senza.
+      staff: eStaff(msg),
       _vars: {},
     };
   }
@@ -1387,7 +1412,7 @@ export class ModulesEngine {
     return {
       channel, user: nome, userLogin: channel, display: nome,
       args: [], argsRaw: '', evento: 'api',
-      _livello: TIER_SCALA.mod, _vars: {},
+      _livello: TIER_SCALA.mod, staff: true, _vars: {},
     };
   }
 
@@ -1399,7 +1424,7 @@ export class ModulesEngine {
     return {
       channel, user: nome, userLogin: channel, display: nome,
       args, argsRaw: String(frase || ''), evento: 'voce',
-      _livello: TIER_SCALA.mod, _vars: {},
+      _livello: TIER_SCALA.mod, staff: true, _vars: {},
     };
   }
 
@@ -1408,7 +1433,7 @@ export class ModulesEngine {
     return {
       channel, user: nome, userLogin: channel, display: nome,
       args: ['esempio', 'prova'], argsRaw: 'esempio prova', evento: null,
-      _livello: TIER_SCALA.mod,
+      _livello: TIER_SCALA.mod, staff: true,
       _vars: { raider: 'RaiderDiProva', viewers: 42, mesi: 3, bits: 100, premio: 'Premio di prova', user: nome },
     };
   }

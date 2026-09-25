@@ -17,6 +17,14 @@
 //  · QUANTO. Ogni piattaforma ha il suo limite, e chi supera viene tagliato con
 //    «…» a meta' di un nome. Qui un elenco si spezza al confine di un pezzo, in
 //    piu' messaggi se serve: nessun nome tagliato, per costruzione.
+//
+// E una terza, su COSA si dice (docs/RIMEDI.md).
+//
+//  · IL RIMEDIO A CHI LO PUO' FARE. Rimettere un permesso, collegare Spotify,
+//    accendere una cosa nel pannello: lo puo' fare solo chi ha il canale. Detto a
+//    uno spettatore e' una frase che non gli serve e che non puo' eseguire, e in
+//    chat lo leggono tutti. Il rimedio si dice solo a chi ha scritto il comando
+//    se e' dello staff; a tutti gli altri si dice cosa e' successo, e basta.
 
 // I limiti veri, in caratteri. Twitch accetta 500, ma la voce ne tiene 450 per
 // prudenza (chat.js): conta quello, perche' e' quello che taglia.
@@ -88,6 +96,16 @@ export function inMessaggi(pezzi, limite, { testa = '', coda = '', sep = ' · ',
   }
   if (cur) fuori.push(cur);
   return fuori;
+}
+
+// Chi ha scritto e' lo streamer (col suo account, che e' anche quello del bot) o
+// un suo moderatore.
+export const eStaff = (msg) => !!(msg && (msg.isBroadcaster || msg.isMod || msg.isSelf));
+
+// Il testo giusto per chi lo legge: `staff` col rimedio, `pubblico` senza. Il
+// cancello dei rimedi (scripts/verifica-rimedi.mjs) legge le due chiavi.
+export function aChiPuo(dalloStaff, testi) {
+  return dalloStaff ? testi.staff : testi.pubblico;
 }
 
 // Risponde con uno o piu' messaggi, tutti a chi ha chiesto.

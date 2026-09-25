@@ -10,7 +10,7 @@ import { streamers, points } from '../db.js';
 import { canaleHa } from './accesso.js';
 import * as spotify from './spotify.js';
 import { makeLog } from '../logger.js';
-import { aChi } from './risposte.js';
+import { aChi, aChiPuo, eStaff } from './risposte.js';
 import { nomeIn } from './comandi-registro.js';
 
 const log = makeLog('songrequest');
@@ -70,19 +70,31 @@ function configMusica(channel) {
 }
 
 // Mette in coda un brano GIÀ scelto (uri noto). Ritorna un messaggio per la chat.
-async function accodaUri(channel, brano, prefissoOk) {
+// Aprire Spotify o ricollegarlo lo puo' fare solo lo streamer: il rimedio va a
+// lui e ai mod, a chi ha chiesto la canzone si dice perche' non e' entrata.
+async function accodaUri(channel, brano, prefissoOk, dalloStaff = false) {
   const r = await spotify.aggiungiInCoda(channel, brano.uri).catch(() => ({ ok: false, status: 0 }));
   if (r.ok) return { ok: true, msg: `${prefissoOk}${brano.nome} — ${brano.artisti} 🎶` };
-  if (r.status === 404) return { ok: false, msg: '🎵 Nessun dispositivo Spotify attivo: apri Spotify e avvia la riproduzione.' };
-  if (r.status === 401) return { ok: false, msg: '🎵 Collegamento Spotify scaduto: ricollegalo dal pannello.' };
+  if (r.status === 404) {
+    return { ok: false, msg: aChiPuo(dalloStaff, {
+      staff: '🎵 Nessun dispositivo Spotify attivo: apri Spotify e avvia la riproduzione.',
+      pubblico: '🎵 Spotify del canale adesso è fermo: la canzone non è entrata in coda.',
+    }) };
+  }
+  if (r.status === 401) {
+    return { ok: false, msg: aChiPuo(dalloStaff, {
+      staff: '🎵 Collegamento Spotify scaduto: ricollegalo dal pannello.',
+      pubblico: '🎵 Spotify del canale adesso non risponde: la canzone non è entrata in coda.',
+    }) };
+  }
   return { ok: false, msg: '🎵 Non è stato possibile aggiungere il brano, riprova.' };
 }
 
 // Cerca un brano su Spotify e lo mette in coda. Ritorna un messaggio per la chat.
-async function accoda(channel, q, prefissoOk) {
+async function accoda(channel, q, prefissoOk, dalloStaff = false) {
   const brano = await spotify.cerca(channel, q).catch(() => null);
   if (!brano) return { ok: false, msg: `🎵 Non ho trovato "${q}" su Spotify.` };
-  return accodaUri(channel, brano, prefissoOk);
+  return accodaUri(channel, brano, prefissoOk, dalloStaff);
 }
 
 // Ritorna true se il messaggio era un comando SongRequest (gestito).
@@ -97,7 +109,13 @@ export async function trySongRequest(msg, say) {
 
     if (['sr', 'songrequest', 'richiedi', 'canzone'].includes(cmd)) {
       if (!canaleHa(channel, 'musica')) return true;                 // richiede l'add-on Musica
-      if (!spotify.collegato(channel)) { say('🎵 Richieste musicali non attive: lo streamer deve collegare Spotify dal pannello.'); return true; }
+      if (!spotify.collegato(channel)) {
+        say(aChiPuo(eStaff(msg), {
+          staff: '🎵 Richieste musicali non attive: Spotify non è collegato, si collega dal pannello.',
+          pubblico: '🎵 Le richieste musicali qui non sono attive.',
+        }));
+        return true;
+      }
       const cfg = configMusica(channel);
       const nome = msg.display || msg.user;
       let q = sp < 0 ? '' : taglia(testo.slice(sp + 1));
@@ -116,7 +134,7 @@ export async function trySongRequest(msg, say) {
           const saldo = points.get(channel, msg.user);
           if (saldo < pend.costo) { say(`🎵 ${nome}, ti servono ${pend.costo} monete (ne hai ${saldo}).`); return true; }
         }
-        const esito = await accodaUri(channel, scelto, '🎵 In coda: ');
+        const esito = await accodaUri(channel, scelto, '🎵 In coda: ', eStaff(msg));
         if (esito.ok && pend.modo === 'monete') points.add(channel, msg.user, -pend.costo);
         say(esito.msg);
         return true;
@@ -155,14 +173,14 @@ export async function trySongRequest(msg, say) {
           say(`🎵 ${nome}, quale intendi? ${elenco} — rispondi con !${cmd} ${numeri} (entro 90s)`);
           return true;
         }
-        const esito = await accodaUri(channel, cands[0], '🎵 In coda: ');
+        const esito = await accodaUri(channel, cands[0], '🎵 In coda: ', eStaff(msg));
         if (esito.ok && cfg.modo === 'monete') points.add(channel, msg.user, -cfg.costo);
         say(esito.msg);
         return true;
       }
 
       // disambiguazione spenta: comportamento classico (primo risultato Spotify)
-      const esito = await accoda(channel, q, '🎵 In coda: ');
+      const esito = await accoda(channel, q, '🎵 In coda: ', eStaff(msg));
       if (esito.ok && cfg.modo === 'monete') points.add(channel, msg.user, -cfg.costo);
       say(esito.msg);
       return true;
