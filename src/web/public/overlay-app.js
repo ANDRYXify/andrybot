@@ -850,15 +850,16 @@ function apriCombo(e, n) {
   conta.style.fontSize = Math.round(s * 0.34) + 'px';
   el.appendChild(conta);
   muroBox.appendChild(el);
-  MURO.aperte.set(e.nome, { el, conta, s, x, y, kmax, soglia: MURO.combo.soglia });
+  MURO.aperte.set(e.nome, { el, conta, s, x, y, kmax, soglia: MURO.combo.soglia, n: 0 });
   requestAnimationFrame(() => cresciCombo(e.nome, n));
 }
 
 function cresciCombo(nome, n) {
   const v = MURO.aperte.get(nome);
   if (!v) return;
-  const k = Math.min(v.kmax, window.SB_MURO.crescita(n, v.soglia));
-  v.conta.textContent = '\u00d7' + n;
+  v.n = Math.max(v.n, n);
+  const k = Math.min(v.kmax, window.SB_MURO.crescita(v.n, v.soglia));
+  v.conta.textContent = '\u00d7' + v.n;
   v.el.style.transform = 'translate(' + (v.x - v.s / 2) + 'px,' + (v.y - v.s / 2) + 'px) scale(' + k + ')';
   v.el.classList.remove('batte');
   void v.el.offsetWidth;

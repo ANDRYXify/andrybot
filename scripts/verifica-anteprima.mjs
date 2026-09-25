@@ -77,6 +77,8 @@ const ROTTURE = [
     'da un AVIF il pannello fa togliere uno sfondo che in onda resterebbe'],
   ['src/web/public/app.js', "      if (d[3]) { document.getElementById('eff-chiave-colore').value", "      if (true) { document.getElementById('eff-chiave-colore').value",
     'dove l\'angolo e\' trasparente la casella prende un colore che non si vede'],
+  ['src/web/public/overlay-app.js', "  v.n = Math.max(v.n, n);\n", "  v.n = n;\n",
+    'con i fotogrammi in ritardo la combo torna indietro'],
 ];
 
 // --selftest prova tutte le rotture; --selftest=<parola> solo quelle la cui
@@ -570,6 +572,24 @@ try {
     await attesa(300);
     const pir = await live.evaluate(() => document.querySelectorAll('#muro .muro-emote').length);
     dice(pir === 28, `muro ${nome}: la piramide di trenta emote ne mette 28, sette gradini (${pir})`, 'la figura non ha tutti i suoi pezzi');
+  }
+  // In onda la scena puo' essere pesante e i fotogrammi arrivare tardi: il
+  // primo conteggio della combo viaggia su un fotogramma, i successivi no.
+  // Col fotogramma in ritardo di 300 ms il numero non deve tornare indietro.
+  {
+    const lenta = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+    await lenta.addInitScript(() => {
+      const raf = window.requestAnimationFrame.bind(window);
+      window.requestAnimationFrame = (cb) => (window.__lento ? setTimeout(() => raf(cb), 300) : raf(cb));
+    });
+    await lenta.goto(base + '/overlay/prova?key=x', { waitUntil: 'domcontentloaded' });
+    await lenta.waitForFunction(() => typeof MIO === 'object' && MIO.muro && MIO.muro.attivo === true, null, { timeout: 8000 }).catch(() => {});
+    await attesa(400);
+    await lenta.evaluate(() => { window.__lento = true; });
+    for (const [i, chi] of ['a', 'b', 'c', 'd', 'e'].entries()) { ovl.manda({ tipo: 'muro', chi, testo: 'Lenta', emotiTwitch: { Lenta: FACCIA } }); await attesa(i < 4 ? 80 : 400); }
+    const conta = await lenta.evaluate(() => { const c = document.querySelector('#muro .muro-combo'); return c ? c.querySelector('.muro-conta').textContent : ''; });
+    dice(conta === '×5', `muro con la scena pesante: cinque persone ripetono la stessa emote e la combo dice «${conta}»`, 'il conteggio torna indietro');
+    await lenta.close();
   }
 
   // --- 6-nonies. l'ordine dei livelli ---------------------------------------
