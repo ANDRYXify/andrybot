@@ -57,6 +57,14 @@ const ROTTURE = [
     'in diretta l\'ordine dei livelli scelto nello Studio non arriva'],
   ['src/web/public/app.js', "    nodo.style.zIndex = String(1 + ordine.indexOf(e.k));\n", '',
     'la tela non segue l\'ordine dei livelli'],
+  ['src/web/public/overlay-app.js', "  if (aSchermo(ev)) { el.classList.add(ev.schermo); palcoSchermo.appendChild(el); return; }\n", '',
+    'un media a tutto schermo finisce nell\'area degli effetti'],
+  ['src/web/public/overlay.html', "    #palco-schermo > .effetto.riempi { object-fit: cover; }\n", '',
+    'a tutto schermo riempito si stira invece di coprire'],
+  ['src/web/public/disegnati.js', "      DISEGNA[q.k](ctx, q, s, r);\n", '',
+    'un disegno che non disegna niente'],
+  ['src/web/public/overlay-app.js', "    else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno') { if (mostra('effetti')) {", "    else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno') { if (true) {",
+    'a tutto schermo parte anche dove gli effetti sono spenti'],
 ];
 
 // --selftest prova tutte le rotture; --selftest=<parola> solo quelle la cui
@@ -782,6 +790,90 @@ try {
     if (!vicino(lL.el.w, RQL.w / 100 * 1920, 2.5) || !vicino(lL.el.h, RQL.h / 100 * 1080, 2.5)) posti.push(`la carta non e' il riquadro: ${mis(lL.el)}`);
   } else posti.push('manca un pezzo in diretta');
   dice(posti.length === 0, 'e ogni pezzo sta dove il numero dice: 0 a filo, 100 a filo dall\'altra parte, 50 al centro, la larghezza in centesimi dello spazio interno, il testo allineato come chiesto', posti.join(' · '));
+
+  // --- 9. gli effetti a tutto schermo -----------------------------------------
+  // (docs/EFFETTI-SCHERMO.md) Un media a tutto schermo copre la finestra anche
+  // con l'area degli effetti chiusa in un angolo, riempito (cover) o intero
+  // (contain), mai stirato. Un disegno e' una tela grande quanto la finestra
+  // che si disegna davvero e se ne va da sola a fine durata. Dove l'overlay non
+  // mostra gli effetti non parte niente. Nel pannello gli effetti pronti hanno
+  // la loro anteprima vera, e un disegno salvato torna nella lista da modificare.
+  const LARGA = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="100"><rect width="400" height="100" fill="#e33"/></svg>');
+  const AREA_PICCOLA = { effetti: { x: 5, y: 5, w: 20, h: 20, r: 0 } };
+  const FUOCHI = { nome: 'fuochi', colori: ['#ff5a5a', '#ffd166'], quanti: 'tanti', durata: 4, suono: '' };
+  TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: AREA_PICCOLA, alertStile: null, chatStile: null };
+  await apriLive(() => window.MIO && window.MIO.mostra && window.MIO.mostra.effetti === true);
+  const tuttoSchermo = [];
+  for (const schermo of ['riempi', 'intero']) {
+    ovl.manda({ tipo: 'immagine', url: LARGA, durata: 1500, comando: '', schermo, posizione: null });
+    await live.waitForFunction(() => document.querySelector('#palco-schermo .effetto.dentro'), null, { timeout: 5000 }).catch(() => {});
+    await live.evaluate(A_RIPOSO);
+    const m = await live.evaluate(() => {
+      const el = document.querySelector('#palco-schermo .effetto');
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: r.left, y: r.top, w: r.width, h: r.height, fit: getComputedStyle(el).objectFit, nelPalco: !!document.querySelector('#palco .effetto') };
+    });
+    const atteso = schermo === 'riempi' ? 'cover' : 'contain';
+    if (!m || !vicino(m.x, 0) || !vicino(m.y, 0) || !vicino(m.w, 1920) || !vicino(m.h, 1080) || m.fit !== atteso || m.nelPalco) tuttoSchermo.push(`${schermo}: ${JSON.stringify(m)}`);
+    await live.waitForFunction(() => !document.querySelector('#palco-schermo .effetto'), null, { timeout: 5000 }).catch(() => tuttoSchermo.push(`${schermo}: non se ne va`));
+  }
+  dice(!tuttoSchermo.length, 'un media a tutto schermo copre la finestra anche con l\'area degli effetti in un angolo: riempito copre, intero si vede tutto, mai stirato', tuttoSchermo.join(' · '));
+
+  ovl.manda({ tipo: 'disegno', comando: '', disegno: FUOCHI, durata: 4000, volume: 0 });
+  await live.waitForFunction(() => document.querySelector('#palco-schermo canvas.disegnato'), null, { timeout: 5000 }).catch(() => {});
+  await attesa(1900);
+  const disegnato = await live.evaluate(() => {
+    const c = document.querySelector('#palco-schermo canvas.disegnato');
+    if (!c) return null;
+    const r = c.getBoundingClientRect();
+    const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    let accesi = 0;
+    for (let i = 3; i < d.length; i += 4 * 97) if (d[i] > 0) accesi++;
+    return { w: r.width, h: r.height, accesi, livello: c.parentElement.dataset.el };
+  });
+  await live.waitForFunction(() => !document.querySelector('#palco-schermo canvas.disegnato'), null, { timeout: 5000 }).catch(() => {});
+  const andato = await live.evaluate(() => !document.querySelector('#palco-schermo canvas.disegnato'));
+  dice(disegnato && vicino(disegnato.w, 1920) && vicino(disegnato.h, 1080) && disegnato.accesi > 20 && disegnato.livello === 'effetti' && andato,
+    `un disegno e' una tela grande quanto la finestra, al livello degli effetti, che si disegna (${disegnato ? disegnato.accesi : 0} punti accesi) e se ne va da sola`, JSON.stringify({ disegnato, andato }));
+
+  TEMA = { ...TEMA, mostra: { ...MOSTRA, effetti: false } };
+  await apriLive(() => window.MIO && window.MIO.mostra && window.MIO.mostra.effetti === false);
+  ovl.manda({ tipo: 'disegno', comando: '', disegno: FUOCHI, durata: 4000, volume: 0 });
+  ovl.manda({ tipo: 'immagine', url: LARGA, durata: 1500, comando: '', schermo: 'riempi', posizione: null });
+  await attesa(900);
+  const spento = await live.evaluate(() => document.querySelectorAll('#palco-schermo > *').length);
+  dice(spento === 0, 'dove l\'overlay non mostra gli effetti, a tutto schermo non parte niente', `${spento} elementi`);
+
+  await ed.evaluate(() => window.SB_APP.vai('effetti'));
+  await ed.waitForFunction(() => document.querySelectorAll('#pronti-galleria .pronti-voce').length === 8 && document.querySelector('#lista-effetti [data-modifica-pronto]'), null, { timeout: 10000 }).catch(() => {});
+  await attesa(1500);
+  const pannello = await ed.evaluate(async () => {
+    const accesi = (c) => { if (!c || !c.width) return 0; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4 * 13) if (d[i] > 0) n++; return n; };
+    const out = { voci: document.querySelectorAll('#pronti-galleria .pronti-voce').length, anteprima: accesi(document.querySelector('.pronti-tela')) };
+    out.mini = [...document.querySelectorAll('.pronti-mini')].filter((c) => accesi(c) > 0).length;
+    document.querySelector('[data-pronto="lampo"]').click();
+    await new Promise((r) => setTimeout(r, 300));
+    out.lampo = { scelto: document.querySelector('[data-pronto="lampo"]').getAttribute('aria-checked'), quanti: !!document.querySelector('.pronti-quanti'), max: document.getElementById('pronti-durata')?.max };
+    document.querySelector('[data-pronto="neve"]').click();
+    await new Promise((r) => setTimeout(r, 300));
+    out.neve = { quanti: !!document.querySelector('.pronti-quanti'), max: document.getElementById('pronti-durata')?.max };
+    const video = document.querySelector('#lista-effetti [data-eff="3"] select[data-schermo]');
+    out.dove = video ? video.value : null;
+    const prima = document.querySelectorAll('#lista-effetti [data-modifica-pronto]').length;
+    document.querySelector('[data-pronti="salva"]').click();
+    await new Promise((r) => setTimeout(r, 900));
+    out.salvati = document.querySelectorAll('#lista-effetti [data-modifica-pronto]').length - prima;
+    document.querySelector('#lista-effetti [data-modifica-pronto]').click();
+    await new Promise((r) => setTimeout(r, 400));
+    out.modifica = document.querySelector('.pronti-campi h3')?.textContent || '';
+    return out;
+  });
+  dice(pannello.voci === 8 && pannello.anteprima > 20 && pannello.mini === 8 && pannello.lampo.scelto === 'true' && !pannello.lampo.quanti && pannello.lampo.max === '3'
+    && pannello.neve.quanti && pannello.neve.max === '30' && pannello.dove === 'riempi' && pannello.salvati === 1 && /!festa/.test(pannello.modifica),
+  'nel pannello gli otto effetti pronti si vedono davvero, il lampo non ha «quanti», un disegno salvato torna nella lista e si riapre per modificarlo, e un video dice dove appare',
+  JSON.stringify(pannello));
+  await ed.evaluate(() => window.SB_APP.vai('alert'));
 
   dice(erroriEd.length === 0, 'l\'editor non ha errori', erroriEd.slice(0, 2).join(' | '));
   dice(erroriLive.length === 0, 'la pagina dell\'overlay non ha errori', erroriLive.slice(0, 2).join(' | '));

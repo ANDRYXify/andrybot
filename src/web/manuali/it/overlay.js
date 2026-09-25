@@ -7,7 +7,7 @@ export default {
   titolo: 'Manuale dell\'overlay: alert, chat, obiettivo e contatori | SocialBot',
   h1: 'Manuale dell\'overlay',
   desc: 'Cosa può comparire sulla diretta, con i valori di base e i limiti veri: alert degli eventi, chat a schermo, obiettivo, contatori, ultimo follower e sub, effetti.',
-  aggiornata: '2026-09-04',
+  aggiornata: '2026-09-25',
   corpo: [
     { p: [
       'L\'overlay è <strong>una pagina web</strong>. In OBS si mette come sorgente <em>Browser</em>, e da quel momento tutto quello che decidi nel pannello compare sulla diretta senza toccare più niente lì dentro.',
@@ -30,10 +30,20 @@ export default {
       ['Boss', 'La carta del boss di turno: nome, vita, tempo che resta, chi lo colpisce e quanto.', 'in alto al centro'],
       ['Testo a schermo', 'La scritta che un comando manda con «Mostra testo sull\'overlay».', 'al centro'],
       ['Nome del comando', 'La pastiglia «!comando» che compare quando parte un effetto.', 'in basso al centro'],
-      ['Effetti a schermo', 'L\'area dove compaiono immagini e video che partono da un comando o da un premio a punti: la sposti e la ridimensioni, e in un riquadro si adattano. I suoni partono in ogni overlay che ha gli effetti accesi.', 'al centro'],
+      ['Effetti a schermo', 'L\'area dove compaiono immagini e video che partono da un comando o da un premio a punti: la sposti e la ridimensioni, e in un riquadro si adattano. Quelli a tutto schermo non passano da qui (vedi sotto). I suoni partono in ogni overlay che ha gli effetti accesi.', 'al centro'],
       ['Muro delle emote', 'Le emote che la chat scrive volano sulla scena, ognuna col suo movimento; la stessa emote ripetuta cresce e poi esplode, e gli eventi fanno esplodere figure intere. Di serie spento.', 'tutto lo schermo'],
     ] },
     { p: ['Sulla tela dello Studio ci sono <strong>tutti</strong>, obiettivi e contatori compresi: quello che vedi lì è quello che va in onda, nello stesso punto.'] },
+
+    { h2: 'Gli effetti a tutto schermo' },
+    { p: [
+      'Un\'immagine o un video dei tuoi effetti può andare <strong>a tutto schermo</strong> invece che nell\'area degli effetti: in <em>Effetti e suoni</em>, alla voce «Dove appare», <strong>riempito</strong> copre lo schermo e taglia i bordi che avanzano, <strong>intero</strong> si vede tutto e ai lati resta trasparente. Mai stirato. Va in onda solo dove l\'overlay mostra gli effetti, e sta al loro posto nell\'ordine dei livelli.',
+      'Un video trasparente resta trasparente: WebM (VP8 o VP9 con l\'alfa) e MOV ProRes 4444. Le immagini tengono fino a 1920 pixel di lato; se una caricata prima è troppo piccola per il tutto schermo, il pannello lo dice.',
+    ] },
+    { p: [
+      '<strong>Gli effetti pronti</strong> sono disegnati da noi e nascono a tutto schermo: coriandoli, fuochi d\'artificio, cuori, neve, palloncini, bolle, stelle e lampo. Scegli fino a cinque colori, quanti (pochi, normale, tanti), la durata e un suono, pronto o tuo, e dagli un comando: partono anche da un premio a punti canale, da un modulo, da un gesto della webcam e dai livelli delle donazioni. L\'anteprima nel pannello è l\'effetto vero.',
+      'Il lampo è uno per volta: più lampi di fila possono far male a chi soffre di epilessia fotosensibile.',
+    ] },
 
     { h2: 'Il banco di regia' },
     { p: ['A sinistra i <strong>livelli</strong> (l\'elenco di quello che c\'è, con l\'occhio per toglierlo da questo overlay), al centro la <strong>tela</strong> 1920×1080, a destra le <strong>proprietà</strong> di quello che hai scelto: posizione, dimensione, rotazione e tutto il suo aspetto. Le due sponde si arrotolano per dare spazio alla tela, si staccano trascinandole per la testa e si riagganciano con un doppio clic.'] },

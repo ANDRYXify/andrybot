@@ -20,6 +20,11 @@
     #palco { position: fixed; pointer-events: none; }
     #palco.centro { inset: 0; }
     #palco-libero { position: fixed; inset: 0; pointer-events: none; }
+    #palco-schermo { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+    #palco-schermo > .effetto { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; transform: none; }
+    #palco-schermo > .effetto.riempi { object-fit: cover; }
+    #palco-schermo > .effetto.intero { object-fit: contain; }
+    #palco-schermo > .disegnato { position: absolute; inset: 0; width: 100%; height: 100%; }
     
     .effetto.libero { position: absolute; max-width: none; max-height: 92vh;
       transform: translate(var(--fx-ax, -50%), var(--fx-ay, -50%)) scale(calc(var(--fx-s, 1) * .9)) rotate(var(--fx-r, 0deg)); }
@@ -86,6 +91,7 @@
   <div id="muro" class="schermo" data-el="muro"></div>
   <div id="palco" class="centro" data-el="effetti"></div>
   <div id="palco-libero" data-el="effetti"></div>
+  <div id="palco-schermo" data-el="effetti"></div>
   <div id="etichette" class="basso-centro" data-el="etichetta"></div>
   <div id="testi" class="centro" data-el="scritta"></div>
   <div id="boss" class="alto-centro" data-el="boss"></div>
@@ -102,6 +108,7 @@
   <script src="/flusso.js"></script>
   <script src="/riquadro.js"></script>
   <script src="/muro.js"></script>
+  <script src="/disegnati.js"></script>
   <script src="/overlay-app.js" defer></script>
 
 <!-- Questo software e tutto il suo contenuto (codice, logica, dati, motori di ragionamento e la persona "Lia") sono proprieta intellettuale di Andrea Taliento (ANDRYXify). © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live. ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->

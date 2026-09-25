@@ -661,3 +661,36 @@ export const normOverlayStile = (s) => {
   if (s.widget) out.widget = normOverlayWidgetCfg(s.widget);
   return Object.keys(out).length ? out : null;
 };
+
+// GLI EFFETTI DISEGNATI (docs/EFFETTI-SCHERMO.md): nome, colori di serie,
+// quanti, durata in secondi e i suoi limiti. Lo stesso catalogo sta in
+// public/disegnati.js, che li disegna (un test li tiene uguali). `quanti` non
+// vale per il lampo: e' uno solo per effetto, per costruzione.
+export const DISEGNI = {
+  coriandoli: { colori: ['#ff3b6b', '#ffd23f', '#3ec1ff', '#7cff6b', '#b56bff'], quanti: 'normale', durata: 7, min: 2, max: 20 },
+  fuochi: { colori: ['#ff5a5a', '#ffd166', '#4cc9f0', '#b388ff', '#80ffdb'], quanti: 'normale', durata: 8, min: 4, max: 30 },
+  cuori: { colori: ['#ff2d6f', '#ff6b9a', '#ffb3cc'], quanti: 'normale', durata: 6, min: 2, max: 30 },
+  neve: { colori: ['#ffffff', '#dff1ff'], quanti: 'normale', durata: 10, min: 3, max: 30 },
+  palloncini: { colori: ['#ff4757', '#ffa502', '#2ed573', '#1e90ff', '#a55eea'], quanti: 'normale', durata: 8, min: 3, max: 30 },
+  bolle: { colori: ['#9be7ff', '#c8f7ff', '#ffc8f0'], quanti: 'normale', durata: 7, min: 2, max: 30 },
+  stelle: { colori: ['#fff3b0', '#ffffff', '#ffd166'], quanti: 'normale', durata: 5, min: 2, max: 30 },
+  lampo: { colori: ['#ffffff'], quanti: 'normale', durata: 1, min: 1, max: 3 },
+};
+export const QUANTI_DISEGNO = ['pochi', 'normale', 'tanti'];
+export const MAX_COLORI_DISEGNO = 5;
+const SUONO_EFFETTO = /^effetto:[a-z0-9_]{1,24}$/;
+
+export const normDisegno = (x) => {
+  x = (x && typeof x === 'object') ? x : {};
+  const nome = Object.prototype.hasOwnProperty.call(DISEGNI, x.nome) ? x.nome : 'coriandoli';
+  const d = DISEGNI[nome];
+  const colori = (Array.isArray(x.colori) ? x.colori : []).map((c) => hexOk(c, '').toLowerCase()).filter(Boolean).slice(0, MAX_COLORI_DISEGNO);
+  const suono = String(x.suono || '');
+  return {
+    nome,
+    colori: colori.length ? colori : [...d.colori],
+    quanti: unoDi(x.quanti, QUANTI_DISEGNO, d.quanti),
+    durata: clampInt(x.durata, d.min, d.max, d.durata),
+    suono: SUONI_PRESET.has(suono) || SUONO_EFFETTO.test(suono) ? suono : '',
+  };
+};

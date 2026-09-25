@@ -290,7 +290,7 @@ export class AlertsEngine {
     if (!m) return null;
     try {
       const eff = effectsDb.get(channel, m[1]);
-      if (!eff || !this.effects?.mediaUrl) return null;
+      if (!eff || !eff.file || !this.effects?.mediaUrl) return null;
       return { url: this.effects.mediaUrl(channel, eff.file), tipo: eff.tipo };
     } catch { return null; }
   }

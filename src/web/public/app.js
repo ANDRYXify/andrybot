@@ -1091,11 +1091,31 @@ function apiDemo(percorso, opzioni = {}) {
     return Promise.resolve({ ok: true, comando: normComandoWeb(it?.nome || 'media') });
   }
   if (via.endsWith('/prova')) { toast(L('In demo non invio davvero in chat', 'In demo mode I don\'t really send to chat', 'En demo no envío de verdad al chat')); return Promise.resolve({ ok: true }); }
+  if (via === '/api/streamer/effetti/disegno' || /^\/api\/streamer\/effetti\/\d+\/schermo$/.test(via)) return Promise.resolve(_demoEffetti(via, opzioni.body || {}));
   return Promise.resolve({ ok: true, demo: true });
+}
+
+function _demoEffetti(via, b) {
+  const lista = _demoScritture.effetti || (_demoScritture.effetti = _demoGet('/api/streamer/effetti').effetti.map((e) => ({ ...e })));
+  const m = /\/(\d+)\/schermo$/.exec(via);
+  if (m) { const e = lista.find((x) => x.id === Number(m[1])); if (e) e.schermo = b.schermo || ''; return { ok: true, schermo: b.schermo || '' }; }
+  const p = window.SB_DISEGNATI ? window.SB_DISEGNATI.parametri(b.disegno) : b.disegno;
+  const disegno = { ...p, suono: String(b.disegno?.suono || '') };
+  let e = b.id != null ? lista.find((x) => x.id === Number(b.id)) : null;
+  if (!e) {
+    const base = normComandoWeb(b.comando || disegno.nome);
+    let comando = base, n = 2;
+    while (lista.some((x) => x.comando === comando)) comando = base + '_' + n++;
+    e = { id: Math.max(0, ...lista.map((x) => x.id)) + 1, comando, tipo: 'disegno', schermo: '' };
+    lista.push(e);
+  }
+  Object.assign(e, { tier: b.tier, cooldown: b.cooldown, volume: b.volume, durata: disegno.durata * 1000, disegno });
+  return { ok: true, comando: e.comando, disegno };
 }
 
 function _demoGet(via) {
   if (via === '/api/streamer/overlays' && _demoScritture.overlays) return { overlays: _demoScritture.overlays };
+  if (via === '/api/streamer/effetti' && _demoScritture.effetti) return { overlayUrl: 'https://socialbot.live/overlay/andryx_demo', effetti: _demoScritture.effetti };
   if (via === '/api/contatori' && _demoScritture.contatori) return { contatori: _demoScritture.contatori };
   const F = {
     '/api/me': statoDemo(),
@@ -1432,7 +1452,8 @@ function _demoGet(via) {
       effetti: [
         { id: 1, comando: 'applausi', tipo: 'audio', tier: 'tutti', cooldown: 10, volume: 80, durata: 3000 },
         { id: 2, comando: 'tromba', tipo: 'audio', tier: 'sub', cooldown: 15, volume: 70, durata: 2000 },
-        { id: 3, comando: 'coriandoli', tipo: 'video', tier: 'vip', cooldown: 30, volume: 60, durata: 4000 },
+        { id: 3, comando: 'coriandoli', tipo: 'video', tier: 'vip', cooldown: 30, volume: 60, durata: 4000, schermo: 'riempi' },
+        { id: 4, comando: 'festa', tipo: 'disegno', tier: 'tutti', cooldown: 20, volume: 80, durata: 6000, schermo: '', disegno: { nome: 'fuochi', colori: ['#ff5a5a', '#ffd166', '#4cc9f0'], quanti: 'normale', durata: 8, suono: 'tada' } },
       ],
     },
     '/api/streamer/rapporti': {
@@ -16380,6 +16401,10 @@ function pannelloEffetti() {
       <p class="suggerimento">${L('Fino a', 'Up to', 'Hasta')} <strong>${L('30 secondi', '30 seconds', '30 segundos')}</strong> (30000 ms). ${L('Per le', 'For', 'Para las')} <strong>${L('immagini', 'images', 'imágenes')}</strong> ${L('è quanto restano a schermo;', 'it\'s how long they stay on screen;', 'es cuánto permanecen en pantalla;')}
       ${L('audio e video usano la loro durata reale (accorciati a 30s se più lunghi).', 'audio and video use their real duration (shortened to 30s if longer).', 'audio y vídeo usan su duración real (acortados a 30s si son más largos).')}</p>
 
+      <label class="campo spazio-sopra" for="eff-schermo">${L('Dove appare', 'Where it appears', 'Dónde aparece')} <span class="tenue">${L('(immagini e video)', '(images and videos)', '(imágenes y vídeos)')}</span></label>
+      <select id="eff-schermo">${_opzioniSchermo('')}</select>
+      <p class="suggerimento">${_spiegaSchermo()}</p>
+
       <div class="riga-check spazio-sopra" style="display:block">
         <label class="riga-check"><input type="checkbox" id="eff-pubblico"> ${_bIco(ICO.globo)}<strong>${L('Rendi pubblico', 'Make it public', 'Hazlo público')}</strong> — ${L('condividilo con gli altri streamer nella libreria', 'share it with other streamers in the library', 'compártelo con otros streamers en la biblioteca')}</label>
       </div>
@@ -16392,6 +16417,13 @@ function pannelloEffetti() {
         <button class="btn" id="btn-carica-effetto">${L('Carica effetto', 'Upload effect', 'Subir efecto')}</button>
         <span id="esito-effetto" class="suggerimento"></span>
       </p>
+    </div>
+
+    <div class="carta" id="pronti-carta">
+      <h2>${_hIco(ICO.effetti)}${L('Effetti pronti a tutto schermo', 'Ready-made full-screen effects', 'Efectos listos a pantalla completa')}</h2>
+      <p>${L('Disegnati da noi, coprono', 'Drawn by us, they cover', 'Dibujados por nosotros, cubren')} <strong class="primo-piano">${L('tutto lo schermo', 'the whole screen', 'toda la pantalla')}</strong> ${L('dell\'overlay, dove gli effetti sono accesi. Scegline uno, cambia colori e durata, dagli un comando: parte anche da un premio a punti canale, da un modulo o da un gesto della webcam.', 'of the overlay, wherever effects are on. Pick one, change colors and duration, give it a command: it also plays from a channel-point reward, a module or a webcam gesture.', 'del overlay, donde los efectos están activos. Elige uno, cambia colores y duración, dale un comando: también se lanza desde una recompensa de puntos de canal, un módulo o un gesto de la webcam.')}</p>
+      <div class="pronti-galleria" id="pronti-galleria" role="radiogroup" aria-label="${esc(L('Effetti pronti', 'Ready-made effects', 'Efectos listos'))}"></div>
+      <div class="pronti-editor" id="pronti-editor"></div>
     </div>
 
     <div class="carta">
@@ -16440,15 +16472,18 @@ async function caricaSuoniPremi() {
   const effetti = d.effetti || [];
   const audio = effetti.filter((e) => e.tipo === 'audio');
   const visivi = effetti.filter((e) => e.tipo === 'immagine' || e.tipo === 'video');
-  const tipoDi = {}; effetti.forEach((e) => { tipoDi[e.comando] = e.tipo; });
+  const pronti = effetti.filter((e) => e.tipo === 'disegno');
+  const tipoDi = {}, schermoDi = {}; effetti.forEach((e) => { tipoDi[e.comando] = e.tipo; schermoDi[e.comando] = e.schermo || ''; });
 
   const opzScelta = (sel) => {
     const p = presets.map((s) => `<option value="${esc(s.id)}"${s.id === sel ? ' selected' : ''}>${esc(s.nome)}</option>`).join('');
     const a = audio.map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>!${esc(e.comando)}</option>`).join('');
-    const v = visivi.map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>!${esc(e.comando)} (${e.tipo})</option>`).join('');
+    const v = visivi.map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>!${esc(e.comando)} (${esc(etTipoEffetto(e.tipo))})</option>`).join('');
+    const d = pronti.map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>!${esc(e.comando)}</option>`).join('');
     return `<option value="">${L('— niente —', '— none —', '— nada —')}</option><optgroup label="${L('Suoni pronti', 'Ready-made sounds', 'Sonidos listos')}">${p}</optgroup>`
       + (a ? `<optgroup label="${L('I miei suoni caricati', 'My uploaded sounds', 'Mis sonidos subidos')}">${a}</optgroup>` : '')
-      + (v ? `<optgroup label="${L('Immagini / Video', 'Images / Videos', 'Imágenes / Vídeos')}">${v}</optgroup>` : '');
+      + (v ? `<optgroup label="${L('Immagini / Video', 'Images / Videos', 'Imágenes / Vídeos')}">${v}</optgroup>` : '')
+      + (d ? `<optgroup label="${L('Effetti pronti a tutto schermo', 'Ready-made full-screen effects', 'Efectos listos a pantalla completa')}">${d}</optgroup>` : '');
   };
   const svgPlay = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
   box.innerHTML = `<ul class="lista-suoni-premi">${tutti.map((r) => {
@@ -16489,7 +16524,7 @@ async function caricaSuoniPremi() {
     const comandoSel = () => { const m = /^effetto:(.+)$/.exec(sel.value); return m ? m[1] : ''; };
     const aggiornaEditor = () => {
       const c = comandoSel(); const tipo = tipoDi[c];
-      _premioEditorPos(li.querySelector('.premio-posizione'), c, tipo, st, () => salva());
+      _premioEditorPos(li.querySelector('.premio-posizione'), c, tipo, st, () => salva(), schermoDi[c] || '');
     };
     sel.addEventListener('change', () => {
       const v = sel.value;
@@ -16506,8 +16541,10 @@ async function caricaSuoniPremi() {
     li.querySelector('.sel-lib').addEventListener('click', () => conErrore(async () => {
       const scelta = await scegliDallaLibreria({ titolo: L('Scegli cosa far partire', 'Choose what plays', 'Elige qué se lanza') });
       if (!scelta) return;
-      metti(sel, scelta.ref, '!' + scelta.comando + (scelta.tipo && scelta.tipo !== 'audio' ? ` (${scelta.tipo})` : ''));
+      metti(sel, scelta.ref, '!' + scelta.comando + (scelta.tipo && scelta.tipo !== 'audio' ? ` (${etTipoEffetto(scelta.tipo)})` : ''));
       tipoDi[scelta.comando] = scelta.tipo;
+      const mio = ((await api('/api/streamer/effetti').catch(() => ({ effetti: [] }))).effetti || []).find((e) => e.comando === scelta.comando);
+      schermoDi[scelta.comando] = mio ? (mio.schermo || '') : '';
       aggiornaEditor();
       salva(L('Effetto impostato ✓', 'Effect set ✓', 'Efecto configurado ✓'));
     }));
@@ -16516,19 +16553,22 @@ async function caricaSuoniPremi() {
   });
 }
 
-function _premioEditorPos(box, comando, tipo, st, salva) {
+function _premioEditorPos(box, comando, tipo, st, salva, schermo = '') {
   if (!box) return;
   if (!comando || (tipo !== 'immagine' && tipo !== 'video')) { box.hidden = true; box.innerHTML = ''; return; }
-  st.xy = st.xy || { x: 50, y: 50, s: 100, r: 0 };
+  const aSchermo = schermo === 'riempi' || schermo === 'intero';
+  if (!aSchermo) st.xy = st.xy || { x: 50, y: 50, s: 100, r: 0 };
   box.hidden = false;
   const isVideo = tipo === 'video';
   box.innerHTML = `
-    <p class="suggerimento spazio-sopra"><strong>${L('Dove appare', 'Where it appears', 'Dónde aparece')}</strong> — ${L('trascina nel riquadro, poi regola dimensione e rotazione.', 'drag in the box, then adjust size and rotation.', 'arrastra en el recuadro, luego ajusta tamaño y rotación.')}</p>
+    ${aSchermo
+    ? `<p class="suggerimento spazio-sopra"><strong>${L('A tutto schermo', 'Full screen', 'A pantalla completa')}</strong>: ${L('questo media copre lo schermo, e la posizione qui non serve. Si cambia in «I tuoi effetti».', 'this medium covers the screen, and a position is not needed here. You change it in «Your effects».', 'este medio cubre la pantalla, y aquí la posición no hace falta. Se cambia en «Tus efectos».')}</p>`
+    : `<p class="suggerimento spazio-sopra"><strong>${L('Dove appare', 'Where it appears', 'Dónde aparece')}</strong>: ${L('trascina nel riquadro, poi regola dimensione e rotazione.', 'drag in the box, then adjust size and rotation.', 'arrastra en el recuadro, luego ajusta tamaño y rotación.')}</p>
     <div class="pp-stage"><div class="pp-el">!${esc(comando)}</div></div>
     <div class="griglia-campi spazio-sopra">
       <div><label class="campo">${L('Dimensione', 'Size', 'Tamaño')}: <strong class="pp-s-v">${st.xy.s || 100}</strong>%</label><input type="range" class="pp-s" min="30" max="300" value="${st.xy.s || 100}"></div>
       <div><label class="campo">${L('Rotazione', 'Rotation', 'Rotación')}: <strong class="pp-r-v">${st.xy.r || 0}</strong>°</label><input type="range" class="pp-r" min="-180" max="180" value="${st.xy.r || 0}"></div>
-    </div>
+    </div>`}
     ${isVideo ? `
     <div class="riga-check spazio-sopra"><input type="checkbox" class="pp-chroma" ${st.chroma?.attivo ? 'checked' : ''}><label>Green screen <span class="tenue">— ${L('togli lo sfondo di un colore dal video', 'remove a color background from the video', 'quita el fondo de un color del vídeo')}</span></label></div>
     <div class="pp-chroma-box griglia-campi" ${st.chroma?.attivo ? '' : 'hidden'}>
@@ -16537,6 +16577,14 @@ function _premioEditorPos(box, comando, tipo, st, salva) {
     </div>` : ''}`;
   const el = box.querySelector('.pp-el');
   const stage = box.querySelector('.pp-stage');
+  const chk = box.querySelector('.pp-chroma');
+  if (chk) {
+    chk.addEventListener('change', () => { st.chroma.attivo = chk.checked; box.querySelector('.pp-chroma-box').hidden = !chk.checked; salva(); });
+    box.querySelector('.pp-chroma-col').addEventListener('change', (e) => { st.chroma.colore = e.target.value; salva(); });
+    box.querySelector('.pp-chroma-s').addEventListener('input', (e) => { st.chroma.soglia = Number(e.target.value); box.querySelector('.pp-chroma-s-v').textContent = st.chroma.soglia; });
+    box.querySelector('.pp-chroma-s').addEventListener('change', salva);
+  }
+  if (aSchermo) return;
   const posEl = () => {
     const f = _fatt(st.xy);
     el.style.left = st.xy.x + '%'; el.style.top = st.xy.y + '%';
@@ -16560,13 +16608,6 @@ function _premioEditorPos(box, comando, tipo, st, salva) {
   box.querySelector('.pp-s').addEventListener('change', salva);
   box.querySelector('.pp-r').addEventListener('input', (e) => { st.xy.r = Number(e.target.value); box.querySelector('.pp-r-v').textContent = st.xy.r; posEl(); });
   box.querySelector('.pp-r').addEventListener('change', salva);
-  const chk = box.querySelector('.pp-chroma');
-  if (chk) {
-    chk.addEventListener('change', () => { st.chroma.attivo = chk.checked; box.querySelector('.pp-chroma-box').hidden = !chk.checked; salva(); });
-    box.querySelector('.pp-chroma-col').addEventListener('change', (e) => { st.chroma.colore = e.target.value; salva(); });
-    box.querySelector('.pp-chroma-s').addEventListener('input', (e) => { st.chroma.soglia = Number(e.target.value); box.querySelector('.pp-chroma-s-v').textContent = st.chroma.soglia; });
-    box.querySelector('.pp-chroma-s').addEventListener('change', salva);
-  }
 }
 
 async function caricaPremi() {
@@ -16580,7 +16621,7 @@ async function caricaPremi() {
     return;
   }
   const effOpts = [`<option value="">${L('— nessun effetto —', '— no effect —', '— sin efecto —')}</option>`]
-    .concat((d.effetti || []).map((c) => `<option value="${esc(c.comando)}">!${esc(c.comando)} (${esc(c.tipo)})</option>`)).join('');
+    .concat((d.effetti || []).map((c) => `<option value="${esc(c.comando)}">!${esc(c.comando)} (${esc(etTipoEffetto(c.tipo))})</option>`)).join('');
   const premi = d.premi || [];
   const lista = premi.length
     ? premi.map((p) => `<li><span><strong>${esc(p.titolo)}</strong> <span class="suggerimento">${p.costo} ${L('punti', 'points', 'puntos')}${p.effetto ? ` · !${esc(p.effetto)}` : ''}${p.testo ? ' ·' : ''}</span></span> <a href="#" class="rimuovi-premio" data-id="${esc(p.reward_id)}" title="${L('Elimina', 'Delete', 'Eliminar')}">✕</a></li>`).join('')
@@ -17663,7 +17704,7 @@ function riempiDonazioni() {
   const url = _statoDona?.paginaUrl || (location.origin + '/dona/' + (stato?.user?.login || '…'));
 }
 function _opzioniEffetti(sel) {
-  return `<option value="">${L('— nessun effetto —', '— no effect —', '— ningún efecto —')}</option>` + (_EFFETTI || []).map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>${esc(e.comando)} · ${esc(e.tipo || '')}</option>`).join('');
+  return `<option value="">${L('— nessun effetto —', '— no effect —', '— ningún efecto —')}</option>` + (_EFFETTI || []).map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>${esc(e.comando)} · ${esc(etTipoEffetto(e.tipo))}</option>`).join('');
 }
 function _rigaLivello(l) {
   return `<div class="griglia-campi dona-livello">
@@ -24802,7 +24843,8 @@ function caricaDatiScheda(id) {
   if (id === 'regia') caricaRegia();
   if (id === 'consolify') caricaConsolify();
   if (id === 'studio') caricaStudio();
-  if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); caricaTracking(); }
+  if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); caricaTracking(); requestAnimationFrame(disegnaPronti); }
+  else _prontiFerma();
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
@@ -25526,6 +25568,215 @@ async function caricaTracking() {
   });
 }
 
+const _opzioniSchermo = (sel) => [
+  ['', L('Nella scena, dove lo metti nello Studio', 'In the scene, where you put it in the Studio', 'En la escena, donde lo pones en el Studio')],
+  ['riempi', L('A tutto schermo, riempito', 'Full screen, filled', 'A pantalla completa, rellenando')],
+  ['intero', L('A tutto schermo, intero', 'Full screen, whole', 'A pantalla completa, entero')],
+].map(([v, t]) => `<option value="${v}"${v === sel ? ' selected' : ''}>${esc(t)}</option>`).join('');
+
+const _spiegaSchermo = () => L('Riempito copre tutto lo schermo e taglia i bordi che avanzano; intero si vede tutto e ai lati resta trasparente. Mai stirato. Va a tutto schermo solo dove l\'overlay mostra gli effetti.',
+  'Filled covers the whole screen and crops the edges that stick out; whole shows everything and leaves the sides transparent. Never stretched. It goes full screen only where the overlay shows effects.',
+  'Rellenando cubre toda la pantalla y recorta los bordes que sobran; entero se ve completo y a los lados queda transparente. Nunca estirado. Va a pantalla completa solo donde el overlay muestra los efectos.');
+
+const etTipoEffetto = (tipo) => ({
+  audio: L('audio', 'audio', 'audio'), immagine: L('immagine', 'image', 'imagen'), video: L('video', 'video', 'vídeo'),
+  disegno: L('effetto pronto', 'ready-made effect', 'efecto listo'),
+}[tipo] || tipo || '');
+
+const PRONTI_NOMI = () => ({
+  coriandoli: L('Coriandoli', 'Confetti', 'Confeti'),
+  fuochi: L('Fuochi d\'artificio', 'Fireworks', 'Fuegos artificiales'),
+  cuori: L('Cuori', 'Hearts', 'Corazones'),
+  neve: L('Neve', 'Snow', 'Nieve'),
+  palloncini: L('Palloncini', 'Balloons', 'Globos'),
+  bolle: L('Bolle', 'Bubbles', 'Burbujas'),
+  stelle: L('Stelle', 'Stars', 'Estrellas'),
+  lampo: L('Lampo', 'Flash', 'Destello'),
+});
+
+const QUANTI_NOMI = () => ({ pochi: L('Pochi', 'Few', 'Pocos'), normale: L('Normale', 'Normal', 'Normal'), tanti: L('Tanti', 'Lots', 'Muchos') });
+
+let _pronti = null;
+let _prontiFermi = [];
+let _prontiSuoni = [];
+
+function _prontiNuovo(nome) {
+  const C = window.SB_DISEGNATI.CATALOGO[nome];
+  return { id: null, comando: '', p: { nome, colori: C.colori.slice(), quanti: C.quanti, durata: C.durata, suono: '' }, tier: 'tutti', cooldown: 10, volume: 80 };
+}
+
+function _prontiFerma() { _prontiFermi.forEach((f) => { try { f(); } catch (e) {  } }); _prontiFermi = []; }
+
+function _prontiGiro(tela, dammi, seme) {
+  let ferma = null, via = false, n = 0;
+  const vai = () => {
+    if (via || !tela.isConnected || !tela.offsetWidth) return;
+    ferma = window.SB_DISEGNATI.anima(tela, dammi(), (seme || 1) + n++ * 7919, () => { if (!via) setTimeout(vai, 400); });
+  };
+  if (_menoMoto) window.SB_DISEGNATI.fermo(tela, dammi(), seme || 1, 0.45); else vai();
+  return () => { via = true; if (ferma) ferma(); };
+}
+
+function disegnaPronti() {
+  const gal = document.getElementById('pronti-galleria');
+  const ed = document.getElementById('pronti-editor');
+  if (!gal || !ed || !window.SB_DISEGNATI) return;
+  _prontiFerma();
+  const S = window.SB_DISEGNATI, nomi = PRONTI_NOMI();
+  if (!_pronti) _pronti = _prontiNuovo('coriandoli');
+  gal.innerHTML = S.NOMI.map((n) => `<button type="button" class="pronti-voce" role="radio" aria-checked="${n === _pronti.p.nome}" tabindex="${n === _pronti.p.nome ? 0 : -1}" data-pronto="${n}">
+      <canvas class="pronti-mini" aria-hidden="true"></canvas><span>${esc(nomi[n])}</span></button>`).join('');
+  gal.querySelectorAll('.pronti-voce').forEach((b) => {
+    const tela = b.querySelector('canvas');
+    const p = () => ({ ...S.CATALOGO[b.dataset.pronto], nome: b.dataset.pronto });
+    S.fermo(tela, p(), 3, 0.45);
+    let ferma = null;
+    const su = () => { if (!ferma && !_menoMoto) ferma = _prontiGiro(tela, p, 3); };
+    const giu = () => { if (ferma) { ferma(); ferma = null; S.fermo(tela, p(), 3, 0.45); } };
+    b.addEventListener('pointerenter', su); b.addEventListener('focus', su);
+    b.addEventListener('pointerleave', giu); b.addEventListener('blur', giu);
+    b.addEventListener('click', () => _prontiScegli(b.dataset.pronto));
+    _prontiFermi.push(() => { if (ferma) ferma(); });
+  });
+  gal.onkeydown = (ev) => {
+    const passo = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[ev.key];
+    if (!passo) return;
+    ev.preventDefault();
+    const i = (S.NOMI.indexOf(_pronti.p.nome) + passo + S.NOMI.length) % S.NOMI.length;
+    _prontiScegli(S.NOMI[i]);
+    gal.querySelector(`[data-pronto="${S.NOMI[i]}"]`)?.focus();
+  };
+  _prontiEditor(ed);
+}
+
+function _prontiEditor(ed) {
+  const S = window.SB_DISEGNATI, st = _pronti, C = S.CATALOGO[st.p.nome], nomi = PRONTI_NOMI(), qn = QUANTI_NOMI();
+  const modifica = st.id != null;
+  const presets = (window.SUONI_PRESET && window.SUONI_PRESET.lista) || [];
+  const suoni = `<option value="">${L('Nessuno', 'None', 'Ninguno')}</option>
+    <optgroup label="${esc(L('Suoni pronti', 'Ready-made sounds', 'Sonidos listos'))}">${presets.map((x) => `<option value="${esc(x.id)}"${x.id === st.p.suono ? ' selected' : ''}>${esc(x.nome)}</option>`).join('')}</optgroup>
+    ${_prontiSuoni.length ? `<optgroup label="${esc(L('I tuoi suoni', 'Your sounds', 'Tus sonidos'))}">${_prontiSuoni.map((c) => `<option value="effetto:${esc(c)}"${'effetto:' + c === st.p.suono ? ' selected' : ''}>!${esc(c)}</option>`).join('')}</optgroup>` : ''}`;
+  ed.innerHTML = `
+    <div class="pronti-scena"><canvas class="pronti-tela" aria-hidden="true"></canvas></div>
+    <div class="pronti-campi">
+      <h3>${modifica ? L('Modifichi', 'Editing', 'Editas') + ` <code>!${esc(st.comando)}</code>` : esc(nomi[st.p.nome])}</h3>
+      <div>
+        <span class="campo">${L('Colori', 'Colors', 'Colores')} <span class="tenue">${L('(fino a 5)', '(up to 5)', '(hasta 5)')}</span></span>
+        <div class="pronti-colori">
+          ${st.p.colori.map((c, i) => `<span class="pronti-colore"><input type="color" value="${esc(c)}" data-colore="${i}" aria-label="${esc(L('Colore', 'Color', 'Color') + ' ' + (i + 1))}"><button type="button" class="pronti-togli" data-togli="${i}" aria-label="${esc(L('Togli il colore', 'Remove color', 'Quitar el color') + ' ' + (i + 1))}"${st.p.colori.length < 2 ? ' disabled' : ''}>×</button></span>`).join('')}
+          ${st.p.colori.length < 5 ? `<button type="button" class="btn secondario mini" data-pronti="colore-piu">${_bIco(ICO.piu)}${L('Colore', 'Color', 'Color')}</button>` : ''}
+          <button type="button" class="btn secondario mini" data-pronti="colori-serie">${L('Colori di serie', 'Default colors', 'Colores por defecto')}</button>
+        </div>
+      </div>
+      ${st.p.nome === 'lampo' ? '' : `<div>
+        <span class="campo" id="pronti-quanti-et">${L('Quanti', 'How many', 'Cuántos')}</span>
+        <div class="pronti-quanti" role="radiogroup" aria-labelledby="pronti-quanti-et">${S.QUANTI.map((q) => `<button type="button" role="radio" aria-checked="${q === st.p.quanti}" data-quanti="${q}">${esc(qn[q])}</button>`).join('')}</div>
+      </div>`}
+      <div>
+        <label class="campo" for="pronti-durata">${L('Durata', 'Duration', 'Duración')}: <strong id="pronti-durata-v">${st.p.durata}</strong> s</label>
+        <input type="range" id="pronti-durata" min="${C.min}" max="${C.max}" step="1" value="${st.p.durata}">
+      </div>
+      <div class="griglia-campi">
+        <div><label class="campo" for="pronti-suono">${L('Suono', 'Sound', 'Sonido')}</label><select id="pronti-suono">${suoni}</select></div>
+        <div><label class="campo" for="pronti-volume">${L('Volume (%)', 'Volume (%)', 'Volumen (%)')}</label><input type="number" id="pronti-volume" min="0" max="100" value="${st.volume}"></div>
+      </div>
+      ${modifica ? '' : `<label class="campo" for="pronti-comando">${L('Comando in chat', 'Chat command', 'Comando en el chat')} <span class="tenue">${L('(facoltativo)', '(optional)', '(opcional)')}</span></label>
+      <div class="riga-flessibile"><span class="prefisso-cmd">!</span><input type="text" id="pronti-comando" class="campo-largo" maxlength="24" placeholder="${esc(st.p.nome)}" value="${esc(st.comando)}"></div>`}
+      <div class="griglia-campi">
+        <div><label class="campo" for="pronti-tier">${L('Chi può usarlo', 'Who can use it', 'Quién puede usarlo')}</label>
+          <select id="pronti-tier">${[['tutti', L('Tutti', 'Everyone', 'Todos')], ['sub', L('Solo sub', 'Subs only', 'Solo subs')], ['vip', L('Solo VIP', 'VIPs only', 'Solo VIP')], ['mod', L('Solo mod', 'Mods only', 'Solo mods')]].map(([v, t]) => `<option value="${v}"${v === st.tier ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
+        <div><label class="campo" for="pronti-cooldown">${L('Cooldown (s)', 'Cooldown (s)', 'Enfriamiento (s)')}</label><input type="number" id="pronti-cooldown" min="0" max="3600" value="${st.cooldown}"></div>
+      </div>
+      ${st.p.nome === 'lampo' ? `<p class="suggerimento">${L('Un lampo per volta: più lampi di fila possono far male a chi soffre di epilessia fotosensibile, e l\'overlay non li fa.', 'One flash at a time: several flashes in a row can hurt people with photosensitive epilepsy, and the overlay does not do them.', 'Un destello a la vez: varios destellos seguidos pueden hacer daño a quien sufre epilepsia fotosensible, y el overlay no los hace.')}</p>` : ''}
+      <p class="pronti-azioni">
+        <button type="button" class="btn" data-pronti="salva">${modifica ? L('Salva le modifiche', 'Save changes', 'Guardar los cambios') : L('Aggiungi l\'effetto', 'Add the effect', 'Añadir el efecto')}</button>
+        ${modifica ? `<button type="button" class="btn secondario" data-pronti="prova">${L('Prova sull\'overlay', 'Test on the overlay', 'Probar en el overlay')}</button>
+        <button type="button" class="btn secondario" data-pronti="annulla">${L('Chiudi la modifica', 'Close editing', 'Cerrar la edición')}</button>` : ''}
+      </p>
+    </div>`;
+  const tela = ed.querySelector('.pronti-tela');
+  let ferma = _prontiGiro(tela, () => st.p, 11);
+  const riparti = () => { ferma(); ferma = _prontiGiro(tela, () => st.p, 11); };
+  _prontiFermi.push(() => ferma());
+  ed.oninput = (ev) => {
+    const t = ev.target;
+    if (t.dataset.colore != null) st.p.colori[Number(t.dataset.colore)] = t.value;
+    else if (t.id === 'pronti-durata') { st.p.durata = Number(t.value); ed.querySelector('#pronti-durata-v').textContent = t.value; }
+  };
+  ed.onchange = (ev) => {
+    const t = ev.target;
+    if (t.dataset.colore != null || t.id === 'pronti-durata') riparti();
+    else if (t.id === 'pronti-suono') { st.p.suono = t.value; if (t.value && !t.value.startsWith('effetto:') && window.SUONI_PRESET) window.SUONI_PRESET.suona(t.value, st.volume); }
+    else if (t.id === 'pronti-volume') st.volume = Math.max(0, Math.min(100, Math.round(Number(t.value) || 0)));
+    else if (t.id === 'pronti-tier') st.tier = t.value;
+    else if (t.id === 'pronti-cooldown') st.cooldown = Math.max(0, Math.min(3600, Math.round(Number(t.value) || 0)));
+    else if (t.id === 'pronti-comando') st.comando = t.value.trim() ? normComandoWeb(t.value) : '';
+  };
+  ed.onclick = (ev) => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    if (b.dataset.togli != null) { st.p.colori.splice(Number(b.dataset.togli), 1); _prontiRifai(); return; }
+    if (b.dataset.quanti) { st.p.quanti = b.dataset.quanti; _prontiRifai(); return; }
+    const a = b.dataset.pronti;
+    if (a === 'colore-piu') { st.p.colori.push(st.p.colori[st.p.colori.length - 1] || '#ffffff'); _prontiRifai(); }
+    else if (a === 'colori-serie') { st.p.colori = C.colori.slice(); _prontiRifai(); }
+    else if (a === 'annulla') { _pronti = _prontiNuovo(st.p.nome); disegnaPronti(); }
+    else if (a === 'prova') conErrore(async () => {
+      await api('/api/streamer/effetti/test', { method: 'POST', body: { comando: st.comando } });
+      toast(L('Effetto inviato all\'overlay (aprilo per vederlo)', 'Effect sent to the overlay (open it to see it)', 'Efecto enviado al overlay (ábrelo para verlo)'));
+    });
+    else if (a === 'salva') conErrore(async () => {
+      const c = ed.querySelector('#pronti-comando');
+      if (c) st.comando = c.value.trim() ? normComandoWeb(c.value) : '';
+      b.disabled = true;
+      try {
+        const r = await api('/api/streamer/effetti/disegno', { method: 'POST', body: { id: st.id, comando: st.comando, disegno: st.p, tier: st.tier, cooldown: st.cooldown, volume: st.volume } });
+        toast(modifica ? L('Modifiche salvate ✓', 'Changes saved ✓', 'Cambios guardados ✓') : L(`Aggiunto come !${r.comando}: lo trovi nei tuoi effetti ✓`, `Added as !${r.comando}: you find it in your effects ✓`, `Añadido como !${r.comando}: lo encuentras en tus efectos ✓`));
+        if (!modifica) { st.comando = ''; }
+        caricaEffetti();
+        _prontiRifai();
+      } finally { b.disabled = false; }
+    });
+  };
+}
+
+function _prontiRifai() { const ed = document.getElementById('pronti-editor'); if (!ed) return; _prontiFerma(); disegnaPronti(); }
+
+function _prontiScegli(nome) {
+  if (_pronti && _pronti.p.nome === nome) return;
+  const nuovo = _prontiNuovo(nome);
+  if (_pronti && _pronti.id != null) _pronti = { ..._pronti, p: { ...nuovo.p, suono: _pronti.p.suono } };
+  else _pronti = { ...nuovo, comando: _pronti ? _pronti.comando : '', tier: _pronti ? _pronti.tier : nuovo.tier, cooldown: _pronti ? _pronti.cooldown : nuovo.cooldown, volume: _pronti ? _pronti.volume : nuovo.volume };
+  disegnaPronti();
+}
+
+function _prontiModifica(e) {
+  const d = e.disegno || {};
+  _pronti = { id: e.id, comando: e.comando, p: { nome: d.nome, colori: (d.colori || []).slice(), quanti: d.quanti, durata: d.durata, suono: d.suono || '' }, tier: e.tier, cooldown: e.cooldown, volume: e.volume };
+  disegnaPronti();
+  document.getElementById('pronti-carta')?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' });
+}
+
+function _ingrandimento(w, h, schermo) {
+  if (!(w > 0 && h > 0)) return 1;
+  const k = [OVL_W / w, OVL_H / h];
+  return schermo === 'riempi' ? Math.max(...k) : Math.min(...k);
+}
+
+function _controllaSgranata(el, e) {
+  if (!el || !e.url || !(e.schermo === 'riempi' || e.schermo === 'intero')) return;
+  const dimmi = (w, h) => {
+    const k = _ingrandimento(w, h, e.schermo);
+    if (k <= 1.5) return;
+    el.hidden = false;
+    el.textContent = L(`A tutto schermo questo media si ingrandisce ${k.toFixed(1).replace('.', ',')} volte (è ${w}×${h}) e si vedrà sgranato: ricaricalo dal file originale.`,
+      `Full screen, this medium is enlarged ${k.toFixed(1)} times (it is ${w}×${h}) and will look blurry: upload it again from the original file.`,
+      `A pantalla completa este medio se amplía ${k.toFixed(1).replace('.', ',')} veces (es ${w}×${h}) y se verá pixelado: vuelve a subirlo desde el archivo original.`);
+  };
+  if (e.tipo === 'immagine') { const i = new Image(); i.onload = () => dimmi(i.naturalWidth, i.naturalHeight); i.src = e.url; }
+  else if (e.tipo === 'video') { const v = document.createElement('video'); v.preload = 'metadata'; v.muted = true; v.onloadedmetadata = () => dimmi(v.videoWidth, v.videoHeight); v.src = e.url; }
+}
+
 async function caricaEffetti() {
   const ul = document.getElementById('lista-effetti');
   if (!ul) return;
@@ -25537,27 +25788,51 @@ async function caricaEffetti() {
       sp.textContent = L(`Spazio del canale: ${dati.spazio.usato} MB su ${dati.spazio.max}, fra effetti, media dei tasti, font e icone.`, `Channel space: ${dati.spazio.usato} MB of ${dati.spazio.max}, across effects, key media, fonts and icons.`, `Espacio del canal: ${dati.spazio.usato} MB de ${dati.spazio.max}, entre efectos, medios de las teclas, fuentes e iconos.`);
     }
 
-    const etTipo = { audio: _bIco(ICO.altoparlante) + L('audio', 'audio', 'audio'), immagine: _bIco(ICO.immagine) + L('immagine', 'image', 'imagen'), video: _bIco(ICO.video) + L('video', 'video', 'vídeo') };
+    const etTipo = { audio: _bIco(ICO.altoparlante) + etTipoEffetto('audio'), immagine: _bIco(ICO.immagine) + etTipoEffetto('immagine'), video: _bIco(ICO.video) + etTipoEffetto('video'), disegno: _bIco(ICO.effetti) + etTipoEffetto('disegno') };
+    _prontiSuoni = dati.effetti.filter((e) => e.tipo === 'audio').map((e) => e.comando);
+    const nomiPronti = PRONTI_NOMI();
     const etTier = { tutti: L('tutti', 'everyone', 'todos'), sub: 'sub', vip: 'VIP', mod: 'mod' };
 
     if (!dati.effetti.length) {
       ul.innerHTML = `<li class="vuoto">${L('Nessun effetto ancora: caricane uno qui sopra e provalo!', 'No effects yet: upload one above and try it!', 'Aún no hay efectos: sube uno arriba y ¡pruébalo!')}</li>`;
       return;
     }
-    ul.innerHTML = dati.effetti.map((e) => `
-      <li>
+    ul.innerHTML = dati.effetti.map((e) => {
+      const pronto = e.tipo === 'disegno';
+      const visivo = e.tipo === 'immagine' || e.tipo === 'video';
+      const aSchermo = pronto || (visivo && (e.schermo === 'riempi' || e.schermo === 'intero'));
+      return `
+      <li data-eff="${e.id}">
         <div class="testo-voce">
-          <div class="domanda">!${esc(e.comando)} <span class="badge viola">${etTipo[e.tipo] || esc(e.tipo)}</span>${e.combo ? ' <span class="badge">combo</span>' : ''}${e.pubblico ? ` <span class="badge verde">${L('pubblico', 'public', 'público')}</span>` : ''}</div>
-          <div class="meta">${L('chi', 'who', 'quién')}: ${esc(etTier[e.tier] || e.tier)} · cooldown ${e.cooldown}s · ${L('volume', 'volume', 'volumen')} ${e.volume}% · ${e.durata}ms</div>
+          <div class="domanda">!${esc(e.comando)} <span class="badge viola">${etTipo[e.tipo] || esc(e.tipo)}</span>${aSchermo ? ` <span class="badge">${L('tutto schermo', 'full screen', 'pantalla completa')}</span>` : ''}${e.combo ? ' <span class="badge">combo</span>' : ''}${e.pubblico ? ` <span class="badge verde">${L('pubblico', 'public', 'público')}</span>` : ''}</div>
+          <div class="meta">${pronto ? esc(nomiPronti[e.disegno?.nome] || '') + ' · ' : ''}${L('chi', 'who', 'quién')}: ${esc(etTier[e.tier] || e.tier)} · cooldown ${e.cooldown}s · ${L('volume', 'volume', 'volumen')} ${e.volume}% · ${pronto ? (e.disegno?.durata || 0) + ' s' : e.durata + 'ms'}</div>
+          ${visivo ? `<label class="eff-dove"><span>${L('Dove appare', 'Where it appears', 'Dónde aparece')}</span><select data-schermo="${e.id}" aria-label="${esc(L('Dove appare', 'Where it appears', 'Dónde aparece') + ' !' + e.comando)}">${_opzioniSchermo(e.schermo || '')}</select></label>
+          <p class="suggerimento eff-sgranata" data-sgranata="${e.id}" hidden></p>` : ''}
         </div>
         <div class="azioni-voce">
-          <button class="btn secondario mini" data-pubblica="${e.id}" data-stato="${e.pubblico ? 1 : 0}" data-nome="${esc(e.nome || e.comando)}">${e.pubblico ? _bIco(ICO.lucchetto) + L('Rendi privato', 'Make private', 'Hacer privado') : _bIco(ICO.condividi) + L('Condividi', 'Share', 'Compartir')}</button>
+          ${pronto
+    ? `<button class="btn secondario mini" data-modifica-pronto="${e.id}">${L('Modifica', 'Edit', 'Editar')}</button>`
+    : `<button class="btn secondario mini" data-pubblica="${e.id}" data-stato="${e.pubblico ? 1 : 0}" data-nome="${esc(e.nome || e.comando)}">${e.pubblico ? _bIco(ICO.lucchetto) + L('Rendi privato', 'Make private', 'Hacer privado') : _bIco(ICO.condividi) + L('Condividi', 'Share', 'Compartir')}</button>`}
           <button class="btn secondario mini" data-prova="${esc(e.comando)}">${L('Prova', 'Test', 'Probar')}</button>
           <button class="btn pericolo mini" data-elimina-eff="${e.id}">${L('Elimina', 'Delete', 'Eliminar')}</button>
         </div>
-      </li>`).join('');
+      </li>`;
+    }).join('');
+    dati.effetti.forEach((e) => _controllaSgranata(ul.querySelector(`[data-sgranata="${e.id}"]`), e));
+
+    ul.onchange = (ev) => {
+      const sel = ev.target.closest('[data-schermo]');
+      if (!sel) return;
+      conErrore(async () => {
+        await api('/api/streamer/effetti/' + sel.dataset.schermo + '/schermo', { method: 'PATCH', body: { schermo: sel.value } });
+        toast(sel.value ? L('Ora va a tutto schermo ✓', 'Now it goes full screen ✓', 'Ahora va a pantalla completa ✓') : L('Ora sta nella scena ✓', 'Now it stays in the scene ✓', 'Ahora está en la escena ✓'));
+        caricaEffetti();
+      });
+    };
 
     ul.onclick = (ev) => {
+      const mod = ev.target.closest('[data-modifica-pronto]');
+      if (mod) { const e = dati.effetti.find((x) => String(x.id) === mod.dataset.modificaPronto); if (e) _prontiModifica(e); return; }
       const prova = ev.target.closest('[data-prova]');
       const del = ev.target.closest('[data-elimina-eff]');
       const pub = ev.target.closest('[data-pubblica]');
@@ -25850,6 +26125,7 @@ async function caricaEffettoUpload(ev) {
   fd.append('durata', document.getElementById('eff-durata').value);
   fd.append('pubblico', pubblico ? '1' : '0');
   fd.append('nome', document.getElementById('eff-nome')?.value?.trim() || '');
+  fd.append('schermo', document.getElementById('eff-schermo')?.value || '');
 
   btn.disabled = true;
   const testoOrig = btn.textContent;

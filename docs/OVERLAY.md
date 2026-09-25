@@ -1774,6 +1774,7 @@ che passano da un elemento:
 | la carta del boss | `#boss` | in alto al centro, fisso nel CSS | `effetti` |
 | la scritta di un modulo («Testo a schermo») | `#testi` | al centro, fisso | `effetti` |
 | immagini e video degli effetti | `#palco` | al centro, fisso | `effetti` |
+| effetti a tutto schermo e disegnati | `#palco-schermo` | tutta la finestra | `effetti` |
 | il nome del comando che li ha fatti partire | `#etichette` | in basso al centro, fisso | `effetti` |
 
 Tutte e quattro avevano gli stessi tre difetti, che sono la definizione di «non
@@ -1881,6 +1882,12 @@ unità valgono lo schermo. Una regola, due posti giusti.
 canale può scegliere dove far comparire il suo effetto: quelle coordinate sono
 dello schermo, e se l'effetto finisse nell'area spostata sarebbero diventate
 dell'area. Va su uno strato suo, a tutto schermo (`#palco-libero`).
+
+**Un effetto a tutto schermo non ha area.** Un media con «Dove appare» a tutto
+schermo, e ogni effetto disegnato, va in `#palco-schermo`, grande quanto la
+finestra, e non ha posizione: il server non la manda e un premio non gliela da'
+(docs/EFFETTI-SCHERMO.md). Ha `data-el="effetti"`, quindi sta al posto degli
+effetti nell'ordine dei livelli, e parte solo dove l'overlay li mostra.
 
 La regola che centra l'area è una sola per la diretta e per la tela (`#palco,
 .ap-stage .ap-palco` nella pelle), e l'immagine d'esempio dello Studio ha lo

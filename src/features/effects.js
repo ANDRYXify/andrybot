@@ -7,6 +7,7 @@ import crypto from 'node:crypto';
 import { config } from '../config.js';
 import { effects as effectsDb, streamers } from '../db.js';
 import { makeLog } from '../logger.js';
+import { normDisegno } from '../web/stile.js';
 
 // Tetti ai collegamenti SSE (overlay + tracking): per canale e in tutto.
 export const MAX_SSE_CANALE = 32;
@@ -190,15 +191,34 @@ export class EffectsEngine {
   }
 
   // Costruisce il payload standard di un effetto (riusato da trigger e "prova").
+  // Un effetto DISEGNATO non ha file: viaggiano i suoi parametri, gia'
+  // normalizzati, e il suo suono (uno pronto, o un audio del canale).
+  // Un media a tutto schermo non ha posizione: l'overlay non riceve mai le due
+  // cose insieme (docs/EFFETTI-SCHERMO.md, «Dove appare un effetto visivo»).
   payload(channel, eff) {
+    if (eff.tipo === 'disegno') {
+      let grezzo = {};
+      try { grezzo = JSON.parse(eff.disegno || '{}'); } catch { grezzo = {}; }
+      const disegno = normDisegno(grezzo);
+      const p = { comando: eff.comando, tipo: 'disegno', disegno, volume: eff.volume, durata: disegno.durata * 1000 };
+      const audio = /^effetto:(.+)$/.exec(disegno.suono);
+      if (audio) {
+        const a = effectsDb.get(channel, audio[1]);
+        if (a && a.tipo === 'audio' && a.file) p.suonoUrl = this.mediaUrl(channel, a.file);
+      } else if (disegno.suono) p.suonoPreset = disegno.suono;
+      return p;
+    }
+    const visivo = eff.tipo === 'immagine' || eff.tipo === 'video';
+    const schermo = visivo && (eff.schermo === 'riempi' || eff.schermo === 'intero') ? eff.schermo : '';
     const p = {
       comando: eff.comando,
       tipo: eff.tipo,
       url: this.mediaUrl(channel, eff.file),
       volume: eff.volume,
       durata: eff.durata,
+      schermo,
       // posizione a schermo (dall'Overlay Studio): {x,y,s,r} o null = centrato
-      posizione: (eff.posx != null && eff.posy != null)
+      posizione: (!schermo && eff.posx != null && eff.posy != null)
         ? { x: eff.posx, y: eff.posy, s: eff.scala != null ? eff.scala : 100, r: eff.rot || 0 }
         : null,
     };
@@ -275,7 +295,8 @@ export class EffectsEngine {
     const eff = effectsDb.get(ch, comando);
     if (!eff) return false;
     const p = this.payload(ch, eff);
-    if (opzioni.xy && opzioni.xy.x != null) p.posizione = opzioni.xy;
+    if (p.tipo === 'disegno') { this.emit(ch, p); return true; }
+    if (opzioni.xy && opzioni.xy.x != null && !p.schermo) p.posizione = opzioni.xy;
     if (opzioni.chroma && opzioni.chroma.attivo) {
       p.chroma = { colore: opzioni.chroma.colore || '#00ff00', soglia: Math.max(20, Math.min(300, Number(opzioni.chroma.soglia) || 140)) };
     }

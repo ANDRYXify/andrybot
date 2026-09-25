@@ -21,7 +21,7 @@ import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andr
 import * as licenza from '../licenza.js';      // il nome con cui questo software si presenta
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi, recensioni as recensioniDb } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
@@ -66,7 +66,7 @@ import * as donaMedia from '../features/donazioni-media.js';
 import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
 import * as webauthn from './webauthn.js';
-import { comprimi, convertiPerEmote, svgInPng } from '../features/compress.js';
+import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA } from '../features/compress.js';
 import { StudioEngine, QUALITA as STUDIO_QUALITA } from '../features/studio.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
@@ -137,7 +137,7 @@ import {
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
-  normMusica, normTimer, normTreno, normBit, normBoss, normScritta, normEtichetta, normMuro, FIGURE_MURO, normCartelli,
+  normMusica, normTimer, normTreno, normBit, normBoss, normScritta, normEtichetta, normMuro, FIGURE_MURO, normCartelli, normDisegno,
 } from './stile.js';
 
 // --- PIÙ OVERLAY: ogni overlay ha un suo LAYOUT (quali elementi mostra e dove)
@@ -6753,6 +6753,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
 
   // ------------------------------------------------------------ API effetti & suoni
 
+  const disegnoDi = (e) => { try { return normDisegno(JSON.parse(e.disegno || '{}')); } catch { return normDisegno({}); } };
+
   // elenco effetti + URL dell'overlay della diretta (con la chiave del canale)
   app.get('/api/streamer/effetti', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
@@ -6764,6 +6766,9 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       // libreria condivisa
       pubblico: !!e.pubblico, nome: e.nome || '', combo: !!e.suono_file,
       url: e.file ? effects.mediaUrl(login, e.file) : '',
+      // dove appare un media visivo, e i parametri di un effetto disegnato
+      schermo: e.schermo || '',
+      disegno: e.tipo === 'disegno' ? disegnoDi(e) : null,
     }));
     res.json({ effetti, overlayUrl: effects.overlayUrl(login), spazio: spazioDi(login) });
   }));
@@ -7483,6 +7488,51 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     res.json({ ok: true });
   }));
 
+  // UN EFFETTO DISEGNATO (docs/EFFETTI-SCHERMO.md): nessun file, solo i suoi
+  // parametri. Senza id si crea, e un comando gia' preso non si ruba: si dice.
+  // Con l'id si modifica quello, e il comando resta il suo (premi, moduli e
+  // gesti lo chiamano per nome).
+  app.post('/api/streamer/effetti/disegno', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli effetti')) return;
+    const login = currentUser(req).login;
+    if (streamers.get(login)?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
+    const b = req.body || {};
+    const tier = String(b.tier || 'tutti');
+    const cooldown = Math.round(Number(b.cooldown));
+    const volume = Math.round(Number(b.volume ?? 100));
+    if (!TIER_VALIDI.includes(tier)) return res.status(400).json({ errore: 'permesso (chi può usarlo) non valido' });
+    if (!Number.isFinite(cooldown) || cooldown < 0 || cooldown > 3600) return res.status(400).json({ errore: 'cooldown non valido (0..3600 s)' });
+    if (!Number.isFinite(volume) || volume < 0 || volume > 100) return res.status(400).json({ errore: 'volume non valido (0..100)' });
+    const disegno = normDisegno(b.disegno);
+    let comando;
+    if (b.id != null) {
+      const eff = effectsDb.byId(login, parseInt(b.id, 10));
+      if (!eff || eff.tipo !== 'disegno') return res.status(404).json({ errore: 'effetto non trovato' });
+      comando = eff.comando;
+    } else {
+      comando = normComando(b.comando || '');
+      if (comando && effectsDb.get(login, comando)) return res.status(409).json({ errore: `il comando !${comando} è già di un altro effetto` });
+      if (!comando) comando = comandoLibero(login, disegno.nome);
+    }
+    try {
+      effectsDb.addDisegno(login, { comando, disegno: JSON.stringify(disegno), tier, cooldown, volume, durata: disegno.durata * 1000 });
+    } catch (e) {
+      return res.status(400).json({ errore: e?.message || 'salvataggio non riuscito' });
+    }
+    res.json({ ok: true, comando, disegno });
+  }));
+
+  // Dove appare un media visivo: nella scena, o a tutto schermo riempito o intero.
+  app.patch('/api/streamer/effetti/:id/schermo', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli effetti')) return;
+    const login = currentUser(req).login;
+    const id = parseInt(req.params.id, 10);
+    const schermo = String(req.body?.schermo ?? '');
+    if (!Number.isFinite(id) || !SCHERMI.includes(schermo)) return res.status(400).json({ errore: 'scelta non valida' });
+    if (!effectsDb.setSchermo(login, id, schermo)) return res.status(404).json({ errore: 'qui serve un\'immagine o un video' });
+    res.json({ ok: true, schermo });
+  }));
+
   // caricamento di un nuovo effetto (multipart): file + comando/tier/cooldown/volume/durata.
   // Il file viene super-compresso con ffmpeg prima di essere salvato.
   app.post('/api/streamer/effetti', requireLogin, (req, res) => {
@@ -7530,6 +7580,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const durata = Math.round(Number(req.body?.durata));
     const pubblico = /^(1|true|on|si|sì)$/i.test(String(req.body?.pubblico || ''));
     const nomePubblico = String(req.body?.nome || '').slice(0, 60).trim();
+    const schermo = SCHERMI.includes(String(req.body?.schermo ?? '')) ? String(req.body?.schermo ?? '') : '';
 
     // validazione: se qualcosa non va, si puliscono i temp e si risponde 400
     const errore = async (msg) => { await puliziaTutto(); return res.status(400).json({ errore: msg }); };
@@ -7547,7 +7598,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // compressione del media principale: comprimi() cancella comunque il temp
     let esito;
     try {
-      esito = await comprimi(fileMedia.path, fileMedia.mimetype, destDir, `${Date.now()}_${comando}`);
+      esito = await comprimi(fileMedia.path, fileMedia.mimetype, destDir, `${Date.now()}_${comando}`, { latoImmagine: LATO_LIBRERIA });
     } catch (e) {
       await pulisciTemp(fileSuono?.path);
       return res.status(400).json({ errore: e?.message || 'compressione fallita' });
@@ -7592,6 +7643,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     }
     // pubblicazione nella libreria condivisa (attribuzione: chi carica)
     if (eff) effectsDb.setPubblico(login, eff.id, { pubblico, nome: nomePubblico || comando, autore: login });
+    // dove appare (solo immagini e video: per un audio non cambia niente)
+    if (eff) effectsDb.setSchermo(login, eff.id, schermo);
 
     // pulizia dei vecchi file su sostituzione
     if (esistente?.file && esistente.file !== esito.file) await pulisciTemp(join(destDir, esistente.file));
@@ -7622,7 +7675,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     if (!eff) return res.status(404).json({ errore: 'effetto non trovato' });
     const pubblico = req.body?.pubblico === true || /^(1|true|on)$/i.test(String(req.body?.pubblico ?? ''));
     const nome = String(req.body?.nome || eff.nome || eff.comando).slice(0, 60);
-    effectsDb.setPubblico(login, id, { pubblico, nome, autore: login });
+    if (!effectsDb.setPubblico(login, id, { pubblico, nome, autore: login })) return res.status(400).json({ errore: 'nella libreria si condividono i media caricati' });
     res.json({ ok: true, pubblico });
   }));
 
@@ -7907,7 +7960,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
 
     let esito;
     try {
-      esito = await comprimi(req.file.path, req.file.mimetype, destDir, `${Date.now()}_${comando}`);
+      esito = await comprimi(req.file.path, req.file.mimetype, destDir, `${Date.now()}_${comando}`, { latoImmagine: LATO_LIBRERIA });
     } catch (e) {
       return res.status(400).json({ errore: e?.message || 'compressione fallita' });
     }
@@ -7968,7 +8021,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const tutti = permessoOk ? await helix.listaRewardsTutti(login).catch(() => []) : [];
     res.json({
       premi: pointAlerts.list(login),
-      effetti: effectsDb.list(login).map((e) => ({ comando: e.comando, tipo: e.tipo })),
+      effetti: effectsDb.list(login).map((e) => ({ comando: e.comando, tipo: e.tipo, schermo: e.schermo || '' })),
       tutti,
       permessoOk,
     });

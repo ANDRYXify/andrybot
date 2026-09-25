@@ -2488,3 +2488,37 @@ body:not(.con-nav) .salta { display: none; }
   .pt-schermo { position: absolute; top: 0; right: 0; }
 }
 .muro-prove { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+.pronti-galleria { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: .6rem; margin: .7rem 0 1.1rem; }
+.pronti-voce { display: flex; flex-direction: column; gap: .35rem; padding: .4rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); color: var(--testo); font: inherit; font-weight: 600; font-size: .9rem; cursor: pointer; text-align: center; transition: border-color var(--molla), box-shadow var(--molla); }
+.pronti-voce[aria-checked="true"] { border-color: var(--acc); box-shadow: 0 0 0 2px var(--acc-soft); }
+.pronti-voce:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.pronti-mini, .pronti-tela { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--r-s); background: radial-gradient(120% 90% at 50% 110%, #2c2542 0%, #15121e 60%, #0d0b13 100%); }
+.pronti-editor { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 1.1rem; align-items: start; }
+.pronti-campi { display: flex; flex-direction: column; gap: .85rem; min-width: 0; }
+.pronti-campi h3 { margin: 0; }
+.pronti-campi > div > .campo { display: block; margin-bottom: .3rem; }
+.pronti-colori { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; }
+.pronti-colore { display: inline-flex; align-items: center; gap: 2px; }
+.pronti-colore input[type="color"] { width: 2.3rem; height: 2.3rem; padding: 2px; border: 1px solid var(--border); border-radius: var(--r-s); background: var(--surface); cursor: pointer; }
+.pronti-togli { width: 1.6rem; height: 1.6rem; padding: 0; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); color: var(--testo-3); font: inherit; line-height: 1; cursor: pointer; }
+.pronti-togli:disabled { opacity: .4; cursor: default; }
+.pronti-quanti { display: inline-flex; border: 1px solid var(--border); border-radius: var(--r-s); overflow: hidden; }
+.pronti-quanti button { padding: .4rem .9rem; background: var(--surface); border: 0; color: var(--testo); font: inherit; cursor: pointer; }
+.pronti-quanti button + button { border-left: 1px solid var(--border); }
+.pronti-quanti button[aria-checked="true"] { background: var(--acc); color: var(--su-acc); }
+.pronti-quanti button:focus-visible, .pronti-togli:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.pronti-azioni { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; }
+.eff-dove { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin-top: .45rem; font-size: .85rem; color: var(--testo-3); }
+.eff-dove select { width: auto; max-width: 100%; }
+.eff-sgranata { margin: .35rem 0 0; color: var(--ambra); }
+@media (max-width: 760px) {
+  .pronti-editor { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .pronti-galleria { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; }
+  .pronti-voce { font-size: .78rem; padding: .3rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pronti-voce { transition: none; }
+}

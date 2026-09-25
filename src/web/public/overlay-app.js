@@ -15,6 +15,7 @@ const mostra = (k) => MIO.mostra[k] !== false;
 const muroBox = document.getElementById('muro');
 const palco = document.getElementById('palco');
 const palcoLibero = document.getElementById('palco-libero');
+const palcoSchermo = document.getElementById('palco-schermo');
 const etichette = document.getElementById('etichette');
 const testi = document.getElementById('testi');
 const penBox = document.getElementById('penitenze');
@@ -30,6 +31,7 @@ function mostraProssimo() {
   const ev = codaVisiva.shift();
   if (ev.tipo === 'immagine') mostraImmagine(ev);
   else if (ev.tipo === 'video') mostraVideo(ev);
+  else if (ev.tipo === 'disegno') mostraDisegno(ev);
   else finito();
 }
 
@@ -71,7 +73,10 @@ const tiraXY = (v, f) => Math.round((50 * (f - 1) - v * f) * 100) / 100;
 
 function posaEffetti() { posizionaContenitore(palco, MIO.xy.effetti, 'centro'); }
 
+const aSchermo = (ev) => ev.schermo === 'riempi' || ev.schermo === 'intero';
+
 function metti(el, ev) {
+  if (aSchermo(ev)) { el.classList.add(ev.schermo); palcoSchermo.appendChild(el); return; }
   const libero = !!(ev.posizione && ev.posizione.x != null);
   (libero ? palcoLibero : palco).appendChild(el);
   if (libero) return;
@@ -198,6 +203,30 @@ function mostraVideo(ev) {
   v.addEventListener('error', function () { guaio('video', 'il file non si apre: ' + String(v.src || '').split('?')[0]); chiudi(); });
   fermaTimer = reggiFinoAllaFine(v, 'video', chiudi, durataMs(ev, 8000) + 600);
   avvia(v, 'video');
+}
+
+let giroDisegno = 0;
+
+function mostraDisegno(ev) {
+  if (!window.SB_DISEGNATI || !ev.disegno) { finito(); return; }
+  const tela = document.createElement('canvas');
+  tela.className = 'disegnato';
+  palcoSchermo.appendChild(tela);
+  suonaAbbinato(ev);
+  if (ev.suonoPreset && window.SUONI_PRESET) { try { window.SUONI_PRESET.suona(ev.suonoPreset, ev.volume); } catch (e) {  } }
+  const ms = durataMs(ev, 5000);
+  etichettaVolatile(ev.comando, Math.min(ms, 5000));
+  let chiuso = false, ferma = null;
+  const chiudi = () => {
+    if (chiuso) return;
+    chiuso = true;
+    clearTimeout(scadenza);
+    if (ferma) ferma();
+    tela.remove();
+    finito();
+  };
+  const scadenza = setTimeout(chiudi, ms + 2000);
+  ferma = window.SB_DISEGNATI.anima(tela, ev.disegno, (Date.now() ^ Math.imul(++giroDisegno, 2654435761)) >>> 0, chiudi);
 }
 
 function hexToRgb(h) {
@@ -956,7 +985,7 @@ function ricevi(m) {
     else if (dati.tipo === 'testo') mostraTesto(dati);
     else if (dati.tipo === 'boss') { boss(dati); muroBoss(dati); }
     else if (dati.tipo === 'contatore') contatore(dati);
-    else if (dati.tipo === 'immagine' || dati.tipo === 'video') { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
+    else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno') { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
 }
 
 function connetti() {

@@ -894,6 +894,11 @@ aggiungiColonna('effects', 'nome', "TEXT NOT NULL DEFAULT ''");         // titol
 aggiungiColonna('effects', 'autore', "TEXT NOT NULL DEFAULT ''");       // login del creatore originale (attribuzione)
 aggiungiColonna('effects', 'usi', 'INTEGER NOT NULL DEFAULT 0');        // quante volte è stato importato
 aggiungiColonna('effects', 'suono_file', "TEXT NOT NULL DEFAULT ''");   // COMBO: audio abbinato a un'immagine/video
+// Gli effetti a tutto schermo (docs/EFFETTI-SCHERMO.md): dove appare un media
+// visivo ('' nella scena, 'riempi' o 'intero' a tutto schermo), e i parametri
+// di un effetto disegnato (JSON, solo per tipo 'disegno', che non ha file).
+aggiungiColonna('effects', 'schermo', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('effects', 'disegno', "TEXT NOT NULL DEFAULT ''");
 // Quando un modulo a tempo ha parlato l'ultima volta. Stava in memoria, e la
 // memoria muore col processo: al riavvio ogni timer risultava "mai partito" e
 // partivano tutti insieme, a ogni deploy. Zero vuol dire mai visto: il motore
@@ -4281,6 +4286,13 @@ export function baseDaFile(nomeFile) {
 
 const MAX_EFFETTI = 60;   // tetto di effetti per canale
 
+// La LIBRERIA e' fatta di media: righe con un file. Un effetto disegnato e' un
+// comando come gli altri, ma non e' un media, e quindi non si condivide, non
+// si importa e non compare dove si sceglie un media.
+export const TIPI_MEDIA = ['audio', 'immagine', 'video'];
+const SOLO_MEDIA = " AND tipo IN ('audio','immagine','video')";
+export const SCHERMI = ['', 'riempi', 'intero'];
+
 export const effects = {
   list(channel) {
     return db.prepare('SELECT * FROM effects WHERE channel=? ORDER BY comando').all(channel);
@@ -4321,9 +4333,34 @@ export const effects = {
       ON CONFLICT(channel, comando) DO UPDATE SET
         tipo=excluded.tipo, file=excluded.file, tier=excluded.tier,
         cooldown=excluded.cooldown, volume=excluded.volume, durata=excluded.durata,
-        attivo=1, ts=excluded.ts`)
+        disegno='', attivo=1, ts=excluded.ts`)
       .run(channel, c, tipo, file, tier, cooldown, volume, durata, now());
     return esistente?.file || null;
+  },
+  // Un effetto DISEGNATO: nessun file, i parametri in `disegno` (JSON gia'
+  // normalizzato dal chiamante). Un comando che e' gia' di un media non si
+  // prende: sostituirlo cancellerebbe il file di qualcun altro senza dirlo.
+  addDisegno(channel, { comando, disegno, tier, cooldown, volume, durata }) {
+    const c = normComando(comando);
+    if (!c) throw new Error('comando non valido');
+    const esistente = db.prepare('SELECT tipo FROM effects WHERE channel=? AND comando=?').get(channel, c);
+    if (esistente && esistente.tipo !== 'disegno') throw new Error(`il comando !${c} è già di un altro effetto`);
+    if (!esistente && this.count(channel) >= MAX_EFFETTI) throw new Error(`hai raggiunto il massimo di ${MAX_EFFETTI} effetti`);
+    db.prepare(`INSERT INTO effects (channel, comando, tipo, file, tier, cooldown, volume, durata, disegno, schermo, attivo, ts)
+      VALUES (?,?,'disegno','',?,?,?,?,?,'',1,?)
+      ON CONFLICT(channel, comando) DO UPDATE SET
+        tier=excluded.tier, cooldown=excluded.cooldown, volume=excluded.volume,
+        durata=excluded.durata, disegno=excluded.disegno, attivo=1, ts=excluded.ts`)
+      .run(channel, c, tier, cooldown, volume, durata, disegno, now());
+    return c;
+  },
+  // Dove appare un media visivo. Solo immagini e video: un audio non si vede,
+  // e un disegno nasce gia' a tutto schermo. true se l'ha cambiato.
+  setSchermo(channel, id, schermo) {
+    if (!SCHERMI.includes(schermo)) return false;
+    const info = db.prepare("UPDATE effects SET schermo=? WHERE channel=? AND id=? AND tipo IN ('immagine','video')")
+      .run(schermo, channel, id);
+    return info.changes > 0;
   },
   // Elimina un effetto e ritorna i nomi file da cancellare dal disco (media +
   // eventuale audio abbinato della COMBO), o null se non esisteva.
@@ -4352,8 +4389,8 @@ export const effects = {
   // Rende un effetto pubblico/privato + titolo mostrato nella libreria. L'autore
   // (creatore originale) NON viene mai sovrascritto una volta impostato. true se esiste.
   setPubblico(channel, id, { pubblico, nome, autore } = {}) {
-    const r = db.prepare('SELECT autore FROM effects WHERE channel=? AND id=?').get(channel, id);
-    if (!r) return false;
+    const r = db.prepare('SELECT autore, tipo FROM effects WHERE channel=? AND id=?').get(channel, id);
+    if (!r || !TIPI_MEDIA.includes(r.tipo)) return false;
     const aut = (r.autore && r.autore.trim()) ? r.autore : String(autore || channel).toLowerCase();
     db.prepare('UPDATE effects SET pubblico=?, nome=?, autore=? WHERE channel=? AND id=?')
       .run(pubblico ? 1 : 0, String(nome || '').slice(0, 60), aut, channel, id);
@@ -4371,12 +4408,12 @@ export const effects = {
   },
   // Effetto PUBBLICO per id, di qualsiasi canale: per import e anteprima sicura.
   pubblicoById(id) {
-    return db.prepare('SELECT * FROM effects WHERE id=? AND pubblico=1 AND attivo=1').get(id) || null;
+    return db.prepare('SELECT * FROM effects WHERE id=? AND pubblico=1 AND attivo=1' + SOLO_MEDIA).get(id) || null;
   },
   // Elenco della LIBRERIA CONDIVISA: effetti pubblici, filtrabili per tipo/testo,
   // opzionalmente escludendo un canale (di norma il proprio). Prima i più usati.
   sharedList({ tipo, q, escludi, limit = 120 } = {}) {
-    let sql = 'SELECT * FROM effects WHERE pubblico=1 AND attivo=1';
+    let sql = 'SELECT * FROM effects WHERE pubblico=1 AND attivo=1' + SOLO_MEDIA;
     const args = [];
     if (tipo && ['audio', 'immagine', 'video'].includes(tipo)) { sql += ' AND tipo=?'; args.push(tipo); }
     if (escludi) { sql += ' AND channel<>?'; args.push(String(escludi).toLowerCase()); }
@@ -4390,7 +4427,7 @@ export const effects = {
   // alla libreria delle grafiche: le tue immagini si riusano SEMPRE, anche se non
   // le hai rese pubbliche.
   myList({ channel, tipo, limit = 120 } = {}) {
-    let sql = 'SELECT * FROM effects WHERE channel=? AND attivo=1';
+    let sql = 'SELECT * FROM effects WHERE channel=? AND attivo=1' + SOLO_MEDIA;
     const args = [String(channel || '').toLowerCase()];
     if (tipo && ['audio', 'immagine', 'video'].includes(tipo)) { sql += ' AND tipo=?'; args.push(tipo); }
     sql += ' ORDER BY ts DESC LIMIT ?';
