@@ -82,7 +82,12 @@ test('non serve ricordarsi di vestirle: si vestono da sé', () => {
   assert.match(app, /function vestiOgniTendina\(/, 'c\'è un posto solo che le veste tutte');
   assert.match(app, /select:not\(\.tendina-vero\)/, 'e prende quelle non ancora vestite');
   assert.match(app, /new MutationObserver\(/, 'e guarda quello che compare dopo, non solo quello che c\'è all\'avvio');
-  assert.match(app, /requestAnimationFrame\(giro\)/, 'una passata per disegno, non una per ogni nodo che cambia');
+  // Si vestono nella stessa microtask in cui entrano, quindi prima di qualunque
+  // disegno: con un requestAnimationFrame una riga nata dentro un fotogramma
+  // mostrava per un fotogramma il menu del sistema. E si guarda solo quello che
+  // entra, non tutta la pagina a ogni cambiamento.
+  assert.match(app, /for \(const m of mosse\) m\.addedNodes\.forEach\(vesti\);/, 'si veste quello che entra, subito');
+  assert.doesNotMatch(app, /requestAnimationFrame\(giro\);\n\s*\}\)\.observe\(document\.documentElement/, 'non al fotogramma dopo');
 });
 
 // UNA TENDINA NON LA TAGLIA IL SUO CONTENITORE.

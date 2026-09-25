@@ -29019,17 +29019,18 @@ function vestiOgniTendina(dove) {
 }
 
 (function () {
-  let inCoda = false;
-  const giro = () => { inCoda = false; vestiOgniTendina(); };
+  const vesti = (n) => {
+    if (!(n instanceof Element)) return;
+    if (n.matches('select:not(.tendina-vero)')) vestiTendina(n);
+    n.querySelectorAll('select:not(.tendina-vero)').forEach(vestiTendina);
+  };
   try {
-    new MutationObserver(() => {
-      if (inCoda) return;
-      inCoda = true;
-      requestAnimationFrame(giro);
+    new MutationObserver((mosse) => {
+      for (const m of mosse) m.addedNodes.forEach(vesti);
     }).observe(document.documentElement, { childList: true, subtree: true });
   } catch (e) {  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', giro, { once: true });
-  else giro();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => vestiOgniTendina(), { once: true });
+  else vestiOgniTendina();
 }());
 
 try { window.dispatchEvent(new CustomEvent('sb-app-pronta')); } catch (e) {  }

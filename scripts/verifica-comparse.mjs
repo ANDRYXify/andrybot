@@ -33,6 +33,7 @@ const ROTTURE = [
   ['nascosto', /✗ niente compare senza disegnarsi/, 'l\'attributo hidden non passa piu\' dal disegno'],
   ['finestra', /✗ e niente se ne va senza disfarsi/, 'una finestra di sistema si chiude di colpo'],
   ['esce', /✗ e niente se ne va senza disfarsi/, 'chi prende `esce` non si disfa'],
+  ['tendina-tardi', /✗ e niente se ne va senza disfarsi/, 'una tendina che si veste tardi: il menu del browser si vede, poi sparisce di colpo'],
 ];
 if (process.argv.includes('--selftest')) {
   const io = fileURLToPath(import.meta.url);
@@ -65,6 +66,17 @@ const rompi = async (pg) => {
     await pg.addInitScript(() => {
       const vera = HTMLDialogElement.prototype.close;
       document.addEventListener('DOMContentLoaded', () => setTimeout(() => { HTMLDialogElement.prototype.close = vera; }, 0));
+    });
+  }
+  if (ROMPI === 'tendina-tardi') {
+    await pg.addInitScript(() => {
+      const Vero = window.MutationObserver;
+      const Finto = function (cb) {
+        if (!/\/app\.js/.test(new Error().stack) || !String(cb).includes('addedNodes.forEach')) return new Vero(cb);
+        return new Vero((mosse, o) => setTimeout(() => cb(mosse, o), 400));
+      };
+      Finto.prototype = Vero.prototype;
+      window.MutationObserver = Finto;
     });
   }
   if (ROMPI === 'esce') {
@@ -153,8 +165,20 @@ const SORVEGLIA = () => {
     return nuovi;
   };
 
+  // SI GUARDA QUELLO CHE SI DIPINGE. Un campione preso dentro un
+  // requestAnimationFrame vede lo stato di META' fotogramma: se un'altra
+  // richiesta dello stesso fotogramma, registrata dopo, cambia la pagina prima
+  // del disegno (una tendina che si veste), il campione vede uno stato che
+  // nessuno vedra' mai. Un ResizeObserver arriva dopo TUTTE le richieste del
+  // fotogramma e dopo il layout, prima del disegno: una sentinella che cambia
+  // misura a ogni fotogramma fa arrivare il campione li'.
+  let sentinella = null, lato = 1;
+  const battito = () => {
+    requestAnimationFrame(battito);
+    lato = 3 - lato;
+    sentinella.style.width = lato + 'px';
+  };
   const giro = () => {
-    requestAnimationFrame(giro);
     const t = ora();
     if (t - ultimo < 40) return;
     ultimo = t;
@@ -189,16 +213,21 @@ const SORVEGLIA = () => {
   };
   document.addEventListener('DOMContentLoaded', () => {
     new MutationObserver((mosse) => {
-      sporco = true;
       const t = ora();
       for (const m of mosse) {
+        if (m.target === sentinella) continue;
+        sporco = true;
         if (m.attributeName !== 'class' || !(m.target instanceof HTMLElement)) continue;
         const e = m.target, prima = ' ' + (m.oldValue || '') + ' ';
         if (e.classList.contains('dg-in') && prima.indexOf(' dg-in ') < 0 && vera(e, 'dg-retino')) scopre.set(e, t);
         if (e.classList.contains('dg-out') && prima.indexOf(' dg-out ') < 0 && vera(e, 'dg-copri')) copre.set(e, t);
       }
     }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeOldValue: true, attributeFilter: ['class', 'hidden', 'open', 'style'] });
-    requestAnimationFrame(giro);
+    sentinella = document.createElement('div');
+    sentinella.style.cssText = 'position:fixed;left:-8px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
+    document.documentElement.appendChild(sentinella);
+    new ResizeObserver(giro).observe(sentinella);
+    requestAnimationFrame(battito);
   });
 };
 
