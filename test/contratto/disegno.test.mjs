@@ -463,3 +463,57 @@ test('la vetrina non porta il disegno del pannello', () => {
   assert.match(corpoDi(NUCLEO, 'sulleMosse'), /if \(corpo\) quando\('corpo'\);/, 'il nucleo avvisa chi estende, senza sapere chi e\'');
   assert.match(PANNELLO, /D\.estendi\(\{\n\s*corpo: function \(\) \{ sulMenu\(\); sulleCornici\(\); \},/, 'e il pannello risponde col menu\' e le cornici');
 });
+
+const funzioneApp = (nome) => {
+  const i = APP.indexOf(`function ${nome}(`);
+  assert.ok(i >= 0, `c'e' ${nome}`);
+  return APP.slice(i, APP.indexOf('\n}\n', i));
+};
+
+test('lo Studio mostra e nasconde per le strade che il disegno conosce', () => {
+  // Un pannello arrotolato, l'inspector senza niente di scelto, la guida del
+  // banco: li nascondeva il CSS con display:none appeso a una classe del
+  // contenitore. Per il disegno era un contenitore che cambiava classe, non un
+  // corpo che se ne andava: il corpo spariva di colpo e tornava senza disegnarsi.
+  // Adesso ognuno passa dall'attributo hidden, che il disegno guarda.
+  const arr = funzioneApp('arrotola');
+  assert.match(arr, /pan\.classList\.toggle\('arrotolato', chiuso\);/);
+  assert.match(arr, /if \(corpo\) corpo\.hidden = chiuso;/, 'il corpo del pannello si nasconde con hidden');
+  assert.ok(APP.includes('if (p.chiuso) arrotola(el, true);'), 'un pannello che riapre la pagina arrotolato passa dalla stessa strada');
+  assert.ok(APP.includes("arrotola(pan, !pan.classList.contains('arrotolato'));"), 'e cosi\' il tasto');
+  assert.doesNotMatch(ANIME, /\.arrotolato \.pan-corpo \{[^}]*display: none/);
+
+  const insp = funzioneApp('aggiornaInspector');
+  assert.match(insp, /if \(pieno\) pieno\.hidden = !selezione;\n\s*if \(vuoto\) vuoto\.hidden = !!selezione;/, 'pieno e vuoto si danno il cambio con hidden');
+  assert.match(funzioneApp('montaBanco'), /pieno\.className = 'ovl-insp-pieno';\n\s*for \(const n of \[\.\.\.corpoInsp\.children\]\) if \(!n\.classList\.contains\('ovl-vuoto'\)\) pieno\.appendChild\(n\);/,
+    'quello che serve a un elemento scelto sta in un contenitore solo');
+  assert.doesNotMatch(ANIME, /\.ovl-inspector(\.vuoto|:not\(\.vuoto\))[^{]*\{[^}]*display: none/);
+
+  assert.match(funzioneApp('guidaSchedaHtml'), /const dietroAlTasto = id === SEZ_BANCO && !document\.body\.classList\.contains\('banco-guida'\);/, 'la guida del banco nasce nascosta, se il tasto e\' spento');
+  assert.match(APP, /if \(apri\) g\.open = true;\n\s*g\.hidden = !apri;/, 'e il tasto la mostra e la nasconde con hidden');
+  assert.doesNotMatch(ANIME, /\.guida-scheda \{[^}]*display: (none|block)/);
+});
+
+test('le righe dei livelli si riconciliano per chiave, e le classi del disegno restano sue', () => {
+  // Rifare la lista a ogni giro (innerHTML) buttava via righe che si stavano
+  // disegnando e ne faceva comparire di nuove senza disegno. Adesso una riga
+  // che c'era resta la stessa: cambia solo quello che e' cambiato, e le classi
+  // dg-* le decide il disegno.
+  const ric = funzioneApp('_riconciliaLivelli');
+  assert.match(ric, /box\.querySelectorAll\(':scope > \.ovl-liv:not\(\.esce\)'\)\]\.map\(\(r\) => \[r\.dataset\.liv, r\]\)/, 'le righe si ritrovano per chiave');
+  assert.match(ric, /if \(!c\.startsWith\('dg-'\) && !vuole\.has\(c\)\) r\.classList\.remove\(c\);/, 'le classi del disegno non si toccano');
+  assert.match(ric, /if \(r\.innerHTML !== nuova\.innerHTML\) r\.innerHTML = nuova\.innerHTML;/, 'il dentro cambia solo se e\' cambiato');
+  assert.match(ric, /for \(const r of presenti\.values\(\)\) togli\(r\);/, 'una riga che se ne va si disfa');
+  const rendi = funzioneApp('_rendiLivelli');
+  assert.ok(rendi.includes('_riconciliaLivelli(box, qui.map((l, i) => [l.k, righe[i]]));'));
+  assert.doesNotMatch(rendi, /box\.innerHTML = righe/, 'la lista non si rifa\' da capo');
+  assert.match(funzioneApp('_trascinaLivello'), /querySelectorAll\(':scope > \.ovl-liv:not\(\.esce\)'\)/, 'chi trascina non conta le righe che se ne vanno');
+});
+
+test('una tendina che si chiude resta dov\'e\' finche\' si disfa', () => {
+  // Chiudendo, la lista tornava subito dentro il suo guscio: si disfaceva in un
+  // posto diverso da quello in cui la si vedeva. Torna a casa a disegno finito.
+  const v = funzioneApp('vestiTendina');
+  assert.match(v, /rientro = setTimeout\(\(\) => \{ if \(aperta\) return; lista\.classList\.remove\('volante'\); guscio\.appendChild\(lista\); \}, _duraUscita\(\) \+ 20\);/);
+  assert.match(v, /aperta = true;\n\s*clearTimeout\(rientro\);/, 'riaprendola prima, resta dov\'e\'');
+});

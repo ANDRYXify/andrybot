@@ -321,6 +321,39 @@ sfumando il velo intero si sfumava anche la carta, che spariva mentre si
 disfaceva (e con meno movimento spariva di colpo). La carta prima di entrare
 non si vede, e mentre si disfa sì.
 
+## Lo Studio: tre regole per chi scrive
+
+Nello Studio si vedevano tre modi di comparire e sparire che il disegno non
+poteva vedere. Da lì vengono tre regole, e valgono per tutto il pannello.
+
+- **Si nasconde con `hidden`, mai con una classe che nasconde i figli.** Un
+  pannello arrotolato, l'inspector senza niente di scelto e la guida del banco
+  li nascondeva il CSS: `display: none` appeso a una classe del contenitore.
+  Per il disegno era un contenitore che cambiava classe, non un corpo che se ne
+  andava, e il corpo spariva di colpo e tornava senza disegnarsi. Adesso
+  `arrotola` mette `hidden` sul corpo del pannello, e nell'inspector il pieno e
+  il vuoto si danno il cambio con `hidden`. La guida del banco nasce `hidden`
+  se il tasto è spento, e il tasto la mostra e la nasconde. Sul telefono di
+  lato c'era anche una regola che la nascondeva sempre: il tasto non faceva
+  niente, ed è uscita.
+- **Una lista si riconcilia per chiave, non si riscrive.** I livelli si rifacevano
+  con `innerHTML` a ogni giro. Una riga che si stava disegnando veniva buttata
+  e ne nasceva un'altra uguale, senza disegno, e una riga tolta spariva di
+  colpo. Adesso `_riconciliaLivelli` ritrova le righe per chiave, cambia solo
+  quello che è cambiato, mette in ordine spostando, e manda via con `togli`
+  quelle che non ci sono più. La coda della lista (il vuoto, «Aggiungi») si
+  scrive una volta sola.
+- **Le classi `dg-*` sono del disegno.** Chi riconcilia una riga le lascia
+  com'erano: toglierle a metà disegno lasciava una riga non disegnata.
+
+E una tendina che si chiude resta dov'è finché si è disfatta. Prima tornava
+subito nel suo guscio, e si disfaceva in un posto diverso da quello in cui la
+si vedeva.
+
+`scripts/verifica-comparse.mjs` fa questi gesti nello Studio, sul computer e
+sul telefono di lato. L'autoprova ha una rottura in più: il pannello che si
+arrotola di colpo, con `display` al posto di `hidden`.
+
 ## Il cassetto del telefono
 
 Scorreva, ed era scritto qui fra le cose che restano animate: «è un

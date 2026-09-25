@@ -55,6 +55,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Chi toglie e rimette il follow non fa più partire avvisi, ringraziamenti e conti da follower nuovo. Chi torna a seguirti dopo tre mesi viene salutato con un bentornato.
 - Una domanda fatta a te in chat che il bot non sa resta a te: il bot tace invece di rispondere col tuo nome. Le cose da sistemare nel pannello le dice solo a te e ai tuoi mod, mai agli spettatori.
 - L'elenco di !giochi dice come si gioca ognuno: il nome e quello che va scritto dopo, tipo !duello @nome posta. In fondo dice come chiedere le regole di un gioco.
+- Nello Studio i pannelli che arrotoli, il riquadro delle proprietà e le righe dei livelli si disegnano e si disfano come il resto del pannello. Sul telefono di lato il tasto della guida la mostra davvero.
 
 ## 2026-09-24
 

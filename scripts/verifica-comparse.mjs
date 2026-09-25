@@ -28,12 +28,16 @@ import { fileURLToPath } from 'node:url';
 import { apriSito, apriBrowser } from './_sito.mjs';
 
 const ROMPI = (process.argv.find((a) => a.startsWith('--rompi=')) || '').slice('--rompi='.length);
+// --solo=studio fa girare un pezzo solo del giro: serve a guardare da vicino.
+const SOLO = (process.argv.find((a) => a.startsWith('--solo=')) || '').slice('--solo='.length);
+const tocca = (pezzo) => !SOLO || SOLO === pezzo;
 
 const ROTTURE = [
   ['nascosto', /✗ niente compare senza disegnarsi/, 'l\'attributo hidden non passa piu\' dal disegno'],
   ['finestra', /✗ e niente se ne va senza disfarsi/, 'una finestra di sistema si chiude di colpo'],
   ['esce', /✗ e niente se ne va senza disfarsi/, 'chi prende `esce` non si disfa'],
   ['tendina-tardi', /✗ e niente se ne va senza disfarsi/, 'una tendina che si veste tardi: il menu del browser si vede, poi sparisce di colpo'],
+  ['pannello-di-colpo', /✗ e niente se ne va senza disfarsi[^\n]*studio, i livelli si arrotolano/, 'un pannello del banco si arrotola di colpo, come quando lo faceva una classe'],
 ];
 if (process.argv.includes('--selftest')) {
   const io = fileURLToPath(import.meta.url);
@@ -78,6 +82,15 @@ const rompi = async (pg) => {
       Finto.prototype = Vero.prototype;
       window.MutationObserver = Finto;
     });
+  }
+  if (ROMPI === 'pannello-di-colpo') {
+    await pg.addInitScript(() => document.addEventListener('DOMContentLoaded', () => {
+      window.arrotola = function (pan, chiuso) {
+        pan.classList.toggle('arrotolato', chiuso);
+        const corpo = pan.querySelector(':scope > .pan-corpo');
+        if (corpo) corpo.style.display = chiuso ? 'none' : '';
+      };
+    }));
   }
   if (ROMPI === 'esce') {
     await pg.addInitScript(() => {
@@ -264,7 +277,7 @@ const raccogli = async (pg, dove) => {
 };
 
 // ---- IL PANNELLO, SUL COMPUTER ------------------------------------------------
-{
+if (tocca('pannello')) {
   const pg = await pagina('/?demo=1&lang=it', { width: 1440, height: 900 });
   const D = 'pannello';
   await fa(pg, D, 'il giro guidato si chiude con «Salta il giro»', 'sparisce', () => pg.evaluate(() => document.querySelector('[data-giro="salta"]').click()));
@@ -352,7 +365,7 @@ const raccogli = async (pg, dove) => {
 }
 
 // ---- IL PANNELLO, SUL TELEFONO -------------------------------------------------
-{
+if (tocca('telefono')) {
   const pg = await pagina('/?demo=1&lang=it', { width: 390, height: 844 });
   const D = 'telefono';
   await fa(pg, D, 'il giro guidato si chiude', 'sparisce', () => pg.evaluate(() => document.querySelector('[data-giro="salta"]').click()));
@@ -363,7 +376,7 @@ const raccogli = async (pg, dove) => {
 }
 
 // ---- IL BANNER DEI COOKIE --------------------------------------------------
-{
+if (tocca('cookie')) {
   const pg = await pagina('/?demo=1&lang=it', { width: 1440, height: 900 }, { cookie: false });
   const D = 'cookie';
   await fa(pg, D, 'il banner dei cookie se ne va con OK', 'sparisce', () => pg.evaluate(() => document.getElementById('cookie-ok').click()));
@@ -371,11 +384,78 @@ const raccogli = async (pg, dove) => {
 }
 
 // ---- LA VETRINA --------------------------------------------------------------
-{
+if (tocca('vetrina')) {
   const pg = await pagina('/', { width: 1280, height: 900 });
   const D = 'vetrina';
   await fa(pg, D, 'la finestra delle piattaforme si apre', 'compare', () => pg.evaluate(() => document.querySelector('a.vt-btn[href^="/entra?nuovo=1"]').click()));
   await fa(pg, D, 'e si chiude con Esc', 'sparisce', () => pg.keyboard.press('Escape'));
+  await raccogli(pg, D);
+}
+
+// ---- LO STUDIO -----------------------------------------------------------------
+// Il banco di lavoro: i livelli e le proprieta' sono due pannelli che si
+// arrotolano, le proprieta' cambiano con l'elemento scelto e hanno i loro
+// gruppi a fisarmonica, e sopra la tela ci sono la guida e le tendine.
+if (tocca('studio')) {
+  const pg = await pagina('/?demo=1&lang=it', { width: 1440, height: 900 });
+  const D = 'studio';
+  await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.querySelector('[data-giro="salta"]')?.click(); window.SB_APP.vai('alert'); });
+  await pg.waitForTimeout(2500);
+  const clic = (sel) => () => pg.evaluate((s) => document.querySelector(s).click(), sel);
+  await fa(pg, D, 'si sceglie un elemento', 'compare', () => pg.evaluate(() => seleziona('alert')));
+  // Cambiando elemento il blocco vecchio si disfa tenendo il suo posto: il nuovo
+  // sta sotto, fuori dalla vista del pannello, e si disegna quando ci arriva.
+  await fa(pg, D, 'se ne sceglie un altro', 'sparisce', () => pg.evaluate(() => seleziona('chat')));
+  await pg.evaluate(() => {
+    window.__comparse.azione = 'preparazione';
+    const g = document.querySelector('#ovl-inspector .asp-blocco:not([hidden]) > .insp-grp[open]');
+    g.setAttribute('data-prova-grp', '');
+    g.scrollIntoView({ block: 'center', behavior: 'instant' });
+  });
+  await pg.waitForTimeout(600);
+  await fa(pg, D, 'un gruppo delle proprieta\' si chiude', 'sparisce', clic('[data-prova-grp] > summary'));
+  await fa(pg, D, 'e si riapre', 'compare', clic('[data-prova-grp] > summary'));
+  await fa(pg, D, 'le proprieta\' si arrotolano', 'sparisce', clic('#ovl-inspector [data-pan-arrotola]'));
+  await fa(pg, D, 'e si srotolano', 'compare', clic('#ovl-inspector [data-pan-arrotola]'));
+  await fa(pg, D, 'si toglie la scelta', 'sparisce', () => pg.evaluate(() => deseleziona()));
+  await fa(pg, D, 'i livelli si arrotolano', 'sparisce', clic('#ovl-livelli [data-pan-arrotola]'));
+  await fa(pg, D, 'e si srotolano', 'compare', clic('#ovl-livelli [data-pan-arrotola]'));
+  await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.getElementById('ovl-liv-aggiungi').scrollIntoView({ block: 'start', behavior: 'instant' }); });
+  await pg.waitForTimeout(600);
+  await fa(pg, D, 'il pannello per aggiungere si apre', 'compare', clic('#ovl-liv-aggiungi'));
+  await fa(pg, D, 'e si chiude', 'sparisce', clic('#ovl-liv-aggiungi'));
+  // I livelli sono righe che restano se' stesse: un elemento tolto dall'overlay
+  // si disfa dall'elenco, rimesso ci si disegna.
+  await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.getElementById('ovl-livelli').scrollIntoView({ block: 'start', behavior: 'instant' }); });
+  await pg.waitForTimeout(600);
+  await fa(pg, D, 'un elemento si toglie dall\'overlay', 'sparisce', clic('#ovl-livelli [data-liv="alert"] [data-occhio]'));
+  await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.getElementById('ovl-liv-aggiungi').click(); });
+  await pg.waitForTimeout(700);
+  await fa(pg, D, 'e ci si rimette', 'compare', clic('#ovl-agg [data-metti="alert"]'));
+  await fa(pg, D, 'la guida del banco si apre', 'compare', clic('#ovl-aiuto'));
+  await fa(pg, D, 'e si chiude', 'sparisce', clic('#ovl-aiuto'));
+  await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; window.scrollTo(0, 0); });
+  await pg.waitForTimeout(600);
+  await fa(pg, D, 'la tendina dell\'overlay si apre', 'compare', () => pg.click('.tendina:has(#ovl-quale) > .tendina-btn'));
+  await fa(pg, D, 'e si chiude con Esc', 'sparisce', () => pg.keyboard.press('Escape'));
+  await fa(pg, D, 'dal vivo si accende', '', clic('#ovl-vivo'), 4000);
+  await fa(pg, D, 'e si spegne', '', clic('#ovl-vivo'));
+  await raccogli(pg, D);
+}
+
+// Sul telefono il banco lavora in orizzontale: stessi pannelli, stesse strade.
+if (tocca('studio')) {
+  const pg = await pagina('/?demo=1&lang=it', { width: 844, height: 390 });
+  const D = 'studio sul telefono';
+  await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.querySelector('[data-giro="salta"]')?.click(); window.SB_APP.vai('alert'); });
+  await pg.waitForTimeout(2500);
+  const clic = (sel) => () => pg.evaluate((s) => document.querySelector(s).click(), sel);
+  await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.getElementById('ovl-inspector').scrollIntoView({ block: 'start', behavior: 'instant' }); });
+  await pg.waitForTimeout(600);
+  await fa(pg, D, 'si sceglie un elemento', 'compare', () => pg.evaluate(() => seleziona('alert')));
+  await fa(pg, D, 'si toglie la scelta', 'sparisce', () => pg.evaluate(() => deseleziona()));
+  await fa(pg, D, 'le proprieta\' si arrotolano', 'sparisce', clic('#ovl-inspector [data-pan-arrotola]'));
+  await fa(pg, D, 'e si srotolano', 'compare', clic('#ovl-inspector [data-pan-arrotola]'));
   await raccogli(pg, D);
 }
 

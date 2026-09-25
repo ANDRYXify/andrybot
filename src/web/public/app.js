@@ -3542,7 +3542,8 @@ function guidaSchedaHtml(id) {
       else { localStorage.setItem('guida-vista:' + id, '1'); sessionStorage.setItem('guida-oggi:' + id, '1'); }
     }
   } catch {  }
-  return `<details class="guida-scheda"${aperta ? ' open' : ''} data-guida="${id}">
+  const dietroAlTasto = id === SEZ_BANCO && !document.body.classList.contains('banco-guida');
+  return `<details class="guida-scheda"${aperta ? ' open' : ''}${dietroAlTasto ? ' hidden' : ''} data-guida="${id}">
     <summary><span class="guida-ico">${_icoGuida}</span> ${L('Come funziona', 'How it works', 'Cómo funciona')}</summary>
     <div class="guida-corpo">
       ${serve ? `<p class="guida-serve"><strong>${L('A cosa serve.', 'What it’s for.', 'Para qué sirve.')}</strong> ${esc(serve)}</p>` : ''}
@@ -10953,6 +10954,9 @@ function aggiornaInspector() {
   for (const b of box.querySelectorAll('.asp-blocco')) b.hidden = b.dataset.asp !== selezione;
   box.hidden = !box.closest('.carta.ovl-banco');
   box.classList.toggle('vuoto', !selezione);
+  const pieno = box.querySelector('.ovl-insp-pieno'), vuoto = box.querySelector('.ovl-vuoto');
+  if (pieno) pieno.hidden = !selezione;
+  if (vuoto) vuoto.hidden = !!selezione;
   if (!selezione) return;
   const nome = _g('insp-nome'); if (nome) nome.textContent = _nomeEl(selezione);
   const luc = _g('insp-blocca');
@@ -11131,7 +11135,13 @@ function montaBanco() {
     v.textContent = L('Scegli un elemento sulla tela o nei livelli per modificarlo.',
       'Pick an element on the canvas or in the layers to edit it.',
       'Elige un elemento en el lienzo o en las capas para editarlo.');
-    (insp.querySelector(':scope > .pan-corpo') || insp).appendChild(v);
+    corpoInsp.appendChild(v);
+  }
+  if (!corpoInsp.querySelector(':scope > .ovl-insp-pieno')) {
+    const pieno = document.createElement('div');
+    pieno.className = 'ovl-insp-pieno';
+    for (const n of [...corpoInsp.children]) if (!n.classList.contains('ovl-vuoto')) pieno.appendChild(n);
+    corpoInsp.insertBefore(pieno, corpoInsp.firstChild);
   }
 
   if (!carta.querySelector('.ovl-piede')) {
@@ -11177,7 +11187,14 @@ function ripristinaPannello(el, chiave) {
     el.style.left = p.x + 'px';
     el.style.top = p.y + 'px';
   }
-  if (p.chiuso) el.classList.add('arrotolato');
+  if (p.chiuso) arrotola(el, true);
+}
+
+function arrotola(pan, chiuso) {
+  pan.classList.toggle('arrotolato', chiuso);
+  const corpo = pan.querySelector(':scope > .pan-corpo');
+  if (corpo) corpo.hidden = chiuso;
+  pan.querySelector(':scope > .pan-testa [data-pan-arrotola]')?.setAttribute('aria-expanded', chiuso ? 'false' : 'true');
 }
 
 function salvaPannello(el, chiave) {
@@ -11226,8 +11243,7 @@ document.addEventListener('click', (ev) => {
   if (!b) return;
   const pan = b.closest('[data-pan]');
   if (!pan) return;
-  const chiuso = pan.classList.toggle('arrotolato');
-  b.setAttribute('aria-expanded', chiuso ? 'false' : 'true');
+  arrotola(pan, !pan.classList.contains('arrotolato'));
   salvaPannello(pan, pan.dataset.pan);
 });
 
@@ -11720,21 +11736,48 @@ function _rendiLivelli() {
       <span class="ovl-liv-occhio" data-occhio="${l.k}" role="button" tabindex="0"
         title="${dentro ? L('Togli da questo overlay', 'Remove from this overlay', 'Quitar de este overlay') : L('Rimettilo com\'era', 'Put it back as it was', 'Vuelve a ponerlo como estaba')}">${_bIco(dentro ? ICO.occhio : ICO.occhioNo)}</span>
     </button>`;
-  }).join('');
-  const vuoto = qui.length ? '' : `<p class="tenue ovl-liv-vuoto">${L('Questo overlay è vuoto: con «Aggiungi» ci metti dentro quello che vuoi.', 'This overlay is empty: with «Add» you put in whatever you want.', 'Este overlay está vacío: con «Añadir» pones dentro lo que quieras.')}</p>`;
-  box.innerHTML = righe + vuoto + `
+  });
+  if (!box.querySelector(':scope > #ovl-liv-aggiungi')) {
+    box.innerHTML = `<p class="tenue ovl-liv-vuoto" hidden>${L('Questo overlay è vuoto: con «Aggiungi» ci metti dentro quello che vuoi.', 'This overlay is empty: with «Add» you put in whatever you want.', 'Este overlay está vacío: con «Añadir» pones dentro lo que quieras.')}</p>
     <button type="button" class="ovl-liv-agg" id="ovl-liv-aggiungi" aria-expanded="false">
       ${_bIco('<path d="M12 5v14"/><path d="M5 12h14"/>')}<span>${L('Aggiungi', 'Add', 'Añadir')}</span></button>
-    <div class="ovl-agg" id="ovl-agg" hidden>${_htmlAggiungi(fuori)}</div>`;
+    <div class="ovl-agg" id="ovl-agg" hidden></div>`;
+  }
+  _riconciliaLivelli(box, qui.map((l, i) => [l.k, righe[i]]));
+  box.querySelector(':scope > .ovl-liv-vuoto').hidden = qui.length > 0;
+  const agg = box.querySelector(':scope > #ovl-agg'), dentroAgg = _htmlAggiungi(fuori);
+  if (agg._html !== dentroAgg) { agg._html = dentroAgg; agg.innerHTML = dentroAgg; }
   requestAnimationFrame(() => _ripassaPosizioni(null));
   _seguiMisure();
+}
+
+function _riconciliaLivelli(box, voluti) {
+  const presenti = new Map([...box.querySelectorAll(':scope > .ovl-liv:not(.esce)')].map((r) => [r.dataset.liv, r]));
+  const stampo = document.createElement('template');
+  let prima = null;
+  for (const [k, html] of voluti) {
+    stampo.innerHTML = html.trim();
+    const nuova = stampo.content.firstElementChild;
+    let r = presenti.get(k);
+    if (r) {
+      presenti.delete(k);
+      const vuole = new Set(nuova.classList);
+      for (const c of [...r.classList]) if (!c.startsWith('dg-') && !vuole.has(c)) r.classList.remove(c);
+      for (const c of vuole) r.classList.add(c);
+      if (r.innerHTML !== nuova.innerHTML) r.innerHTML = nuova.innerHTML;
+    } else r = nuova;
+    const dopo = prima ? prima.nextElementSibling : box.firstElementChild;
+    if (r !== dopo) box.insertBefore(r, dopo);
+    prima = r;
+  }
+  for (const r of presenti.values()) togli(r);
 }
 
 const PRESA_ICO = '<circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/>';
 
 let _livelloMosso = false;
 function _trascinaLivello(riga, presa, e) {
-  const righe = [...riga.parentElement.querySelectorAll(':scope > .ovl-liv')];
+  const righe = [...riga.parentElement.querySelectorAll(':scope > .ovl-liv:not(.esce)')];
   const i0 = righe.indexOf(riga);
   if (i0 < 0) return;
   const k = riga.dataset.liv;
@@ -12929,12 +12972,13 @@ function vestiTendina(sel) {
     if (su < lista.scrollTop) lista.scrollTop = su;
     else if (giu > lista.scrollTop + lista.clientHeight) lista.scrollTop = giu - lista.clientHeight;
   };
+  let rientro = 0;
   const chiudi = (tornaAlBottone) => {
     if (!aperta) return;
     aperta = false;
     lista.hidden = true;
-    lista.classList.remove('volante');
-    guscio.appendChild(lista);
+    clearTimeout(rientro);
+    rientro = setTimeout(() => { if (aperta) return; lista.classList.remove('volante'); guscio.appendChild(lista); }, _duraUscita() + 20);
     bottone.setAttribute('aria-expanded', 'false');
     window.removeEventListener('scroll', viaAllaSvelta, true);
     window.removeEventListener('resize', viaAllaSvelta);
@@ -12958,6 +13002,7 @@ function vestiTendina(sel) {
     if (aperta || bottone.disabled) return;
     disegna();
     aperta = true;
+    clearTimeout(rientro);
     document.body.appendChild(lista);
     lista.hidden = false;
     lista.classList.add('volante');
@@ -13213,7 +13258,11 @@ function caricaAlert() {
     const apri = !document.body.classList.contains('banco-guida');
     document.body.classList.toggle('banco-guida', apri);
     const g = document.querySelector('.pagina-testata .guida-scheda');
-    if (g) { g.open = apri; if (apri) g.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'nearest' }); }
+    if (g) {
+      if (apri) g.open = true;
+      g.hidden = !apri;
+      if (apri) g.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'nearest' });
+    }
     requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco));
   });
   _g('scheda-alert')?.addEventListener('click', (e) => {

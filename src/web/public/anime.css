@@ -1230,8 +1230,7 @@ body.banco-on .pagina-testata > .carte-ctrl { display: none; }
 body.banco-on .pagina-testata > h1 { grid-column: 1; margin: 0; }
 body.banco-on .pagina-testata > .fam-barra { grid-column: 2; justify-self: start; margin: 0; }
 body.banco-on .pagina-testata > .pt-schermo { position: static; grid-column: 3; grid-row: 1; }
-body.banco-on .pagina-testata > .guida-scheda { grid-column: 1 / -1; display: none; }
-body.banco-on.banco-guida .pagina-testata > .guida-scheda { display: block; }
+body.banco-on .pagina-testata > .guida-scheda { grid-column: 1 / -1; }
 body.banco-guida #ovl-aiuto { background: var(--acc-soft); border-color: var(--acc-bordo); color: var(--acc); }
 body.banco-on .pagina-testata h1 { font-size: clamp(1.3rem, 1.1rem + .8vw, 1.55rem); }
 body.banco-on .pagina-testata > .guida-scheda { margin-top: .7rem; }
@@ -1391,11 +1390,8 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 .pan-tasto:hover { color: var(--testo); border-color: var(--border-2); }
 }
 .pan-corpo { padding: 8px; }
-.arrotolato .pan-corpo { display: none; }
 .arrotolato { max-height: none !important; }
 
-.carta.ovl-banco .ovl-inspector.vuoto .pan-corpo > *:not(.ovl-vuoto) { display: none; }
-.carta.ovl-banco .ovl-inspector:not(.vuoto) .pan-corpo > .ovl-vuoto { display: none; }
 .carta.ovl-banco .ovl-vuoto {
   padding: 1.1rem .9rem; color: var(--testo-3); font-size: .86rem; line-height: 1.5;
 }
@@ -1451,7 +1447,6 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 @media (max-height: 560px) and (orientation: landscape) {
   body.banco-on .site-header, body.banco-on .testata-sito { position: static; }
   body.banco-on .pagina-testata > h1 { font-size: 1.05rem; }
-  body.banco-on .pagina-testata > .guida-scheda { display: none; }
   body.banco-on .contenuto { padding-top: .5rem; }
   body.banco-on .pagina-testata { margin-bottom: .3rem; }
   .carta.ovl-banco .ovl-testa-banco,
