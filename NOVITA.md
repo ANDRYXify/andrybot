@@ -35,6 +35,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - «Prova» su un effetto te lo fa vedere nel pannello com'è in onda, video e disegni compresi, e da lì lo mandi all'overlay. Nella libreria anche immagini e video hanno il tasto per guardarli. [vai: effetti]
 - [importante] Caricando un effetto puoi togliere uno sfondo a tinta unita, come un green screen: lo vedi subito nell'anteprima e in onda esce proprio così. [vai: effetti]
 - Una GIF o un PNG animato coi fotogrammi velocissimi va in onda al ritmo con cui lo vedi nel browser, non più fino a dieci volte più veloce. [vai: effetti]
+- Sul telefono la home non si trascina più di lato: le decorazioni della prima schermata restano dentro lo schermo, e il banner dei cookie ha di nuovo il tasto a portata di dito.
+- Nella tua pagina link un indirizzo lungo scritto in un testo va a capo, invece di uscire dallo schermo del telefono. [vai: pagina]
 
 ## 2026-09-24
 

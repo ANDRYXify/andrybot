@@ -278,3 +278,73 @@ una misura sbagliata non si corregge spostando le caselle. `--selftest` mette un
 Il controllo della larghezza gira a 360 px, non più a 390: è la larghezza più
 comune fra i telefoni Android, e chi ci sta a 360 ci sta anche a 390.
 
+## La pagina non scorre di lato
+
+Segnalato da un iPhone, con una foto: la home si trascinava verso destra e il
+titolo restava tagliato a metà.
+
+**La causa, misurata.** Le due decorazioni della scena in cima alla home (la
+trama cinetica e il retino, `.vt-scena::before` e `::after`) sbordano di mezzo
+schermo per lato, `inset: … -50vw`, apposta: così arrivano ai bordi anche su uno
+schermo largo, e le loro maschere radiali sono disegnate su quella misura. La
+pagina contava su `html { overflow-x: clip }` per nascondere l'eccedenza, e sul
+computer basta. Sul telefono no: il valore della radice diventa quello del
+viewport, e il browser del telefono allarga lo stesso il viewport fino al
+contenuto. Aperta come da un telefono, la home era larga 567 px su uno schermo
+da 390, e si trascinava di 177. Allargato il viewport, anche il banner dei
+cookie (fisso, largo quanto il viewport) finiva col tasto «Ho capito» fuori
+dallo schermo. E il colpevole non era un elemento ma uno pseudo-elemento, che il
+controllo della larghezza di allora non guardava: guardava solo le schede del
+pannello, e solo gli elementi.
+
+**La regola.** Il body di ogni pagina ritaglia davvero:
+`position: relative; overflow-x: clip`. A differenza della radice, un clip sul
+body ritaglia sul serio, e a differenza di `hidden` non fa del body un
+contenitore che scorre, quindi le barre appiccicate (`sticky`) continuano a
+funzionare. `position: relative` serve perché ritagli anche gli elementi
+assoluti che dipendono dalla pagina intera; oggi sono solo il «salta al
+contenuto» e i testi per i lettori di schermo, e restano dove sono perché il
+body parte da 0,0 senza margini. Gli strati fissi grandi quanto lo schermo (lo
+sfondo animato, lo splash) ritagliano allo schermo. Vale in ogni guscio: il
+pannello e la home (`style.css`, e la sua copia a dieta), le pagine statiche
+(`pagina.css`), le guide e i manuali (`guide.js`), le pagine di servizio, la
+pagina link e quella delle donazioni.
+
+Le decorazioni non sono state toccate: la parte che si vede è la stessa, al
+pixel. Stringerle ai bordi dello schermo avrebbe cambiato il loro disegno,
+perché le maschere sono proporzionate alla scatola.
+
+**Il testo va a capo.** Nella pagina link un indirizzo lungo incollato in un
+testo non andava a capo: su un telefono arrivava a 627 px. Nella pagina link e
+nella sua informativa ogni parola, per quanto lunga, va a capo quando non ci sta
+(`overflow-wrap: anywhere`). Etichette e sottotitoli dei link restano su una
+riga e finiscono coi tre puntini, come prima.
+
+**Il collaudo** (`scripts/verifica-larghezza.mjs`) misura due cose, perché un
+ritaglio nasconde: con il ritaglio acceso, «la pagina scorre?» sarebbe sempre
+no, anche con un titolo tagliato a metà.
+
+1. *Il telefono.* Ogni pagina si apre come da un telefono. Da quando il
+   documento è letto il viewport non si allarga mai, e la pagina non scorre.
+   Prima di allora il telefono usa i suoi 980 px di serie, perché non ha ancora
+   letto il `<meta name="viewport">`: la prima versione della misura li contava
+   e dava tutto rosso. Se il viewport si allarga, si nomina chi sborda,
+   pseudo-elementi compresi, letti dal protocollo di Chromium perché la pagina
+   non li vede.
+2. *Niente di tagliato.* Nessun testo, link, tasto, campo o immagine esce dal
+   bordo dello schermo, a meno che non stia in una scatola che ritaglia o
+   scorre per conto suo: una scritta che scorre, un'etichetta coi tre puntini,
+   una tabella larga nel suo riquadro. Le decorazioni senza testo possono
+   uscire: il ritaglio le taglia apposta.
+
+Il collaudo guarda le 37 schede del pannello a 360 px, e 26 pagine pubbliche a
+320, 360, 390 e 430 px: la home in tre lingue dal suo guscio vero, le guide, la
+pagina che non c'è, le pagine statiche e la pagina link in ogni stile, con i
+blocchi che uno streamer scrive davvero, indirizzo lungo compreso. Prima di
+misurare scorre tutta la pagina, così le entrate che aspettano di essere viste
+sono al loro posto. `--selftest` rompe tre cose e pretende il rosso per la
+ragione giusta: una scheda del pannello più larga dello schermo, il body che
+smette di ritagliare (la home deve tornare larga e il colpevole nominato deve
+essere `section.vt-scena::before`), un titolo che non va a capo (il ritaglio lo
+nasconderebbe, la seconda misura lo trova).
+

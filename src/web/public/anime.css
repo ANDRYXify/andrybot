@@ -1,7 +1,7 @@
 /* © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live */
 /* Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live */
 
-#anime-sfondo { position: fixed; inset: 0; z-index: -2; pointer-events: none; background: var(--bg); }
+#anime-sfondo { position: fixed; inset: 0; z-index: -2; pointer-events: none; background: var(--bg); overflow: clip; }
 body { background: transparent; }
 
 h1, h2, h3, .titolo-mega {

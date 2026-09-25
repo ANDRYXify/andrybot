@@ -61,7 +61,7 @@ const VESTITO = `
   :root{color-scheme:light;${CHIARO}}
   @media(prefers-color-scheme:dark){:root{color-scheme:dark;${SCURO}}}
   html{-webkit-text-size-adjust:100%}
-  body{position:relative;isolation:isolate;min-height:100dvh;display:grid;place-items:center;
+  body{position:relative;isolation:isolate;overflow-x:clip;min-height:100dvh;display:grid;place-items:center;
     padding:clamp(1.4rem,5vw,3rem);background:var(--bg);color:var(--testo);
     font:16px/1.6 var(--testo-font,system-ui),system-ui,sans-serif;
     -webkit-font-smoothing:antialiased}

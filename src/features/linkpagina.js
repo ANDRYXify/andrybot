@@ -1043,7 +1043,7 @@ ${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
   ::-webkit-scrollbar-thumb{background:${c.acc}88;border-radius:9px}
   ::-webkit-scrollbar-track{background:transparent}
   :focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:6px}
-  body{min-height:100dvh;${sfondo};color:var(--testo);font-family:var(--ft);
+  body{min-height:100dvh;${sfondo};color:var(--testo);font-family:var(--ft);position:relative;overflow-x:clip;overflow-wrap:anywhere;
     display:flex;flex-direction:column;align-items:center;
     /* env(safe-area-inset-*): sui telefoni con la tacca e la barra in fondo il
        contenuto non finisce più sotto di esse */
@@ -1515,7 +1515,7 @@ export function renderInformativa({ login, display, baseUrl, pagina, contatto, q
 <style>${facciaFont(t.font)}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{--acc:${c.acc};--fd:${font.d};--ft:${font.t}}
-  body{min-height:100dvh;background:${c.bg};color:${c.testo};font-family:var(--ft);line-height:1.65;
+  body{min-height:100dvh;background:${c.bg};color:${c.testo};font-family:var(--ft);line-height:1.65;position:relative;overflow-x:clip;overflow-wrap:anywhere;
     padding:clamp(1.5rem,6vw,3.5rem) 1.25rem 3rem;-webkit-font-smoothing:antialiased}
   main{max-width:40rem;margin:0 auto}
   h1{font-family:var(--fd);font-size:clamp(1.7rem,6vw,2.4rem);font-weight:800;letter-spacing:-.03em;line-height:1.05}

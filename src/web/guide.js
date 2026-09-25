@@ -73,7 +73,7 @@ const CSS = `
 :root[data-theme="dark"]{color-scheme:dark;${TAV.scuro}}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{position:relative;isolation:isolate;margin:0;background:var(--bg);color:var(--testo);font:16px/1.7 Archivo,'Archivo Riserva',system-ui,-apple-system,'Segoe UI',sans-serif;font-synthesis-weight:none}
+body{position:relative;isolation:isolate;overflow-x:clip;margin:0;background:var(--bg);color:var(--testo);font:16px/1.7 Archivo,'Archivo Riserva',system-ui,-apple-system,'Segoe UI',sans-serif;font-synthesis-weight:none}
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:calc(var(--retino-forza,1) * .5);background-image:var(--retino);background-size:var(--retino-passo)}
 .g-testata{border-bottom:var(--contorno-sp) solid var(--contorno);background:var(--surface)}
 .g-testata div{max-width:760px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
