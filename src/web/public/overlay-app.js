@@ -979,7 +979,7 @@ function contatore(d) {
   let el = document.getElementById(id);
   const cmd = String(d.comando || '').toLowerCase();
   if (!d.mostra || !mostra('cont') || !mostra('cont:' + cmd)) { if (el) el.remove(); return; }
-  if (!el) { el = document.createElement('div'); el.id = id; el.className = 'contatore-widget ovl-widget forma-carta materia-piatta cornice-nessuna'; document.body.appendChild(el); }
+  if (!el) { el = document.createElement('div'); el.id = id; el.dataset.el = 'cont:' + cmd; el.className = 'contatore-widget ovl-widget forma-carta materia-piatta cornice-nessuna'; document.body.appendChild(el); applicaOrdine(); }
   el.textContent = String(d.testo || '');
   const mio = (MIO.xy || {})['cont:' + cmd] || null;
   const x = mio ? Number(mio.x) : (isFinite(Number(d.x)) ? Number(d.x) : 6);
@@ -1088,7 +1088,19 @@ let musicaInVolo = false;
 
 const MUSICA_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
 
+function applicaOrdine() {
+  const nodi = [...document.querySelectorAll('[data-el]')];
+  const ordine = window.SB_RIQUADRO.ordine(nodi.map((n) => n.dataset.el), MIO.ordine);
+  for (const n of nodi) n.style.zIndex = String(1 + ordine.indexOf(n.dataset.el));
+}
+
 function posaElemento(el, chiave, cfg) {
+  el.dataset.el = chiave;
+  posaDove(el, chiave, cfg);
+  applicaOrdine();
+}
+
+function posaDove(el, chiave, cfg) {
   const xy = (MIO.xy && MIO.xy[chiave]) || (cfg && cfg.xy);
   if (xy && xy.x != null) {
     el.style.position = 'fixed';
@@ -1573,6 +1585,7 @@ setInterval(() => {
 
 function applicaTema(t) {
   MIO.mostra = (t && t.mostra) ? t.mostra : MIO.mostra;
+  MIO.ordine = (t && Array.isArray(t.ordine)) ? t.ordine : [];
   MIO.xy = (t && t.xy) ? t.xy : {};
 
   MIO.stile = { alert: (t && t.alertStile) || null, chat: (t && t.chatStile) || null };
@@ -1614,6 +1627,7 @@ function applicaTema(t) {
   MIO.bit = t.bit || null;
   if (MIO.bit && MIO.bit.attivo && mostra('bit')) chiediBit(); else { disegnaBit(); }
   if (MIO.musica && MIO.musica.attivo && mostra('musica')) chiediMusica(); else togliMusica();
+  applicaOrdine();
 }
 
 async function caricaTema() {

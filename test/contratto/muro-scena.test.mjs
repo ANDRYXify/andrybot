@@ -44,7 +44,7 @@ test('un\'area: nello Studio un riquadro a tutta tela se non e\' posato, sotto t
   assert.ok(/if \(e\.cfg\) return _cfgEl\(k\)\.xy \|\| \(k === 'muro' \? MURO_PIENO\(\) : null\);/.test(APP));
   assert.ok(/const MURO_PIENO = \(\) => \(\{ x: 0, y: 0, w: 100, h: 100, r: 0 \}\);/.test(APP));
   assert.ok(/if \(e\.k === 'muro'\) stage\.insertBefore\(nodo, stage\.firstChild\);/.test(APP), 'il fondo della tela: non ruba i clic agli altri');
-  assert.ok(/<body>\n  <div id="muro" class="schermo"><\/div>/.test(HTML), 'anche in diretta sta sotto a tutto');
+  assert.ok(/<body>\n  <div id="muro" class="schermo" data-el="muro"><\/div>/.test(HTML), 'anche in diretta sta sotto a tutto');
   assert.ok(/#muro \{ position: fixed; overflow: hidden; pointer-events: none; \}\n    #muro\.schermo \{ inset: 0; \}/.test(HTML));
   assert.ok(/posizionaContenitore\(muroBox, window\.SB_RIQUADRO\.e\(xy\) \? xy : null, 'schermo'\);/.test(OVL));
   assert.ok(/chat: el === chatBox \|\| el === muroBox/.test(OVL), 'il riquadro e\' un\'area, come la chat');

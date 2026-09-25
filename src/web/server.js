@@ -219,6 +219,11 @@ const _blocchiDiOverlay = (b) => {
   for (const k of Object.keys(b).slice(0, 60)) if (CHIAVE_EL.test(k) && b[k] === true) q[k] = true;
   return q;
 };
+// L'ORDINE DEI LIVELLI: le chiavi degli elementi dal fondo al primo piano
+// (docs/OVERLAY.md, «L'ordine dei livelli»). Solo chiavi vere, una volta sola.
+const _ordineDiOverlay = (v) => (Array.isArray(v)
+  ? [...new Set(v.map((k) => String(k || '')).filter((k) => CHIAVE_EL.test(k)))].slice(0, 80)
+  : []);
 const _xyDiOverlay = (xy) => {
   const q = {};
   if (!xy || typeof xy !== 'object') return q;
@@ -250,6 +255,7 @@ const _mostraDiffOverlay = (m) => {
 const _occasioniDiOverlay = (x) => normOccasioni(x, {
   pulisciMostra: _mostraDiffOverlay,
   pulisciXy: (xy) => _xyDiOverlay(xy || {}),
+  pulisciOrdine: _ordineDiOverlay,
 });
 
 function overlaysDi(settings) {
@@ -1406,6 +1412,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // deve vedere una cosa sola, non una base e una correzione
       mostra: vis.mostra,
       xy: vis.xy,
+      ordine: vis.ordine,
       // STILE di alert/chat di QUESTO overlay (null → l'overlay usa lo stile che
       // arriva con l'evento, cioè quello di canale). Così ogni link ha il suo look.
       alertStile: st.alerts || null,
@@ -6060,6 +6067,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
           id, nome: String(o?.nome || 'Overlay').trim().slice(0, 40) || 'Overlay',
           mostra: _mostraDiOverlay(m),
           xy: _xyDiOverlay(xy),
+          ordine: _ordineDiOverlay(o?.ordine),
           blocchi: _blocchiDiOverlay(o?.blocchi),
           occasioni: _occasioniDiOverlay((Array.isArray(o?.occasioni) ? o.occasioni : [])
             .map((oc) => ({ ...oc, attiva: acceseOra.has(`${id}\u0000${oc?.id}`) }))),
@@ -7437,7 +7445,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const base = effects.overlayUrl(login);
     const sep = base.includes('?') ? '&' : '?';
     const overlays = overlaysDi(streamers.get(login)?.settings).map((o) => ({
-      id: o.id, nome: o.nome, mostra: o.mostra || _mostraDefault(), xy: o.xy || {}, blocchi: o.blocchi || {}, css: o.css || '', stile: o.stile || null,
+      id: o.id, nome: o.nome, mostra: o.mostra || _mostraDefault(), xy: o.xy || {}, ordine: Array.isArray(o.ordine) ? o.ordine : [], blocchi: o.blocchi || {}, css: o.css || '', stile: o.stile || null,
       occasioni: Array.isArray(o.occasioni) ? o.occasioni : [],
       // il link porta la chiave in se': e' l'unico modo in cui un link e' un segreto
       url: `${base}${sep}o=${encodeURIComponent(o.id)}`,

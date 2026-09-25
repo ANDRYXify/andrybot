@@ -32,7 +32,7 @@ test('dentro la tela il modello di scatola e\' quello dell\'overlay, e nessuna r
     'il reset della tela ha specificita\' zero: vince sul reset del pannello e perde contro ogni regola della pelle');
   const iStyle = IDX.indexOf('href="style.css"'), iSkin = IDX.indexOf('href="overlay-skin.css"');
   assert.ok(iStyle >= 0 && iSkin > iStyle, 'la pelle si carica dopo il foglio del pannello, se no il suo reset a specificita\' zero perderebbe');
-  assert.ok(/\.ap-stage \.ap-handle \{ box-sizing: border-box; \}/.test(SKIN), 'le maniglie restano come sono disegnate');
+  assert.ok(/#ap-riquadro \.ap-rq-ruota, #ap-riquadro \.ap-rq-scala \{[^}]*box-sizing: border-box;/.test(SKIN), 'le maniglie restano come sono disegnate');
 });
 
 test('il contatore si veste in un posto solo, letto da tutte e due le pagine', () => {
@@ -51,8 +51,16 @@ test('chi veste la tela fa quello che fa chi veste la diretta', () => {
   const db = leggi('src/db.js');
   assert.ok(/grassetto: !!o\.grassetto/.test(db) && /box\.style\.fontWeight = o\.grassetto \? '800' : '500';/.test(APP),
     'il grassetto del contatore ha lo stesso ripiego di qua e di la\': spento se non scelto');
-  assert.ok(/nodo\.classList\.toggle\('spento', !_elementoAcceso\(e\.k\)\);/.test(APP) && /\.ap-stage \.ap-el\.spento \{ opacity: \.35; \}/.test(SKIN),
+  assert.ok(/nodo\.classList\.toggle\('el-spento', !_elementoAcceso\(e\.k\)\);/.test(APP) && /\.ap-stage \.ap-el\.el-spento \{ opacity: \.35; \}/.test(SKIN),
     'un elemento spento resta sulla tela, sbiadito');
+  // Si chiamava «spento», come il pallino di stato del pannello (.spento: 7 px,
+  // tondo, colorato): ogni elemento spento sulla tela ne prendeva il bordo tondo,
+  // lo sfondo e l'altezza, e ai bordi il clic cadeva fuori dall'ellisse. Il nome
+  // della tela e' suo, e nessun altro foglio lo usa.
+  for (const f of ['style.css', 'anime.css', 'overlay-skin.css']) {
+    const css = leggi('src/web/public/' + f);
+    assert.ok(!/(^|[\s,}])\.el-spento\b/m.test(css.replace('.ap-stage .ap-el.el-spento { opacity: .35; }', '')), `${f}: .el-spento e' solo della tela`);
+  }
   assert.ok(/\.ap-stage \.ap-chat \{ display: flex; flex-direction: column; gap: \.35rem; \}/.test(SKIN) && /#chatlive \{[^}]*gap: \.35rem/.test(OVL_HTML),
     'la chat ha lo stesso spazio fra le righe');
 });

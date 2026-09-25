@@ -69,7 +69,8 @@
     #chatlive.basso-destra   { bottom: 3vh; right: 2vw; align-items: flex-end; }
 
     
-    .wbox { position: fixed; display: flex; flex-direction: column; gap: .5rem; pointer-events: none; z-index: 7; }
+    .wbox { position: absolute; display: flex; flex-direction: column; gap: .5rem; pointer-events: none; }
+    .wbox > [data-el] { position: relative; }
     .wbox.alto-sinistra  { top: 3vh; left: 2vw; }
     .wbox.alto-destra    { top: 3vh; right: 2vw; align-items: flex-end; }
     .wbox.basso-sinistra { bottom: 3vh; left: 2vw; }
@@ -82,15 +83,15 @@
   </style>
 </head>
 <body>
-  <div id="muro" class="schermo"></div>
-  <div id="palco" class="centro"></div>
-  <div id="palco-libero"></div>
-  <div id="etichette" class="basso-centro"></div>
-  <div id="testi" class="centro"></div>
-  <div id="boss" class="alto-centro"></div>
-  <div id="penitenze"></div>
-  <div id="alert"></div>
-  <div id="chatlive"></div>
+  <div id="muro" class="schermo" data-el="muro"></div>
+  <div id="palco" class="centro" data-el="effetti"></div>
+  <div id="palco-libero" data-el="effetti"></div>
+  <div id="etichette" class="basso-centro" data-el="etichetta"></div>
+  <div id="testi" class="centro" data-el="scritta"></div>
+  <div id="boss" class="alto-centro" data-el="boss"></div>
+  <div id="penitenze" data-el="pen"></div>
+  <div id="alert" data-el="alert"></div>
+  <div id="chatlive" data-el="chat"></div>
   <div class="wbox alto-sinistra" data-ang="alto-sinistra"></div>
   <div class="wbox alto-destra" data-ang="alto-destra"></div>
   <div class="wbox basso-sinistra" data-ang="basso-sinistra"></div>

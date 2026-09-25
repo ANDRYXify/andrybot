@@ -51,7 +51,7 @@ test('la colonna dei livelli e\' l\'unico elenco, e non ha un doppione', () => {
   assert.match(APP, /const tutti = ELEMENTI\(\);/, 'la colonna si disegna dagli elementi veri');
   // e mostra QUELLO CHE C'E': il resto sta dietro «Aggiungi», non in fondo
   // all'elenco spento, dove il proprio overlay era la minoranza
-  assert.match(APP, /const qui = tutti\.filter\(\(l\) => _inOverlay\(l\.k\) \|\| toltaQui\(l\.k\)\);/, 'nell\'elenco c\'e\' quello che c\'e\'');
+  assert.match(APP, /const qui = tutti\.filter\(\(l\) => _inOverlay\(l\.k\) \|\| toltaQui\(l\.k\)\)\.sort\(/, 'nell\'elenco c\'e\' quello che c\'e\', nell\'ordine dei livelli');
   assert.match(APP, /id="ovl-liv-aggiungi"/, 'e quello che non c\'e\' si aggiunge da li\'');
 });
 
@@ -299,7 +299,7 @@ test('l’overlay non veste i colori di un’altra azienda', () => {
 // quindi player, conto alla rovescia, obiettivi e contatori avevano una
 // posizione sola per tutto il canale: li spostavi in un overlay e ti seguivano.
 test('la posizione di un elemento appartiene all’overlay in cui la metti', () => {
-  const posa = OVL.slice(OVL.indexOf('function posaElemento('), OVL.indexOf('\n}', OVL.indexOf('function posaElemento(')));
+  const posa = OVL.slice(OVL.indexOf('function posaDove('), OVL.indexOf('\n}', OVL.indexOf('function posaDove(')));
   assert.ok(/MIO\.xy\[chiave\]/.test(posa), 'la posizione di questo overlay viene prima');
   assert.ok(/\|\| \(cfg && cfg\.xy\)/.test(posa), 'e quella di canale resta il punto di partenza');
   // una funzione sola posa tutto: prima le stesse sei righe erano scritte due volte

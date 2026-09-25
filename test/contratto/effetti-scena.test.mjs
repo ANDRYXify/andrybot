@@ -31,7 +31,7 @@ test('le misure sono del contenitore, e la stessa regola centra l\'area in onda 
 
 test('in diretta si posa come gli altri, e un premio con un posto suo resta sullo schermo intero', () => {
   assert.ok(/function posaEffetti\(\) \{ posizionaContenitore\(palco, MIO\.xy\.effetti, 'centro'\); \}/.test(OVL));
-  assert.ok(/\(libero \? palcoLibero : palco\)\.appendChild\(el\);/.test(OVL) && /<div id="palco-libero"><\/div>/.test(HTML));
+  assert.ok(/\(libero \? palcoLibero : palco\)\.appendChild\(el\);/.test(OVL) && /<div id="palco-libero" data-el="effetti"><\/div>/.test(HTML));
   for (const f of ['mostraImmagine', 'mostraVideo', 'mostraVideoChroma']) {
     const i = OVL.indexOf(`function ${f}(`);
     const corpo = OVL.slice(i, OVL.indexOf('\n}\n', i));

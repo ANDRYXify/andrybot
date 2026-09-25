@@ -59,5 +59,23 @@
     while ((v = vivi(box)).length > 1 && trabocca(box)) { v[0].remove(); n++; }
     return n;
   }
-  window.SB_RIQUADRO = { posa: posa, togli: togli, ritaglia: ritaglia, trabocca: trabocca, e: eRiquadro };
+  var ORDINE_BASE = ['muro', 'effetti', 'pen', 'etichetta', 'scritta', 'chat', 'wf', 'ws', 'goal', 'cart', 'musica', 'timer', 'treno', 'bit', 'boss', 'alert', 'cont'];
+  function rango(k) { var i = ORDINE_BASE.indexOf(String(k).split(':')[0]); return i < 0 ? ORDINE_BASE.length : i; }
+  function ordine(chiavi, salvato) {
+    var s = [];
+    (Array.isArray(salvato) ? salvato : []).forEach(function (k) { k = String(k); if (s.indexOf(k) < 0) s.push(k); });
+    function posto(k) {
+      var i = s.indexOf(k);
+      if (i >= 0) return i;
+      var r = rango(k), dopo = -1;
+      for (var j = 0; j < s.length; j++) if (rango(s[j]) <= r) dopo = j;
+      return dopo + 0.5;
+    }
+    var visti = [];
+    (chiavi || []).forEach(function (k) { k = String(k); if (visti.indexOf(k) < 0) visti.push(k); });
+    return visti.map(function (k) { return { k: k, p: posto(k), r: rango(k) }; })
+      .sort(function (a, b) { return a.p - b.p || a.r - b.r || (a.k < b.k ? -1 : a.k > b.k ? 1 : 0); })
+      .map(function (x) { return x.k; });
+  }
+  window.SB_RIQUADRO = { posa: posa, togli: togli, ritaglia: ritaglia, trabocca: trabocca, e: eRiquadro, ordine: ordine, ORDINE_BASE: ORDINE_BASE };
 })();

@@ -438,27 +438,81 @@ const discordi = await p.evaluate(async () => {
   return fuori;
 });
 
+// L'ORDINE DEI LIVELLI (docs/OVERLAY.md). Si prova il gesto vero: la riga
+// della chat presa dalla presa e tirata su di due righe va due livelli piu'
+// avanti, e la tela la segue; Alt+↓ sulla riga la rimanda indietro di uno;
+// Ctrl+Z torna all'ordine di prima; e scegliere un elemento non lo porta
+// davanti: il suo livello resta quello dell'ordine.
+const livelli = [];
+{
+  await p.evaluate(() => { deseleziona(); _scriviOrdine([]); aggiornaAnteprima(); _rendiLivelli(); });
+  await p.waitForTimeout(150);
+  const vis = () => p.evaluate(() => _ordineScena().filter((k) => _inOverlay(k)));
+  const prima = await vis();
+  const presa = await p.$('#ovl-livelli [data-presa="chat"]');
+  const riga = await p.$('#ovl-livelli [data-liv="chat"]');
+  if (!presa || !riga) livelli.push('la riga della chat non ha la presa');
+  else {
+    await presa.scrollIntoViewIfNeeded();
+    await p.waitForTimeout(150);
+    const b = await presa.boundingBox();
+    const passo = await p.evaluate(() => { const r = [...document.querySelectorAll('#ovl-livelli > * > .ovl-liv, #ovl-livelli .ovl-liv')]; return r.length > 1 ? r[1].getBoundingClientRect().top - r[0].getBoundingClientRect().top : 30; });
+    await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await p.mouse.down();
+    await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2 - passo * 2, { steps: 8 });
+    await p.mouse.up();
+    await p.waitForTimeout(250);
+    const dopo = await vis();
+    const i0 = prima.indexOf('chat'), i1 = dopo.indexOf('chat');
+    if (i1 !== Math.min(prima.length - 1, i0 + 2)) livelli.push(`trascinata su di due righe la chat va da ${i0} a ${i1} invece che a ${Math.min(prima.length - 1, i0 + 2)}`);
+    const zOk = await p.evaluate(() => _ordineScena().every((k, i) => { const n = _nodo(k); return !n || n.style.zIndex === String(i + 1); }));
+    if (!zOk) livelli.push('la tela non segue l\'ordine dopo il trascinamento');
+    const cima = await p.evaluate(() => document.querySelector('#ovl-livelli .ovl-liv')?.dataset.liv);
+    if (cima !== dopo[dopo.length - 1]) livelli.push(`in cima all'elenco c'e' ${cima}, non il primo piano ${dopo[dopo.length - 1]}`);
+    await p.focus('#ovl-livelli [data-liv="chat"]');
+    await p.keyboard.down('Alt'); await p.keyboard.press('ArrowDown'); await p.keyboard.up('Alt');
+    await p.waitForTimeout(200);
+    const tasto = await vis();
+    if (tasto.indexOf('chat') !== i1 - 1) livelli.push(`Alt+↓ porta la chat a ${tasto.indexOf('chat')} invece che a ${i1 - 1}`);
+    await p.evaluate(() => deseleziona());
+    await p.keyboard.down('Control'); await p.keyboard.press('z'); await p.keyboard.up('Control');
+    await p.keyboard.down('Control'); await p.keyboard.press('z'); await p.keyboard.up('Control');
+    await p.waitForTimeout(250);
+    const annullato = await vis();
+    if (JSON.stringify(annullato) !== JSON.stringify(prima)) livelli.push('due volte Ctrl+Z non riportano l\'ordine di prima');
+    const alzato = await p.evaluate(() => {
+      const k = _ordineScena().filter((x) => _inOverlay(x))[0];
+      seleziona(k);
+      const z = _nodo(k).style.zIndex, cs = getComputedStyle(_nodo(k)).zIndex;
+      deseleziona();
+      return z === String(_ordineScena().indexOf(k) + 1) && cs === z ? '' : `scelto, ${k} passa a ${cs}`;
+    });
+    if (alzato) livelli.push(alzato);
+  }
+}
+
 // Le maniglie di un elemento devono essere raggiungibili col mouse. Quella di
 // rotazione sporge 78 px SOPRA l'elemento: per chi sta in cima alla tela (un
 // obiettivo al 3%) finiva 7 px fuori dal riquadro, tagliata. E per l'alert era
-// dentro ma un altro elemento le stava sopra e si prendeva il clic.
+// dentro ma un altro elemento le stava sopra e si prendeva il clic. Ora stanno
+// nel riquadro di selezione, sopra a tutti i livelli: si prendono qualunque sia
+// l'ordine, e scegliere un elemento non lo porta piu' davanti.
 const manigliePerse = await p.evaluate(async () => {
   const fuori = [];
   for (const e of ELEMENTI()) {
     if (!_inOverlay(e.k)) continue;
     seleziona(e.k);
     await new Promise((r) => setTimeout(r, 110));
-    const n = _nodo(e.k);
     const tela = document.getElementById('ovl-preview').getBoundingClientRect();
-    for (const h of n.querySelectorAll('.ap-handle')) {
+    for (const h of document.querySelectorAll('#ap-riquadro [data-lato]')) {
       const b = h.getBoundingClientRect();
       if (!b.width) continue;
       const cx = b.left + b.width / 2, cy = b.top + b.height / 2;
       const dentro = cx >= tela.left && cx <= tela.right && cy >= tela.top && cy <= tela.bottom;
       const sopra = document.elementFromPoint(cx, cy);
       const suo = sopra === h || (sopra && h.contains(sopra));
-      if (!dentro) fuori.push(`${e.k}/${h.className.replace('ap-handle ', '')}: fuori dalla tela`);
-      else if (!suo) fuori.push(`${e.k}/${h.className.replace('ap-handle ', '')}: il clic lo prende ${sopra ? (sopra.className || sopra.tagName) : 'niente'}`);
+      if (!dentro) fuori.push(`${e.k}/${h.dataset.lato}: fuori dalla tela`);
+      else if (!suo) fuori.push(`${e.k}/${h.dataset.lato}: il clic lo prende ${sopra ? (sopra.className || sopra.tagName) : 'niente'}`);
     }
   }
   return fuori;
@@ -720,6 +774,7 @@ verde = dice(doppioni.length === 0, 'una proprietà ha un valore solo: cursore e
 verde = dice(scordati.length === 0, 'l’annulla riporta indietro qualunque elemento', scordati.join(' · ')) && verde;
 verde = dice(discordi.length === 0, 'livelli, proprietà e piede dicono lo stesso posto', discordi.join(' · ')) && verde;
 verde = dice(manigliePerse.length === 0, 'ogni maniglia è dentro la tela e prende il clic', manigliePerse.join(' · ')) && verde;
+verde = dice(livelli.length === 0, 'i livelli si riordinano trascinando la riga, da tastiera e con l\'annulla, e scegliere un elemento non lo porta davanti', livelli.join(' · ')) && verde;
 verde = dice(trapelati.length === 0, 'ogni overlay ha il suo layout: spostare qui non muove gli altri', trapelati.join(' · ')) && verde;
 verde = dice(storiaMista.length === 0, 'e il suo annulla, che non scavalca gli altri overlay', storiaMista.join(' · ')) && verde;
 verde = dice(marce.length === 0, 'le marce del trascinamento: fine, dritto, niente aggancio, rotella sicura', marce.join(' · ')) && verde;

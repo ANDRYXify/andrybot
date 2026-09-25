@@ -34,19 +34,24 @@ export function occasioneAttiva(ov) {
 export function conOccasione(ov, mostraBase) {
   const mostra = ov?.mostra || mostraBase || {};
   const xy = ov?.xy || {};
+  const ordine = Array.isArray(ov?.ordine) ? ov.ordine : [];
   const oc = occasioneAttiva(ov);
-  if (!oc) return { mostra, xy, occasione: null };
+  if (!oc) return { mostra, xy, ordine, occasione: null };
   const q = (x) => (x && typeof x === 'object' ? x : {});
   return {
     mostra: { ...mostra, ...q(oc.mostra) },
     xy: { ...xy, ...q(oc.xy) },
+    // L'ordine non e' sparso come le altre differenze: un ordine a meta' non
+    // dice dove stanno gli altri. O l'occasione ha il suo, o vale quello della
+    // base.
+    ordine: Array.isArray(oc.ordine) && oc.ordine.length ? oc.ordine : ordine,
     occasione: { id: oc.id, nome: oc.nome },
   };
 }
 
 // Ripulisce l'elenco. `pulisciMostra` e `pulisciXy` sanno quali chiavi sono
 // valide: le passa chi le conosce.
-export function normOccasioni(lista, { pulisciMostra, pulisciXy } = {}) {
+export function normOccasioni(lista, { pulisciMostra, pulisciXy, pulisciOrdine } = {}) {
   const arr = Array.isArray(lista) ? lista : [];
   const visti = new Set();
   let accesa = false;
@@ -63,6 +68,7 @@ export function normOccasioni(lista, { pulisciMostra, pulisciXy } = {}) {
       attiva,
       mostra: typeof pulisciMostra === 'function' ? pulisciMostra(o?.mostra) : {},
       xy: typeof pulisciXy === 'function' ? pulisciXy(o?.xy) : {},
+      ordine: typeof pulisciOrdine === 'function' ? pulisciOrdine(o?.ordine) : [],
     });
   }
   return out;

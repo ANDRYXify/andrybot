@@ -1914,3 +1914,78 @@ tutto schermo la tela vuota e' lui: un clic la' lo sceglie. Scelto, non sale
 sopra gli altri come fa un elemento scelto. Un'area grande quanto la tela non
 ha dove andare di lato: per spostarla la si stringe prima, e il cancello dello
 Studio fa lo stesso invece di chiederle lo spostamento impossibile.
+
+## L'ordine dei livelli
+
+Chiesto così: «nell'overlay studio non posso trascinare sulla barra a sinistra
+per deciderne il livello (in primo piano o dietro)».
+
+### Il modello
+
+Ogni overlay ha un **ordine**: l'elenco delle chiavi degli elementi, dal fondo
+al primo piano (`ordine`). Vale come le posizioni: è dell'overlay, e
+un'occasione accesa può avere il suo, che allora vale al posto di quello della
+base (un'occasione che non l'ha tocca solo quello che nomina, e l'ordine resta
+quello della base).
+
+**Di serie è l'ordine che la diretta ha oggi**, letto dai livelli che le
+pagine già avevano, così aprendo lo Studio niente cambia posto:
+
+    muro · effetti · sfida a tempo · nome del comando · testo a schermo · chat ·
+    ultimo follower · ultimo sub · obiettivi · cartelli · player · conto alla
+    rovescia · hype train · classifica Bit · boss · alert · contatori
+
+Una sola funzione, `SB_RIQUADRO.ordine(chiavi, salvato)`, dà l'ordine vero, e
+la usano sia la tela sia la pagina dell'overlay. Il punto delicato è
+l'elemento che l'ordine salvato non nomina (un obiettivo creato dopo): deve
+finire allo **stesso posto sulla tela e in onda**, anche se in onda non tutti
+gli elementi sono disegnati. Per questo il suo posto non dipende da chi c'è:
+si mette subito dopo l'ultimo elemento dell'ordine salvato che nell'ordine di
+serie gli sta prima, e a pari posto decide l'ordine di serie e poi la chiave.
+Ordinare un sottoinsieme dà lo stesso risultato che ordinare tutto e poi
+togliere quelli che mancano: la prova lo controlla su tutti i sottoinsiemi.
+
+### Nello Studio
+
+- La tela dà a ogni elemento il livello `1 + posizione` nell'ordine.
+- **Scegliere un elemento non lo porta più davanti.** Lo portava, perché le
+  maniglie di scala e rotazione stavano dentro l'elemento: sotto un altro
+  elemento non si prendevano. Ora stanno nel riquadro di selezione, che sta
+  sopra a tutti gli elementi: le maniglie si prendono sempre, e la tela mostra
+  il vero ordine anche mentre lavori. Trascinando un livello nell'elenco lo
+  vedi andare davanti o dietro mentre lo muovi.
+- L'elenco dei livelli è in ordine di livello, **in cima il primo piano**,
+  come in OBS. Si riordina trascinando dalla presa a sinistra di ogni riga;
+  da tastiera, su una riga, `Alt+↑` e `Alt+↓`; sulla tela, con un elemento
+  scelto, `Ctrl+]` e `Ctrl+[` (con `Maiusc`, fino in cima o in fondo).
+- L'ordine entra nella storia: `Ctrl+Z` lo riporta com'era.
+
+### In onda
+
+Un livello si confronta solo con i fratelli del suo stesso strato. Gli angoli
+(`.wbox`) erano `position: fixed` con `z-index: 7`: uno strato ciascuno, e un
+obiettivo in un angolo non poteva stare fra la chat e l'alert, qualunque
+numero avesse. Ora gli angoli sono `position: absolute` senza livello, quindi
+non fanno strato, e ogni elemento prende il suo livello sullo strato della
+pagina. Gli elementi hanno già il loro strato interno (`isolation: isolate`),
+quindi le loro cornici disegnate con `z-index: -1` restano dove erano.
+
+Ogni radice di elemento porta la sua chiave in `data-el` (i contenitori nella
+pagina, gli altri quando si posano), e a ogni posa la pagina ridà i livelli
+con la stessa funzione della tela.
+
+### Due difetti che il cancello ha trovato provando l'ordine
+
+- **Maniglie una sopra l'altra.** Sugli elementi bassi (la chat di una riga,
+  l'ultimo follower, un contatore) la maniglia del bordo in alto e quella del
+  bordo in basso si sovrapponevano, e la prima non si prendeva mai. Ora le due
+  di ogni asse si allontanano quanto basta: i loro centri distano sempre
+  almeno 40 px (`MANIGLIA_SPAZIO`) su maniglie da 34, e la rotazione sale
+  dello stesso tanto.
+- **Lo spento della tela e quello del pannello.** Lo Studio segnava un elemento
+  spento con la classe `spento`, che nel pannello e' il pallino di stato (7 px,
+  tondo, colorato): ogni elemento spento ne prendeva il bordo tondo, lo sfondo
+  e l'altezza. Ai bordi il clic cadeva fuori dall'ellisse, e il muro, spento e
+  grande quanto la tela, ci avrebbe disegnato sotto un'ellisse colorata. La
+  classe della tela ora si chiama `el-spento`, e una prova controlla che
+  nessun altro foglio usi quel nome.

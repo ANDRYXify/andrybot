@@ -8994,6 +8994,8 @@ function pannelloAlert() {
       <div class="ovl-inspector" id="ovl-inspector" hidden>
         <div class="ovl-insp-testa"><span class="ovl-insp-nome" id="insp-nome">${L('Elemento', 'Element', 'Elemento')}</span>
           <button type="button" class="ovl-insp-reset" id="insp-blocca" title="${L('Un livello bloccato non si sposta, non si ridimensiona e non si ruota per sbaglio', 'A locked layer won’t move, resize or rotate by accident', 'Una capa bloqueada no se mueve, no se redimensiona ni gira por error')}">${L('Blocca', 'Lock', 'Bloquear')}</button>
+          <button type="button" class="ovl-insp-reset" id="insp-dietro" title="${L('Manda dietro di un livello', 'Send back one layer', 'Llevar detrás una capa')}${traTasti(scorciatoia('alt', '↓'))}">${L('Dietro', 'Back', 'Detrás')}</button>
+          <button type="button" class="ovl-insp-reset" id="insp-davanti" title="${L('Porta davanti di un livello', 'Bring forward one layer', 'Traer delante una capa')}${traTasti(scorciatoia('alt', '↑'))}">${L('Davanti', 'Forward', 'Delante')}</button>
           <button type="button" class="ovl-insp-reset" id="insp-reset" title="${L('Ripristina posizione, dimensione e rotazione', 'Reset position, size and rotation', 'Restablecer posición, tamaño y rotación')}">${L('Ripristina', 'Reset', 'Restablecer')}</button></div>
         <div class="ovl-insp-num">
           <label>X <input type="number" id="insp-x" step="0.1" min="0" max="100"><i>%</i></label>
@@ -10009,7 +10011,6 @@ function aggiornaAnteprima() {
     apChat.className = 'ap-el ap-chat' + (/destra/.test(chatPos) ? ' destra' : '') + (selezione === 'chat' ? ' sel' : '');
     apChat.style.maxWidth = Number(cst.larghezza) > 0 ? _arr((Number(cst.larghezza) / 100) * OVL_W) + 'px' : '';
     apChat.innerHTML = _righeChatFinte(cst, _messaggiFinti(window.SB_RIQUADRO.e(_posCorrente('chat') || {})));
-    _iniettaManiglie('chat');
   }
   const nomi = CHAT_FINTA();
   const nf = _vivo ? nomi[_vivoNomi % nomi.length][0] : 'MarioRossi';
@@ -10018,11 +10019,13 @@ function aggiornaAnteprima() {
   _anteprimaWidget('ws', 'ultimoSub', ns);
 
   _sincronizzaScena();
+  const ordine = _ordineScena();
   for (const e of ELEMENTI()) {
     const nodo = _nodo(e.k);
     if (!nodo) continue;
+    nodo.style.zIndex = String(1 + ordine.indexOf(e.k));
     nodo.style.display = _inOverlay(e.k) ? '' : 'none';
-    nodo.classList.toggle('spento', !_elementoAcceso(e.k));
+    nodo.classList.toggle('el-spento', !_elementoAcceso(e.k));
     nodo.classList.toggle('bloccato', _bloccato(e.k));
     const st = _posCorrente(e.k);
     if (st) _posElemento(nodo, st);
@@ -10171,7 +10174,6 @@ function _scatolaNaturale(box) {
   const clone = box.cloneNode(true);
   clone.removeAttribute('id');
   clone.classList.remove('sel');
-  clone.querySelectorAll('.ap-handle').forEach((h) => h.remove());
   clone.style.cssText += ';position:absolute;left:0;top:0;width:max-content;height:auto;max-width:none;visibility:hidden;pointer-events:none';
   (box.parentElement || document.body).appendChild(clone);
   const w = clone.offsetWidth / fs, h = clone.offsetHeight / fs;
@@ -10649,13 +10651,8 @@ const NOME_ANG = () => ({
 });
 
 const RUOTA_SU = 78;
+const MANIGLIA_SPAZIO = 40;
 const SCALA_SPAZIO = 94;
-
-function _maniglieAPosto(el, sf, topVisivo) {
-  el.querySelectorAll('.ap-handle').forEach((h) => { h.style.transform = sf === 1 ? 'none' : `scale(${1 / sf})`; });
-  el.querySelector('.ap-h-ruota')?.classList.toggle('sotto', topVisivo < RUOTA_SU);
-  el.classList.toggle('stretto', el.offsetWidth * sf < SCALA_SPAZIO || el.offsetHeight * sf < SCALA_SPAZIO);
-}
 
 function _posAncora(el, ang) {
   const a = ANCORA[ang] || ANCORA['basso-destra'];
@@ -10666,8 +10663,6 @@ function _posAncora(el, ang) {
   el.style.top = a.y <= 50 ? a.y + '%' : 'auto';
   el.style.bottom = a.y > 50 ? 100 - a.y + '%' : 'auto';
   el.style.transform = cx || cy ? `translate(${cx ? '-50%' : '0'},${cy ? '-50%' : '0'})` : 'none';
-  const h = el.offsetHeight;
-  _maniglieAPosto(el, 1, centroDa(a.y, h, OVL_H) - h / 2);
 }
 
 function _centroTela(k) {
@@ -10700,8 +10695,7 @@ function _posElemento(el, xy) {
     const chat = el.classList.contains('ap-chat');
     const area = chat || el.id === 'ap-muro';
     window.SB_RIQUADRO.posa(el, xy, { tela: { w: OVL_W, h: OVL_H }, chat: area, dentro: area || el.classList.contains('alert-card') ? null : el.firstElementChild });
-    if (chat) { el.innerHTML = _righeChatFinte(_leggiChatStile(), _messaggiFinti(true)); _iniettaManiglie('chat'); window.SB_RIQUADRO.ritaglia(el); }
-    _maniglieAPosto(el, 1, 0);
+    if (chat) { el.innerHTML = _righeChatFinte(_leggiChatStile(), _messaggiFinti(true)); window.SB_RIQUADRO.ritaglia(el); }
     if (selezione && el.id === _idEl(selezione)) _disegnaRiquadro();
     return;
   }
@@ -10712,9 +10706,6 @@ function _posElemento(el, xy) {
   el.style.position = 'absolute'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
   el.style.right = 'auto'; el.style.bottom = 'auto';
   el.style.transform = `translate(${_tiraXY(xy.x, sf)}%,${_tiraXY(xy.y, sf)}%) scale(${sf}) rotate(${r}deg)`;
-
-  const h = el.offsetHeight * sf;
-  _maniglieAPosto(el, sf, centroDa(xy.y, h, OVL_H) - h / 2);
   if (selezione && el.id === _idEl(selezione)) _disegnaRiquadro();
 }
 
@@ -10808,6 +10799,9 @@ function aggiornaInspector() {
   const nome = _g('insp-nome'); if (nome) nome.textContent = _nomeEl(selezione);
   const luc = _g('insp-blocca');
   if (luc) { const b = _bloccato(selezione); luc.textContent = b ? L('Sblocca', 'Unlock', 'Desbloquear') : L('Blocca', 'Lock', 'Bloquear'); luc.classList.toggle('chiuso', b); }
+  const avanti = _g('insp-davanti'), indietro = _g('insp-dietro');
+  if (avanti) avanti.disabled = !_passoLivello(selezione, 1);
+  if (indietro) indietro.disabled = !_passoLivello(selezione, -1);
   _altrove(box);
   _mostraProp();
 }
@@ -11210,6 +11204,40 @@ function _ovAttuale() { return overlays.find((o) => o.id === overlaySel) || over
 function _baseXY() { const o = _ovAttuale(); if (!o) return {}; return (o.xy = o.xy || {}); }
 function _ovXY() { const oc = _occAttuale(); if (!oc) return _baseXY(); return (oc.xy = oc.xy || {}); }
 function _vedoXY() { const oc = _occAttuale(); return oc ? { ..._baseXY(), ...(oc.xy || {}) } : _baseXY(); }
+function _baseOrdine() { const o = _ovAttuale(); return o && Array.isArray(o.ordine) ? o.ordine : []; }
+function _ordineProprio() { const oc = _occAttuale(); return oc ? (Array.isArray(oc.ordine) ? oc.ordine : []) : _baseOrdine(); }
+function _vedoOrdine() { const oc = _occAttuale(); return oc && Array.isArray(oc.ordine) && oc.ordine.length ? oc.ordine : _baseOrdine(); }
+function _ordineScena() { return window.SB_RIQUADRO.ordine(ELEMENTI().map((e) => e.k), _vedoOrdine()); }
+function _scriviOrdine(lista) {
+  const oc = _occAttuale();
+  if (oc) oc.ordine = lista;
+  else { const o = _ovAttuale(); if (o) o.ordine = lista; }
+}
+function _mostraOrdine(ord) {
+  for (const k of ord) { const n = _nodo(k); if (n) n.style.zIndex = String(1 + ord.indexOf(k)); }
+}
+function _mettiOrdine(ord) {
+  if (JSON.stringify(ord) === JSON.stringify(_ordineScena())) { _mostraOrdine(ord); return; }
+  _scriviOrdine(ord);
+  aggiornaAnteprima();
+  _rendiLivelli();
+  aggiornaInspector();
+  _ricorda();
+  salvaLayoutOverlay(true);
+}
+function _passoLivello(k, verso) {
+  const ord = _ordineScena();
+  if (!ord.includes(k)) return null;
+  const vis = ord.filter((x) => x === k || _inOverlay(x));
+  const i = vis.indexOf(k);
+  const altro = verso === 'cima' ? vis[vis.length - 1] : verso === 'fondo' ? vis[0] : vis[i + verso];
+  if (!altro || altro === k) return null;
+  ord.splice(ord.indexOf(k), 1);
+  const p = ord.indexOf(altro);
+  ord.splice(verso === 'cima' || verso > 0 ? p + 1 : p, 0, k);
+  return ord;
+}
+function _spostaLivello(k, verso) { const ord = _passoLivello(k, verso); if (ord) _mettiOrdine(ord); }
 
 function _semePos(k) {
   const e = ELEM(k);
@@ -11331,7 +11359,8 @@ function _disegnaRiquadro() {
     box = document.createElement('div');
     box.id = 'ap-riquadro';
     box.innerHTML = ['n', 'e', 's', 'o', 'no', 'ne', 'so', 'se'].map((l) => `<i class="ap-rq-m ap-rq-${l}" data-lato="${l}"></i>`).join('')
-      + '<i class="ap-rq-ruota" data-lato="ruota">⟳</i>';
+      + '<i class="ap-rq-ruota" data-lato="ruota" title="' + L('Trascina per ruotare', 'Drag to rotate', 'Arrastra para rotar') + '">⟳</i>'
+      + '<i class="ap-rq-scala" data-lato="scala" title="' + L('Trascina per ridimensionare', 'Drag to resize', 'Arrastra para redimensionar') + '">⤡</i>';
     stage.appendChild(box);
     box.addEventListener('pointerdown', (e) => {
       const m = e.target.closest('[data-lato]');
@@ -11344,6 +11373,11 @@ function _disegnaRiquadro() {
   box.style.left = rett.x + '%'; box.style.top = rett.y + '%';
   box.style.width = rett.w + '%'; box.style.height = rett.h + '%';
   box.style.transform = rett.r ? `rotate(${rett.r}deg)` : '';
+  const altoPx = (rett.h / 100) * OVL_H, largoPx = (rett.w / 100) * OVL_W;
+  box.style.setProperty('--sp-v', Math.max(0, (MANIGLIA_SPAZIO - altoPx) / 2) + 'px');
+  box.style.setProperty('--sp-h', Math.max(0, (MANIGLIA_SPAZIO - largoPx) / 2) + 'px');
+  box.classList.toggle('ruota-sotto', (rett.y / 100) * OVL_H < RUOTA_SU);
+  box.classList.toggle('stretto', (rett.w / 100) * OVL_W < SCALA_SPAZIO || (rett.h / 100) * OVL_H < SCALA_SPAZIO);
   _disegnaParti();
 }
 
@@ -11376,7 +11410,7 @@ function _dragRiquadro(lato, e) {
   if (!k || _bloccato(k)) return;
   const el = _nodo(k);
   if (!el) return;
-  if (lato === 'ruota') { _dragManiglia(k, e, 'ruota'); return; }
+  if (lato === 'ruota' || lato === 'scala') { _dragManiglia(k, e, lato); return; }
   const canvas = _g('ovl-preview').getBoundingClientRect();
   const scala = canvas.width / OVL_W;
   let st = _statoXY(k);
@@ -11509,13 +11543,15 @@ function _rendiLivelli() {
   const tutti = ELEMENTI();
   const oc = _occAttuale();
   const toltaQui = (k) => !!oc && (oc.mostra || {})[k] === false;
-  const qui = tutti.filter((l) => _inOverlay(l.k) || toltaQui(l.k));
+  const ordine = _ordineScena();
+  const qui = tutti.filter((l) => _inOverlay(l.k) || toltaQui(l.k)).sort((a, b) => ordine.indexOf(b.k) - ordine.indexOf(a.k));
   const fuori = tutti.filter((l) => !_inOverlay(l.k) && !toltaQui(l.k));
   const righe = qui.map((l) => {
     const dentro = _inOverlay(l.k);
     const spento = dentro && !_elementoAcceso(l.k);
     const st = _posDove(l.k);
     return `<button type="button" class="ovl-liv${selezione === l.k ? ' scelto' : ''}${dentro ? '' : ' via'}" data-liv="${l.k}">
+      <span class="ovl-liv-presa" data-presa="${l.k}" title="${L('Trascina per portarlo davanti o dietro', 'Drag to bring it forward or send it back', 'Arrastra para traerlo delante o llevarlo detrás')}${traTasti(scorciatoia('alt', '↑') + ', ' + scorciatoia('alt', '↓'))}">${_bIco(PRESA_ICO)}</span>
       <span class="ovl-liv-ico">${_bIco(l.ico)}</span>
       <span class="ovl-liv-corpo"><strong>${esc(l.n)}</strong><span>${dentro
         ? _testoPos(st)
@@ -11534,6 +11570,61 @@ function _rendiLivelli() {
     <div class="ovl-agg" id="ovl-agg" hidden>${_htmlAggiungi(fuori)}</div>`;
   requestAnimationFrame(() => _ripassaPosizioni(null));
   _seguiMisure();
+}
+
+const PRESA_ICO = '<circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/>';
+
+let _livelloMosso = false;
+function _trascinaLivello(riga, presa, e) {
+  const righe = [...riga.parentElement.querySelectorAll(':scope > .ovl-liv')];
+  const i0 = righe.indexOf(riga);
+  if (i0 < 0) return;
+  const k = riga.dataset.liv;
+  const rett = righe.map((r) => r.getBoundingClientRect());
+  const passo = righe.length > 1 ? rett[1].top - rett[0].top : rett[i0].height;
+  const y0 = e.clientY;
+  let dest = i0, mosso = false;
+  try { presa.setPointerCapture(e.pointerId); } catch (err) {  }
+  riga.classList.add('trascinata');
+  const ordineCon = (d) => {
+    const lista = righe.map((r) => r.dataset.liv).filter((x) => x !== k);
+    lista.splice(d, 0, k);
+    const ord = _ordineScena().filter((x) => x !== k);
+    const sotto = lista[d + 1], sopra = lista[d - 1];
+    if (sotto != null) ord.splice(ord.indexOf(sotto) + 1, 0, k);
+    else if (sopra != null) ord.splice(ord.indexOf(sopra), 0, k);
+    else ord.push(k);
+    return ord;
+  };
+  const muovi = (ev) => {
+    const dy = ev.clientY - y0;
+    if (!mosso && Math.abs(dy) < 4) return;
+    mosso = true;
+    riga.style.transform = `translateY(${dy}px)`;
+    const centro = rett[i0].top + rett[i0].height / 2 + dy;
+    dest = righe.reduce((n, r, j) => (j !== i0 && rett[j].top + rett[j].height / 2 < centro ? n + 1 : n), 0);
+    righe.forEach((r, j) => {
+      if (j === i0) return;
+      const sh = j > i0 && j <= dest ? -passo : j < i0 && j >= dest ? passo : 0;
+      r.style.transform = sh ? `translateY(${sh}px)` : '';
+    });
+    _mostraOrdine(ordineCon(dest));
+  };
+  const fine = () => {
+    presa.removeEventListener('pointermove', muovi);
+    presa.removeEventListener('pointerup', fine);
+    presa.removeEventListener('pointercancel', fine);
+    righe.forEach((r) => { r.style.transform = ''; });
+    riga.classList.remove('trascinata');
+    if (!mosso) return;
+    _livelloMosso = true;
+    setTimeout(() => { _livelloMosso = false; }, 0);
+    _mettiOrdine(ordineCon(dest));
+    _g('ovl-livelli')?.querySelector(`[data-liv="${CSS.escape(k)}"]`)?.focus();
+  };
+  presa.addEventListener('pointermove', muovi);
+  presa.addEventListener('pointerup', fine);
+  presa.addEventListener('pointercancel', fine);
 }
 
 function _htmlAggiungi(fuori) {
@@ -11964,7 +12055,14 @@ function collegaEditorOvl() {
   if (!scheda || scheda.dataset.editor) return;
   scheda.dataset.editor = '1';
 
+  _g('ovl-livelli')?.addEventListener('pointerdown', (e) => {
+    const presa = e.target.closest('[data-presa]');
+    if (!presa || (e.button != null && e.button !== 0)) return;
+    e.preventDefault();
+    _trascinaLivello(presa.closest('[data-liv]'), presa, e);
+  });
   _g('ovl-livelli')?.addEventListener('click', (e) => {
+    if (_livelloMosso) { e.stopPropagation(); return; }
     const agg = e.target.closest('#ovl-liv-aggiungi');
     if (agg) {
       e.stopPropagation();
@@ -12079,6 +12177,19 @@ function collegaEditorOvl() {
     if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); return e.shiftKey ? ripetiOvl() : annullaOvl(); }
     if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); return ripetiOvl(); }
     if (e.key === 'Escape') { if (!_inTrascinamento) deseleziona(); return; }
+    const riga = e.target?.closest?.('#ovl-livelli [data-liv]');
+    const quale = riga ? riga.dataset.liv : selezione;
+    if (quale && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault();
+      _spostaLivello(quale, e.shiftKey ? (e.key === 'ArrowUp' ? 'cima' : 'fondo') : (e.key === 'ArrowUp' ? 1 : -1));
+      if (riga) _g('ovl-livelli')?.querySelector(`[data-liv="${CSS.escape(quale)}"]`)?.focus();
+      return;
+    }
+    if (selezione && mod && (e.code === 'BracketRight' || e.code === 'BracketLeft')) {
+      e.preventDefault();
+      const avanti = e.code === 'BracketRight';
+      return _spostaLivello(selezione, e.shiftKey ? (avanti ? 'cima' : 'fondo') : (avanti ? 1 : -1));
+    }
     if (!selezione) return;
     const passi = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
     if (passi) { e.preventDefault(); return _spostaTasti(selezione, passi[0], passi[1], e.shiftKey); }
@@ -12093,18 +12204,6 @@ let _timerPos = null;
 function _salvaPosDebounced(chiave) {
   clearTimeout(_timerPos);
   _timerPos = setTimeout(() => _salvaPos(chiave), 500);
-}
-
-function _iniettaManiglie(chiave) {
-  const el = _nodo(chiave);
-  if (!el || el.querySelector('.ap-handle')) return;
-  const hR = document.createElement('div');
-  hR.className = 'ap-handle ap-h-scala'; hR.title = L('Trascina per ridimensionare', 'Drag to resize', 'Arrastra para redimensionar'); hR.textContent = '⤡';
-  const hRot = document.createElement('div');
-  hRot.className = 'ap-handle ap-h-ruota'; hRot.title = L('Trascina per ruotare', 'Drag to rotate', 'Arrastra para rotar'); hRot.textContent = '⟳';
-  el.appendChild(hR); el.appendChild(hRot);
-  hR.addEventListener('pointerdown', (e) => _dragManiglia(chiave, e, 'scala'));
-  hRot.addEventListener('pointerdown', (e) => _dragManiglia(chiave, e, 'ruota'));
 }
 
 function _dragManiglia(chiave, e, tipo) {
@@ -12164,7 +12263,7 @@ function _sessione() {
 function _istantanea() {
   const pos = {}, acceso = {};
   for (const e of ELEMENTI()) { pos[e.k] = _posCorrente(e.k) || null; acceso[e.k] = _accesoDi(e.k); }
-  return JSON.stringify({ pos, acceso, mostra: _mostraOra(), parti: ELEM('musica') ? _cfgEl('musica').parti || null : null });
+  return JSON.stringify({ pos, acceso, mostra: _mostraOra(), ordine: _ordineProprio(), parti: ELEM('musica') ? _cfgEl('musica').parti || null : null });
 }
 let _ultimoRicordo = 0, _ultimaFusione = '';
 function _ricorda(fusione) {
@@ -12194,6 +12293,7 @@ function _applicaIstantanea(foto) {
       if (d.mostra && e.k in d.mostra) _accendiQui(e.k, d.mostra[e.k] !== false);
     }
     for (const [id] of CHAT_DA) _accendiQui('chat:' + id, !(d.mostra && d.mostra['chat:' + id] === false));
+    _scriviOrdine(Array.isArray(d.ordine) ? d.ordine : []);
     _rendiQualiChat();
     if (d.parti && ELEM('musica') && JSON.stringify(_cfgEl('musica').parti) !== JSON.stringify(d.parti)) { _cfgEl('musica').parti = d.parti; salvaCfgElemento('musica'); }
     disegnaGoal();
@@ -12311,10 +12411,8 @@ function rendiTrascinabile(el, chiave) {
   el.style.cursor = 'grab';
   const [tMod, tMaiusc, tAlt] = [scorciatoia('mod'), scorciatoia('maiusc'), scorciatoia('alt')];
   el.title = L(`Clic per selezionare · trascina per spostare (${tMod} = fine, ${tMaiusc} = dritto, ${tAlt} = niente aggancio) · doppio clic per ripristinare`, `Click to select · drag to move (${tMod} = fine, ${tMaiusc} = straight, ${tAlt} = no snapping) · double click to reset`, `Clic para seleccionar · arrastra para mover (${tMod} = fino, ${tMaiusc} = recto, ${tAlt} = sin ajuste) · doble clic para restablecer`);
-  _iniettaManiglie(chiave);
   el.addEventListener('pointerdown', (e) => {
     if (e.button != null && e.button !== 0) return;
-    if (e.target?.classList?.contains('ap-handle')) return;
     e.preventDefault();
     if (chiave === 'musica' && selezione === 'musica' && !_bloccato(chiave) && _cfgEl('musica').verso === 'libera') {
       const parte = _parteDi(e.target);
@@ -12806,7 +12904,7 @@ function caricaOverlaySel() {
 
 function _overlaysPayload() {
 
-  return overlays.map((o) => ({ id: o.id, nome: o.nome, mostra: o.mostra, xy: o.xy, css: o.css || '', stile: o.stile || null, blocchi: o.blocchi || {}, occasioni: o.occasioni || [] }));
+  return overlays.map((o) => ({ id: o.id, nome: o.nome, mostra: o.mostra, xy: o.xy, ordine: o.ordine || [], css: o.css || '', stile: o.stile || null, blocchi: o.blocchi || {}, occasioni: o.occasioni || [] }));
 }
 
 let _avvisoSalvataggio = 0;
@@ -12980,6 +13078,8 @@ function caricaAlert() {
   });
 
   _g('insp-blocca')?.addEventListener('click', () => { if (selezione) _blocca(selezione, !_bloccato(selezione)); });
+  _g('insp-davanti')?.addEventListener('click', (e) => { if (selezione) _spostaLivello(selezione, e.shiftKey ? 'cima' : 1); });
+  _g('insp-dietro')?.addEventListener('click', (e) => { if (selezione) _spostaLivello(selezione, e.shiftKey ? 'fondo' : -1); });
   _g('insp-reset')?.addEventListener('click', () => {
     if (!selezione) return;
     const k = selezione; _azzeraPos(k); aggiornaAnteprima(); aggiornaInspector(); _salvaPos(k);

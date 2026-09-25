@@ -1492,13 +1492,18 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
   display: flex; align-items: center; gap: .5rem; width: 100%; text-align: left;
   padding: .4rem .45rem; border-radius: var(--r-s); border: 1px solid transparent;
   background: transparent; color: var(--testo); font: inherit; cursor: pointer;
-  transition: background .18s ease, border-color .18s ease;
+  transition: background .18s ease, border-color .18s ease, transform .16s ease;
 }
 @media (hover: hover) {
 .ovl-liv:hover { background: var(--surface-3); }
 }
 .ovl-liv.scelto { background: var(--acc-soft); border-color: var(--acc-bordo); }
 .ovl-liv.via { opacity: .5; }
+.ovl-liv-presa { flex: 0 0 auto; display: grid; place-items: center; margin: -.2rem -.15rem -.2rem -.2rem; padding: .2rem .05rem; border-radius: 5px; color: var(--testo-3); cursor: grab; touch-action: none; }
+@media (hover: hover) { .ovl-liv-presa:hover { color: var(--testo); background: var(--surface-3); } }
+.ovl-liv.trascinata { position: relative; z-index: 2; transition: none; background: var(--surface); border-color: var(--acc-bordo); box-shadow: var(--ombra-ink-timbro); cursor: grabbing; }
+.ovl-liv.trascinata .ovl-liv-presa { cursor: grabbing; color: var(--acc); }
+@media (prefers-reduced-motion: reduce) { .ovl-liv { transition: none; } }
 .ovl-liv-ico { flex: 0 0 auto; color: var(--testo-3); display: grid; place-items: center; }
 .ovl-liv.scelto .ovl-liv-ico { color: var(--acc); }
 .ovl-liv-corpo { min-width: 0; display: grid; }
@@ -1589,7 +1594,7 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
   font-size: .62rem; font-style: normal; color: rgba(255, 255, 255, .5);
 }
 
-.ap-guida { position: absolute; z-index: 40; pointer-events: none; background: var(--acc); opacity: .9; }
+.ap-guida { position: absolute; z-index: 502; pointer-events: none; background: var(--acc); opacity: .9; }
 .ap-guida-x { top: 0; bottom: 0; width: 1px; margin-left: -.5px; }
 .ap-guida-y { left: 0; right: 0; height: 1px; margin-top: -.5px; }
 .ap-guida.centro { background: #ff3ea5; box-shadow: 0 0 6px rgba(255, 62, 165, .6); }

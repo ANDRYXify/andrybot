@@ -25,6 +25,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-25
 
 - La libreria sfondi delle Grafiche, quando è vuota, lo dice su tutta la riga invece di andare a capo sillaba per sillaba. Lo stesso per gli altri elenchi a griglia vuoti o in caricamento. [vai: grafiche]
+- [importante] Nell'Overlay Studio decidi chi sta davanti e chi dietro trascinando la riga nei livelli, e in diretta l'ordine è lo stesso della tela. Scegliere un elemento non lo porta più in primo piano. [vai: alert]
+- Nello Studio un elemento spento non si porta più dietro una macchia tonda colorata, e si prende col clic in tutta la sua area.
 
 ## 2026-09-24
 

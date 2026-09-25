@@ -100,14 +100,13 @@ test('un livello bloccato non si sposta, e il lucchetto viaggia con l\'overlay',
   assert.ok(/blocchi: _blocchiDiOverlay\(o\?\.blocchi\)/.test(SRV) && /if \(CHIAVE_EL\.test\(k\) && b\[k\] === true\) q\[k\] = true;/.test(SRV), 'il server lo tiene, con le chiavi degli elementi');
   assert.ok(/blocchi: o\.blocchi \|\| \{\}, css: o\.css/.test(SRV), 'e lo rimanda al pannello');
   assert.ok(/data-lucchetto="\$\{l\.k\}"/.test(APP) && /id="insp-blocca"/.test(APP), 'si chiude dal livello e dalle proprieta\'');
-  // Le maniglie si vedono solo sull'elemento SCELTO, quindi l'eccezione «qui
-  // non si vedono» deve venire DOPO la regola che le accende: stessa
-  // specificita', vince l'ultima. Scritta prima, era morta da sempre — e un
-  // livello bloccato le mostrava, con dentro il ridimensiona che funzionava.
-  const accende = SKIN.indexOf('.ap-stage .ap-el.sel .ap-handle { display: flex; }');
-  const spegne = SKIN.indexOf('.ap-stage .ap-el.bloccato .ap-handle, .ap-stage .ap-el.nel-riquadro .ap-handle { display: none; }');
-  assert.ok(spegne > 0, 'un livello bloccato non mostra le maniglie');
-  assert.ok(spegne > accende, 'e l\'eccezione viene dopo la regola che le accende, sennò non vale');
+  // Le maniglie stanno nel riquadro di selezione (docs/OVERLAY.md, «L'ordine
+  // dei livelli»). Un livello bloccato non le mostra: la regola che le spegne
+  // e' piu' specifica di quella che le disegna (un id e due classi contro un
+  // id e una classe), quindi vale dovunque stia nel foglio. Prima era una
+  // questione d'ordine, e scritta prima era morta da sempre.
+  assert.ok(SKIN.includes('#ap-riquadro.bloccato .ap-rq-m, #ap-riquadro.bloccato .ap-rq-ruota, #ap-riquadro.bloccato .ap-rq-scala { display: none; }'), 'un livello bloccato non mostra le maniglie');
+  assert.ok(SKIN.includes('#ap-riquadro .ap-rq-ruota, #ap-riquadro .ap-rq-scala { position: absolute;'), 'e le disegna una regola meno specifica');
   assert.match(corpoDi('_dragManiglia'), /if \(_bloccato\(chiave\)\)/, 'e la maniglia stessa si rifiuta, non solo il foglio di stile');
 });
 

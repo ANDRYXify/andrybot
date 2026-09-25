@@ -35,7 +35,7 @@ test('una resa sola, letta da tutte e due le pagine, e dopo il contenuto', () =>
     assert.ok(iR >= 0 && iA > iR, `${pagina}: riquadro.js prima di ${app}`);
   }
   assert.ok(/var k = Math\.min\(\(w \/ 100\) \* t\.w \/ W, \(h \/ 100\) \* t\.h \/ H\);/.test(RQ), 'un fattore solo, il minimo dei due: niente deformazioni');
-  assert.ok(/window\.SB_RIQUADRO = \{ posa: posa, togli: togli, ritaglia: ritaglia, trabocca: trabocca, e: eRiquadro \}/.test(RQ));
+  assert.ok(/window\.SB_RIQUADRO = \{ posa: posa, togli: togli, ritaglia: ritaglia, trabocca: trabocca, e: eRiquadro, ordine: ordine, ORDINE_BASE: ORDINE_BASE \}/.test(RQ));
   assert.ok(/return primo\.offsetTop < -1 \|\| \(ultimo\.offsetTop \+ ultimo\.offsetHeight\) > box\.clientHeight \+ 1;/.test(RQ),
     'il trabocco si misura sulle righe, non su scrollHeight: quel che sta sopra il bordo scrollHeight non lo vede');
   const dopo = (fn, prima, poi) => {
@@ -64,13 +64,13 @@ test('l\'editor: la stessa resa, la conversione senza salti, i bordi che si agga
   assert.ok(/function vivi\(box\)/.test(RQ) && /if \(c\.offsetHeight > 0 \|\| c\.offsetWidth > 0\) out\.push\(c\);/.test(RQ) && /var v = vivi\(box\);\n\s*if \(!v\.length\) return false;\n\s*var primo = v\[0\], ultimo = v\[v\.length - 1\];/.test(RQ), 'trabocco e taglio guardano solo i figli disegnati: sulla tela le maniglie nascoste non sono righe');
   assert.ok(/if \(o\.dentro\) \{ W = Math\.max\(W, o\.dentro\.offsetWidth\); H = Math\.max\(H, o\.dentro\.offsetHeight\); \}/.test(RQ) && !/scrollWidth/.test(RQ), 'la misura e\' almeno quella dell\'elemento dentro l\'involucro, non quella tappata dal riquadro; e non e\' scrollWidth, che conta anche lo sfondo sfocato che sporge');
   assert.ok(/^\.ovl-musica\.riquadro \{ min-width: max-content; \}/m.test(SKIN) && /\.ovl-musica\.riquadro \.m-sotto \{ flex-wrap: wrap; \}/.test(SKIN), 'il player non si stringe sotto il suo minimo, e i tempi vanno a capo invece di tagliarsi');
-  assert.ok(/if \(chat\) \{ el\.innerHTML = _righeChatFinte\(_leggiChatStile\(\), _messaggiFinti\(true\)\); _iniettaManiglie\('chat'\); window\.SB_RIQUADRO\.ritaglia\(el\); \}/.test(APP), 'a ogni posa la chat sulla tela si riscrive e poi si taglia: tirando i bordi le righe escono e tornano');
+  assert.ok(/if \(chat\) \{ el\.innerHTML = _righeChatFinte\(_leggiChatStile\(\), _messaggiFinti\(true\)\); window\.SB_RIQUADRO\.ritaglia\(el\); \}/.test(APP), 'a ogni posa la chat sulla tela si riscrive e poi si taglia: tirando i bordi le righe escono e tornano');
   assert.ok(/if \(!riempi\) return base\.slice\(0, 2\);/.test(APP) && /for \(let i = 0; out\.length < max; i\+\+\) out\.push\(base\[i % base\.length\]\);/.test(APP), 'nel riquadro la chat finta ha quante righe ne mostrerebbe la diretta');
   assert.ok(/box\.className = 'pen-box';/.test(APP) && /^\.pen-box \{ display: flex; flex-direction: column; gap: \.6rem; \}/m.test(SKIN), 'sulla tela la sfida sta in un contenitore come in diretta: la scatola e\' il contenitore, la carta no');
   assert.ok(/const rett = _rettDi\(k\);\n\s*if \(!rett\) return;\n\s*st = \{ x: rett\.x, y: rett\.y, w: rett\.w, h: rett\.h, r: Number\(st\.r\) \|\| 0 \};/.test(APP), 'tirare un bordo di un punto lo fa riquadro dal rettangolo che occupa');
   assert.ok(/for \(let i = 0; i <= 12; i\+\+\) cand\.push\(\{ v: _arr\(i \* 100 \/ 12\)/.test(APP), 'i bordi si agganciano alle dodici caselle della griglia');
   assert.ok(/id="insp-w"/.test(APP) && /id="insp-h"/.test(APP) && /id="insp-riq"/.test(APP), 'larghezza, altezza e la spunta nelle proprieta\'');
   assert.ok(/if \(window\.SB_RIQUADRO\.e\(_posCorrente\(chiave\) \|\| \{\}\)\) \{ _trascinaRiquadro\(chiave, e\); return; \}/.test(APP), 'trascinare un riquadro sposta il riquadro');
-  assert.ok(/#ap-riquadro:not\(\.attivo\) \.ap-rq-no/.test(SKIN) && /\.ap-stage \.ap-el\.nel-riquadro \.ap-handle \{ display: none; \}/.test(SKIN), 'sul punto solo i lati, sul riquadro otto maniglie e niente maniglia di scala');
+  assert.ok(/#ap-riquadro:not\(\.attivo\) \.ap-rq-no/.test(SKIN) && /#ap-riquadro\.attivo \.ap-rq-scala, #ap-riquadro\.stretto \.ap-rq-scala \{ display: none; \}/.test(SKIN), 'sul punto i lati, la scala e la rotazione; sul riquadro otto maniglie, la rotazione e niente maniglia di scala');
   assert.ok(/#chatlive\.riquadro, \.ap-chat\.riquadro \{ justify-content: flex-end; overflow: hidden; \}/.test(SKIN) && /\.riquadro \.chat-riga \{ max-width: 100%; white-space: normal; overflow-wrap: anywhere; \}/.test(SKIN), 'il testo va a capo, la chat non trabocca');
 });

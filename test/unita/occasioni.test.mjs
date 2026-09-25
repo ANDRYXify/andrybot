@@ -90,3 +90,15 @@ test("roba malfatta non fa danni", () => {
   const r = conOccasione({ mostra: { alert: true }, occasioni: [{ id: 'a', attiva: true, mostra: 'no' }] });
   assert.deepEqual(r.mostra, { alert: true });
 });
+
+test("l'ordine dei livelli: un'occasione col suo lo usa intero, senza vale quello della base", () => {
+  const base = { mostra: {}, xy: {}, ordine: ['muro', 'chat', 'alert'] };
+  assert.deepEqual(conOccasione({ ...base, occasioni: [] }).ordine, ['muro', 'chat', 'alert']);
+  assert.deepEqual(conOccasione({ ...base, occasioni: [{ id: 'a', attiva: true, mostra: {}, xy: {}, ordine: [] }] }).ordine, ['muro', 'chat', 'alert'],
+    'un\'occasione che non l\'ha cambiato non lo tocca');
+  assert.deepEqual(conOccasione({ ...base, occasioni: [{ id: 'a', attiva: true, mostra: {}, xy: {}, ordine: ['alert', 'muro', 'chat'] }] }).ordine, ['alert', 'muro', 'chat'],
+    'un ordine a meta\' non direbbe dove stanno gli altri: o tutto il suo, o quello della base');
+  assert.deepEqual(conOccasione({ mostra: {}, xy: {} }).ordine, [], 'un overlay che non l\'ha mai toccato non ha ordine: vale quello di serie');
+  const l = normOccasioni([{ id: 'a', ordine: ['x', 'chat'] }], { pulisciOrdine: (v) => v.filter((k) => k !== 'x') });
+  assert.deepEqual(l[0].ordine, ['chat'], 'le chiavi valide le decide chi conosce la base');
+});

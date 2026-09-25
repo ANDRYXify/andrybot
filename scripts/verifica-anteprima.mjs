@@ -51,6 +51,12 @@ const ROTTURE = [
     'il riquadro torna un perimetro attorno a un elemento scalato, non la sua scatola'],
   ['src/web/public/presets.js', "      const libera = !!cfg && cfg.verso === 'libera';", "      const libera = false;",
     'nella disposizione libera le parti restano ai posti di serie'],
+  ['src/web/public/overlay-app.js', "  for (const n of nodi) n.style.zIndex = String(1 + ordine.indexOf(n.dataset.el));\n", '',
+    'in diretta i livelli tornano nell\'ordine del foglio di stile'],
+  ['src/web/public/overlay-app.js', "window.SB_RIQUADRO.ordine(nodi.map((n) => n.dataset.el), MIO.ordine)", "window.SB_RIQUADRO.ordine(nodi.map((n) => n.dataset.el), [])",
+    'in diretta l\'ordine dei livelli scelto nello Studio non arriva'],
+  ['src/web/public/app.js', "    nodo.style.zIndex = String(1 + ordine.indexOf(e.k));\n", '',
+    'la tela non segue l\'ordine dei livelli'],
 ];
 
 // --selftest prova tutte le rotture; --selftest=<parola> solo quelle la cui
@@ -545,6 +551,68 @@ try {
     const pir = await live.evaluate(() => document.querySelectorAll('#muro .muro-emote').length);
     dice(pir === 28, `muro ${nome}: la piramide di trenta emote ne mette 28, sette gradini (${pir})`, 'la figura non ha tutti i suoi pezzi');
   }
+
+  // --- 6-nonies. l'ordine dei livelli ---------------------------------------
+  // Chat, alert e ultimo follower uno sopra l'altro, col muro sotto a tutti:
+  // in ogni punto dove se ne toccano almeno due, quello che si prende il clic e'
+  // il piu' in alto secondo l'ordine, sulla tela e in onda. In onda i clic si
+  // riaccendono solo per misurare: la pagina non ne prende. L'ultimo follower
+  // in onda vive in un angolo, e deve potersi mettere davanti o in mezzo agli
+  // altri come chiunque (docs/OVERLAY.md, «L'ordine dei livelli»). Ogni lato
+  // si guarda per intero: sulla tela ci sono anche gli elementi che in onda
+  // nessuno ha ancora mosso (un contatore), e contano come gli altri.
+  // Chi sta in un punto lo dice il browser con la stessa prova che decide chi
+  // e' in cima (elementsFromPoint): coi rettangoli, un punto sul bordo o un
+  // figlio che sporge di mezzo pixel era «fuori» per la sonda e «dentro» per
+  // il clic, e la sonda dava torto all'ordine senza che l'ordine sbagliasse.
+  const TRE = { chat: { x: 30, y: 30, w: 30, h: 30, r: 0 }, alert: { x: 34, y: 34, w: 30, h: 22, r: 0 }, wf: { x: 55, y: 50, s: 100, r: 0 } };
+  const SONDA = `({ ordine, tela, chiave }) => {
+    const r0 = tela();
+    const out = [];
+    for (let i = 1; i < 30; i++) for (let j = 1; j < 30; j++) {
+      const x = r0.left + r0.width * (0.25 + 0.5 * i / 30), y = r0.top + r0.height * (0.25 + 0.5 * j / 30);
+      const sotto = [...new Set(document.elementsFromPoint(x, y).map(chiave).filter(Boolean))];
+      if (sotto.length < 2) continue;
+      const atteso = [...window.SB_RIQUADRO.ordine(sotto, ordine)].pop();
+      if (sotto[0] !== atteso) out.push(sotto.join('+') + ': ' + sotto[0] + ' invece di ' + atteso);
+      else out.push('');
+    }
+    return { punti: out.length, sbagli: out.filter(Boolean) };
+  }`;
+  const wfCfg = await ed.evaluate(() => ({ ..._leggiWidget('wf'), attivo: true }));
+  for (const [nome, ordine] of [['di serie', []], ['la chat davanti a tutto', ['muro', 'alert', 'wf', 'chat']], ['l\'ultimo follower, che in onda sta in un angolo, davanti a tutto', ['muro', 'chat', 'alert', 'wf']]]) {
+    const edS = await ed.evaluate(async ({ TRE, ordine, SONDA }) => {
+      deseleziona();
+      const q = _ovXY(); for (const k of Object.keys(q)) delete q[k];
+      Object.assign(q, JSON.parse(JSON.stringify(TRE)));
+      _scriviOrdine(ordine);
+      aggiornaAnteprima();
+      await new Promise((r) => setTimeout(r, 600));
+      const perId = {}; for (const k of ELEMENTI().map((e) => e.k)) perId[_idEl(k)] = k;
+      return (0, eval)('(' + SONDA + ')')({ ordine,
+        tela: () => document.getElementById('ap-stage').getBoundingClientRect(),
+        chiave: (el) => { const n = el && el.closest('.ap-el'); return n ? (perId[n.id] || n.id) : ''; } });
+    }, { TRE, ordine, SONDA });
+    TEMA = { css: '', widget: { ultimoFollower: wfCfg, ultimoSub: { attivo: false } }, goals: [], conti: {}, timer: null, musica: null,
+      stato: { ultimoFollower: 'MarioRossi' }, mostra: MOSTRA, xy: TRE, ordine, alertStile: { icona: false }, chatStile: null };
+    await apriLive(() => document.querySelector('.ovl-widget .w-testo b'));
+    ovl.manda({ tipo: 'chat', user: 'MarioRossi', colore: '#ff4d4d', testo: 'ciao a tutti', max: 8, fadeSec: 0 });
+    ovl.manda({ tipo: 'alert', kind: 'sub', testo: 'Nuovo abbonamento', colore: '#ff4d4d', durata: 30000 });
+    await live.waitForFunction(() => document.querySelector('#chatlive .chat-riga') && document.querySelector('#alert .alert-card.dentro'), null, { timeout: 6000 }).catch(() => {});
+    await attesa(500);
+    const lvS = await live.evaluate(({ ordine, SONDA }) => {
+      const st = document.createElement('style'); st.textContent = '* { pointer-events: auto !important; }'; document.head.appendChild(st);
+      const r = (0, eval)('(' + SONDA + ')')({ ordine,
+        tela: () => ({ left: 0, top: 0, width: window.innerWidth, height: window.innerHeight }),
+        chiave: (el) => { const n = el && el.closest('[data-el]'); return n ? n.dataset.el : ''; } });
+      st.remove();
+      return { ...r, inAngolo: !!document.querySelector('.wbox > [data-el="wf"]') };
+    }, { ordine, SONDA });
+    dice(edS.punti > 40 && lvS.punti > 40 && !edS.sbagli.length && !lvS.sbagli.length && lvS.inAngolo,
+      `ordine dei livelli, ${nome}: davanti c'e' chi deve starci in ${edS.punti} punti sulla tela e ${lvS.punti} in onda${lvS.inAngolo ? ', col follower nel suo angolo' : ''}`,
+      [...edS.sbagli.slice(0, 3).map((x) => 'tela ' + x), ...lvS.sbagli.slice(0, 3).map((x) => 'onda ' + x), lvS.inAngolo ? '' : 'il follower non e\' nel suo angolo'].filter(Boolean).join(' · '));
+  }
+  await ed.evaluate(() => { _scriviOrdine([]); aggiornaAnteprima(); });
 
   // --- 6-ter. i cartelli -----------------------------------------------------
   // Un cartello e' solo quel che ci hai scritto, quindi l'unica cosa che puo'
