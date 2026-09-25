@@ -12,7 +12,12 @@ premi si ripassa a china; quando stai per fare qualcosa di cui potresti
 pentirti, la finestra che te lo chiede è una nuvoletta spigolosa rossa; quello
 che se ne va si disfa con gli stessi tratti con cui si era fatto.
 
-Il codice è uno solo: `src/web/public/disegno.js` (`SB_DISEGNO`), più il blocco
+Il codice sta in due file. `src/web/public/disegno.js` (`SB_DISEGNO`) lo portano
+tutte le pagine, vetrina compresa; `src/web/public/disegno-pannello.js` lo porta
+solo il pannello, subito dopo: il menù, la scena delle sezioni, l'urlo e le
+cornici. Il secondo si aggancia al primo con `SB_DISEGNO.estendi`, e il primo lo
+avvisa quando la pagina cambia senza sapere chi ascolta: così la vetrina non paga
+il peso di quello che non usa (`scripts/verifica-dieta.mjs`). Più il blocco
 `.dg-*` in `anime.css`.
 
 **Tutto quello che compare si disegna, tutto quello che se ne va si disfa. In
@@ -59,8 +64,8 @@ Da lì le scelte:
 
 | cosa succede | cosa si vede |
 | --- | --- |
-| cambi **sezione** (da scena a scena) | ogni vignetta della scheda vecchia si disegna all'indietro, poi la nuova si disegna |
-| cambi **sottosezione** (da azione ad azione, `stessaFamiglia()`) | niente si disfa: la scheda nuova si disegna e basta |
+| cambi **sezione** (da scena a scena) | ogni vignetta della scheda vecchia si disegna all'indietro, testata compresa, poi la nuova si disegna |
+| cambi **sottosezione** (da azione ad azione, `stessaFamiglia()`) | lo stesso: la scheda vecchia si disfa, poi la sorella si disegna |
 | scorri e arriva una carta | la carta si disegna quando entra |
 | un avviso | si disegna veloce, con le scintille o la vena di rabbia; se ne va disegnandosi all'indietro |
 | una finestra, la ricerca, la visita guidata | la loro carta si disegna sopra al velo, e chiudendola si disegna all'indietro |
@@ -79,6 +84,9 @@ Da lì le scelte:
 | un gruppo del menù si apre o si chiude | le sue voci si scoprono o si ricoprono col retino |
 | la barra delle modifiche non salvate arriva o se ne va | si disegna e si disfa dov'è, non scivola |
 | la pagina si carica | i disegni aspettano che la copertina cominci ad andarsene: sotto la copertina non li vedrebbe nessuno |
+| arriva dopo una carta, o una riga col suo contorno (i dati caricati, una riga che aggiungi) | si disegna quando arriva; se arriva fuori schermo, al suo primo pixel |
+| togli una riga (un'azione, una frase, un'offerta, un premio) | si disfa, poi se ne va; chi salva il modulo non la conta già più |
+| la pagina si rifà tutta dopo un gesto (un salvataggio, un altro canale, un'altra lingua) | si disfa tutta, menù e barra in alto compresi, poi si ridisegna |
 | la vetrina | ogni vignetta (un riquadro chiuso) si disegna quando entra nello schermo |
 
 Una carta dura circa 560 ms dall'inizio alla pulizia, ma il contenuto si legge
@@ -132,9 +140,11 @@ possa esistere.
    contenuto sta a 10, sotto la barra in alto, la barra in basso e il menù. Nel
    prototipo il disegno di chi usciva passava sopra al menù che si stava
    chiudendo.
-7. **In ordine di lettura.** Quando una scena si apre, il riquadro «Come
-   funziona» e le carte a schermo si ordinano dall'alto e da sinistra, 70 ms
-   l'una dall'altra. Nel prototipo si disegnava prima la carta in basso e poi il
+7. **In ordine di lettura.** Quando una scena si apre, la testata (il riquadro
+   «Come funziona», la barra delle sorelle, la descrizione, i tasti) e le carte
+   a schermo si ordinano dall'alto e da sinistra, 70 ms l'una dall'altra. Il
+   titolo entra parola per parola, è il lettering, e non si ridisegna; uscendo
+   si ricopre come il resto. Nel prototipo si disegnava prima la carta in basso e poi il
    riquadro in alto, perché arrivavano in quell'ordine.
 8. **Prima si misura tutto, poi si scrive.** Una misura chiesta dopo una
    scrittura costringe il browser a rifare l'impaginazione. Le richieste vanno in
@@ -284,6 +294,16 @@ chiunque, si disegna senza che nessuno se ne ricordi.
 - **Chi si aggiunge sopra a tutto** (un figlio diretto della pagina: una
   tendina volante, una striscia, un pulsante che galleggia) si disegna quando
   arriva.
+- **Chi arriva dentro alla scheda aperta.** Una riga aggiunta senza togliere
+  niente compare, col contorno o col solo retino. In una lista riscritta
+  compare solo il riquadro col contorno che prima non c'era: uno rifatto uguale
+  al suo posto (la stessa etichetta, le stesse classi, lo stesso testo) lo
+  vedevi già. Una riga che togli passa da `togli`: prende `esce`, si disfa, e
+  poi se ne va; chi legge il modulo per salvarlo salta le righe con `esce`.
+- **La pagina che si rifà.** Dopo un gesto che cambia i dati (un salvataggio,
+  un altro canale, un'altra lingua) il pannello si riscrive tutto: prima la
+  scena si disfa, il menù si disfa (`menu-via`) e la barra in alto si ricopre,
+  poi `render()`, poi tutto si ridisegna (`ridisegna`).
 - **Chi compare fuori schermo** aspetta invisibile il suo primo pixel, come le
   carte e le vignette della vetrina.
 
@@ -409,9 +429,8 @@ si disegnano più né scivolano: ci sono.
   Ognuna è controllata per mutazione: rotta la regola, la prova diventa rossa.
 - `scripts/verifica-stacco.mjs` apre il pannello in un browser vero e osserva
   ogni tela che nasce, per tutti i passaggi fra schede vicine. Controlla:
-  - cambiando sezione, che si disfino tutte le vignette a schermo della scena
-    vecchia, una per una; e che dentro la stessa sezione non se ne disfi
-    nessuna;
+  - cambiando scheda, sezione o sorella, che si disfino tutte le vignette a
+    schermo della scena vecchia, testata compresa, una per una;
   - disegno ogni volta, in ordine di lettura;
   - nessuna tela rimasta nel documento;
   - avvisi con le scintille o la vena di rabbia, che se ne vanno disegnandosi

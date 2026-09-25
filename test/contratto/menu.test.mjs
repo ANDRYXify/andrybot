@@ -97,10 +97,10 @@ test('a tutto schermo il menu sta sul bordo: compare dopo una sosta, si disegna 
   assert.ok(blocco.includes('padding-left: max(var(--margine-pagina), calc(var(--bordo-menu) + .6rem));'), 'e la pagina non ci entra: passando sui livelli non si apre per sbaglio');
   assert.match(blocco, /body\.con-nav\.tutto-schermo \.drawer \{[^}]*transform: none; transition: none; visibility: hidden;/, 'il cassetto non scivola: compare dov\'e\'');
   assert.ok(blocco.includes('body.con-nav.tutto-schermo.menu-aperto .drawer { visibility: visible; }'));
-  const DIS = readFileSync(new URL('../../src/web/public/disegno.js', import.meta.url), 'utf8');
+  const DIS = readFileSync(new URL('../../src/web/public/disegno-pannello.js', import.meta.url), 'utf8');
   assert.ok(DIS.includes("if (cassetto) chiedi(cassetto, { veloce: true });"), 'prima il contorno del cassetto, in qualunque forma sia');
   assert.ok(DIS.includes("chiedi(g, { da: 140 + j * PASSO_FILA, veloce: true });"), 'poi i gruppi, uno dopo l\'altro');
-  assert.ok(DIS.includes('viaMenu: viaMenu'), 'e sa disfarlo, dicendo quanto ci mette');
+  assert.ok(DIS.includes('D.viaMenu = viaMenu;'), 'e sa disfarlo, dicendo quanto ci mette');
   const chiudi = funzione('chiudiMenuMobile');
   assert.ok(chiudi.includes("const dura = resta ? 0 : (window.SB_DISEGNO?.viaMenu?.() || 0);")
     && chiudi.includes("_viaMenu = setTimeout(() => { _viaMenu = 0; document.body.classList.remove('menu-aperto', 'menu-via'); }, dura);"), 'sparisce solo quando il disegno e\' tornato indietro');
@@ -165,15 +165,16 @@ test('il menu si disegna in ogni caso: quando si vede in una forma nuova, e prim
   // modulo del disegno guarda il menu, e ogni volta che si vede in una forma
   // nuova lo disegna. La forma e' il suo contorno: il cassetto del telefono ha
   // tre lati, quello posato quattro, quello di lato uno solo.
-  const DIS = readFileSync(join(PUB, 'disegno.js'), 'utf8');
+  const DIS = readFileSync(join(PUB, 'disegno.js'), 'utf8') + '\n' + readFileSync(join(PUB, 'disegno-pannello.js'), 'utf8');
   const corpo = (nome) => { const i = DIS.indexOf(`function ${nome}(`); assert.ok(i >= 0, nome); return DIS.slice(i, DIS.indexOf('\n  }\n', i)); };
   const forma = corpo('formaMenu');
   assert.ok(forma.includes("if (!c || document.body.classList.contains('menu-via')) return '';"), 'un menu che se ne sta andando non e\' un menu che compare');
   assert.ok(forma.includes('return m.bordo && m.bordo.lati ? m.bordo.lati.map(Number).join(\'\') : \'-\';'), 'la forma e\' il contorno');
   assert.ok(corpo('sulMenu').includes('if (ora && ora !== menuVisto) menu();'), 'si vede in una forma nuova: si disegna');
-  assert.ok(corpo('sulleMosse').includes('if (corpo) sulMenu();'), 'a ogni classe che cambia sulla pagina');
-  assert.ok(corpo('avvia').includes("window.addEventListener('resize', function () { sulMenu(); esegui(); });"), 'a ogni cambio di misura della finestra');
-  assert.ok(/sulMenu\(\);\n\s*esegui\(\);\n\s*\(window\.requestIdleCallback/.test(corpo('avvia')), 'e appena parte');
+  assert.ok(DIS.includes('corpo: function () { sulMenu(); sulleCornici(); },'), 'il menu\' risponde quando il nucleo avvisa che la pagina e\' cambiata');
+  assert.ok(corpo('sulleMosse').includes("if (corpo) quando('corpo');"), 'a ogni classe che cambia sulla pagina');
+  assert.ok(corpo('avvia').includes("window.addEventListener('resize', function () { quando('corpo'); esegui(); });"), 'a ogni cambio di misura della finestra');
+  assert.ok(DIS.includes('estendi: function (x) { estensioni.push(x); if (x.corpo) x.corpo(); esegui(); },'), 'e appena parte');
   assert.doesNotMatch(DIS, /diventa\('menu-aperto'\)|perde\('tutto-schermo'\)/, 'nessuna regola per strada');
   // Chi lo nasconde lo dice prima (`menu-via`), lo disfa, e solo dopo cambia
   // la pagina.

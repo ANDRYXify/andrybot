@@ -44,6 +44,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nella tua pagina link il blocco per sostenerti compare quando ci arrivi anche sui browser meno recenti, dove prima restava invisibile. [vai: pagina]
 - Le tendine, le carte che ripieghi, i gruppi del menù, la ricerca, la barra delle modifiche e le finestre si disegnano quando compaiono e si disfano quando se ne vanno, invece di scivolare o sparire di colpo.
 - Nella home la finestra per scegliere con cosa accedere si disegna e si disfa, e gli avvisi non si interrompono più a metà del loro disegno.
+- Cambiando sezione la pagina vecchia si disfa prima che arrivi la nuova, anche fra pagine dello stesso gruppo, e con lei la testata.
+- Le righe che aggiungi o togli, come azioni, frasi, premi e livelli delle donazioni, si disegnano quando arrivano e si disfano quando le togli.
+- Dopo un salvataggio, un cambio di canale o di lingua la pagina si disfa e si ridisegna, invece di cambiare di colpo.
+- Le bolle d'aiuto, le nuvolette e le barre in alto e in basso si disegnano quando compaiono e si disfano quando se ne vanno.
 
 ## 2026-09-24
 

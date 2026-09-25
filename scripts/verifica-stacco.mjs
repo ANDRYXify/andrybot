@@ -1,10 +1,11 @@
 // Cancello dello STACCO fra vignette: il sito si disegna, non si anima.
 //
-// Il sito cambia scheda in due modi, ed e' la grammatica del fumetto. Muoversi
-// fra due SOTTOSEZIONI della stessa famiglia e' un passaggio «da azione ad
-// azione»: stessa scena, niente si disfa, la vignetta nuova si disegna.
-// Cambiare SEZIONE e' un passaggio «da scena a scena»: la vignetta vecchia si
-// disegna all'indietro, poi la nuova si disegna. Disegnare vuol dire matita,
+// Cambiando scheda la vignetta vecchia si disegna all'indietro, poi la nuova
+// si disegna: fra due sezioni e anche fra due SOTTOSEZIONI della stessa
+// famiglia. Prima fra sorelle non si disfaceva niente («da azione ad azione»,
+// la stessa scena), e le carte vecchie sparivano di colpo: tutto quello che se
+// ne va si disfa. Della scena fa parte anche la testata: la descrizione, la
+// barra delle sorelle, i tasti, il riquadro «Come funziona». Disegnare vuol dire matita,
 // china sul bordo vero, retino che scopre il contenuto, pulizia; all'indietro
 // torna la matita, il retino ricopre, la china e la matita si ritirano. Il
 // modello sta in docs/DISEGNO.md, il disegno in src/web/public/disegno.js.
@@ -58,7 +59,7 @@ const ROMPI = (process.argv.find((a) => a.startsWith('--rompi=')) || '').slice('
 // L'AUTOPROVA: ogni rottura in un processo suo, e il rosso deve arrivare per
 // la ragione giusta.
 const ROTTURE = [
-  ['esce', /✗ cambiare sezione disfa ogni vignetta/, 'la scheda vecchia non si disfa: la classe `esce` non arriva mai'],
+  ['esce', /✗ cambiare scheda disfa ogni vignetta/, 'la scheda vecchia non si disfa: la classe `esce` non arriva mai'],
   ['cassetto-via', /✗ il cassetto del telefono si chiude disfacendosi/, 'il cassetto del telefono si chiude senza disfarsi'],
   ['cassetto-scivola', /✗ il cassetto del telefono non si sposta/, 'il cassetto del telefono torna a scivolare'],
   ['velo-dopo', /✗ e il velo sfuma mentre si disfa/, 'il velo aspetta la fine del disegno per sfumare'],
@@ -194,7 +195,7 @@ await p.evaluate(() => {
       // L'ordine di lettura e' quello della scena: le sue carte e il riquadro
       // «Come funziona». Il gruppo del menu' che si apre sulla scheda nuova si
       // disegna anche lui, ma sta nella sua colonna.
-      const scena = [...document.querySelectorAll('.pannello-scheda .carta, #pagina-testata > .guida-scheda')].some((e) => e._dgTela === n);
+      const scena = [...document.querySelectorAll('.pannello-scheda .carta, #pagina-testata > *')].some((e) => e._dgTela === n);
       window.__tele.push({
         scena,
         tipo: n.querySelector('.dg-sfila') ? 'sfila' : china ? 'china' : 'altro',
@@ -216,10 +217,12 @@ for (let i = 1; i < schede.length; i++) {
   const stessa = await p.evaluate(([a, b2]) => stessaFamiglia(a, b2), [schede[i - 1], schede[i]]);
   // Quante vignette della scena vecchia sono a schermo: tante se ne devono disfare.
   const daDisfare = await p.evaluate(() => {
-    const v = [...document.querySelectorAll('.pannello-scheda.visibile .carta'), ...document.querySelectorAll('#pagina-testata > .guida-scheda')];
+    const v = [...document.querySelectorAll('.pannello-scheda.visibile .carta'), ...document.querySelectorAll('#pagina-testata > *')];
+    const trasparente = (c) => /rgba\([^)]*,\s*0\)$/.test(c) || c === 'transparent';
     return v.filter((e) => {
       const r = e.getBoundingClientRect(), st = getComputedStyle(e);
-      return r.height > 8 && r.bottom > 0 && r.top < innerHeight && parseFloat(st.borderTopWidth) >= 0.5 && st.borderTopStyle !== 'none';
+      const contorno = ['Top', 'Right', 'Bottom', 'Left'].some((x) => st['border' + x + 'Style'] !== 'none' && parseFloat(st['border' + x + 'Width']) >= 0.5 && !trasparente(st['border' + x + 'Color']));
+      return r.height >= 8 && r.width >= 8 && r.bottom > 0 && r.top < innerHeight && contorno && st.visibility !== 'hidden';
     }).length;
   });
   await p.evaluate((x) => window.SB_APP.vai(x), schede[i]);
@@ -229,7 +232,7 @@ for (let i = 1; i < schede.length; i++) {
   const inOrdine = disegni.every((t, k) => !k || t.top > disegni[k - 1].top + 2
     || (Math.abs(t.top - disegni[k - 1].top) <= 2 && t.left >= disegni[k - 1].left));
   passaggi.push({ da: schede[i - 1], a: schede[i], stessa, daDisfare,
-    disfatte: tele.filter((t) => t.tipo === 'sfila').length, disegni: disegni.length, inOrdine });
+    disfatte: tele.filter((t) => t.tipo === 'sfila' && t.scena).length, disegni: disegni.length, inOrdine });
 }
 
 // Rimaste: un disegno finito non lascia niente nel documento.
@@ -461,6 +464,16 @@ const CASSETTO = () => {
   return {
     aperto: document.body.classList.contains('menu-aperto'), si_vede: getComputedStyle(d).visibility === 'visible',
     sinistra: Math.round(r.left), velo: +getComputedStyle(document.getElementById('backdrop')).opacity,
+    // il velo sta andando a zero: la sua transizione d'opacita' corre verso 0,
+    // o e' gia' arrivato. Leggere solo il valore in un fotogramma dipende da
+    // quanti fotogrammi ci sono: su una macchina carica il campione cade
+    // all'inizio della sfumatura, e il velo sembra fermo.
+    veloVa: (() => {
+      const b = document.getElementById('backdrop');
+      if (+getComputedStyle(b).opacity < 0.05) return true;
+      return b.getAnimations().some((a) => a.transitionProperty === 'opacity' && a.playState === 'running'
+        && a.effect && a.effect.getKeyframes().some((k) => k.offset === 1 && +k.opacity === 0));
+    })(),
     disegna: !!(china && !disfa(d)), disfa: disfa(d), gruppiDisfano: gruppi.filter(disfa).length,
     china: china ? china.getAttribute('d') : '', largo: r.width, alto: r.height,
   };
@@ -502,7 +515,7 @@ for (const [nome, chiudi] of STRADE) {
     const t0 = performance.now();
     const giro = () => {
       const c = window.__cassetto();
-      window.__fotogrammi.push({ t: Math.round(performance.now() - t0), aperto: c.aperto, si_vede: c.si_vede, disfa: c.disfa, gruppi: c.gruppiDisfano, velo: c.velo });
+      window.__fotogrammi.push({ t: Math.round(performance.now() - t0), aperto: c.aperto, si_vede: c.si_vede, disfa: c.disfa, gruppi: c.gruppiDisfano, velo: c.velo, veloVa: c.veloVa });
       if (performance.now() - t0 < 1200) requestAnimationFrame(giro);
     };
     requestAnimationFrame(giro);
@@ -606,11 +619,9 @@ const azioni = passaggi.filter((x) => x.stessa);
 console.log(`\n${passaggi.length} passaggi fra schede vicine: ${scene.length} da scena a scena, ${azioni.length} da azione ad azione.\n`);
 
 dice(scene.length > 0 && azioni.length > 0, 'ci sono tutti e due i passaggi da guardare');
-const nonDisfatte = scene.filter((x) => !x.daDisfare || x.disfatte !== x.daDisfare);
-dice(!nonDisfatte.length, 'cambiare sezione disfa ogni vignetta della scena vecchia, una per una',
+const nonDisfatte = passaggi.filter((x) => !x.daDisfare || x.disfatte !== x.daDisfare);
+dice(!nonDisfatte.length, 'cambiare scheda disfa ogni vignetta della scena vecchia, una per una, anche fra sorelle',
   nonDisfatte.slice(0, 4).map((x) => `${x.da}→${x.a}: ${x.disfatte} su ${x.daDisfare}`).join(' · '));
-const disfatteNellaScena = azioni.filter((x) => x.disfatte);
-dice(!disfatteNellaScena.length, 'muoversi dentro la stessa sezione NON disfa niente: e\' la stessa scena', via(disfatteNellaScena));
 const senzaDisegno = passaggi.filter((x) => !x.disegni);
 dice(!senzaDisegno.length, 'e la vignetta nuova si disegna, ogni volta', via(senzaDisegno));
 const disordine = passaggi.filter((x) => !x.inOrdine);
@@ -641,9 +652,10 @@ const nonDisegna = cassetto.filter((x) => !x.primo || !treLati(x.primo));
 dice(!nonDisegna.length, 'aprendolo si disegna, con la china sui suoi tre lati: il lato destro non c\'e\'', nonDisegna.map((x) => `${x.nome}: ${x.primo ? x.primo.china.slice(0, 60) : 'nessun disegno'}`).join(' · '));
 const nonDisfa = cassetto.filter((x) => !(x.disfacendo.some((f) => f.gruppi > 0) && !x.dopo.aperto && !x.dopo.si_vede));
 dice(!nonDisfa.length, 'il cassetto del telefono si chiude disfacendosi, cassetto e gruppi, per ogni strada', nonDisfa.map((x) => `${x.nome}: ${x.disfacendo.length} fotogrammi a disfarsi, poi ${JSON.stringify({ aperto: x.dopo.aperto, si_vede: x.dopo.si_vede })}`).join(' · '));
-// all'ultimo fotogramma in cui il cassetto si vede ancora, il velo e' gia'
-// andato: se aspettasse la fine del disegno, in tutti quei fotogrammi varrebbe 1
-const velo = cassetto.filter((x) => { const u = x.disfacendo[x.disfacendo.length - 1]; return !u || !(u.velo < 0.9); });
+// all'ultimo fotogramma in cui il cassetto si vede ancora, il velo sta gia'
+// sfumando verso zero (o c'e' arrivato): se aspettasse la fine del disegno, in
+// tutti quei fotogrammi sarebbe fermo a 1
+const velo = cassetto.filter((x) => { const u = x.disfacendo[x.disfacendo.length - 1]; return !u || !u.veloVa; });
 dice(!velo.length, 'e il velo sfuma mentre si disfa, non dopo', velo.map((x) => `${x.nome}: ${JSON.stringify(x.disfacendo.slice(-2))}`).join(' · '));
 const resti = cassetto.filter((x) => x.resti);
 dice(!resti.length, 'e non lascia niente nel documento', resti.map((x) => `${x.nome}: ${x.resti}`).join(' · '));

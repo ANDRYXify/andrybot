@@ -99,8 +99,13 @@ const SORVEGLIA = () => {
     && (parseFloat(st['border' + x + 'Width']) || 0) >= 0.5 && !trasparente(st['border' + x + 'Color']));
   const vera = (e, nome) => e.getAnimations().some((a) => a.animationName === nome && a.effect && a.effect.getComputedTiming().duration >= 30);
   const scopre = new WeakMap(), copre = new WeakMap();
+  // Chi si scopre o si ricopre e' l'elemento o uno dei suoi antenati. Per chi e'
+  // stato tolto dalla pagina gli antenati sono quelli che aveva quando si
+  // vedeva: tolto con innerHTML, il suo genitore non c'e' piu'.
+  const antenati = new WeakMap();
+  const catena = (e) => { const c = []; for (let x = e; x && x.nodeType === 1; x = x.parentElement) c.push(x); return c; };
   const segnati = (mappa, e, da, a) => {
-    for (let x = e; x && x.nodeType === 1; x = x.parentElement) {
+    for (const x of (e.isConnected ? catena(e) : (antenati.get(e) || catena(e)))) {
       const t = mappa.get(x);
       if (t !== undefined && t >= da && t <= a) return true;
     }
@@ -134,10 +139,12 @@ const SORVEGLIA = () => {
         if (st.display === 'none') { prima.set(c, false); continue; }
         const op = opaco && parseFloat(st.opacity) >= 0.02;
         const r = c.getBoundingClientRect();
-        const vede = op && st.visibility !== 'hidden' && r.width >= 8 && r.height >= 8;
+        // sotto i 12 px non e' una vignetta: e' un segno (una freccia, un
+        // puntino), e mentre gira puo' passare sotto la soglia e tornare
+        const vede = op && st.visibility !== 'hidden' && r.width >= 12 && r.height >= 12;
         const coperto = c.classList.contains('dg-in') || c.classList.contains('dg-out');
         const cont = coperto || contorno(st);
-        if (vede && cont) nuovi.set(c, { r, firma: firma(c, r), eraVisto: prima.get(c) === true });
+        if (vede && cont) { nuovi.set(c, { r, firma: firma(c, r), eraVisto: prima.get(c) === true }); if (!antenati.has(c)) antenati.set(c, catena(c)); }
         prima.set(c, vede);
         giu(c, op);
       }
@@ -291,6 +298,27 @@ const raccogli = async (pg, dove) => {
   await fa(pg, D, 'e si chiude', 'sparisce', () => pg.click('#prova-tendina > summary'));
   await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.getElementById('prova-zona').remove(); });
   await pg.waitForTimeout(500);
+  // Le scene: una sorella, un'altra sezione, una riga che si aggiunge e si
+  // toglie, e la pagina che si rifa' tutta cambiando lingua.
+  const sorelle = await pg.evaluate(() => {
+    const ids = [...document.querySelectorAll('.pannello-scheda')].map((p) => p.dataset.scheda);
+    for (const a of ids) for (const b of ids) if (a !== b && stessaFamiglia(a, b)) return [a, b];
+    return null;
+  });
+  await pg.evaluate((a) => { window.__comparse.azione = 'preparazione'; window.SB_APP.vai(a); }, sorelle[0]);
+  await pg.waitForTimeout(1500);
+  await fa(pg, D, 'si passa a una scheda sorella', 'sparisce', () => pg.evaluate((b) => window.SB_APP.vai(b), sorelle[1]), 1800);
+  attesi.push([D, 'si passa a una scheda sorella', 'compare']);
+  await fa(pg, D, 'si cambia sezione', 'sparisce', () => pg.evaluate(() => window.SB_APP.vai('donazioni')), 2000);
+  attesi.push([D, 'si cambia sezione', 'compare']);
+  await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.getElementById('dona-livello-piu').scrollIntoView({ block: 'center', behavior: 'instant' }); });
+  await pg.waitForTimeout(1200);
+  await fa(pg, D, 'un\'offerta si aggiunge', 'compare', () => pg.evaluate(() => document.getElementById('dona-livello-piu').click()));
+  await fa(pg, D, 'e si toglie', 'sparisce', () => pg.evaluate(() => [...document.querySelectorAll('#dona-livelli .dl-via')].pop().click()));
+  await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; window.scrollTo(0, 0); });
+  await pg.waitForTimeout(900);
+  await fa(pg, D, 'la lingua cambia', 'sparisce', () => pg.evaluate(() => cambiaLingua('en')), 2200);
+  attesi.push([D, 'la lingua cambia', 'compare']);
   await raccogli(pg, D);
 }
 

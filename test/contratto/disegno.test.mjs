@@ -11,7 +11,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const leggi = (via) => readFileSync(new URL(`../../${via}`, import.meta.url), 'utf8');
-const DG = leggi('src/web/public/disegno.js');
+// Il disegno sta in due file: quello di tutte le pagine, e quello che solo il
+// pannello carica (menu', scena, urlo, cornici). Le regole valgono su tutti e due.
+const NUCLEO = leggi('src/web/public/disegno.js');
+const PANNELLO = leggi('src/web/public/disegno-pannello.js');
+const DG = NUCLEO + '\n' + PANNELLO;
 const APP = leggi('src/web/public/app.js');
 const ANIME = leggi('src/web/public/anime.css');
 const VETRINA = leggi('src/web/public/anime-vetrina.css');
@@ -93,21 +97,27 @@ test('prima si misura tutto, poi si scrive', () => {
   };
   prima(corpoDi(DG, 'giro'), 'var misure = tele.map(', 'posa(t, misure[i])', 'il giro delle tele legge tutto e poi sposta');
   prima(corpoDi(DG, 'esegui'), 'var misure = giro1.map(function (x) { return misura(x[0]); });', 'traccia(', 'la coda misura tutto e poi disegna');
-  prima(corpoDi(DG, 'scena'), 'var misure = tutte.map(misura);', 'traccia(', 'la scena misura tutto e poi disegna');
+  prima(corpoDi(DG, 'scena'), 'var misure = tutte.map(function (x) { return misura(x[0]); });', 'traccia(', 'la scena misura tutto e poi disegna');
   for (const nome of ['traccia', 'sfila', 'componi', 'piano', 'tela']) {
     assert.doesNotMatch(corpoDi(DG, nome), /getBoundingClientRect|getComputedStyle/, `${nome}: chi disegna non misura`);
   }
   const e = corpoDi(DG, 'esceScena');
-  assert.ok(e.indexOf('var misure = tutte.map(misura);') >= 0 && e.indexOf('sfila(') > e.indexOf('var misure'), 'anche chi esce misura tutto e poi disegna');
+  assert.ok(e.indexOf('var misure = tutte.map(function (x) { return misura(x[0]); });') >= 0 && e.indexOf('sfila(') > e.indexOf('var misure'), 'anche chi esce misura tutto e poi disegna');
 });
 
 test('la scena si disegna in ordine di lettura', () => {
   const s = corpoDi(DG, 'scena');
   assert.match(s, /\.sort\(function \(x, y\) \{ return \(x\[1\]\.r\.top - y\[1\]\.r\.top\) \|\| \(x\[1\]\.r\.left - y\[1\]\.r\.left\); \}\)/);
-  assert.match(s, /traccia\(x\[0\], x\[1\], \{ da: i \* PASSO_FILA \}\)/);
-  assert.match(corpoDi(DG, 'vignetteDellaScena'), /#pagina-testata > \.guida-scheda/, 'col riquadro «Come funziona» della testata');
-  assert.match(s, /vignetteDellaScena\(pannello\)/);
-  assert.match(corpoDi(DG, 'esceScena'), /vignetteDellaScena\(pannello\)/, 'e se ne vanno le stesse vignette che si erano disegnate');
+  assert.match(s, /x\[2\]\.da = i \* PASSO_FILA; traccia\(x\[0\], x\[1\], x\[2\]\);/);
+  // Della scena fa parte la testata: il riquadro «Come funziona», la barra
+  // delle sorelle, la descrizione, i tasti. Il titolo entra parola per parola
+  // (e' il lettering) e non si ridisegna; uscendo, si ricopre come il resto.
+  const v = corpoDi(DG, 'vignetteDellaScena');
+  assert.match(v, /document\.getElementById\('pagina-testata'\)/, 'con la testata');
+  assert.match(v, /\(!uscendo && c\.tagName === 'H1'\)\) return;/, 'tranne il titolo entrando');
+  assert.match(v, /tutte\.push\(\[c, !contornato\(c\)\]\);/, 'e chi non ha contorno si scopre col retino');
+  assert.match(s, /vignetteDellaScena\(pannello, false\)/);
+  assert.match(corpoDi(DG, 'esceScena'), /vignetteDellaScena\(pannello, true\)/, 'e se ne vanno le stesse vignette che si erano disegnate, titolo compreso');
 });
 
 test('il livello si ricava: sopra al suo elemento, sotto a barre e menu', () => {
@@ -135,8 +145,8 @@ test('si disegna in ogni caso, anche per chi chiede meno movimento', () => {
   const inizio = STILE.lastIndexOf('@media (prefers-reduced-motion: reduce) {', i);
   assert.ok(i > 0 && inizio > 0 && !STILE.slice(inizio, i).includes('\n}\n'), 'la regola che ferma tutto sta in «meno movimento»');
   const blocco = STILE.slice(inizio, STILE.indexOf('\n}\n', i));
-  assert.match(blocco, /\n {2}:not\(\.dg-in, \.dg-out, \.dg-tela, \.dg-tela \*\), ::before, ::after \{ animation-duration: \.001ms !important; animation-iteration-count: 1 !important; \}/,
-    'e riduce a niente ogni animazione tranne i tratti e il retino');
+  assert.match(blocco, /\n {2}:not\(\.dg-in, \.dg-out, \.dg-tela, \.dg-tela \*, \[data-disegno\], \[data-disegno\] \*\), ::before, ::after \{ animation-duration: \.001ms !important; animation-iteration-count: 1 !important; \}/,
+    'e riduce a niente ogni animazione tranne i tratti, il retino e i disegni che si fanno da se\' (le nuvolette)');
   assert.doesNotMatch(blocco, /\*, \*::before, \*::after \{[^}]*animation-duration/, 'nessuna regola che valga anche per il disegno');
   assert.doesNotMatch(blocco, /\.carta\.rivela \{ opacity: 1/, 'le carte aspettano il loro disegno come per tutti');
   const rivela = APP.slice(APP.indexOf('function rivelaCarte('), APP.indexOf('\n}\n', APP.indexOf('function rivelaCarte(')));
@@ -268,7 +278,7 @@ test('il tasto che premi si ripassa a china, e solo se il gesto non ha gia\' la 
 
 test('prima di un gesto di cui pentirsi, la nuvoletta spigolosa rossa', () => {
   const sc = corpoDi(DG, 'sulleMosse');
-  assert.match(sc, /if \(diventa\('dentro'\) && carta && carta\.querySelector\('\.btn\.pericolo'\)\) urlo\(carta\);\n\s*if \(diventa\('dentro'\)\) chiedi\(carta\);/,
+  assert.match(sc, /if \(diventa\('dentro'\) && carta && carta\.querySelector\('\.btn\.pericolo'\)\) quando\('urlo', carta\);\n\s*if \(diventa\('dentro'\)\) chiedi\(carta\);/,
     'la finestra che chiede un gesto pericoloso diventa un urlo prima di disegnarsi');
   assert.match(APP, /\{ id: 'si', testo: si, tono: pericolo \? 'pericolo' : '' \}/, 'e l\'app lo dice gia\' col tasto');
   assert.match(APP, /class="btn grande\$\{a\.tono \? ' ' \+ a\.tono : ''\}"/);
@@ -278,7 +288,7 @@ test('prima di un gesto di cui pentirsi, la nuvoletta spigolosa rossa', () => {
   assert.match(u, /var w = b \? b\.inlineSize : carta\.offsetWidth, h = b \? b\.blockSize : carta\.offsetHeight;/, 'sulla misura esatta della carta');
   assert.match(u, /new ResizeObserver\(adatta\)\.observe\(carta\)/, 'e la segue se cambia');
   assert.match(corpoDi(DG, 'misura'), /bordo: urlo \? \{ sp: SP_URLO, urlo: true, rag: 0 \}/, 'la china ricalca l\'urlo, non il bordo che la carta non ha piu\'');
-  assert.match(corpoDi(DG, 'piano'), /\{ classe: 'dg-china dg-urlo-china', da: daChina, dur: tChina, fa: function \(w, h\) \{ return spigoli\(w, h, seme\); \} \}/);
+  assert.match(corpoDi(DG, 'piano'), /\{ classe: 'dg-china dg-urlo-china', da: daChina, dur: tChina, fa: function \(w, h\) \{ return sagome\.urlo\(w, h, seme\); \} \}/);
   assert.match(ANIME, /\.bv-carta\.dg-urlo \{ position: relative; isolation: isolate; background: transparent; border-color: transparent; box-shadow: none; \}/,
     'la carta lascia il posto alla sagoma, che resta anche a chi chiede meno movimento');
   assert.match(ANIME, /\.dg-sagoma \.dg-fondo \{ fill: var\(--surface\); stroke: var\(--rosso\);/);
@@ -295,7 +305,16 @@ test('tutto quello che compare si disegna, qualunque strada lo faccia comparire'
   assert.match(mo, /else if \(el\.tagName === 'DIALOG'\) mostrati\.push\(el\);/, 'la finestra di sistema che si apre');
   assert.match(mo, /if \(!finestra && diventa\('dentro'\)\) mostrati\.push\(el\);/, 'chi entra da se\'');
   const ag = corpoDi(DG, 'sulleAggiunte');
-  assert.match(ag, /else if \(padre === document\.body && !n\.matches\(SALTA_CORPO\)\) compare\(n, \{ veloce: true \}\);/, 'chi si aggiunge alla pagina, sopra a tutto');
+  assert.match(ag, /else if \(padre === document\.body\) \{ if \(!n\.matches\(SALTA_CORPO\)\) compare\(n, \{ veloce: true \}\); \}/, 'chi si aggiunge alla pagina, sopra a tutto');
+  // Dentro alla scheda aperta, chi arriva dopo col suo contorno (una carta
+  // caricata, una riga aggiunta) si disegna; chi prende il posto di uno
+  // uguale (una lista riscritta) no: quello lo vedevi gia'.
+  // Chi si aggiunge senza togliere niente (una riga nuova) compare, col
+  // contorno o senza; in una lista riscritta compare solo il riquadro col
+  // contorno che prima non c'era.
+  assert.match(ag, /else if \(padre\.closest\('\.pannello-scheda\.visibile'\) && !fermo\(n\) && \(!riscritto \|\| contornato\(n\)\)\) \{/);
+  assert.match(ag, /if \(rifatti\[f\]\) \{ rifatti\[f\]--; continue; \}/, 'uno rifatto uguale non compare');
+  assert.match(corpoDi(DG, 'avvia'), /observe\(app, \{ childList: true, subtree: true \}\)/, 'in tutta la scheda, non solo in cima');
   // Col contorno si traccia; senza, si scopre col retino, e i riquadri col
   // contorno che ha dentro si tracciano insieme.
   assert.match(corpoDi(DG, 'parti'), /if \(contornato\(el\)\) return \[\[el, false\]\];/);
@@ -382,4 +401,65 @@ test('una carta che si ripiega si disfa prima, e riaprendola si disegna', () => 
   // Dentro a quello che compare si tracciano i riquadri; i comandi (tasti,
   // campi, collegamenti) li scopre il retino di chi li contiene.
   assert.match(corpoDi(DG, 'parti'), /if \(!\(c instanceof HTMLElement\) \|\| c\.matches\(COMANDO\)\) continue;/);
+});
+
+test('anche fra sorelle la scheda vecchia si disfa, e la pagina che si rifa\' si disfa prima', () => {
+  // Fra due sottosezioni della stessa famiglia prima non si disfaceva niente:
+  // le carte vecchie sparivano di colpo. Tutto quello che se ne va si disfa.
+  const i = APP.indexOf('function vaiAScheda(');
+  const vai = APP.slice(i, APP.indexOf('\n}\n', i));
+  assert.ok(vai.indexOf("p.classList.add('esce')") > 0 && vai.indexOf("p.classList.add('esce')") < vai.indexOf('if (stessaFamiglia(prima, id))'), 'la scheda vecchia si disfa, sorella o no');
+  assert.match(vai, /_uscitaVia = setTimeout\(\(\) => \{\n\s*for \(const p of document\.querySelectorAll\('\.pannello-scheda\.esce'\)\) p\.classList\.remove\('esce'\);\n\s*_scambiaScheda\(id, sezioni\);/, 'e solo dopo arriva la sorella');
+  // Dopo un gesto che cambia i dati (un salvataggio, un canale, la lingua) la
+  // pagina si rifa' tutta: prima si disfa, menu' compreso, poi si ridisegna.
+  const j = APP.indexOf('async function ridisegna(');
+  const r = APP.slice(j, APP.indexOf('\n}\n', j));
+  assert.match(r, /visibili\.forEach\(\(p\) => p\.classList\.add\('esce'\)\);/);
+  assert.match(r, /if \(menu\) b\.add\('menu-via'\);/);
+  assert.match(r, /render\(\);\n\s*if \(menu\) b\.remove\('menu-via'\);/, 'e dopo si ridisegna, menu\' compreso');
+  assert.doesNotMatch(APP, /stato = await api\('\/api\/me'\);\s*render\(\);/, 'nessuna pagina si rifa\' di colpo dopo un gesto');
+});
+
+test('una riga tolta si disfa prima di andarsene, e chi legge non la conta piu\'', () => {
+  // Togliere una riga (un'azione, una frase, un'offerta, un premio) la faceva
+  // sparire di colpo. `togli` la fa disfare e la toglie dopo; intanto chi
+  // legge il modulo per salvarlo non la vede gia' piu'.
+  const i = APP.indexOf('function togli(');
+  const t = APP.slice(i, APP.indexOf('\n}\n', i));
+  assert.match(t, /el\.classList\.add\('esce'\);\n\s*el\.inert = true;\n\s*setTimeout\(\(\) => \{ el\.remove\(\); poi\?\.\(\); \}, _duraUscita\(\) \+ 20\);/);
+  for (const x of ["togli(ban.closest('.scudo-seg'));", "togli(b.closest('.dona-livello'),", 'togli(riga, _disegnaPremiMuro);', "const r = rim.closest('.azione-riga'); r?.classList.add('esce'); aggiornaRiassunto(); togli(r);", "const r = rimF.closest('.frase-trigger'); r?.classList.add('esce'); aggiornaRiassunto(); togli(r);"]) assert.ok(APP.includes(x), x);
+  for (const x of ["querySelectorAll('[data-premio]:not(.esce)')", "querySelectorAll('#dona-livelli .dona-livello:not(.esce)')", "querySelectorAll('#lista-azioni .azione-riga:not(.esce)')", "querySelectorAll('#lista-altrimenti .azione-riga:not(.esce)')", "querySelectorAll('#lista-frasi-trigger .frase-trigger:not(.esce) .mod-testo-trigger')"]) assert.ok(APP.includes(x), 'chi legge salta le righe che se ne vanno: ' + x);
+  assert.doesNotMatch(APP, /closest\('\.(azione-riga|frase-trigger|dona-livello|scudo-seg)'\)\?\.remove\(\)/, 'nessuna riga sparisce di colpo');
+});
+
+test('le nuvolette si disegnano da se\', e si disfano chiudendosi, anche con meno movimento', () => {
+  // Le nuvolette (quella che spiega un tasto e quella che ti dice una cosa)
+  // tracciano il loro contorno da se', perche' e' una sagoma e non un bordo; il
+  // contenuto lo scopre il retino. Chiudendosi il contorno si ritira mentre il
+  // retino ricopre, e il velo sfuma il colore. Con meno movimento il loro
+  // disegno era spento, e la nuvoletta grande entrava con un rimbalzo.
+  const AIUTO = leggi('src/web/public/aiuto.js');
+  assert.equal((AIUTO.match(/setAttribute\('data-disegno', ''\)/g) || []).length, 2, 'tutte e due si disegnano da se\'');
+  assert.equal((AIUTO.match(/window\.SB_DISEGNO\.compare\((b|bolla), \{ veloce: true \}\)/g) || []).length, 2, 'e il contenuto lo scopre il retino');
+  assert.match(AIUTO, /window\.SB_DISEGNO\.via\(b, \{ veloce: true \}\)/, 'la nuvoletta del tasto si disfa prima di nascondersi');
+  assert.match(AIUTO, /window\.SB_DISEGNO\.via\(bolla, \{ veloce: true \}\) : 0;\n\s*velo\.classList\.add\('via'\);/, 'quella grande si disfa, e il velo sfuma');
+  assert.ok(STILE.includes('.aiuto-bolla.dg-out .aiuto-forma, .nuv-bolla.dg-out .nuv-forma { stroke-dasharray: 1; animation: bolla-ritira'), 'il contorno si ritira');
+  assert.doesNotMatch(STILE, /\.aiuto-bolla\.vista \.aiuto-forma[^{]*\{\s*animation: none/, 'nessuna regola spegne il loro disegno');
+  assert.doesNotMatch(STILE, /scale\(\.72\)|animation: appare/, 'niente rimbalzo ne\' dissolvenza d\'entrata');
+});
+
+test('la vetrina non porta il disegno del pannello', () => {
+  // Il menu', la scena delle sezioni, l'urlo e le cornici esistono solo nel
+  // pannello: stanno in disegno-pannello.js, che solo il pannello carica,
+  // subito dopo il nucleo. La home porta il nucleo e basta (verifica-dieta ne
+  // misura il peso).
+  for (const via of ['function formaMenu(', 'function scena(', 'function urlo(', 'function spigoli(', 'CORNICI']) {
+    assert.ok(!NUCLEO.includes(via), `il nucleo non porta ${via}`);
+    assert.ok(PANNELLO.includes(via), `lo porta il pannello: ${via}`);
+  }
+  const INDEX = leggi('src/web/public/index.html');
+  assert.ok(INDEX.includes('<script src="disegno.js" defer></script>\n  <script src="disegno-pannello.js" defer></script>'), 'il pannello lo carica subito dopo il nucleo');
+  assert.ok(!leggi('src/web/vetrina-vista.js').includes('disegno-pannello.js'), 'la vetrina no');
+  assert.match(corpoDi(NUCLEO, 'sulleMosse'), /if \(corpo\) quando\('corpo'\);/, 'il nucleo avvisa chi estende, senza sapere chi e\'');
+  assert.match(PANNELLO, /D\.estendi\(\{\n\s*corpo: function \(\) \{ sulMenu\(\); sulleCornici\(\); \},/, 'e il pannello risponde col menu\' e le cornici');
 });

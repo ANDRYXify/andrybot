@@ -89,6 +89,12 @@ const SELFTEST = process.argv.includes('--selftest');
 // porta style-vetrina.css (4,5 kB), scritta da scripts/copia-vetrina.mjs e
 // sorvegliata qui come la copia di anime.css. La home e' scesa a 56,9 kB, e il
 // tetto scende con lei: 60, la misura di oggi con la stessa aria sopra.
+//
+// Il 25 settembre la home e' arrivata a 60,4 kB: il disegno era cresciuto per
+// il pannello (il menu' in ogni forma, la scena delle sezioni, l'urlo, le
+// cornici) e la vetrina se lo portava dietro senza usarne niente. Invece di
+// alzare il tetto quella parte e' uscita in disegno-pannello.js, che carica
+// solo il pannello: la vetrina porta il nucleo e basta.
 const TETTO_KB = 60;
 
 let chromium;

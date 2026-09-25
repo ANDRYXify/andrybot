@@ -660,7 +660,7 @@ async function dopoAcquisto(r) {
   const nomi = (r.aggiunti || []).map((id) => { const n = NOME_ADDON[id]; return n ? L(n[0], n[1], n[2]) : id; });
   if (nomi.length) toast(L(`Aggiunto: ${nomi.join(', ')}. È già tuo; i giorni che restano del mese li trovi nella prossima fattura.`, `Added: ${nomi.join(', ')}. It is yours now; the remaining days of the month go on your next invoice.`, `Añadido: ${nomi.join(', ')}. Ya es tuyo; los días que quedan del mes van en la próxima factura.`));
   else toast(L('Ce l’hai già: non c’era niente da aggiungere.', 'You already have it: nothing to add.', 'Ya lo tienes: no había nada que añadir.'));
-  try { stato = await api('/api/me'); render(); } catch {  }
+  try { stato = await api('/api/me'); await ridisegna(); } catch {  }
 }
 
 const _DEMO_CANALI = [
@@ -1604,6 +1604,21 @@ function conScrollFermo(fn) {
   return r;
 }
 
+async function ridisegna() {
+  const b = document.body.classList;
+  const visibili = [...document.querySelectorAll('.pannello-scheda.visibile')];
+  visibili.forEach((p) => p.classList.add('esce'));
+  const menu = window.SB_DISEGNO?.viaMenu?.() || 0;
+  if (menu) b.add('menu-via');
+  const area = document.getElementById('area-utente');
+  const inAlto = area ? (window.SB_DISEGNO?.via?.(area) || 0) : 0;
+  const dura = Math.max(visibili.length ? _duraUscita() : 0, menu, inAlto);
+  if (dura) await new Promise((ok) => setTimeout(ok, dura));
+  render();
+  if (menu) b.remove('menu-via');
+  if (area) window.SB_DISEGNO?.compare?.(area, { veloce: true });
+}
+
 function render() {
 
   const _syRender = (stato && stato.user) ? (window.scrollY || 0) : 0;
@@ -1938,7 +1953,7 @@ function renderAreaUtente() {
       v.closest('.switch-canale-menu')?.setAttribute('hidden', '');
       if (canale === attuale) return;
       await api('/api/cambia-canale', { method: 'POST', body: { channel: canale } });
-      stato = await api('/api/me'); render();
+      stato = await api('/api/me'); await ridisegna();
       toast(L('Ora gestisci @', 'Now managing @', 'Ahora gestionas @') + (stato.user.display || stato.user.login) + (stato.ruolo === 'moderatore' ? L(' come moderatore', ' as moderator', ' como moderador') : L(' come proprietario', ' as owner', ' como propietario')));
     })));
   wireSwitchCanaleGlobale();
@@ -1991,7 +2006,7 @@ function cambiaLingua(l) {
   try { localStorage.setItem('lingua', l); } catch (e) {  }
   try { document.documentElement.lang = l; } catch (e) {  }
   try { window.SB_CERCA && window.SB_CERCA.invalida(); } catch (e) {  }
-  render();
+  ridisegna();
 }
 
 function selettoreLingua(cls) {
@@ -3734,7 +3749,16 @@ function barraGiuHtml() {
 function aggiornaBarraGiu() {
   const el = document.getElementById('barra-giu');
   if (!el) return;
-  el.innerHTML = document.body.classList.contains('con-nav') ? barraGiuHtml() : '';
+  const html = document.body.classList.contains('con-nav') ? barraGiuHtml() : '';
+  const t = document.createElement('div');
+  t.innerHTML = html;
+  const nuove = [...t.children], vecchie = [...el.children];
+  const senzaAccesa = (x) => x.outerHTML.replace(' on"', '"');
+  if (nuove.length && nuove.length === vecchie.length && nuove.every((n, i) => senzaAccesa(n) === senzaAccesa(vecchie[i]))) {
+    nuove.forEach((n, i) => vecchie[i].classList.toggle('on', n.classList.contains('on')));
+    return;
+  }
+  el.innerHTML = html;
 }
 
 let _ossTitolo = null;
@@ -7846,7 +7870,7 @@ async function caricaInstagram() {
     document.getElementById('ig-scollega')?.addEventListener('click', () => conErrore(async () => {
       await api('/api/instagram/disconnect', { method: 'POST', body: {} });
       toast(L('Instagram scollegato.', 'Instagram disconnected.', 'Instagram desconectado.'));
-      stato = await api('/api/me'); render();
+      stato = await api('/api/me'); await ridisegna();
     }));
   } else {
     if (aMano) { aMano.hidden = false; aMano.open = !!d.aMano; }
@@ -10679,7 +10703,7 @@ const _muroFigSel = (campo, conCaso) => `<select data-c="${campo}">${(conCaso ? 
 
 let _muroPremiTutti = null;
 function _leggiPremiMuro() {
-  return [..._g('muro-premi')?.querySelectorAll('[data-premio]') || []].map((r) => ({
+  return [..._g('muro-premi')?.querySelectorAll('[data-premio]:not(.esce)') || []].map((r) => ({
     id: r.querySelector('[data-premio-id]').value,
     titolo: r.querySelector('[data-premio-id]').selectedOptions[0]?.textContent || '',
     figura: r.querySelector('[data-premio-fig]').value,
@@ -17849,7 +17873,7 @@ function _disegnaLivelli(livelli) {
   box.innerHTML = (livelli || []).map(_rigaLivello).join('') || `<p class="suggerimento">${L('Nessuna offerta: chi dona vede gli importi suggeriti.', 'No offers: donors see the suggested amounts.', 'Sin ofertas: quien dona ve los importes sugeridos.')}</p>`;
 }
 function _leggiLivelli() {
-  return [...document.querySelectorAll('#dona-livelli .dona-livello')].map((r) => ({
+  return [...document.querySelectorAll('#dona-livelli .dona-livello:not(.esce)')].map((r) => ({
     da: Number(r.querySelector('.dl-da')?.value) || 0, nome: (r.querySelector('.dl-nome')?.value || '').trim(), effetto: r.querySelector('.dl-effetto')?.value || '',
   })).filter((l) => l.da > 0);
 }
@@ -23193,7 +23217,7 @@ function scudoWire() {
           toast(r.ripiego === 'ban'
             ? L('Bannato: il blocco non si poteva fare, e il follow resta.', 'Banned: blocking was not possible, and the follow stays.', 'Baneado: no se pudo bloquear, y el follow se queda.')
             : L('Bloccato ✓: il follow non c\'è più.', 'Blocked ✓: the follow is gone.', 'Bloqueado ✓: el follow ya no está.'));
-          const row = ban.closest('.scudo-seg'); if (row) row.remove();
+          togli(ban.closest('.scudo-seg'));
         }
         else { toast(L('Non riuscito', 'Failed', 'Falló') + (r.motivo ? ': ' + r.motivo : ''), 'errore'); ban.disabled = false; }
       } catch (e) {
@@ -23527,7 +23551,7 @@ function attivaPiattaforma() {
       toast(L('Profilo riletto: conoscenza aggiornata e scheda riempita dove era vuota ✓', 'Profile re-read: knowledge updated and card filled where empty ✓', 'Perfil releído: conocimiento actualizado y ficha rellenada donde estaba vacía ✓'));
 
       stato = await api('/api/me');
-      render();
+      await ridisegna();
     } catch (e) {
       out.textContent = '' + e.message;
       toast(L('Pre-addestramento fallito: ', 'Pre-training failed: ', 'Pre-entrenamiento fallido: ') + e.message, 'errore');
@@ -23733,8 +23757,7 @@ function attivaPiattaforma() {
   });
   _g('dona-livelli')?.addEventListener('click', (e) => {
     const b = e.target.closest('.dl-via'); if (!b) return;
-    b.closest('.dona-livello')?.remove();
-    if (!_g('dona-livelli').querySelector('.dona-livello')) _disegnaLivelli([]);
+    togli(b.closest('.dona-livello'), () => { if (!_g('dona-livelli')?.querySelector('.dona-livello')) _disegnaLivelli([]); });
   });
   _g('dona-conto-box')?.addEventListener('click', (e) => {
     const b = e.target.closest('[data-dona]'); if (!b) return;
@@ -23853,8 +23876,15 @@ function attivaPiattaforma() {
     const piu = ev.target.closest('[data-premio-piu]');
     if (!via && !piu) return;
     const c = _cfgEl('muro');
-    if (via) { via.closest('[data-premio]')?.remove(); c.premi = _leggiPremiMuro(); }
-    else c.premi = [...(c.premi || []), { id: (_muroPremiTutti || [])[0]?.id || '', titolo: (_muroPremiTutti || [])[0]?.title || '', figura: 'caso' }].filter((p) => p.id);
+    if (via) {
+      const riga = via.closest('[data-premio]');
+      riga?.classList.add('esce');
+      c.premi = _leggiPremiMuro();
+      salvaCfgElemento('muro');
+      togli(riga, _disegnaPremiMuro);
+      return;
+    }
+    c.premi = [...(c.premi || []), { id: (_muroPremiTutti || [])[0]?.id || '', titolo: (_muroPremiTutti || [])[0]?.title || '', figura: 'caso' }].filter((p) => p.id);
     _disegnaPremiMuro();
     salvaCfgElemento('muro');
   });
@@ -24247,13 +24277,13 @@ function attivaPiattaforma() {
     if (!token) { toast(L('Incolla il token del bot (te lo dà @BotFather).', 'Paste the bot token (@BotFather gives it to you).', 'Pega el token del bot (te lo da @BotFather).'), 'errore'); return; }
     const r = await api('/api/streamer/telegram/token', { method: 'POST', body: { token } });
     toast(L('Bot collegato: @', 'Bot connected: @', 'Bot conectado: @') + (r.botUsername || '?') + '');
-    stato = await api('/api/me'); render();
+    stato = await api('/api/me'); await ridisegna();
   }));
 
   document.getElementById('btn-tg-rileva')?.addEventListener('click', () => conErrore(async () => {
     const r = await api('/api/streamer/telegram/rileva', { method: 'POST', body: {} });
     toast(r.privato ? L('Collegata la chat privata col bot.', 'Private chat with the bot connected.', 'Chat privado con el bot conectado.') : L('Gruppo collegato: ', 'Group connected: ', 'Grupo conectado: ') + (r.gruppo || '✓'));
-    stato = await api('/api/me'); render();
+    stato = await api('/api/me'); await ridisegna();
   }));
 
   document.getElementById('btn-tg-salva')?.addEventListener('click', () => conErrore(async () => {
@@ -24279,7 +24309,7 @@ function attivaPiattaforma() {
       si: L('Scollega', 'Disconnect', 'Desconecta'), pericolo: true }))) return;
     await api('/api/streamer/telegram', { method: 'DELETE' });
     toast(L('Telegram scollegato.', 'Telegram disconnected.', 'Telegram desconectado.'));
-    stato = await api('/api/me'); render();
+    stato = await api('/api/me'); await ridisegna();
   }));
 
   document.getElementById('btn-tg-ingresso')?.addEventListener('click', async (ev) => {
@@ -24310,14 +24340,14 @@ function attivaPiattaforma() {
     conErrore(async () => {
       await api('/api/streamer/telegram/interattivo', { method: 'POST', body: { attivo: chk.checked } });
       toast(chk.checked ? L('Bot interattivo acceso ✓', 'Interactive bot on ✓', 'Bot interactivo encendido ✓') : L('Bot interattivo spento.', 'Interactive bot off.', 'Bot interactivo apagado.'));
-      stato = await api('/api/me'); render();
+      stato = await api('/api/me'); await ridisegna();
     }).catch(() => { chk.checked = !chk.checked; });
   });
 
   document.getElementById('chk-tg-dm')?.addEventListener('change', (ev) => conErrore(async () => {
     await api('/api/streamer/telegram/dm', { method: 'POST', body: { modo: ev.target.checked ? 'me' : 'off' } });
     toast(ev.target.checked ? L('In privato risponderò solo a te ✓', 'In private I will answer only you ✓', 'En privado responderé solo a ti ✓') : L('Chat privata spenta.', 'Private chat off.', 'Chat privado apagado.'));
-    stato = await api('/api/me'); render();
+    stato = await api('/api/me'); await ridisegna();
   }));
   document.getElementById('btn-tg-dm-collega')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     const r = await api('/api/streamer/telegram/collega', { method: 'POST', body: {} });
@@ -24327,7 +24357,7 @@ function attivaPiattaforma() {
   document.getElementById('btn-tg-dm-scollega')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await api('/api/streamer/telegram/scollega', { method: 'POST', body: {} });
     toast(L('Account Telegram scollegato.', 'Telegram account disconnected.', 'Cuenta de Telegram desconectada.'));
-    stato = await api('/api/me'); render();
+    stato = await api('/api/me'); await ridisegna();
   }); });
   document.getElementById('chk-tg-proattiva')?.addEventListener('change', (ev) => conErrore(async () => {
     await salvaImpostazioni({ proattivoTg: ev.target.checked },
@@ -24428,7 +24458,7 @@ function attivaPiattaforma() {
   document.getElementById('btn-yt-canale-salva')?.addEventListener('click', salvaYoutube);
   document.getElementById('btn-yt-apikey-rimuovi')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await salvaImpostazioni({ youtube: { canale: (document.getElementById('inp-yt-canale').value || '').trim(), apiKeyClear: true } }, L('Chiave tolta.', 'Key removed.', 'Clave quitada.'));
-    stato = await api('/api/me'); render();
+    stato = await api('/api/me'); await ridisegna();
   }); });
 
   document.getElementById('btn-ig-salva')?.addEventListener('click', () => conErrore(async () => {
@@ -24444,7 +24474,7 @@ function attivaPiattaforma() {
   }));
   document.getElementById('btn-ig-token-rimuovi')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await salvaImpostazioni({ instagram: { userId: (document.getElementById('inp-ig-userid').value || '').trim(), tokenClear: true } }, L('Token tolto.', 'Token removed.', 'Token quitado.'));
-    stato = await api('/api/me'); render();
+    stato = await api('/api/me'); await ridisegna();
   }); });
   document.getElementById('btn-ig-prova')?.addEventListener('click', () => conErrore(async () => {
     const esito = document.getElementById('ig-esito');
@@ -24880,7 +24910,7 @@ function gestisciClicEditor(ev) {
     return;
   }
   const rim = ev.target.closest('[data-rimuovi-azione]');
-  if (rim) { ev.preventDefault(); rim.closest('.azione-riga')?.remove(); aggiornaRiassunto(); return; }
+  if (rim) { ev.preventDefault(); const r = rim.closest('.azione-riga'); r?.classList.add('esce'); aggiornaRiassunto(); togli(r); return; }
 
   if (ev.target.closest('[data-aggiungi-frase]')) {
     ev.preventDefault();
@@ -24899,7 +24929,7 @@ function gestisciClicEditor(ev) {
     return;
   }
   const rimF = ev.target.closest('[data-rimuovi-frase]');
-  if (rimF) { ev.preventDefault(); rimF.closest('.frase-trigger')?.remove(); aggiornaRiassunto(); return; }
+  if (rimF) { ev.preventDefault(); const r = rimF.closest('.frase-trigger'); r?.classList.add('esce'); aggiornaRiassunto(); togli(r); return; }
   const su = ev.target.closest('[data-su]');
   if (su) {
     ev.preventDefault();
@@ -27700,7 +27730,7 @@ function leggiForm() {
     trigger.senzaBang = !!g('mod-senza-bang')?.checked;
   } else if (tipoT === 'parola') {
 
-    trigger.testi = [...document.querySelectorAll('#lista-frasi-trigger .mod-testo-trigger')]
+    trigger.testi = [...document.querySelectorAll('#lista-frasi-trigger .frase-trigger:not(.esce) .mod-testo-trigger')]
       .map((i) => i.value.trim()).filter(Boolean);
     trigger.modo = g('mod-modo')?.value || 'contiene';
     trigger.maiuscole = !!g('mod-case')?.checked;
@@ -27729,8 +27759,8 @@ function leggiForm() {
   };
   const scelte = [...document.querySelectorAll('.mod-piatt-c')].filter((x) => x.checked).map((x) => x.value);
   if (scelte.length && scelte.length < _piattaformeAttive.length) condizioni.piattaforme = scelte;
-  const azioni = [...document.querySelectorAll('#lista-azioni .azione-riga')].map(leggiAzioneRiga);
-  const altrimenti = [...document.querySelectorAll('#lista-altrimenti .azione-riga')].map(leggiAzioneRiga);
+  const azioni = [...document.querySelectorAll('#lista-azioni .azione-riga:not(.esce)')].map(leggiAzioneRiga);
+  const altrimenti = [...document.querySelectorAll('#lista-altrimenti .azione-riga:not(.esce)')].map(leggiAzioneRiga);
   return {
     id: moduloInModifica?.id ?? null,
     nome: (g('mod-nome')?.value || '').trim(),
@@ -28448,7 +28478,7 @@ async function caricaTabellaAdmin() {
         }
 
         stato = await api('/api/me');
-        render();
+        await ridisegna();
       });
     };
   } catch (e) {
@@ -28467,7 +28497,7 @@ document.addEventListener('click', (ev) => {
     conErrore(async () => {
       await api('/api/cambia-canale', { method: 'POST', body: { channel: torna.dataset.tornaCanale } });
       stato = await api('/api/me');
-      render();
+      await ridisegna();
     });
     return;
   }
@@ -28483,7 +28513,7 @@ document.addEventListener('click', (ev) => {
       await api('/api/richiesta', { method: 'POST', body: {} });
       toast(L('Richiesta inviata!', 'Request sent!', '¡Solicitud enviada!'));
       stato = await api('/api/me');
-      render();
+      await ridisegna();
     });
   }
 });
@@ -28807,18 +28837,27 @@ function vaiAScheda(id) {
   const sezioni = [...document.querySelectorAll('.pannello-scheda')].filter((p) => p.dataset.scheda === id);
   sezioni.forEach((p) => rendiCartePieghevoli(p, id));
 
-  if (stessaFamiglia(prima, id)) {
-    _scambiaScheda(id, sezioni);
-    if (insieme && sporcoPrima) _riarmaBarraSalva(id);
-    return;
-  }
-
   for (const p of document.querySelectorAll('.pannello-scheda.visibile')) p.classList.add('esce');
   clearTimeout(_uscitaVia);
+  if (stessaFamiglia(prima, id)) {
+    _uscitaVia = setTimeout(() => {
+      for (const p of document.querySelectorAll('.pannello-scheda.esce')) p.classList.remove('esce');
+      _scambiaScheda(id, sezioni);
+      if (insieme && sporcoPrima) _riarmaBarraSalva(id);
+    }, _duraUscita());
+    return;
+  }
   _uscitaVia = setTimeout(() => _cambiaScena(id, sezioni), _duraUscita());
 }
 
 let _uscitaVia = 0;
+
+function togli(el, poi) {
+  if (!el) { poi?.(); return; }
+  el.classList.add('esce');
+  el.inert = true;
+  setTimeout(() => { el.remove(); poi?.(); }, _duraUscita() + 20);
+}
 
 function _duraUscita() {
   const v = getComputedStyle(document.documentElement).getPropertyValue('--t-uscita').trim();

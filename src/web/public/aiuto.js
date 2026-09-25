@@ -30,6 +30,7 @@ import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
   let vita = 0;
   let dovEra = 0;
   let uscita = 0;
+  let viaBolla = 0;
   let seq = 0;
   let segue = null;
 
@@ -164,7 +165,9 @@ import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
     if (!testo) return;
     const b = nasce();
     nasce(); corpo.textContent = testo;
+    clearTimeout(viaBolla); viaBolla = 0;
     b.className = 'aiuto-bolla ' + tipoDi(el);
+    b.setAttribute('data-disegno', '');
     b.hidden = false;
     if (!b.id) b.id = 'aiuto-bolla';
     seq += 1;
@@ -185,7 +188,12 @@ import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
     posa(el);
     clearTimeout(vita);
     vita = setTimeout(() => { if (seq === mio) spegni(); }, quantoDura(testo));
-    requestAnimationFrame(() => { if (seq === mio) { posa(el); b.classList.add('vista'); } });
+    requestAnimationFrame(() => {
+      if (seq !== mio) return;
+      posa(el);
+      b.classList.add('vista');
+      if (window.SB_DISEGNO && window.SB_DISEGNO.compare) window.SB_DISEGNO.compare(b, { veloce: true });
+    });
   }
 
   function spegni() {
@@ -196,7 +204,12 @@ import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
     if (segue) { segue.disconnect(); segue = null; }
     if (acceso) acceso.removeAttribute('aria-describedby');
     acceso = null;
-    if (bolla) { bolla.classList.remove('vista'); bolla.hidden = true; }
+    if (!bolla || bolla.hidden || viaBolla) return;
+    const b = bolla;
+    const fine = () => { viaBolla = 0; b.classList.remove('vista'); b.hidden = true; };
+    const dura = b.classList.contains('vista') && window.SB_DISEGNO && window.SB_DISEGNO.via ? window.SB_DISEGNO.via(b, { veloce: true }) : 0;
+    if (!dura) { fine(); return; }
+    viaBolla = setTimeout(fine, dura);
   }
 
   function ancoraSopra() {
@@ -273,6 +286,7 @@ import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
       velo.className = 'nuv-velo';
       const bolla = document.createElement('div');
       bolla.className = 'nuv-bolla' + (o.attenzione ? ' attenzione' : '');
+      bolla.setAttribute('data-disegno', '');
       bolla.setAttribute('role', 'alertdialog');
       bolla.setAttribute('aria-modal', 'true');
 
@@ -283,6 +297,7 @@ import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
       ombraN.setAttribute('class', 'nuv-ombra');
       const formaN = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       formaN.setAttribute('class', 'nuv-forma');
+      formaN.setAttribute('pathLength', '1');
       svg.append(ombraN, formaN);
 
       const dentro = document.createElement('div');
@@ -317,11 +332,21 @@ import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
         ombraN.setAttribute('d', d);
       };
       disegnaBolla();
-      requestAnimationFrame(() => { disegnaBolla(); bolla.classList.add('vista'); });
+      requestAnimationFrame(() => {
+        disegnaBolla();
+        bolla.classList.add('vista');
+        if (window.SB_DISEGNO && window.SB_DISEGNO.compare) window.SB_DISEGNO.compare(bolla, { veloce: true });
+      });
 
+      let chiusa = false;
       const chiudiNuv = () => {
+        if (chiusa) return;
+        chiusa = true;
         document.removeEventListener('keydown', tastiNuv, true);
-        velo.remove();
+        const dura = window.SB_DISEGNO && window.SB_DISEGNO.via ? window.SB_DISEGNO.via(bolla, { veloce: true }) : 0;
+        velo.classList.add('via');
+        velo.inert = true;
+        setTimeout(() => velo.remove(), dura);
         try { if (daDove && document.contains(daDove)) daDove.focus(); } catch (e) {  }
         risolvi();
       };
