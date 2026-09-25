@@ -378,17 +378,6 @@ export async function vita() {
   finally { clearTimeout(to); }
 }
 
-// Distilla ORA le risposte del modello in moduli. Ritorna {ok, distillazione} o null.
-export async function distillaModuli() {
-  const ac = new AbortController();
-  const to = setTimeout(() => ac.abort(), 30_000);
-  try {
-    const r = await fetch(BASE + '/distilla_moduli', { method: 'POST', signal: ac.signal });
-    if (!r.ok) return null;
-    return await r.json().catch(() => null);
-  } catch (e) { log.debug('distillaModuli:', e?.message || e); return null; }
-  finally { clearTimeout(to); }
-}
 
 // Libera il disco dai modelli non usati. `giorni` opzionale. Ritorna {ok, pulizia} o null.
 export async function pulisciModelli(giorni) {
@@ -806,18 +795,6 @@ export async function integrazione() {
   finally { clearTimeout(to); }
 }
 
-// INTEGRA: fa lavorare ORA le sue bozze nel sé (trigger manuale owner). Ritorna
-// {ok, esito} o null. Non richiede la sandbox.
-export async function integra() {
-  const ac = new AbortController();
-  const to = setTimeout(() => ac.abort(), 12000);
-  try {
-    const r = await fetch(BASE + '/integra', { method: 'POST', signal: ac.signal });
-    if (!r.ok) return null;
-    return await r.json().catch(() => null);
-  } catch (e) { log.debug('integra:', e?.message || e); return null; }
-  finally { clearTimeout(to); }
-}
 
 // LE CAPACITÀ: la gestione unificata di tutto ciò che lei crea (registro + nodi) — scopo,
 // tipo (automazione/trasformazione/analisi/conversazione), salute, se è privata o promossa nei
