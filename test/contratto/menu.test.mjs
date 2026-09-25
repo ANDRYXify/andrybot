@@ -171,7 +171,7 @@ test('il menu si disegna in ogni caso: quando si vede in una forma nuova, e prim
   assert.ok(forma.includes("if (!c || document.body.classList.contains('menu-via')) return '';"), 'un menu che se ne sta andando non e\' un menu che compare');
   assert.ok(forma.includes('return m.bordo && m.bordo.lati ? m.bordo.lati.map(Number).join(\'\') : \'-\';'), 'la forma e\' il contorno');
   assert.ok(corpo('sulMenu').includes('if (ora && ora !== menuVisto) menu();'), 'si vede in una forma nuova: si disegna');
-  assert.ok(corpo('sulleClassi').includes('if (corpo) sulMenu();'), 'a ogni classe che cambia sulla pagina');
+  assert.ok(corpo('sulleMosse').includes('if (corpo) sulMenu();'), 'a ogni classe che cambia sulla pagina');
   assert.ok(corpo('avvia').includes("window.addEventListener('resize', function () { sulMenu(); esegui(); });"), 'a ogni cambio di misura della finestra');
   assert.ok(/sulMenu\(\);\n\s*esegui\(\);\n\s*\(window\.requestIdleCallback/.test(corpo('avvia')), 'e appena parte');
   assert.doesNotMatch(DIS, /diventa\('menu-aperto'\)|perde\('tutto-schermo'\)/, 'nessuna regola per strada');

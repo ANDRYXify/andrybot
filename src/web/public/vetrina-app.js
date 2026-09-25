@@ -17,6 +17,12 @@
     catch (e) { return false; }
   }
 
+  function uscita() {
+    var v = getComputedStyle(document.documentElement).getPropertyValue('--t-uscita').trim();
+    var n = parseFloat(v) || 0;
+    return /ms$/.test(v) ? n : n * 1000;
+  }
+
   function toast(msg, tipo) {
     var box = document.getElementById('toast-box');
     if (!box) return;
@@ -26,9 +32,7 @@
     box.appendChild(el);
     setTimeout(function () {
       el.classList.add('esce');
-      var via = function () { el.remove(); };
-      el.addEventListener('animationend', via, { once: true });
-      setTimeout(via, 700);
+      setTimeout(function () { el.remove(); }, uscita() + 20);
     }, 4000);
   }
 
@@ -64,7 +68,7 @@
     var v = document.querySelector('[data-chiedi]');
     if (!v) return;
     v.classList.remove('dentro');
-    setTimeout(function () { v.hidden = true; }, 240);
+    setTimeout(function () { v.hidden = true; }, uscita() + 20);
     _chiesto = null;
   }
 

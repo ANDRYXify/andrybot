@@ -56,9 +56,10 @@ const ROTTURE = [
   // Questo difetto non sta nel codice ma nell'animazione, e non si vede
   // leggendo: la scheda e' posizionata giusta, poi l'ingresso la trasla in giu'
   // di 14px. Contro il bordo inferiore esce, per tutta la durata dell'entrata.
+  // Oggi la scheda non ha un ingresso suo, si disegna: la rottura glielo rimette.
   ['l\'ingresso che trasla la scheda fuori dal bordo a cui e\' incollata', CSS,
-    `  animation: gr-entra-fermo .24s var(--an-vel) both;`,
-    `  animation: gr-entra .24s var(--an-vel) both;`],
+    `  box-shadow: var(--alone-contorno), var(--ombra-ink-alta); padding: 1rem 1.1rem; display: grid; gap: .5rem;\n}\n`,
+    `  box-shadow: var(--alone-contorno), var(--ombra-ink-alta); padding: 1rem 1.1rem; display: grid; gap: .5rem;\n  animation: giro-scende .24s both;\n}\n@keyframes giro-scende { from { transform: translateY(14px); } }\n`],
 ];
 const originali = new Map([[APP, fs.readFileSync(APP, 'utf8')], [CSS, fs.readFileSync(CSS, 'utf8')]]);
 const quale = SELFTEST ? Number(process.argv.find((a) => /^--rottura=/.test(a))?.split('=')[1] || 0) : -1;
@@ -280,7 +281,11 @@ verde = dice(fuoriSchermo.length === 0, 'la scheda del giro sta sempre dentro lo
 if (SELFTEST) {
   ripristina();
   console.log('\n  selftest');
+  // Una rottura si vede da dove finisce la scheda, o dai fotogrammi del suo
+  // ingresso: quella dell'ingresso la dicono i fotogrammi, sempre, mentre la
+  // posizione la vede solo un campione che capita nei 240 ms dell'entrata.
   if (fuoriSchermo.length) { console.log(`  ✓ il cancello se ne accorge (${fuoriSchermo.length} guai)`); verde = true; }
+  else if (ing && ing.muove) { console.log(`  ✓ il cancello se ne accorge (l'ingresso sposta la scheda: ${ing.dove})`); verde = true; }
   else { console.log('  ✗ con questa rottura non ha visto niente'); verde = false; }
 }
 

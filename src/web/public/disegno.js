@@ -149,9 +149,62 @@
     };
   }
 
-  function disegnabile(el, m) {
+  function disegnabile(el, m, o) {
     var r = m.r;
-    return !!m.bordo && m.visibile && r.width >= 8 && r.height >= 8 && r.bottom > 0 && r.top < window.innerHeight;
+    return !!(m.bordo || (o && o.retino)) && m.visibile && r.width >= 8 && r.height >= 8 && r.bottom > 0 && r.top < window.innerHeight;
+  }
+
+  var LATI4 = ['Top', 'Right', 'Bottom', 'Left'];
+
+  function haContorno(st) {
+    return LATI4.some(function (x) {
+      var c = st['border' + x + 'Color'];
+      return st['border' + x + 'Style'] !== 'none' && (parseFloat(st['border' + x + 'Width']) || 0) >= 0.5 &&
+        !(/rgba\([^)]*,\s*0\)$/.test(c) || c === 'transparent');
+    });
+  }
+
+  function contornato(e) {
+    if (e.classList.contains('dg-in') || e.classList.contains('dg-out')) return !!misura(e).bordo;
+    return haContorno(getComputedStyle(e));
+  }
+
+  function fermo(el) {
+    return !!(el.closest && el.closest('[data-dg-no]'));
+  }
+
+  function siVede(el) {
+    if (!el.isConnected || (el.checkVisibility && !el.checkVisibility())) return false;
+    var r = el.getBoundingClientRect();
+    if (r.width < 8 || r.height < 8) return false;
+    if (getComputedStyle(el).visibility === 'hidden') return false;
+    for (var a = el; a && a.nodeType === 1; a = a.parentElement) {
+      var st = getComputedStyle(a);
+      if (st.display === 'none' || parseFloat(st.opacity) < 0.02) return false;
+    }
+    return true;
+  }
+
+  function aSchermo(el) {
+    var r = el.getBoundingClientRect();
+    return r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth;
+  }
+
+  var COMANDO = 'a, button, input, select, textarea, [role="button"]';
+
+  function parti(el) {
+    if (contornato(el)) return [[el, false]];
+    var dentro = [];
+    (function giu(e) {
+      for (var i = 0; i < e.children.length; i++) {
+        var c = e.children[i];
+        if (!(c instanceof HTMLElement) || c.matches(COMANDO)) continue;
+        var st = getComputedStyle(c);
+        if (st.display === 'none') continue;
+        if (contornato(c)) dentro.push([c, false]); else giu(c);
+      }
+    })(el);
+    return [[el, true]].concat(dentro);
   }
 
   var tele = [];
@@ -176,19 +229,41 @@
       posa(t, misure[i]);
       return true;
     });
+    [].slice.call(document.querySelectorAll('.dg-strato')).forEach(function (p) {
+      if (p.firstChild) return;
+      try { p.hidePopover(); } catch (e) {}
+      p.remove();
+    });
     inGiro = tele.length > 0;
     if (inGiro) requestAnimationFrame(giro);
+  }
+
+  function strato(dlg) {
+    var p = dlg._dgStrato;
+    if (!p || !p.isConnected) {
+      p = document.createElement('div');
+      p.setAttribute('popover', 'manual');
+      p.setAttribute('aria-hidden', 'true');
+      p.className = 'dg-strato';
+      document.body.appendChild(p);
+      dlg._dgStrato = p;
+    }
+    try { if (p.matches(':popover-open')) p.hidePopover(); p.showPopover(); } catch (e) {}
+    return p;
   }
 
   function tela(el, m) {
     var s = document.createElementNS(NS, 'svg');
     s.setAttribute('class', 'dg-tela');
     s.setAttribute('aria-hidden', 'true');
+    var dlg = el.closest && el.closest('dialog');
+    var casa = dlg && dlg.matches(':modal') ? strato(dlg) : document.body;
+    var fisso = m.inFisso || casa !== document.body;
     s.style.zIndex = m.z;
-    s.style.position = m.inFisso ? 'fixed' : 'absolute';
-    var t = { el: el, s: s, inFisso: m.inFisso, w: 0, h: 0, tracce: [] };
+    s.style.position = fisso ? 'fixed' : 'absolute';
+    var t = { el: el, s: s, inFisso: fisso, w: 0, h: 0, tracce: [] };
     posa(t, m.r);
-    document.body.appendChild(s);
+    casa.appendChild(s);
     tele.push(t);
     if (!inGiro) { inGiro = true; requestAnimationFrame(giro); }
     t.traccia = function (padre, fa, classe, da, dur, extra, n) {
@@ -238,23 +313,25 @@
     var da = o.da || 0;
     var k = o.veloce ? 0.7 : 1;
     var seme = semeDi(el);
-    var bd = m.bordo;
+    var bd = o.retino ? null : m.bordo;
     var tratti = [];
     var tLato = 125 * k, passo = 60 * k;
-    [0, 1, 2, 3].forEach(function (i) {
-      if (bd.lati && !bd.lati[i]) return;
-      tratti.push({ matita: true, classe: 'dg-matita', da: da + i * passo, dur: tLato,
-        fa: function (w, h) { var l = lato(i, w, h); return tratto(l[0], l[1], l[2], l[3], caso(seme + ':' + i), 7, 2.6); } });
-    });
-    if (!o.veloce && (!bd.lati || bd.lati[0])) {
-      tratti.push({ matita: true, classe: 'dg-matita', da: da + 4 * passo, dur: tLato,
-        fa: function (w, h) { var l = lato(0, w, h); return tratto(l[0], l[1], l[2], l[3], caso(seme + ':ripasso'), 4, 2); } });
-    }
     var daChina = da + 140 * k, tChina = 250 * k;
-    tratti.push(bd.urlo
-      ? { classe: 'dg-china dg-urlo-china', da: daChina, dur: tChina, fa: function (w, h) { return spigoli(w, h, seme); } }
-      : { classe: 'dg-china', da: daChina, dur: tChina, extra: { 'stroke-width': Math.max(1, bd.sp), stroke: bd.colore },
-        fa: function (w, h) { return contorno(w, h, bd, caso(seme + ':china')); } });
+    if (bd) {
+      [0, 1, 2, 3].forEach(function (i) {
+        if (bd.lati && !bd.lati[i]) return;
+        tratti.push({ matita: true, classe: 'dg-matita', da: da + i * passo, dur: tLato,
+          fa: function (w, h) { var l = lato(i, w, h); return tratto(l[0], l[1], l[2], l[3], caso(seme + ':' + i), 7, 2.6); } });
+      });
+      if (!o.veloce && (!bd.lati || bd.lati[0])) {
+        tratti.push({ matita: true, classe: 'dg-matita', da: da + 4 * passo, dur: tLato,
+          fa: function (w, h) { var l = lato(0, w, h); return tratto(l[0], l[1], l[2], l[3], caso(seme + ':ripasso'), 4, 2); } });
+      }
+      tratti.push(bd.urlo
+        ? { classe: 'dg-china dg-urlo-china', da: daChina, dur: tChina, fa: function (w, h) { return spigoli(w, h, seme); } }
+        : { classe: 'dg-china', da: daChina, dur: tChina, extra: { 'stroke-width': Math.max(1, bd.sp), stroke: bd.colore },
+          fa: function (w, h) { return contorno(w, h, bd, caso(seme + ':china')); } });
+    }
     var pulizia = { da: daChina + tChina, dur: PULIZIA };
     return { tratti: tratti, retino: { da: da + 220 * k, dur: 170 * k }, pulizia: pulizia, fine: pulizia.da + pulizia.dur };
   }
@@ -338,18 +415,23 @@
 
   var coda = [];
 
-  function chiedi(el, o, via) {
-    if (el && (via || !el.dataset.dgIn)) coda.push([el, o || {}, !!via]);
+  function chiedi(el, o, indietro) {
+    if (el && (indietro || !el.dataset.dgIn)) coda.push([el, o || {}, !!indietro]);
+  }
+
+  function copertina() {
+    var s = document.getElementById('splash');
+    return !!(s && !s.classList.contains('via'));
   }
 
   function esegui() {
+    if (!coda.length || copertina()) return 0;
     var giro1 = coda;
     coda = [];
-    if (!giro1.length) return 0;
     var misure = giro1.map(function (x) { return misura(x[0]); });
     var fatti = 0;
     giro1.forEach(function (x, i) {
-      if (!disegnabile(x[0], misure[i])) return;
+      if (!disegnabile(x[0], misure[i], x[1])) return;
       if (x[2]) { sfila(x[0], misure[i], x[1]); fatti++; return; }
       if (x[0].dataset.dgIn) return;
       traccia(x[0], misure[i], x[1]);
@@ -422,7 +504,10 @@
     return tutte;
   }
 
+  var dopoCopertina = [];
+
   function scena(pannello) {
+    if (copertina()) { if (dopoCopertina.indexOf(pannello) < 0) dopoCopertina.push(pannello); return; }
     var tutte = vignetteDellaScena(pannello);
     tutte.forEach(function (e) { delete e.dataset.dgFatto; });
     var misure = tutte.map(misura);
@@ -538,50 +623,161 @@
     });
   }
 
-  var FINESTRE = [['bv-velo', '.bv-carta'], ['giro-velo', '.giro-carta']];
+  function compare(el, o) {
+    o = o || {};
+    if (!el || !el.isConnected || fermo(el) || !siVede(el)) return;
+    if (el.parentElement && el.parentElement.closest('.dg-in, .dg-out, .dg-attesa')) return;
+    if (!aSchermo(el)) { attendi(el); return; }
+    lascia(el);
+    var da = o.da === undefined ? turno() : o.da;
+    parti(el).forEach(function (x) {
+      chiedi(x[0], { da: da, veloce: o.veloce, retino: x[1] });
+    });
+  }
 
-  function sulleClassi(mosse) {
-    var corpo = false;
+  function via(el, o) {
+    o = o || {};
+    if (!el || !el.isConnected || fermo(el)) return 0;
+    var fine = 0;
+    parti(el).forEach(function (x) {
+      var m = misura(x[0]), oo = { veloce: o.veloce, retino: x[1] };
+      if (disegnabile(x[0], m, oo)) fine = Math.max(fine, sfila(x[0], m, oo));
+    });
+    return fine;
+  }
+
+  function trattieni(el, display) {
+    el.style.setProperty('--dg-display', display);
+    el.classList.add('dg-resta');
+    if (!el.inert) { el.inert = true; el._dgInerte = true; }
+    var fine = via(el, {});
+    clearTimeout(el._dgResta);
+    if (!fine) { lascia(el); return; }
+    el._dgResta = setTimeout(function () { lascia(el); }, fine);
+  }
+
+  function lascia(el) {
+    if (!el._dgResta && !el.classList.contains('dg-resta')) return;
+    clearTimeout(el._dgResta);
+    el._dgResta = 0;
+    el.classList.remove('dg-resta');
+    el.style.removeProperty('--dg-display');
+    if (el._dgInerte) { el.inert = false; el._dgInerte = false; }
+  }
+
+  function figliDi(d) {
+    return [].filter.call(d.children, function (c) { return c instanceof HTMLElement && c.tagName !== 'SUMMARY'; });
+  }
+
+  function chiudeDettagli(d) {
+    if (fermo(d) || !siVede(d)) return;
+    d.classList.add('dg-resta');
+    var fine = 0;
+    figliDi(d).forEach(function (c) { if (siVede(c) && aSchermo(c)) fine = Math.max(fine, via(c, { veloce: true })); });
+    clearTimeout(d._dgResta);
+    d._dgResta = 0;
+    if (!fine) { d.classList.remove('dg-resta'); return; }
+    d._dgResta = setTimeout(function () { d._dgResta = 0; d.classList.remove('dg-resta'); }, fine);
+  }
+
+  var arrivo = null;
+
+  function attendi(el) {
+    if (!('IntersectionObserver' in window) || el.classList.contains('dg-attesa')) return;
+    if (!arrivo) {
+      arrivo = new IntersectionObserver(function (voci) {
+        voci.forEach(function (v) {
+          if (!v.isIntersecting) return;
+          arrivo.unobserve(v.target);
+          v.target.classList.remove('dg-attesa');
+          compare(v.target);
+        });
+        esegui();
+      }, { threshold: 0 });
+    }
+    el.classList.add('dg-attesa');
+    arrivo.observe(el);
+  }
+
+  var FINESTRE = [['bv-velo', '.bv-carta'], ['giro-velo', '.giro-carta'], ['vt-velo', '.vt-velo-carta']];
+  var osservatore = null;
+
+  function sulleMosse(mosse) {
+    var corpo = false, sveglia = false, mostrati = [], nascosti = [], chiusi = [];
     for (var i = 0; i < mosse.length; i++) {
       var m = mosse[i], el = m.target;
       if (!(el instanceof HTMLElement)) continue;
+      if (m.attributeName === 'hidden') {
+        if (m.oldValue !== null && !el.hasAttribute('hidden')) mostrati.push(el);
+        else if (m.oldValue === null && el.hasAttribute('hidden')) nascosti.push(el);
+        continue;
+      }
+      if (m.attributeName === 'open') {
+        var aperto = el.hasAttribute('open');
+        if (aperto && m.oldValue === null) {
+          if (el.tagName === 'DETAILS') { clearTimeout(el._dgResta); el._dgResta = 0; el.classList.remove('dg-resta'); mostrati = mostrati.concat(figliDi(el)); }
+          else if (el.tagName === 'DIALOG') mostrati.push(el);
+        } else if (!aperto && m.oldValue !== null && el.tagName === 'DETAILS') chiusi.push(el);
+        continue;
+      }
       var prima = ' ' + String(m.oldValue || '') + ' ';
       var diventa = function (c) { return el.classList.contains(c) && prima.indexOf(' ' + c + ' ') < 0; };
       var perde = function (c) { return !el.classList.contains(c) && prima.indexOf(' ' + c + ' ') >= 0; };
       if (el.classList.contains('pannello-scheda')) {
         if (diventa('visibile')) scena(el);
         if (diventa('esce')) esceScena(el);
-      } else if (el.classList.contains('carta')) {
+        continue;
+      }
+      if (el === document.body) { corpo = true; continue; }
+      if (el.id === 'splash') { if (diventa('via')) sveglia = true; continue; }
+      if (fermo(el)) continue;
+      if (diventa('esce')) via(el, { veloce: el.classList.contains('toast') || el.classList.contains('rec-invito') });
+      else if (perde('esce')) mostrati.push(el);
+      if (el.classList.contains('carta')) {
         if (diventa('dentro') && !el.dataset.dgFatto) chiedi(el, { da: turno() });
-      } else if (el.classList.contains('toast') || el.classList.contains('rec-invito')) {
-        if (diventa('esce')) chiedi(el, { veloce: true }, true);
-      } else if (el === document.body) {
-        corpo = true;
       } else if (el.id === 'cerca-overlay') {
         if (diventa('aperto')) chiedi(el.querySelector('.cerca-box'));
       } else {
+        var finestra = false;
         for (var j = 0; j < FINESTRE.length; j++) {
           if (!el.classList.contains(FINESTRE[j][0])) continue;
+          finestra = true;
           var carta = el.querySelector(FINESTRE[j][1]);
           if (diventa('dentro') && carta && carta.querySelector('.btn.pericolo')) urlo(carta);
           if (diventa('dentro')) chiedi(carta);
           if (perde('dentro')) chiedi(carta, {}, true);
         }
+        if (!finestra && diventa('dentro')) mostrati.push(el);
       }
     }
+    nascosti.forEach(function (el) {
+      if (!el.isConnected || fermo(el)) return;
+      var v = el.getAttribute('hidden');
+      el.removeAttribute('hidden');
+      var d = getComputedStyle(el).display;
+      var vede = d !== 'none' && siVede(el) && aSchermo(el);
+      el.setAttribute('hidden', v);
+      if (vede) trattieni(el, d);
+    });
+    chiusi.forEach(chiudeDettagli);
+    mostrati.forEach(function (el) { if (!el.hasAttribute('hidden')) compare(el); });
+    if (sveglia) { var attese = dopoCopertina; dopoCopertina = []; attese.forEach(scena); }
     if (corpo) sulMenu();
+    if (osservatore) osservatore.takeRecords();
     esegui();
   }
 
+  var SALTA_CORPO = '.dg-tela, .dg-strato, .dg-sagoma, .bv-velo, .giro-velo, dialog, script, style, link, template, #toast-box, #splash';
+
   function sulleAggiunte(mosse) {
     for (var i = 0; i < mosse.length; i++) {
-      var nuovi = mosse[i].addedNodes;
+      var padre = mosse[i].target, nuovi = mosse[i].addedNodes;
       for (var j = 0; j < nuovi.length; j++) {
         var n = nuovi[j];
         if (!(n instanceof HTMLElement)) continue;
-        if (n.classList.contains('pannello-scheda') && n.classList.contains('visibile')) scena(n);
+        if (n.classList.contains('pannello-scheda')) { if (n.classList.contains('visibile')) scena(n); }
         else if (n.classList.contains('toast')) chiedi(n, { veloce: true, emanata: n.classList.contains('errore') ? 'rabbia' : 'scintille' });
-        else if (n.classList.contains('cookie-banner') || n.classList.contains('aiuto-banner') || n.classList.contains('rec-invito')) chiedi(n, { veloce: true });
+        else if (padre === document.body && !n.matches(SALTA_CORPO)) compare(n, { veloce: true });
       }
     }
     esegui();
@@ -608,27 +804,37 @@
   }
 
   function vetrina() {
-    if (!document.body.classList.contains('vetrina') || !('IntersectionObserver' in window)) return;
+    if (!document.body.classList.contains('vetrina')) return;
     var radice = document.querySelector('main') || document.body;
-    var io = new IntersectionObserver(function (voci) {
-      voci.forEach(function (v) {
-        if (!v.isIntersecting) return;
-        io.unobserve(v.target);
-        v.target.classList.remove('dg-attesa');
-        chiedi(v.target, { da: turno() });
-      });
-      esegui();
-    }, { threshold: 0 });
     var alto = window.innerHeight;
-    var fuori = vignetteDi(radice).filter(function (e) {
+    vignetteDi(radice).filter(function (e) {
       var r = e.getBoundingClientRect();
       return !(r.bottom > 0 && r.top < alto);
-    });
-    fuori.forEach(function (e) { e.classList.add('dg-attesa'); io.observe(e); });
+    }).forEach(attendi);
+  }
+
+  function finestre() {
+    if (!window.HTMLDialogElement) return;
+    var chiudi = HTMLDialogElement.prototype.close;
+    HTMLDialogElement.prototype.close = function () {
+      var d = this, args = arguments;
+      if (d._dgChiude) return;
+      var dura = d.open ? via(d, {}) : 0;
+      if (!dura) return chiudi.apply(d, args);
+      d._dgChiude = true;
+      setTimeout(function () { d._dgChiude = false; chiudi.apply(d, args); }, dura);
+    };
+    document.addEventListener('cancel', function (ev) {
+      var d = ev.target;
+      if (!(d instanceof HTMLDialogElement) || !d.open) return;
+      ev.preventDefault();
+      d.close();
+    }, true);
   }
 
   function avvia() {
-    new MutationObserver(sulleClassi).observe(document.body, { attributes: true, attributeOldValue: true, subtree: true, attributeFilter: ['class'] });
+    osservatore = new MutationObserver(sulleMosse);
+    osservatore.observe(document.body, { attributes: true, attributeOldValue: true, subtree: true, attributeFilter: ['class', 'hidden', 'open'] });
     var app = document.getElementById('app');
     if (app) new MutationObserver(sulleAggiunte).observe(app, { childList: true });
     var avvisi = document.getElementById('toast-box');
@@ -636,12 +842,13 @@
     new MutationObserver(sulleAggiunte).observe(document.body, { childList: true });
     document.addEventListener('click', ripassa, true);
     window.addEventListener('resize', function () { sulMenu(); esegui(); });
-    [].slice.call(document.querySelectorAll('.cookie-banner:not([hidden])')).forEach(function (e) { chiedi(e, { veloce: true }); });
+    finestre();
+    [].slice.call(document.querySelectorAll('.cookie-banner:not([hidden])')).forEach(function (e) { compare(e, { veloce: true }); });
     sulMenu();
     esegui();
     (window.requestIdleCallback || function (fn) { return setTimeout(fn, 200); })(vetrina);
   }
 
   avvia();
-  window.SB_DISEGNO = { disegna: disegna, disfa: disfa, scena: scena, viaMenu: viaMenu };
+  window.SB_DISEGNO = { disegna: disegna, disfa: disfa, scena: scena, viaMenu: viaMenu, via: via, compare: function (el, o) { compare(el, o); esegui(); } };
 })();

@@ -300,20 +300,12 @@ body.menu-aperto.menu-via .backdrop { opacity: 0; pointer-events: none; }
 .carta-chevron svg { display: block; }
 .carta.pieghevole.chiusa .carta-chevron { transform: rotate(-90deg); }
 
-.carta-corpo {
-  display: grid; grid-template-rows: 1fr;
-  transition: grid-template-rows var(--dur-elem) var(--ease-quint),
-              opacity var(--dur-elem) var(--ease), margin-top var(--dur-elem) var(--ease-quint);
-  margin-top: .45rem; opacity: 1;
-}
+.carta-corpo { margin-top: .45rem; }
 .carta-corpo > .carta-corpo-in { min-height: 0; min-width: 0; }
-.carta.pieghevole.chiusa > .carta-corpo > .carta-corpo-in,
-.carta.pieghevole.in-moto > .carta-corpo > .carta-corpo-in { overflow: clip; overflow-clip-margin: var(--posto-inchiostro); }
-.carta.pieghevole.chiusa > .carta-corpo { grid-template-rows: 0fr; opacity: 0; margin-top: 0; }
+.carta.pieghevole.chiusa > .carta-corpo { display: none; }
 
 .carta-riassunto { display: none; font-size: .84rem; color: var(--testo-3); margin-top: .3rem; }
-.carta.pieghevole.chiusa .carta-riassunto { display: block; animation: carta-riass-in var(--dur-elem) var(--ease) both; }
-@keyframes carta-riass-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.carta.pieghevole.chiusa .carta-riassunto, .carta-riassunto.esce { display: block; }
 
 .carte-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: 1.1rem 0 1.2rem; }
 .carte-ctrl .suggerimento { margin: 0 .1rem 0 auto; }
@@ -2218,7 +2210,9 @@ body.meno-moto .aiuto-bolla.vista .aiuto-pensieri, body.meno-moto .aiuto-bolla.v
   color: var(--testo); padding: 0; max-width: 34rem; width: calc(100vw - 2rem);
   max-height: min(80vh, 40rem); box-shadow: var(--om-m);
 }
-.nov-finestra::backdrop { background: rgba(0, 0, 0, .45); }
+.nov-finestra::backdrop { background: rgba(0, 0, 0, .45); transition: opacity .26s ease; }
+@starting-style { .nov-finestra[open]::backdrop { opacity: 0; } }
+.nov-finestra.dg-out::backdrop { opacity: 0; }
 .nov-testa { padding: 1.1rem 1.2rem .6rem; border-bottom: 1px solid var(--border); }
 .nov-testa h2 { font-family: var(--mano); font-size: 1.06rem; font-weight: 700; margin: 0 0 .2rem; }
 .nov-corpo { padding: .4rem 1.2rem 1rem; overflow-y: auto; max-height: min(56vh, 28rem); }

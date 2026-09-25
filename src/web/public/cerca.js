@@ -687,13 +687,14 @@
       var dd = DOMANDE().filter(function (d) { return !filtro || (indice().find(function (v) { return v.id === d[1]; }) || {}).gruppoId === filtro; });
       if (dd.length) {
         hs += '<div class="cerca-sugg-tit">' + esc(L('Cosa cerchi?', 'What are you looking for?', '¿Qué buscas?')) + '</div><div class="cerca-sugg">';
-        dd.forEach(function (d, i) { hs += '<button class="chip-domanda" data-id="' + esc(d[1]) + '" style="--an-ritardo:' + (i * 45) + 'ms"><span class="pip"></span>' + esc(d[0]) + '</button>'; });
+        dd.forEach(function (d) { hs += '<button class="chip-domanda" data-id="' + esc(d[1]) + '"><span class="pip"></span>' + esc(d[0]) + '</button>'; });
         hs += '</div>';
       }
       var resto = usate.length ? sezioni.filter(function (v) { return usate.indexOf(v) < 0; }) : sezioni;
       hs += righe(resto, [], L('Tutte le sezioni', 'All sections', 'Todas las secciones'), usate.length);
       lista.innerHTML = hs;
       aggancia();
+      scopri();
       return;
     }
 
@@ -718,6 +719,11 @@
     }
     lista.innerHTML = h;
     aggancia();
+    scopri();
+  }
+
+  function scopri() {
+    if (ov && ov.classList.contains('aperto') && window.SB_DISEGNO && window.SB_DISEGNO.compare) window.SB_DISEGNO.compare(lista, { veloce: true });
   }
 
   function righe(arr, rad, titolo, offset) {
@@ -726,7 +732,7 @@
     h += '<div class="cerca-lista">';
     arr.forEach(function (v, i) {
       var idx = base + i;
-      h += '<div class="cerca-voce' + (idx === sel ? ' sel' : '') + '" data-id="' + esc(v.id) + '" data-i="' + idx + '" style="--an-ritardo:' + Math.min(i, 10) * 28 + 'ms">' +
+      h += '<div class="cerca-voce' + (idx === sel ? ' sel' : '') + '" data-id="' + esc(v.id) + '" data-i="' + idx + '">' +
         '<span class="pip"></span>' +
         '<span class="txt"><b>' + evidenzia(v.label, rad) + '</b><small>' + esc(v.gruppo) + (v.sotto ? ' · ' + esc(v.sotto) : '') + '</small></span>' +
         '<span class="via">' + esc(L('apri', 'open', 'abrir')) + '</span></div>';
@@ -769,8 +775,18 @@
     if (v._dom) setTimeout(function () { try { mira(ritrova(v)); } catch (e) {  } }, 300);
   }
 
+  var _via = 0;
+  function uscita() {
+    var v = getComputedStyle(document.documentElement).getPropertyValue('--t-uscita').trim();
+    var n = parseFloat(v) || 0;
+    return /ms$/.test(v) ? n : n * 1000;
+  }
   function apri() {
     if (!ov) return;
+    if (_via) {
+      clearTimeout(_via); _via = 0; ov.classList.remove('via');
+      var b = ov.querySelector('.cerca-box'); if (b) b.classList.remove('esce');
+    }
     _daDove = document.activeElement;
     filtro = ''; sel = 0; _radAttuali = []; inp.value = '';
     invalida();
@@ -779,11 +795,20 @@
     document.addEventListener('keydown', globali, true);
   }
   function chiudi() {
-    if (ov) ov.classList.remove('aperto');
-    document.body.classList.remove('cerca-aperta');
     document.removeEventListener('keydown', globali, true);
     try { if (_daDove && document.contains(_daDove)) _daDove.focus(); } catch (e) {  }
     _daDove = null;
+    if (!ov || !ov.classList.contains('aperto')) { document.body.classList.remove('cerca-aperta'); return; }
+    if (_via) return;
+    var box = ov.querySelector('.cerca-box');
+    ov.classList.add('via');
+    if (box) box.classList.add('esce');
+    _via = setTimeout(function () {
+      _via = 0;
+      ov.classList.remove('aperto', 'via');
+      if (box) box.classList.remove('esce');
+      document.body.classList.remove('cerca-aperta');
+    }, uscita() + 20);
   }
   var FUOCABILI = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 

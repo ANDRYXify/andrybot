@@ -68,6 +68,17 @@ Da lì le scelte:
 | premi un tasto che ha un contorno, e il gesto non fa partire altri disegni | il tasto si ripassa a china dal punto toccato, poi l'inchiostro in più sfuma |
 | il menù compare o cambia forma, in qualunque modo (lo apri, la pagina si carica, la finestra si allarga o si stringe, il tablet gira, togli il tutto schermo) | il cassetto si disegna nella forma che ha lì, poi i gruppi uno dopo l'altro |
 | il menù se ne va, in qualunque modo (la X, il velo, Esc, una voce, il tasto della barra, il tutto schermo, la finestra che si stringe) | il cassetto e i gruppi si disegnano all'indietro dove sono, e il velo sfuma insieme |
+| una cosa nascosta compare (una tendina, un menu a discesa, un riquadro che dipende da una scelta) | si disegna: il suo contorno, o il solo retino se non ne ha, più i riquadri che ha dentro |
+| si nasconde | resta dov'è finché si è disegnata all'indietro, poi se ne va |
+| apri una tendina (`<details>`) | il contenuto si scopre col retino, e i suoi riquadri si tracciano |
+| la chiudi | il contenuto si ricopre, poi la tendina si chiude |
+| una finestra di sistema (le novità, un invito) | si disegna sopra al suo velo, e chiudendola, da qualunque parte e anche con Esc, si disfa prima di chiudersi |
+| la ricerca cambia risultati mentre scrivi | i risultati nuovi si scoprono col retino |
+| ripieghi una carta | il suo corpo si ricopre col retino, poi la carta si chiude e il riassunto si scopre |
+| la riapri | il corpo si scopre, e il riassunto se ne va disfacendosi |
+| un gruppo del menù si apre o si chiude | le sue voci si scoprono o si ricoprono col retino |
+| la barra delle modifiche non salvate arriva o se ne va | si disegna e si disfa dov'è, non scivola |
+| la pagina si carica | i disegni aspettano che la copertina cominci ad andarsene: sotto la copertina non li vedrebbe nessuno |
 | la vetrina | ogni vignetta (un riquadro chiuso) si disegna quando entra nello schermo |
 
 Una carta dura circa 560 ms dall'inizio alla pulizia, ma il contenuto si legge
@@ -245,6 +256,51 @@ lo stesso seme: quando il disegno finisce resta la sagoma, senza scatti. La
 sagoma è la forma della carta, non un movimento: resta anche per chi chiede
 meno movimento.
 
+## Tutto si disegna: le strade
+
+Il disegno non ha una lista di cose da disegnare: guarda le strade da cui una
+cosa compare o se ne va, e ognuna passa di lì. Una cosa aggiunta domani, da
+chiunque, si disegna senza che nessuno se ne ricordi.
+
+- **Le classi del ciclo di vita.** `visibile` ed `esce` per le schede, `dentro`
+  per le carte, le finestre e chi entra da sé (la barra delle modifiche),
+  `menu-aperto` per il menù. E `esce` vale per chiunque: chi la prende si
+  disfa, e chi la toglie dalla pagina aspetta `--t-uscita`. Se la classe se ne
+  va prima (ci hai ripensato), si ridisegna.
+- **L'attributo `hidden`.** Tolto: la cosa compare, e si disegna. Messo: l'app
+  ha finito, e per lei la cosa è nascosta (lo stato dice `hidden`); la vista la
+  tiene dov'era (`dg-resta`, col `display` che aveva) finché si è disegnata
+  all'indietro, e intanto non si tocca e col Tab non ci si arriva. Per leggere
+  come si vedeva, il modulo toglie un istante l'attributo, misura e lo rimette,
+  senza che il browser dipinga in mezzo, e dimentica le mosse fatte da sé
+  (`takeRecords`) per non scambiarle per mosse dell'app.
+- **Le tendine (`<details>`).** Aprendosi, il contenuto si scopre; chiudendosi
+  resta aperto alla vista (`::details-content` visibile) finché si è ricoperto.
+- **Le finestre di sistema (`<dialog>`).** Stanno nel livello più alto della
+  pagina, sopra a tutto: una tela appesa al corpo della pagina starebbe sotto.
+  La loro tela sta in uno strato suo, un popover aperto dopo la finestra. E si
+  chiudono solo dopo essersi disfatte, da qualunque codice le chiuda e anche
+  con Esc: `close()` passa dal disegno.
+- **Chi si aggiunge sopra a tutto** (un figlio diretto della pagina: una
+  tendina volante, una striscia, un pulsante che galleggia) si disegna quando
+  arriva.
+- **Chi compare fuori schermo** aspetta invisibile il suo primo pixel, come le
+  carte e le vignette della vetrina.
+
+Cosa si disegna di una cosa che compare: il suo contorno, se ce l'ha; se non ce
+l'ha, il retino la scopre, e i riquadri col contorno che ha dentro si tracciano
+insieme. Chi sta dentro a una cosa che si sta già disegnando lo scopre il retino
+di chi lo contiene, e non si disegna due volte.
+
+Non si disegna il contenuto dello streamer (`data-dg-no`): la tela dello
+Studio, l'anteprima di un effetto, quella del file che carichi. Mostrano
+l'overlay com'è in onda, con le entrate e le uscite che ha scelto lo streamer.
+
+Il velo di una finestra sfuma il suo colore e la sfocatura, non l'opacità:
+sfumando il velo intero si sfumava anche la carta, che spariva mentre si
+disfaceva (e con meno movimento spariva di colpo). La carta prima di entrare
+non si vede, e mentre si disfa sì.
+
 ## Il cassetto del telefono
 
 Scorreva, ed era scritto qui fra le cose che restano animate: «è un
@@ -291,10 +347,12 @@ disegnarsi. Adesso le regole sono due, e non nominano nessuna strada.
 
 ## Cosa resta animato, e perché
 
-Il disegno è per le **vignette**: le cose che entrano ed escono dalla pagina.
-Resta com'era quello che non è una vignetta:
+Tutto quello che entra ed esce dalla pagina si disegna: le tendine e i menu a
+discesa comprese, che prima entravano sfumando. Resta com'era quello che non
+entra e non esce:
 
-- le **micro-interazioni**: tendine, pressione e sollevamento dei tasti, hover;
+- le **micro-interazioni**: pressione e sollevamento dei tasti, hover, la
+  freccia di una tendina che gira;
 - lo stato **vivo**: le pulsazioni del «in diretta», i caricamenti, i contatori;
 - il **titolo** della scheda, che entra parola per parola: è il lettering;
 - tra una pagina e l'altra (`@view-transition`) la barra, il marchio e il piede
@@ -330,6 +388,22 @@ di un pixel o due, e la china ne ricalca uno o due. I blocchi di solo testo non
 si disegnano più né scivolano: ci sono.
 
 ## Come si controlla
+
+- `scripts/verifica-comparse.mjs` non conosce le strade: guarda la pagina a
+  ogni giro di fotogramma e registra ogni riquadro col contorno che diventa
+  visibile o smette di esserlo, e per ognuno controlla la regola sola. Chi
+  compare a schermo si sta scoprendo (lui o chi lo contiene ha preso `dg-in`,
+  con un'animazione vera); chi sparisce a schermo si stava ricoprendo. Quando un
+  disegno comincia lo si annota subito dall'osservatore delle classi: il giro
+  sulla pagina può essere lento (lo Studio ha migliaia di pezzi) e un disegno
+  all'indietro dura 250 ms. Non è una comparsa un riquadro che prende un bordo
+  restando dov'era, né uno rifatto uguale al suo posto. Il contenuto di una
+  tendina chiusa non si vede, anche se il browser, se glielo chiedi, ne calcola
+  le misure. Fa i gesti sul pannello (computer e telefono), col banner dei
+  cookie e nella vetrina, e pretende che ognuno faccia davvero comparire o
+  sparire qualcosa. L'autoprova toglie l'attributo `hidden` dal disegno,
+  riporta la chiusura delle finestre di sistema a quella del browser, e toglie
+  al disegno la classe `esce`.
 
 - `test/contratto/disegno.test.mjs` legge nel codice le regole qui sopra.
   Ognuna è controllata per mutazione: rotta la regola, la prova diventa rossa.

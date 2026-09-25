@@ -32,7 +32,7 @@ test('l\'immagine resta nel browser: niente rete, IndexedDB per overlay, solo im
 });
 
 test('sotto la tela, con trasparenza e interruttore, e la pagina la rilegge da sola', () => {
-  assert.ok(/<div class="ap-riferimento" id="ap-riferimento" hidden><\/div>\n\s*<div class="ap-stage" id="ap-stage">/.test(APP), 'lo strato sta sotto la tela, primo figlio dell\'anteprima');
+  assert.ok(/<div class="ap-riferimento" id="ap-riferimento" hidden data-dg-no><\/div>\n\s*<div class="ap-stage" id="ap-stage" data-dg-no>/.test(APP), 'lo strato sta sotto la tela, primo figlio dell\'anteprima, e come la tela e\' dello streamer: non si disegna');
   assert.ok(/^\.ap-riferimento \{ position: absolute; inset: 0; background-size: cover; background-position: center; pointer-events: none; \}/m.test(SKIN) && /\.ap-riferimento\[hidden\] \{ display: none; \}/.test(SKIN), 'copre la tela, centrata, e non prende il mouse');
   assert.ok(/function aggiornaAnteprima\(\) \{\n  _rifCarica\(\);/.test(APP), 'ogni aggiornamento della tela chiede l\'immagine dell\'overlay in uso');
   assert.ok(/if \(_rif\.id === id\) \{ _rifDisegna\(\); return; \}/.test(blocco), 'ma la rilegge da IndexedDB solo quando cambia overlay');

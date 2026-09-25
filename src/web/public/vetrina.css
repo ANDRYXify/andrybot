@@ -575,17 +575,17 @@ body.leggero .vt-rec[aria-hidden], body.meno-moto .vt-rec[aria-hidden] { display
 .vt-velo {
   position: fixed; inset: 0; z-index: 300; display: grid; place-items: center;
   padding: 20px; overflow-y: auto;
+  transition: background-color .24s ease, backdrop-filter .24s ease, -webkit-backdrop-filter .24s ease;
+}
+.vt-velo.dentro {
   background: color-mix(in srgb, var(--bg) 76%, transparent);
   backdrop-filter: blur(10px) saturate(1.2); -webkit-backdrop-filter: blur(10px) saturate(1.2);
-  opacity: 0; transition: opacity .24s ease;
 }
-.vt-velo.dentro { opacity: 1; }
+.vt-velo:not(.dentro) .vt-velo-carta:not(.dg-out) { opacity: 0; }
 .vt-velo-carta {
   width: min(420px, 100%); padding: 1.6rem 1.7rem 1.5rem; border-radius: 18px; text-align: center;
   background: var(--surface); border: 1px solid var(--border-2); box-shadow: var(--om-l);
-  transform: translateY(14px) scale(.97); transition: transform .24s ease;
 }
-.vt-velo.dentro .vt-velo-carta { transform: none; }
 .vt-velo-carta h2 { margin: 0 0 .5rem; font-size: 1.35rem; letter-spacing: -.02em; }
 .vt-velo-carta p { margin: 0; font-size: .9rem; line-height: 1.5; color: var(--testo-2); }
 .vt-velo-azioni { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 1.2rem; }
@@ -594,7 +594,7 @@ body.leggero .vt-rec[aria-hidden], body.meno-moto .vt-rec[aria-hidden] { display
   padding: .4rem .7rem; cursor: pointer; flex-basis: 100%;
 }
 @media (hover: hover) { .vt-velo-no:hover { color: var(--testo); } }
-@media (prefers-reduced-motion: reduce) { .vt-velo, .vt-velo-carta { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .vt-velo { transition: none; } }
 
 .vt-risparmio[hidden] { display: none; }
 .vt-risparmio {

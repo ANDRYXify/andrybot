@@ -34,7 +34,7 @@ test('si disegna solo quello che ha un contorno, e la china ricalca il bordo ver
     && m.indexOf('coperto.forEach(function (c) { el.classList.add(c); });') > m.indexOf('var visibile = st.visibility !== \'hidden\';'), 'si legge a classi tolte, e si rimettono dopo');
   assert.match(m, /\['TopLeft', 'TopRight', 'BottomRight', 'BottomLeft'\]\.map/, 'ogni angolo col suo raggio');
   assert.match(m, /return \[misurato\(v\[0\], r\.width\), misurato\(v\[1\] \|\| v\[0\], r\.height\)\];/, 'in orizzontale e in verticale');
-  assert.match(corpoDi(DG, 'disegnabile'), /return !!m\.bordo && m\.visibile &&/, 'e si disegna solo quello che si vede');
+  assert.match(corpoDi(DG, 'disegnabile'), /return !!\(m\.bordo \|\| \(o && o\.retino\)\) && m\.visibile &&/, 'e si disegna solo quello che si vede: col contorno, o col solo retino chi non ne ha');
   const t = corpoDi(DG, 'piano');
   assert.match(t, /contorno\(w, h, bd, caso\(seme \+ ':china'\)\)/, 'col bordo intero: lati, angoli, spessore');
   assert.match(t, /\{ 'stroke-width': Math\.max\(1, bd\.sp\), stroke: bd\.colore \}/, 'e col suo colore');
@@ -198,9 +198,11 @@ test('nella vetrina le vignette sono i riquadri chiusi piu\' esterni, e si diseg
   assert.match(corpoDi(DG, 'vignetteDi'), /if \(vignetta\(c\)\) trovate\.push\(c\); else giu\(c\);/, 'si prende la piu\' esterna: dentro non si scende');
   const vt = corpoDi(DG, 'vetrina');
   assert.match(vt, /return !\(r\.bottom > 0 && r\.top < alto\);/, 'quelle gia\' a schermo le hai viste: non si ridisegnano');
-  assert.match(vt, /e\.classList\.add\('dg-attesa'\); io\.observe\(e\);/, 'le altre aspettano invisibili, come le carte del pannello');
-  assert.match(vt, /v\.target\.classList\.remove\('dg-attesa'\);\n\s*chiedi\(v\.target/, 'e al primo pixel che entra si scoprono e si disegnano insieme: non le vedi mai gia\' fatte');
-  assert.match(vt, /\{ threshold: 0 \}/, 'al primo pixel, non quando se ne vede un pezzo');
+  assert.match(vt, /\}\)\.forEach\(attendi\);/, 'le altre aspettano');
+  const at = corpoDi(DG, 'attendi');
+  assert.match(at, /el\.classList\.add\('dg-attesa'\);\n\s*arrivo\.observe\(el\);/, 'invisibili, come le carte del pannello');
+  assert.match(at, /v\.target\.classList\.remove\('dg-attesa'\);\n\s*compare\(v\.target\);/, 'e al primo pixel che entra si scoprono e si disegnano insieme: non le vedi mai gia\' fatte');
+  assert.match(at, /\{ threshold: 0 \}/, 'al primo pixel, non quando se ne vede un pezzo');
   for (const css of [ANIME, VETRINA]) assert.match(css, /\.dg-attesa \{ opacity: 0; \}\n@media print \{ \.dg-attesa \{ opacity: 1; \} \}/, 'e in stampa si vede');
   assert.match(vt, /document\.body\.classList\.contains\('vetrina'\)/, 'solo nella vetrina');
 });
@@ -265,7 +267,7 @@ test('il tasto che premi si ripassa a china, e solo se il gesto non ha gia\' la 
 });
 
 test('prima di un gesto di cui pentirsi, la nuvoletta spigolosa rossa', () => {
-  const sc = corpoDi(DG, 'sulleClassi');
+  const sc = corpoDi(DG, 'sulleMosse');
   assert.match(sc, /if \(diventa\('dentro'\) && carta && carta\.querySelector\('\.btn\.pericolo'\)\) urlo\(carta\);\n\s*if \(diventa\('dentro'\)\) chiedi\(carta\);/,
     'la finestra che chiede un gesto pericoloso diventa un urlo prima di disegnarsi');
   assert.match(APP, /\{ id: 'si', testo: si, tono: pericolo \? 'pericolo' : '' \}/, 'e l\'app lo dice gia\' col tasto');
@@ -280,4 +282,104 @@ test('prima di un gesto di cui pentirsi, la nuvoletta spigolosa rossa', () => {
   assert.match(ANIME, /\.bv-carta\.dg-urlo \{ position: relative; isolation: isolate; background: transparent; border-color: transparent; box-shadow: none; \}/,
     'la carta lascia il posto alla sagoma, che resta anche a chi chiede meno movimento');
   assert.match(ANIME, /\.dg-sagoma \.dg-fondo \{ fill: var\(--surface\); stroke: var\(--rosso\);/);
+});
+
+test('tutto quello che compare si disegna, qualunque strada lo faccia comparire', () => {
+  // «Tutto deve essere disegnato, non tralasciamo nulla.» Il modulo non ha
+  // una lista di cose da disegnare: guarda le strade con cui una cosa compare.
+  const av = corpoDi(DG, 'avvia');
+  assert.match(av, /attributeFilter: \['class', 'hidden', 'open'\]/, 'le classi, l\'attributo hidden e le tendine che si aprono');
+  const mo = corpoDi(DG, 'sulleMosse');
+  assert.match(mo, /if \(m\.oldValue !== null && !el\.hasAttribute\('hidden'\)\) mostrati\.push\(el\);/, 'chi perde hidden compare');
+  assert.match(mo, /if \(el\.tagName === 'DETAILS'\) \{[^\n]*mostrati = mostrati\.concat\(figliDi\(el\)\); \}/, 'la tendina che si apre scopre il suo contenuto');
+  assert.match(mo, /else if \(el\.tagName === 'DIALOG'\) mostrati\.push\(el\);/, 'la finestra di sistema che si apre');
+  assert.match(mo, /if \(!finestra && diventa\('dentro'\)\) mostrati\.push\(el\);/, 'chi entra da se\'');
+  const ag = corpoDi(DG, 'sulleAggiunte');
+  assert.match(ag, /else if \(padre === document\.body && !n\.matches\(SALTA_CORPO\)\) compare\(n, \{ veloce: true \}\);/, 'chi si aggiunge alla pagina, sopra a tutto');
+  // Col contorno si traccia; senza, si scopre col retino, e i riquadri col
+  // contorno che ha dentro si tracciano insieme.
+  assert.match(corpoDi(DG, 'parti'), /if \(contornato\(el\)\) return \[\[el, false\]\];/);
+  assert.match(corpoDi(DG, 'parti'), /return \[\[el, true\]\]\.concat\(dentro\);/, 'senza contorno: il retino, piu\' i riquadri che ha dentro');
+  assert.match(corpoDi(DG, 'piano'), /var bd = o\.retino \? null : m\.bordo;/, 'il solo retino non ha tratti');
+  // Chi e' gia' dentro a un disegno in corso lo scopre il retino di chi lo
+  // contiene; chi e' fuori schermo aspetta il suo primo pixel.
+  const co = corpoDi(DG, 'compare');
+  assert.match(co, /if \(el\.parentElement && el\.parentElement\.closest\('\.dg-in, \.dg-out, \.dg-attesa'\)\) return;/);
+  assert.match(co, /if \(!aSchermo\(el\)\) \{ attendi\(el\); return; \}/);
+});
+
+test('tutto quello che se ne va si disfa prima di sparire', () => {
+  const mo = corpoDi(DG, 'sulleMosse');
+  // hidden: l'app lo scrive e ha finito; la vista aspetta che si disfi.
+  assert.match(mo, /else if \(m\.oldValue === null && el\.hasAttribute\('hidden'\)\) nascosti\.push\(el\);/, 'chi prende hidden se ne va');
+  assert.match(mo, /el\.removeAttribute\('hidden'\);\n\s*var d = getComputedStyle\(el\)\.display;/, 'si legge come si vedeva');
+  assert.match(mo, /el\.setAttribute\('hidden', v\);\n\s*if \(vede\) trattieni\(el, d\);/, 'e lo si tiene in vista finche\' si disfa');
+  assert.match(mo, /if \(osservatore\) osservatore\.takeRecords\(\);/, 'senza leggere come mosse dell\'app quelle del disegno');
+  const tr = corpoDi(DG, 'trattieni');
+  assert.match(tr, /el\.style\.setProperty\('--dg-display', display\);\n\s*el\.classList\.add\('dg-resta'\);/);
+  assert.match(tr, /if \(!el\.inert\) \{ el\.inert = true; el\._dgInerte = true; \}/, 'mentre si disfa non si tocca e non si raggiunge col Tab');
+  for (const css of [ANIME, VETRINA]) {
+    assert.ok(css.includes('[hidden].dg-resta { display: var(--dg-display) !important; pointer-events: none; }'), 'la regola che lo tiene in vista');
+    assert.ok(css.includes('details.dg-resta::details-content { content-visibility: visible; }'), 'e quella che tiene aperta la tendina che si chiude');
+  }
+  assert.match(mo, /else if \(!aperto && m\.oldValue !== null && el\.tagName === 'DETAILS'\) chiusi\.push\(el\);/, 'la tendina che si chiude');
+  // esce: chiunque lo prenda si disfa, e chi lo toglie aspetta --t-uscita.
+  assert.match(mo, /if \(diventa\('esce'\)\) via\(el, \{ veloce:/, 'chi prende esce, chiunque sia');
+  assert.match(mo, /else if \(perde\('esce'\)\) mostrati\.push\(el\);/, 'e se ci ripensa, si ridisegna');
+  // Le finestre di sistema: si chiudono solo dopo essersi disfatte, da
+  // qualunque codice le chiuda, anche con Esc.
+  const fi = corpoDi(DG, 'finestre');
+  assert.match(fi, /HTMLDialogElement\.prototype\.close = function \(\) \{/);
+  assert.match(fi, /var dura = d\.open \? via\(d, \{\}\) : 0;/);
+  assert.match(fi, /document\.addEventListener\('cancel', function \(ev\) \{/);
+  assert.match(fi, /ev\.preventDefault\(\);\n\s*d\.close\(\);/, 'Esc passa dalla stessa porta');
+});
+
+test('i disegni stanno dove si vedono: sopra le finestre di sistema, e dopo la copertina', () => {
+  // Una finestra aperta con showModal sta nel livello piu' alto della pagina:
+  // una tela appesa al body starebbe sotto. La tela va in uno strato suo, un
+  // popover aperto dopo la finestra.
+  const te = corpoDi(DG, 'tela');
+  assert.match(te, /var casa = dlg && dlg\.matches\(':modal'\) \? strato\(dlg\) : document\.body;/);
+  assert.match(corpoDi(DG, 'strato'), /p\.setAttribute\('popover', 'manual'\);/);
+  assert.match(corpoDi(DG, 'strato'), /if \(p\.matches\(':popover-open'\)\) p\.hidePopover\(\); p\.showPopover\(\);/, 'riaperto sopra alla finestra piu\' recente');
+  // Sotto la copertina un disegno non lo vede nessuno: si aspetta che se ne
+  // vada, poi la scena e il menu' si disegnano.
+  assert.match(corpoDi(DG, 'esegui'), /if \(!coda\.length \|\| copertina\(\)\) return 0;/);
+  assert.match(corpoDi(DG, 'scena'), /if \(copertina\(\)\) \{ if \(dopoCopertina\.indexOf\(pannello\) < 0\) dopoCopertina\.push\(pannello\); return; \}/);
+  assert.match(corpoDi(DG, 'sulleMosse'), /if \(el\.id === 'splash'\) \{ if \(diventa\('via'\)\) sveglia = true; continue; \}/);
+});
+
+test('il velo sfuma, la carta si disegna: non si sfuma anche lei', () => {
+  // La carta di una finestra e' rivelata dal disegno, non dall'opacita' del
+  // velo: sfumando il velo intero, la carta spariva mentre si disfaceva, e con
+  // meno movimento spariva di colpo.
+  const velo = /\n\.bv-velo \{[^}]*\}/.exec(ANIME)[0];
+  assert.doesNotMatch(velo, /opacity/, 'il velo non sfuma la carta');
+  assert.ok(ANIME.includes('.bv-velo:not(.dentro) .bv-carta:not(.dg-out) { opacity: 0; }'), 'prima che entri la carta non si vede, e mentre si disfa si');
+});
+
+test('il contenuto dello streamer non si disegna: e\' suo', () => {
+  // La tela dello Studio, l'anteprima di un effetto e quella del file caricato
+  // mostrano l'overlay com'e' in onda, con le sue entrate e uscite.
+  for (const x of ['<div class="ap-stage" id="ap-stage" data-dg-no>', '<div class="ap-riferimento" id="ap-riferimento" hidden data-dg-no>', '<div class="eff-prima-scena" data-dg-no>', '<div class="ant-scena" aria-hidden="true" data-dg-no>']) assert.ok(APP.includes(x), x);
+  assert.match(corpoDi(DG, 'fermo'), /return !!\(el\.closest && el\.closest\('\[data-dg-no\]'\)\);/);
+});
+
+test('una carta che si ripiega si disfa prima, e riaprendola si disegna', () => {
+  // Prima il corpo scivolava su (grid-template-rows) sfumando: un movimento,
+  // non un disegno. Adesso si ricopre col retino e solo dopo la carta si
+  // ripiega; riaprendola il corpo si scopre, e il riassunto di quando era
+  // chiusa se ne va disfacendosi.
+  const i = APP.indexOf('function _piegaCarta(');
+  const f = APP.slice(i, APP.indexOf('\n}\n', i));
+  assert.match(f, /const dura = corpo \? \(window\.SB_DISEGNO\?\.via\?\.\(corpo, \{ veloce: true \}\) \|\| 0\) : 0;/, 'il corpo si ricopre');
+  assert.match(f, /carta\._piega = setTimeout\(chiudi, dura\);/, 'e solo dopo la carta si ripiega');
+  assert.match(f, /carta\.classList\.remove\('chiusa'\);\n\s*if \(corpo\) window\.SB_DISEGNO\?\.compare\?\.\(corpo, \{ veloce: true \}\);/, 'riaprendola il corpo si scopre');
+  assert.match(f, /if \(riass\) riass\.classList\.add\('esce'\);/, 'e il riassunto se ne va disfacendosi');
+  assert.match(f, /if \(carta\._piega\) \{\n\s*clearTimeout\(carta\._piega\); carta\._piega = 0;/, 'e se ci ripensi mentre si disfa, si ridisegna');
+  assert.doesNotMatch(STILE, /grid-template-rows var\(--dur-elem\)|carta-riass-in/, 'niente scivolo ne\' dissolvenza');
+  // Dentro a quello che compare si tracciano i riquadri; i comandi (tasti,
+  // campi, collegamenti) li scopre il retino di chi li contiene.
+  assert.match(corpoDi(DG, 'parti'), /if \(!\(c instanceof HTMLElement\) \|\| c\.matches\(COMANDO\)\) continue;/);
 });

@@ -1797,26 +1797,33 @@ function rendiCartePieghevoli(scope, scheda) {
   }
 }
 
-function _cartaInMoto(carta) {
-  const corpo = carta.querySelector(':scope > .carta-corpo');
-  if (!corpo) return;
-  carta.classList.add('in-moto');
-  clearTimeout(carta._fermo);
-  const ferma = () => {
-    clearTimeout(carta._fermo);
-    carta.classList.remove('in-moto');
-    corpo.removeEventListener('transitionend', senti);
-  };
-  const senti = (ev) => { if (ev.target === corpo && ev.propertyName === 'grid-template-rows') ferma(); };
-  corpo.addEventListener('transitionend', senti);
-  carta._fermo = setTimeout(ferma, 900);
-}
-
+const _cartaPiegata = (carta) => carta.classList.contains('chiusa') || !!carta._piega;
 function _piegaCarta(carta, aperta) {
-  carta.classList.toggle('chiusa', !aperta);
+  if (aperta !== _cartaPiegata(carta)) return;
   carta.querySelector(':scope > h2')?.setAttribute('aria-expanded', aperta ? 'true' : 'false');
   if (carta.dataset.ck) _ricordaCarta(carta.dataset.ck, aperta);
-  _cartaInMoto(carta);
+  const corpo = carta.querySelector(':scope > .carta-corpo');
+  const riass = carta.querySelector('.carta-riassunto');
+  if (carta._piega) {
+    clearTimeout(carta._piega); carta._piega = 0;
+    if (corpo) window.SB_DISEGNO?.compare?.(corpo, { veloce: true });
+    return;
+  }
+  if (aperta) {
+    if (riass) riass.classList.add('esce');
+    carta.classList.remove('chiusa');
+    if (corpo) window.SB_DISEGNO?.compare?.(corpo, { veloce: true });
+    if (riass) setTimeout(() => riass.classList.remove('esce'), _duraUscita() + 20);
+    return;
+  }
+  const chiudi = () => {
+    carta._piega = 0;
+    carta.classList.add('chiusa');
+    if (riass) window.SB_DISEGNO?.compare?.(riass, { veloce: true });
+  };
+  const dura = corpo ? (window.SB_DISEGNO?.via?.(corpo, { veloce: true }) || 0) : 0;
+  if (!dura) { chiudi(); return; }
+  carta._piega = setTimeout(chiudi, dura);
 }
 
 const CARTE_PER_BARRA = 4;
@@ -2697,10 +2704,19 @@ function _bottoniSalva() {
   return [...r.querySelectorAll(SEL_SALVA)].filter(_salvaBuono).slice(0, 2);
 }
 
+let _viaBarra = 0;
 function _mostraBarraSalva(mostra) {
   if (!_salvaBarra) return;
-  _salvaBarra.classList.toggle('dentro', !!mostra);
+  const b = _salvaBarra;
   document.body.classList.toggle('con-salva', !!mostra);
+  if (mostra) {
+    if (_viaBarra) { clearTimeout(_viaBarra); _viaBarra = 0; b.classList.remove('esce'); }
+    b.classList.add('dentro');
+    return;
+  }
+  if (!b.classList.contains('dentro') || _viaBarra) return;
+  b.classList.add('esce');
+  _viaBarra = setTimeout(() => { _viaBarra = 0; b.classList.remove('dentro', 'esce'); }, _duraUscita() + 20);
 }
 
 function _inVista(b) {
@@ -3947,8 +3963,11 @@ function aiutoChiuso(id) {
 
 function togliAiuto(perSempre, id = schedaAttiva) {
   if (perSempre) { try { localStorage.setItem('sb-aiuto-' + id, '1'); } catch (e) {  } }
-  _aiutoStriscia?.remove();
+  const el = _aiutoStriscia;
   _aiutoStriscia = null;
+  if (!el) return;
+  el.classList.add('esce');
+  setTimeout(() => el.remove(), _duraUscita() + 20);
 }
 
 function aiutoRifiutato(id) {
@@ -9095,8 +9114,8 @@ function pannelloAlert() {
       <div class="ovl-scena">
       <div class="ovl-tela" id="ovl-tela">
       <div class="ovl-anteprima" id="ovl-preview">
-        <div class="ap-riferimento" id="ap-riferimento" hidden></div>
-        <div class="ap-stage" id="ap-stage">
+        <div class="ap-riferimento" id="ap-riferimento" hidden data-dg-no></div>
+        <div class="ap-stage" id="ap-stage" data-dg-no>
           <div class="ap-el alert-card" id="ap-alert"><div class="alert-ico" id="ap-alert-ico"></div><div class="alert-testo" id="ap-alert-testo"></div></div>
           <div class="ap-el ap-chat" id="ap-chat"></div>
           <div class="ap-el" id="ap-wf"><div class="ovl-widget" id="ap-wf-el"><span class="w-ico"></span><span class="w-testo"></span></div></div>
@@ -16456,7 +16475,7 @@ function pannelloEffetti() {
       <label class="campo" for="eff-file">${L('File (audio / immagine / video)', 'File (audio / image / video)', 'Archivo (audio / imagen / vídeo)')}</label>
       <input type="file" id="eff-file" accept="audio/*,image/*,video/*">
       <div class="eff-prima spazio-sopra" id="eff-prima" hidden>
-        <div class="eff-prima-scena"><canvas id="eff-prima-tela" aria-label="${esc(L('Anteprima del file: clicca per prendere il colore da togliere', 'File preview: click to pick the color to remove', 'Vista previa del archivo: haz clic para tomar el color que quitar'))}"></canvas></div>
+        <div class="eff-prima-scena" data-dg-no><canvas id="eff-prima-tela" aria-label="${esc(L('Anteprima del file: clicca per prendere il colore da togliere', 'File preview: click to pick the color to remove', 'Vista previa del archivo: haz clic para tomar el color que quitar'))}"></canvas></div>
         <p class="suggerimento" id="eff-prima-nota" hidden></p>
         <label class="riga-check spazio-sopra" id="eff-chiave-riga"><input type="checkbox" id="eff-chiave"> <span><strong>${L('Togli uno sfondo a tinta unita', 'Remove a solid-color background', 'Quita un fondo de color liso')}</strong> ${L('(un green screen, o qualunque colore pieno)', '(a green screen, or any flat color)', '(un green screen, o cualquier color liso)')}</span></label>
         <div id="eff-chiave-box" hidden>
@@ -25907,7 +25926,7 @@ function anteprimaEffetto(e, { comando = e.comando || '', xy = null } = {}) {
   el.innerHTML = `<div class="bv-carta mdl-carta ant-carta" role="dialog" aria-modal="true" aria-labelledby="ant-titolo">
     <h2 id="ant-titolo">${esc(titolo)}</h2>
     <p class="bv-intro">${L('Come va in onda', 'How it goes on air', 'Cómo sale en directo')}: ${esc(_anteDove({ ...e, xy: xy || e.xy }))}.</p>
-    <div class="ant-scena" aria-hidden="true"><div class="ant-dentro"></div></div>
+    <div class="ant-scena" aria-hidden="true" data-dg-no><div class="ant-dentro"></div></div>
     <div class="bv-azioni">
       <button type="button" class="btn secondario" data-ant="rivedi">${_bIco('<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/>')}${L('Rivedi', 'Replay', 'Volver a ver')}</button>
       ${comando && !DEMO ? `<button type="button" class="btn secondario" data-ant="manda">${L('Manda all’overlay', 'Send to the overlay', 'Enviar al overlay')}</button>` : ''}
@@ -28850,7 +28869,7 @@ function initGuscio() {
 
     if (ev.target.closest('a, button, input, select, textarea, label')) return;
     const carta = h2.parentElement;
-    _piegaCarta(carta, carta.classList.contains('chiusa'));
+    _piegaCarta(carta, _cartaPiegata(carta));
   });
   document.addEventListener('keydown', (ev) => {
     if (ev.key !== 'Enter' && ev.key !== ' ') return;
@@ -28858,7 +28877,7 @@ function initGuscio() {
     if (!h2 || h2 !== document.activeElement) return;
     ev.preventDefault();
     const carta = h2.parentElement;
-    _piegaCarta(carta, carta.classList.contains('chiusa'));
+    _piegaCarta(carta, _cartaPiegata(carta));
   });
 
   document.addEventListener('toggle', (ev) => {

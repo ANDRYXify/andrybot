@@ -177,3 +177,6 @@ summary:focus-visible, select:focus-visible, input:focus-visible, textarea:focus
 .dg-ripasso { animation: dg-via 150ms steps(2, jump-end) 260ms forwards; }
 .dg-attesa { opacity: 0; }
 @media print { .dg-attesa { opacity: 1; } }
+[hidden].dg-resta { display: var(--dg-display) !important; pointer-events: none; }
+details.dg-resta::details-content { content-visibility: visible; }
+.dg-strato { position: fixed; inset: 0; width: auto; height: auto; margin: 0; padding: 0; border: 0; background: none; overflow: visible; pointer-events: none; }

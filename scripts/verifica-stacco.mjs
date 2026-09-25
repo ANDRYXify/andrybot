@@ -191,7 +191,12 @@ await p.evaluate(() => {
     for (const m of mosse) for (const n of m.addedNodes) {
       if (!(n instanceof SVGElement) || !n.classList.contains('dg-tela')) continue;
       const china = n.querySelector('.dg-china');
+      // L'ordine di lettura e' quello della scena: le sue carte e il riquadro
+      // «Come funziona». Il gruppo del menu' che si apre sulla scheda nuova si
+      // disegna anche lui, ma sta nella sua colonna.
+      const scena = [...document.querySelectorAll('.pannello-scheda .carta, #pagina-testata > .guida-scheda')].some((e) => e._dgTela === n);
       window.__tele.push({
+        scena,
         tipo: n.querySelector('.dg-sfila') ? 'sfila' : china ? 'china' : 'altro',
         top: parseFloat(n.style.top) - (n.style.position === 'fixed' ? 0 : scrollY),
         left: parseFloat(n.style.left),
@@ -220,7 +225,7 @@ for (let i = 1; i < schede.length; i++) {
   await p.evaluate((x) => window.SB_APP.vai(x), schede[i]);
   await p.waitForTimeout(700);
   const tele = await p.evaluate(() => window.__tele);
-  const disegni = tele.filter((t) => t.tipo === 'china').sort((x, y) => x.da - y.da);
+  const disegni = tele.filter((t) => t.tipo === 'china' && t.scena).sort((x, y) => x.da - y.da);
   const inOrdine = disegni.every((t, k) => !k || t.top > disegni[k - 1].top + 2
     || (Math.abs(t.top - disegni[k - 1].top) <= 2 && t.left >= disegni[k - 1].left));
   passaggi.push({ da: schede[i - 1], a: schede[i], stessa, daDisfare,
@@ -308,27 +313,38 @@ await p.waitForTimeout(500);
 // partire un disegno (una scheda nuova), la risposta e' quella e non si ripassa
 // niente. Prima qui uscivano tre «!» sul punto del clic: sono la sorpresa di un
 // personaggio, e un clic non e' una sorpresa.
+// Il tasto e' uno col contorno il cui gesto non fa partire nessun disegno:
+// prima era il «?» delle guide, che apriva il suo menu' senza disegnarlo;
+// adesso il menu' si disegna, e quella e' la risposta al gesto.
+await p.evaluate(() => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'btn secondario mini'; b.id = 'prova-tasto'; b.textContent = 'Prova';
+  b.style.cssText = 'position:fixed;left:60%;top:30%;z-index:5';
+  document.body.appendChild(b);
+});
+await p.waitForTimeout(700);
 await p.evaluate(() => {
   window.__ripassi = [];
   new MutationObserver((mosse) => mosse.forEach((m) => m.addedNodes.forEach((n) => {
     if (n.classList && n.classList.contains('dg-ripasso')) {
-      const t = document.querySelector('.aiuto-btn').getBoundingClientRect();
+      const t = document.getElementById('prova-tasto').getBoundingClientRect();
       window.__ripassi.push({ x: parseFloat(n.style.left), y: parseFloat(n.style.top) - (n.style.position === 'fixed' ? 0 : scrollY),
         tastoX: t.left, tastoY: t.top, tratti: n.querySelectorAll('.dg-ripassa').length });
     }
   }))).observe(document.body, { childList: true });
 });
 const tasto = await p.evaluate(() => {
-  const r = document.querySelector('.aiuto-btn').getBoundingClientRect();
+  const r = document.getElementById('prova-tasto').getBoundingClientRect();
   return { x: r.left, y: r.top, w: r.width, h: r.height };
 });
 await p.mouse.click(tasto.x + tasto.w * 0.8, tasto.y + tasto.h / 2);
 await p.waitForTimeout(700);
 await p.keyboard.press('Escape');
-await p.evaluate(() => document.querySelector('.aiuto-btn').click());
+await p.evaluate(() => document.getElementById('prova-tasto').click());
 await p.waitForTimeout(150);
 await p.keyboard.press('Escape');
 const ripasso = await p.evaluate(() => ({ visti: window.__ripassi.slice(), rimasti: document.querySelectorAll('.dg-ripasso').length }));
+await p.evaluate(() => document.getElementById('prova-tasto').remove());
 const altraScheda = await p.evaluate(() => {
   const v = [...document.querySelectorAll('.drawer-voce[data-scheda]')].find((e) => !e.classList.contains('on') && e.offsetParent);
   const r = v.getBoundingClientRect();

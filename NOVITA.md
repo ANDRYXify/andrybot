@@ -42,6 +42,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Il menù si disegna in ogni caso: quando la pagina si carica, quando allarghi o stringi la finestra, quando giri il tablet e quando togli il tutto schermo.
 - Con «Riduci movimento» attivo le pagine, gli avvisi, le finestre e il menù si disegnano e si disfano come per tutti, invece di comparire e sparire di colpo.
 - Nella tua pagina link il blocco per sostenerti compare quando ci arrivi anche sui browser meno recenti, dove prima restava invisibile. [vai: pagina]
+- Le tendine, le carte che ripieghi, i gruppi del menù, la ricerca, la barra delle modifiche e le finestre si disegnano quando compaiono e si disfano quando se ne vanno, invece di scivolare o sparire di colpo.
+- Nella home la finestra per scegliere con cosa accedere si disegna e si disfa, e gli avvisi non si interrompono più a metà del loro disegno.
 
 ## 2026-09-24
 
