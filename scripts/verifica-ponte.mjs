@@ -38,7 +38,7 @@ export const PERMESSE = {
   '/prova_strumento': ['usa cio\' che ha gia\'', 'fa lavorare una capacita\' sua, non gliene da\' una nuova'],
   '/promuovi': ['membrana e freni', 'decide cosa passa il confine'],
   '/revoca_promozione': ['membrana e freni', 'decide cosa passa il confine'],
-  '/autoautorialita': ['membrana e freni', 'solo le azioni scritte in AZIONI qui sotto'],
+  '/autoautorialita': ['membrana e freni', 'solo il freno che congela tutto (AZIONI qui sotto): scrivergli chi e\', o disfarlo, da fuori non si puo\''],
   '/ecosistema': ['il proprietario nel suo computer', 'solo le azioni scritte in AZIONI qui sotto: gesti del proprietario, o una proposta che puo\' lasciar cadere'],
   '/insegna': ['scambi col bot', 'il verso della valvola: consegna, il bot ritira'],
   '/posta': ['scambi col bot', 'il verso della valvola: consegna, il bot ritira'],
@@ -61,7 +61,7 @@ export const MAI = ['/distilla_moduli', '/integra', '/vita', '/sogna', '/costrui
 // Le azioni dentro le rotte a piu' azioni, com'e' ammesso che siano.
 export const AZIONI = {
   '/api/admin/ecosistema': { permesse: ['installa', 'naviga', 'browser', 'schermo', 'crea', 'scrivi', 'esegui', 'lavoro', 'desiderio', 'ferma'], mai: ['autonomo'] },
-  '/api/admin/autoautorialita': { permesse: ['congela', 'autoritratto', 'annulla_autoritratto', 'valori', 'annulla_valori', 'modulo'], mai: ['passo'] },
+  '/api/admin/autoautorialita': { permesse: ['congela'], mai: ['passo', 'autoritratto', 'annulla_autoritratto', 'valori', 'annulla_valori', 'modulo', 'essere', 'plasma'] },
 };
 
 // Ogni chiamata del ponte che cambia qualcosa: l'indirizzo, letto dal codice.
@@ -156,7 +156,7 @@ const DETTI = [
   ['illeggibili', 'ogni POST al cervello ha un indirizzo che si sa leggere'],
   ['vietate', 'nessuna POST al cervello e\' un ordine che lo fa crescere'],
   ['ignote', 'ogni POST al cervello e\' classificata, col suo motivo'],
-  ['azioni', 'le azioni di /ecosistema e /autoautorialita sono quelle classificate, senza «autonomo» e «passo»'],
+  ['azioni', 'le azioni di /ecosistema e /autoautorialita sono quelle classificate: niente «autonomo», e sul sé solo il freno'],
   ['mente', 'la mente la chiede solo /mente su Telegram, nessuna rotta del sito'],
 ];
 
@@ -173,7 +173,8 @@ if (process.argv.includes('--selftest')) {
     ['illeggibili', (t) => ({ ...t, ponte: t.ponte + "\nasync function z(o) { await fetch(BASE + '/cresci', o); }\n" }), 'una chiamata con le opzioni in una variabile'],
     ['ignote', (t) => ({ ...t, ponte: t.ponte + "\nasync function w() { await fetch(BASE + '/cresci', { method: 'PUT' }); }\n" }), 'un altro metodo che cambia qualcosa'],
     ['azioni', (t) => ({ ...t, server: t.server.replace("'desiderio', 'ferma']", "'desiderio', 'autonomo', 'ferma']") }), '«autonomo» di nuovo fra le azioni dell\'ecosistema'],
-    ['azioni', (t) => ({ ...t, server: t.server.replace("'annulla_valori', 'modulo']", "'annulla_valori', 'modulo', 'passo']") }), '«passo» di nuovo fra le azioni dell\'autoautorialita\''],
+    ['azioni', (t) => ({ ...t, server: t.server.replace("const consentite = ['congela'];", "const consentite = ['congela', 'passo'];") }), '«passo» di nuovo fra le azioni dell\'autoautorialita\''],
+    ['azioni', (t) => ({ ...t, server: t.server.replace("const consentite = ['congela'];", "const consentite = ['congela', 'autoritratto'];") }), 'il proprietario che torna a scrivergli l\'autoritratto'],
     ['mente', (t) => ({ ...t, server: t.server + "\napp.post('/api/admin/mente', requireAdmin, wrap(async (req, res) => { res.json(await brainpy.mente()); }));\n" }), 'una rotta del sito che chiede la mente'],
   ];
   let cieche = 0;

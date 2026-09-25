@@ -10351,10 +10351,10 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const r = await brainpy.assistente(!!req.body?.attivo).catch(() => null);
     res.json(r || { ok: false });
   }));
-  // ── AUTO-AUTORIALITÀ: lei si riscrive da sé (autoritratto, valori, moduli germinali).
-  //    Libertà PIENA nel recinto germinale — la membrana resta l'unico confine, il
-  //    pubblico non si tocca. Foto (GET) + azioni (POST). Tutto loggato/reversibile,
-  //    con un freno che congela tutto. Solo andryxify.
+  // ── AUTO-AUTORIALITÀ: il cervello si riscrive da sé, nei suoi cicli (autoritratto,
+  //    valori, moduli germinali). Dal sito si guarda (GET) e si può solo fermare: la
+  //    POST ammette il freno che congela tutto, e basta. Scrivergli chi è, o
+  //    disfarlo, non passa di qui: un sé dettato da fuori non è suo. Solo andryxify.
   app.get('/api/admin/autoautorialita', requireAdmin, wrap(async (req, res) => {
     const d = await brainpy.autoautorialita().catch(() => ({})) || {};
     res.json({ ok: true, autoautorialita: d });
@@ -10362,8 +10362,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   app.post('/api/admin/autoautorialita', requireAdmin, wrap(async (req, res) => {
     const b = req.body || {};
     const az = String(b.azione || '').trim();
-    const consentite = ['congela', 'autoritratto', 'annulla_autoritratto', 'valori',
-      'annulla_valori', 'modulo'];
+    const consentite = ['congela'];
     if (!consentite.includes(az)) { res.json({ ok: false, motivo: 'azione sconosciuta' }); return; }
     const r = await brainpy.autoautorialitaAzione(b).catch(() => null);
     res.json(r || { ok: false });
