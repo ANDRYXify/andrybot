@@ -9,10 +9,6 @@
 
   function disegni(ms) { return Math.max(2, Math.round(ms / DUE)); }
   function passi(n) { return 'steps(' + n + ', jump-end)'; }
-  function meno() {
-    return document.body.classList.contains('meno-moto') ||
-      !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  }
   function f(n) { return Math.round(n * 10) / 10; }
 
   function caso(seme) {
@@ -349,7 +345,7 @@
   function esegui() {
     var giro1 = coda;
     coda = [];
-    if (!giro1.length || meno()) return 0;
+    if (!giro1.length) return 0;
     var misure = giro1.map(function (x) { return misura(x[0]); });
     var fatti = 0;
     giro1.forEach(function (x, i) {
@@ -384,16 +380,31 @@
     return [].slice.call(document.querySelectorAll('#nav-drawer > .drawer-grp'));
   }
 
-  function menu(conCassetto) {
+  function menu() {
     var cassetto = document.getElementById('drawer');
-    if (conCassetto && cassetto) chiedi(cassetto, { veloce: true });
+    if (cassetto) chiedi(cassetto, { veloce: true });
     gruppiDelMenu().forEach(function (g, j) {
-      chiedi(g, { da: (conCassetto ? 140 : 60) + j * PASSO_FILA, veloce: true });
+      chiedi(g, { da: 140 + j * PASSO_FILA, veloce: true });
     });
   }
 
+  var menuVisto = '';
+
+  function formaMenu() {
+    var c = document.getElementById('drawer');
+    if (!c || document.body.classList.contains('menu-via')) return '';
+    var m = misura(c);
+    if (!m.visibile || m.r.width < 8 || m.r.height < 8) return '';
+    return m.bordo && m.bordo.lati ? m.bordo.lati.map(Number).join('') : '-';
+  }
+
+  function sulMenu() {
+    var ora = formaMenu();
+    if (ora && ora !== menuVisto) menu();
+    menuVisto = ora;
+  }
+
   function viaMenu() {
-    if (meno()) return 0;
     var cassetto = document.getElementById('drawer');
     var tutti = gruppiDelMenu().concat(cassetto ? [cassetto] : []);
     var misure = tutti.map(misura);
@@ -412,7 +423,6 @@
   }
 
   function scena(pannello) {
-    if (meno()) return;
     var tutte = vignetteDellaScena(pannello);
     tutte.forEach(function (e) { delete e.dataset.dgFatto; });
     var misure = tutte.map(misura);
@@ -425,7 +435,6 @@
   }
 
   function esceScena(pannello) {
-    if (meno()) return;
     var tutte = vignetteDellaScena(pannello);
     var misure = tutte.map(misura);
     tutte.forEach(function (e, i) { if (disegnabile(e, misure[i])) sfila(e, misure[i], {}); });
@@ -499,7 +508,7 @@
   }
 
   function ripassa(ev) {
-    if (!ev.isTrusted || ev.button > 0 || meno()) return;
+    if (!ev.isTrusted || ev.button > 0) return;
     var el = ev.target && ev.target.closest ? ev.target.closest(AGISCE) : null;
     if (!el || el.disabled || el.closest('.dg-tela')) return;
     var ora = performance.now();
@@ -532,6 +541,7 @@
   var FINESTRE = [['bv-velo', '.bv-carta'], ['giro-velo', '.giro-carta']];
 
   function sulleClassi(mosse) {
+    var corpo = false;
     for (var i = 0; i < mosse.length; i++) {
       var m = mosse[i], el = m.target;
       if (!(el instanceof HTMLElement)) continue;
@@ -546,8 +556,7 @@
       } else if (el.classList.contains('toast') || el.classList.contains('rec-invito')) {
         if (diventa('esce')) chiedi(el, { veloce: true }, true);
       } else if (el === document.body) {
-        if (diventa('menu-aperto')) menu(true);
-        if (perde('tutto-schermo') && el.classList.contains('con-nav')) menu(false);
+        corpo = true;
       } else if (el.id === 'cerca-overlay') {
         if (diventa('aperto')) chiedi(el.querySelector('.cerca-box'));
       } else {
@@ -560,6 +569,7 @@
         }
       }
     }
+    if (corpo) sulMenu();
     esegui();
   }
 
@@ -598,7 +608,7 @@
   }
 
   function vetrina() {
-    if (meno() || !document.body.classList.contains('vetrina') || !('IntersectionObserver' in window)) return;
+    if (!document.body.classList.contains('vetrina') || !('IntersectionObserver' in window)) return;
     var radice = document.querySelector('main') || document.body;
     var io = new IntersectionObserver(function (voci) {
       voci.forEach(function (v) {
@@ -625,11 +635,13 @@
     if (avvisi) new MutationObserver(sulleAggiunte).observe(avvisi, { childList: true });
     new MutationObserver(sulleAggiunte).observe(document.body, { childList: true });
     document.addEventListener('click', ripassa, true);
+    window.addEventListener('resize', function () { sulMenu(); esegui(); });
     [].slice.call(document.querySelectorAll('.cookie-banner:not([hidden])')).forEach(function (e) { chiedi(e, { veloce: true }); });
+    sulMenu();
     esegui();
     (window.requestIdleCallback || function (fn) { return setTimeout(fn, 200); })(vetrina);
   }
 
   avvia();
-  window.SB_DISEGNO = { disegna: disegna, disfa: disfa, scena: scena, menu: function () { menu(true); esegui(); }, viaMenu: viaMenu };
+  window.SB_DISEGNO = { disegna: disegna, disfa: disfa, scena: scena, viaMenu: viaMenu };
 })();

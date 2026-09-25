@@ -32,6 +32,18 @@
 // sposta mai; la sua china ha tre lati, come il suo bordo; chiudendolo resta
 // al suo posto finche' si e' disfatto, e il velo sfuma insieme.
 //
+// Il menu' IN OGNI CASO. «Che sia quando compare o quando scompare il menu
+// deve venire disegnato in ogni caso». Le strade sono tante (il tasto, il
+// velo, una voce, il tutto schermo, la finestra che si allarga o si stringe,
+// il tablet che gira, la pagina che si carica) e contarle una per una e' il
+// modo sicuro di dimenticarne una. Qui non si contano le strade: si guarda il
+// menu' a ogni fotogramma, dal caricamento alla fine, e si controlla la
+// regola sola: ogni volta che si vede in una forma nuova lo si vede
+// disegnarsi, ogni volta che sparisce lo si e' visto disfarsi. Visto vuol dire
+// la china a meta' strada (0 < stroke-dashoffset < 1), non una classe messa:
+// con «meno movimento» una regola del foglio di stile riduceva ogni
+// animazione a un millesimo di millisecondo, e le classi c'erano lo stesso.
+//
 // Uso: node scripts/verifica-stacco.mjs
 //      node scripts/verifica-stacco.mjs --selftest   (rompe una cosa per volta)
 
@@ -50,6 +62,9 @@ const ROTTURE = [
   ['cassetto-via', /✗ il cassetto del telefono si chiude disfacendosi/, 'il cassetto del telefono si chiude senza disfarsi'],
   ['cassetto-scivola', /✗ il cassetto del telefono non si sposta/, 'il cassetto del telefono torna a scivolare'],
   ['velo-dopo', /✗ e il velo sfuma mentre si disfa/, 'il velo aspetta la fine del disegno per sfumare'],
+  ['menu-largo', /✗ il menu' non compare mai senza disegnarsi/, 'cambiando larghezza il menu\' compare gia\' fatto'],
+  ['menu-stretto', /✗ e non sparisce mai senza disfarsi/, 'stringendo la finestra il menu\' di lato sparisce di colpo'],
+  ['meno-moto', /✗ anche con meno movimento si vede disegnare/, 'con meno movimento i disegni tornano istantanei'],
 ];
 if (process.argv.includes('--selftest')) {
   const io = fileURLToPath(import.meta.url);
@@ -71,9 +86,91 @@ try { ({ chromium } = await import(PLAYWRIGHT)); }
 catch { console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 
 const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
+
+// Il menu' a ogni fotogramma, dal primo: se si vede, in che forma (dove sta e
+// quanto e' largo), e a che punto e' la china (del cassetto o di un gruppo):
+// se si sta tracciando o ritirando, e se non ha ancora finito. Si leggono i
+// tempi veri della sua animazione, non il tratto a un istante: la china del
+// cassetto si ritira in 80 ms a due disegni, e un fotogramma perso mentre la
+// finestra cambia misura bastava a non vederla. Un'animazione ridotta a niente
+// da una regola del foglio di stile ha una durata sotto i 30 ms. Il tratto che
+// si traccia conta finche' non ha finito (uno finito prima di vedersi non l'ha
+// visto nessuno); quello che si ritira conta finche' c'e' la sua tela, che se
+// ne va col disegno all'indietro.
+const REGISTRA = () => {
+  window.__menu = [];
+  window.__azione = 'caricamento';
+  const t0 = performance.now();
+  const aMeta = (e) => {
+    const s = e && e._dgTela && e._dgTela.isConnected ? e._dgTela : null;
+    const c = s && s.querySelector('.dg-china');
+    const a = c && c.getAnimations()[0];
+    if (!a) return '';
+    const t = a.effect.getComputedTiming();
+    if (!(t.duration >= 30) || t.localTime === null) return '';
+    if (c.classList.contains('dg-sfila')) return 'via';
+    return t.localTime < t.delay + t.duration ? 'su' : '';
+  };
+  const giro = () => {
+    const d = document.getElementById('drawer');
+    if (d) {
+      const st = getComputedStyle(d), r = d.getBoundingClientRect();
+      const vede = st.display !== 'none' && st.visibility !== 'hidden' && r.width >= 8 && r.height >= 8;
+      const pezzi = [d, ...document.querySelectorAll('#nav-drawer > .drawer-grp')].map(aMeta);
+      window.__menu.push({ t: Math.round(performance.now() - t0), azione: window.__azione, vede,
+        forma: vede ? Math.round(r.left) + ':' + Math.round(r.width) : '', su: pezzi.includes('su'), via: pezzi.includes('via') });
+    }
+    requestAnimationFrame(giro);
+  };
+  requestAnimationFrame(giro);
+};
+// Le rotture del menu' si fanno prima che il sito parta: tolgono la strada
+// giusta, non il disegno. I file arrivano minificati, coi nomi cambiati: chi
+// ascolta si riconosce da dove si registra, non da come si chiama.
+const rompiMenu = async (pg) => {
+  if (ROMPI === 'menu-largo') {
+    await pg.addInitScript(() => {
+      const orig = window.addEventListener;
+      window.addEventListener = function (tipo, fn, ...r) { if (tipo === 'resize' && /disegno[^/]*\.js/.test(new Error().stack)) return; return orig.call(this, tipo, fn, ...r); };
+    });
+  }
+  if (ROMPI === 'menu-stretto') {
+    await pg.addInitScript(() => {
+      const orig = MediaQueryList.prototype.addEventListener;
+      MediaQueryList.prototype.addEventListener = function (tipo, fn, ...r) { if (tipo === 'change' && this.media === '(min-width: 64rem)') return; return orig.call(this, tipo, fn, ...r); };
+    });
+  }
+  if (ROMPI === 'meno-moto') {
+    await pg.addInitScript(() => document.addEventListener('DOMContentLoaded', () => {
+      const s = document.createElement('style');
+      s.textContent = '@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; } }';
+      document.head.appendChild(s);
+    }));
+  }
+};
+// Ogni volta che il menu' si vede in una forma nuova, nei 600 ms dopo la sua
+// china non ha ancora finito di tracciarsi (o, se se ne sta gia' andando, di
+// ritirarsi): la vedi farsi. Ogni volta che sparisce, nei 600 ms prima si stava
+// ritirando mentre si vedeva.
+const eventiMenu = (fr) => {
+  const ev = [];
+  for (let i = 1; i < fr.length; i++) {
+    const a = fr[i - 1], c = fr[i];
+    if (c.vede && (!a.vede || c.forma !== a.forma)) {
+      const visto = fr.slice(i).filter((x) => x.t - c.t <= 600).some((x) => x.su || x.via);
+      ev.push({ tipo: 'compare', azione: c.azione, visto, forma: c.forma });
+    }
+    if (a.vede && !c.vede) {
+      const visto = fr.slice(0, i).filter((x) => a.t - x.t <= 600).some((x) => x.via);
+      ev.push({ tipo: 'sparisce', azione: c.azione, visto });
+    }
+  }
+  return ev;
+};
 const b = await chromium.launch({ executablePath: CHROMIUM,
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox', '--disable-dev-shm-usage'] });
 const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+await rompiMenu(p);
 await p.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domcontentloaded' });
 await p.waitForFunction(() => window.SB_APP && window.SB_DISEGNO, null, { timeout: 20000 });
 await p.addStyleTag({ content: '#cookie-banner,.giro-velo,.giro-fumetto{display:none!important}' });
@@ -260,22 +357,43 @@ ripasso.conFinestra = await p.evaluate(() => ({ ripassi: window.__ripassi.length
 await p.evaluate(() => { document.querySelector('.bv-velo [data-mdl="no"]')?.click(); document.getElementById('prova-ripasso')?.remove(); });
 await p.waitForTimeout(500);
 
-// I due interruttori non sono lo stesso interruttore. «Leggero» si accende DA
-// SOLO su un dispositivo che dichiara poca memoria, pochi core o una rete
-// lenta, e serve al CARICO: qualche tratto non pesa niente, il disegno resta.
-// «Meno movimento» lo chiede la persona, e li' non si disegna niente.
+// «Leggero» si accende DA SOLO su un dispositivo che dichiara poca memoria,
+// pochi core o una rete lenta, e serve al CARICO: qualche tratto non pesa
+// niente, il disegno resta.
 const interruttori = {};
 const unaScena = passaggi.find((x) => !x.stessa);
-for (const [classe, atteso] of [['leggero', true], ['meno-moto', false]]) {
-  await p.evaluate((c) => { document.body.classList.add(c); }, classe);
-  await p.evaluate((x) => window.SB_APP.vai(x), unaScena.da);
-  await p.waitForTimeout(700);
-  await p.evaluate(() => { window.__tele = []; });
-  await p.evaluate((x) => window.SB_APP.vai(x), unaScena.a);
-  await p.waitForTimeout(700);
-  interruttori[classe] = { visto: (await p.evaluate(() => window.__tele.length)) > 0, atteso };
-  await p.evaluate((c) => { document.body.classList.remove(c); }, classe);
-}
+await p.evaluate(() => { document.body.classList.add('leggero'); });
+await p.evaluate((x) => window.SB_APP.vai(x), unaScena.da);
+await p.waitForTimeout(700);
+await p.evaluate(() => { window.__tele = []; });
+await p.evaluate((x) => window.SB_APP.vai(x), unaScena.a);
+await p.waitForTimeout(700);
+interruttori.leggero = { visto: (await p.evaluate(() => window.__tele.length)) > 0 };
+await p.evaluate(() => { document.body.classList.remove('leggero'); });
+// «Meno movimento» lo chiede la persona, e toglie il MOVIMENTO: lo scorrere
+// morbido, le cose che volano, le pulsazioni. Il disegno no: e' il modo in cui
+// le cose compaiono e se ne vanno, e si disegna in ogni caso. Si guarda la
+// china a meta' strada, non la tela: la tela nasce anche quando una regola del
+// foglio di stile riduce l'animazione a niente.
+await p.emulateMedia({ reducedMotion: 'reduce' });
+await p.evaluate((x) => window.SB_APP.vai(x), unaScena.da);
+await p.waitForTimeout(700);
+await p.evaluate(() => {
+  window.__meta = { su: 0, via: 0 };
+  const t0 = performance.now();
+  const giro = () => {
+    for (const c of document.querySelectorAll('svg.dg-tela .dg-china')) {
+      const o = parseFloat(getComputedStyle(c).strokeDashoffset);
+      if (o > 0.001 && o < 0.999) window.__meta[c.classList.contains('dg-sfila') ? 'via' : 'su']++;
+    }
+    if (performance.now() - t0 < 900) requestAnimationFrame(giro);
+  };
+  requestAnimationFrame(giro);
+});
+await p.evaluate((x) => window.SB_APP.vai(x), unaScena.a);
+await p.waitForTimeout(1000);
+interruttori.menoMoto = await p.evaluate(() => window.__meta);
+await p.emulateMedia({ reducedMotion: 'no-preference' });
 
 // Niente veli a tutto schermo rimasti accesi SOPRA alla pagina. Sopra: lo
 // sfondo sta a z-index negativo, dietro al contenuto, e non e' un velo.
@@ -295,6 +413,8 @@ const uscita = await p.evaluate(() => {
 
 // ---- IL CASSETTO DEL TELEFONO ----------------------------------------------
 const tel = await b.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+await tel.addInitScript(REGISTRA);
+await rompiMenu(tel);
 if (ROMPI === 'velo-dopo') {
   await tel.addInitScript(() => document.addEventListener('DOMContentLoaded', () => {
     const s = document.createElement('style');
@@ -358,7 +478,9 @@ const STRADE = [
 await tel.evaluate(`window.__cassetto = ${CASSETTO.toString()}`);
 const cassetto = [];
 for (const [nome, chiudi] of STRADE) {
+  await tel.evaluate(() => { window.__azione = 'aprendo il cassetto'; });
   const { primo, lati } = await aprire();
+  await tel.evaluate((a) => { window.__azione = a; }, 'chiudendo con ' + nome);
   await tel.evaluate(() => {
     window.__fotogrammi = [];
     const t0 = performance.now();
@@ -388,13 +510,73 @@ const treLati = (c) => {
   }
   return /^M/.test(c.china) && !/Z/.test(c.china);
 };
-await tel.evaluate(() => document.body.classList.add('meno-moto'));
+await tel.emulateMedia({ reducedMotion: 'reduce' });
+await tel.evaluate(() => { window.__azione = 'meno movimento: aprendo il cassetto'; });
 await tel.click('[data-apri-menu]');
-await tel.waitForTimeout(80);
-const fermoAperto = await tel.evaluate(() => ({ aperto: document.body.classList.contains('menu-aperto'), tele: document.querySelectorAll('svg.dg-tela').length }));
+await tel.waitForTimeout(900);
+await tel.evaluate(() => { window.__azione = 'meno movimento: chiudendo con la X'; });
 await tel.click('#chiudi-menu');
-await tel.waitForTimeout(30);
-const fermoChiuso = await tel.evaluate(() => ({ aperto: document.body.classList.contains('menu-aperto'), tele: document.querySelectorAll('svg.dg-tela').length }));
+await tel.waitForTimeout(900);
+const telMenu = await tel.evaluate(() => window.__menu);
+
+// ---- IL MENU' IN OGNI CASO -------------------------------------------------
+// Dal caricamento, per ogni strada che lo fa comparire, sparire o cambiare
+// forma: la finestra che si stringe e si allarga (e' anche il tablet che
+// gira), il cassetto aperto quando la finestra si allarga, il tutto schermo,
+// il menu' posato, e tutto di nuovo con «meno movimento».
+const m = await b.newPage({ viewport: { width: 1440, height: 900 } });
+await m.addInitScript(REGISTRA);
+await rompiMenu(m);
+await m.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domcontentloaded' });
+await m.waitForFunction(() => window.SB_APP && window.SB_DISEGNO, null, { timeout: 20000 });
+await m.addStyleTag({ content: '#cookie-banner,.giro-velo,.giro-fumetto{display:none!important}' });
+await m.waitForTimeout(1500);
+const LARGO = { width: 1440, height: 900 }, STRETTO = { width: 390, height: 844 };
+const fa = async (azione, gesto) => {
+  await m.evaluate((a) => { window.__azione = a; }, azione);
+  await gesto();
+  await m.waitForTimeout(1000);
+};
+const clic = (sel) => () => m.evaluate((s) => document.querySelector(s).click(), sel);
+const ATTESI = [
+  ['caricamento', 'compare'],
+  ['stringendo, col menu\' di lato', 'sparisce'],
+  ['allargando, col cassetto chiuso', 'compare'],
+  ['aprendo il cassetto', 'compare'],
+  ['allargando, col cassetto aperto', 'compare'],
+  ['a tutto schermo', 'sparisce'],
+  ['aprendo il menu\' posato', 'compare'],
+  ['chiudendo il menu\' posato con Esc', 'sparisce'],
+  ['stringendo, col menu\' posato aperto', 'compare'],
+  ['allargando, col menu\' posato aperto', 'sparisce'],
+  ['togliendo il tutto schermo', 'compare'],
+  ['meno movimento: stringendo', 'sparisce'],
+  ['meno movimento: allargando', 'compare'],
+  ['meno movimento: a tutto schermo', 'sparisce'],
+  ['meno movimento: togliendo il tutto schermo', 'compare'],
+];
+await fa(ATTESI[1][0], () => m.setViewportSize(STRETTO));
+await fa(ATTESI[2][0], () => m.setViewportSize(LARGO));
+await m.setViewportSize(STRETTO);
+await m.waitForTimeout(900);
+await fa(ATTESI[3][0], clic('#apri-menu'));
+await fa(ATTESI[4][0], () => m.setViewportSize(LARGO));
+await m.evaluate(() => { window.__azione = 'verso una scheda larga'; window.SB_APP.vai('alert'); });
+await m.waitForTimeout(1200);
+await fa(ATTESI[5][0], clic('#pt-schermo'));
+await fa(ATTESI[6][0], clic('#apri-menu'));
+await fa(ATTESI[7][0], () => m.keyboard.press('Escape'));
+await m.evaluate(() => document.querySelector('#apri-menu').click());
+await m.waitForTimeout(900);
+await fa(ATTESI[8][0], () => m.setViewportSize(STRETTO));
+await fa(ATTESI[9][0], () => m.setViewportSize(LARGO));
+await fa(ATTESI[10][0], clic('#pt-schermo'));
+await m.emulateMedia({ reducedMotion: 'reduce' });
+await fa(ATTESI[11][0], () => m.setViewportSize(STRETTO));
+await fa(ATTESI[12][0], () => m.setViewportSize(LARGO));
+await fa(ATTESI[13][0], clic('#pt-schermo'));
+await fa(ATTESI[14][0], clic('#pt-schermo'));
+const largoMenu = await m.evaluate(() => window.__menu);
 
 await b.close();
 await chiudiSito();
@@ -436,7 +618,6 @@ dice(ripasso.dopoScheda === 0 && ripasso.conFinestra.finestra && ripasso.conFine
 dice(!veli.length, 'non resta nessun velo a tutto schermo sopra alla pagina', veli.join(' · '));
 dice(uscita > 0 && uscita <= 300, 'l\'uscita e\' corta: il disegno all\'indietro, non una dissolvenza', `${uscita}ms`);
 dice(interruttori.leggero.visto === true, 'la modalita\' leggera non spegne il disegno: serve al carico, non al movimento');
-dice(interruttori['meno-moto'].visto === false, 'chi ha chiesto meno movimento non vede disegnare niente');
 
 const fermo = cassetto.filter((x) => new Set(x.lati).size !== 1);
 dice(!fermo.length, 'il cassetto del telefono non si sposta: compare dov\'e\' e se ne va da li\'', fermo.map((x) => `${x.nome}: ${x.lati.join(',')}`).join(' · '));
@@ -450,7 +631,25 @@ const velo = cassetto.filter((x) => { const u = x.disfacendo[x.disfacendo.length
 dice(!velo.length, 'e il velo sfuma mentre si disfa, non dopo', velo.map((x) => `${x.nome}: ${JSON.stringify(x.disfacendo.slice(-2))}`).join(' · '));
 const resti = cassetto.filter((x) => x.resti);
 dice(!resti.length, 'e non lascia niente nel documento', resti.map((x) => `${x.nome}: ${x.resti}`).join(' · '));
-dice(fermoAperto.aperto && !fermoAperto.tele && !fermoChiuso.aperto && !fermoChiuso.tele, 'con meno movimento il cassetto si apre e si chiude all\'istante, senza disegni', JSON.stringify({ fermoAperto, fermoChiuso }));
+
+const eventi = [...eventiMenu(telMenu).map((e) => ({ ...e, dove: 'telefono' })), ...eventiMenu(largoMenu).map((e) => ({ ...e, dove: 'computer' }))];
+const dirEvento = (e) => `${e.dove}, ${e.azione}${e.forma ? ' (' + e.forma + ')' : ''}`;
+const compare = eventi.filter((e) => e.tipo === 'compare'), sparisce = eventi.filter((e) => e.tipo === 'sparisce');
+console.log(`\nIl menu' a ogni fotogramma: ${compare.length} volte compare o cambia forma, ${sparisce.length} volte sparisce.\n`);
+const giaFatto = compare.filter((e) => !e.visto);
+dice(!giaFatto.length, 'il menu\' non compare mai senza disegnarsi, in nessuna forma e per nessuna strada', giaFatto.map(dirEvento).join(' · '));
+const diColpo = sparisce.filter((e) => !e.visto);
+dice(!diColpo.length, 'e non sparisce mai senza disfarsi', diColpo.map(dirEvento).join(' · '));
+const mancano = ATTESI.filter(([azione, tipo]) => !eventi.some((e) => e.dove === 'computer' && e.azione === azione && e.tipo === tipo)).map(([a, t]) => `${a}: nessun «${t}»`);
+for (const tipo of ['compare', 'sparisce']) {
+  const n = eventi.filter((e) => e.dove === 'telefono' && e.tipo === tipo).length;
+  if (n < STRADE.length + 1) mancano.push(`telefono: ${n} volte «${tipo}» su ${STRADE.length + 1}`);
+}
+dice(!mancano.length, `ogni strada provata fa davvero quello che si guarda (${ATTESI.length} sul computer, ${STRADE.length + 1} sul telefono)`, mancano.join(' · '));
+const menoMoto = eventi.filter((e) => /^meno movimento/.test(e.azione));
+dice(interruttori.menoMoto.su > 0 && interruttori.menoMoto.via > 0 && menoMoto.length >= 6 && menoMoto.every((e) => e.visto),
+  'anche con meno movimento si vede disegnare: la scena che cambia, il cassetto, il menu\' di lato e quello posato',
+  JSON.stringify({ scena: interruttori.menoMoto, menu: menoMoto.filter((e) => !e.visto).map(dirEvento) }));
 
 const rossi = esiti.filter((x) => !x).length;
 console.log(rossi ? '\ncancello ROSSO ✗\n' : '\nOgni passaggio si disfa e si disegna come gli tocca. ✓\n');

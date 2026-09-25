@@ -86,7 +86,7 @@ p, li { line-height: 1.72; }
   #anime-sfondo::after, .pl-atmo { animation: none !important; }
   .btn::after, .pl-tile::after { display: none; }
   :root { --molla-lieve: ease; --molla-medio: ease; --molla-pieno: ease; --molla-scena: ease;
-            --t-lieve: .01ms; --t-medio: .01ms; --t-pieno: .01ms; --t-scena: .01ms; --t-uscita: .01ms; }
+            --t-lieve: .01ms; --t-medio: .01ms; --t-pieno: .01ms; --t-scena: .01ms; }
 }
 .btn, button.btn, a.btn {
   transition: scale var(--t-molla-su) var(--molla-medio), opacity .2s ease,

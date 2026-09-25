@@ -54,8 +54,8 @@ test('la soglia del menu di lato e\' la stessa per lo stile e per il codice', ()
   const css = /@media \(min-width: ([0-9.]+rem)\) \{\n {2}body\.con-nav \{ --largo-menu: 15rem; --lato: var\(--largo-menu\); \}/.exec(CSS);
   assert.ok(css, 'lo stile mette il menu di lato');
   assert.equal(js[1], css[1], 'una soglia sola: se divergono, fra le due il cassetto resta aperto di lato');
-  assert.match(APP, /matchMedia\(MENU_DI_LATO\)\.addEventListener\('change', \(ev\) => \{ if \(ev\.matches\) chiudiMenuMobile\(\{ subito: true \}\); \}\)/,
-    'allargando la finestra il cassetto aperto si chiude, e subito: diventa il menu di lato, disfarlo sarebbe sbagliato');
+  assert.ok(APP.includes("window.matchMedia(MENU_DI_LATO).addEventListener('change', (ev) => {\n    const b = document.body.classList;\n    if (ev.matches) { chiudiMenuMobile(); return; }"),
+    'allargando la finestra il cassetto aperto si chiude');
 });
 
 test('di lato non c\'e\' niente che serva solo al cassetto; a tutto schermo il menu torna cassetto', () => {
@@ -98,12 +98,11 @@ test('a tutto schermo il menu sta sul bordo: compare dopo una sosta, si disegna 
   assert.match(blocco, /body\.con-nav\.tutto-schermo \.drawer \{[^}]*transform: none; transition: none; visibility: hidden;/, 'il cassetto non scivola: compare dov\'e\'');
   assert.ok(blocco.includes('body.con-nav.tutto-schermo.menu-aperto .drawer { visibility: visible; }'));
   const DIS = readFileSync(new URL('../../src/web/public/disegno.js', import.meta.url), 'utf8');
-  assert.ok(DIS.includes("if (conCassetto && cassetto) chiedi(cassetto, { veloce: true });"), 'prima il contorno del cassetto');
-  assert.ok(DIS.includes("chiedi(g, { da: (conCassetto ? 140 : 60) + j * PASSO_FILA, veloce: true });"), 'poi i gruppi, uno dopo l\'altro');
-  assert.ok(DIS.includes("if (diventa('menu-aperto')) menu(true);"), 'ogni volta che il cassetto si apre, sul telefono come a tutto schermo');
+  assert.ok(DIS.includes("if (cassetto) chiedi(cassetto, { veloce: true });"), 'prima il contorno del cassetto, in qualunque forma sia');
+  assert.ok(DIS.includes("chiedi(g, { da: 140 + j * PASSO_FILA, veloce: true });"), 'poi i gruppi, uno dopo l\'altro');
   assert.ok(DIS.includes('viaMenu: viaMenu'), 'e sa disfarlo, dicendo quanto ci mette');
   const chiudi = funzione('chiudiMenuMobile');
-  assert.ok(chiudi.includes("const dura = subito ? 0 : (window.SB_DISEGNO?.viaMenu?.() || 0);")
+  assert.ok(chiudi.includes("const dura = resta ? 0 : (window.SB_DISEGNO?.viaMenu?.() || 0);")
     && chiudi.includes("_viaMenu = setTimeout(() => { _viaMenu = 0; document.body.classList.remove('menu-aperto', 'menu-via'); }, dura);"), 'sparisce solo quando il disegno e\' tornato indietro');
   assert.match(APP, /const SOSTA_BORDO_MS = \d+;/, 'una sosta sul bordo prima di aprire');
 });
@@ -145,8 +144,9 @@ test('sul telefono il cassetto non scorre: si disegna e si disfa, qualunque stra
   const chiudi = funzione('chiudiMenuMobile');
   assert.doesNotMatch(chiudi, /menuPosato\(\)/, 'il disegno all\'indietro non e\' piu\' solo del tutto schermo');
   assert.ok(chiudi.includes("document.body.classList.add('menu-via');"));
-  assert.equal((APP.match(/classList\.(add|toggle)\('menu-aperto'/g) || []).length, 1, 'il cassetto si apre in un posto solo, apriMenu');
+  assert.equal((APP.match(/classList\.(add|toggle)\('menu-aperto'\)/g) || []).length, 1, 'il cassetto si apre in un posto solo, apriMenu');
   assert.ok(funzione('apriMenu').includes("document.body.classList.add('menu-aperto');"));
+  assert.equal((APP.match(/\.add\('menu-aperto', 'menu-via'\)/g) || []).length, 1, 'e l\'unico altro posto lo tiene in vista solo per disfarlo');
   assert.equal((APP.match(/classList\.remove\('menu-aperto'/g) || []).length, 2, 'e si chiude in un posto solo, chiudiMenuMobile (subito o dopo il disegno)');
   assert.match(APP, /const giraMenu = \(\) => \{ if \(document\.body\.classList\.contains\('menu-aperto'\) && !_viaMenu\) chiudiMenuMobile\(\); else apriMenu\(false\); \};/);
   assert.match(APP, /if \(ev\.target\.closest\('\[data-apri-menu\]'\)\) giraMenu\(\);/, 'il tasto della barra in basso');
@@ -157,3 +157,39 @@ test('sul telefono il cassetto non scorre: si disegna e si disfa, qualunque stra
     'scegliendo una voce il menu si chiude al gesto, insieme alla scena che se ne va, non dopo');
 });
 
+test('il menu si disegna in ogni caso: quando si vede in una forma nuova, e prima di sparire si disfa', () => {
+  // «Che sia quando compare o quando scompare il menu deve venire disegnato in
+  // ogni caso». Le strade sono tante: il tasto, il velo, una voce, il tutto
+  // schermo, la finestra che si allarga o si stringe (anche il tablet che
+  // gira), la pagina che si carica. Non si scrive una regola per strada: il
+  // modulo del disegno guarda il menu, e ogni volta che si vede in una forma
+  // nuova lo disegna. La forma e' il suo contorno: il cassetto del telefono ha
+  // tre lati, quello posato quattro, quello di lato uno solo.
+  const DIS = readFileSync(join(PUB, 'disegno.js'), 'utf8');
+  const corpo = (nome) => { const i = DIS.indexOf(`function ${nome}(`); assert.ok(i >= 0, nome); return DIS.slice(i, DIS.indexOf('\n  }\n', i)); };
+  const forma = corpo('formaMenu');
+  assert.ok(forma.includes("if (!c || document.body.classList.contains('menu-via')) return '';"), 'un menu che se ne sta andando non e\' un menu che compare');
+  assert.ok(forma.includes('return m.bordo && m.bordo.lati ? m.bordo.lati.map(Number).join(\'\') : \'-\';'), 'la forma e\' il contorno');
+  assert.ok(corpo('sulMenu').includes('if (ora && ora !== menuVisto) menu();'), 'si vede in una forma nuova: si disegna');
+  assert.ok(corpo('sulleClassi').includes('if (corpo) sulMenu();'), 'a ogni classe che cambia sulla pagina');
+  assert.ok(corpo('avvia').includes("window.addEventListener('resize', function () { sulMenu(); esegui(); });"), 'a ogni cambio di misura della finestra');
+  assert.ok(/sulMenu\(\);\n\s*esegui\(\);\n\s*\(window\.requestIdleCallback/.test(corpo('avvia')), 'e appena parte');
+  assert.doesNotMatch(DIS, /diventa\('menu-aperto'\)|perde\('tutto-schermo'\)/, 'nessuna regola per strada');
+  // Chi lo nasconde lo dice prima (`menu-via`), lo disfa, e solo dopo cambia
+  // la pagina.
+  const applica = funzione('applicaSchermo');
+  assert.ok(applica.includes("document.body.classList.add('menu-via');\n    _viaSchermo = setTimeout(() => { _viaSchermo = 0; posa(); document.body.classList.remove('menu-via');"), 'il tutto schermo che arriva con una scheda');
+  const cambia = funzione('cambiaSchermo');
+  assert.ok(cambia.includes("document.body.classList.add('menu-via');\n  _cambioSchermo = setTimeout(() => dopo(true), dura);") && cambia.includes("if (via) document.body.classList.remove('menu-via');"), 'il tasto del tutto schermo');
+  // Chiudere e' disfare solo se il menu sparisce davvero: il cassetto che
+  // diventa il menu di lato resta, e si ridisegna nella forma nuova.
+  const chiudi = funzione('chiudiMenuMobile');
+  assert.ok(chiudi.includes('const resta = menuFisso();'), 'si chiede se il menu resta');
+  assert.match(APP, /const menuFisso = \(\) => document\.body\.classList\.contains\('con-nav'\) && !document\.body\.classList\.contains\('tutto-schermo'\) && window\.matchMedia\(MENU_DI_LATO\)\.matches;/);
+  // Stringendo la finestra il menu di lato non ha piu' posto: resta in vista
+  // come cassetto quanto basta per disfarsi.
+  assert.ok(APP.includes("    if (!b.contains('con-nav') || b.contains('tutto-schermo') || b.contains('menu-aperto')) return;\n    b.add('menu-aperto', 'menu-via');\n    chiudiMenuMobile();"),
+    'stringendo, il menu di lato si disfa prima di sparire');
+  assert.doesNotMatch(APP, /SB_DISEGNO\?\.menu\?\./, 'nessuno chiede il disegno a mano: lo fa il modulo, sempre');
+  assert.match(CSS, /body\.menu-aperto:not\(\.menu-via\) \.apri-menu span:nth-child\(1\)/, 'e la X torna hamburger appena il menu comincia ad andarsene');
+});

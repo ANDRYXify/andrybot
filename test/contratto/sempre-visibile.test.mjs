@@ -35,13 +35,14 @@ test('le parole del titolo si vedono anche se l\'animazione non parte', () => {
 test('una carta si vede anche se nessuno la disegna', () => {
   // Il disegno e' un di piu': la carta la rivela la sua classe, non il tratto.
   // Nascosta finche' non arriva nel riquadro, visibile appena ci arriva, e
-  // visibile comunque dopo la rete di sicurezza; chi chiede meno movimento la
-  // vede subito. Nessuna trasformazione: una carta che aspetta non e' spostata
-  // da nessuna parte, e non puo' allargare la pagina.
+  // visibile comunque dopo la rete di sicurezza. Chi chiede meno movimento
+  // aspetta il disegno come tutti (docs/DISEGNO.md, regola 21): nessuna regola
+  // la mostra prima. Nessuna trasformazione: una carta che aspetta non e'
+  // spostata da nessuna parte, e non puo' allargare la pagina.
   assert.match(CSS, /\.carta\.rivela \{ opacity: 0; \}\n\.carta\.rivela\.dentro \{ opacity: 1; \}/);
   const regole = [...CSS.matchAll(/([^{}]*\.carta\.rivela[^{}]*)\{([^}]*)\}/g)].map((m) => m[2]).join(' ');
   assert.doesNotMatch(regole, /transform|translate|transition/, 'la carta che aspetta non si muove');
   const i = APP.indexOf('function _reteDiSicurezza(');
   assert.match(APP.slice(i, APP.indexOf('\n}\n', i)), /c\.classList\.add\('dentro'\)/, 'la rete di sicurezza la mostra comunque');
-  assert.match(CSS, /prefers-reduced-motion: reduce\)[\s\S]*?\.carta\.rivela \{ opacity: 1 !important; \}/);
+  assert.doesNotMatch(CSS, /\.carta\.rivela \{ opacity: 1 !important; \}/, 'con meno movimento la carta aspetta il suo disegno come tutti');
 });

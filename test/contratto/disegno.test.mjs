@@ -126,10 +126,30 @@ test('disegnare una carta la rivela, e il retino finisce opaco', () => {
   assert.match(ANIME, /animation: dg-retino var\(--dg-retino, 170ms\) steps\(3, jump-end\) var\(--dg-da-retino, 0ms\) both;/, 'e resta li\'');
 });
 
-test('chi chiede meno movimento non vede disegnare niente', () => {
-  for (const nome of ['esegui', 'esceScena', 'scena']) assert.match(corpoDi(DG, nome), /meno\(\)/, `${nome} guarda meno()`);
-  assert.match(corpoDi(DG, 'meno'), /meno-moto/);
-  assert.match(corpoDi(DG, 'meno'), /prefers-reduced-motion: reduce/);
+test('si disegna in ogni caso, anche per chi chiede meno movimento', () => {
+  // Il disegno e' il modo in cui le cose compaiono e se ne vanno, non un
+  // movimento in piu': «meno movimento» ferma lo scorrere morbido, le cose che
+  // volano, le pulsazioni. Non c'e' nessun interruttore che lo spenga.
+  assert.doesNotMatch(DG, /prefers-reduced-motion|meno-moto|function meno\(/, 'il modulo non ha un interruttore che spenga il disegno');
+  const i = STILE.indexOf('  *, *::before, *::after { transition-duration: .001ms !important;');
+  const inizio = STILE.lastIndexOf('@media (prefers-reduced-motion: reduce) {', i);
+  assert.ok(i > 0 && inizio > 0 && !STILE.slice(inizio, i).includes('\n}\n'), 'la regola che ferma tutto sta in «meno movimento»');
+  const blocco = STILE.slice(inizio, STILE.indexOf('\n}\n', i));
+  assert.match(blocco, /\n {2}:not\(\.dg-in, \.dg-out, \.dg-tela, \.dg-tela \*\), ::before, ::after \{ animation-duration: \.001ms !important; animation-iteration-count: 1 !important; \}/,
+    'e riduce a niente ogni animazione tranne i tratti e il retino');
+  assert.doesNotMatch(blocco, /\*, \*::before, \*::after \{[^}]*animation-duration/, 'nessuna regola che valga anche per il disegno');
+  assert.doesNotMatch(blocco, /\.carta\.rivela \{ opacity: 1/, 'le carte aspettano il loro disegno come per tutti');
+  const rivela = APP.slice(APP.indexOf('function rivelaCarte('), APP.indexOf('\n}\n', APP.indexOf('function rivelaCarte(')));
+  assert.doesNotMatch(rivela, /_menoMoto/, 'le carte si rivelano quando arrivano, anche con meno movimento');
+  const vai = APP.slice(APP.indexOf('function vaiAScheda('), APP.indexOf('\n}\n', APP.indexOf('function vaiAScheda(')));
+  assert.doesNotMatch(vai, /_menoMoto/, 'e cambiando sezione la scena vecchia si disfa sempre');
+  // Uscire e' disfarsi: il tempo che l'app aspetta prima di togliere una cosa
+  // e' quello del disegno all'indietro, e con meno movimento non si accorcia.
+  // Prima scendeva a un centesimo di millisecondo, e la scena, gli avvisi e le
+  // finestre sparivano mentre cominciavano a disfarsi.
+  for (const [nome, css] of [['anime.css', ANIME], ['anime-vetrina.css', VETRINA]]) {
+    assert.equal((css.match(/--t-uscita:/g) || []).length, 1, `${nome}: il tempo dell'uscita e' uno, e non cambia con meno movimento`);
+  }
 });
 
 test('il disegno ascolta le classi che l\'app scrive davvero', () => {
@@ -181,7 +201,6 @@ test('nella vetrina le vignette sono i riquadri chiusi piu\' esterni, e si diseg
   assert.match(vt, /e\.classList\.add\('dg-attesa'\); io\.observe\(e\);/, 'le altre aspettano invisibili, come le carte del pannello');
   assert.match(vt, /v\.target\.classList\.remove\('dg-attesa'\);\n\s*chiedi\(v\.target/, 'e al primo pixel che entra si scoprono e si disegnano insieme: non le vedi mai gia\' fatte');
   assert.match(vt, /\{ threshold: 0 \}/, 'al primo pixel, non quando se ne vede un pezzo');
-  assert.match(vt, /if \(meno\(\) \|\|/, 'chi chiede meno movimento non aspetta niente');
   for (const css of [ANIME, VETRINA]) assert.match(css, /\.dg-attesa \{ opacity: 0; \}\n@media print \{ \.dg-attesa \{ opacity: 1; \} \}/, 'e in stampa si vede');
   assert.match(vt, /document\.body\.classList\.contains\('vetrina'\)/, 'solo nella vetrina');
 });
@@ -223,7 +242,7 @@ test('il tasto che premi si ripassa a china, e solo se il gesto non ha gia\' la 
   assert.match(corpoDi(DG, 'avvia'), /document\.addEventListener\('click', ripassa, true\);/, 'prima di chiunque, anche di chi ferma il clic');
   assert.doesNotMatch(DG, /esclam/, 'i «!» sono la sorpresa di un personaggio: un clic non e\' una sorpresa');
   const r = corpoDi(DG, 'ripassa');
-  assert.match(r, /if \(!ev\.isTrusted \|\| ev\.button > 0 \|\| meno\(\)\) return;/, 'solo i clic veri, col tasto principale, e mai a chi chiede meno movimento');
+  assert.match(r, /if \(!ev\.isTrusted \|\| ev\.button > 0\) return;/, 'solo i clic veri, col tasto principale');
   assert.match(r, /ev\.target\.closest\(AGISCE\)/, 'solo su quello che fa qualcosa');
   assert.match(r, /var gia = avviati;/);
   assert.match(r, /if \(avviati !== gia \|\| !el\.isConnected\) return;/, 'se il gesto ha fatto partire un disegno, la risposta e\' quella');

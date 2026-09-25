@@ -695,7 +695,7 @@ body.leggero #anime-sfondo::after, body.meno-moto #anime-sfondo::after { animati
   #anime-sfondo::after, .pl-atmo { animation: none !important; }
   .btn::after, .pl-tile::after { display: none; }
   :root { --molla-lieve: ease; --molla-medio: ease; --molla-pieno: ease; --molla-scena: ease;
-          --t-lieve: .01ms; --t-medio: .01ms; --t-pieno: .01ms; --t-scena: .01ms; --t-uscita: .01ms; }
+          --t-lieve: .01ms; --t-medio: .01ms; --t-pieno: .01ms; --t-scena: .01ms; }
 }
 
 body.senza-cursore, body.senza-cursore * { cursor: default !important; }

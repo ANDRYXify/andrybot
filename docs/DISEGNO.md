@@ -15,6 +15,13 @@ che se ne va si disfa con gli stessi tratti con cui si era fatto.
 Il codice è uno solo: `src/web/public/disegno.js` (`SB_DISEGNO`), più il blocco
 `.dg-*` in `anime.css`.
 
+**Tutto quello che compare si disegna, tutto quello che se ne va si disfa. In
+ogni caso.** Chiesto così: «che sia quando compare o quando scompare il menu
+deve venire disegnato in ogni caso. Tutto deve essere disegnato, non tralasciamo
+nulla, i dettagli sono vitalmente importanti». Non ci sono strade di serie B né
+eccezioni: né per la finestra che cambia misura, né per la pagina che si carica,
+né per chi chiede meno movimento.
+
 ## Da dove viene: come si disegna davvero
 
 Una tavola di manga si fa in quattro passaggi, sempre gli stessi
@@ -59,8 +66,8 @@ Da lì le scelte:
 | una finestra, la ricerca, la visita guidata | la loro carta si disegna sopra al velo, e chiudendola si disegna all'indietro |
 | una finestra ti chiede un gesto di cui potresti pentirti | la carta è una nuvoletta spigolosa rossa, come un urlo |
 | premi un tasto che ha un contorno, e il gesto non fa partire altri disegni | il tasto si ripassa a china dal punto toccato, poi l'inchiostro in più sfuma |
-| apri il menù (il cassetto del telefono, o quello del tutto schermo) | il cassetto si disegna, poi i gruppi uno dopo l'altro |
-| chiudi il menù, in qualunque modo (la X, il velo, Esc, una voce, il tasto della barra) | il cassetto e i gruppi si disegnano all'indietro dove sono, e il velo sfuma insieme |
+| il menù compare o cambia forma, in qualunque modo (lo apri, la pagina si carica, la finestra si allarga o si stringe, il tablet gira, togli il tutto schermo) | il cassetto si disegna nella forma che ha lì, poi i gruppi uno dopo l'altro |
+| il menù se ne va, in qualunque modo (la X, il velo, Esc, una voce, il tasto della barra, il tutto schermo, la finestra che si stringe) | il cassetto e i gruppi si disegnano all'indietro dove sono, e il velo sfuma insieme |
 | la vetrina | ogni vignetta (un riquadro chiuso) si disegna quando entra nello schermo |
 
 Una carta dura circa 560 ms dall'inizio alla pulizia, ma il contenuto si legge
@@ -130,8 +137,7 @@ possa esistere.
     riga piena è larga quanto il passo), resta così (`both`) e la classe se ne va
     a tempo. La rete di sicurezza mostra comunque le carte che nessuno ha
     rivelato, e una carta che si è disfatta ma non è stata tolta torna a
-    vedersi. Chi chiede meno movimento non vede disegnare niente e trova tutto
-    già al suo posto.
+    vedersi.
 11. **Uscire dura quanto il disegno all'indietro.** Schede, avvisi e finestre se
     ne vanno dopo `--t-uscita`, lo stesso tempo dappertutto, e il disegno
     all'indietro ci sta dentro per costruzione: è la linea del tempo
@@ -187,6 +193,19 @@ possa esistere.
     menu aspettava che la scena finisse di disfarsi, e se ne andava dopo: quando
     spariva di colpo non si notava, disegnandosi sarebbe rimasto fermo, aperto,
     dopo che avevi già scelto.
+21. **Meno movimento non spegne il disegno.** Il disegno è il modo in cui le
+    cose compaiono e se ne vanno, non un movimento in più: non sposta niente,
+    non ingrandisce, non scorre. «Riduci movimento» ferma lo scorrere morbido,
+    le cose che volano, le pulsazioni, i numeri che contano; i tratti e il
+    retino no. La regola che riduce ogni animazione a niente li lascia fuori
+    (`:not(.dg-in, .dg-out, .dg-tela, .dg-tela *)`), le carte aspettano il loro
+    disegno come per tutti, e cambiando sezione la scena vecchia si disfa
+    sempre. Prima il modulo aveva un interruttore che spegneva tutto, e con
+    «meno movimento» il menù compariva e spariva di colpo.
+22. **Uscire dura quanto il disegno all'indietro, sempre.** `--t-uscita` è il
+    tempo che l'app aspetta prima di togliere una cosa, e non si accorcia con
+    meno movimento. Scendeva a un centesimo di millisecondo: la scena, gli
+    avvisi e le finestre sparivano mentre cominciavano a disfarsi.
 
 ## La tela viva
 
@@ -239,8 +258,36 @@ succedeva. Il velo dietro sfuma mentre il cassetto si disfa (`menu-via`), non
 dopo. Tutte le strade passano da due funzioni, `apriMenu` e `chiudiMenuMobile`:
 prima il tasto «Altro» della barra in basso e l'hamburger accendevano e
 spegnevano la classe per conto loro, e avrebbero saltato il disegno.
-Allargando la finestra col cassetto aperto, il cassetto diventa il menu di lato
-e si chiude subito: disfarlo sarebbe stato disfare il menu di lato.
+
+## Il menù in ogni caso
+
+Le strade che fanno comparire o sparire il menù sono tante: il tasto, il velo,
+Esc, una voce, il tutto schermo che arriva o se ne va, la finestra che si
+allarga o si stringe (ed è anche il tablet che gira), la pagina che si carica.
+Una regola per strada vuol dire dimenticarne una, ed era successo: con la
+finestra che cambiava misura il menù compariva già fatto e spariva di colpo, e
+il menu di lato, che si disfaceva entrando nel tutto schermo, tornava senza
+disegnarsi. Adesso le regole sono due, e non nominano nessuna strada.
+
+- **Compare: lo guarda il modulo.** Il menù ha una forma, che è il suo contorno:
+  il cassetto del telefono ha tre lati, quello posato del tutto schermo quattro,
+  quello di lato uno solo (il bordo destro). A ogni classe che cambia sulla
+  pagina, a ogni cambio di misura della finestra e appena parte, il modulo
+  guarda se il menù si vede e in che forma (`formaMenu`); se si vede in una forma
+  nuova, lo disegna (`sulMenu`). Così si disegna quando lo apri, quando la
+  pagina si carica, quando la finestra si allarga e il cassetto chiuso diventa il
+  menu di lato, quando il cassetto aperto diventa il menu di lato, e quando togli
+  il tutto schermo.
+- **Se ne va: chi lo nasconde lo dice prima.** Chi sta per nasconderlo mette
+  `menu-via`, lo disfa (`viaMenu`) e solo dopo cambia la pagina: la X e le altre
+  strade del cassetto, il tasto del tutto schermo, la scheda larga che lo
+  accende. Un menù con `menu-via` se ne sta andando, e per il modulo non sta
+  comparendo. Chiudere è disfare solo se il menù sparisce davvero: il cassetto
+  che diventa il menu di lato resta, e si ridisegna nella forma nuova
+  (`menuFisso`).
+- **La finestra che si stringe.** Il menu di lato non ha più posto: resta in
+  vista come cassetto, con `menu-aperto` e `menu-via` insieme, quanto basta per
+  disfarsi, poi se ne va. Il velo resta spento e l'hamburger non diventa una X.
 
 ## Cosa resta animato, e perché
 
@@ -277,8 +324,8 @@ già a schermo in quel momento le hai viste, e non si ridisegnano. Le altre
 aspettano invisibili (`dg-attesa`), come le carte del pannello, e al **primo
 pixel** che entra si scoprono e si disegnano nello stesso momento. Nella prima
 versione l'osservatore aspettava di vederne il 12%: su un riquadro alto 1546 px
-erano 185 px già visti, poi il riquadro spariva e si ridisegnava. Chi chiede
-meno movimento non aspetta niente, e in stampa si vede tutto. I loro bordi sono
+erano 185 px già visti, poi il riquadro spariva e si ridisegnava. In stampa si
+vede tutto. I loro bordi sono
 di un pixel o due, e la china ne ricalca uno o due. I blocchi di solo testo non
 si disegnano più né scivolano: ci sono.
 
@@ -302,21 +349,34 @@ si disegnano più né scivolano: ci sono.
   - il tasto premuto si ripassa sopra al tasto stesso, solo per un clic vero,
     e se ne va; se il gesto apre una finestra (un tasto di prova col bordo che
     apre una conferma) non si ripassa niente;
-  - la modalità leggera che disegna, e «meno movimento» che non disegna.
+  - la modalità leggera che disegna, e «meno movimento» che disegna lo stesso:
+    cambiando sezione si vede la china della scena vecchia ritirarsi e quella
+    della nuova tracciarsi.
 
   - il cassetto del telefono, aperto e chiuso per ognuna delle cinque strade
     (la X, il velo, Esc, una voce, il tasto della barra in basso): non si sposta
     mai; aprendolo si disegna, con la china sui suoi tre lati; chiudendolo, a
     ogni fotogramma finché si vede, si disfa lui coi suoi gruppi, e il velo è
-    già sfumato prima che sparisca; non lascia niente; con meno movimento si apre
-    e si chiude all'istante.
+    già sfumato prima che sparisca; non lascia niente.
+  - il menù a ogni fotogramma, dal caricamento alla fine, sul telefono e sul
+    computer: ogni volta che si vede in una forma nuova la sua china non ha
+    ancora finito di tracciarsi, ogni volta che sparisce si stava ritirando
+    mentre si vedeva. Si leggono i tempi veri delle animazioni, non il tratto a
+    un istante: la china del cassetto si ritira in 80 ms a due disegni, e un
+    fotogramma perso mentre la finestra cambia misura bastava a non vederla. Le
+    strade provate: la pagina che si carica, la finestra che si stringe e si
+    allarga, col cassetto chiuso e aperto, il tutto schermo avanti e indietro,
+    il menù posato aperto e chiuso, e poi con meno movimento; ognuna deve fare
+    davvero quello che si guarda.
 
-  L'autoprova rompe quattro cose, ognuna in un processo suo, e pretende il
+  L'autoprova rompe sette cose, ognuna in un processo suo, e pretende il
   rosso per la ragione giusta: la scheda vecchia che non si disfa, il cassetto
   che si chiude senza disfarsi, il cassetto che torna a scivolare, il velo che
-  aspetta la fine del disegno. Una misura a un istante fisso non basta: il
-  disegno all'indietro del cassetto dura circa 200 ms, e la prima versione lo
-  guardava quando era già finito.
+  aspetta la fine del disegno, il menù che al cambio di misura compare già
+  fatto, il menu di lato che stringendo la finestra sparisce di colpo, i
+  disegni che con meno movimento tornano istantanei. Una misura a un istante
+  fisso non basta: il disegno all'indietro del cassetto dura circa 200 ms, e la
+  prima versione lo guardava quando era già finito.
 - `test/contratto/disegno.test.mjs` prova anche il contorno con un lato
   mancante: il cassetto ha due angoli, parte e finisce sul bordo destro, e
   nessun tratto corre lungo il lato che non c'è.

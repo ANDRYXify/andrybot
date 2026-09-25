@@ -1665,7 +1665,13 @@ function render() {
 
 const MENU_DI_LATO = '(min-width: 64rem)';
 try {
-  window.matchMedia(MENU_DI_LATO).addEventListener('change', (ev) => { if (ev.matches) chiudiMenuMobile({ subito: true }); });
+  window.matchMedia(MENU_DI_LATO).addEventListener('change', (ev) => {
+    const b = document.body.classList;
+    if (ev.matches) { chiudiMenuMobile(); return; }
+    if (!b.contains('con-nav') || b.contains('tutto-schermo') || b.contains('menu-aperto')) return;
+    b.add('menu-aperto', 'menu-via');
+    chiudiMenuMobile();
+  });
 } catch {  }
 
 const _menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -1721,7 +1727,6 @@ function _guardaLeCarteNuove() {
 
 function rivelaCarte(scope = document) {
   const carte = scope.querySelectorAll('.carta');
-  if (_menoMoto) { carte.forEach((c) => c.classList.add('rivela', 'dentro')); return; }
   const obs = _osservatore();
   for (const c of carte) {
     c.classList.remove('dentro');
@@ -3786,18 +3791,17 @@ let _viaSchermo = 0;
 function applicaSchermo({ subito = false } = {}) {
   const on = SCHEDE_LARGHE.has(schedaAttiva) && schermoPienoScelto();
   const prima = document.body.classList.contains('tutto-schermo');
-  if (_viaSchermo) {
-    clearTimeout(_viaSchermo); _viaSchermo = 0;
-    if (!on) window.SB_DISEGNO?.menu?.();
-  }
+  if (_viaSchermo) { clearTimeout(_viaSchermo); _viaSchermo = 0; document.body.classList.remove('menu-via'); }
   const posa = () => {
     document.body.classList.toggle('tutto-schermo', on);
     if (prima !== on) chiudiMenuMobile();
   };
   const lato = on && !prima && !subito && document.body.classList.contains('con-nav') && !document.body.classList.contains('menu-aperto');
   const dura = lato ? (window.SB_DISEGNO?.viaMenu?.() || 0) : 0;
-  if (dura) _viaSchermo = setTimeout(() => { _viaSchermo = 0; posa(); requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco)); }, dura);
-  else posa();
+  if (dura) {
+    document.body.classList.add('menu-via');
+    _viaSchermo = setTimeout(() => { _viaSchermo = 0; posa(); document.body.classList.remove('menu-via'); requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco)); }, dura);
+  } else posa();
   const b = document.getElementById('pt-schermo');
   if (b) {
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -3813,15 +3817,17 @@ function cambiaSchermo() {
   if (_cambioSchermo) return;
   const on = !document.body.classList.contains('tutto-schermo');
   try { localStorage.setItem(_chiaveSchermo(schedaAttiva), on ? '1' : '0'); } catch (e) {  }
-  const dopo = () => {
+  const dopo = (via) => {
     _cambioSchermo = 0;
     applicaSchermo({ subito: true });
+    if (via) document.body.classList.remove('menu-via');
     requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco));
   };
   const lato = on && document.body.classList.contains('con-nav') && !document.body.classList.contains('menu-aperto');
   const dura = lato ? (window.SB_DISEGNO?.viaMenu?.() || 0) : 0;
-  if (!dura) { dopo(); return; }
-  _cambioSchermo = setTimeout(dopo, dura);
+  if (!dura) { dopo(false); return; }
+  document.body.classList.add('menu-via');
+  _cambioSchermo = setTimeout(() => dopo(true), dura);
 }
 
 function aggiornaTestataPagina() {
@@ -28663,12 +28669,14 @@ async function caricaPasskey() {
 
 let _viaMenu = 0, _lasciaMenu = 0, _sostaBordo = 0, _menuDalBordo = false;
 const menuPosato = () => document.body.classList.contains('tutto-schermo') && document.body.classList.contains('con-nav');
-function chiudiMenuMobile({ subito = false } = {}) {
+const menuFisso = () => document.body.classList.contains('con-nav') && !document.body.classList.contains('tutto-schermo') && window.matchMedia(MENU_DI_LATO).matches;
+function chiudiMenuMobile() {
   clearTimeout(_lasciaMenu); _lasciaMenu = 0; _menuDalBordo = false;
   document.getElementById('apri-menu')?.setAttribute('aria-expanded', 'false');
-  if (subito && _viaMenu) { clearTimeout(_viaMenu); _viaMenu = 0; }
+  const resta = menuFisso();
+  if (resta && _viaMenu) { clearTimeout(_viaMenu); _viaMenu = 0; }
   if (!document.body.classList.contains('menu-aperto') || _viaMenu) return;
-  const dura = subito ? 0 : (window.SB_DISEGNO?.viaMenu?.() || 0);
+  const dura = resta ? 0 : (window.SB_DISEGNO?.viaMenu?.() || 0);
   if (!dura) { document.body.classList.remove('menu-aperto', 'menu-via'); return; }
   document.body.classList.add('menu-via');
   _viaMenu = setTimeout(() => { _viaMenu = 0; document.body.classList.remove('menu-aperto', 'menu-via'); }, dura);
@@ -28677,7 +28685,7 @@ function apriMenu(dalBordo = false) {
   clearTimeout(_lasciaMenu); _lasciaMenu = 0;
   _menuDalBordo = dalBordo;
   document.getElementById('apri-menu')?.setAttribute('aria-expanded', 'true');
-  if (_viaMenu) { clearTimeout(_viaMenu); _viaMenu = 0; document.body.classList.remove('menu-via'); window.SB_DISEGNO?.menu?.(); return; }
+  if (_viaMenu) { clearTimeout(_viaMenu); _viaMenu = 0; document.body.classList.remove('menu-via'); return; }
   document.body.classList.add('menu-aperto');
 }
 const giraMenu = () => { if (document.body.classList.contains('menu-aperto') && !_viaMenu) chiudiMenuMobile(); else apriMenu(false); };
@@ -28785,8 +28793,6 @@ function vaiAScheda(id) {
     if (insieme && sporcoPrima) _riarmaBarraSalva(id);
     return;
   }
-
-  if (_menoMoto) { _cambiaScena(id, sezioni); return; }
 
   for (const p of document.querySelectorAll('.pannello-scheda.visibile')) p.classList.add('esce');
   clearTimeout(_uscitaVia);

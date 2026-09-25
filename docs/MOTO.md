@@ -335,7 +335,9 @@ bot, l'andare in diretta — non ogni clic su una scheda.
 per ognuno osserva le tele che nascono. Pretende il bianchetto quando cambia la
 sezione e mai dentro la stessa sezione. Pretende che la scheda nuova si disegni
 in ordine di lettura e che non resti niente a disegno finito. Tiene separati i
-due interruttori: con «leggero» il disegno c'è, con «meno movimento» no.
+due interruttori: con «leggero» il disegno c'è, e con «meno movimento» anche,
+perché il disegno è il modo in cui le cose compaiono e se ne vanno, non un
+movimento in più ([DISEGNO.md](DISEGNO.md), regola 21).
 
 Fonti: [McCloud, i sei passaggi](https://understandingcomics177.wordpress.com/about/1-2/2-2/) ·
 [linee d'azione nel manga](https://jerwoodvisualarts.org/blog/how-to-draw-manga-action-lines/) ·

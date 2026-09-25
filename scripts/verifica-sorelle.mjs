@@ -68,6 +68,9 @@ try {
   for (const s of schede) {
     if (SELFTEST && s === 'emote') continue;   // il selftest finge di averne saltata una
     await pg.evaluate((x) => window.vaiAScheda(x), s);
+    // Cambiando sezione la scena vecchia si disfa prima di lasciare il posto,
+    // anche con meno movimento: si aspetta la scena nuova, non un tempo fisso.
+    await pg.waitForFunction((x) => !!document.querySelector(`.pannello-scheda.visibile[data-scheda="${x}"]`), s, { timeout: 3000 }).catch(() => {});
     await pg.waitForTimeout(140);
     // La barra delle sorelle sta nella testata; quella con un id e' un'altra
     // cosa — le sotto-schede DENTRO una scheda — e qui non c'entra.

@@ -115,9 +115,9 @@ body:not(.con-nav) .barra-top { display: none; }
 .apri-menu span:nth-child(1) { width: 100%; }
 .apri-menu span:nth-child(2) { width: 82%; align-self: flex-start; }
 .apri-menu span:nth-child(3) { width: 92%; }
-body.menu-aperto .apri-menu span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-body.menu-aperto .apri-menu span:nth-child(2) { opacity: 0; }
-body.menu-aperto .apri-menu span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+body.menu-aperto:not(.menu-via) .apri-menu span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+body.menu-aperto:not(.menu-via) .apri-menu span:nth-child(2) { opacity: 0; }
+body.menu-aperto:not(.menu-via) .apri-menu span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 .drawer {
   position: fixed; top: 0; right: 0; height: 100dvh; width: min(86vw, 320px); z-index: 61;
@@ -1526,8 +1526,8 @@ pre.blocco-codice { background: var(--surface-2); border: 1px solid var(--border
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
-  .carta.rivela { opacity: 1 !important; }
+  *, *::before, *::after { transition-duration: .001ms !important; scroll-behavior: auto !important; }
+  :not(.dg-in, .dg-out, .dg-tela, .dg-tela *), ::before, ::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
   .pt-parola > i { transform: none !important; }
   .btn { transform: none !important; translate: none !important; scale: none !important; }
 }
