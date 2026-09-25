@@ -12,6 +12,8 @@
 // Gating: segue l'add-on "Giochi" (settings.giochi), come i minigiochi.
 import { streamers, statoVivo } from '../db.js';
 import { makeLog } from '../logger.js';
+import { aChi } from './risposte.js';
+import { nomeIn } from './comandi-registro.js';
 
 const log = makeLog('giveaway');
 
@@ -297,7 +299,7 @@ export function tryGiveaway(msg, say) {
         if (!g) { say('🎁 Non c\'è nessun giveaway aperto.'); return true; }
         const chi = (parti[0] || '').replace(/^@/, '').toLowerCase();
         const quanti = parti[1] != null ? (parseInt(parti[1], 10) || 1) : 1;
-        if (!chi) { say('🎫 Uso: !biglietti @nome [quantità].'); return true; }
+        if (!chi) { aChi(msg, say)(`🎫 Si danno così: !${nomeIn(channel, 'biglietti')} @nome 3. Senza numero, uno.`); return true; }
         const tot = bonus(channel, chi, quanti);
         if (tot == null) say(`🎫 @${chi} non è (ancora) in gara: deve entrare con !${g.keyword}.`);
         else say(`🎫 @${chi} ora ha ${tot} biglietti nel giveaway.`);

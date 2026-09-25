@@ -10,6 +10,7 @@
 import { streamers } from '../db.js';
 import { preparaComando, comandoDi } from './comandi-registro.js';
 import { makeLog } from '../logger.js';
+import { aChi } from './risposte.js';
 
 const log = makeLog('giochi');
 
@@ -39,7 +40,7 @@ export async function tryGamesBridge(msg, say) {
     // dice invece di tacere. Il vaglio viene PRIMA del riconoscimento, se no un
     // rinomino non verrebbe mai riconosciuto.
     const vaglio = preparaComando(msg.channel, msg);
-    if (vaglio?.rifiuta) { say(vaglio.messaggio); return true; }
+    if (vaglio?.rifiuta) { aChi(msg, say)(vaglio.messaggio); return true; }
     const testo = vaglio?.testo || String(msg.text || '').trim();
     if (!testo || !INOLTRA(testo)) return false;
     if (vaglio?.salta) return false;

@@ -82,12 +82,15 @@ test('la puntata esce subito, sta nel database, e torna dopo un riavvio', (t) =>
   B.impostaCaso(carte(10, 7, 9, 8));
   const s = scena('j1');
   s.scrivi('anna', '!bj 100');
-  assert.match(s.detti.at(-1), /anna: 10. 7. \(17\) · banco: 9. e una coperta/);
+  assert.match(s.detti.at(-1), /anna punta 100: hai 10. 7. \(17\), il banco mostra 9. e una coperta/);
   assert.equal(points.get('j1', 'anna'), 400, 'la puntata esce subito');
   assert.deepEqual(statoVivo.leggi('j1', 'bj-mani'), { anna: 100 });
   assert.deepEqual(B.rimborsaDopoRiavvio(), [{ channel: 'j1', chi: 'anna', posta: 100 }]);
   assert.equal(points.get('j1', 'anna'), 500, 'dopo un riavvio torna');
   assert.equal(statoVivo.leggi('j1', 'bj-mani'), null);
+  assert.equal(B.testoRimborso({ channel: 'j1', chi: 'anna', posta: 100 }),
+    '🃏 @anna, il bot si è riavviato mentre avevi una mano di blackjack aperta: la puntata di 100 monete è tornata a te.',
+    'e chi l\'aveva aperta lo viene a sapere');
 });
 
 test('le regole del tavolo: blackjack, sballo, banco, pari, e chi non decide sta', (t) => {
@@ -96,24 +99,25 @@ test('le regole del tavolo: blackjack, sballo, banco, pari, e chi non decide sta
   const s = scena('j2');
   B.impostaCaso(carte(1, 13, 9, 8));
   s.scrivi('anna', '!bj 100');
-  assert.match(s.detti.at(-1), /BLACKJACK! \+150/);
+  assert.match(s.detti.at(-1), /Blackjack servito! Ti tornano 250 monete: la puntata più 150\. Ora ne hai 1150\./);
   assert.equal(points.get('j2', 'anna'), 1150, '3 a 2');
   B.impostaCaso(carte(10, 9, 1, 12));
   s.scrivi('bruno', '!bj 100');
-  assert.match(s.detti.at(-1), /il banco ha blackjack, −100/);
+  assert.match(s.detti.at(-1), /Il banco ha blackjack\. La puntata va al banco\. Ora ne hai 900\./);
   B.impostaCaso(carte(10, 6, 9, 8, 6));
   s.scrivi('carla', '!bj 100');
   s.scrivi('carla', '!carta');
-  assert.match(s.detti.at(-1), /carla: 10. 6. 6. = 22, sballa! −100/);
+  assert.match(s.detti.at(-1), /10. 6. 6. = 22: sballi\. La puntata va al banco\. Ora ne hai 900\./);
   B.impostaCaso(carte(10, 8, 10, 6, 13));
   s.scrivi('dario', '!bj 100');
   s.scrivi('dario', '!stai');
-  assert.match(s.detti.at(-1), /dario sta a 18 · banco: 10. 6. K. = 26, sballa → vince! \+100/);
+  assert.match(s.detti.at(-1), /Stai a 18; il banco 10. 6. K. = 26, e sballa: hai vinto! Ti tornano 200 monete: la puntata più 100\. Ora ne hai 1100\./,
+    'quello che torna, cosa c\'e\' dentro e quanto resta: il conto si rifa\' da soli');
   assert.equal(points.get('j2', 'dario'), 1100);
   B.impostaCaso(carte(10, 8, 10, 8));
   s.scrivi('elena', '!bj 100');
   t.mock.timers.tick(60_000);
-  assert.match(s.detti.at(-1), /elena sta a 18 · banco: 10. 8. = 18 → pari: la puntata torna/, 'dopo il tempo si sta da soli');
+  assert.match(s.detti.at(-1), /Tempo scaduto, stai a 18; il banco 10. 8. = 18: pari\. Ti torna la puntata\. Ora ne hai 1000\./, 'dopo il tempo si sta da soli');
   assert.equal(points.get('j2', 'elena'), 1000);
   assert.deepEqual([points.get('j2', 'carla'), points.get('j2', 'dario')], [900, 1100], 'una mano chiusa non si richiude allo scadere del suo tempo');
   assert.deepEqual(statoVivo.leggi('j2', 'bj-mani'), null, 'nessuna mano resta aperta');
@@ -123,17 +127,17 @@ test('una mano alla volta, e senza mano !carta lo dice', () => {
   canale('j3', { massimo: 200 }, { anna: 100 });
   const s = scena('j3');
   s.scrivi('anna', '!carta');
-  assert.match(s.detti.at(-1), /non hai una mano aperta: !blackjack 50/);
+  assert.match(s.detti.at(-1), /Non hai una mano aperta: !blackjack 50/);
   s.scrivi('anna', '!bj');
   assert.match(s.detti.at(-1), /Si gioca così: !blackjack 50/);
   s.scrivi('anna', '!bj 300');
   assert.match(s.detti.at(-1), /al massimo 200/);
   s.scrivi('anna', '!bj 150');
-  assert.match(s.detti.at(-1), /non basta quello che hai \(100\)/);
+  assert.match(s.detti.at(-1), /Per puntarne 150 non bastano: di monete ne hai 100\./);
   B.impostaCaso(carte(10, 7, 9, 8));
   s.scrivi('anna', '!bj 50');
   s.scrivi('anna', '!21 10');
-  assert.match(s.detti.at(-1), /hai già una mano aperta/);
+  assert.match(s.detti.at(-1), /Hai già una mano aperta/);
   assert.equal(points.get('j3', 'anna'), 50);
   B.impostaCaso(null);
 });
@@ -155,7 +159,7 @@ test('blackjack tutti e due: la puntata torna', () => {
   const s = scena('j5');
   B.impostaCaso(carte(1, 12, 10, 1));
   s.scrivi('anna', '!bj 100');
-  assert.match(s.detti.at(-1), /blackjack tutti e due: la puntata torna/);
+  assert.match(s.detti.at(-1), /Blackjack tutti e due! Ti torna la puntata\. Ora ne hai 500\./);
   assert.equal(points.get('j5', 'anna'), 500);
   B.impostaCaso(null);
 });
@@ -165,9 +169,9 @@ test('l\'asso vale uno o undici, e a 21 si sta da soli', () => {
   const s = scena('j6');
   B.impostaCaso(carte(1, 7, 10, 7, 3));
   s.scrivi('anna', '!bj 100');
-  assert.match(s.detti.at(-1), /anna: A. 7. \(8\/18\)/, 'col morbido si leggono tutti e due i conti');
+  assert.match(s.detti.at(-1), /anna punta 100: hai A. 7. \(8\/18\)/, 'col morbido si leggono tutti e due i conti');
   s.scrivi('anna', '!carta');
-  assert.match(s.detti.at(-1), /anna sta a 21 · banco: 10. 7. = 17 → vince! \+100/);
+  assert.match(s.detti.at(-1), /Stai a 21; il banco 10. 7. = 17: hai vinto! Ti tornano 200 monete: la puntata più 100\./);
   assert.equal(B.manoDi('j6', 'anna'), null);
   B.impostaCaso(null);
 });
@@ -194,13 +198,13 @@ test('dopo una mano si aspetta, dopo un errore no', (t) => {
   s.scrivi('anna', '!bj tanto');
   B.impostaCaso(carte(1, 13, 9, 8));
   s.scrivi('anna', '!bj 100');
-  assert.match(s.detti.at(-1), /BLACKJACK!/, 'lo sbaglio non fa aspettare');
+  assert.match(s.detti.at(-1), /Blackjack servito!/, 'lo sbaglio non fa aspettare');
   s.scrivi('anna', '!bj 100');
   assert.match(s.detti.at(-1), /⏳ anna, !blackjack di nuovo fra 30 secondi/);
   t.mock.timers.tick(30_000);
   B.impostaCaso(carte(1, 13, 9, 8));
   s.scrivi('anna', '!bj 100');
-  assert.match(s.detti.at(-1), /BLACKJACK!/);
+  assert.match(s.detti.at(-1), /Blackjack servito!/);
   B.impostaCaso(null);
 });
 

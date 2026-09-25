@@ -48,6 +48,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Le righe che aggiungi o togli, come azioni, frasi, premi e livelli delle donazioni, si disegnano quando arrivano e si disfano quando le togli.
 - Dopo un salvataggio, un cambio di canale o di lingua la pagina si disfa e si ridisegna, invece di cambiare di colpo.
 - Le bolle d'aiuto, le nuvolette e le barre in alto e in basso si disegnano quando compaiono e si disfano quando se ne vanno.
+- [importante] !giochi risponde a chi lo chiede con i giochi che può usare, divisi per come si gioca, e con !giochi e un nome spiega quel gioco coi nomi e le regole del tuo canale. [vai: giochi]
+- Chi chiede qualcosa in chat, come una classifica, come si usa un comando o quanto aspettare, riceve la risposta agganciata al suo messaggio. Le classifiche dicono anche dove sta lui.
+- Il blackjack dice il conto per intero: quanto ti torna, cosa c'è dentro e quante monete hai adesso. Se il bot si riavvia con una mano aperta, lo dice in chat quando rende la puntata.
+- Fra i comandi dei giochi la pesca non porta più l'etichetta «costa monete»: non ne è mai costata.
 
 ## 2026-09-24
 

@@ -4,7 +4,8 @@
 // Comandi: !dado [NdM] · !moneta · !8ball <domanda> · !slot · !roulette <p> <scelta>
 //          · !pesca · !duello @tizio · !furto @tizio · !regala @tizio N
 //          · !trivia · !classifica [mod|tutti] · !monete · !giochi
-import { elencoGiochiInChat, nomeIn } from './comandi-registro.js';
+import { giochiInChat, spiegaGioco, nomeIn } from './comandi-registro.js';
+import { aChi, spazioPer, inMessaggi } from './risposte.js';
 import { valoriDi } from './giochi-conf.js';
 import * as coccole from './coccole.js';
 import * as colpoFeat from './colpo.js';
@@ -201,6 +202,19 @@ function gara(parola) {
 function vuotaPer(quale, moneta) {
   if (quale === 'staff') return `Nessuno dello staff ha ancora ${moneta}. 🛡️`;
   return `Nessuno ha ancora ${moneta}: chattate e giocate! 🎮`;
+}
+// Chi chiede la classifica vuole sapere prima di tutto dove sta lui. Il posto
+// si dice solo nella SUA gara (pubblico o staff): in un'altra non vuol dire
+// niente, e li' si dice quante ne ha.
+function eTu(channel, user, quale, top, moneta) {
+  const io = String(user || '').toLowerCase();
+  const i = top.findIndex((r) => r.user === io);
+  if (i >= 0) return `E tu sei lì, ${i + 1}°.`;
+  const saldo = points.get(channel, io);
+  const mia = points.ruoloDi(channel, io) === 'staff' ? 'staff' : 'pubblico';
+  if (!saldo) return `Tu non ne hai ancora: si guadagnano stando in chat.`;
+  if (quale !== mia) return `Tu ne hai ${saldo}.`;
+  return `Tu sei ${points.posizione(channel, io)}° con ${saldo} ${moneta}.`;
 }
 
 // Riempie i segnaposto di un modello. Nasce da un difetto vero: un esito del
@@ -856,6 +870,10 @@ export function tryGame(msg, say) {
     if (!attivi(channel)) return false;
     const nome = msg.display || msg.user;
     const moneta = () => nomeMoneta(channel);
+    // chi ha sbagliato un comando, o ha chiesto qualcosa, riceve la risposta
+    // agganciata al suo messaggio: e' roba sua, non un annuncio alla stanza
+    const risposta = aChi(msg, say);
+    const comando = (id) => '!' + nomeIn(channel, id);
 
     // un numero mentre si conta insieme appartiene alla conta, una parola
     // mentre c'e' la catena alla catena
@@ -895,8 +913,11 @@ export function tryGame(msg, say) {
 
     switch (cmd) {
       case 'giochi': {
-        const lista = elencoGiochiInChat(channel);
-        say(lista || '🎮 Nessun gioco acceso in questo canale.');
+        const risposta = aChi(msg, say);
+        if (args.length) { risposta(spiegaGioco(channel, args[0], msg)); return true; }
+        const testi = giochiInChat(channel, msg, { limite: spazioPer(msg) });
+        if (!testi.length) { risposta('🎮 In questo canale adesso non ci sono giochi accesi.'); return true; }
+        testi.forEach(risposta);
         return true;
       }
 
@@ -922,23 +943,24 @@ export function tryGame(msg, say) {
       case '8ball': {
         const c8 = conf(channel, '8ball');
         if (aspetta(channel, '8ball', msg, say)) return true;
-        if (!args.length) { say(`🎱 Fammi una domanda, ${nome}! (es. !8ball vinco stasera?)`); return true; }
+        if (!args.length) { risposta(`🎱 Fammi una domanda: ${comando('8ball')} vinco stasera?`); return true; }
         say(`🎱 ${scegli(c8.risposte)}`);
         giocato(channel, '8ball', msg.user);
         return true;
       }
 
       case 'monete': {
-        say(`💰 ${nome}, hai ${points.get(channel, msg.user)} ${moneta()}.`);
+        risposta(`💰 Hai ${points.get(channel, msg.user)} ${moneta()}.`);
         return true;
       }
 
       case 'classifica': {
         const quale = /mod|staff/.test(parola) ? 'staff' : gara(args[0]);
         const top = points.top(channel, cfgPunti(channel).topN, quale);
-        if (!top.length) { say(vuotaPer(quale, moneta())); return true; }
-        const riga = top.map((r, i) => `${medaglia(i)} ${r.user} (${r.monete})`).join('  ');
-        say(`${ETICHETTA_GARA[quale]} ${moneta()}: ${riga}`);
+        if (!top.length) { risposta(vuotaPer(quale, moneta())); return true; }
+        const pezzi = top.map((r, i) => `${medaglia(i)} ${r.user} ${r.monete}`);
+        inMessaggi(pezzi, spazioPer(msg), { testa: `${ETICHETTA_GARA[quale]} ${moneta()}:`, coda: eTu(channel, msg.user, quale, top, moneta()), primaDellaCoda: '. ' })
+          .forEach(risposta);
         return true;
       }
 
@@ -946,28 +968,29 @@ export function tryGame(msg, say) {
         const cs = conf(channel, 'slot');
         if (aspetta(channel, 'slot', msg, say)) return true;
         const costo = cs.costo;
-        if (points.get(channel, msg.user) < costo) { say(`🎰 Ti servono ${costo} ${moneta()} per giocare, ${nome}. Chatta un po' e torna!`); return true; }
+        if (points.get(channel, msg.user) < costo) { risposta(`🎰 Per giocare servono ${costo} ${moneta()}, e ne hai ${points.get(channel, msg.user)}. Si guadagnano stando in chat.`); return true; }
         points.add(channel, msg.user, -costo);
         giocato(channel, 'slot', msg.user);
         const r = [scegli(SLOT_SIMBOLI), scegli(SLOT_SIMBOLI), scegli(SLOT_SIMBOLI)];
         const esito = vincitaSlot(r, cs);
         const vincita = esito.monete;
-        const msgWin = vincita ? (esito.tris ? ' JACKPOT!! 🎉' : ' bella coppia!') : '';
+        const msgWin = vincita ? (esito.tris ? ' JACKPOT!! 🎉' : ' Bella coppia!') : '';
         if (vincita) points.add(channel, msg.user, vincita);
-        say(`🎰 [ ${r.join(' | ')} ] ${vincita ? `${nome} vince ${vincita} ${moneta()}!${msgWin}` : `niente, ritenta ${nome}!`}`);
+        const ora = points.get(channel, msg.user);
+        risposta(`🎰 [ ${r.join(' | ')} ] ${vincita ? `Vinci ${vincita} ${moneta()}!${msgWin} Ora ne hai ${ora}.` : `Niente, ritenta! Ora ne hai ${ora}.`}`);
         return true;
       }
 
       case 'duello': {
         const sfidato = (args[0] || '').replace(/^@/, '').toLowerCase();
         const posta = args[1] === undefined ? 0 : Math.round(Number(args[1]));
-        if (!sfidato) { say(`⚔️ Sfida qualcuno: !duello @nome`); return true; }
+        if (!sfidato) { risposta(`⚔️ Si sfida così: ${comando('duello')} @nome, o ${comando('duello')} @nome 50 per giocarvi ${moneta()}.`); return true; }
         if (sfidato === msg.user.toLowerCase()) { say(`${nome}, non puoi sfidare te stesso 😄`); return true; }
         if (!/^[a-z0-9_]{3,25}$/.test(sfidato)) { say(`⚔️ «${sfidato}» non è un nome valido.`); return true; }
         // Nessun duello con i fantasmi: si sfida chi è in chat, non un nome
         // qualsiasi. Senza questo, le monete finivano su profili inesistenti.
         if (!inChat(channel, sfidato)) { say(`⚔️ @${sfidato} non è in chat: puoi sfidare solo chi c'è.`); return true; }
-        if (args[1] !== undefined && (!Number.isFinite(posta) || posta <= 0)) { say('⚔️ Uso: !duello @nome, oppure !duello @nome 50 per giocarvi delle monete.'); return true; }
+        if (args[1] !== undefined && (!Number.isFinite(posta) || posta <= 0)) { risposta(`⚔️ La posta è un numero: ${comando('duello')} @${sfidato} 50.`); return true; }
         const cd = conf(channel, 'duello');
         if (aspetta(channel, 'duello', msg, say, { dire: ({ nome: chi, tempo, perTutti }) => (perTutti ? `⚔️ Un duello alla volta: il prossimo fra ${tempo}.` : `⚔️ ${chi}, il tuo prossimo duello fra ${tempo}.`) })) return true;
         if (posta > 0) { sfidaConPosta(channel, msg, sfidato, posta, say); return true; }
@@ -1019,12 +1042,12 @@ export function tryGame(msg, say) {
         if (aspetta(channel, 'roulette', msg, say)) return true;
         const punta = Math.round(Number(args[0]));
         const scelta = (args[1] || '').toLowerCase();
-        if (!Number.isFinite(punta) || punta <= 0 || !scelta) { say(`🎡 Uso: !roulette <puntata> <rosso|nero|verde|numero 0-36>`); return true; }
+        if (!Number.isFinite(punta) || punta <= 0 || !scelta) { risposta(`🎡 Si punta così: ${comando('roulette')} 50 rosso. Puoi dire rosso, nero, verde o un numero da 0 a 36.`); return true; }
         if (cr.massimo > 0 && punta > cr.massimo) { say(`🎡 Qui si punta al massimo ${cr.massimo} ${moneta()}, ${nome}.`); return true; }
         const saldo = points.get(channel, msg.user);
-        if (saldo < punta) { say(`🎡 ${nome}, non hai abbastanza ${moneta()} (${saldo}).`); return true; }
+        if (saldo < punta) { risposta(`🎡 Per puntarne ${punta} non bastano: di ${moneta()} ne hai ${saldo}.`); return true; }
         const numScelto = /^\d{1,2}$/.test(scelta) ? parseInt(scelta, 10) : null;
-        if (numScelto === null && !['rosso', 'nero', 'verde', 'red', 'black', 'green'].includes(scelta)) { say(`🎡 Punta su rosso, nero, verde o un numero da 0 a 36.`); return true; }
+        if (numScelto === null && !['rosso', 'nero', 'verde', 'red', 'black', 'green'].includes(scelta)) { risposta(`🎡 Si punta su rosso, nero, verde o un numero da 0 a 36: ${comando('roulette')} ${punta} rosso.`); return true; }
         if (numScelto !== null && (numScelto < 0 || numScelto > 36)) { say(`🎡 Il numero va da 0 a 36, ${nome}.`); return true; }
         points.add(channel, msg.user, -punta);
         giocato(channel, 'roulette', msg.user);
@@ -1042,7 +1065,7 @@ export function tryGame(msg, say) {
 
       case 'furto': {
         const vittima = (args[0] || '').replace(/^@/, '').toLowerCase();
-        if (!vittima) { say(`🦝 Uso: !furto @nome`); return true; }
+        if (!vittima) { risposta(`🦝 Si ruba così: ${comando('furto')} @nome.`); return true; }
         if (vittima === msg.user.toLowerCase()) { say(`${nome}, non puoi derubare te stesso 😄`); return true; }
         const cfu = conf(channel, 'furto');
         if (aspetta(channel, 'furto', msg, say, { dire: ({ nome: chi, tempo, perTutti, cmd }) => (perTutti ? `🦝 Troppi furti in giro: !${cmd} di nuovo fra ${tempo}.` : `🦝 ${chi}, aspetta ${tempo} prima di tentare un altro colpo.`) })) return true;
@@ -1163,9 +1186,9 @@ export function tryGame(msg, say) {
       case 'morra': {
         const cm = conf(channel, 'morra');
         const tu = PAROLE_MORRA[String(args[0] || '').toLowerCase()];
-        if (!tu) { say('✊ Uso: !morra sasso, carta o forbice. Con una puntata ci giochi delle monete: !morra carta 20.'); return true; }
+        if (!tu) { risposta(`✊ Si gioca così: ${comando('morra')} sasso, carta o forbice. Con una puntata ti giochi ${moneta()}: ${comando('morra')} carta 20.`); return true; }
         const puntata = args[1] === undefined ? 0 : Math.round(Number(args[1]));
-        if (args[1] !== undefined && (!Number.isFinite(puntata) || puntata <= 0)) { say('✊ La puntata è un numero di monete: !morra carta 20.'); return true; }
+        if (args[1] !== undefined && (!Number.isFinite(puntata) || puntata <= 0)) { risposta(`✊ La puntata è un numero: ${comando('morra')} ${args[0]} 20.`); return true; }
         if (cm.massimo > 0 && puntata > cm.massimo) { say(`✊ Qui si punta al massimo ${cm.massimo} ${moneta()}, ${nome}.`); return true; }
         if (puntata > 0 && points.get(channel, msg.user) < puntata) { say(`✊ ${nome}, non hai ${puntata} ${moneta()}.`); return true; }
         if (aspetta(channel, 'morra', msg, say)) return true;
@@ -1189,9 +1212,9 @@ export function tryGame(msg, say) {
       case 'regala': {
         const dest = (args[0] || '').replace(/^@/, '').toLowerCase();
         const q = Math.round(Number(args[1]));
-        if (!dest || !Number.isFinite(q) || q <= 0) { say(`💝 Uso: !regala @nome quantità`); return true; }
+        if (!dest || !Number.isFinite(q) || q <= 0) { risposta(`💝 Si regala così: ${comando('regala')} @nome 50.`); return true; }
         if (dest === msg.user.toLowerCase()) { say(`${nome}, non puoi regalarti ${moneta()} da solo 😄`); return true; }
-        if (points.get(channel, msg.user) < q) { say(`${nome}, non hai abbastanza ${moneta()} (ne hai ${points.get(channel, msg.user)}).`); return true; }
+        if (points.get(channel, msg.user) < q) { risposta(`💝 Per regalarne ${q} non bastano: di ${moneta()} ne hai ${points.get(channel, msg.user)}.`); return true; }
         points.add(channel, msg.user, -q); points.add(channel, dest, q);
         say(`💝 ${nome} ha regalato ${q} ${moneta()} a ${dest}! Che generosità ✨`);
         return true;

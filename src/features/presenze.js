@@ -31,6 +31,7 @@
 import { streamers, presenze as store, points, memory, modules as modulesDb } from '../db.js';
 import { NON_CONTARE } from './watchtime.js';
 import { makeLog } from '../logger.js';
+import { aChi } from './risposte.js';
 
 const log = makeLog('presenze');
 const norm = (s) => String(s || '').toLowerCase().trim();
@@ -238,10 +239,15 @@ export function testoSerie(channel, user, nome) {
   return `📅 @${chi}: ${plurale(p.serie, 'diretta di fila', 'dirette di fila')} (record ${p.record}), presente a ${plurale(p.dirette, 'diretta', 'dirette')} in tutto.`;
 }
 const medaglia = (i) => ['🥇', '🥈', '🥉'][i] || `${i + 1}°`;
-export function testoClassifica(channel, n = 5) {
+// Con `chi` dice anche la sua: chi chiede una classifica vuole sapere dove sta.
+export function testoClassifica(channel, n = 5, chi = '') {
   const top = classifica(channel, n);
   if (!top.length) return '📅 Nessuna serie ancora: la prima diretta si conta dopo dieci minuti in chat.';
-  return '📅 Serie di presenze: ' + top.map((r, i) => `${medaglia(i)} ${r.user} ${r.serie}`).join(' · ');
+  const riga = '📅 Serie di presenze: ' + top.map((r, i) => `${medaglia(i)} ${r.user} ${r.serie}`).join(' · ');
+  if (!chi) return riga;
+  const i = top.findIndex((r) => r.user === norm(chi));
+  const mia = di(channel, chi).serie;
+  return `${riga}. ${i >= 0 ? `E tu sei lì, ${i + 1}°.` : mia ? `La tua: ${plurale(mia, 'diretta di fila', 'dirette di fila')}.` : 'La tua parte dalla prossima diretta.'}`;
 }
 
 // !serie [@nome] · !classificaserie — i nomi canonici sono nel registro dei comandi.
@@ -255,7 +261,7 @@ export function tryComando(msg, say) {
     const cmd = (parti.shift() || '').toLowerCase();
     if (cmd !== 'serie' && cmd !== 'classificaserie') return false;
     if (!cfg(ch).attivo) return false;
-    if (cmd === 'classificaserie') { say(testoClassifica(ch)); return true; }
+    if (cmd === 'classificaserie') { aChi(msg, say)(testoClassifica(ch, 5, msg.user)); return true; }
     const altro = String(parti[0] || '').replace(/^@/, '').toLowerCase();
     const chi = /^[a-z0-9_]{2,25}$/.test(altro) ? altro : norm(msg.user);
     say(testoSerie(ch, chi, chi === norm(msg.user) ? (msg.display || chi) : chi));

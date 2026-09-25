@@ -107,7 +107,7 @@ test('la morra in chat: senza puntata non muove monete, con la puntata si', () =
   assert.equal(points.get('s6', 'olga'), 100);
   assert.match(detti.at(-1), /olga: sasso · io: (sasso|carta|forbice)/);
   scrivi('s6', 'olga', '!morra lancia', detti);
-  assert.match(detti.at(-1), /Uso: !morra sasso, carta o forbice/);
+  assert.match(detti.at(-1), /Si gioca così: !morra sasso, carta o forbice/);
   games.tryGame({ channel: 's6', user: 'pia', text: '!morra carta 20' }, (t) => detti.push(t));
   assert.match(detti.at(-1), /non hai 20/);
   points.add('s6', 'quinto', 100);

@@ -85,6 +85,7 @@ import * as dcCollega from './features/discord-collega.js';
 import * as pub from './features/pubblicita.js';
 import * as modalitaFeat from './features/modalita-chat.js';
 import * as bossFeat from './features/boss.js';
+import { aChi } from './features/risposte.js';
 import * as bjFeat from './features/blackjack.js';
 
 const log = makeLog('bot');
@@ -193,9 +194,16 @@ export class BotManager {
     if (this.modules) this.modules.modalita = this.modalita;
     games.impostaModalita(this.modalita);
     // Le mani di blackjack rimaste aperte da prima di un riavvio: nessuno le puo'
-    // piu' giocare, e la puntata torna a chi l'aveva messa.
+    // piu' giocare, e la puntata torna a chi l'aveva messa. E glielo si dice,
+    // appena il suo canale torna in chat: senza, la mano spariva e la puntata
+    // ricompariva senza una parola, e sembrava un gioco che non paga.
+    this._bjRese = new Map();
     try {
-      for (const r of bjFeat.rimborsaDopoRiavvio()) log.info(`#${r.channel} blackjack: ${r.posta} rese a ${r.chi}, la mano era rimasta aperta`);
+      for (const r of bjFeat.rimborsaDopoRiavvio()) {
+        log.info(`#${r.channel} blackjack: ${r.posta} rese a ${r.chi}, la mano era rimasta aperta`);
+        if (!this._bjRese.has(r.channel)) this._bjRese.set(r.channel, []);
+        this._bjRese.get(r.channel).push(r);
+      }
     } catch (e) { log.error('blackjack rimborsi:', e?.message || e); }
     // Il boss: la barra della vita sull'overlay, e la festa in solo emote.
     bossFeat.impostaSpinta((ch, p) => this.effects?.emit?.(ch, p));
@@ -840,6 +848,8 @@ export class BotManager {
         catch (e) { this.units.delete(login); throw e; }
         chat.join(login);
         const u = this.units.get(login); if (u) u.connesso = true;
+        for (const r of this._bjRese.get(login) || []) this.say(login, bjFeat.testoRimborso(r));
+        this._bjRese.delete(login);
         this.events.watch(s).catch?.(() => {});
         log.info(`Unità attiva per #${login} (parla come @${login})`);
       } catch (e) {
@@ -985,7 +995,7 @@ export class BotManager {
     // nessuno, e uno riservato risponde dicendo a chi e' riservato invece di
     // tacere. Un posto solo, cosi' vale anche per le famiglie che verranno.
     const vaglio = suo ? null : registro.preparaComando(login, msg);
-    if (vaglio?.rifiuta) { parla(vaglio.messaggio); return; }
+    if (vaglio?.rifiuta) { aChi(msg, parla)(vaglio.messaggio); return; }
     if (!suo && !vaglio?.salta) {
     const cmdMsg = vaglio?.testo && vaglio.testo !== msg.text ? { ...msg, text: vaglio.testo } : msg;
     // lo scudo: !permetti nome, l'uscita dal trattenimento degli account nuovi.

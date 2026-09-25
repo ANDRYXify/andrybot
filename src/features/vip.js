@@ -5,6 +5,7 @@ import { vips, memory, points, padroneDi } from '../db.js';
 import { migliaia } from './bit.js';
 import { dette } from './premio.js';
 import { makeLog } from '../logger.js';
+import { aChi, spazioPer, inMessaggi } from './risposte.js';
 
 const log = makeLog('vip');
 
@@ -146,15 +147,16 @@ export async function tryVipCommand(helix, msg, say) {
     if (!/^!(vip|unvip|viplista|viplist)\b/i.test(t)) return false;
     const parti = t.slice(1).split(/\s+/);
     const cmd = parti.shift().toLowerCase();
+    const risposta = aChi(msg, say);
     if (cmd === 'viplista' || cmd === 'viplist') {
       const l = vips.list(msg.channel);
-      say(l.length
-        ? '👑 VIP a tempo: ' + l.map((v) => v.display + (v.until ? ` (fino al ${new Date(v.until).toLocaleDateString('it-IT')})` : ' (sempre)')).join(', ')
-        : 'Nessun VIP a tempo assegnato dal bot.');
+      if (!l.length) { risposta('👑 Il bot non ha dato VIP a tempo a nessuno.'); return true; }
+      inMessaggi(l.map((v) => v.display + (v.until ? ` fino al ${new Date(v.until).toLocaleDateString('it-IT')}` : ' per sempre')), spazioPer(msg),
+        { testa: '👑 VIP a tempo:', sep: ', ' }).forEach(risposta);
       return true;
     }
     const nome = (parti[0] || '').replace(/^@/, '');
-    if (!nome) { say(cmd === 'unvip' ? 'Uso: !unvip @nome' : 'Uso: !vip @nome [settimana/mese]'); return true; }
+    if (!nome) { risposta(cmd === 'unvip' ? '👑 Si toglie così: !unvip @nome' : '👑 Si dà così: !vip @nome per una settimana, !vip @nome mese per un mese, !vip @nome sempre per sempre.'); return true; }
     if (cmd === 'unvip') { await togliVip(helix, msg.channel, nome, say); return true; }
     await assegnaVip(helix, msg.channel, { nome, durata: parseDurata(parti.join(' ')), motivo: 'comando' }, say);
     return true;

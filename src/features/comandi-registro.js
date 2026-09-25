@@ -21,7 +21,8 @@
 // Le scelte dello streamer stanno in settings.comandi, una riga per comando:
 //   { furto: { off: true }, slot: { nome: 'macchinetta', chi: 'sub' } }
 import { streamers } from '../db.js';
-import { valoriDi } from './giochi-conf.js';
+import { valoriDi, giocoDi } from './giochi-conf.js';
+import { inMessaggi } from './risposte.js';
 
 export const LIVELLI = ['tutti', 'sub', 'vip', 'mod'];
 
@@ -78,7 +79,7 @@ export const MODULI = {
 // quello che il gestore pretende comunque.
 export const COMANDI = [
   { id: 'giochi', modulo: 'giochi', nomi: ['giochi'], titolo: ['Elenco dei giochi', 'Games list', 'Lista de juegos'],
-    cosa: ['Elenca in chat i giochi accesi, quelli di chat e quelli con la webcam.', 'Lists the games that are on in chat, both chat games and webcam ones.', 'Lista en el chat los juegos activos, los de chat y los de webcam.'], spegnibile: false },
+    cosa: ['Risponde a chi lo chiede con i giochi accesi che può usare, divisi per come si gioca. Con !giochi e un nome spiega quel gioco.', 'Replies to whoever asks with the games that are on and that they can use, grouped by how they are played. With !giochi and a name it explains that game.', 'Responde a quien lo pide con los juegos activos que puede usar, agrupados por cómo se juegan. Con !giochi y un nombre explica ese juego.'], spegnibile: false },
 
   { id: 'dado', modulo: 'giochi', gioco: 'dado', nomi: ['dado', 'roll'], titolo: ['Dado', 'Dice', 'Dado'],
     cosa: ['Tira un dado. Con !dado 2d20 ne tira altri.', 'Rolls a die. With !dado 2d20 it rolls others.', 'Tira un dado. Con !dado 2d20 tira otros.'] },
@@ -99,7 +100,7 @@ export const COMANDI = [
   { id: 'manche', modulo: 'giochi', gioco: 'manche', nomi: ['manche', 'gioca'], titolo: ['Manche al volo', 'Round on the fly', 'Ronda al vuelo'],
     cosa: ['Lancia subito una manche invece di aspettare quella automatica.', 'Starts a round right away instead of waiting for the automatic one.', 'Lanza una ronda enseguida en vez de esperar la automática.'] },
   { id: 'pesca', modulo: 'giochi', gioco: 'pesca', nomi: ['pesca', 'fish'], titolo: ['Pesca', 'Fishing', 'Pesca'],
-    cosa: ['Getta la lenza: si pesca qualcosa, o niente.', 'Cast the line: you catch something, or nothing.', 'Echa el sedal: pescas algo, o nada.'], costa: true },
+    cosa: ['Getta la lenza: si pesca qualcosa, o niente.', 'Cast the line: you catch something, or nothing.', 'Echa el sedal: pescas algo, o nada.'] },
   { id: 'roulette', modulo: 'giochi', gioco: 'roulette', nomi: ['roulette', 'rul'], titolo: ['Roulette', 'Roulette', 'Ruleta'],
     cosa: ['Punta le monete su rosso o nero.', 'Bet your coins on red or black.', 'Apuesta las monedas al rojo o al negro.'], costa: true },
   { id: 'furto', modulo: 'giochi', gioco: 'furto', nomi: ['furto', 'rapina'], titolo: ['Furto', 'Heist', 'Robo'],
@@ -252,6 +253,78 @@ export const COMANDI = [
   { id: 'ag', modulo: 'sito', nomi: ['ag', 'agentify'], titolo: ['Giochi del sito', 'Site games', 'Juegos del sitio'],
     cosa: ['Manda il comando ai giochi di andryxify.it.', 'Sends the command to the andryxify.it games.', 'Manda el comando a los juegos de andryxify.it.'] },
 ];
+
+// COME SE NE PARLA IN CHAT. `cosa` e' scritto per il pannello, cioe' per lo
+// streamer; chi guarda ha bisogno d'altro: sapere a cosa si gioca, e come.
+// Ogni comando delle famiglie di giochi (giochi, webcam, puzzle) ha qui la sua
+// riga, e il cancello dei comandi lo pretende:
+//
+//   { gruppo, emoji, spiega }   un gioco: sta nell'elenco di !giochi dentro il
+//                               suo gruppo, e «!giochi nome» risponde `spiega`
+//                               (con `nome` se il titolo del pannello e' un'azione)
+//   { parteDi: 'id' }           una mossa (!carta, !passa...): da sola non e' un
+//                               gioco, e nell'elenco sarebbe rumore. La spiega
+//                               il suo gioco, che per questo la deve nominare.
+//
+// `spiega` parla a chi legge, in seconda persona. {id} diventa il nome che quel
+// comando ha nel canale (rinominato compreso), %monete% il nome delle monete,
+// %gioco.manopola% il valore scelto nelle regole del gioco: solo manopole che
+// non valgono mai zero, cosi' nessuna frase dice «costa 0».
+export const GRUPPI = [
+  { id: 'solo', emoji: '🎲', nome: 'Da solo' },
+  { id: 'sfide', emoji: '⚔️', nome: 'Contro qualcuno' },
+  { id: 'insieme', emoji: '👥', nome: 'Tutti insieme' },
+  { id: 'coccole', emoji: '🤗', nome: 'Coccole' },
+  { id: 'conto', emoji: '💰', nome: 'Le tue %monete%' },
+  { id: 'webcam', emoji: '🎥', nome: 'Con la webcam' },
+];
+
+export const IN_CHAT = {
+  dado: { gruppo: 'solo', emoji: '🎲', spiega: 'Tiri un dado da sei con {dado}. Ne vuoi di più, o con più facce? {dado} 2d20 ne tira due da venti.' },
+  moneta: { gruppo: 'solo', emoji: '🪙', spiega: 'Lanci una moneta con {moneta}, ed esce testa o croce.' },
+  '8ball': { gruppo: 'solo', emoji: '🎱', spiega: 'Fai una domanda e la palla magica ti risponde: {8ball} vinco stasera?' },
+  monete: { gruppo: 'conto', emoji: '💰', spiega: 'Ti dice quante %monete% hai. Si guadagnano stando in chat, e giocando.' },
+  classifica: { gruppo: 'conto', emoji: '🏆', spiega: 'Chi ha più %monete% nel canale, e a che posto sei tu. Con {classifica} mod vedi la gara dello staff, con {classifica} tutti le due insieme.' },
+  slot: { gruppo: 'solo', emoji: '🎰', spiega: 'Tiri la leva con {slot}: ogni giocata costa %slot.costo% %monete%, con i simboli uguali si vince e il tris di 💎 è il jackpot.' },
+  duello: { gruppo: 'sfide', emoji: '⚔️', spiega: 'Sfidi qualcuno che è in chat con {duello} @nome, e vince uno dei due. Con una posta ({duello} @nome 50) l\'altro accetta con {accetta} o dice di no con {rifiuta}, e chi vince prende la posta dell\'altro.' },
+  trivia: { gruppo: 'insieme', emoji: '🧠', spiega: 'Con {trivia} parte una domanda per tutta la chat: vince chi risponde giusto per primo.' },
+  manche: { gruppo: 'insieme', emoji: '🎮', spiega: 'Con {manche} parte subito una manche per tutta la chat, invece di aspettare la prossima. Per sceglierla scrivi anche il nome: {manche} impiccato.' },
+  pesca: { gruppo: 'solo', emoji: '🎣', spiega: 'Getti la lenza con {pesca}: può abboccare qualcosa che vale %monete%, o niente.' },
+  roulette: { gruppo: 'solo', emoji: '🎡', spiega: 'Punti su un colore o su un numero: {roulette} 50 rosso. Col colore giusto ti torna il doppio, col verde 14 volte tanto, col numero giusto 36.' },
+  furto: { gruppo: 'sfide', emoji: '🦝', spiega: 'Provi a rubare %monete% a qualcuno con {furto} @nome. Se va bene sono tue, se ti beccano paghi tu la multa, a lui.' },
+  blackjack: { gruppo: 'solo', emoji: '🃏', spiega: 'Una mano contro il banco: {blackjack} 50 per puntare, poi {carta} per un\'altra carta o {stai} per fermarti. Il banco sta su ogni 17; se non decidi entro %blackjack.tempo% secondi, stai.' },
+  carta: { parteDi: 'blackjack' },
+  stai: { parteDi: 'blackjack' },
+  corsa: { gruppo: 'insieme', emoji: '🏁', spiega: 'Con {corsa} si apre la corsa, e %corsa.raccolta% secondi dopo si parte. Punti con {corsa} 2 50: 50 %monete% sul secondo corridore. Il favorito paga poco, l\'ultimo tanto.' },
+  patata: { gruppo: 'insieme', emoji: '🥔', spiega: 'Lanci la patata bollente con {patata}: chi ce l\'ha la passa con {passa} @nome, o {passa} e va a qualcuno a caso. Scoppia in mano a qualcuno quando nessuno se l\'aspetta.' },
+  passa: { parteDi: 'patata' },
+  catena: { gruppo: 'insieme', emoji: '🔗', spiega: 'Apri la catena con {catena}: ogni parola comincia con le ultime due lettere di quella prima, una a testa e mai due di fila. Si prova a battere il record del canale.' },
+  conta: { gruppo: 'insieme', emoji: '🔢', spiega: 'Apri la conta con {conta}: la chat scrive 1, 2, 3, un numero a testa e mai due di fila. Chi sbaglia fa ricominciare da capo.' },
+  colpo: { gruppo: 'insieme', emoji: '🦹', spiega: 'Organizzi un colpo, o entri nella banda, con {colpo}; con {colpo} 100 scegli la posta. Più siete, più è facile scappare col bottino, e se siete troppo pochi il colpo salta.' },
+  boss: { gruppo: 'insieme', emoji: '👹', nome: 'Il boss', spiega: 'Arriva un boss e tutta la chat lo colpisce con {colpisci}, entro %boss.durata% secondi. Se cade, il bottino va a chi l\'ha colpito, in proporzione ai danni. Con {boss} arriva subito.' },
+  colpisci: { parteDi: 'boss' },
+  abbraccio: { gruppo: 'coccole', emoji: '🤗', spiega: 'Abbracci qualcuno con {abbraccio} @nome, o tutta la chat se non dici chi. Chi non ne vuole scrive {nococcole}.' },
+  bacio: { gruppo: 'coccole', emoji: '😘', spiega: 'Mandi un bacino a qualcuno con {bacio} @nome, o a tutta la chat se non dici chi.' },
+  cinque: { gruppo: 'coccole', emoji: '✋', spiega: 'Alzi la mano per qualcuno ({cinque} @nome) o per chiunque: chi risponde con {cinque} la batte, e ogni tanto viene un cinque perfetto.' },
+  nococcole: { parteDi: 'abbraccio' },
+  accetta: { parteDi: 'duello' },
+  rifiuta: { parteDi: 'duello' },
+  morra: { gruppo: 'solo', emoji: '✊', spiega: 'Sasso, carta o forbice contro il bot: {morra} carta. Con una puntata ti giochi %monete%: {morra} carta 20.' },
+  sblocca: { gruppo: 'conto', emoji: '🔓', spiega: 'Spendi %monete% per mettere la chat in %sblocca.modo% per qualche minuto: {sblocca} 5 per cinque minuti, a %sblocca.costoMinuto% %monete% al minuto.' },
+  regala: { gruppo: 'conto', emoji: '💝', spiega: 'Regali %monete% tue a qualcuno: {regala} @nome 50.' },
+
+  mima: { gruppo: 'webcam', emoji: '🎭', spiega: 'Con {mima} parte il gioco della mimica nell\'overlay della webcam.' },
+  nonridere: { gruppo: 'webcam', emoji: '😐', spiega: 'Con {nonridere} parte la sfida «non ridere» nell\'overlay della webcam.' },
+  reaction: { gruppo: 'webcam', emoji: '⚡', spiega: 'Con {reaction} parte la prova di reazione nell\'overlay della webcam.' },
+  battaglia: { gruppo: 'webcam', emoji: '🥊', spiega: 'Con {battaglia} parte la battaglia: la chat sfida lo streamer con i gesti da imitare, e ognuno manda il suo con {sfida}.' },
+  sfida: { parteDi: 'battaglia' },
+  puzzle: { gruppo: 'webcam', emoji: '🧩', spiega: 'Con {puzzle} parte il puzzle con le mani nell\'overlay della webcam, e con {puzzlestop} si ferma.' },
+  puzzlestop: { parteDi: 'puzzle' },
+};
+
+// Le famiglie che !giochi elenca. Il comando che fa l'elenco non sta nell'elenco.
+export const FAMIGLIE_GIOCHI = ['giochi', 'webcam', 'puzzle'];
+export const ELENCO = 'giochi';
 
 const PER_ID = new Map(COMANDI.map((c) => [c.id, c]));
 export const comandoDi = (id) => PER_ID.get(id) || null;
@@ -410,17 +483,84 @@ const ETICHETTA = {
   tutti: 'a tutti',
 };
 
-// L'elenco che !giochi scrive in chat: uno solo, e dice quello che RISPONDE
-// davvero. Prima erano due moduli con due liste scritte a mano, e chi non usa la
-// webcam si trovava in chat una lista di roba che non ha.
-export function elencoGiochiInChat(channel) {
-  const righe = elenco(channel).filter((r) => r.vivo && r.id !== 'giochi');
-  const chat = righe.filter((r) => r.modulo === 'giochi').map((r) => '!' + r.nomi[0]);
-  const webcam = righe.filter((r) => r.modulo === 'webcam' || r.modulo === 'puzzle').map((r) => '!' + r.nomi[0]);
+// L'ELENCO CHE !giochi SCRIVE IN CHAT. Dice quello che RISPONDE davvero (prima
+// erano due moduli con due liste scritte a mano, e chi non usa la webcam si
+// trovava in chat una lista di roba che non ha), e a chi l'ha chiesto dice
+// quello che LUI puo' usare: i giochi riservati ai mod non sono un invito per
+// chi non lo e'. Le mosse stanno dentro al loro gioco, i giochi nel loro gruppo.
+//
+// Torna i messaggi gia' spezzati per il limite di chi chiede: un gruppo che non
+// ci sta riparte nel messaggio dopo col suo nome, mai tagliato a meta'.
+const APERTURE = ['Ecco a cosa si gioca qui.', 'Scegli tu.', 'Si gioca a tutto questo.'];
+const aperture = new Map();
+
+const nomeMonete = (channel) => {
+  const n = impostazioni(channel).nomeMonete;
+  return (n && String(n).trim()) || 'monete';
+};
+
+export function giochiInChat(channel, msg = {}, { limite = 450 } = {}) {
+  const righe = elenco(channel).filter((r) => r.vivo && FAMIGLIE_GIOCHI.includes(r.modulo) && r.id !== ELENCO
+    && IN_CHAT[r.id]?.gruppo && puoUsare(r.chi, msg));
+  const monete = nomeMonete(channel);
   const pezzi = [];
-  if (chat.length) pezzi.push(`🎮 Giochi: ${chat.join(', ')}`);
-  if (webcam.length) pezzi.push(`🎥 Con la webcam: ${webcam.join(', ')}`);
-  return pezzi.join(' — ');
+  for (const g of GRUPPI) {
+    const qui = righe.filter((r) => IN_CHAT[r.id].gruppo === g.id);
+    if (!qui.length) continue;
+    const testa = `${g.emoji} ${g.nome.replace('%monete%', monete)}:`;
+    qui.forEach((r, i) => pezzi.push({
+      testo: i ? '!' + r.nomi[0] : `${testa} !${r.nomi[0]}`,
+      prima: i ? ', ' : ' · ',
+      daCapo: `${testa} !${r.nomi[0]}`,
+    }));
+  }
+  if (!pezzi.length) return [];
+  const n = aperture.get(channel) || 0;
+  aperture.set(channel, n + 1);
+  const esempio = righe.find((r) => IN_CHAT[r.id].gruppo !== 'conto') || righe[0];
+  const giochi = nomeIn(channel, ELENCO);
+  return inMessaggi(pezzi, limite, {
+    testa: `🎮 ${APERTURE[n % APERTURE.length]}`,
+    coda: `Come si gioca? !${giochi} e il nome, tipo !${giochi} ${esempio.nomi[0]}.`,
+    primaDellaCoda: '. ',
+  });
+}
+
+// Il testo di `spiega`, con i nomi e i valori di QUESTO canale.
+export function riempiSpiega(channel, testo) {
+  const settings = impostazioni(channel);
+  const monete = nomeMonete(channel);
+  return String(testo || '')
+    .replace(/\{([a-z0-9]+)\}/g, (_, id) => '!' + nomeIn(channel, id))
+    .replace(/%monete%/g, monete)
+    .replace(/%([a-z0-9]+)\.([a-zA-Z]+)%/g, (_, g, k) => testoManopola(settings, g, k));
+}
+
+function testoManopola(settings, gioco, k) {
+  const v = valoriDi(settings, gioco)[k];
+  const m = giocoDi(gioco)?.param?.find((x) => x.k === k);
+  if (m?.tipo === 'scelta') return (m.scelte.find(([id]) => id === v)?.[1]?.[0]) || String(v);
+  return String(v);
+}
+
+// «!giochi slot»: come si gioca, detto a chi l'ha chiesto. Una mossa porta al
+// suo gioco (chi chiede di !carta vuole sapere del blackjack). Un gioco spento
+// o sconosciuto lo dice, e rimanda all'elenco.
+export function spiegaGioco(channel, parola, msg = {}) {
+  const p = String(parola || '').toLowerCase().replace(/^!/, '');
+  const giochi = nomeIn(channel, ELENCO);
+  const r = risolvi(channel, p);
+  const riga = r && IN_CHAT[r.comando.id];
+  if (!riga) return `Qui non c'è un gioco che si chiama «${p}»: !${giochi} li dice tutti.`;
+  const id = riga.parteDi || r.comando.id;
+  const c = PER_ID.get(id);
+  const suo = IN_CHAT[id];
+  if (!vivo(channel, id)) return `${suo.emoji} ${suo.nome || c.titolo[0]} qui è spento: !${giochi} dice quelli accesi.`;
+  const come = riempiSpiega(channel, suo.spiega);
+  let testo = `${suo.emoji} ${suo.nome || c.titolo[0]}: ${come[0].toLowerCase()}${come.slice(1)}`;
+  const chi = livelloDi(c, scelte(channel)[id] || {});
+  if (chi !== 'tutti' && !puoUsare(chi, msg)) testo += ` Qui farlo partire è riservato ${ETICHETTA[chi]}.`;
+  return testo;
 }
 
 // Cosa il pannello puo' scrivere, e come si ripulisce.

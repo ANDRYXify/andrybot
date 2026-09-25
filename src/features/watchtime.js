@@ -7,6 +7,7 @@
 // lista dei canali attivi. Qui stanno la formattazione e i comandi in chat.
 import { watchtime, streamers } from '../db.js';
 import { makeLog } from '../logger.js';
+import { aChi, spazioPer, inMessaggi } from './risposte.js';
 
 const log = makeLog('watchtime');
 
@@ -74,8 +75,14 @@ export function tryComando(msg, say) {
     if (['classificaore', 'oretop', 'topore', 'classificatempo'].includes(cmd)) {
       if (!attivo(ch)) return true;
       const top = watchtime.top(ch, 5);
-      if (!top.length) { say('⏱️ Ancora nessuna ora registrata: la classifica parte con la prossima live!'); return true; }
-      say('⏱️ Più presenti in chat: ' + top.map((r, i) => `${medaglia(i)} ${r.display || r.user} (${formatta(r.seconds)})`).join('  '));
+      const risposta = aChi(msg, say);
+      if (!top.length) { risposta('⏱️ Ancora nessuna ora registrata: la classifica parte con la prossima live!'); return true; }
+      const io = String(msg.user || '').toLowerCase();
+      const i = top.findIndex((r) => r.user === io);
+      const mie = watchtime.get(ch, io);
+      const coda = i >= 0 ? `E tu sei lì, ${i + 1}°.` : mie ? `Tu sei a ${formatta(mie)}.` : 'Le tue ore partono adesso: resta in live!';
+      inMessaggi(top.map((r, j) => `${medaglia(j)} ${r.display || r.user} ${formatta(r.seconds)}`), spazioPer(msg),
+        { testa: '⏱️ Chi c\'è di più:', coda, primaDellaCoda: '. ' }).forEach(risposta);
       return true;
     }
 

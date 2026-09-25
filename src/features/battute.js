@@ -19,7 +19,8 @@
 // genere si applica: una battuta può contenere `{o/a}`.
 import { battute } from '../db.js';
 import { makeLog } from '../logger.js';
-import { preparaComando, comandoDi } from './comandi-registro.js';
+import { preparaComando, comandoDi, nomeIn } from './comandi-registro.js';
+import { aChi } from './risposte.js';
 
 const log = makeLog('battute');
 
@@ -144,7 +145,7 @@ export function tryBattuta(msg, say, { inventa = null, motore = null } = {}) {
     const nomi = (comandoDi('battuta')?.nomi || ['battuta']).join('|');
     if (!new RegExp(`^!(?:${nomi})\\b`, 'i').test(String(msg?.text || '').trim())) return false;
     const vaglio = preparaComando(msg.channel, msg);
-    if (vaglio?.rifiuta) { say(vaglio.messaggio); return true; }
+    if (vaglio?.rifiuta) { aChi(msg, say)(vaglio.messaggio); return true; }
     if (vaglio?.salta) return false;
     const testo = String(vaglio?.testo || msg.text || '').trim();
     const m = new RegExp(`^!(?:${nomi})\\b\\s*([\\s\\S]*)$`, 'i').exec(testo);
@@ -175,7 +176,7 @@ export function tryBattuta(msg, say, { inventa = null, motore = null } = {}) {
 
     if (/^(?:quante|count)$/i.test(resto)) {
       const c = battute.count(canale);
-      say(c ? `Nel serbatoio ci sono ${c} battute.` : 'Il serbatoio è vuoto: aggiungine con !battuta aggiungi <testo>');
+      say(c ? `Nel serbatoio ci sono ${c} battute.` : `Il serbatoio è vuoto: un mod le aggiunge con !${nomeIn(canale, 'battuta')} aggiungi e il testo.`);
       return true;
     }
 
@@ -186,7 +187,7 @@ export function tryBattuta(msg, say, { inventa = null, motore = null } = {}) {
       return true;
     }
 
-    if (resto) { say('Uso: !battuta · !battuta N · !battuta aggiungi <testo> · !battuta togli N'); return true; }
+    if (resto) { const b = '!' + nomeIn(canale, 'battuta'); aChi(msg, say)(`😄 Si usa così: ${b} per una a caso, ${b} 3 per la numero 3. I mod le aggiungono con ${b} aggiungi e il testo, e le tolgono con ${b} togli 3.`); return true; }
 
     // una qualsiasi: serbatoio prima, costruita poi. La sequenza sta in `diUna`,
     // una sola volta: qui, nell'iniziativa del bot e nel tasto della console.
@@ -197,13 +198,13 @@ export function tryBattuta(msg, say, { inventa = null, motore = null } = {}) {
       inventa()
         .then((t) => {
           const pulito = String(t || '').replace(/\s+/g, ' ').trim().slice(0, 300);
-          if (!pulito) { say('Non me ne viene una. Aggiungine tu con !battuta aggiungi <testo> 🙂'); return; }
+          if (!pulito) { say(`Non me ne viene una. Un mod può aggiungerne con !${nomeIn(canale, 'battuta')} aggiungi e il testo 🙂`); return; }
           say(pulito);
         })
         .catch((e) => { log.debug('inventa:', e?.message || e); });
       return true;
     }
-    say('Il serbatoio è vuoto: aggiungine con !battuta aggiungi <testo> 🙂');
+    say(`Il serbatoio è vuoto: un mod le aggiunge con !${nomeIn(canale, 'battuta')} aggiungi e il testo 🙂`);
     return true;
   } catch (e) { log.error('battute:', e?.message || e); return false; }
 }

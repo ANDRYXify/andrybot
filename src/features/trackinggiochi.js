@@ -32,11 +32,11 @@ export function tryComando(effects, msg, say) {
     const ch = msg.channel;
     const trk = streamers.get(ch)?.settings?.tracking || {};
     if (trk.attivo === false) {
-      // Stesso principio: se il tracking e spento del tutto, chi comanda deve
+      // Stesso principio: se il tracking è spento del tutto, chi comanda deve
       // saperlo. Agli altri restiamo in silenzio, per non riempire la chat.
       const c0 = testo.slice(1).split(/\s+/)[0].toLowerCase();
       if ((msg.isMod || msg.isBroadcaster) && ['puzzle', 'puzzlestop', 'mima', 'nonridere', 'reaction', 'battaglia'].includes(c0)) {
-        say('Il tracking webcam e spento: accendilo nel pannello, scheda «Effetti & suoni».');
+        say('Il tracking webcam è spento: accendilo nel pannello, scheda «Effetti & suoni».');
         return true;
       }
       return false;
@@ -51,7 +51,7 @@ export function tryComando(effects, msg, say) {
       // e chi lo scriveva non aveva modo di capire cosa mancasse.
       if (!(msg.isMod || msg.isBroadcaster)) return true;
       if (trk.effetti?.puzzle !== true) {
-        say('Il Puzzle e spento: accendilo nel pannello, scheda «Effetti & suoni» → 🧩 «Puzzle con le mani», poi riscrivi !puzzle.');
+        say('Il Puzzle è spento: accendilo nel pannello, scheda «Effetti & suoni» → 🧩 «Puzzle con le mani», poi riscrivi !puzzle.');
         return true;
       }
       if (!effects?.hasTrkClients?.(ch)) { say('Per il puzzle apri prima l\'overlay tracking in OBS 🎥 (scheda «Effetti» → Link OBS del tracking).'); return true; }

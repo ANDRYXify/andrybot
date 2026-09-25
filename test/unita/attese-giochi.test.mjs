@@ -55,7 +55,7 @@ test('un comando scritto male non consuma l\'attesa di quello giusto', (t) => {
   canale('a1', {}, { anna: 1000 });
   const s = scena('a1');
   s.scrivi('anna', '!roulette');
-  assert.match(s.detti.at(-1), /Uso: !roulette/);
+  assert.match(s.detti.at(-1), /Si punta così: !roulette 50 rosso/);
   s.scrivi('anna', '!roulette 10 rosso');
   assert.match(s.detti.at(-1), /La pallina cade/, 'subito dopo, gioca');
 });

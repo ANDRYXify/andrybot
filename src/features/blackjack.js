@@ -24,8 +24,10 @@
 import { points, streamers, statoVivo } from '../db.js';
 import { valoriDi } from './giochi-conf.js';
 import { nomeIn } from './comandi-registro.js';
+import { aChi } from './risposte.js';
 
 const pulito = (s) => String(s || '').replace(/^@/, '').toLowerCase().trim();
+const monete = (channel) => String(streamers.get(channel)?.settings?.nomeMonete || '').trim() || 'monete';
 const conf = (channel) => valoriDi(streamers.get(channel)?.settings, 'blackjack');
 const CHIAVE = 'bj-mani';
 const SEMI = ['♠', '♥', '♦', '♣'];
@@ -88,7 +90,7 @@ export function simulaMano(decidi, vincitaBJ, posta = 100, pescaFn = pesca) {
   return rende(esitoFinale(io, banco), posta, vincitaBJ) - posta;
 }
 const scrivi = (carte) => carte.map((c) => `${NOMI[c.grado]}${c.seme}`).join(' ');
-const conto = (carte) => {
+const contaCarte = (carte) => {
   const p = punti(carte);
   return p.soft ? `${p.duro}/${p.tot}` : String(p.tot);
 };
@@ -102,6 +104,11 @@ function ricorda(channel, chi, posta) {
 
 // All'avvio: le mani rimaste aperte da prima del riavvio si chiudono rendendo
 // la puntata. Nessuno le puo' piu' giocare, e nessuno deve perderci.
+// Chi l'aveva aperta non deve trovarsi la mano sparita senza sapere perche':
+// quando il canale torna in chat glielo si dice.
+export const testoRimborso = ({ channel, chi, posta }) =>
+  `🃏 @${chi}, il bot si è riavviato mentre avevi una mano di blackjack aperta: la puntata di ${posta} ${monete(channel)} è tornata a te.`;
+
 export function rimborsaDopoRiavvio() {
   const rese = [];
   for (const { channel, dato } of statoVivo.tutti(CHIAVE)) {
@@ -123,80 +130,98 @@ function chiudi(channel, chi, m, esito) {
   mani.delete(`${channel}|${chi}`);
   clearTimeout(m.timer);
   const torna = rende(esito, m.posta, conf(channel).vincitaBJ);
-  points.add(channel, chi, torna);
+  const saldo = points.add(channel, chi, torna);
   ricorda(channel, chi, 0);
-  return torna - m.posta;
+  return { torna, netto: torna - m.posta, saldo };
 }
 
-function finisci(channel, chi, m) {
+// IL CONTO DETTO PER INTERO. «vince! +50» su una puntata di 50 si leggeva «mi
+// e' tornata la puntata»: quello che torna, cosa c'e' dentro e quanto resta,
+// cosi' chi gioca puo' rifare il conto da solo.
+function conto(channel, esito, r) {
+  const mon = monete(channel);
+  const ora = ` Ora ne hai ${r.saldo}.`;
+  if (esito === 'vinci' || esito === 'bj') return `Ti tornano ${r.torna} ${mon}: la puntata più ${r.netto}.${ora}`;
+  if (esito === 'pari') return `Ti torna la puntata.${ora}`;
+  return `La puntata va al banco.${ora}`;
+}
+
+function finisci(channel, chi, m, { scaduto = false } = {}) {
   giocaBanco(m.banco);
   const io = punti(m.io).tot;
   const lui = punti(m.banco).tot;
   const esito = esitoFinale(m.io, m.banco);
-  const netto = chiudi(channel, chi, m, esito);
-  const banco = `banco: ${scrivi(m.banco)} = ${lui}${lui > 21 ? ', sballa' : ''}`;
-  const dice = { vinci: `vince! +${netto}`, pari: 'pari: la puntata torna', perdi: `perde, −${m.posta}` }[esito];
-  try { m.say(`🃏 ${m.nome} sta a ${io} · ${banco} → ${dice}`); } catch { /* niente */ }
+  const r = chiudi(channel, chi, m, esito);
+  const banco = `il banco ${scrivi(m.banco)} = ${lui}${lui > 21 ? ', e sballa' : ''}`;
+  const come = { vinci: 'hai vinto!', pari: 'pari.', perdi: 'vince il banco.' }[esito];
+  const prima = scaduto ? `Tempo scaduto, stai a ${io}` : `Stai a ${io}`;
+  try { m.say(`🃏 ${prima}; ${banco}: ${come} ${conto(channel, esito, r)}`); } catch { /* niente */ }
 }
 
 function arma(channel, chi, m) {
   clearTimeout(m.timer);
-  m.timer = setTimeout(() => finisci(channel, chi, m), conf(channel).tempo * 1000);
+  m.timer = setTimeout(() => finisci(channel, chi, m, { scaduto: true }), conf(channel).tempo * 1000);
   m.timer.unref?.();
 }
 
 // `!bj 50`: la mano parte. Torna true se e' partita (per far scattare l'attesa).
+// Ogni risposta della mano e' per chi la gioca: agganciata alla sua ultima
+// mossa, anche quella che arriva da sola quando il tempo scade.
 export function apri(channel, msg, args, say, { moneta = 'monete' } = {}) {
   const c = conf(channel);
   const chi = pulito(msg.user);
   const nome = msg.display || msg.user;
   const cmd = nomeIn(channel, 'blackjack');
+  const risposta = aChi(msg, say);
+  const mosse = `!${nomeIn(channel, 'carta')} o !${nomeIn(channel, 'stai')}`;
   if (mani.has(`${channel}|${chi}`)) {
-    say(`🃏 ${nome}, hai già una mano aperta: !${nomeIn(channel, 'carta')} o !${nomeIn(channel, 'stai')}.`);
+    risposta(`🃏 Hai già una mano aperta: ${mosse}?`);
     return false;
   }
-  if (!/^[1-9]\d*$/.test(String(args[0] || ''))) { say(`🃏 Si gioca così: !${cmd} 50 (la puntata).`); return false; }
+  if (!/^[1-9]\d*$/.test(String(args[0] || ''))) { risposta(`🃏 Si gioca così: !${cmd} 50, dove 50 è la puntata.`); return false; }
   const posta = Number(args[0]);
-  if (c.massimo > 0 && posta > c.massimo) { say(`🃏 Qui si punta al massimo ${c.massimo} ${moneta}.`); return false; }
+  if (c.massimo > 0 && posta > c.massimo) { risposta(`🃏 Qui si punta al massimo ${c.massimo} ${moneta}.`); return false; }
   const saldo = points.get(channel, chi);
-  if (saldo < posta) { say(`🃏 ${nome}, per puntare ${posta} ${moneta} non basta quello che hai (${saldo}).`); return false; }
+  if (saldo < posta) { risposta(`🃏 Per puntarne ${posta} non bastano: di ${moneta} ne hai ${saldo}.`); return false; }
   points.add(channel, chi, -posta);
-  const m = { nome, posta, io: [pesca(), pesca()], banco: [pesca(), pesca()], timer: null, say };
+  const m = { nome, posta, io: [pesca(), pesca()], banco: [pesca(), pesca()], timer: null, say: risposta };
   mani.set(`${channel}|${chi}`, m);
   ricorda(channel, chi, posta);
   const esito = esitoNaturale(m.io, m.banco);
   if (esito) {
-    const netto = chiudi(channel, chi, m, esito);
-    const dice = { pari: 'blackjack tutti e due: la puntata torna', bj: `BLACKJACK! +${netto}`, perdi: `il banco ha blackjack, −${posta}` }[esito];
-    say(`🃏 ${nome}: ${scrivi(m.io)} · banco: ${scrivi(m.banco)} → ${dice}`);
+    const r = chiudi(channel, chi, m, esito);
+    const come = { pari: 'Blackjack tutti e due!', bj: 'Blackjack servito!', perdi: 'Il banco ha blackjack.' }[esito];
+    risposta(`🃏 ${nome} punta ${posta}: ${scrivi(m.io)}, il banco ${scrivi(m.banco)}. ${come} ${conto(channel, esito, r)}`);
     return true;
   }
   arma(channel, chi, m);
-  say(`🃏 ${nome}: ${scrivi(m.io)} (${conto(m.io)}) · banco: ${scrivi([m.banco[0]])} e una coperta. !${nomeIn(channel, 'carta')} o !${nomeIn(channel, 'stai')}?`);
+  risposta(`🃏 ${nome} punta ${posta}: hai ${scrivi(m.io)} (${contaCarte(m.io)}), il banco mostra ${scrivi([m.banco[0]])} e una coperta. ${mosse}?`);
   return true;
 }
 
 export function carta(channel, msg, say) {
   const chi = pulito(msg.user);
   const m = mani.get(`${channel}|${chi}`);
-  if (!m) { say(`🃏 ${msg.display || msg.user}, non hai una mano aperta: !${nomeIn(channel, 'blackjack')} 50 per giocare.`); return; }
-  m.say = say;
+  const risposta = aChi(msg, say);
+  if (!m) { risposta(`🃏 Non hai una mano aperta: !${nomeIn(channel, 'blackjack')} 50 per giocare.`); return; }
+  m.say = risposta;
   m.io.push(pesca());
   const p = punti(m.io);
   if (p.tot > 21) {
-    chiudi(channel, chi, m, 'perdi');
-    say(`🃏 ${m.nome}: ${scrivi(m.io)} = ${p.tot}, sballa! −${m.posta}`);
+    const r = chiudi(channel, chi, m, 'perdi');
+    risposta(`🃏 ${scrivi(m.io)} = ${p.tot}: sballi. ${conto(channel, 'perdi', r)}`);
     return;
   }
   if (p.tot === 21) { finisci(channel, chi, m); return; }
   arma(channel, chi, m);
-  say(`🃏 ${m.nome}: ${scrivi(m.io)} (${conto(m.io)}). !${nomeIn(channel, 'carta')} o !${nomeIn(channel, 'stai')}?`);
+  risposta(`🃏 ${scrivi(m.io)} (${contaCarte(m.io)}). !${nomeIn(channel, 'carta')} o !${nomeIn(channel, 'stai')}?`);
 }
 
 export function stai(channel, msg, say) {
   const chi = pulito(msg.user);
   const m = mani.get(`${channel}|${chi}`);
-  if (!m) { say(`🃏 ${msg.display || msg.user}, non hai una mano aperta: !${nomeIn(channel, 'blackjack')} 50 per giocare.`); return; }
-  m.say = say;
+  const risposta = aChi(msg, say);
+  if (!m) { risposta(`🃏 Non hai una mano aperta: !${nomeIn(channel, 'blackjack')} 50 per giocare.`); return; }
+  m.say = risposta;
   finisci(channel, chi, m);
 }

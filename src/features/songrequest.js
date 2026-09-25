@@ -10,6 +10,8 @@ import { streamers, points } from '../db.js';
 import { canaleHa } from './accesso.js';
 import * as spotify from './spotify.js';
 import { makeLog } from '../logger.js';
+import { aChi } from './risposte.js';
+import { nomeIn } from './comandi-registro.js';
 
 const log = makeLog('songrequest');
 
@@ -131,7 +133,7 @@ export async function trySongRequest(msg, say) {
       }
       // in modo "bit" togliamo i cheermote dal testo (es. "Cheer100")
       if (cfg.modo === 'bit') q = q.replace(/\b[A-Za-z]+\d+\b/g, ' ').replace(/\s+/g, ' ').trim();
-      if (!q) { say('🎵 Uso: !sr <nome canzone o artista>'); return true; }
+      if (!q) { aChi(msg, say)(`🎵 Si chiede così: !${nomeIn(msg.channel, 'sr')} e il titolo o l'artista, tipo !${nomeIn(msg.channel, 'sr')} Bohemian Rhapsody.`); return true; }
       // costo in monete: controlla il saldo (l'addebito avviene solo se il brano entra in coda)
       if (cfg.modo === 'monete') {
         const saldo = points.get(channel, msg.user);

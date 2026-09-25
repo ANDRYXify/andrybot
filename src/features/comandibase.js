@@ -8,6 +8,8 @@ import { streamers } from '../db.js';
 import { personalizzato } from './personalizzati.js';
 import * as bit from './bit.js';
 import { makeLog } from '../logger.js';
+import { aChi } from './risposte.js';
+import { nomeIn } from './comandi-registro.js';
 
 const log = makeLog('comandibase');
 
@@ -72,7 +74,7 @@ export async function tryComando(helix, msg, say) {
       if (personalizzato(ch, cmd)) return false;
       if (!(msg.isMod || msg.isBroadcaster)) return true;   // solo staff, in silenzio per gli altri
       const chi = (parti[0] || '').replace(/^@/, '').toLowerCase();
-      if (!nomeOk(chi)) { say('📣 Uso: !so <canale>'); return true; }
+      if (!nomeOk(chi)) { aChi(msg, say)(`📣 Si fa così: !${nomeIn(msg.channel, 'so')} e il nome del canale.`); return true; }
       const r = await helix.shoutout(ch, chi);
       if (r?.ok) {
         let extra = '';

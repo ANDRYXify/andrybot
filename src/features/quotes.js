@@ -4,6 +4,7 @@
 // l'ultimo gioco che stava streammando.
 import { quotes } from '../db.js';
 import { makeLog } from '../logger.js';
+import { aChi } from './risposte.js';
 
 const log = makeLog('citazioni');
 
@@ -22,7 +23,7 @@ const fmt = (q) => {
 function aggiungi(msg, testo, say) {
   if (!puoGestire(msg)) { say('Solo mod e streamer possono aggiungere citazioni 🙂'); return true; }
   const t = String(testo || '').trim();
-  if (!t) { say('Uso: !cita aggiungi <testo>'); return true; }
+  if (!t) { aChi(msg, say)('📝 Si salva così: !cita aggiungi e la frase.'); return true; }
   const n = quotes.add(msg.channel, t, msg.user);
   say(`Citazione #${n} salvata! 📝`);
   return true;

@@ -24,6 +24,7 @@
 import { streamers } from '../db.js';
 import { valoriDi } from './giochi-conf.js';
 import { nomeIn } from './comandi-registro.js';
+import { aChi } from './risposte.js';
 
 const pulito = (s) => String(s || '').replace(/^@/, '').toLowerCase().trim();
 const chiave = (channel, gioco, chi) => `${channel}|${gioco}|${chi}`;
@@ -61,7 +62,7 @@ export function aspetta(channel, gioco, msg, say, { comando = gioco, muta = fals
   const nome = msg.display || msg.user;
   const tempo = aParole(r.ms);
   const cmd = nomeIn(channel, comando);
-  say(dire ? dire({ nome, tempo, perTutti: r.perTutti, cmd })
+  aChi(msg, say)(dire ? dire({ nome, tempo, perTutti: r.perTutti, cmd })
     : r.perTutti ? `⏳ !${cmd} di nuovo fra ${tempo}.` : `⏳ ${nome}, !${cmd} di nuovo fra ${tempo}.`);
   return true;
 }
