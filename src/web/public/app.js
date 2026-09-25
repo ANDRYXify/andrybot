@@ -16449,6 +16449,19 @@ function pannelloEffetti() {
 
       <label class="campo" for="eff-file">${L('File (audio / immagine / video)', 'File (audio / image / video)', 'Archivo (audio / imagen / vídeo)')}</label>
       <input type="file" id="eff-file" accept="audio/*,image/*,video/*">
+      <div class="eff-prima spazio-sopra" id="eff-prima" hidden>
+        <div class="eff-prima-scena"><canvas id="eff-prima-tela" aria-label="${esc(L('Anteprima del file: clicca per prendere il colore da togliere', 'File preview: click to pick the color to remove', 'Vista previa del archivo: haz clic para tomar el color que quitar'))}"></canvas></div>
+        <p class="suggerimento" id="eff-prima-nota" hidden></p>
+        <label class="riga-check spazio-sopra" id="eff-chiave-riga"><input type="checkbox" id="eff-chiave"> <span><strong>${L('Togli uno sfondo a tinta unita', 'Remove a solid-color background', 'Quita un fondo de color liso')}</strong> ${L('(un green screen, o qualunque colore pieno)', '(a green screen, or any flat color)', '(un green screen, o cualquier color liso)')}</span></label>
+        <div id="eff-chiave-box" hidden>
+          <div class="griglia-campi spazio-sopra">
+            <div><label class="campo" for="eff-chiave-colore">${L('Colore da togliere', 'Color to remove', 'Color a quitar')}</label><input type="color" id="eff-chiave-colore" value="#00ff00"></div>
+            <div><label class="campo" for="eff-chiave-simile">${L('Sensibilità', 'Sensitivity', 'Sensibilidad')}: <strong id="eff-chiave-simile-v">25</strong></label><input type="range" id="eff-chiave-simile" min="1" max="60" value="25"></div>
+            <div><label class="campo" for="eff-chiave-morbido">${L('Bordi morbidi', 'Soft edges', 'Bordes suaves')}: <strong id="eff-chiave-morbido-v">8</strong></label><input type="range" id="eff-chiave-morbido" min="0" max="40" value="8"></div>
+          </div>
+          <p class="suggerimento">${L('Clicca sull’anteprima per prendere il colore giusto. Quello che vedi qui è quello che va in onda: il server toglie lo sfondo con lo stesso calcolo.', 'Click the preview to pick the right color. What you see here is what goes on air: the server removes the background with the same calculation.', 'Haz clic en la vista previa para tomar el color correcto. Lo que ves aquí es lo que sale en directo: el servidor quita el fondo con el mismo cálculo.')}</p>
+        </div>
+      </div>
 
       <div class="spazio-sopra">
         <label class="campo" for="eff-suono">${_bIco(ICO.altoparlante)}${L('Suono da abbinare', 'Sound to pair', 'Sonido a combinar')} <span class="tenue">— ${L('opzionale, per immagini/video: crei una', 'optional, for images/videos: you create a', 'opcional, para imágenes/vídeos: creas una')} <strong>combo</strong> (${L('media + suono che parte insieme', 'media + sound that plays together', 'media + sonido que se reproduce junto')})</span></label>
@@ -24724,6 +24737,7 @@ function attivaPiattaforma() {
   initStudio();
 
   document.getElementById('btn-carica-effetto')?.addEventListener('click', caricaEffettoUpload);
+  _primaCollega();
 
   document.getElementById('eff-pubblico')?.addEventListener('change', (e) => {
     const box = document.getElementById('eff-nome-box'); if (box) box.hidden = !e.target.checked;
@@ -26311,6 +26325,180 @@ async function importaLibreria(id, btn) {
   }
 }
 
+function chiaveColore(d, rgb, simile, morbido) {
+  const kr = rgb[0], kg = rgb[1], kb = rgb[2], n = 255 * 255 * 3;
+  for (let i = 0; i < d.length; i += 4) {
+    const dr = d[i] - kr, dg = d[i + 1] - kg, db = d[i + 2] - kb;
+    const dist = Math.sqrt((dr * dr + dg * dg + db * db) / n);
+    const a = Math.round(morbido > 0.0001 ? Math.min(1, Math.max(0, (dist - simile) / morbido)) * 255 : (dist > simile ? 255 : 0));
+    if (a < d[i + 3]) d[i + 3] = a;
+  }
+  return d;
+}
+
+const _prima = { url: '', media: null, raf: 0, grezza: null, prima: true, togli: false, fotogramma: null, giro: 0 };
+const _hexRgb = (h) => { const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(h || '')); return m ? [1, 2, 3].map((i) => parseInt(m[i], 16)) : [0, 255, 0]; };
+
+function _primaChiave() {
+  if (!_prima.media || !_prima.togli || !document.getElementById('eff-chiave')?.checked) return null;
+  return {
+    colore: document.getElementById('eff-chiave-colore').value,
+    simile: Number(document.getElementById('eff-chiave-simile').value) / 100,
+    morbido: Number(document.getElementById('eff-chiave-morbido').value) / 100,
+  };
+}
+
+function _primaDisegna() {
+  const m = _prima.media, tela = document.getElementById('eff-prima-tela');
+  if (!m || !tela) return;
+  const src = _prima.fotogramma || m;
+  const w0 = src.displayWidth || m.videoWidth || m.naturalWidth, h0 = src.displayHeight || m.videoHeight || m.naturalHeight;
+  if (!w0 || !h0) return;
+  const f = Math.min(1, 960 / w0), w = Math.max(1, Math.round(w0 * f)), h = Math.max(1, Math.round(h0 * f));
+  if (tela.width !== w || tela.height !== h) { tela.width = w; tela.height = h; }
+  const g = _prima.grezza || (_prima.grezza = document.createElement('canvas'));
+  if (g.width !== w || g.height !== h) { g.width = w; g.height = h; }
+  const gx = g.getContext('2d', { willReadFrequently: true });
+  gx.clearRect(0, 0, w, h); gx.drawImage(src, 0, 0, w, h);
+  const ctx = tela.getContext('2d');
+  const k = _primaChiave();
+  if (!k) { ctx.clearRect(0, 0, w, h); ctx.drawImage(g, 0, 0); return; }
+  const im = gx.getImageData(0, 0, w, h);
+  chiaveColore(im.data, _hexRgb(k.colore), k.simile, k.morbido);
+  ctx.putImageData(im, 0, 0);
+}
+
+function _primaGiro() {
+  cancelAnimationFrame(_prima.raf);
+  const m = _prima.media;
+  if (!m || m.tagName !== 'VIDEO') return;
+  const passo = () => { if (_prima.media !== m) return; _primaDisegna(); _prima.raf = requestAnimationFrame(passo); };
+  _prima.raf = requestAnimationFrame(passo);
+}
+
+function _primaChiudi() {
+  cancelAnimationFrame(_prima.raf);
+  clearTimeout(_prima.giro);
+  if (_prima.fotogramma) { _prima.fotogramma.close(); _prima.fotogramma = null; }
+  if (_prima.media && _prima.media.pause) { try { _prima.media.pause(); } catch (e) {  } }
+  if (_prima.url) URL.revokeObjectURL(_prima.url);
+  _prima.url = ''; _prima.media = null;
+  const box = document.getElementById('eff-prima'); if (box) box.hidden = true;
+  const chk = document.getElementById('eff-chiave'); if (chk) chk.checked = false;
+  const kb = document.getElementById('eff-chiave-box'); if (kb) kb.hidden = true;
+}
+
+function _primaAnimata(file) {
+  return file.slice(0, 4096).arrayBuffer().then((b) => {
+    const t = String.fromCharCode(...new Uint8Array(b));
+    if (file.type === 'image/gif') return t.includes('NETSCAPE2.0');
+    if (/^image\/a?png$/.test(file.type)) return t.includes('acTL');
+    if (file.type === 'image/webp') return t.slice(12, 16) === 'VP8X' && (t.charCodeAt(20) & 2) !== 0;
+    if (file.type === 'image/avif') return t.slice(8, 12) === 'avis';
+    return false;
+  }, () => false);
+}
+
+const _attesaFotogramma = (ms) => (ms <= 10 ? 100 : ms);
+
+async function _primaFotogrammi(file, m) {
+  if (typeof ImageDecoder === 'undefined') return false;
+  let dec = null;
+  try {
+    const tipo = file.type === 'image/apng' ? 'image/png' : file.type;
+    if (!(await ImageDecoder.isTypeSupported(tipo))) return false;
+    dec = new ImageDecoder({ data: await file.arrayBuffer(), type: tipo });
+    await dec.tracks.ready;
+    await dec.completed;
+    const tr = dec.tracks.selectedTrack;
+    if (!tr || !tr.animated || tr.frameCount < 2 || _prima.media !== m) { dec.close(); return false; }
+    const n = tr.frameCount;
+    let i = 0;
+    const passo = async () => {
+      let f = null;
+      try { if (_prima.media === m) f = (await dec.decode({ frameIndex: i })).image; } catch (e) {  }
+      if (!f || _prima.media !== m) { if (f) f.close(); dec.close(); return; }
+      if (_prima.fotogramma) _prima.fotogramma.close();
+      _prima.fotogramma = f;
+      _primaDisegna();
+      i = (i + 1) % n;
+      _prima.giro = setTimeout(passo, _attesaFotogramma((f.duration || 0) / 1000));
+    };
+    passo();
+    return true;
+  } catch (e) {
+    if (dec) dec.close();
+    return false;
+  }
+}
+
+function _primaApri(file) {
+  _primaChiudi();
+  const box = document.getElementById('eff-prima'), nota = document.getElementById('eff-prima-nota');
+  if (!file || !box || !/^(image|video)\//.test(file.type || '')) return;
+  const url = URL.createObjectURL(file);
+  const m = document.createElement(file.type.startsWith('video/') ? 'video' : 'img');
+  _prima.url = url; _prima.media = m; _prima.prima = true;
+  _prima.togli = file.type !== 'image/avif';
+  box.hidden = false; nota.hidden = _prima.togli;
+  document.getElementById('eff-chiave-riga').hidden = !_prima.togli;
+  if (!_prima.togli) nota.textContent = L('Un AVIF va in onda così com’è, trasparenza compresa: se ha un fondo da togliere, esportalo in PNG, WebP o video.', 'An AVIF goes on air as it is, transparency included: if it has a background to remove, export it as PNG, WebP or video.', 'Un AVIF sale en directo tal cual, transparencia incluida: si tiene un fondo que quitar, expórtalo en PNG, WebP o vídeo.');
+  const pronto = () => { if (_prima.media !== m) return; _primaDisegna(); _primaGiro(); };
+  const niente = () => {
+    if (_prima.media !== m) return;
+    const t = document.getElementById('eff-prima-tela'); t.width = 1; t.height = 1;
+    nota.hidden = false;
+    if (_prima.togli) nota.textContent = L('Il browser non sa mostrare questo formato, quindi qui l’anteprima non c’è: il server lo legge lo stesso, e anche lo sfondo si toglie.', 'The browser cannot show this format, so there is no preview here: the server reads it anyway, and the background is removed too.', 'El navegador no sabe mostrar este formato, así que aquí no hay vista previa: el servidor lo lee igual, y el fondo también se quita.');
+  };
+  if (m.tagName === 'VIDEO') {
+    m.muted = true; m.loop = true; m.playsInline = true;
+    m.addEventListener('loadeddata', pronto, { once: true });
+    m.addEventListener('error', niente, { once: true });
+    m.src = url; m.play().catch(() => {});
+  } else {
+    _primaFotogrammi(file, m).then(async (scorre) => {
+      if (scorre || !(await _primaAnimata(file)) || _prima.media !== m || !_prima.togli) return;
+      nota.hidden = false;
+      nota.textContent = L('Qui vedi solo il primo fotogramma, perché questo browser non sa scorrerli: in onda si muove.', 'Here you only see the first frame, because this browser cannot step through them: on air it moves.', 'Aquí solo ves el primer fotograma, porque este navegador no sabe recorrerlos: en directo se mueve.');
+    });
+    m.addEventListener('load', pronto, { once: true });
+    m.addEventListener('error', niente, { once: true });
+    m.src = url;
+  }
+}
+
+function _primaCollega() {
+  const file = document.getElementById('eff-file');
+  if (!file || file.dataset.prima) return;
+  file.dataset.prima = '1';
+  file.addEventListener('change', () => _primaApri(file.files && file.files[0]));
+  const chk = document.getElementById('eff-chiave'), box = document.getElementById('eff-chiave-box');
+  chk.addEventListener('change', () => {
+    box.hidden = !chk.checked;
+    if (chk.checked && _prima.prima && _prima.grezza && _prima.grezza.width) {
+      const d = _prima.grezza.getContext('2d', { willReadFrequently: true }).getImageData(1, 1, 1, 1).data;
+      if (d[3]) { document.getElementById('eff-chiave-colore').value = '#' + [d[0], d[1], d[2]].map((v) => v.toString(16).padStart(2, '0')).join(''); _prima.prima = false; }
+    }
+    _primaDisegna();
+  });
+  for (const id of ['eff-chiave-simile', 'eff-chiave-morbido']) {
+    document.getElementById(id).addEventListener('input', (e) => { document.getElementById(id + '-v').textContent = e.target.value; _primaDisegna(); });
+  }
+  document.getElementById('eff-chiave-colore').addEventListener('input', () => { _prima.prima = false; _primaDisegna(); });
+  document.getElementById('eff-prima-tela').addEventListener('click', (ev) => {
+    const t = ev.currentTarget, g = _prima.grezza;
+    if (!g || !g.width || !_prima.media || !_prima.togli) return;
+    const r = t.getBoundingClientRect();
+    const x = Math.max(0, Math.min(g.width - 1, Math.floor((ev.clientX - r.left) / r.width * g.width)));
+    const y = Math.max(0, Math.min(g.height - 1, Math.floor((ev.clientY - r.top) / r.height * g.height)));
+    const d = g.getContext('2d', { willReadFrequently: true }).getImageData(x, y, 1, 1).data;
+    if (!d[3]) return;
+    document.getElementById('eff-chiave-colore').value = '#' + [d[0], d[1], d[2]].map((v) => v.toString(16).padStart(2, '0')).join('');
+    chk.checked = true; box.hidden = false; _prima.prima = false;
+    _primaDisegna();
+  });
+}
+
 async function caricaEffettoUpload(ev) {
   if (DEMO) { toast(L('In demo non si caricano file — accedi per farlo davvero.', "In demo you can't upload files — log in to do it for real.", 'En la demo no se suben archivos — inicia sesión para hacerlo de verdad.')); return; }
   const btn = ev.currentTarget;
@@ -26337,6 +26525,8 @@ async function caricaEffettoUpload(ev) {
   fd.append('pubblico', pubblico ? '1' : '0');
   fd.append('nome', document.getElementById('eff-nome')?.value?.trim() || '');
   fd.append('schermo', document.getElementById('eff-schermo')?.value || '');
+  const chiave = _primaChiave();
+  if (chiave) fd.append('chiave', JSON.stringify(chiave));
 
   btn.disabled = true;
   const testoOrig = btn.textContent;
@@ -26350,6 +26540,7 @@ async function caricaEffettoUpload(ev) {
     const nomeComando = dati?.comando ? ' — !' + dati.comando : '';
     toast((dati?.combo ? L('Combo caricata (media + suono)', 'Combo uploaded (media + sound)', 'Combo subida (media + sonido)') : L('Media caricato nella tua libreria', 'Medium uploaded to your library', 'Medio subido a tu biblioteca')) + nomeComando);
     fileInput.value = '';
+    _primaChiudi();
     if (suonoInput) suonoInput.value = '';
     document.getElementById('eff-comando').value = '';
     const nomeBox = document.getElementById('eff-nome'); if (nomeBox) nomeBox.value = '';

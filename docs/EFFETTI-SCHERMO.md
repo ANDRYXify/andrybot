@@ -139,6 +139,114 @@ Un file che il browser non sa nominare (arriva come
 `application/octet-stream`) si riconosce da quello che c'è dentro: si muove, è
 un video; un fotogramma solo, un'immagine; solo suono, un audio.
 
+### Lo sfondo da togliere
+
+Chiesto così: «un eventuale sfondo a tinta unita da rimuovere se l'utente non
+può caricarlo già a sfondo trasparente (tipo sfondo verde e il sito lo rimuove
+e mostra il risultato in anteprima)».
+
+Scegliendo un file da caricare, sotto compare la sua anteprima su una
+scacchiera, così dove è trasparente si vede. Un video gira in tondo, muto.
+Spuntando «Togli uno sfondo a tinta unita» il colore da togliere si prende
+dall'angolo in alto a sinistra, dove di solito c'è il fondo; cliccando
+sull'anteprima si prende quello sotto il clic. Un pixel che non si vede non
+dà colore: se l'angolo è già trasparente la casella non prende niente
+(prenderebbe un nero finto e toglierebbe il nero del soggetto), e il colore si
+sceglie col clic. Due misure: la **sensibilità**
+(quanto un colore può essere diverso da quello scelto ed essere tolto lo
+stesso) e i **bordi morbidi** (la fascia in cui il soggetto sfuma nel fondo
+invece di avere un contorno seghettato).
+
+Il calcolo è uno solo, scritto due volte. È il filtro `colorkey` di ffmpeg:
+per ogni pixel la distanza dal colore scelto nello spazio RGB,
+d = √((Δr² + Δg² + Δb²) / (3 · 255²)); sotto la sensibilità il pixel sparisce,
+fra la sensibilità e la sensibilità più i bordi sfuma, oltre resta pieno. Il
+pannello lo rifà su ogni fotogramma dell'anteprima (`chiaveColore` in
+`app.js`), il server lo fa fare a ffmpeg. Quello che si vede nel pannello è
+quello che va in onda **perché è la stessa formula**, non perché si somigliano:
+un test prende la funzione del pannello così com'è e la confronta con ffmpeg
+pixel per pixel, con tre coppie di misure diverse. Differiscono al massimo di
+1 su 255, l'arrotondamento.
+
+Al server arrivano il colore e le due misure. Si normalizzano prima di
+toccare ffmpeg (`normChiave`): un colore che non è `#rrggbb` non toglie niente,
+e le misure restano nei limiti che il pannello permette.
+
+Un file **già trasparente** con in più un fondo da togliere (un logo con un
+riquadro bianco attorno, per dire): la trasparenza finale è la minore fra
+quella del file e quella del colore tolto, nell'anteprima come sul server.
+`colorkey` da solo riscriverebbe il canale alfa da capo, e quello che era già
+trasparente tornerebbe nero; il grafo dei filtri tiene da parte l'alfa
+d'origine e le fa incontrare. Anche questo è provato con ffmpeg.
+
+Un video a cui si toglie il fondo esce WebM trasparente, e la regola della
+trasparenza vale anche qui: se il colore è stato tolto, in onda l'alfa c'è, o
+il caricamento si ferma.
+
+Con un fondo da togliere niente si tiene com'è. Un **WebP animato** lo legge
+ffmpeg 9 fotogramma per fotogramma, con la sua trasparenza (il decodificatore
+`webp_anim`), e va in onda come video trasparente che si muove ancora: un
+codec d'animazione in un'immagine va per la strada dei video, com'era già per
+l'APNG. Un **AVIF** invece no: ffmpeg ne legge la trasparenza come un flusso a
+parte e non la applica (provato: un pixel trasparente del file esce opaco),
+quindi togliendo il fondo si perderebbe quella del file. Un AVIF va in onda
+com'è: il pannello non mostra la casella e dice perché, e il server rifiuta un
+fondo da togliere su un AVIF invece di rovinarlo in silenzio.
+
+Un'immagine animata (GIF, PNG animato, WebP animato) nell'anteprima si muove
+coi **suoi** fotogrammi, letti uno per uno dal browser (`ImageDecoder`), con
+la regola del ritmo qui sotto. Disegnarla da un `<img>` non basta: su una
+tela arriva sempre il primo fotogramma (provato in Chromium, anche con
+l'immagine dentro la pagina). Dove il browser non sa scorrere i fotogrammi, il
+pannello mostra il primo e dice che in onda si muove; per saperlo guarda
+dentro il file, come il server: il blocco `acTL` di un PNG animato (che si
+chiama quasi sempre `.png`, come uno fermo), il bit dell'animazione di un
+WebP, il blocco `NETSCAPE2.0` di una GIF che gira.
+
+Un formato che il browser non sa mostrare (un ProRes, per dire) non ha
+anteprima, e il pannello lo dice: il server lo legge lo stesso e il fondo si
+toglie lo stesso.
+
+Quello che una tinta unita non fa: un riflesso verde sul soggetto (i capelli
+davanti a un telo verde) resta, e un fondo in ombra ha colori più scuri di
+quello scelto. Per il secondo basta alzare la sensibilità guardando
+l'anteprima; per il primo serve girare con più luce sul telo.
+
+### Il ritmo di un'immagine animata
+
+Misurando le durate per l'anteprima è venuto fuori un difetto della
+conversione, che c'era da prima. I browser tengono **100 ms** ogni fotogramma
+di una GIF, di un PNG animato o di un WebP animato che dichiara **10 ms o
+meno**: è la regola di Firefox, WebKit e Chromium (WebKit bug 36082), nata
+contro le pubblicità che lampeggiavano, e sta nel riproduttore delle immagini
+(`ImageDecoder` dà le durate grezze: 0, 5, 10 ms). È così che lo streamer quel
+file l'ha sempre visto, e così lo mostrerebbe OBS, che è un Chromium. ffmpeg 9
+invece tiene il valore scritto:
+
+| scritto nel file | browser | in onda, prima | in onda, ora |
+|---|---|---|---|
+| GIF, 1 centesimo | 100 ms | **10 ms** | 100 ms |
+| GIF, 2 centesimi | 20 ms | 20 ms | 20 ms |
+| GIF, 0 | 100 ms | 100 ms | 100 ms |
+| WebP animato, 5 o 10 ms | 100 ms | 100 ms (tenuto com'è) | 100 ms, anche quando diventa video |
+| PNG animato, 0 | 100 ms | **66,7 ms** | 100 ms |
+| PNG animato, 50 ms | 50 ms | 50 ms | 50 ms |
+
+Una GIF «velocissima» andava in onda dieci volte più veloce di come lo
+streamer la conosceva. Ora, quando un'immagine animata diventa video, i tempi
+si riscrivono con la regola del browser (`setpts`: il fotogramma n parte
+quando è finito il precedente, con la durata del precedente corretta), e al
+PNG animato con durata zero si chiede un decimo di secondo invece di un
+quindicesimo (`-default_fps 10`). I video veri non si toccano: a 120 fps un
+fotogramma dura 8 ms davvero. Una GIF che diventa emote o un WebP animato
+tenuto com'è restano immagini, e li anima il browser con la sua regola.
+
+Un test, con ffmpeg vero, fa le GIF da 1 e 2 centesimi, i WebP animati da 5 e
+20 ms e i PNG animati da 0 e 50 ms, e confronta il passo fra i fotogrammi in
+onda con la regola che usa il pannello, presa da `app.js` così com'è. Resta una differenza: l'ultimo fotogramma di un video dura quanto
+dichiarato dal file, perché `setpts` sposta l'inizio dei fotogrammi ma non la
+durata dell'ultimo.
+
 ## I disegni
 
 Otto effetti: **coriandoli, fuochi d'artificio, cuori, neve, palloncini,

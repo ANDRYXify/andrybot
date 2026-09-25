@@ -66,7 +66,7 @@ import * as donaMedia from '../features/donazioni-media.js';
 import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
 import * as webauthn from './webauthn.js';
-import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA } from '../features/compress.js';
+import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA, normChiave } from '../features/compress.js';
 import { StudioEngine, QUALITA as STUDIO_QUALITA } from '../features/studio.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
@@ -7595,6 +7595,10 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const pubblico = /^(1|true|on|si|sì)$/i.test(String(req.body?.pubblico || ''));
     const nomePubblico = String(req.body?.nome || '').slice(0, 60).trim();
     const schermo = SCHERMI.includes(String(req.body?.schermo ?? '')) ? String(req.body?.schermo ?? '') : '';
+    // lo sfondo a tinta unita da togliere (docs/EFFETTI-SCHERMO.md): arriva
+    // come testo nel modulo, e se non e' valido non si toglie niente
+    let chiave = null;
+    try { chiave = normChiave(JSON.parse(String(req.body?.chiave || 'null'))); } catch { chiave = null; }
 
     // validazione: se qualcosa non va, si puliscono i temp e si risponde 400
     const errore = async (msg) => { await puliziaTutto(); return res.status(400).json({ errore: msg }); };
@@ -7612,7 +7616,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // compressione del media principale: comprimi() cancella comunque il temp
     let esito;
     try {
-      esito = await comprimi(fileMedia.path, fileMedia.mimetype, destDir, `${Date.now()}_${comando}`, { latoImmagine: LATO_LIBRERIA });
+      esito = await comprimi(fileMedia.path, fileMedia.mimetype, destDir, `${Date.now()}_${comando}`, { latoImmagine: LATO_LIBRERIA, chiave });
     } catch (e) {
       await pulisciTemp(fileSuono?.path);
       return res.status(400).json({ errore: e?.message || 'compressione fallita' });

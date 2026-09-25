@@ -67,6 +67,16 @@ const ROTTURE = [
     'a tutto schermo parte anche dove gli effetti sono spenti'],
   ['src/web/public/app.js', "    if (e.tipo === 'video') {\n      const v = document.createElement('video');", "    if (false) {\n      const v = document.createElement('video');",
     'nell\'anteprima del pannello il video non si vede'],
+  ['src/web/public/app.js', "  chiaveColore(im.data, _hexRgb(k.colore), k.simile, k.morbido);\n", '',
+    'nell\'anteprima del caricamento lo sfondo non si toglie'],
+  ['src/web/public/app.js', "    if (chk.checked && _prima.prima && _prima.grezza && _prima.grezza.width) {", "    if (false) {",
+    'spuntando la casella il colore da togliere non si prende dall\'angolo'],
+  ['src/web/public/app.js', "    const tr = dec.tracks.selectedTrack;", "    const tr = null;",
+    'nell\'anteprima un PNG animato resta fermo'],
+  ['src/web/public/app.js', "  _prima.togli = file.type !== 'image/avif';", "  _prima.togli = true;",
+    'da un AVIF il pannello fa togliere uno sfondo che in onda resterebbe'],
+  ['src/web/public/app.js', "      if (d[3]) { document.getElementById('eff-chiave-colore').value", "      if (true) { document.getElementById('eff-chiave-colore').value",
+    'dove l\'angolo e\' trasparente la casella prende un colore che non si vede'],
 ];
 
 // --selftest prova tutte le rotture; --selftest=<parola> solo quelle la cui
@@ -915,9 +925,88 @@ try {
     await aspetta(400);
     return out;
   }, CAMPIONE);
-  dice(anteprima.video && anteprima.suona && anteprima.copre && anteprima.alfa?.[0] === 0 && anteprima.alfa?.[1] === 255 && anteprima.disegno > 20 && anteprima.chiusa && anteprima.immagine,
+  // Il soggetto «pieno» si misura con la tolleranza del codec: il VP9 comprime
+  // anche l'alfa, e nel campione il centro vale 251 in alcuni fotogrammi e 255
+  // in altri (misurato con ffmpeg). Il fondo invece e' 0 in tutti.
+  const pieno = (a) => Number.isFinite(a) && a >= 240;
+  dice(anteprima.video && anteprima.suona && anteprima.copre && anteprima.alfa?.[0] === 0 && pieno(anteprima.alfa?.[1]) && anteprima.disegno > 20 && anteprima.chiusa && anteprima.immagine,
     'l\'anteprima nel pannello: un video trasparente parte, copre la scena a tutto schermo e lascia vedere il fondo, un disegno si disegna, un\'immagine della libreria si vede, ed Esc chiude',
     JSON.stringify(anteprima));
+  // Lo sfondo da togliere al caricamento. Un video col fondo verde da studio
+  // (non il verde puro della casella: se il colore non si prendesse
+  // dall'angolo, il fondo resterebbe mezzo visibile) e un'immagine col fondo
+  // azzurro presa col clic sull'anteprima. Dove c'era il fondo l'anteprima e'
+  // trasparente, il soggetto resta pieno, e verso il server parte proprio il
+  // colore preso con le due misure. Un formato che il browser non sa mostrare
+  // lo dice invece di restare una scatola vuota. Un PNG animato col nome .png
+  // si muove anche nell'anteprima coi suoi fotogrammi, come in onda, e senza
+  // la nota di chi vede solo il primo. Un AVIF va in onda com'e':
+  // la casella non c'e', il pannello dice perche', e il clic non l'accende.
+  // Dove l'angolo e' gia' trasparente, la casella non prende il nero finto di
+  // un pixel che non si vede (toglierebbe il nero del soggetto).
+  const campione = (f) => readFileSync(join(RAD, 'scripts/campioni', f)).toString('base64');
+  const CAMPIONI_SFONDO = { verde: campione('sfondo-verde.webm'), lampo: campione('lampeggia.png'), avif: campione('verde.avif'), cerchio: campione('cerchio-trasparente.webm') };
+  const sfondo = await ed.evaluate(async (cc) => {
+    const byte = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const aspetta = (ms) => new Promise((r) => setTimeout(r, ms));
+    const file = document.getElementById('eff-file'), tela = document.getElementById('eff-prima-tela'), chk = document.getElementById('eff-chiave');
+    const metti = (f) => { const dt = new DataTransfer(); dt.items.add(f); file.files = dt.files; file.dispatchEvent(new Event('change')); };
+    const alfa = () => { const x = tela.getContext('2d'); return [x.getImageData(1, 1, 1, 1).data[3], x.getImageData(tela.width >> 1, tela.height >> 1, 1, 1).data[3]]; };
+    const out = {};
+    metti(new File([byte(cc.verde)], 'verde.webm', { type: 'video/webm' }));
+    await aspetta(900);
+    out.video = { vista: !document.getElementById('eff-prima').hidden, w: tela.width, prima: alfa() };
+    chk.click();
+    await aspetta(400);
+    out.video.colore = document.getElementById('eff-chiave-colore').value;
+    out.video.dopo = alfa();
+    out.video.manda = _primaChiave();
+    const c = document.createElement('canvas'); c.width = 80; c.height = 60;
+    const g = c.getContext('2d'); g.fillStyle = '#2a7fff'; g.fillRect(0, 0, 80, 60); g.fillStyle = '#ffd400'; g.beginPath(); g.arc(40, 30, 16, 0, 7); g.fill();
+    metti(new File([await new Promise((r) => c.toBlob(r, 'image/png'))], 'azzurro.png', { type: 'image/png' }));
+    await aspetta(500);
+    out.img = { spenta: !chk.checked, prima: alfa() };
+    const r = tela.getBoundingClientRect();
+    tela.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: r.left + 3, clientY: r.top + 3 }));
+    await aspetta(300);
+    out.img.accesa = chk.checked && !document.getElementById('eff-chiave-box').hidden;
+    out.img.colore = document.getElementById('eff-chiave-colore').value;
+    out.img.dopo = alfa();
+    metti(new File([new Uint8Array(256)], 'prores.mov', { type: 'video/quicktime' }));
+    await aspetta(900);
+    out.illeggibile = !document.getElementById('eff-prima-nota').hidden;
+    metti(new File([byte(cc.lampo)], 'lampeggia.png', { type: 'image/png' }));
+    const visti = new Set();
+    for (let i = 0; i < 8; i++) { await aspetta(130); if (tela.width > 1) visti.add(tela.getContext('2d').getImageData(tela.width >> 1, tela.height >> 1, 1, 1).data[0] > 128 ? 'rosso' : 'blu'); }
+    out.lampeggia = [...visti].sort().join();
+    out.lampoNota = document.getElementById('eff-prima-nota').hidden;
+    metti(new File([byte(cc.avif)], 'verde.avif', { type: 'image/avif' }));
+    await aspetta(600);
+    const ra = tela.getBoundingClientRect();
+    tela.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: ra.left + 3, clientY: ra.top + 3 }));
+    await aspetta(200);
+    out.avif = { casella: !document.getElementById('eff-chiave-riga').hidden, spenta: !chk.checked, manda: _primaChiave(), nota: document.getElementById('eff-prima-nota').hidden ? '' : document.getElementById('eff-prima-nota').textContent, vista: tela.width };
+    metti(new File([byte(cc.cerchio)], 'cerchio.webm', { type: 'video/webm' }));
+    await aspetta(900);
+    const colorePrima = document.getElementById('eff-chiave-colore').value;
+    chk.click();
+    await aspetta(300);
+    out.angoloVuoto = { prima: colorePrima, dopo: document.getElementById('eff-chiave-colore').value, alfa: alfa() };
+    file.value = ''; _primaChiudi();
+    out.chiusa = document.getElementById('eff-prima').hidden;
+    return out;
+  }, CAMPIONI_SFONDO);
+  const rgb = (h) => [1, 3, 5].map((i) => parseInt(String(h).slice(i, i + 2), 16));
+  const verde = sfondo.video.colore ? rgb(sfondo.video.colore) : [];
+  dice(sfondo.video.vista && sfondo.video.w === 96 && sfondo.video.prima.join() === '255,255'
+    && vicino(verde[0], 40, 4) && vicino(verde[1], 150, 4) && vicino(verde[2], 70, 4) && sfondo.video.dopo.join() === '0,255'
+    && sfondo.video.manda?.colore === sfondo.video.colore && sfondo.video.manda?.simile === 0.25 && sfondo.video.manda?.morbido === 0.08
+    && sfondo.img.spenta && sfondo.img.prima.join() === '255,255' && sfondo.img.accesa && sfondo.img.colore === '#2a7fff' && sfondo.img.dopo.join() === '0,255'
+    && sfondo.illeggibile && sfondo.lampeggia === 'blu,rosso' && sfondo.lampoNota
+    && !sfondo.avif.casella && sfondo.avif.spenta && sfondo.avif.manda === null && /AVIF/.test(sfondo.avif.nota) && sfondo.avif.vista === 64
+    && sfondo.angoloVuoto.dopo === sfondo.angoloVuoto.prima && sfondo.angoloVuoto.alfa[0] === 0 && pieno(sfondo.angoloVuoto.alfa[1]) && sfondo.chiusa,
+  'lo sfondo da togliere: il colore si prende dall\'angolo o col clic, nell\'anteprima il fondo sparisce e il soggetto resta, al server parte quel colore, un formato che il browser non mostra lo dice, un PNG animato si muove, e un AVIF va in onda com\'e\' e lo dice',
+  JSON.stringify(sfondo));
   await ed.evaluate(() => window.SB_APP.vai('alert'));
 
   dice(erroriEd.length === 0, 'l\'editor non ha errori', erroriEd.slice(0, 2).join(' | '));

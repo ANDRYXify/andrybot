@@ -2540,3 +2540,6 @@ body:not(.con-nav) .salta { display: none; }
   .ant-suono svg { animation: none; }
   .ant-el { transition: none; }
 }
+
+.eff-prima-scena { display: grid; place-items: center; min-height: 120px; max-height: 360px; border-radius: var(--r-m); overflow: hidden; background-color: #1d1b24; background-image: conic-gradient(#2b2834 25%, #1d1b24 0 50%, #2b2834 0 75%, #1d1b24 0); background-size: 24px 24px; }
+#eff-prima-tela { display: block; max-width: 100%; max-height: 360px; cursor: crosshair; }

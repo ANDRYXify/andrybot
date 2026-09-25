@@ -33,6 +33,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] Nella storia «Stasera alle…» l'immagine del gioco ha tre modi: a tutto schermo con velo e sfocatura, in un riquadro che sposti e ingrandisci, o niente per lasciare il tema. [vai: grafiche]
 - Gli effetti accettano ogni video trasparente: WebM, MOV ProRes 4444 o HEVC di iPhone e Final Cut, Animation, GIF, APNG, AVIF e WebP animati. Se la trasparenza si perdesse, il caricamento si ferma e lo dice. [vai: effetti]
 - «Prova» su un effetto te lo fa vedere nel pannello com'è in onda, video e disegni compresi, e da lì lo mandi all'overlay. Nella libreria anche immagini e video hanno il tasto per guardarli. [vai: effetti]
+- [importante] Caricando un effetto puoi togliere uno sfondo a tinta unita, come un green screen: lo vedi subito nell'anteprima e in onda esce proprio così. [vai: effetti]
+- Una GIF o un PNG animato coi fotogrammi velocissimi va in onda al ritmo con cui lo vedi nel browser, non più fino a dieci volte più veloce. [vai: effetti]
 
 ## 2026-09-24
 

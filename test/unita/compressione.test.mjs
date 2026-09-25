@@ -7,11 +7,12 @@
 // WebM deve arrivare al file che va in onda.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, copyFileSync, existsSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdtempSync, rmSync, copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { crc32 } from 'node:zlib';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { leggiSonda, decodificatore, webpAnimato, eAvif, tipoDaSonda, comprimi, verificaAlfa, LATO_LIBRERIA } from '../../src/features/compress.js';
+import { leggiSonda, decodificatore, webpAnimato, eAvif, tipoDaSonda, comprimi, verificaAlfa, normChiave, filtroChiave, LATO_LIBRERIA } from '../../src/features/compress.js';
 
 const WEBM_ALFA = `Input #0, matroska,webm, from 'x.webm':
   Metadata:
@@ -147,3 +148,160 @@ test('con ffmpeg vero: se la trasparenza si perdesse, il caricamento si ferma e 
     assert.ok(!existsSync(out), 'e il file senza trasparenza non resta sul disco');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+// LO SFONDO DA TOGLIERE (docs/EFFETTI-SCHERMO.md). Quello che il pannello
+// mostra e quello che il server fa sono lo stesso calcolo: la formula del
+// pannello (chiaveColore) contro il filtro colorkey di ffmpeg, pixel per
+// pixel, su colori a caso vicini e lontani dal colore tolto.
+const APP = readFileSync(new URL('../../src/web/public/app.js', import.meta.url), 'utf8');
+const chiaveColore = (() => {
+  const i = APP.indexOf('function chiaveColore(');
+  let d = 0, j = APP.indexOf('{', i);
+  for (; j < APP.length; j++) { if (APP[j] === '{') d++; else if (APP[j] === '}' && !--d) break; }
+  return new Function(APP.slice(i, j + 1) + '; return chiaveColore;')();
+})();
+
+test('lo sfondo da togliere: i numeri si fermano nei loro limiti, e un colore storto non toglie niente', () => {
+  assert.deepEqual(normChiave({ colore: '#00FF00', simile: 0.3, morbido: 0.1 }), { colore: '#00ff00', simile: 0.3, morbido: 0.1 });
+  assert.deepEqual(normChiave({ colore: '#123456', simile: 9, morbido: -1 }), { colore: '#123456', simile: 0.6, morbido: 0 });
+  assert.equal(normChiave({ colore: 'verde' }), null);
+  assert.equal(normChiave(null), null);
+  assert.equal(filtroChiave({ colore: '#00b140', simile: 0.25, morbido: 0.08 }, false), 'format=rgba,colorkey=0x00b140:0.25:0.08');
+  assert.match(filtroChiave({ colore: '#00b140', simile: 0.25, morbido: 0.08 }, true), /blend=all_mode=darken\[a\];\[o2\]\[a\]alphamerge$/, 'su un file gia\' trasparente, la minore delle due trasparenze');
+});
+
+test('la formula del pannello: dentro la sensibilita\' trasparente, fuori pieno, in mezzo sfuma, e non ridà opacita\' a chi non ce l\'ha', () => {
+  const px = (r, g, b, a = 255) => chiaveColore(new Uint8ClampedArray([r, g, b, a]), [0, 255, 0], 0.2, 0.1)[3];
+  assert.equal(px(0, 255, 0), 0, 'il colore stesso sparisce');
+  assert.equal(px(255, 0, 0), 255, 'un colore lontano resta');
+  const mezzo = px(0, 255 - 110, 0);
+  assert.ok(mezzo > 0 && mezzo < 255, `in mezzo sfuma (${mezzo})`);
+  assert.equal(px(255, 0, 0, 40), 40, 'la trasparenza che c\'era resta');
+});
+
+test('il colore scelto nel pannello arriva a ffmpeg: il modulo lo manda, il server lo normalizza e lo passa alla compressione', () => {
+  const SRV = readFileSync(new URL('../../src/web/server.js', import.meta.url), 'utf8');
+  assert.match(APP, /const chiave = _primaChiave\(\);\n\s*if \(chiave\) fd\.append\('chiave', JSON\.stringify\(chiave\)\);/);
+  const i = SRV.indexOf('  async function salvaEffetto(');
+  assert.ok(i > 0);
+  const corpo = SRV.slice(i, SRV.indexOf('\n  }\n', i));
+  assert.match(corpo, /chiave = normChiave\(JSON\.parse\(String\(req\.body\?\.chiave \|\| 'null'\)\)\)/);
+  assert.match(corpo, /await comprimi\(fileMedia\.path, [^;]*\{ latoImmagine: LATO_LIBRERIA, chiave \}\)/);
+});
+
+test('con ffmpeg vero: la formula del pannello e colorkey danno lo stesso risultato, pixel per pixel', { skip: !ffmpeg && 'ffmpeg non c\'e\' su questa macchina' }, () => {
+  let seme = 7;
+  const caso = () => (seme = (seme * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  const N = 64 * 64, src = Buffer.alloc(N * 3);
+  for (let i = 0; i < N; i++) {
+    const vicino = i % 2;
+    src[i * 3] = Math.floor(caso() * (vicino ? 120 : 256)); src[i * 3 + 1] = Math.floor(vicino ? 140 + caso() * 116 : caso() * 256); src[i * 3 + 2] = Math.floor(caso() * (vicino ? 120 : 256));
+  }
+  for (const k of [{ colore: '#00ff00', simile: 0.3, morbido: 0.1 }, { colore: '#22cc44', simile: 0.15, morbido: 0 }, { colore: '#00b140', simile: 0.4, morbido: 0.25 }]) {
+    const ff = execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', '64x64', '-i', 'pipe:0', '-vf', filtroChiave(k, false), '-f', 'rawvideo', '-pix_fmt', 'rgba', 'pipe:1'], { input: src, maxBuffer: 1e7 });
+    const d = new Uint8ClampedArray(N * 4);
+    for (let i = 0; i < N; i++) { d[i * 4] = src[i * 3]; d[i * 4 + 1] = src[i * 3 + 1]; d[i * 4 + 2] = src[i * 3 + 2]; d[i * 4 + 3] = 255; }
+    chiaveColore(d, [1, 3, 5].map((o) => parseInt(k.colore.slice(o, o + 2), 16)), k.simile, k.morbido);
+    let peggio = 0;
+    for (let i = 0; i < N; i++) peggio = Math.max(peggio, Math.abs(d[i * 4 + 3] - ff[i * 4 + 3]));
+    assert.ok(peggio <= 1, `${k.colore} ${k.simile}/${k.morbido}: scarto ${peggio}`);
+  }
+});
+
+test('con ffmpeg vero: un video col fondo verde esce trasparente, e uno gia\' trasparente non perde niente', { skip: !ffmpeg && 'ffmpeg non c\'e\' su questa macchina' }, async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'andrybot-chiave-'));
+  try {
+    const verde = "color=c=0x00b140:s=320x240:d=1:r=10,format=rgba,geq=r='if(lt(hypot(X-160,Y-120),60),230,0)':g='if(lt(hypot(X-160,Y-120),60),30,177)':b='if(lt(hypot(X-160,Y-120),60),40,64)':a='255'";
+    execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'lavfi', '-i', verde, '-c:v', 'libvpx-vp9', '-pix_fmt', 'yuv420p', join(dir, 'verde.webm')]);
+    const k = { colore: '#00b140', simile: 0.25, morbido: 0.08 };
+    const r = await comprimi(join(dir, 'verde.webm'), 'video/webm', dir, 'tolto', { latoImmagine: LATO_LIBRERIA, chiave: k });
+    assert.match(sondaDi(join(dir, r.file)), /alpha_mode\s*:\s*1/);
+    const alfa = (f) => { const px = execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-c:v', 'libvpx-vp9', '-i', f, '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'], { maxBuffer: 1e7 }); return (x, y) => px[(y * 320 + x) * 4 + 3]; };
+    const a = alfa(join(dir, r.file));
+    assert.equal(a(5, 5), 0, 'il verde e\' andato');
+    assert.equal(a(160, 120), 255, 'il soggetto resta');
+    const cerchio = "color=c=black@0.0:s=320x240:d=1:r=10,format=rgba,geq=r='if(lt(X,160),0,255)':g='if(lt(X,160),177,0)':b='0':a='if(lt(Y,60),0,255)'";
+    execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'lavfi', '-i', cerchio, '-c:v', 'prores_ks', '-profile:v', '4444', '-pix_fmt', 'yuva444p10le', join(dir, 'gia.mov')]);
+    const r2 = await comprimi(join(dir, 'gia.mov'), 'video/quicktime', dir, 'gia', { latoImmagine: LATO_LIBRERIA, chiave: { colore: '#00b100', simile: 0.2, morbido: 0.05 } });
+    const b = alfa(join(dir, r2.file));
+    assert.equal(b(300, 20), 0, 'la parte trasparente del file resta trasparente, anche dove non e\' verde');
+    assert.equal(b(20, 200), 0, 'il verde opaco se ne va');
+    assert.equal(b(300, 200), 255, 'il resto resta pieno');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('con ffmpeg vero: un\'immagine col fondo di un colore solo esce trasparente', { skip: !ffmpeg && 'ffmpeg non c\'e\' su questa macchina' }, async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'andrybot-chiave-img-'));
+  try {
+    const logo = "color=c=white:s=200x100,format=rgb24,geq=r='if(lt(hypot(X-100,Y-50),30),20,255)':g='if(lt(hypot(X-100,Y-50),30),20,255)':b='if(lt(hypot(X-100,Y-50),30),160,255)'";
+    execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'lavfi', '-i', logo, '-frames:v', '1', join(dir, 'logo.png')]);
+    const r = await comprimi(join(dir, 'logo.png'), 'image/png', dir, 'logo', { latoImmagine: LATO_LIBRERIA, chiave: { colore: '#ffffff', simile: 0.1, morbido: 0.05 } });
+    assert.match(r.file, /\.webp$/);
+    const px = execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-i', join(dir, r.file), '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'], { maxBuffer: 1e7 });
+    assert.equal(px[(5 * 200 + 5) * 4 + 3], 0, 'il fondo bianco e\' andato');
+    assert.equal(px[(50 * 200 + 100) * 4 + 3], 255, 'il logo resta');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+// Con uno sfondo da togliere niente si tiene com'e'. Un WebP animato lo legge
+// ffmpeg 9 fotogramma per fotogramma (decodificatore webp_anim) e diventa un
+// video trasparente che si muove ancora, con la trasparenza del file. Un AVIF
+// no: ffmpeg ne legge l'alfa come un flusso a parte e non la applica, allora
+// il caricamento lo dice invece di rovinarlo; senza fondo da togliere passa.
+const conWebpAnimato = ffmpeg && (() => { try { return /webp_anim/.test(execFileSync('ffmpeg', ['-hide_banner', '-decoders'], { encoding: 'utf8' })); } catch { return false; } })();
+test('con ffmpeg vero: un WebP animato col fondo da togliere diventa un video che si muove, e un AVIF lo dice', { skip: !conWebpAnimato && 'qui manca ffmpeg col decodificatore dei WebP animati (quello del Dockerfile ce l\'ha)' }, async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'andrybot-chiave-anim-'));
+  try {
+    const giro = "color=c=0x00b140:s=160x120:d=1:r=10,format=rgba,geq=r='if(lt(hypot(X-80-20*sin(T*6),Y-60),30),230,0)':g='if(lt(hypot(X-80-20*sin(T*6),Y-60),30),30,177)':b='if(lt(hypot(X-80-20*sin(T*6),Y-60),30),40,64)':a='if(lt(Y,10),0,255)'";
+    execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'lavfi', '-i', giro, '-c:v', 'libwebp_anim', '-loop', '0', join(dir, 'giro.webp')]);
+    const r = await comprimi(join(dir, 'giro.webp'), 'image/webp', dir, 'giro', { latoImmagine: LATO_LIBRERIA, chiave: { colore: '#00b140', simile: 0.2, morbido: 0.05 } });
+    assert.equal(r.tipo, 'video');
+    assert.match(r.file, /\.webm$/);
+    assert.match(sondaDi(join(dir, r.file)), /alpha_mode\s*:\s*1/);
+    const fotogramma = (n) => { const px = execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-c:v', 'libvpx-vp9', '-i', join(dir, r.file), '-vf', `select=eq(n\\,${n})`, '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'], { maxBuffer: 1e7 }); return (x, y) => px[(y * 160 + x) * 4 + 3]; };
+    const primo = fotogramma(0), dopo = fotogramma(3);
+    assert.equal(primo(5, 5), 0, 'la fascia trasparente del file resta trasparente');
+    assert.equal(primo(130, 60), 0, 'il verde e\' andato');
+    assert.equal(primo(55, 60), 255, 'il soggetto resta');
+    assert.equal(dopo(55, 60), 0, 'e si muove: tre fotogrammi dopo li\' c\'e\' il fondo, tolto');
+    execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'lavfi', '-i', 'color=c=0x00b140:s=64x64', '-frames:v', '1', '-c:v', 'libaom-av1', '-still-picture', '1', join(dir, 'fermo.avif')]);
+    copyFileSync(join(dir, 'fermo.avif'), join(dir, 'fermo2.avif'));
+    await assert.rejects(comprimi(join(dir, 'fermo.avif'), 'image/avif', dir, 'f1', { latoImmagine: LATO_LIBRERIA, chiave: { colore: '#00b140' } }), /da un AVIF lo sfondo non si toglie/);
+    const tenuto = await comprimi(join(dir, 'fermo2.avif'), 'image/avif', dir, 'f2', { latoImmagine: LATO_LIBRERIA });
+    assert.equal(tenuto.file, 'f2.avif');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+// Il ritmo di un'immagine animata (docs/EFFETTI-SCHERMO.md): in onda ogni
+// fotogramma dura quanto nel browser, che tiene 100 ms quelli da 10 ms o meno,
+// e l'anteprima del pannello usa la stessa regola (presa da app.js cosi'
+// com'e'). Il WebP animato passa col fondo da togliere: senza, si tiene com'e'
+// e lo anima il browser da solo, con la sua regola.
+const attesaFotogramma = (() => { const m = /const _attesaFotogramma = (\([^;]*\));/.exec(APP); return new Function('return ' + m[1])(); })();
+test('con ffmpeg vero: un\'immagine animata va in onda col ritmo del browser, e l\'anteprima tiene lo stesso', { skip: !conWebpAnimato && 'qui manca ffmpeg col decodificatore dei WebP animati (quello del Dockerfile ce l\'ha)' }, async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'andrybot-ritmo-'));
+  try {
+    const giro = (r) => `color=c=black:s=16x16:r=${r}:d=0.2,format=rgb24,geq=r='if(mod(N,2),20,230)':g='40':b='if(mod(N,2),230,20)'`;
+    const fai = (nome, r, arg) => execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'lavfi', '-i', giro(r), ...arg, join(dir, nome)]);
+    fai('g10.gif', 100, ['-f', 'gif']); fai('g20.gif', 50, ['-f', 'gif']);
+    fai('w5.webp', 200, ['-c:v', 'libwebp_anim']); fai('w20.webp', 50, ['-c:v', 'libwebp_anim']);
+    fai('a50.png', 20, ['-f', 'apng']);
+    const zero = Buffer.from(readFileSync(join(dir, 'a50.png')));
+    for (let i = 8; i < zero.length;) {
+      const n = zero.readUInt32BE(i);
+      if (zero.toString('latin1', i + 4, i + 8) === 'fcTL') { zero.writeUInt16BE(0, i + 28); zero.writeUInt32BE(crc32(zero.subarray(i + 4, i + 8 + n)), i + 8 + n); }
+      i += 12 + n;
+    }
+    writeFileSync(join(dir, 'a0.png'), zero);
+    const niente = { colore: '#000000', simile: 0.01, morbido: 0 };
+    for (const [f, t, scritto] of [['g10.gif', 'image/gif', 10], ['g20.gif', 'image/gif', 20], ['w5.webp', 'image/webp', 5], ['w20.webp', 'image/webp', 20], ['a0.png', 'image/png', 0], ['a50.png', 'image/png', 50]]) {
+      const r = await comprimi(join(dir, f), t, dir, 'r_' + f.replace('.', '_'), { latoImmagine: LATO_LIBRERIA, chiave: t === 'image/webp' ? niente : null });
+      assert.equal(r.tipo, 'video', f);
+      const info = spawnSync('ffmpeg', ['-hide_banner', '-i', join(dir, r.file), '-vf', 'showinfo', '-f', 'null', '-'], { encoding: 'utf8' }).stderr;
+      const pts = [...String(info).matchAll(/pts_time:([0-9.]+)/g)].map((m) => Number(m[1]) * 1000);
+      assert.ok(pts.length >= 2, `${f}: fotogrammi ${pts.length}`);
+      assert.ok(Math.abs(pts[1] - pts[0] - attesaFotogramma(scritto)) < 1.5, `${f}: scritto ${scritto} ms, in onda ${pts[1] - pts[0]} ms, nel pannello ${attesaFotogramma(scritto)} ms`);
+    }
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+

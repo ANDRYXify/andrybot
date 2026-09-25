@@ -135,14 +135,30 @@ function sonda(percorso) {
 }
 
 // Da dove leggere: il file, col decodificatore giusto davanti, e se un'immagine
-// e' in realta' un'animazione (APNG) va per la strada dei video. `s` e' quello
-// che la sonda ha visto: serve dopo, a controllare che la trasparenza arrivi.
+// e' in realta' un'animazione (APNG, o un WebP animato a cui togliere lo
+// sfondo) va per la strada dei video. `s` e' quello che la sonda ha visto:
+// serve dopo, a controllare che la trasparenza arrivi.
+const CODEC_ANIMATI = new Set(['apng', 'webp_anim']);
 async function ingresso(tempPath, tipo) {
   if (tipo === 'audio') return { tipo, dentro: ['-i', tempPath], s: null };
   const s = await sonda(tempPath);
   if (s && !s.codec) throw new Error(`questo file non lo so leggere: vanno bene ${FORMATI_LETTI}`);
-  return { tipo: tipo === 'immagine' && s?.codec === 'apng' ? 'video' : tipo, dentro: [...decodificatore(s || {}), '-i', tempPath], s };
+  const ritmo = s?.codec === 'apng' ? ['-default_fps', '10'] : [];
+  return { tipo: tipo === 'immagine' && CODEC_ANIMATI.has(s?.codec) ? 'video' : tipo, dentro: [...decodificatore(s || {}), ...ritmo, '-i', tempPath], s };
 }
+
+// IL RITMO DI UN'IMMAGINE ANIMATA (docs/EFFETTI-SCHERMO.md). I browser tengono
+// 100 ms ogni fotogramma di una GIF, di un PNG animato o di un WebP animato
+// che dichiara 10 ms o meno (la regola di Firefox, WebKit e Chromium, WebKit
+// bug 36082): e' cosi' che lo streamer quel file l'ha sempre visto. ffmpeg
+// invece tiene il valore scritto, e una GIF da un centesimo andava in onda
+// dieci volte piu' veloce. Diventando video i tempi si riscrivono con la stessa
+// regola: il fotogramma n parte quando e' finito il precedente, con la durata
+// del precedente corretta. Per un PNG animato con durata zero ffmpeg userebbe
+// 1/15 di secondo: si chiede 1/10 (-default_fps 10), come il browser. I video
+// veri non si toccano: a 120 fps un fotogramma dura 8 ms davvero.
+const IMMAGINI_ANIMATE = new Set(['gif', 'apng', 'webp_anim']);
+export const RITMO_BROWSER = "setpts='if(eq(N,0),0,PREV_OUTPTS+if(lte((PTS-PREV_INPTS)*TB,0.010001),0.1/TB,PTS-PREV_INPTS))'";
 
 // Il tipo: dal nome che il browser da', e se non ne da' uno che conosciamo,
 // da quello che c'e' dentro.
@@ -159,6 +175,29 @@ async function tipoDi(tempPath, tipoDichiarato) {
 // AlphaMode del WebM che il browser legge per sapere che c'e' la trasparenza:
 // il video restava trasparente dentro e usciva nero in onda. E dai media
 // caricati spariscono anche posizione, dispositivo e autore.
+
+// TOGLIERE UNO SFONDO A TINTA UNITA (docs/EFFETTI-SCHERMO.md, «Lo sfondo da
+// togliere»). Il filtro colorkey di ffmpeg: per ogni pixel la distanza dal
+// colore scelto nello spazio RGB, d = sqrt((dr²+dg²+db²) / (3·255²)); sotto
+// «simile» e' trasparente, fra simile e simile+morbido sfuma, sopra resta. Il
+// pannello mostra l'anteprima con la stessa formula (chiaveColore in app.js),
+// e un test la confronta con ffmpeg pixel per pixel.
+// colorkey sovrascrive la trasparenza che c'e' gia': su un file gia'
+// trasparente il fondo diventerebbe nero. Allora l'alfa finale e' la minore
+// fra quella del file e quella del colore tolto, come nell'anteprima.
+export function normChiave(x) {
+  if (!x || typeof x !== 'object') return null;
+  const colore = String(x.colore || '').toLowerCase();
+  if (!/^#[0-9a-f]{6}$/.test(colore)) return null;
+  const num = (v, a, b, d) => { const n = Number(v); return Number.isFinite(n) ? Math.round(Math.min(b, Math.max(a, n)) * 100) / 100 : d; };
+  return { colore, simile: num(x.simile, 0.01, 0.6, 0.25), morbido: num(x.morbido, 0, 0.4, 0.08) };
+}
+export function filtroChiave(k, conAlfa) {
+  const ck = `colorkey=0x${k.colore.slice(1)}:${k.simile}:${k.morbido}`;
+  return conAlfa
+    ? `format=rgba,split[o][k];[k]${ck},alphaextract[ka];[o]split[o1][o2];[o1]alphaextract[oa];[oa][ka]blend=all_mode=darken[a];[o2][a]alphamerge`
+    : `format=rgba,${ck}`;
+}
 
 // VP9 in onda: 4:2:0 a 8 bit, con l'alfa o senza. La scelta non la fa il
 // codificatore (ffmpeg 9 gli farebbe prendere un 4:4:4 a 12 bit, che poi
@@ -249,11 +288,17 @@ async function verificaOutput(percorso) {
 // Comprime `tempPath` (file appena caricato) in `destDir` con nome basato su `id`.
 // `tipoDichiarato` è il mimetype (o un nome file) usato per capire audio/immagine/video.
 // Ritorna { tipo, file, durata } oppure lancia un errore. Cancella SEMPRE il tempPath.
-export async function comprimi(tempPath, tipoDichiarato, destDir, id, { latoImmagine = IMG_MAX_LATO } = {}) {
+export async function comprimi(tempPath, tipoDichiarato, destDir, id, { latoImmagine = IMG_MAX_LATO, chiave = null } = {}) {
   try {
     const tipo0 = await tipoDi(tempPath, tipoDichiarato);
+    // Con uno sfondo da togliere niente si tiene com'e'. Un WebP animato lo
+    // legge ffmpeg 9 fotogramma per fotogramma, alfa compresa, e diventa un
+    // video. Un AVIF no: ffmpeg ne legge la trasparenza come un flusso a parte
+    // e non la applica, e togliendo il fondo si perderebbe quella del file.
+    const k = normChiave(chiave);
     const tenuto = tipo0 === 'immagine' ? TENUTO_COM_E(await testaDi(tempPath)) : '';
-    if (tenuto) {
+    if (k && tenuto === 'avif') throw new Error('da un AVIF lo sfondo non si toglie: caricalo com\'è, o esportalo in PNG, WebP o video e riprova');
+    if (tenuto && !k) {
       const { size } = await stat(tempPath);
       if (size > WEBP_ANIMATO_MAX) throw new Error(`${tenuto === 'webp' ? 'WebP animato' : 'AVIF'} troppo pesante: tienilo sotto gli 8 MB, o caricalo come GIF o video`);
       const file = `${id}.${tenuto}`;
@@ -285,7 +330,7 @@ export async function comprimi(tempPath, tipoDichiarato, destDir, id, { latoImma
       const out = join(destDir, file);
       await eseguiFfmpeg([
         '-y', ...dentro, '-map_metadata', '-1',
-        '-vf', `scale='min(${latoImmagine},iw)':'min(${latoImmagine},ih)':force_original_aspect_ratio=decrease`,
+        '-vf', `${k ? filtroChiave(k, !!s?.alfa) + ',' : ''}scale='min(${latoImmagine},iw)':'min(${latoImmagine},ih)':force_original_aspect_ratio=decrease`,
         '-frames:v', '1',
         '-c:v', 'libwebp', '-quality', String(IMG_QUALITA),
         out,
@@ -300,14 +345,14 @@ export async function comprimi(tempPath, tipoDichiarato, destDir, id, { latoImma
     await eseguiFfmpeg([
       '-y', ...dentro, '-map_metadata', '-1',
       '-t', String(VIDEO_MAX_S),
-      '-vf', `scale=-2:'min(${VIDEO_MAX_ALTEZZA},ih)',${PIXEL_VIDEO}`,
+      '-vf', `${IMMAGINI_ANIMATE.has(s?.codec) ? RITMO_BROWSER + ',' : ''}${k ? filtroChiave(k, !!s?.alfa) + ',' : ''}scale=-2:'min(${VIDEO_MAX_ALTEZZA},ih)',${PIXEL_VIDEO}`,
       '-c:v', 'libvpx-vp9', '-crf', String(VIDEO_CRF), '-b:v', '0',
       '-deadline', 'good', '-cpu-used', '4', '-row-mt', '1',
       '-c:a', 'libopus', '-b:a', AUDIO_BITRATE,
       out,
     ]);
     await verificaOutput(out);
-    await verificaAlfa(out, s);
+    await verificaAlfa(out, k ? { ...s, alfa: true } : s);
     const reale = await sondaDurataMs(out);
     const durata = Math.min(reale ?? VIDEO_MAX_S * 1000, VIDEO_MAX_S * 1000);
     return { tipo, file, durata };
