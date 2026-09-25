@@ -52,6 +52,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Chi chiede qualcosa in chat, come una classifica, come si usa un comando o quanto aspettare, riceve la risposta agganciata al suo messaggio. Le classifiche dicono anche dove sta lui.
 - Il blackjack dice il conto per intero: quanto ti torna, cosa c'è dentro e quante monete hai adesso. Se il bot si riavvia con una mano aperta, lo dice in chat quando rende la puntata.
 - Fra i comandi dei giochi la pesca non porta più l'etichetta «costa monete»: non ne è mai costata.
+- Chi toglie e rimette il follow non fa più partire avvisi, ringraziamenti e conti da follower nuovo. Chi torna a seguirti dopo tre mesi viene salutato con un bentornato.
 
 ## 2026-09-24
 

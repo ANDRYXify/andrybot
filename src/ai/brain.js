@@ -305,6 +305,14 @@ const EV_FOLLOW = [
   '{nome} ha premuto follow! Ottima scelta, resta con noi 😎',
   'Nuovo follower: {nome}! Grazie, ci fa piacere averti qui 🤗',
 ];
+// Chi torna a seguire dopo mesi: non e' nuovo, e' tornato. Parole che vanno
+// bene per chiunque, perche' di chi torna non si sa se e' lui o lei.
+const EV_RITORNO = [
+  'Che bello rivederti, {nome}! 💜',
+  '{nome} è di nuovo dei nostri, che piacere! ✨',
+  'Guarda chi si rivede: ciao di nuovo, {nome}! 🙌',
+  'Rieccoti, {nome}! Fatti sentire in chat 😄',
+];
 const EV_SUB = [
   'Grazie della sub{tier}, {nome}! Sei un grande 💜',
   '{nome} con la sub{tier}! Grazie di cuore 🙌',
@@ -1551,6 +1559,11 @@ export class Brain {
         case 'channel.follow': {
           if (!data.user_name) return;
           testo = compila(scegli(EV_FOLLOW), { nome: data.user_name });
+          break;
+        }
+        case 'channel.follow.ritorno': {
+          if (!data.user_name) return;
+          testo = compila(scegli(EV_RITORNO), { nome: data.user_name });
           break;
         }
         case 'channel.subscribe': {

@@ -695,6 +695,15 @@ CREATE TABLE IF NOT EXISTS point_alerts (    -- premi a PUNTI CANALE Twitch → 
   PRIMARY KEY (channel, reward_id)
 );
 
+CREATE TABLE IF NOT EXISTS seguiti (         -- chi ha gia' seguito il canale: un follow ripetuto non e' un follower nuovo
+  channel TEXT NOT NULL,
+  chi TEXT NOT NULL,                         -- 'twitch:<id>' | 'kick:<nome>'
+  primo INTEGER NOT NULL,                    -- la prima volta che l'abbiamo visto seguire
+  ultimo INTEGER NOT NULL,                   -- l'ultima volta che SAPPIAMO che seguiva (un follow, o la semina)
+  volte INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY (channel, chi)
+);
+
 CREATE TABLE IF NOT EXISTS stato_vivo (      -- lo stato dei motori che deve sopravvivere a un riavvio
   channel TEXT NOT NULL,
   chiave TEXT NOT NULL,                      -- 'giveaway' | 'penitenza' | 'assetto' | 'ritmo'
@@ -4616,6 +4625,27 @@ export const modules = {
 // che il canale ha imparato — se sta solo in memoria sparisce a ogni
 // pubblicazione. Qui c'e' la casa comune: una riga per canale e chiave, dentro
 // il JSON che il motore si e' scritto da se'. Nessuno legge il JSON di un altro.
+
+// CHI HA GIA' SEGUITO. Lo store e' muto: cos'e' un ritorno lo decide
+// features/seguiti.js. Twitch non dice quando uno smette di seguire, quindi
+// l'unica cosa che si sa e' l'ultima volta che seguiva.
+export const seguiti = {
+  get(channel, chi) {
+    return db.prepare('SELECT primo, ultimo, volte FROM seguiti WHERE channel=? AND chi=?')
+      .get(String(channel || '').toLowerCase(), String(chi || '')) || null;
+  },
+  segna(channel, chi, ora) {
+    db.prepare(`INSERT INTO seguiti (channel, chi, primo, ultimo, volte) VALUES (?,?,?,?,1)
+      ON CONFLICT(channel, chi) DO UPDATE SET ultimo=excluded.ultimo, volte=seguiti.volte+1`)
+      .run(String(channel || '').toLowerCase(), String(chi || ''), ora, ora);
+  },
+  // Chi segue adesso, preso da Twitch una volta: chi c'e' gia' resta com'e'.
+  semina(channel, chiList, ora) {
+    const ins = db.prepare('INSERT OR IGNORE INTO seguiti (channel, chi, primo, ultimo, volte) VALUES (?,?,?,?,1)');
+    const tutto = db.transaction((l) => { for (const chi of l) ins.run(String(channel || '').toLowerCase(), String(chi || ''), ora, ora); });
+    tutto(chiList || []);
+  },
+};
 
 export const statoVivo = {
   leggi(channel, chiave) {

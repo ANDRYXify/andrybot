@@ -87,6 +87,7 @@ import * as modalitaFeat from './features/modalita-chat.js';
 import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
 import * as bjFeat from './features/blackjack.js';
+import * as seguitiFeat from './features/seguiti.js';
 
 const log = makeLog('bot');
 const BOSS_DOPO_RAID_MS = 20_000;
@@ -850,6 +851,9 @@ export class BotManager {
         const u = this.units.get(login); if (u) u.connesso = true;
         for (const r of this._bjRese.get(login) || []) this.say(login, bjFeat.testoRimborso(r));
         this._bjRese.delete(login);
+        // chi segue gia' il canale, ricordato una volta: il suo prossimo follow
+        // non e' nuovo (features/seguiti.js)
+        seguitiFeat.semina(this.helix, login).catch((e) => log.debug(`#${login} semina dei follower:`, e?.message || e));
         this.events.watch(s).catch?.(() => {});
         log.info(`Unità attiva per #${login} (parla come @${login})`);
       } catch (e) {
@@ -1202,6 +1206,15 @@ export class BotManager {
       // esplosione sul muro delle emote, se il premio e' fra quelli scelti
       try { this.muro?.suPremio(channel, data); } catch (e) { log.debug(`#${channel} muro premio:`, e?.message || e); }
     }
+    // Chi toglie e rimette il follow non e' un follower nuovo (features/seguiti.js):
+    // il ripetuto si ferma qui, il ritorno cambia tipo prima di chiunque.
+    if (type === 'channel.follow') {
+      let come = 'nuovo';
+      try { come = seguitiFeat.classifica(channel, 'twitch', data?.user_id || data?.user_login); }
+      catch (e) { log.error(`#${channel} follow:`, e?.message || e); }
+      if (come === 'ripetuto') { log.debug(`#${channel} follow ripetuto di ${data?.user_login || '?'}: non e' nuovo`); return; }
+      if (come === 'ritorno') { this._dispatchEvent({ ...ev, type: 'channel.follow.ritorno' }); return; }
+    }
     this._dispatchEvent(ev);
   }
 
@@ -1500,6 +1513,9 @@ export class BotManager {
         regali: 'channel.subscription.gift',
       };
       const type = comeTwitch[ev.tipo];
+      // anche su Kick un follow ripetuto non e' un follower nuovo, e un ritorno
+      // non ha un avviso da follower
+      if (ev.tipo === 'seguito' && seguitiFeat.classifica(ev.channel, ev.piattaforma || 'kick', ev.utente) !== 'nuovo') return;
       if (type) {
         this.alerts?.onEvent({
           channel: ev.channel,
