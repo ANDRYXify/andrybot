@@ -6761,6 +6761,12 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // ------------------------------------------------------------ API effetti & suoni
 
   const disegnoDi = (e) => { try { return normDisegno(JSON.parse(e.disegno || '{}')); } catch { return normDisegno({}); } };
+  // l'audio del canale che un disegno usa come suono, per sentirlo nell'anteprima
+  const disegnoSuonoUrl = (login, e) => {
+    const m = /^effetto:(.+)$/.exec(disegnoDi(e).suono);
+    const a = m ? effectsDb.get(login, m[1]) : null;
+    return a && a.tipo === 'audio' && a.file ? effects.mediaUrl(login, a.file) : '';
+  };
 
   // elenco effetti + URL dell'overlay della diretta (con la chiave del canale)
   app.get('/api/streamer/effetti', requireLogin, wrap(async (req, res) => {
@@ -6773,6 +6779,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       // libreria condivisa
       pubblico: !!e.pubblico, nome: e.nome || '', combo: !!e.suono_file,
       url: e.file ? effects.mediaUrl(login, e.file) : '',
+      suonoUrl: e.suono_file ? effects.mediaUrl(login, e.suono_file) : (e.tipo === 'disegno' ? disegnoSuonoUrl(login, e) : ''),
       // dove appare un media visivo, e i parametri di un effetto disegnato
       schermo: e.schermo || '',
       disegno: e.tipo === 'disegno' ? disegnoDi(e) : null,

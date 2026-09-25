@@ -65,6 +65,8 @@ const ROTTURE = [
     'un disegno che non disegna niente'],
   ['src/web/public/overlay-app.js', "    else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno') { if (mostra('effetti')) {", "    else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno') { if (true) {",
     'a tutto schermo parte anche dove gli effetti sono spenti'],
+  ['src/web/public/app.js', "    if (e.tipo === 'video') {\n      const v = document.createElement('video');", "    if (false) {\n      const v = document.createElement('video');",
+    'nell\'anteprima del pannello il video non si vede'],
 ];
 
 // --selftest prova tutte le rotture; --selftest=<parola> solo quelle la cui
@@ -873,6 +875,49 @@ try {
     && pannello.neve.quanti && pannello.neve.max === '30' && pannello.dove === 'riempi' && pannello.salvati === 1 && /!festa/.test(pannello.modifica),
   'nel pannello gli otto effetti pronti si vedono davvero, il lampo non ha «quanti», un disegno salvato torna nella lista e si riapre per modificarlo, e un video dice dove appare',
   JSON.stringify(pannello));
+  // L'anteprima nel pannello: prima c'erano solo i suoni, e i video andavano
+  // all'overlay senza che nel pannello si vedesse niente. Un WebM trasparente
+  // vero (uscito dalla compressione, scripts/campioni) deve suonare nel
+  // pannello, coprire la scena intera se e' a tutto schermo e lasciar vedere
+  // il fondo dove e' trasparente; un disegno e un'immagine della libreria si
+  // vedono, e Esc chiude.
+  const CAMPIONE = readFileSync(join(RAD, 'scripts/campioni/cerchio-trasparente.webm')).toString('base64');
+  const anteprima = await ed.evaluate(async (b64) => {
+    const aspetta = (ms) => new Promise((r) => setTimeout(r, ms));
+    const url = URL.createObjectURL(new Blob([Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))], { type: 'video/webm' }));
+    const chiudi = anteprimaEffetto({ tipo: 'video', url, schermo: 'intero', volume: 0, comando: 'prova' });
+    await aspetta(900);
+    const v = document.querySelector('.ant-velo .ant-dentro video');
+    const out = { video: !!v };
+    if (v) {
+      const sc = document.querySelector('.ant-scena').getBoundingClientRect(), vr = v.getBoundingClientRect();
+      const t = document.createElement('canvas'); t.width = v.videoWidth; t.height = v.videoHeight;
+      const x = t.getContext('2d'); x.drawImage(v, 0, 0);
+      out.suona = !v.paused && v.currentTime > 0.2;
+      out.copre = Math.abs(vr.width - sc.width) < 2 && Math.abs(vr.height - sc.height) < 2;
+      out.alfa = [x.getImageData(2, 2, 1, 1).data[3], x.getImageData(Math.round(t.width / 2), Math.round(t.height / 2), 1, 1).data[3]];
+    }
+    chiudi();
+    await aspetta(500);
+    document.querySelector('#lista-effetti [data-modifica-pronto]')?.closest('li')?.querySelector('[data-prova]')?.click();
+    await aspetta(2600);
+    const tela = document.querySelector('.ant-velo canvas.ant-tela');
+    if (tela) { const d = tela.getContext('2d').getImageData(0, 0, tela.width, tela.height).data; let n = 0; for (let i = 3; i < d.length; i += 4 * 61) if (d[i]) n++; out.disegno = n; }
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await aspetta(500);
+    out.chiusa = !document.querySelector('.ant-velo');
+    const g = document.querySelector('#lib-griglia .lib-card[data-tipo="immagine"] .lib-guarda');
+    g?.click();
+    await aspetta(600);
+    const im = document.querySelector('.ant-velo .ant-dentro img');
+    out.immagine = !!(im && im.naturalWidth > 0);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await aspetta(400);
+    return out;
+  }, CAMPIONE);
+  dice(anteprima.video && anteprima.suona && anteprima.copre && anteprima.alfa?.[0] === 0 && anteprima.alfa?.[1] === 255 && anteprima.disegno > 20 && anteprima.chiusa && anteprima.immagine,
+    'l\'anteprima nel pannello: un video trasparente parte, copre la scena a tutto schermo e lascia vedere il fondo, un disegno si disegna, un\'immagine della libreria si vede, ed Esc chiude',
+    JSON.stringify(anteprima));
   await ed.evaluate(() => window.SB_APP.vai('alert'));
 
   dice(erroriEd.length === 0, 'l\'editor non ha errori', erroriEd.slice(0, 2).join(' | '));

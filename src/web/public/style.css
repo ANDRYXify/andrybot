@@ -2522,3 +2522,21 @@ body:not(.con-nav) .salta { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .pronti-voce { transition: none; }
 }
+
+.bv-carta.ant-carta { width: min(900px, 100%); }
+.ant-scena { position: relative; aspect-ratio: 16 / 9; border-radius: var(--r-m); overflow: hidden; margin-top: .8rem; background-color: #1d1b24; background-image: conic-gradient(#2b2834 25%, #1d1b24 0 50%, #2b2834 0 75%, #1d1b24 0); background-size: 28px 28px; }
+.ant-dentro { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; container-type: size; }
+.ant-el { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 80cqw; max-height: 80cqh; transition: opacity .28s ease; }
+.ant-el.libero { max-width: none; max-height: 92cqh; }
+.ant-el.schermo { left: 0; top: 0; width: 100%; height: 100%; max-width: none; max-height: none; transform: none; }
+.ant-el.schermo.riempi { object-fit: cover; }
+.ant-el.schermo.intero { object-fit: contain; }
+.ant-el.esce { opacity: 0; }
+.ant-tela { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ant-suono, .ant-vuoto { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: #fff; font-size: 44px; text-align: center; padding: 60px; }
+.ant-suono svg { width: 220px; height: 220px; animation: ant-pulsa 1.1s ease-in-out infinite; }
+@keyframes ant-pulsa { 50% { transform: scale(1.12); opacity: .7; } }
+@media (prefers-reduced-motion: reduce) {
+  .ant-suono svg { animation: none; }
+  .ant-el { transition: none; }
+}

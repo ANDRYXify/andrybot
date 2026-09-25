@@ -16623,7 +16623,11 @@ async function caricaSuoniPremi() {
     li.querySelector('.prova-suono').addEventListener('click', () => {
       const v = sel.value;
       if (v && !v.startsWith('effetto:') && window.SUONI_PRESET) window.SUONI_PRESET.suona(v, 100);
-      else if (v) api('/api/streamer/effetti/test', { method: 'POST', body: { comando: comandoSel() } }).then(() => toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'))).catch(() => toast(L('Apri prima l\'overlay in OBS.', 'Open the overlay in OBS first.', 'Abre antes el overlay en OBS.')));
+      else if (v) conErrore(async () => {
+        const e = ((await api('/api/streamer/effetti')).effetti || []).find((x) => x.comando === comandoSel());
+        if (!e) { toast(L('Questo effetto non c’è più.', 'This effect is gone.', 'Este efecto ya no está.'), 'errore'); return; }
+        anteprimaEffetto(e, { xy: e.schermo ? null : st.xy });
+      });
       else toast(L('Scegli prima un effetto.', 'Choose an effect first.', 'Elige antes un efecto.'));
     });
     li.querySelector('.sel-lib').addEventListener('click', () => conErrore(async () => {
@@ -24743,6 +24747,8 @@ function attivaPiattaforma() {
       const imp = ev.target.closest('.lib-importa');
       const play = ev.target.closest('.lib-play');
       const cond = ev.target.closest('.lib-cond');
+      const guarda = ev.target.closest('.lib-guarda');
+      if (guarda) { const it = _libMostrati.find((x) => x.id === Number(guarda.dataset.id)); if (it) anteprimaEffetto(it, { comando: it.mio ? it.comando : '' }); return; }
       if (imp) conErrore(() => importaLibreria(imp.dataset.id, imp));
       else if (cond) conErrore(() => condividiMedia(cond));
       else if (play) { try { const a = new Audio(play.dataset.audio); a.play().catch(() => {}); } catch (e) {  } }
@@ -25865,6 +25871,120 @@ function _controllaSgranata(el, e) {
   else if (e.tipo === 'video') { const v = document.createElement('video'); v.preload = 'metadata'; v.muted = true; v.onloadedmetadata = () => dimmi(v.videoWidth, v.videoHeight); v.src = e.url; }
 }
 
+function _anteDove(e) {
+  if (e.tipo === 'disegno') return L('a tutto schermo', 'full screen', 'a pantalla completa');
+  if (e.tipo === 'audio') return L('si sente e non si vede', 'it is heard, not seen', 'se oye y no se ve');
+  if (e.schermo === 'riempi') return L('a tutto schermo, riempito', 'full screen, filled', 'a pantalla completa, rellenando');
+  if (e.schermo === 'intero') return L('a tutto schermo, intero', 'full screen, whole', 'a pantalla completa, entero');
+  if (e.xy && e.xy.x != null) return L('nel suo posto sullo schermo', 'in its own spot on the screen', 'en su sitio en la pantalla');
+  return L('al centro dell’area degli effetti dello Studio', 'in the middle of the Studio effects area', 'en el centro del área de efectos del Studio');
+}
+
+function anteprimaEffetto(e, { comando = e.comando || '', xy = null } = {}) {
+  const el = document.createElement('div');
+  el.className = 'bv-velo mdl-chiedi ant-velo';
+  const titolo = (comando ? '!' + comando + ' · ' : (e.nome ? e.nome + ' · ' : '')) + etTipoEffetto(e.tipo);
+  el.innerHTML = `<div class="bv-carta mdl-carta ant-carta" role="dialog" aria-modal="true" aria-labelledby="ant-titolo">
+    <h2 id="ant-titolo">${esc(titolo)}</h2>
+    <p class="bv-intro">${L('Come va in onda', 'How it goes on air', 'Cómo sale en directo')}: ${esc(_anteDove({ ...e, xy: xy || e.xy }))}.</p>
+    <div class="ant-scena" aria-hidden="true"><div class="ant-dentro"></div></div>
+    <div class="bv-azioni">
+      <button type="button" class="btn secondario" data-ant="rivedi">${_bIco('<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/>')}${L('Rivedi', 'Replay', 'Volver a ver')}</button>
+      ${comando && !DEMO ? `<button type="button" class="btn secondario" data-ant="manda">${L('Manda all’overlay', 'Send to the overlay', 'Enviar al overlay')}</button>` : ''}
+      <button type="button" class="btn" data-ant="chiudi">${L('Chiudi', 'Close', 'Cerrar')}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('dentro'));
+  const dentro = el.querySelector('.ant-dentro');
+  const scena = el.querySelector('.ant-scena');
+  const scala = () => { dentro.style.transform = `scale(${scena.clientWidth / OVL_W})`; };
+  scala();
+  const guarda = typeof ResizeObserver === 'function' ? new ResizeObserver(scala) : null;
+  if (guarda) guarda.observe(scena);
+  let ferma = [];
+  const pulisci = () => { ferma.forEach((f) => { try { f(); } catch (x) {  } }); ferma = []; dentro.innerHTML = ''; };
+  const suona = (url, vol) => { if (!url) return; const a = new Audio(url); a.volume = vol; a.play().catch(() => {}); ferma.push(() => { a.pause(); }); };
+  const vol = Math.max(0, Math.min(100, Number(e.volume ?? 100))) / 100;
+  const posa = (m) => {
+    m.classList.add('ant-el');
+    const pos = xy || e.xy;
+    if (e.schermo === 'riempi' || e.schermo === 'intero') m.classList.add('schermo', e.schermo);
+    else if (pos && pos.x != null) {
+      const f = _fatt(pos);
+      m.classList.add('libero');
+      m.style.left = pos.x + '%'; m.style.top = pos.y + '%';
+      m.style.transform = `translate(${_tiraXY(pos.x, f)}%,${_tiraXY(pos.y, f)}%) scale(${f}) rotate(${Number(pos.r) || 0}deg)`;
+    }
+    dentro.appendChild(m);
+  };
+  const url = e.url || (DEMO && e.tipo === 'immagine' ? EFFETTO_ESEMPIO : '');
+  const vai = () => {
+    pulisci();
+    if (e.tipo === 'disegno' && window.SB_DISEGNATI) {
+      const tela = document.createElement('canvas');
+      tela.className = 'ant-tela';
+      dentro.appendChild(tela);
+      const d = e.disegno || {};
+      if (/^effetto:/.test(d.suono || '')) suona(e.suonoUrl, vol);
+      else if (d.suono && window.SUONI_PRESET) window.SUONI_PRESET.suona(d.suono, vol * 100);
+      if (_menoMoto) window.SB_DISEGNATI.fermo(tela, d, 5, 0.45);
+      else ferma.push(window.SB_DISEGNATI.anima(tela, d, (Date.now() & 0xffff) + 1));
+      return;
+    }
+    if (e.tipo === 'audio') {
+      const a = document.createElement('div');
+      a.className = 'ant-suono';
+      a.innerHTML = `<svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${LIB_ONDA}</svg>`;
+      dentro.appendChild(a);
+      suona(e.url || e.suonoUrl, vol);
+      return;
+    }
+    if (!url) {
+      const p = document.createElement('p');
+      p.className = 'ant-vuoto';
+      p.textContent = DEMO ? L('In demo il media non c’è: accedi per vederlo.', 'In the demo the medium is not there: log in to see it.', 'En la demo el medio no está: inicia sesión para verlo.') : L('Questo media non si trova più.', 'This medium can no longer be found.', 'Este medio ya no se encuentra.');
+      dentro.appendChild(p);
+      return;
+    }
+    if (e.tipo === 'video') {
+      const v = document.createElement('video');
+      v.src = url; v.playsInline = true; v.volume = vol; v.preload = 'auto';
+      posa(v);
+      v.play().catch(() => { v.muted = true; v.play().catch(() => {}); });
+      ferma.push(() => { v.pause(); v.removeAttribute('src'); v.load(); });
+    } else {
+      const im = document.createElement('img');
+      im.src = url; im.alt = '';
+      posa(im);
+      const t = setTimeout(() => im.classList.add('esce'), Math.max(500, Number(e.durata) || 5000));
+      ferma.push(() => clearTimeout(t));
+    }
+    if (e.suonoUrl) suona(e.suonoUrl, vol);
+  };
+  let chiuso = false;
+  const via = () => {
+    if (chiuso) return; chiuso = true;
+    pulisci();
+    if (guarda) guarda.disconnect();
+    document.removeEventListener('keydown', tasti, true);
+    el.classList.remove('dentro');
+    setTimeout(() => el.remove(), _duraUscita() + 20);
+  };
+  const tasti = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); via(); } };
+  document.addEventListener('keydown', tasti, true);
+  el.addEventListener('click', (ev) => { if (ev.target === el) via(); });
+  el.querySelector('[data-ant="chiudi"]').addEventListener('click', via);
+  el.querySelector('[data-ant="rivedi"]').addEventListener('click', vai);
+  el.querySelector('[data-ant="manda"]')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/streamer/effetti/test', { method: 'POST', body: { comando } });
+    toast(L('Effetto inviato all\'overlay (aprilo per vederlo)', 'Effect sent to the overlay (open it to see it)', 'Efecto enviado al overlay (ábrelo para verlo)'));
+  }));
+  el.querySelector('[data-ant="chiudi"]').focus();
+  vai();
+  return via;
+}
+
 async function caricaEffetti() {
   const ul = document.getElementById('lista-effetti');
   if (!ul) return;
@@ -25925,10 +26045,8 @@ async function caricaEffetti() {
       const del = ev.target.closest('[data-elimina-eff]');
       const pub = ev.target.closest('[data-pubblica]');
       if (prova) {
-        conErrore(async () => {
-          await api('/api/streamer/effetti/test', { method: 'POST', body: { comando: prova.dataset.prova } });
-          toast(L('Effetto inviato all\'overlay (aprilo per vederlo)', 'Effect sent to the overlay (open it to see it)', 'Efecto enviado al overlay (ábrelo para verlo)'));
-        });
+        const e = dati.effetti.find((x) => x.comando === prova.dataset.prova);
+        if (e) anteprimaEffetto(e);
       } else if (del) {
         conErrore(async () => {
           if (!(await chiediSe({ titolo: L('Elimino questo effetto?', 'Delete this effect?', '¿Elimino este efecto?'), pericolo: true,
@@ -25959,6 +26077,7 @@ async function caricaEffetti() {
 
 let _libTipo = '';
 let _libMiei = false;
+let _libMostrati = [];
 let _libCercaTimer = null;
 
 const LIB_ONDA = '<path d="M3 12h2.2l1.9-6 2.6 12 2.4-9 2 6 1.6-3H21"/>';
@@ -25971,8 +26090,9 @@ function libMediaHtml(it) {
 
 function libItemHtml(it, azione) {
   const media = libMediaHtml(it);
-  const audio = (it.tipo === 'audio' || it.combo)
-    ? `<button type="button" class="btn secondario mini lib-play ico-sola" data-audio="${esc(it.suonoUrl || it.url)}" title="${L('Ascolta', 'Listen', 'Escuchar')}" aria-label="${L('Ascolta', 'Listen', 'Escuchar')}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}</button>` : '';
+  const audio = it.tipo === 'audio'
+    ? `<button type="button" class="btn secondario mini lib-play ico-sola" data-audio="${esc(it.suonoUrl || it.url)}" title="${L('Ascolta', 'Listen', 'Escuchar')}" aria-label="${L('Ascolta', 'Listen', 'Escuchar')}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}</button>`
+    : `<button type="button" class="btn secondario mini lib-guarda ico-sola" data-id="${it.id}" title="${L('Guarda', 'Watch', 'Ver')}" aria-label="${L('Guarda', 'Watch', 'Ver')} ${esc(it.nome || '')}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}</button>`;
   const principale = azione === 'usa'
     ? `<button type="button" class="btn mini lib-usa" data-id="${it.id}">${_bIco(ICO.spunta)}${it.mio ? L('Usa', 'Use', 'Usar') : L('Prendi e usa', 'Take and use', 'Coger y usar')}</button>`
     : (it.mio
@@ -26108,6 +26228,8 @@ function scegliDallaLibreria({ tipi = ['immagine', 'video', 'audio'], titolo = '
     griglia.addEventListener('click', async (ev) => {
       const play = ev.target.closest('.lib-play');
       if (play) { try { const a = new Audio(play.dataset.audio); a.play().catch(() => {}); } catch (e) { /**/ } return; }
+      const guarda = ev.target.closest('.lib-guarda');
+      if (guarda) { const it = mostrati.find((x) => x.id === Number(guarda.dataset.id)); if (it) anteprimaEffetto(it, { comando: '' }); return; }
       const b = ev.target.closest('.lib-usa');
       if (!b || b.disabled) return;
       const it = mostrati.find((x) => x.id === Number(b.dataset.id));
@@ -26145,6 +26267,7 @@ async function caricaLibreria() {
         : L('Ancora niente di condiviso. Il primo puoi essere tu: apri «Solo i miei» e premi Condividi su un tuo media.', 'Nothing shared yet. You can be the first: open «Only mine» and press Share on one of your media.', 'Aún no hay nada compartido. Puedes ser el primero: abre «Solo los míos» y pulsa Compartir en uno de tus medios.')}</p>`;
       return;
     }
+    _libMostrati = items;
     g.innerHTML = items.map((it) => libItemHtml(it, 'aggiungi')).join('');
   } catch (e) {
     g.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`;
