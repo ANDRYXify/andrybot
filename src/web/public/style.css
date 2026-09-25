@@ -802,6 +802,7 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .lista-voci .meta { font-size: .78rem; color: var(--testo-3); }
 .vuoto {
   position: relative;
+  grid-column: 1 / -1;
   margin: .55rem 0;
   padding: 1.45rem 1.15rem 1.5rem;
   text-align: center;
@@ -1613,7 +1614,7 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
 }
 .scheletro.riga { height: .95em; margin: .5rem 0; }
 .scheletro.riga.corta { width: 62%; }
-.attesa { display: block; list-style: none; margin: .1rem 0; }
+.attesa { display: block; grid-column: 1 / -1; list-style: none; margin: .1rem 0; }
 .attesa .scheletro { display: block; }
 body.leggero .scheletro::after, body.meno-moto .scheletro::after { animation: none; }
 @media (prefers-reduced-motion: reduce) { .scheletro::after { animation: none; } }

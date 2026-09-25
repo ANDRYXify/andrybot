@@ -22,6 +22,10 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+## 2026-09-25
+
+- La libreria sfondi delle Grafiche, quando è vuota, lo dice su tutta la riga invece di andare a capo sillaba per sillaba. Lo stesso per gli altri elenchi a griglia vuoti o in caricamento. [vai: grafiche]
+
 ## 2026-09-24
 
 - Il sito si disegna: cambiando sezione la pagina vecchia si disegna all'indietro e la nuova si disegna a matita e china, come una tavola di manga. Lo stesso per avvisi, finestre e carte che arrivano.
