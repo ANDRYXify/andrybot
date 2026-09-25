@@ -132,14 +132,29 @@ for (const id of elementi) {
 // comandi erano divisi fra il pannello e le carte sotto la tela: per una
 // modifica precisa bisognava scendere, e mentre modificavi non vedevi piu'
 // l'anteprima.
+//
+// Il blocco di prima si disfa, e solo dopo arriva il nuovo (docs/DISEGNO.md):
+// si misura a cambio finito (al piu' tre secondi), e intanto si guarda che due
+// blocchi non si vedano mai insieme, nemmeno per un attimo.
 const chiavi = await p.evaluate(() => ELEMENTI().map((e) => e.k));
 const incoerenti = [];
 for (const k of chiavi) {
-  const r = await p.evaluate((kk) => {
-    seleziona(kk);
+  const r = await p.evaluate(async (kk) => {
     const insp = document.getElementById('ovl-inspector');
+    const inVista = () => [...insp.querySelectorAll('.asp-blocco')].filter((b) => b.offsetParent !== null || b.getClientRects().length).map((b) => b.dataset.asp);
+    const altrove = () => !!insp.querySelector('.insp-altrove:not([hidden])');
+    seleziona(kk);
+    const fine = performance.now() + 3000;
+    let insieme = [];
+    while (performance.now() < fine) {
+      const ora = inVista();
+      if (ora.length > 1 && !insieme.length) insieme = ora;
+      if ((ora.length === 1 && ora[0] === kk) || (!ora.length && altrove())) break;
+      await new Promise((ok) => requestAnimationFrame(ok));
+    }
     return {
-      visti: [...insp.querySelectorAll('.asp-blocco')].filter((b) => b.offsetParent !== null || b.getClientRects().length).map((b) => b.dataset.asp),
+      insieme,
+      visti: inVista(),
       sel: [...document.querySelectorAll('#ap-stage .ap-el.sel')].map((e) => e.id),
       liv: [...document.querySelectorAll('.ovl-liv.scelto')].map((e) => e.dataset.liv),
       nome: (document.getElementById('insp-nome') || {}).textContent,
@@ -152,6 +167,7 @@ for (const k of chiavi) {
   // veste nella sua scheda, e allora al suo posto c'e' il rimando. Quello che
   // non deve succedere e' il vuoto muto, o i comandi di un altro.
   if (r.visti.length ? (r.visti.length !== 1 || r.visti[0] !== k) : !r.altrove) g.push(`comandi visibili [${r.visti}]`);
+  if (r.insieme.length) g.push(`due blocchi insieme mentre cambia [${r.insieme}]`);
   if (r.inOverlay && (r.sel.length !== 1 || r.sel[0] !== r.idAtteso)) g.push(`sulla tela [${r.sel}]`);
   if (r.liv.length !== 1 || r.liv[0] !== k) g.push(`livelli [${r.liv}]`);
   if (r.nome !== r.atteso) g.push(`titolo «${r.nome}»`);
@@ -354,6 +370,9 @@ for (const [k, sel, val, leggi, atteso] of PROVE) {
 // che l'ha fatto. Prima l'elemento spariva ma l'occhio restava aperto; da
 // quando i livelli sono l'elenco di CHI C'E', la riga non resta spenta in
 // fondo: se ne va e ricompare tra quelli da rimettere. E da li' si rimette.
+// Se ne va come tutto quello che se ne va (docs/DISEGNO.md): prende `esce`, si
+// disfa, e alla fine del disegno non c'e' piu'. Una riga con `esce` non e' piu'
+// fra i livelli: e' una che sta andando via.
 const occhio = await p.evaluate(async () => {
   const riga = document.querySelector('.ovl-liv[data-liv="alert"]');
   const occ = riga && riga.querySelector('[data-occhio]');
@@ -361,9 +380,11 @@ const occhio = await p.evaluate(async () => {
   occ.click();
   await new Promise((r) => setTimeout(r, 200));
   const nodo = document.getElementById('ap-alert');
-  const restata = !!document.querySelector('.ovl-liv[data-liv="alert"]');
+  const restata = !!document.querySelector('.ovl-liv[data-liv="alert"]:not(.esce)');
+  await new Promise((r) => setTimeout(r, _duraUscita() + 60));
+  const sparita = !document.querySelector('.ovl-liv[data-liv="alert"]');
   const rimetti = document.querySelector('#ovl-agg [data-metti="alert"]');
-  const esito = { elementoVia: nodo.style.display === 'none', cambiata: !restata && !!rimetti, restata, rimettibile: !!rimetti };
+  const esito = { elementoVia: nodo.style.display === 'none', cambiata: !restata && sparita && !!rimetti, restata, sparita, rimettibile: !!rimetti };
   if (rimetti) { rimetti.click(); await new Promise((r) => setTimeout(r, 300)); }
   esito.tornato = !!document.querySelector('.ovl-liv[data-liv="alert"]')
     && document.getElementById('ap-alert').style.display !== 'none';

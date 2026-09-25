@@ -321,10 +321,11 @@ sfumando il velo intero si sfumava anche la carta, che spariva mentre si
 disfaceva (e con meno movimento spariva di colpo). La carta prima di entrare
 non si vede, e mentre si disfa sì.
 
-## Lo Studio: tre regole per chi scrive
+## Lo Studio: le regole per chi scrive
 
-Nello Studio si vedevano tre modi di comparire e sparire che il disegno non
-poteva vedere. Da lì vengono tre regole, e valgono per tutto il pannello.
+Nello Studio si vedevano modi di comparire e sparire che il disegno non poteva
+vedere, o che vedeva male. Da lì vengono queste regole, e valgono per tutto il
+pannello.
 
 - **Si nasconde con `hidden`, mai con una classe che nasconde i figli.** Un
   pannello arrotolato, l'inspector senza niente di scelto e la guida del banco
@@ -345,6 +346,33 @@ poteva vedere. Da lì vengono tre regole, e valgono per tutto il pannello.
   scrive una volta sola.
 - **Le classi `dg-*` sono del disegno.** Chi riconcilia una riga le lascia
   com'erano: toglierle a metà disegno lasciava una riga non disegnata.
+- **Nello stesso posto, prima si disfa chi va e poi arriva chi viene.**
+  Scegliendo un altro elemento, il blocco dei comandi di prima si disfaceva
+  mentre quello nuovo compariva: per un attimo due blocchi uno sopra l'altro,
+  e il nuovo saltava su quando il vecchio se ne andava. Adesso fa come la carta
+  che si ripiega: `_cambiaDiMano` fa disfare chi va (`SB_DISEGNO.via`), che dice
+  quanto ci mette, e a disegno finito, nello stesso istante, chi va prende
+  `hidden` e chi viene lo perde. L'orologio è uno solo. Con due (l'app che
+  aspettava `--t-uscita`, il disegno che partiva quando la pagina glielo
+  lasciava fare) su una pagina lenta il nuovo arrivava mentre il vecchio si
+  disfaceva ancora. Se nel frattempo lo si richiede, l'uscita in corso non si
+  salta; se ci si ripensa, chi stava andando si ridisegna. Vale anche fra il
+  pieno e il vuoto dell'inspector, per il contenitore dei blocchi e per il
+  rimando di chi si modifica in un'altra scheda. Il contenitore lo spegneva il
+  CSS quando non aveva blocchi in vista (`:has(... :not([hidden]))`): fra
+  l'uscita e l'arrivo si spegneva e si portava via di colpo chi si disfaceva.
+
+E il disegno stesso ha imparato una cosa. Chi prende `hidden` resta in vista
+finché si è disfatto, ma solo se prima si vedeva. Per saperlo il disegno
+guardava la pagina *dopo* il giro di modifiche: se nello stesso giro compariva
+il suo contenitore, un blocco mai visto sembrava visibile e si disfaceva (alla
+prima scelta si disfacevano tutti i blocchi dello Studio). Al contrario, un
+blocco che se ne andava insieme al suo contenitore sembrava già nascosto e
+spariva di colpo. Adesso `trattieniChiSiVedeva` rimette la pagina com'era prima
+del giro, misura e la riporta com'è. Chi sta dentro a uno che si disfa resta in
+vista con lui, senza un secondo disegno. Chi si è già disfatto (lo ha fatto
+disfare l'app) prendendo `hidden` non si disfa una seconda volta. Chi ricompare
+prima di essersi disfatto torna subito toccabile.
 
 E una tendina che si chiude resta dov'è finché si è disfatta. Prima tornava
 subito nel suo guscio, e si disfaceva in un posto diverso da quello in cui la
@@ -352,7 +380,9 @@ si vedeva.
 
 `scripts/verifica-comparse.mjs` fa questi gesti nello Studio, sul computer e
 sul telefono di lato. L'autoprova ha una rottura in più: il pannello che si
-arrotola di colpo, con `display` al posto di `hidden`.
+arrotola di colpo, con `display` al posto di `hidden`. `scripts/verifica-studio.mjs`
+sceglie ogni elemento e guarda che, mentre il blocco cambia, due blocchi non
+si vedano mai insieme.
 
 ## Il cassetto del telefono
 

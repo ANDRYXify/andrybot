@@ -535,14 +535,40 @@
     return fine;
   }
 
-  function trattieni(el, display) {
+  function trattieni(el, display, per) {
     el.style.setProperty('--dg-display', display);
     el.classList.add('dg-resta');
     if (!el.inert) { el.inert = true; el._dgInerte = true; }
-    var fine = via(el, {});
+    var fine = per === undefined ? via(el, {}) : per;
     clearTimeout(el._dgResta);
-    if (!fine) { lascia(el); return; }
+    if (!fine) { lascia(el); return 0; }
     el._dgResta = setTimeout(function () { lascia(el); }, fine);
+    return fine;
+  }
+
+  function profondita(el) { var n = 0; for (var a = el; a; a = a.parentElement) n++; return n; }
+
+  function trattieniChiSiVedeva(nascosti, svelati) {
+    var messi = nascosti.filter(function (el) { return el.isConnected && !fermo(el) && el.hasAttribute('hidden') && !el.dataset.dgOut; })
+      .map(function (el) { return [el, el.getAttribute('hidden')]; });
+    if (!messi.length) return;
+    var tolti = svelati.filter(function (el) { return el.isConnected && !el.hasAttribute('hidden'); });
+    messi.forEach(function (x) { x[0].removeAttribute('hidden'); });
+    tolti.forEach(function (el) { el.setAttribute('hidden', ''); });
+    var visti = messi.map(function (x) {
+      var d = getComputedStyle(x[0]).display;
+      return [x[0], d !== 'none' && siVede(x[0]) && aSchermo(x[0]) ? d : ''];
+    });
+    tolti.forEach(function (el) { el.removeAttribute('hidden'); });
+    messi.forEach(function (x) { x[0].setAttribute('hidden', x[1]); });
+    var tenuti = [];
+    visti.filter(function (x) { return x[1]; })
+      .sort(function (a, b) { return profondita(a[0]) - profondita(b[0]); })
+      .forEach(function (x) {
+        var sopra = tenuti.filter(function (t) { return t[0].contains(x[0]); })[0];
+        var fine = trattieni(x[0], x[1], sopra ? sopra[1] : undefined);
+        if (fine) tenuti.push([x[0], fine]);
+      });
   }
 
   function lascia(el) {
@@ -592,12 +618,12 @@
   var osservatore = null;
 
   function sulleMosse(mosse) {
-    var corpo = false, sveglia = false, mostrati = [], nascosti = [], chiusi = [];
+    var corpo = false, sveglia = false, mostrati = [], nascosti = [], svelati = [], chiusi = [];
     for (var i = 0; i < mosse.length; i++) {
       var m = mosse[i], el = m.target;
       if (!(el instanceof HTMLElement)) continue;
       if (m.attributeName === 'hidden') {
-        if (m.oldValue !== null && !el.hasAttribute('hidden')) mostrati.push(el);
+        if (m.oldValue !== null && !el.hasAttribute('hidden')) { mostrati.push(el); svelati.push(el); }
         else if (m.oldValue === null && el.hasAttribute('hidden')) nascosti.push(el);
         continue;
       }
@@ -639,17 +665,9 @@
         if (!finestra && diventa('dentro')) mostrati.push(el);
       }
     }
-    nascosti.forEach(function (el) {
-      if (!el.isConnected || fermo(el)) return;
-      var v = el.getAttribute('hidden');
-      el.removeAttribute('hidden');
-      var d = getComputedStyle(el).display;
-      var vede = d !== 'none' && siVede(el) && aSchermo(el);
-      el.setAttribute('hidden', v);
-      if (vede) trattieni(el, d);
-    });
+    trattieniChiSiVedeva(nascosti, svelati);
     chiusi.forEach(chiudeDettagli);
-    mostrati.forEach(function (el) { if (!el.hasAttribute('hidden')) compare(el); });
+    mostrati.forEach(function (el) { if (el.hasAttribute('hidden')) return; lascia(el); compare(el); });
     if (sveglia) quando('sveglia');
     if (corpo) quando('corpo');
     if (osservatore) osservatore.takeRecords();

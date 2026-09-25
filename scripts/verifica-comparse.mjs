@@ -37,7 +37,9 @@ const ROTTURE = [
   ['finestra', /✗ e niente se ne va senza disfarsi/, 'una finestra di sistema si chiude di colpo'],
   ['esce', /✗ e niente se ne va senza disfarsi/, 'chi prende `esce` non si disfa'],
   ['tendina-tardi', /✗ e niente se ne va senza disfarsi/, 'una tendina che si veste tardi: il menu del browser si vede, poi sparisce di colpo'],
-  ['pannello-di-colpo', /✗ e niente se ne va senza disfarsi[^\n]*studio, i livelli si arrotolano/, 'un pannello del banco si arrotola di colpo, come quando lo faceva una classe'],
+  // Il cancello segue i riquadri col contorno: il pannello che lo mostra e' quello
+  // delle proprieta', pieno di campi. Le righe dei livelli non ne hanno.
+  ['pannello-di-colpo', /✗ e niente se ne va senza disfarsi[^\n]*studio, le proprieta' si arrotolano/, 'un pannello del banco si arrotola di colpo, come quando lo faceva una classe'],
 ];
 if (process.argv.includes('--selftest')) {
   const io = fileURLToPath(import.meta.url);
@@ -393,6 +395,10 @@ if (tocca('vetrina')) {
 }
 
 // ---- LO STUDIO -----------------------------------------------------------------
+// Scegliere un elemento fa disegnare tutto il pannello delle proprieta', in
+// ordine di lettura: ci vuole piu' dei 900 ms di un gesto qualunque, e il gesto
+// dopo non deve cominciare a disegno in corso.
+const DISEGNO_LUNGO = 2200;
 // Il banco di lavoro: i livelli e le proprieta' sono due pannelli che si
 // arrotolano, le proprieta' cambiano con l'elemento scelto e hanno i loro
 // gruppi a fisarmonica, e sopra la tela ci sono la guida e le tendine.
@@ -401,11 +407,15 @@ if (tocca('studio')) {
   const D = 'studio';
   await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.querySelector('[data-giro="salta"]')?.click(); window.SB_APP.vai('alert'); });
   await pg.waitForTimeout(2500);
+  // Si parte da un banco assestato: finche' non sa quanto e' alto, il primo
+  // gesto lo fa saltare e le carte sotto entrano nello schermo per quello.
+  await pg.waitForFunction(() => !!document.documentElement.style.getPropertyValue('--banco-sopra'));
+  await pg.waitForTimeout(600);
   const clic = (sel) => () => pg.evaluate((s) => document.querySelector(s).click(), sel);
-  await fa(pg, D, 'si sceglie un elemento', 'compare', () => pg.evaluate(() => seleziona('alert')));
-  // Cambiando elemento il blocco vecchio si disfa tenendo il suo posto: il nuovo
-  // sta sotto, fuori dalla vista del pannello, e si disegna quando ci arriva.
-  await fa(pg, D, 'se ne sceglie un altro', 'sparisce', () => pg.evaluate(() => seleziona('chat')));
+  await fa(pg, D, 'si sceglie un elemento', 'compare', () => pg.evaluate(() => seleziona('alert')), DISEGNO_LUNGO);
+  // Cambiando elemento il blocco vecchio si disfa, e solo dopo arriva il nuovo,
+  // che si disegna: nello stesso posto non stanno mai due blocchi insieme.
+  await fa(pg, D, 'se ne sceglie un altro', 'sparisce', () => pg.evaluate(() => seleziona('chat')), DISEGNO_LUNGO);
   await pg.evaluate(() => {
     window.__comparse.azione = 'preparazione';
     const g = document.querySelector('#ovl-inspector .asp-blocco:not([hidden]) > .insp-grp[open]');
@@ -417,7 +427,7 @@ if (tocca('studio')) {
   await fa(pg, D, 'e si riapre', 'compare', clic('[data-prova-grp] > summary'));
   await fa(pg, D, 'le proprieta\' si arrotolano', 'sparisce', clic('#ovl-inspector [data-pan-arrotola]'));
   await fa(pg, D, 'e si srotolano', 'compare', clic('#ovl-inspector [data-pan-arrotola]'));
-  await fa(pg, D, 'si toglie la scelta', 'sparisce', () => pg.evaluate(() => deseleziona()));
+  await fa(pg, D, 'si toglie la scelta', 'sparisce', () => pg.evaluate(() => deseleziona()), DISEGNO_LUNGO);
   await fa(pg, D, 'i livelli si arrotolano', 'sparisce', clic('#ovl-livelli [data-pan-arrotola]'));
   await fa(pg, D, 'e si srotolano', 'compare', clic('#ovl-livelli [data-pan-arrotola]'));
   await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.getElementById('ovl-liv-aggiungi').scrollIntoView({ block: 'start', behavior: 'instant' }); });
@@ -449,11 +459,15 @@ if (tocca('studio')) {
   const D = 'studio sul telefono';
   await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.querySelector('[data-giro="salta"]')?.click(); window.SB_APP.vai('alert'); });
   await pg.waitForTimeout(2500);
+  // Si parte da un banco assestato: finche' non sa quanto e' alto, il primo
+  // gesto lo fa saltare e le carte sotto entrano nello schermo per quello.
+  await pg.waitForFunction(() => !!document.documentElement.style.getPropertyValue('--banco-sopra'));
+  await pg.waitForTimeout(600);
   const clic = (sel) => () => pg.evaluate((s) => document.querySelector(s).click(), sel);
   await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.getElementById('ovl-inspector').scrollIntoView({ block: 'start', behavior: 'instant' }); });
   await pg.waitForTimeout(600);
-  await fa(pg, D, 'si sceglie un elemento', 'compare', () => pg.evaluate(() => seleziona('alert')));
-  await fa(pg, D, 'si toglie la scelta', 'sparisce', () => pg.evaluate(() => deseleziona()));
+  await fa(pg, D, 'si sceglie un elemento', 'compare', () => pg.evaluate(() => seleziona('alert')), DISEGNO_LUNGO);
+  await fa(pg, D, 'si toglie la scelta', 'sparisce', () => pg.evaluate(() => deseleziona()), DISEGNO_LUNGO);
   await fa(pg, D, 'le proprieta\' si arrotolano', 'sparisce', clic('#ovl-inspector [data-pan-arrotola]'));
   await fa(pg, D, 'e si srotolano', 'compare', clic('#ovl-inspector [data-pan-arrotola]'));
   await raccogli(pg, D);

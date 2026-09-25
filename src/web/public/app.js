@@ -10925,23 +10925,54 @@ const ALTROVE = {
   consolify: ['consolify', ['CONSOLify', 'CONSOLify', 'CONSOLify']],
 };
 
-function _altrove(box) {
-  const fam = String(selezione || '').split(':')[0];
-  const dove = ALTROVE[fam];
-  const haBlocco = [...box.querySelectorAll('.asp-blocco')].some((b) => !b.hidden);
+function _altrove(box, senzaBlocco) {
+  const dove = senzaBlocco && ALTROVE[String(selezione || '').split(':')[0]];
+  if (!dove) return null;
   let nota = box.querySelector('.insp-altrove');
-  if (!dove || haBlocco) { if (nota) nota.hidden = true; return; }
   if (!nota) {
     nota = document.createElement('p');
     nota.className = 'insp-altrove suggerimento';
+    nota.hidden = true;
     box.appendChild(nota);
   }
-  nota.hidden = false;
   const nome = L(dove[1][0], dove[1][1], dove[1][2]);
-  nota.innerHTML = `${esc(dove[2] === 'posto'
+  const html = `${esc(dove[2] === 'posto'
     ? L('Qui scegli dove compaiono e quanto sono grandi: le immagini e i video stanno dentro il suo riquadro. Quello che fa ognuno si cambia in', 'Here you choose where they appear and how big they are: images and videos fit inside its box. What each one does is changed in', 'Aqu\u00ed eliges d\u00f3nde aparecen y qu\u00e9 tama\u00f1o tienen: las im\u00e1genes y los v\u00eddeos caben en su recuadro. Lo que hace cada uno se cambia en')
     : L('Qui lo sposti e lo vesti. Quello che fa si cambia in', 'Here you move it and dress it. What it does is changed in', 'Aqu\u00ed lo mueves y lo vistes. Lo que hace se cambia en'))} `
     + `<button type="button" class="btn secondario mini" data-vai-scheda="${esc(dove[0])}">${esc(nome)}</button>`;
+  if (nota._html !== html) { nota._html = html; nota.innerHTML = html; }
+  return nota;
+}
+
+function _cambiaDiMano(casa, vanno, arrivano) {
+  clearTimeout(casa._cambio);
+  const D = window.SB_DISEGNO;
+  const inUscita = casa._inUscita || (casa._inUscita = new Set());
+  for (const el of arrivano) if (inUscita.delete(el)) D?.compare?.(el);
+  const nuovi = vanno.filter((el) => !el.hidden && !inUscita.has(el));
+  const fuori = nuovi.filter((el) => !nuovi.some((o) => o !== el && o.contains(el)));
+  const dura = Math.max(0, ...fuori.map((el) => D?.via?.(el) || 0));
+  for (const el of nuovi) inUscita.add(el);
+  if (nuovi.length) casa._finoA = Math.max(casa._finoA || 0, performance.now() + dura);
+  const scambia = () => {
+    casa._cambio = 0;
+    for (const el of inUscita) el.hidden = true;
+    inUscita.clear();
+    for (const el of arrivano) el.hidden = false;
+  };
+  const resta = (casa._finoA || 0) - performance.now();
+  if (resta > 0) casa._cambio = setTimeout(scambia, resta);
+  else scambia();
+}
+
+function _mostraInspector(box) {
+  const pieno = box.querySelector('.ovl-insp-pieno'), vuoto = box.querySelector('.ovl-vuoto');
+  const casa = box.querySelector('.ovl-aspetto');
+  const blocchi = [...box.querySelectorAll('.asp-blocco')];
+  const suoi = selezione ? blocchi.filter((b) => b.dataset.asp === selezione) : [];
+  const voluti = new Set((selezione ? [pieno, ...(suoi.length ? [casa, ...suoi] : []), _altrove(box, !suoi.length)] : [vuoto]).filter(Boolean));
+  const tutti = [pieno, vuoto, casa, ...blocchi, box.querySelector('.insp-altrove')].filter(Boolean);
+  _cambiaDiMano(box, tutti.filter((el) => !voluti.has(el)), [...voluti]);
 }
 
 function aggiornaInspector() {
@@ -10951,12 +10982,9 @@ function aggiornaInspector() {
   aggiornaPiedeBanco();
   if (!box) return;
   mettiVesti(box);
-  for (const b of box.querySelectorAll('.asp-blocco')) b.hidden = b.dataset.asp !== selezione;
   box.hidden = !box.closest('.carta.ovl-banco');
   box.classList.toggle('vuoto', !selezione);
-  const pieno = box.querySelector('.ovl-insp-pieno'), vuoto = box.querySelector('.ovl-vuoto');
-  if (pieno) pieno.hidden = !selezione;
-  if (vuoto) vuoto.hidden = !!selezione;
+  _mostraInspector(box);
   if (!selezione) return;
   const nome = _g('insp-nome'); if (nome) nome.textContent = _nomeEl(selezione);
   const luc = _g('insp-blocca');
@@ -10964,7 +10992,6 @@ function aggiornaInspector() {
   const avanti = _g('insp-davanti'), indietro = _g('insp-dietro');
   if (avanti) avanti.disabled = !_passoLivello(selezione, 1);
   if (indietro) indietro.disabled = !_passoLivello(selezione, -1);
-  _altrove(box);
   _mostraProp();
 }
 
@@ -11258,15 +11285,14 @@ let _osservaTestata = null;
 function misuraSopraBanco() {
   const carta = document.querySelector('.carta.ovl-banco');
   if (!carta) { document.documentElement.style.removeProperty('--banco-sopra'); return; }
-  const y = carta.getBoundingClientRect().top + window.scrollY;
-  if (y < 40) return;                       // layout non ancora assestato
-  document.documentElement.style.setProperty('--banco-sopra', Math.round(y + 26) + 'px');
-
   const testata = document.getElementById('pagina-testata');
   if (testata && !_osservaTestata && window.ResizeObserver) {
     _osservaTestata = new ResizeObserver(() => misuraSopraBanco());
     _osservaTestata.observe(testata);
   }
+  const y = carta.getBoundingClientRect().top + window.scrollY;
+  if (y < 40) return;
+  document.documentElement.style.setProperty('--banco-sopra', Math.round(y + 26) + 'px');
 }
 
 function aggiornaPiedeBanco() {

@@ -300,7 +300,7 @@ test('tutto quello che compare si disegna, qualunque strada lo faccia comparire'
   const av = corpoDi(DG, 'avvia');
   assert.match(av, /attributeFilter: \['class', 'hidden', 'open'\]/, 'le classi, l\'attributo hidden e le tendine che si aprono');
   const mo = corpoDi(DG, 'sulleMosse');
-  assert.match(mo, /if \(m\.oldValue !== null && !el\.hasAttribute\('hidden'\)\) mostrati\.push\(el\);/, 'chi perde hidden compare');
+  assert.match(mo, /if \(m\.oldValue !== null && !el\.hasAttribute\('hidden'\)\) \{ mostrati\.push\(el\); svelati\.push\(el\); \}/, 'chi perde hidden compare');
   assert.match(mo, /if \(el\.tagName === 'DETAILS'\) \{[^\n]*mostrati = mostrati\.concat\(figliDi\(el\)\); \}/, 'la tendina che si apre scopre il suo contenuto');
   assert.match(mo, /else if \(el\.tagName === 'DIALOG'\) mostrati\.push\(el\);/, 'la finestra di sistema che si apre');
   assert.match(mo, /if \(!finestra && diventa\('dentro'\)\) mostrati\.push\(el\);/, 'chi entra da se\'');
@@ -331,8 +331,9 @@ test('tutto quello che se ne va si disfa prima di sparire', () => {
   const mo = corpoDi(DG, 'sulleMosse');
   // hidden: l'app lo scrive e ha finito; la vista aspetta che si disfi.
   assert.match(mo, /else if \(m\.oldValue === null && el\.hasAttribute\('hidden'\)\) nascosti\.push\(el\);/, 'chi prende hidden se ne va');
-  assert.match(mo, /el\.removeAttribute\('hidden'\);\n\s*var d = getComputedStyle\(el\)\.display;/, 'si legge come si vedeva');
-  assert.match(mo, /el\.setAttribute\('hidden', v\);\n\s*if \(vede\) trattieni\(el, d\);/, 'e lo si tiene in vista finche\' si disfa');
+  assert.match(mo, /trattieniChiSiVedeva\(nascosti, svelati\);/, 'si legge come si vedeva, e lo si tiene in vista finche\' si disfa');
+  const cv = corpoDi(DG, 'trattieniChiSiVedeva');
+  assert.match(cv, /var d = getComputedStyle\(x\[0\]\)\.display;\n\s*return \[x\[0\], d !== 'none' && siVede\(x\[0\]\) && aSchermo\(x\[0\]\) \? d : ''\];/);
   assert.match(mo, /if \(osservatore\) osservatore\.takeRecords\(\);/, 'senza leggere come mosse dell\'app quelle del disegno');
   const tr = corpoDi(DG, 'trattieni');
   assert.match(tr, /el\.style\.setProperty\('--dg-display', display\);\n\s*el\.classList\.add\('dg-resta'\);/);
@@ -483,8 +484,16 @@ test('lo Studio mostra e nasconde per le strade che il disegno conosce', () => {
   assert.ok(APP.includes("arrotola(pan, !pan.classList.contains('arrotolato'));"), 'e cosi\' il tasto');
   assert.doesNotMatch(ANIME, /\.arrotolato \.pan-corpo \{[^}]*display: none/);
 
-  const insp = funzioneApp('aggiornaInspector');
-  assert.match(insp, /if \(pieno\) pieno\.hidden = !selezione;\n\s*if \(vuoto\) vuoto\.hidden = !!selezione;/, 'pieno e vuoto si danno il cambio con hidden');
+  const mostra = funzioneApp('_mostraInspector');
+  assert.match(mostra, /const voluti = new Set\(\(selezione \? \[pieno, \.\.\.\(suoi\.length \? \[casa, \.\.\.suoi\] : \[\]\), _altrove\(box, !suoi\.length\)\] : \[vuoto\]\)\.filter\(Boolean\)\);/,
+    'pieno, i blocchi col loro contenitore e il rimando si danno il cambio col vuoto');
+  // Un contenitore non si spegne da CSS guardando i figli: fra un blocco che se
+  // ne va e quello che arriva non ce n'e' nessuno, e il contenitore spento si
+  // portava via di colpo quello che si stava disfacendo.
+  assert.doesNotMatch(ANIME + STILE, /:has\([^)]*:not\(\[hidden\]\)\)\)?\s*\{[^}]*display: none/, 'nessun contenitore si spegne guardando i figli');
+  assert.match(mostra, /_cambiaDiMano\(box, tutti\.filter\(\(el\) => !voluti\.has\(el\)\), \[\.\.\.voluti\]\);/);
+  assert.match(funzioneApp('aggiornaInspector'), /_mostraInspector\(box\);/);
+  assert.doesNotMatch(APP, /b\.hidden = b\.dataset\.asp !== selezione/, 'nessuno scambia i blocchi tutti insieme');
   assert.match(funzioneApp('montaBanco'), /pieno\.className = 'ovl-insp-pieno';\n\s*for \(const n of \[\.\.\.corpoInsp\.children\]\) if \(!n\.classList\.contains\('ovl-vuoto'\)\) pieno\.appendChild\(n\);/,
     'quello che serve a un elemento scelto sta in un contenitore solo');
   assert.doesNotMatch(ANIME, /\.ovl-inspector(\.vuoto|:not\(\.vuoto\))[^{]*\{[^}]*display: none/);
@@ -516,4 +525,34 @@ test('una tendina che si chiude resta dov\'e\' finche\' si disfa', () => {
   const v = funzioneApp('vestiTendina');
   assert.match(v, /rientro = setTimeout\(\(\) => \{ if \(aperta\) return; lista\.classList\.remove\('volante'\); guscio\.appendChild\(lista\); \}, _duraUscita\(\) \+ 20\);/);
   assert.match(v, /aperta = true;\n\s*clearTimeout\(rientro\);/, 'riaprendola prima, resta dov\'e\'');
+});
+
+test('nello stesso posto chi arriva aspetta che chi se ne va si sia disfatto', () => {
+  // Scegliendo un altro elemento, il blocco di prima si disfaceva mentre quello
+  // nuovo compariva: per un attimo due blocchi uno sopra l'altro, e il nuovo
+  // saltava su quando il vecchio se ne andava. Come fra le schede sorelle,
+  // prima si disfa chi va, poi arriva chi viene.
+  const cambio = funzioneApp('_cambiaDiMano');
+  assert.match(cambio, /const dura = Math\.max\(0, \.\.\.fuori\.map\(\(el\) => D\?\.via\?\.\(el\) \|\| 0\)\);/, 'chi se ne va lo fa disfare l\'app, e il disegno dice quanto ci mette');
+  assert.match(cambio, /const fuori = nuovi\.filter\(\(el\) => !nuovi\.some\(\(o\) => o !== el && o\.contains\(el\)\)\);/, 'chi sta dentro a uno che va si disfa con lui, una volta sola');
+  assert.match(cambio, /for \(const el of inUscita\) el\.hidden = true;\n\s*inUscita\.clear\(\);\n\s*for \(const el of arrivano\) el\.hidden = false;/,
+    'e allo stesso istante, finito il disegno, chi va prende hidden e chi viene lo perde: un orologio solo');
+  assert.match(cambio, /for \(const el of arrivano\) if \(inUscita\.delete\(el\)\) D\?\.compare\?\.\(el\);/, 'se ci ripensi mentre si disfa, si ridisegna');
+  assert.match(NUCLEO, /el\.hasAttribute\('hidden'\) && !el\.dataset\.dgOut; \}\)/, 'chi si e\' gia\' disfatto, prendendo hidden non si disfa una seconda volta');
+});
+
+test('si disfa solo chi si vedeva prima del giro', () => {
+  // Il disegno tiene in vista chi prende hidden finche' si e' disfatto. Per
+  // sapere se si vedeva, guardava la pagina DOPO il giro: se nello stesso giro
+  // compariva il suo contenitore, un blocco mai visto sembrava visibile e si
+  // disfaceva (tutti i blocchi dello Studio alla prima scelta). E al contrario,
+  // un blocco che se ne va insieme al suo contenitore sembrava gia' nascosto e
+  // spariva di colpo. Adesso si misura la pagina com'era prima del giro.
+  const t = corpoDi(NUCLEO, 'trattieniChiSiVedeva');
+  assert.match(t, /messi\.forEach\(function \(x\) \{ x\[0\]\.removeAttribute\('hidden'\); \}\);\n\s*tolti\.forEach\(function \(el\) \{ el\.setAttribute\('hidden', ''\); \}\);/,
+    'chi ha preso hidden lo perde, chi l\'ha perso lo riprende: com\'era prima');
+  assert.ok(t.indexOf("tolti.forEach(function (el) { el.removeAttribute('hidden'); });") > t.indexOf('var visti = messi.map('), 'e si rimette tutto solo dopo aver misurato');
+  assert.match(t, /var fine = trattieni\(x\[0\], x\[1\], sopra \? sopra\[1\] : undefined\);/, 'chi sta dentro a uno che si disfa resta in vista con lui, senza un secondo disegno');
+  assert.match(NUCLEO, /mostrati\.forEach\(function \(el\) \{ if \(el\.hasAttribute\('hidden'\)\) return; lascia\(el\); compare\(el\); \}\);/,
+    'chi ricompare prima di essersi disfatto torna subito toccabile');
 });
