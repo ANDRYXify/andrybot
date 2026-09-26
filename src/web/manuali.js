@@ -28,8 +28,9 @@ import VETRINA from './manuali/it/vetrina.js';
 import ACCOUNT from './manuali/it/account.js';
 import EMOTE from './manuali/it/emote.js';
 import OVERLAY from './manuali/it/overlay.js';
+import STRUMENTI from './manuali/it/strumenti.js';
 
-export const MANUALI = [GIOCHI, MODULI, BOT, MODERAZIONE, INTERAZIONE, DIRETTA, CONSOLIFY, VETRINA, ACCOUNT, EMOTE, OVERLAY];
+export const MANUALI = [GIOCHI, MODULI, BOT, MODERAZIONE, INTERAZIONE, DIRETTA, CONSOLIFY, VETRINA, STRUMENTI, ACCOUNT, EMOTE, OVERLAY];
 
 // A QUALE SCHEDA DEL PANNELLO SERVE OGNI PAGINA.
 //

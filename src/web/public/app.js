@@ -242,6 +242,7 @@ function impostazioni() {
     overlayCartelli: Array.isArray(s.overlayCartelli) ? s.overlayCartelli : [],
     donazioni: (s.donazioni && typeof s.donazioni === 'object') ? s.donazioni : { attivo: false, link: '', etichetta: '', messaggio: '', valuta: 'EUR', annunciaChat: false, testoChat: '', kofiSet: false },
     grafiche: (s.grafiche && typeof s.grafiche === 'object') ? s.grafiche : null,
+    qr: (s.qr && typeof s.qr === 'object') ? s.qr : null,
     settimana: (s.settimana && typeof s.settimana === 'object') ? s.settimana : null,
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -3224,6 +3225,10 @@ const GRUPPI = [
     ['telegram', 'Telegram'],
     ['ruoli', 'Discord'],
   ] },
+  { id: 'strumenti', nome: 'Strumenti', schede: [
+    ['qr', 'QR su misura'],
+    ['misure', 'Emote e badge'],
+  ] },
   { id: 'account', nome: 'Account', schede: [
     ['account', 'Il tuo account'],
     ['sottoscrizione', 'Abbonamento'],
@@ -3252,6 +3257,7 @@ const T_GRUPPO = {
   scena: ['Scena & overlay', 'Scene & overlay', 'Escena y overlay'],
   vetrina: ['La tua vetrina', 'Your showcase', 'Tu escaparate'],
   community: ['Le tue community', 'Your communities', 'Tus comunidades'],
+  strumenti: ['Strumenti', 'Tools', 'Herramientas'],
   account: ['Account', 'Account', 'Cuenta'],
   admin: ['Admin', 'Admin', 'Admin'],
 };
@@ -3264,6 +3270,8 @@ const T_SCHEDA = {
   statistiche: ['Statistiche', 'Stats', 'Estadísticas'],
   avatar: ['Avatar 3D', 'Avatar 3D', 'Avatar 3D'],
   promo: ['Promo', 'Promo', 'Promo'],
+  qr: ['QR su misura', 'Custom QR', 'QR a medida'],
+  misure: ['Emote e badge', 'Emotes and badges', 'Emotes y badges'],
   moduli: ['Comandi', 'Commands', 'Comandos'],
   regole: ['Moderazione', 'Moderation', 'Moderación'],
   scudo: ['Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'],
@@ -3320,6 +3328,8 @@ const ICONA = {
   statistiche: _ico('<path d="M4 21V4"/><path d="M4 21h16"/><path d="M8.5 21v-6"/><path d="M13 21V9"/><path d="M17.5 21v-9"/>'),
   avatar:      _ico('<path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5"/><path d="M12 12v10"/>'),
   promo:       _ico('<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>'),
+  qr:          _ico('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M20 14v.01"/><path d="M14 20h.01"/><path d="M17 20h4v-3"/>'),
+  misure:      _ico('<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/>'),
   moduli:      _ico('<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M7.5 9.5 10.5 12l-3 2.5"/><path d="M13 15h4"/>'),
   regole:      _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>'),
   scudo:       _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/><path d="m9 12 2 2 4-4"/>'),
@@ -3574,6 +3584,10 @@ const GUIDE = {
     come: [['La sfera al centro è il bot: ogni filo che si illumina è un pezzo di ragionamento in corso.', 'The sphere in the middle is the bot: every thread that lights up is a piece of reasoning under way.', 'La esfera del centro es el bot: cada hilo que se ilumina es un trozo de razonamiento en marcha.', '#mente3d-canvas'], ['Sotto, il cruscotto dice cosa sta facendo adesso e quanto ci mette: se tace, qui si vede perché.', 'Below, the dashboard says what it is doing right now and how long it takes: if it goes quiet, here you see why.', 'Abajo, el panel dice qué está haciendo ahora y cuánto tarda: si se calla, aquí se ve por qué.', '#mente-cruscotto']] },
   promo: { serve: ['Creare le campagne con un regalo per chi arriva dal QR di una pubblicità, e disegnare le grafiche e i video da mandare in onda.', 'Create campaigns with a gift for whoever arrives from an ad’s QR, and draw the graphics and videos to put on air.', 'Crear campañas con un regalo para quien llega desde el QR de un anuncio, y dibujar las gráficas y los vídeos para emitir.'],
     come: [['Una campagna nuova ha un indirizzo, una data di messa in onda e le sue regole: quanti giorni, quali pacchetti, per quanti canali.', 'A new campaign has an address, an air date and its rules: how many days, which packages, for how many channels.', 'Una campaña nueva tiene una dirección, una fecha de emisión y sus reglas: cuántos días, qué paquetes, para cuántos canales.', '#promo-nuova'], ['Nelle grafiche scegli la misura e i testi, e sposti i tempi: sotto l’anteprima trovi i problemi da sistemare prima di esportare.', 'In the graphics you pick the size and the texts, and move the timings: below the preview you find the problems to fix before exporting.', 'En las gráficas eliges el tamaño y los textos, y mueves los tiempos: debajo de la vista previa están los problemas que arreglar antes de exportar.', '#promo-editor']] },
+  qr: { serve: ['Fare un QR che porta alla tua pagina o dove vuoi tu, con le tue forme, i tuoi colori e il tuo logo, sicuro che si legga.', 'Make a QR that leads to your page or wherever you want, with your shapes, colors and logo, sure that it reads.', 'Hacer un QR que lleve a tu página o a donde quieras, con tus formas, tus colores y tu logo, seguro de que se lee.'],
+    come: [['Scrivi dove porta, o scegli la tua pagina link.', 'Write where it leads, or pick your link page.', 'Escribe a dónde lleva, o elige tu página de enlaces.', '#qr-testo'], ['Scegli le forme, i colori e se vuoi un logo al centro: l’anteprima si rilegge da sola a ogni cambio.', 'Pick shapes, colors and whether you want a logo in the middle: the preview reads itself back at every change.', 'Elige las formas, los colores y si quieres un logo en el centro: la vista previa se relee sola a cada cambio.', '#qr-tela'], ['Scarica il PNG o l’SVG, e salva lo stile: lo usano anche le Grafiche social.', 'Download the PNG or the SVG, and save the style: Social graphics use it too.', 'Descarga el PNG o el SVG, y guarda el estilo: también lo usan las Gráficas sociales.', '#qr-png']] },
+  misure: { serve: ['Preparare emote e badge alle misure che chiede Twitch, partendo da un’immagine sola.', 'Get emotes and badges ready at the sizes Twitch asks for, starting from a single image.', 'Preparar emotes y badges a los tamaños que pide Twitch, partiendo de una sola imagen.'],
+    come: [['Scegli un’immagine, meglio se grande e quadrata.', 'Choose an image, better if big and square.', 'Elige una imagen, mejor si es grande y cuadrada.', '#mis-scegli'], ['Guarda come viene alle misure vere, sulla chat scura e su quella chiara.', 'See how it looks at real size, on the dark chat and the light one.', 'Mira cómo queda a tamaño real, en el chat oscuro y en el claro.', '#mis-anteprime'], ['Scaricale una per una o tutte in un file zip.', 'Download them one by one or all in a zip file.', 'Descárgalas una a una o todas en un archivo zip.', '#mis-zip']] },
   grafiche: { serve: ['Fare la locandina della diretta da postare sui social, con i tuoi colori e il tuo handle.', 'Make the stream poster to post on socials, with your colors and your handle.', 'Hacer el cartel del directo para publicar en redes, con tus colores y tu handle.'],
     come: [['Scrivi il titolo: è la riga grande della locandina.', 'Write the title: it is the big line of the poster.', 'Escribe el título: es la línea grande del cartel.', '#gr-titolo'], ['Scegli il colore d\'accento; il testo si adatta da solo perché resti leggibile.', 'Pick the accent color; the text adapts by itself so it stays readable.', 'Elige el color de acento; el texto se adapta solo para que siga legible.', '#gr-accento'], ['Scarica il PNG (o la versione animata) e pubblicalo: la didascalia è già pronta da copiare.', 'Download the PNG (or the animated one) and post it: the caption is ready to copy.', 'Descarga el PNG (o la versión animada) y publícalo: el pie de foto ya está listo para copiar.', '#gr-scarica'], ['In cima, «Metti nella storia» manda la grafica nella tua storia di Instagram, già in verticale; se Instagram non è collegato, lì trovi il tasto per collegarlo.', 'At the top, «Post to your story» sends the graphic to your Instagram story, already vertical; if Instagram is not connected, you find the button to connect it there.', 'Arriba, «Publicar en tu historia» manda la gráfica a tu historia de Instagram, ya en vertical; si Instagram no está conectado, ahí tienes el botón para conectarlo.', '#gr-ig']] },
   settimana: { serve: ['Scrivere una volta sola quando vai in onda e cosa fai, e mandarlo dove ti seguono.', 'Write once when you go live and what you do, and send it where people follow you.', 'Escribir una sola vez cuándo sales en directo y qué haces, y mandarlo donde te siguen.'],
@@ -3588,6 +3602,8 @@ const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" s
 
 const _hIco = (d) => `<svg class="h-ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ICO = {
+  qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M20 14v.01"/><path d="M14 20h.01"/><path d="M17 20h4v-3"/>',
+  misure: '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/>',
   meno: '<line x1="5" x2="19" y1="12" y2="12"/>',
   stella: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
   orologio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
@@ -4590,6 +4606,8 @@ function vistaPiattaforma() {
     ${pannelloDonazioni()}
     ${pannelloSettimana()}
     ${pannelloGrafiche()}
+    ${pannelloQr()}
+    ${pannelloMisure()}
     ${stato.isAdmin ? pannello('admin', vistaAdminContenuto()) : ''}`;
 }
 
@@ -6032,26 +6050,43 @@ function _grafDisegna(canvas, c, t, scala) {
 }
 
 let _grQr = null;
+function _grQrTela(full, P) {
+  const st = qrStileSalvato(), chiave = full + '|' + Math.round(P) + '|' + JSON.stringify(st);
+  if (_grQr && _grQr.chiave === chiave) return _grQr;
+  const prova = (p) => {
+    const geo = window.SB_QR.geometria(p, Math.round(P)), tela = document.createElement('canvas');
+    tela.width = geo.W; tela.height = geo.H;
+    const g = tela.getContext('2d', { willReadFrequently: true });
+    window.SB_QR.disegna(g, p, geo);
+    return { tela, chiaro: p.stile.chiaro, ok: window.SB_QR.rileggi(g.getImageData(0, 0, geo.W, geo.H), p, geo).ok };
+  };
+  const fai = (logo) => {
+    const p = window.SB_QR.progetto(full, { ...st, cornice: '', logo, logoLato: st.logoLato / 100, seme: 'qr:' + String(stato?.user?.login || '') });
+    const mio = p.qr && !p.problemi.length ? prova(p) : null;
+    return mio && mio.ok ? mio : prova(window.SB_QR.progetto(full, {}));
+  };
+  const qui = { chiave, ...fai(null) };
+  _grQr = qui;
+  const rifai = (logo) => { if (_grQr === qui) { Object.assign(qui, fai(logo)); document.dispatchEvent(new Event('sb-qr-pronto')); } };
+  const serve = (st.moduli === 'penna' || st.occhi === 'penna') && !window.SB_PENNA;
+  (serve ? caricaMotoreQr() : Promise.resolve()).then(() => (st.logo !== 'no' ? _qrLogo(st) : null)).then((logo) => { if (serve || logo) rifai(logo); }).catch(() => {});
+  return qui;
+}
+
 function grafQr(ctx, sc, pal, c, lay) {
-  if (!lay.qr || typeof qrcode !== 'function') return;
+  if (!lay.qr || !window.SB_QR) return;
   try {
     const url = grafUrlCanale(c);
     const full = 'https://' + url;
-    if (!_grQr || _grQr.url !== full) {
-      const q = qrcode(0, 'M'); q.addData(full); q.make();
-      const nn = q.getModuleCount(), mods = [];
-      for (let r = 0; r < nn; r++) { const row = []; for (let col = 0; col < nn; col++) row.push(q.isDark(r, col)); mods.push(row); }
-      _grQr = { url: full, n: nn, mods };
-    }
     const { x, y, w: P } = lay.qr;
+    const q = _grQrTela(full, P);
     _grafSegna('qr', { x, y, w: P, h: P });
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.30)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 6;
-    ctx.fillStyle = '#ffffff'; grRoundRect(ctx, x, y, P, P, 26); ctx.fill(); ctx.restore();
-    const n = _grQr.n, quiet = 18, cell = (P - quiet * 2) / n;
-    ctx.fillStyle = '#0d0d12';
-    for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) {
-      if (_grQr.mods[r][col]) ctx.fillRect(x + quiet + col * cell, y + quiet + r * cell, cell + 0.6, cell + 0.6);
-    }
+    ctx.fillStyle = q.chiaro; grRoundRect(ctx, x, y, P, P, 26); ctx.fill(); ctx.restore();
+    const bordo = (P - q.tela.width) / 2;
+    ctx.save(); grRoundRect(ctx, x, y, P, P, 26); ctx.clip();
+    ctx.drawImage(q.tela, Math.round(x + bordo), Math.round(y + bordo));
+    ctx.restore();
     const u = lay.qr.url;
     ctx.font = `700 ${u.px}px ${GR_BASE}`; ctx.textAlign = 'left';
     grafScritta(ctx, sc, pal, { testo: grClip(ctx, url, u.max), x: u.x, base: u.base, font: `700 ${u.px}px ${GR_BASE}`, colori: [pal.txt], px: u.px, peso: u.peso, pezzo: 'qr' });
@@ -6238,6 +6273,7 @@ function initGrafiche() {
     _fermo = 0;
     if (!grafAnimato(c) && canvas.isConnected) grafMostra(canvas, c);
   };
+  document.addEventListener('sb-qr-pronto', () => { if (canvas.isConnected) disegnaFermo(); });
   let didascaliaManuale = false;
   const aggiornaDidascalia = () => {
     const ta = document.getElementById('gr-didascalia');
@@ -7418,6 +7454,419 @@ function collegaPromo() {
     if (ev.target.id !== 'promo-modulo') return;
     ev.preventDefault();
     salvaCampagnaPromo(ev.target);
+  });
+}
+
+const QR_STATO = { p: null, giro: 0, loghi: new Map(), caricato: '', timer: 0, font: null, collegato: false };
+
+const QR_MODULI = () => [['quadrati', L('Quadrati', 'Squares', 'Cuadrados')], ['morbidi', L('Morbidi', 'Soft', 'Suaves')], ['puntini', L('Puntini', 'Dots', 'Puntos')], ['penna', L('A penna', 'Hand drawn', 'A mano')]];
+const QR_OCCHI = () => [['quadrati', L('Quadrati', 'Square', 'Cuadrados')], ['morbidi', L('Morbidi', 'Soft', 'Suaves')], ['tondi', L('Tondi', 'Round', 'Redondos')], ['penna', L('A penna', 'Hand drawn', 'A mano')]];
+const QR_LOGHI = () => [['no', L('Niente', 'None', 'Nada')], ['foto', L('La tua foto', 'Your picture', 'Tu foto')], ['immagine', L('Un’immagine', 'An image', 'Una imagen')]];
+const QR_TAVOLOZZE = () => [
+  ['#150910', '#ffffff', L('Inchiostro', 'Ink', 'Tinta')],
+  ['#1a1919', '#fdfbf6', L('Carta', 'Paper', 'Papel')],
+  ['#ba007a', '#ffffff', 'Magenta'],
+  ['#1d2a6b', '#ffffff', L('Blu notte', 'Night blue', 'Azul noche')],
+  ['#1f4d2b', '#fbfaf5', L('Bosco', 'Forest', 'Bosque')],
+];
+
+function qrStileSalvato() {
+  const s = impostazioni().qr || {};
+  const tra = (v, voci, b) => (voci.some(([id]) => id === v) ? v : b);
+  const col = (v, b) => (/^#[0-9a-f]{6}$/i.test(String(v || '')) ? String(v).toLowerCase() : b);
+  return {
+    moduli: tra(s.moduli, QR_MODULI(), 'quadrati'), occhi: tra(s.occhi, QR_OCCHI(), 'quadrati'),
+    scuro: col(s.scuro, '#150910'), chiaro: col(s.chiaro, '#ffffff'), occhio: col(s.occhio, ''),
+    cornice: typeof s.cornice === 'string' ? s.cornice : '', logo: tra(s.logo, QR_LOGHI(), 'no'),
+    logoImg: typeof s.logoImg === 'string' ? s.logoImg : '',
+    logoLato: Number.isFinite(Number(s.logoLato)) ? Math.max(20, Math.min(100, Number(s.logoLato))) : 100,
+    testo: typeof s.testo === 'string' ? s.testo : '',
+  };
+}
+
+function _qrVie() {
+  const login = String(stato?.user?.login || '').toLowerCase();
+  if (!login) return [];
+  const vie = [[L('La tua pagina link', 'Your link page', 'Tu página de enlaces'), `https://socialbot.live/u/${login}`]];
+  if (stato?.piattaforma === 'twitch') vie.push(['Twitch', `https://twitch.tv/${login}`]);
+  if (stato?.piattaforma === 'kick') vie.push(['Kick', `https://kick.com/${login}`]);
+  return vie;
+}
+
+const _qrScelte = (nome, voci, scelto) => `<div class="gr-sfondo-scelte" role="group">${voci.map(([id, n]) => `<button type="button" class="gr-tema${id === scelto ? ' on' : ''}" data-qr-${nome}="${esc(id)}" aria-pressed="${id === scelto}">${esc(n)}</button>`).join('')}</div>`;
+
+function pannelloQr() {
+  const s = qrStileSalvato(), vie = _qrVie();
+  const testo = s.testo || (vie[0] ? vie[0][1] : '');
+  return pannello('qr', `
+    <div class="carta" id="qr-carta">
+      <h2>${_hIco(ICO.qr)}${L('QR su misura', 'Custom QR', 'QR a medida')}</h2>
+      <p>${L('Un QR che porta dove vuoi, con le tue forme e i tuoi colori. Prima di scaricarlo lo rileggiamo dai pixel, come farebbe un telefono: se non si legge, non esce.', 'A QR that leads where you want, with your shapes and colors. Before you download it we read it back from the pixels, like a phone would: if it does not read, it does not come out.', 'Un QR que lleva a donde quieras, con tus formas y tus colores. Antes de descargarlo lo releemos desde los píxeles, como haría un móvil: si no se lee, no sale.')}</p>
+      <div class="qr-lavoro spazio-sopra">
+        <div class="qr-comandi">
+          <label class="campo campo-su">${L('Dove porta', 'Where it leads', 'A dónde lleva')}<input type="text" id="qr-testo" maxlength="600" value="${esc(testo)}" autocomplete="off" spellcheck="false"></label>
+          ${vie.length ? `<div class="gr-sfondo-scelte" id="qr-vie">${vie.map(([n, u]) => `<button type="button" class="gr-tema" data-qr-via="${esc(u)}">${esc(n)}</button>`).join('')}</div>` : ''}
+          <div class="campo campo-su"><span>${L('I quadratini', 'The modules', 'Los módulos')}</span>${_qrScelte('moduli', QR_MODULI(), s.moduli)}</div>
+          <div class="campo campo-su"><span>${L('Gli occhi', 'The eyes', 'Los ojos')}</span>${_qrScelte('occhi', QR_OCCHI(), s.occhi)}</div>
+          <div class="campo campo-su"><span>${L('I colori', 'The colors', 'Los colores')}</span>
+            <div class="gr-sfondo-scelte">${QR_TAVOLOZZE().map(([a, b, n]) => `<button type="button" class="gr-tema qr-tav" data-qr-tav="${a},${b}"><span class="qr-tav-cam" style="background:${b};border-color:${a}"><span style="background:${a}"></span></span>${esc(n)}</button>`).join('')}</div>
+          </div>
+          <div class="qr-colori">
+            <label class="campo campo-su">${L('Quadratini', 'Modules', 'Módulos')}<input type="color" id="qr-scuro" value="${s.scuro}"></label>
+            <label class="campo campo-su">${L('Fondo', 'Background', 'Fondo')}<input type="color" id="qr-chiaro" value="${s.chiaro}"></label>
+            <label class="campo campo-su">${L('Occhi', 'Eyes', 'Ojos')}<input type="color" id="qr-occhio" value="${s.occhio || s.scuro}"></label>
+          </div>
+          <div class="campo campo-su"><span>${L('Logo al centro', 'Logo in the middle', 'Logo en el centro')}</span>${_qrScelte('logo', QR_LOGHI(), s.logo)}</div>
+          <input type="file" id="qr-file" accept="image/png,image/jpeg,image/webp" hidden>
+          <button type="button" class="btn testo mini" id="qr-cambia"${s.logo === 'immagine' ? '' : ' hidden'}>${L('Cambia immagine', 'Change image', 'Cambiar imagen')}</button>
+          <label class="campo campo-su" id="qr-logo-grande"${s.logo === 'no' ? ' hidden' : ''}>${L('Grandezza del logo', 'Logo size', 'Tamaño del logo')}<input type="range" id="qr-logo-lato" min="20" max="100" step="5" value="${s.logoLato}"></label>
+          <label class="campo campo-su">${L('Frase sotto, se vuoi una cornice', 'Line below, if you want a frame', 'Frase debajo, si quieres un marco')}<input type="text" id="qr-cornice" maxlength="40" value="${esc(s.cornice)}" placeholder="${esc(L('Inquadrami', 'Scan me', 'Escanéame'))}"></label>
+        </div>
+        <div class="qr-vista">
+          <canvas id="qr-tela" width="480" height="480" role="img" aria-label="${esc(L('Anteprima del QR', 'QR preview', 'Vista previa del QR'))}"></canvas>
+          <p id="qr-esito" class="qr-esito" role="status" aria-live="polite"></p>
+          <ul id="qr-problemi" class="promo-problemi"></ul>
+          <div class="promo-azioni">
+            <label class="campo campo-su">${L('Grandezza', 'Size', 'Tamaño')}<select id="qr-misura"><option value="1024">1024 px</option><option value="2048" selected>2048 px</option><option value="4096">4096 px ${L('(stampa)', '(print)', '(impresión)')}</option></select></label>
+          </div>
+          <div class="promo-azioni spazio-sopra">
+            <button type="button" class="btn" id="qr-png" disabled>${L('Scarica PNG', 'Download PNG', 'Descargar PNG')}</button>
+            <button type="button" class="btn secondario" id="qr-svg" disabled>${L('Scarica SVG', 'Download SVG', 'Descargar SVG')}</button>
+            <button type="button" class="btn secondario" id="qr-salva">${L('Salva lo stile', 'Save the style', 'Guardar el estilo')}</button>
+          </div>
+          <p class="suggerimento">${L('Lo stile salvato lo usano anche le Grafiche social, per il QR che mettono nelle immagini.', 'The saved style is also used by Social graphics, for the QR they put in the images.', 'El estilo guardado también lo usan las Gráficas sociales, para el QR que ponen en las imágenes.')}</p>
+        </div>
+      </div>
+    </div>`);
+}
+
+function _qrImmagine(src) {
+  return new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ko(new Error('immagine')); i.src = src; });
+}
+
+function _qrLogo(st) {
+  if (st.logo === 'no') return Promise.resolve(null);
+  const src = st.logo === 'foto' ? `/u/${encodeURIComponent(String(stato?.user?.login || '').toLowerCase())}/avatar` : st.logoImg;
+  if (!src) return Promise.resolve(null);
+  if (!QR_STATO.loghi.has(src)) {
+    QR_STATO.loghi.set(src, _qrImmagine(src).then((img) => {
+      const lato = Math.min(512, Math.max(img.naturalWidth, img.naturalHeight)), k = lato / Math.max(img.naturalWidth, img.naturalHeight);
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      return { img: c, url: c.toDataURL('image/png'), w: c.width, h: c.height };
+    }).catch(() => null));
+  }
+  return QR_STATO.loghi.get(src);
+}
+
+function qrStileDalModulo() {
+  const $ = (x) => document.getElementById(x);
+  const scelto = (nome, base) => document.querySelector(`#scheda-qr [data-qr-${nome}].on`)?.getAttribute(`data-qr-${nome}`) || base;
+  const scuro = $('qr-scuro').value, occhio = $('qr-occhio').value;
+  const logo = scelto('logo', 'no');
+  return {
+    moduli: scelto('moduli', 'quadrati'), occhi: scelto('occhi', 'quadrati'),
+    scuro, chiaro: $('qr-chiaro').value, occhio: occhio.toLowerCase() === scuro.toLowerCase() ? '' : occhio,
+    cornice: $('qr-cornice').value.replace(/\s+/g, ' ').trim(), logo,
+    logoImg: logo === 'immagine' ? QR_STATO.caricato || qrStileSalvato().logoImg : '',
+    logoLato: Number($('qr-logo-lato').value) || 100, testo: $('qr-testo').value.trim(),
+  };
+}
+
+function caricaMotoreQr() {
+  if (window.SB_PENNA) return Promise.resolve();
+  return new Promise((ok, ko) => { const s = document.createElement('script'); s.src = '/penna.js'; s.onload = ok; s.onerror = () => ko(new Error('/penna.js')); document.head.appendChild(s); });
+}
+
+function _qrProgetto(st, logo) {
+  return window.SB_QR.progetto(st.testo, { ...st, logo, logoLato: st.logoLato / 100, occhio: st.occhio, coloreCornice: '', seme: 'qr:' + String(stato?.user?.login || '') });
+}
+
+async function qrRifai() {
+  const giro = ++QR_STATO.giro;
+  const tela = document.getElementById('qr-tela');
+  if (!tela || !window.SB_QR) return;
+  await caricaMotoreQr();
+  const st = qrStileDalModulo();
+  if (st.cornice && document.fonts?.load) await document.fonts.load("400 40px 'Permanent Marker'").catch(() => {});
+  const logo = await _qrLogo(st);
+  if (giro !== QR_STATO.giro) return;
+  const p = _qrProgetto(st, logo);
+  QR_STATO.p = p;
+  const esito = document.getElementById('qr-esito'), lista = document.getElementById('qr-problemi');
+  const problemi = [...(p.problemi || [])];
+  if (st.logo !== 'no' && !logo && p.qr) problemi.push({ dice: st.logo === 'foto' ? L('La tua foto non si è caricata: riprova più tardi, o carica un’immagine.', 'Your picture did not load: try again later, or upload an image.', 'Tu foto no se ha cargado: inténtalo más tarde, o sube una imagen.') : L('Scegli un’immagine da mettere al centro.', 'Choose an image to put in the middle.', 'Elige una imagen para poner en el centro.') });
+  let legge = false;
+  if (p.qr) {
+    const geo = window.SB_QR.geometria(p, 480);
+    tela.width = geo.W; tela.height = geo.H;
+    const g = tela.getContext('2d', { willReadFrequently: true });
+    window.SB_QR.disegna(g, p, geo);
+    legge = window.SB_QR.rileggi(g.getImageData(0, 0, geo.W, geo.H), p, geo).ok;
+    if (!legge) problemi.push({ dice: L('Riletto dai pixel non torna: cambia i colori o rimpicciolisci il logo.', 'Read back from the pixels it does not match: change the colors or make the logo smaller.', 'Releído desde los píxeles no coincide: cambia los colores o haz el logo más pequeño.') });
+  } else {
+    tela.getContext('2d').clearRect(0, 0, tela.width, tela.height);
+  }
+  lista.innerHTML = problemi.map((x) => `<li class="problema">${esc(x.dice)}</li>`).join('');
+  const ok = !!p.qr && legge && !problemi.length;
+  esito.textContent = ok
+    ? (p.targa ? L(`Si legge: riletto dai pixel, col logo che copre ${Math.round(p.targa.danno.quota * 100)}% di quello che si può correggere.`, `It reads: read back from the pixels, with the logo covering ${Math.round(p.targa.danno.quota * 100)}% of what can be corrected.`, `Se lee: releído desde los píxeles, con el logo cubriendo el ${Math.round(p.targa.danno.quota * 100)}% de lo que se puede corregir.`)
+      : L('Si legge: riletto dai pixel.', 'It reads: read back from the pixels.', 'Se lee: releído desde los píxeles.'))
+    : '';
+  esito.classList.toggle('ok', ok);
+  document.getElementById('qr-png').disabled = !ok;
+  document.getElementById('qr-svg').disabled = !ok;
+}
+
+function qrRifaiPresto() {
+  clearTimeout(QR_STATO.timer);
+  QR_STATO.timer = setTimeout(() => { qrRifai().catch(() => {}); }, 120);
+}
+
+function scaricaBlob(blob, nome) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = nome;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+}
+
+function _qrNome(p) {
+  const base = String(p.testo).replace(/^https?:\/\//, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase().slice(0, 50);
+  return 'qr-' + (base || 'socialbot');
+}
+
+async function _qrFont() {
+  if (!QR_STATO.font) {
+    QR_STATO.font = fetch('/vendor/font/permanentmarker-normal-400-latin.woff2').then((r) => (r.ok ? r.blob() : null))
+      .then((b) => (b ? new Promise((ok) => { const f = new FileReader(); f.onload = () => ok(f.result); f.onerror = () => ok(''); f.readAsDataURL(b); }) : ''))
+      .catch(() => '');
+  }
+  return QR_STATO.font;
+}
+
+async function qrScarica(formato, btn) {
+  const p = QR_STATO.p;
+  if (!p?.qr || p.problemi.length) return;
+  btn.disabled = true;
+  try {
+    const geo = window.SB_QR.geometria(p, Number(document.getElementById('qr-misura').value) || 2048);
+    const tela = document.createElement('canvas');
+    tela.width = geo.W; tela.height = geo.H;
+    const g = tela.getContext('2d', { willReadFrequently: true });
+    window.SB_QR.disegna(g, p, geo);
+    if (!window.SB_QR.rileggi(g.getImageData(0, 0, geo.W, geo.H), p, geo).ok) {
+      toast(L('Questo QR riletto dai pixel non torna: non lo scarico.', 'This QR read back from the pixels does not match: I will not download it.', 'Este QR releído desde los píxeles no coincide: no lo descargo.'), 'errore');
+      return;
+    }
+    if (formato === 'png') {
+      scaricaBlob(await firmaPngBlob(await new Promise((ok) => tela.toBlob(ok, 'image/png'))), _qrNome(p) + '.png');
+    } else {
+      const fascia = window.SB_QR.percorsi(p, geo).fascia;
+      const frasePx = fascia ? window.SB_QR.misuraFrase(g, p.stile.cornice, fascia) : 0;
+      const font = fascia ? await _qrFont() : '';
+      scaricaBlob(new Blob([window.SB_QR.svg(p, geo, { font, frasePx })], { type: 'image/svg+xml' }), _qrNome(p) + '.svg');
+    }
+  } finally { btn.disabled = false; }
+}
+
+function _qrRiduciLogo(file) {
+  return _qrImmagine(URL.createObjectURL(file)).then((img) => {
+    for (const lato of [384, 256, 192]) {
+      const k = Math.min(1, lato / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      for (const [tipo, q] of [['image/png'], ['image/webp', 0.9]]) {
+        const u = c.toDataURL(tipo, q);
+        if (u.startsWith(`data:${tipo}`) && u.length <= 190000) return u;
+      }
+    }
+    throw new Error(L('l’immagine è troppo pesante anche rimpicciolita', 'the image is too heavy even when shrunk', 'la imagen pesa demasiado incluso reducida'));
+  });
+}
+
+function avviaQr() {
+  const scheda = document.getElementById('scheda-qr');
+  if (!scheda || !window.SB_QR) return;
+  if (!scheda.dataset.collegata) {
+    scheda.dataset.collegata = '1';
+    scheda.addEventListener('input', (ev) => { if (ev.target.closest('.qr-comandi')) qrRifaiPresto(); });
+    scheda.addEventListener('click', (ev) => {
+      const b = ev.target.closest('button');
+      if (!b || !scheda.contains(b)) return;
+      for (const nome of ['moduli', 'occhi', 'logo']) {
+        if (b.hasAttribute(`data-qr-${nome}`)) {
+          b.parentElement.querySelectorAll('button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+          if (nome === 'logo') {
+            document.getElementById('qr-logo-grande').hidden = b.dataset.qrLogo === 'no';
+            document.getElementById('qr-cambia').hidden = b.dataset.qrLogo !== 'immagine';
+            if (b.dataset.qrLogo === 'immagine' && !QR_STATO.caricato && !qrStileSalvato().logoImg) document.getElementById('qr-file').click();
+          }
+          qrRifaiPresto();
+          return;
+        }
+      }
+      if (b.id === 'qr-cambia') { document.getElementById('qr-file').click(); return; }
+      if (b.dataset.qrVia) { document.getElementById('qr-testo').value = b.dataset.qrVia; qrRifaiPresto(); return; }
+      if (b.dataset.qrTav) {
+        const [a, c] = b.dataset.qrTav.split(',');
+        document.getElementById('qr-scuro').value = a; document.getElementById('qr-occhio').value = a; document.getElementById('qr-chiaro').value = c;
+        qrRifaiPresto();
+        return;
+      }
+      if (b.id === 'qr-png') qrScarica('png', b).catch((e) => toast(e.message, 'errore'));
+      if (b.id === 'qr-svg') qrScarica('svg', b).catch((e) => toast(e.message, 'errore'));
+      if (b.id === 'qr-salva') conErrore(() => salvaImpostazioni({ qr: qrStileDalModulo() }, L('Stile del QR salvato', 'QR style saved', 'Estilo del QR guardado')));
+    });
+    document.getElementById('qr-file').addEventListener('change', (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      ev.target.value = '';
+      if (!f) return;
+      _qrRiduciLogo(f).then((u) => { QR_STATO.caricato = u; qrRifaiPresto(); }).catch((e) => toast(e.message, 'errore'));
+    });
+  }
+  qrRifai().catch(() => {});
+}
+
+const MISURE = {
+  emote: { lati: [112, 56, 28], peso: 1024 * 1024 },
+  badge: { lati: [72, 36, 18], peso: 25 * 1024 },
+};
+const MIS_STATO = { img: null, nome: '', file: [], giro: 0 };
+
+function pannelloMisure() {
+  const scelte = (nome, voci) => `<div class="gr-sfondo-scelte" role="group">${voci.map(([id, n], i) => `<button type="button" class="gr-tema${i === 0 ? ' on' : ''}" data-mis-${nome}="${id}" aria-pressed="${i === 0}">${esc(n)}</button>`).join('')}</div>`;
+  return pannello('misure', `
+    <div class="carta" id="mis-carta">
+      <h2>${_hIco(ICO.misure)}${L('Emote e badge', 'Emotes and badges', 'Emotes y badges')}</h2>
+      <p>${L('Carichi un’immagine sola e ti diamo le misure che chiede Twitch, rimpicciolite bene: la media dei pixel si fa sulla luce vera, non sui numeri del colore, così i bordi restano puliti e i colori non si sporcano.', 'Upload one image and you get the sizes Twitch asks for, shrunk properly: pixels are averaged on real light, not on color numbers, so edges stay clean and colors do not get muddy.', 'Subes una sola imagen y te damos los tamaños que pide Twitch, bien reducidos: la media de los píxeles se hace sobre la luz real, no sobre los números del color, así los bordes quedan limpios y los colores no se ensucian.')}</p>
+      <div class="promo-azioni spazio-sopra">
+        <button type="button" class="btn" id="mis-scegli">${L('Scegli un’immagine', 'Choose an image', 'Elige una imagen')}</button>
+        <input type="file" id="mis-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+      </div>
+      <div class="campo campo-su"><span>${L('Per cosa', 'For what', 'Para qué')}</span>${scelte('tipo', [['emote', L('Emote (112, 56, 28)', 'Emote (112, 56, 28)', 'Emote (112, 56, 28)')], ['badge', L('Badge (72, 36, 18)', 'Badge (72, 36, 18)', 'Badge (72, 36, 18)')]])}</div>
+      <div class="campo campo-su"><span>${L('Se non è quadrata', 'If it is not square', 'Si no es cuadrada')}</span>${scelte('adatta', [['intera', L('Intera, col bordo trasparente', 'Whole, with a transparent border', 'Entera, con borde transparente')], ['riempi', L('Riempi, tagliando i bordi', 'Fill, cutting the edges', 'Rellenar, recortando los bordes')]])}</div>
+      <div id="mis-anteprime" class="mis-anteprime spazio-sopra"><p class="vuoto">${L('Scegli un’immagine per vederla alle misure vere, sulla chat scura e su quella chiara.', 'Choose an image to see it at real size, on the dark chat and the light one.', 'Elige una imagen para verla a tamaño real, en el chat oscuro y en el claro.')}</p></div>
+      <ul id="mis-problemi" class="promo-problemi"></ul>
+      <div class="promo-azioni spazio-sopra"><button type="button" class="btn" id="mis-zip" disabled>${L('Scarica tutte (zip)', 'Download all (zip)', 'Descargar todas (zip)')}</button></div>
+    </div>`);
+}
+
+const _misLin = (() => { const t = new Float32Array(256); for (let i = 0; i < 256; i++) { const x = i / 255; t[i] = x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; } return t; })();
+const _misSrgb = (v) => { const x = v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055; return Math.max(0, Math.min(255, Math.round(x * 255))); };
+
+function riduciLineare(src, S, lato) {
+  const d = src.data, fuori = new ImageData(lato, lato), o = fuori.data, k = S / lato;
+  for (let oy = 0; oy < lato; oy++) {
+    const y0 = oy * k, y1 = y0 + k;
+    for (let ox = 0; ox < lato; ox++) {
+      const x0 = ox * k, x1 = x0 + k;
+      let r = 0, g = 0, b = 0, a = 0, w = 0;
+      for (let y = Math.floor(y0); y < Math.ceil(y1); y++) {
+        const wy = Math.min(y + 1, y1) - Math.max(y, y0);
+        for (let x = Math.floor(x0); x < Math.ceil(x1); x++) {
+          const wx = Math.min(x + 1, x1) - Math.max(x, x0), p = (y * S + x) * 4, al = d[p + 3] / 255, ww = wx * wy;
+          r += _misLin[d[p]] * al * ww; g += _misLin[d[p + 1]] * al * ww; b += _misLin[d[p + 2]] * al * ww; a += al * ww; w += ww;
+        }
+      }
+      const q = (oy * lato + ox) * 4;
+      if (a > 0) { o[q] = _misSrgb(r / a); o[q + 1] = _misSrgb(g / a); o[q + 2] = _misSrgb(b / a); }
+      o[q + 3] = Math.round((a / w) * 255);
+    }
+  }
+  return fuori;
+}
+
+const _crc = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8) { let c = 0xffffffff; for (let i = 0; i < u8.length; i++) c = _crc[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+
+function zipSemplice(file) {
+  const enc = new TextEncoder(), parti = [], centrale = [];
+  let pos = 0;
+  for (const f of file) {
+    const nome = enc.encode(f.nome), dati = f.dati, crc = crc32(dati);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(8, 0, true);
+    h.setUint32(14, crc, true); h.setUint32(18, dati.length, true); h.setUint32(22, dati.length, true); h.setUint16(26, nome.length, true);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true);
+    c.setUint32(16, crc, true); c.setUint32(20, dati.length, true); c.setUint32(24, dati.length, true); c.setUint16(28, nome.length, true); c.setUint32(42, pos, true);
+    parti.push(new Uint8Array(h.buffer), nome, dati);
+    centrale.push(new Uint8Array(c.buffer), nome);
+    pos += 30 + nome.length + dati.length;
+  }
+  const lung = centrale.reduce((s, x) => s + x.length, 0), fine = new DataView(new ArrayBuffer(22));
+  fine.setUint32(0, 0x06054b50, true); fine.setUint16(8, file.length, true); fine.setUint16(10, file.length, true);
+  fine.setUint32(12, lung, true); fine.setUint32(16, pos, true);
+  return new Blob([...parti, ...centrale, new Uint8Array(fine.buffer)], { type: 'application/zip' });
+}
+
+async function misureRifai() {
+  const giro = ++MIS_STATO.giro, img = MIS_STATO.img;
+  const box = document.getElementById('mis-anteprime'), lista = document.getElementById('mis-problemi'), zip = document.getElementById('mis-zip');
+  if (!box || !img) return;
+  const tipo = document.querySelector('#scheda-misure [data-mis-tipo].on')?.dataset.misTipo || 'emote';
+  const adatta = document.querySelector('#scheda-misure [data-mis-adatta].on')?.dataset.misAdatta || 'intera';
+  const M = MISURE[tipo], w = img.naturalWidth, h = img.naturalHeight;
+  const S = Math.min(M.lati[0] * 16, Math.max(M.lati[0], adatta === 'intera' ? Math.max(w, h) : Math.min(w, h)));
+  const base = document.createElement('canvas');
+  base.width = S; base.height = S;
+  const g = base.getContext('2d', { willReadFrequently: true });
+  g.imageSmoothingQuality = 'high';
+  const k = adatta === 'intera' ? S / Math.max(w, h) : S / Math.min(w, h);
+  g.drawImage(img, (S - w * k) / 2, (S - h * k) / 2, w * k, h * k);
+  const sorgente = g.getImageData(0, 0, S, S);
+  const problemi = [];
+  if (Math.max(w, h) < M.lati[0]) problemi.push(L(`L’immagine è più piccola di ${M.lati[0]} px: la misura grande viene sgranata. Meglio partire da almeno ${M.lati[0] * 4} px.`, `The image is smaller than ${M.lati[0]} px: the big size comes out blurry. Better start from at least ${M.lati[0] * 4} px.`, `La imagen es más pequeña que ${M.lati[0]} px: el tamaño grande sale borroso. Mejor partir de al menos ${M.lati[0] * 4} px.`));
+  const file = [];
+  for (const lato of M.lati) {
+    const c = document.createElement('canvas');
+    c.width = lato; c.height = lato;
+    c.getContext('2d').putImageData(riduciLineare(sorgente, S, lato), 0, 0);
+    const blob = await firmaPngBlob(await new Promise((ok) => c.toBlob(ok, 'image/png')));
+    if (giro !== MIS_STATO.giro) return;
+    if (blob.size > M.peso) problemi.push(L(`La misura ${lato} pesa ${Math.ceil(blob.size / 1024)} KB: Twitch ne accetta al massimo ${Math.round(M.peso / 1024)}.`, `The ${lato} size weighs ${Math.ceil(blob.size / 1024)} KB: Twitch accepts at most ${Math.round(M.peso / 1024)}.`, `El tamaño ${lato} pesa ${Math.ceil(blob.size / 1024)} KB: Twitch acepta como máximo ${Math.round(M.peso / 1024)}.`));
+    file.push({ lato, blob, url: c.toDataURL('image/png'), nome: `${MIS_STATO.nome}-${tipo}-${lato}.png` });
+  }
+  MIS_STATO.file = file;
+  const [f4, f2, f1] = file, piccola = `<img src="${f1.url}" srcset="${f2.url} 2x, ${f4.url} 4x" width="${f1.lato}" height="${f1.lato}" alt="">`;
+  const chi = `<b>${esc(String(stato?.user?.login || 'tu'))}</b>`;
+  const riga = (sfondo, cls) => `<div class="mis-chat ${cls}" style="background:${sfondo}"><span class="mis-riga">${tipo === 'badge' ? `${piccola} ${chi}: ${L('ciao a tutti', 'hi everyone', 'hola a todos')}` : `${chi}: ${L('ciao', 'hi', 'hola')} ${piccola} ${L('come va?', 'how is it going?', '¿qué tal?')}`}</span></div>`;
+  box.innerHTML = `<div class="mis-misure">${file.map((f) => `<figure class="mis-misura"><img src="${f.url}" width="${f.lato}" height="${f.lato}" alt="${f.lato} px"><figcaption>${f.lato} px · ${Math.ceil(f.blob.size / 1024)} KB <button type="button" class="btn testo mini" data-mis-scarica="${f.lato}">${L('Scarica', 'Download', 'Descargar')}</button></figcaption></figure>`).join('')}</div>`
+    + riga('#18181b', 'scura') + riga('#f7f7f8', 'chiara');
+  lista.innerHTML = problemi.map((x) => `<li class="problema">${esc(x)}</li>`).join('');
+  zip.disabled = !file.length;
+}
+
+function avviaMisure() {
+  const scheda = document.getElementById('scheda-misure');
+  if (!scheda || scheda.dataset.collegata) return;
+  scheda.dataset.collegata = '1';
+  scheda.addEventListener('click', (ev) => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    if (b.id === 'mis-scegli') { document.getElementById('mis-file').click(); return; }
+    for (const nome of ['tipo', 'adatta']) {
+      if (b.hasAttribute(`data-mis-${nome}`)) {
+        b.parentElement.querySelectorAll('button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+        misureRifai().catch((e) => toast(e.message, 'errore'));
+        return;
+      }
+    }
+    if (b.dataset.misScarica) { const f = MIS_STATO.file.find((x) => String(x.lato) === b.dataset.misScarica); if (f) scaricaBlob(f.blob, f.nome); return; }
+    if (b.id === 'mis-zip' && MIS_STATO.file.length) {
+      Promise.all(MIS_STATO.file.map(async (f) => ({ nome: f.nome, dati: new Uint8Array(await f.blob.arrayBuffer()) })))
+        .then((file) => scaricaBlob(zipSemplice(file), `${MIS_STATO.nome}-${document.querySelector('#scheda-misure [data-mis-tipo].on')?.dataset.misTipo || 'emote'}.zip`));
+    }
+  });
+  document.getElementById('mis-file').addEventListener('change', (ev) => {
+    const f = ev.target.files && ev.target.files[0];
+    ev.target.value = '';
+    if (!f) return;
+    MIS_STATO.nome = (f.name.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'emote').slice(0, 30);
+    _qrImmagine(URL.createObjectURL(f)).then((img) => { MIS_STATO.img = img; return misureRifai(); })
+      .catch(() => toast(L('Questa immagine non si apre: prova un PNG o un JPG.', 'This image does not open: try a PNG or a JPG.', 'Esta imagen no se abre: prueba un PNG o un JPG.'), 'errore'));
   });
 }
 
@@ -25715,6 +26164,8 @@ function caricaDatiScheda(id) {
   if (id === 'account') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); collegaAvvisiManca(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'promo') { collegaPromo(); caricaPromo(); }
+  if (id === 'qr') avviaQr();
+  if (id === 'misure') avviaMisure();
   if (id === 'personalita') { caricaGuide(); caricaSpontanee(); }
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); caricaRetePanoramica(); }
   if (id === 'clip') caricaClip();

@@ -512,11 +512,10 @@
 
     if (B.qr) {
       const Q = B.qr;
-      const q = radice.qrcode ? radice.qrcode(0, 'M') : null;
-      if (!q) throw new Error('manca il generatore di QR');
-      q.addData(String(conf.qr)); q.make();
-      const n = q.getModuleCount();
-      Q.n = n; Q.buio = (x, y) => q.isDark(y, x);
+      if (!radice.SB_QR) throw new Error('manca il generatore di QR');
+      const q = radice.SB_QR.codifica(String(conf.qr), { livello: 'M' });
+      const n = q.n;
+      Q.n = n; Q.buio = (x, y) => q.scuro[y * n + x] === 1;
       const fc = `400 ${Q.cap}px ${MANO}`, mc = metriche(misura, fc), lhc = Q.cap * 1.08;
       Q.fc = fc; Q.lhc = lhc; Q.suC = mc.su;
       const riquadra = (lato) => {

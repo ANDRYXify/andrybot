@@ -43,6 +43,12 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nella pagina che chiede di confermare la settimana i tasti hanno l'aspetto di quelli del sito, non quello grezzo del browser.
 - Quando al canale non manca niente, ogni qualche giorno un piccolo invito in basso a destra ti fa scoprire una funzione che non hai ancora provato, una volta sola.
 - Le istruzioni per trovare il token 7TV dicono dove cliccare su Chrome, Edge e Firefox, e ricordano che senza l'accesso a 7tv.app il token non c'è. [vai: emote]
+- [importante] Nel menù c'è «Strumenti», e dentro «QR su misura»: forme, colori, il tuo logo e una frase, e prima di scaricarlo lo rileggiamo dai pixel. Lo stesso stile va nelle Grafiche social. [vai: qr]
+  > Un QR tuo che si legge davvero
+  > Un QR personalizzato di solito si prova col telefono e si spera. Qui contrasto, margine e quanto può coprire il logo sono dentro il disegno, e se riletto non torna non si scarica.
+- [importante] In «Strumenti» c'è anche «Emote e badge»: da un'immagine sola escono le tre misure che chiede Twitch, rimpicciolite senza sporcare i bordi, e le vedi nella chat chiara e in quella scura. [vai: misure]
+  > Le misure di Twitch da un'immagine sola
+  > Non serve un programma di grafica per avere 112, 56 e 28 pixel: carichi l'immagine, vedi subito come sta in chat e sai se pesa troppo prima di caricarla su Twitch.
 
 ## 2026-09-25
 

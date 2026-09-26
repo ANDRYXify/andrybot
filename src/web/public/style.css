@@ -796,6 +796,28 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .promo-tempo { display: flex; align-items: center; gap: .6rem; margin-top: .6rem; }
 .promo-tempo input[type="range"] { flex: 1 1 auto; }
 .promo-problemi { list-style: none; margin: .6rem 0; padding: 0; display: grid; gap: .35rem; }
+.qr-lavoro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.4rem; align-items: start; }
+@media (max-width: 860px) { .qr-lavoro { grid-template-columns: 1fr; } }
+.qr-comandi { display: grid; gap: .1rem; min-width: 0; }
+.qr-vista { position: sticky; top: calc(var(--top-h) + 1rem); display: grid; gap: .6rem; justify-items: center; min-width: 0; }
+@media (max-width: 860px) { .qr-vista { position: static; } }
+.qr-vista canvas { width: 100%; max-width: 420px; height: auto; border: var(--contorno-sp) solid var(--contorno); border-radius: var(--ang-mano); background: var(--surface); }
+.qr-colori { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
+.qr-colori .campo-su { margin-top: .6rem; }
+.qr-colori input[type="color"] { width: 100%; height: 2.4rem; padding: 2px; border: var(--contorno-sp) solid var(--contorno); border-radius: var(--ang-mano); background: var(--surface); cursor: pointer; }
+.qr-tav { display: inline-flex; align-items: center; gap: .4rem; }
+.qr-tav-cam { display: inline-grid; place-items: center; width: 1.1rem; height: 1.1rem; border: 2px solid; border-radius: 4px; }
+.qr-tav-cam > span { width: .45rem; height: .45rem; border-radius: 1px; }
+.qr-esito { margin: 0; font-weight: 600; font-size: .9rem; min-height: 1.3em; text-align: center; }
+.qr-esito.ok { color: var(--verde); }
+.mis-misure { display: flex; flex-wrap: wrap; gap: 1.2rem; align-items: flex-end; }
+.mis-misura { margin: 0; display: grid; gap: .35rem; justify-items: center; }
+.mis-misura img { background: repeating-conic-gradient(var(--surface-2-tinta) 0 25%, var(--surface) 0 50%) 0 0 / 12px 12px; border: 1px solid var(--contorno); }
+.mis-misura figcaption { font-size: .82rem; color: var(--testo-2); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .4rem; }
+.mis-chat { margin-top: .8rem; padding: .7rem .9rem; border-radius: var(--ang-mano); display: grid; gap: .45rem; font: 13px/28px system-ui, sans-serif; overflow-x: auto; }
+.mis-chat.scura { color: #efeff1; }
+.mis-chat.chiara { color: #0e0e10; border: 1px solid var(--contorno); }
+.mis-riga img { vertical-align: middle; }
 .riga-interruttore .etichetta-stato { font-weight: 700; font-size: 1.02rem; }
 
 .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: .14rem .6rem; font-size: .76rem; font-weight: 600; border: 1px solid var(--border); background: var(--surface-2); color: var(--testo-2); }

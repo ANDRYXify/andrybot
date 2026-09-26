@@ -14,6 +14,8 @@ restituisce `{ w, h, durata, fine, problemi, disegna(ctx, t) }`.
 - **Versioni.** `piena`: logo, titolo, chat con la risposta, nota a mano con la
   freccia, piattaforme cerchiate, carta del QR, indirizzo sottolineato.
   `essenziale`: logo, titolo, indirizzo (per chi non vuole il QR).
+  La matrice del QR viene da `SB_QR.codifica(…, { livello: 'M' })`, il
+  codificatore nostro (`docs/STRUMENTI.md`); la carta la disegna la penna.
   `anteprima`: l'immagine 1200x630 del link di una campagna.
 - **Impaginazione dalla misura.** Orizzontale o verticale lo dice il rapporto
   fra i lati; l'unità `U` è la misura divisa per quella di riferimento

@@ -108,6 +108,7 @@ import * as automatiche from '../features/automatiche.js';
 import * as campagne from '../features/campagne.js';
 import { paginaCampagna, titoloDi } from './campagna-vista.js';
 import { pngDi, alleggerisci } from './png-leggero.js';
+import { normStileQr } from '../features/qr-stile.js';
 import * as promemoriaLicenza from '../features/licenza-promemoria.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
@@ -6436,6 +6437,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     }
     // Grafiche social (P5): config dello studio grafico. Solo dati testuali/di
     // stile, tutto limitato in lunghezza (rese SOLO lato client su canvas).
+    // lo stile del QR su misura (docs/STRUMENTI.md): lo riusano le Grafiche
+    if (b.qr !== undefined) out.qr = normStileQr(b.qr);
     if (b.grafiche !== undefined) {
       const gr = b.grafiche || {};
       const str = (v, n) => String(v == null ? '' : v).slice(0, n);

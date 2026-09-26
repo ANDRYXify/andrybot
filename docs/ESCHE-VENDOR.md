@@ -34,7 +34,8 @@ Fra i prefissi c'e `/vendor/`, e ha ragione di esserci:
 scansionati al mondo.
 
 Ma sotto `/vendor/` ci stanno anche le **nostre** cose: `human.js`, i dieci file
-dei modelli, `pixi.min.js`, `pixi-filters.min.js`, `qrcode.js` e — da poco — i
+dei modelli, `pixi.min.js`, `pixi-filters.min.js`, `qrcode.js` (oggi non c'e piu:
+il QR e nostro, `/qr.js`, vedi `docs/STRUMENTI.md`) e — da poco — i
 quattordici `.woff2` dei caratteri. La difesa serviva la pagina-esca al posto
 della libreria; e siccome la pagina del tracking ne chiede una quindicina, si
 superava la soglia di dodici e l'indirizzo finiva **in castigo per otto
@@ -66,7 +67,7 @@ non pubblichiamo resta in trappola.
 
 | indirizzo | esito |
 | --- | --- |
-| `/vendor/human.js`, `/vendor/pixi.min.js`, `/vendor/qrcode.js` | passa |
+| `/vendor/human.js`, `/vendor/pixi.min.js` | passa |
 | `/vendor/human-models/blazeface.json` | passa |
 | `/vendor/font/archivo-…woff2`, `/vendor/font/LICENSE.txt` | passa |
 | `/style.css` | passa |

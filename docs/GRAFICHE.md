@@ -73,7 +73,10 @@ seconda tinta.
   sinistra. Prima il riquadro stava sopra le ultime righe della settimana e
   l'indirizzo, centrato sotto, usciva dalla tela quando era lungo. Adesso le
   righe si stringono per fargli posto, e il sottotitolo del «Live ora» sta
-  sopra la fascia.
+  sopra la fascia. Il QR ha lo stile che lo streamer ha salvato in «QR su
+  misura» (forme, colori, logo; la cornice no, qui c'è già il riquadro), ed è
+  riletto dai pixel prima di finire nella grafica: se non torna, si usa quello
+  di serie (`docs/STRUMENTI.md`).
 
 ## 4. Il testo si legge per costruzione
 
