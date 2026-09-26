@@ -2092,8 +2092,6 @@ summary:focus-visible, select:focus-visible, input:focus-visible, textarea:focus
   outline-offset: 3px;
 }
 
-}
-
 input[type="file"], .font-mio-x, .ovl-insp-reset {
   border: 2px solid var(--contorno); border-width: var(--tratto-2);
   border-radius: var(--ang-mano);
@@ -2147,6 +2145,27 @@ input[type="file"]::file-selector-button {
   .veste-b:active { transform: none; }
   @media (hover: hover) {
   .veste-b:hover { transform: none; }
+  }
+}
+
+.pronti-voce, .pronti-togli, .pronti-quanti button {
+  border: 1px solid var(--contorno); border-width: var(--tratto-1);
+  border-radius: var(--ang-mano);
+  box-shadow: var(--ombra-ink-timbro);
+  transition: transform var(--lampo) var(--su-due), box-shadow var(--lampo) var(--su-due);
+}
+.pronti-voce { border-radius: var(--ang-mano-l); }
+@media (hover: hover) {
+.pronti-voce:hover, .pronti-togli:hover:not(:disabled), .pronti-quanti button:hover { transform: translate(-1px, -1px); }
+}
+.pronti-voce:active, .pronti-togli:active:not(:disabled), .pronti-quanti button:active { transform: translate(2px, 3px); box-shadow: none; }
+.pronti-voce[aria-checked="true"] { background: var(--acc); color: var(--su-acc); }
+.pronti-togli:disabled { box-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+  .pronti-voce, .pronti-togli, .pronti-quanti button { transition: none; }
+  .pronti-voce:active, .pronti-togli:active, .pronti-quanti button:active { transform: none; }
+  @media (hover: hover) {
+  .pronti-voce:hover, .pronti-togli:hover, .pronti-quanti button:hover { transform: none; }
   }
 }
 

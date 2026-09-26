@@ -28,6 +28,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Chi sostiene il progetto e torna da Stripe ritrova la pagina col suo grazie: prima il rimando al sottodominio perdeva per strada la conferma del pagamento.
 - Privacy e termini dicono il giorno in cui il loro testo è cambiato l'ultima volta, non più solo l'anno.
 - Nei risultati di ricerca titoli e descrizioni di home, guide, manuali, privacy e termini si leggono interi, senza tagli.
+- Scegliendo una veste per l'overlay anche il muro delle emote la segue: l'ombra sulle emote si accende o si spegne come vuole la veste.
+- Gli effetti pronti, i tasti dell'ispettore nello Studio e quello per togliere un carattere hanno di nuovo il loro contorno a china.
 
 ## 2026-09-25
 

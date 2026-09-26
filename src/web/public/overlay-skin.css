@@ -251,7 +251,7 @@
 }
 .ovl-insp-testa { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; }
 .ovl-insp-nome { flex: 1 0 100%; font-weight: 800; }
-.ovl-insp-reset { border: 0; background: color-mix(in srgb, var(--acc) 18%, transparent); color: inherit; border-radius: 8px; padding: .3rem .7rem; cursor: pointer; font-weight: 700; }
+.ovl-insp-reset { background: color-mix(in srgb, var(--acc) 18%, transparent); color: inherit; padding: .3rem .7rem; cursor: pointer; font-weight: 700; }
 @media (hover: hover) {
 .ovl-insp-reset:hover:not(:disabled) { background: color-mix(in srgb, var(--acc) 32%, transparent); }
 }

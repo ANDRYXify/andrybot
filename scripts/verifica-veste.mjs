@@ -86,7 +86,10 @@ dice(senzaTocchi.length === 0, 'e chi veste dichiara di aver toccato dei campi',
 {
   const r = await p.evaluate(() => {
     const b = [...document.querySelectorAll('#ovl-inspector .asp-blocco')];
-    const foto = () => b.map((x) => [...x.querySelectorAll('input, select')].map((e) => e.value).join(',')).join('|');
+    // Una casella di spunta si legge da «checked»: il suo value e' «on» sia
+    // accesa che spenta, e letta cosi' un blocco vestito da una spunta
+    // sembrerebbe fermo. La stessa lettura del controllo per blocco, qui sopra.
+    const foto = () => b.map((x) => [...x.querySelectorAll('input, select')].map((e) => (e.type === 'checkbox' ? e.checked : e.value)).join(',')).join('|');
     applicaVesteOvunque(0); const a = foto();
     applicaVesteOvunque(4); const c = foto();
     const fermi = [];

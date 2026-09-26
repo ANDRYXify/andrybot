@@ -9014,6 +9014,7 @@ const VESTE_MODI = {
   musica: (t) => vestiCfg('musica', t.dati.mu),
   wf: (t) => vestiParte('wf', vesteWidget(t)),
   ws: (t) => vestiParte('ws', vesteWidget(t)),
+  muro: (t, b) => _vesti([...b.querySelectorAll('[data-c="ombra"]')], !!t.dati.al.glow),
 };
 
 function _modoVeste(asp) {

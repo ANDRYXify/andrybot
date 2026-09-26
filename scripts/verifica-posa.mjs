@@ -17,6 +17,13 @@
 // dire la stessa cosa: il banco di regia (app.js, _posElemento) e l'overlay
 // vero (overlay-app.js, trasformaXY).
 //
+// Un elemento posato in un RIQUADRO ha un altro contratto, e si misura con
+// quello: x, y, w e h sono l'area in percento della tela (x e y l'angolo in
+// alto a sinistra), e il rettangolo reso deve essere esattamente quell'area. Il
+// muro delle emote e' sempre un'area (parte a tutta tela), quindi con la regola
+// della Dimensione non si misura: lo si trovava «spostato del doppio», ed era
+// il collaudo a leggere x come la corsa di un elemento che non ne ha una.
+//
 // Uso: node scripts/verifica-posa.mjs            (esce 1 se qualcosa non e' a filo)
 //      node scripts/verifica-posa.mjs --selftest (rimette la formula vecchia:
 //                                                 DEVE diventare rosso)
@@ -33,6 +40,9 @@ const SELFTEST = process.argv.includes('--selftest');
 
 const OVL_W = 1920, OVL_H = 1080;
 const DIMENSIONI = [30, 60, 100, 175, 300];
+// Aree valide per un riquadro (x + w <= 100, y + h <= 100): la tela intera,
+// una in mezzo, una a filo del bordo destro e basso, una nell'angolo.
+const SCATOLE = [[0, 0, 100, 100], [10, 20, 30, 40], [55, 40, 45, 60], [0, 70, 25, 30]];
 const TOLL = 1.5;
 
 const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -53,6 +63,18 @@ const b = await chromium.launch({ executablePath: CHROMIUM,
 
 const guai = [];
 const attesa = (v, lato, tela) => (v / 100) * (tela - lato) + lato / 2;
+
+// Il contratto del riquadro: il rettangolo reso e' l'area, lato per lato.
+function fuoriDallArea(aree, tw, th) {
+  const out = [];
+  for (const a of aree) {
+    const [x, y, w, h] = a.box;
+    const att = { sx: x / 100 * tw, su: y / 100 * th, w: w / 100 * tw, h: h / 100 * th };
+    const scarti = ['sx', 'su', 'w', 'h'].filter((c) => Math.abs(a[c] - att[c]) > TOLL);
+    if (scarti.length) out.push(`${a.k || ''} [${a.box.join(', ')}]: ${scarti.map((c) => `${c} ${a[c].toFixed(1)} invece di ${att[c].toFixed(1)}`).join(', ')}`);
+  }
+  return out;
+}
 
 // ---------------------------------------------------------------- banco di regia
 {
@@ -75,8 +97,8 @@ const attesa = (v, lato, tela) => (v / 100) * (tela - lato) + lato / 2;
     guai.push('banco: il giro guidato non si spegne piu\' con sb-giro, e puo\' coprire la tela');
   }
 
-  const misure = await p.evaluate(({ DIMENSIONI, vecchia }) => {
-    const fuori = [];
+  const { misure, aree } = await p.evaluate(({ DIMENSIONI, SCATOLE, vecchia }) => {
+    const fuori = [], aree = [];
     const canvas = document.getElementById('ovl-preview').getBoundingClientRect();
     const scala = canvas.width / 1920;
     const chiavi = (typeof ELEMENTI === 'function' ? ELEMENTI() : []).map((e) => e.k);
@@ -84,6 +106,17 @@ const attesa = (v, lato, tela) => (v / 100) * (tela - lato) + lato / 2;
       const el = typeof _nodo === 'function' ? _nodo(k) : null;
       if (!el || el.style.display === 'none' || !el.offsetWidth) continue;
       const st = _statoXY(k);
+      const salvo = { ...st };
+      const rimetti = () => { for (const c of Object.keys(st)) delete st[c]; Object.assign(st, salvo); _posElemento(el, st); };
+      for (const [x, y, w, h] of SCATOLE) {
+        Object.assign(st, { x: vecchia ? x + 5 : x, y, w, h, r: 0 });
+        _posElemento(el, st);
+        const r = el.getBoundingClientRect();
+        aree.push({ k, box: [x, y, w, h],
+          sx: (r.left - canvas.left) / scala, su: (r.top - canvas.top) / scala, w: r.width / scala, h: r.height / scala });
+      }
+      rimetti();
+      if (window.SB_RIQUADRO.e(salvo)) continue;
       const s0 = st.s, x0 = st.x, y0 = st.y, r0 = st.r;
       st.r = 0;
       for (const s of DIMENSIONI) {
@@ -102,12 +135,14 @@ const attesa = (v, lato, tela) => (v / 100) * (tela - lato) + lato / 2;
         }
       }
       st.s = s0; st.x = x0; st.y = y0; st.r = r0;
-      _posElemento(el, st);
+      rimetti();
     }
-    return fuori;
-  }, { DIMENSIONI, vecchia: SELFTEST });
+    return { misure: fuori, aree };
+  }, { DIMENSIONI, SCATOLE, vecchia: SELFTEST });
 
   if (!misure.length) guai.push('banco: nessun elemento misurato');
+  if (!aree.length) guai.push('banco riquadro: nessun elemento misurato');
+  for (const g of fuoriDallArea(aree, OVL_W, OVL_H)) guai.push('banco riquadro ' + g);
   for (const m of misure) {
     const cx = m.sx + m.w / 2, cy = m.su + m.h / 2;
     const ax = attesa(m.v, m.w, OVL_W), ay = attesa(m.v, m.h, OVL_H);
@@ -172,6 +207,30 @@ const attesa = (v, lato, tela) => (v / 100) * (tela - lato) + lato / 2;
   p.on('pageerror', (e) => guai.push('overlay: errore di pagina — ' + e.message));
   await p.goto(`http://127.0.0.1:${PORTA}/overlay.html?t=collaudo`, { waitUntil: 'domcontentloaded' });
   await p.waitForFunction(() => typeof window.trasformaXY === 'function', null, { timeout: 20000 });
+
+  // Il riquadro nell'overlay vero, con la funzione vera dell'overlay
+  // (posizionaContenitore) e sui contenitori veri: il muro, che e' un'area e si
+  // riempie, e il box degli alert, che nell'area ci si adatta. Chiamare a mano la funzione
+  // del riquadro con opzioni diverse da quelle dell'overlay misurerebbe una
+  // posa che in diretta non esiste.
+  const areeOvl = await p.evaluate(({ SCATOLE, vecchia }) => {
+    const fuori = [];
+    const muro = document.getElementById('muro');
+    const alert = typeof alertBox !== 'undefined' ? alertBox : null;
+    if (alert) alert.innerHTML = '<div style="width:213px;height:64px;background:#000"></div>';
+    for (const [nome, el] of [['muro', muro], ['alert', alert]]) {
+      if (!el) { fuori.push({ k: nome, manca: true }); continue; }
+      for (const [x, y, w, h] of SCATOLE) {
+        posizionaContenitore(el, { x: vecchia ? x + 5 : x, y, w, h, r: 0 }, 'schermo');
+        const r = el.getBoundingClientRect();
+        fuori.push({ k: nome, box: [x, y, w, h], sx: r.left, su: r.top, w: r.width, h: r.height });
+      }
+    }
+    if (alert) alert.innerHTML = '';
+    return fuori;
+  }, { SCATOLE, vecchia: SELFTEST });
+  for (const a of areeOvl.filter((x) => x.manca)) guai.push(`overlay riquadro: nell'overlay non c'e' ${a.k}`);
+  for (const g of fuoriDallArea(areeOvl.filter((x) => !x.manca), OVL_W, OVL_H)) guai.push('overlay riquadro ' + g);
 
   const misure = await p.evaluate(({ DIMENSIONI, vecchia }) => {
     const T = { w: window.innerWidth, h: window.innerHeight };
@@ -269,8 +328,13 @@ await b.close();
 chiudiSito();
 
 if (SELFTEST) {
-  if (guai.length) { console.log(`Autoprova: con la formula vecchia il cancello vede ${guai.length} pose storte. ✓`); process.exit(0); }
-  console.log('Autoprova FALLITA: con la formula vecchia il cancello resta verde, quindi non misura niente.');
+  // Ogni misura deve vedere la sua rottura: la Dimensione con la formula
+  // vecchia, il riquadro con l'area spostata, nel banco e nell'overlay.
+  const parti = { 'banco Dimensione': (g) => /^banco (?!riquadro)\S+ dim/.test(g), 'banco riquadro': (g) => g.startsWith('banco riquadro '),
+    'overlay Dimensione': (g) => g.startsWith('overlay dim'), 'overlay riquadro': (g) => g.startsWith('overlay riquadro ') };
+  const cieche = Object.entries(parti).filter(([, f]) => !guai.some(f)).map(([n]) => n);
+  if (!cieche.length) { console.log(`Autoprova: con le pose rotte il cancello vede ${guai.length} pose storte, in ogni parte. ✓`); process.exit(0); }
+  console.log(`Autoprova FALLITA: con le pose rotte resta verde ${cieche.join(', ')}, quindi li' non misura niente.`);
   process.exit(1);
 }
 
@@ -280,4 +344,4 @@ if (guai.length) {
   if (guai.length > 40) console.log(` … e altre ${guai.length - 40}`);
   process.exit(1);
 }
-console.log('Posa a filo dei bordi a ogni Dimensione, nel banco e nell\'overlay. ✓');
+console.log('Posa a filo dei bordi a ogni Dimensione, e riquadri esatti, nel banco e nell\'overlay. ✓');
