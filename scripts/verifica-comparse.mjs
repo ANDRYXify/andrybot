@@ -261,7 +261,15 @@ const pagina = async (url, vista, { cookie = true } = {}) => {
   if (cookie) await pg.addInitScript(() => { try { localStorage.setItem('cookie-ok', '1'); } catch (e) {} });
   await rompi(pg);
   await pg.goto(sito.base + url, { waitUntil: 'domcontentloaded' });
-  await pg.waitForTimeout(2500);
+  // La pagina e' pronta quando la copertina se n'e' andata davvero, i caratteri
+  // sono arrivati e passa un attimo di quiete. Prima si aspettavano 2,5 secondi
+  // fissi: sotto carico la copertina della vetrina era ancora su, i tasti in
+  // cima diventavano visibili durante il primo gesto e il cancello li contava
+  // come comparsi senza disegnarsi. Si misurava la pagina che si apriva, non il
+  // gesto.
+  await pg.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 30000 });
+  await pg.evaluate(() => (document.fonts ? document.fonts.ready.then(() => true) : true));
+  await pg.waitForTimeout(1500);
   await pg.evaluate(() => { window.__comparse.pronta = true; });
   return pg;
 };
