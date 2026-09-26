@@ -1628,7 +1628,7 @@ function _demoGet(via) {
       bio: 'Gioco a tutto quello che ha una storia, e la chat decide il finale.',
       colori: { bg: '#05040a', bg2: '#1b0b3d', testo: '#f6f3ff', tenue: '#a99ed0', card: 'rgba(255,255,255,.07)', bordo: 'rgba(170,110,255,.42)', acc: '#b072ff' },
       settimana: _DEMO_SETTIMANA,
-      kit: { presentazione: '', email: 'collab@andryx.it', collaborazioni: ['Logitech G', 'Razer', 'Elgato'], mostra: {}, tema: 'pagina' },
+      kit: { presentazione: '', email: 'collab@andryx.it', collaborazioni: ['Nebbia Audio', 'Pixelforno', 'Ghiro Gear'], mostra: {}, tema: 'pagina' },
     },
     '/api/streamer/codici-posta': {
       codici: [

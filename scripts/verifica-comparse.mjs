@@ -179,6 +179,14 @@ const SORVEGLIA = () => {
     for (const e of vivi.keys()) if (!incontrati.has(e)) prima.set(e, false);
     return nuovi;
   };
+  // LA FOTOGRAFIA DI PARTENZA. Il giro guarda la pagina solo quando il DOM
+  // cambia, ma un'animazione CSS (l'entrata dei tasti della vetrina) rende
+  // visibile un riquadro senza toccare il DOM: se l'ultimo giro prima del gesto
+  // era caduto a meta' dell'animazione, il riquadro restava «invisibile» fino
+  // al primo cambio portato dal gesto, e li' sembrava comparire. Quando la
+  // pagina e' pronta si guarda da capo: quello che si vede prima del gesto e'
+  // noto per costruzione, non per fortuna.
+  S.base = () => { vivi = guarda(); avviata = true; };
 
   // SI GUARDA QUELLO CHE SI DIPINGE. Un campione preso dentro un
   // requestAnimationFrame vede lo stato di META' fotogramma: se un'altra
@@ -270,7 +278,7 @@ const pagina = async (url, vista, { cookie = true } = {}) => {
   await pg.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 30000 });
   await pg.evaluate(() => (document.fonts ? document.fonts.ready.then(() => true) : true));
   await pg.waitForTimeout(1500);
-  await pg.evaluate(() => { window.__comparse.pronta = true; });
+  await pg.evaluate(() => { window.__comparse.base(); window.__comparse.pronta = true; });
   return pg;
 };
 const fa = async (pg, dove, azione, attende, gesto, pausa = 900) => {

@@ -87,9 +87,9 @@ test('i social vengono dalla pagina link: una volta sola, solo piattaforme, solo
 });
 
 test('quello che si salva ha forma: email vera, collaborazioni corte, niente numeri scritti a mano', () => {
-  const k = K.normKit({ presentazione: '  Gioco   a tutto\n\n\n\ne parlo ', email: 'lavoro@andryx.it', collaborazioni: 'Logitech, , Razer,Logitech', mostra: { media: false }, tema: 'notte', media: 99999 });
+  const k = K.normKit({ presentazione: '  Gioco   a tutto\n\n\n\ne parlo ', email: 'lavoro@andryx.it', collaborazioni: 'Nebbia Audio, , Pixelforno,Nebbia Audio', mostra: { media: false }, tema: 'notte', media: 99999 });
   assert.deepEqual(k, {
-    presentazione: 'Gioco a tutto\n\ne parlo', email: 'lavoro@andryx.it', collaborazioni: ['Logitech', 'Razer'],
+    presentazione: 'Gioco a tutto\n\ne parlo', email: 'lavoro@andryx.it', collaborazioni: ['Nebbia Audio', 'Pixelforno'],
     mostra: Object.fromEntries(K.MOSTRA.map((x) => [x, x !== 'media'])), tema: 'notte',
   });
   assert.equal(K.normKit({ email: 'non una mail' }).email, '');

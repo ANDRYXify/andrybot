@@ -33,8 +33,8 @@ test('le righe vanno a capo fra le parole, rispettano gli a capo, e oltre il mas
 });
 
 test('l\'elenco va a capo fra le voci, mai dentro una voce, e il separatore non resta da solo', () => {
-  const r = K.elenco(g, ['Red Bull Gaming', 'Razer', 'Elgato'], 240, 3, ' · ');
-  assert.deepEqual(r.righe, ['Red Bull Gaming · Razer', 'Elgato']);
+  const r = K.elenco(g, ['Ghiro Gear Italia', 'Nebbia', 'Forno'], 260, 3, ' · ');
+  assert.deepEqual(r.righe, ['Ghiro Gear Italia · Nebbia', 'Forno']);
   const lunghi = K.elenco(g, ['M'.repeat(40), 'N'.repeat(40)], 200, 3, ' · ');
   assert.equal(lunghi.righe.length, 2);
   assert.ok(lunghi.righe.every((x) => x !== '·' && x.trim() !== '·'), 'nessuna riga fatta del solo separatore');

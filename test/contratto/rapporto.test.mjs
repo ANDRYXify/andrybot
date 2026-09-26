@@ -22,7 +22,7 @@ test('il bot: apre all\'online, misura a ogni giro, chiude, salva sempre e poi m
   // il resto di quello che succede quando una diretta finisce.
   assert.match(live, /this\._rapportoDiretta\(ch\)\.catch\(/,
     'il rapporto parte a diretta finita, e se qualcosa va storto non trascina giu\' il resto');
-  assert.ok(BOT.includes('rapporto.osservaGiro(login, { spettatori: stream.viewer_count });'), 'gli spettatori dallo stesso giro delle ore');
+  assert.ok(BOT.includes('rapporto.osservaGiro(login, { spettatori: stream.viewer_count, categoria: stream.game_name });'), 'gli spettatori e la categoria dallo stesso giro delle ore');
   const f = BOT.slice(BOT.indexOf('_rapportoDiretta(login) {'), BOT.indexOf('_reagisciAllaDiretta(login, isLive) {'));
   assert.ok(f.includes('const id = rapporti.salva(login, { inizio: chiuso.inizio, fine: chiuso.fine, dati });'), 'il rapporto resta, sempre');
   assert.ok(f.includes("if (c.telegram && conf?.token && conf.owner_tg_id && (conf.dm_modo || 'me') !== 'off') {"), 'Telegram solo verso la chat privata collegata e accesa');
