@@ -57,9 +57,33 @@ const IMPORTANTE = /^\[importante\]\s*/i;
 // una riga che chiama una cosa con un nome che nel pannello non c'e' piu'.
 const VAI = /\s*\[vai:\s*([a-z0-9-]{2,40})\]\s*$/i;
 
+// UN'IMPORTANTE SI PRESENTA PER INTERO. Una capacita' nuova detta con la stessa
+// riga di una virgola corretta si perde lo stesso, anche messa per prima: chi la
+// legge deve capire cos'e', perche' conta e dove si prova. Sotto la riga, due
+// righe rientrate col segno della citazione:
+//
+//     - [importante] Il muro delle emote: ... [vai: alert]
+//       > Il muro delle emote
+//       > Le emote della chat diventano parte della scena, e la chat lo vede.
+//
+// La prima e' il titolo, le altre il perche'. La riga resta com'e' (e con lei
+// l'impronta di «gia' vista»): il titolo e il perche' le si mettono accanto.
+// Solo le importanti ce l'hanno, tutte: e' questo che le fa pesare di piu'
+// (verifica-novita.mjs).
+const CITA = /^\s+>\s?(.*?)\s*$/;
+
 export function analizza(testo) {
   const gruppi = [];
+  let ultima = null;
   for (const riga of String(testo).split('\n')) {
+    const c = ultima && riga.match(CITA);
+    if (c) {
+      if (!c[1]) continue;
+      if (ultima.titolo == null) ultima.titolo = c[1];
+      else ultima.perche = ultima.perche ? `${ultima.perche} ${c[1]}` : c[1];
+      continue;
+    }
+    ultima = null;
     const g = riga.match(GIORNO);
     if (g) { gruppi.push({ data: g[1], voci: [] }); continue; }
     const v = riga.match(VOCE);
@@ -74,7 +98,8 @@ export function analizza(testo) {
       }
       const dove = resto.match(VAI);
       const testo = resto.replace(VAI, '');
-      gruppi[gruppi.length - 1].voci.push({ testo, privata, importante, vai: dove ? dove[1].toLowerCase() : null });
+      ultima = { testo, privata, importante, vai: dove ? dove[1].toLowerCase() : null };
+      gruppi[gruppi.length - 1].voci.push(ultima);
     }
   }
   return gruppi.filter((g) => g.voci.length);
@@ -84,7 +109,8 @@ export function analizza(testo) {
 // giorni che restano vuoti perché parlavano solo di lei.
 export function pubbliche(gruppi) {
   return gruppi
-    .map((g) => ({ data: g.data, voci: g.voci.filter((v) => !v.privata).map((v) => ({ testo: v.testo, vai: v.vai || null, importante: !!v.importante })) }))
+    .map((g) => ({ data: g.data, voci: g.voci.filter((v) => !v.privata).map((v) => ({ testo: v.testo, vai: v.vai || null, importante: !!v.importante,
+      ...(v.titolo ? { titolo: v.titolo } : {}), ...(v.perche ? { perche: v.perche } : {}) })) }))
     .filter((g) => g.voci.length);
 }
 

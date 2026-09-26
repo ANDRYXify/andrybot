@@ -133,6 +133,29 @@ dice(lunghe.length === 0, 'ogni riga sta in due frasi', lunghe[0]?.slice(0, 80))
 dice(tecniche.length === 0, 'nessuna riga parla di file o di gergo', tecniche[0]?.slice(0, 80));
 dice(conEmoji.length === 0, 'niente emoji', conEmoji[0]?.slice(0, 40));
 
+// ---- le importanti si presentano per intero ------------------------------
+// Un'importante detta con la stessa riga di una correzione si perde lo stesso,
+// anche messa per prima: chi apre la finestra deve capire cos'e', perche' conta
+// e dove si prova. Quindi ognuna porta sotto di se' il suo titolo e il suo
+// perche' (src/web/novita.js), e solo loro: un titolo su una riga normale le
+// darebbe un peso che non ha.
+const tutteVoci = gruppi.flatMap((g) => g.voci);
+const importanti = tutteVoci.filter((v) => v.importante);
+const incomplete = importanti.filter((v) => !v.titolo || !v.perche);
+const abusive = tutteVoci.filter((v) => !v.importante && (v.titolo || v.perche));
+const titoliStorti = importanti.filter((v) => v.titolo && ([...v.titolo].length > 60 || /[.!?;:,]$/.test(v.titolo)));
+const perche = importanti.map((v) => v.perche).filter(Boolean);
+const percheLunghi = perche.filter((t) => [...t].length > 300 || (t.match(/[.!?](\s|$)/g) || []).length > 3);
+const conLineette = [...importanti.map((v) => v.titolo), ...perche].filter((t) => t && /—/.test(t));
+const percheTecnici = [...importanti.map((v) => v.titolo), ...perche].filter((t) => t && (GERGO.test(t) || CODICE.test(t) || EMOJI.test(t)));
+dice(!incomplete.length, `le importanti si presentano per intero, con titolo e perché: ${importanti.length}`,
+  incomplete[0] ? `manca a «${incomplete[0].testo.slice(0, 60)}…»` : '');
+dice(!abusive.length, 'e solo loro: un titolo darebbe a una riga normale un peso che non ha', abusive[0]?.testo.slice(0, 60));
+dice(!titoliStorti.length, 'titoli corti, fino a 60 caratteri, senza punto in fondo', titoliStorti[0]?.titolo);
+dice(!percheLunghi.length, 'il perché sta in tre frasi', percheLunghi[0]?.slice(0, 80));
+dice(!conLineette.length, 'titoli e perché senza lineette lunghe', conLineette[0]?.slice(0, 80));
+dice(!percheTecnici.length, 'e scritti per chi trasmette: niente gergo, file o emoji', percheTecnici[0]?.slice(0, 80));
+
 // ---- la regola: chi tocca il prodotto lo racconta -------------------------
 // Si guardano i commit che stanno per essere spinti. Se non ce ne sono (o non
 // c'è un ramo a monte) non c'è niente da controllare: non è un errore.

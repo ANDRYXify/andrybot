@@ -31,19 +31,32 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Scegliendo una veste per l'overlay anche il muro delle emote la segue: l'ombra sulle emote si accende o si spegne come vuole la veste.
 - Gli effetti pronti, i tasti dell'ispettore nello Studio e quello per togliere un carattere hanno di nuovo il loro contorno a china.
 - [importante] La mail e il messaggio su Telegram che chiedono la conferma della settimana hanno «Non pubblicare»: la fermi fino al momento dell'uscita, anche dopo averla confermata, e dal pannello lo stesso. [vai: grafiche]
+  > Non pubblicare, anche all'ultimo minuto
+  > Se dopo aver confermato ti accorgi di un errore nella settimana non devi correre al computer: la fermi dalla mail, da Telegram o dal pannello, e se ci ripensi la rimetti in uscita.
+- Nella finestra delle novità le importanti hanno un titolo, due righe su perché contano e il tasto «Provala» che ti porta dove si usano. Lo stesso nella pagina delle novità.
 
 ## 2026-09-25
 
 - La libreria sfondi delle Grafiche, quando è vuota, lo dice su tutta la riga invece di andare a capo sillaba per sillaba. Lo stesso per gli altri elenchi a griglia vuoti o in caricamento. [vai: grafiche]
 - [importante] Nell'Overlay Studio decidi chi sta davanti e chi dietro trascinando la riga nei livelli, e in diretta l'ordine è lo stesso della tela. Scegliere un elemento non lo porta più in primo piano. [vai: alert]
+  > Davanti e dietro, come in un programma di grafica
+  > Metti la chat sopra la webcam o l'alert sopra tutto trascinando una riga, e quello che vedi nello Studio è quello che va in onda.
 - Nello Studio un elemento spento non si porta più dietro una macchia tonda colorata, e si prende col clic in tutta la sua area.
 - [importante] Otto effetti pronti a tutto schermo disegnati da noi: coriandoli, fuochi d'artificio, cuori, neve, palloncini, bolle, stelle e lampo. Scegli colori, quantità e durata, e dagli un comando. [vai: effetti]
+  > Otto effetti pronti a tutto schermo
+  > Scegli un effetto, lo colori come il tuo canale e lo lanci con un comando o con un premio: niente da cercare o da caricare.
 - [importante] Ogni immagine o video dei tuoi effetti può andare a tutto schermo, riempito o intero, senza passare dall'area degli effetti dello Studio. [vai: effetti]
+  > I tuoi effetti a tutto schermo
+  > Un video o un'immagine che hai caricato copre tutta la scena quando lo lanci, e non serve disegnargli un'area nello Studio.
 - I video WebM trasparenti restano trasparenti dopo il caricamento, i PNG animati restano animati e i WebP animati si caricano. Un file che non si legge dice quali formati vanno. [vai: effetti]
 - [importante] Nella storia «Stasera alle…» l'immagine del gioco ha tre modi: a tutto schermo con velo e sfocatura, in un riquadro che sposti e ingrandisci, o niente per lasciare il tema. [vai: grafiche]
+  > L'immagine del gioco come la vuoi tu
+  > La stessa storia può avere la copertina del gioco sfocata dietro, piccola in un riquadro o niente, così si adatta al tuo stile invece del contrario.
 - Gli effetti accettano ogni video trasparente: WebM, MOV ProRes 4444 o HEVC di iPhone e Final Cut, Animation, GIF, APNG, AVIF e WebP animati. Se la trasparenza si perdesse, il caricamento si ferma e lo dice. [vai: effetti]
 - «Prova» su un effetto te lo fa vedere nel pannello com'è in onda, video e disegni compresi, e da lì lo mandi all'overlay. Nella libreria anche immagini e video hanno il tasto per guardarli. [vai: effetti]
 - [importante] Caricando un effetto puoi togliere uno sfondo a tinta unita, come un green screen: lo vedi subito nell'anteprima e in onda esce proprio così. [vai: effetti]
+  > Togli lo sfondo, come un green screen
+  > Un video con lo sfondo verde o nero diventa un effetto pulito sopra la scena, senza programmi di montaggio: lo vedi subito, e in onda esce identico.
 - Una GIF o un PNG animato coi fotogrammi velocissimi va in onda al ritmo con cui lo vedi nel browser, non più fino a dieci volte più veloce. [vai: effetti]
 - Sul telefono la home non si trascina più di lato: le decorazioni della prima schermata restano dentro lo schermo, e il banner dei cookie ha di nuovo il tasto a portata di dito.
 - Nella tua pagina link un indirizzo lungo scritto in un testo va a capo, invece di uscire dallo schermo del telefono. [vai: pagina]
@@ -59,6 +72,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Dopo un salvataggio, un cambio di canale o di lingua la pagina si disfa e si ridisegna, invece di cambiare di colpo.
 - Le bolle d'aiuto, le nuvolette e le barre in alto e in basso si disegnano quando compaiono e si disfano quando se ne vanno.
 - [importante] !giochi risponde a chi lo chiede con i giochi che può usare, divisi per come si gioca, e con !giochi e un nome spiega quel gioco coi nomi e le regole del tuo canale. [vai: giochi]
+  > !giochi spiega i giochi alla chat
+  > Chi arriva in chat scopre da solo a cosa può giocare e come si fa, con i nomi e le regole del tuo canale, e tu non devi ripeterlo ogni volta.
 - Chi chiede qualcosa in chat, come una classifica, come si usa un comando o quanto aspettare, riceve la risposta agganciata al suo messaggio. Le classifiche dicono anche dove sta lui.
 - Il blackjack dice il conto per intero: quanto ti torna, cosa c'è dentro e quante monete hai adesso. Se il bot si riavvia con una mano aperta, lo dice in chat quando rende la puntata.
 - Fra i comandi dei giochi la pesca non porta più l'etichetta «costa monete»: non ne è mai costata.
@@ -119,22 +134,36 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nelle Grafiche l'anteprima resta tutta visibile mentre scorri, sotto la barra in cima. [vai: grafiche]
 - Nel giro guidato il riquadro attorno a quello che ti indica si disegna a matita, a ogni passo.
 - [importante] Nelle Grafiche sposti ogni pezzo trascinandolo sull'anteprima, col mouse, col dito o con le frecce. Le guide mostrano margini, centri e dove Instagram copre la storia, e post e storia si spostano insieme. [vai: grafiche]
+  > Le Grafiche si impaginano col dito
+  > Sposti titolo, orari e immagini direttamente sull'anteprima, e le guide ti dicono dove Instagram coprirebbe la storia prima che succeda.
 - [importante] Nelle Grafiche c'è «Stasera alle…»: la storia che annuncia la prossima diretta della tua Settimana, con l'ora, il tuo indirizzo e dietro la copertina del gioco. [vai: grafiche]
+  > La storia che annuncia la prossima diretta
+  > Ogni giorno in onda ha la sua storia già pronta, con l'ora giusta e la copertina del gioco: la pubblichi in un tocco invece di rifarla ogni volta.
 - [importante] Nella pagina link e in quella delle donazioni l'immagine di sfondo si sposta e si rimpicciolisce trascinandola sull'anteprima. Dove non arriva continuano i colori dei suoi bordi. [vai: pagina]
+  > Lo sfondo della pagina link si sistema trascinando
+  > Scegli tu quale parte della foto si vede e quanto è grande, e dove la foto non arriva i colori continuano senza un bordo netto.
 - Il boss risponde a chi lo colpisce: poco dopo il primo colpo, e poi al massimo ogni venti secondi, il bot scrive chi ha colpito e quanto, la vita che resta e i secondi che mancano. [vai: giochi]
 - [importante] Nelle Grafiche c'è «In automatico»: la storia «Stasera alle…» esce da sola prima di ogni diretta, e la settimana esce il giorno che scegli, dopo che l'hai confermata dalla mail o dal pannello. [vai: grafiche]
+  > Le storie escono da sole
+  > La storia prima della diretta e la settimana escono all'ora giusta anche se te ne dimentichi, e la settimana solo dopo che l'hai confermata.
 - Col tutto schermo acceso, passando a una scheda che non lo usa il menù torna di lato disegnandosi, e tornando si disfa prima di sparire. Anche riaprirlo mentre si sta chiudendo lo ridisegna.
 - [importante] La pagina delle donazioni può avere l'aspetto della pagina link e seguirlo quando lo cambi: nell'editor, in «Aspetto», scegli «Uguale alla pagina link». [vai: donazioni]
+  > Donazioni e pagina link con lo stesso aspetto
+  > Chi passa dalla tua pagina link a quella delle donazioni trova gli stessi colori e gli stessi caratteri, e se cambi l'una cambia anche l'altra.
 - Nell'editor della pagina link e di quella delle donazioni, dopo un tema pronto resti nella scheda in cui eri, e i tasti scattano una volta sola anche dopo tanti ritocchi.
 - La classifica dei Bit compare davvero in diretta, e resta dove la metti in ogni overlay. I caratteri che carichi si vedono anche in OBS, non solo nello Studio. [vai: alert]
 - Il tutto schermo si ricorda per ogni scheda: acceso in Donazioni non si accende più anche in Pagina link, che resta col menù di lato finché non lo scegli lì.
 - [importante] Il boss è un pezzo dell'Overlay Studio: lo sposti, lo ingrandisci e lo vesti come gli altri, e lo spegni per ogni overlay. Nello Studio lo vedi com'è in onda. [vai: alert]
+  > Il boss si sistema nello Studio
+  > La barra della vita del boss va dove vuoi tu, grande quanto vuoi e vestita come il resto dell'overlay, invece di stare in un angolo fisso.
 - Nell'editor della pagina link e di quella delle donazioni l'anteprima resta ferma a metà schermo mentre scorri i campi. Sul telefono resta in cima, con «Salva e pubblica» sempre a portata. [vai: pagina]
 - Il testo che un comando mostra sull'overlay è un pezzo dello Studio: lo sposti, lo vesti (anche con un fondo) e lo spegni per ogni overlay. [vai: alert]
 - Anche la pastiglia col nome del comando che compare con un effetto, per esempio «!applausi», è un pezzo dello Studio: la sposti, la vesti e la spegni per ogni overlay. [vai: alert]
 - Le immagini e i video degli effetti compaiono in un'area che sposti e ridimensioni nello Studio, e in un riquadro si adattano senza deformarsi. [vai: alert]
 - I video col green screen escono con la loro forma, invece che schiacciati a due per uno.
 - [importante] Il muro delle emote: quelle che la chat scrive volano sulla scena con dieci movimenti, la stessa ripetuta cresce e poi esplode. Eventi, premi e !esplodi fanno esplodere figure intere. [vai: alert]
+  > Il muro delle emote
+  > Le emote che la chat scrive diventano parte della scena: chi guarda vede la sua emote volare, e un raid o un premio fanno esplodere una figura intera.
 
 ## 2026-09-23
 
@@ -151,6 +180,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Il costruttore non crea più un secondo «Moderatori» accanto al tuo «moderatore»: se il ruolo c'è già e il bot non ci arriva, te lo dice. [vai: dcserver]
 - Facendo piazza pulita, i ruoli vecchi che restano li vedi prima, ognuno col suo perché: stanno sopra il bot, oppure sono di un altro bot. [vai: dcserver]
 - [importante] La settimana ha una scheda sua: scrivi una volta i giorni, gli orari e cosa fai, e da lì li prendono la grafica e i calendari. [vai: settimana]
+  > La tua settimana in un posto solo
+  > Scrivi una volta quando vai in onda e cosa fai: grafiche, calendari e avvisi prendono tutto da lì.
 - Con un tasto la mandi su Telegram, nei canali di Discord e nella storia di Instagram. Compaiono solo i servizi che hai collegato. [vai: settimana]
 - Anche il Programma del tuo canale Twitch può riceverla, e si rimette in pari da solo quando cambi la settimana. [vai: settimana]
 - Nella grafica della settimana i giorni seguono la lingua del pannello: in inglese non esce più «LUN MAR MER». [vai: grafiche]
@@ -158,6 +189,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - I tasti di CONSOLify funzionano davvero da una tastiera fisica, icone comprese: fino a oggi ogni pressione si perdeva per strada. [vai: consolify]
 - Con i giochi che dicono da soli quando muori, il contatore adesso sale davvero: il loro messaggio non arrivava fino a me. [vai: moduli]
 - [importante] Instagram si collega con un tasto, come TikTok: scegli con che account entrare, e niente più ID e token da copiare dal sito di Meta. Serve un account professionale. [vai: notifiche]
+  > Instagram si collega con un tasto
+  > Prima servivano codici copiati dal sito di Meta. Adesso scegli l'account e sei collegato, pronto a pubblicare storie e post dal pannello.
 - Il collegamento con Instagram si rinnova da solo prima di scadere, e se togli l'app dal tuo Instagram lo cancello subito. [vai: notifiche]
 - Se a Instagram o al bot di Discord manca un permesso, o un collegamento si è rotto, lo vedi subito nella sua scheda, con il tasto per rimediare. [vai: notifiche]
 - Quando il pannello ti chiede una conferma o un nome, lo fa con la sua finestra e nella tua lingua: niente più finestre grigie del browser, che sul telefono sembravano un avviso di sistema.
@@ -169,6 +202,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - La promo dei tuoi social in chat si accende insieme alla personalità del bot, accanto a «si fa vivo da solo». [vai: personalita]
 - «Come funziona» si apre da solo la prima volta che entri in una scheda, poi resta chiuso finché non lo apri tu.
 - [importante] La prima schermata del tuo server Discord si scrive da sola: ogni canale in mostra ha già la sua faccina e la sua riga, nella lingua del nome. Quelle che scrivi tu restano tue. [vai: dcentra]
+  > La prima schermata del server si scrive da sola
+  > Chi entra nel tuo server trova ogni canale già spiegato in una riga, nella lingua giusta, e tu cambi solo quello che vuoi.
 - Nei giorni della settimana scrivi un gioco o un titolo: mentre scrivi compaiono le categorie di Twitch, e sotto ogni giorno leggi quale andrà sul Programma. [vai: settimana]
 - Il synthwave delle grafiche è in prospettiva vera: il sole sorge dietro il titolo e le linee del pavimento escono da tutto l'orizzonte. [vai: grafiche]
 - Otto temi animati nuovi per le grafiche, fra cui vaporwave, pioggia al neon, notte di stelle, sakura e lo-fi, e tredici stili pronti con l'anteprima fatta coi tuoi testi. [vai: grafiche]
@@ -188,7 +223,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Le grafiche escono anche in verticale per le storie, 1080×1920: lo sfondo copre tutto lo schermo e le scritte stanno lontane dalle barre di Instagram. [vai: grafiche]
 - La settimana mandata nella storia di Instagram non esce più tagliata ai lati: alla storia va la versione verticale, a Telegram e Discord il post. [vai: settimana]
 - [importante] Nuovo nelle Grafiche: con «Metti nella storia» la grafica che vedi va nella tua storia di Instagram, già in verticale. Se Instagram non è collegato, il tasto per collegarlo è lì. [vai: grafiche]
+  > Dalle Grafiche alla storia di Instagram
+  > La grafica che hai appena fatto finisce nella tua storia già nel formato giusto, senza scaricarla e ricaricarla dal telefono.
 - [importante] La storia «Live ora» può partire da sola quando vai in diretta su Twitch: accendila nelle Grafiche, nel riquadro della storia, e se non parte te lo dico. [vai: grafiche]
+  > La storia «Live ora» parte da sola
+  > Quando vai in diretta chi ti segue su Instagram lo sa subito, anche se tu stai già pensando a tutt'altro.
 - Settimana e «Live ora» hanno ognuna il suo titolo: quello della settimana non finisce più sulla grafica della diretta. [vai: grafiche]
 - Nelle Grafiche i tasti hanno di nuovo il contorno, come nel resto del pannello, e in Statistiche il periodo scelto non perde il bordo. [vai: grafiche]
 - Cambiare scheda è più svelto, soprattutto sul telefono, e nello Studio l'anteprima dal vivo riparte quando ci torni. [vai: alert]
@@ -196,14 +235,28 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Pubblicità in chat: il preavviso adesso parte davvero, «sono tornato» arriva quando la pausa finisce, e i secondi nei messaggi sono sempre quanto dura la pausa. [vai: regia]
 - Chi ha l'account nuovo non viene più cacciato dallo scudo: l'avviso esce una volta sola, e un mod lo fa scrivere con !permetti nome. Un messaggio con i Bit non viene mai trattenuto. [vai: scudo]
 - [importante] Ogni gioco ha le sue regole da cambiare: costi, premi, attese, probabilità, testi e cosa si pesca, con accanto quanto rende. Di serie il banco vince sempre un po' e la pesca rende quanto la presenza. [vai: giochi]
+  > Le regole di ogni gioco sono tue
+  > Decidi quanto costa giocare, quanto si vince e ogni quanto, e vedi subito se il gioco regala punti o li toglie.
 - [importante] La chat in solo emote per due minuti, o per il tempo che dici: la accendono i mod con !soloemote 5m, un tuo Modulo o la chat con !sblocca, e poi torna com'era da sola. [vai: moduli]
+  > La chat in solo emote, a tempo
+  > Un momento di festa o di calma in chat dura quanto vuoi e poi finisce da solo.
 - [importante] Quattro manche nuove: impiccato, più o meno, calcolo veloce e rebus con le emoji. Scegli tu quali girano da sole, e con !manche impiccato ne apri una per nome. [vai: giochi]
+  > Quattro manche nuove in chat
+  > Impiccato, più o meno, calcolo e rebus tengono viva la chat nei momenti morti, da soli o quando li chiami tu.
 - [importante] Duelli con la posta: !duello @nome 50, l'altro accetta o rifiuta e chi vince prende la posta dell'altro. Arriva anche la morra cinese contro il bot, per ridere o con una puntata. [vai: giochi]
+  > Duelli con la posta e morra cinese
+  > Due spettatori si sfidano mettendo in gioco i propri punti, e tutta la chat sta a guardare chi vince.
 - Abbracci, bacini e il batti il cinque in chat: ogni tanto, a sorpresa, viene un cinque perfetto. Chi scrive !nococcole non ne riceve. [vai: giochi]
 - [importante] Due giochi da fare insieme: il colpo di gruppo, dove più siete più è facile scappare col bottino, e il boss, che la chat batte a colpi di !colpisci con la barra della vita sull'overlay. [vai: giochi]
+  > Giochi da fare tutti insieme
+  > Il colpo e il boss premiano la chat quando gioca unita: più gente partecipa, più è facile vincere.
 - La finestra delle novità non ti rimostra più le stesse righe: ognuna esce una volta. Le cose nuove più grosse stanno in cima, «In evidenza», anche nella pagina delle novità.
 - [importante] Ogni gioco ha due attese che scegli tu, a testa e per tutti, e partono solo quando si gioca davvero. Chi le trova se lo sente dire una volta, con quanto manca. [vai: giochi]
+  > Attese a testa e per tutti
+  > Nessuno riempie la chat con lo stesso gioco, e chi deve aspettare sa quanto manca invece di riprovare a vuoto.
 - [importante] Tre giochi nuovi: il wordle della chat coi quadratini colorati, conta insieme per battere il record del canale, e il blackjack contro il banco con !bj 50. [vai: giochi]
+  > Wordle, conta e blackjack
+  > Tre giochi diversi fra loro, uno di parole, uno da fare insieme per il record e uno a carte, così ognuno in chat trova il suo.
 - La corsa: !corsa apre le puntate su cinque corridori, il favorito paga poco e l'ultimo tanto, e ogni corridore rende uguale. Nomi e resa li scegli tu. [vai: giochi]
 - La patata bollente: !patata la lancia, !passa la passa a chi è in chat, e scoppia quando nessuno se l'aspetta. Se vuoi, chi resta con la patata paga una multa. [vai: giochi]
 - La catena di parole: !catena, e ogni parola comincia con le ultime due lettere della precedente. Si batte il record del canale, e le chiacchiere non la rompono. [vai: giochi]
@@ -221,12 +274,16 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-19
 
 - [importante] La tua settimana finisce sul calendario del server Discord: chi ti segue vede quando torni e mette il promemoria. [vai: dcavvisi]
+  > La tua settimana sul calendario di Discord
+  > Chi ti segue su Discord vede quando torni in onda e può mettersi il promemoria.
 - Il palinsesto non te lo richiedo: leggo quello che hai già scritto per la grafica della settimana. [vai: dcavvisi]
 - Se cambi la programmazione, o arriva l'ora legale, gli appuntamenti si rimettono a posto da soli. [vai: dcavvisi]
 - Gli appuntamenti che scrivi a mano tu non li tocco: Discord non me lo lascia fare, e va benissimo così. [vai: dcavvisi]
 - Se hai invitato il bot prima del calendario, te lo dico subito e ti dico come rimediare, invece di provarci a vuoto. [vai: dcavvisi]
 - Da ogni scheda salti a quelle accanto senza tornare al menù: prima la barra c'era solo in alcune. [vai: effetti]
 - [importante] Quando parte la pubblicità lo dico in chat: fra poco, adesso, e quando torno. [vai: regia]
+  > La pubblicità annunciata in chat
+  > Chi guarda sa che sta per arrivare una pausa e quando finisce, e non chiude la diretta pensando che sia caduta.
 - Se mi mancano i permessi per farlo te lo dico subito, con il posto dove concederli. [vai: regia]
 - I tre messaggi li scrivi tu, e ognuno si spegne per conto suo. [vai: regia]
 - Per la fine Twitch non manda niente: conto i secondi che mi ha detto, e se mi riavvio nel mezzo sto zitta invece di salutarti tardi. [vai: regia]
@@ -238,11 +295,15 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Se sei partito dal tuo server, un tasto te li scrive su misura: poi li cambi come vuoi. [vai: dcentra]
 - La porta nasce accesa solo dove Discord la prenderebbe, e dove non ci arriva te lo dice invece di farti scoprire il rifiuto. [vai: dcentra]
 - [importante] Il filtro del tuo server Discord si scrive da qui: le tue parole, le liste che Discord tiene aggiornate da sé, lo spam e le raffiche di menzioni. [vai: dcfiltro]
+  > Il filtro del server Discord, da qui
+  > Parole vietate, spam e raffiche di menzioni si fermano prima di arrivare nei canali, e lo regoli dal pannello invece che dalle impostazioni di Discord.
 - Per ogni regola scegli cosa succede quando scatta, e chi non tocca: i tuoi moderatori passano sempre. [vai: dcfiltro]
 - Le regole che hai già non te le riscrivo: te le leggo, e cambio solo quello che è diverso. [vai: dcfiltro]
 - Adesso i comandi rispondono anche a te: il bot scrive col tuo account, e per sbaglio scartava i messaggi tuoi come se fossero i suoi. [vai: moduli]
 - Il tasto del Discord in chat portava a un indirizzo con i due punti attaccati dentro: adesso il link finisce dove finisce, e si apre. [vai: ruoli]
 - [importante] Gli avvisi su Discord adesso hanno una scheda loro: quanti canali vuoi, e per ognuno quali avvisi, di chi, con che parole. [vai: dcavvisi]
+  > Gli avvisi su Discord come li vuoi
+  > Puoi avere più canali di avvisi, ognuno con le sue dirette e le sue parole, invece di un solo messaggio uguale per tutto.
 - Puoi far chiamare un ruolo quando parte l'avviso: sveglia quello e nessun altro, mai il server intero per una parola scritta per sbaglio. [vai: dcavvisi]
 - Le dirette degli amici e della community arrivano anche sul server Discord, con la levetta separata da quella di Telegram. [vai: dcavvisi]
 - Se lo chiedi, a diretta chiusa l'avviso diventa «ha finito la diretta»: non resta un «sono in onda» appeso fino a domani. [vai: dcavvisi]
@@ -262,6 +323,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Adesso ti dico quali dei tuoi ruoli Discord terrei e come li chiamerei, affiancati a quelli della traccia. Rinominarli tiene dentro chi ce l’aveva, cancellarli lo toglie a tutti. [vai: dcserver]
 - Se «!discord» non risponde in chat, la scheda ti dice quale delle tre cose manca invece di lasciartelo indovinare. [vai: ruoli]
 - [importante] La porta del tuo server Discord si scrive da qui: quanto si aspetta prima di poter scrivere, cosa legge chi arriva, e le domande che gli aprono i canali. [vai: dcentra]
+  > La porta d'ingresso del server Discord
+  > Chi arriva nel tuo server legge prima quello che conta per te, aspetta il tempo che hai scelto prima di scrivere, e le sue risposte gli aprono i canali giusti.
 - Ogni risposta apre dei canali e dà un ruolo, scegliendoli per nome: valgono anche quelli che la traccia deve ancora creare. [vai: dcentra]
 - Se Discord la porta non la prenderebbe, te lo dico prima di scriverla: quanti canali mancano, o che al server serve il tipo Community. [vai: dcentra]
 - Chi aveva già risposto alle domande non ricomincia da capo: si rifanno solo quelle che hai cambiato. [vai: dcentra]
@@ -275,15 +338,21 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Accanto al tasto «Attiva» adesso scegli il canale, Twitch o Kick, e un clic basta ancora. Entri da lì e al pagamento ritrovi i pacchetti che avevi già spuntato. [vai: sottoscrizione]
 - Apri il sito e si vede prima, soprattutto dalla seconda volta: quello che non è cambiato il browser adesso se lo tiene, invece di richiederlo tutto da capo ogni volta.
 - [importante] I ruoli del tuo server Discord li dà il bot, in base a quello che succede su Twitch: chi ti segue, chi è abbonato, chi c'è sempre. Scrivi la regola, il resto lo fa lui. [vai: ruoli]
+  > I ruoli di Discord li dà il bot
+  > Chi ti segue, chi è abbonato e chi c'è sempre riceve il ruolo giusto da solo, e tu non devi più assegnarli a mano.
 - Chi ti guarda si collega da solo: scrive !discord in chat e segue due passi. Tocca solo chi si è collegato, e solo i ruoli che hai nominato tu. [vai: ruoli]
 - Il rapporto di fine diretta adesso conta anche i Bit della serata e ti dice chi ne ha messi di più. Chi ha cheerato in anonimo conta nel totale e resta senza nome. [vai: dirette]
 - Il premio VIP automatico adesso può pescare dai Bit invece che dalle monete: lo scegli tu, e vale la classifica vera di Twitch. [vai: giochi]
 - Chi guida i Bit diventa il re: tiene una corona accanto al nome nella chat a schermo, e quando torna a scrivere il bot lo saluta con la frase che hai scritto. [vai: giochi]
 - La classifica dei Bit puoi metterla in scena: la scegli dallo Studio come ogni altro elemento, dici di quando e quante righe, e si aggiorna da sola quando arriva un cheer. [vai: alert]
 - [importante] Collegare Discord adesso è un tasto: ti manda a scegliere il server dall'elenco e torni a posto. Niente bot da creare, niente id da copiare. [vai: ruoli]
+  > Discord si collega con un tasto
+  > Scegli il server da un elenco e hai finito: niente bot da creare nel portale degli sviluppatori e niente codici da copiare.
 - Un VIP a premio adesso dura DIRETTE, non giorni: se salti una settimana ti aspetta. E le gare sono due, monete e Bit, che vanno avanti insieme. [vai: giochi]
 - Ogni posizione ha il nome che le dai tu — re, principe, cavaliere — e la sua durata: al primo posto puoi dare cinque dirette e al terzo una. [vai: giochi]
 - [importante] Categorie e canali del tuo Discord li scegli da qui: parti da una traccia pronta o fagli leggere il server che hai già, e lui lo mette su. [vai: dcserver]
+  > Il server Discord si costruisce da qui
+  > Parti da una traccia pronta o da quello che hai già, e categorie e canali si creano da soli nell'ordine giusto.
 - Prima di toccare niente ti fa vedere l'elenco esatto di quello che farebbe. Va solo in avanti: quello che non è nella traccia resta dov'è, e te lo dice. [vai: dcserver]
 - Dentro ogni canale scrivi chi può fare cosa, con parole normali: «tutti — non può — scrivere». I permessi che non nomini nessuno li tocca. [vai: dcserver]
 - Alcuni tasti comparivano quando non servivano a niente: «Scollega tutto» senza niente da scollegare, «Ferma la diretta» senza diretta. Adesso restano via finché non servono.

@@ -100,10 +100,33 @@ Il criterio sta in cima a `NOVITA.md`: una **capacità nuova** (una funzione, un
 gioco, un collegamento), non una correzione né una rifinitura. Si combina con
 `[privato]` in qualunque ordine.
 
-- **Nella finestra all'ingresso** le importanti escono per prime, in un riquadro
-  «In evidenza» più grande, dalla più recente. Hanno un tetto loro (dodici) e
-  non passano dal taglio delle altre; le altre riempiono il posto che resta.
-- **Sulla pagina `/novita`** stanno in cima alla loro giornata, in un riquadro.
+### Si presentano per intero
+
+Messa per prima ma scritta con la stessa riga di una correzione, un'importante
+si perde lo stesso: chi apre la finestra deve capire cos'è, perché conta e dove
+si prova. Quindi sotto la riga, rientrate, ha due righe in più:
+
+```
+- [importante] Il muro delle emote: quelle che la chat scrive volano sulla scena. [vai: alert]
+  > Il muro delle emote
+  > Le emote che la chat scrive diventano parte della scena, e un raid fa esplodere una figura intera.
+```
+
+La prima è il **titolo** (fino a 60 caratteri, senza punto in fondo), le altre
+il **perché** (fino a tre frasi). La riga resta com'è, e con lei l'impronta di
+«già vista»: aggiungere o cambiare il titolo non fa tornare una novità a chi
+l'ha già letta. `scripts/verifica-novita.mjs` vuole titolo e perché su **ogni**
+importante, e **solo** su loro: un titolo su una riga normale le darebbe un peso
+che non ha.
+
+- **Nella finestra all'ingresso** le importanti escono per prime, sotto «Da
+  provare subito», ognuna in una carta: il titolo in grande, il perché, la riga
+  più piccola e il tasto «Provala» che porta alla scheda dove si usa. Hanno un
+  tetto loro (dodici) e non passano dal taglio delle altre; le altre riempiono
+  il posto che resta.
+- **Sulla pagina `/novita`** stanno in cima alla loro giornata, sotto «Da
+  provare», col titolo come intestazione e il collegamento alla pagina che le
+  spiega.
 
 ## Il tetto
 

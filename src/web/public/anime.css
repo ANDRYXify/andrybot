@@ -2148,6 +2148,12 @@ input[type="file"]::file-selector-button {
   }
 }
 
+.nov-grande {
+  border: 1px solid var(--contorno); border-width: var(--tratto-2);
+  border-radius: var(--ang-mano-l);
+  box-shadow: var(--ombra-ink-timbro);
+}
+
 .pronti-voce, .pronti-togli, .pronti-quanti button {
   border: 1px solid var(--contorno); border-width: var(--tratto-1);
   border-radius: var(--ang-mano);

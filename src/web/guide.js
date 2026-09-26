@@ -109,8 +109,12 @@ h3{font-size:1rem;margin:20px 0 6px}
 .g-dove-tit{margin:14px 0 4px;font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
 .g-evidenza{margin:12px 0 16px;padding:12px 16px;border:1px solid var(--contorno);border-left:4px solid var(--acc);border-radius:6px;background:var(--acc-soft)}
 .g-evidenza-tit{margin:0 0 6px;font-size:.78rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--acc)}
-.g-evidenza ul{padding-left:18px}
-.g-evidenza li{font-weight:600}
+.g-ev+.g-ev{margin-top:14px;padding-top:12px;border-top:1px solid var(--acc-bordo)}
+.g-ev-tit{margin:0 0 4px;font-family:var(--mano);font-size:1.18rem;line-height:1.25}
+.g-ev-perche{margin:0 0 4px}
+.g-ev-riga{margin:0;font-size:.92rem;color:var(--testo-2)}
+.g-ev-dove{margin:6px 0 0;font-size:.84rem}
+.g-ev-dove a::after{content:" →"}
 .g-dove-tit a{display:inline-block;padding:1px 9px;border:1px solid var(--contorno);border-radius:999px;text-decoration:none;background:var(--surface)}
 .g-dove-tit a::after{content:" →"}
 .g-novita section+ul,.g-dove-tit+ul{margin-top:4px}
@@ -523,10 +527,16 @@ function sezioni(voci) {
 
 // Le novita' importanti della giornata stanno in cima, in un riquadro loro: una
 // funzione nuova non deve perdersi fra dieci rifiniture (novita.js, IMPORTANTE).
-function evidenza(voci) {
+// Le importanti si presentano per intero, come nel pannello: il titolo che dice
+// cos'e', il perche' conta, la riga, e dove si prova.
+function evidenza(voci, aiuti = {}) {
   const imp = voci.filter((v) => v && typeof v === 'object' && v.importante);
   if (!imp.length) return '';
-  return `<div class="g-evidenza"><p class="g-evidenza-tit">In evidenza</p><ul>${imp.map((v) => `<li>${testo(v.testo)}</li>`).join('')}</ul></div>`;
+  return `<div class="g-evidenza"><p class="g-evidenza-tit">Da provare</p>${imp.map((v) => {
+    const a = v.vai && aiuti[v.vai];
+    return `<article class="g-ev">${v.titolo ? `<h3 class="g-ev-tit">${esc(v.titolo)}</h3>` : ''}${v.perche ? `<p class="g-ev-perche">${testo(v.perche)}</p>` : ''}`
+      + `<p class="g-ev-riga">${testo(v.testo)}</p>${a ? `<p class="g-ev-dove"><a href="${esc(a.via)}">${esc(a.titolo)}</a></p>` : ''}</article>`;
+  }).join('')}</div>`;
 }
 
 // `aiuti` e' la mappa scheda → pagina che la spiega (da manuali.js, che importa
@@ -546,7 +556,7 @@ export function paginaNovita(gruppi, aiuti = {}) {
 <main><p class="g-briciole"><a href="/">SocialBot</a> › Novità</p>
 <h1>Novità</h1>
 <p>Cosa è cambiato nel bot, in ordine di tempo. Una riga per cosa: se non si vede da fuori, qui non c'è.</p>
-${gruppi.map((g) => `<section class="g-novita"><h2>${esc(dataItaliana(g.data))}</h2>${evidenza(g.voci)}${
+${gruppi.map((g) => `<section class="g-novita"><h2>${esc(dataItaliana(g.data))}</h2>${evidenza(g.voci, aiuti)}${
     sezioni(g.voci.filter((v) => !(v && v.importante))).map((s) => {
       const a = s.vai && aiuti[s.vai];
       const tit = a ? `<h3 class="g-dove-tit"><a href="${esc(a.via)}">${esc(a.titolo)}</a></h3>` : '';

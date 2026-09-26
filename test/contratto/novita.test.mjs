@@ -398,8 +398,46 @@ test('la pagina pubblica manda alla pagina che spiega quella sezione', () => {
   const g = readFileSync(join(RAD, 'src/web/guide.js'), 'utf8');
   const f = g.slice(g.indexOf('export function paginaNovita('), g.indexOf('function dataItaliana('));
   assert.match(f, /sezioni\(g\.voci\.filter\(\(v\) => !\(v && v\.importante\)\)\)/, 'anche qui a sezioni, le importanti a parte');
-  assert.match(f, /\$\{evidenza\(g\.voci\)\}/, 'e le importanti in cima alla giornata');
+  assert.match(f, /\$\{evidenza\(g\.voci, aiuti\)\}/, 'e le importanti in cima alla giornata');
   assert.match(f, /g-dove-tit/, 'col titolo');
   assert.match(f, /href="\$\{esc\(a\.via\)\}"/, 'che e\' un collegamento vero');
   assert.doesNotMatch(f, /data-nov-vai/, 'fuori dal pannello non si apre una scheda: si apre una pagina');
+});
+
+// LE IMPORTANTI SI PRESENTANO PER INTERO. Sotto la riga, due righe rientrate:
+// il titolo e il perche'. La riga resta la stessa, e con lei l'impronta di «gia'
+// vista»: chi l'aveva gia' letta non se la vede tornare davanti.
+test('un\'importante porta il suo titolo e il suo perché, e resta la stessa riga', () => {
+  const md = '## 2026-09-26\n\n- [importante] Il muro. [vai: alert]\n  > Il muro delle emote\n  > Le emote volano.\n  > E poi esplodono.\n- Una correzione.\n\n  > Staccata, non attacca\n';
+  const [g] = analizza(md);
+  assert.deepEqual(g.voci[0], { testo: 'Il muro.', privata: false, importante: true, vai: 'alert', titolo: 'Il muro delle emote', perche: 'Le emote volano. E poi esplodono.' });
+  assert.equal(g.voci[1].titolo, undefined, 'una citazione dopo una riga vuota non si attacca a nessuno');
+  assert.equal(idVoce(g.data, g.voci[0].testo), idVoce(g.data, 'Il muro.'), 'l\'impronta e\' quella della riga');
+  const [p] = pubbliche([g]);
+  assert.equal(p.voci[0].titolo, 'Il muro delle emote', 'escono di casa col resto');
+  assert.equal(p.voci[0].perche, 'Le emote volano. E poi esplodono.');
+  for (const v of gruppi.flatMap((x) => x.voci)) {
+    if (v.importante) assert.ok(v.titolo && v.perche, `«${v.testo.slice(0, 50)}…» si presenta per intero`);
+    else assert.ok(!v.titolo && !v.perche, `«${v.testo.slice(0, 50)}…» non e\' importante: niente titolo`);
+  }
+});
+
+test('nel pannello un\'importante e\' una carta: titolo, perché, riga, e «Provala»', () => {
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const f = app.slice(app.indexOf('async function mostraNovita('), app.indexOf('function pannelloConsolify('));
+  assert.match(f, /<article class="nov-grande">/);
+  assert.match(f, /<h4 class="nov-grande-tit">\$\{solo\(v\)\}\$\{esc\(v\.titolo \|\| v\.testo\)\}<\/h4>/, 'il titolo in grande');
+  assert.match(f, /<p class="nov-grande-perche">\$\{esc\(v\.perche\)\}<\/p>/, 'poi il perche\'');
+  assert.match(f, /data-nov-vai="\$\{esc\(id\)\}">\$\{L\('Provala'/, 'e il tasto che porta dove si prova');
+  assert.match(f, /\$\{evidenza\.map\(grande\)\.join\(''\)\}/, 'per ognuna');
+  const anime = readFileSync(join(RAD, 'src/web/public/anime.css'), 'utf8');
+  assert.match(anime, /\.nov-grande \{\n  border: 1px solid var\(--contorno\); border-width: var\(--tratto-2\);/, 'con il suo contorno a china');
+});
+
+test('sulla pagina pubblica un\'importante ha il suo titolo, e dove si prova', async () => {
+  const { paginaNovita } = await import('../../src/web/guide.js');
+  const h = paginaNovita([{ data: '2026-09-26', voci: [{ testo: 'Il muro.', importante: true, vai: 'alert', titolo: 'Il muro delle emote', perche: 'Le emote volano.' }, { testo: 'Una correzione.', importante: false, vai: null }] }],
+    { alert: { titolo: 'Manuale dell\'overlay', via: '/manuale/overlay' } });
+  assert.match(h, /<article class="g-ev"><h3 class="g-ev-tit">Il muro delle emote<\/h3><p class="g-ev-perche">Le emote volano\.<\/p><p class="g-ev-riga">Il muro\.<\/p><p class="g-ev-dove"><a href="\/manuale\/overlay">/);
+  assert.equal((h.match(/<h1[\s>]/g) || []).length, 1, 'e la pagina resta con un h1 solo');
 });

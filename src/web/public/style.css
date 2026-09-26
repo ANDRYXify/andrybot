@@ -2213,9 +2213,13 @@ body.ce-aperto { overflow: hidden; }
   font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--acc);
 }
 .nov-evidenza h3 .h-ico { width: 1.05rem; height: 1.05rem; }
-.nov-evidenza ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .55rem; }
-.nov-evidenza li { font-size: .98rem; font-weight: 600; line-height: 1.45; color: var(--testo); }
-.nov-evidenza li + li { padding-top: .55rem; border-top: 1px solid var(--acc-bordo); }
+.nov-grande { display: flex; flex-direction: column; gap: .4rem; padding: .85rem .95rem .9rem; background: var(--surface); }
+.nov-grande + .nov-grande { margin-top: .75rem; }
+.nov-grande-tit { margin: 0; font-family: var(--mano); font-size: 1.24rem; line-height: 1.2; color: var(--testo); text-wrap: balance; }
+.nov-grande-perche { margin: 0; font-size: 1rem; line-height: 1.5; color: var(--testo); }
+.nov-grande-riga { margin: 0; font-size: .86rem; line-height: 1.45; color: var(--testo-2); }
+.nov-grande-piede { display: flex; align-items: center; flex-wrap: wrap; gap: .55rem; margin: .3rem 0 0; }
+.nov-grande-dove { font-size: .78rem; color: var(--testo-3); }
 .nov-giorno { margin: .9rem 0 0; }
 .nov-giorno h3 { font-size: .74rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--testo-2); margin: 0 0 .35rem; }
 .nov-giorno ul { margin: 0; padding-left: 1.1rem; }

@@ -13482,9 +13482,19 @@ async function mostraNovita() {
   const quante = evidenza.length + gruppi.reduce((n, g) => n + sezioniDi(g).reduce((k, s) => k + s.voci.length, 0), 0) + restanti;
   const solo = (v) => (typeof v === 'object' && v.privata ? `<span class="nov-priv">${L('solo tu', 'you only', 'solo tú')}</span> ` : '');
   const voce = (v) => `<li>${solo(v)}${esc(typeof v === 'string' ? v : v.testo)}</li>`;
+  const grande = (v) => {
+    const id = v.vai && schedaValida(v.vai) && !schedaBloccata(v.vai) ? v.vai : '';
+    const dove = id ? novScheda(id) : null;
+    return `<article class="nov-grande">
+      <h4 class="nov-grande-tit">${solo(v)}${esc(v.titolo || v.testo)}</h4>
+      ${v.perche ? `<p class="nov-grande-perche">${esc(v.perche)}</p>` : ''}
+      ${v.titolo ? `<p class="nov-grande-riga">${esc(v.testo)}</p>` : ''}
+      ${id ? `<p class="nov-grande-piede"><button type="button" class="btn mini" data-nov-vai="${esc(id)}">${L('Provala', 'Try it', 'Pruébala')}</button><span class="nov-grande-dove">${esc(dove.area ? `${dove.area} · ${dove.nome}` : dove.nome)}</span></p>` : ''}
+    </article>`;
+  };
   const cartaEvidenza = evidenza.length ? `<section class="nov-evidenza" aria-labelledby="nov-evidenza-tit">
-      <h3 id="nov-evidenza-tit">${_hIco(ICO.megafono)}${L('In evidenza', 'Highlights', 'Destacado')}</h3>
-      <ul>${evidenza.map((v) => `<li>${solo(v)}<span class="nov-ev-testo">${esc(v.testo)}</span>${novDove(v)}</li>`).join('')}</ul>
+      <h3 id="nov-evidenza-tit">${_hIco(ICO.megafono)}${L('Da provare subito', 'Try these first', 'Para probar ya')}</h3>
+      ${evidenza.map(grande).join('')}
     </section>` : '';
   const corpo = cartaEvidenza + gruppi.map((g) => `<section class="nov-giorno">
       <h3>${esc(novGiorno(g.data))}</h3>
