@@ -83,7 +83,7 @@ export const META_VETRINA = {
     ogDesc: 'Uno spettatore scrive !social e in chat risponde il tuo account, non un bot. Nello stesso pannello hai overlay, moderazione, clip, grafiche social e pagina link, su Twitch e Kick. Gratis, con demo.',
     twTitolo: 'Il bot che in chat scrive con il tuo nome',
     twDesc: 'In chat risponde il tuo account, non un bot. Nello stesso pannello hai overlay, moderazione, grafiche social e pagina link. Su Twitch e Kick, gratis.',
-    immagine: `${SITO}/icons/og.png?v=8`,
+    immagine: `${SITO}/icons/og.png?v=9`,
     immagineAlt: 'SocialBot — il bot che in chat scrive con il tuo nome, per Twitch e Kick',
     sottocategoria: 'Bot per Twitch e Kick',
     distinto: 'Bot per la chat di Twitch e Kick, con il pannello per la diretta e i social dello streamer, di andryxify. Non è un prodotto di social media marketing né un chatbot per Messenger.',
@@ -96,7 +96,7 @@ export const META_VETRINA = {
     ogDesc: 'A viewer types !social and the reply comes from your account, not from a bot. The same panel has overlay, moderation, clips, social graphics and a link page, on Twitch and Kick. Free, with a demo.',
     twTitolo: 'The bot that writes in chat under your own name',
     twDesc: 'The reply in chat comes from your account, not from a bot. The same panel has overlay, moderation, social graphics and a link page. On Twitch and Kick, free.',
-    immagine: `${SITO}/icons/og-en.png?v=1`,
+    immagine: `${SITO}/icons/og-en.png?v=9`,
     immagineAlt: 'SocialBot, the bot that writes in chat under your own name, for Twitch and Kick',
     sottocategoria: 'Twitch and Kick bot',
     distinto: 'A chat bot for Twitch and Kick, with a panel for the streamer\u2019s stream and socials, by andryxify. It is not a social media marketing product or a Messenger chatbot.',
@@ -109,7 +109,7 @@ export const META_VETRINA = {
     ogDesc: 'Un espectador escribe !social y en el chat responde tu cuenta, no un bot. En el mismo panel tienes overlay, moderación, clips, gráficas sociales y página de enlaces, en Twitch y Kick. Gratis, con demo.',
     twTitolo: 'El bot que en el chat escribe con tu nombre',
     twDesc: 'En el chat responde tu cuenta, no un bot. En el mismo panel tienes overlay, moderación, gráficas sociales y página de enlaces. En Twitch y Kick, gratis.',
-    immagine: `${SITO}/icons/og-es.png?v=1`,
+    immagine: `${SITO}/icons/og-es.png?v=9`,
     immagineAlt: 'SocialBot, el bot que en el chat escribe con tu nombre, para Twitch y Kick',
     sottocategoria: 'Bot para Twitch y Kick',
     distinto: 'Bot para el chat de Twitch y Kick, con el panel para el directo y las redes del streamer, de andryxify. No es un producto de marketing en redes sociales ni un chatbot para Messenger.',
@@ -583,7 +583,7 @@ function corpo(L, l, kick, youtube, dirette, piani, recensioni) {
     ${porteHtml(L, porteAperte(kick, youtube))}
     <section class="vt-scena">
       <header class="vt-barra">
-        <a class="vt-marchio" href="/" aria-label="SocialBot"><img src="/icons/logo-barra.png?v=8" alt="SocialBot" width="80" height="30"></a>
+        <a class="vt-marchio" href="/" aria-label="SocialBot"><img src="/icons/logo-barra.png?v=9" alt="SocialBot" width="80" height="30"></a>
         <nav class="vt-mappa" aria-label="${L('Il sito', 'The site', 'El sitio')}">
           <a href="/guide">${L('Guide', 'Guides', 'Guías')}</a>
           <a href="/manuale">${L('Manuali', 'Manuals', 'Manuales')}</a>
@@ -775,8 +775,8 @@ export function datiStrutturatiVetrina(lingua = 'it', { piani = null, recensioni
         publisher: { '@id': `${SITO}/#org` }, copyrightHolder: autore, copyrightYear: 2024 },
       { '@type': 'WebPage', '@id': `${m.url}#webpage`, url: m.url, name: `SocialBot · ${m.ogTitolo}`, description: m.desc,
         inLanguage: m.inLanguage, isPartOf: { '@id': `${SITO}/#website` }, about: { '@id': `${SITO}/#app` },
-        primaryImageOfPage: `${SITO}/icons/og.png?v=8` },
-      { '@type': 'Organization', '@id': `${SITO}/#org`, name: 'andryxify.it', url: 'https://andryxify.it', logo: `${SITO}/icons/icon-512.png?v=8` },
+        primaryImageOfPage: `${SITO}/icons/og.png?v=9` },
+      { '@type': 'Organization', '@id': `${SITO}/#org`, name: 'andryxify.it', url: 'https://andryxify.it', logo: `${SITO}/icons/icon-512.png?v=9` },
       { '@type': 'Person', '@id': `${SITO}/#autore`, name: 'Andrea Taliento', alternateName: 'ANDRYXify', url: 'https://andryxify.it' },
       app,
       { '@type': 'FAQPage', '@id': `${m.url}#faq`, inLanguage: m.inLanguage,

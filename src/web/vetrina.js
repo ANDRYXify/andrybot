@@ -86,8 +86,6 @@ const ROTTE = new Set([
   '/abbonamento/ritorno',                     // il ritorno dal Checkout: la sessione si rilegge da Stripe
   '/posta/conferma',                          // il clic sulla mail di conferma dell'indirizzo
   '/settimana/conferma',                      // il link della mail che chiede se la settimana va bene
-  '/nyc', '/milano', '/napoli',               // le campagne in citta': la pagina del QR (docs/CAMPAGNE.md)
-  '/nyc/prendi', '/milano/prendi', '/napoli/prendi', // il suo tasto: senza sessione rimanda alla pagina, che fa entrare
   '/spotify/callback', '/tiktok/callback',    // ritorni OAuth: si proteggono con lo `state`
   '/tgapp', '/api/tgapp/auth',                // Telegram Mini App: initData firmato dal bot token
   '/api/tgapp/oidc/start', '/telegram/oidc/callback',
@@ -139,6 +137,7 @@ const LETTORI = {
 export function creaGuscio(publicDir) {
   const pubblici = new Set();
   const esplorati = new Set();
+  const porte = [];
 
   // Un riferimento diventa un file pubblico solo se punta al nostro dominio E se
   // quel file esiste davvero. Così le rotte (/entra, /privacy, /guide/...), le
@@ -211,12 +210,23 @@ export function creaGuscio(publicDir) {
       esplora('/' + nome, file);
       return '/' + nome;
     },
+    // UNA PORTA CON UNO SCHEMA, aperta a chi e' senza sessione solo se chi la
+    // serve dice di si' per QUELL'indirizzo: le campagne (socialbot.live/<id>)
+    // le crea l'admin, e l'elenco sta nel database, non qui. Si dichiara nel
+    // punto in cui si serve, con lo stesso schema della rotta, e il cancello
+    // delle porte (scripts/verifica-porte.mjs) la legge come le altre.
+    porta(schema, apre) {
+      porte.push({ schema: String(schema), apre });
+      return String(schema);
+    },
     // il guscio: i file che le pagine pubbliche si portano dietro
     contiene: (via) => pubblici.has(via) || CARTELLE.some((c) => via.startsWith(c)),
     // la domanda del cancello: questa richiesta passa anche senza sessione?
     aperto: (via) => ROTTE.has(via) || pubblici.has(via) || eIngressoEsterno(via)
       || CARTELLE.some((c) => via.startsWith(c))
-      || PREFISSI.some((c) => via.startsWith(c)),
+      || PREFISSI.some((c) => via.startsWith(c))
+      || porte.some((p) => { try { return p.apre(via) === true; } catch { return false; } }),
+    porte: () => porte.map((p) => p.schema),
     elenco: () => [...pubblici].sort(),
     rotte: () => [...ROTTE].sort(),
   };

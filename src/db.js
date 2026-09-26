@@ -803,6 +803,16 @@ CREATE TABLE IF NOT EXISTS campagne_prese (
   PRIMARY KEY (campagna, channel)
 );
 
+-- LE CAMPAGNE STESSE: le crea l'admin dalla scheda «Promo». L'id e' l'indirizzo
+-- (socialbot.live/<id>), dati le regole, i testi e la grafica, in JSON: la
+-- forma la decide features/campagne.js (norm), non questa tabella.
+CREATE TABLE IF NOT EXISTS campagne (
+  id TEXT PRIMARY KEY,
+  dati TEXT NOT NULL DEFAULT '{}',
+  creata INTEGER NOT NULL DEFAULT 0,
+  aggiornata INTEGER NOT NULL DEFAULT 0
+);
+
 -- IL REGISTRO DEI GIRI DEL COSTRUTTORE DISCORD.
 --
 -- Non serve a noi: serve a lui, il giorno che qualcuno chiede «chi ha
@@ -1834,11 +1844,41 @@ export const dcGiri = {
 // che stato lo decide features/recensioni.js.
 const _recensione = (r) => (r ? { login: r.login, stelle: r.stelle, testo: r.testo || '', lingua: r.lingua || 'it',
   conNome: !!r.con_nome, stato: r.stato, creata: r.creata || 0, aggiornata: r.aggiornata || 0, display: r.display || '' } : null);
-// Le campagne in citta'. `prendi` fa tutto in UNA transazione: guarda se il
+// Le campagne. `prendi` fa tutto in UNA transazione: guarda se il
 // canale l'ha gia' presa, conta i posti, scrive la riga e fa il regalo. SQLite
 // esegue una transazione alla volta, quindi due richieste sull'ultimo posto non
 // passano tutte e due: il tetto e' una proprieta' del database, non una speranza.
+const _campagna = (r) => (r ? { id: r.id, dati: safeJson(r.dati) || {}, creata: r.creata, aggiornata: r.aggiornata } : null);
 export const campagneDb = {
+  elenco() { return db.prepare('SELECT * FROM campagne ORDER BY creata, id').all().map(_campagna); },
+  get(id) { return _campagna(db.prepare('SELECT * FROM campagne WHERE id=?').get(String(id || '').toLowerCase())); },
+  salva(id, dati, ora = now()) {
+    db.prepare(`INSERT INTO campagne (id, dati, creata, aggiornata) VALUES (?,?,?,?)
+      ON CONFLICT(id) DO UPDATE SET dati=excluded.dati, aggiornata=excluded.aggiornata`).run(String(id), JSON.stringify(dati || {}), ora, ora);
+    return this.get(id);
+  },
+  // Una campagna con delle prese non si cancella: quelle righe dicono chi ha
+  // avuto il regalo. Si spegne.
+  togli(id) {
+    const c = String(id || '');
+    return db.transaction(() => {
+      if (this.presi(c) > 0) return 'prese';
+      return db.prepare('DELETE FROM campagne WHERE id=?').run(c).changes ? 'tolta' : 'assente';
+    })();
+  },
+  // Le campagne di partenza nascono UNA volta: se l'admin poi ne cancella una,
+  // al riavvio non torna.
+  semina(lista, ora = now()) {
+    const FLAG = 'campagne_seme_v1';
+    if (db.prepare("SELECT 1 FROM facts WHERE channel='__migrazioni__' AND key=?").get(FLAG)) return 0;
+    let n = 0;
+    db.transaction(() => {
+      for (const { id, dati } of lista) if (!this.get(id)) { this.salva(id, dati, ora); n++; }
+      db.prepare(`INSERT INTO facts (channel, key, value, ts) VALUES ('__migrazioni__', ?, ?, ?)
+        ON CONFLICT(channel, key) DO UPDATE SET value=excluded.value, ts=excluded.ts`).run(FLAG, String(n), ora);
+    })();
+    return n;
+  },
   presi(campagna) { return db.prepare('SELECT COUNT(*) AS n FROM campagne_prese WHERE campagna=?').get(String(campagna)).n; },
   di(campagna, channel) { return db.prepare('SELECT * FROM campagne_prese WHERE campagna=? AND channel=?').get(String(campagna), String(channel || '').toLowerCase()) || null; },
   prendi(campagna, channel, { tetto, ora = now(), regala }) {

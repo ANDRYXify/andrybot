@@ -12,7 +12,9 @@ import cookieSession from 'cookie-session';
 import multer from 'multer';
 import https from 'node:https';
 import crypto from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync, statSync, unlinkSync, renameSync, copyFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync, statSync, unlinkSync, renameSync, copyFileSync, createWriteStream, mkdtempSync, openSync, readSync, closeSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { unlink, readFile, mkdir, rename } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
@@ -104,7 +106,8 @@ import * as storiaIg from '../features/storia-ig.js';
 import * as settimana from '../features/settimana.js';
 import * as automatiche from '../features/automatiche.js';
 import * as campagne from '../features/campagne.js';
-import { paginaCampagna } from './campagna-vista.js';
+import { paginaCampagna, titoloDi } from './campagna-vista.js';
+import { pngDi, alleggerisci } from './png-leggero.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
 import * as ruoli from '../features/ruoli.js';
@@ -667,16 +670,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Sta qui e non dentro il flusso di Twitch perche' adesso le porte sono due:
   // scritto due volte, il giorno che cambia una regola cambierebbe per meta'
   // delle persone. Ritorna true se la prova gratuita e' stata assegnata.
-  // Le campagne in citta' (docs/CAMPAGNE.md): chi parte dalla pagina del QR per
-  // entrare, al rientro torna li'. Si ricorda solo un nome dell'elenco.
+  // Le campagne (docs/CAMPAGNE.md): chi parte dalla pagina del QR per entrare,
+  // al rientro torna li'. Si ricorda solo l'id di una campagna che c'e'.
+  const eCampagna = (id) => campagne.RE_ID.test(String(id || '')) && !!campagneDb.get(String(id));
   function segnaCampagna(req) {
-    if (campagne.eCampagna(req.query?.campagna) && req.session) req.session.campagna = req.query.campagna;
+    const id = String(req.query?.campagna || '').toLowerCase();
+    if (eCampagna(id) && req.session) req.session.campagna = id;
   }
   function tornaAllaCampagna(req) {
     const c = req.session?.campagna;
     if (!c) return '';
     delete req.session.campagna;
-    return campagne.eCampagna(c) ? '/' + c : '';
+    return eCampagna(c) ? '/' + c : '';
   }
 
   function primoAccesso(login, display) {
@@ -799,6 +804,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const guscio = creaGuscio(publicDir);
   guscio.risorsa('pagina-link.js');
   guscio.pagina('index.html');           // la vetrina, servita anche su '/'
+  // Le pagine delle campagne e il loro tasto: aperte solo se l'id e' una
+  // campagna che c'e' (le rotte stanno in fondo, dopo tutte le altre).
+  const viaDiCampagna = (via) => { const m = /^\/([a-z0-9-]{1,30})(?:\/prendi)?\/?$/i.exec(via); return !!m && eCampagna(m[1].toLowerCase()); };
+  guscio.porta('/:campagna', viaDiCampagna);
+  guscio.porta('/:campagna/prendi', viaDiCampagna);
+  guscio.porta('/campagne/:file', (via) => /^\/campagne\/[a-z0-9-]{1,30}\.png$/.test(via));
 
   app.use((req, res, next) => {
     // Rivalida la sessione a OGNI richiesta (regola: se non paghi e non sei un
@@ -5598,44 +5609,6 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const ok = /^[a-z0-9_]{1,40}$/.test(u) && /^[A-Za-z0-9_-]{20,64}$/.test(t) && automatiche.decidiConChiave(u, t, come).ok;
     res.set('Cache-Control', 'no-store').set('Referrer-Policy', 'no-referrer');
     res.type('html').send(paginaConferma(u, t, { fatto: ok ? come : '' }));
-  });
-
-  // LE CAMPAGNE IN CITTA' (docs/CAMPAGNE.md). La pagina del QR dice a ognuno
-  // dove si trova; il tasto e' un POST, e il regalo lo fa la transazione del
-  // database, che tiene il tetto anche con due richieste sull'ultimo posto.
-  const statoCampagna = (id) => campagne.stato(id, { dal: config.campagne?.[id], presi: campagneDb.presi(id) });
-  const personaCampagna = (req, id) => {
-    const user = currentUser(req);
-    if (!user) return { chi: 'fuori' };
-    if (!isOwner(req)) return { chi: 'moderatore' };
-    const login = user.login, sub = subscriptions.get(login), st = streamers.get(login);
-    const gia = !!campagneDb.di(id, login);
-    const no = campagne.perche({ statoCampagna: statoCampagna(id), abbonamento: sub, community: !!(st?.status === 'approved' && st.community), gia });
-    return { chi: 'proprietario', login, no, fino: gia && sub?.status === 'trialing' ? Number(sub.current_period_end) || 0 : 0 };
-  };
-  // Gli indirizzi scritti per intero: una porta composta non la legge nessun
-  // controllo. Che siano proprio le campagne dell'elenco lo fissa la prova
-  // (test/contratto/campagne.test.mjs). Express le trova senza badare alle
-  // maiuscole, quindi il nome si rilegge in minuscolo.
-  const campagnaDi = (req) => String(req.path.split('/')[1] || '').toLowerCase();
-  app.get(['/nyc', '/milano', '/napoli'], (req, res) => {
-    const id = campagnaDi(req);
-    res.set('Cache-Control', 'no-store');
-    const esito = req.query.esito === 'presa' ? 'presa' : '';
-    res.type('html').send(paginaCampagna(id, { campagna: campagne.CAMPAGNE[id], stato: statoCampagna(id), finestra: campagne.finestra(id, config.campagne?.[id]),
-      presi: campagneDb.presi(id), persona: personaCampagna(req, id), esito, kick: conKick }));
-  });
-  // Senza sessione (scaduta fra la pagina e il tasto) si torna alla pagina, che
-  // fa entrare: il tasto non e' mai un vicolo cieco.
-  app.post(['/nyc/prendi', '/milano/prendi', '/napoli/prendi'], (req, res) => {
-    const id = campagnaDi(req);
-    if (!currentUser(req)) return res.redirect(303, '/' + id);
-    const p = personaCampagna(req, id);
-    if (p.chi !== 'proprietario' || p.no) return res.redirect(303, '/' + id);
-    if (!extRateOk('campagna:' + p.login)) return res.status(429).type('text').send('Troppe richieste: riprova fra un minuto.');
-    const esito = campagneDb.prendi(id, p.login, { tetto: campagne.TETTO, regala: () => subscriptions.set(p.login, campagne.regalo()) });
-    if (esito === 'presa') log.info(`campagna ${id}: un anno di tutto a @${p.login}`);
-    res.redirect(303, `/${id}${esito === 'presa' ? '?esito=presa' : ''}`);
   });
 
   // Il giro: ogni minuto, per chi ha qualcosa di acceso.
@@ -10628,6 +10601,164 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const r = await brainpy.integrazione().catch(() => null);
     res.json(r || { ok: false, integrazione: null });
   }));
+
+  // ------------------------------------------------------------ campagne
+  // LE CAMPAGNE (docs/CAMPAGNE.md) stanno nel database e le crea l'admin dalla
+  // scheda «Promo». Le tre di partenza nascono una volta, al primo avvio, con la
+  // data di messa in onda del .env se c'era.
+  campagneDb.semina(campagne.SEME.map(({ id, ...d }) => ({ id, dati: campagne.norm({ ...d, dal: config.campagne?.[id] || '' }).campagna })));
+  const campagnaDi = (id) => {
+    const r = campagneDb.get(id);
+    return r ? { id: r.id, ...campagne.norm(r.dati).campagna } : null;
+  };
+  const statoCampagna = (c) => campagne.stato(c, { presi: campagneDb.presi(c.id) });
+  const personaCampagna = (req, c) => {
+    const user = currentUser(req);
+    if (!user) return { chi: 'fuori' };
+    if (!isOwner(req)) return { chi: 'moderatore' };
+    const login = user.login, sub = subscriptions.get(login), st = streamers.get(login);
+    const gia = !!campagneDb.di(c.id, login);
+    const no = campagne.perche({ statoCampagna: statoCampagna(c), abbonamento: sub, community: !!(st?.status === 'approved' && st.community), gia });
+    return { chi: 'proprietario', login, no, fino: gia && sub?.status === 'trialing' ? Number(sub.current_period_end) || 0 : 0 };
+  };
+  // Il primo pezzo di ogni indirizzo del sito: letto dal router e dalla
+  // cartella pubblica, cosi' una campagna non puo' prendere il posto di una
+  // pagina, di oggi o di domani (le rotte delle campagne stanno in fondo).
+  const occupati = () => {
+    const s = new Set();
+    for (const l of app._router?.stack || []) {
+      const p = l.route?.path;
+      for (const x of (Array.isArray(p) ? p : [p])) {
+        const primo = typeof x === 'string' ? x.split('/')[1] : '';
+        if (primo && !primo.startsWith(':')) s.add(primo.toLowerCase());
+      }
+    }
+    for (const f of readdirSync(publicDir)) { s.add(f.toLowerCase()); s.add(f.toLowerCase().replace(/\.[^.]+$/, '')); }
+    for (const v of guscio.rotte()) { const primo = v.split('/')[1]; if (primo) s.add(primo.toLowerCase()); }
+    return s;
+  };
+  const dirCampagne = join(config.dataDir, 'campagne');
+  const vistaAdmin = (c) => ({
+    id: c.id, campagna: c, titolo: titoloDi(c), stato: statoCampagna(c), presi: campagneDb.presi(c.id),
+    finestra: campagne.finestra(c), url: `https://socialbot.live/${c.id}`, occupato: occupati().has(c.id),
+  });
+
+  app.get('/api/admin/campagne', requireAdmin, (req, res) => {
+    res.json({ campagne: campagneDb.elenco().map((r) => vistaAdmin(campagnaDi(r.id))), pacchetti: abbonamenti.ADDON.map((a) => ({ id: a.id, nome: a.nome })), regole: campagne.REGOLE });
+  });
+  app.post('/api/admin/campagne', requireAdmin, (req, res) => {
+    const b = req.body || {};
+    const id = String(b.id || '').trim().toLowerCase();
+    const c = campagneDb.get(id);
+    if (!c) {
+      const no = campagne.idNuovo(id, occupati(), new Set(campagneDb.elenco().map((x) => x.id)));
+      if (no) return res.status(400).json({ errore: { forma: 'L\'indirizzo può avere solo lettere minuscole, cifre e trattini (da 1 a 30), e non può cominciare o finire con un trattino.', occupato: 'Questo indirizzo è già una pagina del sito.', esiste: 'Questa campagna c\'è già.' }[no] });
+    }
+    const { campagna, errori } = campagne.norm({ ...(c?.dati || {}), ...(b.dati || {}), anteprima: c?.dati?.anteprima || '' });
+    if (errori.length) return res.status(400).json({ errore: `Non tornano: ${errori.join(', ')}.` });
+    campagneDb.salva(id, campagna);
+    log.info(`campagna ${id} ${c ? 'aggiornata' : 'creata'} dall'admin`);
+    res.json({ ok: true, campagna: vistaAdmin(campagnaDi(id)) });
+  });
+  app.delete('/api/admin/campagne/:id', requireAdmin, (req, res) => {
+    const id = String(req.params.id || '').toLowerCase();
+    const esito = campagneDb.togli(id);
+    if (esito === 'prese') return res.status(409).json({ errore: 'Qualcuno l\'ha già presa: la puoi spegnere, non cancellare.' });
+    if (esito === 'tolta') { try { unlinkSync(join(dirCampagne, id + '.png')); } catch { /* non c'era */ } }
+    res.json({ ok: esito === 'tolta' });
+  });
+  // L'anteprima del link di una campagna: la disegna la scheda «Promo» col
+  // motore delle grafiche e la manda qui, 1200x630. Il nome del file e' l'id,
+  // il timbro e' il contenuto: cambiata l'immagine, cambia l'indirizzo.
+  app.post('/api/admin/campagne/:id/anteprima', requireAdmin, express.raw({ type: 'image/png', limit: '6mb' }), wrap(async (req, res) => {
+    const id = String(req.params.id || '').toLowerCase();
+    const c = campagneDb.get(id);
+    if (!c) return res.status(404).json({ errore: 'Campagna sconosciuta.' });
+    const b = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+    if (!pngDi(b, 1200, 630)) return res.status(400).json({ errore: 'L\'anteprima deve essere un PNG di 1200x630.' });
+    const leggera = await alleggerisci(b, { w: 1200, h: 630 });
+    mkdirSync(dirCampagne, { recursive: true });
+    writeFileSync(join(dirCampagne, id + '.png'), leggera);
+    const v = crypto.createHash('sha256').update(leggera).digest('hex').slice(0, 10);
+    campagneDb.salva(id, { ...(campagneDb.get(id)?.dati || c.dati), anteprima: `/campagne/${id}.png?v=${v}` });
+    res.json({ ok: true, campagna: vistaAdmin(campagnaDi(id)) });
+  }));
+  app.get('/campagne/:file', (req, res) => {
+    const m = /^([a-z0-9-]{1,30})\.png$/.exec(String(req.params.file || ''));
+    const f = m ? join(dirCampagne, m[1] + '.png') : '';
+    if (!f || !existsSync(f)) return notFound(res);
+    res.set('Cache-Control', 'public, max-age=31536000, immutable').type('png').sendFile(f);
+  });
+
+  // IL VIDEO DELLE PROMO. Il browser dell'admin disegna i fotogrammi col motore
+  // delle grafiche e li comprime in VP9 dentro un IVF; qui ffmpeg ne fa un MP4
+  // H.264, il formato che chiedono gli schermi. I colori si convertono in
+  // BT.709 e lo si scrive nel file: il browser li consegna in BT.601, e un
+  // lettore che ignora l'etichetta legge l'HD in BT.709, spostando il magenta. Uno alla volta: e' lavoro
+  // pesante, e il file arriva su disco a pezzi, non in memoria.
+  let promoInCorso = false;
+  const PROMO_MAX = 700 * 1024 * 1024;
+  app.post('/api/admin/promo/video', requireAdmin, wrap(async (req, res) => {
+    if (promoInCorso) return res.status(429).json({ errore: 'Sto già facendo un video: aspetta che finisca.' });
+    const nome = String(req.query.nome || 'promo').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'promo';
+    const fps = [24, 25, 30, 50, 60].includes(Number(req.query.fps)) ? Number(req.query.fps) : 30;
+    promoInCorso = true;
+    const dir = mkdtempSync(join(tmpdir(), 'promo-'));
+    const ivf = join(dir, 'in.ivf'), mp4 = join(dir, 'out.mp4');
+    const pulisci = () => { promoInCorso = false; rmSync(dir, { recursive: true, force: true }); };
+    try {
+      await new Promise((ok, ko) => {
+        let n = 0;
+        const out = createWriteStream(ivf);
+        req.on('data', (d) => { n += d.length; if (n > PROMO_MAX) { req.unpipe(out); out.destroy(); ko(new Error('il file è troppo grande')); } });
+        req.on('error', ko); out.on('error', ko); out.on('finish', ok);
+        req.pipe(out);
+      });
+      const testa = Buffer.alloc(32), fd = openSync(ivf, 'r');
+      readSync(fd, testa, 0, 32, 0); closeSync(fd);
+      if (testa.subarray(0, 4).toString('latin1') !== 'DKIF') throw new Error('non è un video che conosco');
+      await new Promise((ok, ko) => {
+        const p = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'ivf', '-i', ivf, '-c:v', 'libx264', '-profile:v', 'high',
+          '-vf', 'scale=out_color_matrix=bt709:out_range=tv,format=yuv420p', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709',
+          '-pix_fmt', 'yuv420p', '-crf', '14', '-preset', 'slow', '-r', String(fps), '-movflags', '+faststart', '-an', mp4], { stdio: ['ignore', 'ignore', 'pipe'] });
+        let err = '';
+        p.stderr.on('data', (d) => { err = (err + d).slice(-2000); });
+        const t = setTimeout(() => p.kill('SIGKILL'), 20 * 60_000);
+        p.on('error', (e) => { clearTimeout(t); ko(e); });
+        p.on('close', (code) => { clearTimeout(t); if (code === 0) ok(); else ko(new Error('ffmpeg: ' + (err.trim().split('\n').pop() || code))); });
+      });
+      res.download(mp4, nome + '.mp4', () => pulisci());
+    } catch (e) {
+      pulisci();
+      if (!res.headersSent) res.status(400).json({ errore: 'Il video non è riuscito: ' + (e?.message || e) });
+    }
+  }));
+
+  // LE PAGINE DELLE CAMPAGNE, per ultime: una rotta sola per tutte, e le
+  // pagine del sito vincono sempre. Se l'id non e' una campagna si passa oltre
+  // (e oltre c'e' il 404). La pagina dice a ognuno dove si trova; il tasto e'
+  // un POST, e il regalo lo fa la transazione del database, che tiene il tetto
+  // anche con due richieste sull'ultimo posto.
+  app.get('/:campagna', (req, res, next) => {
+    const c = campagne.RE_ID.test(String(req.params.campagna).toLowerCase()) ? campagnaDi(String(req.params.campagna).toLowerCase()) : null;
+    if (!c) return next();
+    res.set('Cache-Control', 'no-store');
+    const esito = req.query.esito === 'presa' ? 'presa' : '';
+    res.type('html').send(paginaCampagna(c, { stato: statoCampagna(c), presi: campagneDb.presi(c.id), persona: personaCampagna(req, c), esito, kick: conKick }));
+  });
+  // Senza sessione (scaduta fra la pagina e il tasto) si torna alla pagina, che
+  // fa entrare: il tasto non e' mai un vicolo cieco.
+  app.post('/:campagna/prendi', (req, res, next) => {
+    const c = campagne.RE_ID.test(String(req.params.campagna).toLowerCase()) ? campagnaDi(String(req.params.campagna).toLowerCase()) : null;
+    if (!c) return next();
+    if (!currentUser(req)) return res.redirect(303, '/' + c.id);
+    const p = personaCampagna(req, c);
+    if (p.chi !== 'proprietario' || p.no) return res.redirect(303, '/' + c.id);
+    if (!extRateOk('campagna:' + p.login)) return res.status(429).type('text').send('Troppe richieste: riprova fra un minuto.');
+    const esito = campagneDb.prendi(c.id, p.login, { tetto: c.tetto, regala: () => subscriptions.set(p.login, campagne.regalo(c)) });
+    if (esito === 'presa') log.info(`campagna ${c.id}: ${c.giorni} giorni a @${p.login}`);
+    res.redirect(303, `/${c.id}${esito === 'presa' ? '?esito=presa' : ''}`);
+  });
 
   // ------------------------------------------------------------ avvio
 

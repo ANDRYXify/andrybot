@@ -3,8 +3,8 @@
 
 
 const CACHE = 'socialbot-v5';
-const DA_TENERE = ['/icons/icon-192.png?v=8', '/icons/icon-512.png?v=8',
-  '/icons/marchio-barra.png?v=8', '/icons/logo-barra.png?v=8', '/manifest.webmanifest'];
+const DA_TENERE = ['/icons/icon-192.png?v=9', '/icons/icon-512.png?v=9',
+  '/icons/marchio-barra.png?v=9', '/icons/logo-barra.png?v=9', '/manifest.webmanifest'];
 const SHELL = DA_TENERE.map((v) => v.split('?')[0]);
 
 self.addEventListener('install', (ev) => {

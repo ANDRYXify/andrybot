@@ -3231,6 +3231,7 @@ const GRUPPI = [
 const GRUPPO_ADMIN = { id: 'admin', nome: 'Admin', schede: [
   ['admin', 'Admin'],
   ['avatar', 'Avatar 3D'],
+  ['promo', 'Promo'],
 ] };
 const SOLO_ADMIN = new Set(GRUPPO_ADMIN.schede.map(([id]) => id));
 
@@ -3260,6 +3261,7 @@ const T_SCHEDA = {
   memoria: ['Memoria', 'Memory', 'Memoria'],
   statistiche: ['Statistiche', 'Stats', 'Estadísticas'],
   avatar: ['Avatar 3D', 'Avatar 3D', 'Avatar 3D'],
+  promo: ['Promo', 'Promo', 'Promo'],
   moduli: ['Comandi', 'Commands', 'Comandos'],
   regole: ['Moderazione', 'Moderation', 'Moderación'],
   scudo: ['Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'],
@@ -3315,6 +3317,7 @@ const ICONA = {
   memoria:     _ico('<path d="M12 5a3 3 0 0 0-3 3 2.5 2.5 0 0 0-1.5 4.5A2.5 2.5 0 0 0 9 17a3 3 0 0 0 3 2 3 3 0 0 0 3-2 2.5 2.5 0 0 0 1.5-4.5A2.5 2.5 0 0 0 15 8a3 3 0 0 0-3-3Z"/><path d="M12 5v14"/>'),
   statistiche: _ico('<path d="M4 21V4"/><path d="M4 21h16"/><path d="M8.5 21v-6"/><path d="M13 21V9"/><path d="M17.5 21v-9"/>'),
   avatar:      _ico('<path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5"/><path d="M12 12v10"/>'),
+  promo:       _ico('<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>'),
   moduli:      _ico('<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M7.5 9.5 10.5 12l-3 2.5"/><path d="M13 15h4"/>'),
   regole:      _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>'),
   scudo:       _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/><path d="m9 12 2 2 4-4"/>'),
@@ -3567,6 +3570,8 @@ const GUIDE = {
     come: [['Collega il tuo account 7TV incollando il token (c\'è la guida qui sotto).', 'Connect your 7TV account by pasting the token (there’s a guide below).', 'Conecta tu cuenta 7TV pegando el token (hay una guía abajo).', '#svtv-token'], ['Cerca un\'emote nella directory 7TV e premi «Aggiungi» (puoi dargli un alias).', 'Search an emote in the 7TV directory and hit «Add» (you can give it an alias).', 'Busca una emote en el directorio 7TV y pulsa «Añadir» (puedes ponerle un alias).', '#svtv-cerca'], ['Nel tuo set puoi rinominare o togliere le emote con un clic.', 'In your set you can rename or remove emotes with one click.', 'En tu set puedes renombrar o quitar emotes con un clic.', '#svtv-set']] },
   avatar: { serve: ['Guardare il bot mentre pensa: la sfera si accende quando legge la chat, decide e risponde.', 'Watch the bot while it thinks: the sphere lights up as it reads chat, decides and answers.', 'Ver el bot mientras piensa: la esfera se enciende cuando lee el chat, decide y responde.'],
     come: [['La sfera al centro è il bot: ogni filo che si illumina è un pezzo di ragionamento in corso.', 'The sphere in the middle is the bot: every thread that lights up is a piece of reasoning under way.', 'La esfera del centro es el bot: cada hilo que se ilumina es un trozo de razonamiento en marcha.', '#mente3d-canvas'], ['Sotto, il cruscotto dice cosa sta facendo adesso e quanto ci mette: se tace, qui si vede perché.', 'Below, the dashboard says what it is doing right now and how long it takes: if it goes quiet, here you see why.', 'Abajo, el panel dice qué está haciendo ahora y cuánto tarda: si se calla, aquí se ve por qué.', '#mente-cruscotto']] },
+  promo: { serve: ['Creare le campagne con un regalo per chi arriva dal QR di una pubblicità, e disegnare le grafiche e i video da mandare in onda.', 'Create campaigns with a gift for whoever arrives from an ad’s QR, and draw the graphics and videos to put on air.', 'Crear campañas con un regalo para quien llega desde el QR de un anuncio, y dibujar las gráficas y los vídeos para emitir.'],
+    come: [['Una campagna nuova ha un indirizzo, una data di messa in onda e le sue regole: quanti giorni, quali pacchetti, per quanti canali.', 'A new campaign has an address, an air date and its rules: how many days, which packages, for how many channels.', 'Una campaña nueva tiene una dirección, una fecha de emisión y sus reglas: cuántos días, qué paquetes, para cuántos canales.', '#promo-nuova'], ['Nelle grafiche scegli la misura e i testi, e sposti i tempi: sotto l’anteprima trovi i problemi da sistemare prima di esportare.', 'In the graphics you pick the size and the texts, and move the timings: below the preview you find the problems to fix before exporting.', 'En las gráficas eliges el tamaño y los textos, y mueves los tiempos: debajo de la vista previa están los problemas que arreglar antes de exportar.', '#promo-editor']] },
   grafiche: { serve: ['Fare la locandina della diretta da postare sui social, con i tuoi colori e il tuo handle.', 'Make the stream poster to post on socials, with your colors and your handle.', 'Hacer el cartel del directo para publicar en redes, con tus colores y tu handle.'],
     come: [['Scrivi il titolo: è la riga grande della locandina.', 'Write the title: it is the big line of the poster.', 'Escribe el título: es la línea grande del cartel.', '#gr-titolo'], ['Scegli il colore d\'accento; il testo si adatta da solo perché resti leggibile.', 'Pick the accent color; the text adapts by itself so it stays readable.', 'Elige el color de acento; el texto se adapta solo para que siga legible.', '#gr-accento'], ['Scarica il PNG (o la versione animata) e pubblicalo: la didascalia è già pronta da copiare.', 'Download the PNG (or the animated one) and post it: the caption is ready to copy.', 'Descarga el PNG (o la versión animada) y publícalo: el pie de foto ya está listo para copiar.', '#gr-scarica'], ['In cima, «Metti nella storia» manda la grafica nella tua storia di Instagram, già in verticale; se Instagram non è collegato, lì trovi il tasto per collegarlo.', 'At the top, «Post to your story» sends the graphic to your Instagram story, already vertical; if Instagram is not connected, you find the button to connect it there.', 'Arriba, «Publicar en tu historia» manda la gráfica a tu historia de Instagram, ya en vertical; si Instagram no está conectado, ahí tienes el botón para conectarlo.', '#gr-ig']] },
   settimana: { serve: ['Scrivere una volta sola quando vai in onda e cosa fai, e mandarlo dove ti seguono.', 'Write once when you go live and what you do, and send it where people follow you.', 'Escribir una sola vez cuándo sales en directo y qué haces, y mandarlo donde te siguen.'],
@@ -4553,6 +4558,7 @@ function vistaPiattaforma() {
     ${pannelloMemoria()}
     ${pannelloStatistiche()}
     ${pannelloAvatar()}
+    ${stato.isAdmin ? pannelloPromo() : ''}
     ${pannelloModuli()}
     ${pannelloRegole()}
     ${pannelloScudo()}
@@ -6954,6 +6960,463 @@ function badgePermesso(ok, nome) {
   return ok
     ? `<span class="badge verde">✓ ${nome}</span>`
     : `<span class="badge giallo">${nome} ${L('da concedere', 'to grant', 'por conceder')}</span>`;
+}
+
+function pannelloPromo() {
+  return pannello('promo', `
+    <div class="carta">
+      <h2>${_hIco(ICO.megafono)}${L('Le campagne', 'Campaigns', 'Las campañas')}</h2>
+      <p>${L('Ogni campagna è un indirizzo, socialbot.live/qualcosa, con un regalo per chi arriva dal QR della pubblicità. Qui decidi le regole, i testi della pagina e la sua anteprima.', 'Every campaign is an address, socialbot.live/something, with a gift for whoever arrives from the ad’s QR. Here you set the rules, the page texts and its preview.', 'Cada campaña es una dirección, socialbot.live/algo, con un regalo para quien llega desde el QR del anuncio. Aquí decides las reglas, los textos de la página y su vista previa.')}</p>
+      <div id="promo-elenco">${attesaHtml()}</div>
+      <p class="spazio-sopra"><button type="button" class="btn" id="promo-nuova">${L('Nuova campagna', 'New campaign', 'Nueva campaña')}</button></p>
+      <form id="promo-modulo" class="promo-modulo spazio-sopra" hidden></form>
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.immagine)}${L('Le grafiche', 'Graphics', 'Las gráficas')}</h2>
+      <p>${L('La pubblicità di una campagna, disegnata a mano come il resto: scegli la misura, scrivi i testi, sposta i tempi. Quello che vedi qui è quello che esce.', 'A campaign’s ad, hand drawn like everything else: pick the size, write the texts, move the timings. What you see here is what comes out.', 'El anuncio de una campaña, dibujado a mano como todo lo demás: elige el tamaño, escribe los textos, mueve los tiempos. Lo que ves aquí es lo que sale.')}</p>
+      <div id="promo-editor">${attesaHtml()}</div>
+    </div>`);
+}
+
+const PROMO = { campagne: [], pacchetti: [], regole: {}, logo: null, scena: null, conf: null, t: 0, gioca: false, raf: 0, ultimo: 0, timer: 0, misura: '' };
+let _promoMotore = null;
+
+function caricaMotorePromo() {
+  if (_promoMotore) return _promoMotore;
+  const script = (src) => new Promise((ok, ko) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => ko(new Error(src)); document.head.appendChild(s); });
+  _promoMotore = (window.SB_PENNA ? Promise.resolve() : script('/penna.js'))
+    .then(() => (window.SB_PROMO ? null : script('/promo.js')))
+    .then(() => window.SB_PROMO.pronti())
+    .then(() => window.SB_PROMO.prepara('/icons/logo-esteso.png?v=9'))
+    .then((logo) => { PROMO.logo = logo; return logo; })
+    .catch((e) => { _promoMotore = null; throw e; });
+  return _promoMotore;
+}
+
+const PROMO_STATO = {
+  spenta: [L('spenta', 'off', 'apagada'), ''],
+  prima: [L('non ancora aperta', 'not open yet', 'aún no abierta'), 'giallo'],
+  aperta: [L('aperta', 'open', 'abierta'), 'verde'],
+  piena: [L('piena', 'full', 'llena'), 'rosso'],
+  chiusa: [L('chiusa', 'closed', 'cerrada'), ''],
+};
+const _promoGiorno = (ms, c) => new Date(ms).toLocaleDateString(L('it-IT', 'en-US', 'es-ES'), { day: 'numeric', month: 'long', year: 'numeric', timeZone: c.fuso });
+const _promoOfferta = (t) => { const s = String(t || ''); const i = s.lastIndexOf(', '); return i > 0 ? `${s.slice(0, i + 1)} *${s.slice(i + 2)}*` : `*${s}*`; };
+
+async function caricaPromo() {
+  const box = document.getElementById('promo-elenco');
+  if (!box) return;
+  try {
+    const d = await api('/api/admin/campagne');
+    Object.assign(PROMO, { campagne: d.campagne || [], pacchetti: d.pacchetti || [], regole: d.regole || {} });
+    disegnaElencoPromo();
+  } catch (e) { box.innerHTML = `<p class="vuoto">${esc(e.message)}</p>`; return; }
+  await montaEditorPromo();
+}
+
+function disegnaElencoPromo() {
+  const box = document.getElementById('promo-elenco');
+  if (!box) return;
+  if (!PROMO.campagne.length) { box.innerHTML = `<p class="vuoto">${L('Nessuna campagna, per ora.', 'No campaigns yet.', 'Ninguna campaña, por ahora.')}</p>`; return; }
+  box.innerHTML = `<ul class="promo-elenco">${PROMO.campagne.map((v) => {
+    const c = v.campagna, st = PROMO_STATO[v.stato] || PROMO_STATO.spenta;
+    const quando = v.finestra ? `${_promoGiorno(v.finestra.apre, c)} → ${_promoGiorno(v.finestra.chiude - 1, c)}` : L('senza data di messa in onda', 'no air date yet', 'sin fecha de emisión');
+    return `<li data-promo="${esc(v.id)}">
+      <div class="promo-riga"><strong>socialbot.live/${esc(v.id)}</strong> <span class="badge ${st[1]}">${esc(st[0])}</span></div>
+      <p class="suggerimento">${esc(v.titolo)} · ${L('presi', 'claimed', 'tomados')} ${v.presi} ${L('su', 'of', 'de')} ${c.tetto} · ${esc(quando)}</p>
+      ${v.occupato ? `<p class="problema grave" role="status"><strong>${L('Questo indirizzo adesso è una pagina del sito: la campagna non si vede più.', 'This address is now a page of the site: the campaign is no longer visible.', 'Esta dirección ahora es una página del sitio: la campaña ya no se ve.')}</strong></p>` : ''}
+      <div class="promo-azioni">
+        <button type="button" class="btn secondario mini" data-promo-modifica>${L('Modifica', 'Edit', 'Editar')}</button>
+        <button type="button" class="btn secondario mini" data-promo-grafica>${L('Grafiche', 'Graphics', 'Gráficas')}</button>
+        <button type="button" class="btn secondario mini" data-promo-copia>${L('Copia il link', 'Copy the link', 'Copia el enlace')}</button>
+        <a class="btn testo mini" href="/${esc(v.id)}" target="_blank" rel="noopener">${L('Apri la pagina', 'Open the page', 'Abre la página')}</a>
+      </div>
+    </li>`;
+  }).join('')}</ul>`;
+}
+
+function moduloPromo(v) {
+  const f = document.getElementById('promo-modulo');
+  if (!f) return;
+  const R = PROMO.regole;
+  const c = v ? v.campagna : { lingua: 'it', fuso: 'Europe/Rome', luogo: '', dal: '', finestra: R.finestra, tetto: R.tetto, giorni: R.giorni, pacchetti: PROMO.pacchetti.map((p) => p.id), attiva: true, testi: { titolo: '', frase: '' } };
+  const fusi = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : ['Europe/Rome', 'America/New_York', 'Europe/London'];
+  if (!fusi.includes(c.fuso)) fusi.unshift(c.fuso);
+  const lingue = [['it', 'Italiano'], ['en', 'English'], ['es', 'Español']];
+  f.innerHTML = `
+    <h3>${v ? L('Modifica', 'Edit', 'Editar') + ' socialbot.live/' + esc(v.id) : L('Nuova campagna', 'New campaign', 'Nueva campaña')}</h3>
+    <div class="promo-campi">
+      ${v ? `<div class="campo campo-su"><span>${L('Indirizzo', 'Address', 'Dirección')}</span><span class="promo-via promo-fisso">socialbot.live/${esc(v.id)}<input type="hidden" id="pm-id" value="${esc(v.id)}"></span></div>`
+    : `<label class="campo campo-su">${L('Indirizzo', 'Address', 'Dirección')}<span class="promo-via">socialbot.live/<input type="text" id="pm-id" maxlength="30" autocomplete="off" required></span></label>`}
+      <label class="campo campo-su">${L('Lingua della pagina', 'Page language', 'Idioma de la página')}<select id="pm-lingua">${lingue.map(([k, n]) => `<option value="${k}"${c.lingua === k ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
+      <label class="campo campo-su">${L('Dove si vede', 'Where it shows', 'Dónde se ve')}<input type="text" id="pm-luogo" value="${esc(c.luogo)}" maxlength="40" placeholder="${L('per esempio Times Square', 'for example Times Square', 'por ejemplo Times Square')}"></label>
+      <label class="campo campo-su">${L('Fuso orario', 'Time zone', 'Zona horaria')}<select id="pm-fuso">${fusi.map((z) => `<option${z === c.fuso ? ' selected' : ''}>${esc(z)}</option>`).join('')}</select></label>
+      <label class="campo campo-su">${L('Va in onda il', 'Goes live on', 'Sale el')}<input type="date" id="pm-dal" value="${esc(c.dal)}"></label>
+      <label class="campo campo-su">${L('Resta aperta per (giorni)', 'Stays open for (days)', 'Sigue abierta durante (días)')}<input type="number" id="pm-finestra" min="1" max="365" value="${c.finestra}"></label>
+      <label class="campo campo-su">${L('Per i primi (canali)', 'For the first (channels)', 'Para los primeros (canales)')}<input type="number" id="pm-tetto" min="1" max="1000000" value="${c.tetto}"></label>
+      <label class="campo campo-su">${L('Il regalo dura (giorni)', 'The gift lasts (days)', 'El regalo dura (días)')}<input type="number" id="pm-giorni" min="1" max="3650" value="${c.giorni}"></label>
+    </div>
+    <fieldset class="promo-pacchetti"><legend>${L('Pacchetti regalati', 'Packages given', 'Paquetes regalados')}</legend>
+      ${PROMO.pacchetti.map((p) => `<label class="riga-check"><input type="checkbox" data-pm-pacchetto="${esc(p.id)}"${c.pacchetti.includes(p.id) ? ' checked' : ''}> ${esc(p.nome)}</label>`).join('')}
+    </fieldset>
+    <div class="riga-interruttore spazio-sopra">
+      <label class="interruttore"><input type="checkbox" id="pm-attiva"${c.attiva ? ' checked' : ''}><span class="levetta"></span></label>
+      <span class="etichetta-stato">${L('Accesa', 'On', 'Encendida')}</span>
+    </div>
+    <label class="campo campo-su spazio-sopra">${L('Titolo della pagina, se vuoi scriverlo tu', 'Page title, if you want to write it', 'Título de la página, si quieres escribirlo tú')}<input type="text" id="pm-titolo" value="${esc(c.testi?.titolo || '')}" maxlength="80" placeholder="${esc(v ? v.titolo : '')}"></label>
+    <label class="campo campo-su">${L('Frase d’apertura, se vuoi scriverla tu', 'Opening line, if you want to write it', 'Frase de apertura, si quieres escribirla tú')}<textarea id="pm-frase" maxlength="400" rows="3">${esc(c.testi?.frase || '')}</textarea></label>
+    <p class="suggerimento">${L('Lasciati vuoti, titolo e frase li scrivo io dalle regole, nella lingua della pagina. Salvando rifaccio anche l’anteprima del link.', 'Left empty, I write the title and the line from the rules, in the page language. Saving also redraws the link preview.', 'Si los dejas vacíos, el título y la frase los escribo yo a partir de las reglas, en el idioma de la página. Al guardar rehago también la vista previa del enlace.')}</p>
+    <div class="promo-azioni">
+      <button type="submit" class="btn">${L('Salva', 'Save', 'Guardar')}</button>
+      <button type="button" class="btn secondario" data-pm-annulla>${L('Annulla', 'Cancel', 'Cancelar')}</button>
+      ${v && !v.presi ? `<button type="button" class="btn testo" data-pm-cancella>${L('Cancella la campagna', 'Delete the campaign', 'Borra la campaña')}</button>` : ''}
+    </div>`;
+  f.hidden = false;
+  f.dataset.promo = v ? v.id : '';
+  f.querySelector(v ? '#pm-lingua' : '#pm-id')?.focus();
+}
+
+async function salvaCampagnaPromo(f) {
+  const $ = (id) => document.getElementById(id);
+  const id = $('pm-id').value.trim().toLowerCase();
+  const dati = {
+    lingua: $('pm-lingua').value, luogo: $('pm-luogo').value, fuso: $('pm-fuso').value, dal: $('pm-dal').value,
+    finestra: Number($('pm-finestra').value), tetto: Number($('pm-tetto').value), giorni: Number($('pm-giorni').value),
+    pacchetti: [...f.querySelectorAll('[data-pm-pacchetto]')].filter((x) => x.checked).map((x) => x.dataset.pmPacchetto),
+    attiva: $('pm-attiva').checked, testi: { titolo: $('pm-titolo').value, frase: $('pm-frase').value },
+  };
+  if (!dati.pacchetti.length) { toast(L('Scegli almeno un pacchetto da regalare.', 'Pick at least one package to give.', 'Elige al menos un paquete para regalar.'), 'errore'); return; }
+  const btn = f.querySelector('[type="submit"]');
+  btn.disabled = true;
+  try {
+    const r = await api('/api/admin/campagne', { method: 'POST', body: { id, dati } });
+    let v = r.campagna;
+    try { v = await anteprimaPromo(v); } catch (e) { toast(L('Salvata, ma l’anteprima del link non è riuscita: ', 'Saved, but the link preview failed: ', 'Guardada, pero la vista previa del enlace ha fallado: ') + e.message, 'errore'); }
+    const i = PROMO.campagne.findIndex((x) => x.id === v.id);
+    if (i >= 0) PROMO.campagne[i] = v; else PROMO.campagne.push(v);
+    f.hidden = true; f.innerHTML = '';
+    disegnaElencoPromo();
+    riempiCampagnePromo();
+    toast(L('Campagna salvata.', 'Campaign saved.', 'Campaña guardada.'));
+  } catch (e) { toast(e.message, 'errore'); } finally { btn.disabled = false; }
+}
+
+async function anteprimaPromo(v) {
+  await caricaMotorePromo();
+  const c = v.campagna;
+  const s = window.SB_PROMO.crea({ w: 1200, h: 630, versione: 'anteprima', lingua: c.lingua, logo: PROMO.logo, indirizzo: 'socialbot.live/' + v.id,
+    testi: { offerta: c.grafica?.testi?.offerta || _promoOfferta(v.titolo) }, seme: v.id });
+  const tela = document.createElement('canvas');
+  tela.width = 1200; tela.height = 630;
+  s.disegna(tela.getContext('2d'), s.durata);
+  const blob = await new Promise((ok) => tela.toBlob(ok, 'image/png'));
+  const r = await fetch(`/api/admin/campagne/${encodeURIComponent(v.id)}/anteprima`, { method: 'POST', headers: { 'Content-Type': 'image/png' }, body: blob });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.errore || `errore ${r.status}`);
+  return d.campagna;
+}
+
+const PROMO_CAMPI = () => [
+  ['titolo', L('Titolo', 'Headline', 'Título'), ['piena', 'essenziale']],
+  ['offerta', L('Titolo dell’anteprima', 'Preview headline', 'Título de la vista previa'), ['anteprima']],
+  ['nota', L('La nota a mano', 'The handwritten note', 'La nota a mano'), ['piena']],
+  ['testa', L('In cima alla chat', 'Top of the chat', 'Arriba del chat'), ['piena']],
+  ['spettatore', L('Chi scrive in chat', 'Who writes in chat', 'Quién escribe en el chat'), ['piena']],
+  ['domanda', L('Cosa scrive', 'What they write', 'Qué escribe'), ['piena']],
+  ['tuo', L('Il tuo nome in chat', 'Your name in chat', 'Tu nombre en el chat'), ['piena']],
+  ['risposta', L('La risposta', 'The reply', 'La respuesta'), ['piena']],
+  ['link', L('Il link nella risposta', 'The link in the reply', 'El enlace de la respuesta'), ['piena']],
+  ['didascalia', L('Accanto al QR', 'Next to the QR', 'Junto al QR'), ['piena']],
+  ['piattaforme', L('Piattaforme, separate da virgole', 'Platforms, comma separated', 'Plataformas, separadas por comas'), ['piena']],
+];
+const PROMO_TEMPI = () => ({
+  durata: L('Durata totale', 'Total length', 'Duración total'), logo: L('Logo', 'Logo', 'Logo'), titolo: L('Titolo', 'Headline', 'Título'),
+  chat: L('Carta della chat', 'Chat card', 'Tarjeta del chat'), domanda: L('Primo messaggio', 'First message', 'Primer mensaje'), risposta: L('Risposta', 'Reply', 'Respuesta'),
+  qr: L('Carta del QR', 'QR card', 'Tarjeta del QR'), freccia: L('Freccia e nota', 'Arrow and note', 'Flecha y nota'), piattaforme: L('Piattaforme', 'Platforms', 'Plataformas'),
+  indirizzo: L('Indirizzo', 'Address', 'Dirección'),
+});
+
+async function montaEditorPromo() {
+  const box = document.getElementById('promo-editor');
+  if (!box) return;
+  try { await caricaMotorePromo(); } catch { box.innerHTML = `<p class="vuoto">${L('Il motore delle grafiche non si è caricato: ricarica la pagina.', 'The graphics engine did not load: reload the page.', 'El motor de las gráficas no se ha cargado: recarga la página.')}</p>`; return; }
+  const P = window.SB_PROMO;
+  box.innerHTML = `
+    <div class="promo-campi">
+      <label class="campo campo-su">${L('Campagna', 'Campaign', 'Campaña')}<select id="pe-campagna"></select></label>
+      <label class="campo campo-su">${L('Indirizzo mostrato e nel QR', 'Address shown and in the QR', 'Dirección mostrada y en el QR')}<input type="text" id="pe-indirizzo" maxlength="60"></label>
+      <label class="campo campo-su">${L('Versione', 'Version', 'Versión')}<select id="pe-versione">
+        <option value="piena">${L('Con chat e QR', 'With chat and QR', 'Con chat y QR')}</option>
+        <option value="essenziale">${L('Solo titolo e indirizzo, senza QR', 'Headline and address only, no QR', 'Solo título y dirección, sin QR')}</option>
+        <option value="anteprima">${L('Anteprima del link (1200x630)', 'Link preview (1200x630)', 'Vista previa del enlace (1200x630)')}</option></select></label>
+      <label class="campo campo-su" id="pe-formato-campo">${L('Misura', 'Size', 'Tamaño')}<select id="pe-formato">${P.FORMATI.filter((f) => f.id !== 'anteprima').map((f) => `<option value="${f.id}">${esc(f.nome)} · ${f.w}x${f.h}</option>`).join('')}<option value="misura">${L('Su misura', 'Custom', 'A medida')}</option></select></label>
+      <label class="campo campo-su" id="pe-misura" hidden>${L('Larghezza e altezza', 'Width and height', 'Ancho y alto')}<span class="promo-via"><input type="number" id="pe-w" min="200" max="8000" value="1920"> x <input type="number" id="pe-h" min="200" max="8000" value="1080"></span></label>
+      <label class="campo campo-su">${L('Lingua', 'Language', 'Idioma')}<select id="pe-lingua"><option value="it">Italiano</option><option value="en">English</option><option value="es">Español</option></select></label>
+    </div>
+    <details class="promo-gruppo" open><summary>${L('Testi', 'Texts', 'Textos')}</summary><div class="promo-campi" id="pe-testi">
+      ${PROMO_CAMPI().map(([k, n, per]) => `<label class="campo campo-su" data-pe-per="${per.join(' ')}">${esc(n)}<input type="text" id="pe-${k}" maxlength="${k === 'titolo' || k === 'offerta' ? 120 : 80}"></label>`).join('')}
+    </div><p class="suggerimento">${L('Un campo vuoto usa il testo in grigio, quello di partenza nella lingua scelta. Nei titoli: tra *asterischi* le parole in colore, | per andare a capo, ~ per tenere insieme due parole.', 'An empty field uses the grey text, the starting one in the chosen language. In headlines: *asterisks* for the coloured words, | for a line break, ~ to keep two words together.', 'Un campo vacío usa el texto en gris, el de partida en el idioma elegido. En los títulos: entre *asteriscos* las palabras en color, | para saltar de línea, ~ para mantener juntas dos palabras.')}</p></details>
+    <details class="promo-gruppo"><summary>${L('Tempi', 'Timings', 'Tiempos')}</summary><div class="promo-campi" id="pe-tempi"></div>
+      <p class="suggerimento">${L('Il secondo in cui ogni pezzo comincia a disegnarsi. Alla fine la grafica deve restare ferma e intera per almeno tre secondi.', 'The second each piece starts drawing. At the end the graphic must stay still and whole for at least three seconds.', 'El segundo en que cada pieza empieza a dibujarse. Al final la gráfica debe quedarse quieta y entera al menos tres segundos.')}</p></details>
+    <div class="promo-vista"><canvas id="pe-tela"></canvas></div>
+    <div class="promo-tempo">
+      <button type="button" class="btn secondario mini" id="pe-gioca">${L('Guarda', 'Play', 'Ver')}</button>
+      <input type="range" id="pe-t" min="0" max="15" step="0.01" value="15" aria-label="${L('Istante della grafica', 'Moment of the graphic', 'Momento de la gráfica')}">
+      <span id="pe-t-val" class="suggerimento"></span>
+    </div>
+    <ul id="pe-problemi" class="promo-problemi" aria-live="polite"></ul>
+    <div class="promo-azioni">
+      <button type="button" class="btn" id="pe-png">${L('Scarica l’immagine', 'Download the image', 'Descarga la imagen')}</button>
+      <button type="button" class="btn" id="pe-mp4">${L('Scarica il video', 'Download the video', 'Descarga el vídeo')}</button>
+      <button type="button" class="btn secondario" id="pe-salva">${L('Salva nella campagna', 'Save in the campaign', 'Guardar en la campaña')}</button>
+      <button type="button" class="btn secondario" id="pe-usa" hidden>${L('Usala come anteprima del link', 'Use it as the link preview', 'Úsala como vista previa del enlace')}</button>
+    </div>`;
+  riempiCampagnePromo();
+  const $ = (id) => document.getElementById(id);
+  box.addEventListener('input', (ev) => { if (ev.target.id !== 'pe-t') rifaiPromo(); });
+  box.addEventListener('change', (ev) => {
+    if (ev.target.id === 'pe-campagna') return scegliCampagnaPromo(ev.target.value);
+    if (ev.target.id === 'pe-versione') { tempiPromo(null); visibiliPromo(); }
+    if (ev.target.id === 'pe-formato') visibiliPromo();
+    if (ev.target.id === 'pe-lingua') segnapostoPromo();
+    rifaiPromo();
+  });
+  $('pe-t').addEventListener('input', (ev) => { PROMO.gioca = false; PROMO.t = Number(ev.target.value); disegnaPromo(); });
+  $('pe-gioca').addEventListener('click', giocaPromo);
+  $('pe-png').addEventListener('click', (ev) => conErrore(() => pngPromo(ev.currentTarget)));
+  $('pe-mp4').addEventListener('click', (ev) => mp4Promo(ev.currentTarget));
+  $('pe-salva').addEventListener('click', () => conErrore(salvaGraficaPromo));
+  $('pe-usa').addEventListener('click', () => conErrore(usaAnteprimaPromo));
+  scegliCampagnaPromo(PROMO.campagne[0]?.id || '');
+}
+
+function riempiCampagnePromo() {
+  const sel = document.getElementById('pe-campagna');
+  if (!sel) return;
+  const scelta = sel.value;
+  sel.innerHTML = PROMO.campagne.map((v) => `<option value="${esc(v.id)}">socialbot.live/${esc(v.id)}</option>`).join('') + `<option value="">${L('Nessuna, indirizzo libero', 'None, free address', 'Ninguna, dirección libre')}</option>`;
+  if (scelta && PROMO.campagne.some((v) => v.id === scelta)) sel.value = scelta;
+}
+
+function scegliCampagnaPromo(id) {
+  const $ = (x) => document.getElementById(x);
+  const v = PROMO.campagne.find((x) => x.id === id);
+  $('pe-campagna').value = v ? v.id : '';
+  const g = v?.campagna?.grafica || {};
+  $('pe-indirizzo').value = g.indirizzo || (v ? 'socialbot.live/' + v.id : 'socialbot.live');
+  $('pe-lingua').value = g.lingua || v?.campagna?.lingua || 'it';
+  segnapostoPromo();
+  $('pe-versione').value = g.versione || 'piena';
+  const P = window.SB_PROMO;
+  $('pe-formato').value = g.formato && (g.formato === 'misura' || P.FORMATI.some((f) => f.id === g.formato)) ? g.formato : 'orizzontale';
+  if (g.formato === 'misura') { $('pe-w').value = g.w || 1920; $('pe-h').value = g.h || 1080; }
+  for (const [k] of PROMO_CAMPI()) $('pe-' + k).value = g.testi?.[k] || (k === 'offerta' && v ? _promoOfferta(v.titolo) : '');
+  tempiPromo(g.tempi || null);
+  visibiliPromo();
+  PROMO.t = 1e9;
+  rifaiPromo();
+}
+
+function segnapostoPromo() {
+  const T = window.SB_PROMO.TESTI[document.getElementById('pe-lingua').value] || {};
+  for (const [k] of PROMO_CAMPI()) { const el = document.getElementById('pe-' + k); if (el) el.placeholder = T[k] || ''; }
+}
+
+function tempiPromo(salvati) {
+  const box = document.getElementById('pe-tempi');
+  const versione = document.getElementById('pe-versione').value;
+  const base = window.SB_PROMO.TEMPI[versione], nomi = PROMO_TEMPI();
+  box.innerHTML = Object.keys(base).map((k) => `<label class="campo campo-su">${esc(nomi[k] || k)}<span class="promo-via"><input type="number" id="pe-t-${k}" min="0" max="${k === 'durata' ? 120 : 110}" step="0.1" value="${salvati && Number.isFinite(Number(salvati[k])) ? Number(salvati[k]) : base[k]}"> s</span></label>`).join('');
+}
+
+function visibiliPromo() {
+  const $ = (x) => document.getElementById(x);
+  const versione = $('pe-versione').value;
+  document.querySelectorAll('#pe-testi [data-pe-per]').forEach((el) => { el.hidden = !el.dataset.pePer.split(' ').includes(versione); });
+  $('pe-formato-campo').hidden = versione === 'anteprima';
+  $('pe-misura').hidden = versione === 'anteprima' || $('pe-formato').value !== 'misura';
+  $('pe-mp4').hidden = versione === 'anteprima';
+  $('pe-usa').hidden = versione !== 'anteprima' || !$('pe-campagna').value;
+}
+
+function confPromo() {
+  const $ = (x) => document.getElementById(x);
+  const P = window.SB_PROMO;
+  const versione = $('pe-versione').value;
+  const formato = $('pe-formato').value;
+  const f = P.FORMATI.find((x) => x.id === formato);
+  const lato = (v, d) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(200, Math.min(8000, n)) : d; };
+  const [w, h] = versione === 'anteprima' ? [1200, 630] : f ? [f.w, f.h] : [lato($('pe-w').value, 1920), lato($('pe-h').value, 1080)];
+  const testi = {};
+  for (const [k] of PROMO_CAMPI()) { const x = $('pe-' + k).value.trim(); if (x) testi[k] = x; }
+  const tempi = {};
+  for (const k of Object.keys(P.TEMPI[versione])) { const x = parseFloat($('pe-t-' + k)?.value); if (Number.isFinite(x)) tempi[k] = x; }
+  const id = $('pe-campagna').value;
+  const indirizzo = $('pe-indirizzo').value.trim().replace(/^https?:\/\//, '') || 'socialbot.live';
+  return { w, h, versione, formato: versione === 'anteprima' ? 'anteprima' : formato, lingua: $('pe-lingua').value, testi, tempi, indirizzo, qr: 'https://' + indirizzo, seme: id || 'promo', campagna: id };
+}
+
+function rifaiPromo() {
+  clearTimeout(PROMO.timer);
+  PROMO.timer = setTimeout(() => {
+    const conf = confPromo();
+    try { PROMO.scena = window.SB_PROMO.crea(Object.assign({}, conf, { logo: PROMO.logo })); PROMO.conf = conf; }
+    catch (e) { problemiPromo([{ dice: e.message }]); return; }
+    const r = document.getElementById('pe-t');
+    r.max = String(PROMO.scena.durata);
+    PROMO.t = Math.min(PROMO.t, PROMO.scena.durata);
+    problemiPromo(PROMO.scena.problemi);
+    PROMO.misura = '';
+    disegnaPromo();
+  }, 180);
+}
+
+function problemiPromo(lista) {
+  const ul = document.getElementById('pe-problemi');
+  if (!ul) return;
+  ul.innerHTML = lista.length
+    ? lista.map((p) => `<li class="problema" role="status">${esc(p.dice)}</li>`).join('')
+    : `<li class="suggerimento">${L('Nessun problema: si può esportare.', 'No problems: ready to export.', 'Ningún problema: se puede exportar.')}</li>`;
+}
+
+function disegnaPromo() {
+  const s = PROMO.scena, tela = document.getElementById('pe-tela');
+  if (!s || !tela) return;
+  const larg = Math.min(tela.parentElement.clientWidth || 800, 960);
+  const scala = Math.min(larg / s.w, 620 / s.h);
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const misura = `${s.w}x${s.h}@${scala}x${dpr}`;
+  if (PROMO.misura !== misura) {
+    tela.width = Math.round(s.w * scala * dpr); tela.height = Math.round(s.h * scala * dpr);
+    tela.style.width = Math.round(s.w * scala) + 'px'; tela.style.height = Math.round(s.h * scala) + 'px';
+    PROMO.misura = misura;
+  }
+  const g = tela.getContext('2d');
+  g.setTransform(scala * dpr, 0, 0, scala * dpr, 0, 0);
+  s.disegna(g, PROMO.t);
+  document.getElementById('pe-t').value = String(PROMO.t);
+  document.getElementById('pe-t-val').textContent = PROMO.t.toFixed(1).replace('.', L(',', '.', ',')) + ' s';
+}
+
+function giocaPromo() {
+  const btn = document.getElementById('pe-gioca');
+  PROMO.gioca = !PROMO.gioca;
+  btn.textContent = PROMO.gioca ? L('Ferma', 'Pause', 'Pausa') : L('Guarda', 'Play', 'Ver');
+  if (!PROMO.gioca || !PROMO.scena) return;
+  if (PROMO.t >= PROMO.scena.durata) PROMO.t = 0;
+  PROMO.ultimo = performance.now();
+  const passo = (ora) => {
+    const vista = document.getElementById('scheda-promo')?.classList.contains('visibile');
+    if (!PROMO.gioca || !vista) { PROMO.gioca = false; btn.textContent = L('Guarda', 'Play', 'Ver'); return; }
+    PROMO.t = Math.min(PROMO.scena.durata, PROMO.t + (ora - PROMO.ultimo) / 1000);
+    PROMO.ultimo = ora;
+    disegnaPromo();
+    if (PROMO.t >= PROMO.scena.durata) { PROMO.gioca = false; btn.textContent = L('Guarda', 'Play', 'Ver'); return; }
+    PROMO.raf = requestAnimationFrame(passo);
+  };
+  PROMO.raf = requestAnimationFrame(passo);
+}
+
+const _promoNome = (c) => `socialbot-${c.seme}-${c.versione === 'piena' ? 'qr' : c.versione}-${c.w}x${c.h}`;
+function _promoScarica(blob, nome) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = nome;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+}
+async function _promoProblemi() {
+  const s = PROMO.scena;
+  if (!s) return false;
+  if (!s.problemi.length) return true;
+  return chiediSe({ titolo: L('La grafica ha dei problemi', 'The graphic has problems', 'La gráfica tiene problemas'), testo: s.problemi.map((p) => p.dice).join(' · '), si: L('Esporta lo stesso', 'Export anyway', 'Exportar igual') });
+}
+
+async function pngPromo(btn) {
+  if (!(await _promoProblemi())) return;
+  btn.disabled = true;
+  try {
+    const s = PROMO.scena, tela = document.createElement('canvas');
+    tela.width = s.w; tela.height = s.h;
+    s.disegna(tela.getContext('2d'), s.durata);
+    const blob = await firmaPngBlob(await new Promise((ok) => tela.toBlob(ok, 'image/png')));
+    _promoScarica(blob, _promoNome(PROMO.conf) + '.png');
+  } finally { btn.disabled = false; }
+}
+
+async function mp4Promo(btn) {
+  if (!(await _promoProblemi())) return;
+  const testo = btn.textContent, s = PROMO.scena, conf = PROMO.conf;
+  btn.disabled = true;
+  try {
+    const ivf = await window.SB_PROMO.video(s, { fps: 30, avanza: (k) => { btn.textContent = L('Disegno il video, ', 'Drawing the video, ', 'Dibujo el vídeo, ') + Math.round(k * 100) + '%'; } });
+    btn.textContent = L('Lo preparo per gli schermi…', 'Getting it ready for screens…', 'Lo preparo para las pantallas…');
+    const nome = `${_promoNome(conf)}-${Math.round(s.durata)}s`;
+    const r = await fetch(`/api/admin/promo/video?nome=${encodeURIComponent(nome)}&fps=30`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: ivf });
+    if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.errore || `errore ${r.status}`); }
+    _promoScarica(await r.blob(), nome + '.mp4');
+    toast(L('Il video è pronto.', 'The video is ready.', 'El vídeo está listo.'));
+  } catch (e) {
+    toast(L('Il video non è riuscito: ', 'The video failed: ', 'El vídeo ha fallado: ') + e.message, 'errore');
+  } finally { btn.disabled = false; btn.textContent = testo; }
+}
+
+async function salvaGraficaPromo() {
+  const c = PROMO.conf;
+  if (!c?.campagna) { toast(L('Scegli prima una campagna in cui salvarla.', 'Pick a campaign to save it in first.', 'Elige primero una campaña donde guardarla.'), 'errore'); return; }
+  const grafica = { formato: c.formato, w: c.w, h: c.h, versione: c.versione, lingua: c.lingua, testi: c.testi, tempi: c.tempi, indirizzo: c.indirizzo };
+  const r = await api('/api/admin/campagne', { method: 'POST', body: { id: c.campagna, dati: { grafica } } });
+  const i = PROMO.campagne.findIndex((x) => x.id === c.campagna);
+  if (i >= 0) PROMO.campagne[i] = r.campagna;
+  toast(L('Grafica salvata nella campagna.', 'Graphic saved in the campaign.', 'Gráfica guardada en la campaña.'));
+}
+
+async function usaAnteprimaPromo() {
+  const c = PROMO.conf, s = PROMO.scena;
+  if (!c?.campagna || c.versione !== 'anteprima') return;
+  if (!(await _promoProblemi())) return;
+  const tela = document.createElement('canvas');
+  tela.width = 1200; tela.height = 630;
+  s.disegna(tela.getContext('2d'), s.durata);
+  const blob = await new Promise((ok) => tela.toBlob(ok, 'image/png'));
+  const r = await fetch(`/api/admin/campagne/${encodeURIComponent(c.campagna)}/anteprima`, { method: 'POST', headers: { 'Content-Type': 'image/png' }, body: blob });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.errore || `errore ${r.status}`);
+  const i = PROMO.campagne.findIndex((x) => x.id === c.campagna);
+  if (i >= 0) PROMO.campagne[i] = d.campagna;
+  await salvaGraficaPromo();
+  toast(L('Anteprima del link aggiornata.', 'Link preview updated.', 'Vista previa del enlace actualizada.'));
+}
+
+function collegaPromo() {
+  const scheda = document.getElementById('scheda-promo');
+  if (!scheda || scheda.dataset.collegata) return;
+  scheda.dataset.collegata = '1';
+  scheda.addEventListener('click', async (ev) => {
+    const li = ev.target.closest('[data-promo]');
+    const v = li ? PROMO.campagne.find((x) => x.id === li.dataset.promo) : null;
+    if (ev.target.closest('#promo-nuova')) return moduloPromo(null);
+    if (v && ev.target.closest('[data-promo-modifica]')) return moduloPromo(v);
+    if (v && ev.target.closest('[data-promo-grafica]')) { scegliCampagnaPromo(v.id); document.getElementById('promo-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (v && ev.target.closest('[data-promo-copia]')) return copiaTesto(`https://socialbot.live/${v.id}`, L('Link copiato.', 'Link copied.', 'Enlace copiado.'));
+    const f = document.getElementById('promo-modulo');
+    if (ev.target.closest('[data-pm-annulla]')) { f.hidden = true; f.innerHTML = ''; return; }
+    if (ev.target.closest('[data-pm-cancella]')) {
+      const id = f.dataset.promo;
+      if (!(await chiediSe({ titolo: L('Cancello la campagna?', 'Delete the campaign?', '¿Borro la campaña?'), testo: L(`socialbot.live/${id} smette di esistere.`, `socialbot.live/${id} stops existing.`, `socialbot.live/${id} deja de existir.`), si: L('Cancella', 'Delete', 'Borrar'), pericolo: true }))) return;
+      await conErrore(async () => {
+        await api('/api/admin/campagne/' + encodeURIComponent(id), { method: 'DELETE' });
+        PROMO.campagne = PROMO.campagne.filter((x) => x.id !== id);
+        f.hidden = true; f.innerHTML = '';
+        disegnaElencoPromo(); riempiCampagnePromo();
+        toast(L('Campagna cancellata.', 'Campaign deleted.', 'Campaña borrada.'));
+      });
+    }
+  });
+  scheda.addEventListener('submit', (ev) => {
+    if (ev.target.id !== 'promo-modulo') return;
+    ev.preventDefault();
+    salvaCampagnaPromo(ev.target);
+  });
 }
 
 function pannelloAvatar() {
@@ -25248,6 +25711,7 @@ function caricaDatiScheda(id) {
   if (id === 'stato') caricaAdesso();
   if (id === 'account') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); collegaAvvisiManca(); }
   if (id === 'avatar') caricaMente3d();
+  if (id === 'promo') { collegaPromo(); caricaPromo(); }
   if (id === 'personalita') { caricaGuide(); caricaSpontanee(); }
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); caricaRetePanoramica(); }
   if (id === 'clip') caricaClip();

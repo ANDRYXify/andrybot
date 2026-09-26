@@ -676,6 +676,16 @@ details > summary:focus-visible { outline: 2px solid var(--acc); outline-offset:
 :focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; border-radius: 4px; }
 
 label.campo { display: block; margin: .85rem 0 .3rem; font-weight: 600; font-size: .88rem; }
+.campo.campo-su { display: flex; flex-direction: column; gap: .3rem; margin: .85rem 0 0; font-weight: 600; font-size: .88rem; }
+.campo-su input, .campo-su select, .campo-su textarea { font-weight: 400; }
+.campo-su input[type="number"] { width: 100%; }
+.campo-su input[type="date"] {
+  width: 100%; background: var(--surface); color: var(--testo); padding: .56rem .75rem; font-size: .92rem; font-family: inherit;
+  border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano); border-radius: var(--ang-mano); box-shadow: var(--alone-contorno);
+}
+.campo-su input[type="date"]:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-tint); }
+.campo-su > .tendina { display: flex; }
+.campo-su > .tendina > .tendina-btn { flex: 1 1 auto; max-width: none; }
 .suggerimento { font-size: .82rem; color: var(--testo-2); margin-top: .28rem; }
 
 .tenue { color: var(--testo-2); font-weight: 400; font-size: .9em; }
@@ -766,6 +776,26 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .interruttore input:checked + .levetta::before { transform: translateX(var(--lev-corsa)); }
 .interruttore input:focus-visible + .levetta { outline: 2px solid var(--acc); outline-offset: 2px; }
 .riga-interruttore { display: flex; align-items: center; gap: .85rem; }
+.promo-elenco { list-style: none; margin: 0; padding: 0; display: grid; gap: .9rem; }
+.promo-elenco > li { display: grid; gap: .35rem; padding-bottom: .9rem; border-bottom: 1px dashed var(--contorno); }
+.promo-riga { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.promo-azioni { display: flex; flex-wrap: wrap; gap: .45rem; align-items: center; }
+.promo-campi { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: .8rem .9rem; align-items: start; }
+.promo-campi > .campo-su { margin: 0; }
+.promo-fisso { min-height: 2.5rem; font-weight: 400; font-size: .95rem; }
+.promo-via { display: flex; align-items: center; gap: .35rem; }
+.promo-via input { flex: 1 1 5rem; min-width: 0; }
+.promo-pacchetti { border: 0; padding: 0; min-width: 0; display: flex; flex-wrap: wrap; gap: .4rem 1rem; margin: 1rem 0 0; }
+.promo-pacchetti > .riga-check { margin: 0; }
+.promo-pacchetti > legend { padding: 0; margin-bottom: .45rem; font-weight: 600; font-size: .88rem; }
+.promo-gruppo { margin-top: .9rem; }
+.promo-gruppo > summary { cursor: pointer; font-weight: 700; }
+.promo-gruppo > .promo-campi { margin-top: .7rem; }
+.promo-vista { margin-top: 1rem; display: flex; justify-content: center; overflow: hidden; }
+.promo-vista canvas { max-width: 100%; height: auto; border-radius: 6px; }
+.promo-tempo { display: flex; align-items: center; gap: .6rem; margin-top: .6rem; }
+.promo-tempo input[type="range"] { flex: 1 1 auto; }
+.promo-problemi { list-style: none; margin: .6rem 0; padding: 0; display: grid; gap: .35rem; }
 .riga-interruttore .etichetta-stato { font-weight: 700; font-size: 1.02rem; }
 
 .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: .14rem .6rem; font-size: .76rem; font-weight: 600; border: 1px solid var(--border); background: var(--surface-2); color: var(--testo-2); }

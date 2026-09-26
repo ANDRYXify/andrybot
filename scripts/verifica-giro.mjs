@@ -98,7 +98,12 @@ p.on('pageerror', (e) => rotture.push('errore di pagina: ' + e.message));
 await p.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domcontentloaded' });
 await p.waitForFunction(() => window.SB_APP && typeof GUIDE === 'object', null, { timeout: 20000 });
 
-const schede = await p.evaluate(() => Object.keys(GUIDE));
+// Le schede che il pannello disegna solo per l'admin non ci sono nella demo, e
+// qui non si possono visitare: si dichiarano, col motivo, e si saltano. Una
+// scheda che sparisse dalla demo per sbaglio resta rossa.
+//   · 'promo': le campagne e le loro pubblicita', solo dell'admin.
+const SOLO_ADMIN = new Set(['promo']);
+const schede = (await p.evaluate(() => Object.keys(GUIDE))).filter((s) => !SOLO_ADMIN.has(s));
 let passiTotali = 0, conFaro = 0;
 const vuoti = [];
 const povere = [];

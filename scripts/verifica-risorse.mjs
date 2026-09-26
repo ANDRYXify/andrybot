@@ -76,7 +76,11 @@ const timbri = new Map();      // timbro → chi lo usa
 // sia scritto: fra virgolette in un JSON, in un array, in un attributo.
 // Solo i FILE: `/icons/` da solo e' la cartella aperta, non un'immagine da
 // riscaricare, e timbrare una cartella non vuol dire niente.
-const RE_ICONE = /["'`(](?:https?:\/\/[^"'`\s)]*?)?(\/(?:icons\/|favicon)[^"'`\s)]*\.(?:png|svg|ico|webp|jpg)(?:\?[^"'`\s)]*)?)["'`)]/g;
+// E anche dopo un pezzo di template: `${SITO}/icons/og.png?v=N` e' l'indirizzo
+// assoluto che i server leggono per l'anteprima di un link. Le impronte non lo
+// toccano (marcano solo gli indirizzi relativi), quindi li' il timbro scritto
+// e' l'unico che c'e', e restava fuori dal conto.
+const RE_ICONE = /["'`(}](?:https?:\/\/[^"'`\s)]*?)?(\/(?:icons\/|favicon)[^"'`\s)]*\.(?:png|svg|ico|webp|jpg)(?:\?[^"'`\s)]*)?)["'`)]/g;
 const paginate = [
   ...readdirSync(PUB).filter((x) => x.endsWith('.html')).map((f) => [f, join(PUB, f)]),
   ...sorgentiJs(join(RAD, 'src')),

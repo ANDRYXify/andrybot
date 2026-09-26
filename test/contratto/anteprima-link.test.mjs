@@ -10,6 +10,9 @@ import { dirname, join } from 'node:path';
 import { renderLinkPage, accentoDi } from '../../src/features/linkpagina.js';
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const leggi = (p) => readFileSync(join(RAD, p), 'utf8');
+// L'icona del sito col suo timbro, quello unico di tutte le icone: si legge dal
+// manifest, non si scrive qui (verifica-risorse tiene il timbro uno solo).
+const ICONA = JSON.parse(leggi('src/web/public/manifest.webmanifest')).icons.find((i) => i.src.startsWith('/icons/icon-192.png')).src;
 const SRV = leggi('src/web/server.js');
 const APP = leggi('src/web/public/app.js');
 const PORTE = leggi('scripts/verifica-porte.mjs');
@@ -33,9 +36,9 @@ test('l\'icona della scheda e\' la foto della pagina, e senza foto quella del si
   assert.deepEqual(icone(renderLinkPage({ attiva: true, avatar: 'https://s.live/u/x/img/lp_logo.png', blocchi: [], tema: {} }, opz)),
     ['icon https://s.live/u/x/img/lp_logo.png', 'apple-touch-icon https://s.live/u/x/img/lp_logo.png'], 'la foto caricata, quando c\'e\'');
   assert.deepEqual(icone(renderLinkPage({ attiva: true, avatar: 'no', blocchi: [], tema: {} }, opz)),
-    ['icon /icons/icon-192.png?v=8', 'apple-touch-icon /icons/icon-192.png?v=8'], 'chi non mostra nessuna foto tiene l\'icona del sito');
+    [`icon ${ICONA}`, `apple-touch-icon ${ICONA}`], 'chi non mostra nessuna foto tiene l\'icona del sito');
   assert.deepEqual(icone(renderLinkPage({ attiva: true, blocchi: [], tema: { avatarForma: 'nessuno' } }, opz)),
-    ['icon /icons/icon-192.png?v=8', 'apple-touch-icon /icons/icon-192.png?v=8']);
+    [`icon ${ICONA}`, `apple-touch-icon ${ICONA}`]);
   assert.ok(!renderLinkPage({ attiva: true, avatar: 'javascript:alert(1)', blocchi: [], tema: {} }, opz).includes('href="javascript:'), 'un indirizzo che non e\' un indirizzo non diventa un\'icona');
 });
 

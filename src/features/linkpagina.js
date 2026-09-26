@@ -1005,7 +1005,7 @@ ${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
      in alto, quella caricata o quella di Twitch. Chi ha scelto di non
      mostrare nessuna foto tiene l'icona del sito. */
   ''}${(() => {
-    const icona = mostraAvatar && imgAvatar ? imgAvatar : '/icons/icon-192.png?v=8';
+    const icona = mostraAvatar && imgAvatar ? imgAvatar : '/icons/icon-192.png?v=9';
     return `<link rel="icon" href="${esc(icona)}">
 <link rel="apple-touch-icon" href="${esc(icona)}">`;
   })()}

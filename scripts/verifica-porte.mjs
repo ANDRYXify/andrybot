@@ -103,9 +103,8 @@ const PUBBLICHE = new Map([
   ['GET /u/:user/img/:file', 'immagini della pagina link'],
   ['GET /u/:user/privacy', 'informativa della pagina link'],
   ['GET /sostieni', 'la pagina per sostenere il progetto: pubblica, e non chiede un account a nessuno'],
-  ['GET /nyc', 'la pagina del QR di una pubblicita\' in citta\' (docs/CAMPAGNE.md): la apre chi passa per strada, e chi non ha un account entra da li\''],
-  ['GET /milano', 'come /nyc'],
-  ['GET /napoli', 'come /nyc'],
+  ['GET /:campagna', 'la pagina del QR di una campagna (docs/CAMPAGNE.md): la apre chi passa per strada, e chi non ha un account entra da li\'. Se l\'id non e\' una campagna passa oltre, al 404'],
+  ['GET /campagne/:file', 'l\'anteprima del link di una campagna: la leggono Telegram, WhatsApp e Discord quando qualcuno incolla il link'],
   ['GET /api/sostieni', 'gli importi che proponiamo: la pagina li deve poter leggere prima di chiedere qualcosa'],
   ['POST /api/sostieni', 'apre il pagamento: chi sostiene non si iscrive a niente, quindi non c\'e\' una sessione da guardare (tetto al minuto per indirizzo)'],
   ['GET /api/sostieni/esito', 'il ritorno dal pagamento: la verita\' la da\' Stripe, l\'indirizzo serve solo a sapere quale sessione rileggere'],
@@ -264,11 +263,15 @@ for (const d of sorgente.matchAll(/guscio\.(pagina|risorsa)\(([^)]*)\)/g)) {
   if (!arg.length) continue;   // il nome nei commenti
   if (d[1] === 'pagina') guscio.pagina(...arg); else guscio.risorsa(arg[0]);
 }
+// Le porte con uno schema (`guscio.porta('/:campagna', ...)`): le apre il
+// server per gli indirizzi che riconosce. Qui si sa solo lo schema, e basta:
+// una rotta con QUELLO schema e' una porta dichiarata aperta.
+const schemiAperti = new Set([...sorgente.matchAll(/guscio\.porta\('([^']+)'/g)].map((m) => m[1]));
 const esempio = (via) => via.replace(/:[A-Za-z_]+\??/g, 'x1').replace(/\*/g, 'x1');
 const daFuori = rotte.filter((r) => cancello >= 0 && r.pos > cancello
   && (r.guardia ? !SOLO_SESSIONE.has(r.guardia) : PUBBLICHE.has(r.chiave) && !SOLO_DENTRO.has(r.chiave)));
 for (const r of daFuori) {
-  if (!guscio.aperto(esempio(r.via))) guai.push(`${r.chiave}: la usa chi e' senza sessione, e il cancello gli risponde 404`);
+  if (!guscio.aperto(esempio(r.via)) && !schemiAperti.has(r.via)) guai.push(`${r.chiave}: la usa chi e' senza sessione, e il cancello gli risponde 404`);
 }
 for (const k of SOLO_DENTRO.keys()) {
   if (!PUBBLICHE.has(k)) guai.push(`«${k}» e' fra le porte chiuse a chi e' senza sessione, ma non e' piu' pubblica: va tolta anche da li'`);

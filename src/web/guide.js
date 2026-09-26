@@ -268,7 +268,7 @@ function testata(attiva, l = 'it', alt = null) {
   const t = T[lin(l)], v = VIE[lin(l)];
   const qui = (x) => (attiva === x ? ' aria-current="page"' : '');
   return `<header class="g-testata"><div>
-<a class="g-marchio" href="${v.home}"><img src="/icons/logo-barra.png?v=8" alt="SocialBot" width="80" height="30"></a>
+<a class="g-marchio" href="${v.home}"><img src="/icons/logo-barra.png?v=9" alt="SocialBot" width="80" height="30"></a>
 <nav><a href="${v.guide}"${qui('indice')}>${t.guide}</a><a href="${v.manuali}"${qui('manuali')}>${t.manuali}</a><a href="${v.novita}"${qui('novita')}>${t.novita}</a><a href="${v.home}">${t.ilBot}</a></nav>${selettoreLingue(lin(l), alt)}
 </div></header>`;
 }
@@ -403,7 +403,7 @@ function datiStrutturati(g, l = 'it') {
   return blocchi.map((b) => `<script type="application/ld+json">${JSON.stringify(b)}</script>`).join('');
 }
 
-function scheletro({ titolo, desc, url, corpo, ld, robots = 'index,follow,max-snippet:-1,max-image-preview:large', l = 'it', alt = null, immagine = `${SITO}/icons/og-guide.png?v=8`, immagineAlt = null }) {
+function scheletro({ titolo, desc, url, corpo, ld, robots = 'index,follow,max-snippet:-1,max-image-preview:large', l = 'it', alt = null, immagine = `${SITO}/icons/og-guide.png?v=9`, immagineAlt = null }) {
   const t = T[lin(l)];
   const alternative = alt && Object.keys(alt).length > 1
     ? LINGUE_DOC.filter((x) => alt[x]).map((x) => `<link rel="alternate" hreflang="${x}" href="${esc(alt[x])}">`).join('')
@@ -426,7 +426,7 @@ ${alternative}<meta name="robots" content="${esc(robots)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(titolo)}">
 <meta name="twitter:description" content="${esc(desc)}">
 <meta name="twitter:image" content="${esc(immagine)}">
-<link rel="icon" href="/icons/icon-192.png?v=8">
+<link rel="icon" href="/icons/icon-192.png?v=9">
 <link rel="stylesheet" href="/font.css">
 <script src="/tema.js"></script>
 <style>${CSS}</style>

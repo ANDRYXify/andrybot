@@ -23,10 +23,10 @@ const APP = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
 const SCHEDE = [...new Set([...APP.matchAll(/pannello\('([a-z0-9-]+)'/g)].map((m) => m[1]))]
   .filter((id) => !['admin', 'studio'].includes(id));
 
-// L'unica che resta fuori, e con un motivo: «Avatar 3D» è una scheda da admin,
-// non una cosa che si compra. Una scheda che sta qui senza motivo e' un buco
-// travestito da eccezione.
-const FUORI = new Set(['avatar']);
+// Restano fuori solo le schede da admin, con un motivo: «Avatar 3D» e «Promo»
+// (le campagne e le loro grafiche) non sono cose che si comprano. Una scheda
+// che sta qui senza motivo e' un buco travestito da eccezione.
+const FUORI = new Set(['avatar', 'promo']);
 
 const VOCI = FUNZIONI_VETRINA.flatMap((g) => g.voci);
 

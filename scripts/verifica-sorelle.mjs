@@ -38,7 +38,7 @@ const SELFTEST = process.argv.includes('--selftest');
 const esiti = [];
 const chiedi = (ok, t) => { esiti.push({ ok: !!ok, t }); console.log((ok ? '  ✓ ' : '  ✗ ') + t); };
 
-const FUORI = new Set(['admin', 'avatar', 'studio']);
+const FUORI = new Set(['admin', 'avatar', 'promo', 'studio']);
 const DA_SOLE = new Set(['stato']);
 
 const sito = await apriSito({});
