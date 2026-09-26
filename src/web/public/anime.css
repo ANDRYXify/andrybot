@@ -890,6 +890,8 @@ body.pad-guida, body.pad-guida * { cursor: none !important; }
 .dg-attesa { opacity: 0; }
 @media print { .dg-attesa { opacity: 1; } }
 [hidden].dg-resta { display: var(--dg-display) !important; pointer-events: none; }
+#splash .sp-riprova { z-index: 1; font: 700 14px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding: 8px 18px; border-radius: 10px; border: 2px solid currentColor; background: transparent; color: inherit; cursor: pointer; }
+#splash .sp-riprova:focus-visible { outline: 3px solid #f72fa7; outline-offset: 3px; }
 .dg-resta.dg-cornice { display: var(--dg-display) !important; visibility: visible !important; opacity: 1 !important; pointer-events: none; }
 details.dg-resta::details-content { content-visibility: visible; }
 .dg-strato { position: fixed; inset: 0; width: auto; height: auto; margin: 0; padding: 0; border: 0; background: none; overflow: visible; pointer-events: none; }

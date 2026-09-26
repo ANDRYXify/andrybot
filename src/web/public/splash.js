@@ -15,5 +15,5 @@
       mo.observe(app, { childList: true });
     }
   } catch (e) {  }
-  setTimeout(via, 7000);
+  if (document.body.classList.contains('vetrina')) setTimeout(via, 7000);
 })();
