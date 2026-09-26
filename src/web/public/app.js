@@ -1807,7 +1807,7 @@ function render() {
   aggiornaTestataPagina();
 
   if (conPiattaforma) attivaPiattaforma();
-  if (stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
+  if (stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaLicenza(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
 
   try {
     if (conPiattaforma && new URLSearchParams(location.search).get('benvenuto') === '1') mostraBenvenuto();
@@ -25747,7 +25747,7 @@ function caricaDatiScheda(id) {
   if (id === 'registro') caricaRegistro();
   if (id === 'sottoscrizione') caricaSottoscrizione();
   if (id === 'dirette') caricaDirette();
-  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaRecensioniAdmin(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
+  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaLicenza(); caricaBackup(); caricaRecensioniAdmin(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
 }
 
 const fmtGiornoMese = (g, m) => String(g).padStart(2, '0') + '/' + String(m).padStart(2, '0');
@@ -28661,6 +28661,11 @@ function vistaAdminContenuto() {
       <div id="salute-box">${attesaHtml()}</div>
     </div>
     <div class="carta">
+      <h2>${_hIco(ICO.chiave)}${L('La licenza del server', 'The server licence', 'La licencia del servidor')}</h2>
+      <p>${L('La firmi tu, a mano, con la tua chiave privata. Prima che scada arriva una mail con la data e i passi per rinnovarla, a 60, 30, 14, 7, 3 e 1 giorno.', 'You sign it by hand, with your private key. Before it expires an email arrives with the date and the steps to renew it, at 60, 30, 14, 7, 3 and 1 days.', 'La firmas tú, a mano, con tu clave privada. Antes de que caduque llega un correo con la fecha y los pasos para renovarla, a 60, 30, 14, 7, 3 y 1 días.')}</p>
+      <div id="licenza-box">${attesaHtml()}</div>
+    </div>
+    <div class="carta">
       <h2>${_hIco(ICO.scudo)}${L('Backup del database', 'Database backup', 'Copia de seguridad de la base de datos')}</h2>
       <p>${L('Tutto (comandi, temi, monete, moderatori, pagine link) vive in un solo file. SocialBot ne tiene copie', 'Everything (commands, themes, coins, moderators, link pages) lives in a single file. SocialBot keeps', 'Todo (comandos, temas, monedas, moderadores, páginas de enlaces) vive en un solo archivo. SocialBot guarda')} <strong class="primo-piano">${L('automatiche e sicure', 'automatic, safe copies', 'copias automáticas y seguras')}</strong> ${L('sul server. Non sono scaricabili dal web (contengono dati sensibili): si recuperano dal server.', 'on the server. They are not downloadable from the web (they hold sensitive data): recover them from the server.', 'en el servidor. No se pueden descargar desde la web (contienen datos sensibles): se recuperan desde el servidor.')}</p>
       <div id="backup-box">${attesaHtml()}</div>
@@ -28912,6 +28917,39 @@ async function caricaPiattaforme() {
     toast(L('Scollegata', 'Disconnected', 'Desconectada'));
     caricaPiattaforme();
   })));
+}
+
+async function caricaLicenza() {
+  const box = document.getElementById('licenza-box');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/admin/licenza'); } catch (e) { box.innerHTML = `<p class="vuoto">${esc(e.message)}</p>`; return; }
+  const giorno = d.scade ? new Date(d.scade).toLocaleDateString(L('it-IT', 'en-US', 'es-ES'), { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  const colore = d.stato !== 'valida' ? 'rosso' : d.giorni != null && d.giorni <= 30 ? 'giallo' : 'verde';
+  const stato = d.stato === 'valida'
+    ? (d.scade ? `${L('valida fino al', 'valid until', 'válida hasta el')} ${giorno}${d.giorni != null ? ` · ${L('fra', 'in', 'dentro de')} ${d.giorni} ${L('giorni', 'days', 'días')}` : ''}` : L('valida, senza scadenza', 'valid, no expiry', 'válida, sin caducidad'))
+    : d.motivo || d.stato;
+  box.innerHTML = `
+    <p><span class="badge ${colore}">${esc(stato)}</span>${d.dominio ? ` <span class="suggerimento">${esc(d.dominio)}${d.macchina ? ' · ' + esc(d.macchina) : ''}</span>` : ''}</p>
+    ${d.posta ? '' : `<p class="problema" role="status">${L('La posta del server è spenta: il promemoria non può partire.', 'The server mail is off: the reminder cannot be sent.', 'El correo del servidor está apagado: el recordatorio no puede salir.')}</p>`}
+    <label class="campo campo-su spazio-sopra">${L('Il promemoria arriva a', 'The reminder goes to', 'El recordatorio llega a')}<input type="email" id="licenza-a" value="${esc(d.scelto)}" maxlength="254" placeholder="${esc(d.delegato ? '' : d.destinatario || L('la tua mail confermata', 'your confirmed email', 'tu correo confirmado'))}"></label>
+    <p class="suggerimento">${d.destinatario ? `${L('Adesso arriva a', 'Right now it goes to', 'Ahora llega a')} <strong>${esc(d.destinatario)}</strong>. ` : `${L('Adesso non ha dove arrivare: conferma la tua mail in Account, o scrivine una qui.', 'Right now it has nowhere to go: confirm your email in Account, or write one here.', 'Ahora no tiene adónde llegar: confirma tu correo en Cuenta, o escribe uno aquí.')} `}${L('Vuoto vuol dire la tua mail confermata.', 'Empty means your confirmed email.', 'Vacío quiere decir tu correo confirmado.')}</p>
+    <div class="promo-azioni">
+      <button type="button" class="btn" id="licenza-salva">${L('Salva', 'Save', 'Guardar')}</button>
+      <button type="button" class="btn secondario" id="licenza-prova"${d.posta && d.scade ? '' : ' disabled'}>${L('Manda una prova', 'Send a test', 'Enviar una prueba')}</button>
+    </div>`;
+  document.getElementById('licenza-salva').addEventListener('click', () => conErrore(async () => {
+    await api('/api/admin/licenza', { method: 'POST', body: { destinatario: document.getElementById('licenza-a').value.trim() } });
+    toast(L('Salvato.', 'Saved.', 'Guardado.'));
+    caricaLicenza();
+  }));
+  document.getElementById('licenza-prova').addEventListener('click', (ev) => conErrore(async () => {
+    ev.currentTarget.disabled = true;
+    try {
+      const r = await api('/api/admin/licenza/prova', { method: 'POST' });
+      toast(`${L('Prova mandata a', 'Test sent to', 'Prueba enviada a')} ${r.a}.`);
+    } finally { ev.currentTarget.disabled = false; }
+  }));
 }
 
 async function caricaSalute() {

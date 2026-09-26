@@ -25,7 +25,7 @@ import * as consolle from '../features/console.js';   // CONSOLify + tastiera fi
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi, recensioni as recensioniDb, campagneDb } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { canaleHa } from '../features/accesso.js';
@@ -108,6 +108,7 @@ import * as automatiche from '../features/automatiche.js';
 import * as campagne from '../features/campagne.js';
 import { paginaCampagna, titoloDi } from './campagna-vista.js';
 import { pngDi, alleggerisci } from './png-leggero.js';
+import * as promemoriaLicenza from '../features/licenza-promemoria.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
 import * as ruoli from '../features/ruoli.js';
@@ -10732,6 +10733,65 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       pulisci();
       if (!res.headersSent) res.status(400).json({ errore: 'Il video non è riuscito: ' + (e?.message || e) });
     }
+  }));
+
+  // IL PROMEMORIA DELLA LICENZA (docs/LICENZA-FIRMATA.md). La licenza la firma il
+  // proprietario a mano; qui ci si assicura solo che non se ne dimentichi: a
+  // soglie fisse prima della scadenza parte una mail con la data e i passi per
+  // rinnovarla. Va al proprietario (la sua mail confermata), o a chi ha scelto
+  // lui dalla scheda Admin.
+  const licenzaQui = () => licenza.esito({ dominio: new URL(config.baseUrl).hostname });
+  const destinatarioLicenza = () => {
+    const scelto = sito.get('licenza:destinatario') || '';
+    if (scelto && posta.indirizzoOk(scelto)) return { a: scelto, delegato: true };
+    const mia = mailDi(config.adminLogins[0] || '');
+    return mia ? { a: mia, delegato: false } : { a: '', delegato: false };
+  };
+  const mailLicenza = (adesso = Date.now()) => {
+    const d = licenzaQui().dati || {};
+    const dest = destinatarioLicenza();
+    return { dest, m: promemoriaLicenza.mail({ scade: d.scade, adesso, dominio: d.dominio || new URL(config.baseUrl).hostname, macchina: d.macchina || '',
+      codice: dest.delegato ? '' : posta.codiceDi(config.adminLogins[0] || '') }) };
+  };
+  const giroLicenza = async () => {
+    try {
+      const e = licenzaQui();
+      const scade = e.dati?.scade;
+      if (!scade || !posta.attiva()) return;
+      let memoria = null;
+      try { memoria = JSON.parse(sito.get('licenza:promemoria') || 'null'); } catch { memoria = null; }
+      const mandate = promemoriaLicenza.mandateDi(memoria, scade);
+      const s = promemoriaLicenza.daMandare({ scade, mandate });
+      if (s == null) return;
+      const { dest, m } = mailLicenza();
+      if (!dest.a) { log.warn(`licenza: scade il ${scade} e non c'e' una mail a cui dirlo (conferma la tua in Account, o scegline una nella scheda Admin)`); return; }
+      await posta.invia({ a: dest.a, oggetto: m.oggetto, testo: m.testo, html: m.html });
+      sito.set('licenza:promemoria', JSON.stringify({ scade, mandate: promemoriaLicenza.dopo(mandate, s) }));
+      log.info(`licenza: promemoria mandato (${s ? `${s} giorni` : 'scaduta'})`);
+    } catch (err) { log.warn('licenza: promemoria non mandato:', err?.message || err); }
+  };
+  setTimeout(giroLicenza, 60_000).unref?.();
+  setInterval(giroLicenza, 6 * 3_600_000).unref?.();
+  app.get('/api/admin/licenza', requireAdmin, (req, res) => {
+    const e = licenzaQui(), d = e.dati || {};
+    const dest = destinatarioLicenza();
+    res.json({ stato: e.stato, motivo: e.motivo || '', scade: d.scade || '', giorni: d.scade ? promemoriaLicenza.giorniRimasti(d.scade) : null,
+      dominio: d.dominio || '', macchina: d.macchina || '', destinatario: dest.a, delegato: dest.delegato, scelto: sito.get('licenza:destinatario') || '',
+      soglie: promemoriaLicenza.SOGLIE, posta: posta.attiva() });
+  });
+  app.post('/api/admin/licenza', requireAdmin, (req, res) => {
+    const a = String(req.body?.destinatario ?? '').trim();
+    if (a && !posta.indirizzoOk(a)) return res.status(400).json({ errore: 'Questo indirizzo non ha la forma di una mail.' });
+    sito.set('licenza:destinatario', a);
+    res.json({ ok: true, destinatario: destinatarioLicenza().a, delegato: destinatarioLicenza().delegato });
+  });
+  app.post('/api/admin/licenza/prova', requireAdmin, wrap(async (req, res) => {
+    if (!posta.attiva()) return res.status(400).json({ errore: 'La posta del server è spenta: il promemoria non può partire.' });
+    if (!licenzaQui().dati?.scade) return res.status(400).json({ errore: 'La licenza di adesso non ha una scadenza: non c\'è niente da ricordare.' });
+    const { dest, m } = mailLicenza();
+    if (!dest.a) return res.status(400).json({ errore: 'Non c\'è una mail a cui mandarlo: conferma la tua in Account, o scrivine una qui.' });
+    await posta.invia({ a: dest.a, oggetto: 'Prova: ' + m.oggetto, testo: m.testo, html: m.html });
+    res.json({ ok: true, a: dest.a });
   }));
 
   // LE PAGINE DELLE CAMPAGNE, per ultime: una rotta sola per tutte, e le

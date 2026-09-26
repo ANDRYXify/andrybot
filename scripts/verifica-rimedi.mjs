@@ -53,6 +53,8 @@ export const CLASSIFICATI = [
   ['src/features/donazioni-stripe.js', 'fallo dal tuo Dashboard', 'errore del rimborso, nel pannello del proprietario'],
   ['src/features/posta.js', 'Lo ritrovi nel tuo pannello', 'mail al proprietario'],
   ['src/features/posta.js', 'dal pannello di SocialBot', 'mail a chi ha chiesto il rapporto'],
+  ['src/features/licenza-promemoria.js', 'Per controllare: nella scheda Admin del pannello', 'mail del promemoria della licenza, al proprietario o a chi ha scelto lui'],
+  ['src/features/licenza-promemoria.js', 'questa mail arriva a', 'piede della mail del promemoria della licenza, allo stesso destinatario'],
   ['src/features/studio.js', 'ri-concedi i permessi', 'errore della diretta dallo Studio, nel pannello del proprietario'],
   ['src/features/seventv.js', 'scollega 7TV e ricollegalo', 'errore di 7TV nel pannello: la rotta lo da\' solo al proprietario (ricollega7tv)'],
   ['src/features/seventv.js', 'chiedi al proprietario di ricollegare 7TV', 'errore di 7TV nel pannello, ai moderatori: il rimedio e\' del proprietario'],

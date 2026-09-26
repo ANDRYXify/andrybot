@@ -1844,6 +1844,17 @@ export const dcGiri = {
 // che stato lo decide features/recensioni.js.
 const _recensione = (r) => (r ? { login: r.login, stelle: r.stelle, testo: r.testo || '', lingua: r.lingua || 'it',
   conNome: !!r.con_nome, stato: r.stato, creata: r.creata || 0, aggiornata: r.aggiornata || 0, display: r.display || '' } : null);
+// Le cose del sito che non sono di nessun canale (il destinatario del
+// promemoria della licenza, le soglie gia' mandate): una riga per chiave nella
+// tabella dei fatti, sotto un canale che nessuno puo' avere.
+export const sito = {
+  get(chiave) { const r = db.prepare("SELECT value FROM facts WHERE channel='__sito__' AND key=?").get(String(chiave)); return r ? r.value : null; },
+  set(chiave, valore) {
+    db.prepare(`INSERT INTO facts (channel, key, value, ts) VALUES ('__sito__', ?, ?, ?)
+      ON CONFLICT(channel, key) DO UPDATE SET value=excluded.value, ts=excluded.ts`).run(String(chiave), String(valore ?? ''), now());
+  },
+};
+
 // Le campagne. `prendi` fa tutto in UNA transazione: guarda se il
 // canale l'ha gia' presa, conta i posti, scrive la riga e fa il regalo. SQLite
 // esegue una transazione alla volta, quindi due richieste sull'ultimo posto non

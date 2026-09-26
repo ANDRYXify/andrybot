@@ -78,6 +78,28 @@ il bot non parte.
 Se sbagli l'ordine e il bot non parte, il log dice il motivo **e il rimedio**: un
 blocco che non spiega come si sblocca è un blocco che ti tiene fuori da casa tua.
 
+## Il promemoria: la licenza scade, e qualcuno lo deve sapere
+
+La licenza si rinnova a mano, con la chiave privata che sta solo sul computer del
+proprietario: è una scelta, e resta così. Quello che non deve succedere è
+dimenticarsene. Una licenza scaduta non spegne il server acceso, ma al primo
+riavvio (un aggiornamento, un guasto) il server non riparte, e il sito resta giù
+finché non arriva quella nuova.
+
+Per questo il server manda una mail a **60, 30, 14, 7, 3 e 1 giorno** dalla
+scadenza, e una volta a licenza scaduta (`src/features/licenza-promemoria.js`):
+
+- dice **quando** succede e **cosa** succede, e i passi per rinnovarla, col
+  comando già scritto per il dominio e la macchina della licenza di adesso;
+- **una mail per soglia**: le soglie mandate si ricordano insieme alla data di
+  scadenza, quindi con una licenza nuova il conto riparte da solo;
+- se il server è rimasto spento e di soglie ne sono passate più d'una, parte
+  solo la più urgente: niente raffica;
+- arriva al proprietario (la sua mail confermata, quella del primo di
+  `ADMIN_LOGINS`) oppure a chi sceglie lui nella scheda Admin del pannello,
+  dove si vede anche lo stato della licenza e si può mandare una prova. Alla
+  mail di un delegato non si aggiunge il codice di verifica personale.
+
 ## Cosa non copre
 
 - Non impedisce a nessuno di leggere il codice. Per quello serve un repository
