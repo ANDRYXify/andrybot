@@ -26,6 +26,9 @@ import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passke
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi, recensioni as recensioniDb } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
+import { canaleHa } from '../features/accesso.js';
+import * as cosaManca from '../features/cosa-manca.js';
+import { commands as comandiDb } from '../db.js';
 import { renderLinkPage, renderInformativa, accentoDi, aspettoDi } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
@@ -1516,6 +1519,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     });
     res.flushHeaders?.();
     res.write(': connesso\n\n');   // commento iniziale: apre subito lo stream
+    // Il primo collegamento dell'overlay si ricorda, una volta: e' il fatto che
+    // spegne l'avviso «il tuo overlay non l'hai ancora aperto».
+    const suo = streamers.get(login);
+    if (suo && !suo.settings?.overlayVisto) streamers.setSettings(login, { ...(suo.settings || {}), overlayVisto: Date.now() });
     effects.addClient(login, res);
     req.on('close', () => effects.removeClient(login, res));
   });
@@ -3077,6 +3084,36 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   });
 
   // stato complessivo per la single-page
+  // COSA MANCA AL CANALE (src/features/cosa-manca.js): i fatti che il catalogo
+  // guarda. Un fatto che non si riesce a leggere resta undefined, e undefined non
+  // accende nessun avviso: meglio tacere che dire una cosa falsa. Un canale solo
+  // Discord non ha chat, overlay ne' pagina link: per lui questi avvisi non
+  // esistono.
+  const fattiDelCanale = (login) => {
+    const f = {};
+    if (piattaformaDi(login) === 'discord') return f;
+    const s = streamers.get(login);
+    const prova = (k, fn) => { try { f[k] = fn(); } catch { /* resta ignoto */ } };
+    prova('permessiMancanti', () => scopeMancanti(login).length);
+    prova('botSpento', () => (s ? s.botEnabled === false : undefined));
+    prova('musica', () => canaleHa(login, 'musica'));
+    prova('spotify', () => spotify.collegato(login));
+    prova('overlayVisto', () => (s ? !!s.settings?.overlayVisto : undefined));
+    prova('comandi', () => comandiDb.list(login).length + modulesDb.list(login).length);
+    prova('paginaPubblicata', () => linkPage.get(login)?.attiva === true);
+    prova('settimanaVuota', () => !(settimana.settimanaDi(s?.settings)?.giorni || []).some((g) => g && !g.off && g.ora));
+    return f;
+  };
+  // Gli avvisi di questa persona: solo il proprietario ne ha (la regola sta
+  // dentro avvisiAperti), e un avviso che non si riesce a calcolare non c'e'.
+  const avvisiDi = (req, user) => {
+    try {
+      const s = streamers.get(user.login);
+      return cosaManca.avvisiAperti({ proprietario: isOwner(req) && s?.status === 'approved', spenti: s?.settings?.avvisiSpenti === true,
+        fatti: fattiDelCanale(user.login), risposte: s?.settings?.avvisi });
+    } catch { return []; }
+  };
+
   app.get('/api/me', wrap(async (req, res) => {
     const user = currentUser(req);
     // Vetrina pubblica: senza sessione niente dati reali, solo "nessun utente"
@@ -3152,6 +3189,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       // sul telefono, e uno che ha gia' detto no se lo ritrova davanti. Qui
       // invece la risposta resta con lo streamer, dovunque entri.
       inviti: invitiAperti(req, user, isOwner),
+      avvisi: avvisiDi(req, user),
+      avvisiSpenti: isOwner(req) ? streamers.get(user.login)?.settings?.avvisiSpenti === true : undefined,
       recensione: { invito: statoRecensione(req, user).invito },
     });
   }));
@@ -6660,6 +6699,27 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const visti = { ...(s?.settings?.invitiVisti || {}), [id]: Date.now() };
     streamers.setSettings(login, { ...(s?.settings || {}), invitiVisti: visti });
     res.json({ ok: true });
+  }));
+
+  // Le risposte agli avvisi su cosa manca, e l'interruttore che li spegne tutti:
+  // SOLO il proprietario, e nelle impostazioni del suo canale. Non passano da
+  // /api/streamer/impostazioni, che puo' chiamare anche un moderatore: chi modera
+  // un canale altrui non deve poter togliere al proprietario gli avvisi che
+  // contano, nemmeno sbagliando.
+  app.post('/api/streamer/avvisi', requireOwner, wrap(async (req, res) => {
+    const user = currentUser(req);
+    const s = streamers.get(user.login);
+    if (!s) return res.status(404).json({ errore: 'streamer sconosciuto' });
+    const b = req.body || {};
+    const out = { ...(s.settings || {}) };
+    if (b.spenti !== undefined) out.avvisiSpenti = b.spenti === true;
+    if (b.id !== undefined) {
+      const r = cosaManca.rispondi(out.avvisi, String(b.id), String(b.come || ''));
+      if (!r) return res.status(400).json({ errore: 'risposta sconosciuta' });
+      out.avvisi = r;
+    }
+    streamers.setSettings(user.login, out);
+    res.json({ ok: true, avvisi: avvisiDi(req, user), avvisiSpenti: out.avvisiSpenti === true });
   }));
 
   app.delete('/api/streamer/posta', requireOwner, wrap(async (req, res) => {

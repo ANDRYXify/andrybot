@@ -372,8 +372,89 @@ async function caricaStato() {
   avvisaRapporti();
   collegaRegiaRicordata();
   _mortiRiavvia();
+  avvisoCosaManca();
   invito();
   invitoRecensione();
+}
+
+const AVVISI_MANCA = {
+  permessi: () => ({
+    titolo: L('Mancano dei permessi', 'Some permissions are missing', 'Faltan permisos'),
+    testo: L('Alcune funzioni restano spente finché non concedi i permessi nuovi di Twitch. Ci vogliono dieci secondi.', 'Some features stay off until you grant the new Twitch permissions. It takes ten seconds.', 'Algunas funciones siguen apagadas hasta que concedas los permisos nuevos de Twitch. Tarda diez segundos.'),
+  }),
+  'bot-spento': () => ({
+    titolo: L('Il bot è spento', 'The bot is off', 'El bot está apagado'),
+    testo: L('In chat non risponde a nessuno finché non lo riaccendi.', 'It does not answer anyone in chat until you turn it back on.', 'No responde a nadie en el chat hasta que lo vuelvas a encender.'),
+  }),
+  musica: () => ({
+    titolo: L('Spotify non è collegato', 'Spotify is not connected', 'Spotify no está conectado'),
+    testo: L('Hai le richieste musicali, ma senza Spotify la chat non può chiederti canzoni.', 'You have song requests, but without Spotify chat cannot ask you for songs.', 'Tienes peticiones musicales, pero sin Spotify el chat no puede pedirte canciones.'),
+  }),
+  overlay: () => ({
+    titolo: L('Il tuo overlay non l’hai ancora aperto', 'You have not opened your overlay yet', 'Todavía no has abierto tu overlay'),
+    testo: L('Alert, chat a schermo e obiettivi compaiono in diretta quando metti il link dell’overlay nel programma con cui trasmetti.', 'Alerts, on-screen chat and goals show up live once you put the overlay link in the program you stream with.', 'Alertas, chat en pantalla y objetivos aparecen en directo cuando pones el enlace del overlay en el programa con el que emites.'),
+  }),
+  comandi: () => ({
+    titolo: L('Non hai ancora un comando tuo', 'You do not have a command of your own yet', 'Todavía no tienes un comando tuyo'),
+    testo: L('Un comando come !social o !orari risponde da solo in chat: lo scrivi una volta e non lo ripeti più.', 'A command like !social or !schedule answers in chat by itself: you write it once and never repeat it.', 'Un comando como !social o !horario responde solo en el chat: lo escribes una vez y no lo repites más.'),
+  }),
+  pagina: () => ({
+    titolo: L('La tua pagina link non è pubblicata', 'Your link page is not published', 'Tu página de enlaces no está publicada'),
+    testo: L('È la pagina da mettere in bio, con tutti i tuoi social in un posto solo. Si prepara in pochi minuti.', 'It is the page to put in your bio, with all your socials in one place. It takes a few minutes.', 'Es la página para poner en tu bio, con todas tus redes en un solo sitio. Se prepara en pocos minutos.'),
+  }),
+  settimana: () => ({
+    titolo: L('La tua settimana è vuota', 'Your week is empty', 'Tu semana está vacía'),
+    testo: L('Scrivi quando vai in onda: da lì prendono tutto la grafica della settimana, i calendari e gli avvisi.', 'Write when you go live: the week graphic, the calendars and the notifications all take it from there.', 'Escribe cuándo sales en directo: de ahí lo toman todo la gráfica de la semana, los calendarios y los avisos.'),
+  }),
+};
+const AVVISI_SCHEDA = { permessi: 'stato', 'bot-spento': 'stato', musica: 'musica', overlay: 'alert', comandi: 'moduli', pagina: 'pagina', settimana: 'settimana' };
+const MANCA_DOPO_MS = 12000;
+const MANCA_RIPROVA_MS = 10000;
+let _mancaOrologio = 0;
+let _mancaFatto = false;
+
+function avvisoCosaManca() {
+  if (DEMO || _mancaFatto || !(stato?.avvisi || []).length) return;
+  clearTimeout(_mancaOrologio);
+  _mancaOrologio = setTimeout(mostraAvvisoManca, MANCA_DOPO_MS);
+}
+
+function mostraAvvisoManca() {
+  if (_mancaFatto) return;
+  const id = (stato?.avvisi || []).find((x) => AVVISI_MANCA[x] && AVVISI_SCHEDA[x] !== schedaAttiva && schedaValida(AVVISI_SCHEDA[x]) && !schedaBloccata(AVVISI_SCHEDA[x]));
+  if (!id) return;
+  if (occupatoPerInvito()) { _mancaOrologio = setTimeout(mostraAvvisoManca, MANCA_RIPROVA_MS); return; }
+  _mancaFatto = true;
+  const v = AVVISI_MANCA[id]();
+  const el = document.createElement('section');
+  el.className = 'manca-avviso';
+  el.dataset.avviso = id;
+  el.setAttribute('aria-labelledby', 'manca-tit');
+  el.innerHTML = `<h2 id="manca-tit">${esc(v.titolo)}</h2>
+    <p>${esc(v.testo)}</p>
+    <div class="manca-azioni">
+      <button type="button" class="btn mini" data-manca="vai">${L('Fammi vedere', 'Show me', 'Enséñamelo')}</button>
+      <button type="button" class="btn secondario mini" data-manca="domani">${L('Domani', 'Tomorrow', 'Mañana')}</button>
+      <button type="button" class="btn secondario mini" data-manca="settimana">${L('Fra una settimana', 'In a week', 'En una semana')}</button>
+      <button type="button" class="btn testo mini" data-manca="mai">${L('Non mostrarlo più', 'Do not show it again', 'No mostrarlo más')}</button>
+    </div>`;
+  document.body.appendChild(el);
+  const via = (come) => {
+    stato.avvisi = (stato.avvisi || []).filter((x) => x !== id);
+    api('/api/streamer/avvisi', { method: 'POST', body: { id, come } }).catch(() => {  });
+    document.removeEventListener('keydown', esc_);
+    el.classList.add('esce');
+    setTimeout(() => el.remove(), _duraUscita() + 20);
+  };
+  const esc_ = (ev) => { if (ev.key === 'Escape' && el.contains(document.activeElement)) via('domani'); };
+  document.addEventListener('keydown', esc_);
+  el.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-manca]');
+    if (!b) return;
+    const come = b.dataset.manca;
+    if (come === 'vai') { via('domani'); vaiAScheda(AVVISI_SCHEDA[id]); return; }
+    via(come);
+  });
 }
 
 const RECENSIONE_DOPO_MS = 45000;
@@ -430,7 +511,7 @@ function invitoRecensione() {
 
 function occupatoPerInvito() {
   const cookie = document.getElementById('cookie-banner');
-  return document.hidden || !!document.querySelector('dialog[open], .bv-velo, .giro-velo, .aiuto-banner, .rec-invito, #cerca-overlay.aperto')
+  return document.hidden || !!document.querySelector('dialog[open], .bv-velo, .giro-velo, .aiuto-banner, .rec-invito, .manca-avviso, #cerca-overlay.aperto')
     || document.body.classList.contains('menu-aperto') || !!(cookie && !cookie.hidden);
 }
 
@@ -482,6 +563,21 @@ const PERCHE_RECENSIONE = {
   autore: () => L('Chi fa SocialBot non si recensisce da solo.', 'Whoever makes SocialBot does not review it.', 'Quien hace SocialBot no se reseña a sí mismo.'),
   approvato: () => L('Potrai lasciarla quando il tuo canale è attivo.', 'You can leave one once your channel is active.', 'Podrás dejarla cuando tu canal esté activo.'),
 };
+
+function collegaAvvisiManca() {
+  const chk = document.getElementById('chk-avvisi-manca');
+  if (!chk || chk.dataset.pronto) return;
+  chk.dataset.pronto = '1';
+  chk.addEventListener('change', () => conErrore(async () => {
+    chk.disabled = true;
+    try {
+      const r = await api('/api/streamer/avvisi', { method: 'POST', body: { spenti: !chk.checked } });
+      stato.avvisiSpenti = !!r.avvisiSpenti;
+      stato.avvisi = r.avvisi || [];
+      toast(chk.checked ? L('Avvisi accesi ✓', 'Notes on ✓', 'Avisos encendidos ✓') : L('Avvisi spenti', 'Notes off', 'Avisos apagados'));
+    } catch (e) { chk.checked = !chk.checked; throw e; } finally { chk.disabled = false; }
+  }));
+}
 
 async function caricaRecensione() {
   const box = document.getElementById('recensione-box');
@@ -7025,6 +7121,15 @@ function pannelloAccount() {
     ${proprietario ? `<div class="carta">
       <h2>${_hIco(ICO.stella)}${L('La tua recensione', 'Your review', 'Tu reseña')}</h2>
       <div id="recensione-box">${attesaHtml()}</div>
+    </div>` : ''}
+    ${proprietario ? `<div class="carta">
+      <h2>${_hIco(ICO.megafono)}${L('Avvisi su cosa manca', 'Notes on what is missing', 'Avisos sobre lo que falta')}</h2>
+      <p>${L('Ogni tanto, in basso a destra, un piccolo avviso ti dice cosa manca al canale per usare quello che hai: un permesso, Spotify, la pagina link. Uno per volta, e puoi rimandarlo o toglierlo.', 'Now and then, bottom right, a small note tells you what your channel is missing to use what you have: a permission, Spotify, the link page. One at a time, and you can put it off or remove it.', 'De vez en cuando, abajo a la derecha, un pequeño aviso te dice qué le falta a tu canal para usar lo que tienes: un permiso, Spotify, la página de enlaces. Uno cada vez, y puedes aplazarlo o quitarlo.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="chk-avvisi-manca" ${stato.avvisiSpenti ? '' : 'checked'}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Mostrameli', 'Show them to me', 'Muéstramelos')}</span>
+      </div>
+      <p class="suggerimento">${L('Li vedi solo tu: chi modera il canale non li riceve e non li può togliere.', 'Only you see them: whoever moderates your channel does not get them and cannot remove them.', 'Solo los ves tú: quien modera el canal no los recibe y no los puede quitar.')}</p>
     </div>` : ''}
     <div class="carta">
       <h2>${_hIco(ICO.scarica)}${L('I tuoi dati sono tuoi', 'Your data is yours', 'Tus datos son tuyos')}</h2>
@@ -25093,7 +25198,7 @@ async function conErrore(fn) {
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
   if (id === 'stato') caricaAdesso();
-  if (id === 'account') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); }
+  if (id === 'account') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); collegaAvvisiManca(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'personalita') { caricaGuide(); caricaSpontanee(); }
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); caricaRetePanoramica(); }

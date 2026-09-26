@@ -646,7 +646,7 @@
       if (el === document.body) { corpo = true; continue; }
       if (el.id === 'splash') { if (diventa('via')) sveglia = true; continue; }
       if (fermo(el)) continue;
-      if (diventa('esce')) via(el, { veloce: el.classList.contains('toast') || el.classList.contains('rec-invito') });
+      if (diventa('esce')) via(el, { veloce: el.classList.contains('toast') || el.classList.contains('rec-invito') || el.classList.contains('manca-avviso') });
       else if (perde('esce')) mostrati.push(el);
       if (el.classList.contains('carta')) {
         if (diventa('dentro') && !el.dataset.dgFatto) chiedi(el, { da: turno() });

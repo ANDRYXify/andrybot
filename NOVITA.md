@@ -34,6 +34,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > Non pubblicare, anche all'ultimo minuto
   > Se dopo aver confermato ti accorgi di un errore nella settimana non devi correre al computer: la fermi dalla mail, da Telegram o dal pannello, e se ci ripensi la rimetti in uscita.
 - Nella finestra delle novità le importanti hanno un titolo, due righe su perché contano e il tasto «Provala» che ti porta dove si usano. Lo stesso nella pagina delle novità.
+- [importante] In basso a destra, un avviso alla volta ti dice cosa manca al canale per usare quello che hai: permessi, Spotify, overlay, comandi, pagina link, settimana. [vai: account]
+  > Cosa manca, detto una cosa per volta
+  > Se una funzione non parte perché manca un passo, lo sai senza doverlo cercare: «Fammi vedere» ti porta dove si fa, e se non è il momento lo rimandi o lo togli. Li vedi solo tu, non chi modera il canale.
 
 ## 2026-09-25
 

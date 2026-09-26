@@ -2014,7 +2014,7 @@ input[type="color"]:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-t
 
 .carta { border-width: var(--tratto-3); }
 .toast, .cookie-banner, .aiuto-banner { border-width: var(--tratto-4); }
-.rec-invito {
+.rec-invito, .manca-avviso {
   position: fixed; z-index: 80;
   right: calc(78px + env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
   width: min(340px, calc(100vw - 96px)); display: grid; gap: .55rem; padding: 14px 16px;
@@ -2022,6 +2022,9 @@ input[type="color"]:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-t
   border: 2px solid var(--contorno); border-width: var(--tratto-4); border-radius: var(--ang-mano); box-shadow: var(--ombra-ink);
 }
 .rec-invito h2 { margin: 0; font-family: var(--mano); font-weight: 400; font-size: 1.15rem; line-height: 1.2; }
+.manca-avviso h2 { margin: 0; font-family: var(--mano); font-weight: 400; font-size: 1.15rem; line-height: 1.2; }
+.manca-avviso p { margin: 0; }
+.manca-azioni { display: flex; flex-wrap: wrap; gap: .4rem; }
 .rec-invito .suggerimento { margin: 0; }
 .rec-invito textarea { min-height: 4.5em; resize: vertical; }
 .rec-invito-azioni { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: flex-end; }
@@ -2034,10 +2037,10 @@ input[type="color"]:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-t
 .voto-scelta[data-voto="5"] label:nth-of-type(-n+5) { color: var(--acc); }
 .voto-vuoto { color: var(--testo-3); }
 @media (max-width: 640px) {
-  .rec-invito { right: calc(70px + env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: min(340px, calc(100vw - 84px)); }
+  .rec-invito, .manca-avviso { right: calc(70px + env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: min(340px, calc(100vw - 84px)); }
 }
 @media (max-width: 720px) {
-  body.con-nav .rec-invito { bottom: calc(74px + env(safe-area-inset-bottom, 0px)); right: calc(68px + env(safe-area-inset-right, 0px)); width: min(340px, calc(100vw - 82px)); }
+  body.con-nav .rec-invito, body.con-nav .manca-avviso { bottom: calc(74px + env(safe-area-inset-bottom, 0px)); right: calc(68px + env(safe-area-inset-right, 0px)); width: min(340px, calc(100vw - 82px)); }
 }
 
 .badge, .badge.verde, .badge.rosso, .badge.viola, .badge.giallo, .badge.marchio,
