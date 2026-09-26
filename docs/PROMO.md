@@ -83,10 +83,27 @@ manca) dentro un IVF, un contenitore di 32 byte di testa e 12 per fotogramma
 che scriviamo noi (`SB_PROMO.ivf`). Il server lo riceve su disco a pezzi
 (`POST /api/admin/promo/video`, solo admin, uno alla volta) e ffmpeg ne fa un
 MP4 H.264 (high, yuv420p, crf 14, faststart), il formato che chiedono gli
-schermi. I colori escono in BT.709, convertiti e scritti nel file: il browser
-consegna i fotogrammi in BT.601, e un lettore che ignora l'etichetta legge un
-video HD in BT.709. Letto con la matrice sbagliata il magenta del marchio si
-sposta di una quarantina di livelli; convertito, resta dov'è. Il PNG invece esce dal canvas, firmato come le altre immagini.
+schermi.
+
+I colori escono in BT.709, e si convertono **una volta sola**. Lasciato fare,
+il browser comprime in BT.601; un lettore che ignora l'etichetta legge un video
+HD in BT.709, e il magenta del marchio si sposta di una quarantina di livelli.
+Riconvertire dopo, con ffmpeg, costa precisione (due passaggi, e il colore a
+metà risoluzione ricampionato due volte). Quindi il motore prende i pixel del
+canvas e fa lui i piani I420 (`SB_PROMO.i420`): luma BT.709 a gamma limitata
+pixel per pixel, colore come media di ogni quadretto 2x2, e il fotogramma dice
+`BT709`. Il server non converte niente: dichiara soltanto quello che i dati
+sono (`setparams`) e lo scrive nel file. Misurato sullo stesso fotogramma
+contro il PNG (scarto medio, somma dei tre canali):
+
+| | magenta pieno | bordi | carta |
+|---|---|---|---|
+| BT.601 del browser | 5,8 | 20,7 | 4,8 |
+| riconvertito con ffmpeg | 5,8 | 26,3 | 4,5 |
+| convertito dal motore | 1,8 | 19,3 | 3,4 |
+
+Per questo i lati di una grafica sono sempre pari (`SB_PROMO.pari`): il colore a
+metà risoluzione li vuole così, e H.264 in 4:2:0 non accetta lati dispari. Il PNG invece esce dal canvas, firmato come le altre immagini.
 
 ## Dove si salva
 

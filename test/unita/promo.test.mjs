@@ -68,3 +68,21 @@ test('i formati: quelli degli schermi, e l\'anteprima dei link', () => {
   assert.deepEqual(m['times-square'], [3744, 2196]);
   assert.deepEqual(m.anteprima, [1200, 630]);
 });
+
+test('i fotogrammi del video si convertono una volta sola, in BT.709 a gamma limitata', () => {
+  const px = (...c) => { const d = new Uint8ClampedArray(16); for (let i = 0; i < 4; i++) d.set([...c, 255], i * 4); return S.i420(d, 2, 2, new Uint8Array(6)); };
+  const yuv = (p) => [p[0], p[4], p[5]];
+  assert.deepEqual(yuv(px(255, 255, 255)), [235, 128, 128], 'bianco');
+  assert.deepEqual(yuv(px(0, 0, 0)), [16, 128, 128], 'nero');
+  assert.deepEqual(yuv(px(255, 0, 0)), [63, 102, 240], 'rosso, i valori di riferimento BT.709');
+  assert.deepEqual(yuv(px(0, 0, 255)), [32, 240, 118], 'blu, i valori di riferimento BT.709');
+  const mezzo = new Uint8ClampedArray([255, 0, 255, 255, 0, 0, 0, 255, 255, 0, 255, 255, 0, 0, 0, 255]);
+  const r = S.i420(mezzo, 2, 2, new Uint8Array(6));
+  assert.deepEqual([...r.slice(0, 4)], [78, 16, 78, 16], 'la luma resta pixel per pixel');
+  assert.deepEqual(yuv(r).slice(1), yuv(px(128, 0, 128)).slice(1), 'il colore di un quadretto 2x2 e\' la media dei quattro');
+  assert.deepEqual(S.BT709, { matrix: 'bt709', primaries: 'bt709', transfer: 'bt709', fullRange: false });
+});
+
+test('i lati della grafica sono pari: il video a 4:2:0 li vuole cosi\'', () => {
+  assert.deepEqual([1081, 1919, 1920, 200, 7999].map(S.pari), [1082, 1920, 1920, 200, 8000]);
+});

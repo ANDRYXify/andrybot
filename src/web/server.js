@@ -10693,9 +10693,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
 
   // IL VIDEO DELLE PROMO. Il browser dell'admin disegna i fotogrammi col motore
   // delle grafiche e li comprime in VP9 dentro un IVF; qui ffmpeg ne fa un MP4
-  // H.264, il formato che chiedono gli schermi. I colori si convertono in
-  // BT.709 e lo si scrive nel file: il browser li consegna in BT.601, e un
-  // lettore che ignora l'etichetta legge l'HD in BT.709, spostando il magenta. Uno alla volta: e' lavoro
+  // H.264, il formato che chiedono gli schermi. I colori arrivano gia' in
+  // BT.709 (li converte il motore, una volta sola, dal canvas): qui non si
+  // converte niente, si dichiara solo quello che sono, sull'ingresso e nel file. Uno alla volta: e' lavoro
   // pesante, e il file arriva su disco a pezzi, non in memoria.
   let promoInCorso = false;
   const PROMO_MAX = 700 * 1024 * 1024;
@@ -10720,7 +10720,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       if (testa.subarray(0, 4).toString('latin1') !== 'DKIF') throw new Error('non è un video che conosco');
       await new Promise((ok, ko) => {
         const p = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'ivf', '-i', ivf, '-c:v', 'libx264', '-profile:v', 'high',
-          '-vf', 'scale=out_color_matrix=bt709:out_range=tv,format=yuv420p', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709',
+          '-vf', 'setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv,format=yuv420p', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709',
           '-pix_fmt', 'yuv420p', '-crf', '14', '-preset', 'slow', '-r', String(fps), '-movflags', '+faststart', '-an', mp4], { stdio: ['ignore', 'ignore', 'pipe'] });
         let err = '';
         p.stderr.on('data', (d) => { err = (err + d).slice(-2000); });

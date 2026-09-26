@@ -69,8 +69,9 @@ test('entrare dalla pagina riporta alla pagina, e solo a una campagna che c\'e\'
   assert.equal((SRV.match(/dove: dove \|\| tornaAllaCampagna\(req\) \|\|/g) || []).length, 2, 'Kick e YouTube');
 });
 
-test('i video delle promo escono in BT.709, convertiti e dichiarati', () => {
+test('i video delle promo escono in BT.709, convertiti una volta e dichiarati', () => {
   const v = pezzo("app.post('/api/admin/promo/video', requireAdmin,", 3000);
-  assert.match(v, /'-vf', 'scale=out_color_matrix=bt709:out_range=tv,format=yuv420p'/, 'la conversione dei colori');
+  assert.match(v, /'-vf', 'setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv,format=yuv420p'/, 'si dichiara cosa sono, non si riconverte: li ha gia\' convertiti il motore');
+  assert.ok(!/out_color_matrix/.test(v), 'nessuna seconda conversione');
   for (const x of ["'-colorspace', 'bt709'", "'-color_primaries', 'bt709'", "'-color_trc', 'bt709'"]) assert.ok(v.includes(x), x);
 });

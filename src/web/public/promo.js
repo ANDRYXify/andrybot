@@ -340,9 +340,11 @@
 
   const tocca = (a, b, marg) => a.x < b.x + b.w - marg && b.x < a.x + a.w - marg && a.y < b.y + b.h - marg && b.y < a.y + a.h - marg;
 
+  const pari = (n) => 2 * Math.round(Number(n) / 2);
+
   function crea(conf) {
     const P = penna();
-    const w = Math.round(conf.w), h = Math.round(conf.h);
+    const w = pari(conf.w), h = pari(conf.h);
     const versione = ['piena', 'essenziale', 'anteprima'].includes(conf.versione) ? conf.versione : 'piena';
     const lingua = TESTI[conf.lingua] ? conf.lingua : 'it';
     const T = Object.assign({}, TESTI[lingua], conf.testi || {});
@@ -818,6 +820,28 @@
     return out;
   }
 
+  const BT709 = { matrix: 'bt709', primaries: 'bt709', transfer: 'bt709', fullRange: false };
+
+  function i420(rgba, w, h, fuori) {
+    const cw = w / 2, luma = w * h, quarto = cw * (h / 2);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        fuori[y * w + x] = Math.round(16 + (219 / 255) * (0.2126 * rgba[i] + 0.7152 * rgba[i + 1] + 0.0722 * rgba[i + 2]));
+      }
+    }
+    for (let y = 0; y < h; y += 2) {
+      for (let x = 0; x < w; x += 2) {
+        const a = (y * w + x) * 4, b = a + 4, c = a + w * 4, d = c + 4;
+        const r = (rgba[a] + rgba[b] + rgba[c] + rgba[d]) / 4, g = (rgba[a + 1] + rgba[b + 1] + rgba[c + 1] + rgba[d + 1]) / 4, bl = (rgba[a + 2] + rgba[b + 2] + rgba[c + 2] + rgba[d + 2]) / 4;
+        const yy = 0.2126 * r + 0.7152 * g + 0.0722 * bl, k = (y / 2) * cw + x / 2;
+        fuori[luma + k] = Math.max(16, Math.min(240, Math.round(128 + (224 / 255) * (bl - yy) / 1.8556)));
+        fuori[luma + quarto + k] = Math.max(16, Math.min(240, Math.round(128 + (224 / 255) * (r - yy) / 1.5748)));
+      }
+    }
+    return fuori;
+  }
+
   async function video(scena, opz) {
     const o = Object.assign({ fps: 30, avanza: null }, opz || {});
     if (typeof VideoEncoder === 'undefined') throw new Error('questo browser non sa fare video: serve Chrome o Edge aggiornati');
@@ -834,11 +858,13 @@
     let errore = null;
     const enc = new VideoEncoder({ output: (ch) => { const b = new Uint8Array(ch.byteLength); ch.copyTo(b); pezzi.push(b); }, error: (e) => { errore = e; } });
     enc.configure(conf.c);
-    const c = tela(w, h), g = c.getContext('2d');
+    const c = tela(w, h), g = c.getContext('2d', { willReadFrequently: true });
+    const piani = new Uint8Array(w * h * 1.5);
     for (let i = 0; i < quadri; i++) {
       if (errore) throw errore;
       scena.disegna(g, i / o.fps);
-      const vf = new VideoFrame(c, { timestamp: Math.round(i * 1e6 / o.fps), duration: Math.round(1e6 / o.fps) });
+      i420(g.getImageData(0, 0, w, h).data, w, h, piani);
+      const vf = new VideoFrame(piani, { format: 'I420', codedWidth: w, codedHeight: h, colorSpace: BT709, timestamp: Math.round(i * 1e6 / o.fps), duration: Math.round(1e6 / o.fps) });
       enc.encode(vf, { keyFrame: i % (o.fps * 2) === 0 });
       vf.close();
       while (enc.encodeQueueSize > 3) await new Promise((r) => setTimeout(r, 4));
@@ -856,5 +882,5 @@
     await Promise.all([`400 40px ${MANO}`, `500 40px ${TESTO}`, `700 40px ${TESTO}`, `800 40px ${TESTO}`].map((f) => document.fonts.load(f)));
   }
 
-  radice.SB_PROMO = { COLORI, TESTI, TEMPI, DURATE, FORMATI, FERMA, faccina, parole, spezza, prepara, crea, video, ivf, pronti };
+  radice.SB_PROMO = { COLORI, TESTI, TEMPI, DURATE, FORMATI, FERMA, BT709, faccina, parole, spezza, pari, i420, prepara, crea, video, ivf, pronti };
 })(typeof window !== 'undefined' ? window : globalThis);
