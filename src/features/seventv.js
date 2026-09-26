@@ -256,7 +256,13 @@ export function esitoModifica(azione, data, setId, alias) {
   return false;
 }
 
-const MOTIVO_RICOLLEGA = '7TV non accetta più il token collegato: scollega 7TV e ricollegalo con un token nuovo';
+// Il rimedio lo legge chi lo puo' fare: collegare e scollegare 7TV e' del solo
+// proprietario, quindi a un moderatore si dice di chiederlo a lui. Chi legge lo
+// sceglie la rotta (server.js: `ricollega7tv`), che sa chi e' entrato.
+export const RICOLLEGA = {
+  proprietario: '7TV non accetta più il token collegato: scollega 7TV e ricollegalo con un token nuovo',
+  moderatore: '7TV non accetta più il token del canale: chiedi al proprietario di ricollegare 7TV',
+};
 
 // Applica un'azione (ADD | REMOVE | RENAME) sull'emote-set attivo del canale.
 // `alias`: per ADD il nome da dare (facoltativo), per REMOVE e RENAME il nome
@@ -280,7 +286,7 @@ async function cambia(helix, login, azione, emoteId, alias, nuovo) {
   if (azione === 'RENAME') vars.alias = String(nuovo || '').trim().slice(0, 100);
   const r = await gql(GQL4, M_SET[azione], vars, t.token);
   if (r.errore) {
-    if (daRicollegare(r)) return { ok: false, motivo: MOTIVO_RICOLLEGA, scaduto: true };
+    if (daRicollegare(r)) return { ok: false, motivo: RICOLLEGA.proprietario, scaduto: true };
     return { ok: false, motivo: '7TV dice: ' + r.errore };
   }
   if (!esitoModifica(azione, r.data, setId, vars.alias)) return { ok: false, motivo: '7TV non ha fatto la modifica' };

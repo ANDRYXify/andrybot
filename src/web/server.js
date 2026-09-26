@@ -4342,11 +4342,14 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // Gestione emote (aggiungi/rimuovi/rinomina/carica): la può fare anche un
   // MODERATORE del canale — agisce sull'account 7TV del canale (stessa API,
   // stesso token). Il collegamento/scollegamento dell'account resta al proprietario.
+  // Un token che 7TV non accetta piu' si rimedia ricollegando, e ricollegare e'
+  // del proprietario: il moderatore legge di chiederlo a lui.
+  const ricollega7tv = (req, r) => (r.scaduto ? seventv.RICOLLEGA[isOwner(req) ? 'proprietario' : 'moderatore'] : r.motivo);
   app.post('/api/seventv/aggiungi', requireLogin, g7tv, wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (!seventv.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account 7TV.' });
     const r = await seventv.aggiungi(helix, login, String(req.body?.emoteId || ''), String(req.body?.alias || ''));
-    if (!r.ok) return res.status(r.scaduto ? 401 : 400).json({ errore: r.motivo || 'Non aggiunta.', scaduto: !!r.scaduto });
+    if (!r.ok) return res.status(r.scaduto ? 401 : 400).json({ errore: ricollega7tv(req, r) || 'Non aggiunta.', scaduto: !!r.scaduto });
     res.json({ ok: true });
   }));
 
@@ -4354,7 +4357,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login;
     if (!seventv.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account 7TV.' });
     const r = await seventv.rimuovi(helix, login, String(req.body?.emoteId || ''), String(req.body?.alias || ''));
-    if (!r.ok) return res.status(r.scaduto ? 401 : 400).json({ errore: r.motivo || 'Non rimossa.', scaduto: !!r.scaduto });
+    if (!r.ok) return res.status(r.scaduto ? 401 : 400).json({ errore: ricollega7tv(req, r) || 'Non rimossa.', scaduto: !!r.scaduto });
     res.json({ ok: true });
   }));
 
@@ -4362,7 +4365,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login;
     if (!seventv.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account 7TV.' });
     const r = await seventv.rinomina(helix, login, String(req.body?.emoteId || ''), String(req.body?.nome || ''), String(req.body?.alias || ''));
-    if (!r.ok) return res.status(r.scaduto ? 401 : 400).json({ errore: r.motivo || 'Non rinominata.', scaduto: !!r.scaduto });
+    if (!r.ok) return res.status(r.scaduto ? 401 : 400).json({ errore: ricollega7tv(req, r) || 'Non rinominata.', scaduto: !!r.scaduto });
     res.json({ ok: true });
   }));
 
@@ -4405,12 +4408,12 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     try {
       const bytes = await readFile(outPath);
       const up = await seventv.caricaEmote(login, bytes, nome);
-      if (!up.ok) return res.status(up.scaduto ? 401 : 400).json({ errore: up.motivo || 'Caricamento su 7TV non riuscito.', scaduto: !!up.scaduto });
+      if (!up.ok) return res.status(up.scaduto ? 401 : 400).json({ errore: ricollega7tv(req, up) || 'Caricamento su 7TV non riuscito.', scaduto: !!up.scaduto });
       // aggiunge subito l'emote al set attivo del canale (best-effort), con l'alias
       // scelto dallo streamer (se vuoto, usa il nome dell'emote).
       const alias = String(req.body?.alias || '').trim() || up.nome;
       let aggiunta = false, avviso = '';
-      if (up.id) { const add = await seventv.aggiungi(helix, login, up.id, alias); aggiunta = add.ok; if (!add.ok) avviso = add.motivo || ''; }
+      if (up.id) { const add = await seventv.aggiungi(helix, login, up.id, alias); aggiunta = add.ok; if (!add.ok) avviso = ricollega7tv(req, add) || ''; }
       res.json({ ok: true, id: up.id, animato: conv.animato, aggiunta, avviso });
     } finally { try { await unlink(outPath); } catch { /* già rimosso */ } }
   }
