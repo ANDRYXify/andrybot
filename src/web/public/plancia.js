@@ -46,6 +46,7 @@
     aggiornaLancia();
 
     overlay = document.createElement('div'); overlay.id = 'plancia-overlay'; overlay.hidden = true;
+    overlay.setAttribute('data-dg-parti', '.pl-suono, .pl-esci, .pl-eroe-grp, .pl-tile, .pl-cop > span');
     overlay.innerHTML =
       '<div class="pl-atmo"></div>' +
       '<div class="pl-top"><span class="pl-marchio">' + ICO_PAD + '<b>' + esc(L('Plancia', 'Deck', 'Consola')) + '</b></span>' +
@@ -53,7 +54,7 @@
           '<button type="button" class="pl-suono" aria-pressed="false"></button>' +
           '<button type="button" class="btn secondario mini pl-esci">' + esc(L('Modalità classica', 'Classic mode', 'Modo clásico')) + '</button>' +
         '</span></div>' +
-      '<div class="pl-eroe"></div>' +
+      '<div class="pl-eroe"><div class="pl-eroe-grp"></div><h2 class="pl-eroe-nome"></h2><p class="pl-eroe-desc"></p><div class="pl-eroe-hint" hidden></div></div>' +
       '<div class="pl-pista"><div class="pl-rail" role="listbox" aria-label="' + esc(L('Sezioni', 'Sections', 'Secciones')) + '"></div></div>' +
       '<div class="pl-guida">' +
       '<b class="pl-cop"><span>←→</span> ' + esc(L('scorri', 'scroll', 'desplaza')) + '</b>' +
@@ -158,7 +159,7 @@
     var h = '';
     voci.forEach(function (v, i) {
       if (v.inizioGruppo && i) h += '<span class="pl-sep" aria-hidden="true"></span>';
-      h += '<button type="button" role="option" class="pl-tile' + (v.bloccata ? ' bloccata' : '') + '" data-i="' + i + '" style="--pl-r:' + Math.min(i, 10) * 34 + 'ms">' +
+      h += '<button type="button" role="option" class="pl-tile' + (v.bloccata ? ' bloccata' : '') + '" data-i="' + i + '">' +
         '<span class="pl-tile-ico">' + v.icona + '</span>' +
         '<span class="pl-tile-nome">' + esc(v.nome) + '</span>' +
         (v.bloccata ? '<span class="pl-tile-lock" aria-hidden="true">' + ICO_LOCK + '</span>' : '') +
@@ -177,14 +178,24 @@
     aggiorna(0, true);
   }
 
+  function parole(t) {
+    return String(t || '').split(/\s+/).filter(Boolean).map(function (w, i) {
+      return '<span class="pt-parola" style="--wd:' + (40 + i * 60) + 'ms"><i>' + esc(w) + '</i></span>';
+    }).join(' ');
+  }
+
   function aggiorna(dir, muto) {
     var v = voci[focus]; if (!v || !eroe) return;
-    eroe.innerHTML =
-      '<div class="pl-eroe-grp">' + esc(v.gruppo) + '</div>' +
-      '<h2 class="pl-eroe-nome">' + esc(v.nome) + '</h2>' +
-      '<p class="pl-eroe-desc">' + esc(v.desc) + '</p>' +
-      (v.bloccata ? '<div class="pl-eroe-hint">' + esc(L('bloccata dal tuo piano', 'locked by your plan', 'bloqueada por tu plan')) + '</div>' : '');
-    animaEroe(dir || 0);
+    var grp = eroe.querySelector('.pl-eroe-grp');
+    var altroGruppo = grp.textContent !== v.gruppo;
+    grp.textContent = v.gruppo;
+    eroe.querySelector('.pl-eroe-nome').innerHTML = parole(v.nome);
+    eroe.querySelector('.pl-eroe-desc').textContent = v.desc;
+    var hint = eroe.querySelector('.pl-eroe-hint');
+    hint.textContent = v.bloccata ? L('bloccata dal tuo piano', 'locked by your plan', 'bloqueada por tu plan') : '';
+    hint.hidden = !v.bloccata;
+    entraEroe();
+    if (altroGruppo && !overlay.hidden) { try { window.SB_DISEGNO.compare(grp, { veloce: true }); } catch (e) {} }
     rail.querySelectorAll('.pl-tile').forEach(function (t) { t.classList.toggle('fuoco', +t.dataset.i === focus); });
     var atmo = overlay.querySelector('.pl-atmo');
     if (atmo && voci.length > 1) atmo.style.setProperty('--pl-x', (12 + (focus / (voci.length - 1)) * 76) + '%');
@@ -198,14 +209,11 @@
     rail.style.transform = 'translate3d(' + (primo.offsetLeft - att.offsetLeft) + 'px,0,0)';
   }
 
-  function animaEroe(dir) {
-    if (menoMoto() || !eroe) return;
-    try {
-      eroe.classList.remove('pl-mosso');
-      void eroe.offsetWidth;
-      eroe.style.setProperty('--pl-dx', (dir > 0 ? 34 : dir < 0 ? -34 : 0) + 'px');
-      eroe.classList.add('pl-mosso');
-    } catch (e) {  }
+  function entraEroe() {
+    eroe.classList.remove('entra');
+    if (menoMoto()) return;
+    void eroe.offsetWidth;
+    eroe.classList.add('entra');
   }
 
   function muovi(d) {

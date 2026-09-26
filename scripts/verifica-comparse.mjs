@@ -293,6 +293,12 @@ if (tocca('pannello')) {
   await fa(pg, D, 'il giro guidato si chiude con «Salta il giro»', 'sparisce', () => pg.evaluate(() => document.querySelector('[data-giro="salta"]').click()));
   await fa(pg, D, 'la ricerca si apre', 'compare', () => pg.evaluate(() => window.SB_CERCA.apri()));
   await fa(pg, D, 'la ricerca si chiude con Esc', 'sparisce', () => pg.keyboard.press('Escape'));
+  // La plancia: una scena a tutto schermo, che dichiara le sue parti al disegno
+  // (le tessere sono tasti, e da sole non si disegnerebbero). Saltando gruppo
+  // cambia l'etichetta e la rotaia scorre: niente deve comparire senza disegnarsi.
+  await fa(pg, D, 'la plancia si apre', 'compare', () => pg.evaluate(() => window.SB_PLANCIA.apri()), 1600);
+  await fa(pg, D, 'la plancia salta al gruppo dopo', '', () => pg.keyboard.press('ArrowDown'));
+  await fa(pg, D, 'e si chiude con Esc', 'sparisce', () => pg.keyboard.press('Escape'));
   await fa(pg, D, 'il menu delle guide si apre', 'compare', () => pg.evaluate(() => document.querySelector('.aiuto-btn').click()));
   await fa(pg, D, 'il menu delle guide si chiude', 'sparisce', () => pg.evaluate(() => document.querySelector('.aiuto-btn').click()));
   await fa(pg, D, 'un avviso arriva e se ne va', 'sparisce', () => pg.evaluate(() => toast('Salvato ✓')), 5200);

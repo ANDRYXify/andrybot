@@ -306,6 +306,14 @@ chiunque, si disegna senza che nessuno se ne ricordi.
   poi `render()`, poi tutto si ridisegna (`ridisegna`).
 - **Chi compare fuori schermo** aspetta invisibile il suo primo pixel, come le
   carte e le vignette della vetrina.
+- **Chi dichiara le sue parti** (`data-dg-parti="selettore"`). Il disegno da sé
+  salta i tasti: in una scheda un tasto non è una vignetta. Una scena fatta di
+  tasti, come la plancia (le tessere sono tasti), gli dice quali parti sono le
+  sue: si disegnano quelle che si vedono a schermo, una dopo l'altra
+  nell'ordine in cui sono scritte nella pagina (che per la plancia è l'ordine
+  di lettura: i tasti in alto, l'etichetta del gruppo, le tessere da sinistra, i
+  tasti della guida in fondo),
+  e all'uscita si disfano le stesse.
 
 Cosa si disegna di una cosa che compare: il suo contorno, se ce l'ha; se non ce
 l'ha, il retino la scopre, e i riquadri col contorno che ha dentro si tracciano
@@ -437,7 +445,15 @@ entra e non esce:
 - le **micro-interazioni**: pressione e sollevamento dei tasti, hover, la
   freccia di una tendina che gira;
 - lo stato **vivo**: le pulsazioni del «in diretta», i caricamenti, i contatori;
-- il **titolo** della scheda, che entra parola per parola: è il lettering;
+- il **titolo** della scheda, che entra parola per parola: è il lettering. Lo
+  stesso per il nome della voce scelta nella plancia, ogni volta che cambia.
+  Lì il carattere è a pennarello, e i suoi accenti (la «à» di «Personalità»)
+  salgono sopra la riga: la parola parte più in basso (`pl-parola-su`, 140%
+  invece di 110%), così l'accento non spunta dal bordo prima della lettera;
+- la **rotaia della plancia**, che scorre per portare la tessera scelta al suo
+  posto: è il gesto stesso, non un'entrata. La plancia prima entrava sfumando
+  e il suo titolo scivolava di lato: a opacità zero il disegno non vedeva
+  niente da disegnare, e restava un'animazione qualunque;
 - tra una pagina e l'altra (`@view-transition`) la barra, il marchio e il piede
   stanno fermi, e il contenuto si cambia senza animazione: poi si disegna.
 

@@ -39,6 +39,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > Se una funzione non parte perché manca un passo, lo sai senza doverlo cercare: «Fammi vedere» ti porta dove si fa, e se non è il momento lo rimandi o lo togli. Li vedi solo tu, non chi modera il canale.
 - Le emote 7TV si aggiungono, si tolgono e si rinominano per davvero: «fatto» arriva solo se 7TV conferma, e collegando l'account si controlla che il token possa cambiare il tuo set. [vai: emote]
 - Nella chat a schermo e nel muro le emote 7TV non spariscono più per dieci minuti quando 7TV risponde lento: resta l'ultima lista buona e si riprova entro un minuto.
+- La plancia si apre disegnandosi: tessere e tasti a matita uno dopo l'altro, e il nome della sezione che sale parola per parola, come nel resto del pannello. Chiudendola si disfa.
 
 ## 2026-09-25
 

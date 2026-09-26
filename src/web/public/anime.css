@@ -375,7 +375,6 @@ body.plancia-on { overflow: hidden; }
   position: fixed; inset: 0; z-index: 210; display: flex; flex-direction: column;
   background: var(--bg); overflow: hidden;
   padding: clamp(14px, 2.4vw, 28px) 0 clamp(12px, 1.8vw, 20px);
-  animation: gr-fade .3s ease both;
 }
 #plancia-overlay[hidden] { display: none; }
 body.pad-vivo #plancia-overlay { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
@@ -409,8 +408,6 @@ body.pad-vivo .pl-guida { display: none; }
 .pl-suono.on { background: var(--acc); color: var(--su-acc); }
 
 .pl-eroe { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; min-height: 0; padding-top: 10px; padding-bottom: 10px; max-width: 900px; overflow: hidden; }
-@keyframes pl-eroe-entra { from { opacity: 0; transform: translateX(var(--pl-dx, 0)); } to { opacity: 1; transform: none; } }
-.pl-eroe.pl-mosso { animation: pl-eroe-entra .26s cubic-bezier(.22,.9,.28,1) both; }
 .pl-eroe-grp {
   align-self: flex-start;
   font-family: var(--mano); text-transform: uppercase; letter-spacing: .16em;
@@ -426,6 +423,10 @@ body.pad-vivo .pl-guida { display: none; }
   color: var(--testo);
   text-shadow: 3px 3px 0 var(--acc);
 }
+.pl-eroe-nome .pt-parola { padding-right: 4px; margin-right: -4px; }
+@keyframes pl-parola-su { from { transform: translateY(140%); } to { transform: none; } }
+.pl-eroe.entra .pt-parola > i { animation: pl-parola-su .58s var(--molla-lieve, var(--rev-ease)) both; animation-delay: var(--wd, 0ms); }
+body.meno-moto .pl-eroe .pt-parola > i { animation: none; transform: none; }
 .pl-eroe-desc { color: var(--testo-2); font-size: clamp(1rem, 1.5vw, 1.24rem); line-height: 1.5; margin-top: .9rem; max-width: 62ch; }
 .pl-eroe-hint { margin-top: 1.1rem; font-size: .82rem; color: var(--testo-3); }
 
@@ -654,7 +655,6 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
 
 .pl-tile { transition: transform var(--t-medio) var(--molla-medio), opacity .18s ease, border-color .2s ease, box-shadow var(--t-medio) var(--molla-medio), background .18s ease; }
 .pl-rail { transition: transform var(--t-pieno) var(--molla-pieno); }
-.pl-eroe.pl-mosso { animation: pl-eroe-entra var(--t-pieno) var(--molla-pieno) both; }
 
 .btn:not(.secondario):not(.testo), .pl-tile { position: relative; overflow: hidden; }
 .btn:not(.secondario):not(.testo)::after, .pl-tile::after {

@@ -172,8 +172,19 @@
   }
 
   var COMANDO = 'a, button, input, select, textarea, [role="button"]';
+  var PASSO_PARTI = 45;
+
+  function dichiarate(el) {
+    var sel = el.getAttribute && el.getAttribute('data-dg-parti');
+    if (!sel) return null;
+    return [].slice.call(el.querySelectorAll(sel))
+      .filter(function (c) { return siVede(c) && aSchermo(c); })
+      .map(function (c) { return [c, !contornato(c)]; });
+  }
 
   function parti(el) {
+    var d = dichiarate(el);
+    if (d) return d;
     if (contornato(el)) return [[el, false]];
     var dentro = [];
     (function giu(e) {
@@ -519,8 +530,9 @@
     if (!aSchermo(el)) { attendi(el); return; }
     lascia(el);
     var da = o.da === undefined ? turno() : o.da;
-    parti(el).forEach(function (x) {
-      chiedi(x[0], { da: da, veloce: o.veloce, retino: x[1] });
+    var passo = el.hasAttribute('data-dg-parti') ? PASSO_PARTI : 0;
+    parti(el).forEach(function (x, i) {
+      chiedi(x[0], { da: da + i * passo, veloce: o.veloce, retino: x[1] });
     });
   }
 

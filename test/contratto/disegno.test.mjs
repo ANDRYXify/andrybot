@@ -556,3 +556,25 @@ test('si disfa solo chi si vedeva prima del giro', () => {
   assert.match(NUCLEO, /mostrati\.forEach\(function \(el\) \{ if \(el\.hasAttribute\('hidden'\)\) return; lascia\(el\); compare\(el\); \}\);/,
     'chi ricompare prima di essersi disfatto torna subito toccabile');
 });
+
+// La plancia e' una scena a tutto schermo fatta di tasti: le tessere. Le parti
+// che si disegnano le trova il disegno da se' saltando i tasti (in una scheda un
+// tasto non e' una vignetta), quindi la plancia gliele DICHIARA. Prima entrava
+// sfumando e l'eroe scivolava: a opacita' zero il disegno non vedeva niente, e
+// restava un'animazione qualunque.
+test('la plancia dichiara le sue parti, e si disegna invece di sfumare', () => {
+  const PL = leggi('src/web/public/plancia.js');
+  const parti = corpoDi(NUCLEO, 'parti');
+  assert.match(parti, /var d = dichiarate\(el\);\n    if \(d\) return d;/, 'chi dichiara le parti le da\' lui');
+  const dich = corpoDi(NUCLEO, 'dichiarate');
+  assert.match(dich, /getAttribute\('data-dg-parti'\)/);
+  assert.match(dich, /filter\(function \(c\) \{ return siVede\(c\) && aSchermo\(c\); \}\)/, 'solo le parti che si vedono, a schermo');
+  assert.match(corpoDi(NUCLEO, 'compare'), /hasAttribute\('data-dg-parti'\) \? PASSO_PARTI : 0/, 'una dopo l\'altra, nell\'ordine in cui sono scritte');
+  assert.match(PL, /overlay\.setAttribute\('data-dg-parti', '\.pl-suono, \.pl-esci, \.pl-eroe-grp, \.pl-tile, \.pl-cop > span'\);/);
+  const overlay = ANIME.slice(ANIME.indexOf('#plancia-overlay {'), ANIME.indexOf('}', ANIME.indexOf('#plancia-overlay {')));
+  assert.doesNotMatch(overlay, /animation/, 'la plancia non sfuma: a opacita\' zero non si disegnerebbe niente');
+  assert.doesNotMatch(ANIME + PL, /pl-mosso|pl-eroe-entra/, 'e l\'eroe non scivola');
+  assert.match(ANIME, /\.pl-eroe\.entra \.pt-parola > i \{ animation: pl-parola-su /, 'il nome entra a parole, come ogni titolo');
+  assert.match(corpoDi(PL, 'aggiorna'), /if \(altroGruppo && !overlay\.hidden\) \{ try \{ window\.SB_DISEGNO\.compare\(grp, \{ veloce: true \}\); \} catch \(e\) \{\} \}/,
+    'cambiando gruppo l\'etichetta si ridisegna');
+});
