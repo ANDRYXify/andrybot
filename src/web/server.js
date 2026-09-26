@@ -3124,6 +3124,23 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     prova('comandi', () => comandiDb.list(login).length + modulesDb.list(login).length);
     prova('paginaPubblicata', () => linkPage.get(login)?.attiva === true);
     prova('settimanaVuota', () => !(settimana.settimanaDi(s?.settings)?.giorni || []).some((g) => g && !g.off && g.ora));
+    // Le funzioni mai usate, per gli inviti «Hai gia' provato...?». Ogni segno e'
+    // una cosa che nasce solo usandola (niente di quello che il primo accesso
+    // mette da se'), e una funzione fuori dal piano resta ignota: niente invito.
+    const provato = {};
+    const usato = (k, fn) => { try { const v = fn(); if (typeof v === 'boolean') provato[k] = v; } catch { /* resta ignoto */ } };
+    const riga = (sql, ...a) => !!db.prepare(sql).get(...a);
+    usato('grafiche', () => (s ? !!s.settings?.grafiche : undefined));
+    usato('effetti', () => (canaleHa(login, 'effetti') ? effectsDb.count(login) > 0 : undefined));
+    usato('muro', () => (s ? s.settings?.overlayMuro !== undefined : undefined));
+    usato('consolify', () => (s ? (s.settings?.plancia?.pagine || []).some((pg) => (pg?.tasti || []).some((t) => t && t.vuoto !== true)) : undefined));
+    usato('discord', () => !!s?.settings?.discord || riga("SELECT 1 FROM discord_ruoli WHERE channel=? AND guild<>''", login) || riga('SELECT 1 FROM discord_dest WHERE channel=?', login));
+    usato('telegram', () => (canaleHa(login, 'notifiche') ? riga("SELECT 1 FROM telegram WHERE channel=? AND token<>''", login) : undefined));
+    usato('donazioni', () => paginaDona.get(login) !== null);
+    usato('giochi', () => (canaleHa(login, 'giochi') ? giochiDb.count(login) > 0 : undefined));
+    usato('conoscenza', () => riga("SELECT 1 FROM knowledge WHERE channel=? AND fonte='manuale'", login));
+    usato('emote', () => (piattaformaDi(login) === 'twitch' ? seventv.collegato(login) : undefined));
+    f.provato = provato;
     return f;
   };
   // Gli avvisi di questa persona: solo il proprietario ne ha (la regola sta
@@ -3131,8 +3148,10 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   const avvisiDi = (req, user) => {
     try {
       const s = streamers.get(user.login);
-      return cosaManca.avvisiAperti({ proprietario: isOwner(req) && s?.status === 'approved', spenti: s?.settings?.avvisiSpenti === true,
-        fatti: fattiDelCanale(user.login), risposte: s?.settings?.avvisi });
+      const proprietario = isOwner(req) && s?.status === 'approved';
+      if (!proprietario) return [];
+      return cosaManca.avvisiAperti({ proprietario, spenti: s?.settings?.avvisiSpenti === true,
+        fatti: fattiDelCanale(user.login), risposte: s?.settings?.avvisi, dal: s?.approved_at, provaUltima: s?.settings?.provaUltima });
     } catch { return []; }
   };
 
@@ -6780,6 +6799,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       const r = cosaManca.rispondi(out.avvisi, String(b.id), String(b.come || ''));
       if (!r) return res.status(400).json({ errore: 'risposta sconosciuta' });
       out.avvisi = r;
+      if (cosaManca.eProva(String(b.id))) out.provaUltima = Date.now();
     }
     streamers.setSettings(user.login, out);
     res.json({ ok: true, avvisi: avvisiDi(req, user), avvisiSpenti: out.avvisiSpenti === true });

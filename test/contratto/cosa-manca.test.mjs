@@ -13,7 +13,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { AVVISI } from '../../src/features/cosa-manca.js';
+import { AVVISI, PROVE } from '../../src/features/cosa-manca.js';
 
 const leggi = (f) => readFileSync(new URL('../../' + f, import.meta.url), 'utf8');
 const SRV = leggi('src/web/server.js');
@@ -21,8 +21,9 @@ const APP = leggi('src/web/public/app.js');
 const rotta = (inizio, n = 1500) => { const i = SRV.indexOf(inizio); assert.ok(i > 0, `c'e': ${inizio}`); return SRV.slice(i, i + n); };
 
 test('la lista la riceve solo il proprietario', () => {
-  const di = rotta('const avvisiDi = (req, user) =>', 500);
-  assert.match(di, /proprietario: isOwner\(req\) && s\?\.status === 'approved'/);
+  const di = rotta('const avvisiDi = (req, user) =>', 600);
+  assert.match(di, /const proprietario = isOwner\(req\) && s\?\.status === 'approved';\n      if \(!proprietario\) return \[\];/);
+  assert.ok(di.indexOf('if (!proprietario) return [];') < di.indexOf('fattiDelCanale('), 'e i fatti del canale si guardano solo per lui');
   assert.match(rotta("app.get('/api/me'", 7000), /avvisi: avvisiDi\(req, user\),/);
   assert.match(SRV, /const isOwner = \(req\) => \{ const u = currentUser\(req\); return !!u && u\.role !== 'moderatore'; \};/,
     'e proprietario vuol dire non entrato da moderatore');
@@ -40,7 +41,7 @@ test('le risposte e l\'interruttore passano solo dal proprietario, e restano sul
 });
 
 test('il pannello e il server conoscono gli stessi avvisi, e portano alle stesse schede', () => {
-  const testi = APP.slice(APP.indexOf('const AVVISI_MANCA = {'), APP.indexOf('const AVVISI_SCHEDA = '));
+  const testi = APP.slice(APP.indexOf('const AVVISI_MANCA = {'), APP.indexOf('const AVVISI_PROVA = {'));
   const chiavi = [...testi.matchAll(/^  '?([a-z-]+)'?: \(\) => \(\{/gm)].map((m) => m[1]);
   assert.deepEqual(chiavi, AVVISI.map((a) => a.id), 'ogni avviso ha le sue parole, e nessuna parola resta senza avviso');
   const schede = Function(`return ${APP.match(/const AVVISI_SCHEDA = (\{[^}]+\});/)[1]}`)();
@@ -53,10 +54,11 @@ test('uno per volta, e mai sopra un\'altra cosa', () => {
   const m = APP.slice(APP.indexOf('function mostraAvvisoManca('), APP.indexOf('const RECENSIONE_DOPO_MS'));
   assert.match(m, /if \(occupatoPerInvito\(\)\) \{ _mancaOrologio = setTimeout\(mostraAvvisoManca, MANCA_RIPROVA_MS\); return; \}/);
   assert.match(m, /_mancaFatto = true;/, 'uno per visita');
-  assert.match(m, /AVVISI_SCHEDA\[x\] !== schedaAttiva/, 'e non sulla scheda dove sei gia\'');
+  assert.match(m, /schedaAvviso\(x\) !== schedaAttiva/, 'e non sulla scheda dove sei gia\'');
   assert.match(APP, /dialog\[open\], \.bv-velo, \.giro-velo, \.aiuto-banner, \.rec-invito, \.manca-avviso, #cerca-overlay\.aperto/,
     'e l\'invito alle recensioni aspetta lui, come lui aspetta l\'invito');
-  assert.match(m, /if \(come === 'vai'\) \{ via\('domani'\); vaiAScheda\(AVVISI_SCHEDA\[id\]\); return; \}/, '«Fammi vedere» porta li\' e lo rimanda a domani');
+  assert.match(m, /if \(come === 'vai'\) \{ via\(prova \? 'mai' : 'domani'\); vaiAScheda\(schedaAvviso\(id\)\); return; \}/,
+    '«Fammi vedere» porta li\': un avviso torna domani se manca ancora, un invito e\' fatto');
   const dg = leggi('src/web/public/disegno.js');
   assert.match(dg, /el\.classList\.contains\('manca-avviso'\)/, 'e se ne va disfacendosi, come l\'invito');
 });
@@ -65,4 +67,27 @@ test('l\'overlay si ricorda la prima volta che si apre', () => {
   const r = rotta("app.get('/overlay/:login/stream'", 1200);
   assert.ok(r.indexOf('if (!chiaveOk(req)) return notFound(res);') < r.indexOf('overlayVisto'), 'solo con la chiave giusta');
   assert.match(r, /if \(suo && !suo\.settings\?\.overlayVisto\) streamers\.setSettings\(login, \{ \.\.\.\(suo\.settings \|\| \{\}\), overlayVisto: Date\.now\(\) \}\);/, 'e una volta sola');
+});
+
+test('gli inviti: il pannello ha le parole di ognuno, nelle tre lingue, e porta alla scheda giusta', () => {
+  const testi = APP.slice(APP.indexOf('const AVVISI_PROVA = {'), APP.indexOf('const AVVISI_SCHEDA = '));
+  const chiavi = [...testi.matchAll(/^  ([a-z]+): \(\) => \(\{/gm)].map((m) => m[1]);
+  assert.deepEqual(chiavi, PROVE.map((p) => p.id));
+  const schede = Function(`return ${APP.match(/const PROVE_SCHEDA = (\{[^}]+\});/)[1]}`)();
+  assert.deepEqual(schede, Object.fromEntries(PROVE.map((p) => [p.id, p.scheda])));
+  for (const s of new Set(Object.values(schede))) assert.ok(APP.includes(`pannello('${s}'`), `la scheda ${s} esiste`);
+  for (const id of chiavi) assert.match(testi, new RegExp(`${id}: \\(\\) => \\(\\{\\n    titolo: L\\('[^']+\\?', '[^']+\\?', '¿[^']+\\?'\\),\\n    testo: L\\('[^']+', '[^']+', '[^']+'\\),`), `${id}: una domanda, nelle tre lingue`);
+});
+
+test('gli inviti: un segno d\'uso per ognuno, ignoto se il piano non lo comprende', () => {
+  const f = rotta('const fattiDelCanale = (login) =>', 4000);
+  for (const p of PROVE) assert.match(f, new RegExp(`usato\\('${p.id}', \\(\\) => `), `${p.id}: il server sa se e' stato usato`);
+  assert.match(f, /usato\('effetti', \(\) => \(canaleHa\(login, 'effetti'\) \? /);
+  assert.match(f, /usato\('telegram', \(\) => \(canaleHa\(login, 'notifiche'\) \? /);
+  assert.match(f, /usato\('giochi', \(\) => \(canaleHa\(login, 'giochi'\) \? /);
+  assert.match(f, /usato\('emote', \(\) => \(piattaformaDi\(login\) === 'twitch' \? /, '7TV solo su Twitch');
+  assert.match(f, /if \(typeof v === 'boolean'\) provato\[k\] = v;/, 'solo un si\' o un no: il resto resta ignoto');
+  const r = rotta("app.post('/api/streamer/avvisi'", 900);
+  assert.match(r, /if \(cosaManca\.eProva\(String\(b\.id\)\)\) out\.provaUltima = Date\.now\(\);/, 'la pausa fra un invito e l\'altro parte dalla risposta');
+  assert.match(rotta('const avvisiDi = (req, user) =>', 600), /dal: s\?\.approved_at, provaUltima: s\?\.settings\?\.provaUltima/);
 });

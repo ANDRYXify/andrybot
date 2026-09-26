@@ -407,7 +407,51 @@ const AVVISI_MANCA = {
     testo: L('Scrivi quando vai in onda: da lì prendono tutto la grafica della settimana, i calendari e gli avvisi.', 'Write when you go live: the week graphic, the calendars and the notifications all take it from there.', 'Escribe cuándo sales en directo: de ahí lo toman todo la gráfica de la semana, los calendarios y los avisos.'),
   }),
 };
+const AVVISI_PROVA = {
+  grafiche: () => ({
+    titolo: L('Hai già provato le Grafiche social?', 'Have you tried Social graphics yet?', '¿Ya has probado las Gráficas sociales?'),
+    testo: L('La locandina della diretta e la storia per Instagram, pronte coi tuoi colori e il tuo nome. In due minuti hai qualcosa da postare.', 'Your stream poster and your Instagram story, ready in your colours and with your name. Two minutes and you have something to post.', 'El cartel del directo y la historia de Instagram, listos con tus colores y tu nombre. En dos minutos tienes algo que publicar.'),
+  }),
+  effetti: () => ({
+    titolo: L('Hai già provato gli Effetti?', 'Have you tried Effects yet?', '¿Ya has probado los Efectos?'),
+    testo: L('Suoni, GIF e video che partono sulla tua diretta quando la chat li chiama. Puoi farli tuoi o partire da quelli della libreria.', 'Sounds, GIFs and videos that play on your stream when chat calls them. Make your own or start from the ones in the library.', 'Sonidos, GIF y vídeos que salen en tu directo cuando el chat los llama. Puedes hacer los tuyos o empezar por los de la biblioteca.'),
+  }),
+  muro: () => ({
+    titolo: L('Hai mai visto il muro delle emote?', 'Have you seen the emote wall?', '¿Has visto el muro de emotes?'),
+    testo: L('Le emote che scrive la chat volano sulla tua scena. Scegli tu quante, quanto grandi e come si muovono, e quando arriva un raid esplodono in fuochi d’artificio.', 'The emotes chat types fly across your scene. You choose how many, how big and how they move, and when a raid lands they burst into fireworks.', 'Los emotes que escribe el chat vuelan por tu escena. Tú eliges cuántos, de qué tamaño y cómo se mueven, y cuando llega una raid estallan en fuegos artificiales.'),
+  }),
+  consolify: () => ({
+    titolo: L('Hai già provato CONSOLify?', 'Have you tried CONSOLify yet?', '¿Ya has probado CONSOLify?'),
+    testo: L('Metti su un tasto quello che fai spesso in diretta e lo premi dal telefono, dal tablet o da una tastiera vera, senza cercarlo nel pannello.', 'Put what you often do on stream on a key and press it from your phone, your tablet or a real key pad, without hunting for it in the panel.', 'Pon en una tecla lo que haces a menudo en directo y púlsala desde el móvil, la tablet o un teclado de verdad, sin buscarlo en el panel.'),
+  }),
+  discord: () => ({
+    titolo: L('Hai un server Discord?', 'Do you have a Discord server?', '¿Tienes un servidor de Discord?'),
+    testo: L('Il bot può annunciare lì le tue dirette e dare i ruoli da solo: a chi ti segue, a chi è abbonato, a chi c’è sempre.', 'The bot can announce your streams there and hand out roles by itself: to your followers, your subscribers, the ones who are always around.', 'El bot puede anunciar allí tus directos y dar los roles solo: a quien te sigue, a quien está suscrito, a quien siempre está.'),
+  }),
+  telegram: () => ({
+    titolo: L('Hai un gruppo Telegram?', 'Do you have a Telegram group?', '¿Tienes un grupo de Telegram?'),
+    testo: L('Il bot ci entra con te: annuncia le dirette, fa gli auguri di compleanno e a fine serata ti scrive in privato com’è andata.', 'The bot joins it with you: it announces your streams, wishes happy birthday and at the end of the night tells you privately how it went.', 'El bot entra contigo: anuncia los directos, felicita los cumpleaños y al final de la noche te cuenta en privado cómo ha ido.'),
+  }),
+  donazioni: () => ({
+    titolo: L('Hai già una pagina per le donazioni?', 'Do you have a donation page yet?', '¿Ya tienes una página de donaciones?'),
+    testo: L('Le donazioni arrivano sul tuo conto, e l’avviso in diretta e il grazie in chat partono da soli. La pagina si fa come la pagina link.', 'Donations land in your own account, and the on-stream alert and the thanks in chat fire by themselves. The page is built just like your link page.', 'Las donaciones llegan a tu cuenta, y el aviso en directo y el gracias en el chat salen solos. La página se hace igual que la página de enlaces.'),
+  }),
+  giochi: () => ({
+    titolo: L('Hai già fatto un gioco tuo?', 'Have you made a game of your own yet?', '¿Ya has hecho un juego tuyo?'),
+    testo: L('Oltre ai giochi pronti ne puoi fare di tuoi: un quiz con le tue domande, un rebus, un impiccato con le parole che scegli tu.', 'Besides the ready-made games you can make your own: a quiz with your questions, a rebus, hangman with the words you pick.', 'Además de los juegos listos puedes hacer los tuyos: un quiz con tus preguntas, un jeroglífico, un ahorcado con las palabras que elijas.'),
+  }),
+  conoscenza: () => ({
+    titolo: L('Il bot sa già chi sei?', 'Does the bot know who you are yet?', '¿El bot ya sabe quién eres?'),
+    testo: L('Scrivi in Conoscenza le cose che la chat ti chiede sempre, come il setup o da dove vieni, e il bot risponde al posto tuo.', 'Write down in Knowledge the things chat always asks you, like your setup or where you are from, and the bot answers for you.', 'Escribe en Conocimiento lo que el chat siempre te pregunta, como tu setup o de dónde eres, y el bot responde por ti.'),
+  }),
+  emote: () => ({
+    titolo: L('Usi le emote 7TV?', 'Do you use 7TV emotes?', '¿Usas emotes de 7TV?'),
+    testo: L('Da qui le aggiungi, le togli e le rinomini per il tuo canale, senza aprire 7TV.', 'From here you add, remove and rename them for your channel, without opening 7TV.', 'Desde aquí las añades, las quitas y las renombras para tu canal, sin abrir 7TV.'),
+  }),
+};
 const AVVISI_SCHEDA = { permessi: 'stato', 'bot-spento': 'stato', musica: 'musica', overlay: 'alert', comandi: 'moduli', pagina: 'pagina', settimana: 'settimana' };
+const PROVE_SCHEDA = { grafiche: 'grafiche', effetti: 'effetti', muro: 'alert', consolify: 'consolify', discord: 'ruoli', telegram: 'telegram', donazioni: 'donazioni', giochi: 'giochi', conoscenza: 'conoscenza', emote: 'emote' };
+const schedaAvviso = (x) => AVVISI_SCHEDA[x] || PROVE_SCHEDA[x];
 const MANCA_DOPO_MS = 12000;
 const MANCA_RIPROVA_MS = 10000;
 let _mancaOrologio = 0;
@@ -421,11 +465,12 @@ function avvisoCosaManca() {
 
 function mostraAvvisoManca() {
   if (_mancaFatto) return;
-  const id = (stato?.avvisi || []).find((x) => AVVISI_MANCA[x] && AVVISI_SCHEDA[x] !== schedaAttiva && schedaValida(AVVISI_SCHEDA[x]) && !schedaBloccata(AVVISI_SCHEDA[x]));
+  const id = (stato?.avvisi || []).find((x) => (AVVISI_MANCA[x] || AVVISI_PROVA[x]) && schedaAvviso(x) !== schedaAttiva && schedaValida(schedaAvviso(x)) && !schedaBloccata(schedaAvviso(x)));
   if (!id) return;
   if (occupatoPerInvito()) { _mancaOrologio = setTimeout(mostraAvvisoManca, MANCA_RIPROVA_MS); return; }
   _mancaFatto = true;
-  const v = AVVISI_MANCA[id]();
+  const prova = !AVVISI_MANCA[id];
+  const v = (prova ? AVVISI_PROVA : AVVISI_MANCA)[id]();
   const el = document.createElement('section');
   el.className = 'manca-avviso';
   el.dataset.avviso = id;
@@ -434,9 +479,11 @@ function mostraAvvisoManca() {
     <p>${esc(v.testo)}</p>
     <div class="manca-azioni">
       <button type="button" class="btn mini" data-manca="vai">${L('Fammi vedere', 'Show me', 'Enséñamelo')}</button>
-      <button type="button" class="btn secondario mini" data-manca="domani">${L('Domani', 'Tomorrow', 'Mañana')}</button>
+      ${prova ? `<button type="button" class="btn secondario mini" data-manca="settimana">${L('Più avanti', 'Later', 'Más adelante')}</button>
+      <button type="button" class="btn testo mini" data-manca="mai">${L('Non mi interessa', 'Not interested', 'No me interesa')}</button>`
+    : `<button type="button" class="btn secondario mini" data-manca="domani">${L('Domani', 'Tomorrow', 'Mañana')}</button>
       <button type="button" class="btn secondario mini" data-manca="settimana">${L('Fra una settimana', 'In a week', 'En una semana')}</button>
-      <button type="button" class="btn testo mini" data-manca="mai">${L('Non mostrarlo più', 'Do not show it again', 'No mostrarlo más')}</button>
+      <button type="button" class="btn testo mini" data-manca="mai">${L('Non mostrarlo più', 'Do not show it again', 'No mostrarlo más')}</button>`}
     </div>`;
   document.body.appendChild(el);
   const via = (come) => {
@@ -446,13 +493,13 @@ function mostraAvvisoManca() {
     el.classList.add('esce');
     setTimeout(() => el.remove(), _duraUscita() + 20);
   };
-  const esc_ = (ev) => { if (ev.key === 'Escape' && el.contains(document.activeElement)) via('domani'); };
+  const esc_ = (ev) => { if (ev.key === 'Escape' && el.contains(document.activeElement)) via(prova ? 'settimana' : 'domani'); };
   document.addEventListener('keydown', esc_);
   el.addEventListener('click', (ev) => {
     const b = ev.target.closest('[data-manca]');
     if (!b) return;
     const come = b.dataset.manca;
-    if (come === 'vai') { via('domani'); vaiAScheda(AVVISI_SCHEDA[id]); return; }
+    if (come === 'vai') { via(prova ? 'mai' : 'domani'); vaiAScheda(schedaAvviso(id)); return; }
     via(come);
   });
 }
@@ -7123,8 +7170,8 @@ function pannelloAccount() {
       <div id="recensione-box">${attesaHtml()}</div>
     </div>` : ''}
     ${proprietario ? `<div class="carta">
-      <h2>${_hIco(ICO.megafono)}${L('Avvisi su cosa manca', 'Notes on what is missing', 'Avisos sobre lo que falta')}</h2>
-      <p>${L('Ogni tanto, in basso a destra, un piccolo avviso ti dice cosa manca al canale per usare quello che hai: un permesso, Spotify, la pagina link. Uno per volta, e puoi rimandarlo o toglierlo.', 'Now and then, bottom right, a small note tells you what your channel is missing to use what you have: a permission, Spotify, the link page. One at a time, and you can put it off or remove it.', 'De vez en cuando, abajo a la derecha, un pequeño aviso te dice qué le falta a tu canal para usar lo que tienes: un permiso, Spotify, la página de enlaces. Uno cada vez, y puedes aplazarlo o quitarlo.')}</p>
+      <h2>${_hIco(ICO.megafono)}${L('Avvisi e cose da provare', 'Notes and things to try', 'Avisos y cosas por probar')}</h2>
+      <p>${L('Ogni tanto, in basso a destra, un piccolo avviso ti dice cosa manca al canale per usare quello che hai: un permesso, Spotify, la pagina link. Quando non manca niente, ogni qualche giorno ti fa scoprire una cosa che non hai ancora provato. Uno per volta, e puoi rimandarlo o toglierlo.', 'Now and then, bottom right, a small note tells you what your channel is missing to use what you have: a permission, Spotify, the link page. When nothing is missing, every few days it shows you something you have not tried yet. One at a time, and you can put it off or remove it.', 'De vez en cuando, abajo a la derecha, un pequeño aviso te dice qué le falta a tu canal para usar lo que tienes: un permiso, Spotify, la página de enlaces. Cuando no falta nada, cada pocos días te enseña algo que todavía no has probado. Uno cada vez, y puedes aplazarlo o quitarlo.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="chk-avvisi-manca" ${stato.avvisiSpenti ? '' : 'checked'}><span class="levetta"></span></label>
         <span class="etichetta-stato">${L('Mostrameli', 'Show them to me', 'Muéstramelos')}</span>

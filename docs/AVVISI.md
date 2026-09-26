@@ -44,7 +44,33 @@ sparisce comunque). «Domani», «Fra una settimana», «Non mostrarlo più». E
 basta vale domani. Le risposte restano nel server, non nel browser: una scelta
 tenuta nel browser torna a galla sul telefono.
 
-In Account c'è l'interruttore per spegnerli tutti.
+In Account c'è l'interruttore per spegnerli tutti, inviti compresi.
+
+## «Hai già provato…?»
+
+Quando al canale non manca niente, gli avvisi lasciano il posto agli inviti: una
+funzione che il canale non ha mai usato, detta con una domanda («Hai un gruppo
+Telegram?», «Hai mai visto il muro delle emote?») e due righe su cosa fa.
+
+- **Un invito è un fatto, non un'ipotesi.** Il server guarda un segno che nasce
+  solo usando la funzione (un effetto creato, un tasto di CONSOLify riempito, il
+  muro configurato, un server Discord o un gruppo Telegram collegati, una voce
+  scritta a mano in Conoscenza). Niente di quello che il primo accesso mette da
+  sé conta come uso. Il segno è sì, no o ignoto, e solo il no accende l'invito.
+- **Solo quello che il piano comprende.** Una funzione fuori dal piano resta
+  ignota: un invito a una cosa che non si può aprire sarebbe una vendita. 7TV
+  solo per i canali Twitch.
+- **Dopo gli avvisi, e con più garbo.** Un invito compare solo se non c'è niente
+  che manca, dopo la prima settimana del canale (i primi giorni sono per
+  metterlo in piedi), e non prima di tre giorni dall'ultima risposta a un invito.
+- **Una volta sola.** «Fammi vedere» porta alla scheda e lo chiude, «Non mi
+  interessa» lo chiude, «Più avanti» (o Esc) lo rimanda di una settimana.
+- I fatti del canale si guardano solo per il proprietario: per un moderatore
+  `avvisiDi` torna vuoto prima di leggere qualunque cosa.
+
+Il catalogo è `PROVE` in `src/features/cosa-manca.js`, le parole sono in
+`AVVISI_PROVA` nel pannello, e `test/contratto/cosa-manca.test.mjs` fissa che
+siano gli stessi, nelle tre lingue, con un segno d'uso per ognuno.
 
 ## L'overlay
 
