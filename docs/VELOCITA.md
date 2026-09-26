@@ -324,3 +324,19 @@ Cosa ha dato, misurato:
 Il tempo del thread non si muove: dipende da quanti elementi ha la vetrina e da
 come sono disegnati, non da quanto pesa il foglio. Quello che cambia è quanto si
 scarica prima di poter disegnare: su una 4G lenta sono circa 0,12 s.
+
+### Le due voci di «Strumenti»
+
+Il 26 settembre 2026 le due voci nuove in vetrina (il QR su misura, le emote
+alle misure di Twitch) hanno portato la home da 59,7 a 60,0 kB, sul tetto. Non
+era rientrato niente dalla finestra: era contenuto nuovo. Si è pagato col
+contenuto stesso, senza alzare il tetto:
+
+- il modello di ogni funzione non porta più a capo e rientri fra un tag e
+  l'altro. Stanno dentro contenitori flex, dove non si vedono, e le funzioni
+  sono 64. Lo spazio prima del numero delle funzioni dell'area resta, perché
+  quello si vede;
+- le due descrizioni nuove sono più corte, e dicono la stessa cosa.
+
+La home è tornata a 59,9 kB. L'aria sotto il tetto adesso è un decimo di kB:
+la prossima voce della vetrina dovrà trovarsi il posto da sola.

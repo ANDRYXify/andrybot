@@ -205,8 +205,8 @@ const CAPACITA = [
     { scheda: 'donazioni', pacc: 'free', t: ['Donazioni sul tuo conto', 'Donations on your own account', 'Donaciones en tu propia cuenta'], d: ['Colleghi Stripe, Satispay o la tua pagina Ko-fi, tuoi e gestiti da te, e chi ti segue dona dalla tua pagina link o da una pagina tutta per le donazioni, con le offerte che accendono i tuoi effetti: i soldi arrivano a te, l\'avviso parte in overlay e in chat, e un obiettivo sale anche sulla pagina. Da una cifra in su chi dona può allegare un\'immagine o una GIF che va in onda come un effetto: la vedi prima tu e la mandi con un tasto, o la lasci partire da sola. Se preferisci PayPal o un altro servizio, il tasto porta lì.', 'Connect Stripe, Satispay or your Ko-fi page, yours and run by you, and people donate from your link page or from a page just for donations, with offers that fire your effects: the money goes to you, the alert fires in the overlay and in chat, and a goal grows on the page too. From an amount upwards, donors can attach an image or a GIF that goes on air as an effect: you see it first and send it with a button, or let it start on its own. If you prefer PayPal or another service, the button goes there.', 'Conectas Stripe, Satispay o tu página de Ko-fi, tuyos y gestionados por ti, y quien te sigue dona desde tu página de enlaces o desde una página solo para donaciones, con ofertas que encienden tus efectos: el dinero te llega a ti, el aviso sale en el overlay y en el chat, y un objetivo sube también en la página. A partir de un importe, quien dona puede adjuntar una imagen o un GIF que sale en directo como un efecto: la ves antes tú y la envías con un botón, o dejas que salga sola. Si prefieres PayPal u otro servicio, el botón lleva allí.'] },
   ] },
   { ico: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>', area: ['Strumenti', 'Tools', 'Herramientas'], voci: [
-    { scheda: 'qr', pacc: 'free', t: ['QR su misura, che si legge davvero', 'Custom QR codes that really scan', 'QR a medida que se leen de verdad'], d: ['Forme, colori, il tuo logo al centro e una scritta sotto. Prima di scaricarlo lo rileggiamo: se non si legge ti diciamo perché, e lo stesso QR finisce nelle tue Grafiche social.', 'Shapes, colors, your logo in the middle and a line underneath. Before you download it we read it back: if it does not scan we tell you why, and the same QR goes into your social graphics.', 'Formas, colores, tu logo en el centro y un texto debajo. Antes de descargarlo lo releemos: si no se lee te decimos por qué, y el mismo QR acaba en tus gráficas sociales.'] },
-    { scheda: 'misure', pacc: 'free', t: ['Emote e badge alle misure di Twitch', 'Emotes and badges at Twitch sizes', 'Emotes y badges a los tamaños de Twitch'], d: ['Da un’immagine sola escono le tre misure, rimpicciolite senza sporcare i bordi. Le vedi nella chat chiara e in quella scura, e sai subito se una pesa più di quanto Twitch accetta.', 'One image gives you all three sizes, shrunk without muddy edges. You see them in the light chat and the dark one, and you know right away if one weighs more than Twitch accepts.', 'De una sola imagen salen los tres tamaños, reducidos sin ensuciar los bordes. Los ves en el chat claro y en el oscuro, y sabes enseguida si alguno pesa más de lo que Twitch acepta.'] },
+    { scheda: 'qr', pacc: 'free', t: ['QR su misura, che si legge davvero', 'Custom QR codes that really scan', 'QR a medida que se leen de verdad'], d: ['Forme, colori e il tuo logo al centro. Lo rileggiamo prima che tu lo scarichi, e va anche nelle tue Grafiche social.', 'Shapes, colors and your logo in the middle. We read it back before you download it, and it goes into your social graphics too.', 'Formas, colores y tu logo en el centro. Lo releemos antes de que lo descargues, y va también en tus gráficas sociales.'] },
+    { scheda: 'misure', pacc: 'free', t: ['Emote e badge alle misure di Twitch', 'Emotes and badges at Twitch sizes', 'Emotes y badges a los tamaños de Twitch'], d: ['Da un’immagine sola le tre misure, rimpicciolite senza sporcare i bordi, con l’anteprima nella chat chiara e scura.', 'One image, all three sizes, shrunk without muddy edges, with a preview in the light and dark chat.', 'De una sola imagen los tres tamaños, reducidos sin ensuciar los bordes, con la vista previa en el chat claro y oscuro.'] },
   ] },
 ];
 
@@ -219,17 +219,10 @@ function capacitaHtml(L) {
   const aree = CAPACITA.map((g, i) => {
     const righe = g.voci.map((v) => {
       const e = etichetta(v.pacc);
-      return `<li class="cap-voce">
-        <div class="cap-testo"><strong>${esc(L(v.t[0], v.t[1], v.t[2]))}</strong>
-          <span>${esc(L(v.d[0], v.d[1], v.d[2]))}</span></div>
-        <span class="cap-pacc ${e.cls}">${esc(e.testo)}</span>
-      </li>`;
+      return `<li class="cap-voce"><div class="cap-testo"><strong>${esc(L(v.t[0], v.t[1], v.t[2]))}</strong><span>${esc(L(v.d[0], v.d[1], v.d[2]))}</span></div><span class="cap-pacc ${e.cls}">${esc(e.testo)}</span></li>`;
     }).join('');
     const ico = g.ico ? `<span class="cap-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${g.ico}</svg></span>` : '';
-    return `<details class="cap-area"${i === 0 ? ' open' : ''}>
-      <summary>${ico}${esc(L(g.area[0], g.area[1], g.area[2]))} <span class="cap-quante">${g.voci.length}</span></summary>
-      <ul class="cap-elenco">${righe}</ul>
-    </details>`;
+    return `<details class="cap-area"${i === 0 ? ' open' : ''}><summary>${ico}${esc(L(g.area[0], g.area[1], g.area[2]))} <span class="cap-quante">${g.voci.length}</span></summary><ul class="cap-elenco">${righe}</ul></details>`;
   }).join('');
   const nFree = CAPACITA.reduce((n, g) => n + g.voci.filter((v) => v.pacc === 'free').length, 0);
   const nTot = CAPACITA.reduce((n, g) => n + g.voci.length, 0);
