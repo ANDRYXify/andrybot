@@ -94,6 +94,21 @@ perde, se ne fa un'altra — non si può ripescare, e questo è il punto.
 Il backup è la stessa busta applicata al file intero, con la sua chiave. Un
 backup senza il segreto del server è rumore.
 
+### Il database non si serve mai
+
+Il criterio vale anche prima del furto: il database non deve poter uscire da
+una porta aperta. La cartella che il sito serve a chiunque è
+`src/web/public`, e la cartella dei dati di default si calcola da dove si
+parte (`./data`). Uno script lanciato da dentro la cartella pubblica ha fatto
+nascere lì `data/andrybot.db`, che il server avrebbe dato a chi chiedeva
+`/data/andrybot.db`. Due chiusure, provate in
+`test/unita/dati-fuori-dal-pubblico.test.mjs`:
+
+- `config.js` rifiuta di partire con i dati dentro la cartella pubblica, prima
+  di creare qualunque cosa (`dentroIlPubblico`);
+- il server risponde 404 a qualunque file di database (`.db`, `.sqlite`, con
+  `-wal`, `-shm`, `-journal`), ovunque sia finito.
+
 ## Il cancello
 
 `node scripts/verifica-segreti.mjs` legge lo schema del database e pretende che

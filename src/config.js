@@ -8,7 +8,8 @@
 // web/gate.js) e il segreto dei cookie si auto-genera al primo
 // avvio. Nel .env restano solo le credenziali dell'app Twitch.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { resolve, join } from 'node:path';
+import { resolve, join, dirname, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
 
 // mini-parser .env (niente dipendenze): KEY=valore, # commenti
@@ -44,7 +45,20 @@ export function formaStorta(nome, valore, forma, tipo) {
   return [{ nome, tipo }];
 }
 
+// I dati non stanno MAI dentro la cartella che il sito serve a chiunque: li'
+// il database si scaricherebbe con un indirizzo. Il posto di default si
+// calcola dalla cartella da cui si parte, e partendo da quella pubblica (e'
+// successo, con uno script lanciato da li') la cartella dati nasceva dentro.
+// Qui si rifiuta prima di creare qualunque cosa.
+export const CARTELLA_PUBBLICA = resolve(dirname(fileURLToPath(import.meta.url)), 'web', 'public');
+export function dentroIlPubblico(cartella) {
+  const c = resolve(cartella);
+  return c === CARTELLA_PUBBLICA || c.startsWith(CARTELLA_PUBBLICA + sep);
+}
 const dataDir = resolve(process.cwd(), env('DATA_DIR', './data'));
+if (dentroIlPubblico(dataDir)) {
+  throw new Error(`La cartella dei dati (${dataDir}) starebbe dentro quella pubblica del sito: imposta DATA_DIR o parti dalla radice del progetto.`);
+}
 mkdirSync(dataDir, { recursive: true });
 
 // Segreto di sessione: da .env se impostato, altrimenti generato al

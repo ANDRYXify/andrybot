@@ -118,6 +118,9 @@ export function montaStatici(app, publicDir, { minifica = null, impronte = null 
     next();
   });
 
+  // Un database non si serve mai, ovunque sia finito: ne' il file ne' il suo
+  // diario (-wal) ne' la memoria condivisa (-shm).
+  app.use((req, res, next) => (/\.(db|sqlite3?)(-wal|-shm|-journal)?$/i.test(req.path) ? res.status(404).end() : next()));
   if (minifica) app.use(minifica);
   app.use(express.static(publicDir, {
     setHeaders: (res) => { if (res.locals?.eterno) res.setHeader('Cache-Control', CACHE_ETERNA); },
