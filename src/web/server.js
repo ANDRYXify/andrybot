@@ -31,7 +31,7 @@ import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { canaleHa } from '../features/accesso.js';
 import * as cosaManca from '../features/cosa-manca.js';
 import { commands as comandiDb } from '../db.js';
-import { renderLinkPage, renderInformativa, accentoDi, aspettoDi } from '../features/linkpagina.js';
+import { renderLinkPage, renderInformativa, accentoDi, aspettoDi, coloriDi } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
 import { guscioVetrina, guscioPannello, META_VETRINA, VIA_LINGUA, indirizzoHome } from './vetrina-vista.js';
@@ -109,6 +109,7 @@ import * as campagne from '../features/campagne.js';
 import { paginaCampagna, titoloDi } from './campagna-vista.js';
 import { pngDi, alleggerisci } from './png-leggero.js';
 import { normStileQr } from '../features/qr-stile.js';
+import * as mediakit from '../features/mediakit.js';
 import * as promemoriaLicenza from '../features/licenza-promemoria.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
@@ -6442,6 +6443,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // lo stile del QR su misura (docs/STRUMENTI.md): lo riusano le Grafiche
     if (b.qr !== undefined) out.qr = normStileQr(b.qr);
     if (b.qrUsato === true && !out.qrUsato) out.qrUsato = Date.now();
+    // le scelte del media kit (docs/STRUMENTI.md): i numeri non passano di qui
+    if (b.kit !== undefined) out.kit = mediakit.normKit(b.kit);
     if (b.grafiche !== undefined) {
       const gr = b.grafiche || {};
       const str = (v, n) => String(v == null ? '' : v).slice(0, n);
@@ -6800,6 +6803,23 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       log.info(`posta confermata per #${r.channel}`);
     }
     res.redirect('/?posta=' + (r ? 'ok' : 'no') + (r ? '#dirette' : ''));
+  }));
+
+  // IL MEDIA KIT (docs/STRUMENTI.md): i numeri degli ultimi trenta giorni dai
+  // rapporti, i follower di adesso da Twitch, i social e i colori dalla pagina
+  // link, la settimana. Le scelte dello streamer stanno nelle impostazioni.
+  app.get('/api/streamer/kit', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const pagina = linkPage.get(login);
+    const follower = piattaformaDi(login) === 'twitch' ? await helix.quantiFollower(login).catch(() => null) : null;
+    res.json({
+      display: s?.display || login, piattaforma: piattaformaDi(login),
+      numeri: mediakit.numeri(login), follower,
+      social: mediakit.socialDaPagina(pagina), bio: pagina?.tagline || '', colori: coloriDi(pagina),
+      settimana: settimana.vistaSettimana(settimana.settimanaDi(s?.settings)),
+      kit: mediakit.normKit(s?.settings?.kit),
+    });
   }));
 
   app.get('/api/streamer/statistiche', requireLogin, wrap(async (req, res) => {

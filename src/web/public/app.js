@@ -244,6 +244,7 @@ function impostazioni() {
     grafiche: (s.grafiche && typeof s.grafiche === 'object') ? s.grafiche : null,
     qr: (s.qr && typeof s.qr === 'object') ? s.qr : null,
     qrUsato: !!s.qrUsato,
+    kit: (s.kit && typeof s.kit === 'object') ? s.kit : null,
     settimana: (s.settimana && typeof s.settimana === 'object') ? s.settimana : null,
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -1618,6 +1619,17 @@ function _demoGet(via) {
         { id: 1, inizio: 1789228800000, fine: 1789236000000, letto: true, inviato: '', ts: 1789236000000, dati: { durataMs: 7200000, picco: 39, media: 27, giri: 24, messaggi: 610, persone: 54, top: [{ user: 'marco99', n: 70 }, { user: 'lucaplays', n: 66 }, { user: 'sara_gg', n: 40 }], follow: 6, sub: 1, regali: 0, raid: 0, raidSpettatori: 0, presenti: 40, primeVolte: 3, clip: 1, donazioni: 1, donazioniCent: 500 } },
       ],
     },
+    '/api/streamer/kit': {
+      display: 'Andryx', piattaforma: 'twitch', follower: 12840,
+      numeri: { giorni: 30, a: Date.now(), dirette: 12, ore: 38, media: 41, picco: 96, follow: 214, persone: 486, conCategorie: 12,
+        categorie: [{ nome: 'Just Chatting', quota: 38 }, { nome: 'Minecraft', quota: 27 }, { nome: 'Diablo IV', quota: 21 }, { nome: 'Hollow Knight: Silksong', quota: 9 }, { nome: '', quota: 5, altro: true }],
+        basta: { numeri: true, media: true, categorie: true } },
+      social: [{ icona: 'instagram', url: 'https://instagram.com/andryxify' }, { icona: 'tiktok', url: 'https://www.tiktok.com/@andryxify' }, { icona: 'youtube', url: 'https://youtube.com/@andryxify' }, { icona: 'discord', url: 'https://discord.gg/andryx' }],
+      bio: 'Gioco a tutto quello che ha una storia, e la chat decide il finale.',
+      colori: { bg: '#05040a', bg2: '#1b0b3d', testo: '#f6f3ff', tenue: '#a99ed0', card: 'rgba(255,255,255,.07)', bordo: 'rgba(170,110,255,.42)', acc: '#b072ff' },
+      settimana: _DEMO_SETTIMANA,
+      kit: { presentazione: '', email: 'collab@andryx.it', collaborazioni: ['Logitech G', 'Razer', 'Elgato'], mostra: {}, tema: 'pagina' },
+    },
     '/api/streamer/codici-posta': {
       codici: [
         { settimana: '2026-W36', dal: 1788912000000, codice: 'H4TQ-9MRD', corrente: false },
@@ -2854,7 +2866,7 @@ function _regioneSalva(el) {
 
 function segnaDaSalvare(t) {
   if (!t || !t.closest || !t.closest('.pannello-scheda.visibile')) return;
-  if (t.closest('#tg-destinazioni, #gr-ig, #gr-auto, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .cerca-guscio')) return;
+  if (t.closest('#tg-destinazioni, #gr-ig, #gr-auto, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .cerca-guscio, .st-uscita')) return;
   if (t.closest('.ovl-inspector') && !t.closest(ASP_SALVA_A_MANO)) return;
   const reg = _regioneSalva(t);
   if (!reg) return;
@@ -3233,6 +3245,7 @@ const GRUPPI = [
   { id: 'strumenti', nome: 'Strumenti', schede: [
     ['qr', 'QR su misura'],
     ['misure', 'Emote e badge'],
+    ['kit', 'Media kit'],
   ] },
   { id: 'account', nome: 'Account', schede: [
     ['account', 'Il tuo account'],
@@ -3277,6 +3290,7 @@ const T_SCHEDA = {
   promo: ['Promo', 'Promo', 'Promo'],
   qr: ['QR su misura', 'Custom QR', 'QR a medida'],
   misure: ['Emote e badge', 'Emotes and badges', 'Emotes y badges'],
+  kit: ['Media kit', 'Media kit', 'Media kit'],
   moduli: ['Comandi', 'Commands', 'Comandos'],
   regole: ['Moderazione', 'Moderation', 'Moderación'],
   scudo: ['Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'],
@@ -3335,6 +3349,7 @@ const ICONA = {
   promo:       _ico('<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>'),
   qr:          _ico('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M20 14v.01"/><path d="M14 20h.01"/><path d="M17 20h4v-3"/>'),
   misure:      _ico('<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/>'),
+  kit:         _ico('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18v-2"/><path d="M12 18v-6"/><path d="M16 18v-4"/>'),
   moduli:      _ico('<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M7.5 9.5 10.5 12l-3 2.5"/><path d="M13 15h4"/>'),
   regole:      _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>'),
   scudo:       _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/><path d="m9 12 2 2 4-4"/>'),
@@ -3398,6 +3413,7 @@ const DESC = {
   grafiche: ['La locandina della diretta da postare sui social, coi tuoi colori e il tuo nome.', 'The stream poster to post on socials, with your colours and your name.', 'El cartel del directo para publicar en redes, con tus colores y tu nombre.'],
   qr: ['Un QR con le tue forme, i tuoi colori e il tuo logo, che si scarica solo se si legge.', 'A QR with your shapes, colors and logo, downloadable only if it scans.', 'Un QR con tus formas, tus colores y tu logo, que se descarga solo si se lee.'],
   misure: ['Emote e badge alle tre misure di Twitch, da un’immagine sola.', 'Emotes and badges at the three Twitch sizes, from a single image.', 'Emotes y badges en los tres tamaños de Twitch, desde una sola imagen.'],
+  kit: ['Il foglio da mandare ai marchi, coi numeri veri delle tue dirette.', 'The sheet to send to brands, with the real numbers of your streams.', 'La hoja para mandar a las marcas, con los números reales de tus directos.'],
   settimana: ['I giorni in cui vai in onda, scritti una volta: da qui vanno sui calendari e dove li mandi.', 'The days you go live, written once: from here they go onto the calendars and wherever you send them.', 'Los días en que sales en directo, escritos una vez: de aquí van a los calendarios y adonde los mandes.'],
   consolify: ['I tasti del tuo canale sotto le dita: sul telefono, sul tablet o su una tastiera vera.', 'Your channel’s keys under your fingers: on your phone, tablet or a real key pad.', 'Las teclas de tu canal bajo los dedos: en el móvil, la tablet o un teclado de verdad.'],
   telegram: ['Il tuo bot nel tuo gruppo: avvisi, comandi, compleanni, membri e il rapporto della serata in privato.', 'Your bot in your group: alerts, commands, birthdays, members and the night report in private.', 'Tu bot en tu grupo: avisos, comandos, cumpleaños, miembros y el informe de la noche en privado.'],
@@ -3595,6 +3611,8 @@ const GUIDE = {
     come: [['Scrivi dove porta, o scegli la tua pagina link.', 'Write where it leads, or pick your link page.', 'Escribe a dónde lleva, o elige tu página de enlaces.', '#qr-testo'], ['Scegli le forme, i colori e se vuoi un logo al centro: l’anteprima si rilegge da sola a ogni cambio.', 'Pick shapes, colors and whether you want a logo in the middle: the preview reads itself back at every change.', 'Elige las formas, los colores y si quieres un logo en el centro: la vista previa se relee sola a cada cambio.', '#qr-tela'], ['Scarica il PNG o l’SVG, e salva lo stile: lo usano anche le Grafiche social.', 'Download the PNG or the SVG, and save the style: Social graphics use it too.', 'Descarga el PNG o el SVG, y guarda el estilo: también lo usan las Gráficas sociales.', '#qr-png']] },
   misure: { serve: ['Preparare emote e badge alle misure che chiede Twitch, partendo da un’immagine sola.', 'Get emotes and badges ready at the sizes Twitch asks for, starting from a single image.', 'Preparar emotes y badges a los tamaños que pide Twitch, partiendo de una sola imagen.'],
     come: [['Scegli un’immagine, meglio se grande e quadrata.', 'Choose an image, better if big and square.', 'Elige una imagen, mejor si es grande y cuadrada.', '#mis-scegli'], ['Guarda come viene alle misure vere, sulla chat scura e su quella chiara.', 'See how it looks at real size, on the dark chat and the light one.', 'Mira cómo queda a tamaño real, en el chat oscuro y en el claro.', '#mis-anteprime'], ['Scaricale una per una o tutte in un file zip.', 'Download them one by one or all in a zip file.', 'Descárgalas una a una o todas en un archivo zip.', '#mis-zip']] },
+  kit: { serve: ['Preparare il foglio da mandare a un marchio: chi sei, cosa trasmetti, i tuoi numeri e come contattarti.', 'Prepare the sheet to send to a brand: who you are, what you stream, your numbers and how to reach you.', 'Preparar la hoja para mandar a una marca: quién eres, qué transmites, tus números y cómo contactarte.'],
+    come: [['Scrivi due righe su di te e l’email per le collaborazioni.', 'Write a couple of lines about you and the email for collaborations.', 'Escribe dos líneas sobre ti y el email para colaboraciones.', '#kit-presentazione'], ['Scegli cosa mostrare: i numeri vengono dalle tue dirette degli ultimi 30 giorni.', 'Choose what to show: the numbers come from your streams of the last 30 days.', 'Elige qué mostrar: los números vienen de tus directos de los últimos 30 días.', '#kit-tela'], ['Scarica il PDF, coi link che si aprono con un clic, o il PNG.', 'Download the PDF, with links that open with a click, or the PNG.', 'Descarga el PDF, con enlaces que se abren con un clic, o el PNG.', '#kit-pdf']] },
   grafiche: { serve: ['Fare la locandina della diretta da postare sui social, con i tuoi colori e il tuo handle.', 'Make the stream poster to post on socials, with your colors and your handle.', 'Hacer el cartel del directo para publicar en redes, con tus colores y tu handle.'],
     come: [['Scrivi il titolo: è la riga grande della locandina.', 'Write the title: it is the big line of the poster.', 'Escribe el título: es la línea grande del cartel.', '#gr-titolo'], ['Scegli il colore d\'accento; il testo si adatta da solo perché resti leggibile.', 'Pick the accent color; the text adapts by itself so it stays readable.', 'Elige el color de acento; el texto se adapta solo para que siga legible.', '#gr-accento'], ['Scarica il PNG (o la versione animata) e pubblicalo: la didascalia è già pronta da copiare.', 'Download the PNG (or the animated one) and post it: the caption is ready to copy.', 'Descarga el PNG (o la versión animada) y publícalo: el pie de foto ya está listo para copiar.', '#gr-scarica'], ['In cima, «Metti nella storia» manda la grafica nella tua storia di Instagram, già in verticale; se Instagram non è collegato, lì trovi il tasto per collegarlo.', 'At the top, «Post to your story» sends the graphic to your Instagram story, already vertical; if Instagram is not connected, you find the button to connect it there.', 'Arriba, «Publicar en tu historia» manda la gráfica a tu historia de Instagram, ya en vertical; si Instagram no está conectado, ahí tienes el botón para conectarlo.', '#gr-ig']] },
   settimana: { serve: ['Scrivere una volta sola quando vai in onda e cosa fai, e mandarlo dove ti seguono.', 'Write once when you go live and what you do, and send it where people follow you.', 'Escribir una sola vez cuándo sales en directo y qué haces, y mandarlo donde te siguen.'],
@@ -3611,6 +3629,7 @@ const _hIco = (d) => `<svg class="h-ico" viewBox="0 0 24 24" width="20" height="
 const ICO = {
   qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M20 14v.01"/><path d="M14 20h.01"/><path d="M17 20h4v-3"/>',
   misure: '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/>',
+  kit: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18v-2"/><path d="M12 18v-6"/><path d="M16 18v-4"/>',
   meno: '<line x1="5" x2="19" y1="12" y2="12"/>',
   stella: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
   orologio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
@@ -4615,6 +4634,7 @@ function vistaPiattaforma() {
     ${pannelloGrafiche()}
     ${pannelloQr()}
     ${pannelloMisure()}
+    ${pannelloKit()}
     ${stato.isAdmin ? pannello('admin', vistaAdminContenuto()) : ''}`;
 }
 
@@ -7509,8 +7529,8 @@ function pannelloQr() {
     <div class="carta" id="qr-carta">
       <h2>${_hIco(ICO.qr)}${L('QR su misura', 'Custom QR', 'QR a medida')}</h2>
       <p>${L('Un QR che porta dove vuoi, con le tue forme e i tuoi colori. Prima di scaricarlo lo rileggiamo dai pixel, come farebbe un telefono: se non si legge, non esce.', 'A QR that leads where you want, with your shapes and colors. Before you download it we read it back from the pixels, like a phone would: if it does not read, it does not come out.', 'Un QR que lleva a donde quieras, con tus formas y tus colores. Antes de descargarlo lo releemos desde los píxeles, como haría un móvil: si no se lee, no sale.')}</p>
-      <div class="qr-lavoro spazio-sopra">
-        <div class="qr-comandi">
+      <div class="st-lavoro spazio-sopra">
+        <div class="st-comandi">
           <label class="campo campo-su">${L('Dove porta', 'Where it leads', 'A dónde lleva')}<input type="text" id="qr-testo" maxlength="600" value="${esc(testo)}" autocomplete="off" spellcheck="false"></label>
           ${vie.length ? `<div class="gr-sfondo-scelte" id="qr-vie">${vie.map(([n, u]) => `<button type="button" class="gr-tema" data-qr-via="${esc(u)}">${esc(n)}</button>`).join('')}</div>` : ''}
           <div class="campo campo-su"><span>${L('I quadratini', 'The modules', 'Los módulos')}</span>${_qrScelte('moduli', QR_MODULI(), s.moduli)}</div>
@@ -7529,13 +7549,13 @@ function pannelloQr() {
           <label class="campo campo-su" id="qr-logo-grande"${s.logo === 'no' ? ' hidden' : ''}>${L('Grandezza del logo', 'Logo size', 'Tamaño del logo')}<input type="range" id="qr-logo-lato" min="20" max="100" step="5" value="${s.logoLato}"></label>
           <label class="campo campo-su">${L('Frase sotto, se vuoi una cornice', 'Line below, if you want a frame', 'Frase debajo, si quieres un marco')}<input type="text" id="qr-cornice" maxlength="40" value="${esc(s.cornice)}" placeholder="${esc(L('Inquadrami', 'Scan me', 'Escanéame'))}"></label>
         </div>
-        <div class="qr-destra">
-          <div class="qr-vista">
+        <div class="st-destra">
+          <div class="st-vista">
           <canvas id="qr-tela" width="480" height="480" role="img" aria-label="${esc(L('Anteprima del QR', 'QR preview', 'Vista previa del QR'))}"></canvas>
           <p id="qr-esito" class="qr-esito" role="status" aria-live="polite"></p>
           <ul id="qr-problemi" class="promo-problemi"></ul>
           </div>
-          <div class="qr-uscita">
+          <div class="st-uscita">
           <div class="promo-azioni">
             <label class="campo campo-su">${L('Grandezza', 'Size', 'Tamaño')}<select id="qr-misura"><option value="1024">1024 px</option><option value="2048" selected>2048 px</option><option value="4096">4096 px ${L('(stampa)', '(print)', '(impresión)')}</option></select></label>
           </div>
@@ -7709,7 +7729,7 @@ function avviaQr() {
   if (!scheda || !window.SB_QR) return;
   if (!scheda.dataset.collegata) {
     scheda.dataset.collegata = '1';
-    scheda.addEventListener('input', (ev) => { if (ev.target.closest('.qr-comandi')) qrRifaiPresto(); });
+    scheda.addEventListener('input', (ev) => { if (ev.target.closest('.st-comandi')) qrRifaiPresto(); });
     scheda.addEventListener('click', (ev) => {
       const b = ev.target.closest('button');
       if (!b || !scheda.contains(b)) return;
@@ -7886,6 +7906,228 @@ function avviaMisure() {
     _qrImmagine(URL.createObjectURL(f)).then((img) => { MIS_STATO.img = img; return misureRifai(); })
       .catch(() => toast(L('Questa immagine non si apre: prova un PNG o un JPG.', 'This image does not open: try a PNG or a JPG.', 'Esta imagen no se abre: prueba un PNG o un JPG.'), 'errore'));
   });
+}
+
+const KIT_STATO = { dati: null, avatar: undefined, motore: null, timer: 0, link: [], errore: '' };
+const KIT_TEMI = {
+  carta: { bg: '#fbfaf7', bg2: '#f1eee8', testo: '#16141a', tenue: '#5b5663', card: '#ffffff', bordo: '#e2ddd5' },
+  notte: { bg: '#121117', bg2: '#1c1a24', testo: '#f3f0f7', tenue: '#aaa3b8', card: '#1d1b25', bordo: '#302d3b' },
+};
+const KIT_MOSTRA = () => [
+  ['follower', L('Follower totali', 'Total followers', 'Seguidores totales')], ['media', L('Spettatori in media', 'Average viewers', 'Espectadores de media')],
+  ['picco', L('Spettatori al picco', 'Peak viewers', 'Pico de espectadores')], ['ore', L('Ore in onda', 'Hours live', 'Horas en directo')],
+  ['dirette', L('Dirette', 'Streams', 'Directos')], ['persone', L('Persone in chat', 'People in chat', 'Personas en el chat')],
+  ['follow', L('Follower nuovi', 'New followers', 'Seguidores nuevos')], ['categorie', L('Cosa trasmetti', 'What you stream', 'Qué transmites')],
+  ['settimana', L('Quando sei in onda', 'When you are live', 'Cuándo estás en directo')], ['social', L('Dove trovarti', 'Where to find you', 'Dónde encontrarte')],
+];
+const KIT_TEMI_NOMI = () => [['pagina', L('Come la pagina link', 'Like your link page', 'Como tu página de enlaces')], ['carta', L('Carta', 'Paper', 'Papel')], ['notte', L('Notte', 'Night', 'Noche')]];
+
+function pannelloKit() {
+  return pannello('kit', `
+    <div class="carta" id="kit-carta">
+      <h2>${_hIco(ICO.kit)}${L('Media kit', 'Media kit', 'Media kit')}</h2>
+      <p>${L('Il foglio da mandare a un marchio: chi sei, cosa trasmetti, quanta gente ti guarda e come contattarti. I numeri li misuriamo dalle tue dirette: puoi scegliere quali mostrare, non cambiarli.', 'The sheet to send to a brand: who you are, what you stream, how many people watch you and how to reach you. We measure the numbers from your streams: you can choose which ones to show, not change them.', 'La hoja para mandar a una marca: quién eres, qué transmites, cuánta gente te ve y cómo contactarte. Los números los medimos de tus directos: puedes elegir cuáles mostrar, no cambiarlos.')}</p>
+      <div class="st-lavoro spazio-sopra">
+        <div class="st-comandi">
+          <label class="campo campo-su">${L('Due righe su di te', 'A couple of lines about you', 'Dos líneas sobre ti')}<textarea id="kit-presentazione" maxlength="280" rows="4"></textarea></label>
+          <label class="campo campo-su">${L('Email per le collaborazioni', 'Email for collaborations', 'Email para colaboraciones')}<input type="email" id="kit-email" maxlength="120" autocomplete="email"></label>
+          <label class="campo campo-su">${L('Marchi con cui hai lavorato', 'Brands you have worked with', 'Marcas con las que has trabajado')}<input type="text" id="kit-collab" maxlength="360" placeholder="${esc(L('Separati da una virgola', 'Separated by a comma', 'Separadas por una coma'))}"></label>
+          <div class="campo campo-su"><span>${L('I colori', 'The colors', 'Los colores')}</span><div class="gr-sfondo-scelte" role="group">${KIT_TEMI_NOMI().map(([id, n]) => `<button type="button" class="gr-tema" data-kit-tema="${id}" aria-pressed="false">${esc(n)}</button>`).join('')}</div></div>
+          <fieldset class="kit-mostra spazio-sopra"><legend>${L('Cosa mostrare', 'What to show', 'Qué mostrar')}</legend>${KIT_MOSTRA().map(([id, n]) => `<label class="riga-check"><input type="checkbox" data-kit-mostra="${id}" checked> ${esc(n)}</label>`).join('')}</fieldset>
+          <ul id="kit-mancano" class="kit-mancano"></ul>
+        </div>
+        <div class="st-destra">
+          <div class="st-vista">
+            <canvas id="kit-tela" width="1240" height="1754" role="img" aria-label="${esc(L('Anteprima del media kit', 'Media kit preview', 'Vista previa del media kit'))}"></canvas>
+            <ul id="kit-problemi" class="promo-problemi"></ul>
+          </div>
+          <div class="st-uscita">
+            <div class="promo-azioni">
+              <button type="button" class="btn" id="kit-pdf" disabled>${L('Scarica PDF', 'Download PDF', 'Descargar PDF')}</button>
+              <button type="button" class="btn secondario" id="kit-png" disabled>${L('Scarica PNG', 'Download PNG', 'Descargar PNG')}</button>
+              <button type="button" class="btn secondario" id="kit-salva">${L('Salva', 'Save', 'Guardar')}</button>
+            </div>
+            <p class="suggerimento">${L('Nel PDF la tua email, i social e il canale si aprono con un clic.', 'In the PDF your email, socials and channel open with a click.', 'En el PDF tu email, tus redes y el canal se abren con un clic.')}</p>
+          </div>
+        </div>
+      </div>
+    </div>`);
+}
+
+function caricaMotoreKit() {
+  if (KIT_STATO.motore) return KIT_STATO.motore;
+  const script = (src) => new Promise((ok, ko) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => ko(new Error(src)); document.head.appendChild(s); });
+  KIT_STATO.motore = Promise.all([window.SB_KIT ? null : script('/kit.js'), window.SB_PDF ? null : script('/pdf.js')])
+    .then(() => Promise.all(['400 28px Archivo', '500 24px Archivo', '600 21px Archivo', '700 21px Archivo', '800 72px Archivo'].map((x) => document.fonts?.load?.(x).catch(() => null))))
+    .catch((e) => { KIT_STATO.motore = null; throw e; });
+  return KIT_STATO.motore;
+}
+
+function _kitAvatar(login) {
+  if (KIT_STATO.avatar !== undefined) return Promise.resolve(KIT_STATO.avatar);
+  return _qrImmagine(`/u/${encodeURIComponent(login)}/avatar`).then((i) => (KIT_STATO.avatar = i), () => (KIT_STATO.avatar = null));
+}
+
+function kitDalModulo() {
+  const $ = (x) => document.getElementById(x);
+  const mostra = {};
+  document.querySelectorAll('#scheda-kit [data-kit-mostra]').forEach((c) => { mostra[c.dataset.kitMostra] = c.checked; });
+  return {
+    presentazione: $('kit-presentazione').value, email: $('kit-email').value.trim(),
+    collaborazioni: $('kit-collab').value.split(',').map((x) => x.trim()).filter(Boolean),
+    mostra, tema: document.querySelector('#scheda-kit [data-kit-tema][aria-pressed="true"]')?.dataset.kitTema || 'pagina',
+  };
+}
+
+function _kitRiempi(d) {
+  const $ = (x) => document.getElementById(x);
+  const k = d.kit || {};
+  $('kit-presentazione').value = k.presentazione || d.bio || '';
+  $('kit-email').value = k.email || '';
+  $('kit-collab').value = (k.collaborazioni || []).join(', ');
+  document.querySelectorAll('#scheda-kit [data-kit-mostra]').forEach((c) => { c.checked = k.mostra?.[c.dataset.kitMostra] !== false; });
+  const tema = k.tema || 'pagina';
+  document.querySelectorAll('#scheda-kit [data-kit-tema]').forEach((b) => { b.classList.toggle('on', b.dataset.kitTema === tema); b.setAttribute('aria-pressed', String(b.dataset.kitTema === tema)); });
+}
+
+function _kitManiglia(url) {
+  try {
+    const u = new URL(url), h = u.hostname.replace(/^www\./, ''), primo = u.pathname.split('/').filter(Boolean)[0] || '';
+    if (/^(instagram\.com|tiktok\.com|x\.com|twitter\.com|threads\.net|youtube\.com)$/.test(h) && primo) return '@' + primo.replace(/^@/, '');
+    return (h + u.pathname.replace(/\/+$/, '')).slice(0, 48);
+  } catch { return String(url).slice(0, 48); }
+}
+
+function _kitDisegno(d, scelte) {
+  const n = d.numeri, m = scelte.mostra, loc = LINGUA === 'en' ? 'en-US' : LINGUA === 'es' ? 'es-ES' : 'it-IT';
+  const fmt = (x) => Number(x).toLocaleString(loc);
+  const quando = new Date(n.a).toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' });
+  const numeri = [];
+  const conFollower = m.follower && Number.isFinite(d.follower);
+  if (conFollower) numeri.push({ valore: fmt(d.follower), etichetta: L('follower su Twitch', 'followers on Twitch', 'seguidores en Twitch') });
+  if (n.basta.numeri) {
+    if (m.media && n.media != null) numeri.push({ valore: fmt(n.media), etichetta: L('spettatori in media', 'average viewers', 'espectadores de media') });
+    if (m.picco && n.picco != null) numeri.push({ valore: fmt(n.picco), etichetta: L('spettatori al picco', 'peak viewers', 'pico de espectadores') });
+    if (m.ore) numeri.push({ valore: fmt(n.ore), etichetta: L('ore in onda', 'hours live', 'horas en directo') });
+    if (m.dirette) numeri.push({ valore: fmt(n.dirette), etichetta: L('dirette', 'streams', 'directos') });
+    if (m.persone) numeri.push({ valore: fmt(n.persone), etichetta: L('persone in chat', 'people in chat', 'personas en el chat') });
+    if (m.follow) numeri.push({ valore: fmt(n.follow), etichetta: L('follower nuovi', 'new followers', 'seguidores nuevos') });
+  }
+  const delPeriodo = numeri.length > (conFollower ? 1 : 0);
+  const nota = delPeriodo
+    ? (conFollower
+      ? L(`Ultimi ${n.giorni} giorni, dirette concluse, misurati da SocialBot; i follower sono il totale su Twitch. Aggiornati al ${quando}.`, `Last ${n.giorni} days, finished streams, measured by SocialBot; followers are the Twitch total. Updated on ${quando}.`, `Últimos ${n.giorni} días, directos terminados, medidos por SocialBot; los seguidores son el total en Twitch. Actualizados el ${quando}.`)
+      : L(`Ultimi ${n.giorni} giorni, dirette concluse, misurati da SocialBot. Aggiornati al ${quando}.`, `Last ${n.giorni} days, finished streams, measured by SocialBot. Updated on ${quando}.`, `Últimos ${n.giorni} días, directos terminados, medidos por SocialBot. Actualizados el ${quando}.`))
+    : (conFollower ? L(`I follower sono il totale su Twitch al ${quando}.`, `Followers are the Twitch total on ${quando}.`, `Los seguidores son el total en Twitch el ${quando}.`) : '');
+  const GIORNI = [L('Lun', 'Mon', 'Lun'), L('Mar', 'Tue', 'Mar'), L('Mer', 'Wed', 'Mié'), L('Gio', 'Thu', 'Jue'), L('Ven', 'Fri', 'Vie'), L('Sab', 'Sat', 'Sáb'), L('Dom', 'Sun', 'Dom')];
+  const gg = d.settimana?.giorni || [];
+  const settimana = m.settimana && gg.some((x) => x && !x.off && x.ora) ? GIORNI.map((nome, i) => ({ giorno: nome, ora: gg[i]?.ora || '', off: !!(gg[i]?.off || !gg[i]?.ora) })) : [];
+  const fuso = d.settimana?.fuso || 'Europe/Rome';
+  const canale = d.piattaforma === 'twitch' ? `twitch.tv/${stato?.user?.login}` : d.piattaforma === 'kick' ? `kick.com/${stato?.user?.login}` : '';
+  const colori = scelte.tema === 'pagina' ? d.colori : { ...KIT_TEMI[scelte.tema], acc: d.colori.acc };
+  return {
+    nome: d.display, avatar: KIT_STATO.avatar, colori, presentazione: String(scelte.presentazione || '').trim(),
+    canale: canale ? { etichetta: canale, url: 'https://' + canale } : null,
+    numeri, nota: numeri.length ? nota : '',
+    categorie: m.categorie ? n.categorie.map((c) => ({ nome: c.altro ? L('Altro', 'Other', 'Otros') : c.nome, quota: c.quota })) : [],
+    settimana, fuso: settimana.length ? (fuso === 'Europe/Rome' ? L('Orari in ora italiana', 'Times in Italian time', 'Horas en hora italiana') : fuso.replace(/_/g, ' ')) : '',
+    social: m.social ? d.social.map((s) => ({ icona: s.icona, d: MARCHI[s.icona]?.d || '', testo: _kitManiglia(s.url), url: s.url })) : [],
+    collaborazioni: scelte.collaborazioni, email: scelte.email,
+    testi: {
+      numeri: L('I numeri', 'The numbers', 'Los números'), trasmetto: L('Cosa trasmetto', 'What I stream', 'Qué transmito'),
+      inOnda: L('Quando sono in onda', 'When I am live', 'Cuándo estoy en directo'), trovarmi: L('Dove trovarmi', 'Where to find me', 'Dónde encontrarme'),
+      collaborazioni: L('Hanno lavorato con me', 'Brands I have worked with', 'Han trabajado conmigo'), contatto: L('Per lavorare insieme', 'To work together', 'Para trabajar juntos'),
+    },
+  };
+}
+
+function _kitMancano(d, m) {
+  const n = d.numeri, out = [];
+  if (!n.basta.numeri) out.push(n.dirette === 1
+    ? L(`Negli ultimi ${n.giorni} giorni c’è 1 diretta conclusa: i numeri delle dirette escono da 3 in su.`, `In the last ${n.giorni} days there is 1 finished stream: stream numbers show from 3 up.`, `En los últimos ${n.giorni} días hay 1 directo terminado: los números de los directos salen a partir de 3.`)
+    : L(`Negli ultimi ${n.giorni} giorni ci sono ${n.dirette} dirette concluse: i numeri delle dirette escono da 3 in su.`, `In the last ${n.giorni} days there are ${n.dirette} finished streams: stream numbers show from 3 up.`, `En los últimos ${n.giorni} días hay ${n.dirette} directos terminados: los números de los directos salen a partir de 3.`));
+  else if (m.media && n.media == null) out.push(L('La media degli spettatori esce quando le dirette hanno i conteggi degli spettatori.', 'Average viewers show when streams have viewer counts.', 'La media de espectadores sale cuando los directos tienen recuentos de espectadores.'));
+  if (m.follower && d.piattaforma === 'twitch' && !Number.isFinite(d.follower)) out.push(L('Il totale dei follower adesso non si legge da Twitch: riprova più tardi.', 'The follower total cannot be read from Twitch right now: try again later.', 'El total de seguidores no se puede leer de Twitch ahora: inténtalo más tarde.'));
+  if (m.categorie && n.basta.numeri && !n.basta.categorie) out.push(L('Le categorie si contano dalle dirette di adesso in poi: escono quando ce ne sono almeno 3.', 'Categories are counted from now on: they show once there are at least 3 streams.', 'Las categorías se cuentan desde ahora: salen cuando hay al menos 3 directos.'));
+  if (m.settimana && !(d.settimana?.giorni || []).some((x) => x && !x.off && x.ora)) out.push(L('Per «Quando sono in onda» compila la tua settimana.', 'For «When I am live» fill in your week.', 'Para «Cuándo estoy en directo» rellena tu semana.'));
+  if (m.social && !d.social.length) out.push(L('Per «Dove trovarmi» aggiungi i tuoi social alla pagina link.', 'For «Where to find me» add your socials to your link page.', 'Para «Dónde encontrarme» añade tus redes a tu página de enlaces.'));
+  return out;
+}
+
+const KIT_PROBLEMI = () => ({
+  nome: L('Il nome è lungo: si vede accorciato.', 'The name is long: it shows shortened.', 'El nombre es largo: se ve acortado.'),
+  presentazione: L('La presentazione non ci sta tutta: si vedono le prime quattro righe.', 'The introduction does not fit: the first four lines show.', 'La presentación no cabe entera: se ven las cuatro primeras líneas.'),
+  collaborazioni: L('I marchi non ci stanno tutti: si vedono le prime tre righe.', 'Not all brands fit: the first three lines show.', 'No caben todas las marcas: se ven las tres primeras líneas.'),
+  email: L('L’email è troppo lunga per la fascia: si vede accorciata, ma nel PDF il collegamento resta intero.', 'The email is too long for the band: it shows shortened, but in the PDF the link stays whole.', 'El email es demasiado largo para la franja: se ve acortado, pero en el PDF el enlace queda entero.'),
+  pieno: L('Il foglio è troppo pieno: togli qualcosa da mostrare.', 'The sheet is too full: remove something to show.', 'La hoja está demasiado llena: quita algo que mostrar.'),
+});
+
+function kitRifai() {
+  const tela = document.getElementById('kit-tela'), d = KIT_STATO.dati;
+  if (!tela || !window.SB_KIT) return;
+  const lista = document.getElementById('kit-problemi'), mancano = document.getElementById('kit-mancano');
+  if (!d) {
+    lista.innerHTML = KIT_STATO.errore ? `<li class="problema">${esc(KIT_STATO.errore)}</li>` : '';
+    return;
+  }
+  const scelte = kitDalModulo();
+  const r = window.SB_KIT.disegna(tela.getContext('2d'), _kitDisegno(d, scelte));
+  KIT_STATO.link = r.link;
+  const P = KIT_PROBLEMI();
+  lista.innerHTML = r.problemi.map((x) => `<li class="problema">${esc(P[x] || x)}</li>`).join('');
+  mancano.innerHTML = _kitMancano(d, scelte.mostra).map((x) => `<li>${esc(x)}</li>`).join('');
+  document.getElementById('kit-png').disabled = false;
+  document.getElementById('kit-pdf').disabled = false;
+}
+
+function kitRifaiPresto() {
+  clearTimeout(KIT_STATO.timer);
+  KIT_STATO.timer = setTimeout(kitRifai, 120);
+}
+
+async function kitScarica(formato, btn) {
+  const tela = document.getElementById('kit-tela');
+  if (!tela || !KIT_STATO.dati) return;
+  btn.disabled = true;
+  try {
+    kitRifai();
+    const nome = `media-kit-${String(stato?.user?.login || 'canale').toLowerCase()}`;
+    if (formato === 'pdf') scaricaBlob(await window.SB_PDF.daTela(tela, { link: KIT_STATO.link, titolo: `Media kit · ${KIT_STATO.dati.display}` }), nome + '.pdf');
+    else scaricaBlob(await firmaPngBlob(await new Promise((ok) => tela.toBlob(ok, 'image/png'))), nome + '.png');
+  } finally { btn.disabled = false; }
+}
+
+async function avviaKit() {
+  const scheda = document.getElementById('scheda-kit');
+  if (!scheda) return;
+  if (!scheda.dataset.collegata) {
+    scheda.dataset.collegata = '1';
+    scheda.addEventListener('input', (ev) => { if (ev.target.closest('.st-comandi')) kitRifaiPresto(); });
+    scheda.addEventListener('click', (ev) => {
+      const b = ev.target.closest('button');
+      if (!b || !scheda.contains(b)) return;
+      if (b.dataset.kitTema) {
+        b.parentElement.querySelectorAll('button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+        segnaDaSalvare(b);
+        kitRifaiPresto();
+        return;
+      }
+      if (b.id === 'kit-png') kitScarica('png', b).catch((e) => toast(e.message, 'errore'));
+      if (b.id === 'kit-pdf') kitScarica('pdf', b).catch((e) => toast(e.message, 'errore'));
+      if (b.id === 'kit-salva') conErrore(() => salvaImpostazioni({ kit: kitDalModulo() }, L('Media kit salvato', 'Media kit saved', 'Media kit guardado')));
+    });
+  }
+  try {
+    await caricaMotoreKit();
+    const d = await api('/api/streamer/kit');
+    await _kitAvatar(String(stato?.user?.login || ''));
+    const prima = !KIT_STATO.dati;
+    KIT_STATO.dati = d; KIT_STATO.errore = '';
+    if (prima) _kitRiempi(d);
+  } catch (e) {
+    KIT_STATO.errore = L('Il media kit non si carica adesso: riprova fra poco.', 'The media kit does not load right now: try again shortly.', 'El media kit no carga ahora: inténtalo en un rato.');
+  }
+  kitRifai();
 }
 
 function pannelloAvatar() {
@@ -26184,6 +26426,7 @@ function caricaDatiScheda(id) {
   if (id === 'promo') { collegaPromo(); caricaPromo(); }
   if (id === 'qr') avviaQr();
   if (id === 'misure') avviaMisure();
+  if (id === 'kit') avviaKit();
   if (id === 'personalita') { caricaGuide(); caricaSpontanee(); }
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); caricaRetePanoramica(); }
   if (id === 'clip') caricaClip();

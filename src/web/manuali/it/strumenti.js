@@ -4,15 +4,15 @@
 
 export default {
   slug: 'strumenti',
-  schede: ['qr', 'misure'],
-  titolo: 'Manuale degli strumenti: QR su misura, emote e badge | SocialBot',
+  schede: ['qr', 'misure', 'kit'],
+  titolo: 'Manuale degli strumenti: QR, emote, media kit | SocialBot',
   h1: 'Manuale degli strumenti',
-  desc: 'Un QR con le tue forme, i tuoi colori e il tuo logo, che si legge davvero. Ed emote e badge alle misure che chiede Twitch, partendo da un\'immagine sola.',
+  desc: 'Un QR col tuo logo che si legge davvero, emote e badge alle misure di Twitch e il media kit coi numeri veri delle tue dirette, da mandare ai marchi.',
   aggiornata: '2026-09-26',
   corpo: [
     { p: [
-      'Nel menù del pannello, sotto <em>Strumenti</em>, ci sono le cose che servono intorno alla diretta: il <strong>QR su misura</strong> e le <strong>emote e i badge</strong> alle misure di Twitch.',
-      'Tutti e due lavorano nel tuo browser. Le immagini che prepari per emote e badge non passano dal nostro server; il logo del QR ci arriva solo se premi <em>Salva lo stile</em>, per ritrovarlo la volta dopo.',
+      'Nel menù del pannello, sotto <em>Strumenti</em>, ci sono le cose che servono intorno alla diretta: il <strong>QR su misura</strong>, le <strong>emote e i badge</strong> alle misure di Twitch e il <strong>media kit</strong>.',
+      'Si disegnano tutti nel tuo browser. Le immagini che prepari per emote e badge non passano dal nostro server; il logo del QR e le scelte del media kit ci arrivano solo se premi <em>Salva</em>, per ritrovarli la volta dopo.',
     ] },
 
     { h2: 'QR su misura', scheda: 'qr' },
@@ -68,6 +68,30 @@ export default {
     { h3: 'Pesi e download' },
     { p: ['Twitch accetta emote fino a <strong>1 MB</strong> e badge fino a <strong>25 KB</strong>: se una misura li supera, te lo diciamo. Ogni misura si scarica da sola, oppure tutte insieme in uno zip.'] },
 
+    { h2: 'Media kit', scheda: 'kit' },
+    { p: ['È il foglio da mandare a un marchio quando proponi una collaborazione, o quando te la chiedono: chi sei, cosa trasmetti, quanta gente ti guarda, quando sei in onda, dove trovarti e come scriverti. Esce in PDF, coi link che si aprono con un clic, o in PNG.'] },
+    { h3: 'Da dove vengono i numeri' },
+    { ul: [
+      '<strong>Dalle tue dirette degli ultimi 30 giorni</strong>, quelle concluse: il bot le segue mentre sei in onda e a fine serata ne scrive il rapporto. Sono gli stessi numeri della scheda Dirette.',
+      '<strong>Gli spettatori in media</strong> sono pesati sul tempo: una diretta di sei ore conta sei volte una di un\'ora.',
+      '<strong>Il picco</strong> è il massimo di spettatori in una diretta del periodo.',
+      '<strong>Le persone in chat</strong> sono quelle diverse che hanno scritto almeno una volta, tu escluso.',
+      '<strong>I follower totali</strong> sono quelli che dice Twitch nel momento in cui apri la scheda.',
+      '<strong>Cosa trasmetti</strong> è la parte di tempo di ogni categoria. Si conta dalle dirette di adesso in poi.',
+    ] },
+    { p: [
+      'Sotto i numeri c\'è sempre scritto di quale periodo sono, chi li ha misurati e quando. I numeri non si cambiano a mano: puoi solo scegliere quali mostrare.',
+      'Con meno di tre dirette nel periodo i numeri delle dirette non escono, e sotto la scheda c\'è scritto quante ne mancano: tre serate sono il minimo per dire qualcosa di vero.',
+    ] },
+    { h3: 'Il resto del foglio' },
+    { ul: [
+      '<strong>Due righe su di te</strong>: di partenza c\'è la frase della tua pagina link. Ci stanno quattro righe.',
+      '<strong>Quando sei in onda</strong> viene dalla tua settimana, <strong>dove trovarti</strong> dai social della tua pagina link.',
+      '<strong>I marchi con cui hai lavorato</strong> e <strong>l\'email per le collaborazioni</strong> li scrivi tu. L\'email va in una fascia in fondo al foglio.',
+      '<strong>I colori</strong> sono quelli della tua pagina link, oppure Carta (chiari) o Notte (scuri).',
+    ] },
+    { p: ['Le scelte si salvano con <em>Salva</em> e le ritrovi la volta dopo. I numeri invece si aggiornano da soli ogni volta che apri la scheda. Il media kit non è una pagina pubblica: esiste quando lo scarichi, e lo mandi tu a chi vuoi.'] },
+
     { h2: 'Quando non funziona' },
     { ul: [
       '<strong>I tasti per scaricare il QR sono spenti.</strong> Sotto l\'anteprima c\'è scritto perché: di solito sono i colori troppo vicini, o un logo che con quel link non ci sta.',
@@ -76,6 +100,8 @@ export default {
       '<strong>Voglio cambiare il logo caricato.</strong> Quando è scelto <em>Un\'immagine</em>, sotto c\'è <em>Cambia immagine</em>.',
       '<strong>La misura grande delle emote è sgranata.</strong> L\'immagine di partenza è piccola: parti da almeno quattro volte la misura più grande.',
       '<strong>Una GIF animata esce ferma.</strong> Qui si prende il primo fotogramma: le emote animate si preparano a parte.',
+      '<strong>Nel media kit mancano i numeri.</strong> Negli ultimi 30 giorni ci sono meno di tre dirette concluse: sotto la scheda c\'è scritto quante.',
+      '<strong>Nel media kit mancano le categorie.</strong> Si contano dalle dirette fatte da quando c\'è il media kit, ed escono dopo tre dirette.',
     ] },
   ],
   faq: [
@@ -84,5 +110,7 @@ export default {
     { d: 'Quanto grande lo devo stampare?', r: 'Almeno 2 cm di lato. Se va inquadrato da lontano, circa un decimo della distanza: per tre metri, trenta centimetri.' },
     { d: 'Perché col logo il QR ha più quadratini?', r: 'Col logo usiamo la correzione più alta, che aggiunge codici di riserva: sono loro a recuperare la parte che il logo copre.' },
     { d: 'Le immagini delle emote finiscono sul vostro server?', r: 'No: si rimpiccioliscono nel tuo browser, e da lì le scarichi.' },
+    { d: 'I numeri del media kit si possono modificare?', r: 'No: vengono dalle tue dirette, e puoi solo scegliere quali mostrare. È quello che li rende credibili per chi li legge.' },
+    { d: 'Il media kit è una pagina pubblica?', r: 'No: esiste quando lo scarichi, e lo mandi tu a chi vuoi.' },
   ],
 };

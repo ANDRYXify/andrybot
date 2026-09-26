@@ -50,7 +50,7 @@ export function apri(channel, { ora = Date.now(), inizio = 0 } = {}) {
   // e' una serata diversa.
   const gia = sessioni.get(ch);
   if (gia && gia.inizio === da) return gia;
-  const s = { inizio: da, picco: 0, somma: 0, giri: 0 };
+  const s = { inizio: da, picco: 0, somma: 0, giri: 0, categorie: new Map() };
   sessioni.set(ch, s);
   return s;
 }
@@ -58,22 +58,31 @@ export function apri(channel, { ora = Date.now(), inizio = 0 } = {}) {
 // Un giro da cinque minuti, con gli spettatori di quel momento. Senza una
 // sessione aperta (bot ripartito a diretta in corso) se ne apre una che parte
 // dall'inizio che le presenze ricordano.
-export function osservaGiro(channel, { spettatori = null, ora = Date.now() } = {}) {
+// La categoria si conta nello stesso giro degli spettatori: la quota di tempo
+// di ogni categoria e' la sua parte dei giri, e un giro senza spettatori validi
+// non conta per nessuno dei due (docs/STRUMENTI.md, il media kit).
+export function osservaGiro(channel, { spettatori = null, categoria = '', ora = Date.now() } = {}) {
   const ch = norm(channel);
   if (!ch) return null;
   let s = sessioni.get(ch);
   if (!s) s = apri(ch, { ora });
   const n = Number(spettatori);
-  if (Number.isFinite(n) && n >= 0) { s.picco = Math.max(s.picco, n); s.somma += n; s.giri++; }
+  if (Number.isFinite(n) && n >= 0) {
+    s.picco = Math.max(s.picco, n); s.somma += n; s.giri++;
+    const c = String(categoria || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+    if (c) s.categorie.set(c, (s.categorie.get(c) || 0) + 1);
+  }
   return s;
 }
+
+const categorieDi = (s) => [...(s.categorie || new Map())].map(([nome, giri]) => ({ nome, giri })).sort((a, b) => b.giri - a.giri || (a.nome < b.nome ? -1 : a.nome > b.nome ? 1 : 0));
 
 export function chiudi(channel, { ora = Date.now() } = {}) {
   const ch = norm(channel);
   const s = sessioni.get(ch);
   sessioni.delete(ch);
   if (!s) return null;
-  return { inizio: s.inizio, fine: ora, durataMs: Math.max(0, ora - s.inizio), picco: s.picco, media: s.giri ? Math.round(s.somma / s.giri) : 0, giri: s.giri };
+  return { inizio: s.inizio, fine: ora, durataMs: Math.max(0, ora - s.inizio), picco: s.picco, media: s.giri ? Math.round(s.somma / s.giri) : 0, giri: s.giri, categorie: categorieDi(s) };
 }
 
 export function aperta(channel) { return sessioni.has(norm(channel)); }

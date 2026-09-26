@@ -31,6 +31,20 @@ test('la sessione: apre, conta i giri, chiude con picco, media e durata; riparti
   assert.equal(c2.picco, 7);
 });
 
+test('le categorie si contano nello stesso giro degli spettatori, e solo nei giri buoni', () => {
+  r.apri(CH, { ora: T0, inizio: T0 });
+  r.osservaGiro(CH, { spettatori: 10, categoria: 'Just Chatting', ora: T0 + MIN });
+  r.osservaGiro(CH, { spettatori: 12, categoria: 'Minecraft', ora: T0 + 2 * MIN });
+  r.osservaGiro(CH, { spettatori: 14, categoria: '  Minecraft ', ora: T0 + 3 * MIN });
+  r.osservaGiro(CH, { spettatori: 'boh', categoria: 'Minecraft', ora: T0 + 4 * MIN });
+  r.osservaGiro(CH, { spettatori: 9, categoria: '', ora: T0 + 5 * MIN });
+  r.osservaGiro(CH, { spettatori: 9, categoria: '__proto__', ora: T0 + 6 * MIN });
+  const c = r.chiudi(CH, { ora: T0 + 10 * MIN });
+  assert.equal(c.giri, 5);
+  assert.deepEqual(c.categorie, [{ nome: 'Minecraft', giri: 2 }, { nome: 'Just Chatting', giri: 1 }, { nome: '__proto__', giri: 1 }],
+    'un giro senza spettatori validi non conta, uno senza categoria conta solo per gli spettatori, e un nome e\' solo un nome');
+});
+
 test('la raccolta legge la finestra giusta: chat, eventi, presenze, clip, donazioni', () => {
   const da = T0, a = T0 + 60 * MIN;
   memory.logMessage(CH, 'marco', 'Marco', 'ciao', false, da + MIN);

@@ -517,18 +517,25 @@ export function stratoSfondo(t, c) {
   return { css, html, fondo };
 }
 
-export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, urlLink, donatori, immagineAnteprima } = {}) {
-  // l'indirizzo vero della pagina: quello corto delle donazioni, se c'e'
-  const urlCanonico = dona ? (urlDona || `${baseUrl}/dona/${login}`) : `${baseUrl}/u/${login}`;
-  const pre = PRESET[pagina.template] || PRESET.minimal;
-  const t = pagina.tema || {};
-  // il tema dell'utente vince sul preset, campo per campo
-  const c = {
+// I colori di una pagina: il tema dell'utente vince sul preset, campo per
+// campo. Li usano la pagina e il media kit (docs/STRUMENTI.md), cosi' il kit
+// ha i colori che la pagina ha davvero.
+export function coloriDi(pagina) {
+  const pre = PRESET[pagina?.template] || PRESET.minimal;
+  const t = pagina?.tema || {};
+  return {
     bg: t.bg || pre.bg, bg2: t.bg2 || pre.bg2,
     testo: t.testo || pre.testo, tenue: pre.tenue,
     card: t.card || pre.card, bordo: t.bordo || pre.bordo,
     acc: t.accent || pre.acc,
   };
+}
+
+export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, urlLink, donatori, immagineAnteprima } = {}) {
+  // l'indirizzo vero della pagina: quello corto delle donazioni, se c'e'
+  const urlCanonico = dona ? (urlDona || `${baseUrl}/dona/${login}`) : `${baseUrl}/u/${login}`;
+  const t = pagina.tema || {};
+  const c = coloriDi(pagina);
   const font = PILE[t.font] || PILE.system;
   const raggio = Number.isFinite(Number(t.raggio)) ? Number(t.raggio) : 14;
   // L'arrotondamento scelto NON vale per i riquadri incorporati: quel valore

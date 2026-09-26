@@ -625,7 +625,7 @@ export class BotManager {
             for (const t of presenze.annunciDi(login, esito)) this.say(login, t);
           } catch (e) { log.debug(`#${login} serie di presenze:`, e?.message || e); }
           // e gli spettatori di questo giro, per il rapporto di fine diretta
-          try { rapporto.osservaGiro(login, { spettatori: stream.viewer_count }); }
+          try { rapporto.osservaGiro(login, { spettatori: stream.viewer_count, categoria: stream.game_name }); }
           catch (e) { log.debug(`#${login} rapporto:`, e?.message || e); }
         }
       } catch (e) { log.debug(`#${login} ore:`, e?.message || e); }

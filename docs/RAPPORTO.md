@@ -28,7 +28,12 @@ con la finestra della diretta (`raccogli`, in `src/features/rapporto.js`):
 Quello che passa e non resta, cioè gli spettatori a ogni giro, si tiene in
 memoria durante la diretta (`osservaGiro`, dallo stesso giro da cinque minuti
 delle ore guardate: `stream.viewer_count`, nessuna chiamata in più). Picco e
-media escono da lì.
+media escono da lì. Nello stesso giro si conta anche la categoria
+(`stream.game_name`): il rapporto porta `categorie`, l'elenco dei giri di ogni
+categoria, e la quota di tempo è la sua parte dei giri. Un giro senza
+spettatori validi non conta per nessuno dei due. I conti stanno in una `Map`
+e si salvano come elenco: un nome di categoria resta un nome, anche se si
+chiama `__proto__`. Li legge il media kit (`docs/STRUMENTI.md`).
 
 ## L'inizio e la fine
 

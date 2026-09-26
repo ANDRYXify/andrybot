@@ -50,6 +50,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > Le misure di Twitch da un'immagine sola
   > Non serve un programma di grafica per avere 112, 56 e 28 pixel: carichi l'immagine, vedi subito come sta in chat e sai se pesa troppo prima di caricarla su Twitch.
 - Nel QR su misura, sul telefono, l'anteprima resta in cima mentre scegli forme e colori, e i tasti per scaricare stanno in fondo.
+- [importante] In «Strumenti» c'è il media kit: il foglio da mandare ai marchi, in PDF coi link cliccabili, con chi sei, cosa trasmetti e i numeri delle tue ultime dirette. [vai: kit]
+  > I tuoi numeri, pronti per un marchio
+  > I numeri li misuriamo noi dalle tue dirette, e sotto c'è scritto di quale periodo sono: chi lo legge sa che sono veri. Tu scegli cosa mostrare, non cosa dicono.
 
 ## 2026-09-25
 

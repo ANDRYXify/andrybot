@@ -1,16 +1,17 @@
 # Strumenti
 
 Il gruppo «Strumenti» del pannello tiene le cose che servono intorno alla
-diretta e che non sono il bot. Si apre con due schede:
+diretta e che non sono il bot:
 
 - **QR su misura** (`qr`): un QR con forme, colori, logo e cornice scelti dallo
   streamer, che si scarica solo se riletto dai pixel torna identico;
 - **Emote e badge** (`misure`): un'immagine sola, ridotta alle tre misure che
-  chiede Twitch, con la media fatta sulla luce vera.
+  chiede Twitch, con la media fatta sulla luce vera;
+- **Media kit** (`kit`): il foglio A4 da mandare ai marchi, coi numeri delle
+  dirette misurati da noi, in PDF coi link cliccabili o in PNG.
 
 Un gruppo con una scheda sola il cancello delle sorelle non lo accetta: per
-questo si parte con due strumenti veri, non con uno e un segnaposto. Il media
-kit e l'importazione dagli altri bot vengono dopo.
+questo si è partiti con due strumenti veri, non con uno e un segnaposto.
 
 Il manuale per chi lo usa è `src/web/manuali/it/strumenti.js`
 (`/manuale/strumenti`); qui c'è come è fatto.
@@ -214,3 +215,76 @@ Il download è un PNG per misura o uno zip con tutte (zip senza compressione,
 scritto nel pannello: i PNG sono già compressi).
 
 Le immagini di questa scheda non escono dal browser.
+
+## Media kit
+
+Il foglio che uno streamer manda a un marchio: chi è, cosa trasmette, quanta
+gente lo guarda, quando è in onda, dove trovarlo, come scrivergli. Il calcolo
+sta in `src/features/mediakit.js` (rotta `GET /api/streamer/kit`), il disegno
+in `src/web/public/kit.js` (`SB_KIT`), il PDF in `src/web/public/pdf.js`
+(`SB_PDF`). I due file del pannello si caricano solo quando si apre la scheda.
+
+Non è una pagina pubblica: esiste quando si scarica. Pubblicare numeri che
+oggi sono privati, come la media degli spettatori, vorrebbe un consenso e
+un'informativa a parte.
+
+### Una fonte sola per ogni cosa
+
+| voce | fonte |
+| --- | --- |
+| nome, foto | l'account (`display`, `/u/<login>/avatar`) |
+| presentazione | scritta nella scheda; di partenza la frase della pagina link |
+| dirette, ore, media, picco, follower nuovi | i rapporti degli ultimi 30 giorni, dirette concluse |
+| persone in chat | i messaggi degli ultimi 30 giorni, lo streamer escluso |
+| cosa trasmetti | le categorie dei rapporti (`docs/RAPPORTO.md`) |
+| follower totali | Twitch, `/channels/followers`, adesso |
+| quando sei in onda | la settimana |
+| dove trovarti | i social della pagina link (blocchi `social` e link con l'icona di una piattaforma) |
+| colori «come la pagina link» | `coloriDi` in `linkpagina.js`, la stessa funzione che colora la pagina |
+| marchi, email | scritti nella scheda |
+
+### Onestà per costruzione
+
+- **La media è pesata sul tempo**: Σ(media·giri) / Σ(giri). Una diretta di sei
+  ore pesa sei volte una di un'ora; la media delle medie sarebbe un altro
+  numero, e il test lo controlla.
+- **Soglie**: i numeri del periodo escono solo con almeno 3 dirette concluse;
+  la media anche solo se ci sono campioni; le categorie solo con almeno 3
+  dirette che le hanno. Sotto soglia il blocco non c'è, e la scheda dice
+  perché e quanto manca.
+- **Le percentuali delle categorie sono intere e sommano sempre a 100**: si
+  arrotonda per difetto e il resto va a chi ha perso di più
+  nell'arrotondamento. Oltre la quarta categoria il resto va in «Altro».
+- **Niente si scrive a mano**: `normKit` tiene solo presentazione, email,
+  marchi, cosa mostrare e colori; un numero mandato dal pannello si perde.
+- **Ogni numero porta periodo, fonte e data** nella nota sotto la griglia.
+- **Niente dati di altre persone** (classifiche, nomi di chi guarda) e **niente
+  soldi**.
+
+### Il foglio
+
+A4 a 150 punti per pollice (1240×1754). L'impaginazione ha massimi fissi:
+presentazione 4 righe, 8 numeri in due file da 4, 5 categorie, 6 social,
+marchi su 3 righe. Col caso peggiore, tutto pieno e tutto lungo, l'ultima riga
+resta 100 pixel sopra la fascia del contatto (misurato nel browser). Quello
+che non ci sta si accorcia coi puntini e la scheda lo dice; il nome e l'email
+prima si rimpiccioliscono, perché un'email accorciata su un PNG non si può
+ricopiare. I marchi vanno a capo fra un marchio e l'altro, mai dentro un nome.
+
+L'accento colora le etichette solo se ha contrasto di almeno 3 con lo sfondo
+(testo grande, WCAG); altrimenti le etichette prendono il colore del testo. Il
+testo sulla fascia del contatto è bianco o nero, quello che contrasta di più.
+
+### Il PDF
+
+Scritto da noi: una pagina A4, l'immagine RGB compressa con
+`CompressionStream('deflate')` (zlib, quello che `FlateDecode` vuole), le
+annotazioni `/Link` sopra il canale, i social e l'email, il titolo in UTF-16.
+Gli indirizzi vanno in stringa esadecimale, così nessun carattere può rompere
+la sintassi. `test/unita/pdf.test.mjs` controlla che l'indice punti a ogni
+oggetto, che l'immagine decompressa torni identica, che i link stiano dove
+stavano sulla tela e che il titolo si legga con accenti ed emoji. Una volta il
+file scaricato dal pannello è stato letto anche da pypdf in modalità stretta:
+una pagina A4, il titolo, i sei link coi rettangoli giusti, l'immagine
+1240×1754.
+
