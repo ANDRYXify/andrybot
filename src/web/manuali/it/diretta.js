@@ -4,7 +4,7 @@
 export default {
   slug: 'diretta',
   schede: ['regia', 'dirette', 'statistiche', 'ascolto', 'clip', 'musica'],
-  titolo: 'Manuale della diretta: regia, clip, musica e comandi a voce | SocialBot',
+  titolo: 'Manuale della diretta: regia, clip e comandi a voce | SocialBot',
   h1: 'Manuale della diretta: regia, clip, musica e comandi a voce',
   desc: 'Comandare il canale senza aprire Twitch, far nascere le clip da sole, le richieste musicali e i comandi a voce.',
   aggiornata: '2026-09-04',

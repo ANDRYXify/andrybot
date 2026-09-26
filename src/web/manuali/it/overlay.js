@@ -4,7 +4,7 @@
 export default {
   slug: 'overlay',
   schede: ['alert', 'effetti'],
-  titolo: 'Manuale dell\'overlay: alert, chat, obiettivo e contatori | SocialBot',
+  titolo: 'Manuale dell\'overlay: alert, chat e contatori | SocialBot',
   h1: 'Manuale dell\'overlay',
   desc: 'Cosa può comparire sulla diretta, con i valori di base e i limiti veri: alert degli eventi, chat a schermo, obiettivo, contatori, ultimo follower e sub, effetti.',
   aggiornata: '2026-09-25',

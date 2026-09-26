@@ -25,6 +25,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-26
 
 - Aprendo il pannello con una connessione lenta non resta più una pagina bianca col solo piede: la copertina aspetta che sia pronto, e se ci mette troppo compare «Riprova».
+- Chi sostiene il progetto e torna da Stripe ritrova la pagina col suo grazie: prima il rimando al sottodominio perdeva per strada la conferma del pagamento.
+- Privacy e termini dicono il giorno in cui il loro testo è cambiato l'ultima volta, non più solo l'anno.
+- Nei risultati di ricerca titoli e descrizioni di home, guide, manuali, privacy e termini si leggono interi, senza tagli.
 
 ## 2026-09-25
 

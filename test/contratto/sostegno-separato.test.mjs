@@ -91,7 +91,7 @@ test('la pagina del sostegno sta su un indirizzo solo, e quello corto', () => {
   assert.ok(i > 0);
   assert.match(SRV.slice(i, i + 300), /return next\(\);/, 'tutto il resto passa');
   // E l'altro indirizzo rimanda qui, invece di essere una seconda pagina.
-  assert.match(SRV, /res\.redirect\(301, 'https:\/\/' \+ config\.sostieniHost \+ '\/'\)/,
+  assert.match(SRV, /res\.redirect\(301, 'https:\/\/' \+ config\.sostieniHost \+ '\/' \+ \(q >= 0 \? req\.originalUrl\.slice\(q\) : ''\)\)/,
     '/sostieni manda al sottodominio');
 });
 

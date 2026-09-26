@@ -26,6 +26,7 @@ import { config } from '../config.js';
 import { makeLog } from '../logger.js';
 import { sostegni } from '../db.js';
 import { chiama } from './stripe-filo.js';
+import { urlSostieni } from './donazioni.js';
 
 const log = makeLog('sostegno');
 
@@ -85,7 +86,10 @@ export async function apri({ importo, nome = '', messaggio = '' } = {}) {
   if (!cent) return { errore: `L'importo va da ${euro(MIN)} a ${euro(MAX)} euro.` };
   const chi = String(nome || '').trim().slice(0, 60);
   const msg = String(messaggio || '').trim().slice(0, 300);
-  const ritorno = String(config.baseUrl || '').replace(/\/$/, '') + '/sostieni';
+  // Si torna all'indirizzo vero della pagina, lo stesso della sitemap: sul
+  // sottodominio quando risponde, qui quando e' spento. Passare dal rimando
+  // costerebbe un giro in piu' a chi ha appena pagato.
+  const ritorno = urlSostieni();
   const r = await chiama(config.stripe.secretKey, 'POST', '/checkout/sessions', params({ cent, nome: chi, messaggio: msg, ritorno }));
   if (!r.ok || !r.dati?.url) {
     log.warn('apertura non riuscita:', r.errore);

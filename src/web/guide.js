@@ -179,7 +179,7 @@ export const T = {
     invitoTit: 'Il bot di cui parla questa guida',
     invitoTesto: 'SocialBot scrive in chat con il tuo account: comandi su misura, overlay per OBS, clip, notifiche live e uno scudo anti-bot che si alza da solo quando serve. Gratis, con una demo da provare senza collegare niente.',
     prova: 'Provalo', ogAlt: 'Guide di SocialBot su Twitch, bot e overlay',
-    guideTitolo: 'Guide su Twitch: bot, comandi, overlay e difesa del canale | SocialBot',
+    guideTitolo: 'Guide su Twitch: bot, comandi, overlay e sicurezza | SocialBot',
     guideDesc: 'Guide pratiche per chi trasmette su Twitch: scegliere un bot, collegarlo, creare comandi, mettere gli overlay in OBS e difendersi da follow-bot e hate-raid.',
     guideIntro: 'Come si usa Twitch dal lato di chi trasmette: bot, comandi, overlay e difesa del canale. Scritte per essere lette una volta e risolvere la cosa, senza giri.',
     guideRaccolta: 'Guide su Twitch, bot e overlay',

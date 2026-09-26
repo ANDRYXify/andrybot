@@ -4,7 +4,7 @@
 export default {
   slug: 'consolify',
   schede: ['consolify'],
-  titolo: 'CONSOLify: i tasti del tuo canale, sul telefono o su una tastiera fisica | SocialBot',
+  titolo: 'Manuale di CONSOLify: i tasti del tuo canale | SocialBot',
   h1: 'CONSOLify: i tasti del tuo canale, sul telefono o su una tastiera fisica',
   desc: 'Contatori, effetti, una battuta o una frase a un tocco: dal telefono mentre streami, o dai tasti di una tastiera fisica.',
   aggiornata: '2026-09-04',

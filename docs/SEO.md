@@ -171,10 +171,10 @@ sitemap, indice e collegamenti incrociati.
 
 ### Il collaudo
 
-Un controllo automatico rifiuta le pagine sottili (sotto le 700 parole), quelle
-senza dati strutturati, senza canonical o senza `h1`, e i `title` sopra i 65
-caratteri o le `description` sopra i 165 — che verrebbero troncati nei risultati.
-Cinque descrizioni erano fuori misura e sono state riscritte.
+Qui c'era scritto che un controllo automatico rifiutava le pagine sottili, i
+`title` lunghi e le pagine senza canonical. Il controllo non esisteva: è arrivato
+il 26 settembre 2026, e al primo giro ha trovato dodici difetti. Come funziona sta
+in fondo, in «Il cancello, che prima non c'era».
 
 ### Cosa resta da fare, e richiede te
 
@@ -401,3 +401,84 @@ domande al posto del più e del meno, e il pulsante che si abbassa quando lo pre
 
 Il cancello dei bordi ora guarda anche `src/web/guide.js`: era fuori dal suo
 raggio, ed è la stessa lezione di sempre — la regola era giusta, il campione no.
+
+
+## Il cancello, che prima non c'era
+
+`scripts/verifica-seo.mjs`, nei cancelli di ogni spinta.
+
+**L'elenco delle pagine non sta nel cancello.** È la sitemap: le voci che non
+vengono dal database le compone `src/web/sitemap.js`, e la stessa funzione la
+chiamano il server (che ci aggiunge le pagine degli streamer) e il cancello. Una
+pagina che entra nella sitemap il cancello la guarda da sé. Per ogni voce si fa
+dare la pagina che il server manda a quell'indirizzo, con gli stessi costruttori,
+e pretende che:
+
+- dichiari come canonico e come `og:url` proprio quell'indirizzo, e che i dati
+  strutturati (il `WebPage`, il `mainEntityOfPage`) dicano lo stesso;
+- abbia `<html lang>` nella lingua della voce, e un gruppo `hreflang` uguale a
+  quello della sitemap, con `x-default`: reciproco per costruzione;
+- abbia un `title` di 65 caratteri al massimo e una `description` fra 70 e 165,
+  e che nessuna delle due sia uguale a quella di un'altra pagina;
+- abbia un `h1` solo, dati strutturati che si leggono e nessun `noindex`;
+- colleghi solo cose vere: una voce della sitemap, un file che esiste o una rotta
+  senza parametri che il server ha davvero. `/guide/:slug` non basta a dire che
+  una guida c'è. Ogni `#ancora` deve trovare il suo `id`; sulla home un'ancora è
+  una scheda del pannello (`/#account`), e allora deve essere una scheda vera;
+- non resti orfana: una pagina che nessun'altra collega esiste, ma non la trova
+  nessuno;
+- se è una guida, non sia sottile (700 parole); le date della sitemap siano date,
+  e non nel futuro.
+
+Con `--selftest` il cancello rompe il sito in diciannove modi (un `title` che
+cresce, un canonical che punta altrove, un `hreflang` che non ricambia, un
+collegamento a una guida che non c'è, una pagina che nessuno collega più...) e
+pretende di vederli tutti.
+
+### Cosa ha trovato al primo giro
+
+- **Quattro `title` oltre i 65 caratteri**: la home inglese (75) e spagnola (72),
+  l'indice delle guide (70), la guida su Kick (70). Accorciati senza perdere la
+  frase che conta.
+- **Due `description` oltre i 165**: privacy (186) e termini (167).
+- **Tre pagine senza dati strutturati**: privacy, termini, sostegno. Adesso
+  dicono cosa sono (`WebPage`), di che sito fanno parte, in che lingua sono, e
+  privacy e termini anche quando sono cambiate.
+- **La pagina del sostegno era orfana.** Tutto il sito collega `/sostieni`, e
+  `/sostieni` rimanda al sottodominio. I collegamenti corti restano, apposta:
+  il sottodominio lo accende una sonda solo quando risponde davvero, e da spento
+  la pagina si serve da `/sostieni`. Il cancello li conosce come indirizzo corto,
+  ma solo finché il server ha quella rotta.
+
+Seguendo quel rimando è venuto fuori un difetto che con la SEO non c'entrava.
+Stripe riportava chi aveva appena donato a `/sostieni?ok=<sessione>`, e il 301
+verso il sottodominio buttava via `?ok=…`. Si arrivava sulla pagina senza il
+grazie, e la pagina non rileggeva il pagamento. Adesso il rimando si porta dietro
+la domanda, e il pagamento torna direttamente all'indirizzo vero della pagina.
+
+## Le date della sitemap sono vere, o non ci sono
+
+La sitemap dava «oggi» come `lastmod` a ogni pagina senza una data sua, a ogni
+richiesta. Google se ne accorge e smette di fidarsi di `lastmod` su tutto il
+sito, anche dove è giusto. Adesso la home ha la data dell'ultima novità pubblica,
+privacy e termini dicono da sé quando sono cambiati, e chi non ha una data non ha
+`lastmod`.
+
+La data di privacy e termini è una sola, scritta in tre posti che devono dire lo
+stesso giorno: quella che si legge («Ultimo aggiornamento: 25 settembre 2026»),
+quella per le macchine (`<time datetime>`) e quella dei dati strutturati
+(`dateModified`). E segue il **testo**, non il file: una `description` accorciata
+sta nella testata, i termini restano quelli, e la data che legge chi li apre non
+si sposta. `test/contratto/date-vere.test.mjs` confronta il corpo della pagina,
+senza la riga della data, commit per commit, e diventa rosso se il testo è
+cambiato dopo il giorno dichiarato.
+
+## Le pagine col noindex restano aperte ai crawler
+
+`/sblocca` e `/mod` dicono `noindex`, ed erano anche chiuse in `robots.txt`. Le
+due cose si annullano: Google il `noindex` lo legge solo se ci può entrare, e una
+pagina chiusa che riceve un link da fuori finisce nell'indice vuota («Indicizzata,
+ma bloccata da robots.txt»). Adesso sono aperte. La regola sta in
+`test/unita/vie-private.test.mjs` e la decide la pagina stessa, non un elenco:
+fuori dal prefetch e chiusa in `robots.txt`, a meno che non dica `noindex`; in
+quel caso aperta.

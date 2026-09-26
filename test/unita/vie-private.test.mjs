@@ -16,7 +16,7 @@
 // ci si scorda di robots.txt, questa prova diventa rossa.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -36,15 +36,25 @@ const chiusi = ROBOTS.split('\n')
   .map((r) => r.replace(/^Disallow:\s*/i, '').trim())
   .filter(Boolean);
 
-test('quel che togliamo al prefetch e\' chiuso anche ai crawler', () => {
+// Con un'eccezione, che e' la stessa regola vista dall'altra parte: una pagina
+// che dice «noindex» il crawler la deve poter aprire, sennò il divieto non lo
+// legge, e un link da fuori la fa finire nell'indice vuota («Indicizzata, ma
+// bloccata da robots.txt»). Quelle stanno fuori dal prefetch e APERTE in
+// robots.txt, e lo decide la pagina stessa, non un elenco.
+const noindex = (via) => {
+  const file = join(RAD, 'src/web/public', via.replace(/^\//, '').replace(/\*+$/, '') + '.html');
+  return existsSync(file) && /<meta name="robots" content="noindex/.test(readFileSync(file, 'utf8'));
+};
+
+test('quel che togliamo al prefetch e\' chiuso anche ai crawler, se non dice noindex da se\'', () => {
   const fuori = fuoriDalPrefetch();
   assert.ok(fuori.length >= 8, `solo ${fuori.length} vie fuori dal prefetch: l'elenco non e' quello`);
-  const scoperte = fuori.filter((p) => {
-    const via = p.replace(/\*+$/, '');
-    return !chiusi.some((d) => via === d || via.startsWith(d) || d.startsWith(via));
-  });
-  assert.deepEqual(scoperte, [],
+  const coperta = (p) => { const via = p.replace(/\*+$/, ''); return chiusi.some((d) => via === d || via.startsWith(d) || d.startsWith(via)); };
+  assert.deepEqual(fuori.filter((p) => !noindex(p) && !coperta(p)), [],
     'stanno fuori dal prefetch ma un crawler ci puo\' andare: mettile in robots.txt');
+  const muti = fuori.filter((p) => noindex(p) && coperta(p));
+  assert.deepEqual(muti, [], 'dicono noindex ma robots.txt le chiude: Google non puo\' leggere il divieto');
+  assert.ok(fuori.filter(noindex).length >= 2, 'le pagine col noindex si riconoscono (/sblocca, /mod)');
 });
 
 test('le vie che portano fuori dalla sessione non si crawlano', () => {

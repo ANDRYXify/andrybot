@@ -72,7 +72,8 @@ test('la pagina del sostegno ha un indirizzo solo: il sottodominio', async () =>
   const i = SRV.indexOf("app.get('/sostieni', (req, res, next)");
   assert.ok(i > 0, 'il rimando c\'e\'');
   const r = SRV.slice(i, i + 420);
-  assert.match(r, /res\.redirect\(301, 'https:\/\/' \+ config\.sostieniHost \+ '\/'\)/);
+  assert.match(r, /res\.redirect\(301, 'https:\/\/' \+ config\.sostieniHost \+ '\/' \+ \(q >= 0 \? req\.originalUrl\.slice\(q\) : ''\)\)/,
+    'e si porta dietro la domanda: chi torna da Stripe ha ?ok=<sessione>, e senza la pagina non gli dice grazie');
   assert.match(r, /if \(!config\.sostieniHost\) return next\(\);/,
     'finche\' il sottodominio non risponde la pagina resta qui: spento e\' il modo giusto di sbagliare');
   assert.match(r, /req\.hostname[\s\S]{0,40}=== config\.sostieniHost\) return next\(\);/,

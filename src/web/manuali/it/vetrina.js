@@ -4,7 +4,7 @@
 export default {
   slug: 'vetrina',
   schede: ['pagina', 'donazioni', 'settimana', 'grafiche', 'notifiche', 'telegram', 'ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'dcfiltro'],
-  titolo: 'Manuale della vetrina: pagina link, grafiche e notifiche social | SocialBot',
+  titolo: 'Manuale della vetrina: pagina link, grafiche e social | SocialBot',
   h1: 'Manuale della vetrina: pagina link, grafiche e notifiche social',
   desc: 'La pagina pubblica da mettere in bio, le tre grafiche pronte da pubblicare, quelle che escono da sole e gli avvisi quando vai in diretta o pubblichi qualcosa.',
   aggiornata: '2026-09-25',

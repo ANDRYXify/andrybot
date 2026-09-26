@@ -6,7 +6,7 @@ export default {
   schede: ['sondaggi', 'giveaway', 'penitenze'],
   titolo: 'Manuale di sondaggi, sorteggi e penitenze | SocialBot',
   h1: 'Manuale di sondaggi, sorteggi e penitenze',
-  desc: 'Le tre cose che si fanno mentre sei in diretta: chiedere alla chat, sorteggiare un premio con probabilità che decidi tu, e le penitenze a punti canale che si contano da sole.',
+  desc: 'Tre cose da fare in diretta: chiedere alla chat, sorteggiare un premio con probabilità che decidi tu, e le penitenze a punti canale che si contano da sole.',
   aggiornata: '2026-09-04',
   corpo: [
     { p: [

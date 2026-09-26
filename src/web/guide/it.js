@@ -308,7 +308,7 @@ export const GUIDE_IT = [
   {
     slug: 'bot-per-kick-italiano',
     schede: ['stato'],
-    titolo: 'Bot per Kick in italiano: cosa c\'è e cosa cambia da Twitch | SocialBot',
+    titolo: 'Bot per Kick in italiano: cosa c\'è e cosa cambia da Twitch',
     h1: 'Bot per Kick: cosa c\'è, e cosa cambia da Twitch',
     desc: 'Su Kick l\'API ufficiale c\'è, ma funziona in modo diverso da quella di Twitch — e si vede. Quali bot ci sono davvero, cosa sanno fare e cosa no.',
     aggiornata: '2026-09-06',

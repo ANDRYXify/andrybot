@@ -85,6 +85,20 @@ test('il pagamento si apre sul conto di CASA, e descrive il prodotto senza avern
   } finally { ripulisci(); }
 });
 
+// Col sottodominio acceso la pagina vive li', e /sostieni ci rimanda. Il ritorno
+// da Stripe ci arriva diretto: il rimando buttava via ?ok=<sessione>, e chi
+// aveva appena donato si ritrovava la pagina senza grazie e senza esito.
+test('il pagamento torna all\'indirizzo vero della pagina, con la sua sessione', async () => {
+  config.stripe.secretKey = 'sk_test_prova';
+  config.sostieniHost = 'sostieni.socialbot.live';
+  finto({ stato: 200, dati: { id: 'cs_sotto', url: 'https://stripe/sotto' } });
+  try {
+    await S.apri({ importo: '5' });
+    assert.equal(chiamate[0].corpo.success_url, 'https://sostieni.socialbot.live/?ok={CHECKOUT_SESSION_ID}');
+    assert.equal(chiamate[0].corpo.cancel_url, 'https://sostieni.socialbot.live/?ok=annullato');
+  } finally { config.sostieniHost = ''; ripulisci(); }
+});
+
 test('lo stesso pagamento non si conta due volte', async () => {
   config.stripe.secretKey = 'sk_test_prova';
   finto({ stato: 200, dati: { id: 'cs_due', url: 'https://stripe/due' } });

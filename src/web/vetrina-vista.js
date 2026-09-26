@@ -90,7 +90,7 @@ export const META_VETRINA = {
   },
   en: {
     html: 'en', ogLocale: 'en_GB', url: SITO + VIA_LINGUA.en, inLanguage: 'en-GB',
-    titolo: 'SocialBot — the Twitch and Kick bot that writes in chat under your own name',
+    titolo: 'SocialBot: the Twitch and Kick bot that writes under your name',
     desc: 'The Twitch and Kick bot that writes in chat under your own name, with overlay, moderation, social graphics and a link page in the same panel. Free.',
     ogTitolo: 'The bot that writes in chat under your own name',
     ogDesc: 'A viewer types !social and the reply comes from your account, not from a bot. The same panel has overlay, moderation, clips, social graphics and a link page, on Twitch and Kick. Free, with a demo.',
@@ -103,7 +103,7 @@ export const META_VETRINA = {
   },
   es: {
     html: 'es', ogLocale: 'es_ES', url: SITO + VIA_LINGUA.es, inLanguage: 'es-ES',
-    titolo: 'SocialBot — el bot de Twitch y Kick que en el chat escribe con tu nombre',
+    titolo: 'SocialBot: el bot de Twitch y Kick que escribe con tu nombre',
     desc: 'El bot de Twitch y Kick que escribe en el chat con tu nombre, con overlay, moderación, gráficas sociales y página de enlaces en el mismo panel. Gratis.',
     ogTitolo: 'El bot que en el chat escribe con tu nombre',
     ogDesc: 'Un espectador escribe !social y en el chat responde tu cuenta, no un bot. En el mismo panel tienes overlay, moderación, clips, gráficas sociales y página de enlaces, en Twitch y Kick. Gratis, con demo.',

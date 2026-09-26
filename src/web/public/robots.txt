@@ -2,6 +2,8 @@
 # La vetrina pubblica è indicizzabile; le aree private rispondono già 404 senza
 # accesso e le teniamo fuori dal crawl budget. Gli asset restano crawlabili così
 # Google può renderizzare la pagina (SPA).
+# /sblocca e /mod restano aperte: dicono «noindex», e Google lo legge solo se ci
+# può entrare. Chiuse qui, un link da fuori le farebbe finire nell'indice vuote.
 User-agent: *
 Disallow: /api/
 Disallow: /auth/
@@ -9,8 +11,6 @@ Disallow: /overlay/
 Disallow: /tg/
 Disallow: /entra
 Disallow: /accedi
-Disallow: /sblocca
-Disallow: /mod
 Disallow: /esci
 Disallow: /logout
 Disallow: /o/

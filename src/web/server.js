@@ -32,11 +32,12 @@ import { creaMinifica } from './minifica.js';
 import { guscioVetrina, guscioPannello, META_VETRINA, VIA_LINGUA, indirizzoHome } from './vetrina-vista.js';
 import { pagina404, LINGUE_SERVIZIO } from './pagine-servizio.js';
 import { montaArgine } from './argine.js';
-import { GUIDE, paginaGuida, paginaIndice, paginaNovita, paginaServizio, urlGuide, VIE, LINGUE_DOC } from './guide.js';
+import { GUIDE, paginaGuida, paginaIndice, paginaNovita, paginaServizio, VIE, LINGUE_DOC } from './guide.js';
+import { vociPubbliche, sitemapXml } from './sitemap.js';
 import * as novita from './novita.js';
 import { spazioCartella, inMega } from '../features/spazio.js';
 import * as spontanea from '../features/spontanea.js';
-import { paginaManuale, paginaIndiceManuali, urlManuali, aiutiPerScheda } from './manuali.js';
+import { paginaManuale, paginaIndiceManuali, aiutiPerScheda } from './manuali.js';
 import { conOccasione, normOccasioni, accendi as accendiOccasione } from '../features/occasioni.js';
 import * as cancello from '../features/tg-cancello.js';
 import { permessiDi as permessiDiChat, guai as guaiCancello } from '../features/tg-ingresso.js';
@@ -2178,40 +2179,21 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // La home compare TRE volte, una per lingua, e ogni voce porta con se il
   // gruppo completo di alternative `xhtml:link`: e la forma che Google chiede
   // per dichiarare le lingue da sitemap, e vale insieme agli hreflang nell'HTML.
-  const escXml = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+  //
+  // Le voci che non vengono dal database le compone src/web/sitemap.js, e le
+  // stesse le apre una per una il cancello SEO (scripts/verifica-seo.mjs).
   app.get('/sitemap.xml', wrap(async (req, res) => {
     const b = config.baseUrl;
-    const oggi = new Date().toISOString().slice(0, 10);
-    const LINGUE_URL = Object.fromEntries(Object.entries(VIA_LINGUA).map(([l, via]) => [l, b + via]));
-    const alternative = Object.entries(LINGUE_URL)
-      .map(([l, u]) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${escXml(u)}"/>`)
-      .concat([`    <xhtml:link rel="alternate" hreflang="x-default" href="${escXml(LINGUE_URL.it)}"/>`])
-      .join('\n');
-    const voci = Object.values(LINGUE_URL).map((u) => ({ u, p: '1.0', f: 'weekly', alt: true }));
-    for (const g of [...urlGuide(novita.pubbliche(novita.leggi(NOVITA_MD))), ...urlManuali()]) voci.push({ u: g.loc, p: g.prio, f: g.freq, m: g.lastmod, altDi: g.alt });
-    // L'indirizzo che si dichiara e' quello vero: dichiararne uno che rimanda
-    // vorrebbe dire far indicizzare un rimbalzo.
-    voci.push({ u: donazioni.urlSostieni(), p: '0.4', f: 'yearly' });
-    voci.push({ u: `${b}/privacy`, p: '0.3', f: 'yearly' });
-    voci.push({ u: `${b}/termini`, p: '0.3', f: 'yearly' });
+    const voci = vociPubbliche({ base: b, pubbliche: novita.pubbliche(novita.leggi(NOVITA_MD)), sostieni: donazioni.urlSostieni(), publicDir });
     try {
       for (const r of db.prepare('SELECT channel, ts FROM link_page WHERE attiva=1 ORDER BY ts DESC LIMIT 5000').all()) {
-        voci.push({ u: `${b}/u/${r.channel}`, p: '0.6', f: 'weekly', m: new Date(r.ts || Date.now()).toISOString().slice(0, 10) });
+        voci.push({ u: `${b}/u/${r.channel}`, p: '0.6', f: 'weekly', m: r.ts ? new Date(r.ts).toISOString().slice(0, 10) : undefined });
       }
       for (const r of db.prepare('SELECT channel, ts FROM pagina_dona WHERE attiva=1 ORDER BY ts DESC LIMIT 5000').all()) {
-        voci.push({ u: donazioni.urlPaginaDona(r.channel), p: '0.5', f: 'weekly', m: new Date(r.ts || Date.now()).toISOString().slice(0, 10) });
+        voci.push({ u: donazioni.urlPaginaDona(r.channel), p: '0.5', f: 'weekly', m: r.ts ? new Date(r.ts).toISOString().slice(0, 10) : undefined });
       }
     } catch { /* tabella non ancora creata */ }
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n`
-      + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n`
-      + voci.map((v) => `  <url>\n    <loc>${escXml(v.u)}</loc>\n`
-        + (v.alt ? alternative + '\n' : '')
-        + (v.altDi && Object.keys(v.altDi).length > 1 ? Object.entries(v.altDi)
-          .map(([l, u]) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${escXml(u)}"/>`)
-          .concat(v.altDi.it ? [`    <xhtml:link rel="alternate" hreflang="x-default" href="${escXml(v.altDi.it)}"/>`] : [])
-          .join('\n') + '\n' : '')
-        + `    <lastmod>${v.m || oggi}</lastmod>\n    <changefreq>${v.f}</changefreq>\n    <priority>${v.p}</priority>\n  </url>`).join('\n')
-      + `\n</urlset>\n`;
+    const xml = sitemapXml(voci);
     res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
     res.type('application/xml').send(xml);
   }));
@@ -2511,7 +2493,12 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   app.get('/sostieni', (req, res, next) => {
     if (!config.sostieniHost) return next();
     if (String(req.hostname || '').toLowerCase() === config.sostieniHost) return next();
-    return res.redirect(301, 'https://' + config.sostieniHost + '/');
+    // Il rimando si porta dietro la domanda: chi torna da Stripe arriva qui con
+    // ?ok=<sessione>, ed e' quella che fa dire grazie alla pagina e le fa
+    // rileggere il pagamento. Buttata via, chi aveva appena donato vedeva la
+    // pagina come se non avesse fatto niente.
+    const q = req.originalUrl.indexOf('?');
+    return res.redirect(301, 'https://' + config.sostieniHost + '/' + (q >= 0 ? req.originalUrl.slice(q) : ''));
   });
   app.get('/sostieni', (req, res) => res.sendFile(SOSTIENI_HTML));
 

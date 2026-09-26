@@ -44,7 +44,9 @@ test('il server e il sito dei collaudi seguono la stessa regola', () => {
   assert.match(SITO_PROVE, /const dove = indirizzoHome\(q, via\.search\)/);
   assert.match(SITO_PROVE, /return guscioVetrina\(base, lingua, \{ kick, youtube, piani \}\);/, 'la stessa testa del server');
   assert.match(SERVER, /h = guscioVetrina\(h, codice, /);
-  assert.match(SERVER, /const LINGUE_URL = Object\.fromEntries\(Object\.entries\(VIA_LINGUA\)/, 'la sitemap dagli stessi indirizzi');
+  const SITEMAP = readFileSync(new URL('../../src/web/sitemap.js', import.meta.url), 'utf8');
+  assert.match(SERVER, /vociPubbliche\(\{ base: b,/, 'la sitemap la compone il modulo della sitemap');
+  assert.match(SITEMAP, /const home = Object\.fromEntries\(Object\.entries\(VIA_LINGUA\)/, 'dagli stessi indirizzi');
 });
 
 test('ogni indirizzo di ogni lingua ha la sua rotta scritta per intero, e si apre a chi non e\' entrato', () => {
