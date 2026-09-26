@@ -2354,6 +2354,8 @@ function scorciatoia(...pezzi) {
   return _dispositivo.apple ? p.join('') : p.join('+');
 }
 
+const _tastiSviluppo = () => (_dispositivo.apple ? scorciatoia('mod', 'alt', 'I') : 'F12');
+
 function traTasti(combo) {
   return _dispositivo.soloTocco ? '' : ` (${combo})`;
 }
@@ -17626,12 +17628,13 @@ async function caricaEmote7TV() {
       <details class="spazio-sopra">
         <summary>${L('Come trovo il mio token 7TV?', 'How do I find my 7TV token?', '¿Cómo encuentro mi token de 7TV?')}</summary>
         <ol class="suggerimento">
-          <li>${L('Vai su', 'Go to', 'Ve a')} <a href="https://7tv.app" target="_blank" rel="noopener">7tv.app</a> ${L('e accedi con Twitch.', 'and log in with Twitch.', 'e inicia sesión con Twitch.')}</li>
-          <li>${L('Apri gli strumenti per sviluppatori del browser (tasto F12) e vai in «Applicazione» (Application). Su Firefox si chiama «Archiviazione».', 'Open the browser developer tools (F12 key) and go to «Application». On Firefox it is called «Storage».', 'Abre las herramientas de desarrollo del navegador (tecla F12) y ve a «Aplicación» (Application). En Firefox se llama «Almacenamiento».')}</li>
-          <li>${L('In «Archiviazione locale» (Local storage) apri https://7tv.app e copia il valore di «7tv-token».', 'Under «Local storage» open https://7tv.app and copy the value of «7tv-token».', 'En «Almacenamiento local» (Local storage) abre https://7tv.app y copia el valor de «7tv-token».')}</li>
+          <li>${L('Vai su', 'Go to', 'Ve a')} <a href="https://7tv.app" target="_blank" rel="noopener">7tv.app</a> ${L('da un computer e accedi con Twitch: in alto a destra deve comparire il tuo nome. Senza accesso il token non c\'è.', 'from a computer and log in with Twitch: your name must show up at the top right. Without logging in there is no token.', 'desde un ordenador e inicia sesión con Twitch: arriba a la derecha tiene que aparecer tu nombre. Sin iniciar sesión no hay token.')}</li>
+          <li>${L(`Premi ${_tastiSviluppo()} per aprire gli strumenti per sviluppatori. Su Chrome ed Edge apri la scheda «Application», su Firefox «Archiviazione». Se non la vedi, è dietro le frecce » in alto.`, `Press ${_tastiSviluppo()} to open the developer tools. On Chrome and Edge open the «Application» tab, on Firefox «Storage». If you can't see it, it is behind the » arrows at the top.`, `Pulsa ${_tastiSviluppo()} para abrir las herramientas de desarrollo. En Chrome y Edge abre la pestaña «Application», en Firefox «Almacenamiento». Si no la ves, está detrás de las flechas » de arriba.`)}</li>
+          <li>${L('A sinistra apri «Local storage» e scegli https://7tv.app. Nel filtro scrivi 7tv-token e copia tutto il valore, senza virgolette.', 'On the left open «Local storage» and pick https://7tv.app. Type 7tv-token in the filter and copy the whole value, without quotes.', 'A la izquierda abre «Local storage» y elige https://7tv.app. En el filtro escribe 7tv-token y copia todo el valor, sin comillas.')}</li>
           <li>${L('Incollalo qui sopra e premi «Collega 7TV».', 'Paste it above and press «Connect 7TV».', 'Pégalo arriba y pulsa «Conectar 7TV».')}</li>
         </ol>
         <p class="suggerimento">${L('Va bene anche dalla scheda «Rete» (Network): apri una richiesta verso api.7tv.app e copia quello che segue «Bearer» nell\'intestazione «authorization». Prima di collegarlo chiediamo a 7TV se quel token può davvero cambiare le emote del tuo canale.', 'The «Network» tab works too: open a request to api.7tv.app and copy what follows «Bearer» in the «authorization» header. Before connecting it we ask 7TV whether that token can really change your channel emotes.', 'También sirve la pestaña «Red» (Network): abre una petición a api.7tv.app y copia lo que sigue a «Bearer» en el encabezado «authorization». Antes de conectarlo le preguntamos a 7TV si ese token puede cambiar de verdad las emotes de tu canal.')}</p>
+        <p class="suggerimento">${L('Perché non c\'è un tasto: il login di 7TV riporta solo su 7tv.app, e non consegna il token a un altro sito. Il token si prende da lì, una volta.', 'Why there is no button: 7TV\'s login only returns to 7tv.app and does not hand the token to another site. So the token comes from there, once.', 'Por qué no hay un botón: el inicio de sesión de 7TV solo vuelve a 7tv.app y no entrega el token a otro sitio. El token se toma de ahí, una vez.')}</p>
       </details>`;
     document.getElementById('svtv-collega')?.addEventListener('click', () => conErrore(async () => {
       const token = (document.getElementById('svtv-token')?.value || '').trim();

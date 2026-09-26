@@ -73,6 +73,15 @@ https://7tv.app, sotto `7tv-token`, e nelle richieste verso `api.7tv.app` dopo
 sito non fa più: chi le seguiva non trovava niente da copiare. Quello che si
 incolla si pulisce da `Bearer`, virgolette e spazi (`pulisciToken`).
 
+Il pannello spiega la strada per browser (Chrome ed Edge: «Application»;
+Firefox: «Archiviazione»; poi «Local storage», https://7tv.app, filtro
+`7tv-token`) e dice che senza accesso a 7tv.app il token non c'è. Si è guardato
+se le API nuove (v4, documentate su 7tv.app/api/docs) permettono un tasto
+«Collega» al posto del copia e incolla: no. Il login v4 è un PKCE con
+`redirect_uri` fisso su `7tv.app/login/callback`, e un `return_to` verso un
+altro sito risponde 403 «return_to origin mismatch». Il token resta dentro
+7tv.app; la pagina delle API stessa lo legge da `localStorage["7tv-token"]`.
+
 ## Le letture si ricordano solo quando sono riuscite
 
 `features/emotes.js` tiene la mappa di un canale per dieci minuti. Prima ci

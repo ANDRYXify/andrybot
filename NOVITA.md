@@ -42,6 +42,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - La plancia si apre disegnandosi: tessere e tasti a matita uno dopo l'altro, e il nome della sezione che sale parola per parola, come nel resto del pannello. Chiudendola si disfa.
 - Nella pagina che chiede di confermare la settimana i tasti hanno l'aspetto di quelli del sito, non quello grezzo del browser.
 - Quando al canale non manca niente, ogni qualche giorno un piccolo invito in basso a destra ti fa scoprire una funzione che non hai ancora provato, una volta sola.
+- Le istruzioni per trovare il token 7TV dicono dove cliccare su Chrome, Edge e Firefox, e ricordano che senza l'accesso a 7tv.app il token non c'è. [vai: emote]
 
 ## 2026-09-25
 
