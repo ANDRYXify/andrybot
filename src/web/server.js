@@ -5462,37 +5462,59 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     res.json(vistaAutomatiche(login));
   }));
 
+  app.post('/api/streamer/automatiche/ferma', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const r = automatiche.fermaDalPannello(login, settDi(login));
+    if (!r.ok) return res.status(409).json({ errore: 'Non c\'e\' un\'uscita della settimana da fermare.' });
+    res.json(vistaAutomatiche(login));
+  }));
+
   // Il link della mail porta qui: una pagina che dice cosa uscira' e quando, e
-  // un tasto. Conferma chi preme, non chi apre: i programmi che controllano la
-  // posta aprono i link da soli.
+  // i tasti. Decide chi preme, non chi apre: i programmi che controllano la
+  // posta aprono i link da soli. Le risposte sono due, «Va bene così» e «Non
+  // pubblicare», e fino all'uscita si puo' passare dall'una all'altra: chi ha
+  // confermato e poi vede un errore la ferma da qui, senza aprire il pannello.
   const quandoEsce = automatiche.quandoEsce;
   const escP = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const righeSettimana = (sett) => automatiche.righeSettimana(sett).map((r) => `<li>${escP(r)}</li>`).join('');
-  const paginaConferma = (login, chiave, messaggio = '') => {
+  const tastoDecidi = (u, chiave, come, testo) => `<form method="post" action="/settimana/conferma"><input type="hidden" name="u" value="${escP(u)}"><input type="hidden" name="t" value="${escP(chiave)}"><input type="hidden" name="fai" value="${come}"><button type="submit">${testo}</button></form>`;
+  const paginaConferma = (login, chiave, { fatto = '', fai = '' } = {}) => {
     const u = String(login || '').toLowerCase();
     const r = /^[a-z0-9_]{1,40}$/.test(u) && /^[A-Za-z0-9_-]{20,64}$/.test(chiave) ? automatiche.richiestaDi(u, chiave) : null;
     const sett = r ? settDi(u) : null;
+    const quando = r ? escP(quandoEsce(sett, r.per)) : '';
+    const Quando = quando.charAt(0).toUpperCase() + quando.slice(1);
+    const lista = r ? `<ul>${righeSettimana(sett)}</ul>` : '';
+    const cambia = '<p>Vuoi cambiarla? <a href="/#settimana">Apri la tua Settimana</a>.</p>';
     const corpo = !r
-      ? '<h1>Link non valido</h1><p>Questo link non è uno di quelli che abbiamo mandato. La settimana si conferma anche dal pannello, nelle Grafiche.</p>'
+      ? '<h1>Link non valido</h1><p>Questo link non è uno di quelli che abbiamo mandato. La settimana si conferma, o si ferma, anche dal pannello, nelle Grafiche.</p>'
       : r.scaduta
-        ? `<h1>Questa uscita è passata</h1><p>Il link valeva per ${escP(quandoEsce(sett, r.per))}. La prossima richiesta arriva il giorno prima della prossima uscita.</p>`
-        : messaggio || r.confermata
-          ? `<h1>Confermata</h1><p>${escP(quandoEsce(sett, r.per))} la tua settimana esce nei posti che hai scelto.</p><ul>${righeSettimana(sett)}</ul><p><a href="/#grafiche">Apri le Grafiche</a></p>`
-          : `<h1>La tua settimana esce così</h1><p>${escP(quandoEsce(sett, r.per))}, uguale a questa:</p><ul>${righeSettimana(sett)}</ul>
-<form method="post" action="/settimana/conferma"><input type="hidden" name="u" value="${escP(u)}"><input type="hidden" name="t" value="${escP(chiave)}"><button type="submit">Va bene così</button></form>
-<p>Vuoi cambiarla? <a href="/#settimana">Apri la tua Settimana</a>: finché non confermi, non esce.</p>`;
+        ? `<h1>Questa uscita è passata</h1><p>Il link valeva per ${quando}. La prossima richiesta arriva il giorno prima della prossima uscita.</p>`
+        : fatto === 'ferma' || r.fermata
+          ? `<h1>Ferma: non esce</h1><p>${Quando} la tua settimana non esce. Se ci ripensi, fino a quel momento la puoi ancora confermare.</p>${lista}
+${tastoDecidi(u, chiave, 'conferma', 'Pubblicala lo stesso')}${cambia}`
+          : fatto === 'conferma' || r.confermata
+            ? `<h1>Confermata</h1><p>${Quando} la tua settimana esce nei posti che hai scelto.</p>${lista}
+<p>Hai visto un errore? Fino all'uscita la puoi ancora fermare.</p>${tastoDecidi(u, chiave, 'ferma', 'Non pubblicare')}<p><a href="/#grafiche">Apri le Grafiche</a></p>`
+            : fai === 'ferma'
+              ? `<h1>Vuoi fermare la tua settimana?</h1><p>${Quando} uscirebbe uguale a questa:</p>${lista}
+${tastoDecidi(u, chiave, 'ferma', 'Non pubblicare')}<p>O se invece va bene:</p>${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}${cambia}`
+              : `<h1>La tua settimana esce così</h1><p>${Quando}, uguale a questa:</p>${lista}
+${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
+<p>Finché non confermi, non esce. Non deve uscire?</p>${tastoDecidi(u, chiave, 'ferma', 'Non pubblicare')}${cambia}`;
     return paginaServizio({ titolo: 'La tua settimana | SocialBot', url: config.baseUrl.replace(/\/$/, '') + '/settimana/conferma', corpo });
   };
   app.get('/settimana/conferma', (req, res) => {
     res.set('Cache-Control', 'no-store').set('Referrer-Policy', 'no-referrer');
-    res.type('html').send(paginaConferma(req.query.u, String(req.query.t || '')));
+    res.type('html').send(paginaConferma(req.query.u, String(req.query.t || ''), { fai: req.query.fai === 'ferma' ? 'ferma' : '' }));
   });
   app.post('/settimana/conferma', express.urlencoded({ extended: false, limit: '2kb' }), (req, res) => {
     const u = String(req.body?.u || '').toLowerCase(), t = String(req.body?.t || '');
+    const come = req.body?.fai === 'ferma' ? 'ferma' : 'conferma';
     if (!extRateOk('settimana-conferma:' + u)) return res.status(429).type('text').send('Troppe richieste: riprova fra un minuto.');
-    const ok = /^[a-z0-9_]{1,40}$/.test(u) && /^[A-Za-z0-9_-]{20,64}$/.test(t) && automatiche.confermaConChiave(u, t).ok;
+    const ok = /^[a-z0-9_]{1,40}$/.test(u) && /^[A-Za-z0-9_-]{20,64}$/.test(t) && automatiche.decidiConChiave(u, t, come).ok;
     res.set('Cache-Control', 'no-store').set('Referrer-Policy', 'no-referrer');
-    res.type('html').send(paginaConferma(u, t, ok ? 'confermata' : ''));
+    res.type('html').send(paginaConferma(u, t, { fatto: ok ? come : '' }));
   });
 
   // Il giro: ogni minuto, per chi ha qualcosa di acceso.
@@ -5509,14 +5531,14 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const quando = quandoEsce(sett, per);
     const email = mailDi(login);
     if (email) {
-      const m = automatiche.mailRichiesta({ display: streamers.get(login)?.display || login, sett, per, link,
+      const m = automatiche.mailRichiesta({ display: streamers.get(login)?.display || login, sett, per, link, ferma: `${link}&fai=ferma`,
         cambia: `${config.baseUrl.replace(/\/$/, '')}/#settimana`, codice: posta.codiceDi(login) });
       await posta.invia({ a: email, oggetto: m.oggetto, testo: m.testo, html: m.html })
         .catch((e) => log.warn(`#${login} richiesta della settimana via mail:`, e?.message || e));
     }
     const c = tgPrivato(login);
     if (c) {
-      const t = `${telegram.escHtml(quando.charAt(0).toUpperCase() + quando.slice(1))} la tua settimana esce, uguale a questa. Va bene così? <a href="${link}">Conferma</a> · <a href="${config.baseUrl.replace(/\/$/, '')}/#settimana">Cambiala</a>. Finché non confermi, non esce.`;
+      const t = `${telegram.escHtml(quando.charAt(0).toUpperCase() + quando.slice(1))} la tua settimana esce, uguale a questa. Va bene così? <a href="${link}">Conferma</a> · <a href="${config.baseUrl.replace(/\/$/, '')}/#settimana">Cambiala</a> · <a href="${link}&fai=ferma">Non pubblicare</a>. Finché non confermi, non esce, e anche dopo la puoi fermare.`;
       await telegram.inviaMessaggio(c.token, c.owner_tg_id, t, { anteprima: false }).catch(() => {});
     }
   };

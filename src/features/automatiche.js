@@ -79,6 +79,7 @@ export function leggi(login) {
       chiesta: Number(s.settimana?.chiesta) || 0,
       chiave: String(s.settimana?.chiave || ''),
       confermata: Number(s.settimana?.confermata) || 0,
+      fermata: Number(s.settimana?.fermata) || 0,
       ultima: s.settimana?.ultima || null,
     },
   };
@@ -140,6 +141,7 @@ export const MOTIVI = {
   'anticipo-cambiato': 'l\'anticipo e\' cambiato dopo che la grafica e\' stata preparata: apri le Grafiche, si ripreparano da sole',
   'in-diretta': 'eri gia\' in diretta: e\' uscita «Live ora», se l\'hai accesa',
   'non-confermata': 'non l\'hai confermata, quindi non l\'ho pubblicata',
+  fermata: 'l\'hai fermata tu, quindi non l\'ho pubblicata',
   'nessun-posto': 'nella Settimana non c\'e\' nessun posto dove mandarla',
 };
 
@@ -189,7 +191,7 @@ export function richiestaDaFare({ sett, conf, stato, adesso }) {
   if (!conf?.settimana?.attiva || !conf.settimana.chiedi) return null;
   const per = prossimaUscita({ sett, conf, adesso });
   if (!per || adesso < per - RICHIESTA_PRIMA_MS) return null;
-  if (stato.settimana.chiesta === per || stato.settimana.confermata === per) return null;
+  if (stato.settimana.chiesta === per || stato.settimana.confermata === per || stato.settimana.fermata === per) return null;
   return { per };
 }
 
@@ -207,18 +209,28 @@ export function preparaRichiesta(login, per) {
   return chiave;
 }
 
+// Confermata e fermata sono due risposte alla stessa domanda: per un'uscita ne
+// vale una sola, l'ultima data. Chi ha confermato e poi vede un errore la
+// ferma; chi l'ha fermata e ci ripensa la conferma.
+function decidi(s, per, come) {
+  s.settimana.confermata = come === 'conferma' ? per : (s.settimana.confermata === per ? 0 : s.settimana.confermata);
+  s.settimana.fermata = come === 'ferma' ? per : (s.settimana.fermata === per ? 0 : s.settimana.fermata);
+}
+
 // Dal link della mail: vale per l'uscita per cui e' stato mandato, e solo
-// finche' non e' passata.
-export function confermaConChiave(login, chiave, adesso = Date.now()) {
+// finche' non e' passata. `come` e' 'conferma' o 'ferma'.
+export function decidiConChiave(login, chiave, come, adesso = Date.now()) {
   const s = leggi(login);
   const atteso = s.settimana.chiave;
   const dato = impronta(chiave || '');
   if (!atteso || atteso.length !== dato.length || !crypto.timingSafeEqual(Buffer.from(atteso), Buffer.from(dato))) return { ok: false, motivo: 'link' };
   if (!s.settimana.chiesta || s.settimana.chiesta <= adesso) return { ok: false, motivo: 'scaduto' };
-  s.settimana.confermata = s.settimana.chiesta;
+  decidi(s, s.settimana.chiesta, come === 'ferma' ? 'ferma' : 'conferma');
   scrivi(login, s);
-  return { ok: true, per: s.settimana.confermata };
+  return { ok: true, per: s.settimana.chiesta };
 }
+export const confermaConChiave = (login, chiave, adesso = Date.now()) => decidiConChiave(login, chiave, 'conferma', adesso);
+export const fermaConChiave = (login, chiave, adesso = Date.now()) => decidiConChiave(login, chiave, 'ferma', adesso);
 
 // Il link porta a una pagina che chiede di premere: questa dice per quale
 // uscita vale, senza confermare niente.
@@ -227,18 +239,21 @@ export function richiestaDi(login, chiave, adesso = Date.now()) {
   const dato = impronta(chiave || '');
   const ok = s.settimana.chiave && s.settimana.chiave.length === dato.length && crypto.timingSafeEqual(Buffer.from(s.settimana.chiave), Buffer.from(dato));
   if (!ok) return null;
-  return { per: s.settimana.chiesta, scaduta: !s.settimana.chiesta || s.settimana.chiesta <= adesso, confermata: s.settimana.confermata === s.settimana.chiesta };
+  return { per: s.settimana.chiesta, scaduta: !s.settimana.chiesta || s.settimana.chiesta <= adesso,
+    confermata: s.settimana.confermata === s.settimana.chiesta, fermata: s.settimana.fermata === s.settimana.chiesta };
 }
 
 // Dal pannello: la prossima uscita.
-export function confermaDalPannello(login, sett, adesso = Date.now()) {
+function decidiDalPannello(login, sett, come, adesso) {
   const s = leggi(login);
   const per = prossimaUscita({ sett, conf: s.conf, adesso });
   if (!per) return { ok: false };
-  s.settimana.confermata = per;
+  decidi(s, per, come);
   scrivi(login, s);
   return { ok: true, per };
 }
+export const confermaDalPannello = (login, sett, adesso = Date.now()) => decidiDalPannello(login, sett, 'conferma', adesso);
+export const fermaDalPannello = (login, sett, adesso = Date.now()) => decidiDalPannello(login, sett, 'ferma', adesso);
 
 // ── il giro ────────────────────────────────────────────────────────────────
 // Ogni minuto, per chi ha qualcosa di acceso. Quello che serve da fuori arriva
@@ -286,7 +301,8 @@ export async function giro(login, { sett, rev, adesso = Date.now(), inDiretta = 
       s.settimana.fatte = ricorda(s.settimana.fatte, w.per);
       scrivi(login, s);
       let r;
-      if (s.conf.settimana.chiedi && s.settimana.confermata !== w.per) r = { ok: false, saltata: true, codice: 'non-confermata' };
+      if (s.settimana.fermata === w.per) r = { ok: false, saltata: true, codice: 'fermata' };
+      else if (s.conf.settimana.chiedi && s.settimana.confermata !== w.per) r = { ok: false, saltata: true, codice: 'non-confermata' };
       else {
         const motivo = motivoVecchia(s.immagini['settimana-post'], { impronta: imp, rev }) || motivoVecchia(s.immagini['settimana-storia'], { impronta: imp, rev });
         const post = motivo ? null : immagine(login, 'settimana-post'), storia = motivo ? null : immagine(login, 'settimana-storia');
@@ -329,6 +345,7 @@ export function vista(login, { sett, rev, adesso = Date.now() }) {
     settimana: {
       prossima: uscita || null,
       confermata: !!uscita && s.settimana.confermata === uscita,
+      fermata: !!uscita && s.settimana.fermata === uscita,
       chiesta: !!uscita && s.settimana.chiesta === uscita,
       ultima: s.settimana.ultima,
     },
@@ -346,17 +363,20 @@ export const quandoEsce = (sett, per) => new Intl.DateTimeFormat('it-IT', {
 
 // La mail che chiede se la settimana va bene: cosa uscira', quando, il tasto
 // per confermare e la strada per cambiarla. Senza conferma non esce: lo dice.
-export function mailRichiesta({ display = '', sett, per, link, cambia, codice = '' }) {
+// E c'e' anche «Non pubblicare», per chi ha confermato e poi vede un errore, o
+// legge tardi: la ferma fino all'ultimo minuto, senza aprire il pannello.
+export function mailRichiesta({ display = '', sett, per, link, ferma, cambia, codice = '' }) {
   const quando = quandoEsce(sett, per);
   const righe = righeSettimana(sett);
   const corpo = `<p style="margin:0 0 14px;">${escH(quando.charAt(0).toUpperCase() + quando.slice(1))} la tua settimana esce nei posti che hai scelto, uguale a questa:</p>
 <ul style="margin:0 0 18px;padding-left:20px;line-height:1.7;">${righe.map((r) => `<li>${escH(r)}</li>`).join('')}</ul>
 <p style="margin:0 0 18px;">${tastoHtml('Va bene così', link)}</p>
-<p style="margin:0;">Vuoi cambiarla? <a href="${escH(cambia)}">Apri la tua Settimana</a>. Finché non confermi, non esce.</p>`;
+<p style="margin:0 0 12px;">Vuoi cambiarla? <a href="${escH(cambia)}">Apri la tua Settimana</a>. Finché non confermi, non esce.</p>
+<p style="margin:0;">Non deve uscire? <a href="${escH(ferma)}">Non pubblicare</a>: la fermi anche dopo averla confermata, fino al momento dell'uscita.</p>`;
   return {
     oggetto: 'La tua settimana esce domani: va bene così?',
     html: guscioHtml({ titolo: 'La tua settimana, domani', cappello: display, corpo, codice,
       piede: 'SocialBot · socialbot.live · questa mail arriva il giorno prima di ogni uscita, finché la settimana automatica è accesa.' }),
-    testo: `${quando} la tua settimana esce, uguale a questa:\n${righe.join('\n')}\n\nVa bene così: ${link}\nPer cambiarla: ${cambia}\nFinché non confermi, non esce.${codiceTesto(codice)}`,
+    testo: `${quando} la tua settimana esce, uguale a questa:\n${righe.join('\n')}\n\nVa bene così: ${link}\nPer cambiarla: ${cambia}\nFinché non confermi, non esce.\nNon deve uscire? Non pubblicare, anche dopo averla confermata: ${ferma}${codiceTesto(codice)}`,
   };
 }

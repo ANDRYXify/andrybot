@@ -53,9 +53,10 @@ test('si ripreparano quando cambia quello che disegnano', () => {
 
 test('la conferma dal link vale solo premendo, e il link non si inventa', () => {
   const get = rotta("app.get('/settimana/conferma'", 400);
-  assert.ok(!get.includes('confermaConChiave'), 'aprire il link non conferma: i programmi della posta lo aprono da soli');
+  assert.ok(!/confermaConChiave|fermaConChiave|decidiConChiave/.test(get), 'aprire il link non decide niente: i programmi della posta lo aprono da soli');
   const post = rotta("app.post('/settimana/conferma'", 900);
-  assert.ok(post.includes('automatiche.confermaConChiave(u, t).ok'));
+  assert.ok(post.includes('automatiche.decidiConChiave(u, t, come).ok'));
+  assert.ok(post.includes("const come = req.body?.fai === 'ferma' ? 'ferma' : 'conferma';"), 'le risposte sono due, e una sola alla volta');
   assert.ok(post.includes("extRateOk('settimana-conferma:' + u)"), 'con un tetto ai tentativi');
   assert.match(AUTO, /crypto\.timingSafeEqual/, 'la chiave si confronta a tempo costante');
   assert.match(AUTO, /s\.settimana\.chiave = impronta\(chiave\)/, 'e si tiene solo la sua impronta');
@@ -69,4 +70,19 @@ test('il giro gira ogni minuto, e pubblica dalle stesse strade di sempre', () =>
   assert.ok(giro.includes('await mandaLaSettimana(login, { byte, storia, testo, dove: sett.dove })'), 'la settimana come «Manda»');
   assert.ok(giro.includes('inDiretta: !!manager?.inDiretta?.(login)'), 'e sa se sei gia\' in diretta');
   assert.match(SRV, /setInterval\(\(\) => \{ giroAutomatiche\(\)\.catch\(\(\) => \{\}\); \}, 60_000\)/);
+});
+
+// «Non pubblicare»: chi ha confermato e poi vede un errore, o legge tardi, la
+// ferma dalla mail o da Telegram senza aprire il pannello. Stessa pagina, stessa
+// chiave, un tasto da premere; e il pannello ha lo stesso tasto.
+test('la settimana si ferma dalla mail, da Telegram e dal pannello', () => {
+  const chiedi = rotta('const chiediLaSettimana = async', 1400);
+  assert.ok(chiedi.includes('ferma: `${link}&fai=ferma`'), 'la mail ha il suo «Non pubblicare»');
+  assert.ok(chiedi.includes('<a href="${link}&fai=ferma">Non pubblicare</a>'), 'e Telegram anche');
+  assert.match(AUTO, /Non deve uscire\? <a href="\$\{escH\(ferma\)\}">Non pubblicare<\/a>/);
+  const pagina = rotta('const paginaConferma = ', 2600);
+  assert.ok(pagina.includes("tastoDecidi(u, chiave, 'ferma', 'Non pubblicare')"), 'la pagina del link la ferma premendo');
+  assert.ok(pagina.includes("tastoDecidi(u, chiave, 'conferma', 'Pubblicala lo stesso')"), 'e ferma, la si puo\' ancora confermare');
+  assert.ok(SRV.includes("app.post('/api/streamer/automatiche/ferma', requireOwner"), 'il pannello ha la sua porta, solo per lo streamer');
+  assert.match(APP, /'\/api\/streamer\/automatiche\/ferma'/, 'e il pannello la usa');
 });

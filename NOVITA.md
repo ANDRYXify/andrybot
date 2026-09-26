@@ -30,6 +30,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nei risultati di ricerca titoli e descrizioni di home, guide, manuali, privacy e termini si leggono interi, senza tagli.
 - Scegliendo una veste per l'overlay anche il muro delle emote la segue: l'ombra sulle emote si accende o si spegne come vuole la veste.
 - Gli effetti pronti, i tasti dell'ispettore nello Studio e quello per togliere un carattere hanno di nuovo il loro contorno a china.
+- [importante] La mail e il messaggio su Telegram che chiedono la conferma della settimana hanno «Non pubblicare»: la fermi fino al momento dell'uscita, anche dopo averla confermata, e dal pannello lo stesso. [vai: grafiche]
 
 ## 2026-09-25
 

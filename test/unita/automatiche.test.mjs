@@ -62,11 +62,37 @@ test('il link della mail conferma quell\'uscita, e solo finche\' non e\' passata
   const per = Z('2026-09-27T16:00:00Z');
   const chiave = A.preparaRichiesta('link', per);
   assert.equal(A.confermaConChiave('link', 'sbagliata', per - 1000).ok, false);
-  assert.deepEqual(A.richiestaDi('link', chiave, per - 1000), { per, scaduta: false, confermata: false }, 'aprire il link non conferma');
+  assert.deepEqual(A.richiestaDi('link', chiave, per - 1000), { per, scaduta: false, confermata: false, fermata: false }, 'aprire il link non conferma');
   assert.deepEqual(A.confermaConChiave('link', chiave, per - 1000), { ok: true, per });
   assert.equal(A.leggi('link').settimana.confermata, per);
   const altra = A.preparaRichiesta('link2', per);
   assert.deepEqual(A.confermaConChiave('link2', altra, per + 1000), { ok: false, motivo: 'scaduto' });
+});
+
+// «Non pubblicare»: confermata e fermata sono due risposte alla stessa domanda,
+// e per un'uscita vale l'ultima. Chi conferma e poi vede un errore la ferma;
+// chi la ferma e ci ripensa la conferma. Tutto finche' l'uscita non e' passata.
+test('dal link la settimana si ferma anche dopo averla confermata, e si riconferma', () => {
+  const per = Z('2026-09-27T16:00:00Z');
+  const chiave = A.preparaRichiesta('ferma', per);
+  assert.deepEqual(A.confermaConChiave('ferma', chiave, per - 5000), { ok: true, per });
+  assert.deepEqual(A.fermaConChiave('ferma', chiave, per - 4000), { ok: true, per });
+  let s = A.leggi('ferma').settimana;
+  assert.deepEqual([s.confermata, s.fermata], [0, per], 'fermata toglie la conferma');
+  assert.deepEqual(A.richiestaDi('ferma', chiave, per - 3000), { per, scaduta: false, confermata: false, fermata: true });
+  assert.deepEqual(A.confermaConChiave('ferma', chiave, per - 2000), { ok: true, per });
+  s = A.leggi('ferma').settimana;
+  assert.deepEqual([s.confermata, s.fermata], [per, 0], 'e la conferma toglie il fermo');
+  assert.equal(A.fermaConChiave('ferma', 'sbagliata', per - 1000).ok, false, 'con la chiave sbagliata non si ferma niente');
+  assert.deepEqual(A.fermaConChiave('ferma', chiave, per + 1000), { ok: false, motivo: 'scaduto' }, 'e a uscita passata nemmeno');
+  const c = conf({ settimana: { attiva: true, giorno: 6, ora: '18:00' } });
+  assert.equal(A.richiestaDaFare({ sett: SETT, conf: c, stato: { settimana: { chiesta: 0, confermata: 0, fermata: per } }, adesso: per - 3600_000 }), null, 'fermata, non si richiede');
+});
+
+test('la mail della settimana ha il suo «Non pubblicare»', () => {
+  const m = A.mailRichiesta({ display: 'Prova', sett: SETT, per: Z('2026-09-27T16:00:00Z'), link: 'https://x/c?t=1', ferma: 'https://x/c?t=1&fai=ferma', cambia: 'https://x/#settimana' });
+  assert.match(m.html, /<a href="https:\/\/x\/c\?t=1&amp;fai=ferma">Non pubblicare<\/a>/);
+  assert.match(m.testo, /Non pubblicare, anche dopo averla confermata: https:\/\/x\/c\?t=1&fai=ferma/);
 });
 
 test('il giro: una volta sola, niente immagini vecchie, niente settimane non confermate', async () => {
@@ -112,6 +138,27 @@ test('il giro: una volta sola, niente immagini vecchie, niente settimane non con
   await A.giro(login, { sett: SETT, rev: 7, adesso: per2 + 60_000, ...fuori });
   assert.equal(mandate.length, 1, 'confermata, esce');
   assert.deepEqual([String(mandate[0].byte), String(mandate[0].storia), mandate[0].testo], ['post', 'storia', 'La mia settimana']);
+
+  // confermata e poi fermata: non esce, e il motivo e' quello vero
+  const per3 = Z('2026-10-25T17:00:00Z');
+  await A.giro(login, { sett: SETT, rev: 7, adesso: per3 - 20 * 3600_000, ...fuori });
+  assert.deepEqual(A.confermaConChiave(login, richieste.at(-1).chiave, per3 - 3600_000), { ok: true, per: per3 });
+  assert.deepEqual(A.fermaConChiave(login, richieste.at(-1).chiave, per3 - 1800_000), { ok: true, per: per3 });
+  await A.giro(login, { sett: SETT, rev: 7, adesso: per3 + 60_000, ...fuori });
+  assert.equal(mandate.length, 1, 'fermata, non esce');
+  assert.deepEqual([A.leggi(login).settimana.ultima.saltata, A.leggi(login).settimana.ultima.codice], [true, 'fermata']);
+  assert.match(avvisi.at(-1)[1], /l'hai fermata tu/);
+
+  // anche senza «chiedimi prima» la si ferma dal pannello
+  A.salvaConf(login, { settimana: { attiva: true, giorno: 6, ora: '18:00', chiedi: false } });
+  const per4 = Z('2026-11-01T17:00:00Z');
+  assert.deepEqual(A.fermaDalPannello(login, SETT, per4 - 3600_000), { ok: true, per: per4 });
+  assert.equal(A.vista(login, { sett: SETT, rev: 7, adesso: per4 - 3000_000 }).settimana.fermata, true, 'il pannello lo sa');
+  await A.giro(login, { sett: SETT, rev: 7, adesso: per4 + 60_000, ...fuori });
+  assert.equal(mandate.length, 1, 'fermata dal pannello, non esce');
+  const per5 = Z('2026-11-08T17:00:00Z');
+  await A.giro(login, { sett: SETT, rev: 7, adesso: per5 + 60_000, ...fuori });
+  assert.equal(mandate.length, 2, 'il fermo vale per quell\'uscita sola: la settimana dopo esce');
 });
 
 test('le scelte arrivano pulite', () => {

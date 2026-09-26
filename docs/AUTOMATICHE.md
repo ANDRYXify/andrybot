@@ -76,6 +76,26 @@ scavalca la mezzanotte (diretta alle 00:30, storia due ore prima) esce
 - Senza mail e senza Telegram la richiesta sta solo nel pannello, e la carta
   lo dice. Con «Chiedimi prima» spento la settimana esce ogni volta.
 
+## «Non pubblicare»
+
+Chi conferma e poi si accorge di un errore, o legge tardi e non vuole che
+esca, deve poterla fermare senza cercare dove. Quindi la mail, il messaggio su
+Telegram, la pagina del link e il pannello hanno tutti «Non pubblicare».
+
+- **Confermata e fermata sono due risposte alla stessa domanda**, e per
+  un'uscita ne vale una sola, l'ultima data: fermare toglie la conferma,
+  confermare toglie il fermo. Fino all'uscita si può passare dall'una
+  all'altra quante volte si vuole.
+- Il link di «Non pubblicare» è quello della conferma con `fai=ferma`: stessa
+  chiave, stessa scadenza, e una pagina che chiede di premere, per la stessa
+  ragione della conferma. Una volta ferma, la pagina offre «Pubblicala lo
+  stesso»; una volta confermata, «Non pubblicare».
+- Il fermo vale anche con «Chiedimi prima» spento: dal pannello si ferma
+  l'uscita che arriva, e quella dopo esce come sempre.
+- Il giro salta un'uscita fermata con il suo motivo (`fermata`, «l'hai fermata
+  tu»), diverso da una non confermata: sono due storie diverse, e il pannello le
+  racconta diverse.
+
 ## Dove sta lo stato
 
 In un file per streamer, accanto alle immagini, come la storia della diretta:
@@ -88,7 +108,7 @@ silenzio sarebbe peggio di nessun interruttore.
 
 Quando un'uscita non parte per una ragione nostra, lo stato tiene un codice
 (`non-pronta`, `settimana-cambiata`, `grafiche-cambiate`, `anticipo-cambiato`,
-`in-diretta`, `non-confermata`, `nessun-posto`): il pannello lo dice nella
+`in-diretta`, `non-confermata`, `fermata`, `nessun-posto`): il pannello lo dice nella
 lingua di chi lo usa, e su Telegram va la frase in italiano. Un rifiuto di
 Instagram, di Telegram o di Discord arriva com'è.
 
@@ -99,7 +119,8 @@ Instagram, di Telegram o di Discord arriva com'è.
   prima stava nel riquadro di Instagram: ora le automatiche stanno tutte
   qui) e «La settimana» (giorno, ora, «Chiedimi prima se va bene»). Sotto
   ognuna, quando esce la prossima e com'è andata l'ultima; per la settimana,
-  il tasto «Va bene così» finché non è confermata.
+  il tasto «Va bene così» finché non è confermata, «Non pubblicare» quando
+  sta per uscire, «Pubblicala lo stesso» quando l'hai fermata.
 - **Aprendo le Grafiche** il pannello guarda se qualche immagine è rimasta
   indietro (`pronte` nella vista) e la riprepara da solo: è quello che
   promettono i messaggi di errore.

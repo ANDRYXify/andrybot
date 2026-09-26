@@ -865,11 +865,12 @@ function _demoAuto(via, corpo) {
     .filter(Boolean).map((x) => ({ ...x, esce: x.quando - a.conf.prima.anticipo * 60_000 }));
   const primo = [...slot].sort((x, y) => x.quando - y.quando)[0] || null;
   const uscita = prossima(a.conf.settimana.giorno, a.conf.settimana.ora);
-  if (via.endsWith('/conferma')) a.confermata = uscita;
+  if (via.endsWith('/conferma')) { a.confermata = uscita; a.fermata = 0; }
+  if (via.endsWith('/ferma')) { a.fermata = uscita; a.confermata = 0; }
   return { conf: a.conf, impronta: '0123456789abcdef', rev: 1, pronte: {}, mail: true, telegram: true, ig: true,
     live: { attiva: !!_demoScritture.storiaLive, pronta: !!_demoScritture.storiaLive, ultima: null }, dove: { tg: 1, dc: 1, ig: true },
     prima: { prossima: primo ? { per: primo.quando, esce: primo.esce, giorno: primo.giorno } : null, ultima: null, slot },
-    settimana: { prossima: uscita, confermata: a.confermata === uscita, chiesta: false, ultima: null } };
+    settimana: { prossima: uscita, confermata: a.confermata === uscita, fermata: a.fermata === uscita, chiesta: false, ultima: null } };
 }
 
 function _demoAdesso() {
@@ -4925,12 +4926,16 @@ async function _settAuto() {
     return;
   }
   const quando = v.settimana.prossima ? esc(_autoQuando(v.settimana.prossima)) : '';
-  const conferma = cs.chiedi && !v.settimana.confermata && quando
-    ? ` <button type="button" class="btn secondario mini" data-sett-conferma>${L('Va bene così', 'Looks good', 'Así está bien')}</button>` : '';
-  const riga = !quando ? '' : !cs.chiedi ? L(`In automatico: esce ${quando}.`, `Automatic: it goes out ${quando}.`, `Automático: sale ${quando}.`)
+  const fermata = !!v.settimana.fermata;
+  const conferma = quando && (fermata || (cs.chiedi && !v.settimana.confermata))
+    ? ` <button type="button" class="btn secondario mini" data-sett-conferma>${fermata ? L('Pubblicala lo stesso', 'Publish it anyway', 'Publícala igualmente') : L('Va bene così', 'Looks good', 'Así está bien')}</button>` : '';
+  const ferma = quando && !fermata && (!cs.chiedi || v.settimana.confermata)
+    ? ` <button type="button" class="btn secondario mini" data-sett-ferma>${L('Non pubblicare', 'Don’t publish', 'No publicar')}</button>` : '';
+  const riga = !quando ? '' : fermata ? L(`In automatico: non esce ${quando}, l’hai fermata tu.`, `Automatic: it won’t go out ${quando}, you stopped it.`, `Automático: no sale ${quando}, la has parado tú.`)
+    : !cs.chiedi ? L(`In automatico: esce ${quando}.`, `Automatic: it goes out ${quando}.`, `Automático: sale ${quando}.`)
     : v.settimana.confermata ? L(`In automatico: esce ${quando}, l’hai confermata ✓`, `Automatic: it goes out ${quando}, you confirmed it ✓`, `Automático: sale ${quando}, la has confirmado ✓`)
       : L(`In automatico: esce ${quando}, se la confermi. Cambiala qui sopra e salvala, poi conferma.`, `Automatic: it goes out ${quando}, if you confirm it. Change it above and save it, then confirm.`, `Automático: sale ${quando}, si la confirmas. Cámbiala arriba y guárdala, luego confirma.`);
-  box.innerHTML = `<p class="suggerimento">${riga}${conferma} ${vai}</p>`;
+  box.innerHTML = `<p class="suggerimento">${riga}${conferma}${ferma} ${vai}</p>`;
 }
 
 function collegaSettimana() {
@@ -4956,6 +4961,13 @@ function collegaSettimana() {
       conferma.disabled = true;
       conErrore(async () => {
         try { await api('/api/streamer/automatiche/conferma', { method: 'POST' }); toast(L('Settimana confermata ✓', 'Week confirmed ✓', 'Semana confirmada ✓')); await _settAuto(); } finally { conferma.disabled = false; }
+      });
+    }
+    const ferma = e.target.closest('[data-sett-ferma]');
+    if (ferma && !ferma.disabled) {
+      ferma.disabled = true;
+      conErrore(async () => {
+        try { await api('/api/streamer/automatiche/ferma', { method: 'POST' }); toast(L('Settimana fermata: non esce', 'Week stopped: it won’t go out', 'Semana parada: no sale')); await _settAuto(); } finally { ferma.disabled = false; }
       });
     }
     if (e.target.closest('[data-sett-reinvita]')) {
@@ -5957,6 +5969,7 @@ function _autoMotivo(u) {
     'anticipo-cambiato': L('l’anticipo era cambiato dopo che la grafica era stata preparata. Aprendo le Grafiche si ripreparano da sole.', 'the lead time had changed after the graphic was prepared. Opening Graphics prepares them again.', 'la antelación había cambiado después de preparar la gráfica. Al abrir Gráficas se preparan de nuevo.'),
     'in-diretta': L('eri già in diretta: è uscita «Live ora», se l’hai accesa.', 'you were already live: «Live now» went out, if you turned it on.', 'ya estabas en directo: salió «En directo», si la activaste.'),
     'non-confermata': L('non l’avevi confermata, quindi non è uscita.', 'you had not confirmed it, so it did not go out.', 'no la habías confirmado, así que no salió.'),
+    fermata: L('l’avevi fermata tu, quindi non è uscita.', 'you had stopped it, so it did not go out.', 'la habías parado tú, así que no salió.'),
     'nessun-posto': L('nella Settimana non c’era nessun posto dove mandarla.', 'there was no place in your Week to send it to.', 'en tu Semana no había ningún sitio adonde mandarla.'),
   }[u.codice];
   return m || u.errore || '';
@@ -5987,8 +6000,10 @@ function _grAutoHtml(v) {
     if (!posti) righe.push(`${L('Nella Settimana non hai scelto dove mandarla: spunta i posti in «Mandala».', 'In your Week you have not chosen where to send it: tick the places in «Send it».', 'En tu Semana no has elegido adónde mandarla: marca los sitios en «Mándala».')} <button type="button" class="btn secondario mini" data-vai="settimana">${L('Apri la Settimana', 'Open the Week', 'Abrir la Semana')}</button>`);
     if (v.settimana.prossima) {
       const quando = esc(_autoQuando(v.settimana.prossima));
-      if (!cs.chiedi) righe.push(L(`Esce ${quando}.`, `It goes out ${quando}.`, `Sale ${quando}.`));
-      else if (v.settimana.confermata) righe.push(L(`Esce ${quando}: l’hai confermata ✓`, `It goes out ${quando}: you confirmed it ✓`, `Sale ${quando}: la has confirmado ✓`));
+      const ferma = ` <button type="button" class="btn secondario mini" data-auto-ferma>${L('Non pubblicare', 'Don’t publish', 'No publicar')}</button>`;
+      if (v.settimana.fermata) righe.push(`${L(`Non esce ${quando}: l’hai fermata tu.`, `It won’t go out ${quando}: you stopped it.`, `No sale ${quando}: la has parado tú.`)} <button type="button" class="btn secondario mini" data-auto-conferma>${L('Pubblicala lo stesso', 'Publish it anyway', 'Publícala igualmente')}</button>`);
+      else if (!cs.chiedi) righe.push(`${L(`Esce ${quando}.`, `It goes out ${quando}.`, `Sale ${quando}.`)}${ferma}`);
+      else if (v.settimana.confermata) righe.push(`${L(`Esce ${quando}: l’hai confermata ✓`, `It goes out ${quando}: you confirmed it ✓`, `Sale ${quando}: la has confirmado ✓`)}${ferma}`);
       else {
         righe.push(`${v.settimana.chiesta
           ? L(`Esce ${quando}, se la confermi.`, `It goes out ${quando}, if you confirm it.`, `Sale ${quando}, si la confirmas.`)
@@ -6135,16 +6150,17 @@ function initGrafiche() {
     });
   });
   document.getElementById('gr-auto')?.addEventListener('click', (ev) => {
-    const b = ev.target.closest('[data-auto-conferma]');
+    const b = ev.target.closest('[data-auto-conferma], [data-auto-ferma]');
     if (!b || b.disabled) return;
+    const ferma = b.hasAttribute('data-auto-ferma');
     b.disabled = true;
     conErrore(async () => {
       try {
-        const v = await api('/api/streamer/automatiche/conferma', { method: 'POST' });
+        const v = await api(ferma ? '/api/streamer/automatiche/ferma' : '/api/streamer/automatiche/conferma', { method: 'POST' });
         _grAuto = v;
         const box = _g('gr-auto');
         if (box) box.innerHTML = _grAutoHtml(v);
-        toast(L('Settimana confermata ✓', 'Week confirmed ✓', 'Semana confirmada ✓'));
+        toast(ferma ? L('Settimana fermata: non esce', 'Week stopped: it won’t go out', 'Semana parada: no sale') : L('Settimana confermata ✓', 'Week confirmed ✓', 'Semana confirmada ✓'));
       } finally { b.disabled = false; }
     });
   });
