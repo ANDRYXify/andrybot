@@ -348,6 +348,13 @@ export const config = {
     probabilita: Math.min(1, Math.max(0, Number(env('PROMO_PROBABILITA', '0')) || 0)),
     giorni: Math.max(1, parseInt(env('PROMO_GIORNI', '7'), 10) || 7),
   },
+  // Le campagne in citta' (docs/CAMPAGNE.md): il giorno in cui la pubblicita'
+  // va in onda, AAAA-MM-GG. Senza, la pagina dice che si apre quel giorno.
+  campagne: {
+    nyc: env('CAMPAGNA_NYC_DAL'),
+    milano: env('CAMPAGNA_MILANO_DAL'),
+    napoli: env('CAMPAGNA_NAPOLI_DAL'),
+  },
 };
 
 // Scope OAuth richiesti.

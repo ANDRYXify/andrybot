@@ -792,6 +792,17 @@ CREATE TABLE IF NOT EXISTS recensioni (
 );
 CREATE INDEX IF NOT EXISTS idx_recensioni_stato ON recensioni(stato, aggiornata);
 
+-- LE CAMPAGNE IN CITTA': chi ha preso l'anno di tutto, da quale QR e quando.
+-- Una riga per canale per campagna (la chiave lo impone), e il conteggio per il
+-- tetto e' il numero di righe. La colonna channel fa si' che la riga si esporti
+-- e si cancelli con l'account. Il modello sta in docs/CAMPAGNE.md.
+CREATE TABLE IF NOT EXISTS campagne_prese (
+  campagna TEXT NOT NULL,
+  channel TEXT NOT NULL,
+  ts INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (campagna, channel)
+);
+
 -- IL REGISTRO DEI GIRI DEL COSTRUTTORE DISCORD.
 --
 -- Non serve a noi: serve a lui, il giorno che qualcuno chiede «chi ha
@@ -1823,6 +1834,25 @@ export const dcGiri = {
 // che stato lo decide features/recensioni.js.
 const _recensione = (r) => (r ? { login: r.login, stelle: r.stelle, testo: r.testo || '', lingua: r.lingua || 'it',
   conNome: !!r.con_nome, stato: r.stato, creata: r.creata || 0, aggiornata: r.aggiornata || 0, display: r.display || '' } : null);
+// Le campagne in citta'. `prendi` fa tutto in UNA transazione: guarda se il
+// canale l'ha gia' presa, conta i posti, scrive la riga e fa il regalo. SQLite
+// esegue una transazione alla volta, quindi due richieste sull'ultimo posto non
+// passano tutte e due: il tetto e' una proprieta' del database, non una speranza.
+export const campagneDb = {
+  presi(campagna) { return db.prepare('SELECT COUNT(*) AS n FROM campagne_prese WHERE campagna=?').get(String(campagna)).n; },
+  di(campagna, channel) { return db.prepare('SELECT * FROM campagne_prese WHERE campagna=? AND channel=?').get(String(campagna), String(channel || '').toLowerCase()) || null; },
+  prendi(campagna, channel, { tetto, ora = now(), regala }) {
+    const c = String(campagna), ch = String(channel || '').toLowerCase();
+    return db.transaction(() => {
+      if (this.di(c, ch)) return 'gia';
+      if (this.presi(c) >= tetto) return 'piena';
+      db.prepare('INSERT INTO campagne_prese (campagna, channel, ts) VALUES (?,?,?)').run(c, ch, ora);
+      regala();
+      return 'presa';
+    })();
+  },
+};
+
 export const recensioni = {
   di(login) {
     return _recensione(db.prepare('SELECT * FROM recensioni WHERE login=?').get(String(login || '').toLowerCase()));

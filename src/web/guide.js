@@ -150,8 +150,11 @@ ol.g-passi b{display:block;color:var(--testo);margin-bottom:3px}
 .g-altre small{display:block;color:var(--testo-3);font-weight:400}
 .g-invito{margin-top:44px;background:var(--tono-carta) 0 0 / var(--tono-passo),var(--surface);border:2px solid var(--contorno);border-width:var(--tratto-mano);border-radius:7px 4px 6px 5px / 5px 7px 4px 6px;box-shadow:var(--alone-contorno),var(--ombra-ink-alta);padding:22px 24px}
 .g-invito h2{margin-top:0}
-.g-cta{display:inline-block;margin-top:6px;background:var(--acc);color:var(--su-acc);text-decoration:none;font-weight:600;padding:.62rem 1.15rem;border:2px solid var(--contorno);border-width:var(--tratto-mano);border-radius:var(--ang-mano);box-shadow:var(--ombra-ink)}
-.g-cta:active{transform:translate(2px,3px);box-shadow:none}
+article form{margin:.5rem 0}
+.g-copertina{display:block;width:100%;height:auto;border:2px solid var(--contorno);border-radius:var(--ang-mano);box-shadow:var(--ombra-ink)}
+article form button{font:inherit;cursor:pointer}
+.g-cta,article form button{display:inline-block;margin-top:6px;background:var(--acc);color:var(--su-acc);text-decoration:none;font-weight:600;padding:.62rem 1.15rem;border:2px solid var(--contorno);border-width:var(--tratto-mano);border-radius:var(--ang-mano);box-shadow:var(--ombra-ink)}
+.g-cta:active,article form button:active{transform:translate(2px,3px);box-shadow:none}
 .g-piede{border-top:var(--contorno-sp) solid var(--contorno);margin-top:50px;background:var(--surface)}
 .g-piede div{max-width:760px;margin:0 auto;padding:20px;font-size:.85rem;color:var(--testo-3);display:flex;gap:16px;flex-wrap:wrap}
 .g-piede a{color:var(--testo-3)}
@@ -400,7 +403,7 @@ function datiStrutturati(g, l = 'it') {
   return blocchi.map((b) => `<script type="application/ld+json">${JSON.stringify(b)}</script>`).join('');
 }
 
-function scheletro({ titolo, desc, url, corpo, ld, robots = 'index,follow,max-snippet:-1,max-image-preview:large', l = 'it', alt = null }) {
+function scheletro({ titolo, desc, url, corpo, ld, robots = 'index,follow,max-snippet:-1,max-image-preview:large', l = 'it', alt = null, immagine = `${SITO}/icons/og-guide.png?v=8`, immagineAlt = null }) {
   const t = T[lin(l)];
   const alternative = alt && Object.keys(alt).length > 1
     ? LINGUE_DOC.filter((x) => alt[x]).map((x) => `<link rel="alternate" hreflang="${x}" href="${esc(alt[x])}">`).join('')
@@ -416,13 +419,13 @@ ${alternative}<meta name="robots" content="${esc(robots)}">
 <meta property="og:locale" content="${t.og}">
 <meta property="og:title" content="${esc(titolo)}"><meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${esc(url)}">
-<meta property="og:image" content="${SITO}/icons/og-guide.png?v=8">
+<meta property="og:image" content="${esc(immagine)}">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta property="og:image:type" content="image/png">
-<meta property="og:image:alt" content="${esc(t.ogAlt)}">
+<meta property="og:image:alt" content="${esc(immagineAlt || t.ogAlt)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(titolo)}">
 <meta name="twitter:description" content="${esc(desc)}">
-<meta name="twitter:image" content="${SITO}/icons/og-guide.png?v=8">
+<meta name="twitter:image" content="${esc(immagine)}">
 <link rel="icon" href="/icons/icon-192.png?v=8">
 <link rel="stylesheet" href="/font.css">
 <script src="/tema.js"></script>
@@ -457,9 +460,11 @@ ${altreHtml(g.slug, x)}
 // UNA PAGINA DI SERVIZIO: lo stesso aspetto delle guide, ma fuori dai motori di
 // ricerca. Serve alle risposte che il sito deve a chi arriva da fuori, come chi
 // legge com'e' andata una richiesta di cancellazione fatta da Instagram.
-export function paginaServizio({ titolo, url, corpo }) {
-  return scheletro({ titolo, desc: titolo, url, robots: 'noindex,nofollow', ld: '',
-    corpo: `${testata('')}\n<main><article>${corpo}</article></main>${piede()}` });
+// Una campagna (una pagina che scade) usa lo stesso guscio, con la sua lingua,
+// la sua descrizione e la sua anteprima: chi la condivide deve vedere lei.
+export function paginaServizio({ titolo, url, corpo, l = 'it', desc = titolo, immagine, immagineAlt }) {
+  return scheletro({ titolo, desc, url, robots: 'noindex,nofollow', ld: '', l, immagine, immagineAlt,
+    corpo: `${testata('', l)}\n<main><article>${corpo}</article></main>${piede(l)}` });
 }
 
 export function paginaDoc(d, l = 'it', alt = null) {

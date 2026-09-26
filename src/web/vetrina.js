@@ -86,6 +86,7 @@ const ROTTE = new Set([
   '/abbonamento/ritorno',                     // il ritorno dal Checkout: la sessione si rilegge da Stripe
   '/posta/conferma',                          // il clic sulla mail di conferma dell'indirizzo
   '/settimana/conferma',                      // il link della mail che chiede se la settimana va bene
+  '/nyc', '/milano', '/napoli',               // le campagne in citta': la pagina del QR (docs/CAMPAGNE.md)
   '/spotify/callback', '/tiktok/callback',    // ritorni OAuth: si proteggono con lo `state`
   '/tgapp', '/api/tgapp/auth',                // Telegram Mini App: initData firmato dal bot token
   '/api/tgapp/oidc/start', '/telegram/oidc/callback',

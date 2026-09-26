@@ -23,7 +23,7 @@ import * as consolle from '../features/console.js';   // CONSOLify + tastiera fi
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi, recensioni as recensioniDb } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi, recensioni as recensioniDb, campagneDb } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { canaleHa } from '../features/accesso.js';
@@ -103,6 +103,8 @@ import { credenzialiInstagram } from '../features/instagram-credenziali.js';
 import * as storiaIg from '../features/storia-ig.js';
 import * as settimana from '../features/settimana.js';
 import * as automatiche from '../features/automatiche.js';
+import * as campagne from '../features/campagne.js';
+import { paginaCampagna } from './campagna-vista.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
 import * as ruoli from '../features/ruoli.js';
@@ -665,6 +667,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Sta qui e non dentro il flusso di Twitch perche' adesso le porte sono due:
   // scritto due volte, il giorno che cambia una regola cambierebbe per meta'
   // delle persone. Ritorna true se la prova gratuita e' stata assegnata.
+  // Le campagne in citta' (docs/CAMPAGNE.md): chi parte dalla pagina del QR per
+  // entrare, al rientro torna li'. Si ricorda solo un nome dell'elenco.
+  function segnaCampagna(req) {
+    if (campagne.eCampagna(req.query?.campagna) && req.session) req.session.campagna = req.query.campagna;
+  }
+  function tornaAllaCampagna(req) {
+    const c = req.session?.campagna;
+    if (!c) return '';
+    delete req.session.campagna;
+    return campagne.eCampagna(c) ? '/' + c : '';
+  }
+
   function primoAccesso(login, display) {
     if (streamers.get(login)) return false;
     let promoVinta = false;
@@ -1572,6 +1586,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // `?nuovo=1` = ha premuto «Registrati»: al rientro apriamo il benvenuto.
       const state = crypto.randomUUID();
       req.session.selfFlow = { state, nuovo: req.query.nuovo === '1' };
+      segnaCampagna(req);
       return res.redirect(auth.authUrl([], state));
     }
     const who = await redeemPass(passRaw);
@@ -2601,6 +2616,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
         if (dove) { if (!req.session.user) req.session.abbonando = { login, display: disp }; return res.redirect(dove); }
       }
       if (req.session.user) {
+        const campagna = tornaAllaCampagna(req);
+        if (campagna) return res.redirect(campagna);
         if (promoVinta) return res.redirect('/?promo=1');
         return res.redirect(sf.nuovo ? '/?benvenuto=1' : '/');
       }
@@ -2870,6 +2887,10 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
 
   // KICK: collegamento dello streamer, e webhook degli eventi. Le rotte vivono
   // in src/kick/rotte.js — un file solo, che si legge tutto in un colpo.
+  // Chi entra da una pagina di campagna (il QR) ci torna, per prendere l'anno.
+  // Il nome arriva nell'indirizzo, ma vale solo se e' una campagna vera: non e'
+  // un «rimandami dove vuoi», e' un elenco chiuso.
+  app.get(['/accedi/kick', '/accedi/youtube'], (req, res, next) => { segnaCampagna(req); next(); });
   montaKick(app, {
     requireLogin, currentUser, wrap,
     suMessaggio: (msg) => manager.messaggioEsterno(msg),
@@ -2904,7 +2925,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       req.session.user = sessionePer(login, display, contestoDefault(contesti, invitato));
       // veniva da «Attiva» sulla vetrina? Il carrello e' ancora suo: si paga ora.
       const dove = await doveDopoAcquisto(req, login);
-      return { login, dove: dove || (promoVinta ? '/?promo=1' : '/?benvenuto=1') };
+      return { login, dove: dove || tornaAllaCampagna(req) || (promoVinta ? '/?promo=1' : '/?benvenuto=1') };
     },
   });
 
@@ -2940,7 +2961,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       req.session.user = sessionePer(login, display, contestoDefault(contesti, invitato));
       // veniva da «Attiva» sulla vetrina? Il carrello e' ancora suo: si paga ora.
       const dove = await doveDopoAcquisto(req, login);
-      return { login, dove: dove || (promoVinta ? '/?promo=1' : '/?benvenuto=1') };
+      return { login, dove: dove || tornaAllaCampagna(req) || (promoVinta ? '/?promo=1' : '/?benvenuto=1') };
     },
   });
 
@@ -5559,6 +5580,36 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.set('Cache-Control', 'no-store').set('Referrer-Policy', 'no-referrer');
     res.type('html').send(paginaConferma(u, t, { fatto: ok ? come : '' }));
   });
+
+  // LE CAMPAGNE IN CITTA' (docs/CAMPAGNE.md). La pagina del QR dice a ognuno
+  // dove si trova; il tasto e' un POST, e il regalo lo fa la transazione del
+  // database, che tiene il tetto anche con due richieste sull'ultimo posto.
+  const statoCampagna = (id) => campagne.stato(id, { dal: config.campagne?.[id], presi: campagneDb.presi(id) });
+  const personaCampagna = (req, id) => {
+    const user = currentUser(req);
+    if (!user) return { chi: 'fuori' };
+    if (!isOwner(req)) return { chi: 'moderatore' };
+    const login = user.login, sub = subscriptions.get(login), st = streamers.get(login);
+    const gia = !!campagneDb.di(id, login);
+    const no = campagne.perche({ statoCampagna: statoCampagna(id), abbonamento: sub, community: !!(st?.status === 'approved' && st.community), gia });
+    return { chi: 'proprietario', login, no, fino: gia && sub?.status === 'trialing' ? Number(sub.current_period_end) || 0 : 0 };
+  };
+  for (const id of campagne.ID) {
+    app.get('/' + id, (req, res) => {
+      res.set('Cache-Control', 'no-store');
+      const esito = req.query.esito === 'presa' ? 'presa' : '';
+      res.type('html').send(paginaCampagna(id, { campagna: campagne.CAMPAGNE[id], stato: statoCampagna(id), finestra: campagne.finestra(id, config.campagne?.[id]),
+        presi: campagneDb.presi(id), persona: personaCampagna(req, id), esito, kick: conKick }));
+    });
+    app.post(`/${id}/prendi`, (req, res) => {
+      const p = personaCampagna(req, id);
+      if (p.chi !== 'proprietario' || p.no) return res.redirect(303, '/' + id);
+      if (!extRateOk('campagna:' + p.login)) return res.status(429).type('text').send('Troppe richieste: riprova fra un minuto.');
+      const esito = campagneDb.prendi(id, p.login, { tetto: campagne.TETTO, regala: () => subscriptions.set(p.login, campagne.regalo()) });
+      if (esito === 'presa') log.info(`campagna ${id}: un anno di tutto a @${p.login}`);
+      res.redirect(303, `/${id}${esito === 'presa' ? '?esito=presa' : ''}`);
+    });
+  }
 
   // Il giro: ogni minuto, per chi ha qualcosa di acceso.
   const avvisaAutomatica = async (login, cosa, u) => {
