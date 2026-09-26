@@ -1488,10 +1488,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!chiaveOk(req)) return notFound(res);
     const login = String(req.params.login).toLowerCase();
     try {
-      const mappa = await emotes.mappaCanale(helix, login);
-      res.set('Cache-Control', 'public, max-age=300');
+      const { buona, mappa } = await emotes.mappaCanaleLetta(helix, login);
+      res.set('Cache-Control', buona ? 'public, max-age=300' : 'no-store');
+      res.set('X-Emote-Intera', buona ? '1' : '0');
       res.json(mappa || {});
-    } catch { res.json({}); }
+    } catch { res.set('Cache-Control', 'no-store'); res.set('X-Emote-Intera', '0'); res.json({}); }
   });
 
   // Stemmi (badge) Twitch del canale: "setId/version" → url immagine. L'overlay li
@@ -4352,7 +4353,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   app.post('/api/seventv/rimuovi', requireLogin, g7tv, wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (!seventv.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account 7TV.' });
-    const r = await seventv.rimuovi(helix, login, String(req.body?.emoteId || ''));
+    const r = await seventv.rimuovi(helix, login, String(req.body?.emoteId || ''), String(req.body?.alias || ''));
     if (!r.ok) return res.status(r.scaduto ? 401 : 400).json({ errore: r.motivo || 'Non rimossa.', scaduto: !!r.scaduto });
     res.json({ ok: true });
   }));
@@ -4360,7 +4361,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   app.post('/api/seventv/rinomina', requireLogin, g7tv, wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (!seventv.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account 7TV.' });
-    const r = await seventv.rinomina(helix, login, String(req.body?.emoteId || ''), String(req.body?.nome || ''));
+    const r = await seventv.rinomina(helix, login, String(req.body?.emoteId || ''), String(req.body?.nome || ''), String(req.body?.alias || ''));
     if (!r.ok) return res.status(r.scaduto ? 401 : 400).json({ errore: r.motivo || 'Non rinominata.', scaduto: !!r.scaduto });
     res.json({ ok: true });
   }));

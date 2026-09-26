@@ -607,11 +607,19 @@ function mostraAlertProssimo() {
 }
 
 let EMOTE = {};
+let _emoteRiprova = null;
 async function caricaEmote() {
+  clearTimeout(_emoteRiprova);
+  let intera = false;
   try {
     const r = await fetch('/overlay/' + encodeURIComponent(login) + '/emotes' + location.search);
-    if (r.ok) { const m = await r.json(); if (m && typeof m === 'object') EMOTE = m; }
+    if (r.ok) {
+      const m = await r.json();
+      intera = r.headers.get('X-Emote-Intera') !== '0';
+      if (m && typeof m === 'object') EMOTE = intera ? m : { ...EMOTE, ...m };
+    }
   } catch (e) {  }
+  if (!intera) _emoteRiprova = setTimeout(caricaEmote, 60 * 1000);
 }
 
 let BADGE = {};

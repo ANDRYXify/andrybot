@@ -17117,10 +17117,11 @@ async function caricaEmote7TV() {
         <summary>${L('Come trovo il mio token 7TV?', 'How do I find my 7TV token?', '¿Cómo encuentro mi token de 7TV?')}</summary>
         <ol class="suggerimento">
           <li>${L('Vai su', 'Go to', 'Ve a')} <a href="https://7tv.app" target="_blank" rel="noopener">7tv.app</a> ${L('e accedi con Twitch.', 'and log in with Twitch.', 'e inicia sesión con Twitch.')}</li>
-          <li>${L('Apri gli strumenti sviluppatore del browser (tasto F12) e vai alla scheda «Rete» (Network).', 'Open the browser developer tools (F12 key) and go to the «Network» tab.', 'Abre las herramientas de desarrollo del navegador (tecla F12) y ve a la pestaña «Red» (Network).')}</li>
-          <li>${L('Ricarica la pagina, clicca una richiesta verso 7tv.io e, tra gli header della richiesta, copia il valore dopo «authorization: Bearer ».', 'Reload the page, click a request to 7tv.io and, among the request headers, copy the value after «authorization: Bearer ».', 'Recarga la página, haz clic en una petición a 7tv.io y, entre los encabezados de la petición, copia el valor después de «authorization: Bearer ».')}</li>
+          <li>${L('Apri gli strumenti per sviluppatori del browser (tasto F12) e vai in «Applicazione» (Application). Su Firefox si chiama «Archiviazione».', 'Open the browser developer tools (F12 key) and go to «Application». On Firefox it is called «Storage».', 'Abre las herramientas de desarrollo del navegador (tecla F12) y ve a «Aplicación» (Application). En Firefox se llama «Almacenamiento».')}</li>
+          <li>${L('In «Archiviazione locale» (Local storage) apri https://7tv.app e copia il valore di «7tv-token».', 'Under «Local storage» open https://7tv.app and copy the value of «7tv-token».', 'En «Almacenamiento local» (Local storage) abre https://7tv.app y copia el valor de «7tv-token».')}</li>
           <li>${L('Incollalo qui sopra e premi «Collega 7TV».', 'Paste it above and press «Connect 7TV».', 'Pégalo arriba y pulsa «Conectar 7TV».')}</li>
         </ol>
+        <p class="suggerimento">${L('Va bene anche dalla scheda «Rete» (Network): apri una richiesta verso api.7tv.app e copia quello che segue «Bearer» nell\'intestazione «authorization». Prima di collegarlo chiediamo a 7TV se quel token può davvero cambiare le emote del tuo canale.', 'The «Network» tab works too: open a request to api.7tv.app and copy what follows «Bearer» in the «authorization» header. Before connecting it we ask 7TV whether that token can really change your channel emotes.', 'También sirve la pestaña «Red» (Network): abre una petición a api.7tv.app y copia lo que sigue a «Bearer» en el encabezado «authorization». Antes de conectarlo le preguntamos a 7TV si ese token puede cambiar de verdad las emotes de tu canal.')}</p>
       </details>`;
     document.getElementById('svtv-collega')?.addEventListener('click', () => conErrore(async () => {
       const token = (document.getElementById('svtv-token')?.value || '').trim();
@@ -17240,13 +17241,13 @@ async function _svtvCaricaSet() {
     if (!(await chiediSe({ titolo: L(`Tolgo «${b.dataset.nome}» dal tuo canale?`, `Remove «${b.dataset.nome}» from your channel?`, `¿Quito «${b.dataset.nome}» de tu canal?`),
       testo: L('Puoi rimetterla da 7TV quando vuoi.', 'You can add it back from 7TV whenever you like.', 'Puedes volver a ponerla desde 7TV cuando quieras.'),
       si: L('Toglila', 'Remove it', 'Quítala'), pericolo: true }))) return;
-    await api('/api/seventv/rimuovi', { method: 'POST', body: { emoteId: b.dataset.id } });
+    await api('/api/seventv/rimuovi', { method: 'POST', body: { emoteId: b.dataset.id, alias: b.dataset.nome } });
     toast(L('Emote rimossa.', 'Emote removed.', 'Emote quitada.')); _svtvCaricaSet();
   })));
   box.querySelectorAll('.svtv-rinomina').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
     const nome = ((await chiediTesto({ titolo: L('Come chiamo questa emote?', 'What should this emote be called?', '¿Cómo llamo a esta emote?'), valore: b.dataset.nome, ok: L('Rinomina', 'Rename', 'Renombrar'), max: 100 })) || '').trim();
     if (!nome || nome === b.dataset.nome) return;
-    await api('/api/seventv/rinomina', { method: 'POST', body: { emoteId: b.dataset.id, nome } });
+    await api('/api/seventv/rinomina', { method: 'POST', body: { emoteId: b.dataset.id, alias: b.dataset.nome, nome } });
     toast(L('Emote rinominata ✓', 'Emote renamed ✓', 'Emote renombrada ✓')); _svtvCaricaSet();
   })));
 }

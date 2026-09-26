@@ -9,13 +9,14 @@
 // Uso: node scripts/verifica-7tv.mjs   (esce 1 se il contratto e' cambiato)
 
 const GQL = 'https://7tv.io/v3/gql';
+const GQL4 = 'https://7tv.io/v4/gql';
 const REST4 = 'https://7tv.io/v4';
 
 const esiti = [];
 const dice = (ok, msg, extra = '') => esiti.push({ ok, msg, extra });
 
-const chiedi = async (query) => {
-  const r = await fetch(GQL, {
+const chiedi = async (query, url = GQL) => {
+  const r = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'User-Agent': 'SocialBot/1.0' },
     body: JSON.stringify({ query }),
@@ -31,13 +32,24 @@ const chiedi = async (query) => {
     'le emote di un set si leggono da /v3/emote-sets con { id, name }');
 }
 
-// ---- 2. set: aggiungi/togli/rinomina sono ancora su GraphQL v3 ------------
+// ---- 2. set: aggiungi/togli/rinomina su GraphQL v4, come il sito di 7TV ---
+// La v3 ha ancora `emoteSet(id).emotes(id, action, name)`, ma a una modifica
+// non autorizzata risponde `emoteSet: null` senza errori: per questo le
+// modifiche stanno sulla v4, che e' la porta del sito di 7TV stesso.
 {
-  const j = await chiedi('{ __type(name:"EmoteSetOps"){ fields { name args { name } } } }');
-  const f = (j?.data?.__type?.fields || []).find((x) => x.name === 'emotes');
-  const args = (f?.args || []).map((a) => a.name).sort().join(',');
-  dice(args === 'action,id,name',
-    'emoteSet(id).emotes(id, action, name) regge aggiungi/togli/rinomina', args);
+  const tipo = async (nome) => (await chiedi(`{ __type(name:"${nome}"){ fields { name args { name } } inputFields { name } } }`, GQL4))?.data?.__type;
+  const op = await tipo('EmoteSetOperation');
+  const arg = (campo) => ((op?.fields || []).find((x) => x.name === campo)?.args || []).map((a) => a.name);
+  dice(arg('addEmote').includes('id') && arg('removeEmote').includes('id'),
+    'emoteSets.emoteSet(id).addEmote(id) / removeEmote(id) reggono aggiungi e togli', `${arg('addEmote')} | ${arg('removeEmote')}`);
+  dice(arg('updateEmoteAlias').includes('id') && arg('updateEmoteAlias').includes('alias'),
+    'emoteSets.emoteSet(id).updateEmoteAlias(id, alias) regge rinomina', String(arg('updateEmoteAlias')));
+  const voce = ((await tipo('EmoteSetEmoteId'))?.inputFields || []).map((x) => x.name).sort().join(',');
+  dice(voce === 'alias,emoteId', 'una voce del set e\' { emoteId, alias }', voce);
+  const utente = ((await tipo('User'))?.fields || []).map((x) => x.name);
+  dice(utente.includes('editableEmoteSetIds'), 'users.me dice quali set puo\' cambiare chi ha il token');
+  const io = await chiedi('{ users { me { id } } }', GQL4);
+  dice(io?.data?.users && io.data.users.me === null, 'senza token users.me e\' null: e\' cosi\' che si riconosce un token che 7TV non accetta', JSON.stringify(io).slice(0, 80));
 }
 
 // ---- 3. creazione: NON e' piu' su GraphQL --------------------------------

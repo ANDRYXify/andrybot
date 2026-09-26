@@ -76,7 +76,7 @@ test('un 401 di 7TV si legge come token scaduto, non come guasto generico', asyn
 test('senza account collegato non si tenta nemmeno', async () => {
   const r = await seventv.caricaEmote('nessuno', Buffer.from('xx'), 'prova');
   assert.equal(r.ok, false);
-  assert.match(r.motivo, /collega/);
+  assert.match(r.motivo, /collega/i);
 });
 
 test.after(() => usaEGetta.pulisci());

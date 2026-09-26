@@ -37,6 +37,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] In basso a destra, un avviso alla volta ti dice cosa manca al canale per usare quello che hai: permessi, Spotify, overlay, comandi, pagina link, settimana. [vai: account]
   > Cosa manca, detto una cosa per volta
   > Se una funzione non parte perché manca un passo, lo sai senza doverlo cercare: «Fammi vedere» ti porta dove si fa, e se non è il momento lo rimandi o lo togli. Li vedi solo tu, non chi modera il canale.
+- Le emote 7TV si aggiungono, si tolgono e si rinominano per davvero: «fatto» arriva solo se 7TV conferma, e collegando l'account si controlla che il token possa cambiare il tuo set. [vai: emote]
+- Nella chat a schermo e nel muro le emote 7TV non spariscono più per dieci minuti quando 7TV risponde lento: resta l'ultima lista buona e si riprova entro un minuto.
 
 ## 2026-09-25
 
