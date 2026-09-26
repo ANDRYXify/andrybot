@@ -3153,6 +3153,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     usato('giochi', () => (canaleHa(login, 'giochi') ? giochiDb.count(login) > 0 : undefined));
     usato('conoscenza', () => riga("SELECT 1 FROM knowledge WHERE channel=? AND fonte='manuale'", login));
     usato('emote', () => (piattaformaDi(login) === 'twitch' ? seventv.collegato(login) : undefined));
+    // il QR e' usato se lo stile e' stato salvato o se un QR e' stato scaricato
+    usato('qr', () => (s ? !!(s.settings?.qr || s.settings?.qrUsato) : undefined));
     f.provato = provato;
     return f;
   };
@@ -6439,6 +6441,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // stile, tutto limitato in lunghezza (rese SOLO lato client su canvas).
     // lo stile del QR su misura (docs/STRUMENTI.md): lo riusano le Grafiche
     if (b.qr !== undefined) out.qr = normStileQr(b.qr);
+    if (b.qrUsato === true && !out.qrUsato) out.qrUsato = Date.now();
     if (b.grafiche !== undefined) {
       const gr = b.grafiche || {};
       const str = (v, n) => String(v == null ? '' : v).slice(0, n);

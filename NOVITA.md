@@ -49,6 +49,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] In «Strumenti» c'è anche «Emote e badge»: da un'immagine sola escono le tre misure che chiede Twitch, rimpicciolite senza sporcare i bordi, e le vedi nella chat chiara e in quella scura. [vai: misure]
   > Le misure di Twitch da un'immagine sola
   > Non serve un programma di grafica per avere 112, 56 e 28 pixel: carichi l'immagine, vedi subito come sta in chat e sai se pesa troppo prima di caricarla su Twitch.
+- Nel QR su misura, sul telefono, l'anteprima resta in cima mentre scegli forme e colori, e i tasti per scaricare stanno in fondo.
 
 ## 2026-09-25
 

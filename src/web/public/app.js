@@ -243,6 +243,7 @@ function impostazioni() {
     donazioni: (s.donazioni && typeof s.donazioni === 'object') ? s.donazioni : { attivo: false, link: '', etichetta: '', messaggio: '', valuta: 'EUR', annunciaChat: false, testoChat: '', kofiSet: false },
     grafiche: (s.grafiche && typeof s.grafiche === 'object') ? s.grafiche : null,
     qr: (s.qr && typeof s.qr === 'object') ? s.qr : null,
+    qrUsato: !!s.qrUsato,
     settimana: (s.settimana && typeof s.settimana === 'object') ? s.settimana : null,
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -449,9 +450,13 @@ const AVVISI_PROVA = {
     titolo: L('Usi le emote 7TV?', 'Do you use 7TV emotes?', '¿Usas emotes de 7TV?'),
     testo: L('Da qui le aggiungi, le togli e le rinomini per il tuo canale, senza aprire 7TV.', 'From here you add, remove and rename them for your channel, without opening 7TV.', 'Desde aquí las añades, las quitas y las renombras para tu canal, sin abrir 7TV.'),
   }),
+  qr: () => ({
+    titolo: L('Hai già un QR che porta al tuo canale?', 'Do you have a QR that leads to your channel yet?', '¿Ya tienes un QR que lleve a tu canal?'),
+    testo: L('Per un volantino, un adesivo o lo schermo della diretta: con le tue forme, i tuoi colori e il tuo logo, e prima di scaricarlo lo rileggiamo.', 'For a flyer, a sticker or your stream screen: with your shapes, colors and logo, and we read it back before you download it.', 'Para un folleto, una pegatina o la pantalla del directo: con tus formas, tus colores y tu logo, y lo releemos antes de que lo descargues.'),
+  }),
 };
 const AVVISI_SCHEDA = { permessi: 'stato', 'bot-spento': 'stato', musica: 'musica', overlay: 'alert', comandi: 'moduli', pagina: 'pagina', settimana: 'settimana' };
-const PROVE_SCHEDA = { grafiche: 'grafiche', effetti: 'effetti', muro: 'alert', consolify: 'consolify', discord: 'ruoli', telegram: 'telegram', donazioni: 'donazioni', giochi: 'giochi', conoscenza: 'conoscenza', emote: 'emote' };
+const PROVE_SCHEDA = { grafiche: 'grafiche', effetti: 'effetti', muro: 'alert', consolify: 'consolify', discord: 'ruoli', telegram: 'telegram', donazioni: 'donazioni', giochi: 'giochi', conoscenza: 'conoscenza', emote: 'emote', qr: 'qr' };
 const schedaAvviso = (x) => AVVISI_SCHEDA[x] || PROVE_SCHEDA[x];
 const MANCA_DOPO_MS = 12000;
 const MANCA_RIPROVA_MS = 10000;
@@ -7459,7 +7464,7 @@ function collegaPromo() {
   });
 }
 
-const QR_STATO = { p: null, giro: 0, loghi: new Map(), caricato: '', timer: 0, font: null, collegato: false };
+const QR_STATO = { p: null, giro: 0, loghi: new Map(), caricato: '', timer: 0, font: null, collegato: false, usato: false };
 
 const QR_MODULI = () => [['quadrati', L('Quadrati', 'Squares', 'Cuadrados')], ['morbidi', L('Morbidi', 'Soft', 'Suaves')], ['puntini', L('Puntini', 'Dots', 'Puntos')], ['penna', L('A penna', 'Hand drawn', 'A mano')]];
 const QR_OCCHI = () => [['quadrati', L('Quadrati', 'Square', 'Cuadrados')], ['morbidi', L('Morbidi', 'Soft', 'Suaves')], ['tondi', L('Tondi', 'Round', 'Redondos')], ['penna', L('A penna', 'Hand drawn', 'A mano')]];
@@ -7524,10 +7529,13 @@ function pannelloQr() {
           <label class="campo campo-su" id="qr-logo-grande"${s.logo === 'no' ? ' hidden' : ''}>${L('Grandezza del logo', 'Logo size', 'Tamaño del logo')}<input type="range" id="qr-logo-lato" min="20" max="100" step="5" value="${s.logoLato}"></label>
           <label class="campo campo-su">${L('Frase sotto, se vuoi una cornice', 'Line below, if you want a frame', 'Frase debajo, si quieres un marco')}<input type="text" id="qr-cornice" maxlength="40" value="${esc(s.cornice)}" placeholder="${esc(L('Inquadrami', 'Scan me', 'Escanéame'))}"></label>
         </div>
-        <div class="qr-vista">
+        <div class="qr-destra">
+          <div class="qr-vista">
           <canvas id="qr-tela" width="480" height="480" role="img" aria-label="${esc(L('Anteprima del QR', 'QR preview', 'Vista previa del QR'))}"></canvas>
           <p id="qr-esito" class="qr-esito" role="status" aria-live="polite"></p>
           <ul id="qr-problemi" class="promo-problemi"></ul>
+          </div>
+          <div class="qr-uscita">
           <div class="promo-azioni">
             <label class="campo campo-su">${L('Grandezza', 'Size', 'Tamaño')}<select id="qr-misura"><option value="1024">1024 px</option><option value="2048" selected>2048 px</option><option value="4096">4096 px ${L('(stampa)', '(print)', '(impresión)')}</option></select></label>
           </div>
@@ -7537,6 +7545,7 @@ function pannelloQr() {
             <button type="button" class="btn secondario" id="qr-salva">${L('Salva lo stile', 'Save the style', 'Guardar el estilo')}</button>
           </div>
           <p class="suggerimento">${L('Lo stile salvato lo usano anche le Grafiche social, per il QR che mettono nelle immagini.', 'The saved style is also used by Social graphics, for the QR they put in the images.', 'El estilo guardado también lo usan las Gráficas sociales, para el QR que ponen en las imágenes.')}</p>
+          </div>
         </div>
       </div>
     </div>`);
@@ -7647,6 +7656,12 @@ async function _qrFont() {
   return QR_STATO.font;
 }
 
+function _qrSegnaUso() {
+  if (QR_STATO.usato || impostazioni().qrUsato) return;
+  QR_STATO.usato = true;
+  api('/api/streamer/impostazioni', { method: 'POST', body: { qrUsato: true } }).catch(() => { QR_STATO.usato = false; });
+}
+
 async function qrScarica(formato, btn) {
   const p = QR_STATO.p;
   if (!p?.qr || p.problemi.length) return;
@@ -7661,6 +7676,7 @@ async function qrScarica(formato, btn) {
       toast(L('Questo QR riletto dai pixel non torna: non lo scarico.', 'This QR read back from the pixels does not match: I will not download it.', 'Este QR releído desde los píxeles no coincide: no lo descargo.'), 'errore');
       return;
     }
+    _qrSegnaUso();
     if (formato === 'png') {
       scaricaBlob(await firmaPngBlob(await new Promise((ok) => tela.toBlob(ok, 'image/png'))), _qrNome(p) + '.png');
     } else {

@@ -55,6 +55,7 @@ export const PROVE = [
   { id: 'giochi', scheda: 'giochi' },
   { id: 'conoscenza', scheda: 'conoscenza' },
   { id: 'emote', scheda: 'emote' },
+  { id: 'qr', scheda: 'qr' },
 ];
 export const PROVE_ID = PROVE.map((p) => p.id);
 export const eProva = (id) => PROVE_ID.includes(id);
