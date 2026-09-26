@@ -2887,12 +2887,12 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
 
   // KICK: collegamento dello streamer, e webhook degli eventi. Le rotte vivono
   // in src/kick/rotte.js — un file solo, che si legge tutto in un colpo.
-  // Chi entra da una pagina di campagna (il QR) ci torna, per prendere l'anno.
-  // Il nome arriva nell'indirizzo, ma vale solo se e' una campagna vera: non e'
-  // un «rimandami dove vuoi», e' un elenco chiuso.
-  app.get(['/accedi/kick', '/accedi/youtube'], (req, res, next) => { segnaCampagna(req); next(); });
+  // Chi entra da una pagina di campagna (il QR) ci torna, per prendere l'anno:
+  // `annotaIngresso` lo ricorda alla porta d'ingresso. Il nome arriva
+  // nell'indirizzo, ma vale solo se e' una campagna vera: non e' un «rimandami
+  // dove vuoi», e' un elenco chiuso.
   montaKick(app, {
-    requireLogin, currentUser, wrap,
+    requireLogin, currentUser, wrap, annotaIngresso: segnaCampagna,
     suMessaggio: (msg) => manager.messaggioEsterno(msg),
     suEvento: (ev) => manager.eventoEsterno?.(ev),
 
@@ -2937,7 +2937,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // a piacere e può contenere qualunque cosa. Se non c'è si ripiega sul titolo,
   // e in ultimo sull'id — che c'è sempre.
   montaYoutube(app, {
-    requireLogin, currentUser, wrap,
+    requireLogin, currentUser, wrap, annotaIngresso: segnaCampagna,
     async registra(req, { canaleId, nome, maniglia, foto, token }) {
       // Chi torna si riconosce dall'id del canale, non dal nome: su YouTube il
       // nome e la maniglia si cambiano, l'id no.
@@ -5594,22 +5594,30 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const no = campagne.perche({ statoCampagna: statoCampagna(id), abbonamento: sub, community: !!(st?.status === 'approved' && st.community), gia });
     return { chi: 'proprietario', login, no, fino: gia && sub?.status === 'trialing' ? Number(sub.current_period_end) || 0 : 0 };
   };
-  for (const id of campagne.ID) {
-    app.get('/' + id, (req, res) => {
-      res.set('Cache-Control', 'no-store');
-      const esito = req.query.esito === 'presa' ? 'presa' : '';
-      res.type('html').send(paginaCampagna(id, { campagna: campagne.CAMPAGNE[id], stato: statoCampagna(id), finestra: campagne.finestra(id, config.campagne?.[id]),
-        presi: campagneDb.presi(id), persona: personaCampagna(req, id), esito, kick: conKick }));
-    });
-    app.post(`/${id}/prendi`, (req, res) => {
-      const p = personaCampagna(req, id);
-      if (p.chi !== 'proprietario' || p.no) return res.redirect(303, '/' + id);
-      if (!extRateOk('campagna:' + p.login)) return res.status(429).type('text').send('Troppe richieste: riprova fra un minuto.');
-      const esito = campagneDb.prendi(id, p.login, { tetto: campagne.TETTO, regala: () => subscriptions.set(p.login, campagne.regalo()) });
-      if (esito === 'presa') log.info(`campagna ${id}: un anno di tutto a @${p.login}`);
-      res.redirect(303, `/${id}${esito === 'presa' ? '?esito=presa' : ''}`);
-    });
-  }
+  // Gli indirizzi scritti per intero: una porta composta non la legge nessun
+  // controllo. Che siano proprio le campagne dell'elenco lo fissa la prova
+  // (test/contratto/campagne.test.mjs). Express le trova senza badare alle
+  // maiuscole, quindi il nome si rilegge in minuscolo.
+  const campagnaDi = (req) => String(req.path.split('/')[1] || '').toLowerCase();
+  app.get(['/nyc', '/milano', '/napoli'], (req, res) => {
+    const id = campagnaDi(req);
+    res.set('Cache-Control', 'no-store');
+    const esito = req.query.esito === 'presa' ? 'presa' : '';
+    res.type('html').send(paginaCampagna(id, { campagna: campagne.CAMPAGNE[id], stato: statoCampagna(id), finestra: campagne.finestra(id, config.campagne?.[id]),
+      presi: campagneDb.presi(id), persona: personaCampagna(req, id), esito, kick: conKick }));
+  });
+  // Senza sessione (scaduta fra la pagina e il tasto) si torna alla pagina, che
+  // fa entrare: il tasto non e' mai un vicolo cieco.
+  app.post(['/nyc/prendi', '/milano/prendi', '/napoli/prendi'], (req, res) => {
+    const id = campagnaDi(req);
+    if (!currentUser(req)) return res.redirect(303, '/' + id);
+    const p = personaCampagna(req, id);
+    if (p.chi !== 'proprietario' || p.no) return res.redirect(303, '/' + id);
+    if (!extRateOk('campagna:' + p.login)) return res.status(429).type('text').send('Troppe richieste: riprova fra un minuto.');
+    const esito = campagneDb.prendi(id, p.login, { tetto: campagne.TETTO, regala: () => subscriptions.set(p.login, campagne.regalo()) });
+    if (esito === 'presa') log.info(`campagna ${id}: un anno di tutto a @${p.login}`);
+    res.redirect(303, `/${id}${esito === 'presa' ? '?esito=presa' : ''}`);
+  });
 
   // Il giro: ogni minuto, per chi ha qualcosa di acceso.
   const avvisaAutomatica = async (login, cosa, u) => {

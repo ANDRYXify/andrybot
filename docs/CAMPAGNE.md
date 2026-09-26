@@ -59,13 +59,23 @@ piena, chiusa, già tua, piano a pagamento, community, moderatore.
   si apre da solo (un'anteprima, il controllo di una casella di posta) non
   regala niente. Il cookie di sessione è `SameSite=Lax`, quindi un modulo
   mandato da un altro sito arriva senza sessione e non prende niente.
+- Senza sessione (scaduta fra l'apertura della pagina e il tasto) il POST
+  rimanda alla pagina, che fa entrare: il tasto non finisce mai su un 404.
+- Gli indirizzi sono **scritti per intero** (`['/nyc', '/milano', '/napoli']`),
+  non costruiti in un giro: una porta composta non la legge il cancello delle
+  porte (`scripts/verifica-porte.mjs`), e una porta che non si legge non si
+  controlla. Che siano proprio le campagne dell'elenco lo fissa la prova di
+  contratto.
 - Chi arriva senza account entra con Twitch (`/entra?nuovo=1&campagna=<città>`)
   o con Kick (`/accedi/kick?campagna=<città>`), e al rientro torna sulla pagina.
+  Le porte di Kick e YouTube lo ricordano da sé (`annotaIngresso`), senza una
+  rotta in più davanti.
   Il nome della campagna vale solo se è nell'elenco: non è un «rimandami dove
   vuoi».
 - Resta fuori dai motori di ricerca (`noindex`) e dalla sitemap: è una pagina
   che scade. Ha però la sua anteprima (`/icons/campagna-<città>.png`, 1200×630)
-  per chi la condivide.
+  per chi la condivide, scritta per intero in `COPERTINA` e col timbro di tutte
+  le icone: il cancello delle risorse controlla che il file ci sia.
 
 ## Quando si apre
 

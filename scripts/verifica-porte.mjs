@@ -103,6 +103,9 @@ const PUBBLICHE = new Map([
   ['GET /u/:user/img/:file', 'immagini della pagina link'],
   ['GET /u/:user/privacy', 'informativa della pagina link'],
   ['GET /sostieni', 'la pagina per sostenere il progetto: pubblica, e non chiede un account a nessuno'],
+  ['GET /nyc', 'la pagina del QR di una pubblicita\' in citta\' (docs/CAMPAGNE.md): la apre chi passa per strada, e chi non ha un account entra da li\''],
+  ['GET /milano', 'come /nyc'],
+  ['GET /napoli', 'come /nyc'],
   ['GET /api/sostieni', 'gli importi che proponiamo: la pagina li deve poter leggere prima di chiedere qualcosa'],
   ['POST /api/sostieni', 'apre il pagamento: chi sostiene non si iscrive a niente, quindi non c\'e\' una sessione da guardare (tetto al minuto per indirizzo)'],
   ['GET /api/sostieni/esito', 'il ritorno dal pagamento: la verita\' la da\' Stripe, l\'indirizzo serve solo a sapere quale sessione rileggere'],
@@ -154,7 +157,8 @@ if (SELFTEST) {
 // costruite in un giro, non le vedeva nessuno, e /en rispondeva 404 a chi non
 // era entrato.
 const RE_ROTTA = /app\.(get|post|put|patch|delete|all)\(\s*/g;
-const RE_LETTERALE = /^\s*('[^'`$]*'|"[^"`$]*")\s*/;
+// Un indirizzo e' letterale solo se FINISCE li': «'/' + id» non e' la porta «/».
+const RE_LETTERALE = /^\s*('[^'`$]*'|"[^"`$]*")\s*(?=[,)\]]|$)/;
 const indirizziDi = (testo, da) => {
   const primo = RE_LETTERALE.exec(testo.slice(da));
   if (primo) return [primo[1].slice(1, -1)];

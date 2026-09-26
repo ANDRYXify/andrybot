@@ -24,7 +24,7 @@ import * as diario from './diario.js';
 
 const log = makeLog('kick');
 
-export function montaKick(app, { requireLogin, currentUser, wrap, suMessaggio, suEvento, registra }) {
+export function montaKick(app, { requireLogin, currentUser, wrap, annotaIngresso, suMessaggio, suEvento, registra }) {
   // --- 1. si parte -----------------------------------------------------
   // Due porte, lo stesso giro. `/auth/kick` e' lo streamer che gia' e' dentro e
   // collega il suo Kick al canale che ha; `/accedi/kick` e' chi su Twitch non
@@ -45,6 +45,7 @@ export function montaKick(app, { requireLogin, currentUser, wrap, suMessaggio, s
   app.get('/accedi/kick', (req, res) => {
     if (typeof registra !== 'function') return res.redirect('/');
     if (currentUser(req)) return res.redirect('/');       // gia' dentro: si collega da /auth/kick
+    annotaIngresso?.(req);                           // il server ricorda da dove si entra (una campagna)
     parti(req, res, { registrazione: true });
   });
 

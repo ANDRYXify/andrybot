@@ -20,7 +20,7 @@ import * as api from './api.js';
 
 const log = makeLog('youtube');
 
-export function montaYoutube(app, { requireLogin, currentUser, wrap, registra }) {
+export function montaYoutube(app, { requireLogin, currentUser, wrap, annotaIngresso, registra }) {
   // --- 1. si parte -----------------------------------------------------
   const parti = (req, res, { registrazione }) => {
     if (!auth.aperto()) return res.status(503).send('L’accesso con YouTube non è ancora aperto.');
@@ -33,6 +33,7 @@ export function montaYoutube(app, { requireLogin, currentUser, wrap, registra })
   app.get('/accedi/youtube', (req, res) => {
     if (typeof registra !== 'function') return res.redirect('/');
     if (currentUser(req)) return res.redirect('/');       // già dentro: si collega da /auth/youtube
+    annotaIngresso?.(req);                           // il server ricorda da dove si entra (una campagna)
     parti(req, res, { registrazione: true });
   });
 

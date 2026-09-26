@@ -13,6 +13,13 @@ import { paginaServizio } from './guide.js';
 import { TETTO, GIORNI } from '../features/campagne.js';
 
 const SITO = 'https://socialbot.live';
+// L'anteprima di ogni città, scritta per intero: il cancello delle risorse
+// controlla che il file esista e che il timbro sia quello di tutte le icone.
+export const COPERTINA = {
+  nyc: '/icons/campagna-nyc.png?v=8',
+  milano: '/icons/campagna-milano.png?v=8',
+  napoli: '/icons/campagna-napoli.png?v=8',
+};
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const T = {
@@ -95,9 +102,9 @@ export function paginaCampagna(id, { campagna, stato, finestra, presi = 0, perso
   }
 
   const corpo = `<h1>${esc(t.h1)}</h1>
-<p><img src="/icons/campagna-${id}.png?v=1" alt="${esc(t.alt)}" width="1200" height="630" class="g-copertina"></p>
+<p><img src="${COPERTINA[id]}" alt="${esc(t.alt)}" width="1200" height="630" class="g-copertina"></p>
 <p>${esc(chi)}</p>
 <p>${esc(t.regole(chiude))}</p>
 ${qui}`;
-  return paginaServizio({ titolo: t.titolo, url, corpo, l: campagna.lingua, desc: t.desc, immagine: `${SITO}/icons/campagna-${id}.png?v=1`, immagineAlt: t.alt });
+  return paginaServizio({ titolo: t.titolo, url, corpo, l: campagna.lingua, desc: t.desc, immagine: SITO + COPERTINA[id], immagineAlt: t.alt });
 }
