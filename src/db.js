@@ -935,6 +935,9 @@ aggiungiColonna('effects', 'disegno', "TEXT NOT NULL DEFAULT ''");
 // non lo fa parlare, segna l'ora e gli fa aspettare un giro intero.
 aggiungiColonna('modules', 'timer_last', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('points', 'ruolo', "TEXT NOT NULL DEFAULT ''");  // '' = pubblico · 'staff' = mod/streamer
+// Quante monete sono arrivate dall'ultima importazione da un altro bot: una
+// nuova importazione porta solo la differenza (docs/PONTE.md).
+aggiungiColonna('points', 'importate', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('telegram', 'pin_live', "INTEGER NOT NULL DEFAULT 1");
 aggiungiColonna('telegram', 'msg_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'msg_id_tk', "TEXT NOT NULL DEFAULT ''");
@@ -1211,6 +1214,44 @@ export const points = {
     const q = db.prepare("SELECT COUNT(*) c FROM points WHERE channel=? AND ruolo=? AND user<>? AND user NOT LIKE '[%' AND monete>?")
       .get(channel, r.ruolo || '', padroneDi(channel), r.monete);
     return q.c + 1;
+  },
+  // Utente → { monete, importate } di tutto il canale: l'anteprima di
+  // un'importazione dice a ognuno quante ne ha e quante ne avra'.
+  saldi(channel) {
+    const m = new Map();
+    for (const r of db.prepare('SELECT user, monete, importate FROM points WHERE channel=?').iterate(channel)) {
+      m.set(r.user, { monete: r.monete, importate: r.importate });
+    }
+    return m;
+  },
+  // I PUNTI DI UN ALTRO BOT, UNA VOLTA SOLA. `voci` = [{ utente, monete }], le
+  // monete gia' convertite. Ognuno riceve la differenza fra quanto porta questa
+  // importazione e quanto aveva portato la precedente, sopra a quello che ha
+  // guadagnato qui: lo stesso file due volte non cambia niente, un file
+  // aggiornato cambia solo quello che e' cambiato. Chi non e' nel file non si
+  // tocca. Il conto si fa qui dentro, sulla riga di adesso, non su quella vista
+  // nell'anteprima.
+  importa(channel, voci) {
+    const leggi = db.prepare('SELECT importate FROM points WHERE channel=? AND user=?');
+    const nuovo = db.prepare("INSERT INTO points (channel, user, monete, ruolo, ts, importate) VALUES (?,?,?,'',?,?)");
+    const cambia = db.prepare('UPDATE points SET monete = MAX(0, monete + ? - importate), importate = ?, ts = ? WHERE channel=? AND user=?');
+    const esito = { nuovi: 0, aggiornati: 0, invariati: 0 };
+    db.transaction(() => {
+      for (const v of voci || []) {
+        const u = String(v?.utente || '').toLowerCase();
+        const n = Math.max(0, Math.floor(Number(v?.monete) || 0));
+        if (!u) continue;
+        const r = leggi.get(channel, u);
+        if (!r) {
+          if (n > 0) { nuovo.run(channel, u, n, now(), n); esito.nuovi++; } else esito.invariati++;
+          continue;
+        }
+        if (r.importate === n) { esito.invariati++; continue; }
+        cambia.run(n, n, now(), channel, u);
+        esito.aggiornati++;
+      }
+    })();
+    return esito;
   },
   top(channel, n = 5, chi = 'pubblico') {
     const filtro = FILTRO_CLASSIFICA[chi] ?? FILTRO_CLASSIFICA.pubblico;

@@ -129,7 +129,9 @@ import { provaModerazione, verificabile } from '../moderatori/prova.js';
 import { creaGuscio } from './vetrina.js';
 import { creaImpronte, montaStatici } from './impronte.js';
 import { salute } from '../salute.js';
-import { anteprima as anteprimaImport, moduloDa } from '../features/importacomandi.js';
+import { anteprima as anteprimaImport, moduloDa, moduloTimerDa } from '../features/importacomandi.js';
+import { BOT_NOTI } from '../features/muro.js';
+import { NON_CONTARE } from '../features/watchtime.js';
 import { esporta as esportaDati } from '../features/esporta.js';
 import { cancella as cancellaDati, restiDi, confermaValida as confermaCancellazione } from '../features/cancella.js';
 import { montaKick } from '../kick/rotte.js';
@@ -8393,42 +8395,72 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({ ok: true, id });
   }));
 
-  // IMPORTARE i comandi da un altro bot. Due passi separati apposta: prima
-  // l'anteprima (che non tocca niente e dice esattamente cosa succederebbe),
-  // poi l'applicazione di ciò che lo streamer ha visto. Non si scrive mai nulla
-  // che non sia stato mostrato prima.
+  // IMPORTARE da un altro bot: comandi, timer e punti (docs/PONTE.md). Due
+  // passi separati apposta: prima l'anteprima (che non tocca niente e dice
+  // esattamente cosa succederebbe), poi l'applicazione di ciò che lo streamer ha
+  // visto. Non si scrive mai nulla che non sia stato mostrato prima.
+  // I saldi dei bot noti non sono di una persona: restano fuori.
+  const BOT_ESCLUSI = new Set([...BOT_NOTI, ...NON_CONTARE]);
   app.post('/api/streamer/comandi/importa', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const testo = String(req.body?.testo || '').slice(0, 400_000);
+    const testo = String(req.body?.testo || '').slice(0, 1_500_000);
     if (!testo.trim()) return res.status(400).json({ errore: 'non c\'è niente da importare' });
 
     const gia = modulesDb.list(login) || [];
     const posti = Math.max(0, MAX_MODULI - gia.length);
-    const vista = anteprimaImport(testo, { esistenti: gia, posti });
+    // I punti sono monete che si muovono senza che la chat lo veda: come quelle
+    // aggiustate a mano, li porta solo il proprietario. Un moderatore vede
+    // l'anteprima, e il pannello gli dice perché non li importa.
+    const proprietario = isOwner(req);
+    const vista = anteprimaImport(testo, {
+      esistenti: gia, posti, tasso: req.body?.tasso, escludi: BOT_ESCLUSI,
+      saldi: () => points.saldi(login),
+    });
     if (!vista.formato) {
-      return res.status(400).json({ errore: 'non riconosco questo formato: incolla l\'export del tuo bot, un CSV, o un elenco «!comando risposta»' });
+      return res.status(400).json({ errore: 'non riconosco questo formato: incolla l\'export del tuo bot, un CSV, o un elenco scritto a mano («!comando risposta», «ogni 15 minuti: messaggio», «nome 1200»)' });
     }
-    if (!req.body?.applica) return res.json({ ok: true, anteprima: vista });
+    // l'elenco intero dei saldi resta qui: al pannello bastano i conti e i primi
+    const mostra = { ...vista, punti: vista.punti ? { ...vista.punti, voci: undefined, soloProprietario: !proprietario } : null };
+    if (!req.body?.applica) return res.json({ ok: true, anteprima: mostra });
 
     // Applicazione: solo i buoni, più quelli da rivedere se lo streamer lo ha
-    // chiesto sapendo cosa sono.
-    const daFare = [...vista.buoni, ...(req.body?.includiDaRivedere ? vista.daRivedere : [])]
-      .filter((c) => !c.uguale);
+    // chiesto sapendo cosa sono. Comandi e timer si dividono gli stessi posti.
+    const includi = !!req.body?.includiDaRivedere;
+    let nuoviModuli = 0, senzaPosto = 0;
+    const falliti = [];
+    const salva = (idEsistente, m, nome) => {
+      if (!idEsistente && nuoviModuli >= posti) { senzaPosto++; return null; }
+      try {
+        if (idEsistente) { modulesDb.save(login, { ...m, id: idEsistente }); return 'aggiornato'; }
+        modulesDb.save(login, m); nuoviModuli++; return 'nuovo';
+      } catch (e) { falliti.push({ nome, errore: e?.message || 'non riuscito' }); return null; }
+    };
+
     const perNome = new Map(gia.filter((m) => m?.trigger?.tipo === 'comando')
       .map((m) => [String(m.trigger.comando || '').toLowerCase(), m.id]));
-
-    let importati = 0, aggiornati = 0, senzaPosto = 0;
-    const falliti = [];
-    for (const c of daFare) {
-      const idEsistente = perNome.get(c.nome);
-      if (!idEsistente && importati >= posti) { senzaPosto++; continue; }
-      try {
-        const m = moduloDa(c);
-        if (idEsistente) { modulesDb.save(login, { ...m, id: idEsistente }); aggiornati++; }
-        else { modulesDb.save(login, m); importati++; }
-      } catch (e) { falliti.push({ nome: c.nome, errore: e?.message || 'non riuscito' }); }
+    let importati = 0, aggiornati = 0;
+    for (const c of [...vista.buoni, ...(includi ? vista.daRivedere : [])].filter((c) => !c.uguale)) {
+      const r = salva(perNome.get(c.nome), moduloDa(c), c.nome);
+      if (r === 'nuovo') importati++; else if (r === 'aggiornato') aggiornati++;
     }
-    res.json({ ok: true, importati, aggiornati, senzaPosto, falliti, anteprima: vista });
+
+    const perNomeTimer = new Map(gia.filter((m) => m?.trigger?.tipo === 'timer')
+      .map((m) => [String(m.nome || '').trim().toLowerCase(), m.id]));
+    const timer = { importati: 0, aggiornati: 0 };
+    for (const t of [...vista.timer.buoni, ...(includi ? vista.timer.daRivedere : [])].filter((t) => !t.uguale)) {
+      const r = salva(perNomeTimer.get(t.nome.toLowerCase()), moduloTimerDa(t), t.nome);
+      if (r === 'nuovo') timer.importati++; else if (r === 'aggiornato') timer.aggiornati++;
+    }
+
+    let punti = null;
+    if (vista.punti?.voci?.length) {
+      if (!proprietario) punti = { negati: true };
+      else {
+        punti = points.importa(login, vista.punti.voci.map((v) => ({ utente: v.utente, monete: v.monete })));
+        log.info(`#${login}: punti importati — ${punti.nuovi} nuovi, ${punti.aggiornati} aggiornati, cambio ${vista.punti.tasso}`);
+      }
+    }
+    res.json({ ok: true, importati, aggiornati, senzaPosto, falliti, timer, punti, anteprima: mostra });
   }));
 
   // PRESET "un clic": crea un comando pronto per cambiare CATEGORIA o TITOLO su Twitch,

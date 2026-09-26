@@ -939,6 +939,13 @@ const IMPORT_DEMO_TESTO = `{"commands":[
   {"name":"!morti","message":"Oggi sono morto $(count) volte"},
   {"name":"!so","message":"Andate a seguire $(touser)!"},
   {"name":"!meteo","message":"$(urlfetch https://api.meteo.example/$(query))"}
+],"timers":[
+  {"name":"social","message":"Seguimi anche su Instagram: @andryx","interval":"*/15 * * * *","lines":2,"enabled":true},
+  {"name":"discord","message":"!discord","interval":"0 * * * *","lines":5,"enabled":true}
+],"users":[
+  {"username":"marco_gioca","points":12450},
+  {"username":"giada","points":8300},
+  {"username":"lucia_rs","points":2710}
 ]}`;
 
 function _demoImport(corpo) {
@@ -956,7 +963,26 @@ function _demoImport(corpo) {
     ],
     scartati: [],
   };
-  if (corpo?.applica) return { ok: true, importati: 3, aggiornati: 1, senzaPosto: 0, falliti: [], anteprima: v };
+  v.timer = {
+    totale: 2, troncato: false, daRivedere: [], scartati: [],
+    buoni: [
+      { nome: 'social', testo: 'Seguimi anche su Instagram: @andryx', originale: 'Seguimi anche su Instagram: @andryx', minuti: 15, minMessaggi: 2, ancheOffline: true, soloOffline: false, attivo: true, sovrascrive: false, uguale: false, avvisi: [], note: [] },
+      { nome: 'discord', testo: 'Entra nel Discord: discord.gg/andryx', originale: '!discord', minuti: 60, minMessaggi: 5, ancheOffline: true, soloOffline: false, attivo: true, sovrascrive: false, uguale: false, avvisi: [],
+        note: [L('scrive la risposta di !discord', 'writes the reply of !discord', 'escribe la respuesta de !discord')] },
+    ],
+  };
+  const tasso = Math.max(1, Math.floor(Number(corpo?.tasso) || 1));
+  const gia = { giada: 140 };
+  const voci = [['marco_gioca', 12450], ['giada', 8300], ['lucia_rs', 2710]].map(([utente, punti]) => {
+    const monete = Math.floor(punti / tasso), prima = gia[utente] || 0;
+    return { utente, punti, monete, prima, dopo: prima + monete, nuovo: !prima };
+  });
+  v.punti = {
+    letti: 3, tasso, cambiano: 3, nuovi: 2, invariati: 0, zero: 0,
+    entrano: voci.reduce((a, x) => a + x.monete, 0), top: voci,
+    scartati: [], scartatiTotale: 0, troncato: false, oreFuori: false, soloProprietario: false,
+  };
+  if (corpo?.applica) return { ok: true, importati: 3, aggiornati: 1, senzaPosto: 0, falliti: [], timer: { importati: 2, aggiornati: 0 }, punti: { nuovi: 2, aggiornati: 1, invariati: 0 }, anteprima: v };
   return { ok: true, anteprima: v };
 }
 
@@ -18621,9 +18647,9 @@ function pannelloModuli() {
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.pacco)}${L('Porta qui i comandi che hai già', 'Bring over the commands you already have', 'Trae los comandos que ya tienes')}</h2>
-      <p>${L('Vieni da', 'Coming from', 'Vienes de')} <strong>Nightbot</strong>, <strong>StreamElements</strong>, <strong>Fossabot</strong> ${L('o altro? Incolla qui quello che riesci a copiare:', 'or elsewhere? Paste whatever you can copy:', 'u otro? Pega aquí lo que puedas copiar:')}
-      ${L("l'export del tuo bot, un CSV, o un semplice elenco", 'your bot export, a CSV, or a plain list', 'la exportación de tu bot, un CSV o una simple lista')} <code>!comando risposta</code>.
+      <h2>${_hIco(ICO.pacco)}${L('Porta qui quello che hai già', 'Bring over what you already have', 'Trae lo que ya tienes')}</h2>
+      <p>${L('Vieni da', 'Coming from', 'Vienes de')} <strong>Nightbot</strong>, <strong>StreamElements</strong>, <strong>Fossabot</strong> ${L('o altro? Qui portano comandi, timer e punti del tuo pubblico. Incolla quello che riesci a copiare:', 'or elsewhere? Commands, timers and your viewers\' points come over here. Paste whatever you can copy:', 'u otro? Aquí llegan comandos, temporizadores y los puntos de tu público. Pega lo que puedas copiar:')}
+      ${L("l'export del tuo bot, un CSV, o un elenco con una riga per cosa:", 'your bot export, a CSV, or a list with one line per item:', 'la exportación de tu bot, un CSV o una lista con una línea por cosa:')} <code>!comando risposta</code>, <code>${L('ogni 15 minuti: messaggio', 'every 15 minutes: message', 'cada 15 minutos: mensaje')}</code>, <code>${L('nome 1200', 'name 1200', 'nombre 1200')}</code>.
       ${L('Le variabili vengono tradotte', 'Variables are translated', 'Las variables se traducen')} (<code>$(user)</code> → <code>$user</code>) ${L('e prima di scrivere qualsiasi cosa ti mostro esattamente cosa succede.', 'and before writing anything I show you exactly what happens.', 'y antes de escribir nada te muestro exactamente qué pasa.')}</p>
       <textarea aria-label="${esc(L('Incolla qui…', 'Paste here…', 'Pega aquí…'))}" id="imp-testo" class="campo-largo" rows="6" spellcheck="false" placeholder="${L('Incolla qui…', 'Paste here…', 'Pega aquí…')}"></textarea>
       <p class="spazio-sopra">
@@ -21317,7 +21343,9 @@ function pannelloGiochi() {
         <input aria-label="${esc(L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50'))}" type="number" id="pt-delta" placeholder="${L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50')}" style="max-width:10rem">
         <button type="button" class="btn secondario" id="btn-punti-manuale">${L('Aggiusta', 'Adjust', 'Ajustar')} ${esc(s.nomeMonete)}</button>
       </div>
-      <p class="suggerimento">${L('Per riparare un errore. Con il meno si tolgono. In chat puoi fare lo stesso con un comando (ricetta «Dai monete»), che però lo fa vedere a tutti — e possono usarlo anche i tuoi moderatori.', 'To fix a mistake. Use a minus to remove. In chat you can do the same with a command (the «Give coins» recipe), which everyone sees — and your mods can use it too.', 'Para reparar un error. Con el menos se quitan. En el chat puedes hacer lo mismo con un comando (receta «Dar monedas»), que además lo ve todo el mundo — y también pueden usarlo tus moderadores.')}</p>`}
+      <p class="suggerimento">${L('Per riparare un errore. Con il meno si tolgono. In chat puoi fare lo stesso con un comando (ricetta «Dai monete»), che però lo fa vedere a tutti — e possono usarlo anche i tuoi moderatori.', 'To fix a mistake. Use a minus to remove. In chat you can do the same with a command (the «Give coins» recipe), which everyone sees — and your mods can use it too.', 'Para reparar un error. Con el menos se quitan. En el chat puedes hacer lo mismo con un comando (receta «Dar monedas»), que además lo ve todo el mundo — y también pueden usarlo tus moderadores.')}</p>
+      <p class="suggerimento">${L('I punti che il tuo pubblico ha su un altro bot li porti qui da Moduli, in «Porta qui quello che hai già».', 'Your viewers’ points on another bot come over from Modules, in «Bring over what you already have».', 'Los puntos que tu público tiene en otro bot los traes desde Módulos, en «Trae lo que ya tienes».')}
+        <button type="button" class="btn secondario mini" data-scheda="moduli">${L('Vai a Moduli', 'Go to Modules', 'Ir a Módulos')}</button></p>`}
       <p class="suggerimento spazio-sopra">${L('Le classifiche delle monete stanno nella scheda Statistiche, insieme a tutti gli altri numeri del canale.', 'The coin leaderboards are in the Stats tab, together with all the other channel numbers.', 'Las clasificaciones de monedas están en la pestaña Estadísticas, junto a los demás números del canal.')}
         <button type="button" class="btn secondario mini" data-scheda="statistiche">${L('Vedi le classifiche', 'See the leaderboards', 'Ver las clasificaciones')}</button></p>
       <h3>${L('VIP a tempo attivi', 'Active timed VIPs', 'VIP temporales activos')}</h3>
@@ -25950,68 +25978,154 @@ function attivaPiattaforma() {
   }));
 
   let _impVista = null;
+  let _impTesto = '';
+
+  const impTag = (testo, cls = '') => `<span class="imp-tag${cls ? ' ' + cls : ''}">${esc(testo)}</span>`;
+  const impStato = (c) => `${c.sovrascrive ? impTag(L('sostituisce quello che hai', 'replaces what you have', 'sustituye el que tienes'), 'imp-sovra') : ''}${c.uguale ? impTag(L('identico: lo salto', 'identical: skipping', 'idéntico: lo salto')) : ''}`;
+  const impAvvisi = (c) => (c.avvisi || []).map((a) => `<span class="imp-tag imp-nota">${esc(a.cosa)}${a.dove ? ' — ' + L('qui si fa con', 'here you do it with', 'aquí se hace con') + ' ' + esc(a.dove) : ''}</span>`).join('');
+  const impNum = (n) => Number(n || 0).toLocaleString(localePannello());
+  const impN = (n, uno, tanti) => `${impNum(n)} ${Math.abs(n) === 1 ? uno : tanti}`;
 
   const impRiga = (c) => `<li class="imp-riga">
     <code>!${esc(c.nome)}</code>
     <span class="imp-testo">${esc(c.risposta)}</span>
-    ${c.sovrascrive ? `<span class="imp-tag imp-sovra">${L('sostituisce quello che hai', 'replaces what you have', 'sustituye el que tienes')}</span>` : ''}
-    ${c.uguale ? `<span class="imp-tag">${L('identico: lo salto', 'identical: skipping', 'idéntico: lo salto')}</span>` : ''}
-    ${(c.avvisi || []).map((a) => `<span class="imp-tag imp-nota">${esc(a.cosa)}${a.dove ? ' — ' + L('qui si fa con', 'here you do it with', 'aquí se hace con') + ' ' + esc(a.dove) : ''}</span>`).join('')}
+    ${impStato(c)}${impAvvisi(c)}
   </li>`;
+
+  const impQuando = (t) => {
+    let q = L(`ogni ${t.minuti} min`, `every ${t.minuti} min`, `cada ${t.minuti} min`);
+    if (t.minMessaggi) q += L(`, se in chat ci sono almeno ${t.minMessaggi} messaggi`, `, if chat has at least ${t.minMessaggi} messages`, `, si en el chat hay al menos ${t.minMessaggi} mensajes`);
+    q += t.soloOffline ? L(', solo fuori diretta', ', only when you are offline', ', solo fuera de directo')
+      : (t.ancheOffline ? L(', anche a canale spento', ', also when you are offline', ', también con el canal apagado') : L(', solo in diretta', ', only while live', ', solo en directo'));
+    if (t.attivo === false) q += L(', entra spento', ', comes in switched off', ', entra apagado');
+    return q;
+  };
+  const impRigaTimer = (t) => `<li class="imp-riga">
+    <code>${esc(t.nome)}</code>
+    <span class="imp-testo">${esc(t.testo)}<br><small>${esc(impQuando(t))}</small></span>
+    ${impStato(t)}${(t.note || []).map((n) => impTag(n)).join('')}${impAvvisi(t)}
+  </li>`;
+
+  const impScartati = (lista, totale) => lista.length ? `<details class="spazio-sopra"><summary>${L('Scartati', 'Discarded', 'Descartados')} (${impNum(totale || lista.length)})</summary>
+    <ul class="imp-lista">${lista.map((x) => `<li class="imp-riga"><code>${esc(x.nome)}</code>${impTag(x.perche)}</li>`).join('')}</ul></details>` : '';
+
+  function impPunti(p) {
+    if (!p) return '';
+    const riga = (v) => `<li class="imp-riga">
+      <code>${esc(v.utente)}</code>
+      <span class="imp-testo">${impN(v.punti, L('punto', 'point', 'punto'), L('punti', 'points', 'puntos'))} → ${impN(v.monete, L('moneta', 'coin', 'moneda'), L('monete', 'coins', 'monedas'))}${v.nuovo ? '' : `<br><small>${L('ne ha già', 'already has', 'ya tiene')} ${impNum(v.prima)}, ${L('ne avrà', 'will have', 'tendrá')} ${impNum(v.dopo)}</small>`}</span>
+    </li>`;
+    const altri = p.cambiano - p.top.length;
+    return `<h4 class="spazio-sopra">${L('Punti', 'Points', 'Puntos')}</h4>
+      <p>${p.cambiano
+        ? `${impN(p.cambiano, L('persona riceve monete', 'person gets coins', 'persona recibe monedas'), L('persone ricevono monete', 'people get coins', 'personas reciben monedas'))}${p.nuovi ? ` (${impN(p.nuovi, L('nuova qui', 'new here', 'nueva aquí'), L('nuove qui', 'new here', 'nuevas aquí'))})` : ''}: ${p.entrano >= 0 ? '+' : ''}${impN(p.entrano, L('moneta', 'coin', 'moneda'), L('monete', 'coins', 'monedas'))} ${L('in tutto', 'in total', 'en total')}.`
+        : L('Nessun saldo cambia.', 'No balance changes.', 'Ningún saldo cambia.')}
+      ${p.invariati ? ` ${L('Per', 'For', 'Para')} ${impN(p.invariati, L('persona il saldo importato è già questo: resta com’è.', 'person the imported balance is already this: it stays as it is.', 'persona el saldo importado ya es este: se queda como está.'), L('persone il saldo importato è già questo: restano come sono.', 'people the imported balance is already this: they stay as they are.', 'personas el saldo importado ya es este: se quedan como están.'))}` : ''}</p>
+      <div class="griglia-campi">
+        <div>
+          <label class="campo" for="imp-tasso">${L('Ogni quanti punti di prima, una moneta', 'How many old points make one coin', 'Cuántos puntos de antes hacen una moneda')}</label>
+          <input type="number" id="imp-tasso" min="1" max="1000000" step="1" value="${p.tasso}" style="max-width:10rem">
+        </div>
+      </div>
+      <p class="suggerimento">${L('Si sommano alle monete che ognuno ha già qui. Se importi di nuovo, conta l’ultimo file: nessuno riceve due volte gli stessi punti.', 'They add to the coins everyone already has here. If you import again, the latest file counts: nobody gets the same points twice.', 'Se suman a las monedas que cada uno ya tiene aquí. Si importas de nuevo, cuenta el último archivo: nadie recibe dos veces los mismos puntos.')}</p>
+      ${p.oreFuori ? `<p class="suggerimento">${L('Le ore guardate non si portano: qui si contano da capo.', 'Watch hours do not come over: here they count from scratch.', 'Las horas vistas no se traen: aquí se cuentan desde cero.')}</p>` : ''}
+      ${p.top.length ? `<ul class="imp-lista">${p.top.map(riga).join('')}</ul>` : ''}
+      ${altri > 0 ? `<p class="suggerimento">${altri === 1 ? L('E un’altra persona.', 'And one more person.', 'Y otra persona.') : `${L('E altre', 'And', 'Y otras')} ${impNum(altri)} ${L('persone', 'more people', 'personas')}.`}</p>` : ''}
+      ${p.troncato ? `<p class="suggerimento">${L('Il file ha', 'The file has', 'El archivo tiene')} ${impNum(p.letti)} ${L('righe: leggo le prime 50.000.', 'rows: I read the first 50,000.', 'filas: leo las primeras 50.000.')}</p>` : ''}
+      ${impScartati(p.scartati, p.scartatiTotale)}
+      ${p.soloProprietario && p.cambiano ? `<div class="riquadro-info spazio-sopra">${L('I punti li porta solo il proprietario del canale, come le monete date a mano. Tu vedi cosa succederebbe; importando entrano comandi e timer.', 'Only the channel owner can bring points over, like coins given by hand. You see what would happen; importing brings in commands and timers.', 'Solo el dueño del canal puede traer los puntos, como las monedas dadas a mano. Tú ves qué pasaría; al importar entran comandos y temporizadores.')}</div>` : ''}`;
+  }
 
   function mostraAnteprimaImport(v) {
     _impVista = v;
     const box = document.getElementById('imp-esito');
     if (!box) return;
-    const entrano = v.buoni.filter((c) => !c.uguale).length;
-    const identici = v.buoni.filter((c) => c.uguale).length;
+    const t = v.timer || { buoni: [], daRivedere: [], scartati: [], totale: 0 };
+    const p = v.punti;
+    const nuovi = [...v.buoni, ...t.buoni].filter((c) => !c.uguale && !c.sovrascrive).length;
+    const letti = [];
+    if (v.totale) letti.push(impN(v.totale, L('comando', 'command', 'comando'), L('comandi', 'commands', 'comandos')));
+    if (t.totale) letti.push(impN(t.totale, L('timer', 'timer', 'temporizador'), L('timer', 'timers', 'temporizadores')));
+    if (p) letti.push(impN(p.letti, L('saldo', 'balance', 'saldo'), L('saldi', 'balances', 'saldos')));
+    const riassunto = (x) => {
+      const entrano = x.buoni.filter((c) => !c.uguale).length;
+      const identici = x.buoni.filter((c) => c.uguale).length;
+      return `${impN(entrano, L('entra', 'comes in', 'entra'), L('entrano', 'come in', 'entran'))}${identici ? `, ${impN(identici, L('già identico', 'already identical', 'ya idéntico'), L('già identici', 'already identical', 'ya idénticos'))}` : ''}${x.daRivedere.length ? `, ${impNum(x.daRivedere.length)} ${L('da rivedere', 'to review', 'a revisar')}` : ''}${x.scartati.length ? `, ${impN(x.scartati.length, L('scartato', 'discarded', 'descartado'), L('scartati', 'discarded', 'descartados'))}` : ''}`;
+    };
+    const daRivedere = v.daRivedere.length || t.daRivedere.length;
+    const puntiDaFare = !!(p && p.cambiano && !p.soloProprietario);
     box.innerHTML = `
       <div class="riquadro-info spazio-sopra">
-        <strong>${L('Ho letto', 'I read', 'He leído')} ${v.totale} ${L('comandi', 'commands', 'comandos')}</strong>${v.troncato ? ` — ${L('mostro i primi', 'showing the first', 'muestro los primeros')} ${v.buoni.length + v.daRivedere.length}` : ''}. ${entrano} ${L('entrano', 'come in', 'entran')}${identici ? `, ${identici} ${L('già identici', 'already identical', 'ya idénticos')}` : ''}${v.daRivedere.length ? `, ${v.daRivedere.length} ${L('da rivedere', 'to review', 'a revisar')}` : ''}${v.scartati.length ? `, ${v.scartati.length} ${L('scartati', 'discarded', 'descartados')}` : ''}.
-        ${v.posti !== Infinity && entrano > v.posti ? `<br><strong>${L('Hai posto per', 'You have room for', 'Tienes sitio para')} ${v.posti}</strong>: ${L('il resto non entrerà.', "the rest won't fit.", 'el resto no entrará.')}` : ''}
+        <strong>${L('Ho letto', 'I read', 'He leído')} ${letti.join(', ')}</strong>.
+        ${v.posti !== Infinity && nuovi > v.posti ? `<br><strong>${L('Hai posto per', 'You have room for', 'Tienes sitio para')} ${impN(v.posti, L('modulo nuovo', 'new module', 'módulo nuevo'), L('moduli nuovi', 'new modules', 'módulos nuevos'))}</strong>: ${L('il resto non entrerà.', "the rest won't fit.", 'el resto no entrará.')}` : ''}
       </div>
-      ${v.buoni.length ? `<h4 class="spazio-sopra">${L('Entrano così', 'They come in like this', 'Entran así')}</h4><ul class="imp-lista">${v.buoni.map(impRiga).join('')}</ul>` : ''}
-      ${v.daRivedere.length ? `<h4 class="spazio-sopra">${L('Da rivedere', 'To review', 'A revisar')}</h4>
-        <p class="suggerimento">${L('Usano cose che il bot di prima sapeva fare e qui si fanno in un altro modo. Se li importi così com’è, in chat esce il testo grezzo.', 'They use things the old bot could do that work differently here. If you import them as they are, chat will show the raw text.', 'Usan cosas que el bot anterior hacía y aquí se hacen de otra forma. Si los importas tal cual, en el chat saldrá el texto en crudo.')}</p>
-        <ul class="imp-lista">${v.daRivedere.map(impRiga).join('')}</ul>
-        <label class="riga-check"><input type="checkbox" id="imp-anche-rivedere"> ${L('Importali lo stesso: li sistemo io dopo', "Import them anyway: I'll fix them later", 'Impórtalos igual: los arreglo yo luego')}</label>` : ''}
-      ${v.scartati.length ? `<details class="spazio-sopra"><summary>${L('Scartati', 'Discarded', 'Descartados')} (${v.scartati.length})</summary>
-        <ul class="imp-lista">${v.scartati.map((x) => `<li class="imp-riga"><code>${esc(x.nome)}</code><span class="imp-tag">${esc(x.perche)}</span></li>`).join('')}</ul></details>` : ''}
-      ${(v.buoni.length || v.daRivedere.length) ? `<p class="spazio-sopra"><button class="btn" id="imp-applica">${_bIco(ICO.spunta)}${L('Importa', 'Import', 'Importar')}</button></p>` : ''}`;
+      ${v.totale ? `<h4 class="spazio-sopra">${L('Comandi', 'Commands', 'Comandos')}</h4>
+        <p>${riassunto(v)}${v.troncato ? `. ${L('Mostro i primi', 'Showing the first', 'Muestro los primeros')} ${v.buoni.length + v.daRivedere.length}` : ''}.</p>
+        ${v.buoni.length ? `<ul class="imp-lista">${v.buoni.map(impRiga).join('')}</ul>` : ''}
+        ${v.daRivedere.length ? `<p class="suggerimento spazio-sopra">${L('Da rivedere: usano cose che il bot di prima sapeva fare e qui si fanno in un altro modo. Se li importi così come sono, in chat esce il testo grezzo.', 'To review: they use things the old bot could do that work differently here. If you import them as they are, chat will show the raw text.', 'A revisar: usan cosas que el bot anterior hacía y aquí se hacen de otra forma. Si los importas tal cual, en el chat saldrá el texto en crudo.')}</p>
+          <ul class="imp-lista">${v.daRivedere.map(impRiga).join('')}</ul>` : ''}
+        ${impScartati(v.scartati)}` : ''}
+      ${t.totale ? `<h4 class="spazio-sopra">Timer</h4>
+        <p>${riassunto(t)}.</p>
+        ${t.buoni.length ? `<ul class="imp-lista">${t.buoni.map(impRigaTimer).join('')}</ul>` : ''}
+        ${t.daRivedere.length ? `<p class="suggerimento spazio-sopra">${L('Da rivedere: qui non si comportano del tutto come prima, e accanto c’è il perché.', 'To review: here they do not behave quite as before, and the reason is next to each one.', 'A revisar: aquí no se comportan del todo como antes, y al lado está el porqué.')}</p>
+          <ul class="imp-lista">${t.daRivedere.map(impRigaTimer).join('')}</ul>` : ''}
+        ${impScartati(t.scartati)}` : ''}
+      ${impPunti(p)}
+      ${daRivedere ? `<label class="riga-check spazio-sopra"><input type="checkbox" id="imp-anche-rivedere"> ${L('Importa lo stesso quelli da rivedere: li sistemo io dopo', "Import the ones to review anyway: I'll fix them later", 'Importa igual los que hay que revisar: los arreglo yo luego')}</label>` : ''}
+      ${(v.buoni.length || v.daRivedere.length || t.buoni.length || t.daRivedere.length || puntiDaFare) ? `<p class="spazio-sopra"><button class="btn" id="imp-applica">${_bIco(ICO.spunta)}${L('Importa', 'Import', 'Importar')}</button></p>` : ''}`;
 
+    document.getElementById('imp-tasso')?.addEventListener('change', () => conErrore(vediImport));
     document.getElementById('imp-applica')?.addEventListener('click', () => conErrore(async () => {
       const b = document.getElementById('imp-applica');
       b.disabled = true; b.textContent = L('Importo…', 'Importing…', 'Importando…');
       const r = await api('/api/streamer/comandi/importa', { method: 'POST', body: {
-        testo: document.getElementById('imp-testo').value,
+        testo: _impTesto,
         applica: true,
         includiDaRivedere: !!document.getElementById('imp-anche-rivedere')?.checked,
+        tasso: p?.tasso || 1,
       } });
       const pezzi = [];
-      if (r.importati) pezzi.push(r.importati + ' ' + L('nuovi', 'new', 'nuevos'));
-      if (r.aggiornati) pezzi.push(r.aggiornati + ' ' + L('aggiornati', 'updated', 'actualizados'));
-      toast(pezzi.length ? L('Fatti: ', 'Done: ', 'Hechos: ') + pezzi.join(', ') : L('Niente da fare: era già tutto qui.', 'Nothing to do: it was all here already.', 'Nada que hacer: ya estaba todo aquí.'));
+      if (r.importati) pezzi.push(impN(r.importati, L('comando nuovo', 'new command', 'comando nuevo'), L('comandi nuovi', 'new commands', 'comandos nuevos')));
+      if (r.aggiornati) pezzi.push(impN(r.aggiornati, L('comando aggiornato', 'command updated', 'comando actualizado'), L('comandi aggiornati', 'commands updated', 'comandos actualizados')));
+      if (r.timer?.importati) pezzi.push(impN(r.timer.importati, L('timer nuovo', 'new timer', 'temporizador nuevo'), L('timer nuovi', 'new timers', 'temporizadores nuevos')));
+      if (r.timer?.aggiornati) pezzi.push(impN(r.timer.aggiornati, L('timer aggiornato', 'timer updated', 'temporizador actualizado'), L('timer aggiornati', 'timers updated', 'temporizadores actualizados')));
+      const persone = (r.punti?.nuovi || 0) + (r.punti?.aggiornati || 0);
+      if (persone) pezzi.push(`${L('monete a', 'coins for', 'monedas para')} ${impN(persone, L('persona', 'person', 'persona'), L('persone', 'people', 'personas'))}`);
+      toast(pezzi.length ? L('Fatto: ', 'Done: ', 'Hecho: ') + pezzi.join(', ') : L('Niente da fare: era già tutto qui.', 'Nothing to do: it was all here already.', 'Nada que hacer: ya estaba todo aquí.'));
       if (r.senzaPosto) toast(r.senzaPosto + ' ' + L('non sono entrati: hai finito i posti.', "didn't fit: you're out of room.", 'no entraron: te has quedado sin sitio.'), 'errore');
+      if (r.punti?.negati) toast(L('I punti li porta solo il proprietario del canale.', 'Only the channel owner can bring points over.', 'Solo el dueño del canal puede traer los puntos.'), 'errore');
       document.getElementById('imp-esito').innerHTML = '';
       document.getElementById('imp-testo').value = '';
+      _impTesto = '';
       aggiornaListe();
     }));
   }
 
-  document.getElementById('imp-vedi')?.addEventListener('click', () => conErrore(async () => {
+  const impTasso = () => Math.max(1, Math.floor(Number(document.getElementById('imp-tasso')?.value) || 1));
+  async function vediImport() {
     const campo = document.getElementById('imp-testo');
     if (DEMO && !(campo.value || '').trim()) campo.value = IMPORT_DEMO_TESTO;
     const testo = (campo?.value || '').trim();
     if (!testo) { toast(L('Incolla prima qualcosa.', 'Paste something first.', 'Pega algo antes.'), 'errore'); return; }
-    const r = await api('/api/streamer/comandi/importa', { method: 'POST', body: { testo } });
+    const r = await api('/api/streamer/comandi/importa', { method: 'POST', body: { testo, tasso: impTasso() } });
+    _impTesto = testo;
     mostraAnteprimaImport(r.anteprima);
-  }));
+  }
+
+  document.getElementById('imp-vedi')?.addEventListener('click', () => conErrore(vediImport));
+  document.getElementById('imp-testo')?.addEventListener('input', () => {
+    if (!_impTesto) return;
+    _impTesto = '';
+    document.getElementById('imp-esito').innerHTML = '';
+  });
 
   document.getElementById('imp-file')?.addEventListener('change', (ev) => conErrore(async () => {
     const f = ev.target.files[0]; ev.target.value = '';
     if (!f) return;
-    if (f.size > 400_000) { toast(L('File troppo grande (max 400 KB).', 'File too big (max 400 KB).', 'Archivo demasiado grande (máx. 400 KB).'), 'errore'); return; }
+    if (f.size > 1_500_000) { toast(L('File troppo grande (massimo 1,5 MB).', 'File too big (max 1.5 MB).', 'Archivo demasiado grande (máx. 1,5 MB).'), 'errore'); return; }
     document.getElementById('imp-testo').value = await f.text();
+    document.getElementById('imp-esito').innerHTML = '';
     document.getElementById('imp-vedi').click();
   }));
 

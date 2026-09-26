@@ -53,6 +53,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] In «Strumenti» c'è il media kit: il foglio da mandare ai marchi, in PDF coi link cliccabili, con chi sei, cosa trasmetti e i numeri delle tue ultime dirette. [vai: kit]
   > I tuoi numeri, pronti per un marchio
   > I numeri li misuriamo noi dalle tue dirette, e sotto c'è scritto di quale periodo sono: chi lo legge sa che sono veri. Tu scegli cosa mostrare, non cosa dicono.
+- [importante] Da un altro bot ora porti qui anche i timer e i punti del tuo pubblico, nella carta dei comandi: prima di importare vedi ogni timer con quando parla e ogni saldo come sarà dopo. [vai: moduli]
+  > Il trasloco intero da un altro bot
+  > I punti si sommano alle monete di qui una volta sola, anche se importi di nuovo. E un timer che qui si comporterebbe diversamente te lo diciamo, invece di cambiarlo di nascosto.
 
 ## 2026-09-25
 

@@ -1811,7 +1811,7 @@ body.leggero .scheletro::after, body.meno-moto .scheletro::after { animation: no
 .imp-riga code { flex: 0 0 auto; font-weight: 600; }
 .imp-testo { flex: 1 1 200px; min-width: 0; font-size: .85rem; color: var(--testo-2); overflow-wrap: anywhere; }
 .imp-tag {
-  flex: 0 0 auto; font-size: .7rem; font-weight: 600; padding: .1rem .5rem;
+  flex: 0 1 auto; max-width: 100%; overflow-wrap: anywhere; font-size: .7rem; font-weight: 600; padding: .1rem .5rem;
   border-radius: 999px; color: var(--testo-3); background: var(--surface); border: 1px solid var(--border);
 }
 .imp-tag.imp-sovra { color: var(--ambra); background: var(--ambra-soft); border-color: var(--ambra-bordo); }
