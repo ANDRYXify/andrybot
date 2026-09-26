@@ -35,6 +35,8 @@
     donazioni: 'donazioni dona mance stripe satispay kofi ko-fi soglie grazie pagamenti donaciones propinas pagos',
     pagina: 'pagina link bio linktree profilo vetrina sito i miei link logo avatar página enlaces',
     grafiche: 'grafiche immagini sfondi banner locandine social storia storie instagram verticale gráficos fondos imágenes story stories historia',
+    qr: 'qr qrcode codice inquadra inquadrami scansiona volantino adesivo stampa logo cornice svg png flyer sticker scan code código escanear',
+    misure: 'emote emoji badge badges misure dimensioni ridimensiona rimpicciolisci 112 56 28 72 36 18 zip resize sizes tamaños insignias',
     settimana: 'settimana programmazione palinsesto orari giorni calendario programma twitch storia instagram telegram discord manda week schedule semana horario programación',
     notifiche: 'avvisi notifiche social tiktok instagram youtube discord nuovi post live notificaciones avisos',
     dcavvisi: 'discord avvisi avviso canale live diretta annuncio menzione ruolo everyone amici community testo messaggio alerts announcement channel mention avisos anuncio canal mencion',
