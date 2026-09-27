@@ -6,6 +6,7 @@ import { config } from '../config.js';
 import { makeLog } from '../logger.js';
 import { streamers } from '../db.js';
 import { programmaDa } from '../features/pubblicita.js';
+import { VOCI } from '../features/sondaggi.js';
 
 const log = makeLog('helix');
 
@@ -444,7 +445,7 @@ export class Helix {
       body: {
         broadcaster_id: s.user_id,
         title: String(titolo || '').slice(0, 60),
-        choices: (opzioni || []).slice(0, 5).map((t) => ({ title: String(t).slice(0, 25) })),
+        choices: (opzioni || []).slice(0, VOCI.sondaggio.max).map((t) => ({ title: String(t).slice(0, 25) })),
         duration: Math.min(1800, Math.max(15, Math.round(durata || 120))),
       }, token,
     });
@@ -482,7 +483,7 @@ export class Helix {
       body: {
         broadcaster_id: s.user_id,
         title: String(titolo || '').slice(0, 45),
-        outcomes: (esiti || []).slice(0, 10).map((t) => ({ title: String(t).slice(0, 25) })),
+        outcomes: (esiti || []).slice(0, VOCI.predizione.max).map((t) => ({ title: String(t).slice(0, 25) })),
         prediction_window: Math.min(1800, Math.max(30, Math.round(finestra || 120))),
       }, token,
     });

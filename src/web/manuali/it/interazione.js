@@ -1,5 +1,8 @@
 // Manuale: Manuale di sondaggi, giveaway e penitenze. La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
+import { VOCI } from '../../../features/sondaggi.js';
+
+const { sondaggio: OPZ, predizione: ESI } = VOCI;
 
 export default {
   slug: 'interazione',
@@ -16,7 +19,7 @@ export default {
 
     { h2: 'Sondaggi & predizioni', scheda: 'sondaggi', p: [
       'Apri sondaggi e predizioni <strong>veri di Twitch</strong>, quelli che compaiono sopra il player, senza passare dalla dashboard di Twitch.',
-      'Funzionano solo sui canali Twitch. Twitch dà sondaggi e predizioni ai canali Affiliate e Partner. Sono nel piano Essenziale, quello gratuito.',
+      'Funzionano solo sui canali Twitch: su un canale di un\'altra piattaforma la scheda dice «Solo su Twitch» e non mostra i controlli. Twitch dà sondaggi e predizioni ai canali Affiliate e Partner. Sono nel piano Essenziale, quello gratuito.',
       'Dal pannello li apre solo il proprietario del canale. I moderatori li aprono dalla chat, con i comandi spiegati più sotto.',
       'Servono i permessi di Twitch per sondaggi e predizioni. Se il pannello ti dice di concederli, vai nella scheda «Stato» e premi «Aggiorna i permessi».',
     ] },
@@ -26,7 +29,7 @@ export default {
     { tabella: [
       ['Controllo', 'Di base', 'Limiti', 'Cosa fa'],
       ['«Domanda»', 'vuota', 'Twitch ne tiene 60 caratteri', 'La domanda del sondaggio.'],
-      ['«Opzioni»', 'quattro campi vuoti', 'almeno 2; 25 caratteri ciascuna', 'Le risposte fra cui si vota. I campi vuoti non contano.'],
+      ['«Opzioni»', 'due campi vuoti', `da ${OPZ.min} a ${OPZ.max}; 25 caratteri ciascuna`, `Le risposte fra cui si vota. Il tasto «+» aggiunge un campo, fino a ${OPZ.max}. I campi vuoti non contano.`],
       ['«Durata (secondi)»', '120', '15–1800', 'Quanto resta aperto il voto.'],
     ] },
     { p: [
@@ -39,7 +42,7 @@ export default {
     { tabella: [
       ['Controllo', 'Di base', 'Limiti', 'Cosa fa'],
       ['«Titolo»', 'vuoto', 'Twitch ne tiene 45 caratteri', 'La domanda su cui si punta.'],
-      ['«Esiti»', 'quattro campi vuoti', 'almeno 2; 25 caratteri ciascuno', 'I risultati possibili. I campi vuoti non contano.'],
+      ['«Esiti»', 'due campi vuoti', `da ${ESI.min} a ${ESI.max}; 25 caratteri ciascuno`, `I risultati possibili. Il tasto «+» aggiunge un campo, fino a ${ESI.max}. I campi vuoti non contano.`],
       ['«Finestra puntate (secondi)»', '120', '30–1800', 'Per quanto si può puntare.'],
     ] },
     { p: [
@@ -53,9 +56,9 @@ export default {
     { p: ['Li usano i moderatori e tu. Dalla chat la durata è sempre di due minuti.'] },
     { tabella: [
       ['Comando', 'Cosa fa'],
-      ['<code>!sondaggio Domanda | opzione | opzione</code>', 'Apre un sondaggio. Da 2 a 5 opzioni, separate da <code>|</code>. <code>!poll</code> fa lo stesso.'],
+      ['<code>!sondaggio Domanda | opzione | opzione</code>', `Apre un sondaggio. Da ${OPZ.min} a ${OPZ.max} opzioni, separate da <code>|</code>: quelle in più restano fuori. <code>!poll</code> fa lo stesso.`],
       ['<code>!sondaggio chiudi</code>', 'Chiude quello aperto e mostra il risultato. Valgono anche <code>stop</code>, <code>fine</code> e <code>termina</code>.'],
-      ['<code>!predizione Titolo | esito | esito</code>', 'Apre una predizione, da 2 a 10 esiti. Il bot scrive gli esiti numerati. <code>!prediction</code> e <code>!pronostico</code> fanno lo stesso.'],
+      ['<code>!predizione Titolo | esito | esito</code>', `Apre una predizione, da ${ESI.min} a ${ESI.max} esiti: quelli in più restano fuori. Il bot scrive gli esiti numerati. <code>!prediction</code> e <code>!pronostico</code> fanno lo stesso.`],
       ['<code>!predizione vince 2</code>', 'Risolve sull\'esito indicato, per numero o per nome, anche solo con l\'inizio del nome. Valgono anche <code>risolvi</code>, <code>esito</code> e <code>win</code>.'],
       ['<code>!predizione annulla</code>', 'Annulla e <strong>rimborsa</strong> i punti a tutti. Valgono anche <code>cancella</code> e <code>rimborsa</code>.'],
     ] },
@@ -134,7 +137,7 @@ export default {
       'Cosa serve:',
     ] },
     { ul: [
-      'un canale Twitch con i <strong>punti canale</strong>, che Twitch dà ai canali Affiliate e Partner, e il permesso dei punti canale;',
+      'un canale Twitch con i <strong>punti canale</strong>, che Twitch dà ai canali Affiliate e Partner, e il permesso dei punti canale: su un\'altra piattaforma la scheda dice «Solo su Twitch»;',
       'l\'extra <strong>«Comandi Vocali»</strong>, da solo o nel pacchetto «Tutto»: lo trovi nella scheda «Abbonamento», spiegata nel <a href="/manuale/account">manuale dell\'account</a>;',
       'la <strong>pagina di ascolto</strong> aperta mentre sei in diretta: la apri dalla scheda «Comandi vocali» con «Apri l\'ascolto vocale», spiegata nel <a href="/manuale/moduli">manuale dei comandi</a>.',
     ] },
@@ -215,7 +218,7 @@ export default {
 
     { h2: 'Quando qualcosa non va' },
     { ul: [
-      '<strong>Il sondaggio non si apre.</strong> Se il pannello chiede un permesso, nella scheda «Stato» premi «Aggiorna i permessi». Se dice che Twitch l\'ha rifiutato, forse ce n\'è già uno aperto: chiudilo. Servono almeno due opzioni, e il canale deve essere Affiliate o Partner.',
+      `<strong>Il sondaggio non si apre.</strong> Se il pannello chiede un permesso, nella scheda «Stato» premi «Aggiorna i permessi». Se dice che Twitch l\'ha rifiutato, forse ce n\'è già uno aperto: chiudilo. Servono almeno ${OPZ.min} opzioni, e il canale deve essere Affiliate o Partner.`,
       '<strong>Il pannello dice «solo il proprietario del canale può farlo».</strong> Sondaggi, predizioni e giveaway dal pannello sono del proprietario. Da moderatore usa i comandi in chat.',
       '<strong>Il giveaway non si apre.</strong> Accendi «Attiva i minigiochi in chat» nella scheda «Giochi & classifiche». Se c\'è già un giveaway con qualcuno dentro, chiudilo prima con «Annulla».',
       '<strong>Nessuno entra nel giveaway.</strong> Controlla la parola d\'ingresso: se l\'hai cambiata, in chat va scritta quella, non <code>!join</code>. Con «Riservato agli abbonati (sub)» acceso, chi non è abbonato non entra.',

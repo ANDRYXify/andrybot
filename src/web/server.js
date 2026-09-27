@@ -98,6 +98,7 @@ import * as dcPreset from '../features/discord-preset.js';
 import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
 import * as giochiConf from '../features/giochi-conf.js';
+import { VOCI as VOCI_TWITCH } from '../features/sondaggi.js';
 import * as modalitaChat from '../features/modalita-chat.js';
 import * as instagram from '../features/instagram.js';
 import * as igAccesso from '../features/instagram-accesso.js';
@@ -5858,7 +5859,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       helix.sondaggioAttivo(login).catch(() => null),
       helix.predizioneAttiva(login).catch(() => null),
     ]);
-    res.json({ poll, pred });
+    res.json({ poll, pred, voci: VOCI_TWITCH });
   }));
 
   app.post('/api/sondaggi/crea', requireOwner, wrap(async (req, res) => {
@@ -5866,7 +5867,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const login = currentUser(req).login;
     const titolo = String(req.body?.titolo || '').trim();
     const opzioni = (Array.isArray(req.body?.opzioni) ? req.body.opzioni : []).map((x) => String(x || '').trim()).filter(Boolean);
-    if (!titolo || opzioni.length < 2) return res.status(400).json({ errore: 'Serve una domanda e almeno 2 opzioni.' });
+    if (!titolo || opzioni.length < VOCI_TWITCH.sondaggio.min) return res.status(400).json({ errore: `Serve una domanda e almeno ${VOCI_TWITCH.sondaggio.min} opzioni.` });
     let p;
     try { p = await helix.creaSondaggio(login, { titolo, opzioni, durata: Math.max(15, Math.min(1800, Number(req.body?.durata) || 120)) }); }
     catch (e) {
@@ -5892,7 +5893,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const login = currentUser(req).login;
     const titolo = String(req.body?.titolo || '').trim();
     const esiti = (Array.isArray(req.body?.esiti) ? req.body.esiti : []).map((x) => String(x || '').trim()).filter(Boolean);
-    if (!titolo || esiti.length < 2) return res.status(400).json({ errore: 'Serve un titolo e almeno 2 esiti.' });
+    if (!titolo || esiti.length < VOCI_TWITCH.predizione.min) return res.status(400).json({ errore: `Serve un titolo e almeno ${VOCI_TWITCH.predizione.min} esiti.` });
     let p;
     try { p = await helix.creaPredizione(login, { titolo, esiti, finestra: Math.max(30, Math.min(1800, Number(req.body?.finestra) || 120)) }); }
     catch (e) {

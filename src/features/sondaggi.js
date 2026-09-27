@@ -16,6 +16,14 @@ import { nomeIn } from './comandi-registro.js';
 
 const log = makeLog('sondaggi');
 
+// Quante voci accetta Twitch: un sondaggio ha da 2 a 5 opzioni, una predizione
+// da 2 a 10 esiti. Un numero solo, letto dalla chiamata a Twitch, dai comandi
+// in chat, dal server (che lo passa al pannello) e dal manuale.
+export const VOCI = Object.freeze({
+  sondaggio: Object.freeze({ min: 2, max: 5 }),
+  predizione: Object.freeze({ min: 2, max: 10 }),
+});
+
 const puoGestire = (msg) => !!(msg.isMod || msg.isBroadcaster);
 const taglia = (s) => String(s || '').trim();
 
@@ -46,7 +54,7 @@ export async function trySondaggio(helix, msg, say) {
       }
       const parti = resto.split('|').map(taglia).filter(Boolean);
       const titolo = parti.shift();
-      if (!titolo || parti.length < 2) { aChi(msg, say)(`📊 Si apre così: !${nomeIn(channel, 'sondaggio')} Chi vince? | Rosso | Blu, con la domanda e le risposte separate da |.`); return true; }
+      if (!titolo || parti.length < VOCI.sondaggio.min) { aChi(msg, say)(`📊 Si apre così: !${nomeIn(channel, 'sondaggio')} Chi vince? | Rosso | Blu, con la domanda e le risposte separate da |.`); return true; }
       try {
         const p = await helix.creaSondaggio(channel, { titolo, opzioni: parti, durata: 120 });
         say(p ? `📊 Sondaggio aperto: "${p.titolo}" — votate su Twitch! (2 min)` : '📊 Sondaggio non creato (sei in diretta?).');
@@ -81,7 +89,7 @@ export async function trySondaggio(helix, msg, say) {
     }
     const parti = resto.split('|').map(taglia).filter(Boolean);
     const titolo = parti.shift();
-    if (!titolo || parti.length < 2) { const p = '!' + nomeIn(channel, 'predizione'); aChi(msg, say)(`🔮 Si apre così: ${p} Vinco? | Sì | No. Alla fine ${p} vince Sì, oppure ${p} annulla per ridare i punti.`); return true; }
+    if (!titolo || parti.length < VOCI.predizione.min) { const p = '!' + nomeIn(channel, 'predizione'); aChi(msg, say)(`🔮 Si apre così: ${p} Vinco? | Sì | No. Alla fine ${p} vince Sì, oppure ${p} annulla per ridare i punti.`); return true; }
     try {
       const p = await helix.creaPredizione(channel, { titolo, esiti: parti, finestra: 120 });
       say(p ? `🔮 Predizione aperta: "${p.titolo}" — puntate i punti canale! Esiti: ${p.esiti.map((o, i) => `${i + 1}) ${o.titolo}`).join(' · ')} (2 min)` : '🔮 Predizione non creata.');

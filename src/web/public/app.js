@@ -3480,7 +3480,7 @@ const NOME_ADDON = {
   squadra: ['Squadra', 'Squadra', 'Squadra'],
 };
 
-const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'emote'];
+const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'emote', 'sondaggi', 'penitenze'];
 const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord' };
 
 function soloTwitch(id) {
@@ -9685,10 +9685,11 @@ function pannelloSondaggi() {
       <div id="sondaggio-attivo"></div>
       <label class="campo" for="poll-titolo">${L('Domanda', 'Question', 'Pregunta')}</label>
       <input type="text" id="poll-titolo" placeholder="${L('es. Che gioco stasera?', 'e.g. Which game tonight?', 'p. ej. ¿Qué juego esta noche?')}">
-      <label class="campo spazio-sopra">${L('Opzioni (min 2, max 5)', 'Options (min 2, max 5)', 'Opciones (mín. 2, máx. 5)')}</label>
-      <div class="griglia-campi">
-        ${campo('poll-opt', L('Opzione 1', 'Option 1', 'Opción 1'))}${campo('poll-opt', L('Opzione 2', 'Option 2', 'Opción 2'))}${campo('poll-opt', L('Opzione 3 (facolt.)', 'Option 3 (opt.)', 'Opción 3 (opc.)'))}${campo('poll-opt', L('Opzione 4 (facolt.)', 'Option 4 (opt.)', 'Opción 4 (opc.)'))}
+      <label class="campo spazio-sopra" id="poll-opt-eti">${L('Opzioni', 'Options', 'Opciones')}</label>
+      <div class="griglia-campi" id="poll-opzioni">
+        ${campo('poll-opt', L('Opzione 1', 'Option 1', 'Opción 1'))}${campo('poll-opt', L('Opzione 2', 'Option 2', 'Opción 2'))}
       </div>
+      <button type="button" class="btn secondario mini spazio-sopra" id="poll-opt-piu" hidden title="${esc(L('Aggiungi un\'opzione', 'Add an option', 'Añade una opción'))}" aria-label="${esc(L('Aggiungi un\'opzione', 'Add an option', 'Añade una opción'))}">+</button>
       <label class="campo spazio-sopra">${L('Durata (secondi)', 'Duration (seconds)', 'Duración (segundos)')}</label>
       <input aria-label="${esc(L('Durata del sondaggio in secondi', 'Poll duration in seconds', 'Duracion de la encuesta en segundos'))}" type="number" id="poll-durata" min="15" max="1800" value="120">
       <button class="btn spazio-sopra" id="poll-crea">${L('Lancia sondaggio', 'Launch poll', 'Lanzar encuesta')}</button>
@@ -9699,14 +9700,37 @@ function pannelloSondaggi() {
       <div id="predizione-attiva"></div>
       <label class="campo" for="pred-titolo">${L('Titolo', 'Title', 'Título')}</label>
       <input type="text" id="pred-titolo" placeholder="${L('es. Vinco questa partita?', 'e.g. Will I win this match?', 'p. ej. ¿Gano esta partida?')}">
-      <label class="campo spazio-sopra">${L('Esiti (min 2, max 10)', 'Outcomes (min 2, max 10)', 'Resultados (mín. 2, máx. 10)')}</label>
-      <div class="griglia-campi">
-        ${campo('pred-esito', L('Esito 1 (es. Sì)', 'Outcome 1 (e.g. Yes)', 'Resultado 1 (p. ej. Sí)'))}${campo('pred-esito', L('Esito 2 (es. No)', 'Outcome 2 (e.g. No)', 'Resultado 2 (p. ej. No)'))}${campo('pred-esito', L('Esito 3 (facolt.)', 'Outcome 3 (opt.)', 'Resultado 3 (opc.)'))}${campo('pred-esito', L('Esito 4 (facolt.)', 'Outcome 4 (opt.)', 'Resultado 4 (opc.)'))}
+      <label class="campo spazio-sopra" id="pred-esito-eti">${L('Esiti', 'Outcomes', 'Resultados')}</label>
+      <div class="griglia-campi" id="pred-esiti">
+        ${campo('pred-esito', L('Esito 1 (es. Sì)', 'Outcome 1 (e.g. Yes)', 'Resultado 1 (p. ej. Sí)'))}${campo('pred-esito', L('Esito 2 (es. No)', 'Outcome 2 (e.g. No)', 'Resultado 2 (p. ej. No)'))}
       </div>
+      <button type="button" class="btn secondario mini spazio-sopra" id="pred-esito-piu" hidden title="${esc(L('Aggiungi un esito', 'Add an outcome', 'Añade un resultado'))}" aria-label="${esc(L('Aggiungi un esito', 'Add an outcome', 'Añade un resultado'))}">+</button>
       <label class="campo spazio-sopra">${L('Finestra puntate (secondi)', 'Betting window (seconds)', 'Ventana de apuestas (segundos)')}</label>
       <input aria-label="${esc(L('Finestra delle puntate in secondi', 'Betting window in seconds', 'Ventana de apuestas en segundos'))}" type="number" id="pred-finestra" min="30" max="1800" value="120">
       <button class="btn spazio-sopra" id="pred-crea">${L('Apri predizione', 'Open prediction', 'Abrir predicción')}</button>
     </div>`);
+}
+
+let _vociTwitch = null;
+function _vociVoto({ box, piu, eti, cls, lim, titolo, nome }) {
+  const b = document.getElementById(box);
+  const p = document.getElementById(piu);
+  if (!b || !p || !lim) return;
+  const e = document.getElementById(eti);
+  if (e) e.textContent = `${titolo} (${L(`da ${lim.min} a ${lim.max}`, `${lim.min} to ${lim.max}`, `de ${lim.min} a ${lim.max}`)})`;
+  const quanti = () => b.querySelectorAll('.' + cls).length;
+  p.hidden = quanti() >= lim.max;
+  p.onclick = () => {
+    if (quanti() >= lim.max) return;
+    const ph = nome(quanti() + 1);
+    b.insertAdjacentHTML('beforeend', `<input type="text" class="${cls}" data-aggiunto="1" aria-label="${esc(ph)}" placeholder="${esc(ph)}">`);
+    b.lastElementChild?.focus();
+    p.hidden = quanti() >= lim.max;
+  };
+}
+
+function _vociAzzera(box) {
+  document.querySelectorAll(`#${box} input`).forEach((i) => { if (i.dataset.aggiunto) i.remove(); else i.value = ''; });
 }
 
 async function caricaSondaggi() {
@@ -9718,9 +9742,10 @@ async function caricaSondaggi() {
       const titolo = (document.getElementById('poll-titolo').value || '').trim();
       const opzioni = [...document.querySelectorAll('.poll-opt')].map((i) => i.value.trim()).filter(Boolean);
       const durata = Number(document.getElementById('poll-durata').value) || 120;
-      if (!titolo || opzioni.length < 2) { toast(L('Serve una domanda e almeno 2 opzioni.', 'You need a question and at least 2 options.', 'Hace falta una pregunta y al menos 2 opciones.'), 'errore'); return; }
+      const lim = _vociTwitch?.sondaggio;
+      if (lim && (!titolo || opzioni.length < lim.min)) { toast(L(`Serve una domanda e almeno ${lim.min} opzioni.`, `You need a question and at least ${lim.min} options.`, `Hace falta una pregunta y al menos ${lim.min} opciones.`), 'errore'); return; }
       const r = await api('/api/sondaggi/crea', { method: 'POST', body: { titolo, opzioni, durata } });
-      if (r?.poll) { toast(L('Sondaggio lanciato', 'Poll launched', 'Encuesta lanzada')); document.getElementById('poll-titolo').value = ''; document.querySelectorAll('.poll-opt').forEach((i) => (i.value = '')); caricaSondaggi(); }
+      if (r?.poll) { toast(L('Sondaggio lanciato', 'Poll launched', 'Encuesta lanzada')); document.getElementById('poll-titolo').value = ''; _vociAzzera('poll-opzioni'); caricaSondaggi(); }
     }));
   }
   const br = document.getElementById('pred-crea');
@@ -9730,9 +9755,10 @@ async function caricaSondaggi() {
       const titolo = (document.getElementById('pred-titolo').value || '').trim();
       const esiti = [...document.querySelectorAll('.pred-esito')].map((i) => i.value.trim()).filter(Boolean);
       const finestra = Number(document.getElementById('pred-finestra').value) || 120;
-      if (!titolo || esiti.length < 2) { toast(L('Serve un titolo e almeno 2 esiti.', 'You need a title and at least 2 outcomes.', 'Hace falta un título y al menos 2 resultados.'), 'errore'); return; }
+      const lim = _vociTwitch?.predizione;
+      if (lim && (!titolo || esiti.length < lim.min)) { toast(L(`Serve un titolo e almeno ${lim.min} esiti.`, `You need a title and at least ${lim.min} outcomes.`, `Hace falta un título y al menos ${lim.min} resultados.`), 'errore'); return; }
       const r = await api('/api/predizioni/crea', { method: 'POST', body: { titolo, esiti, finestra } });
-      if (r?.pred) { toast(L('Predizione aperta', 'Prediction opened', 'Predicción abierta')); document.getElementById('pred-titolo').value = ''; document.querySelectorAll('.pred-esito').forEach((i) => (i.value = '')); caricaSondaggi(); }
+      if (r?.pred) { toast(L('Predizione aperta', 'Prediction opened', 'Predicción abierta')); document.getElementById('pred-titolo').value = ''; _vociAzzera('pred-esiti'); caricaSondaggi(); }
     }));
   }
 
@@ -9740,6 +9766,11 @@ async function caricaSondaggi() {
   const wrapR = document.getElementById('predizione-attiva');
   let d;
   try { d = await api('/api/sondaggi/stato'); } catch { return; }
+  _vociTwitch = d.voci || null;
+  _vociVoto({ box: 'poll-opzioni', piu: 'poll-opt-piu', eti: 'poll-opt-eti', cls: 'poll-opt', lim: d.voci?.sondaggio,
+    titolo: L('Opzioni', 'Options', 'Opciones'), nome: (n) => L(`Opzione ${n}`, `Option ${n}`, `Opción ${n}`) });
+  _vociVoto({ box: 'pred-esiti', piu: 'pred-esito-piu', eti: 'pred-esito-eti', cls: 'pred-esito', lim: d.voci?.predizione,
+    titolo: L('Esiti', 'Outcomes', 'Resultados'), nome: (n) => L(`Esito ${n}`, `Outcome ${n}`, `Resultado ${n}`) });
   if (wrapP) {
     if (d.poll) {
       wrapP.innerHTML = `<div class="riquadro-info"><p>${L('Sondaggio in corso:', 'Poll in progress:', 'Encuesta en curso:')} <strong>${esc(d.poll.titolo)}</strong></p>
