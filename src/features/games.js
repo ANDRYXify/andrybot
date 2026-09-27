@@ -6,7 +6,7 @@
 //          · !trivia · !classifica [mod|tutti] · !monete · !giochi
 import { giochiInChat, spiegaGioco, nomeIn } from './comandi-registro.js';
 import { aChi, spazioPer, inMessaggi } from './risposte.js';
-import { valoriDi } from './giochi-conf.js';
+import { valoriDi, SLOT_TRIS } from './giochi-conf.js';
 import * as coccole from './coccole.js';
 import * as colpoFeat from './colpo.js';
 import * as bossFeat from './boss.js';
@@ -723,8 +723,8 @@ const SLOT_SIMBOLI = ['🍒', '🍋', '🔔', '⭐', '💎', '7️⃣'];
 export function vincitaSlot(r, c) {
   if (r[0] === r[1] && r[1] === r[2]) {
     if (r[0] === '💎') return { monete: c.jackpot, tris: true };
-    if (r[0] === '7️⃣') return { monete: Math.round(c.jackpot * 0.75), tris: true };
-    return { monete: Math.round(c.jackpot * 0.4), tris: true };
+    if (r[0] === '7️⃣') return { monete: Math.round(c.jackpot * SLOT_TRIS.sette), tris: true };
+    return { monete: Math.round(c.jackpot * SLOT_TRIS.altri), tris: true };
   }
   if (r[0] === r[1] || r[1] === r[2] || r[0] === r[2]) return { monete: c.coppia, tris: false };
   return { monete: 0, tris: false };

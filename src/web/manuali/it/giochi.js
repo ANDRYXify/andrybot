@@ -1,6 +1,6 @@
 // Manuale: Manuale dei giochi e delle monete. La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
-import { DI_SERIE, RESA, CIFRA, ATTESE, ATTESA, righeRegole, righePesca, presenzaOraria, MANCHE_TIPI } from '../numeri.js';
+import { DI_SERIE, RESA, CIFRA, ATTESE, ATTESA, SLOT, righeRegole, righePesca, presenzaOraria, MANCHE_TIPI } from '../numeri.js';
 
 // Le attese di un gioco dentro le tabelle: «nessuna» al posto del trattino.
 const ATT = (id) => { const t = ATTESE(id); return t === '\u2014' ? 'nessuna' : t; };
@@ -317,8 +317,8 @@ export default {
     { tabella: [
       ['Esito', 'Vinci', 'Con i valori di base'],
       ['Tris di 💎', 'il tris pieno', CIFRA(DI_SERIE('slot').jackpot)],
-      ['Tris di 7️⃣', 'tre quarti', CIFRA(Math.round(DI_SERIE('slot').jackpot * 0.75))],
-      ['Qualsiasi altro tris', 'due quinti', CIFRA(Math.round(DI_SERIE('slot').jackpot * 0.4))],
+      ['Tris di 7️⃣', SLOT.sette.parte, CIFRA(Math.round(DI_SERIE('slot').jackpot * SLOT.sette.fattore))],
+      ['Qualsiasi altro tris', SLOT.altri.parte, CIFRA(Math.round(DI_SERIE('slot').jackpot * SLOT.altri.fattore))],
       ['Due uguali', 'la coppia', CIFRA(DI_SERIE('slot').coppia)],
       ['Niente', 'niente', 'perdi il costo'],
     ] },
