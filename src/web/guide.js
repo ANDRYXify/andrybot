@@ -28,6 +28,7 @@ import { DENTRO as DENTRI } from './guide/comune.js';
 import { GUIDE_IT } from './guide/it.js';
 import { GUIDE_EN } from './guide/en.js';
 import { GUIDE_ES } from './guide/es.js';
+import { viaLegale } from './legali.js';
 
 const SITO = 'https://socialbot.live';
 
@@ -174,9 +175,9 @@ article form button{font:inherit;cursor:pointer}
 // non ha.
 export const LINGUE_DOC = ['it', 'en', 'es'];
 export const VIE = {
-  it: { home: '/', guide: '/guide', manuali: '/manuale', novita: '/novita', privacy: '/privacy', termini: '/termini' },
-  en: { home: '/en', guide: '/en/guides', manuali: '/en/manual', novita: '/novita', privacy: '/privacy', termini: '/termini' },
-  es: { home: '/es', guide: '/es/guias', manuali: '/es/manual', novita: '/novita', privacy: '/privacy', termini: '/termini' },
+  it: { home: '/', guide: '/guide', manuali: '/manuale', novita: '/novita', privacy: viaLegale('privacy', 'it'), termini: viaLegale('termini', 'it') },
+  en: { home: '/en', guide: '/en/guides', manuali: '/en/manual', novita: '/novita', privacy: viaLegale('privacy', 'en'), termini: viaLegale('termini', 'en') },
+  es: { home: '/es', guide: '/es/guias', manuali: '/es/manual', novita: '/novita', privacy: viaLegale('privacy', 'es'), termini: viaLegale('termini', 'es') },
 };
 export const T = {
   it: {

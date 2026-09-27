@@ -18,7 +18,9 @@
 // fatta oggi.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -35,7 +37,23 @@ test('la sitemap non inventa date', () => {
   for (const t of [rotta, SITEMAP]) assert.doesNotMatch(t, /\|\| oggi|const oggi|Date\.now\(\)\)\.toISOString|new Date\(\)\.toISOString/, 'nessuna data di ripiego');
   assert.match(SITEMAP, /\+ \(v\.m \? `    <lastmod>\$\{v\.m\}<\/lastmod>\\n` : ''\)/, 'senza una data vera, niente lastmod');
   assert.match(SITEMAP, /\(\{ u, p: '1\.0', f: 'weekly', alt: home, m: pubbliche\[0\]\?\.data \}\)/, 'la home ha la data dell\'ultima novita\' pubblica');
-  for (const pagina of ['privacy', 'termini']) assert.ok(SITEMAP.includes(`m: dataDichiarata(publicDir, '${pagina}.html')`), `${pagina} ha la data che dichiara`);
+});
+
+// Privacy e termini, in ogni lingua che hanno, portano nella sitemap la data che
+// la pagina stessa dichiara, quella che legge chi la apre.
+test('privacy e termini hanno nella sitemap la data che dichiarano, in ogni lingua', async () => {
+  process.env.DATA_DIR ||= mkdtempSync(join(tmpdir(), 'date-'));
+  const { vociPubbliche, dataDichiarata } = await import('../../src/web/sitemap.js');
+  const { LEGALI } = await import('../../src/web/legali.js');
+  const PUB = join(RAD, 'src/web/public');
+  const voci = vociPubbliche({ base: 'https://socialbot.live', pubbliche: [], sostieni: 'https://sostieni.socialbot.live/', publicDir: PUB });
+  for (const [pagina, lingue] of Object.entries(LEGALI)) {
+    for (const x of Object.values(lingue)) {
+      const v = voci.find((y) => y.u === 'https://socialbot.live' + x.via);
+      assert.ok(v, `${x.via}: nella sitemap`);
+      assert.ok(v.m && v.m === dataDichiarata(PUB, x.file), `${pagina} ${x.via}: la data che dichiara`);
+    }
+  }
 });
 
 const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];

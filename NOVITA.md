@@ -33,6 +33,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Il cursore disegnato c'è anche sul selettore dei colori, su «scegli file» e nei campi dove si scrive: nel pannello non resta nessun cursore di sistema.
 - La pagina iniziale in inglese e in spagnolo ha nella sua lingua anche il piede, il riquadro per dare una mano e l'avviso dei cookie: prima restavano in italiano.
 - Anche nel pannello il piede e l'avviso dei cookie seguono la lingua che scegli, e cambiano insieme a lei.
+- Privacy e termini si leggono anche in inglese e in spagnolo, ognuno col suo indirizzo: il testo di riferimento resta quello italiano, e le traduzioni lo dicono in cima.
 
 ## 2026-09-26
 

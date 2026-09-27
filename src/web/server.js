@@ -39,6 +39,7 @@ import { pagina404, LINGUE_SERVIZIO } from './pagine-servizio.js';
 import { montaArgine } from './argine.js';
 import { GUIDE, paginaGuida, paginaIndice, paginaNovita, paginaServizio, VIE, LINGUE_DOC } from './guide.js';
 import { vociPubbliche, sitemapXml } from './sitemap.js';
+import { legaleIn } from './legali.js';
 import * as novita from './novita.js';
 import { spazioCartella, inMega } from '../features/spazio.js';
 import * as spontanea from '../features/spontanea.js';
@@ -467,7 +468,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (config.discordHost && String(req.hostname || '').toLowerCase() === config.discordHost) {
       // L'informativa e' un indirizzo, non un canale: la pagina ci linka, e
       // senza questa riga finirebbe nel collegamento di un canale che non c'e'.
-      if (req.path === '/privacy') return next();
+      if (legaleIn('privacy').some((x) => x.via === req.path)) return next();
       const d = RE_CANALE_IN_VIA.exec(req.path);
       if (d) {
         const q = req.url.indexOf('?');
@@ -2503,11 +2504,21 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     serviPagina(res, GUIDA_HTML, `${l}:${slug}`, () => paginaGuida(slug, l), next);
   });
 
-  const PRIVACY_HTML = guscio.pagina('privacy.html');
-  app.get('/privacy', (req, res) => res.sendFile(PRIVACY_HTML));
-  // Termini di servizio (pubblici: richiesti anche dalle app di terzi, es. TikTok)
-  const TERMINI_HTML = guscio.pagina('termini.html');
-  app.get(['/termini', '/terms'], (req, res) => res.sendFile(TERMINI_HTML));
+  // Privacy e termini nelle tre lingue (src/web/legali.js). Le righe sono
+  // scritte per esteso perche' il cancello delle porte le legga, e ognuna
+  // dichiara al guscio il file insieme all'indirizzo a cui risponde;
+  // test/contratto/legali.test.mjs controlla che dicano la tabella di legali.js.
+  // /terms lo cercano le app di terzi (es. TikTok): va all'inglese.
+  const PAGINA_LEGALE = {
+    '/privacy': guscio.pagina('privacy.html', '/privacy'),
+    '/en/privacy': guscio.pagina('privacy-en.html', '/en/privacy'),
+    '/es/privacidad': guscio.pagina('privacy-es.html', '/es/privacidad'),
+    '/termini': guscio.pagina('termini.html', '/termini'),
+    '/en/terms': guscio.pagina('termini-en.html', '/en/terms', '/terms'),
+    '/es/terminos': guscio.pagina('termini-es.html', '/es/terminos'),
+  };
+  PAGINA_LEGALE['/terms'] = PAGINA_LEGALE['/en/terms'];
+  app.get(['/privacy', '/en/privacy', '/es/privacidad', '/termini', '/terms', '/en/terms', '/es/terminos'], (req, res) => res.sendFile(PAGINA_LEGALE[req.path]));
 
   // ── Sostenere il progetto ──
   //

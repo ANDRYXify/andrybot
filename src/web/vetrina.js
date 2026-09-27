@@ -75,7 +75,6 @@ const ROTTE = new Set([
   '/', '/entra',                              // la vetrina e il pass monouso dal sito madre
   '/en', '/es', '/en/', '/es/',               // la vetrina in inglese e in spagnolo (con la barra finale rimanda a quella senza)
   '/sblocca',                                 // rientro con passkey
-  '/privacy', '/termini', '/terms',
   '/mod', '/auth/mod', '/auth/callback',      // invito e login dei moderatori delegati
   '/accedi/kick', '/auth/kick', '/auth/kick/callback',   // entrare con Kick: la sessione nasce qui
   '/accedi/youtube', '/auth/youtube', '/auth/youtube/callback',   // e con YouTube, allo stesso modo
