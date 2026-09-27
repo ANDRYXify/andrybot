@@ -26330,7 +26330,7 @@ function attivaPiattaforma() {
 
   const impTag = (testo, cls = '') => `<span class="imp-tag${cls ? ' ' + cls : ''}">${esc(testo)}</span>`;
   const impStato = (c) => `${c.sovrascrive ? impTag(L('sostituisce quello che hai', 'replaces what you have', 'sustituye el que tienes'), 'imp-sovra') : ''}${c.uguale ? impTag(L('identico: lo salto', 'identical: skipping', 'idéntico: lo salto')) : ''}`;
-  const impAvvisi = (c) => (c.avvisi || []).map((a) => `<span class="imp-tag imp-nota">${esc(a.cosa)}${a.dove ? ' — ' + L('qui si fa con', 'here you do it with', 'aquí se hace con') + ' ' + esc(a.dove) : ''}</span>`).join('');
+  const impAvvisi = (c) => (c.avvisi || []).map((a) => `<span class="imp-tag imp-nota">${esc(a.cosa)}${a.dove ? ': ' + L('qui si fa con', 'here you do it with', 'aquí se hace con') + ' ' + esc(a.dove) : ''}</span>`).join('');
   const impNum = (n) => Number(n || 0).toLocaleString(localePannello());
   const impN = (n, uno, tanti) => `${impNum(n)} ${Math.abs(n) === 1 ? uno : tanti}`;
 
@@ -29581,7 +29581,7 @@ function disegnaCampiAzione(a) {
           <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
           <label>Annuncia in chat il brano aggiunto</label>
         </div>
-        <p class="suggerimento">Aggiunge il brano alla coda del tuo Spotify. Richiede l'add-on <strong class="primo-piano">Richieste Musicali</strong> e Spotify collegato in <strong>Durante la diretta → Regia → Musica</strong>.</p>`;
+        <p class="suggerimento">Aggiunge il brano alla coda del tuo Spotify. Le richieste musicali sono nel piano Essenziale: serve Spotify collegato (Premium, con l'app aperta) in <strong>Durante la diretta → Regia → Musica</strong>.</p>`;
     case 'annuncia':
       return `
         <textarea data-campo="testo" data-var-target placeholder="es. Benvenuti nella live! Oggi si gioca a $gioco">${esc(a.testo || '')}</textarea>

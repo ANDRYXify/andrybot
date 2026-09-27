@@ -46,7 +46,7 @@ const NON_TRADUCIBILI = [
   [/\$\(\s*eval\b[^)]*\)/i, 'del codice JavaScript da eseguire', null],
   [/\$\(\s*twitch\b[^)]*\)/i, 'dati di un altro canale presi al volo', null],
   [/\$\(\s*weather\b[^)]*\)/i, 'il meteo', null],
-  [/\$\(\s*(?:youtube|spotify|song|currentsong)\b[^)]*\)/i, 'il brano in ascolto', 'l’add-on Musica'],
+  [/\$\(\s*(?:youtube|spotify|song|currentsong)\b[^)]*\)/i, 'il brano in ascolto', 'il comando !song delle richieste musicali'],
   [/\$\{\s*[a-z][\w.]*[^}]*\}/i, 'una variabile del bot di prima', null],
   [/\$\(\s*[a-z][\w.]*[^)]*\)/i, 'una variabile del bot di prima', null],
 ];

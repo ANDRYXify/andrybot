@@ -127,3 +127,15 @@ test('il passo sul microfono punta al tasto che apre l\'ascolto vocale', () => {
   const id = passo[2].slice(1);
   assert.match(APP, new RegExp(`<a [^>]*id="${id}"[^>]*href="/voce\\.html"`), `#${id} e' il tasto che apre la pagina di ascolto`);
 });
+
+// L'azione «Metti una canzone in coda» dice il piano vero: le richieste
+// musicali sono nell'Essenziale, non un add-on.
+test('l\'azione musica non manda a comprare un add-on che non serve', async () => {
+  const ab = await import('../../src/features/abbonamenti.js');
+  const i = corpo('function disegnaCampiAzione(a)');
+  const musica = i.slice(i.indexOf("case 'musica':"), i.indexOf("case 'annuncia':"));
+  assert.ok(musica.length > 50, 'il blocco si legge');
+  assert.doesNotMatch(musica, /add-on/i);
+  assert.equal(ab.abilitata(ab.funzioniDi({ tier: 'free' }), 'musica'), true);
+  assert.match(musica, /Essenziale/);
+});
