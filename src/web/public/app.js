@@ -9712,11 +9712,8 @@ function pannelloSondaggi() {
 }
 
 let _vociTwitch = null;
-function _vociVoto({ box, piu, eti, cls, lim, titolo, nome }) {
-  const b = document.getElementById(box);
-  const p = document.getElementById(piu);
+function _vociVoto({ box: b, piu: p, eti: e, cls, lim, titolo, nome }) {
   if (!b || !p || !lim) return;
-  const e = document.getElementById(eti);
   if (e) e.textContent = `${titolo} (${L(`da ${lim.min} a ${lim.max}`, `${lim.min} to ${lim.max}`, `de ${lim.min} a ${lim.max}`)})`;
   const quanti = () => b.querySelectorAll('.' + cls).length;
   p.hidden = quanti() >= lim.max;
@@ -9767,9 +9764,9 @@ async function caricaSondaggi() {
   let d;
   try { d = await api('/api/sondaggi/stato'); } catch { return; }
   _vociTwitch = d.voci || null;
-  _vociVoto({ box: 'poll-opzioni', piu: 'poll-opt-piu', eti: 'poll-opt-eti', cls: 'poll-opt', lim: d.voci?.sondaggio,
+  _vociVoto({ box: document.getElementById('poll-opzioni'), piu: document.getElementById('poll-opt-piu'), eti: document.getElementById('poll-opt-eti'), cls: 'poll-opt', lim: d.voci?.sondaggio,
     titolo: L('Opzioni', 'Options', 'Opciones'), nome: (n) => L(`Opzione ${n}`, `Option ${n}`, `Opción ${n}`) });
-  _vociVoto({ box: 'pred-esiti', piu: 'pred-esito-piu', eti: 'pred-esito-eti', cls: 'pred-esito', lim: d.voci?.predizione,
+  _vociVoto({ box: document.getElementById('pred-esiti'), piu: document.getElementById('pred-esito-piu'), eti: document.getElementById('pred-esito-eti'), cls: 'pred-esito', lim: d.voci?.predizione,
     titolo: L('Esiti', 'Outcomes', 'Resultados'), nome: (n) => L(`Esito ${n}`, `Outcome ${n}`, `Resultado ${n}`) });
   if (wrapP) {
     if (d.poll) {

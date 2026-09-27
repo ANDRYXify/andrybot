@@ -43,7 +43,7 @@ test('i limiti sono quelli di Twitch, e la chiamata a Twitch li legge da li\'', 
 
 test('il «+» aggiunge campi fino al massimo, poi sparisce, e l\'etichetta dice il vero', () => {
   // eslint-disable-next-line no-new-func
-  const f = new Function('document', 'L', 'esc', `${funzione('_vociVoto')}\nreturn _vociVoto;`);
+  const f = new Function('L', 'esc', `${funzione('_vociVoto')}\nreturn _vociVoto;`);
   for (const [chi, lim] of Object.entries(VOCI)) {
     const campi = [{}, {}];
     const box = {
@@ -53,8 +53,7 @@ test('il «+» aggiunge campi fino al massimo, poi sparisce, e l\'etichetta dice
     };
     const piu = { hidden: true, onclick: null };
     const eti = { textContent: '' };
-    const el = { box, piu, eti };
-    f({ getElementById: (id) => el[id] }, (it) => it, (x) => x)({ box: 'box', piu: 'piu', eti: 'eti', cls: 'x', lim, titolo: 'Voci', nome: (n) => `Voce ${n}` });
+    f((it) => it, (x) => x)({ box, piu, eti, cls: 'x', lim, titolo: 'Voci', nome: (n) => `Voce ${n}` });
     assert.equal(eti.textContent, `Voci (da ${lim.min} a ${lim.max})`, chi);
     assert.equal(piu.hidden, false);
     for (let i = 0; i < 20; i++) piu.onclick();
