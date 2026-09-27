@@ -42,3 +42,20 @@ export function righePesca() {
   const tot = t.reduce((s, r) => s + r[2], 0);
   return [['Preda', 'Monete', 'Quante volte su 100'], ...t.map(([n, v, w]) => [n, CIFRA(v), CIFRA(Math.round((w / tot) * 1000) / 10)])];
 }
+
+// I PREZZI dei piani e degli extra, letti dal listino che vende
+// (features/abbonamenti.js): il manuale dell'account li mostra, non li ricopia.
+// Scritti a mano, al primo ritocco del listino avrebbero detto un prezzo che
+// Stripe non addebita. Il listino carica config.js, che senza .env parte lo
+// stesso con i suoi valori di serie: leggere i prezzi non chiede niente.
+import { BASE, ADDON, BUNDLE, addonById, bundleById } from '../../features/abbonamenti.js';
+
+export const EURO = (n) => '€' + Number(n).toFixed(2).replace('.', ',');
+export const PREZZO_BASE = () => EURO(BASE.prezzo);
+export const PREZZO_ADDON = (id) => EURO(addonById(id).prezzo);
+// Un pacchetto curato: il suo prezzo e quello pieno dei suoi extra presi uno per uno.
+export const PREZZO_BUNDLE = (id) => ({ prezzo: EURO(bundleById(id).prezzo), pieno: bundleById(id).prezzoPienoTesto });
+// Gli extra che si vendono a parte: non i ritirati (sono nell'Essenziale) e non
+// quelli gia' compresi nel Base.
+export const ADDON_IN_VENDITA = () => ADDON.filter((a) => !a.ritirato && !a.inclusoBase);
+export const BUNDLE_IN_VENDITA = () => BUNDLE.filter((b) => !b.ritirato);

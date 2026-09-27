@@ -210,7 +210,7 @@ function impostazioni() {
     battuteAuto: s.battuteAuto !== false,
     spontaneita: typeof s.spontaneita === 'number' ? s.spontaneita : 0,
     rispostaMenzioni: s.rispostaMenzioni !== false,
-    modalita: ['sempre', 'live', 'manuale'].includes(s.modalita) ? s.modalita : 'sempre',
+    modalita: s.modalita === 'live' ? 'live' : 'sempre',
     iaLocale: s.iaLocale !== false,
     proattivo: s.proattivo !== false,
     proattivoSoloLive: s.proattivoSoloLive === true,
@@ -372,6 +372,7 @@ async function caricaStato() {
     try { history.replaceState(null, '', '/'); } catch {  }
   }
   esitoAcquistoDaIndirizzo();
+  esitoPermessiDaIndirizzo();
   esitoPostaDaIndirizzo();
   avvisaRapporti();
   collegaRegiaRicordata();
@@ -392,7 +393,7 @@ const AVVISI_MANCA = {
   }),
   musica: () => ({
     titolo: L('Spotify non è collegato', 'Spotify is not connected', 'Spotify no está conectado'),
-    testo: L('Hai le richieste musicali, ma senza Spotify la chat non può chiederti canzoni.', 'You have song requests, but without Spotify chat cannot ask you for songs.', 'Tienes peticiones musicales, pero sin Spotify el chat no puede pedirte canciones.'),
+    testo: L('Le richieste musicali sono accese, ma senza Spotify la chat non può chiederti canzoni. Se non le vuoi, spegni il comando !sr.', 'Song requests are on, but without Spotify chat cannot ask you for songs. If you do not want them, turn off the !sr command.', 'Las peticiones musicales están activas, pero sin Spotify el chat no puede pedirte canciones. Si no las quieres, apaga el comando !sr.'),
   }),
   overlay: () => ({
     titolo: L('Il tuo overlay non l’hai ancora aperto', 'You have not opened your overlay yet', 'Todavía no has abierto tu overlay'),
@@ -807,6 +808,23 @@ function esitoAcquistoDaIndirizzo() {
   if (ab && dentro && stato?.user?.role === 'proprietario') vaiAScheda('sottoscrizione');
 }
 
+function esitoPermessiDaIndirizzo() {
+  if (new URLSearchParams(location.search).get('errore') !== 'account-diverso') return;
+  try { history.replaceState(null, '', '/' + location.hash); } catch {  }
+  if ((stato?.piattaforma || 'twitch') !== 'twitch') {
+    chiediScelta({ titolo: L('Twitch non si aggiunge a questo canale', 'Twitch can’t be added to this channel', 'Twitch no se añade a este canal'), testo: _notaCanaleAParte(),
+      azioni: [{ id: 'ok', testo: L('Ho capito', 'Got it', 'Entendido') }] });
+    return;
+  }
+  const chi = '@' + (stato?.gestisce?.nome || stato?.user?.login || '');
+  chiediScelta({ titolo: L('I permessi non sono passati', 'The permissions did not go through', 'Los permisos no se han concedido'),
+    testo: L(`Su Twitch sei entrato con un altro account: i permessi li dà l’account del canale, ${chi}. Entra su Twitch con quello e riprova.`,
+      `On Twitch you signed in with another account: permissions come from the channel’s account, ${chi}. Sign in to Twitch with that one and try again.`,
+      `En Twitch has entrado con otra cuenta: los permisos los da la cuenta del canal, ${chi}. Entra en Twitch con esa y vuelve a intentarlo.`),
+    azioni: [{ id: 'riprova', testo: L('Riprova su Twitch', 'Try again on Twitch', 'Reintentar en Twitch') }, { id: 'no', testo: L('Chiudi', 'Close', 'Cerrar'), tono: 'secondario' }] })
+    .then((r) => { if (r === 'riprova') location.href = '/auth/permessi'; });
+}
+
 async function dopoAcquisto(r) {
   const nomi = (r.aggiunti || []).map((id) => { const n = NOME_ADDON[id]; return n ? L(n[0], n[1], n[2]) : id; });
   if (nomi.length) toast(L(`Aggiunto: ${nomi.join(', ')}. È già tuo; i giorni che restano del mese li trovi nella prossima fattura.`, `Added: ${nomi.join(', ')}. It is yours now; the remaining days of the month go on your next invoice.`, `Añadido: ${nomi.join(', ')}. Ya es tuyo; los días que quedan del mes van en la próxima factura.`));
@@ -842,7 +860,7 @@ function statoDemo() {
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display, nome: ctx.canale },
     isAdmin: false,
-    permessiOk: true, vipOk: true, moderazioneOk: true, canaleOk: true,
+    permessiOk: true, vipOk: true, moderazioneOk: true, canaleOk: true, inChat: true,
     knowledgeCount: 3,
     status: { channels: [ctx.canale] },
     preaddestramento: { preaddestramento_ts: '2026-05-01T20:00:00Z', preaddestramento_esito: 'pagina profilo letta ("Andryx — creator e streamer da Genova · Twitch, YouTube, gaming"), 5 link social; gioco recente: Fortnite; profilo Twitch letto' },
@@ -2313,7 +2331,7 @@ const tP = (o, campo) => {
 };
 const _spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 
-function configuratoreHtml(d, { scelti = [], gia = [], titolo = null } = {}) {
+function configuratoreHtml(d, { scelti = [], gia = [], haBase = false, titolo = null } = {}) {
   if (!d || !Array.isArray(d.addon)) return '';
   const posseduti = new Set(gia);
   const disponibili = d.addon.filter((a) => !posseduti.has(a.id));
@@ -2333,12 +2351,12 @@ function configuratoreHtml(d, { scelti = [], gia = [], titolo = null } = {}) {
     </label>`).join('');
   return `<div class="vt-comp" data-comp>
     <h3 class="vt-comp-tit">${titolo || L('Componi il tuo', 'Build yours', 'Compón el tuyo')}</h3>
-    <p class="vt-testo">${posseduti.size
+    <p class="vt-testo">${haBase
       ? L('Spunta cosa aggiungere: il totale è quello che pagherai in più al mese.', 'Tick what to add: the total is what you’ll pay extra each month.', 'Marca qué añadir: el total es lo que pagarás de más al mes.')
       : L('Spunta cosa ti serve. Il canone Base è compreso nel totale, e puoi cambiare idea quando vuoi.', 'Tick what you need. The Base fee is included in the total, and you can change your mind anytime.', 'Marca lo que necesitas. La cuota Base está incluida en el total, y puedes cambiar de idea cuando quieras.')}</p>
     <div class="vt-comp-griglia">${righe}</div>
     <div class="vt-conto">
-      <span class="vt-conto-tot"><b data-tot>${esc(_eur(posseduti.size ? 0 : d.base.prezzo))}</b><span>${L('/mese', '/month', '/mes')}</span></span>
+      <span class="vt-conto-tot"><b data-tot>${esc(_eur(haBase ? 0 : d.base.prezzo))}</b><span>${L('/mese', '/month', '/mes')}</span></span>
       <span class="vt-conto-nota" data-nota></span>
       <button type="button" class="vt-btn vt-btn-primo" data-vai>${L('Attiva', 'Activate', 'Activar')}</button>
       <span class="vt-risparmio" data-risp hidden></span>
@@ -2346,11 +2364,11 @@ function configuratoreHtml(d, { scelti = [], gia = [], titolo = null } = {}) {
   </div>`;
 }
 
-function montaConfiguratore(root, d, { gia = [], suOk = null } = {}) {
+function montaConfiguratore(root, d, { gia = [], haBase = false, suOk = null } = {}) {
   const box = root && root.querySelector('[data-comp]');
   if (!box || !d) return;
   const posseduti = new Set(gia);
-  const base = posseduti.size ? 0 : Number(d.base?.prezzo || 0);
+  const base = haBase ? 0 : Number(d.base?.prezzo || 0);
   const prezzoDi = (id) => Number((d.addon.find((a) => a.id === id) || {}).prezzo || 0);
   const tot = box.querySelector('[data-tot]');
   const nota = box.querySelector('[data-nota]');
@@ -2380,8 +2398,8 @@ function montaConfiguratore(root, d, { gia = [], suOk = null } = {}) {
     const n = ids.length;
     const parola = L('extra', n === 1 ? 'extra' : 'extras', n === 1 ? 'extra' : 'extras');
     nota.textContent = n
-      ? (posseduti.size ? `${n} ${parola}` : `Base + ${n} ${parola}`)
-      : (posseduti.size ? L('niente di scelto', 'nothing picked', 'nada elegido') : L('solo il canone Base', 'Base fee only', 'solo la cuota Base'));
+      ? (haBase ? `${n} ${parola}` : `Base + ${n} ${parola}`)
+      : (haBase ? L('niente di scelto', 'nothing picked', 'nada elegido') : L('solo il canone Base', 'Base fee only', 'solo la cuota Base'));
     if (b) {
       risp.hidden = false;
       risp.innerHTML = `${_bIco('<path d="M20 6 9 17l-5-5"/>')} ${esc(L(
@@ -2389,7 +2407,7 @@ function montaConfiguratore(root, d, { gia = [], suOk = null } = {}) {
         `With the «${b.nome}» pack you pay ${_eur(b.prezzo)} instead of ${_eur(b.somma)}: applied.`,
         `Con el paquete «${b.nome}» pagas ${_eur(b.prezzo)} en vez de ${_eur(b.somma)}: aplicado.`))}`;
     } else risp.hidden = true;
-    vai.disabled = posseduti.size > 0 && !ids.length;
+    vai.disabled = haBase && !ids.length;
     box.dataset.bundle = b ? b.id : '';
   };
 
@@ -3511,7 +3529,7 @@ function paginaSoloTwitch(id) {
     <div class="blocco-testa">${_bIco(ICO.tv)}<h2>${esc(nomeScheda)}</h2>
       <span class="badge">${L('Solo su Twitch', 'Twitch only', 'Solo en Twitch')}</span></div>
     <p class="blocco-cosa">${L(`Questa parte parla con Twitch, e il tuo canale è su ${esc(dove)}: qui non avrebbe niente con cui lavorare. Preferiamo dirtelo che mostrarti dei pulsanti che non fanno niente.`, `This part talks to Twitch, and your channel is on ${esc(dove)}: here it would have nothing to work with. We’d rather tell you than show you buttons that do nothing.`, `Esta parte habla con Twitch y tu canal está en ${esc(dove)}: aquí no tendría con qué trabajar. Preferimos decírtelo antes que mostrarte botones que no hacen nada.`)}</p>
-    <p class="suggerimento">${L('Se trasmetti anche su Twitch, collega quell’account: il canale diventa uno solo e questa scheda si accende.', 'If you also stream on Twitch, connect that account: the channel becomes one and this tab lights up.', 'Si también emites en Twitch, conecta esa cuenta: el canal pasa a ser uno solo y esta pestaña se enciende.')}</p>
+    <p class="suggerimento">${L('Se trasmetti anche su Twitch, entra con il tuo account Twitch: è un canale a sé, con il suo pannello, e lì questa scheda funziona.', 'If you also stream on Twitch, sign in with your Twitch account: it’s a channel of its own, with its own panel, and there this tab works.', 'Si también emites en Twitch, entra con tu cuenta de Twitch: es un canal aparte, con su propio panel, y allí esta pestaña funciona.')}</p>
   </div>`;
 }
 
@@ -3523,10 +3541,10 @@ function funzioneChiusa(funz) {
 
 function muroPacchetto(funz, cosa, { plurale = false, addon = FUNZ_ADDON[funz] } = {}) {
   if (!funzioneChiusa(funz)) return '';
-  if (_chiusoDalProprietario(funz)) return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${L('Il proprietario ha chiuso questa parte', 'The owner has closed this part', 'El propietario ha cerrado esta parte')}${stato.accesso.nota ? ': ' + esc(stato.accesso.nota) : ''}.</span></div>`;
+  if (_chiusoDalProprietario(funz)) return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${L('andryxify ha chiuso questa parte', 'andryxify has closed this part', 'andryxify ha cerrado esta parte')}${stato.accesso.nota ? ': ' + esc(stato.accesso.nota) : ''}.</span></div>`;
   const na = NOME_ADDON[addon] || ['', '', ''];
   const nome = L(na[0], na[1], na[2]);
-  const compra = !!stato?.stripeAttivo && !!addon;
+  const compra = !!stato?.stripeAttivo && !!addon && stato?.ruolo !== 'moderatore';
   return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${esc(cosa)} ${plurale ? L('non sono nel tuo piano.', 'are not in your plan.', 'no están en tu plan.') : L('non è nel tuo piano.', 'is not in your plan.', 'no está en tu plan.')}</span>
     ${compra ? `<button type="button" class="btn secondario" data-sblocca="${esc(addon)}">${L('Sblocca con', 'Unlock with', 'Desbloquea con')} «${esc(nome)}»</button>`
       : `<a href="#sottoscrizione" data-scheda="sottoscrizione">${L('Vedi i piani', 'See the plans', 'Ver los planes')}</a>`}
@@ -3543,7 +3561,7 @@ const addonPerScheda = (id) => FUNZ_ADDON[SCHEDA_FUNZ[id]] || null;
 
 function paginaBloccata(id) {
   if (_chiusoDalProprietario(SCHEDA_FUNZ[id])) {
-    return `<div class="carta blocco-carta"><div class="blocco-testa">${_bIco(ICO.lucchetto)}<h2>${esc(tScheda(id, id))}</h2><span class="badge rosso">${L('Chiusa dal proprietario', 'Closed by the owner', 'Cerrada por el propietario')}</span></div>
+    return `<div class="carta blocco-carta"><div class="blocco-testa">${_bIco(ICO.lucchetto)}<h2>${esc(tScheda(id, id))}</h2><span class="badge rosso">${L('Chiusa da andryxify', 'Closed by andryxify', 'Cerrada por andryxify')}</span></div>
       <p class="blocco-cosa">${stato.accesso.nota ? esc(stato.accesso.nota) : L('Questa scheda è chiusa per il tuo canale.', 'This tab is closed for your channel.', 'Esta pestaña está cerrada para tu canal.')}</p></div>`;
   }
   const addon = addonPerScheda(id);
@@ -3553,7 +3571,8 @@ function paginaBloccata(id) {
   const passi = (g?.come || []).map((c) => `<li>${L(c[0], c[1], c[2])}</li>`).join('');
   const na = NOME_ADDON[addon] || ['', '', ''];
   const nomePacchetto = L(na[0], na[1], na[2]);
-  const puoComprare = !!stato?.stripeAttivo && !!addon;
+  const proprietario = stato?.ruolo !== 'moderatore';
+  const puoComprare = !!stato?.stripeAttivo && !!addon && proprietario;
   return `<div class="carta blocco-carta">
     <div class="blocco-testa">${_bIco(ICO.lucchetto)}<h2>${esc(nomeScheda)}</h2>
       <span class="badge giallo">${L('Non nel tuo piano', 'Not in your plan', 'No en tu plan')}</span></div>
@@ -3563,7 +3582,7 @@ function paginaBloccata(id) {
       <a class="btn secondario" href="/?demo=1#${esc(id)}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Guarda la demo', 'See the demo', 'Ver la demo')}</a>
       ${puoComprare
         ? `<button class="btn grande" data-sblocca="${esc(addon)}">${_bIco(ICO.effetti)}${L('Sblocca con', 'Unlock with', 'Desbloquea con')} «${esc(nomePacchetto)}»</button>`
-        : `<span class="suggerimento">${L('Questa funzione fa parte del pacchetto', 'This feature is part of the package', 'Esta función forma parte del paquete')} <strong>${esc(nomePacchetto)}</strong>. ${L('Chiedi ad andryxify di abilitarla.', 'Ask andryxify to enable it.', 'Pide a andryxify que la habilite.')}</span>`}
+        : `<span class="suggerimento">${L('Questa funzione fa parte del pacchetto', 'This feature is part of the package', 'Esta función forma parte del paquete')} <strong>${esc(nomePacchetto)}</strong>. ${proprietario ? L('Chiedi ad andryxify di abilitarla.', 'Ask andryxify to enable it.', 'Pide a andryxify que la habilite.') : L('Può aggiungerla il proprietario del canale.', 'The channel owner can add it.', 'Puede añadirla el propietario del canal.')}</span>`}
     </div>
     ${puoComprare ? `<p class="suggerimento spazio-sopra"><a href="#sottoscrizione" data-scheda="sottoscrizione">${L('Vedi tutti i piani e i pacchetti', 'See all plans and packages', 'Ver todos los planes y paquetes')}</a></p>` : ''}
   </div>`;
@@ -3591,7 +3610,7 @@ const GUIDE = {
   stato: { serve: ['Vedere come va adesso: la tua diretta, il bot, e cosa c’è da sistemare.', 'See how it’s going right now: your stream, the bot, and what needs fixing.', 'Ver cómo va ahora: tu directo, el bot y lo que hay que arreglar.'],
     come: [['Guarda la diretta: in onda vedi da quanto e chi ti guarda, fuori onda quando è la prossima e com’è andata l’ultima.', 'Look at your stream: live you see how long and who’s watching, offline when the next one is and how the last one went.', 'Mira tu directo: en directo ves desde cuándo y quién te ve, fuera de directo cuándo es el próximo y cómo fue el último.', '#carta-adesso'], ['Accendi l’interruttore del bot e scegli quando dev’essere attivo.', 'Flip the bot’s switch and choose when it should be active.', 'Activa el interruptor del bot y elige cuándo debe estar activo.', '#toggle-bot'], ['Se manca un permesso o il bot è scollegato, lo trovi in cima, col tasto per rimediare.', 'If a permission is missing or the bot is disconnected, you find it at the top, with the button to fix it.', 'Si falta un permiso o el bot está desconectado, lo encuentras arriba, con el botón para arreglarlo.', '']] },
   account: { serve: ['Collegare le piattaforme, entrare con una passkey, far entrare i moderatori e decidere dei tuoi dati.', 'Connect your platforms, sign in with a passkey, let your moderators in and decide about your data.', 'Conectar tus plataformas, entrar con una passkey, dejar entrar a tus moderadores y decidir sobre tus datos.'],
-    come: [['Collega le piattaforme dove trasmetti: il canale resta uno solo.', 'Connect the platforms you stream on: the channel stays one.', 'Conecta las plataformas donde emites: el canal sigue siendo uno.', '#piattaforme-box'], ['Crea una passkey: rientri con l’impronta o il volto, senza password.', 'Create a passkey: you sign back in with your fingerprint or face, no password.', 'Crea una passkey: vuelves a entrar con tu huella o tu cara, sin contraseña.', '#btn-crea-passkey'], ['Scarica i tuoi dati quando vuoi: sono tuoi.', 'Download your data whenever you want: it’s yours.', 'Descarga tus datos cuando quieras: son tuyos.', '#btn-esporta']] },
+    come: [['Collega Kick e YouTube se trasmetti anche lì: il canale resta uno solo.', 'Connect Kick and YouTube if you stream there too: the channel stays one.', 'Conecta Kick y YouTube si también emites allí: el canal sigue siendo uno.', '#piattaforme-box'], ['Crea una passkey: rientri con l’impronta o il volto, senza password.', 'Create a passkey: you sign back in with your fingerprint or face, no password.', 'Crea una passkey: vuelves a entrar con tu huella o tu cara, sin contraseña.', '#btn-crea-passkey'], ['Scarica i tuoi dati quando vuoi: sono tuoi.', 'Download your data whenever you want: it’s yours.', 'Descarga tus datos cuando quieras: son tuyos.', '#btn-esporta']] },
   personalita: { serve: ['Dare al bot il tono e il carattere con cui parla in chat.', 'Give the bot the tone and character it speaks with in chat.', 'Darle al bot el tono y el carácter con que habla en el chat.'],
     come: [['Scegli il tono, e con «Chat autonoma» quanto interviene da solo.', 'Pick the tone, and with “Autonomous chatting” how often it chimes in on its own.', 'Elige el tono, y con «Chat autónomo» cuánto interviene solo.', '#sel-tono'], ['Aggiungi regole che rispetterà SEMPRE.', 'Add rules it will ALWAYS follow.', 'Añade reglas que respetará SIEMPRE.', '#inp-guida'], ['Salva: il nuovo stile parte subito.', 'Save: the new style takes effect right away.', 'Guarda: el nuevo estilo se aplica al instante.', '#btn-salva-personalita']] },
   conoscenza: { serve: ['Decidere cosa il bot sa di te e come deve rispondere.', 'Decide what the bot knows about you and how it should reply.', 'Decidir qué sabe el bot de ti y cómo debe responder.'],
@@ -4626,7 +4645,7 @@ function cardKickHtml() {
     <h2>${_hIco(ICO.fulmine)}${L('Il tuo canale è su Kick', 'Your channel is on Kick', 'Tu canal está en Kick')}</h2>
     <p>${L('Il bot legge la tua chat di Kick e risponde lì. Funzionano i comandi, i moduli, i giochi e le monete, gli avvisi di follow e abbonamento, l’overlay della diretta e le notifiche social.', 'The bot reads your Kick chat and answers there. Commands, modules, games and coins, follow and subscription alerts, the stream overlay and social notifications all work.', 'El bot lee tu chat de Kick y responde ahí. Funcionan los comandos, los módulos, los juegos y las monedas, los avisos de follow y suscripción, el overlay del directo y las notificaciones sociales.')}</p>
     <p class="suggerimento spazio-sopra">${L('Restano fuori le cose che sono di Twitch: la moderazione automatica, le clip, il cambio di categoria e titolo, i VIP, i punti canale e le emote 7TV. E le monete su Kick arrivano dai messaggi: l’elenco di chi sta guardando in silenzio Kick non lo dà.', 'What stays out is what belongs to Twitch: automatic moderation, clips, category and title changes, VIPs, channel points and 7TV emotes. And on Kick coins come from messages: Kick doesn’t give the list of silent viewers.', 'Queda fuera lo que es de Twitch: la moderación automática, los clips, el cambio de categoría y título, los VIP, los puntos de canal y los emotes 7TV. Y en Kick las monedas llegan de los mensajes: Kick no da la lista de quien mira en silencio.')}</p>
-    <p class="suggerimento">${L('Se trasmetti anche su Twitch, collega quell’account qui sotto: il canale resta uno solo e si accende tutto.', 'If you also stream on Twitch, connect that account below: the channel stays one and everything lights up.', 'Si también emites en Twitch, conecta esa cuenta aquí abajo: el canal sigue siendo uno y se enciende todo.')}</p>
+    <p class="suggerimento">${L('Se trasmetti anche su Twitch, entra con il tuo account Twitch: è un canale a sé, con il suo pannello, e lì funziona anche quello che è solo di Twitch.', 'If you also stream on Twitch, sign in with your Twitch account: it’s a channel of its own, with its own panel, and there the Twitch-only features work too.', 'Si también emites en Twitch, entra con tu cuenta de Twitch: es un canal aparte, con su propio panel, y allí funciona también lo que es solo de Twitch.')}</p>
   </div>`;
 }
 
@@ -8534,10 +8553,10 @@ function pannelloAvatar() {
 function pannelloStato() {
   const login = stato.user.login;
 
-  const connessi = stato.status?.connessi || stato.status?.channels || [];
-  const inChat = connessi.includes(login);
+  const inChat = typeof stato.inChat === 'boolean' ? stato.inChat : null;
   const sImp = impostazioni();
   const proprietario = stato.ruolo !== 'moderatore';
+  const suTwitch = (stato.piattaforma || 'twitch') === 'twitch';
 
   const bannerMod = proprietario ? '' : `
     <div class="carta evidenziata">
@@ -8545,10 +8564,10 @@ function pannelloStato() {
       <p>${L('Sei entrato come', 'You’re signed in as a', 'Has entrado como')} <strong class="primo-piano">${L('moderatore', 'moderator', 'moderador')}</strong>: ${L('puoi occuparti di comandi, moduli, effetti, giochi, notifiche, regole e memoria. Le cose da proprietario — permessi Twitch e l\'elenco dei moderatori — restano a chi possiede il canale.', 'you can handle commands, modules, effects, games, notifications, rules and memory. Owner-only things — Twitch permissions and the moderator list — stay with the channel owner.', 'puedes ocuparte de comandos, módulos, efectos, juegos, notificaciones, reglas y memoria. Lo de propietario — permisos de Twitch y la lista de moderadores — es del dueño del canal.')}</p>
     </div>`;
 
-  const cardPermessi = (!proprietario || stato.permessiOk) ? '' : `
+  const cardPermessi = (!proprietario || !suTwitch || stato.permessiOk) ? '' : `
     <div class="carta evidenziata">
       <h2>${_hIco(ICO.chiave)}${L('Attiva il bot: concedi i permessi', 'Activate the bot: grant permissions', 'Activa el bot: concede los permisos')}</h2>
-      <p>${L('Per funzionare, SocialBot', 'To work, SocialBot', 'Para funcionar, SocialBot')} <strong class="primo-piano">${L('leggerà e scriverà nella tua chat con il tuo account', 'will read and write in your chat with your account', 'leerá y escribirá en tu chat con tu cuenta')}</strong>, ${L('creerà clip e vedrà follow e sub. Nient\'altro.', 'will create clips and see follows and subs. Nothing else.', 'creará clips y verá follows y subs. Nada más.')}</p>
+      <p>${L('Per funzionare, SocialBot', 'To work, SocialBot', 'Para funcionar, SocialBot')} <strong class="primo-piano">${L('leggerà e scriverà nella tua chat con il tuo account', 'will read and write in your chat with your account', 'leerá y escribirá en tu chat con tu cuenta')}</strong>. ${L('Per questo chiede a Twitch un permesso per ogni funzione che ne ha bisogno: clip, moderazione, sondaggi, punti canale e le altre. L\'elenco intero lo vedi su Twitch prima di confermare.', 'That is why it asks Twitch for one permission per feature that needs it: clips, moderation, polls, channel points and the rest. You see the whole list on Twitch before you confirm.', 'Por eso pide a Twitch un permiso por cada función que lo necesita: clips, moderación, encuestas, puntos de canal y las demás. La lista entera la ves en Twitch antes de confirmar.')}</p>
       <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">${L('Concedi i permessi su Twitch', 'Grant permissions on Twitch', 'Concede los permisos en Twitch')}</a></p>
     </div>`;
 
@@ -8556,7 +8575,7 @@ function pannelloStato() {
   const cardChatKO = !chatKO ? '' : `
     <div class="carta evidenziata avviso-rosso">
       <h2>${_hIco(ICO.avviso)}${L('Il bot è scollegato dalla chat', 'The bot is disconnected from chat', 'El bot está desconectado del chat')}</h2>
-      <p>${L('Il permesso Twitch è', 'The Twitch permission is', 'El permiso de Twitch está')} <strong class="primo-piano">${L('scaduto o è stato revocato', 'expired or was revoked', 'caducado o fue revocado')}</strong>: ${L('il bot continua a riprovare ma non riuscirà a entrare in chat finché non lo riccolleghi. Bastano pochi secondi.', "the bot keeps retrying but won't be able to join chat until you reconnect it. It takes a few seconds.", 'el bot sigue reintentando pero no podrá entrar al chat hasta que lo reconectes. Tarda unos segundos.')}</p>
+      <p>${L('Il permesso Twitch è', 'The Twitch permission is', 'El permiso de Twitch está')} <strong class="primo-piano">${L('scaduto o è stato revocato', 'expired or was revoked', 'caducado o fue revocado')}</strong>: ${L('il bot continua a riprovare ma non riuscirà a entrare in chat finché non lo ricolleghi. Bastano pochi secondi.', "the bot keeps retrying but won't be able to join chat until you reconnect it. It takes a few seconds.", 'el bot sigue reintentando pero no podrá entrar al chat hasta que lo reconectes. Tarda unos segundos.')}</p>
       <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">${L('Ricollega i permessi', 'Reconnect permissions', 'Reconecta los permisos')}</a></p>
     </div>`;
 
@@ -8605,12 +8624,12 @@ function pannelloStato() {
           <span class="levetta"></span>
         </label>
         <span class="etichetta-stato" id="etichetta-bot">${stato.streamer.botEnabled ? L('Bot acceso', 'Bot on', 'Bot encendido') : L('Bot spento', 'Bot off', 'Bot apagado')}</span>
-        ${inChat
+        ${inChat === null ? '' : inChat
           ? `<span class="badge verde"><i class="vivo"></i>${L('in chat adesso', 'in chat now', 'en el chat ahora')}</span>`
           : `<span class="badge"><i class="spento"></i>${L('non connesso', 'not connected', 'no conectado')}</span>`}
       </div>
 
-      ${proprietario ? `
+      ${!suTwitch ? '' : proprietario ? `
       <p class="spazio-sopra"><strong class="primo-piano">${L('Permessi:', 'Permissions:', 'Permisos:')}</strong>
         ${badgePermesso(stato.permessiOk, L('chat', 'chat', 'chat'))}
         ${badgePermesso(stato.vipOk, 'VIP')}
@@ -8624,7 +8643,7 @@ function pannelloStato() {
       <p class="suggerimento">${L('La', 'The', 'El')} <strong class="primo-piano">${L('chat', 'chat', 'chat')}</strong> ${L('fa parlare il bot,', 'lets the bot speak,', 'hace hablar al bot,')}
       <strong class="primo-piano">shoutout</strong>/<strong class="primo-piano">${L('annunci', 'announcements', 'anuncios')}</strong> ${L('per i comandi ufficiali,', 'for the official commands,', 'para los comandos oficiales,')}
       <strong class="primo-piano">${L('ore guardate', 'watch time', 'horas vistas')}</strong> ${L('per', 'for', 'para')} <code>!ore</code>. ${L('Se qualcosa non funziona, premi «Aggiorna i permessi».', 'If something doesn\'t work, press «Update permissions».', 'Si algo no funciona, pulsa «Actualizar permisos».')}</p>` : `
-      <p class="suggerimento spazio-sopra">${L('Permessi del bot:', 'Bot permissions:', 'Permisos del bot:')} ${stato.permessiOk ? `<span class="badge verde">✓ ${L('chat attiva', 'chat active', 'chat activo')}</span>` : `<span class="badge rosso">${L('chat non attiva', 'chat not active', 'chat no activo')}</span>`} — ${L('li gestisce il proprietario del canale.', 'the channel owner manages them.', 'los gestiona el dueño del canal.')}</p>`}
+      <p class="suggerimento spazio-sopra">${L('Permessi del bot:', 'Bot permissions:', 'Permisos del bot:')} ${stato.permessiOk ? `<span class="badge verde">✓ ${L('chat attiva', 'chat active', 'chat activo')}</span>` : `<span class="badge rosso">${L('chat non attiva', 'chat not active', 'chat no activo')}</span>`} ${L('(li gestisce il proprietario del canale)', '(the channel owner manages them)', '(los gestiona el dueño del canal)')}</p>`}
 
       <p class="suggerimento spazio-sopra">${L('Spegnerlo non cancella nulla: quando lo riaccendi riparte da dove era rimasto.', 'Turning it off deletes nothing: when you turn it back on it resumes where it left off.', 'Apagarlo no borra nada: cuando lo vuelves a encender retoma donde estaba.')}</p>
 
@@ -8632,12 +8651,10 @@ function pannelloStato() {
       <select id="sel-modalita">
         <option value="sempre" ${sImp.modalita === 'sempre' ? 'selected' : ''}>${L('Sempre (24/7)', 'Always (24/7)', 'Siempre (24/7)')}</option>
         <option value="live" ${sImp.modalita === 'live' ? 'selected' : ''}>${L('Solo quando sei in diretta', 'Only when you’re live', 'Solo cuando estás en directo')}</option>
-        <option value="manuale" ${sImp.modalita === 'manuale' ? 'selected' : ''}>${L('Manuale (decidi tu con l\'interruttore)', 'Manual (you decide with the switch)', 'Manual (decides tú con el interruptor)')}</option>
       </select>
       <p class="suggerimento">
         <strong class="primo-piano">24/7</strong>: ${L('sempre in chat.', 'always in chat.', 'siempre en el chat.')} ·
-        <strong class="primo-piano">${L('Quando sei live', 'When you’re live', 'Cuando estás en directo')}</strong>: ${L('entra da solo quando parte la diretta ed esce a fine stream.', 'joins by itself when the stream starts and leaves at the end.', 'entra solo cuando empieza el directo y sale al final.')} ·
-        <strong class="primo-piano">${L('Manuale', 'Manual', 'Manual')}</strong>: ${L('comandi tu con l\'interruttore qui sopra.', 'you control it with the switch above.', 'lo controlas tú con el interruptor de arriba.')}
+        <strong class="primo-piano">${L('Quando sei live', 'When you’re live', 'Cuando estás en directo')}</strong>: ${L('entra da solo quando parte la diretta ed esce a fine stream.', 'joins by itself when the stream starts and leaves at the end.', 'entra solo cuando empieza el directo y sale al final.')}
       </p>
       <p><button class="btn secondario" id="btn-salva-modalita">${L('Salva modalità', 'Save mode', 'Guardar modo')}</button></p>
     </div>
@@ -8668,7 +8685,7 @@ function pannelloAccount() {
       <h2>${_hIco(ICO.utenti)}${L('Moderatori', 'Moderators', 'Moderadores')}</h2>
       ${muroPacchetto('moderatori', L('Avere dei moderatori sul pannello', 'Having moderators on the panel', 'Tener moderadores en el panel'))}
       ${!funzioneChiusa('moderatori') && stato?.funzioni?.moderatori === 1 && stato?.stripeAttivo ? `<p class="suggerimento">${L('Il tuo piano ha un posto. Con «Squadra» arrivi a dieci.', 'Your plan has one seat. With «Squadra» you get ten.', 'Tu plan tiene un puesto. Con «Squadra» llegas a diez.')} <button type="button" class="btn secondario" data-sblocca="squadra">${L('Aggiungi «Squadra»', 'Add «Squadra»', 'Añadir «Squadra»')}</button></p>` : ''}
-      <p>${L('Fai aiutare qualcuno di cui ti fidi a gestire SocialBot. Gli mandi un', 'Let someone you trust help run SocialBot. You send them an', 'Deja que alguien de confianza te ayude con SocialBot. Le mandas un')} <strong class="primo-piano">${L('link d\'invito', 'invite link', 'enlace de invitación')}</strong>: ${L('accede con Twitch (così sappiamo che è davvero lui) e può occuparsi di tutto,', 'they sign in with Twitch (so we know it’s really them) and can handle everything,', 'entra con Twitch (así sabemos que es él de verdad) y puede ocuparse de todo,')} <strong class="primo-piano">${L('tranne', 'except', 'excepto')}</strong> ${L('le cose da proprietario — permessi Twitch e questo elenco.', 'owner-only things — Twitch permissions and this list.', 'lo de propietario — permisos de Twitch y esta lista.')}</p>
+      <p>${L('Fai aiutare qualcuno di cui ti fidi a gestire SocialBot. Gli mandi un', 'Let someone you trust help run SocialBot. You send them an', 'Deja que alguien de confianza te ayude con SocialBot. Le mandas un')} <strong class="primo-piano">${L('link d\'invito', 'invite link', 'enlace de invitación')}</strong>: ${L('accede con il suo account su quella piattaforma (così sappiamo che è davvero lui) e può occuparsi di tutto,', 'they sign in with their own account on that platform (so we know it’s really them) and can handle everything,', 'entra con su cuenta en esa plataforma (así sabemos que es él de verdad) y puede ocuparse de todo,')} <strong class="primo-piano">${L('tranne', 'except', 'excepto')}</strong> ${L('le cose da proprietario, come i permessi Twitch, questo elenco e i pagamenti.', 'owner-only things, like Twitch permissions, this list and payments.', 'lo de propietario, como los permisos de Twitch, esta lista y los pagos.')}</p>
       <label class="campo" for="sel-mod-piattaforma">${L('Dove sta il moderatore', 'Where the moderator is', 'Dónde está el moderador')}</label>
       <div class="riga-flessibile">
         <select id="sel-mod-piattaforma">
@@ -19460,17 +19477,7 @@ async function caricaSottoscrizione() {
   }
 
   const accRiga = _rigaAccessoHtml();
-  const VOCI = [
-    ['moduli', L('Comandi e automazioni', 'Commands and automations', 'Comandos y automatizaciones')],
-    ['overlay', L('Overlay per la diretta', 'stream overlay', 'Overlay para el directo')],
-
-    ['effetti', L('Effetti e punti canale', 'Effects and channel points', 'Efectos y puntos de canal')],
-    ['giochi', L('Giochi e classifiche', 'Games and leaderboards', 'Juegos y clasificaciones')],
-    ['musica', L('Richieste musicali', 'Music requests', 'Peticiones musicales')],
-    ['clipAuto', L('Clip automatiche', 'Automatic clips', 'Clips automáticos')],
-    ['voce', L('Comandi a voce', 'Voice commands', 'Comandos por voz')],
-    ['notifiche', L('Avvisi live e nuovi post', 'Live and new-post alerts', 'Avisos de directo y nuevos posts')],
-  ];
+  const VOCI = Object.entries(ETICHETTE_FUNZ()).filter(([k]) => k !== 'moderatori');
   const acceso = (k) => { const v = f[k]; return v === true || v === -1 || v === Infinity || (typeof v === 'number' && v > 0); };
   const elenco = VOCI.map(([k, et]) => `<li class="sott-voce ${acceso(k) ? 'on' : 'off'}">
       <span class="sott-segno">${acceso(k) ? '✓' : '·'}</span>${esc(et)}</li>`).join('');
@@ -19486,15 +19493,17 @@ async function caricaSottoscrizione() {
       ${mio ? `<span class="badge verde">${L('attivo', 'active', 'activo')}</span>` : ''}
     </div>`;
 
-  const vende = !!stato.stripeAttivo && !!piani && tier !== 'community' && !guasto && !pausa;
-  const titoloComp = mieiPacchetti.size || (abAttivo && !prova)
+  const proprietario = stato.ruolo !== 'moderatore';
+  const vende = proprietario && !!stato.stripeAttivo && !!piani && tier !== 'community' && !guasto && !pausa;
+  const haBase = !!ab?.conBase;
+  const titoloComp = haBase
     ? L('Gli extra che ti mancano', 'The extras you are missing', 'Los extras que te faltan')
     : prova ? L('Per continuare dopo la prova', 'To carry on after the trial', 'Para seguir después de la prueba')
     : L('Il Base, più quello che vuoi', 'Base, plus whatever you want', 'Base, más lo que quieras');
   const aggiungi = vende
     ? `<h3 class="spazio-sopra">${L('Puoi aggiungere', 'You can add', 'Puedes añadir')}</h3>
-       ${configuratoreHtml(piani, { gia: [...mieiPacchetti], titolo: titoloComp })}`
-    : (altri.length && tier !== 'community' ? `<h3 class="spazio-sopra">${L('Puoi aggiungere', 'You can add', 'Puedes añadir')}</h3>
+       ${configuratoreHtml(piani, { gia: [...mieiPacchetti], haBase, titolo: titoloComp })}`
+    : (proprietario && altri.length && tier !== 'community' ? `<h3 class="spazio-sopra">${L('Puoi aggiungere', 'You can add', 'Puedes añadir')}</h3>
       <div class="sott-pacchetti">${altri.map((a) => cardAddon(a, false)).join('')}</div>
       <p class="suggerimento">${guasto || pausa
         ? L('Prima sistema il pagamento dal portale qui sotto: poi aggiungi quello che vuoi.', 'First sort out the payment from the portal below: then add whatever you want.', 'Primero arregla el pago desde el portal de abajo: luego añade lo que quieras.')
@@ -19502,6 +19511,8 @@ async function caricaSottoscrizione() {
 
   const gestione = tier === 'community'
     ? `<p class="suggerimento">${L('Niente da gestire: il tuo accesso arriva dalla community, non da un pagamento.', 'Nothing to manage: your access comes from the community, not from a payment.', 'Nada que gestionar: tu acceso viene de la comunidad, no de un pago.')}</p>`
+    : !proprietario
+      ? `<p class="suggerimento">${L('Pagare, aggiungere un extra e disdire sono cose del proprietario del canale.', 'Paying, adding an extra and cancelling are up to the channel owner.', 'Pagar, añadir un extra y cancelar son cosas del propietario del canal.')}</p>`
     : cliente
       ? `<p><button class="btn" id="sott-portale">${_bIco(ICO.carta)}${guasto ? L('Aggiorna la carta', 'Update the card', 'Actualizar la tarjeta') : abAttivo && !prova ? L('Gestisci, cambia carta o annulla', 'Manage, change card or cancel', 'Gestionar, cambiar tarjeta o cancelar') : L('Apri il portale dei pagamenti', 'Open the payment portal', 'Abrir el portal de pagos')}</button></p>
          <p class="suggerimento">${abAttivo && !prova
@@ -19531,7 +19542,7 @@ async function caricaSottoscrizione() {
     <h3 class="spazio-sopra">${L('Gestione e disdetta', 'Management and cancellation', 'Gestión y cancelación')}</h3>
     ${gestione}`;
 
-  if (vende) montaConfiguratore(box, piani, { gia: [...mieiPacchetti], suOk: ({ pacchetti, bundle }) => conErrore(async () => {
+  if (vende) montaConfiguratore(box, piani, { gia: [...mieiPacchetti], haBase, suOk: ({ pacchetti, bundle }) => conErrore(async () => {
     const r = await api('/api/abbonamento/checkout', { method: 'POST', body: { pacchetti, bundle } });
     if (r?.url) location.href = r.url;
     else if (r?.ok) await dopoAcquisto(r);
@@ -25373,7 +25384,7 @@ function attivaPiattaforma() {
 
   document.getElementById('btn-crea-passkey')?.addEventListener('click', (ev) => conErrore(async () => {
     const btn = ev.currentTarget; btn.disabled = true;
-    try { await creaPasskey(); toast(L('Passkey creata! Ora puoi rientrare senza pass', 'Passkey created! Now you can log back in without a password', '¡Passkey creada! Ahora puedes volver a entrar sin contraseña')); caricaPasskey(); }
+    try { if (!(await creaPasskey())) return; toast(L('Passkey creata! Ora puoi rientrare senza pass', 'Passkey created! Now you can log back in without a password', '¡Passkey creada! Ahora puedes volver a entrar sin contraseña')); caricaPasskey(); }
     catch (e) {
       if (e?.name === 'NotAllowedError') toast(L('Operazione annullata.', 'Operation canceled.', 'Operación cancelada.'), 'errore');
       else toast(L('Passkey non creata: ', 'Passkey not created: ', 'Passkey no creada: ') + (e.message || e), 'errore');
@@ -29995,6 +30006,13 @@ function _durata(sec) {
 
 const PIATT_ICO = { twitch: ICO.tv, kick: ICO.fulmine, youtube: ICO.video };
 
+function _notaCanaleAParte() {
+  const dove = NOME_PIATTAFORMA[stato?.piattaforma] || stato?.piattaforma || '';
+  return L(`Il tuo canale è su ${dove}: Twitch non si aggiunge a questo canale. Se trasmetti anche su Twitch, entra con il tuo account Twitch: è un canale a sé, con il suo pannello.`,
+    `Your channel is on ${dove}: Twitch can’t be added to this channel. If you also stream on Twitch, sign in with your Twitch account: it’s a channel of its own, with its own panel.`,
+    `Tu canal está en ${dove}: Twitch no se añade a este canal. Si también emites en Twitch, entra con tu cuenta de Twitch: es un canal aparte, con su propio panel.`);
+}
+
 function rigaPiattaforma(p) {
   const stato = !p.disponibile
     ? { cl: '', txt: L('non disponibile', 'not available', 'no disponible') }
@@ -30004,7 +30022,7 @@ function rigaPiattaforma(p) {
           : { cl: BADGE.ok, txt: L('collegata', 'connected', 'conectada') };
   const azione = !p.disponibile ? ''
     : (!p.collegato
-      ? `<a class="btn secondario mini" href="${esc(p.azione)}">${L('Collega', 'Connect', 'Conectar')}</a>`
+      ? (p.azione ? `<a class="btn secondario mini" href="${esc(p.azione)}">${L('Collega', 'Connect', 'Conectar')}</a>` : '')
       : `${p.rifaiEventi ? `<button type="button" class="btn mini" data-kick-eventi>${L('Riprova gli eventi', 'Retry events', 'Reintentar eventos')}</button>` : ''}
          ${p.daRifare && !p.rifaiEventi ? `<a class="btn mini" href="${esc(p.azione)}">${L('Sistema', 'Fix', 'Arreglar')}</a>` : ''}
          ${p.chatDisponibile ? `<label class="interruttore mini" title="${esc(L('Il bot legge e risponde nella chat delle tue dirette YouTube', 'The bot reads and answers in your YouTube live chat', 'El bot lee y responde en el chat de tus directos de YouTube'))}">
@@ -30015,6 +30033,7 @@ function rigaPiattaforma(p) {
     <span class="pf-nome">${esc(p.nome)}${p.account ? ` <span class="tenue">${esc(p.account)}</span>` : ''}</span>
     <span class="badge ${stato.cl}">${stato.txt}</span>
     ${p.note ? `<span class="pf-nota">${esc(p.note)}</span>` : ''}
+    ${p.canaleAParte ? `<span class="pf-nota">${esc(_notaCanaleAParte())}</span>` : ''}
     <span class="pf-azioni">${azione}</span>
   </li>`;
 }
@@ -30401,10 +30420,10 @@ function _rigaAccessoHtml() {
   const fino = a.scade ? ' ' + L('fino al', 'until', 'hasta el') + ' <strong>' + esc(dataIt(a.scade)) + '</strong>' : '';
   const nota = a.nota ? ': ' + esc(a.nota) : '';
   let t;
-  if (a.modo === 'tutto') t = L('Il proprietario ti ha aperto <strong>tutto</strong>', 'The owner has opened <strong>everything</strong> for you', 'El propietario te ha abierto <strong>todo</strong>');
-  else if (a.modo === 'scelte') t = L('Il proprietario ti ha aperto', 'The owner has opened for you', 'El propietario te ha abierto') + ' <strong>' + esc(chiavi.join(', ')) + '</strong>';
-  else if (!chiavi.length) t = L('<strong>Accesso sospeso</strong> dal proprietario', '<strong>Access suspended</strong> by the owner', '<strong>Acceso suspendido</strong> por el propietario');
-  else t = L('Il proprietario ha chiuso', 'The owner has closed', 'El propietario ha cerrado') + ' <strong>' + esc(chiavi.join(', ')) + '</strong>';
+  if (a.modo === 'tutto') t = L('andryxify ti ha aperto <strong>tutto</strong>', 'andryxify has opened <strong>everything</strong> for you', 'andryxify te ha abierto <strong>todo</strong>');
+  else if (a.modo === 'scelte') t = L('andryxify ti ha aperto', 'andryxify has opened for you', 'andryxify te ha abierto') + ' <strong>' + esc(chiavi.join(', ')) + '</strong>';
+  else if (!chiavi.length) t = L('<strong>Accesso sospeso</strong> da andryxify', '<strong>Access suspended</strong> by andryxify', '<strong>Acceso suspendido</strong> por andryxify');
+  else t = L('andryxify ha chiuso', 'andryxify has closed', 'andryxify ha cerrado') + ' <strong>' + esc(chiavi.join(', ')) + '</strong>';
   return `<p class="acc-avviso">${t}${fino}${nota}.</p>`;
 }
 
@@ -30521,7 +30540,7 @@ const bufToB64url = (buf) => {
 };
 
 async function creaPasskey() {
-  if (!window.PublicKeyCredential) { toast(L('Questo dispositivo non supporta le passkey.', "This device doesn't support passkeys.", 'Este dispositivo no admite passkeys.'), 'errore'); return; }
+  if (!window.PublicKeyCredential) { toast(L('Questo dispositivo non supporta le passkey.', "This device doesn't support passkeys.", 'Este dispositivo no admite passkeys.'), 'errore'); return false; }
   const opt = await api('/api/passkey/registra/inizio', { method: 'POST', body: {} });
   const cred = await navigator.credentials.create({ publicKey: {
     challenge: b64urlToBuf(opt.challenge),
@@ -30539,6 +30558,7 @@ async function creaPasskey() {
     clientDataJSON: bufToB64url(cred.response.clientDataJSON),
     nome,
   } });
+  return true;
 }
 
 function mostraInvito(invito) {
@@ -30546,7 +30566,7 @@ function mostraInvito(invito) {
   if (!box || !invito) return;
   box.innerHTML = `
     <p class="suggerimento spazio-sopra">${L('Manda questo link a', 'Send this link to', 'Envía este enlace a')} <strong class="primo-piano">@${esc(invito.login)}</strong>
-      (${L('vale fino al', 'valid until', 'válido hasta el')} ${esc(dataIt(invito.scade))}); ${L('accederà con Twitch e potrà gestire SocialBot:', 'they\'ll log in with Twitch and be able to manage SocialBot:', 'accederá con Twitch y podrá gestionar SocialBot:')}</p>
+      (${L('vale fino al', 'valid until', 'válido hasta el')} ${esc(dataIt(invito.scade))}); ${L('accederà con il suo account su quella piattaforma e potrà gestire SocialBot:', 'they\'ll log in with their own account on that platform and be able to manage SocialBot:', 'accederá con su cuenta en esa plataforma y podrá gestionar SocialBot:')}</p>
     <div class="riga-flessibile">
       <input type="text" id="url-invito" readonly value="${esc(invito.url)}">
       <button class="btn" id="btn-copia-invito">${L('Copia', 'Copy', 'Copiar')}</button>
@@ -30644,13 +30664,14 @@ async function caricaModeratori() {
       if (m.invito) links[m.id] = m.invito.url;
       const stato = m.status === 'attivo'
         ? `<span class="badge verde">${L('attivo', 'active', 'activo')}</span>`
-        : `<span class="badge giallo">${L('invito in attesa', 'invite pending', 'invitación en espera')}</span>`;
+        : m.invito ? `<span class="badge giallo">${L('invito in attesa', 'invite pending', 'invitación en espera')}</span>`
+          : `<span class="badge rosso">${L('invito scaduto', 'invite expired', 'invitación caducada')}</span>`;
       const meta = m.status === 'attivo'
         ? (m.last_seen ? L('ultimo accesso ', 'last access ', 'último acceso ') + esc(dataIt(m.last_seen)) : L('mai entrato', 'never entered', 'nunca ha entrado'))
-        : (m.invito ? L('invito valido fino al ', 'invite valid until ', 'invitación válida hasta el ') + esc(dataIt(m.invito.scade)) : L('invito scaduto', 'invite expired', 'invitación caducada'));
+        : (m.invito ? L('invito valido fino al ', 'invite valid until ', 'invitación válida hasta el ') + esc(dataIt(m.invito.scade)) : L('il link non vale più: rigeneralo', 'the link no longer works: regenerate it', 'el enlace ya no vale: regenéralo'));
       const azioni = m.status === 'attivo'
         ? `<button class="btn secondario mini" data-mod-rimuovi="${m.id}">${L('Rimuovi', 'Remove', 'Quitar')}</button>`
-        : `<button class="btn secondario mini" data-mod-link="${m.id}">${L('Copia link', 'Copy link', 'Copiar enlace')}</button>
+        : `${m.invito ? `<button class="btn secondario mini" data-mod-link="${m.id}">${L('Copia link', 'Copy link', 'Copiar enlace')}</button>` : ''}
            <button class="btn secondario mini" data-mod-reinvita="${m.id}">${L('Rigenera', 'Regenerate', 'Regenerar')}</button>
            <button class="btn secondario mini" data-mod-rimuovi="${m.id}">${L('Annulla', 'Cancel', 'Cancelar')}</button>`;
       return `<li>

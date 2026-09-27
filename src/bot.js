@@ -86,6 +86,10 @@ import * as pub from './features/pubblicita.js';
 import * as modalitaFeat from './features/modalita-chat.js';
 import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
+import { modalitaDi, alLavoro } from './features/quando-lavora.js';
+import { statoVivo } from './db.js';
+import { piattaformaDi } from './identita.js';
+import { tokenDi as tokenKick } from './kick/api.js';
 import * as bjFeat from './features/blackjack.js';
 import * as seguitiFeat from './features/seguiti.js';
 
@@ -782,7 +786,7 @@ export class BotManager {
         const conf = tgConf.get(login);
         if (conf?.token && conf.owner_tg_id && (conf.dm_modo || 'me') !== 'off') {
           const testo = '⚠️ Il bot non riesce a collegarsi alla tua chat: il permesso Twitch è scaduto o è stato revocato. '
-            + 'Entra nella dashboard e premi «Concedi i permessi» per rimetterlo in funzione.';
+            + 'Entra nel pannello e premi «Ricollega i permessi» nella scheda Stato per rimetterlo in funzione.';
           telegram.inviaMessaggio(conf.token, conf.owner_tg_id, testo).catch(() => {});
         }
       }
@@ -796,13 +800,11 @@ export class BotManager {
     return !!t && t.scopes.includes('chat:edit');
   }
 
-  // Modalità di attivazione scelta dallo streamer:
+  // Modalità di attivazione scelta dallo streamer (features/quando-lavora.js):
   //  'sempre'  → 24/7 (sempre in chat quando è acceso)
   //  'live'    → solo mentre è in diretta (entra/esce col live)
-  //  'manuale' → lo governa l'interruttore acceso/spento (come 'sempre' a livello di runtime)
   _modalitaConsente(s) {
-    const m = s?.settings?.modalita || 'sempre';
-    if (m === 'live') return this._liveState.get(s.login) === true;
+    if (modalitaDi(s?.settings) === 'live') return this._liveState.get(s.login) === true;
     return true;
   }
 
@@ -875,7 +877,11 @@ export class BotManager {
     try { await this.reconcileListeners(); }
     catch (e) { log.error('reconcileListeners:', e?.message || e); }
 
-    try { this.reconcileYoutube(wanted); }
+    // YouTube non passa dalla chat di Twitch: un canale nato su YouTube non ha
+    // un token Twitch e non sta in `wanted`. Contano il bot acceso e la levetta;
+    // la modalita' «solo in diretta» e' rispettata da se', perche' la chat di
+    // YouTube si legge solo mentre c'e' una diretta.
+    try { this.reconcileYoutube(new Map(streamers.active().map((s) => [s.login, s]))); }
     catch (e) { log.error('reconcileYoutube:', e?.message || e); }
   }
 
@@ -904,13 +910,27 @@ export class BotManager {
   // una domanda fatta su Kick non si risponde su Twitch.
   async messaggioEsterno(msg) {
     const login = String(msg?.channel || '').toLowerCase();
-    if (!login || !streamers.get(login)) return;
+    const s = login ? streamers.get(login) : null;
+    if (!s) return;
     if (!msg.piattaforma || msg.piattaforma === 'twitch') return;   // Twitch ha la sua strada
+    // L'interruttore e la modalita' valgono qui come per la chat di Twitch: un
+    // bot spento, o «solo in diretta» fuori onda, non risponde nemmeno su Kick.
+    if (!alLavoro(s, { inDiretta: this.inDirettaSu(login, msg.piattaforma) })) return;
     const parla = this.vocePer(msg);
     const onMessage = createMessageHandler({
       chat: { say: (_c, t, o) => parla(t, o) }, helix: this.helix, brain: this.brain, clips: this.clips, botLogin: login,
     });
     await this._gestisciMessaggio(login, msg, onMessage, parla);
+  }
+
+  // IN ONDA SU UNA PIATTAFORMA DIVERSA DA TWITCH. La chat di YouTube si legge
+  // solo durante una diretta: un messaggio che arriva da li' e' in diretta per
+  // costruzione. Kick lo dice con i suoi eventi di inizio e fine diretta, che si
+  // tengono fra gli stati vivi del canale: un riavvio a diretta in corso non la
+  // dimentica.
+  inDirettaSu(login, piattaforma) {
+    if (piattaforma === 'youtube') return true;
+    return statoVivo.leggi(login, 'diretta:' + piattaforma)?.live === true;
   }
 
   // LA VOCE DI UN MESSAGGIO. Sta scritta in UN posto solo, e non si ricava a
@@ -1497,6 +1517,8 @@ export class BotManager {
   async eventoEsterno(ev) {
     if (!ev?.channel || !streamers.get(ev.channel)) return;
     try {
+      if (ev.tipo === 'live') statoVivo.scrivi(ev.channel, 'diretta:' + ev.piattaforma, { live: true });
+      if (ev.tipo === 'fine-live') statoVivo.togli(ev.channel, 'diretta:' + ev.piattaforma);
       if (ev.tipo === 'live') {
         const d = avvisi.diretta({ piattaforma: ev.piattaforma, login: ev.channel, titolo: ev.titolo, id: ev.id || ev.titolo || String(Date.now()) });
         if (d) await this.annunciaDiretta(d);
@@ -2128,6 +2150,19 @@ export class BotManager {
   // chi lo chiede da fuori (la vetrina) non deve andarlo a chiedere di nuovo
   // alla piattaforma.
   inDiretta(login) { return this._liveState.get(String(login || '').toLowerCase()) === true; }
+
+  // IL BOT E' NELLA CHAT DEL CANALE ADESSO? E' il badge della scheda Stato, e
+  // ogni piattaforma ha il suo modo di esserci: Twitch una connessione, YouTube
+  // una chat che si legge solo durante una diretta, Kick un collegamento che il
+  // bot usa finche' lavora. Un canale Discord una chat sua non ce l'ha: null.
+  inChat(login) {
+    const l = String(login || '').toLowerCase();
+    const p = piattaformaDi(l);
+    if (p === 'twitch') return !!this.units.get(l)?.connesso;
+    if (p === 'youtube') return !!this.chatYT?.stato(l)?.inDiretta;
+    if (p === 'kick') return !!tokenKick(l)?.accessToken && alLavoro(streamers.get(l), { inDiretta: this.inDirettaSu(l, 'kick') });
+    return null;
+  }
 
   status() {
     return {

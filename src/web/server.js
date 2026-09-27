@@ -76,6 +76,8 @@ import * as webauthn from './webauthn.js';
 import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA, normChiave } from '../features/compress.js';
 import { StudioEngine, QUALITA as STUDIO_QUALITA } from '../features/studio.js';
 import { seedStreamer } from '../features/seed.js';
+import { eDelKit } from '../features/seed.js';
+import { vivo as comandoVivo } from '../features/comandi-registro.js';
 import * as vip from '../features/vip.js';
 import * as telegram from '../features/telegram.js';
 import * as cartaLive from '../features/cartalive.js';
@@ -100,6 +102,7 @@ import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
 import * as giochiConf from '../features/giochi-conf.js';
 import * as modalitaChat from '../features/modalita-chat.js';
+import { normModalita } from '../features/quando-lavora.js';
 import * as instagram from '../features/instagram.js';
 import * as igAccesso from '../features/instagram-accesso.js';
 import { credenzialiInstagram } from '../features/instagram-credenziali.js';
@@ -2716,12 +2719,16 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // Elenco/invito/rimozione dei moderatori del proprio canale (solo proprietario).
   // La forma con cui un moderatore esce da qui, una sola per tutti gli stati:
   // così l'elenco e le richieste si disegnano con lo stesso pezzo di pagina.
+  // Un invito scaduto non ha piu' un link che funzioni: niente link e niente
+  // «valido fino al» con una data passata, ma `scaduto`, e si rigenera.
+  const invitoScaduto = (m, ora = Date.now()) => m.status === 'invitato' && Number(m.invite_expires) > 0 && ora > Number(m.invite_expires);
   const vestiModeratore = (m) => ({
     id: m.id, login: m.login, display: m.display || m.login, status: m.status,
     piattaforma: piattaformaDi(m.login), nome: nomeSu(m.login),
     last_seen: m.last_seen, created_at: m.created_at,
     chiesto: m.chiesto_at || 0, nota: m.nota || '', verificata: !!m.verificata,
-    invito: m.status === 'invitato' ? { url: MOD_INVITE_URL(m.invite_token), scade: m.invite_expires } : null,
+    invito: m.status === 'invitato' && !invitoScaduto(m) ? { url: MOD_INVITE_URL(m.invite_token), scade: m.invite_expires } : null,
+    scaduto: invitoScaduto(m),
   });
 
   app.get('/api/moderatori', requireOwner, wrap(async (req, res) => {
@@ -2768,11 +2775,14 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // Da nome + piattaforma al canale nostro. `login` da solo resta valido e vuol
   // dire Twitch: era l'unica piattaforma quando la scheda è nata, e i pannelli
   // vecchi continuano a funzionare senza modifiche.
+  // Il nome si pulisce come alla registrazione (loginSu → nomePulito, in
+  // identita.js): il canale di chi entra con Kick o YouTube nasce da li', e un
+  // invito letto con un'altra regola non lo ritroverebbe mai. «Pippo.Rossi» su
+  // YouTube e' yt.pipporossi, entrando come invitando.
   const chiInvitare = (corpo) => {
-    const grezzo = String(corpo?.nome ?? corpo?.login ?? '').toLowerCase().trim().replace(/^@/, '');
+    const grezzo = String(corpo?.nome ?? corpo?.login ?? '').trim().replace(/^@/, '');
     const piattaforma = String(corpo?.piattaforma || 'twitch').toLowerCase();
     if (!PIATTAFORME.some((p) => p.id === piattaforma)) return { errore: 'piattaforma sconosciuta' };
-    if (!/^[a-z0-9_]{3,25}$/.test(grezzo)) return { errore: 'nome utente non valido' };
     const login = loginSu(piattaforma, grezzo);
     if (!login || !eLoginNostro(login)) return { errore: 'nome utente non valido' };
     return { login };
@@ -3003,16 +3013,21 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const st = manager.status?.() || {};
     const fuori = [];
 
-    // Twitch: c'e' sempre, e' la piattaforma di casa.
+    // Twitch: c'e' sempre, e' la piattaforma di casa. Ma e' collegata solo a
+    // un canale Twitch: un canale nato su Kick, YouTube o Discord non puo'
+    // aggiungere Twitch (i permessi si danno con l'account del canale, e Twitch
+    // risponde con un altro), quindi la riga lo dice e non offre il tasto.
+    const suTwitch = piattaformaDi(login) === 'twitch';
     fuori.push({
       id: 'twitch',
       nome: 'Twitch',
       disponibile: true,
-      collegato: true,
-      account: login,
-      attivo: (st.connessi || []).includes(login),
-      daRifare: (st.chatKO || []).includes(login) || !permessiOk(login),
-      azione: '/auth/permessi',
+      collegato: suTwitch,
+      account: suTwitch ? login : '',
+      attivo: suTwitch && (st.connessi || []).includes(login),
+      daRifare: suTwitch && ((st.chatKO || []).includes(login) || !permessiOk(login)),
+      azione: suTwitch ? '/auth/permessi' : '',
+      canaleAParte: !suTwitch,
       note: '',
     });
 
@@ -3146,10 +3161,13 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const prova = (k, fn) => { try { f[k] = fn(); } catch { /* resta ignoto */ } };
     prova('permessiMancanti', () => scopeMancanti(login).length);
     prova('botSpento', () => (s ? s.botEnabled === false : undefined));
-    prova('musica', () => canaleHa(login, 'musica'));
+    // le richieste musicali contano se sono nel piano E accese (il comando !sr):
+    // a chi le ha spente, Spotify non manca
+    prova('musica', () => canaleHa(login, 'musica') && comandoVivo(login, 'sr'));
     prova('spotify', () => spotify.collegato(login));
     prova('overlayVisto', () => (s ? !!s.settings?.overlayVisto : undefined));
-    prova('comandi', () => comandiDb.list(login).length + modulesDb.list(login).length);
+    // i moduli del kit di partenza lasciati com'erano non sono «comandi tuoi»
+    prova('comandi', () => comandiDb.list(login).length + modulesDb.list(login).filter((m) => !eDelKit(m)).length);
     prova('paginaPubblicata', () => linkPage.get(login)?.attiva === true);
     prova('settimanaVuota', () => !(settimana.settimanaDi(s?.settings)?.giorni || []).some((g) => g && !g.off && g.ora));
     // Le funzioni mai usate, per gli inviti «Hai gia' provato...?». Ogni segno e'
@@ -3220,6 +3238,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       missing: missingConfig(),
       storte: configStorta(),
       status: manager.status(),
+      // il bot e' nella chat del canale, sulla piattaforma del canale (null: non ha una chat)
+      inChat: manager.inChat ? manager.inChat(user.login) : null,
       streamer: user ? streamerSicuro(user.login) : null,
       permessiOk: user ? permessiOk(user.login) : false,
       // scope aggiunti dopo che lo streamer si era collegato: se non vuoti, la
@@ -3249,7 +3269,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       nAddon: abbonamenti.ADDON_IDS.length,
       abbonamento: (() => {
         const s = subscriptions.get(user.login);
-        return s ? { tier: s.tier, pacchetti: abbonamenti.normalizzaPacchetti(s.pacchetti), status: s.status, fine: s.current_period_end, attivo: subscriptions.attivo(user.login), cliente: !!s.stripe_customer } : null;
+        return s ? { tier: s.tier, pacchetti: abbonamenti.normalizzaPacchetti(s.pacchetti), status: s.status, fine: s.current_period_end, attivo: subscriptions.attivo(user.login), cliente: !!s.stripe_customer,
+          conBase: conBaseSuStripe(user.login) } : null;
       })(),
       stripeAttivo: config.stripe.attivo,
       // i rapporti delle dirette non ancora aperti, per il segno sulla scheda
@@ -3536,7 +3557,12 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // login self-service in attesa di abbonarsi (req.session.abbonando). Off → 503.
   app.post('/api/abbonamento/checkout', wrap(async (req, res) => {
     if (!config.stripe.attivo) return res.status(503).json({ errore: 'Gli abbonamenti non sono ancora attivi.' });
-    const login = identitaDi(currentUser(req)) || String(req.session?.abbonando?.login || '').toLowerCase();
+    // L'abbonamento e' del canale che si sta gestendo, e lo paga chi lo possiede:
+    // un moderatore da qui avrebbe pagato per il SUO canale credendo di farlo
+    // per questo.
+    const u = currentUser(req);
+    if (u && !isOwner(req)) return res.status(403).json({ errore: 'solo il proprietario del canale può farlo' });
+    const login = u ? String(u.login || '').toLowerCase() : String(req.session?.abbonando?.login || '').toLowerCase();
     if (!login) return res.status(401).json({ errore: 'non autenticato' });
     // BUNDLE curato → prezzo unico scontato (i suoi add-on li sblocca il gating).
     // Altrimenti à la carte (retrocompat: 'pro' → base + tutti gli add-on).
@@ -3586,6 +3612,15 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     return '';
   }
 
+  // HA GIA' IL BASE: una sottoscrizione viva su Stripe, col canone dentro. Un
+  // extra allora entra li' e il Base non si ripaga. La stessa domanda la fanno
+  // l'acquisto qui sotto e il pannello (per il totale che mostra): una risposta
+  // sola, o il totale mostrato e quello addebitato direbbero due cose diverse.
+  function conBaseSuStripe(login) {
+    const s = subscriptions.get(login);
+    return !!(s?.stripe_sub && s?.stripe_customer) && subscriptions.attivo(login);
+  }
+
   // UN ACQUISTO, da qualunque porta arrivi (pannello, vetrina dopo il login).
   // Chi ha gia' una sottoscrizione viva riceve gli extra DENTRO quella, non un
   // secondo Checkout con il Base di nuovo (lo pagherebbe due volte); chi non
@@ -3597,7 +3632,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     if (stripe && ['past_due', 'unpaid', 'incomplete'].includes(s.status)) {
       return { errore: 'C\'è un pagamento non riuscito: sistemalo dal portale, poi aggiungi quello che vuoi.', codice: 409 };
     }
-    if (stripe && subscriptions.attivo(login)) {
+    if (conBaseSuStripe(login)) {
       const r = await abbonamenti.aggiungiAlAbbonamento({ subId: s.stripe_sub, login, pacchetti, bundle, gia: s.pacchetti });
       if (!r) return { errore: 'In questo momento non riesco a parlare con Stripe: riprova fra poco.', codice: 503 };
       if (r.aggiunti.length) {
@@ -3651,8 +3686,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   }));
 
   // portale clienti Stripe (gestione/disdetta). Serve un cliente Stripe esistente.
-  app.post('/api/abbonamento/portale', requireLogin, wrap(async (req, res) => {
-    const s = subscriptions.get(identitaDi(currentUser(req)));
+  app.post('/api/abbonamento/portale', requireOwner, wrap(async (req, res) => {
+    const s = subscriptions.get(currentUser(req).login);
     const url = s?.stripe_customer ? await abbonamenti.creaPortale({ customerId: s.stripe_customer }) : null;
     if (!url) return res.status(503).json({ errore: 'Gestione abbonamento non disponibile.' });
     res.json({ url });
@@ -6023,10 +6058,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // «fammi comparire fra le dirette sulla home»: e' un si' che si dice, e si
     // toglie. Di serie non c'e', quindi nessuno finisce in vetrina per distrazione.
     if (b.vetrinaLive !== undefined) { out.vetrinaLive = !!b.vetrinaLive; vetrinaLive.scorda(); }
-    // modalità di attivazione: 24/7, solo quando è in diretta, o manuale
+    // modalità di attivazione: 24/7 o solo quando è in diretta (features/quando-lavora.js)
     if (b.modalita !== undefined) {
-      if (!['sempre', 'live', 'manuale'].includes(b.modalita)) return res.status(400).json({ errore: 'modalità non valida' });
-      out.modalita = b.modalita;
+      const m = normModalita(b.modalita);
+      if (!m) return res.status(400).json({ errore: 'modalità non valida' });
+      out.modalita = m;
     }
     // LA SCHEDA dello streamer: chi è, deciso da lui. Passa dal pulitore
     // condiviso (src/db.js) — è lo stesso che legge il cervello, così non

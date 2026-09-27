@@ -47,6 +47,22 @@ const MODULI_DEFAULT = [
   },
 ];
 
+// UN MODULO DEL KIT LASCIATO COM'ERA. Chi conta «i comandi tuoi» (l'avviso
+// «Non hai ancora un comando tuo») non deve contare quello che il kit ha messo
+// da se': lo streamer non l'ha fatto. Si confronta quello che conta in un
+// modulo: nome, innesco, condizioni, azioni, ramo del «no» e Telegram. Acceso
+// o spento non conta: spegnerlo non lo fa diventare suo. Basta cambiare una
+// parola, e il modulo e' suo.
+const _ordinato = (x) => (Array.isArray(x) ? x.map(_ordinato)
+  : (x && typeof x === 'object') ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, _ordinato(x[k])])) : x);
+const _impronta = (m) => JSON.stringify(_ordinato({
+  nome: String(m?.nome || ''), trigger: m?.trigger || {}, condizioni: m?.condizioni || {},
+  azioni: Array.isArray(m?.azioni) ? m.azioni : [], altrimenti: Array.isArray(m?.altrimenti) ? m.altrimenti : [],
+  telegram: m?.telegram === true,
+}));
+const _KIT = new Set(MODULI_DEFAULT.map(_impronta));
+export function eDelKit(m) { return !!m && _KIT.has(_impronta(m)); }
+
 // Semina i default per uno streamer (idempotente). Ritorna true se ha seminato.
 export function seedStreamer(login) {
   try {

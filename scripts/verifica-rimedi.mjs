@@ -39,7 +39,7 @@ export const PAROLE = /dashboard|pannell|riautorizz|ricollega|concedi i permessi
 
 // I testi col rimedio che non passano da aChiPuo, ognuno con chi lo legge.
 export const CLASSIFICATI = [
-  ['src/bot.js', 'Entra nella dashboard e premi', 'Telegram, al solo proprietario'],
+  ['src/bot.js', 'Entra nel pannello e premi', 'Telegram, al solo proprietario'],
   ['src/features/antibot.js', 'togline qualcuno dal pannello', '!permetti risponde solo a streamer e mod'],
   ['src/features/comandibase.js', 'riautorizza i permessi dalla dashboard', '!so risponde solo a streamer e mod'],
   ['src/features/modalita-chat.js', 'riautorizza dalla dashboard', 'le modalita\' della chat rispondono solo a streamer e mod'],
