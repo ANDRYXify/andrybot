@@ -27392,16 +27392,22 @@ function _rgDisegna() {
 }
 
 async function caricaRegoleGiochi() {
-  if (!_g('regole-giochi')) return;
-  try { _regole = await api('/api/streamer/giochi/regole'); } catch (e) { _regole = null; return; }
+  const box = _g('regole-giochi');
+  if (!box) return;
+  try { _regole = await api('/api/streamer/giochi/regole'); } catch (e) {
+    _regole = null;
+    box.innerHTML = `<p class="warn-riga">${L('Non riesco a leggere le regole dei giochi: ', 'I can’t read the game rules: ', 'No puedo leer las reglas de los juegos: ')}${esc(e.message)}</p>`;
+    return;
+  }
   _rgDisegna();
 }
 
 async function caricaGiochi() {
   const ul = document.getElementById('lista-giochi');
   if (!ul) return;
+  let errore = null;
   const [manche, moduli] = await Promise.all([
-    api('/api/streamer/giochi').catch(() => []),
+    api('/api/streamer/giochi').catch((e) => { errore = e; return []; }),
     api('/api/streamer/moduli').catch(() => null),
   ]);
   if (moduli) datiModuli = moduli;
@@ -27436,6 +27442,7 @@ async function caricaGiochi() {
     </li>`);
   const righe = [...righeComando, ...righeManche];
   ul.innerHTML = righe.length ? righe.join('')
+    : errore ? `<li class="vuoto">${L('Errore: ', 'Error: ', 'Error: ')}${esc(errore.message)}</li>`
     : `<li class="vuoto">${L('Ancora nessuno: scegli qui sopra chi lancia il gioco e crealo. I giochi di serie funzionano comunque.', 'None yet: pick above who starts the game and make it. The built-in games work anyway.', 'Ninguno todavía: elige arriba quién lanza el juego y créalo. Los juegos de serie funcionan igualmente.')}</li>`;
 
   ul.onclick = (ev) => {
@@ -27447,7 +27454,7 @@ async function caricaGiochi() {
     });
     else if (del) conErrore(async () => {
       if (!(await chiediSe({ titolo: L('Elimino questo gioco?', 'Delete this game?', '¿Elimino este juego?'), pericolo: true,
-        testo: L('Il suo comando in chat smette di rispondere, e non si torna indietro.', 'Its chat command stops answering, and there is no going back.', 'Su comando del chat deja de responder, y no hay vuelta atrás.'),
+        testo: L('Non esce più nelle manche, e non si torna indietro.', 'It no longer comes up in the rounds, and there is no going back.', 'Ya no sale en las rondas, y no hay vuelta atrás.'),
         si: L('Eliminalo', 'Delete it', 'Elimínalo') }))) return;
       await api('/api/streamer/giochi/' + del.dataset.giocoElimina, { method: 'DELETE' });
       toast(L('Gioco eliminato.', 'Game deleted.', 'Juego eliminado.')); caricaGiochi();
