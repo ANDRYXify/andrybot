@@ -975,3 +975,17 @@ test('il tetto dei tasti è uno solo: lo dice il server, lo controlla il pannell
   assert.match(posto, /consTetto\('tasti'\)/, 'il numero viene da quello che ha detto il server');
   assert.match(posto, /toast\(/, 'e chi preme legge perché');
 });
+
+test('nel formato «libero» c\'è il «+» anche lui, e i testi dicono come si aggiunge oggi', () => {
+  // Nel formato libero i tasti si raggruppano per tipo e non ci sono posti
+  // fissi: senza un «+» in fondo, lì un tasto nuovo non si poteva creare.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const disegna = app.slice(app.indexOf('function disegnaConsolify('), app.indexOf('let _ponte = null;'));
+  const libero = disegna.slice(disegna.indexOf('sezioni = ordine.filter'), disegna.indexOf('const vuoto = '));
+  assert.match(libero, /mod \?[^\n]*data-cons-vuoto="1"/, 'in modifica il «+» sta in fondo');
+  // e nessun testo rimanda a un tasto «Aggiungi tasto» che non esiste più
+  assert.ok(!app.includes('Aggiungi tasto'), 'niente «Aggiungi tasto»');
+  assert.ok(!/nell’elenco ci sono già le tue|nell\\'elenco ci sono già le tue/.test(app), 'niente elenco da cui scegliere prima');
+  const vuoto = disegna.slice(disegna.indexOf('const vuoto = '), disegna.indexOf('box.innerHTML'));
+  assert.match(vuoto, /«\+»/, 'il vuoto dice dove sta il «+»');
+});

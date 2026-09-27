@@ -47,7 +47,7 @@ export default {
       ['‹ › e trascinamento', 'Spostano il tasto dentro la pagina.', ''],
     ] },
     { p: [
-      'Nei formati a griglia il «+» sta nel primo posto dopo i tasti. Quando i posti sono pieni, scegli un formato più grande o apri un\'altra pagina. Una pagina tiene al massimo 48 tasti: se ne aggiungi, duplichi o sposti uno in una pagina piena leggi «La pagina «…» è piena: tiene al massimo 48 tasti.»',
+      'Nei formati a griglia il «+» sta nel primo posto dopo i tasti; nel formato libero sta in fondo, dopo tutti i gruppi. Quando i posti sono pieni, scegli un formato più grande o apri un\'altra pagina. Una pagina tiene al massimo 48 tasti: se ne aggiungi, duplichi o sposti uno in una pagina piena leggi «La pagina «…» è piena: tiene al massimo 48 tasti.»',
       '<strong>La scheda di un tasto.</strong> Si apre quando crei un tasto o premi la matita. Ogni campo che cambi si salva da solo, senza un tasto per salvare. Se il salvataggio non riesce, in alto leggi «non salvato».',
     ] },
     { tabella: [
