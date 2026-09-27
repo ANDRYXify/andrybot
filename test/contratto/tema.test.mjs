@@ -157,8 +157,15 @@ test('e si vedono anche con la tastiera, cosa che il browser non faceva', () => 
 test('ogni input che si clicca ha la manina, non la barretta', () => {
   const css = leggi('src/web/public/tema.css');
   const regole = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].replace(/\s+/g, ' ').trim(), corpo: m[2], at: m.index }));
-  const barretta = regole.find((r) => /cursor:\s*url\([^)]*\)\s*16 16,\s*text\s*!important/.test(r.corpo));
-  const manina = regole.filter((r) => /cursor:\s*url\([^)]*\)\s*16 15,\s*pointer\s*!important/.test(r.corpo) && /input\[type=/.test(r.sel));
+  // I tre cursori stanno una volta sola, in variabili: la barretta per scrivere,
+  // la manina per cliccare. Si controlla che siano disegnati (un'immagine, con
+  // il cursore di sistema solo come riserva) e chi li usa.
+  const radice = regole.find((r) => r.sel === ':root' && /--cursore-testo:/.test(r.corpo));
+  assert.ok(radice, 'le variabili dei cursori');
+  assert.match(radice.corpo, /--cursore-testo:\s*url\("data:image\/svg\+xml,[^"]+"\)\s*16 16,\s*text;/);
+  assert.match(radice.corpo, /--cursore-mano:\s*url\("data:image\/svg\+xml,[^"]+"\)\s*16 15,\s*pointer;/);
+  const barretta = regole.find((r) => /cursor:\s*var\(--cursore-testo\)\s*!important/.test(r.corpo));
+  const manina = regole.filter((r) => /cursor:\s*var\(--cursore-mano\)\s*!important/.test(r.corpo) && /input\[type=/.test(r.sel));
   assert.ok(barretta && manina.length === 1, 'una regola per la barretta e una per gli input da cliccare');
   assert.ok(manina[0].at > barretta.at, 'e quella della manina viene dopo, cosi\' vince');
   const CLICCABILI = ['button', 'checkbox', 'color', 'file', 'image', 'radio', 'range', 'reset', 'submit'];
