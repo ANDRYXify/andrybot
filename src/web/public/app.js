@@ -30004,7 +30004,7 @@ function _piattaformeModulo(c) {
   const scelte = Array.isArray(c?.piattaforme) && c.piattaforme.length ? c.piattaforme : null;
   return `<div class="spazio-sopra">
     <label class="campo">${L('Su quali piattaforme', 'On which platforms', 'En qué plataformas')}
-      <span class="tenue">— ${L('nessuna spuntata = su tutte', 'none ticked = on all of them', 'ninguna marcada = en todas')}</span></label>
+      <span class="tenue">(${L('nessuna spuntata vuol dire su tutte', 'none ticked means all of them', 'ninguna marcada quiere decir todas')})</span></label>
     <div class="mod-piatt">${_piattaformeAttive.map((p) => `
       <label class="riga-check"><input type="checkbox" class="mod-piatt-c" value="${esc(p.id)}"${scelte && scelte.includes(p.id) ? ' checked' : ''}> ${esc(p.nome)}</label>`).join('')}</div>
   </div>`;
