@@ -24541,13 +24541,13 @@ function pannelloTelegram() {
         <button class="btn" id="btn-tg-ingresso">${L('Salva il cancello', 'Save the gate', 'Guardar el portero')}</button>
       </div>
     </div>
+    ` : ''}
 
     <div class="carta">
       <h2>${_hIco(ICO.torta)}${L('Auguri di compleanno', 'Birthday wishes', 'Felicitaciones de cumpleaños')}</h2>
-      <p>${L('Il bot fa gli', 'The bot sends', 'El bot da las')} <strong class="primo-piano">${L('auguri automatici', 'automatic wishes', 'felicitaciones automáticas')}</strong> ${L('nel gruppo il giorno del compleanno dei membri. Loro possono registrarsi da soli scrivendo', 'in the group on members’ birthdays. They can register themselves by typing', 'en el grupo el día del cumpleaños de los miembros. Ellos pueden registrarse solos escribiendo')} <code>/compleanno 25/12</code> ${L('nel gruppo (serve il bot interattivo qui sopra), oppure li aggiungi tu qui sotto.', 'in the group (needs the interactive bot above), or you add them below.', 'en el grupo (necesita el bot interactivo de arriba), o los añades tú abajo.')}</p>
+      <p>${L('Il bot fa gli', 'The bot sends', 'El bot da las')} <strong class="primo-piano">${L('auguri automatici', 'automatic wishes', 'felicitaciones automáticas')}</strong> ${L('in due posti: nella chat della diretta e nel gruppo Telegram. Chi ti segue si segna da solo, in chat con', 'in two places: in the stream chat and in the Telegram group. Your people sign up on their own, in chat with', 'en dos sitios: en el chat del directo y en el grupo de Telegram. Quien te sigue se apunta solo, en el chat con')} <code>!compleanno 25/12</code> ${L('e nel gruppo con', 'and in the group with', 'y en el grupo con')} <code>/compleanno 25/12</code>.</p>
       <div id="box-compleanni">${attesaHtml()}</div>
     </div>
-    ` : ''}
 `);
 }
 
@@ -26276,7 +26276,8 @@ function attivaPiattaforma() {
   document.getElementById('btn-tg-dm-collega')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     const r = await api('/api/streamer/telegram/collega', { method: 'POST', body: {} });
     const box = document.getElementById('tg-dm-codice');
-    if (box) box.innerHTML = `<p class="nota-lettura">Scrivi al tuo bot${r.username ? ' <strong>@' + esc(r.username) + '</strong>' : ''} in privato:<br><code>/collega ${esc(r.code)}</code><br>Scade tra 10 minuti.</p>`;
+    const bot = r.username ? ' <strong>@' + esc(r.username) + '</strong>' : '';
+    if (box) box.innerHTML = `<p class="nota-lettura">${L('Scrivi al tuo bot', 'Write to your bot', 'Escribe a tu bot')}${bot} ${L('in privato:', 'in private:', 'en privado:')}<br><code>/collega ${esc(r.code)}</code><br>${L('Scade tra 10 minuti.', 'It expires in 10 minutes.', 'Caduca en 10 minutos.')}</p>`;
   }); });
   document.getElementById('btn-tg-dm-scollega')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await api('/api/streamer/telegram/scollega', { method: 'POST', body: {} });
@@ -27053,64 +27054,72 @@ async function caricaCompleanni() {
   if (!box) return;
   let d;
   try { d = await api('/api/streamer/telegram/compleanni'); }
-  catch { box.innerHTML = '<p class="vuoto">Impossibile caricare.</p>'; return; }
+  catch { box.innerHTML = `<p class="vuoto">${L('Non riesco a leggere i compleanni.', 'I can’t read the birthdays.', 'No consigo leer los cumpleaños.')}</p>`; return; }
+  const tg = stato.telegram || {};
+  const senzaNome = L('senza nome', 'no name', 'sin nombre');
+  const acceso = (si) => (si ? L('accesi', 'on', 'encendidas') : L('spenti', 'off', 'apagadas'));
   const lista = (d.lista || []).map((c) => `
-    <li><div class="testo-voce"><span class="domanda">${esc(c.nome || '—')}</span>
-      <span class="meta"> — ${fmtGiornoMese(c.giorno, c.mese)}${c.daChat ? ' · dalla chat' : (c.manuale ? ' · aggiunto a mano' : '')}</span></div>
-      <button class="btn pericolo mini" data-comple-rimuovi="${esc(c.id)}">Rimuovi</button></li>`).join('');
+    <li><div class="testo-voce"><span class="domanda">${esc(c.nome || senzaNome)}</span>
+      <span class="meta"> · ${fmtGiornoMese(c.giorno, c.mese)}${c.daChat ? ' · ' + L('dalla chat', 'from chat', 'desde el chat') : (c.manuale ? ' · ' + L('aggiunto a mano', 'added by hand', 'añadido a mano') : '')}</span></div>
+      <button class="btn pericolo mini" data-comple-rimuovi="${esc(c.id)}">${L('Rimuovi', 'Remove', 'Quitar')}</button></li>`).join('');
   const roster = (d.membri || []).map((m) => `
     <div class="riga-flessibile membro-riga" data-membro-id="${esc(m.id)}" data-membro-nome="${esc(m.nome || '')}" style="margin-bottom:.4rem">
-      <span class="campo-largo">${esc(m.nome || '—')}${m.username ? ` <span class="meta">@${esc(m.username)}</span>` : ''}</span>
-      <input type="number" class="mem-gg" min="1" max="31" aria-label="Giorno di nascita di ${esc(m.nome || '—')}" placeholder="GG" style="width:72px">
-      <input type="number" class="mem-mm" min="1" max="12" aria-label="Mese di nascita di ${esc(m.nome || '—')}" placeholder="MM" style="width:72px">
-      <button class="btn secondario mini" data-membro-add>Aggiungi</button>
+      <span class="campo-largo">${esc(m.nome || senzaNome)}${m.username ? ` <span class="meta">@${esc(m.username)}</span>` : ''}</span>
+      <input type="number" class="mem-gg" min="1" max="31" aria-label="${esc(L('Giorno di nascita di ', 'Birth day of ', 'Día de nacimiento de ') + (m.nome || senzaNome))}" placeholder="${esc(L('GG', 'DD', 'DD'))}" style="width:72px">
+      <input type="number" class="mem-mm" min="1" max="12" aria-label="${esc(L('Mese di nascita di ', 'Birth month of ', 'Mes de nacimiento de ') + (m.nome || senzaNome))}" placeholder="${esc(L('MM', 'MM', 'MM'))}" style="width:72px">
+      <button class="btn secondario mini" data-membro-add>${L('Aggiungi', 'Add', 'Añadir')}</button>
     </div>`).join('');
   const ch = d.chat || {};
-  const effetti = ['<option value="">— nessun effetto —</option>']
+  const effetti = [`<option value="">${L('nessun effetto', 'no effect', 'ningún efecto')}</option>`]
     .concat((d.effetti || []).map((e) => `<option value="${esc(e)}"${ch.effetto === e ? ' selected' : ''}>!${esc(e)}</option>`)).join('');
+  const gruppo = !tg.configurato
+    ? `<p class="suggerimento">${L('Gli auguri nel gruppo Telegram partono quando colleghi il tuo bot: incolla il suo token nella carta qui sopra. Gli auguri in chat non ne hanno bisogno.', 'Birthday wishes in the Telegram group start once you connect your bot: paste its token in the card above. Chat wishes do not need it.', 'Las felicitaciones en el grupo de Telegram empiezan cuando conectas tu bot: pega su token en la tarjeta de arriba. Las del chat no lo necesitan.')}</p>`
+    : `<div class="riga-interruttore">
+      <label class="interruttore"><input type="checkbox" id="chk-compleanni-attivo" ${d.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+      <span class="etichetta-stato">${L('Auguri nel gruppo Telegram', 'Wishes in the Telegram group', 'Felicitaciones en el grupo de Telegram')} ${acceso(d.attivo)}</span>
+    </div>
+    ${tg.gruppoOk ? '' : `<p class="suggerimento">${L('Serve anche il gruppo: aggiungi il bot, scrivi <code>/collega</code> nel gruppo e premi «Rileva gruppo».', 'The group is needed too: add the bot, type <code>/collega</code> in the group and press «Detect group».', 'También hace falta el grupo: añade el bot, escribe <code>/collega</code> en el grupo y pulsa «Detectar grupo».')}</p>`}
+    <label class="campo spazio-sopra" for="txt-compleanni-msg">${L('Messaggio di auguri', 'Birthday message', 'Mensaje de felicitación')}</label>
+    <textarea id="txt-compleanni-msg" rows="3" placeholder="${esc(L('Tanti auguri {menzione}!', 'Happy birthday {menzione}!', '¡Feliz cumpleaños {menzione}!'))}">${esc(d.messaggio || '')}</textarea>
+    <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{menzione}</code> (${L('tag del festeggiato', 'tags the birthday person', 'etiqueta al cumpleañero')}) <code>{nome}</code>. ${L('Vuoto = messaggio standard.', 'Empty = the default message.', 'Vacío = mensaje estándar.')}</p>
+    <p><button class="btn" id="btn-compleanni-salva">${L('Salva impostazioni', 'Save settings', 'Guardar ajustes')}</button></p>`;
+  const soloTelegram = !tg.configurato ? '' : `
+    <hr class="separatore">
+    <h3>${L('Membri del gruppo', 'Group members', 'Miembros del grupo')} (${(d.membri || []).length})</h3>
+    <p class="suggerimento">${L('L’elenco si riempie da chi <strong>scrive</strong> nel gruppo (Telegram non lascia leggere l’intera lista).', 'The list fills up from whoever <strong>writes</strong> in the group (Telegram does not let anyone read the whole list).', 'La lista se llena con quien <strong>escribe</strong> en el grupo (Telegram no deja leer la lista entera).')}
+    <button class="btn secondario mini" id="btn-membri-aggiorna">${L('Carica amministratori', 'Load admins', 'Cargar administradores')}</button>
+    ${L('Per vedere tutti quelli che scrivono, disattiva la <em>privacy</em> del bot su', 'To see everyone who writes, turn off the bot’s <em>privacy</em> on', 'Para ver a todos los que escriben, desactiva la <em>privacidad</em> del bot en')}
+    <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> (<code>/setprivacy → Disable</code>).</p>
+    ${roster || `<p class="vuoto">${L('Ancora nessun membro. Falli scrivere nel gruppo o carica gli amministratori.', 'No members yet. Have them write in the group or load the admins.', 'Aún no hay miembros. Haz que escriban en el grupo o carga los administradores.')}</p>`}
+
+    <hr class="separatore">
+    <label class="campo">${L('Aggiungi un compleanno a mano (senza tag)', 'Add a birthday by hand (no tag)', 'Añade un cumpleaños a mano (sin etiqueta)')}</label>
+    <div class="riga-flessibile">
+      <input aria-label="${esc(L('Nome', 'Name', 'Nombre'))}" type="text" id="inp-comple-nome" class="campo-largo" placeholder="${esc(L('Nome', 'Name', 'Nombre'))}">
+      <input aria-label="${esc(L('Giorno', 'Day', 'Día'))}" type="number" id="inp-comple-giorno" min="1" max="31" placeholder="${esc(L('GG', 'DD', 'DD'))}" style="width:80px">
+      <input aria-label="${esc(L('Mese', 'Month', 'Mes'))}" type="number" id="inp-comple-mese" min="1" max="12" placeholder="${esc(L('MM', 'MM', 'MM'))}" style="width:80px">
+      <button class="btn secondario" id="btn-comple-aggiungi">${L('Aggiungi', 'Add', 'Añadir')}</button>
+    </div>`;
   box.innerHTML = `
     <div class="riga-interruttore">
       <label class="interruttore"><input type="checkbox" id="chk-comple-chat" ${ch.attivo ? 'checked' : ''}><span class="levetta"></span></label>
-      <span class="etichetta-stato">Auguri in chat ${ch.attivo ? 'accesi' : 'spenti'}</span>
+      <span class="etichetta-stato">${L('Auguri in chat', 'Chat wishes', 'Felicitaciones en el chat')} ${acceso(ch.attivo)}</span>
     </div>
-    <p class="suggerimento">In chat non c'è la mezzanotte: gli auguri partono al <strong>primo messaggio</strong> di chi compie gli anni, una volta l'anno. Con questo acceso, chi guarda può segnarsi da solo scrivendo <code>!compleanno 25/12</code>.</p>
-    <label class="campo spazio-sopra" for="txt-comple-chat">Messaggio in chat</label>
-    <textarea id="txt-comple-chat" rows="2" placeholder="Tanti auguri {nome}!">${esc(ch.messaggio || '')}</textarea>
-    <p class="suggerimento">Segnaposto: <code>{nome}</code>. Vuoto = messaggio standard.</p>
-    <label class="campo spazio-sopra" for="sel-comple-effetto">Effetto in sovraimpressione</label>
-    <select id="sel-comple-effetto" aria-label="Effetto in sovraimpressione">${effetti}</select>
-    <p><button class="btn" id="btn-comple-chat-salva">Salva auguri in chat</button></p>
+    <p class="suggerimento">${L('In chat non c’è la mezzanotte: gli auguri partono al <strong>primo messaggio</strong> di chi compie gli anni, una volta l’anno. Con questo acceso, chi guarda può segnarsi da solo scrivendo <code>!compleanno 25/12</code>.', 'Chat has no midnight: the wishes go out at the <strong>first message</strong> of whoever has a birthday, once a year. With this on, viewers can sign up on their own by typing <code>!compleanno 25/12</code>.', 'En el chat no hay medianoche: las felicitaciones salen con el <strong>primer mensaje</strong> de quien cumple años, una vez al año. Con esto encendido, quien mira puede apuntarse solo escribiendo <code>!compleanno 25/12</code>.')}</p>
+    <label class="campo spazio-sopra" for="txt-comple-chat">${L('Messaggio in chat', 'Chat message', 'Mensaje en el chat')}</label>
+    <textarea id="txt-comple-chat" rows="2" placeholder="${esc(L('Tanti auguri {nome}!', 'Happy birthday {nome}!', '¡Feliz cumpleaños {nome}!'))}">${esc(ch.messaggio || '')}</textarea>
+    <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code>. ${L('Vuoto = messaggio standard.', 'Empty = the default message.', 'Vacío = mensaje estándar.')}</p>
+    <label class="campo spazio-sopra" for="sel-comple-effetto">${L('Effetto in sovraimpressione', 'On-screen effect', 'Efecto en pantalla')}</label>
+    <select id="sel-comple-effetto">${effetti}</select>
+    <p><button class="btn" id="btn-comple-chat-salva">${L('Salva auguri in chat', 'Save chat wishes', 'Guardar felicitaciones en el chat')}</button></p>
 
     <hr class="separatore">
-    <div class="riga-interruttore">
-      <label class="interruttore"><input type="checkbox" id="chk-compleanni-attivo" ${d.attivo ? 'checked' : ''}><span class="levetta"></span></label>
-      <span class="etichetta-stato">Auguri nel gruppo Telegram ${d.attivo ? 'accesi' : 'spenti'}</span>
-    </div>
-    <label class="campo spazio-sopra" for="txt-compleanni-msg">Messaggio di auguri</label>
-    <textarea id="txt-compleanni-msg" rows="3" placeholder="Tanti auguri {menzione}!">${esc(d.messaggio || '')}</textarea>
-    <p class="suggerimento">Segnaposto: <code>{menzione}</code> (tag del festeggiato) <code>{nome}</code>. Vuoto = messaggio standard.</p>
-    <p><button class="btn" id="btn-compleanni-salva">Salva impostazioni</button></p>
+    ${gruppo}
 
     <hr class="separatore">
-    <h3>Compleanni registrati (${(d.lista || []).length})</h3>
-    <ul class="lista-voci">${lista || '<li class="vuoto">Nessuno ancora.</li>'}</ul>
-
-    <hr class="separatore">
-    <h3>Membri del gruppo (${(d.membri || []).length})</h3>
-    <p class="suggerimento">L'elenco si riempie da chi <strong>scrive</strong> nel gruppo (Telegram non lascia leggere l'intera lista).
-    <button class="btn secondario mini" id="btn-membri-aggiorna">Carica amministratori</button>
-    Per vedere tutti quelli che scrivono, disattiva la <em>privacy</em> del bot su
-    <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> (<code>/setprivacy → Disable</code>).</p>
-    ${roster || '<p class="vuoto">Ancora nessun membro. Falli scrivere nel gruppo o carica gli amministratori.</p>'}
-
-    <hr class="separatore">
-    <label class="campo">Aggiungi un compleanno a mano (senza tag)</label>
-    <div class="riga-flessibile">
-      <input aria-label="Nome" type="text" id="inp-comple-nome" class="campo-largo" placeholder="Nome">
-      <input aria-label="GG" type="number" id="inp-comple-giorno" min="1" max="31" placeholder="GG" style="width:80px">
-      <input aria-label="MM" type="number" id="inp-comple-mese" min="1" max="12" placeholder="MM" style="width:80px">
-      <button class="btn secondario" id="btn-comple-aggiungi">Aggiungi</button>
-    </div>`;
+    <h3>${L('Compleanni registrati', 'Saved birthdays', 'Cumpleaños guardados')} (${(d.lista || []).length})</h3>
+    <ul class="lista-voci">${lista || `<li class="vuoto">${L('Nessuno ancora.', 'None yet.', 'Ninguno todavía.')}</li>`}</ul>
+    ${soloTelegram}`;
 }
 
 async function caricaConoscenza() {

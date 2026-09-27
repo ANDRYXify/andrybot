@@ -32,7 +32,7 @@ export default {
     { h2: 'Telegram', scheda: 'telegram', p: [
       'Il tuo bot Telegram dentro i tuoi gruppi e canali: avvisa quando vai in diretta, risponde ai comandi, controlla chi entra, fa gli auguri e ti scrive in privato.',
       'La scheda fa parte del piano Base. Senza, ti mostra cosa fa, il tasto «Guarda la demo» e come sbloccarla.',
-      'Finché non incolli il token del bot vedi solo la carta dell\'avviso, più quella della Mini App se c\'è. Le altre compaiono appena il bot è collegato.',
+      'Finché non incolli il token del bot vedi la carta dell\'avviso, quella degli auguri di compleanno e, se c\'è, quella della Mini App. Le altre compaiono appena il bot è collegato.',
     ] },
 
     { h3: 'Accedi e gestisci da Telegram' },
@@ -163,6 +163,7 @@ export default {
     { h3: 'Auguri di compleanno' },
     { p: [
       'La carta ha due parti separate, perché i posti e i momenti sono diversi: gli auguri nella chat della diretta e quelli nel gruppo Telegram.',
+      'Gli auguri in chat non hanno bisogno di Telegram, e la carta c\'è anche senza il bot. Finché il bot non è collegato, al posto della parte del gruppo leggi che per gli auguri nel gruppo va collegato; «Membri del gruppo» e «Aggiungi un compleanno a mano» compaiono col bot, perché servono solo al gruppo.',
       'Nel gruppo gli auguri partono nella prima ora del giorno, ora italiana. In chat la mezzanotte non esiste: partono al primo messaggio che il festeggiato scrive quel giorno, una volta l\'anno. Chi quel giorno non passa in chat non riceve auguri in chat. Con tutte e due le parti accese, gli auguri del gruppo non tolgono quelli in chat: ogni posto fa i suoi.',
     ] },
     { tabella: [

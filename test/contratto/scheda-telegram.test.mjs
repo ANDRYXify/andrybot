@@ -44,3 +44,35 @@ test('chi rimanda a Telegram porta alla scheda Telegram', () => {
   assert.match(corpoDi('caricaTgLogin'), /replaceState\(null, '', location\.pathname \+ '#telegram'\)/);
   assert.match(SRV, /res\.redirect\('\/\?tgapp=collegato#telegram'\)/);
 });
+
+// I COMPLEANNI SI VEDONO ANCHE SENZA TELEGRAM, E PARLANO LA LINGUA DI CHI GUARDA.
+//
+// Gli auguri in chat non hanno bisogno di Telegram, ma la carta stava dentro la
+// parte che compare solo col bot collegato: chi non l'aveva non poteva
+// accenderli. E la carta, come il riquadro del codice della chat privata, era
+// scritta solo in italiano.
+const senzaL = (s) => s.replace(/L\((?:'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)\s*,\s*(?:'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)\s*,\s*(?:'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)\)/g, 'L()');
+
+test('la carta dei compleanni c\'e\' anche senza il bot Telegram, e la parte del gruppo dice di collegarlo', () => {
+  const tg = corpoDi('pannelloTelegram');
+  const carta = tg.indexOf('id="box-compleanni"');
+  assert.ok(carta > 0);
+  // l'ultima parte condizionata al bot collegato si chiude prima della carta
+  const prima = tg.slice(0, carta);
+  const aperte = (prima.match(/\$\{tg\.configurato \? `/g) || []).length;
+  const chiuse = (prima.match(/` : ''\}/g) || []).length;
+  assert.ok(chiuse >= aperte, 'la carta non sta dentro «tg.configurato»');
+  const c = corpoDi('caricaCompleanni');
+  assert.match(c, /const gruppo = !tg\.configurato\n\s*\? `<p class="suggerimento">\$\{L\('Gli auguri nel gruppo Telegram partono quando colleghi il tuo bot/);
+  assert.match(c, /const soloTelegram = !tg\.configurato \? '' :/, 'membri e compleanni a mano sono del gruppo');
+});
+
+test('i compleanni e il codice della chat privata sono scritti in tre lingue', () => {
+  const c = senzaL(corpoDi('caricaCompleanni'));
+  for (const it of ['Impossibile caricare', 'Auguri in chat', 'Auguri nel gruppo', 'Messaggio', 'Segnaposto', 'Effetto', 'Salva', 'Rimuovi', 'Compleanni registrati', 'Nessuno ancora', 'Membri del gruppo', 'Carica amministratori', 'Aggiungi', 'Giorno di nascita', 'dalla chat', 'aggiunto a mano', 'nessun effetto', '—']) {
+    assert.ok(!c.includes(it), `«${it}» fuori da L()`);
+  }
+  const i = APP.indexOf("const r = await api('/api/streamer/telegram/collega'");
+  const codice = senzaL(APP.slice(i, APP.indexOf('});', i)));
+  for (const it of ['Scrivi al tuo bot', 'in privato', 'Scade tra']) assert.ok(!codice.includes(it), `«${it}» fuori da L()`);
+});
