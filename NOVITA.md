@@ -37,6 +37,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - In «Le tue piattaforme» un canale Kick, YouTube o Discord non vede più Twitch «da sistemare»: la riga dice che Twitch è un canale a sé, e come entrarci. [vai: account]
 - Se dai i permessi entrando su Twitch con un altro account, il pannello te lo dice al ritorno e ti propone di riprovare, invece di tornare in silenzio. [vai: stato]
 - Un moderatore non vede più i tasti per pagare, aggiungere un extra o aprire il portale dei pagamenti: sono del proprietario, e prima «Attiva» faceva pagare il canale del moderatore. [vai: sottoscrizione]
+- Chi ha già il Base e nessun extra, nella scheda Abbonamento, vede solo quanto costano gli extra che aggiunge: prima il totale contava di nuovo il canone Base. [vai: sottoscrizione]
 
 ## 2026-09-26
 

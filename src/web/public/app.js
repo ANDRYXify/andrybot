@@ -2318,7 +2318,7 @@ const tP = (o, campo) => {
 };
 const _spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 
-function configuratoreHtml(d, { scelti = [], gia = [], titolo = null } = {}) {
+function configuratoreHtml(d, { scelti = [], gia = [], haBase = false, titolo = null } = {}) {
   if (!d || !Array.isArray(d.addon)) return '';
   const posseduti = new Set(gia);
   const disponibili = d.addon.filter((a) => !posseduti.has(a.id));
@@ -2338,12 +2338,12 @@ function configuratoreHtml(d, { scelti = [], gia = [], titolo = null } = {}) {
     </label>`).join('');
   return `<div class="vt-comp" data-comp>
     <h3 class="vt-comp-tit">${titolo || L('Componi il tuo', 'Build yours', 'Compón el tuyo')}</h3>
-    <p class="vt-testo">${posseduti.size
+    <p class="vt-testo">${haBase
       ? L('Spunta cosa aggiungere: il totale è quello che pagherai in più al mese.', 'Tick what to add: the total is what you’ll pay extra each month.', 'Marca qué añadir: el total es lo que pagarás de más al mes.')
       : L('Spunta cosa ti serve. Il canone Base è compreso nel totale, e puoi cambiare idea quando vuoi.', 'Tick what you need. The Base fee is included in the total, and you can change your mind anytime.', 'Marca lo que necesitas. La cuota Base está incluida en el total, y puedes cambiar de idea cuando quieras.')}</p>
     <div class="vt-comp-griglia">${righe}</div>
     <div class="vt-conto">
-      <span class="vt-conto-tot"><b data-tot>${esc(_eur(posseduti.size ? 0 : d.base.prezzo))}</b><span>${L('/mese', '/month', '/mes')}</span></span>
+      <span class="vt-conto-tot"><b data-tot>${esc(_eur(haBase ? 0 : d.base.prezzo))}</b><span>${L('/mese', '/month', '/mes')}</span></span>
       <span class="vt-conto-nota" data-nota></span>
       <button type="button" class="vt-btn vt-btn-primo" data-vai>${L('Attiva', 'Activate', 'Activar')}</button>
       <span class="vt-risparmio" data-risp hidden></span>
@@ -2351,11 +2351,11 @@ function configuratoreHtml(d, { scelti = [], gia = [], titolo = null } = {}) {
   </div>`;
 }
 
-function montaConfiguratore(root, d, { gia = [], suOk = null } = {}) {
+function montaConfiguratore(root, d, { gia = [], haBase = false, suOk = null } = {}) {
   const box = root && root.querySelector('[data-comp]');
   if (!box || !d) return;
   const posseduti = new Set(gia);
-  const base = posseduti.size ? 0 : Number(d.base?.prezzo || 0);
+  const base = haBase ? 0 : Number(d.base?.prezzo || 0);
   const prezzoDi = (id) => Number((d.addon.find((a) => a.id === id) || {}).prezzo || 0);
   const tot = box.querySelector('[data-tot]');
   const nota = box.querySelector('[data-nota]');
@@ -2385,8 +2385,8 @@ function montaConfiguratore(root, d, { gia = [], suOk = null } = {}) {
     const n = ids.length;
     const parola = L('extra', n === 1 ? 'extra' : 'extras', n === 1 ? 'extra' : 'extras');
     nota.textContent = n
-      ? (posseduti.size ? `${n} ${parola}` : `Base + ${n} ${parola}`)
-      : (posseduti.size ? L('niente di scelto', 'nothing picked', 'nada elegido') : L('solo il canone Base', 'Base fee only', 'solo la cuota Base'));
+      ? (haBase ? `${n} ${parola}` : `Base + ${n} ${parola}`)
+      : (haBase ? L('niente di scelto', 'nothing picked', 'nada elegido') : L('solo il canone Base', 'Base fee only', 'solo la cuota Base'));
     if (b) {
       risp.hidden = false;
       risp.innerHTML = `${_bIco('<path d="M20 6 9 17l-5-5"/>')} ${esc(L(
@@ -2394,7 +2394,7 @@ function montaConfiguratore(root, d, { gia = [], suOk = null } = {}) {
         `With the «${b.nome}» pack you pay ${_eur(b.prezzo)} instead of ${_eur(b.somma)}: applied.`,
         `Con el paquete «${b.nome}» pagas ${_eur(b.prezzo)} en vez de ${_eur(b.somma)}: aplicado.`))}`;
     } else risp.hidden = true;
-    vai.disabled = posseduti.size > 0 && !ids.length;
+    vai.disabled = haBase && !ids.length;
     box.dataset.bundle = b ? b.id : '';
   };
 
@@ -19454,13 +19454,14 @@ async function caricaSottoscrizione() {
 
   const proprietario = stato.ruolo !== 'moderatore';
   const vende = proprietario && !!stato.stripeAttivo && !!piani && tier !== 'community' && !guasto && !pausa;
-  const titoloComp = mieiPacchetti.size || (abAttivo && !prova)
+  const haBase = !!ab?.conBase;
+  const titoloComp = haBase
     ? L('Gli extra che ti mancano', 'The extras you are missing', 'Los extras que te faltan')
     : prova ? L('Per continuare dopo la prova', 'To carry on after the trial', 'Para seguir después de la prueba')
     : L('Il Base, più quello che vuoi', 'Base, plus whatever you want', 'Base, más lo que quieras');
   const aggiungi = vende
     ? `<h3 class="spazio-sopra">${L('Puoi aggiungere', 'You can add', 'Puedes añadir')}</h3>
-       ${configuratoreHtml(piani, { gia: [...mieiPacchetti], titolo: titoloComp })}`
+       ${configuratoreHtml(piani, { gia: [...mieiPacchetti], haBase, titolo: titoloComp })}`
     : (proprietario && altri.length && tier !== 'community' ? `<h3 class="spazio-sopra">${L('Puoi aggiungere', 'You can add', 'Puedes añadir')}</h3>
       <div class="sott-pacchetti">${altri.map((a) => cardAddon(a, false)).join('')}</div>
       <p class="suggerimento">${guasto || pausa
@@ -19500,7 +19501,7 @@ async function caricaSottoscrizione() {
     <h3 class="spazio-sopra">${L('Gestione e disdetta', 'Management and cancellation', 'Gestión y cancelación')}</h3>
     ${gestione}`;
 
-  if (vende) montaConfiguratore(box, piani, { gia: [...mieiPacchetti], suOk: ({ pacchetti, bundle }) => conErrore(async () => {
+  if (vende) montaConfiguratore(box, piani, { gia: [...mieiPacchetti], haBase, suOk: ({ pacchetti, bundle }) => conErrore(async () => {
     const r = await api('/api/abbonamento/checkout', { method: 'POST', body: { pacchetti, bundle } });
     if (r?.url) location.href = r.url;
     else if (r?.ok) await dopoAcquisto(r);

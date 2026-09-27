@@ -3246,7 +3246,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       nAddon: abbonamenti.ADDON_IDS.length,
       abbonamento: (() => {
         const s = subscriptions.get(user.login);
-        return s ? { tier: s.tier, pacchetti: abbonamenti.normalizzaPacchetti(s.pacchetti), status: s.status, fine: s.current_period_end, attivo: subscriptions.attivo(user.login), cliente: !!s.stripe_customer } : null;
+        return s ? { tier: s.tier, pacchetti: abbonamenti.normalizzaPacchetti(s.pacchetti), status: s.status, fine: s.current_period_end, attivo: subscriptions.attivo(user.login), cliente: !!s.stripe_customer,
+          conBase: conBaseSuStripe(user.login) } : null;
       })(),
       stripeAttivo: config.stripe.attivo,
       // i rapporti delle dirette non ancora aperti, per il segno sulla scheda
@@ -3588,6 +3589,15 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     return '';
   }
 
+  // HA GIA' IL BASE: una sottoscrizione viva su Stripe, col canone dentro. Un
+  // extra allora entra li' e il Base non si ripaga. La stessa domanda la fanno
+  // l'acquisto qui sotto e il pannello (per il totale che mostra): una risposta
+  // sola, o il totale mostrato e quello addebitato direbbero due cose diverse.
+  function conBaseSuStripe(login) {
+    const s = subscriptions.get(login);
+    return !!(s?.stripe_sub && s?.stripe_customer) && subscriptions.attivo(login);
+  }
+
   // UN ACQUISTO, da qualunque porta arrivi (pannello, vetrina dopo il login).
   // Chi ha gia' una sottoscrizione viva riceve gli extra DENTRO quella, non un
   // secondo Checkout con il Base di nuovo (lo pagherebbe due volte); chi non
@@ -3599,7 +3609,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     if (stripe && ['past_due', 'unpaid', 'incomplete'].includes(s.status)) {
       return { errore: 'C\'è un pagamento non riuscito: sistemalo dal portale, poi aggiungi quello che vuoi.', codice: 409 };
     }
-    if (stripe && subscriptions.attivo(login)) {
+    if (conBaseSuStripe(login)) {
       const r = await abbonamenti.aggiungiAlAbbonamento({ subId: s.stripe_sub, login, pacchetti, bundle, gia: s.pacchetti });
       if (!r) return { errore: 'In questo momento non riesco a parlare con Stripe: riprova fra poco.', codice: 503 };
       if (r.aggiunti.length) {

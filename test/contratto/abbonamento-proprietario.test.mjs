@@ -40,3 +40,23 @@ test('al moderatore il pannello non mostra i tasti per pagare', () => {
   assert.match(funzione('muroPacchetto'), /const compra = !!stato\?\.stripeAttivo && !!addon && stato\?\.ruolo !== 'moderatore';/);
   assert.match(funzione('paginaBloccata'), /const puoComprare = !!stato\?\.stripeAttivo && !!addon && proprietario;/);
 });
+
+// «HA GIA' IL BASE» non e' «ha degli extra». Chi aveva solo il Base vedeva il
+// canone di nuovo nel totale e «Base + 1 extra», mentre l'acquisto lo metteva
+// dentro l'abbonamento che aveva senza ripagare il Base. Ora la domanda e' una
+// sola, e la fa il server per tutti e due.
+test('il configuratore sa se il Base c\'e\' gia\', con la regola dell\'acquisto', () => {
+  const regola = SRV.slice(SRV.indexOf('  function conBaseSuStripe(login) {'), SRV.indexOf('  // UN ACQUISTO, da qualunque porta'));
+  assert.match(regola, /return !!\(s\?\.stripe_sub && s\?\.stripe_customer\) && subscriptions\.attivo\(login\);/);
+  assert.match(rotta('  async function avviaAcquisto('), /if \(conBaseSuStripe\(login\)\) \{/, 'l\'acquisto usa la stessa domanda');
+  assert.match(SRV, /conBase: conBaseSuStripe\(user\.login\) \}/, 'e il pannello la riceve');
+  const s = funzione('caricaSottoscrizione');
+  assert.match(s, /const haBase = !!ab\?\.conBase;/);
+  assert.ok(s.includes('configuratoreHtml(piani, { gia: [...mieiPacchetti], haBase,') && s.includes('montaConfiguratore(box, piani, { gia: [...mieiPacchetti], haBase,'));
+  const html = funzione('configuratoreHtml');
+  const monta = funzione('montaConfiguratore');
+  assert.ok(html.includes('${haBase\n      ? L(\'Spunta cosa aggiungere') && html.includes('_eur(haBase ? 0 : d.base.prezzo)'), 'testo e totale iniziale');
+  assert.ok(monta.includes('const base = haBase ? 0 :') && monta.includes('vai.disabled = haBase && !ids.length;'), 'totale e tasto');
+  assert.ok(!/posseduti\.size \? 0|posseduti\.size \?|posseduti\.size > 0 &&/.test(html + monta.replace('if (!ids.length || posseduti.size) return null;', '')),
+    'avere degli extra non e\' piu\' il segnale del Base (resta solo per lo sconto dei pacchetti)');
+});
