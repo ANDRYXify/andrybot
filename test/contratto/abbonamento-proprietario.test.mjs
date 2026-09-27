@@ -60,3 +60,12 @@ test('il configuratore sa se il Base c\'e\' gia\', con la regola dell\'acquisto'
   assert.ok(!/posseduti\.size \? 0|posseduti\.size \?|posseduti\.size > 0 &&/.test(html + monta.replace('if (!ids.length || posseduti.size) return null;', '')),
     'avere degli extra non e\' piu\' il segnale del Base (resta solo per lo sconto dei pacchetti)');
 });
+
+// «COSA HAI ACCESO» elenca le funzioni del piano con le etichette di tutto il
+// pannello: scritte a parte, Telegram e Studio Web erano rimaste fuori.
+test('«Cosa hai acceso» elenca ogni funzione del piano', () => {
+  const s = funzione('caricaSottoscrizione');
+  assert.match(s, /const VOCI = Object\.entries\(ETICHETTE_FUNZ\(\)\)\.filter\(\(\[k\]\) => k !== 'moderatori'\);/, 'i moderatori hanno la loro riga col numero');
+  const E = APP.slice(APP.indexOf('const ETICHETTE_FUNZ = () => ({'), APP.indexOf('});', APP.indexOf('const ETICHETTE_FUNZ = () => ({')));
+  for (const k of ['telegram', 'studio', 'notifiche', 'clipAuto', 'voce']) assert.match(E, new RegExp(`\\n  ${k}: L\\(`), k);
+});

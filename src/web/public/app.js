@@ -19426,17 +19426,7 @@ async function caricaSottoscrizione() {
   }
 
   const accRiga = _rigaAccessoHtml();
-  const VOCI = [
-    ['moduli', L('Comandi e automazioni', 'Commands and automations', 'Comandos y automatizaciones')],
-    ['overlay', L('Overlay per la diretta', 'stream overlay', 'Overlay para el directo')],
-
-    ['effetti', L('Effetti e punti canale', 'Effects and channel points', 'Efectos y puntos de canal')],
-    ['giochi', L('Giochi e classifiche', 'Games and leaderboards', 'Juegos y clasificaciones')],
-    ['musica', L('Richieste musicali', 'Music requests', 'Peticiones musicales')],
-    ['clipAuto', L('Clip automatiche', 'Automatic clips', 'Clips automáticos')],
-    ['voce', L('Comandi a voce', 'Voice commands', 'Comandos por voz')],
-    ['notifiche', L('Avvisi live e nuovi post', 'Live and new-post alerts', 'Avisos de directo y nuevos posts')],
-  ];
+  const VOCI = Object.entries(ETICHETTE_FUNZ()).filter(([k]) => k !== 'moderatori');
   const acceso = (k) => { const v = f[k]; return v === true || v === -1 || v === Infinity || (typeof v === 'number' && v > 0); };
   const elenco = VOCI.map(([k, et]) => `<li class="sott-voce ${acceso(k) ? 'on' : 'off'}">
       <span class="sott-segno">${acceso(k) ? '✓' : '·'}</span>${esc(et)}</li>`).join('');
