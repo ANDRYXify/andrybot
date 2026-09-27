@@ -1140,7 +1140,9 @@ export class BotManager {
     // 2) avvia gli ascolti mancanti, rispettando il CAP globale
     for (const s of vogliono) {
       const login = s.login;
-      if (this.listeners.has(login)) continue;
+      const sensibilita = Number(s.settings?.ascoltoSensibilita) || 5;
+      // gia' in ascolto: la sensibilita' salvata dopo la partenza vale da ora
+      if (this.listeners.has(login)) { this.listeners.get(login).impostaSensibilita(sensibilita); continue; }
 
       // tetto raggiunto: non avviarne altri (log una sola volta)
       if (this.listeners.size >= cap) {
@@ -1157,7 +1159,6 @@ export class BotManager {
       catch (e) { log.debug(`ascolto: getStream #${login} fallito:`, e?.message || e); continue; }
       if (!live) continue;
 
-      const sensibilita = Number(s.settings?.ascoltoSensibilita) || 5;
       const listener = new LiveListener({
         login,
         sensibilita,

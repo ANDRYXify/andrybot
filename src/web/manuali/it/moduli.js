@@ -482,7 +482,7 @@ export default {
     { tabella: [
       ['Controllo', 'Di base', 'Cosa fa'],
       ['interruttore «Ascolto acceso» / «Ascolto spento»', 'spento', 'si salva subito'],
-      ['«Sensibilità»', '5', 'da 1 a 10, vale dopo «Salva». Più alta prende anche i momenti meno intensi, più bassa solo i picchi veri.'],
+      ['«Sensibilità»', '5', 'da 1 a 10, vale dopo «Salva»: se il server ti sta già ascoltando, entro un minuto. Più alta prende anche i momenti meno intensi, più bassa solo i picchi veri.'],
     ] },
     { p: [
       'Accanto all\'interruttore leggi «in ascolto ora» quando il server ti sta ascoltando, «non in ascolto» quando no. Si aggiorna quando riapri il pannello.',
