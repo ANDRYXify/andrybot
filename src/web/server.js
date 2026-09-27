@@ -9106,7 +9106,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // Il webhook c'e ma punta altrove, e non abbiamo mai visto niente: dirlo
   // subito vale piu di mille «/collega» a vuoto.
   const erroreWebhookAltrove = (wh) => ({
-    errore: `il bot ha un webhook attivo verso un altro indirizzo (${String(wh?.url || '').slice(0, 60)}…), quindi i suoi messaggi non arrivano qui. Spegni e riaccendi «il bot risponde nel gruppo», poi riprova.`,
+    errore: `il bot ha un webhook attivo verso un altro indirizzo (${String(wh?.url || '').slice(0, 60)}…), quindi i suoi messaggi non arrivano qui. Spegni e riaccendi «Bot interattivo nel gruppo», poi riprova.`,
   });
 
   // rileva il gruppo da cio che il bot ha visto (dev'essere gia nel gruppo)
