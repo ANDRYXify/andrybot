@@ -44,6 +44,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nell'azione «Aspetta» il campo arriva a 30 secondi, quanto il bot aspetta davvero, e il testo sull'overlay resta a schermo al massimo 30 secondi, come dice il suo campo. [vai: moduli]
 - La carta «Comando vocale» dice che l'ascolto funziona anche fuori da Chrome ed Edge, col motore locale che la prima volta scarica un modello. [vai: ascolto]
 - Nell'editor dei moduli inneschi, eventi, azioni e il riassunto di ogni modulo si leggono in inglese e in spagnolo, come il resto del pannello. [vai: moduli]
+- Anche i campi dell'editor dei moduli, i tasti Prova, Modifica ed Elimina e i Connettori avanzati si leggono in inglese e in spagnolo. [vai: moduli]
 
 ## 2026-09-26
 

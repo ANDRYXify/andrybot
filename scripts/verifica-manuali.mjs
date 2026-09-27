@@ -57,7 +57,8 @@ function copre(dove, cosa, elenco) {
 // ---- le azioni: il pannello le offre, il manuale le spiega ----------------
 const AZIONI = [...app.matchAll(/\['([a-zA-Z]+)',\s*'((?:[^'\\]|\\.)+)'\],?\s*(?=\n)/g)];
 const bloccoAzioni = app.slice(app.indexOf('const AZIONI = ['), app.indexOf('const VARIABILI = ['));
-const etichette = [...bloccoAzioni.matchAll(/\[\s*'[a-zA-Z]+',\s*'((?:[^'\\]|\\.)+)'\s*\]/g)]
+// Ogni voce e' [id, italiano, inglese, spagnolo]: il manuale e' in italiano.
+const etichette = [...bloccoAzioni.matchAll(/\[\s*'[a-zA-Z]+',\s*'((?:[^'\\]|\\.)+)'(?:,\s*'(?:[^'\\]|\\.)*')*\s*\]/g)]
   .map((m) => m[1].replace(/\\'/g, "'"));
 const idAzioni = (srv.match(/const MOD_AZIONI = \[([^\]]*)\]/) || [])[1];
 const idElenco = idAzioni ? [...idAzioni.matchAll(/'([a-zA-Z]+)'/g)].map((m) => m[1]) : [];
@@ -69,7 +70,8 @@ copre('moduli', 'azioni spiegate', etichette);
 const trigger = [...(srv.match(/const MOD_TRIGGER = \[([^\]]*)\]/) || ['', ''])[1].matchAll(/'([a-z]+)'/g)].map((m) => m[1]);
 copre('moduli', 'inneschi', trigger);
 const bloccoEventi = app.slice(app.indexOf('const EVENTI = ['), app.indexOf('const EVENTI_TXT'));
-const eventi = [...bloccoEventi.matchAll(/\[\s*'[a-z]+',\s*'([^']+)'\s*\]/g)].map((m) => m[1]);
+const eventi = [...bloccoEventi.matchAll(/\[\s*'[a-z]+',\s*'((?:[^'\\]|\\.)+)'(?:,\s*'(?:[^'\\]|\\.)*')*\s*\]/g)].map((m) => m[1].replace(/\\'/g, "'"));
+dice(eventi.length > 5, `eventi offerti dal pannello: ${eventi.length}`);
 copre('moduli', 'eventi', eventi);
 
 // ---- le variabili offerte dal pannello ------------------------------------

@@ -26825,8 +26825,8 @@ function gestisciClicEditor(ev) {
     ev.preventDefault();
     document.getElementById('lista-frasi-trigger')?.insertAdjacentHTML('beforeend',
       '<div class="frase-trigger riga-flessibile" style="margin-bottom:.4rem">'
-      + '<input type="text" class="mod-testo-trigger campo-largo" placeholder="es. come stai?">'
-      + '<button type="button" class="btn pericolo mini" data-rimuovi-frase title="Rimuovi">×</button></div>');
+      + `<input type="text" class="mod-testo-trigger campo-largo" placeholder="${esc(L('es. come stai?', 'e.g. how are you?', 'p. ej. ¿cómo estás?'))}">`
+      + `<button type="button" class="btn pericolo mini" data-rimuovi-frase title="${esc(L('Rimuovi', 'Remove', 'Quitar'))}">×</button></div>`);
     aggiornaRiassunto();
     return;
   }
@@ -29126,7 +29126,7 @@ async function caricaModuli() {
   try {
     datiModuli = await api('/api/streamer/moduli');
   } catch (e) {
-    ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`;
+    ul.innerHTML = `<li class="vuoto">${L('Errore:', 'Error:', 'Error:')} ${esc(e.message)}</li>`;
     return;
   }
   disegnaListaModuli();
@@ -29147,7 +29147,7 @@ function disegnaListaModuli() {
   if (!ul) return;
   const moduli = datiModuli?.moduli || [];
   if (!moduli.length) {
-    ul.innerHTML = '<li class="vuoto">Nessun modulo ancora: parti da un modello qui sopra</li>';
+    ul.innerHTML = `<li class="vuoto">${L('Nessun modulo ancora: parti da un modello qui sopra', 'No modules yet: start from a template above', 'Todavía no hay módulos: empieza con una plantilla de arriba')}</li>`;
     return;
   }
   ul.innerHTML = moduli.map((m) => `
@@ -29157,13 +29157,13 @@ function disegnaListaModuli() {
         <span class="levetta"></span>
       </label>
       <div class="testo-voce">
-        <div class="nome-modulo">${esc(m.nome || 'Senza nome')}</div>
+        <div class="nome-modulo">${esc(m.nome || L('Senza nome', 'Unnamed', 'Sin nombre'))}</div>
         <div class="riassunto-lista">${esc(riassuntoModulo(m))}</div>
       </div>
       <div class="azioni-voce">
-        <button class="btn secondario mini" data-prova-modulo="${esc(m.id)}">Prova</button>
-        <button class="btn secondario mini" data-modifica-modulo="${esc(m.id)}">Modifica</button>
-        <button class="btn pericolo mini" data-elimina-modulo="${esc(m.id)}">Elimina</button>
+        <button class="btn secondario mini" data-prova-modulo="${esc(m.id)}">${L('Prova', 'Test', 'Prueba')}</button>
+        <button class="btn secondario mini" data-modifica-modulo="${esc(m.id)}">${L('Modifica', 'Edit', 'Editar')}</button>
+        <button class="btn pericolo mini" data-elimina-modulo="${esc(m.id)}">${L('Elimina', 'Delete', 'Eliminar')}</button>
       </div>
     </li>`).join('');
 
@@ -29229,17 +29229,18 @@ function apriEditor(modulo, dove = 'editor-modulo') {
   const seAperto = c.tier && c.tier !== 'tutti' || c.cooldown > 0 ||
     (typeof c.probabilita === 'number' && c.probabilita < 100) || c.soloLive || c.soloOffline;
 
+  const mon = esc(nomeMonetaUI());
   cont.innerHTML = `
     <div class="carta">
-      <h2>${_hIco(ICO.scrivi)}${m.id ? 'Modifica modulo' : 'Nuovo modulo'}</h2>
+      <h2>${_hIco(ICO.scrivi)}${m.id ? L('Modifica modulo', 'Edit module', 'Editar módulo') : L('Nuovo modulo', 'New module', 'Nuevo módulo')}</h2>
       <div class="riassunto-modulo">${esc(riassuntoModulo(m))}</div>
 
-      <label class="campo" for="mod-nome">Nome del modulo</label>
-      <input type="text" id="mod-nome" placeholder="es. Saluto di benvenuto" value="${esc(m.nome || '')}">
+      <label class="campo" for="mod-nome">${L('Nome del modulo', 'Module name', 'Nombre del módulo')}</label>
+      <input type="text" id="mod-nome" placeholder="${esc(L('es. Saluto di benvenuto', 'e.g. Welcome greeting', 'p. ej. Saludo de bienvenida'))}" value="${esc(m.nome || '')}">
 
       <div class="blocco-quando">
-        <div class="etichetta-blocco">Quando</div>
-        <label class="campo" for="mod-trigger-tipo">Cosa fa scattare il modulo</label>
+        <div class="etichetta-blocco">${L('Quando', 'When', 'Cuando')}</div>
+        <label class="campo" for="mod-trigger-tipo">${L('Cosa fa scattare il modulo', 'What triggers the module', 'Qué dispara el módulo')}</label>
         <select id="mod-trigger-tipo" data-trigger-tipo>
           ${TRIGGER.map(([v, it, en, es]) => `<option value="${v}" ${m.trigger?.tipo === v ? 'selected' : ''}>${esc(L(it, en, es))}</option>`).join('')}
         </select>
@@ -29247,67 +29248,67 @@ function apriEditor(modulo, dove = 'editor-modulo') {
       </div>
 
       <details class="blocco-se" ${seAperto ? 'open' : ''}>
-        <summary class="etichetta-blocco">Se (facoltativo) — aggiungi condizioni</summary>
+        <summary class="etichetta-blocco">${L('Se (facoltativo): aggiungi condizioni', 'If (optional): add conditions', 'Si (opcional): añade condiciones')}</summary>
         <div class="griglia-campi spazio-sopra">
           <div>
-            <label class="campo" for="mod-chipuo">Chi può attivarlo</label>
+            <label class="campo" for="mod-chipuo">${L('Chi può attivarlo', 'Who can trigger it', 'Quién puede activarlo')}</label>
             <select id="mod-chipuo">
-              <option value="tutti" ${c.tier === 'tutti' ? 'selected' : ''}>Tutti</option>
-              <option value="sub" ${c.tier === 'sub' ? 'selected' : ''}>Solo sub</option>
-              <option value="vip" ${c.tier === 'vip' ? 'selected' : ''}>Solo VIP</option>
-              <option value="mod" ${c.tier === 'mod' ? 'selected' : ''}>Solo mod</option>
+              <option value="tutti" ${c.tier === 'tutti' ? 'selected' : ''}>${L('Tutti', 'Everyone', 'Todos')}</option>
+              <option value="sub" ${c.tier === 'sub' ? 'selected' : ''}>${L('Solo sub', 'Subs only', 'Solo subs')}</option>
+              <option value="vip" ${c.tier === 'vip' ? 'selected' : ''}>${L('Solo VIP', 'VIPs only', 'Solo VIP')}</option>
+              <option value="mod" ${c.tier === 'mod' ? 'selected' : ''}>${L('Solo mod', 'Mods only', 'Solo mods')}</option>
             </select>
           </div>
           <div>
-            <label class="campo" for="mod-cooldown">Cooldown (s)</label>
+            <label class="campo" for="mod-cooldown">${L('Cooldown (s)', 'Cooldown (s)', 'Cooldown (s)')}</label>
             <input type="number" id="mod-cooldown" min="0" max="86400" value="${Number(c.cooldown) || 0}">
           </div>
           <div>
-            <label class="campo" for="mod-cooldown-utente">Cooldown per persona (s)</label>
+            <label class="campo" for="mod-cooldown-utente">${L('Cooldown per persona (s)', 'Cooldown per person (s)', 'Cooldown por persona (s)')}</label>
             <input type="number" id="mod-cooldown-utente" min="0" max="86400" value="${Number(c.cooldownUtente) || 0}">
           </div>
           <div>
-            <label class="campo" for="mod-probabilita">Probabilità (%)</label>
+            <label class="campo" for="mod-probabilita">${L('Probabilità (%)', 'Chance (%)', 'Probabilidad (%)')}</label>
             <input type="number" id="mod-probabilita" min="0" max="100" value="${typeof c.probabilita === 'number' ? c.probabilita : 100}">
           </div>
         </div>
-        <p class="suggerimento">Il <strong>cooldown</strong> ferma tutti; quello <strong>per persona</strong> ferma solo chi l'ha appena usato — è quello che serve ai giochi.</p>
+        <p class="suggerimento">${L('Il <strong>cooldown</strong> ferma tutti; quello <strong>per persona</strong> ferma solo chi l\'ha appena usato: è quello che serve ai giochi.', 'The <strong>cooldown</strong> stops everyone; the <strong>per person</strong> one stops only whoever just used it: that is the one games need.', 'El <strong>cooldown</strong> para a todos; el de <strong>por persona</strong> para solo a quien acaba de usarlo: es el que necesitan los juegos.')}</p>
         <div id="mod-quanti">${_quantiModulo(m.trigger || {}, c)}</div>
         <div class="griglia-campi spazio-sopra">
           <div>
-            <label class="campo" for="mod-costo">Costa (${esc(nomeMonetaUI())})</label>
-            <input type="text" id="mod-costo" data-var-target placeholder="100 oppure $arg1" value="${esc(c.costo ?? '')}">
+            <label class="campo" for="mod-costo">${L(`Costa (${mon})`, `Costs (${mon})`, `Cuesta (${mon})`)}</label>
+            <input type="text" id="mod-costo" data-var-target placeholder="${esc(L('100 oppure $arg1', '100 or $arg1', '100 o $arg1'))}" value="${esc(c.costo ?? '')}">
           </div>
           <div>
-            <label class="campo" for="mod-min-punti">Serve almeno (senza spenderli)</label>
+            <label class="campo" for="mod-min-punti">${L('Serve almeno (senza spenderli)', 'Needs at least (without spending them)', 'Hace falta al menos (sin gastarlas)')}</label>
             <input type="number" id="mod-min-punti" min="0" max="1000000" value="${Number(c.minPunti) || 0}">
           </div>
         </div>
-        <label class="campo" for="mod-costo-messaggio">Cosa dire a chi non ha abbastanza ${esc(nomeMonetaUI())}</label>
-        <input type="text" id="mod-costo-messaggio" data-var-target placeholder="Ti servono $costo $monete, ne hai $punti." value="${esc(c.costoMessaggio || '')}">
-        <p class="suggerimento">Si paga <strong>per giocare, non per vincere</strong>: il costo viene tolto prima del tiro di dado, quindi vale anche quando la probabilità non passa. Se il comando viene rifiutato per un altro motivo (ruolo, cooldown, live) non si paga niente. Paga solo chi fa scattare il modulo scrivendo in chat un comando o una parola: su eventi, timer, voce, Telegram e moduli manuali costo e saldo minimo non valgono, e non paga nessuno, nemmeno tu.</p>
+        <label class="campo" for="mod-costo-messaggio">${L(`Cosa dire a chi non ha abbastanza ${mon}`, `What to say to whoever doesn't have enough ${mon}`, `Qué decir a quien no tiene suficientes ${mon}`)}</label>
+        <input type="text" id="mod-costo-messaggio" data-var-target placeholder="${esc(L('Ti servono $costo $monete, ne hai $punti.', 'You need $costo $monete, you have $punti.', 'Te hacen falta $costo $monete, tienes $punti.'))}" value="${esc(c.costoMessaggio || '')}">
+        <p class="suggerimento">${L('Si paga <strong>per giocare, non per vincere</strong>: il costo viene tolto prima del tiro di dado, quindi vale anche quando la probabilità non passa. Se il comando viene rifiutato per un altro motivo (ruolo, cooldown, live) non si paga niente. Paga solo chi fa scattare il modulo scrivendo in chat un comando o una parola: su eventi, timer, voce, Telegram e moduli manuali costo e saldo minimo non valgono, e non paga nessuno, nemmeno tu.', 'You pay <strong>to play, not to win</strong>: the cost is taken before the dice roll, so it counts even when the chance does not pass. If the command is refused for another reason (role, cooldown, live) nothing is paid. Only whoever triggers the module by writing a command or a word in chat pays: on events, timers, voice, Telegram and manual modules cost and minimum balance do not apply, and nobody pays, not even you.', 'Se paga <strong>por jugar, no por ganar</strong>: el coste se quita antes de tirar el dado, así que vale también cuando la probabilidad no pasa. Si el comando se rechaza por otro motivo (rol, cooldown, directo) no se paga nada. Solo paga quien dispara el módulo escribiendo en el chat un comando o una palabra: en eventos, temporizadores, voz, Telegram y módulos manuales el coste y el saldo mínimo no valen, y no paga nadie, ni siquiera tú.')}</p>
         ${_piattaformeModulo(c)}
-        <div class="riga-check"><input type="checkbox" id="mod-solo-live" ${c.soloLive ? 'checked' : ''}><label for="mod-solo-live">Solo se sono in live</label></div>
-        <div class="riga-check"><input type="checkbox" id="mod-solo-offline" ${c.soloOffline ? 'checked' : ''}><label for="mod-solo-offline">Solo se sono offline</label></div>
+        <div class="riga-check"><input type="checkbox" id="mod-solo-live" ${c.soloLive ? 'checked' : ''}><label for="mod-solo-live">${L('Solo se sono in live', 'Only when I\'m live', 'Solo si estoy en directo')}</label></div>
+        <div class="riga-check"><input type="checkbox" id="mod-solo-offline" ${c.soloOffline ? 'checked' : ''}><label for="mod-solo-offline">${L('Solo se sono offline', 'Only when I\'m offline', 'Solo si estoy fuera de directo')}</label></div>
       </details>
 
       <div class="blocco-allora">
-        <div class="etichetta-blocco">Allora</div>
+        <div class="etichetta-blocco">${L('Allora', 'Then', 'Entonces')}</div>
         <div id="lista-azioni">${(m.azioni || []).map(disegnaAzione).join('')}</div>
-        <p class="spazio-sopra"><button class="btn secondario mini" data-aggiungi-azione>+ Aggiungi azione</button></p>
+        <p class="spazio-sopra"><button class="btn secondario mini" data-aggiungi-azione>${L('+ Aggiungi azione', '+ Add action', '+ Añadir acción')}</button></p>
       </div>
 
       <div class="blocco-allora" id="blocco-altrimenti"${Number(c.probabilita) < 100 ? '' : ' hidden'}>
-        <div class="etichetta-blocco">Altrimenti</div>
-        <p class="suggerimento">Cosa fare quando la <strong>probabilità</strong> non passa: è il ramo del gioco perso. Lascialo vuoto se non serve.</p>
+        <div class="etichetta-blocco">${L('Altrimenti', 'Otherwise', 'Si no')}</div>
+        <p class="suggerimento">${L('Cosa fare quando la <strong>probabilità</strong> non passa: è il ramo del gioco perso. Lascialo vuoto se non serve.', 'What to do when the <strong>chance</strong> does not pass: it is the lost-game branch. Leave it empty if you do not need it.', 'Qué hacer cuando la <strong>probabilidad</strong> no pasa: es la rama del juego perdido. Déjala vacía si no hace falta.')}</p>
         <div id="lista-altrimenti">${(m.altrimenti || []).map(disegnaAzione).join('')}</div>
-        <p class="spazio-sopra"><button class="btn secondario mini" data-aggiungi-altrimenti>+ Aggiungi azione</button></p>
+        <p class="spazio-sopra"><button class="btn secondario mini" data-aggiungi-altrimenti>${L('+ Aggiungi azione', '+ Add action', '+ Añadir acción')}</button></p>
       </div>
 
       <p class="spazio-sopra">
-        <button class="btn" data-salva="modulo">Salva</button>
-        <button class="btn secondario" data-prova-editor>Prova</button>
-        <button class="btn secondario" data-annulla-editor>Annulla</button>
+        <button class="btn" data-salva="modulo">${L('Salva', 'Save', 'Guardar')}</button>
+        <button class="btn secondario" data-prova-editor>${L('Prova', 'Test', 'Prueba')}</button>
+        <button class="btn secondario" data-annulla-editor>${L('Annulla', 'Cancel', 'Cancelar')}</button>
       </p>
     </div>`;
 
@@ -29315,71 +29316,73 @@ function apriEditor(modulo, dove = 'editor-modulo') {
   document.getElementById('mod-nome')?.focus();
 }
 
+const FRASI_VOCE_DI_SERIE = ['clippa', 'salva la clip'];
+
 function disegnaCampiQuando(t) {
+  const telegramScheda = `<a href="#telegram" data-scheda="telegram">${L('nella scheda Telegram', 'in the Telegram tab', 'en la pestaña Telegram')}</a>`;
   switch (t.tipo) {
     case 'comando':
       return `
-        <label class="campo" for="mod-comando">Comando (senza !)</label>
+        <label class="campo" for="mod-comando">${L('Comando (senza !)', 'Command (without !)', 'Comando (sin !)')}</label>
         <div class="riga-flessibile">
           <span class="prefisso-cmd">!</span>
-          <input type="text" id="mod-comando" class="campo-largo" placeholder="ciao" value="${esc(t.comando || '')}">
+          <input type="text" id="mod-comando" class="campo-largo" placeholder="${esc(L('ciao', 'hello', 'hola'))}" value="${esc(t.comando || '')}">
         </div>
-        <label class="campo" for="mod-alias">Alias (facoltativi, separati da spazio)</label>
-        <input type="text" id="mod-alias" placeholder="salve buongiorno" value="${esc(Array.isArray(t.alias) ? t.alias.join(' ') : (t.alias || ''))}">
+        <label class="campo" for="mod-alias">${L('Alias (facoltativi, separati da spazio)', 'Aliases (optional, separated by a space)', 'Alias (opcionales, separados por un espacio)')}</label>
+        <input type="text" id="mod-alias" placeholder="${esc(L('salve buongiorno', 'hi hey', 'buenas saludos'))}" value="${esc(Array.isArray(t.alias) ? t.alias.join(' ') : (t.alias || ''))}">
         <div class="riga-check" style="margin-top:.5rem">
           <input type="checkbox" id="mod-senza-bang" ${t.senzaBang ? 'checked' : ''}>
-          <label for="mod-senza-bang">Attiva anche <b>senza !</b> — basta scrivere la parola esatta (es. <code>disc</code>)</label>
+          <label for="mod-senza-bang">${L('Attiva anche <b>senza !</b>: basta scrivere la parola esatta (es. <code>disc</code>)', 'Also works <b>without !</b>: just write the exact word (e.g. <code>disc</code>)', 'Actívalo también <b>sin !</b>: basta escribir la palabra exacta (p. ej. <code>disc</code>)')}</label>
         </div>
         <div class="riga-check" style="margin-top:.4rem">
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
-          <label for="mod-telegram">Abilita anche su <b>Telegram</b> — risponde nel gruppo anche se la parola è <b>dentro una frase</b> (il <code>!</code> non serve). Attiva il <em>bot interattivo</em> <a href="#telegram" data-scheda="telegram">nella scheda Telegram</a>.</label>
+          <label for="mod-telegram">${L('Abilita anche su <b>Telegram</b>: risponde nel gruppo anche se la parola è <b>dentro una frase</b> (il <code>!</code> non serve). Attiva il <em>bot interattivo</em>', 'Also enable on <b>Telegram</b>: it answers in the group even when the word is <b>inside a sentence</b> (no <code>!</code> needed). Turn on the <em>interactive bot</em>', 'Actívalo también en <b>Telegram</b>: responde en el grupo aunque la palabra esté <b>dentro de una frase</b> (el <code>!</code> no hace falta). Activa el <em>bot interactivo</em>')} ${telegramScheda}.</label>
         </div>`;
     case 'parola': {
       const frasi = (Array.isArray(t.testi) && t.testi.length) ? t.testi : (t.testo ? [t.testo] : ['']);
       const caselle = frasi.map((f) => `
         <div class="frase-trigger riga-flessibile" style="margin-bottom:.4rem">
-          <input type="text" class="mod-testo-trigger campo-largo" placeholder="es. come stai? · buonanotte · a che ora inizi?" value="${esc(f)}">
-          <button type="button" class="btn pericolo mini" data-rimuovi-frase title="Rimuovi">×</button>
+          <input type="text" class="mod-testo-trigger campo-largo" placeholder="${esc(L('es. come stai? · buonanotte · a che ora inizi?', 'e.g. how are you? · good night · what time do you start?', 'p. ej. ¿cómo estás? · buenas noches · ¿a qué hora empiezas?'))}" value="${esc(f)}">
+          <button type="button" class="btn pericolo mini" data-rimuovi-frase title="${esc(L('Rimuovi', 'Remove', 'Quitar'))}">×</button>
         </div>`).join('');
       return `
-        <label class="campo">Parole, frasi o domande che fanno scattare il modulo</label>
-        <p class="suggerimento" style="margin-top:0">Una per casella. Possono essere frasi intere (niente più divisione a virgole). Basta che <b>una</b> combaci.</p>
+        <label class="campo">${L('Parole, frasi o domande che fanno scattare il modulo', 'Words, phrases or questions that trigger the module', 'Palabras, frases o preguntas que disparan el módulo')}</label>
+        <p class="suggerimento" style="margin-top:0">${L('Una per casella. Possono essere frasi intere (niente più divisione a virgole). Basta che <b>una</b> combaci.', 'One per box. They can be whole sentences (no more splitting on commas). It is enough for <b>one</b> to match.', 'Una por casilla. Pueden ser frases enteras (ya no se separan con comas). Basta con que <b>una</b> coincida.')}</p>
         <div id="lista-frasi-trigger">${caselle}</div>
-        <p><button type="button" class="btn secondario mini" data-aggiungi-frase>+ Aggiungi frase</button></p>
-        <label class="campo" for="mod-modo">Come confrontarle</label>` + `
+        <p><button type="button" class="btn secondario mini" data-aggiungi-frase>${L('+ Aggiungi frase', '+ Add phrase', '+ Añadir frase')}</button></p>
+        <label class="campo" for="mod-modo">${L('Come confrontarle', 'How to compare them', 'Cómo compararlas')}</label>
         <select id="mod-modo">
-          <option value="contiene" ${t.modo === 'contiene' ? 'selected' : ''}>Compare dentro il messaggio</option>
-          <option value="esatto" ${t.modo === 'esatto' ? 'selected' : ''}>È esattamente il messaggio</option>
-          <option value="inizia" ${t.modo === 'inizia' ? 'selected' : ''}>Il messaggio inizia così</option>
+          <option value="contiene" ${t.modo === 'contiene' ? 'selected' : ''}>${L('Compare dentro il messaggio', 'Shows up inside the message', 'Aparece dentro del mensaje')}</option>
+          <option value="esatto" ${t.modo === 'esatto' ? 'selected' : ''}>${L('È esattamente il messaggio', 'Is exactly the message', 'Es exactamente el mensaje')}</option>
+          <option value="inizia" ${t.modo === 'inizia' ? 'selected' : ''}>${L('Il messaggio inizia così', 'The message starts like this', 'El mensaje empieza así')}</option>
         </select>
         <div class="riga-check" style="margin-top:.5rem">
           <input type="checkbox" id="mod-punt" ${t.ignoraPunt !== false ? 'checked' : ''}>
-          <label for="mod-punt">Ignora la <b>punteggiatura</b> (così “come stai?” combacia con “come stai”)</label>
+          <label for="mod-punt">${L('Ignora la <b>punteggiatura</b> (così “come stai?” combacia con “come stai”)', 'Ignore <b>punctuation</b> (so “how are you?” matches “how are you”)', 'Ignora la <b>puntuación</b> (así “¿cómo estás?” coincide con “cómo estás”)')}</label>
         </div>
         <div class="riga-check">
           <input type="checkbox" id="mod-case" ${t.maiuscole ? 'checked' : ''}>
-          <label for="mod-case">Rispetta <b>maiuscole/minuscole</b> (di solito conviene lasciarlo spento)</label>
+          <label for="mod-case">${L('Rispetta <b>maiuscole/minuscole</b> (di solito conviene lasciarlo spento)', 'Match <b>upper/lower case</b> (usually best left off)', 'Respeta <b>mayúsculas/minúsculas</b> (normalmente conviene dejarlo apagado)')}</label>
         </div>
         <div class="riga-check">
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
-          <label for="mod-telegram">Abilita anche su <b>Telegram</b> — reagisce anche nel gruppo. Attiva il <em>bot interattivo</em> <a href="#telegram" data-scheda="telegram">nella scheda Telegram</a>.</label>
+          <label for="mod-telegram">${L('Abilita anche su <b>Telegram</b>: reagisce anche nel gruppo. Attiva il <em>bot interattivo</em>', 'Also enable on <b>Telegram</b>: it reacts in the group too. Turn on the <em>interactive bot</em>', 'Actívalo también en <b>Telegram</b>: reacciona también en el grupo. Activa el <em>bot interactivo</em>')} ${telegramScheda}.</label>
         </div>`;
     }
     case 'voce': {
-      const frasi = (Array.isArray(t.frasi) && t.frasi.length) ? t.frasi : ['clippa', 'salva la clip'];
+      const frasi = (Array.isArray(t.frasi) && t.frasi.length) ? t.frasi : FRASI_VOCE_DI_SERIE;
       return `
-        <label class="campo" for="mod-frasi-voce">Frasi da ascoltare (una per riga)</label>
-        <textarea id="mod-frasi-voce" placeholder="clippa&#10;salva la clip">${esc(frasi.join('\n'))}</textarea>
-        <p class="suggerimento">Quando al microfono dici una di queste frasi, il modulo scatta. Scrivile in minuscolo,
-        una per riga. L'ascolto si avvia con «Apri l'ascolto vocale», in <strong>Chat e pubblico → Comandi → Comandi vocali</strong>.</p>
+        <label class="campo" for="mod-frasi-voce">${L('Frasi da ascoltare (una per riga)', 'Phrases to listen for (one per line)', 'Frases que escuchar (una por línea)')}</label>
+        <textarea id="mod-frasi-voce" placeholder="${esc(FRASI_VOCE_DI_SERIE.join('\n'))}">${esc(frasi.join('\n'))}</textarea>
+        <p class="suggerimento">${L('Quando al microfono dici una di queste frasi, il modulo scatta. Scrivile in minuscolo, una per riga. L\'ascolto si avvia con «Apri l\'ascolto vocale», in <strong>Chat e pubblico → Comandi → Comandi vocali</strong>.', 'When you say one of these phrases into the mic, the module fires. Write them in lower case, one per line. The recognition is in Italian. Listening starts with «Open voice listening», in <strong>Chat & audience → Commands → Voice commands</strong>.', 'Cuando dices al micrófono una de estas frases, el módulo se dispara. Escríbelas en minúsculas, una por línea. El reconocimiento es en italiano. La escucha se inicia con «Abre la escucha por voz», en <strong>Chat y público → Comandos → Comandos de voz</strong>.')}</p>
         <div class="riga-check" style="margin-top:.4rem">
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
-          <label for="mod-telegram">Manda il messaggio anche su <b>Telegram</b> quando lo dico a voce (serve il bot interattivo).</label>
+          <label for="mod-telegram">${L('Manda il messaggio anche su <b>Telegram</b> quando lo dico a voce (serve il bot interattivo).', 'Also send the message on <b>Telegram</b> when I say it (needs the interactive bot).', 'Manda el mensaje también a <b>Telegram</b> cuando lo digo por voz (hace falta el bot interactivo).')}</label>
         </div>`;
     }
     case 'evento':
       return `
-        <label class="campo" for="mod-evento">Quale evento</label>
+        <label class="campo" for="mod-evento">${L('Quale evento', 'Which event', 'Qué evento')}</label>
         <select id="mod-evento">
           ${EVENTI.map(([v, it, en, es]) => `<option value="${v}" ${t.evento === v ? 'selected' : ''}>${esc(L(it, en, es))}</option>`).join('')}
         </select>`;
@@ -29387,23 +29390,22 @@ function disegnaCampiQuando(t) {
       return `
         <div class="griglia-campi spazio-sopra">
           <div>
-            <label class="campo" for="mod-minuti">Ogni quanti minuti</label>
+            <label class="campo" for="mod-minuti">${L('Ogni quanti minuti', 'Every how many minutes', 'Cada cuántos minutos')}</label>
             <input type="number" id="mod-minuti" min="1" max="1440" value="${Number(t.minuti) || 15}">
           </div>
           <div>
-            <label class="campo" for="mod-min-messaggi">Solo se almeno N messaggi</label>
+            <label class="campo" for="mod-min-messaggi">${L('Solo se almeno N messaggi', 'Only if at least N messages', 'Solo si hay al menos N mensajes')}</label>
             <input type="number" id="mod-min-messaggi" min="0" max="1000" value="${Number(t.minMessaggi) || 0}">
           </div>
         </div>
-        <p class="suggerimento">Metti 0 messaggi per farlo partire comunque a tempo.</p>
+        <p class="suggerimento">${L('Metti 0 messaggi per farlo partire comunque a tempo.', 'Put 0 messages to make it run on time no matter what.', 'Pon 0 mensajes para que salga igualmente a su hora.')}</p>
         <label class="riga-check spazio-sopra">
           <input type="checkbox" id="mod-timer-offline"${t.ancheOffline ? ' checked' : ''}>
-          Falla parlare anche a canale spento
+          ${L('Falla parlare anche a canale spento', 'Let it speak even when the channel is offline', 'Que hable también con el canal apagado')}
         </label>
-        <p class="suggerimento">Di norma un modulo a tempo parla solo mentre sei in diretta: fuori dalla diretta la chat è vuota.</p>`;
+        <p class="suggerimento">${L('Di norma un modulo a tempo parla solo mentre sei in diretta: fuori dalla diretta la chat è vuota.', 'Normally a timed module only speaks while you are live: off air the chat is empty.', 'Normalmente un módulo con temporizador solo habla mientras estás en directo: fuera del directo el chat está vacío.')}</p>`;
     case 'manuale':
-      return `<p class="suggerimento spazio-sopra">Nessun campo: questo modulo si attiva dal bottone "Prova" o dai
-        Connettori avanzati (API in ingresso) qui sotto.</p>`;
+      return `<p class="suggerimento spazio-sopra">${L('Nessun campo: questo modulo si attiva dal bottone «Prova» o dai Connettori avanzati (API in ingresso) qui sotto.', 'No fields: this module runs from the «Test» button or from the Advanced connectors (incoming API) below.', 'Ningún campo: este módulo se activa con el botón «Prueba» o desde los Conectores avanzados (API de entrada) de abajo.')}</p>`;
     default:
       return '';
   }
@@ -29421,9 +29423,9 @@ function disegnaAzione(a) {
       <div class="azione-testata">
         ${selTipo}
         <div class="azione-controlli">
-          <button class="btn secondario mini" data-su title="Sposta su">↑</button>
-          <button class="btn secondario mini" data-giu title="Sposta giù">↓</button>
-          <button class="btn pericolo mini" data-rimuovi-azione title="Rimuovi">×</button>
+          <button class="btn secondario mini" data-su title="${esc(L('Sposta su', 'Move up', 'Subir'))}">↑</button>
+          <button class="btn secondario mini" data-giu title="${esc(L('Sposta giù', 'Move down', 'Bajar'))}">↓</button>
+          <button class="btn pericolo mini" data-rimuovi-azione title="${esc(L('Rimuovi', 'Remove', 'Quitar'))}">×</button>
         </div>
       </div>
       ${disegnaCampiAzione(a)}
@@ -29440,20 +29442,29 @@ function disegnaCampiAzione(a) {
   const pillole = `<div class="chip-vars">${prime.map(chip).join('')}${
     altre.length ? `<button type="button" class="chip-var chip-altre" data-altre-var>${L('+ tutte le altre', '+ all the others', '+ todas las demás')}</button>` : ''}</div>${
     altre.length ? `<div class="chip-vars chip-vars-altre" hidden>${altre.map(chip).join('')}</div>` : ''}${legendaVariabiliHtml()}`;
+  const opzioni = (voci, scelta) => voci.map(([v, t]) => `<option value="${v}" ${scelta === v ? 'selected' : ''}>${esc(t)}</option>`).join('');
+  const etichetta = (t) => `<label class="campo">${esc(t)}</label>`;
+  const aria = (t) => `aria-label="${esc(t)}"`;
+  const gestione = `${L('Serve il permesso', 'It needs the', 'Hace falta el permiso')} <strong class="primo-piano">${L('Gestione canale', 'Manage Channel', 'Gestión del canal')}</strong>${L(': se manca, lo concedi da', ' permission: if it is missing, grant it from', ': si falta, lo concedes desde')} <strong>${L('Chat e pubblico → Comandi → Comandi vocali', 'Chat & audience → Commands → Voice commands', 'Chat y público → Comandos → Comandos de voz')}</strong>.`;
+  const annuncia = (t) => `
+        <div class="riga-check spazio-sopra">
+          <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
+          <label>${esc(t)}</label>
+        </div>`;
   switch (tipo) {
     case 'messaggio':
       return `
-        <textarea data-campo="testo" data-var-target placeholder="es. Ciao $user!">${esc(a.testo || '')}</textarea>
+        <textarea data-campo="testo" data-var-target placeholder="${esc(L('es. Ciao $user!', 'e.g. Hi $user!', 'p. ej. ¡Hola $user!'))}">${esc(a.testo || '')}</textarea>
         ${pillole}`;
     case 'effetto': {
       const eff = datiModuli?.effettiDisponibili || [];
       if (!eff.length) {
-        return `<p class="suggerimento">Non hai ancora effetti: carica prima un effetto in <strong>Scena &amp; overlay → Effetti &amp; suoni</strong>.</p>
+        return `<p class="suggerimento">${L('Non hai ancora effetti: carica prima un effetto in', 'You have no effects yet: first upload an effect in', 'Todavía no tienes efectos: sube primero un efecto en')} <strong>${L('Scena &amp; overlay → Effetti &amp; suoni', 'Scene &amp; overlay → Effects &amp; sounds', 'Escena y overlay → Efectos y sonidos')}</strong>.</p>
           <input type="hidden" data-campo="comando" value="${esc(a.comando || '')}">`;
       }
       return `
-        <label class="campo">Quale effetto</label>
-        <select aria-label="Quale effetto" data-campo="comando">
+        ${etichetta(L('Quale effetto', 'Which effect', 'Qué efecto'))}
+        <select ${aria(L('Quale effetto', 'Which effect', 'Qué efecto'))} data-campo="comando">
           ${eff.map((e) => {
             const cmd = typeof e === 'string' ? e : (e.comando || '');
             return `<option value="${esc(cmd)}" ${a.comando === cmd ? 'selected' : ''}>!${esc(cmd)}</option>`;
@@ -29466,29 +29477,24 @@ function disegnaCampiAzione(a) {
       return `
         <div class="griglia-campi">
           <div>
-            <label class="campo">Cosa fare</label>
-            <select aria-label="Cosa fare" data-campo="op">
-              <option value="aggiungi" ${op === 'aggiungi' ? 'selected' : ''}>Dai</option>
-              <option value="togli" ${op === 'togli' ? 'selected' : ''}>Togli</option>
-              <option value="imposta" ${op === 'imposta' ? 'selected' : ''}>Porta esattamente a</option>
+            ${etichetta(L('Cosa fare', 'What to do', 'Qué hacer'))}
+            <select ${aria(L('Cosa fare', 'What to do', 'Qué hacer'))} data-campo="op">
+              ${opzioni([['aggiungi', L('Dai', 'Give', 'Da')], ['togli', L('Togli', 'Take', 'Quita')], ['imposta', L('Porta esattamente a', 'Set exactly to', 'Lleva exactamente a')]], op)}
             </select>
           </div>
           <div>
-            <label class="campo">Quanti</label>
-            <input aria-label="Quanti" type="text" data-campo="quanto" data-var-target placeholder="10 oppure $random(1,50)" value="${esc(a.quanto ?? '')}">
+            ${etichetta(L('Quanti', 'How many', 'Cuántos'))}
+            <input ${aria(L('Quanti', 'How many', 'Cuántos'))} type="text" data-campo="quanto" data-var-target placeholder="${esc(L('10 oppure $random(1,50)', '10 or $random(1,50)', '10 o $random(1,50)'))}" value="${esc(a.quanto ?? '')}">
           </div>
           <div>
-            <label class="campo">A chi</label>
-            <select aria-label="A chi" data-campo="a">
-              <option value="autore" ${chi === 'autore' ? 'selected' : ''}>Chi ha scritto</option>
-              <option value="destinatario" ${chi === 'destinatario' ? 'selected' : ''}>Chi è taggato dopo il comando</option>
-              <option value="caso" ${chi === 'caso' ? 'selected' : ''}>Uno a caso fra chi è in chat</option>
-              <option value="nome" ${chi === 'nome' ? 'selected' : ''}>Un nome fisso</option>
+            ${etichetta(L('A chi', 'To whom', 'A quién'))}
+            <select ${aria(L('A chi', 'To whom', 'A quién'))} data-campo="a">
+              ${opzioni([['autore', L('Chi ha scritto', 'Whoever wrote', 'Quien ha escrito')], ['destinatario', L('Chi è taggato dopo il comando', 'Whoever is tagged after the command', 'Quien está etiquetado tras el comando')], ['caso', L('Uno a caso fra chi è in chat', 'Someone at random in chat', 'Alguien al azar del chat')], ['nome', L('Un nome fisso', 'A fixed name', 'Un nombre fijo')]], chi)}
             </select>
           </div>
           <div${chi === 'nome' ? '' : ' hidden'} data-solo-nome>
-            <label class="campo">Nome utente</label>
-            <input aria-label="Nome utente" type="text" data-campo="nome" placeholder="tizio" value="${esc(a.nome || '')}">
+            ${etichetta(L('Nome utente', 'Username', 'Nombre de usuario'))}
+            <input ${aria(L('Nome utente', 'Username', 'Nombre de usuario'))} type="text" data-campo="nome" placeholder="${esc(L('tizio', 'someone', 'fulano'))}" value="${esc(a.nome || '')}">
           </div>
         </div>
         ${pillole}`;
@@ -29497,71 +29503,59 @@ function disegnaCampiAzione(a) {
       return `
         <div class="griglia-campi">
           <div>
-            <label class="campo">Nome contatore</label>
-            <input aria-label="Nome contatore" type="text" data-campo="nome" placeholder="morti" value="${esc(a.nome || '')}">
+            ${etichetta(L('Nome contatore', 'Counter name', 'Nombre del contador'))}
+            <input ${aria(L('Nome contatore', 'Counter name', 'Nombre del contador'))} type="text" data-campo="nome" placeholder="${esc(L('morti', 'deaths', 'muertes'))}" value="${esc(a.nome || '')}">
           </div>
           <div>
-            <label class="campo">Operazione</label>
-            <select aria-label="Operazione" data-campo="op">
-              <option value="incrementa" ${a.op === 'incrementa' ? 'selected' : ''}>Incrementa (+1)</option>
-              <option value="azzera" ${a.op === 'azzera' ? 'selected' : ''}>Azzera</option>
-              <option value="imposta" ${a.op === 'imposta' ? 'selected' : ''}>Imposta a…</option>
+            ${etichetta(L('Operazione', 'Operation', 'Operación'))}
+            <select ${aria(L('Operazione', 'Operation', 'Operación'))} data-campo="op">
+              ${opzioni([['incrementa', L('Incrementa (+1)', 'Increase (+1)', 'Aumenta (+1)')], ['azzera', L('Azzera', 'Reset', 'Pon a cero')], ['imposta', L('Imposta a…', 'Set to…', 'Fija en…')]], a.op)}
             </select>
           </div>
           <div>
-            <label class="campo">Valore (se "imposta")</label>
-            <input type="number" data-campo="valore" value="${Number(a.valore) || 0}">
+            ${etichetta(L('Valore (se "imposta")', 'Value (for "set")', 'Valor (si "fija")'))}
+            <input ${aria(L('Valore (se "imposta")', 'Value (for "set")', 'Valor (si "fija")'))} type="number" data-campo="valore" value="${Number(a.valore) || 0}">
           </div>
         </div>`;
     case 'webhook':
       return `
-        <label class="campo">URL del tuo servizio (https)</label>
-        <input aria-label="URL del tuo servizio (https)" type="text" data-campo="url" placeholder="https://" value="${esc(a.url || '')}">
+        ${etichetta(L('URL del tuo servizio (https)', 'Your service URL (https)', 'URL de tu servicio (https)'))}
+        <input ${aria(L('URL del tuo servizio (https)', 'Your service URL (https)', 'URL de tu servicio (https)'))} type="text" data-campo="url" placeholder="https://" value="${esc(a.url || '')}">
         <div class="riga-check">
           <input type="checkbox" data-campo="usaRisposta" ${a.usaRisposta ? 'checked' : ''}>
-          <label>Usa la risposta come messaggio in chat</label>
+          <label>${L('Usa la risposta come messaggio in chat', 'Use the reply as a chat message', 'Usa la respuesta como mensaje en el chat')}</label>
         </div>
-        <p class="suggerimento">L'URL è il <strong class="primo-piano">tuo</strong> servizio: la tua logica resta sul tuo
-        server e SocialBot ne pubblica la risposta.</p>`;
+        <p class="suggerimento">${L('L\'URL è il <strong class="primo-piano">tuo</strong> servizio: la tua logica resta sul tuo server e SocialBot ne pubblica la risposta.', 'The URL is <strong class="primo-piano">your</strong> service: your logic stays on your server and SocialBot posts its reply.', 'La URL es <strong class="primo-piano">tu</strong> servicio: tu lógica se queda en tu servidor y SocialBot publica su respuesta.')}</p>`;
     case 'clip':
       return `
-        <p class="suggerimento">Crea una clip del momento su Twitch. Utile con l'innesco vocale
-        ("clippa!") o su un evento. Nessun campo da compilare.</p>`;
+        <p class="suggerimento">${L('Crea una clip del momento su Twitch. Utile con l\'innesco vocale («clippa!») o su un evento. Nessun campo da compilare.', 'Creates a clip of the moment on Twitch. Handy with the voice trigger («clippa!») or on an event. Nothing to fill in.', 'Crea un clip del momento en Twitch. Útil con el disparador por voz («clippa!») o con un evento. Nada que rellenar.')}</p>`;
     case 'categoria':
       return `
-        <label class="campo">Categoria / gioco (puoi usare le variabili, es. <code>$args</code>)</label>
-        <input type="text" data-campo="gioco" data-var-target placeholder="es. Fortnite oppure $args" value="${esc(a.gioco || '')}">
+        <label class="campo">${L('Categoria / gioco (puoi usare le variabili, es.', 'Category / game (you can use variables, e.g.', 'Categoría / juego (puedes usar variables, p. ej.')} <code>$args</code>)</label>
+        <input ${aria(L('Categoria / gioco', 'Category / game', 'Categoría / juego'))} type="text" data-campo="gioco" data-var-target placeholder="${esc(L('es. Fortnite oppure $args', 'e.g. Fortnite or $args', 'p. ej. Fortnite o $args'))}" value="${esc(a.gioco || '')}">
         ${pillole}
-        <div class="riga-check spazio-sopra">
-          <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
-          <label>Annuncia il cambio in chat</label>
-        </div>
-        <p class="suggerimento">Il bot cerca la categoria su Twitch e imposta quella più somigliante a ciò che scrivi/dici.
-        Serve il permesso <strong class="primo-piano">Gestione canale</strong>: se manca, lo concedi da <strong>Chat e pubblico → Comandi → Comandi vocali</strong>.</p>`;
+        ${annuncia(L('Annuncia il cambio in chat', 'Announce the change in chat', 'Anuncia el cambio en el chat'))}
+        <p class="suggerimento">${L('Il bot cerca la categoria su Twitch e imposta quella più somigliante a ciò che scrivi o dici.', 'The bot looks the category up on Twitch and sets the closest one to what you write or say.', 'El bot busca la categoría en Twitch y pone la más parecida a lo que escribes o dices.')} ${gestione}</p>`;
     case 'titolo':
       return `
-        <label class="campo">Nuovo titolo (puoi usare le variabili, es. <code>$gioco</code>, <code>$args</code>)</label>
-        <textarea data-campo="testo" data-var-target placeholder="es. In diretta: $gioco con la community!">${esc(a.testo || '')}</textarea>
+        <label class="campo">${L('Nuovo titolo (puoi usare le variabili, es.', 'New title (you can use variables, e.g.', 'Nuevo título (puedes usar variables, p. ej.')} <code>$gioco</code>, <code>$args</code>)</label>
+        <textarea ${aria(L('Nuovo titolo', 'New title', 'Nuevo título'))} data-campo="testo" data-var-target placeholder="${esc(L('es. In diretta: $gioco con la community!', 'e.g. Live: $gioco with the community!', 'p. ej. En directo: ¡$gioco con la comunidad!'))}">${esc(a.testo || '')}</textarea>
         ${pillole}
-        <div class="riga-check spazio-sopra">
-          <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
-          <label>Annuncia il cambio in chat</label>
-        </div>
-        <p class="suggerimento">Imposta il titolo dello stream su Twitch (max 140 caratteri).
-        Serve il permesso <strong class="primo-piano">Gestione canale</strong>: se manca, lo concedi da <strong>Chat e pubblico → Comandi → Comandi vocali</strong>.</p>`;
+        ${annuncia(L('Annuncia il cambio in chat', 'Announce the change in chat', 'Anuncia el cambio en el chat'))}
+        <p class="suggerimento">${L('Imposta il titolo dello stream su Twitch (max 140 caratteri).', 'Sets the stream title on Twitch (max 140 characters).', 'Pone el título del directo en Twitch (máx. 140 caracteres).')} ${gestione}</p>`;
     case 'attendi': {
       const max = datiModuli?.limiti?.attesaS;
       return `
-        <label class="campo">Secondi da aspettare${max ? ` (fino a ${max})` : ''}</label>
-        <input aria-label="Secondi da aspettare" type="number" data-campo="secondi" min="0"${max ? ` max="${max}"` : ''} value="${Number(a.secondi) || 2}">`;
+        <label class="campo">${L('Secondi da aspettare', 'Seconds to wait', 'Segundos de espera')}${max ? L(` (fino a ${max})`, ` (up to ${max})`, ` (hasta ${max})`) : ''}</label>
+        <input ${aria(L('Secondi da aspettare', 'Seconds to wait', 'Segundos de espera'))} type="number" data-campo="secondi" min="0"${max ? ` max="${max}"` : ''} value="${Number(a.secondi) || 2}">`;
     }
     case 'overlayTesto': {
       const lim = datiModuli?.limiti || {};
       return `
-        <textarea data-campo="testo" data-var-target placeholder="Testo da mostrare sull'overlay">${esc(a.testo || '')}</textarea>
+        <textarea ${aria(L('Testo da mostrare sull\'overlay', 'Text to show on the overlay', 'Texto que mostrar en el overlay'))} data-campo="testo" data-var-target placeholder="${esc(L('Testo da mostrare sull\'overlay', 'Text to show on the overlay', 'Texto que mostrar en el overlay'))}">${esc(a.testo || '')}</textarea>
         ${pillole}
-        <label class="campo">Durata a schermo (ms)</label>
-        <input aria-label="Durata a schermo (ms)" type="number" data-campo="durata"${lim.testoMinMs ? ` min="${lim.testoMinMs}"` : ''}${lim.testoMaxMs ? ` max="${lim.testoMaxMs}"` : ''} value="${Number(a.durata) || 5000}">`;
+        ${etichetta(L('Durata a schermo (ms)', 'Time on screen (ms)', 'Tiempo en pantalla (ms)'))}
+        <input ${aria(L('Durata a schermo (ms)', 'Time on screen (ms)', 'Tiempo en pantalla (ms)'))} type="number" data-campo="durata"${lim.testoMinMs ? ` min="${lim.testoMinMs}"` : ''}${lim.testoMaxMs ? ` max="${lim.testoMaxMs}"` : ''} value="${Number(a.durata) || 5000}">`;
     }
     case 'regia': {
       const cosa = ['scena', 'muto', 'transizione'].includes(a.cosa) ? a.cosa : 'scena';
@@ -29571,86 +29565,77 @@ function disegnaCampiAzione(a) {
       return `
         <div class="griglia-campi">
           <div>
-            <label class="campo">Cosa fare</label>
-            <select aria-label="Cosa fare" data-campo="cosa">
-              <option value="scena" ${cosa === 'scena' ? 'selected' : ''}>Cambia scena</option>
-              <option value="muto" ${cosa === 'muto' ? 'selected' : ''}>Muta o smuta una fonte</option>
-              <option value="transizione" ${cosa === 'transizione' ? 'selected' : ''}>Cambia transizione</option>
+            ${etichetta(L('Cosa fare', 'What to do', 'Qué hacer'))}
+            <select ${aria(L('Cosa fare', 'What to do', 'Qué hacer'))} data-campo="cosa">
+              ${opzioni([['scena', L('Cambia scena', 'Switch scene', 'Cambia la escena')], ['muto', L('Muta o smuta una fonte', 'Mute or unmute a source', 'Silencia o quita el silencio a una fuente')], ['transizione', L('Cambia transizione', 'Change transition', 'Cambia la transición')]], cosa)}
             </select>
           </div>
           <div data-regia-cosa="scena"${cosa === 'scena' ? '' : ' hidden'}>
-            <label class="campo">Scena</label>
-            <input aria-label="Scena" type="text" data-campo="scena" data-var-target list="mod-regia-scene" maxlength="80" placeholder="es. Pausa, oppure $arg1" value="${esc(a.scena || '')}">
+            ${etichetta(L('Scena', 'Scene', 'Escena'))}
+            <input ${aria(L('Scena', 'Scene', 'Escena'))} type="text" data-campo="scena" data-var-target list="mod-regia-scene" maxlength="80" placeholder="${esc(L('es. Pausa, oppure $arg1', 'e.g. Break, or $arg1', 'p. ej. Pausa, o $arg1'))}" value="${esc(a.scena || '')}">
             ${lista('mod-regia-scene', _cons.scene)}
           </div>
           <div data-regia-cosa="muto"${cosa === 'muto' ? '' : ' hidden'}>
-            <label class="campo">Fonte</label>
-            <input aria-label="Fonte" type="text" data-campo="fonte" data-var-target list="mod-regia-fonti" maxlength="80" placeholder="es. Mic/Aux" value="${esc(a.fonte || '')}">
+            ${etichetta(L('Fonte', 'Source', 'Fuente'))}
+            <input ${aria(L('Fonte', 'Source', 'Fuente'))} type="text" data-campo="fonte" data-var-target list="mod-regia-fonti" maxlength="80" placeholder="${esc(L('es. Mic/Aux', 'e.g. Mic/Aux', 'p. ej. Mic/Aux'))}" value="${esc(a.fonte || '')}">
             ${lista('mod-regia-fonti', _cons.fonti)}
           </div>
           <div data-regia-cosa="muto"${cosa === 'muto' ? '' : ' hidden'}>
-            <label class="campo">Come</label>
-            <select aria-label="Come" data-campo="come">
-              <option value="muta" ${come === 'muta' ? 'selected' : ''}>Muta</option>
-              <option value="smuta" ${come === 'smuta' ? 'selected' : ''}>Smuta</option>
-              <option value="inverti" ${come === 'inverti' ? 'selected' : ''}>Inverti</option>
+            ${etichetta(L('Come', 'How', 'Cómo'))}
+            <select ${aria(L('Come', 'How', 'Cómo'))} data-campo="come">
+              ${opzioni([['muta', L('Muta', 'Mute', 'Silencia')], ['smuta', L('Smuta', 'Unmute', 'Quita el silencio')], ['inverti', L('Inverti', 'Toggle', 'Invierte')]], come)}
             </select>
           </div>
           <div data-regia-cosa="transizione"${cosa === 'transizione' ? '' : ' hidden'}>
-            <label class="campo">Transizione</label>
-            <input aria-label="Transizione" type="text" data-campo="transizione" data-var-target list="mod-regia-transizioni" maxlength="80" placeholder="es. Dissolvenza" value="${esc(a.transizione || '')}">
+            ${etichetta(L('Transizione', 'Transition', 'Transición'))}
+            <input ${aria(L('Transizione', 'Transition', 'Transición'))} type="text" data-campo="transizione" data-var-target list="mod-regia-transizioni" maxlength="80" placeholder="${esc(L('es. Dissolvenza', 'e.g. Fade', 'p. ej. Fundido'))}" value="${esc(a.transizione || '')}">
             ${lista('mod-regia-transizioni', _cons.transizioni)}
           </div>
         </div>
         ${pillole}
         <p class="suggerimento">${su
-          ? 'Regia collegata da questa pagina: i nomi te li propongo mentre scrivi.'
-          : 'Regia non collegata: scrivi il nome esatto come nel programma, oppure collegala in <strong>CONSOLify</strong> e te li propongo io.'}
-        Il passo lo esegue il pannello aperto sul computer della regia, non il server: tienilo aperto mentre streami.</p>`;
+          ? L('Regia collegata da questa pagina: i nomi te li propongo mentre scrivi.', 'Program connected from this page: I suggest the names as you type.', 'Realización conectada desde esta página: te propongo los nombres mientras escribes.')
+          : L('Regia non collegata: scrivi il nome esatto come nel programma, oppure collegala in <strong>CONSOLify</strong> e te li propongo io.', 'Program not connected: write the exact name as in the software, or connect it in <strong>CONSOLify</strong> and I will suggest them.', 'Realización no conectada: escribe el nombre exacto como en el programa, o conéctala en <strong>CONSOLify</strong> y te los propongo yo.')}
+        ${L('Il passo lo esegue il pannello aperto sul computer della regia, non il server: tienilo aperto mentre streami.', 'The step is run by the panel open on the streaming computer, not by the server: keep it open while you stream.', 'El paso lo ejecuta el panel abierto en el ordenador de la realización, no el servidor: tenlo abierto mientras haces directo.')}</p>`;
     }
     case 'timeout':
       return `
-        <label class="campo">Timeout (secondi)</label>
-        <input aria-label="Timeout (secondi)" type="number" data-campo="secondi" min="1" max="1209600" value="${Number(a.secondi) || 600}">`;
+        ${etichetta(L('Timeout (secondi)', 'Timeout (seconds)', 'Timeout (segundos)'))}
+        <input ${aria(L('Timeout (secondi)', 'Timeout (seconds)', 'Timeout (segundos)'))} type="number" data-campo="secondi" min="1" max="1209600" value="${Number(a.secondi) || 600}">`;
     case 'musica':
       return `
-        <label class="campo">Brano da mettere in coda (nome, artista o <code>$args</code>)</label>
-        <input type="text" data-campo="brano" data-var-target placeholder="es. Blinding Lights oppure $args" value="${esc(a.brano || '')}">
+        <label class="campo">${L('Brano da mettere in coda (nome, artista o', 'Track to queue (name, artist or', 'Canción que poner en cola (nombre, artista o')} <code>$args</code>)</label>
+        <input ${aria(L('Brano da mettere in coda', 'Track to queue', 'Canción que poner en cola'))} type="text" data-campo="brano" data-var-target placeholder="${esc(L('es. Blinding Lights oppure $args', 'e.g. Blinding Lights or $args', 'p. ej. Blinding Lights o $args'))}" value="${esc(a.brano || '')}">
         ${pillole}
-        <div class="riga-check spazio-sopra">
-          <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
-          <label>Annuncia in chat il brano aggiunto</label>
-        </div>
-        <p class="suggerimento">Aggiunge il brano alla coda del tuo Spotify. Le richieste musicali sono nel piano Essenziale: serve Spotify collegato (Premium, con l'app aperta) in <strong>Durante la diretta → Regia → Musica</strong>.</p>`;
+        ${annuncia(L('Annuncia in chat il brano aggiunto', 'Announce the added track in chat', 'Anuncia en el chat la canción añadida'))}
+        <p class="suggerimento">${L('Aggiunge il brano alla coda del tuo Spotify. Le richieste musicali sono nel piano Essenziale: serve Spotify collegato (Premium, con l\'app aperta) in', 'Adds the track to your Spotify queue. Music requests are in the Essential plan: it needs Spotify connected (Premium, with the app open) in', 'Añade la canción a la cola de tu Spotify. Las peticiones musicales están en el plan Esencial: hace falta Spotify conectado (Premium, con la app abierta) en')} <strong>${L('Durante la diretta → Regia → Musica', 'During the live → Control room → Music', 'Durante el directo → Realización → Música')}</strong>.</p>`;
     case 'annuncia':
       return `
-        <textarea data-campo="testo" data-var-target placeholder="es. Benvenuti nella live! Oggi si gioca a $gioco">${esc(a.testo || '')}</textarea>
+        <textarea ${aria(L('Testo dell\'annuncio', 'Announcement text', 'Texto del anuncio'))} data-campo="testo" data-var-target placeholder="${esc(L('es. Benvenuti nella live! Oggi si gioca a $gioco', 'e.g. Welcome to the stream! Today we play $gioco', 'p. ej. ¡Bienvenidos al directo! Hoy se juega a $gioco'))}">${esc(a.testo || '')}</textarea>
         ${pillole}
-        <label class="campo">Colore dell'annuncio</label>
-        <select aria-label="Colore dell'annuncio" data-campo="colore">
-          ${[['primary', 'Predefinito (viola)'], ['blue', 'Blu'], ['green', 'Verde'], ['orange', 'Arancione'], ['purple', 'Viola']]
-            .map(([v, t]) => `<option value="${v}" ${(a.colore || 'primary') === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+        ${etichetta(L('Colore dell\'annuncio', 'Announcement colour', 'Color del anuncio'))}
+        <select ${aria(L('Colore dell\'annuncio', 'Announcement colour', 'Color del anuncio'))} data-campo="colore">
+          ${opzioni([['primary', L('Predefinito (viola)', 'Default (purple)', 'Predeterminado (morado)')], ['blue', L('Blu', 'Blue', 'Azul')], ['green', L('Verde', 'Green', 'Verde')], ['orange', L('Arancione', 'Orange', 'Naranja')], ['purple', L('Viola', 'Purple', 'Morado')]], a.colore || 'primary')}
         </select>
-        <p class="suggerimento">L'annuncio ufficiale di Twitch (messaggio evidenziato). Serve il permesso <strong class="primo-piano">annunci</strong>: se manca, riautorizza dalla dashboard.</p>`;
+        <p class="suggerimento">${L('L\'annuncio ufficiale di Twitch (messaggio evidenziato). Serve il permesso <strong class="primo-piano">annunci</strong>: se manca, riautorizza dalla dashboard.', 'Twitch\'s official announcement (highlighted message). It needs the <strong class="primo-piano">announcements</strong> permission: if it is missing, authorize again from the dashboard.', 'El anuncio oficial de Twitch (mensaje destacado). Hace falta el permiso de <strong class="primo-piano">anuncios</strong>: si falta, vuelve a autorizar desde el panel.')}</p>`;
     case 'modalita':
       return `
-        <label class="campo">Quale modalità</label>
-        <select aria-label="Quale modalità" data-campo="modo">
-          ${[['emote', 'Solo emote'], ['unici', 'Messaggi unici'], ['sub', 'Solo abbonati']]
-            .map(([v, t]) => `<option value="${v}" ${(a.modo || 'emote') === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+        ${etichetta(L('Quale modalità', 'Which mode', 'Qué modo'))}
+        <select ${aria(L('Quale modalità', 'Which mode', 'Qué modo'))} data-campo="modo">
+          ${opzioni([['emote', L('Solo emote', 'Emote-only', 'Solo emotes')], ['unici', L('Messaggi unici', 'Unique messages', 'Mensajes únicos')], ['sub', L('Solo abbonati', 'Subscribers-only', 'Solo suscriptores')]], a.modo || 'emote')}
         </select>
-        <label class="campo spazio-sopra">Per quanto</label>
-        <input aria-label="Per quanto" type="text" data-campo="durata" maxlength="40" placeholder="vuoto = 2 minuti, oppure 5m, 90s, $arg1" value="${esc(a.durata || '')}">
-        <label class="riga-check spazio-sopra"><input type="checkbox" data-campo="annuncia"${a.annuncia !== false ? ' checked' : ''}> Lo dico in chat, quando parte e quando finisce</label>
-        <p class="suggerimento">Alla fine la chat torna com'era da sola, anche se nel frattempo il bot si riavvia. Se la modalità era già accesa da un mod, la lascio stare. Chat lenta e soli follower non ci sono apposta: le usa lo scudo contro gli attacchi. Serve il permesso di gestire le impostazioni della chat.</p>`;
+        <label class="campo spazio-sopra">${L('Per quanto', 'For how long', 'Durante cuánto')}</label>
+        <input ${aria(L('Per quanto', 'For how long', 'Durante cuánto'))} type="text" data-campo="durata" maxlength="40" placeholder="${esc(L('vuoto = 2 minuti, oppure 5m, 90s, $arg1', 'empty = 2 minutes, or 5m, 90s, $arg1', 'vacío = 2 minutos, o 5m, 90s, $arg1'))}" value="${esc(a.durata || '')}">
+        <label class="riga-check spazio-sopra"><input type="checkbox" data-campo="annuncia"${a.annuncia !== false ? ' checked' : ''}> ${L('Lo dico in chat, quando parte e quando finisce', 'I say it in chat, when it starts and when it ends', 'Lo digo en el chat, cuando empieza y cuando termina')}</label>
+        <p class="suggerimento">${L('Alla fine la chat torna com\'era da sola, anche se nel frattempo il bot si riavvia. Se la modalità era già accesa da un mod, la lascio stare. Chat lenta e soli follower non ci sono apposta: le usa lo scudo contro gli attacchi. Serve il permesso di gestire le impostazioni della chat.', 'At the end the chat goes back to how it was on its own, even if the bot restarts in the meantime. If a mod had already turned the mode on, I leave it alone. Slow mode and followers-only are left out on purpose: the shield uses them against attacks. It needs the permission to manage chat settings.', 'Al final el chat vuelve solo a como estaba, aunque el bot se reinicie mientras tanto. Si un mod ya había activado el modo, lo dejo estar. El modo lento y solo seguidores no están a propósito: los usa el escudo contra los ataques. Hace falta el permiso para gestionar los ajustes del chat.')}</p>`;
     case 'shoutout':
       return `
-        <label class="campo">Canale a cui fare shoutout (vuoto = il nome dopo il comando o chi ti raida)</label>
-        <input aria-label="Canale a cui fare shoutout (vuoto = il nome dopo il comando o chi ti raida)" type="text" data-campo="canale" placeholder="es. giorgiottv oppure lascia vuoto per $touser" value="${esc(a.canale || '')}">
-        <label class="campo spazio-sopra">Messaggio extra in chat (facoltativo)</label>
-        <textarea data-campo="testo" data-var-target placeholder="es. Andate a seguire @$touser! Stava streammando $giocotarget">${esc(a.testo || '')}</textarea>
+        ${etichetta(L('Canale a cui fare shoutout (vuoto = il nome dopo il comando o chi ti raida)', 'Channel to shout out (empty = the name after the command or whoever raids you)', 'Canal al que hacer shoutout (vacío = el nombre tras el comando o quien te hace raid)'))}
+        <input ${aria(L('Canale a cui fare shoutout (vuoto = il nome dopo il comando o chi ti raida)', 'Channel to shout out (empty = the name after the command or whoever raids you)', 'Canal al que hacer shoutout (vacío = el nombre tras el comando o quien te hace raid)'))} type="text" data-campo="canale" placeholder="${esc(L('es. giorgiottv oppure lascia vuoto per $touser', 'e.g. giorgiottv or leave empty for $touser', 'p. ej. giorgiottv o déjalo vacío para $touser'))}" value="${esc(a.canale || '')}">
+        <label class="campo spazio-sopra">${L('Messaggio extra in chat (facoltativo)', 'Extra chat message (optional)', 'Mensaje extra en el chat (opcional)')}</label>
+        <textarea ${aria(L('Messaggio extra in chat (facoltativo)', 'Extra chat message (optional)', 'Mensaje extra en el chat (opcional)'))} data-campo="testo" data-var-target placeholder="${esc(L('es. Andate a seguire @$touser! Stava streammando $giocotarget', 'e.g. Go follow @$touser! They were streaming $giocotarget', 'p. ej. ¡Id a seguir a @$touser! Estaba jugando a $giocotarget'))}">${esc(a.testo || '')}</textarea>
         ${pillole}
-        <p class="suggerimento">Lo shoutout ufficiale di Twitch (il banner). Serve essere in diretta e il permesso <strong class="primo-piano">shoutout</strong>. Per l'auto-shoutout ai raid: crea un modulo con innesco «Un evento del canale», evento «Raid», e questa azione col canale vuoto.</p>`;
+        <p class="suggerimento">${L('Lo shoutout ufficiale di Twitch (il banner). Serve essere in diretta e il permesso <strong class="primo-piano">shoutout</strong>. Per l\'auto-shoutout ai raid: crea un modulo con innesco «Un evento del canale», evento «Raid», e questa azione col canale vuoto.', 'Twitch\'s official shoutout (the banner). You need to be live and have the <strong class="primo-piano">shoutout</strong> permission. For auto-shoutouts on raids: create a module with the «A channel event» trigger, event «Raid», and this action with the channel empty.', 'El shoutout oficial de Twitch (el banner). Hace falta estar en directo y el permiso de <strong class="primo-piano">shoutout</strong>. Para el auto-shoutout en los raids: crea un módulo con el disparador «Un evento del canal», evento «Raid», y esta acción con el canal vacío.')}</p>`;
     default:
       return '';
   }
@@ -29785,27 +29770,27 @@ function disegnaConnettori() {
     : (ceUna ? L('c\u2019è, ma non si può rivedere', 'set, but cannot be shown again', 'existe, pero no se puede volver a ver') : L('nessuna chiave', 'no key', 'sin clave'));
 
   const esempio = `curl -X POST ${apiUrl || 'https://socialbot.live/api/ext/<login>'} \\
-  -H "Authorization: Bearer LA_TUA_CHIAVE" \\
+  -H "Authorization: Bearer ${L('LA_TUA_CHIAVE', 'YOUR_KEY', 'TU_CLAVE')}" \\
   -H "Content-Type: application/json" \\
-  -d '{"azione":"messaggio","testo":"Ciao dalla mia app!"}'`;
+  -d '{"azione":"messaggio","testo":"${L('Ciao dalla mia app!', 'Hi from my app!', 'Hola desde mi app!')}"}'`;
 
   box.innerHTML = `
-    <label class="campo">Chiave API in ingresso</label>
+    <label class="campo">${L('Chiave API in ingresso', 'Incoming API key', 'Clave API de entrada')}</label>
     <div class="riga-flessibile">
-      <input type="text" class="campo-largo" readonly aria-label="Chiave API in ingresso" value="${esc(chiaveMostrata)}">
+      <input type="text" class="campo-largo" readonly aria-label="${esc(L('Chiave API in ingresso', 'Incoming API key', 'Clave API de entrada'))}" value="${esc(chiaveMostrata)}">
       ${apiKey ? `<button class="btn secondario mini" data-apikey="mostra">${apiKeyVisibile ? L('Nascondi', 'Hide', 'Ocultar') : L('Mostra', 'Show', 'Mostrar')}</button>` : ''}
       ${apiKey ? `<button class="btn secondario mini" data-apikey="copia">${L('Copia', 'Copy', 'Copiar')}</button>` : ''}
       <button class="btn secondario mini" data-apikey="rigenera">${ceUna ? L('Rigenera', 'Regenerate', 'Regenerar') : L('Genera chiave', 'Generate key', 'Generar clave')}</button>
     </div>
     <p class="suggerimento">${L('Tienila segreta: chi ha questa chiave può far parlare o agire il tuo bot. Di lei conserviamo solo un\u2019impronta, quindi', 'Keep it secret: whoever has this key can make your bot speak or act. We only keep a fingerprint of it, so', 'Guárdala en secreto: quien la tenga puede hacer hablar o actuar a tu bot. De ella solo guardamos una huella, así que')} <strong>${L('si vede una volta sola', 'it is shown only once', 'se ve una sola vez')}</strong>${L(': se la perdi ne generi un\u2019altra. Nemmeno noi possiamo rileggerla, e se ci rubassero il database non ci sarebbe niente da rubare.', ': if you lose it you generate another. Not even we can read it back, and a stolen database would hold nothing to steal.', ': si la pierdes, generas otra. Ni nosotros podemos releerla, y una base de datos robada no tendría nada que robar.')}</p>
 
-    <label class="campo">URL a cui inviare le richieste</label>
+    <label class="campo">${L('URL a cui inviare le richieste', 'URL to send requests to', 'URL a la que enviar las peticiones')}</label>
     <div class="riga-flessibile">
-      <input type="text" class="campo-largo" readonly aria-label="URL a cui inviare le richieste" value="${esc(apiUrl)}" placeholder="—">
-      <button class="btn secondario mini" data-apikey="copia-url">Copia</button>
+      <input type="text" class="campo-largo" readonly aria-label="${esc(L('URL a cui inviare le richieste', 'URL to send requests to', 'URL a la que enviar las peticiones'))}" value="${esc(apiUrl)}" placeholder="—">
+      <button class="btn secondario mini" data-apikey="copia-url">${L('Copia', 'Copy', 'Copiar')}</button>
     </div>
 
-    <label class="campo">Esempio d'uso</label>
+    <label class="campo">${L('Esempio d\'uso', 'Example', 'Ejemplo de uso')}</label>
     <pre class="blocco-codice">${esc(esempio)}</pre>`;
 
   box.onclick = (ev) => {
@@ -29816,9 +29801,9 @@ function disegnaConnettori() {
       apiKeyVisibile = !apiKeyVisibile;
       disegnaConnettori();
     } else if (azione === 'copia') {
-      copiaTesto(datiModuli?.apiKey || '', 'Chiave copiata');
+      copiaTesto(datiModuli?.apiKey || '', L('Chiave copiata', 'Key copied', 'Clave copiada'));
     } else if (azione === 'copia-url') {
-      copiaTesto(datiModuli?.apiUrl || '', 'URL copiato');
+      copiaTesto(datiModuli?.apiUrl || '', L('URL copiato', 'URL copied', 'URL copiada'));
     } else if (azione === 'rigenera') {
       conErrore(async () => {
         const nuova = !!(datiModuli?.apiKey || datiModuli?.apiKeySet);

@@ -103,13 +103,18 @@ function oggetto(nome) {
 }
 
 test('i percorsi dell\'editor dei moduli e della pagina di ascolto sono quelli del menu', () => {
-  const gruppi = new Set(Object.values(oggetto('T_GRUPPO')).map((v) => v[0]));
-  const nomi = new Set([...gruppi, ...Object.values(oggetto('T_SCHEDA')).map((v) => v[0]),
+  // i nomi in tutte e tre le lingue: l'editor parla la lingua del pannello
+  const gruppi = new Set(Object.values(oggetto('T_GRUPPO')).flat());
+  const nomi = new Set([...gruppi, ...Object.values(oggetto('T_SCHEDA')).flat(), ...Object.values(oggetto('FAM_ETI')).flat(),
     ...[...APP.matchAll(/\{ id: '[a-z]+', nome: '([^']+)', parti: \[/g)].map((m) => m[1])]);
   const pulito = (x) => x.replace(/&amp;/g, '&').replace(/<[^>]+>/g, '').trim();
   const percorsi = [];
   const dove = corpo('function disegnaCampiQuando(t)') + corpo('function disegnaCampiAzione(a)');
-  for (const m of dove.matchAll(/<strong>([^<]*→[^<]*)<\/strong>/g)) percorsi.push(m[1]);
+  for (const m of dove.matchAll(/<strong>([^<]*→[^<]*)<\/strong>/g)) {
+    // dentro L() ci sono le tre lingue: ognuna e' un percorso
+    if (/\$\{L\(/.test(m[1])) percorsi.push(...[...m[1].matchAll(/'((?:[^'\\]|\\.)*)'/g)].map((x) => x[1]));
+    else percorsi.push(m[1]);
+  }
   const VOCE = leggi('src/web/public/voce.js');
   for (const m of VOCE.matchAll(/([A-Za-zÀ-ÿ&; ]+(?: → [A-Za-zÀ-ÿ&; ]+)+)/g)) percorsi.push(m[1]);
   assert.ok(percorsi.length >= 6, `i percorsi si leggono (${percorsi.length})`);
@@ -233,4 +238,104 @@ test('la carta del comando vocale dice anche del motore locale', () => {
   const carta = pannello.slice(pannello.indexOf('ICO.voce'), pannello.indexOf('ICO.giochi'));
   assert.doesNotMatch(carta, /Funziona su Chrome o Edge/);
   assert.match(carta, /motore locale/);
+});
+
+// L'EDITOR DEI MODULI PARLA LA LINGUA DEL PANNELLO. Era rimasto tutto in
+// italiano: gli inneschi, le azioni, gli eventi, le etichette dei campi, i
+// riassunti, «Prova/Modifica/Elimina», le sottoschede. Qui si legge il testo
+// che si vede (fra i tag, e in placeholder, title e aria-label) e non se ne
+// accetta uno scritto fuori da L().
+function fineStringa(s, i) {
+  const q = s[i];
+  for (let k = i + 1; k < s.length; k++) {
+    if (s[k] === '\\') { k++; continue; }
+    if (q === '`' && s[k] === '$' && s[k + 1] === '{') { k = fineGruppo(s, k + 1); continue; }
+    if (s[k] === q) return k;
+  }
+  return s.length;
+}
+function fineGruppo(s, i) {
+  let prof = 0;
+  for (let k = i; k < s.length; k++) {
+    const c = s[k];
+    if (c === "'" || c === '"' || c === '`') { k = fineStringa(s, k); continue; }
+    if (c === '(' || c === '[' || c === '{') prof++;
+    else if (c === ')' || c === ']' || c === '}') { prof--; if (prof === 0) return k; }
+  }
+  return s.length;
+}
+// Il testo che si legge in un pezzo di pagina: fra i tag, e negli attributi che
+// si vedono. Il codice (<code>, $variabili, !comandi, indirizzi) non e' lingua.
+function siVede(html) {
+  const attr = [...html.matchAll(/\b(?:placeholder|title|aria-label)="([^"]*)"/g)].map((m) => m[1]);
+  const fra = html.replace(/<code>[\s\S]*?<\/code>/g, ' ').replace(/<[^>]*>/g, ' ').replace(/\b[\w-]+="[^"]*"/g, ' ');
+  // un esempio di codice (la chiamata curl dei connettori) non e' lingua
+  return [fra.replace(/\bcurl -X[\s\S]*/, ' '), ...attr].map((t) => t.replace(/&[a-z#0-9]+;/gi, ' ')
+    .replace(/https?:\/\/\S*|[$!/][\w./()|,-]+|\bMic\/Aux\b|\bCONTATORify\b|\bCONSOLify\b/g, ' '))
+    .filter((t) => /[A-Za-zÀ-ÿ]{2,}/.test(t));
+}
+function fuoriDaL(s) {
+  const trovate = [];
+  for (let k = 0; k < s.length; k++) {
+    if (/\bLv?\($/.test(s.slice(Math.max(0, k - 2), k + 1)) && !/[\w$.]/.test(s[k - (s[k - 1] === 'v' ? 3 : 2)] || '')) { k = fineGruppo(s, k); continue; }
+    if (s[k] === '(' && /\.[A-Za-z_$][\w$]*$/.test(s.slice(0, k))) { k = fineGruppo(s, k); continue; }
+    const c = s[k];
+    if (c !== "'" && c !== '"' && c !== '`') continue;
+    const fine = fineStringa(s, k);
+    const prima = s.slice(0, k).trimEnd();
+    const dopo = s.slice(fine + 1).trimStart();
+    const confronto = /(===|!==|==|!=|\bcase)$/.test(prima) || /^(===|!==|==|!=)/.test(dopo);
+    const corpo = s.slice(k + 1, fine);
+    if (c === '`') {
+      let fisso = '';
+      for (let j = 0; j < corpo.length; j++) {
+        if (corpo[j] === '\\') { j++; continue; }
+        if (corpo[j] === '$' && corpo[j + 1] === '{') {
+          const f = fineGruppo(corpo, j + 1);
+          trovate.push(...fuoriDaL(corpo.slice(j + 2, f)));
+          fisso += ' ';
+          j = f;
+          continue;
+        }
+        fisso += corpo[j];
+      }
+      trovate.push(...siVede(fisso));
+    } else if (!confronto && (/[A-Za-zÀ-ÿ]{2,} [A-Za-zÀ-ÿ]{2,}/.test(corpo) || /^[A-ZÀ-Ý][a-zà-ÿ]+/.test(corpo) || /^<[^>]+>[^<]*[A-Za-zÀ-ÿ]{2,}/.test(corpo))) {
+      trovate.push(...siVede(corpo));
+    }
+    k = fine;
+  }
+  return trovate;
+}
+
+test('il cancello della lingua vede quello che deve vedere', () => {
+  assert.deepEqual(fuoriDaL("`<label class=\"campo\">Nome contatore</label>`"), [' Nome contatore ']);
+  assert.deepEqual(fuoriDaL("`<input placeholder=\"es. Ciao\" value=\"${x}\">`"), ['es. Ciao']);
+  assert.deepEqual(fuoriDaL("`<label>${L('Nome', 'Name', 'Nombre')}</label>`"), []);
+  assert.deepEqual(fuoriDaL("return 'invia un messaggio';"), ['invia un messaggio']);
+  assert.deepEqual(fuoriDaL("a.op === 'porta via' ? `<code>$user</code>` : ''"), []);
+  assert.deepEqual(fuoriDaL("[['primary', 'Predefinito (viola)']]"), ['Predefinito (viola)']);
+});
+
+test('l\'editor dei moduli, la sua lista e i connettori passano tutti da L()', () => {
+  const fuori = [];
+  for (const f of ['function riassuntoModulo(', 'function riassuntoQuando(', 'function riassuntoSe(', 'function riassuntoAzione(',
+    'function _quantiModulo(', 'async function caricaModuli(', 'function disegnaListaModuli(', 'function apriEditor(',
+    'function disegnaCampiQuando(', 'function disegnaAzione(', 'function disegnaCampiAzione(', 'function gestisciClicEditor(',
+    'function disegnaConnettori(', 'function sottoSchedeHtml(']) {
+    for (const p of fuoriDaL(corpo(f))) fuori.push(`${f.replace(/^(async )?function /, '')}: «${p.trim().slice(0, 60)}»`);
+  }
+  assert.deepEqual(fuori, [], 'testi scritti fuori da L()');
+  const voci = (nome) => {
+    const i = APP.indexOf(`const ${nome} = [`);
+    return new Function(`return ${APP.slice(APP.indexOf('[', i), APP.indexOf('\n];', i) + 2)}`)();
+  };
+  for (const nome of ['EVENTI', 'TRIGGER', 'AZIONI']) {
+    for (const v of voci(nome)) assert.equal(v.filter((x) => typeof x === 'string' && x.trim()).length, 4, `${nome}: «${v[1]}» in tre lingue`);
+  }
+  for (const nome of ['EVENTI_TXT', 'SCALA_EVENTO']) {
+    for (const [k, v] of Object.entries(oggetto(nome))) assert.ok(Array.isArray(v) && v.length === 3, `${nome}.${k} in tre lingue`);
+  }
+  const sotto = oggetto('SOTTO_SCHEDE');
+  for (const [, v] of Object.values(sotto).flatMap((x) => x.voci)) assert.ok(Array.isArray(v) || /^[A-Z]+ify$/.test(v), `sottoscheda «${v}» in tre lingue`);
 });
