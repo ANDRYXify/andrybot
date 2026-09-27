@@ -26,3 +26,13 @@ test('il bot su Telegram nomina il tasto che c\'e\'', () => {
 test('niente refusi nella carta del bot scollegato', () => {
   assert.ok(!APP.includes('riccolleg'));
 });
+
+// UNA PASSKEY «CREATA» SOLO SE C'E'. Su un dispositivo senza passkey il
+// pannello diceva l'errore e subito dopo «Passkey creata!».
+test('«Passkey creata!» solo quando il server l\'ha salvata', () => {
+  const i = APP.indexOf('async function creaPasskey() {');
+  const f = APP.slice(i, APP.indexOf('\n}\n', i));
+  assert.match(f, /if \(!window\.PublicKeyCredential\) \{ toast\([^\n]*'errore'\); return false; \}/, 'senza passkey dice di no');
+  assert.match(f, /await api\('\/api\/passkey\/registra\/fine'[\s\S]*\n {2}return true;$/, 'e dice si\' solo dopo il salvataggio');
+  assert.ok(APP.includes("try { if (!(await creaPasskey())) return; toast(L('Passkey creata!"), 'il tasto crede a quello che risponde');
+});

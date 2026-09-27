@@ -25333,7 +25333,7 @@ function attivaPiattaforma() {
 
   document.getElementById('btn-crea-passkey')?.addEventListener('click', (ev) => conErrore(async () => {
     const btn = ev.currentTarget; btn.disabled = true;
-    try { await creaPasskey(); toast(L('Passkey creata! Ora puoi rientrare senza pass', 'Passkey created! Now you can log back in without a password', '¡Passkey creada! Ahora puedes volver a entrar sin contraseña')); caricaPasskey(); }
+    try { if (!(await creaPasskey())) return; toast(L('Passkey creata! Ora puoi rientrare senza pass', 'Passkey created! Now you can log back in without a password', '¡Passkey creada! Ahora puedes volver a entrar sin contraseña')); caricaPasskey(); }
     catch (e) {
       if (e?.name === 'NotAllowedError') toast(L('Operazione annullata.', 'Operation canceled.', 'Operación cancelada.'), 'errore');
       else toast(L('Passkey non creata: ', 'Passkey not created: ', 'Passkey no creada: ') + (e.message || e), 'errore');
@@ -30487,7 +30487,7 @@ const bufToB64url = (buf) => {
 };
 
 async function creaPasskey() {
-  if (!window.PublicKeyCredential) { toast(L('Questo dispositivo non supporta le passkey.', "This device doesn't support passkeys.", 'Este dispositivo no admite passkeys.'), 'errore'); return; }
+  if (!window.PublicKeyCredential) { toast(L('Questo dispositivo non supporta le passkey.', "This device doesn't support passkeys.", 'Este dispositivo no admite passkeys.'), 'errore'); return false; }
   const opt = await api('/api/passkey/registra/inizio', { method: 'POST', body: {} });
   const cred = await navigator.credentials.create({ publicKey: {
     challenge: b64urlToBuf(opt.challenge),
@@ -30505,6 +30505,7 @@ async function creaPasskey() {
     clientDataJSON: bufToB64url(cred.response.clientDataJSON),
     nome,
   } });
+  return true;
 }
 
 function mostraInvito(invito) {
