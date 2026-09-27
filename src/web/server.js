@@ -7530,6 +7530,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const login = currentUser(req).login;
     const clip = await helix.createClip(login);
     if (!clip) return res.status(400).json({ errore: 'Nessuna clip: devi essere in diretta.' });
+    // nello stesso registro delle automatiche e dei Moduli: da li' la leggono
+    // «Ultime clip», il rapporto della serata e le statistiche
+    try { clips.log(login, clip.id || '', clip.url, 'dalla Regia'); } catch (e) { log.warn(`clip dalla Regia non registrata #${login}:`, e?.message || e); }
     res.json({ ok: true, url: clip.url, editUrl: clip.editUrl });
   }));
 

@@ -105,7 +105,7 @@ export default {
     { h3: 'Ultime clip' },
     { p: [
       'Le ultime 20 clip del canale, dalla più recente: il collegamento, il motivo e quando è nata. Ci sono le automatiche, quelle di «Crea clip» in «Regia», quelle dei momenti salienti, quelle chieste in chat e quelle fatte da un modulo o da un comando vocale.',
-      'Il motivo dice cosa l\'ha fatta nascere, per esempio «momento hype: la chat esplode di reazioni», «momento hype: la chat è impazzita all’improvviso», «momento hype: raid di …», «momento hype: valanga di bit», «momento hype: nuovo sub», «momento saliente (audio della live)», «richiesta in chat da …», «modulo», «comando vocale».',
+      'Il motivo dice cosa l\'ha fatta nascere, per esempio «momento hype: la chat esplode di reazioni», «momento hype: la chat è impazzita all’improvviso», «momento hype: raid di …», «momento hype: valanga di bit», «momento hype: nuovo sub», «momento saliente (audio della live)», «richiesta in chat da …», «dalla Regia» (il tasto «Crea clip»), «modulo», «comando vocale».',
       'Se l\'elenco è vuoto leggi «Nessuna clip ancora: arriveranno nei momenti di hype!». Se dopo una serata trovi troppe clip da scartare, abbassa la sensibilità.',
     ] },
 
