@@ -31,6 +31,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Ogni scheda del pannello ha il suo manuale: Stato, Effetti e Community si aggiungono agli altri, che ora dicono le etichette e i messaggi che vedi davvero.
 - In chat «!bot» e «!ia» rispondono sempre, anche con i comandi base spenti: fra i comandi pronti non si spengono, non si rinominano e non si riservano più. [vai: moduli]
 - Con la gestione dei comandi dalla chat accesa, «!comando lista» lo può scrivere chiunque: aggiungere, cambiare e togliere comandi resta ai moderatori. [vai: moduli]
+- La guida dei contatori e il tasto «Accendi a schermo» non dicono più che il numero riparte da zero: si accende col numero a cui è arrivato. [vai: moduli]
 
 ## 2026-09-26
 
