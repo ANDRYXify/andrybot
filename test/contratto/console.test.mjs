@@ -927,7 +927,8 @@ test('un passo da completare non passa dal ponte dei Moduli', async () => {
 test('il pannello mostra «da completare», lo salta premendo e salva subito un passo nuovo', () => {
   const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
   const premi = app.slice(app.indexOf('async function premiTasto('), app.indexOf('async function eseguiPassoRegia('));
-  assert.match(premi, /\.incompleto\)/, 'premendo, i passi da completare si saltano');
+  assert.match(premi, /if \(p\.incompleto\) continue;/, 'premendo, i passi da completare si saltano');
+  assert.match(premi, /filter\(\(p\) => !p\.incompleto\)/, 'e il conto dei passi guarda solo quelli pronti');
   assert.match(premi, /L\('da completare'/, 'e senza passi pronti il tasto dice perché');
   const passo = app.slice(app.indexOf('function disegnaPasso('), app.indexOf('function disegnaSchedaTasto('));
   assert.match(passo, /data-cons-manca=/, 'ogni passo ha il posto del segno');
