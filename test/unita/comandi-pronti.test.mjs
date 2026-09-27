@@ -280,3 +280,18 @@ test('!comando lista e\' aperto a tutti, aggiungere e togliere restano ai mod', 
   commands.remove(CH, 'prova');
   streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), comandiChat: { attivo: false } });
 });
+
+// UN SALVATAGGIO CAMBIA LE RIGHE CHE SI VEDEVANO. I giochi stanno in due liste
+// del pannello; salvando da una, le scelte lette dall'altra coprivano quelle
+// appena fatte. Ora chi salva dice quali righe aveva davanti.
+test('salvare da una lista cambia solo le sue righe', () => {
+  const prima = { slot: { off: true }, so: { nome: 'grida' } };
+  // dalla lista di Comandi, che le ha tutte: lo slot torna com'era di serie
+  const tutte = T.COMANDI.map((c) => c.id);
+  assert.deepEqual(T.unisci(prima, { so: { nome: 'grida' } }, tutte), { so: { nome: 'grida' } }, 'lo slot riacceso resta acceso');
+  // dalla lista di Giochi, che ha solo i giochi: lo shoutout rinominato non si perde
+  const giochi = T.COMANDI.filter((c) => c.modulo === 'giochi').map((c) => c.id);
+  assert.deepEqual(T.unisci(prima, { dado: { chi: 'sub' } }, giochi), { so: { nome: 'grida' }, dado: { chi: 'sub' } });
+  assert.deepEqual(T.unisci(prima, { so: { off: true } }, ['dado']), prima, 'una riga fuori dalla lista non passa');
+  assert.deepEqual(T.unisci({ bot: { off: true } }, {}, []), {}, 'e quello che non si puo\' salvare non si salva');
+});

@@ -416,7 +416,7 @@ export default {
       'Se un\'intera famiglia è spenta, sopra leggi «famiglia spenta: questi comandi non rispondono». Si riaccende dal suo interruttore, nella scheda di quella funzione: per esempio i giochi in <em>Giochi &amp; classifiche</em>, le ore guardate, i comandi base e la gestione dei comandi dalla chat in <em>Comodità in chat</em>.',
       'A chi non può il bot risponde dicendo a chi è riservato, per esempio «!slot qui è riservato a chi è abbonato.».',
       'Due comandi non possono chiamarsi allo stesso modo: il pannello non salva e ti dice quale nome è già di un altro comando. Un comando tuo con lo stesso nome vince sempre su quello pronto, alias compresi: non devi spegnere niente. Se il tuo modulo è spento, risponde di nuovo quello pronto.',
-      'I comandi dei giochi compaiono anche nella scheda <em>Giochi &amp; classifiche</em>: è la stessa impostazione, vista da due posti.',
+      'I comandi dei giochi compaiono anche nella scheda <em>Giochi &amp; classifiche</em>: è la stessa impostazione, vista da due posti. Ogni «Salva i comandi» salva le righe della sua lista, e lascia le altre come le avevi salvate.',
     ] },
 
     { h3: 'CONTATORify: le morti contate da sole' },

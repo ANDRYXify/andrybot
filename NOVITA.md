@@ -33,6 +33,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Con la gestione dei comandi dalla chat accesa, «!comando lista» lo può scrivere chiunque: aggiungere, cambiare e togliere comandi resta ai moderatori. [vai: moduli]
 - La guida dei contatori e il tasto «Accendi a schermo» non dicono più che il numero riparte da zero: si accende col numero a cui è arrivato. [vai: moduli]
 - Nell'elenco dei moduli il riassunto dell'azione «Contatore» dice se azzera o imposta il numero: prima diceva sempre che lo aumentava. [vai: moduli]
+- «Salva i comandi» salva le righe della sua lista: un gioco rimesso com'era di serie nella scheda Comandi non torna più come lo mostrava ancora la scheda Giochi. [vai: moduli]
 
 ## 2026-09-26
 

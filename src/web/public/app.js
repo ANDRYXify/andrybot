@@ -21467,12 +21467,15 @@ function _gcGruppi(righe) {
   }).join('');
 }
 
-async function salvaGiochiComandi() {
-  const righe = [...document.querySelectorAll('.gc-lista .gc-riga')];
+async function salvaGiochiComandi(ev) {
+  const lista = ev?.currentTarget?.closest?.('.carta')?.querySelector('.gc-lista');
+  const righe = lista ? [...lista.querySelectorAll('.gc-riga')] : [];
   if (!righe.length) return;
   const comandi = {};
+  const ids = [];
   righe.forEach((li) => {
     const id = li.dataset.gc;
+    ids.push(id);
     const on = li.querySelector('[data-gc-on]');
     const nome = li.querySelector('[data-gc-nome]')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || '';
     const chi = li.querySelector('[data-gc-chi]')?.value || 'tutti';
@@ -21483,7 +21486,7 @@ async function salvaGiochiComandi() {
     if (Object.keys(riga).length) comandi[id] = riga;
   });
   try {
-    await api('/api/streamer/comandi-pronti', { method: 'POST', body: { comandi } });
+    await api('/api/streamer/comandi-pronti', { method: 'POST', body: { comandi, ids } });
     caricaGiochiComandi();
     toast(L('Comandi salvati ✓', 'Commands saved ✓', 'Comandos guardados ✓'));
   } catch (e) {

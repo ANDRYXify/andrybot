@@ -46,3 +46,37 @@ test('il riassunto dell\'azione contatore dice l\'operazione scelta nell\'editor
   assert.match(r({ tipo: 'contatore', nome: 'morti', op: 'imposta', valore: 7 }), /imposta[^\n]*7/i);
   assert.doesNotMatch(r({ tipo: 'contatore', nome: 'morti', op: 'incrementa' }), /azzera|imposta/i);
 });
+
+// «Salva i comandi» c'e' due volte: nella scheda Comandi (tutti i comandi) e in
+// Giochi (i comandi dei giochi). Legge solo la lista della sua carta, e dice al
+// server quali righe aveva davanti: una scelta riportata al valore di base in
+// una lista non viene piu' coperta dalla riga dell'altra.
+function rigaFinta(id, { on = true, nome = '', chi = 'tutti' } = {}) {
+  const campi = { '[data-gc-on]': { checked: on }, '[data-gc-nome]': { value: nome }, '[data-gc-chi]': { value: chi } };
+  return { dataset: { gc: id }, querySelector: (q) => campi[q] || null };
+}
+function listaFinta(righe) {
+  return { querySelectorAll: (q) => (q === '.gc-riga' ? righe : []) };
+}
+
+test('«Salva i comandi» manda solo le righe della sua lista, e quali erano', async () => {
+  const comandi = listaFinta([rigaFinta('slot'), rigaFinta('so', { nome: 'grida' })]);
+  const giochi = listaFinta([rigaFinta('slot', { on: false })]);
+  const carta = (ul) => ({ querySelector: (q) => (q === '.gc-lista' ? ul : null) });
+  const tasto = (ul) => ({ closest: (q) => (q === '.carta' ? carta(ul) : null) });
+  const mandati = [];
+  const documento = { querySelectorAll: () => [...comandi.querySelectorAll('.gc-riga'), ...giochi.querySelectorAll('.gc-riga')] };
+  const salva = new Function('document', 'api', 'toast', 'caricaGiochiComandi', 'L',
+    `${corpo('async function salvaGiochiComandi(')}; return salvaGiochiComandi;`)(
+    documento, async (url, o) => { mandati.push(o.body); return {}; }, () => {}, () => {}, (it) => it);
+
+  await salva({ currentTarget: tasto(comandi) });
+  assert.deepEqual(mandati[0].comandi, { so: { nome: 'grida' } }, 'lo slot riacceso non viene coperto dalla lista dei giochi');
+  assert.deepEqual(mandati[0].ids, ['slot', 'so']);
+  await salva({ currentTarget: tasto(giochi) });
+  assert.deepEqual(mandati[1], { comandi: { slot: { off: true } }, ids: ['slot'] });
+
+  const SRV = leggi('src/web/server.js');
+  const rotta = SRV.slice(SRV.indexOf("app.post('/api/streamer/comandi-pronti'"), SRV.indexOf("app.get('/api/streamer/giochi'"));
+  assert.match(rotta, /unisciComandi\(s\?\.settings\?\.comandi, req\.body\?\.comandi, req\.body\.ids\)/, 'il server cambia solo le righe mandate');
+});

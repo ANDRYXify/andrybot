@@ -46,7 +46,7 @@ import { paginaManuale, paginaIndiceManuali, aiutiPerScheda } from './manuali.js
 import { conOccasione, normOccasioni, accendi as accendiOccasione } from '../features/occasioni.js';
 import * as cancello from '../features/tg-cancello.js';
 import { permessiDi as permessiDiChat, guai as guaiCancello } from '../features/tg-ingresso.js';
-import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
+import { elenco as elencoComandi, normalizza as normalizzaComandi, unisci as unisciComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
 import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX, bloccaDaConsole } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
 import { aperto as incidenteAperto, elenco as elencoIncidenti, uno as unIncidente, sintesi as sintesiIncidente } from '../features/incidenti.js';
@@ -8793,12 +8793,16 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
 
   app.post('/api/streamer/comandi-pronti', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const scelte = normalizzaComandi(req.body?.comandi);
+    const s = streamers.get(login);
+    // Con `ids` il pannello dice quali righe aveva davanti: cambiano solo
+    // quelle, e le altre restano come erano salvate.
+    const scelte = Array.isArray(req.body?.ids)
+      ? unisciComandi(s?.settings?.comandi, req.body?.comandi, req.body.ids)
+      : normalizzaComandi(req.body?.comandi);
     const scontri = collisioniComandi(scelte);
     if (scontri.length) {
       return res.status(400).json({ errore: `il nome «${scontri[0].nome}» e' gia' di un altro comando` });
     }
-    const s = streamers.get(login);
     streamers.setSettings(login, { ...(s?.settings || {}), comandi: scelte });
     res.json({ ok: true, comandi: elencoComandi(login) });
   }));

@@ -605,6 +605,21 @@ export function normalizza(dati) {
   return fuori;
 }
 
+// UN SALVATAGGIO RIGUARDA LE RIGHE CHE SI VEDEVANO. Gli stessi comandi stanno
+// in due liste del pannello (tutti in Comandi, i giochi anche in Giochi): chi
+// salva da una lista manda le sue righe, `ids`, e solo quelle cambiano. Le
+// scelte degli altri comandi restano quelle salvate, invece di essere coperte
+// da una lista che nessuno stava guardando.
+export function unisci(prima, arrivate, ids) {
+  const qui = new Set((Array.isArray(ids) ? ids : []).map(String));
+  const vecchie = normalizza(prima);
+  const nuove = normalizza(arrivate);
+  const fuori = {};
+  for (const [id, v] of Object.entries(vecchie)) if (!qui.has(id)) fuori[id] = v;
+  for (const [id, v] of Object.entries(nuove)) if (qui.has(id)) fuori[id] = v;
+  return fuori;
+}
+
 // Due comandi non possono rispondere alla stessa parola: il secondo non
 // partirebbe mai, e nessuno capirebbe perche'.
 export function collisioni(dati) {
