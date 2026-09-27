@@ -5113,7 +5113,7 @@ function _settLeggi() {
     giorni: _settLeggiGiorni(),
     dura: Number(_g('sett-dura')?.value) || w.dura,
     fuso: _fusoQui() || w.fuso,
-    dove: w.dove,
+    dove: _settPosti ? _settDoveScelti() : w.dove,
     twitch: { acceso: _g('sett-tw') ? !!_g('sett-tw').checked : w.twitch.acceso },
   };
 }
@@ -5151,7 +5151,7 @@ async function caricaSettimana() {
   let d = null;
   try { d = await api('/api/streamer/settimana'); } catch { d = null; }
   if (d?.settimana && stato?.streamer) stato.streamer.settings = { ...(stato.streamer.settings || {}), settimana: d.settimana };
-  _settPosti = d?.posti || {};
+  _settPosti = d ? (d.posti || {}) : null;
   _settDisegnaGiorni();
   _settDisegnaCalendari();
   _settDisegnaDove();

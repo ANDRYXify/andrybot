@@ -33,6 +33,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nell'aspetto della pagina link, movimento, spessore e ombra dei bottoni mostrano quelli che la pagina usa davvero, anche dopo un tema pronto: prima il pannello diceva «Fermo», «Leggero» e «Nessuna». [vai: pagina]
 - Nel registro delle donazioni, «Rimborsa» su una donazione arrivata con Satispay chiede conferma nominando il tuo negozio Satispay, non più il conto Stripe. [vai: donazioni]
 - Nell'aspetto della pagina link, «Modi» dice come va davvero il permesso per video e musica di altri siti: con «Caricali subito» chi apre la pagina trova prima una fascia che glielo chiede. [vai: pagina]
+- Nella tua settimana, «Salva la settimana» ricorda i posti che hai spuntato in «Mandala»: prima teneva quelli di prima, e la settimana automatica usciva nei posti vecchi. [vai: settimana]
 
 ## 2026-09-26
 

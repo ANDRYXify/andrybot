@@ -110,3 +110,19 @@ test('nel pannello le categorie di Twitch si cercano in un posto solo', () => {
   assert.ok(usi.includes('campo'), 'e i giorni della settimana anche');
   assert.equal([...APP.matchAll(/api\('\/api\/streamer\/regia\/giochi\?q='/g)].length, 1, 'una chiamata sola alla ricerca dei giochi');
 });
+
+test('«Salva la settimana» salva i posti spuntati, e quelli di prima solo se la lista non si e\' caricata', async () => {
+  const fz = (nome) => { const i = APP.indexOf(`function ${nome}(`); assert.ok(i >= 0, `manca ${nome}`); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
+  const spunte = [{ dataset: { settDove: 'tg' }, value: '11' }, { dataset: { settDove: 'ig' }, value: 'storia' }];
+  const prova = (posti) => new Function('document', '_settPosti', `
+    const settimanaOra = () => ({ giorni: [], dura: 120, fuso: 'Europe/Rome', dove: { tg: ['99'], dc: ['7'], ig: false }, twitch: { acceso: false } });
+    const _settLeggiGiorni = () => []; const _g = () => null; const _fusoQui = () => 'Europe/Rome';
+    ${fz('_settDoveScelti')} ${fz('_settLeggi')} return _settLeggi();`)(
+    { querySelectorAll: (q) => (q === '#sett-dove input[data-sett-dove]:checked' ? spunte : []) }, posti);
+  assert.deepEqual(prova({ tg: [{ id: 11 }], dc: [{ id: 7 }], ig: { puo: true } }).dove, { tg: ['11'], dc: [], ig: true },
+    'quelli spuntati, e il canale tolto resta tolto');
+  assert.deepEqual(prova(null).dove, { tg: ['99'], dc: ['7'], ig: false }, 'senza la lista, non si cancella niente');
+  assert.match(APP, /_settPosti = d \? \(d\.posti \|\| \{\}\) : null;/, 'una lettura fallita non conta come «nessun posto»');
+  const { normalizzaSettimana } = await import('../../src/features/settimana.js');
+  assert.deepEqual(normalizzaSettimana({ dove: { tg: ['11'], dc: [], ig: true } }).dove, { tg: ['11'], dc: [], ig: true }, 'e il server li tiene come arrivano');
+});
