@@ -31,17 +31,6 @@ export const TIPI = ['follower', 'sub', 'vip', 'mod', 'monete', 'ore', 'serie', 
 const CON_SOGLIA = new Set(['monete', 'ore', 'serie', 'dirette']);
 export const haSoglia = (tipo) => CON_SOGLIA.has(String(tipo));
 
-export const T_REGOLA = {
-  follower: ['Ti segue', 'Follows you', 'Te sigue'],
-  sub: ['È abbonato', 'Is subscribed', 'Está suscrito'],
-  vip: ['È VIP', 'Is a VIP', 'Es VIP'],
-  mod: ['È moderatore', 'Is a moderator', 'Es moderador'],
-  monete: ['Ha almeno tante monete', 'Has at least this many coins', 'Tiene al menos estas monedas'],
-  ore: ['Ti ha guardato almeno tante ore', 'Has watched you at least this many hours', 'Te ha visto al menos estas horas'],
-  serie: ['È di fila da tante dirette', 'Has a streak of this many streams', 'Lleva una racha de tantos directos'],
-  dirette: ['È stato ad almeno tante dirette', 'Has attended at least this many streams', 'Ha estado en al menos tantos directos'],
-};
-
 // Una regola vale se nomina un ruolo che esiste ancora e una condizione che
 // sappiamo valutare. `ruoliVeri` e' l'elenco degli id che il server ha davvero.
 export function regolaOk(r, ruoliVeri) {
@@ -119,7 +108,7 @@ const A_PAROLE = {
   monete: (n) => `ha almeno ${n} monete`,
   ore: (n) => `ti ha guardato almeno ${n} ore`,
   serie: (n) => `è di fila da ${n} dirette`,
-  dirette: (n) => `è stato ad almeno ${n} dirette`,
+  dirette: (n) => `c’è stato ad almeno ${n} dirette`,
 };
 
 export function perche(regola) {
