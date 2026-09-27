@@ -22493,7 +22493,13 @@ function _dcaCollega() {
       return;
     }
     if (e.target.closest('[data-togli]')) {
-      conErrore(async () => { await api('/api/streamer/discord/avvisi/' + d.dataset.dca, { method: 'DELETE' }); await caricaDcAvvisi(); });
+      conErrore(async () => {
+        if (!(await chiediSe({ titolo: L('Tolgo questo canale?', 'Remove this channel?', '¿Quito este canal?'),
+          testo: L('Gli avvisi non arriveranno più lì. Puoi rimetterlo quando vuoi.', 'Alerts will stop landing there. You can add it back whenever you like.', 'Los avisos dejarán de llegar ahí. Puedes volver a ponerlo cuando quieras.'),
+          si: L('Toglilo', 'Remove it', 'Quítalo'), pericolo: true }))) return;
+        await api('/api/streamer/discord/avvisi/' + d.dataset.dca, { method: 'DELETE' });
+        await caricaDcAvvisi();
+      });
       return;
     }
     if (e.target.closest('[data-prova]')) {

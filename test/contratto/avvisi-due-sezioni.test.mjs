@@ -135,3 +135,17 @@ test('l\'avviso si toglie dove era stato messo, e solo quello dello streamer giu
   assert.match(corpo, /tgMsg\.perStreamer\(login, chi\)/, 'non chiude l\'avviso su Telegram');
   assert.match(corpo, /dcMsg\.perStreamer\(login, chi\)/, 'non chiude l\'avviso su Discord');
 });
+
+// Togliere un posto spegne i suoi avvisi: le due sezioni lo chiedono prima
+// allo stesso modo. Su Telegram lo chiedeva, su Discord toglieva al primo tocco.
+test('«Togli» chiede conferma prima di togliere un posto, su Telegram e su Discord', () => {
+  const app = leggi('src/web/public/app.js');
+  const prima = (chiamata) => {
+    const i = app.indexOf(chiamata);
+    assert.ok(i >= 0, `c'e' ${chiamata}`);
+    const pezzo = app.slice(app.lastIndexOf('conErrore(async () => {', i), i);
+    return /if \(!\(await chiediSe\(\{[\s\S]*pericolo: true \}\)\)\) return;/.test(pezzo);
+  };
+  assert.ok(prima("await api('/api/streamer/telegram/destinazioni/' + d.dataset.dest, { method: 'DELETE' })"), 'Telegram');
+  assert.ok(prima("await api('/api/streamer/discord/avvisi/' + d.dataset.dca, { method: 'DELETE' })"), 'Discord');
+});

@@ -79,6 +79,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nella Mini App di Telegram il badge «in chat adesso» guarda la chat della piattaforma del tuo canale, non più solo quella di Twitch, e se il canale una chat non ce l'ha non compare.
 - Nella Mini App di Telegram il codice da collegare ti manda nel posto giusto del pannello: «Le tue community», scheda Telegram, carta «Accedi e gestisci da Telegram». [vai: telegram]
 - La scheda Avvisi di Discord dice che gli avvisi partono col piano Base, e «Prova» chiede lo stesso piano degli avvisi veri invece di mandare un avviso che poi non arriverebbe. [vai: dcavvisi]
+- Negli Avvisi di Discord «Togli» chiede conferma prima di togliere un canale, come fa già Telegram coi suoi posti. [vai: dcavvisi]
 
 ## 2026-09-26
 
