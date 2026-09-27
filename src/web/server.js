@@ -8704,7 +8704,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
 
   // citazioni (!cita) — elenco/aggiungi/rimuovi dalla dashboard
   app.get('/api/streamer/citazioni', requireLogin, wrap(async (req, res) => {
-    res.json(quotes.list(currentUser(req).login).map((q) => ({ n: q.n, text: q.text, added_by: q.added_by, ts: q.ts })));
+    res.json(quotes.list(currentUser(req).login).map((q) => ({ n: q.n, text: q.text, added_by: q.added_by, autore: q.autore, data: q.data, ts: q.ts })));
   }));
   app.post('/api/streamer/citazioni', requireLogin, wrap(async (req, res) => {
     const testo = String(req.body?.testo || '').trim();
@@ -8759,7 +8759,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({
       monete: points.top(login, 10),
       staff: points.top(login, 10, 'staff'),
-      vip: vips.list(login).map((v) => ({ user: v.user, display: v.display, until: v.until, motivo: v.motivo })),
+      vip: vips.list(login).map((v) => ({ user: v.user, display: v.display, until: v.until, dirette: v.dirette, motivo: v.motivo })),
     });
   }));
 

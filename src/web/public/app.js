@@ -27452,22 +27452,25 @@ async function caricaClassifica() {
     gara(ulStaff, d.staff || [], vuotoStaff());
     if (ulVip) {
       const vip = d.vip || [];
+      const motivo = { premio: L('premio', 'reward', 'premio'), comando: L('dal comando in chat', 'from the chat command', 'desde el comando del chat'), voce: L('a voce', 'by voice', 'por voz') };
+      const quanto = (v) => {
+        const n = Number(v.dirette) || 0;
+        if (n > 0) return n === 1 ? L('ancora una diretta', 'one more stream', 'un directo más') : L(`ancora ${n} dirette`, `${n} more streams`, `${n} directos más`);
+        return Number(v.until) > 0 ? L(`fino al ${dataIt(v.until)}`, `until ${dataIt(v.until)}`, `hasta el ${dataIt(v.until)}`) : L('per sempre', 'forever', 'para siempre');
+      };
       ulVip.innerHTML = vip.length
-        ? vip.map((v) => {
-            const quando = v.until ? `fino al ${dataIt(v.until)}` : 'per sempre';
-            return `
+        ? vip.map((v) => `
           <li>
             <div class="testo-voce">
               <span class="domanda">${esc(v.display || v.user)}</span>
-              <span class="risposta">${esc(quando)}${v.motivo ? ' · ' + esc(v.motivo) : ''}</span>
+              <span class="risposta">${esc(quanto(v))}${v.motivo ? ' · ' + esc(motivo[v.motivo] || v.motivo) : ''}</span>
             </div>
-          </li>`;
-          }).join('')
-        : '<li class="vuoto">Nessun VIP a tempo assegnato dal bot. Dallo a voce ("vip a nome") o con !vip @nome.</li>';
+          </li>`).join('')
+        : `<li class="vuoto">${L('Nessun VIP a tempo dato dal bot. Lo dai a voce («vip a nome») o in chat con !vip @nome.', 'No timed VIP given by the bot. You give it by voice («vip to name») or in chat with !vip @name.', 'Ningún VIP temporal dado por el bot. Lo das por voz («vip a nombre») o en el chat con !vip @nombre.')}</li>`;
     }
   } catch (e) {
-    if (ulCl) ulCl.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`;
-    if (ulVip) ulVip.innerHTML = '';
+    const errore = `<li class="vuoto">${L('Errore: ', 'Error: ', 'Error: ')}${esc(e.message)}</li>`;
+    for (const ul of [ulCl, ulStaff, ulVip]) if (ul) ul.innerHTML = errore;
   }
 }
 
@@ -27478,22 +27481,22 @@ async function caricaCitazioni() {
   if (!ul) return;
   try {
     const voci = await api('/api/streamer/citazioni');
-    const fmtD = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? `${m[3]}/${m[2]}/${m[1]}` : ''; };
+    const fmtD = (iso) => (/^\d{4}-\d{2}-\d{2}$/.test(String(iso || '')) ? new Date(iso + 'T12:00:00').toLocaleDateString(localePannello()) : '');
     ul.innerHTML = voci.length
       ? voci.map((q) => {
-        const meta = [q.autore ? '@' + esc(q.autore) : '', fmtD(q.data)].filter(Boolean).join(' · ');
+        const meta = [q.autore ? '@' + esc(q.autore) : '', esc(fmtD(q.data))].filter(Boolean).join(' · ');
         return `<li>
-          <div class="testo-voce"><span class="domanda">#${q.n}</span> <span class="risposta">${esc(q.text)}</span>${meta ? ` <span class="suggerimento">— ${meta}</span>` : ''}</div>
-          <button class="btn secondario mini" data-cita-rimuovi="${q.n}">Rimuovi</button>
+          <div class="testo-voce"><span class="domanda">#${q.n}</span> <span class="risposta">${esc(q.text)}</span>${meta ? ` <span class="suggerimento">${meta}</span>` : ''}</div>
+          <button class="btn secondario mini" data-cita-rimuovi="${q.n}">${L('Rimuovi', 'Remove', 'Quitar')}</button>
         </li>`;
       }).join('')
-      : '<li class="vuoto">Ancora nessuna citazione. Aggiungine una qui sopra o con !cita aggiungi in chat</li>';
+      : `<li class="vuoto">${L('Ancora nessuna citazione. Aggiungine una qui sopra, o in chat con !cita aggiungi.', 'No quotes yet. Add one above, or in chat with !cita aggiungi.', 'Todavía no hay citas. Añade una aquí arriba, o en el chat con !cita aggiungi.')}</li>`;
     ul.onclick = (ev) => {
       const b = ev.target.closest('[data-cita-rimuovi]');
       if (!b) return;
       conErrore(async () => { await api('/api/streamer/citazioni/' + b.dataset.citaRimuovi, { method: 'DELETE' }); toast(L('Citazione rimossa.', 'Quote removed.', 'Cita eliminada.')); caricaCitazioni(); });
     };
-  } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
+  } catch (e) { ul.innerHTML = `<li class="vuoto">${L('Errore: ', 'Error: ', 'Error: ')}${esc(e.message)}</li>`; }
 }
 
 async function caricaBattute() {

@@ -12,6 +12,14 @@ const log = makeLog('vip');
 const GIORNO = 24 * 3600_000;
 const SEMPRE = { ms: 0, txt: 'sempre' };
 
+// UN VIP DATO DAL BOT DURA IN UNO DI TRE MODI: un numero di dirette (i premi),
+// fino a una data (quelli dati a mano), o per sempre. «Per sempre» e' chi non ha
+// ne' una scadenza ne' un conto a dirette: guardare solo la scadenza scambiava
+// un premio a dirette per un VIP perenne. La regola sta qui, e la leggono tutti.
+export const perSempre = (v) => !(Number(v?.until) > 0) && !(Number(v?.dirette) > 0);
+export const quantoDura = (v) => (Number(v?.dirette) > 0 ? `ancora per ${dette(Number(v.dirette))}`
+  : Number(v?.until) > 0 ? `fino al ${new Date(Number(v.until)).toLocaleDateString('it-IT')}` : 'per sempre');
+
 // --------------------------------------------------------- durata dal parlato/testo
 export function parseDurata(testo) {
   const t = String(testo || '').toLowerCase();
@@ -123,7 +131,7 @@ export async function assegnaVipLogin(helix, channel, login, durata, motivo = 'p
     const gia = vips.get(channel, login);
     // Un VIP SENZA scadenza non si accorcia mai — ne' con un tempo ne' con un
     // conto a dirette: sarebbe un premio che revoca cio' che premia.
-    if (gia && !gia.until && !gia.dirette && (aTempo(durata) || aDirette(durata))) {
+    if (gia && perSempre(gia) && (aTempo(durata) || aDirette(durata))) {
       return { ok: false, perenne: true, display: gia.display || login };
     }
     const r = await helix.addVip(channel, u.id);
@@ -151,7 +159,7 @@ export async function tryVipCommand(helix, msg, say) {
     if (cmd === 'viplista' || cmd === 'viplist') {
       const l = vips.list(msg.channel);
       if (!l.length) { risposta('👑 Il bot non ha dato VIP a tempo a nessuno.'); return true; }
-      inMessaggi(l.map((v) => v.display + (v.until ? ` fino al ${new Date(v.until).toLocaleDateString('it-IT')}` : ' per sempre')), spazioPer(msg),
+      inMessaggi(l.map((v) => `${v.display} ${quantoDura(v)}`), spazioPer(msg),
         { testa: '👑 VIP a tempo:', sep: ', ' }).forEach(risposta);
       return true;
     }
@@ -184,7 +192,7 @@ export async function giaPerSempre(helix, channel) {
   const nostri = new Map();
   for (const v of vips.list(channel)) {
     nostri.set(v.user, v);
-    if (!v.until) perenni.add(v.user);
+    if (perSempre(v)) perenni.add(v.user);
   }
   try {
     for (const v of (await helix.getVips(channel)) || []) {

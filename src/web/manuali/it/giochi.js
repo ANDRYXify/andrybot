@@ -205,7 +205,7 @@ export default {
       'Se manca il nome o il numero, il pannello scrive «Scrivi il nome e quante monete (con il meno per toglierle).». Il nome va scritto come su Twitch, da 2 a 30 caratteri fra lettere, cifre e trattino basso.',
       'Sotto, il proprietario trova anche il rimando per chi arriva da un altro bot: i punti che il tuo pubblico ha là si portano qui dalla scheda «Comandi», carta «Porta qui quello che hai già». Il tasto «Vai a Moduli» ti porta lì. I punti si sommano alle monete una volta sola: importare di nuovo lo stesso elenco non li raddoppia. Come si fa è spiegato nel <a href="/manuale/moduli">manuale dei comandi</a>.',
       'Le classifiche delle monete stanno nella scheda «Statistiche»: ci arrivi con «Vedi le classifiche».',
-      'In fondo, «VIP a tempo attivi» elenca i VIP dati dal bot: per quelli del premio vedi quante dirette restano, per gli altri fino a quando durano, o «per sempre».',
+      'In fondo, «VIP a tempo attivi» elenca i VIP dati dal bot: per quelli del premio vedi quante dirette restano («ancora 3 dirette»), per gli altri fino a quando durano, o «per sempre». Accanto c\'è da dove vengono: «premio», «dal comando in chat» o «a voce».',
     ] },
 
     { h3: 'Giochi del sito andryxify.it' },

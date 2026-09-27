@@ -32,6 +32,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Sotto i punti della chat sparisce la casella «Solo mentre sei in diretta», che non cambiava niente: la presenza arriva solo in diretta, le monete per messaggio sempre. [vai: giochi]
 - Nel giveaway «Quanti» parte dal numero scelto in «Vincitori (predefinito)», e dopo «Estrai» la riga con chi ha vinto resta al suo posto. [vai: giveaway]
 - Se apri un giveaway con i minigiochi spenti, il pannello ti dice di accendere «Attiva i minigiochi in chat» invece di parlare del piano. [vai: giveaway]
+- «VIP a tempo attivi» dice quante dirette restano a chi ha vinto il premio, invece di «per sempre», e chi rivince il premio lo rinnova a dirette. [vai: giochi]
+- Le citazioni importate mostrano nell'elenco il loro autore e la data, e i testi dell'elenco si leggono anche in inglese e spagnolo. [vai: giochi]
 
 ## 2026-09-26
 
