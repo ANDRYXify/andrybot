@@ -183,7 +183,7 @@ export default {
       'Premi «Crea il premio su Twitch». Il premio nasce su Twitch con la richiesta di testo già pronta, diventa il premio di quel modo e accende le penitenze: l\'interruttore passa a «Penitenze attive». Il pannello scrive «Premio creato su Twitch!».',
       'Se Twitch rifiuta, di solito esiste già un premio con quel nome: cambia «Nome» e riprova.',
       'Il bot riconosce il premio dal nome. Se lo rinomini su Twitch, torna qui e sceglilo di nuovo nel menù.',
-      'Se manca il permesso dei punti canale, la carta te lo dice: nella scheda «Stato» premi «Aggiorna i permessi», poi torna qui.',
+      'Se manca il permesso dei punti canale, la carta te lo dice e ti dà il tasto «Aggiorna i permessi», lo stesso della scheda «Stato»: premilo, poi torna qui.',
     ] },
 
     { h3: 'Come va una penitenza' },

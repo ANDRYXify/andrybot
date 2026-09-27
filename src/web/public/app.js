@@ -3623,7 +3623,7 @@ const GUIDE = {
   giveaway: { serve: ['Organizzare estrazioni a premi per la community.', 'Run prize giveaways for your community.', 'Organizar sorteos de premios para tu comunidad.'],
     come: [['Apri il giveaway indicando il premio; puoi dare più possibilità a sub e VIP e scegliere la parola d\'ingresso.', 'Open the giveaway and set the prize; you can give subs and VIPs better odds and pick the join keyword.', 'Abre el sorteo indicando el premio; puedes dar más posibilidades a subs y VIPs y elegir la palabra de entrada.', '#gw-premio'], ['La community entra scrivendo !join (o la tua parola) in chat. Con !biglietti @nome regali chance extra.', 'The community joins by typing !join (or your keyword) in chat. With !biglietti @name you grant extra chances.', 'La comunidad entra escribiendo !join (o tu palabra) en el chat. Con !biglietti @nombre das chances extra.', '#gw-keyword'], ['Estrai uno o più vincitori dal pannello o con !estrai N (puoi ripetere).', 'Draw one or more winners from the panel or with !estrai N (you can repeat).', 'Saca uno o varios ganadores desde el panel o con !estrai N (puedes repetir).', '#giveaway-stato']] },
   penitenze: { serve: ['Trasformare un premio a punti canale in una sfida a tempo: il bot conta quante volte sbagli (con «+1» a schermo) e alla fine fa partire una penitenza.', 'Turn a channel-point reward into a timed challenge: the bot counts your slip-ups (with an on-screen «+1») and triggers a forfeit at the end.', 'Convertir una recompensa de puntos de canal en un reto cronometrado: el bot cuenta cuántas veces fallas (con un «+1» en pantalla) y al final lanza una penitencia.'],
-    come: [['Accendi le penitenze: perché funzionino servono i Punti canale e il riconoscimento vocale della scheda «Comandi a voce».', 'Turn forfeits on: for them to work you need Channel Points and the voice recognition from the «Voice commands» tab.', 'Enciende las penitencias: para que funcionen hacen falta los Puntos de canal y el reconocimiento de voz de la pestaña «Comandos por voz».', '#pen-attivo'], ['Scegli i due premi: «Vieta la parola» (non dirla) e «Usa solo la parola» (dì solo quella).', 'Choose the two rewards: «Ban the word» (don’t say it) and «Use only the word» (say only that).', 'Elige las dos recompensas: «Prohíbe la palabra» (no la digas) y «Usa solo la palabra» (di solo esa).', '#pen-box-vieta'], ['Decidi la penitenza (tua lista o inventata dall\'IA) e dove mostrare il contatore nell\'overlay.', 'Decide the forfeit (your list or AI-generated) and where to show the counter in the overlay.', 'Decide la penitencia (tu lista o inventada por la IA) y dónde mostrar el contador en el overlay.', '#pen-penitenze']] },
+    come: [['Accendi le penitenze: perché funzionino servono i Punti canale e il riconoscimento vocale della scheda «Comandi vocali».', 'Turn forfeits on: for them to work you need Channel Points and the voice recognition from the «Voice commands» tab.', 'Enciende las penitencias: para que funcionen hacen falta los Puntos de canal y el reconocimiento de voz de la pestaña «Comandos de voz».', '#pen-attivo'], ['Scegli i due premi: «Vieta la parola» (non dirla) e «Usa solo la parola» (dì solo quella).', 'Choose the two rewards: «Ban the word» (don’t say it) and «Use only the word» (say only that).', 'Elige las dos recompensas: «Prohíbe la palabra» (no la digas) y «Usa solo la palabra» (di solo esa).', '#pen-box-vieta'], ['Decidi la penitenza (tua lista o inventata dall\'IA) e dove mostrare il contatore nell\'overlay.', 'Decide the forfeit (your list or AI-generated) and where to show the counter in the overlay.', 'Decide la penitencia (tu lista o inventada por la IA) y dónde mostrar el contador en el overlay.', '#pen-penitenze']] },
   notifiche: { serve: ['Collegare i tuoi social e annunciare quello che pubblichi: i post di Instagram, i video e le dirette di TikTok, i video di YouTube.', 'Connect your socials and announce what you post: Instagram posts, TikTok videos and lives, YouTube videos.', 'Conectar tus redes y anunciar lo que publicas: los posts de Instagram, los vídeos y directos de TikTok, los vídeos de YouTube.'],
     come: [['In cima collega Instagram e TikTok con un tasto, e scrivi il tuo canale YouTube.', 'At the top, connect Instagram and TikTok with one button, and type your YouTube channel.', 'Arriba, conecta Instagram y TikTok con un botón, y escribe tu canal de YouTube.', '#social-account'], ['Per ogni cosa da annunciare accendi l’avviso e scegli le parole: se non scrivi niente, uso le mie.', 'For each thing to announce, turn the alert on and choose the words: if you write nothing, I use mine.', 'Para cada cosa que anunciar, enciende el aviso y elige las palabras: si no escribes nada, uso las mías.', '#txt-ig-messaggio'], ['Per un altro sito, in fondo incolli l’indirizzo del suo feed.', 'For another site, paste its feed address at the bottom.', 'Para otro sitio, pega abajo la dirección de su feed.', '#feed-fonti']] },
   telegram: { serve: ['Portare il bot nel tuo gruppo Telegram: avvisa quando vai in diretta, risponde ai comandi, fa gli auguri ai membri e ti manda il rapporto della serata in privato.', 'Bring the bot into your Telegram group: it alerts when you go live, answers commands, wishes members happy birthday and sends you the night\u2019s report in private.', 'Llevar el bot a tu grupo de Telegram: avisa cuando est\u00e1s en directo, responde a los comandos, felicita a los miembros y te manda el informe de la noche en privado.'],
@@ -9871,7 +9871,7 @@ function pannelloPenitenze() {
           <li><strong>${L('Usa solo la parola', 'Use only the word', 'Usa solo la palabra')}</strong> — ${L('puoi dire', 'you can say', 'puedes decir')} <em>${L('solo', 'only', 'solo')}</em> ${L('quella: ogni frase con un\'altra parola,', 'that: every sentence with another word,', 'esa: cada frase con otra palabra,')} <span class="pen-inline-num">+1</span>.</li>
         </ul>
       </div>
-      <p class="suggerimento">${L('Serve il <strong>riconoscimento vocale</strong> attivo (scheda <em>Comandi a voce</em>) e il permesso <strong>Punti canale</strong>.', 'Requires <strong>voice recognition</strong> active (<em>Voice commands</em> tab) and the <strong>Channel Points</strong> permission.', 'Necesita el <strong>reconocimiento de voz</strong> activo (pestaña <em>Comandos por voz</em>) y el permiso <strong>Puntos de canal</strong>.')}</p>
+      <p class="suggerimento">${L(`Serve il <strong>riconoscimento vocale</strong> attivo (scheda <em>${tScheda('ascolto')}</em>) e il permesso <strong>Punti canale</strong>.`, `Requires <strong>voice recognition</strong> active (<em>${tScheda('ascolto')}</em> tab) and the <strong>Channel Points</strong> permission.`, `Necesita el <strong>reconocimiento de voz</strong> activo (pestaña <em>${tScheda('ascolto')}</em>) y el permiso <strong>Puntos de canal</strong>.`)}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="pen-attivo" ${p.attivo ? 'checked' : ''}><span class="levetta"></span></label>
         <span class="etichetta-stato" id="pen-etichetta">${p.attivo ? L('Penitenze attive', 'Forfeits on', 'Penitencias activas') : L('Penitenze spente', 'Forfeits off', 'Penitencias apagadas')}</span>
@@ -9998,11 +9998,24 @@ async function _penMontaEffetto() {
   };
 }
 
+function _penInterruttore(acceso) {
+  const sw = document.getElementById('pen-attivo');
+  if (sw) sw.checked = !!acceso;
+  const et = document.getElementById('pen-etichetta');
+  if (et) et.textContent = acceso ? L('Penitenze attive', 'Forfeits on', 'Penitencias activas') : L('Penitenze spente', 'Forfeits off', 'Penitencias apagadas');
+}
+
 async function caricaPenitenze() {
-  document.getElementById('pen-attivo')?.addEventListener('change', (ev) => {
-    const et = document.getElementById('pen-etichetta');
-    if (et) et.textContent = ev.target.checked ? L('Penitenze attive', 'Forfeits on', 'Penitencias activas') : L('Penitenze spente', 'Forfeits off', 'Penitencias apagadas');
-  });
+  _penCollega();
+  await _penMontaEffetto();
+  await _penPremi();
+}
+
+function _penCollega() {
+  const sw = document.getElementById('pen-attivo');
+  if (!sw || sw.dataset.wired) return;
+  sw.dataset.wired = '1';
+  sw.addEventListener('change', () => _penInterruttore(sw.checked));
   document.getElementById('pen-salva')?.addEventListener('click', () => conErrore(() => salvaPenitenze()));
   const rng = document.getElementById('pen-fuzzy');
   const val = document.getElementById('pen-fuzzy-val');
@@ -10014,14 +10027,17 @@ async function caricaPenitenze() {
     await api('/api/penitenze/prova', { method: 'POST', body: {} });
     toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
   }));
-  await _penMontaEffetto();
+}
+
+async function _penPremi() {
   const boxV = document.getElementById('pen-box-vieta');
   const boxS = document.getElementById('pen-box-solo');
   if (!boxV || !boxS) return;
   let d;
   try { d = await api('/api/penitenze/premi'); } catch { boxV.innerHTML = boxS.innerHTML = `<p class="suggerimento">${L('Impossibile leggere i premi.', 'Couldn’t read the rewards.', 'No se pueden leer las recompensas.')}</p>`; return; }
   if (!d.permessoOk) {
-    boxV.innerHTML = `<div class="riquadro-info">${L('Per i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.', 'Channel-point rewards need the permission: grant it from <strong>Chat &amp; commands → Effects &amp; sounds</strong> (Rewards section), then come back here.', 'Las recompensas de puntos de canal necesitan el permiso: concédelo desde <strong>Chat y comandos → Efectos y sonidos</strong> (sección Recompensas), luego vuelve aquí.')}</div>`;
+    boxV.innerHTML = `<div class="riquadro-info">${L(`Per i premi a punti canale serve il permesso dei punti canale: nella scheda «${tScheda('stato')}» premi «Aggiorna i permessi», poi torna qui.`, `Channel-point rewards need the channel points permission: in the «${tScheda('stato')}» tab press «Update permissions», then come back here.`, `Las recompensas de puntos de canal necesitan el permiso de puntos de canal: en la pestaña «${tScheda('stato')}» pulsa «Actualizar permisos», luego vuelve aquí.`)}
+      <p class="spazio-sopra"><a class="btn secondario mini" href="/auth/permessi">${_bIco(ICO.chiave)}${L('Aggiorna i permessi', 'Update permissions', 'Actualizar permisos')}</a></p></div>`;
     boxS.innerHTML = '';
     return;
   }
@@ -10059,7 +10075,13 @@ async function caricaPenitenze() {
       const titolo = (document.getElementById(nomeId)?.value || nomeDefault).trim();
       const costo = Number(document.getElementById(costoId)?.value) || 500;
       const r = await api('/api/penitenze/premio', { method: 'POST', body: { campo, titolo, costo } });
-      if (r?.reward) { if (inp) inp.value = r.reward.title; toast(L('Premio creato su Twitch!', 'Reward created on Twitch!', '¡Recompensa creada en Twitch!')); caricaPenitenze(); }
+      if (r?.reward) {
+        if (inp) inp.value = r.reward.title;
+        if (r.penitenze && stato?.streamer) stato.streamer.settings = { ...(stato.streamer.settings || {}), penitenze: r.penitenze };
+        _penInterruttore(r.penitenze ? r.penitenze.attivo : true);
+        toast(L('Premio creato su Twitch!', 'Reward created on Twitch!', '¡Recompensa creada en Twitch!'));
+        _penPremi();
+      }
     }));
   };
   montaPicker(boxV, { campo: 'premioVieta', hiddenId: 'pen-premio-vieta', attuale: d.premioVieta, titolo: L('Vieta la parola', 'Ban the word', 'Prohíbe la palabra'), nomeDefault: L('Vietami una parola', 'Ban me a word', 'Prohíbeme una palabra') });

@@ -5819,7 +5819,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const s = streamers.get(login);
     const penitenze = { ...(s.settings?.penitenze || {}), attivo: true, [campo]: reward.title };
     streamers.setSettings(login, { ...s.settings, penitenze });
-    res.json({ ok: true, reward, campo });
+    // Il pannello riceve quello che e' stato salvato: l'interruttore e il premio
+    // si allineano da qui, e un «Salva» dopo non rispegne le penitenze.
+    res.json({ ok: true, reward, campo, penitenze });
   }));
 
   // Prova il contatore penitenze nell'overlay (start → +1 → +1 → fine).
