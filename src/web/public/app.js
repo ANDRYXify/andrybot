@@ -1291,6 +1291,12 @@ function _demoEffetti(via, b) {
   return { ok: true, comando: e.comando, disegno };
 }
 
+const _DEMO_TEMA_BASE = { sfondoTipo: 'tinta', bg: '', bg2: '', angolo: 160, sfondoUrl: '', sfondoX: 50, sfondoY: 50, sfondoScala: 100,
+  sfondoRapporto: 0, sfondoRiempi: 'bordi', sfondoBordi: null, effetto: 'nessuno', testo: '', accent: '', card: '', bordo: '',
+  font: 'system', fontTitoli: '', corpo: 100, peso: 'marcato', interlinea: 150, spaziatura: 100, maiuscolo: 'no', testoBtn: '',
+  bordoSp: 0, css: '', raggio: 14, stileBtn: 'pieno', ombra: true, ombraTipo: 'morbida', ombraColore: '', consenso: 'sempre',
+  anim: 'rise', avatarForma: 'cerchio', larghezza: 30, allinea: 'centro', cursore: 'sistema', disposizione: 'colonna', movimento: 'dolce' };
+
 function _demoGet(via) {
   if (via === '/api/streamer/overlays' && _demoScritture.overlays) return { overlays: _demoScritture.overlays };
   if (via === '/api/streamer/effetti' && _demoScritture.effetti) return { overlayUrl: 'https://socialbot.live/overlay/andryx_demo', effetti: _demoScritture.effetti };
@@ -1557,12 +1563,11 @@ function _demoGet(via) {
       icone: ['link','twitch','youtube','instagram','tiktok','discord','spotify','x','telegram','kick','github','cuore','stella','regalo','carrello','calendario','mail','musica','video','scarica','gioco','caffe','soldi'],
       tipi: ['link','titolo','testo','separatore','social','embed','immagine','diretta'],
       limiti: { headline: 80, tagline: 200, label: 60, sotto: 90, url: 500, blocchi: 40, testo: 500, titolo: 60, voci: { social: 12, griglia: 12, numeri: 6, faq: 12 }, altezzaEmbed: 900 },
+      temaBase: _DEMO_TEMA_BASE,
       avatarTwitch: '', suggeriti: [],
       pagina: { template: 'neon', avatar: '', attiva: true, aggiornata: null,
         headline: 'Andry \u00b7 streamer', tagline: 'Ogni sera su Twitch, di solito a fare danni',
-        tema: { sfondoTipo: 'gradiente', bg: '#07060d', bg2: '#1a0f33', angolo: 165, sfondoUrl: '', effetto: 'aurora',
-          testo: '', accent: '', card: '', bordo: '', font: 'system', raggio: 14, stileBtn: 'pieno',
-          ombra: true, anim: 'rise', avatarForma: 'cerchio', larghezza: 30, allinea: 'centro' },
+        tema: { ..._DEMO_TEMA_BASE, sfondoTipo: 'gradiente', bg: '#07060d', bg2: '#1a0f33', angolo: 165, effetto: 'aurora' },
         blocchi: [ { tipo: 'link', icona: 'twitch', label: 'Twitch', url: 'https://twitch.tv/andryxify', sotto: 'Ogni sera dalle 21', evidenzia: true },
           { tipo: 'titolo', testo: 'I MIEI SOCIAL' },
           { tipo: 'social', voci: [ { icona: 'instagram', url: 'https://instagram.com/andryxify' }, { icona: 'tiktok', url: 'https://tiktok.com/@andryxify' }, { icona: 'discord', url: 'https://discord.gg/andryxify' } ] },
@@ -19893,10 +19898,10 @@ const TEMI_PRONTI = [
   { id: 'neon', nome: 'Notte al neon', base: 'neon',
     tema: _tema({ sfondoTipo: 'gradiente', angolo: 165, effetto: 'aurora', stileBtn: 'vetro', raggio: 18 }) },
   { id: 'carta', nome: 'Carta e inchiostro', base: 'minimal',
-    tema: _tema({ font: 'serif', raggio: 2, stileBtn: 'contorno', ombra: false, anim: 'fade', allinea: 'sinistra' }) },
+    tema: _tema({ font: 'serif', raggio: 2, stileBtn: 'contorno', ombraTipo: 'nessuna', anim: 'fade', allinea: 'sinistra' }) },
   { id: 'wabi', nome: 'Wabi-sabi', base: 'retro',
     tema: _tema({ bg: '#f2ece2', bg2: '#e3d7c6', testo: '#3b2a1d', accent: '#c2551f', card: '#fffaf3', bordo: '#ddcdb6',
-      font: 'serif', raggio: 3, effetto: 'grana', ombra: false, disposizione: 'sezioni', allinea: 'sinistra' }) },
+      font: 'serif', raggio: 3, effetto: 'grana', ombraTipo: 'nessuna', disposizione: 'sezioni', allinea: 'sinistra' }) },
   { id: 'rivista', nome: 'Rivista', base: 'minimal',
     tema: _tema({ font: 'condensato', raggio: 4, larghezza: 44, allinea: 'sinistra', disposizione: 'rivista' }) },
   { id: 'tramonto', nome: 'Tramonto', base: 'sunset',
@@ -19904,7 +19909,7 @@ const TEMI_PRONTI = [
   { id: 'vetro', nome: 'Vetro', base: 'glass',
     tema: _tema({ sfondoTipo: 'gradiente', effetto: 'maglia', stileBtn: 'vetro', raggio: 20 }) },
   { id: 'brutale', nome: 'Brutalista', base: 'brutal',
-    tema: _tema({ raggio: 0, stileBtn: 'contorno', ombra: false, anim: 'pop', allinea: 'sinistra' }) },
+    tema: _tema({ raggio: 0, stileBtn: 'contorno', ombraTipo: 'nessuna', anim: 'pop', allinea: 'sinistra' }) },
   { id: 'confetto', nome: 'Confetto', base: 'pastello',
     tema: _tema({ raggio: 999, font: 'tondo', effetto: 'bolle' }) },
   { id: 'bosco', nome: 'Bosco', base: 'minimal',
@@ -19927,7 +19932,7 @@ const TEMI_PRONTI = [
     tema: _tema({ sfondoTipo: 'gradiente', bg: '#060b18', bg2: '#0e1e42', accent: '#5b8cff', effetto: 'maglia', raggio: 12 }) },
   { id: 'arcade', nome: 'Arcade', base: 'brutal',
     tema: _tema({ bg: '#08090a', bg2: '#101314', testo: '#e6ffe9', accent: '#53fc18', card: 'rgba(83,252,24,.07)',
-      bordo: '#53fc18', font: 'mono', raggio: 0, ombra: false, effetto: 'grana', anim: 'pop' }) },
+      bordo: '#53fc18', font: 'mono', raggio: 0, ombraTipo: 'nessuna', effetto: 'grana', anim: 'pop' }) },
 
   { id: 'synth', nome: 'Synthwave', base: 'neon',
     tema: _tema({ sfondoTipo: 'gradiente', bg: '#1a0730', bg2: '#3d0d4e', angolo: 200, testo: '#ffe7fb', accent: '#ff4fd8',
@@ -19937,7 +19942,7 @@ const TEMI_PRONTI = [
       card: 'rgba(0,229,255,.06)', bordo: 'rgba(0,229,255,.34)', font: 'mono', raggio: 2, effetto: 'scanline', movimento: 'cinema' }) },
   { id: 'matrix', nome: 'Matrix', base: 'brutal',
     tema: _tema({ bg: '#020604', bg2: '#04120a', testo: '#c8ffd4', accent: '#22ff88', card: 'rgba(34,255,136,.06)',
-      bordo: 'rgba(34,255,136,.35)', font: 'mono', raggio: 0, ombra: false, effetto: 'matrix' }) },
+      bordo: 'rgba(34,255,136,.35)', font: 'mono', raggio: 0, ombraTipo: 'nessuna', effetto: 'matrix' }) },
   { id: 'galassia', nome: 'Galassia', base: 'neon',
     tema: _tema({ sfondoTipo: 'gradiente', bg: '#050418', bg2: '#160a3a', angolo: 165, testo: '#eef0ff', accent: '#8b7bff',
       card: 'rgba(255,255,255,.06)', bordo: 'rgba(139,123,255,.34)', effetto: 'nebulosa', movimento: 'crawl', raggio: 16, stileBtn: 'vetro' }) },
@@ -20442,7 +20447,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
     const t = ev.target.closest('[data-lptema]'); if (!t) return;
     const tema = TEMI_PRONTI.find((x) => x.id === t.dataset.lptema); if (!tema) return;
     LP.testa.template = tema.base;
-    LP.tema = { ...tema.tema, _pronto: tema.id };
+    LP.tema = { ...(LP.d?.temaBase || {}), ...tema.tema, _pronto: tema.id };
     caricaPaginaLink(true).then(lpAnteprima);
   };
   const suCarica = (ev) => {

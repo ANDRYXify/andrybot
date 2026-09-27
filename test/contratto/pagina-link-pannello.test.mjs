@@ -68,3 +68,63 @@ test('la prova del pannello ha gli stessi limiti del server', () => {
   // eslint-disable-next-line no-new-func
   assert.deepEqual(new Function(`return ${riga}`)(), LIMITI_LINKPAGE);
 });
+
+// ── Il tema: il pannello mostra quello che la pagina usa ─────────────────────
+// Un menu' che non trova il suo valore resta sulla prima voce: era cosi' che il
+// pannello diceva «Fermo», «Leggero» e «Nessuna» mentre la pagina usciva
+// «Dolce», «Marcato» e «Morbida».
+
+const BASE = linkPage.pulisci({}).tema;
+const menuDelTema = () => {
+  const carica = tratto(APP, 'async function caricaPaginaLink(', '\n}\n');
+  return [...carica.matchAll(/<select[^>]*data-lpk="([a-zA-Z]+)"/g)].map((m) => m[1]);
+};
+const TEMI_PRONTI = (() => {
+  const i = APP.indexOf('const TEMI_PRONTI = [');
+  const testo = APP.slice(i + 'const TEMI_PRONTI = '.length, APP.indexOf('\n];', i) + 2);
+  const t = APP.slice(APP.indexOf('const _tema = ('), APP.indexOf('const TEMI_PRONTI'));
+  // eslint-disable-next-line no-new-func
+  return new Function(`${t} return ${testo}`)();
+})();
+
+test('ogni menu dell\'aspetto ha il suo valore di base, e le tre voci sono quelle della pagina', () => {
+  const menu = menuDelTema();
+  assert.ok(menu.length >= 10, `menu trovati: ${menu.length}`);
+  for (const k of ['movimento', 'peso', 'ombraTipo']) assert.ok(menu.includes(k), `manca il menu «${k}»`);
+  for (const k of menu) assert.ok(BASE[k] !== undefined, `il menu «${k}» non ha un valore di base: mostrerebbe la prima voce`);
+  assert.deepEqual([BASE.movimento, BASE.peso, BASE.ombraTipo], ['dolce', 'marcato', 'morbida']);
+  assert.deepEqual(linkPage.conDefault('nuova', 'Nuova').tema, BASE, 'una pagina nuova parte dalla base');
+});
+
+test('una pagina salvata prima di un comando lo legge col valore di base, e l\'ombra dal vecchio interruttore', async () => {
+  const { db } = await import('../../src/db.js');
+  linkPage.salva('vecchia', { headline: 'x', blocchi: [] });
+  db.prepare('UPDATE link_page SET tema=? WHERE channel=?').run(JSON.stringify({ ombra: false, accent: '#ff0000' }), 'vecchia');
+  const t = linkPage.get('vecchia').tema;
+  assert.deepEqual([t.movimento, t.peso, t.ombraTipo, t.accent], ['dolce', 'marcato', 'nessuna', '#ff0000']);
+  for (const k of menuDelTema()) assert.ok(t[k] !== undefined, `«${k}» manca nel tema che arriva al pannello`);
+  db.prepare('UPDATE link_page SET tema=? WHERE channel=?').run(JSON.stringify({ accent: '#ff0000' }), 'vecchia');
+  assert.equal(linkPage.get('vecchia').tema.ombraTipo, 'morbida', 'l\'ombra accesa di allora e\' quella morbida');
+  linkPage.rimuovi('vecchia');
+});
+
+test('un tema pronto parte dalla base del server, e il pannello mostra quello che la pagina usera\'', () => {
+  const suTema = tratto(APP, 'const suTema = (ev) => {', '\n  };');
+  assert.match(suTema, /LP\.tema = \{ \.\.\.\(LP\.d\?\.temaBase \|\| \{\}\), \.\.\.tema\.tema, _pronto: tema\.id \};/);
+  assert.match(tratto(SRV, "app.get('/api/linkpage', requireOwner", '}));'), /temaBase: linkPage\.pulisci\(\{\}\)\.tema,/);
+  assert.match(tratto(SRV, "app.get('/api/paginadona', requireOwner", '}));'), /temaBase: paginaDona\.pulisci\(\{\}\)\.tema,/);
+  for (const t of TEMI_PRONTI) {
+    assert.ok(t.tema.ombra !== false, `«${t.nome}»: l'ombra spenta si dice con ombraTipo: 'nessuna', non col vecchio interruttore`);
+    const messo = { ...BASE, ...t.tema };
+    const pagina = linkPage.pulisci({ tema: messo }).tema;
+    for (const k of menuDelTema()) assert.ok(messo[k] !== undefined, `«${t.nome}»: il menu «${k}» resterebbe sulla prima voce`);
+    for (const k of ['movimento', 'peso', 'ombraTipo']) assert.equal(messo[k], pagina[k], `«${t.nome}»: il pannello mostra «${messo[k]}», la pagina usa «${pagina[k]}»`);
+  }
+});
+
+test('la prova del pannello parte dalla stessa base', () => {
+  const i = APP.indexOf('const _DEMO_TEMA_BASE = ');
+  // eslint-disable-next-line no-new-func
+  const demo = new Function(`return ${APP.slice(i + 'const _DEMO_TEMA_BASE = '.length, APP.indexOf('};', i) + 1)}`)();
+  assert.deepEqual(demo, BASE);
+});

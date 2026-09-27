@@ -3682,26 +3682,6 @@ export function iconaDaUrl(u) {
   return 'link';
 }
 
-const TEMA_DEF = {
-  sfondoTipo: 'tinta',       // tinta | gradiente | immagine
-  bg: '', bg2: '', angolo: 160, sfondoUrl: '',
-  // l'immagine: il suo punto (X, Y) sta sullo stesso punto dello schermo, e
-  // la grandezza e' rispetto a «copre lo schermo» (docs/SFONDO-PAGINA.md)
-  sfondoX: 50, sfondoY: 50, sfondoScala: 100, sfondoRapporto: 0,
-  sfondoRiempi: 'bordi',     // bordi | tema: cosa c'e' dove l'immagine non arriva
-  sfondoBordi: null,         // { su, giu, sx, dx, angoli }: sei colori per lato, e i quattro angoli
-  effetto: 'nessuno',        // nessuno | aurora | maglia | grana | bolle
-  testo: '', accent: '', card: '', bordo: '',
-  font: 'system',
-  raggio: 14,                // spigoli (0) → pillola (999)
-  stileBtn: 'pieno',         // pieno | contorno | vetro
-  ombra: true,
-  anim: 'rise',              // nessuna | fade | rise | pop
-  avatarForma: 'cerchio',    // cerchio | quadrato | nessuno
-  larghezza: 30,             // rem: quanto è larga la colonna
-  allinea: 'centro',         // centro | sinistra
-};
-
 // Visite della pagina link: si contano e si riassumono, nient'altro.
 export const visitePagina = {
   conta(channel) {
@@ -3738,7 +3718,11 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
   conAspetto,
   _riga(r) {
     const leggi = (s, def) => { try { const p = JSON.parse(s || 'null'); return p && typeof p === 'object' ? p : def; } catch { return def; } };
-    const tema = { ...TEMA_DEF, ...leggi(r.tema, {}) };
+    // Il tema si legge passando dalla stessa pulizia del salvataggio: quello che
+    // manca (una pagina salvata prima che un comando esistesse) prende il suo
+    // valore di base, scritto una volta sola nella pulizia. Il pannello mostra
+    // questo e la pagina si stampa da questo: non possono dire due cose diverse.
+    const tema = this.pulisci({ tema: leggi(r.tema, {}) }).tema;
     let blocchi = leggi(r.blocchi, null);
     if (!Array.isArray(blocchi)) {
       // pagina salvata prima dei blocchi: i vecchi `links` diventano blocchi link
@@ -3759,7 +3743,7 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
     const r = this.get(channel);
     if (r) return r;
     return { channel: String(channel).toLowerCase(), headline: display || channel, tagline: '',
-      template: 'minimal', avatar: '', tema: { ...TEMA_DEF }, blocchi: [], attiva: true, ts: 0, vuota: true,
+      template: 'minimal', avatar: '', tema: this.pulisci({}).tema, blocchi: [], attiva: true, ts: 0, vuota: true,
       ...(this.conAspetto ? { aspetto: 'link' } : {}) };
   },
   esiste(channel) { return !!this.get(channel); },
@@ -3806,6 +3790,8 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
     const tema = {
       sfondoTipo: scelta(t.sfondoTipo, ['tinta', 'gradiente', 'immagine'], 'tinta'),
       bg: hex(t.bg), bg2: hex(t.bg2), angolo: num(t.angolo, 0, 360, 160), sfondoUrl: urlOk(t.sfondoUrl),
+      // l'immagine: il suo punto (X, Y) sta sullo stesso punto dello schermo, e
+      // la grandezza e' rispetto a «copre lo schermo» (docs/SFONDO-PAGINA.md)
       sfondoX: num(t.sfondoX, 0, 100, 50), sfondoY: num(t.sfondoY, 0, 100, 50),
       sfondoScala: num(t.sfondoScala, 40, 200, 100),
       sfondoRapporto: rapporto(t.sfondoRapporto),

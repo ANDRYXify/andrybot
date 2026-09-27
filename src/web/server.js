@@ -2001,6 +2001,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       icone: ICONE_LINKPAGE,
       tipi: TIPI_BLOCCO,
       limiti: LIMITI_LINKPAGE,
+      // il tema di una pagina che nessuno ha toccato: un tema pronto parte da
+      // qui, cosi' quello che non dice ha il valore che la pagina usera' davvero
+      temaBase: linkPage.pulisci({}).tema,
       avatarTwitch: await avatarDi(login, { aggiorna: true }),
       visite: visitePagina.riassunto(login),
       // per chi parte da zero: un primo blocco già pronto sul suo canale
@@ -2109,6 +2112,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // l'aspetto della pagina link, per mostrare da dove viene e per partire da li'
       aspettoLink: link ? { template: link.template, tema: link.tema } : null,
       templates: TEMPLATE_LINKPAGE, fonts: FONT_LINKPAGE, icone: ICONE_LINKPAGE, tipi: TIPI_BLOCCO, limiti: LIMITI_LINKPAGE,
+      temaBase: paginaDona.pulisci({}).tema,
       avatarTwitch: await avatarDi(login, { aggiorna: true }),
       visite: null,
       // per chi parte da zero: il tasto delle donazioni, che qui e' il cuore della pagina
