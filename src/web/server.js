@@ -4573,12 +4573,13 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   app.get('/api/tgapp/stato', requireLogin, (req, res) => {
     const u = currentUser(req);
     const s = streamers.get(u.login);
-    const st = manager.status();
     res.json({
       login: u.login, display: u.display || u.login, ruolo: u.role,
       abilitato: s?.status === 'approved',
       botOn: !!s?.botEnabled,
-      inChat: Array.isArray(st?.channels) && st.channels.includes(u.login),
+      // la stessa risposta del pannello: la chat della piattaforma del canale,
+      // non quella di Twitch per tutti (null: il canale una chat non ce l'ha)
+      inChat: manager.inChat ? manager.inChat(u.login) : null,
     });
   });
 

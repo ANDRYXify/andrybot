@@ -58,7 +58,7 @@ async function vistaDashboard(sess) {
     <div class="card">
       <h2>${L('Il tuo canale', 'Your channel', 'Tu canal')}</h2>
       <div class="riga"><span class="lab">${esc(st.display || st.login)}</span>
-        <span class="badge ${st.inChat ? 'on' : 'off'}"><span class="dot"></span>${st.inChat ? L('in chat', 'in chat', 'en el chat') : L('offline', 'offline', 'desconectado')}</span></div>
+        ${typeof st.inChat !== 'boolean' ? '' : `<span class="badge ${st.inChat ? 'on' : 'off'}"><span class="dot"></span>${st.inChat ? L('in chat adesso', 'in chat now', 'en el chat ahora') : L('non connesso', 'not connected', 'no conectado')}</span>`}</div>
       <div class="riga"><span class="lab">${L('Bot acceso', 'Bot on', 'Bot activo')}</span>
         <label class="sw"><input type="checkbox" id="botsw" ${st.botOn ? 'checked' : ''} ${puoToggle ? '' : 'disabled'}><span class="track"></span><span class="knob"></span></label></div>
       ${st.abilitato ? '' : `<p class="muted">${L('Il tuo canale non è ancora abilitato.', 'Your channel isn’t enabled yet.', 'Tu canal aún no está habilitado.')}</p>`}
