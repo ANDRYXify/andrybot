@@ -19,6 +19,7 @@ const log = makeLog('giveaway');
 
 // channel → {
 //   premio, soloSub, keyword,
+//   quanti,                              // vincitori che «Estrai» propone nel pannello
 //   molt: { sub, vip, mod },
 //   partecipanti: Map(user → { display, base, bonus }),   // biglietti = base + bonus
 //   apertoDa, vincitori: [display,...]
@@ -45,6 +46,7 @@ function idrata() {
         premio: String(d.premio || ''),
         soloSub: !!d.soloSub,
         keyword: String(d.keyword || 'join'),
+        quanti: intero(d.quanti, 1, 1, 50),
         molt: d.molt && typeof d.molt === 'object' ? d.molt : {},
         partecipanti: new Map(Array.isArray(d.partecipanti) ? d.partecipanti : []),
         apertoDa: Number(d.apertoDa) || r.ts,
@@ -61,7 +63,7 @@ function salva(channel) {
   try {
     if (!g) { statoVivo.togli(channel, CHIAVE); return; }
     statoVivo.scrivi(channel, CHIAVE, {
-      premio: g.premio, soloSub: g.soloSub, keyword: g.keyword, molt: g.molt,
+      premio: g.premio, soloSub: g.soloSub, keyword: g.keyword, quanti: g.quanti, molt: g.molt,
       partecipanti: [...g.partecipanti], apertoDa: g.apertoDa, vincitori: g.vincitori,
     });
   } catch (e) { log.debug('salvataggio:', e?.message || e); }
@@ -124,6 +126,7 @@ export function stato(channel) {
     premio: g.premio,
     soloSub: g.soloSub,
     keyword: g.keyword,
+    quanti: g.quanti,
     partecipanti: g.partecipanti.size,
     biglietti: bigliettiTotali(g),
     molt: { ...g.molt },
@@ -132,6 +135,8 @@ export function stato(channel) {
 }
 
 // Apre un giveaway. { ok, premio, soloSub, keyword, molt } oppure { ok:false, errore }.
+// `quanti` e' il numero di vincitori che il pannello propone a ogni «Estrai»:
+// sta col giveaway, cosi' lo ritrova chi riapre la scheda o dopo un riavvio.
 export function apri(channel, opts = {}) {
   if (!abilitato(channel)) return { ok: false, errore: 'add-on' };
   const g = vivo(channel);
@@ -147,7 +152,7 @@ export function apri(channel, opts = {}) {
   const premio = String(opts.premio || '').trim().slice(0, 120) || 'un premio a sorpresa';
 
   attivi.set(channel, {
-    premio, soloSub: !!opts.soloSub, keyword, molt,
+    premio, soloSub: !!opts.soloSub, keyword, molt, quanti: intero(opts.quanti, 1, 1, 50),
     partecipanti: new Map(), apertoDa: Date.now(), vincitori: [],
   });
   salva(channel);

@@ -9787,7 +9787,7 @@ function pannelloGiveaway() {
         <p class="suggerimento">${L('«2» = doppie possibilità di vincere. «1» = come tutti. Nessuno è mai sicuro di vincere: l\'estrazione è casuale ma pesata.', '«2» = double chance to win. «1» = same as everyone. No one is ever guaranteed to win: the draw is random but weighted.', '«2» = doble posibilidad de ganar. «1» = como todos. Nadie tiene la victoria asegurada: el sorteo es aleatorio pero ponderado.')}</p>
         <div class="riga-check spazio-sopra">
           <input aria-label="${esc(L('Solo abbonati', 'Subscribers only', 'Solo suscriptores'))}" type="checkbox" id="gw-sub">
-          <label>${L('Riservato agli abbonati (sub)', 'Subscribers only (subs)', 'Solo para suscriptores (subs)')}</label>
+          <label for="gw-sub">${L('Riservato agli abbonati (sub)', 'Subscribers only (subs)', 'Solo para suscriptores (subs)')}</label>
         </div>
         <button class="btn spazio-sopra" id="gw-apri">${L('Apri il giveaway', 'Open the giveaway', 'Abrir el sorteo')}</button>
       </div>
@@ -9808,7 +9808,8 @@ async function caricaGiveaway() {
       const moltSub = parseInt(document.getElementById('gw-molt-sub').value, 10) || 1;
       const moltVip = parseInt(document.getElementById('gw-molt-vip').value, 10) || 1;
       const moltMod = parseInt(document.getElementById('gw-molt-mod').value, 10) || 1;
-      const r = await api('/api/giveaway/apri', { method: 'POST', body: { premio, soloSub, keyword, moltSub, moltVip, moltMod } });
+      const quanti = parseInt(document.getElementById('gw-vincitori').value, 10) || 1;
+      const r = await api('/api/giveaway/apri', { method: 'POST', body: { premio, soloSub, keyword, quanti, moltSub, moltVip, moltMod } });
       if (r?.ok) { toast(L('Giveaway aperto!', 'Giveaway opened!', '¡Sorteo abierto!')); document.getElementById('gw-premio').value = ''; caricaGiveaway(); }
     }));
   }
@@ -9821,27 +9822,27 @@ async function caricaGiveaway() {
     if (molt.sub > 1) chipsMolt.push(`sub ×${molt.sub}`);
     if (molt.vip > 1) chipsMolt.push(`vip ×${molt.vip}`);
     if (molt.mod > 1) chipsMolt.push(`mod ×${molt.mod}`);
-    const rigaMolt = chipsMolt.length ? `<p class="suggerimento">${L('Probabilità:', 'Odds:', 'Probabilidad:')} ${esc(chipsMolt.join(' · '))} — ${d.biglietti} ${L('biglietti totali', 'total tickets', 'boletos totales')}</p>` : `<p class="suggerimento">${d.biglietti} ${L('biglietti totali', 'total tickets', 'boletos totales')}</p>`;
+    const rigaMolt = chipsMolt.length ? `<p class="suggerimento">${L('Probabilità:', 'Odds:', 'Probabilidad:')} ${esc(chipsMolt.join(' · '))}, ${d.biglietti} ${L('biglietti totali', 'total tickets', 'boletos totales')}</p>` : `<p class="suggerimento">${d.biglietti} ${L('biglietti totali', 'total tickets', 'boletos totales')}</p>`;
+    const vinti = Array.isArray(d.vincitori) ? d.vincitori : [];
+    const rigaVinti = vinti.length ? `<p class="ok-riga">${vinti.length === 1 ? L('Ha vinto:', 'Winner:', 'Ganó:') : L('Hanno vinto:', 'Winners:', 'Ganaron:')} <strong>${esc(vinti.join(', '))}</strong>!</p>` : '';
     stBox.innerHTML = `<div class="riquadro-info">
       <p>${L('Giveaway in corso:', 'Giveaway in progress:', 'Sorteo en curso:')} <strong>${esc(d.premio)}</strong>${d.soloSub ? ` <span class="badge">${L('solo sub', 'subs only', 'solo subs')}</span>` : ''}</p>
-      <p class="spazio-sopra"><strong>${d.partecipanti}</strong> ${d.partecipanti === 1 ? L('partecipante', 'participant', 'participante') : L('partecipanti', 'participants', 'participantes')} — ${L('entrano con', 'they join with', 'entran con')} <code>!${esc(d.keyword || 'join')}</code></p>
+      <p class="spazio-sopra"><strong>${d.partecipanti}</strong> ${d.partecipanti === 1 ? L('partecipante', 'participant', 'participante') : L('partecipanti', 'participants', 'participantes')}, ${L('entrano con', 'they join with', 'entran con')} <code>!${esc(d.keyword || 'join')}</code></p>
       ${rigaMolt}
       <div class="riga-flessibile spazio-sopra">
         <label class="campo-piccola" for="gw-quanti">${L('Quanti', 'How many', 'Cuántos')}</label>
-        <input type="number" id="gw-quanti" min="1" max="50" value="1" style="max-width:5rem">
+        <input type="number" id="gw-quanti" min="1" max="50" value="${Number(d.quanti) || 1}" style="max-width:5rem">
         <button class="btn" id="gw-estrai">${L('Estrai', 'Draw', 'Sacar')}</button>
         <button class="btn pericolo" id="gw-annulla">${L('Annulla', 'Cancel', 'Cancelar')}</button>
       </div>
-      <div id="gw-vincitore" class="spazio-sopra"></div>
+      <div id="gw-vincitore" class="spazio-sopra">${rigaVinti}</div>
     </div>`;
     document.getElementById('gw-estrai').addEventListener('click', () => conErrore(async () => {
       const quanti = parseInt(document.getElementById('gw-quanti').value, 10) || 1;
       const r = await api('/api/giveaway/estrai', { method: 'POST', body: { quanti } });
+      if (r?.vincitori?.length) { caricaGiveaway(); return; }
       const v = document.getElementById('gw-vincitore');
-      const vinc = (r && r.vincitori && r.vincitori.length) ? r.vincitori : (r?.vincitore ? [r.vincitore] : []);
-      if (vinc.length) { if (v) v.innerHTML = `<p class="ok-riga">${vinc.length === 1 ? L('Ha vinto:', 'Winner:', 'Ganó:') : L('Hanno vinto:', 'Winners:', 'Ganaron:')} <strong>${esc(vinc.join(', '))}</strong>!</p>`; }
-      else if (v) v.innerHTML = `<p class="warn-riga">${L('Nessun partecipante ancora.', 'No participants yet.', 'Aún no hay participantes.')}</p>`;
-      caricaGiveaway();
+      if (v) v.innerHTML = rigaVinti + `<p class="warn-riga">${vinti.length ? L('Non resta nessuno da estrarre.', 'There is nobody left to draw.', 'No queda nadie por sacar.') : L('Nessun partecipante ancora.', 'No participants yet.', 'Aún no hay participantes.')}</p>`;
     }));
     document.getElementById('gw-annulla').addEventListener('click', () => conErrore(async () => { await api('/api/giveaway/annulla', { method: 'POST', body: {} }); toast(L('Giveaway annullato.', 'Giveaway cancelled.', 'Sorteo cancelado.')); caricaGiveaway(); }));
   } else {

@@ -30,6 +30,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nel media kit il testo sulla fascia del contatto si legge con qualunque colore della pagina link: con alcuni accenti prima restava troppo tenue.
 - Ogni scheda del pannello ha il suo manuale: Stato, Effetti e Community si aggiungono agli altri, che ora dicono le etichette e i messaggi che vedi davvero.
 - Sotto i punti della chat sparisce la casella «Solo mentre sei in diretta», che non cambiava niente: la presenza arriva solo in diretta, le monete per messaggio sempre. [vai: giochi]
+- Nel giveaway «Quanti» parte dal numero scelto in «Vincitori (predefinito)», e dopo «Estrai» la riga con chi ha vinto resta al suo posto. [vai: giveaway]
 
 ## 2026-09-26
 

@@ -5934,7 +5934,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const login = currentUser(req).login;
     const b = req.body || {};
     const r = giveaway.apri(login, {
-      premio: b.premio, soloSub: !!b.soloSub, keyword: b.keyword,
+      premio: b.premio, soloSub: !!b.soloSub, keyword: b.keyword, quanti: b.quanti,
       moltSub: b.moltSub, moltVip: b.moltVip, moltMod: b.moltMod,
     });
     if (!r.ok) return res.status(400).json({ errore: r.errore === 'gia-aperto' ? 'C\'è già un giveaway aperto.' : 'I giveaway non sono inclusi nel tuo piano.' });

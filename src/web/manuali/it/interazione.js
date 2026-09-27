@@ -85,7 +85,7 @@ export default {
     { p: [
       'Premi «Apri il giveaway». Il pannello scrive «Giveaway aperto!» e il bot lo annuncia in chat, con la parola per entrare e le probabilità di abbonati e VIP.',
       'Con il giveaway aperto la carta mostra «Giveaway in corso:» con il premio, l\'etichetta «solo sub» se è riservato, quanti partecipanti ci sono, la parola con cui entrano e quanti biglietti ci sono in tutto.',
-      'Nel campo «Quanti» scegli quanti vincitori estrarre, da 1 a 50: parte dal numero di «Vincitori (predefinito)». Premi «Estrai». Sotto compare «Ha vinto:» o «Hanno vinto:» con i nomi, e il bot li annuncia in chat. Se non è entrato nessuno, la carta scrive «Nessun partecipante ancora.».',
+      'Nel campo «Quanti» scegli quanti vincitori estrarre, da 1 a 50: parte dal numero di «Vincitori (predefinito)». Premi «Estrai». Sotto compare «Ha vinto:» o «Hanno vinto:» con i nomi di chi ha vinto finora in questo giveaway, e il bot li annuncia in chat. Se non è entrato nessuno, la carta scrive «Nessun partecipante ancora.»; se hanno già vinto tutti quelli entrati, «Non resta nessuno da estrarre.».',
       'Chi vince esce dall\'estrazione: puoi premere «Estrai» di nuovo per altri vincitori, sempre persone diverse.',
       '«Annulla» chiude il giveaway, e il bot scrive in chat che è annullato. Premilo anche quando hai finito di estrarre, per chiuderlo.',
     ] },
