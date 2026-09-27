@@ -1463,7 +1463,7 @@ export class BotManager {
   // dietro il proprio giro di Telegram, e Discord veniva servito a parte con una
   // destinazione sola: cosi' «il post nuovo su Instagram» sapeva arrivare a un
   // topic e non sapeva arrivare a un canale, senza che nessun errore lo dicesse.
-  async _diffondi(login, evento, chi, d, { chiudi = false, messaggioTg = '', conIncorniciato = true } = {}) {
+  async _diffondi(login, evento, chi, d, { chiudi = false, messaggioTg = '' } = {}) {
     let inviati = 0;
     // «chi» sono io o e' un altro? La differenza non e' estetica: l'avviso di un
     // altro va ricordato per STREAMER, se no la sua diretta che finisce chiude
@@ -1485,7 +1485,7 @@ export class BotManager {
     } catch (e) { log.error(`avviso Telegram ${evento} #${chi}:`, e?.message || e); }
     try {
       if (ammesso.discord) {
-        const r = await this._diffondiDiscord(login, evento, chi, d, { chiudi, conIncorniciato });
+        const r = await this._diffondiDiscord(login, evento, chi, d, { chiudi });
         inviati += r.inviati || 0;
       }
     } catch (e) { log.error(`avviso Discord ${evento} #${chi}:`, e?.message || e); }
@@ -1496,7 +1496,7 @@ export class BotManager {
   // configurazione degli avvisi: sta nella busta dei segreti, con gli altri, e
   // si prende qui — cosi' la configurazione resta una cosa che si puo' guardare
   // senza scoprire niente.
-  async _diffondiDiscord(login, evento, chi, d, { chiudi = false, conIncorniciato = true } = {}) {
+  async _diffondiDiscord(login, evento, chi, d, { chiudi = false, post = false } = {}) {
     dcDest.migra(login, dcConf.get(login));   // il vecchio canale unico diventa la prima destinazione
     const dest = dcDest.perEvento(login, evento, chi);
     if (!dest.length) return { inviati: 0 };
@@ -1505,7 +1505,7 @@ export class BotManager {
     const token = dcApi.tokenDi(dcRuoli.get(login));
     const buoni = token ? dest : dest.filter((x) => x.webhook);
     if (!buoni.length) return { inviati: 0 };
-    const esiti = await discord.diffondi(token, buoni, d, { conIncorniciato });
+    const esiti = await discord.diffondi(token, buoni, d, { post });
     let inviati = 0;
     for (const e of esiti) {
       if (!e.ok) continue;
@@ -2145,10 +2145,11 @@ export class BotManager {
         await telegram.diffondi(conf.token, dest, testo, { anteprima: true }).catch(() => {});
       }
       // E su Discord, dove lo streamer ha acceso quell'avviso. Un post non e'
-      // una diretta: niente incorniciato «è in diretta», solo la riga col link.
+      // una diretta: niente incorniciato «è in diretta», e le parole del post,
+      // non quelle che il canale ha per le dirette.
       await this._diffondiDiscord(l, ev, l, {
         piattaforma, login: l, display: s?.display || l, titolo, url, gioco: '', spettatori: null,
-      }, { conIncorniciato: false }).catch(() => {});
+      }, { post: true }).catch(() => {});
       if (annunciaChat && this.units.has(l) && url) {
         const info = { tiktok: ['🎵', 'TikTok'], instagram: ['📸', 'Instagram'], youtube: ['📺', 'YouTube'] }[piattaforma] || ['📺', 'YouTube'];
         this.say(l, `${info[0]} Nuovo contenuto su ${info[1]}! 👉 ${url}`);

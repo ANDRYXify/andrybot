@@ -250,6 +250,18 @@ export function testoDiretta(d, template = '') {
     .slice(0, 1800);
 }
 
+// UN POST NUOVO NON E' UNA DIRETTA. Niente riquadro, e parole sue: il testo
+// di ogni canale e' scritto per le dirette (di serie dice «è in diretta»), e
+// sopra un video nuovo direbbe una cosa falsa. Stessi segnaposto e stesse
+// regole di composizione della diretta: una riga senza dato sparisce.
+export const TESTO_POST = Object.freeze({
+  youtube: '📺 **{nome}** ha caricato un nuovo video su YouTube\n{titolo}\n{link}',
+  instagram: '📸 **{nome}** ha un nuovo post su Instagram\n{titolo}\n{link}',
+  tiktok: '🎵 **{nome}** ha un nuovo post su TikTok\n{link}',
+});
+export const testoPost = (d) => testoDiretta(d, TESTO_POST[String(d?.piattaforma || '')] || TESTO_POST.youtube)
+  .split('\n').filter((r) => r.trim()).join('\n');
+
 // LO STESSO AVVISO A PIU' CANALI, ognuno col suo testo e il suo ruolo da
 // chiamare. Sequenziale di proposito, come di la': Discord limita la frequenza,
 // e un canale che rifiuta non deve impedire agli altri di ricevere.
@@ -257,11 +269,13 @@ export function testoDiretta(d, template = '') {
 // La menzione: `allowed_mentions` elenca SOLO il ruolo scelto per QUELLA
 // destinazione. Prima era `parse: ['roles','everyone']` per tutti, cioe' un
 // «@everyone» scritto per sbaglio nel testo svegliava l'intero server.
-export async function diffondi(token, dest, d, { conIncorniciato = true } = {}) {
-  const emb = conIncorniciato ? incornicia(d) : null;
+// Con `post` e' un post nuovo: niente riquadro e il testo del post, non quello
+// che il canale ha per le dirette.
+export async function diffondi(token, dest, d, { post = false } = {}) {
+  const emb = post ? null : incornicia(d);
   const out = [];
   for (const t of (dest || [])) {
-    const testo = testoDiretta(d, t.messaggio);
+    const testo = post ? testoPost(d) : testoDiretta(d, t.messaggio);
     const ruolo = String(t.ruolo || '').replace(/[^0-9]/g, '');
     const payload = {
       content: ((ruolo ? `<@&${ruolo}> ` : '') + testo).slice(0, 1990),

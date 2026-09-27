@@ -296,7 +296,7 @@ export default {
       ['Controllo', 'Cosa fa', 'Di base e limiti'],
       ['«Quali avvisi arrivano qui»', 'Le stesse sette voci di Telegram: le dirette su Twitch, Kick, YouTube e TikTok, e i post nuovi su YouTube, Instagram e TikTok.', 'Tutti'],
       ['«Di chi»', '«Io» e gli altri streamer che annunci. Se sei entrato solo con Discord, «Io» non c\'è: annunci gli altri.', 'Tutti'],
-      ['«Il testo»', 'Le parole sopra il riquadro. Segnaposto <code>{nome}</code>, <code>{titolo}</code>, <code>{gioco}</code>, <code>{spettatori}</code>, <code>{link}</code>, <code>{piattaforma}</code>.', 'Vuoto: «🔴 **{nome}** è in diretta · {link}». Al massimo 1800 caratteri.'],
+      ['«Il testo»', 'Le parole sopra il riquadro, per le dirette. Segnaposto <code>{nome}</code>, <code>{titolo}</code>, <code>{gioco}</code>, <code>{spettatori}</code>, <code>{link}</code>, <code>{piattaforma}</code>.', 'Vuoto: «🔴 **{nome}** è in diretta · {link}». Al massimo 1800 caratteri.'],
       ['«Chiama un ruolo»', 'Menziona quel ruolo, e nessun altro.', '«nessuno»'],
       ['«Chiudi l\'avviso a diretta finita»', 'A diretta finita riscrive l\'avviso in «⚫ … ha finito la diretta».', 'Spento'],
       ['«Acceso»', 'Spento, il canale resta in elenco ma non riceve niente.', 'Acceso'],
@@ -304,7 +304,7 @@ export default {
       ['«Togli»', 'Toglie il canale, dopo la conferma.', ''],
     ] },
     { p: [
-      'Titolo, gioco e spettatori stanno già nel riquadro sotto il messaggio: nel testo di solito bastano nome e link. Un post nuovo non è una diretta, e arriva senza riquadro.',
+      'Titolo, gioco e spettatori stanno già nel riquadro sotto il messaggio: nel testo di solito bastano nome e link. Un post nuovo non è una diretta: arriva senza riquadro e con parole sue, come «📺 {nome} ha caricato un nuovo video su YouTube» col titolo e il link. Il testo del canale non lo usa.',
       'Scrivere <code>@everyone</code> nel testo non serve e non funziona: il bot non lo lascia passare. Per chiamare qualcuno usa «Chiama un ruolo».',
       'L\'avviso chiuso non sparisce, diventa «ha finito la diretta»: il bot riscrive solo i suoi messaggi e non ne cancella nessuno.',
       'Se costruisci la traccia «Intorno alle dirette» in «Il server» e qui non hai ancora nessun canale, il canale <code>sono-in-onda</code> diventa il posto delle tue dirette.',
