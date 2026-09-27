@@ -299,7 +299,7 @@ export default {
       ['«Chiama un ruolo»', 'Menziona quel ruolo, e nessun altro.', '«nessuno»'],
       ['«Chiudi l\'avviso a diretta finita»', 'A diretta finita riscrive l\'avviso in «⚫ … ha finito la diretta».', 'Spento'],
       ['«Acceso»', 'Spento, il canale resta in elenco ma non riceve niente.', 'Acceso'],
-      ['«Prova»', 'Manda l\'avviso esattamente dove finirebbe, col tuo testo e la tua menzione. Leggi «Mandato ✓ guarda nel canale.».', ''],
+      ['«Prova»', 'Manda l\'avviso esattamente dove finirebbe, col tuo testo e la tua menzione. Leggi «Mandato ✓ guarda nel canale.». Come gli avvisi veri chiede il piano Base: senza, leggi «Mandare gli avvisi su Discord non è nel tuo piano…», la stessa frase che la carta ti mostra in cima.', ''],
       ['«Togli»', 'Toglie il canale, dopo la conferma.', ''],
     ] },
     { p: [

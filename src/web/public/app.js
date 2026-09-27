@@ -22554,13 +22554,14 @@ function pannelloDcAvvisi() {
   return pannello('dcavvisi', `
     <div class="carta">
       <h2>${_hIco(ICO.megafono)}${L('In quali canali arrivano', 'Which channels they land in', 'En qué canales llegan')}</h2>
-      <p>${L('Un canale per ogni cosa: le tue dirette di qua, quelle degli amici di là, i post nuovi dove vuoi tu. Ogni canale ha il suo testo e può chiamare un ruolo.', 'A channel for each thing: your streams here, your friends\' there, new posts wherever you like. Each channel has its own text and can ping a role.', 'Un canal para cada cosa: tus directos aquí, los de tus amigos allá, los posts nuevos donde quieras. Cada canal tiene su texto y puede llamar a un rol.')}</p>
+      ${muroPacchetto('notifiche', L('Mandare gli avvisi su Discord', 'Sending alerts on Discord', 'Mandar avisos en Discord'))}
+      <p>${L('Un canale per ogni cosa: le tue dirette di qua, quelle degli amici di là, i post nuovi dove vuoi tu. Ogni canale ha il suo testo e può chiamare un ruolo. Gli avvisi partono col piano Base; il calendario qui sotto c’è in tutti i piani.', 'A channel for each thing: your streams here, your friends\' there, new posts wherever you like. Each channel has its own text and can ping a role. The alerts go out with the Base plan; the calendar below is in every plan.', 'Un canal para cada cosa: tus directos aquí, los de tus amigos allá, los posts nuevos donde quieras. Cada canal tiene su texto y puede llamar a un rol. Los avisos salen con el plan Base; el calendario de abajo está en todos los planes.')}</p>
       <div id="dca-box" class="spazio-sopra">${attesaHtml()}</div>
     </div>
 
     <div class="carta">
       <h2>${_hIco(ICO.utenti)}${L('Chi annunciare', 'Who to announce', 'A quién anunciar')}</h2>
-      <p>${L('Oltre a te: altri streamer, e se vuoi chi fa parte della community. La lista è la stessa che vedi su Telegram — il bot chiede a Twitch una volta sola come stanno — ma che farne lo decidi qui, per il tuo server.', 'Besides you: other streamers, and if you want, the community. The list is the same one you see on Telegram — the bot asks Twitch once how they are doing — but what to do with it you decide here, for your server.', 'Además de ti: otros streamers y, si quieres, la comunidad. La lista es la misma que ves en Telegram — el bot pregunta a Twitch una sola vez cómo están — pero qué hacer con ella lo decides aquí, para tu servidor.')}</p>
+      <p>${L('Oltre a te: altri streamer, e se vuoi chi fa parte della community. La lista è la stessa che vedi su Telegram (il bot chiede a Twitch una volta sola come stanno), ma che farne lo decidi qui, per il tuo server.', 'Besides you: other streamers, and if you want, the community. The list is the same one you see on Telegram (the bot asks Twitch once how they are doing), but what to do with it you decide here, for your server.', 'Además de ti: otros streamers y, si quieres, la comunidad. La lista es la misma que ves en Telegram (el bot pregunta a Twitch una sola vez cómo están), pero qué hacer con ella lo decides aquí, para tu servidor.')}</p>
       <div id="dca-chi" class="spazio-sopra"></div>
     </div>
 

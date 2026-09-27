@@ -4830,7 +4830,10 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
 
   // La prova va ESATTAMENTE dove finirebbe davvero, col testo e la menzione di
   // quella destinazione: una prova che passa da un'altra strada prova altro.
-  app.post('/api/streamer/discord/avvisi/:id/prova', requireOwner, wrap(async (req, res) => {
+  // E chiede lo stesso piano degli avvisi veri (bot.js, annunciaDiretta): una
+  // prova che parte dove l'avviso vero non partirebbe racconterebbe il falso.
+  // L'etichetta e' la stessa che la scheda mostra sopra i canali.
+  app.post('/api/streamer/discord/avvisi/:id/prova', requireOwner, gateFeature('notifiche', 'Mandare gli avvisi su Discord'), wrap(async (req, res) => {
     const login = currentUser(req).login;
     const d = dcDest.get(login, req.params.id);
     const token = dcApi.tokenDi(dcRuoli.get(login));
