@@ -10192,8 +10192,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (azione === 'donazione') {
       const d = donazioni.leggiEsterna(req.body);
       if (!d) return res.status(400).json({ errore: 'serve un importo' });
+      // `valuta` e' facoltativa: senza, o con una che non conosciamo, vale
+      // quella del canale.
+      const valuta = d.valuta || streamers.get(login)?.settings?.donazioni?.valuta || 'EUR';
       const chiave = 'ext:' + login + ':' + (d.id || crypto.randomUUID());
-      if (!registroDonazioni.segna(chiave, { login, fonte: 'ext', importo: Math.round(d.importo * 100), valuta: d.valuta || s.settings?.donazioni?.valuta || 'EUR', nome: d.user, messaggio: d.messaggio })) return res.json({ ok: true, doppione: true });
+      if (!registroDonazioni.segna(chiave, { login, fonte: 'ext', importo: Math.round(d.importo * 100), valuta, nome: d.user, messaggio: d.messaggio })) return res.json({ ok: true, doppione: true });
       manager.alerts?.donazione(login, d);
       return res.json({ ok: true });
     }

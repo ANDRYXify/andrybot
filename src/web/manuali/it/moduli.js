@@ -344,7 +344,7 @@ export default {
       ['<code>clip</code>', '<code>motivo</code>, facoltativo', 'crea una clip; serve «Comandi Vocali» o «Clip Automatiche»'],
       ['<code>tiktok-live</code>', 'nessuno', 'avvisa che sei in diretta su TikTok; serve il piano Base'],
       ['<code>youtube-post</code>, <code>tiktok-post</code>, <code>instagram-post</code>', '<code>titolo</code>, <code>url</code>', 'avvisa un nuovo post; serve il piano Base'],
-      ['<code>donazione</code>', '<code>importo</code> (obbligatorio), <code>valuta</code>, <code>nome</code>, <code>messaggio</code>, <code>id</code>', 'una donazione arrivata da un altro servizio; con lo stesso <code>id</code> non conta due volte'],
+      ['<code>donazione</code>', '<code>importo</code> (obbligatorio), <code>valuta</code>, <code>nome</code>, <code>messaggio</code>, <code>id</code>', 'una donazione arrivata da un altro servizio; senza <code>valuta</code>, o con una che il bot non conosce, vale quella delle tue donazioni; con lo stesso <code>id</code> non conta due volte'],
     ] },
     { p: [
       'Al massimo 30 richieste al minuto: oltre, la risposta è <code>429</code>. Una chiave sbagliata riceve <code>404</code>, senza spiegazioni. Un\'azione fuori dal tuo piano riceve <code>403</code>, una sconosciuta «azione non riconosciuta».',

@@ -139,3 +139,35 @@ test('l\'azione musica non manda a comprare un add-on che non serve', async () =
   assert.equal(ab.abilitata(ab.funzioniDi({ tier: 'free' }), 'musica'), true);
   assert.match(musica, /Essenziale/);
 });
+
+// CONNETTORI, AZIONE «donazione»: `valuta` e' facoltativa. Senza, il server
+// leggeva le impostazioni da una variabile che in quel punto non esiste, e
+// rispondeva 500. Si esegue il ramo vero, coi suoi soli ingredienti.
+test('una donazione dai connettori senza valuta prende quella del canale', async () => {
+  const SRV = leggi('src/web/server.js');
+  const i = SRV.indexOf("if (azione === 'donazione') {", SRV.indexOf("app.post('/api/ext/:login'"));
+  assert.ok(i > 0, 'il ramo si trova');
+  let d = 0, fine = i;
+  for (let j = SRV.indexOf('{', i); j < SRV.length; j++) {
+    if (SRV[j] === '{') d++;
+    else if (SRV[j] === '}') { d--; if (!d) { fine = j + 1; break; } }
+  }
+  const donazioni = await import('../../src/features/donazioni.js');
+  const prova = async (corpo) => {
+    const segnate = [];
+    let risposta = null;
+    const res = { status: () => res, json: (x) => { risposta = x; return res; } };
+    const ramo = new Function('req', 'res', 'login', 'donazioni', 'registroDonazioni', 'streamers', 'manager', 'crypto',
+      `return (async () => { const azione = 'donazione'; ${SRV.slice(i, fine)} })();`);
+    await ramo({ body: { azione: 'donazione', ...corpo } }, res, 'canale', donazioni,
+      { segna: (k, v) => { segnate.push(v); return true; } },
+      { get: () => ({ settings: { donazioni: { valuta: 'CHF' } } }) },
+      { alerts: { donazione: () => {} } }, { randomUUID: () => 'x' });
+    return { risposta, segnate };
+  };
+  const senza = await prova({ importo: 5 });
+  assert.deepEqual(senza.risposta, { ok: true });
+  assert.equal(senza.segnate[0].valuta, 'CHF', 'senza valuta, quella del canale');
+  assert.equal((await prova({ importo: 5, valuta: 'boh' })).segnate[0].valuta, 'CHF', 'una valuta sconosciuta non rompe niente');
+  assert.equal((await prova({ importo: 5, valuta: 'usd' })).segnate[0].valuta, 'USD', 'una vera vale');
+});
