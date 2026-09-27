@@ -163,7 +163,7 @@ export default {
     { h3: 'Auguri di compleanno' },
     { p: [
       'La carta ha due parti separate, perché i posti e i momenti sono diversi: gli auguri nella chat della diretta e quelli nel gruppo Telegram.',
-      'Nel gruppo gli auguri partono nella prima ora del giorno, ora italiana. In chat la mezzanotte non esiste: partono al primo messaggio che il festeggiato scrive quel giorno, una volta l\'anno. Chi quel giorno non passa in chat non riceve auguri in chat.',
+      'Nel gruppo gli auguri partono nella prima ora del giorno, ora italiana. In chat la mezzanotte non esiste: partono al primo messaggio che il festeggiato scrive quel giorno, una volta l\'anno. Chi quel giorno non passa in chat non riceve auguri in chat. Con tutte e due le parti accese, gli auguri del gruppo non tolgono quelli in chat: ogni posto fa i suoi.',
     ] },
     { tabella: [
       ['Controllo', 'Cosa fa', 'Di base e limiti'],

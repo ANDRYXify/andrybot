@@ -87,6 +87,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Le frasi di !discord in chat, i messaggi di Telegram e Discord nel pannello e i motivi scritti nel registro del tuo server hanno gli accenti veri: «così», «più», «è» invece dell'apostrofo. [vai: ruoli]
 - Costruendo «Intorno alle dirette», il canale sono-in-onda entra negli Avvisi di Discord già acceso, e l'avviso della diretta ci arriva senza doverlo riaccendere a mano. [vai: dcavvisi]
 - Su Discord l'avviso di un post nuovo ha parole da post, come «ha caricato un nuovo video su YouTube», e non più il testo della diretta che diceva «è in diretta». [vai: dcavvisi]
+- Con gli auguri accesi sia nel gruppo Telegram sia in chat, chi compie gli anni riceve anche quelli in chat al suo primo messaggio: prima quelli del gruppo li spegnevano. [vai: telegram]
 
 ## 2026-09-26
 

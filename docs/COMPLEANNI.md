@@ -29,9 +29,11 @@ legge quando si vuole. In chat a mezzanotte non c'e' nessuno, e un augurio che
 nessuno legge non e' un augurio.
 
 Quindi in chat partono al **primo messaggio** di chi compie gli anni quel
-giorno, una volta l'anno (`last_auguri`, lo stesso campo del gruppo: sono due
-righe diverse, quindi non si pestano i piedi). Chi quel giorno non passa non
-riceve niente: gli auguri si fanno a chi c'e'.
+giorno, una volta l'anno. Il segno e' suo, `last_auguri_chat`, separato da
+`last_auguri` del gruppo: il giro di mezzanotte fa gli auguri nel gruppo a tutto
+l'elenco, compresi quelli segnati dalla chat, e con un segno solo avrebbe
+«gia' fatto» anche la chat prima del primo messaggio. Chi quel giorno non passa
+non riceve niente: gli auguri si fanno a chi c'e'.
 
 Il segno «gia' fatto» si scrive **prima** di parlare. Se si scrivesse dopo, un
 messaggio che non parte lascerebbe la riga da rifare, e la chat si riempirebbe

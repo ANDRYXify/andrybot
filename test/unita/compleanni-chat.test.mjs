@@ -75,7 +75,21 @@ test('gli auguri partono al primo messaggio, e una volta sola', () => {
 });
 
 test('l\'anno segnato e\' quello di oggi, non un contatore', () => {
-  assert.equal(compleanni.get(CH, 'chat:marco99').last_auguri, oggi.anno);
+  assert.equal(compleanni.get(CH, 'chat:marco99').last_auguri_chat, oggi.anno);
+  assert.equal(compleanni.get(CH, 'chat:marco99').last_auguri, 0, 'ed e\' il segno della chat: quello del gruppo resta suo');
+});
+
+// Con gli auguri del gruppo accesi, a mezzanotte il bot segna l'anno a tutto
+// l'elenco. Con un segno solo, al primo messaggio in chat gli auguri erano gia'
+// «fatti», e in chat non partivano mai.
+test('gli auguri nel gruppo non spengono quelli in chat', () => {
+  compleanni.set(CH, 'chat:elena', 'Elena', oggi.giorno, oggi.mese);
+  compleanni.markAuguri(CH, 'chat:elena', oggi.anno);   // il gruppo, a mezzanotte
+  const a = raccolta();
+  assert.equal(comple.auguriInChat(msg('buongiorno', { user: 'elena', display: 'Elena' }), a.parla), true);
+  assert.match(a.d[0], /Elena/);
+  const b = raccolta();
+  assert.equal(comple.auguriInChat(msg('ancora io', { user: 'elena', display: 'Elena' }), b.parla), false, 'e sempre una volta sola');
 });
 
 test('a chi compie gli anni un altro giorno non si dice niente', () => {
