@@ -8257,7 +8257,7 @@ const _panPredefiniti = () => window.SB_PANNELLI.predefiniti(PAN_STATO.dati || {
 function _panIcona(nome, colore) {
   const chiave = nome + '|' + colore;
   if (PAN_STATO.icone.has(chiave)) return PAN_STATO.icone.get(chiave);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="96" height="96" fill="none" stroke="${colore}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ICO[nome] || ICO.stella}</svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="256" height="256" fill="none" stroke="${colore}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ICO[nome] || ICO.stella}</svg>`;
   const img = new Image();
   const pronta = new Promise((ok) => { img.onload = () => ok(img); img.onerror = () => ok(null); });
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
@@ -8324,7 +8324,7 @@ async function panRifai() {
   const T = PAN_TIPI();
   if (vista.children.length !== S.voci.length || vista.dataset.alto !== String(h)) {
     vista.dataset.alto = String(h);
-    vista.innerHTML = S.voci.map((v, i) => `<figure class="pan-fig"><canvas width="${P.W}" height="${h}" role="img"></canvas><figcaption><button type="button" class="btn secondario mini" data-pan-png="${i}">${L('Scarica', 'Download', 'Descargar')}</button></figcaption></figure>`).join('');
+    vista.innerHTML = S.voci.map((v, i) => `<figure class="pan-fig"><canvas width="${P.W * P.DENSITA}" height="${h * P.DENSITA}" role="img"></canvas><figcaption><button type="button" class="btn secondario mini" data-pan-png="${i}">${L('Scarica', 'Download', 'Descargar')}</button></figcaption></figure>`).join('');
   }
   const problemi = [];
   const tele = [...vista.querySelectorAll('canvas')];
@@ -8335,7 +8335,7 @@ async function panRifai() {
     if (giro !== PAN_STATO.giro) return;
     const titolo = v.titolo || T[v.tipo];
     tele[i].setAttribute('aria-label', titolo);
-    const r = P.disegna(tele[i].getContext('2d'), { h, px, titolo, icona, colori: pal, forma: st.forma, carattere: car, seme: `pan:${String(stato?.user?.login || '')}:${v.id}`, penna: window.SB_PENNA });
+    const r = P.disegna(tele[i].getContext('2d'), { h, densita: P.DENSITA, px, titolo, icona, colori: pal, forma: st.forma, carattere: car, seme: `pan:${String(stato?.user?.login || '')}:${v.id}`, penna: window.SB_PENNA });
     if (r.problemi.length) problemi.push(L(`«${titolo}» non ci sta intero: accorcialo o scegli un carattere più stretto.`, `«${titolo}» does not fit: shorten it or pick a narrower font.`, `«${titolo}» no cabe entero: acórtalo o elige una letra más estrecha.`));
   }
   lista.innerHTML = problemi.map((x) => `<li class="problema">${esc(x)}</li>`).join('');
