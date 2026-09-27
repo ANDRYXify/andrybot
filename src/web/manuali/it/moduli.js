@@ -405,8 +405,11 @@ export default {
     { tabella: [
       ['Controllo', 'Cosa fa'],
       ['interruttore', 'accende o spegne il comando. Un pallino al suo posto vuol dire che è sempre acceso.'],
-      ['«nome tuo»', 'il nome nuovo, fino a 20 lettere minuscole e cifre. Rinominare sostituisce: i nomi di serie smettono di rispondere. «non si rinomina» vale per il comando che fa entrare nel sorteggio, perché la parola la scegli quando lo apri.'],
-      ['«chi può»', '«tutti», «abbonati», «VIP», «moderatori». Un comando che di serie è per i moderatori non si apre a tutti: scegliere più in basso lo lascia al suo livello.'],
+      ['«nome tuo»', 'il nome nuovo, fino a 20 lettere minuscole e cifre. Rinominare sostituisce: i nomi di serie smettono di rispondere. «non si rinomina» vale per il comando che fa entrare nel sorteggio, perché la parola la scegli quando lo apri, e per <code>!bot</code>.'],
+      ['«chi può»', '«tutti», «abbonati», «VIP», «moderatori». Un comando che di serie è per i moderatori non si apre a tutti: scegliere più in basso lo lascia al suo livello. «non si riserva» vale per <code>!bot</code>.'],
+    ] },
+    { p: [
+      '<code>!bot</code> (anche <code>!ia</code>, <code>!ai</code> e <code>!socialbot</code>) sta da solo nella famiglia «Trasparenza IA»: non si spegne, non si rinomina e non si riserva, perché chiunque in chat deve poter sapere che alcune risposte sono scritte da un\'intelligenza artificiale. Risponde con una frase fissa, e non fa domande al bot.',
     ] },
     { p: [
       'Accanto al nome vedi «costa monete» se il comando usa le monete, e le attese («30s a testa», «2 min per tutti»). Le attese dei giochi si cambiano nelle regole dei giochi, in <em>Giochi &amp; classifiche</em>.',

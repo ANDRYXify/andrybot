@@ -216,3 +216,35 @@ test('!giochi e un nome spiega quel gioco, coi nomi e i valori del canale', () =
     assert.doesNotMatch(T.riempiSpiega(CH, r.spiega), /[{}%]|undefined|NaN/, `${id}: la spiegazione esce pulita`);
   }
 });
+
+// LA TRASPARENZA IA NON SI SPEGNE. `!bot` (e `!ia`, `!ai`, `!socialbot`) dice
+// che in chat risponde anche un'intelligenza artificiale: stava nella famiglia
+// dei comandi base, e spegnendo quella, o il comando, o rinominandolo, la
+// dichiarazione spariva o cambiava nome. Adesso nessuna scelta la tocca.
+const comandibase = await import('../../src/features/comandibase.js');
+
+test('!bot risponde sempre, a chiunque, con le parole di sempre', async () => {
+  const bot = T.comandoDi('bot');
+  assert.equal(T.spegnibile(bot), false, 'non si spegne');
+  assert.equal(T.rinominabile(bot), false, 'non si rinomina');
+  assert.equal(T.riservabile(bot), false, 'non si riserva');
+  assert.equal(T.moduloAcceso(bot.modulo, { comandiBase: { attivo: false } }), true, 'la sua famiglia non ha interruttore');
+
+  scegli({ bot: { off: true, nome: 'chiedi', chi: 'mod' } });
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), comandiBase: { attivo: false } });
+  assert.deepEqual(T.normalizza({ bot: { off: true, nome: 'chiedi', chi: 'mod' } }), {}, 'il pannello non puo\' salvare niente su di lui');
+  for (const parola of ['bot', 'ia', 'ai', 'socialbot']) {
+    const v = T.preparaComando(CH, messaggio('!' + parola));
+    assert.equal(v.testo, '!bot', `!${parola} arriva al gestore anche con i comandi base spenti`);
+  }
+  assert.equal(T.preparaComando(CH, messaggio('!chiedi')), null, 'un nome inventato non diventa !bot');
+  const riga = T.elenco(CH).find((c) => c.id === 'bot');
+  assert.equal(riga.vivo, true);
+  assert.equal(riga.chi, 'tutti');
+
+  const dette = [];
+  assert.equal(await comandibase.tryComando(null, messaggio('!ia'), (t) => dette.push(t)), true);
+  assert.match(dette[0], /intelligenza artificiale/, 'e dice quello che il pannello promette');
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), comandiBase: { attivo: true } });
+  scegli({});
+});

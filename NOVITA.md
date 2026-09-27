@@ -29,6 +29,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > Link e descrizioni vengono da quello che hai già: pagina link, social, settimana, Discord, donazioni. Scarichi tutto in un file, pronto da mettere su Twitch.
 - Nel media kit il testo sulla fascia del contatto si legge con qualunque colore della pagina link: con alcuni accenti prima restava troppo tenue.
 - Ogni scheda del pannello ha il suo manuale: Stato, Effetti e Community si aggiungono agli altri, che ora dicono le etichette e i messaggi che vedi davvero.
+- In chat «!bot» e «!ia» rispondono sempre, anche con i comandi base spenti: fra i comandi pronti non si spengono, non si rinominano e non si riservano più. [vai: moduli]
 
 ## 2026-09-26
 
