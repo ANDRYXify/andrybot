@@ -1511,12 +1511,12 @@ function _demoGet(via) {
     ], livelli: ['tutti', 'sub', 'vip', 'mod'] },
     '/api/streamer/telegram/carta': {
       attiva: true, mia: false, tema: 'twitch', temaAttivo: 'twitch', disegnabile: true,
-      carta: { nome: 'Twitch — notte viola', larghezza: 1200, altezza: 500, fondo: {}, elementi: [] },
+      carta: { nome: 'Twitch: notte viola', larghezza: 1200, altezza: 500, fondo: {}, elementi: [] },
       dati: { nome: 'ANDRYXify', titolo: 'Si costruisce il bot, dal vivo', gioco: 'Software and Game Dev', login: 'andryx_demo', avatar: '' },
       vocabolario: { tipi: ['testo', 'targhetta', 'avatar', 'riga', 'striscia'], forme: ['tondo', 'tagliato', 'quadro'],
         fondi: ['tinta', 'alone', 'sfumatura'], segnaposto: ['nome', 'titolo', 'gioco', 'login', 'link', 'spettatori', 'piattaforma'],
         caratteri: ['Anton', 'Archivo Black', 'Archivo'], misura: { larghezza: 1200, altezza: 500 }, massimo: 24,
-        temi: [{ id: 'twitch', nome: 'Twitch — notte viola', carta: {} }, { id: 'kick', nome: 'Kick — taglio verde', carta: {} }] },
+        temi: [{ id: 'twitch', nome: 'Twitch: notte viola', nomi: ['Twitch: notte viola', 'Twitch: purple night', 'Twitch: noche violeta'], carta: {} }, { id: 'kick', nome: 'Kick: taglio verde', nomi: ['Kick: taglio verde', 'Kick: green cut', 'Kick: corte verde'], carta: {} }] },
     },
     '/api/streamer/telegram/destinazioni': {
       io: 'andryx_demo',
@@ -2613,7 +2613,7 @@ function disegnaCartaLive() {
   box.hidden = false;
   const temi = (d.vocabolario?.temi || []);
   const sceltoNessuno = !d.mia;
-  const bottoni = temi.map((t) => `<button type="button" class="btn secondario cl-tema${d.temaAttivo === t.id ? ' scelto' : ''}" data-tema="${esc(t.id)}">${esc(t.nome)}</button>`).join('');
+  const bottoni = temi.map((t) => `<button type="button" class="btn secondario cl-tema${d.temaAttivo === t.id ? ' scelto' : ''}" data-tema="${esc(t.id)}">${esc(t.nomi ? L(t.nomi[0], t.nomi[1], t.nomi[2]) : t.nome)}</button>`).join('');
   box.innerHTML = `
     <h2>${_hIco(ICO.immagine)}${L('La locandina della diretta', 'The live poster', 'El cartel del directo')}</h2>
     <p>${L('Quando parte la diretta, l\'avviso porta con sé un\'immagine: il tuo nome, il titolo, il gioco e la tua faccia.', 'When the live starts, the alert carries an image: your name, the title, the game and your face.', 'Cuando empieza el directo, el aviso lleva una imagen: tu nombre, el título, el juego y tu cara.')}</p>
@@ -2788,7 +2788,7 @@ async function caricaTgDestinazioni() {
       <input type="checkbox" id="tg-community"${d.communityLive ? ' checked' : ''}>
       <span class="tg-community-corpo">
         <strong>${L('Annuncia anche le dirette della community', 'Announce community members’ lives too', 'Anuncia también los directos de la comunidad')}</strong>
-        <span>${L(`Quando un membro della community va in diretta, l’avviso compare dove hai deciso nella matrice — fissato e tolto da solo a diretta finita. In lista entrano <strong>solo i membri verificati e confermati</strong> da andryxify.it: chi ha soltanto un account gratuito o un piano a pagamento non compare. Ora sono <strong>${d.communityQuanti || 0}</strong> canali, e la lista si aggiorna da sé.`, `When a community member goes live, the alert lands where you decided in the matrix — pinned and removed by itself when the live ends. The list holds <strong>only verified and confirmed members</strong> from andryxify.it: anyone with just a free account or a paid plan doesn’t show up. Right now that’s <strong>${d.communityQuanti || 0}</strong> channels, and the list keeps itself up to date.`, `Cuando un miembro de la comunidad emite, el aviso llega donde decidiste en la matriz — fijado y quitado solo al terminar. En la lista entran <strong>solo los miembros verificados y confirmados</strong> por andryxify.it: quien solo tiene una cuenta gratuita o un plan de pago no aparece. Ahora son <strong>${d.communityQuanti || 0}</strong> canales, y la lista se actualiza sola.`)}</span>
+        <span>${L(`Quando un membro della community va in diretta, l’avviso compare dove hai deciso in «Quale avviso va dove», e a diretta finita si toglie dove era fissato. In lista entrano <strong>solo i membri verificati e confermati</strong> da andryxify.it: chi ha soltanto un account gratuito o un piano a pagamento non compare. Ora sono <strong>${d.communityQuanti || 0}</strong> canali, e la lista si aggiorna da sé.`, `When a community member goes live, the alert lands where you decided in «Which alert goes where», and when the live ends it is removed where it was pinned. The list holds <strong>only verified and confirmed members</strong> from andryxify.it: anyone with just a free account or a paid plan doesn’t show up. Right now that’s <strong>${d.communityQuanti || 0}</strong> channels, and the list keeps itself up to date.`, `Cuando un miembro de la comunidad emite, el aviso llega donde decidiste en «Qué aviso va dónde», y al terminar se quita donde estaba fijado. En la lista entran <strong>solo los miembros verificados y confirmados</strong> por andryxify.it: quien solo tiene una cuenta gratuita o un plan de pago no aparece. Ahora son <strong>${d.communityQuanti || 0}</strong> canales, y la lista se actualiza sola.`)}</span>
       </span>
     </label>
     <div class="tg-amici">
@@ -22011,7 +22011,7 @@ function _dcOpzioniRuolo(scelto) {
     const qui = x.id === scelto;
     const si = x.posto === 'gestibile';
     if (!si && !qui && x.posto !== 'sopra') continue;
-    righe.push(`<option value="${esc(x.id)}"${qui ? ' selected' : ''}${si ? '' : ' disabled'}>${esc(x.nome)}${si ? '' : ' — ' + esc(nota[x.posto] || nota.sopra)}</option>`);
+    righe.push(`<option value="${esc(x.id)}"${qui ? ' selected' : ''}${si ? '' : ' disabled'}>${esc(x.nome)}${si ? '' : ' (' + esc(nota[x.posto] || nota.sopra) + ')'}</option>`);
   }
   if (scelto && !lista.some((x) => x.id === scelto)) {
     righe.push(`<option value="${esc(scelto)}" selected disabled>${esc(L('un ruolo che non c’è più', 'a role that is gone', 'un rol que ya no existe'))}</option>`);
@@ -22043,6 +22043,17 @@ function _dcDici(id, testo, tono) {
   n.className = 'tg-stato' + (tono ? ' ' + tono : '');
   n.textContent = testo || '';
   n.hidden = !testo;
+}
+
+function _dcSoloProprietario() {
+  if (stato?.ruolo !== 'moderatore') return false;
+  const testo = L('Le schede di Discord le usa solo il proprietario del canale: da moderatore le vedi, ma non le puoi usare.', 'The Discord tabs are for the channel owner only: as a moderator you can see them, but not use them.', 'Las pestañas de Discord solo las usa el propietario del canal: como moderador las ves, pero no puedes usarlas.');
+  for (const id of ['dc-stato', 'dcs-stato']) _dcDici(id, testo, 'guaio');
+  for (const id of ['dca-box', 'dcev', 'dce-verifica', 'dcf-conto']) {
+    const n = _g(id);
+    if (n) n.innerHTML = `<p class="tg-stato guaio">${esc(testo)}</p>`;
+  }
+  return true;
 }
 
 function _dcServeHtml() {
@@ -22160,6 +22171,7 @@ function _dcEsito(e) {
 }
 
 async function caricaRuoli() {
+  if (_dcSoloProprietario()) return;
   let d = null;
   try { d = await api('/api/streamer/ruoli'); } catch { d = null; }
   if (!d) { _dcDici('dc-stato', L('Non riesco a leggere la configurazione.', 'I can’t read the configuration.', 'No consigo leer la configuración.'), 'guaio'); return; }
@@ -22352,7 +22364,7 @@ let _dcaDati = null;
 async function caricaDcAvvisi() {
   const box = document.getElementById('dca-box');
   const chi = document.getElementById('dca-chi');
-  if (!box) return;
+  if (!box || _dcSoloProprietario()) return;
   let d;
   try { d = await api('/api/streamer/discord/avvisi'); }
   catch { box.innerHTML = `<p class="suggerimento">${L('Non riesco a leggere gli avvisi di Discord.', 'I can\'t read the Discord alerts.', 'No consigo leer los avisos de Discord.')}</p>`; return; }
@@ -22417,7 +22429,7 @@ async function caricaDcAvvisi() {
       || `<p class="vuoto">${L('Ancora nessun canale: scegline uno qui sotto e da lì in poi ti avviso.', 'No channel yet: pick one below and from then on I will tell them.', 'Aún ningún canal: elige uno abajo y a partir de ahí aviso.')}</p>`}</div>
     <div class="riga-flessibile spazio-sopra" id="dca-nuovo"${d.collegato ? '' : ' hidden'}>
       <select class="campo-largo" id="dca-scelta" aria-label="${esc(L('canale del server', 'server channel', 'canal del servidor'))}">
-        ${liberi.length ? liberi.map((c) => `<option value="${esc(c.id)}"${c.muto ? ' disabled' : ''}>#${esc(c.nome)}${c.muto ? ' — ' + L('qui non può scrivere', 'cannot write here', 'aquí no puede escribir') : ''}</option>`).join('')
+        ${liberi.length ? liberi.map((c) => `<option value="${esc(c.id)}"${c.muto ? ' disabled' : ''}>#${esc(c.nome)}${c.muto ? ' (' + L('qui non può scrivere', 'cannot write here', 'aquí no puede escribir') + ')' : ''}</option>`).join('')
         : `<option value="">${L('nessun canale libero', 'no free channel', 'ningún canal libre')}</option>`}
       </select>
       <button type="button" class="btn secondario" id="dca-piu"${liberi.some((c) => !c.muto) ? '' : ' disabled'}>${_bIco(ICO.piu)}${L('Aggiungi', 'Add', 'Añadir')}</button>
@@ -22633,6 +22645,7 @@ const _dcevLeggi = () => ({
 });
 
 async function caricaDcEventi() {
+  if (_dcSoloProprietario()) return;
   try { _dcev = await api('/api/streamer/dcserver/eventi'); } catch { _dcev = null; }
   if (!_dcev) { const b = _g('dcev'); if (b) b.innerHTML = `<p class="tg-stato guaio">${L('Non riesco a leggerli.', 'I can\u2019t read them.', 'No consigo leerlos.')}</p>`; return; }
   _dcevDisegna();
@@ -22640,8 +22653,8 @@ async function caricaDcEventi() {
 
 function fasciaDistruttiva(pre) {
   return `<p class="dcs-fascia" id="${pre}-fascia" role="status" hidden>
-      <strong>${L('Modalità distruttiva', 'Destructive mode', 'Modo destructivo')}</strong>
-      ${L('— quello che non è nella traccia verrà cancellato. Si chiude da sola fra', '— whatever is not in the track will be deleted. It closes on its own in', '— lo que no esté en la plantilla se borrará. Se cierra sola en')}
+      <strong>${L('Modalità distruttiva:', 'Destructive mode:', 'Modo destructivo:')}</strong>
+      ${L('quello che non è nella traccia verrà cancellato. Si chiude da sola fra', 'whatever is not in the track will be deleted. It closes on its own in', 'lo que no esté en la plantilla se borrará. Se cierra sola en')}
       <b class="dist-resta" id="${pre}-resta">10 min</b>.
       <button type="button" class="btn secondario mini" id="${pre}-esci">${L('Esci', 'Leave', 'Salir')}</button>
     </p>`;
@@ -22818,7 +22831,7 @@ function _dcsOpzioniChi(scelto) {
   const lista = (_dcs && _dcs.ruoli) || [];
   const nome = scelto && scelto !== 'tutti' ? String(scelto.ruolo || '') : '';
   const fuori = nome && !lista.some((r) => r.nome === nome)
-    ? `<option value="${esc(nome)}" selected>${esc(nome)}${L(' — non c’è più', ' — gone', ' — ya no está')}</option>` : '';
+    ? `<option value="${esc(nome)}" selected>${esc(nome)}${L(' (non c’è più)', ' (gone)', ' (ya no está)')}</option>` : '';
   return `<option value="tutti"${scelto === 'tutti' ? ' selected' : ''}>${L('Tutti', 'Everyone', 'Todos')}</option>`
     + fuori + lista.map((r) => `<option value="${esc(r.nome)}"${r.nome === nome ? ' selected' : ''}>${esc(r.nome)}</option>`).join('');
 }
@@ -23480,6 +23493,7 @@ async function _dcsCaricaRegistro() {
 }
 
 async function caricaDcServer() {
+  if (_dcSoloProprietario()) return;
   if (_dcs) { _dcsMostra(); return; }
   let d = null;
   try { d = await api('/api/streamer/dcserver'); } catch { d = null; }

@@ -8992,7 +8992,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     caratteri: cartaLive.CARATTERI.map(([nome]) => nome),
     misura: cartaLive.MISURA,
     massimo: cartaLive.MAX_ELEMENTI,
-    temi: cartaLive.NOMI_TEMI.map((id) => ({ id, nome: cartaLive.TEMI[id].nome, carta: cartaLive.TEMI[id] })),
+    temi: cartaLive.NOMI_TEMI.map((id) => ({ id, nome: cartaLive.TEMI[id].nome, nomi: cartaLive.NOMI_TEMA[id] || null, carta: cartaLive.TEMI[id] })),
   });
 
   // Cosa scrivere dentro alla carta mentre la si compone. Sono i dati VERI del
@@ -9017,8 +9017,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // la' — fra la carta ripulita e il tema grezzo — direbbe «e' una tua» un
   // istante dopo che hai scelto un tema. Un tasto che si spegne da solo.
   function temaUguale(carta) {
-    const suo = JSON.stringify(cartaLive.normCarta(carta));
-    return cartaLive.NOMI_TEMI.find((t) => JSON.stringify(cartaLive.normCarta(cartaLive.TEMI[t])) === suo) || null;
+    const suo = cartaLive.improntaCarta(carta);
+    return cartaLive.NOMI_TEMI.find((t) => cartaLive.improntaCarta(cartaLive.TEMI[t]) === suo) || null;
   }
 
   async function rispostaCarta(login) {

@@ -546,7 +546,7 @@ export default {
     { d: 'Gli avvisi su Discord non partono.', r: 'Servono il piano Base, il bot nel server e un canale «Acceso» con quell\'avviso spuntato. «Prova» ti fa vedere dove finisce.' },
     { d: 'Sul calendario del server non compare niente.', r: 'In «Gli appuntamenti sul calendario» controlla che «Metti la mia settimana sul calendario del server» sia acceso, che «Dove succede» abbia il link del tuo canale e che la tua settimana non sia vuota. Poi premi «Mettili adesso»: se leggi che al bot manca «Creare eventi», riscegli il server da «Cambia server» nei «Ruoli».' },
     { d: 'La porta d\'ingresso non si accende.', r: 'Discord la accende solo sui server di tipo Community, con almeno 7 canali fra quelli che chi entra si può aprire e almeno 5 dove tutti possono scrivere. L\'anteprima dice cosa manca.' },
-    { d: 'Sono moderatore del canale e nelle schede Discord non vedo niente.', r: 'Le schede Discord le usa solo il proprietario del canale.' },
+    { d: 'Sono moderatore del canale e nelle schede Discord non posso fare niente.', r: 'Le schede Discord le usa solo il proprietario del canale. Da moderatore le apri, e ognuna te lo dice al posto dei suoi controlli.' },
     { d: 'Ho cancellato un canale con la piazza pulita. Lo recupero?', r: 'No: su Discord un canale cancellato non torna. In «Cosa è stato fatto» restano i nomi di quello che è stato tolto.' },
   ],
 };

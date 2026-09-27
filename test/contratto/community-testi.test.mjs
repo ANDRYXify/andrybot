@@ -80,3 +80,11 @@ test('la mini-guida del Filtro non promette che i moderatori passano sempre', ()
   assert.ok(g.includes('«Questi ruoli passano»'));
   assert.ok(APP.includes("L('Questi ruoli passano', 'These roles get through', 'Estos roles pasan')"), 'la casella si chiama così');
 });
+
+test('niente lineetta lunga nelle etichette di Telegram e Discord', () => {
+  for (const f of ['_dcOpzioniRuolo', 'caricaDcAvvisi', 'fasciaDistruttiva', '_dcsOpzioniChi', 'caricaCompleanni', 'pannelloDcAvvisi', 'caricaTgDestinazioni']) {
+    assert.ok(!corpo(f).includes('—'), `${f} usa «—»`);
+  }
+  const temi = leggi('src/features/carta-disegno.js');
+  assert.ok(!/nome: '[^']*—/.test(temi), 'i nomi dei temi della locandina');
+});

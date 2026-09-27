@@ -91,6 +91,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - La carta degli auguri di compleanno si vede anche senza il bot Telegram, così accendi gli auguri in chat; la parte del gruppo ti dice di collegarlo. [vai: telegram]
 - La carta dei compleanni e il codice per collegare la chat privata di Telegram si leggono anche in inglese e spagnolo. [vai: telegram]
 - Nel registro del tuo server Discord, il motivo della condizione sulle dirette si legge «c’è stato ad almeno N dirette», come la chiama la scheda Ruoli. [vai: ruoli]
+- I temi della locandina di Telegram hanno il nome anche in inglese e spagnolo, e le etichette di Telegram e Discord non usano più la lineetta lunga. [vai: telegram]
+- Un moderatore che apre le schede di Discord legge che le usa solo il proprietario del canale, invece di «Non riesco a leggere la configurazione». [vai: ruoli]
 
 ## 2026-09-26
 
