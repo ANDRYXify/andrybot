@@ -3528,7 +3528,7 @@ function funzioneChiusa(funz) {
 
 function muroPacchetto(funz, cosa, addon = FUNZ_ADDON[funz]) {
   if (!funzioneChiusa(funz)) return '';
-  if (_chiusoDalProprietario(funz)) return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${esc(cosa)} ${L('è chiuso dal proprietario', 'is closed by the owner', 'está cerrado por el propietario')}${stato.accesso.nota ? ': ' + esc(stato.accesso.nota) : ''}.</span></div>`;
+  if (_chiusoDalProprietario(funz)) return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${esc(cosa)} ${L('è chiuso da andryxify', 'is closed by andryxify', 'está cerrado por andryxify')}${stato.accesso.nota ? ': ' + esc(stato.accesso.nota) : ''}.</span></div>`;
   const na = NOME_ADDON[addon] || ['', '', ''];
   const nome = L(na[0], na[1], na[2]);
   const compra = !!stato?.stripeAttivo && !!addon && stato?.ruolo !== 'moderatore';
@@ -3548,7 +3548,7 @@ const addonPerScheda = (id) => FUNZ_ADDON[SCHEDA_FUNZ[id]] || null;
 
 function paginaBloccata(id) {
   if (_chiusoDalProprietario(SCHEDA_FUNZ[id])) {
-    return `<div class="carta blocco-carta"><div class="blocco-testa">${_bIco(ICO.lucchetto)}<h2>${esc(tScheda(id, id))}</h2><span class="badge rosso">${L('Chiusa dal proprietario', 'Closed by the owner', 'Cerrada por el propietario')}</span></div>
+    return `<div class="carta blocco-carta"><div class="blocco-testa">${_bIco(ICO.lucchetto)}<h2>${esc(tScheda(id, id))}</h2><span class="badge rosso">${L('Chiusa da andryxify', 'Closed by andryxify', 'Cerrada por andryxify')}</span></div>
       <p class="blocco-cosa">${stato.accesso.nota ? esc(stato.accesso.nota) : L('Questa scheda è chiusa per il tuo canale.', 'This tab is closed for your channel.', 'Esta pestaña está cerrada para tu canal.')}</p></div>`;
   }
   const addon = addonPerScheda(id);
@@ -30367,10 +30367,10 @@ function _rigaAccessoHtml() {
   const fino = a.scade ? ' ' + L('fino al', 'until', 'hasta el') + ' <strong>' + esc(dataIt(a.scade)) + '</strong>' : '';
   const nota = a.nota ? ': ' + esc(a.nota) : '';
   let t;
-  if (a.modo === 'tutto') t = L('Il proprietario ti ha aperto <strong>tutto</strong>', 'The owner has opened <strong>everything</strong> for you', 'El propietario te ha abierto <strong>todo</strong>');
-  else if (a.modo === 'scelte') t = L('Il proprietario ti ha aperto', 'The owner has opened for you', 'El propietario te ha abierto') + ' <strong>' + esc(chiavi.join(', ')) + '</strong>';
-  else if (!chiavi.length) t = L('<strong>Accesso sospeso</strong> dal proprietario', '<strong>Access suspended</strong> by the owner', '<strong>Acceso suspendido</strong> por el propietario');
-  else t = L('Il proprietario ha chiuso', 'The owner has closed', 'El propietario ha cerrado') + ' <strong>' + esc(chiavi.join(', ')) + '</strong>';
+  if (a.modo === 'tutto') t = L('andryxify ti ha aperto <strong>tutto</strong>', 'andryxify has opened <strong>everything</strong> for you', 'andryxify te ha abierto <strong>todo</strong>');
+  else if (a.modo === 'scelte') t = L('andryxify ti ha aperto', 'andryxify has opened for you', 'andryxify te ha abierto') + ' <strong>' + esc(chiavi.join(', ')) + '</strong>';
+  else if (!chiavi.length) t = L('<strong>Accesso sospeso</strong> da andryxify', '<strong>Access suspended</strong> by andryxify', '<strong>Acceso suspendido</strong> por andryxify');
+  else t = L('andryxify ha chiuso', 'andryxify has closed', 'andryxify ha cerrado') + ' <strong>' + esc(chiavi.join(', ')) + '</strong>';
   return `<p class="acc-avviso">${t}${fino}${nota}.</p>`;
 }
 
