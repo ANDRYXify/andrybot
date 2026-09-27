@@ -222,3 +222,15 @@ test('«Aspetta» e il testo sull\'overlay hanno i limiti del motore, letti dal 
   assert.doesNotMatch(testo, /m(in|ax)="\d/);
   assert.match(testo, /lim\.testoMaxMs/);
 });
+
+// La carta «Comando vocale» diceva «Funziona su Chrome o Edge», ma la pagina di
+// ascolto ha anche il motore locale per i browser che il riconoscimento non ce
+// l'hanno: la carta dice tutti e due.
+test('la carta del comando vocale dice anche del motore locale', () => {
+  const VOCE = leggi('src/web/public/voce.js');
+  assert.match(VOCE, /function passaALocale\(/, 'la pagina ripiega sul motore locale');
+  const pannello = corpo('function pannelloAscolto()');
+  const carta = pannello.slice(pannello.indexOf('ICO.voce'), pannello.indexOf('ICO.giochi'));
+  assert.doesNotMatch(carta, /Funziona su Chrome o Edge/);
+  assert.match(carta, /motore locale/);
+});
