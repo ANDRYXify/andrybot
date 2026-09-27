@@ -49,6 +49,21 @@ test('un passo di regia dai Moduli esce dallo stesso ponte, ripulito come quelli
   chiudi();
 });
 
+test('anche la transizione di un Modulo arriva al ponte, come scena e muto', async () => {
+  // I tre tipi di regia sono tre: se la pulizia ne conosce solo due, la terza
+  // azione dei Moduli si salva e poi non parte mai.
+  const ch = canale();
+  const arrivati = [];
+  const chiudi = consolle.apriPonte(ch, (m) => {
+    arrivati.push(m);
+    setTimeout(() => consolle.esitoDalPonte(ch, m.lavoro, { ok: true, mostra: m.passo.transizione }), 0);
+  });
+  const e = await consolle.passoDiRegia(ch, { tipo: 'transizione', transizione: '  Dissolvenza  ' });
+  assert.equal(e.ok, true, e.mostra);
+  assert.deepEqual(arrivati[0].passo, { tipo: 'transizione', transizione: 'Dissolvenza' });
+  chiudi();
+});
+
 test('dal ponte dei Moduli non passa niente che non sia regia', async () => {
   const ch = canale();
   const arrivati = [];

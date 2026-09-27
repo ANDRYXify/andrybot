@@ -451,6 +451,10 @@ function passoPulito(p, valide) {
     const come = ['inverti', 'muta', 'smuta'].includes(String(p?.come)) ? String(p.come) : 'inverti';
     return fonte ? { tipo, fonte, come } : null;
   }
+  if (tipo === 'transizione') {
+    const transizione = testoPulito(p?.transizione, 80);
+    return transizione ? { tipo, transizione } : null;
+  }
   if (tipo === 'attesa') {
     const ms = Math.round(Number(p?.ms));
     return Number.isFinite(ms) && ms > 0 ? { tipo, ms: Math.min(ms, ATTESA_MAX_MS) } : null;

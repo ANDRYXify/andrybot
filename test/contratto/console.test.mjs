@@ -646,6 +646,18 @@ test('i passi di regia si salvano, e senza una pagina di guardia il tasto lo dic
   assert.equal(consolle.pontiAperti(ch), 0, 'e chiudendo la pagina non resta di guardia nessuno');
 });
 
+test('un passo di transizione resta al salvataggio e alla rilettura', () => {
+  // Il pannello offre «Fai partire una transizione»: se la pulizia non la
+  // conosce, il passo sparisce appena salvi e il tasto resta senza.
+  const ch = canale();
+  const r = consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [{
+    passi: [{ tipo: 'transizione', transizione: ' Taglio ' }],
+  }] }] });
+  assert.equal(r.pagine[0].tasti.length, 1, 'il tasto resta');
+  assert.deepEqual(r.pagine[0].tasti[0].passi, [{ tipo: 'transizione', transizione: 'Taglio' }]);
+  assert.deepEqual(consolle.plancia(ch).pagine[0].tasti[0].passi, [{ tipo: 'transizione', transizione: 'Taglio' }], 'e rileggendo non cambia');
+});
+
 test('la pagina percorre la partitura in ORDINE, un passo per volta', () => {
   // Se il server facesse «tutto il resto» e la pagina le scene «dopo», una fila
   // con un'attesa in mezzo andrebbe fuori ordine. Percio' la pagina cammina lei,
