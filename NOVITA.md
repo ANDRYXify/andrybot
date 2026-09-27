@@ -83,6 +83,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nelle schede Telegram e Discord le spiegazioni dicono il vero: «Rileva gruppo» va anche col bot interattivo acceso, i comandi stanno in «Chat e pubblico», e nel filtro passano i ruoli che spunti. [vai: telegram]
 - Nella scheda Telegram «Avvisa il gruppo quando vado in diretta» si accende appena c'è un posto dove mandare l'avviso, anche solo un canale, come già accettava il server. [vai: telegram]
 - «Fissa l'avviso in cima durante la live…» vale per ogni posto che aggiungi, e a fine diretta su TikTok l'avviso si toglie solo dove era fissato, seguendo la spunta di quel posto. [vai: telegram]
+- Nei Ruoli di Discord, «Passa adesso» con «Tieni i ruoli aggiornati» spento ti dice di accenderlo, invece di chiederti di portare nel server un bot che c'è già. [vai: ruoli]
 
 ## 2026-09-26
 

@@ -111,3 +111,12 @@ test('il token del bot non torna mai verso il pannello', () => {
   assert.match(post.slice(0, 900), /typeof b\.token === 'string' && b\.token\.trim\(\)/,
     'un campo vuoto vuol dire «non l’ho toccato», non «cancellalo»');
 });
+
+test('«Passa adesso» dice perché il giro non parte, con la risposta del giro', () => {
+  const SRV = leggi('src/web/server.js');
+  const i = SRV.indexOf("app.post('/api/streamer/ruoli/giro'");
+  const r = SRV.slice(i, SRV.indexOf('\n  }));', i));
+  assert.match(r, /dcGiro\.nonParte\(dcRuoli\.get\(login\), \{ prova \}\) === 'spento'/);
+  assert.ok(r.includes('Accendi prima «Tieni i ruoli aggiornati»'), 'da spento dice di accenderlo');
+  assert.match(leggi('src/features/discord-giro.js'), /if \(nonParte\(conf, \{ prova \}\)\) return null;/, 'e il giro usa la stessa risposta');
+});

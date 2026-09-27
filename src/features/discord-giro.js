@@ -70,18 +70,27 @@ function aggiungi(elenco, cosa) {
   elenco.push(t);
 }
 
+// PERCHE' UN GIRO NON PARTE: '' se parte, 'server' se manca il server o un bot
+// che ci entri, 'spento' se «Tieni i ruoli aggiornati» e' spento e non e' una
+// prova. Una risposta sola, letta dal giro e da chi deve dire perche' non e'
+// partito: due cause diverse hanno due rimedi diversi, e dire «porta il bot»
+// a chi il bot ce l'ha gia' lo manda a rifare una cosa fatta.
+export function nonParte(conf, { prova = false } = {}) {
+  if (!conf || !conf.guild || !api.tokenDi(conf)) return 'server';
+  // Da spento si puo' guardare, non toccare: «fammi vedere cosa faresti» serve
+  // proprio PRIMA di accendere, e non puo' cambiare niente per costruzione.
+  if (!conf.attivo && !prova) return 'spento';
+  return '';
+}
+
 // Un giro su un canale. `quadro` e' una funzione (gente) -> fotografia di
 // Twitch: sta fuori di qui apposta, perche' il giro non deve sapere COME si
 // chiede a Twitch chi ti segue.
 export async function giro(channel, { quadro = null, max = MAX_PERSONE, prova = false, pausa = PAUSA_MS } = {}) {
   const ch = String(channel).toLowerCase();
   const conf = dcRuoli.get(ch);
-  if (!conf || !conf.guild) return null;
+  if (nonParte(conf, { prova })) return null;
   const token = api.tokenDi(conf);
-  if (!token) return null;
-  // Da spento si puo' guardare, non toccare: «fammi vedere cosa faresti» serve
-  // proprio PRIMA di accendere, e non puo' cambiare niente per costruzione.
-  if (!conf.attivo && !prova) return null;
 
   const esito = { visti: 0, dati: 0, tolti: 0, fuori: 0, bloccati: [], scartate: 0, errori: [], quando: 0 };
   const finisci = (extra = {}) => {

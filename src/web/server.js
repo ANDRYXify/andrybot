@@ -4931,11 +4931,17 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
 
   app.post('/api/streamer/ruoli/giro', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
+    const prova = !!req.body?.prova;
     const e = await dcGiro.giro(login, {
-      prova: !!req.body?.prova,
+      prova,
       quadro: (gente) => helix.ruoliDi(login, gente),
     });
-    if (!e) return res.status(400).json({ errore: 'Prima porta il bot nel tuo server.' });
+    if (!e) {
+      // il perche' lo dice il giro stesso: sono due cause con due rimedi
+      return res.status(400).json({ errore: dcGiro.nonParte(dcRuoli.get(login), { prova }) === 'spento'
+        ? 'Accendi prima «Tieni i ruoli aggiornati»: da spento il bot i ruoli non li tocca.'
+        : 'Prima porta il bot nel tuo server.' });
+    }
     res.json(e);
   }));
 
