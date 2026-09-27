@@ -32,6 +32,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nella scheda Stato, in «Quando dev'essere attivo», restano «Sempre» e «Solo quando sei in diretta»: «Manuale» faceva lo stesso di «Sempre», e chi l'aveva scelto ora legge «Sempre». [vai: stato]
 - Su Kick il bot ubbidisce all'interruttore e alla modalità: spento non risponde più, e con «Solo quando sei in diretta» risponde solo mentre Kick dice che sei in onda. [vai: stato]
 - Per i canali nati su YouTube la chat delle dirette parte davvero: prima la levetta restava alzata e il bot non la leggeva mai. [vai: account]
+- La scheda Stato di un canale Kick, YouTube o Discord non chiede più i permessi di Twitch, e «in chat adesso» guarda la chat della piattaforma del canale. [vai: stato]
+- La carta «Attiva il bot» dice il vero sui permessi: Twitch ne chiede uno per ogni funzione che li usa, e l'elenco intero lo vedi prima di confermare. [vai: stato]
 
 ## 2026-09-26
 

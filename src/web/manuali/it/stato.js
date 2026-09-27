@@ -83,7 +83,7 @@ export default {
     { tabella: [
       ['Controllo', 'Cosa fa', 'Di base'],
       ['Interruttore «Bot acceso» / «Bot spento»', 'Accende o spegne il bot sul canale. Il cambio vale subito, e lo conferma «Bot acceso!» o «Bot spento.».', 'Acceso.'],
-      ['«in chat adesso» / «non connesso»', 'Dice se il bot è dentro la tua chat di Twitch. Si legge quando apri il pannello.', 'Solo lettura.'],
+      ['«in chat adesso» / «non connesso»', 'Dice se il bot è nella chat della piattaforma del tuo canale: su Twitch se è entrato nella chat, su Kick se è acceso e Kick è collegato, su YouTube se sta leggendo la chat di una diretta. Si legge quando apri il pannello. Un canale solo su Discord non ce l\'ha.', 'Solo lettura.'],
       ['«Quando dev\'essere attivo»', '«Sempre (24/7)» oppure «Solo quando sei in diretta».', '«Sempre (24/7)».'],
       ['«Salva modalità»', 'Salva la scelta del menù qui sopra. Risponde «Modalità salvata ✓».', ''],
     ] },
@@ -108,7 +108,7 @@ export default {
     ] },
     { p: [
       'Sotto c\'è «Aggiorna i permessi»: apre Twitch, confermi, e si aggiornano tutti, anche quelli nuovi. Se qualcosa non funziona, è il primo tasto da premere.',
-      'Un moderatore al posto della riga vede «Permessi del bot:» con «chat attiva» o «chat non attiva». I permessi li dà solo il proprietario.',
+      'Su un canale Twitch, un moderatore al posto della riga vede «Permessi del bot:» con «chat attiva» o «chat non attiva». I permessi li dà solo il proprietario.',
     ] },
 
     { h3: 'Stai provando … gratis' },

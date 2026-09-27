@@ -842,7 +842,7 @@ function statoDemo() {
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display, nome: ctx.canale },
     isAdmin: false,
-    permessiOk: true, vipOk: true, moderazioneOk: true, canaleOk: true,
+    permessiOk: true, vipOk: true, moderazioneOk: true, canaleOk: true, inChat: true,
     knowledgeCount: 3,
     status: { channels: [ctx.canale] },
     preaddestramento: { preaddestramento_ts: '2026-05-01T20:00:00Z', preaddestramento_esito: 'pagina profilo letta ("Andryx — creator e streamer da Genova · Twitch, YouTube, gaming"), 5 link social; gioco recente: Fortnite; profilo Twitch letto' },
@@ -8521,10 +8521,10 @@ function pannelloAvatar() {
 function pannelloStato() {
   const login = stato.user.login;
 
-  const connessi = stato.status?.connessi || stato.status?.channels || [];
-  const inChat = connessi.includes(login);
+  const inChat = typeof stato.inChat === 'boolean' ? stato.inChat : null;
   const sImp = impostazioni();
   const proprietario = stato.ruolo !== 'moderatore';
+  const suTwitch = (stato.piattaforma || 'twitch') === 'twitch';
 
   const bannerMod = proprietario ? '' : `
     <div class="carta evidenziata">
@@ -8532,10 +8532,10 @@ function pannelloStato() {
       <p>${L('Sei entrato come', 'You’re signed in as a', 'Has entrado como')} <strong class="primo-piano">${L('moderatore', 'moderator', 'moderador')}</strong>: ${L('puoi occuparti di comandi, moduli, effetti, giochi, notifiche, regole e memoria. Le cose da proprietario — permessi Twitch e l\'elenco dei moderatori — restano a chi possiede il canale.', 'you can handle commands, modules, effects, games, notifications, rules and memory. Owner-only things — Twitch permissions and the moderator list — stay with the channel owner.', 'puedes ocuparte de comandos, módulos, efectos, juegos, notificaciones, reglas y memoria. Lo de propietario — permisos de Twitch y la lista de moderadores — es del dueño del canal.')}</p>
     </div>`;
 
-  const cardPermessi = (!proprietario || stato.permessiOk) ? '' : `
+  const cardPermessi = (!proprietario || !suTwitch || stato.permessiOk) ? '' : `
     <div class="carta evidenziata">
       <h2>${_hIco(ICO.chiave)}${L('Attiva il bot: concedi i permessi', 'Activate the bot: grant permissions', 'Activa el bot: concede los permisos')}</h2>
-      <p>${L('Per funzionare, SocialBot', 'To work, SocialBot', 'Para funcionar, SocialBot')} <strong class="primo-piano">${L('leggerà e scriverà nella tua chat con il tuo account', 'will read and write in your chat with your account', 'leerá y escribirá en tu chat con tu cuenta')}</strong>, ${L('creerà clip e vedrà follow e sub. Nient\'altro.', 'will create clips and see follows and subs. Nothing else.', 'creará clips y verá follows y subs. Nada más.')}</p>
+      <p>${L('Per funzionare, SocialBot', 'To work, SocialBot', 'Para funcionar, SocialBot')} <strong class="primo-piano">${L('leggerà e scriverà nella tua chat con il tuo account', 'will read and write in your chat with your account', 'leerá y escribirá en tu chat con tu cuenta')}</strong>. ${L('Per questo chiede a Twitch un permesso per ogni funzione che ne ha bisogno: clip, moderazione, sondaggi, punti canale e le altre. L\'elenco intero lo vedi su Twitch prima di confermare.', 'That is why it asks Twitch for one permission per feature that needs it: clips, moderation, polls, channel points and the rest. You see the whole list on Twitch before you confirm.', 'Por eso pide a Twitch un permiso por cada función que lo necesita: clips, moderación, encuestas, puntos de canal y las demás. La lista entera la ves en Twitch antes de confirmar.')}</p>
       <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">${L('Concedi i permessi su Twitch', 'Grant permissions on Twitch', 'Concede los permisos en Twitch')}</a></p>
     </div>`;
 
@@ -8592,12 +8592,12 @@ function pannelloStato() {
           <span class="levetta"></span>
         </label>
         <span class="etichetta-stato" id="etichetta-bot">${stato.streamer.botEnabled ? L('Bot acceso', 'Bot on', 'Bot encendido') : L('Bot spento', 'Bot off', 'Bot apagado')}</span>
-        ${inChat
+        ${inChat === null ? '' : inChat
           ? `<span class="badge verde"><i class="vivo"></i>${L('in chat adesso', 'in chat now', 'en el chat ahora')}</span>`
           : `<span class="badge"><i class="spento"></i>${L('non connesso', 'not connected', 'no conectado')}</span>`}
       </div>
 
-      ${proprietario ? `
+      ${!suTwitch ? '' : proprietario ? `
       <p class="spazio-sopra"><strong class="primo-piano">${L('Permessi:', 'Permissions:', 'Permisos:')}</strong>
         ${badgePermesso(stato.permessiOk, L('chat', 'chat', 'chat'))}
         ${badgePermesso(stato.vipOk, 'VIP')}
@@ -8611,7 +8611,7 @@ function pannelloStato() {
       <p class="suggerimento">${L('La', 'The', 'El')} <strong class="primo-piano">${L('chat', 'chat', 'chat')}</strong> ${L('fa parlare il bot,', 'lets the bot speak,', 'hace hablar al bot,')}
       <strong class="primo-piano">shoutout</strong>/<strong class="primo-piano">${L('annunci', 'announcements', 'anuncios')}</strong> ${L('per i comandi ufficiali,', 'for the official commands,', 'para los comandos oficiales,')}
       <strong class="primo-piano">${L('ore guardate', 'watch time', 'horas vistas')}</strong> ${L('per', 'for', 'para')} <code>!ore</code>. ${L('Se qualcosa non funziona, premi «Aggiorna i permessi».', 'If something doesn\'t work, press «Update permissions».', 'Si algo no funciona, pulsa «Actualizar permisos».')}</p>` : `
-      <p class="suggerimento spazio-sopra">${L('Permessi del bot:', 'Bot permissions:', 'Permisos del bot:')} ${stato.permessiOk ? `<span class="badge verde">✓ ${L('chat attiva', 'chat active', 'chat activo')}</span>` : `<span class="badge rosso">${L('chat non attiva', 'chat not active', 'chat no activo')}</span>`} — ${L('li gestisce il proprietario del canale.', 'the channel owner manages them.', 'los gestiona el dueño del canal.')}</p>`}
+      <p class="suggerimento spazio-sopra">${L('Permessi del bot:', 'Bot permissions:', 'Permisos del bot:')} ${stato.permessiOk ? `<span class="badge verde">✓ ${L('chat attiva', 'chat active', 'chat activo')}</span>` : `<span class="badge rosso">${L('chat non attiva', 'chat not active', 'chat no activo')}</span>`} ${L('(li gestisce il proprietario del canale)', '(the channel owner manages them)', '(los gestiona el dueño del canal)')}</p>`}
 
       <p class="suggerimento spazio-sopra">${L('Spegnerlo non cancella nulla: quando lo riaccendi riparte da dove era rimasto.', 'Turning it off deletes nothing: when you turn it back on it resumes where it left off.', 'Apagarlo no borra nada: cuando lo vuelves a encender retoma donde estaba.')}</p>
 

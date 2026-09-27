@@ -75,3 +75,24 @@ test('la chat di YouTube parte anche per un canale nato su YouTube', async () =>
   await io._syncChannels();
   assert.deepEqual(accesi, ['yt.nato'], 'bot acceso e levetta alzata bastano; il bot spento resta fuori');
 });
+
+// Il badge «in chat adesso» della scheda Stato: dice il vero sulla piattaforma
+// del canale, non sulla chat di Twitch per tutti.
+test('«in chat adesso» guarda la chat della piattaforma del canale', () => {
+  streamers.upsertApproved('kick.badge', 'badge');
+  tokens.save('kick', 'kick.badge', { accessToken: 'a', refreshToken: 'r', scopes: [], expiresAt: Date.now() + 3600_000, userId: '7' });
+  streamers.upsertApproved('kick.senza', 'senza');
+  streamers.upsertApproved('dc.server', 'server');
+  const io = Object.create(BotManager.prototype);
+  io.units = new Map([['twitchino', { connesso: true }]]);
+  io.chatYT = { stato: (l) => ({ inDiretta: l === 'yt.onda' }) };
+  assert.equal(io.inChat('twitchino'), true);
+  assert.equal(io.inChat('altro'), false, 'Twitch senza connessione');
+  assert.equal(io.inChat('kick.badge'), true, 'Kick collegato e bot acceso');
+  assert.equal(io.inChat('kick.senza'), false, 'Kick non collegato');
+  streamers.setEnabled('kick.badge', false);
+  assert.equal(io.inChat('kick.badge'), false, 'bot spento');
+  assert.equal(io.inChat('yt.onda'), true, 'YouTube: legge la chat della diretta');
+  assert.equal(io.inChat('yt.fermo'), false);
+  assert.equal(io.inChat('dc.server'), null, 'Discord una chat del canale non ce l\'ha');
+});

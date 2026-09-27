@@ -88,6 +88,8 @@ import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
 import { statoVivo } from './db.js';
+import { piattaformaDi } from './identita.js';
+import { tokenDi as tokenKick } from './kick/api.js';
 import * as bjFeat from './features/blackjack.js';
 import * as seguitiFeat from './features/seguiti.js';
 
@@ -2148,6 +2150,19 @@ export class BotManager {
   // chi lo chiede da fuori (la vetrina) non deve andarlo a chiedere di nuovo
   // alla piattaforma.
   inDiretta(login) { return this._liveState.get(String(login || '').toLowerCase()) === true; }
+
+  // IL BOT E' NELLA CHAT DEL CANALE ADESSO? E' il badge della scheda Stato, e
+  // ogni piattaforma ha il suo modo di esserci: Twitch una connessione, YouTube
+  // una chat che si legge solo durante una diretta, Kick un collegamento che il
+  // bot usa finche' lavora. Un canale Discord una chat sua non ce l'ha: null.
+  inChat(login) {
+    const l = String(login || '').toLowerCase();
+    const p = piattaformaDi(l);
+    if (p === 'twitch') return !!this.units.get(l)?.connesso;
+    if (p === 'youtube') return !!this.chatYT?.stato(l)?.inDiretta;
+    if (p === 'kick') return !!tokenKick(l)?.accessToken && alLavoro(streamers.get(l), { inDiretta: this.inDirettaSu(l, 'kick') });
+    return null;
+  }
 
   status() {
     return {

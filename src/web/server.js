@@ -3210,6 +3210,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       missing: missingConfig(),
       storte: configStorta(),
       status: manager.status(),
+      // il bot e' nella chat del canale, sulla piattaforma del canale (null: non ha una chat)
+      inChat: manager.inChat ? manager.inChat(user.login) : null,
       streamer: user ? streamerSicuro(user.login) : null,
       permessiOk: user ? permessiOk(user.login) : false,
       // scope aggiunti dopo che lo streamer si era collegato: se non vuoti, la
