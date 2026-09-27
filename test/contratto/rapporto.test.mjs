@@ -205,3 +205,14 @@ test('i titoli si chiedono a Twitch, e non possono impedire al rapporto di salva
   assert.match(HELIX, /async dettagliClip\(ids\)/);
   assert.match(HELIX, /\.slice\(0, 100\)/, 'cento per volta, non una chiamata per clip');
 });
+
+test('la clip fatta dalla Regia si registra come le altre, col suo motivo', () => {
+  // «Crea clip» faceva la clip su Twitch e basta: non finiva in «Ultime clip»,
+  // né nel rapporto della serata, né nelle statistiche, che leggono tutte lo
+  // stesso registro delle clip automatiche e dei Moduli.
+  const rotta = SRV.slice(SRV.indexOf("app.post('/api/streamer/regia/clip'"), SRV.indexOf("app.post('/api/streamer/regia/marker'"));
+  assert.match(rotta, /clips\.log\(login, clip\.id \|\| '', clip\.url, 'dalla Regia'\)/, 'la clip entra nel registro');
+  assert.ok(rotta.indexOf('clips.log(') > rotta.indexOf('if (!clip)'), 'solo se Twitch l\'ha fatta davvero');
+  const man = sezioneManuale(MANUALI, 'clip');
+  assert.match(man, /«dalla Regia»/, 'il manuale elenca il motivo');
+});

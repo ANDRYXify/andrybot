@@ -7295,7 +7295,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // Per la dashboard: l'indirizzo da incollare nel tasto, e il bottone per revocare.
   app.get('/api/streamer/console', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    res.json({ base: `${config.baseUrl}/api/console/${login}`, chiave: consolle.chiave(login), overlay: effects.hasClients(login), azioni: consolle.azioni(login) });
+    res.json({ base: `${config.baseUrl}/api/console/${login}`, chiave: consolle.chiave(login), overlay: effects.hasClients(login), azioni: consolle.azioni(login), limiti: consolle.LIMITI });
   }));
   app.post('/api/streamer/console/revoca', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
@@ -7370,6 +7370,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   }));
   app.post('/api/streamer/console/plancia', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
+    const oltre = consolle.fuoriTetto(req.body?.plancia);
+    if (oltre) return res.status(400).json({ ok: false, errore: oltre });
     const prima = consolle.fileUsati(login);
     const p = consolle.salvaPlancia(login, req.body?.plancia);
     // Un media sostituito o un passo tolto lasciano un file che non guarda piu'
@@ -7539,6 +7541,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const login = currentUser(req).login;
     const clip = await helix.createClip(login);
     if (!clip) return res.status(400).json({ errore: 'Nessuna clip: devi essere in diretta.' });
+    // nello stesso registro delle automatiche e dei Moduli: da li' la leggono
+    // «Ultime clip», il rapporto della serata e le statistiche
+    try { clips.log(login, clip.id || '', clip.url, 'dalla Regia'); } catch (e) { log.warn(`clip dalla Regia non registrata #${login}:`, e?.message || e); }
     res.json({ ok: true, url: clip.url, editUrl: clip.editUrl });
   }));
 

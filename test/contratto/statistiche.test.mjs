@@ -84,3 +84,17 @@ test('il manuale e la vetrina la raccontano, e la novita\' dice dove andare', ()
   assert.match(vet, /scheda: 'statistiche', pacc: 'free'/);
   assert.match(leggi('NOVITA.md'), /scheda «Statistiche».*\[vai: statistiche\]/);
 });
+
+test('«Chi guarda di più» vuota dice il vero: il conteggio è acceso di base', () => {
+  // Diceva sempre «il conteggio delle ore si accende nella scheda Comandi»,
+  // come se fosse spento, mentre di base e' acceso e la classifica e' vuota
+  // solo perche' nessuna ora e' stata ancora contata.
+  const app = leggi('src/web/public/app.js');
+  const ore = app.slice(app.indexOf("_statGara('lista-ore'"), app.indexOf("const box = document.getElementById('stat-dirette')"));
+  assert.match(ore, /impostazioni\(\)\.watchtime\?\.attivo !== false/, 'il testo segue la spunta, spenta solo se l\'hai spenta tu');
+  assert.match(ore, /Ancora nessuna ora contata/, 'acceso: ancora niente da contare');
+  assert.match(ore, /è spento/, 'spento: lo dice, e dove si riaccende');
+  assert.ok(!app.includes('Il conteggio delle ore si accende nella scheda Comandi.'), 'la frase vecchia non c\'è più');
+  const man = sezioneManuale(MANUALI, 'statistiche');
+  assert.match(man, /Ancora nessuna ora contata/, 'il manuale cita la frase vera');
+});
