@@ -975,6 +975,12 @@ test('il tetto dei tasti è uno solo: lo dice il server, lo controlla il pannell
   const posto = app.slice(app.indexOf('function consPostoInPagina('), app.indexOf('function consPostoInPagina(') + 700);
   assert.match(posto, /consTetto\('tasti'\)/, 'il numero viene da quello che ha detto il server');
   assert.match(posto, /toast\(/, 'e chi preme legge perché');
+
+  // il manuale dice gli stessi numeri: se un tetto cambia, questa riga si accende
+  const man = testoManuali();
+  assert.match(man, new RegExp(`fino a ${consolle.LIMITI.pagine} pagine`));
+  assert.match(man, new RegExp(`fino a ${consolle.LIMITI.tasti} tasti per pagina`));
+  assert.match(man, new RegExp(`al massimo ${consolle.LIMITI.passi} passi`));
 });
 
 test('nel formato «libero» c\'è il «+» anche lui, e i testi dicono come si aggiunge oggi', () => {
