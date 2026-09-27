@@ -156,6 +156,8 @@ export class ModulesEngine {
         } else if (tr.tipo === 'evento' && tr.evento === 'first' && primoMessaggio) {
           ctx = this._ctxDaMessaggio(msg, channel, livello, [], '');
           ctx.evento = 'first';
+          // e' un evento: chi scrive per la prima volta non paga niente
+          ctx.pagante = '';
         }
 
         if (ctx) { await this.esegui(modulo, ctx, say); if (tr.tipo === 'comando') comandoScattato = true; }
@@ -685,14 +687,17 @@ export class ModulesEngine {
 
     // MONETE. Due cose diverse: `minPunti` chiede un patrimonio e non lo tocca
     // (un comando riservato a chi ha gia' accumulato); `costo` si paga.
-    // Senza un autore vero (timer, evento, API) non c'e' nessuno da addebitare:
+    // Paga solo chi ha scritto in chat: il suo contesto e' l'unico che ha un
+    // `pagante` (_ctxDaMessaggio). Timer, eventi, API, voce, Telegram e prova
+    // non hanno uno spettatore davanti, e nemmeno lo streamer paga al suo posto:
     // le due condizioni non si applicano invece di rifiutare a vuoto.
     const autore = loginBuono(ctx.user);
+    const pagante = loginBuono(ctx.pagante);
     const minPunti = Math.max(0, Number(c.minPunti) || 0);
     const costo = await this._quantoCosta(c.costo, ctx);
     let saldo = 0;
-    if (autore && (minPunti > 0 || costo > 0)) {
-      saldo = points.get(ctx.channel, autore);
+    if (pagante && (minPunti > 0 || costo > 0)) {
+      saldo = points.get(ctx.channel, pagante);
       ctx._vars = { ...(ctx._vars || {}), costo: String(costo), saldo: String(saldo) };
       if (minPunti > 0 && saldo < minPunti) return no('minPunti');
       if (costo > 0 && saldo < costo) return no('costo');
@@ -719,8 +724,8 @@ export class ModulesEngine {
     // IL PAGAMENTO. Qui, e non prima: tutto cio' che poteva rifiutare ha gia'
     // rifiutato. E qui, e non dopo il dado: in una macchinetta si paga per
     // giocare, non per vincere — cosi' il ramo "altrimenti" parte gia' pagato.
-    if (autore && costo > 0) {
-      points.add(ctx.channel, autore, -costo);
+    if (pagante && costo > 0) {
+      points.add(ctx.channel, pagante, -costo);
       ctx._vars = { ...(ctx._vars || {}), costo: String(costo), saldo: String(Math.max(0, saldo - costo)) };
     }
 
@@ -1356,6 +1361,9 @@ export class ModulesEngine {
       piattaforma: msg.piattaforma || 'twitch',
       user: nome,                   // nome visualizzato (per $user/$touser)
       userLogin: msg.user || '',    // login (per moderazione/timeout)
+      // Chi paga «Costa» e mostra «Serve almeno»: chi ha scritto, per login.
+      // Solo questo contesto lo ha (vedi _condizioniOk).
+      pagante: msg.user || '',
       userId: msg.userId || (msg.tags && msg.tags['user-id']) || '', // id numerico (per $followage)
       display: nome,
       args,

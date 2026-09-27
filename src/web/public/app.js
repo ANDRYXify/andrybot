@@ -29266,7 +29266,7 @@ function apriEditor(modulo, dove = 'editor-modulo') {
         </div>
         <label class="campo" for="mod-costo-messaggio">Cosa dire a chi non ha abbastanza ${esc(nomeMonetaUI())}</label>
         <input type="text" id="mod-costo-messaggio" data-var-target placeholder="Ti servono $costo $monete, ne hai $punti." value="${esc(c.costoMessaggio || '')}">
-        <p class="suggerimento">Si paga <strong>per giocare, non per vincere</strong>: il costo viene tolto prima del tiro di dado, quindi vale anche quando la probabilità non passa. Se il comando viene rifiutato per un altro motivo (ruolo, cooldown, live) non si paga niente.</p>
+        <p class="suggerimento">Si paga <strong>per giocare, non per vincere</strong>: il costo viene tolto prima del tiro di dado, quindi vale anche quando la probabilità non passa. Se il comando viene rifiutato per un altro motivo (ruolo, cooldown, live) non si paga niente. Paga solo chi fa scattare il modulo scrivendo in chat un comando o una parola: su eventi, timer, voce, Telegram e moduli manuali costo e saldo minimo non valgono, e non paga nessuno, nemmeno tu.</p>
         ${_piattaformeModulo(c)}
         <div class="riga-check"><input type="checkbox" id="mod-solo-live" ${c.soloLive ? 'checked' : ''}><label for="mod-solo-live">Solo se sono in live</label></div>
         <div class="riga-check"><input type="checkbox" id="mod-solo-offline" ${c.soloOffline ? 'checked' : ''}><label for="mod-solo-offline">Solo se sono offline</label></div>

@@ -18,8 +18,9 @@ const { ModulesEngine } = await import('../../src/features/modules.js');
 
 const CH = 'canale';
 const motore = new ModulesEngine({});
-const base = { channel: CH, user: 'tizio', display: 'Tizio', args: [], argsRaw: '', _livello: 0 };
-const ctx = (extra = {}) => ({ ...base, ...extra });
+// Il contesto di chi scrive in chat: e' l'unico con un `pagante`, che e' lui.
+const base = { channel: CH, user: 'tizio', display: 'Tizio', args: [], argsRaw: '', _livello: 0, pagante: 'tizio' };
+const ctx = (extra = {}) => ({ ...base, ...(extra.user ? { pagante: extra.user } : {}), ...extra });
 
 function raccogli() {
   const dette = [];
@@ -215,3 +216,36 @@ test('la cifra appena mossa si puo\' riusare, e non e\' quella chiesta ma quella
 });
 
 test.after(() => usaEGetta.pulisci());
+
+// PAGA SOLO CHI SCRIVE IN CHAT. Timer, eventi, API, voce, Telegram e prova non
+// hanno uno spettatore davanti: il loro contesto portava il nome dello
+// streamer (o di chi segue, o di chi scrive su Telegram), e «Costa» addebitava
+// a lui. Si costruiscono i contesti veri, come li fa il motore.
+test('«Costa» e «Serve almeno» non addebitano a nessuno fuori dalla chat', async () => {
+  const { streamers } = await import('../../src/db.js');
+  streamers.request(CH, 'Canale', '1');
+  points.add(CH, 'canale', 500);
+  const prima = { canale: points.get(CH, 'canale'), tizio: points.get(CH, 'tizio') };
+  const m = { id: 40, condizioni: { costo: 100, minPunti: 50 }, azioni: [{ tipo: 'messaggio', testo: 'ok $costo' }] };
+  const contesti = {
+    timer: motore._ctxTimer(CH),
+    api: motore._ctxApi(CH),
+    voce: motore._ctxVoce(CH, 'clippa'),
+    telegram: motore._ctxTelegram(CH, 'tizio', [], ''),
+    evento: motore._ctxDaEvento({ data: { user_login: 'tizio', user_name: 'tizio' } }, CH, 'follow'),
+    prova: motore._ctxProva(CH),
+  };
+  for (const [nome, c] of Object.entries(contesti)) {
+    const a = raccogli();
+    assert.equal(await motore.esegui({ ...m, id: 40 + Object.keys(contesti).indexOf(nome) }, c, a.dire), true, `${nome}: parte`);
+    assert.deepEqual({ canale: points.get(CH, 'canale'), tizio: points.get(CH, 'tizio') }, prima, `${nome}: nessuno paga`);
+  }
+});
+
+test('in chat paga chi ha scritto, per il suo nome utente e non per quello mostrato', async () => {
+  points.add(CH, 'yuki_88', -1_000_000); points.add(CH, 'yuki_88', 300);
+  const c = motore._ctxDaMessaggio({ user: 'yuki_88', display: 'ゆき', text: '!gioca' }, CH, 0, [], '');
+  const m = { id: 50, condizioni: { costo: 100 }, azioni: [{ tipo: 'messaggio', testo: 'ok' }] };
+  assert.equal(await motore.esegui(m, c, () => {}), true);
+  assert.equal(points.get(CH, 'yuki_88'), 200, 'il nome mostrato non e\' un nome utente: paga lo stesso');
+});

@@ -170,7 +170,7 @@ export default {
     ] },
     { p: [
       'Nelle etichette la moneta ha il nome che le hai dato in <em>Giochi &amp; classifiche</em>. Con le fasce fai una scala: un modulo per 1-99 bit, uno per 100-999, uno da 1.000 in su. Un massimo più basso del minimo viene ignorato. Chi resta fuori dalla fascia non paga e non consuma il cooldown.',
-      'Sugli eventi, sui timer, sulla voce, su Telegram e sui moduli manuali «Chi può attivarlo» non ferma niente.',
+      'Sugli eventi, sui timer, sulla voce, su Telegram e sui moduli manuali «Chi può attivarlo» non ferma niente. Lo stesso vale per «Costa (monete)» e «Serve almeno»: paga solo chi fa scattare il modulo scrivendo in chat un comando o una parola, col suo nome utente. Sugli eventi (anche il primo messaggio), sui timer, sulla voce, su Telegram e sui moduli manuali il modulo parte e non paga nessuno, nemmeno tu.',
     ] },
     { h3: 'In che ordine vengono controllate' },
     { p: ['L\'ordine decide <strong>quando si paga</strong>.'] },
