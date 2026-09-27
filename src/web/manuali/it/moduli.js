@@ -392,7 +392,7 @@ export default {
       ['«Regolazione fine (X/Y manuali)»', 'X 4, Y 94', 'da 0 a 100 %'],
       ['«Colore testo»', 'bianco', ''],
       ['«Dimensione (px)»', '40', 'da 10 a 200'],
-      ['«Colore sfondo»', 'nero semitrasparente', 'con «Sfondo trasparente» non c\'è sfondo'],
+      ['«Colore sfondo»', 'nero semitrasparente', 'il colore che scegli tiene la stessa trasparenza; con «Sfondo trasparente» non c\'è sfondo'],
       ['«Font»', 'Sistema', 'Sistema, Inter, Space Grotesk, JetBrains Mono, Fraunces, Bricolage'],
       ['«Grassetto»', 'acceso', ''],
       ['«Formato del testo»', '<code>{emoji} {etichetta}: {valore}</code>', '80 caratteri'],

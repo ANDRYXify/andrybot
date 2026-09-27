@@ -4309,7 +4309,9 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   app.get('/api/contatori', requireLogin, (req, res) => {
     const list = contatori.list(currentUser(req).login)
       .map((c) => ({ ...c, overlayCfg: contatori.overlayDi(c), verbiCfg: contatori.verbiDi(c) }));
-    res.json({ contatori: list });
+    // `base`: l'aspetto di serie, cosi' il pannello riparte da li' (lo sfondo
+    // nero semitrasparente) invece di inventarsene uno.
+    res.json({ contatori: list, base: contatori.overlayDi(null) });
   });
   // crea/aggiorna un contatore (comando, etichetta, emoji, step, parola auto, valore)
   app.post('/api/contatori', requireLogin, gCont, wrap(async (req, res) => {

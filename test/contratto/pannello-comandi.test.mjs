@@ -6,6 +6,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { cartellaUsaEGetta } from '../aiuto.mjs';
+
+// Alcune prove caricano moduli del server: il database, se si apre, sta in una
+// cartella usa-e-getta.
+const usaEGetta = cartellaUsaEGetta('andrybot-pannello-comandi-');
+test.after(() => usaEGetta.pulisci());
 
 const leggi = (f) => readFileSync(new URL('../../' + f, import.meta.url), 'utf8');
 const APP = leggi('src/web/public/app.js');
@@ -170,4 +176,27 @@ test('una donazione dai connettori senza valuta prende quella del canale', async
   assert.equal(senza.segnate[0].valuta, 'CHF', 'senza valuta, quella del canale');
   assert.equal((await prova({ importo: 5, valuta: 'boh' })).segnate[0].valuta, 'CHF', 'una valuta sconosciuta non rompe niente');
   assert.equal((await prova({ importo: 5, valuta: 'usd' })).segnate[0].valuta, 'USD', 'una vera vale');
+});
+
+// CONTATORI, «Salva aspetto»: lo sfondo di serie e' nero semitrasparente, ma il
+// selettore di colore conosce solo colori pieni, e salvando lo sfondo diventava
+// nero pieno. Il colore scelto tiene la trasparenza che lo sfondo aveva, e uno
+// sfondo trasparente riacceso riparte da quella di serie, che dice il server.
+test('«Salva aspetto» non rende pieno uno sfondo semitrasparente', async () => {
+  const { contatori } = await import('../../src/db.js');
+  const base = contatori.overlayDi(null);
+  assert.match(base.sfondo, /^rgba\([^)]*,\s*0?\.\d+\)$/, 'di serie lo sfondo e\' semitrasparente');
+  const { parti, da } = new Function(`${corpo('function _sfondoParti(')}\n${corpo('function _sfondoDa(')}\nreturn { parti: _sfondoParti, da: _sfondoDa };`)();
+  const giro = (v, scelto) => { const p = parti(v, base.sfondo); return da(scelto ?? p.hex, p.alfa); };
+  assert.equal(giro(base.sfondo), 'rgba(0,0,0,0.55)', 'salvare senza toccare lascia lo sfondo com\'era');
+  assert.equal(giro(base.sfondo, '#ff0000'), 'rgba(255,0,0,0.55)', 'cambiare colore tiene la trasparenza');
+  assert.equal(giro('#123456'), '#123456', 'un colore pieno resta pieno');
+  assert.equal(giro('transparent', '#00ff00'), 'rgba(0,255,0,0.55)', 'riaccendere lo sfondo riparte da quello di serie');
+  const { puliConta } = await import('../../src/web/stile.js');
+  assert.equal(puliConta({ sfondo: giro(base.sfondo, '#ff0000') }).sfondo, 'rgba(255,0,0,0.55)', 'e il server lo accetta');
+
+  const carica = corpo('async function caricaContatori()');
+  assert.match(carica, /data-ovk="sfondo" data-alfa="\$\{sf\.alfa\}"/, 'il selettore si porta dietro la trasparenza');
+  assert.match(carica, /sfondo: g\('trasp'\)\.checked \? 'transparent' : _sfondoDa\(g\('sfondo'\)\.value, Number\(g\('sfondo'\)\.dataset\.alfa\)\)/, 'e il salvataggio la usa');
+  assert.match(leggi('src/web/server.js'), /res\.json\(\{ contatori: list, base: contatori\.overlayDi\(null\) \}\)/, 'la base la dice il server');
 });
