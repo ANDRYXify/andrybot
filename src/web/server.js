@@ -99,6 +99,7 @@ import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
 import * as giochiConf from '../features/giochi-conf.js';
 import * as modalitaChat from '../features/modalita-chat.js';
+import { LIMITI_AZIONI } from '../features/modules.js';
 import * as instagram from '../features/instagram.js';
 import * as igAccesso from '../features/instagram-accesso.js';
 import { credenzialiInstagram } from '../features/instagram-credenziali.js';
@@ -8373,6 +8374,13 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       if (a.tipo === 'annuncia' && !String(a.testo || '').trim()) {
         return 'l\'azione "annuncio" ha bisogno di un testo (anche con variabili come $gioco)';
       }
+      if (a.tipo === 'attendi' && Number(a.secondi) > LIMITI_AZIONI.attesaS) {
+        return `l'azione "aspetta" arriva al massimo a ${LIMITI_AZIONI.attesaS} secondi`;
+      }
+      if (a.tipo === 'overlayTesto' && a.durata !== undefined
+        && !(Number(a.durata) >= LIMITI_AZIONI.testoMinMs && Number(a.durata) <= LIMITI_AZIONI.testoMaxMs)) {
+        return `l'azione "testo sull'overlay" resta a schermo da ${LIMITI_AZIONI.testoMinMs} a ${LIMITI_AZIONI.testoMaxMs} millisecondi`;
+      }
       if (a.tipo === 'modalita') {
         if (!Object.keys(modalitaChat.MODI).includes(a.modo)) return 'l\'azione "modalità della chat" vuole sapere quale modalità accendere';
         if (String(a.durata ?? '').length > 40) return 'l\'azione "modalità della chat" vuole una durata corta, come 2m, 90s o $arg1';
@@ -8403,6 +8411,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       // c'e', e basta; il valore lo si vede una volta, quando nasce.
       apiKeySet: owner ? haApiKey(login) : undefined,
       apiUrl: owner ? `${config.baseUrl}/api/ext/${login}` : undefined,
+      // i limiti dei campi delle azioni, gli stessi del motore
+      limiti: LIMITI_AZIONI,
     });
   }));
 

@@ -29,6 +29,8 @@ const log = makeLog('moduli');
 const MAX_AZIONI = 8;              // azioni eseguite al massimo per modulo
 const MAX_TESTO = 400;             // troncatura dei messaggi
 const MAX_ATTESA_S = 30;           // secondi massimi per l'azione "attendi"
+const TESTO_MIN_MS = 500;          // quanto resta a schermo, al minimo, un "overlayTesto"
+const TESTO_MAX_MS = 30_000;       // e al massimo
 const CACHE_STREAM_MS = 30_000;    // cache dello stato live per canale
 const WEBHOOK_TIMEOUT_MS = 5000;   // timeout della chiamata webhook
 const WEBHOOK_MAX_BYTES = 10 * 1024; // lettura massima della risposta webhook
@@ -36,6 +38,11 @@ const TIMER_TICK_MS = 30_000;      // ogni quanto il timer controlla i moduli
 const PAUSA_FRA_TIMER_MS = 7_000;  // respiro fra due timer scaduti nello stesso giro
 const MAX_CODA_TIMER = 50;         // tetto alla fila d'attesa dei timer
 const MAX_PUNTI_AZIONE = 1_000_000; // tetto su quanto un'azione puo' muovere in una volta
+
+// I LIMITI DELLE AZIONI che si scrivono a mano: il pannello li legge da qui
+// (arrivano con l'elenco dei moduli) e il server rifiuta quello che li supera.
+// Un numero solo, cosi' il campo non promette piu' di quello che il motore fa.
+export const LIMITI_AZIONI = Object.freeze({ attesaS: MAX_ATTESA_S, testoMinMs: TESTO_MIN_MS, testoMaxMs: TESTO_MAX_MS });
 
 // Un login su cui si possono muovere monete. Esclude i segnaposto di sistema
 // (che iniziano con '[') e qualunque cosa non somigli a un nome utente: un
@@ -859,7 +866,7 @@ export class ModulesEngine {
       }
       case 'overlayTesto': {
         const testo = await this.espandi(azione.testo, ctx);
-        const durata = Math.max(500, Math.min(60_000, Number(azione.durata) || 5000));
+        const durata = Math.max(TESTO_MIN_MS, Math.min(TESTO_MAX_MS, Number(azione.durata) || 5000));
         this.effects?.emit(ctx.channel, { tipo: 'testo', testo, durata });
         return;
       }

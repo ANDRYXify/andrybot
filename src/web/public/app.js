@@ -1710,7 +1710,7 @@ function _demoGet(via) {
         { key: 'Città', value: 'Genova' },
       ],
     },
-    '/api/streamer/moduli': [
+    '/api/streamer/moduli': { moduli: [
       { id: 'social', nome: 'Social', attivo: true, tipo: 'comando',
         trigger: { tipo: 'comando', comando: 'social' },
         azioni: [{ tipo: 'messaggio', testo: 'I miei social: andryxify.it/u/$canale' }] },
@@ -1718,12 +1718,12 @@ function _demoGet(via) {
         trigger: { tipo: 'comando', comando: 'pc' },
         azioni: [{ tipo: 'messaggio', testo: 'Ryzen 7 + RTX 4070. Dettagli su andryxify.it' }] },
       { id: 'benvenuto', nome: 'Benvenuto', attivo: true, tipo: 'evento',
-        trigger: { tipo: 'evento', evento: 'primo-messaggio' },
+        trigger: { tipo: 'evento', evento: 'first' },
         azioni: [{ tipo: 'messaggio', testo: 'Benvenuto $user! Mettiti comodo' }] },
       { id: 'dado', nome: 'Tiro di dado', attivo: false, tipo: 'comando',
         trigger: { tipo: 'comando', comando: 'dado' },
         azioni: [{ tipo: 'messaggio', testo: '$user tira il dado e fa... $random(1,6)!' }] },
-    ],
+    ], effettiDisponibili: ['applausi', 'tromba', 'coriandoli', 'festa'], limiti: { attesaS: 30, testoMinMs: 500, testoMaxMs: 30000 } },
     '/api/streamer/telegram/compleanni': {
       attivo: true, messaggio: '',
       chat: { attivo: true, messaggio: '', effetto: 'coriandoli' },
@@ -29530,16 +29530,20 @@ function disegnaCampiAzione(a) {
         </div>
         <p class="suggerimento">Imposta il titolo dello stream su Twitch (max 140 caratteri).
         Serve il permesso <strong class="primo-piano">Gestione canale</strong>: se manca, lo concedi da <strong>Chat e pubblico → Comandi → Comandi vocali</strong>.</p>`;
-    case 'attendi':
+    case 'attendi': {
+      const max = datiModuli?.limiti?.attesaS;
       return `
-        <label class="campo">Secondi da aspettare</label>
-        <input aria-label="Secondi da aspettare" type="number" data-campo="secondi" min="0" max="60" value="${Number(a.secondi) || 2}">`;
-    case 'overlayTesto':
+        <label class="campo">Secondi da aspettare${max ? ` (fino a ${max})` : ''}</label>
+        <input aria-label="Secondi da aspettare" type="number" data-campo="secondi" min="0"${max ? ` max="${max}"` : ''} value="${Number(a.secondi) || 2}">`;
+    }
+    case 'overlayTesto': {
+      const lim = datiModuli?.limiti || {};
       return `
         <textarea data-campo="testo" data-var-target placeholder="Testo da mostrare sull'overlay">${esc(a.testo || '')}</textarea>
         ${pillole}
         <label class="campo">Durata a schermo (ms)</label>
-        <input aria-label="Durata a schermo (ms)" type="number" data-campo="durata" min="500" max="30000" value="${Number(a.durata) || 5000}">`;
+        <input aria-label="Durata a schermo (ms)" type="number" data-campo="durata"${lim.testoMinMs ? ` min="${lim.testoMinMs}"` : ''}${lim.testoMaxMs ? ` max="${lim.testoMaxMs}"` : ''} value="${Number(a.durata) || 5000}">`;
+    }
     case 'regia': {
       const cosa = ['scena', 'muto', 'transizione'].includes(a.cosa) ? a.cosa : 'scena';
       const come = a.come || 'inverti';

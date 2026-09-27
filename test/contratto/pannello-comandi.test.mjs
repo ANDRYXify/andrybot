@@ -200,3 +200,25 @@ test('«Salva aspetto» non rende pieno uno sfondo semitrasparente', async () =>
   assert.match(carica, /sfondo: g\('trasp'\)\.checked \? 'transparent' : _sfondoDa\(g\('sfondo'\)\.value, Number\(g\('sfondo'\)\.dataset\.alfa\)\)/, 'e il salvataggio la usa');
   assert.match(leggi('src/web/server.js'), /res\.json\(\{ contatori: list, base: contatori\.overlayDi\(null\) \}\)/, 'la base la dice il server');
 });
+
+// «ASPETTA»: il campo accettava fino a 60 secondi e il motore si fermava a 30.
+// Adesso il numero e' uno, nel motore: il server lo manda al pannello con
+// l'elenco dei moduli e rifiuta quello che lo supera. Lo stesso per quanto resta
+// a schermo un testo sull'overlay.
+test('«Aspetta» e il testo sull\'overlay hanno i limiti del motore, letti dal motore', async () => {
+  const { LIMITI_AZIONI } = await import('../../src/features/modules.js');
+  const MOT = leggi('src/features/modules.js');
+  assert.match(MOT, /Math\.min\(MAX_ATTESA_S, Number\(azione\.secondi\)/, 'il motore si ferma al suo numero');
+  assert.match(MOT, /Math\.max\(TESTO_MIN_MS, Math\.min\(TESTO_MAX_MS, Number\(azione\.durata\)/);
+  assert.deepEqual(LIMITI_AZIONI, { attesaS: 30, testoMinMs: 500, testoMaxMs: 30000 }, 'i numeri che dice il manuale');
+  const SRV = leggi('src/web/server.js');
+  assert.match(SRV, /limiti: LIMITI_AZIONI,/, 'arrivano al pannello con l\'elenco dei moduli');
+  assert.match(SRV, /a\.tipo === 'attendi' && Number\(a\.secondi\) > LIMITI_AZIONI\.attesaS/, 'e il server non salva di piu\'');
+  const campi = corpo('function disegnaCampiAzione(a)');
+  const aspetta = campi.slice(campi.indexOf("case 'attendi':"), campi.indexOf("case 'overlayTesto':"));
+  assert.doesNotMatch(aspetta, /max="\d/, 'nessun massimo scritto a mano');
+  assert.match(aspetta, /datiModuli\?\.limiti\?\.attesaS/);
+  const testo = campi.slice(campi.indexOf("case 'overlayTesto':"), campi.indexOf("case 'regia':"));
+  assert.doesNotMatch(testo, /m(in|ax)="\d/);
+  assert.match(testo, /lim\.testoMaxMs/);
+});
