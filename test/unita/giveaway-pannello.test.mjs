@@ -57,3 +57,15 @@ test('il pannello manda il predefinito, parte da quello e mostra i vincitori dal
   const apri = srv.slice(srv.indexOf("app.post('/api/giveaway/apri'"), srv.indexOf("app.post('/api/giveaway/estrai'"));
   assert.match(apri, /quanti: b\.quanti/, 'il server lo passa al giveaway');
 });
+
+test('con i minigiochi spenti il giveaway non si apre, e il pannello dice cosa accendere', () => {
+  streamers.setSettings(CANALE, { giochi: false });
+  giveaway.annulla(CANALE);
+  const r = giveaway.apri(CANALE, { premio: 'x' });
+  assert.deepEqual(r, { ok: false, errore: 'giochi-spenti' });
+  streamers.setSettings(CANALE, { giochi: true });
+  const srv = leggi('src/web/server.js');
+  const apri = srv.slice(srv.indexOf("app.post('/api/giveaway/apri'"), srv.indexOf("app.post('/api/giveaway/estrai'"));
+  assert.ok(apri.includes('accendi «Attiva i minigiochi in chat»'), 'dice cosa accendere');
+  assert.ok(!/piano/.test(apri), 'non parla del piano: il giveaway e\' nel piano gratuito');
+});

@@ -5925,7 +5925,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
 
   // ------------------------------------------------------------ GIVEAWAY (dal pannello)
   // Stato in memoria condiviso col bot (stesso processo). Gli spettatori entrano
-  // con !join in chat; lo streamer apre/estrae/annulla da qui. Add-on "Giochi".
+  // con !join in chat; lo streamer apre/estrae/annulla da qui. Si apre solo con i minigiochi accesi.
   app.get('/api/giveaway/stato', requireOwner, (req, res) => {
     res.json(giveaway.stato(currentUser(req).login));
   });
@@ -5937,7 +5937,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       premio: b.premio, soloSub: !!b.soloSub, keyword: b.keyword, quanti: b.quanti,
       moltSub: b.moltSub, moltVip: b.moltVip, moltMod: b.moltMod,
     });
-    if (!r.ok) return res.status(400).json({ errore: r.errore === 'gia-aperto' ? 'C\'è già un giveaway aperto.' : 'I giveaway non sono inclusi nel tuo piano.' });
+    if (!r.ok) return res.status(400).json({ errore: r.errore === 'gia-aperto' ? 'C\'è già un giveaway aperto.' : 'Il giveaway parte solo con i minigiochi accesi: nella scheda «Giochi & classifiche» accendi «Attiva i minigiochi in chat».' });
     const m = [];
     if (r.molt.sub > 1) m.push(`sub ×${r.molt.sub}`);
     if (r.molt.vip > 1) m.push(`vip ×${r.molt.vip}`);
