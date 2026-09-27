@@ -45,3 +45,21 @@ test('eliminare una manche non parla di un comando in chat', () => {
   assert.ok(conferma.includes('Non esce più nelle manche'));
   assert.ok(!/comando/i.test(conferma));
 });
+
+test('i rimandi chiamano le schede col loro nome, preso dall\'elenco delle schede', () => {
+  const nomi = APP.slice(APP.indexOf('const T_SCHEDA = {'), APP.indexOf('const tScheda = '));
+  assert.match(nomi, /moduli: \['Comandi', 'Commands', 'Comandos'\]/);
+  assert.match(nomi, /ascolto: \['Comandi vocali', 'Voice commands', 'Comandos de voz'\]/);
+  const giochi = funzione('pannelloGiochi');
+  assert.ok(!/Comandi a voce|Voice commands →|Vai a Moduli|da Moduli/.test(giochi), 'niente nomi di schede che non esistono');
+  assert.ok(giochi.includes("L(`Vai a ${tScheda('moduli')}`, `Go to ${tScheda('moduli')}`, `Ir a ${tScheda('moduli')}`)"));
+  assert.ok(giochi.includes("dalla scheda «${tScheda('ascolto')}»"));
+  assert.ok(funzione('pannelloPenitenze').includes("<em>${tScheda('ascolto')}</em>"));
+});
+
+test('le etichette dei giochi da creare non usano la lineetta lunga', () => {
+  const giochi = funzione('pannelloGiochi');
+  const carta = giochi.slice(giochi.indexOf("L('I tuoi giochi'"), giochi.indexOf("L('Classifica & VIP'"));
+  assert.ok(carta.length > 1000, 'trovo la carta «I tuoi giochi»');
+  assert.ok(!carta.includes('—'), 'nessuna «—» nella carta');
+});

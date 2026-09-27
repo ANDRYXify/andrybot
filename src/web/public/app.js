@@ -21658,7 +21658,7 @@ function pannelloGiochi() {
         </button>
         <button type="button" class="gioco-ramo" data-ramo="comando">
           <strong>${L('Lo scrive uno spettatore', 'A viewer types it', 'Lo escribe un espectador')}</strong>
-          <span>${L('Un comando che costa monete, tira il dado e paga — o no.', 'A command that costs coins, rolls the dice and pays — or not.', 'Un comando que cuesta monedas, tira el dado y paga — o no.')}</span>
+          <span>${L('Un comando che costa monete, tira il dado e paga, o no.', 'A command that costs coins, rolls the dice and pays, or not.', 'Un comando que cuesta monedas, tira el dado y paga, o no.')}</span>
         </button>
       </div>
 
@@ -21677,29 +21677,29 @@ function pannelloGiochi() {
         <input type="text" id="gioco-nome" aria-label="${esc(L('Nome del gioco', 'Game name', 'Nombre del juego'))}" maxlength="60" placeholder="${L('Nome del gioco (es. Trivia gaming)', 'Game name (e.g. Gaming trivia)', 'Nombre del juego (p. ej. Trivia gaming)')}">
       </div>
       <div id="gioco-trivia" class="spazio-sopra">
-        <label class="campo" for="gioco-domande">${L('Domande — una per riga, formato', 'Questions — one per line, format', 'Preguntas — una por línea, formato')} <code>${L('domanda | risposta1, risposta2', 'question | answer1, answer2', 'pregunta | respuesta1, respuesta2')}</code></label>
+        <label class="campo" for="gioco-domande">${L('Domande: una per riga, nel formato', 'Questions: one per line, in the format', 'Preguntas: una por línea, con el formato')} <code>${L('domanda | risposta1, risposta2', 'question | answer1, answer2', 'pregunta | respuesta1, respuesta2')}</code></label>
         <textarea id="gioco-domande" rows="5" placeholder="${L('Chi ha vinto i mondiali 2006? | italia&#10;Come si chiama il mio gatto? | felix, felixe', 'Who won the 2006 World Cup? | italy&#10;What’s my cat’s name? | felix, felixe', '¿Quién ganó el Mundial 2006? | italia&#10;¿Cómo se llama mi gato? | felix, felixe')}"></textarea>
       </div>
       <div id="gioco-rebus" class="spazio-sopra" hidden>
-        <label class="campo" for="gioco-rebus-righe">${L('Rebus: uno per riga, formato', 'Rebus: one per line, format', 'Jeroglíficos: uno por línea, formato')} <code>${L('emoji | risposta1, risposta2', 'emoji | answer1, answer2', 'emoji | respuesta1, respuesta2')}</code></label>
+        <label class="campo" for="gioco-rebus-righe">${L('Rebus: uno per riga, nel formato', 'Rebus: one per line, in the format', 'Jeroglíficos: uno por línea, con el formato')} <code>${L('emoji | risposta1, risposta2', 'emoji | answer1, answer2', 'emoji | respuesta1, respuesta2')}</code></label>
         <textarea id="gioco-rebus-righe" rows="5" placeholder="🕷️🧑 | spiderman, uomo ragno&#10;🦁👑 | il re leone, re leone"></textarea>
       </div>
       <div id="gioco-parola" class="spazio-sopra" hidden>
-        <label class="campo" for="gioco-parole">${L('Parole — una per riga (il bot ne pesca una e il primo che la scrive vince)', 'Words — one per line (the bot picks one and the first to type it wins)', 'Palabras — una por línea (el bot elige una y el primero que la escribe gana)')}</label>
+        <label class="campo" for="gioco-parole">${L('Parole: una per riga. Il bot ne pesca una e vince il primo che la scrive.', 'Words: one per line. The bot picks one and the first to type it wins.', 'Palabras: una por línea. El bot elige una y gana el primero que la escribe.')}</label>
         <textarea id="gioco-parole" rows="5" placeholder="pizza&#10;combo perfetta&#10;gg wp"></textarea>
         <p class="suggerimento" id="gioco-nota-impiccato" hidden>${L('Per l\'impiccato servono parole sole, senza spazi, fra 4 e 20 lettere: la chat le scopre una lettera alla volta, e sei errori le fanno perdere.', 'Hangman needs single words, no spaces, 4 to 20 letters: chat uncovers them one letter at a time, and six mistakes lose.', 'El ahorcado necesita palabras sueltas, sin espacios, de 4 a 20 letras: el chat las descubre letra a letra, y seis errores las pierden.')}</p>
         <p class="suggerimento" id="gioco-nota-wordle" hidden>${L('Per il wordle servono parole di cinque lettere, senza spazi: la chat prova parole di cinque lettere e il bot risponde coi quadratini colorati.', 'Wordle needs five-letter words, no spaces: chat tries five-letter words and the bot answers with coloured squares.', 'El wordle necesita palabras de cinco letras, sin espacios: el chat prueba palabras de cinco letras y el bot responde con cuadritos de colores.')}</p>
         <p class="suggerimento" id="gioco-nota-anagramma" hidden>${L('Per gli anagrammi servono parole di almeno quattro lettere: il bot mescola le lettere e chi rimette la parola in ordine vince.', 'Anagrams need words of at least four letters: the bot scrambles them and whoever unscrambles first wins.', 'Los anagramas necesitan palabras de al menos cuatro letras: el bot las mezcla y gana quien las reordena.')}</p>
       </div>
       <div id="gioco-sequenza" class="spazio-sopra" hidden>
-        <label class="campo" for="gioco-simboli">${L('Simboli — separati da spazio (almeno tre). Il bot ne mostra una sequenza e vince chi la ricopia esatta.', 'Symbols — space separated (at least three). The bot shows a sequence and whoever copies it exactly wins.', 'Símbolos — separados por espacio (al menos tres). El bot muestra una secuencia y gana quien la copia exacta.')}</label>
+        <label class="campo" for="gioco-simboli">${L('Simboli: separati da uno spazio, almeno tre. Il bot ne mostra una sequenza e vince chi la ricopia esatta.', 'Symbols: separated by a space, at least three. The bot shows a sequence and whoever copies it exactly wins.', 'Símbolos: separados por un espacio, al menos tres. El bot muestra una secuencia y gana quien la copia exacta.')}</label>
         <input type="text" id="gioco-simboli" placeholder="🍒 ⭐ 💎 🔥 🎲">
         <label class="campo-num spazio-sopra">${L('Quanti simboli per sequenza', 'How many symbols per sequence', 'Cuántos símbolos por secuencia')}<input type="number" id="gioco-lunghezza" min="3" max="8" value="4"></label>
       </div>
       <div id="gioco-domanda" class="spazio-sopra" hidden>
         <label class="campo" for="gioco-testo">${L('La domanda', 'The question', 'La pregunta')}</label>
         <input type="text" id="gioco-testo" maxlength="240" placeholder="${L('Qual è il mio gioco preferito?', 'What is my favourite game?', '¿Cuál es mi juego favorito?')}">
-        <label class="campo spazio-sopra" for="gioco-risposte">${L('Risposte accettate — separate da virgola', 'Accepted answers — comma separated', 'Respuestas aceptadas — separadas por comas')}</label>
+        <label class="campo spazio-sopra" for="gioco-risposte">${L('Risposte accettate, separate da virgola', 'Accepted answers, comma separated', 'Respuestas aceptadas, separadas por comas')}</label>
         <input type="text" id="gioco-risposte" placeholder="${L('elden ring, eldenring', 'elden ring, eldenring', 'elden ring, eldenring')}">
         <label class="campo-num spazio-sopra">${L('Secondi per rispondere', 'Seconds to answer', 'Segundos para responder')}<input type="number" id="gioco-durata" min="10" max="300" value="45"></label>
       </div>
@@ -21713,7 +21713,7 @@ function pannelloGiochi() {
           <button class="modello-pronto" data-ricetta="">${L('Parti da zero', 'Start from scratch', 'Empieza de cero')}</button>
         </div>
         <div id="editor-gioco"></div>
-        <p class="suggerimento">${L('Un gioco è tre cose: un comando che <strong>costa</strong>, un tiro di dado, e cosa succede se vinci — o se perdi. Le scritte accettano le', 'A game is three things: a command that <strong>costs</strong>, a dice roll, and what happens if you win — or lose. The texts accept the', 'Un juego son tres cosas: un comando que <strong>cuesta</strong>, una tirada de dado, y qué pasa si ganas — o si pierdes. Los textos aceptan las')} <a href="#" data-apri-var-giochi>${L('parole magiche dei giochi', 'game keywords', 'palabras mágicas de los juegos')}</a>.</p>
+        <p class="suggerimento">${L('Un gioco è tre cose: un comando che <strong>costa</strong>, un tiro di dado, e cosa succede se vinci o se perdi. Le scritte accettano le', 'A game is three things: a command that <strong>costs</strong>, a dice roll, and what happens if you win or lose. The texts accept the', 'Un juego son tres cosas: un comando que <strong>cuesta</strong>, una tirada de dado, y qué pasa si ganas o si pierdes. Los textos aceptan las')} <a href="#" data-apri-var-giochi>${L('parole magiche dei giochi', 'game keywords', 'palabras mágicas de los juegos')}</a>.</p>
         <div id="var-giochi" hidden></div>
       </div>
 
@@ -21728,16 +21728,16 @@ function pannelloGiochi() {
       ${_premioGara('bit', L('Chi mette i Bit', 'Who puts in the Bits', 'Quien pone los Bits'), 'Bit')}
       <p class="suggerimento spazio-sopra">${L('Le due gare sono indipendenti: puoi accenderne una, l’altra o tutt’e due. Il premio non pesca mai dallo staff né da te: Twitch non permette di dare il VIP a un moderatore, quindi il posto scorre a chi può davvero riceverlo.', 'The two races are independent: turn on one, the other, or both. The prize never draws from your staff or from you: Twitch does not allow giving VIP to a moderator, so the spot slides to someone who can actually get it.', 'Las dos carreras son independientes: puedes encender una, la otra o las dos. El premio nunca se elige del staff ni de ti: Twitch no permite dar VIP a un moderador, así que el puesto pasa a quien sí puede recibirlo.')}</p>
       <p class="suggerimento">${L('Puoi darlo anche', 'You can also give it', 'También puedes darlo')}
-      <strong class="primo-piano">${L('a voce', 'by voice', 'por voz')}</strong> ${L('(Comandi a voce → "vip a nome") o in chat con', '(Voice commands → "vip to name") or in chat with', '(Comandos por voz → "vip a nombre") o en el chat con')} <code>!vip @${L('nome', 'name', 'nombre')}</code>${L(': quelli durano un tempo, non delle dirette.', ': those last a length of time, not a number of streams.', ': esos duran un tiempo, no directos.')}</p>
+      <strong class="primo-piano">${L('a voce', 'by voice', 'por voz')}</strong> ${L(`(«vip a nome», dalla scheda «${tScheda('ascolto')}») o in chat con`, `(«vip to name», from the «${tScheda('ascolto')}» tab) or in chat with`, `(«vip a nombre», desde la pestaña «${tScheda('ascolto')}») o en el chat con`)} <code>!vip @${L('nome', 'name', 'nombre')}</code>${L(': quelli durano un tempo, non delle dirette.', ': those last a length of time, not a number of streams.', ': esos duran un tiempo, no directos.')}</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-premio">${L('Salva premio', 'Save reward', 'Guardar premio')}</button></p>
       ${stato.ruolo === 'moderatore' ? '' : `<div class="riga-flessibile spazio-sopra">
         <input aria-label="${esc(L('nome utente', 'username', 'nombre de usuario'))}" type="text" id="pt-utente" placeholder="${L('nome utente', 'username', 'nombre de usuario')}" style="max-width:14rem">
         <input aria-label="${esc(L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50'))}" type="number" id="pt-delta" placeholder="${L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50')}" style="max-width:10rem">
         <button type="button" class="btn secondario" id="btn-punti-manuale">${L('Aggiusta', 'Adjust', 'Ajustar')} ${esc(s.nomeMonete)}</button>
       </div>
-      <p class="suggerimento">${L('Per riparare un errore. Con il meno si tolgono. In chat puoi fare lo stesso con un comando (ricetta «Dai monete»), che però lo fa vedere a tutti — e possono usarlo anche i tuoi moderatori.', 'To fix a mistake. Use a minus to remove. In chat you can do the same with a command (the «Give coins» recipe), which everyone sees — and your mods can use it too.', 'Para reparar un error. Con el menos se quitan. En el chat puedes hacer lo mismo con un comando (receta «Dar monedas»), que además lo ve todo el mundo — y también pueden usarlo tus moderadores.')}</p>
-      <p class="suggerimento">${L('I punti che il tuo pubblico ha su un altro bot li porti qui da Moduli, in «Porta qui quello che hai già».', 'Your viewers’ points on another bot come over from Modules, in «Bring over what you already have».', 'Los puntos que tu público tiene en otro bot los traes desde Módulos, en «Trae lo que ya tienes».')}
-        <button type="button" class="btn secondario mini" data-scheda="moduli">${L('Vai a Moduli', 'Go to Modules', 'Ir a Módulos')}</button></p>`}
+      <p class="suggerimento">${L('Per riparare un errore. Con il meno si tolgono. In chat puoi fare lo stesso con un comando (ricetta «Dai monete»), che però lo fa vedere a tutti, e possono usarlo anche i tuoi moderatori.', 'To fix a mistake. Use a minus to remove. In chat you can do the same with a command (the «Give coins» recipe), which everyone sees, and your mods can use it too.', 'Para reparar un error. Con el menos se quitan. En el chat puedes hacer lo mismo con un comando (receta «Dar monedas»), que además lo ve todo el mundo, y también pueden usarlo tus moderadores.')}</p>
+      <p class="suggerimento">${L(`I punti che il tuo pubblico ha su un altro bot li porti qui dalla scheda «${tScheda('moduli')}», in «Porta qui quello che hai già».`, `Your viewers’ points on another bot come over from the «${tScheda('moduli')}» tab, in «Bring over what you already have».`, `Los puntos que tu público tiene en otro bot los traes desde la pestaña «${tScheda('moduli')}», en «Trae lo que ya tienes».`)}
+        <button type="button" class="btn secondario mini" data-scheda="moduli">${L(`Vai a ${tScheda('moduli')}`, `Go to ${tScheda('moduli')}`, `Ir a ${tScheda('moduli')}`)}</button></p>`}
       <p class="suggerimento spazio-sopra">${L('Le classifiche delle monete stanno nella scheda Statistiche, insieme a tutti gli altri numeri del canale.', 'The coin leaderboards are in the Stats tab, together with all the other channel numbers.', 'Las clasificaciones de monedas están en la pestaña Estadísticas, junto a los demás números del canal.')}
         <button type="button" class="btn secondario mini" data-scheda="statistiche">${L('Vedi le classifiche', 'See the leaderboards', 'Ver las clasificaciones')}</button></p>
       <h3>${L('VIP a tempo attivi', 'Active timed VIPs', 'VIP temporales activos')}</h3>
