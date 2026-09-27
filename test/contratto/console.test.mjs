@@ -989,3 +989,35 @@ test('nel formato «libero» c\'è il «+» anche lui, e i testi dicono come si 
   const vuoto = disegna.slice(disegna.indexOf('const vuoto = '), disegna.indexOf('box.innerHTML'));
   assert.match(vuoto, /«\+»/, 'il vuoto dice dove sta il «+»');
 });
+
+test('chi preme «Collega» legge il motivo vero, e «Oppure a mano» si prova sempre', async () => {
+  // «Oppure a mano» si provava solo con una password scritta: un programma su
+  // un'altra porta senza password non veniva mai cercato lì. E qualunque cosa
+  // andasse storta si leggeva «Non risponde»: l'indirizzo di rete, la password
+  // sbagliata, tutto uguale.
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const f = app.slice(app.indexOf('async function provaCollegamento('), app.indexOf('function mostraCampoPassword('));
+  assert.match(f, /if \(aMano\) prove\.push\(aMano\);/, 'i campi a mano si provano anche senza password');
+  assert.match(f, /motivi\.add\(/, 'ogni tentativo lascia il suo motivo');
+  assert.match(f, /\['password-sbagliata', 'serve-password', 'fuori-casa'\]\.find\(/, 'e si dice il più utile, non sempre «Non risponde»');
+  assert.match(f, /MOTIVI_REGIA\(\)\[perche\]/, 'con le frasi di un posto solo');
+  const motivi = app.slice(app.indexOf('const MOTIVI_REGIA = () => ({'), app.indexOf('function cfgDaiCampi('));
+  for (const m of ['fuori-casa', 'serve-password', 'password-sbagliata', 'non-raggiungibile']) assert.match(motivi, new RegExp(`'${m}': L\\(`), m);
+
+  // e la pagina li distingue davvero: l'indirizzo di rete si ferma prima,
+  // la password sbagliata è la chiusura 4009 del programma
+  const src = readFileSync(join(RAD, 'src/web/public/regia-esterna.js'), 'utf8');
+  const prese = [];
+  class FintoWS { constructor(url) { this.url = url; prese.push(this); } send() {} close() {} }
+  const finta = { window: {}, localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} } };
+  new Function('window', 'localStorage', 'WebSocket', src)(finta.window, finta.localStorage, FintoWS);
+  const R = finta.window.RegiaEsterna;
+  await assert.rejects(R.collega({ ip: '192.168.1.20', porta: '4455', pass: '' }), /fuori-casa/);
+  assert.equal(prese.length, 0, 'un indirizzo di rete non si tenta nemmeno');
+  const sbagliata = R.collega({ ip: '127.0.0.1', porta: '4455', pass: 'no' });
+  prese[0].onclose({ code: 4009 });
+  await assert.rejects(sbagliata, /password-sbagliata/);
+  const spento = R.collega({ ip: '127.0.0.1', porta: '4455', pass: '' });
+  prese[1].onclose({ code: 1006 });
+  await assert.rejects(spento, /non-raggiungibile/);
+});

@@ -38,6 +38,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Se nella Musica manca il permesso dei punti canale, il riquadro porta dritto a concederlo: prima rimandava a una sezione che non c'è più. [vai: musica]
 - In inglese la Regia si chiama «Control room» anche nel menù, e la sua guida elenca le azioni rapide che ci sono davvero: clip, marker, pubblicità, raid. [vai: regia]
 - «Chi guarda di più» vuota non chiede più di accendere un conteggio che è già acceso: dice che nessuna ora è stata ancora contata, e solo se l'hai spento ti dice dove riaccenderlo. [vai: statistiche]
+- Collegando la regia da CONSOLify leggi il motivo vero quando non va (password sbagliata, indirizzo di rete, programma spento), e «Oppure a mano» si prova anche senza password. [vai: consolify]
 
 ## 2026-09-26
 

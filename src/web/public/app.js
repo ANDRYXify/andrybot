@@ -15462,7 +15462,8 @@ function disegnaSpiaRegia(msg) {
 
 const MOTIVI_REGIA = () => ({
   'fuori-casa': L('Solo il tuo computer: un indirizzo di rete lo blocca il browser, non noi.', 'Only your own computer: a network address is blocked by the browser, not by us.', 'Solo tu propio ordenador: una dirección de red la bloquea el navegador, no nosotros.'),
-  'serve-password': L('Chiede una password: prendila dalle impostazioni del programma.', 'It asks for a password: take it from the program’s settings.', 'Pide una contraseña: tómala de los ajustes del programa.'),
+  'serve-password': L('Ci sono, ma chiede una password: incollala qui sotto.', 'It’s there, but it wants a password: paste it below.', 'Está ahí, pero pide una contraseña: pégala abajo.'),
+  'password-sbagliata': L('Ci sono, ma la password non è quella giusta: ricopiala dalle impostazioni del programma e incollala qui sotto.', 'It’s there, but the password is not the right one: copy it again from the program’s settings and paste it below.', 'Está ahí, pero la contraseña no es la correcta: vuelve a copiarla de los ajustes del programa y pégala abajo.'),
   'non-raggiungibile': L('Non risponde: controlla che il programma sia aperto e che il collegamento sia acceso nelle sue impostazioni.', 'No answer: check the program is open and its connection is switched on in its settings.', 'No responde: comprueba que el programa esté abierto y que la conexión esté activada en sus ajustes.'),
 });
 
@@ -15488,13 +15489,14 @@ async function provaCollegamento(zitto) {
 
   const prove = [];
   if (letto) prove.push(letto);
-  if (aMano && aMano.pass) prove.push(aMano);
+  if (aMano) prove.push(aMano);
   if (g.pass) prove.push(g);
   for (const porta of PORTE_REGIA) prove.push({ ip: '127.0.0.1', porta, pass: g.pass || '' });
   for (const porta of PORTE_REGIA) prove.push({ ip: '127.0.0.1', porta, pass: '' });
 
   if (!zitto) disegnaSpiaRegia(L('provo…', 'trying…', 'probando…'));
   let serveLaPassword = false;
+  const motivi = new Set();
   const visti = new Set();
   for (const cfg of prove) {
     const firma = `${cfg.ip}|${cfg.porta}|${cfg.pass}`;
@@ -15511,14 +15513,15 @@ async function provaCollegamento(zitto) {
       await caricaScene();
       return true;
     } catch (e) {
-      if (e && e.message === 'serve-password') serveLaPassword = true;
+      const motivo = (e && e.message) || '';
+      if (motivo === 'serve-password' || motivo === 'password-sbagliata') serveLaPassword = true;
+      motivi.add(motivo);
     }
   }
   if (!zitto) {
     mostraCampoPassword(serveLaPassword);
-    disegnaSpiaRegia(serveLaPassword
-      ? L('Ci sono, ma chiede una password: incollala qui sotto.', 'It’s there, but it wants a password: paste it below.', 'Está ahí, pero pide una contraseña: pégala abajo.')
-      : MOTIVI_REGIA()['non-raggiungibile']);
+    const perche = ['password-sbagliata', 'serve-password', 'fuori-casa'].find((m) => motivi.has(m)) || 'non-raggiungibile';
+    disegnaSpiaRegia(MOTIVI_REGIA()[perche]);
   }
   return false;
 }
