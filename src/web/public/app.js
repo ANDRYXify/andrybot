@@ -29335,7 +29335,7 @@ function disegnaCampiQuando(t) {
         <label class="campo" for="mod-frasi-voce">Frasi da ascoltare (una per riga)</label>
         <textarea id="mod-frasi-voce" placeholder="clippa&#10;salva la clip">${esc(frasi.join('\n'))}</textarea>
         <p class="suggerimento">Quando al microfono dici una di queste frasi, il modulo scatta. Scrivile in minuscolo,
-        una per riga. L'ascolto si avvia dalla pagina "Apri l'ascolto vocale" in <strong>Diretta → Comandi a voce</strong>.</p>
+        una per riga. L'ascolto si avvia con «Apri l'ascolto vocale», in <strong>Chat e pubblico → Comandi → Comandi vocali</strong>.</p>
         <div class="riga-check" style="margin-top:.4rem">
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
           <label for="mod-telegram">Manda il messaggio anche su <b>Telegram</b> quando lo dico a voce (serve il bot interattivo).</label>
@@ -29412,7 +29412,7 @@ function disegnaCampiAzione(a) {
     case 'effetto': {
       const eff = datiModuli?.effettiDisponibili || [];
       if (!eff.length) {
-        return `<p class="suggerimento">Non hai ancora effetti: carica prima un effetto in <strong>Chat &amp; comandi → Effetti &amp; suoni</strong>.</p>
+        return `<p class="suggerimento">Non hai ancora effetti: carica prima un effetto in <strong>Scena &amp; overlay → Effetti &amp; suoni</strong>.</p>
           <input type="hidden" data-campo="comando" value="${esc(a.comando || '')}">`;
       }
       return `
@@ -29501,7 +29501,7 @@ function disegnaCampiAzione(a) {
           <label>Annuncia il cambio in chat</label>
         </div>
         <p class="suggerimento">Il bot cerca la categoria su Twitch e imposta quella più somigliante a ciò che scrivi/dici.
-        Serve il permesso <strong class="primo-piano">Gestione canale</strong> (lo concedi da <strong>Diretta → Comandi a voce</strong>).</p>`;
+        Serve il permesso <strong class="primo-piano">Gestione canale</strong>: se manca, lo concedi da <strong>Chat e pubblico → Comandi → Comandi vocali</strong>.</p>`;
     case 'titolo':
       return `
         <label class="campo">Nuovo titolo (puoi usare le variabili, es. <code>$gioco</code>, <code>$args</code>)</label>
@@ -29512,7 +29512,7 @@ function disegnaCampiAzione(a) {
           <label>Annuncia il cambio in chat</label>
         </div>
         <p class="suggerimento">Imposta il titolo dello stream su Twitch (max 140 caratteri).
-        Serve il permesso <strong class="primo-piano">Gestione canale</strong> (lo concedi da <strong>Diretta → Comandi a voce</strong>).</p>`;
+        Serve il permesso <strong class="primo-piano">Gestione canale</strong>: se manca, lo concedi da <strong>Chat e pubblico → Comandi → Comandi vocali</strong>.</p>`;
     case 'attendi':
       return `
         <label class="campo">Secondi da aspettare</label>
@@ -29581,7 +29581,7 @@ function disegnaCampiAzione(a) {
           <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
           <label>Annuncia in chat il brano aggiunto</label>
         </div>
-        <p class="suggerimento">Aggiunge il brano alla coda del tuo Spotify. Richiede l'add-on <strong class="primo-piano">Richieste Musicali</strong> e Spotify collegato in <strong>Diretta → Musica</strong>.</p>`;
+        <p class="suggerimento">Aggiunge il brano alla coda del tuo Spotify. Richiede l'add-on <strong class="primo-piano">Richieste Musicali</strong> e Spotify collegato in <strong>Durante la diretta → Regia → Musica</strong>.</p>`;
     case 'annuncia':
       return `
         <textarea data-campo="testo" data-var-target placeholder="es. Benvenuti nella live! Oggi si gioca a $gioco">${esc(a.testo || '')}</textarea>
@@ -29610,7 +29610,7 @@ function disegnaCampiAzione(a) {
         <label class="campo spazio-sopra">Messaggio extra in chat (facoltativo)</label>
         <textarea data-campo="testo" data-var-target placeholder="es. Andate a seguire @$touser! Stava streammando $giocotarget">${esc(a.testo || '')}</textarea>
         ${pillole}
-        <p class="suggerimento">Lo shoutout ufficiale di Twitch (il banner). Serve essere in diretta e il permesso <strong class="primo-piano">shoutout</strong>. Per l'auto-shoutout ai raid: crea un modulo con innesco <strong>Evento → raid</strong> e questa azione lasciando vuoto il canale.</p>`;
+        <p class="suggerimento">Lo shoutout ufficiale di Twitch (il banner). Serve essere in diretta e il permesso <strong class="primo-piano">shoutout</strong>. Per l'auto-shoutout ai raid: crea un modulo con innesco «Un evento del canale», evento «Raid», e questa azione col canale vuoto.</p>`;
     default:
       return '';
   }

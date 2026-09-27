@@ -133,12 +133,12 @@ async function inviaFrase(frase) {
     const tit = dati && dati.titolo;
     if (cat) {
       if (dati.eseguito && cat.nome) logga('categoria cambiata in "' + cat.nome + '"');
-      else if (cat.riautorizza) logga('manca il permesso di gestione canale: riautorizza dalla dashboard (Panoramica → permessi)');
+      else if (cat.riautorizza) logga('manca il permesso di gestione canale: concedilo nel pannello, da Chat e pubblico → Comandi → Comandi vocali');
       else if (cat.trovato === false) logga('categoria non trovata per "' + (cat.query || '') + '"');
       else logga('non sono riuscito a cambiare categoria');
     } else if (tit) {
       if (dati.eseguito && tit.testo) logga('titolo cambiato in "' + tit.testo + '"');
-      else if (tit.riautorizza) logga('manca il permesso di gestione canale: riautorizza dalla dashboard (Panoramica → permessi)');
+      else if (tit.riautorizza) logga('manca il permesso di gestione canale: concedilo nel pannello, da Chat e pubblico → Comandi → Comandi vocali');
       else logga('non sono riuscito a cambiare titolo');
     } else if (dati && dati.eseguito) logga('"' + frase + '" → modulo scattato');
     else logga('"' + frase + '" inviato (nessun modulo ha reagito)');

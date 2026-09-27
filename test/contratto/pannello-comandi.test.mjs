@@ -80,3 +80,38 @@ test('«Salva i comandi» manda solo le righe della sua lista, e quali erano', a
   const rotta = SRV.slice(SRV.indexOf("app.post('/api/streamer/comandi-pronti'"), SRV.indexOf("app.get('/api/streamer/giochi'"));
   assert.match(rotta, /unisciComandi\(s\?\.settings\?\.comandi, req\.body\?\.comandi, req\.body\.ids\)/, 'il server cambia solo le righe mandate');
 });
+
+// I PERCORSI CHE IL PANNELLO INDICA ESISTONO. L'editor dei moduli e la pagina di
+// ascolto mandavano in schede che non ci sono piu' («Diretta → Comandi a voce»,
+// «Panoramica → permessi»). Ogni pezzo di un percorso deve essere il nome di un
+// gruppo, di una famiglia o di una scheda del menu di oggi, e il primo un gruppo.
+function oggetto(nome) {
+  const i = APP.indexOf(`const ${nome} = {`);
+  assert.ok(i >= 0, `manca ${nome}`);
+  let d = 0;
+  for (let j = APP.indexOf('{', i); j < APP.length; j++) {
+    if (APP[j] === '{') d++;
+    else if (APP[j] === '}') { d--; if (!d) return new Function(`return (${APP.slice(APP.indexOf('{', i), j + 1)})`)(); }
+  }
+  return {};
+}
+
+test('i percorsi dell\'editor dei moduli e della pagina di ascolto sono quelli del menu', () => {
+  const gruppi = new Set(Object.values(oggetto('T_GRUPPO')).map((v) => v[0]));
+  const nomi = new Set([...gruppi, ...Object.values(oggetto('T_SCHEDA')).map((v) => v[0]),
+    ...[...APP.matchAll(/\{ id: '[a-z]+', nome: '([^']+)', parti: \[/g)].map((m) => m[1])]);
+  const pulito = (x) => x.replace(/&amp;/g, '&').replace(/<[^>]+>/g, '').trim();
+  const percorsi = [];
+  const dove = corpo('function disegnaCampiQuando(t)') + corpo('function disegnaCampiAzione(a)');
+  for (const m of dove.matchAll(/<strong>([^<]*→[^<]*)<\/strong>/g)) percorsi.push(m[1]);
+  const VOCE = leggi('src/web/public/voce.js');
+  for (const m of VOCE.matchAll(/([A-Za-zÀ-ÿ&; ]+(?: → [A-Za-zÀ-ÿ&; ]+)+)/g)) percorsi.push(m[1]);
+  assert.ok(percorsi.length >= 6, `i percorsi si leggono (${percorsi.length})`);
+  for (const p of percorsi) {
+    const pezzi = p.split('→').map(pulito);
+    // il primo pezzo e' la fine della frase che lo porta («… da Chat e pubblico»)
+    pezzi[0] = [...gruppi].find((g) => pezzi[0].endsWith(g)) || pezzi[0];
+    assert.ok(gruppi.has(pezzi[0]), `«${p}»: «${pezzi[0]}» non e' un gruppo del menu`);
+    for (const x of pezzi) assert.ok(nomi.has(x), `«${p}»: «${x}» non e' nel menu`);
+  }
+});
