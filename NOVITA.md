@@ -76,6 +76,13 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nel manuale dei giochi la tabella delle regole scrive «1 frase di serie» al singolare, e i premi dei tris della slot vengono dagli stessi numeri del gioco.
 - In «I giochi che hai fatto» il tipo di ogni manche si legge col nome del menù, anche in inglese e spagnolo, e non con la sua sigla. [vai: giochi]
 - Quando a sondaggi, predizioni o penitenze manca un permesso, pannello e chat ti dicono di premere «Aggiorna i permessi» nella scheda «Stato». [vai: stato]
+- «Aggiungi numero» nella pagina link si ferma a sei, quanti la pagina ne mostra: prima dal settimo in poi i numeri sparivano al salvataggio senza dirlo. [vai: pagina]
+- Movimento, spessore e ombra dei bottoni, nell'aspetto della pagina link, mostrano quelli che la pagina usa davvero, anche dopo un tema pronto: prima il pannello diceva «Fermo», «Leggero» e «Nessuna». [vai: pagina]
+- «Rimborsa», nel registro delle donazioni, su una donazione arrivata con Satispay chiede conferma nominando il tuo negozio Satispay, non più il conto Stripe. [vai: donazioni]
+- «Modi», nell'aspetto della pagina link, dice come va davvero il permesso per video e musica di altri siti: con «Caricali subito» chi apre la pagina trova prima una fascia che glielo chiede. [vai: pagina]
+- «Salva la settimana» ricorda i posti che hai spuntato in «Mandala»: prima teneva quelli di prima, e la settimana automatica usciva nei posti vecchi. [vai: settimana]
+- Il primo link già pronto della pagina link porta al tuo canale anche se entri con Kick o YouTube, non più a Twitch; chi ha solo un server Discord parte senza. [vai: pagina]
+- Le Grafiche portano all'indirizzo vero del tuo canale anche se entri con Kick o YouTube, e nella pagina link la foto del profilo si chiama «La tua foto» per tutti. [vai: grafiche]
 
 ## 2026-09-26
 

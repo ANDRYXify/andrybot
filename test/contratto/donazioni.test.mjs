@@ -479,3 +479,22 @@ test('la pagina delle donazioni dice il suo indirizzo vero: canonical e og:url c
   assert.ok(link.includes('<link rel="canonical" href="https://s.live/u/x">') && link.includes('· i miei link</title>'), 'la pagina link resta la pagina link');
   assert.equal((SRV.match(/urlDona: donazioni\.urlPaginaDona\(login\)/g) || []).length, 4, 'le due pagine e le due anteprime sanno l\'indirizzo corto');
 });
+
+test('«Rimborsa» chiede conferma nominando il servizio da cui tornano i soldi, quello della riga', () => {
+  // le fonti che il server rimborsa, lette dalla sua regola
+  const regola = SRV.match(/rimborsabile: \(([^)]*)\) &&/);
+  assert.ok(regola, 'non trovo la regola del server su cosa si rimborsa');
+  const fonti = [...regola[1].matchAll(/r\.fonte === '(\w+)'/g)].map((m) => m[1]);
+  assert.deepEqual(fonti.sort(), ['satispay', 'stripe']);
+  assert.match(APP, /<li class="dona-riga\$\{d\.rimborsata \? ' rimborsata' : ''\}" data-id="\$\{esc\(d\.id\)\}" data-fonte="\$\{esc\(d\.fonte \|\| ''\)\}">/, 'la riga dice da dove e\' arrivata');
+  const i = APP.indexOf('const daDove = {');
+  assert.ok(i >= 0, 'la conferma non sceglie il servizio');
+  const mappa = APP.slice(i + 'const daDove = '.length, APP.indexOf('}[li.dataset.fonte]', i) + 1);
+  // eslint-disable-next-line no-new-func
+  const daDove = new Function('L', `return ${mappa}`)((it) => it);
+  const nome = { stripe: 'Stripe', satispay: 'Satispay' };
+  for (const f of fonti) assert.ok(String(daDove[f] || '').includes(nome[f]), `una donazione da ${f} si rimborsa dicendo ${nome[f]}`);
+  const conferma = APP.slice(i, APP.indexOf("si: L('Rimborsa'", i));
+  assert.ok(!/Stripe\. Non si può annullare/.test(conferma), 'la conferma non dice piu\' sempre Stripe');
+  assert.match(conferma, /testo: L\(`I soldi tornano a chi te li ha mandati\$\{daDove\}\. Non si può annullare\.`/);
+});

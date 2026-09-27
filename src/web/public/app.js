@@ -859,6 +859,7 @@ function statoDemo() {
     rapportiNuovi: 1, postaDisponibile: true, inviti: [],
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display, nome: ctx.canale },
+    indirizzo: 'https://www.twitch.tv/' + ctx.canale,
     isAdmin: false,
     permessiOk: true, vipOk: true, moderazioneOk: true, canaleOk: true, inChat: true,
     knowledgeCount: 3,
@@ -1309,6 +1310,12 @@ function _demoEffetti(via, b) {
   return { ok: true, comando: e.comando, disegno };
 }
 
+const _DEMO_TEMA_BASE = { sfondoTipo: 'tinta', bg: '', bg2: '', angolo: 160, sfondoUrl: '', sfondoX: 50, sfondoY: 50, sfondoScala: 100,
+  sfondoRapporto: 0, sfondoRiempi: 'bordi', sfondoBordi: null, effetto: 'nessuno', testo: '', accent: '', card: '', bordo: '',
+  font: 'system', fontTitoli: '', corpo: 100, peso: 'marcato', interlinea: 150, spaziatura: 100, maiuscolo: 'no', testoBtn: '',
+  bordoSp: 0, css: '', raggio: 14, stileBtn: 'pieno', ombra: true, ombraTipo: 'morbida', ombraColore: '', consenso: 'sempre',
+  anim: 'rise', avatarForma: 'cerchio', larghezza: 30, allinea: 'centro', cursore: 'sistema', disposizione: 'colonna', movimento: 'dolce' };
+
 function _demoGet(via) {
   if (via === '/api/streamer/overlays' && _demoScritture.overlays) return { overlays: _demoScritture.overlays };
   if (via === '/api/streamer/effetti' && _demoScritture.effetti) return { overlayUrl: 'https://socialbot.live/overlay/andryx_demo', effetti: _demoScritture.effetti };
@@ -1574,13 +1581,12 @@ function _demoGet(via) {
       fonts: ['system','inter','mono','serif','condensato','tondo'],
       icone: ['link','twitch','youtube','instagram','tiktok','discord','spotify','x','telegram','kick','github','cuore','stella','regalo','carrello','calendario','mail','musica','video','scarica','gioco','caffe','soldi'],
       tipi: ['link','titolo','testo','separatore','social','embed','immagine','diretta'],
-      limiti: { headline: 80, tagline: 200, label: 60, sotto: 90, url: 500, blocchi: 40, social: 12, testo: 500, titolo: 60 },
+      limiti: { headline: 80, tagline: 200, label: 60, sotto: 90, url: 500, blocchi: 40, testo: 500, titolo: 60, voci: { social: 12, griglia: 12, numeri: 6, faq: 12 }, altezzaEmbed: 900 },
+      temaBase: _DEMO_TEMA_BASE,
       avatarTwitch: '', suggeriti: [],
       pagina: { template: 'neon', avatar: '', attiva: true, aggiornata: null,
         headline: 'Andry \u00b7 streamer', tagline: 'Ogni sera su Twitch, di solito a fare danni',
-        tema: { sfondoTipo: 'gradiente', bg: '#07060d', bg2: '#1a0f33', angolo: 165, sfondoUrl: '', effetto: 'aurora',
-          testo: '', accent: '', card: '', bordo: '', font: 'system', raggio: 14, stileBtn: 'pieno',
-          ombra: true, anim: 'rise', avatarForma: 'cerchio', larghezza: 30, allinea: 'centro' },
+        tema: { ..._DEMO_TEMA_BASE, sfondoTipo: 'gradiente', bg: '#07060d', bg2: '#1a0f33', angolo: 165, effetto: 'aurora' },
         blocchi: [ { tipo: 'link', icona: 'twitch', label: 'Twitch', url: 'https://twitch.tv/andryxify', sotto: 'Ogni sera dalle 21', evidenzia: true },
           { tipo: 'titolo', testo: 'I MIEI SOCIAL' },
           { tipo: 'social', voci: [ { icona: 'instagram', url: 'https://instagram.com/andryxify' }, { icona: 'tiktok', url: 'https://tiktok.com/@andryxify' }, { icona: 'discord', url: 'https://discord.gg/andryxify' } ] },
@@ -4848,10 +4854,12 @@ function grafGiorni(giorni) {
   return Array.from({ length: 7 }, (_, i) => ({ g: String(gg[i]).toUpperCase(), ora: String(w[i]?.ora || ''), att: String(w[i]?.att || ''), off: !!w[i]?.off }));
 }
 
+const grafCanale = () => String(stato?.indirizzo || '').replace(/^https?:\/\/(www\.)?/, '');
+
 function grafUrlCanale(c) {
   const login = (stato?.user?.login || 'iltuocanale').toLowerCase();
-  return (c && c.dest === 'twitch')
-    ? 'twitch.tv/' + login
+  return (c && c.dest === 'twitch' && grafCanale())
+    ? grafCanale()
     : 'socialbot.live/u/' + login;
 }
 
@@ -5141,7 +5149,7 @@ function _settLeggi() {
     giorni: _settLeggiGiorni(),
     dura: Number(_g('sett-dura')?.value) || w.dura,
     fuso: _fusoQui() || w.fuso,
-    dove: w.dove,
+    dove: _settPosti ? _settDoveScelti() : w.dove,
     twitch: { acceso: _g('sett-tw') ? !!_g('sett-tw').checked : w.twitch.acceso },
   };
 }
@@ -5179,7 +5187,7 @@ async function caricaSettimana() {
   let d = null;
   try { d = await api('/api/streamer/settimana'); } catch { d = null; }
   if (d?.settimana && stato?.streamer) stato.streamer.settings = { ...(stato.streamer.settings || {}), settimana: d.settimana };
-  _settPosti = d?.posti || {};
+  _settPosti = d ? (d.posti || {}) : null;
   _settDisegnaGiorni();
   _settDisegnaCalendari();
   _settDisegnaDove();
@@ -5461,8 +5469,8 @@ function pannelloGrafiche() {
           <div class="spazio-sopra gr-social">
             <label class="campo">${L('Condivisione & link al canale', 'Sharing & channel link', 'Compartir y enlace al canal')}</label>
             <div class="gr-sfondo-scelte">
-              <button type="button" class="gr-tema${c.dest !== 'twitch' ? ' on' : ''}" data-gr-dest="u">socialbot.live/u/…</button>
-              <button type="button" class="gr-tema${c.dest === 'twitch' ? ' on' : ''}" data-gr-dest="twitch">twitch.tv/…</button>
+              <button type="button" class="gr-tema${c.dest !== 'twitch' || !grafCanale() ? ' on' : ''}" data-gr-dest="u">socialbot.live/u/…</button>
+              ${grafCanale() ? `<button type="button" class="gr-tema${c.dest === 'twitch' ? ' on' : ''}" data-gr-dest="twitch">${esc(grafCanale().replace(/[^/@]+$/, '…'))}</button>` : ''}
             </div>
             <label class="riga-check spazio-sopra"><input type="checkbox" id="gr-qr" ${c.qr ? 'checked' : ''}> <strong>${L('Stampa un QR + il link del canale sull\'immagine', 'Print a QR + the channel link on the image', 'Imprime un QR + el enlace del canal en la imagen')}</strong></label>
             <p class="suggerimento">${L('Su Instagram l\'immagine del feed non è cliccabile: col QR chi la vede arriva comunque al canale. Per un link tappabile usa lo sticker «link» nelle Storie o il link in bio.', 'On Instagram feed images aren\'t clickable: with the QR viewers still reach the channel. For a tappable link use the «link» sticker in Stories or the link in bio.', 'En Instagram la imagen del feed no es clicable: con el QR quien la ve igual llega al canal. Para un enlace tocable usa el sticker «enlace» en Stories o el link en bio.')}</p>
@@ -19770,7 +19778,7 @@ function riempiDonazioni() {
   const url = _statoDona?.paginaUrl || (location.origin + '/dona/' + (stato?.user?.login || '…'));
 }
 function _opzioniEffetti(sel) {
-  return `<option value="">${L('— nessun effetto —', '— no effect —', '— ningún efecto —')}</option>` + (_EFFETTI || []).map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>${esc(e.comando)} · ${esc(etTipoEffetto(e.tipo))}</option>`).join('');
+  return `<option value="">${L('Nessun effetto', 'No effect', 'Ningún efecto')}</option>` + (_EFFETTI || []).map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>${esc(e.comando)} · ${esc(etTipoEffetto(e.tipo))}</option>`).join('');
 }
 function _rigaLivello(l) {
   return `<div class="griglia-campi dona-livello">
@@ -19895,7 +19903,7 @@ function _sommeDona(lista) {
 function _rigaDonaHtml(d) {
   const quando = (ts) => { try { return new Date(ts).toLocaleString(localePannello(), { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
   const fonte = d.fonte === 'kofi' ? 'Ko-fi' : (d.fonte === 'ext' ? L('chiave API', 'API key', 'clave API') : (d.fonte === 'satispay' ? 'Satispay' : 'Stripe'));
-  return `<li class="dona-riga${d.rimborsata ? ' rimborsata' : ''}" data-id="${esc(d.id)}">
+  return `<li class="dona-riga${d.rimborsata ? ' rimborsata' : ''}" data-id="${esc(d.id)}" data-fonte="${esc(d.fonte || '')}">
     <div><b>${esc(_soldi(d.importo, d.valuta))}</b> ${esc(d.nome || L('qualcuno', 'someone', 'alguien'))}${d.messaggio ? ` <span class="suggerimento">· ${esc(d.messaggio)}</span>` : ''}
       <span class="suggerimento">· ${esc(quando(d.quando))} · ${esc(fonte)}${d.rimborsata ? ' · ' + L('rimborsata', 'refunded', 'reembolsada') : ''}</span></div>
     <div class="dona-azioni"><button type="button" class="btn secondario mini" data-dona-riga="riproponi">${L('Rimanda l\'avviso', 'Replay the alert', 'Repetir el aviso')}</button>${d.effetto ? ` <button type="button" class="btn secondario mini" data-dona-riga="rieffetto">${L('Rimanda l\'immagine', 'Replay the image', 'Repetir la imagen')}</button>` : ''}${d.rimborsabile ? ` <button type="button" class="btn secondario mini" data-dona-riga="rimborsa">${L('Rimborsa', 'Refund', 'Reembolsar')}</button>` : ''} <button type="button" class="btn secondario mini" data-dona-riga="elimina">${L('Elimina', 'Delete', 'Eliminar')}</button></div>
@@ -19994,6 +20002,8 @@ function lpIntroHtml(d) {
 }
 
 const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', schede: { link: {}, dona: {} } };
+const lpVociMax = (tipo) => Number(LP.d?.limiti?.voci?.[tipo]) || 0;
+const lpVociPiene = (b) => (b.voci || []).length >= lpVociMax(b.tipo);
 const lpSchede = () => LP.schede[LP.quale === 'dona' ? 'dona' : 'link'];
 const lpApi = () => (LP.quale === 'dona' ? '/api/paginadona' : '/api/linkpage');
 
@@ -20005,10 +20015,10 @@ const TEMI_PRONTI = [
   { id: 'neon', nome: 'Notte al neon', base: 'neon',
     tema: _tema({ sfondoTipo: 'gradiente', angolo: 165, effetto: 'aurora', stileBtn: 'vetro', raggio: 18 }) },
   { id: 'carta', nome: 'Carta e inchiostro', base: 'minimal',
-    tema: _tema({ font: 'serif', raggio: 2, stileBtn: 'contorno', ombra: false, anim: 'fade', allinea: 'sinistra' }) },
+    tema: _tema({ font: 'serif', raggio: 2, stileBtn: 'contorno', ombraTipo: 'nessuna', anim: 'fade', allinea: 'sinistra' }) },
   { id: 'wabi', nome: 'Wabi-sabi', base: 'retro',
     tema: _tema({ bg: '#f2ece2', bg2: '#e3d7c6', testo: '#3b2a1d', accent: '#c2551f', card: '#fffaf3', bordo: '#ddcdb6',
-      font: 'serif', raggio: 3, effetto: 'grana', ombra: false, disposizione: 'sezioni', allinea: 'sinistra' }) },
+      font: 'serif', raggio: 3, effetto: 'grana', ombraTipo: 'nessuna', disposizione: 'sezioni', allinea: 'sinistra' }) },
   { id: 'rivista', nome: 'Rivista', base: 'minimal',
     tema: _tema({ font: 'condensato', raggio: 4, larghezza: 44, allinea: 'sinistra', disposizione: 'rivista' }) },
   { id: 'tramonto', nome: 'Tramonto', base: 'sunset',
@@ -20016,7 +20026,7 @@ const TEMI_PRONTI = [
   { id: 'vetro', nome: 'Vetro', base: 'glass',
     tema: _tema({ sfondoTipo: 'gradiente', effetto: 'maglia', stileBtn: 'vetro', raggio: 20 }) },
   { id: 'brutale', nome: 'Brutalista', base: 'brutal',
-    tema: _tema({ raggio: 0, stileBtn: 'contorno', ombra: false, anim: 'pop', allinea: 'sinistra' }) },
+    tema: _tema({ raggio: 0, stileBtn: 'contorno', ombraTipo: 'nessuna', anim: 'pop', allinea: 'sinistra' }) },
   { id: 'confetto', nome: 'Confetto', base: 'pastello',
     tema: _tema({ raggio: 999, font: 'tondo', effetto: 'bolle' }) },
   { id: 'bosco', nome: 'Bosco', base: 'minimal',
@@ -20039,7 +20049,7 @@ const TEMI_PRONTI = [
     tema: _tema({ sfondoTipo: 'gradiente', bg: '#060b18', bg2: '#0e1e42', accent: '#5b8cff', effetto: 'maglia', raggio: 12 }) },
   { id: 'arcade', nome: 'Arcade', base: 'brutal',
     tema: _tema({ bg: '#08090a', bg2: '#101314', testo: '#e6ffe9', accent: '#53fc18', card: 'rgba(83,252,24,.07)',
-      bordo: '#53fc18', font: 'mono', raggio: 0, ombra: false, effetto: 'grana', anim: 'pop' }) },
+      bordo: '#53fc18', font: 'mono', raggio: 0, ombraTipo: 'nessuna', effetto: 'grana', anim: 'pop' }) },
 
   { id: 'synth', nome: 'Synthwave', base: 'neon',
     tema: _tema({ sfondoTipo: 'gradiente', bg: '#1a0730', bg2: '#3d0d4e', angolo: 200, testo: '#ffe7fb', accent: '#ff4fd8',
@@ -20049,7 +20059,7 @@ const TEMI_PRONTI = [
       card: 'rgba(0,229,255,.06)', bordo: 'rgba(0,229,255,.34)', font: 'mono', raggio: 2, effetto: 'scanline', movimento: 'cinema' }) },
   { id: 'matrix', nome: 'Matrix', base: 'brutal',
     tema: _tema({ bg: '#020604', bg2: '#04120a', testo: '#c8ffd4', accent: '#22ff88', card: 'rgba(34,255,136,.06)',
-      bordo: 'rgba(34,255,136,.35)', font: 'mono', raggio: 0, ombra: false, effetto: 'matrix' }) },
+      bordo: 'rgba(34,255,136,.35)', font: 'mono', raggio: 0, ombraTipo: 'nessuna', effetto: 'matrix' }) },
   { id: 'galassia', nome: 'Galassia', base: 'neon',
     tema: _tema({ sfondoTipo: 'gradiente', bg: '#050418', bg2: '#160a3a', angolo: 165, testo: '#eef0ff', accent: '#8b7bff',
       card: 'rgba(255,255,255,.06)', bordo: 'rgba(139,123,255,.34)', effetto: 'nebulosa', movimento: 'crawl', raggio: 16, stileBtn: 'vetro' }) },
@@ -20152,7 +20162,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
 
   const NOMI_STILE = { minimal: 'Minimal', neon: 'Neon', retro: 'Retro', sunset: 'Sunset', glass: 'Glass', brutal: 'Brutal', pastello: 'Pastello',
     cyber: 'Cyberpunk', vapor: 'Vaporwave', oro: L('Oro', 'Gold', 'Oro'), oceano: L('Oceano', 'Ocean', 'Océano'), foresta: L('Foresta', 'Forest', 'Bosque'), ghiaccio: L('Ghiaccio', 'Ice', 'Hielo'), lava: 'Lava', bubblegum: 'Bubblegum' };
-  const NOMI_FONT = { system: L('Sistema', 'System', 'Sistema'), inter: 'Inter', mono: L('Monospaziato', 'Monospaced', 'Monoespaciado'), serif: L('Con grazie', 'Serif', 'Con serifa'), condensato: L('Condensato', 'Condensed', 'Condensada'), tondo: L('Tondo', 'Rounded', 'Redonda'), manga: L('Manga — a pennarello', 'Manga — marker', 'Manga — a rotulador') };
+  const NOMI_FONT = { system: L('Sistema', 'System', 'Sistema'), inter: 'Inter', mono: L('Monospaziato', 'Monospaced', 'Monoespaciado'), serif: L('Con grazie', 'Serif', 'Con serifa'), condensato: L('Condensato', 'Condensed', 'Condensada'), tondo: L('Tondo', 'Rounded', 'Redonda'), manga: L('Manga (a pennarello)', 'Manga (marker)', 'Manga (a rotulador)') };
   const opts = (lista, sel, nomi) => lista.map((k) => `<option value="${esc(k)}"${k === sel ? ' selected' : ''}>${esc((nomi && nomi[k]) || k)}</option>`).join('');
 
   box.innerHTML = `
@@ -20176,15 +20186,15 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
           <input type="text" id="lp-tagline" data-lpt="tagline" maxlength="${d.limiti.tagline}" value="${esc(LP.testa.tagline)}" placeholder="${esc(L('es. Ogni sera su Twitch', 'e.g. Every night on Twitch', 'p. ej. Cada noche en Twitch'))}">
           <label class="campo spazio-sopra" for="lp-avatar">${L('Immagine del profilo', 'Profile picture', 'Imagen de perfil')}</label>
           <select id="lp-avatar" data-lpt="avatarModo">
-            <option value=""${!LP.testa.avatar ? ' selected' : ''}>${L('Quella di Twitch', 'Your Twitch one', 'La de Twitch')}</option>
+            <option value=""${!LP.testa.avatar ? ' selected' : ''}>${L('La tua foto', 'Your photo', 'Tu foto')}</option>
             <option value="url"${LP.testa.avatar && LP.testa.avatar !== 'no' ? ' selected' : ''}>${L('Un\'immagine mia (carica o incolla)', 'My own image (upload or paste)', 'Una imagen mía (sube o pega)')}</option>
             <option value="no"${LP.testa.avatar === 'no' ? ' selected' : ''}>${L('Nessuna', 'None', 'Ninguna')}</option>
           </select>
           <div id="lp-avatar-tw" class="lp-avatar-tw" ${LP.testa.avatar ? 'hidden' : ''}>
             ${d.avatarTwitch
               ? `<img src="${esc(d.url)}/avatar" alt="" width="44" height="44" loading="lazy" data-via-se-rotta>
-                 <span class="suggerimento">${L('Questa è la tua foto di Twitch: la prendiamo da soli e si aggiorna quando la cambi là.', 'This is your Twitch picture: we fetch it for you and it updates when you change it there.', 'Esta es tu foto de Twitch: la traemos nosotros y se actualiza cuando la cambias allí.')}</span>`
-              : `<span class="suggerimento">${L('Non riusciamo a leggere la tua foto da Twitch in questo momento: riproviamo da soli, oppure scegli “Un\'immagine mia”.', 'We can\'t read your Twitch picture right now: we\'ll retry by ourselves, or pick “My own image”.', 'Ahora no podemos leer tu foto de Twitch: lo reintentamos solos, o elige “Una imagen mía”.')}</span>`}
+                 <span class="suggerimento">${L('È la foto del profilo con cui entri: la prendiamo da soli, e si aggiorna quando la cambi là.', 'It is the profile picture of the account you sign in with: we fetch it for you, and it updates when you change it there.', 'Es la foto del perfil con el que entras: la traemos nosotros, y se actualiza cuando la cambias allí.')}</span>`
+              : `<span class="suggerimento">${L('In questo momento non riusciamo a leggere la tua foto: riproviamo da soli, oppure scegli «Un\'immagine mia».', 'We can\'t read your picture right now: we\'ll retry by ourselves, or pick “My own image”.', 'Ahora no podemos leer tu foto: lo reintentamos solos, o elige «Una imagen mía».')}</span>`}
           </div>
           <div id="lp-avatar-box" ${LP.testa.avatar && LP.testa.avatar !== 'no' ? '' : 'hidden'}>
             <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpup="avatar">${_bIco(ICO.carica)}${L('Carica una foto', 'Upload a photo', 'Subir una foto')}</button></p>
@@ -20272,16 +20282,16 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
             <div class="griglia-campi">
               <div><label class="campo" for="lp-disp">${L('Disposizione', 'Layout', 'Disposición')}</label>
                 <select id="lp-disp" data-lpk="disposizione">
-                  <option value="colonna">${L('Colonna — la classica lista', 'Column — the classic list', 'Columna — la lista clásica')}</option>
-                  <option value="rivista">${L('Rivista — affiancati, come una griglia', 'Magazine — side by side, like a grid', 'Revista — en paralelo, como una rejilla')}</option>
-                  <option value="sezioni">${L('Sezioni — pagina lunga da scorrere', 'Sections — a long page to scroll', 'Secciones — página larga para desplazar')}</option>
+                  <option value="colonna">${L('Colonna (la classica lista)', 'Column (the classic list)', 'Columna (la lista clásica)')}</option>
+                  <option value="rivista">${L('Rivista (affiancati, come una griglia)', 'Magazine (side by side, like a grid)', 'Revista (en paralelo, como una rejilla)')}</option>
+                  <option value="sezioni">${L('Sezioni (pagina lunga da scorrere)', 'Sections (a long page to scroll)', 'Secciones (página larga para desplazar)')}</option>
                 </select></div>
               <div><label class="campo" for="lp-mov">${L('Movimento', 'Motion', 'Movimiento')}</label>
                 <select id="lp-mov" data-lpk="movimento">
-                  <option value="nessuno">${L('Fermo — nessuna animazione', 'Still — no animation', 'Quieto — sin animación')}</option>
-                  <option value="dolce">${L('Dolce — i contenuti compaiono mentre scorri', 'Gentle — content appears as you scroll', 'Suave — el contenido aparece al desplazar')}</option>
-                  <option value="cinema">${L('Cinema — parallasse, titoli parola per parola', 'Cinematic — parallax, word-by-word titles', 'Cine — paralaje, títulos palabra por palabra')}</option>
-                  <option value="crawl">${L('Star Wars — l’intestazione arriva in prospettiva', 'Star Wars — the header flies in with perspective', 'Star Wars — el encabezado llega en perspectiva')}</option>
+                  <option value="nessuno">${L('Fermo (nessuna animazione)', 'Still (no animation)', 'Quieto (sin animación)')}</option>
+                  <option value="dolce">${L('Dolce (i contenuti compaiono mentre scorri)', 'Gentle (content appears as you scroll)', 'Suave (el contenido aparece al desplazar)')}</option>
+                  <option value="cinema">${L('Cinema (parallasse, titoli parola per parola)', 'Cinematic (parallax, word-by-word titles)', 'Cine (paralaje, títulos palabra por palabra)')}</option>
+                  <option value="crawl">${L('Star Wars (l’intestazione arriva in prospettiva)', 'Star Wars (the header flies in with perspective)', 'Star Wars (el encabezado llega en perspectiva)')}</option>
                 </select></div>
               <div><label class="campo" for="lp-stile">${L('Stile di partenza', 'Starting style', 'Estilo de partida')}</label>
                 <select id="lp-stile" data-lpt="template">${opts(d.templates || [], LP.testa.template, NOMI_STILE)}</select></div>
@@ -20323,7 +20333,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
             </div>
             ${lpRng('interlinea', L('Interlinea', 'Line height', 'Interlineado'), 120, 200, Number(LP.tema.interlinea) || 150, '%')}
             ${lpRng('corpo', L('Grandezza del testo', 'Text size', 'Tamaño del texto'), 80, 130, Number(LP.tema.corpo) || 100, '%')}
-            <p class="suggerimento">${L('La grandezza vale per tutta la pagina insieme, così le proporzioni restano quelle. Lo spessore muove tutti i pesi in blocco — titoli, etichette, sottotitoli — e li tiene in scala fra loro: è la stessa pagina più leggera, non una pagina diversa.', 'Size applies to the whole page at once, so the proportions stay put. Weight moves every level together — headings, labels, sublabels — keeping them in scale: it is the same page, lighter, not a different page.', 'El tamaño vale para toda la página a la vez, así las proporciones no cambian. El grosor mueve todos los pesos juntos y los mantiene en escala: es la misma página más ligera, no otra página.')}</p>
+            <p class="suggerimento">${L('La grandezza vale per tutta la pagina insieme, così le proporzioni restano quelle. Lo spessore muove insieme tutti i pesi (titoli, etichette, sottotitoli) e li tiene in scala fra loro: è la stessa pagina più leggera, non una pagina diversa.', 'Size applies to the whole page at once, so the proportions stay put. Weight moves every level together (headings, labels, sublabels) keeping them in scale: it is the same page, lighter, not a different page.', 'El tamaño vale para toda la página a la vez, así las proporciones no cambian. El grosor mueve todos los pesos juntos y los mantiene en escala: es la misma página más ligera, no otra página.')}</p>
           </div>
         </div>
 
@@ -20448,7 +20458,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
               <option value="sempre">${L('Caricali subito (consigliato)', 'Load them right away (recommended)', 'Cárgalos enseguida (recomendado)')}</option>
               <option value="chiedi">${L('Caricali solo se il visitatore lo chiede', 'Load them only if the visitor asks', 'Cárgalos solo si el visitante lo pide')}</option>
             </select>
-            <p class="suggerimento">${L('Sul telefono il puntatore non c’è, quindi lì non cambia niente. Per i contenuti di altri siti: “Subito” è come funziona un sito normale; “Solo se lo chiede” mette al loro posto un cartello con un bottone, e verso quei siti non parte niente finché non lo premi. In tutti e due i casi <strong>la tua pagina non usa cookie</strong>: quelli eventuali sono di YouTube, Spotify o Twitch, e l\'informativa in fondo lo spiega — cambia da sé a seconda di cosa scegli qui.', 'There is no pointer on phones, so nothing changes there. For content from other sites: “Right away” is how a normal site works; “Only if asked” puts a card with a button in their place, and nothing goes out to those sites until you press it. Either way <strong>your page uses no cookies</strong>: any cookies belong to YouTube, Spotify or Twitch, and the notice at the bottom explains it.', 'En el móvil no hay puntero, así que ahí no cambia nada. Para el contenido de otros sitios: “Enseguida” es como funciona un sitio normal; “Solo si lo pide” pone en su lugar una tarjeta con un botón. En ambos casos <strong>tu página no usa cookies</strong>: los que haya son de YouTube, Spotify o Twitch, y el aviso al pie lo explica.')}</p>
+            <p class="suggerimento">${L('Sul telefono il puntatore non c’è, quindi lì non cambia niente. I contenuti di altri siti non partono mai senza il permesso di chi guarda. Con «Caricali subito», la prima volta che apre la pagina il visitatore trova una fascia che glielo chiede, e la sua scelta resta ricordata; con «Caricali solo se il visitatore lo chiede» la fascia non c’è, e al posto di ogni contenuto c’è un cartello con un bottone. In tutti e due i casi <strong>la tua pagina non usa cookie</strong>: quelli eventuali sono di YouTube, Spotify o Twitch, e l\'informativa in fondo alla pagina lo spiega, seguendo quello che scegli qui.', 'There is no pointer on phones, so nothing changes there. Content from other sites never loads without the visitor’s permission. With “Load them right away”, the first time visitors open the page they see a strip asking for it, and their choice is remembered; with “Load them only if the visitor asks” there is no strip, and each piece of content is replaced by a card with a button. Either way <strong>your page uses no cookies</strong>: any cookies belong to YouTube, Spotify or Twitch, and the notice at the bottom of the page explains it, following what you choose here.', 'En el móvil no hay puntero, así que ahí no cambia nada. El contenido de otros sitios nunca se carga sin el permiso de quien mira. Con «Cárgalos enseguida», la primera vez que abre la página el visitante ve una franja que se lo pide, y su elección se recuerda; con «Cárgalos solo si el visitante lo pide» no hay franja, y en lugar de cada contenido hay una tarjeta con un botón. En ambos casos <strong>tu página no usa cookies</strong>: las que haya son de YouTube, Spotify o Twitch, y el aviso al pie de la página lo explica, según lo que elijas aquí.')}</p>
           </div>
         </div>
 
@@ -20554,7 +20564,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
     const t = ev.target.closest('[data-lptema]'); if (!t) return;
     const tema = TEMI_PRONTI.find((x) => x.id === t.dataset.lptema); if (!tema) return;
     LP.testa.template = tema.base;
-    LP.tema = { ...tema.tema, _pronto: tema.id };
+    LP.tema = { ...(LP.d?.temaBase || {}), ...tema.tema, _pronto: tema.id };
     caricaPaginaLink(true).then(lpAnteprima);
   };
   const suCarica = (ev) => {
@@ -20614,9 +20624,9 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
     const scartati = Math.max(0, (r?.inviati || 0) - (r?.salvati || 0));
     const esito = document.getElementById('lp-esito');
     if (esito) esito.textContent = scartati > 0
-      ? L(`Pubblicata ✓ — ${scartati} blocco/hi non salvati: manca un'etichetta o un indirizzo valido (https://…).`,
-        `Published ✓ — ${scartati} block(s) not saved: a label or a valid address (https://…) is missing.`,
-        `Publicada ✓ — ${scartati} bloque(s) no guardados: falta una etiqueta o una dirección válida (https://…).`)
+      ? L(`Pubblicata ✓, ma ${scartati === 1 ? 'un pezzo non si è salvato' : scartati + ' pezzi non si sono salvati'}.`,
+        `Published ✓, but ${scartati === 1 ? 'one piece was' : scartati + ' pieces were'} not saved.`,
+        `Publicada ✓, pero ${scartati === 1 ? 'una pieza no se guardó' : scartati + ' piezas no se guardaron'}.`)
       : L('Pubblicata ✓ è già online.', 'Published ✓ it’s already live.', 'Publicada ✓ ya está online.');
     toast(L('Pagina pubblicata ✓', 'Page published ✓', 'Página publicada ✓'));
     conScrollFermo(() => caricaPaginaLink());
@@ -20930,7 +20940,7 @@ function lpRenderBlocchi() {
           <button type="button" class="btn secondario mini" data-lpsoc="via" data-lpb="${i}" data-lpv="${j}" title="${L('Togli', 'Remove', 'Quitar')}">${_lpVia}</button>
         </div>
         <div class="lp-icone piccole">${(d.icone || []).map((k) => `<button type="button" class="lp-ipick${k === v.icona ? ' sel' : ''}" data-lpico="${esc(k)}" data-lpb="${i}" data-lpv="${j}" title="${esc(k)}">${lpIco(k, 15)}</button>`).join('')}</div>`).join('')
-        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi social', 'Add social', 'Añadir red')}</button></p>
+        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}"${lpVociPiene(b) ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi social', 'Add social', 'Añadir red')}</button></p>
            <p class="suggerimento">${L('Icone piccole in fila. L\'icona la riconosco dall\'indirizzo.', 'Small icons in a row. I detect the icon from the address.', 'Iconos pequeños en fila. El icono lo reconozco por la dirección.')}</p>`;
     } else if (b.tipo === 'titolo' || b.tipo === 'testo') {
       const max = b.tipo === 'titolo' ? d.limiti.titolo : d.limiti.testo;
@@ -20956,14 +20966,14 @@ function lpRenderBlocchi() {
         <select data-lpb="${i}" data-lpf="formato">${Object.keys(FORM).map((k) => `<option value="${k}"${(b.formato || 'auto') === k ? ' selected' : ''}>${esc(FORM[k])}</option>`).join('')}</select>
         <label class="campo spazio-sopra">${L('Altezza del riquadro', 'Box height', 'Altura del recuadro')}
           <span class="tenue" data-lpalt-v="${i}">${Number(b.altezza) > 0 ? Number(b.altezza) + 'px' : L('automatica', 'automatic', 'automática')}</span></label>
-        <input type="range" data-lpb="${i}" data-lpf="altezza" min="0" max="900" step="10" value="${Number(b.altezza) || 0}">
+        <input type="range" data-lpb="${i}" data-lpf="altezza" min="0" max="${d.limiti.altezzaEmbed}" step="10" value="${Number(b.altezza) || 0}">
         <div class="griglia-campi spazio-sopra">
           <div><label class="campo">${L('Colore dietro al riquadro', 'Colour behind the frame', 'Color detrás del marco')}</label>
             <input aria-label="${esc(L('Colore dietro al riquadro', 'Colour behind the frame', 'Color detrás del marco'))}" type="color" data-lpb="${i}" data-lpf="sfondo" value="${esc(b.sfondo || LP.tema.bordo || '#000000')}"></div>
         </div>
         <p class="suggerimento">${L('Il contenuto di un altro sito ha i suoi angoli arrotondati: negli spicchi che restano si vedeva la pagina. Di partenza li riempie il colore del bordo, così sembrano cornice e non un buco. Se preferisci, mettici il colore che vedi dentro al contenuto e spariscono del tutto.', 'Content from another site has its own rounded corners: in the wedges left over you could see the page through. By default the border colour fills them, so they read as frame and not as a hole. If you prefer, put the colour you see inside the content and they disappear entirely.', 'El contenido de otro sitio tiene sus esquinas redondeadas: en las cuñas que quedan se veía la página. Por defecto las rellena el color del borde, así parecen marco y no un agujero. Si lo prefieres, pon el color que ves dentro del contenido y desaparecen del todo.')}
           ${b.sfondo ? `<button type="button" class="btn secondario mini" data-lpvia-emb="${i}">${L('Rimetti come il tema', 'Back to theme', 'Como el tema')}</button>` : ''}</p>
-        <p class="suggerimento">${L('A zero decide il sito. Le piattaforme non ci dicono quanto è alto il loro contenuto — è un pezzo di un altro sito, non lo possiamo misurare — quindi se sotto ti avanza spazio vuoto, o il contenuto è tagliato, aggiustalo qui a occhio guardando l\'anteprima.', 'At zero the site decides. Platforms don\'t tell us how tall their content is — it\'s a piece of another site, we can\'t measure it — so if you see empty space below, or the content is cut, set it here by eye while watching the preview.', 'En cero decide el sitio. Las plataformas no nos dicen la altura de su contenido — es un trozo de otro sitio, no podemos medirlo — así que si te sobra espacio abajo, o el contenido queda cortado, ajústalo aquí a ojo mirando la vista previa.')}</p>
+        <p class="suggerimento">${L('A zero decide il sito. Le piattaforme non ci dicono quanto è alto il loro contenuto: è un pezzo di un altro sito, e non lo possiamo misurare. Se sotto ti avanza spazio vuoto, o il contenuto è tagliato, aggiustalo qui a occhio guardando l\'anteprima.', 'At zero the site decides. Platforms don\'t tell us how tall their content is: it\'s a piece of another site, and we can\'t measure it. If you see empty space below, or the content is cut, set it here by eye while watching the preview.', 'En cero decide el sitio. Las plataformas no nos dicen la altura de su contenido: es un trozo de otro sitio, y no podemos medirlo. Si te sobra espacio abajo, o el contenido queda cortado, ajústalo aquí a ojo mirando la vista previa.')}</p>
         <p class="suggerimento">${L('Incolla l\'indirizzo normale, al resto ci penso io. Va bene sia un singolo contenuto sia una PAGINA intera: canale YouTube, profilo TikTok, pagina Facebook, artista Spotify, profilo SoundCloud, canale Twitch o Kick. Oppure un video, uno short, un post o un reel di Instagram, un brano, un album, una playlist, un podcast, una clip. Riconosco anche Apple Music, Deezer e Vimeo.', 'Paste the normal address, I handle the rest. A single item or a whole PAGE both work: YouTube channel, TikTok profile, Facebook page, Spotify artist, SoundCloud profile, Twitch or Kick channel. Or a video, a short, an Instagram post or reel, a track, an album, a playlist, a podcast, a clip. I also recognise Apple Music, Deezer and Vimeo.', 'Pega la dirección normal, del resto me encargo yo. Vale tanto un contenido suelto como una PÁGINA entera: canal de YouTube, perfil de TikTok, página de Facebook, artista de Spotify, perfil de SoundCloud, canal de Twitch o Kick. O un vídeo, un short, una publicación o un reel de Instagram, una canción, un álbum, una lista, un podcast, un clip. También reconozco Apple Music, Deezer y Vimeo.')}</p>
         <p class="suggerimento">${L('Due limiti che non dipendono da noi: il profilo Instagram e la timeline di X non si possono incorporare (le due piattaforme non lo permettono). Di Instagram puoi mettere un post o un reel.', 'Two limits that are not ours: Instagram profiles and X timelines cannot be embedded (those platforms don\'t allow it). From Instagram you can embed a post or a reel.', 'Dos límites que no dependen de nosotros: el perfil de Instagram y la línea de X no se pueden incorporar (esas plataformas no lo permiten). De Instagram puedes poner una publicación o un reel.')}</p>`;
     } else if (b.tipo === 'eroe') {
@@ -20986,7 +20996,7 @@ function lpRenderBlocchi() {
           <input type="text" data-lpb="${i}" data-lpv="${j}" data-lpf="voceEtichetta" maxlength="40" value="${esc(v.etichetta || '')}" placeholder="${esc(L('es. follower', 'e.g. followers', 'p. ej. seguidores'))}">
           <button type="button" class="btn secondario mini" data-lpsoc="via" data-lpb="${i}" data-lpv="${j}" title="${L('Togli', 'Remove', 'Quitar')}">${_lpVia}</button>
         </div>`).join('')
-        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi numero', 'Add number', 'Añadir número')}</button></p>
+        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}"${lpVociPiene(b) ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi numero', 'Add number', 'Añadir número')}</button></p>
            <p class="suggerimento">${L('Follower, anni di dirette, ore in diretta, paesi visitati: tre numeri grossi dicono chi sei più di un paragrafo.', 'Followers, years streaming, hours live, countries visited: three big numbers say who you are better than a paragraph.', 'Seguidores, años en directo, horas emitidas, países visitados: tres números grandes dicen quién eres mejor que un párrafo.')}</p>`;
     } else if (b.tipo === 'faq') {
       campi = (b.voci || []).map((v, j) => `
@@ -20997,7 +21007,7 @@ function lpRenderBlocchi() {
           </div>
           <textarea class="spazio-sopra" data-lpb="${i}" data-lpv="${j}" data-lpf="voceR" rows="2" maxlength="${d.limiti.testo}" placeholder="${esc(L('La risposta', 'The answer', 'La respuesta'))}">${esc(v.r || '')}</textarea>
         </div>`).join('')
-        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi domanda', 'Add question', 'Añadir pregunta')}</button></p>
+        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}"${lpVociPiene(b) ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi domanda', 'Add question', 'Añadir pregunta')}</button></p>
            <p class="suggerimento">${L('Si aprono e si chiudono da sole, senza una riga di script. “Che PC usi?”, “Quando streammi?”, “Posso usare le tue clip?”', 'They open and close on their own, without a line of script. “What PC do you use?”, “When do you stream?”, “Can I use your clips?”', 'Se abren y cierran solas, sin una línea de script. “¿Qué PC usas?”, “¿Cuándo transmites?”, “¿Puedo usar tus clips?”')}</p>`;
     } else if (b.tipo === 'sostieni') {
       const dn = impostazioni().donazioni || {};
@@ -21031,7 +21041,7 @@ function lpRenderBlocchi() {
       campi = `<input type="text" data-lpb="${i}" data-lpf="testo" maxlength="${d.limiti.titolo}" value="${esc(b.testo || '')}" placeholder="${esc(L('es. OGNI SERA DALLE 21 ·', 'e.g. EVERY NIGHT FROM 9PM ·', 'p. ej. CADA NOCHE DESDE LAS 21 ·'))}">
         <label class="campo spazio-sopra">${L('Velocità', 'Speed', 'Velocidad')}</label>
         <select data-lpb="${i}" data-lpf="velocita">${Object.keys(VEL).map((k) => `<option value="${k}"${(b.velocita || 'media') === k ? ' selected' : ''}>${esc(VEL[k])}</option>`).join('')}</select>
-        <p class="suggerimento">${L('Una riga di testo grande che scorre in continuo, come sui siti fatti bene. Chiudi con un simbolo (·, —, ★) così il giro non si vede.', 'A big line of text scrolling forever, like on well-made sites. End it with a symbol (·, —, ★) so the loop doesn\'t show.', 'Una línea de texto grande que se desplaza sin fin, como en los sitios bien hechos. Termínala con un símbolo (·, —, ★) para que no se note el bucle.')}</p>`;
+        <p class="suggerimento">${L('Una riga di testo grande che scorre in continuo, come sui siti fatti bene. Chiudila con un simbolo (·, ★) così il giro non si vede.', 'A big line of text scrolling forever, like on well-made sites. End it with a symbol (·, ★) so the loop doesn\'t show.', 'Una línea de texto grande que se desplaza sin fin, como en los sitios bien hechos. Termínala con un símbolo (·, ★) para que no se note el bucle.')}</p>`;
     } else if (b.tipo === 'griglia') {
       campi = (b.voci || []).map((v, j) => `
         <div class="lp-tessera-ed">
@@ -21044,7 +21054,7 @@ function lpRenderBlocchi() {
           <input type="url" class="spazio-sopra" data-lpb="${i}" data-lpv="${j}" data-lpf="voceLink" maxlength="${d.limiti.url}" value="${esc(v.url || '')}" placeholder="${esc(L('Dove porta (facoltativo)', 'Where it goes (optional)', 'Adónde lleva (opcional)'))}">
           <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpup="${i}.${j}">${_bIco(ICO.carica)}${L('Immagine', 'Image', 'Imagen')}</button></p>
         </div>`).join('')
-        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi tessera', 'Add card', 'Añadir ficha')}</button></p>
+        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}"${lpVociPiene(b) ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi tessera', 'Add card', 'Añadir ficha')}</button></p>
            <p class="suggerimento">${L('Tessere con immagine affiancate: le tue clip, i tuoi video, i tuoi progetti. Contenuti da guardare, non righe da leggere.', 'Cards with images side by side: your clips, videos, projects. Things to look at, not lines to read.', 'Fichas con imagen en paralelo: tus clips, vídeos, proyectos. Cosas para mirar, no líneas para leer.')}</p>`;
     } else if (b.tipo === 'diretta') {
       const PIA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
@@ -21182,7 +21192,7 @@ function lpClicBlocchi(ev) {
       b.voci = b.voci || [];
       const vuota = { griglia: { img: '', titolo: '', testo: '', url: '' }, numeri: { n: '', etichetta: '' },
         faq: { d: '', r: '' } }[b.tipo] || { icona: 'link', url: '' };
-      if (b.voci.length < 12) b.voci.push({ ...vuota });
+      if (!lpVociPiene(b)) b.voci.push({ ...vuota });
     }
     else b.voci.splice(Number(so.dataset.lpv), 1);
     lpRenderBlocchi(); lpAnteprima();
@@ -25760,8 +25770,11 @@ function attivaPiattaforma() {
       if (cosa === 'scarta' && !(await chiediSe({ titolo: L('Scarto questa immagine?', 'Discard this image?', '¿Descarto esta imagen?'), pericolo: true,
         testo: L('Si cancella dal server. La donazione resta nel registro.', 'It is deleted from the server. The donation stays in the register.', 'Se borra del servidor. La donación se queda en el registro.'),
         si: L('Scartala', 'Discard it', 'Descártala') }))) return;
+      const daDove = { stripe: L(', dal tuo conto Stripe', ', from your Stripe account', ', desde tu cuenta de Stripe'),
+        satispay: L(', dal tuo negozio Satispay', ', from your Satispay shop', ', desde tu tienda Satispay'),
+        kofi: L(', dalla tua pagina Ko-fi', ', from your Ko-fi page', ', desde tu página de Ko-fi') }[li.dataset.fonte] || '';
       if (cosa === 'rimborsa' && !(await chiediSe({ titolo: L('Rimborso questa donazione?', 'Refund this donation?', '¿Reembolso esta donación?'), pericolo: true,
-        testo: L('I soldi tornano a chi te li ha mandati, dal tuo conto Stripe. Non si può annullare.', 'The money goes back to whoever sent it, from your Stripe account. It cannot be undone.', 'El dinero vuelve a quien te lo mandó, desde tu cuenta de Stripe. No se puede deshacer.'),
+        testo: L(`I soldi tornano a chi te li ha mandati${daDove}. Non si può annullare.`, `The money goes back to whoever sent it${daDove}. It cannot be undone.`, `El dinero vuelve a quien te lo mandó${daDove}. No se puede deshacer.`),
         si: L('Rimborsa', 'Refund', 'Reembolsa') }))) return;
       b.disabled = true;
       try {

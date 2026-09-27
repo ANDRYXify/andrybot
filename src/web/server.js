@@ -1994,6 +1994,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Funziona per tutti i piani, Essenziale gratuito compreso.
   // requireOwner: la pagina pubblica è l'identità dello streamer, non
   // un'impostazione del canale, quindi i moderatori non la toccano.
+  const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
   app.get('/api/linkpage', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const s = streamers.get(login);
@@ -2006,11 +2007,16 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       icone: ICONE_LINKPAGE,
       tipi: TIPI_BLOCCO,
       limiti: LIMITI_LINKPAGE,
+      // il tema di una pagina che nessuno ha toccato: un tema pronto parte da
+      // qui, cosi' quello che non dice ha il valore che la pagina usera' davvero
+      temaBase: linkPage.pulisci({}).tema,
       avatarTwitch: await avatarDi(login, { aggiorna: true }),
       visite: visitePagina.riassunto(login),
-      // per chi parte da zero: un primo blocco già pronto sul suo canale
-      suggeriti: linkPage.esiste(login) ? [] : [
-        { tipo: 'link', icona: 'twitch', label: 'Twitch', url: `https://twitch.tv/${login}`, sotto: '', evidenzia: true },
+      // per chi parte da zero: un primo blocco già pronto sul suo canale, sulla
+      // piattaforma dove vive davvero. Chi ha solo un server Discord un canale
+      // da linkare non ce l'ha, e non gli si inventa.
+      suggeriti: linkPage.esiste(login) || !urlCanale(login) ? [] : [
+        { tipo: 'link', icona: piattaformaDi(login), label: NOME_PIATTAFORMA[piattaformaDi(login)] || '', url: urlCanale(login), sotto: '', evidenzia: true },
       ],
       pagina: {
         headline: p.headline || '', tagline: p.tagline || '',
@@ -2114,6 +2120,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // l'aspetto della pagina link, per mostrare da dove viene e per partire da li'
       aspettoLink: link ? { template: link.template, tema: link.tema } : null,
       templates: TEMPLATE_LINKPAGE, fonts: FONT_LINKPAGE, icone: ICONE_LINKPAGE, tipi: TIPI_BLOCCO, limiti: LIMITI_LINKPAGE,
+      temaBase: paginaDona.pulisci({}).tema,
       avatarTwitch: await avatarDi(login, { aggiorna: true }),
       visite: null,
       // per chi parte da zero: il tasto delle donazioni, che qui e' il cuore della pagina
@@ -3232,6 +3239,9 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       // preferenza: e' quello che decide se una funzione ha senso o no (le clip,
       // la categoria, lo scudo anti-bot esistono solo su Twitch).
       piattaforma: piattaformaDi(user.login),
+      // L'indirizzo pubblico del canale, vuoto per chi ha solo Discord: il
+      // pannello lo scrive sulle grafiche cosi' com'e', senza rifarselo.
+      indirizzo: urlCanale(user.login),
       // Per ogni scheda del pannello, la pagina che la spiega (se c'è): la
       // dichiara la pagina stessa, accanto al proprio contenuto.
       aiuti: AIUTI_LINGUE,
