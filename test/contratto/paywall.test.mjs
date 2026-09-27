@@ -59,8 +59,8 @@ test('chi non paga vede il muro e la strada: la scheda Abbonamento vende, i muri
   assert.ok(!APP.includes('href="#stato" data-scheda="stato">${L(\'Vedi'), 'i muri non mandano piu\' alla scheda Stato');
   assert.equal((APP.match(/href="#sottoscrizione" data-scheda="sottoscrizione"/g) || []).length >= 3, true, 'muro dentro la scheda, scheda murata, scheda Stato');
   const card = fra(APP, 'async function caricaSottoscrizione() {', '\nconst MARCHI = {');
-  assert.ok(card.includes('configuratoreHtml(piani, { gia: [...mieiPacchetti], titolo: titoloComp })'), 'lo stesso compositore della vetrina');
-  assert.ok(card.includes('if (vende) montaConfiguratore(box, piani, { gia: [...mieiPacchetti], suOk:'));
+  assert.ok(card.includes('configuratoreHtml(piani, { gia: [...mieiPacchetti], haBase, titolo: titoloComp })'), 'lo stesso compositore della vetrina');
+  assert.ok(card.includes('if (vende) montaConfiguratore(box, piani, { gia: [...mieiPacchetti], haBase, suOk:'));
   assert.ok(card.includes("api('/api/abbonamento/checkout', { method: 'POST', body: { pacchetti, bundle } })"));
   for (const stato of ['guasto', 'pausa', 'finito', 'provaFinita']) assert.ok(card.includes(`} else if (${stato}) {`), `la scheda racconta lo stato «${stato}»`);
   assert.ok(card.includes("const mieiPacchetti = new Set(abAttivo && !prova ? (ab.pacchetti || []) : []);"), 'un extra di un abbonamento finito non e\' «attivo»');
