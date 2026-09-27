@@ -115,3 +115,15 @@ test('i percorsi dell\'editor dei moduli e della pagina di ascolto sono quelli d
     for (const x of pezzi) assert.ok(nomi.has(x), `«${p}»: «${x}» non e' nel menu`);
   }
 });
+
+// Il giro della scheda Comandi vocali: il passo sul microfono punta al tasto che
+// apre la pagina di ascolto, non all'interruttore dei momenti salienti (che e'
+// l'ascolto del server e col microfono non c'entra).
+test('il passo sul microfono punta al tasto che apre l\'ascolto vocale', () => {
+  const i = APP.indexOf('const GUIDE = {');
+  const guida = APP.slice(APP.indexOf('  ascolto: {', i), APP.indexOf(']] },', APP.indexOf('  ascolto: {', i)));
+  const passo = [...guida.matchAll(/\['([^']*microfono[^']*)', '[^']*', '[^']*', '(#[a-z0-9-]+)'\]/gi)][0];
+  assert.ok(passo, 'c\'e\' un passo che parla del microfono');
+  const id = passo[2].slice(1);
+  assert.match(APP, new RegExp(`<a [^>]*id="${id}"[^>]*href="/voce\\.html"`), `#${id} e' il tasto che apre la pagina di ascolto`);
+});
