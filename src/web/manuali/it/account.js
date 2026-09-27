@@ -1,5 +1,9 @@
 // Manuale: account e abbonamento. La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
+// I prezzi vengono dal listino che vende (numeri.js → features/abbonamenti.js).
+import { PREZZO_BASE, PREZZO_ADDON, PREZZO_BUNDLE } from '../numeri.js';
+
+const TUTTO = PREZZO_BUNDLE('tutto');
 
 export default {
   slug: 'account',
@@ -256,11 +260,11 @@ export default {
     { tabella: [
       ['Piano o extra', 'Prezzo al mese', 'Cosa accende', 'Se lo spegni'],
       ['Essenziale', 'Gratis', 'Il bot in chat col tuo account, comandi e moduli illimitati, moderazione e scudo anti-bot, overlay, alert e contatori, giochi e monete, sondaggi, effetti anche a punti canale, richieste musicali.', 'Non si spegne.'],
-      ['Base', '€2,99', 'Tutto l\'Essenziale, più gli avvisi quando vai in diretta su Telegram e Discord, gli avvisi dei nuovi post su TikTok, YouTube e Instagram, il bot su Telegram, lo Studio Web e un moderatore.', 'Gli avvisi non partono più e non puoi invitare né accettare moderatori. Le impostazioni restano.'],
-      ['Clip Automatiche', '€1,99', 'I momenti migliori clippati e salvati da soli mentre trasmetti su Twitch.', 'Le clip già fatte restano. Non ne nascono di nuove.'],
-      ['Comandi Vocali', '€0,99', 'Guidi il bot con la voce: cambi titolo e categoria e dai VIP mentre trasmetti.', 'L\'ascolto si ferma. I moduli con innesco vocale restano scritti, ma non scattano.'],
-      ['Squadra', '€1,99', 'Fino a 10 moderatori sul pannello.', 'Non puoi invitarne né accettarne oltre il posto del Base.'],
-      ['Tutto', '€3,99 invece di €4,97', 'I tre extra insieme.', 'Come spegnere i tre extra.'],
+      ['Base', PREZZO_BASE(), 'Tutto l\'Essenziale, più gli avvisi quando vai in diretta su Telegram e Discord, gli avvisi dei nuovi post su TikTok, YouTube e Instagram, il bot su Telegram, lo Studio Web e un moderatore.', 'Gli avvisi non partono più e non puoi invitare né accettare moderatori. Le impostazioni restano.'],
+      ['Clip Automatiche', PREZZO_ADDON('clip'), 'I momenti migliori clippati e salvati da soli mentre trasmetti su Twitch.', 'Le clip già fatte restano. Non ne nascono di nuove.'],
+      ['Comandi Vocali', PREZZO_ADDON('voce'), 'Guidi il bot con la voce: cambi titolo e categoria e dai VIP mentre trasmetti.', 'L\'ascolto si ferma. I moduli con innesco vocale restano scritti, ma non scattano.'],
+      ['Squadra', PREZZO_ADDON('squadra'), 'Fino a 10 moderatori sul pannello.', 'Non puoi invitarne né accettarne oltre il posto del Base.'],
+      ['Tutto', `${TUTTO.prezzo} invece di ${TUTTO.pieno}`, 'I tre extra insieme.', 'Come spegnere i tre extra.'],
     ] },
     { p: [
       'Gli extra si aggiungono sopra il Base: dall\'Essenziale, scegliere un extra vuol dire prendere anche il Base.',
@@ -270,7 +274,7 @@ export default {
     { p: ['Quando i pagamenti dal pannello sono aperti, qui c\'è il riquadro per aggiungere. Il suo titolo dice da dove parti: «Il Base, più quello che vuoi» dall\'Essenziale, «Per continuare dopo la prova» durante una prova, «Gli extra che ti mancano» se hai già un abbonamento.'] },
     { passi: [
       { t: 'Spunta cosa ti serve. ', d: 'Accanto a ogni extra c\'è quanto aggiunge al mese. Il totale si aggiorna mentre spunti.' },
-      { t: 'Guarda il totale. ', d: 'Se sei sull\'Essenziale comprende il Base, e con niente spuntato dice «solo il canone Base». Se hai già il Base conta solo gli extra che aggiungi. Se scegli tutti e tre gli extra e non ne hai ancora nessuno, lo sconto di «Tutto» si applica da solo: «Col pacchetto «Tutto» paghi €3,99 invece di €4,97: applicato.».' },
+      { t: 'Guarda il totale. ', d: `Se sei sull'Essenziale comprende il Base, e con niente spuntato dice «solo il canone Base». Se hai già il Base conta solo gli extra che aggiungi. Se scegli tutti e tre gli extra e non ne hai ancora nessuno, lo sconto di «Tutto» si applica da solo: «Col pacchetto «Tutto» paghi ${TUTTO.prezzo} invece di ${TUTTO.pieno}: applicato.».` },
       { t: 'Premi «Attiva». ', d: 'Se non hai un abbonamento, si apre la pagina di pagamento di Stripe. Se ce l\'hai, gli extra entrano in quello e il Base non si ripaga.' },
     ] },
     { p: [
