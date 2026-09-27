@@ -3533,7 +3533,12 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // login self-service in attesa di abbonarsi (req.session.abbonando). Off → 503.
   app.post('/api/abbonamento/checkout', wrap(async (req, res) => {
     if (!config.stripe.attivo) return res.status(503).json({ errore: 'Gli abbonamenti non sono ancora attivi.' });
-    const login = identitaDi(currentUser(req)) || String(req.session?.abbonando?.login || '').toLowerCase();
+    // L'abbonamento e' del canale che si sta gestendo, e lo paga chi lo possiede:
+    // un moderatore da qui avrebbe pagato per il SUO canale credendo di farlo
+    // per questo.
+    const u = currentUser(req);
+    if (u && !isOwner(req)) return res.status(403).json({ errore: 'solo il proprietario del canale può farlo' });
+    const login = u ? String(u.login || '').toLowerCase() : String(req.session?.abbonando?.login || '').toLowerCase();
     if (!login) return res.status(401).json({ errore: 'non autenticato' });
     // BUNDLE curato → prezzo unico scontato (i suoi add-on li sblocca il gating).
     // Altrimenti à la carte (retrocompat: 'pro' → base + tutti gli add-on).
@@ -3648,8 +3653,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   }));
 
   // portale clienti Stripe (gestione/disdetta). Serve un cliente Stripe esistente.
-  app.post('/api/abbonamento/portale', requireLogin, wrap(async (req, res) => {
-    const s = subscriptions.get(identitaDi(currentUser(req)));
+  app.post('/api/abbonamento/portale', requireOwner, wrap(async (req, res) => {
+    const s = subscriptions.get(currentUser(req).login);
     const url = s?.stripe_customer ? await abbonamenti.creaPortale({ customerId: s.stripe_customer }) : null;
     if (!url) return res.status(503).json({ errore: 'Gestione abbonamento non disponibile.' });
     res.json({ url });

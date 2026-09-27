@@ -227,7 +227,7 @@ export default {
       'Qui vedi cosa hai attivo, cosa comprende, e come cambiarlo o annullarlo. Nessun vincolo: si disdice quando vuoi.',
       'La regola: <strong>l\'Essenziale è gratis e resta gratis</strong>, senza carta. Il resto si aggiunge uno per uno e si toglie quando non serve più.',
       'La scheda è una carta sola, «La tua sottoscrizione», divisa nelle parti qui sotto.',
-      'Un moderatore vede il piano del canale e cosa è acceso. Pagare, aggiungere un extra e disdire sono cose del proprietario.',
+      'Un moderatore vede il piano del canale e cosa è acceso. Pagare, aggiungere un extra e disdire sono cose del proprietario: al moderatore la scheda non mostra i tasti per farlo, e al posto della gestione dice «Pagare, aggiungere un extra e disdire sono cose del proprietario del canale.».',
     ] },
 
     { h3: 'Piano attuale' },
@@ -289,7 +289,7 @@ export default {
       'Un extra compare solo quando il suo prezzo è pronto per la vendita. Se ne manca uno, riprova più tardi.',
       'Se Stripe in quel momento non risponde, leggi «In questo momento non riesco a parlare con Stripe: riprova fra poco.». Se il piano scelto non si può vendere adesso, leggi «Piano non disponibile.».',
     ] },
-    { p: ['Nelle altre schede, una funzione fuori dal tuo piano mostra «Non nel tuo piano», con «Guarda la demo» e il tasto «Sblocca con «…»», che la aggiunge da lì. Sotto c\'è «Vedi tutti i piani e i pacchetti», che porta qui. Se i pagamenti dal pannello non sono aperti, al posto del tasto leggi quale pacchetto la comprende e «Chiedi ad andryxify di abilitarla.».'] },
+    { p: ['Nelle altre schede, una funzione fuori dal tuo piano mostra «Non nel tuo piano», con «Guarda la demo» e il tasto «Sblocca con «…»», che la aggiunge da lì. Sotto c\'è «Vedi tutti i piani e i pacchetti», che porta qui. Se i pagamenti dal pannello non sono aperti, al posto del tasto leggi quale pacchetto la comprende e «Chiedi ad andryxify di abilitarla.». Un moderatore il tasto non lo vede: legge quale pacchetto la comprende e «Può aggiungerla il proprietario del canale.».'] },
 
     { h3: 'Gestione e disdetta' },
     { p: ['Il tasto apre il <strong>portale sicuro dei pagamenti</strong> di Stripe. Il nome del tasto cambia con la situazione:'] },

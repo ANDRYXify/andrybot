@@ -3531,7 +3531,7 @@ function muroPacchetto(funz, cosa, addon = FUNZ_ADDON[funz]) {
   if (_chiusoDalProprietario(funz)) return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${esc(cosa)} ${L('è chiuso dal proprietario', 'is closed by the owner', 'está cerrado por el propietario')}${stato.accesso.nota ? ': ' + esc(stato.accesso.nota) : ''}.</span></div>`;
   const na = NOME_ADDON[addon] || ['', '', ''];
   const nome = L(na[0], na[1], na[2]);
-  const compra = !!stato?.stripeAttivo && !!addon;
+  const compra = !!stato?.stripeAttivo && !!addon && stato?.ruolo !== 'moderatore';
   return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${esc(cosa)} ${L('non è nel tuo piano.', 'is not in your plan.', 'no está en tu plan.')}</span>
     ${compra ? `<button type="button" class="btn secondario" data-sblocca="${esc(addon)}">${L('Sblocca con', 'Unlock with', 'Desbloquea con')} «${esc(nome)}»</button>`
       : `<a href="#sottoscrizione" data-scheda="sottoscrizione">${L('Vedi i piani', 'See the plans', 'Ver los planes')}</a>`}
@@ -3558,7 +3558,8 @@ function paginaBloccata(id) {
   const passi = (g?.come || []).map((c) => `<li>${L(c[0], c[1], c[2])}</li>`).join('');
   const na = NOME_ADDON[addon] || ['', '', ''];
   const nomePacchetto = L(na[0], na[1], na[2]);
-  const puoComprare = !!stato?.stripeAttivo && !!addon;
+  const proprietario = stato?.ruolo !== 'moderatore';
+  const puoComprare = !!stato?.stripeAttivo && !!addon && proprietario;
   return `<div class="carta blocco-carta">
     <div class="blocco-testa">${_bIco(ICO.lucchetto)}<h2>${esc(nomeScheda)}</h2>
       <span class="badge giallo">${L('Non nel tuo piano', 'Not in your plan', 'No en tu plan')}</span></div>
@@ -3568,7 +3569,7 @@ function paginaBloccata(id) {
       <a class="btn secondario" href="/?demo=1#${esc(id)}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Guarda la demo', 'See the demo', 'Ver la demo')}</a>
       ${puoComprare
         ? `<button class="btn grande" data-sblocca="${esc(addon)}">${_bIco(ICO.effetti)}${L('Sblocca con', 'Unlock with', 'Desbloquea con')} «${esc(nomePacchetto)}»</button>`
-        : `<span class="suggerimento">${L('Questa funzione fa parte del pacchetto', 'This feature is part of the package', 'Esta función forma parte del paquete')} <strong>${esc(nomePacchetto)}</strong>. ${L('Chiedi ad andryxify di abilitarla.', 'Ask andryxify to enable it.', 'Pide a andryxify que la habilite.')}</span>`}
+        : `<span class="suggerimento">${L('Questa funzione fa parte del pacchetto', 'This feature is part of the package', 'Esta función forma parte del paquete')} <strong>${esc(nomePacchetto)}</strong>. ${proprietario ? L('Chiedi ad andryxify di abilitarla.', 'Ask andryxify to enable it.', 'Pide a andryxify que la habilite.') : L('Può aggiungerla il proprietario del canale.', 'The channel owner can add it.', 'Puede añadirla el propietario del canal.')}</span>`}
     </div>
     ${puoComprare ? `<p class="suggerimento spazio-sopra"><a href="#sottoscrizione" data-scheda="sottoscrizione">${L('Vedi tutti i piani e i pacchetti', 'See all plans and packages', 'Ver todos los planes y paquetes')}</a></p>` : ''}
   </div>`;
@@ -19451,7 +19452,8 @@ async function caricaSottoscrizione() {
       ${mio ? `<span class="badge verde">${L('attivo', 'active', 'activo')}</span>` : ''}
     </div>`;
 
-  const vende = !!stato.stripeAttivo && !!piani && tier !== 'community' && !guasto && !pausa;
+  const proprietario = stato.ruolo !== 'moderatore';
+  const vende = proprietario && !!stato.stripeAttivo && !!piani && tier !== 'community' && !guasto && !pausa;
   const titoloComp = mieiPacchetti.size || (abAttivo && !prova)
     ? L('Gli extra che ti mancano', 'The extras you are missing', 'Los extras que te faltan')
     : prova ? L('Per continuare dopo la prova', 'To carry on after the trial', 'Para seguir después de la prueba')
@@ -19459,7 +19461,7 @@ async function caricaSottoscrizione() {
   const aggiungi = vende
     ? `<h3 class="spazio-sopra">${L('Puoi aggiungere', 'You can add', 'Puedes añadir')}</h3>
        ${configuratoreHtml(piani, { gia: [...mieiPacchetti], titolo: titoloComp })}`
-    : (altri.length && tier !== 'community' ? `<h3 class="spazio-sopra">${L('Puoi aggiungere', 'You can add', 'Puedes añadir')}</h3>
+    : (proprietario && altri.length && tier !== 'community' ? `<h3 class="spazio-sopra">${L('Puoi aggiungere', 'You can add', 'Puedes añadir')}</h3>
       <div class="sott-pacchetti">${altri.map((a) => cardAddon(a, false)).join('')}</div>
       <p class="suggerimento">${guasto || pausa
         ? L('Prima sistema il pagamento dal portale qui sotto: poi aggiungi quello che vuoi.', 'First sort out the payment from the portal below: then add whatever you want.', 'Primero arregla el pago desde el portal de abajo: luego añade lo que quieras.')
@@ -19467,6 +19469,8 @@ async function caricaSottoscrizione() {
 
   const gestione = tier === 'community'
     ? `<p class="suggerimento">${L('Niente da gestire: il tuo accesso arriva dalla community, non da un pagamento.', 'Nothing to manage: your access comes from the community, not from a payment.', 'Nada que gestionar: tu acceso viene de la comunidad, no de un pago.')}</p>`
+    : !proprietario
+      ? `<p class="suggerimento">${L('Pagare, aggiungere un extra e disdire sono cose del proprietario del canale.', 'Paying, adding an extra and cancelling are up to the channel owner.', 'Pagar, añadir un extra y cancelar son cosas del propietario del canal.')}</p>`
     : cliente
       ? `<p><button class="btn" id="sott-portale">${_bIco(ICO.carta)}${guasto ? L('Aggiorna la carta', 'Update the card', 'Actualizar la tarjeta') : abAttivo && !prova ? L('Gestisci, cambia carta o annulla', 'Manage, change card or cancel', 'Gestionar, cambiar tarjeta o cancelar') : L('Apri il portale dei pagamenti', 'Open the payment portal', 'Abrir el portal de pagos')}</button></p>
          <p class="suggerimento">${abAttivo && !prova
