@@ -530,7 +530,7 @@ export default {
 
     { h3: 'La pagina di ascolto vocale' },
     { p: [
-      'È la pagina che apri con «Apri l\'ascolto vocale». Si usa dal computer da cui streammi, con lo stesso accesso del pannello.',
+      'È la pagina che apri con «Apri l\'ascolto vocale». Si usa dal computer da cui streammi, con lo stesso accesso del pannello, e si legge nella lingua che hai scelto nel pannello.',
     ] },
     { tabella: [
       ['Parte', 'Cosa fa'],
@@ -539,7 +539,7 @@ export default {
       ['«Registro»', 'cosa ha sentito e cosa è successo, con l\'ora. Tiene le ultime 200 righe.'],
     ] },
     { p: [
-      'Il riconoscimento è in <strong>italiano</strong>. Su Chrome ed Edge usa quello del browser, che non scarica niente. Dove il browser non ce l\'ha (Dia, Arc, Brave) usa un motore locale: la prima volta scarica un modello di qualche decina di MB, poi funziona anche offline. Il cambio lo fa da solo e lo scrive nel registro.',
+      'Il riconoscimento è in <strong>italiano</strong>, qualunque sia la lingua della pagina. Su Chrome ed Edge usa quello del browser, che non scarica niente. Dove il browser non ce l\'ha (Dia, Arc, Brave) usa un motore locale: la prima volta scarica un modello di qualche decina di MB, poi funziona anche offline. Il cambio lo fa da solo e lo scrive nel registro.',
       'La stessa frase non scatta due volte in 4 secondi.',
       'Oltre ai tuoi moduli e ai due comandi di categoria e titolo, la pagina capisce il VIP: «<strong>vip a</strong> chiara», «vip a chiara <strong>per un mese</strong>» (anche «per 2 settimane», «per 3 giorni», «per sempre»; senza durata vale una settimana), e «<strong>togli vip a</strong> chiara». Il nome si cerca fra chi ha scritto in chat, e il bot risponde in chat: «👑 VIP a … per una settimana!», oppure «Non trovo nessuno che somigli a "…" in chat 🤔». Basta la parola «vip» seguita da un nome: attento a come la usi mentre parli.',
       'Durante una penitenza a punti canale la pagina manda anche le frasi intere, per contare le parole vietate. Nel registro leggi «Penitenza in corso: conto quello che dici finché non finisce.». Le penitenze le spiega il <a href="/manuale/interazione">manuale di sondaggi, giveaway e penitenze</a>.',

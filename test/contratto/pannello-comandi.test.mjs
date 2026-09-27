@@ -136,7 +136,7 @@ test('il passo sul microfono punta al tasto che apre l\'ascolto vocale', () => {
   const passo = [...guida.matchAll(/\['([^']*microfono[^']*)', '[^']*', '[^']*', '(#[a-z0-9-]+)'\]/gi)][0];
   assert.ok(passo, 'c\'e\' un passo che parla del microfono');
   const id = passo[2].slice(1);
-  assert.match(APP, new RegExp(`<a [^>]*id="${id}"[^>]*href="/voce\\.html"`), `#${id} e' il tasto che apre la pagina di ascolto`);
+  assert.match(APP, new RegExp(`<a [^>]*id="${id}"[^>]*href="/voce\\.html[?"]`), `#${id} e' il tasto che apre la pagina di ascolto`);
 });
 
 // L'azione «Metti una canzone in coda» dice il piano vero: le richieste
@@ -338,4 +338,34 @@ test('l\'editor dei moduli, la sua lista e i connettori passano tutti da L()', (
   }
   const sotto = oggetto('SOTTO_SCHEDE');
   for (const [, v] of Object.values(sotto).flatMap((x) => x.voci)) assert.ok(Array.isArray(v) || /^[A-Z]+ify$/.test(v), `sottoscheda «${v}» in tre lingue`);
+});
+
+// LA PAGINA DI ASCOLTO PARLA LA LINGUA DEL PANNELLO. Era tutta in italiano:
+// ora prende la lingua dal pannello (che gliela passa aprendola) e ogni testo
+// che scrive, in pagina e nel registro, passa da L(). Il riconoscimento resta
+// in italiano, e la pagina lo dice a chi la legge in un'altra lingua.
+test('la pagina di ascolto vocale parla tre lingue', () => {
+  const VOCE = leggi('src/web/public/voce.js');
+  const HTML = leggi('src/web/public/voce.html');
+  assert.match(VOCE, /const L = \(it, en, es\) =>/);
+  assert.match(VOCE, /localStorage\.getItem\('lingua'\)/, 'la stessa scelta del pannello');
+  assert.match(APP, /id="btn-apri-voce" href="\/voce\.html\?lang=\$\{L\('it', 'en', 'es'\)\}"/, 'e il pannello la passa aprendola');
+  const fuori = [];
+  const argomenti = (nome) => [...VOCE.matchAll(new RegExp(`\\b${nome}\\(`, 'g'))].map((m) => {
+    const da = m.index + m[0].length;
+    return VOCE.slice(da, fineGruppo(VOCE, da - 1));
+  });
+  for (const a of [...argomenti('logga'), ...argomenti('passaALocale')]) for (const p of fuoriDaL(a)) fuori.push(p);
+  for (const m of VOCE.matchAll(/\.textContent = ([^;]+);/g)) for (const p of fuoriDaL(m[1])) fuori.push(p);
+  assert.deepEqual(fuori.map((x) => x.trim()), [], 'testi della pagina fuori da L()');
+  const chiavi = [...HTML.matchAll(/data-t="([a-zA-Z]+)"/g)].map((m) => m[1]);
+  assert.ok(chiavi.length >= 7, 'i testi della pagina hanno la loro chiave');
+  for (const k of chiavi) assert.match(VOCE, new RegExp(`\\n  ${k}: \\['[^']`), `«${k}» ha le sue tre lingue`);
+  const testoFisso = HTML.slice(HTML.indexOf('<body>'), HTML.indexOf('<script')).replace(/<([a-z0-9]+)[^>]*data-t="[^"]*"[^>]*>[\s\S]*?<\/\1>/g, '');
+  // il tasto e lo stato li riscrive la pagina appena parte, nella sua lingua
+  assert.match(VOCE, /\naggiornaStato\(\);\n/, 'la pagina scrive subito tasto e stato');
+  const senzaStato = testoFisso.replace(/<button id="btn"[^>]*>[^<]*<\/button>/, '').replace(/<span id="statoTesto">[^<]*<\/span>/, '');
+  assert.deepEqual(siVede(senzaStato).map((x) => x.trim()), [], 'fuori dalle chiavi non resta testo');
+  assert.match(VOCE, /r\.lang = 'it-IT'/, 'il riconoscimento resta in italiano');
+  assert.match(VOCE, /Recognition is in Italian/);
 });
