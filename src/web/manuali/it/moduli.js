@@ -42,7 +42,7 @@ export default {
       ['«Comandi base pronti»', 'acceso', 'Accende <code>!so</code>/<code>!shoutout</code> (solo moderatori e streamer, solo in diretta), <code>!followage</code>, <code>!uptime</code> e <code>!bit</code>.'],
     ] },
     { p: [
-      'I comandi creati dalla chat sono solo testo: accettano solo <code>{user}</code> (il nome di chi scrive), fino a 400 caratteri, con un nome fino a 25 caratteri. Non compaiono in «I tuoi moduli»: li elenchi in chat con <code>!comando lista</code>. Per variabili, condizioni ed effetti serve un modulo.',
+      'I comandi creati dalla chat sono solo testo: accettano solo <code>{user}</code> (il nome di chi scrive), fino a 400 caratteri, con un nome fino a 25 caratteri. Non compaiono in «I tuoi moduli»: li elenchi in chat con <code>!comando lista</code>, che può scrivere chiunque. Crearli, cambiarli e toglierli resta sempre ai moderatori e a te. Per variabili, condizioni ed effetti serve un modulo.',
       '<code>!bot</code> e <code>!ia</code> rispondono sempre, qualunque cosa dicano questi interruttori: chiunque in chat può sapere che alcune risposte sono scritte da un\'intelligenza artificiale. Se ti costruisci un tuo <code>!bot</code>, risponde il tuo.',
     ] },
 

@@ -248,3 +248,35 @@ test('!bot risponde sempre, a chiunque, con le parole di sempre', async () => {
   streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), comandiBase: { attivo: true } });
   scegli({});
 });
+
+// !COMANDO LISTA E' DI TUTTI, LE MODIFICHE NO. Il registro diceva «solo mod»
+// per tutto !comando, e il gestore apriva l'elenco a chiunque: vinceva il
+// registro, e l'elenco era chiuso. Ora l'elenco e' aperto, e le sottoazioni
+// che scrivono le guarda il gestore, qualunque livello dica il registro.
+const comandichat = await import('../../src/features/comandichat.js');
+const { commands } = await import('../../src/db.js');
+
+test('!comando lista e\' aperto a tutti, aggiungere e togliere restano ai mod', () => {
+  scegli({});
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), comandiChat: { attivo: true } });
+  const chiunque = T.preparaComando(CH, messaggio('!comando lista'));
+  assert.equal(chiunque.testo, '!comando lista', 'nessun rifiuto a chi non e\' mod');
+  const dette = [];
+  const dire = (t) => dette.push(String(t));
+  assert.equal(comandichat.tryComando(messaggio('!comando aggiungi !prova ciao'), dire), true);
+  assert.equal(commands.get(CH, 'prova'), null, 'chi non e\' mod non crea niente');
+  assert.equal(comandichat.tryComando(messaggio('!addcom !prova ciao'), dire), true);
+  assert.equal(commands.get(CH, 'prova'), null, 'nemmeno dalla forma corta');
+  comandichat.tryComando(messaggio('!comando aggiungi !prova ciao {user}', { isMod: true }), dire);
+  assert.ok(commands.get(CH, 'prova'), 'un mod si');
+  dette.length = 0;
+  comandichat.tryComando(messaggio('!comando elimina !prova'), dire);
+  assert.ok(commands.get(CH, 'prova'), 'chi non e\' mod non toglie niente');
+  comandichat.tryComando(messaggio('!comando lista'), dire);
+  assert.match(dette.join(' '), /!prova/, 'e l\'elenco lo legge chiunque');
+  for (const id of ['addcom', 'editcom', 'delcom']) {
+    assert.equal(T.preparaComando(CH, messaggio('!' + id + ' !x y')).rifiuta, 'mod', `!${id} resta ai mod`);
+  }
+  commands.remove(CH, 'prova');
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), comandiChat: { attivo: false } });
+});

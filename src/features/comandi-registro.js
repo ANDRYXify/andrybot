@@ -215,8 +215,12 @@ export const COMANDI = [
     spegnibile: false, rinominabile: false, riservabile: false,
     cosa: ['Dice a chi lo scrive che qui risponde un assistente automatico, e che alcune risposte in chat sono scritte da un\'intelligenza artificiale. Risponde sempre, a chiunque.', 'Tells whoever writes it that an automated assistant answers here, and that some chat replies are written by an artificial intelligence. It always answers, to anyone.', 'Dice a quien lo escribe que aquí responde un asistente automático, y que algunas respuestas en el chat las escribe una inteligencia artificial. Responde siempre, a cualquiera.'] },
 
-  { id: 'comando', modulo: 'chat', nomi: ['comando', 'cmd', 'comandi', 'command', 'commands'], titolo: ['Gestisci i comandi', 'Manage commands', 'Gestiona los comandos'], chi: 'mod',
-    cosa: ['Aggiunge, cambia e toglie comandi senza aprire il pannello.', 'Adds, changes and removes commands without opening the panel.', 'Añade, cambia y quita comandos sin abrir el panel.'] },
+  // L'elenco (!comando lista) e' di tutti; aggiungere, cambiare e togliere
+  // restano ai mod, e lo decide il gestore stesso (comandichat.js), non questa
+  // riga: alzare il livello qui chiude anche l'elenco, abbassarlo non apre le
+  // modifiche a nessuno.
+  { id: 'comando', modulo: 'chat', nomi: ['comando', 'cmd', 'comandi', 'command', 'commands'], titolo: ['Gestisci i comandi', 'Manage commands', 'Gestiona los comandos'],
+    cosa: ['Chiunque ne legge l\'elenco con !comando lista. Aggiungere, cambiare e togliere comandi senza aprire il pannello resta ai moderatori.', 'Anyone can read the list with !comando lista. Adding, changing and removing commands without opening the panel stays with the moderators.', 'Cualquiera lee la lista con !comando lista. Añadir, cambiar y quitar comandos sin abrir el panel sigue siendo cosa de los moderadores.'] },
   { id: 'addcom', modulo: 'chat', nomi: ['addcom'], titolo: ['Aggiungi un comando', 'Add a command', 'Añade un comando'], chi: 'mod',
     cosa: ['Scorciatoia per aggiungere un comando.', 'Shortcut to add a command.', 'Atajo para añadir un comando.'] },
   { id: 'delcom', modulo: 'chat', nomi: ['delcom'], titolo: ['Togli un comando', 'Remove a command', 'Quita un comando'], chi: 'mod',
