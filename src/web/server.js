@@ -5262,10 +5262,13 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // Si scrive SOLO se una destinazione non c'e' ancora: chi aveva gia'
     // scelto un canale, o chi usa il suo webhook, non se lo vede cambiare
     // sotto le mani da un giro del costruttore.
+    //
+    // E nasce ACCESO: la destinazione la ricava dcDest.migra da qui, attivo
+    // compreso, e un posto nato spento sarebbe un avviso che non parte.
     let avvisiVerso = '';
     const cfg = dcConf.get(login);
-    if (e.canaleAvvisi && !cfg?.canale && !cfg?.webhook) {
-      dcConf.set(login, { canale: e.canaleAvvisi });
+    if (e.canaleAvvisi && !cfg?.canale && !cfg?.webhook && !dcDest.lista(login).length) {
+      dcConf.set(login, { canale: e.canaleAvvisi, attivo: true });
       avvisiVerso = String(e.canaleAvvisi);
     }
     res.json({ ...e, avvisiVerso });
