@@ -3840,7 +3840,7 @@ function tFamiglia(id, def) {
 const SOTTO_SCHEDE = {
   moduli: {
     attributo: 'zona',
-    voci: [['comandi', 'Comandi e contatori'], ['morti', 'CONTATORify']],
+    voci: [['comandi', ['Comandi e contatori', 'Commands and counters', 'Comandos y contadores']], ['morti', 'CONTATORify']],
   },
 };
 
@@ -3859,7 +3859,7 @@ function sottoSchedeHtml(scheda) {
   const voci = cfg.voci.map(([id, nome]) => {
     const on = id === ora;
     return `<button type="button" class="fam-scheda${on ? ' on' : ''}" data-sotto="${esc(id)}"`
-      + `${on ? ' aria-current="true"' : ''}>${esc(nome)}</button>`;
+      + `${on ? ' aria-current="true"' : ''}>${esc(Lv(nome))}</button>`;
   }).join('');
   return `<div class="fam-barra" id="sotto-${esc(scheda)}" role="tablist">${voci}</div>`;
 }
@@ -28784,39 +28784,44 @@ async function caricaMemoria(mostraToast = false) {
 }
 
 const EVENTI = [
-  ['follow', 'Nuovo follow'],
-  ['subscribe', 'Sub / resub'],
-  ['raid', 'Raid'],
-  ['cheer', 'Bits / cheer'],
-  ['redemption', 'Riscatto punti canale'],
-  ['first', 'Primo messaggio di un utente'],
-  ['online', 'Sei andato in live'],
-  ['offline', 'Fine live'],
-  ['gesto', 'Gesto webcam (mani/volto)'],
+  ['follow', 'Nuovo follow', 'New follow', 'Nuevo follow'],
+  ['subscribe', 'Sub / resub', 'Sub / resub', 'Sub / resub'],
+  ['raid', 'Raid', 'Raid', 'Raid'],
+  ['cheer', 'Bits / cheer', 'Bits / cheer', 'Bits / cheer'],
+  ['redemption', 'Riscatto punti canale', 'Channel points redemption', 'Canje de puntos de canal'],
+  ['first', 'Primo messaggio di un utente', 'A user\'s first message', 'Primer mensaje de un usuario'],
+  ['online', 'Sei andato in live', 'You went live', 'Has empezado el directo'],
+  ['offline', 'Fine live', 'Stream ended', 'Fin del directo'],
+  ['gesto', 'Gesto webcam (mani/volto)', 'Webcam gesture (hands/face)', 'Gesto de webcam (manos/cara)'],
 ];
 const EVENTI_TXT = {
-  follow: 'arriva un nuovo follow', subscribe: 'qualcuno si abbona', raid: 'parte un raid',
-  cheer: 'arrivano dei bits', redemption: 'riscattano un premio coi punti',
-  first: 'un utente scrive per la prima volta', online: 'vai in live', offline: 'finisce la live',
-  gesto: 'fai un gesto alla webcam (usa $gesto / $emozione nel testo)',
+  follow: ['arriva un nuovo follow', 'a new follow arrives', 'llega un nuevo follow'],
+  subscribe: ['qualcuno si abbona', 'someone subscribes', 'alguien se suscribe'],
+  raid: ['parte un raid', 'a raid comes in', 'llega un raid'],
+  cheer: ['arrivano dei bits', 'bits come in', 'llegan bits'],
+  redemption: ['riscattano un premio coi punti', 'someone redeems a points reward', 'alguien canjea un premio con puntos'],
+  first: ['un utente scrive per la prima volta', 'a user writes for the first time', 'un usuario escribe por primera vez'],
+  online: ['vai in live', 'you go live', 'empiezas el directo'],
+  offline: ['finisce la live', 'the stream ends', 'termina el directo'],
+  gesto: ['fai un gesto alla webcam (usa $gesto / $emozione nel testo)', 'you make a gesture at the webcam (use $gesto / $emozione in the text)', 'haces un gesto a la webcam (usa $gesto / $emozione en el texto)'],
 };
-const SCALA_EVENTO = { cheer: 'Bit', raid: 'spettatori', subscribe: 'mesi' };
+const SCALA_EVENTO = { cheer: ['Bit', 'Bits', 'Bits'], raid: ['spettatori', 'viewers', 'espectadores'], subscribe: ['mesi', 'months', 'meses'] };
 
 function _quantiModulo(t, c) {
-  const unita = (t && t.tipo === 'evento') ? SCALA_EVENTO[t.evento || ''] : '';
+  const unita = (t && t.tipo === 'evento') ? Lv(SCALA_EVENTO[t.evento || '']) : '';
   if (!unita) return '';
   return `
     <div class="griglia-campi spazio-sopra">
       <div>
-        <label class="campo" for="mod-min-quantita">Da quanti ${esc(unita)} in su</label>
+        <label class="campo" for="mod-min-quantita">${L(`Da quanti ${esc(unita)} in su`, `From how many ${esc(unita)} up`, `Desde cuántos ${esc(unita)}`)}</label>
         <input type="number" id="mod-min-quantita" min="0" max="10000000" value="${Number(c.minQuantita) || 0}">
       </div>
       <div>
-        <label class="campo" for="mod-max-quantita">Fino a quanti ${esc(unita)}</label>
+        <label class="campo" for="mod-max-quantita">${L(`Fino a quanti ${esc(unita)}`, `Up to how many ${esc(unita)}`, `Hasta cuántos ${esc(unita)}`)}</label>
         <input type="number" id="mod-max-quantita" min="0" max="10000000" value="${Number(c.maxQuantita) || 0}">
       </div>
     </div>
-    <p class="suggerimento">Zero vuol dire nessun limite. Servono a fare una <strong>scala</strong>: un modulo per fascia (1-99, 100-999, 1000 in su), così chi alza la posta ottiene qualcosa di diverso invece della solita risposta uguale per tutti. Chi resta fuori dalla fascia non paga costi e non consuma il cooldown.</p>`;
+    <p class="suggerimento">${L('Zero vuol dire nessun limite. Servono a fare una <strong>scala</strong>: un modulo per fascia (1-99, 100-999, 1000 in su), così chi alza la posta ottiene qualcosa di diverso invece della solita risposta uguale per tutti. Chi resta fuori dalla fascia non paga costi e non consuma il cooldown.', 'Zero means no limit. They let you build a <strong>ladder</strong>: one module per band (1-99, 100-999, 1000 and up), so whoever raises the stakes gets something different instead of the same reply for everyone. Whoever falls outside the band pays nothing and uses no cooldown.', 'Cero quiere decir sin límite. Sirven para hacer una <strong>escalera</strong>: un módulo por franja (1-99, 100-999, 1000 en adelante), así quien sube la apuesta obtiene algo distinto en vez de la misma respuesta para todos. Quien queda fuera de la franja no paga costes y no consume el cooldown.')}</p>`;
 }
 
 function _rinfrescaQuanti() {
@@ -28829,12 +28834,12 @@ function _rinfrescaQuanti() {
 }
 
 const TRIGGER = [
-  ['comando', 'Un comando in chat'],
-  ['parola', 'Una parola, frase o domanda in chat'],
-  ['voce', 'Comando vocale (dal tuo PC)'],
-  ['evento', 'Un evento del canale'],
-  ['timer', 'A tempo (timer)'],
-  ['manuale', 'Manuale / da un mio servizio'],
+  ['comando', 'Un comando in chat', 'A chat command', 'Un comando en el chat'],
+  ['parola', 'Una parola, frase o domanda in chat', 'A word, phrase or question in chat', 'Una palabra, frase o pregunta en el chat'],
+  ['voce', 'Comando vocale (dal tuo PC)', 'Voice command (from your PC)', 'Comando por voz (desde tu PC)'],
+  ['evento', 'Un evento del canale', 'A channel event', 'Un evento del canal'],
+  ['timer', 'A tempo (timer)', 'On a timer', 'Con temporizador'],
+  ['manuale', 'Manuale / da un mio servizio', 'Manual / from a service of mine', 'Manual / desde un servicio mío'],
 ];
 const nomeMonetaUI = () => (impostazioni()?.nomeMonete || '').trim() || 'monete';
 
@@ -28850,22 +28855,22 @@ const bottoniRicette = (attributo) => RICETTE_PUNTI
   .map(([id, eti]) => `<button class="modello-pronto" ${attributo}="${id}">${esc(eti())}</button>`).join('');
 
 const AZIONI = [
-  ['messaggio', 'Scrivi in chat'],
-  ['effetto', 'Fai partire un effetto'],
-  ['clip', 'Crea una clip'],
-  ['categoria', 'Cambia categoria Twitch'],
-  ['titolo', 'Cambia titolo stream'],
-  ['contatore', 'Contatore'],
-  ['webhook', 'Chiama un webhook'],
-  ['attendi', 'Aspetta'],
-  ['overlayTesto', 'Mostra testo sull\'overlay'],
-  ['timeout', 'Timeout in chat'],
-  ['musica', 'Metti una canzone in coda'],
-  ['annuncia', 'Annuncio in chat (/announce)'],
-  ['shoutout', 'Shoutout (banner)'],
-  ['punti', 'Dai o togli punti'],
-  ['regia', 'Regia: scena, muto o transizione'],
-  ['modalita', 'Modalità della chat a tempo'],
+  ['messaggio', 'Scrivi in chat', 'Write in chat', 'Escribe en el chat'],
+  ['effetto', 'Fai partire un effetto', 'Play an effect', 'Lanza un efecto'],
+  ['clip', 'Crea una clip', 'Create a clip', 'Crea un clip'],
+  ['categoria', 'Cambia categoria Twitch', 'Change Twitch category', 'Cambia la categoría de Twitch'],
+  ['titolo', 'Cambia titolo stream', 'Change stream title', 'Cambia el título del directo'],
+  ['contatore', 'Contatore', 'Counter', 'Contador'],
+  ['webhook', 'Chiama un webhook', 'Call a webhook', 'Llama a un webhook'],
+  ['attendi', 'Aspetta', 'Wait', 'Espera'],
+  ['overlayTesto', 'Mostra testo sull\'overlay', 'Show text on the overlay', 'Muestra texto en el overlay'],
+  ['timeout', 'Timeout in chat', 'Chat timeout', 'Timeout en el chat'],
+  ['musica', 'Metti una canzone in coda', 'Queue a song', 'Pon una canción en cola'],
+  ['annuncia', 'Annuncio in chat (/announce)', 'Chat announcement (/announce)', 'Anuncio en el chat (/announce)'],
+  ['shoutout', 'Shoutout (banner)', 'Shoutout (banner)', 'Shoutout (banner)'],
+  ['punti', 'Dai o togli punti', 'Give or take points', 'Da o quita puntos'],
+  ['regia', 'Regia: scena, muto o transizione', 'Program: scene, mute or transition', 'Realización: escena, silencio o transición'],
+  ['modalita', 'Modalità della chat a tempo', 'Timed chat mode', 'Modo del chat con tiempo'],
 ];
 
 const VARIABILI = [
@@ -28929,7 +28934,7 @@ const LEGENDA_VAR = [
 
   ['gruppo', 'Le persone', 'People', 'Las personas'],
   ['$followage', 'Da quanto ti segue chi scrive (o !followage @nome)', 'How long the writer has followed (or !followage @name)', 'Cuánto lleva siguiéndote quien escribe (o !followage @nombre)'],
-  ['$ore', 'Ore guardate da chi scrive (o !ore @nome) — serve il conteggio ore acceso', 'Watch time of the writer (or !ore @name) — needs watch-time on', 'Horas vistas de quien escribe (o !ore @nombre) — necesita el conteo activado'],
+  ['$ore', 'Ore guardate da chi scrive (o !ore @nome): serve il conteggio ore acceso', 'Watch time of the writer (or !ore @name): needs watch time on', 'Horas vistas de quien escribe (o !ore @nombre): necesita el conteo activado'],
   ['$chattercaso', 'Un utente a caso tra chi ha scritto di recente', 'A random recent chatter', 'Un usuario al azar entre quienes escribieron'],
   ['$cita', 'Una citazione a caso tra quelle salvate con !cita', 'A random saved quote (from !cita)', 'Una cita al azar de las guardadas con !cita'],
 
@@ -28997,99 +29002,113 @@ function riassuntoModulo(m) {
   const t = riassuntoQuando(m.trigger || {});
   const c = riassuntoSe(m.condizioni || {});
   const az = (m.azioni || []).map(riassuntoAzione).filter(Boolean);
-  const azTxt = az.length ? az.join(', ') : 'non fa ancora niente';
+  const azTxt = az.length ? az.join(', ') : L('non fa ancora niente', 'does nothing yet', 'todavía no hace nada');
   const alt = (m.altrimenti || []).map(riassuntoAzione).filter(Boolean);
-  const altTxt = alt.length ? ` · ALTRIMENTI ${alt.join(', ')}` : '';
-  return `QUANDO ${t}${c ? ' · SE ' + c : ''} → ${azTxt}${altTxt}`;
+  const altTxt = alt.length ? ` · ${L('ALTRIMENTI', 'OTHERWISE', 'SI NO')} ${alt.join(', ')}` : '';
+  return `${L('QUANDO', 'WHEN', 'CUANDO')} ${t}${c ? ` · ${L('SE', 'IF', 'SI')} ${c}` : ''} → ${azTxt}${altTxt}`;
 }
 function riassuntoQuando(t) {
+  const o = L(' o ', ' or ', ' o ');
   switch (t.tipo) {
     case 'comando': {
-      if (!t.comando) return 'scrivono un comando';
+      if (!t.comando) return L('scrivono un comando', 'someone writes a command', 'escriben un comando');
       const a = Array.isArray(t.alias) ? t.alias : (typeof t.alias === 'string' ? t.alias.split(/[\s,]+/) : []);
       const alist = a.map((x) => String(x).trim().replace(/^!/, '')).filter(Boolean);
       const bang = t.senzaBang ? '' : '!';
-      return `scrivono ${bang}${t.comando}` + (alist.length ? ` (o ${alist.map((x) => bang + x).join(', ')})` : '')
-        + (t.senzaBang ? ' (anche senza !)' : '');
+      const nomi = alist.length ? ` (${L('o', 'or', 'o')} ${alist.map((x) => bang + x).join(', ')})` : '';
+      return L(`scrivono ${bang}${t.comando}`, `someone writes ${bang}${t.comando}`, `escriben ${bang}${t.comando}`) + nomi
+        + (t.senzaBang ? L(' (anche senza !)', ' (also without !)', ' (también sin !)') : '');
     }
     case 'parola': {
-      const modo = { contiene: 'compare', esatto: 'è esattamente', inizia: 'inizia con' }[t.modo] || 'compare';
       const frasi = (Array.isArray(t.testi) && t.testi.length) ? t.testi : (t.testo ? [t.testo] : []);
-      if (!frasi.length) return 'compare una parola';
-      const primi = frasi.slice(0, 2).map((x) => `"${x}"`).join(' o ');
+      if (!frasi.length) return L('compare una parola', 'a word shows up', 'aparece una palabra');
+      const primi = frasi.slice(0, 2).map((x) => `"${x}"`).join(o);
       const extra = frasi.length > 2 ? ` (+${frasi.length - 2})` : '';
-      return `in chat ${modo} ${primi}${extra}`;
+      if (t.modo === 'esatto') return L(`in chat è esattamente ${primi}${extra}`, `the chat message is exactly ${primi}${extra}`, `en el chat es exactamente ${primi}${extra}`);
+      if (t.modo === 'inizia') return L(`in chat inizia con ${primi}${extra}`, `a chat message starts with ${primi}${extra}`, `en el chat empieza por ${primi}${extra}`);
+      return L(`in chat compare ${primi}${extra}`, `${primi}${extra} shows up in chat`, `en el chat aparece ${primi}${extra}`);
     }
     case 'voce': {
       const f = (Array.isArray(t.frasi) ? t.frasi : []).filter(Boolean);
-      if (!f.length) return 'dici una frase al microfono';
-      const primi = f.slice(0, 2).map((x) => `"${x}"`).join(' o ');
-      return `dici ${primi}`;
+      if (!f.length) return L('dici una frase al microfono', 'you say a phrase into the mic', 'dices una frase al micrófono');
+      const primi = f.slice(0, 2).map((x) => `"${x}"`).join(o);
+      return L(`dici ${primi}`, `you say ${primi}`, `dices ${primi}`);
     }
-    case 'evento': return EVENTI_TXT[t.evento] || 'succede un evento del canale';
+    case 'evento': return Lv(EVENTI_TXT[t.evento]) || L('succede un evento del canale', 'a channel event happens', 'pasa un evento del canal');
     case 'timer': {
-      let s = `ogni ${t.minuti || 0} min`;
-      if (t.minMessaggi) s += ` e almeno ${t.minMessaggi} messaggi`;
-      s += t.ancheOffline ? ', anche a canale spento' : ', solo in diretta';
+      const min = t.minuti || 0;
+      let s = L(`ogni ${min} min`, `every ${min} min`, `cada ${min} min`);
+      if (t.minMessaggi) s += L(` e almeno ${t.minMessaggi} messaggi`, ` and at least ${t.minMessaggi} messages`, ` y al menos ${t.minMessaggi} mensajes`);
+      s += t.ancheOffline ? L(', anche a canale spento', ', even when offline', ', también con el canal apagado') : L(', solo in diretta', ', only when live', ', solo en directo');
       return s;
     }
-    case 'manuale': return 'lo attivi tu (Prova o servizio esterno)';
-    default: return 'succede qualcosa';
+    case 'manuale': return L('lo attivi tu (Prova o servizio esterno)', 'you trigger it (Test or an outside service)', 'lo activas tú (Prueba o servicio externo)');
+    default: return L('succede qualcosa', 'something happens', 'pasa algo');
   }
 }
 function riassuntoSe(c) {
   const parti = [];
-  const chi = { sub: 'solo i sub', vip: 'solo i VIP', mod: 'solo i mod' }[c.tier];
+  const mon = nomeMonetaUI();
+  const chi = { sub: L('solo i sub', 'subs only', 'solo los subs'), vip: L('solo i VIP', 'VIPs only', 'solo los VIP'), mod: L('solo i mod', 'mods only', 'solo los mods') }[c.tier];
   if (chi) parti.push(chi);
-  if (c.cooldown > 0) parti.push(`max ogni ${c.cooldown}s`);
-  if (c.cooldownUtente > 0) parti.push(`ogni ${c.cooldownUtente}s a testa`);
-  if (c.minPunti > 0) parti.push(`serve almeno ${c.minPunti} ${nomeMonetaUI()}`);
-  if (c.minQuantita > 0 && c.maxQuantita > 0) parti.push(`da ${c.minQuantita} a ${c.maxQuantita}`);
-  else if (c.minQuantita > 0) parti.push(`da ${c.minQuantita} in su`);
-  else if (c.maxQuantita > 0) parti.push(`fino a ${c.maxQuantita}`);
-  if (typeof c.costo === 'string' && c.costo.includes('$')) parti.push(`costa ${c.costo} ${nomeMonetaUI()}`);
-  else if (c.costo > 0) parti.push(`costa ${c.costo} ${nomeMonetaUI()}`);
-  if (typeof c.probabilita === 'number' && c.probabilita >= 0 && c.probabilita < 100) parti.push(`${c.probabilita}% delle volte`);
-  if (c.soloLive) parti.push('solo in live');
-  if (c.soloOffline) parti.push('solo offline');
+  if (c.cooldown > 0) parti.push(L(`max ogni ${c.cooldown}s`, `at most every ${c.cooldown}s`, `como mucho cada ${c.cooldown}s`));
+  if (c.cooldownUtente > 0) parti.push(L(`ogni ${c.cooldownUtente}s a testa`, `every ${c.cooldownUtente}s each`, `cada ${c.cooldownUtente}s por persona`));
+  if (c.minPunti > 0) parti.push(L(`serve almeno ${c.minPunti} ${mon}`, `needs at least ${c.minPunti} ${mon}`, `hacen falta al menos ${c.minPunti} ${mon}`));
+  if (c.minQuantita > 0 && c.maxQuantita > 0) parti.push(L(`da ${c.minQuantita} a ${c.maxQuantita}`, `from ${c.minQuantita} to ${c.maxQuantita}`, `de ${c.minQuantita} a ${c.maxQuantita}`));
+  else if (c.minQuantita > 0) parti.push(L(`da ${c.minQuantita} in su`, `from ${c.minQuantita} up`, `desde ${c.minQuantita}`));
+  else if (c.maxQuantita > 0) parti.push(L(`fino a ${c.maxQuantita}`, `up to ${c.maxQuantita}`, `hasta ${c.maxQuantita}`));
+  if ((typeof c.costo === 'string' && c.costo.includes('$')) || c.costo > 0) parti.push(L(`costa ${c.costo} ${mon}`, `costs ${c.costo} ${mon}`, `cuesta ${c.costo} ${mon}`));
+  if (typeof c.probabilita === 'number' && c.probabilita >= 0 && c.probabilita < 100) parti.push(L(`${c.probabilita}% delle volte`, `${c.probabilita}% of the time`, `el ${c.probabilita}% de las veces`));
+  if (c.soloLive) parti.push(L('solo in live', 'only when live', 'solo en directo'));
+  if (c.soloOffline) parti.push(L('solo offline', 'only offline', 'solo fuera de directo'));
   return parti.join(', ');
 }
 function riassuntoAzione(a) {
+  const mon = nomeMonetaUI();
   switch (a.tipo) {
-    case 'messaggio': return 'invia un messaggio';
-    case 'effetto': return a.comando ? `fai partire l'effetto !${a.comando}` : 'fai partire un effetto';
+    case 'messaggio': return L('invia un messaggio', 'sends a message', 'envía un mensaje');
+    case 'effetto': return a.comando ? L(`fai partire l'effetto !${a.comando}`, `play the effect !${a.comando}`, `lanza el efecto !${a.comando}`) : L('fai partire un effetto', 'play an effect', 'lanza un efecto');
     case 'contatore': {
-      const n = a.nome || 'contatore';
-      if (a.op === 'azzera') return `azzera "${n}"`;
-      if (a.op === 'imposta') return `imposta "${n}" a ${a.valore ?? 0}`;
-      return `aumenta "${n}"`;
+      const n = a.nome || L('contatore', 'counter', 'contador');
+      if (a.op === 'azzera') return L(`azzera "${n}"`, `reset "${n}"`, `pon a cero "${n}"`);
+      if (a.op === 'imposta') return L(`imposta "${n}" a ${a.valore ?? 0}`, `set "${n}" to ${a.valore ?? 0}`, `pon "${n}" en ${a.valore ?? 0}`);
+      return L(`aumenta "${n}"`, `increase "${n}"`, `aumenta "${n}"`);
     }
-    case 'webhook': return 'chiama un webhook';
-    case 'clip': return 'crea una clip';
-    case 'categoria': return a.gioco ? `cambia categoria in "${a.gioco}"` : 'cambia categoria';
-    case 'titolo': return a.testo ? `cambia titolo in "${a.testo}"` : 'cambia titolo';
-    case 'attendi': return `aspetta ${a.secondi || 0}s`;
-    case 'overlayTesto': return 'mostra un testo sull\'overlay';
+    case 'webhook': return L('chiama un webhook', 'call a webhook', 'llama a un webhook');
+    case 'clip': return L('crea una clip', 'create a clip', 'crea un clip');
+    case 'categoria': return a.gioco ? L(`cambia categoria in "${a.gioco}"`, `change category to "${a.gioco}"`, `cambia la categoría a "${a.gioco}"`) : L('cambia categoria', 'change category', 'cambia la categoría');
+    case 'titolo': return a.testo ? L(`cambia titolo in "${a.testo}"`, `change title to "${a.testo}"`, `cambia el título a "${a.testo}"`) : L('cambia titolo', 'change title', 'cambia el título');
+    case 'attendi': return L(`aspetta ${a.secondi || 0}s`, `wait ${a.secondi || 0}s`, `espera ${a.secondi || 0}s`);
+    case 'overlayTesto': return L('mostra un testo sull\'overlay', 'show a text on the overlay', 'muestra un texto en el overlay');
     case 'regia': {
       if (a.cosa === 'muto') {
-        const come = { muta: 'muta', smuta: 'smuta', inverti: 'muta o smuta' }[a.come] || 'muta o smuta';
-        return a.fonte ? `${come} la fonte "${a.fonte}"` : `${come} una fonte`;
+        const f = a.fonte ? `"${a.fonte}"` : '';
+        if (a.come === 'muta') return f ? L(`muta la fonte ${f}`, `mute the source ${f}`, `silencia la fuente ${f}`) : L('muta una fonte', 'mute a source', 'silencia una fuente');
+        if (a.come === 'smuta') return f ? L(`smuta la fonte ${f}`, `unmute the source ${f}`, `quita el silencio a la fuente ${f}`) : L('smuta una fonte', 'unmute a source', 'quita el silencio a una fuente');
+        return f ? L(`muta o smuta la fonte ${f}`, `mute or unmute the source ${f}`, `silencia o quita el silencio a la fuente ${f}`) : L('muta o smuta una fonte', 'mute or unmute a source', 'silencia o quita el silencio a una fuente');
       }
-      if (a.cosa === 'transizione') return a.transizione ? `passa alla transizione "${a.transizione}"` : 'cambia transizione';
-      return a.scena ? `cambia scena in "${a.scena}"` : 'cambia scena';
+      if (a.cosa === 'transizione') return a.transizione ? L(`passa alla transizione "${a.transizione}"`, `switch to the "${a.transizione}" transition`, `pasa a la transición "${a.transizione}"`) : L('cambia transizione', 'change transition', 'cambia la transición');
+      return a.scena ? L(`cambia scena in "${a.scena}"`, `switch scene to "${a.scena}"`, `cambia la escena a "${a.scena}"`) : L('cambia scena', 'switch scene', 'cambia la escena');
     }
-    case 'timeout': return `timeout di ${a.secondi || 0}s`;
-    case 'musica': return a.brano ? `metti in coda "${a.brano}"` : 'metti una canzone in coda';
+    case 'timeout': return L(`timeout di ${a.secondi || 0}s`, `${a.secondi || 0}s timeout`, `timeout de ${a.secondi || 0}s`);
+    case 'musica': return a.brano ? L(`metti in coda "${a.brano}"`, `queue "${a.brano}"`, `pon en cola "${a.brano}"`) : L('metti una canzone in coda', 'queue a song', 'pon una canción en cola');
     case 'punti': {
-      const chi = { destinatario: 'a chi è taggato', caso: 'a uno a caso', nome: `a @${a.nome || '?'}` }[a.a] || 'a chi scrive';
+      const chi = a.a === 'nome' ? `@${a.nome || '?'}` : ({
+        destinatario: L('chi è taggato', 'whoever is tagged', 'quien está etiquetado'),
+        caso: L('uno a caso', 'someone at random', 'alguien al azar'),
+      })[a.a] || L('chi scrive', 'the writer', 'quien escribe');
       const q = String(a.quanto ?? '').trim() || '?';
-      if (a.op === 'togli') return `togli ${q} ${nomeMonetaUI()} ${chi}`;
-      if (a.op === 'imposta') return `porta ${chi} a ${q} ${nomeMonetaUI()}`;
-      return `dai ${q} ${nomeMonetaUI()} ${chi}`;
+      if (a.op === 'togli') return L(`togli ${q} ${mon} a ${chi}`, `take ${q} ${mon} from ${chi}`, `quita ${q} ${mon} a ${chi}`);
+      if (a.op === 'imposta') return L(`porta ${chi} a ${q} ${mon}`, `set ${chi} to ${q} ${mon}`, `lleva a ${chi} a ${q} ${mon}`);
+      return L(`dai ${q} ${mon} a ${chi}`, `give ${q} ${mon} to ${chi}`, `da ${q} ${mon} a ${chi}`);
     }
-    case 'annuncia': return 'fai un annuncio in chat';
-    case 'modalita': return `chat in ${({ emote: 'solo emote', unici: 'messaggi unici', sub: 'solo abbonati' })[a.modo] || 'solo emote'} per ${String(a.durata || '').trim() || '2 minuti'}`;
-    case 'shoutout': return a.canale ? `shoutout a @${a.canale}` : 'shoutout (al nome dopo il comando o a chi ti raida)';
+    case 'annuncia': return L('fai un annuncio in chat', 'make a chat announcement', 'haz un anuncio en el chat');
+    case 'modalita': {
+      const modo = ({ emote: L('solo emote', 'emote-only', 'solo emotes'), unici: L('messaggi unici', 'unique messages', 'mensajes únicos'), sub: L('solo abbonati', 'subscribers-only', 'solo suscriptores') })[a.modo] || L('solo emote', 'emote-only', 'solo emotes');
+      const per = String(a.durata || '').trim() || L('2 minuti', '2 minutes', '2 minutos');
+      return L(`chat in ${modo} per ${per}`, `chat in ${modo} for ${per}`, `chat en ${modo} durante ${per}`);
+    }
+    case 'shoutout': return a.canale ? L(`shoutout a @${a.canale}`, `shoutout to @${a.canale}`, `shoutout a @${a.canale}`) : L('shoutout (al nome dopo il comando o a chi ti raida)', 'shoutout (to the name after the command or whoever raids you)', 'shoutout (al nombre tras el comando o a quien te hace raid)');
     default: return '';
   }
 }
@@ -29222,7 +29241,7 @@ function apriEditor(modulo, dove = 'editor-modulo') {
         <div class="etichetta-blocco">Quando</div>
         <label class="campo" for="mod-trigger-tipo">Cosa fa scattare il modulo</label>
         <select id="mod-trigger-tipo" data-trigger-tipo>
-          ${TRIGGER.map(([v, t]) => `<option value="${v}" ${m.trigger?.tipo === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+          ${TRIGGER.map(([v, it, en, es]) => `<option value="${v}" ${m.trigger?.tipo === v ? 'selected' : ''}>${esc(L(it, en, es))}</option>`).join('')}
         </select>
         <div id="campi-quando">${disegnaCampiQuando(m.trigger || {})}</div>
       </div>
@@ -29362,7 +29381,7 @@ function disegnaCampiQuando(t) {
       return `
         <label class="campo" for="mod-evento">Quale evento</label>
         <select id="mod-evento">
-          ${EVENTI.map(([v, t2]) => `<option value="${v}" ${t.evento === v ? 'selected' : ''}>${esc(t2)}</option>`).join('')}
+          ${EVENTI.map(([v, it, en, es]) => `<option value="${v}" ${t.evento === v ? 'selected' : ''}>${esc(L(it, en, es))}</option>`).join('')}
         </select>`;
     case 'timer':
       return `
@@ -29395,7 +29414,7 @@ function disegnaAzione(a) {
   const tipo = a.tipo || 'messaggio';
   const selTipo = `
     <select data-azione-tipo>
-      ${AZIONI.map(([v, t]) => `<option value="${v}" ${tipo === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+      ${AZIONI.map(([v, it, en, es]) => `<option value="${v}" ${tipo === v ? 'selected' : ''}>${esc(L(it, en, es))}</option>`).join('')}
     </select>`;
   return `
     <div class="azione-riga" data-tipo="${esc(tipo)}">
