@@ -128,3 +128,55 @@ test('la prova del pannello parte dalla stessa base', () => {
   const demo = new Function(`return ${APP.slice(i + 'const _DEMO_TEMA_BASE = '.length, APP.indexOf('};', i) + 1)}`)();
   assert.deepEqual(demo, BASE);
 });
+
+// ── I testi dell'editor ──────────────────────────────────────────────────────
+
+const MAN = leggi('src/web/manuali/it/vetrina.js');
+const corpoDi = (inizio) => {
+  const i = APP.indexOf(inizio);
+  assert.ok(i >= 0, `manca ${inizio}`);
+  const fine = APP.slice(i + inizio.length).search(/\n(async )?function /);
+  return APP.slice(i, i + inizio.length + fine);
+};
+const testiIt = (codice) => [...codice.matchAll(/\bL\((['`])((?:\\.|(?!\1).)*)\1/g)].map((m) => m[2]);
+
+test('i testi dell\'editor della pagina link e delle offerte non hanno lineette lunghe', () => {
+  for (const f of ['async function caricaPaginaLink(', 'function lpRenderBlocchi(', 'function _opzioniEffetti(']) {
+    const corpo = corpoDi(f);
+    assert.ok(testiIt(corpo).length >= 1, `${f}: non trovo i testi`);
+    for (const m of corpo.matchAll(/\bL\(([\s\S]*?)\)(?=[}\s,;])/g)) {
+      assert.ok(!m[1].includes('—'), `${f}: «—» in ${m[1].slice(0, 90)}`);
+    }
+  }
+});
+
+test('i nomi dei caratteri e delle scelte dell\'impianto sono quelli del manuale', () => {
+  const carica = corpoDi('async function caricaPaginaLink(');
+  const riga = carica.slice(carica.indexOf('const NOMI_FONT = ') + 'const NOMI_FONT = '.length, carica.indexOf('\n', carica.indexOf('const NOMI_FONT = ')) - 1);
+  // eslint-disable-next-line no-new-func
+  const nomi = new Function('L', `return ${riga}`)((it) => it);
+  assert.equal(nomi.manga, 'Manga (a pennarello)');
+  const scrittura = MAN.slice(MAN.indexOf("['«Scrittura»'"), MAN.indexOf('\n', MAN.indexOf("['«Scrittura»'")));
+  for (const n of Object.values(nomi)) assert.ok(scrittura.includes(n), `il manuale non nomina il carattere «${n}»`);
+  const impianto = MAN.slice(MAN.indexOf("['«Impianto»'"), MAN.indexOf('\n', MAN.indexOf("['«Impianto»'")));
+  for (const id of ['lp-disp', 'lp-mov']) {
+    const sel = carica.slice(carica.indexOf(`<select id="${id}"`), carica.indexOf('</select>', carica.indexOf(`<select id="${id}"`)));
+    for (const m of sel.matchAll(/<option value="\w+">\$\{L\('([^'(]+?)(?: \(|')/g)) {
+      assert.ok(impianto.includes(m[1].trim()), `il manuale non nomina «${m[1].trim()}»`);
+    }
+  }
+});
+
+test('«Modi» dice il vero sul permesso: la fascia con «Caricali subito», il cartello con l\'altra scelta', () => {
+  const carica = corpoDi('async function caricaPaginaLink(');
+  const modi = testiIt(carica).find((t) => t.startsWith('Sul telefono il puntatore'));
+  assert.ok(modi, 'non trovo il suggerimento di «Modi»');
+  assert.ok(!/sito normale/.test(modi), '«Subito» non e\' come un sito normale: chiede il permesso');
+  assert.match(modi, /Con «Caricali subito», la prima volta che apre la pagina il visitatore trova una fascia/);
+  assert.match(modi, /con «Caricali solo se il visitatore lo chiede» la fascia non c’è, e al posto di ogni contenuto c’è un cartello con un bottone/);
+  const pagina = (consenso) => renderLinkPage({ tema: { consenso }, blocchi: [{ tipo: 'embed', url: 'https://youtu.be/abc' }] },
+    { login: 'prova', display: 'Prova', baseUrl: 'https://socialbot.live' });
+  const subito = pagina('sempre'), chiedi = pagina('chiedi');
+  assert.ok(subito.includes('id="fascia"') && subito.includes('Va bene, carica tutto') && !subito.includes('<iframe'), 'con «subito» la pagina chiede con la fascia, e non carica niente prima');
+  assert.ok(!chiedi.includes('id="fascia"') && chiedi.includes('class="chiedi-b"'), 'con «chiedi» niente fascia, un cartello col bottone');
+});

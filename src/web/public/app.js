@@ -19661,7 +19661,7 @@ function riempiDonazioni() {
   const url = _statoDona?.paginaUrl || (location.origin + '/dona/' + (stato?.user?.login || '…'));
 }
 function _opzioniEffetti(sel) {
-  return `<option value="">${L('— nessun effetto —', '— no effect —', '— ningún efecto —')}</option>` + (_EFFETTI || []).map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>${esc(e.comando)} · ${esc(etTipoEffetto(e.tipo))}</option>`).join('');
+  return `<option value="">${L('Nessun effetto', 'No effect', 'Ningún efecto')}</option>` + (_EFFETTI || []).map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>${esc(e.comando)} · ${esc(etTipoEffetto(e.tipo))}</option>`).join('');
 }
 function _rigaLivello(l) {
   return `<div class="griglia-campi dona-livello">
@@ -20045,7 +20045,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
 
   const NOMI_STILE = { minimal: 'Minimal', neon: 'Neon', retro: 'Retro', sunset: 'Sunset', glass: 'Glass', brutal: 'Brutal', pastello: 'Pastello',
     cyber: 'Cyberpunk', vapor: 'Vaporwave', oro: L('Oro', 'Gold', 'Oro'), oceano: L('Oceano', 'Ocean', 'Océano'), foresta: L('Foresta', 'Forest', 'Bosque'), ghiaccio: L('Ghiaccio', 'Ice', 'Hielo'), lava: 'Lava', bubblegum: 'Bubblegum' };
-  const NOMI_FONT = { system: L('Sistema', 'System', 'Sistema'), inter: 'Inter', mono: L('Monospaziato', 'Monospaced', 'Monoespaciado'), serif: L('Con grazie', 'Serif', 'Con serifa'), condensato: L('Condensato', 'Condensed', 'Condensada'), tondo: L('Tondo', 'Rounded', 'Redonda'), manga: L('Manga — a pennarello', 'Manga — marker', 'Manga — a rotulador') };
+  const NOMI_FONT = { system: L('Sistema', 'System', 'Sistema'), inter: 'Inter', mono: L('Monospaziato', 'Monospaced', 'Monoespaciado'), serif: L('Con grazie', 'Serif', 'Con serifa'), condensato: L('Condensato', 'Condensed', 'Condensada'), tondo: L('Tondo', 'Rounded', 'Redonda'), manga: L('Manga (a pennarello)', 'Manga (marker)', 'Manga (a rotulador)') };
   const opts = (lista, sel, nomi) => lista.map((k) => `<option value="${esc(k)}"${k === sel ? ' selected' : ''}>${esc((nomi && nomi[k]) || k)}</option>`).join('');
 
   box.innerHTML = `
@@ -20165,16 +20165,16 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
             <div class="griglia-campi">
               <div><label class="campo" for="lp-disp">${L('Disposizione', 'Layout', 'Disposición')}</label>
                 <select id="lp-disp" data-lpk="disposizione">
-                  <option value="colonna">${L('Colonna — la classica lista', 'Column — the classic list', 'Columna — la lista clásica')}</option>
-                  <option value="rivista">${L('Rivista — affiancati, come una griglia', 'Magazine — side by side, like a grid', 'Revista — en paralelo, como una rejilla')}</option>
-                  <option value="sezioni">${L('Sezioni — pagina lunga da scorrere', 'Sections — a long page to scroll', 'Secciones — página larga para desplazar')}</option>
+                  <option value="colonna">${L('Colonna (la classica lista)', 'Column (the classic list)', 'Columna (la lista clásica)')}</option>
+                  <option value="rivista">${L('Rivista (affiancati, come una griglia)', 'Magazine (side by side, like a grid)', 'Revista (en paralelo, como una rejilla)')}</option>
+                  <option value="sezioni">${L('Sezioni (pagina lunga da scorrere)', 'Sections (a long page to scroll)', 'Secciones (página larga para desplazar)')}</option>
                 </select></div>
               <div><label class="campo" for="lp-mov">${L('Movimento', 'Motion', 'Movimiento')}</label>
                 <select id="lp-mov" data-lpk="movimento">
-                  <option value="nessuno">${L('Fermo — nessuna animazione', 'Still — no animation', 'Quieto — sin animación')}</option>
-                  <option value="dolce">${L('Dolce — i contenuti compaiono mentre scorri', 'Gentle — content appears as you scroll', 'Suave — el contenido aparece al desplazar')}</option>
-                  <option value="cinema">${L('Cinema — parallasse, titoli parola per parola', 'Cinematic — parallax, word-by-word titles', 'Cine — paralaje, títulos palabra por palabra')}</option>
-                  <option value="crawl">${L('Star Wars — l’intestazione arriva in prospettiva', 'Star Wars — the header flies in with perspective', 'Star Wars — el encabezado llega en perspectiva')}</option>
+                  <option value="nessuno">${L('Fermo (nessuna animazione)', 'Still (no animation)', 'Quieto (sin animación)')}</option>
+                  <option value="dolce">${L('Dolce (i contenuti compaiono mentre scorri)', 'Gentle (content appears as you scroll)', 'Suave (el contenido aparece al desplazar)')}</option>
+                  <option value="cinema">${L('Cinema (parallasse, titoli parola per parola)', 'Cinematic (parallax, word-by-word titles)', 'Cine (paralaje, títulos palabra por palabra)')}</option>
+                  <option value="crawl">${L('Star Wars (l’intestazione arriva in prospettiva)', 'Star Wars (the header flies in with perspective)', 'Star Wars (el encabezado llega en perspectiva)')}</option>
                 </select></div>
               <div><label class="campo" for="lp-stile">${L('Stile di partenza', 'Starting style', 'Estilo de partida')}</label>
                 <select id="lp-stile" data-lpt="template">${opts(d.templates || [], LP.testa.template, NOMI_STILE)}</select></div>
@@ -20216,7 +20216,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
             </div>
             ${lpRng('interlinea', L('Interlinea', 'Line height', 'Interlineado'), 120, 200, Number(LP.tema.interlinea) || 150, '%')}
             ${lpRng('corpo', L('Grandezza del testo', 'Text size', 'Tamaño del texto'), 80, 130, Number(LP.tema.corpo) || 100, '%')}
-            <p class="suggerimento">${L('La grandezza vale per tutta la pagina insieme, così le proporzioni restano quelle. Lo spessore muove tutti i pesi in blocco — titoli, etichette, sottotitoli — e li tiene in scala fra loro: è la stessa pagina più leggera, non una pagina diversa.', 'Size applies to the whole page at once, so the proportions stay put. Weight moves every level together — headings, labels, sublabels — keeping them in scale: it is the same page, lighter, not a different page.', 'El tamaño vale para toda la página a la vez, así las proporciones no cambian. El grosor mueve todos los pesos juntos y los mantiene en escala: es la misma página más ligera, no otra página.')}</p>
+            <p class="suggerimento">${L('La grandezza vale per tutta la pagina insieme, così le proporzioni restano quelle. Lo spessore muove insieme tutti i pesi (titoli, etichette, sottotitoli) e li tiene in scala fra loro: è la stessa pagina più leggera, non una pagina diversa.', 'Size applies to the whole page at once, so the proportions stay put. Weight moves every level together (headings, labels, sublabels) keeping them in scale: it is the same page, lighter, not a different page.', 'El tamaño vale para toda la página a la vez, así las proporciones no cambian. El grosor mueve todos los pesos juntos y los mantiene en escala: es la misma página más ligera, no otra página.')}</p>
           </div>
         </div>
 
@@ -20341,7 +20341,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
               <option value="sempre">${L('Caricali subito (consigliato)', 'Load them right away (recommended)', 'Cárgalos enseguida (recomendado)')}</option>
               <option value="chiedi">${L('Caricali solo se il visitatore lo chiede', 'Load them only if the visitor asks', 'Cárgalos solo si el visitante lo pide')}</option>
             </select>
-            <p class="suggerimento">${L('Sul telefono il puntatore non c’è, quindi lì non cambia niente. Per i contenuti di altri siti: “Subito” è come funziona un sito normale; “Solo se lo chiede” mette al loro posto un cartello con un bottone, e verso quei siti non parte niente finché non lo premi. In tutti e due i casi <strong>la tua pagina non usa cookie</strong>: quelli eventuali sono di YouTube, Spotify o Twitch, e l\'informativa in fondo lo spiega — cambia da sé a seconda di cosa scegli qui.', 'There is no pointer on phones, so nothing changes there. For content from other sites: “Right away” is how a normal site works; “Only if asked” puts a card with a button in their place, and nothing goes out to those sites until you press it. Either way <strong>your page uses no cookies</strong>: any cookies belong to YouTube, Spotify or Twitch, and the notice at the bottom explains it.', 'En el móvil no hay puntero, así que ahí no cambia nada. Para el contenido de otros sitios: “Enseguida” es como funciona un sitio normal; “Solo si lo pide” pone en su lugar una tarjeta con un botón. En ambos casos <strong>tu página no usa cookies</strong>: los que haya son de YouTube, Spotify o Twitch, y el aviso al pie lo explica.')}</p>
+            <p class="suggerimento">${L('Sul telefono il puntatore non c’è, quindi lì non cambia niente. I contenuti di altri siti non partono mai senza il permesso di chi guarda. Con «Caricali subito», la prima volta che apre la pagina il visitatore trova una fascia che glielo chiede, e la sua scelta resta ricordata; con «Caricali solo se il visitatore lo chiede» la fascia non c’è, e al posto di ogni contenuto c’è un cartello con un bottone. In tutti e due i casi <strong>la tua pagina non usa cookie</strong>: quelli eventuali sono di YouTube, Spotify o Twitch, e l\'informativa in fondo alla pagina lo spiega, seguendo quello che scegli qui.', 'There is no pointer on phones, so nothing changes there. Content from other sites never loads without the visitor’s permission. With “Load them right away”, the first time visitors open the page they see a strip asking for it, and their choice is remembered; with “Load them only if the visitor asks” there is no strip, and each piece of content is replaced by a card with a button. Either way <strong>your page uses no cookies</strong>: any cookies belong to YouTube, Spotify or Twitch, and the notice at the bottom of the page explains it, following what you choose here.', 'En el móvil no hay puntero, así que ahí no cambia nada. El contenido de otros sitios nunca se carga sin el permiso de quien mira. Con «Cárgalos enseguida», la primera vez que abre la página el visitante ve una franja que se lo pide, y su elección se recuerda; con «Cárgalos solo si el visitante lo pide» no hay franja, y en lugar de cada contenido hay una tarjeta con un botón. En ambos casos <strong>tu página no usa cookies</strong>: las que haya son de YouTube, Spotify o Twitch, y el aviso al pie de la página lo explica, según lo que elijas aquí.')}</p>
           </div>
         </div>
 
@@ -20507,9 +20507,9 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
     const scartati = Math.max(0, (r?.inviati || 0) - (r?.salvati || 0));
     const esito = document.getElementById('lp-esito');
     if (esito) esito.textContent = scartati > 0
-      ? L(`Pubblicata ✓ — ${scartati} blocco/hi non salvati: manca un'etichetta o un indirizzo valido (https://…).`,
-        `Published ✓ — ${scartati} block(s) not saved: a label or a valid address (https://…) is missing.`,
-        `Publicada ✓ — ${scartati} bloque(s) no guardados: falta una etiqueta o una dirección válida (https://…).`)
+      ? L(`Pubblicata ✓, ma ${scartati === 1 ? 'un pezzo non si è salvato' : scartati + ' pezzi non si sono salvati'}.`,
+        `Published ✓, but ${scartati === 1 ? 'one piece was' : scartati + ' pieces were'} not saved.`,
+        `Publicada ✓, pero ${scartati === 1 ? 'una pieza no se guardó' : scartati + ' piezas no se guardaron'}.`)
       : L('Pubblicata ✓ è già online.', 'Published ✓ it’s already live.', 'Publicada ✓ ya está online.');
     toast(L('Pagina pubblicata ✓', 'Page published ✓', 'Página publicada ✓'));
     conScrollFermo(() => caricaPaginaLink());
@@ -20856,7 +20856,7 @@ function lpRenderBlocchi() {
         </div>
         <p class="suggerimento">${L('Il contenuto di un altro sito ha i suoi angoli arrotondati: negli spicchi che restano si vedeva la pagina. Di partenza li riempie il colore del bordo, così sembrano cornice e non un buco. Se preferisci, mettici il colore che vedi dentro al contenuto e spariscono del tutto.', 'Content from another site has its own rounded corners: in the wedges left over you could see the page through. By default the border colour fills them, so they read as frame and not as a hole. If you prefer, put the colour you see inside the content and they disappear entirely.', 'El contenido de otro sitio tiene sus esquinas redondeadas: en las cuñas que quedan se veía la página. Por defecto las rellena el color del borde, así parecen marco y no un agujero. Si lo prefieres, pon el color que ves dentro del contenido y desaparecen del todo.')}
           ${b.sfondo ? `<button type="button" class="btn secondario mini" data-lpvia-emb="${i}">${L('Rimetti come il tema', 'Back to theme', 'Como el tema')}</button>` : ''}</p>
-        <p class="suggerimento">${L('A zero decide il sito. Le piattaforme non ci dicono quanto è alto il loro contenuto — è un pezzo di un altro sito, non lo possiamo misurare — quindi se sotto ti avanza spazio vuoto, o il contenuto è tagliato, aggiustalo qui a occhio guardando l\'anteprima.', 'At zero the site decides. Platforms don\'t tell us how tall their content is — it\'s a piece of another site, we can\'t measure it — so if you see empty space below, or the content is cut, set it here by eye while watching the preview.', 'En cero decide el sitio. Las plataformas no nos dicen la altura de su contenido — es un trozo de otro sitio, no podemos medirlo — así que si te sobra espacio abajo, o el contenido queda cortado, ajústalo aquí a ojo mirando la vista previa.')}</p>
+        <p class="suggerimento">${L('A zero decide il sito. Le piattaforme non ci dicono quanto è alto il loro contenuto: è un pezzo di un altro sito, e non lo possiamo misurare. Se sotto ti avanza spazio vuoto, o il contenuto è tagliato, aggiustalo qui a occhio guardando l\'anteprima.', 'At zero the site decides. Platforms don\'t tell us how tall their content is: it\'s a piece of another site, and we can\'t measure it. If you see empty space below, or the content is cut, set it here by eye while watching the preview.', 'En cero decide el sitio. Las plataformas no nos dicen la altura de su contenido: es un trozo de otro sitio, y no podemos medirlo. Si te sobra espacio abajo, o el contenido queda cortado, ajústalo aquí a ojo mirando la vista previa.')}</p>
         <p class="suggerimento">${L('Incolla l\'indirizzo normale, al resto ci penso io. Va bene sia un singolo contenuto sia una PAGINA intera: canale YouTube, profilo TikTok, pagina Facebook, artista Spotify, profilo SoundCloud, canale Twitch o Kick. Oppure un video, uno short, un post o un reel di Instagram, un brano, un album, una playlist, un podcast, una clip. Riconosco anche Apple Music, Deezer e Vimeo.', 'Paste the normal address, I handle the rest. A single item or a whole PAGE both work: YouTube channel, TikTok profile, Facebook page, Spotify artist, SoundCloud profile, Twitch or Kick channel. Or a video, a short, an Instagram post or reel, a track, an album, a playlist, a podcast, a clip. I also recognise Apple Music, Deezer and Vimeo.', 'Pega la dirección normal, del resto me encargo yo. Vale tanto un contenido suelto como una PÁGINA entera: canal de YouTube, perfil de TikTok, página de Facebook, artista de Spotify, perfil de SoundCloud, canal de Twitch o Kick. O un vídeo, un short, una publicación o un reel de Instagram, una canción, un álbum, una lista, un podcast, un clip. También reconozco Apple Music, Deezer y Vimeo.')}</p>
         <p class="suggerimento">${L('Due limiti che non dipendono da noi: il profilo Instagram e la timeline di X non si possono incorporare (le due piattaforme non lo permettono). Di Instagram puoi mettere un post o un reel.', 'Two limits that are not ours: Instagram profiles and X timelines cannot be embedded (those platforms don\'t allow it). From Instagram you can embed a post or a reel.', 'Dos límites que no dependen de nosotros: el perfil de Instagram y la línea de X no se pueden incorporar (esas plataformas no lo permiten). De Instagram puedes poner una publicación o un reel.')}</p>`;
     } else if (b.tipo === 'eroe') {
@@ -20924,7 +20924,7 @@ function lpRenderBlocchi() {
       campi = `<input type="text" data-lpb="${i}" data-lpf="testo" maxlength="${d.limiti.titolo}" value="${esc(b.testo || '')}" placeholder="${esc(L('es. OGNI SERA DALLE 21 ·', 'e.g. EVERY NIGHT FROM 9PM ·', 'p. ej. CADA NOCHE DESDE LAS 21 ·'))}">
         <label class="campo spazio-sopra">${L('Velocità', 'Speed', 'Velocidad')}</label>
         <select data-lpb="${i}" data-lpf="velocita">${Object.keys(VEL).map((k) => `<option value="${k}"${(b.velocita || 'media') === k ? ' selected' : ''}>${esc(VEL[k])}</option>`).join('')}</select>
-        <p class="suggerimento">${L('Una riga di testo grande che scorre in continuo, come sui siti fatti bene. Chiudi con un simbolo (·, —, ★) così il giro non si vede.', 'A big line of text scrolling forever, like on well-made sites. End it with a symbol (·, —, ★) so the loop doesn\'t show.', 'Una línea de texto grande que se desplaza sin fin, como en los sitios bien hechos. Termínala con un símbolo (·, —, ★) para que no se note el bucle.')}</p>`;
+        <p class="suggerimento">${L('Una riga di testo grande che scorre in continuo, come sui siti fatti bene. Chiudila con un simbolo (·, ★) così il giro non si vede.', 'A big line of text scrolling forever, like on well-made sites. End it with a symbol (·, ★) so the loop doesn\'t show.', 'Una línea de texto grande que se desplaza sin fin, como en los sitios bien hechos. Termínala con un símbolo (·, ★) para que no se note el bucle.')}</p>`;
     } else if (b.tipo === 'griglia') {
       campi = (b.voci || []).map((v, j) => `
         <div class="lp-tessera-ed">

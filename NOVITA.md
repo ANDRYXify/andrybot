@@ -32,6 +32,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nella pagina link «Aggiungi numero» si ferma a sei, quanti la pagina ne mostra: prima dal settimo in poi i numeri sparivano al salvataggio senza dirlo. [vai: pagina]
 - Nell'aspetto della pagina link, movimento, spessore e ombra dei bottoni mostrano quelli che la pagina usa davvero, anche dopo un tema pronto: prima il pannello diceva «Fermo», «Leggero» e «Nessuna». [vai: pagina]
 - Nel registro delle donazioni, «Rimborsa» su una donazione arrivata con Satispay chiede conferma nominando il tuo negozio Satispay, non più il conto Stripe. [vai: donazioni]
+- Nell'aspetto della pagina link, «Modi» dice come va davvero il permesso per video e musica di altri siti: con «Caricali subito» chi apre la pagina trova prima una fascia che glielo chiede. [vai: pagina]
 
 ## 2026-09-26
 
