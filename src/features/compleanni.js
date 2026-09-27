@@ -124,7 +124,7 @@ export function tryComando(msg, parla) {
   if (cmd.azione === 'mostra') {
     const cur = compleanni.get(ch, chi);
     parla(cur
-      ? `@${nome} il tuo compleanno e' segnato per il ${fmtData(cur.giorno, cur.mese)}. Per cambiarlo: !compleanno GG/MM`
+      ? `@${nome} il tuo compleanno è segnato per il ${fmtData(cur.giorno, cur.mese)}. Per cambiarlo: !compleanno GG/MM`
       : `@${nome} scrivi !compleanno GG/MM (per esempio !compleanno 25/12) e ti faccio gli auguri il giorno giusto.`);
     return true;
   }

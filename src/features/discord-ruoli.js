@@ -174,7 +174,7 @@ export function differenza({ regole, dati, attuali, fuoriPortata } = {}) {
     dare: dare.sort(), togliere: togliere.sort(), bloccati: [...new Set(bloccati)].sort(),
     perche: Object.fromEntries([
       ...dare.map((id) => [id, (motivi.get(id) || []).join(', ')]),
-      ...togliere.map((id) => [id, 'non rientra piu\' in nessuna condizione']),
+      ...togliere.map((id) => [id, 'non rientra più in nessuna condizione']),
     ]),
   };
 }

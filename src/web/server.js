@@ -4901,7 +4901,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const token = campi.token || dcApi.tokenDi(prima);
     const guild = campi.guild !== undefined ? String(campi.guild).replace(/[^0-9]/g, '') : (prima?.guild || '');
     if (campi.attivo && !(token && guild)) {
-      return res.status(400).json({ errore: 'Prima porta il bot nel tuo server: senza, non c\'e\' niente da accendere.' });
+      return res.status(400).json({ errore: 'Prima porta il bot nel tuo server: senza, non c\'è niente da accendere.' });
     }
     res.json(ruoliVisti(dcRuoli.set(login, campi)));
   }));
@@ -9409,7 +9409,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       const guaio = guaiCancello({ ioSonoAdmin: me.admin, possoLimitare: me.possoLimitare, permessi });
       if (guaio === 'permessi') return res.status(400).json({ errore: 'non riesco a leggere i permessi del gruppo: riprova fra poco, o controlla che il bot sia ancora dentro' });
       if (guaio === 'admin') return res.status(400).json({ errore: 'il bot deve essere amministratore del gruppo' });
-      if (guaio === 'limitare') return res.status(400).json({ errore: 'il bot e\' amministratore ma non puo\' limitare i membri: dagli il permesso «Blocca utenti»' });
+      if (guaio === 'limitare') return res.status(400).json({ errore: 'il bot è amministratore ma non può limitare i membri: dagli il permesso «Blocca utenti»' });
     }
     tgConf.setIngresso(login, {
       attivo,

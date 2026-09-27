@@ -68,6 +68,6 @@ test('chi chiama lo passa: il giro dei ruoli e il costruttore', () => {
   for (const chiave of ['creato', 'sistemato', 'tolto', 'ruoloCreato', 'ruoloSistemato', 'ruoloTolto']) {
     assert.ok(cos.includes(`MOTIVO.${chiave}`), `il costruttore non dice perche' per «${chiave}»`);
   }
-  assert.ok(cos.includes("tolto: 'non e\\' nella traccia"),
+  assert.ok(cos.includes("tolto: 'non è nella traccia"),
     'cancellare e\' la cosa che piu\' di tutte ha bisogno di un perche\' scritto');
 });

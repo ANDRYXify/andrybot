@@ -76,10 +76,10 @@ export function indirizzo(channel) {
 //
 // I segnaposto sono tre e bastano: chi scrive, dove andare, e il codice.
 export const FRASI = Object.freeze({
-  inizio: '@{nome} ti faccio entrare nel Discord e ti do un codice da riscrivere qui, cosi\' ti sistemo i ruoli. Si comincia qui {link}',
+  inizio: '@{nome} ti faccio entrare nel Discord e ti do un codice da riscrivere qui, così ti sistemo i ruoli. Si comincia qui {link}',
   fatto: '@{nome} collegato ✓ Al prossimo giro ti metto a posto i ruoli su Discord.',
-  scaduto: '@{nome} quel codice non vale piu\'. Si riparte da qui {link}',
-  via: '@{nome} scollegato. I ruoli che hai adesso restano tuoi: non tocco piu\' niente.',
+  scaduto: '@{nome} quel codice non vale più. Si riparte da qui {link}',
+  via: '@{nome} scollegato. I ruoli che hai adesso restano tuoi: non tocco più niente.',
   estraneo: '@{nome} non risulti collegato.',
 });
 

@@ -748,7 +748,7 @@ export function differenza(foto, preset, { togliere = false, puoiToccare = null 
   for (const v of lista) {
     const gia = trovati.get(v);
     if (v.avvisi) avvisi = gia ? { id: String(gia.id), nome: gia.nome } : { nome: v.nome, dentro: v.dentro };
-    if (!gia) { crea.push({ ...v, perche: 'non c\'e\'' }); continue; }
+    if (!gia) { crea.push({ ...v, perche: 'non c\'è' }); continue; }
     const cambia = {};
     if (permessiDiversi(v.permessi, gia)) cambia.permessi = fondiPermessi(gia, v.permessi);
     if (v.argomento && String(gia.argomento || '') !== v.argomento) cambia.argomento = v.argomento;
@@ -1131,7 +1131,7 @@ export function differenzaIngresso(preset, foto, stato = {}) {
 
   let blocco = '';
   if (!(foto?.caratteristiche || []).includes('COMMUNITY')) {
-    blocco = 'questo server non e\' di tipo Community: la schermata di benvenuto e le domande d\'ingresso Discord le accende solo li\', dalle sue impostazioni';
+    blocco = 'questo server non è di tipo Community: la schermata di benvenuto e le domande d\'ingresso Discord le accende solo lì, dalle sue impostazioni';
   } else if (laPorta && vuole.acceso) {
     const c = contaPorta(preset, foto, vuole);
     if (!c.basta) {

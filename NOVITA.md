@@ -84,6 +84,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nella scheda Telegram «Avvisa il gruppo quando vado in diretta» si accende appena c'è un posto dove mandare l'avviso, anche solo un canale, come già accettava il server. [vai: telegram]
 - «Fissa l'avviso in cima durante la live…» vale per ogni posto che aggiungi, e a fine diretta su TikTok l'avviso si toglie solo dove era fissato, seguendo la spunta di quel posto. [vai: telegram]
 - Nei Ruoli di Discord, «Passa adesso» con «Tieni i ruoli aggiornati» spento ti dice di accenderlo, invece di chiederti di portare nel server un bot che c'è già. [vai: ruoli]
+- Le frasi di !discord in chat, i messaggi di Telegram e Discord nel pannello e i motivi scritti nel registro del tuo server hanno gli accenti veri: «così», «più», «è» invece dell'apostrofo. [vai: ruoli]
 
 ## 2026-09-26
 
