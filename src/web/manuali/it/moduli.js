@@ -400,7 +400,7 @@ export default {
 
     { h3: 'Comandi pronti' },
     { p: [
-      'Qui ci sono tutti i comandi che il bot porta già con sé, divisi per famiglia: giochi in chat, giochi con la webcam, sorteggi, ore guardate, serie di presenze, compleanni, VIP, sondaggi, richieste musicali, modalità della chat, e gli altri. Ognuno si spegne, si rinomina e si può riservare. Le scelte valgono dopo <strong>«Salva i comandi»</strong>.',
+      'Qui ci sono tutti i comandi che il bot porta già con sé, divisi per famiglia: giochi in chat, giochi con la webcam, sorteggi, ore guardate, serie di presenze, compleanni, VIP, sondaggi, richieste musicali, modalità della chat, e gli altri. Quasi tutti si spengono, si rinominano e si possono riservare: le eccezioni lo dicono sulla loro riga. Le scelte valgono dopo <strong>«Salva i comandi»</strong>.',
     ] },
     { tabella: [
       ['Controllo', 'Cosa fa'],

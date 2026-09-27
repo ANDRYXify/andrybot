@@ -9257,7 +9257,7 @@ function pannelloAscolto() {
     ${proprietario ? `
     <div class="carta">
       <h2>${_hIco(ICO.cuffie)}${L('Impara mentre parlo', 'Learns while I talk', 'Aprende mientras hablo')}</h2>
-      <p>${L('Con la pagina di ascolto aperta, il bot', 'With the listening page open, the bot', 'Con la página de escucha abierta, el bot')} <strong class="primo-piano">${L('ti sente parlare in diretta', 'hears you speak live', 'te oye hablar en directo')}</strong> ${L('e cresce: impara i tuoi modi di dire e il tuo tono, così ti somiglia sempre di più.', 'and grows: it learns your sayings and your tone, so it sounds more and more like you.', 'y crece: aprende tus expresiones y tu tono, así se te parece cada vez más.')} <strong>${L('Solo la tua voce', 'Only your voice', 'Solo tu voz')}</strong> — ${L('mai da altri account.', 'never from other accounts.', 'nunca de otras cuentas.')}</p>
+      <p>${L('Con la pagina di ascolto aperta, il bot', 'With the listening page open, the bot', 'Con la página de escucha abierta, el bot')} <strong class="primo-piano">${L('ti sente parlare in diretta', 'hears you speak live', 'te oye hablar en directo')}</strong> ${L('e cresce: impara i tuoi modi di dire e il tuo tono, così ti somiglia sempre di più.', 'and grows: it learns your sayings and your tone, so it sounds more and more like you.', 'y crece: aprende tus expresiones y tu tono, así se te parece cada vez más.')} <strong>${L('Solo la tua voce', 'Only your voice', 'Solo tu voz')}</strong>: ${L('mai da altri account.', 'never from other accounts.', 'nunca de otras cuentas.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
           <input type="checkbox" id="chk-impara" ${iv.attivo ? 'checked' : ''}>
@@ -18910,8 +18910,8 @@ function pannelloModuli() {
     <div data-zona="comandi">
     <div class="carta">
       <h2>${_hIco(ICO.fulmine)}${L('Comando rapido', 'Quick command', 'Comando rápido')}</h2>
-      <p>${L('Il modo più veloce: scrivi il', 'The fastest way: type the', 'La forma más rápida: escribe el')} <strong class="primo-piano">${L('nome', 'name', 'nombre')}</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">${L('cosa deve rispondere', 'what it should reply', 'qué debe responder')}</strong>. ${L('Fatto — niente altro da compilare.', 'Done — nothing else to fill in.', 'Listo — nada más que rellenar.')}</p>
-      <p class="suggerimento"><a href="/manuale/moduli" target="_blank" rel="noopener">${L('Manuale dei moduli', 'Modules manual', 'Manual de módulos')}</a> — ${L('inneschi, condizioni, azioni e variabili, uno per uno.', 'triggers, conditions, actions and variables, one by one.', 'disparadores, condiciones, acciones y variables, uno por uno.')}</p>
+      <p>${L('Il modo più veloce: scrivi il', 'The fastest way: type the', 'La forma más rápida: escribe el')} <strong class="primo-piano">${L('nome', 'name', 'nombre')}</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">${L('cosa deve rispondere', 'what it should reply', 'qué debe responder')}</strong>. ${L('Fatto: niente altro da compilare.', 'Done: nothing else to fill in.', 'Listo: nada más que rellenar.')}</p>
+      <p class="suggerimento"><a href="/manuale/moduli" target="_blank" rel="noopener">${L('Manuale dei moduli', 'Modules manual', 'Manual de módulos')}</a>: ${L('inneschi, condizioni, azioni e variabili, uno per uno.', 'triggers, conditions, actions and variables, one by one.', 'disparadores, condiciones, acciones y variables, uno por uno.')}</p>
       <div class="riga-flessibile">
         <span class="prefisso-cmd">!</span>
         <input aria-label="social" type="text" id="qc-nome" class="campo-largo" placeholder="social" maxlength="24">
@@ -18928,7 +18928,7 @@ function pannelloModuli() {
       <p class="suggerimento">${L('Altre variabili utili:', 'More handy variables:', 'Más variables útiles:')}
       <code>$followage</code> (${L('da quanto ti segue chi scrive, o', 'how long the writer has followed, or', 'cuánto lleva siguiéndote quien escribe, o')} <code>!followage @nome</code>),
       <code>$spettatori</code> (${L('quanti stanno guardando ora', 'how many are watching now', 'cuántos están viendo ahora')}),
-      <code>$chattercaso</code> (${L('un utente a caso tra chi ha scritto — perfetto per i giochi, es.', 'a random recent chatter — great for games, e.g.', 'un usuario al azar entre quienes han escrito — ideal para juegos, p. ej.')} <em>!abbraccia $chattercaso</em>),
+      <code>$chattercaso</code> (${L('un utente a caso tra chi ha scritto, perfetto per i giochi, es.', 'a random recent chatter, great for games, e.g.', 'un usuario al azar entre quienes han escrito, ideal para juegos, p. ej.')} <em>!abbraccia $chattercaso</em>),
       <code>$data</code> · <code>$ora</code> · <code>$giorno</code>. ${L('Nota:', 'Note:', 'Nota:')} <code>$followage</code> ${L('richiede il permesso "lettura follower" (dalla dashboard).', 'needs the "read followers" permission (from the dashboard).', 'necesita el permiso de "lectura de seguidores" (desde el panel).')}</p>
       <p class="spazio-sopra">
         <button class="btn" id="btn-qc">${L('Aggiungi comando', 'Add command', 'Añadir comando')}</button>
@@ -18936,7 +18936,7 @@ function pannelloModuli() {
       </p>
       <div class="riquadro-info spazio-sopra">
         <strong>${L('Comandi pronti (1 clic)', 'Ready-made commands (1 click)', 'Comandos listos (1 clic)')}</strong>
-        <p class="suggerimento">${L('Creo per te il comando già configurato per i mod. Poi in chat basta', 'I create the command already set up for mods. Then in chat just type', 'Creo el comando ya configurado para mods. Luego en el chat basta')} <code>!categoria Fortnite</code> ${L('o', 'or', 'o')} <code>!titolo In diretta!</code> — ${L('e anche da Telegram in privato con', 'and also from Telegram in private with', 'y también desde Telegram en privado con')} <code>/categoria</code> · <code>/titolo</code>.</p>
+        <p class="suggerimento">${L('Creo per te il comando già configurato per i mod. Poi in chat basta', 'I create the command already set up for mods. Then in chat just type', 'Creo el comando ya configurado para mods. Luego en el chat basta')} <code>!categoria Fortnite</code> ${L('o', 'or', 'o')} <code>!titolo In diretta!</code>, ${L('e anche da Telegram in privato con', 'and also from Telegram in private with', 'y también desde Telegram en privado con')} <code>/categoria</code> · <code>/titolo</code>.</p>
         <p>
           <button class="btn secondario" id="btn-preset-categoria">${L('Crea comando !categoria', 'Create !categoria command', 'Crear comando !categoria')}</button>
           <button class="btn secondario" id="btn-preset-titolo">${L('Crea comando !titolo', 'Create !titolo command', 'Crear comando !titolo')}</button>
@@ -19017,7 +19017,7 @@ function pannelloModuli() {
     </div>
     ${carteContatori()}    <div class="carta">
       <h2>${_hIco(ICO.chat)}${L('Comandi pronti', 'Built-in commands', 'Comandos de serie')}</h2>
-      <p>${L('Quelli che il bot porta già con sé. Ognuno si spegne, si rinomina e si può riservare — come i tuoi.', 'The ones the bot already brings with it. Each one can be switched off, renamed and reserved — like yours.', 'Los que el bot ya trae consigo. Cada uno se apaga, se renombra y se puede reservar — como los tuyos.')}</p>
+      <p>${L('Quelli che il bot porta già con sé. Quasi tutti si spengono, si rinominano e si possono riservare, come i tuoi.', 'The ones the bot already brings with it. Almost all of them can be switched off, renamed and reserved, like yours.', 'Los que el bot ya trae consigo. Casi todos se apagan, se renombran y se pueden reservar, como los tuyos.')}</p>
       <p class="suggerimento">${L('Un comando tuo con lo stesso nome vince sempre su quello pronto.', 'A command of yours with the same name always wins over the built-in one.', 'Un comando tuyo con el mismo nombre siempre gana al de serie.')}</p>
       <ul class="gc-lista" id="lista-cmd-pronti">${attesaHtml('li')}</ul>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-gcmd-2">${L('Salva i comandi', 'Save the commands', 'Guardar los comandos')}</button></p>
@@ -21208,7 +21208,7 @@ function _verbiContHtml(c) {
     const opt = CHI_CONT.map(([k, n]) => `<option value="${k}"${r.chi === k ? ' selected' : ''}>${esc(L(n[0], n[1], n[2]))}</option>`).join('');
     const eti = esc(L(nome[0], nome[1], nome[2]));
     return `<div class="cont-verbo" data-verbo="${id}">
-      <span class="cv-nome">${eti}<span class="tenue"> \u2014 ${esc(L(che[0], che[1], che[2]))}</span></span>
+      <span class="cv-nome">${eti}<span class="tenue">: ${esc(L(che[0], che[1], che[2]))}</span></span>
       <input type="text" data-vk="parole" maxlength="80" value="${esc(parole)}" aria-label="${eti} \u2014 ${esc(L('parole', 'words', 'palabras'))}"
         placeholder="${id === 'leggi' ? esc(L('il nome da solo', 'the name alone', 'el nombre solo')) : esc(L('una o pi\u00f9 parole', 'one or more words', 'una o m\u00e1s palabras'))}"${id === 'leggi' ? ' disabled' : ''}>
       <select data-vk="chi" aria-label="${eti} \u2014 ${esc(L('chi pu\u00f2', 'who can', 'qui\u00e9n puede'))}">${opt}</select>
