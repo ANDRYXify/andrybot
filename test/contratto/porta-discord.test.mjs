@@ -48,7 +48,8 @@ test('il nome corto porta al collegamento di QUEL canale, e a nient\'altro', () 
   assert.match(m, /req\.url = '\/collega\/' \+ d\[1\]\.toLowerCase\(\)/);
   assert.ok(m.includes('const d = RE_CANALE_IN_VIA.exec(req.path);') && SRV.includes('const RE_CANALE_IN_VIA = new RegExp(`^/(${CANALE_IN_VIA})/?$`, \'i\');'), 'un canale, non un percorso qualunque');
   assert.match(m.slice(0, 700), /res\.redirect\(302, config\.baseUrl \+ '\/'\)/, 'la radice non e\' una pagina: rimanda al sito');
-  assert.match(m.slice(0, 700), /req\.path === '\/privacy'\) return next\(\);/,
+  // l'informativa ha un indirizzo per lingua: passano tutti, e nessuno diventa un canale
+  assert.match(m.slice(0, 700), /if \(legaleIn\('privacy'\)\.some\(\(x\) => x\.via === req\.path\)\) return next\(\);/,
     'e l\'informativa e\' un indirizzo, non un canale: la pagina ci linka');
 });
 
