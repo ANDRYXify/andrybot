@@ -95,6 +95,11 @@ const SELFTEST = process.argv.includes('--selftest');
 // cornici) e la vetrina se lo portava dietro senza usarne niente. Invece di
 // alzare il tetto quella parte e' uscita in disegno-pannello.js, che carica
 // solo il pannello: la vetrina porta il nucleo e basta.
+//
+// Il 27 settembre la home era a 60,0 con 14 byte d'aria. Invece di alzare il
+// tetto la pagina ha smesso di spedire il rientro dei suoi template (a capo e
+// spazi davanti a ogni riga): 170 byte compressi che non disegnavano niente
+// (senzaRientro, in vetrina-vista.js, con la prova che si legge uguale).
 const TETTO_KB = 60;
 
 let chromium;

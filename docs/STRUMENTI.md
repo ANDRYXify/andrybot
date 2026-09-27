@@ -8,7 +8,9 @@ diretta e che non sono il bot:
 - **Emote e badge** (`misure`): un'immagine sola, ridotta alle tre misure che
   chiede Twitch, con la media fatta sulla luce vera;
 - **Media kit** (`kit`): il foglio A4 da mandare ai marchi, coi numeri delle
-  dirette misurati da noi, in PDF coi link cliccabili o in PNG.
+  dirette misurati da noi, in PDF coi link cliccabili o in PNG;
+- **Pannelli** (`pannelli`): i pannelli sotto il canale Twitch, tutti nello
+  stesso stile, con link e descrizioni già scritti da quello che il canale ha.
 
 Un gruppo con una scheda sola il cancello delle sorelle non lo accetta: per
 questo si è partiti con due strumenti veri, non con uno e un segnaposto.
@@ -287,4 +289,94 @@ stavano sulla tela e che il titolo si legga con accenti ed emoji. Una volta il
 file scaricato dal pannello è stato letto anche da pypdf in modalità stretta:
 una pagina A4, il titolo, i sei link coi rettangoli giusti, l'immagine
 1240×1754.
+
+## Pannelli
+
+Sotto il canale Twitch, in «Informazioni», ci sono i pannelli: ognuno ha
+un'immagine, un link e una descrizione. Le misure le dice Twitch: l'immagine
+larga al massimo 320 pixel e alta al massimo 600, altrimenti la ridimensiona;
+la descrizione in Markdown, senza HTML. Qui l'immagine si disegna a 320 esatti:
+più larga Twitch la stringerebbe lui, e la stringerebbe peggio.
+
+Un'immagine è la parte facile. Quello che costa tempo a uno streamer sono il
+link giusto e la descrizione di ogni pannello, e sono cose che il canale sa
+già. Per questo i pannelli nascono pieni:
+
+| pannello | link | descrizione |
+|---|---|---|
+| Chi sono | la pagina link | la frase della pagina link |
+| Social | la pagina link | i social della pagina link, uno per riga, coi link |
+| Discord | la porta d'ingresso del server, se è aperta; se no il Discord della pagina link | |
+| Sostienimi | la pagina delle donazioni, se le donazioni sono pronte | |
+| Programma | la pagina link | i giorni e le ore della settimana, e il fuso |
+| Comandi | | i comandi del canale, fino a dodici |
+| Regole | | da scrivere |
+
+Si parte coi pannelli per cui c'è qualcosa da dire: senza donazioni pronte il
+pannello «Sostienimi» non compare da solo, senza settimana non compare
+«Programma» (il nome che Twitch stesso dà a quella funzione, e corto). Si aggiungono, si tolgono, si riordinano, e ogni
+campo si riscrive a mano; un pannello libero ha solo quello che ci si scrive.
+
+### Uno stile per tutta la serie
+
+I pannelli stanno in fila sulla stessa pagina: uno diverso dagli altri si nota
+subito. Per questo lo stile è della serie, non del pannello: tema, forma,
+carattere, icone sì o no, altezza. Il pannello sceglie solo titolo e icona.
+
+- **Tema.** «Pagina»: lo sfondo è l'accento della pagina link. «Carta» e
+  «Notte»: chiaro e scuro, con l'accento sulle icone e sul bordo.
+- **Forma.** «A penna»: il bordo disegnato dalla penna di casa (quella del QR
+  e delle carte del pannello), con un seme per pannello, così ogni bordo è un
+  po' diverso come quelli fatti a mano, ma sempre lo stesso a ogni disegno.
+  «Netta»: angoli tondi. «Piena»: tutta l'immagine.
+- **Carattere.** Gli stessi delle Grafiche social.
+- **Altezza.** 80, 100 o 160 pixel.
+
+Fuori dalla forma lo sfondo è trasparente: sulla pagina di Twitch, chiara o
+scura, si vede solo il pannello.
+
+### Si legge per costruzione
+
+Il titolo parte grande (poco meno di metà dell'altezza) e si rimpicciolisce
+finché ci sta, fino a 14 pixel; solo sotto si accorcia coi puntini, e la scheda
+lo dice. La misura è una sola per tutta la serie: quella che fa stare il titolo
+più lungo. La prima versione adattava ogni pannello per conto suo, e in fila
+«Quando sono in diretta» veniva la metà degli altri: una cosa che si nota
+subito, su una pagina dove i pannelli stanno uno sotto l'altro. Il testo sul pannello ha contrasto di almeno 4,5 con il suo sfondo
+(WCAG, anche per il testo piccolo): se il colore scelto non ci arriva, prende il
+bianco o il nero, quello che contrasta di più. L'accento colora icona e bordo
+solo se contrasta almeno 3 con lo sfondo, altrimenti prendono il colore del
+testo. Lo stesso criterio del media kit, con la stessa funzione (`inchiostro`
+in `kit.js`).
+
+Il nero dev'essere nero puro. Fra bianco e `#000000` quello migliore arriva
+sempre ad almeno 4,58, qualunque sia lo sfondo (il caso peggiore è uno sfondo di
+luminanza 0,18, dove i due si equivalgono). Con un nero morbido, `#111111`, non
+è più vero: su `#6666ff` nessuno dei due arriva a 4,5. Il media kit usava
+proprio quel nero sulla fascia del contatto; il collaudo dei pannelli, che
+prova tutti i colori di una griglia 6×6×6, l'ha trovato, e adesso la regola
+sta in un posto solo.
+
+### Il Markdown
+
+Le descrizioni si scrivono in Markdown perché Twitch le legge così. Quello che
+arriva da fuori (il nome di un social, una categoria) si scrive con i segni del
+Markdown disattivati, e un link entra solo se è un indirizzo web: una parentesi
+o uno spazio nell'indirizzo si codificano, così non rompono la riga.
+
+### Scaricare
+
+Ogni pannello si scarica da solo in PNG. «Scarica tutti» fa un file ZIP con
+tutte le immagini, in ordine, e un `testi.txt` con titolo, link e descrizione
+di ognuno, da copiare dentro Twitch. Lo ZIP lo scriviamo noi (`zip.js`): le
+immagini sono già compresse, quindi si mettono dentro così come sono, con il
+loro CRC-32. `test/unita/zip.test.mjs` lo fa leggere anche a un lettore che non
+è il nostro.
+
+### Dove sta
+
+`src/web/public/pannelli.js` disegna e prepara i testi (`SB_PANNELLI`),
+`src/web/public/zip.js` scrive lo ZIP, `src/features/pannelli.js` ripulisce
+quello che si salva (`settings.pannelli`), `GET /api/streamer/pannelli` dà i
+dati del canale. Si caricano solo quando si apre la scheda.
 

@@ -340,3 +340,22 @@ contenuto stesso, senza alzare il tetto:
 
 La home è tornata a 59,9 kB. L'aria sotto il tetto adesso è un decimo di kB:
 la prossima voce della vetrina dovrà trovarsi il posto da sola.
+
+### Il rientro dei template
+
+Il 27 settembre la home era a 60,0 kB con 14 byte d'aria, e la voce dei
+pannelli di Twitch non ci stava. Il posto l'ha trovato la pagina stessa: usciva
+col rientro dei template che la scrivono, un a capo e otto, dieci spazi davanti
+a ogni riga. `senzaRientro` (in `vetrina-vista.js`) toglie spazi e tabulazioni
+attorno a ogni a capo e lascia l'a capo, uno per uno, fuori da script, stili,
+`pre` e `textarea`.
+
+Si legge uguale per costruzione. Dove lo spazio bianco si comprime, un a capo
+con gli spazi attorno e un a capo da solo diventano lo stesso spazio. Dove gli
+a capo contano (`white-space: pre-line`, il testo delle recensioni) gli spazi
+attorno a un a capo li butta il browser, e gli a capo restano tutti. Nella
+vetrina non c'è nessun `pre`, nessun attributo che vada a capo, nessuno script
+che legga gli spazi. La prova (`test/unita/vetrina-rientro.test.mjs`) controlla
+stessi tag, stesso testo letto nei due modi, script e stili identici.
+
+Sono 170 byte compressi per lingua: l'aria torna a 0,18 kB.

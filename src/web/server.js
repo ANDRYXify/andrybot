@@ -110,6 +110,7 @@ import { paginaCampagna, titoloDi } from './campagna-vista.js';
 import { pngDi, alleggerisci } from './png-leggero.js';
 import { normStileQr } from '../features/qr-stile.js';
 import * as mediakit from '../features/mediakit.js';
+import * as pannelliTw from '../features/pannelli.js';
 import * as promemoriaLicenza from '../features/licenza-promemoria.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
@@ -6447,6 +6448,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (b.qrUsato === true && !out.qrUsato) out.qrUsato = Date.now();
     // le scelte del media kit (docs/STRUMENTI.md): i numeri non passano di qui
     if (b.kit !== undefined) out.kit = mediakit.normKit(b.kit);
+    if (b.pannelli !== undefined) out.pannelli = pannelliTw.normPannelli(b.pannelli);
     if (b.grafiche !== undefined) {
       const gr = b.grafiche || {};
       const str = (v, n) => String(v == null ? '' : v).slice(0, n);
@@ -6821,6 +6823,31 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       social: mediakit.socialDaPagina(pagina), bio: pagina?.tagline || '', colori: coloriDi(pagina),
       settimana: settimana.vistaSettimana(settimana.settimanaDi(s?.settings)),
       kit: mediakit.normKit(s?.settings?.kit),
+    });
+  }));
+
+  // I PANNELLI DI TWITCH nascono pieni: quello che il canale sa gia' (docs/STRUMENTI.md).
+  // Un link entra solo se porta a una pagina accesa: la pagina link se e'
+  // attiva, le donazioni se la loro pagina e' accesa e sanno incassare, il
+  // Discord dalla porta d'ingresso se e' aperta, se no dalla pagina link.
+  app.get('/api/streamer/pannelli', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const pagina = linkPage.get(login);
+    const social = mediakit.socialDaPagina(pagina);
+    const donaPronta = !!paginaDona.get(login)?.attiva && !donazioni.cosaManca(s?.settings, contiDi(login));
+    const comandi = (modulesDb.list(login) || [])
+      .filter((m) => m.attivo && m.trigger?.tipo === 'comando' && m.trigger.comando)
+      .map((m) => String(m.trigger.comando)).slice(0, pannelliTw.MAX.comandi);
+    res.json({
+      display: s?.display || login, piattaforma: piattaformaDi(login),
+      colori: coloriDi(pagina), bio: pagina?.tagline || '', social,
+      linkPagina: pagina?.attiva ? `${config.baseUrl}/u/${login}` : '',
+      linkDona: donaPronta ? donazioni.urlPaginaDona(login) : '',
+      linkDiscord: dcCollega.attivo() && dcCollega.apertoA(login) ? dcCollega.indirizzo(login) : (social.find((x) => x.icona === 'discord')?.url || ''),
+      settimana: settimana.vistaSettimana(settimana.settimanaDi(s?.settings)),
+      comandi,
+      pannelli: s?.settings?.pannelli ? pannelliTw.normPannelli(s.settings.pannelli) : null,
     });
   }));
 

@@ -4,15 +4,15 @@
 
 export default {
   slug: 'strumenti',
-  schede: ['qr', 'misure', 'kit'],
-  titolo: 'Manuale degli strumenti: QR, emote, media kit | SocialBot',
+  schede: ['qr', 'misure', 'kit', 'pannelli'],
+  titolo: 'Manuale degli strumenti: QR, emote, kit e pannelli | SocialBot',
   h1: 'Manuale degli strumenti',
-  desc: 'Un QR col tuo logo che si legge davvero, emote e badge alle misure di Twitch e il media kit coi numeri veri delle tue dirette, da mandare ai marchi.',
-  aggiornata: '2026-09-26',
+  desc: 'Un QR col tuo logo che si legge davvero, emote e badge alle misure di Twitch, il media kit coi numeri veri e i pannelli del canale già pieni.',
+  aggiornata: '2026-09-27',
   corpo: [
     { p: [
-      'Nel menù del pannello, sotto <em>Strumenti</em>, ci sono le cose che servono intorno alla diretta: il <strong>QR su misura</strong>, le <strong>emote e i badge</strong> alle misure di Twitch e il <strong>media kit</strong>.',
-      'Si disegnano tutti nel tuo browser. Le immagini che prepari per emote e badge non passano dal nostro server; il logo del QR e le scelte del media kit ci arrivano solo se premi <em>Salva</em>, per ritrovarli la volta dopo.',
+      'Nel menù del pannello, sotto <em>Strumenti</em>, ci sono le cose che servono intorno alla diretta: il <strong>QR su misura</strong>, le <strong>emote e i badge</strong> alle misure di Twitch, il <strong>media kit</strong> e i <strong>pannelli</strong> del canale.',
+      'Si disegnano tutti nel tuo browser. Le immagini che prepari per emote e badge non passano dal nostro server; il logo del QR, le scelte del media kit e i pannelli ci arrivano solo se premi <em>Salva</em>, per ritrovarli la volta dopo.',
     ] },
 
     { h2: 'QR su misura', scheda: 'qr' },
@@ -92,6 +92,34 @@ export default {
     ] },
     { p: ['Le scelte si salvano con <em>Salva</em> e le ritrovi la volta dopo. I numeri invece si aggiornano da soli ogni volta che apri la scheda. Il media kit non è una pagina pubblica: esiste quando lo scarichi, e lo mandi tu a chi vuoi.'] },
 
+    { h2: 'Pannelli', scheda: 'pannelli' },
+    { p: ['Sono i riquadri sotto il tuo canale Twitch, in <em>Informazioni</em>: ognuno ha un\'immagine, un link e una descrizione. Qui li prepari tutti insieme, nello stesso stile, e li scarichi in un file solo.'] },
+    { h3: 'Nascono già pieni' },
+    { ul: [
+      '<strong>Chi sono</strong> porta alla tua pagina link, con la sua frase come descrizione.',
+      '<strong>Programma</strong> scrive i giorni e le ore della tua settimana, e il fuso.',
+      '<strong>Social</strong> mette in fila i social della tua pagina link, ognuno col suo link.',
+      '<strong>Discord</strong> porta alla porta d\'ingresso del tuo server, se è aperta; se no al Discord che hai sulla pagina link.',
+      '<strong>Sostienimi</strong> porta alla pagina delle donazioni, se è accesa e le donazioni sono pronte.',
+      '<strong>Comandi</strong> elenca i tuoi comandi, fino a dodici. <strong>Regole</strong> parte da quattro regole che riscrivi come vuoi.',
+    ] },
+    { p: [
+      'Un pannello compare da solo solo se il canale ha qualcosa da metterci: senza settimana non c\'è <em>Programma</em>, senza donazioni pronte non c\'è <em>Sostienimi</em>. Li aggiungi da <em>Aggiungi</em>, in fondo all\'elenco, insieme a quello libero, dove scrivi tu tutto.',
+      'Ogni campo si riscrive. Se poi cambi qualcosa nel canale, per esempio un social, <em>Riprendi dal canale</em> rimette il link e la descrizione di adesso.',
+    ] },
+    { h3: 'Uno stile per tutti' },
+    { p: [
+      'Colori, forma, carattere, altezza e icona valgono per tutti i pannelli: stanno in fila sulla stessa pagina, e uno diverso dagli altri si nota subito. I colori possono essere quelli della tua pagina link, Carta o Notte; la forma a penna, netta o piena. Anche il titolo ha una misura sola per tutti: quella che fa stare il più lungo.',
+      'Il testo sul pannello si legge sempre: se il colore non contrasta abbastanza, diventa bianco o nero. Con <em>Twitch scuro</em> e <em>Twitch chiaro</em> vedi come stanno sulle due pagine di Twitch.',
+    ] },
+    { h3: 'Metterli su Twitch' },
+    { passi: [
+      { t: 'Scarica tutti', d: ': ti arriva un file con le immagini in ordine e un testo con titolo, link e descrizione di ognuno. Puoi anche scaricare un pannello solo, da sotto la sua immagine.' },
+      { t: 'Apri il tuo canale', d: ' su Twitch, vai in <em>Informazioni</em> e accendi <em>Modifica pannelli</em>.' },
+      { t: 'Per ogni pannello', d: ' carica l\'immagine, incolla il link e la descrizione. Nella scheda, sotto ogni pannello, ci sono <em>Copia il link</em> e <em>Copia la descrizione</em>.' },
+    ] },
+    { p: ['Le immagini sono larghe 320 pixel, la misura con cui Twitch le mostra. La descrizione Twitch la legge in Markdown: <code>**grassetto**</code>, <code>[parole](link)</code> per un link, un trattino davanti per un elenco.'] },
+
     { h2: 'Quando non funziona' },
     { ul: [
       '<strong>I tasti per scaricare il QR sono spenti.</strong> Sotto l\'anteprima c\'è scritto perché: di solito sono i colori troppo vicini, o un logo che con quel link non ci sta.',
@@ -102,6 +130,9 @@ export default {
       '<strong>Una GIF animata esce ferma.</strong> Qui si prende il primo fotogramma: le emote animate si preparano a parte.',
       '<strong>Nel media kit mancano i numeri.</strong> Negli ultimi 30 giorni ci sono meno di tre dirette concluse: sotto la scheda c\'è scritto quante.',
       '<strong>Nel media kit mancano le categorie.</strong> Si contano dalle dirette fatte da quando c\'è il media kit, ed escono dopo tre dirette.',
+      '<strong>Un pannello che mi aspettavo non c\'è.</strong> Il canale non ha ancora niente da metterci: per esempio la pagina delle donazioni è spenta. Aggiungilo da <em>Aggiungi</em> e scrivi tu link e descrizione.',
+      '<strong>Un titolo di pannello finisce coi puntini.</strong> Non ci sta nemmeno col carattere più piccolo: accorcialo, togli l\'icona o scegli un carattere più stretto.',
+      '<strong>Tutti i titoli dei pannelli sono diventati piccoli.</strong> La misura è una per tutti, quella del titolo più lungo: accorcia quello.',
     ] },
   ],
   faq: [
@@ -112,5 +143,7 @@ export default {
     { d: 'Le immagini delle emote finiscono sul vostro server?', r: 'No: si rimpiccioliscono nel tuo browser, e da lì le scarichi.' },
     { d: 'I numeri del media kit si possono modificare?', r: 'No: vengono dalle tue dirette, e puoi solo scegliere quali mostrare. È quello che li rende credibili per chi li legge.' },
     { d: 'Il media kit è una pagina pubblica?', r: 'No: esiste quando lo scarichi, e lo mandi tu a chi vuoi.' },
+    { d: 'I pannelli si aggiornano da soli su Twitch?', r: 'No: Twitch non lascia cambiare i pannelli da fuori. Quando cambi qualcosa, riscarichi e ricarichi il pannello che è cambiato.' },
+    { d: 'Posso usare i pannelli su Kick o YouTube?', r: 'Le immagini sì, sono normali PNG. Le misure però sono quelle di Twitch.' },
   ],
 };

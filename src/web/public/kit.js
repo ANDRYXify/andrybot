@@ -24,6 +24,10 @@
     return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
   }
 
+  function inchiostro(su) {
+    return contrasto('#ffffff', su) >= contrasto('#000000', su) ? '#ffffff' : '#000000';
+  }
+
   function taglia(g, t, largo) {
     let s = String(t || '');
     if (g.measureText(s).width <= largo) return { testo: s, tagliato: false };
@@ -96,7 +100,7 @@
       g.drawImage(d.avatar, M + (A - w) / 2, M + (A - h) / 2, w, h);
     } else {
       g.fillStyle = c.acc; g.fillRect(M, M, A, A);
-      g.fillStyle = contrasto('#ffffff', c.acc) >= contrasto('#111111', c.acc) ? '#ffffff' : '#111111';
+      g.fillStyle = inchiostro(c.acc);
       g.font = f(800, 84); g.textAlign = 'center';
       g.fillText(String(d.nome || '?').slice(0, 1).toUpperCase(), M + A / 2, M + A / 2 + 30);
     }
@@ -227,7 +231,7 @@
     const bh = 124, by = H - M - bh;
     if (d.email) {
       tondo(g, M, by, W - 2 * M, bh, 22); g.fillStyle = c.acc; g.fill();
-      const su = contrasto('#ffffff', c.acc) >= contrasto('#111111', c.acc) ? '#ffffff' : '#111111';
+      const su = inchiostro(c.acc);
       etichetta(g, d.testi.contatto, M + 36, by + 44, su);
       let ep = 38;
       for (; ep > 24; ep -= 2) { g.font = f(700, ep); if (g.measureText(d.email).width <= W - 2 * M - 72) break; }
@@ -242,7 +246,7 @@
     return { link, problemi, basso };
   }
 
-  const KIT = { W, H, M, MAX, disegna, contrasto, righe, elenco, taglia, rgbDi };
+  const KIT = { W, H, M, MAX, disegna, contrasto, inchiostro, righe, elenco, taglia, rgbDi };
   if (typeof module !== 'undefined' && module.exports) module.exports = KIT;
   else radice.SB_KIT = KIT;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -38,6 +38,7 @@
     qr: 'qr qrcode codice inquadra inquadrami scansiona volantino adesivo stampa logo cornice svg png flyer sticker scan code código escanear',
     misure: 'emote emoji badge badges misure dimensioni ridimensiona rimpicciolisci 112 56 28 72 36 18 zip resize sizes tamaños insignias',
     kit: 'media kit mediakit press kit sponsor sponsorizzazioni marchi brand collaborazioni numeri pdf presentazione aziende',
+    pannelli: 'pannelli pannello panels paneles informazioni about descrizione immagini canale twitch zip',
     settimana: 'settimana programmazione palinsesto orari giorni calendario programma twitch storia instagram telegram discord manda week schedule semana horario programación',
     notifiche: 'avvisi notifiche social tiktok instagram youtube discord nuovi post live notificaciones avisos',
     dcavvisi: 'discord avvisi avviso canale live diretta annuncio menzione ruolo everyone amici community testo messaggio alerts announcement channel mention avisos anuncio canal mencion',

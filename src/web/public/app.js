@@ -245,6 +245,7 @@ function impostazioni() {
     qr: (s.qr && typeof s.qr === 'object') ? s.qr : null,
     qrUsato: !!s.qrUsato,
     kit: (s.kit && typeof s.kit === 'object') ? s.kit : null,
+    pannelli: (s.pannelli && typeof s.pannelli === 'object') ? s.pannelli : null,
     settimana: (s.settimana && typeof s.settimana === 'object') ? s.settimana : null,
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -1644,6 +1645,16 @@ function _demoGet(via) {
         { id: 2, inizio: 1789401600000, fine: 1789410960000, letto: true, inviato: 'telegram', ts: 1789410960000, dati: { durataMs: 9360000, picco: 48, media: 33, giri: 31, messaggi: 980, persone: 80, top: [{ user: 'giada_ttv', n: 101 }, { user: 'il_nonno', n: 64 }, { user: 'sara_gg', n: 52 }], follow: 9, sub: 3, regali: 0, raid: 0, raidSpettatori: 0, presenti: 58, primeVolte: 5, clip: 2, donazioni: 0, donazioniCent: 0 } },
         { id: 1, inizio: 1789228800000, fine: 1789236000000, letto: true, inviato: '', ts: 1789236000000, dati: { durataMs: 7200000, picco: 39, media: 27, giri: 24, messaggi: 610, persone: 54, top: [{ user: 'marco99', n: 70 }, { user: 'lucaplays', n: 66 }, { user: 'sara_gg', n: 40 }], follow: 6, sub: 1, regali: 0, raid: 0, raidSpettatori: 0, presenti: 40, primeVolte: 3, clip: 1, donazioni: 1, donazioniCent: 500 } },
       ],
+    },
+    '/api/streamer/pannelli': {
+      display: 'Andryx', piattaforma: 'twitch',
+      colori: { bg: '#05040a', bg2: '#1b0b3d', testo: '#f6f3ff', tenue: '#a99ed0', card: 'rgba(255,255,255,.07)', bordo: 'rgba(170,110,255,.42)', acc: '#b072ff' },
+      bio: 'Gioco a tutto quello che ha una storia, e la chat decide il finale.',
+      social: [{ icona: 'instagram', url: 'https://instagram.com/andryxify' }, { icona: 'tiktok', url: 'https://www.tiktok.com/@andryxify' }, { icona: 'youtube', url: 'https://youtube.com/@andryxify' }],
+      linkPagina: 'https://socialbot.live/u/andryxify', linkDona: 'https://dona.socialbot.live/andryxify', linkDiscord: 'https://discord.socialbot.live/andryxify',
+      settimana: _DEMO_SETTIMANA,
+      comandi: ['discord', 'social', 'lurk', 'morti', 'setup'],
+      pannelli: null,
     },
     '/api/streamer/kit': {
       display: 'Andryx', piattaforma: 'twitch', follower: 12840,
@@ -3272,6 +3283,7 @@ const GRUPPI = [
     ['qr', 'QR su misura'],
     ['misure', 'Emote e badge'],
     ['kit', 'Media kit'],
+    ['pannelli', 'Pannelli'],
   ] },
   { id: 'account', nome: 'Account', schede: [
     ['account', 'Il tuo account'],
@@ -3317,6 +3329,7 @@ const T_SCHEDA = {
   qr: ['QR su misura', 'Custom QR', 'QR a medida'],
   misure: ['Emote e badge', 'Emotes and badges', 'Emotes y badges'],
   kit: ['Media kit', 'Media kit', 'Media kit'],
+  pannelli: ['Pannelli', 'Panels', 'Paneles'],
   moduli: ['Comandi', 'Commands', 'Comandos'],
   regole: ['Moderazione', 'Moderation', 'Moderación'],
   scudo: ['Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'],
@@ -3375,6 +3388,7 @@ const ICONA = {
   promo:       _ico('<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>'),
   qr:          _ico('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M20 14v.01"/><path d="M14 20h.01"/><path d="M17 20h4v-3"/>'),
   misure:      _ico('<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/>'),
+  pannelli:    _ico('<rect x="3" y="3" width="18" height="6" rx="1.5"/><rect x="3" y="11" width="18" height="4" rx="1.5"/><rect x="3" y="17" width="18" height="4" rx="1.5"/>'),
   kit:         _ico('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18v-2"/><path d="M12 18v-6"/><path d="M16 18v-4"/>'),
   moduli:      _ico('<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M7.5 9.5 10.5 12l-3 2.5"/><path d="M13 15h4"/>'),
   regole:      _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>'),
@@ -3439,6 +3453,7 @@ const DESC = {
   grafiche: ['La locandina della diretta da postare sui social, coi tuoi colori e il tuo nome.', 'The stream poster to post on socials, with your colours and your name.', 'El cartel del directo para publicar en redes, con tus colores y tu nombre.'],
   qr: ['Un QR con le tue forme, i tuoi colori e il tuo logo, che si scarica solo se si legge.', 'A QR with your shapes, colors and logo, downloadable only if it scans.', 'Un QR con tus formas, tus colores y tu logo, que se descarga solo si se lee.'],
   misure: ['Emote e badge alle tre misure di Twitch, da un’immagine sola.', 'Emotes and badges at the three Twitch sizes, from a single image.', 'Emotes y badges en los tres tamaños de Twitch, desde una sola imagen.'],
+  pannelli: ['I pannelli sotto il tuo canale Twitch, nello stesso stile e già pieni.', 'The panels under your Twitch channel, in one style and already filled in.', 'Los paneles bajo tu canal de Twitch, con un mismo estilo y ya rellenos.'],
   kit: ['Il foglio da mandare ai marchi, coi numeri veri delle tue dirette.', 'The sheet to send to brands, with the real numbers of your streams.', 'La hoja para mandar a las marcas, con los números reales de tus directos.'],
   settimana: ['I giorni in cui vai in onda, scritti una volta: da qui vanno sui calendari e dove li mandi.', 'The days you go live, written once: from here they go onto the calendars and wherever you send them.', 'Los días en que sales en directo, escritos una vez: de aquí van a los calendarios y adonde los mandes.'],
   consolify: ['I tasti del tuo canale sotto le dita: sul telefono, sul tablet o su una tastiera vera.', 'Your channel’s keys under your fingers: on your phone, tablet or a real key pad.', 'Las teclas de tu canal bajo los dedos: en el móvil, la tablet o un teclado de verdad.'],
@@ -3637,6 +3652,8 @@ const GUIDE = {
     come: [['Scrivi dove porta, o scegli la tua pagina link.', 'Write where it leads, or pick your link page.', 'Escribe a dónde lleva, o elige tu página de enlaces.', '#qr-testo'], ['Scegli le forme, i colori e se vuoi un logo al centro: l’anteprima si rilegge da sola a ogni cambio.', 'Pick shapes, colors and whether you want a logo in the middle: the preview reads itself back at every change.', 'Elige las formas, los colores y si quieres un logo en el centro: la vista previa se relee sola a cada cambio.', '#qr-tela'], ['Scarica il PNG o l’SVG, e salva lo stile: lo usano anche le Grafiche social.', 'Download the PNG or the SVG, and save the style: Social graphics use it too.', 'Descarga el PNG o el SVG, y guarda el estilo: también lo usan las Gráficas sociales.', '#qr-png']] },
   misure: { serve: ['Preparare emote e badge alle misure che chiede Twitch, partendo da un’immagine sola.', 'Get emotes and badges ready at the sizes Twitch asks for, starting from a single image.', 'Preparar emotes y badges a los tamaños que pide Twitch, partiendo de una sola imagen.'],
     come: [['Scegli un’immagine, meglio se grande e quadrata.', 'Choose an image, better if big and square.', 'Elige una imagen, mejor si es grande y cuadrada.', '#mis-scegli'], ['Guarda come viene alle misure vere, sulla chat scura e su quella chiara.', 'See how it looks at real size, on the dark chat and the light one.', 'Mira cómo queda a tamaño real, en el chat oscuro y en el claro.', '#mis-anteprime'], ['Scaricale una per una o tutte in un file zip.', 'Download them one by one or all in a zip file.', 'Descárgalas una a una o todas en un archivo zip.', '#mis-zip']] },
+  pannelli: { serve: ['Fare i pannelli sotto il tuo canale Twitch, tutti nello stesso stile, con link e descrizioni già scritti.', 'Make the panels under your Twitch channel, all in one style, with links and descriptions already written.', 'Hacer los paneles bajo tu canal de Twitch, todos con el mismo estilo, con enlaces y descripciones ya escritos.'],
+    come: [['Scegli colori, forma, carattere e altezza: valgono per tutti i pannelli.', 'Pick colors, shape, font and height: they apply to all panels.', 'Elige colores, forma, letra y altura: valen para todos los paneles.', '#pan-carta .gr-sfondo-scelte'], ['Guarda i pannelli: ognuno ha già il suo link e la sua descrizione, e li cambi come vuoi.', 'Look at the panels: each one already has its link and description, and you change them as you like.', 'Mira los paneles: cada uno ya tiene su enlace y su descripción, y los cambias como quieras.', '#pan-voci'], ['Scarica tutti: immagini e testi in un file solo, da mettere su Twitch.', 'Download all: images and texts in one file, to put on Twitch.', 'Descarga todos: imágenes y textos en un solo archivo, para poner en Twitch.', '#pan-zip']] },
   kit: { serve: ['Preparare il foglio da mandare a un marchio: chi sei, cosa trasmetti, i tuoi numeri e come contattarti.', 'Prepare the sheet to send to a brand: who you are, what you stream, your numbers and how to reach you.', 'Preparar la hoja para mandar a una marca: quién eres, qué transmites, tus números y cómo contactarte.'],
     come: [['Scrivi due righe su di te e l’email per le collaborazioni.', 'Write a couple of lines about you and the email for collaborations.', 'Escribe dos líneas sobre ti y el email para colaboraciones.', '#kit-presentazione'], ['Scegli cosa mostrare: i numeri vengono dalle tue dirette degli ultimi 30 giorni.', 'Choose what to show: the numbers come from your streams of the last 30 days.', 'Elige qué mostrar: los números vienen de tus directos de los últimos 30 días.', '#kit-tela'], ['Scarica il PDF, coi link che si aprono con un clic, o il PNG.', 'Download the PDF, with links that open with a click, or the PNG.', 'Descarga el PDF, con enlaces que se abren con un clic, o el PNG.', '#kit-pdf']] },
   grafiche: { serve: ['Fare la locandina della diretta da postare sui social, con i tuoi colori e il tuo handle.', 'Make the stream poster to post on socials, with your colors and your handle.', 'Hacer el cartel del directo para publicar en redes, con tus colores y tu handle.'],
@@ -3656,6 +3673,7 @@ const ICO = {
   qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M20 14v.01"/><path d="M14 20h.01"/><path d="M17 20h4v-3"/>',
   misure: '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/>',
   kit: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18v-2"/><path d="M12 18v-6"/><path d="M16 18v-4"/>',
+  pannelli: '<rect x="3" y="3" width="18" height="6" rx="1.5"/><rect x="3" y="11" width="18" height="4" rx="1.5"/><rect x="3" y="17" width="18" height="4" rx="1.5"/>',
   meno: '<line x1="5" x2="19" y1="12" y2="12"/>',
   stella: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
   orologio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
@@ -3675,6 +3693,7 @@ const ICO = {
   germoglio: '<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>',
   telefono: '<rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/>',
   carta: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
+  utente: '<circle cx="12" cy="7" r="4"/><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>',
   utenti: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   persona: '<path d="M12 3c.35 3.8 1.4 4.85 5 5.2-3.6.35-4.65 1.4-5 5.2-.35-3.8-1.4-4.85-5-5.2 3.6-.35 4.65-1.4 5-5.2Z"/><path d="M18.5 15c.15 1.6.6 2.05 2.2 2.2-1.6.15-2.05.6-2.2 2.2-.15-1.6-.6-2.05-2.2-2.2 1.6-.15 2.05-.6 2.2-2.2Z"/>',
   righello: '<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.4 2.4 0 0 1 0-3.4l2.6-2.6a2.4 2.4 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/>',
@@ -4661,6 +4680,7 @@ function vistaPiattaforma() {
     ${pannelloQr()}
     ${pannelloMisure()}
     ${pannelloKit()}
+    ${pannelloPannelli()}
     ${stato.isAdmin ? pannello('admin', vistaAdminContenuto()) : ''}`;
 }
 
@@ -8154,6 +8174,328 @@ async function avviaKit() {
     KIT_STATO.errore = L('Il media kit non si carica adesso: riprova fra poco.', 'The media kit does not load right now: try again shortly.', 'El media kit no carga ahora: inténtalo en un rato.');
   }
   kitRifai();
+}
+
+const PAN_STATO = { dati: null, serie: null, motore: null, icone: new Map(), timer: 0, giro: 0, errore: '', aperta: 0 };
+const PAN_TEMI = () => [['pagina', L('Come la pagina link', 'Like your link page', 'Como tu página de enlaces')], ['carta', L('Carta', 'Paper', 'Papel')], ['notte', L('Notte', 'Night', 'Noche')]];
+const PAN_FORME = () => [['penna', L('A penna', 'Hand-drawn', 'A mano')], ['netta', L('Netta', 'Clean', 'Nítida')], ['piena', L('Piena', 'Full', 'Llena')]];
+const PAN_ALTEZZE = () => [[80, L('Bassi', 'Short', 'Bajos')], [100, L('Medi', 'Medium', 'Medios')], [160, L('Alti', 'Tall', 'Altos')]];
+const PAN_TIPI = () => ({ chi: L('Chi sono', 'About me', 'Sobre mí'), programma: L('Programma', 'Schedule', 'Horario'), social: L('Social', 'Socials', 'Redes'), discord: 'Discord', dona: L('Sostienimi', 'Support me', 'Apóyame'), comandi: L('Comandi', 'Commands', 'Comandos'), regole: L('Regole', 'Rules', 'Normas'), libero: L('Pannello', 'Panel', 'Panel') });
+const PAN_ICONE = () => ({
+  utente: L('Persona', 'Person', 'Persona'), faccina: L('Faccina', 'Smiley', 'Carita'), calendario: L('Calendario', 'Calendar', 'Calendario'), globo: L('Mondo', 'Globe', 'Mundo'),
+  chat: L('Fumetto', 'Speech bubble', 'Bocadillo'), cuore: L('Cuore', 'Heart', 'Corazón'), lista: L('Elenco', 'List', 'Lista'),
+  scudo: L('Scudo', 'Shield', 'Escudo'), stella: L('Stella', 'Star', 'Estrella'), giochi: 'Controller', musica: L('Musica', 'Music', 'Música'),
+  cuffie: L('Cuffie', 'Headphones', 'Auriculares'), monitor: L('Schermo', 'Screen', 'Pantalla'), fotocamera: L('Fotocamera', 'Camera', 'Cámara'),
+  video: L('Video', 'Video', 'Vídeo'), trofeo: L('Trofeo', 'Trophy', 'Trofeo'), corona: L('Corona', 'Crown', 'Corona'),
+  megafono: L('Megafono', 'Megaphone', 'Megáfono'), dado: L('Dado', 'Die', 'Dado'), fulmine: L('Fulmine', 'Lightning', 'Rayo'),
+  libro: L('Libro', 'Book', 'Libro'), telefono: L('Telefono', 'Phone', 'Teléfono'), giveaway: L('Regalo', 'Gift', 'Regalo'),
+});
+const panTesti = () => ({
+  titoli: PAN_TIPI(),
+  giorni: [L('Lunedì', 'Monday', 'Lunes'), L('Martedì', 'Tuesday', 'Martes'), L('Mercoledì', 'Wednesday', 'Miércoles'), L('Giovedì', 'Thursday', 'Jueves'), L('Venerdì', 'Friday', 'Viernes'), L('Sabato', 'Saturday', 'Sábado'), L('Domenica', 'Sunday', 'Domingo')],
+  fuso: (f) => L(`Orari: ${f}`, `Times: ${f}`, `Horario: ${f}`),
+  discord: L('Entra nel server Discord della community.', 'Join the community Discord server.', 'Entra en el servidor de Discord de la comunidad.'),
+  dona: L('Se ti va di sostenere le dirette, passa da qui. Grazie!', 'If you would like to support the streams, this is the place. Thank you!', 'Si quieres apoyar los directos, pasa por aquí. ¡Gracias!'),
+  regole: [L('Rispetto per tutti, sempre', 'Respect everyone, always', 'Respeto para todos, siempre'), L('Niente spam, link o pubblicità', 'No spam, links or ads', 'Nada de spam, enlaces ni publicidad'), L('Niente spoiler senza avvisare', 'No spoilers without a warning', 'Nada de spoilers sin avisar'), L('Le decisioni dei moderatori valgono', 'Moderators have the final say', 'Las decisiones de los moderadores cuentan')],
+});
+
+function pannelloPannelli() {
+  const bottoni = (lista, attr) => lista.map(([id, n]) => `<button type="button" class="gr-tema" data-${attr}="${id}" aria-pressed="false">${esc(n)}</button>`).join('');
+  const caratteri = Object.entries(GR_CARATTERI).map(([id, f]) => `<button type="button" class="gr-tema" data-pan-font="${id}" aria-pressed="false" style="font-family:${esc(f.famiglia)};${f.stile ? 'font-style:italic;' : ''}">${esc(L(...f.nome))}</button>`).join('');
+  return pannello('pannelli', `
+    <div class="carta" id="pan-carta">
+      <h2>${_hIco(ICO.pannelli)}${L('Pannelli', 'Panels', 'Paneles')}</h2>
+      <p>${L('I pannelli che stanno sotto il tuo canale Twitch, in «Informazioni». Nascono già pieni di quello che il canale sa: la tua pagina, i social, quando sei in diretta, il Discord. Tutti nello stesso stile, e ognuno lo cambi come vuoi.', 'The panels under your Twitch channel, in «About». They start already filled with what the channel knows: your page, your socials, when you are live, your Discord. All in one style, and you change each one as you like.', 'Los paneles bajo tu canal de Twitch, en «Información». Nacen ya llenos de lo que el canal sabe: tu página, tus redes, cuándo estás en directo, tu Discord. Todos con el mismo estilo, y cada uno lo cambias como quieras.')}</p>
+      <div class="st-lavoro spazio-sopra">
+        <div class="st-comandi">
+          <div class="campo campo-su"><span>${L('I colori', 'The colors', 'Los colores')}</span><div class="gr-sfondo-scelte" role="group">${bottoni(PAN_TEMI(), 'pan-tema')}</div></div>
+          <div class="campo campo-su"><span>${L('La forma', 'The shape', 'La forma')}</span><div class="gr-sfondo-scelte" role="group">${bottoni(PAN_FORME(), 'pan-forma')}</div></div>
+          <div class="campo campo-su"><span>${L('Il carattere', 'The font', 'La letra')}</span><div class="gr-sfondo-scelte" role="group">${caratteri}</div></div>
+          <div class="campo campo-su"><span>${L('L’altezza', 'The height', 'La altura')}</span><div class="gr-sfondo-scelte" role="group">${bottoni(PAN_ALTEZZE(), 'pan-alto')}</div></div>
+          <label class="riga-check spazio-sopra"><input type="checkbox" id="pan-icone" checked> ${L('Un’icona accanto al titolo', 'An icon next to the title', 'Un icono junto al título')}</label>
+          <h3 class="spazio-sopra">${L('I pannelli, in ordine', 'The panels, in order', 'Los paneles, en orden')}</h3>
+          <div id="pan-voci" class="pan-voci"></div>
+          <div class="riga-flessibile spazio-sopra">
+            <select id="pan-tipo" aria-label="${esc(L('Quale pannello aggiungere', 'Which panel to add', 'Qué panel añadir'))}">${Object.entries(PAN_TIPI()).map(([id, n]) => `<option value="${id}">${esc(n)}</option>`).join('')}</select>
+            <button type="button" class="btn secondario" id="pan-aggiungi">${L('Aggiungi', 'Add', 'Añadir')}</button>
+          </div>
+          <p class="suggerimento">${L('La descrizione Twitch la legge in Markdown: **grassetto**, [parole](link) per un link, un trattino davanti per un elenco.', 'Twitch reads the description as Markdown: **bold**, [words](link) for a link, a dash in front for a list.', 'Twitch lee la descripción en Markdown: **negrita**, [palabras](enlace) para un enlace, un guion delante para una lista.')}</p>
+        </div>
+        <div class="st-destra">
+          <div class="st-vista">
+            <div class="gr-sfondo-scelte" role="group" aria-label="${esc(L('Com’è la pagina di Twitch', 'What the Twitch page looks like', 'Cómo es la página de Twitch'))}">
+              <button type="button" class="gr-tema on" data-pan-fondo="scuro" aria-pressed="true">${L('Twitch scuro', 'Dark Twitch', 'Twitch oscuro')}</button>
+              <button type="button" class="gr-tema" data-pan-fondo="chiaro" aria-pressed="false">${L('Twitch chiaro', 'Light Twitch', 'Twitch claro')}</button>
+            </div>
+            <div id="pan-vista" class="pan-vista" data-fondo="scuro"></div>
+            <ul id="pan-problemi" class="promo-problemi"></ul>
+          </div>
+          <div class="st-uscita">
+            <div class="promo-azioni">
+              <button type="button" class="btn" id="pan-zip" disabled>${L('Scarica tutti', 'Download all', 'Descargar todos')}</button>
+              <button type="button" class="btn secondario" id="pan-salva">${L('Salva', 'Save', 'Guardar')}</button>
+            </div>
+            <p class="suggerimento">${L('Nel file ci sono le immagini in ordine e un testo con titolo, link e descrizione di ognuno. Su Twitch: il tuo canale, «Informazioni», «Modifica pannelli».', 'The file has the images in order and a text with the title, link and description of each. On Twitch: your channel, «About», «Edit panels».', 'En el archivo están las imágenes en orden y un texto con el título, el enlace y la descripción de cada uno. En Twitch: tu canal, «Información», «Editar paneles».')}</p>
+          </div>
+        </div>
+      </div>
+    </div>`);
+}
+
+function caricaMotorePannelli() {
+  if (PAN_STATO.motore) return PAN_STATO.motore;
+  const script = (src) => new Promise((ok, ko) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => ko(new Error(src)); document.head.appendChild(s); });
+  PAN_STATO.motore = Promise.all([window.SB_KIT ? null : script('/kit.js'), window.SB_PENNA ? null : script('/penna.js'), window.SB_PANNELLI ? null : script('/pannelli.js'), window.SB_ZIP ? null : script('/zip.js')])
+    .then(() => grafFontPronti())
+    .catch((e) => { PAN_STATO.motore = null; throw e; });
+  return PAN_STATO.motore;
+}
+
+const _panStile = () => ({ tema: 'pagina', forma: 'penna', carattere: 'archivo', altezza: 100, icone: true });
+const _panPredefiniti = () => window.SB_PANNELLI.predefiniti(PAN_STATO.dati || {}, panTesti());
+
+function _panIcona(nome, colore) {
+  const chiave = nome + '|' + colore;
+  if (PAN_STATO.icone.has(chiave)) return PAN_STATO.icone.get(chiave);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="96" height="96" fill="none" stroke="${colore}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ICO[nome] || ICO.stella}</svg>`;
+  const img = new Image();
+  const pronta = new Promise((ok) => { img.onload = () => ok(img); img.onerror = () => ok(null); });
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  PAN_STATO.icone.set(chiave, pronta);
+  return pronta;
+}
+
+function _panScelte() {
+  const st = PAN_STATO.serie.stile;
+  const segna = (attr, val) => document.querySelectorAll(`#scheda-pannelli [data-${attr}]`).forEach((b) => {
+    const on = String(b.dataset[attr.replace(/-([a-z])/g, (_, c) => c.toUpperCase())]) === String(val);
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+  });
+  segna('pan-tema', st.tema); segna('pan-forma', st.forma); segna('pan-font', st.carattere); segna('pan-alto', st.altezza);
+  const ic = document.getElementById('pan-icone');
+  if (ic) ic.checked = st.icone !== false;
+}
+
+function _panVoceHtml(v, i, n) {
+  const T = PAN_TIPI(), I = PAN_ICONE();
+  return `<details class="pan-voce" data-pan-i="${i}"${i === PAN_STATO.aperta ? ' open' : ''}>
+    <summary><span class="pan-num">${i + 1}</span><span class="pan-nome">${esc(v.titolo || T[v.tipo])}</span></summary>
+    <div class="pan-campi">
+      <label class="campo campo-su">${L('Titolo', 'Title', 'Título')}<input type="text" data-pan-campo="titolo" maxlength="40" value="${esc(v.titolo)}"></label>
+      <label class="campo campo-su">${L('Icona', 'Icon', 'Icono')}<select data-pan-campo="icona">${Object.entries(I).map(([k, nome]) => `<option value="${k}"${k === v.icona ? ' selected' : ''}>${esc(nome)}</option>`).join('')}</select></label>
+      <label class="campo campo-su">${L('Dove porta l’immagine', 'Where the image leads', 'A dónde lleva la imagen')}<input type="url" data-pan-campo="link" maxlength="300" value="${esc(v.link)}" placeholder="https://"></label>
+      <label class="campo campo-su">${L('Descrizione', 'Description', 'Descripción')}<textarea data-pan-campo="testo" rows="4" maxlength="1000">${esc(v.testo)}</textarea></label>
+      <div class="pan-azioni">
+        <button type="button" class="btn secondario mini" data-pan-azione="copia-link">${L('Copia il link', 'Copy the link', 'Copiar el enlace')}</button>
+        <button type="button" class="btn secondario mini" data-pan-azione="copia-testo">${L('Copia la descrizione', 'Copy the description', 'Copiar la descripción')}</button>
+        ${v.tipo !== 'libero' ? `<button type="button" class="btn secondario mini" data-pan-azione="riprendi">${L('Riprendi dal canale', 'Refill from the channel', 'Recuperar del canal')}</button>` : ''}
+        <button type="button" class="btn secondario mini" data-pan-azione="su"${i === 0 ? ' disabled' : ''}>${L('Su', 'Up', 'Arriba')}</button>
+        <button type="button" class="btn secondario mini" data-pan-azione="giu"${i === n - 1 ? ' disabled' : ''}>${L('Giù', 'Down', 'Abajo')}</button>
+        <button type="button" class="btn secondario mini" data-pan-azione="togli">${L('Togli', 'Remove', 'Quitar')}</button>
+      </div>
+    </div>
+  </details>`;
+}
+
+function _panElenco() {
+  const box = document.getElementById('pan-voci');
+  if (!box || !PAN_STATO.serie) return;
+  const voci = PAN_STATO.serie.voci;
+  box.innerHTML = voci.length ? voci.map((v, i) => _panVoceHtml(v, i, voci.length)).join('')
+    : `<p class="suggerimento">${L('Nessun pannello: aggiungine uno qui sotto.', 'No panels: add one below.', 'Ningún panel: añade uno aquí abajo.')}</p>`;
+}
+
+async function panRifai() {
+  const vista = document.getElementById('pan-vista');
+  const lista = document.getElementById('pan-problemi');
+  const zip = document.getElementById('pan-zip');
+  if (!vista || !lista) return;
+  if (PAN_STATO.errore || !PAN_STATO.serie || !window.SB_PANNELLI) {
+    vista.innerHTML = '';
+    lista.innerHTML = PAN_STATO.errore ? `<li class="problema">${esc(PAN_STATO.errore)}</li>` : '';
+    if (zip) zip.disabled = true;
+    return;
+  }
+  const giro = ++PAN_STATO.giro;
+  const P = window.SB_PANNELLI, S = PAN_STATO.serie, st = S.stile;
+  const h = P.ALTEZZE.includes(Number(st.altezza)) ? Number(st.altezza) : 100;
+  const pal = P.tavolozza(st.tema, PAN_STATO.dati?.colori, window.SB_KIT);
+  const car = GR_CARATTERI[st.carattere] || GR_CARATTERI.archivo;
+  const T = PAN_TIPI();
+  if (vista.children.length !== S.voci.length || vista.dataset.alto !== String(h)) {
+    vista.dataset.alto = String(h);
+    vista.innerHTML = S.voci.map((v, i) => `<figure class="pan-fig"><canvas width="${P.W}" height="${h}" role="img"></canvas><figcaption><button type="button" class="btn secondario mini" data-pan-png="${i}">${L('Scarica', 'Download', 'Descargar')}</button></figcaption></figure>`).join('');
+  }
+  const problemi = [];
+  const tele = [...vista.querySelectorAll('canvas')];
+  const px = tele.length ? Math.min(...S.voci.map((v, i) => P.misura(tele[i].getContext('2d'), { h, titolo: v.titolo || T[v.tipo], icona: st.icone !== false, carattere: car }))) : 0;
+  for (let i = 0; i < S.voci.length; i++) {
+    const v = S.voci[i];
+    const icona = st.icone !== false ? await _panIcona(v.icona, pal.accento) : null;
+    if (giro !== PAN_STATO.giro) return;
+    const titolo = v.titolo || T[v.tipo];
+    tele[i].setAttribute('aria-label', titolo);
+    const r = P.disegna(tele[i].getContext('2d'), { h, px, titolo, icona, colori: pal, forma: st.forma, carattere: car, seme: `pan:${String(stato?.user?.login || '')}:${v.id}`, penna: window.SB_PENNA });
+    if (r.problemi.length) problemi.push(L(`«${titolo}» non ci sta intero: accorcialo o scegli un carattere più stretto.`, `«${titolo}» does not fit: shorten it or pick a narrower font.`, `«${titolo}» no cabe entero: acórtalo o elige una letra más estrecha.`));
+  }
+  lista.innerHTML = problemi.map((x) => `<li class="problema">${esc(x)}</li>`).join('');
+  if (zip) zip.disabled = !S.voci.length;
+}
+
+function _panMostra(i) {
+  const vista = document.getElementById('pan-vista');
+  const fig = vista?.children[i];
+  if (!fig || (vista.scrollWidth <= vista.clientWidth && vista.scrollHeight <= vista.clientHeight)) return;
+  const rv = vista.getBoundingClientRect(), rf = fig.getBoundingClientRect();
+  const piano = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  vista.scrollBy({ left: rf.left + rf.width / 2 - (rv.left + rv.width / 2), top: rf.top + rf.height / 2 - (rv.top + rv.height / 2), behavior: piano });
+}
+
+function panRifaiPresto() {
+  clearTimeout(PAN_STATO.timer);
+  PAN_STATO.timer = setTimeout(() => panRifai().catch(() => null), 90);
+}
+
+async function _panPng(i) {
+  const tela = document.querySelectorAll('#pan-vista canvas')[i];
+  if (!tela) return null;
+  return firmaPngBlob(await new Promise((ok) => tela.toBlob(ok, 'image/png')));
+}
+
+async function panScarica(i, btn) {
+  btn.disabled = true;
+  try {
+    await panRifai();
+    const v = PAN_STATO.serie.voci[i];
+    const b = await _panPng(i);
+    if (b) scaricaBlob(b, window.SB_PANNELLI.nomeFile(i, v.titolo || PAN_TIPI()[v.tipo]));
+  } finally { btn.disabled = false; }
+}
+
+async function panScaricaTutti(btn) {
+  btn.disabled = true;
+  try {
+    await panRifai();
+    const P = window.SB_PANNELLI, T = PAN_TIPI();
+    const voci = PAN_STATO.serie.voci.map((v) => ({ ...v, titolo: v.titolo || T[v.tipo] }));
+    const file = [];
+    for (let i = 0; i < voci.length; i++) {
+      const b = await _panPng(i);
+      if (b) file.push({ nome: P.nomeFile(i, voci[i].titolo), dati: new Uint8Array(await b.arrayBuffer()) });
+    }
+    file.push({ nome: 'testi.txt', dati: P.testi(voci) });
+    const login = String(stato?.user?.login || 'canale').toLowerCase();
+    scaricaBlob(new Blob([window.SB_ZIP.crea(file, { data: new Date() })], { type: 'application/zip' }), `pannelli-${login}.zip`);
+  } finally { btn.disabled = false; }
+}
+
+function _panAzione(b, i) {
+  const S = PAN_STATO.serie, v = S.voci[i];
+  if (!v) return;
+  const az = b.dataset.panAzione;
+  if (az === 'copia-link') { copiaTesto(v.link, L('Link copiato', 'Link copied', 'Enlace copiado')); return; }
+  if (az === 'copia-testo') { copiaTesto(v.testo, L('Descrizione copiata', 'Description copied', 'Descripción copiada')); return; }
+  if (az === 'riprendi') {
+    const p = _panPredefiniti().find((x) => x.tipo === v.tipo);
+    if (!p) { toast(L('Per questo pannello il canale adesso non ha niente da proporre.', 'For this panel the channel has nothing to suggest right now.', 'Para este panel el canal ahora no tiene nada que proponer.'), 'errore'); return; }
+    v.link = p.link; v.testo = p.testo;
+    PAN_STATO.aperta = i;
+  }
+  if (az === 'su' && i > 0) { [S.voci[i - 1], S.voci[i]] = [S.voci[i], S.voci[i - 1]]; PAN_STATO.aperta = i - 1; }
+  if (az === 'giu' && i < S.voci.length - 1) { [S.voci[i + 1], S.voci[i]] = [S.voci[i], S.voci[i + 1]]; PAN_STATO.aperta = i + 1; }
+  if (az === 'togli') { S.voci.splice(i, 1); PAN_STATO.aperta = -1; }
+  _panElenco();
+  segnaDaSalvare(document.getElementById('pan-salva'));
+  panRifai().then(() => { if (PAN_STATO.aperta >= 0) _panMostra(PAN_STATO.aperta); }).catch(() => null);
+}
+
+function _panAggiungi() {
+  const S = PAN_STATO.serie, P = window.SB_PANNELLI;
+  if (!S || !P) return;
+  if (S.voci.length >= P.MAX.voci) { toast(L(`Al massimo ${P.MAX.voci} pannelli.`, `At most ${P.MAX.voci} panels.`, `Como máximo ${P.MAX.voci} paneles.`), 'errore'); return; }
+  const tipo = document.getElementById('pan-tipo')?.value || 'libero';
+  const pronto = _panPredefiniti().find((x) => x.tipo === tipo);
+  const base = pronto ? { ...pronto } : { tipo, titolo: PAN_TIPI()[tipo] || '', icona: P.ICONE[tipo] || 'stella', link: '', testo: '' };
+  let id = tipo, n = 2;
+  while (S.voci.some((x) => x.id === id)) id = `${tipo}-${n++}`;
+  S.voci.push({ ...base, id });
+  PAN_STATO.aperta = S.voci.length - 1;
+  _panElenco();
+  segnaDaSalvare(document.getElementById('pan-salva'));
+  panRifai().then(() => _panMostra(PAN_STATO.aperta)).catch(() => null);
+}
+
+async function avviaPannelli() {
+  const scheda = document.getElementById('scheda-pannelli');
+  if (!scheda) return;
+  if (!scheda.dataset.collegata) {
+    scheda.dataset.collegata = '1';
+    scheda.addEventListener('input', (ev) => {
+      const c = ev.target.closest('[data-pan-campo]');
+      const S = PAN_STATO.serie;
+      if (c && S) {
+        const i = Number(c.closest('[data-pan-i]')?.dataset.panI);
+        const v = S.voci[i];
+        if (!v) return;
+        v[c.dataset.panCampo] = c.value;
+        if (c.dataset.panCampo === 'titolo') {
+          const nome = c.closest('.pan-voce')?.querySelector('.pan-nome');
+          if (nome) nome.textContent = c.value || PAN_TIPI()[v.tipo];
+        }
+        panRifaiPresto();
+        return;
+      }
+      if (ev.target.id === 'pan-icone' && S) { S.stile.icone = ev.target.checked; panRifaiPresto(); }
+    });
+    scheda.addEventListener('toggle', (ev) => {
+      const d = ev.target.closest?.('.pan-voce');
+      if (d && d.open) { PAN_STATO.aperta = Number(d.dataset.panI); _panMostra(PAN_STATO.aperta); }
+    }, true);
+    scheda.addEventListener('focusin', (ev) => {
+      const d = ev.target.closest?.('.pan-voce');
+      if (d) _panMostra(Number(d.dataset.panI));
+    });
+    scheda.addEventListener('click', (ev) => {
+      const b = ev.target.closest('button');
+      if (!b || !scheda.contains(b)) return;
+      const S = PAN_STATO.serie;
+      const scelta = [['panTema', 'tema'], ['panForma', 'forma'], ['panFont', 'carattere'], ['panAlto', 'altezza']].find(([k]) => b.dataset[k] !== undefined);
+      if (scelta && S) {
+        S.stile[scelta[1]] = scelta[1] === 'altezza' ? Number(b.dataset[scelta[0]]) : b.dataset[scelta[0]];
+        _panScelte();
+        segnaDaSalvare(b);
+        panRifaiPresto();
+        return;
+      }
+      if (b.dataset.panFondo) {
+        b.parentElement.querySelectorAll('button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+        const vista = document.getElementById('pan-vista');
+        if (vista) vista.dataset.fondo = b.dataset.panFondo;
+        return;
+      }
+      if (b.dataset.panAzione) { _panAzione(b, Number(b.closest('[data-pan-i]')?.dataset.panI)); return; }
+      if (b.dataset.panPng !== undefined) { panScarica(Number(b.dataset.panPng), b).catch((e) => toast(e.message, 'errore')); return; }
+      if (b.id === 'pan-aggiungi') { _panAggiungi(); return; }
+      if (b.id === 'pan-zip') { panScaricaTutti(b).catch((e) => toast(e.message, 'errore')); return; }
+      if (b.id === 'pan-salva' && S) conErrore(() => salvaImpostazioni({ pannelli: S }, L('Pannelli salvati', 'Panels saved', 'Paneles guardados')));
+    });
+  }
+  try {
+    await caricaMotorePannelli();
+    const d = await api('/api/streamer/pannelli');
+    PAN_STATO.dati = d; PAN_STATO.errore = '';
+    if (!PAN_STATO.serie) {
+      const salvati = d.pannelli || impostazioni().pannelli;
+      PAN_STATO.serie = salvati && Array.isArray(salvati.voci)
+        ? { stile: { ..._panStile(), ...(salvati.stile || {}) }, voci: salvati.voci.map((v) => ({ ...v })) }
+        : { stile: _panStile(), voci: _panPredefiniti() };
+      _panScelte();
+      _panElenco();
+    }
+  } catch (e) {
+    PAN_STATO.errore = L('I pannelli non si caricano adesso: riprova fra poco.', 'The panels do not load right now: try again shortly.', 'Los paneles no cargan ahora: inténtalo en un rato.');
+  }
+  await panRifai().catch(() => null);
 }
 
 function pannelloAvatar() {
@@ -26541,6 +26883,7 @@ function caricaDatiScheda(id) {
   if (id === 'qr') avviaQr();
   if (id === 'misure') avviaMisure();
   if (id === 'kit') avviaKit();
+  if (id === 'pannelli') avviaPannelli();
   if (id === 'personalita') { caricaGuide(); caricaSpontanee(); }
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); caricaRetePanoramica(); }
   if (id === 'clip') caricaClip();

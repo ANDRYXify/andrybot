@@ -15,6 +15,18 @@ test('il contrasto e\' quello della norma: nero su bianco 21, uguale su uguale 1
   assert.equal(K.contrasto('non un colore', '#fff'), 1, 'un colore illeggibile non passa per buono');
 });
 
+test('bianco o nero puro, quello che contrasta di piu\': su qualunque colore arriva a 4,5', () => {
+  // col nero puro il caso peggiore e' 4,58; con un nero morbido (#111) un
+  // accento come #6666ff restava sotto con tutti e due
+  const passi = [0, 51, 102, 153, 204, 255];
+  for (const r of passi) for (const g of passi) for (const b of passi) {
+    const c = '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
+    assert.ok(K.contrasto(K.inchiostro(c), c) >= 4.5, c);
+  }
+  assert.equal(K.inchiostro('#6666ff'), '#000000');
+  assert.equal(K.inchiostro('#1a1919'), '#ffffff');
+});
+
 test('taglia: sta o si accorcia coi puntini, e lo dice', () => {
   assert.deepEqual(K.taglia(g, 'ciao', 40), { testo: 'ciao', tagliato: false });
   const t = K.taglia(g, 'buongiorno', 50);

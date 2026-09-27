@@ -208,6 +208,7 @@ const CAPACITA = [
     { scheda: 'qr', pacc: 'free', t: ['QR su misura, che si legge davvero', 'Custom QR codes that really scan', 'QR a medida que se leen de verdad'], d: ['Forme, colori e il tuo logo al centro. Lo rileggiamo prima che tu lo scarichi, e va anche nelle tue Grafiche social.', 'Shapes, colors and your logo in the middle. We read it back before you download it, and it goes into your social graphics too.', 'Formas, colores y tu logo en el centro. Lo releemos antes de que lo descargues, y va también en tus gráficas sociales.'] },
     { scheda: 'misure', pacc: 'free', t: ['Emote e badge alle misure di Twitch', 'Emotes and badges at Twitch sizes', 'Emotes y badges a los tamaños de Twitch'], d: ['Da un’immagine sola le tre misure, rimpicciolite senza sporcare i bordi, con l’anteprima nella chat chiara e scura.', 'One image, all three sizes, shrunk without muddy edges, with a preview in the light and dark chat.', 'De una sola imagen los tres tamaños, reducidos sin ensuciar los bordes, con la vista previa en el chat claro y oscuro.'] },
     { scheda: 'kit', pacc: 'free', t: ['Media kit coi numeri veri', 'Media kit with real numbers', 'Media kit con números reales'], d: ['Il foglio per i marchi, in PDF: i numeri vengono dalle tue dirette e non si cambiano a mano.', 'The sheet for brands, as a PDF: the numbers come from your streams and cannot be edited.', 'La hoja para las marcas, en PDF: los números vienen de tus directos y no se cambian a mano.'] },
+    { scheda: 'pannelli', pacc: 'free', t: ['Pannelli del canale', 'Channel panels', 'Paneles del canal'], d: ['I pannelli di Twitch in uno stile solo, con link e descrizioni già scritti da quello che hai.', 'Your Twitch panels in one style, with links and descriptions already written from what you have.', 'Los paneles de Twitch con un solo estilo, con enlaces y descripciones ya escritos con lo que tienes.'] },
   ] },
 ];
 
@@ -872,6 +873,21 @@ function soloRisorseVetrina(h) {
   return h;
 }
 
+// IL RIENTRO DEL SORGENTE NON SI SPEDISCE. La pagina nasce da template
+// scritti col loro rientro: a capo e otto spazi davanti a ogni riga, byte che
+// non disegnano niente (225 compressi sulla home, il 27 settembre). Si tolgono
+// gli spazi e le tabulazioni attorno a ogni a capo, e l'a capo resta, uno per
+// uno: fra due tag uno spazio bianco resta uno spazio bianco, e un elemento
+// che rispetta gli a capo (`white-space: pre-line`, le recensioni) li ritrova
+// tutti, perche' gli spazi attorno a un a capo li butta lui stesso.
+// Restano intatti script, stili, `pre` e `textarea`, dove lo spazio e' testo.
+const INTOCCABILI = /(<(script|style|pre|textarea)\b[\s\S]*?<\/\2\s*>)/gi;
+export function senzaRientro(h) {
+  return String(h).split(INTOCCABILI)
+    .map((p, i) => (i % 3 === 0 ? p.replace(/[ \t]*\n[ \t]*/g, '\n') : (i % 3 === 1 ? p : '')))
+    .join('');
+}
+
 // Il guscio di chi non e' entrato: la vetrina gia' disegnata, la larghezza
 // giusta al primo disegno (`body.vetrina`, vedi docs/VELOCITA.md) e solo le sue
 // risorse.
@@ -903,7 +919,7 @@ export function guscioVetrina(guscio, lingua, opzioni = {}) {
   cambia(`<meta name="twitter:image" content="${base.immagine}">`, `<meta name="twitter:image" content="${m.immagine}">`);
   cambia(`<meta property="og:image:alt" content="${base.immagineAlt}">`, `<meta property="og:image:alt" content="${m.immagineAlt}">`);
   cambia(`<meta name="twitter:image:alt" content="${base.immagineAlt}">`, `<meta name="twitter:image:alt" content="${m.immagineAlt}">`);
-  return soloRisorseVetrina(h);
+  return senzaRientro(soloRisorseVetrina(h));
 }
 
 // Il guscio di chi e' entrato (e della demo): tutto il pannello, senza lo
