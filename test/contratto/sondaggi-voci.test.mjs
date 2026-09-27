@@ -96,5 +96,5 @@ test('se manca un permesso, il messaggio dice dove si concede, non un indirizzo'
   assert.ok(!zona.includes('da /auth/permessi'), 'penitenze, sondaggi e predizioni');
   assert.equal((zona.match(/nella scheda «Stato» premi «Aggiorna i permessi»/g) || []).length, 4);
   const chat = leggi('src/features/sondaggi.js');
-  assert.ok(!chat.includes('/auth/permessi') && chat.includes('scheda «Stato», premi «Aggiorna i permessi»'));
+  assert.ok(!chat.includes('/auth/permessi') && chat.includes('lo streamer lo rimette dal pannello, scheda «Stato», con «Aggiorna i permessi»'));
 });

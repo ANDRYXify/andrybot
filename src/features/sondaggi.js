@@ -41,7 +41,7 @@ export async function trySondaggio(helix, msg, say) {
     if (!canaleHa(channel, 'effetti')) return true;          // richiede l'add-on Effetti & Punti canale
     const resto = sp < 0 ? '' : taglia(testo.slice(sp + 1));
     const primo = (resto.split(/\s+/)[0] || '').toLowerCase();
-    const err403 = (cosa) => say(`⚠️ Per ${cosa} al bot manca un permesso: nel pannello, scheda «Stato», premi «Aggiorna i permessi» e riprova.`);
+    const err403 = (cosa) => say(`⚠️ Per ${cosa} al bot manca un permesso: lo streamer lo rimette dal pannello, scheda «Stato», con «Aggiorna i permessi».`);
 
     // ── SONDAGGI ──────────────────────────────────────────────────────────
     if (cmd === 'sondaggio' || cmd === 'poll') {
