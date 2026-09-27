@@ -90,6 +90,7 @@ export default {
     { p: [
       'Con <strong>«Sempre (24/7)»</strong> il bot sta in chat giorno e notte, finché l\'interruttore è acceso.',
       'Con <strong>«Solo quando sei in diretta»</strong> entra nella tua chat di Twitch da solo quando parte la diretta ed esce quando finisce. Di solito se ne accorge subito, al massimo in un paio di minuti. Fuori onda, in questa modalità, il badge dice «non connesso» ed è normale.',
+      'Su Kick vale lo stesso: il bot risponde da quando Kick dice che la diretta è partita a quando dice che è finita. La chat di YouTube il bot la legge solo durante le dirette, con tutte e due le modalità.',
       'L\'interruttore vale sopra la modalità: da spento, il bot non risponde in nessun caso.',
       '<strong>Spegnerlo non cancella nulla.</strong> Comandi, monete, memoria e impostazioni restano, e quando lo riaccendi riparte da dove era rimasto.',
       'L\'interruttore e la modalità li usa anche un moderatore.',
