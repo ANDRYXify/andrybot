@@ -19786,7 +19786,7 @@ function _sommeDona(lista) {
 function _rigaDonaHtml(d) {
   const quando = (ts) => { try { return new Date(ts).toLocaleString(localePannello(), { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
   const fonte = d.fonte === 'kofi' ? 'Ko-fi' : (d.fonte === 'ext' ? L('chiave API', 'API key', 'clave API') : (d.fonte === 'satispay' ? 'Satispay' : 'Stripe'));
-  return `<li class="dona-riga${d.rimborsata ? ' rimborsata' : ''}" data-id="${esc(d.id)}">
+  return `<li class="dona-riga${d.rimborsata ? ' rimborsata' : ''}" data-id="${esc(d.id)}" data-fonte="${esc(d.fonte || '')}">
     <div><b>${esc(_soldi(d.importo, d.valuta))}</b> ${esc(d.nome || L('qualcuno', 'someone', 'alguien'))}${d.messaggio ? ` <span class="suggerimento">· ${esc(d.messaggio)}</span>` : ''}
       <span class="suggerimento">· ${esc(quando(d.quando))} · ${esc(fonte)}${d.rimborsata ? ' · ' + L('rimborsata', 'refunded', 'reembolsada') : ''}</span></div>
     <div class="dona-azioni"><button type="button" class="btn secondario mini" data-dona-riga="riproponi">${L('Rimanda l\'avviso', 'Replay the alert', 'Repetir el aviso')}</button>${d.effetto ? ` <button type="button" class="btn secondario mini" data-dona-riga="rieffetto">${L('Rimanda l\'immagine', 'Replay the image', 'Repetir la imagen')}</button>` : ''}${d.rimborsabile ? ` <button type="button" class="btn secondario mini" data-dona-riga="rimborsa">${L('Rimborsa', 'Refund', 'Reembolsar')}</button>` : ''} <button type="button" class="btn secondario mini" data-dona-riga="elimina">${L('Elimina', 'Delete', 'Eliminar')}</button></div>
@@ -25654,8 +25654,11 @@ function attivaPiattaforma() {
       if (cosa === 'scarta' && !(await chiediSe({ titolo: L('Scarto questa immagine?', 'Discard this image?', '¿Descarto esta imagen?'), pericolo: true,
         testo: L('Si cancella dal server. La donazione resta nel registro.', 'It is deleted from the server. The donation stays in the register.', 'Se borra del servidor. La donación se queda en el registro.'),
         si: L('Scartala', 'Discard it', 'Descártala') }))) return;
+      const daDove = { stripe: L(', dal tuo conto Stripe', ', from your Stripe account', ', desde tu cuenta de Stripe'),
+        satispay: L(', dal tuo negozio Satispay', ', from your Satispay shop', ', desde tu tienda Satispay'),
+        kofi: L(', dalla tua pagina Ko-fi', ', from your Ko-fi page', ', desde tu página de Ko-fi') }[li.dataset.fonte] || '';
       if (cosa === 'rimborsa' && !(await chiediSe({ titolo: L('Rimborso questa donazione?', 'Refund this donation?', '¿Reembolso esta donación?'), pericolo: true,
-        testo: L('I soldi tornano a chi te li ha mandati, dal tuo conto Stripe. Non si può annullare.', 'The money goes back to whoever sent it, from your Stripe account. It cannot be undone.', 'El dinero vuelve a quien te lo mandó, desde tu cuenta de Stripe. No se puede deshacer.'),
+        testo: L(`I soldi tornano a chi te li ha mandati${daDove}. Non si può annullare.`, `The money goes back to whoever sent it${daDove}. It cannot be undone.`, `El dinero vuelve a quien te lo mandó${daDove}. No se puede deshacer.`),
         si: L('Rimborsa', 'Refund', 'Reembolsa') }))) return;
       b.disabled = true;
       try {

@@ -31,6 +31,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Ogni scheda del pannello ha il suo manuale: Stato, Effetti e Community si aggiungono agli altri, che ora dicono le etichette e i messaggi che vedi davvero.
 - Nella pagina link «Aggiungi numero» si ferma a sei, quanti la pagina ne mostra: prima dal settimo in poi i numeri sparivano al salvataggio senza dirlo. [vai: pagina]
 - Nell'aspetto della pagina link, movimento, spessore e ombra dei bottoni mostrano quelli che la pagina usa davvero, anche dopo un tema pronto: prima il pannello diceva «Fermo», «Leggero» e «Nessuna». [vai: pagina]
+- Nel registro delle donazioni, «Rimborsa» su una donazione arrivata con Satispay chiede conferma nominando il tuo negozio Satispay, non più il conto Stripe. [vai: donazioni]
 
 ## 2026-09-26
 
