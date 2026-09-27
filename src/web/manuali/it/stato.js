@@ -32,6 +32,7 @@ export default {
     { h3: 'Attiva il bot: concedi i permessi' },
     { p: [
       'Solo per il proprietario di un canale Twitch che non ha ancora dato i permessi. Senza, il bot non può scrivere nella tua chat. Il tasto è «Concedi i permessi su Twitch».',
+      'I permessi li dà l\'account Twitch del canale. Se su Twitch sei entrato con un altro account, al ritorno il pannello dice «I permessi non sono passati» e propone «Riprova su Twitch».',
       'Il bot scrive in chat <strong>con il tuo account</strong>, non con un account suo. Per questo chiede a Twitch i permessi del canale, uno per ogni funzione che li usa:',
     ] },
     { tabella: [

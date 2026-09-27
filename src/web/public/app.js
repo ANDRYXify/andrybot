@@ -372,6 +372,7 @@ async function caricaStato() {
     try { history.replaceState(null, '', '/'); } catch {  }
   }
   esitoAcquistoDaIndirizzo();
+  esitoPermessiDaIndirizzo();
   esitoPostaDaIndirizzo();
   avvisaRapporti();
   collegaRegiaRicordata();
@@ -805,6 +806,23 @@ function esitoAcquistoDaIndirizzo() {
   else if (ann === 'annullato') toast(L('Pagamento annullato: nessun addebito.', 'Payment canceled: no charge.', 'Pago cancelado: sin cargo.'));
   try { history.replaceState(null, '', '/' + (ab && dentro ? '#sottoscrizione' : '')); } catch {  }
   if (ab && dentro && stato?.user?.role === 'proprietario') vaiAScheda('sottoscrizione');
+}
+
+function esitoPermessiDaIndirizzo() {
+  if (new URLSearchParams(location.search).get('errore') !== 'account-diverso') return;
+  try { history.replaceState(null, '', '/' + location.hash); } catch {  }
+  if ((stato?.piattaforma || 'twitch') !== 'twitch') {
+    chiediScelta({ titolo: L('Twitch non si aggiunge a questo canale', 'Twitch can’t be added to this channel', 'Twitch no se añade a este canal'), testo: _notaCanaleAParte(),
+      azioni: [{ id: 'ok', testo: L('Ho capito', 'Got it', 'Entendido') }] });
+    return;
+  }
+  const chi = '@' + (stato?.gestisce?.nome || stato?.user?.login || '');
+  chiediScelta({ titolo: L('I permessi non sono passati', 'The permissions did not go through', 'Los permisos no se han concedido'),
+    testo: L(`Su Twitch sei entrato con un altro account: i permessi li dà l’account del canale, ${chi}. Entra su Twitch con quello e riprova.`,
+      `On Twitch you signed in with another account: permissions come from the channel’s account, ${chi}. Sign in to Twitch with that one and try again.`,
+      `En Twitch has entrado con otra cuenta: los permisos los da la cuenta del canal, ${chi}. Entra en Twitch con esa y vuelve a intentarlo.`),
+    azioni: [{ id: 'riprova', testo: L('Riprova su Twitch', 'Try again on Twitch', 'Reintentar en Twitch') }, { id: 'no', testo: L('Chiudi', 'Close', 'Cerrar'), tono: 'secondario' }] })
+    .then((r) => { if (r === 'riprova') location.href = '/auth/permessi'; });
 }
 
 async function dopoAcquisto(r) {
@@ -3498,7 +3516,7 @@ function paginaSoloTwitch(id) {
     <div class="blocco-testa">${_bIco(ICO.tv)}<h2>${esc(nomeScheda)}</h2>
       <span class="badge">${L('Solo su Twitch', 'Twitch only', 'Solo en Twitch')}</span></div>
     <p class="blocco-cosa">${L(`Questa parte parla con Twitch, e il tuo canale è su ${esc(dove)}: qui non avrebbe niente con cui lavorare. Preferiamo dirtelo che mostrarti dei pulsanti che non fanno niente.`, `This part talks to Twitch, and your channel is on ${esc(dove)}: here it would have nothing to work with. We’d rather tell you than show you buttons that do nothing.`, `Esta parte habla con Twitch y tu canal está en ${esc(dove)}: aquí no tendría con qué trabajar. Preferimos decírtelo antes que mostrarte botones que no hacen nada.`)}</p>
-    <p class="suggerimento">${L('Se trasmetti anche su Twitch, collega quell’account: il canale diventa uno solo e questa scheda si accende.', 'If you also stream on Twitch, connect that account: the channel becomes one and this tab lights up.', 'Si también emites en Twitch, conecta esa cuenta: el canal pasa a ser uno solo y esta pestaña se enciende.')}</p>
+    <p class="suggerimento">${L('Se trasmetti anche su Twitch, entra con il tuo account Twitch: è un canale a sé, con il suo pannello, e lì questa scheda funziona.', 'If you also stream on Twitch, sign in with your Twitch account: it’s a channel of its own, with its own panel, and there this tab works.', 'Si también emites en Twitch, entra con tu cuenta de Twitch: es un canal aparte, con su propio panel, y allí esta pestaña funciona.')}</p>
   </div>`;
 }
 
@@ -3578,7 +3596,7 @@ const GUIDE = {
   stato: { serve: ['Vedere come va adesso: la tua diretta, il bot, e cosa c’è da sistemare.', 'See how it’s going right now: your stream, the bot, and what needs fixing.', 'Ver cómo va ahora: tu directo, el bot y lo que hay que arreglar.'],
     come: [['Guarda la diretta: in onda vedi da quanto e chi ti guarda, fuori onda quando è la prossima e com’è andata l’ultima.', 'Look at your stream: live you see how long and who’s watching, offline when the next one is and how the last one went.', 'Mira tu directo: en directo ves desde cuándo y quién te ve, fuera de directo cuándo es el próximo y cómo fue el último.', '#carta-adesso'], ['Accendi l’interruttore del bot e scegli quando dev’essere attivo.', 'Flip the bot’s switch and choose when it should be active.', 'Activa el interruptor del bot y elige cuándo debe estar activo.', '#toggle-bot'], ['Se manca un permesso o il bot è scollegato, lo trovi in cima, col tasto per rimediare.', 'If a permission is missing or the bot is disconnected, you find it at the top, with the button to fix it.', 'Si falta un permiso o el bot está desconectado, lo encuentras arriba, con el botón para arreglarlo.', '']] },
   account: { serve: ['Collegare le piattaforme, entrare con una passkey, far entrare i moderatori e decidere dei tuoi dati.', 'Connect your platforms, sign in with a passkey, let your moderators in and decide about your data.', 'Conectar tus plataformas, entrar con una passkey, dejar entrar a tus moderadores y decidir sobre tus datos.'],
-    come: [['Collega le piattaforme dove trasmetti: il canale resta uno solo.', 'Connect the platforms you stream on: the channel stays one.', 'Conecta las plataformas donde emites: el canal sigue siendo uno.', '#piattaforme-box'], ['Crea una passkey: rientri con l’impronta o il volto, senza password.', 'Create a passkey: you sign back in with your fingerprint or face, no password.', 'Crea una passkey: vuelves a entrar con tu huella o tu cara, sin contraseña.', '#btn-crea-passkey'], ['Scarica i tuoi dati quando vuoi: sono tuoi.', 'Download your data whenever you want: it’s yours.', 'Descarga tus datos cuando quieras: son tuyos.', '#btn-esporta']] },
+    come: [['Collega Kick e YouTube se trasmetti anche lì: il canale resta uno solo.', 'Connect Kick and YouTube if you stream there too: the channel stays one.', 'Conecta Kick y YouTube si también emites allí: el canal sigue siendo uno.', '#piattaforme-box'], ['Crea una passkey: rientri con l’impronta o il volto, senza password.', 'Create a passkey: you sign back in with your fingerprint or face, no password.', 'Crea una passkey: vuelves a entrar con tu huella o tu cara, sin contraseña.', '#btn-crea-passkey'], ['Scarica i tuoi dati quando vuoi: sono tuoi.', 'Download your data whenever you want: it’s yours.', 'Descarga tus datos cuando quieras: son tuyos.', '#btn-esporta']] },
   personalita: { serve: ['Dare al bot il tono e il carattere con cui parla in chat.', 'Give the bot the tone and character it speaks with in chat.', 'Darle al bot el tono y el carácter con que habla en el chat.'],
     come: [['Scegli il tono, e con «Chat autonoma» quanto interviene da solo.', 'Pick the tone, and with “Autonomous chatting” how often it chimes in on its own.', 'Elige el tono, y con «Chat autónomo» cuánto interviene solo.', '#sel-tono'], ['Aggiungi regole che rispetterà SEMPRE.', 'Add rules it will ALWAYS follow.', 'Añade reglas que respetará SIEMPRE.', '#inp-guida'], ['Salva: il nuovo stile parte subito.', 'Save: the new style takes effect right away.', 'Guarda: el nuevo estilo se aplica al instante.', '#btn-salva-personalita']] },
   conoscenza: { serve: ['Decidere cosa il bot sa di te e come deve rispondere.', 'Decide what the bot knows about you and how it should reply.', 'Decidir qué sabe el bot de ti y cómo debe responder.'],
@@ -4613,7 +4631,7 @@ function cardKickHtml() {
     <h2>${_hIco(ICO.fulmine)}${L('Il tuo canale è su Kick', 'Your channel is on Kick', 'Tu canal está en Kick')}</h2>
     <p>${L('Il bot legge la tua chat di Kick e risponde lì. Funzionano i comandi, i moduli, i giochi e le monete, gli avvisi di follow e abbonamento, l’overlay della diretta e le notifiche social.', 'The bot reads your Kick chat and answers there. Commands, modules, games and coins, follow and subscription alerts, the stream overlay and social notifications all work.', 'El bot lee tu chat de Kick y responde ahí. Funcionan los comandos, los módulos, los juegos y las monedas, los avisos de follow y suscripción, el overlay del directo y las notificaciones sociales.')}</p>
     <p class="suggerimento spazio-sopra">${L('Restano fuori le cose che sono di Twitch: la moderazione automatica, le clip, il cambio di categoria e titolo, i VIP, i punti canale e le emote 7TV. E le monete su Kick arrivano dai messaggi: l’elenco di chi sta guardando in silenzio Kick non lo dà.', 'What stays out is what belongs to Twitch: automatic moderation, clips, category and title changes, VIPs, channel points and 7TV emotes. And on Kick coins come from messages: Kick doesn’t give the list of silent viewers.', 'Queda fuera lo que es de Twitch: la moderación automática, los clips, el cambio de categoría y título, los VIP, los puntos de canal y los emotes 7TV. Y en Kick las monedas llegan de los mensajes: Kick no da la lista de quien mira en silencio.')}</p>
-    <p class="suggerimento">${L('Se trasmetti anche su Twitch, collega quell’account qui sotto: il canale resta uno solo e si accende tutto.', 'If you also stream on Twitch, connect that account below: the channel stays one and everything lights up.', 'Si también emites en Twitch, conecta esa cuenta aquí abajo: el canal sigue siendo uno y se enciende todo.')}</p>
+    <p class="suggerimento">${L('Se trasmetti anche su Twitch, entra con il tuo account Twitch: è un canale a sé, con il suo pannello, e lì funziona anche quello che è solo di Twitch.', 'If you also stream on Twitch, sign in with your Twitch account: it’s a channel of its own, with its own panel, and there the Twitch-only features work too.', 'Si también emites en Twitch, entra con tu cuenta de Twitch: es un canal aparte, con su propio panel, y allí funciona también lo que es solo de Twitch.')}</p>
   </div>`;
 }
 
@@ -29940,6 +29958,13 @@ function _durata(sec) {
 
 const PIATT_ICO = { twitch: ICO.tv, kick: ICO.fulmine, youtube: ICO.video };
 
+function _notaCanaleAParte() {
+  const dove = NOME_PIATTAFORMA[stato?.piattaforma] || stato?.piattaforma || '';
+  return L(`Il tuo canale è su ${dove}: Twitch non si aggiunge a questo canale. Se trasmetti anche su Twitch, entra con il tuo account Twitch: è un canale a sé, con il suo pannello.`,
+    `Your channel is on ${dove}: Twitch can’t be added to this channel. If you also stream on Twitch, sign in with your Twitch account: it’s a channel of its own, with its own panel.`,
+    `Tu canal está en ${dove}: Twitch no se añade a este canal. Si también emites en Twitch, entra con tu cuenta de Twitch: es un canal aparte, con su propio panel.`);
+}
+
 function rigaPiattaforma(p) {
   const stato = !p.disponibile
     ? { cl: '', txt: L('non disponibile', 'not available', 'no disponible') }
@@ -29949,7 +29974,7 @@ function rigaPiattaforma(p) {
           : { cl: BADGE.ok, txt: L('collegata', 'connected', 'conectada') };
   const azione = !p.disponibile ? ''
     : (!p.collegato
-      ? `<a class="btn secondario mini" href="${esc(p.azione)}">${L('Collega', 'Connect', 'Conectar')}</a>`
+      ? (p.azione ? `<a class="btn secondario mini" href="${esc(p.azione)}">${L('Collega', 'Connect', 'Conectar')}</a>` : '')
       : `${p.rifaiEventi ? `<button type="button" class="btn mini" data-kick-eventi>${L('Riprova gli eventi', 'Retry events', 'Reintentar eventos')}</button>` : ''}
          ${p.daRifare && !p.rifaiEventi ? `<a class="btn mini" href="${esc(p.azione)}">${L('Sistema', 'Fix', 'Arreglar')}</a>` : ''}
          ${p.chatDisponibile ? `<label class="interruttore mini" title="${esc(L('Il bot legge e risponde nella chat delle tue dirette YouTube', 'The bot reads and answers in your YouTube live chat', 'El bot lee y responde en el chat de tus directos de YouTube'))}">
@@ -29960,6 +29985,7 @@ function rigaPiattaforma(p) {
     <span class="pf-nome">${esc(p.nome)}${p.account ? ` <span class="tenue">${esc(p.account)}</span>` : ''}</span>
     <span class="badge ${stato.cl}">${stato.txt}</span>
     ${p.note ? `<span class="pf-nota">${esc(p.note)}</span>` : ''}
+    ${p.canaleAParte ? `<span class="pf-nota">${esc(_notaCanaleAParte())}</span>` : ''}
     <span class="pf-azioni">${azione}</span>
   </li>`;
 }

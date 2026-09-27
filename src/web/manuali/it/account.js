@@ -33,7 +33,7 @@ export default {
     { tabella: [
       ['Badge', 'Cosa vuol dire'],
       ['«non disponibile»', 'Questa piattaforma non è ancora aperta su SocialBot. Per YouTube la nota dice «in arrivo».'],
-      ['«non collegata»', 'Non l\'hai collegata. Premi «Collega».'],
+      ['«non collegata»', 'Non l\'hai collegata. Premi «Collega». Su un canale Kick, YouTube o Discord la riga di Twitch resta così, senza tasto: Twitch non si aggiunge a un canale di un\'altra piattaforma. Se trasmetti anche su Twitch, entri con il tuo account Twitch e hai un canale a sé, con il suo pannello.'],
       ['«collegata»', 'Collegata, ma il bot adesso non ci lavora: per esempio su Twitch è spento, o su YouTube non sei in diretta.'],
       ['«attiva»', 'Il bot ci lavora adesso.'],
       ['«da sistemare»', 'Qualcosa non va. La nota accanto dice cosa, e il tasto accanto lo sistema.'],

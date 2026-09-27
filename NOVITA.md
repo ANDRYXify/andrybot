@@ -34,6 +34,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Per i canali nati su YouTube la chat delle dirette parte davvero: prima la levetta restava alzata e il bot non la leggeva mai. [vai: account]
 - La scheda Stato di un canale Kick, YouTube o Discord non chiede più i permessi di Twitch, e «in chat adesso» guarda la chat della piattaforma del canale. [vai: stato]
 - La carta «Attiva il bot» dice il vero sui permessi: Twitch ne chiede uno per ogni funzione che li usa, e l'elenco intero lo vedi prima di confermare. [vai: stato]
+- In «Le tue piattaforme» un canale Kick, YouTube o Discord non vede più Twitch «da sistemare»: la riga dice che Twitch è un canale a sé, e come entrarci. [vai: account]
+- Se dai i permessi entrando su Twitch con un altro account, il pannello te lo dice al ritorno e ti propone di riprovare, invece di tornare in silenzio. [vai: stato]
 
 ## 2026-09-26
 

@@ -2993,16 +2993,21 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const st = manager.status?.() || {};
     const fuori = [];
 
-    // Twitch: c'e' sempre, e' la piattaforma di casa.
+    // Twitch: c'e' sempre, e' la piattaforma di casa. Ma e' collegata solo a
+    // un canale Twitch: un canale nato su Kick, YouTube o Discord non puo'
+    // aggiungere Twitch (i permessi si danno con l'account del canale, e Twitch
+    // risponde con un altro), quindi la riga lo dice e non offre il tasto.
+    const suTwitch = piattaformaDi(login) === 'twitch';
     fuori.push({
       id: 'twitch',
       nome: 'Twitch',
       disponibile: true,
-      collegato: true,
-      account: login,
-      attivo: (st.connessi || []).includes(login),
-      daRifare: (st.chatKO || []).includes(login) || !permessiOk(login),
-      azione: '/auth/permessi',
+      collegato: suTwitch,
+      account: suTwitch ? login : '',
+      attivo: suTwitch && (st.connessi || []).includes(login),
+      daRifare: suTwitch && ((st.chatKO || []).includes(login) || !permessiOk(login)),
+      azione: suTwitch ? '/auth/permessi' : '',
+      canaleAParte: !suTwitch,
       note: '',
     });
 
