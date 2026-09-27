@@ -841,6 +841,7 @@ function statoDemo() {
     rapportiNuovi: 1, postaDisponibile: true, inviti: [],
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display, nome: ctx.canale },
+    indirizzo: 'https://www.twitch.tv/' + ctx.canale,
     isAdmin: false,
     permessiOk: true, vipOk: true, moderazioneOk: true, canaleOk: true,
     knowledgeCount: 3,
@@ -4820,10 +4821,12 @@ function grafGiorni(giorni) {
   return Array.from({ length: 7 }, (_, i) => ({ g: String(gg[i]).toUpperCase(), ora: String(w[i]?.ora || ''), att: String(w[i]?.att || ''), off: !!w[i]?.off }));
 }
 
+const grafCanale = () => String(stato?.indirizzo || '').replace(/^https?:\/\/(www\.)?/, '');
+
 function grafUrlCanale(c) {
   const login = (stato?.user?.login || 'iltuocanale').toLowerCase();
-  return (c && c.dest === 'twitch')
-    ? 'twitch.tv/' + login
+  return (c && c.dest === 'twitch' && grafCanale())
+    ? grafCanale()
     : 'socialbot.live/u/' + login;
 }
 
@@ -5433,8 +5436,8 @@ function pannelloGrafiche() {
           <div class="spazio-sopra gr-social">
             <label class="campo">${L('Condivisione & link al canale', 'Sharing & channel link', 'Compartir y enlace al canal')}</label>
             <div class="gr-sfondo-scelte">
-              <button type="button" class="gr-tema${c.dest !== 'twitch' ? ' on' : ''}" data-gr-dest="u">socialbot.live/u/…</button>
-              <button type="button" class="gr-tema${c.dest === 'twitch' ? ' on' : ''}" data-gr-dest="twitch">twitch.tv/…</button>
+              <button type="button" class="gr-tema${c.dest !== 'twitch' || !grafCanale() ? ' on' : ''}" data-gr-dest="u">socialbot.live/u/…</button>
+              ${grafCanale() ? `<button type="button" class="gr-tema${c.dest === 'twitch' ? ' on' : ''}" data-gr-dest="twitch">${esc(grafCanale().replace(/[^/@]+$/, '…'))}</button>` : ''}
             </div>
             <label class="riga-check spazio-sopra"><input type="checkbox" id="gr-qr" ${c.qr ? 'checked' : ''}> <strong>${L('Stampa un QR + il link del canale sull\'immagine', 'Print a QR + the channel link on the image', 'Imprime un QR + el enlace del canal en la imagen')}</strong></label>
             <p class="suggerimento">${L('Su Instagram l\'immagine del feed non è cliccabile: col QR chi la vede arriva comunque al canale. Per un link tappabile usa lo sticker «link» nelle Storie o il link in bio.', 'On Instagram feed images aren\'t clickable: with the QR viewers still reach the channel. For a tappable link use the «link» sticker in Stories or the link in bio.', 'En Instagram la imagen del feed no es clicable: con el QR quien la ve igual llega al canal. Para un enlace tocable usa el sticker «enlace» en Stories o el link en bio.')}</p>
@@ -20069,15 +20072,15 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
           <input type="text" id="lp-tagline" data-lpt="tagline" maxlength="${d.limiti.tagline}" value="${esc(LP.testa.tagline)}" placeholder="${esc(L('es. Ogni sera su Twitch', 'e.g. Every night on Twitch', 'p. ej. Cada noche en Twitch'))}">
           <label class="campo spazio-sopra" for="lp-avatar">${L('Immagine del profilo', 'Profile picture', 'Imagen de perfil')}</label>
           <select id="lp-avatar" data-lpt="avatarModo">
-            <option value=""${!LP.testa.avatar ? ' selected' : ''}>${L('Quella di Twitch', 'Your Twitch one', 'La de Twitch')}</option>
+            <option value=""${!LP.testa.avatar ? ' selected' : ''}>${L('La tua foto', 'Your photo', 'Tu foto')}</option>
             <option value="url"${LP.testa.avatar && LP.testa.avatar !== 'no' ? ' selected' : ''}>${L('Un\'immagine mia (carica o incolla)', 'My own image (upload or paste)', 'Una imagen mía (sube o pega)')}</option>
             <option value="no"${LP.testa.avatar === 'no' ? ' selected' : ''}>${L('Nessuna', 'None', 'Ninguna')}</option>
           </select>
           <div id="lp-avatar-tw" class="lp-avatar-tw" ${LP.testa.avatar ? 'hidden' : ''}>
             ${d.avatarTwitch
               ? `<img src="${esc(d.url)}/avatar" alt="" width="44" height="44" loading="lazy" data-via-se-rotta>
-                 <span class="suggerimento">${L('Questa è la tua foto di Twitch: la prendiamo da soli e si aggiorna quando la cambi là.', 'This is your Twitch picture: we fetch it for you and it updates when you change it there.', 'Esta es tu foto de Twitch: la traemos nosotros y se actualiza cuando la cambias allí.')}</span>`
-              : `<span class="suggerimento">${L('Non riusciamo a leggere la tua foto da Twitch in questo momento: riproviamo da soli, oppure scegli “Un\'immagine mia”.', 'We can\'t read your Twitch picture right now: we\'ll retry by ourselves, or pick “My own image”.', 'Ahora no podemos leer tu foto de Twitch: lo reintentamos solos, o elige “Una imagen mía”.')}</span>`}
+                 <span class="suggerimento">${L('È la foto del profilo con cui entri: la prendiamo da soli, e si aggiorna quando la cambi là.', 'It is the profile picture of the account you sign in with: we fetch it for you, and it updates when you change it there.', 'Es la foto del perfil con el que entras: la traemos nosotros, y se actualiza cuando la cambias allí.')}</span>`
+              : `<span class="suggerimento">${L('In questo momento non riusciamo a leggere la tua foto: riproviamo da soli, oppure scegli «Un\'immagine mia».', 'We can\'t read your picture right now: we\'ll retry by ourselves, or pick “My own image”.', 'Ahora no podemos leer tu foto: lo reintentamos solos, o elige «Una imagen mía».')}</span>`}
           </div>
           <div id="lp-avatar-box" ${LP.testa.avatar && LP.testa.avatar !== 'no' ? '' : 'hidden'}>
             <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpup="avatar">${_bIco(ICO.carica)}${L('Carica una foto', 'Upload a photo', 'Subir una foto')}</button></p>

@@ -206,3 +206,11 @@ test('il primo link gia\' pronto porta al canale sulla sua piattaforma, e chi ha
   assert.deepEqual(primo('dc.pippo'), [], 'solo Discord: nessun canale da linkare');
   assert.ok(!rotta.includes('twitch.tv/${login}'), 'niente piu\' twitch.tv per tutti');
 });
+
+test('la foto del profilo si chiama «La tua foto» per tutti, e i suoi avvisi non parlano di Twitch', () => {
+  const carica = corpoDi('async function caricaPaginaLink(');
+  const menu = carica.slice(carica.indexOf('<select id="lp-avatar"'), carica.indexOf('<div id="lp-avatar-box"'));
+  assert.match(menu, /<option value=""\$\{!LP\.testa\.avatar \? ' selected' : ''\}>\$\{L\('La tua foto', 'Your photo', 'Tu foto'\)\}<\/option>/);
+  for (const t of testiIt(menu)) assert.ok(!/Twitch/.test(t), `la foto e' quella del profilo con cui si entra, su qualunque piattaforma: ${t}`);
+  assert.ok(MAN.includes('«La tua foto» usa la foto del profilo con cui entri'), 'e il manuale la chiama allo stesso modo');
+});

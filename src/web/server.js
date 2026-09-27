@@ -3209,6 +3209,9 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       // preferenza: e' quello che decide se una funzione ha senso o no (le clip,
       // la categoria, lo scudo anti-bot esistono solo su Twitch).
       piattaforma: piattaformaDi(user.login),
+      // L'indirizzo pubblico del canale, vuoto per chi ha solo Discord: il
+      // pannello lo scrive sulle grafiche cosi' com'e', senza rifarselo.
+      indirizzo: urlCanale(user.login),
       // Per ogni scheda del pannello, la pagina che la spiega (se c'è): la
       // dichiara la pagina stessa, accanto al proprio contenuto.
       aiuti: AIUTI_LINGUE,

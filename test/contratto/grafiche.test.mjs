@@ -328,3 +328,20 @@ test('l\'immagine del gioco ha tre modi, uguali di qua e di la\', e il vecchio i
   assert.ok(APP.includes("const grafPillolaProssima = (c) => !!grafProssimaGioco(c) && !grafConCopertina(c) && !grafCopertinaRiquadro(c);"), 'la pillola del gioco solo quando l\'immagine non si vede: una regola per la disposizione e per il disegno');
   assert.ok(APP.includes("const pillola = grafPillolaProssima(c) ? 104 + 40 : 0;") && APP.includes("if (grafPillolaProssima(c)) grafPillola(ctx, pal, lay, gioco);"));
 });
+
+test('il link al canale sulle grafiche e\' l\'indirizzo vero del canale, su ogni piattaforma', async () => {
+  const { urlCanale } = await import('../../src/identita.js');
+  const me = SRV.slice(SRV.indexOf('piattaforma: piattaformaDi(user.login),'), SRV.indexOf('aiuti: AIUTI_LINGUE,'));
+  assert.match(me, /indirizzo: urlCanale\(user\.login\),/, 'il pannello riceve l\'indirizzo dal server, che lo sa da identita.js');
+  const i = APP.indexOf('const grafCanale = ');
+  const codice = APP.slice(i, APP.indexOf('\n}\n', APP.indexOf('function grafUrlCanale(', i)) + 2);
+  const url = (login, dest) => vm.runInNewContext(`${codice}\ngrafUrlCanale({ dest: ${JSON.stringify(dest)} })`,
+    { stato: { user: { login }, indirizzo: urlCanale(login) } });
+  assert.equal(url('pippo', 'twitch'), 'twitch.tv/pippo');
+  assert.equal(url('kick.pippo', 'twitch'), 'kick.com/pippo', 'Kick: il suo canale, non twitch.tv/kick.pippo');
+  assert.equal(url('yt.pippo', 'twitch'), 'youtube.com/@pippo');
+  assert.equal(url('dc.pippo', 'twitch'), 'socialbot.live/u/dc.pippo', 'senza un canale, la pagina link');
+  assert.equal(url('kick.pippo', 'u'), 'socialbot.live/u/kick.pippo');
+  assert.ok(!APP.includes('data-gr-dest="twitch">twitch.tv/…'), 'il tasto non dice twitch.tv a tutti');
+  assert.match(APP, /\$\{grafCanale\(\) \? `<button type="button" class="gr-tema\$\{c\.dest === 'twitch' \? ' on' : ''\}" data-gr-dest="twitch">\$\{esc\(grafCanale\(\)\.replace\(/, 'il tasto mostra il suo indirizzo, e c\'e\' solo se il canale c\'e\'');
+});
