@@ -85,7 +85,7 @@ const PILE = {
 
 // La sola pila che porta un file. Le pagine link non caricano caratteri dal
 // web: e' una scelta di velocita', e vale ancora per tutte tranne questa.
-import { cssPaginaSicuro } from '../db.js';
+import { cssPaginaSicuro, LIMITI_LINKPAGE } from '../db.js';
 import { formattaImporto } from './donazioni.js';
 
 // I COMMENTI NON ESCONO DA QUI.
@@ -761,7 +761,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       const forma = b.formato && b.formato !== 'auto' ? b.formato : e.formato;
       // altezza scelta a mano: vince su tutto, comprese le proporzioni
       const dich = [];
-      if (Number(b.altezza) > 0) dich.push(`height:${Math.min(1200, Math.round(b.altezza))}px`, 'aspect-ratio:auto');
+      if (Number(b.altezza) > 0) dich.push(`height:${Math.min(LIMITI_LINKPAGE.altezzaEmbed, Math.round(b.altezza))}px`, 'aspect-ratio:auto');
       if (b.sfondo) dich.push(`--emb-bg:${b.sfondo}`);
       dich.push(`--d:${Math.min(n - 1, 12) * 45}ms`);
       const alt = `${Number(b.altezza) > 0 ? 'data-fisso="1" ' : ''}style="${dich.join(';')}"`;

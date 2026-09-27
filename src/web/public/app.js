@@ -1556,7 +1556,7 @@ function _demoGet(via) {
       fonts: ['system','inter','mono','serif','condensato','tondo'],
       icone: ['link','twitch','youtube','instagram','tiktok','discord','spotify','x','telegram','kick','github','cuore','stella','regalo','carrello','calendario','mail','musica','video','scarica','gioco','caffe','soldi'],
       tipi: ['link','titolo','testo','separatore','social','embed','immagine','diretta'],
-      limiti: { headline: 80, tagline: 200, label: 60, sotto: 90, url: 500, blocchi: 40, social: 12, testo: 500, titolo: 60 },
+      limiti: { headline: 80, tagline: 200, label: 60, sotto: 90, url: 500, blocchi: 40, testo: 500, titolo: 60, voci: { social: 12, griglia: 12, numeri: 6, faq: 12 }, altezzaEmbed: 900 },
       avatarTwitch: '', suggeriti: [],
       pagina: { template: 'neon', avatar: '', attiva: true, aggiornata: null,
         headline: 'Andry \u00b7 streamer', tagline: 'Ogni sera su Twitch, di solito a fare danni',
@@ -19880,6 +19880,8 @@ function lpIntroHtml(d) {
 }
 
 const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', schede: { link: {}, dona: {} } };
+const lpVociMax = (tipo) => Number(LP.d?.limiti?.voci?.[tipo]) || 0;
+const lpVociPiene = (b) => (b.voci || []).length >= lpVociMax(b.tipo);
 const lpSchede = () => LP.schede[LP.quale === 'dona' ? 'dona' : 'link'];
 const lpApi = () => (LP.quale === 'dona' ? '/api/paginadona' : '/api/linkpage');
 
@@ -20816,7 +20818,7 @@ function lpRenderBlocchi() {
           <button type="button" class="btn secondario mini" data-lpsoc="via" data-lpb="${i}" data-lpv="${j}" title="${L('Togli', 'Remove', 'Quitar')}">${_lpVia}</button>
         </div>
         <div class="lp-icone piccole">${(d.icone || []).map((k) => `<button type="button" class="lp-ipick${k === v.icona ? ' sel' : ''}" data-lpico="${esc(k)}" data-lpb="${i}" data-lpv="${j}" title="${esc(k)}">${lpIco(k, 15)}</button>`).join('')}</div>`).join('')
-        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi social', 'Add social', 'Añadir red')}</button></p>
+        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}"${lpVociPiene(b) ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi social', 'Add social', 'Añadir red')}</button></p>
            <p class="suggerimento">${L('Icone piccole in fila. L\'icona la riconosco dall\'indirizzo.', 'Small icons in a row. I detect the icon from the address.', 'Iconos pequeños en fila. El icono lo reconozco por la dirección.')}</p>`;
     } else if (b.tipo === 'titolo' || b.tipo === 'testo') {
       const max = b.tipo === 'titolo' ? d.limiti.titolo : d.limiti.testo;
@@ -20842,7 +20844,7 @@ function lpRenderBlocchi() {
         <select data-lpb="${i}" data-lpf="formato">${Object.keys(FORM).map((k) => `<option value="${k}"${(b.formato || 'auto') === k ? ' selected' : ''}>${esc(FORM[k])}</option>`).join('')}</select>
         <label class="campo spazio-sopra">${L('Altezza del riquadro', 'Box height', 'Altura del recuadro')}
           <span class="tenue" data-lpalt-v="${i}">${Number(b.altezza) > 0 ? Number(b.altezza) + 'px' : L('automatica', 'automatic', 'automática')}</span></label>
-        <input type="range" data-lpb="${i}" data-lpf="altezza" min="0" max="900" step="10" value="${Number(b.altezza) || 0}">
+        <input type="range" data-lpb="${i}" data-lpf="altezza" min="0" max="${d.limiti.altezzaEmbed}" step="10" value="${Number(b.altezza) || 0}">
         <div class="griglia-campi spazio-sopra">
           <div><label class="campo">${L('Colore dietro al riquadro', 'Colour behind the frame', 'Color detrás del marco')}</label>
             <input aria-label="${esc(L('Colore dietro al riquadro', 'Colour behind the frame', 'Color detrás del marco'))}" type="color" data-lpb="${i}" data-lpf="sfondo" value="${esc(b.sfondo || LP.tema.bordo || '#000000')}"></div>
@@ -20872,7 +20874,7 @@ function lpRenderBlocchi() {
           <input type="text" data-lpb="${i}" data-lpv="${j}" data-lpf="voceEtichetta" maxlength="40" value="${esc(v.etichetta || '')}" placeholder="${esc(L('es. follower', 'e.g. followers', 'p. ej. seguidores'))}">
           <button type="button" class="btn secondario mini" data-lpsoc="via" data-lpb="${i}" data-lpv="${j}" title="${L('Togli', 'Remove', 'Quitar')}">${_lpVia}</button>
         </div>`).join('')
-        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi numero', 'Add number', 'Añadir número')}</button></p>
+        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}"${lpVociPiene(b) ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi numero', 'Add number', 'Añadir número')}</button></p>
            <p class="suggerimento">${L('Follower, anni di dirette, ore in diretta, paesi visitati: tre numeri grossi dicono chi sei più di un paragrafo.', 'Followers, years streaming, hours live, countries visited: three big numbers say who you are better than a paragraph.', 'Seguidores, años en directo, horas emitidas, países visitados: tres números grandes dicen quién eres mejor que un párrafo.')}</p>`;
     } else if (b.tipo === 'faq') {
       campi = (b.voci || []).map((v, j) => `
@@ -20883,7 +20885,7 @@ function lpRenderBlocchi() {
           </div>
           <textarea class="spazio-sopra" data-lpb="${i}" data-lpv="${j}" data-lpf="voceR" rows="2" maxlength="${d.limiti.testo}" placeholder="${esc(L('La risposta', 'The answer', 'La respuesta'))}">${esc(v.r || '')}</textarea>
         </div>`).join('')
-        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi domanda', 'Add question', 'Añadir pregunta')}</button></p>
+        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}"${lpVociPiene(b) ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi domanda', 'Add question', 'Añadir pregunta')}</button></p>
            <p class="suggerimento">${L('Si aprono e si chiudono da sole, senza una riga di script. “Che PC usi?”, “Quando streammi?”, “Posso usare le tue clip?”', 'They open and close on their own, without a line of script. “What PC do you use?”, “When do you stream?”, “Can I use your clips?”', 'Se abren y cierran solas, sin una línea de script. “¿Qué PC usas?”, “¿Cuándo transmites?”, “¿Puedo usar tus clips?”')}</p>`;
     } else if (b.tipo === 'sostieni') {
       const dn = impostazioni().donazioni || {};
@@ -20930,7 +20932,7 @@ function lpRenderBlocchi() {
           <input type="url" class="spazio-sopra" data-lpb="${i}" data-lpv="${j}" data-lpf="voceLink" maxlength="${d.limiti.url}" value="${esc(v.url || '')}" placeholder="${esc(L('Dove porta (facoltativo)', 'Where it goes (optional)', 'Adónde lleva (opcional)'))}">
           <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpup="${i}.${j}">${_bIco(ICO.carica)}${L('Immagine', 'Image', 'Imagen')}</button></p>
         </div>`).join('')
-        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi tessera', 'Add card', 'Añadir ficha')}</button></p>
+        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}"${lpVociPiene(b) ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi tessera', 'Add card', 'Añadir ficha')}</button></p>
            <p class="suggerimento">${L('Tessere con immagine affiancate: le tue clip, i tuoi video, i tuoi progetti. Contenuti da guardare, non righe da leggere.', 'Cards with images side by side: your clips, videos, projects. Things to look at, not lines to read.', 'Fichas con imagen en paralelo: tus clips, vídeos, proyectos. Cosas para mirar, no líneas para leer.')}</p>`;
     } else if (b.tipo === 'diretta') {
       const PIA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
@@ -21068,7 +21070,7 @@ function lpClicBlocchi(ev) {
       b.voci = b.voci || [];
       const vuota = { griglia: { img: '', titolo: '', testo: '', url: '' }, numeri: { n: '', etichetta: '' },
         faq: { d: '', r: '' } }[b.tipo] || { icona: 'link', url: '' };
-      if (b.voci.length < 12) b.voci.push({ ...vuota });
+      if (!lpVociPiene(b)) b.voci.push({ ...vuota });
     }
     else b.voci.splice(Number(so.dataset.lpv), 1);
     lpRenderBlocchi(); lpAnteprima();

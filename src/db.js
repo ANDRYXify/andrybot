@@ -3648,9 +3648,16 @@ export const FORMATI_EMBED = ['auto', 'video', 'quadrato', 'verticale', 'alto', 
 // accendere e spegnere un "sono live": quando la diretta parte si vede, quando
 // è finita il player mostra da sé che il canale è offline.
 export const PIATTAFORME_DIRETTA = ['twitch', 'kick', 'youtube'];
+// I limiti arrivano anche al pannello, insieme alla pagina: un massimo scritto
+// solo qui non puo' essere diverso di la', e una riga in piu' non sparisce al
+// salvataggio senza che nessuno l'abbia vista andar via.
+// voci: quante righe tiene un pezzo fatto di righe, per tipo di pezzo.
+// altezzaEmbed: il massimo, in px, dell'altezza scelta a mano per un riquadro.
 export const LIMITI_LINKPAGE = {
   headline: 80, tagline: 200, label: 60, sotto: 90, url: 500,
-  blocchi: 40, social: 12, testo: 500, titolo: 60,
+  blocchi: 40, testo: 500, titolo: 60,
+  voci: { social: 12, griglia: 12, numeri: 6, faq: 12 },
+  altezzaEmbed: 900,
 };
 
 // Riconosce la piattaforma dall'indirizzo: così l'icona giusta arriva da sé e
@@ -3868,7 +3875,7 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
       } else if (tipo === 'separatore' || tipo === 'spazio') {
         out.push({ tipo });
       } else if (tipo === 'social') {
-        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, L.social).map((sv) => {
+        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, L.voci.social).map((sv) => {
           const u = urlOk(sv?.url);
           return { url: u, icona: scelta(sv?.icona, ICONE_LINKPAGE, null) || iconaDaUrl(u) };
         });
@@ -3883,7 +3890,7 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
         // sito, non li possiamo misurare), quindi la decide chi fa la pagina:
         // e l'unico modo per non lasciare mai spazio vuoto sotto.
         out.push({ tipo, url: urlOk(b.url), risolto: urlOk(b.risolto),
-          formato: scelta(b.formato, FORMATI_EMBED, 'auto'), altezza: num(b.altezza, 0, 1200, 0),
+          formato: scelta(b.formato, FORMATI_EMBED, 'auto'), altezza: num(b.altezza, 0, L.altezzaEmbed, 0),
           sfondo: hex(b.sfondo), titolo: str(b.titolo, L.label) });
       } else if (tipo === 'diretta') {
         // il nome del canale, non un indirizzo: il player lo costruiamo noi.
@@ -3904,11 +3911,11 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
       } else if (tipo === 'scritta') {
         out.push({ tipo, testo: str(b.testo, L.titolo), velocita: scelta(b.velocita, ['lenta', 'media', 'veloce'], 'media') });
       } else if (tipo === 'numeri') {
-        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 6)
+        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, L.voci.numeri)
           .map((v) => ({ n: str(v?.n, 16), etichetta: str(v?.etichetta, 40) }));
         out.push({ tipo, voci });
       } else if (tipo === 'faq') {
-        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 12)
+        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, L.voci.faq)
           .map((v) => ({ d: str(v?.d, L.titolo), r: str(v?.r, L.testo) }));
         out.push({ tipo, voci });
       } else if (tipo === 'conto') {
@@ -3930,7 +3937,7 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
         out.push({ tipo, titolo: str(b.titolo, L.label), quanti: quanti >= 3 && quanti <= 20 ? quanti : 5,
           modo: scelta(b.modo, ['ultimi', 'top'], 'ultimi'), periodo: scelta(b.periodo, ['mese', 'sempre'], 'sempre') });
       } else if (tipo === 'griglia') {
-        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 12).map((v) => ({
+        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, L.voci.griglia).map((v) => ({
           img: urlOk(v?.img), titolo: str(v?.titolo, L.label), testo: str(v?.testo, L.sotto), url: urlOk(v?.url),
         }));
         out.push({ tipo, voci });
