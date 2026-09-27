@@ -786,7 +786,7 @@ export class BotManager {
         const conf = tgConf.get(login);
         if (conf?.token && conf.owner_tg_id && (conf.dm_modo || 'me') !== 'off') {
           const testo = '⚠️ Il bot non riesce a collegarsi alla tua chat: il permesso Twitch è scaduto o è stato revocato. '
-            + 'Entra nella dashboard e premi «Concedi i permessi» per rimetterlo in funzione.';
+            + 'Entra nel pannello e premi «Ricollega i permessi» nella scheda Stato per rimetterlo in funzione.';
           telegram.inviaMessaggio(conf.token, conf.owner_tg_id, testo).catch(() => {});
         }
       }

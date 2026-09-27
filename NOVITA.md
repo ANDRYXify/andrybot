@@ -40,6 +40,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Chi ha già il Base e nessun extra, nella scheda Abbonamento, vede solo quanto costano gli extra che aggiunge: prima il totale contava di nuovo il canone Base. [vai: sottoscrizione]
 - In «Cosa hai acceso» della scheda Abbonamento ci sono anche «Bot su Telegram» e «Studio Web», che il Base comprende e mancavano dall'elenco. [vai: sottoscrizione]
 - Quando andryxify ti apre o ti chiude una funzione a mano, il pannello lo dice con il suo nome: prima scriveva «il proprietario», che sembrava voler dire te. [vai: sottoscrizione]
+- Invitando un moderatore, il pannello dice che entrerà con il suo account sulla piattaforma che hai scelto, non più «con Twitch» anche per Kick e YouTube. [vai: account]
+- Quando il bot perde la chat, il messaggio su Telegram nomina il tasto giusto, «Ricollega i permessi» nella scheda Stato.
 
 ## 2026-09-26
 
