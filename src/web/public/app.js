@@ -29040,8 +29040,8 @@ function riassuntoAzione(a) {
     case 'effetto': return a.comando ? `fai partire l'effetto !${a.comando}` : 'fai partire un effetto';
     case 'contatore': {
       const n = a.nome || 'contatore';
-      if (a.operazione === 'azzera') return `azzera "${n}"`;
-      if (a.operazione === 'imposta') return `imposta "${n}" a ${a.valore ?? 0}`;
+      if (a.op === 'azzera') return `azzera "${n}"`;
+      if (a.op === 'imposta') return `imposta "${n}" a ${a.valore ?? 0}`;
       return `aumenta "${n}"`;
     }
     case 'webhook': return 'chiama un webhook';
