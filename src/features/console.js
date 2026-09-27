@@ -422,6 +422,23 @@ const nuovoId = () => crypto.randomBytes(5).toString('hex');
 const PASSI_MAX = 8;
 const ATTESA_MAX_MS = 30000;
 export const DA_COMPLETARE = 'da completare';
+
+// I TETTI SONO UNO PER COSA, e stanno qui. Il pannello li riceve da qui e li
+// controlla a ogni ingresso (il «+», «Duplica», «Sposta nella pagina»), cosi'
+// chi preme sa perche' non si puo'. Una plancia che arriva oltre il tetto non si
+// salva tagliata in silenzio: si rifiuta, e si dice quale tetto ha passato.
+export const LIMITI = Object.freeze({ pagine: PAGINE_MAX, tasti: TASTI_MAX, passi: PASSI_MAX });
+
+export function fuoriTetto(dati) {
+  const pagine = Array.isArray(dati?.pagine) ? dati.pagine : [];
+  if (pagine.length > PAGINE_MAX) return `al massimo ${PAGINE_MAX} pagine`;
+  for (const pg of pagine) {
+    const tasti = Array.isArray(pg?.tasti) ? pg.tasti : [];
+    if (tasti.length > TASTI_MAX) return `al massimo ${TASTI_MAX} tasti per pagina`;
+    for (const t of tasti) if (Array.isArray(t?.passi) && t.passi.length > PASSI_MAX) return `al massimo ${PASSI_MAX} passi per tasto`;
+  }
+  return '';
+}
 const daCompletare = (passo) => ({ ...passo, incompleto: true });
 
 function passoPulito(p, valide) {
@@ -565,7 +582,7 @@ export function fileUsati(channel) {
 export function salvaPlancia(channel, dati) {
   const login = norm(channel);
   const s = streamers.get(login);
-  if (!s) return null;
+  if (!s || fuoriTetto(dati)) return null;
   const pulita = planciaPulita(login, dati);
   streamers.setSettings(login, { ...(s.settings || {}), plancia: pulita });
   return plancia(login);

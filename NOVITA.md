@@ -31,6 +31,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Ogni scheda del pannello ha il suo manuale: Stato, Effetti e Community si aggiungono agli altri, che ora dicono le etichette e i messaggi che vedi davvero.
 - La transizione scelta in un tasto di CONSOLify o in un Modulo resta dov'è e parte davvero: prima spariva appena salvata. [vai: consolify]
 - Un'idea pronta di CONSOLify crea il tasto coi passi da riempire segnati «da completare», e un passo aggiunto si salva subito: prima i passi vuoti sparivano e il tasto restava lì senza fare niente. [vai: consolify]
+- Quando una pagina di CONSOLify ha già 48 tasti, anche «Duplica» e «Sposta nella pagina» si fermano e dicono che è piena: prima il tasto in più spariva senza avviso. [vai: consolify]
 
 ## 2026-09-26
 

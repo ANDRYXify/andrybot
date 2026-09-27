@@ -938,3 +938,40 @@ test('il pannello mostra «da completare», lo salta premendo e salva subito un 
   const faccia = app.slice(app.indexOf('const tastoHtml = '), app.indexOf('const tasti = pg.tasti'));
   assert.match(faccia, /consStato\(t, a\)/, 'anche la faccia del tasto lo dice');
 });
+
+test('il tetto dei tasti è uno solo: lo dice il server, lo controlla il pannello a ogni ingresso', () => {
+  // Il «+» controllava i 48 tasti, «Duplica» e «Sposta nella pagina» no, e il
+  // server tagliava in silenzio quelli in più: il 49° spariva senza una parola.
+  assert.deepEqual(consolle.LIMITI, { pagine: 8, tasti: 48, passi: 8 });
+
+  const ch = canale();
+  const tasto = (i) => ({ nome: `T${i}`, passi: [{ tipo: 'chat', testo: `ciao ${i}` }] });
+  const giusta = { pagine: [{ nome: 'P', tasti: Array.from({ length: 48 }, (_, i) => tasto(i)) }] };
+  assert.equal(consolle.fuoriTetto(giusta), '', 'quarantotto ci stanno');
+  assert.equal(consolle.salvaPlancia(ch, giusta).pagine[0].tasti.length, 48);
+  const troppa = { pagine: [{ nome: 'P', tasti: Array.from({ length: 49 }, (_, i) => tasto(i)) }] };
+  assert.match(consolle.fuoriTetto(troppa), /48 tasti/, 'il quarantanovesimo si dice');
+  assert.equal(consolle.salvaPlancia(ch, troppa), null, 'e non si salva una plancia tagliata');
+  assert.equal(consolle.plancia(ch).pagine[0].tasti.length, 48, 'quella di prima resta com\'era');
+  assert.match(consolle.fuoriTetto({ pagine: Array.from({ length: 9 }, () => ({ tasti: [] })) }), /8 pagine/);
+  assert.match(consolle.fuoriTetto({ pagine: [{ tasti: [{ passi: Array.from({ length: 9 }, () => ({ tipo: 'attesa', ms: 5 })) }] }] }), /8 passi/);
+
+  const srv = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
+  const info = srv.slice(srv.indexOf("app.get('/api/streamer/console'"), srv.indexOf("app.post('/api/streamer/console/revoca'"));
+  assert.match(info, /limiti: consolle\.LIMITI/, 'il pannello riceve i tetti dal server');
+  const salva = srv.slice(srv.indexOf("app.post('/api/streamer/console/plancia'"), srv.indexOf('// ---- REGIA'));
+  assert.match(salva, /consolle\.fuoriTetto\(/, 'e il salvataggio oltre il tetto risponde con il motivo');
+
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const clic = app.slice(app.indexOf('function appendiConsolify('), app.indexOf('function appendiConsolifyTrascina('));
+  const campi = app.slice(app.indexOf('function appendiConsolifyCampi('), app.indexOf('const MORTI_DEF'));
+  assert.ok(!/\b48\b|\b8\b/.test(clic.replace(/'[^'\n]*'/g, '')), 'nessun tetto scritto a mano nei tasti della plancia');
+  for (const [nome, pezzo] of [
+    ['il «+»', clic.slice(clic.indexOf("closest('[data-cons-vuoto]')"), clic.indexOf("closest('[data-cons-apri]')"))],
+    ['«Duplica»', clic.slice(clic.indexOf("id === 'cons-c-duplica'"), clic.indexOf("id === 'cons-c-togli'"))],
+    ['«Sposta nella pagina»', campi.slice(campi.indexOf("id === 'cons-c-pagina'"), campi.indexOf("id === 'cons-formato'"))],
+  ]) assert.match(pezzo, /consPostoInPagina\(/, `${nome} controlla il posto`);
+  const posto = app.slice(app.indexOf('function consPostoInPagina('), app.indexOf('function consPostoInPagina(') + 700);
+  assert.match(posto, /consTetto\('tasti'\)/, 'il numero viene da quello che ha detto il server');
+  assert.match(posto, /toast\(/, 'e chi preme legge perché');
+});

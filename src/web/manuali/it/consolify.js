@@ -47,13 +47,13 @@ export default {
       ['‹ › e trascinamento', 'Spostano il tasto dentro la pagina.', ''],
     ] },
     { p: [
-      'Nei formati a griglia il «+» sta nel primo posto dopo i tasti. Quando i posti sono pieni, scegli un formato più grande o apri un\'altra pagina. Oltre i 48 tasti leggi «Quarantotto tasti per pagina bastano: fanne un\'altra pagina.»',
+      'Nei formati a griglia il «+» sta nel primo posto dopo i tasti. Quando i posti sono pieni, scegli un formato più grande o apri un\'altra pagina. Una pagina tiene al massimo 48 tasti: se ne aggiungi, duplichi o sposti uno in una pagina piena leggi «La pagina «…» è piena: tiene al massimo 48 tasti.»',
       '<strong>La scheda di un tasto.</strong> Si apre quando crei un tasto o premi la matita. Ogni campo che cambi si salva da solo, senza un tasto per salvare. Se il salvataggio non riesce, in alto leggi «non salvato».',
     ] },
     { tabella: [
       ['Campo', 'Cosa fa', 'Limiti'],
       ['«Nome sul tasto»', 'Il nome che vedi sul tasto. Vuoto, prende il nome dell\'azione o del primo passo.', '24 caratteri'],
-      ['«Sposta nella pagina»', 'Porta il tasto in fondo a un\'altra pagina.', ''],
+      ['«Sposta nella pagina»', 'Porta il tasto in fondo a un\'altra pagina.', 'solo in una pagina con meno di 48 tasti'],
       ['«Cosa fa, in fila»', 'I passi del tasto, in ordine. Vedi la tabella dei passi.', 'fino a 8 passi'],
       ['«Icona»', 'Una delle nostre icone, oppure «nessuna».', ''],
       ['Un\'immagine tua', 'Un\'immagine al posto dell\'icona. Ha un indirizzo pubblico, così la stessa faccia la metti anche sul tasto della tastiera fisica. Un SVG diventa PNG.', 'PNG, JPG, WEBP, GIF o SVG, fino a 2 MB'],
@@ -61,7 +61,7 @@ export default {
       ['«Colore»', 'Nessuno, uno dei 7 proposti o uno qualunque dal selettore.', ''],
       ['«Chiedi conferma prima di premerlo»', 'Prima di partire il tasto chiede conferma, nel pannello.', 'spento di base'],
       ['«Indirizzo di questo tasto»', 'L\'indirizzo per la tastiera fisica, con la chiave coperta. «mostra» la scopre, «copia» la copia.', ''],
-      ['«Duplica»', 'Crea una copia subito dopo, con un indirizzo suo.', ''],
+      ['«Duplica»', 'Crea una copia subito dopo, con un indirizzo suo.', 'solo se la pagina ha meno di 48 tasti'],
       ['«Togli il tasto»', 'Cancella il tasto. «Chiudi» chiude la scheda.', ''],
     ] },
     { p: [
@@ -82,7 +82,7 @@ export default {
     { p: [
       'I passi di regia propongono le scene, le fonti e le transizioni che il pannello ha letto dal programma. Se il programma non è collegato leggi, per esempio, «nessuna scena: collega la regia qui sotto».',
       'Il file di «Manda questo» passa dalla stessa compressione degli effetti e occupa lo spazio del canale. Se lo spazio è finito leggi «spazio del canale esaurito: togli qualche media, effetto o font e riprova».',
-      'Accanto a ogni passo ci sono ‹ › per spostarlo e × per toglierlo. Un tasto deve fare almeno una cosa: se provi a togliere l\'ultimo passo leggi «Un tasto deve fare almeno una cosa. Cambiala, oppure togli il tasto.». Al nono passo leggi «Otto passi bastano: oltre, un tasto non si capisce più.».',
+      'Accanto a ogni passo ci sono ‹ › per spostarlo e × per toglierlo. Un tasto deve fare almeno una cosa: se provi a togliere l\'ultimo passo leggi «Un tasto deve fare almeno una cosa. Cambiala, oppure togli il tasto.». Al nono passo leggi «Un tasto fa al massimo 8 passi: oltre, non si capisce più.»',
       '<strong>Le idee pronte.</strong> Un tasto appena creato non fa ancora niente e propone sei idee: «Manda un link», «Manda un suono», «Manda un\'immagine», «Racconta una battuta», «Cambia scena» e «Vado in pausa». Scegline una: mette i passi, il nome e l\'icona, e poi cambi quello che vuoi. I passi che aspettano qualcosa da te nascono «da completare»: il link da scrivere, il file da scegliere. «Cambia scena» e «Vado in pausa» prendono la prima scena e la prima fonte lette dal programma; se il programma non è collegato, anche quei passi restano da completare.',
     ] },
 

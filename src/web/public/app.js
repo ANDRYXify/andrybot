@@ -15286,6 +15286,7 @@ async function caricaConsolify() {
     _cons.login = String(_cons.base).split('/').pop() || '';
     _cons.chiave = d?.chiave || '';
     _cons.overlay = !!d?.overlay;
+    _cons.limiti = d?.limiti || null;
     _cons.plancia = p?.plancia || { pagine: [{ nome: 'Principale', tasti: [] }] };
     if (_cons.pagina >= _cons.plancia.pagine.length) _cons.pagina = 0;
   } catch (e) {
@@ -15309,7 +15310,7 @@ function disegnaConsolify() {
   const misura = _cons.plancia.misura || 'm';
   const mod = _cons.modifica;
 
-  const linguette = `<div class="cons-linguette">${pagine.map((p, i) => `<button class="cons-ling${i === _cons.pagina ? ' on' : ''}" data-cons-pag="${i}">${esc(p.nome || `#${i + 1}`)}</button>`).join('')}${mod && pagine.length < 8 ? '<button class="cons-ling cons-ling-piu" id="cons-piu-pagina" title="' + L('Nuova pagina', 'New page', 'Nueva página') + '">+</button>' : ''}</div>`;
+  const linguette = `<div class="cons-linguette">${pagine.map((p, i) => `<button class="cons-ling${i === _cons.pagina ? ' on' : ''}" data-cons-pag="${i}">${esc(p.nome || `#${i + 1}`)}</button>`).join('')}${mod && pagine.length < consTetto('pagine') ? '<button class="cons-ling cons-ling-piu" id="cons-piu-pagina" title="' + L('Nuova pagina', 'New page', 'Nueva página') + '">+</button>' : ''}</div>`;
 
   const fmt = _cons.plancia.formato || { righe: 0, colonne: 0 };
   const col = Number(fmt.colonne) || 0;
@@ -15719,6 +15720,17 @@ const FORMATI_CONS = [[3, 3], [3, 4], [3, 5], [4, 4], [4, 6], [5, 8]];
 
 const consUrlTasto = (t) => `${_cons.base}/tasto/${t.id || ''}?key=${_cons.chiave}`;
 
+const consTetto = (k) => Number(_cons.limiti && _cons.limiti[k]) || Infinity;
+
+function consPostoInPagina(np) {
+  const pg = _cons.plancia.pagine[np];
+  if (!pg) return false;
+  if ((pg.tasti || []).length < consTetto('tasti')) return true;
+  const nome = pg.nome || `#${np + 1}`;
+  toast(L(`La pagina «${nome}» è piena: tiene al massimo ${consTetto('tasti')} tasti.`, `The page “${nome}” is full: it holds at most ${consTetto('tasti')} keys.`, `La página «${nome}» está llena: tiene como máximo ${consTetto('tasti')} teclas.`), 'errore');
+  return false;
+}
+
 const COLORI_TASTO = ['', '#ba007a', '#d000b8', '#1f9e4f', '#e0913a', '#3aa6c9', '#8f7bd6', '#9a9a9a'];
 
 const RICETTE = () => [
@@ -15946,7 +15958,7 @@ function appendiConsolify() {
     const vuoto = ev.target.closest('[data-cons-vuoto]');
     if (vuoto) {
       const lista = pg().tasti;
-      if (lista.length >= 48) { toast(L('Quarantotto tasti per pagina bastano: fanne un\'altra pagina.', 'Forty-eight keys per page is plenty: make another page.', 'Cuarenta y ocho teclas por página bastan: haz otra página.'), 'errore'); return; }
+      if (!consPostoInPagina(_cons.pagina)) return;
       lista.push({ passi: [], nome: '', icona: '', colore: '', conferma: false, vuoto: true });
       _cons.aperto = lista.length - 1;
       disegnaConsolify();
@@ -15999,6 +16011,7 @@ function appendiConsolify() {
     if (id === 'cons-aggiorna') { caricaConsolify(); return; }
 
     if (id === 'cons-piu-pagina') {
+      if (_cons.plancia.pagine.length >= consTetto('pagine')) return;
       _cons.plancia.pagine.push({ nome: `#${_cons.plancia.pagine.length + 1}`, tasti: [] });
       _cons.pagina = _cons.plancia.pagine.length - 1;
       disegnaConsolify(); await salvaPlancia(); return;
@@ -16082,14 +16095,14 @@ function appendiConsolify() {
                 : tipo === 'muto' ? { tipo, fonte: (_cons.fonti || [])[0] || '', come: 'inverti' }
                   : tipo === 'transizione' ? { tipo, transizione: (_cons.transizioni || [])[0] || '' }
                     : { tipo: 'attesa', ms: 1000 };
-      if (t.passi.length >= 8) { toast(L('Otto passi bastano: oltre, un tasto non si capisce più.', 'Eight steps is plenty: past that, a key stops being readable.', 'Ocho pasos bastan: más allá, una tecla deja de entenderse.'), 'errore'); return; }
+      if (t.passi.length >= consTetto('passi')) { toast(L(`Un tasto fa al massimo ${consTetto('passi')} passi: oltre, non si capisce più.`, `A key does at most ${consTetto('passi')} steps: past that, it stops being readable.`, `Una tecla hace como máximo ${consTetto('passi')} pasos: más allá, deja de entenderse.`), 'errore'); return; }
       t.passi.push(nuovo);
       disegnaSchedaTasto(); await salvaPlancia({ ridisegna: false }); return;
     }
     if (id === 'cons-c-chiudi') { _cons.aperto = null; disegnaSchedaTasto(); return; }
     if (id === 'cons-c-duplica') {
       const lista = pg().tasti; const t = aperto();
-      if (!t) return;
+      if (!t || !consPostoInPagina(_cons.pagina)) return;
       lista.splice(_cons.aperto + 1, 0, { ...t, id: '' });
       _cons.aperto = null; disegnaConsolify(); await salvaPlancia(); return;
     }
@@ -16190,6 +16203,7 @@ function appendiConsolifyCampi() {
     if (id === 'cons-c-pagina' && t) {
       const dove = Number(ev.target.value);
       if (dove === _cons.pagina || !_cons.plancia.pagine[dove]) return;
+      if (!consPostoInPagina(dove)) { ev.target.value = String(_cons.pagina); return; }
       _cons.plancia.pagine[_cons.pagina].tasti.splice(_cons.aperto, 1);
       _cons.plancia.pagine[dove].tasti.push(t);
       _cons.aperto = null; disegnaConsolify(); await salvaPlancia(); return;
