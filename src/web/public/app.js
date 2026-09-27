@@ -864,7 +864,7 @@ function statoDemo() {
     knowledgeCount: 3,
     status: { channels: [ctx.canale] },
     preaddestramento: { preaddestramento_ts: '2026-05-01T20:00:00Z', preaddestramento_esito: 'pagina profilo letta ("Andryx — creator e streamer da Genova · Twitch, YouTube, gaming"), 5 link social; gioco recente: Fortnite; profilo Twitch letto' },
-    telegram: { configurato: true, gruppoOk: true, attivo: true, pinLive: true,
+    telegram: { configurato: true, gruppoOk: true, postoOk: true, attivo: true, pinLive: true,
       interattivo: true, botUsername: 'andryx_live_bot', gruppo: 'Community di Andryx', messaggio: '',
       ingresso: { attivo: true, minuti: 5, scaduto: 'caccia', testo: '', tasto: '', inAttesa: 2 },
       dmModo: 'me', dmCollegato: true, dmNome: 'Andryx' },
@@ -1522,6 +1522,7 @@ function _demoGet(via) {
       io: 'andryx_demo',
       webhook: { attivo: true, nostro: true, inAttesa: 0, errore: '' },
       visti: 5,
+      postoOk: true,
       eventi: [
         { k: 'live', it: 'Diretta su Twitch', en: 'Twitch live', es: 'Directo en Twitch' },
         { k: 'tiktok', it: 'Diretta su TikTok', en: 'TikTok live', es: 'Directo en TikTok' },
@@ -2696,6 +2697,9 @@ async function caricaTgDestinazioni() {
   let d;
   try { d = await api('/api/streamer/telegram/destinazioni'); } catch { box.innerHTML = ''; return; }
   _tgDati = d;
+  const accendi = document.getElementById('chk-tg-attivo');
+  if (accendi) accendi.disabled = !d.postoOk;
+  if (stato.telegram) stato.telegram.postoOk = !!d.postoOk;
   const eventi = d.eventi || [];
   const nomeEv = (k) => { const e = eventi.find((x) => x.k === k); return e ? L(e.it, e.en, e.es) : k; };
   const amici = d.amici || [];
@@ -2904,7 +2908,8 @@ function collegaTgDestinazioni() {
           </button>`).join('')}</div>`;
         dove.querySelectorAll('[data-nuova]').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
           const t = nuove[Number(b.dataset.nuova)];
-          await api('/api/streamer/telegram/destinazioni', { method: 'POST', body: t });
+          const fissa = document.getElementById('chk-tg-pin');
+          await api('/api/streamer/telegram/destinazioni', { method: 'POST', body: fissa ? { ...t, pin: fissa.checked } : t });
           dove.innerHTML = '';
           toast(L('Destinazione collegata ✓', 'Destination connected ✓', 'Destino conectado ✓'));
           await caricaTgDestinazioni();
@@ -24451,15 +24456,15 @@ function pannelloTelegram() {
         <code>{spettatori}</code> <code>{link}</code>. ${L('Lascia vuoto per usare quello standard.', 'Leave empty to use the default.', 'Déjalo vacío para usar el estándar.')}</p>
 
       <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-tg-attivo" ${tg.attivo ? 'checked' : ''} ${tg.gruppoOk ? '' : 'disabled'}>
+        <input type="checkbox" id="chk-tg-attivo" ${tg.attivo ? 'checked' : ''} ${tg.postoOk ? '' : 'disabled'}>
         <label for="chk-tg-attivo">${L('Avvisa il gruppo quando vado in diretta', 'Alert the group when I go live', 'Avisa al grupo cuando voy en directo')}</label>
       </div>
 
       <div class="riga-check">
-        <input type="checkbox" id="chk-tg-pin" ${tg.pinLive ? 'checked' : ''} ${tg.gruppoOk ? '' : 'disabled'}>
+        <input type="checkbox" id="chk-tg-pin" ${tg.pinLive ? 'checked' : ''}>
         <label for="chk-tg-pin">${L('Fissa l\'avviso in cima durante la live e rimuovilo quando stacco', 'Pin the alert at the top during the live and remove it when I go offline', 'Fija el aviso arriba durante el directo y quítalo cuando termino')}</label>
       </div>
-      <p class="suggerimento">${L('Per fissare l\'avviso il bot dev\'essere', 'To pin the alert the bot must be', 'Para fijar el aviso el bot debe ser')} <strong>${L('amministratore', 'an administrator', 'administrador')}</strong> ${L('del gruppo con il permesso di', 'of the group with permission to', 'del grupo con permiso para')} <em>${L('fissare i messaggi', 'pin messages', 'fijar mensajes')}</em>. ${L('L\'eliminazione a fine live funziona comunque.', 'Deletion at the end of the live works anyway.', 'El borrado al final del directo funciona igualmente.')}</p>
+      <p class="suggerimento">${L('Vale per ogni posto che aggiungi da qui in poi: dopo, ognuno ha la sua spunta «Fissa l’avviso qui».', 'It applies to every place you add from now on: after that, each one has its own «Pin the alert here» tick.', 'Vale para cada sitio que añadas a partir de ahora: después, cada uno tiene su casilla «Fija el aviso aquí».')} ${L('Per fissare l\'avviso il bot dev\'essere', 'To pin the alert the bot must be', 'Para fijar el aviso el bot debe ser')} <strong>${L('amministratore', 'an administrator', 'administrador')}</strong> ${L('del gruppo con il permesso di', 'of the group with permission to', 'del grupo con permiso para')} <em>${L('fissare i messaggi', 'pin messages', 'fijar mensajes')}</em>. ${L('L\'eliminazione a fine live funziona comunque.', 'Deletion at the end of the live works anyway.', 'El borrado al final del directo funciona igualmente.')}</p>
 
       <p class="spazio-sopra">
         <button class="btn" id="btn-tg-salva">${L('Salva', 'Save', 'Guardar')}</button>

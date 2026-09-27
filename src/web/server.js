@@ -1077,6 +1077,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     return SCOPES.broadcaster.filter((s) => !t.scopes.includes(s));
   };
 
+  // C'E' UN POSTO DOVE MANDARE L'AVVISO? Il gruppo di «Rileva gruppo» oppure un
+  // posto qualsiasi dell'elenco: e' la condizione con cui «impostazioni»
+  // accetta di accendere l'avviso, e il pannello la legge da qui invece di
+  // rifarsela (se la rifaceva piu' stretta, voleva per forza il gruppo).
+  const tgHaPosto = (login, c = tgConf.get(login)) => !!(c?.chat_id || tgDest.lista(login).length);
+
   // stato Telegram per la dashboard — MAI il token (segreto): solo se è
   // configurato, lo @username del bot, il gruppo collegato e le impostazioni.
   const statoTelegram = (login) => {
@@ -1086,6 +1092,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       botUsername: c?.bot_username || '',
       gruppo: c?.chat_titolo || '',
       gruppoOk: !!(c && c.chat_id),
+      postoOk: tgHaPosto(login, c),
       attivo: !!(c && c.attivo),
       messaggio: c?.messaggio || '',
       pinLive: c ? !!c.pin_live : true,
@@ -9163,6 +9170,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({
       webhook: wh,
       visti: tgVisti.lista(login).length,
+      // dopo «Aggiungi gruppo, canale o topic» la spunta dell'avviso si accende
+      // senza ricaricare: la risposta e' la stessa di statoTelegram
+      postoOk: tgHaPosto(login, c),
       destinazioni: tgDest.lista(login).map((d) => ({
         id: d.id, chatId: d.chat_id, titolo: d.titolo, tipo: d.tipo,
         threadId: d.thread_id, threadNome: d.thread_nome,
@@ -9215,7 +9225,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       threadId: String(req.body?.threadId || ''),
       threadNome: String(req.body?.threadNome || '').slice(0, 80),
       eventi: req.body?.eventi, streamer: req.body?.streamer,
-      pin: !!req.body?.pin,
+      // «Fissa l'avviso in cima…» della scheda e' il valore di base di ogni
+      // posto nuovo, come lo e' per il primo gruppo (tgDest.migra): se il
+      // pannello lo manda si usa quello, se no quello salvato
+      pin: req.body?.pin !== undefined ? !!req.body.pin : !!c.pin_live,
     });
     telegram.inviaMessaggio(c.token, chatId,
       '✅ Collegato! Da qui in poi vi avviserò in questo posto.',
@@ -9409,7 +9422,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const attivo = !!req.body?.attivo;
     const messaggio = String(req.body?.messaggio ?? '').slice(0, 800);
     const pinLive = !!req.body?.pinLive;
-    if (attivo && !c.chat_id && !tgDest.lista(login).length) return res.status(400).json({ errore: 'collega prima un gruppo o un canale' });
+    if (attivo && !tgHaPosto(login, c)) return res.status(400).json({ errore: 'collega prima un gruppo o un canale' });
     tgConf.set(login, { attivo, messaggio, pinLive });
     res.json({ ok: true });
   }));

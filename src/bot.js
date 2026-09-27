@@ -127,6 +127,11 @@ export function rigaEvento(tipo, dati) {
   return riga.length <= RIGA_EVENTO_MAX ? riga : `${t} {}`;
 }
 
+// L'avviso della diretta su TikTok nel registro dei messaggi Telegram (tgMsg),
+// che e' per streamer: un login di Twitch non contiene «:», quindi questa
+// chiave non si confonde mai con quella di uno streamer annunciato.
+export const chiaveTikTok = (login) => 'tiktok:' + String(login || '').toLowerCase();
+
 export class BotManager {
   constructor({ auth, helix, effects, modules, bus }) {
     this.auth = auth;
@@ -1757,19 +1762,26 @@ export class BotManager {
     } catch (e) { log.error('controllaTikTok:', e?.message || e); }
   }
 
-  // Live TikTok spenta: elimina dal gruppo l'avviso (se era stato fissato/inviato),
-  // togliendo così anche il "fissato". Best-effort, message_id separato da Twitch.
+  // Live TikTok spenta: l'avviso si toglie DOVE era stato messo, come quello
+  // della diretta su Twitch (_chiudiAvvisi): in ogni posto che l'aveva fissato,
+  // e solo li'. Decide la spunta «Fissa l'avviso qui» di QUEL posto: quella
+  // della scheda e' solo il valore di base dei posti nuovi. Best-effort, un
+  // tentativo per posto.
   async _chiudiTelegramTikTok(login) {
     try {
       const conf = tgConf.get(login);
-      if (!conf?.token || !conf.chat_id) return;
-      const msgId = conf.msg_id_tk;
-      if (!msgId) return;
-      tgConf.setMsgIdTk(login, '');   // azzera comunque: un solo tentativo
-      if (!conf.pin_live) return;     // eliminazione legata all'opzione "fissa/elimina"
-      const r = await telegram.eliminaMessaggio(conf.token, conf.chat_id, msgId);
-      if (r.ok) log.info(`avviso TikTok Telegram eliminato per #${login} (live finita)`);
-      else log.warn(`elimina TikTok Telegram #${login}: ${r.errore}`);
+      if (!conf?.token) return;
+      const chiave = chiaveTikTok(login);
+      const messi = tgMsg.perStreamer(login, chiave);
+      tgMsg.pulisci(login, chiave);   // azzera comunque: un solo tentativo
+      if (conf.msg_id_tk) tgConf.setMsgIdTk(login, '');
+      for (const m of messi) {
+        const d = tgDest.get(login, m.dest_id);
+        if (!d?.pin || !m.msg_id) continue;
+        const r = await telegram.eliminaMessaggio(conf.token, d.chat_id, m.msg_id);
+        if (r.ok) log.info(`avviso TikTok Telegram eliminato in ${d.titolo || d.chat_id} (live di #${login} finita)`);
+        else log.warn(`elimina TikTok Telegram ${d.titolo || d.chat_id}: ${r.errore}`);
+      }
     } catch (e) { log.error(`chiudi TikTok Telegram #${login}:`, e?.message || e); }
   }
 
@@ -2007,12 +2019,13 @@ export class BotManager {
           tgDest.migra(l, conf);
           const dest = tgDest.perEvento(l, 'tiktok', l);
           const esiti = await telegram.diffondi(conf.token, dest, testo, { anteprima: true });
-          const primo = esiti.find((e) => e.ok && e.result?.message_id);
-          const msgId = primo?.result?.message_id || null;
-          if (msgId) {
-            tgConf.setMsgIdTk(l, msgId);
-            for (const e of esiti) {
-              if (!e.ok || !e.dest.pin || !e.result?.message_id) continue;
+          // Ogni posto ricorda il SUO messaggio, come per le dirette degli
+          // altri: a fine diretta si toglie dove era stato fissato, e l'id di un
+          // messaggio vale solo nella chat dove e' nato.
+          for (const e of esiti) {
+            if (!e.ok || !e.result?.message_id) continue;
+            tgMsg.segna(l, e.dest.id, chiaveTikTok(l), e.result.message_id);
+            if (e.dest.pin) {
               const p = await telegram.fissaMessaggio(conf.token, e.dest.chat_id, e.result.message_id, { silenzioso: false });
               if (!p.ok) log.warn(`pin TikTok Telegram ${e.dest.titolo || e.dest.chat_id}: ${p.errore}`);
             }

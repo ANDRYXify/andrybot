@@ -74,12 +74,13 @@ export default {
       ['Controllo', 'Cosa fa', 'Di base'],
       ['«Quali avvisi arrivano qui»', 'Sette voci: «Diretta su Twitch», «Diretta su Kick», «Diretta su YouTube», «Diretta su TikTok», «Nuovo video su YouTube», «Nuovo post su Instagram», «Nuovo post su TikTok».', 'Tutte'],
       ['«Di chi»', '«Io» e gli altri streamer che annunci.', 'Tutti'],
-      ['«Fissa l’avviso qui»', 'Fissa in cima l\'avviso della diretta finché sei in onda, e lo toglie quando finisci.', 'Acceso sul primo gruppo, spento sui posti aggiunti dopo'],
+      ['«Fissa l’avviso qui»', 'Fissa in cima l\'avviso della diretta finché sei in onda, e lo toglie quando finisci.', 'Come la spunta «Fissa l\'avviso in cima durante la live e rimuovilo quando stacco» al momento in cui aggiungi il posto'],
       ['«Attiva»', 'Spenta, il posto resta in elenco ma non riceve niente.', 'Accesa'],
       ['«Prova»', 'Manda qui un\'anteprima dell\'avviso, con la locandina se è accesa. Leggi «Anteprima mandata: guarda su Telegram.».', ''],
       ['«Togli»', 'Toglie il posto, dopo la conferma. Lo rimetti quando vuoi.', ''],
     ] },
     { p: [
+      'La spunta «Fissa l\'avviso in cima durante la live e rimuovilo quando stacco», sotto il messaggio, è il valore di base dei posti che aggiungi. Poi decide la «Fissa l’avviso qui» di ogni posto, anche per la diretta su TikTok.',
       'Per fissare l\'avviso il bot dev\'essere amministratore con il permesso di fissare i messaggi. Senza quel permesso l\'avviso non resta in cima, ma a fine diretta viene tolto lo stesso. Telegram lascia cancellare a un bot i suoi messaggi solo entro 48 ore.',
       '<strong>«Quale avviso va dove»</strong> mette tutto in una tabella: ogni riga è un avviso, ogni colonna è un posto. Spunti l\'incrocio e si salva da solo. Se una riga dice «non arriva da nessuna parte», quell\'avviso oggi non va da nessuna parte. Un avviso spuntato su due posti arriva in tutti e due. Le colonne dei posti spenti non si toccano.',
     ] },
@@ -94,7 +95,7 @@ export default {
     ] },
     { esempio: '🔴 {nome} è in diretta!\n\n{titolo}\n🎮 {gioco}\n\n👉 {link}' },
     { p: [
-      '«Salva» registra il messaggio e le spunte. Se accendi l\'avviso senza un posto dove mandarlo leggi «collega prima un gruppo o un canale».',
+      '«Salva» registra il messaggio e le spunte. La spunta «Avvisa il gruppo quando vado in diretta» si accende appena c\'è un posto dove mandare l\'avviso: il gruppo di «Rileva gruppo» oppure un posto qualsiasi dell\'elenco. Senza posti leggi «collega prima un gruppo o un canale».',
       '«Manda una prova» manda nel gruppo collegato lo stesso avviso che partirà davvero, locandina compresa. Si usa quando c\'è un gruppo.',
       '«Scollega», dopo la conferma, stacca il bot: con lui se ne vanno il gruppo collegato, l\'avviso acceso, il bot interattivo e la chat privata. Per riaccenderlo incolli di nuovo il token.',
       'Gli avvisi dei post nuovi si accendono nella scheda «I tuoi social» (<a href="/manuale/vetrina">manuale della vetrina</a>). Qui scegli dove arrivano.',
