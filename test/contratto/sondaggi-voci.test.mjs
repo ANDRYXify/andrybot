@@ -89,3 +89,12 @@ test('il manuale dice gli stessi limiti', () => {
   assert.ok(testo.includes(`da ${VOCI.predizione.min} a ${VOCI.predizione.max}; 25 caratteri`));
   assert.ok(!testo.includes('quattro campi'));
 });
+
+test('se manca un permesso, il messaggio dice dove si concede, non un indirizzo', () => {
+  const srv = leggi('src/web/server.js');
+  const zona = srv.slice(srv.indexOf("app.post('/api/penitenze/premio'"), srv.indexOf("app.post('/api/predizioni/risolvi'"));
+  assert.ok(!zona.includes('da /auth/permessi'), 'penitenze, sondaggi e predizioni');
+  assert.equal((zona.match(/nella scheda «Stato» premi «Aggiorna i permessi»/g) || []).length, 4);
+  const chat = leggi('src/features/sondaggi.js');
+  assert.ok(!chat.includes('/auth/permessi') && chat.includes('scheda «Stato», premi «Aggiorna i permessi»'));
+});

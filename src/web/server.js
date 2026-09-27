@@ -5799,7 +5799,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
 
   app.post('/api/penitenze/premio', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "punti canale" da /auth/permessi', permesso: true });
+    if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Manca il permesso dei punti canale: nella scheda «Stato» premi «Aggiorna i permessi».', permesso: true });
     // campo = quale dei due premi (vieta = ban, solo = inverso)
     const campo = req.body?.campo === 'premioSolo' ? 'premioSolo' : 'premioVieta';
     const nomeDefault = campo === 'premioSolo' ? 'Dì solo questa parola' : 'Vietami una parola';
@@ -5812,7 +5812,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     try {
       reward = await helix.creaReward(login, { titolo, costo, userInput: true, prompt });
     } catch (e) {
-      if (e.status === 403) return res.status(403).json({ errore: 'Permesso mancante: concedi "punti canale" da /auth/permessi', permesso: true });
+      if (e.status === 403) return res.status(403).json({ errore: 'Manca il permesso dei punti canale: nella scheda «Stato» premi «Aggiorna i permessi».', permesso: true });
       if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato il premio: forse esiste già un premio con questo nome.' });
       return res.status(502).json({ errore: 'Twitch non ha creato il premio.' });
     }
@@ -5871,7 +5871,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     let p;
     try { p = await helix.creaSondaggio(login, { titolo, opzioni, durata: Math.max(15, Math.min(1800, Number(req.body?.durata) || 120)) }); }
     catch (e) {
-      if (e.status === 401 || e.status === 403) return res.status(403).json({ errore: 'Concedi il permesso "sondaggi" da /auth/permessi', permesso: true });
+      if (e.status === 401 || e.status === 403) return res.status(403).json({ errore: 'Manca il permesso dei sondaggi: nella scheda «Stato» premi «Aggiorna i permessi».', permesso: true });
       if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato il sondaggio (ne hai già uno attivo?).' });
       return res.status(502).json({ errore: 'Twitch non ha creato il sondaggio.' });
     }
@@ -5897,7 +5897,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     let p;
     try { p = await helix.creaPredizione(login, { titolo, esiti, finestra: Math.max(30, Math.min(1800, Number(req.body?.finestra) || 120)) }); }
     catch (e) {
-      if (e.status === 401 || e.status === 403) return res.status(403).json({ errore: 'Concedi il permesso "predizioni" da /auth/permessi', permesso: true });
+      if (e.status === 401 || e.status === 403) return res.status(403).json({ errore: 'Manca il permesso delle predizioni: nella scheda «Stato» premi «Aggiorna i permessi».', permesso: true });
       if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato la predizione (ne hai già una attiva?).' });
       return res.status(502).json({ errore: 'Twitch non ha creato la predizione.' });
     }

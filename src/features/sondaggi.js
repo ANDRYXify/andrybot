@@ -41,7 +41,7 @@ export async function trySondaggio(helix, msg, say) {
     if (!canaleHa(channel, 'effetti')) return true;          // richiede l'add-on Effetti & Punti canale
     const resto = sp < 0 ? '' : taglia(testo.slice(sp + 1));
     const primo = (resto.split(/\s+/)[0] || '').toLowerCase();
-    const err403 = (cosa, scope) => say(`⚠️ Per ${cosa} concedi al bot il permesso "${scope}" da /auth/permessi, poi riprova.`);
+    const err403 = (cosa) => say(`⚠️ Per ${cosa} al bot manca un permesso: nel pannello, scheda «Stato», premi «Aggiorna i permessi» e riprova.`);
 
     // ── SONDAGGI ──────────────────────────────────────────────────────────
     if (cmd === 'sondaggio' || cmd === 'poll') {
@@ -59,7 +59,7 @@ export async function trySondaggio(helix, msg, say) {
         const p = await helix.creaSondaggio(channel, { titolo, opzioni: parti, durata: 120 });
         say(p ? `📊 Sondaggio aperto: "${p.titolo}" — votate su Twitch! (2 min)` : '📊 Sondaggio non creato (sei in diretta?).');
       } catch (e) {
-        if (e.status === 401 || e.status === 403) err403('creare sondaggi', 'channel:manage:polls');
+        if (e.status === 401 || e.status === 403) err403('creare sondaggi');
         else if (e.status === 400) say('📊 Twitch ha rifiutato il sondaggio (ne hai già uno attivo?).');
         else say('📊 Errore nel creare il sondaggio.');
       }
@@ -94,7 +94,7 @@ export async function trySondaggio(helix, msg, say) {
       const p = await helix.creaPredizione(channel, { titolo, esiti: parti, finestra: 120 });
       say(p ? `🔮 Predizione aperta: "${p.titolo}" — puntate i punti canale! Esiti: ${p.esiti.map((o, i) => `${i + 1}) ${o.titolo}`).join(' · ')} (2 min)` : '🔮 Predizione non creata.');
     } catch (e) {
-      if (e.status === 401 || e.status === 403) err403('creare predizioni', 'channel:manage:predictions');
+      if (e.status === 401 || e.status === 403) err403('creare predizioni');
       else if (e.status === 400) say('🔮 Twitch ha rifiutato la predizione (ne hai già una attiva?).');
       else say('🔮 Errore nel creare la predizione.');
     }
