@@ -42,3 +42,21 @@ test('la home italiana resta com\'e\' scritta in index.html', () => {
   const p = pezzi(guscioVetrina(GUSCIO, 'it', { kick: true, piani: [] }));
   assert.ok(p.includes('Dai una mano') && p.includes('Ho capito'));
 });
+
+// Il pannello sceglie la lingua nel browser: i piedi inglese e spagnolo gli
+// arrivano nel guscio, fatti dalla stessa funzione della home, e app.js li
+// mette al posto dell'italiano appena parte e a ogni cambio di lingua.
+test('il guscio del pannello porta il piede nelle altre lingue, e il pannello lo usa', async () => {
+  const { guscioPannello } = await import('../../src/web/vetrina-vista.js');
+  const h = guscioPannello(GUSCIO);
+  for (const l of ['en', 'es']) {
+    const t = (h.match(new RegExp(`<template id="pie-${l}">([\\s\\S]*?)</template>`)) || [])[1] || '';
+    assert.ok(t.includes('pie-mano') && t.includes('class="pie"') && t.includes('cookie-testo'), `${l}: il template ha i tre pezzi`);
+    for (const x of ITALIANO) assert.ok(!t.includes(x), `${l}: «${x}» nel template`);
+    assert.equal(t, (() => { const v = guscioVetrina(GUSCIO, l, { kick: true, piani: [] }); return v.match(/<aside class="pie-mano">[\s\S]*?<\/aside>/)[0] + v.match(/<footer class="pie">[\s\S]*?<\/footer>/)[0]; })() + t.slice(t.indexOf('<div class="cookie-testo">')), `${l}: lo stesso piede della home`);
+  }
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  assert.match(app, /\npieInLingua\(\);\n/, 'il pannello lo mette appena parte');
+  const cambia = app.slice(app.indexOf('function cambiaLingua('), app.indexOf('\n}\n', app.indexOf('function cambiaLingua(')));
+  assert.ok(cambia.includes('pieInLingua()'), 'e a ogni cambio di lingua');
+});

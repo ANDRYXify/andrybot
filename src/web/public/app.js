@@ -2197,6 +2197,18 @@ function indirizzoInLingua(l) {
     if (cambia) history.replaceState(history.state, '', u.pathname + u.search + u.hash);
   } catch (e) {  }
 }
+const _pieItaliano = {};
+function pieInLingua() {
+  const mano = document.querySelector('.pie-mano'), pie = document.querySelector('footer.pie');
+  const avviso = document.querySelector('#cookie-banner p'), ok = document.getElementById('cookie-ok');
+  if (!mano || !pie || !avviso || !ok) return;
+  if (!_pieItaliano.mano) Object.assign(_pieItaliano, { mano: mano.innerHTML, pie: pie.innerHTML, avviso: avviso.innerHTML, ok: ok.textContent });
+  const t = LINGUA === 'it' ? null : document.getElementById('pie-' + LINGUA)?.content;
+  const x = t ? { mano: t.querySelector('.pie-mano').innerHTML, pie: t.querySelector('footer.pie').innerHTML, avviso: t.querySelector('.cookie-testo p').innerHTML, ok: t.querySelector('.cookie-testo button').textContent } : _pieItaliano;
+  mano.innerHTML = x.mano; pie.innerHTML = x.pie; avviso.innerHTML = x.avviso; ok.textContent = x.ok;
+}
+pieInLingua();
+
 function cambiaLingua(l) {
   if (!LINGUE.includes(l) || l === LINGUA) return;
   if (!stato?.user) { try { localStorage.setItem('lingua', l); } catch (e) {  } location.href = VIA_LINGUA[l]; return; }
@@ -2205,6 +2217,7 @@ function cambiaLingua(l) {
   try { localStorage.setItem('lingua', l); } catch (e) {  }
   try { document.documentElement.lang = l; } catch (e) {  }
   try { window.SB_CERCA && window.SB_CERCA.invalida(); } catch (e) {  }
+  pieInLingua();
   ridisegna();
 }
 

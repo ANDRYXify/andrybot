@@ -974,11 +974,17 @@ export function guscioVetrina(guscio, lingua, opzioni = {}) {
 
 // Il guscio di chi e' entrato (e della demo): tutto il pannello, senza lo
 // script della vetrina che li' non ha niente da fare.
+//
+// Il pannello sceglie la lingua nel browser, quindi il piede in inglese e in
+// spagnolo viaggia accanto a quello italiano, in un <template> per lingua fatto
+// da pieDi: app.js lo mette al posto dell'italiano quando la lingua cambia.
 export function guscioPannello(guscio) {
   let h = guscio;
   for (const riga of SOLO_VETRINA) {
     if (!h.includes(riga)) throw new Error(`pannello: non trovo ${riga} in index.html`);
     h = h.replace('  ' + riga + '\n', '').replace(riga, '');
   }
-  return h;
+  const piedi = ['en', 'es'].map((l) => { const p = pieDi(l); return `<template id="pie-${l}">${p.mano}${p.pie}<div class="cookie-testo">${p.cookie}</div></template>`; }).join('');
+  if (!h.includes('</body>')) throw new Error('pannello: non trovo </body> in index.html');
+  return h.replace('</body>', `${piedi}\n</body>`);
 }
