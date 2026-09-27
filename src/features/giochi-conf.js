@@ -108,6 +108,26 @@ const ATTESE = ({ testa = 0, tutti = 0, prima = null, etiTesta, etiTutti } = {})
     eti: etiTutti || T('Attesa fra due giocate, per tutti', 'Wait between two plays, for everyone', 'Espera entre dos jugadas, para todos') },
 ];
 
+// Quanto paga un tris della slot, in parti del tris di 💎. Li leggono il
+// motore (games.js), la resa e l'etichetta qui sotto, e il manuale.
+export const SLOT_TRIS = Object.freeze({ sette: 0.75, altri: 0.4 });
+
+// Una parte del premio pieno detta a parole, nelle tre lingue. Le frazioni
+// semplici hanno il loro nome, le altre si dicono in centesimi: cosi' un
+// fattore cambiato non lascia in giro una frazione che non e' piu' vera.
+const PARTI = {
+  0.25: T('un quarto', 'a quarter', 'un cuarto'),
+  0.4: T('due quinti', 'two fifths', 'dos quintos'),
+  0.5: T('metà', 'half', 'la mitad'),
+  0.75: T('tre quarti', 'three quarters', 'tres cuartos'),
+};
+export const parteDi = (f) => {
+  const c = Math.round(f * 100);
+  return PARTI[f] || T(`${c} su 100`, `${c} in 100`, `${c} de cada 100`);
+};
+const _7 = parteDi(SLOT_TRIS.sette);
+const _altri = parteDi(SLOT_TRIS.altri);
+
 // Il catalogo. `param` in ordine di pannello. `resa` e' la descrizione
 // dell'esito medio: vedi `valutaResa`.
 export const CATALOGO = [
@@ -115,11 +135,11 @@ export const CATALOGO = [
     id: 'slot', nome: T('Slot machine', 'Slot machine', 'Tragaperras'),
     param: [
       { k: 'costo', tipo: 'monete', def: 10, min: 1, max: 100000, eti: T('Costo di una giocata', 'Cost of a play', 'Coste de una tirada'), vecchio: { punti: 'slotCosto', era: 10 } },
-      { k: 'jackpot', tipo: 'monete', def: 200, min: 0, max: 1000000, eti: T('Tris di 💎 (il 7 paga tre quarti, gli altri due quinti)', 'Three 💎 (7 pays three quarters, the others two fifths)', 'Trío de 💎 (el 7 paga tres cuartos, los demás dos quintos)'), vecchio: { punti: 'slotVinci', era: 200 } },
+      { k: 'jackpot', tipo: 'monete', def: 200, min: 0, max: 1000000, eti: T(`Tris di 💎 (il 7 paga ${_7[0]}, gli altri ${_altri[0]})`, `Three 💎 (7 pays ${_7[1]}, the others ${_altri[1]})`, `Trío de 💎 (el 7 paga ${_7[2]}, los demás ${_altri[2]})`), vecchio: { punti: 'slotVinci', era: 200 } },
       { k: 'coppia', tipo: 'monete', def: 15, min: 0, max: 100000, eti: T('Una coppia', 'A pair', 'Una pareja'), vecchio: { punti: 'slotCoppia', era: 20 } },
       ...ATTESE({ testa: 5, prima: 'testa' }),
     ],
-    resa: { tipo: 'puntata', costo: 'costo', esiti: [[1 / 216, ['jackpot', 1]], [1 / 216, ['jackpot', 0.75]], [4 / 216, ['jackpot', 0.4]], [90 / 216, ['coppia', 1]]] },
+    resa: { tipo: 'puntata', costo: 'costo', esiti: [[1 / 216, ['jackpot', 1]], [1 / 216, ['jackpot', SLOT_TRIS.sette]], [4 / 216, ['jackpot', SLOT_TRIS.altri]], [90 / 216, ['coppia', 1]]] },
   },
   {
     id: 'roulette', nome: T('Roulette', 'Roulette', 'Ruleta'),

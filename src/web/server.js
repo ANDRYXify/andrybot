@@ -101,6 +101,7 @@ import * as dcPreset from '../features/discord-preset.js';
 import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
 import * as giochiConf from '../features/giochi-conf.js';
+import { VOCI as VOCI_TWITCH } from '../features/sondaggi.js';
 import * as modalitaChat from '../features/modalita-chat.js';
 import { normModalita } from '../features/quando-lavora.js';
 import * as instagram from '../features/instagram.js';
@@ -5844,7 +5845,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
 
   app.post('/api/penitenze/premio', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "punti canale" da /auth/permessi', permesso: true });
+    if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Manca il permesso dei punti canale: nella scheda «Stato» premi «Aggiorna i permessi».', permesso: true });
     // campo = quale dei due premi (vieta = ban, solo = inverso)
     const campo = req.body?.campo === 'premioSolo' ? 'premioSolo' : 'premioVieta';
     const nomeDefault = campo === 'premioSolo' ? 'Dì solo questa parola' : 'Vietami una parola';
@@ -5857,7 +5858,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     try {
       reward = await helix.creaReward(login, { titolo, costo, userInput: true, prompt });
     } catch (e) {
-      if (e.status === 403) return res.status(403).json({ errore: 'Permesso mancante: concedi "punti canale" da /auth/permessi', permesso: true });
+      if (e.status === 403) return res.status(403).json({ errore: 'Manca il permesso dei punti canale: nella scheda «Stato» premi «Aggiorna i permessi».', permesso: true });
       if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato il premio: forse esiste già un premio con questo nome.' });
       return res.status(502).json({ errore: 'Twitch non ha creato il premio.' });
     }
@@ -5865,7 +5866,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const s = streamers.get(login);
     const penitenze = { ...(s.settings?.penitenze || {}), attivo: true, [campo]: reward.title };
     streamers.setSettings(login, { ...s.settings, penitenze });
-    res.json({ ok: true, reward, campo });
+    // Il pannello riceve quello che e' stato salvato: l'interruttore e il premio
+    // si allineano da qui, e un «Salva» dopo non rispegne le penitenze.
+    res.json({ ok: true, reward, campo, penitenze });
   }));
 
   // Prova il contatore penitenze nell'overlay (start → +1 → +1 → fine).
@@ -5902,7 +5905,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       helix.sondaggioAttivo(login).catch(() => null),
       helix.predizioneAttiva(login).catch(() => null),
     ]);
-    res.json({ poll, pred });
+    res.json({ poll, pred, voci: VOCI_TWITCH });
   }));
 
   app.post('/api/sondaggi/crea', requireOwner, wrap(async (req, res) => {
@@ -5910,11 +5913,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const login = currentUser(req).login;
     const titolo = String(req.body?.titolo || '').trim();
     const opzioni = (Array.isArray(req.body?.opzioni) ? req.body.opzioni : []).map((x) => String(x || '').trim()).filter(Boolean);
-    if (!titolo || opzioni.length < 2) return res.status(400).json({ errore: 'Serve una domanda e almeno 2 opzioni.' });
+    if (!titolo || opzioni.length < VOCI_TWITCH.sondaggio.min) return res.status(400).json({ errore: `Serve una domanda e almeno ${VOCI_TWITCH.sondaggio.min} opzioni.` });
     let p;
     try { p = await helix.creaSondaggio(login, { titolo, opzioni, durata: Math.max(15, Math.min(1800, Number(req.body?.durata) || 120)) }); }
     catch (e) {
-      if (e.status === 401 || e.status === 403) return res.status(403).json({ errore: 'Concedi il permesso "sondaggi" da /auth/permessi', permesso: true });
+      if (e.status === 401 || e.status === 403) return res.status(403).json({ errore: 'Manca il permesso dei sondaggi: nella scheda «Stato» premi «Aggiorna i permessi».', permesso: true });
       if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato il sondaggio (ne hai già uno attivo?).' });
       return res.status(502).json({ errore: 'Twitch non ha creato il sondaggio.' });
     }
@@ -5936,11 +5939,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const login = currentUser(req).login;
     const titolo = String(req.body?.titolo || '').trim();
     const esiti = (Array.isArray(req.body?.esiti) ? req.body.esiti : []).map((x) => String(x || '').trim()).filter(Boolean);
-    if (!titolo || esiti.length < 2) return res.status(400).json({ errore: 'Serve un titolo e almeno 2 esiti.' });
+    if (!titolo || esiti.length < VOCI_TWITCH.predizione.min) return res.status(400).json({ errore: `Serve un titolo e almeno ${VOCI_TWITCH.predizione.min} esiti.` });
     let p;
     try { p = await helix.creaPredizione(login, { titolo, esiti, finestra: Math.max(30, Math.min(1800, Number(req.body?.finestra) || 120)) }); }
     catch (e) {
-      if (e.status === 401 || e.status === 403) return res.status(403).json({ errore: 'Concedi il permesso "predizioni" da /auth/permessi', permesso: true });
+      if (e.status === 401 || e.status === 403) return res.status(403).json({ errore: 'Manca il permesso delle predizioni: nella scheda «Stato» premi «Aggiorna i permessi».', permesso: true });
       if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato la predizione (ne hai già una attiva?).' });
       return res.status(502).json({ errore: 'Twitch non ha creato la predizione.' });
     }
@@ -5971,7 +5974,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
 
   // ------------------------------------------------------------ GIVEAWAY (dal pannello)
   // Stato in memoria condiviso col bot (stesso processo). Gli spettatori entrano
-  // con !join in chat; lo streamer apre/estrae/annulla da qui. Add-on "Giochi".
+  // con !join in chat; lo streamer apre/estrae/annulla da qui. Si apre solo con i minigiochi accesi.
   app.get('/api/giveaway/stato', requireOwner, (req, res) => {
     res.json(giveaway.stato(currentUser(req).login));
   });
@@ -5980,10 +5983,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const login = currentUser(req).login;
     const b = req.body || {};
     const r = giveaway.apri(login, {
-      premio: b.premio, soloSub: !!b.soloSub, keyword: b.keyword,
+      premio: b.premio, soloSub: !!b.soloSub, keyword: b.keyword, quanti: b.quanti,
       moltSub: b.moltSub, moltVip: b.moltVip, moltMod: b.moltMod,
     });
-    if (!r.ok) return res.status(400).json({ errore: r.errore === 'gia-aperto' ? 'C\'è già un giveaway aperto.' : 'I giveaway non sono inclusi nel tuo piano.' });
+    if (!r.ok) return res.status(400).json({ errore: r.errore === 'gia-aperto' ? 'C\'è già un giveaway aperto.' : 'Il giveaway parte solo con i minigiochi accesi: nella scheda «Giochi & classifiche» accendi «Attiva i minigiochi in chat».' });
     const m = [];
     if (r.molt.sub > 1) m.push(`sub ×${r.molt.sub}`);
     if (r.molt.vip > 1) m.push(`vip ×${r.molt.vip}`);
@@ -6392,7 +6395,6 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
         moltVip:      f(p.moltVip, 1.25, 1, 10),
         lurkPasso:    f(p.lurkPasso, 0.15, 0, 1),
         lurkMinimo:   f(p.lurkMinimo, 0.35, 0, 1),
-        soloLive:     p.soloLive !== false,
       };
     }
     // richieste musicali (!sr): modo di pagamento/permesso + costo + premio
@@ -8757,7 +8759,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
 
   // citazioni (!cita) — elenco/aggiungi/rimuovi dalla dashboard
   app.get('/api/streamer/citazioni', requireLogin, wrap(async (req, res) => {
-    res.json(quotes.list(currentUser(req).login).map((q) => ({ n: q.n, text: q.text, added_by: q.added_by, ts: q.ts })));
+    res.json(quotes.list(currentUser(req).login).map((q) => ({ n: q.n, text: q.text, added_by: q.added_by, autore: q.autore, data: q.data, ts: q.ts })));
   }));
   app.post('/api/streamer/citazioni', requireLogin, wrap(async (req, res) => {
     const testo = String(req.body?.testo || '').trim();
@@ -8812,7 +8814,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({
       monete: points.top(login, 10),
       staff: points.top(login, 10, 'staff'),
-      vip: vips.list(login).map((v) => ({ user: v.user, display: v.display, until: v.until, motivo: v.motivo })),
+      vip: vips.list(login).map((v) => ({ user: v.user, display: v.display, until: v.until, dirette: v.dirette, motivo: v.motivo })),
     });
   }));
 

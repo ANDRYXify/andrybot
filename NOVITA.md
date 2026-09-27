@@ -62,6 +62,20 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Invitando un moderatore puoi scrivere il nome come lo vedi sulla piattaforma, anche con maiuscole o punti: si legge come quando quella persona entra. [vai: account]
 - L'avviso «Spotify non è collegato» arriva solo a chi ha le richieste musicali accese: chi spegne il comando !sr non lo vede più. [vai: musica]
 - L'avviso «Non hai ancora un comando tuo» non conta più i due moduli del kit di partenza lasciati com'erano: prima non compariva mai. [vai: moduli]
+- Sotto i punti della chat sparisce la casella «Solo mentre sei in diretta», che non cambiava niente: la presenza arriva solo in diretta, le monete per messaggio sempre. [vai: giochi]
+- Nel giveaway «Quanti» parte dal numero scelto in «Vincitori (predefinito)», e dopo «Estrai» la riga con chi ha vinto resta al suo posto. [vai: giveaway]
+- Se apri un giveaway con i minigiochi spenti, il pannello ti dice di accendere «Attiva i minigiochi in chat» invece di parlare del piano. [vai: giveaway]
+- «VIP a tempo attivi» dice quante dirette restano a chi ha vinto il premio, invece di «per sempre», e chi rivince il premio lo rinnova a dirette. [vai: giochi]
+- Le citazioni importate mostrano nell'elenco il loro autore e la data, e i testi dell'elenco si leggono anche in inglese e spagnolo. [vai: giochi]
+- Creare un premio nelle penitenze accende anche l'interruttore nella scheda, così un «Salva» dopo non le rispegne, e «Salva» parte una volta sola. [vai: penitenze]
+- Quando manca il permesso dei punti canale, la scheda Penitenze ti dà il tasto «Aggiorna i permessi» invece di mandarti in un'altra scheda. [vai: penitenze]
+- Sondaggi e predizioni partono con due campi, e il tasto «+» ne aggiunge fino a 5 opzioni o 10 esiti, i limiti di Twitch. [vai: sondaggi]
+- Su un canale che non è su Twitch, Sondaggi e Penitenze dicono che funzionano solo lì, invece di mostrare tasti che non fanno niente.
+- Se le regole dei giochi o l'elenco dei tuoi giochi non arrivano, la carta dice l'errore invece di restare in caricamento o dirti che non ne hai. [vai: giochi]
+- In «Classifica & VIP» i rimandi chiamano le schede col loro nome, «Comandi» e «Comandi vocali», e i campi dei giochi da creare hanno etichette più chiare. [vai: giochi]
+- Nel manuale dei giochi la tabella delle regole scrive «1 frase di serie» al singolare, e i premi dei tris della slot vengono dagli stessi numeri del gioco.
+- In «I giochi che hai fatto» il tipo di ogni manche si legge col nome del menù, anche in inglese e spagnolo, e non con la sua sigla. [vai: giochi]
+- Quando a sondaggi, predizioni o penitenze manca un permesso, pannello e chat ti dicono di premere «Aggiorna i permessi» nella scheda «Stato». [vai: stato]
 
 ## 2026-09-26
 

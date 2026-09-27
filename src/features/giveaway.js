@@ -9,7 +9,8 @@
 // è pesata: più biglietti = più probabilità, ma nessuno è mai certo di vincere.
 // Si possono estrarre anche più vincitori in un colpo (!estrai N), senza ripescare.
 //
-// Gating: segue l'add-on "Giochi" (settings.giochi), come i minigiochi.
+// Si accende e si spegne con i minigiochi (settings.giochi, «Attiva i minigiochi
+// in chat»): non e' una questione di piano.
 import { streamers, statoVivo } from '../db.js';
 import { makeLog } from '../logger.js';
 import { aChi } from './risposte.js';
@@ -19,6 +20,7 @@ const log = makeLog('giveaway');
 
 // channel → {
 //   premio, soloSub, keyword,
+//   quanti,                              // vincitori che «Estrai» propone nel pannello
 //   molt: { sub, vip, mod },
 //   partecipanti: Map(user → { display, base, bonus }),   // biglietti = base + bonus
 //   apertoDa, vincitori: [display,...]
@@ -45,6 +47,7 @@ function idrata() {
         premio: String(d.premio || ''),
         soloSub: !!d.soloSub,
         keyword: String(d.keyword || 'join'),
+        quanti: intero(d.quanti, 1, 1, 50),
         molt: d.molt && typeof d.molt === 'object' ? d.molt : {},
         partecipanti: new Map(Array.isArray(d.partecipanti) ? d.partecipanti : []),
         apertoDa: Number(d.apertoDa) || r.ts,
@@ -61,7 +64,7 @@ function salva(channel) {
   try {
     if (!g) { statoVivo.togli(channel, CHIAVE); return; }
     statoVivo.scrivi(channel, CHIAVE, {
-      premio: g.premio, soloSub: g.soloSub, keyword: g.keyword, molt: g.molt,
+      premio: g.premio, soloSub: g.soloSub, keyword: g.keyword, quanti: g.quanti, molt: g.molt,
       partecipanti: [...g.partecipanti], apertoDa: g.apertoDa, vincitori: g.vincitori,
     });
   } catch (e) { log.debug('salvataggio:', e?.message || e); }
@@ -124,6 +127,7 @@ export function stato(channel) {
     premio: g.premio,
     soloSub: g.soloSub,
     keyword: g.keyword,
+    quanti: g.quanti,
     partecipanti: g.partecipanti.size,
     biglietti: bigliettiTotali(g),
     molt: { ...g.molt },
@@ -132,8 +136,10 @@ export function stato(channel) {
 }
 
 // Apre un giveaway. { ok, premio, soloSub, keyword, molt } oppure { ok:false, errore }.
+// `quanti` e' il numero di vincitori che il pannello propone a ogni «Estrai»:
+// sta col giveaway, cosi' lo ritrova chi riapre la scheda o dopo un riavvio.
 export function apri(channel, opts = {}) {
-  if (!abilitato(channel)) return { ok: false, errore: 'add-on' };
+  if (!abilitato(channel)) return { ok: false, errore: 'giochi-spenti' };
   const g = vivo(channel);
   if (g && g.partecipanti.size > 0) return { ok: false, errore: 'gia-aperto' };   // uno vuoto si può rimpiazzare
 
@@ -147,7 +153,7 @@ export function apri(channel, opts = {}) {
   const premio = String(opts.premio || '').trim().slice(0, 120) || 'un premio a sorpresa';
 
   attivi.set(channel, {
-    premio, soloSub: !!opts.soloSub, keyword, molt,
+    premio, soloSub: !!opts.soloSub, keyword, molt, quanti: intero(opts.quanti, 1, 1, 50),
     partecipanti: new Map(), apertoDa: Date.now(), vincitori: [],
   });
   salva(channel);
@@ -338,7 +344,7 @@ export function tryGiveaway(msg, say) {
         const r = apri(channel, { premio: rest.join(' '), soloSub, keyword });
         if (!r.ok) {
           if (r.errore === 'gia-aperto') say('🎁 C\'è già un giveaway aperto: !estrai per il vincitore o !giveaway annulla.');
-          return true;   // add-on assente → silenzio
+          return true;   // minigiochi spenti → silenzio
         }
         say(`🎁 GIVEAWAY APERTO: ${r.premio}! Scrivete !${r.keyword} per partecipare${r.soloSub ? ' (riservato ai sub)' : ''}.${riepilogoMolt(r.molt)} In bocca al lupo! 🍀`);
         return true;

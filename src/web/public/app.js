@@ -221,7 +221,7 @@ function impostazioni() {
     promoSocial: s.promoSocial !== false,
     vetrinaLive: s.vetrinaLive === true,
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
-    punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, perPresenza: 5, perAttivita: 5, moltSub: 1.5, moltVip: 1.25, lurkPasso: 0.15, lurkMinimo: 0.35, soloLive: true, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
+    punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, perPresenza: 5, perAttivita: 5, moltSub: 1.5, moltVip: 1.25, lurkPasso: 0.15, lurkMinimo: 0.35, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
     manche: { attivo: false, minMin: 15, maxMin: 45, soloLive: false, ...(s.manche && typeof s.manche === 'object' ? s.manche : {}) },
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : {},
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
@@ -1760,6 +1760,7 @@ function _demoGet(via) {
       { id: 1, tipo: 'trivia', nome: 'Trivia gaming', attivo: true, config: { domande: [{ q: 'In che anno è uscito il primo Minecraft?', a: ['2011'] }, { q: 'Chi è la mascotte di PlayStation?', a: ['crash', 'crash bandicoot'] }] } },
       { id: 2, tipo: 'parola', nome: 'Reflex hype', attivo: true, config: { parole: ['pizza', 'combo perfetta', 'gg wp', 'clutch'] } },
     ],
+    '/api/sondaggi/stato': { poll: null, pred: null, voci: { sondaggio: { min: 2, max: 5 }, predizione: { min: 2, max: 10 } } },
     '/api/penitenze/premi': {
       permessoOk: true, premioVieta: 'Vietami una parola', premioSolo: 'Dì solo questa parola',
       tutti: [
@@ -3511,7 +3512,7 @@ const NOME_ADDON = {
   squadra: ['Squadra', 'Squadra', 'Squadra'],
 };
 
-const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'emote'];
+const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'emote', 'sondaggi', 'penitenze'];
 const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord' };
 
 function soloTwitch(id) {
@@ -3655,7 +3656,7 @@ const GUIDE = {
   giveaway: { serve: ['Organizzare estrazioni a premi per la community.', 'Run prize giveaways for your community.', 'Organizar sorteos de premios para tu comunidad.'],
     come: [['Apri il giveaway indicando il premio; puoi dare più possibilità a sub e VIP e scegliere la parola d\'ingresso.', 'Open the giveaway and set the prize; you can give subs and VIPs better odds and pick the join keyword.', 'Abre el sorteo indicando el premio; puedes dar más posibilidades a subs y VIPs y elegir la palabra de entrada.', '#gw-premio'], ['La community entra scrivendo !join (o la tua parola) in chat. Con !biglietti @nome regali chance extra.', 'The community joins by typing !join (or your keyword) in chat. With !biglietti @name you grant extra chances.', 'La comunidad entra escribiendo !join (o tu palabra) en el chat. Con !biglietti @nombre das chances extra.', '#gw-keyword'], ['Estrai uno o più vincitori dal pannello o con !estrai N (puoi ripetere).', 'Draw one or more winners from the panel or with !estrai N (you can repeat).', 'Saca uno o varios ganadores desde el panel o con !estrai N (puedes repetir).', '#giveaway-stato']] },
   penitenze: { serve: ['Trasformare un premio a punti canale in una sfida a tempo: il bot conta quante volte sbagli (con «+1» a schermo) e alla fine fa partire una penitenza.', 'Turn a channel-point reward into a timed challenge: the bot counts your slip-ups (with an on-screen «+1») and triggers a forfeit at the end.', 'Convertir una recompensa de puntos de canal en un reto cronometrado: el bot cuenta cuántas veces fallas (con un «+1» en pantalla) y al final lanza una penitencia.'],
-    come: [['Accendi le penitenze: perché funzionino servono i Punti canale e il riconoscimento vocale della scheda «Comandi a voce».', 'Turn forfeits on: for them to work you need Channel Points and the voice recognition from the «Voice commands» tab.', 'Enciende las penitencias: para que funcionen hacen falta los Puntos de canal y el reconocimiento de voz de la pestaña «Comandos por voz».', '#pen-attivo'], ['Scegli i due premi: «Vieta la parola» (non dirla) e «Usa solo la parola» (dì solo quella).', 'Choose the two rewards: «Ban the word» (don’t say it) and «Use only the word» (say only that).', 'Elige las dos recompensas: «Prohíbe la palabra» (no la digas) y «Usa solo la palabra» (di solo esa).', '#pen-box-vieta'], ['Decidi la penitenza (tua lista o inventata dall\'IA) e dove mostrare il contatore nell\'overlay.', 'Decide the forfeit (your list or AI-generated) and where to show the counter in the overlay.', 'Decide la penitencia (tu lista o inventada por la IA) y dónde mostrar el contador en el overlay.', '#pen-penitenze']] },
+    come: [['Accendi le penitenze: perché funzionino servono i Punti canale e il riconoscimento vocale della scheda «Comandi vocali».', 'Turn forfeits on: for them to work you need Channel Points and the voice recognition from the «Voice commands» tab.', 'Enciende las penitencias: para que funcionen hacen falta los Puntos de canal y el reconocimiento de voz de la pestaña «Comandos de voz».', '#pen-attivo'], ['Scegli i due premi: «Vieta la parola» (non dirla) e «Usa solo la parola» (dì solo quella).', 'Choose the two rewards: «Ban the word» (don’t say it) and «Use only the word» (say only that).', 'Elige las dos recompensas: «Prohíbe la palabra» (no la digas) y «Usa solo la palabra» (di solo esa).', '#pen-box-vieta'], ['Decidi la penitenza (tua lista o inventata dall\'IA) e dove mostrare il contatore nell\'overlay.', 'Decide the forfeit (your list or AI-generated) and where to show the counter in the overlay.', 'Decide la penitencia (tu lista o inventada por la IA) y dónde mostrar el contador en el overlay.', '#pen-penitenze']] },
   notifiche: { serve: ['Collegare i tuoi social e annunciare quello che pubblichi: i post di Instagram, i video e le dirette di TikTok, i video di YouTube.', 'Connect your socials and announce what you post: Instagram posts, TikTok videos and lives, YouTube videos.', 'Conectar tus redes y anunciar lo que publicas: los posts de Instagram, los vídeos y directos de TikTok, los vídeos de YouTube.'],
     come: [['In cima collega Instagram e TikTok con un tasto, e scrivi il tuo canale YouTube.', 'At the top, connect Instagram and TikTok with one button, and type your YouTube channel.', 'Arriba, conecta Instagram y TikTok con un botón, y escribe tu canal de YouTube.', '#social-account'], ['Per ogni cosa da annunciare accendi l’avviso e scegli le parole: se non scrivi niente, uso le mie.', 'For each thing to announce, turn the alert on and choose the words: if you write nothing, I use mine.', 'Para cada cosa que anunciar, enciende el aviso y elige las palabras: si no escribes nada, uso las mías.', '#txt-ig-messaggio'], ['Per un altro sito, in fondo incolli l’indirizzo del suo feed.', 'For another site, paste its feed address at the bottom.', 'Para otro sitio, pega abajo la dirección de su feed.', '#feed-fonti']] },
   telegram: { serve: ['Portare il bot nel tuo gruppo Telegram: avvisa quando vai in diretta, risponde ai comandi, fa gli auguri ai membri e ti manda il rapporto della serata in privato.', 'Bring the bot into your Telegram group: it alerts when you go live, answers commands, wishes members happy birthday and sends you the night\u2019s report in private.', 'Llevar el bot a tu grupo de Telegram: avisa cuando est\u00e1s en directo, responde a los comandos, felicita a los miembros y te manda el informe de la noche en privado.'],
@@ -9716,10 +9717,11 @@ function pannelloSondaggi() {
       <div id="sondaggio-attivo"></div>
       <label class="campo" for="poll-titolo">${L('Domanda', 'Question', 'Pregunta')}</label>
       <input type="text" id="poll-titolo" placeholder="${L('es. Che gioco stasera?', 'e.g. Which game tonight?', 'p. ej. ¿Qué juego esta noche?')}">
-      <label class="campo spazio-sopra">${L('Opzioni (min 2, max 5)', 'Options (min 2, max 5)', 'Opciones (mín. 2, máx. 5)')}</label>
-      <div class="griglia-campi">
-        ${campo('poll-opt', L('Opzione 1', 'Option 1', 'Opción 1'))}${campo('poll-opt', L('Opzione 2', 'Option 2', 'Opción 2'))}${campo('poll-opt', L('Opzione 3 (facolt.)', 'Option 3 (opt.)', 'Opción 3 (opc.)'))}${campo('poll-opt', L('Opzione 4 (facolt.)', 'Option 4 (opt.)', 'Opción 4 (opc.)'))}
+      <label class="campo spazio-sopra" id="poll-opt-eti">${L('Opzioni', 'Options', 'Opciones')}</label>
+      <div class="griglia-campi" id="poll-opzioni">
+        ${campo('poll-opt', L('Opzione 1', 'Option 1', 'Opción 1'))}${campo('poll-opt', L('Opzione 2', 'Option 2', 'Opción 2'))}
       </div>
+      <button type="button" class="btn secondario mini spazio-sopra" id="poll-opt-piu" hidden title="${esc(L('Aggiungi un\'opzione', 'Add an option', 'Añade una opción'))}" aria-label="${esc(L('Aggiungi un\'opzione', 'Add an option', 'Añade una opción'))}">+</button>
       <label class="campo spazio-sopra">${L('Durata (secondi)', 'Duration (seconds)', 'Duración (segundos)')}</label>
       <input aria-label="${esc(L('Durata del sondaggio in secondi', 'Poll duration in seconds', 'Duracion de la encuesta en segundos'))}" type="number" id="poll-durata" min="15" max="1800" value="120">
       <button class="btn spazio-sopra" id="poll-crea">${L('Lancia sondaggio', 'Launch poll', 'Lanzar encuesta')}</button>
@@ -9730,14 +9732,34 @@ function pannelloSondaggi() {
       <div id="predizione-attiva"></div>
       <label class="campo" for="pred-titolo">${L('Titolo', 'Title', 'Título')}</label>
       <input type="text" id="pred-titolo" placeholder="${L('es. Vinco questa partita?', 'e.g. Will I win this match?', 'p. ej. ¿Gano esta partida?')}">
-      <label class="campo spazio-sopra">${L('Esiti (min 2, max 10)', 'Outcomes (min 2, max 10)', 'Resultados (mín. 2, máx. 10)')}</label>
-      <div class="griglia-campi">
-        ${campo('pred-esito', L('Esito 1 (es. Sì)', 'Outcome 1 (e.g. Yes)', 'Resultado 1 (p. ej. Sí)'))}${campo('pred-esito', L('Esito 2 (es. No)', 'Outcome 2 (e.g. No)', 'Resultado 2 (p. ej. No)'))}${campo('pred-esito', L('Esito 3 (facolt.)', 'Outcome 3 (opt.)', 'Resultado 3 (opc.)'))}${campo('pred-esito', L('Esito 4 (facolt.)', 'Outcome 4 (opt.)', 'Resultado 4 (opc.)'))}
+      <label class="campo spazio-sopra" id="pred-esito-eti">${L('Esiti', 'Outcomes', 'Resultados')}</label>
+      <div class="griglia-campi" id="pred-esiti">
+        ${campo('pred-esito', L('Esito 1 (es. Sì)', 'Outcome 1 (e.g. Yes)', 'Resultado 1 (p. ej. Sí)'))}${campo('pred-esito', L('Esito 2 (es. No)', 'Outcome 2 (e.g. No)', 'Resultado 2 (p. ej. No)'))}
       </div>
+      <button type="button" class="btn secondario mini spazio-sopra" id="pred-esito-piu" hidden title="${esc(L('Aggiungi un esito', 'Add an outcome', 'Añade un resultado'))}" aria-label="${esc(L('Aggiungi un esito', 'Add an outcome', 'Añade un resultado'))}">+</button>
       <label class="campo spazio-sopra">${L('Finestra puntate (secondi)', 'Betting window (seconds)', 'Ventana de apuestas (segundos)')}</label>
       <input aria-label="${esc(L('Finestra delle puntate in secondi', 'Betting window in seconds', 'Ventana de apuestas en segundos'))}" type="number" id="pred-finestra" min="30" max="1800" value="120">
       <button class="btn spazio-sopra" id="pred-crea">${L('Apri predizione', 'Open prediction', 'Abrir predicción')}</button>
     </div>`);
+}
+
+let _vociTwitch = null;
+function _vociVoto({ box: b, piu: p, eti: e, cls, lim, titolo, nome }) {
+  if (!b || !p || !lim) return;
+  if (e) e.textContent = `${titolo} (${L(`da ${lim.min} a ${lim.max}`, `${lim.min} to ${lim.max}`, `de ${lim.min} a ${lim.max}`)})`;
+  const quanti = () => b.querySelectorAll('.' + cls).length;
+  p.hidden = quanti() >= lim.max;
+  p.onclick = () => {
+    if (quanti() >= lim.max) return;
+    const ph = nome(quanti() + 1);
+    b.insertAdjacentHTML('beforeend', `<input type="text" class="${cls}" data-aggiunto="1" aria-label="${esc(ph)}" placeholder="${esc(ph)}">`);
+    b.lastElementChild?.focus();
+    p.hidden = quanti() >= lim.max;
+  };
+}
+
+function _vociAzzera(box) {
+  document.querySelectorAll(`#${box} input`).forEach((i) => { if (i.dataset.aggiunto) i.remove(); else i.value = ''; });
 }
 
 async function caricaSondaggi() {
@@ -9749,9 +9771,10 @@ async function caricaSondaggi() {
       const titolo = (document.getElementById('poll-titolo').value || '').trim();
       const opzioni = [...document.querySelectorAll('.poll-opt')].map((i) => i.value.trim()).filter(Boolean);
       const durata = Number(document.getElementById('poll-durata').value) || 120;
-      if (!titolo || opzioni.length < 2) { toast(L('Serve una domanda e almeno 2 opzioni.', 'You need a question and at least 2 options.', 'Hace falta una pregunta y al menos 2 opciones.'), 'errore'); return; }
+      const lim = _vociTwitch?.sondaggio;
+      if (lim && (!titolo || opzioni.length < lim.min)) { toast(L(`Serve una domanda e almeno ${lim.min} opzioni.`, `You need a question and at least ${lim.min} options.`, `Hace falta una pregunta y al menos ${lim.min} opciones.`), 'errore'); return; }
       const r = await api('/api/sondaggi/crea', { method: 'POST', body: { titolo, opzioni, durata } });
-      if (r?.poll) { toast(L('Sondaggio lanciato', 'Poll launched', 'Encuesta lanzada')); document.getElementById('poll-titolo').value = ''; document.querySelectorAll('.poll-opt').forEach((i) => (i.value = '')); caricaSondaggi(); }
+      if (r?.poll) { toast(L('Sondaggio lanciato', 'Poll launched', 'Encuesta lanzada')); document.getElementById('poll-titolo').value = ''; _vociAzzera('poll-opzioni'); caricaSondaggi(); }
     }));
   }
   const br = document.getElementById('pred-crea');
@@ -9761,9 +9784,10 @@ async function caricaSondaggi() {
       const titolo = (document.getElementById('pred-titolo').value || '').trim();
       const esiti = [...document.querySelectorAll('.pred-esito')].map((i) => i.value.trim()).filter(Boolean);
       const finestra = Number(document.getElementById('pred-finestra').value) || 120;
-      if (!titolo || esiti.length < 2) { toast(L('Serve un titolo e almeno 2 esiti.', 'You need a title and at least 2 outcomes.', 'Hace falta un título y al menos 2 resultados.'), 'errore'); return; }
+      const lim = _vociTwitch?.predizione;
+      if (lim && (!titolo || esiti.length < lim.min)) { toast(L(`Serve un titolo e almeno ${lim.min} esiti.`, `You need a title and at least ${lim.min} outcomes.`, `Hace falta un título y al menos ${lim.min} resultados.`), 'errore'); return; }
       const r = await api('/api/predizioni/crea', { method: 'POST', body: { titolo, esiti, finestra } });
-      if (r?.pred) { toast(L('Predizione aperta', 'Prediction opened', 'Predicción abierta')); document.getElementById('pred-titolo').value = ''; document.querySelectorAll('.pred-esito').forEach((i) => (i.value = '')); caricaSondaggi(); }
+      if (r?.pred) { toast(L('Predizione aperta', 'Prediction opened', 'Predicción abierta')); document.getElementById('pred-titolo').value = ''; _vociAzzera('pred-esiti'); caricaSondaggi(); }
     }));
   }
 
@@ -9771,6 +9795,11 @@ async function caricaSondaggi() {
   const wrapR = document.getElementById('predizione-attiva');
   let d;
   try { d = await api('/api/sondaggi/stato'); } catch { return; }
+  _vociTwitch = d.voci || null;
+  _vociVoto({ box: document.getElementById('poll-opzioni'), piu: document.getElementById('poll-opt-piu'), eti: document.getElementById('poll-opt-eti'), cls: 'poll-opt', lim: d.voci?.sondaggio,
+    titolo: L('Opzioni', 'Options', 'Opciones'), nome: (n) => L(`Opzione ${n}`, `Option ${n}`, `Opción ${n}`) });
+  _vociVoto({ box: document.getElementById('pred-esiti'), piu: document.getElementById('pred-esito-piu'), eti: document.getElementById('pred-esito-eti'), cls: 'pred-esito', lim: d.voci?.predizione,
+    titolo: L('Esiti', 'Outcomes', 'Resultados'), nome: (n) => L(`Esito ${n}`, `Outcome ${n}`, `Resultado ${n}`) });
   if (wrapP) {
     if (d.poll) {
       wrapP.innerHTML = `<div class="riquadro-info"><p>${L('Sondaggio in corso:', 'Poll in progress:', 'Encuesta en curso:')} <strong>${esc(d.poll.titolo)}</strong></p>
@@ -9818,7 +9847,7 @@ function pannelloGiveaway() {
         <p class="suggerimento">${L('«2» = doppie possibilità di vincere. «1» = come tutti. Nessuno è mai sicuro di vincere: l\'estrazione è casuale ma pesata.', '«2» = double chance to win. «1» = same as everyone. No one is ever guaranteed to win: the draw is random but weighted.', '«2» = doble posibilidad de ganar. «1» = como todos. Nadie tiene la victoria asegurada: el sorteo es aleatorio pero ponderado.')}</p>
         <div class="riga-check spazio-sopra">
           <input aria-label="${esc(L('Solo abbonati', 'Subscribers only', 'Solo suscriptores'))}" type="checkbox" id="gw-sub">
-          <label>${L('Riservato agli abbonati (sub)', 'Subscribers only (subs)', 'Solo para suscriptores (subs)')}</label>
+          <label for="gw-sub">${L('Riservato agli abbonati (sub)', 'Subscribers only (subs)', 'Solo para suscriptores (subs)')}</label>
         </div>
         <button class="btn spazio-sopra" id="gw-apri">${L('Apri il giveaway', 'Open the giveaway', 'Abrir el sorteo')}</button>
       </div>
@@ -9839,7 +9868,8 @@ async function caricaGiveaway() {
       const moltSub = parseInt(document.getElementById('gw-molt-sub').value, 10) || 1;
       const moltVip = parseInt(document.getElementById('gw-molt-vip').value, 10) || 1;
       const moltMod = parseInt(document.getElementById('gw-molt-mod').value, 10) || 1;
-      const r = await api('/api/giveaway/apri', { method: 'POST', body: { premio, soloSub, keyword, moltSub, moltVip, moltMod } });
+      const quanti = parseInt(document.getElementById('gw-vincitori').value, 10) || 1;
+      const r = await api('/api/giveaway/apri', { method: 'POST', body: { premio, soloSub, keyword, quanti, moltSub, moltVip, moltMod } });
       if (r?.ok) { toast(L('Giveaway aperto!', 'Giveaway opened!', '¡Sorteo abierto!')); document.getElementById('gw-premio').value = ''; caricaGiveaway(); }
     }));
   }
@@ -9852,27 +9882,27 @@ async function caricaGiveaway() {
     if (molt.sub > 1) chipsMolt.push(`sub ×${molt.sub}`);
     if (molt.vip > 1) chipsMolt.push(`vip ×${molt.vip}`);
     if (molt.mod > 1) chipsMolt.push(`mod ×${molt.mod}`);
-    const rigaMolt = chipsMolt.length ? `<p class="suggerimento">${L('Probabilità:', 'Odds:', 'Probabilidad:')} ${esc(chipsMolt.join(' · '))} — ${d.biglietti} ${L('biglietti totali', 'total tickets', 'boletos totales')}</p>` : `<p class="suggerimento">${d.biglietti} ${L('biglietti totali', 'total tickets', 'boletos totales')}</p>`;
+    const rigaMolt = chipsMolt.length ? `<p class="suggerimento">${L('Probabilità:', 'Odds:', 'Probabilidad:')} ${esc(chipsMolt.join(' · '))}, ${d.biglietti} ${L('biglietti totali', 'total tickets', 'boletos totales')}</p>` : `<p class="suggerimento">${d.biglietti} ${L('biglietti totali', 'total tickets', 'boletos totales')}</p>`;
+    const vinti = Array.isArray(d.vincitori) ? d.vincitori : [];
+    const rigaVinti = vinti.length ? `<p class="ok-riga">${vinti.length === 1 ? L('Ha vinto:', 'Winner:', 'Ganó:') : L('Hanno vinto:', 'Winners:', 'Ganaron:')} <strong>${esc(vinti.join(', '))}</strong>!</p>` : '';
     stBox.innerHTML = `<div class="riquadro-info">
       <p>${L('Giveaway in corso:', 'Giveaway in progress:', 'Sorteo en curso:')} <strong>${esc(d.premio)}</strong>${d.soloSub ? ` <span class="badge">${L('solo sub', 'subs only', 'solo subs')}</span>` : ''}</p>
-      <p class="spazio-sopra"><strong>${d.partecipanti}</strong> ${d.partecipanti === 1 ? L('partecipante', 'participant', 'participante') : L('partecipanti', 'participants', 'participantes')} — ${L('entrano con', 'they join with', 'entran con')} <code>!${esc(d.keyword || 'join')}</code></p>
+      <p class="spazio-sopra"><strong>${d.partecipanti}</strong> ${d.partecipanti === 1 ? L('partecipante', 'participant', 'participante') : L('partecipanti', 'participants', 'participantes')}, ${L('entrano con', 'they join with', 'entran con')} <code>!${esc(d.keyword || 'join')}</code></p>
       ${rigaMolt}
       <div class="riga-flessibile spazio-sopra">
         <label class="campo-piccola" for="gw-quanti">${L('Quanti', 'How many', 'Cuántos')}</label>
-        <input type="number" id="gw-quanti" min="1" max="50" value="1" style="max-width:5rem">
+        <input type="number" id="gw-quanti" min="1" max="50" value="${Number(d.quanti) || 1}" style="max-width:5rem">
         <button class="btn" id="gw-estrai">${L('Estrai', 'Draw', 'Sacar')}</button>
         <button class="btn pericolo" id="gw-annulla">${L('Annulla', 'Cancel', 'Cancelar')}</button>
       </div>
-      <div id="gw-vincitore" class="spazio-sopra"></div>
+      <div id="gw-vincitore" class="spazio-sopra">${rigaVinti}</div>
     </div>`;
     document.getElementById('gw-estrai').addEventListener('click', () => conErrore(async () => {
       const quanti = parseInt(document.getElementById('gw-quanti').value, 10) || 1;
       const r = await api('/api/giveaway/estrai', { method: 'POST', body: { quanti } });
+      if (r?.vincitori?.length) { caricaGiveaway(); return; }
       const v = document.getElementById('gw-vincitore');
-      const vinc = (r && r.vincitori && r.vincitori.length) ? r.vincitori : (r?.vincitore ? [r.vincitore] : []);
-      if (vinc.length) { if (v) v.innerHTML = `<p class="ok-riga">${vinc.length === 1 ? L('Ha vinto:', 'Winner:', 'Ganó:') : L('Hanno vinto:', 'Winners:', 'Ganaron:')} <strong>${esc(vinc.join(', '))}</strong>!</p>`; }
-      else if (v) v.innerHTML = `<p class="warn-riga">${L('Nessun partecipante ancora.', 'No participants yet.', 'Aún no hay participantes.')}</p>`;
-      caricaGiveaway();
+      if (v) v.innerHTML = rigaVinti + `<p class="warn-riga">${vinti.length ? L('Non resta nessuno da estrarre.', 'There is nobody left to draw.', 'No queda nadie por sacar.') : L('Nessun partecipante ancora.', 'No participants yet.', 'Aún no hay participantes.')}</p>`;
     }));
     document.getElementById('gw-annulla').addEventListener('click', () => conErrore(async () => { await api('/api/giveaway/annulla', { method: 'POST', body: {} }); toast(L('Giveaway annullato.', 'Giveaway cancelled.', 'Sorteo cancelado.')); caricaGiveaway(); }));
   } else {
@@ -9901,7 +9931,7 @@ function pannelloPenitenze() {
           <li><strong>${L('Usa solo la parola', 'Use only the word', 'Usa solo la palabra')}</strong> — ${L('puoi dire', 'you can say', 'puedes decir')} <em>${L('solo', 'only', 'solo')}</em> ${L('quella: ogni frase con un\'altra parola,', 'that: every sentence with another word,', 'esa: cada frase con otra palabra,')} <span class="pen-inline-num">+1</span>.</li>
         </ul>
       </div>
-      <p class="suggerimento">${L('Serve il <strong>riconoscimento vocale</strong> attivo (scheda <em>Comandi a voce</em>) e il permesso <strong>Punti canale</strong>.', 'Requires <strong>voice recognition</strong> active (<em>Voice commands</em> tab) and the <strong>Channel Points</strong> permission.', 'Necesita el <strong>reconocimiento de voz</strong> activo (pestaña <em>Comandos por voz</em>) y el permiso <strong>Puntos de canal</strong>.')}</p>
+      <p class="suggerimento">${L(`Serve il <strong>riconoscimento vocale</strong> attivo (scheda <em>${tScheda('ascolto')}</em>) e il permesso <strong>Punti canale</strong>.`, `Requires <strong>voice recognition</strong> active (<em>${tScheda('ascolto')}</em> tab) and the <strong>Channel Points</strong> permission.`, `Necesita el <strong>reconocimiento de voz</strong> activo (pestaña <em>${tScheda('ascolto')}</em>) y el permiso <strong>Puntos de canal</strong>.`)}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="pen-attivo" ${p.attivo ? 'checked' : ''}><span class="levetta"></span></label>
         <span class="etichetta-stato" id="pen-etichetta">${p.attivo ? L('Penitenze attive', 'Forfeits on', 'Penitencias activas') : L('Penitenze spente', 'Forfeits off', 'Penitencias apagadas')}</span>
@@ -10028,11 +10058,24 @@ async function _penMontaEffetto() {
   };
 }
 
+function _penInterruttore(acceso) {
+  const sw = document.getElementById('pen-attivo');
+  if (sw) sw.checked = !!acceso;
+  const et = document.getElementById('pen-etichetta');
+  if (et) et.textContent = acceso ? L('Penitenze attive', 'Forfeits on', 'Penitencias activas') : L('Penitenze spente', 'Forfeits off', 'Penitencias apagadas');
+}
+
 async function caricaPenitenze() {
-  document.getElementById('pen-attivo')?.addEventListener('change', (ev) => {
-    const et = document.getElementById('pen-etichetta');
-    if (et) et.textContent = ev.target.checked ? L('Penitenze attive', 'Forfeits on', 'Penitencias activas') : L('Penitenze spente', 'Forfeits off', 'Penitencias apagadas');
-  });
+  _penCollega();
+  await _penMontaEffetto();
+  await _penPremi();
+}
+
+function _penCollega() {
+  const sw = document.getElementById('pen-attivo');
+  if (!sw || sw.dataset.wired) return;
+  sw.dataset.wired = '1';
+  sw.addEventListener('change', () => _penInterruttore(sw.checked));
   document.getElementById('pen-salva')?.addEventListener('click', () => conErrore(() => salvaPenitenze()));
   const rng = document.getElementById('pen-fuzzy');
   const val = document.getElementById('pen-fuzzy-val');
@@ -10044,14 +10087,17 @@ async function caricaPenitenze() {
     await api('/api/penitenze/prova', { method: 'POST', body: {} });
     toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
   }));
-  await _penMontaEffetto();
+}
+
+async function _penPremi() {
   const boxV = document.getElementById('pen-box-vieta');
   const boxS = document.getElementById('pen-box-solo');
   if (!boxV || !boxS) return;
   let d;
   try { d = await api('/api/penitenze/premi'); } catch { boxV.innerHTML = boxS.innerHTML = `<p class="suggerimento">${L('Impossibile leggere i premi.', 'Couldn’t read the rewards.', 'No se pueden leer las recompensas.')}</p>`; return; }
   if (!d.permessoOk) {
-    boxV.innerHTML = `<div class="riquadro-info">${L('Per i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.', 'Channel-point rewards need the permission: grant it from <strong>Chat &amp; commands → Effects &amp; sounds</strong> (Rewards section), then come back here.', 'Las recompensas de puntos de canal necesitan el permiso: concédelo desde <strong>Chat y comandos → Efectos y sonidos</strong> (sección Recompensas), luego vuelve aquí.')}</div>`;
+    boxV.innerHTML = `<div class="riquadro-info">${L(`Per i premi a punti canale serve il permesso dei punti canale: nella scheda «${tScheda('stato')}» premi «Aggiorna i permessi», poi torna qui.`, `Channel-point rewards need the channel points permission: in the «${tScheda('stato')}» tab press «Update permissions», then come back here.`, `Las recompensas de puntos de canal necesitan el permiso de puntos de canal: en la pestaña «${tScheda('stato')}» pulsa «Actualizar permisos», luego vuelve aquí.`)}
+      <p class="spazio-sopra"><a class="btn secondario mini" href="/auth/permessi">${_bIco(ICO.chiave)}${L('Aggiorna i permessi', 'Update permissions', 'Actualizar permisos')}</a></p></div>`;
     boxS.innerHTML = '';
     return;
   }
@@ -10089,7 +10135,13 @@ async function caricaPenitenze() {
       const titolo = (document.getElementById(nomeId)?.value || nomeDefault).trim();
       const costo = Number(document.getElementById(costoId)?.value) || 500;
       const r = await api('/api/penitenze/premio', { method: 'POST', body: { campo, titolo, costo } });
-      if (r?.reward) { if (inp) inp.value = r.reward.title; toast(L('Premio creato su Twitch!', 'Reward created on Twitch!', '¡Recompensa creada en Twitch!')); caricaPenitenze(); }
+      if (r?.reward) {
+        if (inp) inp.value = r.reward.title;
+        if (r.penitenze && stato?.streamer) stato.streamer.settings = { ...(stato.streamer.settings || {}), penitenze: r.penitenze };
+        _penInterruttore(r.penitenze ? r.penitenze.attivo : true);
+        toast(L('Premio creato su Twitch!', 'Reward created on Twitch!', '¡Recompensa creada en Twitch!'));
+        _penPremi();
+      }
     }));
   };
   montaPicker(boxV, { campo: 'premioVieta', hiddenId: 'pen-premio-vieta', attuale: d.premioVieta, titolo: L('Vieta la parola', 'Ban the word', 'Prohíbe la palabra'), nomeDefault: L('Vietami una parola', 'Ban me a word', 'Prohíbeme una palabra') });
@@ -21598,7 +21650,7 @@ function pannelloGiochi() {
         <label class="campo-num">${L('Quanti in classifica', 'How many on the board', 'Cuántos en la clasificación')}<input type="number" id="pt-topN" min="3" max="10" value="${s.punti.topN}"></label>
       </div>
       <h3 class="sotto-titolo">${L('Guadagno mentre guardano', 'Earning while watching', 'Ganancia mientras miran')}</h3>
-      <p>${L('Ogni cinque minuti, chi è in chat riceve la <strong>presenza</strong> — anche se sta zitto — e chi ha scritto in quel giro riceve in più la <strong>partecipazione</strong>. Chi resta a lungo in silenzio continua a guadagnare, ma scendendo un gradino per volta fino a un minimo: appena riscrive torna a quota piena.', 'Every five minutes, whoever is in chat gets <strong>presence</strong> — even in silence — and whoever wrote in that round also gets <strong>participation</strong>. Someone silent for a long time keeps earning, but one step lower each round down to a floor: as soon as they write again they are back to full.', 'Cada cinco minutos, quien está en el chat recibe la <strong>presencia</strong> — aunque calle — y quien escribió en esa ronda recibe además la <strong>participación</strong>. Quien calla mucho sigue ganando, pero bajando un escalón por ronda hasta un mínimo: en cuanto vuelve a escribir recupera la cuota completa.')}</p>
+      <p>${L('Ogni cinque minuti, mentre sei in diretta, chi è in chat riceve la <strong>presenza</strong>, anche se sta zitto, e chi ha scritto in quel giro riceve in più la <strong>partecipazione</strong>. Chi resta a lungo in silenzio continua a guadagnare, ma scendendo un gradino per volta fino a un minimo: appena riscrive torna a quota piena.', 'Every five minutes, while you are live, whoever is in chat gets <strong>presence</strong>, even in silence, and whoever wrote in that round also gets <strong>participation</strong>. Someone silent for a long time keeps earning, but one step lower each round down to a floor: as soon as they write again they are back to full.', 'Cada cinco minutos, mientras estás en directo, quien está en el chat recibe la <strong>presencia</strong>, aunque calle, y quien escribió en esa ronda recibe además la <strong>participación</strong>. Quien calla mucho sigue ganando, pero bajando un escalón por ronda hasta un mínimo: en cuanto vuelve a escribir recupera la cuota completa.')}</p>
       <div class="griglia-punti">
         <label class="campo-num">${L('Presenza (per giro)', 'Presence (per round)', 'Presencia (por ronda)')}<input type="number" id="pt-perPresenza" min="0" max="10000" value="${s.punti.perPresenza}"></label>
         <label class="campo-num">${L('Partecipazione (in più)', 'Participation (extra)', 'Participación (extra)')}<input type="number" id="pt-perAttivita" min="0" max="10000" value="${s.punti.perAttivita}"></label>
@@ -21607,8 +21659,7 @@ function pannelloGiochi() {
         <label class="campo-num">${L('Quanto cala per giro in silenzio', 'Drop per silent round', 'Cuánto baja por ronda en silencio')}<input type="number" id="pt-lurkPasso" min="0" max="1" step="0.05" value="${s.punti.lurkPasso}"></label>
         <label class="campo-num">${L('Non scende sotto', 'Never below', 'No baja de')}<input type="number" id="pt-lurkMinimo" min="0" max="1" step="0.05" value="${s.punti.lurkMinimo}"></label>
       </div>
-      <p><label class="riga-check"><input type="checkbox" id="pt-soloLive"${s.punti.soloLive !== false ? ' checked' : ''}> ${L('Solo mentre sei in diretta', 'Only while you are live', 'Solo mientras estás en directo')}</label></p>
-      <p class="suggerimento">${L('“Punti per messaggio” a 0 = nessun guadagno passivo dal chattare.', '“Points per message” at 0 = no passive earning from chatting.', '“Puntos por mensaje” a 0 = sin ganancia pasiva por charlar.')}</p>
+      <p class="suggerimento">${L('Presenza e partecipazione arrivano solo mentre sei in diretta. Le monete per messaggio arrivano sempre, anche a canale spento se il bot è in chat. Con «Punti per messaggio» a 0 non arrivano più.', 'Presence and participation only come while you are live. Coins per message always come, even with the channel offline if the bot is in chat. With «Points per message» at 0 they stop.', 'Presencia y participación solo llegan mientras estás en directo. Las monedas por mensaje llegan siempre, también con el canal apagado si el bot está en el chat. Con «Puntos por mensaje» a 0 dejan de llegar.')}</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">${L('Salva punti', 'Save points', 'Guardar puntos')}</button></p>
     </div>
     <div class="carta">
@@ -21670,7 +21721,7 @@ function pannelloGiochi() {
         </button>
         <button type="button" class="gioco-ramo" data-ramo="comando">
           <strong>${L('Lo scrive uno spettatore', 'A viewer types it', 'Lo escribe un espectador')}</strong>
-          <span>${L('Un comando che costa monete, tira il dado e paga — o no.', 'A command that costs coins, rolls the dice and pays — or not.', 'Un comando que cuesta monedas, tira el dado y paga — o no.')}</span>
+          <span>${L('Un comando che costa monete, tira il dado e paga, o no.', 'A command that costs coins, rolls the dice and pays, or not.', 'Un comando que cuesta monedas, tira el dado y paga, o no.')}</span>
         </button>
       </div>
 
@@ -21689,29 +21740,29 @@ function pannelloGiochi() {
         <input type="text" id="gioco-nome" aria-label="${esc(L('Nome del gioco', 'Game name', 'Nombre del juego'))}" maxlength="60" placeholder="${L('Nome del gioco (es. Trivia gaming)', 'Game name (e.g. Gaming trivia)', 'Nombre del juego (p. ej. Trivia gaming)')}">
       </div>
       <div id="gioco-trivia" class="spazio-sopra">
-        <label class="campo" for="gioco-domande">${L('Domande — una per riga, formato', 'Questions — one per line, format', 'Preguntas — una por línea, formato')} <code>${L('domanda | risposta1, risposta2', 'question | answer1, answer2', 'pregunta | respuesta1, respuesta2')}</code></label>
+        <label class="campo" for="gioco-domande">${L('Domande: una per riga, nel formato', 'Questions: one per line, in the format', 'Preguntas: una por línea, con el formato')} <code>${L('domanda | risposta1, risposta2', 'question | answer1, answer2', 'pregunta | respuesta1, respuesta2')}</code></label>
         <textarea id="gioco-domande" rows="5" placeholder="${L('Chi ha vinto i mondiali 2006? | italia&#10;Come si chiama il mio gatto? | felix, felixe', 'Who won the 2006 World Cup? | italy&#10;What’s my cat’s name? | felix, felixe', '¿Quién ganó el Mundial 2006? | italia&#10;¿Cómo se llama mi gato? | felix, felixe')}"></textarea>
       </div>
       <div id="gioco-rebus" class="spazio-sopra" hidden>
-        <label class="campo" for="gioco-rebus-righe">${L('Rebus: uno per riga, formato', 'Rebus: one per line, format', 'Jeroglíficos: uno por línea, formato')} <code>${L('emoji | risposta1, risposta2', 'emoji | answer1, answer2', 'emoji | respuesta1, respuesta2')}</code></label>
+        <label class="campo" for="gioco-rebus-righe">${L('Rebus: uno per riga, nel formato', 'Rebus: one per line, in the format', 'Jeroglíficos: uno por línea, con el formato')} <code>${L('emoji | risposta1, risposta2', 'emoji | answer1, answer2', 'emoji | respuesta1, respuesta2')}</code></label>
         <textarea id="gioco-rebus-righe" rows="5" placeholder="🕷️🧑 | spiderman, uomo ragno&#10;🦁👑 | il re leone, re leone"></textarea>
       </div>
       <div id="gioco-parola" class="spazio-sopra" hidden>
-        <label class="campo" for="gioco-parole">${L('Parole — una per riga (il bot ne pesca una e il primo che la scrive vince)', 'Words — one per line (the bot picks one and the first to type it wins)', 'Palabras — una por línea (el bot elige una y el primero que la escribe gana)')}</label>
+        <label class="campo" for="gioco-parole">${L('Parole: una per riga. Il bot ne pesca una e vince il primo che la scrive.', 'Words: one per line. The bot picks one and the first to type it wins.', 'Palabras: una por línea. El bot elige una y gana el primero que la escribe.')}</label>
         <textarea id="gioco-parole" rows="5" placeholder="pizza&#10;combo perfetta&#10;gg wp"></textarea>
         <p class="suggerimento" id="gioco-nota-impiccato" hidden>${L('Per l\'impiccato servono parole sole, senza spazi, fra 4 e 20 lettere: la chat le scopre una lettera alla volta, e sei errori le fanno perdere.', 'Hangman needs single words, no spaces, 4 to 20 letters: chat uncovers them one letter at a time, and six mistakes lose.', 'El ahorcado necesita palabras sueltas, sin espacios, de 4 a 20 letras: el chat las descubre letra a letra, y seis errores las pierden.')}</p>
         <p class="suggerimento" id="gioco-nota-wordle" hidden>${L('Per il wordle servono parole di cinque lettere, senza spazi: la chat prova parole di cinque lettere e il bot risponde coi quadratini colorati.', 'Wordle needs five-letter words, no spaces: chat tries five-letter words and the bot answers with coloured squares.', 'El wordle necesita palabras de cinco letras, sin espacios: el chat prueba palabras de cinco letras y el bot responde con cuadritos de colores.')}</p>
         <p class="suggerimento" id="gioco-nota-anagramma" hidden>${L('Per gli anagrammi servono parole di almeno quattro lettere: il bot mescola le lettere e chi rimette la parola in ordine vince.', 'Anagrams need words of at least four letters: the bot scrambles them and whoever unscrambles first wins.', 'Los anagramas necesitan palabras de al menos cuatro letras: el bot las mezcla y gana quien las reordena.')}</p>
       </div>
       <div id="gioco-sequenza" class="spazio-sopra" hidden>
-        <label class="campo" for="gioco-simboli">${L('Simboli — separati da spazio (almeno tre). Il bot ne mostra una sequenza e vince chi la ricopia esatta.', 'Symbols — space separated (at least three). The bot shows a sequence and whoever copies it exactly wins.', 'Símbolos — separados por espacio (al menos tres). El bot muestra una secuencia y gana quien la copia exacta.')}</label>
+        <label class="campo" for="gioco-simboli">${L('Simboli: separati da uno spazio, almeno tre. Il bot ne mostra una sequenza e vince chi la ricopia esatta.', 'Symbols: separated by a space, at least three. The bot shows a sequence and whoever copies it exactly wins.', 'Símbolos: separados por un espacio, al menos tres. El bot muestra una secuencia y gana quien la copia exacta.')}</label>
         <input type="text" id="gioco-simboli" placeholder="🍒 ⭐ 💎 🔥 🎲">
         <label class="campo-num spazio-sopra">${L('Quanti simboli per sequenza', 'How many symbols per sequence', 'Cuántos símbolos por secuencia')}<input type="number" id="gioco-lunghezza" min="3" max="8" value="4"></label>
       </div>
       <div id="gioco-domanda" class="spazio-sopra" hidden>
         <label class="campo" for="gioco-testo">${L('La domanda', 'The question', 'La pregunta')}</label>
         <input type="text" id="gioco-testo" maxlength="240" placeholder="${L('Qual è il mio gioco preferito?', 'What is my favourite game?', '¿Cuál es mi juego favorito?')}">
-        <label class="campo spazio-sopra" for="gioco-risposte">${L('Risposte accettate — separate da virgola', 'Accepted answers — comma separated', 'Respuestas aceptadas — separadas por comas')}</label>
+        <label class="campo spazio-sopra" for="gioco-risposte">${L('Risposte accettate, separate da virgola', 'Accepted answers, comma separated', 'Respuestas aceptadas, separadas por comas')}</label>
         <input type="text" id="gioco-risposte" placeholder="${L('elden ring, eldenring', 'elden ring, eldenring', 'elden ring, eldenring')}">
         <label class="campo-num spazio-sopra">${L('Secondi per rispondere', 'Seconds to answer', 'Segundos para responder')}<input type="number" id="gioco-durata" min="10" max="300" value="45"></label>
       </div>
@@ -21725,7 +21776,7 @@ function pannelloGiochi() {
           <button class="modello-pronto" data-ricetta="">${L('Parti da zero', 'Start from scratch', 'Empieza de cero')}</button>
         </div>
         <div id="editor-gioco"></div>
-        <p class="suggerimento">${L('Un gioco è tre cose: un comando che <strong>costa</strong>, un tiro di dado, e cosa succede se vinci — o se perdi. Le scritte accettano le', 'A game is three things: a command that <strong>costs</strong>, a dice roll, and what happens if you win — or lose. The texts accept the', 'Un juego son tres cosas: un comando que <strong>cuesta</strong>, una tirada de dado, y qué pasa si ganas — o si pierdes. Los textos aceptan las')} <a href="#" data-apri-var-giochi>${L('parole magiche dei giochi', 'game keywords', 'palabras mágicas de los juegos')}</a>.</p>
+        <p class="suggerimento">${L('Un gioco è tre cose: un comando che <strong>costa</strong>, un tiro di dado, e cosa succede se vinci o se perdi. Le scritte accettano le', 'A game is three things: a command that <strong>costs</strong>, a dice roll, and what happens if you win or lose. The texts accept the', 'Un juego son tres cosas: un comando que <strong>cuesta</strong>, una tirada de dado, y qué pasa si ganas o si pierdes. Los textos aceptan las')} <a href="#" data-apri-var-giochi>${L('parole magiche dei giochi', 'game keywords', 'palabras mágicas de los juegos')}</a>.</p>
         <div id="var-giochi" hidden></div>
       </div>
 
@@ -21740,16 +21791,16 @@ function pannelloGiochi() {
       ${_premioGara('bit', L('Chi mette i Bit', 'Who puts in the Bits', 'Quien pone los Bits'), 'Bit')}
       <p class="suggerimento spazio-sopra">${L('Le due gare sono indipendenti: puoi accenderne una, l’altra o tutt’e due. Il premio non pesca mai dallo staff né da te: Twitch non permette di dare il VIP a un moderatore, quindi il posto scorre a chi può davvero riceverlo.', 'The two races are independent: turn on one, the other, or both. The prize never draws from your staff or from you: Twitch does not allow giving VIP to a moderator, so the spot slides to someone who can actually get it.', 'Las dos carreras son independientes: puedes encender una, la otra o las dos. El premio nunca se elige del staff ni de ti: Twitch no permite dar VIP a un moderador, así que el puesto pasa a quien sí puede recibirlo.')}</p>
       <p class="suggerimento">${L('Puoi darlo anche', 'You can also give it', 'También puedes darlo')}
-      <strong class="primo-piano">${L('a voce', 'by voice', 'por voz')}</strong> ${L('(Comandi a voce → "vip a nome") o in chat con', '(Voice commands → "vip to name") or in chat with', '(Comandos por voz → "vip a nombre") o en el chat con')} <code>!vip @${L('nome', 'name', 'nombre')}</code>${L(': quelli durano un tempo, non delle dirette.', ': those last a length of time, not a number of streams.', ': esos duran un tiempo, no directos.')}</p>
+      <strong class="primo-piano">${L('a voce', 'by voice', 'por voz')}</strong> ${L(`(«vip a nome», dalla scheda «${tScheda('ascolto')}») o in chat con`, `(«vip to name», from the «${tScheda('ascolto')}» tab) or in chat with`, `(«vip a nombre», desde la pestaña «${tScheda('ascolto')}») o en el chat con`)} <code>!vip @${L('nome', 'name', 'nombre')}</code>${L(': quelli durano un tempo, non delle dirette.', ': those last a length of time, not a number of streams.', ': esos duran un tiempo, no directos.')}</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-premio">${L('Salva premio', 'Save reward', 'Guardar premio')}</button></p>
       ${stato.ruolo === 'moderatore' ? '' : `<div class="riga-flessibile spazio-sopra">
         <input aria-label="${esc(L('nome utente', 'username', 'nombre de usuario'))}" type="text" id="pt-utente" placeholder="${L('nome utente', 'username', 'nombre de usuario')}" style="max-width:14rem">
         <input aria-label="${esc(L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50'))}" type="number" id="pt-delta" placeholder="${L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50')}" style="max-width:10rem">
         <button type="button" class="btn secondario" id="btn-punti-manuale">${L('Aggiusta', 'Adjust', 'Ajustar')} ${esc(s.nomeMonete)}</button>
       </div>
-      <p class="suggerimento">${L('Per riparare un errore. Con il meno si tolgono. In chat puoi fare lo stesso con un comando (ricetta «Dai monete»), che però lo fa vedere a tutti — e possono usarlo anche i tuoi moderatori.', 'To fix a mistake. Use a minus to remove. In chat you can do the same with a command (the «Give coins» recipe), which everyone sees — and your mods can use it too.', 'Para reparar un error. Con el menos se quitan. En el chat puedes hacer lo mismo con un comando (receta «Dar monedas»), que además lo ve todo el mundo — y también pueden usarlo tus moderadores.')}</p>
-      <p class="suggerimento">${L('I punti che il tuo pubblico ha su un altro bot li porti qui da Moduli, in «Porta qui quello che hai già».', 'Your viewers’ points on another bot come over from Modules, in «Bring over what you already have».', 'Los puntos que tu público tiene en otro bot los traes desde Módulos, en «Trae lo que ya tienes».')}
-        <button type="button" class="btn secondario mini" data-scheda="moduli">${L('Vai a Moduli', 'Go to Modules', 'Ir a Módulos')}</button></p>`}
+      <p class="suggerimento">${L('Per riparare un errore. Con il meno si tolgono. In chat puoi fare lo stesso con un comando (ricetta «Dai monete»), che però lo fa vedere a tutti, e possono usarlo anche i tuoi moderatori.', 'To fix a mistake. Use a minus to remove. In chat you can do the same with a command (the «Give coins» recipe), which everyone sees, and your mods can use it too.', 'Para reparar un error. Con el menos se quitan. En el chat puedes hacer lo mismo con un comando (receta «Dar monedas»), que además lo ve todo el mundo, y también pueden usarlo tus moderadores.')}</p>
+      <p class="suggerimento">${L(`I punti che il tuo pubblico ha su un altro bot li porti qui dalla scheda «${tScheda('moduli')}», in «Porta qui quello che hai già».`, `Your viewers’ points on another bot come over from the «${tScheda('moduli')}» tab, in «Bring over what you already have».`, `Los puntos que tu público tiene en otro bot los traes desde la pestaña «${tScheda('moduli')}», en «Trae lo que ya tienes».`)}
+        <button type="button" class="btn secondario mini" data-scheda="moduli">${L(`Vai a ${tScheda('moduli')}`, `Go to ${tScheda('moduli')}`, `Ir a ${tScheda('moduli')}`)}</button></p>`}
       <p class="suggerimento spazio-sopra">${L('Le classifiche delle monete stanno nella scheda Statistiche, insieme a tutti gli altri numeri del canale.', 'The coin leaderboards are in the Stats tab, together with all the other channel numbers.', 'Las clasificaciones de monedas están en la pestaña Estadísticas, junto a los demás números del canal.')}
         <button type="button" class="btn secondario mini" data-scheda="statistiche">${L('Vedi le classifiche', 'See the leaderboards', 'Ver las clasificaciones')}</button></p>
       <h3>${L('VIP a tempo attivi', 'Active timed VIPs', 'VIP temporales activos')}</h3>
@@ -25914,7 +25965,6 @@ function attivaPiattaforma() {
       moltVip: parseFloat(document.getElementById('pt-moltVip')?.value) || 1.25,
       lurkPasso: parseFloat(document.getElementById('pt-lurkPasso')?.value) ?? 0.15,
       lurkMinimo: parseFloat(document.getElementById('pt-lurkMinimo')?.value) ?? 0.35,
-      soloLive: !!document.getElementById('pt-soloLive')?.checked,
       topN: v('pt-topN'),
     } }, L('Punti salvati ✓', 'Points saved ✓', 'Puntos guardados ✓'));
   }));
@@ -27405,16 +27455,22 @@ function _rgDisegna() {
 }
 
 async function caricaRegoleGiochi() {
-  if (!_g('regole-giochi')) return;
-  try { _regole = await api('/api/streamer/giochi/regole'); } catch (e) { _regole = null; return; }
+  const box = _g('regole-giochi');
+  if (!box) return;
+  try { _regole = await api('/api/streamer/giochi/regole'); } catch (e) {
+    _regole = null;
+    box.innerHTML = `<p class="warn-riga">${L('Non riesco a leggere le regole dei giochi: ', 'I can’t read the game rules: ', 'No puedo leer las reglas de los juegos: ')}${esc(e.message)}</p>`;
+    return;
+  }
   _rgDisegna();
 }
 
 async function caricaGiochi() {
   const ul = document.getElementById('lista-giochi');
   if (!ul) return;
+  let errore = null;
   const [manche, moduli] = await Promise.all([
-    api('/api/streamer/giochi').catch(() => []),
+    api('/api/streamer/giochi').catch((e) => { errore = e; return []; }),
     api('/api/streamer/moduli').catch(() => null),
   ]);
   if (moduli) datiModuli = moduli;
@@ -27425,13 +27481,14 @@ async function caricaGiochi() {
     if (g.tipo === 'trivia') return `${(c.domande || []).length} ${L('domande', 'questions', 'preguntas')}`;
     if (g.tipo === 'sequenza') return `${(c.simboli || []).length} ${L('simboli', 'symbols', 'símbolos')}`;
     if (g.tipo === 'domanda') return L('una domanda', 'one question', 'una pregunta');
-    if (g.tipo === 'rebus') return `${(c.rebus || []).length} rebus`;
+    if (g.tipo === 'rebus') return `${(c.rebus || []).length} ${L('rebus', 'rebuses', 'jeroglíficos')}`;
     return `${(c.parole || []).length} ${L('parole', 'words', 'palabras')}`;
   };
+  const nomeTipo = (t) => [...(document.getElementById('gioco-tipo')?.options || [])].find((o) => o.value === t)?.textContent || t;
   const righeManche = manche.map((g) => `<li>
       <div class="testo-voce">
         <div class="domanda">${esc(g.nome || L('(senza nome)', '(unnamed)', '(sin nombre)'))} <span class="badge">${L('a sorpresa', 'by surprise', 'por sorpresa')}</span></div>
-        <div class="meta">${esc(g.tipo)} · ${quanti(g)}${g.attivo ? '' : ` · <span class="badge">${L('in pausa', 'paused', 'en pausa')}</span>`}</div>
+        <div class="meta">${esc(nomeTipo(g.tipo))} · ${quanti(g)}${g.attivo ? '' : ` · <span class="badge">${L('in pausa', 'paused', 'en pausa')}</span>`}</div>
       </div>
       <div class="azioni-voce">
         <button class="btn secondario mini" data-gioco-toggle="${g.id}" data-attivo="${g.attivo ? 1 : 0}">${g.attivo ? L('Pausa', 'Pause', 'Pausa') : L('Riattiva', 'Resume', 'Reactivar')}</button>
@@ -27449,6 +27506,7 @@ async function caricaGiochi() {
     </li>`);
   const righe = [...righeComando, ...righeManche];
   ul.innerHTML = righe.length ? righe.join('')
+    : errore ? `<li class="vuoto">${L('Errore: ', 'Error: ', 'Error: ')}${esc(errore.message)}</li>`
     : `<li class="vuoto">${L('Ancora nessuno: scegli qui sopra chi lancia il gioco e crealo. I giochi di serie funzionano comunque.', 'None yet: pick above who starts the game and make it. The built-in games work anyway.', 'Ninguno todavía: elige arriba quién lanza el juego y créalo. Los juegos de serie funcionan igualmente.')}</li>`;
 
   ul.onclick = (ev) => {
@@ -27460,7 +27518,7 @@ async function caricaGiochi() {
     });
     else if (del) conErrore(async () => {
       if (!(await chiediSe({ titolo: L('Elimino questo gioco?', 'Delete this game?', '¿Elimino este juego?'), pericolo: true,
-        testo: L('Il suo comando in chat smette di rispondere, e non si torna indietro.', 'Its chat command stops answering, and there is no going back.', 'Su comando del chat deja de responder, y no hay vuelta atrás.'),
+        testo: L('Non esce più nelle manche, e non si torna indietro.', 'It no longer comes up in the rounds, and there is no going back.', 'Ya no sale en las rondas, y no hay vuelta atrás.'),
         si: L('Eliminalo', 'Delete it', 'Elimínalo') }))) return;
       await api('/api/streamer/giochi/' + del.dataset.giocoElimina, { method: 'DELETE' });
       toast(L('Gioco eliminato.', 'Game deleted.', 'Juego eliminado.')); caricaGiochi();
@@ -27515,22 +27573,25 @@ async function caricaClassifica() {
     gara(ulStaff, d.staff || [], vuotoStaff());
     if (ulVip) {
       const vip = d.vip || [];
+      const motivo = { premio: L('premio', 'reward', 'premio'), comando: L('dal comando in chat', 'from the chat command', 'desde el comando del chat'), voce: L('a voce', 'by voice', 'por voz') };
+      const quanto = (v) => {
+        const n = Number(v.dirette) || 0;
+        if (n > 0) return n === 1 ? L('ancora una diretta', 'one more stream', 'un directo más') : L(`ancora ${n} dirette`, `${n} more streams`, `${n} directos más`);
+        return v.until ? L(`fino al ${dataIt(v.until)}`, `until ${dataIt(v.until)}`, `hasta el ${dataIt(v.until)}`) : L('per sempre', 'forever', 'para siempre');
+      };
       ulVip.innerHTML = vip.length
-        ? vip.map((v) => {
-            const quando = v.until ? `fino al ${dataIt(v.until)}` : 'per sempre';
-            return `
+        ? vip.map((v) => `
           <li>
             <div class="testo-voce">
               <span class="domanda">${esc(v.display || v.user)}</span>
-              <span class="risposta">${esc(quando)}${v.motivo ? ' · ' + esc(v.motivo) : ''}</span>
+              <span class="risposta">${esc(quanto(v))}${v.motivo ? ' · ' + esc(motivo[v.motivo] || v.motivo) : ''}</span>
             </div>
-          </li>`;
-          }).join('')
-        : '<li class="vuoto">Nessun VIP a tempo assegnato dal bot. Dallo a voce ("vip a nome") o con !vip @nome.</li>';
+          </li>`).join('')
+        : `<li class="vuoto">${L('Nessun VIP a tempo dato dal bot. Lo dai a voce («vip a nome») o in chat con !vip @nome.', 'No timed VIP given by the bot. You give it by voice («vip to name») or in chat with !vip @name.', 'Ningún VIP temporal dado por el bot. Lo das por voz («vip a nombre») o en el chat con !vip @nombre.')}</li>`;
     }
   } catch (e) {
-    if (ulCl) ulCl.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`;
-    if (ulVip) ulVip.innerHTML = '';
+    const errore = `<li class="vuoto">${L('Errore: ', 'Error: ', 'Error: ')}${esc(e.message)}</li>`;
+    for (const ul of [ulCl, ulStaff, ulVip]) if (ul) ul.innerHTML = errore;
   }
 }
 
@@ -27541,22 +27602,22 @@ async function caricaCitazioni() {
   if (!ul) return;
   try {
     const voci = await api('/api/streamer/citazioni');
-    const fmtD = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? `${m[3]}/${m[2]}/${m[1]}` : ''; };
+    const fmtD = (iso) => (/^\d{4}-\d{2}-\d{2}$/.test(String(iso || '')) ? new Date(iso + 'T12:00:00').toLocaleDateString(localePannello()) : '');
     ul.innerHTML = voci.length
       ? voci.map((q) => {
-        const meta = [q.autore ? '@' + esc(q.autore) : '', fmtD(q.data)].filter(Boolean).join(' · ');
+        const meta = [q.autore ? '@' + esc(q.autore) : '', esc(fmtD(q.data))].filter(Boolean).join(' · ');
         return `<li>
-          <div class="testo-voce"><span class="domanda">#${q.n}</span> <span class="risposta">${esc(q.text)}</span>${meta ? ` <span class="suggerimento">— ${meta}</span>` : ''}</div>
-          <button class="btn secondario mini" data-cita-rimuovi="${q.n}">Rimuovi</button>
+          <div class="testo-voce"><span class="domanda">#${q.n}</span> <span class="risposta">${esc(q.text)}</span>${meta ? ` <span class="suggerimento">${meta}</span>` : ''}</div>
+          <button class="btn secondario mini" data-cita-rimuovi="${q.n}">${L('Rimuovi', 'Remove', 'Quitar')}</button>
         </li>`;
       }).join('')
-      : '<li class="vuoto">Ancora nessuna citazione. Aggiungine una qui sopra o con !cita aggiungi in chat</li>';
+      : `<li class="vuoto">${L('Ancora nessuna citazione. Aggiungine una qui sopra, o in chat con !cita aggiungi.', 'No quotes yet. Add one above, or in chat with !cita aggiungi.', 'Todavía no hay citas. Añade una aquí arriba, o en el chat con !cita aggiungi.')}</li>`;
     ul.onclick = (ev) => {
       const b = ev.target.closest('[data-cita-rimuovi]');
       if (!b) return;
       conErrore(async () => { await api('/api/streamer/citazioni/' + b.dataset.citaRimuovi, { method: 'DELETE' }); toast(L('Citazione rimossa.', 'Quote removed.', 'Cita eliminada.')); caricaCitazioni(); });
     };
-  } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
+  } catch (e) { ul.innerHTML = `<li class="vuoto">${L('Errore: ', 'Error: ', 'Error: ')}${esc(e.message)}</li>`; }
 }
 
 async function caricaBattute() {

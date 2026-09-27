@@ -1,6 +1,6 @@
 // Manuale: Manuale dei giochi e delle monete. La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
-import { DI_SERIE, RESA, CIFRA, ATTESE, ATTESA, righeRegole, righePesca, presenzaOraria, MANCHE_TIPI } from '../numeri.js';
+import { DI_SERIE, RESA, CIFRA, ATTESE, ATTESA, SLOT, righeRegole, righePesca, presenzaOraria, MANCHE_TIPI } from '../numeri.js';
 
 // Le attese di un gioco dentro le tabelle: «nessuna» al posto del trattino.
 const ATT = (id) => { const t = ATTESE(id); return t === '\u2014' ? 'nessuna' : t; };
@@ -67,11 +67,14 @@ export default {
     { p: ['Qui decidi quante monete si guadagnano. Ci sono tre entrate, e si sommano.'] },
     { tabella: [
       ['Entrata', 'A chi', 'Quando', 'Di base'],
-      ['Messaggio', 'a chi scrive', 'al massimo una volta ogni 60 secondi a testa', '2 monete'],
+      ['Messaggio', 'a chi scrive', 'al massimo una volta ogni 60 secondi a testa, anche a canale spento', '2 monete'],
       ['Presenza', 'a chi è in chat, anche in silenzio', 'ogni giro di cinque minuti, solo in diretta', '5 monete'],
       ['Partecipazione', 'in più, a chi ha scritto in quel giro', 'ogni giro di cinque minuti, solo in diretta', '5 monete'],
     ] },
-    { p: ['Presenza, partecipazione, moltiplicatori e le due quote del silenzio stanno sotto «Guadagno mentre guardano».'] },
+    { p: [
+      'Presenza e partecipazione arrivano solo mentre sei in diretta, e non c\'è una scelta per darle a canale spento. Le monete per messaggio arrivano sempre, anche a canale spento se il bot è in chat.',
+      'Presenza, partecipazione, moltiplicatori e le due quote del silenzio stanno sotto «Guadagno mentre guardano».',
+    ] },
     { tabella: [
       ['Controllo', 'Di base', 'Limiti', 'Cosa fa'],
       ['«Punti per messaggio»', '2', '0–1000', 'Monete a chi scrive. A 0 questa entrata si spegne.'],
@@ -148,14 +151,14 @@ export default {
     ] },
     { tabella: [
       ['Tipo nel menù', 'Cosa scrivi', 'Limiti'],
-      ['«Quiz (domande & risposte)»', 'Nel riquadro delle domande, una per riga: <code>domanda | risposta1, risposta2</code>.', 'fino a 200 domande, 10 risposte ciascuna'],
-      ['«Parola veloce (reflex)»', 'Nel riquadro delle parole, una per riga.', 'fino a 300 parole'],
-      ['«Anagramma (lettere mescolate)»', 'Parole di almeno quattro lettere, una per riga.', 'fino a 300 parole'],
-      ['«Sequenza di simboli»', 'I simboli, separati da uno spazio, e «Quanti simboli per sequenza».', 'da 3 a 24 simboli; sequenze da 3 a 8, di base 4'],
-      ['«Domanda tua (una sola)»', '«La domanda», le risposte accettate separate da virgola e i «Secondi per rispondere».', 'domanda fino a 240 caratteri, 10 risposte, da 10 a 300 secondi, di base 45'],
-      ['«Rebus con le emoji»', 'Un rebus per riga: <code>emoji | risposta1, risposta2</code>.', 'fino a 200 rebus'],
-      ['«Impiccato (parole da scoprire)»', 'Parole sole, senza spazi, fra 4 e 20 lettere.', 'fino a 300 parole'],
-      ['«Wordle (parole di cinque lettere)»', 'Parole di cinque lettere, senza spazi.', 'fino a 300 parole'],
+      ['«Quiz (domande & risposte)»', 'In «Domande», una per riga: <code>domanda | risposta1, risposta2</code>.', 'fino a 200 domande, 10 risposte ciascuna'],
+      ['«Parola veloce (reflex)»', 'In «Parole», una per riga.', 'fino a 300 parole'],
+      ['«Anagramma (lettere mescolate)»', 'In «Parole», parole di almeno quattro lettere, una per riga.', 'fino a 300 parole'],
+      ['«Sequenza di simboli»', 'In «Simboli», i simboli separati da uno spazio, e «Quanti simboli per sequenza».', 'da 3 a 24 simboli; sequenze da 3 a 8, di base 4'],
+      ['«Domanda tua (una sola)»', '«La domanda», le «Risposte accettate» separate da virgola e i «Secondi per rispondere».', 'domanda fino a 240 caratteri, 10 risposte, da 10 a 300 secondi, di base 45'],
+      ['«Rebus con le emoji»', 'In «Rebus», uno per riga: <code>emoji | risposta1, risposta2</code>.', 'fino a 200 rebus'],
+      ['«Impiccato (parole da scoprire)»', 'In «Parole», parole sole, senza spazi, fra 4 e 20 lettere.', 'fino a 300 parole'],
+      ['«Wordle (parole di cinque lettere)»', 'In «Parole», parole di cinque lettere, senza spazi.', 'fino a 300 parole'],
     ] },
     { p: [
       'Premi «Crea gioco»: il pannello scrive «Gioco creato!». Puoi avere fino a 50 giochi così. Se manca il materiale, o per anagramma, impiccato e wordle non c\'è nemmeno una parola della misura giusta, il gioco non si crea e il pannello dice cosa manca.',
@@ -200,9 +203,9 @@ export default {
       'Il VIP si dà anche a voce («vip a nome», scheda «Comandi vocali») o in chat con <code>!vip @nome</code>: quelli durano un tempo, di base una settimana, non delle dirette.',
       'Solo il proprietario vede la riga per aggiustare le monete. Scrivi il «nome utente» e quante monete, col meno per toglierle («es. 100 o -50»), poi premi «Aggiusta» seguito dal nome della moneta. Il pannello mostra il saldo nuovo. Il saldo non scende mai sotto zero, e ogni volta si muovono al massimo un milione di monete. Serve a riparare un errore senza farlo vedere in chat; la ricetta «Dai monete (mod)» invece la vedono tutti.',
       'Se manca il nome o il numero, il pannello scrive «Scrivi il nome e quante monete (con il meno per toglierle).». Il nome va scritto come su Twitch, da 2 a 30 caratteri fra lettere, cifre e trattino basso.',
-      'Sotto, il proprietario trova anche il rimando per chi arriva da un altro bot: i punti che il tuo pubblico ha là si portano qui dalla scheda «Comandi», carta «Porta qui quello che hai già». Il tasto «Vai a Moduli» ti porta lì. I punti si sommano alle monete una volta sola: importare di nuovo lo stesso elenco non li raddoppia. Come si fa è spiegato nel <a href="/manuale/moduli">manuale dei comandi</a>.',
+      'Sotto, il proprietario trova anche il rimando per chi arriva da un altro bot: i punti che il tuo pubblico ha là si portano qui dalla scheda «Comandi», carta «Porta qui quello che hai già». Il tasto «Vai a Comandi» ti porta lì. I punti si sommano alle monete una volta sola: importare di nuovo lo stesso elenco non li raddoppia. Come si fa è spiegato nel <a href="/manuale/moduli">manuale dei comandi</a>.',
       'Le classifiche delle monete stanno nella scheda «Statistiche»: ci arrivi con «Vedi le classifiche».',
-      'In fondo, «VIP a tempo attivi» elenca i VIP dati dal bot: per quelli del premio vedi quante dirette restano, per gli altri fino a quando durano, o «per sempre».',
+      'In fondo, «VIP a tempo attivi» elenca i VIP dati dal bot: per quelli del premio vedi quante dirette restano («ancora 3 dirette»), per gli altri fino a quando durano, o «per sempre». Accanto c\'è da dove vengono: «premio», «dal comando in chat» o «a voce».',
     ] },
 
     { h3: 'Giochi del sito andryxify.it' },
@@ -314,8 +317,8 @@ export default {
     { tabella: [
       ['Esito', 'Vinci', 'Con i valori di base'],
       ['Tris di 💎', 'il tris pieno', CIFRA(DI_SERIE('slot').jackpot)],
-      ['Tris di 7️⃣', 'tre quarti', CIFRA(Math.round(DI_SERIE('slot').jackpot * 0.75))],
-      ['Qualsiasi altro tris', 'due quinti', CIFRA(Math.round(DI_SERIE('slot').jackpot * 0.4))],
+      ['Tris di 7️⃣', SLOT.sette.parte, CIFRA(Math.round(DI_SERIE('slot').jackpot * SLOT.sette.fattore))],
+      ['Qualsiasi altro tris', SLOT.altri.parte, CIFRA(Math.round(DI_SERIE('slot').jackpot * SLOT.altri.fattore))],
       ['Due uguali', 'la coppia', CIFRA(DI_SERIE('slot').coppia)],
       ['Niente', 'niente', 'perdi il costo'],
     ] },
