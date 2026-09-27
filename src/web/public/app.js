@@ -1742,6 +1742,7 @@ function _demoGet(via) {
       { id: 1, tipo: 'trivia', nome: 'Trivia gaming', attivo: true, config: { domande: [{ q: 'In che anno è uscito il primo Minecraft?', a: ['2011'] }, { q: 'Chi è la mascotte di PlayStation?', a: ['crash', 'crash bandicoot'] }] } },
       { id: 2, tipo: 'parola', nome: 'Reflex hype', attivo: true, config: { parole: ['pizza', 'combo perfetta', 'gg wp', 'clutch'] } },
     ],
+    '/api/sondaggi/stato': { poll: null, pred: null, voci: { sondaggio: { min: 2, max: 5 }, predizione: { min: 2, max: 10 } } },
     '/api/penitenze/premi': {
       permessoOk: true, premioVieta: 'Vietami una parola', premioSolo: 'Dì solo questa parola',
       tutti: [
@@ -27514,7 +27515,7 @@ async function caricaClassifica() {
       const quanto = (v) => {
         const n = Number(v.dirette) || 0;
         if (n > 0) return n === 1 ? L('ancora una diretta', 'one more stream', 'un directo más') : L(`ancora ${n} dirette`, `${n} more streams`, `${n} directos más`);
-        return Number(v.until) > 0 ? L(`fino al ${dataIt(v.until)}`, `until ${dataIt(v.until)}`, `hasta el ${dataIt(v.until)}`) : L('per sempre', 'forever', 'para siempre');
+        return v.until ? L(`fino al ${dataIt(v.until)}`, `until ${dataIt(v.until)}`, `hasta el ${dataIt(v.until)}`) : L('per sempre', 'forever', 'para siempre');
       };
       ulVip.innerHTML = vip.length
         ? vip.map((v) => `

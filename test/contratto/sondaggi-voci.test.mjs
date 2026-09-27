@@ -70,6 +70,13 @@ test('il pannello parte con due campi per parte, senza numeri scritti a mano', (
   assert.ok(!/almeno 2 /.test(funzione('caricaSondaggi')));
 });
 
+test('la prova del pannello (demo) risponde con gli stessi limiti del server', () => {
+  const demo = APP.match(/'\/api\/sondaggi\/stato': \{ poll: null, pred: null, voci: (\{[^\n]*\}) \},\n/);
+  assert.ok(demo, 'la demo ha la sua risposta');
+  // eslint-disable-next-line no-new-func
+  assert.deepEqual(new Function(`return ${demo[1]}`)(), JSON.parse(JSON.stringify(VOCI)));
+});
+
 test('sondaggi e penitenze sono schede solo Twitch', () => {
   const solo = APP.match(/const SOLO_TWITCH = \[([^\]]*)\]/)[1];
   for (const id of ['sondaggi', 'penitenze']) assert.ok(solo.includes(`'${id}'`), id);
