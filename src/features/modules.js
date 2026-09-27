@@ -912,7 +912,7 @@ export class ModulesEngine {
       case 'musica': {
         // mette un brano nella coda Spotify del canale. Il "brano" può usare le
         // variabili ($args): comando fisso (es. !sigla → un brano preciso) oppure
-        // libero (es. !metti $args). Richiede l'add-on Musica e Spotify collegato.
+        // libero (es. !metti $args). Serve la funzione Musica del piano (c'e' gia' nell'Essenziale) e Spotify collegato.
         if (!canaleHa(ctx.channel, 'musica')) return;
         if (!spotify.collegato(ctx.channel)) {
           if (azione.annuncia !== false) {
