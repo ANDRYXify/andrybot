@@ -428,9 +428,10 @@ e pretende che:
 - non resti orfana: una pagina che nessun'altra collega esiste, ma non la trova
   nessuno;
 - se è una guida, non sia sottile (700 parole); le date della sitemap siano date,
-  e non nel futuro.
+  e non nel futuro;
+- in quello che si legge non ci siano lineette lunghe (vedi sotto).
 
-Con `--selftest` il cancello rompe il sito in diciannove modi (un `title` che
+Con `--selftest` il cancello rompe il sito in ventitré modi (un `title` che
 cresce, un canonical che punta altrove, un `hreflang` che non ricambia, un
 collegamento a una guida che non c'è, una pagina che nessuno collega più...) e
 pretende di vederli tutti.
@@ -482,3 +483,26 @@ ma bloccata da robots.txt»). Adesso sono aperte. La regola sta in
 `test/unita/vie-private.test.mjs` e la decide la pagina stessa, non un elenco:
 fuori dal prefetch e chiusa in `robots.txt`, a meno che non dica `noindex`; in
 quel caso aperta.
+
+## Le lineette
+
+Nei testi pubblici la lineetta lunga («—») si era moltiplicata: 15 nella home, 41
+fra le righe delle novità, fino a 16 in una guida sola, e anche nel `title` della
+home, cioè nel risultato di ricerca e nell'anteprima di ogni link condiviso. In
+italiano si usa poco, e messa ovunque come pausa fa sembrare il testo tutto
+uguale, scritto in serie. Dove c'era è diventata quello che la frase voleva dire:
+due punti prima di una spiegazione, parentesi per un inciso, una virgola, o un
+punto.
+
+La regola sta in `guai()` ed è scritta sui caratteri, non su un elenco di frasi:
+in quello che si legge (il testo visibile, gli attributi che si leggono o si
+sentono come `alt` e `aria-label`, `title`, `description`, i meta delle
+anteprime, le stringhe dei dati strutturati) non c'è «—», e «–» sta solo fra due
+numeri, dove vuol dire «da... a...» (`0–1000` nelle tabelle dei manuali). Il meta
+`copyright` resta fuori: è la firma, non lo legge nessuno. L'autoprova mette una
+lineetta nel testo, una corta come pausa nella `description`, una nell'`alt` di
+un'immagine e una nei dati strutturati, e pretende di vederle tutte.
+
+Le pagine di servizio che non stanno nella sitemap (`/collega`, `/mod`,
+`/sblocca`, `/voce`, l'overlay) hanno avuto lo stesso trattamento a mano, titoli
+compresi: ora si scrivono «Accesso moderatore | SocialBot» come le guide.

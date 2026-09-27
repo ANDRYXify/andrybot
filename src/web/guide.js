@@ -191,7 +191,7 @@ export const T = {
     guideIntro: 'Come si usa Twitch dal lato di chi trasmette: bot, comandi, overlay e difesa del canale. Scritte per essere lette una volta e risolvere la cosa, senza giri.',
     guideRaccolta: 'Guide su Twitch, bot e overlay',
     manualiTitolo: 'Manuali di SocialBot: giochi, monete e moduli | SocialBot',
-    manualiDesc: 'I manuali di SocialBot: le monete e i giochi della chat, e i moduli — inneschi, condizioni, azioni e variabili, uno per uno.',
+    manualiDesc: 'I manuali di SocialBot: cosa fa ogni scheda del pannello e come, con i numeri veri del bot.',
     manualiIntro: 'Cosa fa cosa, e come. Non è una presentazione: è il materiale da tenere aperto accanto mentre configuri.',
     manualiRaccolta: 'Manuali di SocialBot',
   },

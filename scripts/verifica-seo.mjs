@@ -21,7 +21,10 @@
 //    la pagina ha;
 //  · nessuna voce resti orfana: una pagina che nessun'altra collega esiste, ma
 //    non la trova nessuno;
-//  · le guide non siano sottili, e le date della sitemap siano date vere.
+//  · le guide non siano sottili, e le date della sitemap siano date vere;
+//  · in quello che si legge (testo, title, description, anteprime, dati
+//    strutturati) non ci siano lineette lunghe: la corta sta solo fra due
+//    numeri, dove vuol dire «da... a...».
 //
 // Uso: node scripts/verifica-seo.mjs [--selftest]
 
@@ -105,6 +108,18 @@ const senzaNascosti = (h) => h.replace(/<!--[\s\S]*?-->/g, '').replace(/<(script
 const attributi = (tag) => Object.fromEntries([...tag.matchAll(/([\w:-]+)\s*=\s*"([^"]*)"/g)].map((m) => [m[1].toLowerCase(), decodifica(m[2])]));
 const tagDi = (h, nome) => [...h.matchAll(new RegExp(`<${nome}\\b[^>]*>`, 'gi'))].map((m) => attributi(m[0]));
 
+// Le parole che qualcuno legge: il testo, gli attributi che si leggono o si
+// sentono, i meta che finiscono nei risultati e nelle anteprime, le stringhe
+// dei dati strutturati. Il meta copyright no: e' la firma, non la legge nessuno.
+const META_LETTI = /^(description|og:title|og:description|og:image:alt|twitter:title|twitter:description|twitter:image:alt)$/;
+function* stringhe(o) {
+  if (typeof o === 'string') { yield o; return; }
+  if (o && typeof o === 'object') for (const v of Object.values(o)) yield* stringhe(v);
+}
+
+// Una lineetta lunga, o una corta che non sta fra due numeri.
+export const LINEETTA = /—|(?<!\d)–|–(?!\d)/;
+
 const norm = (u) => { const x = new URL(u); return x.origin + (x.pathname.replace(/(.)\/$/, '$1')); };
 
 // Ogni oggetto dentro un JSON-LD, @graph compreso.
@@ -123,6 +138,13 @@ export function leggi(html, u) {
   const m = (chiave, val) => meta.filter((x) => x[chiave] === val).map((x) => x.content);
   const principale = (corpo.match(/<main\b[\s\S]*<\/main>/i) || [corpo])[0];
   const parole = (decodifica(principale.replace(/<[^>]+>/g, ' ')).match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) || []).length;
+  const letti = [
+    ...[...testa.matchAll(/<title>([\s\S]*?)<\/title>/gi)].map((x) => decodifica(x[1])),
+    ...meta.filter((x) => META_LETTI.test(x.name || x.property || '')).map((x) => x.content || ''),
+    decodifica(corpo.replace(/<[^>]+>/g, ' ')),
+    ...[...corpo.matchAll(/<[a-z][^>]*>/gi)].flatMap((x) => { const a = attributi(x[0]); return ['alt', 'title', 'aria-label', 'placeholder'].map((k) => a[k]).filter(Boolean); }),
+    ...[...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi)].flatMap((x) => { try { return [...stringhe(JSON.parse(x[1]))]; } catch { return []; } }),
+  ];
   const collegamenti = [...corpo.matchAll(/<a\b[^>]*>/gi)].map((x) => attributi(x[0]).href).filter(Boolean)
     .map((href) => { try { return new URL(href, u); } catch { return null; } })
     .filter((x) => x && /^https?:$/.test(x.protocol));
@@ -139,6 +161,7 @@ export function leggi(html, u) {
     id: new Set([...corpo.matchAll(/\s(?:id|name)="([^"]+)"/g)].map((x) => x[1])),
     parole,
     collegamenti,
+    letti,
   };
 }
 
@@ -231,6 +254,8 @@ export function guai({ voci, pagine }, rotte = rotteFisse(), schede = schedePann
     const guida = LINGUE_DOC.some((l) => new URL(v.u).pathname.startsWith(VIE[l].guide + '/'));
     if (guida && p.parole < MISURE.paroleGuida) segna('parole', `${v.u}: ${p.parole} parole (una guida ne vuole ${MISURE.paroleGuida})`);
     if (v.m !== undefined && (!/^\d{4}-\d{2}-\d{2}$/.test(v.m) || v.m > OGGI)) segna('date', `${v.u}: lastmod «${v.m}»`);
+    const conLineetta = p.letti.flatMap((x) => x.split(/(?<=[.!?\n])\s+/)).filter((x) => LINEETTA.test(x));
+    if (conLineetta.length) segna('lineette', `${v.u}: ${conLineetta.length} ${conLineetta.length === 1 ? 'frase' : 'frasi'} con la lineetta, la prima «${conLineetta[0].replace(/\s+/g, ' ').trim().slice(0, 90)}»`);
 
     for (const x of p.collegamenti) {
       const dentro = x.origin === SITO || indirizzi.has(norm(x.href));
@@ -273,6 +298,7 @@ const PROMESSE = [
   ['orfane', 'nessuna pagina orfana'],
   ['parole', `guide di almeno ${MISURE.paroleGuida} parole`],
   ['date', 'le date della sitemap sono date, e non nel futuro'],
+  ['lineette', 'nessuna lineetta lunga in quello che si legge (la corta solo fra due numeri)'],
 ];
 
 function racconta(g) {
@@ -300,7 +326,7 @@ if (process.argv.includes('--selftest')) {
     return { voci: vero.voci, pagine: new Map(vero.pagine).set(u, h.replace(da, a)) };
   };
   const ROTTURE = [
-    ['un title che cresce oltre la misura', 'titolo', rompi(guida, /<title>/, '<title>Una frase in piu\' messa davanti a tutto il resto — ')],
+    ['un title che cresce oltre la misura', 'titolo', rompi(guida, /<title>/, '<title>Una frase in piu\' messa davanti a tutto il resto, ')],
     ['una description troppo corta', 'descrizione', rompi(guida, /(<meta name="description" content=")[^"]*"/, '$1Una guida."')],
     ['un canonical che punta altrove', 'canonico', rompi(guida, /(<link rel="canonical" href=")[^"]*"/, `$1${SITO}/"`)],
     ['un og:url che non e\' il canonico', 'anteprima', rompi(guida, /(<meta property="og:url" content=")[^"]*"/, `$1${SITO}/guide"`)],
@@ -317,6 +343,10 @@ if (process.argv.includes('--selftest')) {
     ['un title copiato da un\'altra pagina', 'unici', (() => { const t = ((vero.pagine.get(altraGuida) || '').match(/<title>[\s\S]*?<\/title>/) || [])[0]; return t ? rompi(guida, /<title>[\s\S]*?<\/title>/, t) : null; })()],
     ['una guida che si svuota', 'parole', rompi(guida, /<main\b[\s\S]*<\/main>/, '<main><h1>Guida</h1><p>Poche parole.</p></main>')],
     ['una voce della sitemap senza pagina', 'pagina', { voci: [...vero.voci, { u: `${SITO}${VIE.it.guide}/sparita`, p: '0.7', f: 'monthly' }], pagine: vero.pagine }],
+    ['una lineetta lunga nel testo', 'lineette', rompi(guida, '</main>', '<p>Una frase \u2014 con la lineetta.</p></main>')],
+    ['una lineetta corta usata come pausa nella description', 'lineette', rompi(guida, /(<meta name="description" content=")/, '$1Guida \u2013 ')],
+    ['una lineetta lunga nel testo alternativo di un\'immagine', 'lineette', rompi(guida, '</main>', '<img src="/x.png" alt="Il bot \u2014 in chat"></main>')],
+    ['una lineetta lunga nei dati strutturati', 'lineette', rompi(guida, /("headline":")/, '$1Guida \u2014 ')],
     ['una data della sitemap nel futuro', 'date', { voci: vero.voci.map((v, i) => (i === 0 ? { ...v, m: '2999-01-01' } : v)), pagine: vero.pagine }],
     ['una pagina che nessuno collega piu\'', 'orfane', (() => {
       const bersaglio = vero.voci.find((v) => v.u.includes('/termini'))?.u;

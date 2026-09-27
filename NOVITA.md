@@ -15,7 +15,7 @@ pubblica, all'API aperta né alla sitemap, e la vede solo il proprietario nel su
 pannello. Un giorno fatto di sole righe private non compare nemmeno come giorno:
 la data, da sola, direbbe che è successo qualcosa.
 
-Ci vanno **tutte le cose interne del cervello privato** — il suo computer, il suo schermo, il
+Ci vanno **tutte le cose interne del cervello privato**: il suo computer, il suo schermo, il
 suo browser, come ragiona, come cresce. Non riguardano chi usa il bot, e questa
 pagina è pubblica e indicizzata. Se una riga descrive invece una funzione che lo
 streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
@@ -378,12 +378,12 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > Discord si collega con un tasto
   > Scegli il server da un elenco e hai finito: niente bot da creare nel portale degli sviluppatori e niente codici da copiare.
 - Un VIP a premio adesso dura DIRETTE, non giorni: se salti una settimana ti aspetta. E le gare sono due, monete e Bit, che vanno avanti insieme. [vai: giochi]
-- Ogni posizione ha il nome che le dai tu — re, principe, cavaliere — e la sua durata: al primo posto puoi dare cinque dirette e al terzo una. [vai: giochi]
+- Ogni posizione ha il nome che le dai tu (re, principe, cavaliere) e la sua durata: al primo posto puoi dare cinque dirette e al terzo una. [vai: giochi]
 - [importante] Categorie e canali del tuo Discord li scegli da qui: parti da una traccia pronta o fagli leggere il server che hai già, e lui lo mette su. [vai: dcserver]
   > Il server Discord si costruisce da qui
   > Parti da una traccia pronta o da quello che hai già, e categorie e canali si creano da soli nell'ordine giusto.
 - Prima di toccare niente ti fa vedere l'elenco esatto di quello che farebbe. Va solo in avanti: quello che non è nella traccia resta dov'è, e te lo dice. [vai: dcserver]
-- Dentro ogni canale scrivi chi può fare cosa, con parole normali: «tutti — non può — scrivere». I permessi che non nomini nessuno li tocca. [vai: dcserver]
+- Dentro ogni canale scrivi chi può fare cosa, con parole normali, come «tutti», «non può», «scrivere». I permessi che non nomini nessuno li tocca. [vai: dcserver]
 - Alcuni tasti comparivano quando non servivano a niente: «Scollega tutto» senza niente da scollegare, «Ferma la diretta» senza diretta. Adesso restano via finché non servono.
 - Dalla privacy della pagina donazioni il tasto «Torna alla pagina» riportava alla pagina link. Adesso torna dov'eri, e quell'informativa parla della pagina giusta.
 - In fondo alla pagina delle donazioni c'è il collegamento ai tuoi link: chi arriva da un link diretto trova anche il resto. [vai: donazioni]
@@ -564,7 +564,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - I menù con tante voci non si schiacciano più: prima con dieci scene i nomi venivano tagliati a metà, ora la lista scorre. [vai: consolify]
 - I menù a tendina del pannello sono disegnati come il resto del sito, tutti: prima solo uno lo era e gli altri uscivano col grigio del sistema.
 - Un tasto si crea da un posto libero: nasce vuoto e si apre la sua scheda, dove costruisci quello che vuoi. Non devi più scegliere un'azione da una tendina prima di poter fare niente. [vai: consolify]
-- Nella scheda ci sono idee pronte — manda un link, manda un suono, cambia scena, vado in pausa — che sono un punto di partenza: poi cambi tutto. [vai: consolify]
+- Nella scheda ci sono idee pronte (manda un link, manda un suono, cambia scena, vado in pausa) che sono un punto di partenza: poi cambi tutto. [vai: consolify]
 - Collegata la regia, ti do io scene, fonti e transizioni: nei tasti le scegli da un elenco invece di ricopiare i nomi a mano. [vai: consolify]
 - Le schede aperte si aggiornano appena il collegamento va a buon fine, invece di restare come prima. [vai: consolify]
 - Collegare il programma con cui mandi in onda è un clic: indirizzo e porta non te li chiedo, li provo io. Se lì l'autenticazione è spenta, hai finito lì. [vai: consolify]
@@ -574,7 +574,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Funziona sul computer dove gira quel programma. Dal telefono i tasti del bot vanno come sempre, ma le scene no, e la scheda te lo dice prima. [vai: consolify]
 - Un tasto può mandare in onda un'immagine, un video o un suono caricati lì sul tasto: non devi più farne prima un effetto con un suo comando in un'altra scheda. [vai: consolify]
 - Durata e volume di quel media si cambiano dal tasto, e quando lo sostituisci il file vecchio se ne va invece di restare sul disco per sempre. [vai: consolify]
-- Un tasto di CONSOLify può fare più cose di seguito, non una sola: dire una frase, aspettare, lanciare un effetto, mandare il risultato di un comando — nell'ordine che scegli tu. [vai: consolify]
+- Un tasto di CONSOLify può fare più cose di seguito, non una sola: dire una frase, aspettare, lanciare un effetto, mandare il risultato di un comando, nell'ordine che scegli tu. [vai: consolify]
 - I passi si aggiungono, si spostano e si tolgono dalla scheda del tasto, e se uno non riesce gli altri succedono lo stesso. [vai: consolify]
 - I tasti che avevi già continuano a funzionare: diventano una fila di un passo solo, senza che tu debba rifarli. [vai: consolify]
 - I tasti di CONSOLify creati prima di oggi ripartono: alcuni non avevano un indirizzo valido e premerli non faceva niente, ora si sistemano da soli alla prima apertura. [vai: consolify]
@@ -587,9 +587,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Se il browser non dà il permesso di partire con l'audio, il video parte muto invece di restare fermo, e negli errori trovi scritto che è successo. [vai: effetti]
 - Quando un overlay non riesce a far partire un suono o un video, ora lo dice invece di restare zitto: il motivo lo trovi fra gli errori, con scritto cosa non è andato. [vai: effetti]
 - I tasti di CONSOLify hanno il tratto disegnato del resto del sito, e si distinguono sia col tema chiaro sia con quello scuro; i posti liberi si vedono che sono posti, non tasti spenti. [vai: consolify]
-- La plancia vuota non è più una frase: i posti liberi si vedono, e sotto c'è scritto come riempirli — con il consiglio giusto a seconda che tu stia sistemando i tasti o usandoli. [vai: consolify]
+- La plancia vuota non è più una frase: i posti liberi si vedono, e sotto c'è scritto come riempirli, con il consiglio giusto a seconda che tu stia sistemando i tasti o usandoli. [vai: consolify]
 - Ogni tasto di CONSOLify ha il suo indirizzo, e punta al tasto invece che all'azione: se domani a quel tasto cambi mestiere, nome o icona, sulla tastiera fisica non rifai niente. [vai: consolify]
-- Scegli il formato della plancia — da 3×3 a 5×8 — e quanto stanno grandi i tasti: parti da una griglia vera invece che da un foglio bianco, e i posti liberi si vedono. [vai: consolify]
+- Scegli il formato della plancia (da 3×3 a 5×8) e quanto stanno grandi i tasti: parti da una griglia vera invece che da un foglio bianco, e i posti liberi si vedono. [vai: consolify]
 - Sul telefono la plancia si apre di lato: in verticale i tasti sarebbero francobolli, e te lo dice invece di darteli schiacciati. [vai: consolify]
 - Quello che scrivi nella scheda di un tasto si salva da sé quando esci dal campo: non c'è più un «Salva» da ricordarsi, e non si perde niente scegliendo un colore.
 - Rigenerare la chiave degli indirizzi si fa dal pannello e chiede conferma: i vecchi indirizzi smettono di funzionare subito.
@@ -598,15 +598,15 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - L'immagine che carichi ha un suo indirizzo, così la stessa faccia la puoi mettere anche sul tasto di una tastiera fisica.
 - I tasti si trascinano per ordinarli, si duplicano e si spostano fra le pagine.
 - La chiave degli indirizzi ora sta coperta: quella scheda si apre mentre streami, e prima si leggeva a schermo.
-- Nuova sezione CONSOLify: i tasti del tuo canale sotto le dita mentre streami — contatori, effetti, una battuta, una frase — sul telefono, sul tablet o su un secondo monitor.
+- Nuova sezione CONSOLify: i tasti del tuo canale sotto le dita mentre streami (contatori, effetti, una battuta, una frase) sul telefono, sul tablet o su un secondo monitor.
 - I tasti nascono da soli dai tuoi contatori e dai tuoi effetti, e ognuno mostra com'è andata: premi e leggi il numero nuovo.
 - Gli stessi tasti li puoi mettere su una tastiera fisica: la scheda ti dà l'indirizzo già pronto da incollare, e icona e nome li scegli lì.
-- Quando il serbatoio delle battute è vuoto, il bot ne costruisce una con i numeri del tuo canale — morti, tentativi, quello che conti tu — invece di chiederne una generica.
+- Quando il serbatoio delle battute è vuoto, il bot ne costruisce una con i numeri del tuo canale (morti, tentativi, quello che conti tu) invece di chiederne una generica.
 - E impara quale modo di costruirle fa ridere lì: dopo averla detta conta chi ride davvero, e la volta dopo usa il modo che ha funzionato.
 
 ## 2026-09-08
 
-- Se la domanda tocca qualcosa che il cervello sa costruire — un calcolo, una deduzione, una catena di cause — risponde lui, e la risposta resta imparata.
+- Se la domanda tocca qualcosa che il cervello sa costruire (un calcolo, una deduzione, una catena di cause), risponde lui, e la risposta resta imparata.
 - Il conto in chat arriva comunque: se il cervello è spento lo fa il bot, e chi guarda non vede differenza.
 
 - Se il pannello non riesce a contattare il server, la pagina dice di chi è il software invece di mostrare solo un errore.
@@ -726,12 +726,12 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Quando la cancellazione è finita te lo dice una nuvoletta disegnata come il resto del sito, invece della finestrella grigia del browser.
 - Nella finestra di ricerca il Tab non esce più dietro al velo, Escape chiude da qualunque punto e chiudendo il cursore torna dove eri. Prima girava nella pagina sotto, che non si vede.
 - Il bot legge e risponde nella chat delle tue dirette YouTube, con gli stessi comandi, moduli e monete di Twitch. Si accende da Stato → Le tue piattaforme.
-- Nella sezione Andarsene si vede cosa c'è da cancellare scritto a parole — messaggi ricordati, citazioni, comandi — invece dei nomi interni del database.
+- Nella sezione Andarsene si vede cosa c'è da cancellare scritto a parole (messaggi ricordati, citazioni, comandi) invece dei nomi interni del database.
 - Da Stato → Andarsene puoi cancellare l'account e tutto quello che contiene, file caricati e collegamenti compresi. Non si annulla: per confermare va scritto il nome del canale.
 - Se il bot si riavvia mentre un giveaway è aperto, chi era entrato resta in gara coi suoi biglietti. Prima sparivano tutti, e con loro il giveaway.
 - Anche una penitenza in corso riprende da dov'era, contatore compreso, invece di spegnersi a metà.
 - Se lo scudo aveva chiuso la chat ai soli follower e il bot si riavviava, la chat restava chiusa e nessuno la riapriva. Adesso si riapre da sola al ritorno.
-- La ricerca trova quello che c'è scritto dentro le schede — campi, sezioni, pieghevoli, bottoni — e non solo i nomi delle schede. Cliccando ti porta sulla cosa e te la segna, aprendo da sola quello che la nascondeva.
+- La ricerca trova quello che c'è scritto dentro le schede (campi, sezioni, pieghevoli, bottoni) e non solo i nomi delle schede. Cliccando ti porta sulla cosa e te la segna, aprendo da sola quello che la nascondeva.
 - Dalla ricerca si arriva anche a Scudo anti-bot, Comandi vocali, Conoscenza, Penitenze, Musica e Clip: prima quelle sei sezioni non uscivano mai.
 - I moduli a tempo parlano solo mentre sei in diretta: prima riempivano la chat vuota tutta la notte. Dentro al modulo c'è l'interruttore per farli parlare anche a canale spento.
 - Dopo un riavvio del bot i timer non partono più tutti insieme, perché l'ora dell'ultimo giro adesso resta salvata. E quelli che scadono nello stesso minuto escono in fila, non in un colpo.
@@ -840,7 +840,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-04
 
-- La chiave API del canale non si conserva più: ne resta solo un'impronta. Si vede una volta sola, quando la generi — nemmeno noi possiamo rileggerla.
+- La chiave API del canale non si conserva più: ne resta solo un'impronta. Si vede una volta sola, quando la generi, e nemmeno noi possiamo rileggerla.
 - I backup del database sono cifrati: una copia che esce di casa è rumore senza il segreto del server.
 - I segreti dei collegamenti (bot Telegram, Spotify, TikTok, 7TV) non stanno più in chiaro nel database: ognuno ha la sua chiave, e quella chiave è a sua volta chiusa a chiave.
 - Ogni segreto è legato al suo posto: preso da un account e messo su un altro non si apre più.
@@ -884,12 +884,12 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - I titoli delle sezioni non sporgono più sopra la carta, e la freccetta che le apre è tornata una punta invece di un rombo.
 - La pagina link ha molte più cose da cambiare: carattere dei titoli separato, maiuscolo, interlinea, aria fra i pezzi, colore del testo dei bottoni e spessore del bordo.
 - C'è una scheda «CSS» dove scrivere il tuo: arriva per ultimo, quindi vince su tutto il resto.
-- La pagina link: l'aspetto non è più una colonna sola da ventidue voci, ma sei schede — Temi, Impianto, Scrittura, Colori, Bottoni, Modi — con i campi affiancati.
+- La pagina link: l'aspetto non è più una colonna sola da ventidue voci, ma sei schede (Temi, Impianto, Scrittura, Colori, Bottoni, Modi) con i campi affiancati.
 - L'anteprima della pagina link è passata a sinistra, con i comandi a destra: si legge come il banco dell'overlay.
 - Puoi cambiare la grandezza del testo della pagina link (80–130%) e il suo spessore: leggero, medio o marcato. Prima era grassetto e basta.
 - Il puntatore disegnato adesso resta scelto: lo salvavi e alla ricarica tornava indietro da solo.
 - Il titolo della home usa gli stessi due colori del resto della pagina: le parole nel colore del testo, quelle in risalto nel rosa del marchio. Prima aveva un rosa tutto suo che al buio restava scuro come il fondo.
-- I bottoni scelti e quelli rossi hanno di nuovo il loro contorno: il bordo era dello stesso colore del riempimento, quindi spariva dentro, e restava solo l'ombra su due lati — sembravano ritagliati male.
+- I bottoni scelti e quelli rossi hanno di nuovo il loro contorno: il bordo era dello stesso colore del riempimento, quindi spariva dentro, e restava solo l'ombra su due lati: sembravano ritagliati male.
 - I riquadri «ultimo follower» e «ultimo sub» prendono la veste come tutto il resto: prima quei bottoni non facevano niente e le due etichette restavano com'erano mentre l'overlay cambiava tema.
 - «a tutto l'overlay» adesso li prende davvero tutti: prima saltava quei due, il conto alla rovescia e i contatori.
 - Ai due riquadri puoi scegliere forma, materia e cornice, come agli altri pezzi.
@@ -950,7 +950,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Chi visita la tua pagina può cambiare idea sui contenuti di altri siti: prima la scelta era per sempre e il riquadro non tornava più. Ora nel piede c'è «Contenuti di altri siti» che lo riapre.
 - Se dice di no dopo aver detto di sì, il no vale davvero: la pagina si ricarica, così da quei siti non parte più niente.
 - Sulla pagina link online non funzionava niente di quello che si clicca: il riquadro del consenso non compariva, «Carica il contenuto» non rispondeva, il conto alla rovescia stava fermo. Ora funziona.
-- Nell'interfaccia non ci sono più emoji di sistema: dove dicevano qualcosa — «bloccato», «animato», «in attesa» — ora c'è il segno disegnato, con lo stesso tratto del resto.
+- Nell'interfaccia non ci sono più emoji di sistema: dove dicevano qualcosa («bloccato», «animato», «in attesa») ora c'è il segno disegnato, con lo stesso tratto del resto.
 - Le emoji che il bot scrive in chat restano dov'erano: quella è la sua voce.
 - Gli obiettivi si impostano in un posto solo: il traguardo vale per tutti i tuoi overlay, e non lo devi rifare scena per scena. Dove sta e come si vede lo decidi ancora sull'overlay che stai componendo.
 - La barra di un obiettivo non torna più indietro: se arrivavano follower mentre il numero vero era ancora quello di poco prima, il totale a schermo calava. Ora no.
@@ -1030,15 +1030,15 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Gli avvisi entrano di slancio e quelli di errore danno una scrollata, così non passano inosservati.
 - Barre di avanzamento, equalizzatore e misuratore del volume si muovono senza far ricalcolare la pagina: il movimento è più fluido, soprattutto sull'overlay in diretta.
 - Il puntatore disegnato ora vale ovunque: prima su alcune intestazioni e barre di sezione tornava quello di sistema.
-- Scegliendo un obiettivo sulla tela le sue proprietà — colori, carattere, forma, cornice, opacità — si aprono lì accanto, come per ogni altro elemento.
+- Scegliendo un obiettivo sulla tela le sue proprietà (colori, carattere, forma, cornice, opacità) si aprono lì accanto, come per ogni altro elemento.
 - Trascinare un contatore non lo fa più saltare a metà schermo, e ora si può anche ruotare.
 - L'occhio di «Obiettivo» e «Contatori» funziona davvero: prima si spegneva e al ricaricamento tornava acceso, quindi non si potevano togliere da un overlay.
-- Il giro guidato insegna invece di raccontare: ogni tappa è un passo da fare, con la luce puntata sul comando che nomina — e se sta dentro una sezione chiusa, la apre.
+- Il giro guidato insegna invece di raccontare: ogni tappa è un passo da fare, con la luce puntata sul comando che nomina, e se sta dentro una sezione chiusa, la apre.
 - Tre schede che il giro saltava (Avatar 3D, Grafiche social, Scudo anti-bot) adesso ce l'hanno.
 
 ## 2026-09-02
 
-- Gli obiettivi sono quanti ne vuoi, non uno: ognuno col suo traguardo, il suo angolo e il suo aspetto — colori, carattere, forma, cornice, dimensione, opacità.
+- Gli obiettivi sono quanti ne vuoi, non uno: ognuno col suo traguardo, il suo angolo e il suo aspetto: colori, carattere, forma, cornice, dimensione, opacità.
 - Due obiettivi che contano la stessa cosa salgono insieme: una scala («100 follower», «500 follower») si fa senza rifare niente a mano.
 - C'è il manuale dell'overlay: i sette elementi, i valori di base, le parole da usare nei testi degli alert e cosa fare quando non si vede niente.
 - Nell'overlay c'è l'obiettivo: una barra che si riempie da sola mentre arrivano follower, sub o bit, col conto vero e un tasto per ripartire da zero.
@@ -1049,15 +1049,15 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Il giro si vede una volta sola e si rifà quando vuoi dal «?». Se stai già facendo qualcosa non parte.
 - I comandi pronti sono tradotti: nome e spiegazione escono in italiano, inglese e spagnolo come il resto del pannello.
 - I giochi si creano tutti da un posto solo: prima c'erano due riquadri che facevano la stessa cosa e uno ti spostava in un'altra scheda per finire il lavoro.
-- Si sceglie chi lancia il gioco — il bot a sorpresa, o uno spettatore che scrive un comando — e il resto si adatta.
+- Si sceglie chi lancia il gioco (il bot a sorpresa, o uno spettatore che scrive un comando) e il resto si adatta.
 - Nell'editor dei giochi le parole magiche offerte sono quelle che a un gioco servono: monete, caso, numeri, chi scrive. Le altre restano a un clic.
 - Sul telefono il «?» apre guide, manuali e novità dentro al menù, come righe: prima usciva una tendina più larga del menù e si leggeva mezza parola.
 - Anche il cambio canale sul telefono è diventato un elenco, per lo stesso motivo.
 - Tutto quello che si chiama con un «!» adesso si gestisce: una quarantina di comandi pronti, ognuno da spegnere, rinominare o riservare a sub, VIP e moderatori. Li trovi in Comandi, in fondo.
-- «!giochi» risponde una volta sola: prima usciva l'elenco dei giochi di chat e, subito sotto, quello dei giochi con la webcam — anche a chi la webcam non la usa.
+- «!giochi» risponde una volta sola: prima usciva l'elenco dei giochi di chat e, subito sotto, quello dei giochi con la webcam, anche a chi la webcam non la usa.
 - Un comando di una famiglia spenta non risponde più e il pannello te lo dice, invece di lasciarti indovinare perché tace.
 - Ogni gioco si accende e si spegne da solo, si rinomina e si può riservare a sub, VIP o moderatori: prima i comandi erano fissi e non si poteva toccarne nemmeno uno.
-- La scheda Giochi elenca tutti i comandi veri: ne mostrava dieci su trenta, e cinque giochi — pesca, roulette, furto, regala, manche — non li nominava affatto mentre il bot li annunciava in chat.
+- La scheda Giochi elenca tutti i comandi veri: ne mostrava dieci su trenta, e cinque giochi (pesca, roulette, furto, regala, manche) non li nominava affatto mentre il bot li annunciava in chat.
 - «!giochi» in chat dice i giochi accesi coi nomi che hai scelto tu, invece di un elenco fisso che poteva non corrispondere.
 - La promo social è passata dalle Notifiche, dove sta di casa: nella scheda Giochi non c'entrava niente.
 - Ogni scheda del pannello ha il suo manuale o la sua guida: prima ce l'avevano sei schede su ventiquattro, e nelle altre il «?» in barra non aveva niente da offrire.
@@ -1066,16 +1066,16 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Sul tema scuro il logo ha di nuovo l'alone dietro anche nella pagina pubblica e nelle guide: ce l'aveva solo la barra in alto.
 - L'anteprima che esce quando condividi un link, e l'icona dell'app, sono dei colori nuovi: restavano indietro di un marchio.
 - Le scritte più tenui, il verde e l'ambra adesso si leggono: stavano sotto la soglia di contrasto anche prima del cambio.
-- Nella barra c'è un «?» che porta a guide, manuali e novità — e in cima quella della scheda che stai guardando.
+- Nella barra c'è un «?» che porta a guide, manuali e novità, e in cima quella della scheda che stai guardando.
 - L'avviso della guida impara: dove sei già entrato e uscito senza fare niente arriva prima, e se gli dici due volte «non serve» sta zitto per un mese.
-- Quando si vede che sei in difficoltà — fermo, un errore appena uscito, la rotella su e giù, o ci torni per la terza volta — il bot ti dice che per quella scheda c'è una guida. Si zittisce per sempre con un clic.
+- Quando si vede che sei in difficoltà (fermo, un errore appena uscito, la rotella su e giù, o ci torni per la terza volta) il bot ti dice che per quella scheda c'è una guida. Si zittisce per sempre con un clic.
 - Se è una guida, si apre sul punto che dice cosa fare in SocialBot: non su una spiegazione generica.
 - Privacy, termini, invito ai moderatori e sblocco hanno lo stesso aspetto del resto del sito e seguono il tema che hai scelto: erano rimaste scure e viola.
 - Su Kick il bot scrive con il tuo account, come su Twitch: prima provava con un account suo e Kick rifiutava, quindi in chat non usciva niente.
 - La pagina pubblica è dello stesso colore del resto del bot e segue il tema che hai scelto, chiaro o scuro: prima era scura e basta, anche se avevi scelto chiaro.
 - Dalla pagina pubblica si arriva a guide, manuali e novità con un clic: prima stavano solo in fondo alla pagina.
 - Quando condividi un link di SocialBot esce l'anteprima giusta: privacy, termini, invito ai moderatori, sblocco e mini app non ne avevano nessuna, e le chat mostravano una cartolina vecchia.
-- Se Kick non manda niente, il pannello dice quale delle quattro cause è — e c'è un tasto per rifare l'iscrizione agli eventi senza ricollegare l'account.
+- Se Kick non manda niente, il pannello dice quale delle quattro cause è, e c'è un tasto per rifare l'iscrizione agli eventi senza ricollegare l'account.
 - Ci si registra anche con Kick: se trasmetti solo lì non ti serve un account Twitch, e le parti che senza Twitch non funzionerebbero il pannello te le dice spente invece di fingere.
 - Il bot funziona davvero su Kick: gli eventi che Kick ci mandava venivano rifiutati dal sito, quindi il collegamento riusciva e poi non arrivava niente.
 - Su Kick il bot non si ascolta più da solo: le sue risposte non contano come messaggi della chat.
@@ -1100,7 +1100,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Due classifiche separate: una del pubblico e una dello staff, così i moderatori non coprono più i primi posti.
 - Il premio in VIP salta chi ce l'ha già per sempre e passa al successivo, invece di accorciarglielo.
 - La barra "non hai salvato" indica il salva della zona che stai modificando, e sparisce quando salvi lì.
-- Le immagini che arrivano da fuori — emote comprese — non si rompono più.
+- Le immagini che arrivano da fuori, emote comprese, non si rompono più.
 
 ## 2026-08-28
 
