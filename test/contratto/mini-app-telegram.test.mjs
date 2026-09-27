@@ -24,3 +24,16 @@ test('dove una chat non c\'e\', la Mini App non mostra il badge', () => {
   assert.match(TGA, /\$\{typeof st\.inChat !== 'boolean' \? '' : `<span class="badge/);
   assert.ok(!TGA.includes("L('offline'"), '«offline» diceva altro: non in diretta, non «il bot non c\'e\'»');
 });
+
+test('il rimando al pannello nomina scheda e carta coi nomi veri, nelle tre lingue', () => {
+  const APP = readFileSync(new URL('../../src/web/public/app.js', import.meta.url), 'utf8');
+  const tre = (re, testo) => { const m = re.exec(testo); assert.ok(m, `trovo ${re}`); return [m[1], m[2], m[3]]; };
+  const gruppo = tre(/community: \['([^']+)', '([^']+)', '([^']+)'\]/, APP.slice(APP.indexOf('const T_GRUPPO')));
+  const carta = tre(/L\('(Accedi e gestisci da Telegram)', '([^']+)', '([^']+)'\)/, APP);
+  const riga = TGA.slice(TGA.indexOf('<li>', TGA.indexOf('<div class="codice">') + 1));
+  const passo = tre(/L\('Vai su ([^']+)', 'Go to ([^']+)', 'Ve a ([^']+)'\)/, riga);
+  for (let i = 0; i < 3; i++) {
+    assert.ok(passo[i].includes(`<b>${gruppo[i]} → Telegram</b>`), `il gruppo del menù: ${gruppo[i]}`);
+    assert.ok(passo[i].includes(`«${carta[i]}»`), `la carta: ${carta[i]}`);
+  }
+});
