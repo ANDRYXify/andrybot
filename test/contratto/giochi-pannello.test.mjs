@@ -63,3 +63,10 @@ test('le etichette dei giochi da creare non usano la lineetta lunga', () => {
   assert.ok(carta.length > 1000, 'trovo la carta «I tuoi giochi»');
   assert.ok(!carta.includes('—'), 'nessuna «—» nella carta');
 });
+
+test('nell\'elenco dei giochi fatti il tipo si legge col nome del menù, nella lingua del pannello', () => {
+  const c = funzione('caricaGiochi');
+  assert.ok(c.includes("document.getElementById('gioco-tipo')?.options"), 'il nome viene dal menù dei tipi');
+  assert.ok(c.includes('${esc(nomeTipo(g.tipo))}'));
+  assert.ok(!c.includes('${esc(g.tipo)}'), 'non l\'identificativo interno');
+});

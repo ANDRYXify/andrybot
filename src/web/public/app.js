@@ -27418,13 +27418,14 @@ async function caricaGiochi() {
     if (g.tipo === 'trivia') return `${(c.domande || []).length} ${L('domande', 'questions', 'preguntas')}`;
     if (g.tipo === 'sequenza') return `${(c.simboli || []).length} ${L('simboli', 'symbols', 'símbolos')}`;
     if (g.tipo === 'domanda') return L('una domanda', 'one question', 'una pregunta');
-    if (g.tipo === 'rebus') return `${(c.rebus || []).length} rebus`;
+    if (g.tipo === 'rebus') return `${(c.rebus || []).length} ${L('rebus', 'rebuses', 'jeroglíficos')}`;
     return `${(c.parole || []).length} ${L('parole', 'words', 'palabras')}`;
   };
+  const nomeTipo = (t) => [...(document.getElementById('gioco-tipo')?.options || [])].find((o) => o.value === t)?.textContent || t;
   const righeManche = manche.map((g) => `<li>
       <div class="testo-voce">
         <div class="domanda">${esc(g.nome || L('(senza nome)', '(unnamed)', '(sin nombre)'))} <span class="badge">${L('a sorpresa', 'by surprise', 'por sorpresa')}</span></div>
-        <div class="meta">${esc(g.tipo)} · ${quanti(g)}${g.attivo ? '' : ` · <span class="badge">${L('in pausa', 'paused', 'en pausa')}</span>`}</div>
+        <div class="meta">${esc(nomeTipo(g.tipo))} · ${quanti(g)}${g.attivo ? '' : ` · <span class="badge">${L('in pausa', 'paused', 'en pausa')}</span>`}</div>
       </div>
       <div class="azioni-voce">
         <button class="btn secondario mini" data-gioco-toggle="${g.id}" data-attivo="${g.attivo ? 1 : 0}">${g.attivo ? L('Pausa', 'Pause', 'Pausa') : L('Riattiva', 'Resume', 'Reactivar')}</button>
