@@ -2706,12 +2706,16 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // Elenco/invito/rimozione dei moderatori del proprio canale (solo proprietario).
   // La forma con cui un moderatore esce da qui, una sola per tutti gli stati:
   // così l'elenco e le richieste si disegnano con lo stesso pezzo di pagina.
+  // Un invito scaduto non ha piu' un link che funzioni: niente link e niente
+  // «valido fino al» con una data passata, ma `scaduto`, e si rigenera.
+  const invitoScaduto = (m, ora = Date.now()) => m.status === 'invitato' && Number(m.invite_expires) > 0 && ora > Number(m.invite_expires);
   const vestiModeratore = (m) => ({
     id: m.id, login: m.login, display: m.display || m.login, status: m.status,
     piattaforma: piattaformaDi(m.login), nome: nomeSu(m.login),
     last_seen: m.last_seen, created_at: m.created_at,
     chiesto: m.chiesto_at || 0, nota: m.nota || '', verificata: !!m.verificata,
-    invito: m.status === 'invitato' ? { url: MOD_INVITE_URL(m.invite_token), scade: m.invite_expires } : null,
+    invito: m.status === 'invitato' && !invitoScaduto(m) ? { url: MOD_INVITE_URL(m.invite_token), scade: m.invite_expires } : null,
+    scaduto: invitoScaduto(m),
   });
 
   app.get('/api/moderatori', requireOwner, wrap(async (req, res) => {
@@ -2758,11 +2762,14 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   // Da nome + piattaforma al canale nostro. `login` da solo resta valido e vuol
   // dire Twitch: era l'unica piattaforma quando la scheda è nata, e i pannelli
   // vecchi continuano a funzionare senza modifiche.
+  // Il nome si pulisce come alla registrazione (loginSu → nomePulito, in
+  // identita.js): il canale di chi entra con Kick o YouTube nasce da li', e un
+  // invito letto con un'altra regola non lo ritroverebbe mai. «Pippo.Rossi» su
+  // YouTube e' yt.pipporossi, entrando come invitando.
   const chiInvitare = (corpo) => {
-    const grezzo = String(corpo?.nome ?? corpo?.login ?? '').toLowerCase().trim().replace(/^@/, '');
+    const grezzo = String(corpo?.nome ?? corpo?.login ?? '').trim().replace(/^@/, '');
     const piattaforma = String(corpo?.piattaforma || 'twitch').toLowerCase();
     if (!PIATTAFORME.some((p) => p.id === piattaforma)) return { errore: 'piattaforma sconosciuta' };
-    if (!/^[a-z0-9_]{3,25}$/.test(grezzo)) return { errore: 'nome utente non valido' };
     const login = loginSu(piattaforma, grezzo);
     if (!login || !eLoginNostro(login)) return { errore: 'nome utente non valido' };
     return { login };

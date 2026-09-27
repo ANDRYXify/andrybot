@@ -30611,13 +30611,14 @@ async function caricaModeratori() {
       if (m.invito) links[m.id] = m.invito.url;
       const stato = m.status === 'attivo'
         ? `<span class="badge verde">${L('attivo', 'active', 'activo')}</span>`
-        : `<span class="badge giallo">${L('invito in attesa', 'invite pending', 'invitación en espera')}</span>`;
+        : m.invito ? `<span class="badge giallo">${L('invito in attesa', 'invite pending', 'invitación en espera')}</span>`
+          : `<span class="badge rosso">${L('invito scaduto', 'invite expired', 'invitación caducada')}</span>`;
       const meta = m.status === 'attivo'
         ? (m.last_seen ? L('ultimo accesso ', 'last access ', 'último acceso ') + esc(dataIt(m.last_seen)) : L('mai entrato', 'never entered', 'nunca ha entrado'))
-        : (m.invito ? L('invito valido fino al ', 'invite valid until ', 'invitación válida hasta el ') + esc(dataIt(m.invito.scade)) : L('invito scaduto', 'invite expired', 'invitación caducada'));
+        : (m.invito ? L('invito valido fino al ', 'invite valid until ', 'invitación válida hasta el ') + esc(dataIt(m.invito.scade)) : L('il link non vale più: rigeneralo', 'the link no longer works: regenerate it', 'el enlace ya no vale: regenéralo'));
       const azioni = m.status === 'attivo'
         ? `<button class="btn secondario mini" data-mod-rimuovi="${m.id}">${L('Rimuovi', 'Remove', 'Quitar')}</button>`
-        : `<button class="btn secondario mini" data-mod-link="${m.id}">${L('Copia link', 'Copy link', 'Copiar enlace')}</button>
+        : `${m.invito ? `<button class="btn secondario mini" data-mod-link="${m.id}">${L('Copia link', 'Copy link', 'Copiar enlace')}</button>` : ''}
            <button class="btn secondario mini" data-mod-reinvita="${m.id}">${L('Rigenera', 'Regenerate', 'Regenerar')}</button>
            <button class="btn secondario mini" data-mod-rimuovi="${m.id}">${L('Annulla', 'Cancel', 'Cancelar')}</button>`;
       return `<li>

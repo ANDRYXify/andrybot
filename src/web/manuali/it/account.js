@@ -88,7 +88,7 @@ export default {
     { p: [
       'L\'invito <strong>vale 72 ore</strong> e si usa una volta. Chi lo apre entra con <strong>il suo account su quella piattaforma</strong>, lo stesso che hai scritto tu. Con un altro account l\'invito non vale, e su Twitch la pagina dell\'invito glielo dice.',
       'Il link non è nemmeno indispensabile: se quella persona entra nel pannello con quell\'account prima della scadenza, l\'invito si abbina da solo.',
-      'Il nome va scritto com\'è sulla piattaforma: da 3 a 25 caratteri, lettere, numeri e trattino basso.',
+      'Scrivi il nome com\'è sulla piattaforma, con o senza la @. Maiuscole, punti, trattini e spazi non contano: il nome si legge come quando quella persona entra, e restano lettere, numeri e trattino basso. Se non resta niente, leggi «nome utente non valido».',
     ] },
     { p: ['In «Chi ha chiesto di aiutarti» ogni richiesta porta un segno:'] },
     { ul: [
@@ -105,6 +105,7 @@ export default {
       ['Stato', 'Cosa vedi', 'Tasti'],
       ['«attivo»', '«ultimo accesso …», oppure «mai entrato».', '«Rimuovi»: chiede «Tolgo questo moderatore?», e da lì non entra più nel pannello.'],
       ['«invito in attesa»', '«invito valido fino al …» con la data di scadenza.', '«Copia link», «Rigenera» per un link nuovo di 72 ore, «Annulla», che chiede conferma come «Rimuovi».'],
+      ['«invito scaduto»', 'Sono passate le 72 ore: «il link non vale più: rigeneralo».', '«Rigenera» e «Annulla». Il vecchio link non si copia più.'],
     ] },
     { p: ['Messaggi che puoi incontrare creando un invito: «Scrivi il nome utente del moderatore.», «nome utente non valido», «sei già il proprietario del canale», «Il tuo piano non include i moderatori.», «hai raggiunto il massimo di moderatori del tuo piano.».'] },
 

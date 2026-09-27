@@ -43,6 +43,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Invitando un moderatore, il pannello dice che entrerà con il suo account sulla piattaforma che hai scelto, non più «con Twitch» anche per Kick e YouTube. [vai: account]
 - Quando il bot perde la chat, il messaggio su Telegram nomina il tasto giusto, «Ricollega i permessi» nella scheda Stato.
 - Su un dispositivo che non gestisce le passkey il pannello dice solo che non si può, senza più aggiungere subito dopo «Passkey creata!». [vai: account]
+- Un invito da moderatore scaduto si vede come «invito scaduto», da rigenerare, invece di un «valido fino al» con una data già passata. [vai: account]
+- Invitando un moderatore puoi scrivere il nome come lo vedi sulla piattaforma, anche con maiuscole o punti: si legge come quando quella persona entra. [vai: account]
 
 ## 2026-09-26
 
