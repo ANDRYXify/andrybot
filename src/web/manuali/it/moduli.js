@@ -233,7 +233,7 @@ export default {
     { h3: 'Salva, Prova, Annulla' },
     { p: [
       '<strong>«Salva»</strong> salva e chiude l\'editor. <strong>«Prova»</strong> prima salva, poi esegue il modulo saltando le condizioni: «Salvato e provato: guarda chat/overlay». <strong>«Annulla»</strong> chiude senza salvare.',
-      'Se qualcosa non va il pannello dice cosa: un webhook senza <code>http</code> o <code>https</code>, un cambio di categoria o di titolo senza testo, una canzone senza brano, un annuncio vuoto, un\'azione punti senza quantità o con un nome utente non valido, una regia senza scena, fonte o transizione.',
+      'Se qualcosa non va il pannello dice cosa: un webhook senza <code>http</code> o <code>https</code>, un cambio di categoria o di titolo senza testo, una canzone senza brano, un annuncio vuoto, un\'azione punti senza quantità o con un nome utente non valido, una regia senza scena, fonte o transizione, un\'attesa di più di 30 secondi, un testo sull\'overlay che resta a schermo meno di mezzo secondo o più di 30.',
     ] },
 
     { h3: 'Le variabili' },
