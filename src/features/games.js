@@ -64,15 +64,15 @@ function nomeMoneta(channel) {
 // scendendo di un passo a ogni giro senza partecipare, fino a un minimo. Chi
 // torna a parlare risale subito a quota piena.
 //
-// Tutto solo mentre il canale e' in diretta: a canale spento non c'e' niente da
-// premiare, e il flusso continuo a bocce ferme e' proprio cio' che svaluta la
-// moneta.
+// Presenza e partecipazione solo mentre il canale e' in diretta, senza una
+// scelta che le accenda a canale spento: li' non c'e' niente da premiare, e il
+// flusso continuo a bocce ferme e' proprio cio' che svaluta la moneta. Le
+// monete per messaggio invece arrivano sempre, perche' premiano chi scrive.
 const PUNTI_DEFAULT = {
   perMessaggio: 2, ogniSecondi: 60,
   perPresenza: 5, perAttivita: 5,
   moltSub: 1.5, moltVip: 1.25,
   lurkPasso: 0.15, lurkMinimo: 0.35,
-  soloLive: true,
   topN: 5,
 };
 function numClamp(v, def, lo, hi) { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; }
@@ -88,7 +88,6 @@ function cfgPunti(channel) {
     moltVip:      numFra(p.moltVip,        PUNTI_DEFAULT.moltVip, 1, 10),
     lurkPasso:    numFra(p.lurkPasso,      PUNTI_DEFAULT.lurkPasso, 0, 1),
     lurkMinimo:   numFra(p.lurkMinimo,     PUNTI_DEFAULT.lurkMinimo, 0, 1),
-    soloLive:     p.soloLive !== false,
   };
 }
 function numFra(v, def, lo, hi) { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; }
@@ -154,14 +153,15 @@ export function ruoliDi(channel) {
 
 // Un giro dell'economia. `presenti` e' la lista di chi e' in chat (anche in
 // silenzio); `ruoli` dice chi e' sub o VIP. Ritorna quanto e' stato dato, per
-// i collaudi e per la console.
+// i collaudi e per la console. A canale spento non da' niente, qualunque cosa
+// dica un vecchio `punti.soloLive` salvato: non e' piu' una scelta.
 export function giroMonete(channel, presenti, { ruoli = null, live = true } = {}) {
   const ch = String(channel || '').toLowerCase();
   if (!ruoli) ruoli = ruoliDi(ch);
   const esito = { accreditati: 0, monete: 0, saltati: 0 };
   if (!attivi(ch)) return esito;
+  if (!live) { attiviGiro.delete(ch); return esito; }
   const cfg = cfgPunti(ch);
-  if (cfg.soloLive && !live) { attiviGiro.delete(ch); return esito; }
   if (!(cfg.perPresenza > 0 || cfg.perAttivita > 0)) return esito;
 
   const parlanti = attiviGiro.get(ch) || new Set();

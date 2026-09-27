@@ -6345,7 +6345,6 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
         moltVip:      f(p.moltVip, 1.25, 1, 10),
         lurkPasso:    f(p.lurkPasso, 0.15, 0, 1),
         lurkMinimo:   f(p.lurkMinimo, 0.35, 0, 1),
-        soloLive:     p.soloLive !== false,
       };
     }
     // richieste musicali (!sr): modo di pagamento/permesso + costo + premio

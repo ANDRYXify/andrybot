@@ -221,7 +221,7 @@ function impostazioni() {
     promoSocial: s.promoSocial !== false,
     vetrinaLive: s.vetrinaLive === true,
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
-    punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, perPresenza: 5, perAttivita: 5, moltSub: 1.5, moltVip: 1.25, lurkPasso: 0.15, lurkMinimo: 0.35, soloLive: true, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
+    punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, perPresenza: 5, perAttivita: 5, moltSub: 1.5, moltVip: 1.25, lurkPasso: 0.15, lurkMinimo: 0.35, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
     manche: { attivo: false, minMin: 15, maxMin: 45, soloLive: false, ...(s.manche && typeof s.manche === 'object' ? s.manche : {}) },
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : {},
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
@@ -21536,7 +21536,7 @@ function pannelloGiochi() {
         <label class="campo-num">${L('Quanti in classifica', 'How many on the board', 'Cuántos en la clasificación')}<input type="number" id="pt-topN" min="3" max="10" value="${s.punti.topN}"></label>
       </div>
       <h3 class="sotto-titolo">${L('Guadagno mentre guardano', 'Earning while watching', 'Ganancia mientras miran')}</h3>
-      <p>${L('Ogni cinque minuti, chi è in chat riceve la <strong>presenza</strong> — anche se sta zitto — e chi ha scritto in quel giro riceve in più la <strong>partecipazione</strong>. Chi resta a lungo in silenzio continua a guadagnare, ma scendendo un gradino per volta fino a un minimo: appena riscrive torna a quota piena.', 'Every five minutes, whoever is in chat gets <strong>presence</strong> — even in silence — and whoever wrote in that round also gets <strong>participation</strong>. Someone silent for a long time keeps earning, but one step lower each round down to a floor: as soon as they write again they are back to full.', 'Cada cinco minutos, quien está en el chat recibe la <strong>presencia</strong> — aunque calle — y quien escribió en esa ronda recibe además la <strong>participación</strong>. Quien calla mucho sigue ganando, pero bajando un escalón por ronda hasta un mínimo: en cuanto vuelve a escribir recupera la cuota completa.')}</p>
+      <p>${L('Ogni cinque minuti, mentre sei in diretta, chi è in chat riceve la <strong>presenza</strong>, anche se sta zitto, e chi ha scritto in quel giro riceve in più la <strong>partecipazione</strong>. Chi resta a lungo in silenzio continua a guadagnare, ma scendendo un gradino per volta fino a un minimo: appena riscrive torna a quota piena.', 'Every five minutes, while you are live, whoever is in chat gets <strong>presence</strong>, even in silence, and whoever wrote in that round also gets <strong>participation</strong>. Someone silent for a long time keeps earning, but one step lower each round down to a floor: as soon as they write again they are back to full.', 'Cada cinco minutos, mientras estás en directo, quien está en el chat recibe la <strong>presencia</strong>, aunque calle, y quien escribió en esa ronda recibe además la <strong>participación</strong>. Quien calla mucho sigue ganando, pero bajando un escalón por ronda hasta un mínimo: en cuanto vuelve a escribir recupera la cuota completa.')}</p>
       <div class="griglia-punti">
         <label class="campo-num">${L('Presenza (per giro)', 'Presence (per round)', 'Presencia (por ronda)')}<input type="number" id="pt-perPresenza" min="0" max="10000" value="${s.punti.perPresenza}"></label>
         <label class="campo-num">${L('Partecipazione (in più)', 'Participation (extra)', 'Participación (extra)')}<input type="number" id="pt-perAttivita" min="0" max="10000" value="${s.punti.perAttivita}"></label>
@@ -21545,8 +21545,7 @@ function pannelloGiochi() {
         <label class="campo-num">${L('Quanto cala per giro in silenzio', 'Drop per silent round', 'Cuánto baja por ronda en silencio')}<input type="number" id="pt-lurkPasso" min="0" max="1" step="0.05" value="${s.punti.lurkPasso}"></label>
         <label class="campo-num">${L('Non scende sotto', 'Never below', 'No baja de')}<input type="number" id="pt-lurkMinimo" min="0" max="1" step="0.05" value="${s.punti.lurkMinimo}"></label>
       </div>
-      <p><label class="riga-check"><input type="checkbox" id="pt-soloLive"${s.punti.soloLive !== false ? ' checked' : ''}> ${L('Solo mentre sei in diretta', 'Only while you are live', 'Solo mientras estás en directo')}</label></p>
-      <p class="suggerimento">${L('“Punti per messaggio” a 0 = nessun guadagno passivo dal chattare.', '“Points per message” at 0 = no passive earning from chatting.', '“Puntos por mensaje” a 0 = sin ganancia pasiva por charlar.')}</p>
+      <p class="suggerimento">${L('Presenza e partecipazione arrivano solo mentre sei in diretta. Le monete per messaggio arrivano sempre, anche a canale spento se il bot è in chat. Con «Punti per messaggio» a 0 non arrivano più.', 'Presence and participation only come while you are live. Coins per message always come, even with the channel offline if the bot is in chat. With «Points per message» at 0 they stop.', 'Presencia y participación solo llegan mientras estás en directo. Las monedas por mensaje llegan siempre, también con el canal apagado si el bot está en el chat. Con «Puntos por mensaje» a 0 dejan de llegar.')}</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">${L('Salva punti', 'Save points', 'Guardar puntos')}</button></p>
     </div>
     <div class="carta">
@@ -25852,7 +25851,6 @@ function attivaPiattaforma() {
       moltVip: parseFloat(document.getElementById('pt-moltVip')?.value) || 1.25,
       lurkPasso: parseFloat(document.getElementById('pt-lurkPasso')?.value) ?? 0.15,
       lurkMinimo: parseFloat(document.getElementById('pt-lurkMinimo')?.value) ?? 0.35,
-      soloLive: !!document.getElementById('pt-soloLive')?.checked,
       topN: v('pt-topN'),
     } }, L('Punti salvati ✓', 'Points saved ✓', 'Puntos guardados ✓'));
   }));

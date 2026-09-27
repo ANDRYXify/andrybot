@@ -67,11 +67,14 @@ export default {
     { p: ['Qui decidi quante monete si guadagnano. Ci sono tre entrate, e si sommano.'] },
     { tabella: [
       ['Entrata', 'A chi', 'Quando', 'Di base'],
-      ['Messaggio', 'a chi scrive', 'al massimo una volta ogni 60 secondi a testa', '2 monete'],
+      ['Messaggio', 'a chi scrive', 'al massimo una volta ogni 60 secondi a testa, anche a canale spento', '2 monete'],
       ['Presenza', 'a chi è in chat, anche in silenzio', 'ogni giro di cinque minuti, solo in diretta', '5 monete'],
       ['Partecipazione', 'in più, a chi ha scritto in quel giro', 'ogni giro di cinque minuti, solo in diretta', '5 monete'],
     ] },
-    { p: ['Presenza, partecipazione, moltiplicatori e le due quote del silenzio stanno sotto «Guadagno mentre guardano».'] },
+    { p: [
+      'Presenza e partecipazione arrivano solo mentre sei in diretta, e non c\'è una scelta per darle a canale spento. Le monete per messaggio arrivano sempre, anche a canale spento se il bot è in chat.',
+      'Presenza, partecipazione, moltiplicatori e le due quote del silenzio stanno sotto «Guadagno mentre guardano».',
+    ] },
     { tabella: [
       ['Controllo', 'Di base', 'Limiti', 'Cosa fa'],
       ['«Punti per messaggio»', '2', '0–1000', 'Monete a chi scrive. A 0 questa entrata si spegne.'],
