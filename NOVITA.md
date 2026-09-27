@@ -34,6 +34,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nel registro delle donazioni, «Rimborsa» su una donazione arrivata con Satispay chiede conferma nominando il tuo negozio Satispay, non più il conto Stripe. [vai: donazioni]
 - Nell'aspetto della pagina link, «Modi» dice come va davvero il permesso per video e musica di altri siti: con «Caricali subito» chi apre la pagina trova prima una fascia che glielo chiede. [vai: pagina]
 - Nella tua settimana, «Salva la settimana» ricorda i posti che hai spuntato in «Mandala»: prima teneva quelli di prima, e la settimana automatica usciva nei posti vecchi. [vai: settimana]
+- Nella pagina link di chi entra con Kick o YouTube, il primo link già pronto porta al suo canale e non più a Twitch; chi ha solo un server Discord parte senza. [vai: pagina]
 
 ## 2026-09-26
 

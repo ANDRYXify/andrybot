@@ -29,7 +29,7 @@ export default {
       'L\'editor ha tre colonne: i comandi, con le due linguette «Contenuti» e «Aspetto», l\'«Anteprima dal vivo» e il riquadro coi comandi del pezzo che hai scelto. L\'anteprima resta ferma a metà schermo mentre scorri i campi. Sul telefono resta in cima, con «Salva e pubblica» sempre a portata.',
     ] },
     { passi: [
-      { t: 'Riempi «Contenuti»', d: 'L\'intestazione, poi i pezzi della pagina: link, social, video, la tua diretta e gli altri. La prima volta trovi già pronto un link al tuo canale.' },
+      { t: 'Riempi «Contenuti»', d: 'L\'intestazione, poi i pezzi della pagina: link, social, video, la tua diretta e gli altri. La prima volta trovi già pronto un link al tuo canale, su Twitch, Kick o YouTube.' },
       { t: 'Scegli l\'«Aspetto»', d: 'Parti da un tema pronto, che cambia tutto in un colpo, e ritocca quello che vuoi.' },
       { t: 'Guarda l\'anteprima', d: 'Si aggiorna mentre scrivi, senza salvare, ed è la pagina vera. Con «Telefono» e «Schermo» la vedi nelle due misure. Cliccando un pezzo nell\'anteprima apri i suoi comandi.' },
       { t: 'Premi «Salva e pubblica»', d: 'La pagina va online subito. L\'indirizzo non cambia mai: chi ce l\'ha vede sempre la versione aggiornata.' },

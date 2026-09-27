@@ -1989,6 +1989,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Funziona per tutti i piani, Essenziale gratuito compreso.
   // requireOwner: la pagina pubblica è l'identità dello streamer, non
   // un'impostazione del canale, quindi i moderatori non la toccano.
+  const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
   app.get('/api/linkpage', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const s = streamers.get(login);
@@ -2006,9 +2007,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       temaBase: linkPage.pulisci({}).tema,
       avatarTwitch: await avatarDi(login, { aggiorna: true }),
       visite: visitePagina.riassunto(login),
-      // per chi parte da zero: un primo blocco già pronto sul suo canale
-      suggeriti: linkPage.esiste(login) ? [] : [
-        { tipo: 'link', icona: 'twitch', label: 'Twitch', url: `https://twitch.tv/${login}`, sotto: '', evidenzia: true },
+      // per chi parte da zero: un primo blocco già pronto sul suo canale, sulla
+      // piattaforma dove vive davvero. Chi ha solo un server Discord un canale
+      // da linkare non ce l'ha, e non gli si inventa.
+      suggeriti: linkPage.esiste(login) || !urlCanale(login) ? [] : [
+        { tipo: 'link', icona: piattaformaDi(login), label: NOME_PIATTAFORMA[piattaformaDi(login)] || '', url: urlCanale(login), sotto: '', evidenzia: true },
       ],
       pagina: {
         headline: p.headline || '', tagline: p.tagline || '',

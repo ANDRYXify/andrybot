@@ -180,3 +180,29 @@ test('«Modi» dice il vero sul permesso: la fascia con «Caricali subito», il 
   assert.ok(subito.includes('id="fascia"') && subito.includes('Va bene, carica tutto') && !subito.includes('<iframe'), 'con «subito» la pagina chiede con la fascia, e non carica niente prima');
   assert.ok(!chiedi.includes('id="fascia"') && chiedi.includes('class="chiedi-b"'), 'con «chiedi» niente fascia, un cartello col bottone');
 });
+
+// ── Il canale di chi entra con Kick, YouTube o Discord ───────────────────────
+
+test('il primo link gia\' pronto porta al canale sulla sua piattaforma, e chi ha solo Discord non ne ha', async () => {
+  const { urlCanale, piattaformaDi } = await import('../../src/identita.js');
+  const { ICONE_LINKPAGE } = await import('../../src/db.js');
+  const rotta = tratto(SRV, "app.get('/api/linkpage', requireOwner", '}));');
+  const da = rotta.indexOf('suggeriti: ') + 'suggeriti: '.length;
+  const espr = rotta.slice(da, rotta.indexOf('\n      ],', da) + '\n      ]'.length);
+  const nomi = SRV.match(/const NOME_PIATTAFORMA = (\{[^}]*\});/);
+  assert.ok(nomi, 'manca il nome delle piattaforme');
+  // eslint-disable-next-line no-new-func
+  const primo = (login) => new Function('linkPage', 'urlCanale', 'piattaformaDi', 'login', `const NOME_PIATTAFORMA = ${nomi[1]}; return ${espr};`)(
+    { esiste: () => false }, urlCanale, piattaformaDi, login);
+  const atteso = { pippo: ['https://www.twitch.tv/pippo', 'twitch', 'Twitch'], 'kick.pippo': ['https://kick.com/pippo', 'kick', 'Kick'],
+    'yt.pippo': ['https://www.youtube.com/@pippo', 'youtube', 'YouTube'] };
+  for (const [login, [url, icona, label]] of Object.entries(atteso)) {
+    const [b, ...altri] = primo(login);
+    assert.equal(altri.length, 0);
+    assert.deepEqual([b.url, b.icona, b.label], [url, icona, label], login);
+    assert.ok(ICONE_LINKPAGE.includes(b.icona), `${login}: l'icona esiste`);
+    assert.equal(linkPage.pulisci({ blocchi: [b] }).blocchi[0].url, url, `${login}: il link passa la pulizia com'e'`);
+  }
+  assert.deepEqual(primo('dc.pippo'), [], 'solo Discord: nessun canale da linkare');
+  assert.ok(!rotta.includes('twitch.tv/${login}'), 'niente piu\' twitch.tv per tutti');
+});
