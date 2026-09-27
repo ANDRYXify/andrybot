@@ -99,6 +99,7 @@ import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
 import * as giochiConf from '../features/giochi-conf.js';
 import * as modalitaChat from '../features/modalita-chat.js';
+import { normModalita } from '../features/quando-lavora.js';
 import * as instagram from '../features/instagram.js';
 import * as igAccesso from '../features/instagram-accesso.js';
 import { credenzialiInstagram } from '../features/instagram-credenziali.js';
@@ -6012,10 +6013,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // «fammi comparire fra le dirette sulla home»: e' un si' che si dice, e si
     // toglie. Di serie non c'e', quindi nessuno finisce in vetrina per distrazione.
     if (b.vetrinaLive !== undefined) { out.vetrinaLive = !!b.vetrinaLive; vetrinaLive.scorda(); }
-    // modalità di attivazione: 24/7, solo quando è in diretta, o manuale
+    // modalità di attivazione: 24/7 o solo quando è in diretta (features/quando-lavora.js)
     if (b.modalita !== undefined) {
-      if (!['sempre', 'live', 'manuale'].includes(b.modalita)) return res.status(400).json({ errore: 'modalità non valida' });
-      out.modalita = b.modalita;
+      const m = normModalita(b.modalita);
+      if (!m) return res.status(400).json({ errore: 'modalità non valida' });
+      out.modalita = m;
     }
     // LA SCHEDA dello streamer: chi è, deciso da lui. Passa dal pulitore
     // condiviso (src/db.js) — è lo stesso che legge il cervello, così non

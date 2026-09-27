@@ -86,6 +86,7 @@ import * as pub from './features/pubblicita.js';
 import * as modalitaFeat from './features/modalita-chat.js';
 import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
+import { modalitaDi } from './features/quando-lavora.js';
 import * as bjFeat from './features/blackjack.js';
 import * as seguitiFeat from './features/seguiti.js';
 
@@ -796,13 +797,11 @@ export class BotManager {
     return !!t && t.scopes.includes('chat:edit');
   }
 
-  // Modalità di attivazione scelta dallo streamer:
+  // Modalità di attivazione scelta dallo streamer (features/quando-lavora.js):
   //  'sempre'  → 24/7 (sempre in chat quando è acceso)
   //  'live'    → solo mentre è in diretta (entra/esce col live)
-  //  'manuale' → lo governa l'interruttore acceso/spento (come 'sempre' a livello di runtime)
   _modalitaConsente(s) {
-    const m = s?.settings?.modalita || 'sempre';
-    if (m === 'live') return this._liveState.get(s.login) === true;
+    if (modalitaDi(s?.settings) === 'live') return this._liveState.get(s.login) === true;
     return true;
   }
 

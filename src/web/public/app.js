@@ -210,7 +210,7 @@ function impostazioni() {
     battuteAuto: s.battuteAuto !== false,
     spontaneita: typeof s.spontaneita === 'number' ? s.spontaneita : 0,
     rispostaMenzioni: s.rispostaMenzioni !== false,
-    modalita: ['sempre', 'live', 'manuale'].includes(s.modalita) ? s.modalita : 'sempre',
+    modalita: s.modalita === 'live' ? 'live' : 'sempre',
     iaLocale: s.iaLocale !== false,
     proattivo: s.proattivo !== false,
     proattivoSoloLive: s.proattivoSoloLive === true,
@@ -8619,12 +8619,10 @@ function pannelloStato() {
       <select id="sel-modalita">
         <option value="sempre" ${sImp.modalita === 'sempre' ? 'selected' : ''}>${L('Sempre (24/7)', 'Always (24/7)', 'Siempre (24/7)')}</option>
         <option value="live" ${sImp.modalita === 'live' ? 'selected' : ''}>${L('Solo quando sei in diretta', 'Only when you’re live', 'Solo cuando estás en directo')}</option>
-        <option value="manuale" ${sImp.modalita === 'manuale' ? 'selected' : ''}>${L('Manuale (decidi tu con l\'interruttore)', 'Manual (you decide with the switch)', 'Manual (decides tú con el interruptor)')}</option>
       </select>
       <p class="suggerimento">
         <strong class="primo-piano">24/7</strong>: ${L('sempre in chat.', 'always in chat.', 'siempre en el chat.')} ·
-        <strong class="primo-piano">${L('Quando sei live', 'When you’re live', 'Cuando estás en directo')}</strong>: ${L('entra da solo quando parte la diretta ed esce a fine stream.', 'joins by itself when the stream starts and leaves at the end.', 'entra solo cuando empieza el directo y sale al final.')} ·
-        <strong class="primo-piano">${L('Manuale', 'Manual', 'Manual')}</strong>: ${L('comandi tu con l\'interruttore qui sopra.', 'you control it with the switch above.', 'lo controlas tú con el interruptor de arriba.')}
+        <strong class="primo-piano">${L('Quando sei live', 'When you’re live', 'Cuando estás en directo')}</strong>: ${L('entra da solo quando parte la diretta ed esce a fine stream.', 'joins by itself when the stream starts and leaves at the end.', 'entra solo cuando empieza el directo y sale al final.')}
       </p>
       <p><button class="btn secondario" id="btn-salva-modalita">${L('Salva modalità', 'Save mode', 'Guardar modo')}</button></p>
     </div>
