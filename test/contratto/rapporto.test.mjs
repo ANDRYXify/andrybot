@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MANUALI } from '../../src/web/manuali.js';
 import { FUNZIONI_VETRINA } from '../../src/web/vetrina-vista.js';
+import { sezioneManuale } from '../aiuto.mjs';
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const leggi = (p) => readFileSync(join(RAD, p), 'utf8');
 const BOT = leggi('src/bot.js');
@@ -59,7 +60,8 @@ test('il pannello: la scheda Dirette, il puntino, i canali; l\'interruttore non 
 
 test('il manuale, la vetrina, la privacy e le novita\' lo raccontano', () => {
   const testo = JSON.stringify(MANUALI);
-  assert.ok(testo.includes('Il rapporto di ogni diretta') && testo.includes('picco di spettatori') && testo.includes('via mail'), 'il manuale spiega il rapporto e i canali');
+  const sez = sezioneManuale(MANUALI, 'dirette');
+  assert.ok(testo.length && /rapporto/i.test(sez) && /picco/.test(sez) && /Telegram/.test(sez) && /mail/.test(sez), 'il manuale spiega il rapporto e i canali, nella sezione della scheda');
   const voci = FUNZIONI_VETRINA.flatMap((g) => g.voci);
   assert.ok(voci.some((v) => v.scheda === 'dirette' && v.t[0] === 'Il rapporto di ogni diretta'));
   const privacy = leggi('src/web/public/privacy.html');

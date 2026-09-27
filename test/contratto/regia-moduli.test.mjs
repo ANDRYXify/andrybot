@@ -135,9 +135,16 @@ test('l\'editor offre la regia coi nomi letti in pagina, e i modelli pronti usan
 test('manuale, vetrina e novita\' lo dicono', () => {
   const man = testoManuali();
   assert.match(man, /'Regia: scena, muto o transizione', 'comanda il programma/);
-  assert.match(man, /le quindici azioni/);
-  assert.ok(!/quattordici azioni/.test(man));
-  assert.match(man, /mi collego da solo appena apri il pannello/);
+  // quante sono le azioni lo dice il motore, non il collaudo: un'azione nuova
+  // fa diventare rosso il manuale che conta ancora le vecchie
+  const azioni = (/const MOD_AZIONI = \[([^\]]*)\]/.exec(leggi('src/web/server.js'))[1].match(/'[^']+'/g) || []).length;
+  const NUMERI = { 14: 'quattordici', 15: 'quindici', 16: 'sedici', 17: 'diciassette', 18: 'diciotto', 19: 'diciannove', 20: 'venti' };
+  assert.ok(NUMERI[azioni], `azioni: ${azioni}`);
+  assert.match(man, new RegExp(`le ${NUMERI[azioni]} azioni`), `il manuale conta ${azioni} azioni`);
+  for (const [n, parola] of Object.entries(NUMERI)) {
+    if (Number(n) !== azioni) assert.ok(!new RegExp(`${parola} azioni`).test(man), `il manuale dice ancora «${parola} azioni»`);
+  }
+  assert.match(man, /(si ricollega|mi collego) da solo appena apri il pannello/);
   const vet = leggi('src/web/vetrina-vista.js');
   assert.match(vet, /scheda: 'moduli', pacc: 'free', t: \['La regia dai comandi e dagli eventi'/);
   const nov = leggi('NOVITA.md');

@@ -17,6 +17,7 @@ import MANUALI_ES from './manuali/es/index.js';
 
 // Un manuale per file, in src/web/manuali/<lingua>/: si scrivono e si traducono
 // uno per volta senza toccare gli altri.
+import STATO from './manuali/it/stato.js';
 import GIOCHI from './manuali/it/giochi.js';
 import MODULI from './manuali/it/moduli.js';
 import BOT from './manuali/it/bot.js';
@@ -28,9 +29,13 @@ import VETRINA from './manuali/it/vetrina.js';
 import ACCOUNT from './manuali/it/account.js';
 import EMOTE from './manuali/it/emote.js';
 import OVERLAY from './manuali/it/overlay.js';
+import EFFETTI from './manuali/it/effetti.js';
+import COMMUNITY from './manuali/it/community.js';
 import STRUMENTI from './manuali/it/strumenti.js';
 
-export const MANUALI = [GIOCHI, MODULI, BOT, MODERAZIONE, INTERAZIONE, DIRETTA, CONSOLIFY, VETRINA, STRUMENTI, ACCOUNT, EMOTE, OVERLAY];
+// Nell'ordine del menù del pannello: chi cerca una scheda la trova dove se
+// l'aspetta.
+export const MANUALI = [STATO, BOT, MODULI, MODERAZIONE, GIOCHI, INTERAZIONE, DIRETTA, CONSOLIFY, OVERLAY, EFFETTI, EMOTE, VETRINA, COMMUNITY, STRUMENTI, ACCOUNT];
 
 // A QUALE SCHEDA DEL PANNELLO SERVE OGNI PAGINA.
 //

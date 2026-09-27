@@ -20,6 +20,22 @@ export async function lanciaScript(file, args = []) {
 // Il testo di tutti i manuali in italiano, per le prove che vogliono sapere se
 // «il manuale lo dice». I manuali stanno uno per file (src/web/manuali/it/):
 // leggere solo manuali.js voleva dire leggere l'indice, non i manuali.
+// Il testo delle sezioni di manuale che spiegano una scheda: dall'h2 che la
+// dichiara fino al prossimo h2. E' quello che il «?» del pannello apre, quindi
+// e' li' che una cosa della scheda deve essere spiegata, con le parole che ha
+// oggi il manuale e non con una frase copiata nel collaudo.
+export function sezioneManuale(manuali, scheda) {
+  const pezzi = [];
+  for (const m of manuali) {
+    let dentro = false;
+    for (const b of m.corpo || []) {
+      if (b.h2 !== undefined) dentro = b.scheda === scheda;
+      if (dentro) pezzi.push(JSON.stringify(b));
+    }
+  }
+  return pezzi.join('\n');
+}
+
 export function testoManuali() {
   const rad = new URL('../src/web/', import.meta.url);
   const cartella = new URL('manuali/it/', rad);

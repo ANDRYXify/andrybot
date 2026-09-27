@@ -85,6 +85,32 @@ cercare una cosa che non trova.
 I nomi dei comandi (`!morti`, `!ore`) non si traducono: sono quelli che il bot
 riconosce.
 
+## Gli indirizzi dei manuali
+
+Scelti una volta, qui, perché guide e manuali si citano a vicenda e un
+collegamento deve portare alla pagina della stessa lingua:
+
+| id (italiano) | inglese `/en/manual/…` | spagnolo `/es/manual/…` |
+|---|---|---|
+| stato | status | estado |
+| bot | bot | bot |
+| moduli | commands | comandos |
+| moderazione | moderation | moderacion |
+| giochi | games | juegos |
+| interazione | polls-giveaways | encuestas-sorteos |
+| diretta | live | directo |
+| consolify | consolify | consolify |
+| overlay | overlay | overlay |
+| effetti | effects | efectos |
+| emote | emotes | emotes |
+| vetrina | showcase | escaparate |
+| community | community | comunidad |
+| strumenti | tools | herramientas |
+| account | account | cuenta |
+
+Gli indirizzi delle guide li danno le guide stesse (`slug` in `guide/en.js` e
+`guide/es.js`): un manuale che cita una guida li legge da lì.
+
 ## Il «?» del pannello
 
 `aiutiPerScheda()` restituisce l'indirizzo della pagina nella lingua del
