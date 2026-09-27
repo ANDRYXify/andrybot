@@ -867,3 +867,74 @@ test('il tetto che conta e\' quello della tastiera: quello generale gli sta sopr
     assert.ok(classe && CLASSI[classe].max > tetto, `${metodo}: il tetto generale (${classe}) taglierebbe prima di quello della tastiera (${tetto})`);
   }
 });
+
+test('un passo da completare resta, si vede e non parte', async () => {
+  // Le idee pronte e «Aggiungi passo» mettono passi coi campi ancora vuoti: la
+  // frase da scrivere, il file da scegliere, la scena quando la regia non è
+  // collegata. Buttarli al salvataggio voleva dire che il tasto restava
+  // disegnato ma puntava a niente, e sparivano alla prima rilettura. Un passo
+  // incompleto esiste: il server lo tiene segnato, e premendo si salta.
+  const ch = canale();
+  const detti = [];
+  const salvata = consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [{
+    nome: 'Vado in pausa',
+    passi: [
+      { tipo: 'chat', testo: '' },
+      { tipo: 'scena', scena: '' },
+      { tipo: 'muto', fonte: '', come: 'muta' },
+      { tipo: 'transizione', transizione: '' },
+      { tipo: 'media', file: '', genere: 'audio', durata: 5000, volume: 100 },
+      { tipo: 'comando', comando: '' },
+    ],
+  }] }] });
+  const t = salvata.pagine[0].tasti[0];
+  assert.ok(t, 'il tasto resta');
+  assert.equal(t.passi.length, 6, 'e restano tutti i suoi passi');
+  assert.ok(t.passi.every((p) => p.incompleto === true), 'ognuno segnato da completare');
+  assert.deepEqual(consolle.plancia(ch).pagine[0].tasti[0].passi, t.passi, 'e la rilettura li tiene uguali');
+
+  const r = await consolle.eseguiTasto(ch, t.id, { say: (x) => detti.push(x) });
+  assert.equal(r.ok, false, 'un tasto con soli passi da completare non finge di aver fatto');
+  assert.equal(r.mostra, 'da completare', 'e dice perché');
+  assert.deepEqual(detti, [], 'in chat non esce niente');
+  const e = await consolle.eseguiPassoDiTasto(ch, t.id, 0, { say: (x) => detti.push(x) });
+  assert.deepEqual([e.ok, e.mostra], [false, 'da completare'], 'nemmeno chiesto un passo alla volta');
+
+  // riempito il campo, il segno se ne va e il passo parte; quelli ancora
+  // vuoti si saltano senza fermare gli altri
+  const dopo = consolle.salvaPlancia(ch, { pagine: [{ nome: 'P', tasti: [{ ...t,
+    passi: [{ tipo: 'chat', testo: 'Torno subito' }, ...t.passi.slice(1)] }] }] });
+  const t2 = dopo.pagine[0].tasti[0];
+  assert.deepEqual(t2.passi[0], { tipo: 'chat', testo: 'Torno subito' }, 'completo, senza segno');
+  assert.equal(t2.id, t.id, 'ed è lo stesso tasto, con lo stesso indirizzo');
+  const r2 = await consolle.eseguiTasto(ch, t2.id, { say: (x) => detti.push(x) });
+  assert.deepEqual(detti, ['Torno subito']);
+  assert.equal(r2.ok, true, r2.mostra);
+});
+
+test('un passo da completare non passa dal ponte dei Moduli', async () => {
+  const ch = canale();
+  const arrivati = [];
+  const chiudi = consolle.apriPonte(ch, (m) => arrivati.push(m));
+  for (const passo of [{ tipo: 'scena', scena: '' }, { tipo: 'muto', fonte: ' ' }, { tipo: 'transizione' }]) {
+    const e = await consolle.passoDiRegia(ch, passo);
+    assert.deepEqual([e.ok, e.mostra], [false, 'passo non valido'], JSON.stringify(passo));
+  }
+  assert.equal(arrivati.length, 0);
+  chiudi();
+});
+
+test('il pannello mostra «da completare», lo salta premendo e salva subito un passo nuovo', () => {
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const premi = app.slice(app.indexOf('async function premiTasto('), app.indexOf('async function eseguiPassoRegia('));
+  assert.match(premi, /\.incompleto\)/, 'premendo, i passi da completare si saltano');
+  assert.match(premi, /L\('da completare'/, 'e senza passi pronti il tasto dice perché');
+  const passo = app.slice(app.indexOf('function disegnaPasso('), app.indexOf('function disegnaSchedaTasto('));
+  assert.match(passo, /data-cons-manca=/, 'ogni passo ha il posto del segno');
+  const salva = app.slice(app.indexOf('async function salvaPlancia('), app.indexOf('let _consAppeso'));
+  assert.match(salva, /segnaDaCompletare\(\)/, 'e il segno segue quello che ha detto il server');
+  const piu = app.slice(app.indexOf("if (id === 'cons-p-piu')"), app.indexOf("if (id === 'cons-c-chiudi')"));
+  assert.match(piu, /await salvaPlancia\(/, '«Aggiungi passo» salva subito, senza aspettare un campo cambiato');
+  const faccia = app.slice(app.indexOf('const tastoHtml = '), app.indexOf('const tasti = pg.tasti'));
+  assert.match(faccia, /consStato\(t, a\)/, 'anche la faccia del tasto lo dice');
+});

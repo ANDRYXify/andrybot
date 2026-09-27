@@ -65,7 +65,8 @@ export default {
       ['«Togli il tasto»', 'Cancella il tasto. «Chiudi» chiude la scheda.', ''],
     ] },
     { p: [
-      '<strong>I passi.</strong> Un tasto può fare più cose di seguito. Scegli il tipo accanto a «Aggiungi passo» e premilo. I passi vanno in ordine, e se uno non riesce gli altri succedono lo stesso: chi ti guarda ha già visto i primi.',
+      '<strong>I passi.</strong> Un tasto può fare più cose di seguito. Scegli il tipo accanto a «Aggiungi passo» e premilo: il passo si salva subito. I passi vanno in ordine, e se uno non riesce gli altri succedono lo stesso: chi ti guarda ha già visto i primi.',
+      '<strong>Da completare.</strong> Un passo a cui manca ancora quello che lo fa agire (la frase, il file, la scena, la fonte, la transizione o il nome del comando) resta nel tasto con il segno «da completare». Premendo il tasto quel passo si salta e gli altri partono. Se il tasto ha solo passi da completare non fa niente, e sotto il tasto leggi «da completare».',
     ] },
     { tabella: [
       ['Passo', 'Cosa fa', 'Limiti'],
@@ -82,7 +83,7 @@ export default {
       'I passi di regia propongono le scene, le fonti e le transizioni che il pannello ha letto dal programma. Se il programma non è collegato leggi, per esempio, «nessuna scena: collega la regia qui sotto».',
       'Il file di «Manda questo» passa dalla stessa compressione degli effetti e occupa lo spazio del canale. Se lo spazio è finito leggi «spazio del canale esaurito: togli qualche media, effetto o font e riprova».',
       'Accanto a ogni passo ci sono ‹ › per spostarlo e × per toglierlo. Un tasto deve fare almeno una cosa: se provi a togliere l\'ultimo passo leggi «Un tasto deve fare almeno una cosa. Cambiala, oppure togli il tasto.». Al nono passo leggi «Otto passi bastano: oltre, un tasto non si capisce più.».',
-      '<strong>Le idee pronte.</strong> Un tasto appena creato non fa ancora niente e propone sei idee: «Manda un link», «Manda un suono», «Manda un\'immagine», «Racconta una battuta», «Cambia scena» e «Vado in pausa». Scegline una: mette i passi, il nome e l\'icona, e poi cambi quello che vuoi. «Cambia scena» e «Vado in pausa» prendono la prima scena e la prima fonte lette dal programma, quindi collegalo prima.',
+      '<strong>Le idee pronte.</strong> Un tasto appena creato non fa ancora niente e propone sei idee: «Manda un link», «Manda un suono», «Manda un\'immagine», «Racconta una battuta», «Cambia scena» e «Vado in pausa». Scegline una: mette i passi, il nome e l\'icona, e poi cambi quello che vuoi. I passi che aspettano qualcosa da te nascono «da completare»: il link da scrivere, il file da scegliere. «Cambia scena» e «Vado in pausa» prendono la prima scena e la prima fonte lette dal programma; se il programma non è collegato, anche quei passi restano da completare.',
     ] },
 
     { h3: 'Il programma con cui mandi in onda' },
@@ -119,6 +120,7 @@ export default {
       '«chiave non valida»: la chiave è sbagliata o è stata rigenerata. Ricopia l\'indirizzo.',
       '«troppo in fretta»: più di 40 richieste in un minuto sul canale. Dal pannello un tasto con più passi può contare una richiesta per passo.',
       '«tasto non trovato»: quel tasto non c\'è più.',
+      '«da completare»: il tasto ha solo passi da completare. Riempili nella sua scheda.',
       '«nessun overlay collegato» e «nessuna pagina di regia aperta»: vedi sopra.',
       '«!nome non c\'è»: il comando del passo non esiste più.',
       '«manca il testo»: «Fai dire una frase» non ha niente da dire.',

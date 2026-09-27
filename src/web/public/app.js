@@ -15329,7 +15329,7 @@ function disegnaConsolify() {
     return `<button class="cons-tasto" data-cons-tasto="${i}"${stile}${mod ? ` draggable="true" data-cons-trascina="${i}"` : ''} title="${esc(consNome(t, a))}">
       <span class="cons-ico">${consIcona(t, a)}</span>
       <span class="cons-nome">${esc(consNome(t, a))}</span>
-      <span class="cons-stato">${esc(a?.mostra || '')}</span>
+      <span class="cons-stato">${esc(consStato(t, a))}</span>
       ${mod ? `<span class="cons-mod">
           <span class="cons-mini" data-cons-apri="${i}" title="${L('Modifica', 'Edit', 'Editar')}">${_bIco(ICO.scrivi)}</span>
           <span class="cons-mini" data-cons-togli="${i}" title="${L('Togli', 'Remove', 'Quitar')}">×</span>
@@ -15600,9 +15600,12 @@ const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function premiTasto(t, stato) {
   const passi = t.passi || [];
+  const pronti = passi.filter((p) => !p.incompleto).length;
+  if (!pronti) return { ok: false, mostra: L('da completare', 'unfinished', 'por completar') };
   const esiti = [];
   for (let k = 0; k < passi.length; k++) {
     const p = passi[k];
+    if (p.incompleto) continue;
     if (p.tipo === 'attesa') { await attendi(Math.min(30000, Number(p.ms) || 0)); esiti.push({ ok: true, mostra: '' }); continue; }
     const diRegia = p.tipo === 'scena' || p.tipo === 'muto' || p.tipo === 'transizione';
     if (diRegia && window.RegiaEsterna && RegiaEsterna.collegato()) { esiti.push(await eseguiPassoRegia(p)); continue; }
@@ -15612,7 +15615,7 @@ async function premiTasto(t, stato) {
       if (d && typeof d.overlay === 'boolean' && d.overlay !== _cons.overlay) { _cons.overlay = d.overlay; disegnaSpia(); }
       esiti.push({ ok: !!(d && d.ok), mostra: String((d && d.mostra) || '') });
     } catch (e) { esiti.push({ ok: false, mostra: L('non riuscito', 'failed', 'falló') }); }
-    if (stato) stato.textContent = `${k + 1}/${passi.length}`;
+    if (stato) stato.textContent = `${esiti.length}/${pronti}`;
   }
   const riusciti = esiti.filter((e) => e.ok).length;
   const guaio = esiti.find((e) => !e.ok);
@@ -15686,6 +15689,9 @@ function consAzione(t, perId) {
   return perId ? perId.get(p.id) : _cons.azioni.find((a) => a.id === p.id);
 }
 const consNome = (t, a) => t.nome || (a && a.titolo) || etichettaPasso(((t && t.passi) || [])[0]) || '—';
+const consDaCompletare = (t) => { const passi = (t && t.passi) || []; return !passi.length || passi.some((p) => p.incompleto); };
+const consStato = (t, a) => (consDaCompletare(t) ? L('da completare', 'unfinished', 'por completar') : ((a && a.mostra) || ''));
+const MANCA_PASSO = () => `<span class="badge giallo">${L('da completare', 'unfinished', 'por completar')}</span>`;
 
 function consIcona(t, a) {
   const scelta = t.icona || a?.icona || '';
@@ -15703,6 +15709,8 @@ function rinfrescaTasto(i) {
   if (nome) nome.textContent = consNome(t, a);
   const ico = el.querySelector('.cons-ico');
   if (ico) ico.innerHTML = consIcona(t, a);
+  const st = el.querySelector('.cons-stato');
+  if (st) st.textContent = consStato(t, a);
   if (t.colore) el.style.setProperty('--cons-tinta', t.colore);
   else el.style.removeProperty('--cons-tinta');
 }
@@ -15782,6 +15790,7 @@ function disegnaPasso(p, k, n) {
     <span class="cons-passo-n">${k + 1}</span>
     <span class="cons-passo-t">${esc(nomi[p.tipo] || p.tipo)}</span>
     <span class="cons-passo-c">${corpo}</span>
+    <span data-cons-manca="${k}">${p.incompleto ? MANCA_PASSO() : ''}</span>
     ${frecce}
   </div>`;
 }
@@ -15812,7 +15821,7 @@ function disegnaSchedaTasto() {
     <div class="cons-sez">${L('Cosa fa, in fila', 'What it does, in order', 'Qué hace, en fila')}</div>
     <p class="suggerimento">${L('Un tasto può fare più cose di seguito. Vanno in ordine, e se una non riesce le altre succedono lo stesso.', 'A key can do several things in a row. They run in order, and if one fails the others still happen.', 'Una tecla puede hacer varias cosas seguidas. Van en orden, y si una falla las demás pasan igual.')}</p>
     ${(t.passi || []).length ? '' : `<div class="cons-ricette">
-      <p class="suggerimento">${L('Non fa ancora niente. Aggiungi i passi che vuoi qui sotto, oppure parti da una di queste — poi cambi tutto quello che vuoi.', 'It does nothing yet. Add the steps you want below, or start from one of these — then change anything you like.', 'Todavía no hace nada. Añade abajo los pasos que quieras, o parte de una de estas — luego cambias lo que quieras.')}</p>
+      <p class="suggerimento">${L('Non fa ancora niente. Aggiungi i passi che vuoi qui sotto, oppure parti da un’idea: mette i passi, e quelli da riempire restano segnati «da completare» finché non li completi.', 'It does nothing yet. Add the steps you want below, or start from an idea: it puts the steps in, and the ones to fill in stay marked “unfinished” until you complete them.', 'Todavía no hace nada. Añade abajo los pasos que quieras, o parte de una idea: pone los pasos, y los que hay que rellenar quedan marcados «por completar» hasta que los completes.')}</p>
       <div class="cons-ricette-fila">${RICETTE().map((r) => `<button class="btn secondario mini" data-cons-preset="${r.id}">${_bIco(ICO[r.icona] || ICO.effetti)}${esc(r.nome)}</button>`).join('')}</div>
     </div>`}
     <div class="cons-passi">${(t.passi || []).map((p, k) => disegnaPasso(p, k, (t.passi || []).length)).join('')}</div>
@@ -15882,6 +15891,16 @@ function disegnaIndirizziConsole() {
   box.innerHTML = testa + (righe || `<p class="vuoto">${L('Nessun tasto ancora: creane uno nella plancia qui sopra e il suo indirizzo compare qui.', 'No keys yet: make one on the board above and its address appears here.', 'Aún no hay teclas: crea una en el tablero de arriba y su dirección aparece aquí.')}</p>`);
 }
 
+function segnaDaCompletare() {
+  const t = _cons.plancia.pagine[_cons.pagina]?.tasti?.[_cons.aperto];
+  if (!t) return;
+  document.querySelectorAll('#cons-scheda [data-cons-manca]').forEach((el) => {
+    const p = (t.passi || [])[Number(el.dataset.consManca)];
+    el.innerHTML = p && p.incompleto ? MANCA_PASSO() : '';
+  });
+  rinfrescaTasto(_cons.aperto);
+}
+
 async function salvaPlancia({ ridisegna = true } = {}) {
   const es = document.getElementById('cons-esito');
   try {
@@ -15891,6 +15910,7 @@ async function salvaPlancia({ ridisegna = true } = {}) {
       if (_cons.pagina >= _cons.plancia.pagine.length) _cons.pagina = 0;
       if (_cons.aperto !== null && !_cons.plancia.pagine[_cons.pagina]?.tasti?.[_cons.aperto]) _cons.aperto = null;
       if (ridisegna) disegnaConsolify();
+      else segnaDaCompletare();
       disegnaIndirizziConsole();
     }
     if (es) es.textContent = '';
@@ -16064,7 +16084,7 @@ function appendiConsolify() {
                     : { tipo: 'attesa', ms: 1000 };
       if (t.passi.length >= 8) { toast(L('Otto passi bastano: oltre, un tasto non si capisce più.', 'Eight steps is plenty: past that, a key stops being readable.', 'Ocho pasos bastan: más allá, una tecla deja de entenderse.'), 'errore'); return; }
       t.passi.push(nuovo);
-      disegnaSchedaTasto(); return;
+      disegnaSchedaTasto(); await salvaPlancia({ ridisegna: false }); return;
     }
     if (id === 'cons-c-chiudi') { _cons.aperto = null; disegnaSchedaTasto(); return; }
     if (id === 'cons-c-duplica') {
