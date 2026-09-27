@@ -3508,13 +3508,13 @@ function funzioneChiusa(funz) {
   return !(v === true || v === -1 || (typeof v === 'number' && v > 0));
 }
 
-function muroPacchetto(funz, cosa, addon = FUNZ_ADDON[funz]) {
+function muroPacchetto(funz, cosa, { plurale = false, addon = FUNZ_ADDON[funz] } = {}) {
   if (!funzioneChiusa(funz)) return '';
-  if (_chiusoDalProprietario(funz)) return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${esc(cosa)} ${L('è chiuso dal proprietario', 'is closed by the owner', 'está cerrado por el propietario')}${stato.accesso.nota ? ': ' + esc(stato.accesso.nota) : ''}.</span></div>`;
+  if (_chiusoDalProprietario(funz)) return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${L('Il proprietario ha chiuso questa parte', 'The owner has closed this part', 'El propietario ha cerrado esta parte')}${stato.accesso.nota ? ': ' + esc(stato.accesso.nota) : ''}.</span></div>`;
   const na = NOME_ADDON[addon] || ['', '', ''];
   const nome = L(na[0], na[1], na[2]);
   const compra = !!stato?.stripeAttivo && !!addon;
-  return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${esc(cosa)} ${L('non è nel tuo piano.', 'is not in your plan.', 'no está en tu plan.')}</span>
+  return `<div class="muro-pacchetto" role="note">${_bIco(ICO.lucchetto)}<span>${esc(cosa)} ${plurale ? L('non sono nel tuo piano.', 'are not in your plan.', 'no están en tu plan.') : L('non è nel tuo piano.', 'is not in your plan.', 'no está en tu plan.')}</span>
     ${compra ? `<button type="button" class="btn secondario" data-sblocca="${esc(addon)}">${L('Sblocca con', 'Unlock with', 'Desbloquea con')} «${esc(nome)}»</button>`
       : `<a href="#sottoscrizione" data-scheda="sottoscrizione">${L('Vedi i piani', 'See the plans', 'Ver los planes')}</a>`}
   </div>`;
@@ -3597,7 +3597,7 @@ const GUIDE = {
   consolify: { serve: ['Avere i tasti del tuo canale sotto le dita mentre streami (contatori, effetti, una battuta, una frase), sul telefono, sul tablet o su una tastiera fisica.', 'Have your channel’s keys under your fingers while you stream (counters, effects, a joke, a line), on your phone, tablet or a physical key pad.', 'Tener las teclas de tu canal bajo los dedos mientras emites (contadores, efectos, un chiste, una frase), en el móvil, la tablet o un teclado físico.'],
     come: [['Premi «Modifica i tasti» e poi il «+»: nasce un tasto vuoto, e nei suoi passi trovi già le tue azioni, perché nascono dai tuoi contatori e dai tuoi effetti.', 'Press “Edit the keys”, then the “+”: an empty key is born, and in its steps you already find your actions, because they come from your own counters and effects.', 'Pulsa «Editar las teclas» y luego el «+»: nace una tecla vacía, y en sus pasos ya encuentras tus acciones, porque nacen de tus contadores y tus efectos.', '#cons-modifica'], ['Premi «Fatto» e prova: sotto ogni tasto compare com\'è andata, per esempio il numero nuovo del contatore.', 'Press “Done” and try it: under each key you see how it went, for example the counter’s new number.', 'Pulsa «Hecho» y pruébalo: bajo cada tecla aparece cómo ha ido, por ejemplo el número nuevo del contador.', '#cons-plancia'], ['Apri questa pagina sul telefono e tienila lì mentre streami: la griglia si adatta da sé.', 'Open this page on your phone and keep it there while you stream: the grid adapts on its own.', 'Abre esta página en el móvil y tenla ahí mientras emites: la cuadrícula se adapta sola.', ''], ['Per una tastiera fisica: ogni tasto qui ha il suo indirizzo. Copialo e incollalo in un tasto con un componente di chiamate web: punta al tasto, non all\'azione, quindi se domani gli cambi mestiere lì non rifai niente.', 'For a physical key pad: every key here has its own address. Copy it into a key with a web-request component: it points at the key, not the action, so if tomorrow you change what it does you redo nothing there.', 'Para un teclado físico: cada tecla de aquí tiene su dirección. Cópiala en una tecla con un componente de peticiones web: apunta a la tecla, no a la acción, así si mañana cambias lo que hace no rehaces nada allí.', '#cons-indirizzi'], ['Se un indirizzo finisce in una clip, rigenera la chiave: quelli vecchi smettono di funzionare subito.', 'If an address ends up in a clip, regenerate the key: the old ones stop working immediately.', 'Si una dirección acaba en un clip, regenera la clave: las viejas dejan de funcionar enseguida.', '#cons-revoca']] },
   regia: { serve: ['Gestire la diretta dal pannello: titolo, categoria, marker e le azioni rapide, senza aprire Twitch.', 'Run your stream from the panel: title, category, markers and quick actions, without opening Twitch.', 'Gestionar el directo desde el panel: título, categoría, marcadores y acciones rápidas, sin abrir Twitch.'],
-    come: [['Cambia titolo e categoria e salva: si aggiornano su Twitch subito.', 'Change title and category and save: they update on Twitch right away.', 'Cambia título y categoría y guarda: se actualizan en Twitch al instante.', '#regia-titolo'], ['Usa le azioni rapide durante la live (marker, clip, annunci).', 'Use the quick actions during the stream (marker, clip, announcements).', 'Usa las acciones rápidas durante el directo (marcador, clip, anuncios).', '#regia-clip'], ['Tieni il pannello aperto su un secondo schermo mentre streami.', 'Keep the panel open on a second screen while you stream.', 'Ten el panel abierto en una segunda pantalla mientras emites.', '']] },
+    come: [['Cambia titolo e categoria e salva: si aggiornano su Twitch subito.', 'Change title and category and save: they update on Twitch right away.', 'Cambia título y categoría y guarda: se actualizan en Twitch al instante.', '#regia-titolo'], ['Usa le azioni rapide durante la live: clip, marker, pubblicità, raid.', 'Use the quick actions during the stream: clips, markers, ads, raids.', 'Usa las acciones rápidas durante el directo: clips, marcadores, anuncios, raids.', '#regia-clip'], ['Tieni il pannello aperto su un secondo schermo mentre streami.', 'Keep the panel open on a second screen while you stream.', 'Ten el panel abierto en una segunda pantalla mientras emites.', '']] },
   dirette: { serve: ['Rileggere com’è andata ogni diretta e scegliere dove ricevere il rapporto.', 'Look back at how each stream went and choose where to get the report.', 'Repasar cómo fue cada directo y elegir dónde recibir el informe.'],
     come: [['Ogni diretta finita è una carta: durata, spettatori, chat, follower, presenti, clip e donazioni.', 'Every finished stream is a card: duration, viewers, chat, followers, attendees, clips and donations.', 'Cada directo terminado es una tarjeta: duración, espectadores, chat, seguidores, presentes, clips y donaciones.', '#lista-rapporti'], ['Accendi Telegram se hai collegato la chat privata: il rapporto arriva lì appena chiudi.', 'Turn on Telegram if you linked the private chat: the report lands there as soon as you end.', 'Enciende Telegram si vinculaste el chat privado: el informe llega allí en cuanto cierras.', '#chk-rap-telegram'], ['Per la mail scrivi l’indirizzo e conferma dal messaggio che ti arriva.', 'For email, write the address and confirm from the message you get.', 'Para el correo escribe la dirección y confirma desde el mensaje que te llega.', '#inp-posta']] },
   sottoscrizione: { serve: ['Vedere cosa hai attivo, cosa comprende, quanto paghi e come cambiarlo o annullarlo.', 'See what you have active, what it includes, what you pay and how to change or cancel it.', 'Ver qué tienes activo, qué incluye, cuánto pagas y cómo cambiarlo o cancelarlo.'],
@@ -3830,7 +3830,7 @@ const FAM_ETI = {
   comandi: ['Comandi', 'Commands', 'Comandos'],
   moderazione: ['Moderazione', 'Moderation', 'Moderación'],
   interazione: ['Giochi', 'Games', 'Juegos'],
-  inonda: ['Regia', 'Live control', 'Realización'],
+  inonda: ['Regia', 'Control room', 'Realización'],
 };
 function tFamiglia(id, def) {
   const e = FAM_ETI[id];
@@ -9146,8 +9146,8 @@ function pannelloClip() {
   return pannello('clip', `
     <div class="carta">
       <h2>${_hIco(ICO.clip)}${L('Clip automatiche', 'Automatic clips', 'Clips automáticos')}</h2>
-      ${muroPacchetto('clipAuto', L('Le clip automatiche', 'Automatic clips', 'Los clips automáticos'))}
-      <p>${L('Il bot riconosce i', 'The bot spots', 'El bot reconoce los')} <strong>${L('momenti da clip', 'clip-worthy moments', 'momentos para clip')}</strong> ${L('da solo: non conta solo i messaggi, ma capisce quando la chat', 'on its own: it doesn’t just count messages, it senses when chat', 'solo: no cuenta solo los mensajes, sino que capta cuándo el chat')} <strong>${L('esplode di reazioni', 'explodes with reactions', 'explota de reacciones')}</strong>${L(', ride tutta insieme o arrivano', ', laughs all together, or', ', se ríe a la vez o llegan')} <strong>${L('sub, bit o raid', 'subs, bits or raids', 'subs, bits o raids')}</strong> ${L('arrivano. E si adatta al ritmo del tuo canale (piccolo o grande).', 'come in. And it adapts to your channel’s pace (small or big).', 'And it adapts to your channel’s pace (small or big).')}</p>
+      ${muroPacchetto('clipAuto', L('Le clip automatiche', 'Automatic clips', 'Los clips automáticos'), { plurale: true })}
+      <p>${L('Il bot riconosce i', 'The bot spots', 'El bot reconoce los')} <strong>${L('momenti da clip', 'clip-worthy moments', 'momentos para clip')}</strong> ${L('da solo: non conta solo i messaggi, ma capisce quando la chat', 'on its own: it doesn’t just count messages, it senses when chat', 'solo: no cuenta solo los mensajes, sino que capta cuándo el chat')} <strong>${L('esplode di reazioni', 'explodes with reactions', 'explota de reacciones')}</strong>${L(', ride tutta insieme o arrivano', ', laughs all together, or', ', se ríe a la vez o llegan')} <strong>${L('sub, bit o raid', 'subs, bits or raids', 'subs, bits o raids')}</strong>${L('. E si adatta al ritmo del tuo canale, piccolo o grande.', ' come in. And it adapts to your channel’s pace, small or big.', '. Y se adapta al ritmo de tu canal, pequeño o grande.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
           <input type="checkbox" id="chk-clip" ${s.clipAuto && !funzioneChiusa('clipAuto') ? 'checked' : ''}${funzioneChiusa('clipAuto') ? ' disabled' : ''}>
@@ -9286,7 +9286,7 @@ function pannelloMusica() {
       <p>${L('Decidi tu se le richieste sono libere o "a pagamento": non devono per forza essere gratis.', 'You decide whether requests are free or "paid": they don’t have to be free.', 'Tú decides si las peticiones son libres o "de pago": no tienen por qué ser gratis.')}</p>
       <label class="campo" for="musica-modo">${L('Modalità', 'Mode', 'Modo')}</label>
       <select id="musica-modo">
-        ${opt('libero', L('Libere — tutti, gratis', 'Free — everyone, free', 'Libres — todos, gratis'))}
+        ${opt('libero', L('Libere (tutti, gratis)', 'Free (everyone, no cost)', 'Libres (todos, gratis)'))}
         ${opt('sub', L('Solo abbonati (sub)', 'Subscribers only (subs)', 'Solo suscriptores (subs)'))}
         ${opt('monete', L('A monete del bot', 'With bot coins', 'Con monedas del bot'))}
         ${opt('bit', L('A bit (Cheer nel messaggio)', 'With bits (Cheer in the message)', 'Con bits (Cheer en el mensaje)'))}
@@ -9298,8 +9298,8 @@ function pannelloMusica() {
       </div>
       <div id="musica-premio-box" class="spazio-sopra" hidden>
         <input type="hidden" id="musica-premio" value="${esc(m.premio || '')}">
-        <p>Gli spettatori richiedono una canzone <strong>riscattando un premio a punti canale</strong> con la "richiesta di testo": scrivono il brano nel riscatto e il bot lo mette in coda.</p>
-        <div id="musica-premi-box" class="spazio-sopra"><p>Carico i tuoi premi…</p></div>
+        <p>${L('Gli spettatori richiedono una canzone <strong>riscattando un premio a punti canale</strong> con la "richiesta di testo": scrivono il brano nel riscatto e il bot lo mette in coda.', 'Viewers request a song by <strong>redeeming a channel-point reward</strong> with "require text": they write the track in the redemption and the bot queues it.', 'Los espectadores piden una canción <strong>canjeando una recompensa de puntos de canal</strong> con "requerir texto": escriben el tema en el canje y el bot lo pone en cola.')}</p>
+        <div id="musica-premi-box" class="spazio-sopra">${attesaHtml()}</div>
       </div>
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="musica-disambigua" ${m.disambigua !== false ? 'checked' : ''}>
@@ -9373,7 +9373,8 @@ async function caricaPremiMusica() {
   let d;
   try { d = await api('/api/musica/premi'); } catch { box.innerHTML = `<p>${L('Impossibile leggere i premi.', 'Couldn’t read the rewards.', 'No se pueden leer las recompensas.')}</p>`; return; }
   if (!d.permessoOk) {
-    box.innerHTML = `<div class="riquadro-info">${L('Per usare i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.', 'To use channel-point rewards you need the permission: grant it from <strong>Chat &amp; commands → Effects &amp; sounds</strong> (Rewards section), then come back here.', 'Para usar las recompensas de puntos de canal necesitas el permiso: concédelo desde <strong>Chat y comandos → Efectos y sonidos</strong> (sección Recompensas), luego vuelve aquí.')}</div>`;
+    box.innerHTML = `<div class="riquadro-info">${L('Per usare i premi a punti canale serve il permesso Punti canale di Twitch.', 'To use channel-point rewards you need Twitch’s Channel Points permission.', 'Para usar las recompensas de puntos de canal necesitas el permiso Puntos de canal de Twitch.')}
+      <a href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Concede el permiso')}</a> ${L('(ti riporta qui dopo l\'autorizzazione).', '(it brings you back here after authorizing).', '(te devuelve aquí tras autorizar).')}</div>`;
     return;
   }
   const eleggibili = (d.tutti || []).filter((r) => r.richiedeTesto);
@@ -9398,7 +9399,7 @@ async function caricaPremiMusica() {
     box.innerHTML = `
       <label class="campo" for="musica-premio-sel">${L('Premio usato per le richieste', 'Reward used for requests', 'Recompensa usada para las peticiones')}</label>
       <select id="musica-premio-sel">
-        ${eleggibili.map((r) => `<option value="${esc(r.title)}"${r.title === attuale ? ' selected' : ''}>${esc(r.title)} — ${r.cost} ${L('punti', 'points', 'puntos')}</option>`).join('')}
+        ${eleggibili.map((r) => `<option value="${esc(r.title)}"${r.title === attuale ? ' selected' : ''}>${esc(r.title)} (${r.cost} ${L('punti', 'points', 'puntos')})</option>`).join('')}
       </select>
       ${esclusi ? `<p class="suggerimento">${esclusi} ${esclusi === 1 ? L('altro premio non ha', 'other reward doesn’t have', 'otra recompensa no tiene') : L('altri premi non hanno', 'other rewards don’t have', 'otras recompensas no tienen')} ${L('la richiesta di testo, quindi', 'require text, so', 'requerir texto, así que')} ${esclusi === 1 ? L('non compare', 'it doesn’t appear', 'no aparece') : L('non compaiono', 'they don’t appear', 'no aparecen')} ${L('qui.', 'here.', 'aquí.')}</p>` : ''}
       ${formCrea}`;
@@ -15224,7 +15225,7 @@ function pannelloConsolify() {
   return pannello('consolify', `
     <div class="carta">
       <h2>${_hIco(ICO.onda)}CONSOLify</h2>
-      <p class="suggerimento">${L('I tasti del tuo canale, sotto le dita. Sul telefono, sul tablet o su un secondo monitor mentre streammi — e gli stessi tasti li puoi mettere su una tastiera fisica.', 'Your channel’s keys under your fingers. On your phone, tablet or a second monitor while you stream — and the same keys go on a physical key pad.', 'Las teclas de tu canal bajo los dedos. En el móvil, la tablet o un segundo monitor mientras emites — y las mismas teclas van a un teclado físico.')}</p>
+      <p class="suggerimento">${L('I tasti del tuo canale, sotto le dita. Sul telefono, sul tablet o su un secondo monitor mentre streammi, e gli stessi tasti li puoi mettere su una tastiera fisica.', 'Your channel’s keys under your fingers. On your phone, tablet or a second monitor while you stream, and the same keys go on a physical key pad.', 'Las teclas de tu canal bajo los dedos. En el móvil, la tablet o un segundo monitor mientras emites, y las mismas teclas van a un teclado físico.')}</p>
       <div class="vita-azioni">
         <button class="btn secondario mini" id="cons-modifica">${L('Modifica i tasti', 'Edit the keys', 'Editar las teclas')}</button>
         <button class="btn secondario mini" id="cons-aggiorna">${L('Aggiorna', 'Refresh', 'Actualizar')}</button>
@@ -15259,7 +15260,7 @@ function pannelloConsolify() {
         <button class="btn secondario mini" id="re-scorda">${L('Scorda tutto', 'Forget it all', 'Olvidar todo')}</button>
         <span id="re-spia" class="cons-spia"></span>
       </p>
-      <p class="suggerimento">${L('Il collegamento si apre da questa pagina, e solo verso il programma che gira sullo stesso computer: un browser non può cercare né raggiungere un altro computer della rete, lo impedisce il browser stesso. Dal telefono però i tasti scena funzionano lo stesso, passando da questo pannello: tienilo aperto su quel computer mentre streami. Se non c’è nessun pannello aperto lì, il tasto te lo dice invece di fingere.', 'The connection opens from this page, and only to the program running on the same computer: a browser cannot search for or reach another computer on the network — the browser itself forbids it. From your phone the scene keys still work though, going through this panel: keep it open on that computer while you stream. If no panel is open there, the key says so instead of pretending.', 'La conexión se abre desde esta página, y solo hacia el programa que corre en el mismo ordenador: un navegador no puede buscar ni alcanzar otro ordenador de la red, lo impide el propio navegador. Desde el móvil las teclas de escena funcionan igual, pasando por este panel: tenlo abierto en ese ordenador mientras emites. Si no hay ningún panel abierto allí, la tecla te lo dice en vez de fingir.')}</p>
+      <p class="suggerimento">${L('Il collegamento si apre da questa pagina, e solo verso il programma che gira sullo stesso computer: un browser non può cercare né raggiungere un altro computer della rete, lo impedisce il browser stesso. Dal telefono però i tasti scena funzionano lo stesso, passando da questo pannello: tienilo aperto su quel computer mentre streami. Se non c’è nessun pannello aperto lì, il tasto te lo dice invece di fingere.', 'The connection opens from this page, and only to the program running on the same computer: a browser cannot search for or reach another computer on the network, the browser itself forbids it. From your phone the scene keys still work though, going through this panel: keep it open on that computer while you stream. If no panel is open there, the key says so instead of pretending.', 'La conexión se abre desde esta página, y solo hacia el programa que corre en el mismo ordenador: un navegador no puede buscar ni alcanzar otro ordenador de la red, lo impide el propio navegador. Desde el móvil las teclas de escena funcionan igual, pasando por este panel: tenlo abierto en ese ordenador mientras emites. Si no hay ningún panel abierto allí, la tecla te lo dice en vez de fingir.')}</p>
       <div id="re-scene" class="cons-scene"></div>
     </div>
 
@@ -15455,7 +15456,7 @@ function disegnaSpiaRegia(msg) {
   if (!el) return;
   el.className = 'cons-spia' + (su ? ' su' : ' giu');
   el.textContent = msg || (su
-    ? L('collegato — da qui comando anche quello che premi dal telefono', 'connected — from here I also run what you press on your phone', 'conectado — desde aquí también ejecuto lo que pulsas en el móvil')
+    ? L('collegato: da qui comando anche quello che premi dal telefono', 'connected: from here I also run what you press on your phone', 'conectado: desde aquí también ejecuto lo que pulsas en el móvil')
     : L('non collegato', 'not connected', 'no conectado'));
 }
 
@@ -15656,7 +15657,7 @@ function disegnaSpia() {
   el.className = 'cons-spia' + (su ? ' su' : ' giu');
   el.textContent = su
     ? L('overlay collegato', 'overlay connected', 'overlay conectado')
-    : L('nessun overlay collegato — effetti, suoni e video non hanno dove andare', 'no overlay connected — effects, sounds and videos have nowhere to go', 'ningún overlay conectado — efectos, sonidos y vídeos no tienen a dónde ir');
+    : L('nessun overlay collegato: effetti, suoni e video non hanno dove andare', 'no overlay connected: effects, sounds and videos have nowhere to go', 'ningún overlay conectado: efectos, sonidos y vídeos no tienen a dónde ir');
 }
 
 const TIPI_PASSO = () => [
@@ -15849,7 +15850,7 @@ function disegnaSchedaTasto() {
       ${icone.map((k) => `<button class="cons-ic${scelta === k ? ' on' : ''}" data-cons-icona="${esc(k)}" title="${esc(k)}">${_bIco(ICO[k])}</button>`).join('')}
       ${scelta.startsWith('img:') ? `<button class="cons-ic on" data-cons-icona="${esc(scelta)}"><img class="cons-img" src="/icona/${esc(_cons.login)}/${esc(scelta.slice(4))}" alt=""></button>` : ''}
     </div>
-    <label class="cons-libera">${L('Oppure un\'immagine tua (PNG, JPG, WEBP, GIF, SVG — max 2 MB). Ha un indirizzo pubblico, così la stessa faccia la metti anche sul tasto della tastiera fisica.', 'Or an image of your own (PNG, JPG, WEBP, GIF, SVG — max 2 MB). It gets a public address, so the same face goes on your physical key pad too.', 'O una imagen tuya (PNG, JPG, WEBP, GIF, SVG — máx 2 MB). Tiene una dirección pública, así la misma cara va también en la tecla de tu teclado físico.')}
+    <label class="cons-libera">${L('Oppure un\'immagine tua (PNG, JPG, WEBP, GIF o SVG, fino a 2 MB). Ha un indirizzo pubblico, così la stessa faccia la metti anche sul tasto della tastiera fisica.', 'Or an image of your own (PNG, JPG, WEBP, GIF or SVG, up to 2 MB). It gets a public address, so the same face goes on your physical key pad too.', 'O una imagen tuya (PNG, JPG, WEBP, GIF o SVG, hasta 2 MB). Tiene una dirección pública, así la misma cara va también en la tecla de tu teclado físico.')}
       <input type="file" class="campo" id="cons-c-file" accept="image/*"></label>
     <label class="cons-libera corta">${L('Oppure un carattere tuo', 'Or a character of your own', 'O un carácter tuyo')}
       <input class="campo" id="cons-c-icona" maxlength="4" value="${esc(ICO[t.icona] ? '' : (t.icona || ''))}" placeholder="${L('vuoto = quella scelta sopra', 'empty = the one picked above', 'vacío = la elegida arriba')}"></label>
@@ -16688,7 +16689,7 @@ function pannelloRegia() {
 
     <div class="carta">
       <h2>${_hIco(ICO.scrivi)}${L('Info del canale', 'Channel info', 'Info del canal')}</h2>
-      <p>${L('Imposta', 'Set the', 'Configura')} <strong>${L('titolo', 'title', 'título')}</strong>, <strong>${L('categoria', 'category', 'categoría')}</strong> ${L('e', 'and', 'y')} <strong>${L('tag', 'tags', 'etiquetas')}</strong> ${L('del canale — senza aprire Twitch o OBS. Vale anche da offline.', 'of the channel — without opening Twitch or OBS. Works offline too.', 'del canal — sin abrir Twitch ni OBS. Vale también sin estar en directo.')}</p>
+      <p>${L('Imposta', 'Set the', 'Configura')} <strong>${L('titolo', 'title', 'título')}</strong>, <strong>${L('categoria', 'category', 'categoría')}</strong> ${L('e', 'and', 'y')} <strong>${L('tag', 'tags', 'etiquetas')}</strong> ${L('del canale, senza aprire Twitch o OBS. Vale anche da offline.', 'of the channel, without opening Twitch or OBS. Works offline too.', 'del canal, sin abrir Twitch ni OBS. Vale también sin estar en directo.')}</p>
       <label class="campo" for="regia-titolo">${L('Titolo della diretta', 'Stream title', 'Título del directo')}</label>
       <input type="text" id="regia-titolo" class="campo-largo" maxlength="140" placeholder="${L('Es. Ranked fino al Diamante!', 'e.g. Ranked to Diamond!', '¡Ej. Ranked hasta Diamante!')}">
 
@@ -16699,7 +16700,7 @@ function pannelloRegia() {
         <div id="regia-gioco-lista" class="cat-lista" hidden></div>
       </div>
 
-      <label class="campo spazio-sopra" for="regia-tags">${L('Tag', 'Tags', 'Etiquetas')} <span class="tenue">— ${L('separati da virgola, max 10', 'comma-separated, max 10', 'separadas por comas, máx. 10')}</span></label>
+      <label class="campo spazio-sopra" for="regia-tags">${L('Tag', 'Tags', 'Etiquetas')} <span class="tenue">(${L('separati da virgola, max 10', 'comma-separated, max 10', 'separadas por comas, máx. 10')})</span></label>
       <input type="text" id="regia-tags" class="campo-largo" placeholder="${L('italiano, chill, ranked', 'english, chill, ranked', 'español, chill, ranked')}">
 
       <p class="spazio-sopra"><button type="button" class="btn" id="regia-salva-canale" title="${esc(L('Cambia titolo e categoria della diretta adesso, senza aprire Twitch', 'Changes the live title and category right now, without opening Twitch', 'Cambia el título y la categoría del directo ahora, sin abrir Twitch'))}">${L('Salva info canale', 'Save channel info', 'Guardar info del canal')}</button></p>
@@ -16727,7 +16728,7 @@ function pannelloRegia() {
           <button type="button" class="btn secondario mini" id="regia-raid-annulla">${L('Annulla', 'Cancel', 'Cancelar')}</button>
         </div>
       </div>
-      <p class="suggerimento spazio-sopra">${L('Clip e marker (e la pubblicità/raid) funzionano solo <strong>mentre sei in diretta</strong>. Il video della live lo fa ancora OBS — qui gestisci tutto il resto.', 'Clips and markers (and ads/raids) only work <strong>while you’re live</strong>. OBS still does the video — here you manage everything else.', 'Los clips y marcadores (y los anuncios/raids) solo funcionan <strong>mientras estás en directo</strong>. El vídeo sigue haciéndolo OBS — aquí gestionas todo lo demás.')}</p>
+      <p class="suggerimento spazio-sopra">${L('Clip e marker (e la pubblicità/raid) funzionano solo <strong>mentre sei in diretta</strong>. Il video della live lo fa ancora OBS: qui gestisci tutto il resto.', 'Clips and markers (and ads/raids) only work <strong>while you’re live</strong>. OBS still does the video: here you manage everything else.', 'Los clips y marcadores (y los anuncios/raids) solo funcionan <strong>mientras estás en directo</strong>. El vídeo sigue haciéndolo OBS: aquí gestionas todo lo demás.')}</p>
     </div>
 
     <div class="carta">
@@ -16898,7 +16899,7 @@ async function caricaRegia() {
   const t = document.getElementById('regia-titolo'); if (t) t.value = d.canale?.title || '';
   const tags = document.getElementById('regia-tags'); if (tags) tags.value = (d.canale?.tags || []).join(', ');
   _regiaGameId = d.canale?.gameId || '';
-  const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = d.canale?.gameName || L('— nessuna —', '— none —', '— ninguna —');
+  const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = d.canale?.gameName || L('nessuna', 'none', 'ninguna');
 
   const adBox = document.getElementById('regia-ad-box'); if (adBox) adBox.style.display = p.commercial ? '' : 'none';
   const raidBox = document.getElementById('regia-raid-box'); if (raidBox) raidBox.style.display = p.raid ? '' : 'none';
@@ -27123,7 +27124,7 @@ async function caricaClip() {
   if (!ul) return;
   try {
     const { clip } = await api('/api/streamer/memoria');
-    if (!clip.length) { ul.innerHTML = '<li class="vuoto">Nessuna clip ancora: arriveranno nei momenti di hype!</li>'; return; }
+    if (!clip.length) { ul.innerHTML = `<li class="vuoto">${L('Nessuna clip ancora: arriveranno nei momenti di hype!', 'No clips yet: they’ll come in the hype moments!', '¡Aún no hay clips: llegarán en los momentos de hype!')}</li>`; return; }
     ul.innerHTML = clip.map((c) => `
       <li>
         <div class="testo-voce">
@@ -27132,7 +27133,7 @@ async function caricaClip() {
         </div>
       </li>`).join('');
   } catch (e) {
-    ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`;
+    ul.innerHTML = `<li class="vuoto">${L('Non riesco a leggere le clip:', 'I can’t read the clips:', 'No puedo leer los clips:')} ${esc(e.message)}</li>`;
   }
 }
 
@@ -28728,7 +28729,9 @@ async function caricaStatistiche() {
   _statGara('lista-chatters', (s.topChatters || []).map((c) => ({ chi: c.user, quanto: `${_statNum(c.n)} ${L('messaggi', 'messages', 'mensajes')}` })),
     L('Ancora nessuno ha scritto in questo periodo.', 'Nobody wrote in this period yet.', 'Todavía nadie escribió en este periodo.'));
   _statGara('lista-ore', (s.ore || []).map((o) => ({ chi: o.user, quanto: _statOre(o.secondi) })),
-    L('Il conteggio delle ore si accende nella scheda Comandi.', 'Watch-time counting is switched on in the Commands tab.', 'El conteo de horas se activa en la pestaña Comandos.'));
+    impostazioni().watchtime?.attivo !== false
+      ? L('Ancora nessuna ora contata: si contano mentre sei in diretta, a chi resta in chat anche senza scrivere.', 'No hours counted yet: they are counted while you are live, for whoever stays in chat, even without writing.', 'Aún ninguna hora contada: se cuentan mientras estás en directo, a quien se queda en el chat aunque no escriba.')
+      : L('Il conteggio delle ore è spento: lo riaccendi nella scheda Comandi, carta «Comodità in chat».', 'Watch-time counting is off: turn it back on in the Commands tab, “Chat conveniences” card.', 'El conteo de horas está apagado: lo vuelves a activar en la pestaña Comandos, tarjeta «Comodidades en el chat».'));
 
   const box = document.getElementById('stat-dirette');
   if (box) {

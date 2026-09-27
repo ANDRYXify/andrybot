@@ -34,6 +34,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Quando una pagina di CONSOLify ha già 48 tasti, anche «Duplica» e «Sposta nella pagina» si fermano e dicono che è piena: prima il tasto in più spariva senza avviso. [vai: consolify]
 - Nel formato «libero» di CONSOLify, in modifica, c'è il «+» in fondo alla pagina: prima lì non c'era modo di creare un tasto nuovo. [vai: consolify]
 - Le clip fatte con «Crea clip» in Regia finiscono in «Ultime clip», nel rapporto della serata e nelle statistiche, col motivo «dalla Regia». [vai: clip]
+- Clip e Musica parlano tutte e tre le lingue anche nei pezzi rimasti in italiano o in inglese, e il muro delle clip automatiche dice che «non sono» nel tuo piano. [vai: clip]
+- Se nella Musica manca il permesso dei punti canale, il riquadro porta dritto a concederlo: prima rimandava a una sezione che non c'è più. [vai: musica]
+- In inglese la Regia si chiama «Control room» anche nel menù, e la sua guida elenca le azioni rapide che ci sono davvero: clip, marker, pubblicità, raid. [vai: regia]
+- «Chi guarda di più» vuota non chiede più di accendere un conteggio che è già acceso: dice che nessuna ora è stata ancora contata, e solo se l'hai spento ti dice dove riaccenderlo. [vai: statistiche]
 
 ## 2026-09-26
 

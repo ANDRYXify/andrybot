@@ -134,7 +134,7 @@ export default {
     { p: ['In «Modalità» scegli come si paga una richiesta. Premi «Salva» e leggi «Impostazioni musica salvate». Queste impostazioni le cambiano anche i moderatori.'] },
     { tabella: [
       ['Modalità', 'Chi può chiedere', 'Cosa succede'],
-      ['«Libere» (di base)', 'tutti', 'Gratis.'],
+      ['«Libere (tutti, gratis)» (di base)', 'tutti', 'Gratis.'],
       ['«Solo abbonati (sub)»', 'abbonati, moderatori e tu', 'Gli altri leggono che le richieste sono riservate ai sub.'],
       ['«A monete del bot»', 'chi ha abbastanza monete', 'Costa le monete che metti in «Costo». Si scalano solo se il brano entra davvero in coda.'],
       ['«A bit (Cheer nel messaggio)»', 'chi fa un Cheer', 'Il Cheer va nello stesso messaggio di <code>!sr</code>, di almeno i bit che metti in «Costo».'],
@@ -145,7 +145,7 @@ export default {
       '<strong>A punti canale.</strong> Serve un premio di Twitch con la <strong>richiesta di testo</strong> attiva. In «Premio usato per le richieste» trovi solo quelli adatti: sceglilo e si salva da solo con «Premio impostato ✓». Se non ne hai, apri «Crea un premio pronto all\'uso» (se hai già premi adatti si chiama «Oppure crea un premio pronto all\'uso»).',
       'Lì scrivi «Nome» (di base «Richiesta musicale», fino a 45 caratteri) e «Costo (punti canale)» (di base 500). Premi «Crea il premio su Twitch»: il premio nasce con la richiesta di testo accesa, viene scelto qui e la modalità passa ai punti canale. Leggi «Premio creato su Twitch!».',
       'Con un premio creato da qui, se nel riscatto manca la canzone, se la canzone non si trova o non entra in coda, i punti tornano allo spettatore e il bot aggiunge in chat «Punti rimborsati.». Con un premio creato a mano su Twitch il rimborso non si può fare.',
-      'I premi li legge e li crea solo il proprietario, e serve il permesso Punti canale di Twitch. Se manca, il riquadro te lo dice. Se Twitch rifiuta il premio leggi «Twitch ha rifiutato il premio: forse esiste già un premio con questo nome.»',
+      'I premi li legge e li crea solo il proprietario, e serve il permesso Punti canale di Twitch. Se manca, il riquadro te lo dice con il collegamento «Concedi il permesso», che ti riporta qui. Se Twitch rifiuta il premio leggi «Twitch ha rifiutato il premio: forse esiste già un premio con questo nome.»',
       '<strong>Quale canzone?</strong> La spunta «Se ci sono più canzoni con lo stesso titolo, chiedi in chat quale ("intendi 1, 2 o 3?")» è accesa di base. Quando la ricerca trova almeno due brani con lo stesso titolo e artisti diversi, il bot ne propone fino a tre e aspetta <strong>90 secondi</strong>. Lo spettatore risponde col numero, per esempio <code>!sr 2</code>. Se la richiesta nomina già l\'artista giusto, non chiede niente. Con la spunta spenta il bot mette in coda il primo risultato di Spotify.',
     ] },
     { tabella: [
@@ -256,7 +256,7 @@ export default {
       ['«Monete dello staff»', 'Le monete dei tuoi moderatori, separate dal pubblico.', '«Nessuno del tuo staff ha monete: è normale, moderi invece di giocare.» Se manca il permesso per leggere i moderatori, restano nel pubblico e la carta ha il tasto «Concedi i permessi».'],
       ['«Chi c’è sempre»', 'Le dirette di fila, e quante in tutto. Una presenza conta dopo dieci minuti in chat, anche senza scrivere.', '«Ancora nessuna serie: la presenza si conta dopo dieci minuti in chat.»'],
       ['«Chi scrive di più»', 'I messaggi nel periodo.', '«Ancora nessuno ha scritto in questo periodo.»'],
-      ['«Chi guarda di più»', 'Le ore guardate: cinque minuti a ogni giro, a chi è in chat mentre sei in diretta, anche senza scrivere. I bot più noti non contano.', '«Il conteggio delle ore si accende nella scheda Comandi.»'],
+      ['«Chi guarda di più»', 'Le ore guardate: cinque minuti a ogni giro, a chi è in chat mentre sei in diretta, anche senza scrivere. I bot più noti non contano.', '«Ancora nessuna ora contata: si contano mentre sei in diretta, a chi resta in chat anche senza scrivere.» Se hai spento il conteggio: «Il conteggio delle ore è spento: lo riaccendi nella scheda Comandi, carta «Comodità in chat».»'],
     ] },
     { p: [
       'Il conteggio delle ore è acceso di base. La spunta è «Conta le ore guardate in chat», nella carta «Comodità in chat» della scheda «Comandi».',
