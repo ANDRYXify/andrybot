@@ -75,6 +75,8 @@ import * as webauthn from './webauthn.js';
 import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA, normChiave } from '../features/compress.js';
 import { StudioEngine, QUALITA as STUDIO_QUALITA } from '../features/studio.js';
 import { seedStreamer } from '../features/seed.js';
+import { eDelKit } from '../features/seed.js';
+import { vivo as comandoVivo } from '../features/comandi-registro.js';
 import * as vip from '../features/vip.js';
 import * as telegram from '../features/telegram.js';
 import * as cartaLive from '../features/cartalive.js';
@@ -3148,10 +3150,13 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const prova = (k, fn) => { try { f[k] = fn(); } catch { /* resta ignoto */ } };
     prova('permessiMancanti', () => scopeMancanti(login).length);
     prova('botSpento', () => (s ? s.botEnabled === false : undefined));
-    prova('musica', () => canaleHa(login, 'musica'));
+    // le richieste musicali contano se sono nel piano E accese (il comando !sr):
+    // a chi le ha spente, Spotify non manca
+    prova('musica', () => canaleHa(login, 'musica') && comandoVivo(login, 'sr'));
     prova('spotify', () => spotify.collegato(login));
     prova('overlayVisto', () => (s ? !!s.settings?.overlayVisto : undefined));
-    prova('comandi', () => comandiDb.list(login).length + modulesDb.list(login).length);
+    // i moduli del kit di partenza lasciati com'erano non sono «comandi tuoi»
+    prova('comandi', () => comandiDb.list(login).length + modulesDb.list(login).filter((m) => !eDelKit(m)).length);
     prova('paginaPubblicata', () => linkPage.get(login)?.attiva === true);
     prova('settimanaVuota', () => !(settimana.settimanaDi(s?.settings)?.giorni || []).some((g) => g && !g.off && g.ora));
     // Le funzioni mai usate, per gli inviti «Hai gia' provato...?». Ogni segno e'

@@ -45,6 +45,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Su un dispositivo che non gestisce le passkey il pannello dice solo che non si può, senza più aggiungere subito dopo «Passkey creata!». [vai: account]
 - Un invito da moderatore scaduto si vede come «invito scaduto», da rigenerare, invece di un «valido fino al» con una data già passata. [vai: account]
 - Invitando un moderatore puoi scrivere il nome come lo vedi sulla piattaforma, anche con maiuscole o punti: si legge come quando quella persona entra. [vai: account]
+- L'avviso «Spotify non è collegato» arriva solo a chi ha le richieste musicali accese: chi spegne il comando !sr non lo vede più. [vai: musica]
+- L'avviso «Non hai ancora un comando tuo» non conta più i due moduli del kit di partenza lasciati com'erano: prima non compariva mai. [vai: moduli]
 
 ## 2026-09-26
 

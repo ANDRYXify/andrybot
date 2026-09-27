@@ -393,7 +393,7 @@ const AVVISI_MANCA = {
   }),
   musica: () => ({
     titolo: L('Spotify non è collegato', 'Spotify is not connected', 'Spotify no está conectado'),
-    testo: L('Hai le richieste musicali, ma senza Spotify la chat non può chiederti canzoni.', 'You have song requests, but without Spotify chat cannot ask you for songs.', 'Tienes peticiones musicales, pero sin Spotify el chat no puede pedirte canciones.'),
+    testo: L('Le richieste musicali sono accese, ma senza Spotify la chat non può chiederti canzoni. Se non le vuoi, spegni il comando !sr.', 'Song requests are on, but without Spotify chat cannot ask you for songs. If you do not want them, turn off the !sr command.', 'Las peticiones musicales están activas, pero sin Spotify el chat no puede pedirte canciones. Si no las quieres, apaga el comando !sr.'),
   }),
   overlay: () => ({
     titolo: L('Il tuo overlay non l’hai ancora aperto', 'You have not opened your overlay yet', 'Todavía no has abierto tu overlay'),
