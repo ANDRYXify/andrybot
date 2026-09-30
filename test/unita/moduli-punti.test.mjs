@@ -20,9 +20,10 @@ const { ModulesEngine } = await import('../../src/features/modules.js');
 
 const CH = 'canale';
 const motore = new ModulesEngine({});
-// Il contesto di chi scrive in chat: e' l'unico con un `pagante`, che e' lui.
-const base = { channel: CH, user: 'tizio', display: 'Tizio', args: [], argsRaw: '', _livello: 0, pagante: 'tizio' };
-const ctx = (extra = {}) => ({ ...base, ...(extra.user ? { pagante: extra.user } : {}), ...extra });
+// Il contesto di chi scrive in chat: e' l'unico con un `pagante`, che e' lui,
+// ed e' anche l'`autore`, quello a cui vanno le monete di «Chi ha scritto».
+const base = { channel: CH, user: 'tizio', display: 'Tizio', args: [], argsRaw: '', _livello: 0, pagante: 'tizio', autore: 'tizio' };
+const ctx = (extra = {}) => ({ ...base, ...(extra.user ? { pagante: extra.user, autore: extra.user } : {}), ...extra });
 
 function raccogli() {
   const dette = [];
@@ -250,4 +251,38 @@ test('in chat paga chi ha scritto, per il suo nome utente e non per quello mostr
   const m = { id: 50, condizioni: { costo: 100 }, azioni: [{ tipo: 'messaggio', testo: 'ok' }] };
   assert.equal(await motore.esegui(m, c, () => {}), true);
   assert.equal(points.get(CH, 'yuki_88'), 200, 'il nome mostrato non e\' un nome utente: paga lo stesso');
+});
+
+test('«Chi ha scritto» e\' chi ha fatto scattare il modulo: un timer non ha nessuno, e lo streamer non prende il suo posto', async () => {
+  const { streamers } = await import('../../src/db.js');
+  streamers.request(CH, 'Canale', '1');
+  const azzera = (u) => { points.add(CH, u, -1_000_000); };
+  for (const u of ['canale', 'tizio', 'yuki_88', 'fan_1', 'raider_2']) azzera(u);
+  const m = (id) => ({ id, azioni: [{ tipo: 'punti', op: 'aggiungi', quanto: '50' }] });
+  const saldi = () => Object.fromEntries(['canale', 'tizio', 'yuki_88', 'fan_1', 'raider_2'].map((u) => [u, points.get(CH, u)]));
+  const casi = [
+    ['timer', motore._ctxTimer(CH), {}],
+    ['telegram, dove un nome non e\' un account del canale', motore._ctxTelegram(CH, 'tizio', [], ''), {}],
+    ['inizio della diretta', motore._ctxDaEvento({ data: { broadcaster_user_login: CH } }, CH, 'online'), {}],
+    ['bit anonimi', motore._ctxDaEvento({ data: { is_anonymous: true, bits: 100 } }, CH, 'cheer'), {}],
+    ['chat, col nome mostrato in un altro alfabeto', motore._ctxDaMessaggio({ user: 'yuki_88', display: 'ゆき', text: '!x' }, CH, 0, [], ''), { yuki_88: 50 }],
+    ['nuovo follower', motore._ctxDaEvento({ data: { user_login: 'fan_1', user_name: 'Fan_1' } }, CH, 'follow'), { fan_1: 50 }],
+    ['raid', motore._ctxDaEvento({ data: { from_broadcaster_user_login: 'raider_2', from_broadcaster_user_name: 'Raider_2', viewers: 10 } }, CH, 'raid'), { raider_2: 50 }],
+    ['voce, dove agisce lo streamer', motore._ctxVoce(CH, 'premio'), { canale: 50 }],
+  ];
+  let id = 60;
+  for (const [nome, c, atteso] of casi) {
+    const prima = saldi();
+    await motore.esegui(m(id++), c, () => {});
+    const dopo = saldi();
+    const mosso = Object.fromEntries(Object.keys(dopo).filter((u) => dopo[u] !== prima[u]).map((u) => [u, dopo[u] - prima[u]]));
+    assert.deepEqual(mosso, atteso, nome);
+  }
+});
+
+test('il cooldown a testa vale per il nome utente anche con un nome mostrato in un altro alfabeto', async () => {
+  const m = { id: 80, condizioni: { cooldownUtente: 60 }, azioni: [{ tipo: 'messaggio', testo: 'ok' }] };
+  const c = () => motore._ctxDaMessaggio({ user: 'yuki_88', display: 'ゆき', text: '!x' }, CH, 0, [], '');
+  assert.equal(await motore.esegui(m, c(), () => {}), true);
+  assert.equal(await motore.esegui(m, c(), () => {}), false, 'la seconda volta si ferma');
 });

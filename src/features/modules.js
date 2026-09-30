@@ -383,7 +383,7 @@ export class ModulesEngine {
   // Contesto per un modulo eseguito da Telegram (nessun ruolo → tier passano).
   _ctxTelegram(ch, utente, args, argsRaw) {
     return {
-      channel: ch, user: utente || '', userLogin: '', display: utente || '',
+      channel: ch, user: utente || '', userLogin: '', autore: '', display: utente || '',
       args: args || [], argsRaw: argsRaw || '', evento: null,
       _livello: TIER_SCALA.mod, _vars: {},
     };
@@ -700,7 +700,7 @@ export class ModulesEngine {
     // `pagante` (_ctxDaMessaggio). Timer, eventi, API, voce, Telegram e prova
     // non hanno uno spettatore davanti, e nemmeno lo streamer paga al suo posto:
     // le due condizioni non si applicano invece di rifiutare a vuoto.
-    const autore = loginBuono(ctx.user);
+    const autore = loginBuono(ctx.autore);
     const pagante = loginBuono(ctx.pagante);
     const minPunti = Math.max(0, Number(c.minPunti) || 0);
     const costo = await this._quantoCosta(c.costo, ctx);
@@ -784,7 +784,7 @@ export class ModulesEngine {
       const recenti = memory.recent(ctx.channel, 80) || [];
       const io = norm(ctx.display || ctx.user);
       const nomi = [...new Set(recenti.filter((m) => !m.from_bot && m.user).map((m) => m.user))];
-      const altri = escludiAutore ? nomi.filter((n) => norm(n) !== io && norm(n) !== norm(ctx.user)) : nomi;
+      const altri = escludiAutore ? nomi.filter((n) => norm(n) !== io && norm(n) !== norm(ctx.user) && norm(n) !== norm(ctx.autore || '')) : nomi;
       const pool = altri.length ? altri : nomi;
       return pool.length ? pool[Math.floor(Math.random() * pool.length)] : '';
     } catch (e) { log.debug('chatterACaso:', e?.message || e); return ''; }
@@ -793,13 +793,15 @@ export class ModulesEngine {
   // A chi vanno (o da chi si tolgono) le monete di un'azione `punti`.
   // 'autore' e' il default perche' e' il caso normale; gli altri servono per i
   // regali, i furti e le estrazioni. Il nome passa sempre da loginBuono: un
-  // destinatario arriva da quello che uno scrive in chat.
+  // destinatario arriva da quello che uno scrive in chat. L'autore e' quello
+  // del contesto (vedi CONTESTI): un timer non ce l'ha, e le monete non vanno a
+  // nessuno invece che allo streamer.
   _chiPunti(azione, ctx) {
     switch (azione?.a) {
       case 'destinatario': return loginBuono((ctx.args && ctx.args[0]) || '');
       case 'caso': return loginBuono(this._chatterACaso(ctx));
       case 'nome': return loginBuono(azione.nome);
-      default: return loginBuono(ctx.user);
+      default: return loginBuono(ctx.autore);
     }
   }
 
@@ -1255,7 +1257,7 @@ export class ModulesEngine {
 
     // Anche queste si pagano solo se citate: una lettura in piu' per ogni
     // messaggio di chat non si giustifica per una variabile che quasi nessuno usa.
-    const chiScrive = loginBuono(ctx.user);
+    const chiScrive = loginBuono(ctx.autore);
     const puntiAutore = /\$punti/.test(s) && chiScrive ? String(points.get(ctx.channel, chiScrive)) : '';
     let posizioneAutore = '';
     if (/\$posizione/.test(s) && chiScrive) {
@@ -1376,6 +1378,17 @@ export class ModulesEngine {
   }
 
   // ============================================================ CONTESTI
+  //
+  // `autore` e' chi ha fatto scattare il modulo, per login: e' la persona su cui
+  // si muovono le monete di «Chi ha scritto», che paga il cooldown a testa e di
+  // cui $punti dice il saldo. Chi scrive in chat; la persona dell'evento (chi
+  // segue, si abbona, riscatta, fa raid, dona Bit), nessuno se e' anonima; lo
+  // streamer quando e' lui ad agire (voce, gesto della webcam, API, prova).
+  // Nessuno per il tempo (timer), per l'inizio e la fine della diretta, e per
+  // Telegram, dove un nome non e' un account del canale: li' le azioni su
+  // «Chi ha scritto» saltano, e lo streamer non prende il posto di nessuno.
+  // Il login, non il nome visualizzato: un nome in un altro alfabeto non e' un
+  // login, e le monete finirebbero nel vuoto.
 
   _ctxDaMessaggio(msg, channel, livello, args, argsRaw) {
     const nome = msg.display || msg.user || '';
@@ -1390,6 +1403,7 @@ export class ModulesEngine {
       // Chi paga «Costa» e mostra «Serve almeno»: chi ha scritto, per login.
       // Solo questo contesto lo ha (vedi _condizioniOk).
       pagante: msg.user || '',
+      autore: msg.user || '',
       userId: msg.userId || (msg.tags && msg.tags['user-id']) || '', // id numerico (per $followage)
       display: nome,
       args,
@@ -1408,9 +1422,12 @@ export class ModulesEngine {
     const d = ev.data || {};
     const raider = d.from_broadcaster_user_name || '';
     const user = comeSiChiama(d, raider || '');
+    const autore = evento === 'gesto' ? channel
+      : (d.is_anonymous ? '' : norm(d.user_login || d.from_broadcaster_user_login || ''));
     return {
       channel,
       user,
+      autore,
       userLogin: norm(d.user_login || d.user_name || ''),
       display: user,
       args: [],
@@ -1435,7 +1452,7 @@ export class ModulesEngine {
   _ctxTimer(channel) {
     const nome = streamers.get(channel)?.display || channel;
     return {
-      channel, user: nome, userLogin: channel, display: nome,
+      channel, user: nome, userLogin: channel, autore: '', display: nome,
       args: [], argsRaw: '', evento: null,
       _livello: TIER_SCALA.mod, _vars: {},
     };
@@ -1444,7 +1461,7 @@ export class ModulesEngine {
   _ctxApi(channel) {
     const nome = streamers.get(channel)?.display || channel;
     return {
-      channel, user: nome, userLogin: channel, display: nome,
+      channel, user: nome, userLogin: channel, autore: channel, display: nome,
       args: [], argsRaw: '', evento: 'api',
       _livello: TIER_SCALA.mod, staff: true, _vars: {},
     };
@@ -1456,7 +1473,7 @@ export class ModulesEngine {
     const nome = streamers.get(channel)?.display || channel;
     const args = Array.isArray(parole) ? parole : String(frase || '').split(' ').filter(Boolean);
     return {
-      channel, user: nome, userLogin: channel, display: nome,
+      channel, user: nome, userLogin: channel, autore: channel, display: nome,
       args, argsRaw: String(frase || ''), evento: 'voce',
       _livello: TIER_SCALA.mod, staff: true, _vars: {},
     };
@@ -1465,7 +1482,7 @@ export class ModulesEngine {
   _ctxProva(channel) {
     const nome = streamers.get(channel)?.display || channel;
     return {
-      channel, user: nome, userLogin: channel, display: nome,
+      channel, user: nome, userLogin: channel, autore: channel, display: nome,
       args: ['esempio', 'prova'], argsRaw: 'esempio prova', evento: null,
       _livello: TIER_SCALA.mod, staff: true,
       _vars: { raider: 'RaiderDiProva', viewers: 42, mesi: 3, bits: 100, premio: 'Premio di prova', user: nome },
