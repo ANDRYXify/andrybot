@@ -60,6 +60,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > !followage e !channelage a modo tuo
   > Prima la risposta dei comandi pronti era fissa, e il tempo di !followage contava i mesi da trenta giorni.
 - Nei Moduli $data, $ora e $giorno seguono fuso e formato del canale, e $moneta, $sino, $eta, $colore, $animale, $soldi e $altezza escono nella lingua della chat. [vai: moduli]
+- [importante] Nella scheda «Negozio» apri il negozio del canale: chi guarda spende le monete con !compra, per un effetto, il VIP, un ruolo su Discord, una canzone o un oggetto da tenere. [vai: negozio]
+  > Il negozio del canale
+  > Le monete guadagnate stando in chat adesso si spendono: tu decidi cosa c'è, quanto costa e chi lo compra, e se qualcosa non parte le monete tornano.
+- L'informativa sulla privacy dice cosa tiene il negozio: chi ha comprato cosa e quando, per un anno, e gli oggetti nella borsa finché l'articolo resta.
+
 
 ## 2026-09-27
 

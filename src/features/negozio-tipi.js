@@ -24,7 +24,7 @@ import { SUONI_PRESET } from '../web/stile.js';
 import { canaleHa } from './accesso.js';
 import * as spotify from './spotify.js';
 import * as dcApi from './discord-api.js';
-import { normRegole, ruoliNostri } from './discord-ruoli.js';
+import { normRegole, ruoliNostri, postoDeiRuoli } from './discord-ruoli.js';
 import { assegnaVipLogin, perSempre, giaPerSempre } from './vip.js';
 
 export const TIPI = ['oggetto', 'effetto', 'modulo', 'mano', 'vip', 'discord', 'musica', 'evidenza'];
@@ -200,4 +200,24 @@ export function esecutori({ helix = null, effetti = null, moduli = null } = {}) 
       },
     },
   };
+}
+
+// I RUOLI CHE SI POSSONO VENDERE, per il pannello: quelli che il bot puo'
+// davvero dare (sotto di lui, non di un'integrazione, non @everyone). Quelli che
+// una regola dei Ruoli nomina ci sono, marcati: il pannello li mostra e non li
+// lascia scegliere, e dice perche'.
+export async function ruoliDaVendere(canale) {
+  const conf = dcRuoli.get(canale);
+  const token = dcApi.tokenDi(conf);
+  if (!conf?.guild || !token) return { ok: false, motivo: 'discordSpento' };
+  const me = await dcApi.io(token, conf.guild);
+  if (!me.ok) return { ok: false, motivo: 'discordNo', errore: me.errore || '' };
+  const r = await dcApi.ruoli(token, conf.guild);
+  if (!r.ok) return { ok: false, motivo: 'discordNo', errore: r.errore || '' };
+  const posto = postoDeiRuoli(r.ruoli, me.ruoli, conf.guild);
+  const regole = ruoliNostri(normRegole(conf.regole));
+  const ruoli = r.ruoli.filter((x) => posto.gestibile(x.id))
+    .sort((a, b) => b.position - a.position)
+    .map((x) => ({ id: x.id, nome: x.nome, colore: x.colore, regola: regole.has(x.id) }));
+  return { ok: true, ruoli, server: conf.guild_nome || '' };
 }

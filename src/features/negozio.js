@@ -24,7 +24,8 @@
 //
 // Il negozio di un canale non vede niente degli altri: ogni lettura e ogni
 // scrittura porta il canale, e un articolo si trova solo dentro il suo.
-import { negozio as negozioDb, streamers } from '../db.js';
+import { negozio as negozioDb, streamers, effects as effectsDb, modules as modulesDb, dcRuoli } from '../db.js';
+import { normRegole, ruoliNostri } from './discord-ruoli.js';
 import { preferenzeDi, numero, durata, data } from './preferenze.js';
 import { canaleHa } from './accesso.js';
 import { nomeIn } from './comandi-registro.js';
@@ -42,7 +43,9 @@ export const SCORTE = ['illimitate', 'tutto', 'persona'];
 export const MAX_ATTESA_S = 7 * 86400;
 export const MAX_PREZZO = 10_000_000;
 export const MAX_SCORTA = 1_000_000;
-const IMMAGINE_OK = /^[a-z0-9_-]{1,40}\.(?:webp|png|jpg)$/;
+// L'immagine di un articolo e' un'immagine della libreria del canale, la
+// stessa di effetti, alert e grafiche: «effetto:<comando>». Un magazzino solo.
+export const IMMAGINE_OK = /^effetto:[a-z0-9_]{1,30}$/;
 
 // Il negozio e' aperto se lo streamer l'ha aperto, e il suo piano ha i giochi:
 // le monete stanno li'.
@@ -279,7 +282,7 @@ const FRASI = {
     vuoto: () => '🛒 Il negozio per ora è vuoto.',
     elenco: (d) => `🛒 Nel negozio: ${d.voci}. Si compra con ${d.cmd} e la parola fra parentesi.`,
     voce: (d) => `${d.articolo} (${d.parola}), ${d.prezzo} ${d.moneta}`,
-    dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ` È per chi ${d.requisito}.` : ''}${d.scorte ? ' ' + d.scorte : ''}`,
+    dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' È per chi ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}`,
     restano: (d) => (d.n > 0 ? `Ne restano ${d.cifra}.` : 'È finito.'),
     aTesta: (d) => (d.n === 1 ? 'Uno a testa.' : `${d.cifra} a testa.`),
     fatto: (d) => `🛒 ${d.nome}, fatto: ${d.articolo} è tuo. Ti restano ${d.saldo} ${d.moneta}.`,
@@ -302,6 +305,7 @@ const FRASI = {
         : `🛒 ${d.nome}, ${d.domanda} Rispondi così: ${d.cmd} ${d.parola} e la tua risposta.`),
     nonParte: (d) => `🛒 ${d.nome}, ${d.articolo} adesso non si può comprare: ${d.perche}. Le monete restano tue.`,
     rimborso: (d) => `🛒 ${d.nome}, ${d.articolo} non è partito: ${d.perche}. Ti ho reso ${d.prezzo} ${d.moneta}.`,
+    rifiutato: (d) => `🛒 ${d.nome}, ${d.articolo} non è stato accettato: ti ho reso ${d.prezzo} ${d.moneta}.`,
     borsa: (d) => `🎒 ${d.nome}, nella tua borsa: ${d.lista}.`,
     borsaVuota: (d) => `🎒 ${d.nome}, la tua borsa è vuota. Cosa c'è da comprare lo vedi con ${d.cmdNegozio}.`,
   },
@@ -311,7 +315,7 @@ const FRASI = {
     vuoto: () => '🛒 The shop is empty for now.',
     elenco: (d) => `🛒 In the shop: ${d.voci}. Buy with ${d.cmd} and the word in brackets.`,
     voce: (d) => `${d.articolo} (${d.parola}), ${d.prezzo} ${d.moneta}`,
-    dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ` It's for anyone who ${d.requisito}.` : ''}${d.scorte ? ' ' + d.scorte : ''}`,
+    dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' It\'s for anyone who ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}`,
     restano: (d) => (d.n > 0 ? `${d.cifra} left.` : 'Sold out.'),
     aTesta: (d) => (d.n === 1 ? 'One each.' : `${d.cifra} each.`),
     fatto: (d) => `🛒 ${d.nome}, done: ${d.articolo} is yours. You have ${d.saldo} ${d.moneta} left.`,
@@ -334,6 +338,7 @@ const FRASI = {
         : `🛒 ${d.nome}, ${d.domanda} Answer like this: ${d.cmd} ${d.parola} and your answer.`),
     nonParte: (d) => `🛒 ${d.nome}, ${d.articolo} can't be bought right now: ${d.perche}. Your coins stay yours.`,
     rimborso: (d) => `🛒 ${d.nome}, ${d.articolo} didn't go through: ${d.perche}. I gave you back ${d.prezzo} ${d.moneta}.`,
+    rifiutato: (d) => `🛒 ${d.nome}, ${d.articolo} wasn't accepted: I gave you back ${d.prezzo} ${d.moneta}.`,
     borsa: (d) => `🎒 ${d.nome}, in your bag: ${d.lista}.`,
     borsaVuota: (d) => `🎒 ${d.nome}, your bag is empty. See what you can buy with ${d.cmdNegozio}.`,
   },
@@ -343,7 +348,7 @@ const FRASI = {
     vuoto: () => '🛒 La tienda por ahora está vacía.',
     elenco: (d) => `🛒 En la tienda: ${d.voci}. Se compra con ${d.cmd} y la palabra entre paréntesis.`,
     voce: (d) => `${d.articolo} (${d.parola}), ${d.prezzo} ${d.moneta}`,
-    dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ` Es para quien ${d.requisito}.` : ''}${d.scorte ? ' ' + d.scorte : ''}`,
+    dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' Es para quien ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}`,
     restano: (d) => (d.n > 0 ? `Quedan ${d.cifra}.` : 'Se ha agotado.'),
     aTesta: (d) => (d.n === 1 ? 'Uno por persona.' : `${d.cifra} por persona.`),
     fatto: (d) => `🛒 ${d.nome}, hecho: ${d.articolo} es tuyo. Te quedan ${d.saldo} ${d.moneta}.`,
@@ -366,6 +371,7 @@ const FRASI = {
         : `🛒 ${d.nome}, ${d.domanda} Responde así: ${d.cmd} ${d.parola} y tu respuesta.`),
     nonParte: (d) => `🛒 ${d.nome}, ${d.articolo} ahora no se puede comprar: ${d.perche}. Las monedas siguen siendo tuyas.`,
     rimborso: (d) => `🛒 ${d.nome}, ${d.articolo} no ha salido: ${d.perche}. Te he devuelto ${d.prezzo} ${d.moneta}.`,
+    rifiutato: (d) => `🛒 ${d.nome}, ${d.articolo} no ha sido aceptado: te he devuelto ${d.prezzo} ${d.moneta}.`,
     borsa: (d) => `🎒 ${d.nome}, en tu bolsa: ${d.lista}.`,
     borsaVuota: (d) => `🎒 ${d.nome}, tu bolsa está vacía. Lo que puedes comprar lo ves con ${d.cmdNegozio}.`,
   },
@@ -559,4 +565,80 @@ export async function tryComando(msg, parla, ambiente = {}) {
     log.error(`#${ch} ${cmd}:`, e?.message || e);
   }
   return true;
+}
+
+// ------------------------------------------------------------------ il pannello
+//
+// Quello che la scheda Negozio legge e scrive. Il server fa solo da porta:
+// chi e' entrato, e il canale e' il suo. Tutte le decisioni stanno qui.
+
+// Lo stato del negozio per la scheda: gli articoli con quante volte sono stati
+// comprati e in quante borse stanno, la coda da consegnare, lo storico.
+export function vistaPannello(canale) {
+  const ch = String(canale || '').toLowerCase();
+  const venduti = negozioDb.venduti(ch);
+  const pf = preferenzeDi(ch);
+  const immagineUrl = (ref) => {
+    const m = /^effetto:(.+)$/.exec(ref || '');
+    const e = m ? effectsDb.get(ch, m[1]) : null;
+    return e && e.tipo === 'immagine' ? `/api/streamer/libreria/media/${e.id}` : '';
+  };
+  return {
+    attivo: streamers.get(ch)?.settings?.negozio?.attivo === true,
+    moneta: monetaDi(ch, pf.lingua),
+    comandi: { negozio: nomeIn(ch, 'negozio'), compra: nomeIn(ch, 'compra'), borsa: nomeIn(ch, 'borsa') },
+    max: MAX_ARTICOLI,
+    articoli: negozioDb.articoli(ch).map((a) => ({
+      ...a, scorte: scorteDi(a), venduti: venduti.get(a.id) || 0,
+      inBorse: a.tipo === 'oggetto' ? negozioDb.inQuanteBorse(ch, a.id) : 0,
+      immagineUrl: immagineUrl(a.immagine),
+    })),
+    coda: negozioDb.coda(ch),
+    storico: negozioDb.storico(ch),
+    // quello che l'editor offre: gli effetti della libreria del canale e i suoi Moduli
+    effetti: effectsDb.list(ch).map((e) => ({ comando: e.comando, tipo: e.tipo })),
+    moduli: modulesDb.list(ch).map((m) => ({ id: m.id, nome: m.nome, attivo: !!m.attivo })),
+  };
+}
+
+export function apri(canale, attivo) {
+  const ch = String(canale || '').toLowerCase();
+  const s = streamers.get(ch);
+  if (!s) return false;
+  streamers.setSettings(ch, { ...(s.settings || {}), negozio: { ...(s.settings?.negozio || {}), attivo: !!attivo } });
+  return !!attivo;
+}
+
+// Salva un articolo dal pannello. Quello che normArticolo non puo' sapere da
+// solo si guarda qui, nel canale: l'immagine e l'effetto stanno nella sua
+// libreria, il modulo e' suo, il ruolo di Discord non lo decide gia' una regola.
+export function salvaArticolo(canale, grezzo) {
+  const ch = String(canale || '').toLowerCase();
+  const n = normArticolo(grezzo);
+  if (!n.ok) return n;
+  const a = n.articolo;
+  if (!a.id && negozioDb.articoli(ch).length >= MAX_ARTICOLI) return { ok: false, errore: 'troppi' };
+  if (grezzo?.immagine && !a.immagine) return { ok: false, errore: 'immagine' };
+  if (a.immagine && effectsDb.get(ch, a.immagine.slice('effetto:'.length))?.tipo !== 'immagine') return { ok: false, errore: 'immagine' };
+  if (a.tipo === 'effetto' && a.dati.effetto && !effectsDb.get(ch, a.dati.effetto)) return { ok: false, errore: 'effetto' };
+  if (a.tipo === 'modulo' && !modulesDb.get(ch, a.dati.modulo)) return { ok: false, errore: 'modulo' };
+  if (a.tipo === 'discord' && ruoliNostri(normRegole(dcRuoli.get(ch)?.regole)).has(a.dati.ruolo)) return { ok: false, errore: 'ruoloRegola' };
+  const r = negozioDb.salva(ch, a);
+  if (!r.ok) return { ok: false, errore: r.motivo === 'parola' ? 'parolaUsata' : 'nonCe' };
+  return { ok: true, articolo: r.articolo };
+}
+
+export const togliArticolo = (canale, id) => negozioDb.togli(canale, id);
+
+// «Fatto»: lo streamer l'ha consegnato.
+export const consegna = (canale, id) => ({ ok: negozioDb.consegna(canale, id) });
+
+// «Rifiuta e rimborsa»: le monete tornano, e a chi l'aveva comprato lo si dice
+// in chat. Torna la frase da dire, che il server manda con la voce del canale.
+export function rifiuta(canale, id) {
+  const ch = String(canale || '').toLowerCase();
+  const r = negozioDb.rimborsa(ch, id, 'rifiutato', { da: ['da_consegnare'] });
+  if (!r.ok) return { ok: false };
+  const pf = preferenzeDi(ch);
+  return { ok: true, frase: frase(ch, 'rifiutato', { nome: r.display || r.user, articolo: r.nome, prezzo: cifra(r.prezzo, pf), moneta: monetaDi(ch, pf.lingua) }) };
 }

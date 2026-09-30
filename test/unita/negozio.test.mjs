@@ -399,6 +399,9 @@ test('in chat: i tre comandi, rinominabili, e un negozio chiuso tace', async () 
   assert.ok(!/Segreto/.test(elenco), 'quello che si vede solo a chi lo puo\' comprare non esce nella risposta a tutti');
   await scrivi('!borsa');
   assert.equal(detti.pop(), '🎒 Lia, nella tua borsa: Scudo.');
+  articolo(ch, { nome: 'Corona', prezzo: 1500, descrizione: 'Brilla.', requisiti: [{ tipo: 'ore', soglia: 5 }], scorte: { modo: 'persona', n: 1 } });
+  await scrivi('!negozio corona');
+  assert.equal(detti.pop(), '🛒 Corona (corona): 1500 monete. Brilla. È per chi ha guardato almeno 5 ore. Uno a testa.');
   streamers.setSettings(ch, { ...streamers.get(ch).settings, comandi: { compra: { nome: 'prendi' } } });
   await scrivi('!prendi spada');
   assert.match(detti.pop(), /Spada di legno è nella tua borsa/);
@@ -482,4 +485,75 @@ test('un Modulo comprato: parte col nome di chi ha comprato, e il suo «Costa» 
   assert.equal(points.get(ch, 'remo'), 390);
   modulesDb.save(ch, { ...modulesDb.get(ch, id), attivo: false });
   assert.equal((await S.compra({ canale: ch, msg: msg(ch, 'remo'), parola: 'saluto', esecutori: es, ora: ORA })).dati.codice, 'modulo', 'un modulo spento non si vende');
+});
+
+test('dal pannello: si salva solo quello che sta nel canale, e il rimborso a mano si dice in chat', async () => {
+  const { effects, modules: modulesDb, dcRuoli } = await import('../../src/db.js');
+  const ch = canale({ ivo: 1000 });
+  const altro = canale();
+  assert.equal(S.salvaArticolo(ch, { nome: 'Botto', tipo: 'effetto', dati: { effetto: 'airhorn' } }).errore, 'effetto', 'un effetto che nella libreria del canale non c\'e\'');
+  effects.add(altro, { comando: 'airhorn', tipo: 'audio', file: 'a.mp3', tier: 'tutti', cooldown: 0, volume: 100, durata: 3000 });
+  const idMod = modulesDb.save(altro, { nome: 'Suo', attivo: true, trigger: { tipo: 'comando', comando: 'x' }, azioni: [{ tipo: 'messaggio', testo: 'x' }] });
+  assert.equal(S.salvaArticolo(ch, { nome: 'Modulo', tipo: 'modulo', dati: { modulo: idMod } }).errore, 'modulo', 'il modulo di un altro canale non si vende qui');
+  assert.equal(S.salvaArticolo(ch, { nome: 'Foto', tipo: 'oggetto', immagine: 'effetto:nonce' }).errore, 'immagine');
+  assert.equal(S.salvaArticolo(ch, { nome: 'Foto', tipo: 'oggetto', immagine: '../../etc/passwd' }).errore, 'immagine', 'un\'immagine che non e\' un riferimento della libreria non passa');
+  dcRuoli.set(ch, { guild: '123456', regole: [{ tipo: 'sub', ruolo: '777777' }] });
+  assert.equal(S.salvaArticolo(ch, { nome: 'Ruolo', tipo: 'discord', dati: { ruolo: '777777' } }).errore, 'ruoloRegola', 'un ruolo che una regola governa non si vende');
+  assert.equal(S.salvaArticolo(ch, { nome: 'Ruolo', tipo: 'discord', dati: { ruolo: '888888' } }).ok, true);
+  const uno = S.salvaArticolo(ch, { nome: 'Spada', tipo: 'oggetto' });
+  assert.equal(S.salvaArticolo(ch, { nome: 'Spadone', parola: 'spada', tipo: 'oggetto' }).errore, 'parolaUsata');
+  assert.equal(S.salvaArticolo(ch, { ...uno.articolo, prezzo: 7 }).articolo.prezzo, 7, 'con l\'id si cambia, non si duplica');
+  assert.equal(S.vistaPannello(ch).articoli.filter((a) => a.parola === 'spada').length, 1);
+
+  const gioco = S.salvaArticolo(ch, { nome: 'Scegli il gioco', parola: 'gioco', tipo: 'mano', prezzo: 300 }).articolo;
+  const e = await compra(ch, 'ivo', 'gioco', { nota: 'Hades' });
+  assert.equal(S.vistaPannello(ch).coda[0].nota, 'Hades');
+  const r = S.rifiuta(ch, e.dati.id);
+  assert.equal(r.ok, true);
+  assert.match(r.frase, /IVO, Scegli il gioco non è stato accettato: ti ho reso 300 monete\./);
+  assert.equal(S.rifiuta(ch, e.dati.id).ok, false, 'una volta sola');
+  assert.equal(points.get(ch, 'ivo'), 1000);
+  const v = S.vistaPannello(ch);
+  assert.equal(v.coda.length, 0);
+  assert.equal(v.storico.totali.rimborsati, 1);
+  assert.equal(v.articoli.find((a) => a.id === gioco.id).venduti, 0, 'un rimborso non e\' una vendita');
+  assert.equal(S.vistaPannello(altro).articoli.length, 0);
+  assert.equal(S.apri(ch, false), false);
+  assert.equal(S.vistaPannello(ch).attivo, false);
+});
+
+test('le tre letture di Twitch dicono «no» e «non lo so» in due modi diversi', async () => {
+  const { Helix } = await import('../../src/twitch/helix.js');
+  const ch = canale();
+  db.prepare('UPDATE streamers SET user_id=? WHERE login=?').run('999', ch);
+  const h = new Helix({ auth: { getToken: async () => 'tok' } });
+  let risposta = null;
+  h._request = async (_m, via, { query }) => {
+    if (risposta instanceof Error) throw risposta;
+    return typeof risposta === 'function' ? risposta(via, query) : risposta;
+  };
+  const guasto = Object.assign(new Error('Helix → 401'), { status: 401 });
+
+  risposta = { data: [{ user_id: '7', tier: '2000' }] };
+  assert.equal(await h.tierDi(ch, '7'), 2);
+  risposta = { data: [] };
+  assert.equal(await h.tierDi(ch, '7'), 0, 'nessuna riga: non e\' abbonato');
+  risposta = guasto;
+  assert.equal(await h.tierDi(ch, '7'), null, 'un permesso che manca non e\' un «non abbonato»');
+
+  risposta = { data: [{ followed_at: '2026-09-01T00:00:00Z' }] };
+  assert.equal(await h.seguitoDal(ch, '7'), Date.parse('2026-09-01T00:00:00Z'));
+  risposta = { data: [] };
+  assert.equal(await h.seguitoDal(ch, '7'), 0);
+  risposta = guasto;
+  assert.equal(await h.seguitoDal(ch, '7'), null);
+
+  risposta = (via, query) => { assert.equal(via, '/bits/leaderboard'); assert.equal(query.period, 'all'); return { data: [{ user_id: '7', score: 1500 }] }; };
+  assert.equal(await h.bitDi(ch, '7'), 1500);
+  risposta = { data: [] };
+  assert.equal(await h.bitDi(ch, '7'), 0, 'fuori dalla classifica: mai cheerato');
+  risposta = { data: [{ user_id: '8', score: 90000 }] };
+  assert.equal(await h.bitDi(ch, '7'), null, 'una risposta che parla d\'altri non dice niente di lei');
+  risposta = guasto;
+  assert.equal(await h.bitDi(ch, '7'), null);
 });
