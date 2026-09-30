@@ -80,3 +80,5 @@ export const ora = (ms, p) => F.ora(ms, p);
 export const giorno = (ms, p) => F.giorno(ms, p);
 export const quando = (ms, p, opz) => F.quando(ms, p, opz);
 export const durata = (ms, p) => F.durata(ms, p);
+export const numero = (n, p, opz) => F.numero(n, p, opz);
+export const euro = (n, p) => F.euro(n, p);

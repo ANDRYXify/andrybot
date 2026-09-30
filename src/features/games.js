@@ -20,6 +20,7 @@ import * as catenaFeat from './catena.js';
 import { aspetta, giocato } from './attese-giochi.js';
 import { points, streamers, giochi } from '../db.js';
 import { makeLog } from '../logger.js';
+import { nomeMoneta } from './moneta.js';
 
 const log = makeLog('giochi');
 
@@ -38,10 +39,6 @@ const ultimoAccredito = new Map();
 function attivi(channel) {
   const s = streamers.get(channel);
   return s?.settings?.giochi !== false;   // di default i giochi sono accesi
-}
-function nomeMoneta(channel) {
-  const n = streamers.get(channel)?.settings?.nomeMonete;
-  return (n && String(n).trim()) || 'monete';
 }
 
 // Configurazione punti/classifica per canale (personalizzabile dalla dashboard).

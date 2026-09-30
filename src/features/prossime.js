@@ -146,13 +146,13 @@ const FRASI = {
   en: {
     c: (q, t) => `The next stream is ${q}${t ? `: ${t}` : ''}.`,
     nessuna: 'There\'s no next stream on the schedule yet.',
-    illeggibile: 'I can\'t read the Twitch schedule right now.',
+    illeggibile: 'I can\'t read the Twitch Schedule right now.',
     daDecidere: 'to be decided',
   },
   es: {
     c: (q, t) => `El próximo directo es ${q}${t ? `: ${t}` : ''}.`,
     nessuna: 'Todavía no hay un próximo directo en el horario.',
-    illeggibile: 'Ahora no consigo leer el horario de Twitch.',
+    illeggibile: 'Ahora no consigo leer el Programa de Twitch.',
     daDecidere: 'por decidir',
   },
 };

@@ -11,7 +11,9 @@ import { personalizzato } from './personalizzati.js';
 import * as bit from './bit.js';
 import { makeLog } from '../logger.js';
 import { aChi } from './risposte.js';
-import { nomeIn } from './comandi-registro.js';
+import { nomeIn, rispostaDi } from './comandi-registro.js';
+import { linguaChat } from './lingua-canale.js';
+import { preferenzeDi as _pref, F as _F } from './preferenze.js';
 import * as prossime from './prossime.js';
 import * as voce from './voce.js';
 
@@ -24,22 +26,15 @@ const attivo = (channel) => streamers.get(channel)?.settings?.comandiBase?.attiv
 // Il vaglio principale e' in cima alla catena; questo resta perche' i comandi
 // base si possono chiamare anche da fuori.
 
-// durata "umana" da una data ISO a ORA: "2 anni e 3 mesi", "5 mesi", "12 giorni".
-function fmtDurata(fromISO) {
-  const start = new Date(fromISO).getTime();
-  if (!Number.isFinite(start)) return '';
-  const sec = Math.max(0, Math.floor((Date.now() - start) / 1000));
-  const g = Math.floor(sec / 86400);
-  const anni = Math.floor(g / 365), mesi = Math.floor((g % 365) / 30), giorni = g % 30;
-  const plur = (n, u, t) => `${n} ${n === 1 ? u : t}`;
-  const parti = [];
-  if (anni) parti.push(plur(anni, 'anno', 'anni'));
-  if (mesi) parti.push(plur(mesi, 'mese', 'mesi'));
-  if (giorni && !anni) parti.push(plur(giorni, 'giorno', 'giorni'));
-  if (parti.length) return parti.join(' e ');
-  const ore = Math.floor(sec / 3600);
-  return ore > 0 ? plur(ore, 'ora', 'ore') : 'meno di un\'ora';
-}
+// Chi non si trova si dice nella lingua della chat.
+const NON_TROVO = { it: '🤔 Non trovo questo utente.', en: '🤔 I can\'t find that user.', es: '🤔 No encuentro a ese usuario.' };
+
+// Le preferenze del canale con le due cose che servono qui: la data e il tempo
+// passato, scritti come li vuole il canale (preferenze.js, formati.js).
+const preferenzeDi = (ch) => {
+  const p = _pref(ch);
+  return { ...p, data: (ms) => _F.data(ms, p), tempo: (ms) => _F.tempoDa(ms, p) };
+};
 
 function fmtUptime(startedAt) {
   const start = new Date(startedAt).getTime();
@@ -108,9 +103,31 @@ export async function tryComando(helix, msg, say) {
         try { const u = await helix.getUserByLogin(chi); uid = u?.id || ''; nome = u?.display_name || chi; }
         catch { uid = ''; }
       }
-      if (!uid) { say('🤔 Non trovo questo utente.'); return true; }
+      if (!uid) { say(NON_TROVO[linguaChat(ch)] || NON_TROVO.it); return true; }
       const iso = await helix.getFollowAge(ch, uid);
-      say(iso ? `💜 @${nome} segue il canale da ${fmtDurata(iso)}.` : `@${nome} non segue (ancora) il canale.`);
+      const pref = preferenzeDi(ch);
+      const da = Date.parse(iso || '');
+      say(Number.isFinite(da)
+        ? rispostaDi(ch, 'followage', 'si', { nome, durata: pref.tempo(da), data: pref.data(da) })
+        : rispostaDi(ch, 'followage', 'no', { nome }));
+      return true;
+    }
+
+    // ---- CHANNELAGE: !channelage [@nome] — da quanto esiste il canale ----
+    // Senza nome e' il canale dove si scrive; con un nome, il canale di quella
+    // persona (su Twitch ogni account e' un canale). La data e' quella che
+    // Twitch da' alla nascita dell'account, nel fuso e nel formato del canale.
+    if (cmd === 'channelage' || cmd === 'accountage' || cmd === 'etacanale') {
+      if (personalizzato(ch, cmd)) return false;
+      if (typeof helix.getUserByLogin !== 'function') return false;
+      const chi = (parti[0] || '').replace(/^@/, '').toLowerCase();
+      const di = chi && nomeOk(chi) ? chi : ch;
+      let u = null;
+      try { u = await helix.getUserByLogin(di); } catch { u = null; }
+      const nato = Date.parse(u?.created_at || '');
+      if (!Number.isFinite(nato)) { say(NON_TROVO[linguaChat(ch)] || NON_TROVO.it); return true; }
+      const pref = preferenzeDi(ch);
+      say(rispostaDi(ch, 'channelage', 'si', { nome: u.display_name || di, durata: pref.tempo(nato), data: pref.data(nato) }));
       return true;
     }
 

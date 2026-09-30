@@ -239,6 +239,8 @@ function impostazioni() {
     overlayStato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     overlayMusica: (s.overlayMusica && typeof s.overlayMusica === 'object') ? s.overlayMusica : {},
     overlayTimer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : {},
+    overlayPubblicita: (s.overlayPubblicita && typeof s.overlayPubblicita === 'object') ? s.overlayPubblicita : {},
+    formaMonete: typeof s.formaMonete === 'string' ? s.formaMonete : '',
     overlayTreno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : {},
     overlayBit: (s.overlayBit && typeof s.overlayBit === 'object') ? s.overlayBit : {},
     overlayCartelli: Array.isArray(s.overlayCartelli) ? s.overlayCartelli : [],
@@ -858,6 +860,7 @@ function statoDemo() {
     ruolo: ctx.role,
     identita: 'andryx_demo', identitaDisplay: 'Andryx',
     tier: 'community', stripeAttivo: false,
+    linguaChat: L('it', 'en', 'es'),
     rapportiNuovi: 1, postaDisponibile: true, inviti: [],
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display, nome: ctx.canale },
@@ -1325,6 +1328,7 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
+    '/api/streamer/preferenze': { scelte: {}, valori: { lingua: 'it', fuso: 'Europe/Rome', data: 'gg/mm/aaaa', ora: '24', settimana: 'lun', durate: 'estese', fonteProssime: '', risposta: 'nome' }, origineLingua: 'base', linguaTwitch: '', fusoSettimana: 'Europe/Rome', suTwitch: true, fonte: 'settimana' },
     '/api/account/collegamenti': { collegamenti: [{ id: 'spotify', chi: '', via: '/api/spotify/disconnect' }, { id: 'tiktok', chi: 'andryxify', via: '/api/tiktok/disconnect' }, { id: 'tgapp', chi: 'andryx', via: '/api/tgapp/scollega' }] },
     '/api/instagram/stato': { appAttiva: true, collegato: true, scaduto: false, username: 'andryxify', aMano: false },
     '/api/discord/invito': { url: '' },
@@ -1497,7 +1501,9 @@ function _demoGet(via) {
       { id: "compleanno", modulo: "compleanni", moduloNome: ["Compleanni","Birthdays","Cumpleaños"], moduloAcceso: true, titolo: ["Il mio compleanno","My birthday","Mi cumpleaños"], cosa: ["Chi lo scrive si segna il compleanno (!compleanno 25/12), lo rilegge o lo toglie con «via».","The writer sets their birthday (!compleanno 25/12), reads it back or removes it with «via».","Quien lo escribe apunta su cumpleaños (!compleanno 25/12), lo consulta o lo quita con «via»."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["compleanno","compleanni","birthday"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "battuta", modulo: "battute", moduloNome: ["Battute","Jokes","Chistes"], moduloAcceso: true, titolo: ["Battuta","Joke","Chiste"], cosa: ["Dice una battuta del serbatoio del canale. Mod e streamer le aggiungono con !battuta aggiungi.","Tells a joke from the channel's bank. Mods and streamer add them with !battuta aggiungi.","Cuenta un chiste del depósito del canal. Mods y streamer los añaden con !battuta aggiungi."], costa: false, attesa: 5, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["battuta","battute","joke"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "so", modulo: "base", moduloNome: ["Comandi pronti","Built-in commands","Comandos de serie"], moduloAcceso: true, titolo: ["Shoutout","Shoutout","Shoutout"], cosa: ["Fa lo shoutout a un altro canale.","Gives a shoutout to another channel.","Hace un shoutout a otro canal."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["so","shoutout"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
-      { id: "followage", modulo: "base", moduloNome: ["Comandi pronti","Built-in commands","Comandos de serie"], moduloAcceso: true, titolo: ["Da quanto segui","How long you've followed","Desde cuándo sigues"], cosa: ["Dice da quanto tempo una persona segue il canale.","Says how long someone has followed the channel.","Dice desde cuándo una persona sigue el canal."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["followage","daquanto"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
+      { id: "followage", modulo: "base", moduloNome: ["Comandi pronti", "Built-in commands", "Comandos de serie"], moduloAcceso: true, titolo: ["Da quanto segui", "How long you've followed", "Desde cuándo sigues"], cosa: ["Dice da quanto tempo una persona segue il canale. Con un nome dopo il comando, lo dice di quella persona.", "Says how long someone has followed the channel. With a name after the command, it says it about that person.", "Dice desde cuándo una persona sigue el canal. Con un nombre después del comando, lo dice de esa persona."], costa: false, attesa: 0, attesaTutti: 0, spegnibile: true, rinominabile: true, riservabile: true, acceso: true, vivo: true, nomi: ["followage", "daquanto"], rinominato: false, chi: "tutti", chiMinimo: "tutti", risposte: {"si": {"etichetta": ["Quando segue", "When they follow", "Cuando sigue"], sua: "", base: "💜 @{nome} segue il canale da {durata}.", segnaposti: ["nome", "durata", "data"]}, no: {"etichetta": ["Quando non segue", "When they don't follow", "Cuando no sigue"], sua: "", base: "@{nome} non segue ancora il canale.", segnaposti: ["nome"]}} },
+      { id: "channelage", modulo: "base", moduloNome: ["Comandi pronti", "Built-in commands", "Comandos de serie"], moduloAcceso: true, titolo: ["Da quanto esiste il canale", "How old the channel is", "Desde cuándo existe el canal"], cosa: ["Dice quando è nato il canale e quanto tempo fa. Con un nome dopo il comando, lo dice del canale di quella persona.", "Says when the channel was created and how long ago. With a name after the command, it says it about that person's channel.", "Dice cuándo se creó el canal y hace cuánto. Con un nombre después del comando, lo dice del canal de esa persona."], costa: false, attesa: 0, attesaTutti: 0, spegnibile: true, rinominabile: true, riservabile: true, acceso: true, vivo: true, nomi: ["channelage", "accountage", "etacanale"], rinominato: false, chi: "tutti", chiMinimo: "tutti", risposte: {"si": {"etichetta": ["La risposta", "The reply", "La respuesta"], sua: "", base: "📅 Il canale di {nome} è nato il {data}, {durata} fa.", segnaposti: ["nome", "durata", "data"]}} },
+      { id: "prossima", modulo: "base", moduloNome: ["Comandi pronti", "Built-in commands", "Comandos de serie"], moduloAcceso: true, titolo: ["La prossima diretta", "The next stream", "El próximo directo"], cosa: ["Dice quando è la prossima diretta, dalla settimana o dal Programma di Twitch, come hai scelto nelle preferenze.", "Says when the next stream is, from your week or from the Twitch Schedule, as you chose in your preferences.", "Dice cuándo es el próximo directo, desde tu semana o desde el Programa de Twitch, como elegiste en tus preferencias."], costa: false, attesa: 0, attesaTutti: 0, spegnibile: true, rinominabile: true, riservabile: true, acceso: true, vivo: true, nomi: ["prossima", "next", "schedule", "proxima"], rinominato: false, chi: "tutti", chiMinimo: "tutti", risposte: null },
       { id: "uptime", modulo: "base", moduloNome: ["Comandi pronti","Built-in commands","Comandos de serie"], moduloAcceso: true, titolo: ["Da quanto sei in diretta","How long you've been live","Cuánto llevas en directo"], cosa: ["Dice da quanto è cominciata la diretta.","Says how long ago the stream started.","Dice cuándo empezó el directo."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["uptime"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "bit", modulo: "base", moduloNome: ["Comandi pronti","Built-in commands","Comandos de serie"], moduloAcceso: true, titolo: ["La classifica dei Bit","The Bits leaderboard","La clasificación de Bits"], cosa: ["Mostra chi ha messo più Bit e a che posto sei tu. Puoi chiedere oggi, settimana, mese, anno o sempre.","Shows who cheered the most Bits and where you stand. You can ask for today, week, month, year or all time.","Muestra quién ha puesto más Bits y en qué puesto estás. Puedes pedir hoy, semana, mes, año o siempre."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["bit","bits","classificabit"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "bot", modulo: "trasparenza", moduloNome: ["Trasparenza IA","AI transparency","Transparencia de IA"], moduloAcceso: true, titolo: ["Chi risponde in chat","Who answers in chat","Quién responde en el chat"], cosa: ["Dice a chi lo scrive che qui risponde un assistente automatico, e che alcune risposte in chat sono scritte da un'intelligenza artificiale. Risponde sempre, a chiunque.","Tells whoever writes it that an automated assistant answers here, and that some chat replies are written by an artificial intelligence. It always answers, to anyone.","Dice a quien lo escribe que aquí responde un asistente automático, y que algunas respuestas en el chat las escribe una inteligencia artificial. Responde siempre, a cualquiera."], costa: false, attesa: 0, spegnibile: false, rinominabile: false, riservabile: false, acceso: true, vivo: true, nomi: ["bot","socialbot","ia","ai"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
@@ -5074,7 +5080,10 @@ function _settDisegnaCalendari() {
   const p = _settPosti || {};
   const w = settimanaOra();
   const righe = [];
-  if (p.tw) {
+  if (p.tw && p.tw.delloStreamer) {
+    righe.push(`<p class="suggerimento">${L('Le prossime dirette le leggo dal Programma di Twitch, come hai scelto: la settimana non ci scrive sopra e non ci toglie niente.', 'I read the next streams from the Twitch Schedule, as you chose: your week does not write on it or remove anything from it.', 'Leo los próximos directos del Programa de Twitch, como elegiste: tu semana no escribe en él ni le quita nada.')}
+      <button type="button" class="btn secondario mini" data-vai="account">${L('Cambia nelle preferenze', 'Change it in preferences', 'Cámbialo en las preferencias')}</button></p>`);
+  } else if (p.tw) {
     righe.push(p.tw.permesso
       ? `<label class="tg-spunta"><input type="checkbox" id="sett-tw"${w.twitch.acceso ? ' checked' : ''}><span>${L('Scrivila nel Programma del mio canale Twitch', 'Write it into my Twitch channel Schedule', 'Escríbela en el Programa de mi canal de Twitch')}</span></label>
          <p class="suggerimento">${L('Ogni giorno diventa una diretta che si ripete, con il gioco trovato su Twitch. Quelle che scrivi a mano sul Programma restano tue: non le tocco.', 'Each day becomes a repeating stream, with the game found on Twitch. The ones you write by hand on the Schedule stay yours: I leave them alone.', 'Cada día se vuelve un directo que se repite, con el juego encontrado en Twitch. Los que escribes a mano en el Programa siguen siendo tuyos: no los toco.')}</p>`
@@ -5176,7 +5185,8 @@ function _settDiciEsito(e) {
   const t = [];
   let guaio = false;
   const tw = e?.twitch;
-  if (tw && tw.permesso) { guaio = true; t.push(L('Per il Programma di Twitch manca il permesso.', 'The Twitch Schedule permission is missing.', 'Falta el permiso del Programa de Twitch.')); }
+  if (tw && tw.delloStreamer) t.push(L('Il Programma di Twitch è la fonte delle tue prossime dirette: non l\'ho toccato.', 'The Twitch Schedule is the source of your next streams: I left it alone.', 'El Programa de Twitch es la fuente de tus próximos directos: no lo he tocado.'));
+  else if (tw && tw.permesso) { guaio = true; t.push(L('Per il Programma di Twitch manca il permesso.', 'The Twitch Schedule permission is missing.', 'Falta el permiso del Programa de Twitch.')); }
   else if (tw && tw.ok) {
     const n = (tw.creati || 0) + (tw.sistemati || 0) + (tw.tolti || 0);
     t.push(n ? L('Programma di Twitch aggiornato.', 'Twitch Schedule updated.', 'Programa de Twitch actualizado.') : L('Il Programma di Twitch era già a posto.', 'The Twitch Schedule was already right.', 'El Programa de Twitch ya estaba bien.'));
@@ -8781,6 +8791,11 @@ function pannelloAccount() {
       <p>${L('Gli account che hai collegato, tutti qui: li scolleghi quando vuoi, qualunque sia il tuo piano.', 'The accounts you connected, all in one place: disconnect them whenever you like, whatever your plan.', 'Las cuentas que has conectado, todas aquí: las desconectas cuando quieras, sea cual sea tu plan.')}</p>
       <div id="acc-collegamenti" class="spazio-sopra" aria-busy="true">${attesaHtml('div')}</div>
       <p class="suggerimento">${L('Twitch, Kick e YouTube stanno qui sopra, in «Le tue piattaforme»; i conti delle donazioni nella scheda Donazioni.', 'Twitch, Kick and YouTube are above, in «Your platforms»; the donation accounts in the Donations tab.', 'Twitch, Kick y YouTube están arriba, en «Tus plataformas»; las cuentas de donaciones en la pestaña Donaciones.')}</p>
+    </div>
+    <div class="carta" id="carta-preferenze">
+      <h2>${_hIco(ICO.calendario)}${L('Preferenze del canale', 'Channel preferences', 'Preferencias del canal')}</h2>
+      <p>${L('Come parla e come conta il tempo il tuo canale: la lingua del bot in chat, le date, le ore e da dove prende le prossime dirette. «Di base» segue il tuo canale da solo.', 'How your channel speaks and counts time: the bot’s language in chat, dates, times and where it takes the next streams from. «Default» follows your channel by itself.', 'Cómo habla y cuenta el tiempo tu canal: el idioma del bot en el chat, las fechas, las horas y de dónde toma los próximos directos. «Por defecto» sigue a tu canal solo.')}</p>
+      <div id="acc-preferenze" class="spazio-sopra" aria-busy="true">${attesaHtml('div')}</div>
     </div>`}
     <div class="carta">
       <h2>${_hIco(ICO.cestino)}${L('Andarsene', 'Leaving', 'Marcharse')}</h2>
@@ -11120,6 +11135,33 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="timer">${L('Salva', 'Save', 'Guardar')}</button></p>
     </details>
 
+    <details class="carta sez" data-parte="aspetto" id="sez-pubblicita">
+      <summary><h3>${_hIco(ICO.megafono)}${L('Conto alla pubblicità', 'Ad countdown', 'Cuenta atrás de anuncios')}</h3></summary>
+      <p>${L('Quanto manca alla prossima pubblicità, e durante la pausa quanto manca al ritorno. I tempi li dice Twitch, solo mentre sei in onda: fuori diretta, o senza pubblicità in programma, il pezzo non c\'è.', 'How long until the next ad break, and during the break how long until you are back. Twitch gives the times, only while you are live: offline, or with no ads scheduled, the piece is not there.', 'Cuánto falta para la próxima pausa de anuncios y, durante la pausa, cuánto falta para volver. Los tiempos los da Twitch, solo mientras estás en directo: sin directo, o sin anuncios programados, la pieza no está.')}</p>
+      <div data-cfg="pubblicita">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="pubbl-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Conto alla pubblicità', 'Ad countdown', 'Cuenta atrás de anuncios')}</span>
+        </div>
+        <div class="griglia-campi spazio-sopra">
+          <div><label class="campo" for="pubbl-titolo">${L('Prima della pausa', 'Before the break', 'Antes de la pausa')}</label><input type="text" id="pubbl-titolo" data-c="titolo" maxlength="60" placeholder="${esc(_titoliPubblicita()[0])}"></div>
+          <div><label class="campo" for="pubbl-titolo-pausa">${L('Durante la pausa', 'During the break', 'Durante la pausa')}</label><input type="text" id="pubbl-titolo-pausa" data-c="titoloPausa" maxlength="60" placeholder="${esc(_titoliPubblicita()[1])}"></div>
+        </div>
+        <p class="suggerimento">${L('Vuoti, escono nella lingua della chat.', 'Left empty, they come out in the chat language.', 'Vacíos, salen en el idioma del chat.')}</p>
+        <div class="goal-campi spazio-sopra">
+          <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-c="posizione">${POS4_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Da quando si vede', 'Shows from', 'Se ve desde')}<select data-c="mostraDa">${[[0, L('sempre', 'always', 'siempre')], [1, L('1 minuto prima', '1 minute before', '1 minuto antes')], [2, L('2 minuti prima', '2 minutes before', '2 minutos antes')], [5, L('5 minuti prima', '5 minutes before', '5 minutos antes')], [10, L('10 minuti prima', '10 minutes before', '10 minutos antes')], [30, L('30 minuti prima', '30 minutes before', '30 minutos antes')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+        </div>
+        <label class="riga-check spazio-sopra"><input type="checkbox" data-c="pausa"> ${L('Resta anche durante la pausa, col conto del ritorno', 'Stays during the break too, counting down to your return', 'Se queda también durante la pausa, con la cuenta de la vuelta')}</label>
+        <p class="suggerimento">${L(`Serve il permesso di leggere la programmazione delle pubblicità: se manca, nella scheda «${tScheda('stato')}» premi «Aggiorna i permessi». Gli avvisi in chat sulla pubblicità sono un'altra cosa, e si accendono a parte.`, `It needs the permission to read the ad schedule: if it is missing, press «Update permissions» in the «${tScheda('stato')}» tab. Chat notices about ads are a separate thing, and are turned on separately.`, `Hace falta el permiso para leer la programación de anuncios: si falta, en la pestaña «${tScheda('stato')}» pulsa «Actualizar permisos». Los avisos en el chat sobre los anuncios son otra cosa, y se encienden aparte.`)}</p>
+        <div class="asp-blocco" data-asp="pubblicita" data-cfg-di="pubblicita">
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="pubblicita">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
     <details class="carta sez" data-parte="aspetto" id="sez-treno">
       <summary><h3>${_hIco(ICO.treno)}Hype train</h3></summary>
       <p>${L('Il treno lo fa Twitch: livello, punti e quanto manca li decide lui, e qui si vedono. Niente da contare e niente da far partire — quando parte, parte.', 'The train is Twitch’s: level, points and time left are its call, and here you see them. Nothing to count and nothing to start — when it goes, it goes.', 'El tren lo hace Twitch: nivel, puntos y lo que falta los decide él, y aquí se ven. Nada que contar y nada que arrancar — cuando sale, sale.')}</p>
@@ -11570,7 +11612,7 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
 let occSel = '';
@@ -12309,6 +12351,23 @@ function _vestiTimer(box, cfg) {
     : _orologioGiu(fine > 0 ? manca : (Number(cfg.minuti) || 15) * 60000);
 }
 
+function _defPubblicita() {
+  return { attivo: false, titolo: '', titoloPausa: '', mostraDa: 0, pausa: true, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
+}
+
+const _TITOLI_PUBBLICITA = () => ({ it: ['Pubblicità fra', 'Torno fra'], en: ['Ads in', 'Back in'], es: ['Anuncios en', 'Vuelvo en'] });
+const _titoliPubblicita = () => _TITOLI_PUBBLICITA()[['it', 'en', 'es'].includes(stato?.linguaChat) ? stato.linguaChat : 'it'];
+
+function _vestiPubblicita(box, cfg) {
+  if (!box.querySelector('.t-num')) box.innerHTML = '<span class="t-tit"></span><span class="t-num"></span>';
+  const st = cfg.stile || {};
+  box.className = 'ovl-widget ovl-timer ovl-pubblicita dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
+  box.querySelector('.t-tit').textContent = cfg.titolo || _titoliPubblicita()[0];
+  box.querySelector('.t-num').textContent = _orologioGiu(4 * 60000 + 32000);
+}
+
 const TRENO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICO.treno + '</svg>';
 
 function _defTreno() {
@@ -12552,7 +12611,7 @@ async function _disegnaPremiMuro() {
       : `<p class="vuoto">${L('Non hai ancora premi a punti canale su Twitch: creane uno e torna qui.', 'You have no channel-point rewards on Twitch yet: create one and come back here.', 'Aún no tienes recompensas de puntos de canal en Twitch: crea una y vuelve aquí.')}</p>`);
 }
 
-const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, scritta: _vestiScritta, etichetta: _vestiEtichetta, muro: _vestiMuro, effetti: _vestiEffetti };
+const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, pubblicita: _vestiPubblicita, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, scritta: _vestiScritta, etichetta: _vestiEtichetta, muro: _vestiMuro, effetti: _vestiEffetti };
 
 function _orologioGiu(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -12846,6 +12905,7 @@ const PEZZI_EL = () => [
   ['chat', '#sez-chat'],
   ['musica', '#sez-musica'],
   ['timer', '#sez-timer'],
+  ['pubblicita', '#sez-pubblicita'],
   ['treno', '#sez-treno'],
   ['bit', '#sez-bit'],
   ['boss', '#sez-boss'],
@@ -13134,6 +13194,7 @@ const ELEMENTI = () => {
   cartBozza().forEach((c, i) => out.push({ k: 'cart:' + c.id, ico: ICO.cartello, n: nomeCartello(c, i), cart: c }));
   out.push({ k: 'musica', ico: ICO.musica, n: L('Player musica', 'Music player', 'Reproductor de música'), cfg: 'overlayMusica' });
   out.push({ k: 'timer', ico: ICO.orologio, n: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), cfg: 'overlayTimer' });
+  out.push({ k: 'pubblicita', ico: ICO.megafono, n: L('Conto alla pubblicità', 'Ad countdown', 'Cuenta atrás de anuncios'), cfg: 'overlayPubblicita' });
   out.push({ k: 'treno', ico: ICO.treno, n: L('Hype train', 'Hype train', 'Hype train'), cfg: 'overlayTreno' });
   out.push({ k: 'bit', ico: ICO.podio, n: L('Classifica Bit', 'Bits leaderboard', 'Clasificación de Bits'), cfg: 'overlayBit' });
   out.push({ k: 'pen', ico: ICO.penitenza, n: L('Sfida a tempo', 'Timed challenge', 'Reto a tiempo'), cfg: 'penitenze' });
@@ -13192,7 +13253,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, bit: _defBit, boss: _defBoss, scritta: _defScritta, etichetta: _defEtichetta, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, pubblicita: _defPubblicita, treno: _defTreno, bit: _defBit, boss: _defBoss, scritta: _defScritta, etichetta: _defEtichetta, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 function _cfgEl(k) {
   const e = ELEM(k);
@@ -16872,7 +16933,7 @@ function _pubDisegna() {
         <span class="suggerimento">${L('secondi', 'seconds', 'segundos')}</span>
       </div>
       ${momento('prima', L('Prima che parta', 'Before it starts', 'Antes de que empiece'),
-    L('Lo ricavo dalla programmazione di Twitch, che esiste solo mentre sei in onda. Sta vicino alla pausa apposta: uno snooze la sposta di cinque minuti, e un annuncio in chat non si ritira.', 'I work it out from the Twitch schedule, which only exists while you are live. It stays close to the break on purpose: a snooze moves it by five minutes, and a chat announcement cannot be taken back.', 'Lo saco de la programación de Twitch, que solo existe mientras estás en directo. Se queda cerca de la pausa a propósito: un snooze la mueve cinco minutos, y un anuncio en el chat no se retira.'))}
+    L('Lo ricavo dalla programmazione di Twitch, che esiste solo mentre sei in onda. Sta vicino alla pausa apposta: uno snooze la sposta di cinque minuti, e un annuncio in chat non si ritira.', 'I work it out from the Twitch Schedule, which only exists while you are live. It stays close to the break on purpose: a snooze moves it by five minutes, and a chat announcement cannot be taken back.', 'Lo saco de la programación de Twitch, que solo existe mientras estás en directo. Se queda cerca de la pausa a propósito: un snooze la mueve cinco minutos, y un anuncio en el chat no se retira.'))}
       ${momento('durante', L('Appena parte', 'As it starts', 'Nada más empezar'),
     L('Questo me lo dice Twitch, e mi dice anche quanto dura.', 'Twitch tells me this one, and how long it lasts.', 'Esto me lo dice Twitch, y también cuánto dura.'))}
       ${momento('dopo', L('Quando torni', 'When you are back', 'Cuando vuelves'),
@@ -21566,12 +21627,20 @@ function _gcRiga(g) {
   const chiPuo = g.riservabile === false
     ? `<span class="gc-input gc-fermo">${esc(L('non si riserva', 'cannot be reserved', 'no se reserva'))}</span>`
     : `<select data-gc-chi>${livelli}</select>`;
+  const segnaposti = g.risposte ? [...new Set(Object.values(g.risposte).flatMap((f) => f.segnaposti || []))] : [];
+  const frasi = g.risposte ? `<details class="gc-frasi spazio-sopra">
+        <summary>${esc(L('La risposta in chat', 'The reply in chat', 'La respuesta en el chat'))}${Object.values(g.risposte).some((f) => f.sua) ? ` <span class="gc-costa">${esc(L('tua', 'yours', 'tuya'))}</span>` : ''}</summary>
+        ${Object.entries(g.risposte).map(([k, f]) => `<label class="campo" for="gc-${esc(g.id)}-${esc(k)}">${esc(Lv(f.etichetta || [k, k, k]))}</label>
+        <textarea id="gc-${esc(g.id)}-${esc(k)}" class="campo-largo" rows="2" maxlength="300" data-gc-risposta="${esc(k)}" placeholder="${esc(f.base)}">${esc(f.sua)}</textarea>`).join('')}
+        <p class="suggerimento">${L('Vuota, il bot usa la sua, quella che vedi in grigio, nella lingua della chat. Puoi usare', 'Empty, the bot uses its own, the one you see in gray, in the chat language. You can use', 'Vacía, el bot usa la suya, la que ves en gris, en el idioma del chat. Puedes usar')} ${segnaposti.map((x) => `<code>{${esc(x)}}</code>`).join(' ')}.</p>
+      </details>` : '';
   return `<li class="gc-riga${g.acceso ? '' : ' gc-off'}${g.moduloAcceso ? '' : ' gc-muto'}" data-gc="${esc(g.id)}">
     ${spegni}
     <div class="gc-corpo">
       <div class="gc-testa"><strong>${esc(Lv(g.titolo))}</strong>${g.costa ? `<span class="gc-costa">${esc(L('costa monete', 'costs coins', 'cuesta monedas'))}</span>` : ''}</div>
       <div class="gc-cosa">${esc(Lv(g.cosa))}</div>
       <div class="gc-nomi">${nomi}${_gcAttese(g)}</div>
+      ${frasi}
     </div>
     <div class="gc-regole">
       <label class="gc-campo"><span>${esc(L('nome tuo', 'your name', 'tu nombre'))}</span>${rinomina}</label>
@@ -21631,6 +21700,9 @@ async function salvaGiochiComandi(ev) {
     if (on && !on.checked) riga.off = true;
     if (nome && nome !== id) riga.nome = nome;
     if (chi !== 'tutti') riga.chi = chi;
+    const frasi = {};
+    li.querySelectorAll('[data-gc-risposta]').forEach((t) => { const v = t.value.replace(/\s+/g, ' ').trim(); if (v) frasi[t.dataset.gcRisposta] = v; });
+    if (Object.keys(frasi).length) riga.risposte = frasi;
     if (Object.keys(riga).length) comandi[id] = riga;
   });
   try {
@@ -21665,6 +21737,7 @@ function pannelloGiochi() {
 
       <label class="campo" for="inp-monete">${L('Come si chiamano le monete', 'What the coins are called', 'Cómo se llaman las monedas')}</label>
       <input type="text" id="inp-monete" maxlength="20" value="${esc(s.nomeMonete)}" placeholder="${L('es. monete, punti, gemme…', 'e.g. coins, points, gems…', 'p. ej. monedas, puntos, gemas…')}">
+      <div id="forma-monete" class="spazio-sopra" role="radiogroup" aria-labelledby="forma-monete-tit" hidden></div>
 
       <p class="spazio-sopra"><button class="btn" id="btn-salva-giochi">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
@@ -25699,11 +25772,18 @@ function attivaPiattaforma() {
   }));
 
   document.getElementById('btn-salva-giochi')?.addEventListener('click', () => conErrore(async () => {
+    const nome = document.getElementById('inp-monete').value.trim();
+    const forma = _formaMoneteDaSalvare(nome);
     await salvaImpostazioni({
       giochi: document.getElementById('chk-giochi').checked,
-      nomeMonete: document.getElementById('inp-monete').value.trim(),
+      nomeMonete: nome,
+      ...(forma === null ? {} : { formaMonete: forma }),
     }, L('Giochi salvati ✓', 'Games saved ✓', 'Juegos guardados ✓'));
+    _formaMoneteToccata = false;
+    _disegnaFormaMonete();
   }));
+  document.getElementById('inp-monete')?.addEventListener('input', () => _aggiornaFormaMonete());
+  document.getElementById('forma-monete')?.addEventListener('change', () => { _formaMoneteToccata = true; _aggiornaFormaMonete(); });
 
   document.getElementById('btn-salva-gcmd')?.addEventListener('click', salvaGiochiComandi);
 
@@ -27115,7 +27195,7 @@ async function conErrore(fn) {
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
   if (id === 'stato') caricaAdesso();
-  if (id === 'account') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); collegaAvvisiManca(); caricaCollegamenti(); }
+  if (id === 'account') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); collegaAvvisiManca(); caricaCollegamenti(); caricaPreferenze(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'promo') { collegaPromo(); caricaPromo(); }
   if (id === 'qr') avviaQr();
@@ -27130,7 +27210,7 @@ function caricaDatiScheda(id) {
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
-    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); riempiCfgForm('scritta'); riempiCfgForm('etichetta'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
+    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('pubblicita'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); riempiCfgForm('scritta'); riempiCfgForm('etichetta'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'consolify') caricaConsolify();
@@ -27140,7 +27220,7 @@ function caricaDatiScheda(id) {
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); caricaRegoleGiochi(); }
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); caricaRegoleGiochi(); _disegnaFormaMonete(); }
   if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); }
   if (id === 'notifiche') { caricaTikTok(); caricaInstagram(); collegaFeed(); caricaFeed(); }
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }
@@ -30308,6 +30388,146 @@ const NOME_COLLEGAMENTO = {
   tgapp: ['Telegram, per entrare nel pannello', 'Telegram, to sign in to the panel', 'Telegram, para entrar en el panel'],
   telegram: ['Telegram, i messaggi privati del bot', 'Telegram, the bot\'s private messages', 'Telegram, los mensajes privados del bot'],
 };
+
+const _FRASI_FORMA_MONETE = {
+  it: (n) => [`le tue ${n}`, `i tuoi ${n}`, `la tua ${n}`, `il tuo ${n}`],
+  es: (n) => [`¿cuántas ${n} tienes?`, `¿cuántos ${n} tienes?`, `¿cuánta ${n} tienes?`, `¿cuánto ${n} tienes?`],
+};
+let _formaMoneteToccata = false;
+
+function _nomeMoneteSalvato() {
+  const F = window.SB_FORMATI;
+  return (impostazioni().nomeMonete || '').trim() || (F ? F.NOME_MONETA_BASE : 'monete');
+}
+
+function _statoFormaMonete() {
+  const F = window.SB_FORMATI;
+  const nome = (_g('inp-monete')?.value || '').trim() || F.NOME_MONETA_BASE;
+  const salvata = F.FORME_MONETA.includes(impostazioni().formaMonete) && nome === _nomeMoneteSalvato() ? impostazioni().formaMonete : '';
+  const base = F.formaMonetaBase(nome);
+  const toccata = _formaMoneteToccata ? _g('forma-monete')?.querySelector('input:checked')?.value : '';
+  return { nome, base, salvata, scelta: toccata || salvata || base, diBase: !toccata && !salvata };
+}
+
+async function _disegnaFormaMonete() {
+  const box = _g('forma-monete');
+  if (!box) return;
+  const frasi = _FRASI_FORMA_MONETE[stato?.linguaChat];
+  await _conFormati().catch(() => null);
+  const F = window.SB_FORMATI;
+  if (!frasi || !F || !F.formaMonetaBase) { box.hidden = true; box.innerHTML = ''; return; }
+  _formaMoneteToccata = false;
+  box.innerHTML = `<p class="campo" id="forma-monete-tit">${L('Come se ne parla in chat', 'How chat talks about them', 'Cómo se habla de ellas en el chat')}</p>`
+    + F.FORME_MONETA.map((f) => `<label class="riga-check"><input type="radio" name="forma-monete" value="${f}"> <span data-forma-frase="${f}"></span> <span class="tenue" data-forma-base="${f}" hidden>${L('di base', 'default', 'por defecto')}</span></label>`).join('')
+    + `<p class="suggerimento">${L('Scegli la frase che suona giusta col tuo nome: il bot accorda così le parole che gli stanno intorno.', 'Pick the phrase that sounds right with your name: the bot agrees the words around it this way.', 'Elige la frase que suena bien con tu nombre: el bot concuerda así las palabras que lo rodean.')}</p>`;
+  box.hidden = false;
+  _aggiornaFormaMonete();
+}
+
+function _aggiornaFormaMonete() {
+  const box = _g('forma-monete');
+  const frasi = _FRASI_FORMA_MONETE[stato?.linguaChat];
+  if (!box || box.hidden || !frasi || !window.SB_FORMATI) return;
+  const st = _statoFormaMonete();
+  const testi = frasi(st.nome);
+  window.SB_FORMATI.FORME_MONETA.forEach((f, i) => {
+    const t = box.querySelector(`[data-forma-frase="${f}"]`);
+    if (t) t.textContent = `«${testi[i]}»`;
+    const b = box.querySelector(`[data-forma-base="${f}"]`);
+    if (b) b.hidden = !(st.diBase && f === st.base);
+    const r = box.querySelector(`input[value="${f}"]`);
+    if (r) r.checked = f === st.scelta;
+  });
+}
+
+function _formaMoneteDaSalvare(nome) {
+  const box = _g('forma-monete');
+  if (!box || box.hidden || !window.SB_FORMATI) return null;
+  if (_formaMoneteToccata) return box.querySelector('input:checked')?.value || '';
+  return (nome || window.SB_FORMATI.NOME_MONETA_BASE) === _nomeMoneteSalvato() ? (impostazioni().formaMonete || '') : '';
+}
+
+const _conFormati = () => (window.SB_FORMATI ? Promise.resolve() : new Promise((ok, ko) => { const s = document.createElement('script'); s.src = '/formati.js'; s.onload = ok; s.onerror = () => ko(new Error('/formati.js')); document.head.appendChild(s); }));
+
+async function caricaPreferenze() {
+  const box = document.getElementById('acc-preferenze');
+  if (!box) return;
+  const [r] = await Promise.all([api('/api/streamer/preferenze').catch(() => null), _conFormati().catch(() => null)]);
+  box.removeAttribute('aria-busy');
+  if (!r || !r.valori || !window.SB_FORMATI) { box.innerHTML = `<p class="suggerimento">${L('Non riesco a leggere le preferenze adesso: riprova fra poco.', 'I cannot read your preferences right now: try again shortly.', 'Ahora no puedo leer tus preferencias: vuelve a intentarlo en un rato.')}</p>`; return; }
+  _disegnaPreferenze(box, r);
+}
+
+const NOMI_LINGUA = { it: 'Italiano', en: 'English', es: 'Español' };
+
+function _disegnaPreferenze(box, r) {
+  const F = window.SB_FORMATI;
+  const sc = { ...(r.scelte || {}) };
+  const esempio = Date.UTC(2026, 8, 30, 19, 0);
+  const linguaBase = ['it', 'en', 'es'].includes(r.linguaTwitch) ? r.linguaTwitch : 'it';
+  const diBase = (t) => `${L('Di base', 'Default', 'Por defecto')}: ${t}`;
+  const esGiorno = { lun: L('lunedì', 'Monday', 'lunes'), dom: L('domenica', 'Sunday', 'domingo') };
+  const fonteNome = { settimana: L('la settimana di SocialBot', 'your SocialBot week', 'la semana de SocialBot'), twitch: L('il Programma di Twitch', 'the Twitch Schedule', 'el Programa de Twitch') };
+  const pref = (x = {}) => {
+    const b = F.valori({ lingua: sc.lingua || linguaBase, fuso: sc.fuso || r.fusoSettimana });
+    return { ...b, ...Object.fromEntries(Object.entries(sc).filter(([k, v]) => v && k !== 'lingua' && k !== 'fuso')), ...x };
+  };
+  const voci = () => {
+    const b = pref({ data: undefined, ora: undefined, durate: undefined });
+    const base = F.valori({ lingua: b.lingua });
+    return {
+      lingua: [['', diBase(NOMI_LINGUA[linguaBase])], ['it', NOMI_LINGUA.it], ['en', NOMI_LINGUA.en], ['es', NOMI_LINGUA.es]],
+      data: [['', diBase(F.data(esempio, pref({ data: base.data })))], ...F.DATE.map((d) => [d, F.data(esempio, pref({ data: d }))])],
+      ora: [['', diBase(F.ora(esempio, pref({ ora: base.ora })))], ['24', `${L('24 ore', '24-hour', '24 horas')} (${F.ora(esempio, pref({ ora: '24' }))})`], ['12', `${L('12 ore', '12-hour', '12 horas')} (${F.ora(esempio, pref({ ora: '12' }))})`]],
+      settimana: [['', diBase(esGiorno.lun)], ['lun', esGiorno.lun], ['dom', esGiorno.dom]],
+      durate: [['', diBase(F.durata(80 * 60000, pref({ durate: 'estese' })))], ['estese', F.durata(80 * 60000, pref({ durate: 'estese' }))], ['brevi', F.durata(80 * 60000, pref({ durate: 'brevi' }))]],
+      fonteProssime: [['', diBase(fonteNome[r.fonte] || fonteNome.settimana)], ['settimana', fonteNome.settimana], ['twitch', fonteNome.twitch]],
+    };
+  };
+  const esempioTesto = () => `${F.data(esempio, pref())}, ${F.ora(esempio, pref())} · ${F.quando(esempio, pref(), { adesso: esempio - 3600000 })} · ${F.durata(80 * 60000, pref())}`;
+  const v0 = voci();
+  const tendina = (id, etichetta, nota = '') => `<label class="campo" for="pref-${id}">${etichetta}</label>
+    <select id="pref-${id}" class="campo-largo" data-pref="${id}">${v0[id].map(([v, t]) => `<option value="${esc(v)}"${v === (sc[id] || '') ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+    ${nota ? `<p class="suggerimento">${nota}</p>` : ''}`;
+  const fusi = (() => { try { return Intl.supportedValuesOf('timeZone'); } catch (e) { return []; } })();
+  box.innerHTML = `
+    ${tendina('lingua', L('Lingua del bot in chat', 'Bot language in chat', 'Idioma del bot en el chat'),
+      ['it', 'en', 'es'].includes(r.linguaTwitch) ? L('Di base è la lingua del tuo canale su Twitch.', 'By default it is your channel’s language on Twitch.', 'Por defecto es el idioma de tu canal en Twitch.') : '')}
+    <label class="campo" for="pref-fuso">${L('Fuso orario', 'Time zone', 'Zona horaria')}</label>
+    <input type="text" id="pref-fuso" class="campo-largo" data-pref="fuso" list="pref-fusi" autocomplete="off" spellcheck="false" value="${esc(sc.fuso || '')}" placeholder="${esc(r.fusoSettimana)}">
+    <datalist id="pref-fusi">${fusi.map((f) => `<option value="${esc(f)}"></option>`).join('')}</datalist>
+    <p class="suggerimento">${L('Vuoto: quello della tua settimana', 'Empty: the one of your week', 'Vacío: el de tu semana')} (${esc(r.fusoSettimana)}).</p>
+    ${tendina('data', L('Data', 'Date', 'Fecha'))}
+    ${tendina('ora', L('Ora', 'Time', 'Hora'))}
+    ${tendina('settimana', L('La settimana comincia', 'The week starts on', 'La semana empieza el'))}
+    ${tendina('durate', L('Durate', 'Durations', 'Duraciones'))}
+    ${r.suTwitch ? tendina('fonteProssime', L('Le prossime dirette si leggono da', 'Next streams are read from', 'Los próximos directos se leen de'),
+      L('Le usano !prossima, $prossima e il bot quando gli chiedono quando sei in diretta. Col Programma di Twitch la settimana non ci scrive sopra e non ci toglie niente.', 'They are used by !prossima, $prossima and the bot when someone asks when you are live. With the Twitch Schedule, your week does not write on it or remove anything from it.', 'Los usan !prossima, $prossima y el bot cuando le preguntan cuándo estás en directo. Con el Programa de Twitch, tu semana no escribe en él ni le quita nada.')) : ''}
+    <p class="riquadro-info spazio-sopra">${L('In chat si scrive così:', 'In chat it reads like this:', 'En el chat se escribe así:')} <strong id="pref-esempio">${esc(esempioTesto())}</strong></p>
+    <p class="spazio-sopra"><button type="button" class="btn" id="btn-salva-preferenze">${L('Salva preferenze', 'Save preferences', 'Guardar preferencias')}</button></p>`;
+  const aggiorna = () => {
+    const v = voci();
+    for (const [id, righe] of Object.entries(v)) {
+      const sel = document.getElementById('pref-' + id);
+      if (sel) righe.forEach(([, t], k) => { if (sel.options[k]) sel.options[k].textContent = t; });
+    }
+    const es = document.getElementById('pref-esempio');
+    if (es) es.textContent = esempioTesto();
+  };
+  for (const el of box.querySelectorAll('[data-pref]')) {
+    el.addEventListener('change', () => {
+      const v = String(el.value || '').trim();
+      if (el.dataset.pref === 'fuso' && v && !F.fusoValido(v)) { toast(L('Questo fuso non esiste: scegline uno dall\'elenco.', 'That time zone does not exist: pick one from the list.', 'Esa zona horaria no existe: elige una de la lista.')); el.value = sc.fuso || ''; return; }
+      sc[el.dataset.pref] = v;
+      aggiorna();
+    });
+  }
+  document.getElementById('btn-salva-preferenze')?.addEventListener('click', () => conErrore(async () => {
+    const nuovo = await api('/api/streamer/preferenze', { method: 'POST', body: { preferenze: sc } });
+    toast(L('Preferenze salvate ✓', 'Preferences saved ✓', 'Preferencias guardadas ✓'));
+    if (nuovo?.fonte) { r.fonte = nuovo.fonte; aggiorna(); }
+  }));
+}
 
 async function caricaCollegamenti() {
   const box = document.getElementById('acc-collegamenti');

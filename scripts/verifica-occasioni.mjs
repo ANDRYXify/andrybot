@@ -72,6 +72,10 @@ if (!browser) { console.log('  –  saltato: manca Chromium o Playwright'); proc
 const { base, chiudi } = await apriSito();
 const errori = [];
 const p = await browser.newPage({ viewport: { width: 1500, height: 980 } });
+// I giri guidati si aprono da soli in ogni scheda nuova, a un tempo loro:
+// senza questa scelta («non mostrarli piu'») coprirebbero un tasto a caso
+// quando la pagina arriva in fretta. Qui non si prova il giro.
+await p.addInitScript(() => { try { localStorage.setItem('sb-giro', JSON.stringify({ viste: {}, mai: true })); } catch {} });
 p.on('pageerror', (e) => errori.push(String(e.message || e)));
 
 await p.goto(base + '/?demo=1&lang=it', { waitUntil: 'domcontentloaded' });

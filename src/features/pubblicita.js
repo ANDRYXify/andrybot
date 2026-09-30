@@ -166,6 +166,46 @@ export function vaGuardato(conf, stato, adesso = Date.now()) {
   return prossima - adesso <= conf.quanto * 1000 + 2 * GIRO_MS;
 }
 
+// IL CONTO SULL'OVERLAY. Gli serve sempre sapere la prossima pausa, ma con meno
+// fretta degli annunci: il programma si rilegge ogni cinque minuti, e piu'
+// spesso solo quando puo' essere cambiato. Cambia in tre momenti: vicino alla
+// pausa (uno snooze la sposta, e il conto deve seguirla), quando la pausa
+// doveva essere gia' partita, e alla fine di una pausa, quando Twitch mette in
+// programma la prossima. Senza nessuna pausa in programma, e senza una pausa
+// finita dopo l'ultima lettura, non si chiede ogni mezzo minuto: la risposta
+// non cambia.
+export function vaGuardatoPerOverlay(stato, adesso = Date.now()) {
+  const prossima = Number(stato?.prossima) || 0;
+  const letto = Number(stato?.letto) || 0;
+  if (adesso - letto >= RILETTURA_MS) return true;
+  const inizio = Number(stato?.ultimaPausa) || 0;
+  const finePausa = Number(stato?.finisceA) || (inizio ? inizio + durataValida(stato?.secondi) * 1000 : 0);
+  if (finePausa && finePausa <= adesso && letto < finePausa) return true;
+  if (!prossima) return false;
+  if (prossima <= adesso) return true;
+  return prossima - adesso <= 2 * GIRO_MS;
+}
+
+// DOPO UN RIAVVIO. Il conto dei secondi non sopravvive (vedi `_pub` nel bot),
+// ma la fine di una pausa in corso e' un fatto, sta fra gli stati vivi, e
+// l'overlay la sta gia' mostrando: ripartire senza vorrebbe dire togliergli il
+// conto del ritorno a meta'. Si riprende solo quella. Il «sono tornato» in chat
+// no: lo dice una sveglia, e nessuna sveglia la punta.
+export function riprendi(salvato, adesso = Date.now()) {
+  const fine = Number(salvato?.pausaFino) || 0;
+  return fine > adesso ? { finisceA: fine } : {};
+}
+
+// Quello che l'overlay deve sapere, e basta: la prossima pausa e la fine di
+// quella in corso. Fuori diretta niente: Twitch non ne programma, e un conto a
+// canale spento sarebbe inventato.
+export function perOverlay(stato, live, adesso = Date.now()) {
+  if (!live) return { prossima: 0, pausaFino: 0 };
+  const pausaFino = Number(stato?.finisceA) > adesso ? Number(stato.finisceA) : 0;
+  const prossima = Number(stato?.prossima) > adesso ? Number(stato.prossima) : 0;
+  return { prossima: pausaFino ? 0 : prossima, pausaFino };
+}
+
 // L'istante a cui puntare la sveglia del preavviso, o 0 se e' ancora presto.
 // Si punta solo dentro la finestra: piu' in la' il programma si rilegge, e uno
 // snooze nel frattempo si vede.
@@ -193,7 +233,11 @@ export function preavviso(conf, stato, programma, adesso = Date.now()) {
 }
 
 // ── La pausa che comincia ─────────────────────────────────────────────────
-export function allaPartenza(conf, stato, evento, adesso = Date.now()) {
+// LA PAUSA IN SE', senza nessuna frase: quando e' cominciata, quanto dura e
+// quando finisce. Serve a due cose che non dipendono l'una dall'altra: gli
+// annunci in chat e il conto sull'overlay. Tutte e due la registrano anche se
+// l'altra e' spenta.
+export function pausaDa(evento, stato, adesso = Date.now()) {
   // L'istante dichiarato. Nei documenti si chiama `started_at`; c'e' chi l'ha
   // ricevuto come `timestamp`, e sono la stessa cosa.
   const inizio = istante(evento?.started_at ?? evento?.timestamp);
@@ -202,13 +246,21 @@ export function allaPartenza(conf, stato, evento, adesso = Date.now()) {
   if (!inizio) return null;
   if (String(stato?.ultimaPausa || '') === String(inizio)) return null;
   const secondi = durataValida(evento?.duration_seconds);
+  const finisceA = secondi ? Math.min(inizio, adesso) + secondi * 1000 : 0;
+  return { inizio, secondi, finisceA };
+}
+
+export function allaPartenza(conf, stato, evento, adesso = Date.now()) {
+  const p = pausaDa(evento, stato, adesso);
+  if (!p) return null;
+  const { inizio, secondi } = p;
   // LA PAUSA FINISCE A INIZIO + DURATA, qualunque sia il momento in cui
   // l'evento arriva: un evento in ritardo ha gia' consumato parte della pausa,
   // e contare da quando arriva sposterebbe la fine di tutto quel ritardo. Il
   // minimo con adesso copre un orologio di Twitch avanti rispetto al nostro:
   // la pausa non puo' essere cominciata dopo che ce l'hanno detto.
   // Senza durata non c'e' una fine da contare, quindi nessun «sono tornato».
-  const finisceA = secondi ? Math.min(inizio, adesso) + secondi * 1000 : 0;
+  const finisceA = p.finisceA;
   // A pausa gia' finita, «pubblicita' per 90 secondi» sarebbe falso.
   const inCorso = !secondi || finisceA > adesso;
   return { inizio, secondi, finisceA, dire: inCorso && siDice(conf, 'durante') };

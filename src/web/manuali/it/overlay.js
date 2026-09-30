@@ -13,7 +13,7 @@ export default {
   corpo: [
     { h2: 'Overlay Studio', scheda: 'alert', p: [
       'L\'overlay è <strong>una pagina web</strong>. In OBS si mette come sorgente <em>Browser</em>. Da lì in poi quello che decidi nella scheda «Overlay Studio», nel gruppo «Scena & overlay», compare in diretta senza toccare più niente in OBS.',
-      'La scheda si apre sul <strong>banco</strong>: a sinistra i livelli, al centro la tela 1920×1080, a destra le proprietà. Le impostazioni di alert, chat, ultimo follower e sub, player, conto alla rovescia, hype train, classifica Bit, boss, testo a schermo, nome del comando e muro delle emote stanno dentro «Proprietà»: selezioni l\'elemento sulla tela e le trovi lì, divise in gruppi che si aprono uno alla volta. Sotto il banco restano le carte «Metterlo nella diretta», «Gli obiettivi», «Cartelli» e «CSS avanzato».',
+      'La scheda si apre sul <strong>banco</strong>: a sinistra i livelli, al centro la tela 1920×1080, a destra le proprietà. Le impostazioni di alert, chat, ultimo follower e sub, player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, boss, testo a schermo, nome del comando e muro delle emote stanno dentro «Proprietà»: selezioni l\'elemento sulla tela e le trovi lì, divise in gruppi che si aprono uno alla volta. Sotto il banco restano le carte «Metterlo nella diretta», «Gli obiettivi», «Cartelli» e «CSS avanzato».',
       'In testa alla scheda <strong>«Tutto schermo»</strong> toglie il menù di lato e lascia tutta la larghezza alla tela. Il menù si disfa a matita e aspetta sul bordo sinistro: ci arrivi col cursore e si ridisegna, lo lasci e si disfa. «Rimetti il menù» lo riporta di lato. Il browser ricorda la scelta per questa scheda.',
       'La scheda c\'è in ogni piano, anche in quello gratuito. La usano il proprietario del canale e i moderatori. Le poche cose riservate al proprietario sono segnate qui sotto.',
       'Su un telefono tenuto in verticale compare la carta «Gira il telefono»: il banco lavora in orizzontale.',
@@ -90,6 +90,7 @@ export default {
       ['Cartelli', 'Una scritta o un\'immagine ferma in scena. Fino a 8.', 'in basso a sinistra', 'carta «Cartelli»'],
       ['«Player musica»', 'Quello che stai ascoltando su Spotify.', 'in basso a sinistra', 'qui, in «Proprietà»'],
       ['«Conto alla rovescia»', 'Quanto manca all\'inizio, anche in subathon.', 'in alto a destra', 'qui, in «Proprietà»'],
+      ['«Conto alla pubblicità»', 'Quanto manca alla prossima pubblicità, e durante la pausa quanto manca al ritorno. I tempi li dice Twitch.', 'in alto a destra', 'qui, in «Proprietà»'],
       ['«Hype train»', 'Il treno di Twitch: livello, barra, tempo che resta.', 'in alto a destra', 'qui, in «Proprietà»'],
       ['«Classifica Bit»', 'Chi ha messo più Bit.', 'in alto a sinistra', 'qui, in «Proprietà»'],
       ['«Sfida a tempo»', 'La carta della penitenza riscattata coi punti canale.', 'in alto a destra', 'scheda «Penitenze»'],
@@ -114,12 +115,12 @@ export default {
       ['Ultimo follower e ultimo sub', 'interruttore, testo, icona, aspetto', 'il nome mostrato'],
       ['CSS avanzato', 'tutto', ''],
       ['Obiettivi e cartelli', 'se si vedono e dove', 'traguardo e conto, testo o immagine, aspetto'],
-      ['Player, conto alla rovescia, hype train, classifica Bit, sfida a tempo, boss, testo a schermo, nome del comando, contatori, muro delle emote', 'se si vedono e dove', 'tutte le impostazioni e l\'aspetto'],
+      ['Player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, sfida a tempo, boss, testo a schermo, nome del comando, contatori, muro delle emote', 'se si vedono e dove', 'tutte le impostazioni e l\'aspetto'],
       ['Effetti a schermo', 'se si vedono, dove e quanto grandi', 'cosa fa ogni effetto, nella scheda «Effetti & suoni»'],
     ] },
     { p: [
       'Per avere due obiettivi o due cartelli con un aspetto diverso in due scene ne fai due, e in ogni overlay accendi quello giusto.',
-      '<strong>Si salvano da soli</strong>, appena molli il mouse o cambi un valore: posizioni, dimensioni, rotazioni, riquadri, blocchi, ordine dei livelli, visibilità, occasioni, «Quali chat in questo overlay», player, conto alla rovescia, hype train, classifica Bit, boss, testo a schermo, nome del comando, muro delle emote, obiettivi, cartelli e contatori. I loro pulsanti «Salva» salvano subito, senza aspettare.',
+      '<strong>Si salvano da soli</strong>, appena molli il mouse o cambi un valore: posizioni, dimensioni, rotazioni, riquadri, blocchi, ordine dei livelli, visibilità, occasioni, «Quali chat in questo overlay», player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, boss, testo a schermo, nome del comando, muro delle emote, obiettivi, cartelli e contatori. I loro pulsanti «Salva» salvano subito, senza aspettare.',
       '<strong>Aspettano un pulsante</strong>: alert eventi («Salva alert»), chat a schermo («Salva chat»), ultimo follower e ultimo sub, CSS («Salva CSS»). «Salva overlay» li salva tutti insieme. Finché non salvi, in basso resta la barra delle modifiche non salvate, con «Annulla» per tornare a com\'era. Se cambi scheda, overlay o pagina il pannello chiede prima.',
       'Se un salvataggio non riesce leggi «Non riesco a salvare: controlla la connessione, riprovo al prossimo cambiamento.»',
       'In cima a ogni gruppo «Aspetto» c\'è la riga <strong>«Veste»</strong> con nove vesti pronte: Viola classico, Neon, Minimal chiaro, Retro arcade, Manga, Vetro, Terminale, Nastro, Esagoni. Una veste cambia l\'elemento che stai guardando; sul muro delle emote accende o spegne l\'ombra. «a tutto l’overlay» stende la veste scelta su tutti gli elementi. Dopo cambi a mano quello che vuoi. Se premi «a tutto l’overlay» senza aver scelto una veste leggi «Scegli prima una veste qui sopra.»',
@@ -194,6 +195,22 @@ export default {
       ['«Cosa scrive»', 'Grazie {chi}! Il conto sale di {quanto}.', '200 caratteri, con <code>{chi}</code> e <code>{quanto}</code>'],
     ] },
     { p: ['Il tetto è su quanto manca, non su quanto hai aggiunto in tutto. Se il conto è già arrivato a zero, un sub non lo fa ripartire. Chi guarda chiede <code>!subathon</code> per sapere quanto manca.'] },
+
+    { h3: 'Conto alla pubblicità' },
+    { p: [
+      'Dice a chi guarda quanto manca alla prossima pausa pubblicitaria, e durante la pausa quanto manca al tuo ritorno. Qui non scegli nessun tempo: li dice Twitch, e il conto li segue da solo, anche quando rimandi la pausa. Si vede solo mentre sei in diretta e c\'è una pausa in programma; negli altri momenti non c\'è niente a schermo.',
+      'Serve il permesso di leggere la programmazione delle pubblicità. Se manca, nella scheda «Stato» premi «Aggiorna i permessi». Gli avvisi in chat sulla pubblicità (<a href="/manuale/diretta">manuale della diretta</a>) sono un\'altra cosa: il conto funziona anche con quelli spenti.',
+    ] },
+    { tabella: [
+      ['Impostazione', 'Di base', 'Limiti'],
+      ['«Conto alla pubblicità» (interruttore)', 'spento', ''],
+      ['«Prima della pausa»', 'Pubblicità fra', '60 caratteri; vuoto, esce nella lingua della chat'],
+      ['«Durante la pausa»', 'Torno fra', '60 caratteri; vuoto, esce nella lingua della chat'],
+      ['«Dove»', 'in alto a destra', 'i quattro angoli, o dove lo trascini'],
+      ['«Da quando si vede»', 'sempre', 'sempre · 1, 2, 5, 10 o 30 minuti prima'],
+      ['«Resta anche durante la pausa, col conto del ritorno»', 'acceso', ''],
+    ] },
+    { p: ['Quando la pausa comincia il conto passa da solo al titolo di «Durante la pausa». Arrivato a zero se ne va: non resta mai un 0:00 a schermo. Se apri o ricarichi l\'overlay a pausa in corso, riparte da dove era.'] },
 
     { h3: 'Hype train' },
     { p: ['Il treno lo fa Twitch: livello, punti e tempo che resta li decide lui, e qui si vedono. Non c\'è niente da far partire. Quando il treno parte compare; quando Twitch dice che è finito, la carta resta il tempo di leggere il livello raggiunto e poi va via. Se il pannello ti chiede un permesso nuovo di Twitch, serve per questo.'] },

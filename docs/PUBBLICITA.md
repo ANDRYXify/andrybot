@@ -162,6 +162,57 @@ riga sola, sotto i tre momenti.
 nella lingua che vuole, e «un minuto e mezzo» dentro una frase in inglese
 sarebbe una toppa.
 
+## Il conto sull'overlay
+
+Lo stesso programma serve a una seconda cosa: un elemento della scena che dice
+a chi guarda quanto manca alla prossima pausa, e durante la pausa quanto manca
+al ritorno. Il modello è lo stesso, le decisioni scendono da lì.
+
+**I due usi non dipendono l'uno dall'altro.** Lo stato della pubblicità di un
+canale si tiene se lo usa almeno uno dei due: gli annunci in chat o il conto
+sull'overlay. La pausa che comincia (`pausaDa`) si registra in tutti e due i
+casi, con la stessa fine (inizio + durata); le sveglie e le frasi solo se la
+chat è accesa. Con la chat zitta il conto c'è lo stesso, e con l'overlay
+spento a Twitch si chiede solo quello che serve alla chat.
+
+**Il bot manda istanti, non secondi.** All'overlay arrivano due istanti:
+`prossima` (la prossima pausa) e `pausaFino` (la fine di quella in corso). Il
+conto lo fa l'overlay, ogni secondo, dal suo orologio. Mandare «mancano 270
+secondi» vorrebbe dire un messaggio al secondo, o un numero fermo.
+
+**Si manda solo quando cambia** (`_pubInScena`). Lo stato si scrive anche fra
+gli stati vivi del canale (`statoVivo`, chiave `pubblicita`): un overlay che
+si apre, o si ricarica, a pausa in corso lo trova nel tema, invece di
+aspettare il giro dopo. Il tema scarta i tempi già passati: uno stato vecchio
+vale come niente.
+
+**Cosa arriva, e basta** (`perOverlay`). Fuori diretta niente: Twitch non ne
+programma, e un conto a canale spento sarebbe inventato. Durante la pausa la
+sua fine, e la prossima no. Un istante già passato non si conta.
+
+**Quando rileggere il programma** (`vaGuardatoPerOverlay`). Il programma cambia
+in tre momenti, e si rilegge in quelli: vicino alla pausa (uno snooze la
+sposta), quando la pausa doveva essere già partita, e **alla fine di una
+pausa**, quando Twitch mette in programma la prossima. Fuori da questi, ogni
+cinque minuti come per la chat. Senza la regola della fine, dopo ogni pausa il
+conto sarebbe sparito fino a cinque minuti. E fuori diretta si dimentica anche
+quando si è letto: alla diretta dopo si rilegge al primo giro.
+
+**Dopo un riavvio** (`riprendi`). Il conto dei secondi della pausa è
+volatile, e deve esserlo per la chat: salutare in ritardo è peggio che stare
+zitti. Ma la fine di una pausa in corso è un fatto, sta fra gli stati vivi, e
+l'overlay la sta già mostrando: senza riprenderla, il primo giro dopo il
+riavvio scriverebbe «nessuna pausa» sopra quella in corso e il conto del
+ritorno sparirebbe a metà. Si riprende solo quella; nessuna sveglia la punta,
+quindi in chat non esce niente.
+
+**Nella scena** il pezzo si chiama `pubblicita`: sta negli elenchi degli
+elementi di tutte e due le parti (`ELEM_OVERLAY`, `ELEM_OVL`), si mette, si
+sposta e si veste come il conto alla rovescia, e si salva in
+`settings.overlayPubblicita` (`normPubblicita`). I titoli vuoti vogliono dire
+quelli di base nella lingua della chat (`linguaChat`), e il pannello mostra
+nell'anteprima quelli che l'overlay scriverà.
+
 ## Dove sta nel codice
 
 | pezzo | dove |
@@ -170,9 +221,10 @@ sarebbe una toppa.
 | la lettura del programma | `programmaDa`, chiamata da `src/twitch/helix.js` (`getAdSchedule`) |
 | la sottoscrizione a Twitch | `src/twitch/events.js` |
 | il giro, le sveglie e l'ascolto dell'evento | `src/bot.js` (`_giroPubblicita`, `_sveglia`, `_preavviso`, `_pubblicitaPartita`, `_sonoTornato`) |
+| il conto sull'overlay | `src/bot.js` (`_pubInScena`), `src/features/alerts.js` (`_pubblicitaInScena`), `src/web/public/overlay-app.js` (`disegnaPubblicita`), `src/web/stile.js` (`normPubblicita`) |
 | le porte | `src/web/server.js` (`/api/streamer/regia`, `/regia/pubblicita/messaggi`) |
 | la carta nel pannello | `src/web/public/app.js` (`_pubDisegna`, `_pubLeggi`) |
-| le prove | `test/unita/pubblicita.test.mjs`, `test/unita/pubblicita-sveglie.test.mjs` (orologio finto), `test/contratto/pubblicita.test.mjs` |
+| le prove | `test/unita/pubblicita.test.mjs`, `test/unita/pubblicita-sveglie.test.mjs` (orologio finto), `test/unita/pubblicita-overlay.test.mjs`, `test/contratto/pubblicita.test.mjs`, `test/contratto/pubblicita-scena.test.mjs`, `scripts/verifica-pubblicita-scena.mjs` (browser vero) |
 
 ## Il pannello (il ragionamento, che nei file serviti non si può scrivere)
 

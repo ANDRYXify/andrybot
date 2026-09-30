@@ -462,6 +462,25 @@ export const normTimer = (t) => {
   };
 };
 
+// IL CONTO ALLA PUBBLICITA'. Un elemento della scena come il conto alla
+// rovescia, ma i tempi non li sceglie lo streamer: li dice Twitch (vedi
+// features/pubblicita.js). Qui le parole, da quanto prima mostrarlo (in
+// minuti, 0 = sempre) e se restare anche durante la pausa. Un titolo vuoto
+// vuol dire quello di base, nella lingua della chat.
+export const normPubblicita = (x) => {
+  x = x || {};
+  return {
+    attivo: x.attivo === true,
+    titolo: String(x.titolo ?? '').slice(0, 60),
+    titoloPausa: String(x.titoloPausa ?? '').slice(0, 60),
+    mostraDa: clampInt(x.mostraDa, 0, 60, 0),
+    pausa: x.pausa !== false,
+    posizione: unoDi(x.posizione, POS_ANG, 'alto-destra'),
+    xy: xyOk(x.xy),
+    stile: normWidgetStile(x.stile),
+  };
+};
+
 // IL TRENO. E' un elemento della scena come gli altri — stessa veste, stesso
 // angolo, stesso trascinamento — piu' le due scelte che sono solo sue: se
 // mostrare chi ha spinto di piu', e se dirlo in chat. La chat e la scena sono

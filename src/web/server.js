@@ -113,6 +113,8 @@ import { credenzialiInstagram } from '../features/instagram-credenziali.js';
 import * as storiaIg from '../features/storia-ig.js';
 import * as settimana from '../features/settimana.js';
 import * as prossime from '../features/prossime.js';
+import * as preferenze from '../features/preferenze.js';
+import { origineLinguaChat, linguaChat } from '../features/lingua-canale.js';
 import * as automatiche from '../features/automatiche.js';
 import * as campagne from '../features/campagne.js';
 import { paginaCampagna, titoloDi } from './campagna-vista.js';
@@ -151,6 +153,7 @@ import { montaYoutube } from '../youtube/rotte.js';
 import * as ytApi from '../youtube/api.js';
 import * as avvisi from '../features/avvisi.js';
 import * as comandiChat from '../features/comandichat.js';
+import { nomePulito, formaValida } from '../features/moneta.js';
 
 const log = makeLog('web');
 const logOverlay = makeLog('overlay');
@@ -161,7 +164,7 @@ import {
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
-  normMusica, normTimer, normTreno, normBit, normBoss, normScritta, normEtichetta, normMuro, FIGURE_MURO, normCartelli, normDisegno,
+  normMusica, normTimer, normPubblicita, normTreno, normBit, normBoss, normScritta, normEtichetta, normMuro, FIGURE_MURO, normCartelli, normDisegno,
 } from './stile.js';
 
 // --- PIÙ OVERLAY: ogni overlay ha un suo LAYOUT (quali elementi mostra e dove)
@@ -169,7 +172,7 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
 const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {});
 // Gli elementi nati da un interruttore che c'era gia' (docs/OVERLAY.md, «Lo
 // stesso interruttore di prima»): finche' in un overlay non sono scritti,
@@ -3280,6 +3283,9 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       // il bot e' nella chat del canale, sulla piattaforma del canale (null: non ha una chat)
       inChat: manager.inChat ? manager.inChat(user.login) : null,
       streamer: user ? streamerSicuro(user.login) : null,
+      // La lingua della chat, letta dal posto solo: le anteprime del pannello
+      // scrivono come scrivera' il bot, non come e' scritto il pannello.
+      linguaChat: user ? linguaChat(user.login) : 'it',
       permessiOk: user ? permessiOk(user.login) : false,
       // scope aggiunti dopo che lo streamer si era collegato: se non vuoti, la
       // dashboard mostra un invito a ri-autorizzare (niente errori silenziosi).
@@ -4652,6 +4658,31 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   // Scollegare e' ritirare un consenso, e l'informativa promette che si puo':
   // un canale tornato all'Essenziale ha ancora quelli di quando pagava, e la
   // scheda in cui stavano e' chiusa. Ogni voce porta la rotta che la toglie.
+  // LE PREFERENZE DEL CANALE (docs/PREFERENZE.md): quello che lo streamer ha
+  // scelto, i valori che valgono adesso, e da dove viene la lingua di base.
+  // Salvare «di base» toglie la chiave: chi non sceglie segue la base.
+  const statoPreferenze = (login) => {
+    const settings = streamers.get(login)?.settings || {};
+    return {
+      scelte: preferenze.scelte(settings.preferenze),
+      valori: preferenze.preferenzeDi(login),
+      origineLingua: origineLinguaChat(login),
+      linguaTwitch: String(settings.linguaTwitch || '').slice(0, 2),
+      fusoSettimana: settimana.settimanaDi(settings).fuso,
+      suTwitch: prossime.suTwitch(login),
+      fonte: prossime.fonteDi(login),
+    };
+  };
+  app.get('/api/streamer/preferenze', requireOwner, (req, res) => {
+    res.json(statoPreferenze(currentUser(req).login));
+  });
+  app.post('/api/streamer/preferenze', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    if (!preferenze.salvaPreferenze(login, req.body?.preferenze)) return res.status(404).json({ errore: 'canale sconosciuto' });
+    prossime.dimenticaProgramma(login);
+    res.json({ ok: true, ...statoPreferenze(login) });
+  });
+
   app.get('/api/account/collegamenti', requireOwner, (req, res) => {
     const login = currentUser(req).login;
     const tg = tgConf.get(login);
@@ -5486,7 +5517,9 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     }
     posti.ig = await storiaIgPossibile(login);
     // Il Programma e' di Twitch: c'e' per chi e' entrato con Twitch.
-    if (tokens.get('broadcaster', login)) posti.tw = { permesso: programmaOk(login) };
+    // `delloStreamer`: il Programma e' la fonte scelta delle prossime dirette,
+    // e la settimana non ci scrive (prossime.js); il pannello lo dice li' accanto.
+    if (tokens.get('broadcaster', login)) posti.tw = { permesso: programmaOk(login), delloStreamer: prossime.programmaDelloStreamer(login) };
     if (pronto) posti.dcCalendario = { acceso: !!s?.settings?.discordEventi?.acceso };
     return posti;
   };
@@ -6292,6 +6325,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (b.overlayTreno !== undefined) {
       out.overlayTreno = normTreno(b.overlayTreno);
     }
+    if (b.overlayPubblicita !== undefined) out.overlayPubblicita = normPubblicita(b.overlayPubblicita);
     if (b.overlayCartelli !== undefined) {
       out.overlayCartelli = normCartelli(b.overlayCartelli);
     }
@@ -6465,7 +6499,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       const minMin = cm(m.minMin, 15, 1, 360);
       out.manche = { attivo: !!m.attivo, minMin, maxMin: Math.max(minMin, cm(m.maxMin, 45, 1, 360)), soloLive: !!m.soloLive };
     }
-    if (b.nomeMonete !== undefined) out.nomeMonete = String(b.nomeMonete).trim().slice(0, 20);
+    if (b.nomeMonete !== undefined) out.nomeMonete = nomePulito(b.nomeMonete);
+    // Come si parla della moneta (moneta.js). Vuoto vuol dire «di base», e la
+    // base segue il nome: se lo streamer lo cambia, cambia con lui.
+    if (b.formaMonete !== undefined) out.formaMonete = formaValida(b.formaMonete) ? b.formaMonete : '';
     // Le manopole di ogni gioco: le dichiara e le normalizza il catalogo.
     if (b.giochiConf !== undefined) out.giochiConf = giochiConf.normalizzaConf(s.settings?.giochiConf, b.giochiConf);
     // personalizzazione punti/classifica: quanti punti per messaggio, premi dei
@@ -6729,7 +6766,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayScritta', 'overlayEtichetta', 'overlayMuro', 'overlayCartelli', 'fontPersonali'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayPubblicita', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayScritta', 'overlayEtichetta', 'overlayMuro', 'overlayCartelli', 'fontPersonali'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }
