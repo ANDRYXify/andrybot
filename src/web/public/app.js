@@ -240,6 +240,7 @@ function impostazioni() {
     overlayMusica: (s.overlayMusica && typeof s.overlayMusica === 'object') ? s.overlayMusica : {},
     overlayTimer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : {},
     overlayPubblicita: (s.overlayPubblicita && typeof s.overlayPubblicita === 'object') ? s.overlayPubblicita : {},
+    formaMonete: typeof s.formaMonete === 'string' ? s.formaMonete : '',
     overlayTreno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : {},
     overlayBit: (s.overlayBit && typeof s.overlayBit === 'object') ? s.overlayBit : {},
     overlayCartelli: Array.isArray(s.overlayCartelli) ? s.overlayCartelli : [],
@@ -21749,6 +21750,7 @@ function pannelloGiochi() {
 
       <label class="campo" for="inp-monete">${L('Come si chiamano le monete', 'What the coins are called', 'Cómo se llaman las monedas')}</label>
       <input type="text" id="inp-monete" maxlength="20" value="${esc(s.nomeMonete)}" placeholder="${L('es. monete, punti, gemme…', 'e.g. coins, points, gems…', 'p. ej. monedas, puntos, gemas…')}">
+      <div id="forma-monete" class="spazio-sopra" role="radiogroup" aria-labelledby="forma-monete-tit" hidden></div>
 
       <p class="spazio-sopra"><button class="btn" id="btn-salva-giochi">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
@@ -25784,11 +25786,18 @@ function attivaPiattaforma() {
   }));
 
   document.getElementById('btn-salva-giochi')?.addEventListener('click', () => conErrore(async () => {
+    const nome = document.getElementById('inp-monete').value.trim();
+    const forma = _formaMoneteDaSalvare(nome);
     await salvaImpostazioni({
       giochi: document.getElementById('chk-giochi').checked,
-      nomeMonete: document.getElementById('inp-monete').value.trim(),
+      nomeMonete: nome,
+      ...(forma === null ? {} : { formaMonete: forma }),
     }, L('Giochi salvati ✓', 'Games saved ✓', 'Juegos guardados ✓'));
+    _formaMoneteToccata = false;
+    _disegnaFormaMonete();
   }));
+  document.getElementById('inp-monete')?.addEventListener('input', () => _aggiornaFormaMonete());
+  document.getElementById('forma-monete')?.addEventListener('change', () => { _formaMoneteToccata = true; _aggiornaFormaMonete(); });
 
   document.getElementById('btn-salva-gcmd')?.addEventListener('click', salvaGiochiComandi);
 
@@ -27225,7 +27234,7 @@ function caricaDatiScheda(id) {
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); caricaRegoleGiochi(); }
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); caricaRegoleGiochi(); _disegnaFormaMonete(); }
   if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); }
   if (id === 'notifiche') { caricaTikTok(); caricaInstagram(); collegaFeed(); caricaFeed(); }
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }
@@ -30393,6 +30402,64 @@ const NOME_COLLEGAMENTO = {
   tgapp: ['Telegram, per entrare nel pannello', 'Telegram, to sign in to the panel', 'Telegram, para entrar en el panel'],
   telegram: ['Telegram, i messaggi privati del bot', 'Telegram, the bot\'s private messages', 'Telegram, los mensajes privados del bot'],
 };
+
+const _FRASI_FORMA_MONETE = {
+  it: (n) => [`le tue ${n}`, `i tuoi ${n}`, `la tua ${n}`, `il tuo ${n}`],
+  es: (n) => [`¿cuántas ${n} tienes?`, `¿cuántos ${n} tienes?`, `¿cuánta ${n} tienes?`, `¿cuánto ${n} tienes?`],
+};
+let _formaMoneteToccata = false;
+
+function _nomeMoneteSalvato() {
+  const F = window.SB_FORMATI;
+  return (impostazioni().nomeMonete || '').trim() || (F ? F.NOME_MONETA_BASE : 'monete');
+}
+
+function _statoFormaMonete() {
+  const F = window.SB_FORMATI;
+  const nome = (_g('inp-monete')?.value || '').trim() || F.NOME_MONETA_BASE;
+  const salvata = F.FORME_MONETA.includes(impostazioni().formaMonete) && nome === _nomeMoneteSalvato() ? impostazioni().formaMonete : '';
+  const base = F.formaMonetaBase(nome);
+  const toccata = _formaMoneteToccata ? _g('forma-monete')?.querySelector('input:checked')?.value : '';
+  return { nome, base, salvata, scelta: toccata || salvata || base, diBase: !toccata && !salvata };
+}
+
+async function _disegnaFormaMonete() {
+  const box = _g('forma-monete');
+  if (!box) return;
+  const frasi = _FRASI_FORMA_MONETE[stato?.linguaChat];
+  await _conFormati().catch(() => null);
+  const F = window.SB_FORMATI;
+  if (!frasi || !F || !F.formaMonetaBase) { box.hidden = true; box.innerHTML = ''; return; }
+  _formaMoneteToccata = false;
+  box.innerHTML = `<p class="campo" id="forma-monete-tit">${L('Come se ne parla in chat', 'How chat talks about them', 'Cómo se habla de ellas en el chat')}</p>`
+    + F.FORME_MONETA.map((f) => `<label class="riga-check"><input type="radio" name="forma-monete" value="${f}"> <span data-forma-frase="${f}"></span> <span class="tenue" data-forma-base="${f}" hidden>${L('di base', 'default', 'por defecto')}</span></label>`).join('')
+    + `<p class="suggerimento">${L('Scegli la frase che suona giusta col tuo nome: il bot accorda così le parole che gli stanno intorno.', 'Pick the phrase that sounds right with your name: the bot agrees the words around it this way.', 'Elige la frase que suena bien con tu nombre: el bot concuerda así las palabras que lo rodean.')}</p>`;
+  box.hidden = false;
+  _aggiornaFormaMonete();
+}
+
+function _aggiornaFormaMonete() {
+  const box = _g('forma-monete');
+  const frasi = _FRASI_FORMA_MONETE[stato?.linguaChat];
+  if (!box || box.hidden || !frasi || !window.SB_FORMATI) return;
+  const st = _statoFormaMonete();
+  const testi = frasi(st.nome);
+  window.SB_FORMATI.FORME_MONETA.forEach((f, i) => {
+    const t = box.querySelector(`[data-forma-frase="${f}"]`);
+    if (t) t.textContent = `«${testi[i]}»`;
+    const b = box.querySelector(`[data-forma-base="${f}"]`);
+    if (b) b.hidden = !(st.diBase && f === st.base);
+    const r = box.querySelector(`input[value="${f}"]`);
+    if (r) r.checked = f === st.scelta;
+  });
+}
+
+function _formaMoneteDaSalvare(nome) {
+  const box = _g('forma-monete');
+  if (!box || box.hidden || !window.SB_FORMATI) return null;
+  if (_formaMoneteToccata) return box.querySelector('input:checked')?.value || '';
+  return (nome || window.SB_FORMATI.NOME_MONETA_BASE) === _nomeMoneteSalvato() ? (impostazioni().formaMonete || '') : '';
+}
 
 const _conFormati = () => (window.SB_FORMATI ? Promise.resolve() : new Promise((ok, ko) => { const s = document.createElement('script'); s.src = '/formati.js'; s.onload = ok; s.onerror = () => ko(new Error('/formati.js')); document.head.appendChild(s); }));
 

@@ -151,6 +151,7 @@ import { montaYoutube } from '../youtube/rotte.js';
 import * as ytApi from '../youtube/api.js';
 import * as avvisi from '../features/avvisi.js';
 import * as comandiChat from '../features/comandichat.js';
+import { nomePulito, formaValida } from '../features/moneta.js';
 
 const log = makeLog('web');
 const logOverlay = makeLog('overlay');
@@ -6481,7 +6482,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       const minMin = cm(m.minMin, 15, 1, 360);
       out.manche = { attivo: !!m.attivo, minMin, maxMin: Math.max(minMin, cm(m.maxMin, 45, 1, 360)), soloLive: !!m.soloLive };
     }
-    if (b.nomeMonete !== undefined) out.nomeMonete = String(b.nomeMonete).trim().slice(0, 20);
+    if (b.nomeMonete !== undefined) out.nomeMonete = nomePulito(b.nomeMonete);
+    // Come si parla della moneta (moneta.js). Vuoto vuol dire «di base», e la
+    // base segue il nome: se lo streamer lo cambia, cambia con lui.
+    if (b.formaMonete !== undefined) out.formaMonete = formaValida(b.formaMonete) ? b.formaMonete : '';
     // Le manopole di ogni gioco: le dichiara e le normalizza il catalogo.
     if (b.giochiConf !== undefined) out.giochiConf = giochiConf.normalizzaConf(s.settings?.giochiConf, b.giochiConf);
     // personalizzazione punti/classifica: quanti punti per messaggio, premi dei

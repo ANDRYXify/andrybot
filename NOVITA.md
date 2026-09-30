@@ -64,6 +64,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > Il conto alla pubblicità, in scena
   > Prima il conto c'era solo nel pannello, per te: chi guardava la diretta non sapeva quando sarebbe arrivata la pausa, né quanto sarebbe durata.
 - Il pannello si apre subito: prima il server si fermava una decina di secondi quasi a ogni apertura, e la copertina finiva su «ci sta mettendo più del solito». Dalla seconda volta il browser tiene i file.
+- Accanto al nome della moneta scegli come se ne parla, «le tue», «i tuoi», «la tua» o «il tuo»: !giochi dice «I tuoi Semi di girasole», non più «Le tue Semi di girasole». [vai: giochi]
 
 ## 2026-09-27
 

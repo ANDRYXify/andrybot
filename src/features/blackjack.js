@@ -27,9 +27,10 @@ import { points, streamers, statoVivo } from '../db.js';
 import { valoriDi } from './giochi-conf.js';
 import { nomeIn } from './comandi-registro.js';
 import { aChi } from './risposte.js';
+import { nomeMoneta } from './moneta.js';
 
 const pulito = (s) => String(s || '').replace(/^@/, '').toLowerCase().trim();
-const monete = (channel) => String(streamers.get(channel)?.settings?.nomeMonete || '').trim() || 'monete';
+const monete = (channel) => nomeMoneta(channel);
 const conf = (channel) => valoriDi(streamers.get(channel)?.settings, 'blackjack');
 const CHIAVE = 'bj-mani';
 const SEMI = ['♠', '♥', '♦', '♣'];

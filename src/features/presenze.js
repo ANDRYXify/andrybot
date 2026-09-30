@@ -34,6 +34,7 @@ import { streamers, presenze as store, points, memory, modules as modulesDb } fr
 import { NON_CONTARE } from './watchtime.js';
 import { makeLog } from '../logger.js';
 import { aChi } from './risposte.js';
+import { nomeMoneta } from './moneta.js';
 
 const log = makeLog('presenze');
 const norm = (s) => String(s || '').toLowerCase().trim();
@@ -95,7 +96,7 @@ export function riempi(modello, valori) {
   return t.trim();
 }
 
-const nomeMonete = (ch) => { const n = streamers.get(ch)?.settings?.nomeMonete; return (typeof n === 'string' && n.trim()) || 'monete'; };
+const nomeMonete = (ch) => nomeMoneta(ch);
 const ordinale = (n) => `${n}ª`;
 
 // ---------------------------------------------------------------- il giro
