@@ -167,6 +167,13 @@ for (const d of provate) {
 // finire sotto gli occhi, anche se sta dentro un pieghevole chiuso o dietro a
 // una sottoscheda. Qui si clicca davvero il primo risultato e si guarda dove
 // si e' finiti.
+//
+// Il primo risultato puo' essere una SCHEDA: «Abbonamento» e' un campo degli
+// alert nell'Overlay Studio e insieme il nome della scheda dell'abbonamento, e
+// la scheda esce prima (come deve: e' una risposta giusta, lo dice il controllo
+// qui sopra). Una scheda non ha niente da segnare: arrivarci vuol dire vederla
+// aperta. Chiederle il segno misurava come la ricerca porta a un elemento su
+// una cosa che elemento non e'.
 const nonArrivate = [];
 for (const d of provate.filter((_, i) => i % 7 === 0).slice(0, 6)) {
   const r = await p.evaluate(async (testo) => {
@@ -176,18 +183,23 @@ for (const d of provate.filter((_, i) => i % 7 === 0).slice(0, 6)) {
     inp.dispatchEvent(new Event('input', { bubbles: true }));
     await new Promise((x) => setTimeout(x, 200));
     const prima = document.querySelector('#cerca-overlay .cerca-voce');
-    if (!prima) return { scheda: '', segnato: false, inVista: false };
+    if (!prima) return { scheda: '', segnato: false, inVista: false, laScheda: false };
+    const pulito = (t) => String(t || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const id = prima.dataset.id || '';
+    const eUnaScheda = !!id && pulito(prima.querySelector('b')?.textContent) === pulito(window.SB_APP.nomeScheda(id));
     prima.click();
     await new Promise((x) => setTimeout(x, 3200));
     const m = document.querySelector('.cerca-mira');
     const b = m && m.getBoundingClientRect();
+    const scheda = document.querySelector('.pannello-scheda.visibile')?.dataset.scheda || '';
     return {
-      scheda: document.querySelector('.pannello-scheda.visibile')?.dataset.scheda || '',
+      scheda,
+      laScheda: eUnaScheda && scheda === id,
       segnato: !!m,
       inVista: !!(b && b.top > -20 && b.bottom < window.innerHeight + 20),
     };
   }, d.testo);
-  if (!r.segnato || !r.inVista) nonArrivate.push({ q: d.testo, dove: r.scheda, segnato: r.segnato, inVista: r.inVista });
+  if (!r.laScheda && (!r.segnato || !r.inVista)) nonArrivate.push({ q: d.testo, dove: r.scheda, segnato: r.segnato, inVista: r.inVista });
 }
 
 // LA TRAPPOLA DEL FUOCO. La finestra dice `role="dialog" aria-modal="true"`,
