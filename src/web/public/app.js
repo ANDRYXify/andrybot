@@ -26665,7 +26665,7 @@ function attivaPiattaforma() {
         ${v.daRivedere.length ? `<p class="suggerimento spazio-sopra">${L('Da rivedere: usano cose che il bot di prima sapeva fare e qui si fanno in un altro modo. Se li importi così come sono, in chat esce il testo grezzo.', 'To review: they use things the old bot could do that work differently here. If you import them as they are, chat will show the raw text.', 'A revisar: usan cosas que el bot anterior hacía y aquí se hacen de otra forma. Si los importas tal cual, en el chat saldrá el texto en crudo.')}</p>
           <ul class="imp-lista">${v.daRivedere.map(impRiga).join('')}</ul>` : ''}
         ${impScartati(v.scartati)}` : ''}
-      ${t.totale ? `<h4 class="spazio-sopra">Timer</h4>
+      ${t.totale ? `<h4 class="spazio-sopra">${L('Timer', 'Timers', 'Temporizadores')}</h4>
         <p>${riassunto(t)}.</p>
         ${t.buoni.length ? `<ul class="imp-lista">${t.buoni.map(impRigaTimer).join('')}</ul>` : ''}
         ${t.daRivedere.length ? `<p class="suggerimento spazio-sopra">${L('Da rivedere: qui non si comportano del tutto come prima, e accanto c’è il perché.', 'To review: here they do not behave quite as before, and the reason is next to each one.', 'A revisar: aquí no se comportan del todo como antes, y al lado está el porqué.')}</p>
@@ -29097,7 +29097,7 @@ const TRIGGER = [
   ['timer', 'A tempo (timer)', 'On a timer', 'Con temporizador'],
   ['manuale', 'Manuale / da un mio servizio', 'Manual / from a service of mine', 'Manual / desde un servicio mío'],
 ];
-const nomeMonetaUI = () => (impostazioni()?.nomeMonete || '').trim() || 'monete';
+const nomeMonetaUI = () => (impostazioni()?.nomeMonete || '').trim() || L('monete', 'coins', 'monedas');
 
 const RICETTE_PUNTI = [
   ['slot', () => L('Macchinetta a monete', 'Coin slot machine', 'Máquina de monedas')],

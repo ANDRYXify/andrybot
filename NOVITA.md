@@ -43,6 +43,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nel tracciamento della webcam il suggerimento nomina il tasto giusto, «Salva impostazioni webcam». [vai: effetti]
 - L'informativa sulla privacy dice cosa succede alla voce: comandi a voce e penitenze passano dal tuo browser, l'audio della diretta si misura solo per le clip, e il bot impara solo dalle tue parole.
 - Mima, Non ridere, Reaction rush e Battaglia, i minigiochi della webcam, hanno lo stesso nome in tutto il pannello, anche in inglese e in spagnolo. [vai: effetti]
+- «Dai punti» a «Chi ha scritto» in un timer non paga più lo streamer: lì non ha scritto nessuno e il passo salta. E le monete vanno al nome utente, anche a chi si mostra con un nome in un altro alfabeto. [vai: moduli]
+- La moneta di base si chiama «coins» o «monedas» col pannello in inglese o in spagnolo, e l'anteprima dell'importazione dice «Timers» o «Temporizadores». [vai: moduli]
 
 ## 2026-09-27
 
