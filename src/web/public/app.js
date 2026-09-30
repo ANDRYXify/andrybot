@@ -1561,7 +1561,7 @@ function _demoGet(via) {
       { id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true },
         xy: { alert: { x: 50, y: 14 }, chat: { x: 16, y: 78 }, wf: { x: 86, y: 62 }, ws: { x: 86, y: 82 } },
         css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/overlay-principale' },
-      { id: 'ovsolochat', nome: 'Solo chat', mostra: { alert: false, chat: true, wf: false, ws: false, boss: false, scritta: false, etichetta: false, muro: false, effetti: false },
+      { id: 'ovsolochat', nome: 'Solo chat', mostra: { alert: false, chat: true, wf: false, ws: false, boss: false, arena: false, scritta: false, etichetta: false, muro: false, effetti: false },
         xy: { chat: { x: 22, y: 50 } }, css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/solo-chat' },
       { id: 'ovpausa', nome: 'Schermata di pausa', mostra: { alert: true, chat: false, wf: true, ws: true, effetti: true },
         xy: { alert: { x: 50, y: 50 }, wf: { x: 22, y: 84 }, ws: { x: 78, y: 84 } },
@@ -11202,6 +11202,26 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="boss">${L('Salva', 'Save', 'Guardar')}</button></p>
     </details>
 
+    <details class="carta sez" data-parte="aspetto" id="sez-arena">
+      <summary><h3>${_hIco(ICO.scudo)}${L('Arena delle emote', 'Emote arena', 'Arena de emotes')}</h3></summary>
+      <p>${L('L\'arena in cui la chat combatte con le sue emote: i combattenti col nome sopra, gli oggetti, i muri che si stringono, il vincitore grande al centro. Si vede solo mentre un\'arena è aperta. Chi entra, quanto dura e quanto paga si decide nei Giochi.', 'The arena where chat fights with its emotes: the fighters with their names above, the items, the walls closing in, the winner big in the middle. It only shows while an arena is open. Who joins, how long it lasts and what it pays are set in Games.', 'La arena donde el chat lucha con sus emotes: los luchadores con el nombre encima, los objetos, los muros que se estrechan, el ganador grande en el centro. Solo se ve mientras hay una arena abierta. Quién entra, cuánto dura y cuánto paga se decide en Juegos.')}</p>
+      <p><button type="button" class="btn secondario mini" data-vai-scheda="giochi">${_bIco(ICO.giochi)}${L('Apri i Giochi', 'Open Games', 'Abrir Juegos')}</button></p>
+      <div data-cfg="arena">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="arena-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Mostrala nella scena', 'Show it on the scene', 'Muéstrala en la escena')}</span>
+        </div>
+        <div class="asp-blocco" data-asp="arena" data-cfg-di="arena">
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          <label class="riga-check"><input type="checkbox" data-c="nomi"> ${L('Il nome sopra ogni combattente', 'The name above each fighter', 'El nombre encima de cada luchador')}</label>
+          <label class="riga-check"><input type="checkbox" data-c="coloreChat"> ${L('Col colore che ognuno ha in chat', 'In the colour each one has in chat', 'Con el color que cada uno tiene en el chat')}</label>
+          <label class="riga-check"><input type="checkbox" data-c="bordo"> ${L('Il bordo dell\'arena, disegnato a penna', 'The arena border, drawn in pen', 'El borde de la arena, dibujado a pluma')}</label>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="arena">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
     <details class="carta sez" data-parte="aspetto" id="sez-scritta">
       <summary><h3>${_hIco(ICO.testo)}${L('Testo a schermo', 'On-screen text', 'Texto en pantalla')}</h3></summary>
       <p>${L('Le scritte che un comando mette in scena con «Mostra testo sull\'overlay». Cosa dicono e quanto restano si decide nel comando; qui dove stanno e come sono vestite.', 'The texts a command puts on screen with «Show text on the overlay». What they say and how long they stay is set in the command; here, where they sit and how they look.', 'Los textos que un comando pone en escena con «Mostrar texto en el overlay». Qué dicen y cuánto duran se decide en el comando; aquí, dónde están y cómo se visten.')}</p>
@@ -11581,7 +11601,7 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
 let occSel = '';
@@ -12418,6 +12438,52 @@ function _vestiBoss(box, cfg) {
   tempo.style.transform = 'scaleX(.55)';
 }
 
+function _defArena() {
+  return { attivo: true, posizione: 'centro', xy: null, nomi: true, coloreChat: true, bordo: true,
+    stile: { dim: 'media', sfondo: '#0f0f14', opacita: 0, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 12, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
+}
+
+let _arenaMotore = null;
+function caricaMotoreArena() {
+  if (_arenaMotore) return _arenaMotore;
+  const script = (src) => new Promise((ok, ko) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => ko(new Error(src)); document.head.appendChild(s); });
+  _arenaMotore = Promise.all([window.SB_PENNA ? null : script('/penna.js'), window.SB_ARENA ? null : script('/arena.js')])
+    .then(() => (window.SB_ARENA_TELA ? null : script('/arena-tela.js')))
+    .catch((e) => { _arenaMotore = null; throw e; });
+  return _arenaMotore;
+}
+
+const ARENA_NOMI = ['LucaPlays', 'giada_ttv', 'Marco99', 'nova_ttv', 'Pippo', 'ElenaGG'];
+
+function _disegnaArena(box, cfg) {
+  const T = window.SB_ARENA_TELA;
+  const tela = box.querySelector('canvas');
+  if (!T || !window.SB_ARENA || !tela || !box.isConnected) return;
+  const w = tela.offsetWidth;
+  if (!w) return;
+  const r = tela.getBoundingClientRect();
+  const W = Math.max(50, Math.min(4000, Math.round(w * (r.width > 0 ? r.width / w : 1) * (window.devicePixelRatio || 1))));
+  const H = Math.round(W * T.TH / T.TW);
+  if (tela.width !== W || tela.height !== H) { tela.width = W; tela.height = H; }
+  const cs = getComputedStyle(box);
+  const veste = { font: cs.fontFamily, testo: cs.color, accento: (cs.getPropertyValue('--acc') || '').trim() || '#f72fa7',
+    nomi: cfg.nomi !== false, coloreChat: cfg.coloreChat !== false, bordo: cfg.bordo !== false };
+  const scena = T.esempio(ARENA_NOMI, window.SB_MURO ? window.SB_MURO.ESEMPI : []);
+  const colori = ['#ff4d4d', '#48b0ff', '#38d39f', '#22d3ee', '#ffcf3a', '#b388ff'];
+  scena.corpi.forEach((c, i) => { c.colore = colori[i % colori.length]; });
+  T.disegna(tela, scena, veste, () => _disegnaArena(box, cfg));
+}
+
+function _vestiArena(box, cfg) {
+  if (!box.querySelector('canvas')) box.innerHTML = '<canvas></canvas>';
+  const st = cfg.stile || {};
+  box.className = 'ovl-widget ovl-arena dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 0) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
+  if (window.SB_ARENA_TELA && window.SB_ARENA) { requestAnimationFrame(() => _disegnaArena(box, cfg)); return; }
+  caricaMotoreArena().then(() => requestAnimationFrame(() => _disegnaArena(box, cfg))).catch(() => {});
+}
+
 function _defScritta() {
   return { attivo: true, posizione: 'centro', xy: null,
     stile: { dim: 'media', sfondo: '#0f0f14', opacita: 0, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 12, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
@@ -12566,7 +12632,7 @@ async function _disegnaPremiMuro() {
       : `<p class="vuoto">${L('Non hai ancora premi a punti canale su Twitch: creane uno e torna qui.', 'You have no channel-point rewards on Twitch yet: create one and come back here.', 'Aún no tienes recompensas de puntos de canal en Twitch: crea una y vuelve aquí.')}</p>`);
 }
 
-const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, scritta: _vestiScritta, etichetta: _vestiEtichetta, muro: _vestiMuro, effetti: _vestiEffetti };
+const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, arena: _vestiArena, scritta: _vestiScritta, etichetta: _vestiEtichetta, muro: _vestiMuro, effetti: _vestiEffetti };
 
 function _orologioGiu(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -12863,6 +12929,7 @@ const PEZZI_EL = () => [
   ['treno', '#sez-treno'],
   ['bit', '#sez-bit'],
   ['boss', '#sez-boss'],
+  ['arena', '#sez-arena'],
   ['scritta', '#sez-scritta'],
   ['etichetta', '#sez-etichetta'],
   ['muro', '#sez-muro'],
@@ -13152,6 +13219,7 @@ const ELEMENTI = () => {
   out.push({ k: 'bit', ico: ICO.podio, n: L('Classifica Bit', 'Bits leaderboard', 'Clasificación de Bits'), cfg: 'overlayBit' });
   out.push({ k: 'pen', ico: ICO.penitenza, n: L('Sfida a tempo', 'Timed challenge', 'Reto a tiempo'), cfg: 'penitenze' });
   out.push({ k: 'boss', ico: ICO.target, n: L('Boss', 'Boss', 'Jefe'), cfg: 'overlayBoss' });
+  out.push({ k: 'arena', ico: ICO.scudo, n: L('Arena delle emote', 'Emote arena', 'Arena de emotes'), cfg: 'overlayArena' });
   out.push({ k: 'scritta', ico: ICO.testo, n: L('Testo a schermo', 'On-screen text', 'Texto en pantalla'), cfg: 'overlayScritta' });
   out.push({ k: 'etichetta', ico: ICO.fulmine, n: L('Nome del comando', 'Command name', 'Nombre del comando'), cfg: 'overlayEtichetta' });
   out.push({ k: 'muro', ico: ICO.faccina, n: L('Muro delle emote', 'Emote wall', 'Muro de emotes'), cfg: 'overlayMuro' });
@@ -13206,7 +13274,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, bit: _defBit, boss: _defBoss, scritta: _defScritta, etichetta: _defEtichetta, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, bit: _defBit, boss: _defBoss, arena: _defArena, scritta: _defScritta, etichetta: _defEtichetta, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 function _cfgEl(k) {
   const e = ELEM(k);
@@ -13291,7 +13359,7 @@ function _accendiDi(k, v) {
   if (e && e.cont) { (e.cont.overlayCfg = e.cont.overlayCfg || {}).mostra = !!v; return; }
   if (e && e.cfg) {
     _cfgEl(k).attivo = !!v;
-    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo', boss: 'boss-attivo', scritta: 'scr-attivo', etichetta: 'eti-attivo', muro: 'muro-attivo' }[k]);
+    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo', boss: 'boss-attivo', arena: 'arena-attivo', scritta: 'scr-attivo', etichetta: 'eti-attivo', muro: 'muro-attivo' }[k]);
     if (chk) chk.checked = !!v;
     return;
   }
@@ -27147,7 +27215,7 @@ function caricaDatiScheda(id) {
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
-    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); riempiCfgForm('scritta'); riempiCfgForm('etichetta'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
+    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); riempiCfgForm('arena'); riempiCfgForm('scritta'); riempiCfgForm('etichetta'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'consolify') caricaConsolify();

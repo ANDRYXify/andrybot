@@ -87,6 +87,8 @@
 
     #boss { position: fixed; left: 0; right: 0; display: flex; justify-content: center; pointer-events: none; z-index: 8; }
     #boss.alto-centro { top: 8vh; }
+    #arena { position: fixed; pointer-events: none; z-index: 7; }
+    #arena.centro { inset: 0; display: flex; align-items: center; justify-content: center; }
   </style>
   <meta name="copyright" content="© 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live">
 </head>
@@ -98,6 +100,7 @@
   <div id="etichette" class="basso-centro" data-el="etichetta"></div>
   <div id="testi" class="centro" data-el="scritta"></div>
   <div id="boss" class="alto-centro" data-el="boss"></div>
+  <div id="arena" class="centro" data-el="arena"></div>
   <div id="penitenze" data-el="pen"></div>
   <div id="alert" data-el="alert"></div>
   <div id="chatlive" data-el="chat"></div>
@@ -112,6 +115,9 @@
   <script src="/riquadro.js"></script>
   <script src="/muro.js"></script>
   <script src="/disegnati.js"></script>
+  <script src="/penna.js"></script>
+  <script src="/arena.js"></script>
+  <script src="/arena-tela.js"></script>
   <script src="/overlay-app.js" defer></script>
 
 <!-- Questo software e tutto il suo contenuto (codice, logica, dati, motori di ragionamento e la persona "Lia") sono proprieta intellettuale di Andrea Taliento (ANDRYXify). © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live. ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->

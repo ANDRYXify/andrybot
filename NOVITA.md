@@ -46,6 +46,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - «Dai punti» a «Chi ha scritto» in un timer non paga più lo streamer: lì non ha scritto nessuno e il passo salta. E le monete vanno al nome utente, anche a chi si mostra con un nome in un altro alfabeto. [vai: moduli]
 - La moneta di base si chiama «coins» o «monedas» col pannello in inglese o in spagnolo, e l'anteprima dell'importazione dice «Timers» o «Temporizadores». [vai: moduli]
 - Chi toglie tutti i posti degli avvisi su Telegram o su Discord non se ne ritrova uno alla lettura dopo: il gruppo o il canale collegato diventa un posto una volta sola, quando arriva.
+- [importante] Nei Giochi c'è l'arena delle emote: chi scrive in chat entra con la sua emote, i combattenti si scontrano da soli e vince l'ultimo in piedi, con premi in monete. [vai: giochi]
+  > L'arena delle emote
+  > Un gioco per tutta la chat che si guarda in diretta: la apri con !arena, ognuno combatte con la sua emote, e nell'overlay è un elemento dello Studio che sposti e vesti come gli altri.
 
 ## 2026-09-27
 

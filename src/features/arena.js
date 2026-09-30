@@ -76,6 +76,9 @@ export const FRASI = {
   schermoScrivi: 'Scrivi in chat per entrare!',
   schermoComando: 'Scrivi !{combatti} per entrare!',
   schermoEmote: '!{emote} nome per scegliere la tua',
+  // Sotto il vincitore, grande al centro.
+  schermoVince: 'vince l\'arena!',
+  schermoATempo: 'resta in piedi e vince!',
 };
 const A_CHI = { sub: 'a chi è abbonato', vip: 'ai VIP', mod: 'ai moderatori' };
 
@@ -187,6 +190,7 @@ export function stato(channel) {
     fase: p.fase,
     ora: orologio.ora(),
     righe: p.righe,
+    aperta: p.aperta,
     fineIscrizioni: p.chiude,
     combattenti: p.combattenti.map(pubblico),
     regole: p.regole,
@@ -218,7 +222,7 @@ export function apri(channel, say, { annuncio = '' } = {}) {
       costo: c.costo > 0 ? di(FRASI.costo, { costo: c.costo, monete: monete(channel) }) : '',
     }));
   } catch { /* niente */ }
-  manda(channel, { azione: 'iscrizioni', ora, fineIscrizioni: p.chiude, righe: p.righe, regole: p.regole });
+  manda(channel, { azione: 'iscrizioni', ora, aperta: ora, fineIscrizioni: p.chiude, righe: p.righe, regole: p.regole });
   // Le emote 7TV arrivano quando arrivano: chi e' gia' entrato si ricalcola,
   // e il suo `entra` riparte con l'emote giusta. Dopo la chiusura non si tocca
   // piu' niente: la battaglia e' partita con quelle che c'erano.
@@ -383,7 +387,8 @@ function vittoria(channel, p) {
   } catch { /* niente */ }
   const ora = orologio.ora();
   p.fineVittoria = ora + p.c.vittoria * 1000;
-  p.esitoPubblico = { vincitore: e.vincitore, aTempo: e.aTempo, corona: e.corona, passo: e.passo, classifica: e.classifica, premi };
+  p.esitoPubblico = { vincitore: e.vincitore, aTempo: e.aTempo, corona: e.corona, passo: e.passo, classifica: e.classifica, premi,
+    motto: e.aTempo ? FRASI.schermoATempo : FRASI.schermoVince };
   manda(channel, { azione: 'vittoria', ora, esito: p.esitoPubblico, fineVittoria: p.fineVittoria });
   p.timer = orologio.dopo(() => fine(channel, p), p.c.vittoria * 1000);
 }
