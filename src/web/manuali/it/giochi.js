@@ -371,7 +371,7 @@ export default {
 
     { h3: 'La catena di parole' },
     { p: [
-      'Con <code>!catena</code> il bot dice una parola, e la chat continua: ogni parola comincia con le ultime due lettere della precedente, casa, sasso, sole, leone. Conta solo un messaggio fatto di una parola che comincia con le due lettere giuste: il resto è chiacchiera e non tocca niente. Gli accenti non contano.',
+      'Con <code>!catena</code> il bot dice una parola, e la chat continua: ogni parola comincia con le ultime due lettere della precedente, casa, sasso, sole, leone. Conta solo un messaggio fatto di una parola che comincia con le due lettere giuste: il resto è chiacchiera e non tocca niente. Gli accenti non contano. A ogni parola buona il bot risponde con le due lettere da cui si riparte, per esempio «🔗 SOLE, 2 parole. Avanti con LE!».',
       `La catena si rompe se una parola era già stata detta o se la stessa persona ne scrive due di fila: il bot dice perché e riparte da una parola nuova. Si batte il record del canale, che resta anche quando il bot si riavvia. Ogni ${DI_SERIE('catena').traguardo} parole il bot applaude, e se per ${ATTESA(DI_SERIE('catena').pausa)} nessuno trova la parola la catena si chiude. Le parole da cui si parte le scegli tu, nelle regole.`,
       'Manche, conta e catena leggono tutte la chat, quindi ne gira una alla volta: finché una è aperta, le altre aspettano, e il bot lo dice.',
     ] },

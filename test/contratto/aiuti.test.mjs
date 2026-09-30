@@ -143,8 +143,8 @@ test('la memoria resta nel browser: niente esce di lì', () => {
 
 test('da dentro il pannello si arriva a guide e manuali', () => {
   assert.match(APP, /function menuAiutoHtml\(\)/, 'c’è un menu di aiuto');
-  for (const via of ['/guide', '/manuale', '/novita']) {
-    assert.ok(APP.includes(`['${via}',`), `porta a ${via}`);
+  for (const cosa of ['guide', 'manuali', 'novita']) {
+    assert.ok(APP.includes(`[viaPagina('${cosa}'),`), `porta a ${cosa}, nella lingua del pannello`);
   }
   const i = APP.indexOf('const aiuto = menuAiutoHtml();');
   const corpo = APP.slice(i, i + 1400);

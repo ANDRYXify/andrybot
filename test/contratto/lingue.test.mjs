@@ -68,6 +68,32 @@ test('ogni indirizzo di ogni lingua ha la sua rotta scritta per intero, e si apr
   }
 });
 
+test('il pannello porta a guide, manuali e novità nella sua lingua, agli indirizzi di VIE', () => {
+  // Il pannello e' un file servito al browser e non importa guide.js: la sua
+  // tabella e' una copia, e qui si guarda che dica gli stessi indirizzi.
+  const i = APP.indexOf('const VIE_PAGINE = {');
+  assert.ok(i > 0, 'il pannello ha la sua tabella degli indirizzi');
+  const tabella = new Function(`return ${APP.slice(i + 'const VIE_PAGINE = '.length, APP.indexOf('};', i) + 1)}`)();
+  assert.deepEqual(Object.keys(tabella), LINGUE_DOC);
+  for (const l of LINGUE_DOC) {
+    assert.deepEqual(tabella[l], { guide: VIE[l].guide, manuali: VIE[l].manuali, novita: VIE[l].novita }, l);
+  }
+  assert.match(APP, /const viaPagina = \(cosa\) => \(VIE_PAGINE\[LINGUA\] \|\| VIE_PAGINE\.it\)\[cosa\];/, 'e sceglie con la lingua del pannello');
+});
+
+test('le novità hanno un indirizzo per lingua, scritto per intero, aperto a chi non e\' entrato', () => {
+  const vie = LINGUE_DOC.map((l) => VIE[l].novita);
+  assert.deepEqual(vie, ['/novita', '/en/news', '/es/novedades'], 'quelli di docs/LINGUE.md');
+  assert.ok(SERVER.includes(`app.get([${vie.map((v) => `'${v}'`).join(', ')}], `), 'la rotta li elenca tutti e tre');
+  const guscio = creaGuscio(new URL('../../src/web/public', import.meta.url).pathname);
+  for (const via of vie) assert.ok(guscio.aperto(via), `${via} si apre senza sessione`);
+  for (const l of LINGUE_DOC) {
+    const h = pagina(l);
+    assert.ok(h.includes(`href="${VIE[l].novita}"`), `${l}: la vetrina porta alle novità nella sua lingua`);
+    if (l !== 'it') assert.ok(!h.includes('href="/novita"'), `${l}: e non a quelle italiane`);
+  }
+});
+
 test('il pannello legge la lingua anche dall\'indirizzo, e cambiandola non lo lascia a dire il contrario', () => {
   assert.match(APP, /const VIA_LINGUA = \{ it: '\/', en: '\/en', es: '\/es' \};/);
   assert.match(APP, /const dallIndirizzo = \{ '\/en': 'en', '\/es': 'es' \}\[location\.pathname\];/);

@@ -2393,7 +2393,6 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   // come le guide — chi valuta il bot deve poter vedere prima cosa sa fare.
   // Il «?» di ogni scheda, lingua per lingua: il pannello apre la pagina nella
   // sua lingua (l'italiano resta dove una traduzione non c'e').
-  const AIUTI = aiutiPerScheda();
   const AIUTI_LINGUE = Object.fromEntries(LINGUE_DOC.map((l) => [l, aiutiPerScheda(l)]));
   const MANUALE_HTML = new Map();
   app.get(['/manuale', '/en/manual', '/es/manual'], (req, res, next) => {
@@ -2414,22 +2413,39 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   // Le voci marcate `[privato]` non passano MAI di qui. Non le filtriamo caso per
   // caso: `pubbliche()` e' l'unica forma che queste due porte conoscono, e una
   // voce privata non ce la si puo' far dare nemmeno sbagliando.
-  let novitaHtml = { quando: null, corpo: '' };
-  app.get('/novita', (req, res) => {
-    const gruppi = novita.pubbliche(novita.leggi(NOVITA_MD));
-    const quando = novita.ultima(gruppi) + ':' + gruppi.length;
-    if (novitaHtml.quando !== quando) novitaHtml = { quando, corpo: paginaNovita(gruppi, AIUTI) };
+  //
+  // Una pagina per lingua, ognuna al suo indirizzo (VIE in guide.js), con le
+  // righe nella sua lingua. La pagina si rifa' quando il file e' stato riletto:
+  // `leggi()` ridà lo stesso elenco finche' il file non cambia, quindi e' lui a
+  // dire quando quella fatta non vale piu'.
+  const NOVITA_HTML = new Map();
+  app.get(['/novita', '/en/news', '/es/novedades'], (req, res, next) => {
+    const l = linguaDi(req.path, 'novita');
+    if (!l) return next();
+    const letti = novita.leggi(NOVITA_MD);
+    let fatta = NOVITA_HTML.get(l);
+    if (!fatta || fatta.letti !== letti) {
+      fatta = { letti, corpo: paginaNovita(novita.pubbliche(letti, l), AIUTI_LINGUE[l], l) };
+      NOVITA_HTML.set(l, fatta);
+    }
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.set('Cache-Control', 'public, max-age=0, s-maxage=600');
-    res.send(novitaHtml.corpo);
+    res.send(fatta.corpo);
   });
 
-  // Quello che il pannello mostra in cima: le ultime, e la data dell'ultima.
-  // Risposta uguale per tutti, quindi si puo' tenere in una cache condivisa.
+  // La lingua che chiede chi legge le novita' come dati: ?lang=it|en|es, e
+  // qualunque altra cosa vale italiano. L'impronta di ogni riga e' la stessa in
+  // tutte e tre (novita.js), quindi il segnaposto non dipende dalla lingua.
+  const linguaNovita = (req) => (novita.LINGUE.includes(req.query.lang) ? req.query.lang : 'it');
+
+  // Le ultime novita' e la data dell'ultima, per chi le legge da fuori.
+  // Risposta uguale per tutti a parita' di lingua (la lingua sta nell'indirizzo),
+  // quindi si puo' tenere in una cache condivisa.
   app.get('/api/novita', (req, res) => {
-    const gruppi = novita.pubbliche(novita.leggi(NOVITA_MD));
+    const l = linguaNovita(req);
+    const gruppi = novita.pubbliche(novita.leggi(NOVITA_MD), l);
     res.set('Cache-Control', 'public, max-age=0, s-maxage=600');
-    res.json({ ultima: novita.ultima(gruppi), segnalibro: novita.segnalibro(gruppi), gruppi: gruppi.slice(0, 3) });
+    res.json({ lingua: l, ultima: novita.ultima(gruppi), segnalibro: novita.segnalibro(gruppi), gruppi: gruppi.slice(0, 3) });
   });
 
   // QUELLO CHE SI E' PERSO. Chi torna dopo un aggiornamento non deve andare a
@@ -2443,9 +2459,11 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     const u = currentUser(req);
     const suo = streamers.get(u.login);
     const letti = novita.leggi(NOVITA_MD);
-    // all'amministratore si aggiungono le novita' del cervello, che stanno nel
-    // suo file: la strada pubblica non le vede perche' non legge quel file.
-    const gruppi = u.isAdmin ? novita.tutte(novita.unisci(letti, novita.leggi(LIA_NOVITA))) : novita.pubbliche(letti);
+    // Nella lingua del pannello, che la manda (?lang=). All'amministratore si
+    // aggiungono le novita' del cervello, che stanno nel suo file: la strada
+    // pubblica non le vede perche' non legge quel file.
+    const l = linguaNovita(req);
+    const gruppi = u.isAdmin ? novita.tutte(novita.unisci(letti, novita.leggi(LIA_NOVITA)), l) : novita.pubbliche(letti, l);
     const ultima = novita.ultima(gruppi);
     // Il segnaposto si calcola QUI, sui gruppi che stiamo per mostrare a lui: chi
     // vede anche le righe private le conta, chi vede solo le pubbliche no. Cosi'
@@ -7437,6 +7455,25 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     gsi.revoca(login);
     gsiStato.scorda(login);
     res.json({ ok: true });
+  }));
+
+  // Il numero letto da un file sul computer della regia (DSDeaths, o un altro
+  // programma che tiene il conto). Arriva il numero, non il file. La regola e'
+  // quella dei giochi che parlano da soli, e sta in morti.contaDaFile.
+  app.post('/api/streamer/morti/file', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const cfg = morti.normalizza(streamers.get(login)?.settings?.morti);
+    const r = morti.contaDaFile(login, req.body, {
+      contatore: cfg.file,
+      inOnda: rapporto.inCorso(login),
+      esegui: (id) => consolle.esegui(login, id, {
+        say: (t) => { try { manager.say(login, t); } catch { /* niente */ } },
+        emit: (p) => { try { effects.emit(login, p); } catch { /* niente */ } },
+        effetti: effects,
+      }),
+    });
+    if (!r.ok) return res.status(400).json({ errore: 'numero non valido' });
+    res.json(r);
   }));
 
   // Un'azione della console fatta fare DAL PANNELLO, da chi e' entrato. La strada

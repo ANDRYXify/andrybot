@@ -381,6 +381,7 @@ async function caricaStato() {
   avvisaRapporti();
   collegaRegiaRicordata();
   _mortiRiavvia();
+  _fmAvvia().catch(() => {});
   avvisoCosaManca();
   invito();
   invitoRecensione();
@@ -2093,9 +2094,9 @@ function barraCarteHtml(id) {
 
 function vociAiuto() {
   return [
-    ['/guide', L('Guide', 'Guides', 'Guías')],
-    ['/manuale', L('Manuali', 'Manuals', 'Manuales')],
-    ['/novita', L('Novità', 'What’s new', 'Novedades')],
+    [viaPagina('guide'), L('Guide', 'Guides', 'Guías')],
+    [viaPagina('manuali'), L('Manuali', 'Manuals', 'Manuales')],
+    [viaPagina('novita'), L('Novità', 'What’s new', 'Novedades')],
   ];
 }
 
@@ -2226,6 +2227,12 @@ const testoAttivo = (si) => (si ? L('Attivo', 'On', 'Activo') : L('Spento', 'Off
 const testoClipAuto = (si) => (si ? L('Clip automatiche accese', 'Automatic clips on', 'Clips automáticos activados') : L('Clip automatiche spente', 'Automatic clips off', 'Clips automáticos desactivados'));
 const testoAscolto = (si) => (si ? L('Ascolto acceso', 'Listening on', 'Escucha activada') : L('Ascolto spento', 'Listening off', 'Escucha desactivada'));
 const VIA_LINGUA = { it: '/', en: '/en', es: '/es' };
+const VIE_PAGINE = {
+  it: { guide: '/guide', manuali: '/manuale', novita: '/novita' },
+  en: { guide: '/en/guides', manuali: '/en/manual', novita: '/en/news' },
+  es: { guide: '/es/guias', manuali: '/es/manual', novita: '/es/novedades' },
+};
+const viaPagina = (cosa) => (VIE_PAGINE[LINGUA] || VIE_PAGINE.it)[cosa];
 function indirizzoInLingua(l) {
   try {
     const u = new URL(location.href);
@@ -15401,7 +15408,7 @@ async function mostraNovita() {
   if (_novFatto || !stato?.user) return;
   _novFatto = true;
   let d = null;
-  try { d = await api('/api/novita/da-vedere'); } catch { return; }
+  try { d = await api(`/api/novita/da-vedere?lang=${LINGUA}`); } catch { return; }
   if (!d?.ok) return;
   const segna = (fino) => api('/api/novita/viste', { method: 'POST', body: { fino } }).catch(() => {});
   const fin = d.segnalibro || d.ultima;
@@ -15449,7 +15456,7 @@ async function mostraNovita() {
       ? `<p class="suggerimento nov-altri">${L(`Le altre ${restanti} stanno più indietro: le trovi tutte qui sotto.`, `The other ${restanti} are further back: you find them all below.`, `Las otras ${restanti} están más atrás: las encuentras todas abajo.`)}</p>`
       : ''}</div>
     <div class="nov-piede">
-      <a class="btn secondario mini" href="/novita">${L('Tutte le novità', 'All the news', 'Todas las novedades')}</a>
+      <a class="btn secondario mini" href="${esc(viaPagina('novita'))}">${L('Tutte le novità', 'All updates', 'Todas las novedades')}</a>
       <button class="btn" id="nov-chiudi">${L('Ho capito', 'Got it', 'Entendido')}</button>
     </div>`;
   document.body.appendChild(f);
@@ -16496,7 +16503,8 @@ function appendiConsolifyCampi() {
 
 const MORTI_DEF = { attivo: false, fonte: '', ogniMs: 2000, soglia: 8, riarmoMs: 4000, schermate: [] };
 const _mortiCfg = () => ({ ...MORTI_DEF, ...(impostazioni().morti || {}) });
-let _mortiTimer = null;
+let _mortiFerma = null;
+let _mortiAspetta = false;
 let _mortiStato = {};
 let _mortiVisto = null;
 let _mortiInGiro = false;
@@ -16567,6 +16575,7 @@ function _mortiSpia() {
     el.textContent = L('La regia non è collegata: senza, non posso guardare niente.', 'The program is not connected: without it I can\'t watch anything.', 'El programa no está conectado: sin él no puedo mirar nada.');
     return;
   }
+  if (_mortiAspetta) { el.textContent = L('Sta già guardando un\'altra scheda del pannello: se la chiudi, continuo io.', 'Another panel tab is already watching: if you close it, I take over.', 'Ya está mirando otra pestaña del panel: si la cierras, sigo yo.'); return; }
   if (!_mortiVisto) { el.textContent = L('Guardo…', 'Watching…', 'Miro…'); return; }
   const v = _mortiVisto;
   el.textContent = v.contata
@@ -16577,13 +16586,137 @@ function _mortiSpia() {
 }
 
 function _mortiRiavvia() {
-  clearInterval(_mortiTimer);
-  _mortiTimer = null;
+  if (_mortiFerma) _mortiFerma();
+  _mortiFerma = null;
+  _mortiAspetta = false;
   _mortiStato = {};
   const cfg = _mortiCfg();
   if (DEMO || !cfg.attivo || !cfg.schermate.length) { _mortiSpia(); return; }
-  _mortiTimer = setInterval(() => { _mortiGiro().catch(() => {}); }, cfg.ogniMs);
+  _mortiAspetta = true;
+  _mortiFerma = window.SB_MORTI.dasolo('sb-morti-schermo', () => {
+    _mortiAspetta = false;
+    _mortiSpia();
+    return window.SB_MORTI.ogni(cfg.ogniMs, () => { _mortiGiro().catch(() => {}); });
+  });
   _mortiSpia();
+}
+
+const _fm = { h: null, giro: '', visto: '', numero: null, contate: 0, inOnda: null, cosa: '', aspetta: false, ferma: null, dentro: false };
+const _fmPuo = () => typeof window.showOpenFilePicker === 'function';
+const _fmChiave = () => 'file:' + String(stato?.gestisce?.streamer || stato?.user?.login || '').toLowerCase();
+
+function _fmDb() {
+  return new Promise((ok, no) => {
+    let r;
+    try { r = indexedDB.open('socialbot-morti', 1); } catch (e) { return no(e); }
+    r.onupgradeneeded = () => { r.result.createObjectStore('file'); };
+    r.onsuccess = () => ok(r.result);
+    r.onerror = () => no(r.error);
+  });
+}
+
+async function _fmTieni(h) {
+  const d = await _fmDb();
+  try {
+    await new Promise((ok, no) => {
+      const t = d.transaction('file', 'readwrite');
+      if (h) t.objectStore('file').put(h, _fmChiave()); else t.objectStore('file').delete(_fmChiave());
+      t.oncomplete = ok;
+      t.onerror = () => no(t.error);
+    });
+  } finally { d.close(); }
+}
+
+async function _fmRicordato() {
+  const d = await _fmDb();
+  try {
+    return await new Promise((ok) => {
+      const r = d.transaction('file').objectStore('file').get(_fmChiave());
+      r.onsuccess = () => ok(r.result || null);
+      r.onerror = () => ok(null);
+    });
+  } finally { d.close(); }
+}
+
+async function _fmLeggi() {
+  if (!_fm.h || _fm.dentro) return;
+  _fm.dentro = true;
+  try {
+    let f;
+    try { f = await _fm.h.getFile(); } catch { _fm.cosa = 'perso'; _fmSpia(); return; }
+    const visto = f.lastModified + ':' + f.size;
+    if (visto === _fm.visto) return;
+    let testo;
+    try { testo = await f.slice(0, 256).text(); } catch { return; }
+    _fm.visto = visto;
+    const n = window.SB_MORTI.numeroDaFile(testo);
+    if (n === null) { _fm.cosa = 'storto'; _fmSpia(); return; }
+    _fm.cosa = 'legge';
+    if (n === _fm.numero) { _fmSpia(); return; }
+    _fm.numero = n;
+    const d = await api('/api/streamer/morti/file', { method: 'POST', body: { totale: n, nome: f.name, giro: _fm.giro } }).catch(() => null);
+    if (!d) { _fm.visto = ''; _fm.numero = null; return; }
+    _fm.inOnda = !!d.inOnda;
+    if (d.contate) {
+      _fm.contate += d.contate;
+      toast(L(`Morte contata dal file: +${d.contate}`, `Death counted from the file: +${d.contate}`, `Muerte contada desde el archivo: +${d.contate}`));
+    }
+    _fmSpia();
+  } finally { _fm.dentro = false; }
+}
+
+function _fmFerma() {
+  if (_fm.ferma) _fm.ferma();
+  _fm.ferma = null;
+  _fm.aspetta = false;
+}
+
+function _fmParti(h) {
+  _fmFerma();
+  Object.assign(_fm, { h, visto: '', numero: null, contate: 0, inOnda: null, cosa: '', aspetta: true });
+  _fm.ferma = window.SB_MORTI.dasolo('sb-morti-file', () => {
+    _fm.aspetta = false;
+    _fm.giro = crypto.randomUUID();
+    _fm.visto = '';
+    _fm.numero = null;
+    _fmLeggi().catch(() => {});
+    return window.SB_MORTI.ogni(2000, () => { _fmLeggi().catch(() => {}); });
+  });
+  _fmSpia();
+}
+
+async function _fmAvvia() {
+  if (DEMO || !_fmPuo() || _fm.h) { _fmSpia(); return; }
+  const h = await _fmRicordato().catch(() => null);
+  if (!h) { _fmSpia(); return; }
+  _fm.h = h;
+  const p = await h.queryPermission({ mode: 'read' }).catch(() => 'denied');
+  if (p === 'granted') _fmParti(h);
+  else { _fm.cosa = 'permesso'; _fmSpia(); }
+}
+
+function _fmSpia() {
+  const el = _g('morti-file-spia');
+  const riprendi = _g('morti-file-riprendi');
+  const togli = _g('morti-file-togli');
+  if (riprendi) riprendi.hidden = _fm.cosa !== 'permesso';
+  if (togli) togli.hidden = !_fm.h;
+  if (!el) return;
+  const nome = _fm.h ? _fm.h.name : '';
+  const m = _mortiCfg();
+  if (DEMO) { el.textContent = L('Nella demo non leggo file.', 'In the demo I don\'t read files.', 'En la demo no leo archivos.'); return; }
+  if (!_fmPuo()) { el.textContent = L('Questo browser non lascia leggere un file del computer: apri il pannello con Chrome o Edge.', 'This browser won\'t let a page read a file on your computer: open the panel in Chrome or Edge.', 'Este navegador no deja leer un archivo del equipo: abre el panel con Chrome o Edge.'); return; }
+  if (!_fm.h) { el.textContent = L('Nessun file scelto.', 'No file chosen.', 'Ningún archivo elegido.'); return; }
+  if (_fm.cosa === 'permesso') { el.textContent = L(`Il browser chiede di nuovo il permesso per «${nome}»: premi «Riprendi».`, `The browser is asking again for permission to read «${nome}»: press «Resume».`, `El navegador vuelve a pedir permiso para «${nome}»: pulsa «Reanudar».`); return; }
+  if (_fm.aspetta) { el.textContent = L(`«${nome}» lo sta già leggendo un'altra scheda del pannello: se la chiudi, continuo io.`, `Another panel tab is already reading «${nome}»: if you close it, I take over.`, `Otra pestaña del panel ya está leyendo «${nome}»: si la cierras, sigo yo.`); return; }
+  if (_fm.cosa === 'perso') { el.textContent = L(`Non trovo più «${nome}»: sceglilo di nuovo.`, `I can't find «${nome}» anymore: choose it again.`, `Ya no encuentro «${nome}»: vuelve a elegirlo.`); return; }
+  if (_fm.cosa === 'storto') { el.textContent = L(`In «${nome}» non trovo un numero solo: è il file giusto?`, `I don't find a single number in «${nome}»: is it the right file?`, `En «${nome}» no encuentro un solo número: ¿es el archivo correcto?`); return; }
+  if (_fm.numero === null) { el.textContent = L(`Leggo «${nome}»…`, `Reading «${nome}»…`, `Leyendo «${nome}»…`); return; }
+  const righe = [L(`Leggo «${nome}»: ${_fm.numero}.`, `Reading «${nome}»: ${_fm.numero}.`, `Leyendo «${nome}»: ${_fm.numero}.`)];
+  if (!m.file) righe.push(L('Scegli quale contatore far salire.', 'Choose which counter to raise.', 'Elige qué contador subir.'));
+  else if (_fm.inOnda === false) righe.push(L('Fuori diretta leggo ma non conto.', 'Off air I read but don\'t count.', 'Fuera de directo leo pero no cuento.'));
+  if (_fm.contate) righe.push(L(`Contate da quando guardo: ${_fm.contate}.`, `Counted since I started reading: ${_fm.contate}.`, `Contadas desde que leo: ${_fm.contate}.`));
+  el.textContent = righe.join(' ');
 }
 
 function _mortiFonti() {
@@ -16689,6 +16822,8 @@ async function _mortiCarica() {
   _mortiRiempiConti(conti);
   try { _gsiDati = await api('/api/streamer/morti/gsi'); } catch { _gsiDati = null; }
   _mortiGsiLista(conti);
+  const selFile = _g('morti-file-conta');
+  if (selFile) selFile.innerHTML = _mortiOpzioni(conti, _mortiCfg().file || '', L('non contare', 'don\'t count', 'no contar'));
   await _mortiGuardaVersioni().catch(() => {});
 }
 
@@ -16857,6 +16992,29 @@ function collegaMorti() {
     const m = _mortiCfg();
     await _mortiSalva({ gsi: { ...(m.gsi || {}), [sel.dataset.gsiGioco]: sel.value } }).catch(() => {});
   });
+
+  _g('morti-file-conta')?.addEventListener('change', (e) => { _mortiSalva({ file: e.target.value }).then(_fmSpia).catch(() => {}); });
+  _g('morti-file-scegli')?.addEventListener('click', async () => {
+    if (DEMO || !_fmPuo()) { _fmSpia(); return; }
+    let h = null;
+    try { [h] = await window.showOpenFilePicker({ id: 'socialbot-morti', multiple: false, types: [{ description: L('Testo', 'Text', 'Texto'), accept: { 'text/plain': ['.txt'] } }] }); }
+    catch { return; }
+    if (!h) return;
+    await _fmTieni(h).catch(() => {});
+    _fmParti(h);
+  });
+  _g('morti-file-riprendi')?.addEventListener('click', async () => {
+    if (!_fm.h) return;
+    const p = await _fm.h.requestPermission({ mode: 'read' }).catch(() => 'denied');
+    if (p === 'granted') _fmParti(_fm.h); else _fmSpia();
+  });
+  _g('morti-file-togli')?.addEventListener('click', async () => {
+    _fmFerma();
+    await _fmTieni(null).catch(() => {});
+    Object.assign(_fm, { h: null, cosa: '', numero: null, contate: 0, inOnda: null });
+    _fmSpia();
+  });
+  _fmSpia();
 
   _g('morti-gsi-rinnova')?.addEventListener('click', async () => {
     if (!(await chiediSe({ titolo: L('Faccio una chiave nuova per i giochi?', 'Make a new key for the games?', '¿Hago una clave nueva para los juegos?'), pericolo: true,
@@ -19172,6 +19330,22 @@ function _mortiCarte() {
       <div id="morti-gsi-lista" class="goal-lista spazio-sopra"></div>
       <p class="suggerimento" id="morti-gsi-spia">&mdash;</p>
       <p><button class="btn secondario mini" id="morti-gsi-rinnova">${L('Rifai la chiave', 'Make a new key', 'Rehacer la clave')}</button></p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.carta)}${L('Il conto scritto in un file', 'The count written in a file', 'La cuenta escrita en un archivo')}</h2>
+      <p>${L('Nei souls il numero esatto lo tiene il gioco, e c\'è un programma gratuito che lo sa leggere:', 'In the souls games the exact number is kept by the game, and a free program can read it:', 'En los souls el número exacto lo guarda el juego, y hay un programa gratuito que sabe leerlo:')} <a href="https://github.com/Quidrex/DSDeaths" target="_blank" rel="noopener">DSDeaths</a>. ${L('Funziona con tutti i Dark Souls, Sekiro ed Elden Ring offline, e scrive il conto in', 'It works with every Dark Souls, Sekiro and Elden Ring offline, and writes the count in', 'Funciona con todos los Dark Souls, Sekiro y Elden Ring sin conexión, y escribe la cuenta en')} <strong>DSDeaths.txt</strong>. ${L('Qui scegli quel file, e il contatore segue il gioco.', 'Choose that file here, and the counter follows the game.', 'Elige aquí ese archivo, y el contador sigue al juego.')}</p>
+      <p class="suggerimento">${L('Va bene anche un altro programma che scrive il conto in un file di testo, con un numero solo. Serve', 'Any other program that writes the count in a text file, with a single number, works too. You need', 'Sirve también otro programa que escriba la cuenta en un archivo de texto, con un solo número. Hace falta')} <strong>${L('Chrome o Edge su questo computer', 'Chrome or Edge on this computer', 'Chrome o Edge en este equipo')}</strong>, ${L('e il file', 'and the file', 'y el archivo')} <strong>${L('resta dov\'è', 'stays where it is', 'se queda donde está')}</strong>: ${L('al server arriva solo il numero. Fuori diretta leggo ma non conto.', 'only the number reaches the server. Off air I read but don\'t count.', 'al servidor solo llega el número. Fuera de directo leo pero no cuento.')}</p>
+      <div class="riga-flessibile spazio-sopra">
+        <div style="max-width:220px">
+          <label class="campo" for="morti-file-conta">${L('Quale contatore faccio salire', 'Which counter I raise', 'Qué contador subo')}</label>
+          <select id="morti-file-conta" class="campo-largo"></select>
+        </div>
+        <button type="button" class="btn" id="morti-file-scegli">${L('Scegli il file', 'Choose the file', 'Elegir el archivo')}</button>
+        <button type="button" class="btn secondario" id="morti-file-riprendi" hidden>${L('Riprendi', 'Resume', 'Reanudar')}</button>
+        <button type="button" class="btn secondario mini" id="morti-file-togli" hidden>${L('Smetti di leggerlo', 'Stop reading it', 'Dejar de leerlo')}</button>
+      </div>
+      <p class="suggerimento" id="morti-file-spia">${L('Nessun file scelto.', 'No file chosen.', 'Ningún archivo elegido.')}</p>
     </div>
 `;
 }
