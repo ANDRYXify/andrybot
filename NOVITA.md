@@ -93,6 +93,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nel registro del tuo server Discord, il motivo della condizione sulle dirette si legge «c’è stato ad almeno N dirette», come la chiama la scheda Ruoli. [vai: ruoli]
 - I temi della locandina di Telegram hanno il nome anche in inglese e spagnolo, e le etichette di Telegram e Discord non usano più la lineetta lunga. [vai: telegram]
 - Un moderatore che apre le schede di Discord legge che le usa solo il proprietario del canale, invece di «Non riesco a leggere la configurazione». [vai: ruoli]
+- Nel server Discord i tasti per aggiungere categorie, canali, ruoli e permessi si fermano al tetto e dicono quanti ne tiene la traccia, e l'anteprima scrive cosa resta fuori. [vai: dcserver]
+- Nei Ruoli di Discord «Aggiungi una regola» si ferma a 20 e lo dice, e nel filtro una regola senza parole o senza liste avvisa che così non si salva. [vai: ruoli]
 
 ## 2026-09-26
 

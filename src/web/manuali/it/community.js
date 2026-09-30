@@ -239,7 +239,7 @@ export default {
     { p: [
       'Nell\'elenco dei ruoli trovi quelli che il bot può dare. Quelli che stanno sopra il suo ruolo più alto compaiono spenti, con «sta sopra il bot». Il ruolo che hanno tutti, quelli del bot e quelli di altri bot non si offrono: se una regola vecchia ne nomina uno, lo vedi spento col motivo («ce l’hanno tutti», «è del bot», «è di un altro bot»). Una regola che nomina un ruolo cancellato mostra «un ruolo che non c’è più», e il giro la scarta.',
       'Il bot tocca solo chi si è collegato, e solo i ruoli che le tue regole nominano: li dà a chi rientra nella condizione e li toglie a chi non ci rientra più. I ruoli dati a mano, o da un altro bot, non li guarda. Se Twitch per un momento non risponde, le condizioni che vengono da Twitch per quel giro non valgono: il ruolo non viene né dato né tolto. Ogni ruolo dato o tolto lascia scritto il perché nel registro del tuo server, su Discord.',
-      'Tieni fino a 20 regole. Due regole identiche diventano una.',
+      'Tieni fino a 20 regole: arrivato lì, «Aggiungi una regola» ti dice di toglierne una. Due regole identiche diventano una. Se «Costruisci» porta regole nuove oltre il tetto, l\'esito dice quante restano fuori.',
     ] },
     { tabella: [
       ['Controllo', 'Cosa fa'],
@@ -372,11 +372,11 @@ export default {
       ['Permessi di un canale'],
       ['«Vedere il canale», «Scrivere», «Leggere i messaggi di prima», «Mettere reazioni», «Allegare file», «Far vedere l’anteprima dei link», «Aprire discussioni», «Entrare nel vocale», «Parlare nel vocale», «Chiamare tutti»'],
     ] },
-    { p: ['La traccia tiene al massimo 20 categorie e 60 canali.'] },
+    { p: ['La traccia tiene al massimo 20 categorie, 60 canali e 10 righe di «Chi può fare cosa» per canale o categoria. Arrivato al tetto, il tasto si ferma e ti dice quanti ne tiene. Se il server che leggi con «Leggi il mio server» è più grande, quello che resta fuori lo leggi subito e poi nell\'anteprima, in «Restano fuori dalla traccia».'] },
 
     { h3: 'Chi è chi' },
     { p: [
-      'I ruoli del server: come si vedono e cosa possono fare. «Aggiungi un ruolo» ne mette uno nuovo, fino a 15. Oltre leggi «Più di così non se ne possono chiedere.». Una traccia letta dal tuo server tiene anche lei 15 ruoli al massimo.',
+      'I ruoli del server: come si vedono e cosa possono fare. «Aggiungi un ruolo» ne mette uno nuovo, fino a 15. Oltre leggi «La traccia ne tiene al massimo 15 ruoli.». Una traccia letta dal tuo server tiene anche lei 15 ruoli al massimo, e gli altri li trovi in «Restano fuori dalla traccia».',
       '«Streamer» è solo un colore e un posto a parte, senza privilegi: su Discord un bot non può creare niente più in alto di sé. «Moderatori» invece ha i poteri veri, come mettere in pausa, cacciare e cancellare i messaggi degli altri.',
     ] },
     { tabella: [
@@ -465,7 +465,7 @@ export default {
     { h3: 'Le domande' },
     { p: [
       'Chi entra risponde, e ogni risposta gli apre i canali che gli interessano e gli dà un ruolo. Trova solo quello che ha chiesto, invece di tutti i canali insieme.',
-      '«Accendi la porta d’ingresso» la accende. In «I canali che vede chi entra, prima di rispondere» spunti i canali di partenza, fino a 20. Discord accende la porta solo con almeno 7 canali fra quelli che chi entra si può aprire, contando anche quelli delle risposte, e con almeno 5 dove tutti possono scrivere: la carta tiene il conto mentre spunti, e se non bastano l\'anteprima lo dice.',
+      '«Accendi la porta d’ingresso» la accende. In «I canali che vede chi entra, prima di rispondere» spunti i canali di partenza, fino a 20: oltre, la spunta non si mette e leggi il tetto. Discord accende la porta solo con almeno 7 canali fra quelli che chi entra si può aprire, contando anche quelli delle risposte, e con almeno 5 dove tutti possono scrivere: la carta tiene il conto mentre spunti, e se non bastano l\'anteprima lo dice.',
     ] },
     { tabella: [
       ['Controllo', 'Cosa fa', 'Limiti'],
@@ -516,11 +516,11 @@ export default {
     { h3: 'Parole da non scrivere' },
     { p: [
       'Le tue liste, una per ogni cosa che vuoi fermare. Fino a 6 regole.',
-      '«Le parole, una per riga»: fino a 1000, di 60 caratteri l\'una. «insult*» prende tutto quello che comincia così; «*truffa*» la prende anche dentro altre parole. «E queste passano lo stesso»: le eccezioni, fino a 100. Una regola di parole senza parole non si costruisce.',
+      '«Le parole, una per riga»: fino a 1000, di 60 caratteri l\'una. «insult*» prende tutto quello che comincia così; «*truffa*» la prende anche dentro altre parole. «E queste passano lo stesso»: le eccezioni, fino a 100. Una regola di parole senza parole non si salva e non si costruisce, e finché è vuota la carta lo dice.',
     ] },
 
     { h3: 'Le liste già pronte di Discord' },
-    { p: ['Una regola sola. Spunti quali accendere: «parolacce», «roba sessuale», «insulti pesanti». Le aggiorna Discord in tutte le lingue. «Queste passano lo stesso» tiene fino a 1000 eccezioni. Una regola di liste senza nessuna lista spuntata non si costruisce.'] },
+    { p: ['Una regola sola. Spunti quali accendere: «parolacce», «roba sessuale», «insulti pesanti». Le aggiorna Discord in tutte le lingue. «Queste passano lo stesso» tiene fino a 1000 eccezioni. Una regola di liste senza nessuna lista spuntata non si salva e non si costruisce, e la carta lo dice.'] },
 
     { h3: 'Spam' },
     { p: ['Una regola sola. Lo riconosce Discord: link ripetuti, messaggi in serie, roba mandata a tutti in privato.'] },

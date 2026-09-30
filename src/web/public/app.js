@@ -22230,7 +22230,12 @@ function collegaRuoli() {
 
   _g('dc-piu')?.addEventListener('click', () => {
     if (!_dc) return;
-    _dc.regole = _dcLeggiRegole().concat([{ tipo: (_dc.tipi || [{ id: 'sub' }])[0].id, ruolo: '', soglia: 1 }]);
+    const ora = _dcLeggiRegole();
+    if (_dc.maxRegole && ora.length >= _dc.maxRegole) {
+      toast(L(`Le regole sono al massimo ${_dc.maxRegole}: per aggiungerne una, togline un’altra.`, `Rules are at most ${_dc.maxRegole}: to add one, remove another.`, `Las reglas son como máximo ${_dc.maxRegole}: para añadir una, quita otra.`), 'errore');
+      return;
+    }
+    _dc.regole = ora.concat([{ tipo: (_dc.tipi || [{ id: 'sub' }])[0].id, ruolo: '', soglia: 1 }]);
     _dcDisegnaRegole();
   });
 
@@ -22802,6 +22807,37 @@ function _dcsPulito() {
 
 const _dcsConta = (p) => (p?.categorie || []).reduce((t, c) => t + (c.canali || []).length, 0) + (p?.canali || []).length;
 
+const DCS_TETTO = () => ({
+  categorie: [L('categorie', 'categories', 'categorías'), ''],
+  canali: [L('canali', 'channels', 'canales'), ''],
+  ruoli: [L('ruoli', 'roles', 'roles'), ''],
+  righe: [L('righe di permessi', 'permission rows', 'filas de permisos'), L(' per canale', ' per channel', ' por canal')],
+  partenza: [L('canali di partenza', 'starting channels', 'canales de inicio'), ''],
+  rispCanali: [L('canali', 'channels', 'canales'), L(' per risposta', ' per answer', ' por respuesta')],
+  rispRuoli: [L('ruoli', 'roles', 'roles'), L(' per risposta', ' per answer', ' por respuesta')],
+});
+
+function _dcsAlTetto(k, quanti) {
+  const tetto = _dcs?.max?.[k];
+  if (!tetto || quanti < tetto) return false;
+  const [nome, per] = DCS_TETTO()[k];
+  toast(L(`La traccia ne tiene al massimo ${tetto} ${nome}${per}.`, `The track holds at most ${tetto} ${nome}${per}.`, `La plantilla tiene como máximo ${tetto} ${nome}${per}.`), 'errore');
+  return true;
+}
+
+function _dcsScartiTesto(sc) {
+  const nomi = DCS_TETTO();
+  const p = [];
+  for (const k of Object.keys(nomi)) {
+    if (!sc?.[k]) continue;
+    const [nome, per] = nomi[k];
+    p.push(`${nome} ${sc[k]} (${L('ne tiene', 'it holds', 'tiene')} ${_dcs?.max?.[k] ?? ''}${per})`);
+  }
+  if (sc?.senzaParole) p.push(L('regole di parole senza nessuna parola', 'word rules without any word', 'reglas de palabras sin ninguna palabra') + ' ' + sc.senzaParole);
+  if (sc?.senzaListe) p.push(L('regole delle liste senza nessuna lista', 'list rules without any list', 'reglas de listas sin ninguna lista') + ' ' + sc.senzaListe);
+  return p.length ? L('Restano fuori dalla traccia: ', 'Left out of the track: ', 'Se quedan fuera de la plantilla: ') + p.join(', ') + '.' : '';
+}
+
 function _dcsDici(id, testo, tono) {
   const n = _g(id);
   if (!n) return;
@@ -23300,6 +23336,8 @@ function _dcsDiffHtml(d) {
   const tipi = T_DCTIPO();
   const nome = (x) => esc(x.nome || '') + (x.dentro ? ' <span class="suggerimento">' + L('in ', 'in ', 'en ') + esc(x.dentro) + '</span>' : '');
   const blocchi = [];
+  const scarti = _dcsScartiTesto(d.scarti);
+  if (scarti) blocchi.push(`<p class="tg-stato guaio">${esc(scarti)}</p>`);
   if (d.crea.length) {
     blocchi.push(`<h3>${L('Crea', 'Creates', 'Crea')} (${d.crea.length})</h3><ul class="lista-voci">`
       + d.crea.map((x) => `<li>${nome(x)} <span class="suggerimento">${esc(x.tipo === 4 ? L('categoria', 'category', 'categoría') : (tipi[({ 0: 'testo', 2: 'voce', 5: 'annunci', 15: 'forum' })[x.tipo]] || ''))}</span></li>`).join('') + '</ul>');
@@ -23793,6 +23831,13 @@ function collegaChiEntra() {
 
   scheda.addEventListener('change', (e) => {
     if (!e.target.closest('[data-dce]')) return;
+    const tetto = { partenza: 'partenza', 'r-canale': 'rispCanali', 'r-ruolo': 'rispRuoli' }[e.target.dataset.dce];
+    if (tetto && e.target.checked) {
+      const k = e.target.dataset.k;
+      const dove = k === undefined ? `[data-dce="${e.target.dataset.dce}"]` : `[data-dce="${e.target.dataset.dce}"][data-k="${k}"]`;
+      const spuntati = [...scheda.querySelectorAll(dove)].filter((x) => x.checked).length;
+      if (_dcsAlTetto(tetto, spuntati - 1)) e.target.checked = false;
+    }
     _dceLeggi();
     if (['r-canale', 'r-ruolo', 'partenza'].includes(e.target.dataset.dce)) _dceDisegnaPorta();
     if (e.target.dataset.dce === 'ben-canale') {
@@ -24017,6 +24062,17 @@ function _dcfParoleHtml(r) {
     <textarea data-dcf="passano" rows="2">${esc(_dcfRighe(r.passano))}</textarea>`;
 }
 
+const _dcfVuota = (r) => ((r.tipo === 'parole' || r.tipo === 'profilo')
+  ? !(r.parole || []).length && !(r.espressioni || []).length
+  : (r.tipo === 'liste' ? !(r.liste || []).length : false));
+
+function _dcfVuotaHtml(r) {
+  const testo = r.tipo === 'liste'
+    ? L('Senza nessuna lista spuntata questa regola non si salva e non si costruisce.', 'With no list ticked this rule is neither saved nor built.', 'Sin ninguna lista marcada esta regla no se guarda ni se construye.')
+    : L('Senza nemmeno una parola questa regola non si salva e non si costruisce.', 'Without a single word this rule is neither saved nor built.', 'Sin ni una palabra esta regla no se guarda ni se construye.');
+  return `<p class="tg-stato guaio dcf-vuota"${_dcfVuota(r) ? '' : ' hidden'}>${testo}</p>`;
+}
+
 function _dcfRegolaHtml(r, aperta) {
   const dentro = r.tipo === 'parole' || r.tipo === 'profilo' ? _dcfParoleHtml(r)
     : r.tipo === 'liste' ? `<div class="tg-spunte">${(_dcs?.filtro?.liste || []).map((k) => {
@@ -24039,6 +24095,7 @@ function _dcfRegolaHtml(r, aperta) {
       <label class="tg-spunta"><input type="checkbox" data-dcf="accesa"${r.accesa ? ' checked' : ''}><span>${L('accesa', 'on', 'encendida')}</span></label>
       <button type="button" class="btn secondario mini" data-dcf="via">${esc(L('Togli la regola', 'Remove the rule', 'Quitar la regla'))}</button>
     </div>
+    ${_dcfVuotaHtml(r)}
     ${dentro}
     ${_dcfAzioniHtml(r)}
   </details>`;
@@ -24094,6 +24151,8 @@ function _dcfLeggi() {
     };
     r.esentiRuoli = [...nodo.querySelectorAll('[data-dcf="a-eruolo"]')].filter((x) => x.checked).map((x) => x.value);
     r.esentiCanali = [...nodo.querySelectorAll('[data-dcf="a-ecanale"]')].filter((x) => x.checked).map((x) => x.value);
+    const vuota = nodo.querySelector('.dcf-vuota');
+    if (vuota) vuota.hidden = !_dcfVuota(r);
   }
   _dcsTocca();
 }
@@ -24214,6 +24273,7 @@ async function _dcsFai(pre) {
       ? L('una regola nuova nei Ruoli', 'one new rule in Roles', 'una regla nueva en Roles')
       : e.regoleNuove.length + L(' regole nuove nei Ruoli', ' new rules in Roles', ' reglas nuevas en Roles'));
     if (e.ruoliSpenti) p.push(L('partono quando accendi i Ruoli', 'they start when you switch Roles on', 'empiezan cuando enciendes Roles'));
+    if (e.regoleFuori) p.push(e.regoleFuori + L(' regole restano fuori dai Ruoli, che ne tengono al massimo ', ' rules are left out of Roles, which hold at most ', ' reglas se quedan fuera de Roles, que tiene como máximo ') + (_dc?.maxRegole ?? ''));
   }
   if (e.ingressoSistemato) p.push(L('la porta d’ingresso è a posto', 'the entrance door is set', 'la puerta de entrada está lista'));
   if (e.filtroCreate) p.push(e.filtroCreate + L(' regole del filtro nuove', ' new filter rules', ' reglas del filtro nuevas'));
@@ -24252,16 +24312,14 @@ function collegaDcServer() {
     if (!_dcs?.preset) return;
     const p = _dcs.preset;
     p.ruoli = p.ruoli || [];
-    if (p.ruoli.length >= (_dcs.max?.ruoli || 15)) {
-      toast(L('Più di così non se ne possono chiedere.', 'You cannot ask for more than this.', 'No se pueden pedir más.'));
-      return;
-    }
+    if (_dcsAlTetto('ruoli', p.ruoli.length)) return;
     p.ruoli.push({ _k: ++_dcsChiave, nome: L('Nuovo ruolo', 'New role', 'Nuevo rol'), colore: 0, sfuma: null, olografico: false, segno: { tipo: 'niente', emoji: '', icona: '' }, aChi: '', separato: false, citabile: false, privilegi: [] });
     _dcsDisegna();
   });
 
   _g('dcs-catpiu')?.addEventListener('click', () => {
     if (!_dcs?.preset) return;
+    if (_dcsAlTetto('categorie', _dcs.preset.categorie.length)) return;
     _dcs.preset.categorie.push({ _k: ++_dcsChiave, nome: L('Nuova categoria', 'New category', 'Nueva categoría'), permessi: [], canali: [] });
     _dcsDisegna();
   });
@@ -24358,6 +24416,8 @@ function collegaDcServer() {
         _dcs = { ..._dcs, preset: _dcsPrepara(r.preset) };
         _dcsMostra();
         toast(L('Letto ✓', 'Read ✓', 'Leído ✓'));
+        const fuori = _dcsScartiTesto(r.scarti);
+        if (fuori) _dcsDici('dcs-stato', fuori, 'guaio');
       });
     }
     const b = e.target.closest('[data-dcs="traccia"]');
@@ -24377,6 +24437,7 @@ function collegaDcServer() {
       const k = b.closest('.dcs-cat')?.dataset.k;
       p.categorie = p.categorie.filter((c) => String(c._k) !== k);
     } else if (azione === 'ch-piu') {
+      if (_dcsAlTetto('canali', _dcsConta(p))) return;
       const cat = p.categorie.find((c) => String(c._k) === b.dataset.k);
       if (cat) cat.canali.push({ _k: ++_dcsChiave, nome: L('nuovo-canale', 'new-channel', 'nuevo-canal'), tipo: 'testo', argomento: '', permessi: [] });
     } else if (azione === 'ch-via') {
@@ -24388,6 +24449,7 @@ function collegaDcServer() {
       }
     } else if (azione === 'p-piu') {
       const el = _dcsTrova(b.dataset.dove);
+      if (el && _dcsAlTetto('righe', el.permessi.length)) return;
       if (el) el.permessi.push({ _k: ++_dcsChiave, chi: 'tutti', verso: 'no', perm: (_dcs.permessi || ['scrivere'])[1] || 'scrivere' });
     } else if (azione === 'p-via') {
       const riga = b.closest('.dcs-perm');

@@ -42,11 +42,18 @@ export function regolaOk(r, ruoliVeri) {
   return true;
 }
 
-export function normRegole(lista, { max = 20 } = {}) {
+// Quante regole tiene la scheda dei Ruoli. Lo leggono il server, che non ne
+// salva di piu', e il pannello, che ferma «Aggiungi una regola» qui.
+export const MAX_REGOLE = 20;
+
+// Il tetto conta le regole VERE: prima si scartano quelle vuote e i doppioni,
+// poi si contano. Tagliare l'elenco grezzo farebbe perdere regole buone dietro
+// a una riga vuota.
+export function normRegole(lista, { max = MAX_REGOLE } = {}) {
   const arr = Array.isArray(lista) ? lista : [];
   const out = [];
   const visti = new Set();
-  for (const r of arr.slice(0, max)) {
+  for (const r of arr) {
     const tipo = String(r?.tipo || '');
     if (!TIPI.includes(tipo)) continue;
     const ruolo = String(r?.ruolo || '').replace(/[^0-9]/g, '').slice(0, 24);
@@ -57,10 +64,14 @@ export function normRegole(lista, { max = 20 } = {}) {
     const k = `${tipo}|${ruolo}|${soglia}`;
     if (visti.has(k)) continue;
     visti.add(k);
+    if (out.length >= max) continue;
     out.push({ tipo, ruolo, soglia });
   }
   return out;
 }
+
+// Quante regole vere restano fuori dal tetto: chi taglia lo deve poter dire.
+export const regoleFuori = (lista) => Math.max(0, normRegole(lista, { max: Infinity }).length - MAX_REGOLE);
 
 // I ruoli che UNA regola qualsiasi nomina: sono gli unici che questo gestore
 // puo' togliere. Tutto il resto del server non lo riguarda.

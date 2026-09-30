@@ -90,7 +90,7 @@ import * as discord from '../features/discord.js';
 import * as dcApi from '../features/discord-api.js';
 import * as dcCollega from '../features/discord-collega.js';
 import * as dcGiro from '../features/discord-giro.js';
-import { normRegole, postoDeiRuoli, livelloDi, TIPI as TIPI_RUOLO, haSoglia } from '../features/discord-ruoli.js';
+import { normRegole, regoleFuori, MAX_REGOLE, postoDeiRuoli, livelloDi, TIPI as TIPI_RUOLO, haSoglia } from '../features/discord-ruoli.js';
 import * as sostegno from '../features/sostegno.js';
 import { creaChiavi, DURATA_MS as CHIAVE_MS } from './chiave-breve.js';
 import { peso as pesoDanno } from '../features/discord-peso.js';
@@ -4667,6 +4667,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     botNome: String(c?.bot_nome || ''),
     attivo: !!c?.attivo,
     regole: c?.regole || [],
+    // il tetto delle regole: il pannello ferma «Aggiungi una regola» qui
+    maxRegole: MAX_REGOLE,
     ultimoGiro: Number(c?.ultimo_giro) || 0,
     ultimoEsito: c?.ultimo_esito || {},
     // Le frasi in chat: le sue, e accanto quelle di casa — cosi' il pannello
@@ -4878,7 +4880,11 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // un campo vuoto vuol dire «non l'ho toccato», non «cancellalo»: il token
     // il pannello non ce l'ha, quindi non puo' nemmeno rimandarlo indietro.
     if (typeof b.token === 'string' && b.token.trim()) campi.token = b.token.trim();
-    if (b.regole !== undefined) campi.regole = normRegole(b.regole);
+    if (b.regole !== undefined) {
+      // oltre il tetto non si taglia in silenzio: si dice, e non si salva niente
+      if (regoleFuori(b.regole)) return res.status(400).json({ errore: `Più di ${MAX_REGOLE} regole non si tengono: togline qualcuna.` });
+      campi.regole = normRegole(b.regole);
+    }
     if (b.frasi !== undefined) campi.frasi = dcCollega.normalizzaFrasi(b.frasi);
     if (b.attivo !== undefined) campi.attivo = !!b.attivo;
     const prima = dcRuoli.get(login);
@@ -5077,6 +5083,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       // dentro un canale, e non si mescolano mai coi permessi di sopra.
       privilegi: Object.keys(dcCatalogo.PERMESSI_RUOLO),
       max: { categorie: dcCatalogo.MAX_CATEGORIE, canali: dcCatalogo.MAX_CANALI, ruoli: dcCatalogo.MAX_RUOLI,
+        righe: dcCatalogo.MAX_RIGHE, partenza: dcCatalogo.MAX_PARTENZA,
+        rispCanali: dcCatalogo.MAX_RISP_CANALI, rispRuoli: dcCatalogo.MAX_RISP_RUOLI,
         domande: dcCatalogo.MAX_DOMANDE, risposte: dcCatalogo.MAX_RISPOSTE },
       // I tetti del filtro sono di Discord: il pannello li mostra invece di
       // far chiedere una settima regola di parole e farla rifiutare.
@@ -5119,13 +5127,19 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // gia' e non se le porta dietro, al primo «rimettilo a posto» se le vede
     // cancellare.
     const rr = await dcApi.regoleAuto(token, guild).catch(() => ({ ok: false }));
-    res.json({ ok: true, preset: dcCatalogo.dallaFotografia(foto, { porta, regole: rr?.ok ? rr.regole : null }) });
+    // Un server piu' grande dei tetti della traccia non ci entra intero: quello
+    // che resta fuori si conta e si dice, non si perde in silenzio.
+    const scarti = {};
+    const preset = dcCatalogo.dallaFotografia(foto, { porta, regole: rr?.ok ? rr.regole : null, scarti });
+    res.json({ ok: true, preset, scarti });
   }));
 
   app.post('/api/streamer/dcserver/anteprima', requireOwner, wrap(async (req, res) => {
     const { token, guild, pronto } = dcTokenE(currentUser(req).login);
     if (!pronto) return res.status(400).json(NON_PRONTO);
-    const preset = dcCatalogo.normalizzaPreset(req.body?.preset);
+    // quello che i tetti lasciano fuori dalla traccia, detto nell'anteprima
+    const scarti = {};
+    const preset = dcCatalogo.normalizzaPreset(req.body?.preset, scarti);
     // L'impronta che torna e' di quello che succedera' DAVVERO, e il pannello
     // la rimanda indietro tale e quale. Percio' l'anteprima dev'essere del
     // modo giusto: in avanti e distruttivo fanno due cose diverse, e due cose
@@ -5143,7 +5157,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // tocca, perche' non dirlo lascerebbe credere che il server sia gia'
     // uguale al preset quando non lo e'.
     const r = a.differenza.ruoli || { crea: [], sistema: [], togli: [], ambigui: [], fuoriPortata: [] };
-    res.json({ ok: true, impronta: a.impronta, mancanti: a.mancanti, vuota: a.vuota, distruttivo: togliere,
+    res.json({ ok: true, impronta: a.impronta, mancanti: a.mancanti, vuota: a.vuota, distruttivo: togliere, scarti,
       crea: a.differenza.crea, sistema: a.differenza.sistema, fuori: a.fuori,
       togli: togliere ? a.differenza.togli : [],
       peso: togliere ? pesoDanno([...a.differenza.togli, ...r.togli]) : null,
@@ -5237,8 +5251,11 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // che ci aveva scritto resta. Dopo si cambiano da li', come tutte le altre.
     if ((e.regoleNuove || []).length) {
       const prima = dcRuoli.get(login)?.regole || [];
-      const tutte = normRegole([...prima, ...e.regoleNuove.map((x) => ({ tipo: x.tipo, ruolo: x.ruolo }))]);
+      const unite = [...prima, ...e.regoleNuove.map((x) => ({ tipo: x.tipo, ruolo: x.ruolo }))];
+      const tutte = normRegole(unite);
       dcRuoli.set(login, { regole: tutte });
+      // oltre il tetto dei Ruoli non entrano: l'esito lo dice
+      e.regoleFuori = regoleFuori(unite);
       // Scritte non vuol dire accese: se l'interruttore dei Ruoli e' spento le
       // regole aspettano, e va detto — se no «ho scritto le regole» si legge
       // come «da adesso i ruoli arrivano», e non e' vero.
