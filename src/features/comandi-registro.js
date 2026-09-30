@@ -209,6 +209,8 @@ export const COMANDI = [
     cosa: ['Fa lo shoutout a un altro canale.', 'Gives a shoutout to another channel.', 'Hace un shoutout a otro canal.'] },
   { id: 'followage', modulo: 'base', nomi: ['followage', 'daquanto'], titolo: ['Da quanto segui', 'How long you\'ve followed', 'Desde cuándo sigues'],
     cosa: ['Dice da quanto tempo una persona segue il canale.', 'Says how long someone has followed the channel.', 'Dice desde cuándo una persona sigue el canal.'] },
+  { id: 'prossima', modulo: 'base', nomi: ['prossima', 'next', 'schedule', 'proxima'], titolo: ['La prossima diretta', 'The next stream', 'El próximo directo'],
+    cosa: ['Dice quando è la prossima diretta, dalla settimana o dal Programma di Twitch, come hai scelto nelle preferenze.', 'Says when the next stream is, from your week or from the Twitch schedule, as you chose in your preferences.', 'Dice cuándo es el próximo directo, desde tu semana o desde el horario de Twitch, como elegiste en tus preferencias.'] },
   { id: 'uptime', modulo: 'base', nomi: ['uptime'], titolo: ['Da quanto sei in diretta', 'How long you\'ve been live', 'Cuánto llevas en directo'],
     cosa: ['Dice da quanto è cominciata la diretta.', 'Says how long ago the stream started.', 'Dice cuándo empezó el directo.'] },
   { id: 'bit', modulo: 'base', nomi: ['bit', 'bits', 'classificabit'], titolo: ['La classifica dei Bit', 'The Bits leaderboard', 'La clasificación de Bits'],

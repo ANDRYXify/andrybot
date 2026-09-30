@@ -121,6 +121,9 @@ comandi diversi da quelli della riga italiana.
   en> If you use the panel in English or Spanish, you read what changed in your language, and switching languages doesn’t bring back updates you’ve already read.
   es> Las novedades en tu idioma
   es> Si usas el panel en inglés o en español, lees lo que cambió en tu idioma, y cambiar de idioma no te vuelve a mostrar las novedades que ya leíste.
+- [importante] In chat c'è !prossima: dice quando è la prossima diretta, con l'ora vera presa dalla tua settimana o dal Programma di Twitch, e nei Moduli c'è $prossima. [vai: moduli]
+  > Il comando !prossima
+  > Prima alla domanda «quando sei in diretta?» nessun comando sapeva rispondere con un'ora vera.
 
 ## 2026-09-27
 

@@ -110,6 +110,7 @@ import * as igAccesso from '../features/instagram-accesso.js';
 import { credenzialiInstagram } from '../features/instagram-credenziali.js';
 import * as storiaIg from '../features/storia-ig.js';
 import * as settimana from '../features/settimana.js';
+import * as prossime from '../features/prossime.js';
 import * as automatiche from '../features/automatiche.js';
 import * as campagne from '../features/campagne.js';
 import { paginaCampagna, titoloDi } from './campagna-vista.js';
@@ -5525,12 +5526,16 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     const esito = {};
     // Spento, il Programma si ripulisce di quello che avevamo scritto noi:
     // «non scriverla piu'» vuol dire anche «togli quella che c'e'».
-    if (sett.twitch.acceso || prima.twitch.scritti.length) {
+    // Se lo streamer ha scelto il Programma di Twitch come fonte delle prossime
+    // dirette, la settimana non ci scrive e non ci toglie niente (prossime.js).
+    if (prossime.programmaDelloStreamer(login)) esito.twitch = { ok: false, delloStreamer: true };
+    else if (sett.twitch.acceso || prima.twitch.scritti.length) {
       if (!programmaOk(login)) esito.twitch = { ok: false, permesso: true };
       else {
         const e = await settimana.sincronizzaProgramma(helix, login, sett)
           .catch((x) => ({ ok: false, errore: String(x?.message || x) }));
         if (e.ok) sett.twitch.scritti = e.scritti;
+        prossime.dimenticaProgramma(login);
         esito.twitch = { ok: e.ok, creati: e.creati || 0, sistemati: e.sistemati || 0, tolti: e.tolti || 0,
           occupati: e.occupati || [], errori: e.errori || (e.errore ? [e.errore] : []) };
       }

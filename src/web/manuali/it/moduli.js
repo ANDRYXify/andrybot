@@ -41,7 +41,7 @@ export default {
       ['Interruttore', 'Di base', 'Cosa fa'],
       ['«Gestisci i comandi dalla chat (per i mod)»', 'spento', 'I moderatori creano comandi di solo testo senza aprire il pannello: <code>!comando aggiungi !nome risposta</code>, <code>!comando modifica !nome risposta</code>, <code>!comando elimina !nome</code>, <code>!comando lista</code>, e le forme corte <code>!addcom</code>, <code>!editcom</code>, <code>!delcom</code>.'],
       ['«Conta le ore guardate in chat»', 'acceso', 'Ogni cinque minuti di diretta accredita il tempo a chi è in chat, anche a chi non scrive. Accende <code>!ore</code>, <code>!classificaore</code> e la variabile <code>$ore</code>.'],
-      ['«Comandi base pronti»', 'acceso', 'Accende <code>!so</code>/<code>!shoutout</code> (solo moderatori e streamer, solo in diretta), <code>!followage</code>, <code>!uptime</code> e <code>!bit</code>.'],
+      ['«Comandi base pronti»', 'acceso', 'Accende <code>!so</code>/<code>!shoutout</code> (solo moderatori e streamer, solo in diretta), <code>!followage</code>, <code>!uptime</code>, <code>!prossima</code> (quando è la prossima diretta, dalla settimana o dal Programma di Twitch) e <code>!bit</code>.'],
     ] },
     { p: [
       'I comandi creati dalla chat sono solo testo: accettano solo <code>{user}</code> (il nome di chi scrive), fino a 400 caratteri, con un nome fino a 25 caratteri. Non compaiono in «I tuoi moduli»: li elenchi in chat con <code>!comando lista</code>, che può scrivere chiunque. Crearli, cambiarli e toglierli resta sempre ai moderatori e a te. Per variabili, condizioni ed effetti serve un modulo.',
@@ -256,6 +256,7 @@ export default {
     { tabella: [
       ['Variabile', 'Diventa'],
       ['<code>$uptime</code>', 'da quanto sei in diretta (vuota se offline)'],
+      ['<code>$prossima</code>', 'quando è la prossima diretta, per esempio «sabato alle 21:00»; «da decidere» se non ce n\'è una'],
       ['<code>$gioco</code>', 'la categoria attuale'],
       ['<code>$titolo</code>', 'il titolo attuale'],
       ['<code>$spettatori</code>', 'quanti stanno guardando ora'],

@@ -25,6 +25,7 @@ import { makeLog } from '../logger.js';
 import { leggiDurata, DURATA_DI_SERIE } from './modalita-chat.js';
 import { aggiornaSchermo } from './contatori.js';
 import { aChiPuo, eStaff } from './risposte.js';
+import * as prossime from './prossime.js';
 
 const log = makeLog('moduli');
 
@@ -1104,6 +1105,15 @@ export class ModulesEngine {
       try { stream = await this._stream(ctx.channel); } catch { stream = null; }
     }
 
+    // $prossima: la prossima diretta, dalla fonte scelta e nel formato del
+    // canale (prossime.js). Solo se citata: il Programma di Twitch si legge al
+    // massimo una volta ogni quarto d'ora, ma non per un messaggio che non lo usa.
+    let prossimaText = '';
+    if (/\$prossima\b/.test(s)) {
+      try { prossimaText = await prossime.quandoProssima(ctx.channel, { helix: this.helix }); }
+      catch (e) { log.debug('prossima:', e?.message || e); }
+    }
+
     // FOLLOWAGE: da quanto un utente segue il canale. Senza destinatario ($touser)
     // vale per chi scrive; con "!followage @tizio" vale per il destinatario. Serve
     // lo scope moderator:read:followers sul token del broadcaster: se manca, resta
@@ -1277,6 +1287,7 @@ export class ModulesEngine {
       args: ctx.argsRaw || '',
       canale: ctx.channel || '',
       uptime: stream?.started_at ? this._formattaUptime(stream.started_at) : '',
+      prossima: prossimaText,
       gioco: stream?.game_name || '',
       titolo: stream?.title || '',
       // spettatori collegati adesso (vuoto se offline)
