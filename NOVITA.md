@@ -417,107 +417,311 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-19
 
 - [importante] La tua settimana finisce sul calendario del server Discord: chi ti segue vede quando torni e mette il promemoria. [vai: dcavvisi]
+  en: Your week lands on your Discord server’s calendar: your followers see when you’re back and can set a reminder.
+  es: Tu semana llega al calendario del servidor de Discord: quien te sigue ve cuándo vuelves y se pone el recordatorio.
   > La tua settimana sul calendario di Discord
   > Chi ti segue su Discord vede quando torni in onda e può mettersi il promemoria.
+  en> Your week on the Discord calendar
+  en> Your followers on Discord see when you’re back on air and can set themselves a reminder.
+  es> Tu semana en el calendario de Discord
+  es> Quien te sigue en Discord ve cuándo vuelves al aire y puede ponerse el recordatorio.
 - Il palinsesto non te lo richiedo: leggo quello che hai già scritto per la grafica della settimana. [vai: dcavvisi]
+  en: I don’t ask you for the schedule again: I read what you already wrote for the weekly graphic.
+  es: El horario no te lo vuelvo a pedir: leo lo que ya escribiste para la gráfica de la semana.
 - Se cambi la programmazione, o arriva l'ora legale, gli appuntamenti si rimettono a posto da soli. [vai: dcavvisi]
+  en: If you change your schedule, or daylight saving time kicks in, the events fix themselves.
+  es: Si cambias la programación, o llega el horario de verano, las citas se acomodan solas.
 - Gli appuntamenti che scrivi a mano tu non li tocco: Discord non me lo lascia fare, e va benissimo così. [vai: dcavvisi]
+  en: Events you write by hand I leave alone: Discord doesn’t let me touch them, and that’s just fine.
+  es: Las citas que escribes a mano no las toco: Discord no me deja, y está muy bien así.
 - Se hai invitato il bot prima del calendario, te lo dico subito e ti dico come rimediare, invece di provarci a vuoto. [vai: dcavvisi]
+  en: If you invited the bot before the calendar existed, I tell you right away and how to fix it, instead of trying in vain.
+  es: Si invitaste al bot antes del calendario, te lo digo enseguida y te digo cómo arreglarlo, en lugar de intentarlo en vano.
 - Da ogni scheda salti a quelle accanto senza tornare al menù: prima la barra c'era solo in alcune. [vai: effetti]
+  en: From every tab you can jump to the ones next to it without going back to the menu: before, only some had the bar.
+  es: Desde cada pestaña saltas a las de al lado sin volver al menú: antes la barra estaba solo en algunas.
 - [importante] Quando parte la pubblicità lo dico in chat: fra poco, adesso, e quando torno. [vai: regia]
+  en: When an ad break starts, I say so in chat: coming up, now, and when I’m back.
+  es: Cuando empieza la publicidad lo digo en el chat: dentro de poco, ahora, y cuando vuelvo.
   > La pubblicità annunciata in chat
   > Chi guarda sa che sta per arrivare una pausa e quando finisce, e non chiude la diretta pensando che sia caduta.
+  en> Ad breaks announced in chat
+  en> Viewers know a break is coming and when it ends, and they don’t close the stream thinking it crashed.
+  es> La publicidad anunciada en el chat
+  es> Quien mira sabe que se acerca una pausa y cuándo termina, y no cierra el directo pensando que se cayó.
 - Se mi mancano i permessi per farlo te lo dico subito, con il posto dove concederli. [vai: regia]
+  en: If I’m missing the permissions to do it, I tell you right away, with the place to grant them.
+  es: Si me faltan los permisos para hacerlo te lo digo enseguida, con el lugar donde concederlos.
 - I tre messaggi li scrivi tu, e ognuno si spegne per conto suo. [vai: regia]
+  en: You write the three messages, and each one can be turned off on its own.
+  es: Los tres mensajes los escribes tú, y cada uno se apaga por separado.
 - Per la fine Twitch non manda niente: conto i secondi che mi ha detto, e se mi riavvio nel mezzo sto zitta invece di salutarti tardi. [vai: regia]
+  en: Twitch sends nothing when the break ends: I count the seconds it told me, and if I restart in the middle I stay quiet instead of welcoming you back late.
+  es: Para el final Twitch no manda nada: cuento los segundos que me dijo, y si me reinicio en medio me quedo callada en lugar de saludarte tarde.
 - Ogni ruolo può avere il suo segno accanto al nome: un'emoji, o un'immagine tua. [vai: dcserver]
+  en: Each role can have its own mark next to the name: an emoji, or an image of your own.
+  es: Cada rol puede tener su signo junto al nombre: un emoji o una imagen tuya.
 - La tinta la scegli tu: un colore, una sfumatura fra due, o l'olografico. [vai: dcserver]
+  en: You pick the tint: one color, a gradient between two, or holographic.
+  es: El tono lo eliges tú: un color, un degradado entre dos o el holográfico.
 - L'immagine che scegli non la tengo: la rimpicciolisco io, la mando a Discord e la scordo. [vai: dcserver]
+  en: I don’t keep the image you choose: I shrink it, send it to Discord and forget it.
+  es: La imagen que eliges no me la quedo: la reduzco, la mando a Discord y la olvido.
 - Quello che il tuo server non può ancora fare te lo dico prima, invece di fartelo scoprire da un rifiuto. [vai: dcserver]
+  en: Whatever your server can’t do yet, I tell you beforehand, instead of letting you find out from a rejection.
+  es: Lo que tu servidor todavía no puede hacer te lo digo antes, en lugar de que lo descubras por un rechazo.
 - Le tracce del server adesso arrivano con la porta d'ingresso e il filtro già scritti, sui canali che la traccia ha. [vai: dcentra]
+  en: Server tracks now come with the entrance door and the filter already written, for the channels the track has.
+  es: Las plantillas del servidor ahora llegan con la puerta de entrada y el filtro ya escritos, en los canales que tiene la plantilla.
 - Se sei partito dal tuo server, un tasto te li scrive su misura: poi li cambi come vuoi. [vai: dcentra]
+  en: If you started from your own server, one button writes them to fit: then you change them however you like.
+  es: Si partiste de tu servidor, un botón te los escribe a medida: después los cambias como quieras.
 - La porta nasce accesa solo dove Discord la prenderebbe, e dove non ci arriva te lo dice invece di farti scoprire il rifiuto. [vai: dcentra]
+  en: The door starts switched on only where Discord would accept it, and where it can’t, it tells you instead of letting you discover the rejection.
+  es: La puerta nace encendida solo donde Discord la aceptaría, y donde no llega te lo dice en lugar de dejarte descubrir el rechazo.
 - [importante] Il filtro del tuo server Discord si scrive da qui: le tue parole, le liste che Discord tiene aggiornate da sé, lo spam e le raffiche di menzioni. [vai: dcfiltro]
+  en: Your Discord server’s filter is written from here: your own words, the lists Discord keeps up to date by itself, spam and mention floods.
+  es: El filtro de tu servidor de Discord se escribe desde aquí: tus palabras, las listas que Discord mantiene al día por su cuenta, el spam y las ráfagas de menciones.
   > Il filtro del server Discord, da qui
   > Parole vietate, spam e raffiche di menzioni si fermano prima di arrivare nei canali, e lo regoli dal pannello invece che dalle impostazioni di Discord.
+  en> Your Discord server’s filter, from here
+  en> Banned words, spam and mention floods are stopped before they reach your channels, and you set it from the panel instead of Discord’s settings.
+  es> El filtro del servidor de Discord, desde aquí
+  es> Palabras prohibidas, spam y ráfagas de menciones se frenan antes de llegar a los canales, y lo ajustas desde el panel en lugar de la configuración de Discord.
 - Per ogni regola scegli cosa succede quando scatta, e chi non tocca: i tuoi moderatori passano sempre. [vai: dcfiltro]
+  en: For each rule you choose what happens when it triggers, and who it leaves alone: your mods always get through.
+  es: Para cada regla eliges qué pasa cuando salta y a quién no toca: tus moderadores pasan siempre.
 - Le regole che hai già non te le riscrivo: te le leggo, e cambio solo quello che è diverso. [vai: dcfiltro]
+  en: I don’t rewrite the rules you already have: I read them, and change only what’s different.
+  es: Las reglas que ya tienes no te las reescribo: las leo y cambio solo lo que es distinto.
 - Adesso i comandi rispondono anche a te: il bot scrive col tuo account, e per sbaglio scartava i messaggi tuoi come se fossero i suoi. [vai: moduli]
+  en: Commands now answer you too: the bot writes with your account, and by mistake it was discarding your messages as if they were its own.
+  es: Ahora los comandos te responden también a ti: el bot escribe con tu cuenta, y por error descartaba tus mensajes como si fueran suyos.
 - Il tasto del Discord in chat portava a un indirizzo con i due punti attaccati dentro: adesso il link finisce dove finisce, e si apre. [vai: ruoli]
+  en: The Discord button in chat led to an address with the colon stuck inside it: now the link ends where it should, and it opens.
+  es: El botón de Discord en el chat llevaba a una dirección con los dos puntos pegados dentro: ahora el enlace termina donde termina, y se abre.
 - [importante] Gli avvisi su Discord adesso hanno una scheda loro: quanti canali vuoi, e per ognuno quali avvisi, di chi, con che parole. [vai: dcavvisi]
+  en: Discord alerts now have their own tab: as many channels as you want, and for each one which alerts, for whom, with what words.
+  es: Los avisos en Discord ahora tienen su propia pestaña: tantos canales como quieras, y para cada uno qué avisos, de quién y con qué palabras.
   > Gli avvisi su Discord come li vuoi
   > Puoi avere più canali di avvisi, ognuno con le sue dirette e le sue parole, invece di un solo messaggio uguale per tutto.
+  en> Discord alerts the way you want them
+  en> You can have several alert channels, each with its own streams and its own words, instead of one message that’s the same for everything.
+  es> Los avisos en Discord como los quieres
+  es> Puedes tener varios canales de avisos, cada uno con sus directos y sus palabras, en lugar de un solo mensaje igual para todo.
 - Puoi far chiamare un ruolo quando parte l'avviso: sveglia quello e nessun altro, mai il server intero per una parola scritta per sbaglio. [vai: dcavvisi]
+  en: You can have a role pinged when the alert goes out: it wakes that role and nobody else, never the whole server because of a word typed by mistake.
+  es: Puedes hacer que se llame a un rol cuando sale el aviso: despierta a ese y a nadie más, nunca al servidor entero por una palabra escrita por error.
 - Le dirette degli amici e della community arrivano anche sul server Discord, con la levetta separata da quella di Telegram. [vai: dcavvisi]
+  en: Streams from friends and the community reach your Discord server too, with a toggle separate from Telegram’s.
+  es: Los directos de los amigos y de la comunidad llegan también al servidor de Discord, con un interruptor aparte del de Telegram.
 - Se lo chiedi, a diretta chiusa l'avviso diventa «ha finito la diretta»: non resta un «sono in onda» appeso fino a domani. [vai: dcavvisi]
+  en: If you ask for it, once the stream is over the alert changes to “finished streaming”: no “I’m live” left hanging until tomorrow.
+  es: Si lo pides, con el directo terminado el aviso pasa a «terminó el directo»: no queda un «estoy en directo» colgado hasta mañana.
 - I menù a tendina non vengono più tagliati dal riquadro che li contiene: si aprono interi, e scorrerli non li fa sparire. [vai: ruoli]
+  en: Dropdown menus are no longer clipped by the box that holds them: they open in full, and scrolling doesn’t make them vanish.
+  es: Los menús desplegables ya no los recorta el recuadro que los contiene: se abren enteros, y desplazarse no los hace desaparecer.
 - La scheda Discord è in ordine: il collegamento, chi prende quale ruolo, la porta d'ingresso. Una carta, una cosa. [vai: ruoli]
+  en: The Discord tab is in order: the connection, who gets which role, the entrance door. One card, one thing.
+  es: La pestaña Discord está en orden: la conexión, quién recibe qué rol, la puerta de entrada. Una tarjeta, una cosa.
 - Sul sito, chi cerca un bot solo per il suo Discord lo trova subito sotto ai tasti di registrazione. [vai: pagina]
+  en: On the site, people looking for a bot just for their Discord find it right under the sign-up buttons.
+  es: En el sitio, quien busca un bot solo para su Discord lo encuentra enseguida debajo de los botones de registro.
 - Ogni ruolo dato o tolto adesso lascia scritto il perché nel registro del tuo server, invece di una riga muta. [vai: ruoli]
+  en: Every role given or removed now leaves the reason in your server’s audit log, instead of a silent line.
+  es: Cada rol dado o quitado ahora deja escrito el porqué en el registro de tu servidor, en lugar de una línea muda.
 - Il costruttore sa fare anche canali annunci, forum con i tag, media e palco, con lentezza e durata dei fili. [vai: dcserver]
+  en: The builder can also make announcement channels, forums with tags, media and stage channels, with slow mode and thread duration.
+  es: El constructor sabe hacer también canales de anuncios, foros con etiquetas, multimedia y escenario, con modo lento y duración de los hilos.
 - Le impostazioni del tuo server Discord si cambiano da qui: chi può scrivere appena entra, il filtro delle immagini, i canali di sistema e regole, l'angolo AFK. [vai: dcserver]
+  en: Your Discord server’s settings are changed from here: who can write as soon as they join, the image filter, the system and rules channels, the AFK corner.
+  es: La configuración de tu servidor de Discord se cambia desde aquí: quién puede escribir nada más entrar, el filtro de imágenes, los canales de sistema y de reglas, el rincón AFK.
 - Il freno d'emergenza c'è: metti in pausa tutti gli inviti con una spunta, e li riapri quando vuoi. [vai: dcserver]
+  en: There’s an emergency brake: pause all invites with one checkbox, and reopen them whenever you want.
+  es: Hay un freno de emergencia: pausas todas las invitaciones con una casilla, y las reabres cuando quieras.
 - Chi un canale non ce l’ha entra con Discord e basta: costruisce il suo server da qui, e di dirette e overlay non vede nemmeno le schede. [vai: dcserver]
+  en: People without a channel just sign in with Discord: they build their server from here, and don’t even see the stream and overlay tabs.
+  es: Quien no tiene un canal entra solo con Discord: construye su servidor desde aquí, y de directos y overlays ni siquiera ve las pestañas.
 - Dalla scheda di Discord adesso copi l’indirizzo della tua porta d’ingresso e la apri, invece di leggerla dentro una frase. [vai: ruoli]
+  en: From the Discord tab you now copy your entrance door’s address and open it, instead of reading it inside a sentence.
+  es: Desde la pestaña Discord ahora copias la dirección de tu puerta de entrada y la abres, en lugar de leerla dentro de una frase.
 - Sostenere il progetto ha un indirizzo solo, corto, e dal sito ci si arriva: prima la pagina esisteva e non ci portava nessuno.
+  en: Supporting the project has a single short address, and the site links to it: before, the page existed and nothing led there.
+  es: Apoyar el proyecto tiene una sola dirección, corta, y desde el sitio se llega: antes la página existía y no llevaba nadie ahí.
 - Prima di mandarti su Twitch adesso ti chiedo con quale account: lo stesso riquadro per «Inizia gratis» e per «Attiva». [vai: sottoscrizione]
+  en: Before sending you to Twitch, I now ask you which account: the same box for “Start for free” and for “Activate”.
+  es: Antes de mandarte a Twitch ahora te pregunto con qué cuenta: el mismo recuadro para «Empieza gratis» y para «Activar».
 - La pagina per collegare il Discord si apre a chiunque, anche senza account, e prima di mandarti da Discord ti dice in tre righe cosa succede. [vai: ruoli]
+  en: The page for linking Discord opens for anyone, even without an account, and before sending you to Discord it tells you in three lines what happens.
+  es: La página para vincular Discord se abre para cualquiera, incluso sin cuenta, y antes de mandarte a Discord te dice en tres líneas qué pasa.
 - Ti serve solo la parte di Discord? Adesso c’è scritto sul sito che si può fare e che è gratis. [vai: dcserver]
+  en: Only need the Discord part? The site now says you can, and that it’s free.
+  es: ¿Solo te sirve la parte de Discord? Ahora el sitio dice que se puede y que es gratis.
 - Adesso ti dico quali dei tuoi ruoli Discord terrei e come li chiamerei, affiancati a quelli della traccia. Rinominarli tiene dentro chi ce l’aveva, cancellarli lo toglie a tutti. [vai: dcserver]
+  en: I now tell you which of your Discord roles I’d keep and what I’d call them, side by side with the track’s. Renaming keeps whoever had them, deleting takes them from everyone.
+  es: Ahora te digo qué roles de tu Discord conservaría y cómo los llamaría, junto a los de la plantilla. Renombrarlos mantiene a quien los tenía, borrarlos se los quita a todos.
 - Se «!discord» non risponde in chat, la scheda ti dice quale delle tre cose manca invece di lasciartelo indovinare. [vai: ruoli]
+  en: If “!discord” doesn’t answer in chat, the tab tells you which of the three things is missing instead of leaving you to guess.
+  es: Si «!discord» no responde en el chat, la pestaña te dice cuál de las tres cosas falta en lugar de dejártelo adivinar.
 - [importante] La porta del tuo server Discord si scrive da qui: quanto si aspetta prima di poter scrivere, cosa legge chi arriva, e le domande che gli aprono i canali. [vai: dcentra]
+  en: Your Discord server’s door is written from here: how long people wait before they can write, what newcomers read, and the questions that open channels for them.
+  es: La puerta de tu servidor de Discord se escribe desde aquí: cuánto se espera antes de poder escribir, qué lee quien llega y las preguntas que le abren los canales.
   > La porta d'ingresso del server Discord
   > Chi arriva nel tuo server legge prima quello che conta per te, aspetta il tempo che hai scelto prima di scrivere, e le sue risposte gli aprono i canali giusti.
+  en> Your Discord server’s entrance door
+  en> Newcomers to your server first read what matters to you, wait the time you chose before writing, and their answers open the right channels for them.
+  es> La puerta de entrada del servidor de Discord
+  es> Quien llega a tu servidor lee primero lo que te importa, espera el tiempo que elegiste antes de escribir, y sus respuestas le abren los canales correctos.
 - Ogni risposta apre dei canali e dà un ruolo, scegliendoli per nome: valgono anche quelli che la traccia deve ancora creare. [vai: dcentra]
+  en: Each answer opens channels and gives a role, picked by name: even those the track still has to create count.
+  es: Cada respuesta abre canales y da un rol, eligiéndolos por nombre: valen también los que la plantilla todavía tiene que crear.
 - Se Discord la porta non la prenderebbe, te lo dico prima di scriverla: quanti canali mancano, o che al server serve il tipo Community. [vai: dcentra]
+  en: If Discord wouldn’t accept the door, I tell you before writing it: how many channels are missing, or that the server needs to be a Community server.
+  es: Si Discord no aceptaría la puerta, te lo digo antes de escribirla: cuántos canales faltan, o que el servidor tiene que ser de tipo Comunidad.
 - Chi aveva già risposto alle domande non ricomincia da capo: si rifanno solo quelle che hai cambiato. [vai: dcentra]
+  en: People who had already answered the questions don’t start over: only the ones you changed are asked again.
+  es: Quien ya había respondido a las preguntas no empieza de cero: solo se repiten las que cambiaste.
 - La modalità distruttiva adesso si vede anche dalla scheda della porta: fascia rossa, tasto rosso e il tempo che scorre, da tutte e due. [vai: dcentra]
+  en: Destructive mode now shows on the door’s tab too: red band, red button and the time running, on both.
+  es: El modo destructivo ahora se ve también desde la pestaña de la puerta: franja roja, botón rojo y el tiempo corriendo, en las dos.
 - Passare fra «Il server» e «Chi entra» non chiede più di salvare: sono due metà della stessa traccia, e uscendo davvero te lo ricorda lo stesso. [vai: dcentra]
+  en: Switching between “The server” and “Who joins” no longer asks you to save: they’re two halves of the same track, and when you really leave it still reminds you.
+  es: Pasar de «El servidor» a «Quién entra» ya no pide guardar: son dos mitades de la misma plantilla, y cuando sales de verdad te lo recuerda igual.
 - Le impostazioni del server adesso arrivano davvero al server: il pannello le scriveva nella traccia e per strada si perdevano. [vai: dcserver]
+  en: Server settings now really reach the server: the panel wrote them into the track and they got lost on the way.
+  es: La configuración del servidor ahora llega de verdad al servidor: el panel la escribía en la plantilla y se perdía por el camino.
 - Niente più spiegazioni per cose che hai già fatto: i permessi te li chiedo solo se mancano davvero. [vai: ruoli]
+  en: No more explanations for things you’ve already done: I only ask for permissions if they’re really missing.
+  es: Se acabaron las explicaciones para cosas que ya hiciste: los permisos te los pido solo si de verdad faltan.
 - Entrare nel tuo Discord adesso è un indirizzo solo: si apre, si dice a Discord chi si è, e si è dentro. Poi il codice in chat e i ruoli arrivano da soli. [vai: ruoli]
+  en: Joining your Discord is now a single address: it opens, people tell Discord who they are, and they’re in. Then the chat code and the roles arrive by themselves.
+  es: Entrar en tu Discord ahora es una sola dirección: se abre, se le dice a Discord quién eres y ya estás dentro. Luego el código en el chat y los roles llegan solos.
 - Quello che il bot risponde quando gli chiedono del Discord lo scrivi tu: cinque frasi, col nome di chi scrive e il link dentro. [vai: ruoli]
+  en: You write what the bot answers when people ask about the Discord: five lines, with the name of whoever’s asking and the link inside.
+  es: Lo que el bot responde cuando le preguntan por el Discord lo escribes tú: cinco frases, con el nombre de quien escribe y el enlace dentro.
 - Vuoi che gestisca tutto il server? C’è un tasto che lo riporta su Discord come amministratore, e prima ti dice per bene cosa comporta. [vai: ruoli]
+  en: Want it to manage the whole server? There’s a button that brings it back to Discord as an administrator, and it first explains properly what that means.
+  es: ¿Quieres que gestione todo el servidor? Hay un botón que lo vuelve a llevar a Discord como administrador, y antes te explica bien lo que implica.
 - Accanto al tasto «Attiva» adesso scegli il canale, Twitch o Kick, e un clic basta ancora. Entri da lì e al pagamento ritrovi i pacchetti che avevi già spuntato. [vai: sottoscrizione]
+  en: Next to the “Activate” button you now pick the channel, Twitch or Kick, and one click is still enough. You sign in from there, and at checkout you find the packages you had already checked.
+  es: Junto al botón «Activar» ahora eliges el canal, Twitch o Kick, y sigue bastando un clic. Entras desde ahí y en el pago encuentras los paquetes que ya habías marcado.
 - Apri il sito e si vede prima, soprattutto dalla seconda volta: quello che non è cambiato il browser adesso se lo tiene, invece di richiederlo tutto da capo ogni volta.
+  en: The site shows up faster when you open it, especially from the second time: the browser now keeps what hasn’t changed instead of fetching it all again every time.
+  es: El sitio se ve antes al abrirlo, sobre todo desde la segunda vez: lo que no cambió ahora el navegador lo guarda, en lugar de volver a pedirlo todo cada vez.
 - [importante] I ruoli del tuo server Discord li dà il bot, in base a quello che succede su Twitch: chi ti segue, chi è abbonato, chi c'è sempre. Scrivi la regola, il resto lo fa lui. [vai: ruoli]
+  en: The bot hands out your Discord server’s roles based on what happens on Twitch: who follows you, who’s subscribed, who’s always there. You write the rule, it does the rest.
+  es: Los roles de tu servidor de Discord los da el bot según lo que pasa en Twitch: quién te sigue, quién está suscrito, quién está siempre. Escribes la regla y él hace el resto.
   > I ruoli di Discord li dà il bot
   > Chi ti segue, chi è abbonato e chi c'è sempre riceve il ruolo giusto da solo, e tu non devi più assegnarli a mano.
+  en> The bot hands out Discord roles
+  en> Followers, subscribers and regulars get the right role on their own, and you no longer have to assign them by hand.
+  es> Los roles de Discord los da el bot
+  es> Quien te sigue, quien está suscrito y quien está siempre recibe el rol correcto solo, y ya no tienes que asignarlos a mano.
 - Chi ti guarda si collega da solo: scrive !discord in chat e segue due passi. Tocca solo chi si è collegato, e solo i ruoli che hai nominato tu. [vai: ruoli]
+  en: Viewers link themselves: they type !discord in chat and follow two steps. It only affects people who linked, and only the roles you named.
+  es: Quien te mira se vincula solo: escribe !discord en el chat y sigue dos pasos. Solo afecta a quien se vinculó, y solo a los roles que nombraste tú.
 - Il rapporto di fine diretta adesso conta anche i Bit della serata e ti dice chi ne ha messi di più. Chi ha cheerato in anonimo conta nel totale e resta senza nome. [vai: dirette]
+  en: The end-of-stream report now also counts the night’s Bits and tells you who gave the most. Anonymous cheers count in the total and stay nameless.
+  es: El informe de fin de directo ahora cuenta también los Bits de la noche y te dice quién puso más. Quien hizo cheer en anónimo cuenta en el total y se queda sin nombre.
 - Il premio VIP automatico adesso può pescare dai Bit invece che dalle monete: lo scegli tu, e vale la classifica vera di Twitch. [vai: giochi]
+  en: The automatic VIP prize can now draw from Bits instead of coins: you choose, and it uses Twitch’s real leaderboard.
+  es: El premio VIP automático ahora puede sacar de los Bits en lugar de las monedas: lo eliges tú, y vale la clasificación real de Twitch.
 - Chi guida i Bit diventa il re: tiene una corona accanto al nome nella chat a schermo, e quando torna a scrivere il bot lo saluta con la frase che hai scritto. [vai: giochi]
+  en: Whoever leads in Bits becomes the king: they keep a crown next to their name in the on-screen chat, and when they write again the bot greets them with the line you wrote.
+  es: Quien lidera en Bits se vuelve el rey: lleva una corona junto al nombre en el chat en pantalla, y cuando vuelve a escribir el bot lo saluda con la frase que escribiste.
 - La classifica dei Bit puoi metterla in scena: la scegli dallo Studio come ogni altro elemento, dici di quando e quante righe, e si aggiorna da sola quando arriva un cheer. [vai: alert]
+  en: You can put the Bits leaderboard on screen: pick it in the Studio like any other element, say for what period and how many rows, and it updates itself when a cheer comes in.
+  es: La clasificación de Bits la puedes poner en escena: la eliges desde el Studio como cualquier otro elemento, dices de cuándo y cuántas filas, y se actualiza sola cuando llega un cheer.
 - [importante] Collegare Discord adesso è un tasto: ti manda a scegliere il server dall'elenco e torni a posto. Niente bot da creare, niente id da copiare. [vai: ruoli]
+  en: Connecting Discord is now one button: it sends you to pick the server from the list and you’re back, all set. No bot to create, no IDs to copy.
+  es: Conectar Discord ahora es un botón: te manda a elegir el servidor de la lista y vuelves listo. Nada de bots que crear ni de ids que copiar.
   > Discord si collega con un tasto
   > Scegli il server da un elenco e hai finito: niente bot da creare nel portale degli sviluppatori e niente codici da copiare.
+  en> Discord connects with one button
+  en> Pick the server from a list and you’re done: no bot to create in the developer portal and no codes to copy.
+  es> Discord se conecta con un botón
+  es> Eliges el servidor de una lista y listo: nada de bots que crear en el portal de desarrolladores ni códigos que copiar.
 - Un VIP a premio adesso dura DIRETTE, non giorni: se salti una settimana ti aspetta. E le gare sono due, monete e Bit, che vanno avanti insieme. [vai: giochi]
+  en: A prize VIP now lasts STREAMS, not days: if you skip a week, it waits for you. There are two races, coins and Bits, running side by side.
+  es: Un VIP de premio ahora dura DIRECTOS, no días: si te saltas una semana, te espera. Las carreras son dos, monedas y Bits, que avanzan juntas.
 - Ogni posizione ha il nome che le dai tu (re, principe, cavaliere) e la sua durata: al primo posto puoi dare cinque dirette e al terzo una. [vai: giochi]
+  en: Each position has the name you give it (king, prince, knight) and its own duration: you can give first place five streams and third place one.
+  es: Cada posición tiene el nombre que le das (rey, príncipe, caballero) y su duración: al primer puesto le puedes dar cinco directos y al tercero uno.
 - [importante] Categorie e canali del tuo Discord li scegli da qui: parti da una traccia pronta o fagli leggere il server che hai già, e lui lo mette su. [vai: dcserver]
+  en: You pick your Discord’s categories and channels from here: start from a ready-made track or let it read the server you already have, and it sets it up.
+  es: Las categorías y los canales de tu Discord los eliges desde aquí: partes de una plantilla lista o le haces leer el servidor que ya tienes, y él lo monta.
   > Il server Discord si costruisce da qui
   > Parti da una traccia pronta o da quello che hai già, e categorie e canali si creano da soli nell'ordine giusto.
+  en> Build your Discord server from here
+  en> Start from a ready-made track or from what you already have, and categories and channels are created by themselves in the right order.
+  es> El servidor de Discord se construye desde aquí
+  es> Partes de una plantilla lista o de lo que ya tienes, y las categorías y los canales se crean solos en el orden correcto.
 - Prima di toccare niente ti fa vedere l'elenco esatto di quello che farebbe. Va solo in avanti: quello che non è nella traccia resta dov'è, e te lo dice. [vai: dcserver]
+  en: Before touching anything, it shows you the exact list of what it would do. It only moves forward: whatever isn’t in the track stays where it is, and it tells you so.
+  es: Antes de tocar nada te muestra la lista exacta de lo que haría. Solo va hacia adelante: lo que no está en la plantilla se queda donde está, y te lo dice.
 - Dentro ogni canale scrivi chi può fare cosa, con parole normali, come «tutti», «non può», «scrivere». I permessi che non nomini nessuno li tocca. [vai: dcserver]
+  en: Inside each channel you write who can do what, in plain words like “everyone”, “cannot”, “write”. Permissions you don’t mention are left untouched.
+  es: Dentro de cada canal escribes quién puede hacer qué, con palabras normales como «todos», «no puede», «escribir». Los permisos que no nombras no se tocan.
 - Alcuni tasti comparivano quando non servivano a niente: «Scollega tutto» senza niente da scollegare, «Ferma la diretta» senza diretta. Adesso restano via finché non servono.
+  en: Some buttons showed up when they served no purpose: “Disconnect everything” with nothing to disconnect, “Stop the stream” with no stream. Now they stay away until they’re needed.
+  es: Algunos botones aparecían cuando no servían para nada: «Desconectar todo» sin nada que desconectar, «Parar el directo» sin directo. Ahora no aparecen hasta que hacen falta.
 - Dalla privacy della pagina donazioni il tasto «Torna alla pagina» riportava alla pagina link. Adesso torna dov'eri, e quell'informativa parla della pagina giusta.
+  en: From the donations page’s privacy notice, the “Back to the page” button led to the link page. Now it goes back where you were, and that notice talks about the right page.
+  es: Desde la privacidad de la página de donaciones, el botón «Volver a la página» llevaba a la página de enlaces. Ahora vuelve adonde estabas, y ese aviso habla de la página correcta.
 - In fondo alla pagina delle donazioni c'è il collegamento ai tuoi link: chi arriva da un link diretto trova anche il resto. [vai: donazioni]
+  en: At the bottom of the donations page there’s a link to your links: people arriving from a direct link find the rest too.
+  es: Al final de la página de donaciones está el enlace a tus enlaces: quien llega desde un enlace directo encuentra también el resto.
 - Nel costruttore Discord una categoria non risulta più «mai usata»: quel conto non esiste, e adesso ti dice quanti canali ha dentro e da quanto tacciono. [vai: dcserver]
+  en: In the Discord builder a category no longer shows as “never used”: that count doesn’t exist, and now it tells you how many channels it holds and how long they’ve been quiet.
+  es: En el constructor de Discord una categoría ya no aparece como «nunca usada»: esa cuenta no existe, y ahora te dice cuántos canales tiene dentro y desde cuándo están callados.
 - C'è una pagina per dare una mano al progetto, su socialbot.live/sostieni: quanto vuoi tu, una volta sola, senza iscriverti a niente.
+  en: There’s a page to help out the project, at socialbot.live/sostieni: as much as you like, just once, without signing up for anything.
+  es: Hay una página para echarle una mano al proyecto, en socialbot.live/sostieni: lo que quieras, una sola vez, sin suscribirte a nada.
 - Vuoi che il server diventi esattamente la traccia? C'è una modalità apposta: la accendi tu, dura dieci minuti e si spegne da sola, e intanto la pagina cambia colore. [vai: dcserver]
+  en: Want the server to become exactly the track? There’s a mode just for that: you turn it on, it lasts ten minutes and switches itself off, and meanwhile the page changes color.
+  es: ¿Quieres que el servidor sea exactamente la plantilla? Hay un modo para eso: lo activas tú, dura diez minutos y se apaga solo, y mientras tanto la página cambia de color.
 - Quando stai per cancellare un canale in cui si parlava ancora, o più di dieci cose insieme, ti chiedo di scrivere il nome del server: su Discord non tornano. [vai: dcserver]
+  en: When you’re about to delete a channel where people were still talking, or more than ten things at once, I ask you to type the server’s name: on Discord they don’t come back.
+  es: Cuando vas a borrar un canal donde todavía se hablaba, o más de diez cosas a la vez, te pido que escribas el nombre del servidor: en Discord no vuelven.
 - Di ogni passaggio del costruttore resta scritto chi è stato e cosa ha fatto, coi nomi di quello che è sparito. È l'unico posto dove quei nomi restano. [vai: dcserver]
+  en: Every pass of the builder leaves a record of who did it and what they did, with the names of whatever disappeared. It’s the only place those names survive.
+  es: De cada pasada del constructor queda escrito quién fue y qué hizo, con los nombres de lo que desapareció. Es el único lugar donde esos nombres se conservan.
 - Quando incolli il link della pagina per dare una mano al progetto, l'anteprima adesso parla di quella pagina invece che del bot in generale.
+  en: When you paste the link to the page for helping the project, the preview now talks about that page instead of the bot in general.
+  es: Cuando pegas el enlace de la página para ayudar al proyecto, la vista previa ahora habla de esa página y no del bot en general.
 - La pagina per dare una mano al progetto si apriva solo a chi era già entrato: da fuori dava «non c'è niente qui». Adesso si apre a tutti.
+  en: The page for helping the project only opened for people already signed in: from outside it said “nothing here”. Now it opens for everyone.
+  es: La página para ayudar al proyecto solo se abría a quien ya había entrado: desde fuera decía «aquí no hay nada». Ahora se abre para todos.
 - Il puntatore disegnato c'era solo sulla vetrina. Adesso è su ogni pagina del sito, 404 compreso.
+  en: The hand-drawn pointer was only on the showcase. Now it’s on every page of the site, 404 included.
+  es: El puntero dibujado solo estaba en el escaparate. Ahora está en todas las páginas del sitio, 404 incluida.
 - Su Discord l'avviso di diretta lo scrive il bot nel canale che scegli: non devi più creare un webhook a mano. Chi ce l'ha già lo tiene. [vai: notifiche]
+  en: On Discord the bot writes the go-live alert in the channel you choose: you no longer have to create a webhook by hand. If you already have one, you keep it.
+  es: En Discord el aviso de directo lo escribe el bot en el canal que eliges: ya no tienes que crear un webhook a mano. Quien ya lo tiene lo conserva.
 - Un canale in sola lettura non zittisce più il bot: «sono-in-onda» resta di sola lettura per le persone, e lui ci scrive. [vai: dcserver]
+  en: A read-only channel no longer silences the bot: “sono-in-onda” stays read-only for people, and the bot writes in it.
+  es: Un canal de solo lectura ya no calla al bot: «sono-in-onda» sigue siendo de solo lectura para las personas, y él escribe ahí.
 - Il bot adesso può dare ai ruoli anche i poteri di moderazione, così «Moderatori» nasce già con i suoi: se l'avevi invitato prima, rifallo. [vai: ruoli]
+  en: The bot can now give roles moderation powers too, so “Moderators” is born with its own: if you invited it earlier, do it again.
+  es: Ahora el bot puede dar a los roles también los poderes de moderación, así «Moderadores» nace ya con los suyos: si lo invitaste antes, vuelve a hacerlo.
 - Dal costruttore decidi anche i ruoli: nome, colore, se stanno a parte, e cosa possono fare. Le tracce ne portano già quattro. [vai: dcserver]
+  en: From the builder you also decide the roles: name, color, whether they’re shown separately, and what they can do. The tracks already come with four.
+  es: Desde el constructor decides también los roles: nombre, color, si van aparte y qué pueden hacer. Las plantillas ya traen cuatro.
 - In piazza pulita spariscono anche i ruoli che non sono nella traccia, e si cancellano per ultimi: se qualcosa va storto non resti senza privilegi. [vai: dcserver]
+  en: When you clear the board, roles that aren’t in the track disappear too, and they’re deleted last: if something goes wrong, you’re not left without privileges.
+  es: Al hacer limpieza desaparecen también los roles que no están en la plantilla, y se borran al final: si algo sale mal, no te quedas sin privilegios.
 - Quello che il bot non può toccare adesso te lo dice prima: i ruoli sopra di lui, e i privilegi che non ha da passare. [vai: dcserver]
+  en: Whatever the bot can’t touch, it now tells you beforehand: roles above it, and privileges it doesn’t have to pass on.
+  es: Lo que el bot no puede tocar ahora te lo dice antes: los roles por encima de él y los privilegios que no tiene para dar.
 - Quando una cosa non riesce, il messaggio parla di quella cosa: se non è riuscito a cancellare un canale non ti manda più a guardare i ruoli.
+  en: When something fails, the message talks about that thing: if it couldn’t delete a channel, it no longer sends you off to check the roles.
+  es: Cuando algo falla, el mensaje habla de esa cosa: si no pudo borrar un canal, ya no te manda a mirar los roles.
 - I canali che il bot non vede o non può gestire adesso restano fuori dall'elenco, e te li dice prima: non ti promette più cose che poi non riescono. [vai: dcserver]
+  en: Channels the bot can’t see or manage now stay off the list, and it tells you about them beforehand: it no longer promises things that then fail.
+  es: Los canales que el bot no ve o no puede gestionar ahora quedan fuera de la lista, y te los dice antes: ya no promete cosas que luego no salen.
 - In fondo alla home c'è un invito a dare una mano al progetto, al posto di un link perso fra privacy e termini.
+  en: At the bottom of the home page there’s an invitation to help out the project, instead of a link lost between privacy and terms.
+  es: Al final de la portada hay una invitación a echarle una mano al proyecto, en lugar de un enlace perdido entre privacidad y términos.
 
 ## 2026-09-18
 
