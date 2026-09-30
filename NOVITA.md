@@ -122,8 +122,14 @@ comandi diversi da quelli della riga italiana.
   es> Las novedades en tu idioma
   es> Si usas el panel en inglés o en español, lees lo que cambió en tu idioma, y cambiar de idioma no te vuelve a mostrar las novedades que ya leíste.
 - [importante] In chat c'è !prossima: dice quando è la prossima diretta, con l'ora vera presa dalla tua settimana o dal Programma di Twitch, e nei Moduli c'è $prossima. [vai: moduli]
+  en: Chat has !prossima: it says when your next stream is, with the real time taken from your week or from the Twitch Schedule, and Modules have $prossima.
+  es: En el chat está !prossima: dice cuándo es el próximo directo, con la hora real tomada de tu semana o del Programa de Twitch, y en los Módulos está $prossima.
   > Il comando !prossima
   > Prima alla domanda «quando sei in diretta?» nessun comando sapeva rispondere con un'ora vera.
+  en> The !prossima command
+  en> Before, no command could answer “when are you live?” with a real time.
+  es> El comando !prossima
+  es> Antes, ningún comando sabía responder a «¿cuándo estás en directo?» con una hora real.
 
 ## 2026-09-27
 
