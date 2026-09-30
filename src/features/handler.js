@@ -128,9 +128,12 @@ export function createMessageHandler({ chat, brain, botLogin }) {
     }
 
     // f. per tutto il resto decide il cervello: se e cosa rispondere
-    if (brain.shouldReply({ channel, botLogin, user, text, streamer, isSelf })) {
+    // i tag dicono se il messaggio risponde a un altro, e a chi: serve a capire
+    // a chi e' rivolto (src/ai/destinatario.js)
+    const tags = msg.tags || null;
+    if (brain.shouldReply({ channel, botLogin, user, text, streamer, isSelf, tags })) {
       const t0 = Date.now();
-      const risposta = await brain.chatReply({ channel, user, display, text, streamer, botLogin, ruolo: ruoloDi(msg) });
+      const risposta = await brain.chatReply({ channel, user, display, text, streamer, botLogin, ruolo: ruoloDi(msg), tags });
       if (risposta) {
         // Il tempo giusto lo decide attesaUmana (lunghezza + ritmo della chat).
         // Quello che il cervello ci ha già messo del suo si sconta: se ha

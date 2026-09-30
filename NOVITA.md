@@ -214,6 +214,12 @@ comandi diversi da quelli della riga italiana.
 - L'informativa sulla privacy dice cosa tiene il negozio: chi ha comprato cosa e quando, per un anno, e gli oggetti nella borsa finché l'articolo resta.
   en: The privacy notice says what the shop keeps: who bought what and when, for a year, and the items in the bag for as long as the item is there.
   es: La política de privacidad dice qué guarda la tienda: quién compró qué y cuándo, durante un año, y los objetos de la bolsa mientras el artículo siga ahí.
+- In chat il bot risponde a chi parla a lui: chi parla di bot, risponde a un altro spettatore o scrive il nome dello streamer non riceve più frasi a caso. [vai: personalita]
+  en: In chat the bot answers whoever is talking to it: people talking about bots, replying to another viewer or writing the streamer’s name no longer get random lines.
+  es: En el chat el bot responde a quien le habla a él: quien habla de bots, responde a otro espectador o escribe el nombre del streamer ya no recibe frases al azar.
+- Il gioco e la durata della diretta il bot li dice a chi li chiede davvero, non a chi scrive «da quanto tempo non ci vediamo». [vai: personalita]
+  en: The bot says what game it is and how long the stream has been going to people who actually ask, not to someone writing “long time no see”.
+  es: El juego y la duración del directo el bot los dice a quien los pregunta de verdad, no a quien escribe «cuánto tiempo sin vernos».
 
 ## 2026-09-27
 
