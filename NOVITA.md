@@ -719,77 +719,187 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-08
 
 - Se la domanda tocca qualcosa che il cervello sa costruire (un calcolo, una deduzione, una catena di cause), risponde lui, e la risposta resta imparata.
+  en: If the question touches something the brain knows how to build (a calculation, a deduction, a chain of causes), the brain answers, and the answer stays learned.
+  es: Si la pregunta toca algo que el cerebro sabe construir (un cálculo, una deducción, una cadena de causas), responde él, y la respuesta queda aprendida.
 - Il conto in chat arriva comunque: se il cervello è spento lo fa il bot, e chi guarda non vede differenza.
+  en: The math reaches the chat either way: if the brain is off, the bot does it, and viewers see no difference.
+  es: La cuenta llega al chat de todos modos: si el cerebro está apagado la hace el bot, y quien mira no nota la diferencia.
 
 - Se il pannello non riesce a contattare il server, la pagina dice di chi è il software invece di mostrare solo un errore.
+  en: If the panel can’t reach the server, the page says who the software belongs to instead of just showing an error.
+  es: Si el panel no logra contactar con el servidor, la página dice de quién es el software en lugar de mostrar solo un error.
 
 - Il menù per scegliere l'overlay non è più quello grigio del sistema: è disegnato come il resto del pannello, e si usa anche con la sola tastiera.
+  en: The menu for picking the overlay is no longer the system’s gray one: it’s drawn like the rest of the panel, and it works with the keyboard alone too.
+  es: El menú para elegir el overlay ya no es el gris del sistema: está dibujado como el resto del panel, y se usa también solo con el teclado.
 - Sul telefono resta quello del sistema, perché lì la ruota è più comoda di qualunque cosa possiamo disegnare.
+  en: On phones the system one stays, because there the wheel is handier than anything we could draw.
+  es: En el teléfono se queda el del sistema, porque ahí la rueda es más cómoda que cualquier cosa que podamos dibujar.
 
 - Il bot pensa una cosa per volta. Prima più richieste insieme si dimezzavano il processore a vicenda e finivano tutte fuori tempo: nessuna risposta usciva.
+  en: The bot thinks about one thing at a time. Before, several requests at once halved each other’s processor time and all timed out: no answer came out.
+  es: El bot piensa una cosa a la vez. Antes varias peticiones juntas se partían el procesador y acababan todas fuera de tiempo: no salía ninguna respuesta.
 - Mentre qualcuno sta parlando, il bot smette di studiare per conto suo. La domanda di una persona viene prima del suo rimuginare.
+  en: While someone is talking, the bot stops studying on its own. A person’s question comes before its musing.
+  es: Mientras alguien está hablando, el bot deja de estudiar por su cuenta. La pregunta de una persona va antes que sus cavilaciones.
 
 - L'interruttore delle battute automatiche si spegne da solo se la chat autonoma è spenta, e dice perché: prima si poteva accendere senza che cambiasse niente.
+  en: The automatic jokes switch turns itself off if autonomous chatting is off, and says why: before, you could turn it on and nothing changed.
+  es: El interruptor de los chistes automáticos se apaga solo si el chat autónomo está apagado, y dice por qué: antes se podía activar sin que cambiara nada.
 
 - Le ricette e le domande da enciclopedia funzionano davvero: prima la ricerca non partiva mai e il bot ripiegava su «insegnamela dalla dashboard».
+  en: Recipes and encyclopedia questions really work: before, the search never started and the bot fell back on “teach it to me from the dashboard”.
+  es: Las recetas y las preguntas de enciclopedia funcionan de verdad: antes la búsqueda nunca arrancaba y el bot recurría a «enséñamela desde el panel».
 - Il comando delle battute si può rinominare e spegnere dal pannello come tutti gli altri, e ha una sua voce fra le famiglie.
+  en: The jokes command can be renamed and turned off from the panel like all the others, and it has its own entry among the families.
+  es: El comando de los chistes se puede renombrar y apagar desde el panel como todos los demás, y tiene su propia entrada entre las familias.
 
 - Se chiami il bot per nome ti risponde sempre. Prima, dopo una risposta restava muto per quarantacinque secondi anche a chi lo chiamava: sembrava morto.
+  en: If you call the bot by name it always answers. Before, after one reply it went silent for forty-five seconds even for people calling it: it seemed dead.
+  es: Si llamas al bot por su nombre te responde siempre. Antes, después de una respuesta se quedaba mudo cuarenta y cinco segundos incluso con quien lo llamaba: parecía muerto.
 - Ogni tanto dice una battuta da solo, se lasci accesa la chat autonoma. Si spegne dalla scheda Giochi.
+  en: Every now and then it tells a joke on its own, if you leave autonomous chatting on. You turn it off from the Games tab.
+  es: De vez en cuando cuenta un chiste por su cuenta, si dejas activado el chat autónomo. Se apaga desde la pestaña Juegos.
 - Le battute che fanno ridere escono più spesso: dopo ognuna il bot conta quante persone diverse ridono davvero.
+  en: Jokes that get laughs come out more often: after each one, the bot counts how many different people actually laugh.
+  es: Los chistes que hacen reír salen más a menudo: después de cada uno, el bot cuenta cuántas personas distintas se ríen de verdad.
 - Le battute si gestiscono anche dalla dashboard, con quante volte sono state dette e quante hanno funzionato.
+  en: Jokes can be managed from the dashboard too, with how many times each was told and how many times it worked.
+  es: Los chistes también se gestionan desde el panel, con cuántas veces se contaron y cuántas funcionaron.
 - Quello che il bot trova cercando se lo scrive. La stessa domanda, la seconda volta, ha risposta immediata.
+  en: Whatever the bot finds by searching, it writes down. The same question the second time gets an instant answer.
+  es: Lo que el bot encuentra buscando lo anota. La misma pregunta, la segunda vez, tiene respuesta inmediata.
 
 - Nuovo comando !battuta. Il bot pesca dal serbatoio del canale, e mod e streamer lo riempiono con !battuta aggiungi.
+  en: New !battuta command. The bot draws from the channel’s joke jar, and mods and the streamer fill it with !battuta aggiungi.
+  es: Nuevo comando !battuta. El bot saca del depósito de chistes del canal, y los mods y el streamer lo llenan con !battuta aggiungi.
 - Non ripete: esce sempre la meno detta di recente, non una a caso.
+  en: It doesn’t repeat itself: it always picks the one told least recently, not a random one.
+  es: No se repite: sale siempre el que menos se ha contado últimamente, no uno al azar.
 - Se il serbatoio è vuoto se ne fa venire una dal cervello, con il carattere del canale addosso.
+  en: If the jar is empty, it gets one from the brain, with the channel’s personality on it.
+  es: Si el depósito está vacío, pide uno al cerebro, con el carácter del canal encima.
 - Le ricette funzionano anche chiedendole come si chiedono davvero: «Bot mi dai la ricetta della carbonara?», non solo «ricetta carbonara».
+  en: Recipes also work when you ask for them the way people really ask: “Bot mi dai la ricetta della carbonara?”, not just “ricetta carbonara”.
+  es: Las recetas funcionan también pidiéndolas como se piden de verdad: «Bot mi dai la ricetta della carbonara?», no solo «ricetta carbonara».
 
 - Il bot risponde alle domande cercando davvero. Prima restituiva l'introduzione di Wikipedia: a «capitale della Francia» rispondeva quanto è grande la Francia.
+  en: The bot answers questions by really searching. Before, it returned the Wikipedia introduction: asked for the “capitale della Francia”, it answered with how big France is.
+  es: El bot responde a las preguntas buscando de verdad. Antes devolvía la introducción de Wikipedia: a «capitale della Francia» respondía cuánto mide Francia.
 - Le ricette arrivano dal ricettario, non dall'enciclopedia: ingredienti e una riga di preparazione, non la storia del piatto.
+  en: Recipes come from the cookbook, not the encyclopedia: ingredients and a line of method, not the history of the dish.
+  es: Las recetas llegan del recetario, no de la enciclopedia: ingredientes y una línea de preparación, no la historia del plato.
 - Quello che trova lo dice con parole sue, nel tono che gli hai dato. Prima il testo trovato usciva grezzo, e solo quando il modello era spento.
+  en: It says what it finds in its own words, in the tone you gave it. Before, the text it found came out raw, and only when the model was off.
+  es: Lo que encuentra lo dice con sus propias palabras, en el tono que le diste. Antes el texto encontrado salía en bruto, y solo cuando el modelo estaba apagado.
 - Nuovo campo Carattere in Personalità: scrivi con parole tue com'è fatto il bot, e vale ovunque parli.
+  en: New Character field in Personality: describe the bot in your own words, and it applies everywhere it speaks.
+  es: Nuevo campo Carácter en Personalidad: escribe con tus palabras cómo es el bot, y vale en todas partes donde habla.
 - Se non trova niente che c'entri con la domanda, tace invece di rispondere a caso.
+  en: If it finds nothing related to the question, it stays quiet instead of answering at random.
+  es: Si no encuentra nada que tenga que ver con la pregunta, se calla en lugar de responder al azar.
 
 - Il bot fa i conti: «quanto fa 4+4», «7 x 8», «20% di 90», anche con le parentesi. Il risultato lo calcola, non lo indovina, quindi è sempre giusto.
+  en: The bot does math: “quanto fa 4+4”, “7 x 8”, “20% di 90”, even with parentheses. It calculates the result instead of guessing it, so it’s always right.
+  es: El bot hace cuentas: «quanto fa 4+4», «7 x 8», «20% di 90», incluso con paréntesis. El resultado lo calcula, no lo adivina, así que siempre es correcto.
 - Quando un numero è ambiguo tace invece di rischiare: «1.000» in italiano è mille, ma scritto in chat può essere uno virgola zero, e non c'è modo di saperlo.
+  en: When a number is ambiguous it stays quiet instead of taking a chance: “1.000” in Italian is a thousand, but typed in chat it could be one point zero, and there’s no way to know.
+  es: Cuando un número es ambiguo se calla en lugar de arriesgarse: «1.000» en italiano es mil, pero escrito en el chat puede ser uno coma cero, y no hay forma de saberlo.
 - Se il messaggio non è un conto non risponde. Nessuna risposta a «ho 2 gatti e 3 cani».
+  en: If the message isn’t a calculation, it doesn’t answer. No reply to “ho 2 gatti e 3 cani”.
+  es: Si el mensaje no es una cuenta, no responde. Ninguna respuesta a «ho 2 gatti e 3 cani».
 
 - Scegli come il bot parla di sé: femminile, maschile, o senza dirlo. Sta in Personalità, sotto il tono.
+  en: Choose how the bot refers to itself: feminine, masculine, or without saying. It’s in Personality, under the tone.
+  es: Elige cómo habla el bot de sí mismo: en femenino, en masculino o sin decirlo. Está en Personalidad, debajo del tono.
 - Prima cambiava a ogni frase. Le battute scritte a mano erano tutte al maschile («sono apparso»), e il resto lo decideva lui volta per volta.
+  en: Before, it switched with every sentence. The handwritten jokes were all masculine in Italian (“sono apparso”), and it decided the rest case by case.
+  es: Antes cambiaba en cada frase. Los chistes escritos a mano estaban todos en masculino («sono apparso»), y el resto lo decidía él cada vez.
 - Chi non sceglie niente non rischia: il bot gira la frase e non dichiara nessun genere, invece di darsene uno a caso.
+  en: If you don’t choose, there’s no risk: the bot phrases things so it doesn’t state any gender, instead of picking one at random.
+  es: Si no eliges nada no hay riesgo: el bot da la vuelta a la frase y no declara ningún género, en lugar de darse uno al azar.
 
 - Puoi sfidare a duello lo streamer. Il bot parla con il suo account e non vede i propri messaggi, quindi lui risultava sempre «non in chat» anche mentre stava scrivendo.
+  en: You can challenge the streamer to a duel. The bot speaks with the streamer’s account and doesn’t see its own messages, so the streamer always showed up as “not in chat” even while typing.
+  es: Puedes retar a duelo al streamer. El bot habla con su cuenta y no ve sus propios mensajes, así que el streamer siempre aparecía «no en el chat» aunque estuviera escribiendo.
 - Si può sfidare anche chi c'è e sta zitto. Prima contava solo chi aveva parlato negli ultimi trenta minuti, e metà della chat era invisibile.
+  en: You can also challenge people who are there but quiet. Before, only those who had spoken in the last thirty minutes counted, and half the chat was invisible.
+  es: También se puede retar a quien está pero no escribe. Antes solo contaba quien había hablado en los últimos treinta minutos, y medio chat era invisible.
 
 - La scheda del giro guidato non sporge più dal bordo dello schermo mentre compare. Entrava salendo di quattordici pixel, e quando si appoggiava in fondo quei pixel la portavano fuori.
+  en: The guided tour card no longer sticks out past the edge of the screen as it appears. It came in rising by fourteen pixels, and when it rested at the bottom those pixels pushed it out.
+  es: La tarjeta del recorrido guiado ya no sobresale del borde de la pantalla al aparecer. Entraba subiendo catorce píxeles, y cuando se apoyaba abajo esos píxeles la sacaban.
 
 - Sulla pagina link, un avatar con l'indirizzo rotto mostra l'iniziale invece dell'icona di immagine spezzata. Il ripiego c'era da tempo, ma il browser lo rifiutava e non era mai partito.
+  en: On the link page, an avatar with a broken address shows the initial instead of the broken-image icon. The fallback had been there for a while, but the browser rejected it and it never kicked in.
+  es: En la página de enlaces, un avatar con la dirección rota muestra la inicial en lugar del icono de imagen rota. El respaldo existía desde hacía tiempo, pero el navegador lo rechazaba y nunca se activó.
 
 - Il tasto sotto il mouse lo segue senza scattare. Prima il movimento ripartiva da capo a ogni spostamento del puntatore e non arrivava mai a destinazione.
+  en: The button under the mouse follows it without jerking. Before, the motion restarted with every pointer move and never reached its destination.
+  es: El botón bajo el mouse lo sigue sin saltos. Antes el movimiento volvía a empezar con cada desplazamiento del puntero y nunca llegaba a destino.
 - I tasti si sollevano davvero quando ci passi sopra: si staccano dalla pagina invece di spostarsi di un pixel, e restano davanti a quello che hanno intorno.
+  en: Buttons really lift up when you hover over them: they come off the page instead of shifting by a pixel, and stay in front of what’s around them.
+  es: Los botones se levantan de verdad cuando pasas por encima: se despegan de la página en lugar de moverse un píxel, y quedan delante de lo que los rodea.
 - L'ombra dei tasti non viene più tagliata dal bordo della scheda che li contiene. Su Safari era tagliata sempre, perché quel browser non conosce il permesso di sfogo.
+  en: Button shadows are no longer clipped by the edge of the card that holds them. On Safari they were always clipped, because that browser doesn’t support the overflow permission.
+  es: La sombra de los botones ya no la recorta el borde de la tarjeta que los contiene. En Safari se recortaba siempre, porque ese navegador no conoce el permiso de desborde.
 - Chi tiene acceso il movimento ridotto vede la profondità senza il movimento: l'ombra cresce lo stesso, il tasto non si sposta.
+  en: People with reduced motion turned on see the depth without the motion: the shadow still grows, the button doesn’t move.
+  es: Quien tiene activado el movimiento reducido ve la profundidad sin el movimiento: la sombra crece igual, el botón no se mueve.
 
 - Il giro guidato non finisce più mezzo fuori dallo schermo. Su sette schede, sei avevano almeno un passo con la scheda dei suggerimenti tagliata dal bordo.
+  en: The guided tour no longer ends up half off the screen. Out of seven tabs, six had at least one step with the tips card cut off by the edge.
+  es: El recorrido guiado ya no queda medio fuera de la pantalla. De siete pestañas, seis tenían al menos un paso con la tarjeta de ayuda cortada por el borde.
 - L'ultimo passo, quello che dice dove trovare il manuale, si piantava dove stava il passo prima. Adesso sta in mezzo, e in mezzo davvero.
+  en: The last step, the one that says where to find the manual, got stuck where the previous step had been. Now it sits in the middle, truly in the middle.
+  es: El último paso, el que dice dónde encontrar el manual, se quedaba clavado donde estaba el paso anterior. Ahora está en el centro, en el centro de verdad.
 - Quando il passo indica qualcosa che sta più in basso nella pagina, il riquadro aspetta di stare dentro la finestra invece di seguirlo fuori.
+  en: When a step points to something further down the page, the box waits to be inside the window instead of following it out.
+  es: Cuando el paso señala algo que está más abajo en la página, el recuadro espera a estar dentro de la ventana en lugar de seguirlo fuera.
 - Nella demo un link diretto a una scheda porta dove dice. Prima si atterrava sempre sulla prima.
+  en: In the demo, a direct link to a tab takes you where it says. Before, you always landed on the first one.
+  es: En la demo, un enlace directo a una pestaña lleva adonde dice. Antes siempre se aterrizaba en la primera.
 
 - La pagina della moderazione è divisa in tre: Chat per i filtri sui messaggi, Scudo per la difesa dagli attacchi, Registro per quello che è successo.
+  en: The moderation page is split into three: Chat for message filters, Shield for defending against attacks, Log for what happened.
+  es: La página de moderación está dividida en tres: Chat para los filtros de mensajes, Escudo para la defensa contra los ataques y Registro para lo que pasó.
 - Lo stato dello scudo sta dove si accende: acceso o spento, il livello di adesso, quanti follow servono per far scattare l'allarme.
+  en: The shield’s status sits where you turn it on: on or off, the current level, how many follows it takes to trigger the alarm.
+  es: El estado del escudo está donde se activa: encendido o apagado, el nivel actual y cuántos follows hacen falta para que salte la alarma.
 - Le due liste «blocca sempre» e «non toccare mai» stavano in due posti e si cancellavano a vicenda: un nome aggiunto di qua spariva salvando di là. Ora stanno in un posto solo e si salvano da sole.
+  en: The “Always block” and “Never touch” lists lived in two places and wiped each other out: a name added on one side vanished when saving on the other. Now they’re in one place and save themselves.
+  es: Las listas «Bloquear siempre» y «Nunca tocar» estaban en dos lugares y se borraban entre sí: un nombre añadido en uno desaparecía al guardar en el otro. Ahora están en un solo lugar y se guardan solas.
 - Sola osservazione, quanto presto reagire e la segnalazione di chi guarda molti canali: le tre caselle c'erano, il salvataggio le buttava via. Adesso restano.
+  en: Observe only, how early to react and flagging people who watch many channels: the three boxes were there, but saving threw them away. Now they stick.
+  es: Solo observar, qué tan pronto reaccionar y la señalización de quien mira muchos canales: las tres casillas estaban, pero al guardar se perdían. Ahora se quedan.
 - Un salvataggio parziale non azzera più il resto. Soglia, timeout ed età minima restavano indietro a ogni «Salva» senza dirlo.
+  en: A partial save no longer resets everything else. Threshold, timeout and minimum age were silently rolled back with every “Save”.
+  es: Un guardado parcial ya no pone a cero el resto. Umbral, timeout y antigüedad mínima se quedaban atrás en cada «Guardar» sin avisar.
 - Nel registro ogni attacco è una scheda che si apre: chi c'era diviso per giudizio, e la pulizia dei follower finti con il numero da riscrivere per confermare.
+  en: In the log, each attack is a card that opens: who was there, sorted by verdict, and the fake-follower cleanup with the number to type back to confirm.
+  es: En el registro cada ataque es una ficha que se abre: quién estaba, dividido por veredicto, y la limpieza de seguidores falsos con el número que hay que volver a escribir para confirmar.
 - Le azioni che non erano riuscite adesso si vedono, e si riprendono da lì.
+  en: Actions that had failed are now visible, and can be resumed from there.
+  es: Las acciones que habían fallado ahora se ven, y se retoman desde ahí.
 
 - Chi scrive nel tuo canale da mesi non finisce più nel mucchio durante un'ondata di follow finti, nemmeno con un nome che somiglia a quelli dei bot.
+  en: People who have been chatting in your channel for months no longer get lumped in during a wave of fake follows, even with a name that looks like a bot’s.
+  es: Quien escribe en tu canal desde hace meses ya no acaba en el montón durante una oleada de follows falsos, ni siquiera con un nombre parecido al de los bots.
 - Per essere di casa servono una trentina di messaggi e un paio di mesi. Il volume da solo non basta: quattrocento righe in un'ora sono un motivo di sospetto.
+  en: Being a regular takes about thirty messages and a couple of months. Volume alone isn’t enough: four hundred lines in one hour is a reason for suspicion.
+  es: Para ser de la casa hacen falta unos treinta mensajes y un par de meses. El volumen solo no basta: cuatrocientas líneas en una hora son motivo de sospecha.
 - Pesano anche i precedenti. Un account che lo scudo ha già fermato lì da poco parte in salita, e questo vale solo nel canale dove è successo.
+  en: Track record counts too. An account the shield recently stopped there starts uphill, and that only applies in the channel where it happened.
+  es: También pesan los antecedentes. Una cuenta que el escudo ya frenó ahí hace poco empieza cuesta arriba, y eso vale solo en el canal donde pasó.
 - Un giudizio vecchio conta meno di uno nuovo: ogni novanta giorni vale la metà, dopo un anno non ne resta praticamente niente.
+  en: An old verdict counts less than a new one: every ninety days it’s worth half, and after a year there’s practically nothing left of it.
+  es: Un veredicto viejo cuenta menos que uno nuevo: cada noventa días vale la mitad, y después de un año prácticamente no queda nada.
 - Essere stati lasciati stare durante un attacco non lascia alcuna traccia.
+  en: Having been left alone during an attack leaves no trace at all.
+  es: Haber sido dejado en paz durante un ataque no deja ningún rastro.
 - La fiducia sposta il punteggio, in bene e in male, ma da sola non fa mai togliere nessuno: per agire serve sempre un fatto indipendente.
+  en: Trust shifts the score, for better and for worse, but on its own it never gets anyone removed: acting always takes an independent fact.
+  es: La confianza mueve la puntuación, para bien y para mal, pero por sí sola nunca hace quitar a nadie: para actuar siempre hace falta un hecho independiente.
 
 ## 2026-09-07
 
