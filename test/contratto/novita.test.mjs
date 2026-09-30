@@ -614,3 +614,15 @@ test('le porte delle novità danno la lingua chiesta, e il pannello chiede la su
   assert.match(f, /href="\$\{esc\(viaPagina\('novita'\)\)\}"/, 'e «Tutte le novità» porta alla pagina della sua lingua');
   assert.doesNotMatch(f, /href="\/novita"/);
 });
+
+test('nel file vero ogni riga pubblica si legge nelle tre lingue, e niente di scritto va perso', () => {
+  // Il cancello (verifica-novita.mjs) misura anche la forma delle traduzioni;
+  // qui si guarda la cosa che la pagina e il pannello danno per scontata: che
+  // chi legge in inglese o in spagnolo non si trovi una riga in italiano.
+  const testo = readFileSync(join(RAD, 'NOVITA.md'), 'utf8');
+  assert.deepEqual(righeSperse(testo), [], 'una traduzione staccata dalla sua riga, o scritta due volte');
+  for (const l of ['en', 'es']) {
+    const rimaste = pubbliche(gruppi, l).flatMap((g) => g.voci.filter((v) => v.lingua).map((v) => `${g.data} «${v.testo.slice(0, 50)}…»`));
+    assert.deepEqual(rimaste, [], `${l}: righe rimaste in italiano`);
+  }
+});

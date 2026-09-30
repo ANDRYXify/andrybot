@@ -24,6 +24,23 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+Ogni riga pubblica si scrive **nelle tre lingue del sito**, nello stesso commit:
+sotto la riga italiana, rientrate, la stessa riga in inglese e in spagnolo. Chi
+usa la pagina o il pannello in inglese o in spagnolo la legge nella sua lingua.
+
+    - Il testo in italiano. [vai: account]
+      en: The text in English.
+      es: El texto en español.
+
+Un'importante porta anche titolo e perché nelle altre due lingue, dopo quelli
+italiani: `en>` ed `es>`, la prima riga il titolo e le altre il perché. Il
+`[vai: x]` sta solo sulla riga italiana e vale per tutte; le righe `[privato]`
+non si traducono. Inglese americano e spagnolo neutro, brevi come l'italiano,
+con i nomi di schede e tasti come li mostra il pannello in quella lingua. Anche
+questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
+traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
+comandi diversi da quelli della riga italiana.
+
 ## 2026-09-30
 
 - Il QR e il media kit degli Strumenti portano all'indirizzo vero del tuo canale anche su Kick e YouTube: prima su Kick ne scrivevano uno sbagliato. [vai: qr]
@@ -95,6 +112,15 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Chi l'antispam ferma al primo messaggio risulta arrivato lo stesso: conta fra le prime volte del rapporto, e il giorno dopo non è di nuovo alla prima volta. [vai: dirette]
   en: People stopped by the antispam on their first message still count as arrived: they’re among the first-timers in the report, and the next day they aren’t first-timers again.
   es: Quien el antispam frena en su primer mensaje figura como llegado igual: cuenta entre las primeras veces del informe, y al día siguiente no vuelve a ser su primera vez.
+- [importante] Le novità si leggono anche in inglese e in spagnolo: la finestra del pannello parla la lingua che hai scelto, e la pagina ha un indirizzo per lingua, socialbot.live/en/news e socialbot.live/es/novedades.
+  en: What’s new now reads in English and Spanish too: the panel window speaks the language you picked, and the page has an address for each language, socialbot.live/en/news and socialbot.live/es/novedades.
+  es: Las novedades se leen también en inglés y en español: la ventana del panel habla el idioma que elegiste, y la página tiene una dirección por idioma, socialbot.live/en/news y socialbot.live/es/novedades.
+  > Le novità nella tua lingua
+  > Chi usa il pannello in inglese o in spagnolo legge cosa è cambiato nella sua lingua, e cambiare lingua non fa rivedere le novità già lette.
+  en> What’s new, in your language
+  en> If you use the panel in English or Spanish, you read what changed in your language, and switching languages doesn’t bring back updates you’ve already read.
+  es> Las novedades en tu idioma
+  es> Si usas el panel en inglés o en español, lees lo que cambió en tu idioma, y cambiar de idioma no te vuelve a mostrar las novedades que ya leíste.
 
 ## 2026-09-27
 
