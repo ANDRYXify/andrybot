@@ -36,7 +36,7 @@ test('una parola e\' una parola sola di lettere, senza accenti ne\' punto in fon
   assert.equal(K.parolaDi('ok123'), '');
 });
 
-test('conta solo la mossa: le chiacchiere non toccano la catena', (t) => {
+test('conta solo la mossa, e ogni mossa ha la sua risposta: le chiacchiere no', (t) => {
   t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
   canale('k1');
   K.impostaCaso(() => 0);
@@ -44,12 +44,13 @@ test('conta solo la mossa: le chiacchiere non toccano la catena', (t) => {
   s.scrivi('anna', '!catena');
   assert.equal(s.detti.at(-1), '🔗 Catena di parole! Si parte da CASA: la prossima comincia con SA. Una parola a messaggio, mai due di fila la stessa persona, mai una già detta. Record del canale: 0.');
   const n = s.detti.length;
-  s.scrivi('bruno', 'sasso');
-  s.scrivi('anna', 'ciao');
-  s.scrivi('anna', 'salve a tutti');
+  s.scrivi('anna', 'Sasso');
+  s.scrivi('bruno', 'ciao');
+  s.scrivi('bruno', 'salve a tutti');
   s.scrivi('carla', 'Sole!');
-  s.scrivi('anna', 'bravissimi');
-  assert.equal(s.detti.length, n, 'mentre la catena va il bot tace');
+  s.scrivi('bruno', 'bravissimi');
+  assert.deepEqual(s.detti.slice(n), ['🔗 SASSO, una parola. Avanti con SO!', '🔗 SOLE, 2 parole. Avanti con LE!'],
+    'una mossa accettata in silenzio sembra persa: in chat era «Normale» dopo PIANO, e nessuno ha capito che era entrata');
   assert.deepEqual(K.catenaInCorso('k1'), { parola: 'sole', n: 2, ultimo: 'carla', record: 2 });
 });
 
@@ -92,7 +93,8 @@ test('il record si annuncia una volta, al primo passo oltre, e resta nel databas
   s.scrivi('bruno', 'nebbia');
   s.scrivi('anna', 'iato');
   s.scrivi('bruno', 'topo');
-  assert.deepEqual(s.detti.slice(n), ['🏆 Nuovo record del canale: 3 parole! Avanti con TO!'], 'annunciato una volta, al primo passo oltre');
+  assert.deepEqual(s.detti.slice(n), ['🔗 LEONE, una parola. Avanti con NE!', '🔗 NEBBIA, 2 parole. Avanti con IA!', '🏆 Nuovo record del canale: 3 parole! Avanti con TO!', '🔗 TOPO, 4 parole. Avanti con PO!'],
+    'il record si annuncia una volta, al primo passo oltre, e prende il posto della conferma: una riga per mossa');
   assert.equal(K.recordCatena('k3'), 4);
 });
 
@@ -102,8 +104,9 @@ test('ogni traguardo il bot applaude e dice le due lettere', (t) => {
   const s = scena('k4');
   s.scrivi('anna', '!catena');
   s.scrivi('anna', 'leone');
+  const n = s.detti.length;
   s.scrivi('bruno', 'neve');
-  assert.equal(s.detti.at(-1), '🔗 2 parole! Adesso tocca a VE.');
+  assert.deepEqual(s.detti.slice(n), ['🔗 2 parole! Adesso tocca a VE.'], 'il traguardo prende il posto della conferma, non si aggiunge');
 });
 
 test('se nessuno trova la parola per la pausa scelta, la catena si chiude', (t) => {

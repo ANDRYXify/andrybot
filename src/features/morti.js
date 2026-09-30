@@ -9,8 +9,8 @@
 // Una firma e' un'impronta di 64 bit in esadecimale, sedici cifre. Non e'
 // un'immagine: da una firma non si torna indietro a quello che c'era sullo
 // schermo, ed e' per questo che si puo' tenere qui senza tenere niente di tuo.
-import { normComando } from '../db.js';
-import { GIOCHI } from './gsi.js';
+import { normComando, statoVivo } from '../db.js';
+import { GIOCHI, salto } from './gsi.js';
 
 export const MAX_SCHERMATE = 8;
 // Una schermata di morte quasi mai e' un fotogramma solo: entra in dissolvenza,
@@ -67,6 +67,9 @@ export function normalizza(b) {
   }
   return {
     gsi,
+    // Il programma che tiene il conto in un file (DSDeaths per i souls, o un
+    // altro): quale contatore far salire. Vuoto vuol dire spento.
+    file: normComando(String(o.file || '')),
     attivo: !!o.attivo && schermate.length > 0,
     fonte: String(o.fonte || '').slice(0, 120),
     ogniMs: tra(o.ogniMs, OGNI_MIN_MS, OGNI_MAX_MS, OGNI_DEF_MS),
@@ -77,3 +80,49 @@ export function normalizza(b) {
 }
 
 export const DEFAULT = normalizza({});
+
+// ── LE MORTI DA UN FILE ─────────────────────────────────────────────────────
+//
+// Per i souls il conto esatto sta nella memoria del gioco, e c'e' chi lo legge
+// gia': DSDeaths (github.com/Quidrex/DSDeaths) lo scrive in un file di testo,
+// un numero e basta, e lo riscrive a ogni morte. Il pannello aperto sul
+// computer della regia legge quel file e manda qui il NUMERO: il file resta
+// dov'e'.
+//
+// E' lo stesso problema dei giochi che parlano da soli, e la stessa regola
+// (gsi.salto), non una copia: il numero e' un totale, conta il salto in su, e
+// ogni altra cosa ribasa. Fra due letture passano due secondi, e in due
+// secondi non si muore piu' di MAX_SALTO volte: un salto piu' grosso e' un
+// altro personaggio caricato, non una serie di morti.
+//
+// LA PRIMA LETTURA DI CHI GUARDA NON CONTA MAI. Il pannello, ogni volta che
+// comincia a guardare (pagina aperta, file scelto, permesso ridato), si da' un
+// giro nuovo, e il giro entra nella partita. Cosi' il numero che trova non si
+// confronta con quello lasciato ieri: le morti fatte a pannello chiuso, magari
+// fuori diretta, non sono successe adesso. Il prezzo e' quello di sempre: una
+// morte fatta nei secondi di una pagina ricaricata si perde, e nessuna si conta
+// due volte.
+export const MAX_TOTALE = 10_000_000;
+const GIRO = /^[a-z0-9-]{8,40}$/;
+
+export function daFile(corpo) {
+  const totale = corpo?.totale;
+  if (typeof totale !== 'number' || !Number.isInteger(totale) || totale < 0 || totale > MAX_TOTALE) return null;
+  const giro = String(corpo?.giro || '');
+  if (!GIRO.test(giro)) return null;
+  const nome = String(corpo?.nome || '').trim().slice(0, 80);
+  return { tuo: true, morti: totale, partita: ['file', giro, nome].join('|') };
+}
+
+// Fuori diretta si legge ma non si conta, e senza un contatore scelto pure: il
+// ricordo pero' si aggiorna sempre, se no la prima lettura in diretta
+// confronterebbe con un numero vecchio.
+export function contaDaFile(login, corpo, { contatore = '', inOnda = false, esegui = () => {} } = {}) {
+  const ora = daFile(corpo);
+  if (!ora) return { ok: false };
+  const r = salto(statoVivo.leggi(login, 'morti:file'), ora);
+  statoVivo.scrivi(login, 'morti:file', { ...r.stato, quando: Date.now() });
+  const contate = r.morti && inOnda && contatore ? r.morti : 0;
+  for (let i = 0; i < contate; i++) esegui('contatore:piu:' + contatore);
+  return { ok: true, contate, inOnda: !!inOnda };
+}

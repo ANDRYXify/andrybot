@@ -101,7 +101,6 @@ import * as dcPreset from '../features/discord-preset.js';
 import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
 import * as voce from '../features/voce.js';
-import { linguaChat } from '../features/lingua-canale.js';
 import * as giochiConf from '../features/giochi-conf.js';
 import { VOCI as VOCI_TWITCH } from '../features/sondaggi.js';
 import * as modalitaChat from '../features/modalita-chat.js';
@@ -7502,6 +7501,25 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     gsi.revoca(login);
     gsiStato.scorda(login);
     res.json({ ok: true });
+  }));
+
+  // Il numero letto da un file sul computer della regia (DSDeaths, o un altro
+  // programma che tiene il conto). Arriva il numero, non il file. La regola e'
+  // quella dei giochi che parlano da soli, e sta in morti.contaDaFile.
+  app.post('/api/streamer/morti/file', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const cfg = morti.normalizza(streamers.get(login)?.settings?.morti);
+    const r = morti.contaDaFile(login, req.body, {
+      contatore: cfg.file,
+      inOnda: rapporto.inCorso(login),
+      esegui: (id) => consolle.esegui(login, id, {
+        say: (t) => { try { manager.say(login, t); } catch { /* niente */ } },
+        emit: (p) => { try { effects.emit(login, p); } catch { /* niente */ } },
+        effetti: effects,
+      }),
+    });
+    if (!r.ok) return res.status(400).json({ errore: 'numero non valido' });
+    res.json(r);
   }));
 
   // Un'azione della console fatta fare DAL PANNELLO, da chi e' entrato. La strada
