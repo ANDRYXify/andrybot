@@ -1149,78 +1149,218 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-02
 
 - Gli obiettivi sono quanti ne vuoi, non uno: ognuno col suo traguardo, il suo angolo e il suo aspetto: colori, carattere, forma, cornice, dimensione, opacità.
+  en: You can have as many goals as you like, not just one: each with its own target, its own corner and its own look: colors, font, shape, frame, size, opacity.
+  es: Puedes tener tantos objetivos como quieras, no solo uno: cada uno con su meta, su esquina y su aspecto: colores, fuente, forma, marco, tamaño, opacidad.
 - Due obiettivi che contano la stessa cosa salgono insieme: una scala («100 follower», «500 follower») si fa senza rifare niente a mano.
+  en: Two goals that count the same thing go up together: a ladder (“100 followers”, “500 followers”) needs nothing redone by hand.
+  es: Dos objetivos que cuentan lo mismo suben juntos: una escalera («100 seguidores», «500 seguidores») se arma sin rehacer nada a mano.
 - C'è il manuale dell'overlay: i sette elementi, i valori di base, le parole da usare nei testi degli alert e cosa fare quando non si vede niente.
+  en: The overlay has its own manual: the seven elements, the defaults, the words to use in alert texts, and what to do when nothing shows up.
+  es: El overlay tiene su manual: los siete elementos, los valores de base, las palabras para los textos de las alertas y qué hacer cuando no se ve nada.
 - Nell'overlay c'è l'obiettivo: una barra che si riempie da sola mentre arrivano follower, sub o bit, col conto vero e un tasto per ripartire da zero.
+  en: The overlay has a goal: a bar that fills up by itself as followers, subs or bits come in, with the real count and a button to start over from zero.
+  es: El overlay tiene un objetivo: una barra que se llena sola a medida que llegan seguidores, subs o bits, con la cuenta real y un botón para volver a empezar de cero.
 - I contatori sono diventati un elemento dell'overlay come gli altri: si spengono dall'elenco e prendono la veste della scena, senza perdere i colori che gli hai dato tu.
+  en: Counters are now an overlay element like the others: you turn them off from the list and they take on the scene’s style, without losing the colors you gave them.
+  es: Los contadores ahora son un elemento del overlay como los demás: se apagan desde la lista y toman el estilo de la escena, sin perder los colores que les diste.
 - Gli sfondi dell'overlay c'erano ma non si vedevano: alert, chat e widget uscivano trasparenti, quindi scritte bianche appoggiate sul gioco. Ora si vedono.
+  en: Overlay backgrounds were there but didn’t show: alerts, chat and widgets came out transparent, so white text sat right on top of the game. Now they show.
+  es: Los fondos del overlay estaban, pero no se veían: alertas, chat y widgets salían transparentes, así que el texto blanco quedaba encima del juego. Ahora se ven.
 - L'overlay non è più viola Twitch di serie.
+  en: The overlay no longer comes in Twitch purple by default.
+  es: El overlay ya no viene en morado de Twitch por defecto.
 - La prima volta che entri in una scheda, il bot te la fa vedere passo passo: a cosa serve, cosa c'è dentro con la luce puntata sopra, e dove leggere di più.
+  en: The first time you open a tab, the bot walks you through it: what it’s for, what’s inside with a spotlight on it, and where to read more.
+  es: La primera vez que entras en una pestaña, el bot te la muestra paso a paso: para qué sirve, qué hay dentro con un foco encima y dónde leer más.
 - Il giro si vede una volta sola e si rifà quando vuoi dal «?». Se stai già facendo qualcosa non parte.
+  en: The tour shows up only once, and you can replay it whenever you like from the “?”. If you’re already in the middle of something, it doesn’t start.
+  es: El recorrido se ve una sola vez y lo repites cuando quieras desde el «?». Si ya estás haciendo algo, no arranca.
 - I comandi pronti sono tradotti: nome e spiegazione escono in italiano, inglese e spagnolo come il resto del pannello.
+  en: Built-in commands are translated: name and description come out in Italian, English and Spanish, like the rest of the panel.
+  es: Los comandos de serie están traducidos: nombre y explicación salen en italiano, inglés y español, como el resto del panel.
 - I giochi si creano tutti da un posto solo: prima c'erano due riquadri che facevano la stessa cosa e uno ti spostava in un'altra scheda per finire il lavoro.
+  en: All games are created from one place: before, there were two boxes doing the same thing, and one sent you to another tab to finish the job.
+  es: Todos los juegos se crean desde un solo lugar: antes había dos recuadros que hacían lo mismo, y uno te mandaba a otra pestaña para terminar.
 - Si sceglie chi lancia il gioco (il bot a sorpresa, o uno spettatore che scrive un comando) e il resto si adatta.
+  en: You choose who starts the game (the bot, as a surprise, or a viewer typing a command) and everything else adapts.
+  es: Eliges quién lanza el juego (el bot por sorpresa, o un espectador que escribe un comando) y el resto se adapta.
 - Nell'editor dei giochi le parole magiche offerte sono quelle che a un gioco servono: monete, caso, numeri, chi scrive. Le altre restano a un clic.
+  en: In the game editor, the magic words on offer are the ones a game needs: coins, chance, numbers, who’s typing. The rest are one click away.
+  es: En el editor de juegos, las palabras mágicas que se ofrecen son las que un juego necesita: monedas, azar, números, quién escribe. Las demás están a un clic.
 - Sul telefono il «?» apre guide, manuali e novità dentro al menù, come righe: prima usciva una tendina più larga del menù e si leggeva mezza parola.
+  en: On your phone, the “?” opens guides, manuals and what’s new inside the menu, as rows: before, a dropdown wider than the menu popped up and you could read half a word.
+  es: En el teléfono, el «?» abre guías, manuales y novedades dentro del menú, como filas: antes salía un desplegable más ancho que el menú y se leía media palabra.
 - Anche il cambio canale sul telefono è diventato un elenco, per lo stesso motivo.
+  en: Switching channels on your phone is now a list too, for the same reason.
+  es: El cambio de canal en el teléfono ahora también es una lista, por el mismo motivo.
 - Tutto quello che si chiama con un «!» adesso si gestisce: una quarantina di comandi pronti, ognuno da spegnere, rinominare o riservare a sub, VIP e moderatori. Li trovi in Comandi, in fondo.
+  en: Everything you call with a “!” can now be managed: about forty built-in commands, each one you can turn off, rename or keep for subs, VIPs and mods. You’ll find them at the bottom of Commands.
+  es: Todo lo que se llama con un «!» ahora se gestiona: unos cuarenta comandos de serie que puedes apagar, renombrar o reservar a subs, VIP y moderadores. Los encuentras al final de Comandos.
 - «!giochi» risponde una volta sola: prima usciva l'elenco dei giochi di chat e, subito sotto, quello dei giochi con la webcam, anche a chi la webcam non la usa.
+  en: “!giochi” answers only once: before, it listed the chat games and, right below, the webcam games, even for people who don’t use a webcam.
+  es: «!giochi» responde una sola vez: antes salía la lista de juegos del chat y, justo debajo, la de juegos con webcam, incluso a quien no usa la webcam.
 - Un comando di una famiglia spenta non risponde più e il pannello te lo dice, invece di lasciarti indovinare perché tace.
+  en: A command from a family that’s turned off no longer answers, and the panel tells you so instead of leaving you to guess why it’s silent.
+  es: Un comando de una familia apagada ya no responde, y el panel te lo dice en lugar de dejarte adivinar por qué calla.
 - Ogni gioco si accende e si spegne da solo, si rinomina e si può riservare a sub, VIP o moderatori: prima i comandi erano fissi e non si poteva toccarne nemmeno uno.
+  en: Each game can be turned on and off by itself, renamed, and kept for subs, VIPs or mods: before, the commands were fixed and you couldn’t touch a single one.
+  es: Cada juego se enciende y se apaga por separado, se renombra y se puede reservar a subs, VIP o moderadores: antes los comandos eran fijos y no se podía tocar ni uno.
 - La scheda Giochi elenca tutti i comandi veri: ne mostrava dieci su trenta, e cinque giochi (pesca, roulette, furto, regala, manche) non li nominava affatto mentre il bot li annunciava in chat.
+  en: The Games tab lists all the real commands: it showed ten out of thirty, and five games (Fishing, Roulette, Heist, gift, Rounds) weren’t named at all while the bot announced them in chat.
+  es: La pestaña Juegos enumera todos los comandos reales: mostraba diez de treinta, y cinco juegos (Pesca, Ruleta, Robo, regalo, Rondas) ni se nombraban mientras el bot los anunciaba en el chat.
 - «!giochi» in chat dice i giochi accesi coi nomi che hai scelto tu, invece di un elenco fisso che poteva non corrispondere.
+  en: “!giochi” in chat lists the games that are on, with the names you picked, instead of a fixed list that might not match.
+  es: «!giochi» en el chat dice los juegos activos con los nombres que elegiste, en lugar de una lista fija que podía no coincidir.
 - La promo social è passata dalle Notifiche, dove sta di casa: nella scheda Giochi non c'entrava niente.
+  en: The social promo moved to Notifications, where it belongs: it had nothing to do with the Games tab.
+  es: La promo social pasó a Notificaciones, donde le corresponde: en la pestaña Juegos no tenía nada que ver.
 - Ogni scheda del pannello ha il suo manuale o la sua guida: prima ce l'avevano sei schede su ventiquattro, e nelle altre il «?» in barra non aveva niente da offrire.
+  en: Every tab in the panel has its own manual or guide: before, only six tabs out of twenty-four had one, and in the others the “?” in the bar had nothing to offer.
+  es: Cada pestaña del panel tiene su manual o su guía: antes solo lo tenían seis de veinticuatro, y en las demás el «?» de la barra no tenía nada que ofrecer.
 - Sette manuali nuovi: il bot, la moderazione, sondaggi e sorteggi, la diretta, la vetrina, l'abbonamento e le emote. Con i valori di base e i limiti veri, non descrizioni generiche.
+  en: Seven new manuals: the bot, moderation, polls and giveaways, the live stream, the showcase, the subscription and emotes. With the real defaults and limits, not generic descriptions.
+  es: Siete manuales nuevos: el bot, la moderación, encuestas y sorteos, el directo, el escaparate, la suscripción y los emotes. Con los valores de base y los límites reales, no descripciones genéricas.
 - Il sito ha i colori del logo, chiaro e scuro: prima la carta era calda e l'accento arancione, e con un marchio magenta non c'entravano niente.
+  en: The site now has the logo’s colors, in light and dark: before, the paper was warm and the accent orange, which had nothing to do with a magenta brand.
+  es: El sitio tiene los colores del logo, en claro y oscuro: antes el papel era cálido y el acento naranja, y con una marca magenta no tenían nada que ver.
 - Sul tema scuro il logo ha di nuovo l'alone dietro anche nella pagina pubblica e nelle guide: ce l'aveva solo la barra in alto.
+  en: In the dark theme, the logo has its glow behind it again on the public page and in the guides too: only the top bar had it.
+  es: En el tema oscuro, el logo vuelve a tener el halo detrás también en la página pública y en las guías: solo lo tenía la barra de arriba.
 - L'anteprima che esce quando condividi un link, e l'icona dell'app, sono dei colori nuovi: restavano indietro di un marchio.
+  en: The preview that shows up when you share a link, and the app icon, now use the new colors: they were one brand behind.
+  es: La vista previa que sale cuando compartes un enlace, y el icono de la app, tienen los colores nuevos: se habían quedado una marca atrás.
 - Le scritte più tenui, il verde e l'ambra adesso si leggono: stavano sotto la soglia di contrasto anche prima del cambio.
+  en: The faintest text, the green and the amber are now readable: they were below the contrast threshold even before the change.
+  es: Los textos más tenues, el verde y el ámbar ahora se leen: estaban por debajo del umbral de contraste incluso antes del cambio.
 - Nella barra c'è un «?» che porta a guide, manuali e novità, e in cima quella della scheda che stai guardando.
+  en: The bar has a “?” that leads to guides, manuals and what’s new, with the one for the tab you’re looking at on top.
+  es: En la barra hay un «?» que lleva a guías, manuales y novedades, y arriba la de la pestaña que estás mirando.
 - L'avviso della guida impara: dove sei già entrato e uscito senza fare niente arriva prima, e se gli dici due volte «non serve» sta zitto per un mese.
+  en: The guide prompt learns: where you’ve already come and gone without doing anything it shows up sooner, and if you tell it “No thanks” twice it stays quiet for a month.
+  es: El aviso de la guía aprende: donde ya entraste y saliste sin hacer nada aparece antes, y si le dices dos veces «No hace falta» se calla un mes.
 - Quando si vede che sei in difficoltà (fermo, un errore appena uscito, la rotella su e giù, o ci torni per la terza volta) il bot ti dice che per quella scheda c'è una guida. Si zittisce per sempre con un clic.
+  en: When it’s clear you’re stuck (not moving, an error just popped up, scrolling up and down, or back for the third time), the bot tells you there’s a guide for that tab. One click silences it for good.
+  es: Cuando se nota que tienes dificultades (quieto, un error recién salido, la rueda arriba y abajo, o vuelves por tercera vez), el bot te dice que esa pestaña tiene una guía. Se calla para siempre con un clic.
 - Se è una guida, si apre sul punto che dice cosa fare in SocialBot: non su una spiegazione generica.
+  en: If it’s a guide, it opens at the part that says what to do in SocialBot, not at a generic explanation.
+  es: Si es una guía, se abre en la parte que dice qué hacer en SocialBot, no en una explicación genérica.
 - Privacy, termini, invito ai moderatori e sblocco hanno lo stesso aspetto del resto del sito e seguono il tema che hai scelto: erano rimaste scure e viola.
+  en: Privacy, terms, the moderator invite and unlock look like the rest of the site and follow the theme you picked: they had stayed dark and purple.
+  es: Privacidad, términos, la invitación a moderadores y el desbloqueo tienen el mismo aspecto que el resto del sitio y siguen el tema que elegiste: se habían quedado oscuros y morados.
 - Su Kick il bot scrive con il tuo account, come su Twitch: prima provava con un account suo e Kick rifiutava, quindi in chat non usciva niente.
+  en: On Kick the bot writes with your account, like on Twitch: before, it tried with an account of its own and Kick refused it, so nothing showed up in chat.
+  es: En Kick el bot escribe con tu cuenta, como en Twitch: antes lo intentaba con una cuenta propia y Kick la rechazaba, así que en el chat no salía nada.
 - La pagina pubblica è dello stesso colore del resto del bot e segue il tema che hai scelto, chiaro o scuro: prima era scura e basta, anche se avevi scelto chiaro.
+  en: The public page has the same colors as the rest of the bot and follows the theme you picked, light or dark: before, it was always dark, even if you’d chosen light.
+  es: La página pública tiene los mismos colores que el resto del bot y sigue el tema que elegiste, claro u oscuro: antes era oscura y punto, aunque hubieras elegido claro.
 - Dalla pagina pubblica si arriva a guide, manuali e novità con un clic: prima stavano solo in fondo alla pagina.
+  en: From the public page, guides, manuals and what’s new are one click away: before, they were only at the bottom of the page.
+  es: Desde la página pública se llega a guías, manuales y novedades con un clic: antes solo estaban al final de la página.
 - Quando condividi un link di SocialBot esce l'anteprima giusta: privacy, termini, invito ai moderatori, sblocco e mini app non ne avevano nessuna, e le chat mostravano una cartolina vecchia.
+  en: When you share a SocialBot link, the right preview shows up: privacy, terms, the moderator invite, unlock and the mini app had none, and chats showed an old postcard.
+  es: Cuando compartes un enlace de SocialBot sale la vista previa correcta: privacidad, términos, invitación a moderadores, desbloqueo y mini app no tenían ninguna, y los chats mostraban una postal vieja.
 - Se Kick non manda niente, il pannello dice quale delle quattro cause è, e c'è un tasto per rifare l'iscrizione agli eventi senza ricollegare l'account.
+  en: If Kick sends nothing, the panel tells you which of the four causes it is, and there’s a button to redo the event subscription without reconnecting your account.
+  es: Si Kick no manda nada, el panel te dice cuál de las cuatro causas es, y hay un botón para rehacer la suscripción a los eventos sin volver a conectar la cuenta.
 - Ci si registra anche con Kick: se trasmetti solo lì non ti serve un account Twitch, e le parti che senza Twitch non funzionerebbero il pannello te le dice spente invece di fingere.
+  en: You can sign up with Kick too: if you only stream there you don’t need a Twitch account, and the panel shows the parts that wouldn’t work without Twitch as off instead of pretending.
+  es: Ahora te puedes registrar también con Kick: si solo emites ahí no necesitas una cuenta de Twitch, y el panel te muestra apagadas las partes que sin Twitch no funcionarían, en lugar de fingir.
 - Il bot funziona davvero su Kick: gli eventi che Kick ci mandava venivano rifiutati dal sito, quindi il collegamento riusciva e poi non arrivava niente.
+  en: The bot really works on Kick: the site was rejecting the events Kick sent us, so the connection went through and then nothing arrived.
+  es: El bot funciona de verdad en Kick: el sitio rechazaba los eventos que Kick nos mandaba, así que la conexión se hacía y luego no llegaba nada.
 - Su Kick il bot non si ascolta più da solo: le sue risposte non contano come messaggi della chat.
+  en: On Kick the bot no longer listens to itself: its replies don’t count as chat messages.
+  es: En Kick el bot ya no se escucha a sí mismo: sus respuestas no cuentan como mensajes del chat.
 - Il menù laterale si chiude cliccando fuori, non solo con la X: su schermi larghi restava aperto.
+  en: The side menu closes when you click outside it, not just with the X: on wide screens it stayed open.
+  es: El menú lateral se cierra haciendo clic fuera, no solo con la X: en pantallas anchas se quedaba abierto.
 - Ci sono due manuali, uno per i giochi e uno per i moduli: cosa fa ogni comando, quanto costa, quanto paga, e cosa vuol dire ogni variabile. Li apri dalle schede Giochi e Comandi.
+  en: There are two manuals, one for games and one for modules: what each command does, what it costs, what it pays, and what each variable means. You open them from the Games and Commands tabs.
+  es: Hay dos manuales, uno para los juegos y otro para los módulos: qué hace cada comando, cuánto cuesta, cuánto paga y qué significa cada variable. Los abres desde las pestañas Juegos y Comandos.
 - C'è una pagina Novità, e in cima al pannello trovi quello che è cambiato da quando non guardavi: se aggiungiamo qualcosa, adesso lo sai.
+  en: There’s a What’s new page, and at the top of the panel you find what changed since you last looked: when we add something, now you know.
+  es: Hay una página de Novedades, y arriba en el panel encuentras lo que cambió desde la última vez que miraste: si añadimos algo, ahora lo sabes.
 - Le pagine che si aprono senza login tornano a funzionare: la home restava sotto il velo di caricamento, l'overlay in OBS era bianco, e l'invito ai moderatori e lo sblocco con passkey non facevano niente.
+  en: Pages that open without logging in work again: the home page was stuck under the loading screen, the overlay in OBS was blank, and the moderator invite and passkey unlock did nothing.
+  es: Las páginas que se abren sin iniciar sesión vuelven a funcionar: la portada se quedaba bajo el velo de carga, el overlay en OBS estaba en blanco, y la invitación y el desbloqueo con passkey no hacían nada.
 - Il marchio nuovo: il logo nella barra in alto al posto della scritta, e la schermata di caricamento che respira invece dello sfondo.
+  en: The new brand: the logo in the top bar instead of the wordmark, and a loading screen that breathes instead of the background.
+  es: La marca nueva: el logo en la barra de arriba en lugar del texto, y la pantalla de carga que respira en vez del fondo.
 - Il logo nuovo arriva anche a chi era già passato dal sito: prima restava incastrato quello vecchio nella linguetta del browser.
+  en: The new logo reaches people who had already visited the site too: before, the old one stayed stuck in the browser tab.
+  es: El logo nuevo llega también a quien ya había pasado por el sitio: antes el viejo se quedaba atascado en la pestaña del navegador.
 - Nella scheda Giochi c'è "Inventa un gioco tuo": i giochi non sono più solo quelli pronti, te li costruisci come i comandi.
+  en: The Games tab has “Make up your own game”: games are no longer just the ready-made ones, you build them like commands.
+  es: En la pestaña Juegos está «Inventa tu propio juego»: los juegos ya no son solo los que vienen hechos, te los armas como los comandos.
 - Sei ricette a punti da cui partire: slot, scommessa, regalo, furto, saldo e "dai punti".
+  en: Six points recipes to start from: slots, bet, gift, heist, balance and “give points”.
+  es: Seis recetas con puntos para empezar: tragaperras, apuesta, regalo, robo, saldo y «dar puntos».
 - Il costo di un gioco può essere una cifra che scrive chi gioca, non solo un numero fisso.
+  en: A game’s cost can be an amount the player types in, not just a fixed number.
+  es: El costo de un juego puede ser una cifra que escribe quien juega, no solo un número fijo.
 - Puoi aggiustare le monete di qualcuno a mano dal pannello, senza passare dalla chat.
+  en: You can adjust someone’s coins by hand from the panel, without going through chat.
+  es: Puedes ajustar las monedas de alguien a mano desde el panel, sin pasar por el chat.
 - Nelle risposte a punti puoi usare la cifra davvero mossa e il nome di chi l'ha subita, così un furto racconta quello che è successo.
+  en: In points replies you can use the amount actually moved and the name of whoever it happened to, so a heist tells what really happened.
+  es: En las respuestas con puntos puedes usar la cifra que se movió de verdad y el nombre de quien la sufrió, así un robo cuenta lo que pasó.
 - Un comando che ti sei costruito tu vince sempre su quello pronto con lo stesso nome.
+  en: A command you built yourself always wins over a built-in one with the same name.
+  es: Un comando que armaste tú siempre gana sobre el de serie con el mismo nombre.
 - "Scarica i miei dati" funziona anche su iPhone: prima non partiva niente.
+  en: “Download my data” works on iPhone too: before, nothing happened.
+  es: «Descargar mis datos» funciona también en iPhone: antes no pasaba nada.
 - La barra in alto si ritira quando non ci sta, invece di accavallarsi su schermi stretti.
+  en: The top bar tucks away when it doesn’t fit, instead of overlapping on narrow screens.
+  es: La barra de arriba se repliega cuando no cabe, en lugar de superponerse en pantallas estrechas.
 - Le dirette dal browser (Studio Web) sono spente: erano promesse in ventun punti e non funzionavano.
+  en: Streaming from the browser (Web Studio) is turned off: it was promised in twenty-one places and didn’t work.
+  es: Las transmisiones desde el navegador (Estudio Web) están apagadas: se prometían en veintiún lugares y no funcionaban.
 
 ## 2026-08-29
 
 - Due classifiche separate: una del pubblico e una dello staff, così i moderatori non coprono più i primi posti.
+  en: Two separate leaderboards: one for the audience and one for the staff, so mods no longer take up the top spots.
+  es: Dos clasificaciones separadas: una del público y otra del staff, así los moderadores ya no ocupan los primeros puestos.
 - Il premio in VIP salta chi ce l'ha già per sempre e passa al successivo, invece di accorciarglielo.
+  en: The VIP prize skips anyone who already has VIP for good and moves on to the next person, instead of shortening theirs.
+  es: El premio de VIP se salta a quien ya lo tiene para siempre y pasa al siguiente, en lugar de acortárselo.
 - La barra "non hai salvato" indica il salva della zona che stai modificando, e sparisce quando salvi lì.
+  en: The “not saved” bar points to the Save button of the area you’re editing, and disappears when you save there.
+  es: La barra de «no guardado» señala el botón Guardar de la zona que estás editando, y desaparece cuando guardas ahí.
 - Le immagini che arrivano da fuori, emote comprese, non si rompono più.
+  en: Images that come from outside, emotes included, no longer break.
+  es: Las imágenes que llegan de fuera, emotes incluidos, ya no se rompen.
 
 ## 2026-08-28
 
 - Caricare emote nuove su 7TV funziona di nuovo.
+  en: Uploading new emotes to 7TV works again.
+  es: Subir emotes nuevos a 7TV vuelve a funcionar.
 - Il bot parla su Kick: comandi, moderazione e avvisi, con lo stesso pannello.
+  en: The bot talks on Kick: commands, moderation and alerts, from the same panel.
+  es: El bot habla en Kick: comandos, moderación y avisos, con el mismo panel.
 - Un !comando scritto su Kick non riceve più la risposta su Twitch.
+  en: A !command typed on Kick no longer gets its reply on Twitch.
+  es: Un !comando escrito en Kick ya no recibe la respuesta en Twitch.
 - Puoi scegliere su quali piattaforme gira ogni singolo comando; quelli che hai già restano come stanno.
+  en: You can choose which platforms each command runs on; the ones you already have stay as they are.
+  es: Puedes elegir en qué plataformas funciona cada comando; los que ya tienes se quedan como están.
 - L'avviso di diretta è uno solo per tutte le piattaforme, non uno per ognuna.
+  en: The go-live alert is a single one for all platforms, not one for each.
+  es: El aviso de directo es uno solo para todas las plataformas, no uno para cada una.
 - Porti qui i comandi che hai già su un altro bot, senza riscriverli a mano.
+  en: You can bring over the commands you already have on another bot, without retyping them by hand.
+  es: Puedes traer aquí los comandos que ya tienes en otro bot, sin reescribirlos a mano.
 - Puoi scaricare tutti i tuoi dati quando vuoi, in un file solo.
+  en: You can download all your data whenever you want, in a single file.
+  es: Puedes descargar todos tus datos cuando quieras, en un solo archivo.
 - La libreria dei media si apre da ogni campo dove serve un'immagine o un suono, non solo dalla sua scheda.
+  en: The media library opens from any field that needs an image or a sound, not just from its own tab.
+  es: La biblioteca de medios se abre desde cualquier campo que necesite una imagen o un sonido, no solo desde su pestaña.
 - Telegram: "Rileva gruppo" non dà più errore.
+  en: Telegram: “Detect group” no longer throws an error.
+  es: Telegram: «Detectar grupo» ya no da error.
 - Se finisci su una pagina senza cruscotto, adesso c'è come tornare indietro.
+  en: If you end up on a page without the dashboard, there’s now a way back.
+  es: Si terminas en una página sin el panel, ahora hay forma de volver atrás.
