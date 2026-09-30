@@ -82,7 +82,7 @@ test('la mini-guida del Filtro non promette che i moderatori passano sempre', ()
 });
 
 test('niente lineetta lunga nelle etichette di Telegram e Discord', () => {
-  for (const f of ['_dcOpzioniRuolo', 'caricaDcAvvisi', 'fasciaDistruttiva', '_dcsOpzioniChi', 'caricaCompleanni', 'pannelloDcAvvisi', 'caricaTgDestinazioni']) {
+  for (const f of ['_dcOpzioniRuolo', 'caricaDcAvvisi', 'fasciaDistruttiva', '_dcsOpzioniChi', 'caricaCompleanni', 'pannelloDcAvvisi', 'caricaTgDestinazioni', 'pannelloTelegram', 'pannelloRuoli', 'pannelloDcServer', 'pannelloChiEntra', 'pannelloFiltro', '_dcsDiffHtml']) {
     assert.ok(!corpo(f).includes('—'), `${f} usa «—»`);
   }
   const temi = leggi('src/features/carta-disegno.js');

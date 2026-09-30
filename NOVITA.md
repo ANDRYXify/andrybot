@@ -115,6 +115,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - «Salva la settimana» ricorda i posti che hai spuntato in «Mandala»: prima teneva quelli di prima, e la settimana automatica usciva nei posti vecchi. [vai: settimana]
 - Il primo link già pronto della pagina link porta al tuo canale anche se entri con Kick o YouTube, non più a Twitch; chi ha solo un server Discord parte senza. [vai: pagina]
 - Le Grafiche portano all'indirizzo vero del tuo canale anche se entri con Kick o YouTube, e nella pagina link la foto del profilo si chiama «La tua foto» per tutti. [vai: grafiche]
+- Nelle schede Ruoli, Il server e Il filtro di Discord le spiegazioni non usano più la lineetta lunga come pausa. [vai: dcserver]
 
 ## 2026-09-26
 
