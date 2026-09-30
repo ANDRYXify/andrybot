@@ -56,6 +56,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] In Account ci sono le «Preferenze del canale»: la lingua del bot in chat, il fuso, come si scrivono date, ore e durate, e da dove si leggono le prossime dirette. [vai: account]
   > Le preferenze del canale
   > Prima il bot scriveva le date all'italiana e con l'ora di Roma per tutti, anche per un canale inglese o spagnolo.
+- [importante] C'è !channelage, da quanto esiste il canale o quello di chi nomini, e !followage dice il tempo vero di calendario. La risposta di tutti e due la puoi riscrivere, nella lista dei comandi. [vai: moduli]
+  > !followage e !channelage a modo tuo
+  > Prima la risposta dei comandi pronti era fissa, e il tempo di !followage contava i mesi da trenta giorni.
 
 ## 2026-09-27
 

@@ -125,9 +125,34 @@
     return w.length > 1 ? w.slice(0, -1).join(', ') + W.e + w[w.length - 1] : w[0];
   }
 
+  const ETA = {
+    it: { a: ['anno', 'anni'], me: ['mese', 'mesi'], g: ['giorno', 'giorni'], h: ['ora', 'ore'], poco: "meno di un'ora", e: ' e ' },
+    en: { a: ['year', 'years'], me: ['month', 'months'], g: ['day', 'days'], h: ['hour', 'hours'], poco: 'less than an hour', e: ' and ' },
+    es: { a: ['año', 'años'], me: ['mes', 'meses'], g: ['día', 'días'], h: ['hora', 'horas'], poco: 'menos de una hora', e: ' y ' },
+  };
+
+  function tempoDa(inizio, p, opz) {
+    const v = valori(p);
+    const W = ETA[v.lingua];
+    const fine = opz && Number.isFinite(opz.adesso) ? opz.adesso : Date.now();
+    if (!Number.isFinite(inizio) || inizio > fine) return W.poco;
+    const x = calendario(inizio, v), y = calendario(fine, v);
+    let anni = y.a - x.a, mesi = y.m - x.m, giorni = y.g - x.g;
+    if (y.h * 60 + y.min < x.h * 60 + x.min) giorni -= 1;
+    if (giorni < 0) { mesi -= 1; giorni += new Date(Date.UTC(y.a, y.m - 1, 0)).getUTCDate(); }
+    if (mesi < 0) { anni -= 1; mesi += 12; }
+    const parola = (n, k) => `${n} ${W[k][n === 1 ? 0 : 1]}`;
+    const coppia = (a, b) => (b ? a + W.e + b : a);
+    if (anni > 0) return coppia(parola(anni, 'a'), mesi ? parola(mesi, 'me') : '');
+    if (mesi > 0) return coppia(parola(mesi, 'me'), giorni ? parola(giorni, 'g') : '');
+    if (giorni > 0) return parola(giorni, 'g');
+    const ore = Math.floor((fine - inizio) / 3600000);
+    return ore > 0 ? parola(ore, 'h') : W.poco;
+  }
+
   function primoGiorno(p) { return valori(p).settimana === 'dom' ? 0 : 1; }
 
-  const FORMATI = { LINGUE, DATE, ORE, SETTIMANE, DURATE, FUSO_BASE, fusoValido, valori, data, ora, giorno, quando, durata, primoGiorno };
+  const FORMATI = { LINGUE, DATE, ORE, SETTIMANE, DURATE, FUSO_BASE, fusoValido, valori, data, ora, giorno, quando, durata, tempoDa, primoGiorno };
   if (typeof module !== 'undefined' && module.exports) module.exports = FORMATI;
   else radice.SB_FORMATI = FORMATI;
 })(typeof window !== 'undefined' ? window : globalThis);
