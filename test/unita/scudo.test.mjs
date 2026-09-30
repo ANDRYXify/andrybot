@@ -129,7 +129,7 @@ test('venti persone che scrivono «lol» sono una chat viva, non un attacco', as
   streamers.upsertApproved(ch, 'Coro2', '12');
   streamers.setEnabled(ch, true);
   streamers.setSettings(ch, { antibot: { attivo: true, avvisa: false } });
-  const scudo = new ab.AntiBot({ helix: { deleteMessage: async () => {} } });
+  const scudo = new ab.AntiBot({ helix: { deleteMessage: async () => ({ ok: true }) } });
   for (let i = 0; i < 20; i++) {
     const preso = await scudo.controllaChat({ channel: ch, user: 'gente' + i, userId: 'g' + i, id: 'k' + i, text: 'lol' });
     assert.equal(preso, false, 'una parola sola non entra mai nel confronto');
@@ -173,7 +173,7 @@ test('sotto un raid vero il coro chiede molte piu\' bocche', async () => {
   streamers.setEnabled(ch, true);
   streamers.setSettings(ch, { antibot: { attivo: true, avvisa: false } });
   const scudo = new ab.AntiBot({ helix: {
-    deleteMessage: async () => {}, chatSoloFollower: async () => ({ ok: true }),
+    deleteMessage: async () => ({ ok: true }), chatSoloFollower: async () => ({ ok: true }),
     chatLenta: async () => ({ ok: true }), shieldMode: async () => ({ ok: true }),
   } });
   scudo.onRaid({ channel: ch, ts: 1000, data: { viewers: 300, from_login: 'lucia' } });
@@ -203,7 +203,7 @@ test('il coro resta acceso anche se lo streamer spegne l\'elenco dei nomi', asyn
   streamers.upsertApproved(ch, 'Coro3', '13');
   streamers.setEnabled(ch, true);
   streamers.setSettings(ch, { antibot: { attivo: true, avvisa: false, nomiBot: false } });
-  const scudo = new ab.AntiBot({ helix: { deleteMessage: async () => {}, chatSoloFollower: async () => ({ ok: true }), chatLenta: async () => ({ ok: true }), shieldMode: async () => ({ ok: true }) } });
+  const scudo = new ab.AntiBot({ helix: { deleteMessage: async () => ({ ok: true }), chatSoloFollower: async () => ({ ok: true }), chatLenta: async () => ({ ok: true }), shieldMode: async () => ({ ok: true }) } });
   const testo = 'guarda che roba questo canale merita molti piu spettatori davvero';
   let preso = false;
   for (let i = 0; i < 4; i++) preso = await scudo.controllaChat({ channel: ch, user: 'v' + i, userId: 'w' + i, id: 'q' + i, text: testo });
@@ -318,7 +318,7 @@ function helixFinto() {
     shieldMode: async (_c, on) => { f.chiuso.shield = on; return { ok: true }; },
     bloccaUtente: async (_c, id) => { f.bloccati.push(id); return { ok: true }; },
     timeoutUser: async (_c, id) => { f.bannati.push(id); return { ok: true }; },
-    deleteMessage: async () => {},
+    deleteMessage: async () => ({ ok: true }),
     getRecentFollowers: async () => { const a = [...f.follower]; a.cursore = ''; a.totale = a.length; return a; },
   };
 }

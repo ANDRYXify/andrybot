@@ -186,15 +186,46 @@ aggiornamento che fallisce lascia le cose come stavano invece che a metà.
    (quella che la riapre per controllarla);
 4. `npm ci` + `npm test` + cancelli — **se è rosso il container non viene
    sfiorato** e il sito resta su con la versione di prima;
-5. solo allora ricostruisce, e interroga `/health` finché non torna sano;
-   altrimenti stampa il comando esatto per tornare indietro.
+5. aspetta che nessuno sia in diretta (vedi sotto), costruisce l'immagine
+   nuova col bot vecchio acceso, poi cambia il container e interroga `/health`
+   finché non torna sano; se non torna, torna da solo alla versione di prima.
 
-`--prova` fa tutto tranne toccare il container. `--salta-prove` esiste per le
-emergenze vere.
+`--prova` fa tutto tranne toccare il container. `--salta-prove` e `--subito`
+esistono per le emergenze vere.
 
 Il `npm ci` non è un dettaglio: è ciò che dà a questo cancello la proprietà che
 il gancio locale non ha — un'installazione **pulita, dal lockfile**, come su una
 macchina che non ha mai visto il progetto.
+
+### Aggiornare senza che il bot che gira se ne accorga
+
+Due cose dell'aggiornamento toccavano il bot vivo, e nessuna delle due si
+vedeva dallo script: si vedeva in chat.
+
+- **Il collaudo ruba la macchina.** Prove, cancelli e Chromium sono mezz'ora
+  di CPU sulla stessa macchina che tiene il bot in chat e gli overlay in onda.
+  Adesso tutto il collaudo parte con `nice -n 19` (e `ionice -c 3` dove
+  c'è): quando il bot e il collaudo vogliono la CPU insieme, il bot passa
+  avanti, e il collaudo ci mette solo di più. Non si cambia il collaudo: si
+  cambia chi aspetta.
+- **Il cambio del container** sono pochi secondi con chat, avvisi e overlay
+  giù, e quello che succede lì (un comando, un follow) si perde. Di base il
+  cambio aspetta che **nessuno sia in diretta**. Lo dice il bot stesso: scrive
+  chi è in onda in `data/.in-onda` a ogni cambio e all'avvio (`_scriviInOnda`
+  in `src/bot.js`), su Twitch e su Kick. Lo script controlla ogni minuto, al
+  massimo `ATTESA_MAX_MIN` minuti (di base 360). Se l'attesa scade rimette il
+  repository com'era ed esce con 3. `--subito` non aspetta, ed è per le
+  emergenze. Senza il file (il bot è fermo, o è una versione che ancora non lo
+  scrive) non si sa chi è in onda, e non si aspetta.
+- **Il collaudo verde si ricorda** (`data/.collaudato`, il commit di qui e
+  quello del cervello): un aggiornamento rimandato non rifà mezz'ora di prove
+  al giro dopo.
+- **L'immagine nuova si costruisce prima**, col bot vecchio acceso; il fermo è
+  solo il cambio, e alla fine lo script dice quanti secondi è durato.
+
+Le prove sono in `test/contratto/aggiorna-senza-fermare.test.mjs`. Lì la
+funzione che legge il file si fa girare così com'è scritta nello script, non
+una sua copia.
 
 ### Cosa ha trovato alla prima esecuzione
 

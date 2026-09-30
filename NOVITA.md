@@ -65,6 +65,12 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > Le monete guadagnate stando in chat adesso si spendono: tu decidi cosa c'è, quanto costa e chi lo compra, e se qualcosa non parte le monete tornano.
 - L'informativa sulla privacy dice cosa tiene il negozio: chi ha comprato cosa e quando, per un anno, e gli oggetti nella borsa finché l'articolo resta.
 
+- [importante] Nell'Overlay Studio c'è il «Conto alla pubblicità»: quanto manca alla prossima pausa di Twitch e, durante la pausa, quanto manca al tuo ritorno. Scende da solo e segue anche i rinvii. [vai: alert]
+  > Il conto alla pubblicità, in scena
+  > Prima il conto c'era solo nel pannello, per te: chi guardava la diretta non sapeva quando sarebbe arrivata la pausa, né quanto sarebbe durata.
+- Il pannello si apre subito: prima il server si fermava una decina di secondi quasi a ogni apertura, e la copertina finiva su «ci sta mettendo più del solito». Dalla seconda volta il browser tiene i file.
+- Accanto al nome della moneta scegli come se ne parla, «le tue», «i tuoi», «la tua» o «il tuo»: !giochi dice «I tuoi Semi di girasole», non più «Le tue Semi di girasole». [vai: giochi]
+- Gli aggiornamenti di SocialBot aspettano che nessuno sia in diretta prima di riavviare il bot, e mentre si preparano non gli rubano velocità: niente chat o overlay fermi in piena serata.
 
 ## 2026-09-27
 

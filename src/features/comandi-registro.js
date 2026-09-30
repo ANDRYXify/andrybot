@@ -26,6 +26,7 @@ import { streamers } from '../db.js';
 import { valoriDi, giocoDi } from './giochi-conf.js';
 import { inMessaggi } from './risposte.js';
 import { linguaChat } from './lingua-canale.js';
+import { monetaDi, accordaMoneta } from './moneta.js';
 
 export const LIVELLI = ['tutti', 'sub', 'vip', 'mod'];
 
@@ -303,6 +304,7 @@ export const COMANDI = [
 //
 // `spiega` parla a chi legge, in seconda persona. {id} diventa il nome che quel
 // comando ha nel canale (rinominato compreso), %monete% il nome delle monete,
+// %[le tue|i tuoi|la tua|il tuo]% l'accordo con quel nome (vedi moneta.js),
 // %gioco.manopola% il valore scelto nelle regole del gioco: solo manopole che
 // non valgono mai zero, cosi' nessuna frase dice «costa 0».
 //
@@ -315,7 +317,7 @@ export const GRUPPI = [
   { id: 'sfide', emoji: '⚔️', nome: 'Contro qualcuno' },
   { id: 'insieme', emoji: '👥', nome: 'Tutti insieme' },
   { id: 'coccole', emoji: '🤗', nome: 'Coccole' },
-  { id: 'conto', emoji: '💰', nome: 'Le tue %monete%' },
+  { id: 'conto', emoji: '💰', nome: '%[Le tue|I tuoi|La tua|Il tuo]% %monete%' },
   { id: 'webcam', emoji: '🎥', nome: 'Con la webcam' },
 ];
 
@@ -323,7 +325,7 @@ export const IN_CHAT = {
   dado: { gruppo: 'solo', emoji: '🎲', spiega: 'Tiri un dado da sei con {dado}. Ne vuoi di più, o con più facce? {dado} 2d20 ne tira due da venti.' },
   moneta: { gruppo: 'solo', emoji: '🪙', spiega: 'Lanci una moneta con {moneta}, ed esce testa o croce.' },
   '8ball': { gruppo: 'solo', emoji: '🎱', forma: 'domanda', spiega: 'Fai una domanda e la palla magica ti risponde: {8ball} vinco stasera?' },
-  monete: { gruppo: 'conto', emoji: '💰', spiega: 'Ti dice quante %monete% hai. Si guadagnano stando in chat, e giocando.' },
+  monete: { gruppo: 'conto', emoji: '💰', spiega: 'Ti dice %[quante|quanti|quanta|quanto]% %monete% hai. %[Si guadagnano|Si guadagnano|Si guadagna|Si guadagna]% stando in chat, e giocando.' },
   classifica: { gruppo: 'conto', emoji: '🏆', spiega: 'Chi ha più %monete% nel canale, e a che posto sei tu. Con {classifica} mod vedi la gara dello staff, con {classifica} tutti le due insieme.' },
   slot: { gruppo: 'solo', emoji: '🎰', spiega: 'Tiri la leva con {slot}: ogni giocata costa %slot.costo% %monete%, con i simboli uguali si vince e il tris di 💎 è il jackpot.' },
   duello: { gruppo: 'sfide', emoji: '⚔️', forma: '@nome posta', spiega: 'Sfidi qualcuno che è in chat con {duello} @nome, e vince uno dei due. Con una posta ({duello} @nome 50) l\'altro accetta con {accetta} o dice di no con {rifiuta}, e chi vince prende la posta dell\'altro.' },
@@ -331,7 +333,7 @@ export const IN_CHAT = {
   manche: { gruppo: 'insieme', emoji: '🎮', spiega: 'Con {manche} parte subito una manche per tutta la chat, invece di aspettare la prossima. Per sceglierla scrivi anche il nome: {manche} impiccato.' },
   pesca: { gruppo: 'solo', emoji: '🎣', spiega: 'Getti la lenza con {pesca}: può abboccare qualcosa che vale %monete%, o niente.' },
   roulette: { gruppo: 'solo', emoji: '🎡', forma: 'posta colore', spiega: 'Punti su un colore o su un numero: {roulette} 50 rosso. Col colore giusto ti torna il doppio, col verde 14 volte tanto, col numero giusto 36.' },
-  furto: { gruppo: 'sfide', emoji: '🦝', forma: '@nome', spiega: 'Provi a rubare %monete% a qualcuno con {furto} @nome. Se va bene sono tue, se ti beccano paghi tu la multa, a lui.' },
+  furto: { gruppo: 'sfide', emoji: '🦝', forma: '@nome', spiega: 'Provi a rubare %monete% a qualcuno con {furto} @nome. Se va bene %[sono tue|sono tuoi|è tua|è tuo]%, se ti beccano paghi tu la multa, a lui.' },
   blackjack: { gruppo: 'solo', emoji: '🃏', forma: 'posta', spiega: 'Una mano contro il banco: {blackjack} 50 per puntare, poi {carta} per un\'altra carta o {stai} per fermarti. Il banco sta su ogni 17; se non decidi entro %blackjack.tempo% secondi, stai.' },
   carta: { parteDi: 'blackjack' },
   stai: { parteDi: 'blackjack' },
@@ -351,7 +353,7 @@ export const IN_CHAT = {
   rifiuta: { parteDi: 'duello' },
   morra: { gruppo: 'solo', emoji: '✊', forma: 'mossa posta', spiega: 'Sasso, carta o forbice contro il bot: {morra} carta. Con una puntata ti giochi %monete%: {morra} carta 20.' },
   sblocca: { gruppo: 'conto', emoji: '🔓', forma: 'minuti', spiega: 'Spendi %monete% per mettere la chat in %sblocca.modo% per qualche minuto: {sblocca} 5 per cinque minuti, a %sblocca.costoMinuto% %monete% al minuto.' },
-  regala: { gruppo: 'conto', emoji: '💝', forma: '@nome quanto', spiega: 'Regali %monete% tue a qualcuno: {regala} @nome 50.' },
+  regala: { gruppo: 'conto', emoji: '💝', forma: '@nome quanto', spiega: 'Regali %[un po\' delle tue|un po\' dei tuoi|un po\' della tua|un po\' del tuo]% %monete% a qualcuno: {regala} @nome 50.' },
 
   mima: { gruppo: 'webcam', emoji: '🎭', spiega: 'Con {mima} parte il gioco della mimica nell\'overlay della webcam.' },
   nonridere: { gruppo: 'webcam', emoji: '😐', spiega: 'Con {nonridere} parte la sfida «non ridere» nell\'overlay della webcam.' },
@@ -543,9 +545,11 @@ const ETICHETTA = {
 const APERTURE = ['Ecco a cosa si gioca qui.', 'Scegli tu.', 'Si gioca a tutto questo.'];
 const aperture = new Map();
 
-const nomeMonete = (channel) => {
-  const n = impostazioni(channel).nomeMonete;
-  return (n && String(n).trim()) || 'monete';
+// Il nome e la forma della moneta vengono da un posto solo (moneta.js): gli
+// accordi si sciolgono prima, poi entra il nome.
+const conMoneta = (channel, testo) => {
+  const m = monetaDi(channel);
+  return accordaMoneta(testo, m.forma).replace(/%monete%/g, m.nome);
 };
 
 // Come si scrive un gioco per giocarlo: il nome del canale e la sua forma.
@@ -554,12 +558,11 @@ const comeSiScrive = (r) => ['!' + r.nomi[0], IN_CHAT[r.id].forma].filter(Boolea
 export function giochiInChat(channel, msg = {}, { limite = 450 } = {}) {
   const righe = elenco(channel).filter((r) => r.vivo && FAMIGLIE_GIOCHI.includes(r.modulo) && r.id !== ELENCO
     && IN_CHAT[r.id]?.gruppo && puoUsare(r.chi, msg));
-  const monete = nomeMonete(channel);
   const pezzi = [];
   for (const g of GRUPPI) {
     const qui = righe.filter((r) => IN_CHAT[r.id].gruppo === g.id);
     if (!qui.length) continue;
-    const testa = `${g.emoji} ${g.nome.replace('%monete%', monete)}:`;
+    const testa = `${g.emoji} ${conMoneta(channel, g.nome)}:`;
     qui.forEach((r, i) => {
       const come = comeSiScrive(r);
       pezzi.push({ testo: i ? come : `${testa} ${come}`, prima: i ? ', ' : ' · ', daCapo: `${testa} ${come}` });
@@ -582,10 +585,8 @@ export function giochiInChat(channel, msg = {}, { limite = 450 } = {}) {
 // Il testo di `spiega`, con i nomi e i valori di QUESTO canale.
 export function riempiSpiega(channel, testo) {
   const settings = impostazioni(channel);
-  const monete = nomeMonete(channel);
-  return String(testo || '')
-    .replace(/\{([a-z0-9]+)\}/g, (_, id) => '!' + nomeIn(channel, id))
-    .replace(/%monete%/g, monete)
+  return conMoneta(channel, String(testo || '')
+    .replace(/\{([a-z0-9]+)\}/g, (_, id) => '!' + nomeIn(channel, id)))
     .replace(/%([a-z0-9]+)\.([a-zA-Z]+)%/g, (_, g, k) => testoManopola(settings, g, k));
 }
 

@@ -27,6 +27,13 @@ const sito = await apriSito({});
 const br = await apriBrowser();
 if (!br) { console.log('Playwright non c\'e\': salto.'); sito.chiudi(); process.exit(0); }
 const pg = await br.newPage({ viewport: { width: 1280, height: 1200 } });
+// Il giro guidato di una scheda nuova si apre da solo dopo 1,4 secondi, se la
+// striscia dei cookie non c'e' piu'. Qui la striscia si toglie a 0,8 secondi:
+// senza questa riga era una gara di tempi, e il giro copriva «Leggi il mio
+// server» quando la pagina arrivava in fretta. Si parte come chi i giri li ha
+// gia' fatti, con la stessa scelta che il pannello offre («non mostrarli piu'»),
+// come negli altri cancelli che premono tasti.
+await pg.addInitScript(() => { try { localStorage.setItem('sb-giro', JSON.stringify({ viste: {}, mai: true })); } catch {} });
 const guai = [];
 pg.on('pageerror', (e) => guai.push('pageerror: ' + e.message));
 pg.on('console', (m) => { if (m.type() === 'error') guai.push('console: ' + m.text()); });

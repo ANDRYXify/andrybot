@@ -92,7 +92,21 @@ dice(scritteAMano.length === 0 || scritteAMano.every((r) => casiModello.has(r)),
 const nome = (tok) => { const m = /^\$([a-zA-Z0-9_]+)(\()?/.exec(String(tok)); return m ? '$' + m[1] + (m[2] || '') : ''; };
 const offerte = [...listaDi(app, 'VARIABILI').matchAll(/'([^']+)'/g)].map((m) => m[1]);
 const spiegate = new Set([...listaDi(app, 'LEGENDA_VAR').matchAll(/\['(\$[^']+)'/g)].map((m) => nome(m[1])));
-const aCaso = new Set([...corpoDi(motore, 'const dinamiche = ').matchAll(/^\s{6}([a-zA-Z]+):/gm)].map((m) => '$' + m[1]));
+// Le variabili «a caso» stanno in un OGGETTO, non in una funzione: il corpo si
+// prende dalla sua prima graffa alla chiusa che le corrisponde. Con `corpoDi`
+// si cercavano prima i parametri, cioe' le tonde della prima freccia, e ci si
+// fermava alla prima graffa dentro un valore (le opzioni di un formato).
+const oggettoDi = (testo, nome) => {
+  const i = testo.indexOf(nome);
+  if (i < 0) return '';
+  let liv = 0;
+  for (let j = testo.indexOf('{', i); j >= 0 && j < testo.length; j++) {
+    if (testo[j] === '{') liv++;
+    else if (testo[j] === '}') { liv--; if (liv === 0) return testo.slice(i, j + 1); }
+  }
+  return '';
+};
+const aCaso = new Set([...oggettoDi(motore, 'const dinamiche = ').matchAll(/^\s{6}([a-zA-Z]+):/gm)].map((m) => '$' + m[1]));
 dice(offerte.length > 10 && spiegate.size > 10 && aCaso.size > 5,
   `variabili offerte ${offerte.length} · spiegate ${spiegate.size} · famiglia "a caso" ${aCaso.size}`);
 const mute = offerte.filter((v) => !spiegate.has(nome(v)) && !aCaso.has(nome(v)));

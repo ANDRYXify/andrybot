@@ -58,6 +58,10 @@ const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
 const b = await chromium.launch({ executablePath: CHROMIUM,
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox', '--disable-dev-shm-usage'] });
 const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+// I giri guidati si aprono da soli in ogni scheda nuova, a un tempo loro:
+// senza questa scelta («non mostrarli piu'») coprirebbero un tasto a caso
+// quando la pagina arriva in fretta. Qui non si prova il giro.
+await p.addInitScript(() => { try { localStorage.setItem('sb-giro', JSON.stringify({ viste: {}, mai: true })); } catch {} });
 await p.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domcontentloaded' });
 await p.waitForFunction(() => window.SB_APP && window.SB_CERCA, null, { timeout: 20000 });
 await p.addStyleTag({ content: '#cookie-banner{display:none!important}' });
