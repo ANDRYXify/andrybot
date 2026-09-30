@@ -28,6 +28,7 @@ import { aChiPuo, eStaff } from './risposte.js';
 import * as prossime from './prossime.js';
 import * as formati from './preferenze.js';
 import { preferenzeDi } from './preferenze.js';
+import { nomeMoneta } from './moneta.js';
 
 // Le parole che alcune variabili pescano: nella lingua della chat del canale,
 // come tutto quello che il bot scrive (docs/PREFERENZE.md).
@@ -71,10 +72,6 @@ function loginBuono(x) {
   return /^[a-z0-9_]{2,30}$/.test(u) ? u : '';
 }
 
-function nomeMoneta(channel) {
-  const n = streamers.get(channel)?.settings?.nomeMonete;
-  return (n && String(n).trim()) || 'monete';
-}
 
 // Scala dei ruoli (tier): tutti < sub < vip < mod.
 const TIER_SCALA = { tutti: 0, sub: 1, vip: 2, mod: 3 };

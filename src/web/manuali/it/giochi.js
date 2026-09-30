@@ -31,6 +31,7 @@ export default {
       'È l\'interruttore generale. La spunta «Attiva i minigiochi in chat» è accesa di base.',
       'Da spenta, i comandi dei giochi e dei giveaway non rispondono, le monete per messaggio, presenza e partecipazione non arrivano, le manche e il boss non partono e un giveaway non si apre. Monete, classifiche e regole restano salvate.',
       'In «Come si chiamano le monete» scrivi il nome della moneta, fino a 20 caratteri. Il bot lo usa in tutti i messaggi dei giochi. Premi «Salva».',
+      'Sotto, in «Come se ne parla in chat», vedi quattro frasi già scritte col tuo nome: «le tue Semi di girasole», «i tuoi Semi di girasole», «la tua…», «il tuo…». Scegli quella che suona giusta, e il bot accorda così le parole intorno al nome, per esempio in !giochi. Finché non scegli vale quella segnata «di base»: per «monete» è «le tue», per un nome tuo dipende da come finisce la prima parola. Se cambi nome e non scegli di nuovo, torna la base del nome nuovo. Con la chat in inglese la scelta non c\'è: lì le parole intorno non cambiano.',
       'Il link «Manuale dei giochi e delle monete» apre questa pagina.',
     ] },
 
@@ -495,7 +496,7 @@ export default {
   faq: [
     { d: 'Posso spegnere solo un gioco?', r: 'Sì: nella carta «Comandi dei giochi» ogni riga ha il suo interruttore. Da lì lo puoi anche rinominare o riservare ad abbonati, VIP o moderatori. Premi «Salva i comandi».' },
     { d: 'Come tolgo monete a qualcuno?', r: 'Nella carta «Classifica & VIP» scrivi il nome e un numero col meno, per esempio -50, e premi «Aggiusta». Lo può fare solo il proprietario del canale, e in chat non si vede.' },
-    { d: 'Come si chiama la moneta?', r: 'Come vuoi tu: fino a venti caratteri, in «Come si chiamano le monete» nella carta «Minigiochi». Il bot usa quel nome ovunque, anche nei messaggi dei giochi pronti.' },
+    { d: 'Come si chiama la moneta?', r: 'Come vuoi tu: fino a venti caratteri, in «Come si chiamano le monete» nella carta «Minigiochi». Il bot usa quel nome ovunque, anche nei messaggi dei giochi pronti, e accorda le parole intorno con la frase che scegli in «Come se ne parla in chat».' },
     { d: 'Un gioco regala troppe monete. Cosa faccio?', r: 'Apri il gioco in «Le regole di ogni gioco»: se la scritta accanto al nome è rossa, crea monete. Abbassa il premio o alza il costo finché torna normale, poi premi «Salva le regole».' },
     { d: 'Perché il bot dice che devo aspettare?', r: 'Ogni gioco ha un\'attesa a testa e una per tutti. Le cambi nelle regole di quel gioco: zero vuol dire nessuna attesa.' },
     { d: 'Gli spettatori non sanno a cosa giocare.', r: 'Diglielo con <code>!giochi</code>: il bot risponde a ognuno con i giochi che può usare e cosa scrivere. Con <code>!giochi</code> e il nome di un gioco spiega le regole del tuo canale.' },

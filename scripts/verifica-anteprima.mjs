@@ -147,6 +147,10 @@ const brano = (nome) => ({ stato: 'suona', suona: true, nome, artisti: 'Artista'
 
 try {
   const ed = await browser.newPage({ viewport: { width: 2000, height: 1200 } });
+  // I giri guidati si aprono da soli in ogni scheda nuova, a un tempo loro:
+  // senza questa scelta («non mostrarli piu'») coprirebbero un tasto a caso
+  // quando la pagina arriva in fretta. Qui non si prova il giro.
+  await ed.addInitScript(() => { try { localStorage.setItem('sb-giro', JSON.stringify({ viste: {}, mai: true })); } catch {} });
   const erroriEd = [];
   ed.on('pageerror', (e) => erroriEd.push(String(e.message || e)));
   await ed.goto(base + '/?demo=1&lang=it', { waitUntil: 'domcontentloaded' });

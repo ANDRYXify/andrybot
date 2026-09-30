@@ -18,17 +18,34 @@
 #  la versione di prima. Un aggiornamento che fallisce deve lasciare le cose
 #  come stavano, non a metà.
 #
+#  IL BOT CHE GIRA NON DEVE ACCORGERSENE. Due cose lo toccavano:
+#   · il collaudo (prove e cancelli con Chromium, mezz'ora) gira sulla stessa
+#     macchina, e a piena potenza rubava la CPU al bot vivo: risposte in chat
+#     lente, overlay che scattano. Adesso gira con la priorita' piu' bassa
+#     (nice 19, e ionice idle se c'e'): quando il bot chiede, il bot passa
+#     avanti, e il collaudo ci mette solo di piu';
+#   · il cambio del container, qualche secondo in cui chat, avvisi e overlay
+#     sono giu' (e quello che succede li' si perde). Adesso, di base, il cambio
+#     ASPETTA che nessuno sia in diretta: lo dice il bot stesso, in
+#     data/.in-onda. Si controlla ogni minuto; --subito non aspetta.
+#  Un collaudo verde vale per quel commit: si ricorda (data/.collaudato), cosi'
+#  un aggiornamento rimandato non rifa' mezz'ora di prove al giro dopo.
+#
 #  Opzioni:
 #      --prova       fa tutto tranne fermare/ricostruire il container
 #      --salta-prove salta il collaudo (emergenza vera: sai cosa stai facendo)
+#      --subito      riavvia anche se qualcuno e' in diretta (emergenza)
+#  Variabile:
+#      ATTESA_MAX_MIN  quanto aspettare al massimo la fine delle dirette (di base 360)
 # ============================================================
 set -euo pipefail
 
-PROVA=0; SALTA=0
+PROVA=0; SALTA=0; SUBITO=0
 for a in "$@"; do
   case "$a" in
     --prova) PROVA=1 ;;
     --salta-prove) SALTA=1 ;;
+    --subito) SUBITO=1 ;;
     *) echo "opzione sconosciuta: $a" >&2; exit 2 ;;
   esac
 done
@@ -148,8 +165,18 @@ if [ "$SERVE_LIA" = "1" ]; then
 fi
 
 # ---- 5. il collaudo, PRIMA di toccare quello che gira ------
+# La priorita' piu' bassa che c'e': il bot che gira passa sempre avanti.
+BASSA=(nice -n 19)
+command -v ionice >/dev/null 2>&1 && BASSA+=(ionice -c 3)
+# Il collaudo e' una funzione del codice: se questo commit (e quello del
+# cervello) e' gia' passato, non si rifa'.
+COLLAUDATO="$RADICE/data/.collaudato"
+FIRMA_CODICE="$(git rev-parse HEAD)"
+[ "$SERVE_LIA" = "1" ] && FIRMA_CODICE="$FIRMA_CODICE $(git -C "$LIA_DIR" rev-parse HEAD)"
 if [ "$SALTA" = "1" ]; then
   echo; echo "collaudo saltato su tua richiesta."
+elif [ "$(cat "$COLLAUDATO" 2>/dev/null || true)" = "$FIRMA_CODICE" ]; then
+  echo; echo "questo codice ha gia' passato il collaudo: non lo rifaccio."
 else
   passo "Collaudo (se è rosso, quello che gira non viene toccato)"
   command -v node >/dev/null || muori "serve Node sul server per il collaudo. Installalo, oppure usa --salta-prove."
@@ -172,13 +199,15 @@ else
     exit 1
   }
 
-  npm ci --no-audit --no-fund --silent || { echo "installazione dipendenze fallita"; torna_indietro; }
-  npm test --silent || torna_indietro
-  npm run --silent cancelli || torna_indietro
+  echo "(a priorita' bassa: il bot che gira non rallenta, il collaudo ci mette quello che serve)"
+  "${BASSA[@]}" npm ci --no-audit --no-fund --silent || { echo "installazione dipendenze fallita"; torna_indietro; }
+  "${BASSA[@]}" npm test --silent || torna_indietro
+  "${BASSA[@]}" npm run --silent cancelli || torna_indietro
   if [ "$SERVE_LIA" = "1" ]; then
     # le prove del cervello leggono anche questo repository (sta accanto): ANDRYBOT_DIR glielo dice
-    ( cd "$LIA_DIR" && ANDRYBOT_DIR="$RADICE" npm test --silent && ANDRYBOT_DIR="$RADICE" npm run --silent cancelli ) || torna_indietro
+    ( cd "$LIA_DIR" && ANDRYBOT_DIR="$RADICE" "${BASSA[@]}" npm test --silent && ANDRYBOT_DIR="$RADICE" "${BASSA[@]}" npm run --silent cancelli ) || torna_indietro
   fi
+  mkdir -p "$(dirname "$COLLAUDATO")" && echo "$FIRMA_CODICE" > "$COLLAUDATO"
   echo "collaudo verde ✓"
 fi
 
@@ -189,8 +218,48 @@ if [ "$PROVA" = "1" ]; then
   exit 0
 fi
 
-passo "Ricostruisco e riavvio"
-docker compose up -d --build
+# ---- 5b. il momento giusto: quando nessuno e' in diretta --------
+#
+# Il file lo scrive il bot che gira (bot.js, _scriviInOnda) a ogni cambio e
+# all'avvio: dice quello che sa il processo vivo. Senza file (bot fermo, o di
+# una versione che non lo scrive ancora) non si sa, e non si aspetta.
+IN_ONDA_FILE="$RADICE/data/.in-onda"
+in_onda() {
+  [ -f "$IN_ONDA_FILE" ] || return 0
+  sed -n 's/.*"canali":\[\([^]]*\)\].*/\1/p' "$IN_ONDA_FILE" | tr -d '"' | tr ',' ' '
+}
+ATTESA_MAX_MIN="${ATTESA_MAX_MIN:-360}"
+if [ "$SUBITO" = "1" ]; then
+  passo "Riavvio subito, su tua richiesta"
+  if [ -n "$(in_onda)" ]; then echo "in diretta adesso: $(in_onda). Per loro chat e overlay si fermano qualche secondo."; fi
+elif [ -n "$(in_onda)" ]; then
+  passo "Aspetto la fine delle dirette"
+  echo "in diretta adesso: $(in_onda)"
+  echo "la versione nuova e' collaudata e pronta: riavvio appena nessuno e' in onda."
+  echo "controllo ogni minuto, al massimo $ATTESA_MAX_MIN minuti. Per non aspettare: --subito"
+  ASPETTATI=0
+  while [ -n "$(in_onda)" ]; do
+    if [ "$ASPETTATI" -ge "$ATTESA_MAX_MIN" ]; then
+      echo
+      echo "Dopo $ATTESA_MAX_MIN minuti c'e' ancora qualcuno in diretta ($(in_onda)): non riavvio."
+      echo "Rimetto il repository com'era ($(git rev-parse --short "$PRIMA")), cosi' quello che c'e' qui e' quello che gira."
+      echo "Il collaudo di questa versione resta valido: rilancia quando vuoi, e non lo rifara'."
+      git reset --hard "$PRIMA" >/dev/null
+      if [ "$SERVE_LIA" = "1" ]; then git -C "$LIA_DIR" reset --hard "$LIA_PRIMA" >/dev/null; fi
+      exit 3
+    fi
+    sleep 60
+    ASPETTATI=$((ASPETTATI + 1))
+  done
+  echo "nessuno in diretta ($ASPETTATI minuti di attesa): riavvio."
+fi
+
+passo "Costruisco la versione nuova (quella che gira resta accesa)"
+docker compose build
+
+passo "Riavvio"
+FERMO_DA="$(date +%s)"
+docker compose up -d
 
 # ---- 6b. LA PORTA D'INGRESSO RILEGGE LA SUA CONFIGURAZIONE ----
 #
@@ -242,6 +311,7 @@ aspetta_sano() {   # esce 0 se entro 60 secondi il bot risponde sano o degradato
 
 passo "Controllo che sia tornato su"
 if aspetta_sano; then
+  echo "il bot e' rimasto giu' circa $(( $(date +%s) - FERMO_DA )) secondi."
   # Il segno si lascia QUI e solo qui: dopo che il container e' stato
   # ricostruito E ha risposto sano. Scriverlo prima vorrebbe dire dichiarare
   # deployata una versione che magari non parte.

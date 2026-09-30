@@ -154,6 +154,12 @@ comandi diversi da quelli della riga italiana.
 - Nei Moduli $data, $ora e $giorno seguono fuso e formato del canale, e $moneta, $sino, $eta, $colore, $animale, $soldi e $altezza escono nella lingua della chat. [vai: moduli]
   en: In Modules, $data, $ora and $giorno follow your channel’s time zone and format, and $moneta, $sino, $eta, $colore, $animale, $soldi and $altezza come out in the chat’s language.
   es: En los Módulos, $data, $ora y $giorno siguen la zona horaria y el formato del canal, y $moneta, $sino, $eta, $colore, $animale, $soldi y $altezza salen en el idioma del chat.
+- [importante] Nell'Overlay Studio c'è il «Conto alla pubblicità»: quanto manca alla prossima pausa di Twitch e, durante la pausa, quanto manca al tuo ritorno. Scende da solo e segue anche i rinvii. [vai: alert]
+  > Il conto alla pubblicità, in scena
+  > Prima il conto c'era solo nel pannello, per te: chi guardava la diretta non sapeva quando sarebbe arrivata la pausa, né quanto sarebbe durata.
+- Il pannello si apre subito: prima il server si fermava una decina di secondi quasi a ogni apertura, e la copertina finiva su «ci sta mettendo più del solito». Dalla seconda volta il browser tiene i file.
+- Accanto al nome della moneta scegli come se ne parla, «le tue», «i tuoi», «la tua» o «il tuo»: !giochi dice «I tuoi Semi di girasole», non più «Le tue Semi di girasole». [vai: giochi]
+- Gli aggiornamenti di SocialBot aspettano che nessuno sia in diretta prima di riavviare il bot, e mentre si preparano non gli rubano velocità: niente chat o overlay fermi in piena serata.
 
 ## 2026-09-27
 

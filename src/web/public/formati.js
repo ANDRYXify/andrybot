@@ -163,7 +163,24 @@
 
   function primoGiorno(p) { return valori(p).settimana === 'dom' ? 0 : 1; }
 
-  const FORMATI = { LINGUE, DATE, ORE, SETTIMANE, DURATE, FUSO_BASE, fusoValido, valori, data, ora, giorno, quando, durata, tempoDa, numero, euro, primoGiorno };
+  const FORME_MONETA = ['fp', 'mp', 'fs', 'ms'];
+  const NOME_MONETA_BASE = 'monete';
+
+  function formaMonetaBase(nome) {
+    const n = String(nome == null ? '' : nome).trim();
+    if (!n || n.toLowerCase() === NOME_MONETA_BASE) return 'fp';
+    const prima = n.toLowerCase().split(/\s+/)[0].replace(/[^a-zàèéìòù]/g, '');
+    return /[ea]$/.test(prima) ? 'fp' : 'mp';
+  }
+
+  const ACCORDO = /%\[([^\]|%]*)\|([^\]|%]*)\|([^\]|%]*)\|([^\]|%]*)\]%/g;
+
+  function accordaMoneta(testo, forma) {
+    const i = FORME_MONETA.indexOf(FORME_MONETA.includes(forma) ? forma : 'fp');
+    return String(testo == null ? '' : testo).replace(ACCORDO, function () { return arguments[1 + i]; });
+  }
+
+  const FORMATI = { LINGUE, DATE, ORE, SETTIMANE, DURATE, FUSO_BASE, fusoValido, valori, data, ora, giorno, quando, durata, tempoDa, numero, euro, primoGiorno, FORME_MONETA, NOME_MONETA_BASE, formaMonetaBase, accordaMoneta };
   if (typeof module !== 'undefined' && module.exports) module.exports = FORMATI;
   else radice.SB_FORMATI = FORMATI;
 })(typeof window !== 'undefined' ? window : globalThis);

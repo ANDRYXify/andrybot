@@ -6,6 +6,8 @@
 // connessione chat autenticata CON L'ACCOUNT DELLO STREAMER (il bot
 // parla come lui), un gestore messaggi e le sottoscrizioni agli
 // eventi Twitch. Tiene tutto sincronizzato con la dashboard.
+import { writeFileSync, renameSync } from 'node:fs';
+import { join } from 'node:path';
 import { makeLog } from './logger.js';
 import { config } from './config.js';
 import * as filigrana from './watermark.js';
@@ -186,6 +188,7 @@ export class BotManager {
 
   async start() {
     if (this.running) return;
+    this._scriviInOnda();
 
     this.clips = new ClipEngine({ helix: this.helix, say: (ch, t) => this.say(ch, t) });
     // Il muro delle emote: la chat, gli eventi e i premi che fanno volare emote.
@@ -1325,6 +1328,22 @@ export class BotManager {
       .catch(() => { /* alla prossima */ });
   }
 
+  // CHI E' IN ONDA, SCRITTO FUORI DAL PROCESSO (data/.in-onda). Lo legge
+  // server/aggiorna.sh prima di riavviare: un riavvio in piena diretta ferma per
+  // qualche secondo chat, avvisi e overlay a chi sta trasmettendo, e quello che
+  // succede in quei secondi si perde. Si riscrive a ogni cambio e all'avvio, cosi'
+  // il file dice sempre quello che sa il processo che gira, non uno morto prima.
+  // Si scrive accanto e poi si rinomina: chi legge non trova mai meta' file.
+  _scriviInOnda() {
+    try {
+      const canali = new Set([...this._liveState].filter(([, v]) => v === true).map(([c]) => c));
+      for (const p of ['kick']) for (const r of statoVivo.tutti('diretta:' + p)) if (r.dato?.live === true) canali.add(r.channel);
+      const file = join(config.dataDir, '.in-onda');
+      writeFileSync(file + '.tmp', JSON.stringify({ canali: [...canali].sort(), ts: Date.now() }));
+      renameSync(file + '.tmp', file);
+    } catch (e) { log.debug('in onda: ' + (e?.message || e)); }
+  }
+
   // Fonte UNICA di verità per lo stato live/offline (arriva sia da EventSub,
   // istantaneo, sia dal watcher, che copre anche chi non è connesso in chat —
   // es. modalità "quando live" con bot ancora offline). Idempotente: reagisce
@@ -1335,6 +1354,7 @@ export class BotManager {
     const prev = this._liveState.get(ch);
     if (prev === isLive) return;                 // nessun cambiamento: stop
     this._liveState.set(ch, isLive);
+    this._scriviInOnda();
     // riconcilia le unità: la modalità "quando live" entra/esce col live
     this.syncChannels().catch(() => {});
     // LA DIRETTA E' UN FATTO, L'ANNUNCIO E' UNA TRANSIZIONE: due cose diverse, e
@@ -1533,6 +1553,7 @@ export class BotManager {
     try {
       if (ev.tipo === 'live') statoVivo.scrivi(ev.channel, 'diretta:' + ev.piattaforma, { live: true });
       if (ev.tipo === 'fine-live') statoVivo.togli(ev.channel, 'diretta:' + ev.piattaforma);
+      if (ev.tipo === 'live' || ev.tipo === 'fine-live') this._scriviInOnda();
       if (ev.tipo === 'live') {
         const d = avvisi.diretta({ piattaforma: ev.piattaforma, login: ev.channel, titolo: ev.titolo, id: ev.id || ev.titolo || String(Date.now()) });
         if (d) await this.annunciaDiretta(d);
@@ -1815,23 +1836,49 @@ export class BotManager {
   // un istante preciso, e a quell'istante si arriva con una sveglia: un giro
   // ogni mezzo minuto le farebbe arrivare fino a mezzo minuto dopo. Il giro
   // serve solo a leggere il programma. Vedi docs/PUBBLICITA.md.
+  //
+  // Lo stato della pubblicita' serve a due cose: gli annunci in chat e il conto
+  // sull'overlay. Si tiene se lo usa almeno una delle due, e il programma si
+  // rilegge quando serve a una delle due, ognuna col suo passo.
   async _giroPubblicita() {
     const adesso = Date.now();
     for (const [ch, live] of this._liveState) {
-      const conf = pub.normalizzaPubblicita(streamers.get(ch)?.settings?.pubblicita);
-      if (!conf.acceso) { this._pub.delete(ch); this._spegniSveglia(ch, 'prima'); this._spegniSveglia(ch, 'dopo'); continue; }
-      const stato = this._pub.get(ch) || {};
+      const s = streamers.get(ch)?.settings || {};
+      const conf = pub.normalizzaPubblicita(s.pubblicita);
+      const inScena = s.overlayPubblicita?.attivo === true;
+      if (!conf.acceso) { this._spegniSveglia(ch, 'prima'); this._spegniSveglia(ch, 'dopo'); }
+      if (!conf.acceso && !inScena) { this._pub.delete(ch); continue; }
+      const stato = this._pub.get(ch) || pub.riprendi(statoVivo.leggi(ch, 'pubblicita'), adesso);
       // Fuori diretta il programma non si chiede: Twitch lo lascia vuoto
       // apposta, e sarebbe una telefonata per una risposta che sappiamo gia'.
-      if (live && pub.vaGuardato(conf, stato, adesso)) {
+      const perChat = conf.acceso && pub.vaGuardato(conf, stato, adesso);
+      const perScena = inScena && pub.vaGuardatoPerOverlay(stato, adesso);
+      if (live && (perChat || perScena)) {
         const p = await this.helix?.getAdSchedule?.(ch).catch(() => null);
         stato.prossima = p?.prossima || 0;
         stato.letto = adesso;
-        const dire = pub.quandoAvvisare(conf, stato, p, adesso);
-        if (dire) this._sveglia(ch, 'prima', dire, () => this._preavviso(ch));
+        if (conf.acceso) {
+          const dire = pub.quandoAvvisare(conf, stato, p, adesso);
+          if (dire) this._sveglia(ch, 'prima', dire, () => this._preavviso(ch));
+        }
       }
+      // Fuori diretta il programma che si sapeva non vale piu': alla diretta
+      // dopo si rilegge al primo giro, invece di aspettare la rilettura.
+      if (!live) { stato.prossima = 0; stato.letto = 0; }
       this._pub.set(ch, stato);
+      if (inScena) this._pubInScena(ch);
     }
+  }
+
+  // IL CONTO SULL'OVERLAY. Si manda solo quando cambia, e si tiene fra gli
+  // stati vivi del canale: un overlay che si apre (o si ricarica) a pausa in
+  // corso lo trova li', invece di aspettare il giro dopo.
+  _pubInScena(ch) {
+    const dato = pub.perOverlay(this._pub.get(ch), this._liveState.get(ch) === true, Date.now());
+    const prima = statoVivo.leggi(ch, 'pubblicita');
+    if (prima && prima.prossima === dato.prossima && prima.pausaFino === dato.pausaFino) return;
+    statoVivo.scrivi(ch, 'pubblicita', dato);
+    try { this.effects?.emit?.(ch, { tipo: 'pubblicita', ...dato }); } catch (e) { log.debug(`#${ch} pubblicità in scena:`, e?.message || e); }
   }
 
   // Una sveglia per canale e per frase: puntarne una nuova toglie la vecchia,
@@ -1883,8 +1930,10 @@ export class BotManager {
   // Twitch ci dice qualcosa: da qui escono il messaggio di adesso e la
   // sveglia del «sono tornato», puntata a inizio + durata.
   async _pubblicitaPartita(ch, dati) {
-    const conf = pub.normalizzaPubblicita(streamers.get(ch)?.settings?.pubblicita);
-    if (!conf.acceso) return;
+    const s = streamers.get(ch)?.settings || {};
+    const conf = pub.normalizzaPubblicita(s.pubblicita);
+    const inScena = s.overlayPubblicita?.attivo === true;
+    if (!conf.acceso && !inScena) return;
     const stato = this._pub.get(ch) || {};
     const a = pub.allaPartenza(conf, stato, dati, Date.now());
     if (!a) return;
@@ -1897,7 +1946,9 @@ export class BotManager {
     stato.prossima = 0;
     stato.dettoPer = '';
     this._pub.set(ch, stato);
+    if (inScena) this._pubInScena(ch);
     this._spegniSveglia(ch, 'prima');
+    if (!conf.acceso) return;
     if (a.finisceA) this._sveglia(ch, 'dopo', a.finisceA, () => this._sonoTornato(ch));
     else this._spegniSveglia(ch, 'dopo');
     if (a.testo) await this._annuncio(ch, conf, a.testo);

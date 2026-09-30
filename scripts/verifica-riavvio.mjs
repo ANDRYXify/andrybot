@@ -129,7 +129,7 @@ const DECISO = [
   // in diretta, davanti a chi sta guardando. Perderlo e' il comportamento
   // voluto, e la tolleranza che si imposta nel pannello e' la stessa regola
   // detta a chi lo usa.
-  ['bot.js', '_pub', 'volatile', 'il conto dei secondi di una pausa pubblicitaria: sopravvivere a un riavvio vorrebbe dire salutare in ritardo, e in ritardo e\' peggio che zitti'],
+  ['bot.js', '_pub', 'volatile', 'il conto dei secondi di una pausa pubblicitaria: sopravvivere a un riavvio vorrebbe dire salutare in ritardo, e in ritardo e\' peggio che zitti. Si riprende solo la fine di una pausa in corso, che sta fra gli stati vivi per l\'overlay'],
   ['bot.js', '_pubSveglie', 'volatile', 'le sveglie del preavviso e del «sono tornato»: muoiono col conto che servono, per la stessa ragione'],
   ['bot.js', '_tiktokLive', 'volatile', 'stato TikTok, si richiede'],
   ['bot.js', '_tiktokUltima', 'volatile', 'anti-doppione a breve; il post gia\' annunciato sta nel database'],
@@ -137,6 +137,7 @@ const DECISO = [
   ['bot.js', '_mancheProx', 'volatile', 'quando tocca alla prossima manche: si ricalcola'],
   ['bot.js', '_tgProattivoUltimo', 'volatile', 'ultimo messaggio proattivo, anti-ripetizione a breve'],
   ['bot.js', '_canarinoTs', 'volatile', 'un minuto di silenzio dopo la risposta al canarino: dopo un riavvio, al massimo, risponde una volta di piu\''],
+  ['features/prossime.js', '_programmi', 'volatile', 'il Programma di Twitch tenuto da parte un quarto d\'ora: dopo un riavvio si rilegge, e finche\' non c\'e\' il cervello non inventa una prossima diretta'],
   ['features/abbonamenti.js', '_prezzi', 'volatile', 'i prezzi trovati in Stripe e il loro esito: si rifanno a ogni avvio e ogni quarto d\'ora, e finche\' non ci sono non si vende'],
   ['bot.js', '_ultimaSpontanea', 'volatile', 'quando ha parlato da solo l\'ultima volta: senza memoria il riposo vale dall\'AVVIO (spontanea.ultimoNoto), non da zero — se no ogni riavvio regalava una riga subito, e riavvii frequenti facevano una raffica'],
   ['bot.js', '_ultimaPromo', 'volatile', 'ultimo promemoria dei link: idem, e un riavvio non e\' un modo pratico per farglielo ripetere'],
