@@ -53,6 +53,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > Il comando !prossima
   > Prima alla domanda «quando sei in diretta?» nessun comando sapeva rispondere con un'ora vera.
 - Alla domanda «quando sei in diretta?» il bot risponde con la prossima diretta vera, presa dalla tua settimana o dal Programma di Twitch, e non da un testo scritto a mano.
+- [importante] In Account ci sono le «Preferenze del canale»: la lingua del bot in chat, il fuso, come si scrivono date, ore e durate, e da dove si leggono le prossime dirette. [vai: account]
+  > Le preferenze del canale
+  > Prima il bot scriveva le date all'italiana e con l'ora di Roma per tutti, anche per un canale inglese o spagnolo.
 
 ## 2026-09-27
 

@@ -21,7 +21,7 @@ export default {
 
     { h2: 'Il tuo account', scheda: 'account', p: [
       'Qui colleghi le piattaforme dove trasmetti, crei una passkey, fai entrare i moderatori, scegli gli avvisi e decidi dei tuoi dati.',
-      'Un moderatore non vede le carte «Moderatori», «Le mail che ti mandiamo», «La tua recensione» e «Avvisi e cose da provare», e non può scaricare né cancellare i dati del canale.',
+      'Un moderatore non vede le carte «Moderatori», «Le mail che ti mandiamo», «La tua recensione», «Avvisi e cose da provare», «I tuoi collegamenti» e «Preferenze del canale», e non può scaricare né cancellare i dati del canale.',
     ] },
 
     { h3: 'Il tuo canale è su Kick' },
@@ -216,6 +216,26 @@ export default {
       'Qui trovi, tutti insieme, gli account che hai collegato oltre a quello con cui entri: Spotify, TikTok, Instagram, gli avvisi di Discord col webhook, 7TV, l\'accesso con Telegram e l\'account Telegram a cui il bot scrive in privato. Accanto a ognuno c\'è il nome dell\'account, quando lo conosciamo.',
       '«Scollega» ti chiede conferma e poi toglie il collegamento: il bot smette di usarlo e dimentica le sue chiavi, e lo ricolleghi quando vuoi dalla sua scheda. La carta si apre con <strong>qualunque piano</strong>: se torni all\'Essenziale e una scheda si chiude, quello che ci avevi collegato lo togli comunque da qui.',
       'Twitch, Kick e YouTube stanno in «Le tue piattaforme»; i conti delle donazioni (Stripe, Satispay, Ko-fi) nella scheda Donazioni. La carta la vede solo il proprietario.',
+    ] },
+
+    { h3: 'Preferenze del canale' },
+    { p: [
+      'Come parla e come conta il tempo il tuo canale. Ogni scelta parte da «Di base», che segue il tuo canale da solo e accanto dice cosa vale adesso; quando scegli, vale la tua scelta.',
+    ] },
+    { tabella: [
+      ['Scelta', 'Di base', 'Cosa cambia'],
+      ['«Lingua del bot in chat»', 'la lingua del tuo canale su Twitch, se è italiano, inglese o spagnolo; altrimenti italiano', 'La lingua in cui il bot scrive in chat e in cui escono date e ore.'],
+      ['«Fuso orario»', 'quello della tua settimana', 'L\'ora in cui cadono le date che il bot scrive, e quando per lui comincia «domani». Si sceglie dall\'elenco dei fusi.'],
+      ['«Data»', '30/09/2026 in italiano e spagnolo, 09/30/2026 in inglese', 'Anche 2026-09-30 oppure «30 settembre 2026».'],
+      ['«Ora»', '24 ore in italiano e spagnolo, 12 ore in inglese', '21:00 oppure 9:00 PM.'],
+      ['«La settimana comincia»', 'lunedì', 'Lunedì o domenica.'],
+      ['«Durate»', 'per esteso', '«1 ora e 20 minuti» oppure «1h 20m».'],
+      ['«Le prossime dirette si leggono da»', 'la settimana, se ha almeno una sera in onda; altrimenti il Programma di Twitch', 'Da dove prendono la prossima diretta <code>!prossima</code>, <code>$prossima</code> e il bot quando gli chiedono quando sei in diretta. Compare solo per i canali su Twitch.'],
+    ] },
+    { p: [
+      'Sotto le scelte, «In chat si scrive così:» mostra una data, un\'ora, un «stasera alle…» e una durata come li scriverà il bot, e cambia mentre scegli. «Salva preferenze» le salva.',
+      'Se scegli il Programma di Twitch, la settimana non ci scrive sopra e non ci toglie niente: il Programma resta tuo. Lo dice anche la scheda Settimana, al posto della scelta di scriverla sul Programma.',
+      'La carta la vede solo il proprietario del canale.',
     ] },
 
     { h3: 'Andarsene' },
