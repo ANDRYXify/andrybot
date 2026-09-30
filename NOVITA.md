@@ -60,6 +60,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > !followage e !channelage a modo tuo
   > Prima la risposta dei comandi pronti era fissa, e il tempo di !followage contava i mesi da trenta giorni.
 - Nei Moduli $data, $ora e $giorno seguono fuso e formato del canale, e $moneta, $sino, $eta, $colore, $animale, $soldi e $altezza escono nella lingua della chat. [vai: moduli]
+- [importante] Nell'Overlay Studio c'è il «Conto alla pubblicità»: quanto manca alla prossima pausa di Twitch e, durante la pausa, quanto manca al tuo ritorno. Scende da solo e segue anche i rinvii. [vai: alert]
+  > Il conto alla pubblicità, in scena
+  > Prima il conto c'era solo nel pannello, per te: chi guardava la diretta non sapeva quando sarebbe arrivata la pausa, né quanto sarebbe durata.
 
 ## 2026-09-27
 

@@ -239,6 +239,7 @@ function impostazioni() {
     overlayStato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     overlayMusica: (s.overlayMusica && typeof s.overlayMusica === 'object') ? s.overlayMusica : {},
     overlayTimer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : {},
+    overlayPubblicita: (s.overlayPubblicita && typeof s.overlayPubblicita === 'object') ? s.overlayPubblicita : {},
     overlayTreno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : {},
     overlayBit: (s.overlayBit && typeof s.overlayBit === 'object') ? s.overlayBit : {},
     overlayCartelli: Array.isArray(s.overlayCartelli) ? s.overlayCartelli : [],
@@ -858,6 +859,7 @@ function statoDemo() {
     ruolo: ctx.role,
     identita: 'andryx_demo', identitaDisplay: 'Andryx',
     tier: 'community', stripeAttivo: false,
+    linguaChat: L('it', 'en', 'es'),
     rapportiNuovi: 1, postaDisponibile: true, inviti: [],
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display, nome: ctx.canale },
@@ -11133,6 +11135,33 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="timer">${L('Salva', 'Save', 'Guardar')}</button></p>
     </details>
 
+    <details class="carta sez" data-parte="aspetto" id="sez-pubblicita">
+      <summary><h3>${_hIco(ICO.megafono)}${L('Conto alla pubblicità', 'Ad countdown', 'Cuenta atrás de anuncios')}</h3></summary>
+      <p>${L('Quanto manca alla prossima pubblicità, e durante la pausa quanto manca al ritorno. I tempi li dice Twitch, solo mentre sei in onda: fuori diretta, o senza pubblicità in programma, il pezzo non c\'è.', 'How long until the next ad break, and during the break how long until you are back. Twitch gives the times, only while you are live: offline, or with no ads scheduled, the piece is not there.', 'Cuánto falta para la próxima pausa de anuncios y, durante la pausa, cuánto falta para volver. Los tiempos los da Twitch, solo mientras estás en directo: sin directo, o sin anuncios programados, la pieza no está.')}</p>
+      <div data-cfg="pubblicita">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="pubbl-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Conto alla pubblicità', 'Ad countdown', 'Cuenta atrás de anuncios')}</span>
+        </div>
+        <div class="griglia-campi spazio-sopra">
+          <div><label class="campo" for="pubbl-titolo">${L('Prima della pausa', 'Before the break', 'Antes de la pausa')}</label><input type="text" id="pubbl-titolo" data-c="titolo" maxlength="60" placeholder="${esc(_titoliPubblicita()[0])}"></div>
+          <div><label class="campo" for="pubbl-titolo-pausa">${L('Durante la pausa', 'During the break', 'Durante la pausa')}</label><input type="text" id="pubbl-titolo-pausa" data-c="titoloPausa" maxlength="60" placeholder="${esc(_titoliPubblicita()[1])}"></div>
+        </div>
+        <p class="suggerimento">${L('Vuoti, escono nella lingua della chat.', 'Left empty, they come out in the chat language.', 'Vacíos, salen en el idioma del chat.')}</p>
+        <div class="goal-campi spazio-sopra">
+          <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-c="posizione">${POS4_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Da quando si vede', 'Shows from', 'Se ve desde')}<select data-c="mostraDa">${[[0, L('sempre', 'always', 'siempre')], [1, L('1 minuto prima', '1 minute before', '1 minuto antes')], [2, L('2 minuti prima', '2 minutes before', '2 minutos antes')], [5, L('5 minuti prima', '5 minutes before', '5 minutos antes')], [10, L('10 minuti prima', '10 minutes before', '10 minutos antes')], [30, L('30 minuti prima', '30 minutes before', '30 minutos antes')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+        </div>
+        <label class="riga-check spazio-sopra"><input type="checkbox" data-c="pausa"> ${L('Resta anche durante la pausa, col conto del ritorno', 'Stays during the break too, counting down to your return', 'Se queda también durante la pausa, con la cuenta de la vuelta')}</label>
+        <p class="suggerimento">${L(`Serve il permesso di leggere la programmazione delle pubblicità: se manca, nella scheda «${tScheda('stato')}» premi «Aggiorna i permessi». Gli avvisi in chat sulla pubblicità sono un'altra cosa, e si accendono a parte.`, `It needs the permission to read the ad schedule: if it is missing, press «Update permissions» in the «${tScheda('stato')}» tab. Chat notices about ads are a separate thing, and are turned on separately.`, `Hace falta el permiso para leer la programación de anuncios: si falta, en la pestaña «${tScheda('stato')}» pulsa «Actualizar permisos». Los avisos en el chat sobre los anuncios son otra cosa, y se encienden aparte.`)}</p>
+        <div class="asp-blocco" data-asp="pubblicita" data-cfg-di="pubblicita">
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="pubblicita">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
     <details class="carta sez" data-parte="aspetto" id="sez-treno">
       <summary><h3>${_hIco(ICO.treno)}Hype train</h3></summary>
       <p>${L('Il treno lo fa Twitch: livello, punti e quanto manca li decide lui, e qui si vedono. Niente da contare e niente da far partire — quando parte, parte.', 'The train is Twitch’s: level, points and time left are its call, and here you see them. Nothing to count and nothing to start — when it goes, it goes.', 'El tren lo hace Twitch: nivel, puntos y lo que falta los decide él, y aquí se ven. Nada que contar y nada que arrancar — cuando sale, sale.')}</p>
@@ -11590,7 +11619,7 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
 let occSel = '';
@@ -12329,6 +12358,23 @@ function _vestiTimer(box, cfg) {
     : _orologioGiu(fine > 0 ? manca : (Number(cfg.minuti) || 15) * 60000);
 }
 
+function _defPubblicita() {
+  return { attivo: false, titolo: '', titoloPausa: '', mostraDa: 0, pausa: true, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
+}
+
+const _TITOLI_PUBBLICITA = () => ({ it: ['Pubblicità fra', 'Torno fra'], en: ['Ads in', 'Back in'], es: ['Anuncios en', 'Vuelvo en'] });
+const _titoliPubblicita = () => _TITOLI_PUBBLICITA()[['it', 'en', 'es'].includes(stato?.linguaChat) ? stato.linguaChat : 'it'];
+
+function _vestiPubblicita(box, cfg) {
+  if (!box.querySelector('.t-num')) box.innerHTML = '<span class="t-tit"></span><span class="t-num"></span>';
+  const st = cfg.stile || {};
+  box.className = 'ovl-widget ovl-timer ovl-pubblicita dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
+  box.querySelector('.t-tit').textContent = cfg.titolo || _titoliPubblicita()[0];
+  box.querySelector('.t-num').textContent = _orologioGiu(4 * 60000 + 32000);
+}
+
 const TRENO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICO.treno + '</svg>';
 
 function _defTreno() {
@@ -12575,7 +12621,7 @@ async function _disegnaPremiMuro() {
       : `<p class="vuoto">${L('Non hai ancora premi a punti canale su Twitch: creane uno e torna qui.', 'You have no channel-point rewards on Twitch yet: create one and come back here.', 'Aún no tienes recompensas de puntos de canal en Twitch: crea una y vuelve aquí.')}</p>`);
 }
 
-const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, scritta: _vestiScritta, etichetta: _vestiEtichetta, muro: _vestiMuro, effetti: _vestiEffetti };
+const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, pubblicita: _vestiPubblicita, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, scritta: _vestiScritta, etichetta: _vestiEtichetta, muro: _vestiMuro, effetti: _vestiEffetti };
 
 function _orologioGiu(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -12869,6 +12915,7 @@ const PEZZI_EL = () => [
   ['chat', '#sez-chat'],
   ['musica', '#sez-musica'],
   ['timer', '#sez-timer'],
+  ['pubblicita', '#sez-pubblicita'],
   ['treno', '#sez-treno'],
   ['bit', '#sez-bit'],
   ['boss', '#sez-boss'],
@@ -13157,6 +13204,7 @@ const ELEMENTI = () => {
   cartBozza().forEach((c, i) => out.push({ k: 'cart:' + c.id, ico: ICO.cartello, n: nomeCartello(c, i), cart: c }));
   out.push({ k: 'musica', ico: ICO.musica, n: L('Player musica', 'Music player', 'Reproductor de música'), cfg: 'overlayMusica' });
   out.push({ k: 'timer', ico: ICO.orologio, n: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), cfg: 'overlayTimer' });
+  out.push({ k: 'pubblicita', ico: ICO.megafono, n: L('Conto alla pubblicità', 'Ad countdown', 'Cuenta atrás de anuncios'), cfg: 'overlayPubblicita' });
   out.push({ k: 'treno', ico: ICO.treno, n: L('Hype train', 'Hype train', 'Hype train'), cfg: 'overlayTreno' });
   out.push({ k: 'bit', ico: ICO.podio, n: L('Classifica Bit', 'Bits leaderboard', 'Clasificación de Bits'), cfg: 'overlayBit' });
   out.push({ k: 'pen', ico: ICO.penitenza, n: L('Sfida a tempo', 'Timed challenge', 'Reto a tiempo'), cfg: 'penitenze' });
@@ -13215,7 +13263,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer, treno: _defTreno, bit: _defBit, boss: _defBoss, scritta: _defScritta, etichetta: _defEtichetta, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, pubblicita: _defPubblicita, treno: _defTreno, bit: _defBit, boss: _defBoss, scritta: _defScritta, etichetta: _defEtichetta, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 function _cfgEl(k) {
   const e = ELEM(k);
@@ -27167,7 +27215,7 @@ function caricaDatiScheda(id) {
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
-    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); riempiCfgForm('scritta'); riempiCfgForm('etichetta'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
+    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('pubblicita'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); riempiCfgForm('scritta'); riempiCfgForm('etichetta'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'consolify') caricaConsolify();

@@ -518,7 +518,7 @@ test('un elemento che resta a schermo non viene ri-appeso a ogni disegno', () =>
   // e' nato un elemento nuovo, e va guardato che anche lui si posi invece di
   // farsi ri-appendere.
   const quanti = (OVL.match(/\n\s*posa\(wboxes\[/g) || []).length;
-  assert.equal(quanti, 7, `i pezzi che restano a schermo sono sette (contatori, obiettivo, musica, conto alla rovescia, treno, classifica Bit, cartelli), e devono passare tutti dalla posa (${quanti})`);
+  assert.equal(quanti, 8, `i pezzi che restano a schermo sono otto (contatori, obiettivo, musica, conto alla rovescia, conto alla pubblicita', treno, classifica Bit, cartelli), e devono passare tutti dalla posa (${quanti})`);
 });
 
 test('un contatore nuovo si fa dal banco, non mandando lo streamer altrove', () => {

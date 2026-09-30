@@ -28,7 +28,7 @@ export default {
     { p: [
       'Fuori onda leggi «OFFLINE» e la frase «Non sei in diretta adesso. Titolo, categoria e tag puoi impostarli lo stesso.»',
       'In onda leggi «LIVE», gli «Spettatori» e da quanto sei in diretta («Da»), che avanza da solo ogni secondo.',
-      'Se Twitch ha già in programma la prossima pubblicità, compaiono anche «Prossima pubblicità», con il conto alla rovescia, e «Durerà». Servono il permesso della programmazione pubblicità e la diretta accesa.',
+      'Se Twitch ha già in programma la prossima pubblicità, compaiono anche «Prossima pubblicità», con il conto alla rovescia, e «Durerà». Servono il permesso della programmazione pubblicità e la diretta accesa. Lo stesso conto lo puoi mostrare a chi guarda: è il «Conto alla pubblicità» dell\'Overlay Studio (<a href="/manuale/overlay">manuale dell\'overlay</a>).',
       'Il numero degli spettatori non si aggiorna da solo: premi «Aggiorna» per rileggerlo.',
     ] },
 
