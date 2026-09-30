@@ -45,20 +45,24 @@ test('la rotta chiede la sessione e passa per la regola', () => {
 
 test('dal pannello esce il numero, non il file', () => {
   const l = funzione(app, 'async function _fmLeggi() {');
-  assert.match(l, /api\('\/api\/streamer\/morti\/file', \{ method: 'POST', body: \{ totale: n, nome: f\.name, giro: _fm\.giro \} \}\)/);
-  assert.match(l, /window\.SB_MORTI\.numeroDaFile\(testo\)/);
-  assert.match(l, /f\.slice\(0, 256\)\.text\(\)/, 'si legge solo l\'inizio: un numero non e\' lungo');
+  assert.match(l, /api\('\/api\/streamer\/morti\/file', \{ method: 'POST', body: \{ totale: letto\.totale, nome: letto\.nome, giro: _fm\.giro \} \}\)/);
+  const f = funzione(app, 'async function _fmDaFile() {');
+  assert.match(f, /window\.SB_MORTI\.numeroDaFile\(testo\)/);
+  assert.match(f, /f\.slice\(0, 256\)\.text\(\)/, 'si legge solo l\'inizio: un numero non e\' lungo');
+  const mc = funzione(app, 'async function _fmDaMinecraft() {');
+  assert.match(mc, /return \{ totale: _fm\.mc\.morti, nome: 'Minecraft: ' \+ _fm\.mc\.nome \};/, 'da Minecraft escono il conto e il nome del giocatore, non il registro');
+  assert.match(mc, /await M\.prepara\(_fm\.mc, _fm\.h, _fm\.risorse\);/);
 });
 
 test('i due giri battono col worker, e a guardare e\' una scheda sola', () => {
   const schermo = funzione(app, 'function _mortiRiavvia() {');
-  const file = funzione(app, 'function _fmParti(h) {');
+  const file = funzione(app, 'function _fmParti(voce) {');
   for (const [nome, corpo, serratura] of [['schermata', schermo, 'sb-morti-schermo'], ['file', file, 'sb-morti-file']]) {
     assert.ok(!/setInterval\(/.test(corpo), `${nome}: un timer della pagina, a scheda nascosta, parte una volta al minuto`);
     assert.match(corpo, /window\.SB_MORTI\.ogni\(/, `${nome}: senza il battito`);
     assert.ok(corpo.includes(`window.SB_MORTI.dasolo('${serratura}'`), `${nome}: senza la serratura`);
   }
-  assert.match(file, /_fm\.giro = crypto\.randomUUID\(\);/, 'il giro nuovo nasce quando la serratura e\' presa: prima non si guarda');
+  assert.match(file, /_fm\.giro = crypto\.randomUUID\(\);\n\s*_fm\.mc = null;/, 'il giro nuovo nasce quando la serratura e\' presa, e Minecraft riparte da zero col giro');
   assert.match(pub, /new Worker\('\/battito\.js'\)/);
   assert.ok(existsSync(join(RAD, 'src/web/public/battito.js')), 'il battito non c\'e\'');
   assert.match(leggi('src/web/public/battito.js'), /setInterval\(function \(\) \{ postMessage\(0\); \}, ms\)/);
@@ -66,9 +70,19 @@ test('i due giri battono col worker, e a guardare e\' una scheda sola', () => {
 
 test('il lettore parte da solo con il pannello, e la carta ha i suoi pezzi', () => {
   assert.match(app, /_mortiRiavvia\(\);\n\s*_fmAvvia\(\)\.catch\(\(\) => \{\}\);/, 'il file si legge anche senza aprire la scheda dei Comandi');
-  for (const id of ['morti-file-conta', 'morti-file-scegli', 'morti-file-riprendi', 'morti-file-togli', 'morti-file-spia']) {
+  for (const id of ['morti-file-conta', 'morti-file-scegli', 'morti-mc-scegli', 'morti-mc-risorse', 'morti-file-riprendi', 'morti-file-togli', 'morti-file-spia']) {
     assert.ok(app.includes(`id="${id}"`), `manca #${id}`);
   }
   assert.match(app, /_g\('morti-file-conta'\)\?\.addEventListener\('change', \(e\) => \{ _mortiSalva\(\{ file: e\.target\.value \}\)/);
   assert.match(app, /requestPermission\(\{ mode: 'read' \}\)/, 'il permesso si ridomanda solo col tasto: il browser lo vuole da un gesto');
+});
+
+test('il lettore di Minecraft arriva al pannello, e solo a chi lo usa', () => {
+  const mc = leggi('src/web/public/morti-minecraft.js');
+  assert.match(mc, /window\.SB_MINECRAFT = \{/);
+  assert.match(app, /s\.src = '\/morti-minecraft\.js';/, 'si carica quando serve');
+  assert.ok(!/<script src="morti-minecraft\.js"/.test(leggi('src/web/public/index.html')), 'non pesa su chi non gioca a Minecraft');
+  const da = funzione(app, 'async function _fmDaMinecraft() {');
+  assert.match(da, /await _fmMinecraft\(\);/);
+  assert.match(funzione(app, 'async function _fmLeggi() {'), /_fm\.tipo === 'minecraft' \? await _fmDaMinecraft\(\) : await _fmDaFile\(\)/);
 });

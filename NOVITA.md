@@ -172,24 +172,24 @@ comandi diversi da quelli della riga italiana.
 - Gli aggiornamenti di SocialBot aspettano che nessuno sia in diretta prima di riavviare il bot, e mentre si preparano non gli rubano velocità: niente chat o overlay fermi in piena serata.
   en: SocialBot updates wait until nobody is live before restarting the bot, and while they get ready they don’t slow it down: no chat or overlay freezing in the middle of a stream.
   es: Las actualizaciones de SocialBot esperan a que nadie esté en directo antes de reiniciar el bot, y mientras se preparan no le quitan velocidad: nada de chat ni overlay parados en pleno directo.
-- [importante] CONTATORify legge il conto dei souls dal file di DSDeaths: tutti i Dark Souls, Sekiro ed Elden Ring offline, col numero esatto che tiene il gioco. [vai: moduli]
-  en: CONTATORify reads the souls games’ count from the DSDeaths file: every Dark Souls, Sekiro and Elden Ring offline, with the exact number the game keeps.
-  es: CONTATORify lee la cuenta de los souls desde el archivo de DSDeaths: todos los Dark Souls, Sekiro y Elden Ring sin conexión, con el número exacto que guarda el juego.
-  > Le morti dei souls, contate dal gioco
-  > DSDeaths legge il numero dalla memoria del gioco e lo scrive in un file. Scegli quel file nel pannello, e in diretta il contatore sale da solo col numero del gioco.
-  en> Souls deaths, counted by the game
-  en> DSDeaths reads the number from the game’s memory and writes it to a file. Choose that file in the panel, and when you’re live the counter goes up by itself with the game’s own number.
-  es> Las muertes de los souls, contadas por el juego
-  es> DSDeaths lee el número de la memoria del juego y lo escribe en un archivo. Elige ese archivo en el panel, y en directo el contador sube solo con el número del juego.
+- [importante] CONTATORify conta le morti col numero dei giochi stessi: i souls dal file di DSDeaths, Minecraft Java dal suo registro, nella lingua in cui giochi. [vai: moduli]
+  en: CONTATORify counts deaths with the games’ own numbers: the souls games from the DSDeaths file, Minecraft Java from its log, in the language you play in.
+  es: CONTATORify cuenta las muertes con el número de los propios juegos: los souls desde el archivo de DSDeaths, Minecraft Java desde su registro, en el idioma en que juegas.
+  > Le morti contate dal gioco
+  > Per i souls DSDeaths legge il numero dalla memoria del gioco; per Minecraft il pannello legge il registro con le frasi di morte del tuo gioco e conta solo le tue. Scegli il file o la cartella, e in diretta il contatore sale da solo.
+  en> Deaths counted by the game
+  en> For the souls games DSDeaths reads the number from the game’s memory; for Minecraft the panel reads the log with your game’s death messages and counts only yours. Choose the file or the folder, and when you’re live the counter goes up by itself.
+  es> Las muertes contadas por el juego
+  es> Para los souls DSDeaths lee el número de la memoria del juego; para Minecraft el panel lee el registro con las frases de muerte de tu juego y cuenta solo las tuyas. Elige el archivo o la carpeta, y en directo el contador sube solo.
 - Il riconoscimento della schermata di morte continua anche col pannello dietro al gioco: prima, dopo cinque minuti, Chrome lo faceva guardare una volta al minuto e le morti si perdevano. [vai: moduli]
   en: Death screen recognition keeps going with the panel behind the game: before, after five minutes Chrome let it look only once a minute, and deaths got lost.
   es: El reconocimiento de la pantalla de muerte sigue funcionando con el panel detrás del juego: antes, a los cinco minutos, Chrome lo dejaba mirar una vez por minuto y se perdían muertes.
 - Col pannello aperto in due schede le morti si contano una volta sola: guarda una scheda, e se la chiudi continua l'altra. [vai: moduli]
   en: With the panel open in two tabs, deaths are counted only once: one tab watches, and if you close it the other takes over.
   es: Con el panel abierto en dos pestañas, las muertes se cuentan una sola vez: mira una pestaña, y si la cierras sigue la otra.
-- La privacy dice cosa arriva al server dal contatore delle morti: dallo schermo solo «+1», dai giochi il numero e la partita, da un file il numero e il nome del file.
-  en: The privacy notice says what reaches the server from the death counter: from the screen only “+1”, from games the number and the match, from a file the number and the file name.
-  es: La política de privacidad dice qué llega al servidor desde el contador de muertes: desde la pantalla solo «+1», desde los juegos el número y la partida, desde un archivo el número y su nombre.
+- La privacy dice cosa arriva al server dal contatore delle morti, strada per strada: dallo schermo solo «+1», dalle altre il numero con la partita, il nome del file o il giocatore.
+  en: The privacy notice says what reaches the server from the death counter, source by source: from the screen only “+1”, from the others the number with the match, the file name or the player.
+  es: La política de privacidad dice qué llega al servidor desde el contador de muertes, fuente por fuente: desde la pantalla solo «+1», desde las otras el número con la partida, el nombre del archivo o el jugador.
 - Nella catena di parole ogni parola buona ha la sua risposta, con le due lettere da cui si riparte: prima passava in silenzio e sembrava che il gioco non andasse. [vai: giochi]
   en: In the word chain every valid word gets its own reply, with the two letters to continue from: before, it went by in silence and the game looked broken.
   es: En la cadena de palabras cada palabra válida tiene su respuesta, con las dos letras desde las que se sigue: antes pasaba en silencio y parecía que el juego no funcionaba.

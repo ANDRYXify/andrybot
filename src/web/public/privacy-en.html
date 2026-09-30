@@ -174,7 +174,9 @@
           (Counter-Strike 2, Dota 2): the game sends its state, which also includes the ID of their game account. We keep
           the number of deaths and the match (the map and mode, or the match number); we don't save the rest and it
           doesn't end up in the logs. <strong>From a file</strong> on their computer (for example the one DSDeaths
-          writes): the panel reads it and the file stays there; we receive the number and the file name.</li>
+          writes): the panel reads it and the file stays there; we receive the number and the file name.
+          <strong>From Minecraft</strong>: the panel reads the game's log and death messages on their computer; we
+          receive the number of deaths and the player name, not the log.</li>
         <li><strong>Minimal technical logs</strong> for operation and security.</li>
       </ul>
     </section>

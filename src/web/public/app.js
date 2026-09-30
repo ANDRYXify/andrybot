@@ -16530,9 +16530,11 @@ function _mortiRiavvia() {
   _mortiSpia();
 }
 
-const _fm = { h: null, giro: '', visto: '', numero: null, contate: 0, inOnda: null, cosa: '', aspetta: false, ferma: null, dentro: false };
+const _fm = { tipo: 'file', h: null, risorse: null, mc: null, giro: '', visto: '', numero: null, nomeInviato: '', contate: 0, inOnda: null, cosa: '', aspetta: false, ferma: null, dentro: false };
 const _fmPuo = () => typeof window.showOpenFilePicker === 'function';
+const _fmPuoCartella = () => typeof window.showDirectoryPicker === 'function';
 const _fmChiave = () => 'file:' + String(stato?.gestisce?.streamer || stato?.user?.login || '').toLowerCase();
+const _fmMinecraft = () => (window.SB_MINECRAFT ? Promise.resolve() : new Promise((ok, ko) => { const s = document.createElement('script'); s.src = '/morti-minecraft.js'; s.onload = ok; s.onerror = () => ko(new Error('/morti-minecraft.js')); document.head.appendChild(s); }));
 
 function _fmDb() {
   return new Promise((ok, no) => {
@@ -16544,12 +16546,12 @@ function _fmDb() {
   });
 }
 
-async function _fmTieni(h) {
+async function _fmTieni(voce) {
   const d = await _fmDb();
   try {
     await new Promise((ok, no) => {
       const t = d.transaction('file', 'readwrite');
-      if (h) t.objectStore('file').put(h, _fmChiave()); else t.objectStore('file').delete(_fmChiave());
+      if (voce) t.objectStore('file').put(voce, _fmChiave()); else t.objectStore('file').delete(_fmChiave());
       t.oncomplete = ok;
       t.onerror = () => no(t.error);
     });
@@ -16561,34 +16563,58 @@ async function _fmRicordato() {
   try {
     return await new Promise((ok) => {
       const r = d.transaction('file').objectStore('file').get(_fmChiave());
-      r.onsuccess = () => ok(r.result || null);
+      r.onsuccess = () => ok(r.result && r.result.h ? r.result : null);
       r.onerror = () => ok(null);
     });
   } finally { d.close(); }
+}
+
+const _fmVoce = () => ({ tipo: _fm.tipo, h: _fm.h, risorse: _fm.risorse });
+
+async function _fmDaFile() {
+  let f;
+  try { f = await _fm.h.getFile(); } catch { _fm.cosa = 'perso'; return null; }
+  const visto = f.lastModified + ':' + f.size;
+  if (visto === _fm.visto) {
+    if (_fm.numero === null) return null;
+    _fm.cosa = 'legge';
+    return { totale: _fm.numero, nome: f.name };
+  }
+  let testo;
+  try { testo = await f.slice(0, 256).text(); } catch { return null; }
+  _fm.visto = visto;
+  const n = window.SB_MORTI.numeroDaFile(testo);
+  if (n === null) { _fm.cosa = 'storto'; return null; }
+  _fm.cosa = 'legge';
+  return { totale: n, nome: f.name };
+}
+
+async function _fmDaMinecraft() {
+  try { await _fmMinecraft(); } catch { _fm.cosa = 'perso'; return null; }
+  const M = window.SB_MINECRAFT;
+  if (!_fm.mc) _fm.mc = M.lettore();
+  try {
+    await M.prepara(_fm.mc, _fm.h, _fm.risorse);
+    _fm.cosa = await M.giro(_fm.mc, _fm.h);
+  } catch { _fm.cosa = 'perso'; return null; }
+  if (_fm.cosa !== 'legge') return null;
+  return { totale: _fm.mc.morti, nome: 'Minecraft: ' + _fm.mc.nome };
 }
 
 async function _fmLeggi() {
   if (!_fm.h || _fm.dentro) return;
   _fm.dentro = true;
   try {
-    let f;
-    try { f = await _fm.h.getFile(); } catch { _fm.cosa = 'perso'; _fmSpia(); return; }
-    const visto = f.lastModified + ':' + f.size;
-    if (visto === _fm.visto) return;
-    let testo;
-    try { testo = await f.slice(0, 256).text(); } catch { return; }
-    _fm.visto = visto;
-    const n = window.SB_MORTI.numeroDaFile(testo);
-    if (n === null) { _fm.cosa = 'storto'; _fmSpia(); return; }
-    _fm.cosa = 'legge';
-    if (n === _fm.numero) { _fmSpia(); return; }
-    _fm.numero = n;
-    const d = await api('/api/streamer/morti/file', { method: 'POST', body: { totale: n, nome: f.name, giro: _fm.giro } }).catch(() => null);
-    if (!d) { _fm.visto = ''; _fm.numero = null; return; }
+    const letto = _fm.tipo === 'minecraft' ? await _fmDaMinecraft() : await _fmDaFile();
+    if (!letto || (letto.totale === _fm.numero && letto.nome === _fm.nomeInviato)) { _fmSpia(); return; }
+    _fm.numero = letto.totale;
+    _fm.nomeInviato = letto.nome;
+    const d = await api('/api/streamer/morti/file', { method: 'POST', body: { totale: letto.totale, nome: letto.nome, giro: _fm.giro } }).catch(() => null);
+    if (!d) { _fm.visto = ''; _fm.numero = null; _fm.nomeInviato = ''; return; }
     _fm.inOnda = !!d.inOnda;
     if (d.contate) {
       _fm.contate += d.contate;
-      toast(L(`Morte contata dal file: +${d.contate}`, `Death counted from the file: +${d.contate}`, `Muerte contada desde el archivo: +${d.contate}`));
+      toast(L(`Morte contata: +${d.contate}`, `Death counted: +${d.contate}`, `Muerte contada: +${d.contate}`));
     }
     _fmSpia();
   } finally { _fm.dentro = false; }
@@ -16600,27 +16626,37 @@ function _fmFerma() {
   _fm.aspetta = false;
 }
 
-function _fmParti(h) {
+function _fmParti(voce) {
   _fmFerma();
-  Object.assign(_fm, { h, visto: '', numero: null, contate: 0, inOnda: null, cosa: '', aspetta: true });
+  Object.assign(_fm, { tipo: voce.tipo === 'minecraft' ? 'minecraft' : 'file', h: voce.h, risorse: voce.risorse || null, mc: null, visto: '', numero: null, nomeInviato: '', contate: 0, inOnda: null, cosa: '', aspetta: true });
   _fm.ferma = window.SB_MORTI.dasolo('sb-morti-file', () => {
     _fm.aspetta = false;
     _fm.giro = crypto.randomUUID();
+    _fm.mc = null;
     _fm.visto = '';
     _fm.numero = null;
+    _fm.nomeInviato = '';
     _fmLeggi().catch(() => {});
     return window.SB_MORTI.ogni(2000, () => { _fmLeggi().catch(() => {}); });
   });
   _fmSpia();
 }
 
+async function _fmPermesso(chiedi) {
+  const mani = [_fm.h, _fm.risorse].filter(Boolean);
+  for (const m of mani) {
+    const p = await (chiedi ? m.requestPermission({ mode: 'read' }) : m.queryPermission({ mode: 'read' })).catch(() => 'denied');
+    if (p !== 'granted') return false;
+  }
+  return mani.length > 0;
+}
+
 async function _fmAvvia() {
   if (DEMO || !_fmPuo() || _fm.h) { _fmSpia(); return; }
-  const h = await _fmRicordato().catch(() => null);
-  if (!h) { _fmSpia(); return; }
-  _fm.h = h;
-  const p = await h.queryPermission({ mode: 'read' }).catch(() => 'denied');
-  if (p === 'granted') _fmParti(h);
+  const voce = await _fmRicordato().catch(() => null);
+  if (!voce) { _fmSpia(); return; }
+  Object.assign(_fm, { tipo: voce.tipo === 'minecraft' ? 'minecraft' : 'file', h: voce.h, risorse: voce.risorse || null });
+  if (await _fmPermesso(false)) _fmParti(_fmVoce());
   else { _fm.cosa = 'permesso'; _fmSpia(); }
 }
 
@@ -16628,20 +16664,31 @@ function _fmSpia() {
   const el = _g('morti-file-spia');
   const riprendi = _g('morti-file-riprendi');
   const togli = _g('morti-file-togli');
+  const risorse = _g('morti-mc-risorse');
   if (riprendi) riprendi.hidden = _fm.cosa !== 'permesso';
   if (togli) togli.hidden = !_fm.h;
+  if (risorse) risorse.hidden = !(_fm.tipo === 'minecraft' && _fm.h && (_fm.cosa === 'frasi' || _fm.risorse));
   if (!el) return;
   const nome = _fm.h ? _fm.h.name : '';
   const m = _mortiCfg();
+  const mc = _fm.tipo === 'minecraft';
   if (DEMO) { el.textContent = L('Nella demo non leggo file.', 'In the demo I don\'t read files.', 'En la demo no leo archivos.'); return; }
   if (!_fmPuo()) { el.textContent = L('Questo browser non lascia leggere un file del computer: apri il pannello con Chrome o Edge.', 'This browser won\'t let a page read a file on your computer: open the panel in Chrome or Edge.', 'Este navegador no deja leer un archivo del equipo: abre el panel con Chrome o Edge.'); return; }
   if (!_fm.h) { el.textContent = L('Nessun file scelto.', 'No file chosen.', 'Ningún archivo elegido.'); return; }
   if (_fm.cosa === 'permesso') { el.textContent = L(`Il browser chiede di nuovo il permesso per «${nome}»: premi «Riprendi».`, `The browser is asking again for permission to read «${nome}»: press «Resume».`, `El navegador vuelve a pedir permiso para «${nome}»: pulsa «Reanudar».`); return; }
   if (_fm.aspetta) { el.textContent = L(`«${nome}» lo sta già leggendo un'altra scheda del pannello: se la chiudi, continuo io.`, `Another panel tab is already reading «${nome}»: if you close it, I take over.`, `Otra pestaña del panel ya está leyendo «${nome}»: si la cierras, sigo yo.`); return; }
-  if (_fm.cosa === 'perso') { el.textContent = L(`Non trovo più «${nome}»: sceglilo di nuovo.`, `I can't find «${nome}» anymore: choose it again.`, `Ya no encuentro «${nome}»: vuelve a elegirlo.`); return; }
+  if (_fm.cosa === 'perso') { el.textContent = L(`Non riesco più a leggere «${nome}»: sceglilo di nuovo.`, `I can't read «${nome}» anymore: choose it again.`, `Ya no consigo leer «${nome}»: vuelve a elegirlo.`); return; }
   if (_fm.cosa === 'storto') { el.textContent = L(`In «${nome}» non trovo un numero solo: è il file giusto?`, `I don't find a single number in «${nome}»: is it the right file?`, `En «${nome}» no encuentro un solo número: ¿es el archivo correcto?`); return; }
+  if (_fm.cosa === 'registro') { el.textContent = L(`In «${nome}» non trovo logs/latest.log: è la cartella del gioco? Avvia Minecraft almeno una volta.`, `I can't find logs/latest.log in «${nome}»: is it the game folder? Start Minecraft at least once.`, `En «${nome}» no encuentro logs/latest.log: ¿es la carpeta del juego? Abre Minecraft al menos una vez.`); return; }
+  if (_fm.cosa === 'frasi') { el.textContent = L(`In «${nome}» non trovo i file del gioco con le frasi di morte. Se usi un launcher diverso da quello ufficiale, scegli anche la cartella dove tiene i file del gioco: quella con «assets».`, `I can't find the game files with the death messages in «${nome}». If you use a launcher other than the official one, also choose the folder where it keeps the game files: the one with «assets».`, `En «${nome}» no encuentro los archivos del juego con las frases de muerte. Si usas un launcher distinto del oficial, elige también la carpeta donde guarda los archivos del juego: la que tiene «assets».`); return; }
+  if (_fm.cosa === 'nome') { el.textContent = L('Non so ancora chi sei: Minecraft lo scrive quando parte.', 'I don\'t know who you are yet: Minecraft writes it when it starts.', 'Todavía no sé quién eres: Minecraft lo escribe al arrancar.'); return; }
   if (_fm.numero === null) { el.textContent = L(`Leggo «${nome}»…`, `Reading «${nome}»…`, `Leyendo «${nome}»…`); return; }
-  const righe = [L(`Leggo «${nome}»: ${_fm.numero}.`, `Reading «${nome}»: ${_fm.numero}.`, `Leyendo «${nome}»: ${_fm.numero}.`)];
+  const righe = [];
+  if (mc) {
+    const x = _fm.mc || {};
+    righe.push(L(`Leggo Minecraft come «${x.nome}»: ${x.espressioni?.length || 0} frasi di morte, lingua ${x.lingua}.`, `Reading Minecraft as «${x.nome}»: ${x.espressioni?.length || 0} death messages, language ${x.lingua}.`, `Leyendo Minecraft como «${x.nome}»: ${x.espressioni?.length || 0} frases de muerte, idioma ${x.lingua}.`));
+    if (x.lingua && x.lingua !== 'en_us' && !x.frasiSue) righe.push(L(`Quelle in ${x.lingua} non le trovo: riconosco solo le inglesi.`, `I can't find the ${x.lingua} ones: I only recognize the English ones.`, `No encuentro las de ${x.lingua}: solo reconozco las inglesas.`));
+  } else righe.push(L(`Leggo «${nome}»: ${_fm.numero}.`, `Reading «${nome}»: ${_fm.numero}.`, `Leyendo «${nome}»: ${_fm.numero}.`));
   if (!m.file) righe.push(L('Scegli quale contatore far salire.', 'Choose which counter to raise.', 'Elige qué contador subir.'));
   else if (_fm.inOnda === false) righe.push(L('Fuori diretta leggo ma non conto.', 'Off air I read but don\'t count.', 'Fuera de directo leo pero no cuento.'));
   if (_fm.contate) righe.push(L(`Contate da quando guardo: ${_fm.contate}.`, `Counted since I started reading: ${_fm.contate}.`, `Contadas desde que leo: ${_fm.contate}.`));
@@ -16929,18 +16976,38 @@ function collegaMorti() {
     try { [h] = await window.showOpenFilePicker({ id: 'socialbot-morti', multiple: false, types: [{ description: L('Testo', 'Text', 'Texto'), accept: { 'text/plain': ['.txt'] } }] }); }
     catch { return; }
     if (!h) return;
-    await _fmTieni(h).catch(() => {});
-    _fmParti(h);
+    const voce = { tipo: 'file', h, risorse: null };
+    await _fmTieni(voce).catch(() => {});
+    _fmParti(voce);
+  });
+  _g('morti-mc-scegli')?.addEventListener('click', async () => {
+    if (DEMO || !_fmPuoCartella()) { _fmSpia(); return; }
+    let h = null;
+    try { h = await window.showDirectoryPicker({ id: 'socialbot-minecraft', mode: 'read' }); }
+    catch { return; }
+    if (!h) return;
+    const voce = { tipo: 'minecraft', h, risorse: null };
+    await _fmTieni(voce).catch(() => {});
+    _fmParti(voce);
+  });
+  _g('morti-mc-risorse')?.addEventListener('click', async () => {
+    if (DEMO || !_fmPuoCartella() || _fm.tipo !== 'minecraft' || !_fm.h) return;
+    let r = null;
+    try { r = await window.showDirectoryPicker({ id: 'socialbot-minecraft-file', mode: 'read' }); }
+    catch { return; }
+    if (!r) return;
+    const voce = { tipo: 'minecraft', h: _fm.h, risorse: r };
+    await _fmTieni(voce).catch(() => {});
+    _fmParti(voce);
   });
   _g('morti-file-riprendi')?.addEventListener('click', async () => {
     if (!_fm.h) return;
-    const p = await _fm.h.requestPermission({ mode: 'read' }).catch(() => 'denied');
-    if (p === 'granted') _fmParti(_fm.h); else _fmSpia();
+    if (await _fmPermesso(true)) _fmParti(_fmVoce()); else _fmSpia();
   });
   _g('morti-file-togli')?.addEventListener('click', async () => {
     _fmFerma();
     await _fmTieni(null).catch(() => {});
-    Object.assign(_fm, { h: null, cosa: '', numero: null, contate: 0, inOnda: null });
+    Object.assign(_fm, { tipo: 'file', h: null, risorse: null, mc: null, cosa: '', numero: null, nomeInviato: '', contate: 0, inOnda: null });
     _fmSpia();
   });
   _fmSpia();
@@ -19262,17 +19329,22 @@ function _mortiCarte() {
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.carta)}${L('Il conto scritto in un file', 'The count written in a file', 'La cuenta escrita en un archivo')}</h2>
-      <p>${L('Nei souls il numero esatto lo tiene il gioco, e c\'è un programma gratuito che lo sa leggere:', 'In the souls games the exact number is kept by the game, and a free program can read it:', 'En los souls el número exacto lo guarda el juego, y hay un programa gratuito que sabe leerlo:')} <a href="https://github.com/Quidrex/DSDeaths" target="_blank" rel="noopener">DSDeaths</a>. ${L('Funziona con tutti i Dark Souls, Sekiro ed Elden Ring offline, e scrive il conto in', 'It works with every Dark Souls, Sekiro and Elden Ring offline, and writes the count in', 'Funciona con todos los Dark Souls, Sekiro y Elden Ring sin conexión, y escribe la cuenta en')} <strong>DSDeaths.txt</strong>. ${L('Qui scegli quel file, e il contatore segue il gioco.', 'Choose that file here, and the counter follows the game.', 'Elige aquí ese archivo, y el contador sigue al juego.')}</p>
-      <p class="suggerimento">${L('Va bene anche un altro programma che scrive il conto in un file di testo, con un numero solo. Serve', 'Any other program that writes the count in a text file, with a single number, works too. You need', 'Sirve también otro programa que escriba la cuenta en un archivo de texto, con un solo número. Hace falta')} <strong>${L('Chrome o Edge su questo computer', 'Chrome or Edge on this computer', 'Chrome o Edge en este equipo')}</strong>, ${L('e il file', 'and the file', 'y el archivo')} <strong>${L('resta dov\'è', 'stays where it is', 'se queda donde está')}</strong>: ${L('al server arriva solo il numero. Fuori diretta leggo ma non conto.', 'only the number reaches the server. Off air I read but don\'t count.', 'al servidor solo llega el número. Fuera de directo leo pero no cuento.')}</p>
+      <h2>${_hIco(ICO.carta)}${L('Il conto dal tuo computer', 'The count from your computer', 'La cuenta desde tu equipo')}</h2>
+      <p>${L('Nei souls il numero esatto lo tiene il gioco, e c\'è un programma gratuito che lo sa leggere:', 'In the souls games the exact number is kept by the game, and a free program can read it:', 'En los souls el número exacto lo guarda el juego, y hay un programa gratuito que sabe leerlo:')} <a href="https://github.com/Quidrex/DSDeaths" target="_blank" rel="noopener">DSDeaths</a>. ${L('Funziona con tutti i Dark Souls, Sekiro ed Elden Ring offline, e scrive il conto in', 'It works with every Dark Souls, Sekiro and Elden Ring offline, and writes the count in', 'Funciona con todos los Dark Souls, Sekiro y Elden Ring sin conexión, y escribe la cuenta en')} <strong>DSDeaths.txt</strong>: ${L('scegli quel file.', 'choose that file.', 'elige ese archivo.')}</p>
+      <p>${L('Per', 'For', 'Para')} <strong>Minecraft Java</strong> ${L('scegli la cartella del gioco,', 'choose the game folder,', 'elige la carpeta del juego,')} <strong>.minecraft</strong>: ${L('leggo le frasi di morte che il gioco scrive nel suo registro, nella lingua in cui giochi, e conto solo le tue.', 'I read the death messages the game writes in its log, in the language you play in, and count only yours.', 'leo las frases de muerte que el juego escribe en su registro, en el idioma en que juegas, y cuento solo las tuyas.')}</p>
+      <p class="suggerimento">${L('Va bene anche un altro programma che scrive il conto in un file di testo, con un numero solo. Serve', 'Any other program that writes the count in a text file, with a single number, works too. You need', 'Sirve también otro programa que escriba la cuenta en un archivo de texto, con un solo número. Hace falta')} <strong>${L('Chrome o Edge su questo computer', 'Chrome or Edge on this computer', 'Chrome o Edge en este equipo')}</strong>, ${L('e i file', 'and the files', 'y los archivos')} <strong>${L('restano dove sono', 'stay where they are', 'se quedan donde están')}</strong>: ${L('al server arriva solo il numero. Fuori diretta leggo ma non conto.', 'only the number reaches the server. Off air I read but don\'t count.', 'al servidor solo llega el número. Fuera de directo leo pero no cuento.')}</p>
       <div class="riga-flessibile spazio-sopra">
         <div style="max-width:220px">
           <label class="campo" for="morti-file-conta">${L('Quale contatore faccio salire', 'Which counter I raise', 'Qué contador subo')}</label>
           <select id="morti-file-conta" class="campo-largo"></select>
         </div>
         <button type="button" class="btn" id="morti-file-scegli">${L('Scegli il file', 'Choose the file', 'Elegir el archivo')}</button>
+        <button type="button" class="btn secondario" id="morti-mc-scegli">${L('Scegli la cartella di Minecraft', 'Choose the Minecraft folder', 'Elegir la carpeta de Minecraft')}</button>
+      </div>
+      <div class="riga-flessibile spazio-sopra">
         <button type="button" class="btn secondario" id="morti-file-riprendi" hidden>${L('Riprendi', 'Resume', 'Reanudar')}</button>
-        <button type="button" class="btn secondario mini" id="morti-file-togli" hidden>${L('Smetti di leggerlo', 'Stop reading it', 'Dejar de leerlo')}</button>
+        <button type="button" class="btn secondario mini" id="morti-mc-risorse" hidden>${L('Scegli la cartella dei file del gioco', 'Choose the game files folder', 'Elegir la carpeta de archivos del juego')}</button>
+        <button type="button" class="btn secondario mini" id="morti-file-togli" hidden>${L('Smetti di leggere', 'Stop reading', 'Dejar de leer')}</button>
       </div>
       <p class="suggerimento" id="morti-file-spia">${L('Nessun file scelto.', 'No file chosen.', 'Ningún archivo elegido.')}</p>
     </div>

@@ -58,7 +58,7 @@ giochi dove qualcuno il numero lo tiene davvero. La pagina parte dalla prima.
 | --- | --- | --- |
 | Counter-Strike 2, Dota 2 | il gioco, con la Game State Integration di Valve | il gioco lo manda al server (seconda strada) |
 | Dark Souls (Prepare to Die, Remastered, II, Scholar of the First Sin, III), Sekiro, Elden Ring offline | il gioco, nella sua memoria | DSDeaths (github.com/Quidrex/DSDeaths) lo legge e lo scrive in `DSDeaths.txt`; il pannello legge quel file (terza strada) |
-| Minecraft Java | le frasi di morte nel registro del gioco (`logs/latest.log`) | da fare: si legge il registro con le frasi del gioco stesso, nella sua lingua (piu' sotto) |
+| Minecraft Java | le frasi di morte nel registro del gioco (`logs/latest.log`) | il pannello legge il registro con le frasi del gioco stesso, nella sua lingua (terza strada, piu' sotto) |
 | League of Legends | la Live Client Data API, su `127.0.0.1:2999` | non si fa: la porta ha un certificato di Riot che una pagina web non accetta senza installarlo a mano |
 | Uncharted, e i giochi che sfumano al nero | nessuno: niente numero, e uno schermo nero combacia con tutto | il tasto di CONSOLify |
 | Tutti gli altri con una schermata fissa | nessuno | la schermata riconosciuta (prima strada) |
@@ -334,20 +334,67 @@ chiudi, continuo io.»). Se quella si chiude, o smette, subentra la prossima,
 con un giro nuovo. La serratura vale dentro un browser: due browser diversi
 sullo stesso computer restano due, ed e' un caso che non copriamo.
 
-## Minecraft (da fare)
+## Minecraft Java
 
-Minecraft Java scrive ogni messaggio di chat nel suo registro,
-`logs/latest.log`, righe `[CHAT] <messaggio>` (dal 1.19 `[System] [CHAT]`), e le
-frasi di morte sono quelle del gioco, nella lingua scelta in `options.txt`:
-l'inglese sta dentro il `.jar` della versione, le altre fra gli asset
-(`assets/indexes/*.json` porta a `assets/objects/xx/<hash>`). Verificato sui file
-di Mojang: 106 frasi per lingua, e in italiano 94 su 106 non cominciano col nome
-della vittima (`%2$s ha trafitto %1$s`), quindi la vittima si riconosce solo con
-la frase del gioco, mai cercando il nome in testa.
+Minecraft scrive ogni messaggio di chat nel suo registro, `logs/latest.log`:
+`[Render thread/INFO]: [System] [CHAT] <messaggio>` dal 1.19, `[CHAT] <messaggio>`
+prima. Le frasi di morte sono quelle del gioco, nella lingua scelta in
+`options.txt` (`lang:it_it`): l'inglese sta dentro il jar della versione, le altre
+fra gli asset (`assets/indexes/*.json` porta a `assets/objects/xx/<hash>`). Il
+codice sta in `src/web/public/morti-minecraft.js`, che il pannello carica solo
+per chi sceglie la cartella di Minecraft.
 
-Il piano: si sceglie la cartella del gioco; chi sei lo dice la riga
-`Setting user: <nome>` che il gioco scrive all'avvio (senza, non si conta: su un
-server arrivano le morti di tutti); si conta una riga che combacia per intero
-con una frase di morte e ha te come `%1$s`; si legge dal punto dove si era
-rimasti, e alla prima lettura dalla fine. Le frasi si leggono dai file del gioco
-che ha lo streamer, e non le teniamo noi.
+**Le frasi si leggono dai file di chi gioca, e non le teniamo noi.** Sono di
+Mojang. Il jar pesa quaranta mega: si legge solo la sua coda, si trova la voce
+`assets/minecraft/lang/en_us.json` nell'indice dello zip e si scompatta quella
+sola (anche nello zip grande, ZIP64). Si prendono le versioni installate piu'
+recenti, e l'unione delle loro frasi: una frase vecchia non collide con niente.
+Quando `options.txt` cambia (si e' cambiata lingua nel gioco) le frasi si rifanno.
+
+**Una frase diventa un'espressione che trova la vittima ovunque sia.** Nella 26.3
+le frasi di morte sono 106 per lingua, e in italiano 94 su 106 non cominciano
+con la vittima (`%2$s ha trafitto %1$s`): cercare il nome in testa alla riga
+sarebbe sbagliato in partenza. `%1$s` diventa il gruppo della vittima, gli altri
+segnaposti diventano «qualunque cosa», il resto si confronta lettera per lettera
+dall'inizio alla fine della riga. Due frasi non hanno la vittima (il messaggio
+troppo lungo, il link di «Intentional Game Design»): non contano mai.
+
+**Conta solo la vittima, e solo se sei tu.** Chi sei lo dice la riga
+`Setting user: <nome>` che il gioco scrive all'avvio, in testa al registro; senza,
+non si conta (su un server arrivano le morti di tutti). Davanti al nome sono
+ammesse solo etichette fra quadre, «[VIP] Steve». Provato sulle frasi vere di
+inglese, italiano e spagnolo: 104 su 104 prese in ogni lingua, e nessuna contata
+a chi uccide. La prima versione ammetteva un nome in coda preceduto da uno
+spazio, e sulle frasi italiane contava 21 morti a chi uccideva: in «Un'incudine ha
+spiaccicato Alex mentre lottava con Steve» la frase corta «Un'incudine ha
+spiaccicato %1$s» prende come vittima «Alex mentre lottava con Steve». La regola
+giusta e' piu' stretta, non una toppa.
+
+**La chat dei giocatori non e' il gioco.** Una riga `[System] [CHAT]` e' un
+messaggio del gioco; una `[Not Secure]`, o un messaggio che comincia con
+`<nome> `, e' qualcuno che scrive. Senza questa regola chi scrive in chat
+«Steve was slain by Zombie» farebbe contare una morte.
+
+**Si legge da dove si era rimasti.** La prima volta si parte dalla fine esatta
+del file, e se l'ultima riga e' a meta' la si butta: quello che c'era prima di
+cominciare a guardare e' gia' successo. Si leggono solo righe intere; una riga a
+meta' aspetta il giro dopo. Un registro nuovo (il gioco e' ripartito) si
+riconosce dalla prima riga, che ha l'ora dell'avvio, o dal file piu' corto, e si
+legge da capo, perche' e' tutto nuovo: anche le morti scritte prima del punto
+dove era arrivato quello vecchio.
+
+**Al server va la stessa porta del file.** Il pannello conta le morti viste dal
+suo giro e manda quel totale con il nome «Minecraft: <giocatore>»: la regola del
+salto, la prima lettura che non conta, il fuori diretta e la scheda sola sono
+quelli di sopra, gli stessi. Un altro account e' un'altra partita.
+
+**Un launcher diverso.** Prism, MultiMC, CurseForge e l'app di Modrinth tengono
+il registro nella cartella dell'istanza e i file del gioco altrove. Si sceglie la
+cartella dell'istanza; se li' non ci sono le frasi, il pannello chiede anche la
+cartella dei file del gioco, e le cerca in `versions/`, in
+`libraries/com/mojang/minecraft/` e in `assets/`.
+
+Le prove sono in `test/unita/morti-minecraft.test.mjs` (con frasi inventate, nel
+formato del gioco) e nel cancello `scripts/verifica-minecraft.mjs`, che fa
+girare il file minificato in Chromium con una cartella vera, un jar compresso e
+un registro che cresce.
