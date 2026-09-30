@@ -78,8 +78,60 @@
     return { conta: conta, stato: { dentro: dentro, ultima: conta ? ora : ultima } };
   }
 
+  var MAX_CIFRE = 8;
+
+  function numeroDaFile(testo) {
+    var tutti = String(testo == null ? '' : testo).match(/\d+/g) || [];
+    if (tutti.length !== 1 || tutti[0].length > MAX_CIFRE) return null;
+    return Number(tutti[0]);
+  }
+
+  function ogni(ms, fn) {
+    var passo = Math.max(250, Number(ms) || 0);
+    var timer = 0;
+    var w = null;
+    var suo = function () { if (!timer) timer = setInterval(fn, passo); };
+    try { w = new Worker('/battito.js'); } catch (e) { w = null; }
+    if (!w) { suo(); return function () { clearInterval(timer); timer = 0; }; }
+    w.onmessage = function () { fn(); };
+    w.onerror = function () { if (w) w.terminate(); w = null; suo(); };
+    w.postMessage(passo);
+    return function () {
+      if (w) w.terminate();
+      w = null;
+      clearInterval(timer);
+      timer = 0;
+    };
+  }
+
+  function dasolo(nome, parti) {
+    var ferma = null;
+    var fine = null;
+    var fermo = false;
+    var su = function () { if (!fermo) ferma = parti(); };
+    var serrature = typeof navigator !== 'undefined' && navigator.locks && typeof navigator.locks.request === 'function' ? navigator.locks : null;
+    var basta = typeof AbortController === 'function' ? new AbortController() : null;
+    if (!serrature) su();
+    else {
+      serrature.request(nome, basta ? { signal: basta.signal } : {}, function () {
+        if (fermo) return null;
+        su();
+        return new Promise(function (ok) { fine = ok; });
+      }).catch(function () {});
+    }
+    return function () {
+      fermo = true;
+      if (basta) basta.abort();
+      if (ferma) ferma();
+      ferma = null;
+      if (fine) fine();
+      fine = null;
+    };
+  }
+
   window.SB_MORTI = {
     impronta: impronta, distanza: distanza, vicina: vicina, guarda: guarda, ritaglio: ritaglio,
+    numeroDaFile: numeroDaFile, ogni: ogni, dasolo: dasolo,
     LARGA: LARGA, ALTA: ALTA, SOGLIA: SOGLIA, RIARMO_MS: RIARMO_MS,
   };
 })();

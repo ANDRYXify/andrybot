@@ -48,9 +48,24 @@ strumenti che esistono:
   la strada giusta: non si indovina niente, e' il gioco che lo dice.
 
 La conclusione: **non esiste una libreria che riconosca «una morte» in un gioco
-qualsiasi**, perche' non esiste la cosa. Esistono due strade diverse, e servono
-tutte e due — una esatta per i pochi giochi che pubblicano i dati, una generale
-per tutti gli altri. Questa pagina descrive la seconda.
+qualsiasi**, perche' non esiste la cosa. Esistono strade diverse, e servono
+tutte: una generale per tutti i giochi (la schermata), e quelle esatte per i
+giochi dove qualcuno il numero lo tiene davvero. La pagina parte dalla prima.
+
+### Le fonti vere, gioco per gioco (ricerca del 30 settembre 2026)
+
+| Gioco | Chi tiene il numero | Come arriva a noi |
+| --- | --- | --- |
+| Counter-Strike 2, Dota 2 | il gioco, con la Game State Integration di Valve | il gioco lo manda al server (seconda strada) |
+| Dark Souls (Prepare to Die, Remastered, II, Scholar of the First Sin, III), Sekiro, Elden Ring offline | il gioco, nella sua memoria | DSDeaths (github.com/Quidrex/DSDeaths) lo legge e lo scrive in `DSDeaths.txt`; il pannello legge quel file (terza strada) |
+| Minecraft Java | le frasi di morte nel registro del gioco (`logs/latest.log`) | da fare: si legge il registro con le frasi del gioco stesso, nella sua lingua (piu' sotto) |
+| League of Legends | la Live Client Data API, su `127.0.0.1:2999` | non si fa: la porta ha un certificato di Riot che una pagina web non accetta senza installarlo a mano |
+| Uncharted, e i giochi che sfumano al nero | nessuno: niente numero, e uno schermo nero combacia con tutto | il tasto di CONSOLify |
+| Tutti gli altri con una schermata fissa | nessuno | la schermata riconosciuta (prima strada) |
+
+Leggere la memoria dei giochi da noi voleva dire far installare un programma, e
+con Elden Ring l'anticheat lo blocca comunque. DSDeaths lo fa gia', e da anni:
+noi leggiamo il suo file.
 
 ## L'impronta, e perche' non e' uno screenshot
 
@@ -257,3 +272,82 @@ browser sarebbe peggio. Due copie della stessa regola sono un posto in cui
 divergere, quindi c'e' una prova che fa passare le stesse coppie da tutte e due e
 pretende lo stesso numero: se una cambiasse e l'altra no, prenderesti dalla
 libreria schede che poi non ti prendono niente.
+
+## La terza strada: il conto scritto in un file
+
+DSDeaths legge le morti dalla memoria dei souls e a ogni morte le scrive in
+`DSDeaths.txt`, un numero e basta. Il pannello aperto sul computer della regia
+legge quel file (Chrome ed Edge lo permettono, con la File System Access API) e
+manda al server il **numero**: il file resta dov'e'. Va bene qualunque programma
+che scriva un conto in un file di testo, purche' dentro ci sia **un numero
+solo**: con due («DS3: 37») non si sa quale sia il conto, e non si tira a
+indovinare.
+
+La regola e' quella della seconda strada, e sta nello stesso posto
+(`gsi.salto`): il numero e' un totale, conta il salto in su, e ogni altra cosa
+ribasa. Un numero che scende e' un altro personaggio caricato; un salto di piu'
+di cinque in due secondi pure. Fuori diretta si legge e non si conta, e il
+ricordo va avanti comunque, se no la prima lettura in diretta conterebbe le
+morti del pomeriggio.
+
+**La prima lettura di chi guarda non conta mai.** Il pannello, ogni volta che
+comincia a guardare (pagina aperta, file scelto, permesso ridato), si da' un
+GIRO nuovo, e il giro fa parte della partita. Cosi' il numero che trova non si
+confronta con quello di ieri: le morti fatte a pannello chiuso non sono
+successe adesso. Il prezzo e' quello di sempre: una morte fatta nei secondi di
+una pagina ricaricata si perde, e nessuna si conta due volte. Il ricordo sta fra
+gli stati vivi (`morti:file`), a parte da quello dei giochi: un gioco che parla e
+un file letto non si ribasano a vicenda.
+
+Il file si sceglie una volta: la maniglia resta nel browser (IndexedDB), e al
+ritorno il pannello chiede al browser se il permesso c'e' ancora. Se c'e',
+riparte da solo; se no mostra «Riprendi», perche' il permesso il browser lo
+ridà solo a un gesto.
+
+## Il battito: guardare anche da dietro al gioco
+
+Il pannello sul computer della regia sta quasi sempre dietro al gioco, e una
+scheda nascosta Chrome la rallenta: dopo cinque minuti i timer della pagina
+partono una volta al minuto. Misurato (`scripts/verifica-battito.mjs`, col tempo
+di grazia accorciato): un giro ogni secondo diventava zero giri in venti
+secondi, anche con la regia collegata. Col microfono aperto no, ed e' per questo
+che l'ascolto vocale non ne soffriva. Una schermata di morte resta a schermo tre
+secondi: guardando una volta al minuto, le morti si perdevano quasi tutte.
+
+I timer di un worker invece non si toccano, e i suoi messaggi arrivano alla
+pagina anche nascosta. Percio' i giri delle morti (la schermata e il file)
+battono con `SB_MORTI.ogni`, che tiene il tempo in `battito.js`, e non con un
+timer della pagina. Il cancello rifa' la misura a ogni collaudo, e ha dentro il
+suo controllo: se nel banco il timer della pagina non rallenta, la misura non
+vale e il cancello e' rosso.
+
+## Una scheda sola
+
+Con due schede del pannello aperte, ognuna avrebbe guardato per conto suo. Per
+la schermata vuol dire ogni morte contata due volte; per il file, peggio, nessuna
+contata mai, perche' ogni scheda col suo giro ribasa quella dell'altra.
+
+Quindi a guardare e' una scheda sola: `SB_MORTI.dasolo` prende una serratura del
+browser (Web Locks), una per la schermata e una per il file. Le altre aspettano,
+e il pannello lo dice («Sta gia' guardando un'altra scheda del pannello: se la
+chiudi, continuo io.»). Se quella si chiude, o smette, subentra la prossima,
+con un giro nuovo. La serratura vale dentro un browser: due browser diversi
+sullo stesso computer restano due, ed e' un caso che non copriamo.
+
+## Minecraft (da fare)
+
+Minecraft Java scrive ogni messaggio di chat nel suo registro,
+`logs/latest.log`, righe `[CHAT] <messaggio>` (dal 1.19 `[System] [CHAT]`), e le
+frasi di morte sono quelle del gioco, nella lingua scelta in `options.txt`:
+l'inglese sta dentro il `.jar` della versione, le altre fra gli asset
+(`assets/indexes/*.json` porta a `assets/objects/xx/<hash>`). Verificato sui file
+di Mojang: 106 frasi per lingua, e in italiano 94 su 106 non cominciano col nome
+della vittima (`%2$s ha trafitto %1$s`), quindi la vittima si riconosce solo con
+la frase del gioco, mai cercando il nome in testa.
+
+Il piano: si sceglie la cartella del gioco; chi sei lo dice la riga
+`Setting user: <nome>` che il gioco scrive all'avvio (senza, non si conta: su un
+server arrivano le morti di tutti); si conta una riga che combacia per intero
+con una frase di morte e ha te come `%1$s`; si legge dal punto dove si era
+rimasti, e alla prima lettura dalla fine. Le frasi si leggono dai file del gioco
+che ha lo streamer, e non le teniamo noi.
