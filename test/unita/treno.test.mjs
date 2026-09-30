@@ -14,6 +14,10 @@
 //    un treno da cento sub sono cento righe del bot;
 //  · il treno non conta negli obiettivi ne' nel subathon: i sub e i bit che lo
 //    fanno crescere sono gia' passati di la' uno per uno.
+//
+// Le parole sono quelle della voce del canale (features/voce.js): qui ogni
+// momento ha una frase sola scritta dallo streamer, cosi' si vede QUANDO si
+// parla senza dipendere da QUALE frase del giro esce.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
@@ -26,12 +30,14 @@ const { normTreno } = await import('../../src/web/stile.js');
 const CH = 'canale';
 streamers.request(CH, 'Canale', '1');
 
-const REGOLE = normTreno({ attivo: true, annuncia: true, testoParte: 'parte', testoLivello: 'liv {livello}', testoFine: 'fine {livello} grazie {chi}' });
-const prepara = (regole = REGOLE) => {
+const REGOLE = normTreno({ attivo: true, annuncia: true });
+const FRASI = { 'treno-parte': ['parte'], 'treno-livello': ['liv {livello}'], 'treno-fine': ['fine {livello} grazie {chi}'] };
+const soloSue = (frasi) => ({ momenti: Object.fromEntries(Object.entries(frasi).map(([k, f]) => [k, Array.isArray(f) ? { modo: 'sue', frasi: f } : f])) });
+const prepara = (regole = REGOLE, frasi = FRASI) => {
   const s = streamers.get(CH)?.settings || {};
   const stato = { ...(s.overlayStato || {}) };
   delete stato.treno;
-  streamers.setSettings(CH, { ...s, overlayTreno: regole, overlayStato: stato });
+  streamers.setSettings(CH, { ...s, overlayTreno: regole, overlayStato: stato, voce: soloSue(frasi) });
 };
 
 const ORA = 1_700_000_000_000;
@@ -131,7 +137,7 @@ test('con la chat spenta il bot sta zitto, ma la scena si aggiorna lo stesso', (
 });
 
 test('con la scena spenta non si spinge niente in overlay, ma in chat si parla', () => {
-  prepara(normTreno({ attivo: false, annuncia: true, testoParte: 'parte' }));
+  prepara(normTreno({ attivo: false, annuncia: true }));
   const dette = [];
   const spinte = [];
   treno.suEvento(CH, 'channel.hype_train.begin', EV(), { say: (c, t) => dette.push(t), spingi: (c, t) => spinte.push(t), ora: ORA });
@@ -146,7 +152,7 @@ test('a treno spento non si scrive nemmeno lo stato: chi non lo usa non paga una
 });
 
 test('«!treno» risponde solo se un treno sta davvero correndo', () => {
-  prepara();
+  prepara(REGOLE, { ...FRASI, 'treno-stato': ['livello {livello}, {quanto} punti su {meta}'] });
   const dette = [];
   const parla = (t) => dette.push(t);
   const msg = { channel: CH, text: '!treno', isSelf: false };
@@ -157,6 +163,20 @@ test('«!treno» risponde solo se un treno sta davvero correndo', () => {
   assert.match(dette[0], /150 punti su 500/);
   assert.equal(treno.tryComando({ ...msg, text: '!altro' }, parla, { ora: ORA }), false);
   assert.equal(treno.tryComando(msg, parla, { ora: ORA + 999_999 }), false, 'un treno scaduto non risponde');
+});
+
+test('«!treno» con le frasi nostre dice i numeri veri, e spento non risponde', () => {
+  prepara(REGOLE, {});
+  treno.suEvento(CH, 'channel.hype_train.begin', EV(), { ora: ORA });
+  const dette = [];
+  assert.equal(treno.tryComando({ channel: CH, text: '!treno' }, (t) => dette.push(t), { ora: ORA }), true);
+  assert.match(dette[0], /\b2\b/);
+  assert.match(dette[0], /150/);
+  assert.match(dette[0], /500/);
+  prepara(REGOLE, { 'treno-stato': { modo: 'spento' } });
+  treno.suEvento(CH, 'channel.hype_train.begin', EV(), { ora: ORA });
+  assert.equal(treno.tryComando({ channel: CH, text: '!treno' }, (t) => dette.push(t), { ora: ORA }), false,
+    'spento nelle frasi del bot, il comando passa ad altri');
 });
 
 test('il treno non tocca gli obiettivi: quei sub sono passati di la prima', () => {
@@ -173,7 +193,7 @@ test('le impostazioni hanno valori sensati anche se nessuno le tocca', () => {
   assert.equal(d.annuncia, false);
   assert.equal(d.mostraChi, true);
   assert.equal(d.posizione, 'alto-destra');
-  assert.match(d.testoLivello, /\{livello\}/);
+  assert.ok(!('testoLivello' in d) && !('testoParte' in d), 'le parole non stanno nel riquadro: sono le frasi del bot');
   assert.equal(normTreno({ posizione: 'chissadove' }).posizione, 'alto-destra');
   assert.equal(normTreno({ titolo: 'x'.repeat(200) }).titolo.length, 60);
 });
@@ -186,14 +206,10 @@ test.after(() => usaEGetta.pulisci());
 // dopo e" fatta. E va detto UNA VOLTA per livello, perche" `progress` arriva a
 // ogni contributo e ripeterlo a ognuno e" la stessa raffica che gia" evitiamo
 // per i passaggi di livello.
-const CON_QUASI = normTreno({
-  attivo: true, annuncia: true,
-  testoParte: 'parte', testoLivello: 'liv {livello}', testoFine: 'fine',
-  testoQuasi: 'quasi {livello}, mancano {manca}',
-});
+const CON_QUASI = { 'treno-parte': ['parte'], 'treno-livello': ['liv {livello}'], 'treno-fine': ['fine'], 'treno-quasi': ['quasi {livello}, mancano {manca}'] };
 
 test('nell ultimo quarto il bot dice quanto manca, e lo dice una volta sola', () => {
-  prepara(CON_QUASI);
+  prepara(REGOLE, CON_QUASI);
   const dette = [];
   const say = (ch, t) => dette.push(t);
   treno.suEvento(CH, 'channel.hype_train.begin', EV(), { say, ora: ORA });
@@ -207,7 +223,7 @@ test('nell ultimo quarto il bot dice quanto manca, e lo dice una volta sola', ()
 });
 
 test('al livello dopo il richiamo torna disponibile', () => {
-  prepara(CON_QUASI);
+  prepara(REGOLE, CON_QUASI);
   const dette = [];
   const say = (ch, t) => dette.push(t);
   treno.suEvento(CH, 'channel.hype_train.begin', EV(), { say, ora: ORA });
@@ -218,7 +234,7 @@ test('al livello dopo il richiamo torna disponibile', () => {
 });
 
 test('il passaggio di livello batte il richiamo, ma non se lo mangia', () => {
-  prepara(CON_QUASI);
+  prepara(REGOLE, CON_QUASI);
   const dette = [];
   const say = (ch, t) => dette.push(t);
   treno.suEvento(CH, 'channel.hype_train.begin', EV(), { say, ora: ORA });
@@ -230,7 +246,7 @@ test('il passaggio di livello batte il richiamo, ma non se lo mangia', () => {
 });
 
 test('e il treno che parte gia in cima non brucia il richiamo', () => {
-  prepara(CON_QUASI);
+  prepara(REGOLE, CON_QUASI);
   const dette = [];
   const say = (ch, t) => dette.push(t);
   treno.suEvento(CH, 'channel.hype_train.begin', EV({ progress: 480 }), { say, ora: ORA });
@@ -239,17 +255,19 @@ test('e il treno che parte gia in cima non brucia il richiamo', () => {
 });
 
 test('il numero che manca e per il livello DOPO, non per quello in cui siamo', () => {
-  prepara(normTreno({ attivo: true, annuncia: true }));
+  prepara(REGOLE, {});
   const dette = [];
   const say = (ch, t) => dette.push(t);
   treno.suEvento(CH, 'channel.hype_train.begin', EV(), { say, ora: ORA });
   treno.suEvento(CH, 'channel.hype_train.progress', EV({ progress: 400 }), { say, ora: ORA + 1000 });
-  assert.equal(dette.at(-1), 'Manca poco al livello 3: 100 punti!',
+  assert.match(dette.at(-1), /livello 3/, 'le frasi nostre del richiamo parlano del livello dopo');
+  assert.match(dette.at(-1), /\b100 punti\b/);
+  assert.doesNotMatch(dette.at(-1), /livello 2\b/,
     'siamo al 2 e Twitch manda i punti verso il 3: scrivere "al livello 2" sarebbe un traguardo gia passato');
 });
 
-test('svuotando il testo il richiamo non si dice piu', () => {
-  prepara(normTreno({ attivo: true, annuncia: true, testoParte: 'parte', testoQuasi: '' }));
+test('spento nelle frasi del bot, il richiamo non si dice piu', () => {
+  prepara(REGOLE, { 'treno-parte': ['parte'], 'treno-quasi': { modo: 'spento' } });
   const dette = [];
   const say = (ch, t) => dette.push(t);
   treno.suEvento(CH, 'channel.hype_train.begin', EV(), { say, ora: ORA });
@@ -258,7 +276,7 @@ test('svuotando il testo il richiamo non si dice piu', () => {
 });
 
 test('un treno nuovo si riprende il diritto al richiamo', () => {
-  prepara(CON_QUASI);
+  prepara(REGOLE, CON_QUASI);
   const dette = [];
   const say = (ch, t) => dette.push(t);
   treno.suEvento(CH, 'channel.hype_train.progress', EV({ progress: 400 }), { say, ora: ORA });

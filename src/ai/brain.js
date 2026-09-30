@@ -16,6 +16,7 @@ import { daAssistente } from './registro.js';
 import { genereDi, scegliAccordando, istruzioneGenere } from './genere.js';
 import * as conti from '../features/conti.js';
 import { perLaStanza } from '../features/momenti.js';
+import * as voce from '../features/voce.js';
 import * as prossime from '../features/prossime.js';
 import { preferenzeDi, quando as quandoDiretta } from '../features/preferenze.js';
 
@@ -302,64 +303,9 @@ const UPTIME_LIVE = [
 ];
 
 // ---------------------------------------------------------------- eventi
-// (in prima persona: è lo streamer che parla)
-const EV_FOLLOW = [
-  'Grazie del follow, {nome}! 💜',
-  'Benvenuto a bordo, {nome}! Grazie del follow 🚀',
-  '{nome} è dei nostri ora! Grazie del follow 🙌',
-  'Grande {nome}, grazie del follow! Fatti sentire in chat 😄',
-  'Oh, un nuovo volto! Benvenuto {nome}, grazie del follow ✨',
-  '{nome} ha premuto follow! Ottima scelta, resta con noi 😎',
-  'Nuovo follower: {nome}! Grazie, ci fa piacere averti qui 🤗',
-];
-// Chi torna a seguire dopo mesi: non e' nuovo, e' tornato. Parole che vanno
-// bene per chiunque, perche' di chi torna non si sa se e' lui o lei.
-const EV_RITORNO = [
-  'Che bello rivederti, {nome}! 💜',
-  '{nome} è di nuovo dei nostri, che piacere! ✨',
-  'Guarda chi si rivede: ciao di nuovo, {nome}! 🙌',
-  'Rieccoti, {nome}! Fatti sentire in chat 😄',
-];
-const EV_SUB = [
-  'Grazie della sub{tier}, {nome}! Sei un grande 💜',
-  '{nome} con la sub{tier}! Grazie di cuore 🙌',
-  'Sub{tier} di {nome}! Abbraccio virtuale in arrivo 🤗',
-  'Grande {nome}, grazie per la sub{tier}! 🎉',
-  '{nome} si è abbonato{tier}! Non dovevi… ma grazie, ci tenevo 💜',
-  'Sub{tier} in cassa da {nome}! Sei ufficialmente uno dei nostri 🔥',
-  'Che dire {nome}: sub{tier} apprezzatissima, grazie davvero 😄',
-];
-const EV_RAID = [
-  'Raid di {nome} con {viewers} persone! Benvenuti tutti 🎉',
-  'Aprite le porte: arriva il raid di {nome}! Benvenuti in {viewers} 🙌',
-  '{nome} ci porta {viewers} persone! Fatevi sentire in chat, benvenuti 💜',
-  'Benvenuti raider di {nome}! Mettetevi comodi, qui si sta bene 🔥',
-  'RAID! {nome} sfonda con {viewers} persone, che entrata 🚀',
-  'Occhio che arriva {nome} col suo esercito ({viewers})! Benvenuti tutti 🎊',
-  '{viewers} nuovi amici grazie a {nome}! Un saluto in chat, forza 💪',
-];
-const EV_ONLINE = [
-  'Siamo live! Chiamate tutti, si comincia 🔴',
-  'Si parte! Benvenuti alla live di oggi 🎬',
-  'Live iniziata! Mettetevi comodi 💜',
-  'Eccoci, si va in onda! Buona live a tutti 🔴',
-  'Semaforo verde, si accende tutto! Benvenuti 🟢',
-  'Ci siamo, si comincia! Avvisate chi dovete avvisare 📣',
-];
-const EV_CHEER = [
-  'Grazie per i {bits} bits, {nome}! Sei una forza 💎',
-  '{nome} lancia {bits} bits! Grazie di cuore 🙌',
-  'Bits in arrivo: {bits} da {nome}! Grande 💜',
-  '{nome}, {bits} bits?! Ti adoro, grazie ✨',
-  'Pioggia di bits: {bits} da {nome}! Sei un mito 🔥',
-  'Grazie {nome} per i {bits} bits, li apprezzo tantissimo 😄',
-];
-const EV_RISCATTO = [
-  '{nome} ha riscattato "{titolo}"! Punti ben spesi 😄',
-  'Riscatto in arrivo: "{titolo}" per {nome}! 🎁',
-  '{nome} si prende "{titolo}", grande! 👏',
-  'Un "{titolo}" per {nome}! I punti girano 💫',
-];
+// Le frasi degli eventi (follow, abbonamenti, raid, Bit, diretta, premi) non
+// stanno piu' qui: stanno nel frasario, e le sceglie la voce del canale
+// (features/voce.js), in prima persona, nella lingua e nel tono del canale.
 
 // ======================================================================
 // utilità
@@ -414,6 +360,53 @@ function sembraRispondibile(text) {
   if (INTENTI_NOTI.test(t)) return true;
   if (EMOZIONE_CUES.test(t)) return true;
   return PAROLE_SOCIAL.some((p) => t.includes(p));
+}
+
+// DA UN EVENTO DI TWITCH AL SUO MOMENTO, con i dati che servono alla frase.
+// Un dato che non c'e' non si inventa («qualcuno», «tante»): resta fuori, e la
+// voce sceglie una frase che non lo chiede, o non dice niente.
+//
+// Chi riceve un abbonamento in regalo arriva come `channel.subscribe` con
+// `is_gift`: non ha pagato niente, e il grazie va a chi ha regalato, che arriva
+// una volta sola con `channel.subscription.gift`. Il rinnovo arriva solo con
+// `channel.subscription.message`, e senza i mesi e' un abbonamento e basta.
+const numero = (x) => { const n = Number(x); return Number.isFinite(n) && n > 0 ? n : ''; };
+const TIER = { 2000: 2, 3000: 3 };
+export function momentoDiEvento(ev) {
+  const { type, data = {} } = ev || {};
+  const nome = String(data.user_name || data.user_login || '').trim();
+  switch (type) {
+    case 'channel.follow': return { momento: 'follow', dati: { nome } };
+    case 'channel.follow.ritorno': return { momento: 'follow-ritorno', dati: { nome } };
+    case 'channel.subscribe':
+      if (data.is_gift) return null;
+      return { momento: 'abbonamento', dati: { nome, tier: TIER[data.tier] || '' } };
+    case 'channel.subscription.message': {
+      const mesi = numero(data.cumulative_months);
+      return mesi ? { momento: 'abbonamento-rinnovo', dati: { nome, mesi } }
+        : { momento: 'abbonamento', dati: { nome, tier: TIER[data.tier] || '' } };
+    }
+    case 'channel.subscription.gift': {
+      const quanti = numero(data.total) || 1;
+      return data.is_anonymous || !nome ? { momento: 'regalo-anonimo', dati: { quanti } }
+        : { momento: 'abbonamento-regalo', dati: { nome, quanti } };
+    }
+    case 'channel.raid':
+      return { momento: 'raid-arrivato', dati: {
+        nome: String(data.from_broadcaster_user_name || data.from_broadcaster_user_login || '').trim(),
+        spettatori: numero(data.viewers),
+      } };
+    case 'channel.cheer': {
+      const bit = numero(data.bits);
+      if (!bit) return null;
+      return data.is_anonymous || !nome ? { momento: 'bit-anonimo', dati: { bit } } : { momento: 'bit', dati: { nome, bit } };
+    }
+    case 'stream.online': return { momento: 'inizio-diretta', dati: {} };
+    case 'stream.offline': return { momento: 'fine-diretta', dati: {} };
+    case 'channel.channel_points_custom_reward_redemption.add':
+      return { momento: 'riscatto', dati: { nome, premio: String(data.reward?.title || '').trim() } };
+    default: return null;
+  }
 }
 
 // ======================================================================
@@ -1583,65 +1576,23 @@ export class Brain {
   // ------------------------------------------------------------ onEvent
 
   // Eventi Twitch → annunci in chat (in prima persona: parla lo streamer).
+  // Qui si decide QUALE momento e' e con quali dati; la frase la sceglie la
+  // voce del canale. Un momento spento, o senza una frase adatta ai dati che
+  // ci sono, non dice niente.
   onEvent(ev, say) {
     try {
-      const { channel, type, data = {} } = ev || {};
+      const { channel, type } = ev || {};
       if (!channel || !type || typeof say !== 'function') return;
       persona.onEvento(ev);   // l'anima reagisce agli eventi (umore/energia)
 
       const chiave = channel + '|' + type;
       if (Date.now() - (this._ultimoEvento.get(chiave) || 0) < COOLDOWN_EVENTO) return;
 
-      let testo = null;
-      switch (type) {
-        case 'channel.follow': {
-          if (!data.user_name) return;
-          testo = compila(scegli(EV_FOLLOW), { nome: data.user_name });
-          break;
-        }
-        case 'channel.follow.ritorno': {
-          if (!data.user_name) return;
-          testo = compila(scegli(EV_RITORNO), { nome: data.user_name });
-          break;
-        }
-        case 'channel.subscribe': {
-          const tier = data.tier === '2000' ? ' Tier 2' : data.tier === '3000' ? ' Tier 3' : '';
-          testo = compila(scegli(EV_SUB), { nome: data.user_name || 'qualcuno', tier });
-          break;
-        }
-        case 'channel.raid': {
-          testo = compila(scegli(EV_RAID), {
-            nome: data.from_broadcaster_user_name || 'un canale amico',
-            viewers: data.viewers ?? 'tante',
-          });
-          break;
-        }
-        case 'channel.cheer': {
-          const bits = data.bits ?? 0;
-          if (!bits) return;
-          const nome = data.is_anonymous ? 'un anonimo generoso' : (data.user_name || 'qualcuno');
-          testo = compila(scegli(EV_CHEER), { nome, bits });
-          break;
-        }
-        case 'stream.online': {
-          testo = scegli(EV_ONLINE);
-          break;
-        }
-        case 'channel.channel_points_custom_reward_redemption.add': {
-          testo = compila(scegli(EV_RISCATTO), {
-            nome: data.user_name || 'qualcuno',
-            titolo: data.reward?.title || 'un premio',
-          });
-          break;
-        }
-        default:
-          return;   // evento che non commentiamo
-      }
-
+      const cosa = momentoDiEvento(ev);
+      if (!cosa) return;
+      const testo = voce.di(channel, cosa.momento, cosa.dati);
+      if (!testo) return;
       this._ultimoEvento.set(chiave, Date.now());
-      // tocco d'anima: colore dell'umore attuale (persona.onEvento sopra l'ha già
-      // aggiornato, quindi dopo un raid/sub la firma è più "carica").
-      testo = persona.colora(testo);
       log.info(`#${channel} evento ${type} → ${testo}`);
       say(testo);
     } catch (e) {

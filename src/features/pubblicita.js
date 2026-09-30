@@ -31,6 +31,12 @@
 // E una pausa si annuncia UNA VOLTA. EventSub puo' consegnare due volte lo
 // stesso messaggio: a distinguerle e' l'istante d'inizio, non il fatto di aver
 // ricevuto qualcosa.
+//
+// LE PAROLE NON STANNO QUI. Qui si decide QUANDO parlare e con quali dati; la
+// frase la sceglie la voce del canale (features/voce.js), dai momenti
+// `pubblicita-prima`, `pubblicita-parte` e `pubblicita-dopo` del frasario,
+// nella lingua e nel tono del canale. Lo streamer che vuole le sue, o nessuna,
+// lo dice nella carta «Le frasi del bot».
 
 export const COLORI = Object.freeze(['primary', 'blue', 'green', 'orange', 'purple']);
 export const MOMENTI = Object.freeze(['prima', 'durante', 'dopo']);
@@ -56,11 +62,8 @@ export const GIRO_MS = 30_000;
 // impostazioni della pubblicita' a diretta accesa).
 export const RILETTURA_MS = 5 * 60_000;
 
-const TESTI = Object.freeze({
-  prima: 'Fra poco parte la pubblicità: restate qui, torno subito.',
-  durante: 'Pubblicità per {secondi} secondi. Non andate via, ci vediamo fra poco.',
-  dopo: 'Eccomi, sono tornato.',
-});
+// Il momento del frasario di ogni istante della pausa.
+export const MOMENTO = Object.freeze({ prima: 'pubblicita-prima', durante: 'pubblicita-parte', dopo: 'pubblicita-dopo' });
 
 const numero = (v, meno, piu, difetto) => {
   const n = Math.round(Number(v));
@@ -104,14 +107,10 @@ export function programmaDa(riga) {
   };
 }
 
-// Un testo vuoto NON e' «usa quello di sempre»: e' «non dire niente». Chi
-// svuota la casella sta spegnendo quel momento, e riempirgliela con il nostro
-// testo vorrebbe dire fare il contrario di quello che ha chiesto. Per spegnere
-// c'e' anche la levetta; questo e' il secondo modo, quello che viene naturale.
-const unMomento = (v, quale) => ({
-  acceso: v?.acceso !== false,
-  testo: v?.testo === undefined ? TESTI[quale] : String(v.testo || '').slice(0, 480),
-});
+// Ogni momento ha la sua levetta, per tacere una sera. Per non usarlo mai lo
+// si spegne nelle frasi del bot, e chi chiama lo mette qui dentro (vedi
+// `siDice`): la levetta di qui e quella della voce sono due modi di dire di no.
+const unMomento = (v) => ({ acceso: v?.acceso !== false });
 
 export function normalizzaPubblicita(v) {
   const p = {
@@ -120,36 +119,29 @@ export function normalizzaPubblicita(v) {
     quanto: numero(v?.quanto, PREAVVISO_MIN, PREAVVISO_MAX, 60),
     tolleranza: numero(v?.tolleranza, 0, TOLLERANZA_MAX, 120),
   };
-  for (const m of MOMENTI) p[m] = unMomento(v?.[m], m);
+  for (const m of MOMENTI) p[m] = unMomento(v?.[m]);
   return p;
 }
 
-// Un momento parla solo se e' acceso E ha qualcosa da dire. Sono due modi di
-// dire di no, e uno solo dei due non basterebbe: la levetta serve a tacere per
-// una sera, la casella vuota a non usarlo mai.
-export const parla = (conf, quale) => !!(conf?.acceso && conf?.[quale]?.acceso && String(conf[quale].testo || '').trim());
+// Un momento si dice se la pubblicita' in chat e' accesa e quel momento anche.
+export const siDice = (conf, quale) => !!(conf?.acceso && conf?.[quale]?.acceso);
 
-// `{secondi}` e `{durata}` vogliono dire una cosa sola in tutti e tre i
-// momenti: QUANTO DURA LA PAUSA. Prima la dice il programma, durante e dopo
-// l'evento di partenza. Se la durata non si sa, una frase che la chiede non si
-// dice: meglio zitti che un numero inventato in chat.
-const CHIEDE_DURATA = /\{(secondi|durata)\}/;
-
-export function testoDi(conf, quale, { secondi = 0, canale = '' } = {}) {
-  const testo = String(conf?.[quale]?.testo || '');
+// I DATI DELLA FRASE. `{secondi}` e `{durata}` vogliono dire una cosa sola in
+// tutti e tre i momenti: QUANTO DURA LA PAUSA. Prima la dice il programma,
+// durante e dopo l'evento di partenza. Se la durata non si sa, i due dati non
+// ci sono, e la voce sceglie una frase che non li chiede: un numero inventato
+// in chat e' peggio di una frase senza numero.
+//
+// `{durata}` e' scritta in cifre e non a parole apposta: «un minuto e mezzo»
+// e' di una lingua sola, 1:30 di tutte.
+export function datiDi({ secondi = 0, canale = '' } = {}) {
   const s = durataValida(secondi);
-  if (!s && CHIEDE_DURATA.test(testo)) return '';
-  const mm = Math.floor(s / 60);
-  const ss = String(s % 60).padStart(2, '0');
-  return testo
-    .replace(/\{secondi\}/g, String(s))
-    // `{durata}` e' scritta in cifre e non a parole apposta: il testo lo scrive
-    // lo streamer, nella lingua che vuole, e «un minuto e mezzo» dentro una
-    // frase in inglese sarebbe una toppa.
-    .replace(/\{durata\}/g, `${mm}:${ss}`)
-    .replace(/\{canale\}/g, String(canale || ''))
-    .slice(0, 500)
-    .trim();
+  const out = { canale: String(canale || '') };
+  if (s) {
+    out.secondi = s;
+    out.durata = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  }
+  return out;
 }
 
 // ── Il preavviso ──────────────────────────────────────────────────────────
@@ -166,7 +158,7 @@ export function testoDi(conf, quale, { secondi = 0, canale = '' } = {}) {
 // finestra si legge solo se non si sa niente, se la pausa e' passata, o se
 // l'ultima lettura e' vecchia.
 export function vaGuardato(conf, stato, adesso = Date.now()) {
-  if (!parla(conf, 'prima')) return false;
+  if (!siDice(conf, 'prima')) return false;
   const prossima = Number(stato?.prossima) || 0;
   if (!prossima) return true;
   if (prossima <= adesso) return true;
@@ -178,7 +170,7 @@ export function vaGuardato(conf, stato, adesso = Date.now()) {
 // Si punta solo dentro la finestra: piu' in la' il programma si rilegge, e uno
 // snooze nel frattempo si vede.
 export function quandoAvvisare(conf, stato, programma, adesso = Date.now()) {
-  if (!parla(conf, 'prima')) return 0;
+  if (!siDice(conf, 'prima')) return 0;
   const quando = Number(programma?.prossima) || 0;
   if (!quando || quando <= adesso) return 0;
   if (String(stato?.dettoPer || '') === String(quando)) return 0;
@@ -192,13 +184,12 @@ export function quandoAvvisare(conf, stato, programma, adesso = Date.now()) {
 // cinque minuti, fuori dalla finestra per qualunque preavviso. Una volta per
 // pausa, e la pausa e' l'ISTANTE annunciato.
 export function preavviso(conf, stato, programma, adesso = Date.now()) {
-  if (!parla(conf, 'prima')) return null;
+  if (!siDice(conf, 'prima')) return null;
   const quando = Number(programma?.prossima) || 0;
   if (!quando || quando <= adesso) return null;
   if (quando - adesso > conf.quanto * 1000) return null;
   if (String(stato?.dettoPer || '') === String(quando)) return null;
-  const testo = testoDi(conf, 'prima', { secondi: programma?.durata });
-  return testo ? { quando, testo } : null;
+  return { quando, secondi: durataValida(programma?.durata) };
 }
 
 // ── La pausa che comincia ─────────────────────────────────────────────────
@@ -220,23 +211,18 @@ export function allaPartenza(conf, stato, evento, adesso = Date.now()) {
   const finisceA = secondi ? Math.min(inizio, adesso) + secondi * 1000 : 0;
   // A pausa gia' finita, «pubblicita' per 90 secondi» sarebbe falso.
   const inCorso = !secondi || finisceA > adesso;
-  return {
-    inizio,
-    secondi,
-    finisceA,
-    testo: inCorso && parla(conf, 'durante') ? testoDi(conf, 'durante', { secondi }) : '',
-  };
+  return { inizio, secondi, finisceA, dire: inCorso && siDice(conf, 'durante') };
 }
 
 // ── La pausa che finisce, che e' un conto e non un evento ────────────────
 export function allaFine(conf, stato, adesso = Date.now()) {
-  if (!parla(conf, 'dopo')) return null;
+  if (!siDice(conf, 'dopo')) return null;
   const finisceA = Number(stato?.finisceA) || 0;
   if (!finisceA || stato?.dettoDopo) return null;
   if (adesso < finisceA) return null;
   // In ritardo oltre la tolleranza non si dice niente: il bot si e' riavviato,
   // o l'evento e' arrivato tardi, e «sono tornato» dieci minuti dopo e' una
   // bugia detta in diretta. Meglio zitti.
-  if (adesso - finisceA > conf.tolleranza * 1000) return { scaduto: true, testo: '' };
-  return { scaduto: false, testo: testoDi(conf, 'dopo', { secondi: stato?.secondi }) };
+  if (adesso - finisceA > conf.tolleranza * 1000) return { scaduto: true, dire: false };
+  return { scaduto: false, dire: true, secondi: durataValida(stato?.secondi) };
 }

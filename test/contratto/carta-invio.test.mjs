@@ -157,9 +157,12 @@ test('con la locandina il testo non ripete l’immagine', () => {
   }
 });
 
-test('ogni piattaforma ha il suo testo corto: nessuna resta indietro', () => {
+test('ogni piattaforma ha la sua icona: il testo corto e quello lungo nascono dagli stessi pezzi', () => {
+  // Il testo corto non e' piu' un testo a parte da scrivere per ogni
+  // piattaforma: e' la stessa riga della voce, con l'icona e il link. Una
+  // piattaforma nuova non puo' restare indietro, basta che abbia l'icona.
   for (const p of CHIAVI) {
-    assert.ok(PIATTAFORME[p].conLocandina, `${p}: manca il testo per quando parte la locandina`);
+    assert.ok(PIATTAFORME[p].icona, `${p}: manca l'icona`);
   }
 });
 

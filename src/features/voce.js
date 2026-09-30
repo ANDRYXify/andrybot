@@ -19,9 +19,9 @@
 //
 // Un momento nuovo si scrive nel frasario (frasario/<gruppo>.js): tre lingue,
 // tre toni, i segnaposti che usa. `node scripts/verifica-voce.mjs` dice se
-// manca qualcosa. Il quarto argomento di `di` serve solo a chi scrive fuori
-// dalla chat (Telegram, Discord): `{ forma }` sfugge il testo della frase, e i
-// dati entrano come li passa lui, gia' messi in forma.
+// manca qualcosa. I dati entrano come sono: chi scrive fuori dalla chat e ha un
+// suo formato (Telegram, Discord) passa un segno al posto del nome e stende la
+// frase a modo suo (features/avvisi.js, `stendiRiga`).
 //
 // IL MODELLO. Una frase esce da quattro cose, e nessuna e' il caso:
 //
@@ -52,7 +52,7 @@
 //   {:💜}                  una faccina: l'emote del canale se la chat ne ha una
 //                          allegra, se no quella scritta.
 import { createHash } from 'node:crypto';
-import { streamers, voceGiri } from '../db.js';
+import { db, streamers, voceGiri } from '../db.js';
 import { linguaChat } from './lingua-canale.js';
 import { accorda, dichiaraGenere, genereDi } from '../ai/genere.js';
 import { emotiTop } from '../ai/learn.js';
@@ -217,15 +217,13 @@ function numero(v, lingua) {
   return String(v);
 }
 
-// La frase stesa: genere, faccine, plurali, dati. `forma` sfugge il testo
-// della frase e lascia i dati come sono.
-function stendi(testo, { pieni, lingua, genere, emote, forma }) {
+// La frase stesa: genere, faccine, plurali, dati.
+function stendi(testo, { pieni, lingua, genere, emote }) {
   const t = accorda(testo, genere);
-  const f = typeof forma === 'function' ? forma : (x) => x;
   let out = '';
   let ultimo = 0;
   for (const m of t.matchAll(SEGNO)) {
-    out += f(t.slice(ultimo, m.index));
+    out += t.slice(ultimo, m.index);
     ultimo = m.index + m[0].length;
     const dentro = m[1];
     if (DATO.test(dentro)) { out += dentro in pieni ? numero(pieni[dentro], lingua) : ''; continue; }
@@ -233,13 +231,13 @@ function stendi(testo, { pieni, lingua, genere, emote, forma }) {
     if (p) {
       const v = pieni[p[1]];
       const uno = Number(v) === 1;
-      out += f(uno ? p[2] : p[3]).split('#').join(numero(typeof v === 'number' ? v : Number(v), lingua));
+      out += (uno ? p[2] : p[3]).split('#').join(numero(typeof v === 'number' ? v : Number(v), lingua));
       continue;
     }
     const fc = dentro.match(FACCINA);
-    if (fc) { out += emote || f(fc[1]); continue; }
+    if (fc) { out += emote || fc[1]; continue; }
   }
-  out += f(t.slice(ultimo));
+  out += t.slice(ultimo);
   return out.replace(/[ \t]{2,}/g, ' ').trim();
 }
 
@@ -253,19 +251,20 @@ function prepara(canale, momento, dati, opzioni) {
   const c = String(canale || '').toLowerCase();
   const m = MOMENTI[momento];
   if (!c || !m) return null;
-  const settings = settingsDi(c);
+  const vere = settingsDi(c);
+  const settings = opzioni?.voce ? { ...vere, voce: opzioni.voce } : vere;
   const { frasi: fm, modo, lingua } = mazzo(settings, c, momento);
   if (modo === 'spento' || !fm.length) return null;
   const pieni = datiPieni(settings, dati);
   const genere = genereDi(settings);
   const fuori = m.dove === 'fuori';
   const emote = fuori ? [] : emoteDi(c);
-  return { c, m, fm, lingua, pieni, genere, fuori, emote, forma: opzioni?.forma };
+  return { c, m, fm, lingua, pieni, genere, emote };
 }
 
-export function di(canale, momento, dati = {}, opzioni = {}) {
+export function di(canale, momento, dati = {}) {
   try {
-    const p = prepara(canale, momento, dati, opzioni);
+    const p = prepara(canale, momento, dati, {});
     if (!p) return '';
     const prima = voceGiri.get(p.c, momento);
     const r = passo(p.c, momento, p.fm, prima, (f) => adatta(f, p.pieni, p.genere));
@@ -277,9 +276,11 @@ export function di(canale, momento, dati = {}, opzioni = {}) {
   }
 }
 
-export function anteprima(canale, momento, dati = {}, quante = 3) {
+// `voce` al posto di quella salvata: la carta prova quello che c'e' sullo
+// schermo, prima che lo streamer lo salvi.
+export function anteprima(canale, momento, dati = {}, quante = 3, { voce } = {}) {
   try {
-    const p = prepara(canale, momento, dati, {});
+    const p = prepara(canale, momento, dati, { voce });
     if (!p) return [];
     let stato = voceGiri.get(p.c, momento);
     const out = [];
@@ -328,3 +329,77 @@ export function normVoce(x) {
   }
   return out;
 }
+
+// I TESTI DI PRIMA. L'hype train e la pubblicita' avevano ognuno le sue
+// caselle, col nostro testo scritto dentro di serie; adesso le frasi stanno in
+// un posto solo. Si passa una volta, al primo avvio, e per ogni casella vale
+// quello che lo streamer aveva detto:
+//  · l'aveva cambiata: e' la sua frase, e resta sua, «solo le sue»;
+//  · l'aveva svuotata: aveva detto «non dirlo», e il momento resta spento;
+//  · non l'aveva toccata: aveva il nostro testo, e passa alle nostre frasi,
+//    che adesso cambiano col canale.
+// Un segnaposto che il momento non conosce si toglie, come faceva la casella
+// di prima: la frase resta la sua, senza il buco.
+export const TESTI_DI_PRIMA = Object.freeze([
+  ['overlayTreno', 'testoParte', 'treno-parte', 'Hype train partito! Spingiamo.'],
+  ['overlayTreno', 'testoLivello', 'treno-livello', 'Hype train al livello {livello}!'],
+  ['overlayTreno', 'testoFine', 'treno-fine', 'Treno finito al livello {livello}. Grazie {chi}!'],
+  ['overlayTreno', 'testoQuasi', 'treno-quasi', 'Manca poco al livello {prossimo}: {manca} punti!'],
+  ['pubblicita', 'prima', 'pubblicita-prima', 'Fra poco parte la pubblicità: restate qui, torno subito.'],
+  ['pubblicita', 'durante', 'pubblicita-parte', 'Pubblicità per {secondi} secondi. Non andate via, ci vediamo fra poco.'],
+  ['pubblicita', 'dopo', 'pubblicita-dopo', 'Eccomi, sono tornato.'],
+]);
+
+function senzaSegniIgnoti(momento, testo) {
+  const ok = new Set(datiAmmessi(momento));
+  return String(testo).replace(SEGNO, (tutto, dentro) => {
+    const k = DATO.test(dentro) ? dentro : (dentro.match(PLURALE)?.[1] || '');
+    if (!k) return dichiaraGenere(tutto) || FACCINA.test(dentro) ? tutto : '';
+    return ok.has(k) ? tutto : '';
+  }).replace(/[ \t]{2,}/g, ' ').trim().slice(0, MAX_LUNGHEZZA_SUA);
+}
+
+export function conTestiDiPrima(settings) {
+  const s = { ...(settings || {}) };
+  const momenti = { ...(s.voce?.momenti || {}) };
+  let cambiato = false;
+  for (const [dove, chiave, momento, nostro] of TESTI_DI_PRIMA) {
+    const blocco = s[dove];
+    if (!blocco || typeof blocco !== 'object') continue;
+    const treno = dove === 'overlayTreno';
+    const vecchio = treno ? blocco[chiave] : blocco[chiave]?.testo;
+    if (vecchio === undefined) continue;
+    cambiato = true;
+    if (treno) { const b = { ...blocco }; delete b[chiave]; s[dove] = b; }
+    else { const m = { ...blocco[chiave] }; delete m.testo; s[dove] = { ...s[dove], [chiave]: m }; }
+    if (momenti[momento]) continue;
+    const testo = String(vecchio ?? '');
+    if (!testo.trim()) { momenti[momento] = { modo: 'spento', frasi: [] }; continue; }
+    if (testo.trim() === nostro) continue;
+    const sua = senzaSegniIgnoti(momento, testo);
+    if (sua) momenti[momento] = { modo: 'sue', frasi: [sua] };
+  }
+  if (!cambiato) return { settings, cambiato: false };
+  s.voce = { ...(s.voce || {}), momenti };
+  return { settings: s, cambiato: true };
+}
+
+export function migraTestiDiPrima({ forza = false } = {}) {
+  const FLAG = 'voce_testi_di_prima_v1';
+  try {
+    if (!forza && db.prepare("SELECT 1 FROM facts WHERE channel='__migrazioni__' AND key=?").get(FLAG)) return 0;
+    let n = 0;
+    db.transaction(() => {
+      for (const st of streamers.list()) {
+        const r = conTestiDiPrima(st.settings);
+        if (!r.cambiato) continue;
+        streamers.setSettings(st.login, r.settings);
+        n++;
+      }
+      db.prepare(`INSERT INTO facts (channel, key, value, ts) VALUES ('__migrazioni__', ?, ?, ?)
+        ON CONFLICT(channel, key) DO UPDATE SET value=excluded.value, ts=excluded.ts`).run(FLAG, String(n), Date.now());
+    })();
+    return n;
+  } catch { return 0; }
+}
+migraTestiDiPrima();

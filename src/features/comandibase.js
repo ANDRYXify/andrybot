@@ -13,6 +13,7 @@ import { makeLog } from '../logger.js';
 import { aChi } from './risposte.js';
 import { nomeIn } from './comandi-registro.js';
 import * as prossime from './prossime.js';
+import * as voce from './voce.js';
 
 const log = makeLog('comandibase');
 
@@ -80,12 +81,13 @@ export async function tryComando(helix, msg, say) {
       if (!nomeOk(chi)) { aChi(msg, say)(`📣 Si fa così: !${nomeIn(msg.channel, 'so')} e il nome del canale.`); return true; }
       const r = await helix.shoutout(ch, chi);
       if (r?.ok) {
-        let extra = '';
+        let gioco = '';
         try {
           const u = await helix.getUserByLogin(chi);
-          if (u?.id) { const info = await helix.getChannelInfo(u.id); if (info?.game_name) extra = ` Stava streammando ${info.game_name}!`; }
+          if (u?.id) { const info = await helix.getChannelInfo(u.id); gioco = info?.game_name || ''; }
         } catch { /* niente: il banner è già partito */ }
-        say(`📣 Andate a seguire @${r.target || chi}!${extra} twitch.tv/${chi}`);
+        const frase = voce.di(ch, 'shoutout', { nome: r.target || chi, link: `twitch.tv/${chi}`, gioco });
+        if (frase) say(frase);
       } else if (r?.motivo) {
         // MAI errori muti: spieghiamo perché
         if (/permesso/.test(r.motivo)) say('🔒 Mi manca il permesso per lo shoutout ufficiale: riautorizza i permessi dalla dashboard.');

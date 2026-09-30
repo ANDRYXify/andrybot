@@ -67,7 +67,7 @@ test('nel bot il ripetuto si ferma prima di tutti, il ritorno cambia tipo prima 
   assert.match(corpo, /if \(come === 'ripetuto'\) \{ log\.debug\(.*\); return; \}/, 'il ripetuto non arriva a nessuno');
   assert.match(corpo, /if \(come === 'ritorno'\) \{ this\._dispatchEvent\(\{ \.\.\.ev, type: 'channel\.follow\.ritorno' \}\); return; \}/);
   const BRAIN = readFileSync(new URL('../../src/ai/brain.js', import.meta.url), 'utf8');
-  assert.ok(BRAIN.includes("case 'channel.follow.ritorno': {"), 'il cervello dice bentornato');
+  assert.match(BRAIN, /case 'channel\.follow\.ritorno': return \{ momento: 'follow-ritorno'/, 'il cervello dice bentornato, con la voce del canale');
   assert.ok(BOT.includes("if (ev.tipo === 'seguito' && seguitiFeat.classifica(ev.channel, ev.piattaforma || 'kick', ev.utente) !== 'nuovo') return;"), 'anche su Kick');
 });
 

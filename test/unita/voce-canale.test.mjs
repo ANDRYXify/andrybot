@@ -183,11 +183,13 @@ test('le emote allegre della chat prendono il posto delle faccine, le altre no',
     'anche una faccina scritta dallo streamer, fuori dalla chat, resta la sua');
 });
 
-test('la forma di chi scrive fuori dalla chat: il testo si sfugge, i dati restano come sono', () => {
-  const c = canale({ voce: { momenti: { 'avviso-diretta': { modo: 'sue', frasi: ['Rock & roll: {nome} su {piattaforma}'] } } } });
-  const esc = (s) => s.replace(/&/g, '&amp;');
-  const t = voce.di(c, 'avviso-diretta', { nome: '<b>Luna</b>', piattaforma: 'Twitch' }, { forma: esc });
-  assert.equal(t, 'Rock &amp; roll: <b>Luna</b> su Twitch');
+test('la prova guarda la scelta sullo schermo, e non consuma niente', () => {
+  const c = canale();
+  const prima = voce.anteprima(c, 'follow', { nome: 'Luna' }, 2);
+  const provata = voce.anteprima(c, 'follow', { nome: 'Luna' }, 2, { voce: voce.normVoce({ momenti: { follow: { modo: 'sue', frasi: ['Solo mia, {nome}'] } } }) });
+  assert.deepEqual(provata, ['Solo mia, Luna', 'Solo mia, Luna']);
+  assert.deepEqual(voce.anteprima(c, 'follow', { nome: 'Luna' }, 2), prima, 'la prova non ha salvato niente');
+  assert.equal(voce.di(c, 'follow', { nome: 'Luna' }), prima[0], 'e non ha fatto avanzare il giro');
 });
 
 test('la scelta salvata si ripulisce: segnaposti che il momento non ha non entrano', () => {

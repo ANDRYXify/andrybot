@@ -54,6 +54,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > Prima alla domanda «quando sei in diretta?» nessun comando sapeva rispondere con un'ora vera.
 - Alla domanda «quando sei in diretta?» il bot risponde con la prossima diretta vera, presa dalla tua settimana o dal Programma di Twitch, e non da un testo scritto a mano.
 
+- Il bot ringrazia per follow, abbonamenti, raid, Bit, shoutout e premi a punti canale nella lingua della chat e col tono scelto, con frasi che ogni canale gira a modo suo. [vai: personalita]
+- A diretta finita il bot saluta la chat, e dopo un rinnovo ringrazia per i mesi di abbonamento. Chi regala abbonamenti riceve il grazie una volta sola, e chi li riceve non viene più ringraziato al posto suo.
+- L'hype train, la pubblicità, il promemoria dei link e !treno parlano nella lingua del tuo canale: le loro frasi stanno in Personalità, e un testo che avevi cambiato resta il tuo. [vai: personalita]
+- Quando fai partire un raid dalla Regia, il bot lo dice in chat col nome del canale dove state andando. [vai: regia]
+- Gli avvisi di diretta su Telegram e su Discord si aprono con una frase che cambia a ogni diretta, nella lingua del canale, e il riquadro di Discord parla quella lingua. Un testo scritto da te per un posto vale ancora.
 ## 2026-09-27
 
 - [importante] In «Strumenti» ci sono i pannelli per Twitch: tutti nello stesso stile, e già pieni dei link e delle descrizioni che il canale conosce. [vai: pannelli]

@@ -794,8 +794,8 @@ export const MOMENTI = {
   'treno-fine': {
     titolo: ['L’hype train finisce', 'The hype train ends', 'Termina el hype train'],
     quando: ['Quando l’hype train si chiude.', 'When the hype train ends.', 'Cuando el hype train termina.'],
-    dati: { livello: 'sempre', punti: 'sempre', chi: 'a volte' },
-    esempio: { livello: 4, punti: 5200, chi: 'Luna' },
+    dati: { livello: 'sempre', punti: 'sempre', prossimo: 'sempre', manca: 'sempre', chi: 'a volte' },
+    esempio: { livello: 4, punti: 5200, prossimo: 5, manca: 0, chi: 'Luna' },
     spegnibile: true,
     frasi: {
       it: {

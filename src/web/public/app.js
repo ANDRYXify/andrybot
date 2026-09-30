@@ -1342,7 +1342,6 @@ function _demoGet(via) {
       { id: 'dota2', nome: 'Dota 2', cartella: 'game/dota/cfg/gamestate_integration', file: 'gamestate_integration_socialbot_dota2.cfg' },
     ] },
     '/api/streamer/discord/avvisi': { collegato: true, guildNome: 'Casa di andryx', io: 'andryx_demo', conDiretta: true,
-      testoDiCasa: '🔴 **{nome}** è in diretta · {link}',
       destinazioni: [
         { id: 1, canale: '200000000000000001', canaleNome: 'annunci', webhook: false, eventi: ['live', 'kick'], streamer: ['andryx_demo'],
           messaggio: '', ruolo: '100000000000000011', chiudi: true, attivo: true },
@@ -11138,16 +11137,9 @@ function pannelloAlert() {
         <label class="riga-check"><input type="checkbox" data-c="mostraRecord"> ${L('Mostra il record del canale, quando Twitch lo manda', 'Show the channel record, when Twitch sends it', 'Muestra el récord del canal, cuando Twitch lo envía')}</label>
 
         <h4 class="spazio-sopra">${L('In chat', 'In chat', 'En el chat')}</h4>
-        <p class="suggerimento">${L('Si parla quando il treno parte, quando manca poco al livello, quando ci arriva e quando finisce. Una volta per livello, non a ogni sub: quello lo dicono già gli alert. Svuota una casella e quella frase non si dice più.', 'It speaks when the train starts, when the next level is close, when it gets there and when it ends. Once per level, not at every sub: the alerts already say that. Empty a box and that line is never said.', 'Habla cuando el tren sale, cuando falta poco para el nivel, cuando llega y cuando acaba. Una vez por nivel, no en cada sub: eso ya lo dicen las alertas. Vacía una casilla y esa frase no se dice más.')}</p>
+        <p class="suggerimento">${L('Si parla quando il treno parte, quando manca poco al livello, quando ci arriva e quando finisce. Una volta per livello, non a ogni sub: quello lo dicono già gli alert.', 'It speaks when the train starts, when the next level is close, when it gets there and when it ends. Once per level, not at every sub: the alerts already say that.', 'Habla cuando el tren sale, cuando falta poco para el nivel, cuando llega y cuando acaba. Una vez por nivel, no en cada sub: eso ya lo dicen las alertas.')}</p>
         <label class="riga-check spazio-sopra"><input type="checkbox" data-c="annuncia"> ${L('Dillo in chat', 'Say it in chat', 'Dilo en el chat')}</label>
-        <div><label class="campo" for="trn-parte">${L('Quando parte', 'When it starts', 'Cuando sale')}</label>
-          <input id="trn-parte" type="text" data-c="testoParte" maxlength="200"></div>
-        <div><label class="campo" for="trn-liv">${L('Quando sale di livello', 'When it levels up', 'Cuando sube de nivel')} <span class="tenue">— <code>{livello}</code></span></label>
-          <input id="trn-liv" type="text" data-c="testoLivello" maxlength="200"></div>
-        <div><label class="campo" for="trn-quasi">${L('Quando manca poco al livello', 'When the next level is close', 'Cuando falta poco para el nivel')} <span class="tenue">— <code>{prossimo}</code> <code>{manca}</code></span></label>
-          <input id="trn-quasi" type="text" data-c="testoQuasi" maxlength="200"></div>
-        <div><label class="campo" for="trn-fine">${L('Quando finisce', 'When it ends', 'Cuando acaba')} <span class="tenue">— <code>{livello}</code> <code>{chi}</code> <code>{punti}</code></span></label>
-          <input id="trn-fine" type="text" data-c="testoFine" maxlength="200"></div>
+        <p class="suggerimento">${L('Le frasi cambiano col tuo canale, nella sua lingua e nel suo tono. Le scegli, le scrivi tu o ne spegni una in', 'The lines change with your channel, in its language and tone. You pick them, write your own or switch one off in', 'Las frases cambian con tu canal, en su idioma y su tono. Las eliges, escribes las tuyas o apagas una en')} <a href="#personalita" data-scheda="personalita">${L('Personalità, «Le frasi del bot»', 'Personality, “The bot’s lines”', 'Personalidad, «Las frases del bot»')}</a>.</p>
 
         <div class="asp-blocco" data-asp="treno" data-cfg-di="treno">
           <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
@@ -12321,10 +12313,7 @@ const TRENO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 
 function _defTreno() {
   return { attivo: false, titolo: 'Hype train', mostraChi: true, mostraRecord: false,
-    annuncia: false, testoParte: 'Hype train partito! Spingiamo.',
-    testoLivello: 'Hype train al livello {livello}!',
-    testoFine: 'Treno finito al livello {livello}. Grazie {chi}!',
-    testoQuasi: 'Manca poco al livello {prossimo}: {manca} punti!',
+    annuncia: false,
     posizione: 'alto-destra', xy: null,
     stile: { dim: 'media', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 12, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
 }
@@ -16862,8 +16851,6 @@ function _pubDisegna() {
       <label class="dcs-priv"><input type="checkbox" data-pub="${q}-acceso"${c[q].acceso ? ' checked' : ''}>
         <span><b>${esc(titolo)}</b></span></label>
       <p class="suggerimento">${esc(sotto)}</p>
-      <input type="text" data-pub="${q}-testo" maxlength="480" value="${esc(c[q].testo || '')}"
-        aria-label="${esc(titolo)}" placeholder="${esc(L('Lascia vuoto per non dire niente', 'Leave empty to say nothing', 'Déjalo vacío para no decir nada'))}">
     </div>`;
   const pm = _pub.permessi || {};
   const manca = [];
@@ -16890,7 +16877,7 @@ function _pubDisegna() {
     L('Questo me lo dice Twitch, e mi dice anche quanto dura.', 'Twitch tells me this one, and how long it lasts.', 'Esto me lo dice Twitch, y también cuánto dura.'))}
       ${momento('dopo', L('Quando torni', 'When you are back', 'Cuando vuelves'),
     L('Per la fine Twitch non manda niente: conto io i secondi che mi ha detto. Se mi riavvio nel mezzo il conto si perde, e allora sto zitta invece di salutarti in ritardo.', 'Twitch sends nothing for the end: I count the seconds it told me. If I restart in the middle the count is lost, and then I keep quiet instead of greeting you late.', 'Para el final Twitch no manda nada: cuento yo los segundos que me dijo. Si me reinicio en medio se pierde la cuenta, y entonces me callo en vez de saludarte tarde.'))}
-      <p class="suggerimento spazio-sopra">${L('Segnaposti, uguali in tutte e tre: {secondi} è quanto dura la pausa (90), {durata} lo stesso in minuti (1:30), {canale} il nome del canale. Se Twitch non dice quanto dura, una riga che lo chiede non esce.', 'Placeholders, the same in all three: {secondi} is how long the break lasts (90), {durata} the same in minutes (1:30), {canale} the channel name. If Twitch does not say how long it lasts, a line that asks for it is not sent.', 'Marcadores, iguales en las tres: {secondi} es cuánto dura la pausa (90), {durata} lo mismo en minutos (1:30), {canale} el nombre del canal. Si Twitch no dice cuánto dura, una línea que lo pide no sale.')}</p>
+      <p class="suggerimento spazio-sopra">${L('Le frasi cambiano col tuo canale, nella sua lingua e nel suo tono, e quando Twitch dice quanto dura la pausa lo dicono anche loro. Le scegli, le scrivi tu o ne spegni una per sempre in', 'The lines change with your channel, in its language and tone, and when Twitch says how long the break lasts they say it too. You pick them, write your own or switch one off for good in', 'Las frases cambian con tu canal, en su idioma y su tono, y cuando Twitch dice cuánto dura la pausa también lo dicen. Las eliges, escribes las tuyas o apagas una para siempre en')} <a href="#personalita" data-scheda="personalita">${L('Personalità, «Le frasi del bot»', 'Personality, “The bot’s lines”', 'Personalidad, «Las frases del bot»')}</a>. ${L('Qui le spegni per una sera.', 'Here you switch them off for one evening.', 'Aquí las apagas por una noche.')}</p>
       <div class="dcs-asp-riga spazio-sopra">
         <label class="campo" for="pub-tolleranza">${L('Quanto ritardo accetto', 'How late I still speak', 'Cuánto retraso acepto')}</label>
         <input type="number" id="pub-tolleranza" data-pub="tolleranza" min="0" max="${lim.tolleranzaMax}" value="${Number(c.tolleranza)}">
@@ -16906,7 +16893,7 @@ function _pubLeggi() {
   const testo = (q) => String(v(q)?.value ?? '');
   const c = { acceso: spunta('acceso'), colore: testo('colore'),
     quanto: Number(testo('quanto')), tolleranza: Number(testo('tolleranza')) };
-  for (const m of ['prima', 'durante', 'dopo']) c[m] = { acceso: spunta(m + '-acceso'), testo: testo(m + '-testo') };
+  for (const m of ['prima', 'durante', 'dopo']) c[m] = { acceso: spunta(m + '-acceso') };
   return c;
 }
 
@@ -22455,8 +22442,8 @@ async function caricaDcAvvisi() {
           ${persone.map((pp) => `<label class="tg-spunta"><input type="checkbox" data-chi="${esc(pp.login)}"${t.streamer.length === 0 || t.streamer.includes(pp.login) ? ' checked' : ''}><span>${esc(pp.display)}</span></label>`).join('')}
         </div>` : ''}
         <label class="campo spazio-sopra" for="dca-testo-${t.id}">${L('Il testo', 'The text', 'El texto')}</label>
-        <textarea rows="2" id="dca-testo-${t.id}" data-testo placeholder="${esc(d.testoDiCasa || '')}">${esc(t.messaggio || '')}</textarea>
-        <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code> <code>{spettatori}</code> <code>{link}</code> <code>{piattaforma}</code>. ${L('Vuoto = quello di casa. Titolo, gioco e spettatori sono già dentro il riquadro sotto il messaggio. Vale per le dirette: i post nuovi arrivano con le loro parole, senza riquadro.', 'Empty = the house one. Title, game and viewers are already inside the box under the message. It is for streams: new posts arrive with their own words, without the box.', 'Vacío = el de casa. Título, juego y espectadores ya están dentro del recuadro bajo el mensaje. Vale para los directos: los posts nuevos llegan con sus propias palabras, sin recuadro.')}</p>
+        <textarea rows="2" id="dca-testo-${t.id}" data-testo placeholder="${esc(L('Vuoto: una riga delle frasi del bot e il link', 'Empty: a line from the bot’s lines and the link', 'Vacío: una línea de las frases del bot y el enlace'))}">${esc(t.messaggio || '')}</textarea>
+        <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code> <code>{spettatori}</code> <code>{link}</code> <code>{piattaforma}</code>. ${L('Vuoto = una riga delle frasi del bot, nella lingua del tuo canale (Personalità, «Le frasi del bot»). Titolo, gioco e spettatori sono già dentro il riquadro sotto il messaggio. Vale per le dirette: i post nuovi arrivano con le loro parole, senza riquadro.', 'Empty = a line from the bot’s lines, in your channel’s language (Personality, “The bot’s lines”). Title, game and viewers are already inside the box under the message. It is for streams: new posts arrive with their own words, without the box.', 'Vacío = una línea de las frases del bot, en el idioma de tu canal (Personalidad, «Las frases del bot»). Título, juego y espectadores ya están dentro del recuadro bajo el mensaje. Vale para los directos: los posts nuevos llegan con sus propias palabras, sin recuadro.')}</p>
         <label class="campo spazio-sopra" for="dca-ruolo-${t.id}">${L('Chiama un ruolo', 'Ping a role', 'Llamar a un rol')}</label>
         <select class="campo-largo" id="dca-ruolo-${t.id}" data-ruolo>
           <option value=""${t.ruolo ? '' : ' selected'}>${L('nessuno', 'nobody', 'nadie')}</option>
@@ -24541,7 +24528,6 @@ function collegaDcServer() {
 
 function pannelloTelegram() {
   const tg = stato.telegram || { configurato: false, gruppoOk: false, attivo: false, messaggio: '', botUsername: '', gruppo: '', pinLive: true };
-  const msgDefault = '{nome} \u00e8 in diretta!\n\n{titolo}\n{gioco}\n\n{link}';
   const ing = tg.ingresso || { attivo: false, minuti: 5, scaduto: 'caccia', testo: '', tasto: '', inAttesa: 0 };
   return pannello('telegram', `
     <div class="carta" id="box-tglogin" hidden></div>
@@ -24575,9 +24561,9 @@ function pannelloTelegram() {
       <div id="tg-destinazioni" class="spazio-sopra"></div>
 
       <label class="campo spazio-sopra" for="txt-tg-messaggio">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
-      <textarea id="txt-tg-messaggio" rows="5" placeholder="${esc(msgDefault)}">${esc(tg.messaggio || '')}</textarea>
+      <textarea id="txt-tg-messaggio" rows="5" placeholder="${esc(L('Vuoto: una riga delle frasi del bot, poi titolo, gioco e link', 'Empty: a line from the bot’s lines, then title, game and link', 'Vacío: una línea de las frases del bot, luego título, juego y enlace'))}">${esc(tg.messaggio || '')}</textarea>
       <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code>
-        <code>{spettatori}</code> <code>{link}</code>. ${L('Lascia vuoto per usare quello standard.', 'Leave empty to use the default.', 'Déjalo vacío para usar el estándar.')}</p>
+        <code>{spettatori}</code> <code>{link}</code>. ${L('Lascia vuoto e la prima riga la sceglie il bot, nella lingua del tuo canale, fra le', 'Leave it empty and the bot picks the first line, in your channel’s language, from', 'Déjalo vacío y el bot elige la primera línea, en el idioma de tu canal, entre')} <a href="#personalita" data-scheda="personalita">${L('frasi del bot', 'the bot’s lines', 'las frases del bot')}</a>. ${L('Se lo scrivi, vale il tuo.', 'If you write one, yours is used.', 'Si lo escribes, vale el tuyo.')}</p>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-tg-attivo" ${tg.attivo ? 'checked' : ''} ${tg.postoOk ? '' : 'disabled'}>
@@ -24776,8 +24762,8 @@ function pannelloNotifiche() {
       </div>
 
       <label class="campo spazio-sopra" for="txt-tk-messaggio">${L('Messaggio dell\'avviso TikTok', 'TikTok alert message', 'Mensaje del aviso de TikTok')}</label>
-      <textarea id="txt-tk-messaggio" rows="4" placeholder="${esc(L('{nome} è in diretta su TikTok!\n\n{link}', '{nome} is live on TikTok!\n\n{link}', '¡{nome} está en directo en TikTok!\n\n{link}'))}">${esc(tkc.messaggio || '')}</textarea>
-      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{link}</code> <code>{username}</code>. ${L('Lascia vuoto per usare quello standard. Se hai attivato', 'Leave empty to use the default. If you enabled', 'Déjalo vacío para usar el estándar. Si activaste')} <em>${L('«Fissa l\'avviso…»', '“Pin the alert…”', '«Fija el aviso…»')}</em> ${L('nella scheda Telegram, l\'avviso TikTok viene fissato a live attiva ed eliminato quando stacchi.', 'in the Telegram tab, the TikTok alert is pinned while live and removed when you go offline.', 'en la pestaña Telegram, el aviso de TikTok se fija durante el directo y se elimina cuando terminas.')}</p>
+      <textarea id="txt-tk-messaggio" rows="4" placeholder="${esc(L('Vuoto: una riga delle frasi del bot e il link', 'Empty: a line from the bot’s lines and the link', 'Vacío: una línea de las frases del bot y el enlace'))}">${esc(tkc.messaggio || '')}</textarea>
+      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{link}</code> <code>{username}</code>. ${L('Lascia vuoto e la prima riga la sceglie il bot fra le sue frasi, nella lingua del tuo canale. Se hai attivato', 'Leave it empty and the bot picks the first line from its lines, in your channel’s language. If you enabled', 'Déjalo vacío y el bot elige la primera línea entre sus frases, en el idioma de tu canal. Si activaste')} <em>${L('«Fissa l\'avviso…»', '“Pin the alert…”', '«Fija el aviso…»')}</em> ${L('nella scheda Telegram, l\'avviso TikTok viene fissato a live attiva ed eliminato quando stacchi.', 'in the Telegram tab, the TikTok alert is pinned while live and removed when you go offline.', 'en la pestaña Telegram, el aviso de TikTok se fija durante el directo y se elimina cuando terminas.')}</p>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-tk-attivo" ${tkc.attivo ? 'checked' : ''}>

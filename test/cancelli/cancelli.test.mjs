@@ -30,3 +30,10 @@ test('la libreria ha una porta in ogni campo media', async () => {
   const { codice, uscita } = await lanciaScript('scripts/verifica-libreria.mjs');
   assert.equal(codice, 0, uscita);
 });
+
+test('ogni frase del bot ha un posto solo, e il cancello se ne accorge davvero', async () => {
+  const v = await lanciaScript('scripts/verifica-voce.mjs');
+  assert.equal(v.codice, 0, v.uscita);
+  const a = await lanciaScript('scripts/verifica-voce.mjs', ['--selftest']);
+  assert.equal(a.codice, 0, a.uscita);
+});
