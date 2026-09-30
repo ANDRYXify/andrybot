@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // OGNI CAMPO CHE L'OVERLAY LEGGE DAL TEMA, IL SERVER LO MANDA (docs/OVERLAY.md).
 // La risposta di /overlay/:login/tema sceglieva i campi uno per uno, e due non
 // c'erano: la classifica dei Bit non e' mai comparsa in diretta, e i caratteri

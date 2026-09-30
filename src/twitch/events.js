@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // EventSub di Twitch via WebSocket nativo (wss://eventsub.wss.twitch.tv/ws).
 // UNA connessione per broadcaster: le sottoscrizioni con transport
 // "websocket" valgono solo per il token utente che le crea, quindi

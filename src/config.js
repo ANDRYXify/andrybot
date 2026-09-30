@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Configurazione di SocialBot: legge le variabili d'ambiente (.env)
 // e le espone con valori di default sensati. Il bot parte anche a
 // configurazione incompleta ("modalità setup"): la dashboard guida

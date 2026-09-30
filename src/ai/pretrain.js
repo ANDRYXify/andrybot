@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Pre-addestramento automatico: quando uno streamer viene abilitato (o su
 // richiesta dalla dashboard), il bot "studia" il PROPRIO profilo pubblico
 // dello streamer e il suo profilo Twitch, e riempie la knowledge base con

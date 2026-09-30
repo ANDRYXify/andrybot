@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // TUTTO QUELLO CHE SI CHIAMA CON UN «!» E' MODIFICABILE.
 //
 // Prima non lo era, e non per una svista: i comandi predefiniti erano righe di

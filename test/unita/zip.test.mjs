@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LO ZIP NOSTRO (src/web/public/zip.js, docs/STRUMENTI.md): i pannelli si
 // scaricano tutti insieme in un file solo. Le immagini sono gia' compresse,
 // quindi entrano come sono; quello che deve essere giusto e' la forma del file,

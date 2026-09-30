@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // CHI NON TRASMETTE DA NESSUNA PARTE.
 //
 // SocialBot e' nato per la chat di una diretta, e tutto il suo pannello lo da'
@@ -94,4 +96,25 @@ test('sul sito pubblico c\'e\' il tasto, e dice cosa NON vedra\'', async () => {
   assert.ok(h.indexOf('vt-dcbox') > h.indexOf('vt-azioni'), 'il riquadro non e\' attaccato ai tasti');
   assert.ok(h.indexOf('vt-dcbox') < h.indexOf('class="vt-sez"'), 'il riquadro e\' finito dopo l\'apertura');
   assert.equal((h.match(/accedi\/discord/g) || []).length, 1, 'il tasto e\' in due posti: uno di troppo');
+});
+
+// UN MODERATORE NELLE SCHEDE DI DISCORD. Le vede nel menù ma non le usa: le
+// rotte sono del proprietario. Leggeva «Non riesco a leggere la
+// configurazione.», che fa pensare a un guasto; ora legge di chi sono.
+test('un moderatore nelle schede Discord legge che sono del proprietario, non un guasto', () => {
+  const APP = readFileSync(new URL('../../src/web/public/app.js', import.meta.url), 'utf8');
+  const corpo = (nome) => {
+    const i = APP.search(new RegExp(`(async )?function ${nome}\\(`));
+    assert.ok(i >= 0, `c'e' ${nome}`);
+    return APP.slice(i, APP.indexOf('\n}\n', i));
+  };
+  const avviso = corpo('_dcSoloProprietario');
+  assert.match(avviso, /if \(stato\?\.ruolo !== 'moderatore'\) return false;/);
+  assert.ok(avviso.includes('Le schede di Discord le usa solo il proprietario del canale'));
+  for (const f of ['caricaRuoli', 'caricaDcAvvisi', 'caricaDcEventi', 'caricaDcServer']) {
+    const c = corpo(f);
+    const qui = c.indexOf('_dcSoloProprietario()');
+    assert.ok(qui > 0, `${f} lo guarda`);
+    assert.ok(qui < c.indexOf('await api('), `${f}: prima di chiedere al server`);
+  }
 });

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE PUBBLICAZIONI AUTOMATICHE fra pannello e server (docs/AUTOMATICHE.md): le
 // stesse scelte da tutte e due le parti, le immagini preparate dal motore
 // dell'anteprima per il giorno giusto, e una conferma che vale solo se si preme.

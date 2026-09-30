@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL DISEGNO DELLA CARTA — il modello, la validazione, l'SVG.
 //
 // Questo file lo leggono in DUE: il server, che ne fa un PNG da mandare su
@@ -108,9 +110,17 @@ function riempi(modello, dati) {
 // manifesto, e il verde usato UNA VOLTA SOLA come segnale, mai come fascione.
 // L'avatar è quadrato con l'angolo tagliato: geometria opposta, di proposito.
 
+// I nomi dei temi nelle tre lingue del pannello: il primo e' quello che la
+// carta porta con se'. Il nome e' un'etichetta e non il disegno: un tema si
+// riconosce da com'e' fatto (improntaCarta), non da come si chiama.
+export const NOMI_TEMA = Object.freeze({
+  twitch: Object.freeze(['Twitch: notte viola', 'Twitch: purple night', 'Twitch: noche violeta']),
+  kick: Object.freeze(['Kick: taglio verde', 'Kick: green cut', 'Kick: corte verde']),
+});
+
 export const TEMI = {
   twitch: {
-    nome: 'Twitch — notte viola',
+    nome: NOMI_TEMA.twitch[0],
     ...MISURA,
     fondo: { tipo: 'alone', tinta: '#0F0A1B', alone: '#A970FF', alone2: '#772CE8', cx: 18, cy: 34, r: 70 },
     elementi: [
@@ -130,7 +140,7 @@ export const TEMI = {
     ],
   },
   kick: {
-    nome: 'Kick — taglio verde',
+    nome: NOMI_TEMA.kick[0],
     ...MISURA,
     fondo: { tipo: 'sfumatura', tinta: '#0B0F0A', alone: '#000000' },
     elementi: [
@@ -348,6 +358,14 @@ export function normElemento(e, W, H) {
 // Quanti elementi può avere una carta. Non è un numero contro gli abusi: è che
 // oltre, l'immagine diventa illeggibile e la si disegna per niente.
 export const MAX_ELEMENTI = 24;
+
+// COM'E' FATTA UNA CARTA, senza il suo nome: serve a dire «stai usando un tema
+// standard». Il nome non conta, cosi' un tema scelto prima che il suo nome
+// cambiasse resta quel tema.
+export function improntaCarta(c) {
+  const { nome, ...disegno } = normCarta(c);
+  return JSON.stringify(disegno);
+}
 
 export function normCarta(c) {
   const W = numero(c?.larghezza, 400, 2000, MISURA.larghezza);

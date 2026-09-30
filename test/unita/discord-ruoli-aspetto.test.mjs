@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // COME SI VEDE UN RUOLO: i difetti che non devono esistere.
 //
 // Discord, sull'aspetto di un ruolo, ha due caratteristiche che il server puo'

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA PUBBLICITA' NEL BOT: le frasi cadono all'istante giusto.
 //
 // Il modello dice QUANDO; qui si prova che il bot parla proprio allora, con

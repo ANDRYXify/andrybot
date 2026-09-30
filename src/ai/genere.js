@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL GENERE CON CUI IL BOT PARLA DI SE'.
 //
 // Il bot scrive con l'account dello streamer, e in italiano non si puo' dire

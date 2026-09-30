@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL TRENO: il pannello e il server devono partire dalla STESSA cosa.
 //
 // I valori di partenza sono scritti due volte: `normTreno` (server, in

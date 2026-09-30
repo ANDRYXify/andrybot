@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Chi passa senza sessione: le rotte aperte e il guscio delle pagine pubbliche.
 //
 // Il sito è un labirinto: senza sessione il server risponde 404 a tutto, tranne

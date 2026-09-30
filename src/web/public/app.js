@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 
 
 'use strict';
@@ -865,7 +867,7 @@ function statoDemo() {
     knowledgeCount: 3,
     status: { channels: [ctx.canale] },
     preaddestramento: { preaddestramento_ts: '2026-05-01T20:00:00Z', preaddestramento_esito: 'pagina profilo letta ("Andryx — creator e streamer da Genova · Twitch, YouTube, gaming"), 5 link social; gioco recente: Fortnite; profilo Twitch letto' },
-    telegram: { configurato: true, gruppoOk: true, attivo: true, pinLive: true,
+    telegram: { configurato: true, gruppoOk: true, postoOk: true, attivo: true, pinLive: true,
       interattivo: true, botUsername: 'andryx_live_bot', gruppo: 'Community di Andryx', messaggio: '',
       ingresso: { attivo: true, minuti: 5, scaduto: 'caccia', testo: '', tasto: '', inAttesa: 2 },
       dmModo: 'me', dmCollegato: true, dmNome: 'Andryx' },
@@ -1519,17 +1521,18 @@ function _demoGet(via) {
     ], livelli: ['tutti', 'sub', 'vip', 'mod'] },
     '/api/streamer/telegram/carta': {
       attiva: true, mia: false, tema: 'twitch', temaAttivo: 'twitch', disegnabile: true,
-      carta: { nome: 'Twitch — notte viola', larghezza: 1200, altezza: 500, fondo: {}, elementi: [] },
+      carta: { nome: 'Twitch: notte viola', larghezza: 1200, altezza: 500, fondo: {}, elementi: [] },
       dati: { nome: 'ANDRYXify', titolo: 'Si costruisce il bot, dal vivo', gioco: 'Software and Game Dev', login: 'andryx_demo', avatar: '' },
       vocabolario: { tipi: ['testo', 'targhetta', 'avatar', 'riga', 'striscia'], forme: ['tondo', 'tagliato', 'quadro'],
         fondi: ['tinta', 'alone', 'sfumatura'], segnaposto: ['nome', 'titolo', 'gioco', 'login', 'link', 'spettatori', 'piattaforma'],
         caratteri: ['Anton', 'Archivo Black', 'Archivo'], misura: { larghezza: 1200, altezza: 500 }, massimo: 24,
-        temi: [{ id: 'twitch', nome: 'Twitch — notte viola', carta: {} }, { id: 'kick', nome: 'Kick — taglio verde', carta: {} }] },
+        temi: [{ id: 'twitch', nome: 'Twitch: notte viola', nomi: ['Twitch: notte viola', 'Twitch: purple night', 'Twitch: noche violeta'], carta: {} }, { id: 'kick', nome: 'Kick: taglio verde', nomi: ['Kick: taglio verde', 'Kick: green cut', 'Kick: corte verde'], carta: {} }] },
     },
     '/api/streamer/telegram/destinazioni': {
       io: 'andryx_demo',
       webhook: { attivo: true, nostro: true, inAttesa: 0, errore: '' },
       visti: 5,
+      postoOk: true,
       eventi: [
         { k: 'live', it: 'Diretta su Twitch', en: 'Twitch live', es: 'Directo en Twitch' },
         { k: 'tiktok', it: 'Diretta su TikTok', en: 'TikTok live', es: 'Directo en TikTok' },
@@ -2619,7 +2622,7 @@ function disegnaCartaLive() {
   box.hidden = false;
   const temi = (d.vocabolario?.temi || []);
   const sceltoNessuno = !d.mia;
-  const bottoni = temi.map((t) => `<button type="button" class="btn secondario cl-tema${d.temaAttivo === t.id ? ' scelto' : ''}" data-tema="${esc(t.id)}">${esc(t.nome)}</button>`).join('');
+  const bottoni = temi.map((t) => `<button type="button" class="btn secondario cl-tema${d.temaAttivo === t.id ? ' scelto' : ''}" data-tema="${esc(t.id)}">${esc(t.nomi ? L(t.nomi[0], t.nomi[1], t.nomi[2]) : t.nome)}</button>`).join('');
   box.innerHTML = `
     <h2>${_hIco(ICO.immagine)}${L('La locandina della diretta', 'The live poster', 'El cartel del directo')}</h2>
     <p>${L('Quando parte la diretta, l\'avviso porta con sé un\'immagine: il tuo nome, il titolo, il gioco e la tua faccia.', 'When the live starts, the alert carries an image: your name, the title, the game and your face.', 'Cuando empieza el directo, el aviso lleva una imagen: tu nombre, el título, el juego y tu cara.')}</p>
@@ -2703,6 +2706,9 @@ async function caricaTgDestinazioni() {
   let d;
   try { d = await api('/api/streamer/telegram/destinazioni'); } catch { box.innerHTML = ''; return; }
   _tgDati = d;
+  const accendi = document.getElementById('chk-tg-attivo');
+  if (accendi) accendi.disabled = !d.postoOk;
+  if (stato.telegram) stato.telegram.postoOk = !!d.postoOk;
   const eventi = d.eventi || [];
   const nomeEv = (k) => { const e = eventi.find((x) => x.k === k); return e ? L(e.it, e.en, e.es) : k; };
   const amici = d.amici || [];
@@ -2766,14 +2772,14 @@ async function caricaTgDestinazioni() {
   const statoWh = !wh ? '' : (!wh.attivo
     ? `<p class="tg-stato ok">${_bIco('<path d="M20 6 9 17l-5-5"/>')}${L('Rilevamento diretto attivo: premi «Aggiungi» e ti mostro tutto quello che il bot ha visto.', 'Direct detection on: press «Add» and I’ll show everything the bot has seen.', 'Detección directa activa: pulsa «Añadir» y te muestro todo lo que el bot ha visto.')}</p>`
     : (wh.nostro
-      ? `<p class="tg-stato ok">${_bIco('<path d="M20 6 9 17l-5-5"/>')}${L(`Il bot risponde nel gruppo, quindi imparo i posti mentre ci scrivi: ne conosco <strong>${d.visti || 0}</strong>. Per aggiungerne uno scrivi <code>/collega</code> lì dentro — ti risponderò sul posto.`, `The bot replies in the group, so I learn places as you write in them: I know <strong>${d.visti || 0}</strong>. To add one write <code>/collega</code> in there — I’ll reply on the spot.`, `El bot responde en el grupo, así que aprendo los sitios mientras escribes: conozco <strong>${d.visti || 0}</strong>. Para añadir uno escribe <code>/collega</code> ahí dentro — te responderé en el sitio.`)}</p>`
-      : `<p class="tg-stato guaio">${_bIco(ICO.avviso)}${L('Il bot ha un collegamento attivo verso un <strong>altro indirizzo</strong>: i suoi messaggi non arrivano qui. Spegni e riaccendi «il bot risponde nel gruppo» qui sotto.', 'The bot has an active hook to <strong>another address</strong>: its messages don’t reach us. Turn «the bot replies in the group» off and on again below.', 'El bot tiene un enlace activo hacia <strong>otra dirección</strong>: sus mensajes no llegan aquí. Apaga y enciende «el bot responde en el grupo» abajo.')}</p>`));
+      ? `<p class="tg-stato ok">${_bIco('<path d="M20 6 9 17l-5-5"/>')}${L(`Il bot interattivo è acceso, quindi imparo i posti mentre ci scrivi: ne conosco <strong>${d.visti || 0}</strong>. Per aggiungerne uno scrivi <code>/collega</code> lì dentro: ti risponderò sul posto.`, `The interactive bot is on, so I learn places as you write in them: I know <strong>${d.visti || 0}</strong>. To add one write <code>/collega</code> in there: I’ll reply on the spot.`, `El bot interactivo está encendido, así que aprendo los sitios mientras escribes: conozco <strong>${d.visti || 0}</strong>. Para añadir uno escribe <code>/collega</code> ahí dentro: te responderé en el sitio.`)}</p>`
+      : `<p class="tg-stato guaio">${_bIco(ICO.avviso)}${L('Il bot ha un collegamento attivo verso un <strong>altro indirizzo</strong>: i suoi messaggi non arrivano qui. Spegni e riaccendi «Bot interattivo nel gruppo» qui sotto.', 'The bot has an active hook to <strong>another address</strong>: its messages don’t reach us. Turn «Interactive bot in the group» off and on again below.', 'El bot tiene un enlace activo hacia <strong>otra dirección</strong>: sus mensajes no llegan aquí. Apaga y enciende «Bot interactivo en el grupo» abajo.')}</p>`));
 
   box.innerHTML = `
     <p class="campo">${L('Dove arrivano gli avvisi', 'Where the alerts land', 'Dónde llegan los avisos')}</p>
     ${statoWh}
     <div class="tg-elenco">${(d.destinazioni || []).map(carta).join('')
-      || `<p class="vuoto">${L('Nessuna destinazione: aggiungi il bot a un gruppo o a un canale, scrivi un messaggio lì dentro e premi il tasto qui sotto.', 'No destination yet: add the bot to a group or channel, write a message in there and press the button below.', 'Sin destinos: añade el bot a un grupo o canal, escribe un mensaje ahí y pulsa el botón de abajo.')}</p>`}</div>
+      || `<p class="vuoto">${L('Nessuna destinazione: aggiungi il bot a un gruppo o a un canale, scrivi <code>/collega</code> lì dentro e premi il tasto qui sotto.', 'No destination yet: add the bot to a group or channel, write <code>/collega</code> in there and press the button below.', 'Sin destinos: añade el bot a un grupo o canal, escribe <code>/collega</code> ahí dentro y pulsa el botón de abajo.')}</p>`}</div>
     <div class="riga-flessibile spazio-sopra">
       <button type="button" class="btn secondario" id="tg-cerca-dest">${_bIco(ICO.piu)}${L('Aggiungi gruppo, canale o topic', 'Add group, channel or topic', 'Añadir grupo, canal o topic')}</button>
     </div>
@@ -2791,7 +2797,7 @@ async function caricaTgDestinazioni() {
       <input type="checkbox" id="tg-community"${d.communityLive ? ' checked' : ''}>
       <span class="tg-community-corpo">
         <strong>${L('Annuncia anche le dirette della community', 'Announce community members’ lives too', 'Anuncia también los directos de la comunidad')}</strong>
-        <span>${L(`Quando un membro della community va in diretta, l’avviso compare dove hai deciso nella matrice — fissato e tolto da solo a diretta finita. In lista entrano <strong>solo i membri verificati e confermati</strong> da andryxify.it: chi ha soltanto un account gratuito o un piano a pagamento non compare. Ora sono <strong>${d.communityQuanti || 0}</strong> canali, e la lista si aggiorna da sé.`, `When a community member goes live, the alert lands where you decided in the matrix — pinned and removed by itself when the live ends. The list holds <strong>only verified and confirmed members</strong> from andryxify.it: anyone with just a free account or a paid plan doesn’t show up. Right now that’s <strong>${d.communityQuanti || 0}</strong> channels, and the list keeps itself up to date.`, `Cuando un miembro de la comunidad emite, el aviso llega donde decidiste en la matriz — fijado y quitado solo al terminar. En la lista entran <strong>solo los miembros verificados y confirmados</strong> por andryxify.it: quien solo tiene una cuenta gratuita o un plan de pago no aparece. Ahora son <strong>${d.communityQuanti || 0}</strong> canales, y la lista se actualiza sola.`)}</span>
+        <span>${L(`Quando un membro della community va in diretta, l’avviso compare dove hai deciso in «Quale avviso va dove», e a diretta finita si toglie dove era fissato. In lista entrano <strong>solo i membri verificati e confermati</strong> da andryxify.it: chi ha soltanto un account gratuito o un piano a pagamento non compare. Ora sono <strong>${d.communityQuanti || 0}</strong> canali, e la lista si aggiorna da sé.`, `When a community member goes live, the alert lands where you decided in «Which alert goes where», and when the live ends it is removed where it was pinned. The list holds <strong>only verified and confirmed members</strong> from andryxify.it: anyone with just a free account or a paid plan doesn’t show up. Right now that’s <strong>${d.communityQuanti || 0}</strong> channels, and the list keeps itself up to date.`, `Cuando un miembro de la comunidad emite, el aviso llega donde decidiste en «Qué aviso va dónde», y al terminar se quita donde estaba fijado. En la lista entran <strong>solo los miembros verificados y confirmados</strong> por andryxify.it: quien solo tiene una cuenta gratuita o un plan de pago no aparece. Ahora son <strong>${d.communityQuanti || 0}</strong> canales, y la lista se actualiza sola.`)}</span>
       </span>
     </label>
     <div class="tg-amici">
@@ -2911,7 +2917,8 @@ function collegaTgDestinazioni() {
           </button>`).join('')}</div>`;
         dove.querySelectorAll('[data-nuova]').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
           const t = nuove[Number(b.dataset.nuova)];
-          await api('/api/streamer/telegram/destinazioni', { method: 'POST', body: t });
+          const fissa = document.getElementById('chk-tg-pin');
+          await api('/api/streamer/telegram/destinazioni', { method: 'POST', body: fissa ? { ...t, pin: fissa.checked } : t });
           dove.innerHTML = '';
           toast(L('Destinazione collegata ✓', 'Destination connected ✓', 'Destino conectado ✓'));
           await caricaTgDestinazioni();
@@ -3358,6 +3365,8 @@ const T_GRUPPO = {
 };
 const T_SCHEDA = {
   stato: ['Stato', 'Status', 'Estado'],
+  donazioni: ['Donazioni', 'Donations', 'Donaciones'],
+  consolify: ['CONSOLify', 'CONSOLify', 'CONSOLify'],
   account: ['Il tuo account', 'Your account', 'Tu cuenta'],
   personalita: ['Personalità', 'Personality', 'Personalidad'],
   conoscenza: ['Conoscenza', 'Knowledge', 'Conocimiento'],
@@ -3667,9 +3676,9 @@ const GUIDE = {
   notifiche: { serve: ['Collegare i tuoi social e annunciare quello che pubblichi: i post di Instagram, i video e le dirette di TikTok, i video di YouTube.', 'Connect your socials and announce what you post: Instagram posts, TikTok videos and lives, YouTube videos.', 'Conectar tus redes y anunciar lo que publicas: los posts de Instagram, los vídeos y directos de TikTok, los vídeos de YouTube.'],
     come: [['In cima collega Instagram e TikTok con un tasto, e scrivi il tuo canale YouTube.', 'At the top, connect Instagram and TikTok with one button, and type your YouTube channel.', 'Arriba, conecta Instagram y TikTok con un botón, y escribe tu canal de YouTube.', '#social-account'], ['Per ogni cosa da annunciare accendi l’avviso e scegli le parole: se non scrivi niente, uso le mie.', 'For each thing to announce, turn the alert on and choose the words: if you write nothing, I use mine.', 'Para cada cosa que anunciar, enciende el aviso y elige las palabras: si no escribes nada, uso las mías.', '#txt-ig-messaggio'], ['Per un altro sito, in fondo incolli l’indirizzo del suo feed.', 'For another site, paste its feed address at the bottom.', 'Para otro sitio, pega abajo la dirección de su feed.', '#feed-fonti']] },
   telegram: { serve: ['Portare il bot nel tuo gruppo Telegram: avvisa quando vai in diretta, risponde ai comandi, fa gli auguri ai membri e ti manda il rapporto della serata in privato.', 'Bring the bot into your Telegram group: it alerts when you go live, answers commands, wishes members happy birthday and sends you the night\u2019s report in private.', 'Llevar el bot a tu grupo de Telegram: avisa cuando est\u00e1s en directo, responde a los comandos, felicita a los miembros y te manda el informe de la noche en privado.'],
-    come: [['Incolla la chiave del TUO bot, quella che ti d\u00e0 BotFather.', 'Paste the key of YOUR bot, the one BotFather gives you.', 'Pega la clave de TU bot, la que te da BotFather.', '#inp-tg-token'], ['Aggiungi il bot al gruppo e premi \u00abCollega\u00bb: ti trova da solo.', 'Add the bot to the group and press \u00abConnect\u00bb: it finds itself.', 'A\u00f1ade el bot al grupo y pulsa \u00abConectar\u00bb: se encuentra solo.', '#btn-tg-rileva'], ['Accendi l\'avviso e scrivi il messaggio come lo vuoi tu.', 'Turn on the alert and write the message the way you want it.', 'Enciende el aviso y escribe el mensaje como lo quieras.', '#chk-tg-attivo']] },
+    come: [['Incolla la chiave del TUO bot, quella che ti d\u00e0 BotFather.', 'Paste the key of YOUR bot, the one BotFather gives you.', 'Pega la clave de TU bot, la que te da BotFather.', '#inp-tg-token'], ['Aggiungi il bot al gruppo, scrivici \u00ab/collega\u00bb e premi \u00abRileva gruppo\u00bb.', 'Add the bot to the group, type \u00ab/collega\u00bb in it and press \u00abDetect group\u00bb.', 'A\u00f1ade el bot al grupo, escribe \u00ab/collega\u00bb dentro y pulsa \u00abDetectar grupo\u00bb.', '#btn-tg-rileva'], ['Accendi l\'avviso e scrivi il messaggio come lo vuoi tu.', 'Turn on the alert and write the message the way you want it.', 'Enciende el aviso y escribe el mensaje como lo quieras.', '#chk-tg-attivo']] },
   ruoli: { serve: ['Dare i ruoli del tuo server Discord in base a quello che succede su Twitch: chi ti segue, chi è abbonato, chi è VIP o moderatore, quante ore ti ha guardato, quante monete ha, da quante dirette di fila c’è.', 'Give your Discord server’s roles based on what happens on Twitch: who follows you, who is subscribed, who is a VIP or moderator, how many hours they watched, how many coins they have, how long their streak is.', 'Dar los roles de tu servidor de Discord según lo que pasa en Twitch: quién te sigue, quién está suscrito, quién es VIP o moderador, cuántas horas te ha visto, cuántas monedas tiene, cuántos directos seguidos lleva.'],
-    come: [['Premi «Porta il bot nel tuo server»: Discord ti fa scegliere il server dall’elenco e ti chiede di confermare un permesso. Torni qui e ti dico quali ruoli riesce a muovere.', 'Press «Bring the bot to your server»: Discord lets you pick the server from a list and asks you to confirm one permission. Come back and I tell you which roles it can move.', 'Pulsa «Lleva el bot a tu servidor»: Discord te deja elegir el servidor de una lista y te pide confirmar un permiso. Vuelves y te digo qué roles puede mover.', '#dc-invita'], ['Su Discord, in Impostazioni server → Ruoli, trascina il ruolo del bot SOPRA quelli che deve poter dare: più in basso di un ruolo, non lo tocca.', 'On Discord, in Server Settings → Roles, drag the bot’s role ABOVE the ones it must be able to give: below a role, it cannot touch it.', 'En Discord, en Ajustes del servidor → Roles, arrastra el rol del bot POR ENCIMA de los que debe poder dar: por debajo de un rol, no lo toca.', ''], ['Scrivi le regole: una condizione e il ruolo che le corrisponde. Poi accendi.', 'Write the rules: a condition and the role that matches it. Then turn it on.', 'Escribe las reglas: una condición y el rol que le corresponde. Luego enciende.', '#dc-regole'], ['Chi ti guarda si collega da solo: scrive !discord in chat e segue le istruzioni. Finché non si collega, il bot non lo tocca.', 'Your viewers link themselves: they type !discord in chat and follow the steps. Until they link, the bot does not touch them.', 'Quien te ve se vincula solo: escribe !discord en el chat y sigue los pasos. Hasta que no se vincula, el bot no lo toca.', '#dc-collegati']] },
+    come: [['Premi «Porta il bot nel tuo server»: Discord ti fa scegliere il server dall’elenco e ti mostra i permessi che il bot chiede. Torni qui e ti dico quali ruoli riesce a muovere.', 'Press «Bring the bot to your server»: Discord lets you pick the server from a list and shows you the permissions the bot asks for. Come back and I tell you which roles it can move.', 'Pulsa «Lleva el bot a tu servidor»: Discord te deja elegir el servidor de una lista y te muestra los permisos que pide el bot. Vuelves y te digo qué roles puede mover.', '#dc-invita'], ['Su Discord, in Impostazioni server → Ruoli, trascina il ruolo del bot SOPRA quelli che deve poter dare: più in basso di un ruolo, non lo tocca.', 'On Discord, in Server Settings → Roles, drag the bot’s role ABOVE the ones it must be able to give: below a role, it cannot touch it.', 'En Discord, en Ajustes del servidor → Roles, arrastra el rol del bot POR ENCIMA de los que debe poder dar: por debajo de un rol, no lo toca.', ''], ['Scrivi le regole: una condizione e il ruolo che le corrisponde. Poi accendi.', 'Write the rules: a condition and the role that matches it. Then turn it on.', 'Escribe las reglas: una condición y el rol que le corresponde. Luego enciende.', '#dc-regole'], ['Chi ti guarda si collega da solo: scrive !discord in chat e segue le istruzioni. Finché non si collega, il bot non lo tocca.', 'Your viewers link themselves: they type !discord in chat and follow the steps. Until they link, the bot does not touch them.', 'Quien te ve se vincula solo: escribe !discord en el chat y sigue los pasos. Hasta que no se vincula, el bot no lo toca.', '#dc-collegati']] },
   dcavvisi: { serve: ['Dire alla gente del tuo server che sei in diretta, o che lo è qualcuno che segui: in quale canale, con che parole e chiamando chi vuoi tu.', 'Tell the people in your server that you are live, or that someone you follow is: in which channel, with what words, pinging whoever you want.', 'Decir a la gente de tu servidor que estás en directo, o que lo está alguien que sigues: en qué canal, con qué palabras y llamando a quien tú quieras.'],
     come: [['Scegli il canale dove far arrivare l\'avviso. Quelli in cui il bot non può scrivere li trovi segnati: sceglierne uno sarebbe scegliere un posto che poi non funziona.', 'Pick the channel where the alert lands. The ones the bot cannot write in are marked: picking one would mean picking a place that then does nothing.', 'Elige el canal donde llega el aviso. Los que el bot no puede escribir están marcados: elegir uno sería elegir un sitio que luego no funciona.', '#dca-nuovo'], ['Per ogni canale decidi quali avvisi arrivano, di chi, e scrivi il testo come lo vuoi tu.', 'For each channel decide which alerts land there, whose, and write the text the way you want it.', 'Para cada canal decide qué avisos llegan, de quién, y escribe el texto como lo quieras.', '#dca-elenco'], ['Se vuoi, fai chiamare un ruolo: sveglia solo quello, mai tutto il server per sbaglio.', 'If you want, have a role pinged: it wakes only that one, never the whole server by mistake.', 'Si quieres, haz que se llame a un rol: despierta solo a ese, nunca a todo el servidor por error.', '#dca-elenco'], ['«Prova» manda l\'avviso esattamente dove finirebbe davvero, col tuo testo.', '«Test» sends the alert exactly where it would really land, with your text.', '«Probar» manda el aviso exactamente donde llegaría de verdad, con tu texto.', '#dca-elenco']] },
   dcserver: { serve: ['Decidere com’è fatto il tuo server Discord — categorie, canali, di cosa si parla in ognuno e chi può fare cosa — e lasciare che lo metta su lui, dopo averti fatto vedere esattamente cosa farebbe.', 'Decide how your Discord server is laid out — categories, channels, what each one is about and who can do what — and let it set it up, after showing you exactly what it would do.', 'Decidir cómo está hecho tu servidor de Discord — categorías, canales, de qué se habla en cada uno y quién puede hacer qué — y dejar que lo monte él, tras enseñarte exactamente qué haría.'],
@@ -3677,7 +3686,7 @@ const GUIDE = {
   dcentra: { serve: ['Mettere in piedi la porta del tuo server: quanto aspettare prima che uno possa scrivere, cosa legge appena apre, e le domande che gli fanno scegliere i canali che gli interessano.', 'Set up your server’s door: how long before someone can write, what they read as they open it, and the questions that let them pick the channels they care about.', 'Montar la puerta de tu servidor: cuánto esperar antes de que alguien pueda escribir, qué lee nada más abrirlo, y las preguntas que le hacen elegir los canales que le interesan.'],
     come: [['Il livello di verifica è il filtro contro chi entra, spamma e sparisce: «email + cinque minuti» ferma quasi tutto.', 'The verification level is the filter against people who join, spam and vanish: «email + five minutes» stops nearly all of it.', 'El nivel de verificación es el filtro contra quien entra, spamea y desaparece: «correo + cinco minutos» para casi todo.', '#dce-verifica'], ['Scrivi la prima schermata: una riga tua e fino a cinque canali con un tasto per ognuno.', 'Write the first screen: one line of your own and up to five channels with a button each.', 'Escribe la primera pantalla: una línea tuya y hasta cinco canales con un botón para cada uno.', '#dce-benvenuto'], ['Aggiungi le domande: ogni risposta apre dei canali e dà un ruolo. I canali si scelgono per nome, anche quelli che la traccia deve ancora creare.', 'Add the questions: every answer opens channels and hands out a role. Channels are picked by name, including the ones the track has yet to create.', 'Añade las preguntas: cada respuesta abre canales y da un rol. Los canales se eligen por nombre, incluidos los que la plantilla aún tiene que crear.', '#dce-porta'], ['«Fammi vedere cosa faresti» e poi «Costruisci»: la porta parte insieme ai canali, in un giro solo.', '«Show me what you would do» and then «Build it»: the door goes out together with the channels, in one go.', '«Enséñame qué harías» y luego «Constrúyelo»: la puerta sale junto con los canales, de una sola vez.', '#dce-vedi']] },
   dcfiltro: { serve: ['Decidere cosa sul tuo server non si scrive: le tue parole, le liste che Discord tiene aggiornate da sé, lo spam e le raffiche di menzioni. Lo ferma Discord prima che il messaggio esista, non un bot che lo legge dopo.', 'Decide what does not get written on your server: your own words, the lists Discord keeps updated by itself, spam and mention raids. Discord stops it before the message exists, not a bot reading it afterwards.', 'Decidir qué no se escribe en tu servidor: tus palabras, las listas que Discord mantiene solo, el spam y las ráfagas de menciones. Lo para Discord antes de que el mensaje exista, no un bot que lo lee después.'],
-    come: [['Le tue liste stanno in «Parole da non scrivere», una per ogni cosa che vuoi fermare. Si scrive anche a pezzi: «insult*» prende tutto quello che comincia così.', 'Your own lists live in «Words that do not get written», one per thing you want stopped. Partial words work too: «insult*» catches everything starting like that.', 'Tus listas están en «Palabras que no se escriben», una por cada cosa que quieras parar. También a trozos: «insult*» coge todo lo que empiece así.', '#dcf-parole'], ['Le liste già pronte le aggiorna Discord in tutte le lingue: tu scegli quali accendere.', 'The ready-made lists are updated by Discord in every language: you choose which to switch on.', 'Las listas ya hechas las actualiza Discord en todos los idiomas: tú eliges cuáles encender.', '#dcf-liste'], ['Per ogni regola decidi cosa succede quando scatta, e chi e dove non tocca: i tuoi moderatori passano sempre.', 'For each rule you decide what happens when it fires, and who and where it leaves alone: your moderators always get through.', 'Para cada regla decides qué pasa cuando salta, y a quién y dónde no toca: tus moderadores siempre pasan.', '#dcf-menzioni'], ['«Fammi vedere cosa faresti» e poi «Costruisci»: il filtro parte insieme ai canali, in un giro solo.', '«Show me what you would do» and then «Build it»: the filter goes out together with the channels, in one go.', '«Enséñame qué harías» y luego «Constrúyelo»: el filtro sale junto con los canales, de una sola vez.', '#dcf-vedi']] },
+    come: [['Le tue liste stanno in «Parole da non scrivere», una per ogni cosa che vuoi fermare. Si scrive anche a pezzi: «insult*» prende tutto quello che comincia così.', 'Your own lists live in «Words that do not get written», one per thing you want stopped. Partial words work too: «insult*» catches everything starting like that.', 'Tus listas están en «Palabras que no se escriben», una por cada cosa que quieras parar. También a trozos: «insult*» coge todo lo que empiece así.', '#dcf-parole'], ['Le liste già pronte le aggiorna Discord in tutte le lingue: tu scegli quali accendere.', 'The ready-made lists are updated by Discord in every language: you choose which to switch on.', 'Las listas ya hechas las actualiza Discord en todos los idiomas: tú eliges cuáles encender.', '#dcf-liste'], ['Per ogni regola decidi cosa succede quando scatta, e chi e dove non tocca: passano i ruoli che spunti in «Questi ruoli passano». Con le regole di base ci sono già quelli dello staff della traccia.', 'For each rule you decide what happens when it fires, and who and where it leaves alone: the roles you tick in «These roles get through» get through. With the basic rules the track’s staff roles are already there.', 'Para cada regla decides qué pasa cuando salta, y a quién y dónde no toca: pasan los roles que marques en «Estos roles pasan». Con las reglas básicas ya están los del staff de la plantilla.', '#dcf-menzioni'], ['«Fammi vedere cosa faresti» e poi «Costruisci»: il filtro parte insieme ai canali, in un giro solo.', '«Show me what you would do» and then «Build it»: the filter goes out together with the channels, in one go.', '«Enséñame qué harías» y luego «Constrúyelo»: el filtro sale junto con los canales, de una sola vez.', '#dcf-vedi']] },
   studio: { serve: ['Andare in diretta su Twitch dal browser, senza installare niente: componi scene con webcam, schermo, immagini, video, testo e overlay, regola l’audio col mixer e premi «Vai live».', 'Go live on Twitch from the browser, without installing anything: compose scenes with webcam, screen, images, video, text and overlay, tune the audio with the mixer and hit “Go live”.', 'Emitir en Twitch desde el navegador, sin instalar nada: compón escenas con webcam, pantalla, imágenes, vídeo, texto y overlay, ajusta el audio con el mezclador y pulsa «Emitir».'],
     come: [['Scegli fotocamera, microfono e qualità in «Ingressi & qualità».', 'Pick camera, microphone and quality in “Inputs & quality”.', 'Elige cámara, micrófono y calidad en «Entradas y calidad».', '#studio-cam-sel'], ['Aggiungi le fonti e sistemale sul palco (trascina per spostare/ridimensionare), o usa un layout rapido.', 'Add the sources and arrange them on the stage (drag to move/resize), or use a quick layout.', 'Añade las fuentes y colócalas en el escenario (arrastra para mover/redimensionar), o usa un diseño rápido.', '#studio-fonti'], ['Aggiungi la fonte «Overlay» per avere a schermo alert, chat ed effetti a punti canale.', 'Add the “Overlay” source to get alerts, chat and channel-point effects on screen.', 'Añade la fuente «Overlay» para tener en pantalla alertas, chat y efectos de puntos de canal.', '#studio-ov-sel'], ['Premi «Vai live» e tieni aperta questa scheda mentre trasmetti.', 'Hit “Go live” and keep this tab open while you broadcast.', 'Pulsa «Emitir» y mantén esta pestaña abierta mientras transmites.', '#studio-live']] },
   alert: { serve: ['Comporre quello che si vede sulla diretta — alert, chat a schermo, obiettivi, contatori — e prendere il link da mettere in OBS.', 'Compose what shows on your stream — alerts, on-screen chat, goals, counters — and get the link to put in OBS.', 'Componer lo que se ve en el directo — alertas, chat en pantalla, objetivos, contadores — y coger el enlace para poner en OBS.'],
@@ -20321,7 +20330,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
         <div class="lp-pane" data-gruppo="aspetto" data-pane="asp-scrittura" hidden>
           <div class="carta">
             <div class="griglia-campi">
-              <div><label class="campo" for="lp-font">${L('Carattere', 'Font', 'Tipografía')}</label>
+              <div><label class="campo" for="lp-font">${L('Carattere', 'Font', 'Fuente')}</label>
                 <select id="lp-font" data-lpk="font">${opts(d.fonts || [], LP.tema.font, NOMI_FONT)}</select></div>
               <div><label class="campo" for="lp-peso">${L('Spessore', 'Weight', 'Grosor')}</label>
                 <select id="lp-peso" data-lpk="peso">
@@ -21948,7 +21957,7 @@ function pannelloRuoli() {
 
       <details class="spazio-sopra" id="dc-pieni-box" hidden>
         <summary>${L('Dagli i pieni poteri', 'Give it full powers', 'Dale plenos poderes')}</summary>
-        <p class="suggerimento">${L('Di partenza il bot chiede solo quello che gli serve. Con i pieni poteri diventa amministratore: da qui muovi canali, ruoli e permessi senza tornare su Discord. In cambio vede anche i canali privati, quindi daglieli solo se ti fidi — e puoi sempre riportarlo indietro reinvitandolo dal tasto di sopra.', 'By default the bot asks only for what it needs. With full powers it becomes an administrator: from here you move channels, roles and permissions without going back to Discord. In exchange it also sees private channels, so grant this only if you trust it — and you can always take it back by re-inviting it with the button above.', 'De partida el bot pide solo lo que necesita. Con plenos poderes pasa a ser administrador: desde aquí mueves canales, roles y permisos sin volver a Discord. A cambio ve también los canales privados, así que dáselos solo si te fías — y siempre puedes volver atrás reinvitándolo con el botón de arriba.')}</p>
+        <p class="suggerimento">${L('Di partenza il bot chiede solo quello che gli serve. Con i pieni poteri diventa amministratore: da qui muovi canali, ruoli e permessi senza tornare su Discord. In cambio vede anche i canali privati, quindi daglieli solo se ti fidi. E puoi sempre riportarlo indietro reinvitandolo dal tasto di sopra.', 'By default the bot asks only for what it needs. With full powers it becomes an administrator: from here you move channels, roles and permissions without going back to Discord. In exchange it also sees private channels, so grant this only if you trust it. And you can always take it back by re-inviting it with the button above.', 'De partida el bot pide solo lo que necesita. Con plenos poderes pasa a ser administrador: desde aquí mueves canales, roles y permisos sin volver a Discord. A cambio ve también los canales privados, así que dáselos solo si te fías. Y siempre puedes volver atrás reinvitándolo con el botón de arriba.')}</p>
         <p class="suggerimento">${L('Una cosa non cambia nemmeno così: i ruoli più in alto del suo restano fuori portata, e il proprietario del server non lo tocca nessuno.', 'One thing does not change even then: roles above its own stay out of reach, and nobody touches the server owner.', 'Una cosa no cambia ni así: los roles por encima del suyo quedan fuera de su alcance, y al dueño del servidor no lo toca nadie.')}</p>
         <p class="spazio-sopra"><button class="btn secondario" id="dc-pieni">${L('Portalo con i pieni poteri', 'Bring it with full powers', 'Llévalo con plenos poderes')}</button></p>
       </details>
@@ -22050,7 +22059,7 @@ function _dcOpzioniRuolo(scelto) {
     const qui = x.id === scelto;
     const si = x.posto === 'gestibile';
     if (!si && !qui && x.posto !== 'sopra') continue;
-    righe.push(`<option value="${esc(x.id)}"${qui ? ' selected' : ''}${si ? '' : ' disabled'}>${esc(x.nome)}${si ? '' : ' — ' + esc(nota[x.posto] || nota.sopra)}</option>`);
+    righe.push(`<option value="${esc(x.id)}"${qui ? ' selected' : ''}${si ? '' : ' disabled'}>${esc(x.nome)}${si ? '' : ' (' + esc(nota[x.posto] || nota.sopra) + ')'}</option>`);
   }
   if (scelto && !lista.some((x) => x.id === scelto)) {
     righe.push(`<option value="${esc(scelto)}" selected disabled>${esc(L('un ruolo che non c’è più', 'a role that is gone', 'un rol que ya no existe'))}</option>`);
@@ -22082,6 +22091,17 @@ function _dcDici(id, testo, tono) {
   n.className = 'tg-stato' + (tono ? ' ' + tono : '');
   n.textContent = testo || '';
   n.hidden = !testo;
+}
+
+function _dcSoloProprietario() {
+  if (stato?.ruolo !== 'moderatore') return false;
+  const testo = L('Le schede di Discord le usa solo il proprietario del canale: da moderatore le vedi, ma non le puoi usare.', 'The Discord tabs are for the channel owner only: as a moderator you can see them, but not use them.', 'Las pestañas de Discord solo las usa el propietario del canal: como moderador las ves, pero no puedes usarlas.');
+  for (const id of ['dc-stato', 'dcs-stato']) _dcDici(id, testo, 'guaio');
+  for (const id of ['dca-box', 'dcev', 'dce-verifica', 'dcf-conto']) {
+    const n = _g(id);
+    if (n) n.innerHTML = `<p class="tg-stato guaio">${esc(testo)}</p>`;
+  }
+  return true;
 }
 
 function _dcServeHtml() {
@@ -22199,6 +22219,7 @@ function _dcEsito(e) {
 }
 
 async function caricaRuoli() {
+  if (_dcSoloProprietario()) return;
   let d = null;
   try { d = await api('/api/streamer/ruoli'); } catch { d = null; }
   if (!d) { _dcDici('dc-stato', L('Non riesco a leggere la configurazione.', 'I can’t read the configuration.', 'No consigo leer la configuración.'), 'guaio'); return; }
@@ -22257,7 +22278,12 @@ function collegaRuoli() {
 
   _g('dc-piu')?.addEventListener('click', () => {
     if (!_dc) return;
-    _dc.regole = _dcLeggiRegole().concat([{ tipo: (_dc.tipi || [{ id: 'sub' }])[0].id, ruolo: '', soglia: 1 }]);
+    const ora = _dcLeggiRegole();
+    if (_dc.maxRegole && ora.length >= _dc.maxRegole) {
+      toast(L(`Le regole sono al massimo ${_dc.maxRegole}: per aggiungerne una, togline un’altra.`, `Rules are at most ${_dc.maxRegole}: to add one, remove another.`, `Las reglas son como máximo ${_dc.maxRegole}: para añadir una, quita otra.`), 'errore');
+      return;
+    }
+    _dc.regole = ora.concat([{ tipo: (_dc.tipi || [{ id: 'sub' }])[0].id, ruolo: '', soglia: 1 }]);
     _dcDisegnaRegole();
   });
 
@@ -22391,7 +22417,7 @@ let _dcaDati = null;
 async function caricaDcAvvisi() {
   const box = document.getElementById('dca-box');
   const chi = document.getElementById('dca-chi');
-  if (!box) return;
+  if (!box || _dcSoloProprietario()) return;
   let d;
   try { d = await api('/api/streamer/discord/avvisi'); }
   catch { box.innerHTML = `<p class="suggerimento">${L('Non riesco a leggere gli avvisi di Discord.', 'I can\'t read the Discord alerts.', 'No consigo leer los avisos de Discord.')}</p>`; return; }
@@ -22430,7 +22456,7 @@ async function caricaDcAvvisi() {
         </div>` : ''}
         <label class="campo spazio-sopra" for="dca-testo-${t.id}">${L('Il testo', 'The text', 'El texto')}</label>
         <textarea rows="2" id="dca-testo-${t.id}" data-testo placeholder="${esc(d.testoDiCasa || '')}">${esc(t.messaggio || '')}</textarea>
-        <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code> <code>{spettatori}</code> <code>{link}</code> <code>{piattaforma}</code>. ${L('Vuoto = quello di casa. Titolo, gioco e spettatori sono già dentro il riquadro sotto il messaggio.', 'Empty = the house one. Title, game and viewers are already inside the box under the message.', 'Vacío = el de casa. Título, juego y espectadores ya están dentro del recuadro bajo el mensaje.')}</p>
+        <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code> <code>{spettatori}</code> <code>{link}</code> <code>{piattaforma}</code>. ${L('Vuoto = quello di casa. Titolo, gioco e spettatori sono già dentro il riquadro sotto il messaggio. Vale per le dirette: i post nuovi arrivano con le loro parole, senza riquadro.', 'Empty = the house one. Title, game and viewers are already inside the box under the message. It is for streams: new posts arrive with their own words, without the box.', 'Vacío = el de casa. Título, juego y espectadores ya están dentro del recuadro bajo el mensaje. Vale para los directos: los posts nuevos llegan con sus propias palabras, sin recuadro.')}</p>
         <label class="campo spazio-sopra" for="dca-ruolo-${t.id}">${L('Chiama un ruolo', 'Ping a role', 'Llamar a un rol')}</label>
         <select class="campo-largo" id="dca-ruolo-${t.id}" data-ruolo>
           <option value=""${t.ruolo ? '' : ' selected'}>${L('nessuno', 'nobody', 'nadie')}</option>
@@ -22456,7 +22482,7 @@ async function caricaDcAvvisi() {
       || `<p class="vuoto">${L('Ancora nessun canale: scegline uno qui sotto e da lì in poi ti avviso.', 'No channel yet: pick one below and from then on I will tell them.', 'Aún ningún canal: elige uno abajo y a partir de ahí aviso.')}</p>`}</div>
     <div class="riga-flessibile spazio-sopra" id="dca-nuovo"${d.collegato ? '' : ' hidden'}>
       <select class="campo-largo" id="dca-scelta" aria-label="${esc(L('canale del server', 'server channel', 'canal del servidor'))}">
-        ${liberi.length ? liberi.map((c) => `<option value="${esc(c.id)}"${c.muto ? ' disabled' : ''}>#${esc(c.nome)}${c.muto ? ' — ' + L('qui non può scrivere', 'cannot write here', 'aquí no puede escribir') : ''}</option>`).join('')
+        ${liberi.length ? liberi.map((c) => `<option value="${esc(c.id)}"${c.muto ? ' disabled' : ''}>#${esc(c.nome)}${c.muto ? ' (' + L('qui non può scrivere', 'cannot write here', 'aquí no puede escribir') + ')' : ''}</option>`).join('')
         : `<option value="">${L('nessun canale libero', 'no free channel', 'ningún canal libre')}</option>`}
       </select>
       <button type="button" class="btn secondario" id="dca-piu"${liberi.some((c) => !c.muto) ? '' : ' disabled'}>${_bIco(ICO.piu)}${L('Aggiungi', 'Add', 'Añadir')}</button>
@@ -22537,7 +22563,13 @@ function _dcaCollega() {
       return;
     }
     if (e.target.closest('[data-togli]')) {
-      conErrore(async () => { await api('/api/streamer/discord/avvisi/' + d.dataset.dca, { method: 'DELETE' }); await caricaDcAvvisi(); });
+      conErrore(async () => {
+        if (!(await chiediSe({ titolo: L('Tolgo questo canale?', 'Remove this channel?', '¿Quito este canal?'),
+          testo: L('Gli avvisi non arriveranno più lì. Puoi rimetterlo quando vuoi.', 'Alerts will stop landing there. You can add it back whenever you like.', 'Los avisos dejarán de llegar ahí. Puedes volver a ponerlo cuando quieras.'),
+          si: L('Toglilo', 'Remove it', 'Quítalo'), pericolo: true }))) return;
+        await api('/api/streamer/discord/avvisi/' + d.dataset.dca, { method: 'DELETE' });
+        await caricaDcAvvisi();
+      });
       return;
     }
     if (e.target.closest('[data-prova]')) {
@@ -22598,13 +22630,14 @@ function pannelloDcAvvisi() {
   return pannello('dcavvisi', `
     <div class="carta">
       <h2>${_hIco(ICO.megafono)}${L('In quali canali arrivano', 'Which channels they land in', 'En qué canales llegan')}</h2>
-      <p>${L('Un canale per ogni cosa: le tue dirette di qua, quelle degli amici di là, i post nuovi dove vuoi tu. Ogni canale ha il suo testo e può chiamare un ruolo.', 'A channel for each thing: your streams here, your friends\' there, new posts wherever you like. Each channel has its own text and can ping a role.', 'Un canal para cada cosa: tus directos aquí, los de tus amigos allá, los posts nuevos donde quieras. Cada canal tiene su texto y puede llamar a un rol.')}</p>
+      ${muroPacchetto('notifiche', L('Mandare gli avvisi su Discord', 'Sending alerts on Discord', 'Mandar avisos en Discord'))}
+      <p>${L('Un canale per ogni cosa: le tue dirette di qua, quelle degli amici di là, i post nuovi dove vuoi tu. Ogni canale ha il suo testo e può chiamare un ruolo. Gli avvisi partono col piano Base; il calendario qui sotto c’è in tutti i piani.', 'A channel for each thing: your streams here, your friends\' there, new posts wherever you like. Each channel has its own text and can ping a role. The alerts go out with the Base plan; the calendar below is in every plan.', 'Un canal para cada cosa: tus directos aquí, los de tus amigos allá, los posts nuevos donde quieras. Cada canal tiene su texto y puede llamar a un rol. Los avisos salen con el plan Base; el calendario de abajo está en todos los planes.')}</p>
       <div id="dca-box" class="spazio-sopra">${attesaHtml()}</div>
     </div>
 
     <div class="carta">
       <h2>${_hIco(ICO.utenti)}${L('Chi annunciare', 'Who to announce', 'A quién anunciar')}</h2>
-      <p>${L('Oltre a te: altri streamer, e se vuoi chi fa parte della community. La lista è la stessa che vedi su Telegram — il bot chiede a Twitch una volta sola come stanno — ma che farne lo decidi qui, per il tuo server.', 'Besides you: other streamers, and if you want, the community. The list is the same one you see on Telegram — the bot asks Twitch once how they are doing — but what to do with it you decide here, for your server.', 'Además de ti: otros streamers y, si quieres, la comunidad. La lista es la misma que ves en Telegram — el bot pregunta a Twitch una sola vez cómo están — pero qué hacer con ella lo decides aquí, para tu servidor.')}</p>
+      <p>${L('Oltre a te: altri streamer, e se vuoi chi fa parte della community. La lista è la stessa che vedi su Telegram (il bot chiede a Twitch una volta sola come stanno), ma che farne lo decidi qui, per il tuo server.', 'Besides you: other streamers, and if you want, the community. The list is the same one you see on Telegram (the bot asks Twitch once how they are doing), but what to do with it you decide here, for your server.', 'Además de ti: otros streamers y, si quieres, la comunidad. La lista es la misma que ves en Telegram (el bot pregunta a Twitch una sola vez cómo están), pero qué hacer con ella lo decides aquí, para tu servidor.')}</p>
       <div id="dca-chi" class="spazio-sopra"></div>
     </div>
 
@@ -22665,6 +22698,7 @@ const _dcevLeggi = () => ({
 });
 
 async function caricaDcEventi() {
+  if (_dcSoloProprietario()) return;
   try { _dcev = await api('/api/streamer/dcserver/eventi'); } catch { _dcev = null; }
   if (!_dcev) { const b = _g('dcev'); if (b) b.innerHTML = `<p class="tg-stato guaio">${L('Non riesco a leggerli.', 'I can\u2019t read them.', 'No consigo leerlos.')}</p>`; return; }
   _dcevDisegna();
@@ -22672,8 +22706,8 @@ async function caricaDcEventi() {
 
 function fasciaDistruttiva(pre) {
   return `<p class="dcs-fascia" id="${pre}-fascia" role="status" hidden>
-      <strong>${L('Modalità distruttiva', 'Destructive mode', 'Modo destructivo')}</strong>
-      ${L('— quello che non è nella traccia verrà cancellato. Si chiude da sola fra', '— whatever is not in the track will be deleted. It closes on its own in', '— lo que no esté en la plantilla se borrará. Se cierra sola en')}
+      <strong>${L('Modalità distruttiva:', 'Destructive mode:', 'Modo destructivo:')}</strong>
+      ${L('quello che non è nella traccia verrà cancellato. Si chiude da sola fra', 'whatever is not in the track will be deleted. It closes on its own in', 'lo que no esté en la plantilla se borrará. Se cierra sola en')}
       <b class="dist-resta" id="${pre}-resta">10 min</b>.
       <button type="button" class="btn secondario mini" id="${pre}-esci">${L('Esci', 'Leave', 'Salir')}</button>
     </p>`;
@@ -22702,7 +22736,7 @@ function pannelloDcServer() {
 
     <div class="carta" id="dcs-carta-ruoli">
       <h2>${_hIco(ICO.ruoli)}${L('Chi è chi', 'Who is who', 'Quién es quién')}</h2>
-      <p class="suggerimento">${L('I ruoli del server: come si vedono e cosa possono fare. «Streamer» è solo un colore e un posto a parte — più in alto del bot non si può creare niente, e questo è il motivo.', 'The server roles: how they look and what they can do. «Streamer» is just a colour and a separate spot — nothing can be created above the bot, and that is why.', 'Los roles del servidor: cómo se ven y qué pueden hacer. «Streamer» es solo un color y un sitio aparte — no se puede crear nada por encima del bot, y por eso es así.')}</p>
+      <p class="suggerimento">${L('I ruoli del server: come si vedono e cosa possono fare. «Streamer» è solo un colore e un posto a parte: più in alto del bot non si può creare niente, e questo è il motivo.', 'The server roles: how they look and what they can do. «Streamer» is just a colour and a separate spot: nothing can be created above the bot, and that is why.', 'Los roles del servidor: cómo se ven y qué pueden hacer. «Streamer» es solo un color y un sitio aparte: no se puede crear nada por encima del bot, y por eso es así.')}</p>
       <div id="dcs-ruoli" class="spazio-sopra"></div>
       <p class="spazio-sopra"><button class="btn secondario" id="dcs-ruolopiu">${_bIco(ICO.piu)}${L('Aggiungi un ruolo', 'Add a role', 'Añadir un rol')}</button></p>
       <div id="dcs-confronto" class="spazio-sopra" hidden></div>
@@ -22728,7 +22762,7 @@ function pannelloDcServer() {
 
     <div class="carta" id="dcs-carta-modo">
       <h2>${_hIco(ICO.scudo)}${L('Fare piazza pulita', 'Clearing the board', 'Hacer limpieza')}</h2>
-      <p>${L('Finché resti di qua, il costruttore va solo in avanti: crea quello che manca e non cancella mai niente. Di là invece il server diventa esattamente la traccia — e quello che non c’è dentro sparisce.', 'While you stay on this side, the builder only goes forward: it creates what is missing and never deletes anything. On the other side the server becomes exactly the track — and whatever is not in it disappears.', 'Mientras te quedes de este lado, el constructor solo va hacia adelante: crea lo que falta y nunca borra nada. Del otro lado el servidor se convierte exactamente en la plantilla — y lo que no esté dentro desaparece.')}</p>
+      <p>${L('Finché resti di qua, il costruttore va solo in avanti: crea quello che manca e non cancella mai niente. Di là invece il server diventa esattamente la traccia, e quello che non c’è dentro sparisce.', 'While you stay on this side, the builder only goes forward: it creates what is missing and never deletes anything. On the other side the server becomes exactly the track, and whatever is not in it disappears.', 'Mientras te quedes de este lado, el constructor solo va hacia adelante: crea lo que falta y nunca borra nada. Del otro lado el servidor se convierte exactamente en la plantilla, y lo que no esté dentro desaparece.')}</p>
       <p class="suggerimento">${L('Su Discord un canale cancellato non torna, e con lui tutto quello che vi siete detti dentro.', 'On Discord a deleted channel does not come back, and neither does everything you said in it.', 'En Discord un canal borrado no vuelve, y con él todo lo que os habéis dicho dentro.')}</p>
       <p class="spazio-sopra"><button class="btn secondario" id="dcs-entra">${L('Entra in modalità distruttiva', 'Enter destructive mode', 'Entrar en modo destructivo')}</button></p>
     </div>
@@ -22821,6 +22855,37 @@ function _dcsPulito() {
 
 const _dcsConta = (p) => (p?.categorie || []).reduce((t, c) => t + (c.canali || []).length, 0) + (p?.canali || []).length;
 
+const DCS_TETTO = () => ({
+  categorie: [L('categorie', 'categories', 'categorías'), ''],
+  canali: [L('canali', 'channels', 'canales'), ''],
+  ruoli: [L('ruoli', 'roles', 'roles'), ''],
+  righe: [L('righe di permessi', 'permission rows', 'filas de permisos'), L(' per canale', ' per channel', ' por canal')],
+  partenza: [L('canali di partenza', 'starting channels', 'canales de inicio'), ''],
+  rispCanali: [L('canali', 'channels', 'canales'), L(' per risposta', ' per answer', ' por respuesta')],
+  rispRuoli: [L('ruoli', 'roles', 'roles'), L(' per risposta', ' per answer', ' por respuesta')],
+});
+
+function _dcsAlTetto(k, quanti) {
+  const tetto = _dcs?.max?.[k];
+  if (!tetto || quanti < tetto) return false;
+  const [nome, per] = DCS_TETTO()[k];
+  toast(L(`La traccia ne tiene al massimo ${tetto} ${nome}${per}.`, `The track holds at most ${tetto} ${nome}${per}.`, `La plantilla tiene como máximo ${tetto} ${nome}${per}.`), 'errore');
+  return true;
+}
+
+function _dcsScartiTesto(sc) {
+  const nomi = DCS_TETTO();
+  const p = [];
+  for (const k of Object.keys(nomi)) {
+    if (!sc?.[k]) continue;
+    const [nome, per] = nomi[k];
+    p.push(`${nome} ${sc[k]} (${L('ne tiene', 'it holds', 'tiene')} ${_dcs?.max?.[k] ?? ''}${per})`);
+  }
+  if (sc?.senzaParole) p.push(L('regole di parole senza nessuna parola', 'word rules without any word', 'reglas de palabras sin ninguna palabra') + ' ' + sc.senzaParole);
+  if (sc?.senzaListe) p.push(L('regole delle liste senza nessuna lista', 'list rules without any list', 'reglas de listas sin ninguna lista') + ' ' + sc.senzaListe);
+  return p.length ? L('Restano fuori dalla traccia: ', 'Left out of the track: ', 'Se quedan fuera de la plantilla: ') + p.join(', ') + '.' : '';
+}
+
 function _dcsDici(id, testo, tono) {
   const n = _g(id);
   if (!n) return;
@@ -22850,7 +22915,7 @@ function _dcsOpzioniChi(scelto) {
   const lista = (_dcs && _dcs.ruoli) || [];
   const nome = scelto && scelto !== 'tutti' ? String(scelto.ruolo || '') : '';
   const fuori = nome && !lista.some((r) => r.nome === nome)
-    ? `<option value="${esc(nome)}" selected>${esc(nome)}${L(' — non c’è più', ' — gone', ' — ya no está')}</option>` : '';
+    ? `<option value="${esc(nome)}" selected>${esc(nome)}${L(' (non c’è più)', ' (gone)', ' (ya no está)')}</option>` : '';
   return `<option value="tutti"${scelto === 'tutti' ? ' selected' : ''}>${L('Tutti', 'Everyone', 'Todos')}</option>`
     + fuori + lista.map((r) => `<option value="${esc(r.nome)}"${r.nome === nome ? ' selected' : ''}>${esc(r.nome)}</option>`).join('');
 }
@@ -23319,6 +23384,8 @@ function _dcsDiffHtml(d) {
   const tipi = T_DCTIPO();
   const nome = (x) => esc(x.nome || '') + (x.dentro ? ' <span class="suggerimento">' + L('in ', 'in ', 'en ') + esc(x.dentro) + '</span>' : '');
   const blocchi = [];
+  const scarti = _dcsScartiTesto(d.scarti);
+  if (scarti) blocchi.push(`<p class="tg-stato guaio">${esc(scarti)}</p>`);
   if (d.crea.length) {
     blocchi.push(`<h3>${L('Crea', 'Creates', 'Crea')} (${d.crea.length})</h3><ul class="lista-voci">`
       + d.crea.map((x) => `<li>${nome(x)} <span class="suggerimento">${esc(x.tipo === 4 ? L('categoria', 'category', 'categoría') : (tipi[({ 0: 'testo', 2: 'voce', 5: 'annunci', 15: 'forum' })[x.tipo]] || ''))}</span></li>`).join('') + '</ul>');
@@ -23420,7 +23487,7 @@ function _dcsDiffHtml(d) {
     blocchi.push(`<p class="suggerimento">${L('Di questi ne hai più d’uno con lo stesso nome, e non indovino quale intendi: ', 'You have more than one of these with the same name, and I will not guess which one you mean: ', 'De estos tienes más de uno con el mismo nombre, y no adivino cuál quieres: ')}${esc(r.ambigui.join(', '))}</p>`);
   }
   if ((d.fuoriPortata || []).length) {
-    blocchi.push(`<p class="suggerimento">${L('A questi canali il bot non arriva — non li vede o non li può gestire — quindi li lascia stare: ', 'The bot cannot reach these channels — it cannot see or manage them — so it leaves them alone: ', 'A estos canales el bot no llega — no los ve o no puede gestionarlos — así que los deja en paz: ')}`
+    blocchi.push(`<p class="suggerimento">${L('A questi canali il bot non arriva (non li vede o non li può gestire), quindi li lascia stare: ', 'The bot cannot reach these channels (it cannot see or manage them), so it leaves them alone: ', 'A estos canales el bot no llega (no los ve o no puede gestionarlos), así que los deja en paz: ')}`
       + esc((d.fuoriPortata || []).map((x) => x.nome).join(', '))
       + `. ${L('Aprigli il canale su Discord, o spostalo più in basso del suo ruolo.', 'Give it access to the channel on Discord, or move it below its role.', 'Dale acceso al canal en Discord, o muévelo por debajo de su rol.')}</p>`);
   }
@@ -23512,6 +23579,7 @@ async function _dcsCaricaRegistro() {
 }
 
 async function caricaDcServer() {
+  if (_dcSoloProprietario()) return;
   if (_dcs) { _dcsMostra(); return; }
   let d = null;
   try { d = await api('/api/streamer/dcserver'); } catch { d = null; }
@@ -23811,6 +23879,13 @@ function collegaChiEntra() {
 
   scheda.addEventListener('change', (e) => {
     if (!e.target.closest('[data-dce]')) return;
+    const tetto = { partenza: 'partenza', 'r-canale': 'rispCanali', 'r-ruolo': 'rispRuoli' }[e.target.dataset.dce];
+    if (tetto && e.target.checked) {
+      const k = e.target.dataset.k;
+      const dove = k === undefined ? `[data-dce="${e.target.dataset.dce}"]` : `[data-dce="${e.target.dataset.dce}"][data-k="${k}"]`;
+      const spuntati = [...scheda.querySelectorAll(dove)].filter((x) => x.checked).length;
+      if (_dcsAlTetto(tetto, spuntati - 1)) e.target.checked = false;
+    }
     _dceLeggi();
     if (['r-canale', 'r-ruolo', 'partenza'].includes(e.target.dataset.dce)) _dceDisegnaPorta();
     if (e.target.dataset.dce === 'ben-canale') {
@@ -23935,7 +24010,7 @@ function pannelloFiltro() {
 
     <div class="carta">
       <h2>${_hIco(ICO.scudo)}${L('Cosa non si scrive', 'What does not get written', 'Lo que no se escribe')}</h2>
-      <p>${L('Questo filtro è di Discord e gira dentro Discord: ferma il messaggio prima che esista, cosa che un bot in ascolto non può fare — lui lo vedrebbe dopo. Tu scrivi le regole qui, e poi ci stai fuori.', 'This filter is Discord’s own and runs inside Discord: it stops the message before it exists, which a listening bot cannot do — it would see it afterwards. You write the rules here, then you stay out of it.', 'Este filtro es de Discord y funciona dentro de Discord: para el mensaje antes de que exista, cosa que un bot a la escucha no puede hacer — lo vería después. Tú escribes las reglas aquí, y luego te quedas fuera.')}</p>
+      <p>${L('Questo filtro è di Discord e gira dentro Discord: ferma il messaggio prima che esista, cosa che un bot in ascolto non può fare: lui lo vedrebbe dopo. Tu scrivi le regole qui, e poi ci stai fuori.', 'This filter is Discord’s own and runs inside Discord: it stops the message before it exists, which a listening bot cannot do: it would see it afterwards. You write the rules here, then you stay out of it.', 'Este filtro es de Discord y funciona dentro de Discord: para el mensaje antes de que exista, cosa que un bot a la escucha no puede hacer: lo vería después. Tú escribes las reglas aquí, y luego te quedas fuera.')}</p>
       <p class="suggerimento" id="dcf-conto"></p>
       <p class="spazio-sopra"><button type="button" class="btn secondario" id="dcf-pronto">${_bIco(ICO.piu)}${L('Mettimi le regole di base', 'Give me the basic rules', 'Ponme las reglas b\u00e1sicas')}</button></p>
       <p class="suggerimento">${L('Le tre cose che si accendono su qualunque server: le liste di Discord, lo spam e le raffiche di menzioni, coi tuoi moderatori che passano. Le parole tue le scrivi tu, perch\u00e9 dipendono dal tuo server.', 'The three things any server switches on: Discord\u2019s lists, spam and mention raids, with your moderators getting through. Your own words you write yourself, because they depend on your server.', 'Las tres cosas que se encienden en cualquier servidor: las listas de Discord, el spam y las r\u00e1fagas de menciones, con tus moderadores pasando. Tus palabras las escribes t\u00fa, porque dependen de tu servidor.')}</p>
@@ -24035,6 +24110,17 @@ function _dcfParoleHtml(r) {
     <textarea data-dcf="passano" rows="2">${esc(_dcfRighe(r.passano))}</textarea>`;
 }
 
+const _dcfVuota = (r) => ((r.tipo === 'parole' || r.tipo === 'profilo')
+  ? !(r.parole || []).length && !(r.espressioni || []).length
+  : (r.tipo === 'liste' ? !(r.liste || []).length : false));
+
+function _dcfVuotaHtml(r) {
+  const testo = r.tipo === 'liste'
+    ? L('Senza nessuna lista spuntata questa regola non si salva e non si costruisce.', 'With no list ticked this rule is neither saved nor built.', 'Sin ninguna lista marcada esta regla no se guarda ni se construye.')
+    : L('Senza nemmeno una parola questa regola non si salva e non si costruisce.', 'Without a single word this rule is neither saved nor built.', 'Sin ni una palabra esta regla no se guarda ni se construye.');
+  return `<p class="tg-stato guaio dcf-vuota"${_dcfVuota(r) ? '' : ' hidden'}>${testo}</p>`;
+}
+
 function _dcfRegolaHtml(r, aperta) {
   const dentro = r.tipo === 'parole' || r.tipo === 'profilo' ? _dcfParoleHtml(r)
     : r.tipo === 'liste' ? `<div class="tg-spunte">${(_dcs?.filtro?.liste || []).map((k) => {
@@ -24057,6 +24143,7 @@ function _dcfRegolaHtml(r, aperta) {
       <label class="tg-spunta"><input type="checkbox" data-dcf="accesa"${r.accesa ? ' checked' : ''}><span>${L('accesa', 'on', 'encendida')}</span></label>
       <button type="button" class="btn secondario mini" data-dcf="via">${esc(L('Togli la regola', 'Remove the rule', 'Quitar la regla'))}</button>
     </div>
+    ${_dcfVuotaHtml(r)}
     ${dentro}
     ${_dcfAzioniHtml(r)}
   </details>`;
@@ -24112,6 +24199,8 @@ function _dcfLeggi() {
     };
     r.esentiRuoli = [...nodo.querySelectorAll('[data-dcf="a-eruolo"]')].filter((x) => x.checked).map((x) => x.value);
     r.esentiCanali = [...nodo.querySelectorAll('[data-dcf="a-ecanale"]')].filter((x) => x.checked).map((x) => x.value);
+    const vuota = nodo.querySelector('.dcf-vuota');
+    if (vuota) vuota.hidden = !_dcfVuota(r);
   }
   _dcsTocca();
 }
@@ -24232,6 +24321,7 @@ async function _dcsFai(pre) {
       ? L('una regola nuova nei Ruoli', 'one new rule in Roles', 'una regla nueva en Roles')
       : e.regoleNuove.length + L(' regole nuove nei Ruoli', ' new rules in Roles', ' reglas nuevas en Roles'));
     if (e.ruoliSpenti) p.push(L('partono quando accendi i Ruoli', 'they start when you switch Roles on', 'empiezan cuando enciendes Roles'));
+    if (e.regoleFuori) p.push(e.regoleFuori + L(' regole restano fuori dai Ruoli, che ne tengono al massimo ', ' rules are left out of Roles, which hold at most ', ' reglas se quedan fuera de Roles, que tiene como máximo ') + (_dc?.maxRegole ?? ''));
   }
   if (e.ingressoSistemato) p.push(L('la porta d’ingresso è a posto', 'the entrance door is set', 'la puerta de entrada está lista'));
   if (e.filtroCreate) p.push(e.filtroCreate + L(' regole del filtro nuove', ' new filter rules', ' reglas del filtro nuevas'));
@@ -24270,16 +24360,14 @@ function collegaDcServer() {
     if (!_dcs?.preset) return;
     const p = _dcs.preset;
     p.ruoli = p.ruoli || [];
-    if (p.ruoli.length >= (_dcs.max?.ruoli || 15)) {
-      toast(L('Più di così non se ne possono chiedere.', 'You cannot ask for more than this.', 'No se pueden pedir más.'));
-      return;
-    }
+    if (_dcsAlTetto('ruoli', p.ruoli.length)) return;
     p.ruoli.push({ _k: ++_dcsChiave, nome: L('Nuovo ruolo', 'New role', 'Nuevo rol'), colore: 0, sfuma: null, olografico: false, segno: { tipo: 'niente', emoji: '', icona: '' }, aChi: '', separato: false, citabile: false, privilegi: [] });
     _dcsDisegna();
   });
 
   _g('dcs-catpiu')?.addEventListener('click', () => {
     if (!_dcs?.preset) return;
+    if (_dcsAlTetto('categorie', _dcs.preset.categorie.length)) return;
     _dcs.preset.categorie.push({ _k: ++_dcsChiave, nome: L('Nuova categoria', 'New category', 'Nueva categoría'), permessi: [], canali: [] });
     _dcsDisegna();
   });
@@ -24376,6 +24464,8 @@ function collegaDcServer() {
         _dcs = { ..._dcs, preset: _dcsPrepara(r.preset) };
         _dcsMostra();
         toast(L('Letto ✓', 'Read ✓', 'Leído ✓'));
+        const fuori = _dcsScartiTesto(r.scarti);
+        if (fuori) _dcsDici('dcs-stato', fuori, 'guaio');
       });
     }
     const b = e.target.closest('[data-dcs="traccia"]');
@@ -24395,6 +24485,7 @@ function collegaDcServer() {
       const k = b.closest('.dcs-cat')?.dataset.k;
       p.categorie = p.categorie.filter((c) => String(c._k) !== k);
     } else if (azione === 'ch-piu') {
+      if (_dcsAlTetto('canali', _dcsConta(p))) return;
       const cat = p.categorie.find((c) => String(c._k) === b.dataset.k);
       if (cat) cat.canali.push({ _k: ++_dcsChiave, nome: L('nuovo-canale', 'new-channel', 'nuevo-canal'), tipo: 'testo', argomento: '', permessi: [] });
     } else if (azione === 'ch-via') {
@@ -24406,6 +24497,7 @@ function collegaDcServer() {
       }
     } else if (azione === 'p-piu') {
       const el = _dcsTrova(b.dataset.dove);
+      if (el && _dcsAlTetto('righe', el.permessi.length)) return;
       if (el) el.permessi.push({ _k: ++_dcsChiave, chi: 'tutti', verso: 'no', perm: (_dcs.permessi || ['scrivere'])[1] || 'scrivere' });
     } else if (azione === 'p-via') {
       const riga = b.closest('.dcs-perm');
@@ -24488,15 +24580,15 @@ function pannelloTelegram() {
         <code>{spettatori}</code> <code>{link}</code>. ${L('Lascia vuoto per usare quello standard.', 'Leave empty to use the default.', 'Déjalo vacío para usar el estándar.')}</p>
 
       <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-tg-attivo" ${tg.attivo ? 'checked' : ''} ${tg.gruppoOk ? '' : 'disabled'}>
+        <input type="checkbox" id="chk-tg-attivo" ${tg.attivo ? 'checked' : ''} ${tg.postoOk ? '' : 'disabled'}>
         <label for="chk-tg-attivo">${L('Avvisa il gruppo quando vado in diretta', 'Alert the group when I go live', 'Avisa al grupo cuando voy en directo')}</label>
       </div>
 
       <div class="riga-check">
-        <input type="checkbox" id="chk-tg-pin" ${tg.pinLive ? 'checked' : ''} ${tg.gruppoOk ? '' : 'disabled'}>
+        <input type="checkbox" id="chk-tg-pin" ${tg.pinLive ? 'checked' : ''}>
         <label for="chk-tg-pin">${L('Fissa l\'avviso in cima durante la live e rimuovilo quando stacco', 'Pin the alert at the top during the live and remove it when I go offline', 'Fija el aviso arriba durante el directo y quítalo cuando termino')}</label>
       </div>
-      <p class="suggerimento">${L('Per fissare l\'avviso il bot dev\'essere', 'To pin the alert the bot must be', 'Para fijar el aviso el bot debe ser')} <strong>${L('amministratore', 'an administrator', 'administrador')}</strong> ${L('del gruppo con il permesso di', 'of the group with permission to', 'del grupo con permiso para')} <em>${L('fissare i messaggi', 'pin messages', 'fijar mensajes')}</em>. ${L('L\'eliminazione a fine live funziona comunque.', 'Deletion at the end of the live works anyway.', 'El borrado al final del directo funciona igualmente.')}</p>
+      <p class="suggerimento">${L('Vale per ogni posto che aggiungi da qui in poi: dopo, ognuno ha la sua spunta «Fissa l’avviso qui».', 'It applies to every place you add from now on: after that, each one has its own «Pin the alert here» tick.', 'Vale para cada sitio que añadas a partir de ahora: después, cada uno tiene su casilla «Fija el aviso aquí».')} ${L('Per fissare l\'avviso il bot dev\'essere', 'To pin the alert the bot must be', 'Para fijar el aviso el bot debe ser')} <strong>${L('amministratore', 'an administrator', 'administrador')}</strong> ${L('del gruppo con il permesso di', 'of the group with permission to', 'del grupo con permiso para')} <em>${L('fissare i messaggi', 'pin messages', 'fijar mensajes')}</em>. ${L('L\'eliminazione a fine live funziona comunque.', 'Deletion at the end of the live works anyway.', 'El borrado al final del directo funciona igualmente.')}</p>
 
       <p class="spazio-sopra">
         <button class="btn" id="btn-tg-salva">${L('Salva', 'Save', 'Guardar')}</button>
@@ -24511,14 +24603,14 @@ function pannelloTelegram() {
     ${tg.configurato ? `
     <div class="carta">
       <h2>${_hIco(ICO.bot)}${L('Bot interattivo su Telegram', 'Interactive bot on Telegram', 'Bot interactivo en Telegram')}</h2>
-      <p>${L('Con la', 'With', 'Con el')} <strong class="primo-piano">${L('modalità interattiva', 'interactive mode', 'modo interactivo')}</strong> ${L('il bot <strong>legge i messaggi</strong> del gruppo e risponde ai comandi. I comandi si creano in <strong>Chat &amp; comandi → Comandi</strong>: crea un modulo con innesco <em>Comando</em> e spunta <strong>«Abilita anche su Telegram»</strong> (su Telegram funziona anche senza <code>!</code>). Valgono anche a voce dall\'ascolto vocale.', 'the bot <strong>reads the group’s messages</strong> and replies to commands. Commands are created in <strong>Chat &amp; commands → Commands</strong>: create a module with a <em>Command</em> trigger and check <strong>“Enable on Telegram too”</strong> (on Telegram it works even without <code>!</code>). They also work by voice from voice listening.', 'el bot <strong>lee los mensajes</strong> del grupo y responde a los comandos. Los comandos se crean en <strong>Chat y comandos → Comandos</strong>: crea un módulo con disparador <em>Comando</em> y marca <strong>«Habilitar también en Telegram»</strong> (en Telegram funciona incluso sin <code>!</code>). También valen por voz desde la escucha por voz.')}</p>
+      <p>${L('Con la', 'With', 'Con el')} <strong class="primo-piano">${L('modalità interattiva', 'interactive mode', 'modo interactivo')}</strong> ${L('il bot <strong>legge i messaggi</strong> del gruppo e risponde ai comandi. I comandi si creano in <strong>Chat e pubblico → Comandi</strong>: crea un modulo con innesco <em>Comando</em> e spunta <strong>«Abilita anche su Telegram»</strong> (su Telegram funziona anche senza <code>!</code>). Valgono anche a voce dall\'ascolto vocale.', 'the bot <strong>reads the group’s messages</strong> and replies to commands. Commands are created in <strong>Chat &amp; audience → Commands</strong>: create a module with a <em>Command</em> trigger and check <strong>“Enable on Telegram too”</strong> (on Telegram it works even without <code>!</code>). They also work by voice from voice listening.', 'el bot <strong>lee los mensajes</strong> del grupo y responde a los comandos. Los comandos se crean en <strong>Chat y público → Comandos</strong>: crea un módulo con disparador <em>Comando</em> y marca <strong>«Habilitar también en Telegram»</strong> (en Telegram funciona incluso sin <code>!</code>). También valen por voz desde la escucha por voz.')}</p>
 
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="chk-tg-interattivo" ${tg.interattivo ? 'checked' : ''}><span class="levetta"></span></label>
         <span class="etichetta-stato">${L('Bot interattivo nel gruppo', 'Interactive bot in the group', 'Bot interactivo en el grupo')}</span>
         ${tg.interattivo ? `<span class="badge verde">${L('attivo', 'active', 'activo')}</span>` : ''}
       </div>
-      <p class="suggerimento">${L('Il bot dev\'essere', 'The bot must be', 'El bot debe estar')} <strong>${L('nel gruppo', 'in the group', 'en el grupo')}</strong>. ${L('Da attivo, il gruppo si collega da solo: scrivi un messaggio qualsiasi nel gruppo e viene rilevato. Il tasto «Rileva gruppo» funziona solo da spento. Per far leggere al bot <strong>tutti</strong> i messaggi (comandi senza <code>/</code> e roster membri) disattiva la <em>privacy</em> su', 'When active, the group connects itself: send any message in the group and it’s detected. The “Detect group” button only works when off. To let the bot read <strong>all</strong> messages (commands without <code>/</code> and the member roster) disable <em>privacy</em> on', 'Cuando está activo, el grupo se conecta solo: escribe cualquier mensaje en el grupo y se detecta. El botón «Detectar grupo» solo funciona apagado. Para que el bot lea <strong>todos</strong> los mensajes (comandos sin <code>/</code> y la lista de miembros) desactiva la <em>privacidad</em> en')} <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>
+      <p class="suggerimento">${L('Il bot dev\'essere', 'The bot must be', 'El bot debe estar')} <strong>${L('nel gruppo', 'in the group', 'en el grupo')}</strong>. ${L('Da acceso, se non hai ancora un gruppo collegato, il primo messaggio che gli arriva da un gruppo lo aggancia da solo. Per far leggere al bot <strong>tutti</strong> i messaggi (i comandi senza <code>/</code> e chi scrive, per l’elenco dei membri) disattiva la <em>privacy</em> su', 'When on, if you have no group linked yet, the first message it gets from a group links that group by itself. To let the bot read <strong>all</strong> messages (commands without <code>/</code> and who writes, for the member list) disable <em>privacy</em> on', 'Encendido, si aún no tienes un grupo conectado, el primer mensaje que le llega de un grupo lo conecta solo. Para que el bot lea <strong>todos</strong> los mensajes (los comandos sin <code>/</code> y quién escribe, para la lista de miembros) desactiva la <em>privacidad</em> en')} <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>
       (<code>/setprivacy → Disable</code>); ${L('coi comandi <code>/comando</code> funziona comunque.', 'with <code>/command</code> commands it works anyway.', 'con los comandos <code>/comando</code> funciona igualmente.')}</p>
 
       <div class="riga-interruttore spazio-sopra">
@@ -24536,7 +24628,7 @@ function pannelloTelegram() {
         <label class="interruttore"><input type="checkbox" id="chk-tg-proattiva" ${impostazioni().proattivoTg !== false ? 'checked' : ''}><span class="levetta"></span></label>
         <span class="etichetta-stato">${L('Ti scrive per prima (proattiva e curiosa)', 'It writes to you first (proactive and curious)', 'Te escribe primero (proactiva y curiosa)')}</span>
       </div>
-      <p class="suggerimento">${L('Ogni tanto è <strong>lei</strong> a scriverti in privato di sua iniziativa: ti fa una domanda, ti chiede una cosa che ancora non sa, commenta. Come una persona — non a orari fissi, mai di notte, e senza esagerare. Serve aver <strong>collegato</strong> il tuo Telegram qui sopra. Il nome con cui si presenta lo scegli in', 'Now and then <strong>it</strong> writes to you in private on its own: asks you a question, asks something it doesn’t know yet, comments. Like a person — not on a fixed schedule, never at night, and without overdoing it. You need to have <strong>linked</strong> your Telegram above. You choose the name it introduces itself with in', 'De vez en cuando <strong>ella</strong> te escribe en privado por iniciativa propia: te hace una pregunta, te pide algo que aún no sabe, comenta. Como una persona — sin horarios fijos, nunca de noche y sin pasarse. Hace falta haber <strong>vinculado</strong> tu Telegram arriba. El nombre con el que se presenta lo eliges en')} <strong>${L('Admin → Anima', 'Admin → Soul', 'Admin → Alma')}</strong>.</p>
+      <p class="suggerimento">${L('Ogni tanto è <strong>lei</strong> a scriverti in privato di sua iniziativa: ti fa una domanda, ti chiede una cosa che ancora non sa, commenta. Come una persona: non a orari fissi, mai di notte, e senza esagerare. Serve aver <strong>collegato</strong> il tuo Telegram qui sopra, con «Rispondimi in chat privata» acceso.', 'Now and then <strong>it</strong> writes to you in private on its own: asks you a question, asks something it doesn’t know yet, comments. Like a person: not on a fixed schedule, never at night, and without overdoing it. You need to have <strong>linked</strong> your Telegram above, with «Reply to me in private chat» on.', 'De vez en cuando <strong>ella</strong> te escribe en privado por iniciativa propia: te hace una pregunta, te pide algo que aún no sabe, comenta. Como una persona: sin horarios fijos, nunca de noche y sin pasarse. Hace falta haber <strong>vinculado</strong> tu Telegram arriba, con «Respóndeme en el chat privado» encendido.')}</p>
 
       <p class="suggerimento">${L('Nel <strong>gruppo</strong> invece il bot funziona per tutti (e impara dalla chat come su Twitch). Il privato resta solo tuo.', 'In the <strong>group</strong>, instead, the bot works for everyone (and learns from chat like on Twitch). Private stays yours only.', 'En el <strong>grupo</strong>, en cambio, el bot funciona para todos (y aprende del chat como en Twitch). El privado sigue siendo solo tuyo.')}</p>
     </div>
@@ -24573,13 +24665,13 @@ function pannelloTelegram() {
         <button class="btn" id="btn-tg-ingresso">${L('Salva il cancello', 'Save the gate', 'Guardar el portero')}</button>
       </div>
     </div>
+    ` : ''}
 
     <div class="carta">
       <h2>${_hIco(ICO.torta)}${L('Auguri di compleanno', 'Birthday wishes', 'Felicitaciones de cumpleaños')}</h2>
-      <p>${L('Il bot fa gli', 'The bot sends', 'El bot da las')} <strong class="primo-piano">${L('auguri automatici', 'automatic wishes', 'felicitaciones automáticas')}</strong> ${L('nel gruppo il giorno del compleanno dei membri. Loro possono registrarsi da soli scrivendo', 'in the group on members’ birthdays. They can register themselves by typing', 'en el grupo el día del cumpleaños de los miembros. Ellos pueden registrarse solos escribiendo')} <code>/compleanno 25/12</code> ${L('nel gruppo (serve il bot interattivo qui sopra), oppure li aggiungi tu qui sotto.', 'in the group (needs the interactive bot above), or you add them below.', 'en el grupo (necesita el bot interactivo de arriba), o los añades tú abajo.')}</p>
+      <p>${L('Il bot fa gli', 'The bot sends', 'El bot da las')} <strong class="primo-piano">${L('auguri automatici', 'automatic wishes', 'felicitaciones automáticas')}</strong> ${L('in due posti: nella chat della diretta e nel gruppo Telegram. Chi ti segue si segna da solo, in chat con', 'in two places: in the stream chat and in the Telegram group. Your people sign up on their own, in chat with', 'en dos sitios: en el chat del directo y en el grupo de Telegram. Quien te sigue se apunta solo, en el chat con')} <code>!compleanno 25/12</code> ${L('e nel gruppo con', 'and in the group with', 'y en el grupo con')} <code>/compleanno 25/12</code>.</p>
       <div id="box-compleanni">${attesaHtml()}</div>
     </div>
-    ` : ''}
 `);
 }
 
@@ -26311,7 +26403,8 @@ function attivaPiattaforma() {
   document.getElementById('btn-tg-dm-collega')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     const r = await api('/api/streamer/telegram/collega', { method: 'POST', body: {} });
     const box = document.getElementById('tg-dm-codice');
-    if (box) box.innerHTML = `<p class="nota-lettura">Scrivi al tuo bot${r.username ? ' <strong>@' + esc(r.username) + '</strong>' : ''} in privato:<br><code>/collega ${esc(r.code)}</code><br>Scade tra 10 minuti.</p>`;
+    const bot = r.username ? ' <strong>@' + esc(r.username) + '</strong>' : '';
+    if (box) box.innerHTML = `<p class="nota-lettura">${L('Scrivi al tuo bot', 'Write to your bot', 'Escribe a tu bot')}${bot} ${L('in privato:', 'in private:', 'en privado:')}<br><code>/collega ${esc(r.code)}</code><br>${L('Scade tra 10 minuti.', 'It expires in 10 minutes.', 'Caduca en 10 minutos.')}</p>`;
   }); });
   document.getElementById('btn-tg-dm-scollega')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await api('/api/streamer/telegram/scollega', { method: 'POST', body: {} });
@@ -27088,64 +27181,72 @@ async function caricaCompleanni() {
   if (!box) return;
   let d;
   try { d = await api('/api/streamer/telegram/compleanni'); }
-  catch { box.innerHTML = '<p class="vuoto">Impossibile caricare.</p>'; return; }
+  catch { box.innerHTML = `<p class="vuoto">${L('Non riesco a leggere i compleanni.', 'I can’t read the birthdays.', 'No consigo leer los cumpleaños.')}</p>`; return; }
+  const tg = stato.telegram || {};
+  const senzaNome = L('senza nome', 'no name', 'sin nombre');
+  const acceso = (si) => (si ? L('accesi', 'on', 'encendidas') : L('spenti', 'off', 'apagadas'));
   const lista = (d.lista || []).map((c) => `
-    <li><div class="testo-voce"><span class="domanda">${esc(c.nome || '—')}</span>
-      <span class="meta"> — ${fmtGiornoMese(c.giorno, c.mese)}${c.daChat ? ' · dalla chat' : (c.manuale ? ' · aggiunto a mano' : '')}</span></div>
-      <button class="btn pericolo mini" data-comple-rimuovi="${esc(c.id)}">Rimuovi</button></li>`).join('');
+    <li><div class="testo-voce"><span class="domanda">${esc(c.nome || senzaNome)}</span>
+      <span class="meta"> · ${fmtGiornoMese(c.giorno, c.mese)}${c.daChat ? ' · ' + L('dalla chat', 'from chat', 'desde el chat') : (c.manuale ? ' · ' + L('aggiunto a mano', 'added by hand', 'añadido a mano') : '')}</span></div>
+      <button class="btn pericolo mini" data-comple-rimuovi="${esc(c.id)}">${L('Rimuovi', 'Remove', 'Quitar')}</button></li>`).join('');
   const roster = (d.membri || []).map((m) => `
     <div class="riga-flessibile membro-riga" data-membro-id="${esc(m.id)}" data-membro-nome="${esc(m.nome || '')}" style="margin-bottom:.4rem">
-      <span class="campo-largo">${esc(m.nome || '—')}${m.username ? ` <span class="meta">@${esc(m.username)}</span>` : ''}</span>
-      <input type="number" class="mem-gg" min="1" max="31" aria-label="Giorno di nascita di ${esc(m.nome || '—')}" placeholder="GG" style="width:72px">
-      <input type="number" class="mem-mm" min="1" max="12" aria-label="Mese di nascita di ${esc(m.nome || '—')}" placeholder="MM" style="width:72px">
-      <button class="btn secondario mini" data-membro-add>Aggiungi</button>
+      <span class="campo-largo">${esc(m.nome || senzaNome)}${m.username ? ` <span class="meta">@${esc(m.username)}</span>` : ''}</span>
+      <input type="number" class="mem-gg" min="1" max="31" aria-label="${esc(L('Giorno di nascita di ', 'Birth day of ', 'Día de nacimiento de ') + (m.nome || senzaNome))}" placeholder="${esc(L('GG', 'DD', 'DD'))}" style="width:72px">
+      <input type="number" class="mem-mm" min="1" max="12" aria-label="${esc(L('Mese di nascita di ', 'Birth month of ', 'Mes de nacimiento de ') + (m.nome || senzaNome))}" placeholder="${esc(L('MM', 'MM', 'MM'))}" style="width:72px">
+      <button class="btn secondario mini" data-membro-add>${L('Aggiungi', 'Add', 'Añadir')}</button>
     </div>`).join('');
   const ch = d.chat || {};
   const effetti = [`<option value="">${L('Nessun effetto', 'No effect', 'Ningún efecto')}</option>`]
     .concat((d.effetti || []).map((e) => `<option value="${esc(e)}"${ch.effetto === e ? ' selected' : ''}>!${esc(e)}</option>`)).join('');
+  const gruppo = !tg.configurato
+    ? `<p class="suggerimento">${L('Gli auguri nel gruppo Telegram partono quando colleghi il tuo bot: incolla il suo token nella carta qui sopra. Gli auguri in chat non ne hanno bisogno.', 'Birthday wishes in the Telegram group start once you connect your bot: paste its token in the card above. Chat wishes do not need it.', 'Las felicitaciones en el grupo de Telegram empiezan cuando conectas tu bot: pega su token en la tarjeta de arriba. Las del chat no lo necesitan.')}</p>`
+    : `<div class="riga-interruttore">
+      <label class="interruttore"><input type="checkbox" id="chk-compleanni-attivo" ${d.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+      <span class="etichetta-stato">${L('Auguri nel gruppo Telegram', 'Wishes in the Telegram group', 'Felicitaciones en el grupo de Telegram')} ${acceso(d.attivo)}</span>
+    </div>
+    ${tg.gruppoOk ? '' : `<p class="suggerimento">${L('Serve anche il gruppo: aggiungi il bot, scrivi <code>/collega</code> nel gruppo e premi «Rileva gruppo».', 'The group is needed too: add the bot, type <code>/collega</code> in the group and press «Detect group».', 'También hace falta el grupo: añade el bot, escribe <code>/collega</code> en el grupo y pulsa «Detectar grupo».')}</p>`}
+    <label class="campo spazio-sopra" for="txt-compleanni-msg">${L('Messaggio di auguri', 'Birthday message', 'Mensaje de felicitación')}</label>
+    <textarea id="txt-compleanni-msg" rows="3" placeholder="${esc(L('Tanti auguri {menzione}!', 'Happy birthday {menzione}!', '¡Feliz cumpleaños {menzione}!'))}">${esc(d.messaggio || '')}</textarea>
+    <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{menzione}</code> (${L('tag del festeggiato', 'tags the birthday person', 'etiqueta al cumpleañero')}) <code>{nome}</code>. ${L('Vuoto = messaggio standard.', 'Empty = the default message.', 'Vacío = mensaje estándar.')}</p>
+    <p><button class="btn" id="btn-compleanni-salva">${L('Salva impostazioni', 'Save settings', 'Guardar ajustes')}</button></p>`;
+  const soloTelegram = !tg.configurato ? '' : `
+    <hr class="separatore">
+    <h3>${L('Membri del gruppo', 'Group members', 'Miembros del grupo')} (${(d.membri || []).length})</h3>
+    <p class="suggerimento">${L('L’elenco si riempie da chi <strong>scrive</strong> nel gruppo (Telegram non lascia leggere l’intera lista).', 'The list fills up from whoever <strong>writes</strong> in the group (Telegram does not let anyone read the whole list).', 'La lista se llena con quien <strong>escribe</strong> en el grupo (Telegram no deja leer la lista entera).')}
+    <button class="btn secondario mini" id="btn-membri-aggiorna">${L('Carica amministratori', 'Load admins', 'Cargar administradores')}</button>
+    ${L('Per vedere tutti quelli che scrivono, disattiva la <em>privacy</em> del bot su', 'To see everyone who writes, turn off the bot’s <em>privacy</em> on', 'Para ver a todos los que escriben, desactiva la <em>privacidad</em> del bot en')}
+    <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> (<code>/setprivacy → Disable</code>).</p>
+    ${roster || `<p class="vuoto">${L('Ancora nessun membro. Falli scrivere nel gruppo o carica gli amministratori.', 'No members yet. Have them write in the group or load the admins.', 'Aún no hay miembros. Haz que escriban en el grupo o carga los administradores.')}</p>`}
+
+    <hr class="separatore">
+    <label class="campo">${L('Aggiungi un compleanno a mano (senza tag)', 'Add a birthday by hand (no tag)', 'Añade un cumpleaños a mano (sin etiqueta)')}</label>
+    <div class="riga-flessibile">
+      <input aria-label="${esc(L('Nome', 'Name', 'Nombre'))}" type="text" id="inp-comple-nome" class="campo-largo" placeholder="${esc(L('Nome', 'Name', 'Nombre'))}">
+      <input aria-label="${esc(L('Giorno', 'Day', 'Día'))}" type="number" id="inp-comple-giorno" min="1" max="31" placeholder="${esc(L('GG', 'DD', 'DD'))}" style="width:80px">
+      <input aria-label="${esc(L('Mese', 'Month', 'Mes'))}" type="number" id="inp-comple-mese" min="1" max="12" placeholder="${esc(L('MM', 'MM', 'MM'))}" style="width:80px">
+      <button class="btn secondario" id="btn-comple-aggiungi">${L('Aggiungi', 'Add', 'Añadir')}</button>
+    </div>`;
   box.innerHTML = `
     <div class="riga-interruttore">
       <label class="interruttore"><input type="checkbox" id="chk-comple-chat" ${ch.attivo ? 'checked' : ''}><span class="levetta"></span></label>
-      <span class="etichetta-stato">Auguri in chat ${ch.attivo ? 'accesi' : 'spenti'}</span>
+      <span class="etichetta-stato">${L('Auguri in chat', 'Chat wishes', 'Felicitaciones en el chat')} ${acceso(ch.attivo)}</span>
     </div>
-    <p class="suggerimento">In chat non c'è la mezzanotte: gli auguri partono al <strong>primo messaggio</strong> di chi compie gli anni, una volta l'anno. Con questo acceso, chi guarda può segnarsi da solo scrivendo <code>!compleanno 25/12</code>.</p>
-    <label class="campo spazio-sopra" for="txt-comple-chat">Messaggio in chat</label>
-    <textarea id="txt-comple-chat" rows="2" placeholder="Tanti auguri {nome}!">${esc(ch.messaggio || '')}</textarea>
-    <p class="suggerimento">Segnaposto: <code>{nome}</code>. Vuoto = messaggio standard.</p>
-    <label class="campo spazio-sopra" for="sel-comple-effetto">Effetto in sovraimpressione</label>
-    <select id="sel-comple-effetto" aria-label="Effetto in sovraimpressione">${effetti}</select>
-    <p><button class="btn" id="btn-comple-chat-salva">Salva auguri in chat</button></p>
+    <p class="suggerimento">${L('In chat non c’è la mezzanotte: gli auguri partono al <strong>primo messaggio</strong> di chi compie gli anni, una volta l’anno. Con questo acceso, chi guarda può segnarsi da solo scrivendo <code>!compleanno 25/12</code>.', 'Chat has no midnight: the wishes go out at the <strong>first message</strong> of whoever has a birthday, once a year. With this on, viewers can sign up on their own by typing <code>!compleanno 25/12</code>.', 'En el chat no hay medianoche: las felicitaciones salen con el <strong>primer mensaje</strong> de quien cumple años, una vez al año. Con esto encendido, quien mira puede apuntarse solo escribiendo <code>!compleanno 25/12</code>.')}</p>
+    <label class="campo spazio-sopra" for="txt-comple-chat">${L('Messaggio in chat', 'Chat message', 'Mensaje en el chat')}</label>
+    <textarea id="txt-comple-chat" rows="2" placeholder="${esc(L('Tanti auguri {nome}!', 'Happy birthday {nome}!', '¡Feliz cumpleaños {nome}!'))}">${esc(ch.messaggio || '')}</textarea>
+    <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code>. ${L('Vuoto = messaggio standard.', 'Empty = the default message.', 'Vacío = mensaje estándar.')}</p>
+    <label class="campo spazio-sopra" for="sel-comple-effetto">${L('Effetto in sovraimpressione', 'On-screen effect', 'Efecto en pantalla')}</label>
+    <select id="sel-comple-effetto">${effetti}</select>
+    <p><button class="btn" id="btn-comple-chat-salva">${L('Salva auguri in chat', 'Save chat wishes', 'Guardar felicitaciones en el chat')}</button></p>
 
     <hr class="separatore">
-    <div class="riga-interruttore">
-      <label class="interruttore"><input type="checkbox" id="chk-compleanni-attivo" ${d.attivo ? 'checked' : ''}><span class="levetta"></span></label>
-      <span class="etichetta-stato">Auguri nel gruppo Telegram ${d.attivo ? 'accesi' : 'spenti'}</span>
-    </div>
-    <label class="campo spazio-sopra" for="txt-compleanni-msg">Messaggio di auguri</label>
-    <textarea id="txt-compleanni-msg" rows="3" placeholder="Tanti auguri {menzione}!">${esc(d.messaggio || '')}</textarea>
-    <p class="suggerimento">Segnaposto: <code>{menzione}</code> (tag del festeggiato) <code>{nome}</code>. Vuoto = messaggio standard.</p>
-    <p><button class="btn" id="btn-compleanni-salva">Salva impostazioni</button></p>
+    ${gruppo}
 
     <hr class="separatore">
-    <h3>Compleanni registrati (${(d.lista || []).length})</h3>
-    <ul class="lista-voci">${lista || '<li class="vuoto">Nessuno ancora.</li>'}</ul>
-
-    <hr class="separatore">
-    <h3>Membri del gruppo (${(d.membri || []).length})</h3>
-    <p class="suggerimento">L'elenco si riempie da chi <strong>scrive</strong> nel gruppo (Telegram non lascia leggere l'intera lista).
-    <button class="btn secondario mini" id="btn-membri-aggiorna">Carica amministratori</button>
-    Per vedere tutti quelli che scrivono, disattiva la <em>privacy</em> del bot su
-    <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> (<code>/setprivacy → Disable</code>).</p>
-    ${roster || '<p class="vuoto">Ancora nessun membro. Falli scrivere nel gruppo o carica gli amministratori.</p>'}
-
-    <hr class="separatore">
-    <label class="campo">Aggiungi un compleanno a mano (senza tag)</label>
-    <div class="riga-flessibile">
-      <input aria-label="Nome" type="text" id="inp-comple-nome" class="campo-largo" placeholder="Nome">
-      <input aria-label="GG" type="number" id="inp-comple-giorno" min="1" max="31" placeholder="GG" style="width:80px">
-      <input aria-label="MM" type="number" id="inp-comple-mese" min="1" max="12" placeholder="MM" style="width:80px">
-      <button class="btn secondario" id="btn-comple-aggiungi">Aggiungi</button>
-    </div>`;
+    <h3>${L('Compleanni registrati', 'Saved birthdays', 'Cumpleaños guardados')} (${(d.lista || []).length})</h3>
+    <ul class="lista-voci">${lista || `<li class="vuoto">${L('Nessuno ancora.', 'None yet.', 'Ninguno todavía.')}</li>`}</ul>
+    ${soloTelegram}`;
 }
 
 async function caricaConoscenza() {

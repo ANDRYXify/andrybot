@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL GIRO, provato senza Discord e senza Twitch.
 //
 // La prova che conta piu' di tutte e' la terza: se di una persona NON SAPPIAMO
@@ -10,7 +12,7 @@ import { cartellaUsaEGetta } from '../aiuto.mjs';
 
 const usaEGetta = cartellaUsaEGetta('andrybot-dcgiro-');
 const { dcRuoli, dcLink, points, watchtime, presenze } = await import('../../src/db.js');
-const { giro, datiDi, sappiamo } = await import('../../src/features/discord-giro.js');
+const { giro, datiDi, sappiamo, nonParte } = await import('../../src/features/discord-giro.js');
 process.on('exit', () => usaEGetta.pulisci());
 
 const G = '123456789012345678';        // il server
@@ -179,6 +181,18 @@ test('senza configurazione, o da spento, il giro non parte', async () => {
   assert.equal(await giro('mai-visto', {}), null);
   dcRuoli.set('spento2', { token: 'tok', guild: G, attivo: false, regole: [{ tipo: 'sub', ruolo: R_SUB, soglia: 0 }] });
   assert.equal(await giro('spento2', {}), null);
+});
+
+// Le due cause hanno due rimedi, e il pannello deve dire quello giusto: a chi
+// ha il bot nel server e l'interruttore spento, «porta il bot» e' falso.
+test('perche\' non parte: il server che manca e l\'interruttore spento sono due risposte', () => {
+  assert.equal(nonParte(null), 'server');
+  assert.equal(nonParte({ token: 'tok', guild: '', attivo: true }), 'server');
+  assert.equal(nonParte({ token: '', guild: G, attivo: true }), 'server', 'senza un bot che entri nel server');
+  assert.equal(nonParte({ token: 'tok', guild: G, attivo: false }), 'spento');
+  assert.equal(nonParte({ token: 'tok', guild: G, attivo: false }, { prova: true }), '', 'guardare da spento si puo\'');
+  assert.equal(nonParte({ token: 'tok', guild: G, attivo: true }), '');
+  assert.equal(nonParte(dcRuoli.get('spento2')), 'spento', 'e vale sulla riga salvata');
 });
 
 test('ma da spento si puo\' guardare: «cosa faresti» serve proprio prima di accendere', async () => {

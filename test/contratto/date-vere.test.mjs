@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE DATE DELLA SITEMAP SONO VERE, O NON CI SONO.
 //
 // La sitemap dava «oggi» come lastmod a ogni pagina che non ne aveva una sua,

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE IMMAGINI LEGGERE. Un'anteprima di link va tenuta leggera: WhatsApp non
 // mostra quelle troppo pesanti. Il canvas esce a colori pieni (un'anteprima
 // 1200x630 disegnata a mano pesa circa 800 KB); ridotta a 256 colori resta

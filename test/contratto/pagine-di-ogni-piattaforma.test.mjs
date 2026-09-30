@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE PAGINE PUBBLICHE DI UN CANALE VALGONO PER OGNI PIATTAFORMA. Un canale di
 // Kick, di YouTube o solo di Discord ha un login col prefisso (kick.nome,
 // yt.nome, dc.nome): la pagina link, la pagina delle donazioni, le loro

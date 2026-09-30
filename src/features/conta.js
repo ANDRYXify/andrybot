@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // CONTA INSIEME.
 //
 // La chat conta 1, 2, 3... un numero a messaggio. Due regole sole: tocca al

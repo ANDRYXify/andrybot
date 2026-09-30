@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Attrezzi comuni del collaudo: una cartella dati usa-e-getta per ogni file di
 // prove, così il database di prova non tocca mai quello vero.
 import { mkdtempSync, rmSync, readFileSync, readdirSync } from 'node:fs';

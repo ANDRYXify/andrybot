@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'ARGINE davanti a un'app Express vera: non basta che la funzione conti bene,
 // deve anche montarsi nel posto giusto e rispondere come si deve.
 import test from 'node:test';

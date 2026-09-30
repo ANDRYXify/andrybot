@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE PUBBLICAZIONI AUTOMATICHE: la storia prima della diretta e la settimana,
 // da sole, quando lo streamer le accende. Il ragionamento sta in
 // docs/AUTOMATICHE.md; qui le regole che ne discendono.

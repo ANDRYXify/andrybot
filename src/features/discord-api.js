@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL FILO CON DISCORD: solo quello che serve per dare e togliere un ruolo.
 //
 // La REGOLA sta in `discord-ruoli.js` e non sa cosa sia Discord. Qui c'e' il
@@ -93,12 +95,12 @@ function dettaglioForm(corpo) {
 function spiega(stato, corpo, via) {
   const cod = Number(corpo?.code) || 0;
   const { cosa, permesso } = diCosa(via);
-  if (stato === 401) return 'il token del bot non vale piu\': rigeneralo su Discord e rimettilo qui';
+  if (stato === 401) return 'il token del bot non vale più: rigeneralo su Discord e rimettilo qui';
   if (cod === 50013 || cod === 50001) {
-    return `su ${cosa} il bot non puo\' intervenire: gli manca «${permesso}», oppure quella cosa sta piu' in alto di lui`;
+    return `su ${cosa} il bot non può intervenire: gli manca «${permesso}», oppure quella cosa sta più in alto di lui`;
   }
   if (stato === 403) return `Discord non lascia toccare ${cosa} al bot: controlla i suoi permessi e la sua posizione`;
-  if (stato === 404) return `non trovato: ${cosa} non c'e' piu'`;
+  if (stato === 404) return `non trovato: ${cosa} non c’è più`;
   if (stato === 400) {
     const d = dettaglioForm(corpo);
     return `su ${cosa} Discord ha rifiutato quello che gli abbiamo mandato${d ? ': ' + d : ''}`;
@@ -150,7 +152,7 @@ async function chiama(token, via, { metodo = 'GET', corpo = null, modulo = null,
         await attendi(ms);
         return chiama(token, via, { metodo, corpo, modulo, riprova: false, perche });
       }
-      return { ok: false, errore: 'troppe richieste: riprovo piu\' tardi', stato: 429, attesa: ms };
+      return { ok: false, errore: 'troppe richieste: riprovo più tardi', stato: 429, attesa: ms };
     }
     if (r.status === 204) return { ok: true, dati: null };
     const d = await r.json().catch(() => null);
@@ -240,10 +242,10 @@ export async function io(token, guild) {
   const me = await chiama(token, '/users/@me');
   if (!me.ok) return me;
   const id = String(me.dati?.id || '');
-  if (!id) return { ok: false, errore: 'Discord non dice chi e\' il bot' };
+  if (!id) return { ok: false, errore: 'Discord non dice chi è il bot' };
   const m = await chiama(token, `/guilds/${guild}/members/${id}`);
   if (!m.ok) {
-    if (m.assente) return { ok: false, errore: 'il bot non e\' dentro quel server: invitalo prima' };
+    if (m.assente) return { ok: false, errore: 'il bot non è dentro quel server: invitalo prima' };
     return m;
   }
   return { ok: true, id, nome: String(me.dati?.username || ''), ruoli: (m.dati?.roles || []).map(String) };
@@ -918,7 +920,7 @@ export async function scambiaInvito({ clientId, clientSecret, redirectUri, codic
     if (!r.ok) return { ok: false, errore: 'Discord non ha riconosciuto il codice' };
     const d = await r.json().catch(() => null);
     const id = String(d?.guild?.id || '');
-    if (!idOk(id)) return { ok: false, errore: 'Discord non dice in quale server e\' entrato' };
+    if (!idOk(id)) return { ok: false, errore: 'Discord non dice in quale server è entrato' };
     return { ok: true, guild: id, nome: String(d?.guild?.name || '').slice(0, 100) };
   } catch (e) {
     log.warn('scambiaInvito:', e?.message || e);
@@ -992,7 +994,7 @@ export async function scambiaCodice({ clientId, clientSecret, redirectUri, codic
     if (entraIn?.guild && entraIn?.botToken) {
       const e = await entraNelServer(entraIn.botToken, entraIn.guild, id, tok);
       dentro = !!e.ok;
-      if (!e.ok) log.warn(`porta d'ingresso: non e' entrato nel server — ${e.errore || 'motivo non detto'}`);
+      if (!e.ok) log.warn(`porta d'ingresso: non è entrato nel server (${e.errore || 'motivo non detto'})`);
     }
     const foto = /^[a-z0-9_]{6,64}$/i.test(String(me?.avatar || '')) ? `https://cdn.discordapp.com/avatars/${id}/${me.avatar}.png?size=256` : '';
     return { ok: true, id, nome: String(me?.global_name || me?.username || ''), foto, dentro };

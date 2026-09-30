@@ -1,3 +1,5 @@
+<!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
+<!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 # Le presenze: chi c'è, diretta dopo diretta
 
 Le ore guardate dicono *quanto* uno ha guardato. Non dicono *quante volte* è

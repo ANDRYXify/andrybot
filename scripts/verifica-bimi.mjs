@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Cancello del logo BIMI: il file che i programmi di posta mostreranno accanto
 // al mittente deve stare dentro un profilo stretto, e quel profilo non si vede a
 // occhio. Un SVG che si apre benissimo nel browser puo' essere rifiutato da chi

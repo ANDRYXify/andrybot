@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I DATI NON STANNO MAI NELLA CARTELLA PUBBLICA DEL SITO.
 //
 // Il caso vero: uno script lanciato da dentro src/web/public, senza DATA_DIR.

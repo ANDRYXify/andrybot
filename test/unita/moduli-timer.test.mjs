@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I MODULI A TEMPO: quando parlano, e soprattutto quando NON devono parlare.
 //
 // Tre cose andavano storte, e nascevano tutte dallo stesso buco: un timer è un

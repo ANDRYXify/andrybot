@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Connettore Spotify per le "richieste musicali". Ogni streamer collega il
 // PROPRIO account Spotify (OAuth Authorization Code): il bot può poi cercare un
 // brano e metterlo nella coda di riproduzione del broadcaster. Nessun dato

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE MODALITA' DELLA CHAT A TEMPO: «solo emote per due minuti» vuol dire due
 // minuti. Si prova con un Twitch finto (che ricorda com'e' la chat) e un
 // orologio finto (che va avanti quando lo dice la prova). Il ragionamento sta

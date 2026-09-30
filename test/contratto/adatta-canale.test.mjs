@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // «ADATTA LA PERSONALITA' AL MIO CANALE»: l'interruttore c'era, si salvava, e
 // nessuno lo leggeva. Il cervello imparava lo stile dalla voce e dai messaggi
 // dello streamer sempre, acceso o spento. Adesso spento vuol dire quello che

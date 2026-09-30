@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE VIE PRIVATE STAVANO SCRITTE IN DUE POSTI, E I DUE NON SI PARLAVANO.
 //
 // `index.html` ha le regole di prefetch: dicono al browser dove NON andare da

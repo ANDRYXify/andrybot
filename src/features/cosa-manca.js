@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I PICCOLI AVVISI: cosa manca al canale, detto una cosa per volta.
 //
 // Chi usa SocialBot spesso non sa che una cosa esiste, o che le manca un passo

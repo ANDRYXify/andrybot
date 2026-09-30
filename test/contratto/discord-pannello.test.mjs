@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // UNA PAGINA CHE SPIEGA SEMPRE TUTTO E' UNA PAGINA CHE NON SA NIENTE.
 //
 // La scheda di Discord diceva tutto a tutti: come invitare il bot, come dargli

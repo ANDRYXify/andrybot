@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL CSS LIBERO DELLA PAGINA LINK non deve poter uscire dal suo recinto.
 //
 // La pagina link è pubblica: la aprono sconosciuti. Il CSS che ci si scrive

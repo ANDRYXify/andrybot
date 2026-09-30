@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // «QUESTO ACCOUNT DISCORD SONO IO»: come si dimostra, e perche' cosi'.
 //
 // Servono due meta': chi sei su Discord e chi sei su Twitch. La prima la dice
@@ -76,10 +78,10 @@ export function indirizzo(channel) {
 //
 // I segnaposto sono tre e bastano: chi scrive, dove andare, e il codice.
 export const FRASI = Object.freeze({
-  inizio: '@{nome} ti faccio entrare nel Discord e ti do un codice da riscrivere qui, cosi\' ti sistemo i ruoli. Si comincia qui {link}',
+  inizio: '@{nome} ti faccio entrare nel Discord e ti do un codice da riscrivere qui, così ti sistemo i ruoli. Si comincia qui {link}',
   fatto: '@{nome} collegato ✓ Al prossimo giro ti metto a posto i ruoli su Discord.',
-  scaduto: '@{nome} quel codice non vale piu\'. Si riparte da qui {link}',
-  via: '@{nome} scollegato. I ruoli che hai adesso restano tuoi: non tocco piu\' niente.',
+  scaduto: '@{nome} quel codice non vale più. Si riparte da qui {link}',
+  via: '@{nome} scollegato. I ruoli che hai adesso restano tuoi: non tocco più niente.',
   estraneo: '@{nome} non risulti collegato.',
 });
 

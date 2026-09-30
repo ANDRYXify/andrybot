@@ -1,3 +1,5 @@
+<!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
+<!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 # Il punteggio: quanto un account somiglia a una macchina
 
 Non c'è magia neanche negli strumenti di riferimento: è uno scoring su segnali

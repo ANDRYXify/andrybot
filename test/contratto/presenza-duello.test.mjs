@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // CHI C'E' E' CHI STA NELLA STANZA, NON CHI HA PARLATO.
 //
 // La presenza si deduceva dai messaggi visti arrivare. Ha un buco che non si

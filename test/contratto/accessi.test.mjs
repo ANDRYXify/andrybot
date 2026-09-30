@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // GLI ACCESSI DECISI A MANO, DA FUORI: il server risponde con il calcolo unico,
 // le porte sono dell'amministratore, lo streamer legge cosa gli e' stato
 // aperto o chiuso, e i muri di una funzione chiusa non vendono niente.

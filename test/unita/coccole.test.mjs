@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // ABBRACCI, BACINI E IL BATTI IL CINQUE.
 //
 // Il cinque sta in chat: uno alza la mano, un altro la batte, e ogni tanto a

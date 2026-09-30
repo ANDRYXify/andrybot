@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // ============================================================
 //  FILIGRANA DI PROPRIETÀ INTELLETTUALE — SocialBot / andrybot
 //
@@ -74,11 +76,31 @@ export function applicaHeader(res) {
 // ─────────────── Iniezione invisibile nelle pagine HTML ───────────────
 // Aggiunge, prima di </body>, un commento di copyright + la firma a larghezza
 // zero (nascosta). Non si vede a schermo, resta nel sorgente della pagina.
+// Idempotente: una pagina che ha gia' un pezzo non lo riceve due volte, cosi'
+// si puo' passare da qui anche una pagina statica che la firma ce l'ha scritta.
 export function iniettaHtml(html) {
   if (typeof html !== 'string' || !/<\/body>/i.test(html)) return html;
-  const commento = `\n<!-- ${PROPRIETA} -->\n`;
-  const zw = `<span style="display:none" aria-hidden="true">${FILIGRANA_ZW}</span>`;
-  return html.replace(/<\/body>/i, `${commento}${zw}</body>`);
+  let out = html;
+  if (!/<meta\s+name=["']copyright["']/i.test(out) && /<\/head>/i.test(out)) {
+    out = out.replace(/<\/head>/i, `<meta name="copyright" content="${COPYRIGHT}">\n</head>`);
+  }
+  const commento = out.includes(`<!-- ${PROPRIETA} -->`) ? '' : `\n<!-- ${PROPRIETA} -->\n`;
+  const zw = out.includes(FILIGRANA_ZW) ? '' : `<span hidden aria-hidden="true">${FILIGRANA_ZW}</span>`;
+  return commento || zw ? out.replace(/<\/body>(?![\s\S]*<\/body>)/i, `${commento}${zw}</body>`) : out;
+}
+
+// OGNI PAGINA CHE ESCE DAL SERVER passa da qui: la pagina link di ogni
+// streamer, le guide, i manuali, la 404, le conferme. Chi aggiunge una pagina
+// nuova non deve ricordarsi la firma: la riceve uscendo. Tocca solo il testo
+// HTML; JSON, file e flussi passano come sono.
+export function firmaLePagine(req, res, next) {
+  const manda = res.send.bind(res);
+  res.send = (corpo) => {
+    const tipo = String(res.get?.('Content-Type') || '');
+    if (typeof corpo === 'string' && (!tipo || /html/i.test(tipo)) && /<\/body>/i.test(corpo)) corpo = iniettaHtml(corpo);
+    return manda(corpo);
+  };
+  next();
 }
 
 // ─────────────── Firma nei file PNG (visibile in un editor di testo) ───────────────
@@ -152,6 +174,6 @@ export function rispostaCanarino(presentazione) {
   return p ? `${testa} · ${p}` : testa;
 }
 
-export default { AUTORE, ALIAS, ANNO, SITO, FIRMA, COPYRIGHT, PROPRIETA,
+export default { AUTORE, ALIAS, ANNO, SITO, FIRMA, COPYRIGHT, PROPRIETA, firmaLePagine,
   zeroWidth, leggiZeroWidth, FILIGRANA_ZW, applicaHeader, iniettaHtml, FIRMA_PNG, firmaPng,
   CANARINO, normalizzaCanarino, improntaCanarino, eCanarino, rispostaCanarino };

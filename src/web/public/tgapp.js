@@ -40,11 +40,11 @@ function vistaCollega(codice, nome) {
       <div class="codice">${esc(codice)}</div>
       <ol>
         <li>${L('Apri la dashboard su', 'Open the dashboard at', 'Abre el panel en')} <b>socialbot.live</b> ${L('(dalla mail/notifica di andryxify).', '(from your andryxify email/notification).', '(desde tu correo/notificación de andryxify).')}</li>
-        <li>${L('Vai su <b>Notifiche → Accedi da Telegram</b> e inserisci il codice qui sopra.', 'Go to <b>Notifications → Telegram login</b> and enter the code above.', 'Ve a <b>Notificaciones → Acceso con Telegram</b> e introduce el código de arriba.')}</li>
+        <li>${L('Vai su <b>Le tue community → Telegram</b>, nella carta «Accedi e gestisci da Telegram», e inserisci il codice qui sopra.', 'Go to <b>Your communities → Telegram</b>, in the «Log in & manage from Telegram» card, and enter the code above.', 'Ve a <b>Tus comunidades → Telegram</b>, en la tarjeta «Accede y gestiona desde Telegram», e introduce el código de arriba.')}</li>
         <li>${L('Torna qui e riapri la Mini App: sarai dentro!', 'Come back here and reopen the Mini App: you’re in!', 'Vuelve aquí y reabre la Mini App: ¡ya estás dentro!')}</li>
       </ol>
     </div>
-    <button class="big ghost" id="ricontrolla">${L('Ho collegato — ricontrolla', 'I linked it — check again', 'Ya lo vinculé — comprobar')}</button>`;
+    <button class="big ghost" id="ricontrolla">${L('Ho collegato: ricontrolla', 'I linked it: check again', 'Ya lo vinculé: comprobar')}</button>`;
   document.getElementById('ricontrolla').onclick = avvia;
 }
 
@@ -58,7 +58,7 @@ async function vistaDashboard(sess) {
     <div class="card">
       <h2>${L('Il tuo canale', 'Your channel', 'Tu canal')}</h2>
       <div class="riga"><span class="lab">${esc(st.display || st.login)}</span>
-        <span class="badge ${st.inChat ? 'on' : 'off'}"><span class="dot"></span>${st.inChat ? L('in chat', 'in chat', 'en el chat') : L('offline', 'offline', 'desconectado')}</span></div>
+        ${typeof st.inChat !== 'boolean' ? '' : `<span class="badge ${st.inChat ? 'on' : 'off'}"><span class="dot"></span>${st.inChat ? L('in chat adesso', 'in chat now', 'en el chat ahora') : L('non connesso', 'not connected', 'no conectado')}</span>`}</div>
       <div class="riga"><span class="lab">${L('Bot acceso', 'Bot on', 'Bot activo')}</span>
         <label class="sw"><input type="checkbox" id="botsw" ${st.botOn ? 'checked' : ''} ${puoToggle ? '' : 'disabled'}><span class="track"></span><span class="knob"></span></label></div>
       ${st.abilitato ? '' : `<p class="muted">${L('Il tuo canale non è ancora abilitato.', 'Your channel isn’t enabled yet.', 'Tu canal aún no está habilitado.')}</p>`}

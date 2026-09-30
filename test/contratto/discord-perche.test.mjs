@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL BOT RENDE CONTO DI QUELLO CHE FA IN CASA D'ALTRI.
 //
 // Discord tiene 45 giorni di registro, e accanto a ogni azione puo' scriverci
@@ -68,6 +70,6 @@ test('chi chiama lo passa: il giro dei ruoli e il costruttore', () => {
   for (const chiave of ['creato', 'sistemato', 'tolto', 'ruoloCreato', 'ruoloSistemato', 'ruoloTolto']) {
     assert.ok(cos.includes(`MOTIVO.${chiave}`), `il costruttore non dice perche' per «${chiave}»`);
   }
-  assert.ok(cos.includes("tolto: 'non e\\' nella traccia"),
+  assert.ok(cos.includes("tolto: 'non è nella traccia"),
     'cancellare e\' la cosa che piu\' di tutte ha bisogno di un perche\' scritto');
 });

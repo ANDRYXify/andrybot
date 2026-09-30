@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Mostra quali prezzi il server sceglie in Stripe, voce per voce, con la STESSA
 // regola del server (abbonamenti.js → abbinaPrezzi): il prodotto con il nome
 // della voce, il prezzo attivo mensile in euro con l'importo del listino.

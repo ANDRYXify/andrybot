@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // DI CHI È QUESTO SOFTWARE, E COME SI FA A DIMOSTRARLO.
 //
 // Quello che una filigrana nel frontend PUÒ fare e quello che non può, detto

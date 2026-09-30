@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL PAYWALL NEL TEMPO: una prova vale finche' dura, la ronda del cancello
 // governa solo il flag community (l'Essenziale non scade), chi ha gia' una
 // sottoscrizione riceve gli extra dentro quella, e il ritorno dal Checkout

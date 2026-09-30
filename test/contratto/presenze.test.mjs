@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE PRESENZE DA FUORI: il bot le conta nello stesso giro delle ore, saluta al
 // messaggio, risponde ai comandi del registro; il pannello le regola e le
 // mostra; il manuale e la vetrina le raccontano.

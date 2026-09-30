@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL COSTRUTTORE: prende una differenza e la fa succedere.
 //
 // Tutte le decisioni sono gia' state prese altrove. Il preset dice come dev'essere
@@ -45,15 +47,15 @@ const log = makeLog('discord-costruisci');
 const MOTIVO = Object.freeze({
   creato: 'creato dal costruttore, come da traccia',
   sistemato: 'rimesso come dice la traccia',
-  tolto: 'non e\' nella traccia, e la modalita\' distruttiva era accesa',
+  tolto: 'non è nella traccia, e la modalità distruttiva era accesa',
   ruoloCreato: 'creato dal costruttore, come da traccia',
   ruoloSistemato: 'rimesso come dice la traccia',
-  ruoloTolto: 'non e\' nella traccia, e la modalita\' distruttiva era accesa',
+  ruoloTolto: 'non è nella traccia, e la modalità distruttiva era accesa',
   server: 'impostazioni rimesse come dice la traccia',
   ingresso: 'la porta d\'ingresso, come dice la traccia',
   filtro: 'il filtro, come dice la traccia',
-  aTe: 'e\' il ruolo della traccia che spetta a chi ha il server',
-  filtroTolto: 'non e\' nella traccia, e la modalita\' distruttiva era accesa',
+  aTe: 'è il ruolo della traccia che spetta a chi ha il server',
+  filtroTolto: 'non è nella traccia, e la modalità distruttiva era accesa',
 });
 
 export const PAUSA_MS = 350;
@@ -178,11 +180,11 @@ export async function applica(token, guild, preset, { togliere = false, impronta
   // cura non e' un messaggio tecnico: e' ripassare dal tasto che lo porta nel
   // server, perche' reinvitare aggiorna i permessi.
   if (!a.foto.puoCanali) {
-    return { ok: false, reinvito: true, errore: 'al bot manca «Gestire i canali»: ripassa dal tasto che lo porta nel tuo server, cosi\' Discord gli aggiorna i permessi' };
+    return { ok: false, reinvito: true, errore: 'al bot manca «Gestire i canali»: ripassa dal tasto che lo porta nel tuo server, così Discord gli aggiorna i permessi' };
   }
   if (impronta && String(impronta) !== a.impronta) {
     return { ok: false, cambiato: true, impronta: a.impronta, differenza: a.differenza,
-      errore: 'il server e\' cambiato da quando hai guardato: ricontrolla cosa succede e riconferma' };
+      errore: 'il server è cambiato da quando hai guardato: ricontrolla cosa succede e riconferma' };
   }
   // Quello che resta anche facendo piazza pulita si dice anche DOPO, e anche
   // quando non c'era altro da fare: «niente da fare» con i ruoli vecchi ancora

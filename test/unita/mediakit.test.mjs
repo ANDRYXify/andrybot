@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL MEDIA KIT (src/features/mediakit.js, docs/STRUMENTI.md): ogni numero dai
 // rapporti degli ultimi trenta giorni, la media pesata sul tempo, le soglie
 // sotto le quali un numero non esce, le percentuali che sommano a cento.

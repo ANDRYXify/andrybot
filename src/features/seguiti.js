@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // CHI TOGLIE E RIMETTE IL FOLLOW NON E' UN FOLLOWER NUOVO.
 //
 // Twitch manda un follow ogni volta che qualcuno preme «segui», anche se

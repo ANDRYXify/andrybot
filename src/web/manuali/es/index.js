@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I manuali in spagnolo: uno per file in questa cartella, legati all'italiano dallo
 // stesso `id` (lo slug italiano). Schede e data si ereditano dalla voce
 // italiana quando qui non ci sono. Vedi docs/LINGUE.md.

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE PIATTAFORME: una tabella sola, e tutto il resto derivato da lì.
 //
 // Il difetto che questo collaudo esiste per impedire non è "il prefisso

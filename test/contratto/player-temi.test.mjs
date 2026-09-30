@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE ANIMAZIONI SONO DEL TEMA. Un tema del player è tre cose nel foglio, dentro
 // il suo blocco: la texture della carta, la figura dietro o attorno alla
 // copertina, e il suo moto. Il codice non sa niente: mette la classe.

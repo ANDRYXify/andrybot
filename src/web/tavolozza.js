@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // La tavolozza del prodotto sta in UN posto solo: `public/tema.css`.
 //
 // Le pagine composte dal server, l'immagine di anteprima e le icone dell'app

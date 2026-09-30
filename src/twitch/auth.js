@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Autenticazione Twitch (OAuth 2) senza librerie esterne.
 // Gestisce: URL di autorizzazione, scambio del "code", validazione,
 // refresh dei token utente (bot/broadcaster) e token applicazione

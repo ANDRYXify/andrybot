@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I RUOLI DAL COSTRUTTORE, e le tre regole di Discord che decidono tutto.
 //
 //  · sopra il bot non si arriva;

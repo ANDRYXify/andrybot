@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Ponte "giochi del sito andryxify.it": quando in chat arriva un comando dei
 // giochi del sito (es. !ag …), lo inoltriamo al sito, che esegue la logica di
 // gioco (lo stato vive lì) e ci restituisce le risposte da scrivere in chat.

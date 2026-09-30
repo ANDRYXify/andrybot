@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Cancello del MODO: come il bot sta in chat, e la catena che ci arriva.
 //
 // Perche' esiste. Il modo si regge su una catena lunga, e ogni anello sta in un

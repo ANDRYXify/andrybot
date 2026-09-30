@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // TikTok: NON esiste un'API di chat pubblica come Twitch, quindi un bot che
 // scrive in chat TikTok non è realizzabile. Qui facciamo l'unica cosa fattibile
 // e utile: rilevare (best-effort) quando lo streamer va in diretta su TikTok e

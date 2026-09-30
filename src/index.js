@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // SocialBot — punto di ingresso.
 // Avvia web (dashboard su socialbot.live) e, se la configurazione
 // è completa, il bot vero e proprio (chat, eventi, IA, clip).

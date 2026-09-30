@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA BONIFICA: ripulire dopo, senza rifare il danno.
 //
 // La cosa più facile da fare è anche la più sbagliata: «prendi l'intervallo

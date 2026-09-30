@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // INSTAGRAM COL TASTO: le cose che il modulo non puo' dire da solo, perche'
 // stanno nelle rotte, nel giro del bot e nel pannello.
 //

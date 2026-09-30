@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Database di SocialBot (SQLite): qui vivono token, streamer abilitati,
 // memoria del bot (messaggi, ricordi sugli utenti, lezioni imparate),
 // comandi personalizzati e registro delle clip.
@@ -521,7 +523,8 @@ CREATE TABLE IF NOT EXISTS compleanni (   -- compleanni dei membri del gruppo Te
   nome TEXT NOT NULL DEFAULT '',
   giorno INTEGER NOT NULL,
   mese INTEGER NOT NULL,
-  last_auguri INTEGER NOT NULL DEFAULT 0,  -- anno dell'ultimo augurio inviato (anti-doppioni)
+  last_auguri INTEGER NOT NULL DEFAULT 0,  -- anno dell'ultimo augurio nel gruppo (anti-doppioni)
+  last_auguri_chat INTEGER NOT NULL DEFAULT 0,  -- anno dell'ultimo augurio in chat (anti-doppioni)
   ts INTEGER NOT NULL,
   PRIMARY KEY (channel, tg_user_id)
 );
@@ -950,6 +953,15 @@ aggiungiColonna('telegram', 'owner_tg_nome', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'yt_ultimo', "TEXT NOT NULL DEFAULT ''");   // id ultimo video YouTube annunciato (anti-doppioni)
 aggiungiColonna('telegram', 'ig_ultimo', "TEXT NOT NULL DEFAULT ''");   // id ultimo post Instagram annunciato (anti-doppioni)
 aggiungiColonna('telegram', 'tk_ultimo', "TEXT NOT NULL DEFAULT ''");   // id ultimo post TikTok annunciato (anti-doppioni)
+// Gli auguri in chat hanno il loro «gia' fatti quest'anno», separato da quello
+// del gruppo: con un segno solo, gli auguri del gruppo a mezzanotte bruciavano
+// quelli in chat, che arrivano dopo, al primo messaggio. Nasce copiando il segno
+// di prima per chi si era segnato dalla chat: il giorno del passaggio nessuno
+// riceve gli auguri due volte.
+if (!db.prepare('PRAGMA table_info(compleanni)').all().some((c) => c.name === 'last_auguri_chat')) {
+  aggiungiColonna('compleanni', 'last_auguri_chat', 'INTEGER NOT NULL DEFAULT 0');
+  db.exec("UPDATE compleanni SET last_auguri_chat = last_auguri WHERE tg_user_id LIKE 'chat:%'");
+}
 aggiungiColonna('quotes', 'autore', "TEXT NOT NULL DEFAULT ''");   // chi ha DETTO la citazione (import x.la: nome utente)
 aggiungiColonna('quotes', 'data', "TEXT NOT NULL DEFAULT ''");     // data della citazione (ISO YYYY-MM-DD, se nota)
 // linee guida: ambito (dove valgono + con chi) — regole contestuali di "lia"
@@ -3312,8 +3324,11 @@ export const compleanni = {
     db.prepare('DELETE FROM compleanni WHERE channel=? AND tg_user_id=?')
       .run(String(channel).toLowerCase(), String(tgUserId));
   },
-  markAuguri(channel, tgUserId, anno) {
-    db.prepare('UPDATE compleanni SET last_auguri=? WHERE channel=? AND tg_user_id=?')
+  // Il gruppo e la chat hanno ognuno il suo segno: gli auguri in un posto non
+  // spengono quelli nell'altro.
+  markAuguri(channel, tgUserId, anno, dove = 'gruppo') {
+    const colonna = dove === 'chat' ? 'last_auguri_chat' : 'last_auguri';
+    db.prepare(`UPDATE compleanni SET ${colonna}=? WHERE channel=? AND tg_user_id=?`)
       .run(anno | 0, String(channel).toLowerCase(), String(tgUserId));
   },
 };

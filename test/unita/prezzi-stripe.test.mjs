@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA RICERCA DEI PREZZI, DA CAPO A FONDO, con uno Stripe finto: due pagine di
 // prezzi, un id forzato dal .env che non sta nell'elenco degli attivi, un prodotto
 // con l'importo sbagliato. Si guarda cosa il server mette in vendita dopo.

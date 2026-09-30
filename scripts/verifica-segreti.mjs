@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Cancello dei SEGRETI: niente di segreto entra nel database in chiaro.
 //
 // Perche' esiste. Una colonna nuova che conserva un token e' una riga di SQL

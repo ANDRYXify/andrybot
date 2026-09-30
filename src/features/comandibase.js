@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Comandi "base" pronti all'uso: quelli che ogni streamer si aspetta già
 // funzionanti senza doverli costruire a mano — !so/!shoutout, !followage,
 // !uptime, !bit. Vivono qui come add-on OPT-OUT (accesi salvo che lo streamer li

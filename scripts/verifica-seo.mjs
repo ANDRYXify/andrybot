@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Cancello della SEO: ogni pagina della sitemap e' quella che dice di essere.
 //
 // docs/SEO.md raccontava un controllo automatico (pagine sottili, title e
