@@ -843,6 +843,68 @@ CREATE TABLE IF NOT EXISTS dcserver_giri (
   errori TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_dcserver_giri ON dcserver_giri(channel, quando);
+
+-- IL NEGOZIO DEL CANALE (docs/NEGOZIO.md): si paga con le monete, e basta.
+-- Le scorte sono una scelta sola, come nel piano: illimitate (scorta NULL e
+-- per_persona 0), N in tutto (scorta = quante ne RESTANO) oppure N a persona
+-- (per_persona). Quante ne ha prese una persona e quando, invece, non stanno
+-- scritte due volte: si leggono dallo storico, che e' la cosa successa.
+CREATE TABLE IF NOT EXISTS negozio_articoli (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  parola TEXT NOT NULL,                        -- come si compra in chat: !compra <parola>
+  nome TEXT NOT NULL DEFAULT '',
+  descrizione TEXT NOT NULL DEFAULT '',
+  immagine TEXT NOT NULL DEFAULT '',           -- un file nella cartella del canale (data/negozio/<canale>/)
+  prezzo INTEGER NOT NULL DEFAULT 0,
+  tipo TEXT NOT NULL,                          -- oggetto | effetto | modulo | mano | vip | discord | musica | evidenza
+  dati TEXT NOT NULL DEFAULT '{}',             -- quello che serve al tipo, in JSON (features/negozio-tipi.js)
+  scorta INTEGER,                              -- NULL = non si contano in tutto
+  per_persona INTEGER NOT NULL DEFAULT 0,      -- 0 = non si contano a persona
+  attesa_testa INTEGER NOT NULL DEFAULT 0,     -- secondi fra due acquisti della stessa persona
+  attesa_tutti INTEGER NOT NULL DEFAULT 0,     -- secondi fra due acquisti di chiunque
+  si_vede TEXT NOT NULL DEFAULT 'sempre',      -- sempre | chi_puo
+  quando TEXT NOT NULL DEFAULT 'sempre',       -- sempre | diretta | date
+  dal INTEGER NOT NULL DEFAULT 0,
+  al INTEGER NOT NULL DEFAULT 0,
+  attivo INTEGER NOT NULL DEFAULT 1,
+  ordine INTEGER NOT NULL DEFAULT 0,
+  ts INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (channel, parola)
+);
+CREATE TABLE IF NOT EXISTS negozio_requisiti (  -- tutti quelli di un articolo devono valere
+  channel TEXT NOT NULL,
+  articolo INTEGER NOT NULL,
+  tipo TEXT NOT NULL,                          -- mesi | tier | bit | ore | serie | follower | ruolo
+  soglia INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, articolo, tipo)
+);
+CREATE TABLE IF NOT EXISTS negozio_borsa (     -- quello che una persona ha comprato e tiene
+  channel TEXT NOT NULL,
+  user TEXT NOT NULL,
+  articolo INTEGER NOT NULL,
+  nome TEXT NOT NULL DEFAULT '',               -- il nome al momento dell'acquisto
+  quanti INTEGER NOT NULL DEFAULT 0,
+  ts INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, user, articolo)
+);
+CREATE TABLE IF NOT EXISTS negozio_acquisti (  -- lo storico, e la coda di quello che si consegna a mano
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  articolo INTEGER NOT NULL,
+  nome TEXT NOT NULL DEFAULT '',               -- il nome al momento dell'acquisto
+  tipo TEXT NOT NULL DEFAULT '',
+  user TEXT NOT NULL,
+  display TEXT NOT NULL DEFAULT '',
+  prezzo INTEGER NOT NULL DEFAULT 0,
+  nota TEXT NOT NULL DEFAULT '',               -- quello che ha scritto dopo il nome: la canzone, il testo, la richiesta
+  stato TEXT NOT NULL,                         -- in_corso | fatto | da_consegnare | consegnato | rimborsato
+  motivo TEXT NOT NULL DEFAULT '',             -- perche' e' stato rimborsato
+  ts INTEGER NOT NULL DEFAULT 0,
+  chiuso INTEGER NOT NULL DEFAULT 0            -- quando e' diventato fatto, consegnato o rimborsato
+);
+CREATE INDEX IF NOT EXISTS idx_negozio_acquisti ON negozio_acquisti(channel, articolo, user, ts);
+CREATE INDEX IF NOT EXISTS idx_negozio_acquisti_stato ON negozio_acquisti(channel, stato, ts);
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -4892,5 +4954,257 @@ export function migraContatoriModuli() {
   return vecchi.length;
 }
 try { migraContatoriModuli(); } catch { /* database di prova senza la tabella vecchia */ }
+
+// ---------------------------------------------------------------- il negozio
+// Qui ci sono solo le righe e la parte dell'acquisto che sta nel database. Chi
+// decide cosa si puo' comprare, e fa partire quello che si e' comprato, e'
+// features/negozio.js; il perche' di ogni scelta sta in docs/NEGOZIO.md.
+//
+// UN ACQUISTO NEL DATABASE E' UNA TRANSAZIONE SOLA. Le monete si tolgono con
+// un UPDATE che vale solo se bastano, la scorta si scala con un UPDATE che vale
+// solo se ce n'e', e la riga dello storico nasce nella stessa transazione: o
+// succedono tutte e tre o non ne succede nessuna. La transazione e' IMMEDIATE,
+// cioe' prende la scrittura prima di leggere: due acquisti dell'ultima scorta,
+// anche da due processi, non possono leggere tutti e due «ce n'e' una».
+const NEG_VIVI = "('in_corso','fatto','da_consegnare','consegnato')";
+const NEG_ANNO_MS = 365 * 86400_000;
+
+const negRiga = (r) => (r ? {
+  id: r.id, parola: r.parola, nome: r.nome, descrizione: r.descrizione, immagine: r.immagine,
+  prezzo: r.prezzo, tipo: r.tipo, dati: safeJson(r.dati),
+  scorta: r.scorta === null || r.scorta === undefined ? null : r.scorta,
+  perPersona: r.per_persona, attesaTesta: r.attesa_testa, attesaTutti: r.attesa_tutti,
+  siVede: r.si_vede, quando: r.quando, dal: r.dal, al: r.al, attivo: !!r.attivo, ordine: r.ordine, ts: r.ts,
+} : null);
+
+export const negozio = {
+  // ---- gli articoli
+  articoli(channel) {
+    const ch = String(channel || '').toLowerCase();
+    const req = new Map();
+    for (const r of db.prepare('SELECT articolo, tipo, soglia FROM negozio_requisiti WHERE channel=?').iterate(ch)) {
+      if (!req.has(r.articolo)) req.set(r.articolo, []);
+      req.get(r.articolo).push({ tipo: r.tipo, soglia: r.soglia });
+    }
+    return db.prepare('SELECT * FROM negozio_articoli WHERE channel=? ORDER BY ordine, id').all(ch)
+      .map((r) => ({ ...negRiga(r), requisiti: req.get(r.id) || [] }));
+  },
+  articolo(channel, id) {
+    const ch = String(channel || '').toLowerCase();
+    const r = negRiga(db.prepare('SELECT * FROM negozio_articoli WHERE channel=? AND id=?').get(ch, Math.trunc(Number(id)) || 0));
+    if (!r) return null;
+    r.requisiti = db.prepare('SELECT tipo, soglia FROM negozio_requisiti WHERE channel=? AND articolo=?').all(ch, r.id);
+    return r;
+  },
+  perParola(channel, parola) {
+    const ch = String(channel || '').toLowerCase();
+    const r = db.prepare('SELECT id FROM negozio_articoli WHERE channel=? AND parola=?').get(ch, String(parola || ''));
+    return r ? this.articolo(ch, r.id) : null;
+  },
+  // Salva un articolo GIA' normalizzato (features/negozio.js, normArticolo).
+  // Con `id` lo cambia, senza lo crea. La parola e' unica nel canale: se e' gia'
+  // di un altro articolo torna { ok:false, motivo:'parola' }.
+  salva(channel, a) {
+    const ch = String(channel || '').toLowerCase();
+    const id = Math.trunc(Number(a?.id)) || 0;
+    const valori = {
+      channel: ch, parola: a.parola, nome: a.nome, descrizione: a.descrizione, immagine: a.immagine || '',
+      prezzo: a.prezzo, tipo: a.tipo, dati: JSON.stringify(a.dati || {}),
+      scorta: a.scorta === null || a.scorta === undefined ? null : a.scorta,
+      per_persona: a.perPersona || 0, attesa_testa: a.attesaTesta || 0, attesa_tutti: a.attesaTutti || 0,
+      si_vede: a.siVede, quando: a.quando, dal: a.dal || 0, al: a.al || 0, attivo: a.attivo ? 1 : 0,
+      ordine: a.ordine || 0, ts: now(),
+    };
+    try {
+      const fatto = db.transaction(() => {
+        let quale = id;
+        if (quale) {
+          const c = db.prepare(`UPDATE negozio_articoli SET parola=@parola, nome=@nome, descrizione=@descrizione, immagine=@immagine,
+            prezzo=@prezzo, tipo=@tipo, dati=@dati, scorta=@scorta, per_persona=@per_persona, attesa_testa=@attesa_testa,
+            attesa_tutti=@attesa_tutti, si_vede=@si_vede, quando=@quando, dal=@dal, al=@al, attivo=@attivo, ordine=@ordine, ts=@ts
+            WHERE channel=@channel AND id=@id`).run({ ...valori, id: quale });
+          if (!c.changes) return 0;
+        } else {
+          quale = Number(db.prepare(`INSERT INTO negozio_articoli (channel, parola, nome, descrizione, immagine, prezzo, tipo, dati,
+            scorta, per_persona, attesa_testa, attesa_tutti, si_vede, quando, dal, al, attivo, ordine, ts)
+            VALUES (@channel, @parola, @nome, @descrizione, @immagine, @prezzo, @tipo, @dati, @scorta, @per_persona,
+            @attesa_testa, @attesa_tutti, @si_vede, @quando, @dal, @al, @attivo, @ordine, @ts)`).run(valori).lastInsertRowid);
+        }
+        db.prepare('DELETE FROM negozio_requisiti WHERE channel=? AND articolo=?').run(ch, quale);
+        const metti = db.prepare('INSERT INTO negozio_requisiti (channel, articolo, tipo, soglia) VALUES (?,?,?,?)');
+        for (const r of a.requisiti || []) metti.run(ch, quale, r.tipo, r.soglia);
+        return quale;
+      })();
+      if (!fatto) return { ok: false, motivo: 'nonCe' };
+      return { ok: true, articolo: this.articolo(ch, fatto) };
+    } catch (e) {
+      if (/UNIQUE/i.test(e?.message || '')) return { ok: false, motivo: 'parola' };
+      throw e;
+    }
+  },
+  // Toglie un articolo, i suoi requisiti e il suo posto nelle borse. Lo storico
+  // resta: e' successo, e ha il nome di allora.
+  togli(channel, id) {
+    const ch = String(channel || '').toLowerCase();
+    const n = Math.trunc(Number(id)) || 0;
+    return db.transaction(() => {
+      const via = db.prepare('DELETE FROM negozio_articoli WHERE channel=? AND id=?').run(ch, n).changes;
+      if (!via) return { ok: false };
+      db.prepare('DELETE FROM negozio_requisiti WHERE channel=? AND articolo=?').run(ch, n);
+      const borse = db.prepare('DELETE FROM negozio_borsa WHERE channel=? AND articolo=?').run(ch, n).changes;
+      return { ok: true, borse };
+    })();
+  },
+  inQuanteBorse(channel, id) {
+    return db.prepare('SELECT COUNT(*) n FROM negozio_borsa WHERE channel=? AND articolo=? AND quanti>0')
+      .get(String(channel || '').toLowerCase(), Math.trunc(Number(id)) || 0).n;
+  },
+
+  // ---- cosa ferma un acquisto, letto dal database adesso
+  // Lo usano due volte: prima, per rispondere senza toccare niente, e dentro
+  // la transazione, dove vale davvero. Una funzione sola, cosi' le due risposte
+  // non possono dire cose diverse.
+  ostacolo(channel, a, user, ora = now()) {
+    const ch = String(channel || '').toLowerCase();
+    const u = String(user || '').toLowerCase();
+    if (a.scorta !== null && a.scorta !== undefined && a.scorta <= 0) return { motivo: 'scorte' };
+    if (a.perPersona > 0) {
+      const presi = db.prepare(`SELECT COUNT(*) n FROM negozio_acquisti WHERE channel=? AND articolo=? AND user=? AND stato IN ${NEG_VIVI}`)
+        .get(ch, a.id, u).n;
+      if (presi >= a.perPersona) return { motivo: 'persona', presi };
+    }
+    let resta = 0, perTutti = false;
+    if (a.attesaTesta > 0) {
+      const t = db.prepare(`SELECT MAX(ts) t FROM negozio_acquisti WHERE channel=? AND articolo=? AND user=? AND stato IN ${NEG_VIVI}`).get(ch, a.id, u).t;
+      if (t) resta = Math.max(resta, t + a.attesaTesta * 1000 - ora);
+    }
+    if (a.attesaTutti > 0) {
+      const t = db.prepare(`SELECT MAX(ts) t FROM negozio_acquisti WHERE channel=? AND articolo=? AND stato IN ${NEG_VIVI}`).get(ch, a.id).t;
+      const r = t ? t + a.attesaTutti * 1000 - ora : 0;
+      if (r > resta) { resta = r; perTutti = true; }
+    }
+    if (resta > 0) return { motivo: 'attesa', resta, perTutti };
+    const saldo = db.prepare('SELECT monete FROM points WHERE channel=? AND user=?').get(ch, u)?.monete || 0;
+    if (saldo < a.prezzo) return { motivo: 'monete', saldo };
+    return null;
+  },
+
+  // ---- l'acquisto, nel database
+  // `stato`: 'in_corso' se dopo c'e' un effetto da far partire, 'fatto' se
+  // l'acquisto e' tutto qui (l'oggetto, che va nella borsa nella stessa
+  // transazione), 'da_consegnare' se lo consegna lo streamer.
+  prenota(channel, { articolo, user, display = '', nota = '', stato = 'in_corso', inBorsa = false, ora = now() } = {}) {
+    const ch = String(channel || '').toLowerCase();
+    const u = String(user || '').toLowerCase();
+    if (!u) return { ok: false, motivo: 'nonCe' };
+    const giro = db.transaction(() => {
+      const a = this.articolo(ch, articolo);
+      if (!a || !a.attivo) return { ok: false, motivo: 'nonCe' };
+      const o = this.ostacolo(ch, a, u, ora);
+      if (o) return { ok: false, ...o, articolo: a };
+      if (a.prezzo > 0) {
+        const tolte = db.prepare('UPDATE points SET monete = monete - ?, ts = ? WHERE channel=? AND user=? AND monete >= ?')
+          .run(a.prezzo, ora, ch, u, a.prezzo).changes;
+        if (!tolte) throw new NegozioFermo('monete');
+      }
+      if (a.scorta !== null) {
+        const scalata = db.prepare('UPDATE negozio_articoli SET scorta = scorta - 1 WHERE channel=? AND id=? AND scorta > 0').run(ch, a.id).changes;
+        if (!scalata) throw new NegozioFermo('scorte');
+      }
+      const id = Number(db.prepare(`INSERT INTO negozio_acquisti (channel, articolo, nome, tipo, user, display, prezzo, nota, stato, ts, chiuso)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(ch, a.id, a.nome, a.tipo, u, String(display || u).slice(0, 60), a.prezzo,
+        String(nota || '').slice(0, 300), stato, ora, stato === 'fatto' ? ora : 0).lastInsertRowid);
+      if (inBorsa) {
+        db.prepare(`INSERT INTO negozio_borsa (channel, user, articolo, nome, quanti, ts) VALUES (?,?,?,?,1,?)
+          ON CONFLICT(channel, user, articolo) DO UPDATE SET quanti = negozio_borsa.quanti + 1, nome = excluded.nome, ts = excluded.ts`)
+          .run(ch, u, a.id, a.nome, ora);
+      }
+      const saldo = db.prepare('SELECT monete FROM points WHERE channel=? AND user=?').get(ch, u)?.monete || 0;
+      return { ok: true, id, saldo, articolo: { ...a, scorta: a.scorta === null ? null : a.scorta - 1 } };
+    });
+    try {
+      return giro.immediate();
+    } catch (e) {
+      if (e instanceof NegozioFermo) return { ok: false, motivo: e.motivo };
+      throw e;
+    }
+  },
+  // L'effetto e' partito: l'acquisto e' fatto.
+  conferma(channel, id, ora = now()) {
+    return db.prepare("UPDATE negozio_acquisti SET stato='fatto', chiuso=? WHERE channel=? AND id=? AND stato='in_corso'")
+      .run(ora, String(channel || '').toLowerCase(), Math.trunc(Number(id)) || 0).changes === 1;
+  },
+  // Lo streamer l'ha consegnato.
+  consegna(channel, id, ora = now()) {
+    return db.prepare("UPDATE negozio_acquisti SET stato='consegnato', chiuso=? WHERE channel=? AND id=? AND stato='da_consegnare'")
+      .run(ora, String(channel || '').toLowerCase(), Math.trunc(Number(id)) || 0).changes === 1;
+  },
+  // LE MONETE TORNANO, e la scorta con loro: l'acquisto non e' successo. Vale
+  // una volta sola per costruzione — lo stato cambia solo se era ancora uno di
+  // quelli da cui si puo' tornare indietro — quindi due rimborsi dello stesso
+  // acquisto (un doppio clic, un riavvio a meta') ne fanno uno.
+  rimborsa(channel, id, motivo = '', { da = ['in_corso', 'da_consegnare'], ora = now() } = {}) {
+    const ch = String(channel || '').toLowerCase();
+    const n = Math.trunc(Number(id)) || 0;
+    const stati = da.filter((s) => s === 'in_corso' || s === 'da_consegnare');
+    if (!stati.length) return { ok: false };
+    return db.transaction(() => {
+      const r = db.prepare('SELECT * FROM negozio_acquisti WHERE channel=? AND id=?').get(ch, n);
+      if (!r || !stati.includes(r.stato)) return { ok: false };
+      db.prepare("UPDATE negozio_acquisti SET stato='rimborsato', motivo=?, chiuso=? WHERE id=?").run(String(motivo || '').slice(0, 60), ora, n);
+      if (r.prezzo > 0) {
+        db.prepare(`INSERT INTO points (channel, user, monete, ruolo, ts) VALUES (?,?,?,'',?)
+          ON CONFLICT(channel, user) DO UPDATE SET monete = points.monete + excluded.monete, ts = excluded.ts`)
+          .run(ch, r.user, r.prezzo, ora);
+      }
+      db.prepare('UPDATE negozio_articoli SET scorta = scorta + 1 WHERE channel=? AND id=? AND scorta IS NOT NULL').run(ch, r.articolo);
+      const saldo = db.prepare('SELECT monete FROM points WHERE channel=? AND user=?').get(ch, r.user)?.monete || 0;
+      return { ok: true, user: r.user, display: r.display, prezzo: r.prezzo, nome: r.nome, saldo };
+    }).immediate();
+  },
+  // Gli acquisti rimasti a meta' (il processo e' morto fra le monete e
+  // l'effetto), di tutti i canali: all'avvio si rimborsano.
+  sospesi() {
+    return db.prepare("SELECT id, channel, user, nome, prezzo FROM negozio_acquisti WHERE stato='in_corso' ORDER BY id").all();
+  },
+  acquisto(channel, id) {
+    return db.prepare('SELECT * FROM negozio_acquisti WHERE channel=? AND id=?')
+      .get(String(channel || '').toLowerCase(), Math.trunc(Number(id)) || 0) || null;
+  },
+  coda(channel) {
+    return db.prepare("SELECT * FROM negozio_acquisti WHERE channel=? AND stato='da_consegnare' ORDER BY ts, id")
+      .all(String(channel || '').toLowerCase());
+  },
+  storico(channel, { limite = 200 } = {}) {
+    const ch = String(channel || '').toLowerCase();
+    const righe = db.prepare('SELECT * FROM negozio_acquisti WHERE channel=? ORDER BY ts DESC, id DESC LIMIT ?')
+      .all(ch, Math.max(1, Math.min(1000, Math.trunc(limite) || 200)));
+    const t = db.prepare(`SELECT COUNT(*) acquisti, COALESCE(SUM(prezzo),0) monete, COUNT(DISTINCT user) persone
+      FROM negozio_acquisti WHERE channel=? AND stato IN ${NEG_VIVI}`).get(ch);
+    const rimborsati = db.prepare("SELECT COUNT(*) n, COALESCE(SUM(prezzo),0) monete FROM negozio_acquisti WHERE channel=? AND stato='rimborsato'").get(ch);
+    return { righe, totali: { acquisti: t.acquisti, monete: t.monete, persone: t.persone, rimborsati: rimborsati.n, moneteRese: rimborsati.monete } };
+  },
+  // Quante volte e' stato comprato ogni articolo, per chi chiede «cosa c'e' di buono».
+  venduti(channel) {
+    const m = new Map();
+    for (const r of db.prepare(`SELECT articolo, COUNT(*) n FROM negozio_acquisti WHERE channel=? AND stato IN ${NEG_VIVI} GROUP BY articolo`)
+      .iterate(String(channel || '').toLowerCase())) m.set(r.articolo, r.n);
+    return m;
+  },
+  borsa(channel, user) {
+    return db.prepare('SELECT articolo, nome, quanti, ts FROM negozio_borsa WHERE channel=? AND user=? AND quanti>0 ORDER BY ts')
+      .all(String(channel || '').toLowerCase(), String(user || '').toLowerCase());
+  },
+  // Lo storico si tiene un anno, come le donazioni (privacy.html). Quello che
+  // lo streamer deve ancora consegnare non si tocca: non e' storia, e' da fare.
+  pota(ora = now()) {
+    return db.prepare("DELETE FROM negozio_acquisti WHERE stato IN ('fatto','consegnato','rimborsato') AND ts < ?")
+      .run(ora - NEG_ANNO_MS).changes;
+  },
+};
+
+class NegozioFermo extends Error {
+  constructor(motivo) { super(motivo); this.motivo = motivo; }
+}
 
 function safeJson(s) { try { return JSON.parse(s || '{}'); } catch { return {}; } }

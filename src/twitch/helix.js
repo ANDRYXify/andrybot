@@ -797,6 +797,53 @@ export class Helix {
     }
   }
 
+  // LE TRE LETTURE DEI REQUISITI DEL NEGOZIO (features/negozio-requisiti.js).
+  // Tutte e tre distinguono «no» da «non lo so»: il secondo e' `null`, e chi
+  // legge non lo scambia mai per un no.
+  //
+  // Il tier di una persona adesso: 0 = non e' abbonata, 1..3 il tier. Scope
+  // 'channel:read:subscriptions'.
+  async tierDi(channelLogin, userId) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !userId) return null;
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      const j = await this._request('GET', '/subscriptions', { query: { broadcaster_id: s.user_id, user_id: String(userId) }, token });
+      const riga = (j?.data || []).find((r) => String(r?.user_id) === String(userId));
+      if (!riga) return 0;
+      const t = Math.round(Number(riga.tier) / 1000);
+      return t >= 1 && t <= 3 ? t : null;
+    } catch (e) { log.debug('tierDi:', e?.message || e); return null; }
+  }
+
+  // Da quando una persona segue il canale, in ms; 0 = non lo segue. Scope
+  // 'moderator:read:followers'.
+  async seguitoDal(channelLogin, userId) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !userId) return null;
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      const j = await this._request('GET', '/channels/followers', { query: { broadcaster_id: s.user_id, user_id: String(userId) }, token });
+      const quando = Date.parse(j?.data?.[0]?.followed_at || '');
+      return Number.isFinite(quando) && quando > 0 ? quando : 0;
+    } catch (e) { log.debug('seguitoDal:', e?.message || e); return null; }
+  }
+
+  // I Bit di una persona nella classifica di sempre: la stessa di «!bit
+  // sempre», chiesta per lei sola. Una classifica senza di lei vuol dire che
+  // non ha mai cheerato. Scope 'bits:read'.
+  async bitDi(channelLogin, userId) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !userId) return null;
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      const j = await this._request('GET', '/bits/leaderboard', { query: { count: 1, period: 'all', user_id: String(userId) }, token });
+      const riga = (j?.data || []).find((r) => String(r?.user_id) === String(userId));
+      if (riga) return Math.max(0, Math.round(Number(riga.score) || 0));
+      return (j?.data || []).length ? null : 0;
+    } catch (e) { log.debug('bitDi:', e?.message || e); return null; }
+  }
+
   // Follower recenti del canale (dai più nuovi). [{ user_id, user_login, user_name, followed_at }].
   // Richiede lo scope 'moderator:read:followers' sul token del broadcaster.
   async getRecentFollowers(channelLogin, { first = 100, dopo = '' } = {}) {
