@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'AZIONE «TIMEOUT» DEI MODULI. Chiamava `helix.timeout`, che non esiste:
 // non faceva niente, e non lo diceva. La porta vera e' `timeoutUser`, la stessa
 // della moderazione, che vuole l'id della persona e con 0 secondi fa un ban.
