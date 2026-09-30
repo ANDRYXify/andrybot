@@ -84,3 +84,57 @@ cancello controlla che:
 
 Il punto 2 chiude anche il difetto delle risposte in italiano ai canali inglesi
 e spagnoli: la lingua fa parte della voce.
+
+## Com'è fatto (punti 1, 2 e 3)
+
+- **Il motore** è `src/features/voce.js`, con l'interfaccia scritta in testa:
+  `voce.di(canale, momento, dati)` dà la frase o niente. Il frasario sta in
+  `src/features/frasario/`, un file per gruppo (diretta, community, avvisi).
+- **L'ordine del giro** è un ordinamento per impronta (canale, momento, numero
+  del giro, frase): due canali partono da frasi diverse, nessuna torna prima
+  che siano uscite tutte, il giro dopo non comincia dall'ultima. A che punto è
+  sta nella tabella `voce_giri`, quindi un riavvio riprende dalla frase dopo.
+- **Una frase è adatta se ha tutti i dati che nomina.** Un dato che a volte
+  manca toglie le frasi che lo chiedono, non la voce: per questo il cancello
+  pretende, in ogni lingua e tono, sei frasi che chiedono solo i dati che
+  arrivano sempre e non dichiarano un genere. In chat non può finire un
+  `{nome}` perché una frase senza il nome non viene scelta.
+- **I segni** dentro una frase: `{nome}` un dato; `{bit|# bit|# bits}` un
+  numero col suo singolare e plurale; `{o/a}` il genere di chi parla;
+  `{:💜}` una faccina, che diventa un'emote allegra della chat se ce n'è una.
+- **Gli avvisi** su Telegram e Discord hanno una riga della voce per diretta,
+  la stessa nei due posti, col nome segnato e steso da ognuno nel suo formato.
+  Un testo scritto dallo streamer per un posto vale ancora e vince.
+- **I testi di prima** dell'hype train e della pubblicità sono passati una
+  volta sola nelle frasi del bot: cambiati sono diventati «solo le mie»,
+  svuotati «spento», quelli di serie le nostre frasi.
+- **La carta «Le frasi del bot»** sta in Personalità e si salva con le
+  impostazioni (`settings.voce`: il nome della community e, per momento, il
+  modo e le frasi dello streamer).
+
+## Come si porta un posto (punto 4)
+
+1. Un momento nuovo nel frasario del suo gruppo: titolo e spiegazione per la
+   carta in tre lingue, i dati con «sempre» o «a volte», i dati di prova, se
+   si può spegnere, le frasi in tre lingue e tre toni.
+2. Chi scriveva la frase chiama `voce.di(canale, 'momento', dati)` e tace se
+   torna vuota.
+3. Il file esce da `DA_PORTARE` in `scripts/verifica-voce.mjs` e `MASSIMO`
+   scende di uno. Il cancello lo pretende quando il file non ha più frasi fisse.
+
+Il cancello vede le frasi scritte dentro una chiamata che parla (`say`,
+`parla`, `dillo`); non vede quelle composte prima e passate in una variabile.
+Quelle sono, oggi:
+
+- i mazzi della conversazione del cervello (`src/ai/brain.js`: saluti, «come
+  va», ringraziamenti, «non lo so», le frasi su gioco, uptime e clip), e la
+  firma a caso di `persona.colora`;
+- gli annunci delle presenze, il rimborso del blackjack, i messaggi delle clip,
+  dei contatori, dei moduli (i permessi mancanti), della console, del ponte dei
+  giochi, dei plugin, il saluto al re dei Bit, il subathon;
+- in `src/bot.js` l'annuncio di TikTok in chat, il «nuovo contenuto», il boss
+  che arriva col raid;
+- la prova del webhook di Discord e gli avvisi dei post nuovi, che non sono
+  dirette;
+- le risposte dei comandi pronti che lo streamer può riscrivere: sono un
+  secondo posto per le sue frasi, da unire alla carta quando si portano.
