@@ -103,6 +103,15 @@ comandi diversi da quelli della riga italiana.
 - Chi toglie tutti i posti degli avvisi su Telegram o su Discord non se ne ritrova uno alla lettura dopo: il gruppo o il canale collegato diventa un posto una volta sola, quando arriva.
   en: If you remove all the alert places on Telegram or Discord, you don’t find one back the next time it loads: the connected group or channel becomes a place only once, when it arrives.
   es: Quien quita todos los lugares de los avisos en Telegram o en Discord ya no se encuentra uno de nuevo en la siguiente lectura: el grupo o el canal conectado se vuelve un lugar una sola vez, cuando llega.
+- [importante] Nei Giochi c'è l'arena delle emote: chi scrive in chat entra con la sua emote, i combattenti si scontrano da soli e vince l'ultimo in piedi, con premi in monete. [vai: giochi]
+  en: Games has the emote arena: whoever writes in chat joins with their emote, the fighters clash on their own and the last one standing wins, with coin prizes.
+  es: En Juegos está la arena de emotes: quien escribe en el chat entra con su emote, los luchadores chocan solos y gana el último en pie, con premios en monedas.
+  > L'arena delle emote
+  > Un gioco per tutta la chat che si guarda in diretta: la apri con !arena, ognuno combatte con la sua emote, e nell'overlay è un elemento dello Studio che sposti e vesti come gli altri.
+  en> The emote arena
+  en> A game for the whole chat that you watch live: you open it with !arena, everyone fights with their emote, and on the overlay it is a Studio element you move and style like the others.
+  es> La arena de emotes
+  es> Un juego para todo el chat que se ve en directo: la abres con !arena, cada uno lucha con su emote, y en el overlay es un elemento del Studio que mueves y vistes como los demás.
 - Pannello e sito in inglese parlano americano (color, center, behavior), e i suggerimenti a voce propongono parole italiane, perché il riconoscimento è in italiano.
   en: The panel and site in English now speak American (color, center, behavior), and voice suggestions offer Italian words, because recognition is in Italian.
   es: El panel y el sitio en inglés hablan en americano (color, center, behavior), y las sugerencias de voz proponen palabras italianas, porque el reconocimiento está en italiano.

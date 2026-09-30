@@ -13,7 +13,7 @@ export default {
   titolo: 'Manuale dei giochi e delle monete | SocialBot',
   h1: 'Manuale dei giochi e delle monete',
   desc: 'Le monete della chat, ogni carta della scheda Giochi & classifiche, i comandi di gioco con costi e premi veri, le manche e i giochi da creare.',
-  aggiornata: '2026-09-27',
+  aggiornata: '2026-09-30',
   corpo: [
     { p: [
       'La chat ha una <strong>moneta</strong>: si guadagna guardando e scrivendo, si spende nei giochi. Il nome lo scegli tu, di base sono «monete».',
@@ -56,7 +56,7 @@ export default {
     { h3: 'Le regole di ogni gioco' },
     { p: [
       'Costi, premi, attese, probabilità e testi, gioco per gioco. Ogni gioco è una riga che si apre con un clic: dentro trovi i numeri, le scelte e gli elenchi di frasi.',
-      'Accanto al nome vedi quanto rende il gioco con i valori che hai scelto, e cambia mentre li muovi. La scritta diventa rossa quando un gioco a puntata comincia a creare monete, cioè ne restituisce più di 100 ogni 100 giocate, o quando la pesca o il boss automatico rendono più della presenza.',
+      'Accanto al nome vedi quanto rende il gioco con i valori che hai scelto, e cambia mentre li muovi. La scritta diventa rossa quando un gioco a puntata comincia a creare monete, cioè ne restituisce più di 100 ogni 100 giocate, o quando la pesca, il boss o l\'arena automatici rendono più della presenza.',
       `Di serie nessun gioco a puntata crea monete: contro il banco il banco vince un po', la morra è alla pari. Un gioco gratis non rende più della presenza: in un'ora di presenza e partecipazione si prendono ${CIFRA(presenzaOraria({}))} monete, e la pesca al ritmo massimo ne dà ${CIFRA(RESA('pesca').perOra)}.`,
       'Ogni gioco ha due attese. <strong>A testa</strong>: dopo che una persona ha giocato, aspetta lei. <strong>Per tutti</strong>: dopo che qualcuno ha giocato, aspetta tutto il canale. Zero vuol dire nessuna attesa. L\'attesa parte quando si gioca davvero: un comando scritto male non la consuma. Chi la trova se lo sente dire una volta, con quanto manca, poi il bot tace fino alla fine. Per <code>!colpisci</code> tace sempre, perché si scrive a raffica.',
       'Negli elenchi va una frase per riga. Sotto ogni elenco il pannello scrive quali segnaposto puoi usare, per esempio <code>{a}</code> e <code>{b}</code>. Una riga con un segnaposto che quel gioco non conosce non si salva: dopo il salvataggio sparisce. Nella tabella della pesca ogni riga è <code>nome | monete | rarità</code>. La rarità è un peso da 1 a 1000: 30 esce il doppio di 15.',
@@ -276,6 +276,9 @@ export default {
       ['<code>!colpo</code>', '<code>!heist</code>', 'Organizzi un colpo, o entri nella banda. <code>!colpo 100</code> per scegliere la posta.', ATT('colpo')],
       ['<code>!boss</code>', 'nessuno', 'Fa arrivare un boss da battere insieme. Solo mod e streamer.', 'nessuna'],
       ['<code>!colpisci</code>', '<code>!attacca</code> <code>!hit</code>', 'Colpisci il boss di turno.', ATT('boss')],
+      ['<code>!arena</code>', 'nessuno', 'Apre le iscrizioni all\'arena delle emote. <code>!arena ferma</code> la annulla. Solo mod e streamer.', ATT('arena')],
+      ['<code>!combatti</code>', '<code>!fight</code>', 'Entri nell\'arena, quando si entra col comando.', 'nessuna'],
+      ['<code>!emote Kappa</code>', 'nessuno', 'Scegli l\'emote con cui combatti nell\'arena. Senza emote ti dice quella che hai.', '5s a testa'],
       ['<code>!blackjack 50</code>', '<code>!bj</code> <code>!21</code>', 'Una mano contro il banco: due carte a te e due a lui, una coperta.', ATT('blackjack')],
       ['<code>!carta</code>', 'nessuno', 'Un\'altra carta nella tua mano di blackjack.', 'nessuna'],
       ['<code>!stai</code>', '<code>!stand</code>', 'Ti fermi: gioca il banco, e si vede chi vince.', 'nessuna'],
@@ -386,6 +389,18 @@ export default {
       `La chat lo colpisce con <code>!colpisci</code>, un colpo ogni ${ATTESA(DI_SERIE('boss').attesaTesta)} a testa, da ${DI_SERIE('boss').dannoMin} a ${DI_SERIE('boss').dannoMax} di danno. Ha ${ATTESA(DI_SERIE('boss').durata)} prima di scappare. Se cade, il bottino va a chi l'ha colpito in proporzione al danno: se tutti colpiscono uguale ognuno prende ${CIFRA(DI_SERIE('boss').bottino)}, e chi colpisce di più prende di più, fino a ${CIFRA(RESA('boss').massimo)} a testa. Se scappa non prende niente nessuno, e nessuno perde niente.`,
       'Il bot non risponde a ogni colpo: poco dopo il primo, e poi al massimo ogni venti secondi, scrive chi ha colpito e quanto, la vita che resta e i secondi che mancano. Quando il boss arriva a metà vita e a un quarto lo dice subito.',
       'Nell\'overlay, con gli effetti accesi, compare la carta del boss: nome, vita che scende a ogni colpo, tempo che resta, chi colpisce e quanto. È un elemento dello Studio: la sposti, la ingrandisci e la vesti lì, e la spegni per overlay. Nelle regole scegli anche una festa: se il boss cade, la chat va in solo emote per qualche minuto e poi torna com\'era.',
+    ] },
+
+    { h3: 'L\'arena delle emote' },
+    { p: [
+      `Un mod scrive <code>!arena</code> e si aprono le iscrizioni: per ${ATTESA(DI_SERIE('arena').iscrizioni)} chi scrive in chat entra nell'arena con la sua emote. Nelle regole puoi volere il comando <code>!combatti</code> invece di un messaggio qualunque, lasciare entrare solo abbonati, VIP o moderatori, far pagare l'ingresso e fermare i posti a un massimo, di serie ${DI_SERIE('arena').massimo}. Il bot e i bot noti non entrano, e ognuno entra una volta sola.`,
+      'Per le chat grandi c\'è la probabilità: chi scrive entra tante volte su cento. Si tira una volta a persona, al suo primo messaggio: scrivere di più non dà un altro tiro.',
+      'L\'ingresso si paga entrando. Se l\'arena si annulla o il bot si riavvia a metà, torna a chi l\'aveva pagato, e quando il bot rientra in chat lo dice.',
+      'L\'emote di un combattente è quella scelta con <code>!emote</code>, che il bot ricorda da una partita all\'altra. Se non l\'ha scelta, è la prima emote del messaggio con cui è entrato, di Twitch o del canale su 7TV. Se non ne ha scritte, è una delle emote del canale, sempre la stessa per la stessa persona. Se il canale non ne ha, nel cerchio c\'è l\'iniziale del nome.',
+      `Alla fine delle iscrizioni si combatte, se i combattenti sono almeno due; se no l'arena si annulla e l'ingresso torna indietro. I combattenti si muovono da soli, prendono gli oggetti che cadono ogni ${ATTESA(DI_SERIE('arena').ogniOggetto)} e si scontrano: a ogni urto perdono vita, e chi la finisce è eliminato. La spada fa più danno, lo scudo ne fa subire meno, il cuore ridà vita, gli stivali fanno correre di più.`,
+      `Dopo ${ATTESA(DI_SERIE('arena').strettaDopo)} l'arena comincia a stringersi, e in ${ATTESA(DI_SERIE('arena').strettaDurata)} arriva a ${DI_SERIE('arena').strettaMin} su 100 della misura: la partita finisce sempre. Non scende mai sotto due combattenti affiancati, e gli oggetti rimasti fuori dai muri spariscono. Se dopo ${ATTESA(DI_SERIE('arena').durataMax)} sono ancora in piedi in più di uno, vince chi ha più vita.`,
+      `La partita è decisa appena comincia: il bot sa subito chi vince, ma lo dice in chat e paga solo quando l'overlay arriva alla fine. Il vincitore prende ${CIFRA(DI_SERIE('arena').premioVincitore)} monete, ogni eliminazione vale ${CIFRA(DI_SERIE('arena').premioEliminazione)}, e chi porta la corona, cioè ha eliminato di più, prende ${CIFRA(DI_SERIE('arena').premioCorona)}. Chi vince con la corona eliminando tutti arriva a ${CIFRA(RESA('arena').massimo)} monete.`,
+      'L\'arena si apre anche da sola in diretta ogni tanti minuti, o con un raid di almeno tante persone, se lo scegli nelle regole: di serie succede solo con <code>!arena</code>. Nell\'overlay è un elemento dello Studio, «Arena delle emote»: la sposti, la ingrandisci e la vesti lì.',
     ] },
 
     { h3: 'Blackjack' },

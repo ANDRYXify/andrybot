@@ -101,6 +101,7 @@ import * as dcPreset from '../features/discord-preset.js';
 import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
 import * as giochiConf from '../features/giochi-conf.js';
+import { stato as statoArena } from '../features/arena.js';
 import { VOCI as VOCI_TWITCH } from '../features/sondaggi.js';
 import * as modalitaChat from '../features/modalita-chat.js';
 import { LIMITI_AZIONI } from '../features/modules.js';
@@ -163,6 +164,7 @@ import {
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
   normMusica, normTimer, normPubblicita, normTreno, normBit, normBoss, normScritta, normEtichetta, normMuro, FIGURE_MURO, normCartelli, normDisegno,
+  normArena,
 } from './stile.js';
 
 // --- PIÙ OVERLAY: ogni overlay ha un suo LAYOUT (quali elementi mostra e dove)
@@ -170,15 +172,17 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
 const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {});
 // Gli elementi nati da un interruttore che c'era gia' (docs/OVERLAY.md, «Lo
 // stesso interruttore di prima»): finche' in un overlay non sono scritti,
 // valgono quanto quello da cui dipendevano. Un overlay con gli effetti spenti
 // non si ritrova il boss in scena perche' e' nata una chiave. Vale per la base
 // e per le differenze di un'occasione, che sono sparse: si riempie solo se
-// quella da cui si eredita c'e'.
-const EREDITA_MOSTRA = { boss: 'effetti', scritta: 'effetti', etichetta: 'effetti' };
+// quella da cui si eredita c'e'. L'arena e' nata dopo, ed e' un gioco a schermo
+// come il boss: chi il boss l'ha tolto da una scena non ci trova l'arena. Viene
+// dopo il boss, che a sua volta si riempie dagli effetti.
+const EREDITA_MOSTRA = { boss: 'effetti', scritta: 'effetti', etichetta: 'effetti', arena: 'boss' };
 const ereditaMostra = (m) => {
   if (!m || typeof m !== 'object') return m;
   const q = { ...m };
@@ -1459,6 +1463,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       widget: st.widget || base.widget,
       // il boss arriva gia' completo dei suoi valori di serie: acceso, e vestito
       boss: normBoss(base.boss),
+      arena: normArena(base.arena),
       scritta: normScritta(base.scritta),
       etichetta: normEtichetta(base.etichetta),
       muro: normMuro(base.muro),
@@ -1575,6 +1580,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const suo = streamers.get(login);
     if (suo && !suo.settings?.overlayVisto) streamers.setSettings(login, { ...(suo.settings || {}), overlayVisto: Date.now() });
     effects.addClient(login, res);
+    // Un'arena in corso si racconta subito a chi arriva: con seme, combattenti,
+    // regole e istante di partenza l'overlay rifa' la partita fino ad adesso
+    // (docs/ARENA.md). Senza, un overlay riaperto a meta' non saprebbe niente.
+    try {
+      const arena = statoArena(login);
+      if (arena) res.write(`data: ${JSON.stringify({ tipo: 'arena', azione: 'stato', ...arena })}\n\n`);
+    } catch (e) { log.debug(`#${login} arena all'apertura:`, e?.message || e); }
     req.on('close', () => effects.removeClient(login, res));
   });
 
@@ -6320,6 +6332,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     }
     if (b.overlayBit !== undefined) out.overlayBit = normBit(b.overlayBit);
     if (b.overlayBoss !== undefined) out.overlayBoss = normBoss(b.overlayBoss);
+    if (b.overlayArena !== undefined) out.overlayArena = normArena(b.overlayArena);
     if (b.overlayScritta !== undefined) out.overlayScritta = normScritta(b.overlayScritta);
     if (b.overlayEtichetta !== undefined) out.overlayEtichetta = normEtichetta(b.overlayEtichetta);
     if (b.overlayMuro !== undefined) out.overlayMuro = normMuro(b.overlayMuro);
@@ -6767,7 +6780,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayPubblicita', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayScritta', 'overlayEtichetta', 'overlayMuro', 'overlayCartelli', 'fontPersonali'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayPubblicita', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayArena', 'overlayScritta', 'overlayEtichetta', 'overlayMuro', 'overlayCartelli', 'fontPersonali'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }
