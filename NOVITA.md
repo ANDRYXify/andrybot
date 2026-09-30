@@ -150,84 +150,236 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-26
 
 - Aprendo il pannello con una connessione lenta non resta più una pagina bianca col solo piede: la copertina aspetta che sia pronto, e se ci mette troppo compare «Riprova».
+  en: Opening the panel on a slow connection no longer leaves a blank page with just the footer: the cover waits until it’s ready, and if it takes too long “Try again” appears.
+  es: Al abrir el panel con una conexión lenta ya no queda una página en blanco con solo el pie: la portada espera a que esté listo, y si tarda demasiado aparece «Reintentar».
 - Chi sostiene il progetto e torna da Stripe ritrova la pagina col suo grazie: prima il rimando al sottodominio perdeva per strada la conferma del pagamento.
+  en: People supporting the project who come back from Stripe land on the page with their thank-you: before, the redirect to the subdomain lost the payment confirmation along the way.
+  es: Quien apoya el proyecto y vuelve de Stripe encuentra la página con su agradecimiento: antes la redirección al subdominio perdía por el camino la confirmación del pago.
 - Privacy e termini dicono il giorno in cui il loro testo è cambiato l'ultima volta, non più solo l'anno.
+  en: Privacy and terms state the day their text last changed, not just the year.
+  es: Privacidad y términos dicen el día en que su texto cambió por última vez, ya no solo el año.
 - Nei risultati di ricerca titoli e descrizioni di home, guide, manuali, privacy e termini si leggono interi, senza tagli.
+  en: In search results, the titles and descriptions of the home page, guides, manuals, privacy and terms read in full, with nothing cut off.
+  es: En los resultados de búsqueda, títulos y descripciones de la portada, las guías, los manuales, la privacidad y los términos se leen enteros, sin cortes.
 - Scegliendo una veste per l'overlay anche il muro delle emote la segue: l'ombra sulle emote si accende o si spegne come vuole la veste.
+  en: When you pick a look for the overlay, the emote wall follows it too: the shadow on the emotes turns on or off as the look wants.
+  es: Al elegir un aspecto para el overlay, el muro de emotes también lo sigue: la sombra de los emotes se enciende o se apaga según el aspecto.
 - Gli effetti pronti, i tasti dell'ispettore nello Studio e quello per togliere un carattere hanno di nuovo il loro contorno a china.
+  en: Ready-made effects, the inspector buttons in the Studio and the button for removing a font have their ink outline back.
+  es: Los efectos listos, los botones del inspector en el Studio y el de quitar una fuente vuelven a tener su contorno de tinta.
 - [importante] La mail e il messaggio su Telegram che chiedono la conferma della settimana hanno «Non pubblicare»: la fermi fino al momento dell'uscita, anche dopo averla confermata, e dal pannello lo stesso. [vai: grafiche]
+  en: The email and the Telegram message asking you to confirm your week have “Don’t publish”: you can stop it right up to the moment it goes out, even after confirming, and from the panel too.
+  es: El correo y el mensaje de Telegram que piden confirmar la semana tienen «No publicar»: la frenas hasta el momento de la salida, incluso después de confirmarla, y también desde el panel.
   > Non pubblicare, anche all'ultimo minuto
   > Se dopo aver confermato ti accorgi di un errore nella settimana non devi correre al computer: la fermi dalla mail, da Telegram o dal pannello, e se ci ripensi la rimetti in uscita.
+  en> Don’t publish, even at the last minute
+  en> If you spot a mistake in your week after confirming it, you don’t have to rush to your computer: stop it from the email, from Telegram or from the panel, and if you change your mind, put it back in line.
+  es> No publicar, incluso en el último minuto
+  es> Si después de confirmar ves un error en la semana no tienes que correr a la computadora: la frenas desde el correo, desde Telegram o desde el panel, y si cambias de idea la vuelves a poner en salida.
 - Nella finestra delle novità le importanti hanno un titolo, due righe su perché contano e il tasto «Provala» che ti porta dove si usano. Lo stesso nella pagina delle novità.
+  en: In the What’s new window, important updates have a title, two lines on why they matter and a “Try it” button that takes you where they’re used. The same goes for the What’s new page.
+  es: En la ventana de novedades, las importantes tienen un título, dos líneas sobre por qué importan y el botón «Pruébala» que te lleva donde se usan. Lo mismo en la página de novedades.
 - [importante] In basso a destra, un avviso alla volta ti dice cosa manca al canale per usare quello che hai: permessi, Spotify, overlay, comandi, pagina link, settimana. [vai: account]
+  en: At the bottom right, one notice at a time tells you what your channel is missing to use what you have: permissions, Spotify, overlay, commands, link page, week.
+  es: Abajo a la derecha, un aviso a la vez te dice qué le falta al canal para usar lo que tienes: permisos, Spotify, overlay, comandos, página de enlaces, semana.
   > Cosa manca, detto una cosa per volta
   > Se una funzione non parte perché manca un passo, lo sai senza doverlo cercare: «Fammi vedere» ti porta dove si fa, e se non è il momento lo rimandi o lo togli. Li vedi solo tu, non chi modera il canale.
+  en> What’s missing, one thing at a time
+  en> If a feature won’t start because a step is missing, you know without looking for it: “Show me” takes you where it’s done, and if now’s not the time you snooze it or dismiss it. Only you see them, not your mods.
+  es> Lo que falta, una cosa a la vez
+  es> Si una función no arranca porque falta un paso, lo sabes sin buscarlo: «Enséñamelo» te lleva adonde se hace, y si no es el momento lo pospones o lo quitas. Solo los ves tú, no quien modera el canal.
 - Le emote 7TV si aggiungono, si tolgono e si rinominano per davvero: «fatto» arriva solo se 7TV conferma, e collegando l'account si controlla che il token possa cambiare il tuo set. [vai: emote]
+  en: 7TV emotes really get added, removed and renamed: “done” only comes when 7TV confirms, and connecting the account checks that the token can change your set.
+  es: Los emotes de 7TV se añaden, se quitan y se renombran de verdad: «hecho» llega solo si 7TV lo confirma, y al conectar la cuenta se comprueba que el token pueda cambiar tu set.
 - Nella chat a schermo e nel muro le emote 7TV non spariscono più per dieci minuti quando 7TV risponde lento: resta l'ultima lista buona e si riprova entro un minuto.
+  en: In the on-screen chat and on the wall, 7TV emotes no longer vanish for ten minutes when 7TV is slow to answer: the last good list stays, and it retries within a minute.
+  es: En el chat en pantalla y en el muro, los emotes de 7TV ya no desaparecen diez minutos cuando 7TV responde lento: queda la última lista buena y se reintenta en menos de un minuto.
 - La plancia si apre disegnandosi: tessere e tasti a matita uno dopo l'altro, e il nome della sezione che sale parola per parola, come nel resto del pannello. Chiudendola si disfa.
+  en: The board opens by drawing itself: tiles and keys in pencil one after another, and the section name rising word by word, like in the rest of the panel. Closing it un-draws it.
+  es: El tablero se abre dibujándose: fichas y teclas a lápiz una tras otra, y el nombre de la sección que sube palabra por palabra, como en el resto del panel. Al cerrarlo se deshace.
 - Nella pagina che chiede di confermare la settimana i tasti hanno l'aspetto di quelli del sito, non quello grezzo del browser.
+  en: On the page asking you to confirm your week, the buttons look like the site’s, not the browser’s raw ones.
+  es: En la página que pide confirmar la semana, los botones tienen el aspecto de los del sitio, no el crudo del navegador.
 - Quando al canale non manca niente, ogni qualche giorno un piccolo invito in basso a destra ti fa scoprire una funzione che non hai ancora provato, una volta sola.
+  en: When your channel is missing nothing, every few days a small invitation at the bottom right shows you a feature you haven’t tried yet, just once.
+  es: Cuando al canal no le falta nada, cada pocos días una pequeña invitación abajo a la derecha te hace descubrir una función que todavía no probaste, una sola vez.
 - Le istruzioni per trovare il token 7TV dicono dove cliccare su Chrome, Edge e Firefox, e ricordano che senza l'accesso a 7tv.app il token non c'è. [vai: emote]
+  en: The instructions for finding your 7TV token say where to click in Chrome, Edge and Firefox, and remind you that without signing in to 7tv.app there’s no token.
+  es: Las instrucciones para encontrar el token de 7TV dicen dónde hacer clic en Chrome, Edge y Firefox, y recuerdan que sin iniciar sesión en 7tv.app no hay token.
 - [importante] Nel menù c'è «Strumenti», e dentro «QR su misura»: forme, colori, il tuo logo e una frase, e prima di scaricarlo lo rileggiamo dai pixel. Lo stesso stile va nelle Grafiche social. [vai: qr]
+  en: The menu has “Tools”, and inside it “Custom QR”: shapes, colors, your logo and a line of text, and before you download it we read it back from the pixels. The same style goes into Social graphics.
+  es: En el menú está «Herramientas», y dentro «QR a medida»: formas, colores, tu logo y una frase, y antes de descargarlo lo volvemos a leer desde los píxeles. El mismo estilo va a las Gráficas sociales.
   > Un QR tuo che si legge davvero
   > Un QR personalizzato di solito si prova col telefono e si spera. Qui contrasto, margine e quanto può coprire il logo sono dentro il disegno, e se riletto non torna non si scarica.
+  en> A QR of your own that actually scans
+  en> A custom QR is usually tested with a phone and a prayer. Here contrast, margin and how much the logo can cover are built into the design, and if it doesn’t read back, it doesn’t download.
+  es> Un QR tuyo que se lee de verdad
+  es> Un QR personalizado suele probarse con el teléfono y a esperar. Aquí el contraste, el margen y cuánto puede tapar el logo están dentro del diseño, y si al releerlo no cuadra, no se descarga.
 - [importante] In «Strumenti» c'è anche «Emote e badge»: da un'immagine sola escono le tre misure che chiede Twitch, rimpicciolite senza sporcare i bordi, e le vedi nella chat chiara e in quella scura. [vai: misure]
+  en: “Tools” also has “Emotes and badges”: from a single image you get the three sizes Twitch asks for, shrunk without muddying the edges, and you see them in light and dark chat.
+  es: En «Herramientas» está también «Emotes y badges»: de una sola imagen salen los tres tamaños que pide Twitch, reducidos sin ensuciar los bordes, y los ves en el chat claro y en el oscuro.
   > Le misure di Twitch da un'immagine sola
   > Non serve un programma di grafica per avere 112, 56 e 28 pixel: carichi l'immagine, vedi subito come sta in chat e sai se pesa troppo prima di caricarla su Twitch.
+  en> Twitch sizes from a single image
+  en> You don’t need a graphics program to get 112, 56 and 28 pixels: upload the image, see right away how it looks in chat, and know if it’s too heavy before uploading it to Twitch.
+  es> Los tamaños de Twitch desde una sola imagen
+  es> No hace falta un programa de diseño para tener 112, 56 y 28 píxeles: subes la imagen, ves enseguida cómo queda en el chat y sabes si pesa demasiado antes de subirla a Twitch.
 - Nel QR su misura, sul telefono, l'anteprima resta in cima mentre scegli forme e colori, e i tasti per scaricare stanno in fondo.
+  en: In Custom QR on phones, the preview stays at the top while you pick shapes and colors, and the download buttons sit at the bottom.
+  es: En el QR a medida, en el teléfono, la vista previa se queda arriba mientras eliges formas y colores, y los botones para descargar están abajo.
 - [importante] In «Strumenti» c'è il media kit: il foglio da mandare ai marchi, in PDF coi link cliccabili, con chi sei, cosa trasmetti e i numeri delle tue ultime dirette. [vai: kit]
+  en: “Tools” has the media kit: the sheet to send to brands, as a PDF with clickable links, with who you are, what you stream and the numbers from your latest streams.
+  es: En «Herramientas» está el media kit: la hoja para mandar a las marcas, en PDF con enlaces que se pueden pulsar, con quién eres, qué emites y los números de tus últimos directos.
   > I tuoi numeri, pronti per un marchio
   > I numeri li misuriamo noi dalle tue dirette, e sotto c'è scritto di quale periodo sono: chi lo legge sa che sono veri. Tu scegli cosa mostrare, non cosa dicono.
+  en> Your numbers, ready for a brand
+  en> We measure the numbers ourselves from your streams, and underneath it says which period they cover: whoever reads it knows they’re real. You choose what to show, not what they say.
+  es> Tus números, listos para una marca
+  es> Los números los medimos nosotros de tus directos, y debajo dice de qué periodo son: quien lo lee sabe que son reales. Tú eliges qué mostrar, no lo que dicen.
 - [importante] Da un altro bot ora porti qui anche i timer e i punti del tuo pubblico, nella carta dei comandi: prima di importare vedi ogni timer con quando parla e ogni saldo come sarà dopo. [vai: moduli]
+  en: From another bot you can now also bring over timers and your audience’s points, in the commands card: before importing, you see each timer with when it speaks and each balance as it will be afterward.
+  es: Desde otro bot ahora traes también los temporizadores y los puntos de tu público, en la tarjeta de los comandos: antes de importar ves cada temporizador con cuándo habla y cada saldo como quedará.
   > Il trasloco intero da un altro bot
   > I punti si sommano alle monete di qui una volta sola, anche se importi di nuovo. E un timer che qui si comporterebbe diversamente te lo diciamo, invece di cambiarlo di nascosto.
+  en> The whole move from another bot
+  en> Points are added to the coins here just once, even if you import again. And if a timer would behave differently here, we tell you instead of changing it behind your back.
+  es> La mudanza completa desde otro bot
+  es> Los puntos se suman a las monedas de aquí una sola vez, aunque vuelvas a importar. Y si un temporizador se comportaría distinto aquí te lo decimos, en lugar de cambiarlo a escondidas.
 
 ## 2026-09-25
 
 - La libreria sfondi delle Grafiche, quando è vuota, lo dice su tutta la riga invece di andare a capo sillaba per sillaba. Lo stesso per gli altri elenchi a griglia vuoti o in caricamento. [vai: grafiche]
+  en: When the Graphics background library is empty, it says so across the whole row instead of wrapping syllable by syllable. The same goes for other grid lists that are empty or loading.
+  es: La biblioteca de fondos de Gráficas, cuando está vacía, lo dice en toda la fila en lugar de partirse sílaba por sílaba. Lo mismo para las demás listas en cuadrícula vacías o cargando.
 - [importante] Nell'Overlay Studio decidi chi sta davanti e chi dietro trascinando la riga nei livelli, e in diretta l'ordine è lo stesso della tela. Scegliere un elemento non lo porta più in primo piano. [vai: alert]
+  en: In Overlay Studio you decide what’s in front and what’s behind by dragging the row in the layers, and live the order is the same as on the canvas. Picking an element no longer brings it to the front.
+  es: En Overlay Studio decides qué va delante y qué detrás arrastrando la fila en las capas, y en directo el orden es el mismo que en el lienzo. Elegir un elemento ya no lo trae al frente.
   > Davanti e dietro, come in un programma di grafica
   > Metti la chat sopra la webcam o l'alert sopra tutto trascinando una riga, e quello che vedi nello Studio è quello che va in onda.
+  en> Front and back, like in a graphics program
+  en> Put the chat over the webcam or the alert over everything by dragging a row, and what you see in the Studio is what goes on air.
+  es> Delante y detrás, como en un programa de diseño
+  es> Pones el chat sobre la webcam o la alerta sobre todo arrastrando una fila, y lo que ves en el Studio es lo que sale al aire.
 - Nello Studio un elemento spento non si porta più dietro una macchia tonda colorata, e si prende col clic in tutta la sua area.
+  en: In the Studio, a turned-off element no longer drags a round colored blob along with it, and you can click it anywhere in its area.
+  es: En el Studio un elemento apagado ya no arrastra una mancha redonda de color, y se selecciona con un clic en toda su área.
 - [importante] Otto effetti pronti a tutto schermo disegnati da noi: coriandoli, fuochi d'artificio, cuori, neve, palloncini, bolle, stelle e lampo. Scegli colori, quantità e durata, e dagli un comando. [vai: effetti]
+  en: Eight ready-made full-screen effects drawn by us: confetti, fireworks, hearts, snow, balloons, bubbles, stars and lightning. Pick colors, amount and duration, and give it a command.
+  es: Ocho efectos listos a pantalla completa dibujados por nosotros: confeti, fuegos artificiales, corazones, nieve, globos, burbujas, estrellas y relámpago. Eliges colores, cantidad y duración, y le das un comando.
   > Otto effetti pronti a tutto schermo
   > Scegli un effetto, lo colori come il tuo canale e lo lanci con un comando o con un premio: niente da cercare o da caricare.
+  en> Eight ready-made full-screen effects
+  en> Pick an effect, color it like your channel and fire it with a command or a reward: nothing to hunt for or upload.
+  es> Ocho efectos listos a pantalla completa
+  es> Eliges un efecto, lo coloreas como tu canal y lo lanzas con un comando o con un premio: nada que buscar ni que subir.
 - [importante] Ogni immagine o video dei tuoi effetti può andare a tutto schermo, riempito o intero, senza passare dall'area degli effetti dello Studio. [vai: effetti]
+  en: Any image or video in your effects can go full screen, filled or whole, without going through the Studio’s effects area.
+  es: Cada imagen o video de tus efectos puede ir a pantalla completa, rellenando o entero, sin pasar por el área de efectos del Studio.
   > I tuoi effetti a tutto schermo
   > Un video o un'immagine che hai caricato copre tutta la scena quando lo lanci, e non serve disegnargli un'area nello Studio.
+  en> Your effects in full screen
+  en> A video or image you uploaded covers the whole scene when you fire it, and you don’t need to draw an area for it in the Studio.
+  es> Tus efectos a pantalla completa
+  es> Un video o una imagen que subiste cubre toda la escena cuando lo lanzas, y no hace falta dibujarle un área en el Studio.
 - I video WebM trasparenti restano trasparenti dopo il caricamento, i PNG animati restano animati e i WebP animati si caricano. Un file che non si legge dice quali formati vanno. [vai: effetti]
+  en: Transparent WebM videos stay transparent after upload, animated PNGs stay animated and animated WebPs upload. A file that can’t be read tells you which formats work.
+  es: Los videos WebM transparentes siguen transparentes después de subirlos, los PNG animados siguen animados y los WebP animados se suben. Un archivo que no se puede leer dice qué formatos sirven.
 - [importante] Nella storia «Stasera alle…» l'immagine del gioco ha tre modi: a tutto schermo con velo e sfocatura, in un riquadro che sposti e ingrandisci, o niente per lasciare il tema. [vai: grafiche]
+  en: In the “Tonight at…” story, the game image has three modes: full screen with a veil and blur, in a frame you move and enlarge, or none, to leave the theme showing.
+  es: En la historia «Esta noche a las…» la imagen del juego tiene tres modos: a pantalla completa con velo y desenfoque, en un recuadro que mueves y agrandas, o nada para dejar el tema.
   > L'immagine del gioco come la vuoi tu
   > La stessa storia può avere la copertina del gioco sfocata dietro, piccola in un riquadro o niente, così si adatta al tuo stile invece del contrario.
+  en> The game image the way you want it
+  en> The same story can have the game’s cover blurred behind, small in a frame or not at all, so it fits your style instead of the other way around.
+  es> La imagen del juego como la quieres
+  es> La misma historia puede llevar la portada del juego desenfocada detrás, pequeña en un recuadro o nada, así se adapta a tu estilo y no al revés.
 - Gli effetti accettano ogni video trasparente: WebM, MOV ProRes 4444 o HEVC di iPhone e Final Cut, Animation, GIF, APNG, AVIF e WebP animati. Se la trasparenza si perdesse, il caricamento si ferma e lo dice. [vai: effetti]
+  en: Effects accept any transparent video: WebM, MOV ProRes 4444 or HEVC from iPhone and Final Cut, Animation, GIF, APNG, AVIF and animated WebP. If transparency would be lost, the upload stops and says so.
+  es: Los efectos aceptan cualquier video transparente: WebM, MOV ProRes 4444 o HEVC de iPhone y Final Cut, Animation, GIF, APNG, AVIF y WebP animados. Si se perdiera la transparencia, la subida se detiene y lo dice.
 - «Prova» su un effetto te lo fa vedere nel pannello com'è in onda, video e disegni compresi, e da lì lo mandi all'overlay. Nella libreria anche immagini e video hanno il tasto per guardarli. [vai: effetti]
+  en: “Test” on an effect shows it to you in the panel as it looks on air, videos and drawings included, and from there you send it to the overlay. In the library, images and videos have a button to watch them too.
+  es: «Probar» en un efecto te lo muestra en el panel como sale al aire, videos y dibujos incluidos, y desde ahí lo mandas al overlay. En la biblioteca también imágenes y videos tienen el botón para verlos.
 - [importante] Caricando un effetto puoi togliere uno sfondo a tinta unita, come un green screen: lo vedi subito nell'anteprima e in onda esce proprio così. [vai: effetti]
+  en: When uploading an effect you can remove a solid-color background, like a green screen: you see it right away in the preview, and on air it comes out exactly like that.
+  es: Al subir un efecto puedes quitar un fondo de color liso, como una pantalla verde: lo ves enseguida en la vista previa y al aire sale exactamente así.
   > Togli lo sfondo, come un green screen
   > Un video con lo sfondo verde o nero diventa un effetto pulito sopra la scena, senza programmi di montaggio: lo vedi subito, e in onda esce identico.
+  en> Remove the background, like a green screen
+  en> A video with a green or black background becomes a clean effect over the scene, with no editing software: you see it right away, and on air it looks identical.
+  es> Quita el fondo, como una pantalla verde
+  es> Un video con fondo verde o negro se vuelve un efecto limpio sobre la escena, sin programas de edición: lo ves enseguida, y al aire sale idéntico.
 - Una GIF o un PNG animato coi fotogrammi velocissimi va in onda al ritmo con cui lo vedi nel browser, non più fino a dieci volte più veloce. [vai: effetti]
+  en: A GIF or animated PNG with very fast frames goes on air at the pace you see in the browser, no longer up to ten times faster.
+  es: Un GIF o un PNG animado con fotogramas rapidísimos sale al aire al ritmo con que lo ves en el navegador, ya no hasta diez veces más rápido.
 - Sul telefono la home non si trascina più di lato: le decorazioni della prima schermata restano dentro lo schermo, e il banner dei cookie ha di nuovo il tasto a portata di dito.
+  en: On phones the home page no longer drags sideways: the decorations on the first screen stay inside the screen, and the cookie banner has its button within reach of your thumb again.
+  es: En el teléfono la portada ya no se arrastra de lado: las decoraciones de la primera pantalla se quedan dentro, y el aviso de cookies vuelve a tener el botón al alcance del dedo.
 - Nella tua pagina link un indirizzo lungo scritto in un testo va a capo, invece di uscire dallo schermo del telefono. [vai: pagina]
+  en: On your link page, a long address written inside a text wraps onto the next line instead of running off the phone screen.
+  es: En tu página de enlaces, una dirección larga escrita en un texto baja de línea en lugar de salirse de la pantalla del teléfono.
 - Sul telefono il menù non scorre più: si disegna quando lo apri e si disfa quando lo chiudi, con la X, toccando fuori o scegliendo una voce.
+  en: On phones the menu no longer slides: it draws itself when you open it and un-draws when you close it, with the X, by tapping outside or by picking an item.
+  es: En el teléfono el menú ya no se desliza: se dibuja cuando lo abres y se deshace cuando lo cierras, con la X, tocando fuera o eligiendo una opción.
 - Nel muro delle emote il numero della combo non torna più indietro quando la scena in onda è pesante: cinque persone che ripetono la stessa emote fanno sempre ×5. [vai: alert]
+  en: On the emote wall the combo number no longer goes backward when the live scene is heavy: five people repeating the same emote always make ×5.
+  es: En el muro de emotes el número del combo ya no retrocede cuando la escena al aire va pesada: cinco personas que repiten el mismo emote siempre hacen ×5.
 - Il menù si disegna in ogni caso: quando la pagina si carica, quando allarghi o stringi la finestra, quando giri il tablet e quando togli il tutto schermo.
+  en: The menu draws itself in every case: when the page loads, when you widen or narrow the window, when you rotate the tablet and when you leave full screen.
+  es: El menú se dibuja en todos los casos: cuando carga la página, cuando ensanchas o estrechas la ventana, cuando giras la tablet y cuando quitas la pantalla completa.
 - Con «Riduci movimento» attivo le pagine, gli avvisi, le finestre e il menù si disegnano e si disfano come per tutti, invece di comparire e sparire di colpo.
+  en: With “Reduce motion” turned on, pages, notices, windows and the menu draw and un-draw like for everyone else, instead of popping in and out.
+  es: Con «Reducir movimiento» activado, las páginas, los avisos, las ventanas y el menú se dibujan y se deshacen como para todos, en lugar de aparecer y desaparecer de golpe.
 - Nella tua pagina link il blocco per sostenerti compare quando ci arrivi anche sui browser meno recenti, dove prima restava invisibile. [vai: pagina]
+  en: On your link page, the block for supporting you appears when you scroll to it on older browsers too, where it used to stay invisible.
+  es: En tu página de enlaces, el bloque para apoyarte aparece al llegar a él también en los navegadores menos recientes, donde antes quedaba invisible.
 - Le tendine, le carte che ripieghi, i gruppi del menù, la ricerca, la barra delle modifiche e le finestre si disegnano quando compaiono e si disfano quando se ne vanno, invece di scivolare o sparire di colpo.
+  en: Dropdowns, cards you fold, menu groups, search, the edits bar and windows draw themselves when they appear and un-draw when they leave, instead of sliding or vanishing all at once.
+  es: Los desplegables, las tarjetas que pliegas, los grupos del menú, la búsqueda, la barra de cambios y las ventanas se dibujan al aparecer y se deshacen al irse, en lugar de deslizarse o desaparecer de golpe.
 - Nella home la finestra per scegliere con cosa accedere si disegna e si disfa, e gli avvisi non si interrompono più a metà del loro disegno.
+  en: On the home page, the window for choosing how to sign in draws and un-draws itself, and notices no longer stop halfway through being drawn.
+  es: En la portada, la ventana para elegir con qué entrar se dibuja y se deshace, y los avisos ya no se interrumpen a mitad de su dibujo.
 - Cambiando sezione la pagina vecchia si disfa prima che arrivi la nuova, anche fra pagine dello stesso gruppo, e con lei la testata.
+  en: When you switch sections, the old page un-draws before the new one arrives, even between pages of the same group, and the header goes with it.
+  es: Al cambiar de sección la página vieja se deshace antes de que llegue la nueva, también entre páginas del mismo grupo, y con ella el encabezado.
 - Le righe che aggiungi o togli, come azioni, frasi, premi e livelli delle donazioni, si disegnano quando arrivano e si disfano quando le togli.
+  en: Rows you add or remove, like actions, phrases, prizes and donation tiers, draw themselves when they arrive and un-draw when you remove them.
+  es: Las filas que añades o quitas, como acciones, frases, premios y niveles de las donaciones, se dibujan al llegar y se deshacen al quitarlas.
 - Dopo un salvataggio, un cambio di canale o di lingua la pagina si disfa e si ridisegna, invece di cambiare di colpo.
+  en: After a save, or a change of channel or language, the page un-draws and redraws itself instead of switching all at once.
+  es: Después de guardar, o de cambiar de canal o de idioma, la página se deshace y se vuelve a dibujar, en lugar de cambiar de golpe.
 - Le bolle d'aiuto, le nuvolette e le barre in alto e in basso si disegnano quando compaiono e si disfano quando se ne vanno.
+  en: Help bubbles, tooltips and the top and bottom bars draw themselves when they appear and un-draw when they leave.
+  es: Las burbujas de ayuda, los globos y las barras de arriba y de abajo se dibujan al aparecer y se deshacen al irse.
 - [importante] !giochi risponde a chi lo chiede con i giochi che può usare, divisi per come si gioca, e con !giochi e un nome spiega quel gioco coi nomi e le regole del tuo canale. [vai: giochi]
+  en: !giochi answers whoever asks with the games they can use, grouped by how they’re played, and !giochi plus a name explains that game with your channel’s names and rules.
+  es: !giochi responde a quien lo pide con los juegos que puede usar, agrupados por cómo se juegan, y con !giochi y un nombre explica ese juego con los nombres y las reglas de tu canal.
   > !giochi spiega i giochi alla chat
   > Chi arriva in chat scopre da solo a cosa può giocare e come si fa, con i nomi e le regole del tuo canale, e tu non devi ripeterlo ogni volta.
+  en> !giochi explains the games to chat
+  en> Newcomers find out on their own what they can play and how, with your channel’s names and rules, and you don’t have to repeat it every time.
+  es> !giochi explica los juegos al chat
+  es> Quien llega al chat descubre solo a qué puede jugar y cómo se hace, con los nombres y las reglas de tu canal, y tú no tienes que repetirlo cada vez.
 - Chi chiede qualcosa in chat, come una classifica, come si usa un comando o quanto aspettare, riceve la risposta agganciata al suo messaggio. Le classifiche dicono anche dove sta lui.
+  en: People who ask for something in chat, like a leaderboard, how a command works or how long to wait, get the answer attached to their message. Leaderboards also say where they stand.
+  es: Quien pregunta algo en el chat, como una clasificación, cómo se usa un comando o cuánto esperar, recibe la respuesta enganchada a su mensaje. Las clasificaciones dicen también dónde está.
 - Il blackjack dice il conto per intero: quanto ti torna, cosa c'è dentro e quante monete hai adesso. Se il bot si riavvia con una mano aperta, lo dice in chat quando rende la puntata.
+  en: Blackjack spells out the whole tally: what you get back, what’s in it and how many coins you have now. If the bot restarts with a hand open, it says so in chat when it returns the bet.
+  es: El blackjack dice la cuenta entera: cuánto te vuelve, qué hay dentro y cuántas monedas tienes ahora. Si el bot se reinicia con una mano abierta, lo dice en el chat cuando devuelve la apuesta.
 - Fra i comandi dei giochi la pesca non porta più l'etichetta «costa monete»: non ne è mai costata.
+  en: Among the game commands, fishing no longer carries the “costs coins” label: it never cost any.
+  es: Entre los comandos de los juegos la pesca ya no lleva la etiqueta «cuesta monedas»: nunca costó ninguna.
 - Chi toglie e rimette il follow non fa più partire avvisi, ringraziamenti e conti da follower nuovo. Chi torna a seguirti dopo tre mesi viene salutato con un bentornato.
+  en: Unfollowing and following again no longer fires alerts, thank-yous and new-follower counts. Someone who follows you again after three months gets a welcome back.
+  es: Quien quita y vuelve a poner el follow ya no hace saltar avisos, agradecimientos ni cuentas de seguidor nuevo. Quien vuelve a seguirte después de tres meses recibe un bienvenido de nuevo.
 - Una domanda fatta a te in chat che il bot non sa resta a te: il bot tace invece di rispondere col tuo nome. Le cose da sistemare nel pannello le dice solo a te e ai tuoi mod, mai agli spettatori.
+  en: A question put to you in chat that the bot doesn’t know stays yours: the bot keeps quiet instead of answering in your name. Things to fix in the panel it tells only you and your mods, never viewers.
+  es: Una pregunta que te hacen en el chat y el bot no sabe queda para ti: el bot se calla en lugar de responder con tu nombre. Lo que hay que arreglar en el panel te lo dice solo a ti y a tus mods, nunca a los espectadores.
 - L'elenco di !giochi dice come si gioca ognuno: il nome e quello che va scritto dopo, tipo !duello @nome posta. In fondo dice come chiedere le regole di un gioco.
+  en: The !giochi list says how each game is played: the name and what to type after it, like !duello @name stake. At the end it says how to ask for a game’s rules.
+  es: La lista de !giochi dice cómo se juega cada uno: el nombre y lo que va escrito después, como !duello @nombre apuesta. Al final dice cómo pedir las reglas de un juego.
 - Nello Studio i pannelli che arrotoli, il riquadro delle proprietà e le righe dei livelli si disegnano e si disfano come il resto del pannello. Sul telefono di lato il tasto della guida la mostra davvero.
+  en: In the Studio, panels you roll up, the properties box and the layer rows draw and un-draw like the rest of the panel. On a phone held sideways, the guide button really shows it.
+  es: En el Studio los paneles que enrollas, el recuadro de propiedades y las filas de las capas se dibujan y se deshacen como el resto del panel. En el teléfono de lado, el botón de la guía la muestra de verdad.
 
 ## 2026-09-24
 
