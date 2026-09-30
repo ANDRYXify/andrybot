@@ -410,3 +410,56 @@ test('le strade automatiche: ogni tanti minuti, e coi raid abbastanza grandi', (
   streamers.setSettings('ar17', { giochi: false });
   assert.equal(AR.giocabile('ar17'), false, 'coi giochi spenti non si apre da sola');
 });
+
+// Dalla chat, come ci arriva davvero: prima il vaglio del registro (nomi,
+// rinomini, livelli), poi i giochi. Come fa il bot, il testo scritto resta
+// accanto a quello tradotto nel nome canonico.
+test('dalla chat: !arena la apre un moderatore, chi scrive entra, !arena ferma la chiude', async () => {
+  const R = await import('../../src/features/comandi-registro.js');
+  const games = await import('../../src/features/games.js');
+  canale('ar18', { iscrizioni: 30 });
+  streamers.setSettings('ar18', { ...streamers.get('ar18').settings, comandi: { combatti: { nome: 'lotta' } } });
+  const s = scena('ar18');
+  const chat = (user, text, extra = {}) => {
+    const msg = { channel: 'ar18', user, display: user, text, isMod: user === 'mod', ...extra };
+    const v = R.preparaComando('ar18', msg);
+    if (v?.rifiuta) { s.detti.push(v.messaggio); return; }
+    if (v?.salta) return;
+    games.tryGame(v?.testo && v.testo !== text ? { ...msg, text: v.testo, testoScritto: text } : msg, s.say);
+  };
+  chat('anna', '!arena');
+  assert.equal(s.detti.at(-1), '!arena qui è riservato ai moderatori e allo streamer.');
+  assert.equal(AR.arenaInCorso('ar18'), null);
+  chat('mod', '!arena');
+  assert.equal(AR.arenaInCorso('ar18'), 'iscrizioni');
+  assert.equal(s.detti.at(-1), '⚔️ Si apre l\'arena delle emote! Scrivete in chat per entrare, avete 30 secondi. Con !emote e un\'emote scegliete la vostra.');
+  chat('anna', 'ciao!');
+  chat('bruno', '5');
+  chat('carla', '!slot');
+  assert.deepEqual(AR.stato('ar18').combattenti.map((c) => c.id), ['anna', 'bruno', 'carla'], 'qualunque messaggio fa entrare');
+  chat('mod', '!arena');
+  assert.equal(s.detti.at(-1), '⚔️ C\'è già un\'arena in corso.');
+  chat('mod', '!arena ferma');
+  assert.equal(AR.arenaInCorso('ar18'), null);
+  assert.equal(s.eventi.at(-1).azione, 'annullata');
+
+  // Col comando, rinominato: le righe a schermo e l'annuncio dicono il nome del canale.
+  canale('ar18', { iscrizioni: 30, ingresso: 'comando' });
+  streamers.setSettings('ar18', { ...streamers.get('ar18').settings, comandi: { combatti: { nome: 'lotta' } } });
+  chat('mod', '!arena');
+  assert.match(s.detti.at(-1), /Scrivete !lotta per entrare/);
+  assert.deepEqual(AR.stato('ar18').righe, ['Scrivi !lotta per entrare!', '!emote nome per scegliere la tua']);
+  chat('anna', 'ciao');
+  chat('bruno', '!lotta Kappa', { tags: { emotes: '25:7-11' } });
+  assert.deepEqual(AR.stato('ar18').combattenti.map((c) => c.id), ['bruno'], 'col comando, scrivere non basta');
+  assert.deepEqual(AR.stato('ar18').combattenti[0].emote, { nome: 'Kappa', url: TWITCH('25') }, 'l\'emote letta sul testo scritto, col nome del canale');
+  chat('mod', '!arena ferma');
+});
+
+test('!giochi arena la spiega a tutti, e dice che aprirla e\' dei moderatori', async () => {
+  const R = await import('../../src/features/comandi-registro.js');
+  canale('ar19', { iscrizioni: 45 });
+  const testo = R.spiegaGioco('ar19', 'arena', { user: 'anna' });
+  assert.equal(testo, '🏟️ L\'arena delle emote: quando si apre l\'arena hai 45 secondi per entrare: scrivendo in chat, o con !combatti se il canale vuole il comando. Combatti con la tua emote, che scegli con !emote e un\'emote. Vince l\'ultimo in piedi, e con !arena un moderatore la apre. Qui farlo partire è riservato ai moderatori e allo streamer.');
+  assert.equal(R.spiegaGioco('ar19', 'emote', {}).split(':')[0], '🏟️ L\'arena delle emote', 'la mossa porta al suo gioco');
+});
