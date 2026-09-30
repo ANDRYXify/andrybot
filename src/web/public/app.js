@@ -9177,10 +9177,16 @@ function _frasiAdesso(m, modo, mie) {
 
 function _frasiMomentoHtml(m) {
   const modi = _FRASI_MODI();
-  const scelte = Object.keys(modi).filter((k) => k !== 'spento' || m.spegnibile);
-  const id = 'frasi-' + m.id;
   return `<details class="spazio-sopra" data-momento="${esc(m.id)}">
       <summary>${esc(Lv(m.titolo))} <span class="badge" data-stato>${esc(modi[m.modo] || modi.nostre)}</span></summary>
+    </details>`;
+}
+
+function _frasiDentroHtml(m) {
+  const modi = _FRASI_MODI();
+  const scelte = Object.keys(modi).filter((k) => k !== 'spento' || m.spegnibile);
+  const id = 'frasi-' + m.id;
+  return `<div data-dentro>
       <p class="suggerimento">${esc(Lv(m.quando))}</p>
       <label class="campo" for="${esc(id)}-modo">${L('Quali frasi', 'Which lines', 'Qué frases')}</label>
       <select id="${esc(id)}-modo" data-modo>${scelte.map((k) => `<option value="${k}"${m.modo === k ? ' selected' : ''}>${esc(modi[k])}</option>`).join('')}</select>
@@ -9192,7 +9198,14 @@ function _frasiMomentoHtml(m) {
       <div class="riga-flessibile spazio-sopra"><button type="button" class="btn secondario mini" data-prova>${L('Prova', 'Try it', 'Probar')}</button></div>
       <p class="campo" data-provate-titolo hidden>${L('Le prossime che uscirebbero, con dati di esempio', 'The next ones that would come out, with sample data', 'Las próximas que saldrían, con datos de ejemplo')}</p>
       <ol class="lista-voci" data-provate hidden></ol>
-    </details>`;
+    </div>`;
+}
+
+function _frasiApri(ev) {
+  const el = ev.target;
+  if (!(el instanceof HTMLDetailsElement) || !el.open || !el.dataset.momento || el.querySelector('[data-dentro]')) return;
+  const m = _frasiMomento(el.dataset.momento);
+  if (m) el.insertAdjacentHTML('beforeend', _frasiDentroHtml(m));
 }
 
 async function caricaFrasiBot() {
@@ -9208,9 +9221,11 @@ async function caricaFrasiBot() {
   if (comm && document.activeElement !== comm) comm.value = d.community || '';
   box.innerHTML = `<p class="suggerimento">${L('Adesso parlano in', 'Right now they speak', 'Ahora hablan en')} <strong>${esc(lingue[d.lingua] || d.lingua)}</strong> ${L('e col tono', 'with the tone', 'y con el tono')} <strong>${esc(toni[d.tono] || d.tono)}</strong>. ${L('Il tono lo scegli qui sopra, la lingua della chat in', 'You pick the tone above, the chat language in', 'El tono lo eliges arriba, el idioma del chat en')} <a href="#account" data-scheda="account">${L('Account, Preferenze del canale', 'Account, Channel preferences', 'Cuenta, Preferencias del canal')}</a>.</p>`
     + d.gruppi.map((g) => `<h3 class="spazio-sopra">${esc(Lv(g.titolo))}</h3>${g.momenti.map(_frasiMomentoHtml).join('')}`).join('');
+  box.removeEventListener('toggle', _frasiApri, true);
+  box.addEventListener('toggle', _frasiApri, true);
   box.onchange = box.oninput = (ev) => {
     const el = ev.target.closest('[data-momento]');
-    if (!el) return;
+    if (!el || !el.querySelector('[data-dentro]')) return;
     const m = _frasiMomento(el.dataset.momento);
     if (!m) return;
     const modo = el.querySelector('[data-modo]').value;
@@ -9249,6 +9264,7 @@ async function salvaFrasiBot() {
   for (const el of box.querySelectorAll('[data-momento]')) {
     const m = _frasiMomento(el.dataset.momento);
     if (!m) continue;
+    if (!el.querySelector('[data-dentro]')) { momenti[m.id] = { modo: m.modo, frasi: m.sue || [] }; continue; }
     const frasi = _frasiDelMomento(el);
     for (const f of frasi) {
       const ignoto = _segnoIgnoto(f, m.dati);
