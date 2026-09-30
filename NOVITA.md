@@ -854,101 +854,235 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-06
 
 - Nella locandina live compare la foto anche degli streamer che hai aggiunto tu alle notifiche: prima restava un cerchio vuoto.
+  en: The live poster now shows the photo of streamers you added to notifications yourself too: before, it stayed an empty circle.
+  es: El cartel del directo ahora muestra también la foto de los streamers que añadiste tú a las notificaciones: antes quedaba un círculo vacío.
 - Le emote nel titolo non diventano più quadratini: vengono tolte, perché nel disegno della locandina non si possono scrivere.
+  en: Emotes in the title no longer turn into little squares: they’re removed, because they can’t be written into the poster’s drawing.
+  es: Los emotes del título ya no se convierten en cuadraditos: se quitan, porque en el dibujo del cartel no se pueden escribir.
 
 - Le guide hanno lo stesso aspetto del resto: carta, contorno a inchiostro e titoli scritti a mano. Prima sembravano di un altro sito.
+  en: Guides look like everything else: paper, ink outline and handwritten titles. Before, they looked like they came from another site.
+  es: Las guías tienen el mismo aspecto que el resto: papel, contorno de tinta y títulos escritos a mano. Antes parecían de otro sitio.
 
 - Due guide nuove: una su Kick, che spiega cosa cambia rispetto a Twitch e perché, e una su come moderare la chat senza cacciare le persone vere.
+  en: Two new guides: one on Kick, explaining what changes compared with Twitch and why, and one on moderating chat without kicking out real people.
+  es: Dos guías nuevas: una sobre Kick, que explica qué cambia respecto a Twitch y por qué, y otra sobre cómo moderar el chat sin echar a personas reales.
 
 - Il link corto dell'overlay e la tela del tracking non finiscono più fra le pagine che Google visita: non sono pagine, girano dentro OBS.
+  en: The overlay’s short link and the tracking canvas no longer end up among the pages Google visits: they aren’t pages, they run inside OBS.
+  es: El enlace corto del overlay y el lienzo del tracking ya no acaban entre las páginas que visita Google: no son páginas, funcionan dentro de OBS.
 
 - La barra dell'Overlay Studio ha le nuvolette: cosa cambia fra un overlay e l'altro, perché il link è nascosto, e cosa succede davvero a OBS se rinomini o elimini.
+  en: The Overlay Studio bar has tooltips: what differs from one overlay to another, why the link is hidden, and what really happens in OBS if you rename or delete one.
+  es: La barra de Overlay Studio tiene globos de ayuda: qué cambia entre un overlay y otro, por qué el enlace está oculto y qué pasa de verdad en OBS si lo renombras o lo eliminas.
 
 - Cambiare sezione è uno stacco pulito: la pagina vecchia esce, la nuova entra dal lato da cui sei arrivato.
+  en: Switching sections is a clean cut: the old page leaves, and the new one comes in from the side you came from.
+  es: Cambiar de sección es un corte limpio: la página vieja sale y la nueva entra por el lado del que llegaste.
 - Muoversi dentro la stessa sezione è più corto: niente lampo, i riquadri rientrano uno dopo l'altro nell'ordine in cui si leggono.
+  en: Moving within the same section is shorter: no flash, the boxes come back in one after another, in reading order.
+  es: Moverse dentro de la misma sección es más corto: sin destello, los recuadros vuelven a entrar uno tras otro en el orden en que se leen.
 - Su un computer poco potente lo stacco non spariva più: la modalità leggera serve al carico, non al movimento.
+  en: On a low-powered computer the transition no longer disappears: light mode is about load, not about motion.
+  es: En una computadora poco potente la transición ya no desaparece: el modo ligero sirve para la carga, no para el movimiento.
 
 - La pagina «non c'è niente qui» e quella di manutenzione sono diventate una vignetta, col numero 404 nell'angolo come in un fumetto.
+  en: The “nothing here” page and the maintenance page are now comic panels, with the number 404 in the corner like in a comic book.
+  es: La página de «aquí no hay nada» y la de mantenimiento ahora son viñetas, con el número 404 en la esquina como en un cómic.
 - Nove riquadri del sito non avevano il contorno: la lente della ricerca, i campi per scegliere un file e altri. Ora ce l'hanno.
+  en: Nine boxes on the site had no outline: the search magnifier, the file pickers and others. Now they do.
+  es: Nueve recuadros del sitio no tenían contorno: la lupa de la búsqueda, los campos para elegir un archivo y otros. Ahora lo tienen.
 - Sulle pagine di servizio i puntini del retino passavano sopra al testo e lo rendevano quasi illeggibile. Ora stanno sotto.
+  en: On service pages the halftone dots ran over the text and made it almost unreadable. Now they sit underneath.
+  es: En las páginas de servicio los puntos de la trama pasaban por encima del texto y lo hacían casi ilegible. Ahora quedan debajo.
 
 - Le guide «Come funziona», le legende e i riquadri richiudibili hanno lo stesso aspetto degli altri: carta, contorno a inchiostro e titolo scritto a mano.
+  en: The “How it works” guides, the legends and the collapsible boxes look like the others: paper, ink outline and a handwritten title.
+  es: Las guías «Cómo funciona», las leyendas y los recuadros plegables tienen el mismo aspecto que los demás: papel, contorno de tinta y título escrito a mano.
 - Otto riquadri che si aprono non mostravano nessuna freccia: sembravano testo normale. Ora ce l'hanno tutti.
+  en: Eight boxes that open showed no arrow at all: they looked like plain text. Now they all have one.
+  es: Ocho recuadros que se abren no mostraban ninguna flecha: parecían texto normal. Ahora la tienen todos.
 
 - Sulle nuvolette corte la coda non sbanda più sull'angolo: resta attaccata al fondo, anche quando la bolla è larga quanto una parola.
+  en: On short tooltips the tail no longer skids onto the corner: it stays attached to the bottom, even when the bubble is as wide as a single word.
+  es: En los globos cortos la cola ya no se desvía hacia la esquina: sigue pegada al fondo, incluso cuando el globo es tan ancho como una palabra.
 - Non supera più mezza bolla di lunghezza. Prima su una parola sola arrivava a due terzi e sembrava appesa a un filo.
+  en: It’s never longer than half the bubble now. Before, on a single word it reached two thirds and looked like it was hanging by a thread.
+  es: Ya no pasa de la mitad del globo. Antes, en una sola palabra llegaba a dos tercios y parecía colgada de un hilo.
 - Le sezioni ancora vuote non sono più un buco bianco: sono un riquadro col retino, che dice cosa ci comparirà.
+  en: Sections that are still empty are no longer a white hole: they’re a box with halftone that says what will show up there.
+  es: Las secciones todavía vacías ya no son un hueco blanco: son un recuadro con trama que dice qué aparecerá ahí.
 
 - La riga che apre ogni scheda adesso è una didascalia: un riquadro con la barra d'inchiostro e l'angolo piegato, come nei fumetti. Chi parla ha la bolla, chi racconta ha il riquadro.
+  en: The line that opens each tab is now a caption: a box with an ink bar and a folded corner, like in comics. Whoever speaks gets a bubble, whoever narrates gets a box.
+  es: La línea que abre cada pestaña ahora es un texto de apoyo: un recuadro con la barra de tinta y la esquina doblada, como en los cómics. Quien habla tiene globo, quien narra tiene recuadro.
 - Le nuvolette corte non sono più grandi come quelle lunghe: la coda si accorcia insieme alla bolla.
+  en: Short tooltips are no longer as big as long ones: the tail gets shorter along with the bubble.
+  es: Los globos cortos ya no son tan grandes como los largos: la cola se acorta junto con el globo.
 
 - Le nuvolette sono disegnate: corpo e coda sono una forma sola, quindi non si vede più la linea che tagliava la coda a metà.
+  en: Tooltips are drawn: body and tail are a single shape, so the line that cut the tail in half is gone.
+  es: Los globos están dibujados: cuerpo y cola son una sola forma, así que ya no se ve la línea que cortaba la cola por la mitad.
 - La coda si piega verso quello che sta spiegando e si ferma prima di arrivarci, come nei fumetti veri.
+  en: The tail bends toward what it’s explaining and stops just before reaching it, like in real comics.
+  es: La cola se curva hacia lo que está explicando y se detiene antes de llegar, como en los cómics de verdad.
 
 - La coda delle nuvolette si ferma a metà strada e non copre più il tasto che sta spiegando.
+  en: The tooltip tail stops halfway and no longer covers the button it’s explaining.
+  es: La cola de los globos se detiene a mitad de camino y ya no tapa el botón que está explicando.
 - Il messaggio d'errore ha il bordo a zig-zag di un grido, e la nuvoletta che spiega un valore ha la scia di bollicine del pensiero.
+  en: The error message has the zigzag edge of a shout, and the tooltip that explains a value has the bubble trail of a thought.
+  es: El mensaje de error tiene el borde en zigzag de un grito, y el globo que explica un valor tiene la estela de burbujas del pensamiento.
 - Gli avvisi che compaiono in basso sono didascalie, con la barra d'inchiostro e l'angolo piegato. Chi parla ha la bolla, chi racconta ha il riquadro.
+  en: Notices that pop up at the bottom are captions, with an ink bar and a folded corner. Whoever speaks gets a bubble, whoever narrates gets a box.
+  es: Los avisos que aparecen abajo son textos de apoyo, con la barra de tinta y la esquina doblada. Quien habla tiene globo, quien narra tiene recuadro.
 
 - Le nuvolette respirano: più larghe che alte, con l'aria attorno al testo e le righe più distanziate. Prima erano piccole e strette e si leggevano male.
+  en: Tooltips breathe: wider than they are tall, with room around the text and more space between lines. Before, they were small and cramped and hard to read.
+  es: Los globos respiran: más anchos que altos, con aire alrededor del texto y las líneas más separadas. Antes eran pequeños y apretados y se leían mal.
 
 - Le nuvolette non compaiono più spostate per poi rimettersi a posto al primo movimento del mouse, e non rallentano più il sito.
+  en: Tooltips no longer appear out of place only to jump into position at the first mouse move, and they no longer slow the site down.
+  es: Los globos ya no aparecen desplazados para luego acomodarse con el primer movimiento del mouse, y ya no hacen más lento el sitio.
 - Stanno un po' più in alto e di lato, col becco che punta dentro al tasto, e si vede attraverso: non coprono più quello che stai leggendo.
+  en: They sit a bit higher and to the side, with the beak pointing into the button, and you can see through them: they no longer cover what you’re reading.
+  es: Están un poco más arriba y de lado, con el pico apuntando dentro del botón, y se ve a través: ya no tapan lo que estás leyendo.
 
 - Le nuvolette seguono il cursore mentre lo muovi, e la coda è disegnata: curva, come nei fumetti, e punta alla cosa di cui parla anche quando la bolla è finita di lato.
+  en: Tooltips follow the cursor as you move it, and the tail is drawn: curved, like in comics, and it points at what it’s talking about even when the bubble ends up to the side.
+  es: Los globos siguen al cursor mientras lo mueves, y la cola está dibujada: curva, como en los cómics, y apunta a lo que habla incluso cuando el globo acaba de lado.
 - Compaiono con un piccolo scatto e se ne vanno da sole dopo il tempo che serve per leggerle. Non si spengono più da sole dopo mezzo secondo.
+  en: They pop in with a little snap and leave by themselves after enough time to read them. They no longer switch off on their own after half a second.
+  es: Aparecen con un pequeño salto y se van solos después del tiempo necesario para leerlos. Ya no se apagan solos al medio segundo.
 - Il testo dentro è centrato e le righe sono bilanciate, come nei balloon veri.
+  en: The text inside is centered and the lines are balanced, like in real speech balloons.
+  es: El texto de dentro está centrado y las líneas equilibradas, como en los globos de verdad.
 
 - Le nuvolette compaiono dove sei col cursore, non al centro della cosa che stai puntando. Sulla tela dell'editor finivano lontanissime.
+  en: Tooltips appear where your cursor is, not in the middle of the thing you’re pointing at. On the editor canvas they ended up miles away.
+  es: Los globos aparecen donde está tu cursor, no en el centro de lo que estás señalando. En el lienzo del editor acababan lejísimos.
 - Sono palloncini veri: forma tonda, becco che punta dove guardi. Prima erano rettangoli con gli angoli smussati.
+  en: They’re real speech balloons: a round shape, with a beak pointing where you’re looking. Before, they were rectangles with rounded corners.
+  es: Son globos de verdad: forma redonda y pico que apunta adonde miras. Antes eran rectángulos con las esquinas redondeadas.
 - Passando sopra alle vesti dell'overlay adesso c'è scritto com'è fatta ognuna, invece del nome che si legge già sul tasto.
+  en: Hovering over the overlay looks now tells you what each one is like, instead of the name you can already read on the button.
+  es: Al pasar sobre los aspectos del overlay ahora se lee cómo es cada uno, en lugar del nombre que ya está en el botón.
 
 - Le nuvolette col cursore sopra adesso sono di tre tipi: fumetto normale per un comando, squadrato e rosso per le cose che fanno danni, nuvola di pensiero per spiegare un valore o una parola.
+  en: Hover tooltips now come in three kinds: a normal speech balloon for a control, a square red one for things that do damage, and a thought cloud to explain a value or a word.
+  es: Los globos al pasar el cursor ahora son de tres tipos: globo normal para un control, cuadrado y rojo para lo que hace daño, y nube de pensamiento para explicar un valor o una palabra.
 - Ce ne sono ventidue in più, sui comandi il cui nome non dice cosa succede: «Studia ora», «Crea clip», «Avvia raid», «Rileva gruppo», «Togli dal web» e altri.
+  en: There are twenty-two more, on controls whose name doesn’t say what happens: “Study now”, “Create clip”, “Start raid”, “Detect group”, “Take offline” and others.
+  es: Hay veintidós más, en los controles cuyo nombre no dice qué pasa: «Estudiar ahora», «Crear clip», «Iniciar raid», «Detectar grupo», «Quitar de la web» y otros.
 
 - Le levette hanno il pallino in mezzo e dentro alla pista. Fuori dal telefono era spostato in basso a destra e sbordava.
+  en: Toggles have the knob centered and inside the track. Off phones it was shifted down and to the right and spilled over.
+  es: Los interruptores tienen la bolita en medio y dentro de la pista. Fuera del teléfono estaba desplazada abajo a la derecha y se salía.
 
 - La locandina è accesa di suo: se non l'hai mai toccata, parte con il prossimo annuncio. Se l'hai spenta resta spenta, anche salvando un disegno.
+  en: The poster is on by default: if you’ve never touched it, it goes out with the next announcement. If you turned it off it stays off, even when you save a design.
+  es: El cartel viene activado: si nunca lo tocaste, sale con el próximo anuncio. Si lo apagaste sigue apagado, aunque guardes un diseño.
 - Una diretta su Kick riceve la grafica di Kick e una su Twitch quella di Twitch, anche quando lo stesso canale trasmette su tutte e due. Prima poteva arrivare quella sbagliata.
+  en: A stream on Kick gets the Kick design and one on Twitch the Twitch design, even when the same channel streams on both. Before, the wrong one could arrive.
+  es: Un directo en Kick recibe el diseño de Kick y uno en Twitch el de Twitch, incluso cuando el mismo canal emite en los dos. Antes podía llegar el equivocado.
 - L'indirizzo scritto in fondo alla locandina è quello della piattaforma giusta.
+  en: The address written at the bottom of the poster is the one for the right platform.
+  es: La dirección escrita al pie del cartel es la de la plataforma correcta.
 - Se la tua immagine del profilo non si scarica in fretta, la locandina parte lo stesso invece di far aspettare l'annuncio.
+  en: If your profile picture doesn’t download quickly, the poster goes out anyway instead of holding up the announcement.
+  es: Si tu imagen de perfil no se descarga rápido, el cartel sale igual en lugar de hacer esperar al anuncio.
 
 - C'è l'editor della locandina: sposti i pezzi trascinandoli, ne aggiungi, cambi caratteri e colori, e vedi il risultato mentre lo fai. Annulla e rifai con Ctrl+Z.
+  en: There’s a poster editor: you move the pieces by dragging them, add more, change fonts and colors, and see the result as you go. Undo and redo with Ctrl+Z.
+  es: Hay un editor del cartel: mueves las piezas arrastrándolas, añades otras, cambias fuentes y colores, y ves el resultado mientras lo haces. Deshacer y rehacer con Ctrl+Z.
 - Quando parte la locandina il messaggio si accorcia: titolo e categoria sono già disegnati dentro, sotto restano il tuo nome e il link.
+  en: When the poster goes out, the message gets shorter: title and category are already drawn in, and below it only your name and the link remain.
+  es: Cuando sale el cartel el mensaje se acorta: título y categoría ya están dibujados dentro, y debajo quedan tu nombre y el enlace.
 - La locandina arriva anche per gli streamer che hai aggiunto alle notifiche: la grafica resta la tua, dentro ci sono il loro nome, il loro titolo e la loro faccia.
+  en: The poster also goes out for the streamers you added to notifications: the design stays yours, with their name, their title and their face inside.
+  es: El cartel llega también para los streamers que añadiste a las notificaciones: el diseño sigue siendo el tuyo, y dentro están su nombre, su título y su cara.
 - Il titolo e la categoria compaiono anche a canale spento: si prendono da quelli del canale, invece di restare vuoti.
+  en: Title and category show up even when the channel is offline: they’re taken from the channel’s own, instead of staying empty.
+  es: El título y la categoría aparecen también con el canal apagado: se toman de los del canal, en lugar de quedar vacíos.
 
 - «Manda una prova» adesso manda esattamente quello che partirà davvero: se hai acceso la locandina, la prova arriva con la locandina, e te lo dice.
+  en: “Send a test” now sends exactly what will really go out: if the poster is on, the test arrives with the poster, and it tells you so.
+  es: «Enviar una prueba» ahora envía exactamente lo que saldrá de verdad: si activaste el cartel, la prueba llega con el cartel, y te lo dice.
 - La locandina ora si disegna anche in produzione: i caratteri non finivano nel programma pubblicato.
+  en: The poster is now drawn in production too: the fonts weren’t making it into the published program.
+  es: El cartel ahora se dibuja también en producción: las fuentes no llegaban al programa publicado.
 - I due tasti tondi in basso a destra non tremolano più quando ci passi sopra col cursore.
+  en: The two round buttons at the bottom right no longer flicker when you hover over them.
+  es: Los dos botones redondos de abajo a la derecha ya no parpadean cuando pasas el cursor por encima.
 
 - Nelle notifiche Telegram c'è un riquadro per la locandina: la accendi, scegli fra la grafica di Twitch e quella di Kick, e vedi l'anteprima.
+  en: Telegram notifications have a box for the poster: you turn it on, choose between the Twitch and the Kick design, and see the preview.
+  es: En las notificaciones de Telegram hay un recuadro para el cartel: lo activas, eliges entre el diseño de Twitch y el de Kick, y ves la vista previa.
 - L'anteprima è l'immagine vera, disegnata dal server: quello che vedi è quello che arriva nel gruppo.
+  en: The preview is the real image, drawn by the server: what you see is what arrives in the group.
+  es: La vista previa es la imagen real, dibujada por el servidor: lo que ves es lo que llega al grupo.
 
 - I suggerimenti che compaiono passando il cursore adesso sono fumetti: contorno spesso, coda che punta alla cosa di cui parlano, scritti a pennarello come il resto del sito.
+  en: Hover tips are now comic balloons: a thick outline, a tail pointing at what they’re about, and written in marker like the rest of the site.
+  es: Las ayudas que aparecen al pasar el cursor ahora son globos de cómic: contorno grueso, cola que apunta a lo que explican y letra de marcador como el resto del sitio.
 - Un tasto su cui tieni il cursore si disegna sopra a quello che ha intorno. Prima poteva capitare che il riquadro accanto gli passasse sopra l'ombra e sembrasse tagliato.
+  en: A button you hover over is drawn on top of what’s around it. Before, the box next to it could cast its shadow over it and make it look cut off.
+  es: Un botón sobre el que tienes el cursor se dibuja por encima de lo que lo rodea. Antes podía pasar que el recuadro de al lado le echara la sombra encima y pareciera cortado.
 
 - Quando parte la diretta, l'annuncio su Telegram porta con sé una locandina: il tuo nome, il titolo della diretta, il gioco e la tua immagine, su una grafica diversa per Twitch e per Kick.
+  en: When your stream starts, the Telegram announcement brings a poster: your name, the stream title, the game and your picture, on a different design for Twitch and for Kick.
+  es: Cuando empieza el directo, el anuncio en Telegram lleva un cartel: tu nombre, el título del directo, el juego y tu imagen, con un diseño distinto para Twitch y para Kick.
 - Vale per tutte le piattaforme collegate, non solo per Twitch.
+  en: It works for every connected platform, not just Twitch.
+  es: Vale para todas las plataformas conectadas, no solo para Twitch.
 - Se il messaggio è corto diventa la didascalia della foto; se è lungo parte prima la foto e subito dopo il testo intero, che non viene mai tagliato a metà.
+  en: If the message is short it becomes the photo caption; if it’s long, the photo goes first and the full text right after, never cut in half.
+  es: Si el mensaje es corto se convierte en el pie de la foto; si es largo, sale primero la foto y justo después el texto entero, que nunca se corta por la mitad.
 - Se la locandina non si disegna o Telegram la rifiuta, l'annuncio parte lo stesso come prima: chi ti aspetta viene avvisato comunque.
+  en: If the poster can’t be drawn or Telegram rejects it, the announcement goes out anyway as before: the people waiting for you still get the alert.
+  es: Si el cartel no se dibuja o Telegram lo rechaza, el anuncio sale igual que antes: quien te espera recibe el aviso de todas formas.
 
 ## 2026-09-05
 
 - I suggerimenti che compaiono passando il cursore sopra un comando adesso li disegna il sito, col suo tema. Prima erano la scatoletta grigia del browser, che non si può cambiare.
+  en: The tips that appear when you hover over a control are now drawn by the site, with its theme. Before, they were the browser’s little gray box, which can’t be changed.
+  es: Las ayudas que aparecen al pasar el cursor sobre un control ahora las dibuja el sitio, con su tema. Antes eran la cajita gris del navegador, que no se puede cambiar.
 - Compaiono anche arrivandoci col tasto di tabulazione: chi naviga da tastiera prima non li vedeva mai.
+  en: They also appear when you reach them with the Tab key: people navigating by keyboard never saw them before.
+  es: Aparecen también al llegar con la tecla de tabulación: quien navega con el teclado antes no las veía nunca.
 
 - Il vinile che gira sull'overlay non si blocca più per ricominciare il giro da capo. Succedeva a ogni lettura del brano, e valeva anche per le onde e per il titolo che scorre.
+  en: The spinning vinyl on the overlay no longer stops to restart its turn from the beginning. It happened every time the track was read, and the waves and scrolling title did it too.
+  es: El vinilo que gira en el overlay ya no se detiene para empezar la vuelta de nuevo. Pasaba cada vez que se leía la canción, y también con las ondas y el título que se desplaza.
 
 - Nel lettore musica «niente onde» adesso le toglie davvero, invece di lasciarle lì ferme. Le due impostazioni che si sovrapponevano sono diventate una sola.
+  en: In the music player, “no bars” now really removes them instead of leaving them frozen there. The two settings that overlapped are now one.
+  es: En el reproductor de música, «sin ondas» ahora las quita de verdad, en lugar de dejarlas ahí quietas. Los dos ajustes que se superponían ahora son uno solo.
 - La copertina pulsa solo quando Spotify ci dice il tempo del brano. Quando non lo dice resta ferma, invece di pulsare a una velocità che non c'entrava niente con la canzone.
+  en: The cover art pulses only when Spotify tells us the song’s tempo. When it doesn’t, it stays still instead of pulsing at a speed that had nothing to do with the song.
+  es: La portada late solo cuando Spotify nos dice el tempo de la canción. Cuando no lo dice se queda quieta, en lugar de latir a una velocidad que no tenía nada que ver con la canción.
 - Il titolo lungo scorre sempre, non più a volte sì e a volte no: si rimisura quando arriva il carattere, quando arriva la copertina e quando cambi la dimensione.
+  en: A long title always scrolls now, not just sometimes: it’s measured again when the font arrives, when the cover art arrives and when you change the size.
+  es: El título largo se desplaza siempre, ya no a veces sí y a veces no: se vuelve a medir cuando llega la fuente, cuando llega la portada y cuando cambias el tamaño.
 
 - L'accesso con YouTube è pronto ma non ancora aperto: nella vetrina e nella scheda Piattaforme lo trovi in grigio, «in arrivo». Google deve prima approvare il permesso di leggere quale canale sei.
+  en: Signing in with YouTube is ready but not open yet: on the showcase and in the Platforms tab you’ll find it grayed out, “coming soon”. Google first has to approve permission to read which channel you are.
+  es: El acceso con YouTube está listo pero todavía no abierto: en el escaparate y en la pestaña Plataformas lo ves en gris, «próximamente». Google primero debe aprobar el permiso para leer qué canal eres.
 - Se moderi già il canale di qualcun altro puoi chiedere tu l'accesso al suo pannello, senza aspettare che ti mandi un link. Lo trovi nella scheda Stato.
+  en: If you already moderate someone else’s channel, you can ask for access to their panel yourself, without waiting for them to send you a link. You’ll find it in the Status tab.
+  es: Si ya moderas el canal de otra persona, puedes pedir tú el acceso a su panel sin esperar a que te mande un enlace. Lo encuentras en la pestaña Estado.
 - Su Twitch la richiesta arriva allo streamer già confermata: prima di mostrargliela chiediamo a Twitch chi modera quel canale.
+  en: On Twitch the request reaches the streamer already confirmed: before showing it to them, we ask Twitch who moderates that channel.
+  es: En Twitch la solicitud le llega al streamer ya confirmada: antes de mostrársela le preguntamos a Twitch quién modera ese canal.
 - Chi ha il canale vede le richieste in attesa nella scheda Stato e risponde con un tasto. Finché non dice di sì, chi ha chiesto non vede niente e non occupa un posto del piano.
+  en: The channel owner sees pending requests in the Status tab and answers with one button. Until they say yes, the person who asked sees nothing and doesn’t take up a spot on the plan.
+  es: Quien tiene el canal ve las solicitudes pendientes en la pestaña Estado y responde con un botón. Hasta que no diga que sí, quien pidió no ve nada y no ocupa un lugar del plan.
 - L'invito a un moderatore ora si manda anche a chi sta su Kick: scegli la piattaforma e scrivi il nome.
+  en: Moderator invites can now go to people on Kick too: pick the platform and type the name.
+  es: La invitación a un moderador ahora también se puede enviar a quien está en Kick: eliges la plataforma y escribes el nombre.
 - Chi è stato invitato entra dalla sua piattaforma, non per forza da Twitch.
+  en: Whoever was invited signs in from their own platform, not necessarily from Twitch.
+  es: Quien fue invitado entra desde su plataforma, no necesariamente desde Twitch.
 
 ## 2026-09-04
 
